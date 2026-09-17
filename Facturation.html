@@ -7150,10 +7150,10 @@ function buildChno() {
         <input type="number" step="0.5" value="${l.heures||0}" oninput="CH_NO[${i}].heures=parseFloat(this.value)||0;chnoRecalc(${i})" style="width:56px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
         <select onchange="CH_NO[${i}].hUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${hOpts}</select></div></td>`;
     const prixCell = l.hideDetail ? hideCell : `<td style="padding:4px"><div style="display:flex;gap:2px">
-        <input type="number" step="1" value="${l.prix||0}" oninput="CH_NO[${i}].prix=parseFloat(this.value)||0;CH_NO[${i}].prixManual=true;chnoRecalc(${i})" title="Prix horaire (repris du tarif horaire ; modifiable au cas par cas)" style="width:56px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
+        <input type="text" inputmode="decimal" class="money" value="${moneyFormatFull(l.prix||0)}" oninput="CH_NO[${i}].prix=parseFloat(this.value.replace(/\\s/g,''))||0;CH_NO[${i}].prixManual=true;chnoRecalc(${i})" title="Prix horaire (repris du tarif horaire ; modifiable au cas par cas)" style="width:72px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
         <select onchange="CH_NO[${i}].pUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${pOpts}</select></div></td>`;
     const montantCell = l.hideDetail
-      ? `<td><input type="number" step="1" value="${l.amt||0}" oninput="CH_NO[${i}].amt=parseFloat(this.value)||0;updCalcHono()" id="chno-mnt-${i}" style="width:100%;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-weight:bold;color:#003346"></td>`
+      ? `<td><input type="text" inputmode="decimal" class="money" value="${moneyFormatFull(l.amt||0)}" oninput="CH_NO[${i}].amt=parseFloat(this.value.replace(/\\s/g,''))||0;updCalcHono()" id="chno-mnt-${i}" style="width:100%;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-weight:bold;color:#003346"></td>`
       : `<td style="text-align:right;font-weight:bold;color:${l.option?'#8a979c':'#003346'};font-style:${l.option?'italic':'normal'};padding:4px 6px" id="chno-mnt-${i}">${l.option?'('+CHF(l.amt)+')':CHF(l.amt)}</td>`;
     const tr = document.createElement('tr');
     tr.innerHTML = `<td style="padding:4px"><div style="display:flex;align-items:center;gap:6px">

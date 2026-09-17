@@ -16,7 +16,7 @@ Le serveur écoute sur http://localhost:7788 et n'accepte que les connexions
 locales (127.0.0.1). Laissez cette fenêtre ouverte pendant que vous utilisez l'app.
 
 DOSSIER DE BASE :
-    Par défaut : un sous-dossier « sauvegardes » à côté de ce fichier.
+    Par défaut : le sous-dossier « Sauvegarde Facturation » à côté de ce fichier.
     Pour le changer, modifiez BASE_DIR ci-dessous, ou lancez :
         FACT_BACKUP_DIR="/chemin/vers/mon/dossier" python3 fact_backup_server.py
 """
@@ -34,7 +34,7 @@ import subprocess
 PORT = 7788
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # Dossier de base des sauvegardes (modifiable). Priorité à la variable d'environnement.
-BASE_DIR = os.environ.get("FACT_BACKUP_DIR", os.path.join(_HERE, "sauvegardes"))
+BASE_DIR = os.environ.get("FACT_BACKUP_DIR", os.path.join(_HERE, "Sauvegarde Facturation"))
 PREFIX = "facturation_data_"          # préfixe des fichiers de sauvegarde
 # ───────────────────────────────────────────────────────────────
 

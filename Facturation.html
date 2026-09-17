@@ -4886,11 +4886,11 @@ async function offrePDFBytes(){
     }
     // FEUILLE SUPPLÉMENTAIRE : détail (commentaires) des prestations non ordinaires — si la case est cochée.
     // Ajoutée AVANT la pagination pour être numérotée ; basée sur une copie de la page « contexte » (en-tête + pied).
-    let _supIns = 0;   // décalage d'index dû à l'insertion de la feuille supplémentaire (expertise : après idx2)
+    let _supIns = 0, _supAt = 3;   // décalage d'index + position d'insertion de la feuille supplémentaire
     if(d.chnoDetail && Array.isArray(d.chnoLines) && d.chnoLines.length){
       const [sp] = await doc.copyPages(doc, [2]);
-      if(d.isExpertise){ doc.insertPage(3, sp); _supIns = 1; }   // EXPERTISE : après le chapitre « Condition » (page Contexte idx2)
-      else { doc.addPage(sp); }                                   // autres types : à la fin (comportement d'origine)
+      if(d.isExpertise){ doc.insertPage(3, sp); _supIns = 1; _supAt = 3; }   // EXPERTISE : après le chapitre « Condition » (page Contexte idx2)
+      else { doc.insertPage(5, sp); _supIns = 1; _supAt = 5; }               // autres types : DANS L'ORDRE, juste après « Planning d'intention » (idx 4)
       P = doc.getPages();
       wipe(sp,78,52,516,756,0);                         // efface UNIQUEMENT le corps : l'EN-TÊTE courant (OFFRE RELATIVE… + réf + date) et le PIED (coordonnées + n° de page) sont CONSERVÉS → identiques aux autres pages
       // ═══ Reproduction FIDÈLE du PDF de référence « 26TEC_Honoraires_Expertise_bis.pdf »
@@ -4953,7 +4953,7 @@ async function offrePDFBytes(){
     const _rmSia = (!d.hasOrd && NP<=1);
     const _rmPlan = !!d.hidePlanning;
     const _rmCond = !!d.isExpertise;   // expertise : « Condition » est sur la page Contexte → page idx3 (ex mode de calcul) retirée
-    const SH = (i)=> (i>=3 ? i+_supIns : i);   // index d'origine → index après insertion de la feuille supplémentaire (idx3)
+    const SH = (i)=> (i>=_supAt ? i+_supIns : i);   // index d'origine → index après insertion de la feuille supplémentaire
     const keptIdx=[]; for(let i=0;i<P.length;i++){
       if(i===SH(tabIdx(1))&&!keepA2)continue;
       if(i===SH(IA3)&&!keepA3)continue;

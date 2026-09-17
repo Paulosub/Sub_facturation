@@ -641,6 +641,12 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 <div class="panel" id="panel-backup">
   <div class="home-wrap">
     <div class="home-title" style="margin-top:52px">Import / Export</div>
+
+    <!-- ── Sauvegarde DIRECTE dans un dossier du Mac (sans serveur) ── -->
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px">
+      <button type="button" onclick="fsaPickFolder()" style="padding:7px 14px;border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;font-size:12px;font-weight:bold;border-radius:5px;font-family:inherit">📁 Choisir le dossier de sauvegarde…</button>
+      <span id="fsa-status" style="font-size:12px;color:#8a8f92">Vérification…</span>
+    </div>
     <div id="backup-srv-status" class="bk-status off" style="margin-bottom:26px">Vérification du serveur…</div>
 
     <div class="bk-sec">Exporter</div>
@@ -648,7 +654,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
       <div class="home-card" onclick="backupExportBase()">
         <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9a1 1 0 0 1 1-1h6.5l2 3H27a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M16 14v6M13 17.5l3 3 3-3"/></svg></div>
         <div class="ct">Dossier de base</div>
-        <div class="cd">Enregistre une sauvegarde horodatée dans le dossier de base du serveur.</div>
+        <div class="cd">Enregistre une sauvegarde horodatée dans le dossier connecté (ou, à défaut, le dossier de base du serveur).</div>
       </div>
       <div class="home-card" onclick="backupExportSpecific()">
         <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9a1 1 0 0 1 1-1h6.5l2 3H27a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M13 16.5h7M17.5 14l3 2.5-3 2.5"/></svg></div>
@@ -667,7 +673,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
       <div class="home-card" onclick="backupImportLatest()">
         <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 16a9.5 9.5 0 1 0 2.8-6.7"/><path d="M6.5 9.5V15h5.5"/><path d="M16 12v4.4l3.2 1.9"/></svg></div>
         <div class="ct">Dernier export</div>
-        <div class="cd">Recharge la dernière sauvegarde présente dans le dossier de base.</div>
+        <div class="cd">Recharge la dernière sauvegarde du dossier connecté (ou, à défaut, du dossier de base du serveur).</div>
       </div>
     </div>
 
@@ -8284,6 +8290,86 @@ function importData(input) {
 ═══════════════════════════════════════════════════ */
 const BACKUP_SRV = 'http://localhost:7788';
 
+/* ═══════════════════════════════════════════════════
+   SAUVEGARDE DIRECTE DANS UN DOSSIER DU MAC (sans serveur)
+   — File System Access API (Chrome / Edge / Arc / Brave).
+   L'utilisateur choisit UNE FOIS le dossier (p. ex. « sauvegardes » du
+   dossier 99) ; le navigateur mémorise l'autorisation, et l'app y écrit
+   ensuite les .json directement : exports manuels horodatés, et
+   auto-sauvegarde dans un fichier par jour (écrasé au fil de la journée).
+   Le serveur local (fact_backup_server.py) reste un simple secours.
+═══════════════════════════════════════════════════ */
+let _fsaHandle = null;                                   // dossier connecté (FileSystemDirectoryHandle)
+const FSA_OK = ('showDirectoryPicker' in window);
+
+function _fsaDb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('sa_fsa',1); r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function _fsaStore(h){ const db=await _fsaDb(); return new Promise((res,rej)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').put(h,'dir'); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+async function _fsaLoad(){ try{ const db=await _fsaDb(); return await new Promise(res=>{ const g=db.transaction('h','readonly').objectStore('h').get('dir'); g.onsuccess=()=>res(g.result||null); g.onerror=()=>res(null); }); }catch(_){ return null; } }
+
+function fsaReady(){ return !!_fsaHandle; }
+function _fsaTs(){ const d=new Date(),p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds()); }
+function _fsaDay(){ const d=new Date(),p=n=>String(n).padStart(2,'0'); return ''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
+
+function fsaStatus(msg){
+  const el=document.getElementById('fsa-status'); if(!el) return;
+  if(msg){ el.textContent=msg; el.style.color='#8a8f92'; return; }
+  if(_fsaHandle){ el.textContent='Dossier connecté : « '+_fsaHandle.name+' » — les sauvegardes s\'y écrivent directement, sans serveur.'; el.style.color='#2E9E5B'; }
+  else if(FSA_OK){ el.textContent='Aucun dossier connecté — choisissez le dossier « sauvegardes » pour une sauvegarde directe, sans serveur.'; el.style.color='#8a8f92'; }
+  else { el.textContent='Ce navigateur ne permet pas l\'accès direct aux dossiers (utilisez Chrome, ou le serveur local).'; el.style.color='#8a8f92'; }
+}
+
+async function fsaPickFolder(){
+  if(!FSA_OK){ toast('Ce navigateur ne permet pas l\'accès direct aux dossiers — utilisez Chrome/Edge, ou lancez le serveur local.', true); return; }
+  try{
+    const h = await window.showDirectoryPicker({ id:'sa_backup', mode:'readwrite' });
+    _fsaHandle = h; try{ await _fsaStore(h); }catch(_){/* mémorisation impossible : la session courante fonctionne quand même */}
+    fsaStatus(); backupPing();
+    toast('✓ Dossier de sauvegarde connecté : ' + h.name);
+  }catch(e){
+    if(e && e.name==='AbortError') return;               // annulé → on ne fait rien
+    toast('✗ Impossible d\'accéder à ce dossier — ' + e.message, true);
+  }
+}
+
+/* Au démarrage : on retrouve le dossier mémorisé. Si le navigateur exige une
+   confirmation (« prompt »), elle doit venir d'un geste utilisateur → on la
+   demande au premier clic dans la page. */
+async function _fsaRestore(){
+  fsaStatus();
+  if(!FSA_OK) return;
+  const h = await _fsaLoad(); if(!h) return;
+  try{
+    const p = await h.queryPermission({mode:'readwrite'});
+    if(p==='granted'){ _fsaHandle=h; fsaStatus(); backupPing(); return; }
+    if(p==='prompt'){
+      fsaStatus('Dossier « '+h.name+' » mémorisé — un clic dans la page réactivera la sauvegarde directe.');
+      const once = async function(){
+        document.removeEventListener('click', once, true);
+        try{ if(await h.requestPermission({mode:'readwrite'})==='granted'){ _fsaHandle=h; toast('✓ Sauvegarde directe réactivée — dossier « '+h.name+' ».'); backupPing(); } }catch(_){}
+        fsaStatus();
+      };
+      document.addEventListener('click', once, true);
+    }
+  }catch(_){ fsaStatus(); }
+}
+document.addEventListener('DOMContentLoaded', _fsaRestore);
+
+async function fsaWrite(name, json){
+  const fh = await _fsaHandle.getFileHandle(name, {create:true});
+  const w = await fh.createWritable(); await w.write(json); await w.close();
+}
+
+/* Dernière sauvegarde du dossier connecté (fichier facturation_data_*.json le plus récent). */
+async function fsaLatest(){
+  let best=null;
+  for await (const [name, entry] of _fsaHandle.entries()){
+    if(entry.kind!=='file' || !/^facturation_data_.*\.json$/.test(name)) continue;
+    const f = await entry.getFile();
+    if(!best || f.lastModified>best.f.lastModified) best={name:name, f:f};
+  }
+  return best;                                            // {name, f} ou null
+}
+
 /* Petit bandeau de notification (charte : noir / blanc). */
 function toast(msg, isError){
   let t = document.getElementById('app-toast');
@@ -8332,7 +8418,10 @@ async function backupPing(){
     if(el){ el.textContent = 'Serveur de sauvegarde connecté — dossier de base : ' + (j.base||'?'); el.className='bk-status ok'; }
     return j;
   }catch(e){
-    if(el){ el.textContent = 'Serveur de sauvegarde hors ligne — lancez « fact_backup_server.py » puis rechargez.'; el.className='bk-status off'; }
+    if(el){
+      if(fsaReady()){ el.textContent = 'Serveur local hors ligne — facultatif : la sauvegarde directe dans « ' + _fsaHandle.name + ' » est active.'; el.className='bk-status ok'; }
+      else { el.textContent = 'Serveur de sauvegarde hors ligne — lancez « fact_backup_server.py » puis rechargez.'; el.className='bk-status off'; }
+    }
     return null;
   }
 }
@@ -8347,8 +8436,18 @@ async function backupSave(dir){
 }
 
 async function backupExportBase(){
+  // 1) Dossier connecté (sauvegarde directe, sans serveur) : fichier horodaté.
+  if(fsaReady()){
+    try{
+      const name = 'facturation_data_' + _fsaTs() + '.json';
+      await fsaWrite(name, JSON.stringify(buildBackupPayload(), null, 2));
+      toast('✓ Sauvegarde enregistrée dans « ' + _fsaHandle.name + ' » : ' + name);
+      return;
+    }catch(e){ toast('✗ Écriture directe impossible (' + e.message + ') — essai via le serveur…', true); }
+  }
+  // 2) Secours : serveur local.
   try{ const j = await backupSave(null); toast('✓ Sauvegarde enregistrée : ' + j.name); }
-  catch(e){ toast('✗ Échec de l\'export (serveur hors ligne ?) — ' + e.message, true); }
+  catch(e){ toast('✗ Échec de l\'export — connectez un dossier de sauvegarde (bouton 📁) ou lancez le serveur. ' + e.message, true); }
 }
 
 /* Modale de saisie (remplace prompt() natif, peu fiable / bloqué selon le contexte — cf. chConfirm). */
@@ -8436,6 +8535,16 @@ async function backupExportSpecific(){
 function backupImportFile(){ const f=document.getElementById('importFile'); if(f) f.click(); }
 
 async function backupImportLatest(){
+  // 1) Dossier connecté : dernier facturation_data_*.json du dossier, lu directement.
+  if(fsaReady()){
+    try{
+      const b = await fsaLatest();
+      if(!b){ toast('Aucune sauvegarde trouvée dans « ' + _fsaHandle.name + ' ».', true); return; }
+      applyBackupData(JSON.parse(await b.f.text()), b.name);
+      return;
+    }catch(e){ toast('✗ Lecture directe impossible (' + e.message + ') — essai via le serveur…', true); }
+  }
+  // 2) Secours : serveur local.
   try{
     const r = await fetch(BACKUP_SRV + '/latest', {method:'GET', cache:'no-store'});
     if(!r.ok){ if(r.status===404){ toast('Aucune sauvegarde trouvée dans le dossier de base.', true); return; } throw new Error('HTTP '+r.status); }
@@ -8479,8 +8588,19 @@ let _autoBkTimer=null;
 function backupAutoTrigger(){
   if(!backupAutoEnabled()) return;
   clearTimeout(_autoBkTimer);
-  _autoBkTimer = setTimeout(()=>{
-    backupSave(null).then(j=>{ const el=document.getElementById('backup-last-auto'); if(el) el.textContent='Dernière sauvegarde automatique : '+j.name; })
+  _autoBkTimer = setTimeout(async ()=>{
+    const el=document.getElementById('backup-last-auto');
+    // 1) Dossier connecté : un fichier par jour, écrasé au fil de la journée (pas d'accumulation).
+    if(fsaReady()){
+      try{
+        const name = 'facturation_data_auto_' + _fsaDay() + '.json';
+        await fsaWrite(name, JSON.stringify(buildBackupPayload(), null, 2));
+        if(el) el.textContent = 'Dernière sauvegarde automatique : ' + name + ' (' + new Date().toLocaleTimeString('fr-CH') + ', dossier « ' + _fsaHandle.name + ' »)';
+        return;
+      }catch(_){ /* écriture directe impossible → essai serveur ci-dessous */ }
+    }
+    // 2) Secours : serveur local (silencieux s'il est hors ligne).
+    backupSave(null).then(j=>{ if(el) el.textContent='Dernière sauvegarde automatique : '+j.name; })
                     .catch(()=>{ /* serveur hors ligne : on n'interrompt pas l'utilisateur */ });
   }, 1400);
 }

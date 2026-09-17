@@ -4920,7 +4920,7 @@ async function offrePDFBytes(){
       // Quantité selon l'unité de la ligne : « 5 h. » (heures) · « 5 gl » (global) · « 5 » (« — »).
       const fmtQte = (h,u) => { const b=(h%1===0?String(h):(+h).toFixed(1)); u=u||'h';
         return u==='h' ? b+' h.' : (u==='—' ? b : b+' '+u); };
-      const fmtTarif  = t => { const {e,c}=_apo(t); return e+'.'+c+' /h.'; };                // « 182.00 /h. »
+      const fmtTarif  = (t,pu) => { const {e,c}=_apo(t); return e+'.'+c+(((pu||'Frs/h')==='Frs/h')?' /h.':''); };   // « 182.00 /h. » — sans « /h. » si le prix est global (Frs)
       const fmtTotal  = m => { const {e,c}=_apo(m); return e+'.'+c; };                       // « 6’370.00 »
       const HRX=373.2, TRX=428.2, MRX=505.9;            // bords droits : heures · tarif · Montant
       const DX=180.7, DW=155, LHrow=10, GAP=20.1;       // puces : x tiret 172.2, texte 180.7, justifié sur 155
@@ -4963,11 +4963,20 @@ async function offrePDFBytes(){
           const yLast = sy - (lines.length-1)*LHrow;     // heures + tarif + montant sur la dernière ligne de la description
           if(!ln.hideDetail){                            // « Masquer heures/tarif » : seul le montant apparaît
             dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
-            dR(sp,fR,8,cN,fmtTarif(ln.prix||0),TRX,yLast);
+            dR(sp,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast);
           }
           dR(sp,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);  // montant de la ligne dans la colonne « Montant HT »
           totHT += (ln.amt||0);
-          lastY = yLast; sy = yLast - GAP;               // 20.1 pt entre la dernière ligne et la suivante
+          lastY = yLast; sy = yLast - 12;
+          // Commentaire à la suite de la description : une puce « – » par ligne de texte (en retrait).
+          String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean).forEach(it=>{
+            if(sy < 95) return;
+            const ws = wrapW(it, DW-8);
+            dL(sp,fR,8,cN,'–',180.7,sy);
+            ws.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; dL(sp,fR,8,cN,wa.join(' '),189.2,y); });
+            lastY = sy-(ws.length-1)*LHrow; sy = lastY - 12;
+          });
+          sy -= 8;                                       // retour à l'espacement standard entre prestations
         });
         totalRow(sp,lastY,totHT);
       } else {
@@ -5017,7 +5026,7 @@ async function offrePDFBytes(){
               stw.forEach((wa,k)=> dL(pg,fR,8,cN,wa.join(' '),166.5,sy-k*LHrow));
               const yTL = sy-(stw.length-1)*LHrow;
               pg.drawLine({start:{x:166.5,y:yTL-2.2},end:{x:166.5+fR.widthOfTextAtSize(stw[stw.length-1].join(' '),8),y:yTL-2.2},thickness:0.4,color:cN});
-              if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,sy); dR(pg,fR,8,cN,fmtTarif(ln.prix||0),TRX,sy); }
+              if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,sy); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,sy); }
               dL(pg,fR,8,cN,'Fr.',440.2,sy);
               dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,sy);
               totHT += (ln.amt||0);
@@ -5032,15 +5041,24 @@ async function offrePDFBytes(){
               });
               sy -= 21;                                  // respiration avant l'élément suivant (visuel : 41 pt)
             } else {
-              // Sous-titre désactivé : SIMPLE DESCRIPTION — puce « – » du libellé, montants sur la dernière ligne.
+              // Sous-titre désactivé : SIMPLE DESCRIPTION — puce « – » du libellé, montants sur la dernière ligne,
+              // puis le COMMENTAIRE à la suite : une puce « – » par ligne de texte (en retrait).
               const lines = wrapW(ln.lbl, DW);
               dL(pg,fR,8,cN,'–',172.2,sy);
               lines.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; drawJust(wa,y,k===lines.length-1); });
               const yLast = sy-(lines.length-1)*LHrow;
-              if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,yLast); dR(pg,fR,8,cN,fmtTarif(ln.prix||0),TRX,yLast); }
+              if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,yLast); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast); }
               dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);
               totHT += (ln.amt||0);
-              lastY = yLast; sy = yLast - GAP;
+              lastY = yLast; sy = yLast - 12;
+              String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean).forEach(it=>{
+                if(sy < 95) return;
+                const ws = wrapW(it, DW-8);
+                dL(pg,fR,8,cN,'–',180.7,sy);
+                ws.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; dL(pg,fR,8,cN,wa.join(' '),189.2,y); });
+                lastY = sy-(ws.length-1)*LHrow; sy = lastY - 12;
+              });
+              sy -= 8;                                   // fin de la ligne : retour à l'espacement standard
             }
           });
           totalRow(pg,lastY,totHT);
@@ -7255,8 +7273,8 @@ function buildChno() {
         <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap" title="Sous-titre imprimé sous l'en-tête « Prestations d'architectes », juste avant les descriptions (ex. 4.21 Définition de l'objet, étude de faisabilité)"><input type="checkbox" ${t.showSt?'checked':''} onchange="CH_NO_TITRES[${ti}].showSt=this.checked;buildChno();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Sous-titre</label>
         <button title="Supprimer ce titre (les lignes rattachées redeviennent « sans titre »)" style="background:none;border:none;color:#ff9c9c;font-size:13px;cursor:pointer" onclick="delChnoTitre(${ti})">✕</button>
       </div>
-      ${t.showDb?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Données de base — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].db=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="Plans d'exécution de 2002&#10;Visite sur place" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.db)}</textarea></div>`:''}
-      ${t.showObj?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Objectifs — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].obj=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="Établissement d'un descriptif des travaux&#10;Estimation des coûts à ± 20 %" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.obj)}</textarea></div>`:''}
+      ${t.showDb?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Données de base — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].db=this.value;lignesAutoGrow(this);refreshOffreSoon()" onfocus="chPuceFocus(this)" onkeydown="chPuceKey(event)" onblur="chPuceNorm(this)" placeholder="• Plans d'exécution de 2002&#10;• Visite sur place" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.db)}</textarea></div>`:''}
+      ${t.showObj?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Objectifs — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].obj=this.value;lignesAutoGrow(this);refreshOffreSoon()" onfocus="chPuceFocus(this)" onkeydown="chPuceKey(event)" onblur="chPuceNorm(this)" placeholder="• Établissement d'un descriptif des travaux&#10;• Estimation des coûts à ± 20 %" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.obj)}</textarea></div>`:''}
       ${t.showSt?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Sous-titre — imprimé sous « Prestations d'architectes », avant les descriptions :</div><input value="${escA(t.st)}" placeholder="ex. 4.21   Définition de l'objet, étude de faisabilité" oninput="CH_NO_TITRES[${ti}].st=this.value;refreshOffreSoon()" style="width:100%;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit"></div>`:''}
     </td>`;
     tb.appendChild(tr);
@@ -7274,7 +7292,7 @@ function buildChno() {
     const hideCell = `<td style="text-align:center;color:#bbb;font-size:11px;vertical-align:middle">—</td>`;
     const heuresCell = l.hideDetail ? hideCell : `<td style="padding:4px"><div style="display:flex;gap:2px">
         <input type="number" step="0.5" value="${l.heures||0}" oninput="CH_NO[${i}].heures=parseFloat(this.value)||0;chnoRecalc(${i})" style="width:56px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
-        <select onchange="CH_NO[${i}].hUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${hOpts}</select></div></td>`;
+        <select onchange="CH_NO[${i}].hUnit=this.value;if(this.value==='h')CH_NO[${i}].pUnit='Frs/h';else if(this.value==='gl')CH_NO[${i}].pUnit='Frs';buildChno();updCalcHono();refreshOffreSoon()" title="Unité de la quantité — h : le prix passe en Frs/h · gl : le prix passe en Frs (global)" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${hOpts}</select></div></td>`;
     const prixCell = l.hideDetail ? hideCell : `<td style="padding:4px"><div style="display:flex;gap:2px">
         <input type="text" inputmode="decimal" class="money" value="${moneyFormatFull(l.prix||0)}" oninput="CH_NO[${i}].prix=parseFloat(this.value.replace(/\\s/g,''))||0;CH_NO[${i}].prixManual=true;chnoRecalc(${i})" title="Prix horaire (repris du tarif horaire ; modifiable au cas par cas)" style="width:72px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
         <select onchange="CH_NO[${i}].pUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${pOpts}</select></div></td>`;
@@ -7322,6 +7340,23 @@ function buildChno() {
       sans.forEach(i=>addLineRows(CH_NO[i], i));
     }
   }
+}
+/* Puces automatiques des zones « Données de base » / « Objectifs » : chaque ligne commence par « • ».
+   (le PDF retire ces préfixes avant d'imprimer sa propre puce — pas de doublon) */
+function chPuceFocus(el){ if(!el.value.trim()){ el.value='• '; el.dispatchEvent(new Event('input',{bubbles:true})); } }
+function chPuceKey(e){
+  if(e.key!=='Enter') return;
+  e.preventDefault();
+  const el=e.target, s=el.selectionStart, v=el.value;
+  el.value = v.slice(0,s) + '\n• ' + v.slice(el.selectionEnd);
+  el.selectionStart = el.selectionEnd = s+3;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+}
+function chPuceNorm(el){
+  const lines = el.value.split('\n').map(l=>{ const t=l.replace(/^[\s•–-]+/,'').trim(); return t ? '• '+t : ''; });
+  while(lines.length && !lines[lines.length-1]) lines.pop();   // pas de lignes vides en fin
+  el.value = lines.join('\n');
+  el.dispatchEvent(new Event('input',{bubbles:true}));
 }
 function addChnoTitre(){
   CH_NO_TITRES.push({titre:'', db:'', obj:'', st:'', showDb:false, showObj:false, showSt:false});

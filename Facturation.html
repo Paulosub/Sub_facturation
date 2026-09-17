@@ -1286,6 +1286,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <tbody id="chno-body"></tbody>
         </table>
         <button class="btn btn-blue btn-sm" style="margin-top:6px" onclick="addChno()">+ Ligne</button>
+        <button class="btn btn-sm" style="margin-top:6px;background:#0a4a5e;color:#fff" onclick="addChnoTitre()" title="Ajoute un titre (ex. FAISABILITÉ) : chaque titre devient une page de la feuille de détail du PDF, avec blocs « Données de base » et « Objectifs » optionnels, puis ses lignes en sous-titres.">+ Titre (page du détail)</button>
         <div style="text-align:right;margin-top:8px;font-weight:bold;color:#003346"><span id="chno-tot-lbl">Total honoraires non ordinaires</span> : <span id="chno-tot">0.00 Fr.</span></div>
         <div id="chno-tot-note" style="font-size:10.5px;color:#8a979c;margin-top:4px">Ce total s'ajoute aux honoraires ordinaires (H) avant rabais, dans le chapitre 4.</div>
       </div>
@@ -2531,6 +2532,10 @@ let HL = [];        // hono lines for current invoice
 let FAIS = [];      // prestations 4.21 Faisabilité du contrat courant
 let NONORD = [];    // prestations non ordinaires du contrat courant
 let CH_NO = [];      // honoraires non ordinaires — onglet Calcul honoraires
+// Titres du détail des prestations : chaque titre = une PAGE de la feuille de détail du PDF,
+// avec blocs optionnels « Données de base » / « Objectifs » (une puce par ligne de texte).
+// Les lignes CH_NO s'y rattachent par titreIdx (null = sans titre).
+let CH_NO_TITRES = [];   // [{titre, db, obj, showDb, showObj}]
 let ANNEXES_CUSTOM = [];  // annexes personnalisées (nom) ajoutées au contrat → listées au chapitre 8 du PDF
 let saisieMode = 'ordinaire';  // 'ordinaire' | 'nonordinaire' (facture sans contrat)
 let saisieSousType = '';       // '' | 'expertise' — sous-type d'une facture sans contrat (titre « Honoraires expertise »)
@@ -2726,6 +2731,7 @@ function uiCaptureDraft(){
     panel.querySelectorAll('.rt-edit[id]').forEach(e=>{ rts[e.id]={html:e.innerHTML, edited:e.dataset.edited||''}; });
     localStorage.setItem(UI_DRAFT_KEY, JSON.stringify({v:1, ts:Date.now(), cid, fields, checks, dsets, rts,
       nonord: JSON.parse(JSON.stringify(typeof CH_NO!=='undefined'?CH_NO:[])),
+      nonordTitres: JSON.parse(JSON.stringify(typeof CH_NO_TITRES!=='undefined'?CH_NO_TITRES:[])),
       annexes: JSON.parse(JSON.stringify(typeof ANNEXES_CUSTOM!=='undefined'?ANNEXES_CUSTOM:[]))}));
   }catch(_){}
 }
@@ -2763,6 +2769,7 @@ function uiApplyDraft(draft){
     Object.entries(draft.dsets||{}).forEach(([id,o])=>{ const e=document.getElementById(id); if(e){ for(const k in o) e.dataset[k]=o[k]; } });
     Object.entries(draft.rts||{}).forEach(([id,r])=>{ const e=document.getElementById(id); if(e){ e.innerHTML=r.html; if(r.edited) e.dataset.edited=r.edited; else delete e.dataset.edited; } });
     if(Array.isArray(draft.nonord)) CH_NO=JSON.parse(JSON.stringify(draft.nonord));
+    if(Array.isArray(draft.nonordTitres)) CH_NO_TITRES=JSON.parse(JSON.stringify(draft.nonordTitres));
     if(Array.isArray(draft.annexes)) ANNEXES_CUSTOM=JSON.parse(JSON.stringify(draft.annexes));
     if(typeof buildChno==='function') buildChno();
     if(typeof updChSections==='function') updChSections();
@@ -3704,7 +3711,9 @@ function offreGather(){
   const chnoDetail = !!document.getElementById('ch_chno_detail')?.checked;
   const chnoLines = (typeof CH_NO!=='undefined'?CH_NO:[]).filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
                      .map(l=>({lbl:(l.lbl||'').trim(), com:(l.com||'').trim(), amt:l.amt||0, option:!!l.option,
-                               heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||''), hideDetail:!!l.hideDetail}));
+                               heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||''), hideDetail:!!l.hideDetail,
+                               titreIdx:(l.titreIdx==null?null:l.titreIdx)}));
+  const chnoTitres = JSON.parse(JSON.stringify(CH_NO_TITRES||[]));
   const Htot = R.H + chno;
   const rabaisMnt = Htot * R.rabaisPct/100;
   const sousTot = Htot - rabaisMnt;
@@ -3746,7 +3755,7 @@ function offreGather(){
     tarifMoyen: gn('ch_tarif_moyen'),
     tarifRabais: (gn('ch_tarif_moyen')||0)*(1-(gn('ch_rabais')||0)/100),
     planDelais: planGatherDelais(), planReserves: planGatherReserves(),
-    R, chno, chnoOpt, chnoDetail, chnoLines, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
+    R, chno, chnoOpt, chnoDetail, chnoLines, chnoTitres, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
     cfc:{ c1:cfc('ch_cfc1','ch_cfc1_ni'), c2:cfc('ch_cfc2','ch_cfc2_ni'), c4:cfc('ch_cfc4','ch_cfc4_ni'), c5:cfc('ch_cfc5','ch_cfc5_ni'), c9:cfc('ch_cfc9','ch_cfc9_ni') },
     tauxMoyen: R.h, tauxRabais: R.h*(1-R.rabaisPct/100),
     forfaitTTC: R.forfaitOn ? R.forfaitTTC : R.ttc, fraisMnt: R.forfaitFraisMnt, fraisPct: R.forfaitFraisPct, fraisHT: !!R.forfaitFraisHT, fraisMode: R.fraisMode||'pct'
@@ -4888,70 +4897,136 @@ async function offrePDFBytes(){
     // Ajoutée AVANT la pagination pour être numérotée ; basée sur une copie de la page « contexte » (en-tête + pied).
     let _supIns = 0, _supAt = 3;   // décalage d'index + position d'insertion de la feuille supplémentaire
     if(d.chnoDetail && Array.isArray(d.chnoLines) && d.chnoLines.length){
-      const [sp] = await doc.copyPages(doc, [2]);
-      if(d.isExpertise){ doc.insertPage(3, sp); _supIns = 1; _supAt = 3; }   // EXPERTISE : après le chapitre « Condition » (page Contexte idx2)
-      else { doc.insertPage(5, sp); _supIns = 1; _supAt = 5; }               // autres types : DANS L'ORDRE, juste après « Planning d'intention » (idx 4)
+      // ── Groupes : chaque TITRE du formulaire = une PAGE de détail (lignes « sans titre » → page sans titre).
+      //    Sans aucun titre défini → une seule page, mise en page d'origine (zéro régression, expertises incluses).
+      const _titres = Array.isArray(d.chnoTitres) ? d.chnoTitres : [];
+      const _grps = [];
+      { const sans = d.chnoLines.filter(l=>!l.option && (l.titreIdx==null || !_titres[l.titreIdx]));
+        if(sans.length) _grps.push({t:null, lines:sans});
+        _titres.forEach((t,ti)=>{ const ls = d.chnoLines.filter(l=>!l.option && l.titreIdx===ti);
+          if(ls.length || (t.titre||'').trim()) _grps.push({t:t, lines:ls}); }); }
+      if(!_grps.length) _grps.push({t:null, lines:[]});
+      _supAt = d.isExpertise ? 3 : 5;                   // expertise : après « Condition » · autres : après « Planning d'intention »
+      _supIns = _grps.length;
+      const _sheets = [];
+      for(let g=0; g<_grps.length; g++){ const [pg] = await doc.copyPages(doc, [2]); doc.insertPage(_supAt+g, pg); _sheets.push(pg); }
       P = doc.getPages();
+      const sp = _sheets[0];
       wipe(sp,78,52,516,756,0);                         // efface UNIQUEMENT le corps : l'EN-TÊTE courant (OFFRE RELATIVE… + réf + date) et le PIED (coordonnées + n° de page) sont CONSERVÉS → identiques aux autres pages
-      // ═══ Reproduction FIDÈLE du PDF de référence « 26TEC_Honoraires_Expertise_bis.pdf »
-      //     (positions extraites au point près : en-tête/pied du gabarit + chapitre 3 standard,
-      //      colonnes minuscules sur 2 lignes, puces « – », descriptions justifiées, TOTAL « Fr. … .-- »). ═══
+      // ═══ Mise en page fidèle aux références du bureau : « 26TEC_Honoraires_Expertise_bis.pdf »
+      //     (page unique d'origine) et visuel « 26RRD » (pages par TITRE avec Données de base / Objectifs). ═══
       const _apo = n => { const s=Math.abs(+n||0).toFixed(2); let [e,c]=s.split('.'); e=e.replace(/\B(?=(\d{3})+(?!\d))/g,'’'); return {e,c}; };
       // Quantité selon l'unité de la ligne : « 5 h. » (heures) · « 5 gl » (global) · « 5 » (« — »).
       const fmtQte = (h,u) => { const b=(h%1===0?String(h):(+h).toFixed(1)); u=u||'h';
         return u==='h' ? b+' h.' : (u==='—' ? b : b+' '+u); };
       const fmtTarif  = t => { const {e,c}=_apo(t); return e+'.'+c+' /h.'; };                // « 182.00 /h. »
       const fmtTotal  = m => { const {e,c}=_apo(m); return e+'.'+c; };                       // « 6’370.00 »
-      // ── En-tête de chapitre STANDARD « 3 | PRESTATIONS D'ARCHITECTE » (identique aux autres chapitres) ──
-      const hy3=745.2;
-      dL(sp,fB,8,cN,'3',85.04,hy3);
-      sp.drawLine({start:{x:121.9,y:hy3-4.17},end:{x:121.9,y:hy3+9.83},thickness:0.5,color:cN});
-      dL(sp,fB,8,cN,'PRESTATIONS D’ARCHITECTE',130.43,hy3);
-      sp.drawLine({start:{x:85,y:hy3-4.37},end:{x:510.2,y:hy3-4.37},thickness:0.5,color:cN});
-      // ── En-têtes de colonnes : Light, minuscules, sur 2 lignes, bords droits extraits du gabarit ──
       const HRX=373.2, TRX=428.2, MRX=505.9;            // bords droits : heures · tarif · Montant
-      dL(sp,fR,8,cN,'Prestations',130.4,703.5);
-      // En-tête de colonne : « heures estimées » si toutes les lignes sont en heures ; « quantité » dès qu'une ligne utilise gl (ou « — »).
-      const _qteCol = (d.chnoLines||[]).some(l=>!l.option && !l.hideDetail && (l.hUnit||'h')!=='h');
-      if(_qteCol){ dR(sp,fR,7,cN,'quantité',HRX,703.5); }
-      else { dR(sp,fR,7,cN,'heures',HRX,711.9);       dR(sp,fR,7,cN,'estimées',HRX,703.5); }
-      dR(sp,fR,7,cN,'tarif horaire',TRX,711.9); dR(sp,fR,7,cN,'moyen HT',TRX,703.5);
-      dR(sp,fR,7,cN,'Montant',MRX,711.9);      dR(sp,fR,7,cN,'HT',MRX,703.5);
-      sp.drawLine({start:{x:130.4,y:699.3},end:{x:510.2,y:699.3},thickness:0.4,color:cN});
-      // ── Lignes : puce « – » x=172.2, description JUSTIFIÉE x=180.7 (largeur 155, interligne 10) ;
-      //    heures + tarif alignés sur la DERNIÈRE ligne ; PAS de montant par ligne (colonne Montant = TOTAL seul). ──
-      const DX=180.7, DW=155, LHrow=10, GAP=20.1;
-      const wrapW = (txt)=>{ const words=String(txt||'—').split(/\s+/).filter(Boolean); const lines=[]; let cur=[];
-        words.forEach(w=>{ const test=[...cur,w].join(' '); if(fR.widthOfTextAtSize(test,8)>DW && cur.length){ lines.push(cur); cur=[w]; } else cur.push(w); });
+      const DX=180.7, DW=155, LHrow=10, GAP=20.1;       // puces : x tiret 172.2, texte 180.7, justifié sur 155
+      const wrapW = (txt,maxW)=>{ const words=String(txt||'—').split(/\s+/).filter(Boolean); const lines=[]; let cur=[];
+        words.forEach(w=>{ const test=[...cur,w].join(' '); if(fR.widthOfTextAtSize(test,8)>maxW && cur.length){ lines.push(cur); cur=[w]; } else cur.push(w); });
         if(cur.length) lines.push(cur); return lines; };
-      const drawJust=(wordsArr,y,isLast)=>{                                                     // justification (sauf dernière ligne)
-        if(isLast || wordsArr.length===1){ dL(sp,fR,8,cN,wordsArr.join(' '),DX,y); return; }
+      // En-tête de chapitre STANDARD « 3 | PRESTATIONS D'ARCHITECTE » (identique aux autres chapitres).
+      const chapHdr = (pg)=>{ const hy3=745.2;
+        dL(pg,fB,8,cN,'3',85.04,hy3);
+        pg.drawLine({start:{x:121.9,y:hy3-4.17},end:{x:121.9,y:hy3+9.83},thickness:0.5,color:cN});
+        dL(pg,fB,8,cN,'PRESTATIONS D’ARCHITECTE',130.43,hy3);
+        pg.drawLine({start:{x:85,y:hy3-4.37},end:{x:510.2,y:hy3-4.37},thickness:0.5,color:cN}); };
+      // En-têtes de colonnes (yH = ligne du bas) : « heures estimées » ou « quantité » dès qu'une ligne utilise gl / « — ».
+      const colHdr = (pg,yH,qteCol)=>{ dL(pg,fR,8,cN,'Prestations',130.4,yH);
+        if(qteCol){ dR(pg,fR,7,cN,'quantité',HRX,yH); }
+        else { dR(pg,fR,7,cN,'heures',HRX,yH+8.4); dR(pg,fR,7,cN,'estimées',HRX,yH); }
+        dR(pg,fR,7,cN,'tarif horaire',TRX,yH+8.4); dR(pg,fR,7,cN,'moyen HT',TRX,yH);
+        dR(pg,fR,7,cN,'Montant',MRX,yH+8.4);      dR(pg,fR,7,cN,'HT',MRX,yH);
+        pg.drawLine({start:{x:130.4,y:yH-4.2},end:{x:510.2,y:yH-4.2},thickness:0.4,color:cN}); };
+      const drawJustOn = (pg)=>(wordsArr,y,isLast)=>{                                         // justification (sauf dernière ligne)
+        if(isLast || wordsArr.length===1){ dL(pg,fR,8,cN,wordsArr.join(' '),DX,y); return; }
         const wsum=wordsArr.reduce((s,w)=>s+fR.widthOfTextAtSize(w,8),0);
         const gap=(DW - wsum)/(wordsArr.length-1); let x=DX;
-        wordsArr.forEach(w=>{ dL(sp,fR,8,cN,w,x,y); x += fR.widthOfTextAtSize(w,8)+gap; }); };
-      let sy=667.7, totHT=0;
-      d.chnoLines.forEach(ln=>{
-        if(ln.option) return;                            // les options ne font pas partie du détail
-        if(sy<90) return;                                // une seule page
-        const lines = wrapW(ln.lbl);
-        dL(sp,fR,8,cN,'–',172.2,sy);                     // puce (tiret demi-cadratin)
-        lines.forEach((wordsArr,i)=>{ const y=sy-i*LHrow; if(y<80) return; drawJust(wordsArr,y,i===lines.length-1); });
-        const yLast = sy - (lines.length-1)*LHrow;       // heures + tarif + montant sur la dernière ligne de la description
-        if(!ln.hideDetail){                              // « Masquer heures/tarif » : seul le montant apparaît
-          dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
-          dR(sp,fR,8,cN,fmtTarif(ln.prix||0),TRX,yLast);
-        }
-        dR(sp,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);    // montant de la ligne dans la colonne « Montant HT »
-        totHT += (ln.amt||0);
-        sy = yLast - GAP;                                // 20.1 pt entre la dernière ligne et la ligne suivante
-      });
-      // ── TOTAL : trait au-dessus, « TOTAL » + « Fr. » + montant au bord droit de la colonne Montant ──
-      const yLastRow = sy + GAP;                         // dernière ligne écrite du tableau
-      sp.drawLine({start:{x:130.4,y:yLastRow-17.5},end:{x:510.2,y:yLastRow-17.5},thickness:0.4,color:cN});
-      const ty = yLastRow - 31.3;
-      dL(sp,fR,8,cN,'TOTAL',166.5,ty);
-      dL(sp,fR,8,cN,'Fr.',440.2,ty);
-      dR(sp,fR,8,cN,fmtTotal(totHT),506.5,ty);
+        wordsArr.forEach(w=>{ dL(pg,fR,8,cN,w,x,y); x += fR.widthOfTextAtSize(w,8)+gap; }); };
+      const totalRow = (pg,lastY,tot)=>{ pg.drawLine({start:{x:130.4,y:lastY-17.5},end:{x:510.2,y:lastY-17.5},thickness:0.4,color:cN});
+        const ty=lastY-31.3; dL(pg,fR,8,cN,'TOTAL',166.5,ty); dL(pg,fR,8,cN,'Fr.',440.2,ty); dR(pg,fR,8,cN,fmtTotal(tot),506.5,ty); };
+      if(!_titres.length){
+        // ── MISE EN PAGE D'ORIGINE (une seule page ; chaque ligne = puce « – » de son libellé) ──
+        chapHdr(sp);
+        const _qteCol = (d.chnoLines||[]).some(l=>!l.option && !l.hideDetail && (l.hUnit||'h')!=='h');
+        colHdr(sp,703.5,_qteCol);
+        const drawJust = drawJustOn(sp);
+        let sy=667.7, totHT=0, lastY=703.5;
+        d.chnoLines.forEach(ln=>{
+          if(ln.option) return;                          // les options ne font pas partie du détail
+          if(sy<90) return;                              // une seule page
+          const lines = wrapW(ln.lbl, DW);
+          dL(sp,fR,8,cN,'–',172.2,sy);                   // puce (tiret demi-cadratin)
+          lines.forEach((wordsArr,i)=>{ const y=sy-i*LHrow; if(y<80) return; drawJust(wordsArr,y,i===lines.length-1); });
+          const yLast = sy - (lines.length-1)*LHrow;     // heures + tarif + montant sur la dernière ligne de la description
+          if(!ln.hideDetail){                            // « Masquer heures/tarif » : seul le montant apparaît
+            dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
+            dR(sp,fR,8,cN,fmtTarif(ln.prix||0),TRX,yLast);
+          }
+          dR(sp,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);  // montant de la ligne dans la colonne « Montant HT »
+          totHT += (ln.amt||0);
+          lastY = yLast; sy = yLast - GAP;               // 20.1 pt entre la dernière ligne et la suivante
+        });
+        totalRow(sp,lastY,totHT);
+      } else {
+        // ── NOUVELLE MISE EN PAGE (visuel 26RRD) : une page PAR TITRE.
+        //    TITRE souligné → blocs optionnels « Données de base : » / « Objectifs : » (une puce par ligne
+        //    de texte) → en-têtes de colonnes → SOUS-TITRES (les lignes du formulaire, montants sur leur
+        //    ligne) → puces du commentaire → TOTAL de la page. ──
+        _grps.forEach((grp,gi)=>{
+          const pg = _sheets[gi];
+          if(gi>0) wipe(pg,78,52,516,756,0);             // la 1re feuille est déjà nettoyée
+          chapHdr(pg);
+          const drawJust = drawJustOn(pg);
+          let ty0 = 711.2;
+          if(grp.t){
+            const T = String(grp.t.titre||'').trim().toUpperCase();
+            if(T){ dL(pg,fB,8,cN,T,130.4,ty0);
+              pg.drawLine({start:{x:130.4,y:ty0-2.8},end:{x:130.4+fB.widthOfTextAtSize(T,8),y:ty0-2.8},thickness:0.4,color:cN});
+              ty0 -= 31; }
+            const bulletBlock = (label, txt)=>{
+              const items = String(txt||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean);
+              if(!items.length) return;
+              dL(pg,fR,8,cN,label,130.4,ty0); ty0 -= 10;
+              items.forEach(it=>{ dL(pg,fR,8,cN,'•',150.5,ty0);
+                const ws = wrapW(it, 330);
+                ws.forEach((wa,k)=>{ dL(pg,fR,8,cN,wa.join(' '),158.7,ty0); if(k<ws.length-1) ty0 -= 10; });
+                ty0 -= 10; });
+              ty0 -= 10;                                 // respiration après le bloc
+            };
+            if(grp.t.showDb)  bulletBlock('Données de base:', grp.t.db);
+            if(grp.t.showObj) bulletBlock('Objectifs:', grp.t.obj);
+          }
+          const yH = grp.t ? (ty0-13) : 703.5;
+          const qteCol = grp.lines.some(l=>!l.hideDetail && (l.hUnit||'h')!=='h');
+          colHdr(pg,yH,qteCol);
+          let sy = yH-35.8, totHT = 0, lastY = yH;
+          grp.lines.forEach(ln=>{
+            if(sy < 100){ overflows.push('Détail des prestations « '+((grp.t&&grp.t.titre)||'sans titre')+' » — page pleine, contenu tronqué'); return; }
+            // SOUS-TITRE souligné, montants alignés sur SA ligne
+            const stw = wrapW(ln.lbl||'—', 190);
+            stw.forEach((wa,k)=> dL(pg,fR,8,cN,wa.join(' '),166.5,sy-k*LHrow));
+            const yTL = sy-(stw.length-1)*LHrow;
+            pg.drawLine({start:{x:166.5,y:yTL-2.2},end:{x:166.5+fR.widthOfTextAtSize(stw[stw.length-1].join(' '),8),y:yTL-2.2},thickness:0.4,color:cN});
+            if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,sy); dR(pg,fR,8,cN,fmtTarif(ln.prix||0),TRX,sy); }
+            dL(pg,fR,8,cN,'Fr.',440.2,sy);
+            dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,sy);
+            totHT += (ln.amt||0);
+            lastY = yTL; sy = yTL - GAP;
+            // puces du COMMENTAIRE : chaque ligne de texte du commentaire = une puce « – » justifiée
+            String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean).forEach(it=>{
+              if(sy < 95) return;
+              const ws = wrapW(it, DW);
+              dL(pg,fR,8,cN,'–',172.2,sy);
+              ws.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; drawJust(wa,y,k===ws.length-1); });
+              lastY = sy-(ws.length-1)*LHrow; sy = lastY - GAP;
+            });
+            sy -= 21;                                    // respiration avant le sous-titre suivant (visuel : 41 pt)
+          });
+          totalRow(pg,lastY,totHT);
+        });
+      }
     }
     // (3) Numérotation dynamique du pied de page, calculée sur les pages CONSERVÉES, AVANT suppression
     //     (les références P[] restent valides ; doc.getPages() est mis en cache par pdf-lib après removePage).
@@ -5728,7 +5803,9 @@ function loadContratIntoCalcHono(id, verData) {
 
   // Contrat enregistré AVEC le détail complet du formulaire → restauration fidèle (aucune donnée perdue).
   if(c.detail){
-    CH_NO = c.nonord ? JSON.parse(JSON.stringify(c.nonord)) : []; buildChno();
+    CH_NO = c.nonord ? JSON.parse(JSON.stringify(c.nonord)) : [];
+  CH_NO_TITRES = c.nonordTitres ? JSON.parse(JSON.stringify(c.nonordTitres)) : [];
+  buildChno();
   ANNEXES_CUSTOM = c.annexesCustom ? JSON.parse(JSON.stringify(c.annexesCustom)) : []; chRenderAnnexes();
     if(c.phases) SIA.forEach(ph => ph.s.forEach(sub => sv('ch_cc_'+sub.k, c.phases[sub.k]||0)));
     // Zone Frais : pré-reset (contrats antérieurs sans ces clés → pas de fuite du contrat précédent)
@@ -5795,7 +5872,9 @@ function loadContratIntoCalcHono(id, verData) {
   const fBase = c.forfaitBase === 'ht' ? 'ht' : 'ttc';
   { const rb=document.querySelector('input[name="ch_forfait_base"][value="'+fBase+'"]'); if(rb) rb.checked=true; }
   sv('ch_forfait_mnt', c.forfait ? (fBase==='ht' ? (c.hht||0) : (c.httc||0)) : 0); sv('ch_forfait_frais_pct', c.frais ?? 3);
-  CH_NO = c.nonord ? JSON.parse(JSON.stringify(c.nonord)) : []; buildChno();
+  CH_NO = c.nonord ? JSON.parse(JSON.stringify(c.nonord)) : [];
+  CH_NO_TITRES = c.nonordTitres ? JSON.parse(JSON.stringify(c.nonordTitres)) : [];
+  buildChno();
   ANNEXES_CUSTOM = c.annexesCustom ? JSON.parse(JSON.stringify(c.annexesCustom)) : []; chRenderAnnexes();
   if(c.phases) SIA.forEach(ph => ph.s.forEach(sub => sv('ch_cc_'+sub.k, c.phases[sub.k]||0)));
   updEstimCout();
@@ -5862,7 +5941,7 @@ function resetCalcHono(clearTarget) {
   { const rb=document.querySelector('input[name="ch_forfait_base"][value="ttc"]'); if(rb) rb.checked=true; }
   sv('ch_forfait_mnt',0); sv('ch_forfait_frais_pct',3); chFraisReset();
   SIA.forEach(ph => ph.s.forEach(sub => sv('ch_cc_'+sub.k, 0)));
-  CH_NO = []; buildChno();
+  CH_NO = []; CH_NO_TITRES = []; buildChno();
   if(clearTarget) { sv('ch_target',''); const btn=document.getElementById('ch_btn_apply'); if(btn) btn.textContent='Créer le contrat'; chSyncVersionUI(); }
   const msg = document.getElementById('ch_msg'); if(msg) msg.textContent = '';
   updEstimCout();
@@ -6303,7 +6382,8 @@ function applyCalcHono(asNewVersion) {
     annexesCustom: JSON.parse(JSON.stringify(ANNEXES_CUSTOM)),
     // honoraires ordinaires (phases) déjà ci-dessus ; on enregistre aussi les honoraires non
     // ordinaires (chapitre 3) dans le contrat, mêmes ids que la carte « Prestations non ordinaires ».
-    nonord: JSON.parse(JSON.stringify(CH_NO))
+    nonord: JSON.parse(JSON.stringify(CH_NO)),
+    nonordTitres: JSON.parse(JSON.stringify(CH_NO_TITRES))
   };
   const vComment = (gv('ch_version_comment')||'').trim();
   const today = (new Date()).toISOString().slice(0,10);
@@ -7141,7 +7221,32 @@ function buildChno() {
   const tb = document.getElementById('chno-body');
   if(!tb) return;
   tb.innerHTML = '';
-  CH_NO.forEach((l, i) => {
+  const hasTitres = CH_NO_TITRES.length > 0;
+  const escA = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const escT = s => String(s||'').replace(/</g,'&lt;');
+  // ── Bandeau d'un TITRE (une page du détail PDF) + blocs optionnels Données de base / Objectifs ──
+  const addTitreRows = (t, ti) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5" style="padding:12px 4px 4px">
+      <div style="display:flex;align-items:center;gap:10px;background:#0a3140;color:#fff;padding:6px 10px;border-radius:5px">
+        <b style="font-size:11px;letter-spacing:.05em;white-space:nowrap">TITRE ${ti+1} — page du détail</b>
+        <input value="${escA(t.titre)}" placeholder="ex. FAISABILITÉ" oninput="CH_NO_TITRES[${ti}].titre=this.value;refreshOffreSoon()" style="flex:1;min-width:120px;border:1px solid #2a6a7e;border-radius:3px;padding:4px 8px;font-weight:bold;text-transform:uppercase">
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap" title="Affiche un bloc « Données de base : » à puces sous le titre (pas toujours nécessaire)"><input type="checkbox" ${t.showDb?'checked':''} onchange="CH_NO_TITRES[${ti}].showDb=this.checked;buildChno();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Données de base</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap" title="Affiche un bloc « Objectifs : » à puces sous le titre (pas toujours nécessaire)"><input type="checkbox" ${t.showObj?'checked':''} onchange="CH_NO_TITRES[${ti}].showObj=this.checked;buildChno();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Objectifs</label>
+        <button title="Supprimer ce titre (les lignes rattachées redeviennent « sans titre »)" style="background:none;border:none;color:#ff9c9c;font-size:13px;cursor:pointer" onclick="delChnoTitre(${ti})">✕</button>
+      </div>
+      ${t.showDb?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Données de base — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].db=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="Plans d'exécution de 2002&#10;Visite sur place" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.db)}</textarea></div>`:''}
+      ${t.showObj?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Objectifs — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].obj=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="Établissement d'un descriptif des travaux&#10;Estimation des coûts à ± 20 %" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.obj)}</textarea></div>`:''}
+    </td>`;
+    tb.appendChild(tr);
+    tr.querySelectorAll('textarea').forEach(lignesAutoGrow);
+  };
+  const addLigneBtnRow = (ti) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5" style="padding:2px 4px 6px"><button class="btn btn-blue btn-sm" onclick="addChno(${ti})">+ Ligne</button></td>`;
+    tb.appendChild(tr);
+  };
+  const addLineRows = (l, i) => {
     if(!l.hideDetail && (l.heures || l.prix)) l.amt = (l.heures||0) * (l.prix||0);
     const hOpts = HNO_H_UNITS.map(u => `<option${u===l.hUnit?' selected':''}>${u}</option>`).join('');
     const pOpts = HNO_P_UNITS.map(u => `<option${u===l.pUnit?' selected':''}>${u}</option>`).join('');
@@ -7160,24 +7265,53 @@ function buildChno() {
         <label title="Option : montant affiché entre parenthèses et NON additionné au total" style="display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;font-size:10.5px;color:${l.option?'#b06a00':'#8a979c'};font-weight:${l.option?'bold':'normal'}"><input type="checkbox" ${l.option?'checked':''} onchange="CH_NO[${i}].option=this.checked;buildChno();updCalcHono()" style="width:14px;height:14px;cursor:pointer">option</label>
         <input value="${(l.lbl||'').replace(/"/g,'&quot;')}" placeholder="Description de la prestation"
         oninput="CH_NO[${i}].lbl=this.value" style="flex:1;min-width:0;border:1px solid #ccc;border-radius:3px;padding:4px 6px"></div>
-        <label title="Si coché : les heures et le tarif de cette ligne sont masqués (formulaire ET PDF) — seul le montant, saisi directement, apparaît." style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:#666;margin-top:3px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${l.hideDetail?'checked':''} onchange="CH_NO[${i}].hideDetail=this.checked;buildChno();updCalcHono();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Masquer heures/tarif (saisir le montant)</label></td>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:3px;flex-wrap:wrap">
+        <label title="Si coché : les heures et le tarif de cette ligne sont masqués (formulaire ET PDF) — seul le montant, saisi directement, apparaît." style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:#666;cursor:pointer;white-space:nowrap"><input type="checkbox" ${l.hideDetail?'checked':''} onchange="CH_NO[${i}].hideDetail=this.checked;buildChno();updCalcHono();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Masquer heures/tarif (saisir le montant)</label>
+        ${hasTitres?`<label style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:#666;white-space:nowrap">Titre : <select onchange="CH_NO[${i}].titreIdx=(this.value===''?null:+this.value);buildChno();refreshOffreSoon()" style="border:1px solid #ccc;border-radius:3px;font-size:10.5px"><option value="">— sans titre —</option>${CH_NO_TITRES.map((t,k)=>`<option value="${k}"${l.titreIdx===k?' selected':''}>${escT(t.titre||('Titre '+(k+1)))}</option>`).join('')}</select></label>`:''}
+        </div></td>
       ${heuresCell}
       ${prixCell}
       ${montantCell}
       <td><button title="Supprimer la prestation" style="background:none;border:none;color:#c00;opacity:.6;font-size:13px;cursor:pointer" onclick="CH_NO.splice(${i},1);buildChno();updCalcHono()">✕</button></td>`;
     tb.appendChild(tr);
     const tr2 = document.createElement('tr');
-    tr2.innerHTML = `<td style="padding:0 4px 8px 4px"><textarea placeholder="Commentaire" rows="1" oninput="CH_NO[${i}].com=this.value;lignesAutoGrow(this)"
+    tr2.innerHTML = `<td style="padding:0 4px 8px 4px"><textarea placeholder="Commentaire${hasTitres?' — chaque ligne devient une puce sous le sous-titre dans le PDF':''}" rows="1" oninput="CH_NO[${i}].com=this.value;lignesAutoGrow(this);refreshOffreSoon()"
         style="width:100%;resize:none;overflow:hidden;border:1px solid #e2e2e2;border-radius:3px;padding:3px 6px;font-size:11px;color:#555;background:#fafafa;font-family:inherit;line-height:1.4">${(l.com||'').replace(/</g,'&lt;')}</textarea></td>
       <td></td><td></td><td></td><td></td>`;
     tb.appendChild(tr2);
     lignesAutoGrow(tr2.querySelector('textarea'));
-  });
-  if(!CH_NO.length) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px;font-size:11px">Aucune prestation — cliquez sur « + Ligne »</td></tr>';
+  };
+  if(!hasTitres){
+    CH_NO.forEach(addLineRows);
+    if(!CH_NO.length) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px;font-size:11px">Aucune prestation — cliquez sur « + Ligne »</td></tr>';
+  } else {
+    // Lignes « sans titre » d'abord (page de détail sans titre), puis chaque titre et ses lignes.
+    const sans = []; CH_NO.forEach((l,i)=>{ if(l.titreIdx==null || !CH_NO_TITRES[l.titreIdx]) sans.push(i); });
+    if(sans.length){
+      const trS = document.createElement('tr');
+      trS.innerHTML = '<td colspan="5" style="background:#eef0ec;color:#5a6a70;font-size:11px;font-weight:bold;padding:5px 8px">SANS TITRE — ces lignes s\'impriment sur une page de détail sans titre</td>';
+      tb.appendChild(trS);
+      sans.forEach(i=>addLineRows(CH_NO[i], i));
+    }
+    CH_NO_TITRES.forEach((t,ti)=>{
+      addTitreRows(t,ti);
+      CH_NO.forEach((l,i)=>{ if(l.titreIdx===ti) addLineRows(l,i); });
+      addLigneBtnRow(ti);
+    });
+  }
 }
-function addChno() {
+function addChnoTitre(){
+  CH_NO_TITRES.push({titre:'', db:'', obj:'', showDb:false, showObj:false});
+  buildChno(); refreshOffreSoon();
+}
+function delChnoTitre(ti){
+  CH_NO_TITRES.splice(ti,1);
+  CH_NO.forEach(l=>{ if(l.titreIdx===ti) l.titreIdx=null; else if(l.titreIdx!=null && l.titreIdx>ti) l.titreIdx--; });
+  buildChno(); refreshOffreSoon();
+}
+function addChno(titreIdx) {
   const tarif = gn('ch_tarif_moyen') || gn('ch_h') || 0;   // le tarif horaire alimente d'office le prix
-  CH_NO.push({lbl:'', heures:0, hUnit:'h', prix:tarif, pUnit:'Frs/h', amt:0, com:'', prixManual:false, hideDetail:false});
+  CH_NO.push({lbl:'', heures:0, hUnit:'h', prix:tarif, pUnit:'Frs/h', amt:0, com:'', prixManual:false, hideDetail:false, titreIdx:(titreIdx==null?null:titreIdx)});
   buildChno(); updCalcHono();
 }
 

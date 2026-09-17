@@ -4924,8 +4924,8 @@ async function offrePDFBytes(){
       const fmtTotal  = m => { const {e,c}=_apo(m); return e+'.'+c; };                       // « 6’370.00 »
       const HRX=373.2, TRX=428.2, MRX=505.9;            // bords droits : heures · tarif · Montant
       const DX=180.7, DW=155, LHrow=10, GAP=20.1;       // puces : x tiret 172.2, texte 180.7, justifié sur 155
-      const wrapW = (txt,maxW)=>{ const words=String(txt||'—').split(/\s+/).filter(Boolean); const lines=[]; let cur=[];
-        words.forEach(w=>{ const test=[...cur,w].join(' '); if(fR.widthOfTextAtSize(test,8)>maxW && cur.length){ lines.push(cur); cur=[w]; } else cur.push(w); });
+      const wrapW = (txt,maxW,f)=>{ f=f||fR; const words=String(txt||'—').split(/\s+/).filter(Boolean); const lines=[]; let cur=[];
+        words.forEach(w=>{ const test=[...cur,w].join(' '); if(f.widthOfTextAtSize(test,8)>maxW && cur.length){ lines.push(cur); cur=[w]; } else cur.push(w); });
         if(cur.length) lines.push(cur); return lines; };
       // En-tête de chapitre STANDARD « 3 | PRESTATIONS D'ARCHITECTE » (identique aux autres chapitres).
       const chapHdr = (pg)=>{ const hy3=745.2;
@@ -4940,12 +4940,12 @@ async function offrePDFBytes(){
         dR(pg,fR,7,cN,'tarif horaire',TRX,yH+8.4); dR(pg,fR,7,cN,'moyen HT',TRX,yH);
         dR(pg,fR,7,cN,'Montant',MRX,yH+8.4);      dR(pg,fR,7,cN,'HT',MRX,yH);
         pg.drawLine({start:{x:130.4,y:yH-4.2},end:{x:510.2,y:yH-4.2},thickness:0.4,color:cN}); };
-      const drawJustOn = (pg)=>(wordsArr,y,isLast)=>{                                         // justification (sauf dernière ligne)
-        if(isLast || wordsArr.length===1){ dL(pg,fR,8,cN,wordsArr.join(' '),DX,y); return; }
-        const wsum=wordsArr.reduce((s,w)=>s+fR.widthOfTextAtSize(w,8),0);
+      const drawJustOn = (pg)=>(wordsArr,y,isLast,f)=>{ f=f||fR;                              // justification (sauf dernière ligne)
+        if(isLast || wordsArr.length===1){ dL(pg,f,8,cN,wordsArr.join(' '),DX,y); return; }
+        const wsum=wordsArr.reduce((s,w)=>s+f.widthOfTextAtSize(w,8),0);
         const gap=(DW - wsum)/(wordsArr.length-1); let x=DX;
-        wordsArr.forEach(w=>{ dL(pg,fR,8,cN,w,x,y); x += fR.widthOfTextAtSize(w,8)+gap; }); };
-      const totalRow = (pg,lastY,tot)=>{ pg.drawLine({start:{x:130.4,y:lastY-17.5},end:{x:510.2,y:lastY-17.5},thickness:0.4,color:cN});
+        wordsArr.forEach(w=>{ dL(pg,f,8,cN,w,x,y); x += f.widthOfTextAtSize(w,8)+gap; }); };
+      const totalRow = (pg,lastY,tot)=>{ pg.drawLine({start:{x:166.5,y:lastY-17.5},end:{x:510.2,y:lastY-17.5},thickness:0.4,color:cN});   // trait calé à gauche sur « TOTAL »
         const ty=lastY-31.3; dL(pg,fR,8,cN,'TOTAL',166.5,ty); dL(pg,fR,8,cN,'Fr.',440.2,ty); dR(pg,fR,8,cN,fmtTotal(tot),506.5,ty); };
       if(!_titres.length){
         // ── MISE EN PAGE D'ORIGINE (une seule page ; chaque ligne = puce « – » de son libellé) ──
@@ -4998,7 +4998,7 @@ async function offrePDFBytes(){
             const bulletBlock = (label, txt)=>{
               const items = String(txt||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean);
               if(!items.length) return;
-              dL(pg,fR,8,cN,label,130.4,ty0); ty0 -= 10;
+              dL(pg,fR,8,cN,label,130.4,ty0); ty0 -= 16;   // interligne augmenté entre le titre du bloc et sa liste
               items.forEach(it=>{ dL(pg,fR,8,cN,'•',150.5,ty0);
                 const ws = wrapW(it, 330);
                 ws.forEach((wa,k)=>{ dL(pg,fR,8,cN,wa.join(' '),158.7,ty0); if(k<ws.length-1) ty0 -= 10; });
@@ -5018,50 +5018,74 @@ async function offrePDFBytes(){
             dL(pg,fR,8,cN,String(grp.t.st).trim(),130.4,yH-31);
             sy = yH-61; lastY = yH-31;
           }
-          grp.lines.forEach(ln=>{
-            if(sy < 100){ overflows.push('Détail des prestations « '+((grp.t&&grp.t.titre)||'sans titre')+' » — page pleine, contenu tronqué'); return; }
-            if(ln.sousTitre){
-              // SOUS-TITRE activé : libellé souligné, montants sur SA ligne, commentaire en puces dessous.
-              const stw = wrapW(ln.lbl||'—', 190);
-              stw.forEach((wa,k)=> dL(pg,fR,8,cN,wa.join(' '),166.5,sy-k*LHrow));
-              const yTL = sy-(stw.length-1)*LHrow;
-              pg.drawLine({start:{x:166.5,y:yTL-2.2},end:{x:166.5+fR.widthOfTextAtSize(stw[stw.length-1].join(' '),8),y:yTL-2.2},thickness:0.4,color:cN});
-              if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,sy); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,sy); }
-              dL(pg,fR,8,cN,'Fr.',440.2,sy);
-              dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,sy);
-              totHT += (ln.amt||0);
-              lastY = yTL; sy = yTL - GAP;
-              // puces du COMMENTAIRE : chaque ligne de texte du commentaire = une puce « – » justifiée
-              String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean).forEach(it=>{
-                if(sy < 95) return;
-                const ws = wrapW(it, DW);
-                dL(pg,fR,8,cN,'–',172.2,sy);
-                ws.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; drawJust(wa,y,k===ws.length-1); });
-                lastY = sy-(ws.length-1)*LHrow; sy = lastY - GAP;
-              });
-              sy -= 21;                                  // respiration avant l'élément suivant (visuel : 41 pt)
-            } else {
-              // Sous-titre désactivé : SIMPLE DESCRIPTION — puce « – » du libellé, montants sur la dernière ligne,
-              // puis le COMMENTAIRE à la suite : une puce « – » par ligne de texte (en retrait).
-              const lines = wrapW(ln.lbl, DW);
-              dL(pg,fR,8,cN,'–',172.2,sy);
-              lines.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; drawJust(wa,y,k===lines.length-1); });
-              const yLast = sy-(lines.length-1)*LHrow;
-              if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,yLast); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast); }
-              dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);
-              totHT += (ln.amt||0);
-              lastY = yLast; sy = yLast - 12;
-              String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean).forEach(it=>{
-                if(sy < 95) return;
-                const ws = wrapW(it, DW-8);
-                dL(pg,fR,8,cN,'–',180.7,sy);
-                ws.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; dL(pg,fR,8,cN,wa.join(' '),189.2,y); });
-                lastY = sy-(ws.length-1)*LHrow; sy = lastY - 12;
-              });
-              sy -= 8;                                   // fin de la ligne : retour à l'espacement standard
-            }
-          });
-          totalRow(pg,lastY,totHT);
+          // ── Prestations + TOTAL : bloc ALIGNÉ AU BAS DE LA PAGE (le TOTAL se cale en bas ; si le
+          //    contenu dépasse, on repart du haut comme avant). Deux passes : mesure, puis dessin. ──
+          const LH2 = 11.5;                              // interligne augmenté de la partie prestations
+          const syCap = sy, lastYHdr = lastY;            // départ le plus haut possible / repli si aucune ligne
+          const renderLines = (measure, sy0)=>{
+            let sy2 = sy0, tot = 0, lY = sy0;
+            grp.lines.forEach(ln=>{
+              if(sy2 < 100){ if(!measure) overflows.push('Détail des prestations « '+((grp.t&&grp.t.titre)||'sans titre')+' » — page pleine, contenu tronqué'); return; }
+              const comItems = String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean);
+              if(ln.sousTitre){
+                // SOUS-TITRE activé : libellé en Akkurat Regular souligné, montants sur SA ligne.
+                const stw = wrapW(ln.lbl||'—', 190, fReg);
+                const yTL = sy2-(stw.length-1)*LH2;
+                if(!measure){
+                  stw.forEach((wa,k)=> dL(pg,fReg,8,cN,wa.join(' '),166.5,sy2-k*LH2));
+                  pg.drawLine({start:{x:166.5,y:yTL-2.2},end:{x:166.5+fReg.widthOfTextAtSize(stw[stw.length-1].join(' '),8),y:yTL-2.2},thickness:0.4,color:cN});
+                  if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,sy2); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,sy2); }
+                  dL(pg,fR,8,cN,'Fr.',440.2,sy2);
+                  dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,sy2);
+                }
+                tot += (ln.amt||0);
+                lY = yTL; sy2 = yTL - 22;
+                comItems.forEach(it=>{                   // commentaire : une puce « – » justifiée par ligne (Akkurat Light)
+                  if(sy2 < 95) return;
+                  const ws = wrapW(it, DW);
+                  if(!measure){ dL(pg,fR,8,cN,'–',172.2,sy2);
+                    ws.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return; drawJust(wa,y,k===ws.length-1); }); }
+                  lY = sy2-(ws.length-1)*LH2; sy2 = lY - 22;
+                });
+                sy2 -= 24;                               // respiration avant l'élément suivant
+              } else {
+                // SIMPLE DESCRIPTION — commentée : libellé en Akkurat Regular SOULIGNÉ ; sinon Light.
+                const hasCom = comItems.length>0;
+                const fLbl = hasCom ? fReg : fR;
+                const lines = wrapW(ln.lbl, DW, fLbl);
+                const yLast = sy2-(lines.length-1)*LH2;
+                if(!measure){
+                  dL(pg,fLbl,8,cN,'–',172.2,sy2);
+                  lines.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return;
+                    drawJust(wa,y,k===lines.length-1,fLbl);
+                    if(hasCom){ const w=(k===lines.length-1||wa.length===1)?fLbl.widthOfTextAtSize(wa.join(' '),8):DW;
+                      pg.drawLine({start:{x:DX,y:y-2.2},end:{x:DX+w,y:y-2.2},thickness:0.4,color:cN}); } });
+                  if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,yLast); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast); }
+                  dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);
+                }
+                tot += (ln.amt||0);
+                lY = yLast; sy2 = yLast - 14;
+                comItems.forEach(it=>{                   // commentaire en Akkurat Light, position inchangée
+                  if(sy2 < 95) return;
+                  const ws = wrapW(it, DW-8);
+                  if(!measure){ dL(pg,fR,8,cN,'–',180.7,sy2);
+                    ws.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return; dL(pg,fR,8,cN,wa.join(' '),189.2,y); }); }
+                  lY = sy2-(ws.length-1)*LH2; sy2 = lY - 14;
+                });
+                sy2 -= 10;
+              }
+            });
+            return {lastY:lY, totHT:tot};
+          };
+          if(grp.lines.length){
+            const mes = renderLines(true, 1000);         // 1re passe : hauteur du bloc
+            const used = 1000 - mes.lastY;
+            const sy0 = Math.min(syCap, 131.3 + used);   // TOTAL calé au bas de la page (y = 100)
+            const res = renderLines(false, sy0);         // 2e passe : dessin
+            totalRow(pg, res.lastY, res.totHT);
+          } else {
+            totalRow(pg, lastYHdr, 0);
+          }
         });
       }
     }

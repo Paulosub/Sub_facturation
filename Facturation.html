@@ -8318,13 +8318,44 @@ function fsaStatus(msg){
   else { el.textContent='Ce navigateur ne permet pas l\'accès direct aux dossiers (utilisez Chrome, ou le serveur local).'; el.style.color='#8a8f92'; }
 }
 
+/* Vérifie que l'écriture est réellement autorisée ; la redemande si possible
+   (uniquement lors d'un clic — exigence du navigateur). Renvoie true/false. */
+async function fsaEnsurePerm(interactive){
+  if(!_fsaHandle) return false;
+  try{
+    let p = await _fsaHandle.queryPermission({mode:'readwrite'});
+    if(p==='granted') return true;
+    if(interactive){
+      p = await _fsaHandle.requestPermission({mode:'readwrite'});
+      if(p==='granted'){ fsaStatus(); return true; }
+    }
+  }catch(_){}
+  return false;
+}
+
 async function fsaPickFolder(){
   if(!FSA_OK){ toast('Ce navigateur ne permet pas l\'accès direct aux dossiers — utilisez Chrome/Edge, ou lancez le serveur local.', true); return; }
   try{
     const h = await window.showDirectoryPicker({ id:'sa_backup', mode:'readwrite' });
-    _fsaHandle = h; try{ await _fsaStore(h); }catch(_){/* mémorisation impossible : la session courante fonctionne quand même */}
+    _fsaHandle = h;
+    // Vérification RÉELLE : autorisation d'écriture accordée, et écriture test.
+    if(!(await fsaEnsurePerm(true))){
+      _fsaHandle = null; fsaStatus();
+      toast('✗ Le navigateur a refusé l\'écriture dans « ' + h.name + ' ». Testez dans Chrome (hors aperçu Claude), ou utilisez le serveur local.', true);
+      return;
+    }
+    try{
+      const t = await h.getFileHandle('.sa_test_ecriture', {create:true});
+      const w = await t.createWritable(); await w.write('ok'); await w.close();
+      await h.removeEntry('.sa_test_ecriture');
+    }catch(e){
+      _fsaHandle = null; fsaStatus();
+      toast('✗ Écriture impossible dans « ' + h.name + ' » (' + (e.name||'') + '). Testez dans Chrome (hors aperçu Claude), ou utilisez le serveur local.', true);
+      return;
+    }
+    try{ await _fsaStore(h); }catch(_){/* mémorisation impossible : la session courante fonctionne quand même */}
     fsaStatus(); backupPing();
-    toast('✓ Dossier de sauvegarde connecté : ' + h.name);
+    toast('✓ Dossier de sauvegarde connecté : ' + h.name + ' — écriture vérifiée.');
   }catch(e){
     if(e && e.name==='AbortError') return;               // annulé → on ne fait rien
     toast('✗ Impossible d\'accéder à ce dossier — ' + e.message, true);
@@ -8438,12 +8469,16 @@ async function backupSave(dir){
 async function backupExportBase(){
   // 1) Dossier connecté (sauvegarde directe, sans serveur) : fichier horodaté.
   if(fsaReady()){
-    try{
-      const name = 'facturation_data_' + _fsaTs() + '.json';
-      await fsaWrite(name, JSON.stringify(buildBackupPayload(), null, 2));
-      toast('✓ Sauvegarde enregistrée dans « ' + _fsaHandle.name + ' » : ' + name);
-      return;
-    }catch(e){ toast('✗ Écriture directe impossible (' + e.message + ') — essai via le serveur…', true); }
+    if(await fsaEnsurePerm(true)){
+      try{
+        const name = 'facturation_data_' + _fsaTs() + '.json';
+        await fsaWrite(name, JSON.stringify(buildBackupPayload(), null, 2));
+        toast('✓ Sauvegarde enregistrée dans « ' + _fsaHandle.name + ' » : ' + name);
+        return;
+      }catch(e){ toast('✗ Écriture directe impossible dans « ' + _fsaHandle.name + ' » (' + (e.name||e.message) + ') — essai via le serveur…', true); }
+    } else {
+      toast('✗ Écriture refusée par le navigateur pour « ' + _fsaHandle.name + ' » — re-choisissez le dossier (bouton 📁). Essai via le serveur…', true);
+    }
   }
   // 2) Secours : serveur local.
   try{ const j = await backupSave(null); toast('✓ Sauvegarde enregistrée : ' + j.name); }
@@ -8536,7 +8571,7 @@ function backupImportFile(){ const f=document.getElementById('importFile'); if(f
 
 async function backupImportLatest(){
   // 1) Dossier connecté : dernier facturation_data_*.json du dossier, lu directement.
-  if(fsaReady()){
+  if(fsaReady() && await fsaEnsurePerm(true)){
     try{
       const b = await fsaLatest();
       if(!b){ toast('Aucune sauvegarde trouvée dans « ' + _fsaHandle.name + ' ».', true); return; }
@@ -8591,7 +8626,8 @@ function backupAutoTrigger(){
   _autoBkTimer = setTimeout(async ()=>{
     const el=document.getElementById('backup-last-auto');
     // 1) Dossier connecté : un fichier par jour, écrasé au fil de la journée (pas d'accumulation).
-    if(fsaReady()){
+    // (hors clic : on ne peut que VÉRIFIER l'autorisation, pas la redemander)
+    if(fsaReady() && await fsaEnsurePerm(false)){
       try{
         const name = 'facturation_data_auto_' + _fsaDay() + '.json';
         await fsaWrite(name, JSON.stringify(buildBackupPayload(), null, 2));

@@ -15,8 +15,16 @@ montants en CHF, TVA suisse.
   `sa_collaborateurs`, `sa_phases_pct_migrated`, etc.).
 - **`fact_backup_server.py`** — petit serveur local (port 7788, 127.0.0.1
   uniquement) qui permet à l'app d'écrire de vraies sauvegardes `.json` sur le
-  disque (export/import + sauvegarde automatique). Lancement :
-  `python3 fact_backup_server.py` (ou `Lancer_serveur_sauvegarde.command`).
+  disque (export/import + sauvegarde automatique), dossier de base :
+  « Sauvegarde Facturation » dans ce dossier. Sur le Mac Studio de l'atelier,
+  il démarre automatiquement à l'ouverture de session via
+  `~/Applications/Serveur Sauvegarde Facturation.app` (élément d'ouverture) ;
+  sinon : `python3 fact_backup_server.py` ou `Lancer_serveur_sauvegarde.command`.
+  NB : ce dossier est un partage réseau (NAS) — macOS refuse l'accès aux
+  processus d'arrière-plan (LaunchAgent impossible, l'app de démarrage doit
+  rester en mode visible) et l'aperçu intégré de Claude ne peut pas écrire
+  directement dans les dossiers (le bouton 📁 de l'app ne marche que dans un
+  vrai Chrome/Edge/Arc/Brave).
 - **`serve.py` / `serve_facturation.py`** — petits serveurs HTTP pour servir
   la page localement si besoin.
 

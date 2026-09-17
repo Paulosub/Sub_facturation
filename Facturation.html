@@ -1117,9 +1117,14 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
         <table class="xls-tbl">
           <tr><td class="lbl" style="width:180px">AFFAIRE</td><td><input id="ch_affaire" placeholder="24SLC" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></td></tr>
           <tr><td class="lbl">OBJET « à » LOCALITÉ</td><td style="display:flex;gap:6px;align-items:flex-start">
-            <textarea id="ch_projet" class="autogrow" rows="1" placeholder="Rénovation maison vigneronne" oninput="chAutoGrow(this)" style="flex:2"></textarea>
+            <textarea id="ch_projet" class="autogrow" rows="1" placeholder="Rénovation maison vigneronne" oninput="chAutoGrow(this);chUpdProjetCourtRow()" style="flex:2"></textarea>
             <span style="align-self:flex-start;color:#8a979c;padding-top:4px">à</span>
             <input id="ch_lieu" placeholder="Cully" style="flex:1;align-self:flex-start"></td></tr>
+          <!-- Objet COURT pour l'en-tête des pages du PDF : visible seulement quand l'objet dépasse une ligne. -->
+          <tr id="ch_projet_court_row" style="display:none"><td class="lbl">OBJET COURT (EN-TÊTE PDF)</td><td>
+            <input id="ch_projet_court" oninput="refreshOffreSoon()">
+            <div style="font-size:10px;color:#8a979c;margin-top:3px">L'objet est long : cette version raccourcie remplace l'objet dans l'en-tête des pages du PDF (la page de couverture garde l'objet complet).</div>
+          </td></tr>
           <tr><td class="lbl">RUE (bien-fonds)</td><td><input id="ch_padr" placeholder="Chemin des Vignes 12"></td></tr>
           <tr><td class="lbl">CODE POSTAL / LOCALITÉ</td><td><input id="ch_ploc" placeholder="1096 Cully"></td></tr>
           <tr><td class="lbl">ECA</td><td><div id="ch_eca_box" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div></td></tr>
@@ -2433,6 +2438,27 @@ const sv = (id, v) => { const e=document.getElementById(id); if(!e) return; e.va
 /* Zone de texte auto-extensible : ajuste la hauteur au contenu (OBJET, etc.). */
 function chAutoGrow(el){ if(!el) return; el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
 
+/* Objet court (en-tête PDF) : la ligne de saisie n'apparaît que lorsque l'objet
+   dépasse une ligne (retour à la ligne saisi, champ qui s'agrandit, ou ~60 caractères —
+   au-delà, l'en-tête « RÉF - OBJET » des pages du PDF devient trop long). */
+function chProjetEstLong(){
+  const ta = document.getElementById('ch_projet');
+  if(!ta) return false;
+  const v = (ta.value||'').trim();
+  return v.includes('\n') || v.length > 60 || ta.scrollHeight > 40;
+}
+function chUpdProjetCourtRow(){
+  const row = document.getElementById('ch_projet_court_row');
+  const inp = document.getElementById('ch_projet_court');
+  if(!row || !inp) return;
+  const long = chProjetEstLong();
+  // On garde la ligne visible si un objet court a déjà été saisi (même si l'objet a été raccourci).
+  row.style.display = (long || (inp.value||'').trim()) ? '' : 'none';
+  // Suggestion en filigrane : début de l'objet complet, coupé proprement à ~60 caractères.
+  const v = (document.getElementById('ch_projet')?.value||'').replace(/\s+/g,' ').trim();
+  inp.placeholder = long && v ? (v.length>60 ? v.slice(0,60).replace(/\s+\S*$/,'')+'…' : v) : 'Version raccourcie pour l\'en-tête';
+}
+
 /* ═══ Montants : affichage formaté en saisie directe (espace = milliers, point = décimales) ═══
    Les champs de montant portent la classe « money » et sont en <input type="text"> (le type number
    n'accepte pas l'espace). gn() lit la valeur en retirant les espaces. */
@@ -2666,7 +2692,7 @@ function goTab(name, opts) {
   if(name==='cockpit') renderCockpit();
   if(name==='cockpit2') renderCockpit2();
   if(name==='saisie'){ applySaisieModeUI(); faInitMoneyInputs(); }
-  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); }
+  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); chUpdProjetCourtRow(); }
   if(name==='backup') { const cb=document.getElementById('backup_auto'); if(cb) cb.checked=backupAutoEnabled(); backupPing(); renderCreationCharts(); renderCreationList(); refreshBackupFiles(); }
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
@@ -3697,7 +3723,7 @@ function offreGather(){
   const cfc=(id,niId)=>{ const v=gn(id); const ni=document.getElementById(niId)?.checked; return {inclus: ni?0:v, non: ni?v:0, gross:v}; };
   return {
     ref: (gv('ch_affaire')||'—').trim(), date: gv('ch_date'), lieu:'Cully',   // lieu d'émission = adresse du bureau (toujours Cully) — indépendant de la commune du projet
-    projet:(gv('ch_projet')||'').trim(), padr:(gv('ch_padr')||'').trim(), ploc:(gv('ch_ploc')||'').trim(),
+    projet:(gv('ch_projet')||'').trim(), projetCourt:(gv('ch_projet_court')||'').trim(), padr:(gv('ch_padr')||'').trim(), ploc:(gv('ch_ploc')||'').trim(),
     parc: chGetParcelles().join(', '), parcelles: chGetParcelles(), eca: chGetEcas().join(', '), ecas: chGetEcas(),
     formule:(gv('ch_formule')||'').trim().replace(/,\s*$/,''), att:(gv('ch_att')||'').trim(), nom:(gv('ch_nom')||'').trim(), adr:(gv('ch_adr')||'').trim(), loc:(gv('ch_loc')||'').trim(),
     resp:(gv('ch_resp')||'').trim(), situation: rtGetHTML('ch_note_situation'), objectif: rtGetHTML('ch_note_objectif'), approche: rtGetHTML('ch_note_approche'),
@@ -4080,7 +4106,8 @@ async function offrePDFBytes(){
   const offreTitre = d.isExpertise ? "OFFRE RELATIVE AUX PRESTATIONS D'EXPERTISE" : "OFFRE RELATIVE AUX PRESTATIONS D'ARCHITECTE";
   const runHdr=(pg)=>{
     setL(pg,[28.4,804.1,213.5,812.1],offreTitre,fB,7.5,cN);
-    setL(pg,[28.3,790.1,300,798.1],`${d.ref} - ${up(d.projet)}`,fR,7.5,cG);
+    // En-tête sur UNE ligne : objet court s'il est saisi, sinon l'objet complet (sauts de ligne aplatis).
+    setL(pg,[28.3,790.1,300,798.1],`${d.ref} - ${up((d.projetCourt||d.projet||'').replace(/\s+/g,' '))}`,fR,7.5,cG);
     setL(pg,[28.4,777.0,300,785.0],`${up(d.lieu)} - ${offreDateFR(d.date)}`,fR,7.5,cG);
   };
   for(let i=1;i<P.length;i++){ if(P[i]) runHdr(P[i]); }
@@ -5673,11 +5700,12 @@ function loadContratIntoCalcHono(id, verData) {
   // précédent (les contrats anciens n'ont pas les 4 types sauvegardés). chRestoreDetail réappliquera ceux
   // enregistrés, puis chEnsurePrestType remettra « ordinaires » par défaut si aucun type n'est finalement coché.
   ['ch_chk_ord','ch_chk_no','ch_chk_expertise','ch_chk_faisa'].forEach(id=>{ const e=document.getElementById(id); if(e) e.checked=false; });
-  sv('ch_affaire', c.affaire||''); sv('ch_projet', c.projet||''); sv('ch_lieu', c.lieu||'');
+  sv('ch_affaire', c.affaire||''); sv('ch_projet', c.projet||''); sv('ch_projet_court', c.projetCourt||''); sv('ch_lieu', c.lieu||'');
   sv('ch_resp', c.resp||''); sv('ch_date', c.date||''); sv('ch_statut_contrat', c.statutContrat||'');
   sv('ch_formule', (c.formule===undefined||c.formule===null)?'Madame, Monsieur,':c.formule);
   sv('ch_nom', c.nom||''); sv('ch_adr', c.adr||''); sv('ch_loc', c.loc||'');
   sv('ch_att', c.att||''); chToggleAtt();   // « À l'att. de » : visible seulement si aucune formule
+  const _taP=document.getElementById('ch_projet'); if(_taP) chAutoGrow(_taP); chUpdProjetCourtRow();   // ligne « Objet court » selon la longueur de l'objet chargé
   sv('ch_padr', c.padr||''); sv('ch_ploc', c.ploc||'');
   // Parcelles & ECA multiples (rétro-compat : ancien contrat = un seul « parc »).
   PARCELLES = (Array.isArray(c.parcelles)&&c.parcelles.length) ? c.parcelles.slice() : (c.parc ? String(c.parc).split(/\s*,\s*/).filter(Boolean) : ['']);
@@ -5803,7 +5831,7 @@ function resetEstimCoutFields() {
 }
 
 function resetCalcHono(clearTarget) {
-  sv('ch_affaire',''); sv('ch_projet',''); sv('ch_lieu',''); sv('ch_resp',''); sv('ch_date',''); sv('ch_statut_contrat','');
+  sv('ch_affaire',''); sv('ch_projet',''); sv('ch_projet_court',''); sv('ch_lieu',''); sv('ch_resp',''); sv('ch_date',''); sv('ch_statut_contrat','');
   sv('ch_formule','Madame, Monsieur,'); sv('ch_att',''); chToggleAtt(); sv('ch_nom',''); sv('ch_adr',''); sv('ch_loc','');
   sv('ch_padr',''); sv('ch_ploc',''); PARCELLES=['']; ECAS=['']; chRenderParcEca();
   rtSetValue('ch_note_situation',''); rtSetValue('ch_note_objectif',''); rtSetValue('ch_note_approche','');
@@ -6250,7 +6278,7 @@ function applyCalcHono(asNewVersion) {
   const fraisFinal = r.forfaitFraisPct;  // frais en % (appliqué au TTC honoraires du contrat, forfait ou non)
 
   const base = {
-    affaire, projet: gv('ch_projet'), lieu: gv('ch_lieu'), resp: gv('ch_resp'), date: gv('ch_date'),
+    affaire, projet: gv('ch_projet'), projetCourt: gv('ch_projet_court'), lieu: gv('ch_lieu'), resp: gv('ch_resp'), date: gv('ch_date'),
     statutContrat: gv('ch_statut_contrat'),
     formule: gv('ch_formule'), att: gv('ch_att'), nom: gv('ch_nom'), adr: gv('ch_adr'), loc: gv('ch_loc'),
     padr: gv('ch_padr'), ploc: gv('ch_ploc'), parc: chGetParcelles().join(', '), parcelles: chGetParcelles(), ecas: chGetEcas(),

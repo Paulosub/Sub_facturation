@@ -5012,11 +5012,13 @@ async function offrePDFBytes(){
           const qteCol = grp.lines.some(l=>!l.hideDetail && (l.hUnit||'h')!=='h');
           colHdr(pg,yH,qteCol);
           let sy = yH-35.8, totHT = 0, lastY = yH;
-          // SOUS-TITRE du titre (activable) : imprimé sous l'en-tête « Prestations d'architectes »,
-          // avant les descriptions (visuel 26RRD : « 4.21  Définition de l'objet, étude de faisabilité »).
+          // SOUS-TITRES du titre (activables) : imprimés sous l'en-tête « Prestations d'architectes »,
+          // avant les descriptions — un par ligne de saisie (visuel 26RRD : « 4.21  Définition de l'objet… »).
           if(grp.t && grp.t.showSt && (grp.t.st||'').trim()){
-            dL(pg,fR,8,cN,String(grp.t.st).trim(),130.4,yH-31);
-            sy = yH-61; lastY = yH-31;
+            const sts = String(grp.t.st).split(/\n/).map(s=>s.trim()).filter(Boolean);
+            let yS = yH-31;
+            sts.forEach(s=>{ dL(pg,fR,8,cN,s,130.4,yS); lastY = yS; yS -= 12; });
+            sy = lastY - 30;
           }
           grp.lines.forEach(ln=>{
             if(sy < 100){ overflows.push('Détail des prestations « '+((grp.t&&grp.t.titre)||'sans titre')+' » — page pleine, contenu tronqué'); return; }
@@ -7275,7 +7277,7 @@ function buildChno() {
       </div>
       ${t.showDb?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Données de base — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].db=this.value;lignesAutoGrow(this);refreshOffreSoon()" onfocus="chPuceFocus(this)" onkeydown="chPuceKey(event)" onblur="chPuceNorm(this)" placeholder="• Plans d'exécution de 2002&#10;• Visite sur place" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.db)}</textarea></div>`:''}
       ${t.showObj?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Objectifs — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].obj=this.value;lignesAutoGrow(this);refreshOffreSoon()" onfocus="chPuceFocus(this)" onkeydown="chPuceKey(event)" onblur="chPuceNorm(this)" placeholder="• Établissement d'un descriptif des travaux&#10;• Estimation des coûts à ± 20 %" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.obj)}</textarea></div>`:''}
-      ${t.showSt?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Sous-titre — imprimé sous « Prestations d'architectes », avant les descriptions :</div><input value="${escA(t.st)}" placeholder="ex. 4.21   Définition de l'objet, étude de faisabilité" oninput="CH_NO_TITRES[${ti}].st=this.value;refreshOffreSoon()" style="width:100%;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit"></div>`:''}
+      ${t.showSt?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Sous-titres — imprimés sous « Prestations d'architectes », avant les descriptions (un par ligne) :</div><textarea rows="1" oninput="CH_NO_TITRES[${ti}].st=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="4.21   Définition de l'objet, étude de faisabilité&#10;4.22   Étude préliminaire" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.st)}</textarea></div>`:''}
     </td>`;
     tb.appendChild(tr);
     tr.querySelectorAll('textarea').forEach(lignesAutoGrow);

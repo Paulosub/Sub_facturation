@@ -51,4 +51,4 @@ export PDF fidèle aux documents papier du bureau (police Akkurat).
 
 ## Dépôt GitHub
 
-`git@github.com:Paulosub/facturation.git` — dépôt privé, branche `main`.
+`git@github.com:Paulosub/Sub_facturation.git` — dépôt privé, branche `main`.

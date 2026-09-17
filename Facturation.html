@@ -3704,7 +3704,7 @@ function offreGather(){
   const chnoDetail = !!document.getElementById('ch_chno_detail')?.checked;
   const chnoLines = (typeof CH_NO!=='undefined'?CH_NO:[]).filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
                      .map(l=>({lbl:(l.lbl||'').trim(), com:(l.com||'').trim(), amt:l.amt||0, option:!!l.option,
-                               heures:(l.heures||0), prix:(l.prix||0), pUnit:(l.pUnit||'')}));
+                               heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||'')}));
   const Htot = R.H + chno;
   const rabaisMnt = Htot * R.rabaisPct/100;
   const sousTot = Htot - rabaisMnt;
@@ -4491,7 +4491,7 @@ async function offrePDFBytes(){
         (d.chnoLines||[]).forEach(l=>{
           dL(p8,fR,8,cN,l.lbl||'—',LX,yy);
           if(!l.option){
-            if(l.heures) dR(p8,fR,8,cN,(l.heures%1===0?String(l.heures):l.heures.toFixed(1))+' h',HXc,yy);
+            if(l.heures){ const _u=l.hUnit||'h'; dR(p8,fR,8,cN,(l.heures%1===0?String(l.heures):l.heures.toFixed(1))+(_u==='—'?'':' '+_u),HXc,yy); }
             if(l.prix)   dR(p8,fR,8,cN,fc(l.prix),PXc,yy);
           }
           if(l.option){ dR(p8,fLI,8,cN,'('+fc(l.amt)+')',AX,yy); }   // option : parenthèses, non additionnée
@@ -4897,7 +4897,9 @@ async function offrePDFBytes(){
       //     (positions extraites au point près : en-tête/pied du gabarit + chapitre 3 standard,
       //      colonnes minuscules sur 2 lignes, puces « – », descriptions justifiées, TOTAL « Fr. … .-- »). ═══
       const _apo = n => { const s=Math.abs(+n||0).toFixed(2); let [e,c]=s.split('.'); e=e.replace(/\B(?=(\d{3})+(?!\d))/g,'’'); return {e,c}; };
-      const fmtHeures = h => (h%1===0?String(h):(+h).toFixed(1)) + ' h.';                    // « 5 h. »
+      // Quantité selon l'unité de la ligne : « 5 h. » (heures) · « 5 gl » (global) · « 5 » (« — »).
+      const fmtQte = (h,u) => { const b=(h%1===0?String(h):(+h).toFixed(1)); u=u||'h';
+        return u==='h' ? b+' h.' : (u==='—' ? b : b+' '+u); };
       const fmtTarif  = t => { const {e,c}=_apo(t); return e+'.'+c+' /h.'; };                // « 182.00 /h. »
       const fmtTotal  = m => { const {e,c}=_apo(m); return e+'.'+c; };                       // « 6’370.00 »
       // ── En-tête de chapitre STANDARD « 3 | PRESTATIONS D'ARCHITECTE » (identique aux autres chapitres) ──
@@ -4909,7 +4911,10 @@ async function offrePDFBytes(){
       // ── En-têtes de colonnes : Light, minuscules, sur 2 lignes, bords droits extraits du gabarit ──
       const HRX=373.2, TRX=428.2, MRX=505.9;            // bords droits : heures · tarif · Montant
       dL(sp,fR,8,cN,'Prestations',130.4,703.5);
-      dR(sp,fR,7,cN,'heures',HRX,711.9);       dR(sp,fR,7,cN,'estimées',HRX,703.5);
+      // En-tête de colonne : « heures estimées » si toutes les lignes sont en heures ; « quantité » dès qu'une ligne utilise gl (ou « — »).
+      const _qteCol = (d.chnoLines||[]).some(l=>!l.option && (l.hUnit||'h')!=='h');
+      if(_qteCol){ dR(sp,fR,7,cN,'quantité',HRX,703.5); }
+      else { dR(sp,fR,7,cN,'heures',HRX,711.9);       dR(sp,fR,7,cN,'estimées',HRX,703.5); }
       dR(sp,fR,7,cN,'tarif horaire',TRX,711.9); dR(sp,fR,7,cN,'moyen HT',TRX,703.5);
       dR(sp,fR,7,cN,'Montant',MRX,711.9);      dR(sp,fR,7,cN,'HT',MRX,703.5);
       sp.drawLine({start:{x:130.4,y:699.3},end:{x:510.2,y:699.3},thickness:0.4,color:cN});
@@ -4932,7 +4937,7 @@ async function offrePDFBytes(){
         dL(sp,fR,8,cN,'–',172.2,sy);                     // puce (tiret demi-cadratin)
         lines.forEach((wordsArr,i)=>{ const y=sy-i*LHrow; if(y<80) return; drawJust(wordsArr,y,i===lines.length-1); });
         const yLast = sy - (lines.length-1)*LHrow;       // heures + tarif + montant sur la dernière ligne de la description
-        dR(sp,fR,8,cN,fmtHeures(ln.heures||0),HRX+0.2,yLast);
+        dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
         dR(sp,fR,8,cN,fmtTarif(ln.prix||0),TRX,yLast);
         dR(sp,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);    // montant de la ligne dans la colonne « Montant HT »
         totHT += (ln.amt||0);

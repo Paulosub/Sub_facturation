@@ -1,0 +1,27 @@
+# Backups et anciennes versions
+Facturation_backup_*.html
+Facturation_avant_phases_*.html
+Facturation_2.html
+Facturation_ancien.html
+Substances Architectes — Facturation.html
+sauvegardes/
+sauvegarde donnée/
+facturation/
+
+# Données de facturation (données clients — ne jamais pousser)
+facturation_data_*.json
+
+# Documents et factures réelles
+*.pdf
+*.xlsx
+24PRC_*
+26MOR_*
+26TEC_*
+FA26.*
+
+# Fichiers de travail
+PROMPT_CLAUDE.md
+.claude/
+
+# Système
+.DS_Store

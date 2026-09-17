@@ -4934,7 +4934,7 @@ async function offrePDFBytes(){
         dL(pg,fB,8,cN,'PRESTATIONS D’ARCHITECTE',130.43,hy3);
         pg.drawLine({start:{x:85,y:hy3-4.37},end:{x:510.2,y:hy3-4.37},thickness:0.5,color:cN}); };
       // En-têtes de colonnes (yH = ligne du bas) : « heures estimées » ou « quantité » dès qu'une ligne utilise gl / « — ».
-      const colHdr = (pg,yH,qteCol)=>{ dL(pg,fR,8,cN,'Prestations',130.4,yH);
+      const colHdr = (pg,yH,qteCol)=>{ dL(pg,fR,8,cN,'Prestations d’architectes',130.4,yH);
         if(qteCol){ dR(pg,fR,7,cN,'quantité',HRX,yH); }
         else { dR(pg,fR,7,cN,'heures',HRX,yH+8.4); dR(pg,fR,7,cN,'estimées',HRX,yH); }
         dR(pg,fR,7,cN,'tarif horaire',TRX,yH+8.4); dR(pg,fR,7,cN,'moyen HT',TRX,yH);
@@ -5003,6 +5003,12 @@ async function offrePDFBytes(){
           const qteCol = grp.lines.some(l=>!l.hideDetail && (l.hUnit||'h')!=='h');
           colHdr(pg,yH,qteCol);
           let sy = yH-35.8, totHT = 0, lastY = yH;
+          // SOUS-TITRE du titre (activable) : imprimé sous l'en-tête « Prestations d'architectes »,
+          // avant les descriptions (visuel 26RRD : « 4.21  Définition de l'objet, étude de faisabilité »).
+          if(grp.t && grp.t.showSt && (grp.t.st||'').trim()){
+            dL(pg,fR,8,cN,String(grp.t.st).trim(),130.4,yH-31);
+            sy = yH-61; lastY = yH-31;
+          }
           grp.lines.forEach(ln=>{
             if(sy < 100){ overflows.push('Détail des prestations « '+((grp.t&&grp.t.titre)||'sans titre')+' » — page pleine, contenu tronqué'); return; }
             if(ln.sousTitre){
@@ -7246,10 +7252,12 @@ function buildChno() {
         <input value="${escA(t.titre)}" placeholder="ex. FAISABILITÉ" oninput="CH_NO_TITRES[${ti}].titre=this.value;refreshOffreSoon()" style="flex:1;min-width:120px;border:1px solid #2a6a7e;border-radius:3px;padding:4px 8px;font-weight:bold;text-transform:uppercase">
         <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap" title="Affiche un bloc « Données de base : » à puces sous le titre (pas toujours nécessaire)"><input type="checkbox" ${t.showDb?'checked':''} onchange="CH_NO_TITRES[${ti}].showDb=this.checked;buildChno();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Données de base</label>
         <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap" title="Affiche un bloc « Objectifs : » à puces sous le titre (pas toujours nécessaire)"><input type="checkbox" ${t.showObj?'checked':''} onchange="CH_NO_TITRES[${ti}].showObj=this.checked;buildChno();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Objectifs</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap" title="Sous-titre imprimé sous l'en-tête « Prestations d'architectes », juste avant les descriptions (ex. 4.21 Définition de l'objet, étude de faisabilité)"><input type="checkbox" ${t.showSt?'checked':''} onchange="CH_NO_TITRES[${ti}].showSt=this.checked;buildChno();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Sous-titre</label>
         <button title="Supprimer ce titre (les lignes rattachées redeviennent « sans titre »)" style="background:none;border:none;color:#ff9c9c;font-size:13px;cursor:pointer" onclick="delChnoTitre(${ti})">✕</button>
       </div>
       ${t.showDb?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Données de base — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].db=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="Plans d'exécution de 2002&#10;Visite sur place" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.db)}</textarea></div>`:''}
       ${t.showObj?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Objectifs — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].obj=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="Établissement d'un descriptif des travaux&#10;Estimation des coûts à ± 20 %" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.obj)}</textarea></div>`:''}
+      ${t.showSt?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Sous-titre — imprimé sous « Prestations d'architectes », avant les descriptions :</div><input value="${escA(t.st)}" placeholder="ex. 4.21   Définition de l'objet, étude de faisabilité" oninput="CH_NO_TITRES[${ti}].st=this.value;refreshOffreSoon()" style="width:100%;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit"></div>`:''}
     </td>`;
     tb.appendChild(tr);
     tr.querySelectorAll('textarea').forEach(lignesAutoGrow);
@@ -7316,7 +7324,7 @@ function buildChno() {
   }
 }
 function addChnoTitre(){
-  CH_NO_TITRES.push({titre:'', db:'', obj:'', showDb:false, showObj:false});
+  CH_NO_TITRES.push({titre:'', db:'', obj:'', st:'', showDb:false, showObj:false, showSt:false});
   const ti = CH_NO_TITRES.length-1;
   // La description vient se placer SOUS le titre : le 1er titre absorbe les lignes encore « sans titre » ;
   // sinon (ou s'il n'y avait aucune ligne), une ligne vierge est créée sous le nouveau titre.

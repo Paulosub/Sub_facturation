@@ -2597,7 +2597,7 @@ function faFillHLFromContrat(force){
   HL = c.nonord.filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
                .map(l=>({lbl:l.lbl||'', heures:l.heures||0, refHeures:l.heures||0, fromContrat:true,
                          hUnit:l.hUnit||'h', prix:l.prix||0, pUnit:l.pUnit||'Frs/h', amt:l.amt||0,
-                         com:l.com||'', hideDetail:false}));
+                         com:l.com||'', hideDetail:!!l.hideDetail}));
   buildHL();
   return true;
 }
@@ -3704,7 +3704,7 @@ function offreGather(){
   const chnoDetail = !!document.getElementById('ch_chno_detail')?.checked;
   const chnoLines = (typeof CH_NO!=='undefined'?CH_NO:[]).filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
                      .map(l=>({lbl:(l.lbl||'').trim(), com:(l.com||'').trim(), amt:l.amt||0, option:!!l.option,
-                               heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||'')}));
+                               heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||''), hideDetail:!!l.hideDetail}));
   const Htot = R.H + chno;
   const rabaisMnt = Htot * R.rabaisPct/100;
   const sousTot = Htot - rabaisMnt;
@@ -4490,7 +4490,7 @@ async function offrePDFBytes(){
       } else {
         (d.chnoLines||[]).forEach(l=>{
           dL(p8,fR,8,cN,l.lbl||'—',LX,yy);
-          if(!l.option){
+          if(!l.option && !l.hideDetail){                // « Masquer heures/tarif » : seul le montant apparaît
             if(l.heures){ const _u=l.hUnit||'h'; dR(p8,fR,8,cN,(l.heures%1===0?String(l.heures):l.heures.toFixed(1))+(_u==='—'?'':' '+_u),HXc,yy); }
             if(l.prix)   dR(p8,fR,8,cN,fc(l.prix),PXc,yy);
           }
@@ -4912,7 +4912,7 @@ async function offrePDFBytes(){
       const HRX=373.2, TRX=428.2, MRX=505.9;            // bords droits : heures · tarif · Montant
       dL(sp,fR,8,cN,'Prestations',130.4,703.5);
       // En-tête de colonne : « heures estimées » si toutes les lignes sont en heures ; « quantité » dès qu'une ligne utilise gl (ou « — »).
-      const _qteCol = (d.chnoLines||[]).some(l=>!l.option && (l.hUnit||'h')!=='h');
+      const _qteCol = (d.chnoLines||[]).some(l=>!l.option && !l.hideDetail && (l.hUnit||'h')!=='h');
       if(_qteCol){ dR(sp,fR,7,cN,'quantité',HRX,703.5); }
       else { dR(sp,fR,7,cN,'heures',HRX,711.9);       dR(sp,fR,7,cN,'estimées',HRX,703.5); }
       dR(sp,fR,7,cN,'tarif horaire',TRX,711.9); dR(sp,fR,7,cN,'moyen HT',TRX,703.5);
@@ -4937,8 +4937,10 @@ async function offrePDFBytes(){
         dL(sp,fR,8,cN,'–',172.2,sy);                     // puce (tiret demi-cadratin)
         lines.forEach((wordsArr,i)=>{ const y=sy-i*LHrow; if(y<80) return; drawJust(wordsArr,y,i===lines.length-1); });
         const yLast = sy - (lines.length-1)*LHrow;       // heures + tarif + montant sur la dernière ligne de la description
-        dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
-        dR(sp,fR,8,cN,fmtTarif(ln.prix||0),TRX,yLast);
+        if(!ln.hideDetail){                              // « Masquer heures/tarif » : seul le montant apparaît
+          dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
+          dR(sp,fR,8,cN,fmtTarif(ln.prix||0),TRX,yLast);
+        }
         dR(sp,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);    // montant de la ligne dans la colonne « Montant HT »
         totHT += (ln.amt||0);
         sy = yLast - GAP;                                // 20.1 pt entre la dernière ligne et la ligne suivante
@@ -7130,9 +7132,9 @@ function lignesAutoGrow(el) { el.style.height = 'auto'; el.style.height = el.scr
    Table dédiée (contrairement à NONORD/FAIS ci-dessus) car ses colonnes sont différentes. */
 function chnoRecalc(i) {
   const l = CH_NO[i];
-  if(l.heures || l.prix) l.amt = (l.heures||0) * (l.prix||0);
+  if(!l.hideDetail && (l.heures || l.prix)) l.amt = (l.heures||0) * (l.prix||0);
   const e = document.getElementById('chno-mnt-'+i);
-  if(e) e.textContent = l.option ? '('+CHF(l.amt)+')' : CHF(l.amt);
+  if(e && e.tagName!=='INPUT') e.textContent = l.option ? '('+CHF(l.amt)+')' : CHF(l.amt);
   updCalcHono();
 }
 function buildChno() {
@@ -7140,21 +7142,28 @@ function buildChno() {
   if(!tb) return;
   tb.innerHTML = '';
   CH_NO.forEach((l, i) => {
-    if(l.heures || l.prix) l.amt = (l.heures||0) * (l.prix||0);
+    if(!l.hideDetail && (l.heures || l.prix)) l.amt = (l.heures||0) * (l.prix||0);
     const hOpts = HNO_H_UNITS.map(u => `<option${u===l.hUnit?' selected':''}>${u}</option>`).join('');
     const pOpts = HNO_P_UNITS.map(u => `<option${u===l.pUnit?' selected':''}>${u}</option>`).join('');
+    const hideCell = `<td style="text-align:center;color:#bbb;font-size:11px;vertical-align:middle">—</td>`;
+    const heuresCell = l.hideDetail ? hideCell : `<td style="padding:4px"><div style="display:flex;gap:2px">
+        <input type="number" step="0.5" value="${l.heures||0}" oninput="CH_NO[${i}].heures=parseFloat(this.value)||0;chnoRecalc(${i})" style="width:56px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
+        <select onchange="CH_NO[${i}].hUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${hOpts}</select></div></td>`;
+    const prixCell = l.hideDetail ? hideCell : `<td style="padding:4px"><div style="display:flex;gap:2px">
+        <input type="number" step="1" value="${l.prix||0}" oninput="CH_NO[${i}].prix=parseFloat(this.value)||0;CH_NO[${i}].prixManual=true;chnoRecalc(${i})" title="Prix horaire (repris du tarif horaire ; modifiable au cas par cas)" style="width:56px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
+        <select onchange="CH_NO[${i}].pUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${pOpts}</select></div></td>`;
+    const montantCell = l.hideDetail
+      ? `<td><input type="number" step="1" value="${l.amt||0}" oninput="CH_NO[${i}].amt=parseFloat(this.value)||0;updCalcHono()" id="chno-mnt-${i}" style="width:100%;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-weight:bold;color:#003346"></td>`
+      : `<td style="text-align:right;font-weight:bold;color:${l.option?'#8a979c':'#003346'};font-style:${l.option?'italic':'normal'};padding:4px 6px" id="chno-mnt-${i}">${l.option?'('+CHF(l.amt)+')':CHF(l.amt)}</td>`;
     const tr = document.createElement('tr');
     tr.innerHTML = `<td style="padding:4px"><div style="display:flex;align-items:center;gap:6px">
         <label title="Option : montant affiché entre parenthèses et NON additionné au total" style="display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;font-size:10.5px;color:${l.option?'#b06a00':'#8a979c'};font-weight:${l.option?'bold':'normal'}"><input type="checkbox" ${l.option?'checked':''} onchange="CH_NO[${i}].option=this.checked;buildChno();updCalcHono()" style="width:14px;height:14px;cursor:pointer">option</label>
         <input value="${(l.lbl||'').replace(/"/g,'&quot;')}" placeholder="Description de la prestation"
-        oninput="CH_NO[${i}].lbl=this.value" style="flex:1;min-width:0;border:1px solid #ccc;border-radius:3px;padding:4px 6px"></div></td>
-      <td style="padding:4px"><div style="display:flex;gap:2px">
-        <input type="number" step="0.5" value="${l.heures||0}" oninput="CH_NO[${i}].heures=parseFloat(this.value)||0;chnoRecalc(${i})" style="width:56px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
-        <select onchange="CH_NO[${i}].hUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${hOpts}</select></div></td>
-      <td style="padding:4px"><div style="display:flex;gap:2px">
-        <input type="number" step="1" value="${l.prix||0}" oninput="CH_NO[${i}].prix=parseFloat(this.value)||0;CH_NO[${i}].prixManual=true;chnoRecalc(${i})" title="Prix horaire (repris du tarif horaire ; modifiable au cas par cas)" style="width:56px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:4px 4px">
-        <select onchange="CH_NO[${i}].pUnit=this.value" style="border:1px solid #ccc;border-radius:3px;font-size:11px">${pOpts}</select></div></td>
-      <td style="text-align:right;font-weight:bold;color:${l.option?'#8a979c':'#003346'};font-style:${l.option?'italic':'normal'};padding:4px 6px" id="chno-mnt-${i}">${l.option?'('+CHF(l.amt)+')':CHF(l.amt)}</td>
+        oninput="CH_NO[${i}].lbl=this.value" style="flex:1;min-width:0;border:1px solid #ccc;border-radius:3px;padding:4px 6px"></div>
+        <label title="Si coché : les heures et le tarif de cette ligne sont masqués (formulaire ET PDF) — seul le montant, saisi directement, apparaît." style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:#666;margin-top:3px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${l.hideDetail?'checked':''} onchange="CH_NO[${i}].hideDetail=this.checked;buildChno();updCalcHono();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Masquer heures/tarif (saisir le montant)</label></td>
+      ${heuresCell}
+      ${prixCell}
+      ${montantCell}
       <td><button title="Supprimer la prestation" style="background:none;border:none;color:#c00;opacity:.6;font-size:13px;cursor:pointer" onclick="CH_NO.splice(${i},1);buildChno();updCalcHono()">✕</button></td>`;
     tb.appendChild(tr);
     const tr2 = document.createElement('tr');
@@ -7168,7 +7177,7 @@ function buildChno() {
 }
 function addChno() {
   const tarif = gn('ch_tarif_moyen') || gn('ch_h') || 0;   // le tarif horaire alimente d'office le prix
-  CH_NO.push({lbl:'', heures:0, hUnit:'h', prix:tarif, pUnit:'Frs/h', amt:0, com:'', prixManual:false});
+  CH_NO.push({lbl:'', heures:0, hUnit:'h', prix:tarif, pUnit:'Frs/h', amt:0, com:'', prixManual:false, hideDetail:false});
   buildChno(); updCalcHono();
 }
 

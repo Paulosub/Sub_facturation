@@ -1282,9 +1282,22 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
     <div class="card" id="card-planning">
       <div class="card-hd">4 — Planning d'intention<input type="checkbox" id="ch_show_planning" style="display:none"><button type="button" id="ch_plan_toggle_btn" onclick="chToggleExpPlanning()" style="float:right;display:none;font-weight:normal;font-size:11px;background:#0a6e84;color:#fff;border:none;border-radius:3px;padding:2px 9px;cursor:pointer;font-family:inherit">+ Afficher le planning intentionnel</button><label id="ch_hide_planning_lbl" style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer" title="Masque le planning d'intention dans le PDF (utile pour les expertises)"><input type="checkbox" id="ch_hide_planning" onchange="chTogglePlanningHide()" style="width:13px;height:13px;cursor:pointer"> Masquer</label></div>
       <div class="card-bd">
-        <div style="font-size:12.5px;margin-bottom:8px">Les délais prévus sont les suivants :</div>
-        <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="plan-tbl"><tbody id="plan-body"></tbody></table>
-        <button class="btn btn-blue btn-sm" style="margin-top:6px" onclick="planAddRow()">+ Ligne</button>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px">
+          <b>Présentation :</b>
+          <select id="ch_plan_mode" onchange="planModeApply();refreshOffreSoon()" style="font-size:12.5px;border:1px solid #ccc;border-radius:3px;padding:3px 6px;cursor:pointer;font-family:inherit" title="Liste : les délais en deux colonnes de texte (comme aujourd'hui). Graphique : un planning en barres par mois (sections avec trait, barres bleues, jalon rouge), fidèle au visuel 23PSL — réutilisable dans chaque contrat.">
+            <option value="liste">Liste des délais (texte)</option>
+            <option value="gantt">Graphique (barres par mois)</option>
+          </select>
+        </div>
+        <div id="plan-liste-zone">
+          <div style="font-size:12.5px;margin-bottom:8px">Les délais prévus sont les suivants :</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="plan-tbl"><tbody id="plan-body"></tbody></table>
+          <button class="btn btn-blue btn-sm" style="margin-top:6px" onclick="planAddRow()">+ Ligne</button>
+        </div>
+        <div id="plan-gantt-zone" style="display:none">
+          <div style="font-size:12.5px;margin-bottom:8px">Les délais prévus sont les suivants : <span style="color:#8a979c">— sections (titre + trait) et barres par mois ; cochez « rouge » pour un jalon final</span></div>
+          <div id="plan-gantt-editor"></div>
+        </div>
         <div style="font-size:12.5px;margin:16px 0 6px">Ce planning intentionnel reste sous reserve des points suivants :</div>
         <div id="plan-res-body"></div>
         <button class="btn btn-sm" style="margin-top:6px;background:#636E7E;color:#fff" onclick="planAddRes()">+ Réserve</button>
@@ -2720,7 +2733,7 @@ function goTab(name, opts) {
   if(name==='cockpit') renderCockpit();
   if(name==='cockpit2') renderCockpit2();
   if(name==='saisie'){ applySaisieModeUI(); faInitMoneyInputs(); }
-  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); const _tan=document.getElementById('ch_nom'); if(_tan) chAutoGrow(_tan); chUpdProjetCourtRow(); chToggleProjetCard(); }
+  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); const _tan=document.getElementById('ch_nom'); if(_tan) chAutoGrow(_tan); chUpdProjetCourtRow(); chToggleProjetCard(); if(typeof planGanttRender==='function'){ planGanttRender(); planModeApply(); } }
   if(name==='backup') { const cb=document.getElementById('backup_auto'); if(cb) cb.checked=backupAutoEnabled(); backupPing(); renderCreationCharts(); renderCreationList(); refreshBackupFiles(); }
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
@@ -2755,7 +2768,8 @@ function uiCaptureDraft(){
     localStorage.setItem(UI_DRAFT_KEY, JSON.stringify({v:1, ts:Date.now(), cid, fields, checks, dsets, rts,
       nonord: JSON.parse(JSON.stringify(typeof CH_NO!=='undefined'?CH_NO:[])),
       nonordTitres: JSON.parse(JSON.stringify(typeof CH_NO_TITRES!=='undefined'?CH_NO_TITRES:[])),
-      annexes: JSON.parse(JSON.stringify(typeof ANNEXES_CUSTOM!=='undefined'?ANNEXES_CUSTOM:[]))}));
+      annexes: JSON.parse(JSON.stringify(typeof ANNEXES_CUSTOM!=='undefined'?ANNEXES_CUSTOM:[])),
+      planGantt: (typeof PLAN_GANTT!=='undefined'&&PLAN_GANTT)?JSON.parse(JSON.stringify(PLAN_GANTT)):null}));
   }catch(_){}
 }
 function uiClearDraft(){ try{ localStorage.removeItem(UI_DRAFT_KEY); }catch(_){} }
@@ -2794,6 +2808,8 @@ function uiApplyDraft(draft){
     if(Array.isArray(draft.nonord)) CH_NO=JSON.parse(JSON.stringify(draft.nonord));
     if(Array.isArray(draft.nonordTitres)) CH_NO_TITRES=JSON.parse(JSON.stringify(draft.nonordTitres));
     if(Array.isArray(draft.annexes)) ANNEXES_CUSTOM=JSON.parse(JSON.stringify(draft.annexes));
+    if(draft.planGantt){ PLAN_GANTT=JSON.parse(JSON.stringify(draft.planGantt)); }
+    if(typeof planGanttRender==='function'){ planGanttRender(); planModeApply(); }
     if(typeof buildChno==='function') buildChno();
     if(typeof updChSections==='function') updChSections();
     if(typeof chToggleProjetCard==='function') chToggleProjetCard();
@@ -3823,6 +3839,8 @@ function offreGather(){
     tarifMoyen: gn('ch_tarif_moyen'),
     tarifRabais: (gn('ch_tarif_moyen')||0)*(1-(gn('ch_rabais')||0)/100),
     planDelais: planGatherDelais(), planReserves: planGatherReserves(),
+    planMode: (document.getElementById('ch_plan_mode')||{}).value||'liste',
+    planGantt: (typeof planGanttGather==='function' ? planGanttGather() : null),
     R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, projetPage, projetTexte, hideTarifs, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
     remuType: gv('ch_modecalc_type')||'relatif',   // rémunération : relatif (Forfait relatif) / forfait (Forfait) / unitaire (Unitaire)
     cfc:{ c1:cfc('ch_cfc1','ch_cfc1_ni'), c2:cfc('ch_cfc2','ch_cfc2_ni'), c4:cfc('ch_cfc4','ch_cfc4_ni'), c5:cfc('ch_cfc5','ch_cfc5_ni'), c9:cfc('ch_cfc9','ch_cfc9_ni') },
@@ -4428,11 +4446,45 @@ async function offrePDFBytes(){
   // EXPERTISE : le tarif est reporté en Annexe 1 (bloc « (2c) ») et cette page idx3 est retirée du PDF
   // (keptIdx / removePage). « Condition » est dessiné à la suite du Contexte (idx2). Rien à dessiner ici.
 
-  // ── PAGE 5 (index 4) : PLANNING D'INTENTION — redessiné uniquement si modifié ──
+  // ── PAGE 5 (index 4) : PLANNING D'INTENTION — liste (texte) OU graphique (barres par mois) ──
   const p5=P[4];
   const planUnchanged = JSON.stringify(d.planDelais)===JSON.stringify(PLAN_DELAIS_DEFAULT)
                      && JSON.stringify(d.planReserves)===JSON.stringify(PLAN_RESERVES_DEFAULT);
-  if(!planUnchanged){
+  const _ganttOn = d.planMode==='gantt' && d.planGantt && d.planGantt.m0 && (d.planGantt.rows||[]).length;
+  if(_ganttOn){
+    // ═══ PLANNING GRAPHIQUE — géométrie mesurée sur « 23PSL_Honoraires_Communes_Canton » ═══
+    // Sections : titre gras 7 pt + trait pleine largeur (0.25) 3.6 pt sous la ligne de base.
+    // Barres : libellé Light 7 pt aligné à droite (231.5), cellules d'un mois (séparateur blanc 0.4)
+    // hautes de 14.3 (ligne de base −4.6 → +9.7), bleu #00B9F2 ou rouge #E52C1A (jalon).
+    // Axe : « MM | AAAA » centré sous chaque colonne, premier et dernier mois en gras.
+    wipe(p5,128,52,512,722,0);
+    dL(p5,fR,8,cN,'Les délais prévus sont les suivants:',L,711.5);
+    const g=d.planGantt, n=Math.max(1,+g.n||1), months=planGanttMonths(g);
+    const X0=242.5, X1=509.8, pitch=(X1-X0)/n, GAPC=0.4;
+    const cBleu=rgb(0,185/255,242/255), cRge=rgb(229/255,44/255,26/255);
+    let y=711.5-25.4, prev=null;   // 1er élément à ~686.1 comme le visuel
+    g.rows.forEach(r=>{
+      if(r.t==='sec'){
+        if(prev==='bar') y-=4.3;   // respiration après des barres (écart 19 au lieu de 14.7)
+        if((r.lbl||'').trim()) dL(p5,fB,7,cN,r.lbl,130.6,y);
+        p5.drawLine({start:{x:130.4,y:y-3.6},end:{x:X1,y:y-3.6},thickness:0.25,color:cN});
+        y-=17.8; prev='sec';
+      } else {
+        if((r.lbl||'').trim()) dR(p5,fR,7,cN,r.lbl,231.5,y);
+        const a=Math.max(1,Math.min(n,+r.a||1)), b=Math.max(a,Math.min(n,+r.b||a));
+        for(let m=a;m<=b;m++) p5.drawRectangle({x:X0+(m-1)*pitch+GAPC/2, y:y-4.6, width:pitch-GAPC, height:14.3, color:r.red?cRge:cBleu});
+        y-=14.7; prev='bar';
+      }
+    });
+    const yAx=y-0.5;
+    months.forEach((ml,i)=>{ const bold=(i===0||i===n-1), f=bold?fB:fR, sz=bold?7:6.5;
+      dL(p5,f,sz,cN,ml, X0+i*pitch+pitch/2 - f.widthOfTextAtSize(ml,sz)/2, yAx); });
+    let yr=yAx-43.4;   // écart du visuel entre l'axe (520.9) et les réserves (477.5)
+    dL(p5,fR,8,cN,'Ce planning intentionnel reste sous reserve des points suivants:',L,yr);
+    yr-=16;
+    d.planReserves.forEach(t=>{ dL(p5,fR,8,cN,'- '+t,L,yr); yr-=10; });
+    checkOv('Planning d\'intention', yr, 52, 5);
+  } else if(!planUnchanged){
     wipe(p5,128,52,512,722,0);   // zone agrandie jusqu'au pied de page
     let yp=711.5;
     dL(p5,fR,8,cN,'Les délais prévus sont les suivants:',L,yp);
@@ -6029,6 +6081,69 @@ function planSetData(delais, reserves){
   if(rb){ rb.innerHTML=''; ((reserves&&reserves.length)?reserves:PLAN_RESERVES_DEFAULT).forEach(t=>rb.insertAdjacentHTML('beforeend', planResHTML(t))); }
 }
 
+/* ── Planning GRAPHIQUE (barres par mois — fidèle au visuel « 23PSL_Honoraires_Communes_Canton ») ──
+   Structure : {m0:'2024-02', n:8, rows:[{t:'sec',lbl} | {t:'bar',lbl,a,b,red}]} — a/b = mois 1..n inclus.
+   Enregistré avec chaque contrat (detail.planMode / detail.planGantt) → réutilisable partout. */
+let PLAN_GANTT = null;
+const PLAN_GANTT_EMPTY = ()=>({m0:'', n:8, rows:[]});
+function planGanttMonths(g){ const out=[]; if(!g||!g.m0) return out;
+  let [y,m]=String(g.m0).split('-').map(Number); if(!y||!m) return out;
+  for(let i=0;i<(+g.n||0);i++){ out.push(String(m).padStart(2,'0')+' | '+y); m++; if(m>12){m=1;y++;} }
+  return out; }
+function planModeApply(){
+  const mode=(document.getElementById('ch_plan_mode')||{}).value||'liste';
+  const lst=document.getElementById('plan-liste-zone'), gz=document.getElementById('plan-gantt-zone');
+  if(lst) lst.style.display = mode==='gantt'?'none':'';
+  if(gz)  gz.style.display  = mode==='gantt'?'':'none';
+}
+function planGanttRender(){
+  const box=document.getElementById('plan-gantt-editor'); if(!box) return;
+  const g=PLAN_GANTT||(PLAN_GANTT=PLAN_GANTT_EMPTY());
+  const months=planGanttMonths(g);
+  const opts=(sel)=>months.length?months.map((ml,i)=>`<option value="${i+1}"${(i+1)===+sel?' selected':''}>${ml}</option>`).join('')
+                              :'<option value="1">— choisir le premier mois —</option>';
+  let h=`<div style="display:flex;gap:14px;align-items:center;margin-bottom:8px;font-size:12.5px;flex-wrap:wrap">
+    Premier mois <input type="month" value="${g.m0||''}" onchange="PLAN_GANTT.m0=this.value;planGanttRender();refreshOffreSoon()" style="border:1px solid #ccc;border-radius:3px;padding:3px 6px;font-size:12.5px;font-family:inherit">
+    Nombre de mois <input type="number" min="1" max="24" value="${+g.n||8}" onchange="PLAN_GANTT.n=Math.max(1,Math.min(24,+this.value||8));planGanttRender();refreshOffreSoon()" style="width:56px;border:1px solid #ccc;border-radius:3px;padding:3px 6px;font-size:12.5px;text-align:right">
+    <span style="color:#8a979c">le graphique occupe toute la largeur de la page, quel que soit le nombre de mois</span>
+  </div>`;
+  h+=`<table style="width:100%;border-collapse:collapse;font-size:12.5px">`+g.rows.map((r,i)=>{
+    const mv=`<span style="display:inline-flex;flex-direction:column;line-height:9px;margin-right:2px;vertical-align:middle">
+      <span onclick="planGanttMove(${i},-1)" style="cursor:pointer;font-size:9px;color:#8a979c" title="Monter">▲</span>
+      <span onclick="planGanttMove(${i},1)" style="cursor:pointer;font-size:9px;color:#8a979c" title="Descendre">▼</span></span>`;
+    if(r.t==='sec') return `<tr><td style="width:20px;text-align:center">${mv}</td>
+      <td style="padding:3px 4px;width:62px;color:#0a4a5e;font-weight:bold">Section</td>
+      <td colspan="2" style="padding:3px 4px"><input value="${offreEsc(r.lbl||'')}" oninput="PLAN_GANTT.rows[${i}].lbl=this.value;refreshOffreSoon()" placeholder="ISOS A" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:12.5px;font-weight:bold"></td>
+      <td style="width:24px;text-align:center"><span onclick="planGanttDel(${i})" title="Supprimer" style="cursor:pointer;color:#c0392b;font-weight:bold">×</span></td></tr>`;
+    return `<tr><td style="width:20px;text-align:center">${mv}</td>
+      <td style="padding:3px 4px;width:62px;color:#555">Barre</td>
+      <td style="padding:3px 4px"><input value="${offreEsc(r.lbl||'')}" oninput="PLAN_GANTT.rows[${i}].lbl=this.value;refreshOffreSoon()" placeholder="Phase 1 — libellé facultatif" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:12.5px"></td>
+      <td style="padding:3px 4px;white-space:nowrap">de <select onchange="PLAN_GANTT.rows[${i}].a=+this.value;if(+PLAN_GANTT.rows[${i}].b<+this.value)PLAN_GANTT.rows[${i}].b=+this.value;planGanttRender();refreshOffreSoon()" style="font-size:12px;border:1px solid #ccc;border-radius:3px;padding:2px 3px;font-family:inherit">${opts(r.a)}</select>
+        à <select onchange="PLAN_GANTT.rows[${i}].b=+this.value;refreshOffreSoon()" style="font-size:12px;border:1px solid #ccc;border-radius:3px;padding:2px 3px;font-family:inherit">${opts(r.b)}</select>
+        <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;margin-left:6px" title="Barre rouge (jalon / échéance finale)"><input type="checkbox" ${r.red?'checked':''} onchange="PLAN_GANTT.rows[${i}].red=this.checked;refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer;accent-color:#E52C1A"> <span style="color:#E52C1A">rouge</span></label></td>
+      <td style="width:24px;text-align:center"><span onclick="planGanttDel(${i})" title="Supprimer" style="cursor:pointer;color:#c0392b;font-weight:bold">×</span></td></tr>`;
+  }).join('')+`</table>
+  <button class="btn btn-sm" style="margin-top:6px;background:#0a4a5e;color:#fff" onclick="planGanttAdd('sec')" title="Titre de section : en gras, souligné d'un trait sur toute la largeur (ex. ISOS A)">+ Section</button>
+  <button class="btn btn-blue btn-sm" style="margin-top:6px" onclick="planGanttAdd('bar')" title="Ligne avec barre : libellé (facultatif) + barre du mois « de » au mois « à »">+ Barre</button>`;
+  box.innerHTML=h;
+}
+function planGanttAdd(t){ const g=PLAN_GANTT||(PLAN_GANTT=PLAN_GANTT_EMPTY());
+  if(!g.m0){ const d0=new Date(); g.m0=d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0'); }
+  g.rows.push(t==='sec'?{t:'sec',lbl:''}:{t:'bar',lbl:'',a:1,b:1,red:false});
+  planGanttRender(); refreshOffreSoon(); }
+function planGanttDel(i){ if(PLAN_GANTT){ PLAN_GANTT.rows.splice(i,1); planGanttRender(); refreshOffreSoon(); } }
+function planGanttMove(i,dd){ const r=(PLAN_GANTT||{}).rows||[]; const j=i+dd; if(j<0||j>=r.length) return;
+  const t=r[i]; r[i]=r[j]; r[j]=t; planGanttRender(); refreshOffreSoon(); }
+function planGanttGather(){ const g=PLAN_GANTT; if(!g) return null;
+  return {m0:g.m0||'', n:+g.n||8, rows:(g.rows||[]).map(r=> r.t==='sec'
+    ? {t:'sec', lbl:(r.lbl||'').trim()}
+    : {t:'bar', lbl:(r.lbl||'').trim(), a:+r.a||1, b:+r.b||1, red:!!r.red})}; }
+function planSetGantt(mode, gantt){
+  PLAN_GANTT = gantt ? JSON.parse(JSON.stringify(gantt)) : PLAN_GANTT_EMPTY();
+  const ms=document.getElementById('ch_plan_mode'); if(ms) ms.value=(mode==='gantt')?'gantt':'liste';
+  planGanttRender(); planModeApply();
+}
+
 /* Saisie dans les Conditions préliminaires. En PRESTATIONS ORDINAIRES : interdire le vide TOTAL → dès que le
    champ devient vide, on rétablit IMMÉDIATEMENT le texte de base (le contenu reste modifiable ligne par ligne).
    Pour les autres types (expertise/non-ord/faisa), l'effacement complet est autorisé. */
@@ -6175,6 +6290,8 @@ function loadContratIntoCalcHono(id, verData) {
     if(typeof planSetData==='function')
       planSetData((c.detail.planDelais!==undefined)?c.detail.planDelais:c.planDelais,
                   (c.detail.planReserves!==undefined)?c.detail.planReserves:c.planReserves);
+    if(typeof planSetGantt==='function')
+      planSetGantt(c.detail.planMode||c.planMode||'liste', c.detail.planGantt||c.planGantt||null);
     chUpdateSituation();
     chSyncModecalcDefault();   // met à jour le texte « Condition »/« Mode de calcul » vers le défaut courant si le stock est un ancien défaut connu
     chToggleLock('conditions', true); chToggleLock('modecalc', true);   // resynchronise « Modifiable » + dépliage sur l'état édité du contrat CHARGÉ (init : ne touche pas au texte)
@@ -6185,6 +6302,7 @@ function loadContratIntoCalcHono(id, verData) {
   // on les reporte tels quels ; le détail CFC / autres mandataires reste à zéro (éditable).
   // Planning d'intention : lu au niveau du contrat (c.planDelais/planReserves) si présent, sinon défauts.
   if(typeof planSetData==='function') planSetData(c.planDelais, c.planReserves);
+  if(typeof planSetGantt==='function') planSetGantt(c.planMode||'liste', c.planGantt||null);
   const ceApp = document.getElementById('ce_apply'); if(ceApp) ceApp.checked = false;
   { const ct=document.getElementById('ce_total'); if(ct) delete ct.dataset.manual; }
   resetEstimCoutFields();
@@ -6379,6 +6497,8 @@ function chCaptureDetail(){
   return {
     _v:1, inputs, checks, dsets,
     planDelais: planGatherDelais(), planReserves: planGatherReserves(),   // planning d'intention (délais + réserves)
+    planMode: (document.getElementById('ch_plan_mode')||{}).value||'liste',   // « liste » ou « gantt » (graphique)
+    planGantt: (typeof planGanttGather==='function' ? planGanttGather() : null),   // structure du planning graphique
     forfaitBase: (document.querySelector('input[name="ch_forfait_base"]:checked')||{}).value || 'ttc',
     fraisPersoBase: (document.querySelector('input[name="ch_frais_perso_base"]:checked')||{}).value || 'ttc',
     ce_c2: (typeof CE_C2!=='undefined') ? JSON.parse(JSON.stringify(CE_C2)) : [],
@@ -7058,6 +7178,7 @@ function newContratCalc(){
   chSyncVersionUI();
   _chAggHtManual=null; ANNEXES_CUSTOM=[]; chRenderAnnexes(); chOuvrages=[]; chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap();   // nouveau contrat = une seule partie d'ouvrage
   if(typeof planSetData==='function') planSetData();   // planning d'intention remis aux valeurs de base (pas d'héritage du contrat précédent)
+  if(typeof planSetGantt==='function') planSetGantt('liste', null);   // mode liste + graphique vide
   sv('ch_tva', lastTva()); updCalcHono();              // nouveau contrat : TVA de base = dernier taux modifié manuellement
   goTab('calchono');
   setTimeout(refreshOffrePreview, 80);

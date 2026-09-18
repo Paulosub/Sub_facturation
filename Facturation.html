@@ -1226,6 +1226,20 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
       </div>
     </div>
 
+    <!-- ═══ Feuille — PROJET (page optionnelle du PDF, insérée juste après la page Contexte) ═══ -->
+    <div class="card" id="card-projet">
+      <div class="card-hd">Projet<label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer" title="Coché : une page « Projet » est ajoutée au PDF, juste après la page Contexte."><input type="checkbox" id="ch_projet_page_on" onchange="chToggleProjetCard();refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Activer cette page</label></div>
+      <div class="card-bd" id="ch_projet_page_body" style="display:none">
+        <div class="rt-toolbar">
+          <button type="button" onmousedown="return rtCmd(event,'bold')" title="Gras (Akkurat LL TT Regular)"><b>G</b></button>
+          <button type="button" onmousedown="return rtCmd(event,'italic')" title="Italique (Akkurat LL TT Light Italic)"><i>I</i></button>
+          <button type="button" onmousedown="return rtCmd(event,'underline')" title="Souligné"><u>S</u></button>
+          <button type="button" onmousedown="return rtCmd(event,'insertUnorderedList')" title="Puces">•&nbsp;Puces</button>
+        </div>
+        <div id="ch_note_projet" class="rt-edit" contenteditable="true" data-ph="Décrivez le projet…" oninput="refreshOffreSoon()"></div>
+      </div>
+    </div>
+
     <!-- ═══ Feuille — 2 MODE DE CALCUL ═══ -->
     <div class="card" id="card-modecalc">
       <div class="card-hd">2 — Mode de calcul<span style="display:flex;align-items:center;gap:12px"><label class="lockchk" id="ch_modecalc_type_lbl" style="gap:6px">Contrat <select id="ch_modecalc_type" onchange="chModecalcType()" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="forfait">Forfaitaire</option><option value="unitaire">Prix unitaire</option></select></label><label class="lockchk"><input type="checkbox" id="ch_lock_modecalc" onchange="chToggleLock('modecalc')"> Modifiable</label></span></div>
@@ -2697,7 +2711,7 @@ function goTab(name, opts) {
   if(name==='cockpit') renderCockpit();
   if(name==='cockpit2') renderCockpit2();
   if(name==='saisie'){ applySaisieModeUI(); faInitMoneyInputs(); }
-  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); chUpdProjetCourtRow(); }
+  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); chUpdProjetCourtRow(); chToggleProjetCard(); }
   if(name==='backup') { const cb=document.getElementById('backup_auto'); if(cb) cb.checked=backupAutoEnabled(); backupPing(); renderCreationCharts(); renderCreationList(); refreshBackupFiles(); }
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
@@ -2773,6 +2787,7 @@ function uiApplyDraft(draft){
     if(Array.isArray(draft.annexes)) ANNEXES_CUSTOM=JSON.parse(JSON.stringify(draft.annexes));
     if(typeof buildChno==='function') buildChno();
     if(typeof updChSections==='function') updChSections();
+    if(typeof chToggleProjetCard==='function') chToggleProjetCard();
     if(typeof chRenderAnnexes==='function') chRenderAnnexes();
     updCalcHono();
     if(typeof refreshOffrePreview==='function') setTimeout(refreshOffrePreview,150);
@@ -3710,6 +3725,10 @@ function offreGather(){
   // ayant un libellé ou un montant ; on garde libellé + commentaire pour la feuille de détail.
   const chnoDetail = !!document.getElementById('ch_chno_detail')?.checked;
   const chnoTotalOnly = !!document.getElementById('ch_chno_totalonly')?.checked;   // sans titre : montants masqués ligne par ligne, seul le TOTAL s'affiche
+  // Page « Projet » (optionnelle) : activée par sa case ET non vide → page ajoutée après le Contexte.
+  const projetTexte = rtGetHTML('ch_note_projet');
+  const projetPage = !!document.getElementById('ch_projet_page_on')?.checked
+                     && !!(projetTexte||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim();
   const chnoLines = (typeof CH_NO!=='undefined'?CH_NO:[]).filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
                      .map(l=>({lbl:(l.lbl||'').trim(), com:(l.com||'').trim(), amt:l.amt||0, option:!!l.option,
                                heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||''), hideDetail:!!l.hideDetail,
@@ -3756,7 +3775,7 @@ function offreGather(){
     tarifMoyen: gn('ch_tarif_moyen'),
     tarifRabais: (gn('ch_tarif_moyen')||0)*(1-(gn('ch_rabais')||0)/100),
     planDelais: planGatherDelais(), planReserves: planGatherReserves(),
-    R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
+    R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, projetPage, projetTexte, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
     cfc:{ c1:cfc('ch_cfc1','ch_cfc1_ni'), c2:cfc('ch_cfc2','ch_cfc2_ni'), c4:cfc('ch_cfc4','ch_cfc4_ni'), c5:cfc('ch_cfc5','ch_cfc5_ni'), c9:cfc('ch_cfc9','ch_cfc9_ni') },
     tauxMoyen: R.h, tauxRabais: R.h*(1-R.rabaisPct/100),
     forfaitTTC: R.forfaitOn ? R.forfaitTTC : R.ttc, fraisMnt: R.forfaitFraisMnt, fraisPct: R.forfaitFraisPct, fraisHT: !!R.forfaitFraisHT, fraisMode: R.fraisMode||'pct'
@@ -4896,7 +4915,25 @@ async function offrePDFBytes(){
     }
     // FEUILLE SUPPLÉMENTAIRE : détail (commentaires) des prestations non ordinaires — si la case est cochée.
     // Ajoutée AVANT la pagination pour être numérotée ; basée sur une copie de la page « contexte » (en-tête + pied).
-    let _supIns = 0, _supAt = 3;   // décalage d'index + position d'insertion de la feuille supplémentaire
+    // ── Insertions de pages (avant pagination) : chaque entrée {at: index GABARIT, n: pages insérées}.
+    //    _shift(i) convertit un index du gabarit en index réel après toutes les insertions.
+    const _ins = [];
+    const _shift = i => i + _ins.reduce((s,x)=> s + (i>=x.at ? x.n : 0), 0);
+    // ── PAGE « PROJET » (optionnelle) : copie de la page Contexte, insérée juste APRÈS elle (idx 3),
+    //    en-tête/pied conservés, titre de chapitre « PROJET » + texte enrichi (gras/italique/souligné/puces).
+    if(d.projetPage){
+      const [ppj] = await doc.copyPages(doc, [2]);
+      doc.insertPage(3, ppj);
+      _ins.push({at:3, n:1});
+      P = doc.getPages();
+      wipe(ppj,78,52,516,756,0);
+      const hyP=745.2;
+      dL(ppj,fB,8,cN,'PROJET',130.43,hyP);
+      ppj.drawLine({start:{x:121.9,y:hyP-4.17},end:{x:121.9,y:hyP+9.83},thickness:0.5,color:cN});
+      ppj.drawLine({start:{x:85,y:hyP-4.37},end:{x:510.2,y:hyP-4.37},thickness:0.5,color:cN});
+      const yFinP = drawRich(ppj, richParse(d.projetTexte), 712.1, {});
+      checkOv('Projet', yFinP, 52, 'Projet');
+    }
     if(d.chnoDetail && Array.isArray(d.chnoLines) && d.chnoLines.length){
       // ── Groupes : chaque TITRE du formulaire = une PAGE de détail (lignes « sans titre » → page sans titre).
       //    Sans aucun titre défini → une seule page, mise en page d'origine (zéro régression, expertises incluses).
@@ -4908,10 +4945,11 @@ async function offrePDFBytes(){
         const sans = d.chnoLines.filter(l=>!l.option && (l.titreIdx==null || !_titres[l.titreIdx]));
         if(sans.length) _grps.push({t:null, lines:sans}); }
       if(!_grps.length) _grps.push({t:null, lines:[]});
-      _supAt = d.isExpertise ? 3 : 5;                   // expertise : après « Condition » · autres : après « Planning d'intention »
-      _supIns = _grps.length;
+      const _supAt = d.isExpertise ? 3 : 5;             // index GABARIT : après « Condition » (expertise) ou « Planning d'intention »
+      const _at0 = _shift(_supAt);                      // position réelle (tient compte de la page « Projet »)
       const _sheets = [];
-      for(let g=0; g<_grps.length; g++){ const [pg] = await doc.copyPages(doc, [2]); doc.insertPage(_supAt+g, pg); _sheets.push(pg); }
+      for(let g=0; g<_grps.length; g++){ const [pg] = await doc.copyPages(doc, [2]); doc.insertPage(_at0+g, pg); _sheets.push(pg); }
+      _ins.push({at:_supAt, n:_grps.length});
       P = doc.getPages();
       const sp = _sheets[0];
       wipe(sp,78,52,516,756,0);                         // efface UNIQUEMENT le corps : l'EN-TÊTE courant (OFFRE RELATIVE… + réf + date) et le PIED (coordonnées + n° de page) sont CONSERVÉS → identiques aux autres pages
@@ -5104,7 +5142,7 @@ async function offrePDFBytes(){
     const _rmSia = (!d.hasOrd && NP<=1);
     const _rmPlan = !!d.hidePlanning;
     const _rmCond = !!d.isExpertise;   // expertise : « Condition » est sur la page Contexte → page idx3 (ex mode de calcul) retirée
-    const SH = (i)=> (i>=_supAt ? i+_supIns : i);   // index d'origine → index après insertion de la feuille supplémentaire
+    const SH = (i)=> _shift(i);   // index d'origine (gabarit) → index réel après TOUTES les insertions (Projet + feuilles de détail)
     const keptIdx=[]; for(let i=0;i<P.length;i++){
       if(i===SH(tabIdx(1))&&!keepA2)continue;
       if(i===SH(IA3)&&!keepA3)continue;
@@ -5201,12 +5239,21 @@ function printContratOffre(){
   } else alert("Enregistrez d'abord le contrat pour imprimer l'offre.");
 }
 
+/* Carte « Projet » : le corps (zone de texte enrichie) n'est visible que si la page est activée. */
+function chToggleProjetCard(){
+  const on = !!document.getElementById('ch_projet_page_on')?.checked;
+  const body = document.getElementById('ch_projet_page_body');
+  if(body) body.style.display = on ? '' : 'none';
+  if(typeof chRenumber==='function') chRenumber();   // numérotée seulement quand la page est activée
+}
+
 /* Renumérote les chapitres VISIBLES du Calcul honoraires en 1, 2, 3… (sans trou) */
 function chRenumber() {
   const chapters = [
     {id:'card-formulaire',   base:'Formulaire'},
     {id:'card-conditions',   base:'Conditions préliminaires'},
     {id:'card-notes',        base:'Contexte'},
+    {id:'card-projet',       base:'Projet'},
     {id:'card-modecalc',     base:'Mode de calcul'},
     {id:'card-tarifs',       base:'Tarifs horaire'},
     {id:'card-planning',     base:"Planning d'intention"},
@@ -5228,7 +5275,10 @@ function chRenumber() {
     let base = ch.base;
     if(expOnly && ch.id === 'card-modecalc') base = 'Condition';
     else if(expOnly && ch.id === 'card-chno') base = 'Honoraires expertise';   // expertise : « Honoraires non ordinaires » → « Honoraires expertise »
-    const label = (ch.id === 'card-formulaire') ? base : (++n) + ' — ' + base;
+    let label;
+    if(ch.id === 'card-formulaire') label = base;
+    else if(ch.id === 'card-projet' && !document.getElementById('ch_projet_page_on')?.checked) label = base;   // désactivée : sans numéro (ne décale pas les chapitres)
+    else label = (++n) + ' — ' + base;
     let tn = null;
     for(const node of hd.childNodes) { if(node.nodeType === 3 && node.nodeValue.trim()) { tn = node; break; } }
     if(tn) tn.nodeValue = label;
@@ -5867,6 +5917,7 @@ function loadContratIntoCalcHono(id, verData) {
   // Description du projet (chapitre 1). Si un texte a été enregistré, on le restaure et on le
   // marque « manuel » pour ne pas l'écraser par la génération auto ; sinon on laisse l'auto-génération.
   rtSetValue('ch_note_situation', c.note_situation||''); rtSetValue('ch_note_objectif', c.note_objectif||''); rtSetValue('ch_note_approche', c.note_approche||'');
+  rtSetValue('ch_note_projet', c.note_projet||''); { const e=document.getElementById('ch_projet_page_on'); if(e) e.checked = !!c.projetPageOn; } chToggleProjetCard();
   const _taSit = document.getElementById('ch_note_situation');
   if(_taSit) { if(c.note_situation) _taSit.dataset.manual='1'; else delete _taSit.dataset.manual; }
 
@@ -5990,6 +6041,7 @@ function resetCalcHono(clearTarget) {
   sv('ch_formule','Madame, Monsieur,'); sv('ch_att',''); chToggleAtt(); sv('ch_nom',''); sv('ch_adr',''); sv('ch_loc','');
   sv('ch_padr',''); sv('ch_ploc',''); PARCELLES=['']; ECAS=['']; chRenderParcEca();
   rtSetValue('ch_note_situation',''); rtSetValue('ch_note_objectif',''); rtSetValue('ch_note_approche','');
+  rtSetValue('ch_note_projet',''); { const e=document.getElementById('ch_projet_page_on'); if(e) e.checked=false; } chToggleProjetCard();
   const _taSitR = document.getElementById('ch_note_situation'); if(_taSitR) delete _taSitR.dataset.manual;
   const ceApp = document.getElementById('ce_apply'); if(ceApp) ceApp.checked = false;
   { const ct=document.getElementById('ce_total'); if(ct) delete ct.dataset.manual; }
@@ -6103,7 +6155,7 @@ const CH_DETAIL_INPUTS = ['ch_cfc1','ch_cfc2','ch_cfc4','ch_cfc5','ch_cfc9','ch_
   'ce_terrain_surf','ce_terrain_prix','ce_terrain_notaire','ce_terrain_arrondi',
   'ce_prep1','ce_prep2','ce_prep3_qty','ce_prep3_unit','ce_prep3_prix','ce_prep4','ce_prep_arrondi',
   'ce_divers_pct','ce_ext_surf','ce_ext_prix','ce_fs_pct','ce_total','ch_modecalc_type'];
-const CH_DETAIL_CHECKS = ['ch_cfc1_ni','ch_cfc2_ni','ch_cfc4_ni','ch_cfc5_ni','ch_cfc9_ni','ch_autres_global','ce_apply','ch_forfait_on','ch_frais_offerts','ch_frais_depl_off','ch_frais_repro_off','ch_frais_sel_pct','ch_frais_sel_perso','ch_frais_sel_depl','ch_frais_sel_repro','ch_hide_estim','ch_hide_planning','ch_show_planning','ch_hide_rabais','ch_hide_arrondi','ch_chno_detail','ch_chno_totalonly','ch_chk_ord','ch_chk_no','ch_chk_expertise','ch_chk_faisa'];
+const CH_DETAIL_CHECKS = ['ch_cfc1_ni','ch_cfc2_ni','ch_cfc4_ni','ch_cfc5_ni','ch_cfc9_ni','ch_autres_global','ce_apply','ch_forfait_on','ch_frais_offerts','ch_frais_depl_off','ch_frais_repro_off','ch_frais_sel_pct','ch_frais_sel_perso','ch_frais_sel_depl','ch_frais_sel_repro','ch_hide_estim','ch_hide_planning','ch_show_planning','ch_hide_rabais','ch_hide_arrondi','ch_chno_detail','ch_chno_totalonly','ch_projet_page_on','ch_chk_ord','ch_chk_no','ch_chk_expertise','ch_chk_faisa'];
 const CH_DETAIL_DS = ['ch_cfc2','ch_cfc5','ch_cfc9','ch_cfc2_ded','ch_cfc5_ded','ch_det','ch_res_ht','ce_total','ch_ing','ch_cvse','ch_geom'];
 
 function chCaptureDetail(){
@@ -6438,6 +6490,7 @@ function applyCalcHono(asNewVersion) {
     formule: gv('ch_formule'), att: gv('ch_att'), nom: gv('ch_nom'), adr: gv('ch_adr'), loc: gv('ch_loc'),
     padr: gv('ch_padr'), ploc: gv('ch_ploc'), parc: chGetParcelles().join(', '), parcelles: chGetParcelles(), ecas: chGetEcas(),
     note_situation: rtGetHTML('ch_note_situation'), note_objectif: rtGetHTML('ch_note_objectif'), note_approche: rtGetHTML('ch_note_approche'),
+    note_projet: rtGetHTML('ch_note_projet'), projetPageOn: !!document.getElementById('ch_projet_page_on')?.checked,
     dg: dgAll, det: detAll, hht: hhtFinal, httc: httcFinal, frais: fraisFinal,
     forfait: !!r.forfaitOn, forfaitBase: r.forfaitBaseHT ? 'ht' : 'ttc',
     rabais: r.rabaisPct, tva: r.tva, phases,

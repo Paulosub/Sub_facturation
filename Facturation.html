@@ -4574,9 +4574,27 @@ async function offrePDFBytes(){
       if(rowY[rowY.length-1] < 555) overflows.push('Récap expertise — liste trop longue (chevauchement du mandat forfaitaire)');
     } else {
     // Prestations : non ordinaires (ligne 713.2 du gabarit) + ordinaires (dans l'interligne à 699).
+    // TITRES définis (mono) : chaque titre est listé sous « Prestations non ordinaires » avec son sous-total,
+    // et la cascade descend d'autant. « Prestations ordinaires » n'apparaît QUE si la case est cochée.
+    let _shRec = 0;                                                  // décalage de la cascade (mono avec titres)
     if(d.chno>0){
       wV(713.2); amt(713.2,fc(d.chno),fReg);                         // libellé « Prestations non ordinaires » conservé
-      dL(p8,fReg,8,cN,'Prestations ordinaires',LX,699-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,699-AMDY); amt(699,fc(vH),fReg);
+      const _ts = Array.isArray(d.chnoTitres)?d.chnoTitres:[], _tRows=[];
+      if(NP<=1){
+        _ts.forEach((t,ti)=>{ const lbl=String((t&&t.titre)||'').trim(); if(!lbl) return;
+          const s=(d.chnoLines||[]).reduce((a,l)=> a+((!l.option && l.titreIdx===ti)?(l.amt||0):0),0);
+          _tRows.push({lbl:lbl, s:s}); });
+        if(_tRows.length){                                           // lignes non rattachées à un titre → « Autres prestations »
+          const s=(d.chnoLines||[]).reduce((a,l)=> a+((!l.option && (l.titreIdx==null||!_ts[l.titreIdx]))?(l.amt||0):0),0);
+          if(s>0.005) _tRows.push({lbl:'Autres prestations', s:s});
+        }
+      }
+      const _nR = _tRows.length + ((d.hasOrd || NP>1)?1:0);          // lignes sous « Prestations non ordinaires »
+      _shRec = (NP<=1) ? Math.max(0,_nR-1)*14.2 : 0;                 // le gabarit ne prévoit qu'UNE ligne (à 699)
+      if(_shRec>0) wipe(p8,128,606,512,709,0);                       // efface la cascade pré-imprimée AVANT de lister
+      let yy=699;
+      _tRows.forEach(r=>{ dL(p8,fR,8,cN,r.lbl,LX,yy-AMDY); dL(p8,fR,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fR,8,cN,fc(r.s),AX,yy-AMDY); yy-=14.2; });
+      if(d.hasOrd || NP>1){ dL(p8,fReg,8,cN,'Prestations ordinaires',LX,yy-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fReg,8,cN,fc(vH),AX,yy-AMDY); }
     } else {
       wipe(p8,133,712.2,322,724,0);                                  // renomme le libellé en « ordinaires »
       dL(p8,fReg,8,cN,'Prestations ordinaires',LX,713.2-AMDY);
@@ -4587,6 +4605,20 @@ async function offrePDFBytes(){
     // sous-total), « + » quand il l'augmente (montant arrêté AU-DESSUS du sous-total). d.arrondi = sousTot − htFinal.
     const arrTxt = v => (Math.abs(v)<0.005 ? fc(0) : (v>0?'- ':'+ ')+fc(Math.abs(v)));
     if(NP<=1){
+      if(_shRec>0){
+      // MONO avec TITRES listés : la cascade pré-imprimée a été effacée → redessinée PLUS BAS, libellés inclus.
+      const Lx=134.6, FRx=423.8, Vx=505.7, SHm=_shRec;
+      const crow=(y,label,val,vf,pctTxt)=>{ dL(p8,fR,8,cN,label,Lx,y); if(pctTxt) dR(p8,fR,8,cN,pctTxt,415,y); dL(p8,fR,8,cN,'Fr.',FRx,y); dR(p8,vf||fR,8,cN,val,Vx,y); };
+      crow(684.9-SHm,'Rabais spécial Substances','- '+fc(vRab),fR,R8.rabaisPct.toFixed(2)+'%');
+      crow(670.7-SHm,'Sous-total intermédiaire',fc(vSous),fR);
+      crow(656.5-SHm,'Arrondi',arrTxt(vArr),fR);
+      crow(642.3-SHm,'Total des Honoraires HT',fc(vHtF),fReg);
+      p8.drawLine({start:{x:Lx,y:642.3-SHm-4},end:{x:Vx+3,y:642.3-SHm-4},thickness:0.4,color:cN});
+      crow(628.2-SHm,'TVA',fc(vTva),fR,R8.tva.toFixed(2)+'%');
+      crow(614.0-SHm,'Total des honoraires TTC',fc(vTtc),fReg);
+      p8.drawLine({start:{x:Lx,y:614.0-SHm-4},end:{x:Vx+3,y:614.0-SHm-4},thickness:0.4,color:cN});
+      if((614.0-SHm) < 555) overflows.push('Récap — liste des titres trop longue, la cascade chevauche le mandat forfaitaire');
+      } else {
       // MONO : positions du gabarit (libellés/traits pré-imprimés conservés), on met à jour % et montants.
       wP(684.9); pct(684.9,R8.rabaisPct.toFixed(2)+'% Fr.',fReg); wV(684.9); amt(684.9,'- '+fc(vRab),fR);
       wV(670.7); amt(670.7,fc(vSous),fR);
@@ -4594,6 +4626,7 @@ async function offrePDFBytes(){
       wV(642.3); amt(642.3,fc(vHtF),fReg);
       wP(628.2); pct(628.2,R8.tva.toFixed(2)+'% Fr.',fR); wV(628.2); amt(628.2,fc(vTva),fR);
       wV(614.0); amt(614.0,fc(vTtc),fR);
+      }
     } else {
       // MULTI : détail PAR PARTIE d'ouvrage SOUS « Prestations ordinaires », puis cascade Rabais→TTC DÉCALÉE
       // vers le bas (l'espace « Prestations ordinaires » ↔ « Rabais » est préservé). Chaque partie = n° de
@@ -5140,12 +5173,11 @@ async function offrePDFBytes(){
             return {lastY:lY, totHT:tot};
           };
           if(grp.lines.length){
-            // Les prestations SUIVENT le sous-titre (haut de page, interligne 1.5) ;
-            // seul le TOTAL est calé au bas de la page (y = 100), sauf si le contenu descend plus bas.
+            // Le TOTAL suit directement la liste des prestations (plus de calage au bas de la page).
             const res = renderLines(false, syCap);
-            totalRow(pg, Math.min(res.lastY, 131.3), res.totHT);
+            totalRow(pg, res.lastY, res.totHT);
           } else {
-            totalRow(pg, Math.min(lastYHdr, 131.3), 0);
+            totalRow(pg, lastYHdr, 0);
           }
         });
       }

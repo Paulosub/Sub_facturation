@@ -5130,7 +5130,7 @@ async function offrePDFBytes(){
           const drawJust = drawJustOn(pg);
           let ty0 = 711.2;
           if(grp.t){
-            const T = String(grp.t.titre||'').trim().toUpperCase();
+            const T = String(grp.t.titre||'').trim();   // titre tel que saisi (plus de passage en majuscules)
             if(T){ dL(pg,fB,8,cN,T,130.4,ty0);
               pg.drawLine({start:{x:130.4,y:ty0-2.8},end:{x:130.4+fB.widthOfTextAtSize(T,8),y:ty0-2.8},thickness:0.4,color:cN});
               ty0 -= 31; }

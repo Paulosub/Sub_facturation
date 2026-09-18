@@ -3568,7 +3568,8 @@ document.addEventListener('paste', function(e){
   const ce = (e.target && e.target.closest) ? e.target.closest('[contenteditable="true"]') : null;
   if(!ce) return;   // les <input>/<textarea> sont déjà en texte brut
   e.preventDefault();
-  const text = ((e.clipboardData || window.clipboardData)?.getData('text/plain')) || '';
+  let text = ((e.clipboardData || window.clipboardData)?.getData('text/plain')) || '';
+  if(typeof _pasteAllCaps==='function' && _pasteAllCaps(text)) text = text.toLowerCase();   // collé (quasi) tout en MAJUSCULES → minuscules
   try{ document.execCommand('insertText', false, text); }
   catch(_){ const sel=window.getSelection(); if(sel && sel.rangeCount){ const r=sel.getRangeAt(0); r.deleteContents(); r.insertNode(document.createTextNode(text)); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); } }
   if(ce.classList && ce.classList.contains('rt-edit')){ ce.dataset.manual='1'; ce.dataset.edited='1'; }
@@ -3585,6 +3586,28 @@ document.addEventListener('keydown', function(e){
     e.preventDefault();
     document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
   }
+}, true);
+
+/* COLLER en MAJUSCULES → minuscules. Un texte collé (quasi) tout en majuscules dans le formulaire est
+   converti en minuscules (le PDF remet lui-même la majuscule initiale). Les zones enrichies passent par
+   le gestionnaire de collage « texte brut » ci-dessus (qui applique la même conversion) ; ici, on traite
+   les <input> texte et <textarea>. Les champs volontairement en majuscules (ex. AFFAIRE,
+   text-transform:uppercase) sont exclus, et un texte normalement casé est collé tel quel. */
+const _pasteAllCaps = (txt)=>{ const letters=(String(txt||'').match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g)||[]);
+  const ups=(String(txt||'').match(/[A-ZÀ-ÖØ-Þ]/g)||[]);
+  return letters.length>=3 && ups.length/letters.length>0.7; };
+document.addEventListener('paste', function(e){
+  const t = e.target && e.target.closest ? e.target.closest('input[type="text"],input:not([type]),textarea') : null;
+  if(!t) return;
+  if(t.style && String(t.style.textTransform).toLowerCase()==='uppercase') return;   // champ volontairement en majuscules
+  const cd = e.clipboardData || window.clipboardData; if(!cd) return;
+  const txt = cd.getData('text/plain'); if(!txt || !_pasteAllCaps(txt)) return;
+  e.preventDefault();
+  const low = txt.toLowerCase();
+  const s=(t.selectionStart!=null?t.selectionStart:t.value.length), en=(t.selectionEnd!=null?t.selectionEnd:s);
+  t.value = t.value.slice(0,s) + low + t.value.slice(en);
+  t.selectionStart = t.selectionEnd = s + low.length;
+  t.dispatchEvent(new Event('input',{bubbles:true}));
 }, true);
 
 function rtCmd(ev, cmd){
@@ -4166,6 +4189,9 @@ async function offrePDFBytes(){
   // remplace un montant aligné à droite (xR = bord droit)
   const setR=(pg,bb,t,f,sz,c)=>{ wipe(pg,bb[0]-2,bb[1],bb[2]+1,bb[3],1.2); dR(pg,f||fR,sz||8,c||cN,t,bb[2],bb[1]+1.5); };
   const wrap=(t,f,sz,maxW)=>{ const words=(t||'').split(/\s+/); const lines=[]; let cur=''; words.forEach(w=>{ const test=cur?cur+' '+w:w; if(f.widthOfTextAtSize(test,sz)>maxW && cur){ lines.push(cur); cur=w; } else cur=test; }); if(cur) lines.push(cur); return lines; };
+  // Majuscule INITIALE : met en majuscule la 1re lettre d'un texte libre (après chiffres/ponctuation).
+  // Un texte déjà en majuscules n'est pas modifié (la mise en forme existante est conservée).
+  const cap1=(s)=>{ s=String(s==null?'':s); const m=s.match(/[a-zA-ZÀ-ÖØ-öø-ÿ]/); if(!m) return s; const i=m.index; return s.slice(0,i)+s[i].toUpperCase()+s.slice(i+1); };
 
   // en-tête courant (pages 2..11 = index 1..10)
   const offreTitre = d.isExpertise ? "OFFRE RELATIVE AUX PRESTATIONS D'EXPERTISE" : "OFFRE RELATIVE AUX PRESTATIONS D'ARCHITECTE";
@@ -4236,7 +4262,7 @@ async function offrePDFBytes(){
     String(text||'').split(/\n\s*\n/).forEach((para,pi,arr)=>{
       const under = opt.underlineColon && para.trim().endsWith(':');
       para.split(/\n/).forEach(line=>{
-        const t=line.trim(); if(!t){ y-=lh; return; }
+        const t=cap1(line.trim()); if(!t){ y-=lh; return; }
         wrap(t,fR,sz,TW).forEach(wl=>{
           dL(pg,fR,sz,cN,wl,L,y);
           if(under){ const w=fR.widthOfTextAtSize(wl,sz); pg.drawLine({start:{x:L,y:y-2},end:{x:L+w,y:y-2},thickness:0.4,color:cN}); }
@@ -4280,6 +4306,9 @@ async function offrePDFBytes(){
     blk(box);
     lines.forEach(l=>{ if(l.type==='text' && !l.runs.some(r=>r.t.trim())) l.type='blank'; });
     while(lines.length && lines[lines.length-1].type==='blank') lines.pop();
+    // Majuscule initiale de chaque ligne / puce (uniquement si la 1re lettre est en minuscule).
+    lines.forEach(l=>{ if(l.type==='blank') return;
+      for(const r of l.runs){ if(/[a-zA-ZÀ-ÖØ-öø-ÿ]/.test(r.t)){ r.t=cap1(r.t); break; } } });
     return lines;
   };
   // gras → Regular · italique → Light Italic · sinon → Light
@@ -4572,7 +4601,7 @@ async function offrePDFBytes(){
         yy -= LH;
       } else {
         (d.chnoLines||[]).forEach(l=>{
-          dL(p8,fR,8,cN,l.lbl||'—',LX,yy);
+          dL(p8,fR,8,cN,cap1(l.lbl||'—'),LX,yy);
           if(!l.option && !l.hideDetail){                // « Masquer heures/tarif » : seul le montant apparaît
             if(l.heures){ const _u=l.hUnit||'h'; dR(p8,fR,8,cN,(l.heures%1===0?String(l.heures):l.heures.toFixed(1))+(_u==='—'?'':' '+_u),HXc,yy); }
             if(l.prix)   dR(p8,fR,8,cN,fc(l.prix),PXc,yy);
@@ -4620,7 +4649,7 @@ async function offrePDFBytes(){
       if(NP<=1){
         _ts.forEach((t,ti)=>{ const lbl=String((t&&t.titre)||'').trim(); if(!lbl) return;
           const s=(d.chnoLines||[]).reduce((a,l)=> a+((!l.option && l.titreIdx===ti)?(l.amt||0):0),0);
-          _tRows.push({lbl:lbl, s:s}); });
+          _tRows.push({lbl:cap1(lbl), s:s}); });
         if(_tRows.length){                                           // lignes non rattachées à un titre → « Autres prestations »
           const s=(d.chnoLines||[]).reduce((a,l)=> a+((!l.option && (l.titreIdx==null||!_ts[l.titreIdx]))?(l.amt||0):0),0);
           if(s>0.005) _tRows.push({lbl:'Autres prestations', s:s});
@@ -5139,7 +5168,7 @@ async function offrePDFBytes(){
         d.chnoLines.forEach(ln=>{
           if(ln.option) return;                          // les options ne font pas partie du détail
           if(sy<90) return;                              // une seule page
-          const lines = wrapW(ln.lbl, DW);
+          const lines = wrapW(cap1(ln.lbl), DW);
           dL(sp,fR,8,cN,'–',172.2,sy);                   // puce (tiret demi-cadratin)
           lines.forEach((wordsArr,i)=>{ const y=sy-i*LHrow; if(y<80) return; drawJust(wordsArr,y,i===lines.length-1); });
           const yLast = sy - (lines.length-1)*LHrow;     // heures + tarif + montant sur la dernière ligne de la description
@@ -5155,7 +5184,7 @@ async function offrePDFBytes(){
           // Commentaire à la suite de la description : une puce « – » par ligne de texte (en retrait).
           String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean).forEach(it=>{
             if(sy < 95) return;
-            const ws = wrapW(it, DW-8);
+            const ws = wrapW(cap1(it), DW-8);
             dL(sp,fR,8,cN,'–',180.7,sy);
             ws.forEach((wa,k)=>{ const y=sy-k*LHrow; if(y<85) return; dL(sp,fR,8,cN,wa.join(' '),189.2,y); });
             lastY = sy-(ws.length-1)*LHrow; sy = lastY - 12;
@@ -5175,7 +5204,7 @@ async function offrePDFBytes(){
           const drawJust = drawJustOn(pg);
           let ty0 = 711.2;
           if(grp.t){
-            const T = String(grp.t.titre||'').trim();   // titre tel que saisi (plus de passage en majuscules)
+            const T = cap1(String(grp.t.titre||'').trim());   // titre tel que saisi, majuscule initiale garantie
             if(T){ dL(pg,fB,8,cN,T,130.4,ty0);
               pg.drawLine({start:{x:130.4,y:ty0-2.8},end:{x:130.4+fB.widthOfTextAtSize(T,8),y:ty0-2.8},thickness:0.4,color:cN});
               ty0 -= 31; }
@@ -5184,7 +5213,7 @@ async function offrePDFBytes(){
               if(!items.length) return;
               dL(pg,fR,8,cN,label,130.4,ty0); ty0 -= 16;   // interligne augmenté entre le titre du bloc et sa liste
               items.forEach(it=>{ dL(pg,fR,8,cN,'•',150.5,ty0);
-                const ws = wrapW(it, 330);
+                const ws = wrapW(cap1(it), 330);
                 ws.forEach((wa,k)=>{ dL(pg,fR,8,cN,wa.join(' '),158.7,ty0); if(k<ws.length-1) ty0 -= 10; });
                 ty0 -= 10; });
               ty0 -= 10;                                 // respiration après le bloc
@@ -5201,7 +5230,7 @@ async function offrePDFBytes(){
           if(grp.t && grp.t.showSt && (grp.t.st||'').trim()){
             let yS = yH-31;                              // multiligne : chaque ligne saisie, avec retour automatique si trop longue
             String(grp.t.st).split(/\n/).map(s=>s.trim()).filter(Boolean).forEach(lnSt=>{
-              wrapW(lnSt, 379, fR).forEach(wa=>{ dL(pg,fR,8,cN,wa.join(' '),130.4,yS); lastY = yS; yS -= 12; });
+              wrapW(cap1(lnSt), 379, fR).forEach(wa=>{ dL(pg,fR,8,cN,wa.join(' '),130.4,yS); lastY = yS; yS -= 12; });
             });
             sy = lastY - 24;                             // espace sous-titre → prestations : même interligne qu'entre les prestations (24 pt)
           }
@@ -5213,10 +5242,10 @@ async function offrePDFBytes(){
             let sy2 = sy0, tot = 0, lY = sy0;
             grp.lines.forEach(ln=>{
               if(sy2 < 100){ if(!measure) overflows.push('Détail des prestations « '+((grp.t&&grp.t.titre)||'sans titre')+' » — page pleine, contenu tronqué'); return; }
-              const comItems = String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean);
+              const comItems = String(ln.com||'').split(/\n/).map(s=>s.replace(/^[-–•\s]+/,'').trim()).filter(Boolean).map(s=>cap1(s));
               if(ln.sousTitre){
                 // SOUS-TITRE activé : libellé en Akkurat Regular souligné, montants sur SA ligne.
-                const stw = wrapW(ln.lbl||'—', 190, fReg);
+                const stw = wrapW(cap1(ln.lbl||'—'), 190, fReg);
                 const yTL = sy2-(stw.length-1)*LH2;
                 if(!measure){
                   stw.forEach((wa,k)=> dL(pg,fReg,8,cN,wa.join(' '),166.5,sy2-k*LH2));
@@ -5243,7 +5272,7 @@ async function offrePDFBytes(){
                 // PUCE qui s'aligne au « T », le texte suit à 175 (même bord droit de colonne dans les deux cas).
                 const DXd = hasCom ? 166.5 : 175.0;
                 const DWd = hasCom ? 169 : 160.5;
-                const lines = wrapW(ln.lbl, DWd, fLbl);
+                const lines = wrapW(cap1(ln.lbl), DWd, fLbl);
                 const yLast = sy2-(lines.length-1)*LH2;
                 if(!measure){
                   if(!hasCom) dL(pg,fLbl,8,cN,'–',166.5,sy2);   // puce à l'aplomb du « T » de TOTAL

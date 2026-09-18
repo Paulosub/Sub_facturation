@@ -4940,10 +4940,10 @@ async function offrePDFBytes(){
         dR(pg,fR,7,cN,'tarif horaire',TRX,yH+8.4); dR(pg,fR,7,cN,'moyen HT',TRX,yH);
         dR(pg,fR,7,cN,'Montant',MRX,yH+8.4);      dR(pg,fR,7,cN,'HT',MRX,yH);
         pg.drawLine({start:{x:130.4,y:yH-4.2},end:{x:510.2,y:yH-4.2},thickness:0.4,color:cN}); };
-      const drawJustOn = (pg)=>(wordsArr,y,isLast,f)=>{ f=f||fR;                              // justification (sauf dernière ligne)
-        if(isLast || wordsArr.length===1){ dL(pg,f,8,cN,wordsArr.join(' '),DX,y); return; }
+      const drawJustOn = (pg)=>(wordsArr,y,isLast,f,x0,w0)=>{ f=f||fR; x0=(x0==null?DX:x0); w0=(w0==null?DW:w0);   // justification (sauf dernière ligne)
+        if(isLast || wordsArr.length===1){ dL(pg,f,8,cN,wordsArr.join(' '),x0,y); return; }
         const wsum=wordsArr.reduce((s,w)=>s+f.widthOfTextAtSize(w,8),0);
-        const gap=(DW - wsum)/(wordsArr.length-1); let x=DX;
+        const gap=(w0 - wsum)/(wordsArr.length-1); let x=x0;
         wordsArr.forEach(w=>{ dL(pg,f,8,cN,w,x,y); x += f.widthOfTextAtSize(w,8)+gap; }); };
       const totalRow = (pg,lastY,tot)=>{ pg.drawLine({start:{x:166.5,y:lastY-17.5},end:{x:510.2,y:lastY-17.5},thickness:0.4,color:cN});   // trait calé à gauche sur « TOTAL »
         const ty=lastY-31.3; dL(pg,fR,8,cN,'TOTAL',166.5,ty); dL(pg,fR,8,cN,'Fr.',440.2,ty); dR(pg,fR,8,cN,fmtTotal(tot),506.5,ty); };
@@ -5052,14 +5052,15 @@ async function offrePDFBytes(){
                 // SIMPLE DESCRIPTION — commentée : libellé en Akkurat Regular SOULIGNÉ ; sinon Light.
                 const hasCom = comItems.length>0;
                 const fLbl = hasCom ? fReg : fR;
-                const lines = wrapW(ln.lbl, DW, fLbl);
+                const DXd = 166.5, DWd = 169;            // description alignée au « T » de TOTAL (même bord droit qu'avant)
+                const lines = wrapW(ln.lbl, DWd, fLbl);
                 const yLast = sy2-(lines.length-1)*LH2;
                 if(!measure){
-                  dL(pg,fLbl,8,cN,'–',172.2,sy2);
+                  if(!hasCom) dL(pg,fLbl,8,cN,'–',158.0,sy2);   // puce seulement pour une description SANS commentaire
                   lines.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return;
-                    drawJust(wa,y,k===lines.length-1,fLbl);
-                    if(hasCom){ const w=(k===lines.length-1||wa.length===1)?fLbl.widthOfTextAtSize(wa.join(' '),8):DW;
-                      pg.drawLine({start:{x:DX,y:y-2.2},end:{x:DX+w,y:y-2.2},thickness:0.4,color:cN}); } });
+                    drawJust(wa,y,k===lines.length-1,fLbl,DXd,DWd);
+                    if(hasCom){ const w=(k===lines.length-1||wa.length===1)?fLbl.widthOfTextAtSize(wa.join(' '),8):DWd;
+                      pg.drawLine({start:{x:DXd,y:y-2.2},end:{x:DXd+w,y:y-2.2},thickness:0.4,color:cN}); } });
                   if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,yLast); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast); }
                   dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);
                 }

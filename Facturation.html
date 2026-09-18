@@ -4935,10 +4935,12 @@ async function offrePDFBytes(){
         dL(pg,fB,8,cN,'PRESTATIONS D’ARCHITECTE',130.43,hy3);
         pg.drawLine({start:{x:85,y:hy3-4.37},end:{x:510.2,y:hy3-4.37},thickness:0.5,color:cN}); };
       // En-têtes de colonnes (yH = ligne du bas) : « heures estimées » ou « quantité » dès qu'une ligne utilise gl / « — ».
-      const colHdr = (pg,yH,qteCol)=>{ dL(pg,fR,8,cN,'Prestations d’architectes',130.4,yH);
-        if(qteCol){ dR(pg,fR,7,cN,'quantité',HRX,yH); }
-        else { dR(pg,fR,7,cN,'heures',HRX,yH+8.4); dR(pg,fR,7,cN,'estimées',HRX,yH); }
-        dR(pg,fR,7,cN,'tarif horaire',TRX,yH+8.4); dR(pg,fR,7,cN,'moyen HT',TRX,yH);
+      const colHdr = (pg,yH,qteCol,totalOnly)=>{ dL(pg,fR,8,cN,'Prestations d’architectes',130.4,yH);
+        if(!totalOnly){                                  // « Montants uniquement au TOTAL » : ni heures/quantité, ni tarif
+          if(qteCol){ dR(pg,fR,7,cN,'quantité',HRX,yH); }
+          else { dR(pg,fR,7,cN,'heures',HRX,yH+8.4); dR(pg,fR,7,cN,'estimées',HRX,yH); }
+          dR(pg,fR,7,cN,'tarif horaire',TRX,yH+8.4); dR(pg,fR,7,cN,'moyen HT',TRX,yH);
+        }
         dR(pg,fR,7,cN,'Montant',MRX,yH+8.4);      dR(pg,fR,7,cN,'HT',MRX,yH);
         pg.drawLine({start:{x:130.4,y:yH-4.2},end:{x:510.2,y:yH-4.2},thickness:0.4,color:cN}); };
       const drawJustOn = (pg)=>(wordsArr,y,isLast,f,x0,w0)=>{ f=f||fR; x0=(x0==null?DX:x0); w0=(w0==null?DW:w0);   // justification (sauf dernière ligne)
@@ -4952,7 +4954,7 @@ async function offrePDFBytes(){
         // ── MISE EN PAGE D'ORIGINE (une seule page ; chaque ligne = puce « – » de son libellé) ──
         chapHdr(sp);
         const _qteCol = (d.chnoLines||[]).some(l=>!l.option && !l.hideDetail && (l.hUnit||'h')!=='h');
-        colHdr(sp,703.5,_qteCol);
+        colHdr(sp,703.5,_qteCol, d.chnoTotalOnly);
         const drawJust = drawJustOn(sp);
         let sy=667.7, totHT=0, lastY=703.5;
         d.chnoLines.forEach(ln=>{

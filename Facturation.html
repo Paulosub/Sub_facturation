@@ -1242,7 +1242,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 
     <!-- ═══ Feuille — 2 MODE DE CALCUL ═══ -->
     <div class="card" id="card-modecalc">
-      <div class="card-hd">2 — Mode de calcul<span style="display:flex;align-items:center;gap:12px"><label class="lockchk" id="ch_modecalc_type_lbl" style="gap:6px">Contrat <select id="ch_modecalc_type" onchange="chModecalcType()" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="forfait">Forfaitaire</option><option value="unitaire">Prix unitaire</option></select></label><label class="lockchk"><input type="checkbox" id="ch_lock_modecalc" onchange="chToggleLock('modecalc')"> Modifiable</label></span></div>
+      <div class="card-hd">2 — Mode de calcul<span style="display:flex;align-items:center;gap:12px"><label class="lockchk" id="ch_modecalc_type_lbl" style="gap:6px">Contrat <select id="ch_modecalc_type" onchange="chModecalcType()" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="relatif">Forfait relatif</option><option value="forfait">Forfait</option><option value="unitaire">Unitaire</option></select></label><label class="lockchk"><input type="checkbox" id="ch_lock_modecalc" onchange="chToggleLock('modecalc')"> Modifiable</label></span></div>
       <div class="card-bd">
         <div class="rt-toolbar">
           <button type="button" onmousedown="return rtCmd(event,'bold')" title="Gras (Akkurat LL TT Regular)"><b>G</b></button>
@@ -1287,7 +1287,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 
     <!-- ═══ Feuille 2 — HONORAIRES NON ORDINAIRES ═══ -->
     <div class="card" id="card-chno" style="display:none">
-      <div class="card-hd">2 — Honoraires non ordinaires<label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer" title="Si coché : les commentaires des lignes sont détaillés sur une feuille supplémentaire du contrat ; sinon seule la prestation (sans commentaire) apparaît au récapitulatif."><input type="checkbox" id="ch_chno_detail" onchange="refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Détailler les commentaires sur une feuille supplémentaire</label><label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-right:14px" title="Sans titre défini : masque les montants en face de chaque descriptif sur la feuille de détail — seul le TOTAL (somme de tous les descriptifs) s'affiche à droite en bas."><input type="checkbox" id="ch_chno_totalonly" onchange="refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Montants uniquement au TOTAL</label><label id="ch_remu_type2_lbl" style="float:right;font-weight:normal;font-size:11px;display:none;align-items:center;gap:5px;margin-right:14px" title="Type de rémunération du contrat (affiché dans la colonne « Rémunération » de la liste des contrats)">Rémunération <select id="ch_remu_type2" onchange="chRemuTypeChanged(this.value)" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="forfait">Forfaitaire</option><option value="unitaire">Prix unitaire</option></select></label></div>
+      <div class="card-hd">2 — Honoraires non ordinaires<label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer" title="Si coché : les commentaires des lignes sont détaillés sur une feuille supplémentaire du contrat ; sinon seule la prestation (sans commentaire) apparaît au récapitulatif."><input type="checkbox" id="ch_chno_detail" onchange="refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Détailler les commentaires sur une feuille supplémentaire</label><label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-right:14px" title="Sans titre défini : masque les montants en face de chaque descriptif sur la feuille de détail — seul le TOTAL (somme de tous les descriptifs) s'affiche à droite en bas."><input type="checkbox" id="ch_chno_totalonly" onchange="refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Montants uniquement au TOTAL</label><label id="ch_remu_type2_lbl" style="float:right;font-weight:normal;font-size:11px;display:none;align-items:center;gap:5px;margin-right:14px" title="Type de rémunération du contrat (affiché dans la colonne « Rémunération » de la liste des contrats)">Rémunération <select id="ch_remu_type2" onchange="chRemuTypeChanged(this.value)" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="relatif">Forfait relatif</option><option value="forfait">Forfait</option><option value="unitaire">Unitaire</option></select></label></div>
       <div class="card-bd" style="padding:8px">
         <table style="width:100%;border-collapse:collapse;font-size:12px" id="chno-tbl">
           <thead><tr style="background:#003346;color:#fff">
@@ -1551,10 +1551,11 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <tr><td class="sec" colspan="4">Mandat forfaitaire (optionnel)</td></tr>
           <tr><td class="lbl">Rémunération</td><td colspan="3">
             <select id="ch_remu_type" onchange="chRemuTypeChanged(this.value)" style="font-size:12px;padding:3px 6px;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:inherit">
-              <option value="forfait">Forfaitaire</option>
-              <option value="unitaire">Prix unitaire</option>
+              <option value="relatif">Forfait relatif</option>
+              <option value="forfait">Forfait</option>
+              <option value="unitaire">Unitaire</option>
             </select></td></tr>
-          <tr><td colspan="4" class="xls-formule">Type de rémunération du contrat — <b>Forfaitaire</b> ou <b>Prix unitaire</b>. Synchronisé avec le sélecteur « Contrat » du chapitre <b>2 — Mode de calcul</b> : le texte type du chapitre et la colonne « Rémunération » de la liste des contrats suivent ce choix.</td></tr>
+          <tr><td colspan="4" class="xls-formule">Type de rémunération du contrat — <b>Forfait relatif</b>, <b>Forfait</b> ou <b>Unitaire</b>. Synchronisé avec le sélecteur « Contrat » du chapitre <b>2 — Mode de calcul</b> : le texte type du chapitre, le titre « Montant… » du récapitulatif PDF et la colonne « Rémunération » de la liste des contrats suivent ce choix.</td></tr>
           <tr><td class="lbl">Contrat à forfait</td><td colspan="3">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
               <input type="checkbox" id="ch_forfait_on" onchange="updCalcHono()" style="width:14px;height:14px;cursor:pointer">
@@ -3791,6 +3792,7 @@ function offreGather(){
     tarifRabais: (gn('ch_tarif_moyen')||0)*(1-(gn('ch_rabais')||0)/100),
     planDelais: planGatherDelais(), planReserves: planGatherReserves(),
     R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, projetPage, projetTexte, hideTarifs, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
+    remuType: gv('ch_modecalc_type')||'relatif',   // rémunération : relatif (Forfait relatif) / forfait (Forfait) / unitaire (Unitaire)
     cfc:{ c1:cfc('ch_cfc1','ch_cfc1_ni'), c2:cfc('ch_cfc2','ch_cfc2_ni'), c4:cfc('ch_cfc4','ch_cfc4_ni'), c5:cfc('ch_cfc5','ch_cfc5_ni'), c9:cfc('ch_cfc9','ch_cfc9_ni') },
     tauxMoyen: R.h, tauxRabais: R.h*(1-R.rabaisPct/100),
     forfaitTTC: R.forfaitOn ? R.forfaitTTC : R.ttc, fraisMnt: R.forfaitFraisMnt, fraisPct: R.forfaitFraisPct, fraisHT: !!R.forfaitFraisHT, fraisMode: R.fraisMode||'pct',
@@ -4126,6 +4128,17 @@ async function offrePDFBytes(){
   const IA1 = IREC+1;                        // Annexe 1 (Frais accessoires)
   const tabIdx = k => IREC+2+(k-1);          // Annexe 2 (Tableau détaillé), page de la partie k (k=1..NP)
   const IA3 = IREC+3+nTabIns;                // Annexe 3 (Estimation), décalée par les copies tableau
+  // Liste des annexes (construite ICI pour être partagée entre le récap — liste du chapitre — et le bloc
+  // annexes — en-têtes et contenus des pages). Frais FORFAITAIRES (« Frais personnalisés » seuls) :
+  // l'Annexe 1 « Frais accessoires » est retirée et la numérotation suit.
+  const keepA1 = !d.fraisForfait;
+  const annexes=[]; { let anum=0;
+    if(keepA1){ anum++; annexes.push({n:anum, lbl:'Frais accessoires', pages:[IA1], estim:false}); }
+    if(keepA2){ anum++; const pgs=[]; for(let k=1;k<=NP;k++) pgs.push(tabIdx(k)); annexes.push({n:anum, lbl:'Tableau détaillé de calcul des honoraires', pages:pgs, estim:false, tableau:true}); }
+    if(keepA3){ anum++; annexes.push({n:anum, lbl:"Estimation du coût de l'ouvrage ±20%", pages:[IA3], estim:true}); }
+    (d.annexesCustom||[]).forEach(a=>{ if((a.name||'').trim()){ anum++; annexes.push({n:anum, lbl:(a.name||'').trim(), pages:[], estim:false, custom:true}); } });
+  }
+  const nAnxLines = annexes.reduce((s,a)=>s+((a.tableau && NP>1)?NP:1),0);
   // Détection de débordement : chaque zone de texte dynamique signale si son bas dépasse la limite
   // (élément fixe suivant / pied de page). Les alertes sont renvoyées et affichées en fenêtre.
   const overflows = [];
@@ -4513,6 +4526,8 @@ async function offrePDFBytes(){
     const wP=y=> wipe(p8,388,y-1,436,y+8.5,0);
     const amt=(y,t,f)=> dR(p8,f||fR,8,cN,t,AX,y-AMDY);
     const pct=(y,t,f)=> dR(p8,f||fR,8,cN,t,FRr,y-AMDY);
+    let _shRec = 0;                                                  // décalage de la cascade (mono avec titres)
+    let _shForf = 0;                                                 // décalage du bloc « Montant forfaitaire » (suit la cascade, borné par les annexes/signatures)
     if(d.isExpertise){
       // EXPERTISE : liste des honoraires non ordinaires (colonnes Heures / Prix unitaire), puis un
       // « Total des honoraires HT » brut TOUJOURS visible (encadré), puis la cascade Rabais → TTC.
@@ -4550,7 +4565,7 @@ async function offrePDFBytes(){
       const hideRab=!!d.hideRabais, hideArr=!!d.hideArrondi, vGross = vSous + vRab;
       const casc=[];
       casc.push({lbl:'Total des honoraires HT', val:fc(vGross), fnt:fReg, box:true});   // brut, encadré — EXACTEMENT identique avec ou sans détail
-      if(!hideRab){ casc.push({lbl:'Rabais spécial Substances', pctTxt:R8.rabaisPct.toFixed(2)+'%', val:'- '+fc(vRab), fnt:fR, box:false}); }
+      if(!hideRab){ casc.push({lbl:'Rabais', pctTxt:R8.rabaisPct.toFixed(2)+'%', val:'- '+fc(vRab), fnt:fR, box:false}); }
       if(!hideRab){ casc.push({lbl:'Total des honoraires après rabais', val:fc(vSous), fnt:fReg, box:true}); }
       if(!hideArr){ casc.push({lbl:'Arrondi', val:fc(Math.abs(vArr)), fnt:fR, box:false}); }
       if(!hideArr){ casc.push({lbl:'Total des honoraires après arrondi', val:fc(vHtF), fnt:fReg, box:true}); }
@@ -4577,7 +4592,6 @@ async function offrePDFBytes(){
     // Prestations : non ordinaires (ligne 713.2 du gabarit) + ordinaires (dans l'interligne à 699).
     // TITRES définis (mono) : chaque titre est listé sous « Prestations non ordinaires » avec son sous-total,
     // et la cascade descend d'autant. « Prestations ordinaires » n'apparaît QUE si la case est cochée.
-    let _shRec = 0;                                                  // décalage de la cascade (mono avec titres)
     if(d.chno>0){
       const _ts = Array.isArray(d.chnoTitres)?d.chnoTitres:[], _tRows=[];
       if(NP<=1){
@@ -4595,19 +4609,18 @@ async function offrePDFBytes(){
         wipe(p8,133,712.2,510,724,0);                                // efface libellé + « Fr. » + montant pré-imprimés
         const _nR = _tRows.length + (d.hasOrd?1:0);
         const _brut = _tRows.length>1;                               // PLUSIEURS titres → « Total des Honoraires brut HT » encadré avant le rabais
-        if(_brut){
-          _shRec = _nR*14.2;                                         // ligne brut + ESPACE avant « Rabais »
-          if(684.9-_shRec-71 < 555) _shRec = (_nR-1)*14.2;           // page pleine : l'espace saute (grille continue) pour ne pas toucher le forfait
-        } else {
-          _shRec = Math.max(0,_nR-2)*14.2;                           // sans brut, le gabarit offre DEUX lignes (713.2 et 699)
-        }
-        if(_shRec>0) wipe(p8,128,606,512,709,0);                     // efface la cascade pré-imprimée AVANT de lister
+        // Brut : un ESPACE avant le total brut ET un ESPACE avant « Rabais » — le bloc « Montant
+        // forfaitaire » descend d'autant (_shForf, calculé plus bas), plus de compression.
+        _shRec = _brut ? (_nR+1)*14.2 : Math.max(0,_nR-2)*14.2;
+        if(_shRec>0){ wipe(p8,128,606,512,709,0);                    // efface la cascade pré-imprimée AVANT de lister
+          wipe(p8,128,468,512,554,0); }                              // efface AUSSI le bloc « Montant forfaitaire » baké (redessiné plus bas, décalé)
         let yy=713.2;
         _tRows.forEach(r=>{ dL(p8,fR,8,cN,r.lbl,LX,yy-AMDY); dL(p8,fR,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fR,8,cN,fc(r.s),AX,yy-AMDY); yy-=14.2; });
         if(d.hasOrd){ dL(p8,fReg,8,cN,'Prestations ordinaires',LX,yy-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fReg,8,cN,fc(vH),AX,yy-AMDY); yy-=14.2; }
         if(_brut){
+          yy -= 14.2;                                                // ESPACE entre la dernière prestation et le total brut
           // Total BRUT (somme de tout ce qui est listé au-dessus), encadré comme les totaux de la cascade,
-          // avec un ESPACE avant « Rabais » (la cascade descend de deux interlignes supplémentaires).
+          // avec un ESPACE avant « Rabais ».
           const yb=yy-AMDY, vGross=vSous+vRab;
           dL(p8,fReg,8,cN,'Total des Honoraires brut HT',LX,yb); dL(p8,fReg,8,cN,'Fr.',FRl,yb); dR(p8,fReg,8,cN,fc(vGross),AX,yb);
           const HX1=130.3, HX2=510.1, VXl=130.4, VXr=509.9, TH=0.25, TOP=9.9, BOT=4.3;
@@ -4636,7 +4649,7 @@ async function offrePDFBytes(){
       // sous chaque ligne + encadrés (bords verticaux) sur les trois totaux, comme le pré-imprimé.
       const SHm=_shRec, LHc=14.2;
       const casc=[
-        {lbl:'Rabais spécial Substances', pctTxt:R8.rabaisPct.toFixed(2)+'% Fr.', pf:fReg, val:'- '+fc(vRab), vf:fR, lf:fR, box:false},
+        {lbl:'Rabais', pctTxt:R8.rabaisPct.toFixed(2)+'% Fr.', pf:fReg, val:'- '+fc(vRab), vf:fR, lf:fR, box:false},
         {lbl:'Sous-total intermédiaire',  val:fc(vSous),      vf:fR,   lf:fR,   box:true},
         {lbl:'Arrondi',                   val:arrTxt(vArr),   vf:fR,   lf:fR,   box:false},
         {lbl:'Total des Honoraires HT',   val:fc(vHtF),       vf:fReg, lf:fReg, box:true},
@@ -4657,9 +4670,11 @@ async function offrePDFBytes(){
                      p8.drawLine({start:{x:VXr,y:y+TOP},end:{x:VXr,y:y-BOT},thickness:TH,color:cN}); }
         });
       }
-      if(rowY[5] < 555) overflows.push('Récap — liste des titres trop longue, la cascade chevauche le mandat forfaitaire');
+      // (le bloc « Montant forfaitaire » descend avec la cascade — voir _shForf plus bas)
       } else {
       // MONO : positions du gabarit (libellés/traits pré-imprimés conservés), on met à jour % et montants.
+      wipe(p8,133,681.5,270,693,0); dL(p8,fR,8,cN,'Rabais',134.6,687.3);   // libellé baké « Rabais spécial Substances » → « Rabais »
+      wipe(p8,128,693.8,511,695.8,0);                                      // trait baké AU-DESSUS du rabais : supprimé (demande explicite)
       wP(684.9); pct(684.9,R8.rabaisPct.toFixed(2)+'% Fr.',fReg); wV(684.9); amt(684.9,'- '+fc(vRab),fR);
       wV(670.7); amt(670.7,fc(vSous),fR);
       wV(656.5); amt(656.5,arrTxt(vArr),fR);
@@ -4684,7 +4699,7 @@ async function offrePDFBytes(){
       });
       // Cascade décalée (mêmes libellés que le gabarit) — décalage SH = N interlignes.
       const crow=(y,label,val,vf,pctTxt)=>{ dL(p8,fR,8,cN,label,Lx,y); if(pctTxt) dR(p8,fR,8,cN,pctTxt,415,y); dL(p8,fR,8,cN,'Fr.',FRx,y); dR(p8,vf||fR,8,cN,val,Vx,y); };
-      crow(684.9-SH,'Rabais spécial Substances','- '+fc(vRab),fR,R8.rabaisPct.toFixed(2)+'%');
+      crow(684.9-SH,'Rabais','- '+fc(vRab),fR,R8.rabaisPct.toFixed(2)+'%');
       crow(670.7-SH,'Sous-total intermédiaire',fc(vSous),fR);
       crow(656.5-SH,'Arrondi',arrTxt(vArr),fR);
       crow(642.3-SH,'Total des Honoraires HT',fc(vHtF),fReg);
@@ -4695,27 +4710,73 @@ async function offrePDFBytes(){
       if((614.0-SH) < 555) overflows.push("Récap ch.8 — trop de parties d'ouvrage, la cascade chevauche le mandat forfaitaire");
     }
     }
+    // ── Chapitre ANNEXES (liste) — dessiné AVANT le bloc « Montant forfaitaire » pour que celui-ci puisse
+    //    descendre par-dessus la zone effacée. Liste ANCRÉE EN BAS (dernière ligne à 382.8 = 3e ligne du
+    //    gabarit « prestations ordinaires ») ; en-tête « ANNEXES » à 31.4 pt au-dessus (écart du gabarit).
+    //    Listes longues (5 lignes et plus) : disposition d'origine. Liste VIDE : le chapitre disparaît.
+    const anxTop = (nAnxLines>=1 && nAnxLines<=4) ? 382.8 + (nAnxLines-1)*14.2 : 408.8;   // 1re ligne de la liste
+    const anxBottom = Math.min(372, anxTop - Math.max(0,nAnxLines-1)*14.2 - 6) - _expMF;
+    wipe(p8,83,anxBottom,512,456,0);   // efface en-tête baké « 9 | ANNEXES » + liste bakée + zones décalées
+    if(annexes.length){
+      const ayH = anxTop + 31.4 - _expMF;
+      dL(p8,fB,8,cN, d.isExpertise?'8':'9', 85.04, ayH); dL(p8,fB,8,cN,'ANNEXES',130.43,ayH);
+      p8.drawLine({start:{x:85,y:ayH-4.37},end:{x:510.2,y:ayH-4.37},thickness:0.5,color:cN});   // trait de chapitre
+      p8.drawLine({start:{x:121.9,y:ayH-4.17},end:{x:121.9,y:ayH+9.83},thickness:0.5,color:cN}); // séparateur n°/titre
+    }
+    { let ay=anxTop-_expMF;
+      annexes.forEach(a=>{
+        if(a.tableau && NP>1){
+          // une ligne PAR PARTIE, numérotée 2a, 2b, … (même n° de base + lettre) + nom de partie en rouge gras
+          OUV.forEach((o,k)=>{
+            const base='Annexe '+a.n+String.fromCharCode(97+k)+' - '+a.lbl+' ';
+            dL(p8,fR,8,cN, base, 130.4, ay);
+            const bw=fR.widthOfTextAtSize(base,8);
+            dL(p8,fB,8,cRed, '('+(o.name||'')+')', 130.4+bw, ay);
+            ay-=14.2;
+          });
+        } else {
+          dL(p8,fR,8,cN,'Annexe '+a.n+' - '+a.lbl,130.4,ay); ay-=14.2;
+        }
+      });
+    }
+    // ── Décalage du bloc « Montant forfaitaire » : il SUIT la cascade (_shRec) en gardant l'espace du
+    //    gabarit entre « Total des honoraires TTC » et l'encadré, borné par la place disponible au-dessus
+    //    du chapitre ANNEXES (ou des SIGNATURES si aucune annexe).
+    {
+      const _limit = (annexes.length ? (anxTop + 31.4 - _expMF + 9.8) : 301.6) + 8;
+      _shForf = Math.min(_shRec, Math.max(0, 490.5 - _limit));
+      if(_shForf < _shRec - 0.1) overflows.push('Récap — page pleine : le bloc « Montant forfaitaire » chevauche la cascade');
+    }
     // Montant forfaitaire (titre encadré, gras 12 pt, centré) — « relatif* » souligné.
     // Le texte du gabarit va de y=522.8 à 534.8 ; on efface généreusement (sans toucher les traits
     // de la boîte à y=513.2 et 551.1) pour éviter tout dédoublement.
-    const CX=320.2, MFy=_expMF;
+    const CX=320.2, MFy=_expMF+_shForf;
     // Le montant forfaitaire suit la BASE choisie (radios TTC / HT du mandat forfaitaire) :
     // base HT → montant SAISI en HT + suffixe « HT » ; sinon montant TTC + « TTC » (comportement d'origine).
     const _fBaseHT = !AGG && d.R && d.R.forfaitOn && d.R.forfaitBaseHT;
     const _fTxt = _fBaseHT ? (fc(d.R.forfaitHT)+' HT') : (fc(vForf)+' TTC');
     if(d.isExpertise) wipe(p8,128,468,511,553,0);   // EXPERTISE : efface tout le bloc baké (Montant forf. + frais + note « * voir point… ») avant redraw
-    wipe(p8,148,520,494,536,0);
+    if(_shForf===0) wipe(p8,148,520,494,536,0);     // décalé : le baké a déjà été effacé AVANT la cascade (le wipe fixe clipperait la cascade)
+    const _rt = d.remuType||'relatif';               // rémunération : forfait relatif (défaut) / forfait / unitaire
     if(d.isExpertise){
       // Expertise : titre « Montant des honoraires estimé à … TTC » (Bold 12 pt, centré, sans astérisque ni note).
       const t='Montant des honoraires estimé à '+_fTxt;
       dL(p8,fB,12,cN,t, CX - fB.widthOfTextAtSize(t,12)/2, 529.2-MFy);
+    } else if(_rt==='forfait'){
+      // FORFAIT : « Montant arrêté forfaitairement à … HT/TTC » — sans astérisque ni note.
+      const t='Montant arrêté forfaitairement à '+_fTxt;
+      dL(p8,fB,12,cN,t, CX - fB.widthOfTextAtSize(t,12)/2, 529.2-MFy);
+    } else if(_rt==='unitaire'){
+      // UNITAIRE : « Montant arrondi à … HT » (le Total des Honoraires HT) — sans astérisque ni note.
+      const t='Montant arrondi à '+fc(vHtF)+' HT';
+      dL(p8,fB,12,cN,t, CX - fB.widthOfTextAtSize(t,12)/2, 529.2-MFy);
     } else {
-      // Autres types : « Montant forfaitaire relatif* à … TTC/HT » — « relatif* » souligné (astérisque en Regular).
+      // FORFAIT RELATIF : « Montant forfaitaire relatif* à … TTC/HT » — « relatif* » souligné (astérisque en Regular).
       const pre='Montant forfaitaire ', relat='relatif', ast='*', post=' à '+_fTxt;
       const wPre=fB.widthOfTextAtSize(pre,12), wRel=fB.widthOfTextAtSize(relat,12),
             wAst=fReg.widthOfTextAtSize(ast,12), wPost=fB.widthOfTextAtSize(post,12);
       let x=CX-(wPre+wRel+wAst+wPost)/2;
-      const yF=529.2;
+      const yF=529.2-MFy;
       dL(p8,fB,12,cN,pre,x,yF); x+=wPre;
       const xUL=x;
       dL(p8,fB,12,cN,relat,x,yF); x+=wRel;
@@ -4726,20 +4787,22 @@ async function offrePDFBytes(){
     }
     // Total frais accessoires en sus (Regular 8 pt, centré) — UNIQUEMENT s'il y a des frais.
     const _noFrais = !(vFrais > 0.005);
-    wipe(p8,150,490,492,504,0);
+    if(_shForf===0) wipe(p8,150,490,492,504,0);
     if(!_noFrais){ const t='Total frais accessoires en sus Fr. '+fc(vFrais)+' '+(d.fraisHT?'HT':'TTC')+(d.fraisMode==='perso'?'':(', soit '+((d.fraisPct||0).toFixed(1))+'% du total des honoraires'));
       dL(p8,fReg,8,cN,t,CX - fReg.widthOfTextAtSize(t,8)/2,497.9-MFy);
     }
-    // SANS frais (hors expertise) : la note « * voir point n°2 al. 4 » REMONTE à la place du texte frais
-    // (la note bakée plus bas est effacée) et le trait sous le texte frais est supprimé.
-    if(!d.isExpertise && _noFrais){
-      wipe(p8,240,472.5,400,486,0);   // efface la note bakée (x≈247.7, y=476.8)
-      const tn='* voir point n°2 al. 4 de la présente offre.';
-      dL(p8,fR,8,cN,tn,CX - fR.widthOfTextAtSize(tn,8)/2,497.9);
+    // Note « * voir point n°2 al. 4 » : UNIQUEMENT quand le titre porte l'astérisque (forfait relatif).
+    // Sans frais elle remonte à la place du texte frais ; avec frais elle reste sous le trait (476.8).
+    if(!d.isExpertise){
+      if(_shForf===0) wipe(p8,240,472.5,400,486,0);   // efface la note bakée (x≈247.7, y=476.8) — redessinée si besoin
+      if(_rt!=='forfait' && _rt!=='unitaire'){
+        const tn='* voir point n°2 al. 4 de la présente offre.';
+        dL(p8,fR,8,cN,tn,CX - fR.widthOfTextAtSize(tn,8)/2,(_noFrais?497.9:476.8)-MFy);
+      }
     }
     // (Expertise : pas de note « * voir point… » — effacée ci-dessus, non redessinée puisque le titre n'a plus d'astérisque.)
     // Encadrement : traits pleine largeur (130.3→509.7) à 0.25 pt — SANS frais, pas de trait sous le texte (490.5).
-    if(!d.isExpertise){ wipe(p8,128,550,511,553.5,0); wipe(p8,128,511.5,511,515.5,0); wipe(p8,128,488.5,511,492,0); }   // hors expertise : efface les traits bakés (l'expertise l'a fait via le grand wipe)
+    if(!d.isExpertise && _shForf===0){ wipe(p8,128,550,511,553.5,0); wipe(p8,128,511.5,511,515.5,0); wipe(p8,128,488.5,511,492,0); }   // hors expertise : efface les traits bakés (l'expertise l'a fait via le grand wipe ; décalé : effacé avant la cascade)
     { const fx1=130.3, fx2=509.7; (_noFrais?[551.5,513.5]:[551.5,513.5,490.5]).forEach(y=> p8.drawLine({start:{x:fx1,y:y-MFy},end:{x:fx2,y:y-MFy},thickness:0.25,color:cN})); }
     // Signatures (position fixe du gabarit) : seule la DATE du « Fait en … » est mise à jour (aligné à droite).
     if(d.date){
@@ -4752,50 +4815,9 @@ async function offrePDFBytes(){
   // Annexe 1 (Frais, idx 8) : toujours. Annexe 2 (Tableau détaillé, idx 9) : si prestations ordinaires.
   // Annexe 3 (Estimation, idx 10) : si « piloter les CFC depuis cette estimation ».
   {
-    // keepA2/keepA3, tabIdx, IA1, IA3 sont définis dans le bloc multi-ouvrage plus haut.
-    // Numéros d'annexe : Frais=1 ; Tableau détaillé=2 (NP pages en multi, même n°) ; Estimation=3 — conditionnels.
-    // Frais FORFAITAIRES (« Frais personnalisés » seuls) : l'Annexe 1 « Frais accessoires » est retirée
-    // (les tarifs unitaires n'ont pas de raison d'être quand le montant est arrêté) — la numérotation suit.
-    const keepA1 = !d.fraisForfait;
-    const annexes=[]; let anum=0;
-    if(keepA1){ anum++; annexes.push({n:anum, lbl:'Frais accessoires', pages:[IA1], estim:false}); }
-    if(keepA2){ anum++; const pgs=[]; for(let k=1;k<=NP;k++) pgs.push(tabIdx(k)); annexes.push({n:anum, lbl:'Tableau détaillé de calcul des honoraires', pages:pgs, estim:false, tableau:true}); }
-    if(keepA3){ anum++; annexes.push({n:anum, lbl:"Estimation du coût de l'ouvrage ±20%", pages:[IA3], estim:true}); }
-    // Annexes PERSONNALISÉES (nom uniquement, pas de page dédiée) → ajoutées à la suite de la liste.
-    (d.annexesCustom||[]).forEach(a=>{ if((a.name||'').trim()){ anum++; annexes.push({n:anum, lbl:(a.name||'').trim(), pages:[], estim:false, custom:true}); } });
-    // (1) Liste ANNEXES sur le récap. En multi-ouvrage, le Tableau détaillé est listé une ligne PAR PARTIE, avec
-    //     le nom de la partie d'ouvrage en ROUGE GRAS entre parenthèses.
-    // Le bloc est ANCRÉ EN BAS : la dernière ligne se cale à 382.8 (position de la 3e ligne du gabarit
-    // « prestations ordinaires ») et l'en-tête « ANNEXES » descend avec la liste en gardant l'écart du
-    // gabarit (31.4 pt) — la zone des annexes se réduit, SIGNATURES ne bouge pas. Listes longues
-    // (5 lignes et plus, multi-ouvrage) : disposition d'origine (en-tête à 442.6, liste vers le bas).
-    // Liste VIDE : le chapitre ANNEXES disparaît entièrement du récap.
-    const nAnxLines = annexes.reduce((s,a)=>s+((a.tableau && NP>1)?NP:1),0);
-    const anxTop = (nAnxLines>=1 && nAnxLines<=4) ? 382.8 + (nAnxLines-1)*14.2 : 408.8;   // 1re ligne de la liste
-    const anxBottom = Math.min(372, anxTop - Math.max(0,nAnxLines-1)*14.2 - 6) - _expMF;
-    // Un seul grand wipe : en-tête baké « 9 | ANNEXES » (n° x85, trait, séparateur) + liste bakée + zones décalées.
-    wipe(p8,83,anxBottom,512,456,0);
-    if(annexes.length){
-      const ayH = anxTop + 31.4 - _expMF;   // en-tête redessiné au-dessus de la liste (écart du gabarit)
-      dL(p8,fB,8,cN, d.isExpertise?'8':'9', 85.04, ayH); dL(p8,fB,8,cN,'ANNEXES',130.43,ayH);
-      p8.drawLine({start:{x:85,y:ayH-4.37},end:{x:510.2,y:ayH-4.37},thickness:0.5,color:cN});   // trait de chapitre
-      p8.drawLine({start:{x:121.9,y:ayH-4.17},end:{x:121.9,y:ayH+9.83},thickness:0.5,color:cN}); // séparateur n°/titre
-    }
-    let ay=anxTop-_expMF;
-    annexes.forEach(a=>{
-      if(a.tableau && NP>1){
-        // une ligne PAR PARTIE, numérotée 2a, 2b, … (même n° de base + lettre) + nom de partie en rouge gras
-        OUV.forEach((o,k)=>{
-          const base='Annexe '+a.n+String.fromCharCode(97+k)+' - '+a.lbl+' ';
-          dL(p8,fR,8,cN, base, 130.4, ay);
-          const bw=fR.widthOfTextAtSize(base,8);
-          dL(p8,fB,8,cRed, '('+(o.name||'')+')', 130.4+bw, ay);
-          ay-=14.2;
-        });
-      } else {
-        dL(p8,fR,8,cN,'Annexe '+a.n+' - '+a.lbl,130.4,ay); ay-=14.2;
-      }
-    });
+    // La liste « annexes » (et keepA1/keepA2/keepA3) est construite plus haut (bloc multi-ouvrage) ;
+    // la LISTE du chapitre ANNEXES est dessinée dans le bloc RÉCAP (avant le « Montant forfaitaire »,
+    // qui descend maintenant avec la cascade). Ici : uniquement les EN-TÊTES et CONTENUS des pages annexes.
     // (2) En-têtes. Pages portrait (Frais/Estimation) : on redessine « ANNEXE N ». Le Tableau détaillé (paysage)
     //     porte son titre pré-imprimé « ANNEXE 2 - PRESTATIONS ORDINAIRES » (28.4,560.8) → on y accole le nom
     //     de la partie en ROUGE/Bold (uniquement si ≥2 parties d'ouvrage).
@@ -5768,7 +5790,7 @@ function chModecalcType(){
   ['ch_remu_type','ch_remu_type2'].forEach(id=>{ const r=document.getElementById(id); if(r && r.value !== sel.value) r.value = sel.value; });   // reflète le choix dans les 2 sélecteurs « Rémunération »
   const target = chModecalcDefault();   // type-aware : pour l'expertise, la « Condition » garde son texte type (la rémunération n'y change rien)
   if(document.getElementById('ch_chk_expertise')?.checked && !document.getElementById('ch_chk_ord')?.checked){ refreshOffrePreview(); return; }
-  if(ta.dataset.edited && !confirm('Remplacer le texte du mode de calcul par le modèle « '+(sel.value==='unitaire'?'Prix unitaire':'Forfaitaire')+' » ?\nVos modifications manuelles seront perdues.')){
+  if(ta.dataset.edited && !confirm('Remplacer le texte du mode de calcul par le modèle « '+(sel.value==='unitaire'?'Unitaire':(sel.value==='forfait'?'Forfait':'Forfait relatif'))+' » ?\nVos modifications manuelles seront perdues.')){
     return;
   }
   rtSetValue('ch_modecalc', target);   // le sélecteur (unitaire) déclenche déjà le redessin PDF
@@ -6846,9 +6868,9 @@ function chContratModeCalc(c){
             : (c && c.ouvrages && c.ouvrages[0] && c.ouvrages[0].detail && c.ouvrages[0].detail.inputs) ? c.ouvrages[0].detail.inputs
             : null;
   if(!inp) return '';
-  return inp.ch_modecalc_type === 'unitaire' ? 'Prix unitaire' : 'Forfaitaire';
+  return inp.ch_modecalc_type === 'unitaire' ? 'Unitaire' : (inp.ch_modecalc_type === 'forfait' ? 'Forfait' : 'Forfait relatif');
 }
-const CH_MODECALC_COLORS = {'Forfaitaire':'#003346','Prix unitaire':'#5a6b72'};
+const CH_MODECALC_COLORS = {'Forfait relatif':'#003346','Forfait':'#0a4a5e','Unitaire':'#5a6b72','Forfaitaire':'#003346','Prix unitaire':'#5a6b72'};
 function chModecalcBadge(c){
   const mc = chContratModeCalc(c);
   if(!mc) return '';

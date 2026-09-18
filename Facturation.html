@@ -4225,7 +4225,7 @@ async function offrePDFBytes(){
   // Bloc référence en FLUX VERTICAL : objet → bien-fonds → maître d'ouvrage → architecte.
   // Si l'objet passe à la ligne, tous les blocs en dessous descendent (espacement constant).
   wipe(p1,108,305,512,500,0);
-  const p1rule=(y)=>p1.drawLine({start:{x:L,y},end:{x:RX,y},thickness:0.4,color:cN});
+  const p1rule=(y)=>p1.drawLine({start:{x:L,y},end:{x:RX,y},thickness:0.25,color:cN});   // traits sous MAÎTRE DE L'OUVRAGE / ARCHITECTE — même épaisseur que l'en-tête de la page 2 (0.25)
   const LH=14;
   let cy=490.6;
   // Ligne du flux : dessinée UNIQUEMENT si renseignée (pré-décrément) → les lignes vides sont retirées
@@ -4887,7 +4887,7 @@ async function offrePDFBytes(){
         // les petits traits du gabarit (sous le titre y=552 et sous la réf y≈542.8, x 28.3→36.5).
         wipe(pg,27,543.6,400,556,0);   dL(pg,fR,7.5,cG,`${d.ref} - ${up(d.projet)}`,28.3,546.8);
         wipe(pg,27,529.5,400,540.3,0); dL(pg,fR,7.5,cG,`${up(d.lieu)} - ${offreDateFR(d.date)}`,28.4,532.8);
-        pg.drawLine({start:{x:28.35,y:552},end:{x:36.5,y:552},thickness:0.5,color:cN});   // petit trait sous le titre (y=552, effacé par le wipe de la réf) — redessiné
+        pg.drawLine({start:{x:28.35,y:552},end:{x:36.5,y:552},thickness:0.25,color:cN});   // petit trait sous le titre (y=552) — même épaisseur que l'en-tête de la page 2 (0.25)
         if(NP>1 && OUV[pk]){
           // renomme l'en-tête pré-imprimé « ANNEXE 2 - PRESTATIONS ORDINAIRES » en « ANNEXE 2a/2b - … »
           // (même n° de base + lettre par partie), puis accole le nom de partie en ROUGE gras.
@@ -4905,7 +4905,7 @@ async function offrePDFBytes(){
         wipe(pg,28,800,345,814,0);
         dL(pg,fB,a.estim?8:7.5,cN, a.estim ? ('ANNEXE '+a.n+" - ESTIMATION DU COÛT DE L'OUVRAGE ±20%") : ('ANNEXE '+a.n), 28.4, a.estim?804.5:805.1);
         // Petit trait du gabarit sous le titre (y=803, x 28.3→36.5) — effacé par le wipe ci-dessus → redessiné.
-        pg.drawLine({start:{x:28.35,y:803},end:{x:36.5,y:803},thickness:0.5,color:cN});
+        pg.drawLine({start:{x:28.35,y:803},end:{x:36.5,y:803},thickness:0.25,color:cN});   // même épaisseur que l'en-tête de la page 2 (0.25)
       }
     }); });
     // (2c) ANNEXE 1 « Frais accessoires » : on ajoute EN TÊTE la section « Tarifs horaire » (déplacée du
@@ -5338,8 +5338,8 @@ async function offrePDFBytes(){
       const curRX=pw-87.6, totLX=pw-82.2;     // bord droit du n° courant / bord gauche du total
       wipe(pg,pw-97.3,23,pw-86.7,38,0);       // ancien numéro courant (couvre aussi les empattements en haut)
       wipe(pg,pw-82.9,23,pw-75.7,38,0);       // ancien total (couvre aussi les empattements) ; le trait reste
-      dR(pg,fR,7.5,cN,String(pos+1),curRX,28.9);  // page actuelle → même hauteur que le pied de page
-      dL(pg,fR,7.5,cN,String(nTot),totLX,28.9);   // total → même hauteur que le pied de page
+      dR(pg,fR,7.5,cN,String(pos+1),curRX,28.0);  // page actuelle — MÊME ligne de base que le texte de gauche du pied (28.0)
+      dL(pg,fR,7.5,cN,String(nTot),totLX,28.0);   // total — idem
     });
     // (4) Supprimer les pages absentes, du plus grand index au plus petit (pas de décalage d'index).
     //     Les index sont décalés de _supIns (feuille supplémentaire insérée à idx3 pour l'expertise).

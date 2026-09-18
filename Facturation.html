@@ -3793,7 +3793,8 @@ function offreGather(){
     R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, projetPage, projetTexte, hideTarifs, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
     cfc:{ c1:cfc('ch_cfc1','ch_cfc1_ni'), c2:cfc('ch_cfc2','ch_cfc2_ni'), c4:cfc('ch_cfc4','ch_cfc4_ni'), c5:cfc('ch_cfc5','ch_cfc5_ni'), c9:cfc('ch_cfc9','ch_cfc9_ni') },
     tauxMoyen: R.h, tauxRabais: R.h*(1-R.rabaisPct/100),
-    forfaitTTC: R.forfaitOn ? R.forfaitTTC : R.ttc, fraisMnt: R.forfaitFraisMnt, fraisPct: R.forfaitFraisPct, fraisHT: !!R.forfaitFraisHT, fraisMode: R.fraisMode||'pct'
+    forfaitTTC: R.forfaitOn ? R.forfaitTTC : R.ttc, fraisMnt: R.forfaitFraisMnt, fraisPct: R.forfaitFraisPct, fraisHT: !!R.forfaitFraisHT, fraisMode: R.fraisMode||'pct',
+    fraisForfait: (()=>{ try{ const st=chFraisState(); return !!(st.selPerso && !st.selDepl && !st.selRepro); }catch(e){ return false; } })()   // « Frais personnalisés » seuls (montant arrêté) → Annexe 1 inutile
   };
 }
 
@@ -4753,28 +4754,34 @@ async function offrePDFBytes(){
   {
     // keepA2/keepA3, tabIdx, IA1, IA3 sont définis dans le bloc multi-ouvrage plus haut.
     // Numéros d'annexe : Frais=1 ; Tableau détaillé=2 (NP pages en multi, même n°) ; Estimation=3 — conditionnels.
+    // Frais FORFAITAIRES (« Frais personnalisés » seuls) : l'Annexe 1 « Frais accessoires » est retirée
+    // (les tarifs unitaires n'ont pas de raison d'être quand le montant est arrêté) — la numérotation suit.
+    const keepA1 = !d.fraisForfait;
     const annexes=[]; let anum=0;
-    anum++; annexes.push({n:anum, lbl:'Frais accessoires', pages:[IA1], estim:false});
+    if(keepA1){ anum++; annexes.push({n:anum, lbl:'Frais accessoires', pages:[IA1], estim:false}); }
     if(keepA2){ anum++; const pgs=[]; for(let k=1;k<=NP;k++) pgs.push(tabIdx(k)); annexes.push({n:anum, lbl:'Tableau détaillé de calcul des honoraires', pages:pgs, estim:false, tableau:true}); }
     if(keepA3){ anum++; annexes.push({n:anum, lbl:"Estimation du coût de l'ouvrage ±20%", pages:[IA3], estim:true}); }
     // Annexes PERSONNALISÉES (nom uniquement, pas de page dédiée) → ajoutées à la suite de la liste.
     (d.annexesCustom||[]).forEach(a=>{ if((a.name||'').trim()){ anum++; annexes.push({n:anum, lbl:(a.name||'').trim(), pages:[], estim:false, custom:true}); } });
     // (1) Liste ANNEXES sur le récap. En multi-ouvrage, le Tableau détaillé est listé une ligne PAR PARTIE, avec
-    //     le nom de la partie d'ouvrage en ROUGE GRAS entre parenthèses. On étend l'effacement selon le nb de lignes.
+    //     le nom de la partie d'ouvrage en ROUGE GRAS entre parenthèses.
+    // Le bloc est ANCRÉ EN BAS : la dernière ligne se cale à 382.8 (position de la 3e ligne du gabarit
+    // « prestations ordinaires ») et l'en-tête « ANNEXES » descend avec la liste en gardant l'écart du
+    // gabarit (31.4 pt) — la zone des annexes se réduit, SIGNATURES ne bouge pas. Listes longues
+    // (5 lignes et plus, multi-ouvrage) : disposition d'origine (en-tête à 442.6, liste vers le bas).
+    // Liste VIDE : le chapitre ANNEXES disparaît entièrement du récap.
     const nAnxLines = annexes.reduce((s,a)=>s+((a.tableau && NP>1)?NP:1),0);
-    const anxBottom = Math.min(372, 408.8 - nAnxLines*14.2 + 4) - _expMF;
-    if(d.isExpertise){
-      // Chapitre « Annexes » renuméroté (9→8) ET descendu de _expMF. Un seul grand wipe (83→512, anxBottom→452)
-      // efface l'en-tête baké « 9 | ANNEXES » (n° x85 inclus) + la liste bakée d'origine + la zone décalée.
-      wipe(p8,83,anxBottom,512,452,0);
-      const ay0=442.63-_expMF;
-      dL(p8,fB,8,cN,'8',85.04,ay0); dL(p8,fB,8,cN,'ANNEXES',130.43,ay0);
-      p8.drawLine({start:{x:85,y:ay0-4.37},end:{x:510.2,y:ay0-4.37},thickness:0.5,color:cN});   // trait de chapitre
-      p8.drawLine({start:{x:121.9,y:ay0-4.17},end:{x:121.9,y:ay0+9.83},thickness:0.5,color:cN}); // séparateur n°/titre
-    } else {
-      wipe(p8,128,anxBottom,414,419,0);
+    const anxTop = (nAnxLines>=1 && nAnxLines<=4) ? 382.8 + (nAnxLines-1)*14.2 : 408.8;   // 1re ligne de la liste
+    const anxBottom = Math.min(372, anxTop - Math.max(0,nAnxLines-1)*14.2 - 6) - _expMF;
+    // Un seul grand wipe : en-tête baké « 9 | ANNEXES » (n° x85, trait, séparateur) + liste bakée + zones décalées.
+    wipe(p8,83,anxBottom,512,456,0);
+    if(annexes.length){
+      const ayH = anxTop + 31.4 - _expMF;   // en-tête redessiné au-dessus de la liste (écart du gabarit)
+      dL(p8,fB,8,cN, d.isExpertise?'8':'9', 85.04, ayH); dL(p8,fB,8,cN,'ANNEXES',130.43,ayH);
+      p8.drawLine({start:{x:85,y:ayH-4.37},end:{x:510.2,y:ayH-4.37},thickness:0.5,color:cN});   // trait de chapitre
+      p8.drawLine({start:{x:121.9,y:ayH-4.17},end:{x:121.9,y:ayH+9.83},thickness:0.5,color:cN}); // séparateur n°/titre
     }
-    let ay=408.8-_expMF;
+    let ay=anxTop-_expMF;
     annexes.forEach(a=>{
       if(a.tableau && NP>1){
         // une ligne PAR PARTIE, numérotée 2a, 2b, … (même n° de base + lettre) + nom de partie en rouge gras
@@ -4807,6 +4814,11 @@ async function offrePDFBytes(){
           wipe(pg,27,557,172,569,0);
           dL(pg, fB, 7.5, cN, title, 28.4, 560.77);
           dL(pg, fB, 7.5, cRed, ' ('+OUV[pk].name+')', 28.4+fB.widthOfTextAtSize(title,7.5), 560.77);
+        } else if(a.n!==2){
+          // Annexe 1 retirée (frais forfaitaires) → le Tableau détaillé change de numéro : on renomme
+          // l'en-tête pré-imprimé « ANNEXE 2 - PRESTATIONS ORDINAIRES ».
+          wipe(pg,27,557,172,569,0);
+          dL(pg, fB, 7.5, cN, 'ANNEXE '+a.n+' - PRESTATIONS ORDINAIRES', 28.4, 560.77);
         }
       } else {
         wipe(pg,28,800,345,814,0);
@@ -4819,7 +4831,7 @@ async function offrePDFBytes(){
     //      chapitre 3), reproduite au style annexe (titre Regular + trait 0.25 pt + lignes, valeurs à
     //      droite x=510.2), puis on redessine les sections bakées (Impressions … Prestations de tiers)
     //      décalées vers le bas. L'en-tête « FRAIS ACCESOIRES / TARIFS HT » (baké, y≈747) est conservé.
-    if(P[IA1] && d.isExpertise){
+    if(keepA1 && P[IA1] && d.isExpertise){
       // EXPERTISE UNIQUEMENT : on ajoute la section « Tarifs horaire » en tête de l'Annexe 1. Les autres
       // types conservent l'Annexe 1 d'origine (Frais accessoires seuls, gabarit intact).
       const pF=P[IA1], AX=130.4, VX=510.2, CATX=AX+13, BX1=128, BX2=510.2, TH=0.25;   // CATX : libellé décalé après la lettre ; BX : bords du cadre
@@ -5231,6 +5243,7 @@ async function offrePDFBytes(){
     const _rmTarifs = !!d.hideTarifs && !_rmCond;   // non ordinaire à tarifs différents : page idx3 (Mode de calcul + Tarifs) retirée
     const SH = (i)=> _shift(i);   // index d'origine (gabarit) → index réel après TOUTES les insertions (Projet + feuilles de détail)
     const keptIdx=[]; for(let i=0;i<P.length;i++){
+      if(i===SH(IA1)&&!keepA1)continue;
       if(i===SH(tabIdx(1))&&!keepA2)continue;
       if(i===SH(IA3)&&!keepA3)continue;
       if(_rmSia && (i===SH(5) || i===SH(6)))continue;
@@ -5251,6 +5264,7 @@ async function offrePDFBytes(){
     //     Les index sont décalés de _supIns (feuille supplémentaire insérée à idx3 pour l'expertise).
     if(!keepA3) doc.removePage(SH(IA3));
     if(!keepA2) doc.removePage(SH(tabIdx(1)));
+    if(!keepA1) doc.removePage(SH(IA1));                          // frais forfaitaires → Annexe 1 « Frais accessoires » retirée
     if(_rmSia){ doc.removePage(SH(6)); doc.removePage(SH(5)); }   // détermination (6) puis prestations ordinaires (5)
     if(_rmPlan) doc.removePage(SH(4));                            // planning d'intention
     if(_rmCond || _rmTarifs) doc.removePage(SH(3));               // expertise (Condition sur Contexte) OU tarifs différents par ligne

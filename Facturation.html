@@ -1273,7 +1273,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 
     <!-- ═══ Feuille 2 — HONORAIRES NON ORDINAIRES ═══ -->
     <div class="card" id="card-chno" style="display:none">
-      <div class="card-hd">2 — Honoraires non ordinaires<label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer" title="Si coché : les commentaires des lignes sont détaillés sur une feuille supplémentaire du contrat ; sinon seule la prestation (sans commentaire) apparaît au récapitulatif."><input type="checkbox" id="ch_chno_detail" onchange="refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Détailler les commentaires sur une feuille supplémentaire</label><label id="ch_remu_type2_lbl" style="float:right;font-weight:normal;font-size:11px;display:none;align-items:center;gap:5px;margin-right:14px" title="Type de rémunération du contrat (affiché dans la colonne « Rémunération » de la liste des contrats)">Rémunération <select id="ch_remu_type2" onchange="chRemuTypeChanged(this.value)" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="forfait">Forfaitaire</option><option value="unitaire">Prix unitaire</option></select></label></div>
+      <div class="card-hd">2 — Honoraires non ordinaires<label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer" title="Si coché : les commentaires des lignes sont détaillés sur une feuille supplémentaire du contrat ; sinon seule la prestation (sans commentaire) apparaît au récapitulatif."><input type="checkbox" id="ch_chno_detail" onchange="refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Détailler les commentaires sur une feuille supplémentaire</label><label style="float:right;font-weight:normal;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-right:14px" title="Sans titre défini : masque les montants en face de chaque descriptif sur la feuille de détail — seul le TOTAL (somme de tous les descriptifs) s'affiche à droite en bas."><input type="checkbox" id="ch_chno_totalonly" onchange="refreshOffreSoon()" style="width:13px;height:13px;cursor:pointer"> Montants uniquement au TOTAL</label><label id="ch_remu_type2_lbl" style="float:right;font-weight:normal;font-size:11px;display:none;align-items:center;gap:5px;margin-right:14px" title="Type de rémunération du contrat (affiché dans la colonne « Rémunération » de la liste des contrats)">Rémunération <select id="ch_remu_type2" onchange="chRemuTypeChanged(this.value)" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="forfait">Forfaitaire</option><option value="unitaire">Prix unitaire</option></select></label></div>
       <div class="card-bd" style="padding:8px">
         <table style="width:100%;border-collapse:collapse;font-size:12px" id="chno-tbl">
           <thead><tr style="background:#003346;color:#fff">
@@ -3709,6 +3709,7 @@ function offreGather(){
   // Détail sur feuille supplémentaire (commentaires) : case ch_chno_detail. Lignes = prestations non ordinaires
   // ayant un libellé ou un montant ; on garde libellé + commentaire pour la feuille de détail.
   const chnoDetail = !!document.getElementById('ch_chno_detail')?.checked;
+  const chnoTotalOnly = !!document.getElementById('ch_chno_totalonly')?.checked;   // sans titre : montants masqués ligne par ligne, seul le TOTAL s'affiche
   const chnoLines = (typeof CH_NO!=='undefined'?CH_NO:[]).filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
                      .map(l=>({lbl:(l.lbl||'').trim(), com:(l.com||'').trim(), amt:l.amt||0, option:!!l.option,
                                heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||''), hideDetail:!!l.hideDetail,
@@ -3755,7 +3756,7 @@ function offreGather(){
     tarifMoyen: gn('ch_tarif_moyen'),
     tarifRabais: (gn('ch_tarif_moyen')||0)*(1-(gn('ch_rabais')||0)/100),
     planDelais: planGatherDelais(), planReserves: planGatherReserves(),
-    R, chno, chnoOpt, chnoDetail, chnoLines, chnoTitres, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
+    R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
     cfc:{ c1:cfc('ch_cfc1','ch_cfc1_ni'), c2:cfc('ch_cfc2','ch_cfc2_ni'), c4:cfc('ch_cfc4','ch_cfc4_ni'), c5:cfc('ch_cfc5','ch_cfc5_ni'), c9:cfc('ch_cfc9','ch_cfc9_ni') },
     tauxMoyen: R.h, tauxRabais: R.h*(1-R.rabaisPct/100),
     forfaitTTC: R.forfaitOn ? R.forfaitTTC : R.ttc, fraisMnt: R.forfaitFraisMnt, fraisPct: R.forfaitFraisPct, fraisHT: !!R.forfaitFraisHT, fraisMode: R.fraisMode||'pct'
@@ -4961,11 +4962,13 @@ async function offrePDFBytes(){
           dL(sp,fR,8,cN,'–',172.2,sy);                   // puce (tiret demi-cadratin)
           lines.forEach((wordsArr,i)=>{ const y=sy-i*LHrow; if(y<80) return; drawJust(wordsArr,y,i===lines.length-1); });
           const yLast = sy - (lines.length-1)*LHrow;     // heures + tarif + montant sur la dernière ligne de la description
-          if(!ln.hideDetail){                            // « Masquer heures/tarif » : seul le montant apparaît
-            dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
-            dR(sp,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast);
+          if(!d.chnoTotalOnly){                          // case « Montants uniquement au TOTAL » : rien en face des lignes
+            if(!ln.hideDetail){                          // « Masquer heures/tarif » : seul le montant apparaît
+              dR(sp,fR,8,cN,fmtQte(ln.heures||0, ln.hUnit),HRX+0.2,yLast);
+              dR(sp,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast);
+            }
+            dR(sp,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);  // montant de la ligne dans la colonne « Montant HT »
           }
-          dR(sp,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);  // montant de la ligne dans la colonne « Montant HT »
           totHT += (ln.amt||0);
           lastY = yLast; sy = yLast - 12;
           // Commentaire à la suite de la description : une puce « – » par ligne de texte (en retrait).
@@ -5052,11 +5055,14 @@ async function offrePDFBytes(){
                 // SIMPLE DESCRIPTION — commentée : libellé en Akkurat Regular SOULIGNÉ ; sinon Light.
                 const hasCom = comItems.length>0;
                 const fLbl = hasCom ? fReg : fR;
-                const DXd = 166.5, DWd = 169;            // description alignée au « T » de TOTAL (même bord droit qu'avant)
+                // Avec commentaire : le TEXTE s'aligne au « T » de TOTAL (166.5). Sans commentaire : c'est la
+                // PUCE qui s'aligne au « T », le texte suit à 175 (même bord droit de colonne dans les deux cas).
+                const DXd = hasCom ? 166.5 : 175.0;
+                const DWd = hasCom ? 169 : 160.5;
                 const lines = wrapW(ln.lbl, DWd, fLbl);
                 const yLast = sy2-(lines.length-1)*LH2;
                 if(!measure){
-                  if(!hasCom) dL(pg,fLbl,8,cN,'–',158.0,sy2);   // puce seulement pour une description SANS commentaire
+                  if(!hasCom) dL(pg,fLbl,8,cN,'–',166.5,sy2);   // puce à l'aplomb du « T » de TOTAL
                   lines.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return;
                     drawJust(wa,y,k===lines.length-1,fLbl,DXd,DWd);
                     if(hasCom){ const w=(k===lines.length-1||wa.length===1)?fLbl.widthOfTextAtSize(wa.join(' '),8):DWd;
@@ -5066,11 +5072,11 @@ async function offrePDFBytes(){
                 }
                 tot += (ln.amt||0);
                 lY = yLast; sy2 = yLast - 14;
-                comItems.forEach(it=>{                   // commentaire en Akkurat Light, position inchangée
+                comItems.forEach(it=>{                   // commentaire en Akkurat Light — tabulation réduite de moitié (7 pt)
                   if(sy2 < 95) return;
-                  const ws = wrapW(it, DW-8);
-                  if(!measure){ dL(pg,fR,8,cN,'–',180.7,sy2);
-                    ws.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return; dL(pg,fR,8,cN,wa.join(' '),189.2,y); }); }
+                  const ws = wrapW(it, 154);
+                  if(!measure){ dL(pg,fR,8,cN,'–',173.6,sy2);
+                    ws.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return; dL(pg,fR,8,cN,wa.join(' '),182.1,y); }); }
                   lY = sy2-(ws.length-1)*LH2; sy2 = lY - 14;
                 });
                 sy2 -= 10;
@@ -6095,7 +6101,7 @@ const CH_DETAIL_INPUTS = ['ch_cfc1','ch_cfc2','ch_cfc4','ch_cfc5','ch_cfc9','ch_
   'ce_terrain_surf','ce_terrain_prix','ce_terrain_notaire','ce_terrain_arrondi',
   'ce_prep1','ce_prep2','ce_prep3_qty','ce_prep3_unit','ce_prep3_prix','ce_prep4','ce_prep_arrondi',
   'ce_divers_pct','ce_ext_surf','ce_ext_prix','ce_fs_pct','ce_total','ch_modecalc_type'];
-const CH_DETAIL_CHECKS = ['ch_cfc1_ni','ch_cfc2_ni','ch_cfc4_ni','ch_cfc5_ni','ch_cfc9_ni','ch_autres_global','ce_apply','ch_forfait_on','ch_frais_offerts','ch_frais_depl_off','ch_frais_repro_off','ch_frais_sel_pct','ch_frais_sel_perso','ch_frais_sel_depl','ch_frais_sel_repro','ch_hide_estim','ch_hide_planning','ch_show_planning','ch_hide_rabais','ch_hide_arrondi','ch_chno_detail','ch_chk_ord','ch_chk_no','ch_chk_expertise','ch_chk_faisa'];
+const CH_DETAIL_CHECKS = ['ch_cfc1_ni','ch_cfc2_ni','ch_cfc4_ni','ch_cfc5_ni','ch_cfc9_ni','ch_autres_global','ce_apply','ch_forfait_on','ch_frais_offerts','ch_frais_depl_off','ch_frais_repro_off','ch_frais_sel_pct','ch_frais_sel_perso','ch_frais_sel_depl','ch_frais_sel_repro','ch_hide_estim','ch_hide_planning','ch_show_planning','ch_hide_rabais','ch_hide_arrondi','ch_chno_detail','ch_chno_totalonly','ch_chk_ord','ch_chk_no','ch_chk_expertise','ch_chk_faisa'];
 const CH_DETAIL_DS = ['ch_cfc2','ch_cfc5','ch_cfc9','ch_cfc2_ded','ch_cfc5_ded','ch_det','ch_res_ht','ce_total','ch_ing','ch_cvse','ch_geom'];
 
 function chCaptureDetail(){
@@ -7330,8 +7336,7 @@ function buildChno() {
         oninput="CH_NO[${i}].lbl=this.value" style="flex:1;min-width:0;border:1px solid #ccc;border-radius:3px;padding:4px 6px"></div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:3px;flex-wrap:wrap">
         <label title="Si coché : les heures et le tarif de cette ligne sont masqués (formulaire ET PDF) — seul le montant, saisi directement, apparaît." style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:#666;cursor:pointer;white-space:nowrap"><input type="checkbox" ${l.hideDetail?'checked':''} onchange="CH_NO[${i}].hideDetail=this.checked;buildChno();updCalcHono();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Masquer heures/tarif (saisir le montant)</label>
-        ${hasTitres?`<label title="Activé : cette ligne s'imprime en SOUS-TITRE souligné (montants sur sa ligne, commentaire en puces dessous). Désactivé : simple description avec montant." style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:${l.sousTitre?'#0a4a5e':'#666'};font-weight:${l.sousTitre?'bold':'normal'};cursor:pointer;white-space:nowrap"><input type="checkbox" ${l.sousTitre?'checked':''} onchange="CH_NO[${i}].sousTitre=this.checked;buildChno();refreshOffreSoon()" style="width:12px;height:12px;cursor:pointer"> Sous-titre</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:#666;white-space:nowrap">Titre : <select onchange="CH_NO[${i}].titreIdx=(this.value===''?null:+this.value);buildChno();refreshOffreSoon()" style="border:1px solid #ccc;border-radius:3px;font-size:10.5px"><option value="">— sans titre —</option>${CH_NO_TITRES.map((t,k)=>`<option value="${k}"${l.titreIdx===k?' selected':''}>${escT(t.titre||('Titre '+(k+1)))}</option>`).join('')}</select></label>`:''}
+        ${hasTitres?`<label style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:#666;white-space:nowrap">Titre : <select onchange="CH_NO[${i}].titreIdx=(this.value===''?null:+this.value);buildChno();refreshOffreSoon()" style="border:1px solid #ccc;border-radius:3px;font-size:10.5px"><option value="">— sans titre —</option>${CH_NO_TITRES.map((t,k)=>`<option value="${k}"${l.titreIdx===k?' selected':''}>${escT(t.titre||('Titre '+(k+1)))}</option>`).join('')}</select></label>`:''}
         </div></td>
       ${heuresCell}
       ${prixCell}

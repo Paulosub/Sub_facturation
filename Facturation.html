@@ -4322,8 +4322,15 @@ async function offrePDFBytes(){
       const bullet=ln.type==='bullet', indent=bullet?12:0, maxW=TW-indent;
       const toks=[]; ln.runs.forEach(r=>{ r.t.split(/(\s+)/).forEach(p=>{ if(p==='')return; toks.push({txt:p,sp:/^\s+$/.test(p),b:r.b,i:r.i,u:r.u}); }); });
       let lt=[], lw=0, firstOfBlock=true;
+      // TABULATION SUSPENDUE : si la ligne saisie commence par une tabulation, les lignes de
+      // continuation (repli automatique) reprennent le MÊME retrait que le texte après la tabulation.
+      let hang=0;
+      for(const tk of toks){ if(!tk.sp) break;
+        if(tk.txt.indexOf(' ')!==-1) hang += fontFor(tk).widthOfTextAtSize(tk.txt.replace(/ /g,' '),sz); }
+      if(hang > maxW-40) hang = Math.max(0, maxW-40);
       const flush=()=>{
-        let cx=L+indent;
+        const x0 = L+indent + (firstOfBlock ? 0 : hang);
+        let cx=x0;
         if(bullet && firstOfBlock) pg.drawEllipse({x:L+4,y:y+2.4,xScale:1.15,yScale:1.15,color:col});   // pastille dessinée (la police n'a pas le glyphe « • »)
         if(opt.quote && !firstDrawn) dL(pg,fR,sz,col,opt.quote,L-gw-0.5,y);
         firstDrawn=true;
@@ -4331,7 +4338,7 @@ async function offrePDFBytes(){
         // Soulignement CONTINU : un seul trait par groupe de jetons soulign\u00E9s cons\u00E9cutifs (espaces compris).
         // Le trait s'arr\u00EAte au dernier MOT du groupe (pas d'espace pendante en fin de ligne) \u2014 sauf si le
         // groupe ne contient que des espaces soulign\u00E9s (ligne \u00E0 compl\u00E9ter), auquel cas il couvre tout.
-        { let px=L+indent, segs=[], seg=null;
+        { let px=x0, segs=[], seg=null;
           lt.forEach(tk=>{ if(tk.u){ if(!seg){ seg={x1:px, x2:px+tk.w, xTxt:null}; segs.push(seg); } seg.x2=px+tk.w; if(!tk.sp) seg.xTxt=px+tk.w; } else seg=null; px+=tk.w; });
           segs.forEach(s=>{ const x2=(s.xTxt!=null ? s.xTxt : s.x2);
             if(x2>s.x1) pg.drawLine({start:{x:s.x1,y:y-1.5},end:{x:x2,y:y-1.5},thickness:0.4,color:col}); });
@@ -4339,7 +4346,7 @@ async function offrePDFBytes(){
         y-=lh; lt=[]; lw=0; firstOfBlock=false;
       };
       toks.forEach(tk=>{ const f=fontFor(tk); tk.w=f.widthOfTextAtSize(tk.txt.replace(/\u00A0/g,' '),sz);
-        if(!tk.sp && lw+tk.w>maxW && lt.length) flush();
+        if(!tk.sp && lw+tk.w>(firstOfBlock?maxW:maxW-hang) && lt.length) flush();
         if(tk.sp && lt.length===0 && tk.txt.indexOf('\u00A0')===-1) return;   // une tabulation en début de ligne est conservée
         lt.push(tk); lw+=tk.w; });
       if(lt.length) flush();

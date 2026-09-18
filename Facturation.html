@@ -4202,20 +4202,28 @@ async function offrePDFBytes(){
   const p1rule=(y)=>p1.drawLine({start:{x:L,y},end:{x:RX,y},thickness:0.4,color:cN});
   const LH=14;
   let cy=490.6;
-  wrap(up(d.projet),fR,7.5,TW).forEach(l=>{ dL(p1,fR,7.5,cN,l,L,cy); cy-=LH; });
-  dL(p1,fR,7.5,cN,up(d.padr),L,cy); cy-=LH;
-  dL(p1,fR,7.5,cN,up(d.ploc),L,cy);
+  // Ligne du flux : dessinée UNIQUEMENT si renseignée (pré-décrément) → les lignes vides sont retirées
+  // et l'espace avant chaque titre (MAÎTRE DE L'OUVRAGE, ARCHITECTE) reste constant.
+  let _p1n=0; const p1line=(t)=>{ if(!(t||'').trim()) return; if(_p1n>0) cy-=LH; dL(p1,fR,7.5,cN,t,L,cy); _p1n++; };
+  // OBJET : les retours à la ligne SAISIS dans le formulaire sont respectés ; chaque ligne saisie se
+  // replie ensuite automatiquement à la largeur de la page si elle est trop longue.
+  up(d.projet).split(/\n/).map(s=>s.trim()).filter(Boolean).forEach(seg=>{
+    wrap(seg,fR,7.5,TW).forEach(l=> p1line(l));
+  });
+  p1line(up(d.padr));
+  p1line(up(d.ploc));
   // ECA puis parcelle(s) — uniquement si renseignés (cellules vides ignorées). ECA au-dessus des parcelles.
-  if(d.eca){ cy-=LH; dL(p1,fR,7.5,cN,'ECA N° '+up(d.eca),L,cy); }
-  if(d.parc){ cy-=LH; dL(p1,fR,7.5,cN,((d.parcelles&&d.parcelles.length>1)?'PARCELLES N° ':'PARCELLE N° ')+up(d.parc),L,cy); }
+  if(d.eca) p1line('ECA N° '+up(d.eca));
+  if(d.parc) p1line(((d.parcelles&&d.parcelles.length>1)?'PARCELLES N° ':'PARCELLE N° ')+up(d.parc));
   cy-=27.7;
   const _att = (d.att && !d.formule);   // « À l'att. de » seulement si aucune formule et un destinataire est saisi
   dL(p1,fR,7.5,cN,"MAÎTRE DE L'OUVRAGE",L,cy); p1rule(cy-2.8); cy-=15.3;
-  dL(p1,fR,7.5,cN,up(d.nom),L,cy); cy-=LH;
-  if(_att){ dL(p1,fR,7.5,cN,"À L'ATT. DE "+up(d.att),L,cy); cy-=LH; }
-  dL(p1,fR,7.5,cN,up(d.adr),L,cy); cy-=LH;
-  dL(p1,fR,7.5,cN,up(d.loc),L,cy);
-  cy-=(_att ? 34.2-LH : 34.2);   // compense la ligne « À l'att. » pour garder le bloc ARCHITECTE en place
+  _p1n=0;
+  p1line(up(d.nom));
+  if(_att) p1line("À L'ATT. DE "+up(d.att));
+  p1line(up(d.adr));
+  p1line(up(d.loc));
+  cy-=34.2;
   dL(p1,fR,7.5,cN,'ARCHITECTE',L,cy); p1rule(cy-2.8); cy-=15.2;
   dL(p1,fR,7.5,cN,'SUBSTANCES ARCHITECTES SÀRL',L,cy); cy-=LH;
   dL(p1,fR,7.5,cN,'RUE DE LA GARE 12',L,cy); cy-=LH;

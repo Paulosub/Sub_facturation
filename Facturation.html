@@ -5016,7 +5016,7 @@ async function offrePDFBytes(){
           // avant les descriptions (visuel 26RRD : « 4.21  Définition de l'objet, étude de faisabilité »).
           if(grp.t && grp.t.showSt && (grp.t.st||'').trim()){
             dL(pg,fR,8,cN,String(grp.t.st).trim(),130.4,yH-31);
-            sy = yH-61; lastY = yH-31;
+            sy = yH-43; lastY = yH-31;                   // interligne 1.5 (12 pt) entre le sous-titre et la description
           }
           // ── Prestations + TOTAL : bloc ALIGNÉ AU BAS DE LA PAGE (le TOTAL se cale en bas ; si le
           //    contenu dépasse, on repart du haut comme avant). Deux passes : mesure, puis dessin. ──
@@ -5078,13 +5078,12 @@ async function offrePDFBytes(){
             return {lastY:lY, totHT:tot};
           };
           if(grp.lines.length){
-            const mes = renderLines(true, 1000);         // 1re passe : hauteur du bloc
-            const used = 1000 - mes.lastY;
-            const sy0 = Math.min(syCap, 131.3 + used);   // TOTAL calé au bas de la page (y = 100)
-            const res = renderLines(false, sy0);         // 2e passe : dessin
-            totalRow(pg, res.lastY, res.totHT);
+            // Les prestations SUIVENT le sous-titre (haut de page, interligne 1.5) ;
+            // seul le TOTAL est calé au bas de la page (y = 100), sauf si le contenu descend plus bas.
+            const res = renderLines(false, syCap);
+            totalRow(pg, Math.min(res.lastY, 131.3), res.totHT);
           } else {
-            totalRow(pg, lastYHdr, 0);
+            totalRow(pg, Math.min(lastYHdr, 131.3), 0);
           }
         });
       }

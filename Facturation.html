@@ -4206,8 +4206,8 @@ async function offrePDFBytes(){
     // CENTRÉS entre les lignes de texte, à 0.25 pt partout (référence : trait de la page 2).
     wipe(pg,27.9,802.3,37,803.6,0);
     wipe(pg,27.9,788.5,37,789.6,0);
-    pg.drawLine({start:{x:28.35,y:802.1},end:{x:36.5,y:802.1},thickness:0.1,color:cN});    // entre titre et réf — centre MESURÉ de l'espace vide (805.6 ↔ 798.5)
-    pg.drawLine({start:{x:28.35,y:787.9},end:{x:36.5,y:787.9},thickness:0.1,color:cN});    // entre réf et date — centre MESURÉ (791.6 ↔ 784.1)
+    pg.drawLine({start:{x:28.35,y:802.1},end:{x:36.5,y:802.1},thickness:0.25,color:cN});    // entre titre et réf — centre MESURÉ de l'espace vide (805.6 ↔ 798.5)
+    pg.drawLine({start:{x:28.35,y:787.9},end:{x:36.5,y:787.9},thickness:0.25,color:cN});    // entre réf et date — centre MESURÉ (791.6 ↔ 784.1)
   };
   for(let i=1;i<P.length;i++){ if(P[i]) runHdr(P[i]); }
 
@@ -4229,14 +4229,14 @@ async function offrePDFBytes(){
   setL(p1,[28.4,791.0,180,799.0],`${up(d.lieu)} - ${offreDateFR(d.date)}`,fR,8,cN);
   // Petit trait d'en-tête de la couverture : recentré entre « OFFRE D'HONORAIRES » (804.1) et la date (791), 0.25 pt.
   wipe(p1,27.9,802.3,37,803.6,0);
-  p1.drawLine({start:{x:28.35,y:802.9},end:{x:36.5,y:802.9},thickness:0.1,color:cN});   // centre MESURÉ (titre 807.4 ↔ date 798.5)
+  p1.drawLine({start:{x:28.35,y:802.9},end:{x:36.5,y:802.9},thickness:0.25,color:cN});   // centre MESURÉ (titre 807.4 ↔ date 798.5)
   setL(p1,[85.0,509.7,110,516.7],d.ref,fB,7.5,cN);
   // Expertise : l'objet de l'offre devient « … PRESTATIONS D'EXPERTISE » (efface le libellé baké « … D'ARCHITECTE »).
   if(d.isExpertise){ wipe(p1,130,508,322,520,0); dL(p1,fB,7.5,cN,"OFFRE RELATIVE AUX PRESTATIONS D'EXPERTISE",131.6,511.6); }
   // Bloc référence en FLUX VERTICAL : objet → bien-fonds → maître d'ouvrage → architecte.
   // Si l'objet passe à la ligne, tous les blocs en dessous descendent (espacement constant).
   wipe(p1,108,305,512,500,0);
-  const p1rule=(y)=>p1.drawLine({start:{x:L,y},end:{x:RX,y},thickness:0.1,color:cN});   // traits sous MAÎTRE DE L'OUVRAGE / ARCHITECTE — même épaisseur que l'en-tête de la page 2 (0.25)
+  const p1rule=(y)=>p1.drawLine({start:{x:L,y},end:{x:RX,y},thickness:0.25,color:cN});   // traits sous MAÎTRE DE L'OUVRAGE / ARCHITECTE — même épaisseur que l'en-tête de la page 2 (0.25)
   const LH=14;
   let cy=490.6;
   // Ligne du flux : dessinée UNIQUEMENT si renseignée (pré-décrément) → les lignes vides sont retirées
@@ -4899,8 +4899,8 @@ async function offrePDFBytes(){
         wipe(pg,27,543.6,400,556,0);   dL(pg,fR,7.5,cG,`${d.ref} - ${up((d.projetCourt||d.projet||'').replace(/\s+/g,' '))}`,28.3,546.8);
         wipe(pg,27,529.5,400,543.4,0); dL(pg,fR,7.5,cG,`${up(d.lieu)} - ${offreDateFR(d.date)}`,28.4,532.8);
         // Petits traits d'en-tête (paysage) : CENTRÉS entre les lignes de texte, 0.25 pt (référence page 2).
-        pg.drawLine({start:{x:28.35,y:558.0},end:{x:36.5,y:558.0},thickness:0.1,color:cN});   // entre titre (bas 560.8) et réf (haut ~555.2) — centré
-        pg.drawLine({start:{x:28.35,y:544.7},end:{x:36.5,y:544.7},thickness:0.1,color:cN});   // entre réf (bas ~548.3) et date (haut ~541.2) — centré ; remplace le trait baké (542.8)
+        pg.drawLine({start:{x:28.35,y:558.0},end:{x:36.5,y:558.0},thickness:0.25,color:cN});   // entre titre (bas 560.8) et réf (haut ~555.2) — centré
+        pg.drawLine({start:{x:28.35,y:544.7},end:{x:36.5,y:544.7},thickness:0.25,color:cN});   // entre réf (bas ~548.3) et date (haut ~541.2) — centré ; remplace le trait baké (542.8)
         if(NP>1 && OUV[pk]){
           // renomme l'en-tête pré-imprimé « ANNEXE 2 - PRESTATIONS ORDINAIRES » en « ANNEXE 2a/2b - … »
           // (même n° de base + lettre par partie), puis accole le nom de partie en ROUGE gras.
@@ -4917,7 +4917,7 @@ async function offrePDFBytes(){
       } else {
         wipe(pg,28,800,345,814,0);
         dL(pg,fB,a.estim?8:7.5,cN, a.estim ? ('ANNEXE '+a.n+" - ESTIMATION DU COÛT DE L'OUVRAGE ±20%") : ('ANNEXE '+a.n), 28.4, a.estim?804.5:805.1);
-        pg.drawLine({start:{x:28.35,y:802.1},end:{x:36.5,y:802.1},thickness:0.1,color:cN});   // le trait d'en-tête (802.1) est effacé par le wipe ci-dessus → redessiné
+        pg.drawLine({start:{x:28.35,y:802.1},end:{x:36.5,y:802.1},thickness:0.25,color:cN});   // le trait d'en-tête (802.1) est effacé par le wipe ci-dessus → redessiné
       }
     }); });
     // (2c) ANNEXE 1 « Frais accessoires » : on ajoute EN TÊTE la section « Tarifs horaire » (déplacée du
@@ -5355,12 +5355,12 @@ async function offrePDFBytes(){
       if(pw<600){   // pied de page PORTRAIT : les 3 petits traits sont recentrés entre les deux lignes de texte (0.1 pt)
         [[28.35,36.5],[125.85,134.3],[222.95,231.4]].forEach(sg=>{
           wipe(pg,sg[0]-0.5,37.6,sg[1]+0.5,38.7,0);
-          pg.drawLine({start:{x:sg[0],y:37.8},end:{x:sg[1],y:37.8},thickness:0.1,color:cN});
+          pg.drawLine({start:{x:sg[0],y:37.8},end:{x:sg[1],y:37.8},thickness:0.25,color:cN});
         });
       }
       // Trait VERTICAL de la numérotation : baké à 0.25 pt → effacé et redessiné à 0.1 pt (position identique).
       wipe(pg,pw-85.4,27.4,pw-83.8,37,0);
-      pg.drawLine({start:{x:pw-84.6,y:27.9},end:{x:pw-84.6,y:36.4},thickness:0.1,color:cN});
+      pg.drawLine({start:{x:pw-84.6,y:26.55},end:{x:pw-84.6,y:35.05},thickness:0.25,color:cN});   // centre du trait (30.8) = centre du texte des numéros (28.0..33.6)
     });
     // (4) Supprimer les pages absentes, du plus grand index au plus petit (pas de décalage d'index).
     //     Les index sont décalés de _supIns (feuille supplémentaire insérée à idx3 pour l'expertise).

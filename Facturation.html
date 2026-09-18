@@ -4290,7 +4290,15 @@ async function offrePDFBytes(){
         if(bullet && firstOfBlock) pg.drawEllipse({x:L+4,y:y+2.4,xScale:1.15,yScale:1.15,color:col});   // pastille dessinée (la police n'a pas le glyphe « • »)
         if(opt.quote && !firstDrawn) dL(pg,fR,sz,col,opt.quote,L-gw-0.5,y);
         firstDrawn=true;
-        lt.forEach(tk=>{ const f=fontFor(tk); dL(pg,f,sz,col,tk.txt.replace(/\u00A0/g,' '),cx,y); if(tk.u && !tk.sp) pg.drawLine({start:{x:cx,y:y-1.5},end:{x:cx+tk.w,y:y-1.5},thickness:0.4,color:col}); cx+=tk.w; });
+        lt.forEach(tk=>{ const f=fontFor(tk); dL(pg,f,sz,col,tk.txt.replace(/\u00A0/g,' '),cx,y); cx+=tk.w; });
+        // Soulignement CONTINU : un seul trait par groupe de jetons soulign\u00E9s cons\u00E9cutifs (espaces compris).
+        // Le trait s'arr\u00EAte au dernier MOT du groupe (pas d'espace pendante en fin de ligne) \u2014 sauf si le
+        // groupe ne contient que des espaces soulign\u00E9s (ligne \u00E0 compl\u00E9ter), auquel cas il couvre tout.
+        { let px=L+indent, segs=[], seg=null;
+          lt.forEach(tk=>{ if(tk.u){ if(!seg){ seg={x1:px, x2:px+tk.w, xTxt:null}; segs.push(seg); } seg.x2=px+tk.w; if(!tk.sp) seg.xTxt=px+tk.w; } else seg=null; px+=tk.w; });
+          segs.forEach(s=>{ const x2=(s.xTxt!=null ? s.xTxt : s.x2);
+            if(x2>s.x1) pg.drawLine({start:{x:s.x1,y:y-1.5},end:{x:x2,y:y-1.5},thickness:0.4,color:col}); });
+        }
         y-=lh; lt=[]; lw=0; firstOfBlock=false;
       };
       toks.forEach(tk=>{ const f=fontFor(tk); tk.w=f.widthOfTextAtSize(tk.txt.replace(/\u00A0/g,' '),sz);

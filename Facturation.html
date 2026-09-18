@@ -1134,7 +1134,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
               <option>Madame, Monsieur,</option><option>Madame,</option><option>Monsieur,</option>
               <option>Mesdames, Messieurs,</option><option>Famille</option><option value="">— Aucune formule —</option>
             </select>
-            <input id="ch_nom" placeholder="Roger Scheueurmann" style="flex:1"></td></tr>
+            <textarea id="ch_nom" class="autogrow" rows="1" placeholder="Roger Scheueurmann" oninput="chAutoGrow(this)" style="flex:1"></textarea></td></tr>
           <tr id="ch_att_row" style="display:none"><td class="lbl">À L'ATT. DE</td><td><input id="ch_att" placeholder="à l'attention de…" oninput="refreshOffreSoon()"></td></tr>
           <tr><td class="lbl">RUE (maître de l'ouvrage)</td><td><input id="ch_adr" placeholder="Route de Lausanne 5"></td></tr>
           <tr><td class="lbl">NPA / LOCALITÉ (maître de l'ouvrage)</td><td><input id="ch_loc" placeholder="1096 Cully"></td></tr>
@@ -2136,7 +2136,9 @@ async function generateInvoicePDF(returnBytes) {
     return lines.length ? lines : [''];
   };
   let cliY = 157.1;
-  const nameLines = wrapText(nom.toUpperCase(), fontB, s8, cliMaxW);
+  const nameLines = nom.toUpperCase().split(/\n/).map(s=>s.trim()).filter(Boolean)
+    .flatMap(seg=>wrapText(seg, fontB, s8, cliMaxW));   // nom multi-lignes : chaque ligne saisie, repliée si besoin
+  if(!nameLines.length) nameLines.push('');
   nameLines.forEach(ln => { drawL(page1, fontB, s8, cNear, ln, cliX, cy(cliY)); cliY += cliStep; });
   const adrU = (adr||'').toUpperCase(), locU = (loc||'').toUpperCase();
   // Trait séparateur après le BLOC nom (jamais entre 2 lignes d'un nom), si une ligne suit.
@@ -2718,7 +2720,7 @@ function goTab(name, opts) {
   if(name==='cockpit') renderCockpit();
   if(name==='cockpit2') renderCockpit2();
   if(name==='saisie'){ applySaisieModeUI(); faInitMoneyInputs(); }
-  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); chUpdProjetCourtRow(); chToggleProjetCard(); }
+  if(name==='calchono') { chInitMoneyInputs(); updateChTargetSelect(); updChSections(); chInitSituation(); chInitBoiler(); chRenderParcEca(); if(!chOuvrages.length) chInitOuvrages(null); chRenderOuvrageBar(); chRenderOuvrageRecap(); const _tap=document.getElementById('ch_projet'); if(_tap) chAutoGrow(_tap); const _tan=document.getElementById('ch_nom'); if(_tan) chAutoGrow(_tan); chUpdProjetCourtRow(); chToggleProjetCard(); }
   if(name==='backup') { const cb=document.getElementById('backup_auto'); if(cb) cb.checked=backupAutoEnabled(); backupPing(); renderCreationCharts(); renderCreationList(); refreshBackupFiles(); }
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
@@ -3672,7 +3674,7 @@ document.addEventListener('keydown', e=>{
 });
 
 function chBuildSituation() {
-  const nom = (gv('ch_nom') || '').trim();
+  const nom = (gv('ch_nom') || '').trim().replace(/\s+/g,' ');   // nom multi-lignes → aplati dans la phrase
   const formule = (gv('ch_formule') || '').trim().replace(/,\s*$/, ''); // civilité, sans la virgule finale
   let projet = (gv('ch_projet') || '').trim();
   if(projet) projet = projet.charAt(0).toLowerCase() + projet.slice(1);
@@ -3892,7 +3894,7 @@ function offreCover(d){
       ${offreChap(offreEsc(d.ref),'OFFRE RELATIVE AUX PRESTATIONS D\'ARCHITECTE')}
       <div class="offre-p">${offreEsc((d.projet||'').toUpperCase())}<br>${offreEsc(d.padr.toUpperCase())}<br>${offreEsc(d.ploc.toUpperCase())}${d.eca?'<br>'+offreEsc('ECA N° '+d.eca.toUpperCase()):''}${d.parc?'<br>'+offreEsc(((d.parcelles&&d.parcelles.length>1)?'PARCELLES N° ':'PARCELLE N° ')+d.parc.toUpperCase()):''}</div>
       <div class="offre-sub" style="margin-top:8mm">MAÎTRE DE L'OUVRAGE</div>
-      <div class="offre-p">${offreEsc(d.nom.toUpperCase())}<br>${(d.att && !d.formule)?offreEsc("À L'ATT. DE "+d.att.toUpperCase())+'<br>':''}${offreEsc(d.adr.toUpperCase())}<br>${offreEsc(d.loc.toUpperCase())}</div>
+      <div class="offre-p">${offreEsc(d.nom.toUpperCase()).replace(/\n/g,'<br>')}<br>${(d.att && !d.formule)?offreEsc("À L'ATT. DE "+d.att.toUpperCase())+'<br>':''}${offreEsc(d.adr.toUpperCase())}<br>${offreEsc(d.loc.toUpperCase())}</div>
       <div class="offre-sub" style="margin-top:8mm">ARCHITECTE</div>
       <div class="offre-p">SUBSTANCES ARCHITECTES SÀRL<br>RUE DE LA GARE 12<br>1096 CULLY</div>
     </div>`;
@@ -4245,7 +4247,7 @@ async function offrePDFBytes(){
   const _att = (d.att && !d.formule);   // « À l'att. de » seulement si aucune formule et un destinataire est saisi
   dL(p1,fR,7.5,cN,"MAÎTRE DE L'OUVRAGE",L,cy); p1rule(cy-2.8); cy-=15.3;
   _p1n=0;
-  p1line(up(d.nom));
+  up(d.nom).split(/\n/).map(s=>s.trim()).filter(Boolean).forEach(s=> p1line(s));   // nom du MO sur PLUSIEURS lignes si saisi ainsi
   if(_att) p1line("À L'ATT. DE "+up(d.att));
   p1line(up(d.adr));
   p1line(up(d.loc));

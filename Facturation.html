@@ -4578,7 +4578,6 @@ async function offrePDFBytes(){
     // et la cascade descend d'autant. « Prestations ordinaires » n'apparaît QUE si la case est cochée.
     let _shRec = 0;                                                  // décalage de la cascade (mono avec titres)
     if(d.chno>0){
-      wV(713.2); amt(713.2,fc(d.chno),fReg);                         // libellé « Prestations non ordinaires » conservé
       const _ts = Array.isArray(d.chnoTitres)?d.chnoTitres:[], _tRows=[];
       if(NP<=1){
         _ts.forEach((t,ti)=>{ const lbl=String((t&&t.titre)||'').trim(); if(!lbl) return;
@@ -4589,12 +4588,21 @@ async function offrePDFBytes(){
           if(s>0.005) _tRows.push({lbl:'Autres prestations', s:s});
         }
       }
-      const _nR = _tRows.length + ((d.hasOrd || NP>1)?1:0);          // lignes sous « Prestations non ordinaires »
-      _shRec = (NP<=1) ? Math.max(0,_nR-1)*14.2 : 0;                 // le gabarit ne prévoit qu'UNE ligne (à 699)
-      if(_shRec>0) wipe(p8,128,606,512,709,0);                       // efface la cascade pré-imprimée AVANT de lister
-      let yy=699;
-      _tRows.forEach(r=>{ dL(p8,fR,8,cN,r.lbl,LX,yy-AMDY); dL(p8,fR,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fR,8,cN,fc(r.s),AX,yy-AMDY); yy-=14.2; });
-      if(d.hasOrd || NP>1){ dL(p8,fReg,8,cN,'Prestations ordinaires',LX,yy-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fReg,8,cN,fc(vH),AX,yy-AMDY); }
+      if(_tRows.length){
+        // TITRES actifs : la ligne « Prestations non ordinaires » DISPARAÎT — seuls les titres sont listés
+        // (à sa place, dès 713.2), suivis de « Prestations ordinaires » si la case est cochée.
+        wipe(p8,133,712.2,510,724,0);                                // efface libellé + « Fr. » + montant pré-imprimés
+        const _nR = _tRows.length + (d.hasOrd?1:0);
+        _shRec = Math.max(0,_nR-2)*14.2;                             // le gabarit offre DEUX lignes (713.2 et 699)
+        if(_shRec>0) wipe(p8,128,606,512,709,0);                     // efface la cascade pré-imprimée AVANT de lister
+        let yy=713.2;
+        _tRows.forEach(r=>{ dL(p8,fR,8,cN,r.lbl,LX,yy-AMDY); dL(p8,fR,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fR,8,cN,fc(r.s),AX,yy-AMDY); yy-=14.2; });
+        if(d.hasOrd){ dL(p8,fReg,8,cN,'Prestations ordinaires',LX,yy-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fReg,8,cN,fc(vH),AX,yy-AMDY); }
+      } else {
+        // SANS titre : ligne « Prestations non ordinaires » du gabarit + « ordinaires » dans l'interligne.
+        wV(713.2); amt(713.2,fc(d.chno),fReg);
+        if(d.hasOrd || NP>1){ dL(p8,fReg,8,cN,'Prestations ordinaires',LX,699-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,699-AMDY); dR(p8,fReg,8,cN,fc(vH),AX,699-AMDY); }
+      }
     } else {
       wipe(p8,133,712.2,322,724,0);                                  // renomme le libellé en « ordinaires »
       dL(p8,fReg,8,cN,'Prestations ordinaires',LX,713.2-AMDY);
@@ -4606,18 +4614,32 @@ async function offrePDFBytes(){
     const arrTxt = v => (Math.abs(v)<0.005 ? fc(0) : (v>0?'- ':'+ ')+fc(Math.abs(v)));
     if(NP<=1){
       if(_shRec>0){
-      // MONO avec TITRES listés : la cascade pré-imprimée a été effacée → redessinée PLUS BAS, libellés inclus.
-      const Lx=134.6, FRx=423.8, Vx=505.7, SHm=_shRec;
-      const crow=(y,label,val,vf,pctTxt)=>{ dL(p8,fR,8,cN,label,Lx,y); if(pctTxt) dR(p8,fR,8,cN,pctTxt,415,y); dL(p8,fR,8,cN,'Fr.',FRx,y); dR(p8,vf||fR,8,cN,val,Vx,y); };
-      crow(684.9-SHm,'Rabais spécial Substances','- '+fc(vRab),fR,R8.rabaisPct.toFixed(2)+'%');
-      crow(670.7-SHm,'Sous-total intermédiaire',fc(vSous),fR);
-      crow(656.5-SHm,'Arrondi',arrTxt(vArr),fR);
-      crow(642.3-SHm,'Total des Honoraires HT',fc(vHtF),fReg);
-      p8.drawLine({start:{x:Lx,y:642.3-SHm-4},end:{x:Vx+3,y:642.3-SHm-4},thickness:0.4,color:cN});
-      crow(628.2-SHm,'TVA',fc(vTva),fR,R8.tva.toFixed(2)+'%');
-      crow(614.0-SHm,'Total des honoraires TTC',fc(vTtc),fReg);
-      p8.drawLine({start:{x:Lx,y:614.0-SHm-4},end:{x:Vx+3,y:614.0-SHm-4},thickness:0.4,color:cN});
-      if((614.0-SHm) < 555) overflows.push('Récap — liste des titres trop longue, la cascade chevauche le mandat forfaitaire');
+      // MONO avec TITRES listés : cascade redessinée PLUS BAS, avec la GRILLE du gabarit — trait horizontal
+      // sous chaque ligne + encadrés (bords verticaux) sur les trois totaux, comme le pré-imprimé.
+      const SHm=_shRec, LHc=14.2;
+      const casc=[
+        {lbl:'Rabais spécial Substances', pctTxt:R8.rabaisPct.toFixed(2)+'% Fr.', pf:fReg, val:'- '+fc(vRab), vf:fR, lf:fR, box:false},
+        {lbl:'Sous-total intermédiaire',  val:fc(vSous),      vf:fR,   lf:fR,   box:true},
+        {lbl:'Arrondi',                   val:arrTxt(vArr),   vf:fR,   lf:fR,   box:false},
+        {lbl:'Total des Honoraires HT',   val:fc(vHtF),       vf:fReg, lf:fReg, box:true},
+        {lbl:'TVA', pctTxt:R8.tva.toFixed(2)+'% Fr.', pf:fR,  val:fc(vTva), vf:fR, lf:fR, box:false},
+        {lbl:'Total des honoraires TTC',  val:fc(vTtc),       vf:fR,   lf:fR,   box:true},
+      ];
+      const rowY = casc.map((r,i)=> 684.9-SHm - i*LHc);
+      casc.forEach((r,i)=>{ const y=rowY[i];
+        dL(p8,r.lf,8,cN,r.lbl,LX,y);
+        if(r.pctTxt) dR(p8,r.pf,8,cN,r.pctTxt,FRr,y); else dL(p8,r.lf,8,cN,'Fr.',FRl,y);
+        dR(p8,r.vf,8,cN,r.val,AX,y);
+      });
+      { const HX1=130.3, HX2=510.1, VXl=130.4, VXr=509.9, TH=0.25, TOP=9.9, BOT=4.3;
+        p8.drawLine({start:{x:HX1,y:rowY[0]+TOP},end:{x:HX2,y:rowY[0]+TOP},thickness:TH,color:cN});
+        casc.forEach((r,i)=>{ const y=rowY[i];
+          p8.drawLine({start:{x:HX1,y:y-BOT},end:{x:HX2,y:y-BOT},thickness:TH,color:cN});
+          if(r.box){ p8.drawLine({start:{x:VXl,y:y+TOP},end:{x:VXl,y:y-BOT},thickness:TH,color:cN});
+                     p8.drawLine({start:{x:VXr,y:y+TOP},end:{x:VXr,y:y-BOT},thickness:TH,color:cN}); }
+        });
+      }
+      if(rowY[5] < 555) overflows.push('Récap — liste des titres trop longue, la cascade chevauche le mandat forfaitaire');
       } else {
       // MONO : positions du gabarit (libellés/traits pré-imprimés conservés), on met à jour % et montants.
       wP(684.9); pct(684.9,R8.rabaisPct.toFixed(2)+'% Fr.',fReg); wV(684.9); amt(684.9,'- '+fc(vRab),fR);

@@ -5107,7 +5107,7 @@ async function offrePDFBytes(){
             String(grp.t.st).split(/\n/).map(s=>s.trim()).filter(Boolean).forEach(lnSt=>{
               wrapW(lnSt, 379, fR).forEach(wa=>{ dL(pg,fR,8,cN,wa.join(' '),130.4,yS); lastY = yS; yS -= 12; });
             });
-            sy = lastY - 12;                             // interligne 1.5 (12 pt) entre le sous-titre et la description
+            sy = lastY - 24;                             // espace sous-titre → prestations : même interligne qu'entre les prestations (24 pt)
           }
           // ── Prestations + TOTAL : bloc ALIGNÉ AU BAS DE LA PAGE (le TOTAL se cale en bas ; si le
           //    contenu dépasse, on repart du haut comme avant). Deux passes : mesure, puis dessin. ──

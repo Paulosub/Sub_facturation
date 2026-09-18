@@ -3494,6 +3494,7 @@ function updChSections() {
   set('card-sia-calchono', ord);
   set('card-calc-hono', ord);
   set('card-modecalc', ord || exp);   // masqué pour non ordinaire / faisabilité ; CONSERVÉ (renommé « Condition ») pour l'expertise
+  set('card-tarifs', !(no && !ord && !exp) || chTarifsUniform());   // non ordinaire avec tarifs DIFFÉRENTS par ligne → carte Tarifs réduite (les tarifs figurent ligne par ligne)
   // Expertise seule : le sélecteur « Contrat » (Forfaitaire / Prix unitaire) n'a pas de sens → masqué ; on garde « Modifiable ».
   set('ch_modecalc_type_lbl', !(exp && !ord));
   // Sélecteurs « Rémunération » : reflètent ch_modecalc_type (restauré au chargement du contrat).
@@ -3569,6 +3570,16 @@ document.addEventListener('paste', function(e){
 
 /* ═══════════ Éditeurs de texte enrichi (Situation / Objectif) ═══════════
    Gras → Akkurat LL TT Regular · Italique → Akkurat LL TT Light Italic · Souligné · Puces */
+/* Tabulation dans les zones de texte enrichies : Tab insère 4 espaces insécables
+   (préservés dans le PDF, y compris en début de ligne) au lieu de changer de champ. */
+document.addEventListener('keydown', function(e){
+  const t = e.target;
+  if(e.key==='Tab' && !e.shiftKey && t && t.classList && t.classList.contains('rt-edit')){
+    e.preventDefault();
+    document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
+  }
+}, true);
+
 function rtCmd(ev, cmd){
   ev.preventDefault();
   { const a=document.activeElement; if(a && a.classList && a.classList.contains('rt-edit')) rtPush(a); }
@@ -3729,6 +3740,10 @@ function offreGather(){
   const projetTexte = rtGetHTML('ch_note_projet');
   const projetPage = !!document.getElementById('ch_projet_page_on')?.checked
                      && !!(projetTexte||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim();
+  // Non ordinaire avec des tarifs moyens HT différents par ligne → chapitre Tarifs retiré du PDF.
+  const _ordChk = !!document.getElementById('ch_chk_ord')?.checked;
+  const _expChk = !!document.getElementById('ch_chk_expertise')?.checked && !_ordChk;
+  const hideTarifs = !_ordChk && !_expChk && !chTarifsUniform();
   const chnoLines = (typeof CH_NO!=='undefined'?CH_NO:[]).filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
                      .map(l=>({lbl:(l.lbl||'').trim(), com:(l.com||'').trim(), amt:l.amt||0, option:!!l.option,
                                heures:(l.heures||0), hUnit:(l.hUnit||'h'), prix:(l.prix||0), pUnit:(l.pUnit||''), hideDetail:!!l.hideDetail,
@@ -3775,7 +3790,7 @@ function offreGather(){
     tarifMoyen: gn('ch_tarif_moyen'),
     tarifRabais: (gn('ch_tarif_moyen')||0)*(1-(gn('ch_rabais')||0)/100),
     planDelais: planGatherDelais(), planReserves: planGatherReserves(),
-    R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, projetPage, projetTexte, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
+    R, chno, chnoOpt, chnoDetail, chnoTotalOnly, chnoLines, chnoTitres, projetPage, projetTexte, hideTarifs, Htot, rabaisMnt, sousTot, arrondi, catLbl, cat: gv('ch_cat'), phases,
     cfc:{ c1:cfc('ch_cfc1','ch_cfc1_ni'), c2:cfc('ch_cfc2','ch_cfc2_ni'), c4:cfc('ch_cfc4','ch_cfc4_ni'), c5:cfc('ch_cfc5','ch_cfc5_ni'), c9:cfc('ch_cfc9','ch_cfc9_ni') },
     tauxMoyen: R.h, tauxRabais: R.h*(1-R.rabaisPct/100),
     forfaitTTC: R.forfaitOn ? R.forfaitTTC : R.ttc, fraisMnt: R.forfaitFraisMnt, fraisPct: R.forfaitFraisPct, fraisHT: !!R.forfaitFraisHT, fraisMode: R.fraisMode||'pct'
@@ -4218,7 +4233,7 @@ async function offrePDFBytes(){
     const newLine=(t)=>{ cur={type:t||'text',runs:[]}; lines.push(cur); };
     const addTxt=(t,st)=>{ if(t==='')return; if(!cur)newLine('text'); cur.runs.push({t:t,b:st.b,i:st.i,u:st.u}); };
     const inl=(node,st)=>{ node.childNodes.forEach(n=>{
-      if(n.nodeType===3){ addTxt(n.nodeValue.replace(/ /g,' '),st); }
+      if(n.nodeType===3){ addTxt(n.nodeValue,st); }   //   conservés (tabulations)
       else if(n.nodeType===1){ const g=n.tagName,s2={b:st.b,i:st.i,u:st.u};
         if(g==='B'||g==='STRONG')s2.b=true; if(g==='I'||g==='EM')s2.i=true; if(g==='U'||g==='INS')s2.u=true;
         if(g==='BR'){ newLine('text'); return; } inl(n,s2); } }); };
@@ -4226,7 +4241,7 @@ async function offrePDFBytes(){
     // liste <ul><li> nichée dans un <div> était aplatie en texte inline → puces perdues dans le PDF.
     const _hasBlockChild=(node)=> Array.prototype.some.call(node.childNodes, n=> n.nodeType===1 && (n.tagName==='UL'||n.tagName==='OL'||n.tagName==='DIV'||n.tagName==='P'||n.tagName==='LI'));
     const blk=(node)=>{ node.childNodes.forEach(n=>{
-      if(n.nodeType===3){ if(n.nodeValue.trim()){ newLine('text'); addTxt(n.nodeValue.replace(/ /g,' '),{b:0,i:0,u:0}); } }
+      if(n.nodeType===3){ if(n.nodeValue.trim()){ newLine('text'); addTxt(n.nodeValue,{b:0,i:0,u:0}); } }
       else if(n.nodeType===1){ const g=n.tagName;
         if(g==='UL'||g==='OL') blk(n);
         else if(g==='LI'){ newLine('bullet'); inl(n,{b:0,i:0,u:0}); }
@@ -4254,12 +4269,12 @@ async function offrePDFBytes(){
         if(bullet && firstOfBlock) pg.drawEllipse({x:L+4,y:y+2.4,xScale:1.15,yScale:1.15,color:col});   // pastille dessinée (la police n'a pas le glyphe « • »)
         if(opt.quote && !firstDrawn) dL(pg,fR,sz,col,opt.quote,L-gw-0.5,y);
         firstDrawn=true;
-        lt.forEach(tk=>{ const f=fontFor(tk); dL(pg,f,sz,col,tk.txt,cx,y); if(tk.u && !tk.sp) pg.drawLine({start:{x:cx,y:y-1.5},end:{x:cx+tk.w,y:y-1.5},thickness:0.4,color:col}); cx+=tk.w; });
+        lt.forEach(tk=>{ const f=fontFor(tk); dL(pg,f,sz,col,tk.txt.replace(/\u00A0/g,' '),cx,y); if(tk.u && !tk.sp) pg.drawLine({start:{x:cx,y:y-1.5},end:{x:cx+tk.w,y:y-1.5},thickness:0.4,color:col}); cx+=tk.w; });
         y-=lh; lt=[]; lw=0; firstOfBlock=false;
       };
-      toks.forEach(tk=>{ const f=fontFor(tk); tk.w=f.widthOfTextAtSize(tk.txt,sz);
+      toks.forEach(tk=>{ const f=fontFor(tk); tk.w=f.widthOfTextAtSize(tk.txt.replace(/\u00A0/g,' '),sz);
         if(!tk.sp && lw+tk.w>maxW && lt.length) flush();
-        if(tk.sp && lt.length===0) return;
+        if(tk.sp && lt.length===0 && tk.txt.indexOf('\u00A0')===-1) return;   // une tabulation en début de ligne est conservée
         lt.push(tk); lw+=tk.w; });
       if(lt.length) flush();
     });
@@ -4981,11 +4996,8 @@ async function offrePDFBytes(){
         }
         dR(pg,fR,7,cN,'Montant',MRX,yH+8.4);      dR(pg,fR,7,cN,'HT',MRX,yH);
         pg.drawLine({start:{x:130.4,y:yH-4.2},end:{x:510.2,y:yH-4.2},thickness:0.4,color:cN}); };
-      const drawJustOn = (pg)=>(wordsArr,y,isLast,f,x0,w0)=>{ f=f||fR; x0=(x0==null?DX:x0); w0=(w0==null?DW:w0);   // justification (sauf dernière ligne)
-        if(isLast || wordsArr.length===1){ dL(pg,f,8,cN,wordsArr.join(' '),x0,y); return; }
-        const wsum=wordsArr.reduce((s,w)=>s+f.widthOfTextAtSize(w,8),0);
-        const gap=(w0 - wsum)/(wordsArr.length-1); let x=x0;
-        wordsArr.forEach(w=>{ dL(pg,f,8,cN,w,x,y); x += f.widthOfTextAtSize(w,8)+gap; }); };
+      const drawJustOn = (pg)=>(wordsArr,y,isLast,f,x0,w0)=>{ f=f||fR; x0=(x0==null?DX:x0);   // alignement LIBRE (fer à gauche, plus de justification)
+        dL(pg,f,8,cN,wordsArr.join(' '),x0,y); };
       const totalRow = (pg,lastY,tot)=>{ pg.drawLine({start:{x:166.5,y:lastY-17.5},end:{x:510.2,y:lastY-17.5},thickness:0.4,color:cN});   // trait calé à gauche sur « TOTAL »
         const ty=lastY-31.3; dL(pg,fR,8,cN,'TOTAL',166.5,ty); dL(pg,fR,8,cN,'Fr.',440.2,ty); dR(pg,fR,8,cN,fmtTotal(tot),506.5,ty); };
       if(!_titres.length){
@@ -5058,8 +5070,11 @@ async function offrePDFBytes(){
           // SOUS-TITRE du titre (activable) : imprimé sous l'en-tête « Prestations d'architectes »,
           // avant les descriptions (visuel 26RRD : « 4.21  Définition de l'objet, étude de faisabilité »).
           if(grp.t && grp.t.showSt && (grp.t.st||'').trim()){
-            dL(pg,fR,8,cN,String(grp.t.st).trim(),130.4,yH-31);
-            sy = yH-43; lastY = yH-31;                   // interligne 1.5 (12 pt) entre le sous-titre et la description
+            let yS = yH-31;                              // multiligne : chaque ligne saisie, avec retour automatique si trop longue
+            String(grp.t.st).split(/\n/).map(s=>s.trim()).filter(Boolean).forEach(lnSt=>{
+              wrapW(lnSt, 379, fR).forEach(wa=>{ dL(pg,fR,8,cN,wa.join(' '),130.4,yS); lastY = yS; yS -= 12; });
+            });
+            sy = lastY - 12;                             // interligne 1.5 (12 pt) entre le sous-titre et la description
           }
           // ── Prestations + TOTAL : bloc ALIGNÉ AU BAS DE LA PAGE (le TOTAL se cale en bas ; si le
           //    contenu dépasse, on repart du haut comme avant). Deux passes : mesure, puis dessin. ──
@@ -5105,7 +5120,7 @@ async function offrePDFBytes(){
                   if(!hasCom) dL(pg,fLbl,8,cN,'–',166.5,sy2);   // puce à l'aplomb du « T » de TOTAL
                   lines.forEach((wa,k)=>{ const y=sy2-k*LH2; if(y<85) return;
                     drawJust(wa,y,k===lines.length-1,fLbl,DXd,DWd);
-                    if(hasCom){ const w=(k===lines.length-1||wa.length===1)?fLbl.widthOfTextAtSize(wa.join(' '),8):DWd;
+                    if(hasCom){ const w=fLbl.widthOfTextAtSize(wa.join(' '),8);   // soulignement = largeur réelle (texte non justifié)
                       pg.drawLine({start:{x:DXd,y:y-2.2},end:{x:DXd+w,y:y-2.2},thickness:0.4,color:cN}); } });
                   if(!ln.hideDetail){ dR(pg,fR,8,cN,fmtQte(ln.heures||0,ln.hUnit),HRX+0.2,yLast); dR(pg,fR,8,cN,fmtTarif(ln.prix||0, ln.pUnit),TRX,yLast); }
                   dR(pg,fR,8,cN,fmtTotal(ln.amt||0),MRX,yLast);
@@ -5142,13 +5157,14 @@ async function offrePDFBytes(){
     const _rmSia = (!d.hasOrd && NP<=1);
     const _rmPlan = !!d.hidePlanning;
     const _rmCond = !!d.isExpertise;   // expertise : « Condition » est sur la page Contexte → page idx3 (ex mode de calcul) retirée
+    const _rmTarifs = !!d.hideTarifs && !_rmCond;   // non ordinaire à tarifs différents : page idx3 (Mode de calcul + Tarifs) retirée
     const SH = (i)=> _shift(i);   // index d'origine (gabarit) → index réel après TOUTES les insertions (Projet + feuilles de détail)
     const keptIdx=[]; for(let i=0;i<P.length;i++){
       if(i===SH(tabIdx(1))&&!keepA2)continue;
       if(i===SH(IA3)&&!keepA3)continue;
       if(_rmSia && (i===SH(5) || i===SH(6)))continue;
       if(_rmPlan && i===SH(4))continue;
-      if(_rmCond && i===SH(3))continue;
+      if((_rmCond || _rmTarifs) && i===SH(3))continue;
       keptIdx.push(i);
     }
     const nTot=keptIdx.length;
@@ -5166,7 +5182,7 @@ async function offrePDFBytes(){
     if(!keepA2) doc.removePage(SH(tabIdx(1)));
     if(_rmSia){ doc.removePage(SH(6)); doc.removePage(SH(5)); }   // détermination (6) puis prestations ordinaires (5)
     if(_rmPlan) doc.removePage(SH(4));                            // planning d'intention
-    if(_rmCond) doc.removePage(SH(3));                            // expertise : ex-page « mode de calcul » (Condition déplacée sur Contexte)
+    if(_rmCond || _rmTarifs) doc.removePage(SH(3));               // expertise (Condition sur Contexte) OU tarifs différents par ligne
   }
 
   // GARDE DONNÉES : restaure chOuvrages À L'IDENTIQUE (le PDF est déjà dessiné, donc sans effet visuel sur le rendu).
@@ -5237,6 +5253,16 @@ function printContratOffre(){
     chEnsurePrestType();   // respecte le(s) type(s) sauvé(s)
     goTab('calchono'); setTimeout(refreshOffrePreview,60);
   } else alert("Enregistrez d'abord le contrat pour imprimer l'offre.");
+}
+
+/* Tarifs des prestations non ordinaires : true si toutes les lignes (hors options et « masquées »)
+   utilisent le MÊME tarif moyen HT — sinon le chapitre Tarifs est retiré (PDF) et réduit (formulaire). */
+function chTarifsUniform(){
+  const prix = (typeof CH_NO!=='undefined'?CH_NO:[])
+    .filter(l=>!l.option && !l.hideDetail && ((l.lbl||'').trim() || (l.amt||0)>0))
+    .map(l=>+l.prix||0);
+  if(prix.length<2) return true;
+  return prix.every(p=>p===prix[0]);
 }
 
 /* Carte « Projet » : le corps (zone de texte enrichie) n'est visible que si la page est activée. */
@@ -7338,6 +7364,7 @@ function chnoRecalc(i) {
   const e = document.getElementById('chno-mnt-'+i);
   if(e && e.tagName!=='INPUT') e.textContent = l.option ? '('+CHF(l.amt)+')' : CHF(l.amt);
   updCalcHono();
+  if(typeof updChSections==='function') updChSections();   // la carte Tarifs se réduit si les tarifs divergent
 }
 function buildChno() {
   const tb = document.getElementById('chno-body');
@@ -7360,7 +7387,7 @@ function buildChno() {
       </div>
       ${t.showDb?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Données de base — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].db=this.value;lignesAutoGrow(this);refreshOffreSoon()" onfocus="chPuceFocus(this)" onkeydown="chPuceKey(event)" onblur="chPuceNorm(this)" placeholder="• Plans d'exécution de 2002&#10;• Visite sur place" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.db)}</textarea></div>`:''}
       ${t.showObj?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Objectifs — une puce par ligne :</div><textarea rows="2" oninput="CH_NO_TITRES[${ti}].obj=this.value;lignesAutoGrow(this);refreshOffreSoon()" onfocus="chPuceFocus(this)" onkeydown="chPuceKey(event)" onblur="chPuceNorm(this)" placeholder="• Établissement d'un descriptif des travaux&#10;• Estimation des coûts à ± 20 %" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.obj)}</textarea></div>`:''}
-      ${t.showSt?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Sous-titre — imprimé sous « Prestations d'architectes », avant les descriptions :</div><input value="${escA(t.st)}" placeholder="ex. 4.21   Définition de l'objet, étude de faisabilité" oninput="CH_NO_TITRES[${ti}].st=this.value;refreshOffreSoon()" style="width:100%;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit"></div>`:''}
+      ${t.showSt?`<div style="margin-top:5px;padding:0 2px"><div style="font-size:10.5px;color:#666;margin-bottom:2px">Sous-titre — imprimé sous « Prestations d'architectes », avant les descriptions (multiligne possible) :</div><textarea rows="1" oninput="CH_NO_TITRES[${ti}].st=this.value;lignesAutoGrow(this);refreshOffreSoon()" placeholder="ex. 4.21   Définition de l'objet, étude de faisabilité" style="width:100%;resize:none;overflow:hidden;border:1px solid #ccc;border-radius:3px;padding:4px 6px;font-size:11.5px;font-family:inherit;line-height:1.4">${escT(t.st)}</textarea></div>`:''}
     </td>`;
     tb.appendChild(tr);
     tr.querySelectorAll('textarea').forEach(lignesAutoGrow);

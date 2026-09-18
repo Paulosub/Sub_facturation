@@ -4593,11 +4593,28 @@ async function offrePDFBytes(){
         // (à sa place, dès 713.2), suivis de « Prestations ordinaires » si la case est cochée.
         wipe(p8,133,712.2,510,724,0);                                // efface libellé + « Fr. » + montant pré-imprimés
         const _nR = _tRows.length + (d.hasOrd?1:0);
-        _shRec = Math.max(0,_nR-2)*14.2;                             // le gabarit offre DEUX lignes (713.2 et 699)
+        const _brut = _tRows.length>1;                               // PLUSIEURS titres → « Total des Honoraires brut HT » encadré avant le rabais
+        if(_brut){
+          _shRec = _nR*14.2;                                         // ligne brut + ESPACE avant « Rabais »
+          if(684.9-_shRec-71 < 555) _shRec = (_nR-1)*14.2;           // page pleine : l'espace saute (grille continue) pour ne pas toucher le forfait
+        } else {
+          _shRec = Math.max(0,_nR-2)*14.2;                           // sans brut, le gabarit offre DEUX lignes (713.2 et 699)
+        }
         if(_shRec>0) wipe(p8,128,606,512,709,0);                     // efface la cascade pré-imprimée AVANT de lister
         let yy=713.2;
         _tRows.forEach(r=>{ dL(p8,fR,8,cN,r.lbl,LX,yy-AMDY); dL(p8,fR,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fR,8,cN,fc(r.s),AX,yy-AMDY); yy-=14.2; });
-        if(d.hasOrd){ dL(p8,fReg,8,cN,'Prestations ordinaires',LX,yy-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fReg,8,cN,fc(vH),AX,yy-AMDY); }
+        if(d.hasOrd){ dL(p8,fReg,8,cN,'Prestations ordinaires',LX,yy-AMDY); dL(p8,fReg,8,cN,'Fr.',FRl,yy-AMDY); dR(p8,fReg,8,cN,fc(vH),AX,yy-AMDY); yy-=14.2; }
+        if(_brut){
+          // Total BRUT (somme de tout ce qui est listé au-dessus), encadré comme les totaux de la cascade,
+          // avec un ESPACE avant « Rabais » (la cascade descend de deux interlignes supplémentaires).
+          const yb=yy-AMDY, vGross=vSous+vRab;
+          dL(p8,fReg,8,cN,'Total des Honoraires brut HT',LX,yb); dL(p8,fReg,8,cN,'Fr.',FRl,yb); dR(p8,fReg,8,cN,fc(vGross),AX,yb);
+          const HX1=130.3, HX2=510.1, VXl=130.4, VXr=509.9, TH=0.25, TOP=9.9, BOT=4.3;
+          p8.drawLine({start:{x:HX1,y:yb+TOP},end:{x:HX2,y:yb+TOP},thickness:TH,color:cN});
+          p8.drawLine({start:{x:HX1,y:yb-BOT},end:{x:HX2,y:yb-BOT},thickness:TH,color:cN});
+          p8.drawLine({start:{x:VXl,y:yb+TOP},end:{x:VXl,y:yb-BOT},thickness:TH,color:cN});
+          p8.drawLine({start:{x:VXr,y:yb+TOP},end:{x:VXr,y:yb-BOT},thickness:TH,color:cN});
+        }
       } else {
         // SANS titre : ligne « Prestations non ordinaires » du gabarit + « ordinaires » dans l'interligne.
         wV(713.2); amt(713.2,fc(d.chno),fReg);
@@ -4632,7 +4649,7 @@ async function offrePDFBytes(){
         dR(p8,r.vf,8,cN,r.val,AX,y);
       });
       { const HX1=130.3, HX2=510.1, VXl=130.4, VXr=509.9, TH=0.25, TOP=9.9, BOT=4.3;
-        p8.drawLine({start:{x:HX1,y:rowY[0]+TOP},end:{x:HX2,y:rowY[0]+TOP},thickness:TH,color:cN});
+        // (pas de trait AU-DESSUS de « Rabais » — demande explicite)
         casc.forEach((r,i)=>{ const y=rowY[i];
           p8.drawLine({start:{x:HX1,y:y-BOT},end:{x:HX2,y:y-BOT},thickness:TH,color:cN});
           if(r.box){ p8.drawLine({start:{x:VXl,y:y+TOP},end:{x:VXl,y:y-BOT},thickness:TH,color:cN});

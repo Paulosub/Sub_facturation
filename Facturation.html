@@ -1176,6 +1176,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <button type="button" onmousedown="return rtCmd(event,'italic')" title="Italique (Akkurat LL TT Light Italic)"><i>I</i></button>
           <button type="button" onmousedown="return rtCmd(event,'underline')" title="Souligné"><u>S</u></button>
           <button type="button" onmousedown="return rtCmd(event,'insertUnorderedList')" title="Puces">•&nbsp;Puces</button>
+          <button type="button" onmousedown="return rtCmd(event,'tab')" title="Tabulation — insère un retrait à la position du curseur (touche Tab)">⇥&nbsp;Tab</button>
         </div>
         <div id="ch_conditions" class="rt-edit" contenteditable="true" data-ph="Conditions préliminaires…" oninput="chCondInput(this)" onblur="chCondBlur()"></div>
         <div style="font-size:10.5px;color:#8a979c;margin-top:5px">Séparez les paragraphes par une ligne vide ; les listes commencent par « - ». Décochez « Modifiable » pour replier.</div>
@@ -1197,6 +1198,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <button type="button" onmousedown="return rtCmd(event,'italic')" title="Italique (Akkurat LL TT Light Italic)"><i>I</i></button>
           <button type="button" onmousedown="return rtCmd(event,'underline')" title="Souligné"><u>S</u></button>
           <button type="button" onmousedown="return rtCmd(event,'insertUnorderedList')" title="Puces">•&nbsp;Puces</button>
+          <button type="button" onmousedown="return rtCmd(event,'tab')" title="Tabulation — insère un retrait à la position du curseur (touche Tab)">⇥&nbsp;Tab</button>
         </div>
         <div id="ch_note_situation" class="rt-edit" contenteditable="true" data-ph="Décrivez la situation de base du projet…" oninput="this.dataset.manual='1';refreshOffreSoon()"></div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 5px">
@@ -1211,6 +1213,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <button type="button" onmousedown="return rtCmd(event,'italic')" title="Italique (Akkurat LL TT Light Italic)"><i>I</i></button>
           <button type="button" onmousedown="return rtCmd(event,'underline')" title="Souligné"><u>S</u></button>
           <button type="button" onmousedown="return rtCmd(event,'insertUnorderedList')" title="Puces">•&nbsp;Puces</button>
+          <button type="button" onmousedown="return rtCmd(event,'tab')" title="Tabulation — insère un retrait à la position du curseur (touche Tab)">⇥&nbsp;Tab</button>
         </div>
         <div id="ch_note_objectif" class="rt-edit" contenteditable="true" data-ph="Décrivez l'objectif du projet… ou insérez un modèle ci-dessus" oninput="refreshOffreSoon()"></div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 5px">
@@ -1221,6 +1224,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <button type="button" onmousedown="return rtCmd(event,'italic')" title="Italique (Akkurat LL TT Light Italic)"><i>I</i></button>
           <button type="button" onmousedown="return rtCmd(event,'underline')" title="Souligné"><u>S</u></button>
           <button type="button" onmousedown="return rtCmd(event,'insertUnorderedList')" title="Puces">•&nbsp;Puces</button>
+          <button type="button" onmousedown="return rtCmd(event,'tab')" title="Tabulation — insère un retrait à la position du curseur (touche Tab)">⇥&nbsp;Tab</button>
         </div>
         <div id="ch_note_approche" class="rt-edit" contenteditable="true" data-ph="Décrivez l'approche méthodologique du mandat…" oninput="refreshOffreSoon()"></div>
       </div>
@@ -1235,6 +1239,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <button type="button" onmousedown="return rtCmd(event,'italic')" title="Italique (Akkurat LL TT Light Italic)"><i>I</i></button>
           <button type="button" onmousedown="return rtCmd(event,'underline')" title="Souligné"><u>S</u></button>
           <button type="button" onmousedown="return rtCmd(event,'insertUnorderedList')" title="Puces">•&nbsp;Puces</button>
+          <button type="button" onmousedown="return rtCmd(event,'tab')" title="Tabulation — insère un retrait à la position du curseur (touche Tab)">⇥&nbsp;Tab</button>
         </div>
         <div id="ch_note_projet" class="rt-edit" contenteditable="true" data-ph="Décrivez le projet…" oninput="refreshOffreSoon()"></div>
       </div>
@@ -1249,6 +1254,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <button type="button" onmousedown="return rtCmd(event,'italic')" title="Italique (Akkurat LL TT Light Italic)"><i>I</i></button>
           <button type="button" onmousedown="return rtCmd(event,'underline')" title="Souligné"><u>S</u></button>
           <button type="button" onmousedown="return rtCmd(event,'insertUnorderedList')" title="Puces">•&nbsp;Puces</button>
+          <button type="button" onmousedown="return rtCmd(event,'tab')" title="Tabulation — insère un retrait à la position du curseur (touche Tab)">⇥&nbsp;Tab</button>
         </div>
         <div id="ch_modecalc" class="rt-edit" contenteditable="true" data-ph="Mode de calcul des honoraires…" oninput="chModecalcInput(this)" onblur="chModecalcBlur()"></div>
         <div style="font-size:10.5px;color:#8a979c;margin-top:5px">Séparez les paragraphes par une ligne vide. Décochez « Modifiable » pour replier.</div>
@@ -3585,7 +3591,8 @@ function rtCmd(ev, cmd){
   ev.preventDefault();
   { const a=document.activeElement; if(a && a.classList && a.classList.contains('rt-edit')) rtPush(a); }
   try{ document.execCommand('styleWithCSS', false, false); }catch(e){}
-  try{ document.execCommand(cmd, false, null); }catch(e){}
+  try{ if(cmd==='tab') document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');   // tabulation (identique à la touche Tab) — préservée dans le PDF
+       else document.execCommand(cmd, false, null); }catch(e){}
   const ed = document.activeElement;
   if(ed && ed.classList && ed.classList.contains('rt-edit')){ ed.dataset.manual='1'; ed.dataset.edited='1'; }
   refreshOffrePreview();

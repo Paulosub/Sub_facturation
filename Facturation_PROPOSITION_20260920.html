@@ -42,6 +42,21 @@ button{cursor:pointer;font-family:inherit}
 .card{background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden;margin-bottom:12px}
 .card-hd{background:#003346;color:#fff;padding:8px 14px;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center}
 .card-bd{padding:12px 14px}
+/* ══ PROPOSITION 2026-09-20 (version d'essai) : pliage neutre des cartes + barre collante ══ */
+.card.folded > :not(.card-hd){display:none!important}
+.card-hd .chv{display:inline-block;width:13px;color:#8fb3c0;font-weight:normal;margin-right:2px;transition:transform .12s}
+.card.folded .card-hd .chv{transform:rotate(-90deg)}
+#ch-form-scroll .card-hd{cursor:pointer}
+#ch-stickybar{position:sticky;top:0;z-index:60;background:#0a3140;color:#dfe9ec;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.3);padding:6px 10px;margin-bottom:10px;font-size:11px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#ch-stickybar .nav-chip{background:#124a5e;border-radius:10px;padding:2px 8px;cursor:pointer;white-space:nowrap}
+#ch-stickybar .nav-chip:hover{background:#1d6a84}
+#ch-stickybar button{border:none;border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;background:#e8eef0;color:#0a3140;font-family:inherit}
+#ch-stickybar #ch-quick-save{background:#2e9e5b;color:#fff;font-weight:bold}
+#ch-dirty-dot{display:none;color:#FFB020;font-weight:bold;white-space:nowrap}
+#ch-legende{display:flex;gap:10px;align-items:center;color:#9fbcc7;margin-left:auto;white-space:nowrap;font-size:10.5px}
+#ch-legende i{display:inline-block;width:11px;height:11px;border-radius:2px;border:1px solid #7d98a2;vertical-align:-1px;margin-right:3px}
+.pdfbadge{background:#5c6b73;color:#fff;font-size:9.5px;padding:1px 7px;border-radius:8px;font-weight:normal;text-transform:none;letter-spacing:0;white-space:nowrap}
+#essai-banner{position:fixed;left:0;right:0;bottom:0;z-index:99998;background:#b95d00;color:#fff;font:bold 11px/1.5 sans-serif;text-align:center;padding:3px 8px;letter-spacing:.3px}
 .lockchk{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:normal;text-transform:none;letter-spacing:0;color:#cfe0e6;cursor:pointer;white-space:nowrap}
 .lockchk input{width:14px;height:14px;cursor:pointer}
 textarea.ch-locktxt{width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:12px;font-family:inherit;line-height:1.45;resize:vertical}
@@ -494,31 +509,251 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 </style>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.js"></script>
-<style id="ui-switches">
-/* ═══ Interrupteurs style Apple (2026-09-20, validé depuis la version d'essai) ═══
-   Toutes les cases des EN-TÊTES de cartes (et labels .lockchk) deviennent des curseurs iOS :
-   plus lisibles et accessibles. Vert = actif. Les cases des tableaux restent classiques. */
+<style id="theme-essai">
+/* ═══════════════════════════════════════════════════════════════════════════
+   THÈME « ÉPURÉ » — proposition 2026-09-20 (version d'essai)
+   Design system sobre inspiré des interfaces Apple : typographie système,
+   fond gris perle, cartes blanches à ombre douce, interrupteurs iOS pour les
+   masquages, focus bleu discret. AUCUN effet sur les PDF générés.
+═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#a1a1a6;
+  --bg:#f5f5f7; --panel:#ffffff;
+  --brand:#0a3140; --brand2:#0a6e84; --accent:#0071e3; --ok:#34c759; --warn:#ff9f0a; --bad:#ff453a;
+  --line:#e4e4e9; --hairline:rgba(0,0,0,.08);
+  --r-lg:14px; --r-md:10px; --r-sm:8px;
+  --shadow-card:0 1px 1px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.06);
+  --shadow-pop:0 12px 40px rgba(0,0,0,.16);
+}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{background:var(--bg)!important;color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue","Segoe UI",Roboto,Arial,sans-serif!important}
+::selection{background:rgba(0,113,227,.18)}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-thumb{background:#c9c9ce;border-radius:8px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:#a9a9af;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-track{background:transparent}
+
+/* ── En-tête d'application : barre translucide claire ─────────────────────── */
+#hdr{background:rgba(255,255,255,.82)!important;-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
+  color:var(--ink)!important;border-bottom:1px solid var(--hairline)!important;box-shadow:none!important}
+#hdr-logo img{filter:none!important;height:26px!important}
+#hdr .nav-back{background:rgba(0,0,0,.05)!important;color:var(--ink)!important;border:none!important;border-radius:980px!important;
+  font-weight:600!important;padding:6px 14px!important;transition:background .15s ease}
+#hdr .nav-back:hover{background:rgba(0,0,0,.10)!important}
+#hdr .nav-back svg{stroke:var(--ink)!important}
+#hdr-title{color:var(--ink)!important;font-weight:700!important;letter-spacing:.06em!important}
+#hdr-right, #hdr-right *{color:var(--ink2)!important}
+
+/* ── Boutons : pills, poids 600, transitions douces ───────────────────────── */
+button{font-family:inherit}
+.btn{border-radius:980px!important;font-weight:600!important;letter-spacing:.01em;
+  transition:transform .06s ease, filter .15s ease, background .15s ease;box-shadow:none}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:scale(.97)}
+.btn-blue{background:var(--brand)!important}
+button.btn-sm{border-radius:8px!important}
+
+/* ── Cartes : blanches, rayon 14, ombre douce, en-tête clair ─────────────── */
+.card{border-radius:var(--r-lg)!important;box-shadow:var(--shadow-card)!important;border:1px solid var(--hairline)}
+.card-hd{background:var(--panel)!important;color:var(--brand)!important;
+  border-bottom:1px solid var(--line);padding:11px 16px!important;
+  font-size:10.5px!important;letter-spacing:.09em!important}
+.card-hd .chv{color:var(--ink3)!important}
+.lockchk{color:var(--ink2)!important}
+.card-hd select{background:#f2f2f7!important;color:var(--ink)!important;border:1px solid #d8d8dd!important;
+  border-radius:7px!important;padding:2px 6px!important}
+.pdfbadge{background:#f2f2f7!important;color:var(--ink2)!important;border:1px solid var(--line)}
+
+/* ── Interrupteurs iOS pour toutes les cases d'en-tête de carte ───────────── */
 .card-hd input[type="checkbox"], .lockchk input[type="checkbox"]{
   -webkit-appearance:none!important;appearance:none!important;
   width:34px!important;height:20px!important;border-radius:999px!important;
-  background:#c6cdd2;position:relative;cursor:pointer;outline:none;margin:0;
+  background:#d9d9de;position:relative;cursor:pointer;outline:none;margin:0;
   transition:background .18s ease;border:none!important;flex:none}
-.card-hd input[type="checkbox"]:checked, .lockchk input[type="checkbox"]:checked{background:#34c759}
+.card-hd input[type="checkbox"]:checked, .lockchk input[type="checkbox"]:checked{background:var(--ok)}
 .card-hd input[type="checkbox"]::after, .lockchk input[type="checkbox"]::after{
   content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
-  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .18s ease}
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .18s ease}
 .card-hd input[type="checkbox"]:checked::after, .lockchk input[type="checkbox"]:checked::after{left:16px}
-/* Polarité INVERSÉE : les cases internes « masquer » s'affichent comme « Dans le PDF »
-   (non cochée = VERT à droite = visible ; cochée = gris = retiré du PDF). Logique inchangée. */
-.card-hd input[type="checkbox"].sw-invert, .lockchk input[type="checkbox"].sw-invert{background:#34c759}
-.card-hd input[type="checkbox"].sw-invert:checked, .lockchk input[type="checkbox"].sw-invert:checked{background:#c6cdd2}
+/* interrupteur à polarité INVERSÉE : la case interne « masquer » reste inchangée, mais l'interrupteur
+   affiché suit la convention Apple « vert = visible dans le PDF » (non cochée = vert / cochée = gris) */
+.card-hd input[type="checkbox"].sw-invert, .lockchk input[type="checkbox"].sw-invert{background:var(--ok)}
+.card-hd input[type="checkbox"].sw-invert:checked, .lockchk input[type="checkbox"].sw-invert:checked{background:#d9d9de}
 .card-hd input[type="checkbox"].sw-invert::after, .lockchk input[type="checkbox"].sw-invert::after{left:16px}
 .card-hd input[type="checkbox"].sw-invert:checked::after, .lockchk input[type="checkbox"].sw-invert:checked::after{left:2px}
 .ce-eye{border-radius:6px!important;transition:background .15s}
-.ce-eye:hover{background:#eef3f5!important}
+.ce-eye:hover{background:#f2f2f7!important}
+/* cases classiques du corps : accent harmonisé */
+input[type="checkbox"]{accent-color:var(--brand2)}
+input[type="radio"]{accent-color:var(--brand2)}
+
+/* ── Champs : rayon 8, focus bleu doux (le jaune reste réservé aux états) ── */
+input[type="text"],input[type="number"],input[type="date"],input[type="month"],input:not([type]),select,textarea{
+  border-radius:var(--r-sm);border-color:#d8d8dd}
+.field input:focus,.field select:focus{background:#fff!important;border-color:var(--accent)!important;
+  box-shadow:0 0 0 3.5px rgba(0,113,227,.16);outline:none}
+input:focus,select:focus,textarea:focus,.rt-edit:focus{border-color:var(--accent)!important;
+  box-shadow:0 0 0 3.5px rgba(0,113,227,.16)!important;outline:none!important}
+.rt-edit{border-radius:var(--r-md)!important}
+.rt-toolbar button{border-radius:7px!important;background:#f2f2f7!important;border:1px solid #e2e2e7!important}
+.rt-toolbar button:hover{background:#e8e8ed!important}
+
+/* ── Tableaux « feuilles de calcul » : traits fins, en-têtes discrets ─────── */
+.xls-tbl td{border-color:#ececf0!important}
+.xls-tbl td.lbl,.xls-tbl td.sym{background:#f7f7f9!important;color:#494950!important}
+.xls-tbl td.readout{background:#FFFDE0!important}
+.xls-formule{color:var(--ink2)!important}
+
+/* ── Liste des contrats / factures : aérée, en-tête clair collant ─────────── */
+.list-tbl th{background:#fafafc!important;color:var(--ink2)!important;font-weight:600!important;
+  text-transform:uppercase;letter-spacing:.06em;font-size:10px!important;
+  border-bottom:1px solid var(--line)!important;padding:10px 12px!important}
+.list-tbl th.th-sort:hover{background:#f0f0f3!important;color:var(--ink)!important}
+.list-tbl th.th-sort span{color:var(--accent)!important}
+.list-tbl td{padding:10px 12px!important;border-bottom:1px solid #ededf1!important}
+.list-tbl tr:hover td{background:#f5f5f7!important}
+.list-tbl tr.sel td{background:rgba(0,113,227,.08)!important}
+.list-tbl td.num{color:var(--brand)!important}
+
+/* ── Barre collante du formulaire (proposition) : translucide claire ──────── */
+#ch-stickybar{background:rgba(255,255,255,.82)!important;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  color:var(--ink2)!important;border:1px solid var(--hairline);border-radius:12px!important;box-shadow:var(--shadow-card)!important}
+#ch-stickybar .nav-chip{background:#f2f2f7!important;color:var(--ink2)!important;border:1px solid transparent;transition:all .14s}
+#ch-stickybar .nav-chip:hover{background:#fff!important;color:var(--accent)!important;border-color:rgba(0,113,227,.35)}
+#ch-stickybar button{background:#f2f2f7!important;color:var(--ink)!important;border-radius:980px!important;font-weight:600}
+#ch-stickybar #ch-quick-save{background:var(--brand)!important;color:#fff!important}
+#ch-dirty-dot{color:var(--warn)!important}
+#ch-legende{color:var(--ink3)!important}
+#ch-legende i{border-color:#d8d8dd!important}
+
+/* ── Modale de confirmation : rayons doux, ombre profonde ─────────────────── */
+#ch-confirm-ov > div{border-radius:16px!important;box-shadow:var(--shadow-pop)!important}
+#ch-confirm-ov #ch-confirm-hd{background:var(--panel)!important;color:var(--ink)!important;
+  border-bottom:1px solid var(--line);font-size:15px!important}
+#ch-confirm-ov .btn, #ch-confirm-ov button{border-radius:980px!important;font-weight:600!important}
+
+/* ── Barre multi-ouvrage & éléments sombres du formulaire ─────────────────── */
+#ch-ouvrage-bar{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--hairline);
+  border-radius:var(--r-lg)!important;box-shadow:var(--shadow-card)}
+#ch-ouvrage-bar *{color:var(--ink)}
+#ch-ouvrage-bar select{background:#f2f2f7!important;color:var(--ink)!important;border:1px solid #d8d8dd!important;border-radius:7px!important}
+
+/* ── Bandeau version d'essai : graphite discret ───────────────────────────── */
+.card-hd .hd-title{flex:1;text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ── Panneau d'aperçu PDF : clair et discret ─────────────────────────────── */
+.col-right-pdf{background:#e8e8ed!important;border-left:1px solid var(--hairline)!important}
+.col-right-pdf .pv-bar{background:rgba(255,255,255,.86)!important;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  color:var(--ink)!important;border-bottom:1px solid var(--hairline)}
+.col-right-pdf .pv-bar .btn{background:#f2f2f7!important;color:var(--ink)!important}
+.col-right-pdf .pv-bar .btn:hover{background:#e8e8ed!important}
+.col-right-pdf iframe{background:#e8e8ed!important}
+.col-right{background:var(--bg)!important;border-left:1px solid var(--hairline)!important}
+/* ── Accueil : logotype typographique net + tuiles douces sur fond perle ── */
+.home-logotype{font-weight:800;font-size:27px;line-height:1.3;letter-spacing:.42em;color:var(--ink);font-family:inherit}
+#panel-home{background:var(--bg)!important}
+.home-wrap{background:transparent!important}
+.home-card{background:#fff!important;border:1px solid var(--hairline)!important;border-radius:var(--r-lg)!important;
+  box-shadow:var(--shadow-card)!important;transition:transform .16s ease, box-shadow .16s ease}
+.home-card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,.10)!important}
+/* ── MODE « PAS À PAS » (assistant) : une section à la fois, sans aperçu ─── */
+body.wiz-mode .col-right-pdf{display:none!important}
+body.wiz-mode #ch-form-scroll{max-width:840px;margin:0 auto;float:none!important;width:100%!important}
+body.wiz-mode #ch-form-scroll .card:not(.wiz-current){
+  visibility:hidden!important;position:absolute!important;left:0!important;top:0!important;
+  width:100%!important;height:0!important;overflow:hidden!important;pointer-events:none!important;margin:0!important;border:none!important;box-shadow:none!important}
+body.wiz-mode #ch-form-scroll > :not(.card):not(#ch-wizbar):not(#ch-stickybar){display:none!important}
+body.wiz-mode #ch-stickybar{display:none!important}
+#ch-wizbar{display:none;position:sticky;top:0;z-index:70;background:rgba(255,255,255,.85);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
+  border:1px solid var(--hairline);border-radius:14px;box-shadow:var(--shadow-card);
+  padding:10px 14px;margin:0 0 14px 0;align-items:center;gap:10px;font-size:12px;color:var(--ink2)}
+body.wiz-mode #ch-wizbar{display:flex;flex-wrap:wrap}
+#ch-wizbar .wiz-quit{background:transparent;border:none;color:var(--ink2);cursor:pointer;font-size:12px;padding:4px 8px;border-radius:8px}
+#ch-wizbar .wiz-quit:hover{background:#f2f2f7;color:var(--ink)}
+#ch-wizbar .wiz-dots{display:flex;gap:6px;align-items:center;flex:1;justify-content:center;flex-wrap:wrap}
+#ch-wizbar .wiz-dot{width:26px;height:26px;border-radius:50%;background:#e8e8ed;color:var(--ink2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;
+  transition:all .15s ease;border:none}
+#ch-wizbar .wiz-dot:hover{background:#dcdce1}
+#ch-wizbar .wiz-dot.done{background:var(--brand);color:#fff}
+#ch-wizbar .wiz-dot.cur{background:var(--accent);color:#fff;transform:scale(1.15);box-shadow:0 2px 8px rgba(0,113,227,.35)}
+#ch-wizbar .wiz-nav{display:flex;gap:8px;align-items:center}
+#ch-wizbar .wiz-nav button{border:none;border-radius:980px;padding:8px 18px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+#ch-wizbar #wiz-prev{background:#f2f2f7;color:var(--ink)}
+#ch-wizbar #wiz-prev:disabled{opacity:.35;cursor:default}
+#ch-wizbar #wiz-next{background:var(--accent);color:#fff}
+#ch-wizbar #wiz-next:hover{filter:brightness(1.08)}
+#ch-wizbar .wiz-step-title{width:100%;text-align:center;color:var(--ink);font-weight:700;font-size:13px;letter-spacing:.02em}
+body.wiz-mode .card.wiz-current{box-shadow:0 2px 4px rgba(0,0,0,.05), 0 16px 44px rgba(0,0,0,.10)!important}
+/* ── ASSISTANT « NOUVEAU CONTRAT » (V2) : app dédiée plein écran, un écran = une question ── */
+#wiz2{position:fixed;inset:0;z-index:9990;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+#wiz2.on{display:flex}
+#wiz2 .w2-top{display:flex;align-items:center;gap:14px;padding:14px 22px;background:rgba(255,255,255,.85);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-bottom:1px solid var(--hairline)}
+#wiz2 .w2-brand{font-weight:800;letter-spacing:.28em;font-size:12px;color:var(--ink)}
+#wiz2 .w2-stepinfo{color:var(--ink2);font-size:12px;margin-left:auto}
+#wiz2 .w2-close{border:none;background:#f2f2f7;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;color:var(--ink2)}
+#wiz2 .w2-close:hover{background:#e8e8ed;color:var(--ink)}
+#wiz2 .w2-progress{height:3px;background:#e8e8ed}
+#wiz2 .w2-progress i{display:block;height:100%;background:var(--accent);transition:width .3s ease}
+#wiz2 .w2-body{flex:1;overflow-y:auto;display:flex;justify-content:center;padding:44px 20px 120px}
+#wiz2 .w2-card{width:100%;max-width:660px}
+#wiz2 .w2-q{font-size:27px;font-weight:800;letter-spacing:-.01em;color:var(--ink);margin:0 0 6px}
+#wiz2 .w2-sub{font-size:14.5px;color:var(--ink2);margin:0 0 30px}
+#wiz2 .w2-field{margin-bottom:18px}
+#wiz2 .w2-field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;letter-spacing:.02em}
+#wiz2 .w2-field input,#wiz2 .w2-field textarea,#wiz2 .w2-field select{width:100%;box-sizing:border-box;
+  font-size:15px;padding:12px 14px;border:1.5px solid #d8d8dd;border-radius:12px;background:#fff;font-family:inherit}
+#wiz2 .w2-field textarea{resize:vertical;min-height:64px}
+#wiz2 .w2-row{display:flex;gap:12px}
+#wiz2 .w2-row .w2-field{flex:1}
+#wiz2 .w2-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+#wiz2 .w2-tile{background:#fff;border:1.5px solid #d8d8dd;border-radius:14px;padding:16px;cursor:pointer;transition:all .14s ease;position:relative}
+#wiz2 .w2-tile:hover{border-color:#b8b8c0;transform:translateY(-1px)}
+#wiz2 .w2-tile.sel{border-color:var(--accent);background:rgba(0,113,227,.05);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+#wiz2 .w2-tile.sel::after{content:'✓';position:absolute;top:10px;right:12px;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+#wiz2 .w2-tile b{display:block;font-size:14.5px;color:var(--ink);margin-bottom:4px;padding-right:24px}
+#wiz2 .w2-tile span{font-size:12px;color:var(--ink2);line-height:1.45;display:block}
+#wiz2 .w2-seg{display:inline-flex;background:#e8e8ed;border-radius:10px;padding:2.5px;gap:2px}
+#wiz2 .w2-seg button{border:none;background:transparent;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;font-family:inherit}
+#wiz2 .w2-seg button.sel{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+#wiz2 .w2-switchrow{display:flex;align-items:flex-start;gap:14px;background:#fff;border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+#wiz2 .w2-switchrow .txt{flex:1}
+#wiz2 .w2-switchrow b{display:block;font-size:14px;color:var(--ink)}
+#wiz2 .w2-switchrow span{font-size:12px;color:var(--ink2)}
+#wiz2 .w2-note{font-size:12px;color:var(--ink3);margin-top:14px;line-height:1.5}
+#wiz2 .w2-lines .ln{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+#wiz2 .w2-lines .ln input{border:1.5px solid #d8d8dd;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit}
+#wiz2 .w2-lines .ln .lbl{flex:1}
+#wiz2 .w2-lines .ln .num{width:86px;text-align:right}
+#wiz2 .w2-lines .ln .amt{width:110px;text-align:right;color:var(--ink2);font-size:13px;white-space:nowrap}
+#wiz2 .w2-lines .ln .rm{border:none;background:transparent;color:#c2c2c7;font-size:15px;cursor:pointer}
+#wiz2 .w2-lines .ln .rm:hover{color:var(--bad)}
+#wiz2 .w2-add{border:none;background:#f2f2f7;border-radius:980px;padding:8px 16px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit}
+#wiz2 .w2-total{text-align:right;font-size:14px;color:var(--ink);font-weight:700;margin-top:10px}
+#wiz2 .w2-resume{background:#fff;border:1px solid var(--hairline);border-radius:16px;padding:22px;box-shadow:var(--shadow-card)}
+#wiz2 .w2-resume .r-line{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid #f0f0f3;font-size:13.5px}
+#wiz2 .w2-resume .r-line .k{color:var(--ink2)}
+#wiz2 .w2-resume .r-line .v{color:var(--ink);font-weight:600;text-align:right}
+#wiz2 .w2-bigttc{text-align:center;margin:22px 0 6px}
+#wiz2 .w2-bigttc .n{font-size:38px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+#wiz2 .w2-bigttc .l{font-size:12px;color:var(--ink2);letter-spacing:.06em;text-transform:uppercase}
+#wiz2 .w2-nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;justify-content:space-between;
+  padding:16px 26px;background:rgba(255,255,255,.85);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-top:1px solid var(--hairline)}
+#wiz2 .w2-back{border:none;background:transparent;color:var(--ink2);font-size:13.5px;font-weight:600;cursor:pointer;padding:8px 12px;border-radius:10px;font-family:inherit}
+#wiz2 .w2-back:hover{background:#f2f2f7;color:var(--ink)}
+#wiz2 .w2-next{border:none;background:var(--accent);color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;
+  padding:13px 34px;border-radius:980px;font-family:inherit;transition:all .15s}
+#wiz2 .w2-next:hover{filter:brightness(1.07)}
+#wiz2 .w2-next.create{background:var(--ok)}
+#essai-banner{background:rgba(29,29,31,.92)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  color:#f5f5f7!important;font-weight:600!important;letter-spacing:.02em}
 </style>
 </head>
 <body>
+<div id="essai-banner">🧪 VERSION D'ESSAI — proposition d'optimisation du formulaire (20.09.2026) — données de test isolées : vos contrats réels ne sont PAS affectés</div>
 
 <!-- HEADER / TABS -->
 <div id="hdr">
@@ -554,7 +789,8 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 ══════════════════════════════════════════════════ -->
 <div class="panel on" id="panel-home">
   <div class="home-wrap">
-    <div class="home-top"><img class="home-logo" id="home-logo" alt="Substances Architectes"></div>
+    <div class="home-top"><img class="home-logo" id="home-logo" alt="Substances Architectes" style="display:none">
+      <div class="home-logotype">SUBSTANCES<br>ARCHITECTES</div></div>
     <div class="home-title">Application de facturation</div>
     <div class="home-sub">Substances Architectes Sàrl — contrats, factures et suivi</div>
     <div class="home-grid">
@@ -978,7 +1214,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
               <input type="checkbox" id="filter-statut-adef" onchange="renderContratsTable()" style="width:14px;height:14px;cursor:pointer">
               À définir uniquement
             </label>
-            <button class="btn btn-green btn-sm" onclick="newContratCalc()">+ Nouveau contrat</button>
+            <button class="btn btn-green btn-sm" onclick="newContratCalc()">+ Nouveau contrat</button> <button class="btn btn-sm" style="background:#0071e3;color:#fff" onclick="newContratCalc();setTimeout(wiz2Start,200)" title="Créer un contrat avec l'assistant : une question à la fois, en langage clair, sans aperçu">▸ Créer pas à pas</button>
           </div>
         </div>
         <div style="overflow-x:auto">
@@ -1134,6 +1370,24 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 <div class="panel" id="panel-calchono">
   <div class="two-col">
     <div class="col-left" id="ch-form-scroll">
+      <div id="ch-stickybar">
+        <button id="ch-quick-save" onclick="applyCalcHono()" title="Enregistrer le contrat (raccourci : Ctrl/Cmd+S)">💾 Enregistrer</button>
+        <span id="ch-dirty-dot" title="Des modifications n'ont pas encore été enregistrées">● non enregistré</span>
+        <button onclick="chFoldAll(false)" title="Déplier toutes les cartes">⌄ Déplier</button>
+        <button onclick="chFoldAll(true)" title="Replier toutes les cartes (le Formulaire reste ouvert)">› Replier</button>
+        <span id="ch-nav-chips" style="display:flex;flex-wrap:wrap;gap:4px"></span>
+        <span id="ch-legende" title="Convention des cellules : blanc = saisie libre · jaune = valeur manuelle ou pilotée · gris = calculée / inactive"><span><i style="background:#fff"></i>saisie</span><span><i style="background:#FFFDE0"></i>manuel/piloté</span><span><i style="background:#eef0ec"></i>calculé</span></span>
+        <button onclick="chWizardStart()" title="Mode pas à pas : remplir le contrat section par section, sans aperçu">▸ Pas à pas</button>
+      </div>
+      <div id="ch-wizbar">
+        <span class="wiz-step-title" id="wiz-title"></span>
+        <button class="wiz-quit" onclick="chWizardExit()" title="Revenir à la vue complète avec l'aperçu PDF">✕ Quitter le pas à pas</button>
+        <span class="wiz-dots" id="wiz-dots"></span>
+        <span class="wiz-nav">
+          <button id="wiz-prev" onclick="chWizardGo(CH_WIZ.i-1)">‹ Précédent</button>
+          <button id="wiz-next" onclick="chWizardNext()">Suivant ›</button>
+        </span>
+      </div>
 
     <!-- ═══ Feuille 1 — FORMULAIRE ═══ -->
     <div class="card" id="card-formulaire">
@@ -1194,7 +1448,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 
     <!-- ═══ Feuille — 0 CONDITIONS PRÉLIMINAIRES ═══ -->
     <div class="card" id="card-conditions">
-      <div class="card-hd">0 — Conditions préliminaires<label class="lockchk"><input type="checkbox" id="ch_lock_conditions" onchange="chToggleLock('conditions')"> Modifiable</label></div>
+      <div class="card-hd">0 — Conditions préliminaires<label class="lockchk" title="Coché = votre texte personnalisé est affiché et conservé. Décocher restaure le TEXTE TYPE (une confirmation est demandée si votre texte serait perdu)."><input type="checkbox" id="ch_lock_conditions" onchange="chToggleLock('conditions')"> Texte personnalisé</label></div>
       <div class="card-bd">
         <div class="rt-toolbar">
           <button type="button" onmousedown="return rtCmd(event,'bold')" title="Gras (Akkurat LL TT Regular)"><b>G</b></button>
@@ -1292,7 +1546,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 
     <!-- ═══ Feuille — 2 MODE DE CALCUL ═══ -->
     <div class="card" id="card-modecalc">
-      <div class="card-hd">2 — Mode de calcul<span style="display:flex;align-items:center;gap:12px"><label class="lockchk" id="ch_modecalc_type_lbl" style="gap:6px">Contrat <select id="ch_modecalc_type" onchange="chModecalcType()" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="relatif">Forfait relatif</option><option value="forfait">Forfait</option><option value="unitaire">Unitaire</option></select></label><label class="lockchk" id="ch_modecalc_on_lbl" style="gap:6px" title="Vert = le chapitre « Mode de calcul » figure dans le PDF (tous types de contrat ; pour une expertise, il s'agit du chapitre « Condition »). Gris = chapitre retiré du PDF, chapitres suivants renumérotés."><input type="checkbox" id="ch_modecalc_on" checked onchange="refreshOffreSoon()"> Dans le PDF</label><label class="lockchk"><input type="checkbox" id="ch_lock_modecalc" onchange="chToggleLock('modecalc')"> Modifiable</label></span></div>
+      <div class="card-hd">2 — Mode de calcul<span style="display:flex;align-items:center;gap:12px"><label class="lockchk" id="ch_modecalc_type_lbl" style="gap:6px">Contrat <select id="ch_modecalc_type" onchange="chModecalcType()" style="background:#0a4a5e;color:#fff;border:1px solid #2a6a7e;border-radius:3px;font-size:11px;padding:1px 4px;font-family:inherit;cursor:pointer"><option value="relatif">Forfait relatif</option><option value="forfait">Forfait</option><option value="unitaire">Unitaire</option></select></label><label class="lockchk" id="ch_modecalc_on_lbl" style="gap:6px" title="Coché = le chapitre « Mode de calcul » figure dans le PDF (tous types de contrat ; pour une expertise, il s'agit du chapitre « Condition »). Décoché = chapitre retiré du PDF, chapitres suivants renumérotés."><input type="checkbox" id="ch_modecalc_on" checked onchange="refreshOffreSoon()"> Dans le PDF</label><label class="lockchk" title="Coché = votre texte personnalisé est affiché et conservé. Décocher restaure le TEXTE TYPE (une confirmation est demandée si votre texte serait perdu)."><input type="checkbox" id="ch_lock_modecalc" onchange="chToggleLock('modecalc')"> Texte personnalisé</label></span></div>
       <div class="card-bd">
         <div class="rt-toolbar">
           <button type="button" onmousedown="return rtCmd(event,'bold')" title="Gras (Akkurat LL TT Regular)"><b>G</b></button>
@@ -1404,12 +1658,12 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <tr><th style="width:46px"></th><th>Désignation</th><th style="width:90px">Qté</th><th style="width:70px">Unité</th><th style="width:100px">Prix unit.</th><th style="width:130px">Montant Frs</th></tr>
 
           <tr><td class="sec" colspan="6">CFC 0 — Acquisition du terrain</td></tr>
-          <tr><td class="sym"><button type="button" class="ce-eye" data-key="surface" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#4a5a62"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Surface du terrain</td>
+          <tr><td class="sym"><button type="button" class="ce-eye" data-key="surface" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#6e6e73"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Surface du terrain</td>
             <td><input id="ce_terrain_surf" type="number" value="0" oninput="updEstimCout()"></td>
             <td class="unit">m²</td>
             <td><input id="ce_terrain_prix" type="number" value="0" oninput="updEstimCout()"></td>
             <td class="num" id="ce_terrain_base_mnt">0.00 Fr.</td></tr>
-          <tr><td class="sym"><button type="button" class="ce-eye" data-key="droits" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#4a5a62"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Droits de mutation et frais de notaire</td>
+          <tr><td class="sym"><button type="button" class="ce-eye" data-key="droits" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#6e6e73"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Droits de mutation et frais de notaire</td>
             <td><input id="ce_terrain_notaire" type="number" step="0.1" value="5" oninput="updEstimCout()"></td>
             <td class="unit">%</td><td class="unit">—</td><td class="num" id="ce_terrain_notaire_mnt">0.00 Fr.</td></tr>
           <tr><td class="sym">—</td><td>Arrondi</td><td class="unit">—</td><td class="unit">—</td><td class="unit">—</td>
@@ -1421,7 +1675,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
             <td class="num"><input id="ce_prep1" type="number" value="0" oninput="updEstimCout()" style="text-align:right"></td></tr>
           <tr><td class="sym">—</td><td>Diagnostic amiante / désamiantage</td><td class="unit">—</td><td class="unit">—</td><td class="unit">—</td>
             <td class="num"><input id="ce_prep2" type="number" value="0" oninput="updEstimCout()" style="text-align:right"></td></tr>
-          <tr><td class="sym"><button type="button" class="ce-eye" data-key="demolition" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#4a5a62"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Démolition / démontage</td>
+          <tr><td class="sym"><button type="button" class="ce-eye" data-key="demolition" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#6e6e73"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Démolition / démontage</td>
             <td><input id="ce_prep3_qty" type="number" value="0" oninput="updEstimCout()"></td>
             <td><select id="ce_prep3_unit" onchange="updEstimCout()">
               <option>m³</option><option>m²</option><option>ml</option><option>pce</option><option selected>gl</option><option>—</option>
@@ -1442,7 +1696,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <tr><td class="sec" colspan="6">CFC 2 — Construction (cube SIA 416)</td></tr>
           <tbody id="ce-c2-body"></tbody>
           <tr><td colspan="6" style="padding:6px 8px;background:#f8f9f7"><button class="btn btn-sm" style="background:#636E7E;color:#fff" onclick="addCeC2()">+ Ligne</button></td></tr>
-          <tr><td class="sym"><button type="button" class="ce-eye" data-key="divers" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#4a5a62"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Divers et imprévus (% CFC2)</td><td><input id="ce_divers_pct" type="number" step="0.1" value="5" oninput="updEstimCout()"></td><td class="unit">%</td><td class="unit">—</td><td class="num" id="ce_divers_mnt">0.00 Fr.</td></tr>
+          <tr><td class="sym"><button type="button" class="ce-eye" data-key="divers" onclick="ceEye(this)" title="Détail visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#6e6e73"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button></td><td>Divers et imprévus (% CFC2)</td><td><input id="ce_divers_pct" type="number" step="0.1" value="5" oninput="updEstimCout()"></td><td class="unit">%</td><td class="unit">—</td><td class="num" id="ce_divers_mnt">0.00 Fr.</td></tr>
           <tr><td colspan="5" class="sub" style="text-align:right">Total construction</td><td class="sub num" id="ce_constr_tot">0.00 Fr.</td></tr>
 
           <tr><td class="sec" colspan="6">CFC 4 — Aménagements extérieurs</td></tr>
@@ -2869,10 +3123,10 @@ function uiApplyDraft(draft){
 // Brouillons : capturés à chaque saisie dans les formulaires (débouncé) et avant le déchargement de la page.
 let _uiDraftT=null, _uiFactDraftT=null;
 document.addEventListener('input',  e=>{ const t=e.target; if(t && t.closest){
-  if(t.closest('#panel-calchono')){ clearTimeout(_uiDraftT); _uiDraftT=setTimeout(uiCaptureDraft, 900); }
+  if(t.closest('#panel-calchono')){ if(typeof chMarkDirty==='function') chMarkDirty(true); clearTimeout(_uiDraftT); _uiDraftT=setTimeout(uiCaptureDraft, 900); }
   else if(t.closest('#panel-saisie')){ clearTimeout(_uiFactDraftT); _uiFactDraftT=setTimeout(uiCaptureFactDraft, 900); } } }, true);
 document.addEventListener('change', e=>{ const t=e.target; if(t && t.closest){
-  if(t.closest('#panel-calchono')){ clearTimeout(_uiDraftT); _uiDraftT=setTimeout(uiCaptureDraft, 400); }
+  if(t.closest('#panel-calchono')){ if(typeof chMarkDirty==='function') chMarkDirty(true); clearTimeout(_uiDraftT); _uiDraftT=setTimeout(uiCaptureDraft, 400); }
   else if(t.closest('#panel-saisie')){ clearTimeout(_uiFactDraftT); _uiFactDraftT=setTimeout(uiCaptureFactDraft, 400); } } }, true);
 window.addEventListener('beforeunload', ()=>{ if(currentView==='calchono') uiCaptureDraft(); if(currentView==='saisie') uiCaptureFactDraft(); uiSaveState(); });
 // Restauration au démarrage : rouvre l'onglet (et le contrat) où l'on travaillait, puis réapplique le brouillon.
@@ -3066,7 +3320,7 @@ const CE_NATURES = ['Neuf','Transformation','Surélévation','Variante','Option'
 /* Masquage PAR LIGNE dans le PDF Annexe 3 : CE_HIDE[key]=true → la LIGNE ENTIÈRE n'apparaît pas au PDF
    (elle reste au formulaire et ses montants restent comptés dans les totaux de l'estimation). */
 let CE_HIDE = {};
-function ceEyeIcon(key){ return CE_HIDE[key] ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#c2c2c7"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/><path d="M4.5 3.5l15 17"/></svg>' : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#4a5a62"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>'; }   // icônes SVG (plus d'emojis singe/œil, 2026-09-20)
+function ceEyeIcon(key){ return CE_HIDE[key] ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#c2c2c7"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/><path d="M4.5 3.5l15 17"/></svg>' : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;color:#6e6e73"><path d="M2 12s3.5-6.5 10-6.5 10 6.5 10 6.5-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>'; }
 function ceEye(btn){ const k=btn.dataset.key; CE_HIDE[k]=!CE_HIDE[k]; btn.innerHTML=ceEyeIcon(k); btn.title=CE_HIDE[k]?'Ligne masquée dans le PDF (clic pour afficher)':'Ligne visible dans le PDF (clic pour masquer)'; if(typeof persist==='function') persist(); }
 function ceEyeBtn(key){ return '<button type="button" class="ce-eye" data-key="'+key+'" onclick="ceEye(this)" title="Ligne visible dans le PDF (clic pour masquer)" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;line-height:1">'+ceEyeIcon(key)+'</button>'; }
 function ceEyeRefresh(){ document.querySelectorAll('.ce-eye').forEach(b=>{ b.innerHTML=ceEyeIcon(b.dataset.key); b.title=CE_HIDE[b.dataset.key]?'Ligne masquée dans le PDF (clic pour afficher)':'Ligne visible dans le PDF (clic pour masquer)'; }); }
@@ -3175,7 +3429,7 @@ function updEstimCout() {
   const totalArrondi = Math.floor(total / 100) * 100;                 // arrondi automatique, non modifiable (centaine inférieure)
   const ceTotEl = document.getElementById('ce_total');
   const ceTotManuel = ceTotEl?.dataset.manual === '1';               // COÛT TOTAL saisi à la main (sans case à cocher)
-  if(ceTotEl){ ceTotEl.style.background = ceTotManuel ? '#FFFDE0' : ''; if(!ceTotManuel) ceTotEl.value = totalArrondi; }
+  if(ceTotEl){ ceTotEl.style.background = ceTotManuel ? '#FFFDE0' : ''; ceTotEl.title = ceTotManuel ? 'Coût total ARRÊTÉ manuellement — bouton « auto » pour revenir au calcul.' : ''; if(!ceTotManuel) ceTotEl.value = totalArrondi; }
   const totalFinal = ceTotManuel ? (gn('ce_total')||0) : totalArrondi;
   const arrondiTotal = totalFinal - total;   // arrondi (ou ajustement manuel) appliqué au coût total → reporté sur CFC 2
   { const b=document.getElementById('ce_total_brut'); if(b) b.textContent = 'sans arrondi : ' + CHF(total) + ' Fr.'; }
@@ -3273,7 +3527,7 @@ function updCalcHono() {
         if(incEl && incEl.dataset.gross === undefined) incEl.dataset.gross = String(incEl.value).replace(/\s/g,''); // mémorise le brut au premier clic
         amt = incEl ? parseFloat(incEl.dataset.gross) || 0 : 0;
         inclus = amt / 2; nonInclus = amt / 2;
-        if(incEl) { incEl.disabled = true; incEl.style.background = '#FFFDE0'; incEl.value = inclus; }
+        if(incEl) { incEl.disabled = true; incEl.style.background = '#FFFDE0'; incEl.value = inclus; incEl.title='Répartition 50/50 (case cochée) — décochez pour saisir le montant librement.'; }
       } else {
         if(incEl && incEl.dataset.gross !== undefined) { incEl.value = incEl.dataset.gross; delete incEl.dataset.gross; }
         amt = gn(idBase);
@@ -3403,7 +3657,7 @@ function updCalcHono() {
     htManuel=(_chAggHtManual!=null && _chAggHtManual>0);
     htFinal=htManuel?_chAggHtManual:htAuto;
     arrondi=sousTotal-htFinal;
-    if(!_chRecomputing){ const htEl=document.getElementById('ch_res_ht'); if(htEl){ htEl.readOnly=false; htEl.style.background=htManuel?'#FFFDE0':''; if(htManuel){ htEl.dataset.manual='1'; } else { delete htEl.dataset.manual; htEl.value=CHF(htAuto); } } }
+    if(!_chRecomputing){ const htEl=document.getElementById('ch_res_ht'); if(htEl){ htEl.readOnly=false; htEl.style.background=htManuel?'#FFFDE0':''; htEl.title=htManuel?'Total HT ARRÊTÉ manuellement — bouton « auto » pour revenir au calcul.':''; if(htManuel){ htEl.dataset.manual='1'; } else { delete htEl.dataset.manual; htEl.value=CHF(htAuto); } } }
   } else {
     hOrd=Hsum; Htot=Hsum+chnoTot;
     // Rabais et arrondi masquables INDÉPENDAMMENT (expertise/non-ord/faisa seuls) : rabais masqué → 0 ;
@@ -3414,7 +3668,7 @@ function updCalcHono() {
     htAuto = _hideArrondi ? sousTotal : Math.floor(sousTotal/100)*100;
     const htEl=document.getElementById('ch_res_ht');
     htManuel=htEl?.dataset.manual==='1';
-    if(htEl){ htEl.readOnly=false; htEl.style.background=htManuel?'#FFFDE0':''; if(!htManuel) htEl.value=htAuto; }
+    if(htEl){ htEl.readOnly=false; htEl.style.background=htManuel?'#FFFDE0':''; htEl.title=htManuel?'Total HT ARRÊTÉ manuellement — bouton « auto » pour revenir au calcul.':''; if(!htManuel) htEl.value=htAuto; }
     htFinal=htManuel?(gn('ch_res_ht')||0):htAuto;
     arrondi=sousTotal-htFinal;
   }
@@ -3493,12 +3747,12 @@ function updCalcHono() {
   T('ch_forfait_frais_mnt', fraisOfferts ? 'offerts' : (CHF(forfaitFraisMnt) + ' Fr.' + (_refHT ? '  (HT)' : '  (TTC)')));
   T('ch_frais_depl_mnt',  _fs.deplOff  ? 'offerts' : (_deplMnt !=null ? CHF(_deplMnt)+' Fr.'  : '—'));
   T('ch_frais_repro_mnt', _fs.reproOff ? 'offerts' : (_reproMnt!=null ? CHF(_reproMnt)+' Fr.' : '—'));
-  { const fpEl=document.getElementById('ch_forfait_frais_pct'); if(fpEl){ fpEl.disabled = _fs.detail; fpEl.style.background = _fs.detail ? '#eef0ec' : ''; } }
-  { const peEl=document.getElementById('ch_frais_perso_mnt'); if(peEl){ peEl.disabled = !_fs.selPerso; peEl.style.background = !_fs.selPerso ? '#eef0ec' : ''; }
+  { const fpEl=document.getElementById('ch_forfait_frais_pct'); if(fpEl){ fpEl.disabled = _fs.detail; fpEl.style.background = _fs.detail ? '#eef0ec' : ''; fpEl.title=_fs.detail?'Inactif — cochez ce type de frais pour le saisir.':''; } }
+  { const peEl=document.getElementById('ch_frais_perso_mnt'); if(peEl){ peEl.disabled = !_fs.selPerso; peEl.style.background = !_fs.selPerso ? '#eef0ec' : ''; peEl.title=!_fs.selPerso?'Inactif — cochez ce type de frais pour le saisir.':''; }
     document.querySelectorAll('input[name="ch_frais_perso_base"]').forEach(r=>{ r.disabled = !_fs.selPerso; }); }
-  { const dpEl=document.getElementById('ch_frais_depl_pct');  if(dpEl){ const off=!_fs.selDepl || _fs.deplOff;  dpEl.disabled = off;  dpEl.style.background = off ? '#eef0ec' : ''; }
+  { const dpEl=document.getElementById('ch_frais_depl_pct');  if(dpEl){ const off=!_fs.selDepl || _fs.deplOff;  dpEl.disabled = off;  dpEl.style.background = off ? '#eef0ec' : ''; dpEl.title=off?'Inactif — cochez ce type de frais pour le saisir.':''; }
     const dc=document.getElementById('ch_frais_depl_off');  if(dc) dc.disabled = !_fs.selDepl; }
-  { const rpEl=document.getElementById('ch_frais_repro_pct'); if(rpEl){ const off=!_fs.selRepro || _fs.reproOff; rpEl.disabled = off; rpEl.style.background = off ? '#eef0ec' : ''; }
+  { const rpEl=document.getElementById('ch_frais_repro_pct'); if(rpEl){ const off=!_fs.selRepro || _fs.reproOff; rpEl.disabled = off; rpEl.style.background = off ? '#eef0ec' : ''; rpEl.title=off?'Inactif — cochez ce type de frais pour le saisir.':''; }
     const rc=document.getElementById('ch_frais_repro_off'); if(rc) rc.disabled = !_fs.selRepro; }
 
   // Honoraires d'architecte À DÉDUIRE = TOUJOURS 100% des prestations d'architecte (même si le mandat
@@ -3609,6 +3863,7 @@ function updChSections() {
   chSyncPlanBtn();        // bouton « Afficher / Masquer le planning » (expertise uniquement)
   chRenumber();
   if(typeof chRenderAnnexes==='function') chRenderAnnexes();   // les annexes auto dépendent des prestations ordinaires
+  if(typeof chWizardRefresh==='function' && typeof CH_WIZ!=='undefined' && CH_WIZ.on) chWizardRefresh();   // mode pas à pas : étapes recalculées
 }
 
 /* Le planning est masqué si la case « Masquer » est cochée OU si c'est une expertise (masquage d'office).
@@ -3855,10 +4110,13 @@ function chFillObjectif(type) {
   if(!ed) return;
   const txt = CH_OBJECTIF_MODELES[type];
   if(!txt) return;
-  if((ed.textContent||'').trim() && !confirm("Remplacer le texte actuel de l'objectif par le modèle ?")) return;
-  rtSetValue('ch_note_objectif', txt);
-  ed.focus();
-  refreshOffrePreview();
+  const _fill = ()=>{ rtSetValue('ch_note_objectif', txt); ed.focus(); refreshOffrePreview(); };
+  if((ed.textContent||'').trim()){
+    chConfirm("Remplacer le texte actuel de l'objectif par le modèle ?", _fill,
+      {title:'Objectifs', yesText:'Remplacer', yesColor:'#b08800'});
+    return;
+  }
+  _fill();
 }
 function chRegenSituation() {
   const ta = document.getElementById('ch_note_situation');
@@ -5813,6 +6071,9 @@ function offreShowOverflow(overflows){
   } else { w.style.display='none'; w.innerHTML=''; }
 }
 async function refreshOffrePreview(){
+  try{ if(typeof chUpdateAutoBadges==='function') chUpdateAutoBadges(); }catch(e){}
+  if(typeof CH_WIZ!=='undefined' && CH_WIZ.on) return;   // mode pas à pas : pas d'aperçu (régénéré à la sortie)
+  if(typeof WIZ2!=='undefined' && WIZ2.on) return;         // assistant nouveau contrat : idem
   const f=document.getElementById('offre-frame'), e=document.getElementById('offre-frame-empty');
   try{
     if(e){ e.textContent='Génération de l\'aperçu…'; e.style.display='flex'; }
@@ -5862,6 +6123,431 @@ function chToggleProjetCard(){
 }
 
 /* Renumérote les chapitres VISIBLES du Calcul honoraires en 1, 2, 3… (sans trou) */
+/* ══ PROPOSITION 2026-09-20 (version d'essai) : pliage NEUTRE des cartes (aucun effet de bord),
+   navigation par chips, indicateur « non enregistré », Ctrl/Cmd+S, badges de masquage automatique. ══ */
+/* ── MODE « PAS À PAS » (2026-09-20) : le contrat se remplit UNE SECTION À LA FOIS, sans aperçu.
+   Réutilise les cartes existantes (mêmes champs, même logique) : les autres cartes sont déportées
+   hors écran (position:absolute, display inchangé → la numérotation chRenumber reste juste).
+   À chaque étape on remplit, on règle « Dans le PDF », puis Suivant ; la dernière étape enregistre. ── */
+let CH_WIZ = { on:false, i:0 };
+
+/* ══ ASSISTANT « NOUVEAU CONTRAT » V2 (proposition 2026-09-20, r2 — flux complet) ══
+   UNE question par écran, en langage clair. Ordre métier : le MONTANT ARRÊTÉ se demande À LA FIN
+   (il découle du calcul) ; les FACTEURS d'honoraires (catégorie, ajustements, tarif, rabais) ont
+   leur écran ; le coût de l'ouvrage peut se DÉFINIR PAR L'ESTIMATION (volumes × prix/m³, SIA 416).
+   Écrit dans les champs réels et appelle les fonctions existantes : aucune logique dupliquée. */
+let WIZ2={on:false,i:0,d:{}};
+const W2_ESC=s2=>String(s2==null?'':s2).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const W2_NUM=v=>parseFloat(String(v==null?'':v).replace(/[\s'’]/g,'').replace(',','.'))||0;
+function w2Keep(ids){ ids.forEach(([w,setter])=>{ const el=document.getElementById(w); if(el) setter(el.value); }); }
+const WIZ2_SCREENS=[
+ {id:'projet', q:'Quel est le projet ?', sub:'Le numéro d’affaire du bureau et le bien-fonds concerné.',
+  html(){ return `
+   <div class="w2-row">
+    <div class="w2-field" style="max-width:180px"><label>N° D’AFFAIRE *</label><input id="w2_affaire" placeholder="26XYZ" style="text-transform:uppercase" value="${W2_ESC(gv('ch_affaire'))}"></div>
+    <div class="w2-field"><label>COMMUNE / LIEU DU PROJET</label><input id="w2_lieu" placeholder="Cully" value="${W2_ESC(gv('ch_lieu'))}"></div>
+   </div>
+   <div class="w2-field"><label>DESCRIPTION DU PROJET</label><textarea id="w2_projet" rows="2" placeholder="Transformation d’une maison villageoise et création d’un appartement…">${W2_ESC(gv('ch_projet'))}</textarea></div>
+   <div class="w2-row">
+    <div class="w2-field"><label>RUE DU BIEN-FONDS</label><input id="w2_padr" placeholder="Chemin des Vignes 12" value="${W2_ESC(gv('ch_padr'))}"></div>
+    <div class="w2-field"><label>NPA ET LOCALITÉ</label><input id="w2_ploc" placeholder="1096 Cully" value="${W2_ESC(gv('ch_ploc'))}"></div>
+   </div>`; },
+  valid(){ if(!(document.getElementById('w2_affaire').value||'').trim()){ chConfirm('Le N° d’affaire est nécessaire pour identifier le contrat (ex. 26XYZ).', null, {title:'N° d’affaire requis', yesText:'OK', yesColor:'#0071e3', noText:'Fermer'}); return false; } return true; },
+  commit(){ sv('ch_affaire',document.getElementById('w2_affaire').value.trim().toUpperCase());
+    sv('ch_projet',document.getElementById('w2_projet').value); sv('ch_lieu',document.getElementById('w2_lieu').value);
+    sv('ch_padr',document.getElementById('w2_padr').value); sv('ch_ploc',document.getElementById('w2_ploc').value); }},
+ {id:'client', q:'Qui est le maître de l’ouvrage ?', sub:'Le destinataire de l’offre d’honoraires.',
+  html(){ const f=gv('ch_formule')||'Madame, Monsieur,';
+   return `
+   <div class="w2-row">
+    <div class="w2-field" style="max-width:210px"><label>FORMULE</label><select id="w2_formule">
+      ${['Madame, Monsieur,','Madame,','Monsieur,','Mesdames, Messieurs,','Famille'].map(o=>`<option ${o===f?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+    <div class="w2-field"><label>NOM DU MAÎTRE DE L’OUVRAGE</label><input id="w2_nom" placeholder="Claire et Jean Dupont" value="${W2_ESC(gv('ch_nom'))}"></div>
+   </div>
+   <div class="w2-row">
+    <div class="w2-field"><label>RUE</label><input id="w2_adr" placeholder="Route de Lausanne 5" value="${W2_ESC(gv('ch_adr'))}"></div>
+    <div class="w2-field"><label>NPA ET LOCALITÉ</label><input id="w2_loc" placeholder="1096 Cully" value="${W2_ESC(gv('ch_loc'))}"></div>
+   </div>
+   <div class="w2-row">
+    <div class="w2-field"><label>RESPONSABLE DU DOSSIER</label><input id="w2_resp" value="${W2_ESC(gv('ch_resp')||'Paulo Meireles')}"></div>
+    <div class="w2-field" style="max-width:190px"><label>DATE DE L’OFFRE</label><input type="date" id="w2_date" value="${W2_ESC(gv('ch_date'))}"></div>
+   </div>`; },
+  commit(){ sv('ch_formule',document.getElementById('w2_formule').value); if(typeof chToggleAtt==='function') chToggleAtt();
+    sv('ch_nom',document.getElementById('w2_nom').value); sv('ch_adr',document.getElementById('w2_adr').value);
+    sv('ch_loc',document.getElementById('w2_loc').value); sv('ch_resp',document.getElementById('w2_resp').value);
+    sv('ch_date',document.getElementById('w2_date').value); }},
+ {id:'type', q:'Quel type de prestations ?', sub:'Plusieurs choix possibles — le document s’adapte automatiquement.',
+  html(){ const T=WIZ2.d.types; const tile=(k,titre,desc)=>`<div class="w2-tile ${T[k]?'sel':''}" onclick="wiz2Tile('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   return `<div class="w2-tiles">
+    ${tile('ord','Prestations ordinaires','Mandat d’architecte selon SIA 102 : les honoraires découlent du coût de l’ouvrage et des phases confiées.')}
+    ${tile('no','Prestations non ordinaires','Prestations listées ligne par ligne : heures × tarif horaire, ou montants convenus.')}
+    ${tile('expertise','Expertise','Constat, analyse et rapport d’expertise. Un modèle de prestations est proposé automatiquement.')}
+    ${tile('faisa','Étude de faisabilité','Potentiel constructible et premières esquisses — environ 3 % du mandat complet.')}
+   </div>`; },
+  valid(){ const T=WIZ2.d.types; if(!(T.ord||T.no||T.expertise||T.faisa)){ chConfirm('Choisissez au moins un type de prestations.', null, {title:'Type de prestations', yesText:'OK', yesColor:'#0071e3', noText:'Fermer'}); return false; } return true; },
+  commit(){ const T=WIZ2.d.types; const expAvant=!!document.getElementById('ch_chk_expertise').checked;
+    document.getElementById('ch_chk_ord').checked=!!T.ord; document.getElementById('ch_chk_no').checked=!!T.no;
+    document.getElementById('ch_chk_expertise').checked=!!T.expertise; document.getElementById('ch_chk_faisa').checked=!!T.faisa;
+    if(!!T.expertise!==expAvant && typeof chOnExpertiseToggle==='function') chOnExpertiseToggle(); else updChSections(); }},
+ {id:'remu', q:'Comment le mandat est-il rémunéré ?', sub:'Le montant arrêté vous sera demandé à la fin, une fois le calcul établi.',
+  html(){ const R=WIZ2.d.remu; const tile=(k,titre,desc)=>`<div class="w2-tile ${R===k?'sel':''}" onclick="wiz2Remu('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   return `<div class="w2-tiles" style="grid-template-columns:1fr 1fr 1fr">
+    ${tile('relatif','Forfait relatif','Montant indicatif issu du calcul — il suit le projet dans une fourchette convenue.')}
+    ${tile('forfait','Forfait','Montant ferme, arrêté avec le maître de l’ouvrage pour tout le mandat.')}
+    ${tile('unitaire','Unitaire','Au temps consacré : heures effectives × tarif horaire du bureau.')}
+   </div>
+   <div class="w2-note">Le texte « Mode de calcul » du document s’adapte automatiquement à ce choix.</div>`; },
+  commit(){ const R=WIZ2.d.remu; const selM=document.getElementById('ch_modecalc_type');
+    if(selM && selM.value!==R){ selM.value=R; if(typeof chModecalcType==='function') chModecalcType(); } }},
+ {id:'cout', q:'Le coût de l’ouvrage', sub:'Saisissez un coût connu, ou estimez-le par les volumes (SIA 416).',
+  vis(){ return !!WIZ2.d.types.ord; },
+  html(){ const M=WIZ2.d.coutMode;
+   let inner='';
+   if(M==='direct'){ inner=`<div class="w2-field" style="max-width:320px;margin-top:16px"><label>COÛT DE CONSTRUCTION ESTIMÉ (CFC 2, TTC)</label>
+     <input id="w2_cfc2" inputmode="decimal" placeholder="800 000" value="${W2_ESC(WIZ2.d.cfc2||(gn('ch_cfc2')||''))}"></div>`; }
+   if(M==='volumes'){ inner=`<div class="w2-lines" id="w2-vols" style="margin-top:16px">
+      <div class="ln" style="font-size:10.5px;color:var(--ink2);font-weight:600"><span class="lbl" style="padding-left:12px">DÉSIGNATION</span><span class="num" style="width:96px;text-align:right">VOLUME m³</span><span class="num" style="width:96px;text-align:right">PRIX Fr./m³</span><span class="amt">MONTANT</span><span style="width:24px"></span></div>
+      ${WIZ2.d.vols.map((v,i)=>wiz2VolHtml(v,i)).join('')}</div>
+     <button class="w2-add" onclick="wiz2AddVol()">+ Ajouter un volume</button>
+     <div class="w2-total" id="w2-voltot">${CHF(WIZ2.d.vols.reduce((a,v)=>a+(v.qty||0)*(v.prix||0),0))} Fr. TTC</div>
+     <div class="w2-note">Cette estimation PILOTERA les CFC du calcul (divers et imprévus + frais secondaires : 5 % chacun par défaut). Le détail complet — terrain, démolition, aménagements extérieurs — s’affine ensuite au chapitre « Estimation du coût ».</div>`; }
+   return `<div class="w2-tiles">
+    <div class="w2-tile ${M==='direct'?'sel':''}" onclick="wiz2CoutMode('direct')"><b>Coût connu</b><span>Je saisis directement le coût de construction (CFC 2).</span></div>
+    <div class="w2-tile ${M==='volumes'?'sel':''}" onclick="wiz2CoutMode('volumes')"><b>Estimation par volumes</b><span>Volumes bâtis × prix au m³ (SIA 416) — l’estimation pilote le calcul.</span></div>
+   </div>${inner}`; },
+  valid(){ if(!WIZ2.d.coutMode){ chConfirm('Choisissez comment définir le coût de l’ouvrage.', null, {title:'Coût de l’ouvrage', yesText:'OK', yesColor:'#0071e3', noText:'Fermer'}); return false; } return true; },
+  commit(){ if(WIZ2.d.coutMode==='direct'){ const el=document.getElementById('w2_cfc2'); if(el) WIZ2.d.cfc2=el.value;
+      const ceA=document.getElementById('ce_apply'); if(ceA && ceA.checked){ ceA.checked=false; updEstimCout(); }
+      sv('ch_cfc2', W2_NUM(WIZ2.d.cfc2)); updCalcHono(); }
+    else { CE_C2 = WIZ2.d.vols.filter(v=>(v.lbl||'').trim()||v.qty>0).map(v=>({lbl:v.lbl||'', nature:'Neuf', qty:+v.qty||0, unit:'m³', prix:+v.prix||0}));
+      if(!CE_C2.length) CE_C2=[{lbl:'',nature:'Neuf',qty:0,unit:'m³',prix:0}];
+      if(typeof buildCeC2==='function') buildCeC2();
+      const ceA=document.getElementById('ce_apply'); if(ceA) ceA.checked=true;
+      updEstimCout(); updCalcHono(); } }},
+ {id:'prest', q:'Les prestations à facturer', sub:'Une ligne par prestation — heures × tarif, le montant se calcule tout seul.',
+  vis(){ const T=WIZ2.d.types; return !!(T.no||T.expertise||T.faisa); },
+  html(){ if(!WIZ2.d.lignes.length){ WIZ2.d.lignes=(CH_NO||[]).filter(l=>!l.sousTitre).map(l=>({lbl:l.lbl||'', h:l.heures||0, p:l.prix||135})); if(!WIZ2.d.lignes.length) WIZ2.d.lignes=[{lbl:'',h:0,p:135}]; }
+   return `<div class="w2-lines" id="w2-lines">${WIZ2.d.lignes.map((l,i)=>wiz2LigneHtml(l,i)).join('')}</div>
+   <button class="w2-add" onclick="wiz2AddLigne()">+ Ajouter une prestation</button>
+   <div class="w2-total" id="w2-tot">${CHF(WIZ2.d.lignes.reduce((a,l)=>a+(l.h||0)*(l.p||0),0))} Fr. HT</div>`; },
+  commit(){ CH_NO = WIZ2.d.lignes.filter(l=>(l.lbl||'').trim()||l.h>0).map(l=>({lbl:l.lbl,heures:+l.h||0,hUnit:'h',prix:+l.p||0,pUnit:'Frs/h',amt:(+l.h||0)*(+l.p||0),com:'',prixManual:false,hideDetail:false,sousTitre:false,titreIdx:null}));
+    if(typeof buildChno==='function') buildChno(); updCalcHono(); }},
+ {id:'hono', q:'Les honoraires', sub:'La part du mandat, la catégorie d’ouvrage et les facteurs du calcul SIA 102.',
+  vis(){ return !!WIZ2.d.types.ord; },
+  html(){ const P=WIZ2.d.part; const tile=(k,titre,desc)=>`<div class="w2-tile ${P===k?'sel':''}" onclick="wiz2Part('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   const catSel=document.getElementById('ch_cat'); const catOpts=catSel?catSel.innerHTML:'';
+   const F=(id,rid,val)=>W2_ESC(document.getElementById(rid)?document.getElementById(rid).value:val);
+   return `
+   <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px">QUELLE PART DU MANDAT VOUS EST CONFIÉE ?</label>
+   <div class="w2-tiles">
+    ${tile('full','Mandat complet — 100 %','Toutes les phases SIA, de l’avant-projet au décompte final.')}
+    ${tile('enquete','Jusqu’à l’enquête — 32.5 %','Avant-projet, projet de l’ouvrage et procédure d’autorisation.')}
+    ${tile('exec','Exécution — 67.5 %','Appels d’offres, plans d’exécution et direction des travaux.')}
+    ${tile('later','Je préciserai plus tard','Les pourcentages par phase se règlent finement dans le formulaire.')}
+   </div>
+   <div style="height:14px"></div>
+   <div class="w2-field"><label>CATÉGORIE D’OUVRAGE (n — SIA 102)</label><select id="w2_cat">${catOpts}</select></div>
+   <div class="w2-row">
+    <div class="w2-field"><label>AJUSTEMENT r</label><input id="w2_r" inputmode="decimal" value="${F('r','ch_r','1')}" title="Facteur d’ajustement (1 = standard)"></div>
+    <div class="w2-field"><label>TRANSFORMATION U</label><input id="w2_u" inputmode="decimal" value="${F('u','ch_u','1')}" title="Transformation / rénovation (1 = neuf)"></div>
+    <div class="w2-field"><label>GROUPE i</label><input id="w2_i" inputmode="decimal" value="${F('i','ch_i','1')}" title="Facteur de groupe"></div>
+    <div class="w2-field"><label>PRESTATIONS SPÉC. s</label><input id="w2_s" inputmode="decimal" value="${F('s','ch_s','1')}" title="Prestations spéciales"></div>
+   </div>
+   <div class="w2-row">
+    <div class="w2-field" style="max-width:220px"><label>TARIF HORAIRE MOYEN (Fr./h)</label><input id="w2_h" inputmode="decimal" value="${F('h','ch_h','135')}"></div>
+    <div class="w2-field" style="max-width:160px"><label>RABAIS (%)</label><input id="w2_rab" inputmode="decimal" value="${F('rab','ch_rabais','5')}"></div>
+   </div>
+   <div class="w2-note">r, U, i et s valent 1 par défaut — ne les modifiez que si le projet le justifie (complexité, rénovation, ouvrages groupés, prestations spéciales).</div>`; },
+  commit(){ if(WIZ2.d.part==='full') chFillFull(); else if(WIZ2.d.part==='enquete') chFillEnquete(); else if(WIZ2.d.part==='exec') chFillExecution();
+    const cat=document.getElementById('w2_cat'); const catR=document.getElementById('ch_cat'); if(cat&&catR) catR.value=cat.value;
+    sv('ch_r',W2_NUM(document.getElementById('w2_r').value)||1); sv('ch_u',W2_NUM(document.getElementById('w2_u').value)||1);
+    sv('ch_i',W2_NUM(document.getElementById('w2_i').value)||1); sv('ch_s',W2_NUM(document.getElementById('w2_s').value)||1);
+    const h=document.getElementById('ch_h'); if(h){ h.value=W2_NUM(document.getElementById('w2_h').value)||135; if(typeof chHChange==='function') chHChange(); }
+    sv('ch_rabais',W2_NUM(document.getElementById('w2_rab').value)); updCalcHono(); }},
+ {id:'tvafrais', q:'TVA et frais accessoires', sub:'Le taux de TVA du contrat et le mode de facturation des frais — le texte des Conditions préliminaires s’adapte automatiquement.',
+  html(){ const D=WIZ2.d;
+   const tvaBtn=t=>`<button type="button" class="${Math.abs(D.tva-t)<0.001?'sel':''}" onclick="wiz2Tva(${t})">${t.toFixed(1)} %</button>`;
+   const tile=(k,titre,desc)=>`<div class="w2-tile ${D.fraisMode===k?'sel':''}" onclick="wiz2Frais('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   let inner='';
+   if(D.fraisMode==='pct'){ inner=`<div class="w2-field" style="max-width:220px;margin-top:14px"><label>FRAIS GLOBAUX (%) DES HONORAIRES</label><input id="w2_fpct" inputmode="decimal" value="${W2_ESC(D.fraisPct)}"></div>`; }
+   if(D.fraisMode==='perso'){ inner=`<div class="w2-row" style="align-items:flex-end;margin-top:14px">
+      <div class="w2-field" style="max-width:240px"><label>MONTANT ARRÊTÉ DES FRAIS</label><input id="w2_fmnt" inputmode="decimal" placeholder="6 000" value="${W2_ESC(D.fraisMnt)}"></div>
+      <div class="w2-field" style="max-width:170px"><label>BASE</label><span class="w2-seg"><button type="button" class="${D.fraisBase==='ttc'?'sel':''}" onclick="wiz2FraisBase('ttc')">TTC</button><button type="button" class="${D.fraisBase==='ht'?'sel':''}" onclick="wiz2FraisBase('ht')">HT</button></span></div></div>`; }
+   if(D.fraisMode==='deplrepro'){ inner=`<div class="w2-row" style="margin-top:14px">
+      <div class="w2-field"><label>DÉPLACEMENTS (%)</label><input id="w2_fdepl" inputmode="decimal" placeholder="1.5" value="${W2_ESC(D.deplPct)}">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-weight:400;text-transform:none;font-size:12px;color:var(--ink2)"><input type="checkbox" style="width:14px;height:14px" ${D.deplOff?'checked':''} onchange="WIZ2.d.deplOff=this.checked">offerts (mentionnés sans facturation)</label></div>
+      <div class="w2-field"><label>REPRODUCTION (%)</label><input id="w2_frepro" inputmode="decimal" placeholder="1.5" value="${W2_ESC(D.reproPct)}">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-weight:400;text-transform:none;font-size:12px;color:var(--ink2)"><input type="checkbox" style="width:14px;height:14px" ${D.reproOff?'checked':''} onchange="WIZ2.d.reproOff=this.checked">offerts</label></div></div>`; }
+   return `
+   <div class="w2-field"><label>TAUX DE TVA</label>
+     <div style="display:flex;gap:12px;align-items:center">
+       <span class="w2-seg">${tvaBtn(8.1)}${tvaBtn(8.0)}${tvaBtn(7.7)}</span>
+       <input id="w2_tva" inputmode="decimal" style="max-width:110px;border:1.5px solid #d8d8dd;border-radius:12px;padding:9px 12px;font-size:14px;font-family:inherit" value="${W2_ESC(D.tva)}" oninput="WIZ2.d.tva=parseFloat(this.value)||0" title="Taux libre si différent des taux usuels"> <span style="font-size:12px;color:var(--ink3)">taux libre</span>
+     </div></div>
+   <div style="height:10px"></div>
+   <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px">FRAIS ACCESSOIRES</label>
+   <div class="w2-tiles" style="grid-template-columns:1fr 1fr 1fr">
+    ${tile('pct','Frais en %','Pourcentage global appliqué aux honoraires (3 % habituellement).')}
+    ${tile('perso','Montant arrêté','Frais fixés d’avance, en francs, pour tout le mandat.')}
+    ${tile('deplrepro','Déplacement + reproduction','Deux lignes détaillées, chacune avec son pourcentage — ou offertes.')}
+   </div>${inner}`; },
+  commit(){ const D=WIZ2.d;
+    const tv=document.getElementById('w2_tva'); if(tv && tv.value) D.tva=parseFloat(tv.value)||D.tva;
+    sv('ch_tva', D.tva);
+    if(D.fraisMode==='pct'){ const e=document.getElementById('w2_fpct'); if(e) D.fraisPct=e.value;
+      if(typeof chFraisSelect==='function') chFraisSelect('pct'); sv('ch_forfait_frais_pct', W2_NUM(D.fraisPct)); }
+    else if(D.fraisMode==='perso'){ const e=document.getElementById('w2_fmnt'); if(e) D.fraisMnt=e.value;
+      if(typeof chFraisSelect==='function'){ const c=document.getElementById('ch_frais_sel_perso'); if(c&&!c.checked){ c.checked=true; chFraisSelect('perso'); } }
+      sv('ch_frais_perso_mnt', W2_NUM(D.fraisMnt));
+      const rb=document.querySelector('input[name="ch_frais_perso_base"][value="'+D.fraisBase+'"]'); if(rb) rb.checked=true; }
+    else if(D.fraisMode==='deplrepro'){ const e1=document.getElementById('w2_fdepl'); if(e1) D.deplPct=e1.value;
+      const e2=document.getElementById('w2_frepro'); if(e2) D.reproPct=e2.value;
+      if(typeof chFraisSelect==='function'){ const c=document.getElementById('ch_frais_sel_depl'); if(c&&!c.checked){ c.checked=true; chFraisSelect('depl'); } }
+      sv('ch_frais_depl_pct', W2_NUM(D.deplPct)||''); sv('ch_frais_repro_pct', W2_NUM(D.reproPct)||'');
+      const d1=document.getElementById('ch_frais_depl_off'); if(d1) d1.checked=!!D.deplOff;
+      const d2=document.getElementById('ch_frais_repro_off'); if(d2) d2.checked=!!D.reproOff; }
+    if(typeof chFraisTextSync==='function') try{ chFraisTextSync(); }catch(e){}
+    updCalcHono(); }},
+ {id:'doc', q:'Que contiendra le document ?', sub:'Activez les sections à faire figurer dans l’offre PDF — tout reste modifiable ensuite.',
+  html(){ const D=WIZ2.d; const sw=(k,titre,desc,on)=>`
+    <div class="w2-switchrow"><label class="lockchk" style="margin-top:2px"><input type="checkbox" ${on?'checked':''} onchange="WIZ2.d.${k}=this.checked;wiz2Render()"></label>
+      <div class="txt"><b>${titre}</b><span>${desc}</span></div></div>`;
+   return `
+   ${sw('ctxOn','Contexte du projet','Situation de base et objectifs — la page est retirée du document si elle reste vide.',D.ctxOn)}
+   ${D.ctxOn?`<div class="w2-field" style="margin-left:48px"><label>SITUATION DE BASE</label><textarea id="w2_sit" rows="2" placeholder="La parcelle accueille une maison villageoise de 1904…">${W2_ESC(D.sit)}</textarea></div>
+   <div class="w2-field" style="margin-left:48px"><label>OBJECTIFS</label><textarea id="w2_obj" rows="2" placeholder="Rénover l’enveloppe, créer un logement au 1er étage…">${W2_ESC(D.obj)}</textarea></div>`:''}
+   ${sw('planOn','Planning d’intention','Les délais prévus et leurs réserves (liste type du bureau, modifiable).',D.planOn)}
+   ${sw('mcOn','Mode de calcul','Le texte type correspondant à la rémunération choisie (recommandé).',D.mcOn)}
+   ${sw('projOn','Page « Projet »','Page supplémentaire de description détaillée du projet (rarement utilisée).',D.projOn)}
+   <div class="w2-note">Les « Conditions préliminaires » (texte type du bureau) et le récapitulatif des honoraires figurent toujours dans l’offre.</div>`; },
+  commit(){ const D=WIZ2.d;
+    const sEl=document.getElementById('w2_sit'); if(sEl) D.sit=sEl.value;
+    const oEl=document.getElementById('w2_obj'); if(oEl) D.obj=oEl.value;
+    if(D.ctxOn){ if(D.sit.trim()){ rtSetValue('ch_note_situation', rtTextToHTML(D.sit)); const e=document.getElementById('ch_note_situation'); if(e) e.dataset.manual='1'; }
+      if(D.obj.trim()) rtSetValue('ch_note_objectif', rtTextToHTML(D.obj)); }
+    else { rtSetValue('ch_note_situation',''); rtSetValue('ch_note_objectif',''); rtSetValue('ch_note_approche','');
+      const e=document.getElementById('ch_note_situation'); if(e) e.dataset.manual='1'; }
+    const hp=document.getElementById('ch_hide_planning'); if(hp){ hp.checked=!D.planOn; if(typeof chTogglePlanningHide==='function') chTogglePlanningHide(); }
+    const mo=document.getElementById('ch_modecalc_on'); if(mo) mo.checked=!!D.mcOn;
+    const pj=document.getElementById('ch_projet_page_on'); if(pj && pj.checked!==!!D.projOn){ pj.checked=!!D.projOn; if(typeof chToggleProjetCard==='function') chToggleProjetCard(); }
+    updChSections(); }},
+ {id:'montant', q:'Le montant du mandat', sub:'Le calcul est établi — arrêtez maintenant le montant forfaitaire, ou gardez le résultat du calcul.',
+  vis(){ return WIZ2.d.remu!=='unitaire'; },
+  html(){ const r=updCalcHono()||{}; const ttcCalc=r.ttc||0; const htCalc=r.htFinal||0;
+   const sugg=ttcCalc>0 ? Math.round(ttcCalc/1000)*1000 : 0;
+   const cur=gn('ch_forfait_mnt')||'';
+   return `
+   <div class="w2-resume" style="margin-bottom:20px">
+     <div class="r-line"><span class="k">Honoraires calculés (HT)</span><span class="v">${CHF(htCalc)} Fr.</span></div>
+     <div class="r-line" style="border-bottom:none"><span class="k">Honoraires calculés (TTC)</span><span class="v" style="font-size:17px">${CHF(ttcCalc)} Fr.</span></div>
+   </div>
+   <div class="w2-row" style="align-items:flex-end">
+     <div class="w2-field" style="max-width:280px"><label>MONTANT ARRÊTÉ — TOUT LE MANDAT</label>
+       <input id="w2_mnt" inputmode="decimal" placeholder="${sugg?CHF(sugg):'150 000'}" value="${cur?W2_ESC(String(cur)):''}"></div>
+     <div class="w2-field" style="max-width:170px"><label>BASE</label>
+       <span class="w2-seg"><button type="button" class="${WIZ2.d.base==='ttc'?'sel':''}" onclick="wiz2Base('ttc')">TTC</button><button type="button" class="${WIZ2.d.base==='ht'?'sel':''}" onclick="wiz2Base('ht')">HT</button></span></div>
+     ${sugg?`<div class="w2-field" style="max-width:220px"><label>&nbsp;</label><button class="w2-add" style="width:100%" onclick="document.getElementById('w2_mnt').value='${sugg}'" title="Reprendre le calcul, arrondi au millier">Reprendre ${CHF(sugg)} (arrondi)</button></div>`:''}
+   </div>
+   <div class="w2-note">Ce montant vaut pour l’ENSEMBLE du mandat et remplace le résultat du calcul dans le document (« Montant arrêté forfaitairement à… »). Laissez vide pour conserver le montant calculé.</div>`; },
+  commit(){ const el=document.getElementById('w2_mnt'); WIZ2.d.mnt=el?el.value:'';
+    const rb=document.querySelector('input[name="ch_forfait_base"][value="'+WIZ2.d.base+'"]'); if(rb) rb.checked=true;
+    sv('ch_forfait_mnt', W2_NUM(WIZ2.d.mnt)); updCalcHono(); }},
+ {id:'fin', q:'Tout est prêt.', sub:'Vérifiez l’essentiel — le document complet s’affichera après la création.',
+  html(){ const r=updCalcHono()||{};
+   const ttc=(r&&r.forfaitOn)?r.forfaitTTC:(r?r.ttc:0);
+   const T=WIZ2.d.types; const types=[T.ord?'Prestations ordinaires':null,T.no?'Non ordinaires':null,T.expertise?'Expertise':null,T.faisa?'Faisabilité':null].filter(Boolean).join(' + ');
+   const remuL={relatif:'Forfait relatif',forfait:'Forfait',unitaire:'Unitaire'}[WIZ2.d.remu];
+   const mntArr=gn('ch_forfait_mnt')||0;
+   const secs=['Conditions préliminaires', WIZ2.d.ctxOn?'Contexte':null, WIZ2.d.mcOn?'Mode de calcul':null, WIZ2.d.planOn?'Planning d’intention':null, WIZ2.d.projOn?'Page Projet':null,'Récapitulatif'].filter(Boolean).join(' · ');
+   return `<div class="w2-resume">
+     <div class="r-line"><span class="k">Affaire</span><span class="v">${W2_ESC(gv('ch_affaire'))} — ${W2_ESC(gv('ch_lieu'))}</span></div>
+     <div class="r-line"><span class="k">Projet</span><span class="v">${W2_ESC((gv('ch_projet')||'').slice(0,70))}</span></div>
+     <div class="r-line"><span class="k">Maître de l’ouvrage</span><span class="v">${W2_ESC(gv('ch_nom'))}</span></div>
+     <div class="r-line"><span class="k">Type de mandat</span><span class="v">${types}</span></div>
+     <div class="r-line"><span class="k">Rémunération</span><span class="v">${remuL}${WIZ2.d.remu!=='unitaire'&&mntArr>0?' — arrêté à '+CHF(r.forfaitOn?(WIZ2.d.base==='ht'?r.forfaitHT:r.forfaitTTC):mntArr)+' '+WIZ2.d.base.toUpperCase():' — selon calcul'}</span></div>
+     <div class="r-line"><span class="k">TVA · frais accessoires</span><span class="v">${(+WIZ2.d.tva).toFixed(2)} % · ${WIZ2.d.fraisMode==='pct'?((W2_NUM(WIZ2.d.fraisPct)||0)+' % des honoraires'):(WIZ2.d.fraisMode==='perso'?CHF(W2_NUM(WIZ2.d.fraisMnt))+' '+WIZ2.d.fraisBase.toUpperCase():'déplacement + reproduction')}</span></div>
+     <div class="r-line" style="border-bottom:none"><span class="k">Contenu du document</span><span class="v" style="font-weight:400;font-size:12px">${secs}</span></div>
+     <div class="w2-bigttc"><div class="n">${CHF(ttc||0)} Fr.</div><div class="l">Total des honoraires TTC</div></div>
+   </div>
+   <div class="w2-note" style="text-align:center">Après la création, le document PDF s’affiche — chaque détail reste modifiable dans le formulaire complet.</div>`; },
+  commit(){}}
+];
+function wiz2Visible(){ return WIZ2_SCREENS.filter(sc=>!sc.vis||sc.vis()); }
+function wiz2Start(){
+  WIZ2.on=true; WIZ2.i=0;
+  WIZ2.d={types:{ord:true,no:false,expertise:false,faisa:false},remu:(gv('ch_modecalc_type')||'relatif'),base:'ttc',mnt:'',
+    coutMode:'',cfc2:'',vols:[{lbl:'Volume principal',qty:0,prix:850},{lbl:'',qty:0,prix:850}],part:'',lignes:[],
+    tva:(gn('ch_tva')||8.1), fraisMode:'pct', fraisPct:(gn('ch_forfait_frais_pct')||3), fraisMnt:'', fraisBase:'ttc',
+    deplPct:'', reproPct:'', deplOff:false, reproOff:false,
+    ctxOn:false,sit:'',obj:'',planOn:true,mcOn:true,projOn:false};
+  document.getElementById('wiz2').classList.add('on');
+  wiz2Render();
+}
+function wiz2Close(){ WIZ2.on=false; document.getElementById('wiz2').classList.remove('on'); }
+function wiz2Quit(){ wiz2Close(); refreshOffrePreview(); }
+function wiz2Render(){
+  const scr=wiz2Visible(); if(WIZ2.i>scr.length-1) WIZ2.i=scr.length-1;
+  const sc=scr[WIZ2.i];
+  document.getElementById('w2-card').innerHTML='<h1 class="w2-q">'+sc.q+'</h1><p class="w2-sub">'+sc.sub+'</p>'+sc.html();
+  document.getElementById('w2-stepinfo').textContent='Étape '+(WIZ2.i+1)+' sur '+scr.length;
+  document.getElementById('w2-bar').style.width=Math.round(((WIZ2.i+1)/scr.length)*100)+'%';
+  document.getElementById('w2-back').style.visibility=WIZ2.i===0?'hidden':'visible';
+  const nx=document.getElementById('w2-next');
+  if(WIZ2.i===scr.length-1){ nx.textContent='Créer le contrat'; nx.classList.add('create'); }
+  else { nx.textContent='Continuer'; nx.classList.remove('create'); }
+  document.querySelector('#wiz2 .w2-body').scrollTop=0;
+}
+function wiz2Next(){
+  const scr=wiz2Visible(); const sc=scr[WIZ2.i];
+  if(sc.valid && !sc.valid()) return;
+  try{ sc.commit(); }catch(e){ console.error(e); }
+  if(WIZ2.i>=wiz2Visible().length-1){ applyCalcHono(); return; }
+  WIZ2.i++; wiz2Render();
+}
+function wiz2Back(){ if(WIZ2.i>0){ const scr=wiz2Visible(); const sc=scr[WIZ2.i]; try{ if(sc && sc.commit && sc.id!=='fin') sc.commit(); }catch(e){} WIZ2.i--; wiz2Render(); } }
+function wiz2Tile(k){ WIZ2.d.types[k]=!WIZ2.d.types[k]; wiz2Render(); }
+function wiz2Remu(k){ WIZ2.d.remu=k; wiz2Render(); }
+function wiz2Base(b){ const el=document.getElementById('w2_mnt'); if(el) WIZ2.d.mnt=el.value; WIZ2.d.base=b; wiz2Render(); }
+function wiz2Part(k){ WIZ2.d.part=k; wiz2Render(); }
+function wiz2CoutMode(m){ const el=document.getElementById('w2_cfc2'); if(el) WIZ2.d.cfc2=el.value; WIZ2.d.coutMode=m; wiz2Render(); }
+function wiz2Tva(t){ WIZ2.d.tva=t; wiz2Render(); }
+function wiz2Frais(m){ ['w2_fpct','w2_fmnt','w2_fdepl','w2_frepro'].forEach(id=>{ const e=document.getElementById(id); if(!e) return;
+    if(id==='w2_fpct') WIZ2.d.fraisPct=e.value; if(id==='w2_fmnt') WIZ2.d.fraisMnt=e.value;
+    if(id==='w2_fdepl') WIZ2.d.deplPct=e.value; if(id==='w2_frepro') WIZ2.d.reproPct=e.value; });
+  WIZ2.d.fraisMode=m; wiz2Render(); }
+function wiz2FraisBase(b){ const e=document.getElementById('w2_fmnt'); if(e) WIZ2.d.fraisMnt=e.value; WIZ2.d.fraisBase=b; wiz2Render(); }
+function wiz2LigneHtml(l,i){ return '<div class="ln">'
+  +'<input class="lbl" placeholder="Séance, analyse, rapport…" value="'+W2_ESC(l.lbl)+'" oninput="WIZ2.d.lignes['+i+'].lbl=this.value">'
+  +'<input class="num" inputmode="decimal" placeholder="h" title="Heures" value="'+(l.h||'')+'" oninput="WIZ2.d.lignes['+i+'].h=parseFloat(this.value)||0;wiz2Tot()">'
+  +'<input class="num" inputmode="decimal" placeholder="Fr./h" title="Tarif horaire" value="'+(l.p||'')+'" oninput="WIZ2.d.lignes['+i+'].p=parseFloat(this.value)||0;wiz2Tot()">'
+  +'<span class="amt" id="w2-amt-'+i+'">'+CHF((l.h||0)*(l.p||0))+' Fr.</span>'
+  +'<button class="rm" onclick="WIZ2.d.lignes.splice('+i+',1);wiz2Render()" title="Supprimer la ligne">✕</button></div>'; }
+function wiz2AddLigne(){ WIZ2.d.lignes.push({lbl:'',h:0,p:135}); wiz2Render(); }
+function wiz2Tot(){ WIZ2.d.lignes.forEach((l,i)=>{ const e=document.getElementById('w2-amt-'+i); if(e) e.textContent=CHF((l.h||0)*(l.p||0))+' Fr.'; });
+  const t=document.getElementById('w2-tot'); if(t) t.textContent=CHF(WIZ2.d.lignes.reduce((a,l)=>a+(l.h||0)*(l.p||0),0))+' Fr. HT'; }
+function wiz2VolHtml(v,i){ return '<div class="ln">'
+  +'<input class="lbl" placeholder="Volume principal, annexe, garage…" value="'+W2_ESC(v.lbl)+'" oninput="WIZ2.d.vols['+i+'].lbl=this.value">'
+  +'<input class="num" style="width:96px" inputmode="decimal" placeholder="m³" title="Volume SIA 416 (m³)" value="'+(v.qty||'')+'" oninput="WIZ2.d.vols['+i+'].qty=parseFloat(this.value)||0;wiz2VolTot()">'
+  +'<input class="num" style="width:96px" inputmode="decimal" placeholder="Fr./m³" title="Prix au m³" value="'+(v.prix||'')+'" oninput="WIZ2.d.vols['+i+'].prix=parseFloat(this.value)||0;wiz2VolTot()">'
+  +'<span class="amt" id="w2-vamt-'+i+'">'+CHF((v.qty||0)*(v.prix||0))+' Fr.</span>'
+  +'<button class="rm" onclick="WIZ2.d.vols.splice('+i+',1);wiz2Render()" title="Supprimer la ligne">✕</button></div>'; }
+function wiz2AddVol(){ WIZ2.d.vols.push({lbl:'',qty:0,prix:850}); wiz2Render(); }
+function wiz2VolTot(){ WIZ2.d.vols.forEach((v,i)=>{ const e=document.getElementById('w2-vamt-'+i); if(e) e.textContent=CHF((v.qty||0)*(v.prix||0))+' Fr.'; });
+  const t=document.getElementById('w2-voltot'); if(t) t.textContent=CHF(WIZ2.d.vols.reduce((a,v)=>a+(v.qty||0)*(v.prix||0),0))+' Fr. TTC'; }
+
+function chWizardSteps(){
+  return [...document.querySelectorAll('#ch-form-scroll .card')].filter(c=>getComputedStyle(c).display!=='none');
+}
+function chWizardTitle(card){
+  const t=(card.querySelector('.card-hd .hd-title')?.textContent||'').trim();
+  return t || (card.querySelector('.card-hd')?.textContent||'').trim().slice(0,40);
+}
+function chWizardStart(){
+  CH_WIZ.on=true; document.body.classList.add('wiz-mode');
+  chWizardGo(0);
+}
+function chWizardExit(){
+  CH_WIZ.on=false; document.body.classList.remove('wiz-mode');
+  document.querySelectorAll('#ch-form-scroll .card.wiz-current').forEach(c=>c.classList.remove('wiz-current'));
+  refreshOffrePreview();   // l'aperçu (suspendu pendant le pas à pas) est régénéré
+}
+function chWizardGo(i){
+  const steps=chWizardSteps(); if(!steps.length) return;
+  CH_WIZ.i=Math.max(0, Math.min(steps.length-1, i));
+  document.querySelectorAll('#ch-form-scroll .card.wiz-current').forEach(c=>c.classList.remove('wiz-current'));
+  const card=steps[CH_WIZ.i];
+  card.classList.add('wiz-current');
+  chSetFold(card,false);                                  // l'étape courante est toujours dépliée
+  chWizardRefresh();
+  const sc=document.getElementById('ch-form-scroll'); if(sc) sc.scrollTop=0;
+}
+function chWizardNext(){
+  const steps=chWizardSteps();
+  // validation douce : le N° affaire est requis dès la première étape (il identifie le contrat)
+  if(steps[CH_WIZ.i] && steps[CH_WIZ.i].id==='card-formulaire' && !(gv('ch_affaire')||'').trim()){
+    chConfirm('Merci de renseigner le N° affaire avant de poursuivre (première ligne de cette page).',
+      null, {title:'N° affaire requis', yesText:'OK', yesColor:'#0a6e84', noText:'Fermer'});
+    return;
+  }
+  if(CH_WIZ.i>=steps.length-1) return;
+  chWizardGo(CH_WIZ.i+1);
+}
+function chWizardRefresh(){
+  if(!CH_WIZ.on) return;
+  const steps=chWizardSteps();
+  if(CH_WIZ.i>steps.length-1) CH_WIZ.i=steps.length-1;
+  if(!steps[CH_WIZ.i]) return;
+  if(!steps[CH_WIZ.i].classList.contains('wiz-current')) chWizardGo(CH_WIZ.i);
+  const dots=document.getElementById('wiz-dots');
+  if(dots){ dots.innerHTML='';
+    steps.forEach((st,k)=>{ const d=document.createElement('button'); d.className='wiz-dot'+(k===CH_WIZ.i?' cur':(k<CH_WIZ.i?' done':''));
+      d.textContent=(k+1); d.title=chWizardTitle(st); d.onclick=()=>chWizardGo(k); dots.appendChild(d); }); }
+  const ti=document.getElementById('wiz-title');
+  if(ti) ti.textContent='Étape '+(CH_WIZ.i+1)+' / '+steps.length+' — '+chWizardTitle(steps[CH_WIZ.i]);
+  const prev=document.getElementById('wiz-prev'); if(prev) prev.disabled=(CH_WIZ.i===0);
+  const next=document.getElementById('wiz-next');
+  if(next) next.style.display=(CH_WIZ.i>=steps.length-1)?'none':'';
+}
+const CH_FOLD_KEY='sa_cards_fold';
+function chFoldState(){ try{ return JSON.parse(localStorage.getItem(CH_FOLD_KEY)||'{}'); }catch(e){ return {}; } }
+function chSetFold(card, folded){
+  card.classList.toggle('folded', !!folded);
+  const st=chFoldState(); if(card.id){ if(folded) st[card.id]=1; else delete st[card.id]; }
+  try{ localStorage.setItem(CH_FOLD_KEY, JSON.stringify(st)); }catch(e){}
+}
+function chFoldAll(folded){ document.querySelectorAll('#ch-form-scroll .card').forEach(c=>{ if(folded && c.id==='card-formulaire') return; chSetFold(c,folded); }); }
+function chInitFolding(){
+  const st=chFoldState();
+  document.querySelectorAll('#ch-form-scroll .card').forEach(card=>{
+    const hd=card.querySelector('.card-hd'); if(!hd || hd.querySelector('.chv')) return;
+    if(!card.id) card.id='card-save';
+    // le TITRE (premier nœud texte) est enveloppé dans un span pour rester collé à gauche du flex
+    for(const n of [...hd.childNodes]){ if(n.nodeType===3 && n.nodeValue.trim()){
+      const t=document.createElement('span'); t.className='hd-title'; t.textContent=n.nodeValue; hd.replaceChild(t,n); break; } }
+    const chv=document.createElement('span'); chv.className='chv'; chv.textContent='▾';
+    hd.insertBefore(chv, hd.firstChild);
+    hd.addEventListener('click', e=>{
+      const t=e.target;
+      if(t.closest && (t.closest('input,select,button,textarea,a,label'))) return;   // les contrôles de l'en-tête gardent leur rôle
+      chSetFold(card, !card.classList.contains('folded'));
+    });
+    if(st[card.id]) card.classList.add('folded');
+  });
+}
+function chRenderNavChips(){
+  const wrap=document.getElementById('ch-nav-chips'); if(!wrap) return;
+  wrap.innerHTML='';
+  document.querySelectorAll('#ch-form-scroll .card').forEach(card=>{
+    if(getComputedStyle(card).display==='none') return;
+    const hd=card.querySelector('.card-hd'); if(!hd) return;
+    let label=(hd.querySelector('.hd-title')?.textContent||'').trim();
+    if(!label){ for(const n of hd.childNodes){ if(n.nodeType===3 && n.nodeValue.trim()){ label=n.nodeValue.trim(); break; } } }
+    if(!label) label=(hd.textContent||'').replace(/[▾›⌄]/g,'').trim().slice(0,24);
+    const short=label.length>24 ? label.slice(0,22)+'…' : label;
+    const chip=document.createElement('span'); chip.className='nav-chip'; chip.textContent=short; chip.title=label+' — cliquer pour y aller (déplie la carte)';
+    chip.onclick=()=>{ chSetFold(card,false); card.scrollIntoView({behavior:'smooth',block:'start'}); };
+    wrap.appendChild(chip);
+  });
+}
+function chMarkDirty(on){ const d=document.getElementById('ch-dirty-dot'); if(d) d.style.display=on?'':'none'; }
+function chUpdateAutoBadges(){
+  const mk=(cardId, txt, show)=>{ const hd=document.querySelector('#'+cardId+' .card-hd'); if(!hd) return;
+    let b=hd.querySelector('.pdfbadge'); if(!b){ b=document.createElement('span'); b.className='pdfbadge'; hd.appendChild(b); }
+    b.textContent=txt; b.style.display=show?'':'none'; };
+  try{
+    const vide = rtIsEmpty('ch_note_situation') && rtIsEmpty('ch_note_objectif') && rtIsEmpty('ch_note_approche');
+    mk('card-notes','page retirée du PDF (zones vides)', vide);
+    const ord=!!document.getElementById('ch_chk_ord')?.checked, exp=!!document.getElementById('ch_chk_expertise')?.checked;
+    mk('card-tarifs','chapitre remplacé par l\u2019Annexe 1 (tarifs par ligne)', !ord && !exp && typeof chTarifsUniform==='function' && !chTarifsUniform());
+  }catch(e){}
+}
+document.addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key==='s'||e.key==='S') && typeof currentView!=='undefined' && currentView==='calchono'){
+    e.preventDefault(); applyCalcHono();
+  }
+});
+document.addEventListener('DOMContentLoaded', ()=>{ try{ chInitFolding(); chRenderNavChips(); }catch(e){} });
 function chRenumber() {
   const chapters = [
     {id:'card-formulaire',   base:'Formulaire'},
@@ -5893,11 +6579,16 @@ function chRenumber() {
     if(ch.id === 'card-formulaire') label = base;
     else if(ch.id === 'card-projet' && !document.getElementById('ch_projet_page_on')?.checked) label = base;   // désactivée : sans numéro (ne décale pas les chapitres)
     else label = (++n) + ' — ' + base;
-    let tn = null;
-    for(const node of hd.childNodes) { if(node.nodeType === 3 && node.nodeValue.trim()) { tn = node; break; } }
-    if(tn) tn.nodeValue = label;
-    else hd.insertBefore(document.createTextNode(label), hd.firstChild);
+    const ts = hd.querySelector('.hd-title');
+    if(ts){ ts.textContent = label; }
+    else {
+      let tn = null;
+      for(const node of hd.childNodes) { if(node.nodeType === 3 && node.nodeValue.trim()) { tn = node; break; } }
+      if(tn) tn.nodeValue = label;
+      else hd.insertBefore(document.createTextNode(label), hd.firstChild);
+    }
   });
+  if(typeof chRenderNavChips==='function') chRenderNavChips();   // proposition 2026-09-20 : chips de navigation
 }
 
 /* ═══════════ Chapitres verrouillables (Conditions, Mode de calcul) ═══════════ */
@@ -6239,15 +6930,25 @@ function chToggleLock(key, init){
     if(body) body.style.display = '';
     ta.focus();
   } else {
-    // Décoché PAR L'UTILISATEUR → on restaure le TEXTE DE BASE par défaut (les modifications manuelles
-    // sont abandonnées), on efface le drapeau « edited » puis on replie.
-    const def = (key==='conditions')
-      ? CH_COND_DEFAULT_HTML
-      : chModecalcDefault();   // type-aware : « Condition » (expertise) ou « Mode de calcul » (forfait/unitaire)
-    rtSetValue('ch_'+key, def);
-    delete ta.dataset.edited;
-    if(body) body.style.display = 'none';
-    refreshOffrePreview();
+    // Décoché PAR L'UTILISATEUR → restauration du TEXTE TYPE. PROPOSITION 2026-09-20 : si un texte
+    // personnalisé serait perdu, une CONFIRMATION est demandée d'abord (avant : perte silencieuse).
+    const doRestore = ()=>{
+      const def = (key==='conditions')
+        ? CH_COND_DEFAULT_HTML
+        : chModecalcDefault();   // type-aware : « Condition » (expertise) ou « Mode de calcul » (forfait/unitaire)
+      rtSetValue('ch_'+key, def);
+      delete ta.dataset.edited;
+      if(body) body.style.display = 'none';
+      cb.checked = false;
+      refreshOffrePreview();
+    };
+    if(ta.dataset.edited){
+      cb.checked = true;   // la case reste cochée tant que la restauration n'est pas confirmée
+      chConfirm('Revenir au texte type de cette zone ?\n\nVotre texte personnalisé sera remplacé par le texte standard.', doRestore,
+        {title:'Texte personnalisé', yesText:'Restaurer le texte type', yesColor:'#b08800'});
+    } else {
+      doRestore();
+    }
   }
 }
 
@@ -6271,12 +6972,14 @@ function chModecalcType(){
   ['ch_remu_type','ch_remu_type2'].forEach(id=>{ const r=document.getElementById(id); if(r && r.value !== sel.value) r.value = sel.value; });   // reflète le choix dans les 2 sélecteurs « Rémunération »
   const target = chModecalcDefault();   // type-aware : pour l'expertise, la « Condition » garde son texte type (la rémunération n'y change rien)
   if(document.getElementById('ch_chk_expertise')?.checked && !document.getElementById('ch_chk_ord')?.checked){ refreshOffrePreview(); return; }
-  if(ta.dataset.edited && !confirm('Remplacer le texte du mode de calcul par le modèle « '+(sel.value==='unitaire'?'Unitaire':(sel.value==='forfait'?'Forfait':'Forfait relatif'))+' » ?\nVos modifications manuelles seront perdues.')){
+  const _applyModel = ()=>{ rtSetValue('ch_modecalc', target); delete ta.dataset.edited; refreshOffrePreview(); };
+  if(ta.dataset.edited){
+    // chConfirm (modale intégrée) : confirm() natif renvoie false silencieusement dans l'aperçu (règle projet)
+    chConfirm('Remplacer le texte du mode de calcul par le modèle « '+(sel.value==='unitaire'?'Unitaire':(sel.value==='forfait'?'Forfait':'Forfait relatif'))+' » ?\n\nVos modifications manuelles seront perdues.',
+      _applyModel, {title:'Mode de calcul', yesText:'Remplacer', yesColor:'#b08800'});
     return;
   }
-  rtSetValue('ch_modecalc', target);   // le sélecteur (unitaire) déclenche déjà le redessin PDF
-  delete ta.dataset.edited;
-  refreshOffrePreview();
+  _applyModel();
 }
 
 /* Recalcule le tarif horaire moyen avec rabais quand on modifie le tarif moyen */
@@ -7176,7 +7879,7 @@ function applyCalcHono(asNewVersion) {
   chRecomputeAll();          // recalcule H de toutes les parties (le tarif partagé courant s'applique)
   const r = updCalcHono();
   const affaire = gv('ch_affaire');
-  if(!affaire) { alert('Merci de renseigner au moins le N° affaire.'); return; }
+  if(!affaire) { chConfirm('Merci de renseigner au moins le N° affaire (carte « Formulaire », première ligne).', null, {title:'N° affaire requis', yesText:'OK', yesColor:'#0a6e84', noText:'Fermer'}); return; }
   const dgAll  = chOuvrages.length>1 ? chOuvrages.reduce((s,o)=>s+(o.cfcTot||0),0) : r.cfcTot;
   const detAll = chOuvrages.length>1 ? chOuvrages.reduce((s,o)=>s+(o.B||0),0)      : r.B;
   const phases = {};
@@ -7253,9 +7956,21 @@ function applyCalcHono(asNewVersion) {
   updateChTargetSelect();
   chSyncVersionUI();
   const msg = document.getElementById('ch_msg');
-  if(msg) msg.textContent = (isNew ? '✓ Contrat créé' : '✓ Contrat mis à jour') + verMsg + ' — ouverture…';
-  goTab('contrats');
-  loadContrat(id);
+  if(typeof chMarkDirty==='function') chMarkDirty(false);
+  if(isNew){
+    // PROPOSITION 2026-09-20 : après la CRÉATION on RESTE dans le formulaire pour poursuivre la saisie
+    // (le bouton est devenu « Mettre à jour le contrat ») ; la liste est rafraîchie en arrière-plan.
+    curCid = id;
+    if(typeof renderContratsTable==='function') renderContratsTable();
+    if(msg) msg.textContent = '✓ Contrat créé' + verMsg + ' — vous pouvez poursuivre la saisie.';
+    if(typeof toast==='function') toast('✓ Contrat créé' + verMsg);
+    if(typeof CH_WIZ!=='undefined' && CH_WIZ.on) chWizardExit();   // pas à pas terminé → vue complète + aperçu du document
+    if(typeof WIZ2!=='undefined' && WIZ2.on){ wiz2Close(); refreshOffrePreview(); }   // assistant terminé → aperçu
+  } else {
+    if(msg) msg.textContent = '✓ Contrat mis à jour' + verMsg + ' — ouverture…';
+    goTab('contrats');
+    loadContrat(id);
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -7667,6 +8382,14 @@ function editContratCalc(id){
 /* « + Nouveau contrat » : nouveau contrat, édité dans Calcul honoraires. */
 function newContratCalc(){
   newContrat();
+  // PROPOSITION 2026-09-20 : « + Nouveau contrat » = VRAI départ à zéro (avant, les champs du contrat
+  // précédemment ouvert restaient dans le formulaire) + type « ordinaires » par défaut + date du jour.
+  resetCalcHono(true);
+  ['ch_chk_ord','ch_chk_no','ch_chk_expertise','ch_chk_faisa'].forEach(id=>{ const e=document.getElementById(id); if(e) e.checked=false; });
+  if(typeof chEnsurePrestType==='function') chEnsurePrestType();
+  if(typeof updChSections==='function') updChSections();
+  sv('ch_date', new Date().toISOString().slice(0,10));
+  if(typeof chMarkDirty==='function') chMarkDirty(false);
   const tgt=document.getElementById('ch_target'); if(tgt){ tgt.value=''; }
   const btn=document.getElementById('ch_btn_apply'); if(btn) btn.textContent='Créer le contrat';
   chSyncVersionUI();
@@ -9406,7 +10129,7 @@ async function exportData() {
     const json = JSON.stringify(data, null, 2);
     const d = new Date(); const p = n => String(n).padStart(2, '0');
     const ts = d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
-    const filename = 'facturation_data_' + ts + '.json';
+    const filename = 'TEST_facturation_data_' + ts + '.json';
 
     // Méthode moderne (Chrome/Edge, contexte sécurisé) : boîte « Enregistrer sous… »
     // → permet de choisir le dossier parent ; le navigateur mémorise le dernier dossier utilisé.
@@ -9639,7 +10362,7 @@ async function backupExportBase(){
   if(fsaReady()){
     if(await fsaEnsurePerm(true)){
       try{
-        const name = 'facturation_data_' + _fsaTs() + '.json';
+        const name = 'TEST_facturation_data_' + _fsaTs() + '.json';
         await fsaWrite(name, JSON.stringify(buildBackupPayload(), null, 2));
         toast('✓ Sauvegarde enregistrée dans « ' + _fsaHandle.name + ' » : ' + name);
         return;
@@ -9690,7 +10413,7 @@ async function backupExportSpecific(){
   const json = JSON.stringify(buildBackupPayload(), null, 2);
   const d = new Date(); const p = n => String(n).padStart(2,'0');
   const ts = d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes());
-  const filename = 'facturation_data_' + ts + '.json';
+  const filename = 'TEST_facturation_data_' + ts + '.json';
 
   // 1) Sélecteur NATIF du navigateur (Chrome/Edge/Chromium, contexte sécurisé) : ouvre le Finder
   //    « Enregistrer sous… » → fonctionne sur N'IMPORTE QUEL ordinateur, SANS serveur local ; on
@@ -11045,7 +11768,7 @@ function migratePhasesPct(){
     localStorage.setItem('sa_vacances','{"msr2k60en14": {"2024": 161.5, "2025": 221, "2026": 85}, "msr2k60ezk5": {"2025": 98, "2026": 51}, "msr2k60e1zk": {"2024": 51, "2025": 8.5}, "msr2k60e8gt": {"2023": 93.5, "2024": 189.75, "2025": 212.5, "2026": 204}, "msr2k60fdp1": {"2022": 173.5, "2023": 170, "2024": 93.5}, "msr2k60e8oy": {"2021": 10.25, "2022": 228.25, "2023": 214.75, "2024": 245.25, "2025": 137.75, "2026": 85.25}, "msr2k60gzdf": {"2021": 183, "2022": 214.5, "2023": 210, "2024": 17}, "msr2k60enfi": {"2021": 85, "2022": 178.5, "2023": 170, "2024": 238, "2025": 195.5}, "msr2k60gu8r": {"2022": 115, "2023": 186.5, "2024": 204, "2025": 206.25}}');
     localStorage.setItem('sa_collab_annuel','{"msr2k60en14": {"2024": {"eff": 1648.75, "prev": 1623.5}, "2025": {"eff": 2146.75, "prev": 2142}, "2026": {"eff": 1294.75, "prev": 2150.5}}, "msr2k60ezk5": {"2025": {"eff": 891.25, "prev": 901}, "2026": {"eff": 1309, "prev": 2150.5}}, "msr2k60e1zk": {"2024": {"eff": 475, "prev": 467.5}, "2025": {"eff": 758.5, "prev": 799}}, "msr2k60e8gt": {"2023": {"eff": 833.75, "prev": 833.75}, "2024": {"eff": 2166, "prev": 2150.5}, "2025": {"eff": 2165, "prev": 2142}, "2026": {"eff": 1379.75, "prev": 2150.5}}, "msr2k60fdp1": {"2021": {"eff": 59.5, "prev": 54.4}, "2022": {"eff": 1735.5, "prev": 1727.2}, "2023": {"eff": 1707.75, "prev": 1713.6}, "2024": {"eff": 1128.5, "prev": 1720.4}, "2025": {"eff": 59.5, "prev": 557.6}}, "msr2k60e8oy": {"2021": {"eff": 298, "prev": 255}, "2022": {"eff": 2197, "prev": 2097.8}, "2023": {"eff": 2071.75, "prev": 1927.8}, "2024": {"eff": 2005.75, "prev": 1935.45}, "2025": {"eff": 1895.25, "prev": 1927.8}, "2026": {"eff": 1097.75, "prev": 1935.45}}, "msr2k60gzdf": {"2021": {"eff": 2181.5, "prev": 2125}, "2022": {"eff": 2154, "prev": 2159}, "2023": {"eff": 1994.5, "prev": 2033.2}, "2024": {"eff": 396.25, "prev": 421.6}}, "msr2k60enfi": {"2019": {"eff": 21.5, "prev": 0}, "2020": {"eff": 38.75, "prev": 0}, "2021": {"eff": 2182.25, "prev": 2125}, "2022": {"eff": 2205.5, "prev": 2159}, "2023": {"eff": 2391.75, "prev": 2133.5}, "2024": {"eff": 2438.5, "prev": 2150.5}, "2025": {"eff": 1562.25, "prev": 2142}, "2026": {"eff": 92.75, "prev": 2150.5}}, "msr2k60gu8r": {"2022": {"eff": 1562.5, "prev": 1524.9}, "2023": {"eff": 1696.75, "prev": 1713.6}, "2024": {"eff": 1960.75, "prev": 1935.45}, "2025": {"eff": 1367.25, "prev": 1606.5}}}');
     localStorage.setItem('sa_collab_mensuel','{"msr2k60en14": {"2024": {"10": {"eff": 194.75, "vac": 0}, "11": {"eff": 178, "vac": 8.5}, "12": {"eff": 178, "vac": 51}, "01": {"eff": 0, "vac": 0}, "02": {"eff": 0, "vac": 0}, "03": {"eff": 0, "vac": 0}, "04": {"eff": 187.5, "vac": 0}, "05": {"eff": 183.5, "vac": 0}, "06": {"eff": 169.5, "vac": 0}, "07": {"eff": 197.5, "vac": 42.5}, "08": {"eff": 187.25, "vac": 59.5}, "09": {"eff": 172.75, "vac": 0}}, "2025": {"10": {"eff": 197.5, "vac": 0}, "11": {"eff": 172.5, "vac": 17}, "12": {"eff": 186, "vac": 59.5}, "01": {"eff": 178, "vac": 8.5}, "02": {"eff": 170, "vac": 17}, "03": {"eff": 179, "vac": 0}, "04": {"eff": 169.75, "vac": 0}, "05": {"eff": 179, "vac": 0}, "06": {"eff": 171, "vac": 17}, "07": {"eff": 192.75, "vac": 0}, "08": {"eff": 171.25, "vac": 85}, "09": {"eff": 180, "vac": 17}}, "2026": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 68, "vac": 68}, "01": {"eff": 169.25, "vac": 0}, "02": {"eff": 170.5, "vac": 0}, "03": {"eff": 188.25, "vac": 0}, "04": {"eff": 164, "vac": 8.5}, "05": {"eff": 162.75, "vac": 0}, "06": {"eff": 184, "vac": 0}, "07": {"eff": 188, "vac": 8.5}, "08": {"eff": 0, "vac": 0}, "09": {"eff": 0, "vac": 0}}}, "msr2k60ezk5": {"2025": {"10": {"eff": 197.5, "vac": 4.5}, "11": {"eff": 170.75, "vac": 0}, "12": {"eff": 174, "vac": 59.5}, "01": {"eff": 0, "vac": 0}, "02": {"eff": 0, "vac": 0}, "03": {"eff": 0, "vac": 0}, "04": {"eff": 0, "vac": 0}, "05": {"eff": 0, "vac": 0}, "06": {"eff": 0, "vac": 0}, "07": {"eff": 0, "vac": 0}, "08": {"eff": 173.5, "vac": 0}, "09": {"eff": 175.5, "vac": 34}}, "2026": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 0, "vac": 0}, "01": {"eff": 170.75, "vac": 0}, "02": {"eff": 168.5, "vac": 0}, "03": {"eff": 188, "vac": 0}, "04": {"eff": 170.75, "vac": 0}, "05": {"eff": 164.5, "vac": 51}, "06": {"eff": 182.75, "vac": 0}, "07": {"eff": 194.75, "vac": 0}, "08": {"eff": 69, "vac": 0}, "09": {"eff": 0, "vac": 0}}}, "msr2k60e1zk": {"2024": {"10": {"eff": 116.75, "vac": 0}, "11": {"eff": 179.5, "vac": 0}, "12": {"eff": 178.75, "vac": 51}, "01": {"eff": 0, "vac": 0}, "02": {"eff": 0, "vac": 0}, "03": {"eff": 0, "vac": 0}, "04": {"eff": 0, "vac": 0}, "05": {"eff": 0, "vac": 0}, "06": {"eff": 0, "vac": 0}, "07": {"eff": 0, "vac": 0}, "08": {"eff": 0, "vac": 0}, "09": {"eff": 0, "vac": 0}}, "2025": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 0, "vac": 0}, "01": {"eff": 179.25, "vac": 8.5}, "02": {"eff": 170.75, "vac": 0}, "03": {"eff": 177.25, "vac": 0}, "04": {"eff": 170.75, "vac": 0}, "05": {"eff": 60.5, "vac": 0}, "06": {"eff": 0, "vac": 0}, "07": {"eff": 0, "vac": 0}, "08": {"eff": 0, "vac": 0}, "09": {"eff": 0, "vac": 0}}}, "msr2k60e8gt": {"2023": {"10": {"eff": 184.75, "vac": 17}, "11": {"eff": 191, "vac": 0}, "12": {"eff": 166, "vac": 68}, "01": {"eff": 38, "vac": 0}, "02": {"eff": 4.5, "vac": 0}, "03": {"eff": 0, "vac": 0}, "04": {"eff": 32.5, "vac": 0}, "05": {"eff": 44.75, "vac": 0}, "06": {"eff": 0, "vac": 0}, "07": {"eff": 0, "vac": 0}, "08": {"eff": 0, "vac": 0}, "09": {"eff": 172.25, "vac": 8.5}}, "2024": {"10": {"eff": 210.75, "vac": 0}, "11": {"eff": 187.25, "vac": 0}, "12": {"eff": 152.75, "vac": 25.25}, "01": {"eff": 184.5, "vac": 8.5}, "02": {"eff": 178.25, "vac": 11.5}, "03": {"eff": 173, "vac": 0}, "04": {"eff": 178.5, "vac": 0}, "05": {"eff": 174.25, "vac": 17}, "06": {"eff": 179.5, "vac": 0}, "07": {"eff": 195.75, "vac": 42.5}, "08": {"eff": 176.5, "vac": 0}, "09": {"eff": 175, "vac": 85}}, "2025": {"10": {"eff": 208.25, "vac": 0}, "11": {"eff": 180.25, "vac": 0}, "12": {"eff": 168.5, "vac": 34}, "01": {"eff": 177.75, "vac": 0}, "02": {"eff": 178.25, "vac": 0}, "03": {"eff": 172.5, "vac": 85}, "04": {"eff": 174.25, "vac": 8.5}, "05": {"eff": 175.25, "vac": 0}, "06": {"eff": 180.25, "vac": 0}, "07": {"eff": 198.25, "vac": 0}, "08": {"eff": 164.25, "vac": 42.5}, "09": {"eff": 187.25, "vac": 42.5}}, "2026": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 34, "vac": 34}, "01": {"eff": 168.25, "vac": 0}, "02": {"eff": 180.25, "vac": 0}, "03": {"eff": 180.75, "vac": 0}, "04": {"eff": 170.75, "vac": 0}, "05": {"eff": 158.25, "vac": 76.5}, "06": {"eff": 190.75, "vac": 0}, "07": {"eff": 185.5, "vac": 51}, "08": {"eff": 111.25, "vac": 42.5}, "09": {"eff": 0, "vac": 0}}}, "msr2k60fdp1": {"2021": {"10": {"eff": 0}, "11": {"eff": 0}, "12": {"eff": 59.5}, "01": {"eff": 0}, "02": {"eff": 0}, "03": {"eff": 0}, "04": {"eff": 0}, "05": {"eff": 0}, "06": {"eff": 0}, "07": {"eff": 0}, "08": {"eff": 0}, "09": {"eff": 0}}, "2022": {"10": {"eff": 144.25, "vac": 34}, "11": {"eff": 152.75, "vac": 0}, "12": {"eff": 135, "vac": 25.5}, "01": {"eff": 153, "vac": 25}, "02": {"eff": 136.5, "vac": 0}, "03": {"eff": 160.25, "vac": 0}, "04": {"eff": 141.25, "vac": 29.5}, "05": {"eff": 153.25, "vac": 0}, "06": {"eff": 146, "vac": 0}, "07": {"eff": 117.5, "vac": 0}, "08": {"eff": 153.5, "vac": 51}, "09": {"eff": 142.25, "vac": 8.5}}, "2023": {"10": {"eff": 153.5, "vac": 0}, "11": {"eff": 153, "vac": 0}, "12": {"eff": 117.75, "vac": 17}, "01": {"eff": 145, "vac": 25.5}, "02": {"eff": 136, "vac": 51}, "03": {"eff": 153.25, "vac": 51}, "04": {"eff": 127, "vac": 0}, "05": {"eff": 147.75, "vac": 0}, "06": {"eff": 149, "vac": 0}, "07": {"eff": 144.25, "vac": 8.5}, "08": {"eff": 153.75, "vac": 17}, "09": {"eff": 127.5, "vac": 0}}, "2024": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 0, "vac": 0}, "01": {"eff": 136.75, "vac": 17}, "02": {"eff": 150, "vac": 0}, "03": {"eff": 131.25, "vac": 25.5}, "04": {"eff": 159.75, "vac": 0}, "05": {"eff": 148.25, "vac": 25.5}, "06": {"eff": 140.5, "vac": 0}, "07": {"eff": 158.5, "vac": 25.5}, "08": {"eff": 103.5, "vac": 0}, "09": {"eff": 0, "vac": 0}}, "2025": {"10": {"eff": 0}, "11": {"eff": 0}, "12": {"eff": 0}, "01": {"eff": 0}, "02": {"eff": 0}, "03": {"eff": 0}, "04": {"eff": 59.5}, "05": {"eff": 0}, "06": {"eff": 0}, "07": {"eff": 0}, "08": {"eff": 0}, "09": {"eff": 0}}}, "msr2k60e8oy": {"2021": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 101.75, "vac": 6.5}, "12": {"eff": 196.25, "vac": 3.75}, "01": {"eff": 0, "vac": 0}, "02": {"eff": 0, "vac": 0}, "03": {"eff": 0, "vac": 0}, "04": {"eff": 0, "vac": 0}, "05": {"eff": 0, "vac": 0}, "06": {"eff": 0, "vac": 0}, "07": {"eff": 0, "vac": 0}, "08": {"eff": 0, "vac": 0}, "09": {"eff": 0, "vac": 0}}, "2022": {"10": {"eff": 188.5, "vac": 8.5}, "11": {"eff": 185.25, "vac": 7.5}, "12": {"eff": 160.75, "vac": 30.25}, "01": {"eff": 184, "vac": 4.5}, "02": {"eff": 175.25, "vac": 4}, "03": {"eff": 205.5, "vac": 10}, "04": {"eff": 169.5, "vac": 43.5}, "05": {"eff": 184.5, "vac": 9.5}, "06": {"eff": 183.75, "vac": 2.5}, "07": {"eff": 180.5, "vac": 88.5}, "08": {"eff": 188.25, "vac": 1.75}, "09": {"eff": 191.25, "vac": 17.75}}, "2023": {"10": {"eff": 172.25, "vac": 42.5}, "11": {"eff": 165, "vac": 0}, "12": {"eff": 154.25, "vac": 34.25}, "01": {"eff": 163.25, "vac": 30}, "02": {"eff": 151.25, "vac": 0}, "03": {"eff": 186.75, "vac": 3.75}, "04": {"eff": 151.75, "vac": 0}, "05": {"eff": 199.25, "vac": 8.5}, "06": {"eff": 191.5, "vac": 5.25}, "07": {"eff": 186.25, "vac": 89.25}, "08": {"eff": 198, "vac": 1}, "09": {"eff": 152.25, "vac": 0.25}}, "2024": {"10": {"eff": 204.5, "vac": 38.25}, "11": {"eff": 166.25, "vac": 0}, "12": {"eff": 164.5, "vac": 51}, "01": {"eff": 160.25, "vac": 34}, "02": {"eff": 158.25, "vac": 0}, "03": {"eff": 150.75, "vac": 0}, "04": {"eff": 162, "vac": 0}, "05": {"eff": 162.25, "vac": 11.5}, "06": {"eff": 151.75, "vac": 38.25}, "07": {"eff": 194.25, "vac": 25.5}, "08": {"eff": 171, "vac": 46.75}, "09": {"eff": 160, "vac": 0}}, "2025": {"10": {"eff": 175, "vac": 4.25}, "11": {"eff": 147.75, "vac": 0}, "12": {"eff": 74, "vac": 0}, "01": {"eff": 159.25, "vac": 8.5}, "02": {"eff": 165.5, "vac": 0}, "03": {"eff": 174.25, "vac": 0}, "04": {"eff": 158.25, "vac": 4.25}, "05": {"eff": 165.25, "vac": 8.5}, "06": {"eff": 153.25, "vac": 8.5}, "07": {"eff": 190.75, "vac": 68}, "08": {"eff": 161.75, "vac": 35.75}, "09": {"eff": 170.25, "vac": 0}}, "2026": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 0, "vac": 0}, "01": {"eff": 140, "vac": 0}, "02": {"eff": 136.5, "vac": 0}, "03": {"eff": 187.25, "vac": 0}, "04": {"eff": 143.25, "vac": 29.75}, "05": {"eff": 98.25, "vac": 0}, "06": {"eff": 154.5, "vac": 0}, "07": {"eff": 197.25, "vac": 47}, "08": {"eff": 40.75, "vac": 8.5}, "09": {"eff": 0, "vac": 0}}}, "msr2k60gzdf": {"2021": {"10": {"eff": 179.5, "vac": 0}, "11": {"eff": 191, "vac": 0}, "12": {"eff": 195, "vac": 47}, "01": {"eff": 169.75, "vac": 0}, "02": {"eff": 169, "vac": 4}, "03": {"eff": 191, "vac": 21.5}, "04": {"eff": 173.75, "vac": 0}, "05": {"eff": 159, "vac": 8.5}, "06": {"eff": 183.5, "vac": 0}, "07": {"eff": 192, "vac": 93.5}, "08": {"eff": 186.5, "vac": 0}, "09": {"eff": 191.5, "vac": 8.5}}, "2022": {"10": {"eff": 176, "vac": 0}, "11": {"eff": 186.25, "vac": 0}, "12": {"eff": 179, "vac": 18}, "01": {"eff": 189.5, "vac": 35}, "02": {"eff": 170.5, "vac": 0}, "03": {"eff": 193.75, "vac": 0}, "04": {"eff": 160, "vac": 42.5}, "05": {"eff": 178.5, "vac": 8.5}, "06": {"eff": 181.25, "vac": 0}, "07": {"eff": 163, "vac": 34}, "08": {"eff": 188.5, "vac": 76.5}, "09": {"eff": 187.75, "vac": 0}}, "2023": {"10": {"eff": 151, "vac": 0}, "11": {"eff": 149.25, "vac": 8.5}, "12": {"eff": 127.5, "vac": 25.5}, "01": {"eff": 179.25, "vac": 22}, "02": {"eff": 160.75, "vac": 42.5}, "03": {"eff": 194, "vac": 5.5}, "04": {"eff": 141.75, "vac": 0}, "05": {"eff": 173.5, "vac": 8.5}, "06": {"eff": 181.75, "vac": 4.75}, "07": {"eff": 176.75, "vac": 92.75}, "08": {"eff": 187.25, "vac": 0}, "09": {"eff": 171.75, "vac": 0}}, "2024": {"10": {"eff": 0, "vac": 0}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 0, "vac": 0}, "01": {"eff": 145.25, "vac": 17}, "02": {"eff": 144, "vac": 0}, "03": {"eff": 107, "vac": 0}, "04": {"eff": 0, "vac": 0}, "05": {"eff": 0, "vac": 0}, "06": {"eff": 0, "vac": 0}, "07": {"eff": 0, "vac": 0}, "08": {"eff": 0, "vac": 0}, "09": {"eff": 0, "vac": 0}}}, "msr2k60enfi": {"2019": {"10": {"eff": 0}, "11": {"eff": 0}, "12": {"eff": 0}, "01": {"eff": 0}, "02": {"eff": 0}, "03": {"eff": 0}, "04": {"eff": 0}, "05": {"eff": 0}, "06": {"eff": 21.5}, "07": {"eff": 0}, "08": {"eff": 0}, "09": {"eff": 0}}, "2020": {"10": {"eff": 0}, "11": {"eff": 0}, "12": {"eff": 0}, "01": {"eff": 18.75}, "02": {"eff": 17}, "03": {"eff": 0}, "04": {"eff": 3}, "05": {"eff": 0}, "06": {"eff": 0}, "07": {"eff": 0}, "08": {"eff": 0}, "09": {"eff": 0}}, "2021": {"10": {"eff": 170.5, "vac": 0}, "11": {"eff": 176.5, "vac": 0}, "12": {"eff": 179.5, "vac": 0}, "01": {"eff": 172.25, "vac": 0}, "02": {"eff": 172.5, "vac": 0}, "03": {"eff": 194.75, "vac": 0}, "04": {"eff": 190.25, "vac": 0}, "05": {"eff": 153, "vac": 0}, "06": {"eff": 201.5, "vac": 0}, "07": {"eff": 190.25, "vac": 85}, "08": {"eff": 180, "vac": 0}, "09": {"eff": 201.25, "vac": 0}}, "2022": {"10": {"eff": 177.5, "vac": 0}, "11": {"eff": 195, "vac": 0}, "12": {"eff": 193.5, "vac": 34}, "01": {"eff": 185.25, "vac": 42.5}, "02": {"eff": 175.75, "vac": 0}, "03": {"eff": 200, "vac": 0}, "04": {"eff": 159, "vac": 4.5}, "05": {"eff": 181, "vac": 0}, "06": {"eff": 187, "vac": 0}, "07": {"eff": 189.25, "vac": 97.5}, "08": {"eff": 193.25, "vac": 0}, "09": {"eff": 169, "vac": 0}}, "2023": {"10": {"eff": 197.25, "vac": 0}, "11": {"eff": 217.5, "vac": 0}, "12": {"eff": 198, "vac": 25.5}, "01": {"eff": 189, "vac": 34}, "02": {"eff": 178.75, "vac": 0}, "03": {"eff": 265.25, "vac": 0}, "04": {"eff": 176.5, "vac": 17}, "05": {"eff": 209.75, "vac": 0}, "06": {"eff": 207.25, "vac": 0}, "07": {"eff": 178.25, "vac": 85}, "08": {"eff": 185.5, "vac": 8.5}, "09": {"eff": 188.75, "vac": 0}}, "2024": {"10": {"eff": 220.75, "vac": 17}, "11": {"eff": 201.25, "vac": 0}, "12": {"eff": 156.5, "vac": 51}, "01": {"eff": 203.5, "vac": 25.5}, "02": {"eff": 236.25, "vac": 0}, "03": {"eff": 228.25, "vac": 0}, "04": {"eff": 200, "vac": 17}, "05": {"eff": 206, "vac": 0}, "06": {"eff": 191.75, "vac": 0}, "07": {"eff": 194, "vac": 119}, "08": {"eff": 192.5, "vac": 8.5}, "09": {"eff": 207.75, "vac": 0}}, "2025": {"10": {"eff": 197.75, "vac": 42.5}, "11": {"eff": 154.5, "vac": 0}, "12": {"eff": 126.5, "vac": 59.5}, "01": {"eff": 198, "vac": 8.5}, "02": {"eff": 182.5, "vac": 0}, "03": {"eff": 191, "vac": 0}, "04": {"eff": 9, "vac": 0}, "05": {"eff": 13.5, "vac": 0}, "06": {"eff": 34.5, "vac": 8.5}, "07": {"eff": 76.5, "vac": 76.5}, "08": {"eff": 170.75, "vac": 0}, "09": {"eff": 207.75, "vac": 0}}, "2026": {"10": {"eff": 0}, "11": {"eff": 0}, "12": {"eff": 0}, "01": {"eff": 64}, "02": {"eff": 20.75}, "03": {"eff": 0}, "04": {"eff": 0}, "05": {"eff": 8}, "06": {"eff": 0}, "07": {"eff": 0}, "08": {"eff": 0}, "09": {"eff": 0}}}, "msr2k60gu8r": {"2022": {"10": {"eff": 167, "vac": 0}, "11": {"eff": 153, "vac": 0}, "12": {"eff": 135.75, "vac": 25.5}, "01": {"eff": 73, "vac": 0}, "02": {"eff": 127, "vac": 0}, "03": {"eff": 137.25, "vac": 0}, "04": {"eff": 119.75, "vac": 0}, "05": {"eff": 130, "vac": 0}, "06": {"eff": 124.5, "vac": 17}, "07": {"eff": 116.5, "vac": 42.5}, "08": {"eff": 140.25, "vac": 4.5}, "09": {"eff": 138.5, "vac": 25.5}}, "2023": {"10": {"eff": 153.5, "vac": 0}, "11": {"eff": 162.25, "vac": 0}, "12": {"eff": 95.25, "vac": 25.5}, "01": {"eff": 146, "vac": 25.5}, "02": {"eff": 137.5, "vac": 0}, "03": {"eff": 153.25, "vac": 34}, "04": {"eff": 126, "vac": 34}, "05": {"eff": 143, "vac": 0}, "06": {"eff": 158.25, "vac": 0}, "07": {"eff": 143, "vac": 25.5}, "08": {"eff": 151.5, "vac": 8}, "09": {"eff": 127.25, "vac": 34}}, "2024": {"10": {"eff": 191.75, "vac": 0}, "11": {"eff": 146.75, "vac": 0}, "12": {"eff": 161.25, "vac": 51}, "01": {"eff": 161.5, "vac": 17}, "02": {"eff": 153.75, "vac": 0}, "03": {"eff": 159.5, "vac": 17}, "04": {"eff": 161.5, "vac": 0}, "05": {"eff": 161.5, "vac": 25.5}, "06": {"eff": 153, "vac": 0}, "07": {"eff": 168.5, "vac": 42.5}, "08": {"eff": 166.25, "vac": 8.5}, "09": {"eff": 175.5, "vac": 42.5}}, "2025": {"10": {"eff": 179.5, "vac": 23.5}, "11": {"eff": 0, "vac": 0}, "12": {"eff": 42.5, "vac": 42.5}, "01": {"eff": 149.75, "vac": 0}, "02": {"eff": 152, "vac": 0}, "03": {"eff": 160, "vac": 0}, "04": {"eff": 65, "vac": 4.25}, "05": {"eff": 102, "vac": 0}, "06": {"eff": 123.5, "vac": 34}, "07": {"eff": 79, "vac": 8.5}, "08": {"eff": 153, "vac": 42.5}, "09": {"eff": 161, "vac": 51}}}}');
-    localStorage.setItem('sa_autobackup','1');
+    localStorage.setItem('sa_autobackup','0');   // VERSION D'ESSAI : auto-sauvegarde désactivée
     localStorage.setItem('sa_phases_pct_migrated','1');
     localStorage.setItem('sa_seed_ver','2026-09-20-full18');
   }
@@ -11124,5 +11847,18 @@ document.addEventListener('DOMContentLoaded', () => {
     new Date().toLocaleDateString('fr-CH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 });
 </script>
+<div id="wiz2">
+  <div class="w2-top">
+    <span class="w2-brand">NOUVEAU CONTRAT</span>
+    <span class="w2-stepinfo" id="w2-stepinfo"></span>
+    <button class="w2-close" onclick="wiz2Quit()" title="Quitter l'assistant (les saisies déjà validées restent dans le formulaire)">✕</button>
+  </div>
+  <div class="w2-progress"><i id="w2-bar" style="width:0%"></i></div>
+  <div class="w2-body"><div class="w2-card" id="w2-card"></div></div>
+  <div class="w2-nav">
+    <button class="w2-back" id="w2-back" onclick="wiz2Back()">‹ Retour</button>
+    <button class="w2-next" id="w2-next" onclick="wiz2Next()">Continuer</button>
+  </div>
+</div>
 </body>
 </html>

@@ -1,5 +1,9 @@
 # Backups et anciennes versions
 Facturation_backup_*.html
+Facturation_avant_modifs_*.html
+Facturation_avant_rebake_*.html
+.gitignore_conflict_*
+TEST_facturation_data_*.json
 Facturation_avant_phases_*.html
 Facturation_2.html
 Facturation_ancien.html

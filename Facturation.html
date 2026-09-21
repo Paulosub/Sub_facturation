@@ -516,6 +516,43 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 .card-hd input[type="checkbox"].sw-invert:checked::after, .lockchk input[type="checkbox"].sw-invert:checked::after{left:2px}
 .ce-eye{border-radius:6px!important;transition:background .15s}
 .ce-eye:hover{background:#eef3f5!important}
+
+/* ═══ Listes ADAPTATIVES (2026-09-20) : la liste occupe toujours la largeur de l'affichage.
+   Les colonnes secondaires s'effacent par paliers quand la place manque (elles restent
+   accessibles en élargissant la fenêtre) — plus de défilement horizontal. ═══ */
+#tbl-contrats, #tbl-factures{width:100%!important;table-layout:auto}
+@media (max-width:1450px){
+  .list-tbl th, .list-tbl td{padding:8px 8px!important;font-size:11.5px}
+}
+/* palier 1 : sous 1750 px, colonnes tertiaires masquées */
+@media (max-width:1750px){
+  #tbl-contrats th:nth-child(4), #tbl-contrats td:nth-child(4),   /* Responsable */
+  #tbl-contrats th:nth-child(7), #tbl-contrats td:nth-child(7),   /* Rémunération */
+  #tbl-contrats th:nth-child(8), #tbl-contrats td:nth-child(8),   /* TVA */
+  #tbl-contrats th:nth-child(9), #tbl-contrats td:nth-child(9),   /* Versions */
+  #tbl-contrats th:nth-child(10), #tbl-contrats td:nth-child(10), /* % SIA */
+  #tbl-contrats th:nth-child(11), #tbl-contrats td:nth-child(11)  /* Montant DG */
+  {display:none}
+  #tbl-factures th:nth-child(5), #tbl-factures td:nth-child(5),   /* Date */
+  #tbl-factures th:nth-child(7), #tbl-factures td:nth-child(7),   /* Frais TTC */
+  #tbl-factures th:nth-child(10), #tbl-factures td:nth-child(10), /* Délai */
+  #tbl-factures th:nth-child(11), #tbl-factures td:nth-child(11)  /* Jours émission */
+  {display:none}
+}
+/* palier 2 : sous 1250 px, colonnes secondaires masquées — l'essentiel reste */
+@media (max-width:1250px){
+  #tbl-contrats th:nth-child(3), #tbl-contrats td:nth-child(3),   /* Client */
+  #tbl-contrats th:nth-child(5), #tbl-contrats td:nth-child(5),   /* Date */
+  #tbl-contrats th:nth-child(6), #tbl-contrats td:nth-child(6),   /* Type */
+  #tbl-contrats th:nth-child(12), #tbl-contrats td:nth-child(12), /* Honoraires HT */
+  #tbl-contrats th:nth-child(14), #tbl-contrats td:nth-child(14)  /* Facturé TTC */
+  {display:none}
+  #tbl-factures th:nth-child(3), #tbl-factures td:nth-child(3),   /* Projet */
+  #tbl-factures th:nth-child(6), #tbl-factures td:nth-child(6),   /* Honoraires TTC */
+  #tbl-factures th:nth-child(12), #tbl-factures td:nth-child(12), /* Jours de retard */
+  #tbl-factures th:nth-child(13), #tbl-factures td:nth-child(13)  /* Date paiement */
+  {display:none}
+}
 </style>
 </head>
 <body>
@@ -1862,6 +1899,9 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
             <tbody id="hono-body"></tbody>
           </table>
           <button class="btn btn-blue btn-sm" style="margin-top:6px" onclick="addHL()">+ Ligne</button>
+          <div id="f_hl_p2_wrap" style="display:none;margin-top:8px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;white-space:nowrap"><input type="checkbox" id="f_hl_p2" onchange="upd_f()" style="width:14px;height:14px;cursor:pointer"> Détail des prestations en page 2 (présentation du contrat)</label>
+          </div>
         </div>
       </div>
 
@@ -2115,6 +2155,66 @@ async function generateInvoicePDF(returnBytes) {
     page1 = doc1.getPages()[0];
     page2 = doc2.getPages()[0];
   }
+  // ── ÉPAISSEURS 0.25 pt PARTOUT (2026-09-20) : les traits BAKÉS des gabarits facture
+  //    (récap p.1 à 0.5/0.75 pt, tableaux p.2, cadres Total HT…) sont ramenés à 0.25 pt en
+  //    réécrivant l'opérateur « w » (setLineWidth) des content streams. Les textes et le
+  //    logo (glyphes/aplats REMPLIS, sans stroke) ne sont pas affectés.
+  const thinStrokes = (pdoc) => {
+    const PN = PDFLib.PDFName, PA = PDFLib.PDFArray, PRS = PDFLib.PDFRawStream,
+          PR = PDFLib.PDFRef, PD = PDFLib.PDFDict;
+    const ctx = pdoc.context;
+    const done = new Set();   // refs déjà traitées (XObjects partagés entre pages)
+    const rewrite = (txt) => {
+      // Masquer les chaînes (…) pour ne jamais toucher un « w » à l'intérieur d'un texte.
+      const strs=[];
+      const masked = txt.replace(/\((?:[^()\\]|\\[\s\S])*\)/g, m => { strs.push(m); return ''+(strs.length-1)+''; });
+      const thin = masked.replace(/(^|[\s>\]])(\d*\.?\d+)\s+w(?=[\s%\/\[(<]|$)/g,
+        (m, pre, num) => (+num > 0.25 ? pre + '0.25 w' : m));
+      return thin === masked ? null : thin.replace(/(\d+)/g, (m,i)=>strs[+i]);
+    };
+    const processStream = (ref, setNew) => {
+      const key = ref && ref.toString();
+      if(done.has(key)) return; done.add(key);
+      const st = ctx.lookup(ref);
+      if(!(st instanceof PRS)) return;
+      const bytes = PDFLib.decodePDFRawStream(st).decode();
+      let txt=''; for(let i=0;i<bytes.length;i++) txt += String.fromCharCode(bytes[i]);
+      const restored = rewrite(txt);
+      // Toujours parcourir les XObjects imbriqués de ce stream (Form dans Form).
+      walkXObjects(st.dict);
+      if(restored === null) return;
+      const nb = new Uint8Array(restored.length);
+      for(let i=0;i<restored.length;i++) nb[i] = restored.charCodeAt(i) & 0xff;
+      // Un Form XObject garde son dictionnaire (BBox, Resources…) — seul le flux change.
+      const ns = ctx.stream(nb);
+      const dict = st.dict;
+      ['Subtype','BBox','Matrix','Resources','Group','FormType'].forEach(k=>{
+        const v = dict.get(PN.of(k)); if(v !== undefined) ns.dict.set(PN.of(k), v);
+      });
+      if(ref instanceof PR) ctx.assign(ref, ns);
+      else if(setNew) setNew(ctx.register(ns));
+    };
+    const walkXObjects = (dict) => {
+      if(!(dict instanceof PD)) return;
+      // PDFPageLeaf : Resources peut être hérité du nœud Pages → méthode normalisée si présente.
+      const resObj = (typeof dict.Resources === 'function') ? dict.Resources() : dict.get(PN.of('Resources'));
+      const res = resObj !== undefined ? ctx.lookup(resObj) : undefined;
+      if(!(res instanceof PD)) return;
+      const xoObj = res.get(PN.of('XObject'));
+      const xo = xoObj !== undefined ? ctx.lookup(xoObj) : undefined;
+      if(!(xo instanceof PD)) return;
+      xo.entries().forEach(([k, v]) => processStream(v));
+    };
+    pdoc.getPages().forEach(pg => {
+      const contents = pg.node.get(PN.of('Contents'));
+      const seen = ctx.lookup(contents);
+      const refs = (seen instanceof PA) ? Array.from({length:seen.size()},(_,i)=>seen.get(i)) : [contents];
+      refs.forEach(ref => processStream(ref, nr => pg.node.set(PN.of('Contents'), nr)));
+      walkXObjects(pg.node);   // XObjects Form de la page (les filets du gabarit y vivent)
+    });
+  };
+  thinStrokes(doc1); if(doc2!==doc1) thinStrokes(doc2);
+
   if(window.fontkit){ doc1.registerFontkit(window.fontkit); if(doc2!==doc1) doc2.registerFontkit(window.fontkit); }
   // Police Akkurat LL TT — 3 graisses, comme le contrat (Light / Regular / Bold).
   // subset:true → PDF léger (proche des 118 Ko du gabarit de référence), rendu identique.
@@ -2162,7 +2262,7 @@ async function generateInvoicePDF(returnBytes) {
 
   // White-out zones
   wipe(page1, 28,   37,  220, 46);   // header (couvre aussi le tiret baked sous FACTURE → redessiné en 0.25pt)
-  wipe(page1, 368, 150,  190, 58);   // client block (jusqu'à 4 lignes si le nom passe à la ligne)
+  wipe(page1, 368, 150,  199, 58);   // client block (jusqu'à la marge droite 566.9 ; 4 lignes si le nom se replie)
   wipe(page1, 85,  353,  430, 12);   // body line 1
   wipe(page1, 85,  386,  415, 62);   // items zone
   // Récap (mode ordinaire) : l'effacement se fait CELLULE PAR CELLULE dans la branche
@@ -2175,16 +2275,22 @@ async function generateInvoicePDF(returnBytes) {
   // Petit trait séparateur (0.25pt) : dash horizontal de ~8pt à gauche d'une ligne.
   const sepDash = (x, yTop) => hline(page1, x, x + 8, yTop, 0.25);
 
-  // Header — texte + traits séparateurs entre chaque ligne (jamais après la dernière).
-  drawL(page1, fontR, s75, cNear, projName,  28.4, cy(48.5));   // projet : Light (comme le gabarit)
-  drawL(page1, fontR, s75, cNear, num,       28.4, cy(62.5));
-  drawL(page1, fontR, s75, cNear, dateFmt,   28.4, cy(76.5));
-  [38.8, 52.8, 66.8].forEach(y => sepDash(28.4, y));           // après FACTURE / projet / n°
+  // ── EN-TÊTE au graphisme des CONTRATS (2026-09-20) ──
+  // « FACTURE » (bold, baké) · trait 0.25 · « n° - OBJET » gris · trait 0.25 · « CULLY - date » gris.
+  // Positions/couleur identiques à runHdr des offres : lignes 791.6/778.5, traits 802.1/787.9, gris 0.4.
+  const cHdrG = rgb(0.4, 0.4, 0.4);
+  const hdrContrat = (pg, f) => {
+    drawL(pg, f, s75, cHdrG, (num ? num + ' - ' : '') + projName, 28.3, 791.6);
+    drawL(pg, f, s75, cHdrG, dateFmt, 28.4, 778.5);
+    [802.1, 787.9].forEach(yl =>
+      pg.drawLine({start:{x:28.35, y:yl}, end:{x:36.5, y:yl}, thickness:0.25, color:cNear}));
+  };
+  hdrContrat(page1, fontR);
 
   // Client
   // Bloc client : le NOM peut passer sur plusieurs lignes (retour au mot), ce qui
   // décale l'adresse et la localité vers le bas, exactement comme sur la référence.
-  const cliX = 368.6, cliMaxW = 124, cliStep = 14;
+  const cliX = 368.6, cliMaxW = 196, cliStep = 14;   // 196 = jusqu'à la marge droite (566.9) — ne pas replier trop tôt (2026-09-20)
   const wrapText = (txt, font, size, maxW) => {
     const words = String(txt||'').split(/\s+/).filter(Boolean);
     const lines=[]; let cur='';
@@ -2216,16 +2322,31 @@ async function generateInvoicePDF(returnBytes) {
   const bodyPost = ' pour les prestations effectuées à ce jour';
   const prW = fontR.widthOfTextAtSize(bodyPre, s8);
   drawL(page1, fontR, s8, cNear, bodyPre, 85, cy(360.3));
-  drawL(page1, fontReg, s8, cNear, type, 85 + prW, cy(360.3));
-  const typeW = fontReg.widthOfTextAtSize(type, s8);
+  drawL(page1, fontR, s8, cNear, type, 85 + prW, cy(360.3));   // Light partout (2026-09-20)
+  const typeW = fontR.widthOfTextAtSize(type, s8);
   drawL(page1, fontR, s8, cNear, bodyPost, 85 + prW + typeW, cy(360.3));
 
   // Line items
   let iy = 393.4;
   const step = 14.7;
 
+  // ── DÉTAIL EN PAGE 2 (2026-09-21) : facture liée à un contrat SANS prestations
+  //    ordinaires + case « Détail des prestations en page 2 » cochée → la liste HL quitte la
+  //    première page (remplacée par une ligne de synthèse) et s'imprime en page 2 dans la
+  //    présentation de la feuille des contrats.
+  const _cHl = contrats.find(x=>x.id===gv('f_contrat'));
+  const _hlP2 = !!document.getElementById('f_hl_p2')?.checked && saisieMode!=='nonordinaire'
+                && !!_cHl && (typeof chContratPrestTypes==='function')
+                && !chContratPrestTypes(_cHl).includes('Ordinaires') && HL.length > 0;
+
   // HL items
-  HL.forEach(item => {
+  if(_hlP2){
+    drawL(page1, fontR, s8, cNear, 'Honoraires prestations non ordinaires (détail en page 2)', 114.7, cy(iy));
+    drawL(page1, fontR, s75, cGray, 'Fr.', 414, cy(iy));
+    drawR(page1, fontR, s8, cNear, fmtCHF(r.no), 491.5, cy(iy));
+    iy += step;
+  }
+  if(!_hlP2) HL.forEach(item => {
     // Libellé aligné avec « Honoraires prestation ordinaire » (x114.7).
     drawL(page1, fontR, s8, cNear, item.lbl, 114.7, cy(iy));
     // Détail heures / tarif (sauf si masqué) : heures alignées avec le % réalisé (x346),
@@ -2233,7 +2354,8 @@ async function generateInvoicePDF(returnBytes) {
     if(!item.hideDetail) {
       const hu = (item.hUnit && item.hUnit !== '—') ? ' '+item.hUnit : '';
       const pu = (item.pUnit && item.pUnit !== '—') ? ' '+item.pUnit : '';
-      if(item.heures) drawR(page1, fontR, s8, cDGray, String(item.heures)+hu, 346, cy(iy));
+      const _hTxt = item.heures ? String(item.heures)+hu : (item.prix ? '–' : '');   // heures facturées ; 0 → « – » (2026-09-21)
+      if(_hTxt) drawR(page1, fontR, s8, cDGray, _hTxt, 346, cy(iy));
       if(item.prix)   drawR(page1, fontR, s8, cDGray, fmtCHF(item.prix)+pu, 402, cy(iy));
     }
     drawL(page1, fontR, s75, cGray, 'Fr.', 414, cy(iy));
@@ -2256,15 +2378,8 @@ async function generateInvoicePDF(returnBytes) {
     iy += step;
   }
 
-  // Frais row (if any)
-  if(r.fp > 0) {
-    hline(page1, 111, 495, iy - 10.6, 0.25);  // trait séparateur entre prestation ordinaire et Frais
-    drawL(page1, fontR, s8, cNear, 'Frais', 114.7, cy(iy));
-    drawR(page1, fontR, s8, cDGray, (r.fp||0).toFixed(2)+'%', 402, cy(iy));
-    drawL(page1, fontR, s75, cGray, 'Fr.', 414, cy(iy));
-    drawR(page1, fontR, s8, cNear, fmtCHF(r.fht), 491.5, cy(iy));
-    iy += step;
-  }
+  // Ligne « Frais » SUPPRIMÉE de la page 1 (demande 2026-09-21) : les frais restent inclus
+  // dans les totaux du récapitulatif (combinedHT/TTC), seule la ligne détaillée disparaît.
 
   if(saisieMode === 'nonordinaire') {
     // ── Récapitulatif ENTIÈREMENT dynamique (facture sans contrat) ──
@@ -2289,8 +2404,8 @@ async function generateInvoicePDF(returnBytes) {
     });
     yy += 9; // espace avant le total final
     hline(page1, 305, 505, yy - 8.1);
-    drawL(page1, fontB, s8, cNear, 'Total TTC en notre faveur', 309, cy(yy));
-    drawR(page1, fontReg, s8, cNear, fmtCHF(combinedSOL), 495, cy(yy));
+    drawL(page1, fontR, s8, cNear, 'Total TTC en notre faveur', 309, cy(yy));
+    drawR(page1, fontR, s8, cNear, fmtCHF(combinedSOL), 495, cy(yy));
     hline(page1, 305, 505, yy + 6.5);
     // Indicateur de page : une seule page → « 1 / 1 »
     wipe(page1, 505, 801, 60, 13);
@@ -2302,48 +2417,91 @@ async function generateInvoicePDF(returnBytes) {
     //  • Montant (bord droit) x491.5 ; % (bord droit) x402 ; « Fr. » (baked) reste intact.
     //  • Lignes encadrées (totaux) → GRAS ; lignes intermédiaires → Light.
     const AX = 491.5, PX = 402;
-    // Rangées fixes du récapitulatif (y du texte).
-    const YHT=467.1, YRAB=481.9, YHTR=496.6, YTVA=511.4, YTTC=526.1, YARR=540.8, YTTCA=555.6, YACC=570.3, YSOL=613.4;
-    // Effacement CELLULE PAR CELLULE (hauteur du texte uniquement → n'efface pas les traits) :
-    const wA = y => wipe(page1, 425, y-6.5, 68.5, 9);   // cellule montant  (x425..493.5)
-    const wP = y => wipe(page1, 360, y-6.5, 44,   9);   // cellule %        (x360..404)
-    [YHT,YRAB,YHTR,YTVA,YTTC,YARR,YTTCA,YACC,YSOL].forEach(wA);
-    [YRAB,YTVA].forEach(wP);
-    // Montant de TVA (et non le total) sur la ligne TVA :
-    const tvaAmt = combinedHTR * ((r.tp||0)/100);
-    drawR(page1, fontReg, s8, cNear, fmtCHF(combinedHT),     AX, cy(YHT));    // Total HT (gras)
-    if(combinedRA > 0) {
-      drawR(page1, fontR, s8, cDGray, (r.rp||0).toFixed(2)+'%', PX, cy(YRAB));
-      drawR(page1, fontR, s8, cNear, '- '+fmtCHF(combinedRA),   AX, cy(YRAB));
-    }
-    drawR(page1, fontReg, s8, cNear, fmtCHF(combinedHTR),    AX, cy(YHTR));   // Total HT avec rabais (gras)
-    drawR(page1, fontR, s8, cDGray, (r.tp||0).toFixed(2)+'%', PX, cy(YTVA));
-    drawR(page1, fontR, s8, cNear, fmtCHF(tvaAmt),         AX, cy(YTVA));   // montant TVA (Light)
-    drawR(page1, fontReg, s8, cNear, fmtCHF(combinedTTCAuto),AX, cy(YTTC));   // Total TTC calculé (gras)
-    if(Math.abs(combinedARR) > 0.005) {
-      const arrSign = combinedARR >= 0 ? '+ ' : '- ';
-      drawR(page1, fontR, s8, cNear, arrSign+fmtCHF(Math.abs(combinedARR)), AX, cy(YARR));  // Arrondi (Light)
-    }
-    drawR(page1, fontReg, s8, cNear, fmtCHF(combinedTTC),    AX, cy(YTTCA));  // Total TTC après arrondi (gras)
-    if(combinedACC > 0) {
-      drawR(page1, fontR, s8, cNear, '- '+fmtCHF(combinedACC), AX, cy(YACC)); // Acomptes (Light)
-    }
-    drawR(page1, fontReg, s8, cNear, fmtCHF(combinedSOL),    AX, cy(YSOL));   // Total en notre faveur (gras)
+    // ── RÉCAPITULATIF v7 (installé 2026-09-21, validé sur maquette) ──
+    // Trois groupes : PRESTATIONS (ordinaires + non ordinaires → Total HT [cadre] → Rabais /
+    // Arrondi / TVA → Total TTC [cadre] → Acomptes, fermé par un trait) · espace 2 rangées ·
+    // FRAIS (HT fp% / TVA / Total TTC [cadre], SANS trait d'ouverture) · espace 1 rangée ·
+    // TOTAL TTC EN NOTRE FAVEUR [cadre] = honoraires + frais (r.sol + r.fsol).
+    // Le gabarit baké est blanchi ; tout est redessiné en Light 8 pt, traits 0.25 (#231F20).
+    const RSHMAX = 48.75;
+    const lastItemY = iy - step;
+    const firstRule = Math.max(lastItemY + 14.5, 467.1 - 10.45 - RSHMAX);
+    const P0 = firstRule + 10.45, ROW = 14.75;
+    const YY = k => P0 + k*ROW;
+    // Espaces ADAPTATIFS : si des lignes de prestations poussent le bloc vers le bas, les
+    // espaces se réduisent avant de risquer la ligne de versement (trait le plus bas ≤ 633.5).
+    const room = Math.floor((618.8 - firstRule) / ROW) - 9;
+    const G1 = Math.min(2, Math.max(0, room));         // espace Acomptes → Frais (2 rangées visées)
+    const G2 = Math.min(1, Math.max(0, room - G1));    // espace avant le solde (1 rangée visée)
+    const KF = 6 + G1, KS = KF + 3 + G2;               // index de « Frais » et du solde final
+    // Blanchit UNIQUEMENT la zone bakée du récap (456.65..617.65) — surtout pas plus haut :
+    // la zone des items (386..448, déjà blanchie par le wipe items) contient les lignes de
+    // prestations DESSINÉES AVANT ce bloc (bug corrigé 2026-09-21 : wipe à 400 les effaçait).
+    wipe(page1, 106, 450, 396, 175);
+    const cRule2 = rgb(0.137, 0.122, 0.125);
+    const rl = (td) => page1.drawLine({start:{x:107.4,y:cy(td)},end:{x:495.75,y:cy(td)},thickness:0.25,color:cRule2});
+    const vl = (x,td1,td2) => page1.drawLine({start:{x,y:cy(td1)},end:{x,y:cy(td2)},thickness:0.25,color:cRule2});
+    rl(YY(0)-10.45);
+    [0,1,2,3,4,5].forEach(k=>rl(YY(k)+4.24));          // groupe prestations, fermé sous Acomptes
+    [KF,KF+1,KF+2].forEach(k=>rl(YY(k)+4.24));         // groupe frais — pas de trait d'ouverture
+    rl(YY(KS)-10.5); rl(YY(KS)+4.25);                  // cadre du solde final
+    [0,4,KF+2,KS].forEach(k=>{ vl(107.5,YY(k)-10.45,YY(k)+4.24); vl(495.4,YY(k)-10.45,YY(k)+4.24); });
+    // (Les deux lignes de résumé « Honoraires prestations ordinaires / non ordinaires » sont
+    // SUPPRIMÉES — le détail figure déjà dans la première partie ; Total HT ouvre le tableau.)
+    [['Total HT',0],['Rabais',1],['Arrondi',2],['TVA',3],['Total TTC',4],
+     ['Acomptes versés à ce jour',5],
+     ['Frais',KF],['TVA',KF+1],['Total TTC',KF+2],
+     ['Total TTC en notre faveur',KS]].forEach(([lbl,k])=>{
+      drawL(page1, fontR, 8, cNear, lbl, 114.7, cy(YY(k)));
+      drawL(page1, fontR, 8, cNear, 'Fr.', 413.8, cy(YY(k)));
+    });
+    // Valeurs : cascade honoraires (r.ht = ordinaires + non ordinaires) ; frais fidèles à calcF.
+    const raV  = r.rp > 0 ? r.ht * r.rp / 100 : 0;
+    const htrV = r.ht - raV;
+    const tvaV = htrV * ((r.tp||0)/100);
+    const arrV = r.ttc - htrV * (1 + (r.tp||0)/100);
+    const V = (k,txt) => drawR(page1, fontR, s8, cNear, txt, AX, cy(YY(k)));
+    const PC = (k,p) => drawR(page1, fontR, s8, cDGray, p.toFixed(2)+'%', PX, cy(YY(k)));
+    V(0, fmtCHF(r.ht));
+    if(raV > 0){ PC(1, r.rp||0); V(1, '- '+fmtCHF(raV)); }
+    if(Math.abs(arrV) > 0.005) V(2, (arrV>=0?'+ ':'- ')+fmtCHF(Math.abs(arrV)));
+    PC(3, r.tp||0); V(3, fmtCHF(tvaV));
+    V(4, fmtCHF(r.ttc));
+    if(r.acc > 0) V(5, '- '+fmtCHF(r.acc));
+    if((r.fp||0) > 0) PC(KF, r.fp||0);
+    if(Math.abs(r.fht||0) > 0.005) V(KF, fmtCHF(r.fht));
+    if(Math.abs(r.fttc||0) > 0.005){ PC(KF+1, r.tp||0); V(KF+1, fmtCHF(r.ftva)); V(KF+2, fmtCHF(r.fttc)); }
+    V(KS, fmtCHF(r.sol + (r.fsol||0)));   // Total TTC en notre faveur (honoraires + frais)
     // (Aucune hline : les cadres du gabarit restent intacts → traits continus.)
   }
 
-  // Délai
-  drawL(page1, fontB, s8, cNear, delai+' jours', 269.2, cy(645.8));
+  // Délai — ligne entière redessinée en LIGHT d'un seul tenant (2026-09-20) : le gabarit la
+  // bake en Regular avec « NN jours » en gras à position fixe ; en Light les largeurs changent.
+  wipe(page1, 84, 638.6, 456, 9.6);   // borné à x540 : le LOGO commence à x543 (ne pas le blanchir !)
+  drawL(page1, fontR, 8, cNear,
+    'Vous voudrez bien effectuer le versement dans les ' + delai + ' jours, sur le compte courant de substances architectes sàrl', 85, cy(645.8));
 
   // Resp
   drawL(page1, fontR, s75, cNear, resp, 85, cy(735.6));
+
+  // ── CORPS DE LETTRE EN LIGHT (2026-09-20) : le gabarit bake ces lignes en Akkurat REGULAR →
+  //    blanchies et redessinées en LIGHT (8 pt, positions d'origine mesurées au pixel).
+  [[320.3,'Madame, Monsieur,'],
+   [370.3,'relative au projet cité en marge.'],
+   [655.4,'auprès de la banque Cantonale Vaudoise.'],
+   [668.4,'IBAN CH52 0076 7000 Z543 2700 3.'],
+   [687.6,'En vous remerciant de la confiance témoignée, nous vous transmettons, Madame, Monsieur, nos cordiales salutations.'],
+   [726.0,'Substances architectes sàrl']].forEach(([td,txt])=>{
+    wipe(page1, 84, td-7.2, 456, 9.4);   // borné à x540 : le LOGO (x543..566.5, y 89..233) traverse ces lignes
+    drawL(page1, fontR, 8, cNear, txt, 85, cy(td));
+  });
 
   // ═════════════════════════════════════════
   //  PAGE 2
   // ═════════════════════════════════════════
 
   // White-out zones
-  wipe(page2, 28,   42,  240, 14);   // header project
+  wipe(page2, 28,   37,  320, 46);   // header : bande complète (objet + trait bakés) → patron contrat
   // Tableau de référence : on efface UNIQUEMENT la colonne 1 (type/n°/date) et la
   // colonne des montants. Les libellés fixes du gabarit (« Montant donnant droit… »,
   // « (selon DG) / (selon contrat) », « Fr. ») sont conservés tels quels.
@@ -2362,8 +2520,8 @@ async function generateInvoicePDF(returnBytes) {
    500.3,515.0,541.1,561.5,576.3,602.3,622.8,637.5,652.2,667.0,704.9]
     .forEach(yb => wipe(page2, 315, yb-6.5, 193, 8.5));   // x315..508 (montants finissent à 506, cadre à 510)
 
-  // Header
-  drawL(page2, fontR, s75, cNear, projName, 28.4, cy(49.5));  // nom du projet (2e ligne) : Light
+  // Header — même patron que la page 1 (graphisme des contrats) : n° + objet, lieu-date, 2 traits.
+  hdrContrat(page2, fontR2);
 
   // Reference table — colonne 1 (type / n° / date) + 3 montants issus du contrat.
   const cDG   = c.dg   || 0;   // montant donnant droit aux honoraires (selon DGI)
@@ -2376,9 +2534,33 @@ async function generateInvoicePDF(returnBytes) {
   if(dateStr) {
     const [y,m,d] = dateStr.split('-');
     const dateLabel = `${parseInt(d)} ${MONTHS[parseInt(m)-1]} ${parseInt(y)}`;
-    drawL(page2, fontB, s8, cNear, dateLabel, 85, cy(181.7));  // alignée à gauche avec le trait (x85)
+    drawL(page2, fontR, s8, cNear, dateLabel, 85, cy(181.7));  // alignée à gauche avec le trait (x85)
   }
-  drawR(page2, fontB, s8, cNear, fmtCHF(cHTTC), 510, cy(181.7));
+  drawR(page2, fontR, s8, cNear, fmtCHF(cHTTC), 510, cy(181.7));
+  // Libellés bakés en graisse forte sur la ligne TTC et au Total HT → repassés en LIGHT
+  // (2026-09-20, taille 8 pt du gabarit ; wipes bornés pour ne pas toucher les traits bakés).
+  wipe(page2, 203, 175.2, 150, 8.8);
+  drawL(page2, fontR, 8, cNear, 'Montant des honoraires TTC', 204.1, cy(181.7));
+  wipe(page2, 359.5, 175.2, 66, 8.8);
+  drawL(page2, fontR, 8, cNear, '(selon contrat)', 360.6, cy(181.7));
+  wipe(page2, 127.5, 698.3, 45, 8.8);
+  drawL(page2, fontR, 8, cNear, 'Total HT', 128.9, cy(704.9));
+  // « Fr. » de la ligne TTC du tableau de référence (baké en GRAS) → Light, même position.
+  wipe(page2, 425, 175.2, 14, 8.8);
+  drawL(page2, fontR, 8, cNear, 'Fr.', 426.6, cy(181.7));
+  // Numéros + libellés des phases PRINCIPALES : bakés en Akkurat REGULAR → repassés en LIGHT
+  // (2026-09-20, positions du gabarit mesurées ; les sous-lignes sont déjà en Light).
+  [[246.1,103.3,'4.31','Avant-projet'],
+   [316.6,102.0,'4.32','Projet de l’ouvrage'],
+   [392.6,101.8,'4.33','Procédure de demande d’autorisation'],
+   [418.7,103.4,'4.41','Appels d’offres'],
+   [479.9,103.3,'4.51','Projet d’exécution'],
+   [541.1,102.0,'4.52','Exécution de l’ouvrage'],
+   [602.4,101.8,'4.53','Mise en service, achèvement']].forEach(([td,xn,num_,lbl])=>{
+    wipe(page2, 100, td-6.6, 180, 8.8);
+    drawL(page2, fontR, 8, cNear, num_, xn, cy(td));
+    drawL(page2, fontR, 8, cNear, lbl, 128.9, cy(td));
+  });
 
   // SIA phases
   const totC = r.totC || 1;
@@ -2399,7 +2581,7 @@ async function generateInvoicePDF(returnBytes) {
   // Séparateur vertical des lignes de phase PRINCIPALES (baked dans le gabarit) :
   // court trait à x≈420.3, de (phY-10.5) à (phY+4). Effacé par le wipe → on le redessine.
   const cRule = rgb(0.137, 0.122, 0.125); // #231F20
-  const vdivMain = phY => page2.drawLine({start:{x:420.3, y:cy(phY-10.5)}, end:{x:420.3, y:cy(phY+4)}, thickness:0.5, color:cRule});
+  const vdivMain = phY => page2.drawLine({start:{x:420.3, y:cy(phY-10.5)}, end:{x:420.3, y:cy(phY+4)}, thickness:0.25, color:cRule});   // 0.25 pt (2026-09-20)
   SIA.forEach(ph => {
     const phY = phYs[ph.c];
     if(phY === undefined) return;
@@ -2415,12 +2597,12 @@ async function generateInvoicePDF(returnBytes) {
       drawR(page2, fontR, s8, cDGray, pct2(cPct), 420, cy(phY));
       vdivMain(phY);
       drawL(page2, fontR, s75, cGray, 'Fr.', 426, cy(phY));
-      drawR(page2, fontReg, s8, cNear, fmtCHF(amt), 506, cy(phY));   // montant de phase : Regular
+      drawR(page2, fontR, s8, cNear, fmtCHF(amt), 506, cy(phY));   // montant de phase : Light (2026-09-20)
     } else {
       // Ligne principale : montant de phase en Regular + séparateur vertical.
       vdivMain(phY);
       drawL(page2, fontR, s75, cGray, 'Fr.', 426, cy(phY));
-      drawR(page2, fontReg, s8, cNear, fmtCHF(phtAmt), 506, cy(phY)); // montant de phase : Regular
+      drawR(page2, fontR, s8, cNear, fmtCHF(phtAmt), 506, cy(phY)); // montant de phase : Light (2026-09-20)
     }
     ph.s.forEach(sub => {
       if(sub.k === '433') return; // handled above
@@ -2439,14 +2621,97 @@ async function generateInvoicePDF(returnBytes) {
 
   // Total HT row (page 2) — encadré → Regular (texte dans les cases).
   const sf2 = r.sf || 0, sc2 = r.sc || 0;
-  drawR(page2, fontReg, s8, cDGray, pct2(sf2), 365, cy(704.9));
-  drawL(page2, fontReg, s8, cLGray, '/', 370, cy(704.9));
-  drawR(page2, fontReg, s8, cDGray, pct2(sc2), 420, cy(704.9));
-  drawL(page2, fontReg, s75, cGray, 'Fr.', 426, cy(704.9));
-  drawR(page2, fontReg, s8, cNear, fmtCHF(r.ht), 506, cy(704.9));
+  drawR(page2, fontR, s8, cDGray, pct2(sf2), 365, cy(704.9));
+  drawL(page2, fontR, s8, cLGray, '/', 370, cy(704.9));
+  drawR(page2, fontR, s8, cDGray, pct2(sc2), 420, cy(704.9));
+  drawL(page2, fontR, s75, cGray, 'Fr.', 426, cy(704.9));
+  drawR(page2, fontR, s8, cNear, fmtCHF(r.ht), 506, cy(704.9));
+
+  // ── DÉTAIL DES PRESTATIONS EN PAGE 2 (2026-09-21) : remplace le tableau des phases SIA
+  //    par la description détaillée des prestations non ordinaires, dans la présentation de
+  //    la feuille des CONTRATS (offrePDFBytes : colonnes heures/tarif/Montant, puces, libellé
+  //    Regular si commentaire sinon Light, commentaires en Light Italic, ligne TOTAL).
+  if(_hlP2){
+    wipe(page2, 84, 143, 430, 569);   // blanchit le tableau de RÉFÉRENCE (3 lignes, demande 2026-09-21) + tableau des phases + Total HT
+    const fontLI2 = HL.some(l=>String(l.com||'').trim())
+      ? await doc2.embedFont(toBytes(AKKU_LIGHTITALIC), SUB) : null;
+    const isExp2 = chContratPrestTypes(_cHl).includes('Expertise');
+    const HRX=373.2, TRX=428.2, MRX=505.9;                   // bords droits heures / tarif / Montant (cotes contrat)
+    const fmtQte2   = l => l.heures ? String(l.heures) + ((l.hUnit&&l.hUnit!=='h') ? ' '+l.hUnit : ' h.') : (l.prix ? '–' : '');   // 0 heure → « – »
+    const fmtTarif2 = l => l.prix ? ((l.pUnit==='Frs') ? fmtCHF(l.prix) : l.prix.toFixed(2)+' /h.') : '';
+    // Titre (patron du chapitre contrat, sans numérotation) + trait 0.25.
+    // Positions = celles du chapitre de la feuille CONTRAT (hy3=745.2 → td 96.7), le bloc
+    // remonte sous l'en-tête puisque le tableau de référence est supprimé.
+    drawL(page2, fontB, 8, cNear, isExp2 ? 'PRESTATIONS D’EXPERTISE' : 'PRESTATIONS D’ARCHITECTE', 85.04, cy(96.7));
+    hline(page2, 85, 510.2, 101.1, 0.25);
+    // En-tête de colonnes (colHdr du contrat) : label + heures/tarif/Montant en 7 pt, trait 0.25.
+    const qteCol = HL.some(l=>l.hUnit && l.hUnit!=='h');
+    drawL(page2, fontR, 8, cNear, isExp2 ? 'Prestations d’expertise' : 'Prestations d’architectes', 130.4, cy(138.4));
+    if(qteCol){ drawR(page2, fontR, 7, cNear, 'quantité', HRX, cy(138.4)); }
+    else { drawR(page2, fontR, 7, cNear, 'heures', HRX, cy(130.0)); drawR(page2, fontR, 7, cNear, 'facturées', HRX, cy(138.4)); }
+    drawR(page2, fontR, 7, cNear, 'tarif horaire', TRX, cy(130.0)); drawR(page2, fontR, 7, cNear, 'moyen HT', TRX, cy(138.4));
+    drawR(page2, fontR, 7, cNear, 'Montant', MRX, cy(130.0)); drawR(page2, fontR, 7, cNear, 'HT', MRX, cy(138.4));
+    hline(page2, 130.4, 510.2, 142.6, 0.25);
+    // Prestations : puce « – », wrap 155 pt, interligne 10 ; montants sur la dernière ligne du libellé.
+    let ty = 174.2;   // départ des lignes = cote contrat (sy=667.7 → td 174.2)
+    HL.forEach(l => {
+      if(ty > 690) return;                                   // garde-fou débordement (comme le contrat)
+      const _fP = String(l.com||'').trim() ? fontReg : fontR;
+      const lines = wrapText(l.lbl||'', _fP, 8, 155);
+      drawL(page2, _fP, 8, cNear, '–', 172.2, cy(ty));
+      lines.forEach((ln2,i2) => drawL(page2, _fP, 8, cNear, ln2, 180.7, cy(ty + i2*10)));
+      const yLast = ty + (lines.length-1)*10;
+      if(!l.hideDetail){
+        drawR(page2, fontR, 8, cNear, fmtQte2(l),   HRX+0.2, cy(yLast));
+        drawR(page2, fontR, 8, cNear, fmtTarif2(l), TRX,     cy(yLast));
+      }
+      drawR(page2, fontR, 8, cNear, fmtCHF(l.amt||0), MRX, cy(yLast));
+      ty = yLast + 12;
+      if(String(l.com||'').trim() && fontLI2){
+        String(l.com).split(/\n/).map(t=>t.trim()).filter(Boolean).forEach(cm => {
+          wrapText(cm, fontLI2, 8, 147).forEach((ln2,i2) => {
+            if(i2===0) drawL(page2, fontLI2, 8, cNear, '–', 180.7, cy(ty));
+            drawL(page2, fontLI2, 8, cNear, ln2, 189.2, cy(ty));
+            ty += 10;
+          });
+        });
+        ty += 2;
+      }
+      ty += 8;
+    });
+    // Ligne TOTAL (patron contrat) : trait, « TOTAL », « Fr. », montant.
+    const lastY2 = ty - 20;                                  // dernière baseline utile
+    hline(page2, 166.5, 510.2, lastY2 + 17.5, 0.25);
+    drawL(page2, fontR, 8, cNear, 'TOTAL', 166.5, cy(lastY2 + 31.3));
+    drawL(page2, fontR, 8, cNear, 'Fr.', 440.2, cy(lastY2 + 31.3));
+    drawR(page2, fontR, 8, cNear, fmtCHF(HL.reduce((t,l)=>t+(l.amt||0),0)), 506.5, cy(lastY2 + 31.3));
+  }
 
   // (Le cadre « Total HT » — bords + traits — reste baked et continu grâce à l'effacement
   //  ligne par ligne : plus besoin de redessiner de hlines, qui étaient mal placées.)
+
+  // ── PIED DE PAGE au graphisme des CONTRATS (2026-09-20) ──
+  // Adresse du gabarit facture alignée sur les offres (« RUE DE LA GARE 2 » → « 12 »),
+  // 3 petits traits 0.25 pt recentrés entre les deux lignes de texte (y 37.8, x du contrat),
+  // numérotation « n | total » redessinée : n° fer à droite pw−87.6, total pw−82.2, trait vertical 0.25.
+  const piedContrat = (pg, f, nCur, nTot) => {
+    const pw = pg.getWidth();
+    const wb = (x1, yb, x2, yt) => pg.drawRectangle({x:x1, y:yb, width:x2-x1, height:yt-yb, color:cWhite});
+    wb(28, 39.3, 122, 48.5);                                  // adresse du gabarit (ancienne « GARE 2 »)
+    drawL(pg, f, s75, cNear, 'RUE DE LA GARE 12', 28.4, 42.0);
+    [[28.35,36.5],[125.85,134.3],[222.95,231.4]].forEach(sg => {
+      wb(sg[0]-0.7, 37.2, sg[1]+0.9, 39.0);
+      pg.drawLine({start:{x:sg[0], y:37.8}, end:{x:sg[1], y:37.8}, thickness:0.25, color:cNear});
+    });
+    wb(pw-97.3, 23, pw-86.7, 38);                             // ancien n° courant
+    wb(pw-82.9, 23, pw-75.7, 38);                             // ancien total
+    wb(pw-85.4, 27.4, pw-83.8, 37);                           // ancien trait vertical
+    drawR(pg, f, s75, cNear, String(nCur), pw-87.6, 28.0);
+    drawL(pg, f, s75, cNear, String(nTot), pw-82.2, 28.0);
+    pg.drawLine({start:{x:pw-84.6, y:26.55}, end:{x:pw-84.6, y:35.05}, thickness:0.25, color:cNear});
+  };
+  piedContrat(page1, fontR, 1, ORD ? 2 : 1);
+  if(ORD) piedContrat(page2, fontR2, 2, 2);
 
   // ── merge pages and download ──────────────────────────────────────────
   const merged = await PDFDocument.create();
@@ -2665,6 +2930,7 @@ function faAdaptSaisie(){
   // Bouton « Reprendre du contrat » : uniquement pour une facture liée à un contrat
   const btnR=document.querySelector('#card-hono-facture .card-hd button');
   if(btnR) btnR.style.display = no ? 'none' : '';
+  showEl('f_hl_p2_wrap', noOrd && !no);   // choix « détail en page 2 » : contrat SANS prestations ordinaires (2026-09-21)
   const rHo=document.getElementById('R_ho'); const trHo=rHo?rHo.closest('tr'):null;
   if(trHo) trHo.style.display = noOrd ? 'none' : '';        // ligne « Honoraires ordinaires HT » sans objet
   const rNo=document.getElementById('R_no'); const trNo=rNo?rNo.closest('tr'):null;
@@ -2683,10 +2949,32 @@ function faFillHLFromContrat(force){
     if(types.includes('Ordinaires')) return false;
     if(HL.some(l=>(l.lbl||'').trim() || (l.amt||0)>0)) return false;
   }
+  // Heures pré-remplies « comme pour les prestations ordinaires » (2026-09-21) : reprise AUTO →
+  // heures de la FACTURE PRÉCÉDENTE du contrat (cumul facturé à ce jour, même définition de
+  // « précédente » que les acomptes : date puis n°), première facture → 0, à introduire par
+  // rapport aux heures PRÉVUES (refHeures, colonne « Heures contrat »). Le bouton ↺ (force)
+  // reprend le contrat tel quel (heures et montants pleins).
+  let prevHL = null;
+  if(!force){
+    const curDate = gv('f_date') || '9999-12-31', curNum = gv('f_num') || '';
+    const prev = factures
+      .filter(f => f.id !== curFid && f.contrat_id === c.id && Array.isArray(f.hl) && f.hl.length)
+      .filter(f => { const fd=f.date||''; return fd!==curDate ? fd<curDate : (!curNum || String(f.num||'')<curNum); })
+      .sort((a,b) => (b.date||'').localeCompare(a.date||'') || String(b.num||'').localeCompare(String(a.num||'')))[0];
+    prevHL = prev ? prev.hl : null;
+  }
   HL = c.nonord.filter(l=>(l.lbl||'').trim() || (l.amt||0)>0)
-               .map(l=>({lbl:l.lbl||'', heures:l.heures||0, refHeures:l.heures||0, fromContrat:true,
-                         hUnit:l.hUnit||'h', prix:l.prix||0, pUnit:l.pUnit||'Frs/h', amt:l.amt||0,
-                         com:l.com||'', hideDetail:!!l.hideDetail}));
+               .map(l=>{
+                 const base = {lbl:l.lbl||'', heures:l.heures||0, refHeures:l.heures||0, fromContrat:true,
+                               hUnit:l.hUnit||'h', prix:l.prix||0, pUnit:l.pUnit||'Frs/h', amt:l.amt||0,
+                               com:l.com||'', hideDetail:!!l.hideDetail};
+                 if(!force){
+                   const pl = prevHL && prevHL.find(x=>(x.lbl||'').trim()===(l.lbl||'').trim());
+                   base.heures = pl ? (pl.heures||0) : 0;
+                   base.amt = base.hideDetail ? (pl ? (pl.amt||0) : 0) : base.heures*(base.prix||0);
+                 }
+                 return base;
+               });
   buildHL();
   return true;
 }
@@ -4285,6 +4573,15 @@ async function offrePDFBytes(){
   const fB = await doc.embedFont(toBytes(AKKU_BOLD));     // Akkurat LL TT Bold — titres (gabarit)
   const fReg = await doc.embedFont(toBytes(AKKU_REGULAR)); // Akkurat LL TT Regular — emphase (montants/totaux) + gras corps de texte
   const fLI = await doc.embedFont(toBytes(AKKU_LIGHTITALIC)); // Akkurat LL TT Light Italic — texte en italique
+  // ── LOGO « SUBSTANCES ARCHITECTES » repris des gabarits FACTURE (2026-09-20) :
+  //    p.1 facture (noir) → couverture ; p.2 facture (gris) → toutes les pages PORTRAIT suivantes
+  //    (les copies tardives Projet/feuilles héritent du tampon ; l'Annexe 2 paysage garde son décor).
+  //    Tampon VECTORIEL : bande logo découpée par embedPage (bbox mesurée au pixel), l'ancien logo
+  //    du gabarit 24PRC est blanchi dessous (rien d'autre dans la bande : encre du corps ≤ x510.8).
+  const _faLogoDoc = await PDFDocument.load(toBytes(FA_TMPL));
+  const LOGO_BB = { left: 541, bottom: 83.5, right: 568.5, top: 236 };   // bottom 83.5 : l'ancien logo 24PRC descend à ~85.4
+  const logoCouv = await doc.embedPage(_faLogoDoc.getPage(0), LOGO_BB);
+  const logoRun  = await doc.embedPage(_faLogoDoc.getPage(1), LOGO_BB);
   let P = doc.getPages();
   const cN=rgb(0.08,0.07,0.07), cRed=rgb(0.886,0,0.102), cW=rgb(1,1,1), cG=rgb(0.4,0.4,0.4);
   // GARDE DONNÉES : offrePDFBytes ne doit JAMAIS modifier les données du contrat (chOuvrages).
@@ -4373,7 +4670,11 @@ async function offrePDFBytes(){
 
   // en-tête courant (pages 2..11 = index 1..10)
   const offreTitre = d.isExpertise ? "OFFRE RELATIVE AUX PRESTATIONS D'EXPERTISE" : "OFFRE RELATIVE AUX PRESTATIONS D'ARCHITECTE";
+  // Tampon logo (2026-09-20) : blanchit l'ancien logo du gabarit puis pose la bande logo facture.
+  const stampLogo=(pg,emb)=>{ wipe(pg,LOGO_BB.left,LOGO_BB.bottom,LOGO_BB.right,LOGO_BB.top,0);
+    pg.drawPage(emb,{x:LOGO_BB.left,y:LOGO_BB.bottom}); };
   const runHdr=(pg)=>{
+    if(pg.getWidth()<600) stampLogo(pg, logoRun);   // logo gris des pages courantes (PORTRAIT uniquement)
     setL(pg,[28.4,804.1,213.5,812.1],offreTitre,fB,7.5,cN);
     // En-tête sur UNE ligne : objet court s'il est saisi, sinon l'objet complet (sauts de ligne aplatis).
     setL(pg,[28.3,790.1,300,798.1],`${d.ref} - ${up((d.projetCourt||d.projet||'').replace(/\s+/g,' '))}`,fR,7.5,cG);
@@ -4418,6 +4719,7 @@ async function offrePDFBytes(){
 
   // ── PAGE 1 : couverture ──
   const p1=P[0];
+  stampLogo(p1, logoCouv);   // logo NOIR de la première page facture (2026-09-20)
   setL(p1,[28.4,791.0,180,799.0],`${up(d.lieu)} - ${offreDateFR(d.date)}`,fR,8,cN);
   // Petit trait d'en-tête de la couverture : recentré entre « OFFRE D'HONORAIRES » (804.1) et la date (791), 0.25 pt.
   wipe(p1,27.9,802.3,37,803.6,0);
@@ -7731,17 +8033,20 @@ function offreShowVersion(){
 /* ═══════════════════════════════════════════════════
    INVOICES
 ═══════════════════════════════════════════════════ */
-function updateContratSelect() {
+function updateContratSelect(keepId) {
   const sel = document.getElementById('f_contrat');
   if(!sel) return;
   const cur = sel.value;
   sel.innerHTML = '<option value="">— Sélectionner un contrat —</option>';
-  contrats.forEach(c => {
+  // CONTRATS EN COURS SEULEMENT (2026-09-21) : les contrats ARCHIVÉS sont retirés de la liste.
+  // Exception : le contrat déjà sélectionné (ou keepId, passé par fillFacture pour une facture
+  // existante) reste listé même archivé, pour que la facture garde sa liaison à l'écran.
+  contrats.filter(c => !c.archive || c.id === cur || c.id === keepId).forEach(c => {
     const opt = document.createElement('option');
     opt.value = c.id;
     // AFFAIRE TERMINÉE (2026-09-20) : plus de nouveau paiement — l'option est désactivée (une facture
     // EXISTANTE déjà liée reste consultable : sel.value = cur fonctionne même sur une option désactivée).
-    opt.textContent = `${c.affaire||'?'} — ${c.projet||'?'}` + (c.termine ? ' — 🏁 TERMINÉ' : '');
+    opt.textContent = `${c.affaire||'?'} — ${c.projet||'?'}` + (c.termine ? ' — 🏁 TERMINÉ' : (c.archive ? ' — archivé' : ''));
     if(c.termine) opt.disabled = true;
     sel.appendChild(opt);
   });
@@ -7871,6 +8176,12 @@ function onSelectContrat() {
     // Conditions du contrat REPRISES selon son type : rabais masqué au contrat (expertise/non-ord/faisa) → 0.
     const _ck = (c.detail&&c.detail.checks) || (c.ouvrages&&c.ouvrages[0]&&c.ouvrages[0].detail&&c.ouvrages[0].detail.checks) || {};
     const _adapt = faAdaptSaisie();
+    // « Détail des prestations en page 2 » par DÉFAUT (2026-09-21) pour les contrats SANS
+    // prestations ordinaires (non ordinaires / expertise / faisabilité) ; décoché dès qu'un
+    // contrat à prestations ordinaires est choisi. Factures NEUVES uniquement — une facture
+    // déjà enregistrée garde le choix restauré par fillFacture.
+    { const e = document.getElementById('f_hl_p2');
+      if(e && !factures.some(f=>f.id===curFid)) e.checked = _adapt.noOrd; }
     sv('f_rabais', (_adapt.noOrd && _ck.ch_hide_rabais) ? 0 : (c.rabais||0));
     sv('f_tva', c.tva||8.1);
     sv('f_frais', c.frais||0);
@@ -7886,10 +8197,20 @@ function onSelectContrat() {
     if(fl) fl.textContent = (c.frais||0).toFixed(2) + ' %';
     if(ftl) ftl.textContent = (c.tva||8.1).toFixed(2) + ' %';
     // reset arrondi fields so calcF auto-calculates for new contract
-    // Calculer total des acomptes versés (toutes factures précédentes sauf courante)
+    // Calculer total des acomptes versés — UNIQUEMENT les factures PRÉCÉDENTES (2026-09-20) :
+    // date antérieure à la facture courante ; à date égale, numéro antérieur. En MODIFICATION
+    // d'une demande d'acompte, les factures postérieures du contrat ne comptent donc plus
+    // (avant : TOUTES les autres factures du contrat entraient dans le cumul).
+    const curDate = gv('f_date') || '9999-12-31';   // pas encore de date → tout est « précédent »
+    const curNum  = gv('f_num')  || '';
     const prevInvs = factures
       .filter(f => f.id !== curFid && f.contrat_id === cid && f.phases)
-      .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+      .filter(f => {
+        const fd = f.date || '';
+        if(fd !== curDate) return fd < curDate;
+        return !curNum || String(f.num||'') < curNum;   // même date : ordre des n° (n° vide = facture neuve, vient après)
+      })
+      .sort((a,b) => (b.date||'').localeCompare(a.date||'') || String(b.num||'').localeCompare(String(a.num||'')));
     const totalAcc = prevInvs.reduce((s, f) => s + (f._ttc || 0), 0);
     sv('f_acc', totalAcc.toFixed(2));
     const totalFacc = prevInvs.reduce((s, f) => s + (f._fttc || 0), 0);
@@ -7916,7 +8237,10 @@ function onSelectContrat() {
 
 function newFacture() {
   curFid = UID();
-  sv('f_contrat', ''); sv('f_num',''); sv('f_num_type','AC01'); sv('f_type',"Demande d'acompte n° 1");
+  sv('f_contrat', '');
+  { const e=document.getElementById('f_hl_p2'); if(e) e.checked=false; }
+  updateContratSelect();   // repurge la liste (une option « archivé » gardée pour une facture existante disparaît) (2026-09-21)
+  sv('f_num',''); sv('f_num_type','AC01'); sv('f_type',"Demande d'acompte n° 1");
   sv('f_date', new Date().toISOString().slice(0,10));
   sv('f_statut','Envoyée');
   sv('f_rabais',0); sv('f_tva',8.1); sv('f_frais',0); sv('f_acc',0); sv('f_facc',0);
@@ -7954,6 +8278,7 @@ function readFacture() {
            frais: !!document.getElementById('f2_chk_frais')?.checked },
     num: gv('f_num'), type: gv('f_type'), date: gv('f_date'), statut: gv('f_statut'),
     forfait: document.getElementById('f_forfait')?.checked || false,
+    hl_p2: !!document.getElementById('f_hl_p2')?.checked,   // détail des prestations en page 2 (2026-09-21)
     phases,
     hl: JSON.parse(JSON.stringify(HL)),
     ech_j: parseInt(document.getElementById('f_ech_j')?.value||'20'),
@@ -7966,6 +8291,7 @@ function readFacture() {
 }
 
 function fillFacture(inv) {
+  if(inv.contrat_id) updateContratSelect(inv.contrat_id);   // le contrat de la facture reste listé même archivé (2026-09-21)
   sv('f_contrat', inv.contrat_id||'');
   sv('f_num', inv.num||'');
   sv('f_type', inv.type||''); sv('f_date', inv.date);
@@ -7979,6 +8305,7 @@ function fillFacture(inv) {
   const ft2 = document.getElementById('f_ttc'); if(ft2) ft2.value = inv.ttc ? moneyFormatFull(inv.ttc.toFixed(2)) : '';
   const ff2 = document.getElementById('f_fttc'); if(ff2) ff2.value = inv.fttc ? moneyFormatFull(inv.fttc.toFixed(2)) : '';
   const forf = document.getElementById('f_forfait'); if(forf) forf.checked = inv.forfait || false;
+  const hp2 = document.getElementById('f_hl_p2'); if(hp2) hp2.checked = inv.hl_p2 || false;
   if(inv.sansContrat) {
     sv('f2_affaire', inv.cl_affaire||''); sv('f2_projet', inv.cl_projet||''); sv('f2_nom', inv.cl_nom||'');
     sv('f2_adr', inv.cl_adr||''); sv('f2_loc', inv.cl_loc||''); sv('f2_resp', inv.cl_resp||'');

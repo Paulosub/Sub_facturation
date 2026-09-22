@@ -606,6 +606,16 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
         <div class="ct">Contrats</div>
         <div class="cd">Créer un contrat, consulter la liste des contrats en cours et calculer les honoraires. Accès libre.</div>
       </div>
+      <div class="home-card" onclick="goTab('hub-affaires')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h22v16H5z"/><path d="M12 10V7a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3"/><path d="M5 17h22"/></svg></div>
+        <div class="ct">Affaires</div>
+        <div class="cd">Suivi des affaires en cours : PV de chantier, contrôle du coût, devis. Accès libre.</div>
+      </div>
+      <div class="home-card" onclick="goTab('hub-collabs')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M5 25c0-4 3.5-6.5 7-6.5s7 2.5 7 6.5"/><path d="M21 9.2a4 4 0 0 1 0 7.6"/><path d="M22.5 18.6c2.7.6 4.5 2.8 4.5 6.4"/></svg></div>
+        <div class="ct">Collaborateurs</div>
+        <div class="cd">Espace des collaborateurs : feuille d'heures et vacances. Accès libre.</div>
+      </div>
       <div class="home-card locked" onclick="openHub('factures')">
         <span class="lock" title="Accès protégé">Réservé</span>
         <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4h15v23l-2.5-1.7-2.5 1.7-2.5-1.7-2.5 1.7-2.5-1.7L8.5 27z"/><path d="M12 10.5h8M12 14.5h8M12 18.5h5"/></svg></div>
@@ -691,6 +701,278 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
         <div class="ct">Cockpit Claude</div>
         <div class="cd">Tableau de bord et analyses assistées.</div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SOUS-HUB : AFFAIRES (accueil)  (PV de chantier / Contrôle du coût / Devis)
+     ≠ du registre « Affaires » de l'espace Admin (2026-09-22)
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-hub-affaires">
+  <div class="home-wrap">
+    <div class="home-title" style="margin-top:56px">Affaires</div>
+    <div class="home-sub">Suivi des affaires en cours</div>
+    <div class="home-grid">
+      <div class="home-card" onclick="goTab('pv-chantier')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h14a2 2 0 0 1 2 2v20a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M12 3v4M20 3v4"/><path d="M11 13h10M11 18h10M11 23h6"/></svg></div>
+        <div class="ct">PV de chantier</div>
+        <div class="cd">Procès-verbaux de chantier par affaire : rédaction, suivi des décisions.</div>
+      </div>
+      <div class="home-card" onclick="goTab('controle-cout')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 27V9M5 27h22"/><path d="M10 22l5-6 4 3 7-9"/></svg></div>
+        <div class="ct">Contrôle du coût</div>
+        <div class="cd">Suivi du coût de l'ouvrage : budget, adjudications, situation par CFC.</div>
+      </div>
+      <div class="home-card" onclick="goTab('devis')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h12l6 6v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M20 4v6h6"/><path d="M12 17h8M12 22h8"/></svg></div>
+        <div class="ct">Devis</div>
+        <div class="cd">Établissement et suivi des devis par affaire.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SOUS-HUB : COLLABORATEURS (accueil)  (Feuille d'heures / Vacances)
+     ≠ de la gestion « Collaborateurs » de l'espace Admin (2026-09-22)
+══════════════════════════════════════════════════ -->
+<div class="panel" id="panel-hub-collabs">
+  <div class="home-wrap">
+    <div class="home-title" style="margin-top:56px">Collaborateurs</div>
+    <div class="home-sub">Espace des collaborateurs du bureau</div>
+    <div class="home-grid">
+      <div class="home-card" onclick="goTab('hub-heures')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="16" r="12"/><path d="M16 9v7l5 3"/></svg></div>
+        <div class="ct">Heures</div>
+        <div class="cd">Saisie des heures et rapports par collaborateur.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HUB : HEURES (Saisie + Rapport) ── -->
+<div class="panel" id="panel-hub-heures">
+  <div class="home-wrap">
+    <div class="home-title" style="margin-top:56px">Heures</div>
+    <div class="home-sub">Saisie et rapports des heures des collaborateurs</div>
+    <div class="home-grid">
+      <div class="home-card" onclick="goTab('feuille-heures')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="16" r="12"/><path d="M16 9v7l5 3"/></svg></div>
+        <div class="ct">Saisie</div>
+        <div class="cd">Saisie personnelle des heures par affaire, jour après jour.</div>
+      </div>
+      <div class="home-card" onclick="goTab('rapport')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h12l4 4v20H8z"/><path d="M20 4v4h4"/><path d="M12 14h8M12 18h8M12 22h5"/></svg></div>
+        <div class="ct">Rapport</div>
+        <div class="cd">Rapports hebdomadaires, mensuels, annuels et vacances.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VUE : PV DE CHANTIER (squelette à structurer) ── -->
+<div class="panel" id="panel-pv-chantier">
+  <div class="home-wrap">
+    <div class="home-title" style="margin-top:52px">PV de chantier</div>
+    <div class="home-sub">Procès-verbaux de chantier par affaire</div>
+    <div class="adm-wrap">
+      <div style="padding:26px;border:1px dashed #c9c9c9;border-radius:8px;color:#777;font-size:13.5px;max-width:660px;line-height:1.55">
+        Module prêt à être construit : rédaction des procès-verbaux (participants, points traités,
+        décisions et suites), numérotation par affaire et export PDF au graphisme du bureau.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VUE : CONTRÔLE DU COÛT (squelette à structurer) ── -->
+<div class="panel" id="panel-controle-cout">
+  <div class="home-wrap">
+    <div class="home-title" style="margin-top:52px">Contrôle du coût</div>
+    <div class="home-sub">Suivi du coût de l'ouvrage par affaire</div>
+    <div class="adm-wrap">
+      <div style="padding:26px;border:1px dashed #c9c9c9;border-radius:8px;color:#777;font-size:13.5px;max-width:660px;line-height:1.55">
+        Module prêt à être construit : budget par CFC, adjudications, factures et situation,
+        prévision du coût final et écarts.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VUE : DEVIS (squelette à structurer) ── -->
+<div class="panel" id="panel-devis">
+  <div class="home-wrap">
+    <div class="home-title" style="margin-top:52px">Devis</div>
+    <div class="home-sub">Établissement et suivi des devis par affaire</div>
+    <div class="adm-wrap">
+      <div style="padding:26px;border:1px dashed #c9c9c9;border-radius:8px;color:#777;font-size:13.5px;max-width:660px;line-height:1.55">
+        Module prêt à être construit : positions de devis, quantités et prix, totaux TVA comprise
+        et export PDF au graphisme du bureau.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VUE : FEUILLE D'HEURES — calendrier hebdomadaire façon Deltaproject (2026-09-22) :
+     plages saisies au cliquer-tirer, dialogue affaire/phase, mêmes données que Admin · Heures ── -->
+<style id="fh-style">
+#fh_cal{font-size:11px}
+.fh-daycol{flex:1;min-width:0;border-left:1px solid #e3e3e3;position:relative}
+.fh-dayhead{height:38px;text-align:center;border-bottom:1px solid #d5d5d5;padding-top:4px}
+.fh-zone{position:relative;background:repeating-linear-gradient(to bottom,#fff,#fff 45px,#eee 45px,#eee 46px)}
+.fh-zone.we{background:repeating-linear-gradient(to bottom,#f6f6f6,#f6f6f6 45px,#e8e8e8 45px,#e8e8e8 46px)}
+.fh-zone.fe{background:repeating-linear-gradient(to bottom,#edf6ed,#edf6ed 45px,#e0eee0 45px,#e0eee0 46px)}
+.fh-bar{position:absolute;left:2px;right:3px;background:#cfe4f7;border:1px solid #8db8dd;border-radius:2px;overflow:hidden;cursor:pointer;box-sizing:border-box}
+.fh-bar:hover{filter:brightness(.96)}
+.fh-bar{font-family:'AkkuratUI','AkkuratDoc','Akkurat',Arial,sans-serif}
+.fh-bar .bd{background:#1b6fb8;color:#fff;padding:0 4px;font-size:10px;line-height:14px;font-weight:400;white-space:nowrap;overflow:hidden}
+.fh-bar .ct{padding:1px 4px;line-height:13px;color:#1c2b36}
+.fh-bar .ct .af{font-weight:400}
+.fh-bar .ct .l2,.fh-bar .ct .cm{font-weight:300;margin-top:3px}
+.fh-ghost{position:absolute;left:2px;right:3px;background:rgba(27,111,184,.35);border:1px dashed #1b6fb8;border-radius:2px;pointer-events:none}
+.fh-dd{display:none;position:absolute;top:100%;left:0;right:0;max-height:230px;overflow:auto;background:#fff;border:1px solid #b5b5b5;border-radius:0 0 6px 6px;box-shadow:0 8px 22px rgba(0,0,0,.2);z-index:9100}
+.fh-dd div{padding:6px 9px;cursor:pointer;font-size:12.5px;line-height:1.35}
+.fh-dd div:hover{background:#eaf3fb}
+.fh-dd div.sel{background:#dcecf9}
+.fh-bar.vac{background:#ffe3bd;border-color:#dfa458}
+.fh-bar.vac .bd{background:#e8912d}
+.fh-pan{border:1px solid #b9b9b9;border-radius:4px;display:flex;flex-direction:column;background:#fff;min-width:0;min-height:0;overflow:hidden}
+.fh-pan .hd{font-weight:700;font-size:12px;padding:5px 8px;border-bottom:1px solid #ddd}
+.fh-pan .ls{overflow:auto;flex:1;min-height:96px}
+.fh-pan .ls div{padding:3px 8px;font-size:12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fh-pan .ls div:nth-child(even){background:#f2f6fa}
+.fh-pan .ls div.on{background:#1b6fb8;color:#fff}
+.fh-pan .clr{font-size:11px;color:#777;padding:4px 8px;cursor:pointer;border-top:1px solid #eee}
+.fh-pan .clr:hover{color:#c00}
+.fh-bar .fh-rz{position:absolute;left:0;right:0;height:7px;cursor:ns-resize;z-index:2}
+.fh-rz.t{top:0}.fh-rz.b{bottom:0}
+.fh-bar.mv{cursor:grab}
+.fh-bar.sel{outline:2px solid #0b4a7d;z-index:3}
+.fh-bar.mk{outline:2px solid #e8912d;z-index:3}
+.fh-bar.sel.mk{outline:2px solid #0b4a7d;box-shadow:0 0 0 4px rgba(232,145,45,.55)}
+</style>
+<div class="panel" id="panel-feuille-heures">
+  <div class="home-wrap" style="max-width:1240px">
+    <div class="home-title" style="margin-top:44px">Saisie</div>
+    <div class="home-sub">Cliquez-tirez sur le calendrier pour saisir une plage, puis choisissez l'affaire et la phase</div>
+    <div class="adm-wrap">
+      <div class="adm-form" style="align-items:center;flex-wrap:wrap">
+        <span id="fh_seg" style="display:inline-flex;border:1px solid #003346;border-radius:6px;overflow:hidden">
+          <button id="fh_seg_w" onclick="fhSetMode('w')" style="border:none;padding:6px 13px;cursor:pointer;font-size:12.5px;background:#003346;color:#fff">Semaine</button>
+          <button id="fh_seg_m" onclick="fhSetMode('m')" style="border:none;padding:6px 13px;cursor:pointer;font-size:12.5px;background:#fff;color:#003346">Mois</button>
+        </span>
+        <select id="fh_collab" onchange="fhRender()" style="min-width:170px;margin-left:12px"></select>
+        <button class="btn btn-sm" onclick="fhToday()" style="margin-left:14px">Aujourd'hui</button>
+        <button class="btn btn-sm" onclick="fhNavBig(-1)" title="Reculer (4 semaines / 3 mois)">◀◀</button>
+        <button class="btn btn-sm" onclick="fhNav(-1)" title="Précédent">◀</button>
+        <span id="fh_semaine" style="font-weight:600;min-width:230px;text-align:center"></span>
+        <button class="btn btn-sm" onclick="fhNav(1)" title="Suivant">▶</button>
+        <button class="btn btn-sm" onclick="fhNavBig(1)" title="Avancer (4 semaines / 3 mois)">▶▶</button>
+        <span style="position:relative;margin-left:8px">
+          <button class="btn btn-sm" onclick="fhPenMenu(event)" title="Actions sur la plage sélectionnée" style="font-size:15px;line-height:1;padding:5px 11px">✏︎</button>
+          <div id="fh_pen_menu" style="display:none;position:absolute;top:110%;right:0;background:#fff;border:1px solid #b5b5b5;border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.25);padding:5px 0;z-index:9200;min-width:240px;text-align:left"></div>
+        </span>
+        <span style="position:relative;margin-left:4px">
+          <button class="btn btn-sm" onclick="fhOptMenu(event)" title="Options d'affichage" style="font-size:16px;line-height:1;padding:5px 11px">⚙︎</button>
+          <div id="fh_opt_menu" style="display:none;position:absolute;top:110%;right:0;background:#fff;border:1px solid #b5b5b5;border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.25);padding:5px 0;z-index:9200;min-width:255px;text-align:left"></div>
+        </span>
+        <span id="fh_total_sem" style="margin-left:auto;font-weight:700;color:#003346;font-size:14px"></span>
+      </div>
+      <div id="fh_cal" style="margin-top:10px;user-select:none"></div>
+      <div style="margin-top:8px;color:#999;font-size:11.5px">Cliquer-tirer = nouvelle plage · clic sur une plage = modifier ou supprimer. Les heures importées sans horaire s'affichent en début de journée (bord pointillé).</div>
+    </div>
+  </div>
+</div>
+<!-- Modale de saisie de la feuille d'heures -->
+<div id="fh_modal_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:9000">
+  <div style="background:#fff;width:920px;max-width:95vw;height:560px;max-height:calc(100vh - 60px);margin:30px auto;border-radius:10px;padding:18px 22px;box-shadow:0 8px 40px rgba(0,0,0,.35);resize:both;overflow:auto;display:flex;flex-direction:column;box-sizing:border-box">
+    <div id="fh_m_titre" style="font-weight:700;font-size:15px">Nouvelle saisie</div>
+    <div id="fh_m_plage" style="color:#666;font-size:12.5px;margin:2px 0 10px"></div>
+    <div style="display:flex;gap:18px;margin:0 0 10px;font-size:13px">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="radio" name="fh_m_type" id="fh_m_type_w" checked onchange="fhModalMode()"> Temps de travail</label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="radio" name="fh_m_type" id="fh_m_type_v" onchange="fhModalMode()"> Vacances</label>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-height:0">
+      <div id="fh_m_work" style="display:grid;grid-template-columns:1.6fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;flex:1;min-height:0">
+        <div class="fh-pan">
+          <div class="hd">Affaire <input id="fh_p_aff_f" placeholder="filtrer…" oninput="fhPanFill('aff')" style="float:right;width:45%;font-weight:400;font-size:11px;padding:1px 5px;border:1px solid #ccc;border-radius:3px"></div>
+          <div class="ls" id="fh_p_aff"></div>
+        </div>
+        <div class="fh-pan"><div class="hd">Groupe d'activités</div><div class="ls" id="fh_p_grp"></div>
+          <div class="clr" onclick="fhPanClear('grp')">✕ Annuler la sélection</div></div>
+        <div class="fh-pan"><div class="hd">Activité</div><div class="ls" id="fh_p_act"></div>
+          <div class="clr" onclick="fhPanClear('act')">✕ Annuler la sélection</div></div>
+        <div class="fh-pan"><div class="hd">Ouvrage</div><div class="ls" id="fh_p_ouv"></div>
+          <div class="clr" onclick="fhPanClear('ouv')">✕ Annuler la sélection</div></div>
+        <div class="fh-pan"><div class="hd">Phase</div><div class="ls" id="fh_p_pg"></div>
+          <div class="clr" onclick="fhPanClear('pg')">✕ Annuler la sélection</div></div>
+        <div class="fh-pan"><div class="hd">Phase partielle</div><div class="ls" id="fh_p_ph"></div>
+          <div class="clr" onclick="fhPanClear('ph')">✕ Annuler la sélection</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-weight:700;font-size:12.5px;white-space:nowrap">Commentaire</span>
+        <input id="fh_m_desc" style="flex:1;padding:7px 9px;border:1px solid #ccc;border-radius:5px">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button id="fh_m_del" class="btn btn-sm" style="margin-right:auto;color:#c00" onclick="fhModalDelete()">Supprimer</button>
+      <button class="btn btn-sm" onclick="fhModalClose()">Annuler</button>
+      <button class="btn btn-blue btn-sm" onclick="fhModalSave()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── VUE : VACANCES (consultation par collaborateur / année) ── -->
+<style id="rap-style">
+#rap_out .rap-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
+#rap_out .rap-tb th{font-weight:600;padding:5px 9px;border-bottom:1px solid #b5b5b5;border-right:1px solid #e6e6e6;background:#fff;white-space:nowrap;text-align:left}
+#rap_out .rap-tb td{padding:3.5px 9px;border-right:1px solid #f0f0f0;white-space:nowrap}
+#rap_out .rap-tb td:last-child,#rap_out .rap-tb th:last-child{border-right:none}
+#rap_out .rap-tb td:last-child{white-space:normal}
+#rap_out .rap-tb tr.od td{background:#eef2fb}
+#rap_out .rap-tb tr.tt td{font-weight:700}
+#rap_out .rap-tb tbody tr:hover td{background:#e3ecf7}
+#rap_out .rap-init{width:90px;text-align:right;border:1px solid #cfcfcf;border-radius:4px;padding:2px 5px;font-size:12px;background:#fffbe8}
+.rap-menu{display:none;position:absolute;top:110%;right:0;background:#fff;border:1px solid #b5b5b5;border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.25);padding:5px 0;z-index:9200;min-width:270px;text-align:left}
+#rap_legend{display:flex;justify-content:center;margin-top:2px;padding-bottom:8px}
+#rap_legend .bx{display:flex;gap:16px;border:1px solid #ccc;background:#fff;padding:6px 14px;font-size:12px;align-items:center}
+#rap_legend .sq{display:inline-block;width:13px;height:13px;margin-right:5px;vertical-align:-2px}
+</style>
+<div class="panel" id="panel-rapport">
+  <div class="home-wrap" style="max-width:1240px">
+    <div class="home-title" style="margin-top:44px">Rapport</div>
+    <div class="home-sub">Rapports des heures par collaborateur — semaine, mois, trimestre, semestre, année et vacances</div>
+    <div class="adm-wrap">
+      <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
+        <select id="rap_type" onchange="rapSetType(this.value)" style="min-width:185px">
+          <option value="heb">Rapport hebdomadaire</option>
+          <option value="men">Rapport mensuel</option>
+          <option value="jour">Journal mensuel</option>
+          <option value="tri">Rapport trimestriel</option>
+          <option value="sem">Rapport semestriel</option>
+          <option value="ann">Rapport annuel</option>
+          <option value="vac">Rapport des vacances</option>
+        </select>
+        <select id="rap_collab" onchange="rapRender()" style="min-width:165px"></select>
+        <button class="btn btn-sm" id="rap_per_prev" onclick="rapNavPer(-1)" title="Période précédente">◀</button>
+        <select id="rap_periode" onchange="rapPerChange(this.value)" style="min-width:215px"></select>
+        <button class="btn btn-sm" id="rap_per_next" onclick="rapNavPer(1)" title="Période suivante">▶</button>
+        <button class="btn btn-sm" onclick="rapNavYear(-1)" title="Année précédente">◀</button>
+        <span id="rap_annee" style="font-weight:600;min-width:44px;text-align:center"></span>
+        <button class="btn btn-sm" onclick="rapNavYear(1)" title="Année suivante">▶</button>
+        <span style="position:relative">
+          <button class="btn btn-sm" onclick="rapMenu(event,'rap_doc_menu')" title="Rapport / diagramme" style="font-size:14px;line-height:1;padding:5px 10px">📄 ▾</button>
+          <div id="rap_doc_menu" class="rap-menu" style="display:none"></div>
+        </span>
+        <span style="position:relative">
+          <button class="btn btn-sm" onclick="rapMenu(event,'rap_out_menu')" title="Exporter" style="font-size:15px;line-height:1;padding:5px 10px">⚙︎ ▾</button>
+          <div id="rap_out_menu" class="rap-menu" style="display:none"></div>
+        </span>
+        <span style="margin-left:auto;color:#555;font-size:12px">Prévu
+          <input id="rap_hj" type="number" step="0.25" min="0" max="12" onchange="rapSetHj(this.value)" style="width:58px;padding:3px 5px;margin:0 3px"> h/jour ouvré
+        </span>
+      </div>
+      <div id="rap_out" style="margin-top:12px;overflow:auto"></div>
     </div>
   </div>
 </div>
@@ -3041,7 +3323,9 @@ function onOptChange() {
 /* Arborescence de navigation : chaque vue « remonte » vers son parent (pour le bouton Retour). */
 const VIEW_PARENT = {
   'hub-admin':'home','hub-contrats':'home','hub-factures':'home','hub-cockpit':'home','backup':'home',
-  'affaires':'hub-admin','collaborateurs':'hub-admin','heures':'hub-admin','import-delta':'hub-admin','analyse-globale':'hub-admin','affaire-detail':'affaires','collab-detail':'collaborateurs',
+  'affaires':'hub-admin','collaborateurs':'hub-admin',
+  'hub-affaires':'home','pv-chantier':'hub-affaires','controle-cout':'hub-affaires','devis':'hub-affaires',
+  'hub-collabs':'home','hub-heures':'hub-collabs','feuille-heures':'hub-heures','rapport':'hub-heures','heures':'hub-admin','import-delta':'hub-admin','analyse-globale':'hub-admin','affaire-detail':'affaires','collab-detail':'collaborateurs',
   'contrats':'hub-contrats','calchono':'contrats',
   'factures':'hub-factures','saisie':'hub-factures',
   'cockpit':'hub-cockpit','cockpit2':'hub-cockpit'
@@ -3050,7 +3334,9 @@ const VIEW_TITLE = {
   'contrats':'Contrats · Liste','calchono':'Contrats · Calcul des honoraires',
   'factures':'Factures · Liste','saisie':'Factures · Saisie',
   'cockpit':'Cockpit Excel','cockpit2':'Cockpit Claude',
-  'hub-admin':'Admin','affaires':'Admin · Affaires','collaborateurs':'Admin · Collaborateurs','heures':'Admin · Heures','import-delta':'Admin · Import Deltaproject','analyse-globale':'Admin · Analyse globale','affaire-detail':'Analyse d\'affaire','collab-detail':'Fiche collaborateur',
+  'hub-admin':'Admin','affaires':'Admin \u00b7 Affaires',
+  'hub-affaires':'Affaires','pv-chantier':'Affaires \u00b7 PV de chantier','controle-cout':'Affaires \u00b7 Contr\u00f4le du co\u00fbt','devis':'Affaires \u00b7 Devis',
+  'hub-collabs':'Collaborateurs','hub-heures':'Collaborateurs · Heures','feuille-heures':'Heures · Saisie','rapport':'Heures · Rapport','collaborateurs':'Admin · Collaborateurs','heures':'Admin · Heures','import-delta':'Admin · Import Deltaproject','analyse-globale':'Admin · Analyse globale','affaire-detail':'Analyse d\'affaire','collab-detail':'Fiche collaborateur',
   'hub-contrats':'Contrats','hub-factures':'Factures','hub-cockpit':'Cockpit',
   'backup':'Import / Export'
 };
@@ -3074,6 +3360,8 @@ function goTab(name, opts) {
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
   if(name==='heures') renderHeures();
+  if(name==='feuille-heures') fhRender();
+  if(name==='rapport') rapRender();
   if(name==='affaire-detail') renderAffaireDetail();
   if(name==='collab-detail') renderCollabDetail();
   if(name==='analyse-globale') renderAnalyseGlobale();
@@ -9930,6 +10218,7 @@ function buildBackupPayload(){
     sa_affaires_statut: g('sa_affaires_statut') || {},
     sa_affaires_analyse: g('sa_affaires_analyse') || {},
     sa_vacances: g('sa_vacances') || {},
+    sa_vac_saisies: g('sa_vac_saisies') || [],
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
   };
@@ -10103,6 +10392,7 @@ function applyBackupData(data, name){
     if(data.sa_affaires_statut && typeof data.sa_affaires_statut==='object') localStorage.setItem('sa_affaires_statut', JSON.stringify(data.sa_affaires_statut));
     if(data.sa_affaires_analyse && typeof data.sa_affaires_analyse==='object') localStorage.setItem('sa_affaires_analyse', JSON.stringify(data.sa_affaires_analyse));
     if(data.sa_vacances && typeof data.sa_vacances==='object') localStorage.setItem('sa_vacances', JSON.stringify(data.sa_vacances));
+    if(Array.isArray(data.sa_vac_saisies)) localStorage.setItem('sa_vac_saisies', JSON.stringify(data.sa_vac_saisies));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
     // Message de réussite : posé AVANT le rechargement, affiché en toast au démarrage (sinon il disparaîtrait).
@@ -10242,6 +10532,7 @@ let affairesManuelles = [];
 let affairesStatut = {};   // { codeAffaire: 'En cours' | 'En attente' | 'Terminée' | 'Archivée' }
 let analyseAffaires = {};  // { codeAffaire: { prevuTotal, comments:{phaseKey:{type,text}}, commentGlobal } }
 let vacances = {};         // { collabId: { année: heures } } — heures de vacances (hors affaires)
+let vacSaisies = [];       // vacances saisies dans la Feuille d'heures : {id,collab,date,debut,fin,heures,desc} (2026-09-22)
 let collabAnnuel = {};     // { collabId: { année: {eff, prev} } } — heures effectives & prévues (fichiers prénom_Export_année)
 let collabMensuel = {};    // { collabId: { année: { mm: {eff, vac} } } } — détail mensuel (effectives, vacances)
 function vacHours(cid,year){ return (vacances[cid] && +vacances[cid][year]) || 0; }
@@ -10285,6 +10576,7 @@ function persistAdmin(){
     localStorage.setItem('sa_affaires_statut', JSON.stringify(affairesStatut));
     localStorage.setItem('sa_affaires_analyse', JSON.stringify(analyseAffaires));
     localStorage.setItem('sa_vacances', JSON.stringify(vacances));
+    localStorage.setItem('sa_vac_saisies', JSON.stringify(vacSaisies));
     localStorage.setItem('sa_collab_annuel', JSON.stringify(collabAnnuel));
     localStorage.setItem('sa_collab_mensuel', JSON.stringify(collabMensuel));
   }catch(e){ console.warn('localStorage indisponible:', e); }
@@ -10452,6 +10744,738 @@ function heureEdit(id){
   document.getElementById('h_save_btn').textContent='✓ Enregistrer'; document.getElementById('h_cancel_btn').style.display='';
 }
 function heureCancelEdit(){ _heureEditId=null; heureResetForm(); }
+
+/* ═══ FEUILLE D'HEURES — calendrier hebdomadaire façon Deltaproject (2026-09-22) ═══
+   Plages horodatées saisies au cliquer-tirer ; mêmes données que Admin · Heures (tableau
+   global `heures` + persistAdmin). Les lignes saisies ici portent en plus debut/fin ('HH:MM')
+   et source:'fh' ; les lignes importées sans horaire s'empilent en début de journée. */
+const FH_H0=6, FH_H1=20; let FH_PXH=46;      // plage affichée 06:00–20:00, 46 px/h (64 si « Agrandir »)
+/* Options d'affichage de la feuille d'heures (menu ⚙︎ façon Deltaproject, 2026-09-22) —
+   préférences locales du navigateur (sa_fh_opts). */
+let fhOpts={grand:false, titreDuree:true, titreAffaire:false, activites:true, phases:true,
+            commentaires:true, feries:true, samedis:true, dimanches:true};
+try{ const o=JSON.parse(localStorage.getItem('sa_fh_opts')||'{}'); Object.assign(fhOpts,o); }catch(e){}
+FH_PXH=fhOpts.grand?64:46;
+function fhOptToggle(k){
+  fhOpts[k]=!fhOpts[k];
+  if(k==='grand') FH_PXH=fhOpts.grand?64:46;
+  try{ localStorage.setItem('sa_fh_opts', JSON.stringify(fhOpts)); }catch(e){}
+  fhOptMenuFill(); fhRender();
+}
+function fhOptMenuFill(){
+  const m=document.getElementById('fh_opt_menu'); if(!m) return;
+  const it=(k,lbl)=>'<div onclick="fhOptToggle(\''+k+'\')" style="padding:6px 14px;cursor:pointer;font-size:12.5px;white-space:nowrap" onmouseover="this.style.background=\'#eef4f9\'" onmouseout="this.style.background=\'\'">'+
+    '<span style="display:inline-block;width:16px;color:#1b6fb8;font-weight:700">'+(fhOpts[k]?'✓':'')+'</span>'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #e4e4e4;margin:4px 0"></div>';
+  m.innerHTML=it('grand','Agrandir')+sep+
+    it('titreDuree','Titre : afficher la durée')+it('titreAffaire','Titre : afficher l\'affaire')+sep+
+    it('activites','Afficher les activités')+it('phases','Afficher les phases')+it('commentaires','Afficher les commentaires')+sep+
+    it('feries','Taguer les jours fériés')+sep+
+    it('samedis','Taguer les samedis')+it('dimanches','Taguer les dimanches');
+}
+function fhOptMenu(ev){
+  ev.stopPropagation();
+  const m=document.getElementById('fh_opt_menu');
+  const open=m.style.display!=='none';
+  if(open){ m.style.display='none'; return; }
+  fhOptMenuFill(); m.style.display='block';
+  const close=e=>{ if(!m.contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
+  setTimeout(()=>document.addEventListener('mousedown',close),0);
+}
+/* Jours fériés (canton de Vaud) — Pâques par l'algorithme de Meeus. */
+function fhFeries(y){
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  const paques=new Date(y, Math.floor((h+l-7*m+114)/31)-1, ((h+l-7*m+114)%31)+1);
+  const add=(dd,n)=>{ const x=new Date(dd); x.setDate(x.getDate()+n); return x; };
+  const out={};
+  out[y+'-01-01']='Nouvel An'; out[y+'-01-02']='2 janvier';
+  out[fhISO(add(paques,-2))]='Vendredi saint'; out[fhISO(add(paques,1))]='Lundi de Pâques';
+  out[fhISO(add(paques,39))]='Ascension'; out[fhISO(add(paques,50))]='Lundi de Pentecôte';
+  out[y+'-08-01']='Fête nationale';
+  const s1=new Date(y,8,1), off=(7-s1.getDay())%7, jeune=1+off+14;   // 3e dimanche de septembre
+  out[fhISO(new Date(y,8,jeune+1))]='Lundi du Jeûne';
+  out[y+'-12-25']='Noël';
+  return out;
+}
+let _fhMonday=null, _fhDrag=null, _fhEdit=null, _fhCtx=null, _fhMode='w';
+function fhWeekStart(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; }
+function fhISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fhWeekNum(d){ const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const wd=(x.getUTCDay()+6)%7; x.setUTCDate(x.getUTCDate()-wd+3); const y0=new Date(Date.UTC(x.getUTCFullYear(),0,4)); return 1+Math.round(((x-y0)/86400000-3+((y0.getUTCDay()+6)%7))/7); }
+function fhHM(mins){ return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0'); }
+function fhMins(hm){ const m=/^(\d{1,2}):(\d{2})$/.exec(hm||''); return m ? (+m[1])*60+(+m[2]) : null; }
+function fhSetMode(m){
+  _fhMode=m;
+  const w=document.getElementById('fh_seg_w'), mo=document.getElementById('fh_seg_m');
+  if(w){ w.style.background=m==='w'?'#003346':'#fff'; w.style.color=m==='w'?'#fff':'#003346'; }
+  if(mo){ mo.style.background=m==='m'?'#003346':'#fff'; mo.style.color=m==='m'?'#fff':'#003346'; }
+  fhRender();
+}
+function fhNav(n){ if(_fhMode==='m'){ _fhMonday.setMonth(_fhMonday.getMonth()+n); } else { _fhMonday.setDate(_fhMonday.getDate()+7*n); } fhRender(); }
+function fhNavBig(n){ if(_fhMode==='m'){ _fhMonday.setMonth(_fhMonday.getMonth()+3*n); } else { _fhMonday.setDate(_fhMonday.getDate()+28*n); } fhRender(); }
+function fhShiftWeek(n){ fhNav(n); }
+function fhToday(){ _fhMonday=fhWeekStart(new Date()); fhRender(); }
+function fhGoWeek(iso){ _fhMonday=fhWeekStart(new Date(iso+'T12:00:00')); fhSetMode('w'); }
+function fhRender(){
+  const sel=document.getElementById('fh_collab'); if(!sel) return;
+  if(!_fhMonday) _fhMonday=fhWeekStart(new Date());
+  const actifs=(collaborateurs||[]).filter(c=>c.statut!=='ancien');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Votre nom —</option>'+actifs.map(c=>`<option value="${c.id}">${c.nom}</option>`).join('');
+  if(cur) sel.value=cur;
+  const cid=sel.value;
+  if(_fhMode==='m'){ fhRenderMonth(cid); return; }
+  const JOURS=['lun.','mar.','mer.','jeu.','ven.','sam.','dim.'];
+  const MOISC=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  const d0=new Date(_fhMonday), d6=new Date(_fhMonday); d6.setDate(d6.getDate()+6);
+  document.getElementById('fh_semaine').textContent=
+    'Semaine '+fhWeekNum(d0)+' · '+d0.getDate()+' '+MOISC[d0.getMonth()]+' – '+d6.getDate()+' '+MOISC[d6.getMonth()]+' '+d6.getFullYear();
+  const cal=document.getElementById('fh_cal');
+  if(!cid){ cal.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Choisissez votre nom pour afficher votre semaine.</div>';
+            document.getElementById('fh_total_sem').textContent=''; return; }
+  const H=(FH_H1-FH_H0)*FH_PXH;
+  let totalSem=0, totalVac=0;
+  let html='<div style="display:flex;border:1px solid #d5d5d5;border-left:none;border-radius:4px;overflow:hidden">';
+  html+='<div style="width:46px;flex:0 0 46px;border-left:1px solid #d5d5d5"><div class="fh-dayhead"></div><div style="position:relative;height:'+H+'px">';
+  for(let h=FH_H0+1;h<FH_H1;h++) html+='<div style="position:absolute;top:'+(((h-FH_H0)*FH_PXH)-7)+'px;right:5px;color:#999;font-size:10px">'+h+':00</div>';
+  html+='</div></div>';
+  for(let k=0;k<7;k++){
+    const dk=new Date(_fhMonday); dk.setDate(dk.getDate()+k);
+    const iso=fhISO(dk);
+    const lignes=[...(heures||[]).filter(h=>h.collab===cid && h.date===iso),
+                  ...(vacSaisies||[]).filter(v=>v.collab===cid && v.date===iso).map(v=>Object.assign({_vac:true}, v))];
+    const totJ=lignes.filter(h=>!h._vac).reduce((t,h)=>t+(+h.heures||0),0); totalSem+=totJ;
+    totalVac+=lignes.filter(h=>h._vac).reduce((t,h)=>t+(+h.heures||0),0);
+    const fer=fhOpts.feries ? (fhFeries(dk.getFullYear())[iso]||null) : null;
+    const we=fer?' fe':(((k===5&&fhOpts.samedis)||(k===6&&fhOpts.dimanches))?' we':'');
+    html+='<div class="fh-daycol"><div class="fh-dayhead"><div style="font-weight:600">'+JOURS[k]+' '+dk.getDate()+'. '+MOISC[dk.getMonth()]+'</div>'+
+          '<div style="color:#777;font-size:10.5px">'+(fer?'<span style="color:#2e7d32">'+fer+'</span>'+(totJ?' · ':''):'')+(totJ?totJ.toFixed(2).replace(/\.00$/,'.0')+' h':'')+'</div></div>'+
+          '<div class="fh-zone'+we+'" style="height:'+H+'px" data-day="'+k+'" data-iso="'+iso+'" onmousedown="fhDown(event,this)">';
+    let pile=0;                                   // empilement des lignes SANS horaire
+    lignes.sort((a,b)=>(fhMins(a.debut)??999)-(fhMins(b.debut)??999));
+    lignes.forEach(h=>{
+      let m0=fhMins(h.debut), m1=fhMins(h.fin), sansH=false;
+      if(m0===null || m1===null || m1<=m0){ sansH=true; m0=FH_H0*60+pile; m1=m0+Math.round((+h.heures||0.5)*60); pile+= Math.round((+h.heures||0.5)*60); }
+      const top=Math.max(0,(m0-FH_H0*60)/60*FH_PXH), bot=Math.min(H,(m1-FH_H0*60)/60*FH_PXH);
+      const hh=Math.max(14,bot-top);
+      const aff=h._vac ? 'Vacances' : (h.affaire||'')+((typeof affairesAll==='function' && (affairesAll().find(a=>a.code===h.affaire)||{}).projet) ? ': '+(affairesAll().find(a=>a.code===h.affaire)||{}).projet : '');
+      let bd = sansH ? '' : (h.debut+' – '+h.fin);
+      if(fhOpts.titreDuree) bd += (bd?', ':'')+(+h.heures||0).toFixed(2)+' h';
+      if(fhOpts.titreAffaire && !h._vac && h.affaire) bd += (bd?' · ':'')+h.affaire;
+      if(!bd) bd=(+h.heures||0).toFixed(2)+' h';
+      let l2='';
+      if(!h._vac){
+        if(fhOpts.activites && h.activite) l2+=h.activite;
+        if(fhOpts.phases){
+          if(h.ouvrage) l2+=(l2?' · ':'')+h.ouvrage;
+          if(h.phaseGroupe||h.phase) l2+=(l2?' · ':'')+(h.phaseGroupe||'')+(h.phase?' / '+h.phase:'');
+        }
+      }
+      html+='<div class="fh-bar'+(h._vac?' vac':'')+(sansH?'':' mv')+(h.id===_fhSelW?' sel':'')+((!h._vac&&_fhMark&&h.affaire===_fhMark)?' mk':'')+'" data-id="'+h.id+'" data-hor="'+(sansH?0:1)+'"'+
+            ' style="top:'+top+'px;height:'+hh+'px'+(sansH?';border-style:dashed':'')+'"'+
+            ' onmousedown="fhBarDown(event,this)" onclick="fhBarClick(event,this)" ondblclick="fhEditBar(this.dataset.id)">'+
+            '<div class="bd">'+bd.replace(/</g,'&lt;')+'</div>'+
+            '<div class="ct"><div class="af">'+aff.replace(/</g,'&lt;').slice(0,60)+'</div>'+
+            (l2?'<div class="l2">'+l2.replace(/</g,'&lt;')+'</div>':'')+
+            (fhOpts.commentaires&&h.desc?'<div class="cm">'+String(h.desc).replace(/</g,'&lt;').slice(0,90)+'</div>':'')+'</div>'+
+            (sansH?'':'<div class="fh-rz t" data-edge="t"></div><div class="fh-rz b" data-edge="b"></div>')+'</div>';
+    });
+    html+='</div></div>';
+  }
+  html+='</div>';
+  cal.innerHTML=html;
+  document.getElementById('fh_total_sem').textContent='Semaine : '+totalSem.toFixed(2)+' h'+(totalVac>0?' · Vacances : '+totalVac.toFixed(2)+' h':'');
+}
+function fhRenderMonth(cid){
+  // Vue MOIS = TABLEAU de lignes façon Deltaproject (2026-09-22, capture 4.webp) :
+  // Date · Début · Fin · Durée · Fact. · Affaire · Ouvrage · Phase · Phase partielle · Commentaire.
+  // Sélection au clic (+ boutons ✚ ✏ −), double-clic = modifier ; lignes VACANCES en orange.
+  const MOISL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const ref=new Date(_fhMonday); ref.setDate(ref.getDate()+3);
+  const y=ref.getFullYear(), mo=ref.getMonth();
+  document.getElementById('fh_semaine').textContent=MOISL[mo]+' '+y;
+  const cal=document.getElementById('fh_cal');
+  if(!cid){ cal.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Choisissez votre nom pour afficher votre mois.</div>';
+            document.getElementById('fh_total_sem').textContent=''; return; }
+  const pfx=y+'-'+String(mo+1).padStart(2,'0');
+  const lignes=[...(heures||[]).filter(h=>h.collab===cid && (h.date||'').startsWith(pfx)),
+                ...(vacSaisies||[]).filter(v=>v.collab===cid && (v.date||'').startsWith(pfx)).map(v=>Object.assign({_vac:true}, v))]
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.debut||'99').localeCompare(b.debut||'99'));
+  const totW=lignes.filter(h=>!h._vac).reduce((t,h)=>t+(+h.heures||0),0);
+  const totV=lignes.filter(h=>h._vac).reduce((t,h)=>t+(+h.heures||0),0);
+  const esc=t=>String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const fdate=d=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||''); return m ? m[3]+'.'+m[2]+'.'+m[1].slice(2) : (d||''); };
+  let html='<div style="display:flex;gap:6px;margin-bottom:8px">'+
+    '<button class="btn btn-sm" title="Nouvelle saisie" onclick="fhMonthAdd()">✚</button>'+
+    '<button class="btn btn-sm" title="Modifier la ligne sélectionnée" onclick="fhMonthEdit()">✏</button>'+
+    '<button class="btn btn-sm" title="Supprimer la ligne sélectionnée" onclick="fhMonthDel()" style="color:#c00">−</button>'+
+    '</div>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #d5d5d5">'+
+    '<thead><tr style="background:#003346;color:#fff">'+
+    ['Date','Début','Fin','Durée','Fact.','Groupe d\'activités','Activité','Affaire','Ouvrage','Phase','Phase partielle','Commentaire']
+      .map((c,i)=>'<th style="padding:5px 8px;text-align:'+(i>=1&&i<=4?'right':'left')+';white-space:nowrap">'+c+'</th>').join('')+
+    '</tr></thead><tbody>';
+  if(!lignes.length) html+='<tr><td colspan="12" style="padding:12px;color:#999">Aucune saisie ce mois.</td></tr>';
+  lignes.forEach((h,i)=>{
+    const selCls=(h.id===_fhSel)?'background:#cfe4f7;':((!h._vac&&_fhMark&&h.affaire===_fhMark)?'background:#ffe9c9;':(h._vac?'background:#fff3e2;':(i%2?'background:#f7f9fb;':'')));
+    html+='<tr data-id="'+h.id+'" onclick="fhMonthSel(\''+h.id+'\')" ondblclick="fhEditBar(\''+h.id+'\')" style="cursor:pointer;'+selCls+'border-top:1px solid #e8e8e8">'+
+      '<td style="padding:4px 8px;white-space:nowrap">'+fdate(h.date)+'</td>'+
+      '<td style="padding:4px 8px;text-align:right">'+(h.debut||'')+'</td>'+
+      '<td style="padding:4px 8px;text-align:right">'+(h.fin||'')+'</td>'+
+      '<td style="padding:4px 8px;text-align:right;font-weight:600">'+(+h.heures||0).toFixed(2)+'</td>'+
+      '<td style="padding:4px 8px;text-align:right">'+(h._vac?'':(h.facturable===false?'✕':'✔'))+'</td>'+
+      '<td style="padding:4px 8px">'+(h._vac?'':esc(h.grpAct||''))+'</td>'+
+      '<td style="padding:4px 8px">'+(h._vac?'':esc(h.activite||''))+'</td>'+
+      '<td style="padding:4px 8px;white-space:nowrap">'+(h._vac?'<b style="color:#c77414">Vacances</b>':esc(h.affaire))+'</td>'+
+      '<td style="padding:4px 8px">'+esc(h.ouvrage||'')+'</td>'+
+      '<td style="padding:4px 8px">'+esc(h.phaseGroupe||'')+'</td>'+
+      '<td style="padding:4px 8px">'+esc(h.phase||'')+'</td>'+
+      '<td style="padding:4px 8px;color:#555">'+esc(h.desc||'')+'</td>'+
+      '</tr>';
+  });
+  html+='</tbody></table>';
+  cal.innerHTML=html;
+  document.getElementById('fh_total_sem').textContent='Mois : '+totW.toFixed(2)+' h'+(totV>0?' · Vacances : '+totV.toFixed(2)+' h':'');
+}
+let _fhSel=null;
+function fhMonthSel(id){ _fhSel=(_fhSel===id)?null:id; fhRender(); }
+function fhMonthEdit(){ if(!_fhSel){ toast('Sélectionnez une ligne.', true); return; } fhEditBar(_fhSel); }
+function fhMonthDel(){
+  if(!_fhSel){ toast('Sélectionnez une ligne.', true); return; }
+  const id=_fhSel;
+  chConfirm('Supprimer cette ligne ?', ()=>{ heures=heures.filter(x=>x.id!==id); vacSaisies=vacSaisies.filter(x=>x.id!==id); _fhSel=null; persistAdmin(); fhRender(); },
+            {title:'Supprimer', yesText:'Supprimer', yesColor:'#c00'});
+}
+function fhMonthAdd(){
+  const ref=new Date(_fhMonday); ref.setDate(ref.getDate()+3);
+  const now=new Date();
+  const iso=(now.getFullYear()===ref.getFullYear() && now.getMonth()===ref.getMonth()) ? fhISO(now)
+            : fhISO(new Date(ref.getFullYear(), ref.getMonth(), 1));
+  fhOpenModal({iso, de:'08:00', a:'09:00'});
+}
+function fhDown(ev, zone){
+  if(ev.button!==0) return;
+  if(document.getElementById('fh_modal_ov').style.display!=='none') return;   // dialogue ouvert → pas de nouveau drag
+  const cid=document.getElementById('fh_collab').value; if(!cid) return;
+  const r=zone.getBoundingClientRect();
+  const snap=m=>Math.max(FH_H0*60, Math.min(FH_H1*60, Math.round(m/15)*15));
+  const y2m=y=>snap(FH_H0*60 + (y - r.top)/FH_PXH*60);
+  const m0=y2m(ev.clientY);
+  const g=document.createElement('div'); g.className='fh-ghost'; zone.appendChild(g);
+  _fhDrag={zone, iso:zone.dataset.iso, m0, m1:m0+15, g, r};
+  const paint=()=>{ const a=Math.min(_fhDrag.m0,_fhDrag.m1), b=Math.max(_fhDrag.m0,_fhDrag.m1);
+    g.style.top=((a-FH_H0*60)/60*FH_PXH)+'px'; g.style.height=(Math.max(15,b-a)/60*FH_PXH)+'px'; };
+  paint();
+  const mv=e=>{ _fhDrag.m1=y2m(e.clientY); paint(); };
+  const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up);
+    const a=Math.min(_fhDrag.m0,_fhDrag.m1), b=Math.max(_fhDrag.m0,_fhDrag.m1);
+    g.remove();
+    if(b-a>=15){
+      if(_fhCopyBuf){                              // collage DIRECT : pas de fenêtre (2026-09-22)
+        const buf=_fhCopyBuf; _fhCopyBuf=null;
+        const cid2=document.getElementById('fh_collab').value;
+        const base={collab:cid2, date:_fhDrag.iso, debut:fhHM(a), fin:fhHM(b), heures:+((b-a)/60).toFixed(2), desc:buf.desc||''};
+        if(buf.vac) vacSaisies.push(Object.assign({id:UID()}, base));
+        else heures.push(Object.assign({id:UID(), affaire:buf.affaire||'', ouvrage:buf.ouvrage||'', grpAct:buf.grpAct||'', activite:buf.activite||'', phaseGroupe:buf.phaseGroupe||'', phase:buf.phase||'', source:'fh'}, base));
+        persistAdmin(); fhRender();
+      } else fhOpenModal({iso:_fhDrag.iso, de:fhHM(a), a:fhHM(b)});
+    }
+    _fhDrag=null; };
+  document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+  ev.preventDefault();
+}
+function fhOpenModal(ctx){
+  _fhCtx=ctx; _fhEdit=ctx.editId||null;
+  // (panneaux-listes : remplis plus bas, une fois _fhPanSel initialisé)
+  const h=_fhEdit ? ((heures||[]).find(x=>x.id===_fhEdit) || (vacSaisies||[]).find(x=>x.id===_fhEdit)) : null;
+  const estVac=!!(h && (vacSaisies||[]).some(x=>x.id===_fhEdit));
+  document.getElementById('fh_m_type_w').checked=!estVac;
+  document.getElementById('fh_m_type_v').checked=estVac;
+  fhModalMode();
+  document.getElementById('fh_m_titre').textContent=h?'Modifier la saisie':'Nouvelle saisie';
+  const dd=new Date(ctx.iso+'T12:00:00');
+  const _de=(h?h.debut:ctx.de)||'', _fi=(h?h.fin:ctx.a)||'';
+  const _mA=fhMins(_de), _mB=fhMins(_fi);
+  document.getElementById('fh_m_plage').textContent=
+    dd.toLocaleDateString('fr-CH',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+
+    ((_mA!==null&&_mB!==null&&_mB>_mA) ? ' · '+_de+' – '+_fi+' ('+((_mB-_mA)/60).toFixed(2)+' h)'
+      : (h&&+h.heures ? ' · '+(+h.heures).toFixed(2)+' h (sans horaire)' : ''));
+  _fhCtx.de=_de; _fhCtx.a=_fi;
+  _fhPanSel={aff:h?(h.affaire||''):'', grp:h?(h.grpAct||''):'Affaire', act:h?(h.activite||''):'',
+             ouv:h?(h.ouvrage||''):'', pg:h?(h.phaseGroupe||''):'', ph:h?(h.phase||''):''};
+  const _afF=document.getElementById('fh_p_aff_f'); if(_afF) _afF.value='';
+  fhPanFillAll();
+  document.getElementById('fh_m_desc').value=h?(h.desc||''):'';
+  document.getElementById('fh_m_del').style.display=h?'':'none';
+  document.getElementById('fh_modal_ov').style.display='';
+  setTimeout(()=>document.getElementById('fh_p_aff_f')?.focus(),50);
+}
+function fhModalMode(){
+  const v=document.getElementById('fh_m_type_v').checked;
+  document.getElementById('fh_m_work').style.display=v?'none':'grid';
+}
+function fhModalSave(){
+  const cid=document.getElementById('fh_collab').value;
+  const estVac=document.getElementById('fh_m_type_v').checked;
+  const aff=_fhPanSel.aff;
+  const de=_fhCtx.de||'', fin=_fhCtx.a||'';
+  const a=fhMins(de), b=fhMins(fin);
+  if(!estVac && !aff && (!_fhPanSel.grp || _fhPanSel.grp==='Affaire')){ toast('Choisissez l\'affaire.', true); return; }
+  let heuresVal;
+  if(a!==null && b!==null && b>a) heuresVal=+((b-a)/60).toFixed(2);
+  else if(_fhEdit){ const h0=fhFind(_fhEdit); heuresVal=h0?(+h0.heures||0):0; }   // ligne importée sans horaire : durée conservée
+  else { toast('Plage horaire invalide.', true); return; }
+  const base={collab:cid, date:_fhCtx.iso, debut:de, fin, heures:heuresVal,
+              desc:(document.getElementById('fh_m_desc').value||'').trim()};
+  const oldId=_fhEdit;                        // le type peut changer → retirer des DEUX registres
+  if(oldId){ heures=heures.filter(x=>x.id!==oldId); vacSaisies=vacSaisies.filter(x=>x.id!==oldId); }
+  if(estVac){
+    vacSaisies.push(Object.assign({id:oldId||UID()}, base));
+  } else {
+    heures.push(Object.assign({id:oldId||UID(), affaire:aff,
+      grpAct:_fhPanSel.grp, activite:_fhPanSel.act, ouvrage:_fhPanSel.ouv,
+      phaseGroupe:_fhPanSel.pg, phase:_fhPanSel.ph, source:'fh'}, base));
+  }
+  persistAdmin(); fhModalClose(); fhRender();
+}
+function fhModalDelete(){
+  const id=_fhEdit; if(!id) return;
+  chConfirm('Supprimer cette plage ?', ()=>{ heures=heures.filter(x=>x.id!==id); vacSaisies=vacSaisies.filter(x=>x.id!==id); persistAdmin(); fhModalClose(); fhRender(); },
+            {title:'Supprimer', yesText:'Supprimer', yesColor:'#c00'});
+}
+function fhModalClose(){ document.getElementById('fh_modal_ov').style.display='none'; _fhEdit=null; _fhCtx=null; }
+/* ── PANNEAUX-LISTES du dialogue (2026-09-22, format « Nouvelle saisie » Deltaproject) :
+   6 listes cliquables — Affaire (filtrable) / Groupe d'activités / Activité / Ouvrage /
+   Phase / Phase partielle — sélection surlignée, re-clic ou « ✕ » = désélection. ── */
+let _fhPanSel={aff:'',grp:'',act:'',ouv:'',pg:'',ph:''};
+const FH_GRPS=['Affaire','Admin','Divers activité bureau'];
+const FH_ACTS=['Projet','Image de synthèse','Maquette','DT'];
+const FH_PGS=['Relevé et recherche de documentations','Faisabilité','Etude du projet','Appel d’offres','Réalisation'];
+function fhPanOptions(key){
+  const uniq=arr=>{ const seen=new Map(); arr.filter(Boolean).forEach(v=>{ const k=String(v).replace(/'/g,'’').trim(); if(!seen.has(k)) seen.set(k, v); }); return [...seen.values()]; };
+  if(key==='aff'){
+    const f=(document.getElementById('fh_p_aff_f')?.value||'').toLowerCase();
+    return affairesAll().filter(a=>!f || (a.code||'').toLowerCase().includes(f) || (a.projet||'').toLowerCase().includes(f))
+                        .map(a=>({v:a.code, l:a.projet||''}));
+  }
+  if(key==='grp') return uniq([...FH_GRPS, ...(heures||[]).map(h=>h.grpAct)]).map(v=>({v}));
+  if(key==='act') return uniq([...FH_ACTS, ...(heures||[]).map(h=>h.activite)]).map(v=>({v}));
+  if(key==='ouv'){
+    const code=_fhPanSel.aff;
+    const c=(contrats||[]).find(x=>x.affaire===code || x.id===code);
+    return uniq([...(c&&Array.isArray(c.ouvrages)?c.ouvrages:[]).map(o=>o.name),
+                 ...(heures||[]).filter(h=>h.affaire===code).map(h=>h.ouvrage)]).map(v=>({v}));
+  }
+  if(key==='pg') return uniq([...FH_PGS, ...(heures||[]).map(h=>h.phaseGroupe)]).map(v=>({v}));
+  if(key==='ph'){
+    const pg=_fhPanSel.pg;
+    const avec=pg ? uniq((heures||[]).filter(h=>h.phaseGroupe===pg).map(h=>h.phase)) : [];
+    return (avec.length?avec:uniq((heures||[]).map(h=>h.phase))).map(v=>({v}));
+  }
+  return [];
+}
+function fhPanFill(key){
+  const host=document.getElementById('fh_p_'+key); if(!host) return;
+  const esc=t=>String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  host.innerHTML=fhPanOptions(key).map(o=>'<div class="'+(o.v===_fhPanSel[key]?'on':'')+'" data-v="'+esc(o.v)+'" onclick="fhPanPick(\''+key+'\', this.dataset.v)">'+
+    (o.l!==undefined ? '<b>'+esc(o.v)+'</b>&nbsp; '+esc(o.l) : esc(o.v))+'</div>').join('')
+    || '<div style="color:#999;cursor:default">—</div>';
+  const on=host.querySelector('.on'); if(on) on.scrollIntoView({block:'nearest'});
+}
+function fhPanFillAll(){ ['aff','grp','act','ouv','pg','ph'].forEach(fhPanFill); }
+function fhPanPick(key, v){
+  _fhPanSel[key]=(_fhPanSel[key]===v)?'':v;
+  if(key==='aff'){ _fhPanSel.ouv=''; fhPanFill('ouv'); }
+  if(key==='pg') fhPanFill('ph');
+  fhPanFill(key);
+}
+function fhPanClear(key){ _fhPanSel[key]=''; fhPanFill(key); if(key==='pg') fhPanFill('ph'); }
+function fhEditBar(id){
+  const h=(heures||[]).find(x=>x.id===id) || (vacSaisies||[]).find(x=>x.id===id); if(!h) return;
+  fhOpenModal({iso:h.date, de:h.debut||'', a:h.fin||'', editId:id});
+}
+
+/* ── Interactions directes sur les barres (2026-09-22) : DÉPLACER (maintenir-glisser, y
+   compris vers un autre jour), ÉTIRER (poignées haut/bas), COPIER (Alt+clic → les données
+   affaire/phase/commentaire préremplissent la PROCHAINE plage tirée, les heures restant
+   celles du nouveau tirage). ── */
+let _fhSkipClick=false, _fhCopyBuf=null, _fhSelW=null, _fhMark=null;
+// Polices Akkurat LL TT pour l'UI (barres feuille d'heures) — réutilise les base64 des PDF (2026-09-22).
+try{
+  [[AKKU_LIGHT,'300'],[AKKU_REGULAR,'400']].forEach(([src,w])=>{
+    const f=new FontFace('AkkuratUI','url('+src+')',{weight:w});
+    f.load().then(x=>document.fonts.add(x)).catch(()=>{});
+  });
+}catch(e){}
+function fhFind(id){ return (heures||[]).find(x=>x.id===id) || (vacSaisies||[]).find(x=>x.id===id); }
+function fhBarClick(ev, el){
+  if(_fhSkipClick){ _fhSkipClick=false; return; }
+  // Clic = SÉLECTIONNER (contour bleu), double-clic = modifier — comme Deltaproject (2026-09-22).
+  const id=el.dataset.id;
+  _fhSelW=(_fhSelW===id)?null:id;
+  fhRender();
+}
+function fhCurSel(){ return _fhMode==='m' ? _fhSel : _fhSelW; }
+function fhPenMenuFill(){
+  const m=document.getElementById('fh_pen_menu'); if(!m) return;
+  const sel=fhCurSel(), h=sel?fhFind(sel):null;
+  const it=(en,lbl,fn)=>'<div '+(en?('onclick="'+fn+'" onmouseover="this.style.background=\'#eef4f9\'" onmouseout="this.style.background=\'\'"'):'')+
+    ' style="padding:7px 14px;font-size:12.5px;white-space:nowrap;'+(en?'cursor:pointer;color:#222':'color:#b5b5b5;cursor:default')+'">'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #e4e4e4;margin:4px 0"></div>';
+  m.innerHTML=it(!!h,'Modifier …','fhPenDo(\'edit\')')+
+    it(!!h,'Remarque «Copier» …','fhPenDo(\'copy\')')+sep+
+    it(!!(h&&!h._vac&&h.affaire&&!(vacSaisies||[]).some(x=>x.id===sel)),
+       (_fhMark&&h&&h.affaire===_fhMark)?'Ne plus marquer cette affaire':'Marquer tout de cette affaire','fhPenDo(\'mark\')');
+}
+function fhPenMenu(ev){
+  ev.stopPropagation();
+  const m=document.getElementById('fh_pen_menu');
+  if(m.style.display!=='none'){ m.style.display='none'; return; }
+  fhPenMenuFill(); m.style.display='block';
+  const close=e=>{ if(!m.contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
+  setTimeout(()=>document.addEventListener('mousedown',close),0);
+}
+function fhPenDo(act){
+  document.getElementById('fh_pen_menu').style.display='none';
+  const sel=fhCurSel(), h=sel?fhFind(sel):null; if(!h) return;
+  if(act==='edit') fhEditBar(sel);
+  if(act==='copy'){
+    _fhCopyBuf={vac:(vacSaisies||[]).some(x=>x.id===sel), affaire:h.affaire||'', ouvrage:h.ouvrage||'',
+                grpAct:h.grpAct||'', activite:h.activite||'',
+                phaseGroupe:h.phaseGroupe||'', phase:h.phase||'', desc:h.desc||''};
+    toast('Copié — cliquez-tirez ailleurs : la plage sera créée directement.');
+  }
+  if(act==='mark'){ _fhMark=(_fhMark===h.affaire)?null:(h.affaire||null); fhRender(); }
+}
+function fhBarDown(ev, el){
+  ev.stopPropagation();
+  if(ev.button!==0) return;
+  const id=el.dataset.id, h=fhFind(id); if(!h) return;
+  if(ev.altKey){                                   // Alt+clic = copier les données (sans les heures)
+    _fhCopyBuf={vac:(vacSaisies||[]).some(x=>x.id===id), affaire:h.affaire||'', ouvrage:h.ouvrage||'',
+                grpAct:h.grpAct||'', activite:h.activite||'',
+                phaseGroupe:h.phaseGroupe||'', phase:h.phase||'', desc:h.desc||''};
+    _fhSkipClick=true;
+    toast('Copié — cliquez-tirez ailleurs : la plage sera créée directement.');
+    ev.preventDefault(); return;
+  }
+  if(el.dataset.hor!=='1') return;                 // ligne sans horaire : clic = édition seulement
+  const edge=ev.target.classList && ev.target.classList.contains('fh-rz') ? ev.target.dataset.edge : null;
+  const m0=fhMins(h.debut), m1=fhMins(h.fin);
+  const zones=[...document.querySelectorAll('#fh_cal .fh-zone')];
+  const z0=zones.find(z=>z.dataset.iso===h.date) || el.closest('.fh-zone');
+  const snap=m=>Math.max(FH_H0*60, Math.min(FH_H1*60, Math.round(m/15)*15));
+  const startY=ev.clientY, dur=m1-m0;
+  let moved=false, cur={iso:h.date, m0, m1};
+  const g=document.createElement('div'); g.className='fh-ghost';
+  const lbl=document.createElement('div');
+  lbl.style.cssText='position:absolute;top:1px;left:4px;font-size:10px;color:#0b4a7d;font-weight:700;white-space:nowrap';
+  g.appendChild(lbl);
+  let gZone=z0; gZone.appendChild(g);
+  const paint=()=>{
+    if(g.parentElement!==gZone) gZone.appendChild(g);
+    g.style.top=((cur.m0-FH_H0*60)/60*FH_PXH)+'px';
+    g.style.height=(Math.max(15,cur.m1-cur.m0)/60*FH_PXH)+'px';
+    lbl.textContent=fhHM(cur.m0)+' – '+fhHM(cur.m1)+' ('+((cur.m1-cur.m0)/60).toFixed(2)+' h)';
+  };
+  paint();
+  const mv=e=>{
+    const dy=e.clientY-startY;
+    if(Math.abs(dy)>3) moved=true;
+    if(edge==='t'){ cur.m0=Math.min(snap(m0+dy/FH_PXH*60), cur.m1-15); }
+    else if(edge==='b'){ cur.m1=Math.max(snap(m1+dy/FH_PXH*60), cur.m0+15); }
+    else{                                          // déplacement : suit la souris, jour compris
+      const zc=zones.find(z=>{ const r=z.getBoundingClientRect(); return e.clientX>=r.left && e.clientX<r.right; });
+      if(zc){ gZone=zc; cur.iso=zc.dataset.iso; }
+      let nm0=snap(m0+dy/FH_PXH*60);
+      nm0=Math.min(nm0, FH_H1*60-dur);
+      cur.m0=nm0; cur.m1=nm0+dur;
+    }
+    paint();
+  };
+  const up=()=>{
+    document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up);
+    g.remove();
+    if(!moved){ return; }                          // pas bougé → le click ouvrira l'édition
+    _fhSkipClick=true;
+    h.date=cur.iso; h.debut=fhHM(cur.m0); h.fin=fhHM(cur.m1); h.heures=+((cur.m1-cur.m0)/60).toFixed(2);
+    persistAdmin(); fhRender();
+  };
+  document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+  ev.preventDefault();
+}
+
+/* ═══ VACANCES (consultation par collaborateur / année, données import Deltaproject) ═══ */
+/* ══════════ RAPPORT (clone Deltaproject : 7 types, menus, graphique) — 2026-09-22 ══════════ */
+let _rapType='heb', _rapMonday=null, _rapMois=null, _rapAnnee=null, _rapTbl=null, _rapSvg=null;
+const RAP_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const RAP_NL=String.fromCharCode(10), RAP_TAB=String.fromCharCode(9), RAP_Q=String.fromCharCode(39);
+function rapStore(k,d){ try{ return JSON.parse(localStorage.getItem(k))||d; }catch(e){ return d; } }
+function rapCid(){ const x=document.getElementById('rap_collab'); return x?x.value:''; }
+function rapHj(cid){ const o=rapStore('sa_rap_hjour',{}); return +(o[cid])||8.5; }
+function rapSetHj(v){ const cid=rapCid(); if(!cid){ rapRender(); return; } const o=rapStore('sa_rap_hjour',{}); o[cid]=+v||8.5; localStorage.setItem('sa_rap_hjour',JSON.stringify(o)); rapRender(); }
+function rapFmt(n){ n=+n||0; const neg=n<-1e-9; let t=Math.abs(n).toFixed(2); const pr=t.split('.'); let ip=pr[0], out='';
+  while(ip.length>3){ out=RAP_Q+ip.slice(-3)+out; ip=ip.slice(0,-3); }
+  return (neg?'−':'')+ip+out+'.'+pr[1]; }
+function rapEsc(t){ return String(t==null?'':t).split('&').join('&amp;').split('<').join('&lt;'); }
+function rapJO(y,m){ const fer=fhFeries(y); let n=0; const dmax=new Date(y,m+1,0).getDate();
+  for(let d=1;d<=dmax;d++){ const dt=new Date(y,m,d), wd=dt.getDay();
+    if(wd===0||wd===6||fer[fhISO(dt)]) continue; n++; } return n; }
+function rapPrevMois(cid,y,m){ return rapJO(y,m)*rapHj(cid); }
+function rapEffJour(cid,iso){ return (heures||[]).filter(h=>h.collab===cid&&h.date===iso).reduce((t,h)=>t+(+h.heures||0),0); }
+function rapEffMois(cid,y,m){ const pfx=y+'-'+String(m+1).padStart(2,'0');
+  return (heures||[]).filter(h=>h.collab===cid&&(h.date||'').startsWith(pfx)).reduce((t,h)=>t+(+h.heures||0),0); }
+function rapVacMois(cid,y,m){
+  let imp=0; const o=(collabMensuel&&collabMensuel[cid])||{}; const yy=o[y]||o[String(y)]||null;
+  if(yy){ const cand=[String(m+1).padStart(2,'0'), String(m+1), m+1];
+    for(const k of cand){ if(yy[k]&&yy[k].vac!=null){ imp=+yy[k].vac||0; break; } } }
+  const pfx=y+'-'+String(m+1).padStart(2,'0');
+  const fh=(vacSaisies||[]).filter(v=>v.collab===cid&&(v.date||'').startsWith(pfx)).reduce((t,v)=>t+(+v.heures||0),0);
+  return imp+fh; }
+function rapVacInit(cid,y){ const o=rapStore('sa_rap_vacinit',{}); return (o[cid]&&o[cid][y]!=null)?+o[cid][y]:0; }
+function rapSetVacInit(v){ const cid=rapCid(); if(!cid) return; const o=rapStore('sa_rap_vacinit',{});
+  o[cid]=o[cid]||{}; o[cid][_rapAnnee]=+String(v).split(RAP_Q).join('').replace(',','.')||0;
+  localStorage.setItem('sa_rap_vacinit',JSON.stringify(o)); rapRender(); }
+function rapInit(){ if(_rapAnnee!==null) return; const now=new Date();
+  _rapAnnee=now.getFullYear(); _rapMois=now.getMonth(); _rapMonday=fhWeekStart(now); }
+function rapSetType(t){ _rapType=t; const x=document.getElementById('rap_type'); if(x) x.value=t; rapRender(); }
+function rapNavYear(dir){ rapInit(); _rapAnnee+=dir;
+  const x=new Date(_rapMonday); x.setFullYear(x.getFullYear()+dir); _rapMonday=fhWeekStart(x); rapRender(); }
+function rapNavPer(dir){ rapInit();
+  if(_rapType==='heb'){ const x=new Date(_rapMonday); x.setDate(x.getDate()+7*dir); _rapMonday=x;
+    const th=new Date(x); th.setDate(th.getDate()+3); _rapAnnee=th.getFullYear(); }
+  else { _rapMois+=dir; if(_rapMois<0){ _rapMois=11; _rapAnnee--; } if(_rapMois>11){ _rapMois=0; _rapAnnee++; } }
+  rapRender(); }
+function rapPerChange(v){ if(_rapType==='heb') _rapMonday=new Date(v+'T00:00:00'); else _rapMois=+v; rapRender(); }
+function rapTypeLabel(){ return {heb:'Rapport hebdomadaire',men:'Rapport mensuel',jour:'Journal mensuel',tri:'Rapport trimestriel',sem:'Rapport semestriel',ann:'Rapport annuel',vac:'Rapport des vacances'}[_rapType]||''; }
+function rapPerLabel(){
+  if(_rapType==='heb'){ const m=fhWeekStart(_rapMonday); return 'Semaine '+fhWeekNum(m)+', '+m.getDate()+' '+RAP_MOIS[m.getMonth()]+' '+m.getFullYear(); }
+  if(_rapType==='men'||_rapType==='jour') return RAP_MOIS[_rapMois]+' '+_rapAnnee;
+  return String(_rapAnnee); }
+function rapPush(head,rows,plain){
+  _rapTbl={head:head.map(h=>h.t), rows:(plain||rows).map(r=>r.c.map(c=>{ const d=document.createElement('div'); d.innerHTML=String(c==null?'':c); return d.textContent; }))}; }
+function rapTable(head,rows){
+  let h='<table class="rap-tb"><thead><tr>'+head.map(c=>'<th style="text-align:'+(c.r?'right':'left')+'">'+c.t+'</th>').join('')+'</tr></thead><tbody>';
+  rows.forEach((r,i)=>{ h+='<tr class="'+(r.cls||'')+(i%2?' od':'')+'">'+
+    r.c.map((c,j)=>'<td style="text-align:'+(head[j]&&head[j].r?'right':'left')+'">'+(c==null?'':c)+'</td>').join('')+'</tr>'; });
+  return h+'</tbody></table>'; }
+function rapRender(){
+  rapInit();
+  const sel=document.getElementById('rap_collab'); if(!sel) return;
+  const actifs=(collaborateurs||[]).filter(c=>c.statut!=='ancien');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Votre nom —</option>'+actifs.map(c=>'<option value="'+c.id+'">'+rapEsc(c.nom)+'</option>').join('');
+  if(cur) sel.value=cur;
+  const cid=sel.value;
+  document.getElementById('rap_annee').textContent=_rapAnnee;
+  const hj=document.getElementById('rap_hj'); if(document.activeElement!==hj) hj.value=rapHj(cid);
+  const per=document.getElementById('rap_periode');
+  const perOn=(_rapType==='heb'||_rapType==='men'||_rapType==='jour');
+  per.disabled=!perOn;
+  document.getElementById('rap_per_prev').disabled=!perOn;
+  document.getElementById('rap_per_next').disabled=!perOn;
+  if(_rapType==='heb'){
+    let opts=''; const m0=fhWeekStart(new Date(_rapAnnee,0,4));
+    for(let m=new Date(m0); ; m.setDate(m.getDate()+7)){
+      const th=new Date(m); th.setDate(th.getDate()+3);
+      if(th.getFullYear()>_rapAnnee) break;
+      if(th.getFullYear()<_rapAnnee) continue;
+      opts+='<option value="'+fhISO(m)+'">Semaine '+fhWeekNum(m)+', '+m.getDate()+' '+RAP_MOIS[m.getMonth()]+' '+m.getFullYear()+'</option>';
+    }
+    per.innerHTML=opts; per.value=fhISO(fhWeekStart(_rapMonday));
+    if(!per.value && per.options.length){ per.selectedIndex=0; _rapMonday=new Date(per.value+'T00:00:00'); }
+  } else if(perOn){
+    per.innerHTML=RAP_MOIS.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join(''); per.value=_rapMois;
+  } else {
+    per.innerHTML='<option>'+RAP_MOIS[_rapMois]+'</option>';
+  }
+  const out=document.getElementById('rap_out'); _rapTbl=null; _rapSvg=null;
+  if(!cid){ out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Choisissez votre nom pour afficher le rapport.</div>'; return; }
+  if(_rapType==='heb') rapHeb(out,cid);
+  else if(_rapType==='men') rapMen(out,cid);
+  else if(_rapType==='jour') rapJournal(out,cid);
+  else if(_rapType==='tri') rapPeriodes(out,cid,3);
+  else if(_rapType==='sem') rapPeriodes(out,cid,6);
+  else if(_rapType==='ann') rapPeriodes(out,cid,1);
+  else rapVac(out,cid);
+}
+function rapHeb(out,cid){
+  const JN=['lun.','mar.','mer.','jeu.','ven.','sam.','dim.'];
+  const m0=fhWeekStart(_rapMonday); const days=[];
+  for(let k=0;k<7;k++){ const d=new Date(m0); d.setDate(d.getDate()+k); days.push(d); }
+  const rows=[]; let tot=0;
+  days.forEach((d,k)=>{ const e=rapEffJour(cid,fhISO(d)); tot+=e;
+    rows.push({c:[JN[k]+', '+d.getDate()+'. '+RAP_MOIS[d.getMonth()]+' '+d.getFullYear(), rapFmt(e)]}); });
+  rows.push({c:['Total', rapFmt(tot)], cls:'tt'});
+  const head=[{t:'Période'},{t:'Heures effectives',r:1}];
+  rapPush(head,rows);
+  out.innerHTML=rapTable(head,rows)+rapChartHeb(cid,days);
+}
+function rapChartHeb(cid,days){
+  const byAff={}, dayTot=[0,0,0,0,0,0,0];
+  days.forEach((d,k)=>{ (heures||[]).filter(h=>h.collab===cid&&h.date===fhISO(d)).forEach(h=>{
+    const a=h.affaire||'__bureau'; byAff[a]=byAff[a]||[0,0,0,0,0,0,0];
+    byAff[a][k]+=(+h.heures||0); dayTot[k]+=(+h.heures||0); }); });
+  const affs=Object.keys(byAff).sort((x,z)=>byAff[z].reduce((t,v)=>t+v,0)-byAff[x].reduce((t,v)=>t+v,0));
+  if(!affs.length){ _rapSvg=null; return ''; }
+  const nameOf=a=>{ if(a==='__bureau') return 'Affaire bureau';
+    const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===a):null;
+    return (f&&f.projet)?f.projet:a; };
+  const PAL=['#f2a33c','#e8542d','#4a90d9','#7cb342','#9b59b6','#e6c229','#45b8ac','#d9534f','#8d6e63','#5c6bc0'];
+  const ymax=Math.max(2,Math.ceil(Math.max.apply(null,dayTot))+1);
+  const W=1160,H=430,L=54,B=40,T=48,R=18,iw=W-L-R,ih=H-T-B,bw=iw/7;
+  const yv=v=>T+ih-ih*v/ymax;
+  let g='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block;background:#f4f4f4">';
+  g+='<text x="'+(W/2)+'" y="26" text-anchor="middle" font-size="19" fill="#444" font-family="Arial">'+rapEsc("Rapport hebdomadaire: Heures d'affaires")+'</text>';
+  for(let v=0;v<=ymax;v++){
+    g+='<line x1="'+L+'" y1="'+yv(v)+'" x2="'+(W-R)+'" y2="'+yv(v)+'" stroke="#ccc" stroke-width="1" stroke-dasharray="3 4"/>';
+    g+='<text x="'+(L-8)+'" y="'+(yv(v)+4)+'" text-anchor="end" font-size="12" fill="#666" font-family="Arial">'+v+'</text>';
+  }
+  g+='<text transform="rotate(-90 15 '+(T+ih/2)+')" x="15" y="'+(T+ih/2)+'" text-anchor="middle" font-size="13" fill="#555" font-family="Arial">Heures [h]</text>';
+  days.forEach((d,k)=>{
+    let base=T+ih;
+    affs.forEach((a,ai)=>{ const v=byAff[a][k]; if(v<=0) return;
+      const hh=ih*v/ymax; base-=hh;
+      g+='<rect x="'+(L+k*bw+bw*0.07)+'" y="'+base+'" width="'+(bw*0.86)+'" height="'+hh+'" fill="'+PAL[ai%PAL.length]+'"/>';
+    });
+    g+='<text x="'+(L+k*bw+bw/2)+'" y="'+(T+ih+22)+'" text-anchor="middle" font-size="12" fill="#555" font-family="Arial">'+
+       ['lun.','mar.','mer.','jeu.','ven.','sam.','dim.'][k]+', '+d.getDate()+'. '+RAP_MOIS[d.getMonth()]+' '+d.getFullYear()+'</text>';
+  });
+  g+='<line x1="'+L+'" y1="'+(T+ih)+'" x2="'+(W-R)+'" y2="'+(T+ih)+'" stroke="#999" stroke-width="1"/>';
+  g+='</svg>';
+  _rapSvg=g;
+  let leg='<div id="rap_legend"><div class="bx">'+affs.map((a,ai)=>
+    '<span><span class="sq" style="background:'+PAL[ai%PAL.length]+'"></span>'+rapEsc(nameOf(a))+'</span>').join('')+'</div></div>';
+  return '<div style="border:1px solid #e0e0e0;border-radius:4px;margin-top:14px;background:#f4f4f4;padding:4px 4px 0">'+g+leg+'</div>';
+}
+function rapMen(out,cid){
+  const y=_rapAnnee,m=_rapMois,dmax=new Date(y,m+1,0).getDate();
+  const JN=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+  const rows=[]; let tot=0;
+  for(let d=1;d<=dmax;d++){ const dt=new Date(y,m,d), e=rapEffJour(cid,fhISO(dt)); tot+=e;
+    rows.push({c:[JN[dt.getDay()]+', '+d+'. '+RAP_MOIS[m]+' '+y, rapFmt(e), '', '']}); }
+  const prev=rapPrevMois(cid,y,m);
+  rows.push({c:['Total', rapFmt(tot), rapFmt(prev), rapFmt(tot-prev)], cls:'tt'});
+  const head=[{t:'Période'},{t:'Heures effectives',r:1},{t:'Heures prévues',r:1},{t:'Différence',r:1}];
+  rapPush(head,rows); out.innerHTML=rapTable(head,rows);
+}
+function rapPeriodes(out,cid,step){
+  const y=_rapAnnee, rows=[]; let cum=0, totE=0, totP=0;
+  const lab=i=>{ if(step===1) return RAP_MOIS[i]+' '+y;
+    const n=i/step+1, suf=(n===1?'er':'ème');
+    return n+suf+' '+(step===3?'trimestre':'semestre'); };
+  for(let i=0;i<12;i+=step){ let e=0,pv=0;
+    for(let m=i;m<i+step;m++){ e+=rapEffMois(cid,y,m); pv+=rapPrevMois(cid,y,m); }
+    cum+=e-pv; totE+=e; totP+=pv;
+    rows.push({c:[lab(i), rapFmt(e), rapFmt(pv), rapFmt(e-pv), rapFmt(cum)]}); }
+  rows.push({c:['Total', rapFmt(totE), rapFmt(totP), rapFmt(totE-totP), rapFmt(cum)], cls:'tt'});
+  const head=[{t:'Période'},{t:'Heures effectives',r:1},{t:'Heures prévues',r:1},{t:'Différence',r:1},{t:'Solde cumulé',r:1}];
+  rapPush(head,rows); out.innerHTML=rapTable(head,rows);
+}
+function rapVac(out,cid){
+  const y=_rapAnnee, init=rapVacInit(cid,y); let solde=init, tot=0;
+  const rows=[], plain=[];
+  rows.push({c:['','', '<input class="rap-init" value="'+rapFmt(init)+'" onchange="rapSetVacInit(this.value)" title="Solde initial de vacances (droit annuel + report)">']});
+  plain.push({c:['','',rapFmt(init)]});
+  for(let m=0;m<12;m++){ const v=rapVacMois(cid,y,m); solde-=v; tot+=v;
+    const r={c:[RAP_MOIS[m]+' '+y, rapFmt(v), rapFmt(solde)]}; rows.push(r); plain.push(r); }
+  const r={c:['Total', rapFmt(tot), ''], cls:'tt'}; rows.push(r); plain.push(r);
+  const head=[{t:'Période'},{t:'Vacances saisies',r:1},{t:'Différence',r:1}];
+  rapPush(head,rows,plain); out.innerHTML=rapTable(head,rows);
+}
+function rapJournal(out,cid){
+  const y=_rapAnnee,m=_rapMois,pfx=y+'-'+String(m+1).padStart(2,'0');
+  const ls=(heures||[]).filter(h=>h.collab===cid&&(h.date||'').startsWith(pfx))
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.debut||'99').localeCompare(b.debut||'99'));
+  if(!ls.length){ _rapTbl=null;
+    out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Aucune saisie pour '+RAP_MOIS[m]+' '+y+'.</div>'; return; }
+  const head=[{t:'Date'},{t:'Début'},{t:'Fin'},{t:'Durée',r:1},{t:'Arrêt de travail',r:1},{t:'Affaire'},{t:'Ouvrage'},{t:"Groupe d'activités"},{t:'Activité'},{t:'Phase'},{t:'Phase partielle'},{t:'Commentaire'}];
+  const rows=[]; let day=null,dTot=0,dArr=0,prevFin=null;
+  const mins=t=>{ const pr=String(t||'').split(':'); return pr.length===2?(+pr[0])*60+(+pr[1]):null; };
+  const flush=()=>{ if(day===null) return;
+    rows.push({c:['Total du '+day.slice(8,10)+'.'+day.slice(5,7)+'.','','',rapFmt(dTot),rapFmt(dArr),'','','','','','',''], cls:'tt'}); };
+  ls.forEach(h=>{
+    if(h.date!==day){ flush(); day=h.date; dTot=0; dArr=0; prevFin=null; }
+    const m0=mins(h.debut), m1=mins(h.fin);
+    let arr=0; if(m0!==null&&prevFin!==null&&m0>prevFin) arr=(m0-prevFin)/60;
+    if(m1!==null) prevFin=(prevFin===null)?m1:Math.max(prevFin,m1);
+    dTot+=(+h.heures||0); dArr+=arr;
+    rows.push({c:[h.date.slice(8,10)+'.'+h.date.slice(5,7)+'.'+h.date.slice(2,4), h.debut||'', h.fin||'',
+      rapFmt(+h.heures||0), arr?rapFmt(arr):'', rapEsc(h.affaire||'SUBSTANCES'), rapEsc(h.ouvrage||''),
+      rapEsc(h.grpAct||''), rapEsc(h.activite||''), rapEsc(h.phaseGroupe||''), rapEsc(h.phase||''), rapEsc(h.desc||'')]});
+  });
+  flush();
+  rapPush(head,rows); out.innerHTML=rapTable(head,rows);
+}
+function rapMenu(ev,id){
+  ev.stopPropagation();
+  const m=document.getElementById(id);
+  if(m.style.display!=='none'){ m.style.display='none'; return; }
+  const it=(en,lbl,fn)=>'<div '+(en?'onclick="'+fn+'" onmouseover="this.style.background='+RAP_Q+'#eef4f9'+RAP_Q+'" onmouseout="this.style.background='+RAP_Q+RAP_Q+'"':'')+
+    ' style="padding:7px 14px;font-size:12.5px;white-space:nowrap;'+(en?'cursor:pointer;color:#222':'color:#b5b5b5;cursor:default')+'">'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #e4e4e4;margin:4px 0"></div>';
+  if(id==='rap_doc_menu'){
+    m.innerHTML=it(!!_rapTbl,'Afficher le rapport …','rapPrint()')+
+      it(true,'Aperçu des vacances … [Ancien document]','rapSetType('+RAP_Q+'vac'+RAP_Q+')')+sep+
+      it(!!_rapSvg,'Enregistrer le diagramme …','rapSaveSvg()');
+  } else {
+    m.innerHTML=it(!!_rapTbl,'Copier le contenu du tableau dans le presse-papier','rapCopy()')+
+      it(!!_rapTbl,'Exporter le tableau dans un fichier CSV …','rapCSV()');
+  }
+  m.style.display='block';
+  const close=e=>{ if(!m.contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
+  setTimeout(()=>document.addEventListener('mousedown',close),0);
+}
+function rapCopy(){ document.getElementById('rap_out_menu').style.display='none'; if(!_rapTbl) return;
+  const t=[_rapTbl.head.join(RAP_TAB)].concat(_rapTbl.rows.map(r=>r.join(RAP_TAB))).join(RAP_NL);
+  navigator.clipboard.writeText(t).then(()=>toast('Tableau copié dans le presse-papier.')).catch(()=>toast('Copie impossible dans ce navigateur.')); }
+function rapCSV(){ document.getElementById('rap_out_menu').style.display='none'; if(!_rapTbl) return;
+  const q=v=>{ v=String(v); return (v.indexOf(';')>=0||v.indexOf('"')>=0)?'"'+v.split('"').join('""')+'"':v; };
+  const t=[_rapTbl.head.map(q).join(';')].concat(_rapTbl.rows.map(r=>r.map(q).join(';'))).join(RAP_NL);
+  const bl=new Blob([String.fromCharCode(65279)+t],{type:'text/csv;charset=utf-8'});
+  const aa=document.createElement('a'); aa.href=URL.createObjectURL(bl);
+  aa.download='rapport_'+_rapType+'_'+_rapAnnee+'.csv'; aa.click();
+  setTimeout(()=>URL.revokeObjectURL(aa.href),4000); toast('Tableau exporté en CSV.'); }
+function rapSaveSvg(){ document.getElementById('rap_doc_menu').style.display='none'; if(!_rapSvg) return;
+  const bl=new Blob([_rapSvg],{type:'image/svg+xml'});
+  const aa=document.createElement('a'); aa.href=URL.createObjectURL(bl);
+  aa.download='rapport_hebdomadaire_'+fhISO(fhWeekStart(_rapMonday))+'.svg'; aa.click();
+  setTimeout(()=>URL.revokeObjectURL(aa.href),4000); }
+function rapPrint(){ document.getElementById('rap_doc_menu').style.display='none';
+  const el=document.getElementById('rap_out'); if(!el||!_rapTbl) return;
+  const w=window.open('','_blank');
+  if(!w){ toast('Fenêtre bloquée — autorisez les pop-ups pour afficher le rapport.'); return; }
+  const cs=(document.getElementById('rap-style')||{}).textContent||'';
+  const cname=((document.getElementById('rap_collab')||{}).selectedOptions||[{}])[0].textContent||'';
+  w.document.write('<html><head><title>'+rapTypeLabel()+'</title><style>'+cs+
+    ' body{font-family:Arial,Helvetica,sans-serif;margin:26px;color:#222} h2{font-size:17px;margin:0 0 2px} .sub{color:#666;font-size:12px;margin-bottom:14px} #rap_legend .bx{border:none}</style></head><body id="rap_out">'+
+    '<h2>'+rapTypeLabel()+'</h2><div class="sub">'+rapEsc(cname)+' · '+rapPerLabel()+' · Substances architectes sàrl</div>'+
+    el.innerHTML+'</body></html>');
+  w.document.close(); setTimeout(()=>{ try{ w.print(); }catch(e){} },500); }
+function vacRender(){
+  const sel=document.getElementById('vac_collab'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Votre nom —</option>'+(collaborateurs||[]).map(c=>`<option value="${c.id}">${c.nom}</option>`).join('');
+  if(cur) sel.value=cur;
+  const cid=sel.value, tb=document.getElementById('vac_table');
+  if(!cid){ if(tb) tb.innerHTML='<div style="color:#999;font-size:13px">Choisissez votre nom pour consulter vos vacances.</div>'; return; }
+  const v=(typeof vacances!=='undefined' && vacances[cid]) ? vacances[cid] : {};
+  const man={};                                  // vacances saisies dans la Feuille d'heures
+  (vacSaisies||[]).filter(x=>x.collab===cid).forEach(x=>{ const y=(x.date||'').slice(0,4); if(y) man[y]=(man[y]||0)+(+x.heures||0); });
+  const years=[...new Set([...Object.keys(v), ...Object.keys(man)])].sort().reverse();
+  if(!years.length){ if(tb) tb.innerHTML='<div style="color:#999;font-size:13px">Aucune donnée de vacances pour ce collaborateur — saisissez-les dans la Feuille d\'heures (option « Vacances ») ou importez les fichiers Deltaproject (Admin · Import).</div>'; return; }
+  const rows=years.map(y=>{
+    const mens=(typeof collabMensuel!=='undefined' && collabMensuel[cid] && collabMensuel[cid][y]) ? collabMensuel[cid][y] : null;
+    const detail=mens ? Object.keys(mens).sort().filter(mm=>+((mens[mm]||{}).vac||0)>0).map(mm=>`${mm}: ${(+mens[mm].vac).toFixed(1)} h`).join(' · ') : '';
+    const tot=(+v[y]||0)+(man[y]||0);
+    return `<tr><td style="padding:6px 10px;font-weight:600">${y}</td>
+      <td style="padding:6px 10px;text-align:right">${tot.toFixed(1)} h</td>
+      <td style="padding:6px 10px;color:#666;font-size:12px">${detail}${man[y]?(detail?' · ':'')+"saisies feuille d'heures : "+man[y].toFixed(1)+' h':''}</td></tr>`;
+  }).join('');
+  tb.innerHTML=`<table style="border-collapse:collapse;font-size:13px;min-width:420px">
+    <thead><tr style="background:#003346;color:#fff"><th style="padding:6px 10px;text-align:left">Année</th><th style="padding:6px 10px;text-align:right">Vacances</th><th style="padding:6px 10px;text-align:left">Détail mensuel</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
 function heureResetForm(){
   document.getElementById('h_heures').value=''; document.getElementById('h_desc').value='';
   document.getElementById('h_save_btn').textContent='+ Ajouter'; document.getElementById('h_cancel_btn').style.display='none';
@@ -11326,6 +12350,7 @@ function loadPersist() {
   try { const d=localStorage.getItem('sa_affaires_statut'); if(d) affairesStatut=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_affaires_analyse'); if(d) analyseAffaires=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_vacances'); if(d) vacances=JSON.parse(d); } catch(e){}
+  try { const d=localStorage.getItem('sa_vac_saisies'); if(d) vacSaisies=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_annuel'); if(d) collabAnnuel=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_mensuel'); if(d) collabMensuel=JSON.parse(d); } catch(e){}
   migratePhasesPct();

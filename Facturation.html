@@ -925,7 +925,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
     <div class="home-sub">Procès-verbaux de chantier par affaire — annotation avant séance, puis envoi définitif aux intervenants</div>
     <div class="adm-wrap" style="max-width:none;padding:2px 20px 44px">
       <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
-        <button class="btn btn-sm" onclick="pvAddAffOpen()" title="Activer une affaire pour les PV de chantier">✚ Ajouter une nouvelle affaire</button>
+        <button class="btn btn-sm" id="pv_addaff" onclick="pvAddAffOpen()" title="Activer une affaire pour les PV de chantier">✚ Ajouter une nouvelle affaire</button>
         <span id="pv_ctx" style="margin-left:auto;color:#777;font-size:12px"></span>
       </div>
       <div id="pv_out" style="margin-top:12px"></div>
@@ -11848,6 +11848,8 @@ function pvAddAff(code){
 function pvRender(){
   const out=document.getElementById('pv_out'), ctx=document.getElementById('pv_ctx');
   if(!out) return;
+  const ba=document.getElementById('pv_addaff');
+  if(ba) ba.style.display = _pvAff ? 'none' : '';
   if(!_pvAff||!pvA()){
     ctx.textContent=Object.keys(pvData).length+' affaire(s)';
     const codes2=Object.keys(pvData).sort();
@@ -12148,8 +12150,10 @@ function pvSecHTML(pv,sec,si,RO){
     const CH=[['exec','Travaux à exécuter'],['fini','Travaux terminés'],['rem','Remarques']];
     h+='<table class="pv-xl">';
     CH.forEach(ch=>{
-      h+='<tr><th colspan="5" ondragover="pvDragO(event)" ondrop="pvDropHead(event,'+si+','+PV_Q+ch[0]+PV_Q+')">'+ch[1]+
-        (RO?'':' <button class="btn btn-sm pv-mini" title="Ajouter une ligne" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')" style="margin-left:10px;font-size:12px;line-height:1;padding:1px 8px">✚</button>')+'</th></tr>';
+      const nbCh=sec.lines.filter(l=>tyOf(l)===ch[0]).length;
+      h+='<tr><th colspan="5" ondragover="pvDragO(event)" ondrop="pvDropHead(event,'+si+','+PV_Q+ch[0]+PV_Q+')">'+
+        ((nbCh===0&&!RO)?'<button class="btn btn-sm pv-mini" title="Ajouter une ligne" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')" style="margin-right:10px;font-size:12px;line-height:1;padding:1px 8px">✚</button> ':'')+
+        ch[1]+'</th></tr>';
       sec.lines.forEach((ln,li)=>{
         if(tyOf(ln)!==ch[0]) return;
         const u=+ln.u||0;
@@ -12166,7 +12170,7 @@ function pvSecHTML(pv,sec,si,RO){
           '<td class="rm" style="width:26px">'+ubt+'</td>'+
           '<td class="rm" style="width:30px">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
       });
-      if(!RO) h+='<tr><td colspan="5" style="padding:0;border-top:1px solid #e6ecf0">'+
+      if(!RO&&nbCh>0) h+='<tr><td colspan="5" style="padding:0;border-top:1px solid #e6ecf0">'+
         '<button style="width:100%;border:none;background:#fafbfc;color:#7a8b99;font-size:11px;padding:3px;cursor:pointer" '+
         'title="Ajouter une ligne en dessous de la dernière" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')">✚</button></td></tr>';
     });

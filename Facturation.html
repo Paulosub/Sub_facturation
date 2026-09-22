@@ -798,10 +798,10 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 #adr_ov .fr b{text-align:right;font-weight:600}
 </style>
 <div class="panel" id="panel-carnet">
-  <div class="home-wrap" style="max-width:1400px">
+  <div class="home-wrap">
     <div class="home-title" style="margin-top:44px">Adresses</div>
     <div class="home-sub">Entités (sociétés, personnes, familles…) et adresses — CFC, statut, notes, façon Deltaproject</div>
-    <div class="adm-wrap"><div style="display:flex;gap:14px;align-items:flex-start">
+    <div class="adm-wrap" style="max-width:none;padding:2px 20px 44px"><div style="display:flex;gap:14px;align-items:flex-start">
       <div style="flex:0 0 400px;min-width:330px">
         <div class="adm-form" style="align-items:center;gap:6px;margin-bottom:8px">
           <span style="position:relative"><button class="btn btn-sm" onclick="adrMenu(event,'adr_new_menu')">✚ ▾</button>
@@ -920,10 +920,10 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 #pv_out .pv-xl textarea{min-height:46px}
 </style>
 <div class="panel" id="panel-pv-chantier">
-  <div class="home-wrap" style="max-width:1240px">
+  <div class="home-wrap">
     <div class="home-title" style="margin-top:44px">PV de chantier</div>
     <div class="home-sub">Procès-verbaux de chantier par affaire — annotation avant séance, puis envoi définitif aux intervenants</div>
-    <div class="adm-wrap">
+    <div class="adm-wrap" style="max-width:none;padding:2px 20px 44px">
       <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
         <select id="pv_aff" onchange="pvSelAff(this.value)" style="min-width:280px"></select>
         <button class="btn btn-sm" onclick="pvAddAffOpen()" title="Ajouter une affaire au module PV" style="font-size:15px;line-height:1;padding:5px 11px">✚</button>
@@ -1096,10 +1096,10 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 #rap_legend .sq{display:inline-block;width:13px;height:13px;margin-right:5px;vertical-align:-2px}
 </style>
 <div class="panel" id="panel-rapport">
-  <div class="home-wrap" style="max-width:1240px">
+  <div class="home-wrap">
     <div class="home-title" style="margin-top:44px">Rapport</div>
     <div class="home-sub">Rapports des heures par collaborateur — semaine, mois, trimestre, semestre, année et vacances</div>
-    <div class="adm-wrap">
+    <div class="adm-wrap" style="max-width:none;padding:2px 20px 44px">
       <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
         <select id="rap_type" onchange="rapSetType(this.value)" style="min-width:185px">
           <option value="heb">Rapport hebdomadaire</option>
@@ -11909,7 +11909,10 @@ function pvCreate(){
   if(!A.cfg.cfc.length){ _pvCur='CFG'; pvRender();
     toast("Choisissez d'abord les CFC concernés par le projet, les entreprises et les intervenants."); return; }
   const prev=A.pvs.length?A.pvs[A.pvs.length-1]:null;
-  const num=Math.max(A.cfg.numDeb||0, prev?prev.num:0, ...A.pvs.map(x=>+x.num||0))+1;
+  // Numérotation AUTOMATIQUE (2026-09-23) : nouvelle affaire → PV 0 ; reprise (numDeb>0) →
+  // numDeb+1 ; ensuite toujours le n° du dernier PV + 1. Aucune saisie manuelle.
+  const num=A.pvs.length ? (Math.max(...A.pvs.map(x=>+x.num||0))+1)
+                         : (((+A.cfg.numDeb||0)>0) ? (+A.cfg.numDeb)+1 : 0);
   const today=fhISO(new Date());
   let secs;
   const RAS=()=>[{k:'t',v:'Ràs.'}];
@@ -11946,7 +11949,7 @@ function pvCfgHTML(){
   let h='<div class="pv-card"><h4>AFFAIRE — CONDITIONS INITIALES</h4><div class="pv-meta">'+
     '<label>Lieu <input style="width:340px" value="'+pvEscA(cfg.lieu)+'" onchange="pvCfgSet('+PV_Q+'lieu'+PV_Q+',this.value)" placeholder="Rue, NPA localité (ECA …)"></label>'+
     '<label>Heure des séances <input type="time" value="'+pvEscA(cfg.heure)+'" onchange="pvCfgSet('+PV_Q+'heure'+PV_Q+',this.value)"></label>'+
-    '<label>Numérotation — dernier n° déjà émis <input type="number" min="0" style="width:76px" value="'+(+cfg.numDeb||0)+'" onchange="pvCfgSet('+PV_Q+'numDeb'+PV_Q+',this.value)" title="Ex. 32 → le prochain PV portera le n° 33"></label>'+
+    '<label>Numérotation — dernier n° déjà émis <input type="number" min="0" style="width:76px" value="'+(+cfg.numDeb||0)+'" onchange="pvCfgSet('+PV_Q+'numDeb'+PV_Q+',this.value)" title="0 = nouvelle affaire, le premier PV portera le n° 0. Reprise d’un chantier : ex. 32 → le prochain PV portera le n° 33."></label>'+
     '</div></div>';
   h+='<div class="pv-card"><h4>CFC DU PROJET</h4><div class="pv-grid">'+
     lst.map(x=>'<label><input type="checkbox" '+(cfg.cfc.includes(x[0])?'checked':'')+' onchange="pvCfcTog('+PV_Q+pvEscA(x[0])+PV_Q+')"> <b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1])+'</label>').join('')+
@@ -12018,7 +12021,7 @@ function pvEditHTML(out, pv){
     '</div>';
   if(_pvTab==='gen'){ pvEditWrap(out, h+pvCfgHTML()); return; }
   h+='<div class="pv-card"><h4>SÉANCE</h4><div class="pv-meta">'+
-    '<label>N° <input type="number" style="width:70px" value="'+(+pv.num)+'" onchange="pvSet('+PV_Q+'num'+PV_Q+',this.value)"'+dis+'></label>'+
+    '<label>N° <b style="font-size:13px">'+pvPad(pv.num,4)+'</b> <span style="color:#999;font-size:10.5px">(automatique)</span></label>'+
     '<label>Séance du <input type="date" value="'+pvEscA(pv.date)+'" onchange="pvSet('+PV_Q+'date'+PV_Q+',this.value)"'+dis+'></label>'+
     '<label>Heure <input type="time" value="'+pvEscA(pv.heure)+'" onchange="pvSet('+PV_Q+'heure'+PV_Q+',this.value)"'+dis+'></label>'+
     '<label>Semaine <b>'+(pv.date?fhWeekNum(new Date(pv.date+'T00:00:00')):'—')+'</b></label>'+

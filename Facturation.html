@@ -11257,7 +11257,7 @@ function fhBarDown(ev, el){
 
 /* ═══ VACANCES (consultation par collaborateur / année, données import Deltaproject) ═══ */
 /* ══════════ VOLET APERÇU PDF (contrats + factures) — identique au volet du PV (2026-09-22) ══════════ */
-let _sxPrevKind=null, _sxPrevBusy=false;
+let _sxPrevKind=null, _sxPrevBusy=false, _sxZoom=100;
 function sxPrev(kind){
   const el=document.getElementById('sx_prev');
   if(el && _sxPrevKind===kind){ sxPrevClose(); return; }
@@ -11265,33 +11265,52 @@ function sxPrev(kind){
   if(!el){
     const d=document.createElement('div'); d.id='sx_prev';
     d.style.cssText='position:fixed;top:56px;right:10px;bottom:10px;width:470px;max-width:46vw;z-index:8600;background:#e8eaed;border:1px solid #c9c9c9;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden';
-    d.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f6f7f8;border-bottom:1px solid #ddd">'+
+    d.innerHTML='<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#f6f7f8;border-bottom:1px solid #ddd">'+
       '<b id="sx_prev_t" style="font-size:12.5px;flex:1"></b>'+
-      '<button class="btn btn-sm" onclick="sxPrevRender()" title="Régénérer le PDF">↻ Actualiser</button>'+
+      '<button class="btn btn-sm" onclick="sxZoom(-20)" title="Réduire">−</button>'+
+      '<span id="sx_zoom" style="min-width:44px;text-align:center;font-size:12px;cursor:pointer" onclick="sxZoom(0,100)" title="Ajuster à la largeur">'+_sxZoom+'%</span>'+
+      '<button class="btn btn-sm" onclick="sxZoom(20)" title="Agrandir">+</button>'+
+      '<button class="btn btn-sm" onclick="sxPrevRender()" title="Régénérer le PDF">↻</button>'+
       '<button class="btn btn-sm" onclick="sxPrevClose()">✕</button></div>'+
       '<div id="sx_prev_bd" style="flex:1;overflow:auto;padding:12px"></div>';
     document.body.appendChild(d);
   }
-  document.getElementById('sx_prev_t').textContent = kind==='contrat' ? 'Aperçu du contrat' : 'Aperçu de la facture';
+  document.getElementById('sx_prev_t').textContent =
+    kind==='contrat' ? 'Aperçu du contrat' : kind==='facture' ? 'Aperçu de la facture' : 'Aperçu du PV';
+  if(kind==='pv' && typeof pvRender==='function' && _pvCur) pvRender();
   sxPrevRender();
 }
-function sxPrevClose(){ const el=document.getElementById('sx_prev'); if(el) el.remove(); _sxPrevKind=null; }
+function sxPrevClose(){ const el=document.getElementById('sx_prev'); if(el) el.remove();
+  const wasPv=(_sxPrevKind==='pv'); _sxPrevKind=null;
+  if(wasPv && typeof pvRender==='function' && _pvCur) pvRender(); }
+function sxZoom(d,abs){
+  _sxZoom = abs!=null ? abs : Math.min(300, Math.max(60, _sxZoom+(d||0)));
+  const l=document.getElementById('sx_zoom'); if(l) l.textContent=_sxZoom+'%';
+  document.querySelectorAll('#sx_prev_bd canvas').forEach(c=>{ c.style.width=_sxZoom+'%'; });
+}
 async function sxPrevRender(){
   const bd=document.getElementById('sx_prev_bd'); if(!bd||!_sxPrevKind||_sxPrevBusy) return;
   _sxPrevBusy=true;
   bd.innerHTML='<div style="color:#777;font-size:12px;padding:8px">Génération de l’aperçu…</div>';
   try{
     if(typeof offreLoadPdfJs==='function') await offreLoadPdfJs();
-    const bytes = _sxPrevKind==='contrat' ? (await offrePDFBytes()).bytes : await generateInvoicePDF(true);
+    let bytes;
+    if(_sxPrevKind==='contrat') bytes=(await offrePDFBytes()).bytes;
+    else if(_sxPrevKind==='facture') bytes=await generateInvoicePDF(true);
+    else {
+      const pv=(typeof pvCurPv==='function')?pvCurPv():null;
+      if(!pv) throw new Error('Aucun PV ouvert — ouvrez un PV dans l’éditeur.');
+      bytes=await pvPDF(_pvAff, pv.id, 'bytes');
+    }
     const pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise;
     const frag=document.createDocumentFragment();
     const head=document.createElement('div'); head.style.cssText='font-size:11px;color:#666;margin:0 0 8px 2px';
     head.textContent='Aperçu — '+pdf.numPages+' page'+(pdf.numPages>1?'s':'');
     frag.appendChild(head);
     for(let n=1;n<=pdf.numPages;n++){
-      const page=await pdf.getPage(n); const vp=page.getViewport({scale:1.5});
+      const page=await pdf.getPage(n); const vp=page.getViewport({scale:2});
       const cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
-      cv.style.cssText='width:100%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);border-radius:3px;display:block;margin-bottom:12px';
+      cv.style.cssText='width:'+_sxZoom+'%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);border-radius:3px;display:block;margin-bottom:12px';
       await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
       frag.appendChild(cv);
     }
@@ -11416,9 +11435,10 @@ function pvRender(){
     out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Choisissez une affaire, ou ajoutez-en une avec le bouton ✚.</div>'; return; }
   const A=pvA();
   ctx.textContent=A.pvs.length+' PV · dernier : '+(A.pvs.length?('PVCH '+pvPad(A.pvs[A.pvs.length-1].num,4)):'—');
-  if(_pvCur==='CFG'){ out.innerHTML='<div style="margin-bottom:10px"><button class="btn btn-sm" onclick="_pvCur=null;pvRender()">← Liste des PV</button></div>'+pvCfgHTML(); return; }
+  if(_pvCur==='CFG'){ if(_sxPrevKind==='pv') sxPrevClose();
+    out.innerHTML='<div style="margin-bottom:10px"><button class="btn btn-sm" onclick="_pvCur=null;pvRender()">← Liste des PV</button></div>'+pvCfgHTML(); return; }
   const pv=pvCurPv();
-  if(!pv){ pvListHTML(out); return; }
+  if(!pv){ if(_sxPrevKind==='pv') sxPrevClose(); pvListHTML(out); return; }
   pvEditHTML(out, pv);
 }
 /* ── liste des PV ── */
@@ -11552,7 +11572,7 @@ function pvEditHTML(out, pv){
     '<span class="pv-seg"><button class="'+(_pvTab==='gen'?'on':'')+'" onclick="_pvTab='+PV_Q+'gen'+PV_Q+';pvRender()">Général</button>'+
     '<button class="'+(_pvTab==='pv'?'on':'')+'" onclick="_pvTab='+PV_Q+'pv'+PV_Q+';pvRender()">PV</button></span>'+
     '<span style="margin-left:auto"></span>'+
-    '<button class="btn btn-sm" onclick="_pvPrev=!_pvPrev;pvRender()"'+(_pvPrev?' style="background:#003346;color:#fff;border-color:#003346"':'')+' title="Volet d’aperçu PDF à droite">🗔 Aperçu</button>'+
+    '<button class="btn btn-sm" onclick="sxPrev('+PV_Q+'pv'+PV_Q+')"'+(_sxPrevKind==='pv'?' style="background:#003346;color:#fff;border-color:#003346"':'')+' title="Volet d’aperçu PDF à droite (comme contrats et factures)">🗔 Aperçu</button>'+
     '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'open'+PV_Q+')">PDF (onglet)</button>'+
     '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'dl'+PV_Q+')">⬇ PDF</button>'+
     (RO?'<button class="btn btn-sm" onclick="pvMail('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+')">✉ E-mail</button>'
@@ -11581,44 +11601,12 @@ function pvEditHTML(out, pv){
     '<button class="btn btn-sm" onclick="pvSecAddCfc()">+ Section CFC</button></div>';
   pvEditWrap(out, h);
 }
-function pvEditWrap(out, body){
-  if(!_pvPrev){ out.innerHTML=body; return; }
-  out.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start">'+
-    '<div style="flex:1 1 54%;min-width:420px">'+body+'</div>'+
-    '<div id="pv_prev" style="flex:0 0 44%;position:sticky;top:60px;max-height:calc(100vh - 80px);overflow:auto;background:#e8eaed;border:1px solid #d5d5d5;border-radius:8px;padding:12px">'+
-    '<div style="color:#777;font-size:12px">Génération de l’aperçu…</div></div></div>';
-  pvPrevSched(120);
-}
+function pvEditWrap(out, body){ out.innerHTML=body; }
 function pvPrevSched(ms){
-  if(!_pvPrev||!_pvCur||_pvCur==='CFG') return;
-  clearTimeout(_pvPrevT); _pvPrevT=setTimeout(pvPrevRender, ms||600);
-}
-async function pvPrevRender(){
-  const el=document.getElementById('pv_prev'); const pv=pvCurPv();
-  if(!el||!pv||typeof pdfjsLib==='undefined') return;
-  if(_pvPrevBusy){ _pvPrevAgain=true; return; }
-  _pvPrevBusy=true;
-  try{
-    const bytes=await pvPDF(_pvAff, pv.id, 'bytes');
-    const doc=await pdfjsLib.getDocument({data:bytes.slice()}).promise;
-    const frag=document.createDocumentFragment();
-    const head=document.createElement('div');
-    head.style.cssText='font-size:11px;color:#666;margin:0 0 8px 2px';
-    head.textContent='Aperçu — '+doc.numPages+' page'+(doc.numPages>1?'s':'');
-    frag.appendChild(head);
-    for(let i=1;i<=doc.numPages;i++){
-      const pgt=await doc.getPage(i); const vp=pgt.getViewport({scale:1.5});
-      const cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
-      cv.style.cssText='width:100%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);border-radius:3px;display:block;margin-bottom:12px';
-      await pgt.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
-      frag.appendChild(cv);
-    }
-    const el2=document.getElementById('pv_prev');
-    if(el2){ el2.innerHTML=''; el2.appendChild(frag); }
-  }catch(e){ const el2=document.getElementById('pv_prev');
-    if(el2) el2.innerHTML='<div style="color:#b00;font-size:12px">Aperçu impossible : '+pvEsc(e.message)+'</div>'; }
-  _pvPrevBusy=false;
-  if(_pvPrevAgain){ _pvPrevAgain=false; pvPrevSched(200); }
+  // Rafraîchit le volet commun (sxPrev) quand il montre le PV — même aperçu que contrats/factures.
+  if(_sxPrevKind!=='pv'||!document.getElementById('sx_prev')) return;
+  clearTimeout(_pvPrevT);
+  _pvPrevT=setTimeout(()=>{ if(_sxPrevKind==='pv') sxPrevRender(); }, ms||600);
 }
 function pvPresHTML(pv, RO){
   const A=pvA(), dis=RO?' disabled':'';

@@ -772,16 +772,55 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 </div>
 
 <!-- ── VUE : PV DE CHANTIER (squelette à structurer) ── -->
+<style id="pv-style">
+#pv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
+#pv_out .pv-tb th{font-weight:600;padding:6px 10px;border-bottom:1px solid #b5b5b5;text-align:left;white-space:nowrap}
+#pv_out .pv-tb td{padding:5px 10px;border-top:1px solid #f0f0f0}
+#pv_out .pv-tb tbody tr:hover td{background:#eef4f9}
+.pv-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.pv-badge.an{background:#fdeed8;color:#9a6210;border:1px solid #e8c78f}
+.pv-badge.df{background:#e2f2e4;color:#1e6b2d;border:1px solid #9ecfa8}
+#pv_out .pv-card{border:1px solid #d9d9d9;border-radius:8px;background:#fff;padding:14px 16px;margin-top:12px}
+#pv_out .pv-card h4{margin:0 0 10px;font-size:13px;letter-spacing:.04em}
+#pv_out .pv-sec{border:1px solid #ddd;border-radius:8px;background:#fff;margin-top:10px}
+#pv_out .pv-sec .hd{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#f4f7f9;border-bottom:1px solid #e2e2e2;border-radius:8px 8px 0 0}
+#pv_out .pv-sec .hd input{font-weight:700;border:none;background:transparent;flex:1;font-size:12.5px}
+#pv_out .pv-sec .bd{padding:8px 12px}
+#pv_out textarea.pv-ta{width:100%;box-sizing:border-box;border:1px solid #d8d8d8;border-radius:6px;padding:6px 8px;font:12.5px/1.45 inherit;resize:vertical;margin:3px 0}
+#pv_out .pv-pb{border-top:2px dashed #b45309;color:#b45309;font-size:10.5px;text-align:center;margin:8px 0;line-height:1.9}
+#pv_out .pv-img{position:relative;display:inline-block;margin:4px 8px 4px 0}
+#pv_out .pv-img img{max-width:260px;max-height:170px;border:1px solid #ccc;border-radius:4px;display:block}
+#pv_out .pv-mini{font-size:11px;padding:2px 8px}
+#pv_out .pv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 14px}
+#pv_out .pv-grid label{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pv_out .pv-int td input{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:5px;padding:4px 6px;font-size:12px}
+#pv_out .pv-int td{padding:2px 4px;border:none}
+#pv_out .pv-meta label{display:inline-flex;align-items:center;gap:6px;margin:0 16px 8px 0;font-size:12.5px;color:#333}
+#pv_out .pv-meta input{border:1px solid #d8d8d8;border-radius:6px;padding:5px 7px;font-size:12.5px}
+.pv-seg{display:inline-flex;border:1px solid #003346;border-radius:6px;overflow:hidden}
+.pv-seg button{border:none;padding:6px 14px;cursor:pointer;font-size:12.5px;background:#fff;color:#003346}
+.pv-seg button.on{background:#003346;color:#fff}
+</style>
 <div class="panel" id="panel-pv-chantier">
-  <div class="home-wrap">
-    <div class="home-title" style="margin-top:52px">PV de chantier</div>
-    <div class="home-sub">Procès-verbaux de chantier par affaire</div>
+  <div class="home-wrap" style="max-width:1240px">
+    <div class="home-title" style="margin-top:44px">PV de chantier</div>
+    <div class="home-sub">Procès-verbaux de chantier par affaire — annotation avant séance, puis envoi définitif aux intervenants</div>
     <div class="adm-wrap">
-      <div style="padding:26px;border:1px dashed #c9c9c9;border-radius:8px;color:#777;font-size:13.5px;max-width:660px;line-height:1.55">
-        Module prêt à être construit : rédaction des procès-verbaux (participants, points traités,
-        décisions et suites), numérotation par affaire et export PDF au graphisme du bureau.
+      <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
+        <select id="pv_aff" onchange="pvSelAff(this.value)" style="min-width:280px"></select>
+        <button class="btn btn-sm" onclick="pvAddAffOpen()" title="Ajouter une affaire au module PV" style="font-size:15px;line-height:1;padding:5px 11px">✚</button>
+        <span id="pv_ctx" style="margin-left:auto;color:#777;font-size:12px"></span>
       </div>
+      <div id="pv_out" style="margin-top:12px"></div>
     </div>
+  </div>
+</div>
+<div id="pv_aff_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:9000">
+  <div style="background:#fff;width:540px;max-width:92vw;margin:60px auto;border-radius:10px;padding:18px 22px;box-shadow:0 8px 40px rgba(0,0,0,.35)">
+    <div style="font-weight:700;margin-bottom:8px">Ajouter une affaire au module PV</div>
+    <input id="pv_aff_f" placeholder="Filtrer par code ou nom de projet…" oninput="pvAffFill()" style="width:100%;box-sizing:border-box;padding:7px 9px;margin-bottom:8px;border:1px solid #ccc;border-radius:6px">
+    <div id="pv_aff_ls" style="max-height:330px;overflow:auto;border:1px solid #ddd;border-radius:6px"></div>
+    <div style="text-align:right;margin-top:10px"><button class="btn btn-sm" onclick="document.getElementById('pv_aff_ov').style.display='none'">Annuler</button></div>
   </div>
 </div>
 
@@ -3362,6 +3401,7 @@ function goTab(name, opts) {
   if(name==='heures') renderHeures();
   if(name==='feuille-heures') fhRender();
   if(name==='rapport') rapRender();
+  if(name==='pv-chantier') pvRender();
   if(name==='affaire-detail') renderAffaireDetail();
   if(name==='collab-detail') renderCollabDetail();
   if(name==='analyse-globale') renderAnalyseGlobale();
@@ -10219,6 +10259,7 @@ function buildBackupPayload(){
     sa_affaires_analyse: g('sa_affaires_analyse') || {},
     sa_vacances: g('sa_vacances') || {},
     sa_vac_saisies: g('sa_vac_saisies') || [],
+    sa_pv_data: g('sa_pv_data') || {},
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
   };
@@ -10393,6 +10434,7 @@ function applyBackupData(data, name){
     if(data.sa_affaires_analyse && typeof data.sa_affaires_analyse==='object') localStorage.setItem('sa_affaires_analyse', JSON.stringify(data.sa_affaires_analyse));
     if(data.sa_vacances && typeof data.sa_vacances==='object') localStorage.setItem('sa_vacances', JSON.stringify(data.sa_vacances));
     if(Array.isArray(data.sa_vac_saisies)) localStorage.setItem('sa_vac_saisies', JSON.stringify(data.sa_vac_saisies));
+    if(data.sa_pv_data && typeof data.sa_pv_data==='object') localStorage.setItem('sa_pv_data', JSON.stringify(data.sa_pv_data));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
     // Message de réussite : posé AVANT le rechargement, affiché en toast au démarrage (sinon il disparaîtrait).
@@ -10577,6 +10619,7 @@ function persistAdmin(){
     localStorage.setItem('sa_affaires_analyse', JSON.stringify(analyseAffaires));
     localStorage.setItem('sa_vacances', JSON.stringify(vacances));
     localStorage.setItem('sa_vac_saisies', JSON.stringify(vacSaisies));
+    localStorage.setItem('sa_pv_data', JSON.stringify(pvData));
     localStorage.setItem('sa_collab_annuel', JSON.stringify(collabAnnuel));
     localStorage.setItem('sa_collab_mensuel', JSON.stringify(collabMensuel));
   }catch(e){ console.warn('localStorage indisponible:', e); }
@@ -11206,6 +11249,493 @@ function fhBarDown(ev, el){
 }
 
 /* ═══ VACANCES (consultation par collaborateur / année, données import Deltaproject) ═══ */
+/* ══════════ PV DE CHANTIER — affaires, CFC, entreprises, annotation → définitif, PDF, mail (2026-09-22) ══════════ */
+let pvData={}, _pvAff='', _pvCur=null, _pvTab='pv', _pvCfcFull=false;
+const PV_NL=String.fromCharCode(10), PV_Q=String.fromCharCode(39);
+const PV_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const PV_CFC_COURT=[['211.2','Échafaudages'],['211.6','Maçonnerie / BA'],['214','Charpente'],['216','Taille de pierre'],
+ ['221','Fenêtres'],['222','Ferblanterie'],['224','Couverture'],['225','Étanchéité'],['226','Crépissage de façade'],
+ ['228','Stores'],['230','Installations électriques'],['240','Chauffage'],['244','Ventilation'],['250','Sanitaire'],
+ ['258','Cuisine'],['271','Plâtrerie'],['273','Menuiserie'],['281','Chapes'],['281.6','Carrelage'],['281.7','Parquet'],
+ ['285','Peinture'],['287','Nettoyage du bâtiment'],['291','Architecte'],['292','Ingénieur civil'],['296','Spécialistes / Experts'],
+ ['42','Aménagements extérieurs']];
+const PV_CFC_PLUS=[['10','Relevés, études géotechniques'],['11','Déblaiement, préparation du terrain'],['112','Démolitions'],
+ ['13','Installations de chantier en commun'],['135','Sécurité du chantier'],['20','Excavation'],['201','Fouilles en pleine masse'],
+ ['211.1','Installation de chantier'],['211.3','Canalisations intérieures'],['211.4','Béton / béton armé'],['211.5','Maçonnerie'],
+ ['212','Éléments préfabriqués'],['213','Construction métallique'],['215','Construction légère préfabriquée'],['217','Isolations spéciales'],
+ ['223','Paratonnerre'],['227','Traitement des surfaces extérieures'],['231','Appareils à courant fort'],['232','Installations de courant fort'],
+ ['236','Installations à courant faible'],['238','Télécommunication'],['242','Production de chaleur'],['243','Distribution de chaleur'],
+ ['251','Appareils sanitaires'],['254','Tuyauterie'],['261','Ascenseurs'],['272','Serrurerie'],['274','Vitrerie'],['275','Cylindres'],
+ ['277','Cloisons en éléments'],['282','Revêtements de parois'],['283','Faux-plafonds'],['284','Poêles / cheminées'],
+ ['286','Assèchement du bâtiment'],['293','Ingénieur électricien'],['294','Ingénieur CVC'],['295','Ingénieur sanitaire'],
+ ['296.1','Géomètre'],['296.3','Expert taille de pierre'],['296.4','Expert revêtements'],['296.5','Expert stratigraphie / conservation'],
+ ['421','Jardinage'],['5','Frais secondaires']];
+const PV_GEN_DEFAUT=()=>[
+ {t:"00.1 Plans d'exécution", x:["Les plans « bons pour exécution » seront remis en tirage papier en 4 exemplaires :",
+   "– 1 exemplaire pour l'architecte","– 2 exemplaires pour l'entreprise","– 1 exemplaire pour la DT",
+   "Chaque plan livré sur le chantier doit comporter impérativement la mention « exécution »."].join(PV_NL)},
+ {t:"00.2 Offres – métrés – facturation", x:["Adresse de facturation :","(à compléter)","",
+   "Les factures et factures intermédiaires devront être structurées selon le contrat.",
+   "Les montants demandés seront répartis par CFC et indiqueront les rabais, escomptes et prorata contractuellement convenus, ainsi que la retenue de garantie.",
+   "Les factures et factures intermédiaires non conformes seront refusées.",
+   "La DT analyse et traite les factures le 20 de chaque mois, date à laquelle démarre le délai des 30 jours.",
+   "Toute facture reçue au-delà de cette date sera traitée le mois suivant avec report du délai de paiement d'un mois.",
+   "Les compléments d'offres ou commandes supplémentaires doivent obligatoirement être présentés par écrit et signés de la DT pour être valables.",
+   "Les prix des régies ou travaux complémentaires seront soumis aux mêmes conditions de paiement que celles prévues à l'adjudication.",
+   "Les travaux en régie ne sont pas autorisés, sauf accord préalable avec la DT.",
+   "Les bons seront présentés à la DT pour signature au plus tard sept jours après l'exécution du travail.",
+   "Les heures des cadres ne sont pas prises en considération s'il s'agit de travaux à forfait ou en régie.",
+   "Le rapport énumère le nombre d'ouvriers engagés, leurs qualifications, les heures de machines et de travail, les matériaux utilisés et la description du travail accompli."].join(PV_NL)},
+ {t:"00.3 Planning des travaux", x:"Les étapes de bétonnage seront annoncées 48 heures à l'avance aux entreprises concernées."},
+ {t:"00.4 Informations et directives du chantier", x:["L'accès au chantier est strictement interdit à toute personne non autorisée.",
+   "Les recommandations de sécurité SUVA doivent être respectées.","Le chantier sera fermé quotidiennement.",
+   "La dernière entreprise à quitter le chantier ferme tous les accès et dépose la clé dans le boîtier prévu.",
+   "Chaque vendredi soir ou veille de fête, les installations d'eau et de l'enceinte du chantier seront fermées.",
+   "Aucun véhicule ne doit stationner ou attendre sur les routes d'accès au chantier.",
+   "Toute livraison importante influençant le trafic doit être annoncée et planifiée avec la DT au minimum une semaine à l'avance ; toute livraison non annoncée sera renvoyée.",
+   "Avant travaux, les entrepreneurs veilleront à ce que les conduites soient déviées ou mises hors service.",
+   "L'utilisation des bornes hydrantes est interdite.",
+   "Les entreprises doivent évacuer leurs déchets et ranger leur matériel chaque soir."].join(PV_NL)}];
+const PV_TXT05=["Légende : D = Début · F = Fin · Dqp = Dès que possible · Sat = Selon avancement des travaux",
+ "Sans remarques écrites dans un délai de 5 jours suivant sa réception, le présent procès-verbal est considéré comme approuvé et contractuel.",
+ "Les entreprises convoquées doivent être présentes à l'heure précise. Le responsable du chantier doit être présent ou représenté par une personne informée.",
+ "Aucun plan ne doit être transmis sur le chantier avant approbation par ARCH.",
+ "Ordre de distribution des plans : 1. Mandataires à ARCH — 2. ARCH à DT — 3. DT aux entreprises",
+ "Les plans distribués pour exécution doivent porter la mention « EXÉCUTION ».",
+ "La consommation d'alcool est interdite sur le chantier.",
+ "Les véhicules privés ne doivent pas être parqués dans l'enceinte du chantier."].join(PV_NL);
+const PV_TXT06=["06.1 Base","Respect des recommandations SUVA.","Équipement de protection individuelle obligatoire.","","06.2 Remarques","Ràs."].join(PV_NL);
+function pvEsc(t){ return String(t==null?'':t).split('&').join('&amp;').split('<').join('&lt;'); }
+function pvEscA(t){ return pvEsc(t).split('"').join('&quot;'); }
+function pvPad(n,l){ return String(n).padStart(l,'0'); }
+function pvDpt(iso){ const pr=String(iso||'').split('-'); return pr.length===3? pr[2]+'.'+pr[1]+'.'+pr[0].slice(2) : ''; }
+function pvId(){ return 'x'+Math.random().toString(36).slice(2,9); }
+function pvPersist(){ try{ localStorage.setItem('sa_pv_data', JSON.stringify(pvData)); return true; }
+  catch(e){ toast('Stockage plein — modification NON enregistrée (réduisez les images du PV).'); return false; } }
+function pvAffName(code){ const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===code):null;
+  return f&&f.projet ? f.projet : ''; }
+function pvCfcAll(){ const m=PV_CFC_COURT.concat(PV_CFC_PLUS);
+  return m.sort((a,b)=>String(a[0]).localeCompare(String(b[0]),undefined,{numeric:true})); }
+function pvCfcLabel(c){ const f=pvCfcAll().find(x=>x[0]===c); return f?f[1]:''; }
+function pvCfgNew(){ return { lieu:'', heure:'08:30', numDeb:0, cfc:[], ent:{},
+  interv:[ {id:pvId(),grp:'mo',role:"Maître de l'ouvrage",soc:'',nom:'',email:'',d:true},
+           {id:pvId(),grp:'mand',role:'Architectes / Direction des travaux',soc:'Substances architectes sàrl',nom:'M. Meireles',email:'paulo@substances.ch',d:true} ],
+  gen:PV_GEN_DEFAUT() }; }
+function pvA(){ return pvData[_pvAff]; }
+function pvCurPv(){ const A=pvA(); return A? A.pvs.find(x=>x.id===_pvCur) : null; }
+/* ── sélection / ajout d'affaire ── */
+function pvSelAff(v){ _pvAff=v; _pvCur=null; pvRender(); }
+function pvAddAffOpen(){ document.getElementById('pv_aff_ov').style.display='block';
+  document.getElementById('pv_aff_f').value=''; pvAffFill(); }
+function pvAffFill(){
+  const f=(document.getElementById('pv_aff_f').value||'').toLowerCase();
+  const ls=(typeof affairesAll==='function')?affairesAll():[];
+  const html=ls.filter(x=>!pvData[x.code] && ((x.code||'').toLowerCase().includes(f)||(x.projet||'').toLowerCase().includes(f)))
+    .slice(0,80).map(x=>'<div style="padding:6px 10px;cursor:pointer;font-size:12.5px" '+
+      'onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" '+
+      'onclick="pvAddAff('+PV_Q+pvEscA(x.code)+PV_Q+')"><b>'+pvEsc(x.code)+'</b> '+pvEsc(x.projet||'')+'</div>').join('');
+  document.getElementById('pv_aff_ls').innerHTML=html||'<div style="padding:10px;color:#999;font-size:12px">Aucune affaire trouvée.</div>';
+}
+function pvAddAff(code){
+  document.getElementById('pv_aff_ov').style.display='none';
+  if(!pvData[code]) pvData[code]={cfg:pvCfgNew(), pvs:[]};
+  _pvAff=code; _pvCur='CFG'; pvPersist(); pvRender();
+  toast('Affaire '+code+' ajoutée — définissez les CFC, entreprises et intervenants.');
+}
+/* ── rendu principal ── */
+function pvRender(){
+  const sel=document.getElementById('pv_aff'); if(!sel) return;
+  const codes=Object.keys(pvData).sort();
+  sel.innerHTML='<option value="">— Choisir une affaire —</option>'+
+    codes.map(c=>'<option value="'+pvEscA(c)+'">'+pvEsc(c)+' — '+pvEsc(pvAffName(c)).slice(0,60)+'</option>').join('');
+  sel.value=_pvAff;
+  const out=document.getElementById('pv_out'), ctx=document.getElementById('pv_ctx');
+  if(!_pvAff||!pvA()){ ctx.textContent='';
+    out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Choisissez une affaire, ou ajoutez-en une avec le bouton ✚.</div>'; return; }
+  const A=pvA();
+  ctx.textContent=A.pvs.length+' PV · dernier : '+(A.pvs.length?('PVCH '+pvPad(A.pvs[A.pvs.length-1].num,4)):'—');
+  if(_pvCur==='CFG'){ out.innerHTML='<div style="margin-bottom:10px"><button class="btn btn-sm" onclick="_pvCur=null;pvRender()">← Liste des PV</button></div>'+pvCfgHTML(); return; }
+  const pv=pvCurPv();
+  if(!pv){ pvListHTML(out); return; }
+  pvEditHTML(out, pv);
+}
+/* ── liste des PV ── */
+function pvListHTML(out){
+  const A=pvA();
+  let h='<div style="display:flex;gap:8px;margin-bottom:4px">'+
+    '<button class="btn btn-sm" onclick="pvCreate()">✚ Créer un PV</button>'+
+    '<button class="btn btn-sm" onclick="_pvCur='+PV_Q+'CFG'+PV_Q+';pvRender()">⚙︎ Général de l'.replace('x','x')+"'affaire</button></div>";
+  if(!A.pvs.length){ h+='<div style="color:#999;font-size:13px;padding:14px 4px">Aucun PV pour cette affaire. Cliquez sur « Créer un PV » — au premier PV, choisissez les CFC dans « Général ».</div>'; }
+  else {
+    h+='<table class="pv-tb"><thead><tr><th>N°</th><th>Référence</th><th>Séance</th><th>Statut</th><th style="text-align:right">Actions</th></tr></thead><tbody>';
+    A.pvs.slice().reverse().forEach(pv=>{
+      const an=pv.statut!=='definitif';
+      h+='<tr><td><b>PVCH '+pvPad(pv.num,4)+'</b></td><td>'+pvEsc(_pvAff)+'.PV.CH'+pvPad(pv.num,3)+'</td>'+
+        '<td>'+pvDpt(pv.date)+'</td>'+
+        '<td><span class="pv-badge '+(an?'an':'df')+'">'+(an?'Annotation':'Définitif')+'</span></td>'+
+        '<td style="text-align:right;white-space:nowrap">'+
+        '<button class="btn btn-sm pv-mini" onclick="pvOpen('+PV_Q+pv.id+PV_Q+')">Ouvrir</button> '+
+        '<button class="btn btn-sm pv-mini" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'open'+PV_Q+')">Aperçu PDF</button> '+
+        (an?'<button class="btn btn-sm pv-mini" onclick="pvEnvoyer('+PV_Q+pv.id+PV_Q+')" style="color:#1e6b2d">À envoyer</button> ':'')+
+        (an?'<button class="btn btn-sm pv-mini" onclick="pvDel('+PV_Q+pv.id+PV_Q+')" style="color:#b00">−</button>':'')+
+        '</td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  out.innerHTML=h;
+}
+function pvOpen(id){ _pvCur=id; _pvTab='pv'; pvRender(); }
+function pvDel(id){ const A=pvA(); const pv=A.pvs.find(x=>x.id===id); if(!pv) return;
+  chConfirm('Supprimer définitivement le PV PVCH '+pvPad(pv.num,4)+' (annotation) ?', ()=>{
+    A.pvs=A.pvs.filter(x=>x.id!==id); if(_pvCur===id) _pvCur=null; pvPersist(); pvRender(); }); }
+function pvCreate(){
+  const A=pvA(); if(!A) return;
+  if(!A.cfg.cfc.length){ _pvCur='CFG'; pvRender();
+    toast("Choisissez d'abord les CFC concernés par le projet, les entreprises et les intervenants."); return; }
+  const prev=A.pvs.length?A.pvs[A.pvs.length-1]:null;
+  const num=Math.max(A.cfg.numDeb||0, prev?prev.num:0, ...A.pvs.map(x=>+x.num||0))+1;
+  const today=fhISO(new Date());
+  let secs;
+  const RAS=()=>[{k:'t',v:'Ràs.'}];
+  if(prev) secs=JSON.parse(JSON.stringify(prev.secs));
+  else {
+    secs=[{t:'01. AVANCEMENT DES TRAVAUX',lines:RAS()},{t:'02. DOCUMENTS TRANSMIS',lines:RAS()},
+      {t:'03. DOCUMENTS À TRANSMETTRE',lines:RAS()},{t:'04. REMARQUES SUR DOCUMENTS TRANSMIS',lines:RAS()},
+      {t:'05. À TOUS LES INTERVENANTS',lines:[{k:'t',v:PV_TXT05}]},
+      {t:'06. SÉCURITÉ',lines:[{k:'t',v:PV_TXT06}]},
+      {t:'07. VACANCES',lines:RAS()},{t:'08. LIVRAISON SUR LE CHANTIER',lines:RAS()},
+      {t:'09. TRAVAUX À EFFECTUER',lines:[]}];
+    A.cfg.cfc.forEach(c=>{ const e=A.cfg.ent[c]||{}; if(e.adj||e.soc) secs.push({cfc:c,lines:[{k:'t',v:''}]}); });
+    secs.push({t:'10. PLANNING',lines:RAS()},{t:'11. HORS SÉANCE',lines:RAS()});
+  }
+  const pres={};
+  A.cfg.interv.forEach(it=>{ pres['i'+it.id]=it.d?'D':''; });
+  A.cfg.cfc.forEach(c=>{ const e=A.cfg.ent[c]||{}; if(e.adj||e.soc) pres['c'+c]='D'; });
+  if(prev&&prev.pres) Object.keys(prev.pres).forEach(k=>{ pres[k]=prev.pres[k]; });
+  const pv={ id:pvId(), num, date:today, redac:today, heure:A.cfg.heure||'08:30', meteo:'', statut:'annotation',
+    prochaine:'', approb: prev? ('Le procès-verbal PVCH '+pvPad(prev.num,4)+' de la séance du '+pvDpt(prev.date)+' est approuvé sans remarques.') : '',
+    pres, secs };
+  A.pvs.push(pv); pvPersist(); _pvCur=pv.id; _pvTab='pv'; pvRender();
+}
+/* ── configuration « Général » de l'affaire ── */
+function pvCfgHTML(){
+  const A=pvA(), cfg=A.cfg;
+  const lst=_pvCfcFull?pvCfcAll():PV_CFC_COURT;
+  let h='<div class="pv-card"><h4>AFFAIRE — CONDITIONS INITIALES</h4><div class="pv-meta">'+
+    '<label>Lieu <input style="width:340px" value="'+pvEscA(cfg.lieu)+'" onchange="pvCfgSet('+PV_Q+'lieu'+PV_Q+',this.value)" placeholder="Rue, NPA localité (ECA …)"></label>'+
+    '<label>Heure des séances <input type="time" value="'+pvEscA(cfg.heure)+'" onchange="pvCfgSet('+PV_Q+'heure'+PV_Q+',this.value)"></label>'+
+    '<label>Numérotation — dernier n° déjà émis <input type="number" min="0" style="width:76px" value="'+(+cfg.numDeb||0)+'" onchange="pvCfgSet('+PV_Q+'numDeb'+PV_Q+',this.value)" title="Ex. 32 → le prochain PV portera le n° 33"></label>'+
+    '</div></div>';
+  h+='<div class="pv-card"><h4>CFC DU PROJET</h4><div class="pv-grid">'+
+    lst.map(x=>'<label><input type="checkbox" '+(cfg.cfc.includes(x[0])?'checked':'')+' onchange="pvCfcTog('+PV_Q+pvEscA(x[0])+PV_Q+')"> <b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1])+'</label>').join('')+
+    '</div><div style="margin-top:8px"><button class="btn btn-sm pv-mini" onclick="_pvCfcFull=!_pvCfcFull;pvRender()">'+(_pvCfcFull?'Liste raccourcie':'Afficher tous les CFC')+'</button></div></div>';
+  if(cfg.cfc.length){
+    h+='<div class="pv-card"><h4>ENTREPRISES PAR CFC (adjudications)</h4><table class="pv-int" style="width:100%"><tr style="font-size:11px;color:#777"><td style="width:150px">CFC</td><td>Entreprise</td><td style="width:220px">E-mail</td><td style="width:70px;text-align:center">Adjugé</td></tr>'+
+      cfg.cfc.map(c=>{ const e=cfg.ent[c]||{};
+        return '<tr><td><b>'+pvEsc(c)+'</b> <span style="color:#777;font-size:11px">'+pvEsc(pvCfcLabel(c))+'</span></td>'+
+        '<td><input value="'+pvEscA(e.soc||'')+'" onchange="pvEntSet('+PV_Q+pvEscA(c)+PV_Q+','+PV_Q+'soc'+PV_Q+',this.value)" placeholder="Société"></td>'+
+        '<td><input value="'+pvEscA(e.email||'')+'" onchange="pvEntSet('+PV_Q+pvEscA(c)+PV_Q+','+PV_Q+'email'+PV_Q+',this.value)" placeholder="email@…"></td>'+
+        '<td style="text-align:center"><input type="checkbox" style="width:auto" '+(e.adj?'checked':'')+' onchange="pvEntSet('+PV_Q+pvEscA(c)+PV_Q+','+PV_Q+'adj'+PV_Q+',this.checked)"></td></tr>'; }).join('')+
+      '</table></div>';
+  }
+  const GRP={mo:"Maître de l'ouvrage",mand:'Mandataires',ext:'Externes'};
+  h+='<div class="pv-card"><h4>INTERVENANTS</h4>';
+  ['mo','mand','ext'].forEach(g=>{
+    h+='<div style="font-weight:600;font-size:12px;margin:8px 0 3px">'+GRP[g]+' <button class="btn btn-sm pv-mini" onclick="pvIntAdd('+PV_Q+g+PV_Q+')">+</button></div>'+
+      '<table class="pv-int" style="width:100%">';
+    cfg.interv.forEach(it=>{ if(it.grp!==g) return;
+      h+='<tr><td style="width:24%"><input value="'+pvEscA(it.role)+'" onchange="pvIntSet('+PV_Q+it.id+PV_Q+','+PV_Q+'role'+PV_Q+',this.value)" placeholder="Rôle"></td>'+
+        '<td style="width:26%"><input value="'+pvEscA(it.soc)+'" onchange="pvIntSet('+PV_Q+it.id+PV_Q+','+PV_Q+'soc'+PV_Q+',this.value)" placeholder="Société"></td>'+
+        '<td style="width:20%"><input value="'+pvEscA(it.nom)+'" onchange="pvIntSet('+PV_Q+it.id+PV_Q+','+PV_Q+'nom'+PV_Q+',this.value)" placeholder="M. / Mme …"></td>'+
+        '<td style="width:22%"><input value="'+pvEscA(it.email)+'" onchange="pvIntSet('+PV_Q+it.id+PV_Q+','+PV_Q+'email'+PV_Q+',this.value)" placeholder="email@…"></td>'+
+        '<td style="width:52px;text-align:center;font-size:11px">D <input type="checkbox" style="width:auto" '+(it.d?'checked':'')+' onchange="pvIntSet('+PV_Q+it.id+PV_Q+','+PV_Q+'d'+PV_Q+',this.checked)"></td>'+
+        '<td style="width:26px"><button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvIntDel('+PV_Q+it.id+PV_Q+')">−</button></td></tr>';
+    });
+    h+='</table>';
+  });
+  h+='<div style="color:#888;font-size:11px;margin-top:6px">D = reçoit le PV par e-mail (distribution).</div></div>';
+  h+='<div class="pv-card"><h4>0. GÉNÉRAL — TEXTES FIXES DU PV <button class="btn btn-sm pv-mini" onclick="pvGenAdd()">+ bloc</button></h4>'+
+    cfg.gen.map((b,i)=>'<div style="margin-bottom:10px"><input style="width:60%;font-weight:600;border:1px solid #ddd;border-radius:5px;padding:4px 7px;font-size:12px" value="'+pvEscA(b.t)+'" onchange="pvGenSet('+i+','+PV_Q+'t'+PV_Q+',this.value)"> '+
+      '<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvGenDel('+i+')">−</button>'+
+      '<textarea class="pv-ta" rows="'+Math.min(10,Math.max(2,String(b.x).split(PV_NL).length))+'" onchange="pvGenSet('+i+','+PV_Q+'x'+PV_Q+',this.value)">'+pvEsc(b.x)+'</textarea></div>').join('')+
+    '</div>';
+  return h;
+}
+function pvCfgSet(k,v){ pvA().cfg[k]=(k==='numDeb')?(+v||0):v; pvPersist(); }
+function pvCfcTog(c){ const cfg=pvA().cfg; const i=cfg.cfc.indexOf(c);
+  if(i>=0) cfg.cfc.splice(i,1); else { cfg.cfc.push(c); cfg.cfc.sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})); }
+  pvPersist(); pvRender(); }
+function pvEntSet(c,k,v){ const cfg=pvA().cfg; const e=cfg.ent[c]=cfg.ent[c]||{soc:'',email:'',adj:false};
+  e[k]=(k==='adj')?!!v:v; pvPersist(); if(k==='adj') pvRender(); }
+function pvIntAdd(g){ pvA().cfg.interv.push({id:pvId(),grp:g,role:'',soc:'',nom:'',email:'',d:true}); pvPersist(); pvRender(); }
+function pvIntSet(id,k,v){ const it=pvA().cfg.interv.find(x=>x.id===id); if(!it) return; it[k]=(k==='d')?!!v:v; pvPersist(); }
+function pvIntDel(id){ const cfg=pvA().cfg; cfg.interv=cfg.interv.filter(x=>x.id!==id); pvPersist(); pvRender(); }
+function pvGenAdd(){ pvA().cfg.gen.push({t:'00.x Nouveau bloc',x:''}); pvPersist(); pvRender(); }
+function pvGenSet(i,k,v){ pvA().cfg.gen[i][k]=v; pvPersist(); }
+function pvGenDel(i){ pvA().cfg.gen.splice(i,1); pvPersist(); pvRender(); }
+/* ── éditeur de PV ── */
+function pvEditHTML(out, pv){
+  const A=pvA(), RO=pv.statut==='definitif', dis=RO?' disabled':'';
+  let h='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">'+
+    '<button class="btn btn-sm" onclick="_pvCur=null;pvRender()">← Liste</button>'+
+    '<b style="font-size:14px">PVCH '+pvPad(pv.num,4)+'</b>'+
+    '<span class="pv-badge '+(RO?'df':'an')+'">'+(RO?'Définitif':'Annotation')+'</span>'+
+    '<span class="pv-seg"><button class="'+(_pvTab==='gen'?'on':'')+'" onclick="_pvTab='+PV_Q+'gen'+PV_Q+';pvRender()">Général</button>'+
+    '<button class="'+(_pvTab==='pv'?'on':'')+'" onclick="_pvTab='+PV_Q+'pv'+PV_Q+';pvRender()">PV</button></span>'+
+    '<span style="margin-left:auto"></span>'+
+    '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'open'+PV_Q+')">Aperçu PDF</button>'+
+    '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'dl'+PV_Q+')">⬇ PDF</button>'+
+    (RO?'<button class="btn btn-sm" onclick="pvMail('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+')">✉ E-mail</button>'
+       :'<button class="btn btn-sm" style="color:#1e6b2d;font-weight:700" onclick="pvEnvoyer('+PV_Q+pv.id+PV_Q+')">À envoyer</button>')+
+    '</div>';
+  if(_pvTab==='gen'){ out.innerHTML=h+pvCfgHTML(); return; }
+  h+='<div class="pv-card"><h4>SÉANCE</h4><div class="pv-meta">'+
+    '<label>N° <input type="number" style="width:70px" value="'+(+pv.num)+'" onchange="pvSet('+PV_Q+'num'+PV_Q+',this.value)"'+dis+'></label>'+
+    '<label>Séance du <input type="date" value="'+pvEscA(pv.date)+'" onchange="pvSet('+PV_Q+'date'+PV_Q+',this.value)"'+dis+'></label>'+
+    '<label>Heure <input type="time" value="'+pvEscA(pv.heure)+'" onchange="pvSet('+PV_Q+'heure'+PV_Q+',this.value)"'+dis+'></label>'+
+    '<label>Semaine <b>'+(pv.date?fhWeekNum(new Date(pv.date+'T00:00:00')):'—')+'</b></label>'+
+    '<label>Météo <input style="width:240px" value="'+pvEscA(pv.meteo)+'" onchange="pvSet('+PV_Q+'meteo'+PV_Q+',this.value)" placeholder="Temps nuageux, 16°"'+dis+'></label>'+
+    '<label>Rédigé le <input type="date" value="'+pvEscA(pv.redac||'')+'" onchange="pvSet('+PV_Q+'redac'+PV_Q+',this.value)"'+dis+'></label>'+
+    '</div>'+
+    '<div style="margin-top:4px"><label style="font-size:12.5px">Prochaine séance de chantier</label>'+
+    '<textarea class="pv-ta" rows="1" onchange="pvSet('+PV_Q+'prochaine'+PV_Q+',this.value)" placeholder="Jeudi 3 juin 2021"'+dis+'>'+pvEsc(pv.prochaine)+'</textarea>'+
+    '<label style="font-size:12.5px">Approbation du PV précédent</label>'+
+    '<textarea class="pv-ta" rows="1" onchange="pvSet('+PV_Q+'approb'+PV_Q+',this.value)"'+dis+'>'+pvEsc(pv.approb)+'</textarea></div></div>';
+  h+=pvPresHTML(pv, RO);
+  pv.secs.forEach((sec,si)=>{ h+=pvSecHTML(pv,sec,si,RO); });
+  if(!RO) h+='<div style="margin-top:10px"><button class="btn btn-sm" onclick="pvSecAdd()">+ Section</button> '+
+    '<button class="btn btn-sm" onclick="pvSecAddCfc()">+ Section CFC</button></div>';
+  out.innerHTML=h;
+}
+function pvPresHTML(pv, RO){
+  const A=pvA(), dis=RO?' disabled':'';
+  const L='DPEAC'.split('');
+  const row=(key,lbl)=>{ const cur=pv.pres[key]||'';
+    return '<tr><td style="font-size:12px;padding:2px 6px">'+lbl+'</td>'+L.map(x=>
+      '<td style="text-align:center;width:34px"><input type="checkbox" style="width:auto" '+(cur.includes(x)?'checked':'')+
+      ' onchange="pvPresTog('+PV_Q+key+PV_Q+','+PV_Q+x+PV_Q+')"'+dis+'></td>').join('')+'</tr>'; };
+  let h='<div class="pv-card"><h4>PRÉSENCES ET DISTRIBUTION</h4><table style="border-collapse:collapse"><tr><td></td>'+
+    L.map(x=>'<td style="text-align:center;font-weight:700;font-size:11px;width:34px">'+x+'</td>').join('')+'</tr>';
+  A.cfg.interv.forEach(it=>{ h+=row('i'+it.id, pvEsc((it.role?it.role+' — ':'')+(it.soc?it.soc+' : ':'')+it.nom)); });
+  A.cfg.cfc.forEach(c=>{ const e=A.cfg.ent[c]||{}; if(!(e.adj||e.soc)) return;
+    h+=row('c'+c, '<b>'+pvEsc(c)+'</b> '+pvEsc(pvCfcLabel(c))+' — '+pvEsc(e.soc||'?')); });
+  h+='</table><div style="color:#888;font-size:11px;margin-top:6px">D = distribution PV · P = présent · E = excusé · A = absent · C = convoqué à la prochaine séance.</div></div>';
+  return h;
+}
+function pvSecHTML(pv,sec,si,RO){
+  const A=pvA(), dis=RO?' disabled':'';
+  const titre = sec.cfc ? (sec.cfc+' '+pvCfcLabel(sec.cfc)+' — '+((A.cfg.ent[sec.cfc]||{}).soc||'')) : sec.t;
+  let h='<div class="pv-sec"><div class="hd">'+
+    (sec.cfc?'<b style="flex:1;font-size:12.5px">'+pvEsc(titre)+'</b>'
+            :'<input value="'+pvEscA(sec.t)+'" onchange="pvSecTitre('+si+',this.value)"'+dis+'>')+
+    (RO?'':('<button class="btn btn-sm pv-mini" onclick="pvLineAdd('+si+')">+ ligne</button>'+
+      '<button class="btn btn-sm pv-mini" onclick="document.getElementById('+PV_Q+'pv_f_'+si+PV_Q+').click()">+ image</button>'+
+      '<input type="file" accept="image/*" style="display:none" id="pv_f_'+si+'" onchange="pvImgAdd('+si+',this)">'+
+      '<button class="btn btn-sm pv-mini" onclick="pvPbAdd('+si+')">+ saut de page</button>'+
+      '<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvSecDel('+si+')">−</button>'))+
+    '</div><div class="bd">';
+  sec.lines.forEach((ln,li)=>{
+    if(ln.k==='pb'){ h+='<div class="pv-pb">SAUT DE PAGE '+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</div>'; }
+    else if(ln.k==='img'){ h+='<div class="pv-img"><img src="'+ln.v+'">'+
+      (RO?'':'<button class="btn btn-sm pv-mini" style="position:absolute;top:4px;right:4px;color:#b00;background:#fff" onclick="pvLineDel('+si+','+li+')">−</button>')+'</div>'; }
+    else { h+='<div style="display:flex;gap:6px;align-items:flex-start">'+
+      '<textarea class="pv-ta" rows="'+Math.min(14,Math.max(2,String(ln.v).split(PV_NL).length+1))+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v)+'</textarea>'+
+      (RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00;margin-top:6px" onclick="pvLineDel('+si+','+li+')">−</button>')+'</div>'; }
+  });
+  h+='</div></div>';
+  return h;
+}
+/* mutations du PV */
+function pvSet(k,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
+  pv[k]=(k==='num')?(+v||pv.num):v; pvPersist(); if(k==='num'||k==='date') pvRender(); }
+function pvPresTog(key,x){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
+  const cur=pv.pres[key]||''; pv.pres[key]=cur.includes(x)?cur.split(x).join(''):cur+x; pvPersist(); }
+function pvSecTitre(si,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].t=v; pvPersist(); }
+function pvLineSet(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].v=v; pvPersist(); }
+function pvLineAdd(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.push({k:'t',v:''}); pvPersist(); pvRender(); }
+function pvLineDel(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.splice(li,1); pvPersist(); pvRender(); }
+function pvPbAdd(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.push({k:'pb'}); pvPersist(); pvRender(); }
+function pvSecAdd(){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs.push({t:'Nouvelle section',lines:[{k:'t',v:''}]}); pvPersist(); pvRender(); }
+function pvSecAddCfc(){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
+  const A=pvA(); const dispo=A.cfg.cfc.filter(c=>!pv.secs.some(x=>x.cfc===c));
+  if(!dispo.length){ toast('Tous les CFC du projet ont déjà leur section.'); return; }
+  chPrompt('Code CFC à ajouter ('+dispo.join(', ')+') :', c=>{ c=String(c||'').trim();
+    if(!dispo.includes(c)){ toast('CFC inconnu ou déjà présent.'); return; }
+    const i=pv.secs.findIndex(x=>String(x.t||'').startsWith('10.'));
+    pv.secs.splice(i<0?pv.secs.length:i,0,{cfc:c,lines:[{k:'t',v:''}]}); pvPersist(); pvRender(); }); }
+function pvImgAdd(si,inp){
+  const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
+  const f=inp.files&&inp.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ const im=new Image();
+    im.onload=()=>{ const MAX=1100, r=Math.min(1,MAX/im.width);
+      const cv=document.createElement('canvas'); cv.width=Math.round(im.width*r); cv.height=Math.round(im.height*r);
+      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+      const url=cv.toDataURL('image/jpeg',0.82);
+      pv.secs[si].lines.push({k:'img',v:url});
+      if(!pvPersist()) pv.secs[si].lines.pop();
+      pvRender(); };
+    im.src=rd.result; };
+  rd.readAsDataURL(f); inp.value='';
+}
+/* ── envoi : annotation → définitif + PDF + mail ── */
+function pvEnvoyer(id){
+  const A=pvA(); const pv=A.pvs.find(x=>x.id===id); if(!pv||pv.statut==='definitif') return;
+  chConfirm('Le PV PVCH '+pvPad(pv.num,4)+' deviendra DÉFINITIF (verrouillé). Le PDF sera téléchargé et un e-mail préparé pour les destinataires « D ». Continuer ?', ()=>{
+    pv.statut='definitif'; pv.redac=fhISO(new Date()); pvPersist(); pvRender();
+    pvPDF(_pvAff, id, 'dl').then(()=>pvMail(_pvAff, id)).catch(e=>{ toast('Erreur PDF : '+e.message); });
+  });
+}
+function pvMail(code, id){
+  const A=pvData[code]; const pv=A.pvs.find(x=>x.id===id); if(!pv) return;
+  const dests=[], miss=[];
+  A.cfg.interv.forEach(it=>{ if((pv.pres['i'+it.id]||'').includes('D')){
+    if(it.email) dests.push(it.email); else miss.push(it.nom||it.soc||it.role); } });
+  A.cfg.cfc.forEach(c=>{ const e=A.cfg.ent[c]||{}; if((pv.pres['c'+c]||'').includes('D')){
+    if(e.email) dests.push(e.email); else miss.push(c+' — '+(e.soc||'?')); } });
+  if(miss.length) toast('Adresses e-mail manquantes : '+miss.join(', '));
+  if(!dests.length){ toast('Aucun destinataire « D » avec adresse e-mail.'); return; }
+  const ref=code+'.PV.CH'+pvPad(pv.num,3);
+  const subject='PV de chantier '+ref+' — '+(pvAffName(code)||code);
+  const body=['Madame, Monsieur,','','Veuillez trouver en annexe le procès-verbal de la séance de chantier du '+pvDpt(pv.date)+' ('+ref+').',
+    (pv.prochaine?'Prochaine séance : '+pv.prochaine:''),'',
+    'Sans remarques écrites dans un délai de 5 jours suivant sa réception, le présent procès-verbal est considéré comme approuvé et contractuel.','',
+    'Substances architectes sàrl','Rue de la Gare 12, 1096 Cully'].join(PV_NL);
+  location.href='mailto:'+dests.join(',')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+}
+/* ── PDF au graphisme des contrats/factures (Akkurat, traits 0.25, logo, pied dessiné) ── */
+async function pvLogoPng(idx){
+  // Logo « SUBSTANCES ARCHITECTES » rasterisé (~580 dpi) depuis le gabarit facture (p.1 noir / p.2 gris).
+  // Contrairement à embedPage, AUCUN texte fantôme du gabarit ne subsiste dans le PV. Cache global.
+  window._pvLogoCache=window._pvLogoCache||{};
+  if(window._pvLogoCache[idx]) return window._pvLogoCache[idx];
+  const tb=d=>{ const b=atob(d.split(',')[1]); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i); return u; };
+  const d=await pdfjsLib.getDocument({data:tb(FA_TMPL)}).promise;
+  const pgt=await d.getPage(idx+1);
+  const S=8, vp=pgt.getViewport({scale:S});
+  const cv=document.createElement('canvas');
+  cv.width=Math.ceil((568.5-541)*S); cv.height=Math.ceil((236-83.5)*S);
+  const ctx=cv.getContext('2d');
+  ctx.translate(-541*S, -(841.89-236)*S);
+  await pgt.render({canvasContext:ctx, viewport:vp}).promise;
+  const url=cv.toDataURL('image/png');
+  window._pvLogoCache[idx]=url; return url;
+}
+async function pvPDF(code, id, mode){
+  const A=pvData[code]; const pv=A&&A.pvs.find(x=>x.id===id); if(!pv){ return; }
+  const projet=pvAffName(code)||code;
+  const PD=window.PDFLib?window.PDFLib.PDFDocument:PDFDocument;
+  const RGBf=window.PDFLib?window.PDFLib.rgb:rgb;
+  const doc=await PD.create();
+  if(window.fontkit) doc.registerFontkit(window.fontkit);
+  const tb=d=>{ const b=atob(d.split(',')[1]); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i); return u; };
+  const fL=await doc.embedFont(tb(AKKU_LIGHT),{subset:true});
+  const fR=await doc.embedFont(tb(AKKU_REGULAR),{subset:true});
+  const fB=await doc.embedFont(tb(AKKU_BOLD),{subset:true});
+  // Le TT Light/Bold embarqué MANQUE de glyphes (« » " = · … & # etc.) — le Regular a tout.
+  // Sanitize dynamique : caractère absent du Light → équivalent disponible (sinon retiré).
+  const fkL=window.fontkit?window.fontkit.create(tb(AKKU_LIGHT)):null;
+  const MISS={'«':'’','»':'’','“':'’','”':'’','"':'’','·':'–','=':':','…':'...','&':'+','#':'n°','*':'','@':'(at)','§':'par.','€':'EUR','‘':'’','ö':'o','—':'–'};
+  const san=t=>{ t=String(t==null?'':t); if(!fkL) return t; let o='';
+    for(const ch of t){ const cp=ch.codePointAt(0);
+      if(cp===10||cp===13||cp===9||fkL.hasGlyphForCodePoint(cp)) o+=ch;
+      else o+=(MISS[ch]!==undefined?MISS[ch]:''); }
+    return o; };
+  const logoN=await doc.embedPng(tb(await pvLogoPng(0)));
+  const logoG=await doc.embedPng(tb(await pvLogoPng(1)));
+  const cN=RGBf(0.08,0.07,0.07), cG=RGBf(0.4,0.4,0.4), cW=RGBf(1,1,1);
+  const refStr=code+'.PV.CH'+pvPad(pv.num,3);
+  const dfr=iso=>{ const pr=String(iso||'').split('-'); return pr.length===3? (+pr[2])+' '+PV_MOIS[+pr[1]-1]+' '+pr[0] : ''; };
+  const ML=85.04, MRX=510.2, WW=MRX-ML, BOT=70;
+  let pages=[], pg=null, y=0;
+  const newPage=()=>{
+    pg=doc.addPage([595.28,841.89]); pages.push(pg);
+    pg.drawImage(pages.length===1?logoN:logoG,{x:541,y:83.5,width:27.5,height:152.5});
+    pg.drawText('PROCÈS-VERBAL',{x:28.4,y:805.5,size:7.5,font:fB,color:cN});
+    pg.drawText((refStr+' - '+String(projet).toUpperCase()).slice(0,72),{x:28.4,y:791.6,size:7.5,font:fL,color:cG});
+    pg.drawText('CULLY - '+dfr(pv.redac||pv.date),{x:28.4,y:778.5,size:7.5,font:fL,color:cG});
+    pg.drawLine({start:{x:28.35,y:802.1},end:{x:36.5,y:802.1},thickness:0.25,color:cN});
+    pg.drawLine({start:{x:28.35,y:787.9},end:{x:36.5,y:787.9},thickness:0.25,color:cN});
+    // Pied DESSINÉ aux cotes mesurées du gabarit facture (pas d'embed → pas de texte fantôme).
+    pg.drawText('RUE DE LA GARE 12',{x:28.4,y:42.0,size:7.5,font:fL,color:cN});
+    pg.drawText('CH – 1096 CULLY',{x:28.4,y:28.0,size:7.5,font:fL,color:cN});
+    pg.drawText('+41 21 711 50 50',{x:125.7,y:42.0,size:7.5,font:fL,color:cN});
+    pg.drawText('INFO@SUBSTANCES.CH',{x:125.7,y:28.0,size:7.5,font:fR,color:cN});
+    pg.drawText('CHE-403.117.623',{x:222.9,y:42.0,size:7.5,font:fL,color:cN});
+    pg.drawText('CH-550.1.175.460-8',{x:222.9,y:28.0,size:7.5,font:fL,color:cN});
+    [[28.35,36.5],[125.85,134.3],[222.95,231.4]].forEach(sg=>{
+      pg.drawLine({start:{x:sg[0],y:37.8},end:{x:sg[1],y:37.8},thickness:0.25,color:cN}); });
+    y=750;
+  };
+  const need=h=>{ if(y-h<BOT) newPage(); };
+  const wrap=(t,f,sz,w)=>{ const out=[]; ((f===fR)?String(t==null?'':t):san(t)).split(PV_NL).forEach(par=>{
+      const words=par.split(' '); let line='';
+      words.forEach(wd=>{ const test=line?line+' '+wd:wd;
+        if(line && f.widthOfTextAtSize(test,sz)>w){ out.push(line); line=wd; } else line=test; });
+      out.push(line); });
+    return out; };
+  const txt=(t,f,sz,x,w,lh,col)=>{ wrap(t,f,sz,w).forEach(l=>{ need(lh); pg.drawText(l,{x,y,size:sz,font:f,color:col||cN}); y-=lh; }); };
+  const sTitle=t=>{ need(26); y-=8; pg.drawText(san(String(t).toUpperCase()),{x:ML,y,size:8,font:fB,color:cN}); y-=4.5;
+    pg.drawLine({start:{x:ML,y},end:{x:MRX,y},thickness:0.25,color:cN}); y-=11; };
+  newPage();
+  txt(String(projet), fB, 9.5, ML, WW, 13); y-=6;
+  const kv=(k,v)=>{ need(11); pg.drawText(k,{x:ML,y,size:8,font:fR,color:cN});
+    pg.drawText(san(v),{x:ML+92,y,size:8,font:fL,color:cN}); y-=11; };
+  kv('Référence :',refStr);
+  kv('Cully :',pvDpt(pv.redac||pv.date));
+  kv('Séance de chantier :',pvDpt(pv.date)+' — PVCH '+pvPad(pv.num,4));
+  kv('Semaine :',pv.date?fhWeekNum(new Date(pv.date+'T00:00:00')):'');
+  kv('Lieu :',A.cfg.lieu);
+  kv('Heure :',pv.heure||A.cfg.heure);
+  kv('Météo :',pv.meteo);
+  sTitle('Intervenants');
+  const letters=k=>{ const cur=pv.pres[k]||''; return 'DPEAC'.split('').filter(x=>cur.includes(x)).join(' '); };
+  const entry=(lbl,k)=>{ const ls=wrap(lbl,fL,8,WW-60); ls.forEach((l,i)=>{ need(10.5);
+      pg.drawText(l,{x:ML,y,size:8,font:fL,color:cN});
+      if(i===0){ const lt=letters(k); if(lt) pg.drawText(lt,{x:MRX-fR.widthOfTextAtSize(lt,8),y,size:8,font:fR,color:cN}); }
+      y-=10.5; }); };
+  const GRP={mo:"Maître de l'ouvrage",mand:'Mandataires',ext:'Externes'};
+  ['mo','mand','ext'].forEach(g=>{ const its=A.cfg.interv.filter(x=>x.grp===g); if(!its.length) return;
+    need(14); pg.drawText(GRP[g],{x:ML,y,size:8,font:fR,color:cN}); y-=11;
+    its.forEach(it=>entry((it.role?it.role+' — ':'')+(it.soc?it.soc+' : ':'')+it.nom,'i'+it.id)); y-=3; });
+  const ents=A.cfg.cfc.filter(c=>{ const e=A.cfg.ent[c]||{}; return e.adj||e.soc; });
+  if(ents.length){ need(14); pg.drawText('Entreprises',{x:ML,y,size:8,font:fR,color:cN}); y-=11;
+    ents.forEach(c=>entry(c+' '+pvCfcLabel(c)+' — '+((A.cfg.ent[c]||{}).soc||''),'c'+c)); }
+  y-=4;
+  txt('Légende : D = distribution PV · P = présent · E = excusé · A = absent · C = convoqué à la prochaine séance.',fR,7,ML,WW,9,cG);
+  if(pv.prochaine){ sTitle('Prochaine séance de chantier'); txt(pv.prochaine,fR,8,ML,WW,10.5); }
+  if(pv.approb){ y-=2; txt(pv.approb,fL,8,ML,WW,10.5); }
+  if(A.cfg.gen.length){ sTitle('0. Général');
+    A.cfg.gen.forEach(b=>{ need(24); pg.drawText(String(b.t),{x:ML,y,size:8,font:fR,color:cN}); y-=11;
+      txt(b.x,fL,8,ML,WW,10.5); y-=5; }); }
+  for(const sec of pv.secs){
+    const titre = sec.cfc ? (sec.cfc+' '+pvCfcLabel(sec.cfc)+' — '+((A.cfg.ent[sec.cfc]||{}).soc||'')) : sec.t;
+    sTitle(titre);
+    for(const ln of sec.lines){
+      if(ln.k==='pb'){ newPage(); }
+      else if(ln.k==='img'){
+        try{
+          const im = ln.v.startsWith('data:image/png') ? await doc.embedPng(tb(ln.v)) : await doc.embedJpg(tb(ln.v));
+          const w=Math.min(300,WW), hh=im.height*(w/im.width);
+          need(hh+8); pg.drawImage(im,{x:ML,y:y-hh,width:w,height:hh}); y-=hh+10;
+        }catch(e){}
+      }
+      else { txt(ln.v,fL,8,ML,WW,10.5); y-=4; }
+    }
+  }
+  pages.forEach((p,i)=>{ const pw=595.28, n=String(i+1);
+    p.drawText(n,{x:pw-87.6-fL.widthOfTextAtSize(n,7.5),y:28.0,size:7.5,font:fL,color:cN});
+    p.drawText(String(pages.length),{x:pw-82.2,y:28.0,size:7.5,font:fL,color:cN});
+    p.drawLine({start:{x:pw-84.6,y:26.55},end:{x:pw-84.6,y:35.05},thickness:0.25,color:cN}); });
+  const bytes=await doc.save();
+  window._pvLastBytes=bytes;                       // pour vérifications (pdf.js)
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  const url=URL.createObjectURL(blob);
+  if(mode==='open'){ const w=window.open(url,'_blank'); if(w){ setTimeout(()=>URL.revokeObjectURL(url),60000); return; } }
+  const aa=document.createElement('a'); aa.href=url; aa.download=code+'_PV_CH'+pvPad(pv.num,3)+'.pdf';
+  document.body.appendChild(aa); aa.click(); aa.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
 /* ══════════ RAPPORT (clone Deltaproject : 7 types, menus, graphique) — 2026-09-22 ══════════ */
 let _rapType='heb', _rapMonday=null, _rapMois=null, _rapAnnee=null, _rapTbl=null, _rapSvg=null;
 const RAP_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -11429,7 +11959,7 @@ function rapMenu(ev,id){
   const sep='<div style="border-top:1px solid #e4e4e4;margin:4px 0"></div>';
   if(id==='rap_doc_menu'){
     m.innerHTML=it(!!_rapTbl,'Afficher le rapport …','rapPrint()')+
-      it(true,'Aperçu des vacances … [Ancien document]','this.parentElement.style.display='+RAP_Q+'none'+RAP_Q+';rapSetType('+RAP_Q+'vac'+RAP_Q+')')+sep+
+      it(true,'Aperçu des vacances … [Ancien document]','rapApercu('+RAP_Q+'vac'+RAP_Q+')')+sep+
       it(!!_rapSvg,'Enregistrer le diagramme …','rapSaveSvg()');
   } else {
     m.innerHTML=it(!!_rapTbl,'Copier le contenu du tableau dans le presse-papier','rapCopy()')+
@@ -11454,17 +11984,38 @@ function rapSaveSvg(){ document.getElementById('rap_doc_menu').style.display='no
   const aa=document.createElement('a'); aa.href=URL.createObjectURL(bl);
   aa.download='rapport_hebdomadaire_'+fhISO(fhWeekStart(_rapMonday))+'.svg'; aa.click();
   setTimeout(()=>URL.revokeObjectURL(aa.href),4000); }
-function rapPrint(){ document.getElementById('rap_doc_menu').style.display='none';
-  const el=document.getElementById('rap_out'); if(!el||!_rapTbl) return;
+function rapApercu(mode){
+  // « Fichier aperçu » (demande 2026-09-22) : document formaté dans une fenêtre, bouton Imprimer.
+  const mn=document.getElementById('rap_doc_menu'); if(mn) mn.style.display='none';
+  const cid=rapCid(); if(!cid){ toast('Choisissez votre nom pour afficher un aperçu.'); return; }
+  const saveTbl=_rapTbl, saveSvg=_rapSvg, saveType=_rapType;
+  if(mode==='vac') _rapType='vac';
+  const div=document.createElement('div');
+  if(_rapType==='heb') rapHeb(div,cid);
+  else if(_rapType==='men') rapMen(div,cid);
+  else if(_rapType==='jour') rapJournal(div,cid);
+  else if(_rapType==='tri') rapPeriodes(div,cid,3);
+  else if(_rapType==='sem') rapPeriodes(div,cid,6);
+  else if(_rapType==='ann') rapPeriodes(div,cid,1);
+  else rapVac(div,cid);
+  const lbl=rapTypeLabel(), per=rapPerLabel();
+  _rapType=saveType; _rapTbl=saveTbl; _rapSvg=saveSvg;
+  div.querySelectorAll('.rap-init').forEach(x=>{ const sp=document.createElement('span'); sp.textContent=x.value; x.replaceWith(sp); });
   const w=window.open('','_blank');
-  if(!w){ toast('Fenêtre bloquée — autorisez les pop-ups pour afficher le rapport.'); return; }
+  if(!w){ toast('Fenêtre bloquée — autorisez les pop-ups pour ouvrir le fichier aperçu.'); return; }
   const cs=(document.getElementById('rap-style')||{}).textContent||'';
   const cname=((document.getElementById('rap_collab')||{}).selectedOptions||[{}])[0].textContent||'';
-  w.document.write('<html><head><title>'+rapTypeLabel()+'</title><style>'+cs+
-    ' body{font-family:Arial,Helvetica,sans-serif;margin:26px;color:#222} h2{font-size:17px;margin:0 0 2px} .sub{color:#666;font-size:12px;margin-bottom:14px} #rap_legend .bx{border:none}</style></head><body id="rap_out">'+
-    '<h2>'+rapTypeLabel()+'</h2><div class="sub">'+rapEsc(cname)+' · '+rapPerLabel()+' · Substances architectes sàrl</div>'+
-    el.innerHTML+'</body></html>');
-  w.document.close(); setTimeout(()=>{ try{ w.print(); }catch(e){} },500); }
+  w.document.write('<html><head><meta charset="utf-8"><title>'+lbl+'</title><style>'+cs+
+    ' body{font-family:Arial,Helvetica,sans-serif;margin:26px auto;max-width:960px;padding:0 22px;color:#222;background:#fff}'+
+    ' h2{font-size:17px;margin:0 0 2px} .sub{color:#666;font-size:12px;margin-bottom:14px}'+
+    ' .noprint{position:fixed;top:10px;right:12px}'+
+    ' .noprint button{padding:7px 16px;font-size:13px;cursor:pointer;border:1px solid #888;border-radius:7px;background:#fff}'+
+    ' @media print{.noprint{display:none}}</style></head><body id="rap_out">'+
+    '<div class="noprint"><button onclick="window.print()">Imprimer / PDF</button></div>'+
+    '<h2>'+lbl+'</h2><div class="sub">'+rapEsc(cname)+' · '+per+' · Substances architectes sàrl</div>'+
+    div.innerHTML+'</body></html>');
+  w.document.close(); }
+function rapPrint(){ rapApercu('cur'); }
 function vacRender(){
   const sel=document.getElementById('vac_collab'); if(!sel) return;
   const cur=sel.value;
@@ -12364,6 +12915,7 @@ function loadPersist() {
   try { const d=localStorage.getItem('sa_affaires_analyse'); if(d) analyseAffaires=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_vacances'); if(d) vacances=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_vac_saisies'); if(d) vacSaisies=JSON.parse(d); } catch(e){}
+  try { const d=localStorage.getItem('sa_pv_data'); if(d) pvData=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_annuel'); if(d) collabAnnuel=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_mensuel'); if(d) collabMensuel=JSON.parse(d); } catch(e){}
   migratePhasesPct();

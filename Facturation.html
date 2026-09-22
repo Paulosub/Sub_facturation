@@ -779,11 +779,11 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 <!-- ── VUE : PV DE CHANTIER (squelette à structurer) ── -->
 <style id="adr-style">
 #panel-carnet .adr-tb{border-collapse:collapse;width:100%;font-size:12px;background:#fff;border:1px solid #d5d5d5}
-#panel-carnet .adr-tb th{font-weight:600;padding:4px 8px;border-bottom:1px solid #b5b5b5;text-align:left;white-space:nowrap;font-size:11.5px}
+#panel-carnet .adr-tb th{font-weight:bold;padding:5px 8px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
 #panel-carnet .adr-tb td{padding:3.5px 8px;border-top:1px solid #f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
 #panel-carnet .adr-tb tr.on td{background:#cfe4f7}
 #panel-carnet .adr-tb tbody tr:hover td{background:#eef4f9}
-#adr_ents{border:1px solid #d5d5d5;background:#fff;max-height:66vh;overflow:auto;font-size:12.5px}
+#adr_ents{border:none;box-shadow:0 1px 4px rgba(0,0,0,.1);border-radius:6px;background:#fff;max-height:66vh;overflow:auto;font-size:12.5px}
 #adr_ents .rw{display:flex;gap:8px;padding:4px 9px;cursor:pointer;align-items:center;border-top:1px solid #f2f2f2}
 #adr_ents .rw:hover{background:#eef4f9}
 #adr_ents .rw.on{background:#cfe4f7}
@@ -880,17 +880,20 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 </div>
 <style id="pv-style">
 #pv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
-#pv_out .pv-tb th{font-weight:600;padding:6px 10px;border-bottom:1px solid #b5b5b5;text-align:left;white-space:nowrap}
+#pv_out .pv-tb th{font-weight:bold;padding:6px 10px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
 #pv_out .pv-tb td{padding:5px 10px;border-top:1px solid #f0f0f0}
 #pv_out .pv-tb tbody tr:hover td{background:#eef4f9}
 .pv-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600}
 .pv-badge.an{background:#fdeed8;color:#9a6210;border:1px solid #e8c78f}
 .pv-badge.df{background:#e2f2e4;color:#1e6b2d;border:1px solid #9ecfa8}
-#pv_out .pv-card{border:1px solid #d9d9d9;border-radius:8px;background:#fff;padding:14px 16px;margin-top:12px}
-#pv_out .pv-card h4{margin:0 0 10px;font-size:13px;letter-spacing:.04em}
-#pv_out .pv-sec{border:1px solid #ddd;border-radius:8px;background:#fff;margin-top:10px}
-#pv_out .pv-sec .hd{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#f4f7f9;border-bottom:1px solid #e2e2e2;border-radius:8px 8px 0 0}
-#pv_out .pv-sec .hd input{font-weight:700;border:none;background:transparent;flex:1;font-size:12.5px}
+#pv_out .pv-card{border:none;border-radius:6px;background:#fff;padding:0 14px 12px;margin-top:12px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden}
+#pv_out .pv-card h4{margin:0 -14px 10px;padding:8px 14px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;background:#003346;color:#fff;font-weight:bold}
+#pv_out .pv-card h4 .btn{background:#fff;color:#003346}
+#pv_out .pv-sec{border:none;border-radius:6px;background:#fff;margin-top:10px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden}
+#pv_out .pv-sec .hd{display:flex;align-items:center;gap:8px;padding:7px 14px;background:#003346;border-bottom:none;border-radius:6px 6px 0 0}
+#pv_out .pv-sec .hd input{font-weight:bold;border:none;background:transparent;flex:1;font-size:11px;color:#fff;letter-spacing:.4px;text-transform:uppercase}
+#pv_out .pv-sec .hd b{color:#fff;font-size:11px;letter-spacing:.4px;text-transform:uppercase;font-weight:bold}
+#pv_out .pv-sec .hd .btn{background:#fff;color:#003346}
 #pv_out .pv-sec .bd{padding:8px 12px}
 #pv_out textarea.pv-ta{width:100%;box-sizing:border-box;border:1px solid #d8d8d8;border-radius:6px;padding:6px 8px;font:12.5px/1.45 inherit;resize:vertical;margin:3px 0}
 #pv_out .pv-pb{border-top:2px dashed #b45309;color:#b45309;font-size:10.5px;text-align:center;margin:8px 0;line-height:1.9}
@@ -907,8 +910,8 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 .pv-seg button{border:none;padding:6px 14px;cursor:pointer;font-size:12.5px;background:#fff;color:#003346}
 .pv-seg button.on{background:#003346;color:#fff}
 #pv_out table.pv-xl{border-collapse:collapse;width:100%;background:#fff}
-#pv_out .pv-xl th{background:#eef2f5;font-size:11px;font-weight:600;border:1px solid #cdd6dd;padding:4px 7px;text-align:left}
-#pv_out .pv-xl td{border:1px solid #cdd6dd;padding:0;vertical-align:top}
+#pv_out .pv-xl th{background:#eef3f5;color:#003346;font-size:11px;font-weight:bold;border:1px solid #c9d3d6;padding:4px 7px;text-align:left}
+#pv_out .pv-xl td{border:1px solid #c9d3d6;padding:0;vertical-align:top}
 #pv_out .pv-xl textarea,#pv_out .pv-xl input,#pv_out .pv-xl select{width:100%;box-sizing:border-box;border:none;background:transparent;font:12px/1.45 inherit;padding:5px 7px;resize:vertical}
 #pv_out .pv-xl textarea:focus,#pv_out .pv-xl input:focus,#pv_out .pv-xl select:focus{outline:2px solid #7fb3d8;outline-offset:-2px;background:#fbfdff}
 #pv_out .pv-xl td.rm{text-align:center;vertical-align:middle}
@@ -1077,7 +1080,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 <!-- ── VUE : VACANCES (consultation par collaborateur / année) ── -->
 <style id="rap-style">
 #rap_out .rap-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
-#rap_out .rap-tb th{font-weight:600;padding:5px 9px;border-bottom:1px solid #b5b5b5;border-right:1px solid #e6e6e6;background:#fff;white-space:nowrap;text-align:left}
+#rap_out .rap-tb th{font-weight:bold;padding:5px 9px;border-bottom:1px solid #c9d3d6;border-right:1px solid #dde6e9;background:#eef3f5;color:#003346;white-space:nowrap;text-align:left;font-size:11.5px}
 #rap_out .rap-tb td{padding:3.5px 9px;border-right:1px solid #f0f0f0;white-space:nowrap}
 #rap_out .rap-tb td:last-child,#rap_out .rap-tb th:last-child{border-right:none}
 #rap_out .rap-tb td:last-child{white-space:normal}
@@ -11672,8 +11675,8 @@ function sxPrev(kind){
   if(!el){
     const d=document.createElement('div'); d.id='sx_prev';
     d.style.cssText='position:fixed;top:56px;right:10px;bottom:10px;width:470px;max-width:46vw;z-index:8600;background:#e8eaed;border:1px solid #c9c9c9;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden';
-    d.innerHTML='<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#f6f7f8;border-bottom:1px solid #ddd">'+
-      '<b id="sx_prev_t" style="font-size:12.5px;flex:1"></b>'+
+    d.innerHTML='<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#003346;border-bottom:none">'+
+      '<b id="sx_prev_t" style="font-size:11px;flex:1;color:#fff;text-transform:uppercase;letter-spacing:.4px"></b>'+
       '<button class="btn btn-sm" onclick="sxZoom(-20)" title="Réduire">−</button>'+
       '<span id="sx_zoom" style="min-width:44px;text-align:center;font-size:12px;cursor:pointer" onclick="sxZoom(0,100)" title="Ajuster à la largeur">'+_sxZoom+'%</span>'+
       '<button class="btn btn-sm" onclick="sxZoom(20)" title="Agrandir">+</button>'+
@@ -11848,7 +11851,7 @@ function pvRender(){
         '<td><b>'+pvEsc(c)+'</b></td><td>'+pvEsc(pvAffName(c)).slice(0,70)+'</td>'+
         '<td style="text-align:right">'+A2.pvs.length+'</td>'+
         '<td>'+(last?('PVCH '+pvPad(last.num,4)+' — '+pvDpt(last.date)):'—')+'</td>'+
-        '<td>'+(last?('<span class="pv-badge '+(last.statut==='definitif'?'df':'an')+'">'+(last.statut==='definitif'?'Définitif':'Annotation')+'</span>'):'')+'</td></tr>'; }).join('')+
+        '<td>'+(last?('<span class="pv-badge '+(last.statut==='definitif'?'df':'an')+'">'+(last.statut==='definitif'?'Envoyé':'Annotation')+'</span>'):'')+'</td></tr>'; }).join('')+
       '</tbody></table>';
     return; }
   const A=pvA();
@@ -11873,7 +11876,7 @@ function pvListHTML(out){
       const an=pv.statut!=='definitif';
       h+='<tr><td><b>PVCH '+pvPad(pv.num,4)+'</b></td><td>'+pvEsc(_pvAff)+'.PV.CH'+pvPad(pv.num,3)+'</td>'+
         '<td>'+pvDpt(pv.date)+'</td>'+
-        '<td><span class="pv-badge '+(an?'an':'df')+'">'+(an?'Annotation':'Définitif')+'</span></td>'+
+        '<td><span class="pv-badge '+(an?'an':'df')+'">'+(an?'Annotation':'Envoyé')+'</span></td>'+
         '<td style="text-align:right;white-space:nowrap">'+
         '<button class="btn btn-sm pv-mini" onclick="pvOpen('+PV_Q+pv.id+PV_Q+')">Ouvrir</button> '+
         '<button class="btn btn-sm pv-mini" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'open'+PV_Q+')">Aperçu PDF</button> '+
@@ -11993,7 +11996,7 @@ function pvEditHTML(out, pv){
   let h='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">'+
     '<button class="btn btn-sm" onclick="_pvCur=null;pvRender()">← Liste</button>'+
     '<b style="font-size:14px">PVCH '+pvPad(pv.num,4)+'</b>'+
-    '<span class="pv-badge '+(RO?'df':'an')+'">'+(RO?'Définitif':'Annotation')+'</span>'+
+    '<span class="pv-badge '+(RO?'df':'an')+'">'+(RO?'Envoyé':'Annotation')+'</span>'+
     '<span class="pv-seg"><button class="'+(_pvTab==='gen'?'on':'')+'" onclick="_pvTab='+PV_Q+'gen'+PV_Q+';pvRender()">Général</button>'+
     '<button class="'+(_pvTab==='pv'?'on':'')+'" onclick="_pvTab='+PV_Q+'pv'+PV_Q+';pvRender()">PV</button></span>'+
     '<span style="margin-left:auto"></span>'+
@@ -12083,7 +12086,7 @@ function pvSecHTML(pv,sec,si,RO){
     const CH=[['exec','Travaux à exécuter'],['fini','Travaux terminés'],['rem','Remarques']];
     h+='<table class="pv-xl">';
     CH.forEach(ch=>{
-      h+='<tr><th colspan="5" style="background:#e6edf2;font-size:11.5px" ondragover="pvDragO(event)" ondrop="pvDropHead(event,'+si+','+PV_Q+ch[0]+PV_Q+')">'+ch[1]+
+      h+='<tr><th colspan="5" ondragover="pvDragO(event)" ondrop="pvDropHead(event,'+si+','+PV_Q+ch[0]+PV_Q+')">'+ch[1]+
         (RO?'':' <button class="btn btn-sm pv-mini" title="Ajouter une ligne" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')" style="margin-left:10px;font-size:12px;line-height:1;padding:1px 8px">✚</button>')+'</th></tr>';
       sec.lines.forEach((ln,li)=>{
         if(tyOf(ln)!==ch[0]) return;
@@ -12095,7 +12098,7 @@ function pvSecHTML(pv,sec,si,RO){
           '" onclick="pvLineUrg('+si+','+li+')" style="font-weight:700;padding:1px 7px;color:'+(u?'#b00020':'#999')+'">'+(u===2?'!!':'!')+'</button>');
         const grip=RO?'':('<span draggable="true" ondragstart="pvDragS(event,'+si+','+li+')" title="Glisser pour déplacer" style="cursor:grab;color:#aaa;margin-right:3px;user-select:none">⠿</span>');
         h+='<tr ondragover="pvDragO(event)" ondrop="pvDropRow(event,'+si+','+li+','+PV_Q+ch[0]+PV_Q+')"><td class="rm" style="width:44px;white-space:nowrap">'+grip+ck+'</td>'+
-          '<td><textarea rows="'+Math.min(12,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" style="min-height:46px'+ust+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
+          '<td><textarea rows="'+Math.min(12,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" style="min-height:46px'+ust+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
           '<td style="width:86px"><input value="'+pvEscA(ln.d||'')+'" placeholder="sem. 22" title="Texte libre (sem 40, 03.06.21…) — préfixes : D début (vert), F fin (rouge), Dqp / Sat (gris)" style="'+(function(){ const pdl=pvDelaiInfo(ln.d);
             return pdl.p==='F'?'color:#b00020':pdl.p==='D'?'color:#1d7a37':pdl.p?'color:#777':ust.slice(1); })()+'" onchange="pvLineDelai('+si+','+li+',this.value)"'+dis+'></td>'+
           '<td class="rm" style="width:26px">'+ubt+'</td>'+
@@ -12111,7 +12114,7 @@ function pvSecHTML(pv,sec,si,RO){
     h+='<table class="pv-xl">';
     sec.lines.forEach((ln,li)=>{
       if(ln.k==='pb'||ln.k==='img'){ h+=extra(ln,li,2); return; }
-      h+='<tr><td><textarea rows="'+Math.min(14,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
+      h+='<tr><td><textarea rows="'+Math.min(14,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
         '<td class="rm" style="width:30px">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
     });
     h+='</table>';
@@ -12157,7 +12160,31 @@ function pvLineFini(si,li,ck){ const pv=pvCurPv(); if(!pv||pv.statut==='definiti
   pvPersist(); pvRender(); }
 function pvLineUrg(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   const ln=pv.secs[si].lines[li]; ln.u=((+ln.u||0)+1)%3; pvPersist(); pvRender(); }
-let _pvDrag=null;
+let _pvDrag=null, _pvCellBuf=null;
+// ⌘C sans sélection de texte = copier la CELLULE ; ⌘V = la coller EN DESSOUS (2026-09-23).
+document.addEventListener('keydown', function(e){
+  if(!(e.metaKey||e.ctrlKey)) return;
+  const k=(e.key||'').toLowerCase(); if(k!=='c'&&k!=='v') return;
+  const t=e.target;
+  if(!t||t.tagName!=='TEXTAREA'||t.dataset.psi===undefined) return;
+  const pv=(typeof pvCurPv==='function')?pvCurPv():null; if(!pv) return;
+  const si=+t.dataset.psi, li=+t.dataset.pli;
+  if(k==='c'){
+    if(t.selectionStart!==t.selectionEnd) return;                    // sélection → copie de texte native
+    const ln=(pv.secs[si]||{lines:[]}).lines[li]; if(!ln) return;
+    _pvCellBuf=JSON.parse(JSON.stringify(ln));
+    e.preventDefault(); toast('Cellule copiée — ⌘V pour la coller en dessous.');
+  } else {
+    if(!_pvCellBuf||pv.statut==='definitif') return;
+    e.preventDefault();
+    const lines=pv.secs[si].lines, cible=lines[li];
+    const copie=JSON.parse(JSON.stringify(_pvCellBuf));
+    const typed=x=>x==='exec'||x==='fini'||x==='rem'||x==='t';
+    if(cible&&typed(cible.k)&&typed(copie.k)) copie.k=(cible.k==='t')?'exec':cible.k;
+    lines.splice(li+1,0,copie);
+    pvPersist(); pvRender();
+  }
+});
 function pvDragS(e,si,li){ _pvDrag={si,li}; e.dataTransfer.effectAllowed='move';
   try{ e.dataTransfer.setData('text','pv'); }catch(x){} }
 function pvDragO(e){ if(_pvDrag){ e.preventDefault(); e.dataTransfer.dropEffect='move'; } }

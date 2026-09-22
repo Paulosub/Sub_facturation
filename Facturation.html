@@ -554,6 +554,73 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
   {display:none}
 }
 </style>
+<style id="wiz2-essai-style">
+/* ═══ ASSISTANT « CRÉER PAS À PAS » — MODULE D'ESSAI (2026-09-23), réversible : supprimer
+   ce <style>, le <script id="wiz2-essai-js">, le <div id="wiz2">, le bouton de la liste et
+   les 2 hooks (refreshOffrePreview / applyCalcHono) pour le retirer. ═══ */
+/* ── ASSISTANT « NOUVEAU CONTRAT » (V2) : app dédiée plein écran, un écran = une question ── */
+#wiz2{position:fixed;inset:0;z-index:9990;background:#f5f6f7;display:none;flex-direction:column;overflow:hidden}
+#wiz2.on{display:flex}
+#wiz2 .w2-top{display:flex;align-items:center;gap:14px;padding:14px 22px;background:rgba(255,255,255,.85);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-bottom:1px solid #e3e3e3}
+#wiz2 .w2-brand{font-weight:800;letter-spacing:.28em;font-size:12px;color:#1a1a1a}
+#wiz2 .w2-stepinfo{color:#6a7c82;font-size:12px;margin-left:auto}
+#wiz2 .w2-close{border:none;background:#f2f2f7;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;color:#6a7c82}
+#wiz2 .w2-close:hover{background:#e8e8ed;color:#1a1a1a}
+#wiz2 .w2-progress{height:3px;background:#e8e8ed}
+#wiz2 .w2-progress i{display:block;height:100%;background:#003346;transition:width .3s ease}
+#wiz2 .w2-body{flex:1;overflow-y:auto;display:flex;justify-content:center;padding:44px 20px 120px}
+#wiz2 .w2-card{width:100%;max-width:660px}
+#wiz2 .w2-q{font-size:27px;font-weight:800;letter-spacing:-.01em;color:#1a1a1a;margin:0 0 6px}
+#wiz2 .w2-sub{font-size:14.5px;color:#6a7c82;margin:0 0 30px}
+#wiz2 .w2-field{margin-bottom:18px}
+#wiz2 .w2-field label{display:block;font-size:12px;font-weight:600;color:#6a7c82;margin-bottom:6px;letter-spacing:.02em}
+#wiz2 .w2-field input,#wiz2 .w2-field textarea,#wiz2 .w2-field select{width:100%;box-sizing:border-box;
+  font-size:15px;padding:12px 14px;border:1.5px solid #d8d8dd;border-radius:12px;background:#fff;font-family:inherit}
+#wiz2 .w2-field textarea{resize:vertical;min-height:64px}
+#wiz2 .w2-row{display:flex;gap:12px}
+#wiz2 .w2-row .w2-field{flex:1}
+#wiz2 .w2-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+#wiz2 .w2-tile{background:#fff;border:1.5px solid #d8d8dd;border-radius:14px;padding:16px;cursor:pointer;transition:all .14s ease;position:relative}
+#wiz2 .w2-tile:hover{border-color:#b8b8c0;transform:translateY(-1px)}
+#wiz2 .w2-tile.sel{border-color:#003346;background:rgba(0,113,227,.05);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+#wiz2 .w2-tile.sel::after{content:'✓';position:absolute;top:10px;right:12px;width:20px;height:20px;border-radius:50%;
+  background:#003346;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+#wiz2 .w2-tile b{display:block;font-size:14.5px;color:#1a1a1a;margin-bottom:4px;padding-right:24px}
+#wiz2 .w2-tile span{font-size:12px;color:#6a7c82;line-height:1.45;display:block}
+#wiz2 .w2-seg{display:inline-flex;background:#e8e8ed;border-radius:10px;padding:2.5px;gap:2px}
+#wiz2 .w2-seg button{border:none;background:transparent;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:600;color:#6a7c82;cursor:pointer;font-family:inherit}
+#wiz2 .w2-seg button.sel{background:#fff;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+#wiz2 .w2-switchrow{display:flex;align-items:flex-start;gap:14px;background:#fff;border:1px solid #e3e3e3;border-radius:14px;padding:14px 16px;margin-bottom:10px}
+#wiz2 .w2-switchrow .txt{flex:1}
+#wiz2 .w2-switchrow b{display:block;font-size:14px;color:#1a1a1a}
+#wiz2 .w2-switchrow span{font-size:12px;color:#6a7c82}
+#wiz2 .w2-note{font-size:12px;color:#8a979c;margin-top:14px;line-height:1.5}
+#wiz2 .w2-lines .ln{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+#wiz2 .w2-lines .ln input{border:1.5px solid #d8d8dd;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit}
+#wiz2 .w2-lines .ln .lbl{flex:1}
+#wiz2 .w2-lines .ln .num{width:86px;text-align:right}
+#wiz2 .w2-lines .ln .amt{width:110px;text-align:right;color:#6a7c82;font-size:13px;white-space:nowrap}
+#wiz2 .w2-lines .ln .rm{border:none;background:transparent;color:#c2c2c7;font-size:15px;cursor:pointer}
+#wiz2 .w2-lines .ln .rm:hover{color:#c0392b}
+#wiz2 .w2-add{border:none;background:#f2f2f7;border-radius:980px;padding:8px 16px;font-size:12.5px;font-weight:600;color:#1a1a1a;cursor:pointer;font-family:inherit}
+#wiz2 .w2-total{text-align:right;font-size:14px;color:#1a1a1a;font-weight:700;margin-top:10px}
+#wiz2 .w2-resume{background:#fff;border:1px solid #e3e3e3;border-radius:16px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+#wiz2 .w2-resume .r-line{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid #f0f0f3;font-size:13.5px}
+#wiz2 .w2-resume .r-line .k{color:#6a7c82}
+#wiz2 .w2-resume .r-line .v{color:#1a1a1a;font-weight:600;text-align:right}
+#wiz2 .w2-bigttc{text-align:center;margin:22px 0 6px}
+#wiz2 .w2-bigttc .n{font-size:38px;font-weight:800;letter-spacing:-.02em;color:#1a1a1a}
+#wiz2 .w2-bigttc .l{font-size:12px;color:#6a7c82;letter-spacing:.06em;text-transform:uppercase}
+#wiz2 .w2-nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;justify-content:space-between;
+  padding:16px 26px;background:rgba(255,255,255,.85);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-top:1px solid #e3e3e3}
+#wiz2 .w2-back{border:none;background:transparent;color:#6a7c82;font-size:13.5px;font-weight:600;cursor:pointer;padding:8px 12px;border-radius:10px;font-family:inherit}
+#wiz2 .w2-back:hover{background:#f2f2f7;color:#1a1a1a}
+#wiz2 .w2-next{border:none;background:#003346;color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;
+  padding:13px 34px;border-radius:980px;font-family:inherit;transition:all .15s}
+#wiz2 .w2-next:hover{filter:brightness(1.07)}
+#wiz2 .w2-next.create{background:#2E9E5B}
+</style>
 </head>
 <body>
 
@@ -1453,7 +1520,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
               <input type="checkbox" id="filter-statut-adef" onchange="renderContratsTable()" style="width:14px;height:14px;cursor:pointer">
               À définir uniquement
             </label>
-            <button class="btn btn-green btn-sm" onclick="newContratCalc()">+ Nouveau contrat</button>
+            <button class="btn btn-green btn-sm" onclick="newContratCalc()">+ Nouveau contrat</button> <button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="newContratCalc();setTimeout(wiz2Start,200)" title="ESSAI — assistant de création : une question à la fois, en langage clair. Rien n'est enregistré avant le dernier écran.">▸ Créer pas à pas (essai)</button>
           </div>
         </div>
         <div style="overflow-x:auto">
@@ -6570,6 +6637,7 @@ function offreShowOverflow(overflows){
   } else { w.style.display='none'; w.innerHTML=''; }
 }
 async function refreshOffrePreview(){
+  if(typeof WIZ2!=='undefined' && WIZ2.on) return;   // assistant pas à pas (ESSAI) : aperçu suspendu
   const f=document.getElementById('offre-frame'), e=document.getElementById('offre-frame-empty');
   try{
     if(e){ e.textContent='Génération de l\'aperçu…'; e.style.display='flex'; }
@@ -8012,6 +8080,7 @@ function applyCalcHono(asNewVersion) {
   chSyncVersionUI();
   const msg = document.getElementById('ch_msg');
   if(msg) msg.textContent = (isNew ? '✓ Contrat créé' : '✓ Contrat mis à jour') + verMsg + ' — ouverture…';
+  if(typeof WIZ2!=='undefined' && WIZ2.on) wiz2Close();   // fin de l'assistant (ESSAI)
   goTab('contrats');
   loadContrat(id);
 }
@@ -12305,6 +12374,11 @@ function pvPresH(key,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') re
 function pvLineDel(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.splice(li,1); pvPersist(); pvRender(); }
 function pvPbAdd(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.push({k:'pb'}); pvPersist(); pvRender(); }
 function pvSecAdd(){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs.push({t:'Nouvelle section',lines:[{k:'t',v:''}]}); pvPersist(); pvRender(); }
+function pvSecDel(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
+  const sec=pv.secs[si]; if(!sec) return;
+  const nom=sec.cfc?(sec.cfc+' '+pvCfcLabel(sec.cfc)):(String(sec.t||'cette section'));
+  chConfirm('Supprimer la section « '+nom+' » et tout son contenu ?', ()=>{
+    pv.secs.splice(si,1); pvPersist(); pvRender(); }); }
 function pvSecAddCfc(){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   const A=pvA(); const dispo=A.cfg.cfc.filter(c=>!pv.secs.some(x=>x.cfc===c));
   if(!dispo.length){ toast('Tous les CFC du projet ont déjà leur section.'); return; }
@@ -13914,5 +13988,324 @@ document.addEventListener('DOMContentLoaded', () => {
     new Date().toLocaleDateString('fr-CH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 });
 </script>
+<script id="wiz2-essai-js">
+/* ══ ASSISTANT « NOUVEAU CONTRAT » V2 (proposition 2026-09-20, r2 — flux complet) ══
+   UNE question par écran, en langage clair. Ordre métier : le MONTANT ARRÊTÉ se demande À LA FIN
+   (il découle du calcul) ; les FACTEURS d'honoraires (catégorie, ajustements, tarif, rabais) ont
+   leur écran ; le coût de l'ouvrage peut se DÉFINIR PAR L'ESTIMATION (volumes × prix/m³, SIA 416).
+   Écrit dans les champs réels et appelle les fonctions existantes : aucune logique dupliquée. */
+let WIZ2={on:false,i:0,d:{}};
+const W2_ESC=s2=>String(s2==null?'':s2).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const W2_NUM=v=>parseFloat(String(v==null?'':v).replace(/[\s'’]/g,'').replace(',','.'))||0;
+function w2Keep(ids){ ids.forEach(([w,setter])=>{ const el=document.getElementById(w); if(el) setter(el.value); }); }
+const WIZ2_SCREENS=[
+ {id:'projet', q:'Quel est le projet ?', sub:'Le numéro d’affaire du bureau et le bien-fonds concerné.',
+  html(){ return `
+   <div class="w2-row">
+    <div class="w2-field" style="max-width:180px"><label>N° D’AFFAIRE *</label><input id="w2_affaire" placeholder="26XYZ" style="text-transform:uppercase" value="${W2_ESC(gv('ch_affaire'))}"></div>
+    <div class="w2-field"><label>COMMUNE / LIEU DU PROJET</label><input id="w2_lieu" placeholder="Cully" value="${W2_ESC(gv('ch_lieu'))}"></div>
+   </div>
+   <div class="w2-field"><label>DESCRIPTION DU PROJET</label><textarea id="w2_projet" rows="2" placeholder="Transformation d’une maison villageoise et création d’un appartement…">${W2_ESC(gv('ch_projet'))}</textarea></div>
+   <div class="w2-row">
+    <div class="w2-field"><label>RUE DU BIEN-FONDS</label><input id="w2_padr" placeholder="Chemin des Vignes 12" value="${W2_ESC(gv('ch_padr'))}"></div>
+    <div class="w2-field"><label>NPA ET LOCALITÉ</label><input id="w2_ploc" placeholder="1096 Cully" value="${W2_ESC(gv('ch_ploc'))}"></div>
+   </div>`; },
+  valid(){ if(!(document.getElementById('w2_affaire').value||'').trim()){ chConfirm('Le N° d’affaire est nécessaire pour identifier le contrat (ex. 26XYZ).', null, {title:'N° d’affaire requis', yesText:'OK', yesColor:'#0071e3', noText:'Fermer'}); return false; } return true; },
+  commit(){ sv('ch_affaire',document.getElementById('w2_affaire').value.trim().toUpperCase());
+    sv('ch_projet',document.getElementById('w2_projet').value); sv('ch_lieu',document.getElementById('w2_lieu').value);
+    sv('ch_padr',document.getElementById('w2_padr').value); sv('ch_ploc',document.getElementById('w2_ploc').value); }},
+ {id:'client', q:'Qui est le maître de l’ouvrage ?', sub:'Le destinataire de l’offre d’honoraires.',
+  html(){ const f=gv('ch_formule')||'Madame, Monsieur,';
+   return `
+   <div class="w2-row">
+    <div class="w2-field" style="max-width:210px"><label>FORMULE</label><select id="w2_formule">
+      ${['Madame, Monsieur,','Madame,','Monsieur,','Mesdames, Messieurs,','Famille'].map(o=>`<option ${o===f?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+    <div class="w2-field"><label>NOM DU MAÎTRE DE L’OUVRAGE</label><input id="w2_nom" placeholder="Claire et Jean Dupont" value="${W2_ESC(gv('ch_nom'))}"></div>
+   </div>
+   <div class="w2-row">
+    <div class="w2-field"><label>RUE</label><input id="w2_adr" placeholder="Route de Lausanne 5" value="${W2_ESC(gv('ch_adr'))}"></div>
+    <div class="w2-field"><label>NPA ET LOCALITÉ</label><input id="w2_loc" placeholder="1096 Cully" value="${W2_ESC(gv('ch_loc'))}"></div>
+   </div>
+   <div class="w2-row">
+    <div class="w2-field"><label>RESPONSABLE DU DOSSIER</label><input id="w2_resp" value="${W2_ESC(gv('ch_resp')||'Paulo Meireles')}"></div>
+    <div class="w2-field" style="max-width:190px"><label>DATE DE L’OFFRE</label><input type="date" id="w2_date" value="${W2_ESC(gv('ch_date'))}"></div>
+   </div>`; },
+  commit(){ sv('ch_formule',document.getElementById('w2_formule').value); if(typeof chToggleAtt==='function') chToggleAtt();
+    sv('ch_nom',document.getElementById('w2_nom').value); sv('ch_adr',document.getElementById('w2_adr').value);
+    sv('ch_loc',document.getElementById('w2_loc').value); sv('ch_resp',document.getElementById('w2_resp').value);
+    sv('ch_date',document.getElementById('w2_date').value); }},
+ {id:'type', q:'Quel type de prestations ?', sub:'Plusieurs choix possibles — le document s’adapte automatiquement.',
+  html(){ const T=WIZ2.d.types; const tile=(k,titre,desc)=>`<div class="w2-tile ${T[k]?'sel':''}" onclick="wiz2Tile('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   return `<div class="w2-tiles">
+    ${tile('ord','Prestations ordinaires','Mandat d’architecte selon SIA 102 : les honoraires découlent du coût de l’ouvrage et des phases confiées.')}
+    ${tile('no','Prestations non ordinaires','Prestations listées ligne par ligne : heures × tarif horaire, ou montants convenus.')}
+    ${tile('expertise','Expertise','Constat, analyse et rapport d’expertise. Un modèle de prestations est proposé automatiquement.')}
+    ${tile('faisa','Étude de faisabilité','Potentiel constructible et premières esquisses — environ 3 % du mandat complet.')}
+   </div>`; },
+  valid(){ const T=WIZ2.d.types; if(!(T.ord||T.no||T.expertise||T.faisa)){ chConfirm('Choisissez au moins un type de prestations.', null, {title:'Type de prestations', yesText:'OK', yesColor:'#0071e3', noText:'Fermer'}); return false; } return true; },
+  commit(){ const T=WIZ2.d.types; const expAvant=!!document.getElementById('ch_chk_expertise').checked;
+    document.getElementById('ch_chk_ord').checked=!!T.ord; document.getElementById('ch_chk_no').checked=!!T.no;
+    document.getElementById('ch_chk_expertise').checked=!!T.expertise; document.getElementById('ch_chk_faisa').checked=!!T.faisa;
+    if(!!T.expertise!==expAvant && typeof chOnExpertiseToggle==='function') chOnExpertiseToggle(); else updChSections(); }},
+ {id:'remu', q:'Comment le mandat est-il rémunéré ?', sub:'Le montant arrêté vous sera demandé à la fin, une fois le calcul établi.',
+  html(){ const R=WIZ2.d.remu; const tile=(k,titre,desc)=>`<div class="w2-tile ${R===k?'sel':''}" onclick="wiz2Remu('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   return `<div class="w2-tiles" style="grid-template-columns:1fr 1fr 1fr">
+    ${tile('relatif','Forfait relatif','Montant indicatif issu du calcul — il suit le projet dans une fourchette convenue.')}
+    ${tile('forfait','Forfait','Montant ferme, arrêté avec le maître de l’ouvrage pour tout le mandat.')}
+    ${tile('unitaire','Unitaire','Au temps consacré : heures effectives × tarif horaire du bureau.')}
+   </div>
+   <div class="w2-note">Le texte « Mode de calcul » du document s’adapte automatiquement à ce choix.</div>`; },
+  commit(){ const R=WIZ2.d.remu; const selM=document.getElementById('ch_modecalc_type');
+    if(selM && selM.value!==R){ selM.value=R; if(typeof chModecalcType==='function') chModecalcType(); } }},
+ {id:'cout', q:'Le coût de l’ouvrage', sub:'Saisissez un coût connu, ou estimez-le par les volumes (SIA 416).',
+  vis(){ return !!WIZ2.d.types.ord; },
+  html(){ const M=WIZ2.d.coutMode;
+   let inner='';
+   if(M==='direct'){ inner=`<div class="w2-field" style="max-width:320px;margin-top:16px"><label>COÛT DE CONSTRUCTION ESTIMÉ (CFC 2, TTC)</label>
+     <input id="w2_cfc2" inputmode="decimal" placeholder="800 000" value="${W2_ESC(WIZ2.d.cfc2||(gn('ch_cfc2')||''))}"></div>`; }
+   if(M==='volumes'){ inner=`<div class="w2-lines" id="w2-vols" style="margin-top:16px">
+      <div class="ln" style="font-size:10.5px;color:#6a7c82;font-weight:600"><span class="lbl" style="padding-left:12px">DÉSIGNATION</span><span class="num" style="width:96px;text-align:right">VOLUME m³</span><span class="num" style="width:96px;text-align:right">PRIX Fr./m³</span><span class="amt">MONTANT</span><span style="width:24px"></span></div>
+      ${WIZ2.d.vols.map((v,i)=>wiz2VolHtml(v,i)).join('')}</div>
+     <button class="w2-add" onclick="wiz2AddVol()">+ Ajouter un volume</button>
+     <div class="w2-total" id="w2-voltot">${CHF(WIZ2.d.vols.reduce((a,v)=>a+(v.qty||0)*(v.prix||0),0))} Fr. TTC</div>
+     <div class="w2-note">Cette estimation PILOTERA les CFC du calcul (divers et imprévus + frais secondaires : 5 % chacun par défaut). Le détail complet — terrain, démolition, aménagements extérieurs — s’affine ensuite au chapitre « Estimation du coût ».</div>`; }
+   return `<div class="w2-tiles">
+    <div class="w2-tile ${M==='direct'?'sel':''}" onclick="wiz2CoutMode('direct')"><b>Coût connu</b><span>Je saisis directement le coût de construction (CFC 2).</span></div>
+    <div class="w2-tile ${M==='volumes'?'sel':''}" onclick="wiz2CoutMode('volumes')"><b>Estimation par volumes</b><span>Volumes bâtis × prix au m³ (SIA 416) — l’estimation pilote le calcul.</span></div>
+   </div>${inner}`; },
+  valid(){ if(!WIZ2.d.coutMode){ chConfirm('Choisissez comment définir le coût de l’ouvrage.', null, {title:'Coût de l’ouvrage', yesText:'OK', yesColor:'#0071e3', noText:'Fermer'}); return false; } return true; },
+  commit(){ if(WIZ2.d.coutMode==='direct'){ const el=document.getElementById('w2_cfc2'); if(el) WIZ2.d.cfc2=el.value;
+      const ceA=document.getElementById('ce_apply'); if(ceA && ceA.checked){ ceA.checked=false; updEstimCout(); }
+      sv('ch_cfc2', W2_NUM(WIZ2.d.cfc2)); updCalcHono(); }
+    else { CE_C2 = WIZ2.d.vols.filter(v=>(v.lbl||'').trim()||v.qty>0).map(v=>({lbl:v.lbl||'', nature:'Neuf', qty:+v.qty||0, unit:'m³', prix:+v.prix||0}));
+      if(!CE_C2.length) CE_C2=[{lbl:'',nature:'Neuf',qty:0,unit:'m³',prix:0}];
+      if(typeof buildCeC2==='function') buildCeC2();
+      const ceA=document.getElementById('ce_apply'); if(ceA) ceA.checked=true;
+      updEstimCout(); updCalcHono(); } }},
+ {id:'prest', q:'Les prestations à facturer', sub:'Une ligne par prestation — heures × tarif, le montant se calcule tout seul.',
+  vis(){ const T=WIZ2.d.types; return !!(T.no||T.expertise||T.faisa); },
+  html(){ if(!WIZ2.d.lignes.length){ WIZ2.d.lignes=(CH_NO||[]).filter(l=>!l.sousTitre).map(l=>({lbl:l.lbl||'', h:l.heures||0, p:l.prix||135})); if(!WIZ2.d.lignes.length) WIZ2.d.lignes=[{lbl:'',h:0,p:135}]; }
+   return `<div class="w2-lines" id="w2-lines">${WIZ2.d.lignes.map((l,i)=>wiz2LigneHtml(l,i)).join('')}</div>
+   <button class="w2-add" onclick="wiz2AddLigne()">+ Ajouter une prestation</button>
+   <div class="w2-total" id="w2-tot">${CHF(WIZ2.d.lignes.reduce((a,l)=>a+(l.h||0)*(l.p||0),0))} Fr. HT</div>`; },
+  commit(){ CH_NO = WIZ2.d.lignes.filter(l=>(l.lbl||'').trim()||l.h>0).map(l=>({lbl:l.lbl,heures:+l.h||0,hUnit:'h',prix:+l.p||0,pUnit:'Frs/h',amt:(+l.h||0)*(+l.p||0),com:'',prixManual:false,hideDetail:false,sousTitre:false,titreIdx:null}));
+    if(typeof buildChno==='function') buildChno(); updCalcHono(); }},
+ {id:'hono', q:'Les honoraires', sub:'La part du mandat, la catégorie d’ouvrage et les facteurs du calcul SIA 102.',
+  vis(){ return !!WIZ2.d.types.ord; },
+  html(){ const P=WIZ2.d.part; const tile=(k,titre,desc)=>`<div class="w2-tile ${P===k?'sel':''}" onclick="wiz2Part('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   const catSel=document.getElementById('ch_cat'); const catOpts=catSel?catSel.innerHTML:'';
+   const F=(id,rid,val)=>W2_ESC(document.getElementById(rid)?document.getElementById(rid).value:val);
+   return `
+   <label style="display:block;font-size:12px;font-weight:600;color:#6a7c82;margin-bottom:8px">QUELLE PART DU MANDAT VOUS EST CONFIÉE ?</label>
+   <div class="w2-tiles">
+    ${tile('full','Mandat complet — 100 %','Toutes les phases SIA, de l’avant-projet au décompte final.')}
+    ${tile('enquete','Jusqu’à l’enquête — 32.5 %','Avant-projet, projet de l’ouvrage et procédure d’autorisation.')}
+    ${tile('exec','Exécution — 67.5 %','Appels d’offres, plans d’exécution et direction des travaux.')}
+    ${tile('later','Je préciserai plus tard','Les pourcentages par phase se règlent finement dans le formulaire.')}
+   </div>
+   <div style="height:14px"></div>
+   <div class="w2-field"><label>CATÉGORIE D’OUVRAGE (n — SIA 102)</label><select id="w2_cat">${catOpts}</select></div>
+   <div class="w2-row">
+    <div class="w2-field"><label>AJUSTEMENT r</label><input id="w2_r" inputmode="decimal" value="${F('r','ch_r','1')}" title="Facteur d’ajustement (1 = standard)"></div>
+    <div class="w2-field"><label>TRANSFORMATION U</label><input id="w2_u" inputmode="decimal" value="${F('u','ch_u','1')}" title="Transformation / rénovation (1 = neuf)"></div>
+    <div class="w2-field"><label>GROUPE i</label><input id="w2_i" inputmode="decimal" value="${F('i','ch_i','1')}" title="Facteur de groupe"></div>
+    <div class="w2-field"><label>PRESTATIONS SPÉC. s</label><input id="w2_s" inputmode="decimal" value="${F('s','ch_s','1')}" title="Prestations spéciales"></div>
+   </div>
+   <div class="w2-row">
+    <div class="w2-field" style="max-width:220px"><label>TARIF HORAIRE MOYEN (Fr./h)</label><input id="w2_h" inputmode="decimal" value="${F('h','ch_h','135')}"></div>
+    <div class="w2-field" style="max-width:160px"><label>RABAIS (%)</label><input id="w2_rab" inputmode="decimal" value="${F('rab','ch_rabais','5')}"></div>
+   </div>
+   <div class="w2-note">r, U, i et s valent 1 par défaut — ne les modifiez que si le projet le justifie (complexité, rénovation, ouvrages groupés, prestations spéciales).</div>`; },
+  commit(){ if(WIZ2.d.part==='full') chFillFull(); else if(WIZ2.d.part==='enquete') chFillEnquete(); else if(WIZ2.d.part==='exec') chFillExecution();
+    const cat=document.getElementById('w2_cat'); const catR=document.getElementById('ch_cat'); if(cat&&catR) catR.value=cat.value;
+    sv('ch_r',W2_NUM(document.getElementById('w2_r').value)||1); sv('ch_u',W2_NUM(document.getElementById('w2_u').value)||1);
+    sv('ch_i',W2_NUM(document.getElementById('w2_i').value)||1); sv('ch_s',W2_NUM(document.getElementById('w2_s').value)||1);
+    const h=document.getElementById('ch_h'); if(h){ h.value=W2_NUM(document.getElementById('w2_h').value)||135; if(typeof chHChange==='function') chHChange(); }
+    sv('ch_rabais',W2_NUM(document.getElementById('w2_rab').value)); updCalcHono(); }},
+ {id:'tvafrais', q:'TVA et frais accessoires', sub:'Le taux de TVA du contrat et le mode de facturation des frais — le texte des Conditions préliminaires s’adapte automatiquement.',
+  html(){ const D=WIZ2.d;
+   const tvaBtn=t=>`<button type="button" class="${Math.abs(D.tva-t)<0.001?'sel':''}" onclick="wiz2Tva(${t})">${t.toFixed(1)} %</button>`;
+   const tile=(k,titre,desc)=>`<div class="w2-tile ${D.fraisMode===k?'sel':''}" onclick="wiz2Frais('${k}')"><b>${titre}</b><span>${desc}</span></div>`;
+   let inner='';
+   if(D.fraisMode==='pct'){ inner=`<div class="w2-field" style="max-width:220px;margin-top:14px"><label>FRAIS GLOBAUX (%) DES HONORAIRES</label><input id="w2_fpct" inputmode="decimal" value="${W2_ESC(D.fraisPct)}"></div>`; }
+   if(D.fraisMode==='perso'){ inner=`<div class="w2-row" style="align-items:flex-end;margin-top:14px">
+      <div class="w2-field" style="max-width:240px"><label>MONTANT ARRÊTÉ DES FRAIS</label><input id="w2_fmnt" inputmode="decimal" placeholder="6 000" value="${W2_ESC(D.fraisMnt)}"></div>
+      <div class="w2-field" style="max-width:170px"><label>BASE</label><span class="w2-seg"><button type="button" class="${D.fraisBase==='ttc'?'sel':''}" onclick="wiz2FraisBase('ttc')">TTC</button><button type="button" class="${D.fraisBase==='ht'?'sel':''}" onclick="wiz2FraisBase('ht')">HT</button></span></div></div>`; }
+   if(D.fraisMode==='deplrepro'){ inner=`<div class="w2-row" style="margin-top:14px">
+      <div class="w2-field"><label>DÉPLACEMENTS (%)</label><input id="w2_fdepl" inputmode="decimal" placeholder="1.5" value="${W2_ESC(D.deplPct)}">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-weight:400;text-transform:none;font-size:12px;color:#6a7c82"><input type="checkbox" style="width:14px;height:14px" ${D.deplOff?'checked':''} onchange="WIZ2.d.deplOff=this.checked">offerts (mentionnés sans facturation)</label></div>
+      <div class="w2-field"><label>REPRODUCTION (%)</label><input id="w2_frepro" inputmode="decimal" placeholder="1.5" value="${W2_ESC(D.reproPct)}">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-weight:400;text-transform:none;font-size:12px;color:#6a7c82"><input type="checkbox" style="width:14px;height:14px" ${D.reproOff?'checked':''} onchange="WIZ2.d.reproOff=this.checked">offerts</label></div></div>`; }
+   return `
+   <div class="w2-field"><label>TAUX DE TVA</label>
+     <div style="display:flex;gap:12px;align-items:center">
+       <span class="w2-seg">${tvaBtn(8.1)}${tvaBtn(8.0)}${tvaBtn(7.7)}</span>
+       <input id="w2_tva" inputmode="decimal" style="max-width:110px;border:1.5px solid #d8d8dd;border-radius:12px;padding:9px 12px;font-size:14px;font-family:inherit" value="${W2_ESC(D.tva)}" oninput="WIZ2.d.tva=parseFloat(this.value)||0" title="Taux libre si différent des taux usuels"> <span style="font-size:12px;color:#8a979c">taux libre</span>
+     </div></div>
+   <div style="height:10px"></div>
+   <label style="display:block;font-size:12px;font-weight:600;color:#6a7c82;margin-bottom:8px">FRAIS ACCESSOIRES</label>
+   <div class="w2-tiles" style="grid-template-columns:1fr 1fr 1fr">
+    ${tile('pct','Frais en %','Pourcentage global appliqué aux honoraires (3 % habituellement).')}
+    ${tile('perso','Montant arrêté','Frais fixés d’avance, en francs, pour tout le mandat.')}
+    ${tile('deplrepro','Déplacement + reproduction','Deux lignes détaillées, chacune avec son pourcentage — ou offertes.')}
+   </div>${inner}`; },
+  commit(){ const D=WIZ2.d;
+    const tv=document.getElementById('w2_tva'); if(tv && tv.value) D.tva=parseFloat(tv.value)||D.tva;
+    sv('ch_tva', D.tva);
+    if(D.fraisMode==='pct'){ const e=document.getElementById('w2_fpct'); if(e) D.fraisPct=e.value;
+      if(typeof chFraisSelect==='function') chFraisSelect('pct'); sv('ch_forfait_frais_pct', W2_NUM(D.fraisPct)); }
+    else if(D.fraisMode==='perso'){ const e=document.getElementById('w2_fmnt'); if(e) D.fraisMnt=e.value;
+      if(typeof chFraisSelect==='function'){ const c=document.getElementById('ch_frais_sel_perso'); if(c&&!c.checked){ c.checked=true; chFraisSelect('perso'); } }
+      sv('ch_frais_perso_mnt', W2_NUM(D.fraisMnt));
+      const rb=document.querySelector('input[name="ch_frais_perso_base"][value="'+D.fraisBase+'"]'); if(rb) rb.checked=true; }
+    else if(D.fraisMode==='deplrepro'){ const e1=document.getElementById('w2_fdepl'); if(e1) D.deplPct=e1.value;
+      const e2=document.getElementById('w2_frepro'); if(e2) D.reproPct=e2.value;
+      if(typeof chFraisSelect==='function'){ const c=document.getElementById('ch_frais_sel_depl'); if(c&&!c.checked){ c.checked=true; chFraisSelect('depl'); } }
+      sv('ch_frais_depl_pct', W2_NUM(D.deplPct)||''); sv('ch_frais_repro_pct', W2_NUM(D.reproPct)||'');
+      const d1=document.getElementById('ch_frais_depl_off'); if(d1) d1.checked=!!D.deplOff;
+      const d2=document.getElementById('ch_frais_repro_off'); if(d2) d2.checked=!!D.reproOff; }
+    if(typeof chFraisTextSync==='function') try{ chFraisTextSync(); }catch(e){}
+    updCalcHono(); }},
+ {id:'doc', q:'Que contiendra le document ?', sub:'Activez les sections à faire figurer dans l’offre PDF — tout reste modifiable ensuite.',
+  html(){ const D=WIZ2.d; const sw=(k,titre,desc,on)=>`
+    <div class="w2-switchrow"><label class="lockchk" style="margin-top:2px"><input type="checkbox" ${on?'checked':''} onchange="WIZ2.d.${k}=this.checked;wiz2Render()"></label>
+      <div class="txt"><b>${titre}</b><span>${desc}</span></div></div>`;
+   return `
+   ${sw('ctxOn','Contexte du projet','Situation de base et objectifs — la page est retirée du document si elle reste vide.',D.ctxOn)}
+   ${D.ctxOn?`<div class="w2-field" style="margin-left:48px"><label>SITUATION DE BASE</label><textarea id="w2_sit" rows="2" placeholder="La parcelle accueille une maison villageoise de 1904…">${W2_ESC(D.sit)}</textarea></div>
+   <div class="w2-field" style="margin-left:48px"><label>OBJECTIFS</label><textarea id="w2_obj" rows="2" placeholder="Rénover l’enveloppe, créer un logement au 1er étage…">${W2_ESC(D.obj)}</textarea></div>`:''}
+   ${sw('planOn','Planning d’intention','Les délais prévus et leurs réserves (liste type du bureau, modifiable).',D.planOn)}
+   ${sw('mcOn','Mode de calcul','Le texte type correspondant à la rémunération choisie (recommandé).',D.mcOn)}
+   ${sw('projOn','Page « Projet »','Page supplémentaire de description détaillée du projet (rarement utilisée).',D.projOn)}
+   <div class="w2-note">Les « Conditions préliminaires » (texte type du bureau) et le récapitulatif des honoraires figurent toujours dans l’offre.</div>`; },
+  commit(){ const D=WIZ2.d;
+    const sEl=document.getElementById('w2_sit'); if(sEl) D.sit=sEl.value;
+    const oEl=document.getElementById('w2_obj'); if(oEl) D.obj=oEl.value;
+    if(D.ctxOn){ if(D.sit.trim()){ rtSetValue('ch_note_situation', rtTextToHTML(D.sit)); const e=document.getElementById('ch_note_situation'); if(e) e.dataset.manual='1'; }
+      if(D.obj.trim()) rtSetValue('ch_note_objectif', rtTextToHTML(D.obj)); }
+    else { rtSetValue('ch_note_situation',''); rtSetValue('ch_note_objectif',''); rtSetValue('ch_note_approche','');
+      const e=document.getElementById('ch_note_situation'); if(e) e.dataset.manual='1'; }
+    const hp=document.getElementById('ch_hide_planning'); if(hp){ hp.checked=!D.planOn; if(typeof chTogglePlanningHide==='function') chTogglePlanningHide(); }
+    const mo=document.getElementById('ch_modecalc_on'); if(mo) mo.checked=!!D.mcOn;
+    const pj=document.getElementById('ch_projet_page_on'); if(pj && pj.checked!==!!D.projOn){ pj.checked=!!D.projOn; if(typeof chToggleProjetCard==='function') chToggleProjetCard(); }
+    updChSections(); }},
+ {id:'montant', q:'Le montant du mandat', sub:'Le calcul est établi — arrêtez maintenant le montant forfaitaire, ou gardez le résultat du calcul.',
+  vis(){ return WIZ2.d.remu!=='unitaire'; },
+  html(){ const r=updCalcHono()||{}; const ttcCalc=r.ttc||0; const htCalc=r.htFinal||0;
+   const sugg=ttcCalc>0 ? Math.round(ttcCalc/1000)*1000 : 0;
+   const cur=gn('ch_forfait_mnt')||'';
+   return `
+   <div class="w2-resume" style="margin-bottom:20px">
+     <div class="r-line"><span class="k">Honoraires calculés (HT)</span><span class="v">${CHF(htCalc)} Fr.</span></div>
+     <div class="r-line" style="border-bottom:none"><span class="k">Honoraires calculés (TTC)</span><span class="v" style="font-size:17px">${CHF(ttcCalc)} Fr.</span></div>
+   </div>
+   <div class="w2-row" style="align-items:flex-end">
+     <div class="w2-field" style="max-width:280px"><label>MONTANT ARRÊTÉ — TOUT LE MANDAT</label>
+       <input id="w2_mnt" inputmode="decimal" placeholder="${sugg?CHF(sugg):'150 000'}" value="${cur?W2_ESC(String(cur)):''}"></div>
+     <div class="w2-field" style="max-width:170px"><label>BASE</label>
+       <span class="w2-seg"><button type="button" class="${WIZ2.d.base==='ttc'?'sel':''}" onclick="wiz2Base('ttc')">TTC</button><button type="button" class="${WIZ2.d.base==='ht'?'sel':''}" onclick="wiz2Base('ht')">HT</button></span></div>
+     ${sugg?`<div class="w2-field" style="max-width:220px"><label>&nbsp;</label><button class="w2-add" style="width:100%" onclick="document.getElementById('w2_mnt').value='${sugg}'" title="Reprendre le calcul, arrondi au millier">Reprendre ${CHF(sugg)} (arrondi)</button></div>`:''}
+   </div>
+   <div class="w2-note">Ce montant vaut pour l’ENSEMBLE du mandat et remplace le résultat du calcul dans le document (« Montant arrêté forfaitairement à… »). Laissez vide pour conserver le montant calculé.</div>`; },
+  commit(){ const el=document.getElementById('w2_mnt'); WIZ2.d.mnt=el?el.value:'';
+    const rb=document.querySelector('input[name="ch_forfait_base"][value="'+WIZ2.d.base+'"]'); if(rb) rb.checked=true;
+    sv('ch_forfait_mnt', W2_NUM(WIZ2.d.mnt)); updCalcHono(); }},
+ {id:'fin', q:'Tout est prêt.', sub:'Vérifiez l’essentiel — le document complet s’affichera après la création.',
+  html(){ const r=updCalcHono()||{};
+   const ttc=(r&&r.forfaitOn)?r.forfaitTTC:(r?r.ttc:0);
+   const T=WIZ2.d.types; const types=[T.ord?'Prestations ordinaires':null,T.no?'Non ordinaires':null,T.expertise?'Expertise':null,T.faisa?'Faisabilité':null].filter(Boolean).join(' + ');
+   const remuL={relatif:'Forfait relatif',forfait:'Forfait',unitaire:'Unitaire'}[WIZ2.d.remu];
+   const mntArr=gn('ch_forfait_mnt')||0;
+   const secs=['Conditions préliminaires', WIZ2.d.ctxOn?'Contexte':null, WIZ2.d.mcOn?'Mode de calcul':null, WIZ2.d.planOn?'Planning d’intention':null, WIZ2.d.projOn?'Page Projet':null,'Récapitulatif'].filter(Boolean).join(' · ');
+   return `<div class="w2-resume">
+     <div class="r-line"><span class="k">Affaire</span><span class="v">${W2_ESC(gv('ch_affaire'))} — ${W2_ESC(gv('ch_lieu'))}</span></div>
+     <div class="r-line"><span class="k">Projet</span><span class="v">${W2_ESC((gv('ch_projet')||'').slice(0,70))}</span></div>
+     <div class="r-line"><span class="k">Maître de l’ouvrage</span><span class="v">${W2_ESC(gv('ch_nom'))}</span></div>
+     <div class="r-line"><span class="k">Type de mandat</span><span class="v">${types}</span></div>
+     <div class="r-line"><span class="k">Rémunération</span><span class="v">${remuL}${WIZ2.d.remu!=='unitaire'&&mntArr>0?' — arrêté à '+CHF(r.forfaitOn?(WIZ2.d.base==='ht'?r.forfaitHT:r.forfaitTTC):mntArr)+' '+WIZ2.d.base.toUpperCase():' — selon calcul'}</span></div>
+     <div class="r-line"><span class="k">TVA · frais accessoires</span><span class="v">${(+WIZ2.d.tva).toFixed(2)} % · ${WIZ2.d.fraisMode==='pct'?((W2_NUM(WIZ2.d.fraisPct)||0)+' % des honoraires'):(WIZ2.d.fraisMode==='perso'?CHF(W2_NUM(WIZ2.d.fraisMnt))+' '+WIZ2.d.fraisBase.toUpperCase():'déplacement + reproduction')}</span></div>
+     <div class="r-line" style="border-bottom:none"><span class="k">Contenu du document</span><span class="v" style="font-weight:400;font-size:12px">${secs}</span></div>
+     <div class="w2-bigttc"><div class="n">${CHF(ttc||0)} Fr.</div><div class="l">Total des honoraires TTC</div></div>
+   </div>
+   <div class="w2-note" style="text-align:center">Après la création, le document PDF s’affiche — chaque détail reste modifiable dans le formulaire complet.</div>`; },
+  commit(){}}
+];
+function wiz2Visible(){ return WIZ2_SCREENS.filter(sc=>!sc.vis||sc.vis()); }
+function wiz2Start(){
+  WIZ2.on=true; WIZ2.i=0;
+  WIZ2.d={types:{ord:true,no:false,expertise:false,faisa:false},remu:(gv('ch_modecalc_type')||'relatif'),base:'ttc',mnt:'',
+    coutMode:'',cfc2:'',vols:[{lbl:'Volume principal',qty:0,prix:850},{lbl:'',qty:0,prix:850}],part:'',lignes:[],
+    tva:(gn('ch_tva')||8.1), fraisMode:'pct', fraisPct:(gn('ch_forfait_frais_pct')||3), fraisMnt:'', fraisBase:'ttc',
+    deplPct:'', reproPct:'', deplOff:false, reproOff:false,
+    ctxOn:false,sit:'',obj:'',planOn:true,mcOn:true,projOn:false};
+  document.getElementById('wiz2').classList.add('on');
+  wiz2Render();
+}
+function wiz2Close(){ WIZ2.on=false; document.getElementById('wiz2').classList.remove('on'); }
+function wiz2Quit(){ wiz2Close(); refreshOffrePreview(); }
+function wiz2Render(){
+  const scr=wiz2Visible(); if(WIZ2.i>scr.length-1) WIZ2.i=scr.length-1;
+  const sc=scr[WIZ2.i];
+  document.getElementById('w2-card').innerHTML='<h1 class="w2-q">'+sc.q+'</h1><p class="w2-sub">'+sc.sub+'</p>'+sc.html();
+  document.getElementById('w2-stepinfo').textContent='Étape '+(WIZ2.i+1)+' sur '+scr.length;
+  document.getElementById('w2-bar').style.width=Math.round(((WIZ2.i+1)/scr.length)*100)+'%';
+  document.getElementById('w2-back').style.visibility=WIZ2.i===0?'hidden':'visible';
+  const nx=document.getElementById('w2-next');
+  if(WIZ2.i===scr.length-1){ nx.textContent='Créer le contrat'; nx.classList.add('create'); }
+  else { nx.textContent='Continuer'; nx.classList.remove('create'); }
+  document.querySelector('#wiz2 .w2-body').scrollTop=0;
+}
+function wiz2Next(){
+  const scr=wiz2Visible(); const sc=scr[WIZ2.i];
+  if(sc.valid && !sc.valid()) return;
+  try{ sc.commit(); }catch(e){ console.error(e); }
+  if(WIZ2.i>=wiz2Visible().length-1){ applyCalcHono(); return; }
+  WIZ2.i++; wiz2Render();
+}
+function wiz2Back(){ if(WIZ2.i>0){ const scr=wiz2Visible(); const sc=scr[WIZ2.i]; try{ if(sc && sc.commit && sc.id!=='fin') sc.commit(); }catch(e){} WIZ2.i--; wiz2Render(); } }
+function wiz2Tile(k){ WIZ2.d.types[k]=!WIZ2.d.types[k]; wiz2Render(); }
+function wiz2Remu(k){ WIZ2.d.remu=k; wiz2Render(); }
+function wiz2Base(b){ const el=document.getElementById('w2_mnt'); if(el) WIZ2.d.mnt=el.value; WIZ2.d.base=b; wiz2Render(); }
+function wiz2Part(k){ WIZ2.d.part=k; wiz2Render(); }
+function wiz2CoutMode(m){ const el=document.getElementById('w2_cfc2'); if(el) WIZ2.d.cfc2=el.value; WIZ2.d.coutMode=m; wiz2Render(); }
+function wiz2Tva(t){ WIZ2.d.tva=t; wiz2Render(); }
+function wiz2Frais(m){ ['w2_fpct','w2_fmnt','w2_fdepl','w2_frepro'].forEach(id=>{ const e=document.getElementById(id); if(!e) return;
+    if(id==='w2_fpct') WIZ2.d.fraisPct=e.value; if(id==='w2_fmnt') WIZ2.d.fraisMnt=e.value;
+    if(id==='w2_fdepl') WIZ2.d.deplPct=e.value; if(id==='w2_frepro') WIZ2.d.reproPct=e.value; });
+  WIZ2.d.fraisMode=m; wiz2Render(); }
+function wiz2FraisBase(b){ const e=document.getElementById('w2_fmnt'); if(e) WIZ2.d.fraisMnt=e.value; WIZ2.d.fraisBase=b; wiz2Render(); }
+function wiz2LigneHtml(l,i){ return '<div class="ln">'
+  +'<input class="lbl" placeholder="Séance, analyse, rapport…" value="'+W2_ESC(l.lbl)+'" oninput="WIZ2.d.lignes['+i+'].lbl=this.value">'
+  +'<input class="num" inputmode="decimal" placeholder="h" title="Heures" value="'+(l.h||'')+'" oninput="WIZ2.d.lignes['+i+'].h=parseFloat(this.value)||0;wiz2Tot()">'
+  +'<input class="num" inputmode="decimal" placeholder="Fr./h" title="Tarif horaire" value="'+(l.p||'')+'" oninput="WIZ2.d.lignes['+i+'].p=parseFloat(this.value)||0;wiz2Tot()">'
+  +'<span class="amt" id="w2-amt-'+i+'">'+CHF((l.h||0)*(l.p||0))+' Fr.</span>'
+  +'<button class="rm" onclick="WIZ2.d.lignes.splice('+i+',1);wiz2Render()" title="Supprimer la ligne">✕</button></div>'; }
+function wiz2AddLigne(){ WIZ2.d.lignes.push({lbl:'',h:0,p:135}); wiz2Render(); }
+function wiz2Tot(){ WIZ2.d.lignes.forEach((l,i)=>{ const e=document.getElementById('w2-amt-'+i); if(e) e.textContent=CHF((l.h||0)*(l.p||0))+' Fr.'; });
+  const t=document.getElementById('w2-tot'); if(t) t.textContent=CHF(WIZ2.d.lignes.reduce((a,l)=>a+(l.h||0)*(l.p||0),0))+' Fr. HT'; }
+function wiz2VolHtml(v,i){ return '<div class="ln">'
+  +'<input class="lbl" placeholder="Volume principal, annexe, garage…" value="'+W2_ESC(v.lbl)+'" oninput="WIZ2.d.vols['+i+'].lbl=this.value">'
+  +'<input class="num" style="width:96px" inputmode="decimal" placeholder="m³" title="Volume SIA 416 (m³)" value="'+(v.qty||'')+'" oninput="WIZ2.d.vols['+i+'].qty=parseFloat(this.value)||0;wiz2VolTot()">'
+  +'<input class="num" style="width:96px" inputmode="decimal" placeholder="Fr./m³" title="Prix au m³" value="'+(v.prix||'')+'" oninput="WIZ2.d.vols['+i+'].prix=parseFloat(this.value)||0;wiz2VolTot()">'
+  +'<span class="amt" id="w2-vamt-'+i+'">'+CHF((v.qty||0)*(v.prix||0))+' Fr.</span>'
+  +'<button class="rm" onclick="WIZ2.d.vols.splice('+i+',1);wiz2Render()" title="Supprimer la ligne">✕</button></div>'; }
+function wiz2AddVol(){ WIZ2.d.vols.push({lbl:'',qty:0,prix:850}); wiz2Render(); }
+function wiz2VolTot(){ WIZ2.d.vols.forEach((v,i)=>{ const e=document.getElementById('w2-vamt-'+i); if(e) e.textContent=CHF((v.qty||0)*(v.prix||0))+' Fr.'; });
+  const t=document.getElementById('w2-voltot'); if(t) t.textContent=CHF(WIZ2.d.vols.reduce((a,v)=>a+(v.qty||0)*(v.prix||0),0))+' Fr. TTC'; }
+</script>
+<div id="wiz2">
+  <div class="w2-top">
+    <span class="w2-brand">NOUVEAU CONTRAT</span> <span style="background:#b26a12;color:#fff;font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 10px;border-radius:999px">ESSAI — non définitif</span>
+    <span class="w2-stepinfo" id="w2-stepinfo"></span>
+    <button class="w2-close" onclick="wiz2Quit()" title="Quitter l'assistant (les saisies déjà validées restent dans le formulaire)">✕</button>
+  </div>
+  <div class="w2-progress"><i id="w2-bar" style="width:0%"></i></div>
+  <div class="w2-body"><div class="w2-card" id="w2-card"></div></div>
+  <div class="w2-nav">
+    <button class="w2-back" id="w2-back" onclick="wiz2Back()">‹ Retour</button>
+    <button class="w2-next" id="w2-next" onclick="wiz2Next()">Continuer</button>
+  </div>
+</div>
 </body>
 </html>

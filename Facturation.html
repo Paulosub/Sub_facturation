@@ -12152,7 +12152,9 @@ function pvSecHTML(pv,sec,si,RO){
     CH.forEach(ch=>{
       const nbCh=sec.lines.filter(l=>tyOf(l)===ch[0]).length;
       h+='<tr><th colspan="5" ondragover="pvDragO(event)" ondrop="pvDropHead(event,'+si+','+PV_Q+ch[0]+PV_Q+')">'+
-        ((nbCh===0&&!RO)?'<button class="btn btn-sm pv-mini" title="Ajouter une ligne" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')" style="margin-right:10px;font-size:12px;line-height:1;padding:1px 8px">✚</button> ':'')+
+        ((nbCh===0&&!RO)?('<button class="btn btn-sm pv-mini" title="Ajouter une ligne" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')" style="margin-right:6px;font-size:12px;line-height:1;padding:1px 8px">✚</button>'+
+          (_pvCellBuf?'<button class="btn btn-sm pv-mini" title="Coller la cellule copiée" onclick="pvPasteK('+si+','+PV_Q+ch[0]+PV_Q+')" style="margin-right:10px;font-size:11px;line-height:1;padding:1px 8px;color:#0a6e84">⧉</button>':' '))
+         :'')+
         ch[1]+'</th></tr>';
       sec.lines.forEach((ln,li)=>{
         if(tyOf(ln)!==ch[0]) return;
@@ -12168,11 +12170,15 @@ function pvSecHTML(pv,sec,si,RO){
           '<td style="width:86px"><input value="'+pvEscA(ln.d||'')+'" placeholder="sem. 22" title="Texte libre (sem 40, 03.06.21…) — préfixes : D début (vert), F fin (rouge), Dqp / Sat (gris)" style="'+(function(){ const pdl=pvDelaiInfo(ln.d);
             return pdl.p==='F'?'color:#b00020':pdl.p==='D'?'color:#1d7a37':pdl.p?'color:#777':ust.slice(1); })()+'" onchange="pvLineDelai('+si+','+li+',this.value)"'+dis+'></td>'+
           '<td class="rm" style="width:26px">'+ubt+'</td>'+
-          '<td class="rm" style="width:30px">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
+          '<td class="rm" style="width:58px;white-space:nowrap">'+(RO?'':('<button class="btn btn-sm pv-mini" title="Copier la cellule (ou ⌘C dans la cellule)" onclick="pvLineCopy('+si+','+li+')">⧉</button> '+
+            '<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>'))+'</td></tr>';
       });
-      if(!RO&&nbCh>0) h+='<tr><td colspan="5" style="padding:0;border-top:1px solid #e6ecf0">'+
-        '<button style="width:100%;border:none;background:#fafbfc;color:#7a8b99;font-size:11px;padding:3px;cursor:pointer" '+
-        'title="Ajouter une ligne en dessous de la dernière" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')">✚</button></td></tr>';
+      if(!RO&&nbCh>0) h+='<tr><td colspan="5" style="padding:0;border-top:1px solid #e6ecf0"><div style="display:flex">'+
+        '<button style="flex:1;border:none;background:#fafbfc;color:#7a8b99;font-size:11px;padding:3px;cursor:pointer" '+
+        'title="Ajouter une ligne en dessous de la dernière" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')">✚</button>'+
+        (_pvCellBuf?'<button style="flex:1;border:none;border-left:1px solid #e6ecf0;background:#f2f7fb;color:#0a6e84;font-size:11px;padding:3px;cursor:pointer" '+
+          'title="Coller la cellule copiée en fin de chapitre" onclick="pvPasteK('+si+','+PV_Q+ch[0]+PV_Q+')">⧉ Coller</button>':'')+
+        '</div></td></tr>';
     });
     sec.lines.forEach((ln,li)=>{ if(ln.k==='pb'||ln.k==='img') h+=extra(ln,li,5); });
     h+='</table>';
@@ -12181,7 +12187,8 @@ function pvSecHTML(pv,sec,si,RO){
     sec.lines.forEach((ln,li)=>{
       if(ln.k==='pb'||ln.k==='img'){ h+=extra(ln,li,2); return; }
       h+='<tr><td class="txw"><textarea rows="'+Math.min(14,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
-        '<td class="rm" style="width:30px">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
+        '<td class="rm" style="width:58px;white-space:nowrap">'+(RO?'':('<button class="btn btn-sm pv-mini" title="Copier la cellule" onclick="pvLineCopy('+si+','+li+')">⧉</button> '+
+          '<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>'))+'</td></tr>';
     });
     h+='</table>';
   }
@@ -12223,6 +12230,23 @@ function pvLineFini(si,li,ck){ const pv=pvCurPv(); if(!pv||pv.statut==='definiti
   else { const order={exec:0,fini:1,rem:2}; let at=lines.length;
     for(let i2=0;i2<lines.length;i2++){ const ty=tyOf(lines[i2]); if(ty&&order[ty]>order[ln.k]){ at=i2; break; } }
     lines.splice(at,0,ln); }
+  pvPersist(); pvRender(); }
+function pvLineCopy(si,li){ const pv=pvCurPv(); if(!pv) return;
+  const ln=pv.secs[si].lines[li]; if(!ln) return;
+  _pvCellBuf=JSON.parse(JSON.stringify(ln));
+  toast('Cellule copiée — bouton « ⧉ Coller » d’un chapitre, ou ⌘V dans une cellule.');
+  pvRender(); }
+function pvPasteK(si,ch){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif'||!_pvCellBuf) return;
+  const copie=JSON.parse(JSON.stringify(_pvCellBuf));
+  const typed=x=>x==='exec'||x==='fini'||x==='rem'||x==='t';
+  if(typed(copie.k)) copie.k=ch;
+  const lines=pv.secs[si].lines;
+  const tyOf=l=>(l.k==='fini'||l.k==='rem')?l.k:(l.k==='t'||l.k==='exec')?'exec':null;
+  let idx=-1; lines.forEach((l,i2)=>{ if(tyOf(l)===ch) idx=i2; });
+  if(idx>=0) lines.splice(idx+1,0,copie);
+  else { const order={exec:0,fini:1,rem:2}; let at=lines.length;
+    for(let i2=0;i2<lines.length;i2++){ const ty=tyOf(lines[i2]); if(ty&&order[ty]>order[ch]){ at=i2; break; } }
+    lines.splice(at,0,copie); }
   pvPersist(); pvRender(); }
 function pvLineUrg(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   const ln=pv.secs[si].lines[li]; ln.u=((+ln.u||0)+1)%3; pvPersist(); pvRender(); }

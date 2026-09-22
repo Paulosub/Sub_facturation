@@ -909,7 +909,9 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 .pv-seg{display:inline-flex;border:1px solid #003346;border-radius:6px;overflow:hidden}
 .pv-seg button{border:none;padding:6px 14px;cursor:pointer;font-size:12.5px;background:#fff;color:#003346}
 .pv-seg button.on{background:#003346;color:#fff}
-#pv_out table.pv-xl{border-collapse:collapse;width:100%;background:#fff}
+#pv_out table.pv-xl{border-collapse:collapse;width:auto;max-width:100%;background:#fff}
+#pv_out .pv-xl td.tx{width:336px;max-width:336px}
+#pv_out .pv-xl td.txw{width:492px;max-width:492px}
 #pv_out .pv-xl th{background:#eef3f5;color:#003346;font-size:11px;font-weight:bold;border:1px solid #c9d3d6;padding:4px 7px;text-align:left}
 #pv_out .pv-xl td{border:1px solid #c9d3d6;padding:0;vertical-align:top}
 #pv_out .pv-xl textarea,#pv_out .pv-xl input,#pv_out .pv-xl select{width:100%;box-sizing:border-box;border:none;background:transparent;font:12px/1.45 inherit;padding:5px 7px;resize:vertical}
@@ -2126,7 +2128,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
         <button class="btn" style="background:#0a6e84;color:#fff;display:none" onclick="applyCalcHono(true)" id="ch_btn_newver" title="Enregistre l'état actuel comme une nouvelle version (la précédente est conservée dans l'historique)">＋ Nouvelle version</button>
         <button class="btn" style="background:#b04a4a;color:#fff;display:none" onclick="chDeleteLastVersion()" id="ch_btn_delver" title="Supprime la dernière version enregistrée (la version précédente redevient courante)">🗑 Supprimer la dernière version</button>
         <button class="btn" style="background:#b04a4a;color:#fff" onclick="chDeleteContrat()" title="Supprime définitivement ce contrat (et toutes ses versions) de la liste — irréversible">🗑 Supprimer le contrat</button>
-        <button class="btn" onclick="sxPrev('contrat')" title="Volet d’aperçu PDF à droite">🗔 Aperçu</button> <button class="btn" style="background:#2E9E5B;color:#fff" onclick="generateOffrePDF()">⬇ PDF fidèle</button>
+        <button class="btn" style="background:#2E9E5B;color:#fff" onclick="generateOffrePDF()">⬇ PDF fidèle</button>
         <button class="btn btn-blue" onclick="openOffreForm()">🖨 Aperçu HTML</button>
         <button class="btn" style="background:#888;color:#fff" onclick="resetCalcHono(true)">Réinitialiser</button>
         <button class="btn" style="background:#0a4a5e;color:#fff" onclick="chCopyFromContrat()" title="Copier toutes les données d'un contrat existant dans ce formulaire — le n° d'affaire actuel et la cible d'enregistrement sont conservés ; modifiez librement puis « Mettre à jour » pour enregistrer">⧉ Copier depuis un contrat…</button>
@@ -2140,6 +2142,9 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
       <div class="pv-bar">
         <span style="font-weight:bold">Aperçu offre / contrat — PDF fidèle</span>
         <span style="margin-left:auto"></span>
+        <button class="btn btn-sm" onclick="chPrevZoom(-20)" title="Réduire">−</button>
+        <span id="ch_zoom" style="min-width:40px;text-align:center;cursor:pointer" title="Ajuster à la largeur" onclick="chPrevZoom(0,100)">100%</span>
+        <button class="btn btn-sm" onclick="chPrevZoom(20)" title="Agrandir">+</button>
         <button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="refreshOffrePreview()">↻ Actualiser</button>
         <button class="btn btn-sm" style="background:#2E9E5B;color:#fff" onclick="generateOffrePDF()">⬇ PDF</button>
       </div>
@@ -4495,6 +4500,12 @@ function rtAlign(ev, mode, id){
   return false;
 }
 let _offreDeb=null;
+window._chZoom=100;
+function chPrevZoom(d,abs){
+  window._chZoom = abs!=null ? abs : Math.min(300, Math.max(60, (window._chZoom||100)+(d||0)));
+  const l=document.getElementById('ch_zoom'); if(l) l.textContent=window._chZoom+'%';
+  document.querySelectorAll('#offre-frame canvas').forEach(c=>{ if(c.dataset.bw) c.style.maxWidth=(c.dataset.bw*window._chZoom/100)+'px'; });
+}
 function refreshOffreSoon(){ clearTimeout(_offreDeb); _offreDeb=setTimeout(()=>{ try{refreshOffrePreview();}catch(e){} }, 500); }
 /* Sélection automatique du contenu au 1er focus des champs COURTS (input texte/nombre), pour qu'en
    tapant on remplace la valeur. Les zones longues (textarea, éditeurs enrichis contenteditable —
@@ -6574,7 +6585,8 @@ async function refreshOffrePreview(){
       const vp = page.getViewport({scale:1.6});
       const cv = document.createElement('canvas');
       cv.width=vp.width; cv.height=vp.height;
-      cv.style.cssText='width:100%;max-width:'+ (vp.width/1.6) +'px;box-shadow:0 3px 14px rgba(0,0,0,.4);background:#fff';
+      cv.dataset.bw=vp.width/1.6;
+      cv.style.cssText='width:100%;max-width:'+ (vp.width/1.6*(window._chZoom||100)/100) +'px;box-shadow:0 3px 14px rgba(0,0,0,.4);background:#fff';
       await page.render({canvasContext:cv.getContext('2d'), viewport:vp}).promise;
       f.appendChild(cv);
     }
@@ -11888,8 +11900,7 @@ function pvListHTML(out){
   }
   out.innerHTML=h;
 }
-function pvOpen(id){ _pvCur=id; _pvTab='pv'; pvRender();
-  if(_sxPrevKind!=='pv') sxPrev('pv'); }
+function pvOpen(id){ _pvCur=id; _pvTab='pv'; pvRender(); }
 function pvDel(id){ const A=pvA(); const pv=A.pvs.find(x=>x.id===id); if(!pv) return;
   chConfirm('Supprimer définitivement le PV PVCH '+pvPad(pv.num,4)+' (annotation) ?', ()=>{
     A.pvs=A.pvs.filter(x=>x.id!==id); if(_pvCur===id) _pvCur=null; pvPersist(); pvRender(); }); }
@@ -11927,7 +11938,6 @@ function pvCreate(){
     approbMode:'sans', approbRem:'', presH: (prev&&prev.presH)?JSON.parse(JSON.stringify(prev.presH)):{},
     pres, secs };
   A.pvs.push(pv); pvPersist(); _pvCur=pv.id; _pvTab='pv'; pvRender();
-  if(_sxPrevKind!=='pv') sxPrev('pv');
 }
 /* ── configuration « Général » de l'affaire ── */
 function pvCfgHTML(){
@@ -12000,7 +12010,7 @@ function pvEditHTML(out, pv){
     '<span class="pv-seg"><button class="'+(_pvTab==='gen'?'on':'')+'" onclick="_pvTab='+PV_Q+'gen'+PV_Q+';pvRender()">Général</button>'+
     '<button class="'+(_pvTab==='pv'?'on':'')+'" onclick="_pvTab='+PV_Q+'pv'+PV_Q+';pvRender()">PV</button></span>'+
     '<span style="margin-left:auto"></span>'+
-    '<button class="btn btn-sm" onclick="sxPrev('+PV_Q+'pv'+PV_Q+')"'+(_sxPrevKind==='pv'?' style="background:#003346;color:#fff;border-color:#003346"':'')+' title="Volet d’aperçu PDF à droite (comme contrats et factures)">🗔 Aperçu</button>'+
+
     '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'open'+PV_Q+')">PDF (onglet)</button>'+
     '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'dl'+PV_Q+')">⬇ PDF</button>'+
     (RO?'<button class="btn btn-sm" onclick="pvMail('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+')">✉ E-mail</button>'
@@ -12029,12 +12039,60 @@ function pvEditHTML(out, pv){
     '<button class="btn btn-sm" onclick="pvSecAddCfc()">+ Section CFC</button></div>';
   pvEditWrap(out, h);
 }
-function pvEditWrap(out, body){ out.innerHTML=body; }
+let _pvZoom=100;
+function pvEditWrap(out, body){
+  // Aperçu INTÉGRÉ PERMANENT façon formulaire contrat (.col-right-pdf) — pas de fenêtre flottante.
+  out.innerHTML='<div style="display:flex;align-items:stretch;gap:0">'+
+    '<div style="flex:1 1 50%;min-width:0;padding-right:12px">'+body+'</div>'+
+    '<div class="col-right-pdf" style="position:sticky;top:8px;height:calc(100vh - 40px);border-radius:6px;overflow:hidden;align-self:flex-start">'+
+      '<div class="pv-bar"><span style="font-weight:bold">Aperçu PV de chantier — PDF fidèle</span>'+
+      '<span style="margin-left:auto"></span>'+
+      '<button class="btn btn-sm" onclick="pvZoom(-20)" title="Réduire">−</button>'+
+      '<span id="pvf_zoom" style="min-width:40px;text-align:center;cursor:pointer" title="Ajuster à la largeur" onclick="pvZoom(0,100)">'+_pvZoom+'%</span>'+
+      '<button class="btn btn-sm" onclick="pvZoom(20)" title="Agrandir">+</button>'+
+      '<button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="pvPrevRefresh()">↻ Actualiser</button>'+
+      '<button class="btn btn-sm" style="background:#2E9E5B;color:#fff" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+_pvCur+PV_Q+','+PV_Q+'dl'+PV_Q+')">⬇ PDF</button></div>'+
+      '<div id="pvf-frame" style="flex:1;overflow:auto;padding:14px;display:none;flex-direction:column;align-items:center;gap:14px"></div>'+
+      '<div class="pv-empty" id="pvf-empty">Génération de l’aperçu…</div>'+
+    '</div></div>';
+  pvPrevSched(150);
+}
+function pvZoom(d,abs){
+  _pvZoom = abs!=null ? abs : Math.min(300, Math.max(60, _pvZoom+(d||0)));
+  const l=document.getElementById('pvf_zoom'); if(l) l.textContent=_pvZoom+'%';
+  document.querySelectorAll('#pvf-frame canvas').forEach(c=>{ c.style.maxWidth=(c.dataset.bw*_pvZoom/100)+'px'; });
+}
+async function pvPrevRefresh(){
+  const pv=pvCurPv(); if(!pv||!document.getElementById('pvf-frame')) return;
+  if(_pvPrevBusy){ _pvPrevAgain=true; return; }
+  _pvPrevBusy=true;
+  try{
+    const e=document.getElementById('pvf-empty');
+    if(e){ e.textContent='Génération de l’aperçu…'; e.style.display='flex'; }
+    if(typeof offreLoadPdfJs==='function') await offreLoadPdfJs();
+    const bytes=await pvPDF(_pvAff, pv.id, 'bytes');
+    const pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise;
+    const f=document.getElementById('pvf-frame'); if(!f){ _pvPrevBusy=false; return; }
+    f.innerHTML='';
+    for(let n=1;n<=pdf.numPages;n++){
+      const page=await pdf.getPage(n); const vp=page.getViewport({scale:1.6});
+      const cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
+      cv.dataset.bw=vp.width/1.6;
+      cv.style.cssText='width:100%;max-width:'+(vp.width/1.6*_pvZoom/100)+'px;box-shadow:0 3px 14px rgba(0,0,0,.4);background:#fff';
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      f.appendChild(cv);
+    }
+    f.style.display='flex';
+    const e2=document.getElementById('pvf-empty'); if(e2) e2.style.display='none';
+  }catch(err){ const e2=document.getElementById('pvf-empty');
+    if(e2){ e2.textContent='Erreur aperçu : '+String(err&&err.message||err); e2.style.display='flex'; } }
+  _pvPrevBusy=false;
+  if(_pvPrevAgain){ _pvPrevAgain=false; pvPrevSched(300); }
+}
 function pvPrevSched(ms){
-  // Rafraîchit le volet commun (sxPrev) quand il montre le PV — même aperçu que contrats/factures.
-  if(_sxPrevKind!=='pv'||!document.getElementById('sx_prev')) return;
+  if(!_pvCur||_pvCur==='CFG') return;
   clearTimeout(_pvPrevT);
-  _pvPrevT=setTimeout(()=>{ if(_sxPrevKind==='pv') sxPrevRender(); }, ms||600);
+  _pvPrevT=setTimeout(()=>{ if(document.getElementById('pvf-frame')) pvPrevRefresh(); }, ms||600);
 }
 function pvPresHTML(pv, RO){
   const A=pvA(), dis=RO?' disabled':'';
@@ -12098,7 +12156,7 @@ function pvSecHTML(pv,sec,si,RO){
           '" onclick="pvLineUrg('+si+','+li+')" style="font-weight:700;padding:1px 7px;color:'+(u?'#b00020':'#999')+'">'+(u===2?'!!':'!')+'</button>');
         const grip=RO?'':('<span draggable="true" ondragstart="pvDragS(event,'+si+','+li+')" title="Glisser pour déplacer" style="cursor:grab;color:#aaa;margin-right:3px;user-select:none">⠿</span>');
         h+='<tr ondragover="pvDragO(event)" ondrop="pvDropRow(event,'+si+','+li+','+PV_Q+ch[0]+PV_Q+')"><td class="rm" style="width:44px;white-space:nowrap">'+grip+ck+'</td>'+
-          '<td><textarea rows="'+Math.min(12,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" style="min-height:46px'+ust+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
+          '<td class="tx"><textarea rows="'+Math.min(12,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" style="min-height:46px'+ust+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
           '<td style="width:86px"><input value="'+pvEscA(ln.d||'')+'" placeholder="sem. 22" title="Texte libre (sem 40, 03.06.21…) — préfixes : D début (vert), F fin (rouge), Dqp / Sat (gris)" style="'+(function(){ const pdl=pvDelaiInfo(ln.d);
             return pdl.p==='F'?'color:#b00020':pdl.p==='D'?'color:#1d7a37':pdl.p?'color:#777':ust.slice(1); })()+'" onchange="pvLineDelai('+si+','+li+',this.value)"'+dis+'></td>'+
           '<td class="rm" style="width:26px">'+ubt+'</td>'+
@@ -12114,7 +12172,7 @@ function pvSecHTML(pv,sec,si,RO){
     h+='<table class="pv-xl">';
     sec.lines.forEach((ln,li)=>{
       if(ln.k==='pb'||ln.k==='img'){ h+=extra(ln,li,2); return; }
-      h+='<tr><td><textarea rows="'+Math.min(14,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
+      h+='<tr><td class="txw"><textarea rows="'+Math.min(14,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
         '<td class="rm" style="width:30px">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
     });
     h+='</table>';

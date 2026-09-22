@@ -806,6 +806,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 #pv_out .pv-xl textarea,#pv_out .pv-xl input,#pv_out .pv-xl select{width:100%;box-sizing:border-box;border:none;background:transparent;font:12px/1.45 inherit;padding:5px 7px;resize:vertical}
 #pv_out .pv-xl textarea:focus,#pv_out .pv-xl input:focus,#pv_out .pv-xl select:focus{outline:2px solid #7fb3d8;outline-offset:-2px;background:#fbfdff}
 #pv_out .pv-xl td.rm{text-align:center;vertical-align:middle}
+#pv_out .pv-xl textarea{min-height:46px}
 </style>
 <div class="panel" id="panel-pv-chantier">
   <div class="home-wrap" style="max-width:1240px">
@@ -11627,7 +11628,7 @@ function pvSecHTML(pv,sec,si,RO){
   let h='<div class="pv-sec"><div class="hd">'+
     (sec.cfc?'<b style="flex:1;font-size:12.5px">'+pvEsc(titre)+'</b>'
             :'<input value="'+pvEscA(sec.t)+'" onchange="pvSecTitre('+si+',this.value)"'+dis+'>')+
-    (RO?'':('<button class="btn btn-sm pv-mini" onclick="pvLineAdd('+si+')">+ ligne</button>'+
+    (RO?'':((sec.cfc?'':'<button class="btn btn-sm pv-mini" onclick="pvLineAdd('+si+')">+ ligne</button>')+
       '<button class="btn btn-sm pv-mini" onclick="document.getElementById('+PV_Q+'pv_f_'+si+PV_Q+').click()">+ image</button>'+
       '<input type="file" accept="image/*" style="display:none" id="pv_f_'+si+'" onchange="pvImgAdd('+si+',this)">'+
       '<button class="btn btn-sm pv-mini" onclick="pvPbAdd('+si+')">+ saut de page</button>'+
@@ -11637,19 +11638,21 @@ function pvSecHTML(pv,sec,si,RO){
     if(ln.k==='pb') return '<tr><td colspan="'+colspan+'"><div class="pv-pb">SAUT DE PAGE '+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</div></td></tr>';
     return '<tr><td colspan="'+colspan+'"><div class="pv-img"><img src="'+ln.v+'">'+
       (RO?'':'<button class="btn btn-sm pv-mini" style="position:absolute;top:4px;right:4px;color:#b00;background:#fff" onclick="pvLineDel('+si+','+li+')">−</button>')+'</div></td></tr>'; };
+  const tyOf=l=>(l.k==='fini'||l.k==='rem')?l.k:(l.k==='t'||l.k==='exec')?'exec':l.k;
   if(sec.cfc){
-    h+='<table class="pv-xl"><tr><th style="width:112px">Type</th><th>Texte</th><th style="width:96px">Délai</th><th style="width:30px"></th></tr>';
-    sec.lines.forEach((ln,li)=>{
-      if(ln.k==='pb'||ln.k==='img'){ h+=extra(ln,li,4); return; }
-      const ty=(ln.k==='fini'||ln.k==='rem')?ln.k:'exec';
-      h+='<tr><td style="width:112px"><select onchange="pvLineType('+si+','+li+',this.value)"'+dis+'>'+
-        '<option value="exec"'+(ty==='exec'?' selected':'')+'>À exécuter</option>'+
-        '<option value="fini"'+(ty==='fini'?' selected':'')+'>Terminé</option>'+
-        '<option value="rem"'+(ty==='rem'?' selected':'')+'>Remarque</option></select></td>'+
-        '<td><textarea rows="'+Math.min(8,Math.max(1,String(ln.v||'').split(PV_NL).length))+'"'+(ty==='exec'?' style="color:#b00020"':'')+' onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
-        '<td style="width:96px"><input value="'+pvEscA(ln.d||'')+'" placeholder="sem. 22"'+(ty==='exec'?' style="color:#b00020"':'')+' onchange="pvLineDelai('+si+','+li+',this.value)"'+dis+'></td>'+
-        '<td class="rm">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
+    const CH=[['exec','Travaux à exécuter'],['fini','Travaux terminés'],['rem','Remarques']];
+    h+='<table class="pv-xl">';
+    CH.forEach(ch=>{
+      h+='<tr><th colspan="3" style="background:#e6edf2;font-size:11.5px">'+ch[1]+
+        (RO?'':' <button class="btn btn-sm pv-mini" title="Ajouter une ligne" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')" style="margin-left:10px;font-size:12px;line-height:1;padding:1px 8px">✚</button>')+'</th></tr>';
+      sec.lines.forEach((ln,li)=>{
+        if(tyOf(ln)!==ch[0]) return;
+        h+='<tr><td><textarea rows="'+Math.min(12,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'"'+(ch[0]==='exec'?' style="color:#b00020"':'')+' onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
+          '<td style="width:86px"><input value="'+pvEscA(ln.d||'')+'" placeholder="sem. 22"'+(ch[0]==='exec'?' style="color:#b00020"':'')+' onchange="pvLineDelai('+si+','+li+',this.value)"'+dis+'></td>'+
+          '<td class="rm" style="width:30px">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
+      });
     });
+    sec.lines.forEach((ln,li)=>{ if(ln.k==='pb'||ln.k==='img') h+=extra(ln,li,3); });
     h+='</table>';
   } else {
     h+='<table class="pv-xl">';
@@ -11673,6 +11676,20 @@ function pvLineSet(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif'
 function pvLineAdd(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   const sec=pv.secs[si]; sec.lines.push(sec.cfc?{k:'exec',v:'',d:''}:{k:'t',v:''}); pvPersist(); pvRender(); }
 function pvLineType(si,li,t){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].k=t; pvPersist(); pvRender(); }
+function pvLineAddK(si,k){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
+  const lines=pv.secs[si].lines;
+  const tyOf=l=>(l.k==='fini'||l.k==='rem')?l.k:(l.k==='t'||l.k==='exec')?'exec':null;
+  let idx=-1;
+  lines.forEach((l,i2)=>{ if(tyOf(l)===k) idx=i2; });
+  const row={k, v:'', d:''};
+  if(idx>=0) lines.splice(idx+1,0,row);
+  else {
+    const order={exec:0,fini:1,rem:2}; let at=lines.length;
+    for(let i2=0;i2<lines.length;i2++){ const ty=tyOf(lines[i2]);
+      if(ty&&order[ty]>order[k]){ at=i2; break; } }
+    lines.splice(at,0,row);
+  }
+  pvPersist(); pvRender(); }
 function pvLineDelai(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].d=v; pvPersist(); }
 function pvPresH(key,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.presH=pv.presH||{}; pv.presH[key]=v; pvPersist(); }
 function pvLineDel(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.splice(li,1); pvPersist(); pvRender(); }

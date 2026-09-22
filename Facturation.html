@@ -724,6 +724,11 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
         <div class="ct">Contrôle du coût</div>
         <div class="cd">Suivi du coût de l'ouvrage : budget, adjudications, situation par CFC.</div>
       </div>
+      <div class="home-card" onclick="goTab('carnet')">
+        <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="20" height="24" rx="2"/><path d="M6 10h20M12 16a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0M11 23c.8-2.6 7.2-2.6 8 0"/></svg></div>
+        <div class="ct">Adresses</div>
+        <div class="cd">Entités et contacts — entreprises par CFC, mandataires, maîtres de l'ouvrage.</div>
+      </div>
       <div class="home-card" onclick="goTab('devis')">
         <div class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h12l6 6v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M20 4v6h6"/><path d="M12 17h8M12 22h8"/></svg></div>
         <div class="ct">Devis</div>
@@ -772,6 +777,107 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 </div>
 
 <!-- ── VUE : PV DE CHANTIER (squelette à structurer) ── -->
+<style id="adr-style">
+#panel-carnet .adr-tb{border-collapse:collapse;width:100%;font-size:12px;background:#fff;border:1px solid #d5d5d5}
+#panel-carnet .adr-tb th{font-weight:600;padding:4px 8px;border-bottom:1px solid #b5b5b5;text-align:left;white-space:nowrap;font-size:11.5px}
+#panel-carnet .adr-tb td{padding:3.5px 8px;border-top:1px solid #f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+#panel-carnet .adr-tb tr.on td{background:#cfe4f7}
+#panel-carnet .adr-tb tbody tr:hover td{background:#eef4f9}
+#adr_ents{border:1px solid #d5d5d5;background:#fff;max-height:66vh;overflow:auto;font-size:12.5px}
+#adr_ents .rw{display:flex;gap:8px;padding:4px 9px;cursor:pointer;align-items:center;border-top:1px solid #f2f2f2}
+#adr_ents .rw:hover{background:#eef4f9}
+#adr_ents .rw.on{background:#cfe4f7}
+#adr_ents .ty{flex:0 0 18px;height:18px;border:1px solid #b9c4cc;border-radius:4px;background:#f2f6f8;color:#41606f;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+#adr_ents .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#adr_ents .cp{color:#777;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42%}
+.adr-menu{display:none;position:absolute;top:110%;left:0;background:#fff;border:1px solid #b5b5b5;border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.25);padding:5px 0;z-index:9200;min-width:230px;text-align:left}
+#adr_detail .fx{display:grid;grid-template-columns:130px 1fr 120px 1fr;gap:3px 10px;font-size:12.5px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px 16px}
+#adr_detail .fx b{text-align:right;color:#333;font-weight:600}
+#adr_ov .fr{display:grid;grid-template-columns:110px 1fr;gap:7px 10px;align-items:center;font-size:12.5px}
+#adr_ov .fr input,#adr_ov .fr select,#adr_ov .fr textarea{width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:5px;padding:5px 7px;font-size:12.5px}
+#adr_ov .fr b{text-align:right;font-weight:600}
+</style>
+<div class="panel" id="panel-carnet">
+  <div class="home-wrap" style="max-width:1400px">
+    <div class="home-title" style="margin-top:44px">Adresses</div>
+    <div class="home-sub">Entités (sociétés, personnes, familles…) et adresses — CFC, statut, notes, façon Deltaproject</div>
+    <div class="adm-wrap"><div style="display:flex;gap:14px;align-items:flex-start">
+      <div style="flex:0 0 400px;min-width:330px">
+        <div class="adm-form" style="align-items:center;gap:6px;margin-bottom:8px">
+          <span style="position:relative"><button class="btn btn-sm" onclick="adrMenu(event,'adr_new_menu')">✚ ▾</button>
+            <div id="adr_new_menu" class="adr-menu" style="display:none"></div></span>
+          <button class="btn btn-sm" onclick="adrEntEdit()" title="Modifier l'entité">✏</button>
+          <button class="btn btn-sm" style="color:#b00" onclick="adrEntDel()" title="Supprimer l'entité">−</button>
+          <input id="adr_f" placeholder="Rechercher…" oninput="adrRender()" style="flex:1;min-width:120px;border:1px solid #ccc;border-radius:6px;padding:5px 8px">
+        </div>
+        <div id="adr_ents"></div>
+        <div id="adr_nb" style="color:#888;font-size:11.5px;margin-top:5px"></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="adm-form" style="align-items:center;gap:6px;margin-bottom:8px">
+          <button class="btn btn-sm" onclick="adrAdrNew()" title="Nouvelle adresse pour l'entité">✚</button>
+          <button class="btn btn-sm" onclick="adrEditOpen()" title="Éditer l'adresse (fenêtre)">✏</button>
+          <button class="btn btn-sm" style="color:#b00" onclick="adrAdrDel()" title="Supprimer l'adresse">−</button>
+          <span style="position:relative"><button class="btn btn-sm" onclick="adrMenu(event,'adr_out_menu')">⚙︎ ▾</button>
+            <div id="adr_out_menu" class="adr-menu" style="display:none;left:auto;right:0"></div></span>
+        </div>
+        <div id="adr_list"></div>
+        <div style="margin-top:10px"><span class="pv-seg" id="adr_tabs"></span></div>
+        <div id="adr_detail" style="margin-top:8px"></div>
+      </div>
+    </div></div>
+  </div>
+</div>
+<div id="adr_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:9000">
+  <div style="background:#f4f4f4;width:1020px;max-width:96vw;max-height:calc(100vh - 50px);overflow:auto;margin:25px auto;border-radius:10px;padding:16px 22px;box-shadow:0 8px 40px rgba(0,0,0,.35)">
+    <div style="font-weight:700;text-align:center;margin-bottom:12px">Editer l'adresse</div>
+    <div style="display:flex;gap:26px">
+      <div class="fr" style="flex:1">
+        <b>Entité</b><input id="ae_ent">
+        <b style="color:#999">appartient à</b><input id="ae_parent" placeholder="Entité parente (personne liée)">
+        <b>Adresse</b><input id="ae_ad1"><b></b><input id="ae_ad2"><b></b><input id="ae_ad3">
+        <b>Rue</b><input id="ae_rue"><b>Rue 2</b><input id="ae_rue2">
+        <b>NPA/Localité</b><div style="display:flex;gap:6px"><input id="ae_npa" style="width:76px">
+          <input id="ae_loc" style="flex:1"></div>
+        <b>Pays</b><input id="ae_pays" value="Suisse">
+        <b>Téléphone</b><input id="ae_tel" placeholder="+41 21 …">
+        <b>Tél. mobile</b><input id="ae_mob"><b>Fax</b><input id="ae_fax">
+        <b>Courriel</b><input id="ae_mail"><b>Skype</b><input id="ae_skype">
+        <b>Site internet</b><input id="ae_web">
+      </div>
+      <div class="fr" style="flex:1">
+        <b>Type d'adresse</b><select id="ae_typ"><option>Adresse</option><option>Adresse de livraison</option><option>Adresse de facturation</option><option>Chantier</option></select>
+        <b>Description</b><input id="ae_desc">
+        <b>Abréviation</b><input id="ae_abrev">
+        <b>CFC</b><div style="display:flex;gap:6px"><input id="ae_cfc" placeholder="214, 222" style="flex:1">
+          <button class="btn btn-sm" onclick="adrCfcPick()" title="Choisir dans la liste des CFC">…</button></div>
+        <b>Civilité courrier</b><input id="ae_civ" placeholder="Madame, Monsieur,">
+        <b>Affichage</b><label style="font-size:12px"><input type="checkbox" id="ae_masque" style="width:auto"> Masquer l'adresse dans les listes</label>
+        <b>Remarque</b><textarea id="ae_rem" rows="5"></textarea>
+        <b>Fonction</b><input id="ae_fonction">
+        <b>Profession</b><input id="ae_prof">
+        <b>Langue</b><select id="ae_langue"><option>Français</option><option>Allemand</option><option>Italien</option><option>Anglais</option></select>
+        <b>Statut</b><select id="ae_statut"><option value="">–</option><option>Recommandé</option><option>Bonnes relations</option><option>A éviter</option><option>Entreprise liquidée</option><option>Arrêt de livraison</option></select>
+        <b>Créée le</b><span id="ae_meta" style="font-size:12px;color:#555"></span>
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:14px">
+      <button class="btn btn-sm" onclick="document.getElementById('adr_ov').style.display='none'">Annuler</button>
+      <button class="btn btn-sm" style="background:#1a73e8;color:#fff" onclick="adrEditSave()">OK</button>
+    </div>
+  </div>
+</div>
+<div id="adr_pick_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:9300">
+  <div style="background:#fff;width:640px;max-width:94vw;margin:52px auto;border-radius:10px;padding:16px 20px;box-shadow:0 8px 40px rgba(0,0,0,.35)">
+    <div id="adr_pick_t" style="font-weight:700;margin-bottom:8px">Choisir dans le carnet d'adresses</div>
+    <input id="adr_pick_f" placeholder="Filtrer par nom, société, CFC…" oninput="adrPickFill()" style="width:100%;box-sizing:border-box;padding:7px 9px;margin-bottom:8px;border:1px solid #ccc;border-radius:6px">
+    <div id="adr_pick_ls" style="max-height:380px;overflow:auto;border:1px solid #ddd;border-radius:6px"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px;align-items:center">
+      <span id="adr_pick_i" style="color:#888;font-size:11.5px"></span>
+      <button class="btn btn-sm" onclick="document.getElementById('adr_pick_ov').style.display='none'">Annuler</button>
+    </div>
+  </div>
+</div>
 <style id="pv-style">
 #pv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
 #pv_out .pv-tb th{font-weight:600;padding:6px 10px;border-bottom:1px solid #b5b5b5;text-align:left;white-space:nowrap}
@@ -3371,7 +3477,7 @@ const VIEW_PARENT = {
   'hub-admin':'home','hub-contrats':'home','hub-factures':'home','hub-cockpit':'home','backup':'home',
   'affaires':'hub-admin','collaborateurs':'hub-admin',
   'hub-affaires':'home','pv-chantier':'hub-affaires','controle-cout':'hub-affaires','devis':'hub-affaires',
-  'hub-collabs':'home','hub-heures':'hub-collabs','feuille-heures':'hub-heures','rapport':'hub-heures','heures':'hub-admin','import-delta':'hub-admin','analyse-globale':'hub-admin','affaire-detail':'affaires','collab-detail':'collaborateurs',
+  'hub-collabs':'home','hub-heures':'hub-collabs','feuille-heures':'hub-heures','rapport':'hub-heures','carnet':'hub-affaires','heures':'hub-admin','import-delta':'hub-admin','analyse-globale':'hub-admin','affaire-detail':'affaires','collab-detail':'collaborateurs',
   'contrats':'hub-contrats','calchono':'contrats',
   'factures':'hub-factures','saisie':'hub-factures',
   'cockpit':'hub-cockpit','cockpit2':'hub-cockpit'
@@ -3382,7 +3488,7 @@ const VIEW_TITLE = {
   'cockpit':'Cockpit Excel','cockpit2':'Cockpit Claude',
   'hub-admin':'Admin','affaires':'Admin \u00b7 Affaires',
   'hub-affaires':'Affaires','pv-chantier':'Affaires \u00b7 PV de chantier','controle-cout':'Affaires \u00b7 Contr\u00f4le du co\u00fbt','devis':'Affaires \u00b7 Devis',
-  'hub-collabs':'Collaborateurs','hub-heures':'Collaborateurs · Heures','feuille-heures':'Heures · Saisie','rapport':'Heures · Rapport','collaborateurs':'Admin · Collaborateurs','heures':'Admin · Heures','import-delta':'Admin · Import Deltaproject','analyse-globale':'Admin · Analyse globale','affaire-detail':'Analyse d\'affaire','collab-detail':'Fiche collaborateur',
+  'hub-collabs':'Collaborateurs','hub-heures':'Collaborateurs · Heures','feuille-heures':'Heures · Saisie','rapport':'Heures · Rapport','carnet':'Affaires · Adresses','collaborateurs':'Admin · Collaborateurs','heures':'Admin · Heures','import-delta':'Admin · Import Deltaproject','analyse-globale':'Admin · Analyse globale','affaire-detail':'Analyse d\'affaire','collab-detail':'Fiche collaborateur',
   'hub-contrats':'Contrats','hub-factures':'Factures','hub-cockpit':'Cockpit',
   'backup':'Import / Export'
 };
@@ -3409,6 +3515,7 @@ function goTab(name, opts) {
   if(name==='feuille-heures') fhRender();
   if(name==='rapport') rapRender();
   if(name==='pv-chantier') pvRender();
+  if(name==='carnet') adrRender();
   if(name==='affaire-detail') renderAffaireDetail();
   if(name==='collab-detail') renderCollabDetail();
   if(name==='analyse-globale') renderAnalyseGlobale();
@@ -10267,6 +10374,7 @@ function buildBackupPayload(){
     sa_vacances: g('sa_vacances') || {},
     sa_vac_saisies: g('sa_vac_saisies') || [],
     sa_pv_data: g('sa_pv_data') || {},
+    sa_adr: g('sa_adr') || {ent:[],adr:[],seq:1},
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
   };
@@ -10442,6 +10550,7 @@ function applyBackupData(data, name){
     if(data.sa_vacances && typeof data.sa_vacances==='object') localStorage.setItem('sa_vacances', JSON.stringify(data.sa_vacances));
     if(Array.isArray(data.sa_vac_saisies)) localStorage.setItem('sa_vac_saisies', JSON.stringify(data.sa_vac_saisies));
     if(data.sa_pv_data && typeof data.sa_pv_data==='object') localStorage.setItem('sa_pv_data', JSON.stringify(data.sa_pv_data));
+    if(data.sa_adr && typeof data.sa_adr==='object') localStorage.setItem('sa_adr', JSON.stringify(data.sa_adr));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
     // Message de réussite : posé AVANT le rechargement, affiché en toast au démarrage (sinon il disparaîtrait).
@@ -10627,6 +10736,7 @@ function persistAdmin(){
     localStorage.setItem('sa_vacances', JSON.stringify(vacances));
     localStorage.setItem('sa_vac_saisies', JSON.stringify(vacSaisies));
     localStorage.setItem('sa_pv_data', JSON.stringify(pvData));
+    localStorage.setItem('sa_adr', JSON.stringify(adrData));
     localStorage.setItem('sa_collab_annuel', JSON.stringify(collabAnnuel));
     localStorage.setItem('sa_collab_mensuel', JSON.stringify(collabMensuel));
   }catch(e){ console.warn('localStorage indisponible:', e); }
@@ -11256,6 +11366,303 @@ function fhBarDown(ev, el){
 }
 
 /* ═══ VACANCES (consultation par collaborateur / année, données import Deltaproject) ═══ */
+/* ══════════ CARNET D'ADRESSES (clone Deltaproject : entités, adresses, CFC, notes) — 2026-09-23 ══════════ */
+let adrData={ent:[],adr:[],seq:1}, _adrEnt=null, _adrAdr=null, _adrTab='adr', _adrMasked=false;
+let _adrPickCb=null, _adrPickCfc='', _adrPickMode='adr';
+const ADR_TYPES={soc:['S','Nouvelle société …'],pers:['P','Nouvelle personne …'],fam:['F','Nouvelle famille …'],com:['C','Nouvelle communauté …'],ass:['A','Nouvelle association …']};
+function adrId(){ return 'a'+(adrData.seq++)+Math.random().toString(36).slice(2,6); }
+function adrPersist(){ try{ localStorage.setItem('sa_adr', JSON.stringify(adrData)); }catch(e){ toast('Stockage plein — carnet non enregistré.'); } }
+function adrEntById(id){ return adrData.ent.find(e=>e.id===id); }
+function adrCfcMatch(field, code){
+  const cs=String(field||'').split(',').map(x=>x.trim()).filter(Boolean);
+  code=String(code||'').trim(); if(!code) return true;
+  return cs.some(a=>a===code || code.startsWith(a) || a.startsWith(code));
+}
+function adrMenu(ev,id){
+  ev.stopPropagation();
+  const m=document.getElementById(id);
+  if(m.style.display!=='none'){ m.style.display='none'; return; }
+  const it=(lbl,fn)=>'<div onclick="'+fn+'" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" style="padding:7px 14px;font-size:12.5px;white-space:nowrap;cursor:pointer">'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #e4e4e4;margin:4px 0"></div>';
+  if(id==='adr_new_menu'){
+    m.innerHTML=Object.keys(ADR_TYPES).map(t=>it(ADR_TYPES[t][1],'adrEntNew('+PV_Q+t+PV_Q+')')).join('');
+  } else {
+    m.innerHTML=it('Copier le contenu du tableau dans le presse-papier','adrCopy()')+
+      it('Exporter le tableau dans un fichier CSV …','adrCSV()')+
+      it('Exporter vCards …','adrVcf()')+sep+
+      it((_adrMasked?'✓ ':'')+'Afficher les adresses masquées','_adrMasked=!_adrMasked;adrRender()');
+  }
+  m.style.display='block';
+  const close=e=>{ if(!(m.parentElement||m).contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
+  setTimeout(()=>document.addEventListener('mousedown',close),0);
+}
+function adrEntNew(t){
+  document.getElementById('adr_new_menu').style.display='none';
+  chPrompt('Nom de la nouvelle entité ('+ADR_TYPES[t][1].replace('Nouvelle ','').replace(' …','')+') :', nom=>{
+    nom=String(nom||'').trim(); if(!nom) return;
+    const e={id:adrId(), type:t, nom, comp:''};
+    adrData.ent.push(e); _adrEnt=e.id; _adrAdr=null; adrPersist(); adrRender();
+    adrAdrNew();
+  });
+}
+function adrEntEdit(){
+  const e=adrEntById(_adrEnt); if(!e){ toast('Sélectionnez une entité.'); return; }
+  chPrompt('Nom :', nom=>{ if(nom!=null&&String(nom).trim()) e.nom=String(nom).trim();
+    chPrompt('Complément / Prénom :', cp=>{ if(cp!=null) e.comp=String(cp).trim(); adrPersist(); adrRender(); }, e.comp||''); }, e.nom);
+}
+function adrEntDel(){
+  const e=adrEntById(_adrEnt); if(!e){ toast('Sélectionnez une entité.'); return; }
+  chConfirm('Supprimer « '+e.nom+' » et toutes ses adresses ?', ()=>{
+    adrData.ent=adrData.ent.filter(x=>x.id!==e.id);
+    adrData.adr=adrData.adr.filter(a=>a.entId!==e.id);
+    _adrEnt=null; _adrAdr=null; adrPersist(); adrRender(); });
+}
+function adrRender(){
+  const box=document.getElementById('adr_ents'); if(!box) return;
+  const f=(document.getElementById('adr_f').value||'').toLowerCase();
+  const match=e=>{
+    if((e.nom+' '+(e.comp||'')).toLowerCase().includes(f)) return true;
+    return adrData.adr.some(a=>a.entId===e.id && ((a.mail||'')+' '+(a.tel||'')+' '+(a.cfc||'')+' '+(a.loc||'')).toLowerCase().includes(f));
+  };
+  const ents=adrData.ent.filter(e=>(!e.masque||_adrMasked)&&(!f||match(e)))
+    .sort((a,b)=>a.nom.localeCompare(b.nom,'fr',{sensitivity:'base'}));
+  box.innerHTML=ents.map(e=>'<div class="rw'+(e.id===_adrEnt?' on':'')+'" onclick="adrSelEnt('+PV_Q+e.id+PV_Q+')">'+
+    '<span class="ty">'+(ADR_TYPES[e.type]||['?'])[0]+'</span><span class="nm">'+pvEsc(e.nom)+'</span>'+
+    '<span class="cp">'+pvEsc(e.comp||'')+'</span></div>').join('')
+    ||'<div style="padding:12px;color:#999;font-size:12px">Aucune entité — ajoutez-en avec ✚ ▾.</div>';
+  document.getElementById('adr_nb').textContent=adrData.ent.length+' entités / '+adrData.adr.length+' adresses';
+  adrListRender(); adrTabsRender(); adrDetailRender();
+}
+function adrSelEnt(id){ _adrEnt=id; _adrAdr=(adrData.adr.find(a=>a.entId===id)||{}).id||null; adrRender(); }
+function adrListRender(){
+  const el=document.getElementById('adr_list'); if(!el) return;
+  const as=adrData.adr.filter(a=>a.entId===_adrEnt&&(!a.masque||_adrMasked));
+  if(!_adrEnt){ el.innerHTML='<div style="color:#999;font-size:12.5px;padding:10px 2px">Choisissez une entité à gauche.</div>'; return; }
+  el.innerHTML='<table class="adr-tb"><thead><tr><th></th><th>Entité</th><th>Appartient à</th><th>Type</th><th>Téléphone</th><th>Tél. mobile</th><th>Courriel</th><th>CFC</th><th>Statut</th></tr></thead><tbody>'+
+    as.map(a=>'<tr class="'+(a.id===_adrAdr?'on':'')+'" onclick="_adrAdr='+PV_Q+a.id+PV_Q+';adrRender()" ondblclick="adrEditOpen()">'+
+      '<td>▤</td><td><b>'+pvEsc((adrEntById(a.entId)||{}).nom||'')+'</b></td><td>'+pvEsc(a.parent||'')+'</td>'+
+      '<td>'+pvEsc(a.typ||'Adresse')+'</td><td>'+pvEsc(a.tel||'')+'</td><td>'+pvEsc(a.mob||'')+'</td>'+
+      '<td>'+pvEsc(a.mail||'')+'</td><td>'+pvEsc(a.cfc||'')+'</td><td>'+pvEsc(a.statut||'')+'</td></tr>').join('')+
+    '</tbody></table>'+(as.length?'':'<div style="color:#999;font-size:12px;padding:8px 2px">Aucune adresse — ajoutez-en avec ✚.</div>');
+}
+function adrTabsRender(){
+  const el=document.getElementById('adr_tabs'); if(!el) return;
+  const T=[['adr','Adresse'],['props','Propriétés'],['notes','Notes'],['int','Intervenant'],['soum','Soumissionnaire']];
+  el.innerHTML=T.map(t=>'<button class="'+(_adrTab===t[0]?'on':'')+'" onclick="_adrTab='+PV_Q+t[0]+PV_Q+';adrRender()">'+t[1]+'</button>').join('');
+}
+function adrCur(){ return adrData.adr.find(a=>a.id===_adrAdr); }
+function adrDetailRender(){
+  const el=document.getElementById('adr_detail'); if(!el) return;
+  const a=adrCur();
+  if(!a){ el.innerHTML=''; return; }
+  const e=adrEntById(a.entId)||{};
+  if(_adrTab==='adr'){
+    const postal=[a.ad1,a.ad2,a.ad3,a.rue,a.rue2,((a.npa||'')+' '+(a.loc||'')).trim()].filter(Boolean).map(pvEsc).join('<br>');
+    el.innerHTML='<div style="margin-bottom:6px"><button class="btn btn-sm pv-mini" onclick="adrEditOpen()">✏ Éditer</button></div>'+
+      '<div class="fx">'+
+      '<b>Entité</b><span>'+pvEsc(e.nom||'')+'</span><b>Téléphone</b><span>'+pvEsc(a.tel||'')+'</span>'+
+      '<b>appartient à</b><span>'+pvEsc(a.parent||'')+'</span><b>Tél. mobile</b><span>'+pvEsc(a.mob||'')+'</span>'+
+      '<b>Type d'.concat(PV_Q==='x'?'':'')+"'adresse</b><span>"+pvEsc(a.typ||'Adresse')+'</span><b>Fax</b><span>'+pvEsc(a.fax||'')+'</span>'+
+      '<b>Adresse</b><span>'+(postal||'—')+'</span><b>Courriel</b><span>'+pvEsc(a.mail||'')+'</span>'+
+      '<b></b><span></span><b>Site internet</b><span>'+pvEsc(a.web||'')+'</span>'+
+      '<b></b><span></span><b>CFC</b><span>'+pvEsc(a.cfc||'')+'</span>'+
+      '<b>Remarque</b><span>'+pvEsc(a.rem||'')+'</span><b>Fonction</b><span>'+pvEsc(a.fonction||'')+'</span>'+
+      '<b>Statut</b><span>'+pvEsc(a.statut||'–')+'</span><b>Profession</b><span>'+pvEsc(a.prof||'')+'</span>'+
+      '</div>';
+  } else if(_adrTab==='props'){
+    a.props=a.props||[];
+    el.innerHTML='<div style="margin-bottom:6px"><button class="btn btn-sm pv-mini" onclick="adrPropAdd()">✚</button></div>'+
+      '<table class="adr-tb"><thead><tr><th>Groupe de propriétés</th><th>Propriété</th><th style="width:30px"></th></tr></thead><tbody>'+
+      a.props.map((pr,i)=>'<tr><td><input style="width:95%;border:1px solid #ddd;border-radius:4px;padding:3px 6px" value="'+pvEscA(pr.g)+'" onchange="adrPropSet('+i+','+PV_Q+'g'+PV_Q+',this.value)"></td>'+
+        '<td><input style="width:95%;border:1px solid #ddd;border-radius:4px;padding:3px 6px" value="'+pvEscA(pr.p)+'" onchange="adrPropSet('+i+','+PV_Q+'p'+PV_Q+',this.value)"></td>'+
+        '<td><button class="btn btn-sm pv-mini" style="color:#b00" onclick="adrPropDel('+i+')">−</button></td></tr>').join('')+
+      '</tbody></table>';
+  } else if(_adrTab==='notes'){
+    a.notes=a.notes||[];
+    el.innerHTML='<div style="margin-bottom:6px"><button class="btn btn-sm pv-mini" onclick="adrNoteAdd()">✚</button></div>'+
+      '<table class="adr-tb"><thead><tr><th style="width:86px">Date</th><th style="width:110px">Auteur</th><th style="width:180px">Sujet</th><th>Texte</th><th style="width:30px"></th></tr></thead><tbody>'+
+      a.notes.map((n,i)=>'<tr><td>'+pvEsc(n.date)+'</td>'+
+        '<td><input style="width:92%;border:1px solid #ddd;border-radius:4px;padding:3px 6px" value="'+pvEscA(n.auteur)+'" onchange="adrNoteSet('+i+','+PV_Q+'auteur'+PV_Q+',this.value)"></td>'+
+        '<td><input style="width:95%;border:1px solid #ddd;border-radius:4px;padding:3px 6px" value="'+pvEscA(n.sujet)+'" onchange="adrNoteSet('+i+','+PV_Q+'sujet'+PV_Q+',this.value)"></td>'+
+        '<td><input style="width:97%;border:1px solid #ddd;border-radius:4px;padding:3px 6px" value="'+pvEscA(n.texte)+'" onchange="adrNoteSet('+i+','+PV_Q+'texte'+PV_Q+',this.value)"></td>'+
+        '<td><button class="btn btn-sm pv-mini" style="color:#b00" onclick="adrNoteDel('+i+')">−</button></td></tr>').join('')+
+      '</tbody></table>';
+  } else if(_adrTab==='int'){
+    const nom=(e.nom||'').toLowerCase(); const rows=[];
+    Object.keys(pvData).forEach(code=>{
+      const cfg=pvData[code].cfg||{};
+      (cfg.interv||[]).forEach(it=>{ if(nom&&((it.soc||'').toLowerCase().includes(nom)||(it.nom||'').toLowerCase().includes(nom)))
+        rows.push([code, pvAffName(code), it.role||'', it.grp==='mo'?"Maître de l'ouvrage":it.grp==='mand'?'Mandataire':'Externe']); });
+      (cfg.cfc||[]).forEach(c=>{ const en=(cfg.ent||{})[c]||{};
+        if(nom&&(en.soc||'').toLowerCase().includes(nom)) rows.push([code, pvAffName(code), 'CFC '+c+' — '+pvCfcLabel(c), 'Entreprise']); });
+    });
+    el.innerHTML='<table class="adr-tb"><thead><tr><th>Numéro</th><th>Affaire</th><th>Rôle</th><th>Groupe</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr><td>'+pvEsc(r[0])+'</td><td>'+pvEsc(r[1])+'</td><td>'+pvEsc(r[2])+'</td><td>'+pvEsc(r[3])+'</td></tr>').join('')+
+      '</tbody></table>'+(rows.length?'':'<div style="color:#999;font-size:12px;padding:8px 2px">Pas encore intervenant dans une affaire (module PV).</div>');
+  } else {
+    el.innerHTML='<div style="color:#999;font-size:12.5px;padding:10px 2px">Soumissionnaire — sera alimenté par le futur module d’appels d’offres.</div>';
+  }
+}
+function adrPropAdd(){ const a=adrCur(); if(!a) return; a.props=a.props||[]; a.props.push({g:'',p:''}); adrPersist(); adrRender(); }
+function adrPropSet(i,k,v){ const a=adrCur(); if(!a) return; a.props[i][k]=v; adrPersist(); }
+function adrPropDel(i){ const a=adrCur(); if(!a) return; a.props.splice(i,1); adrPersist(); adrRender(); }
+function adrNoteAdd(){ const a=adrCur(); if(!a) return; a.notes=a.notes||[];
+  a.notes.unshift({date:pvDpt(fhISO(new Date())), auteur:'', sujet:'', texte:''}); adrPersist(); adrRender(); }
+function adrNoteSet(i,k,v){ const a=adrCur(); if(!a) return; a.notes[i][k]=v; adrPersist(); }
+function adrNoteDel(i){ const a=adrCur(); if(!a) return; a.notes.splice(i,1); adrPersist(); adrRender(); }
+function adrAdrNew(){
+  const e=adrEntById(_adrEnt); if(!e){ toast('Sélectionnez une entité.'); return; }
+  const a={id:adrId(), entId:e.id, typ:'Adresse', parent:'', ad1:e.nom, ad2:'', ad3:'', rue:'', rue2:'',
+    npa:'', loc:'', pays:'Suisse', tel:'', mob:'', fax:'', mail:'', skype:'', web:'',
+    desc:'', abrev:'', cfc:'', civ:'', masque:false, rem:'', fonction:'', prof:'', langue:'Français', statut:'',
+    props:[], notes:[], cree:pvDpt(fhISO(new Date())), num:++adrData.seq};
+  adrData.adr.push(a); _adrAdr=a.id; adrPersist(); adrRender(); adrEditOpen();
+}
+function adrAdrDel(){ const a=adrCur(); if(!a){ toast('Sélectionnez une adresse.'); return; }
+  chConfirm('Supprimer cette adresse ?', ()=>{ adrData.adr=adrData.adr.filter(x=>x.id!==a.id); _adrAdr=null; adrPersist(); adrRender(); }); }
+function adrEditOpen(){
+  const a=adrCur(); if(!a){ toast('Sélectionnez une adresse (ou créez-la avec ✚).'); return; }
+  const e=adrEntById(a.entId)||{};
+  const set=(id,v)=>{ const x=document.getElementById(id); if(x){ if(x.type==='checkbox') x.checked=!!v; else x.value=v==null?'':v; } };
+  set('ae_ent',e.nom); set('ae_parent',a.parent); set('ae_ad1',a.ad1); set('ae_ad2',a.ad2); set('ae_ad3',a.ad3);
+  set('ae_rue',a.rue); set('ae_rue2',a.rue2); set('ae_npa',a.npa); set('ae_loc',a.loc); set('ae_pays',a.pays);
+  set('ae_tel',a.tel); set('ae_mob',a.mob); set('ae_fax',a.fax); set('ae_mail',a.mail); set('ae_skype',a.skype); set('ae_web',a.web);
+  set('ae_typ',a.typ||'Adresse'); set('ae_desc',a.desc); set('ae_abrev',a.abrev); set('ae_cfc',a.cfc); set('ae_civ',a.civ);
+  set('ae_masque',a.masque); set('ae_rem',a.rem); set('ae_fonction',a.fonction); set('ae_prof',a.prof);
+  set('ae_langue',a.langue||'Français'); set('ae_statut',a.statut||'');
+  document.getElementById('ae_meta').textContent=(a.cree||'')+(a.mod?' (Modifiée le '+a.mod+')':'')+' — N° '+(a.num||'');
+  document.getElementById('adr_ov').style.display='block';
+}
+function adrEditSave(){
+  const a=adrCur(); if(!a) return;
+  const e=adrEntById(a.entId);
+  const gv=id=>{ const x=document.getElementById(id); return x? (x.type==='checkbox'?x.checked:x.value) : ''; };
+  if(e && String(gv('ae_ent')).trim()) e.nom=String(gv('ae_ent')).trim();
+  a.parent=gv('ae_parent'); a.ad1=gv('ae_ad1'); a.ad2=gv('ae_ad2'); a.ad3=gv('ae_ad3');
+  a.rue=gv('ae_rue'); a.rue2=gv('ae_rue2'); a.npa=gv('ae_npa'); a.loc=gv('ae_loc'); a.pays=gv('ae_pays');
+  a.tel=gv('ae_tel'); a.mob=gv('ae_mob'); a.fax=gv('ae_fax'); a.mail=gv('ae_mail'); a.skype=gv('ae_skype'); a.web=gv('ae_web');
+  a.typ=gv('ae_typ'); a.desc=gv('ae_desc'); a.abrev=gv('ae_abrev'); a.cfc=gv('ae_cfc'); a.civ=gv('ae_civ');
+  a.masque=gv('ae_masque'); a.rem=gv('ae_rem'); a.fonction=gv('ae_fonction'); a.prof=gv('ae_prof');
+  a.langue=gv('ae_langue'); a.statut=gv('ae_statut'); a.mod=pvDpt(fhISO(new Date()));
+  document.getElementById('adr_ov').style.display='none';
+  adrPersist(); adrRender();
+}
+function adrCfcPick(){
+  _adrPickMode='cfc';
+  document.getElementById('adr_pick_t').textContent='Choisir un CFC';
+  document.getElementById('adr_pick_f').value='';
+  document.getElementById('adr_pick_ov').style.display='block';
+  adrPickFill();
+}
+function adrPickOpen(opts, cb){
+  _adrPickMode='adr'; _adrPickCb=cb; _adrPickCfc=(opts&&opts.cfc)||'';
+  document.getElementById('adr_pick_t').textContent=(opts&&opts.titre)||'Choisir dans le carnet d’adresses';
+  document.getElementById('adr_pick_f').value='';
+  document.getElementById('adr_pick_ov').style.display='block';
+  adrPickFill();
+}
+function adrPickFill(){
+  const f=(document.getElementById('adr_pick_f').value||'').toLowerCase();
+  const box=document.getElementById('adr_pick_ls');
+  const row=(html,fn)=>'<div onclick="'+fn+'" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" style="padding:6px 10px;cursor:pointer;font-size:12.5px;border-top:1px solid #f2f2f2">'+html+'</div>';
+  if(_adrPickMode==='cfc'){
+    box.innerHTML=pvCfcAll().filter(x=>!f||(x[0]+' '+x[1]).toLowerCase().includes(f))
+      .map(x=>row('<b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1]),'adrPickCfcGo('+PV_Q+pvEscA(x[0])+PV_Q+')')).join('');
+    document.getElementById('adr_pick_i').textContent='';
+    return;
+  }
+  const items=[];
+  adrData.adr.forEach(a=>{
+    if(a.masque&&!_adrMasked) return;
+    if(_adrPickCfc && !adrCfcMatch(a.cfc,_adrPickCfc)) return;
+    const e=adrEntById(a.entId)||{};
+    const txt=(e.nom+' '+(e.comp||'')+' '+(a.parent||'')+' '+(a.cfc||'')+' '+(a.mail||'')+' '+(a.loc||'')).toLowerCase();
+    if(f && !txt.includes(f)) return;
+    items.push({a,e});
+  });
+  items.sort((x,z)=>x.e.nom.localeCompare(z.e.nom,'fr',{sensitivity:'base'}));
+  box.innerHTML=items.slice(0,120).map(({a,e},i)=>row(
+    '<span style="display:inline-block;width:16px;color:#41606f;font-weight:700;font-size:10px">'+(ADR_TYPES[e.type]||['?'])[0]+'</span><b>'+pvEsc(e.nom)+'</b>'+
+    (e.comp?' <span style="color:#777">'+pvEsc(e.comp)+'</span>':'')+
+    (a.parent?' <span style="color:#999">('+pvEsc(a.parent)+')</span>':'')+
+    (a.cfc?' <span style="color:#1d7a37;font-size:11px">CFC '+pvEsc(a.cfc)+'</span>':'')+
+    (a.statut?' <span style="color:#b26a12;font-size:11px">'+pvEsc(a.statut)+'</span>':'')+
+    '<div style="color:#888;font-size:11px">'+pvEsc([a.tel||a.mob,a.mail,(a.npa+' '+(a.loc||'')).trim()].filter(Boolean).join(' · '))+'</div>',
+    'adrPickGo('+i+')')).join('')
+    ||'<div style="padding:10px;color:#999;font-size:12px">Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.</div>';
+  window._adrPickItems=items;
+  document.getElementById('adr_pick_i').textContent=items.length+' adresse(s)'+(_adrPickCfc?' — CFC '+_adrPickCfc:'');
+}
+function adrPickCfcGo(code){
+  document.getElementById('adr_pick_ov').style.display='none';
+  const x=document.getElementById('ae_cfc');
+  if(x) x.value=(x.value?x.value.replace(/\s+$/,'')+', ':'')+code;
+}
+function adrPickGo(i){
+  const it=(window._adrPickItems||[])[i]; if(!it) return;
+  document.getElementById('adr_pick_ov').style.display='none';
+  const {a,e}=it;
+  const estSoc=(e.type!=='pers');
+  const r={ soc: estSoc? e.nom : (a.parent||''),
+    nom: estSoc? (e.comp||'') : ((e.comp?e.comp+' ':'')+e.nom),
+    tel: a.tel||a.mob||'', mail: a.mail||'', fonction: a.fonction||'', cfc: a.cfc||'' };
+  if(_adrPickCb) _adrPickCb(r, a, e);
+}
+function adrCopy(){
+  document.getElementById('adr_out_menu').style.display='none';
+  const rows=adrData.adr.filter(a=>a.entId===_adrEnt).map(a=>{ const e=adrEntById(a.entId)||{};
+    return [e.nom,a.parent||'',a.typ||'',a.tel||'',a.mob||'',a.mail||'',a.cfc||'',a.statut||''].join(RAP_TAB); });
+  navigator.clipboard.writeText(['Entité\tAppartient à\tType\tTéléphone\tMobile\tCourriel\tCFC\tStatut'].concat(rows).join(RAP_NL))
+    .then(()=>toast('Tableau copié.')).catch(()=>toast('Copie impossible.'));
+}
+function adrCSV(){
+  document.getElementById('adr_out_menu').style.display='none';
+  const q=v=>{ v=String(v||''); return (v.includes(';')||v.includes('"'))?'"'+v.split('"').join('""')+'"':v; };
+  const rows=adrData.adr.map(a=>{ const e=adrEntById(a.entId)||{};
+    return [e.nom,e.comp||'',a.parent||'',a.typ||'',a.rue||'',a.npa||'',a.loc||'',a.tel||'',a.mob||'',a.mail||'',a.cfc||'',a.statut||''].map(q).join(';'); });
+  const t=['Entité;Complément;Appartient à;Type;Rue;NPA;Localité;Téléphone;Mobile;Courriel;CFC;Statut'].concat(rows).join(RAP_NL);
+  const bl=new Blob([String.fromCharCode(65279)+t],{type:'text/csv;charset=utf-8'});
+  const aa=document.createElement('a'); aa.href=URL.createObjectURL(bl); aa.download='adresses.csv'; aa.click();
+  setTimeout(()=>URL.revokeObjectURL(aa.href),4000); toast('CSV exporté.');
+}
+function adrVcf(){
+  document.getElementById('adr_out_menu').style.display='none';
+  const as=adrData.adr.filter(a=>!_adrEnt||a.entId===_adrEnt);
+  const cards=as.map(a=>{ const e=adrEntById(a.entId)||{};
+    return ['BEGIN:VCARD','VERSION:3.0','FN:'+e.nom+(e.comp?' '+e.comp:''),
+      (e.type==='pers'?'N:'+e.nom+';'+(e.comp||''):'ORG:'+e.nom),
+      a.tel?'TEL;TYPE=WORK:'+a.tel:'', a.mob?'TEL;TYPE=CELL:'+a.mob:'',
+      a.mail?'EMAIL:'+a.mail:'',
+      (a.rue||a.loc)?'ADR;TYPE=WORK:;;'+(a.rue||'')+';'+(a.loc||'')+';;'+(a.npa||'')+';'+(a.pays||'Suisse'):'',
+      'END:VCARD'].filter(Boolean).join(RAP_NL); }).join(RAP_NL);
+  const bl=new Blob([cards],{type:'text/vcard'});
+  const aa=document.createElement('a'); aa.href=URL.createObjectURL(bl); aa.download='adresses.vcf'; aa.click();
+  setTimeout(()=>URL.revokeObjectURL(aa.href),4000);
+}
+/* ── intégration PV : carnet + contrat ── */
+function pvMoContrat(){
+  const code=_pvAff;
+  const c=(typeof contrats!=='undefined')?(contrats.find(x=>(x.affaire===code)&&!x.archive)||contrats.find(x=>x.affaire===code)):null;
+  if(!c||!c.nom){ toast('Aucun maître de l’ouvrage trouvé dans les contrats de '+code+'.'); return; }
+  pvA().cfg.interv.push({id:pvId(),grp:'mo',role:"Maître de l'ouvrage",soc:'',nom:c.nom,tel:'',email:'',d:true});
+  pvPersist(); pvRender(); toast('Maître de l’ouvrage repris du contrat ('+c.nom+').');
+}
+function pvMoCarnet(){
+  adrPickOpen({titre:"Maître de l'ouvrage — choisir dans le carnet"}, r=>{
+    pvA().cfg.interv.push({id:pvId(),grp:'mo',role:"Maître de l'ouvrage",soc:r.soc,nom:r.nom,tel:r.tel,email:r.mail,d:true});
+    pvPersist(); pvRender(); });
+}
+function pvIntCarnet(g){
+  adrPickOpen({titre:'Choisir un contact dans le carnet'}, r=>{
+    pvA().cfg.interv.push({id:pvId(),grp:g,role:r.fonction||'',soc:r.soc,nom:r.nom,tel:r.tel,email:r.mail,d:true});
+    pvPersist(); pvRender(); });
+}
+function pvEntCarnet(c){
+  adrPickOpen({cfc:c, titre:'Entreprises du carnet — CFC '+c+' '+pvCfcLabel(c)}, r=>{
+    const cfg=pvA().cfg; const e=cfg.ent[c]=cfg.ent[c]||{};
+    e.soc=r.soc||r.nom; e.resp=r.soc?r.nom:''; e.tel=r.tel; e.email=r.mail;
+    pvPersist(); pvRender(); });
+}
 /* ══════════ VOLET APERÇU PDF (contrats + factures) — identique au volet du PV (2026-09-22) ══════════ */
 let _sxPrevKind=null, _sxPrevBusy=false, _sxZoom=100;
 function sxPrev(kind){
@@ -11431,8 +11838,19 @@ function pvRender(){
     codes.map(c=>'<option value="'+pvEscA(c)+'">'+pvEsc(c)+' — '+pvEsc(pvAffName(c)).slice(0,60)+'</option>').join('');
   sel.value=_pvAff;
   const out=document.getElementById('pv_out'), ctx=document.getElementById('pv_ctx');
-  if(!_pvAff||!pvA()){ ctx.textContent='';
-    out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Choisissez une affaire, ou ajoutez-en une avec le bouton ✚.</div>'; return; }
+  if(!_pvAff||!pvA()){
+    ctx.textContent=Object.keys(pvData).length+' affaire(s)';
+    const codes2=Object.keys(pvData).sort();
+    if(!codes2.length){ out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Aucune affaire — ajoutez-en une avec le bouton ✚.</div>'; return; }
+    out.innerHTML='<table class="pv-tb"><thead><tr><th>Affaire</th><th>Projet</th><th style="text-align:right">PV</th><th>Dernier PV</th><th>Statut</th></tr></thead><tbody>'+
+      codes2.map(c=>{ const A2=pvData[c]; const last=A2.pvs.length?A2.pvs[A2.pvs.length-1]:null;
+        return '<tr style="cursor:pointer" onclick="pvSelAff('+PV_Q+pvEscA(c)+PV_Q+')">'+
+        '<td><b>'+pvEsc(c)+'</b></td><td>'+pvEsc(pvAffName(c)).slice(0,70)+'</td>'+
+        '<td style="text-align:right">'+A2.pvs.length+'</td>'+
+        '<td>'+(last?('PVCH '+pvPad(last.num,4)+' — '+pvDpt(last.date)):'—')+'</td>'+
+        '<td>'+(last?('<span class="pv-badge '+(last.statut==='definitif'?'df':'an')+'">'+(last.statut==='definitif'?'Définitif':'Annotation')+'</span>'):'')+'</td></tr>'; }).join('')+
+      '</tbody></table>';
+    return; }
   const A=pvA();
   ctx.textContent=A.pvs.length+' PV · dernier : '+(A.pvs.length?('PVCH '+pvPad(A.pvs[A.pvs.length-1].num,4)):'—');
   if(_pvCur==='CFG'){ if(_sxPrevKind==='pv') sxPrevClose();
@@ -11445,6 +11863,7 @@ function pvRender(){
 function pvListHTML(out){
   const A=pvA();
   let h='<div style="display:flex;gap:8px;margin-bottom:4px">'+
+    '<button class="btn btn-sm" onclick="pvSelAff('+PV_Q+PV_Q+')">← Affaires</button>'+
     '<button class="btn btn-sm" onclick="pvCreate()">✚ Créer un PV</button>'+
     '<button class="btn btn-sm" onclick="_pvCur='+PV_Q+'CFG'+PV_Q+';pvRender()">⚙︎ Général de l'.replace('x','x')+"'affaire</button></div>";
   if(!A.pvs.length){ h+='<div style="color:#999;font-size:13px;padding:14px 4px">Aucun PV pour cette affaire. Cliquez sur « Créer un PV » — au premier PV, choisissez les CFC dans « Général ».</div>'; }
@@ -11521,7 +11940,8 @@ function pvCfgHTML(){
     h+='<div class="pv-card"><h4>ENTREPRISES PAR CFC (adjudications)</h4><table class="pv-int" style="width:100%"><tr style="font-size:11px;color:#777"><td style="width:140px">CFC</td><td>Entreprise</td><td style="width:120px">Responsable</td><td style="width:112px">Tél / Natel</td><td style="width:170px">E-mail</td><td style="width:56px;text-align:center">Adjugé</td></tr>'+
       cfg.cfc.map(c=>{ const e=cfg.ent[c]||{};
         const st=(k,ph,w)=>'<td><input value="'+pvEscA(e[k]||'')+'" onchange="pvEntSet('+PV_Q+pvEscA(c)+PV_Q+','+PV_Q+k+PV_Q+',this.value)" placeholder="'+ph+'"></td>';
-        return '<tr><td><b>'+pvEsc(c)+'</b> <span style="color:#777;font-size:11px">'+pvEsc(pvCfcLabel(c))+'</span></td>'+
+        return '<tr><td><b>'+pvEsc(c)+'</b> <span style="color:#777;font-size:11px">'+pvEsc(pvCfcLabel(c))+'</span> '+
+        '<button class="btn btn-sm pv-mini" title="Choisir une entreprise du carnet (CFC '+pvEscA(c)+')" onclick="pvEntCarnet('+PV_Q+pvEscA(c)+PV_Q+')">📇</button></td>'+
         st('soc','Société')+st('resp','M. …')+st('tel','+41 …')+st('email','email@…')+
         '<td style="text-align:center"><input type="checkbox" style="width:auto" '+(e.adj?'checked':'')+' onchange="pvEntSet('+PV_Q+pvEscA(c)+PV_Q+','+PV_Q+'adj'+PV_Q+',this.checked)"></td></tr>'; }).join('')+
       '</table></div>';
@@ -11529,7 +11949,10 @@ function pvCfgHTML(){
   const GRP={mo:"Maître de l'ouvrage",mand:'Mandataires',ext:'Externes'};
   h+='<div class="pv-card"><h4>INTERVENANTS</h4>';
   ['mo','mand','ext'].forEach(g=>{
-    h+='<div style="font-weight:600;font-size:12px;margin:8px 0 3px">'+GRP[g]+' <button class="btn btn-sm pv-mini" onclick="pvIntAdd('+PV_Q+g+PV_Q+')">+</button></div>'+
+    h+='<div style="font-weight:600;font-size:12px;margin:8px 0 3px">'+GRP[g]+
+      ' <button class="btn btn-sm pv-mini" onclick="pvIntAdd('+PV_Q+g+PV_Q+')">+</button>'+
+      ' <button class="btn btn-sm pv-mini" title="Choisir dans le carnet d’adresses" onclick="'+(g==='mo'?'pvMoCarnet()':'pvIntCarnet('+PV_Q+g+PV_Q+')')+'">📇 Carnet</button>'+
+      (g==='mo'?' <button class="btn btn-sm pv-mini" title="Reprendre le maître de l’ouvrage du contrat" onclick="pvMoContrat()">⤓ Contrat</button>':'')+'</div>'+
       '<table class="pv-int" style="width:100%">';
     cfg.interv.forEach(it=>{ if(it.grp!==g) return;
       h+='<tr><td style="width:24%"><input value="'+pvEscA(it.role)+'" onchange="pvIntSet('+PV_Q+it.id+PV_Q+','+PV_Q+'role'+PV_Q+',this.value)" placeholder="Rôle"></td>'+
@@ -11615,7 +12038,9 @@ function pvPresHTML(pv, RO){
     return '<tr><td style="font-size:12px;padding:2px 6px">'+lbl+'</td>'+L.map(x=>
       '<td style="text-align:center;width:34px"><input type="checkbox" style="width:auto" '+(cur.includes(x)?'checked':'')+
       ' onchange="pvPresTog('+PV_Q+key+PV_Q+','+PV_Q+x+PV_Q+')"'+dis+'></td>').join('')+
-      '<td><input style="width:60px;border:1px solid #ddd;border-radius:5px;padding:3px 5px;font-size:11.5px" placeholder="8:30" value="'+pvEscA((pv.presH||{})[key]||'')+'" onchange="pvPresH('+PV_Q+key+PV_Q+',this.value)"'+dis+'></td></tr>'; };
+      '<td>'+(cur.includes('C')
+        ?'<input style="width:60px;border:1px solid #ddd;border-radius:5px;padding:3px 5px;font-size:11.5px" placeholder="8:30" value="'+pvEscA((pv.presH||{})[key]||'')+'" onchange="pvPresH('+PV_Q+key+PV_Q+',this.value)"'+dis+'>'
+        :'<span style="color:#ccc;font-size:11px" title="Cochez C (convoqué) pour saisir une heure">—</span>')+'</td></tr>'; };
   let h='<div class="pv-card"><h4>PRÉSENCES ET DISTRIBUTION</h4><table style="border-collapse:collapse"><tr><td></td>'+
     L.map(x=>'<td style="text-align:center;font-weight:700;font-size:11px;width:34px">'+x+'</td>').join('')+'<td style="font-weight:700;font-size:11px">Heure</td></tr>';
   A.cfg.interv.forEach(it=>{ h+=row('i'+it.id, pvEsc((it.role?it.role+' — ':'')+(it.soc?it.soc+' : ':'')+it.nom)); });
@@ -11693,7 +12118,8 @@ function pvSecHTML(pv,sec,si,RO){
 function pvSet(k,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   pv[k]=(k==='num')?(+v||pv.num):v; pvPersist(); if(k==='num'||k==='date'||k==='approbMode') pvRender(); }
 function pvPresTog(key,x){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
-  const cur=pv.pres[key]||''; pv.pres[key]=cur.includes(x)?cur.split(x).join(''):cur+x; pvPersist(); }
+  const cur=pv.pres[key]||''; pv.pres[key]=cur.includes(x)?cur.split(x).join(''):cur+x;
+  pvPersist(); if(x==='C') pvRender(); }
 function pvSecTitre(si,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].t=v; pvPersist(); }
 function pvLineSet(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].v=v; pvPersist(); }
 function pvLineAdd(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
@@ -11914,7 +12340,7 @@ async function pvPDF(code, id, mode){
     lns.forEach((ls,k)=>ls.forEach((l,li2)=>pg.drawText(san(l),{x:cols[k][0],y:y-li2*9,size:6.7,font:fL,color:cN})));
     const cur=(pv.pres&&pv.pres[key])||'';
     'DPEAC'.split('').forEach((L2,k)=>{ if(cur.includes(L2)) pg.drawText('x',{x:XL[k],y,size:6.7,font:fL,color:cN}); });
-    const hcv=(pv.presH&&pv.presH[key])||'';
+    const hcv=(cur.includes('C') && pv.presH && pv.presH[key])||'';
     if(hcv) pg.drawText(san(hcv),{x:487.3,y,size:6.7,font:fL,color:cN});
     [426.9,438.2,449.5,460.8,472.1,483.4].forEach(x=>vline(x,y-hh+9,y+9,cG));
     hline(X0,MR,y-hh+9,cG);
@@ -13240,6 +13666,7 @@ function loadPersist() {
   try { const d=localStorage.getItem('sa_vacances'); if(d) vacances=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_vac_saisies'); if(d) vacSaisies=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_pv_data'); if(d) pvData=JSON.parse(d); } catch(e){}
+  try { const d=localStorage.getItem('sa_adr'); if(d) adrData=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_annuel'); if(d) collabAnnuel=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_mensuel'); if(d) collabMensuel=JSON.parse(d); } catch(e){}
   migratePhasesPct();

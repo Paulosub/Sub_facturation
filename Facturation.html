@@ -10779,7 +10779,7 @@ function fhOptMenu(ev){
   const open=m.style.display!=='none';
   if(open){ m.style.display='none'; return; }
   fhOptMenuFill(); m.style.display='block';
-  const close=e=>{ if(!m.contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
+  const close=e=>{ if(!(m.parentElement||m).contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
   setTimeout(()=>document.addEventListener('mousedown',close),0);
 }
 /* Jours fériés (canton de Vaud) — Pâques par l'algorithme de Meeus. */
@@ -11132,7 +11132,7 @@ function fhPenMenu(ev){
   const m=document.getElementById('fh_pen_menu');
   if(m.style.display!=='none'){ m.style.display='none'; return; }
   fhPenMenuFill(); m.style.display='block';
-  const close=e=>{ if(!m.contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
+  const close=e=>{ if(!(m.parentElement||m).contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
   setTimeout(()=>document.addEventListener('mousedown',close),0);
 }
 function fhPenDo(act){
@@ -11209,12 +11209,13 @@ function fhBarDown(ev, el){
 /* ══════════ RAPPORT (clone Deltaproject : 7 types, menus, graphique) — 2026-09-22 ══════════ */
 let _rapType='heb', _rapMonday=null, _rapMois=null, _rapAnnee=null, _rapTbl=null, _rapSvg=null;
 const RAP_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-const RAP_NL=String.fromCharCode(10), RAP_TAB=String.fromCharCode(9), RAP_Q=String.fromCharCode(39);
+const RAP_NL=String.fromCharCode(10), RAP_TAB=String.fromCharCode(9), RAP_Q=String.fromCharCode(39), RAP_MINUS=String.fromCharCode(8722), RAP_CR=String.fromCharCode(13);
 function rapStore(k,d){ try{ return JSON.parse(localStorage.getItem(k))||d; }catch(e){ return d; } }
 function rapCid(){ const x=document.getElementById('rap_collab'); return x?x.value:''; }
-function rapHj(cid){ const o=rapStore('sa_rap_hjour',{}); return +(o[cid])||8.5; }
-function rapSetHj(v){ const cid=rapCid(); if(!cid){ rapRender(); return; } const o=rapStore('sa_rap_hjour',{}); o[cid]=+v||8.5; localStorage.setItem('sa_rap_hjour',JSON.stringify(o)); rapRender(); }
-function rapFmt(n){ n=+n||0; const neg=n<-1e-9; let t=Math.abs(n).toFixed(2); const pr=t.split('.'); let ip=pr[0], out='';
+function rapHj(cid){ const o=rapStore('sa_rap_hjour',{}); const n=+(o[cid]);
+  return (o[cid]!=null && isFinite(n) && n>=0) ? n : 8.5; }
+function rapSetHj(v){ const cid=rapCid(); if(!cid){ rapRender(); return; } const o=rapStore('sa_rap_hjour',{}); o[cid]=(isFinite(+v)&&+v>=0)?+v:8.5; localStorage.setItem('sa_rap_hjour',JSON.stringify(o)); rapRender(); }
+function rapFmt(n){ n=Math.round((+n||0)*100)/100; const neg=n<0; let t=Math.abs(n).toFixed(2); const pr=t.split('.'); let ip=pr[0], out='';
   while(ip.length>3){ out=RAP_Q+ip.slice(-3)+out; ip=ip.slice(0,-3); }
   return (neg?'−':'')+ip+out+'.'+pr[1]; }
 function rapEsc(t){ return String(t==null?'':t).split('&').join('&amp;').split('<').join('&lt;'); }
@@ -11234,26 +11235,38 @@ function rapVacMois(cid,y,m){
   return imp+fh; }
 function rapVacInit(cid,y){ const o=rapStore('sa_rap_vacinit',{}); return (o[cid]&&o[cid][y]!=null)?+o[cid][y]:0; }
 function rapSetVacInit(v){ const cid=rapCid(); if(!cid) return; const o=rapStore('sa_rap_vacinit',{});
-  o[cid]=o[cid]||{}; o[cid][_rapAnnee]=+String(v).split(RAP_Q).join('').replace(',','.')||0;
+  o[cid]=o[cid]||{}; o[cid][_rapAnnee]=+String(v).split(RAP_Q).join('').split(RAP_MINUS).join('-').replace(',','.')||0;
   localStorage.setItem('sa_rap_vacinit',JSON.stringify(o)); rapRender(); }
-function rapInit(){ if(_rapAnnee!==null) return; const now=new Date();
-  _rapAnnee=now.getFullYear(); _rapMois=now.getMonth(); _rapMonday=fhWeekStart(now); }
+function rapInit(){ if(_rapAnnee!==null) return;
+  _rapMonday=fhWeekStart(new Date());
+  const th=new Date(_rapMonday); th.setDate(th.getDate()+3);   // jeudi ISO : évite le saut de semaine au bord d'année
+  _rapAnnee=th.getFullYear(); _rapMois=th.getMonth(); }
 function rapSetType(t){ _rapType=t; const x=document.getElementById('rap_type'); if(x) x.value=t; rapRender(); }
 function rapNavYear(dir){ rapInit(); _rapAnnee+=dir;
   const x=new Date(_rapMonday); x.setFullYear(x.getFullYear()+dir); _rapMonday=fhWeekStart(x); rapRender(); }
 function rapNavPer(dir){ rapInit();
   if(_rapType==='heb'){ const x=new Date(_rapMonday); x.setDate(x.getDate()+7*dir); _rapMonday=x;
-    const th=new Date(x); th.setDate(th.getDate()+3); _rapAnnee=th.getFullYear(); }
+    const th=new Date(x); th.setDate(th.getDate()+3); _rapAnnee=th.getFullYear(); _rapMois=th.getMonth(); }
   else { _rapMois+=dir; if(_rapMois<0){ _rapMois=11; _rapAnnee--; } if(_rapMois>11){ _rapMois=0; _rapAnnee++; } }
   rapRender(); }
-function rapPerChange(v){ if(_rapType==='heb') _rapMonday=new Date(v+'T00:00:00'); else _rapMois=+v; rapRender(); }
+function rapPerChange(v){
+  if(_rapType==='heb'){ _rapMonday=new Date(v+'T00:00:00');
+    const th=new Date(_rapMonday); th.setDate(th.getDate()+3); _rapAnnee=th.getFullYear(); _rapMois=th.getMonth(); }
+  else _rapMois=+v;
+  rapRender(); }
 function rapTypeLabel(){ return {heb:'Rapport hebdomadaire',men:'Rapport mensuel',jour:'Journal mensuel',tri:'Rapport trimestriel',sem:'Rapport semestriel',ann:'Rapport annuel',vac:'Rapport des vacances'}[_rapType]||''; }
 function rapPerLabel(){
   if(_rapType==='heb'){ const m=fhWeekStart(_rapMonday); return 'Semaine '+fhWeekNum(m)+', '+m.getDate()+' '+RAP_MOIS[m.getMonth()]+' '+m.getFullYear(); }
   if(_rapType==='men'||_rapType==='jour') return RAP_MOIS[_rapMois]+' '+_rapAnnee;
   return String(_rapAnnee); }
 function rapPush(head,rows,plain){
-  _rapTbl={head:head.map(h=>h.t), rows:(plain||rows).map(r=>r.c.map(c=>{ const d=document.createElement('div'); d.innerHTML=String(c==null?'':c); return d.textContent; }))}; }
+  // Exports : nombres en ASCII (- au lieu de −, sans apostrophes de milliers) pour rester
+  // calculables dans Excel/Numbers ; retours à la ligne et tabulations aplatis en espaces.
+  const norm=t=>{ const u=t.split(RAP_Q).join('').split(RAP_MINUS).join('-').trim();
+    return (u!=='' && isFinite(+u)) ? u : t; };
+  _rapTbl={head:head.map(h=>h.t), rows:(plain||rows).map(r=>r.c.map(c=>{
+    const d=document.createElement('div'); d.innerHTML=String(c==null?'':c);
+    return norm(d.textContent.split(RAP_NL).join(' ').split(RAP_CR).join(' ').split(RAP_TAB).join(' ')); }))}; }
 function rapTable(head,rows){
   let h='<table class="rap-tb"><thead><tr>'+head.map(c=>'<th style="text-align:'+(c.r?'right':'left')+'">'+c.t+'</th>').join('')+'</tr></thead><tbody>';
   rows.forEach((r,i)=>{ h+='<tr class="'+(r.cls||'')+(i%2?' od':'')+'">'+
@@ -11416,21 +11429,21 @@ function rapMenu(ev,id){
   const sep='<div style="border-top:1px solid #e4e4e4;margin:4px 0"></div>';
   if(id==='rap_doc_menu'){
     m.innerHTML=it(!!_rapTbl,'Afficher le rapport …','rapPrint()')+
-      it(true,'Aperçu des vacances … [Ancien document]','rapSetType('+RAP_Q+'vac'+RAP_Q+')')+sep+
+      it(true,'Aperçu des vacances … [Ancien document]','this.parentElement.style.display='+RAP_Q+'none'+RAP_Q+';rapSetType('+RAP_Q+'vac'+RAP_Q+')')+sep+
       it(!!_rapSvg,'Enregistrer le diagramme …','rapSaveSvg()');
   } else {
     m.innerHTML=it(!!_rapTbl,'Copier le contenu du tableau dans le presse-papier','rapCopy()')+
       it(!!_rapTbl,'Exporter le tableau dans un fichier CSV …','rapCSV()');
   }
   m.style.display='block';
-  const close=e=>{ if(!m.contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
+  const close=e=>{ if(!(m.parentElement||m).contains(e.target)){ m.style.display='none'; document.removeEventListener('mousedown',close); } };
   setTimeout(()=>document.addEventListener('mousedown',close),0);
 }
 function rapCopy(){ document.getElementById('rap_out_menu').style.display='none'; if(!_rapTbl) return;
   const t=[_rapTbl.head.join(RAP_TAB)].concat(_rapTbl.rows.map(r=>r.join(RAP_TAB))).join(RAP_NL);
   navigator.clipboard.writeText(t).then(()=>toast('Tableau copié dans le presse-papier.')).catch(()=>toast('Copie impossible dans ce navigateur.')); }
 function rapCSV(){ document.getElementById('rap_out_menu').style.display='none'; if(!_rapTbl) return;
-  const q=v=>{ v=String(v); return (v.indexOf(';')>=0||v.indexOf('"')>=0)?'"'+v.split('"').join('""')+'"':v; };
+  const q=v=>{ v=String(v); return (v.indexOf(';')>=0||v.indexOf('"')>=0||v.indexOf(RAP_NL)>=0||v.indexOf(RAP_CR)>=0)?'"'+v.split('"').join('""')+'"':v; };
   const t=[_rapTbl.head.map(q).join(';')].concat(_rapTbl.rows.map(r=>r.map(q).join(';'))).join(RAP_NL);
   const bl=new Blob([String.fromCharCode(65279)+t],{type:'text/csv;charset=utf-8'});
   const aa=document.createElement('a'); aa.href=URL.createObjectURL(bl);

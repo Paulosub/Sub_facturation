@@ -11885,7 +11885,8 @@ function pvListHTML(out){
   }
   out.innerHTML=h;
 }
-function pvOpen(id){ _pvCur=id; _pvTab='pv'; pvRender(); }
+function pvOpen(id){ _pvCur=id; _pvTab='pv'; pvRender();
+  if(_sxPrevKind!=='pv') sxPrev('pv'); }
 function pvDel(id){ const A=pvA(); const pv=A.pvs.find(x=>x.id===id); if(!pv) return;
   chConfirm('Supprimer définitivement le PV PVCH '+pvPad(pv.num,4)+' (annotation) ?', ()=>{
     A.pvs=A.pvs.filter(x=>x.id!==id); if(_pvCur===id) _pvCur=null; pvPersist(); pvRender(); }); }
@@ -11923,6 +11924,7 @@ function pvCreate(){
     approbMode:'sans', approbRem:'', presH: (prev&&prev.presH)?JSON.parse(JSON.stringify(prev.presH)):{},
     pres, secs };
   A.pvs.push(pv); pvPersist(); _pvCur=pv.id; _pvTab='pv'; pvRender();
+  if(_sxPrevKind!=='pv') sxPrev('pv');
 }
 /* ── configuration « Général » de l'affaire ── */
 function pvCfgHTML(){
@@ -12086,7 +12088,7 @@ function pvSecHTML(pv,sec,si,RO){
       sec.lines.forEach((ln,li)=>{
         if(tyOf(ln)!==ch[0]) return;
         const u=+ln.u||0;
-        const ust=(u===2)?';color:#b00020;font-weight:700':(u===1)?';color:#b00020':'';
+        const ust=(ch[0]==='fini')?';color:#8c8c8c':(u===2)?';color:#b00020;font-weight:700':(u===1)?';color:#b00020':'';
         const ck=(ch[0]==='rem')?'':('<input type="checkbox" style="width:auto" '+(ch[0]==='fini'?'checked':'')+
           ' title="Terminé — bascule dans Travaux terminés" onchange="pvLineFini('+si+','+li+',this.checked)"'+dis+'>');
         const ubt=RO?'':('<button class="btn btn-sm pv-mini" title="'+['Normal — cliquer pour urgent','Urgent — cliquer pour très urgent','Très urgent — cliquer pour normal'][u]+
@@ -12099,6 +12101,9 @@ function pvSecHTML(pv,sec,si,RO){
           '<td class="rm" style="width:26px">'+ubt+'</td>'+
           '<td class="rm" style="width:30px">'+(RO?'':'<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>')+'</td></tr>';
       });
+      if(!RO) h+='<tr><td colspan="5" style="padding:0;border-top:1px solid #e6ecf0">'+
+        '<button style="width:100%;border:none;background:#fafbfc;color:#7a8b99;font-size:11px;padding:3px;cursor:pointer" '+
+        'title="Ajouter une ligne en dessous de la dernière" onclick="pvLineAddK('+si+','+PV_Q+ch[0]+PV_Q+')">✚</button></td></tr>';
     });
     sec.lines.forEach((ln,li)=>{ if(ln.k==='pb'||ln.k==='img') h+=extra(ln,li,5); });
     h+='</table>';
@@ -12274,7 +12279,7 @@ async function pvPDF(code, id, mode){
     return o; };
   const logoN=await doc.embedPng(tb(await pvLogoPng(0)));
   const logoG=await doc.embedPng(tb(await pvLogoPng(1)));
-  const cN=RGBf(0.08,0.07,0.07), cG=RGBf(0.4,0.4,0.4), cW=RGBf(1,1,1), cRed=RGBf(0.886,0,0.102), cVert=RGBf(0.11,0.48,0.22);
+  const cN=RGBf(0.08,0.07,0.07), cG=RGBf(0.4,0.4,0.4), cW=RGBf(1,1,1), cRed=RGBf(0.886,0,0.102), cVert=RGBf(0.11,0.48,0.22), cGl=RGBf(0.55,0.55,0.55);
   const refStr=code+'.PV.CH'+pvPad(pv.num,3);
   const X0=78.2, MR=510.2, BOT=70;
   let pages=[], pg=null, y=0;
@@ -12405,7 +12410,7 @@ async function pvPDF(code, id, mode){
         if(ln.k==='pb'){ newPage(); lastT=null; continue; }
         const t2=(ln.k==='fini'||ln.k==='rem')?ln.k:'exec';
         const u=+ln.u||0;                                   // 0 normal noir Light · 1 urgent rouge · 2 très urgent rouge gras
-        const col=(u>=1)?cRed:cN, fnt=(u===2)?fB:fL;
+        const col=(t2==='fini')?cGl:((u>=1)?cRed:cN), fnt=(t2!=='fini'&&u===2)?fB:fL;
         const pdl=pvDelaiInfo(ln.d);
         const tl=wrap(ln.v,fnt,7.5,CW2), dl=wrap(pdl.r,fnt,7.5,pdl.p?CWD-12:CWD);
         const hh2=Math.max(tl.length,dl.length,1)*9+5;

@@ -925,8 +925,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
     <div class="home-sub">Procès-verbaux de chantier par affaire — annotation avant séance, puis envoi définitif aux intervenants</div>
     <div class="adm-wrap" style="max-width:none;padding:2px 20px 44px">
       <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
-        <select id="pv_aff" onchange="pvSelAff(this.value)" style="min-width:280px"></select>
-        <button class="btn btn-sm" onclick="pvAddAffOpen()" title="Ajouter une affaire au module PV" style="font-size:15px;line-height:1;padding:5px 11px">✚</button>
+        <button class="btn btn-sm" onclick="pvAddAffOpen()" title="Activer une affaire pour les PV de chantier">✚ Ajouter une nouvelle affaire</button>
         <span id="pv_ctx" style="margin-left:auto;color:#777;font-size:12px"></span>
       </div>
       <div id="pv_out" style="margin-top:12px"></div>
@@ -11847,12 +11846,8 @@ function pvAddAff(code){
 }
 /* ── rendu principal ── */
 function pvRender(){
-  const sel=document.getElementById('pv_aff'); if(!sel) return;
-  const codes=Object.keys(pvData).sort();
-  sel.innerHTML='<option value="">— Choisir une affaire —</option>'+
-    codes.map(c=>'<option value="'+pvEscA(c)+'">'+pvEsc(c)+' — '+pvEsc(pvAffName(c)).slice(0,60)+'</option>').join('');
-  sel.value=_pvAff;
   const out=document.getElementById('pv_out'), ctx=document.getElementById('pv_ctx');
+  if(!out) return;
   if(!_pvAff||!pvA()){
     ctx.textContent=Object.keys(pvData).length+' affaire(s)';
     const codes2=Object.keys(pvData).sort();
@@ -11877,7 +11872,8 @@ function pvRender(){
 /* ── liste des PV ── */
 function pvListHTML(out){
   const A=pvA();
-  let h='<div style="display:flex;gap:8px;margin-bottom:4px">'+
+  let h='<div style="font-weight:700;font-size:14.5px;margin:2px 0 8px">'+pvEsc(_pvAff)+' — '+pvEsc(pvAffName(_pvAff)).slice(0,80)+'</div>'+
+    '<div style="display:flex;gap:8px;margin-bottom:4px">'+
     '<button class="btn btn-sm" onclick="pvSelAff('+PV_Q+PV_Q+')">← Affaires</button>'+
     '<button class="btn btn-sm" onclick="pvCreate()">✚ Créer un PV</button>'+
     '<button class="btn btn-sm" onclick="_pvCur='+PV_Q+'CFG'+PV_Q+';pvRender()">⚙︎ Général de l'.replace('x','x')+"'affaire</button></div>";
@@ -12006,9 +12002,14 @@ function pvGenDel(i){ pvA().cfg.gen.splice(i,1); pvPersist(); pvRender(); }
 /* ── éditeur de PV ── */
 function pvEditHTML(out, pv){
   const A=pvA(), RO=pv.statut==='definitif', dis=RO?' disabled':'';
+  // Migration : les PV créés avant l'introduction de la section photos la reçoivent (2026-09-23).
+  if(!RO && !pv.secs.some(x=>x.img2)){
+    pv.secs.push({t:'12. IMAGES DU CHANTIER', img2:true, lines:[]}); pvPersist();
+  }
   let h='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">'+
     '<button class="btn btn-sm" onclick="_pvCur=null;pvRender()">← Liste</button>'+
     '<b style="font-size:14px">PVCH '+pvPad(pv.num,4)+'</b>'+
+    '<span style="color:#777;font-size:12px">'+pvEsc(_pvAff)+' — '+pvEsc(pvAffName(_pvAff)).slice(0,40)+'</span>'+
     '<span class="pv-badge '+(RO?'df':'an')+'">'+(RO?'Envoyé':'Annotation')+'</span>'+
     '<span class="pv-seg"><button class="'+(_pvTab==='gen'?'on':'')+'" onclick="_pvTab='+PV_Q+'gen'+PV_Q+';pvRender()">Général</button>'+
     '<button class="'+(_pvTab==='pv'?'on':'')+'" onclick="_pvTab='+PV_Q+'pv'+PV_Q+';pvRender()">PV</button></span>'+

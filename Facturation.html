@@ -13953,7 +13953,69 @@ function ccNorm(c){ return String(c||'').replace(/\./g,''); }
 function ccLvl(c){ const L=ccNorm(c).length; return L<=1?1:(L===2?2:3); }
 function ccA(){ return ccData[_ccAff]; }
 function ccAffName(code){ const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===code):null; return f&&f.projet?f.projet:''; }
-function ccCat(){ return (typeof pvCfcAll==='function')?pvCfcAll():[]; }
+/* Catalogue CFC COMPLET (Code des frais de construction — nomenclature usuelle romande) :
+   groupes à 1 chiffre, chapitres à 2 chiffres et positions à 3 chiffres, plus les subdivisions
+   utilisées au bureau (211.2, 281.6, …). Tout autre code reste saisissable librement. */
+const CC_CFC_CAT=[
+['0','Terrain'],
+['00','Études préliminaires'],['000','Poste d’attente'],['001','Études destinées à l’appréciation du terrain'],['002','Arpentage, bornage'],['003','Expertises géotechniques'],['004','Frais d’établissement plan de quartier et plan directeur'],['005','Gabarits provisoires'],['006','Étude de l’impact sur l’environnement'],['009','Divers'],
+['01','Acquisition du terrain ou du droit de superficie'],['010','Poste d’attente'],['011','Acquisition du terrain'],['012','Acquisition du droit de superficie'],['013','Acquisition du droit de mitoyenneté'],['018','Assainissement de sites contaminés'],['019','Divers'],
+['02','Frais accessoires acquisition terrain ou droit de superficie'],['020','Poste d’attente'],['021','Droits de mutation'],['022','Frais de notaire'],['023','Émoluments du registre foncier'],['029','Divers'],
+['03','Contributions d’équipement'],['030','Poste d’attente'],['031','Routes'],['032','Eau'],['033','Électricité'],['034','Gaz'],['035','Chauffage à distance'],['036','Égouts'],['037','Téléréseau, télécommunications'],['039','Divers'],
+['04','Raccordements aux réseaux'],['040','Poste d’attente'],['041','Routes, places, chemins'],['042','Eau'],['043','Électricité'],['044','Gaz'],['045','Chauffage à distance'],['046','Égouts, canalisations'],['047','Téléréseau, télécommunications'],['049','Divers'],
+['05','Viabilisation, autres aménagements du terrain'],['051','Défrichage'],['052','Remise en état du terrain'],['059','Divers'],
+['06','Autres frais du terrain'],['09','Divers terrain'],
+['1','Travaux préparatoires'],
+['10','Relevés, études géotechniques'],['101','Relevés'],['102','Études géotechniques'],['109','Divers'],
+['11','Déblaiement, préparation du terrain'],['110','Poste d’attente'],['111','Défrichage'],['112','Démolitions'],['113','Démontages'],['114','Abattage d’arbres'],['115','Déplacements de terre'],['119','Divers (désamiantage, dépollution)'],
+['12','Protections, aménagements provisoires'],['120','Poste d’attente'],['121','Protection d’ouvrages existants'],['122','Étayages, blindages'],['123','Clôtures provisoires'],['129','Divers'],
+['13','Installations de chantier en commun'],['130','Poste d’attente'],['131','Baraquements de chantier'],['132','Accès provisoires'],['133','Alimentations provisoires'],['135','Installations provisoires'],['135.1','Installations électriques'],['135.3','Eau'],['136','Frais d’énergie et d’eau, etc.'],['137','Grues, monte-charges'],['139','Divers'],
+['14','Adaptation du bâtiment existant'],['141','Consolidations'],['142','Réparations préalables'],['149','Divers'],
+['15','Adaptation du réseau de conduites existant'],['150','Poste d’attente'],['151','Terrassements'],['152','Canalisations'],['153','Électricité'],['154','Chauffage, ventilation, conditionnement d’air, réfrigération'],['155','Installations sanitaires'],['159','Divers'],
+['16','Adaptation des voies de circulation existantes'],['161','Routes, chemins'],['169','Divers'],
+['17','Fondations spéciales, protections des fouilles, étanchement d’ouvrages enterrés'],['170','Poste d’attente'],['171','Pieux'],['172','Parois moulées'],['173','Étayages'],['174','Ancrages'],['175','Étanchement d’ouvrages enterrés'],['176','Épuisement des eaux'],['179','Divers'],
+['18','Autres travaux préparatoires'],['19','Honoraires (travaux préparatoires)'],['191','Architecte'],['192','Ingénieur civil'],['193','Ingénieurs spécialisés'],['196','Géomètre'],['199','Divers (rapports, expertises)'],
+['2','Bâtiment'],
+['20','Excavation'],['200','Poste d’attente'],['201','Fouilles en pleine masse'],['202','Terrassements spéciaux'],['209','Divers'],
+['21','Gros œuvre 1'],['211','Travaux de l’entreprise de maçonnerie'],['211.0','Installation de chantier'],['211.1','Terrassements'],['211.2','Échafaudages'],['211.4','Canalisations intérieures'],['211.5','Béton et béton armé'],['211.6','Maçonnerie / BA'],['212','Construction préfabriquée en béton'],['212.2','Éléments préfabriqués'],['213','Construction en acier'],['214','Charpente'],['214.1','Construction en bois'],['215','Construction légère préfabriquée'],['216','Taille de pierre'],['219','Divers'],
+['22','Gros œuvre 2'],['221','Fenêtres, portes extérieures'],['221.2','Fenêtres bois-métal'],['221.6','Portes extérieures'],['222','Ferblanterie'],['223','Protection contre la foudre'],['224','Couverture'],['225','Étanchéités et isolations spéciales'],['225.3','Étanchéités'],['225.4','Isolations spéciales'],['226','Crépissage de façade'],['227','Traitement des surfaces extérieures'],['228','Fermetures extérieures, stores'],['229','Divers'],
+['23','Installations électriques'],['230','Poste d’attente'],['231','Appareils à courant fort'],['232','Installations à courant fort'],['233','Lustrerie'],['235','Appareils à courant faible'],['236','Installations à courant faible'],['238','Installations provisoires'],['239','Divers'],
+['24','Chauffage, ventilation, conditionnement d’air'],['240','Poste d’attente'],['242','Production de chaleur'],['243','Distribution de chaleur'],['244','Installations de ventilation'],['245','Installations de conditionnement d’air'],['247','Installations spéciales'],['248','Isolations de tuyauteries et gaines'],['249','Divers'],
+['25','Installations sanitaires'],['250','Poste d’attente'],['251','Appareils sanitaires courants'],['252','Appareils sanitaires spéciaux'],['253','Éléments préfabriqués'],['254','Tuyauterie sanitaire'],['255','Isolations d’installations sanitaires'],['256','Unités de cuisine (agencements)'],['258','Agencements de cuisine'],['259','Divers'],
+['26','Installations de transport'],['261','Ascenseurs et monte-charges'],['262','Escaliers roulants'],['269','Divers'],
+['27','Aménagements intérieurs 1'],['271','Plâtrerie'],['272','Ouvrages métalliques'],['272.1','Serrurerie courante'],['272.2','Ouvrages métalliques spéciaux'],['273','Menuiserie'],['273.0','Portes intérieures'],['274','Vitrerie'],['275','Systèmes de verrouillage'],['279','Divers'],
+['28','Aménagements intérieurs 2'],['281','Revêtements de sol'],['281.6','Carrelage'],['281.7','Parquet'],['282','Revêtements de paroi'],['283','Faux-plafonds'],['285','Traitement des surfaces intérieures, peinture'],['287','Nettoyage du bâtiment'],['288','Sèche-mains, équipements'],['289','Divers'],
+['29','Honoraires'],['291','Architecte'],['292','Ingénieur civil'],['293','Ingénieur électricien'],['294','Ingénieur CVC'],['295','Ingénieur sanitaire'],['296','Spécialistes / Experts'],['297','Géomètre'],['299','Divers'],
+['3','Équipements d’exploitation'],
+['30','Poste d’attente (équipements)'],['31','Équipements de production'],['32','Équipements de cuisine industrielle'],['33','Équipements de blanchisserie'],['34','Équipements médicaux'],['35','Équipements de laboratoire'],['36','Équipements de transport'],['37','Équipements divers d’exploitation'],['39','Honoraires (équipements)'],
+['4','Aménagements extérieurs'],
+['40','Mise en forme du terrain'],['401','Terrassements'],['402','Murs de soutènement'],['409','Divers'],
+['41','Constructions extérieures'],['411','Maçonnerie extérieure'],['412','Constructions légères'],['419','Divers'],
+['42','Jardins'],['420','Poste d’attente'],['421','Jardinage'],['422','Clôtures'],['423','Équipements de jardin'],['429','Divers'],
+['43','Installations extérieures'],['431','Électricité extérieure'],['432','Éclairage extérieur'],['439','Divers'],
+['44','Conduites extérieures (canalisations, eau, énergie)'],['441','Canalisations'],['442','Conduites d’eau'],['449','Divers'],
+['45','Routes, chemins, places'],['451','Routes et places'],['452','Chemins'],['459','Divers'],
+['46','Petits ouvrages, superstructures'],['49','Honoraires (aménagements extérieurs)'],['491','Architecte'],['492','Ingénieur civil'],['493','Architecte paysagiste'],['499','Divers'],
+['5','Frais secondaires et comptes d’attente'],
+['50','Frais de concours'],['51','Autorisations, taxes'],['511','Autorisations, permis de construire'],['512','Taxes de raccordement'],['519','Divers'],
+['52','Échantillons, maquettes, reproductions, documents'],['521','Échantillons'],['522','Maquettes'],['524','Reproductions, héliographies'],['529','Divers (photos, panneaux)'],
+['53','Assurances'],['531','Assurance travaux en cours'],['532','Assurance responsabilité civile du MO'],['539','Divers'],
+['54','Financement à partir du début des travaux'],['541','Intérêts intercalaires'],['549','Divers'],
+['55','Prestations du maître de l’ouvrage'],['551','Administration'],['559','Divers'],
+['56','Autres frais secondaires'],['561','Frais de gérance avant occupation'],['562','Inauguration'],['569','Divers'],
+['57','Comptes d’attente pour provisions et réserves'],['571','Provisions pour imprévus'],['579','Divers'],
+['58','Comptes d’attente (renchérissement)'],['59','Honoraires (frais secondaires)'],
+['9','Ameublement et décoration'],
+['90','Meubles'],['900','Poste d’attente'],['901','Meubles'],['902','Meubles spéciaux'],['909','Divers'],
+['91','Luminaires'],['92','Textiles'],['921','Rideaux'],['929','Divers'],
+['93','Appareils, machines'],['94','Petit inventaire'],['95','Œuvres d’art'],['98','Autres postes d’ameublement'],['99','Honoraires (ameublement)']
+];
+function ccCat(){
+  const seen={}, out=[];
+  CC_CFC_CAT.forEach(x=>{ if(!seen[x[0]]){ seen[x[0]]=1; out.push(x); } });
+  ((typeof pvCfcAll==='function')?pvCfcAll():[]).forEach(x=>{ if(!seen[x[0]]){ seen[x[0]]=1; out.push(x); } });
+  return out.sort((a,b)=>String(a[0]).localeCompare(String(b[0]),undefined,{numeric:true}));
+}
 function ccCatLbl(c){ const f=ccCat().find(x=>x[0]===c); return f?f[1]:''; }
 function ccNewAff(code){
   const rows=[];
@@ -13965,6 +14027,13 @@ function ccNewAff(code){
 function ccEnsureRow(A,cfc){ if(!cfc) return; if(!A.rows.some(r=>r.cfc===cfc))
   A.rows.push({id:pvId(), cfc:cfc, lbl:ccCatLbl(cfc), ent:'', dg:0}); }
 function ccTtc(e){ return Math.round((ccP(e.ht)*(1+ccP(e.tva)/100))*100)/100; }
+/* Effet d'une mutation selon son genre : transfert = origine − / destination + ;
+   variation / renchérissement / perte = + sur l'origine ; bénéfice d'adjudication = − sur l'origine. */
+function ccMutEff(e){ const t=ccTtc(e);
+  if(e.genre==='benef') return {src:-t, dst:0};
+  if(e.genre==='perte'||e.genre==='variation'||e.genre==='rench') return {src:t, dst:0};
+  return {src:-t, dst:t}; }
+const CC_MUT_GENRES={transfert:'Transfert', variation:'Variation', rench:'Renchérissement', benef:'Bénéfice d’adjudication', perte:'Perte sur adjudication'};
 function ccEntList(){
   const s=new Set();
   try{ const adr=JSON.parse(localStorage.getItem('sa_adr')||'{}'); (adr.ent||[]).forEach(x=>{ if(x.nom) s.add(x.nom); }); }catch(e){}
@@ -13979,13 +14048,11 @@ function ccOwn(A){
   const at=c=>{ if(!o[c]) o[c]={dg:0,mut:0,con:0,ave:0,prov:0,pay:0,ff:false,cp:null}; return o[c]; };
   A.rows.forEach(r=>{ at(r.cfc).dg += ccP(r.dg); });
   (A.ecr||[]).forEach(e=>{
-    if(e.type==='mut'){ const t=ccTtc(e);
-      if(e.genre==='benef'){ if(e.src) at(e.src).mut -= t; }
-      else if(e.genre==='perte'){ if(e.src) at(e.src).mut += t; }
-      else { if(e.src) at(e.src).mut -= t; if(e.dst) at(e.dst).mut += t; } }
+    if(e.type==='mut'){ const f=ccMutEff(e);
+      if(e.src&&f.src) at(e.src).mut += f.src; if(e.dst&&f.dst) at(e.dst).mut += f.dst; }
     else if(e.type==='contrat'||e.type==='avenant'){ (e.pos||[]).forEach(p=>{ const v=at(p.cfc);
       v.con += ccP(p.mnt); if(e.type==='avenant') v.ave += ccP(p.mnt); }); }
-    else if(e.type==='pay'){ const c=ccPayCfc(e); if(c){ const v=at(c); v.pay += ccP(e.mnt); if(e.typeP==='final') v.ff=true; } }
+    else if(e.type==='pay'){ const c=ccPayCfc(A,e); if(c){ const v=at(c); v.pay += ccP(e.mnt); if(e.typeP==='final') v.ff=true; } }
     else if(e.type==='prov'){ at(e.cfc).prov += ccP(e.mnt); }
     else if(e.type==='cp'){ at(e.cfc).cp = ccP(e.mnt); }
   });
@@ -13997,8 +14064,8 @@ function ccOwn(A){
   });
   return o;
 }
-function ccPayCfc(e){ if(e.cfc) return e.cfc;
-  const A=ccA(); const c=(A.ecr||[]).find(x=>x.id===e.ref); return c ? c.lot : null; }
+function ccPayCfc(A,e){ if(e.cfc) return e.cfc;
+  const c=(A.ecr||[]).find(x=>x.id===e.ref); return c ? c.lot : null; }
 function ccAgg(A){
   const own=ccOwn(A), agg={};
   const codes=A.rows.map(r=>r.cfc);
@@ -14017,7 +14084,7 @@ function ccEcrOf(A,cfc){
   (A.ecr||[]).forEach(e=>{
     if(e.type==='mut'&&(e.src===cfc||e.dst===cfc)) out.push(e);
     else if((e.type==='contrat'||e.type==='avenant')&&(e.pos||[]).some(p=>p.cfc===cfc)) out.push(e);
-    else if(e.type==='pay'&&ccPayCfc(e)===cfc) out.push(e);
+    else if(e.type==='pay'&&ccPayCfc(A,e)===cfc) out.push(e);
     else if((e.type==='prov'||e.type==='cp')&&e.cfc===cfc) out.push(e);
   });
   return out;
@@ -14111,7 +14178,7 @@ function ccRender(){
     const hasEcr=ccEcrOf(A,r.cfc).length>0;
     const pct= totDgRev>0.005 ? (a.dgRev/totDgRev*100) : 0;
     h+='<tr class="'+cls+'">'+
-      '<td class="cc-g"><span class="cc-tgl" onclick="ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+(hasEcr?(_ccOpen[r.cfc]?'▾':'▸'):'')+'</span><b>'+pvEsc(r.cfc)+'</b></td>'+
+      '<td class="cc-g"><span class="cc-tgl" onclick="ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+(hasEcr?(_ccOpen[r.cfc]?'▾':'▸'):'')+'</span><b style="cursor:pointer" title="Nouvelle mutation depuis ce CFC (transfert vers un autre CFC)" onclick="ccDlgMut(null,'+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+pvEsc(r.cfc)+'</b></td>'+
       '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(r.lbl||'')+'" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'lbl'+PV_Q+',this)"></td>'+
       '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(r.ent||'')+'" list="cc_ent_dl" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'ent'+PV_Q+',this)"></td>'+
       '<td><input class="cc-in" value="'+(ccP(r.dg)?ccF(r.dg):'')+'" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'dg'+PV_Q+',this)"></td>'+
@@ -14142,10 +14209,10 @@ function ccEcrRows(A,cfc){
   const cell=(colIdx,txt,cls)=>{ const cells=new Array(11).fill(''); cells[colIdx]='<span class="'+(cls||'')+'">'+txt+'</span>'; return cells; };
   es.forEach(e=>{
     let lbl='', cells=new Array(11).fill(''), cls='';
-    if(e.type==='mut'){ const t=ccTtc(e); cls='cc-mut';
-      const g=e.genre==='benef'?'bénéfice d’adjudication':(e.genre==='perte'?'perte sur adjudication':'transfert'+(e.src===cfc?' → '+(e.dst||'?'):' ← '+(e.src||'?')));
-      lbl='&gt; '+g+(e.num?' ['+e.num+']':'')+(e.des?' · '+pvEsc(e.des):'')+(e.date?' · '+ccDfr(e.date):'');
-      const sgn=(e.genre==='perte')?t:(e.genre==='benef'?-t:(e.src===cfc?-t:t));
+    if(e.type==='mut'){ cls='cc-mut';
+      const g=(e.genre==='transfert'||!CC_MUT_GENRES[e.genre])?('transfert'+(e.src===cfc?' → '+(e.dst||'?'):' ← '+(e.src||'?'))):CC_MUT_GENRES[e.genre].toLowerCase();
+      lbl='&gt; '+g+(e.num?' ['+e.num+']':'')+(e.des?' · '+pvEsc(e.des):'')+(e.date?' · '+ccDfr(e.date):'')+(e.statut==='brouillon'?' · brouillon':'');
+      const f=ccMutEff(e); const sgn=(e.src===cfc)?f.src:f.dst;
       cells[1]=(sgn<0?'−':'')+ccF(Math.abs(sgn));
     } else if(e.type==='contrat'||e.type==='avenant'){ cls='cc-con';
       const m=(e.pos||[]).filter(p=>p.cfc===cfc).reduce((s,p)=>s+ccP(p.mnt),0);
@@ -14165,7 +14232,7 @@ function ccEcrRows(A,cfc){
   return h;
 }
 /* ── menu « nouvelle écriture » + dialogues ── */
-function ccDlg(html){ document.getElementById('cc_ecr_box').innerHTML=html; document.getElementById('cc_ecr_ov').style.display='block'; }
+function ccDlg(html,w){ const b=document.getElementById('cc_ecr_box'); b.style.width=(w||760)+'px'; b.innerHTML=html; document.getElementById('cc_ecr_ov').style.display='block'; }
 function ccDlgClose(){ document.getElementById('cc_ecr_ov').style.display='none'; }
 function ccRowMenu(cfc){
   const b=(lbl,fn,col)=>'<button class="btn btn-sm" style="margin:4px 6px 0 0'+(col?';background:'+col+';color:#fff':'')+'" onclick="'+fn+'">'+lbl+'</button>';
@@ -14189,50 +14256,102 @@ function ccCfcOpts(sel){ const A=ccA();
   return rows.map(r=>'<option value="'+pvEsc(r.cfc)+'"'+(r.cfc===sel?' selected':'')+'>'+pvEsc(r.cfc)+' '+pvEsc(r.lbl||'')+'</option>').join('');
 }
 function ccToday(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-/* Transfert / bénéfice / perte — avec avant/après sur origine et destination */
+/* Mutation — fenêtre fidèle au contrôle des coûts : liste des CFC à gauche (montant + mutations
+   cumulées), origine / avant / après, destination / mutation / après, genres Transfert · Variation ·
+   Renchérissement · Bénéfice / Perte d'adjudication. S'ouvre aussi d'un clic sur le code CFC. */
 function ccDlgMut(id,cfc){
   const A=ccA(); const e=id?A.ecr.find(x=>x.id===id):null;
-  const v=e||{genre:'transfert',src:cfc||'',dst:'',ht:'',tva:(A.tva!=null?A.tva:8.1),num:ccNum('mut'),des:'',date:ccToday(),statut:'definitif'};
-  ccDlg('<div style="font-weight:700;margin-bottom:4px;color:#e08b00">'+(e?'Éditer la mutation':'Mutation')+'</div>'+
-    '<div class="cc-cols"><div><label>Genre de mutation</label><select id="cm_genre" onchange="ccMutPrev()">'+
-      '<option value="transfert"'+(v.genre==='transfert'?' selected':'')+'>Transfert</option>'+
-      '<option value="benef"'+(v.genre==='benef'?' selected':'')+'>Bénéfice d’adjudication (− sur origine)</option>'+
-      '<option value="perte"'+(v.genre==='perte'?' selected':'')+'>Perte sur adjudication (+ sur origine)</option></select></div>'+
-    '<div><label>Statut</label><select id="cm_statut"><option value="brouillon"'+(v.statut==='brouillon'?' selected':'')+'>Brouillon</option><option value="definitif"'+(v.statut!=='brouillon'?' selected':'')+'>Définitif</option></select></div></div>'+
-    '<div class="cc-cols"><div><label>Origine de la mutation</label><select id="cm_src" onchange="ccMutPrev()">'+ccCfcOpts(v.src)+'</select></div>'+
-    '<div><label>Destination (transfert)</label><select id="cm_dst" onchange="ccMutPrev()"><option value="">—</option>'+ccCfcOpts(v.dst)+'</select></div></div>'+
-    '<div class="cc-cols"><div><label>Montant HT</label><input type="text" id="cm_ht" value="'+(v.ht!==''?v.ht:'')+'" oninput="ccMutPrev()"></div>'+
-    '<div><label>TVA %</label><input type="text" id="cm_tva" value="'+v.tva+'" oninput="ccMutPrev()"></div>'+
-    '<div><label>Total TVA incl.</label><div id="cm_ttc" style="padding:7px 2px;font-weight:700">0.00</div></div></div>'+
-    '<div id="cm_prev" style="background:#faf6ee;border:1px solid #eadfc8;border-radius:6px;padding:8px 10px;margin-top:10px;font-size:12px;color:#555"></div>'+
-    '<div class="cc-cols"><div><label>Numéro</label><input type="text" id="cm_num" value="'+(v.num||'')+'"></div>'+
-    '<div><label>Date</label><input type="date" id="cm_date" value="'+(v.date||'')+'"></div></div>'+
-    '<label>Désignation</label><input type="text" id="cm_des" value="'+pvEsc(v.des||'')+'">'+
-    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
-    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSaveMut('+(id?PV_Q+id+PV_Q:'null')+')">OK</button></div>');
+  const v=e||{genre:'transfert',src:cfc||((A.rows[0]||{}).cfc||''),dst:'',ht:'',tva:(A.tva!=null?A.tva:8.1),num:ccNum('mut'),des:'',date:ccToday(),statut:'brouillon',desc:''};
+  window._ccMutSrc=v.src; window._ccMutId=id||null;
+  const own=ccOwn(A);
+  const rows=A.rows.slice().sort((a,b)=>String(a.cfc).localeCompare(String(b.cfc),undefined,{numeric:true}));
+  const list=rows.map(r=>{ const o=own[r.cfc]||{};
+    return '<div class="ccm-it" data-c="'+pvEsc(r.cfc)+'" onclick="_ccMutSrc=this.dataset.c;ccMutSel()" style="display:flex;gap:6px;padding:2px 8px;cursor:pointer;font-size:11.5px">'+
+      '<span style="width:46px;font-weight:600">'+pvEsc(r.cfc)+'</span>'+
+      '<span style="flex:1;text-align:right">'+ccF(o.dg||0)+'</span>'+
+      '<span style="flex:1;text-align:right;color:#e08b00">'+((o.mut||0)<-0.004?'−':'')+(Math.abs(o.mut||0)>0.004?ccF(Math.abs(o.mut)):'')+'</span></div>'; }).join('');
+  const blk=(title,inner)=>'<div style="border:1px solid #d5d5d5;border-radius:6px;padding:8px 10px;margin-top:10px;height:112px;box-sizing:border-box;overflow:hidden"><div style="font-weight:700;font-size:12px;margin-bottom:6px">'+title+'</div>'+inner+'</div>';
+  const trip=(idp)=>'<div style="display:grid;grid-template-columns:86px 1fr;gap:2px 8px;font-size:12px">'+
+    '<span style="color:#777">Total HT</span><span id="'+idp+'_ht" style="text-align:right">—</span>'+
+    '<span style="color:#777">TVA</span><span id="'+idp+'_tva" style="text-align:right">—</span>'+
+    '<span style="color:#777;font-weight:700">Total TVA incl.</span><span id="'+idp+'_ttc" style="text-align:right;font-weight:700">—</span></div>';
+  ccDlg(
+  '<div style="font-weight:700;margin-bottom:8px;text-align:center">Mutation</div>'+
+  '<div style="display:flex;gap:14px;align-items:flex-start">'+
+    '<div style="width:238px;flex:none;border:1px solid #cfd8db;border-radius:6px;max-height:560px;overflow:auto;background:#fff">'+
+      '<div style="display:flex;gap:6px;padding:3px 8px;font-size:10.5px;color:#003346;font-weight:700;background:#eef3f5;position:sticky;top:0"><span style="width:46px">CFC</span><span style="flex:1;text-align:right">Montant</span><span style="flex:1;text-align:right">Mutation</span></div>'+list+'</div>'+
+    '<div style="flex:1;min-width:0">'+
+      '<div class="cc-cols"><div><label>Genre de mutation</label><select id="cm_genre" onchange="ccMutPrev()">'+
+        Object.keys(CC_MUT_GENRES).map(g=>'<option value="'+g+'"'+(v.genre===g?' selected':'')+'>'+CC_MUT_GENRES[g]+'</option>').join('')+'</select></div>'+
+      '<div><label>Statut</label><select id="cm_statut"><option value="brouillon"'+(v.statut==='brouillon'?' selected':'')+'>Brouillon</option><option value="definitif"'+(v.statut!=='brouillon'?' selected':'')+'>Définitif</option></select></div></div>'+
+      '<div class="cc-cols">'+
+        '<div>'+blk('Origine de la mutation','<div id="cm_orig" style="font-size:12.5px;line-height:1.5">—</div>')+'</div>'+
+        '<div>'+blk('Avant mutation',trip('cm_b'))+'</div>'+
+        '<div>'+blk('Après mutation',trip('cm_as'))+'</div></div>'+
+      '<div class="cc-cols">'+
+        '<div>'+blk('Destination de la mutation','<div id="cm_dstwrap"><select id="cm_dst" onchange="ccMutPrev()"><option value="">—</option>'+ccCfcOpts(v.dst)+'</select><div id="cm_dst_ent" style="font-size:11.5px;color:#777;margin-top:6px"></div></div>')+'</div>'+
+        '<div>'+blk('Mutation','<div style="display:grid;grid-template-columns:86px 1fr;gap:4px 8px;font-size:12px;align-items:center">'+
+          '<span style="color:#777">Total HT</span><input type="text" id="cm_ht" style="text-align:right" value="'+(v.ht!==''&&v.ht!=null?v.ht:'')+'" oninput="ccMutHt()">'+
+          '<span style="color:#777">TVA %</span><input type="text" id="cm_tva" style="text-align:right" value="'+v.tva+'" oninput="ccMutHt()">'+
+          '<span style="color:#777;font-weight:700">Total TVA incl.</span><input type="text" id="cm_ttc" style="text-align:right;font-weight:700" oninput="ccMutTtc()"></div>')+'</div>'+
+        '<div>'+blk('Après mutation',trip('cm_ad'))+'</div></div>'+
+      '<div class="cc-cols" style="margin-top:10px"><div><label>Numéro de mutation</label><input type="text" id="cm_num" value="'+(v.num||'')+'"></div>'+
+      '<div><label>Désignation</label><input type="text" id="cm_des" value="'+pvEsc(v.des||'')+'"></div>'+
+      '<div><label>Date</label><input type="date" id="cm_date" value="'+(v.date||'')+'"></div></div>'+
+      '<label>Description</label><textarea id="cm_desc" rows="3">'+pvEsc(v.desc||'')+'</textarea>'+
+      '<div style="text-align:right;margin-top:12px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
+      '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSaveMut(window._ccMutId)">OK</button></div>'+
+    '</div></div>', 1080);
+  ccMutHt(); ccMutSel();
+}
+function ccMutHt(){ const htEl=document.getElementById('cm_ht'); if(!htEl) return;
+  const ht=ccP(htEl.value), tva=ccP(document.getElementById('cm_tva').value);
+  document.getElementById('cm_ttc').value = htEl.value.trim()===''?'':String(Math.round(ht*(1+tva/100)*100)/100);
+  ccMutPrev(); }
+function ccMutTtc(){ const ttcEl=document.getElementById('cm_ttc'); if(!ttcEl) return;
+  const ttc=ccP(ttcEl.value), tva=ccP(document.getElementById('cm_tva').value);
+  document.getElementById('cm_ht').value = ttcEl.value.trim()===''?'':String(Math.round(ttc/(1+tva/100)*100)/100);
+  ccMutPrev(); }
+function ccMutSel(){
+  document.querySelectorAll('#cc_ecr_box .ccm-it').forEach(el=>{ el.style.background=(el.dataset.c===window._ccMutSrc)?'#dbe9f3':''; });
   ccMutPrev();
 }
 function ccMutPrev(){
-  const g=document.getElementById('cm_genre').value, src=document.getElementById('cm_src').value, dst=document.getElementById('cm_dst').value;
-  const ht=ccP(document.getElementById('cm_ht').value), tva=ccP(document.getElementById('cm_tva').value);
-  const ttc=Math.round(ht*(1+tva/100)*100)/100;
-  document.getElementById('cm_ttc').textContent=ccF(ttc);
-  const C=ccAgg(ccA());
-  const line=(c,delta)=>{ const a=C.agg[c]; if(!a) return '';
-    return '<div><b>'+pvEsc(c)+'</b> : DG rév. '+ccF(a.dgRev)+' → <b>'+ccF(a.dgRev+delta)+'</b> après mutation</div>'; };
-  let hh='';
-  if(g==='transfert'){ hh=line(src,-ttc)+(dst?line(dst,ttc):'<div style="color:#b00">Choisissez la destination du transfert.</div>'); }
-  else if(g==='benef') hh=line(src,-ttc); else hh=line(src,ttc);
-  document.getElementById('cm_prev').innerHTML=hh||'—';
+  const gEl=document.getElementById('cm_genre'); if(!gEl) return;
+  const A=ccA(); const src=window._ccMutSrc||''; const g=gEl.value;
+  const tva=ccP(document.getElementById('cm_tva').value);
+  const ht=ccP(document.getElementById('cm_ht').value);
+  const eff=ccMutEff({genre:g, ht:ht, tva:tva});
+  const C=ccAgg(A);
+  const r=A.rows.find(x=>x.cfc===src)||{};
+  document.getElementById('cm_orig').innerHTML='<b>'+pvEsc(src)+'</b> '+pvEsc(r.lbl||ccCatLbl(src)||'')+'<br>'+(r.ent?pvEsc(r.ent):'Aucune entreprise')+'<br>—';
+  const set=(idp,ttc)=>{ const h=ttc/(1+tva/100);
+    document.getElementById(idp+'_ht').textContent=ccF(h);
+    document.getElementById(idp+'_tva').textContent=ccF(ttc-h);
+    document.getElementById(idp+'_ttc').textContent=ccF(ttc); };
+  const aSrc=(C.agg[src]||{}).dgRev||0;
+  set('cm_b', aSrc); set('cm_as', aSrc+eff.src);
+  const isT=(g==='transfert');
+  document.getElementById('cm_dstwrap').style.opacity=isT?'1':'0.35';
+  document.getElementById('cm_dst').disabled=!isT;
+  const dst=isT?document.getElementById('cm_dst').value:'';
+  const rd=A.rows.find(x=>x.cfc===dst);
+  document.getElementById('cm_dst_ent').textContent=rd?(rd.ent||'Aucune entreprise'):'';
+  if(dst){ const aDst=((C.agg[dst]||{}).dgRev)||0; set('cm_ad', aDst+eff.dst); }
+  else { ['cm_ad_ht','cm_ad_tva','cm_ad_ttc'].forEach(i=>document.getElementById(i).textContent='—'); }
 }
 function ccSaveMut(id){
   const A=ccA();
   const o={type:'mut', genre:document.getElementById('cm_genre').value,
-    src:document.getElementById('cm_src').value, dst:document.getElementById('cm_dst').value||null,
+    src:window._ccMutSrc||'', dst:null,
     ht:ccP(document.getElementById('cm_ht').value), tva:ccP(document.getElementById('cm_tva').value),
     num:document.getElementById('cm_num').value, date:document.getElementById('cm_date').value,
-    des:document.getElementById('cm_des').value, statut:document.getElementById('cm_statut').value};
-  if(o.genre==='transfert'&&!o.dst){ toast('Choisissez la destination du transfert.'); return; }
+    des:document.getElementById('cm_des').value, desc:document.getElementById('cm_desc').value,
+    statut:document.getElementById('cm_statut').value};
+  if(!o.src){ toast('Choisissez le CFC d’origine dans la liste de gauche.'); return; }
+  if(o.genre==='transfert'){ o.dst=document.getElementById('cm_dst').value||null;
+    if(!o.dst){ toast('Choisissez la destination du transfert.'); return; }
+    if(o.dst===o.src){ toast('Origine et destination identiques.'); return; } }
   if(id){ const e=A.ecr.find(x=>x.id===id); Object.assign(e,o); } else { o.id=pvId(); A.ecr.push(o); }
   ccEnsureRow(A,o.src); if(o.dst) ccEnsureRow(A,o.dst);
   _ccOpen[o.src]=true; ccPersist(); ccDlgClose(); ccRender();
@@ -14327,7 +14446,7 @@ function ccSavePay(id,hors){
   else { o.ref=(document.getElementById('cp_ref')||{}).value||null; o.cfc=null;
     if(!o.ref){ toast('Choisissez le contrat (ou utilisez « hors contrat »).'); return; } }
   if(id){ const e=A.ecr.find(x=>x.id===id); Object.assign(e,o); } else { o.id=pvId(); A.ecr.push(o); }
-  const c=ccPayCfc(o); if(c){ ccEnsureRow(A,c); _ccOpen[c]=true; }
+  const c=ccPayCfc(A,o); if(c){ ccEnsureRow(A,c); _ccOpen[c]=true; }
   ccPersist(); ccDlgClose(); ccRender();
 }
 function ccDlgProv(id,cfc){

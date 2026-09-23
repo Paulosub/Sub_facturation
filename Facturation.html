@@ -949,6 +949,31 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 #pv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
 #pv_out .pv-tb th{font-weight:bold;padding:6px 10px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
 #pv_out .pv-tb td{padding:5px 10px;border-top:1px solid #f0f0f0}
+/* ── Contrôle du coût ── */
+#cc_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
+#cc_out .pv-tb th{font-weight:bold;padding:6px 10px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+#cc_out .pv-tb td{padding:5px 10px;border-top:1px solid #f0f0f0}
+#cc_out .cc-tb{border-collapse:collapse;min-width:1160px;width:100%;font-size:12px;background:#fff;border:1px solid #d5d5d5}
+#cc_out .cc-tb th{font-weight:bold;padding:5px 7px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:right;white-space:nowrap;font-size:10.5px;text-transform:uppercase;letter-spacing:.2px;position:sticky;top:0;z-index:2}
+#cc_out .cc-tb th.cc-g{text-align:left}
+#cc_out .cc-tb td{padding:2px 7px;border-top:1px solid #f2f2f2;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#cc_out .cc-tb td.cc-g{text-align:left}
+#cc_out .cc-l1>td{background:#e8eef1;font-weight:700;border-top:1px solid #b9c8cd}
+#cc_out .cc-l2>td{font-weight:700;background:#f5f8fa}
+#cc_out .cc-ecr>td{color:#555;font-size:11.5px;border-top:none;padding-top:0;padding-bottom:1px;background:#fcfdfe}
+#cc_out .cc-mut{color:#e08b00!important}
+#cc_out .cc-con{color:#1a73c8!important}
+#cc_out .cc-pay{color:#2e7d32!important}
+#cc_out .cc-red{color:#c62828!important;font-weight:700}
+#cc_out .cc-in{text-align:right;border:1px solid transparent;background:transparent;border-radius:3px;padding:1px 3px;font-size:12px;font-family:inherit;width:88px;font-variant-numeric:tabular-nums}
+#cc_out .cc-in:hover{border-color:#d7dde0}#cc_out .cc-in:focus{border-color:#0a6e84;background:#fff;outline:none}
+#cc_out .cc-int{text-align:left;width:96%;box-sizing:border-box}
+#cc_out .cc-act{visibility:hidden;cursor:pointer;color:#0a6e84;font-weight:700;padding:0 2px}
+#cc_out tr:hover .cc-act{visibility:visible}
+#cc_out .cc-tgl{cursor:pointer;color:#8aa0a8;display:inline-block;width:12px}
+#cc_ecr_box label{display:block;font-size:11px;color:#5a6b72;margin:9px 0 2px;text-transform:uppercase;letter-spacing:.3px}
+#cc_ecr_box input[type=text],#cc_ecr_box input[type=date],#cc_ecr_box input[type=number],#cc_ecr_box select,#cc_ecr_box textarea{width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:12.5px;font-family:inherit}
+#cc_ecr_box .cc-cols{display:flex;gap:14px}#cc_ecr_box .cc-cols>div{flex:1}
 #pv_out .pv-tb tbody tr:hover td{background:#eef4f9}
 .pv-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600}
 .pv-badge.an{background:#fdeed8;color:#9a6210;border:1px solid #e8c78f}
@@ -1008,18 +1033,30 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
   </div>
 </div>
 
-<!-- ── VUE : CONTRÔLE DU COÛT (squelette à structurer) ── -->
+<!-- ── VUE : CONTRÔLE DU COÛT — budget par CFC, adjudications, paiements, prévision et écarts ── -->
 <div class="panel" id="panel-controle-cout">
   <div class="home-wrap">
-    <div class="home-title" style="margin-top:52px">Contrôle du coût</div>
-    <div class="home-sub">Suivi du coût de l'ouvrage par affaire</div>
-    <div class="adm-wrap">
-      <div style="padding:26px;border:1px dashed #c9c9c9;border-radius:8px;color:#777;font-size:13.5px;max-width:660px;line-height:1.55">
-        Module prêt à être construit : budget par CFC, adjudications, factures et situation,
-        prévision du coût final et écarts.
+    <div class="home-title" style="margin-top:44px">Contrôle du coût</div>
+    <div class="home-sub">Suivi du coût de l'ouvrage par affaire — budget par CFC, adjudications, avenants, paiements, prévision du coût final et écarts</div>
+    <div class="adm-wrap" style="max-width:none;padding:2px 20px 44px">
+      <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-sm" id="cc_addaff" onclick="ccAddAffOpen()" title="Activer une affaire pour le contrôle du coût">✚ Ajouter une nouvelle affaire</button>
+        <span id="cc_ctx" style="margin-left:auto;color:#777;font-size:12px"></span>
       </div>
+      <div id="cc_out" style="margin-top:12px"></div>
     </div>
   </div>
+</div>
+<div id="cc_aff_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:9000">
+  <div style="background:#fff;width:540px;max-width:92vw;margin:60px auto;border-radius:10px;padding:18px 22px;box-shadow:0 8px 40px rgba(0,0,0,.35)">
+    <div style="font-weight:700;margin-bottom:8px">Ajouter une affaire au contrôle du coût</div>
+    <input id="cc_aff_f" placeholder="Filtrer par code ou nom de projet…" oninput="ccAffFill()" style="width:100%;box-sizing:border-box;padding:7px 9px;margin-bottom:8px;border:1px solid #ccc;border-radius:6px">
+    <div id="cc_aff_ls" style="max-height:330px;overflow:auto;border:1px solid #ddd;border-radius:6px"></div>
+    <div style="text-align:right;margin-top:10px"><button class="btn btn-sm" onclick="document.getElementById('cc_aff_ov').style.display='none'">Annuler</button></div>
+  </div>
+</div>
+<div id="cc_ecr_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:9000;overflow:auto">
+  <div id="cc_ecr_box" style="background:#fff;width:760px;max-width:94vw;margin:48px auto;border-radius:10px;padding:18px 22px;box-shadow:0 8px 40px rgba(0,0,0,.35)"></div>
 </div>
 
 <!-- ── VUE : DEVIS (squelette à structurer) ── -->
@@ -3585,6 +3622,7 @@ function goTab(name, opts) {
   if(name==='backup') { const cb=document.getElementById('backup_auto'); if(cb) cb.checked=backupAutoEnabled(); backupPing(); renderCreationCharts(); renderCreationList(); refreshBackupFiles(); }
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
+  if(name==='controle-cout') ccRender();
   if(name==='heures') renderHeures();
   if(name==='feuille-heures') fhRender();
   if(name==='rapport') rapRender();
@@ -10457,6 +10495,7 @@ function buildBackupPayload(){
     sa_vacances: g('sa_vacances') || {},
     sa_vac_saisies: g('sa_vac_saisies') || [],
     sa_pv_data: g('sa_pv_data') || {},
+    sa_cout: g('sa_cout') || {},
     sa_adr: g('sa_adr') || {ent:[],adr:[],seq:1},
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
@@ -10633,6 +10672,7 @@ function applyBackupData(data, name){
     if(data.sa_vacances && typeof data.sa_vacances==='object') localStorage.setItem('sa_vacances', JSON.stringify(data.sa_vacances));
     if(Array.isArray(data.sa_vac_saisies)) localStorage.setItem('sa_vac_saisies', JSON.stringify(data.sa_vac_saisies));
     if(data.sa_pv_data && typeof data.sa_pv_data==='object') localStorage.setItem('sa_pv_data', JSON.stringify(data.sa_pv_data));
+    if(data.sa_cout && typeof data.sa_cout==='object'){ localStorage.setItem('sa_cout', JSON.stringify(data.sa_cout)); try{ ccData=JSON.parse(JSON.stringify(data.sa_cout)); }catch(e){} }
     if(data.sa_adr && typeof data.sa_adr==='object') localStorage.setItem('sa_adr', JSON.stringify(data.sa_adr));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
@@ -13862,6 +13902,7 @@ function loadPersist() {
   try { const d=localStorage.getItem('sa_vacances'); if(d) vacances=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_vac_saisies'); if(d) vacSaisies=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_pv_data'); if(d) pvData=JSON.parse(d); } catch(e){}
+  try { const d2=localStorage.getItem('sa_cout'); if(d2) ccData=JSON.parse(d2); } catch(e){}
   try { const d=localStorage.getItem('sa_adr'); if(d) adrData=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_annuel'); if(d) collabAnnuel=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_mensuel'); if(d) collabMensuel=JSON.parse(d); } catch(e){}
@@ -13891,6 +13932,446 @@ function migratePhasesPct(){
            console.log('Migration avancements de phase : '+n+' facture(s) converties fractions → pourcents'); }
   }catch(e){ console.error('migratePhasesPct', e); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTRÔLE DU COÛT — reproduction du contrôle des coûts type Messerli :
+   postes CFC hiérarchiques (1/2/3 chiffres et plus), écritures colorées
+   (MUTATIONS orange · CONTRATS/AVENANTS bleu · PAIEMENTS vert), colonnes
+   DG · Mutations · Contrats+avenants · Avenants · Provision · DG rév. ·
+   Paiements · Coût probable · État du coût · DG %. Données par affaire
+   (sa_cout), manipulation directe dans le tableau + dialogues d'écriture.
+═══════════════════════════════════════════════════════════════════════════ */
+let ccData={}, _ccAff=null, _ccOpen={};
+function ccPersist(){ try{ localStorage.setItem('sa_cout', JSON.stringify(ccData)); return true; }
+  catch(e){ toast('Stockage plein — modification NON enregistrée.'); return false; } }
+function ccP(v){ const n=parseFloat(String(v==null?'':v).replace(/[’'\s]/g,'').replace(',','.')); return isNaN(n)?0:n; }
+function ccF(n){ n=+n||0; const neg=n<-0.004; n=Math.abs(n); let p=n.toFixed(2).split('.');
+  return (neg?'−':'')+p[0].replace(/\B(?=(\d{3})+(?!\d))/g,"'")+'.'+p[1]; }
+function ccF0(n){ return Math.abs(+n||0)<0.005 ? '' : ccF(n); }   // cellule vide quand zéro (comme le modèle)
+function ccDfr(d){ if(!d) return ''; const p=String(d).split('-'); return p.length===3 ? p[2]+'.'+p[1]+'.'+p[0].slice(2) : d; }
+function ccNorm(c){ return String(c||'').replace(/\./g,''); }
+function ccLvl(c){ const L=ccNorm(c).length; return L<=1?1:(L===2?2:3); }
+function ccA(){ return ccData[_ccAff]; }
+function ccAffName(code){ const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===code):null; return f&&f.projet?f.projet:''; }
+function ccCat(){ return (typeof pvCfcAll==='function')?pvCfcAll():[]; }
+function ccCatLbl(c){ const f=ccCat().find(x=>x[0]===c); return f?f[1]:''; }
+function ccNewAff(code){
+  const rows=[];
+  const pvc=(typeof pvData!=='undefined'&&pvData[code]&&pvData[code].cfg)?pvData[code].cfg:null;
+  if(pvc&&Array.isArray(pvc.cfc)) pvc.cfc.forEach(c=>{ const e=(pvc.ent||{})[c]||{};
+    rows.push({id:pvId(), cfc:c, lbl:ccCatLbl(c), ent:e.soc||'', dg:0}); });
+  return {tva:8.1, rows:rows, ecr:[]};
+}
+function ccEnsureRow(A,cfc){ if(!cfc) return; if(!A.rows.some(r=>r.cfc===cfc))
+  A.rows.push({id:pvId(), cfc:cfc, lbl:ccCatLbl(cfc), ent:'', dg:0}); }
+function ccTtc(e){ return Math.round((ccP(e.ht)*(1+ccP(e.tva)/100))*100)/100; }
+function ccEntList(){
+  const s=new Set();
+  try{ const adr=JSON.parse(localStorage.getItem('sa_adr')||'{}'); (adr.ent||[]).forEach(x=>{ if(x.nom) s.add(x.nom); }); }catch(e){}
+  try{ Object.values(typeof pvData!=='undefined'?pvData:{}).forEach(A=>{ Object.values((A.cfg||{}).ent||{}).forEach(x=>{ if(x.soc) s.add(x.soc); }); }); }catch(e){}
+  Object.values(ccData).forEach(A=>(A.ecr||[]).forEach(e=>{ if(e.ent) s.add(e.ent); }));
+  return [...s].sort((a,b)=>a.localeCompare(b));
+}
+function ccNum(type){ const A=ccA(); let m=0; (A.ecr||[]).forEach(e=>{ if(e.type===type||((type==='contrat')&&e.type==='avenant')) m=Math.max(m,+e.num||0); }); return m+1; }
+/* ── calculs : valeurs PROPRES par poste, puis agrégation par préfixe CFC ── */
+function ccOwn(A){
+  const o={};
+  const at=c=>{ if(!o[c]) o[c]={dg:0,mut:0,con:0,ave:0,prov:0,pay:0,ff:false,cp:null}; return o[c]; };
+  A.rows.forEach(r=>{ at(r.cfc).dg += ccP(r.dg); });
+  (A.ecr||[]).forEach(e=>{
+    if(e.type==='mut'){ const t=ccTtc(e);
+      if(e.genre==='benef'){ if(e.src) at(e.src).mut -= t; }
+      else if(e.genre==='perte'){ if(e.src) at(e.src).mut += t; }
+      else { if(e.src) at(e.src).mut -= t; if(e.dst) at(e.dst).mut += t; } }
+    else if(e.type==='contrat'||e.type==='avenant'){ (e.pos||[]).forEach(p=>{ const v=at(p.cfc);
+      v.con += ccP(p.mnt); if(e.type==='avenant') v.ave += ccP(p.mnt); }); }
+    else if(e.type==='pay'){ const c=ccPayCfc(e); if(c){ const v=at(c); v.pay += ccP(e.mnt); if(e.typeP==='final') v.ff=true; } }
+    else if(e.type==='prov'){ at(e.cfc).prov += ccP(e.mnt); }
+    else if(e.type==='cp'){ at(e.cfc).cp = ccP(e.mnt); }
+  });
+  Object.values(o).forEach(v=>{
+    v.dgRev = v.dg + v.mut;
+    const base = (v.cp!=null) ? v.cp : ((v.con>0 ? v.con : v.dgRev) + v.prov);
+    v.prob = Math.max(base, v.pay);
+    v.etat = v.prob - v.dgRev;
+  });
+  return o;
+}
+function ccPayCfc(e){ if(e.cfc) return e.cfc;
+  const A=ccA(); const c=(A.ecr||[]).find(x=>x.id===e.ref); return c ? c.lot : null; }
+function ccAgg(A){
+  const own=ccOwn(A), agg={};
+  const codes=A.rows.map(r=>r.cfc);
+  codes.forEach(c=>{ const n=ccNorm(c);
+    const a={dg:0,mut:0,con:0,ave:0,prov:0,pay:0,ff:false,dgRev:0,prob:0,etat:0};
+    Object.keys(own).forEach(k=>{ if(ccNorm(k)===n || ccNorm(k).startsWith(n)){ const v=own[k];
+      ['dg','mut','con','ave','prov','pay','dgRev','prob','etat'].forEach(f=>a[f]+=v[f]); if(v.ff) a.ff=true; } });
+    agg[c]=a; });
+  const tot={dg:0,mut:0,con:0,ave:0,prov:0,pay:0,dgRev:0,prob:0,etat:0,ff:false};
+  Object.values(own).forEach(v=>{ ['dg','mut','con','ave','prov','pay','dgRev','prob','etat'].forEach(f=>tot[f]+=v[f]); if(v.ff) tot.ff=true; });
+  return {own:own, agg:agg, tot:tot};
+}
+/* ── écritures PROPRES à un CFC (pour l'affichage déplié) ── */
+function ccEcrOf(A,cfc){
+  const out=[];
+  (A.ecr||[]).forEach(e=>{
+    if(e.type==='mut'&&(e.src===cfc||e.dst===cfc)) out.push(e);
+    else if((e.type==='contrat'||e.type==='avenant')&&(e.pos||[]).some(p=>p.cfc===cfc)) out.push(e);
+    else if(e.type==='pay'&&ccPayCfc(e)===cfc) out.push(e);
+    else if((e.type==='prov'||e.type==='cp')&&e.cfc===cfc) out.push(e);
+  });
+  return out;
+}
+/* ── sélection / ajout d'affaire ── */
+function ccSelAff(v){ _ccAff=v; ccRender(); }
+function ccAddAffOpen(){ document.getElementById('cc_aff_ov').style.display='block';
+  document.getElementById('cc_aff_f').value=''; ccAffFill(); }
+function ccAffFill(){
+  const f=(document.getElementById('cc_aff_f').value||'').toLowerCase();
+  const ls=(typeof affairesAll==='function')?affairesAll():[];
+  const html=ls.filter(x=>!ccData[x.code] && ((x.code||'').toLowerCase().includes(f)||(x.projet||'').toLowerCase().includes(f)))
+    .slice(0,80).map(x=>'<div style="padding:6px 10px;cursor:pointer;font-size:12.5px" '+
+      'onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" '+
+      'onclick="ccAddAff('+PV_Q+pvEscA(x.code)+PV_Q+')"><b>'+pvEsc(x.code)+'</b> '+pvEsc(x.projet||'')+'</div>').join('');
+  document.getElementById('cc_aff_ls').innerHTML=html||'<div style="padding:10px;color:#999;font-size:12px">Aucune affaire trouvée.</div>';
+}
+function ccAddAff(code){
+  document.getElementById('cc_aff_ov').style.display='none';
+  if(!ccData[code]) ccData[code]=ccNewAff(code);
+  _ccAff=code; ccPersist(); ccRender();
+  toast('Affaire '+code+' ajoutée'+(ccData[code].rows.length?' — CFC et entreprises repris du module PV.':' — ajoutez les postes CFC.'));
+}
+function ccDelAff(code){ chConfirm('Supprimer le contrôle du coût de l’affaire '+code+' (postes et écritures) ?', ()=>{
+  delete ccData[code]; if(_ccAff===code) _ccAff=null; ccPersist(); ccRender(); }); }
+function ccImportPV(){
+  const A=ccA(); const pvc=(typeof pvData!=='undefined'&&pvData[_ccAff]&&pvData[_ccAff].cfg)?pvData[_ccAff].cfg:null;
+  if(!pvc||!Array.isArray(pvc.cfc)||!pvc.cfc.length){ toast('Aucune configuration PV pour cette affaire.'); return; }
+  let n=0; pvc.cfc.forEach(c=>{ if(!A.rows.some(r=>r.cfc===c)){ const e=(pvc.ent||{})[c]||{};
+    A.rows.push({id:pvId(), cfc:c, lbl:ccCatLbl(c), ent:e.soc||'', dg:0}); n++; } });
+  ccPersist(); ccRender(); toast(n+' poste(s) CFC importé(s) du module PV.');
+}
+/* ── édition directe (cellules) ── */
+function ccSetRow(id,k,el){ const A=ccA(); const r=A.rows.find(x=>x.id===id); if(!r) return;
+  r[k] = (k==='dg') ? ccP(el.value) : el.value;
+  ccPersist(); if(k==='dg'){ el.value = r.dg? ccF(r.dg):''; ccRefreshCalc(); } }
+function ccTgl(cfc){ _ccOpen[cfc]=!_ccOpen[cfc]; ccRender(); }
+function ccTglAll(on){ const A=ccA(); _ccOpen={}; if(on) A.rows.forEach(r=>_ccOpen[r.cfc]=true); ccRender(); }
+function ccSetTva(el){ ccA().tva=ccP(el.value)||8.1; ccPersist(); }
+function ccDelPoste(id){ const A=ccA(); const r=A.rows.find(x=>x.id===id); if(!r) return;
+  const used=ccEcrOf(A,r.cfc).length;
+  chConfirm('Supprimer le poste '+r.cfc+(used?' — ses '+used+' écriture(s) resteront rattachées au code' :'')+' ?', ()=>{
+    A.rows=A.rows.filter(x=>x.id!==id); ccPersist(); ccRender(); });
+}
+function ccDelEcr(id){ const A=ccA(); const e=A.ecr.find(x=>x.id===id); if(!e) return;
+  chConfirm('Supprimer définitivement cette écriture ?', ()=>{ A.ecr=A.ecr.filter(x=>x.id!==id); ccPersist(); ccRender(); }); }
+/* ── rendu ── */
+function ccRefreshCalc(){ ccRender(); }
+function ccRender(){
+  const out=document.getElementById('cc_out'), ctx=document.getElementById('cc_ctx');
+  if(!out) return;
+  const ba=document.getElementById('cc_addaff');
+  if(ba) ba.style.display=_ccAff?'none':'';
+  if(!_ccAff||!ccA()){
+    ctx.textContent=Object.keys(ccData).length+' affaire(s)';
+    const codes=Object.keys(ccData).sort();
+    if(!codes.length){ out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Aucune affaire — ajoutez-en une avec le bouton ✚ (les CFC et entreprises du module PV sont repris automatiquement).</div>'; return; }
+    out.innerHTML='<table class="pv-tb"><thead><tr><th>Affaire</th><th>Projet</th><th style="text-align:right">Postes</th><th style="text-align:right">DG rév. TTC</th><th style="text-align:right">Coût probable TTC</th><th style="text-align:right">État du coût</th><th></th></tr></thead><tbody>'+
+      codes.map(c=>{ const T=ccAgg(ccData[c]).tot;
+        return '<tr style="cursor:pointer" onclick="ccSelAff('+PV_Q+pvEscA(c)+PV_Q+')">'+
+        '<td><b>'+pvEsc(c)+'</b></td><td>'+pvEsc(ccAffName(c)).slice(0,60)+'</td>'+
+        '<td style="text-align:right">'+ccData[c].rows.length+'</td>'+
+        '<td style="text-align:right">'+ccF(T.dgRev)+'</td>'+
+        '<td style="text-align:right">'+ccF(T.prob)+'</td>'+
+        '<td style="text-align:right;color:'+(T.etat>0.005?'#c62828':'#1e6b2d')+'">'+ccF(T.etat)+'</td>'+
+        '<td style="text-align:right"><span class="cc-act" onclick="event.stopPropagation();ccDelAff('+PV_Q+pvEscA(c)+PV_Q+')" title="Supprimer">✕</span></td></tr>'; }).join('')+
+      '</tbody></table>';
+    return;
+  }
+  const A=ccA(), C=ccAgg(A);
+  ctx.textContent=A.rows.length+' postes · '+(A.ecr||[]).length+' écritures';
+  const rows=A.rows.slice().sort((a,b)=>String(a.cfc).localeCompare(String(b.cfc),undefined,{numeric:true}));
+  let h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'+
+    '<button class="btn btn-sm" onclick="ccSelAff(null)">← Affaires</button>'+
+    '<span style="font-weight:700;font-size:14px">'+pvEsc(_ccAff)+' — '+pvEsc(ccAffName(_ccAff)).slice(0,60)+'</span>'+
+    '<span style="flex:1"></span>'+
+    '<button class="btn btn-sm" onclick="ccDlgPoste()">✚ Poste CFC</button>'+
+    '<button class="btn btn-sm" onclick="ccImportPV()" title="Reprend les CFC et entreprises du module PV de chantier">⟳ CFC du PV</button>'+
+    '<button class="btn btn-sm" onclick="ccTglAll(true)">Tout déplier</button>'+
+    '<button class="btn btn-sm" onclick="ccTglAll(false)">Tout replier</button>'+
+    '<label style="font-size:12px;color:#555">TVA % <input value="'+(A.tva!=null?A.tva:8.1)+'" onchange="ccSetTva(this)" style="width:52px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:2px 4px;font-size:12px"></label>'+
+    '</div>';
+  h+='<div style="overflow:auto;max-height:calc(100vh - 260px)"><table class="cc-tb"><thead><tr>'+
+    '<th class="cc-g" style="width:56px">CFC</th><th class="cc-g">Désignation</th><th class="cc-g" style="width:150px">Entreprise</th>'+
+    '<th>DG</th><th>Mutations</th><th>Contrats + aven.</th><th>Avenants</th><th>Provision</th><th>DG rév. TTC</th>'+
+    '<th>Paiements</th><th>Coût probable</th><th>État du coût</th><th>DG %</th><th style="width:44px"></th></tr></thead><tbody>';
+  const totDgRev=C.tot.dgRev||0;
+  rows.forEach(r=>{
+    const a=C.agg[r.cfc]||{dg:0,mut:0,con:0,ave:0,prov:0,pay:0,dgRev:0,prob:0,etat:0};
+    const lvl=ccLvl(r.cfc), cls=lvl===1?'cc-l1':(lvl===2?'cc-l2':'');
+    const hasEcr=ccEcrOf(A,r.cfc).length>0;
+    const pct= totDgRev>0.005 ? (a.dgRev/totDgRev*100) : 0;
+    h+='<tr class="'+cls+'">'+
+      '<td class="cc-g"><span class="cc-tgl" onclick="ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+(hasEcr?(_ccOpen[r.cfc]?'▾':'▸'):'')+'</span><b>'+pvEsc(r.cfc)+'</b></td>'+
+      '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(r.lbl||'')+'" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'lbl'+PV_Q+',this)"></td>'+
+      '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(r.ent||'')+'" list="cc_ent_dl" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'ent'+PV_Q+',this)"></td>'+
+      '<td><input class="cc-in" value="'+(ccP(r.dg)?ccF(r.dg):'')+'" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'dg'+PV_Q+',this)"></td>'+
+      '<td class="cc-mut">'+ccF0(a.mut)+'</td>'+
+      '<td class="cc-con">'+ccF0(a.con)+'</td>'+
+      '<td class="cc-con">'+ccF0(a.ave)+'</td>'+
+      '<td>'+ccF0(a.prov)+'</td>'+
+      '<td><b>'+ccF0(a.dgRev)+'</b></td>'+
+      '<td class="'+(a.ff?'cc-red':'cc-pay')+'">'+(a.ff?'FF':'')+ccF0(a.pay)+'</td>'+
+      '<td><b>'+ccF0(a.prob)+'</b></td>'+
+      '<td style="color:'+(a.etat>0.005?'#c62828':(a.etat<-0.005?'#1e6b2d':'#555'))+'">'+ccF0(a.etat)+'</td>'+
+      '<td>'+(pct>=0.05?pct.toFixed(1)+' %':'')+'</td>'+
+      '<td><span class="cc-act" onclick="ccRowMenu('+PV_Q+pvEscA(r.cfc)+PV_Q+')" title="Nouvelle écriture">✚</span>'+
+      '<span class="cc-act" onclick="ccDelPoste('+PV_Q+r.id+PV_Q+')" title="Supprimer le poste">✕</span></td></tr>';
+    if(_ccOpen[r.cfc]) h+=ccEcrRows(A,r.cfc);
+  });
+  h+='<tr class="cc-l1"><td class="cc-g"></td><td class="cc-g">TOTAL</td><td></td>'+
+    '<td>'+ccF(C.tot.dg)+'</td><td class="cc-mut">'+ccF0(C.tot.mut)+'</td><td class="cc-con">'+ccF0(C.tot.con)+'</td>'+
+    '<td class="cc-con">'+ccF0(C.tot.ave)+'</td><td>'+ccF0(C.tot.prov)+'</td><td>'+ccF(C.tot.dgRev)+'</td>'+
+    '<td class="'+(C.tot.ff?'cc-red':'cc-pay')+'">'+ccF0(C.tot.pay)+'</td><td>'+ccF(C.tot.prob)+'</td>'+
+    '<td style="color:'+(C.tot.etat>0.005?'#c62828':'#1e6b2d')+'">'+ccF0(C.tot.etat)+'</td><td></td><td></td></tr>';
+  h+='</tbody></table></div>';
+  h+='<datalist id="cc_ent_dl">'+ccEntList().map(n=>'<option value="'+pvEsc(n)+'">').join('')+'</datalist>';
+  out.innerHTML=h;
+}
+function ccEcrRows(A,cfc){
+  const es=ccEcrOf(A,cfc); let h='';
+  const cell=(colIdx,txt,cls)=>{ const cells=new Array(11).fill(''); cells[colIdx]='<span class="'+(cls||'')+'">'+txt+'</span>'; return cells; };
+  es.forEach(e=>{
+    let lbl='', cells=new Array(11).fill(''), cls='';
+    if(e.type==='mut'){ const t=ccTtc(e); cls='cc-mut';
+      const g=e.genre==='benef'?'bénéfice d’adjudication':(e.genre==='perte'?'perte sur adjudication':'transfert'+(e.src===cfc?' → '+(e.dst||'?'):' ← '+(e.src||'?')));
+      lbl='&gt; '+g+(e.num?' ['+e.num+']':'')+(e.des?' · '+pvEsc(e.des):'')+(e.date?' · '+ccDfr(e.date):'');
+      const sgn=(e.genre==='perte')?t:(e.genre==='benef'?-t:(e.src===cfc?-t:t));
+      cells[1]=(sgn<0?'−':'')+ccF(Math.abs(sgn));
+    } else if(e.type==='contrat'||e.type==='avenant'){ cls='cc-con';
+      const m=(e.pos||[]).filter(p=>p.cfc===cfc).reduce((s,p)=>s+ccP(p.mnt),0);
+      lbl='&gt; '+(e.type==='avenant'?'Avenant':'Contrat')+' '+(e.num||'')+' · '+ccDfr(e.date)+(e.ent?' · '+pvEsc(e.ent):'')+(e.statut&&e.statut!=='definitif'?' · '+pvEsc(e.statut):'');
+      cells[2]=ccF(m); if(e.type==='avenant') cells[3]=ccF(m);
+    } else if(e.type==='pay'){ cls='cc-pay';
+      lbl='&gt; '+(e.typeP==='final'?'facture finale':'situation '+(e.numP||''))+(e.numF?' · fact. '+pvEsc(e.numF):'')+' · '+ccDfr(e.dateF||e.date)+(e.statut?' · '+pvEsc(e.statut):'');
+      cells[6]=(e.typeP==='final'?'FF':'')+ccF(ccP(e.mnt));
+    } else if(e.type==='prov'){ lbl='&gt; provision'+(e.des?' · '+pvEsc(e.des):''); cells[4]=ccF(ccP(e.mnt)); }
+    else if(e.type==='cp'){ lbl='&gt; coût probable perso'; cells[7]=ccF(ccP(e.mnt)); }
+    h+='<tr class="cc-ecr"><td></td><td class="cc-g '+cls+'" style="padding-left:22px">'+lbl+'</td><td></td>'+
+      '<td></td><td class="'+cls+'">'+(cells[1]||'')+'</td><td class="'+cls+'">'+(cells[2]||'')+'</td><td class="'+cls+'">'+(cells[3]||'')+'</td>'+
+      '<td>'+(cells[4]||'')+'</td><td></td><td class="'+(e.typeP==='final'?'cc-red':cls)+'">'+(cells[6]||'')+'</td><td>'+(cells[7]||'')+'</td><td></td><td></td>'+
+      '<td><span class="cc-act" onclick="ccEditEcr('+PV_Q+e.id+PV_Q+')" title="Éditer">✎</span>'+
+      '<span class="cc-act" onclick="ccDelEcr('+PV_Q+e.id+PV_Q+')" title="Supprimer">✕</span></td></tr>';
+  });
+  return h;
+}
+/* ── menu « nouvelle écriture » + dialogues ── */
+function ccDlg(html){ document.getElementById('cc_ecr_box').innerHTML=html; document.getElementById('cc_ecr_ov').style.display='block'; }
+function ccDlgClose(){ document.getElementById('cc_ecr_ov').style.display='none'; }
+function ccRowMenu(cfc){
+  const b=(lbl,fn,col)=>'<button class="btn btn-sm" style="margin:4px 6px 0 0'+(col?';background:'+col+';color:#fff':'')+'" onclick="'+fn+'">'+lbl+'</button>';
+  ccDlg('<div style="font-weight:700;margin-bottom:6px">Nouvelle écriture — CFC '+pvEsc(cfc)+'</div>'+
+    '<div style="font-size:12px;color:#777;margin-bottom:8px">Mutations en orange · contrats et avenants en bleu · paiements en vert — comme votre contrôle des coûts.</div>'+
+    b('Transfert / mutation…','ccDlgMut(null,'+PV_Q+pvEscA(cfc)+PV_Q+')','#e08b00')+
+    b('Contrat…','ccDlgCon('+PV_Q+'contrat'+PV_Q+',null,'+PV_Q+pvEscA(cfc)+PV_Q+')','#1a73c8')+
+    b('Avenant…','ccDlgCon('+PV_Q+'avenant'+PV_Q+',null,'+PV_Q+pvEscA(cfc)+PV_Q+')','#1a73c8')+
+    b('Paiement sur contrat…','ccDlgPay(null,'+PV_Q+pvEscA(cfc)+PV_Q+',false)','#2e7d32')+
+    b('Paiement hors contrat…','ccDlgPay(null,'+PV_Q+pvEscA(cfc)+PV_Q+',true)','#2e7d32')+
+    b('Provision…','ccDlgProv(null,'+PV_Q+pvEscA(cfc)+PV_Q+')')+
+    b('Coût probable perso…','ccDlgCp('+PV_Q+pvEscA(cfc)+PV_Q+')')+
+    '<div style="text-align:right;margin-top:12px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button></div>');
+}
+function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
+  if(e.type==='mut') ccDlgMut(id); else if(e.type==='contrat') ccDlgCon('contrat',id);
+  else if(e.type==='avenant') ccDlgCon('avenant',id); else if(e.type==='pay') ccDlgPay(id);
+  else if(e.type==='prov') ccDlgProv(id); else if(e.type==='cp') ccDlgCp(e.cfc); }
+function ccCfcOpts(sel){ const A=ccA();
+  const rows=A.rows.slice().sort((a,b)=>String(a.cfc).localeCompare(String(b.cfc),undefined,{numeric:true}));
+  return rows.map(r=>'<option value="'+pvEsc(r.cfc)+'"'+(r.cfc===sel?' selected':'')+'>'+pvEsc(r.cfc)+' '+pvEsc(r.lbl||'')+'</option>').join('');
+}
+function ccToday(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+/* Transfert / bénéfice / perte — avec avant/après sur origine et destination */
+function ccDlgMut(id,cfc){
+  const A=ccA(); const e=id?A.ecr.find(x=>x.id===id):null;
+  const v=e||{genre:'transfert',src:cfc||'',dst:'',ht:'',tva:(A.tva!=null?A.tva:8.1),num:ccNum('mut'),des:'',date:ccToday(),statut:'definitif'};
+  ccDlg('<div style="font-weight:700;margin-bottom:4px;color:#e08b00">'+(e?'Éditer la mutation':'Mutation')+'</div>'+
+    '<div class="cc-cols"><div><label>Genre de mutation</label><select id="cm_genre" onchange="ccMutPrev()">'+
+      '<option value="transfert"'+(v.genre==='transfert'?' selected':'')+'>Transfert</option>'+
+      '<option value="benef"'+(v.genre==='benef'?' selected':'')+'>Bénéfice d’adjudication (− sur origine)</option>'+
+      '<option value="perte"'+(v.genre==='perte'?' selected':'')+'>Perte sur adjudication (+ sur origine)</option></select></div>'+
+    '<div><label>Statut</label><select id="cm_statut"><option value="brouillon"'+(v.statut==='brouillon'?' selected':'')+'>Brouillon</option><option value="definitif"'+(v.statut!=='brouillon'?' selected':'')+'>Définitif</option></select></div></div>'+
+    '<div class="cc-cols"><div><label>Origine de la mutation</label><select id="cm_src" onchange="ccMutPrev()">'+ccCfcOpts(v.src)+'</select></div>'+
+    '<div><label>Destination (transfert)</label><select id="cm_dst" onchange="ccMutPrev()"><option value="">—</option>'+ccCfcOpts(v.dst)+'</select></div></div>'+
+    '<div class="cc-cols"><div><label>Montant HT</label><input type="text" id="cm_ht" value="'+(v.ht!==''?v.ht:'')+'" oninput="ccMutPrev()"></div>'+
+    '<div><label>TVA %</label><input type="text" id="cm_tva" value="'+v.tva+'" oninput="ccMutPrev()"></div>'+
+    '<div><label>Total TVA incl.</label><div id="cm_ttc" style="padding:7px 2px;font-weight:700">0.00</div></div></div>'+
+    '<div id="cm_prev" style="background:#faf6ee;border:1px solid #eadfc8;border-radius:6px;padding:8px 10px;margin-top:10px;font-size:12px;color:#555"></div>'+
+    '<div class="cc-cols"><div><label>Numéro</label><input type="text" id="cm_num" value="'+(v.num||'')+'"></div>'+
+    '<div><label>Date</label><input type="date" id="cm_date" value="'+(v.date||'')+'"></div></div>'+
+    '<label>Désignation</label><input type="text" id="cm_des" value="'+pvEsc(v.des||'')+'">'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSaveMut('+(id?PV_Q+id+PV_Q:'null')+')">OK</button></div>');
+  ccMutPrev();
+}
+function ccMutPrev(){
+  const g=document.getElementById('cm_genre').value, src=document.getElementById('cm_src').value, dst=document.getElementById('cm_dst').value;
+  const ht=ccP(document.getElementById('cm_ht').value), tva=ccP(document.getElementById('cm_tva').value);
+  const ttc=Math.round(ht*(1+tva/100)*100)/100;
+  document.getElementById('cm_ttc').textContent=ccF(ttc);
+  const C=ccAgg(ccA());
+  const line=(c,delta)=>{ const a=C.agg[c]; if(!a) return '';
+    return '<div><b>'+pvEsc(c)+'</b> : DG rév. '+ccF(a.dgRev)+' → <b>'+ccF(a.dgRev+delta)+'</b> après mutation</div>'; };
+  let hh='';
+  if(g==='transfert'){ hh=line(src,-ttc)+(dst?line(dst,ttc):'<div style="color:#b00">Choisissez la destination du transfert.</div>'); }
+  else if(g==='benef') hh=line(src,-ttc); else hh=line(src,ttc);
+  document.getElementById('cm_prev').innerHTML=hh||'—';
+}
+function ccSaveMut(id){
+  const A=ccA();
+  const o={type:'mut', genre:document.getElementById('cm_genre').value,
+    src:document.getElementById('cm_src').value, dst:document.getElementById('cm_dst').value||null,
+    ht:ccP(document.getElementById('cm_ht').value), tva:ccP(document.getElementById('cm_tva').value),
+    num:document.getElementById('cm_num').value, date:document.getElementById('cm_date').value,
+    des:document.getElementById('cm_des').value, statut:document.getElementById('cm_statut').value};
+  if(o.genre==='transfert'&&!o.dst){ toast('Choisissez la destination du transfert.'); return; }
+  if(id){ const e=A.ecr.find(x=>x.id===id); Object.assign(e,o); } else { o.id=pvId(); A.ecr.push(o); }
+  ccEnsureRow(A,o.src); if(o.dst) ccEnsureRow(A,o.dst);
+  _ccOpen[o.src]=true; ccPersist(); ccDlgClose(); ccRender();
+}
+/* Contrat / avenant — entreprise (carnet), lot, positions multi-CFC, statut */
+function ccDlgCon(type,id,cfc){
+  const A=ccA(); const e=id?A.ecr.find(x=>x.id===id):null;
+  const v=e||{ent:(A.rows.find(r=>r.cfc===cfc)||{}).ent||'', lot:cfc||'', pos:[{cfc:cfc||'',mnt:''}],
+    num:ccNum('contrat'), date:ccToday(), statut:'definitif', des:'', ref:null};
+  window._ccPos=JSON.parse(JSON.stringify(v.pos&&v.pos.length?v.pos:[{cfc:cfc||'',mnt:''}]));
+  const contrats=A.ecr.filter(x=>x.type==='contrat');
+  ccDlg('<div style="font-weight:700;margin-bottom:4px;color:#1a73c8">'+(e?'Éditer':'Nouveau')+' '+(type==='avenant'?'avenant':'contrat')+'</div>'+
+    '<div class="cc-cols"><div><label>Entreprise</label><input type="text" id="co_ent" list="cc_ent_dl2" value="'+pvEsc(v.ent||'')+'">'+
+    '<datalist id="cc_ent_dl2">'+ccEntList().map(n=>'<option value="'+pvEsc(n)+'">').join('')+'</datalist></div>'+
+    '<div><label>Lot d’adjudication (CFC principal)</label><select id="co_lot">'+ccCfcOpts(v.lot)+'</select></div></div>'+
+    (type==='avenant'?'<label>Contrat lié</label><select id="co_ref"><option value="">—</option>'+
+      contrats.map(c=>'<option value="'+c.id+'"'+(v.ref===c.id?' selected':'')+'>Contrat '+(c.num||'')+' · '+pvEsc(c.ent||'')+' · '+pvEsc(c.lot||'')+'</option>').join('')+'</select>':'')+
+    '<label>Positions du '+(type==='avenant'?'l’avenant':'contrat')+' (montants TTC)</label>'+
+    '<div id="co_pos"></div>'+
+    '<button class="btn btn-sm" style="margin-top:4px" onclick="_ccPos.push({cfc:'+PV_Q+PV_Q+',mnt:'+PV_Q+PV_Q+'});ccConPos()">✚ Position</button>'+
+    '<div class="cc-cols"><div><label>Numéro</label><input type="text" id="co_num" value="'+(v.num||'')+'"></div>'+
+    '<div><label>Date</label><input type="date" id="co_date" value="'+(v.date||'')+'"></div>'+
+    '<div><label>Statut</label><select id="co_statut">'+['brouillon','en traitement','sur demande','pour signature','definitif'].map(s=>'<option value="'+s+'"'+(v.statut===s?' selected':'')+'>'+(s==='definitif'?'Définitif':s.charAt(0).toUpperCase()+s.slice(1))+'</option>').join('')+'</select></div></div>'+
+    '<label>Désignation</label><input type="text" id="co_des" value="'+pvEsc(v.des||'')+'">'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSaveCon('+PV_Q+type+PV_Q+','+(id?PV_Q+id+PV_Q:'null')+')">OK</button></div>');
+  ccConPos();
+}
+function ccConPos(){
+  const bx=document.getElementById('co_pos'); if(!bx) return;
+  bx.innerHTML=_ccPos.map((p,i)=>'<div style="display:flex;gap:8px;margin-top:4px;align-items:center">'+
+    '<select style="flex:2" onchange="_ccPos['+i+'].cfc=this.value">'+ccCfcOpts(p.cfc)+'</select>'+
+    '<input type="text" style="flex:1;text-align:right" placeholder="Montant TTC" value="'+(p.mnt!==''&&p.mnt!=null?p.mnt:'')+'" oninput="_ccPos['+i+'].mnt=this.value">'+
+    '<span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_ccPos.splice('+i+',1);ccConPos()">×</span></div>').join('');
+}
+function ccSaveCon(type,id){
+  const A=ccA();
+  const pos=_ccPos.map(p=>({cfc:p.cfc,mnt:ccP(p.mnt)})).filter(p=>p.cfc);
+  if(!pos.length){ toast('Ajoutez au moins une position.'); return; }
+  const o={type:type, ent:document.getElementById('co_ent').value.trim(), lot:document.getElementById('co_lot').value,
+    pos:pos, num:document.getElementById('co_num').value, date:document.getElementById('co_date').value,
+    statut:document.getElementById('co_statut').value, des:document.getElementById('co_des').value,
+    ref:(document.getElementById('co_ref')||{}).value||null};
+  if(id){ const e=A.ecr.find(x=>x.id===id); Object.assign(e,o); } else { o.id=pvId(); A.ecr.push(o); }
+  pos.forEach(p=>ccEnsureRow(A,p.cfc));
+  const r=A.rows.find(x=>x.cfc===o.lot); if(r&&!r.ent&&o.ent) r.ent=o.ent;
+  _ccOpen[o.lot]=true; ccPersist(); ccDlgClose(); ccRender();
+}
+/* Paiement — sur contrat (cumul affiché) ou hors contrat ; Situation / Paiement final ; statut */
+function ccDlgPay(id,cfc,hors){
+  const A=ccA(); const e=id?A.ecr.find(x=>x.id===id):null;
+  const contrats=A.ecr.filter(x=>x.type==='contrat');
+  const v=e||{ref:(contrats.find(c=>c.lot===cfc)||{}).id||'', cfc:hors?(cfc||''):'', ent:'', mnt:'',
+    typeP:'sit', statut:'transmis', numP:ccNum('pay'), numF:'', dateF:ccToday(), dateP:'', des:''};
+  const horsMode=e? !e.ref : !!hors;
+  ccDlg('<div style="font-weight:700;margin-bottom:4px;color:#2e7d32">'+(e?'Éditer le paiement':'Paiement '+(horsMode?'hors contrat':'sur contrat'))+'</div>'+
+    (horsMode
+      ?'<div class="cc-cols"><div><label>CFC</label><select id="cp_cfc">'+ccCfcOpts(v.cfc||cfc)+'</select></div>'+
+       '<div><label>Entreprise</label><input type="text" id="cp_ent" list="cc_ent_dl2" value="'+pvEsc(v.ent||'')+'">'+
+       '<datalist id="cc_ent_dl2">'+ccEntList().map(n=>'<option value="'+pvEsc(n)+'">').join('')+'</datalist></div></div>'
+      :'<label>Contrat</label><select id="cp_ref" onchange="ccPayInfo()">'+
+        contrats.map(c=>'<option value="'+c.id+'"'+(v.ref===c.id?' selected':'')+'>Contrat '+(c.num||'')+' · '+pvEsc(c.ent||'')+' · CFC '+pvEsc(c.lot||'')+'</option>').join('')+'</select>'+
+       '<div id="cp_info" style="background:#eef7ee;border:1px solid #cfe3cf;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#444"></div>')+
+    '<div class="cc-cols"><div><label>Type</label><select id="cp_type"><option value="sit"'+(v.typeP!=='final'?' selected':'')+'>Situation / acompte</option><option value="final"'+(v.typeP==='final'?' selected':'')+'>Paiement final (FF)</option></select></div>'+
+    '<div><label>Statut</label><select id="cp_statut">'+['réceptionné','libéré','transmis','débité'].map(s=>'<option'+(v.statut===s?' selected':'')+'>'+s+'</option>').join('')+'</select></div>'+
+    '<div><label>Montant TTC payé</label><input type="text" id="cp_mnt" value="'+(v.mnt!==''?v.mnt:'')+'"></div></div>'+
+    '<div class="cc-cols"><div><label>N° pmt</label><input type="text" id="cp_nump" value="'+(v.numP||'')+'"></div>'+
+    '<div><label>N° facture</label><input type="text" id="cp_numf" value="'+pvEsc(v.numF||'')+'"></div>'+
+    '<div><label>Date facture</label><input type="date" id="cp_datef" value="'+(v.dateF||'')+'"></div>'+
+    '<div><label>Date paiement</label><input type="date" id="cp_datep" value="'+(v.dateP||'')+'"></div></div>'+
+    '<label>Désignation</label><input type="text" id="cp_des" value="'+pvEsc(v.des||'')+'">'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSavePay('+(id?PV_Q+id+PV_Q:'null')+','+(horsMode?'true':'false')+')">OK</button></div>');
+  if(!horsMode) ccPayInfo();
+}
+function ccPayInfo(){
+  const A=ccA(); const el=document.getElementById('cp_ref'), bx=document.getElementById('cp_info'); if(!el||!bx) return;
+  const c=A.ecr.find(x=>x.id===el.value); if(!c){ bx.textContent='Aucun contrat — créez d’abord le contrat, ou utilisez « paiement hors contrat ».'; return; }
+  const conTot=(c.pos||[]).reduce((s,p)=>s+ccP(p.mnt),0);
+  const ave=A.ecr.filter(x=>x.type==='avenant'&&x.ref===c.id).reduce((s,a)=>s+(a.pos||[]).reduce((t,p)=>t+ccP(p.mnt),0),0);
+  const paye=A.ecr.filter(x=>x.type==='pay'&&x.ref===c.id).reduce((s,p)=>s+ccP(p.mnt),0);
+  bx.innerHTML='<b>'+pvEsc(c.ent||'')+'</b> — contrat '+ccF(conTot)+(ave?' + avenants '+ccF(ave):'')+' · cumul payé à ce jour <b>'+ccF(paye)+'</b> · solde '+ccF(conTot+ave-paye);
+}
+function ccSavePay(id,hors){
+  const A=ccA();
+  const o={type:'pay', mnt:ccP(document.getElementById('cp_mnt').value),
+    typeP:document.getElementById('cp_type').value, statut:document.getElementById('cp_statut').value,
+    numP:document.getElementById('cp_nump').value, numF:document.getElementById('cp_numf').value,
+    dateF:document.getElementById('cp_datef').value, dateP:document.getElementById('cp_datep').value,
+    des:document.getElementById('cp_des').value};
+  if(hors){ o.ref=null; o.cfc=document.getElementById('cp_cfc').value; o.ent=document.getElementById('cp_ent').value.trim(); }
+  else { o.ref=(document.getElementById('cp_ref')||{}).value||null; o.cfc=null;
+    if(!o.ref){ toast('Choisissez le contrat (ou utilisez « hors contrat »).'); return; } }
+  if(id){ const e=A.ecr.find(x=>x.id===id); Object.assign(e,o); } else { o.id=pvId(); A.ecr.push(o); }
+  const c=ccPayCfc(o); if(c){ ccEnsureRow(A,c); _ccOpen[c]=true; }
+  ccPersist(); ccDlgClose(); ccRender();
+}
+function ccDlgProv(id,cfc){
+  const A=ccA(); const e=id?A.ecr.find(x=>x.id===id):null;
+  const v=e||{cfc:cfc||'',mnt:'',des:''};
+  ccDlg('<div style="font-weight:700;margin-bottom:4px">Provision</div>'+
+    '<div class="cc-cols"><div><label>CFC</label><select id="pv2_cfc">'+ccCfcOpts(v.cfc)+'</select></div>'+
+    '<div><label>Montant TTC</label><input type="text" id="pv2_mnt" value="'+(v.mnt!==''?v.mnt:'')+'"></div></div>'+
+    '<label>Désignation</label><input type="text" id="pv2_des" value="'+pvEsc(v.des||'')+'">'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSaveProv('+(id?PV_Q+id+PV_Q:'null')+')">OK</button></div>');
+}
+function ccSaveProv(id){ const A=ccA();
+  const o={type:'prov', cfc:document.getElementById('pv2_cfc').value, mnt:ccP(document.getElementById('pv2_mnt').value), des:document.getElementById('pv2_des').value};
+  if(id){ Object.assign(A.ecr.find(x=>x.id===id),o); } else { o.id=pvId(); A.ecr.push(o); }
+  _ccOpen[o.cfc]=true; ccPersist(); ccDlgClose(); ccRender(); }
+function ccDlgCp(cfc){
+  const A=ccA(); const e=A.ecr.find(x=>x.type==='cp'&&x.cfc===cfc);
+  ccDlg('<div style="font-weight:700;margin-bottom:4px">Coût probable perso — CFC '+pvEsc(cfc)+'</div>'+
+    '<div style="font-size:12px;color:#777">Remplace le coût probable calculé pour ce poste. Laissez vide pour revenir au calcul automatique.</div>'+
+    '<label>Montant TTC</label><input type="text" id="cp2_mnt" value="'+(e?e.mnt:'')+'">'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSaveCp('+PV_Q+pvEscA(cfc)+PV_Q+')">OK</button></div>');
+}
+function ccSaveCp(cfc){ const A=ccA(); const val=document.getElementById('cp2_mnt').value.trim();
+  A.ecr=A.ecr.filter(x=>!(x.type==='cp'&&x.cfc===cfc));
+  if(val!=='') A.ecr.push({id:pvId(), type:'cp', cfc:cfc, mnt:ccP(val)});
+  _ccOpen[cfc]=true; ccPersist(); ccDlgClose(); ccRender(); }
+function ccDlgPoste(){
+  const cat=ccCat();
+  ccDlg('<div style="font-weight:700;margin-bottom:4px">Nouveau poste CFC</div>'+
+    '<div class="cc-cols"><div><label>Code CFC</label><input type="text" id="po_cfc" list="cc_cfc_dl" placeholder="ex. 112, 211.5, 2" oninput="const f=('+PV_Q+PV_Q+'+this.value).trim();const c=document.getElementById('+PV_Q+'po_lbl'+PV_Q+');const m=ccCat().find(x=>x[0]===f);if(m&&!c.value)c.value=m[1];">'+
+    '<datalist id="cc_cfc_dl">'+cat.map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist></div>'+
+    '<div><label>Désignation</label><input type="text" id="po_lbl"></div>'+
+    '<div><label>DG (budget TTC)</label><input type="text" id="po_dg"></div></div>'+
+    '<div style="font-size:12px;color:#777;margin-top:6px">Les groupes (1 ou 2 chiffres) totalisent automatiquement leurs sous-postes ; un montant saisi sur un groupe s’ajoute au total.</div>'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccSavePoste()">OK</button></div>');
+}
+function ccSavePoste(){ const A=ccA();
+  const cfc=document.getElementById('po_cfc').value.trim(); if(!cfc){ toast('Indiquez le code CFC.'); return; }
+  if(A.rows.some(r=>r.cfc===cfc)){ toast('Le poste '+cfc+' existe déjà.'); return; }
+  A.rows.push({id:pvId(), cfc:cfc, lbl:document.getElementById('po_lbl').value||ccCatLbl(cfc), ent:'', dg:ccP(document.getElementById('po_dg').value)});
+  ccPersist(); ccDlgClose(); ccRender(); }
 
 /* ═══════════════════════════════════════════════════
    INIT

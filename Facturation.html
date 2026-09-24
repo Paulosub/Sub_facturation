@@ -15552,16 +15552,16 @@ function dvRender(){
       h+='<tr class="'+cls+'" data-gcfc="'+pvEsc(it.cfc)+'" onclick="dvSelGrp('+PV_Q+pvEscA(it.cfc)+PV_Q+',this)"><td class="cc-g" style="padding-left:11px">'+B+pvEsc(it.cfc)+B2+'</td>'+
         '<td class="cc-g" style="padding-left:11px">'+B+pvEsc(ccCatLbl(it.cfc)||'')+B2+'</td>'+
         '<td>'+B+ccF(ht)+B2+'</td><td>'+ccF(t-ht)+'</td><td>'+B+ccF(t)+B2+'</td>'+
-        '<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td><td></td></tr>';
+        '<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'0.00')+'</td><td></td></tr>';
       return; }
     const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100), hasCalc=!!(pp.calc&&pp.calc.rows&&pp.calc.rows.length);
     h+='<tr data-pid="'+pp.id+'" onclick="dvSelPos('+PV_Q+pp.id+PV_Q+',this)">'+
       '<td class="cc-g" style="padding-left:11px">'+pvEsc(pp.cfc||'')+'</td>'+
       '<td class="cc-g" style="padding-left:11px">'+pvEsc(pp.lbl||'')+'</td>'+
-      '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(ht):'')+'</td>'+
-      '<td>'+(t?ccF(t-ht):'')+'</td>'+
-      '<td>'+(t?ccF(t):'')+'</td>'+
-      '<td>'+(t&&C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td>'+
+      '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+ccF(ht)+'</td>'+
+      '<td>'+ccF(t-ht)+'</td>'+
+      '<td>'+ccF(t)+'</td>'+
+      '<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'0.00')+'</td>'+
       '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td></tr>';
   });
   h+='<tr class="cc-l1"><td class="cc-g"></td><td class="cc-g" style="padding-left:11px">TOTAL DEVIS</td>'+

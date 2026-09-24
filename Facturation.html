@@ -10571,6 +10571,7 @@ function buildBackupPayload(){
     sa_pv_data: g('sa_pv_data') || {},
     sa_cout: g('sa_cout') || {},
     sa_devis: g('sa_devis') || {},
+    sa_cfc_edits: g('sa_cfc_edits') || {},
     sa_adr: g('sa_adr') || {ent:[],adr:[],seq:1},
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
@@ -10750,6 +10751,7 @@ function applyBackupData(data, name){
     if(data.sa_cout && typeof data.sa_cout==='object'){ localStorage.setItem('sa_cout', JSON.stringify(data.sa_cout)); try{ ccData=JSON.parse(JSON.stringify(data.sa_cout)); }catch(e){} }
     if(data.sa_devis && typeof data.sa_devis==='object'){ localStorage.setItem('sa_devis', JSON.stringify(data.sa_devis)); try{ dvData=JSON.parse(JSON.stringify(data.sa_devis)); }catch(e){} }
     if(data.sa_adr && typeof data.sa_adr==='object') localStorage.setItem('sa_adr', JSON.stringify(data.sa_adr));
+    if(data.sa_cfc_edits && typeof data.sa_cfc_edits==='object') localStorage.setItem('sa_cfc_edits', JSON.stringify(data.sa_cfc_edits));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
     // Message de réussite : posé AVANT le rechargement, affiché en toast au démarrage (sinon il disparaîtrait).
@@ -15140,8 +15142,14 @@ function ccCat(){
   // complète avec les codes du module PV absents de la liste officielle (compatibilité des PV existants)
   const pvExtra=(typeof PV_CFC_COURT!=='undefined'?PV_CFC_COURT:[]).concat(typeof PV_CFC_PLUS!=='undefined'?PV_CFC_PLUS:[]);
   pvExtra.forEach(x=>{ if(!seen[x[0]]){ seen[x[0]]=1; out.push(x); } });
-  return out.sort((a,b)=>ccCmp(a[0],b[0]));
+  // ajouts et modifications de l'utilisateur (icônes ✚ / ✏ du catalogue du Devis)
+  const E=cfcEdits();
+  (E.add||[]).forEach(x=>{ if(!seen[x[0]]){ seen[x[0]]=1; out.push(x.slice(0,2)); } });
+  const out2=out.map(x=> (E.mod&&E.mod[x[0]]!=null) ? [x[0],E.mod[x[0]]] : x );
+  return out2.sort((a,b)=>ccCmp(a[0],b[0]));
 }
+function cfcEdits(){ try{ return JSON.parse(localStorage.getItem('sa_cfc_edits')||'{}')||{}; }catch(e){ return {}; } }
+function cfcEditsSave(E){ try{ localStorage.setItem('sa_cfc_edits',JSON.stringify(E)); }catch(e){} }
 function ccCatLbl(c){ const f=ccCat().find(x=>x[0]===c); return f?f[1]:''; }
 function ccNewAff(code){
   const rows=[];
@@ -15701,6 +15709,68 @@ function dvSend2CC(){
 }
 /* Catalogue CFC repliable : groupes à 1 chiffre (CFC 0, 1, 2 …) et à 2 chiffres se compactent
    d'un clic (▸/▾, repliés par défaut) ; la recherche (code ou texte) ignore le repli. */
+/* ===== Fenêtre « Nouvelle position / Modifier la position » du catalogue CFC ===== */
+function dvCfcDlg(edit){
+  let code='', t1='', t2='';
+  if(edit){
+    code=window._dvCatSel||'';
+    if(!code){ toast('Sélectionnez d’abord un CFC dans le catalogue.'); return; }
+    t1=ccCatLbl(code)||'';
+  }
+  let ov=document.getElementById('dv_cfc_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='dv_cfc_ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10050';
+    document.body.appendChild(ov); }
+  const lab='display:inline-block;width:130px;text-align:right;padding-right:10px;font-size:13.5px;flex:none';
+  const inp='border:1px solid #c8c8c8;border-radius:3px;padding:5px 8px;font-size:13px;background:#fff;font-family:inherit';
+  ov.innerHTML=
+  '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:640px;max-width:94vw;background:#f4f4f4;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.35)">'+
+    '<div style="background:#003346;color:#fff;font-weight:700;font-size:14px;text-align:center;padding:9px 14px;border-radius:10px 10px 0 0">'+(edit?'Modifier la position':'Nouvelle position')+'</div>'+
+    '<div style="padding:20px 22px 16px 22px">'+
+      '<div style="display:flex;align-items:center;margin-bottom:14px"><span style="'+lab+'">N°</span>'+
+        '<input id="dvc_no" oninput="dvCfcOkUpd()" style="'+inp+';width:180px" value="'+pvEscA(code)+'"></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:14px"><span style="'+lab+'">Texte 1ère ligne</span>'+
+        '<input id="dvc_t1" oninput="dvCfcOkUpd()" style="'+inp+';flex:1" value="'+pvEscA(t1)+'"></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:14px"><span style="'+lab+'">Texte 2ème ligne</span>'+
+        '<input id="dvc_t2" style="'+inp+';flex:1" value="'+pvEscA(t2)+'"></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:6px"><span style="'+lab+';color:#999">Unité</span>'+
+        '<input disabled style="'+inp+';flex:1;background:#f6f6f6"></div>'+
+      '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">'+
+        '<button class="btn btn-sm" style="padding:5px 20px;background:#fff;border:1px solid #c9c9c9;border-radius:7px" onclick="document.getElementById('+PV_Q+'dv_cfc_ov'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+'">Annuler</button>'+
+        '<button class="btn btn-sm" id="dvc_ok" style="padding:5px 26px;border-radius:7px" onclick="dvCfcOk('+(edit?1:0)+','+PV_Q+pvEscA(code)+PV_Q+')">OK</button></div>'+
+    '</div></div>';
+  ov.style.display='block'; dvCfcOkUpd();
+  const f=document.getElementById('dvc_no'); if(f){ f.focus(); }
+}
+function dvCfcOkUpd(){
+  const ok=document.getElementById('dvc_ok'); if(!ok) return;
+  const on=((document.getElementById('dvc_no')||{}).value||'').trim()!==''&&((document.getElementById('dvc_t1')||{}).value||'').trim()!=='';
+  ok.style.background=on?'#0a84ff':'#f2f2f2'; ok.style.border='1px solid '+(on?'#0a84ff':'#c9c9c9');
+  ok.style.color=on?'#fff':'#b5b5b5'; ok.style.fontWeight=on?'600':'400';
+  ok.style.pointerEvents=on?'auto':'none';
+}
+function dvCfcOk(edit, orig){
+  const no=((document.getElementById('dvc_no')||{}).value||'').trim();
+  const t1=((document.getElementById('dvc_t1')||{}).value||'').trim();
+  const t2=((document.getElementById('dvc_t2')||{}).value||'').trim();
+  if(!no||!t1) return;
+  const txt=t2?(t1+' '+t2):t1;
+  const E=cfcEdits(); E.add=E.add||[]; E.mod=E.mod||{};
+  if(edit){
+    const iAdd=E.add.findIndex(x=>x[0]===orig);
+    if(iAdd>=0){ E.add[iAdd]=[no,txt]; if(no!==orig) delete E.mod[orig]; }
+    else if(no===orig){ E.mod[orig]=txt; }
+    else { E.add.push([no,txt]); } /* n° changé sur un CFC officiel : nouveau code, l'officiel reste */
+    window._dvCatSel=no;
+  } else {
+    if(ccCat().some(x=>x[0]===no)){ toast('Le CFC '+no+' existe déjà — utilisez le crayon pour le modifier.'); return; }
+    E.add.push([no,txt]); window._dvCatSel=no;
+  }
+  cfcEditsSave(E);
+  document.getElementById('dv_cfc_ov').style.display='none';
+  if(typeof dvCatRefresh==='function') dvCatRefresh();
+  toast((edit?'CFC modifié : ':'CFC ajouté : ')+no+' '+txt);
+}
 function dvCatList(){
   const D=dvA(); if(!D) return '';
   window._dvCatOpen=window._dvCatOpen||{};
@@ -15718,12 +15788,12 @@ function dvCatList(){
         '<span style="width:48px;flex:none">'+pvEsc(x[0])+'</span><span style="min-width:0">'+pvEsc(x[1])+'</span></div>';
     }
     if(n.length===2){
-      return '<div style="display:flex;gap:6px;padding:2px 10px 2px 6px;font-weight:700;font-size:11.5px">'+
+      return '<div onclick="window._dvCatSel='+PV_Q+pvEscA(x[0])+PV_Q+';dvCatRefresh()" style="display:flex;gap:6px;padding:2px 10px 2px 6px;font-weight:700;font-size:11.5px;cursor:pointer'+(window._dvCatSel===x[0]?';background:#cfe3fa':'')+'">'+
         '<span style="width:10px;flex:none"></span>'+
         '<span style="width:48px;flex:none">'+pvEsc(x[0])+'</span><span style="min-width:0">'+pvEsc(x[1])+'</span></div>';
     }
-    return '<div onclick="dvCatAdd('+PV_Q+pvEscA(x[0])+PV_Q+')" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'"'+
-      ' style="display:flex;gap:6px;padding:1px 10px 1px 6px;font-size:11.5px;cursor:pointer">'+
+    return '<div onclick="window._dvCatSel='+PV_Q+pvEscA(x[0])+PV_Q+';dvCatAdd('+PV_Q+pvEscA(x[0])+PV_Q+')" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+(window._dvCatSel===x[0]?'#cfe3fa':'')+PV_Q+'"'+
+      ' style="display:flex;gap:6px;padding:1px 10px 1px 6px;font-size:11.5px;cursor:pointer'+(window._dvCatSel===x[0]?';background:#cfe3fa':'')+'">'+
       '<span style="width:10px;flex:none"></span>'+
       '<span style="width:48px;flex:none">'+pvEsc(x[0])+'</span><span style="min-width:0">'+pvEsc(x[1])+(inDevis[x[0]]?' ✓':'')+'</span></div>';
   }).join('');
@@ -17062,8 +17132,8 @@ function dvRender(){
   const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
   h+='<div style="width:320px;flex:none;display:flex;flex-direction:column;height:100%">'+
     '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;flex:none">'+
-      '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Ajouter un CFC au catalogue" onclick="toast('+PV_Q+'Ajouter un CFC \u2014 \u00e0 venir.'+PV_Q+')"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M7.5 3v9M3 7.5h9" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round"/></svg></button>'+
-      '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="\u00c9diter le CFC s\u00e9lectionn\u00e9" onclick="toast('+PV_Q+'\u00c9diter le CFC \u2014 \u00e0 venir.'+PV_Q+')"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z" fill="none" stroke="#444" stroke-width="1.3"/></svg></button>'+
+      '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Ajouter un CFC au catalogue" onclick="dvCfcDlg(0)"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M7.5 3v9M3 7.5h9" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round"/></svg></button>'+
+      '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="\u00c9diter le CFC s\u00e9lectionn\u00e9" onclick="dvCfcDlg(1)"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z" fill="none" stroke="#444" stroke-width="1.3"/></svg></button>'+
     '</div>'+
     '<div style="flex:1;border:1px solid #cfd8db;border-radius:6px;box-sizing:border-box;overflow:auto;background:#fff;min-height:0">'+
     '<div style="position:sticky;top:0;z-index:1;background:#eef3f5;border-bottom:1px solid #d9e2e6">'+

@@ -15735,6 +15735,111 @@ function dvValideTog(){
     chConfirm('VALIDER ce devis ?\nLes montants ne seront plus modifiables (y compris les honoraires du contrat d’architecte).', ()=>{ D.valide=true; dvPersist(); dvRender(); });
   }
 }
+/* Menu contextuel (clic droit) sur une position du DG — modèle Deltaproject */
+function dvCtxMenu(ev,id){
+  ev.preventDefault(); ev.stopPropagation();
+  dvSelPos(id, ev.target.closest('tr'));
+  let m=document.getElementById('dv_ctx_pos');
+  if(!m){ m=document.createElement('div'); m.id='dv_ctx_pos';
+    m.style.cssText='display:none;position:fixed;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:230px;z-index:10070;font-size:13px;padding:4px 0;white-space:nowrap';
+    document.body.appendChild(m);
+    document.addEventListener('click',()=>{ m.style.display='none'; });
+    document.addEventListener('contextmenu',e2=>{ if(!e2.target.closest('#dv_flex tr[data-pid]')) m.style.display='none'; });
+  }
+  const it=(lbl,fn)=>'<div style="padding:6px 18px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'dv_ctx_pos'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'">'+lbl+'</div>';
+  m.innerHTML=
+    it('Éditer la position …','dvDlgCalc('+PV_Q+pvEscA(id)+PV_Q+')')+
+    it('Supprimer la position …','dvCtxDel('+PV_Q+pvEscA(id)+PV_Q+')')+
+    it('Indexer la position …','toast('+PV_Q+'Indexation de la position — à venir.'+PV_Q+')')+
+    it('Modifier la TVA','dvCtxTva()');
+  m.style.display='block';
+  const mw=m.offsetWidth||230, mh=m.offsetHeight||140;
+  m.style.left=Math.min(ev.clientX, innerWidth-mw-8)+'px';
+  m.style.top=Math.min(ev.clientY, innerHeight-mh-8)+'px';
+}
+function dvCtxDel(id){
+  const D=dvA(); if(!D) return;
+  if(D.valide){ toast('Devis VALIDÉ — lignes verrouillées.'); return; }
+  const p2=D.pos.find(x=>x.id===id); if(!p2) return;
+  chConfirm('Supprimer la position '+(p2.cfc||'')+' « '+(p2.lbl||'')+' » ?', ()=>dvDelPos(id));
+}
+function dvCtxTva(){
+  const D=dvA(); if(!D) return;
+  if(D.valide){ toast('Devis VALIDÉ — montants verrouillés.'); return; }
+  chPrompt('TVA du devis (%) :', String(D.tva!=null?D.tva:8.1), v=>{
+    const t=ccP(v); if(!(t>=0)) return;
+    D.tva=t; dvPersist(); dvRender();
+    toast('TVA du devis : '+t+' %.');
+  });
+}
+/* Menu contextuel (clic droit) sur la liste Documents — modèle Deltaproject */
+function dvCtxDoc(ev,nom){
+  ev.preventDefault(); ev.stopPropagation();
+  dvDocSel(nom, ev.target.closest('tr'));
+  let m=document.getElementById('dv_ctx_doc');
+  if(!m){ m=document.createElement('div'); m.id='dv_ctx_doc';
+    m.style.cssText='display:none;position:fixed;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:290px;z-index:10070;font-size:13px;padding:4px 0;white-space:nowrap';
+    document.body.appendChild(m);
+    document.addEventListener('click',()=>{ m.style.display='none'; });
+    document.addEventListener('contextmenu',e2=>{ if(!e2.target.closest('#dv_tb_docs tr')) m.style.display='none'; });
+  }
+  const D=dvA(); const dd=((D&&D.docs)||{})[nom]||{};
+  const pdfNom=(typeof dd.pdf==='string'&&dd.pdf)?dd.pdf:((Array.isArray(dd.fichs)&&dd.fichs[0]||{}).nom||'');
+  const it=(lbl,fn,en)=> en
+    ? '<div style="padding:6px 18px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'dv_ctx_doc'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'">'+lbl+'</div>'
+    : '<div style="padding:6px 18px;color:#b5b5b5">'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+  m.innerHTML=
+    it('Ouvrir …','dvDocOuvrir()', true)+
+    it('Ouvrir PDF …', (dd.pdf&&pdfNom)?('dvPdfOpen('+PV_Q+pvEscA(pdfNom)+PV_Q+')'):'', !!(dd.pdf&&pdfNom))+
+    sep+
+    it('Effacer le document …', dd.doc?('dvCtxDocEff('+PV_Q+pvEscA(nom)+PV_Q+')'):'', !!dd.doc)+
+    it('Effacer le PDF …', dd.pdf?('dvCtxPdfEff('+PV_Q+pvEscA(nom)+PV_Q+')'):'', !!dd.pdf)+
+    it('Créer un PDF comme jointe au document …','dvDlgNomFich()', !!dd.doc);
+  m.style.display='block';
+  const mw=m.offsetWidth||290, mh=m.offsetHeight||170;
+  m.style.left=Math.min(ev.clientX, innerWidth-mw-8)+'px';
+  m.style.top=Math.min(ev.clientY, innerHeight-mh-8)+'px';
+}
+function dvCtxDocEff(nom){
+  const D=dvA(); if(!D) return;
+  chConfirm('Effacer le document « '+nom+' » ?\n(La coche « Document disponible » est retirée.)', ()=>{
+    const dd=(D.docs||{})[nom]; if(dd){ dd.doc=false; dvPersist(); dvRender(); } });
+}
+function dvCtxPdfEff(nom){
+  const D=dvA(); if(!D) return;
+  chConfirm('Effacer le PDF de « '+nom+' » ?\n(La coche « PDF disponible » est retirée ; le fichier reste sur le disque.)', ()=>{
+    const dd=(D.docs||{})[nom]; if(dd){ dd.pdf=''; dvPersist(); dvRender(); } });
+}
+/* Menu contextuel (clic droit) sur la liste Fichiers PDF — mêmes états que le menu de l'icône */
+function dvCtxPdf(ev,nom){
+  ev.preventDefault(); ev.stopPropagation();
+  let selM=window._dvPdfSelM||[];
+  if(!selM.includes(nom)){ const tr=ev.target.closest('tr'); dvPdfSel(nom,tr,{}); selM=window._dvPdfSelM||[]; }
+  let m=document.getElementById('dv_ctx_pdf');
+  if(!m){ m=document.createElement('div'); m.id='dv_ctx_pdf';
+    m.style.cssText='display:none;position:fixed;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:250px;z-index:10070;font-size:13px;padding:4px 0;white-space:nowrap';
+    document.body.appendChild(m);
+    document.addEventListener('click',()=>{ m.style.display='none'; });
+    document.addEventListener('contextmenu',e2=>{ if(!e2.target.closest('#dv_tb_pdfs tr')) m.style.display='none'; });
+  }
+  const n=selM.length, selF=selM[selM.length-1]||null;
+  const it=(lbl,fn,en)=> en
+    ? '<div style="padding:6px 18px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'dv_ctx_pdf'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'">'+lbl+'</div>'
+    : '<div style="padding:6px 18px;color:#b5b5b5">'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+  m.innerHTML=
+    it('Ouvrir', (n===1&&selF)?'dvPdfOpenSel()':'', n===1&&!!selF)+
+    it('Partager le fichier PDF …', selF?'dvPdfShare()':'', !!selF)+
+    sep+
+    it('Import fichier PDF …','toast('+PV_Q+'Import d’un fichier PDF — à définir.'+PV_Q+')',true)+
+    it('Fusionner PDF …', n>=2?'dvPdfMergeOpen()':'', n>=2)+
+    it('Supprimer', (n===1&&selF)?'dvPdfDelAsk()':'', n===1&&!!selF);
+  m.style.display='block';
+  const mw=m.offsetWidth||250, mh=m.offsetHeight||170;
+  m.style.left=Math.min(ev.clientX, innerWidth-mw-8)+'px';
+  m.style.top=Math.min(ev.clientY, innerHeight-mh-8)+'px';
+}
 function dvSelAff(v){ _dvAff=v; dvRender(); }
 function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';
   document.getElementById('dv_aff_f').value=''; dvAffFill(); }
@@ -17526,7 +17631,7 @@ function dvRender(){
       return; }
     const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100), hasCalc=!!(pp.calc&&pp.calc.rows&&pp.calc.rows.length);
     const desc=(pp.calc&&pp.calc.desc)||'';
-    h+='<tr data-pid="'+pp.id+'" onclick="dvSelPos('+PV_Q+pp.id+PV_Q+',this)">'+
+    h+='<tr data-pid="'+pp.id+'" onclick="dvSelPos('+PV_Q+pp.id+PV_Q+',this)" oncontextmenu="dvCtxMenu(event,'+PV_Q+pp.id+PV_Q+')">'+
       '<td class="cc-g" style="padding-left:11px">'+pvEsc(pp.cfc||'')+'</td>'+
       '<td class="cc-g" style="padding-left:11px">'+pvEsc(pp.lbl||'')+'</td>'+
       '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+fA(ht)+'</td>'+
@@ -17587,7 +17692,7 @@ function dvRender(){
       if(dd.pdf && dd.doc==null) dd.doc=true; // migration ancien format
       if(dd.fich){ dd.fichs=[dd.fich]; delete dd.fich; } // migration pièce jointe unique → liste
       const mk=v=>'<td style="text-align:center;color:#1a1a1a;font-weight:bold;font-size:15px;line-height:1">'+(v?'✓':'×')+'</td>';
-      return '<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td>'+mk(dd.doc)+mk(dd.pdf)+'</tr>'; }).join('')+
+      return '<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)" oncontextmenu="dvCtxDoc(event,'+PV_Q+n+PV_Q+')"><td>'+n+'</td>'+mk(dd.doc)+mk(dd.pdf)+'</tr>'; }).join('')+
     Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+
     '</tbody></table></div>'+
     '<div style="flex:1 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column">'+
@@ -17599,7 +17704,7 @@ function dvRender(){
       all.sort((x2,y2)=>(y2.date||0)-(x2.date||0));
       const rowsP=all.map(f2=>{ const d2=f2.date?new Date(f2.date):null;
         const ds=d2?(('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear()+' '+('0'+d2.getHours()).slice(-2)+':'+('0'+d2.getMinutes()).slice(-2)):'';
-        return '<tr style="cursor:pointer;user-select:none;-webkit-user-select:none" data-nom="'+pvEscA(f2.nom||'')+'" title="Clic : sélectionner (⌘ ou Maj : sélection multiple) — double-clic : ouvrir" onclick="dvPdfSel('+PV_Q+pvEscA(f2.nom||'')+PV_Q+',this,event)" ondblclick="dvPdfOpen('+PV_Q+pvEscA(f2.nom||'')+PV_Q+')"><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
+        return '<tr style="cursor:pointer;user-select:none;-webkit-user-select:none" data-nom="'+pvEscA(f2.nom||'')+'" title="Clic : sélectionner (⌘ ou Maj : sélection multiple) — double-clic : ouvrir" onclick="dvPdfSel('+PV_Q+pvEscA(f2.nom||'')+PV_Q+',this,event)" oncontextmenu="dvCtxPdf(event,'+PV_Q+pvEscA(f2.nom||'')+PV_Q+')" ondblclick="dvPdfOpen('+PV_Q+pvEscA(f2.nom||'')+PV_Q+')"><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
       while(rowsP.length<10) rowsP.push('<tr><td>&nbsp;</td><td></td></tr>');
       return rowsP.join(''); })()+'</tbody></table>'+
     (()=>{ const anyPdf=Object.keys(D.docs||{}).some(k=>D.docs[k]&&D.docs[k].pdf);

@@ -4775,7 +4775,9 @@ const OFFRE_MOIS = ['JANVIER','FÉVRIER','MARS','AVRIL','MAI','JUIN','JUILLET','
 function offreDateFR(iso){ if(!iso) return ''; const p=iso.split('-'); if(p.length<3) return iso; return parseInt(p[2])+' '+(OFFRE_MOIS[parseInt(p[1])-1]||'')+' '+p[0]; }
 function offreEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function offreParas(txt){ return (txt||'').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<div class="offre-p">${offreEsc(x).replace(/\n/g,'<br>')}</div>`).join(''); }
-function closeOffre(){ document.getElementById('offre-overlay').classList.remove('on'); document.body.classList.remove('offre-open'); }
+function closeOffre(){ document.getElementById('offre-overlay').classList.remove('on'); document.body.classList.remove('offre-open');
+  const t=document.querySelector('#offre-bar .t'); if(t) t.textContent='Offre / contrat d'+String.fromCharCode(39)+'honoraires';
+  try{ _offreDl=generateOffrePDF; _offrePrint=printOffreFaithful; }catch(e){} }
 /* Téléchargement contextuel depuis la modale (offre d'un contrat, ou facture). */
 let _offreDl = generateOffrePDF;
 function offreModalDownload(){ try{ (_offreDl||generateOffrePDF)(); }catch(e){ alert('Erreur téléchargement : '+e.message); } }
@@ -15682,7 +15684,57 @@ function dvDocOptC(g,k){ const o=dvDocOptO(); if(!o) return;
   else o[g][k]=!o[g][k];
   dvPersist();
   const m=document.getElementById('dv_doc_menu_g'); if(m) m.style.display='none'; }
-function dvDocOuvrir(){ toast('Ouvrir « '+(window._dvDocSel||'document')+' » — fenêtre à définir.'); }
+function dvDocOuvrir(){
+  if(window._dvDocSel==='Devis général'){ dvDocFenDG(); return; }
+  toast('Ouvrir « '+(window._dvDocSel||'document')+' » — fenêtre à définir.'); }
+/* Fenêtre « Devis général » : page de garde fidèle au document du bureau,
+   affichée dans l'aperçu plein écran des documents (offre-overlay). */
+function dvDocFenDG(){
+  const aff=_dvAff, D=dvA(); if(!D) return;
+  const jours=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  const mois=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const dt=new Date();
+  const dateFR=jours[dt.getDay()]+', '+dt.getDate()+' '+mois[dt.getMonth()]+' '+dt.getFullYear();
+  // Maître de l'ouvrage depuis le contrat de l'affaire (si trouvé)
+  let mo='';
+  try{ const cs=JSON.parse(localStorage.getItem('sa_contrats')||'[]');
+    const c=cs.find(x=>x && (x.affaire===aff)) || cs.find(x=>x && ((x.affaire||'').toUpperCase().startsWith(aff.toUpperCase())));
+    if(c) mo=[c.nom,c.adr,c.loc].filter(Boolean).join(', ');
+  }catch(e){}
+  const ouvrage=ccAffName(aff)||'';
+  const sec=(t,v)=>'<div style="margin-bottom:8mm"><div style="font-size:8.6pt;color:#333;border-bottom:.4pt solid #555;padding-bottom:1mm">'+t+'</div>'+
+    '<div style="font-size:9pt;margin-top:1.6mm;min-height:4mm">'+pvEsc(v||'')+'</div></div>';
+  const sig=t=>'<div style="margin-top:12mm;font-size:9pt">'+t+'</div>'+
+    '<div style="display:flex;align-items:flex-end;gap:5mm;margin-top:9mm;font-size:9pt">'+
+    '<span style="flex:none">Lieu, date</span><span style="flex:1.1;border-bottom:.4pt solid #555"></span>'+
+    '<span style="flex:none;text-align:right;line-height:1.25">Tampon,<br>signature</span><span style="flex:1.3;border-bottom:.4pt solid #555"></span></div>';
+  const page='<div class="offre-page">'+
+    '<div style="position:absolute;top:15mm;left:14mm;font-size:9pt;line-height:1.5">'+
+      '<div style="font-weight:bold">Devis général</div>'+
+      '<div>'+pvEsc(aff)+'.DG.1</div>'+
+      '<div>CULLY – '+dateFR+'</div></div>'+
+    '<div class="offre-ct" style="margin-top:42mm">'+
+      sec('OUVRAGE', ouvrage)+
+      sec('MAÎTRE DE L'+PV_Q+'OUVRAGE', mo)+
+      sec('ARCHITECTE','Substances Architectes Sàrl, Rue de la Gare 12, 1096 Cully')+
+      sec('DIRECTION DES TRAVAUX','')+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:.5pt solid #1a1a1a;padding-bottom:1mm;margin:14mm 0 0 -24mm">'+
+        '<span style="font-weight:bold;font-size:11.5pt">'+pvEsc(aff)+' - Devis général</span>'+
+        '<span style="font-weight:bold;font-size:11.5pt">±15%</span></div>'+
+      '<div style="font-size:9pt;margin-top:1.6mm">Phase:</div>'+
+      '<div style="margin-top:14mm">'+sig('Le Maître de l'+PV_Q+'ouvrage :')+sig('L'+PV_Q+'architecte :')+'</div>'+
+    '</div>'+
+    offreFoot(1,1)+'</div>';
+  document.querySelector('#offre-bar .t').textContent='Devis général';
+  document.getElementById('offre-title').textContent='— '+aff+' '+(ouvrage||'');
+  const sel=document.getElementById('offre-version'); if(sel){ sel.style.display='none'; }
+  const vc=document.getElementById('offre-version-comment'); if(vc) vc.textContent='';
+  document.getElementById('offre-scroll').innerHTML=page;
+  _offreDl=()=>toast('Génération du PDF du devis — à venir.');
+  _offrePrint=()=>window.print();
+  document.getElementById('offre-overlay').classList.add('on');
+  document.body.classList.add('offre-open');
+}
 /* Sélection d'un document (Devis général / Honoraires / Devis descriptif) : active les icônes +/−/roue. */
 function dvDocSel(n,tr){ window._dvDocSel=n;
   document.querySelectorAll('#dv_out .pv-tb tr.dv-sel').forEach(x=>x.classList.remove('dv-sel'));

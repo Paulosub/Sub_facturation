@@ -15725,6 +15725,18 @@ function dvHonMajContrat(){
     toast('Contrat d’architecte mis à jour — la position 291 suit à nouveau le contrat.');
   });
 }
+/* Réinitialisation de la position 291 : on abandonne le montant manuel et la position
+   reprend le montant du contrat signé (extrapolé à 100%). */
+function dvHonReinit(){
+  const D=dvA(); if(!D) return;
+  const p2=D.pos.find(x=>x.id==='hon_contrat'); if(!p2) return;
+  chConfirm('Abandonner le montant modifié et reprendre le montant du contrat signé ?', ()=>{
+    p2.man=false; p2.calc=null; dvPersist();
+    if(typeof ccDlgClose==='function') ccDlgClose();
+    dvHonSync(); dvRender();
+    toast('Position 291 réinitialisée sur le montant du contrat.');
+  });
+}
 function dvSelAff(v){ _dvAff=v; dvRender(); }
 function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';
   document.getElementById('dv_aff_f').value=''; dvAffFill(); }
@@ -17648,7 +17660,8 @@ function dvDlgCalc(pid){
     tb('✚','dvCalcAdd()','Ajouter une ligne')+tb('−','dvCalcDel()','Supprimer la ligne sélectionnée')+
     '<span style="width:14px"></span>'+
     tb('⏫','dvCalcMove(0)','Déplacer en premier')+tb('↑','dvCalcMove(1)','Monter')+tb('↓','dvCalcMove(2)','Descendre')+tb('⏬','dvCalcMove(3)','Déplacer en dernier')+
-    (p.id==='hon_contrat'&&p.man?'<button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="dvHonMajContrat()" title="Reporter le montant modifié dans le contrat d’architecte (au prorata du pourcentage des phases)">Mettre le contrat à jour</button>':'')+
+    (p.id==='hon_contrat'&&p.man?'<button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="dvHonMajContrat()" title="Reporter le montant modifié dans le contrat d’architecte (au prorata du pourcentage des phases)">Mettre le contrat à jour</button>'+
+      '<button class="btn btn-sm" style="background:#b08800;color:#fff" onclick="dvHonReinit()" title="Abandonner le montant modifié et reprendre le montant du contrat signé (extrapolé à 100%)">Réinitialiser au contrat</button>':'')+
     '<span style="flex:1"></span>'+
     '<div style="display:grid;grid-template-columns:80px 130px;gap:1px 10px;font-size:12.5px">'+
     '<span style="color:#555">Total HT</span><span id="dv_ca_ht" style="text-align:right">0.00</span>'+

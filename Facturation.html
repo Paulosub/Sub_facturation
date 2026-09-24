@@ -15602,6 +15602,15 @@ function dvDlgOpt(){
 /* Barre d'icônes du Devis général (reproduite de l'app du bureau) — fonctions à brancher au fur
    et à mesure : crayon (édition), −, filtre, tableau, clé, document, roue crantée, mode sombre. */
 let _dvSel=null, _dvSelG=null;
+/* Fermeture globale des listes déroulantes : un clic ailleurs dans l'app referme
+   tout menu ouvert (le clic sur le bouton d'un menu reste géré par son toggle). */
+document.addEventListener('mousedown', function(e){
+  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p','dv_doc_menu_m','dv_doc_menu_g','dv_ca_menu',
+   'adr_out_menu','adr_new_menu','rap_out_menu','rap_doc_menu','fh_opt_menu','fh_pen_menu'].forEach(function(id){
+    const m=document.getElementById(id);
+    if(m && m.style.display && m.style.display!=='none' && !(m.parentElement||m).contains(e.target)) m.style.display='none';
+  });
+});
 function dvTbMenu(){ const m=document.getElementById('dv_tb_menu'); if(m) m.style.display=(m.style.display==='none'?'block':'none');
   const t=document.getElementById('dv_tb_menu_t'); if(t) t.style.display='none'; }
 function dvTbMenuT(){ const m=document.getElementById('dv_tb_menu_t'); if(m) m.style.display=(m.style.display==='none'?'block':'none');

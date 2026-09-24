@@ -17093,6 +17093,7 @@ function dvRender(){
   items.sort((a,b)=>{ const c=ccCmp(a.cfc,b.cfc); return c!==0?c:(b.g-a.g); });
   /* Colonne Pourcent selon Paramètres · Affichage : sur le total général,
      ou sur le groupe principal (total du CFC à 1 chiffre, p.ex. CFC 2). */
+  const fA=v=>((D.param&&D.param.arrondi)?ccF(Math.round(v)).slice(0,-3):ccF(v));
   const pctOf=(t,cfc)=>{
     const base=((D.param||{}).pctMode==='groupe')?(C.grp[String(cfc||'').charAt(0)]||0):C.totTTC;
     return base>0.005?(t/base*100).toFixed(2):'0.00';
@@ -17102,7 +17103,7 @@ function dvRender(){
       const cls=L===1?'cc-l1':(L===2?'cc-l2':''), B=L<=2?'<b>':'', B2=L<=2?'</b>':'';
       h+='<tr class="'+cls+'" data-gcfc="'+pvEsc(it.cfc)+'" onclick="dvSelGrp('+PV_Q+pvEscA(it.cfc)+PV_Q+',this)"><td class="cc-g" style="padding-left:11px">'+B+pvEsc(it.cfc)+B2+'</td>'+
         '<td class="cc-g" style="padding-left:11px">'+B+pvEsc(ccCatLbl(it.cfc)||'')+B2+'</td>'+
-        '<td>'+B+ccF(ht)+B2+'</td><td>'+ccF(t-ht)+'</td><td>'+B+ccF(t)+B2+'</td>'+
+        '<td>'+B+fA(ht)+B2+'</td><td>'+fA(t-ht)+'</td><td>'+B+fA(t)+B2+'</td>'+
         (vPct?'<td>'+pctOf(t,it.cfc)+'</td>':'')+
         (vHon?'<td></td><td>'+B+'0.00'+B2+'</td><td></td>':'')+
         (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td>'+(spacer?'<td></td>':'')+'</tr>';
@@ -17112,9 +17113,9 @@ function dvRender(){
     h+='<tr data-pid="'+pp.id+'" onclick="dvSelPos('+PV_Q+pp.id+PV_Q+',this)">'+
       '<td class="cc-g" style="padding-left:11px">'+pvEsc(pp.cfc||'')+'</td>'+
       '<td class="cc-g" style="padding-left:11px">'+pvEsc(pp.lbl||'')+'</td>'+
-      '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+ccF(ht)+'</td>'+
-      '<td>'+ccF(t-ht)+'</td>'+
-      '<td>'+ccF(t)+'</td>'+
+      '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+fA(ht)+'</td>'+
+      '<td>'+fA(t-ht)+'</td>'+
+      '<td>'+fA(t)+'</td>'+
       (vPct?'<td>'+pctOf(t,pp.cfc)+'</td>':'')+
       (vHon?'<td>0.0</td><td>0.00</td><td></td>':'')+
       (vCom?'<td></td>':'')+
@@ -17136,7 +17137,7 @@ function dvRender(){
     }
   });
   h+='<tr class="cc-l1"><td class="cc-g"></td><td class="cc-g" style="padding-left:11px">TOTAL DEVIS</td>'+
-    '<td>'+ccF(C.totHT)+'</td><td>'+ccF(C.totTTC-C.totHT)+'</td><td>'+ccF(C.totTTC)+'</td>'+
+    '<td>'+fA(C.totHT)+'</td><td>'+fA(C.totTTC-C.totHT)+'</td><td>'+fA(C.totTTC)+'</td>'+
     (vPct?'<td>'+(C.totTTC>0.005?'100.00':'')+'</td>':'')+
     (vHon?'<td></td><td><b>0.00</b></td><td></td>':'')+
     (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td>'+(spacer?'<td></td>':'')+'</tr>';

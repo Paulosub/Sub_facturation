@@ -17908,10 +17908,10 @@ function dvCalcMenu(){
     ? '<div style="'+(top?'border-top:1px solid #e4e4e4;':'')+'padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();'+fn+'">'+lbl+'</div>'
     : '<div style="'+(top?'border-top:1px solid #e4e4e4;':'')+'padding:7px 14px;color:#b5b5b5">'+lbl+'</div>';
   m.innerHTML=
-    it('Copier le calcul','dvCalcCopy()',true)+
-    it('Coller le calcul','dvCalcPaste()',!!(_dvCalcClipRows&&_dvCalcClipRows.length))+
-    it('Copier la ligne','dvCalcRowCopy()',!!selOk,1)+
-    it('Coller la ligne','dvCalcRowPaste()',!!(window._dvCalcRowClip&&selOk))+
+    it('Copier le calcul<span style="float:right;color:#999;margin-left:26px">⌘⇧C</span>','dvCalcCopy()',true)+
+    it('Coller le calcul<span style="float:right;color:#999;margin-left:26px">⌘⇧V</span>','dvCalcPaste()',!!(_dvCalcClipRows&&_dvCalcClipRows.length))+
+    it('Copier la ligne<span style="float:right;color:#999;margin-left:26px">⌘C</span>','dvCalcRowCopy()',!!selOk,1)+
+    it('Coller la ligne<span style="float:right;color:#999;margin-left:26px">⌘V</span>','dvCalcRowPaste()',!!(window._dvCalcRowClip&&selOk))+
     it('Navigateur …','',false,1)+
     it('Arrondi …','dvCalcArrOpen()',true)+
     it('Copier le contenu du tableau dans le presse-papier','dvCalcClipTable()',true,1)+
@@ -17940,6 +17940,9 @@ function dvCalcKey(ev){
   if(!dansTable) return;
   const k=ev.key.toLowerCase();
   const p=dvCalcP(); if(!p) return;
+  /* ⌘⇧C / ⌘⇧V : copier / coller le CALCUL ENTIER */
+  if(ev.shiftKey&&k==='c'){ ev.preventDefault(); dvCalcCopy(); return; }
+  if(ev.shiftKey&&k==='v'){ ev.preventDefault(); dvCalcPaste(); return; }
   if(k==='c'){
     if(el.tagName==='INPUT'&&el.selectionStart!==el.selectionEnd) return; /* copie native du texte */
     if(_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord une ligne.'); return; }

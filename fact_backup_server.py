@@ -225,15 +225,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
 
         if u.path == "/mailpdf":
-            # Crée dans Apple Mail un brouillon (visible) avec le PDF en pièce jointe.
+            # Crée dans Apple Mail un brouillon (visible) avec le ou les PDF en pièces jointes
+            # (plusieurs paramètres name= possibles).
             q = urllib.parse.parse_qs(u.query)
-            name = os.path.basename((q.get("name", [""])[0]).strip())
+            names = [os.path.basename(n.strip()) for n in q.get("name", []) if n.strip()]
             to = (q.get("to", [""])[0]).strip()
             subject = (q.get("subject", [""])[0]).strip()
             body = (q.get("body", [""])[0])
-            full = os.path.join(BASE_DIR, "PDF Devis", name)
-            if not name or not os.path.isfile(full):
-                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % name})
+            fulls = [os.path.join(BASE_DIR, "PDF Devis", n) for n in names]
+            missing = [names[i] for i, f in enumerate(fulls) if not os.path.isfile(f)]
+            if not names or missing:
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % (", ".join(missing) or "(aucun)")})
                 return
             try:
                 esc = lambda s: s.replace("\\", "\\\\").replace('"', '\\"')
@@ -246,10 +248,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 ]
                 if to:
                     lines.append('  tell m to make new to recipient at end of to recipients with properties {address:"%s"}' % esc(to))
-                lines += [
-                    '  tell content of m to make new attachment with properties {file name:POSIX file "%s"} at after last paragraph' % esc(full),
-                    'end tell',
-                ]
+                for full in fulls:
+                    lines.append('  tell content of m to make new attachment with properties {file name:POSIX file "%s"} at after last paragraph' % esc(full))
+                lines.append('end tell')
                 args = ["osascript"]
                 for line in lines:
                     args += ["-e", line]

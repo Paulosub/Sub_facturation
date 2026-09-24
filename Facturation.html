@@ -16567,14 +16567,16 @@ function dvPdfMenu(){
     ? '<div style="padding:4px 16px 4px 12px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+lbl+'</div>'
     : '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">'+lbl+'</div>';
   const selM=(window._dvPdfSelM||[]).slice(), selF=selM[selM.length-1]||window._dvPdfSel;
-  const n=selM.length||((selF)?1:0), plur=n>1?' ('+n+')':'';
+  const n=selM.length||((selF)?1:0);
+  /* visuel Deltaproject : à 2 fichiers et plus, Ouvrir et Supprimer se grisent ;
+     Partager (avec toutes les pièces jointes) et Fusionner restent actifs */
   m.innerHTML=
-    it('Ouvrir'+plur, selF?('dvPdfMenu();dvPdfOpenSel()'):'', !!selF)+
-    it('Partager le fichier PDF …', (n===1&&selF)?('dvPdfMenu();dvPdfShare('+PV_Q+pvEscA(selF)+PV_Q+')'):'', n===1&&!!selF)+
+    it('Ouvrir', (n===1&&selF)?('dvPdfMenu();dvPdfOpenSel()'):'', n===1&&!!selF)+
+    it('Partager le fichier PDF …', selF?('dvPdfMenu();dvPdfShare()'):'', !!selF)+
     '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
     it('Import fichier PDF …','dvPdfMenu();toast('+PV_Q+'Import d’un fichier PDF — à définir.'+PV_Q+')',true)+
     it('Fusionner PDF …', n>=2?('dvPdfMenu();dvPdfMergeOpen()'):'', n>=2)+
-    it('Supprimer'+plur, selF?('dvPdfMenu();dvPdfDelAsk()'):'', !!selF);
+    it('Supprimer', (n===1&&selF)?('dvPdfMenu();dvPdfDelAsk()'):'', n===1&&!!selF);
   m.style.display='block';
 }
 function dvPdfOpenSel(){ ((window._dvPdfSelM&&window._dvPdfSelM.length)?window._dvPdfSelM:[window._dvPdfSel]).forEach(n2=>{ if(n2) dvPdfOpen(n2); }); }
@@ -16683,7 +16685,9 @@ async function dvMergeDo(){
 }
 /* ===== Fenêtre « Partager le fichier PDF » (clone Deltaproject) ===== */
 function dvPdfShare(nom){
-  if(!nom) return;
+  const noms=nom?[nom]:((window._dvPdfSelM&&window._dvPdfSelM.length)?window._dvPdfSelM.slice():(window._dvPdfSel?[window._dvPdfSel]:[]));
+  if(!noms.length) return;
+  nom=noms[0];
   let ov=document.getElementById('dv_share_ov');
   if(!ov){ ov=document.createElement('div'); ov.id='dv_share_ov';
     ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10050';
@@ -16695,13 +16699,14 @@ function dvPdfShare(nom){
   const btn='border:1px solid #c8c8c8;border-radius:6px;background:#f6f6f6;padding:5px 14px;font-size:13px;cursor:pointer;font-family:inherit';
   const dot='border:1px solid #c8c8c8;border-radius:6px;background:#f6f6f6;width:34px;padding:4px 0;font-size:13px;cursor:pointer;flex:none;margin-left:8px';
   const conc=nom.replace(/\.pdf$/i,'');
+  const nomsAff=noms.join(', ');
   const dest=localStorage.getItem('sa_dv_share_dest')||'';
   ov.innerHTML=
   '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:720px;max-width:94vw;max-height:92vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.35)">'+
     '<div style="background:#003346;color:#fff;font-weight:700;font-size:14px;text-align:center;padding:9px 14px;border-radius:10px 10px 0 0">Partager le fichier PDF</div>'+
     '<div style="padding:16px 22px 18px 22px">'+
       '<div style="'+sect+'">Fichiers PDF</div>'+
-      '<div style="'+row+'"><span style="'+lab+'">Fichier</span><input id="dvs_nom" style="'+inp+';background:#f4f4f4" readonly value="'+pvEsc(nom)+'"></div>'+
+      '<div style="'+row+'"><span style="'+lab+'">Fichier'+(noms.length>1?'s':'')+'</span><input id="dvs_nom" style="'+inp+';background:#f4f4f4" readonly value="'+pvEsc(nomsAff)+'"></div>'+
       '<div style="border-top:1px solid #ddd;margin:14px 0"></div>'+
       '<div style="'+sect+'">Exporter le fichier PDF</div>'+
       '<div style="'+row+'"><span style="'+lab+'">Dossier</span><input id="dvs_dest" style="'+inp+'" placeholder="Dossier de destination …" value="'+pvEsc(dest)+'">'+
@@ -16722,7 +16727,7 @@ function dvPdfShare(nom){
       '<div style="display:flex;justify-content:flex-end;margin:18px 0 0 0">'+
         '<button style="'+btn+';background:#0a84ff;border-color:#0a84ff;color:#fff;font-weight:600;padding:6px 22px" onclick="dvShareClose()">Fermer</button></div>'+
     '</div></div>';
-  ov.style.display='block'; window._dvShareNom=nom;
+  ov.style.display='block'; window._dvShareNom=nom; window._dvShareNoms=noms;
 }
 function dvShareClose(){ const ov=document.getElementById('dv_share_ov'); if(ov) ov.style.display='none'; }
 async function dvShareDir(){
@@ -16731,15 +16736,20 @@ async function dvShareDir(){
   catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
 }
 async function dvShareSave(){
-  const nom=window._dvShareNom||''; const dest=(document.getElementById('dvs_dest')||{}).value||'';
+  const noms=window._dvShareNoms||(window._dvShareNom?[window._dvShareNom]:[]);
+  const dest=(document.getElementById('dvs_dest')||{}).value||'';
   if(!dest.trim()){ toast('Indiquez d’abord un dossier de destination (bouton …).'); return; }
   try{ localStorage.setItem('sa_dv_share_dest',dest.trim()); }catch(e){}
   const rev=(document.getElementById('dvs_reveal')||{}).checked?'1':'0';
   try{
-    const r=await fetch('http://127.0.0.1:7788/copypdf?name='+encodeURIComponent(nom)+'&dest='+encodeURIComponent(dest.trim())+'&reveal='+rev);
-    const j=await r.json();
-    if(j&&j.ok) toast('« '+nom+' » enregistré dans '+dest.trim());
-    else toast((j&&j.error)||'Échec de l’enregistrement.');
+    let ok=0, err='';
+    for(let i=0;i<noms.length;i++){
+      const r=await fetch('http://127.0.0.1:7788/copypdf?name='+encodeURIComponent(noms[i])+'&dest='+encodeURIComponent(dest.trim())+'&reveal='+((rev==='1'&&i===0)?'1':'0'));
+      const j=await r.json();
+      if(j&&j.ok) ok++; else err=(j&&j.error)||'Échec de l’enregistrement.';
+    }
+    if(ok===noms.length) toast(noms.length>1?(noms.length+' fichiers enregistrés dans '+dest.trim()):('« '+noms[0]+' » enregistré dans '+dest.trim()));
+    else toast(err);
   }catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
 }
 function dvShareTo(){
@@ -16760,9 +16770,10 @@ async function dvShareMail(){
   const civL=civ?(/[,;:.!?]$/.test(civ)?civ:civ+',')+NL+NL:'';
   const body=civL+txt;
   try{
-    const r=await fetch('http://127.0.0.1:7788/mailpdf?name='+encodeURIComponent(nom)+'&to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body));
+    const noms=window._dvShareNoms||(nom?[nom]:[]);
+    const r=await fetch('http://127.0.0.1:7788/mailpdf?'+noms.map(n2=>'name='+encodeURIComponent(n2)).join('&')+'&to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body));
     const j=await r.json();
-    if(j&&j.ok) toast('Brouillon créé dans Apple Mail avec « '+nom+' » en pièce jointe.');
+    if(j&&j.ok) toast('Brouillon créé dans Apple Mail avec '+(noms.length>1?(noms.length+' pièces jointes'):('« '+noms[0]+' » en pièce jointe'))+'.');
     else toast((j&&j.error)||'Échec de la préparation du courrier.');
   }catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
 }

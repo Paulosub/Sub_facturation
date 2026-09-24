@@ -16695,6 +16695,43 @@ function dvDocFenDG(){
     offreFoot(1,1)+'</div>';
   dvDocShow('Devis général', page);
 }
+/* « Document Standard … » du menu feuille : page de garde épurée (modèle Deltaproject) —
+   en-tête à tirets, sections, signatures et logo vertical, SANS ligne de marge ni « Phase ». */
+function dvDocFenStd(){
+  const aff=_dvAff, D=dvA(); if(!D) return;
+  const moisC=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  const dt=new Date();
+  const dateC=dt.getDate()+' '+moisC[dt.getMonth()]+' '+dt.getFullYear();
+  let mo='';
+  try{ const cs=JSON.parse(localStorage.getItem('sa_contrats')||'[]');
+    const c=cs.find(x=>x && (x.affaire===aff)) || cs.find(x=>x && ((x.affaire||'').toUpperCase().startsWith(aff.toUpperCase())));
+    if(c) mo=[c.nom,c.adr,c.loc].filter(Boolean).join(', ');
+  }catch(e){}
+  const ouvrage=ccAffName(aff)||'';
+  const sec=(t,v)=>'<div style="margin-bottom:8mm"><div style="font-size:8.6pt;color:#333;border-bottom:.4pt solid #555;padding-bottom:1mm">'+t+'</div>'+
+    '<div style="font-size:9pt;margin-top:1.6mm;min-height:4mm">'+pvEsc(v||'')+'</div></div>';
+  const sig=t=>'<div style="margin-top:12mm;font-size:9pt">'+t+'</div>'+
+    '<div style="display:flex;align-items:flex-end;gap:5mm;margin-top:9mm;font-size:9pt">'+
+    '<span style="flex:none">Lieu, date</span><span style="flex:1.1;border-bottom:.4pt solid #555"></span>'+
+    '<span style="flex:none;text-align:right;line-height:1.25">Tampon,<br>signature</span><span style="flex:1.3;border-bottom:.4pt solid #555"></span></div>';
+  const tiret='<div style="color:#888;line-height:1;margin:1mm 0">—</div>';
+  const page='<div class="offre-page">'+
+    '<div style="position:absolute;top:13mm;left:14mm;font-size:9pt;line-height:1.45">'+
+      '<div style="font-weight:bold">Devis général</div>'+tiret+
+      '<div>'+pvEsc(aff)+'.DG</div>'+tiret+
+      '<div>'+pvEsc(ouvrage)+'</div>'+tiret+
+      '<div>Cully - '+dateC+'</div></div>'+
+    '<div class="offre-ct" style="margin-top:46mm">'+
+      sec('OUVRAGE', ouvrage)+
+      sec('MAÎTRE DE L'+PV_Q+'OUVRAGE', mo)+
+      sec('ARCHITECTE','Substances Architectes Sàrl, Rue de la Gare 12, 1096 Cully')+
+      sec('DIRECTION DES TRAVAUX','Substances Architectes Sàrl, Rue de la Gare 12, 1096 Cully')+
+      '<div style="margin-top:66mm">'+sig('Le Maître de l'+PV_Q+'ouvrage :')+sig('L'+PV_Q+'architecte :')+'</div>'+
+    '</div>'+
+    '<div class="offre-logo">SUBSTANCES<br>ARCHITECTES</div>'+
+    offreFoot(1,1)+'</div>';
+  dvDocShow('Devis général', page);
+}
 /* Sélection d'un fichier dans la liste Fichiers PDF ; double-clic = ouvrir dans Aperçu. */
 function dvPdfSel(nom,tr,ev){
   /* clic = sélection simple ; ⌘/Ctrl/Maj + clic = ajouter/retirer de la sélection multiple */
@@ -17124,7 +17161,7 @@ function dvToolbarHTML(){
             const gris=lbl=>'<div style="padding:6px 16px;color:#b5b5b5">'+lbl+'</div>';
             if(!pres.length){
               /* menu AVANT toute présentation enregistrée (modèle Deltaproject) */
-              return li('Document Standard … [Ancien document]',av('Document Standard'))+
+              return li('Document Standard … [Ancien document]','dvTbTog(null);dvDocFenStd()')+
                 li('Ajouter une présentation par défaut','dvTbTog(null);dvPresAdd()')+
                 li('Renommer la présentation …',av('Renommer la présentation'))+
                 sep+

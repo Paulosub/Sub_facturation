@@ -179,6 +179,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": str(e)})
             return
 
+        if u.path == "/getpdf":
+            # Renvoie les octets d'un PDF de « PDF Devis » (pour la fusion côté app).
+            q = urllib.parse.parse_qs(u.query)
+            name = os.path.basename((q.get("name", [""])[0]).strip())
+            full = os.path.join(BASE_DIR, "PDF Devis", name)
+            if not name or not os.path.isfile(full):
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % name})
+                return
+            try:
+                with open(full, "rb") as fh:
+                    data = fh.read()
+                self.send_response(200)
+                self._cors()
+                self.send_header("Content-Type", "application/pdf")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         if u.path == "/copypdf":
             # Exporte (copie) un PDF de « PDF Devis » vers un dossier choisi.
             # &reveal=1 → révèle ensuite la copie dans le Finder.

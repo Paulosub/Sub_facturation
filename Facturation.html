@@ -17819,7 +17819,7 @@ function dvDlgCalc(pid){
     '#dv_ca_wrap tr.dv-ca-sel td{background:#cfe3f5}'+
     '#dv_ca_wrap td.mt{padding:0 6px;text-align:right;color:#555;font-size:13px;line-height:23px}'+
     '</style>'+
-  '<div id="dv_ca_wrap" tabindex="0" onkeydown="dvCalcKey(event)">'+
+  '<div id="dv_ca_wrap" tabindex="0">'+
     '<table><colgroup><col style="width:220px"><col style="width:70px"><col style="width:150px"><col style="width:80px">'+
     '<col style="width:56px"><col style="width:92px"><col style="width:54px"><col style="width:92px"><col style="width:100px"><col style="width:46px"></colgroup>'+
     '<thead><tr>'+
@@ -17908,55 +17908,30 @@ function dvCalcMenu(){
     ? '<div style="'+(top?'border-top:1px solid #e4e4e4;':'')+'padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();'+fn+'">'+lbl+'</div>'
     : '<div style="'+(top?'border-top:1px solid #e4e4e4;':'')+'padding:7px 14px;color:#b5b5b5">'+lbl+'</div>';
   m.innerHTML=
-    it('Copier le calcul<span style="float:right;color:#999;margin-left:26px">⌘⇧C</span>','dvCalcCopy()',true)+
-    it('Coller le calcul<span style="float:right;color:#999;margin-left:26px">⌘⇧V</span>','dvCalcPaste()',!!(_dvCalcClipRows&&_dvCalcClipRows.length))+
-    it('Copier la ligne<span style="float:right;color:#999;margin-left:26px">⌘C</span>','dvCalcRowCopy()',!!selOk,1)+
-    it('Coller la ligne<span style="float:right;color:#999;margin-left:26px">⌘V</span>','dvCalcRowPaste()',!!(window._dvCalcRowClip&&selOk))+
+    it('Copier le calcul<span style="float:right;color:#999;margin-left:26px">⌘C</span>','dvCalcCopy()',true)+
+    it('Coller le calcul<span style="float:right;color:#999;margin-left:26px">⌘V</span>','dvCalcPaste()',!!(_dvCalcClipRows&&_dvCalcClipRows.length))+
     it('Navigateur …','',false,1)+
     it('Arrondi …','dvCalcArrOpen()',true)+
     it('Copier le contenu du tableau dans le presse-papier','dvCalcClipTable()',true,1)+
     it('Exporter le tableau dans un fichier CSV …','dvCalcCsv()',true);
   m.style.display='block';
 }
-/* Copier / coller une LIGNE du calcul (même mécanique que ⌘C/⌘V) */
-function dvCalcRowCopy(){
-  const p=dvCalcP(); if(!p||_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord une ligne.'); return; }
-  window._dvCalcRowClip=JSON.parse(JSON.stringify(p.calc.rows[_dvCalcSel]));
-  toast('Ligne '+(_dvCalcSel+1)+' copiée — sélectionnez la ligne de destination puis « Coller la ligne ».');
-}
-function dvCalcRowPaste(){
-  const p=dvCalcP(); if(!p||!window._dvCalcRowClip) return;
-  if(_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord la ligne de destination.'); return; }
-  p.calc.rows[_dvCalcSel]=JSON.parse(JSON.stringify(window._dvCalcRowClip));
-  dvCalcRender();
-  toast('Ligne collée sur la ligne '+(_dvCalcSel+1)+'.');
-}
-/* ⌘C / ⌘V dans le tableau : copie la LIGNE sélectionnée, puis la colle SUR la ligne
-   sélectionnée au moment du coller (le texte sélectionné dans une cellule garde la copie native). */
-function dvCalcKey(ev){
-  if(!(ev.metaKey||ev.ctrlKey)) return;
+/* ⌘C / ⌘V pendant que la fenêtre de calcul est ouverte : copier / coller LE CALCUL
+   (écouteur global — aucun besoin de focus dans le tableau ; le texte sélectionné
+   dans une cellule garde le copier/coller natif). */
+document.addEventListener('keydown',function(ev){
+  if(!(ev.metaKey||ev.ctrlKey)||ev.altKey) return;
+  const wrap=document.getElementById('dv_ca_wrap');
+  if(!wrap||!wrap.getClientRects().length) return;    /* fenêtre de calcul fermée */
+  const k=ev.key.toLowerCase(); if(k!=='c'&&k!=='v') return;
   const el=document.activeElement;
-  const dansTable=el&&el.closest&&el.closest('#dv_ca_wrap');
-  if(!dansTable) return;
-  const k=ev.key.toLowerCase();
-  const p=dvCalcP(); if(!p) return;
-  /* ⌘⇧C / ⌘⇧V : copier / coller le CALCUL ENTIER */
-  if(ev.shiftKey&&k==='c'){ ev.preventDefault(); dvCalcCopy(); return; }
-  if(ev.shiftKey&&k==='v'){ ev.preventDefault(); dvCalcPaste(); return; }
-  if(k==='c'){
-    if(el.tagName==='INPUT'&&el.selectionStart!==el.selectionEnd) return; /* copie native du texte */
-    if(_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord une ligne.'); return; }
-    ev.preventDefault();
-    window._dvCalcRowClip=JSON.parse(JSON.stringify(p.calc.rows[_dvCalcSel]));
-    toast('Ligne '+(_dvCalcSel+1)+' copiée.');
-  } else if(k==='v'&&window._dvCalcRowClip){
-    if(_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord la ligne de destination.'); return; }
-    ev.preventDefault();
-    p.calc.rows[_dvCalcSel]=JSON.parse(JSON.stringify(window._dvCalcRowClip));
-    dvCalcRender();
-    toast('Ligne collée sur la ligne '+(_dvCalcSel+1)+'.');
-  }
-}
+  const dansCellule=el&&el.tagName==='INPUT'&&el.closest('#dv_ca_wrap');
+  if(dansCellule&&el.selectionStart!==el.selectionEnd) return;  /* texte sélectionné : natif */
+  const horsTable=el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')&&!el.closest('#dv_ca_wrap');
+  if(horsTable) return;                                /* champ commentaire/descriptif : natif */
+  ev.preventDefault();
+  if(k==='c') dvCalcCopy(); else dvCalcPaste();
+});
 function dvCalcCopy(){ const p=dvCalcP(); _dvCalcClipRows=JSON.parse(JSON.stringify(p.calc.rows)); toast('Calcul copié ('+_dvCalcClipRows.length+' ligne(s)).'); }
 function dvCalcHasContent(){ const p=dvCalcP();
   return (p.calc.rows||[]).some(r=>(r.com||'').trim()||(r.qexp||'').trim()||ccP(r.qty)||ccP(r.pht)||ccP(r.pttc)); }

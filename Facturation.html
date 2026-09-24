@@ -17018,7 +17018,7 @@ function dvRender(){
       all.sort((x2,y2)=>(y2.date||0)-(x2.date||0));
       const rowsP=all.map(f2=>{ const d2=f2.date?new Date(f2.date):null;
         const ds=d2?(('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear()+' '+('0'+d2.getHours()).slice(-2)+':'+('0'+d2.getMinutes()).slice(-2)):'';
-        return '<tr style="cursor:pointer" data-nom="'+pvEscA(f2.nom||'')+'" title="Clic : sélectionner (⌘ ou Maj : sélection multiple) — double-clic : ouvrir" onclick="dvPdfSel('+PV_Q+pvEscA(f2.nom||'')+PV_Q+',this,event)" ondblclick="dvPdfOpen('+PV_Q+pvEscA(f2.nom||'')+PV_Q+')"><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
+        return '<tr style="cursor:pointer;user-select:none;-webkit-user-select:none" data-nom="'+pvEscA(f2.nom||'')+'" title="Clic : sélectionner (⌘ ou Maj : sélection multiple) — double-clic : ouvrir" onclick="dvPdfSel('+PV_Q+pvEscA(f2.nom||'')+PV_Q+',this,event)" ondblclick="dvPdfOpen('+PV_Q+pvEscA(f2.nom||'')+PV_Q+')"><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
       while(rowsP.length<10) rowsP.push('<tr><td>&nbsp;</td><td></td></tr>');
       return rowsP.join(''); })()+'</tbody></table>'+
     (()=>{ const anyPdf=Object.keys(D.docs||{}).some(k=>D.docs[k]&&D.docs[k].pdf);

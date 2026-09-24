@@ -8164,6 +8164,11 @@ function applyCalcHono(asNewVersion) {
         {title:'Contrat signé — verrouillé', yesText:'＋ Nouvelle version', yesColor:'#0a6e84'});
       return;
     }
+    if(asNewVersion && c.signe){
+      // la DERNIÈRE VERSION SIGNÉE continue de faire foi (p.ex. pour les honoraires du DG)
+      c.signedV={v:Math.max(...c.versions.map(x=>x.v||1)), httc:c.httc, hht:c.hht,
+        phases:JSON.parse(JSON.stringify(c.phases||{}))};
+    }
     if(asNewVersion && (c.signe || c.envoye)){ c.signe=false; c.envoye=false; }   // la nouvelle version repart non envoyée / non signée
     if(asNewVersion){
       // nouvelle version : la précédente est conservée dans l'historique
@@ -8428,19 +8433,19 @@ function chSetContratFlag(id, flag, val){
   if(flag==='signe' && !val && c.signe){
     renderContratsTable();   // ré-affiche la case cochée tant que la levée du verrou n'est pas confirmée
     chConfirm('Retirer l\'état « signé » de ce contrat ?\n\nIl redeviendra modifiable sans passer par une nouvelle version.',
-      ()=>{ c.signe=false; persist(); renderContratsTable(); },
+      ()=>{ c.signe=false; c.signedV=null; persist(); renderContratsTable(); },
       {title:'Contrat signé', yesText:'Retirer « signé »', yesColor:'#b08800'});
     return;
   }
   if(flag==='annule' && val && c.signe){
     renderContratsTable();   // contrat signé (verrouillé) → marquer annulé exige de retirer « signé »
     chConfirm('Ce contrat est marqué SIGNÉ.\n\nLe marquer ANNULÉ retirera l\'état « signé » (et son verrou).',
-      ()=>{ c.signe=false; c.annule=true; if(!c.envoye) c.envoye=true; c.archive=true; persist(); renderContratsTable(); },
+      ()=>{ c.signe=false; c.signedV=null; c.annule=true; if(!c.envoye) c.envoye=true; c.archive=true; persist(); renderContratsTable(); },
       {title:'Contrat signé', yesText:'Marquer annulé', yesColor:'#C0392B'});
     return;
   }
   c[flag] = !!val;
-  if(flag==='signe' && val){ if(!c.envoye) c.envoye = true; c.annule = false; }   // signé ⇒ envoyé, et jamais annulé
+  if(flag==='signe' && val){ if(!c.envoye) c.envoye = true; c.annule = false; c.signedV = null; }   // signé ⇒ envoyé, jamais annulé ; la version courante devient LA version signée
   if(flag==='annule' && val && !c.envoye) c.envoye = true;                        // on n'annule qu'un contrat envoyé
   // TERMINÉ et ANNULÉ archivent automatiquement le contrat (demande 2026-09-20) ; retirer l'état le
   // désarchive, sauf si l'autre motif d'archivage automatique est encore actif.
@@ -15672,9 +15677,12 @@ function dvHonContrat(){
   if(!cs.length) return null;
   let httc=0, hht=0, pct=0, signe=false, m100=0, m100ht=0, partiel=false;
   cs.forEach(c=>{
-    const p2=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
-    const mt=parseFloat(c.httc)||0, mh=parseFloat(c.hht)||0;
-    httc+=mt; hht+=mh; pct+=p2; if(c.signe) signe=true;
+    /* montants qui font foi : version courante si signée, sinon la DERNIÈRE VERSION SIGNÉE */
+    const src=c.signe?c:(c.signedV||c);
+    const sSigne=!!(c.signe||c.signedV);
+    const p2=Object.values(src.phases||c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
+    const mt=parseFloat(src.httc)||0, mh=parseFloat(src.hht)||0;
+    httc+=mt; hht+=mh; pct+=p2; if(sSigne) signe=true;
     if(p2>0.01&&p2<99.995){ partiel=true; m100+=mt/(p2/100); m100ht+=mh/(p2/100); }
     else { m100+=mt; m100ht+=mh; }
   });
@@ -15683,16 +15691,18 @@ function dvHonContrat(){
 }
 function dvHonSync(){
   const D=dvA(); if(!D||!_dvAff) return;
+  if(D.valide) return; /* devis validé : les montants ne bougent plus (contrat compris) */
   const K=dvHonContrat();
-  const cs=(K&&K.signe)?K.cs.filter(c=>c.signe):[];
+  const cs=(K&&K.signe)?K.cs.filter(c=>c.signe||c.signedV):[];
   const i=D.pos.findIndex(p2=>p2.id==='hon_contrat');
   if(!cs.length){ if(i>=0){ D.pos.splice(i,1); dvPersist(); } return; }
   /* montant modifié à la main : on ne l'écrase pas */
   if(i>=0&&D.pos[i].man) return;
   let tot=0, partiel=false;
   cs.forEach(c=>{
-    const pct=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
-    const m=parseFloat(c.httc)||0;
+    const src=c.signe?c:(c.signedV||c);
+    const pct=Object.values(src.phases||c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
+    const m=parseFloat(src.httc)||0;
     if(pct>0.01&&pct<99.995){ partiel=true; tot+=m/(pct/100); } else tot+=m;
   });
   tot=partiel?Math.round(tot):Math.round(tot*100)/100;
@@ -15714,6 +15724,16 @@ function dvHonReinit(){
     dvHonSync(); dvRender();
     toast('Position 291 réinitialisée sur le montant du contrat.');
   });
+}
+/* Brouillon ↔ Validé : validé = montants et lignes verrouillés, le contrat signé
+   ne remplace plus les honoraires du DG. */
+function dvValideTog(){
+  const D=dvA(); if(!D) return;
+  if(D.valide){
+    chConfirm('Repasser ce devis en BROUILLON ?\nLes montants redeviendront modifiables et le contrat signé pourra à nouveau mettre à jour les honoraires.', ()=>{ D.valide=false; dvPersist(); dvRender(); });
+  } else {
+    chConfirm('VALIDER ce devis ?\nLes montants ne seront plus modifiables (y compris les honoraires du contrat d’architecte).', ()=>{ D.valide=true; dvPersist(); dvRender(); });
+  }
 }
 function dvSelAff(v){ _dvAff=v; dvRender(); }
 function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';
@@ -15741,8 +15761,9 @@ function dvCatAdd(code){ const D=dvA(); if(!D) return;
   const inp=document.querySelector('#dv_out input[data-ttc="'+code.replace(/"/g,'')+'"]'); if(inp) inp.focus();
 }
 function dvAddPos(){ const D=dvA(); D.pos.push({id:pvId(), cfc:'', lbl:'', ttc:''}); dvPersist(); dvRender(); }
-function dvDelPos(id){ const D=dvA(); D.pos=D.pos.filter(x=>x.id!==id); dvPersist(); dvRender(); }
+function dvDelPos(id){ const D=dvA(); if(D.valide){ toast('Devis VALIDÉ — lignes verrouillées.'); return; } D.pos=D.pos.filter(x=>x.id!==id); dvPersist(); dvRender(); }
 function dvSet(id,k,el){ const D=dvA(); const pp=D.pos.find(x=>x.id===id); if(!pp) return;
+  if(D.valide&&k==='ttc'){ toast('Devis VALIDÉ — les montants ne sont plus modifiables.'); dvRender(); return; }
   if(k==='ttc'){ pp.ttc=ccP(el.value); if(id==='hon_contrat') pp.man=true; }
   else { pp[k]=el.value; if(k==='cfc'&&!pp.lbl){ const l=ccCatLbl(el.value); if(l) pp.lbl=l; } }
   dvPersist(); dvRender();
@@ -17426,6 +17447,10 @@ function dvRender(){
     '<button class="btn btn-sm" onclick="dvSelAff(null)">← Affaires</button>'+
     '<span style="font-weight:700;font-size:14px">Devis général '+pvEsc(_dvAff)+'</span>'+
     '<span style="color:#777;font-size:12px">'+pvEsc(ccAffName(_dvAff)).slice(0,50)+'</span>'+
+    '<span style="flex:1"></span>'+
+    (D.valide
+      ?'<button class="btn btn-sm" style="background:#e4f4e8;border:1px solid #9fcbaa;color:#1d6b34;font-weight:600" onclick="dvValideTog()" title="Devis VALIDÉ — montants et lignes verrouillés ; cliquer pour repasser en brouillon">🔒 Validé</button>'
+      :'<button class="btn btn-sm" style="background:#fcf0dc;border:1px solid #dcc79a;color:#8a6410" onclick="dvValideTog()" title="Devis en BROUILLON — cliquer pour le valider (verrouille les montants)">Brouillon — valider …</button>')+
     '</div>';
   // Totaux en tête — comme la fenêtre du bureau
   h+='<div style="display:grid;grid-template-columns:110px 160px;gap:1px 10px;font-size:12.5px;margin:4px auto 10px 332px;background:#f4f7f9;border:1px solid #d9e2e6;border-radius:6px;padding:8px 12px;width:300px">'+
@@ -17808,6 +17833,7 @@ function dvMini(html){
 function dvMiniClose(){ const ov=document.getElementById('dv_mini_ov'); if(ov) ov.style.display='none'; }
 function dvCalcOk(){
   const p=dvCalcP(); if(!p) return;
+  if(dvA()&&dvA().valide){ toast('Devis VALIDÉ — les montants ne sont plus modifiables.'); ccDlgClose(); return; }
   p.calc.compos=(document.getElementById('dv_ca_compos')||{}).value||'';
   p.calc.desc=(document.getElementById('dv_ca_desc')||{}).value||'';
   if(p.id==='hon_contrat'&&ccP(p.ttc)!==dvCalcTot().ttc) p.man=true;

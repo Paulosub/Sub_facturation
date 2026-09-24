@@ -15751,17 +15751,18 @@ function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m'); if(!m) 
     : '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">'+lbl+'</div>';
   m.innerHTML=
     it('Effacer le document …','dvDocMenuM();dvDocDelDoc()', !!dd.doc)+
-    it('Effacer le PDF …','dvDocMenuM();dvDocDelPdf()', !!(dd.pdf||(dd.fichs&&dd.fichs.length)));
+    it('Effacer le PDF …','dvDocMenuM();dvDocDelPdf()', !!dd.pdf);
   m.style.display='block'; }
 /* Suppressions : le PDF doit être effacé AVANT le document. */
 function dvDocDelDoc(){ const n=window._dvDocSel; const D=dvA(); if(!n||!D) return;
   const dd=(D.docs||{})[n]; if(!dd||!dd.doc) return;
-  if(dd.pdf||(dd.fichs&&dd.fichs.length)){ dvErr('Un fichier PDF existe déjà.'); return; }
-  delete D.docs[n]; dvPersist(); dvRender();
+  if(dd.pdf){ dvErr('Un fichier PDF existe déjà.'); return; }
+  if(dd.fichs&&dd.fichs.length){ dd.doc=false; } else { delete D.docs[n]; }
+  dvPersist(); dvRender();
   toast('Document « '+n+' » effacé.'); }
 function dvDocDelPdf(){ const n=window._dvDocSel; const D=dvA(); if(!n||!D) return;
-  const dd=(D.docs||{})[n]; if(!dd||(!dd.pdf&&!(dd.fichs&&dd.fichs.length))) return;
-  dd.pdf=null; dd.date=null; dd.fichs=null; dvPersist(); dvRender();
+  const dd=(D.docs||{})[n]; if(!dd||!dd.pdf) return;
+  dd.pdf=null; dd.date=null; dvPersist(); dvRender();
   toast('PDF de « '+n+' » effacé.'); }
 /* Fenêtre d'erreur type macOS : barre de titre « Erreur », panneau stop rouge, bouton OK. */
 function dvErr(msg){

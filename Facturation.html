@@ -15686,7 +15686,107 @@ function dvDocOptC(g,k){ const o=dvDocOptO(); if(!o) return;
   const m=document.getElementById('dv_doc_menu_g'); if(m) m.style.display='none'; }
 function dvDocOuvrir(){
   if(window._dvDocSel==='Devis général'){ dvDocFenDG(); return; }
+  if(window._dvDocSel==='Honoraires'){ dvDocFenHon(); return; }
+  if(window._dvDocSel==='Devis descriptif'){ dvDocFenDesc(); return; }
   toast('Ouvrir « '+(window._dvDocSel||'document')+' » — fenêtre à définir.'); }
+/* Contexte commun des documents du devis : affaire, ouvrage, maître de l'ouvrage (contrat). */
+function dvDocCtx(){
+  const aff=_dvAff;
+  let c=null;
+  try{ const cs=JSON.parse(localStorage.getItem('sa_contrats')||'[]');
+    c=cs.find(x=>x && (x.affaire===aff)) || cs.find(x=>x && ((x.affaire||'').toUpperCase().startsWith((aff||'').toUpperCase()))) || null;
+  }catch(e){}
+  return { aff, ouvrage: ccAffName(aff)||'', c };
+}
+function dvDocShow(titre, pagesHtml){
+  document.querySelector('#offre-bar .t').textContent=titre;
+  document.getElementById('offre-title').textContent='— '+(_dvAff||'');
+  const sel=document.getElementById('offre-version'); if(sel) sel.style.display='none';
+  const vc=document.getElementById('offre-version-comment'); if(vc) vc.textContent='';
+  document.getElementById('offre-scroll').innerHTML=pagesHtml;
+  _offreDl=()=>toast('Génération du PDF — à venir.');
+  _offrePrint=()=>window.print();
+  document.getElementById('offre-overlay').classList.add('on');
+  document.body.classList.add('offre-open');
+}
+/* ── « Soumis à honoraires » (document Honoraires) : tableau CFC, groupes 1 chiffre en noir,
+   groupes 2-3 chiffres en gris, % soumis et Honoraires (0 tant que non saisis). ── */
+function dvDocFenHon(){
+  const D=dvA(); if(!D) return;
+  const K=dvDocCtx(); const C=dvCalc(D); const tva=(D.tva!=null?D.tva:8.1);
+  const dt=new Date();
+  const dateC=('0'+dt.getDate()).slice(-2)+'.'+('0'+(dt.getMonth()+1)).slice(-2)+'.'+String(dt.getFullYear()).slice(-2);
+  const items=[];
+  Object.keys(C.grp).forEach(g=>items.push({g:1, cfc:g}));
+  D.pos.forEach(pp=>items.push({g:0, p:pp, cfc:pp.cfc||'zzz'}));
+  items.sort((x,y)=>{ const c2=ccCmp(x.cfc,y.cfc); return c2!==0?c2:(y.g-x.g); });
+  const rows=items.map(it=>{
+    if(it.g){ const t=C.grp[it.cfc]||0, ht=t/(1+tva/100), L=it.cfc.length;
+      const st=L===1?'background:#000;color:#fff;font-weight:bold':'background:#e2e2e2;font-weight:bold';
+      return '<tr style="'+st+'"><td style="padding:1.4mm 1.5mm">'+pvEsc(it.cfc)+'</td>'+
+        '<td style="padding:1.4mm 1.5mm">'+pvEsc(ccCatLbl(it.cfc)||'')+'</td>'+
+        '<td style="padding:1.4mm 1.5mm;text-align:right">'+ccF(ht)+'</td>'+
+        '<td style="padding:1.4mm 1.5mm;text-align:right"></td>'+
+        '<td style="padding:1.4mm 1.5mm;text-align:right">0.00</td></tr>'; }
+    const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100);
+    return '<tr style="border-bottom:.2pt solid #eee"><td style="padding:1.4mm 1.5mm">'+pvEsc(pp.cfc||'')+'</td>'+
+      '<td style="padding:1.4mm 1.5mm">'+pvEsc(pp.lbl||'')+'</td>'+
+      '<td style="padding:1.4mm 1.5mm;text-align:right">'+ccF(ht)+'</td>'+
+      '<td style="padding:1.4mm 1.5mm;text-align:right">0.0</td>'+
+      '<td style="padding:1.4mm 1.5mm;text-align:right">0.00</td></tr>';
+  });
+  const thead='<tr style="border-bottom:.5pt solid #1a1a1a"><th style="text-align:left;width:14mm;padding:1.4mm 1.5mm">N°</th>'+
+    '<th style="text-align:left;padding:1.4mm 1.5mm">Désignation</th>'+
+    '<th style="text-align:right;width:30mm;padding:1.4mm 1.5mm">Montant HT</th>'+
+    '<th style="text-align:right;width:18mm;padding:1.4mm 1.5mm">% soumis</th>'+
+    '<th style="text-align:right;width:30mm;padding:1.4mm 1.5mm">Honoraires</th></tr>';
+  const meta='<div style="display:grid;grid-template-columns:38mm 1fr;font-size:9pt;line-height:1.55;margin:6mm 0 8mm">'+
+    '<span>N°</span><span>'+pvEsc(K.aff)+'</span>'+
+    '<span>Affaire</span><span>'+pvEsc(K.ouvrage)+'</span>'+
+    '<span>Maître d'+PV_Q+'ouvrage</span><span>'+pvEsc((K.c&&K.c.nom)||'')+'</span>'+
+    '<span>Architecte</span><span>Substances Architectes Sàrl</span>'+
+    '<span>Date</span><span>'+dateC+'</span>'+
+    '<span>Filtre</span><span></span></div>';
+  const head=t=>'<div style="border-top:.4pt solid #ccc;margin-bottom:12mm"></div>'+
+    '<div style="font-weight:bold;font-size:12pt;border-bottom:.5pt solid #1a1a1a;padding-bottom:1.2mm">'+t+'</div>';
+  const pages=[]; let i=0, per=22;
+  while(i<rows.length||pages.length===0){ pages.push(rows.slice(i,i+per)); i+=per; per=38; if(i>=rows.length) break; }
+  const total=pages.length;
+  const html=pages.map((chunk,pi)=>'<div class="offre-page"><div style="margin-top:8mm">'+head('Soumis à honoraires')+
+    (pi===0?meta:'<div style="height:6mm"></div>')+
+    '<table style="width:100%;border-collapse:collapse;font-size:8.8pt"><thead>'+thead+'</thead><tbody>'+chunk.join('')+'</tbody></table>'+
+    '</div>'+offreFoot(pi+1,total)+'</div>').join('');
+  dvDocShow('Soumis à honoraires', html);
+}
+/* ── « Descriptif » (document Devis descriptif) : fiche de l'affaire + Informations
+   alimentées par les Remarques préliminaires (Nom | Texte). ── */
+function dvDocFenDesc(){
+  const D=dvA(); if(!D) return;
+  const K=dvDocCtx();
+  const mois=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const dt=new Date(); const dateL=dt.getDate()+' '+mois[dt.getMonth()]+' '+dt.getFullYear();
+  const l=(lab,val)=>'<span>'+lab+'</span><span>'+val+'</span>';
+  const moLines=[(K.c&&K.c.nom)||'',(K.c&&K.c.adr)||'',(K.c&&K.c.loc)||''].filter(Boolean).map(pvEsc).join('<br>');
+  const rem=(Array.isArray(D.rem)?D.rem:[]).filter(r=>(r.nom||'').trim()||(r.txt||'').trim());
+  const infoRows=rem.length?rem.map(r=>'<div style="display:flex;margin-bottom:5mm">'+
+      '<div style="width:52mm;flex:none">'+pvEsc(r.nom||'')+'</div>'+
+      '<div style="flex:1;white-space:pre-wrap">'+pvEsc(r.txt||'')+'</div></div>').join(''):'';
+  const html='<div class="offre-page"><div style="margin-top:8mm">'+
+    '<div style="border-top:.4pt solid #ccc;margin-bottom:12mm"></div>'+
+    '<div style="font-weight:bold;font-size:12pt;border-bottom:.5pt solid #1a1a1a;padding-bottom:1.2mm">Descriptif</div>'+
+    '<div style="display:grid;grid-template-columns:52mm 1fr;font-size:9pt;line-height:1.55;margin:8mm 0 0">'+
+    l('N°',pvEsc(K.aff))+l('Affaire',pvEsc(K.ouvrage))+
+    '<span style="margin-top:4mm">Maître d'+PV_Q+'ouvrage</span><span style="margin-top:4mm">'+(moLines||'')+'</span>'+
+    '<span style="margin-top:4mm">Architecte</span><span style="margin-top:4mm;display:flex;gap:24mm"><span>Substances Architectes Sàrl<br>Rue de la Gare 12<br>1096 Cully</span><span>021 711 50 50<br>info@substances.ch</span></span>'+
+    '<span style="margin-top:4mm">Indice</span><span style="margin-top:4mm"></span>'+
+    l('Etat de la planification','')+l('Etat du projet','')+
+    l('Marge d'+PV_Q+'approximation','±15%')+
+    l('Date',dateL)+l('Filtre','')+'</div>'+
+    '<div style="color:#888;font-size:8.6pt;border-bottom:.4pt solid #999;padding-bottom:1mm;margin:8mm 0 6mm">Informations</div>'+
+    '<div style="font-size:9pt;line-height:1.5">'+infoRows+'</div>'+
+    '</div>'+offreFoot(1,1)+'</div>';
+  dvDocShow('Descriptif', html);
+}
 /* Fenêtre « Devis général » : page de garde fidèle au document du bureau,
    affichée dans l'aperçu plein écran des documents (offre-overlay). */
 function dvDocFenDG(){

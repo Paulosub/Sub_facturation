@@ -17962,6 +17962,15 @@ function dvCalcHasContent(){ const p=dvCalcP();
   return (p.calc.rows||[]).some(r=>(r.com||'').trim()||(r.qexp||'').trim()||ccP(r.qty)||ccP(r.pht)||ccP(r.pttc)); }
 function dvCalcPaste(){
   if(!_dvCalcClipRows||!_dvCalcClipRows.length){ toast('Aucun calcul copié.'); return; }
+  /* une ligne est sélectionnée : le calcul copié s'insère DIRECTEMENT sous cette ligne */
+  const p0=dvCalcP();
+  if(p0&&_dvCalcSel!=null&&_dvCalcSel>=0&&p0.calc.rows[_dvCalcSel]){
+    const cp=JSON.parse(JSON.stringify(_dvCalcClipRows));
+    p0.calc.rows.splice(_dvCalcSel+1,0,...cp);
+    _dvCalcSel=_dvCalcSel+1; dvCalcRender();
+    toast(cp.length+' ligne(s) collée(s) sous la ligne sélectionnée.');
+    return;
+  }
   if(dvCalcHasContent()){
     dvMini('<div style="display:flex;gap:14px;align-items:flex-start"><div style="font-size:26px">⚠︎</div>'+
       '<div style="font-size:13px;line-height:1.5">Vous avez déjà inséré un calcul. Voulez-vous le remplacer ou le compléter par le contenu du presse-papier ?</div></div>'+

@@ -17781,6 +17781,8 @@ function dvDlgCalc(pid){
   if(!p.calc.rows) p.calc.rows=[];
   if(!p.calc.rows.length && ccP(p.ttc)>0){ const tva=(D.tva!=null?D.tva:8.1);
     p.calc.rows.push({com:'', base:'', qexp:'', qty:'', unit:'', pht:Math.round(ccP(p.ttc)/(1+tva/100)*100)/100, tva:tva, pttc:ccP(p.ttc), on:true}); }
+  { const tva0=(D.tva!=null?D.tva:8.1);
+    while(p.calc.rows.length<10) p.calc.rows.push({com:'', base:'', qexp:'', qty:'', unit:'', pht:'', tva:tva0, pttc:'', on:true}); }
   const tb=(l,fn,tt)=>'<button class="btn btn-sm" style="min-width:34px" onclick="'+fn+'" title="'+tt+'">'+l+'</button>';
   ccDlg(
   '<div style="font-weight:700;text-align:center;margin-bottom:6px">Calcul pour '+pvEsc(p.cfc||'')+'</div>'+
@@ -17793,12 +17795,23 @@ function dvDlgCalc(pid){
     '<div style="display:grid;grid-template-columns:80px 130px;gap:1px 10px;font-size:12.5px">'+
     '<span style="color:#555">Total HT</span><span id="dv_ca_ht" style="text-align:right">0.00</span>'+
     '<span style="color:#555;font-weight:700">Total TTC</span><b id="dv_ca_ttc" style="text-align:right">0.00</b></div></div>'+
-  '<div style="border:1px solid #cfd8db;border-radius:6px;max-height:300px;overflow:auto">'+
-    '<table class="cc-tb" style="min-width:1020px"><thead><tr>'+
-    '<th class="cc-g" style="min-width:180px">Commentaire</th><th class="cc-g" style="width:70px">Base</th>'+
-    '<th class="cc-g" style="min-width:130px">Calcul de quantités</th><th style="width:74px">Quantité</th>'+
-    '<th class="cc-g" style="width:48px">Unité</th><th style="width:86px">Prix HT</th><th style="width:48px">TVA</th>'+
-    '<th style="width:86px">Prix TTC</th><th style="width:96px">Montant</th><th style="width:40px">Var</th>'+
+  '<style>'+
+    '#dv_ca_wrap{border:1px solid #b8c2c7;overflow:auto;background:#fff;max-height:340px}'+
+    '#dv_ca_wrap table{border-collapse:collapse;table-layout:fixed;min-width:1020px;width:100%}'+
+    '#dv_ca_wrap th{background:#f0f0f0;border:1px solid #c9cfd3;font-weight:normal;font-size:12.5px;color:#000;padding:3px 6px;text-align:left;position:sticky;top:0;z-index:1}'+
+    '#dv_ca_wrap td{border:1px solid #dfe4e7;padding:0;height:23px;overflow:hidden}'+
+    '#dv_ca_wrap input{width:100%;height:23px;border:0;padding:0 6px;background:transparent;font:inherit;font-size:13px;box-sizing:border-box;display:block}'+
+    '#dv_ca_wrap input:focus{outline:2px solid #4a90d9;outline-offset:-2px;background:#fff}'+
+    '#dv_ca_wrap input.num{text-align:right}'+
+    '#dv_ca_wrap tr.dv-ca-sel td{background:#cfe3f5}'+
+    '#dv_ca_wrap td.mt{padding:0 6px;text-align:right;color:#555;font-size:13px;line-height:23px}'+
+    '</style>'+
+  '<div id="dv_ca_wrap">'+
+    '<table><colgroup><col style="width:220px"><col style="width:70px"><col style="width:150px"><col style="width:80px">'+
+    '<col style="width:56px"><col style="width:92px"><col style="width:54px"><col style="width:92px"><col style="width:100px"><col style="width:46px"></colgroup>'+
+    '<thead><tr>'+
+    '<th>Commentaire</th><th>Base</th><th>Calcul de quantités</th><th>Quantité</th>'+
+    '<th>Unité</th><th>Prix HT</th><th>TVA</th><th>Prix TTC</th><th>Montant</th><th>Var</th>'+
     '</tr></thead><tbody id="dv_ca_tb"></tbody></table></div>'+
   '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'+
     '<div style="position:relative"><button class="btn btn-sm" onclick="dvCalcMenu()" title="Actions du calcul"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span></button>'+
@@ -17833,17 +17846,17 @@ function dvCalcRender(){
   tb.innerHTML=rows.map((r,i)=>{
     const q=ccP(r.qty), m=(q>0?q:1)*ccP(r.pttc);
     const sel=(i===_dvCalcSel);
-    const inp=(k,v,st,ph)=>'<input class="cc-in'+(st&&st.indexOf('cc-int')>=0?' cc-int':'')+'" style="'+(st||'')+'" '+(ph?'placeholder="'+ph+'" ':'')+'value="'+pvEsc(v==null?'':String(v))+'" onchange="dvCalcSet('+i+','+PV_Q+k+PV_Q+',this)">';
-    return '<tr onclick="dvCalcSel2('+i+')" style="'+(sel?'outline:2px solid #4a90d9;outline-offset:-2px;':'')+'">'+
-      '<td class="cc-g">'+inp('com',r.com,'cc-int;width:96%','type de travaux…')+'</td>'+
-      '<td class="cc-g"><input class="cc-in cc-int" disabled title="À venir" style="opacity:.4;width:56px" value="'+pvEsc(r.base||'')+'"></td>'+
-      '<td class="cc-g">'+inp('qexp',r.qexp,'cc-int;width:96%','ex. 4+4*4')+'</td>'+
-      '<td>'+inp('qty',(r.qty===''||r.qty==null)?'':r.qty,'width:60px')+'</td>'+
-      '<td class="cc-g">'+inp('unit',r.unit,'cc-int;width:38px')+'</td>'+
-      '<td>'+inp('pht',ccP(r.pht)?ccF(ccP(r.pht)):'','width:76px')+'</td>'+
-      '<td>'+inp('tva',(r.tva!=null?r.tva:8.1),'width:40px')+'</td>'+
-      '<td>'+inp('pttc',ccP(r.pttc)?ccF(ccP(r.pttc)):'','width:76px')+'</td>'+
-      '<td style="color:#555">'+(ccP(r.pttc)?ccF(m):'')+'</td>'+
+    const inp=(k,v,num,ph)=>'<input'+(num?' class="num"':'')+(ph?' placeholder="'+ph+'"':'')+' value="'+pvEsc(v==null?'':String(v))+'" onfocus="dvCalcSel2('+i+')" onchange="dvCalcSet('+i+','+PV_Q+k+PV_Q+',this)">';
+    return '<tr'+(sel?' class="dv-ca-sel"':'')+' onclick="dvCalcSel2('+i+')">'+
+      '<td>'+inp('com',r.com,0,'type de travaux…')+'</td>'+
+      '<td><input disabled title="À venir" style="opacity:.4" value="'+pvEsc(r.base||'')+'"></td>'+
+      '<td>'+inp('qexp',r.qexp,0,'ex. 4+4*4')+'</td>'+
+      '<td>'+inp('qty',(r.qty===''||r.qty==null)?'':r.qty,1)+'</td>'+
+      '<td>'+inp('unit',r.unit,0)+'</td>'+
+      '<td>'+inp('pht',ccP(r.pht)?ccF(ccP(r.pht)):'',1)+'</td>'+
+      '<td>'+inp('tva',(r.tva!=null?r.tva:8.1),1)+'</td>'+
+      '<td>'+inp('pttc',ccP(r.pttc)?ccF(ccP(r.pttc)):'',1)+'</td>'+
+      '<td class="mt">'+(ccP(r.pttc)?ccF(m):'')+'</td>'+
       '<td style="text-align:center;cursor:pointer" onclick="event.stopPropagation();dvCalcVar('+i+')" title="'+(r.on===false?'Variante NON additionnée — cliquer pour additionner':'Additionné — cliquer pour passer en variante (vue)')+'">'+
         (r.on===false?'<span style="color:#b5b5b5;font-size:11px">vue</span>':'<b>×</b>')+'</td></tr>';
   }).join('');
@@ -17959,6 +17972,8 @@ function dvMiniClose(){ const ov=document.getElementById('dv_mini_ov'); if(ov) o
 function dvCalcOk(){
   const p=dvCalcP(); if(!p) return;
   if(dvA()&&dvA().valide){ toast('Devis VALIDÉ — les montants ne sont plus modifiables.'); ccDlgClose(); return; }
+  /* les lignes restées vides (gabarit des 10 lignes) ne sont pas conservées */
+  p.calc.rows=p.calc.rows.filter(r=>String(r.com||'')+String(r.qexp||'')+String(r.qty||'')+String(r.unit||'')!==''||ccP(r.pht)>0||ccP(r.pttc)>0);
   p.calc.compos=(document.getElementById('dv_ca_compos')||{}).value||'';
   p.calc.desc=(document.getElementById('dv_ca_desc')||{}).value||'';
   if(p.id==='hon_contrat'&&ccP(p.ttc)!==dvCalcTot().ttc) p.man=true;

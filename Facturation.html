@@ -17148,7 +17148,16 @@ function dvRender(){
   h+='<div style="display:grid;grid-template-columns:110px 160px;gap:1px 10px;font-size:12.5px;margin:4px auto 10px 332px;background:#f4f7f9;border:1px solid #d9e2e6;border-radius:6px;padding:8px 12px;width:300px">'+
     '<span style="color:#555">Total HT</span><b style="text-align:right">'+ccF(C.totHT)+'</b>'+
     '<span style="color:#555">Total TTC</span><b style="text-align:right">'+ccF(C.totTTC)+'</b>'+
-    '<span style="color:#555">Honoraires HT</span><span style="text-align:right">'+ccF(C.honHT)+'</span></div>';
+    '<span style="color:#555">Honoraires HT</span><span style="text-align:right">'+ccF(C.honHT)+'</span>'+
+    (function(){
+      const cs=((typeof contrats!=='undefined'&&Array.isArray(contrats))?contrats:[]).filter(c=>c.affaire===_dvAff&&!c.annule);
+      if(!cs.length) return '';
+      let m=0, pct=0, signe=false;
+      cs.forEach(c=>{ m+=parseFloat(c.httc)||0; pct+=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0); if(c.signe) signe=true; });
+      const info=(pct>0.01&&pct<99.995?pct.toFixed(1).replace('.0','')+'% des phases':'100%')+(signe?', signé':', non signé');
+      return '<span style="color:#555;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px">Contrat d’architecte</span>'+
+        '<span style="text-align:right;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px" title="Montant TTC du contrat d’honoraires ('+info+')">'+ccF(m)+'<span style="color:#999;font-size:10.5px"> · '+info+'</span></span>';
+    })()+'</div>';
   h+='<div id="dv_flex" style="display:flex;gap:12px;align-items:stretch;height:420px">';
   // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
   const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });

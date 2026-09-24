@@ -15644,8 +15644,8 @@ function dvDocMenuP(){ const m=document.getElementById('dv_doc_menu_p'); if(!m) 
     it('Créer un PDF comme jointe au document …','dvDocMenuP();dvDlgNomFich()', !!dd.doc);
   m.style.display='block'; }
 /* Fenêtre « Nom du fichier » (création d'un PDF en pièce jointe du document). */
-function dvDlgNomFich(){
-  const n=window._dvDocSel; if(!n) return;
+function dvDlgNomFich(pre){
+  const n=window._dvDocSel||window._dvNfDoc; if(!n) return;
   window._dvNfDoc=n;
   let ov=document.getElementById('dv_nf_ov');
   if(!ov){ ov=document.createElement('div'); ov.id='dv_nf_ov';
@@ -15659,7 +15659,7 @@ function dvDlgNomFich(){
       '<span style="flex:1;text-align:center;font-weight:700;font-size:14px;color:#333;margin-right:57px">Nom du fichier</span></div>'+
     '<div style="display:flex;align-items:center;gap:14px;padding:22px 24px 10px">'+
       '<span style="font-size:14px;flex:none">Nom du fichier</span>'+
-      '<input id="dv_nf_in" value="'+pvEscA(n+'.pdf')+'" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+')dvNfOk()" style="flex:1;border:2px solid #6aa8e8;border-radius:4px;padding:5px 8px;font-size:14px;background:#fff">'+
+      '<input id="dv_nf_in" value="'+pvEscA(((typeof pre==='string'&&pre)?pre:n).replace(/\.pdf$/i,''))+'" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+')dvNfOk()" style="flex:1;border:2px solid #6aa8e8;border-radius:4px;padding:5px 8px;font-size:14px;background:#fff">'+
     '</div>'+
     '<div style="display:flex;justify-content:flex-end;gap:12px;padding:10px 22px 18px">'+
       '<button onclick="dvNfClose()" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 22px;font-size:14px;cursor:pointer">Annuler</button>'+
@@ -15674,6 +15674,19 @@ async function dvNfOk(){
   if(!nom){ toast('Indiquez un nom de fichier.'); return; }
   if(!/\.pdf$/i.test(nom)) nom+='.pdf';
   dvNfClose();
+  const D=dvA(); if(!D) return;
+  // Nom déjà pris dans la liste des PDF ? → Avertissement : Oui écrase, Non revient au renommage.
+  let existe=false;
+  Object.keys(D.docs||{}).forEach(k=>{ ((D.docs[k]||{}).fichs||[]).forEach(f2=>{ if(f2.nom===nom) existe=true; }); });
+  if(existe){
+    dvWarn('Le fichier existe déjà. Voulez-vous le remplacer ?',
+      function(){ dvNfWrite(nom, true); },
+      function(){ dvDlgNomFich(nom); });
+    return;
+  }
+  dvNfWrite(nom, false);
+}
+async function dvNfWrite(nom, remplace){
   const docName=window._dvNfDoc; if(!docName) return;
   window._dvApDoc=docName;
   try{
@@ -15689,12 +15702,45 @@ async function dvNfOk(){
       const a2=document.createElement('a'); a2.href=u2; a2.download=nom; a2.click();
       setTimeout(()=>URL.revokeObjectURL(u2),4000);
       toast('Serveur de sauvegarde (7788) indisponible — le PDF a été téléchargé.');
-    } else toast('PDF « '+nom+' » créé en pièce jointe du document.');
+    } else toast(remplace?('PDF « '+nom+' » remplacé.'):('PDF « '+nom+' » créé en pièce jointe du document.'));
     // Pièce jointe : ligne dans Fichiers PDF UNIQUEMENT (pas de coche « PDF disponible »).
-    const D=dvA(); if(D){ D.docs=D.docs||{}; const dd=D.docs[docName]||(D.docs[docName]={});
-      dd.doc=true; dd.fich={nom, date:Date.now()};
+    const D=dvA(); if(D){ D.docs=D.docs||{};
+      if(remplace) Object.keys(D.docs).forEach(k=>{ const l2=D.docs[k];
+        if(l2&&Array.isArray(l2.fichs)) l2.fichs=l2.fichs.filter(f2=>f2.nom!==nom); });
+      const dd=D.docs[docName]||(D.docs[docName]={});
+      dd.doc=true; dd.fichs=Array.isArray(dd.fichs)?dd.fichs:[];
+      dd.fichs.unshift({nom, date:Date.now()});
       dvPersist(); dvRender(); }
   }catch(e){ toast('Erreur PDF : '+e.message); }
+}
+/* Fenêtre « Avertissement » (logo A, Non / Oui) — même style que la fenêtre Erreur. */
+function dvWarn(msg,onOui,onNon){
+  window._dvWarnOui=onOui||null; window._dvWarnNon=onNon||null;
+  let ov=document.getElementById('dv_warn_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='dv_warn_ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:6000;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.10)';
+    document.body.appendChild(ov); }
+  ov.innerHTML='<div style="margin-top:16vh;width:520px;background:#ececec;border:1px solid #a8a8a8;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.45);overflow:hidden">'+
+    '<div style="background:linear-gradient(#f4f4f4,#e2e2e2);border-bottom:1px solid #c6c6c6;padding:7px 10px;display:flex;align-items:center">'+
+      '<span onclick="dvWarnBtn(0)" title="Fermer" style="width:12px;height:12px;border-radius:50%;background:#ff5f57;border:1px solid #dd3c33;cursor:pointer;flex:none"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px;flex:none"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px;flex:none"></span>'+
+      '<span style="flex:1;text-align:center;font-weight:700;font-size:14px;color:#333;margin-right:57px">Avertissement</span></div>'+
+    '<div style="display:flex;align-items:center;gap:24px;padding:30px 30px 22px">'+
+      '<svg width="70" height="70" viewBox="0 0 70 70" style="flex:none">'+
+        '<rect x="4" y="4" width="62" height="62" rx="14" fill="#f4f4f4" stroke="#555" stroke-width="3"/>'+
+        '<path d="M28 50 35 20 42 50 39.5 50 37.6 42 32.4 42 30.5 50 Z M33.4 38 36.6 38 35 30 Z" fill="#111"/></svg>'+
+      '<div style="font-size:15px;color:#1a1a1a">'+pvEsc(msg)+'</div></div>'+
+    '<div style="display:flex;justify-content:flex-end;gap:12px;padding:0 22px 20px">'+
+      '<button onclick="dvWarnBtn(0)" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 26px;font-size:14px;cursor:pointer">Non</button>'+
+      '<button onclick="dvWarnBtn(1)" style="background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;border-radius:7px;padding:5px 30px;font-size:14px;cursor:pointer;font-weight:600">Oui</button></div></div>';
+  ov.style.display='flex';
+}
+function dvWarnBtn(oui){
+  const ov=document.getElementById('dv_warn_ov'); if(ov) ov.style.display='none';
+  const fn=oui?window._dvWarnOui:window._dvWarnNon;
+  window._dvWarnOui=null; window._dvWarnNon=null;
+  if(fn) fn();
 }
 function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m'); if(!m) return;
   ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p','dv_doc_menu_g'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; });
@@ -15705,17 +15751,17 @@ function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m'); if(!m) 
     : '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">'+lbl+'</div>';
   m.innerHTML=
     it('Effacer le document …','dvDocMenuM();dvDocDelDoc()', !!dd.doc)+
-    it('Effacer le PDF …','dvDocMenuM();dvDocDelPdf()', !!(dd.pdf||dd.fich));
+    it('Effacer le PDF …','dvDocMenuM();dvDocDelPdf()', !!(dd.pdf||(dd.fichs&&dd.fichs.length)));
   m.style.display='block'; }
 /* Suppressions : le PDF doit être effacé AVANT le document. */
 function dvDocDelDoc(){ const n=window._dvDocSel; const D=dvA(); if(!n||!D) return;
   const dd=(D.docs||{})[n]; if(!dd||!dd.doc) return;
-  if(dd.pdf||dd.fich){ dvErr('Un fichier PDF existe déjà.'); return; }
+  if(dd.pdf||(dd.fichs&&dd.fichs.length)){ dvErr('Un fichier PDF existe déjà.'); return; }
   delete D.docs[n]; dvPersist(); dvRender();
   toast('Document « '+n+' » effacé.'); }
 function dvDocDelPdf(){ const n=window._dvDocSel; const D=dvA(); if(!n||!D) return;
-  const dd=(D.docs||{})[n]; if(!dd||(!dd.pdf&&!dd.fich)) return;
-  dd.pdf=null; dd.date=null; dd.fich=null; dvPersist(); dvRender();
+  const dd=(D.docs||{})[n]; if(!dd||(!dd.pdf&&!(dd.fichs&&dd.fichs.length))) return;
+  dd.pdf=null; dd.date=null; dd.fichs=null; dvPersist(); dvRender();
   toast('PDF de « '+n+' » effacé.'); }
 /* Fenêtre d'erreur type macOS : barre de titre « Erreur », panneau stop rouge, bouton OK. */
 function dvErr(msg){
@@ -16399,6 +16445,7 @@ function dvRender(){
     '<table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>{ const dd=(D.docs||{})[n]||{};
       if(dd.pdf && dd.doc==null) dd.doc=true; // migration ancien format
+      if(dd.fich){ dd.fichs=[dd.fich]; delete dd.fich; } // migration pièce jointe unique → liste
       const mk=v=>'<td style="text-align:center;color:#1a1a1a;font-weight:bold;font-size:15px;line-height:1">'+(v?'✓':'×')+'</td>';
       return '<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td>'+mk(dd.doc)+mk(dd.pdf)+'</tr>'; }).join('')+
     Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+
@@ -16407,8 +16454,10 @@ function dvRender(){
     '<div style="display:flex;align-items:center;margin-bottom:4px;height:26px"><span style="font-size:12px;font-weight:700;color:#003346">Fichiers PDF</span></div>'+
     '<div style="display:flex;gap:8px;align-items:flex-start">'+
     '<table class="pv-tb" style="flex:1"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
-    (()=>{ const rowsP=Object.keys(D.docs||{}).filter(n2=>D.docs[n2]&&D.docs[n2].fich).map(n2=>{ const f2=D.docs[n2].fich;
-        const d2=f2.date?new Date(f2.date):null;
+    (()=>{ const all=[]; Object.keys(D.docs||{}).forEach(n2=>{ const l2=(D.docs[n2]||{}).fichs;
+        if(Array.isArray(l2)) l2.forEach(f2=>all.push(f2)); });
+      all.sort((x2,y2)=>(y2.date||0)-(x2.date||0));
+      const rowsP=all.map(f2=>{ const d2=f2.date?new Date(f2.date):null;
         const ds=d2?(('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear()+' '+('0'+d2.getHours()).slice(-2)+':'+('0'+d2.getMinutes()).slice(-2)):'';
         return '<tr><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
       while(rowsP.length<10) rowsP.push('<tr><td>&nbsp;</td><td></td></tr>');

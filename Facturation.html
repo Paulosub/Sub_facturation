@@ -16363,7 +16363,7 @@ async function dvDocPdfGen(){
     sec('ARCHITECTE','Substances Architectes Sàrl, Rue de la Gare 12, 1096 Cully');
     sec('DIRECTION DES TRAVAUX','');
     y+=26;
-    T(pg,X-64,y,K.aff+' - Devis général',FB,11.5); TR(pg,XE,y,'±15%',FB,11.5);
+    T(pg,X-64,y,K.aff+' - Devis général',FB,11.5); TR(pg,XE,y,dvMarge(),FB,11.5);
     LN(pg,X-64,y+5,XE,0.6); T(pg,X-64,y+17,'Phase:',F,9);
     y+=70;
     const sig=t2=>{ T(pg,X,y,t2,F,9); y+=30;
@@ -16422,7 +16422,7 @@ async function dvDocPdfGen(){
     T(pg,XV+150,y,'021 711 50 50',F,9); T(pg,XV+150,y+12,'info@substances.ch',F,9);
     y+=44;
     lab('Indice',''); lab('Etat de la planification',''); lab('Etat du projet','');
-    lab("Marge d'approximation",'±15%');
+    lab("Marge d'approximation",dvMarge());
     lab('Date',dt.getDate()+' '+mois[dt.getMonth()]+' '+dt.getFullYear()); lab('Filtre','');
     y+=10; T(pg,XL,y,'Informations',F,8.5,gris); LN(pg,XL,y+4,W-M,0.4,gris); y+=20;
     ((Array.isArray(D.rem)?D.rem:[]).filter(r2=>(r2.nom||'').trim()||(r2.txt||'').trim())).forEach(r2=>{
@@ -16534,7 +16534,7 @@ function dvDocFenDesc(){
     '<span style="margin-top:4mm">Architecte</span><span style="margin-top:4mm;display:flex;gap:24mm"><span>Substances Architectes Sàrl<br>Rue de la Gare 12<br>1096 Cully</span><span>021 711 50 50<br>info@substances.ch</span></span>'+
     '<span style="margin-top:4mm">Indice</span><span style="margin-top:4mm"></span>'+
     l('Etat de la planification','')+l('Etat du projet','')+
-    l('Marge d'+PV_Q+'approximation','±15%')+
+    l('Marge d'+PV_Q+'approximation',dvMarge())+
     l('Date',dateL)+l('Filtre','')+'</div>'+
     '<div style="color:#888;font-size:8.6pt;border-bottom:.4pt solid #999;padding-bottom:1mm;margin:8mm 0 6mm">Informations</div>'+
     '<div style="font-size:9pt;line-height:1.5">'+infoRows+'</div>'+
@@ -16574,7 +16574,7 @@ function dvDocFenDG(){
       sec('DIRECTION DES TRAVAUX','')+
       '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:.5pt solid #1a1a1a;padding-bottom:1mm;margin:14mm 0 0 -24mm">'+
         '<span style="font-weight:bold;font-size:11.5pt">'+pvEsc(aff)+' - Devis général</span>'+
-        '<span style="font-weight:bold;font-size:11.5pt">±15%</span></div>'+
+        '<span style="font-weight:bold;font-size:11.5pt">'+pvEsc(dvMarge())+'</span></div>'+
       '<div style="font-size:9pt;margin-top:1.6mm">Phase:</div>'+
       '<div style="margin-top:14mm">'+sig('Le Maître de l'+PV_Q+'ouvrage :')+sig('L'+PV_Q+'architecte :')+'</div>'+
     '</div>'+
@@ -16879,6 +16879,90 @@ function dvDelDo(){
 }
 function dvEditSelPos(){ if(!_dvSel||!dvA()||!dvA().pos.some(x=>x.id===_dvSel)){ toast('Cliquez d’abord une position dans le tableau, puis « Éditer la position ».'); return; }
   dvDlgCalc(_dvSel); }
+/* ===== Fenêtre « Paramètres » du devis (clé à molette — clone Deltaproject) ===== */
+function dvParam(){ const D=dvA(); if(!D) return {};
+  if(!D.param) D.param={planif:'',projet:'',marge:'±15%',indice:'',date:'',
+    pctMode:'total',arrondi:false,txt1:'',txt2:'',txt3:'',txt4:'',txt5:'',
+    tPage:'ESTIMATION DES COÛTS',t1:'Estimation des coûts',t2:'Estimation des coûts',tDoc:'Estimation des coûts'};
+  return D.param; }
+function dvMarge(){ const D=dvA(); return (D&&D.param&&D.param.marge)||'±15%'; }
+let _dvParamCat='info';
+function dvParamOpen(){
+  if(!dvA()){ toast('Ouvrez d’abord un devis.'); return; }
+  window._dvParamTmp=JSON.parse(JSON.stringify(dvParam()));
+  _dvParamCat='info';
+  let ov=document.getElementById('dv_param_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='dv_param_ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10050';
+    document.body.appendChild(ov); }
+  ov.innerHTML=
+  '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:860px;max-width:95vw;background:#f4f4f4;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;height:600px;max-height:92vh">'+
+    '<div style="background:#003346;color:#fff;font-weight:700;font-size:14px;text-align:center;padding:9px 14px;border-radius:10px 10px 0 0">Paramètres</div>'+
+    '<div style="flex:1;display:flex;gap:12px;padding:12px 16px;min-height:0">'+
+      '<div id="dv_param_cats" style="width:200px;flex:none;border:1px solid #7fb4e8;border-radius:4px;background:#fff;overflow:auto"></div>'+
+      '<div id="dv_param_body" style="flex:1;border:1px solid #c9c9c9;border-radius:4px;background:#efefef;overflow:auto;padding:18px 22px"></div>'+
+    '</div>'+
+    '<div style="flex:none;display:flex;justify-content:flex-end;gap:10px;padding:0 16px 14px 16px">'+
+      '<button class="btn btn-sm" style="padding:5px 20px;background:#fff;border:1px solid #c9c9c9;border-radius:7px" onclick="document.getElementById('+PV_Q+'dv_param_ov'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+'">Annuler</button>'+
+      '<button class="btn btn-sm" style="padding:5px 26px;background:#0a84ff;border:1px solid #0a84ff;border-radius:7px;color:#fff;font-weight:600" onclick="dvParamOk()">OK</button></div>'+
+  '</div>';
+  ov.style.display='block';
+  dvParamFill();
+}
+function dvParamCat(k){ dvParamKeep(); _dvParamCat=k; dvParamFill(); }
+/* mémorise les champs affichés dans le brouillon avant de changer de catégorie */
+function dvParamKeep(){
+  const P=window._dvParamTmp||{}; const gv=id=>{ const x=document.getElementById(id); return x?x.value:null; };
+  ['planif','projet','marge','indice','date','txt1','txt2','txt3','txt4','txt5','tPage','t1','t2','tDoc'].forEach(k=>{
+    const v=gv('dvp_'+k); if(v!=null) P[k]=v; });
+  const r=document.querySelector('input[name=dvp_pct]:checked'); if(r) P.pctMode=r.value;
+  const a=document.getElementById('dvp_arr'); if(a) P.arrondi=a.checked;
+}
+function dvParamFill(){
+  const P=window._dvParamTmp||{};
+  const cats=[['info','Information'],['aff','Affichage'],['com','Commentaire'],['tit','Titres']];
+  document.getElementById('dv_param_cats').innerHTML=
+    '<div style="padding:5px 10px;border-bottom:1px solid #ddd;font-size:13px;font-weight:400">Catégorie</div>'+
+    cats.map(c=>'<div onclick="dvParamCat('+PV_Q+c[0]+PV_Q+')" style="padding:5px 10px;font-size:13.5px;cursor:pointer'+
+      (c[0]===_dvParamCat?';background:#2f7fe8;color:#fff':'')+'">'+c[1]+'</div>').join('');
+  const lab='display:inline-block;width:220px;flex:none;font-size:13.5px';
+  const inp='flex:1;border:1px solid #c8c8c8;border-radius:3px;padding:5px 8px;font-size:13px;background:#fff;font-family:inherit';
+  const row=(l,html)=>'<div style="display:flex;align-items:center;margin-bottom:16px"><span style="'+lab+'">'+l+'</span>'+html+'</div>';
+  const F=(l,k)=>row(l,'<input id="dvp_'+k+'" style="'+inp+'" value="'+pvEscA(P[k]||'')+'">');
+  let h='';
+  if(_dvParamCat==='info'){
+    h=F('Etat de planification','planif')+F('Etat du projet','projet')+
+      F('Marge d’approximation du DG','marge')+F('Indice','indice')+
+      row('Date','<input id="dvp_date" style="'+inp+';max-width:260px" value="'+pvEscA(P.date||'')+'">'+
+        '<button class="btn btn-sm" style="margin-left:8px;padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Choisir la date" onclick="dvParamDate()">📅</button>'+
+        '<input type="date" id="dvp_dateN" style="position:absolute;width:0;height:0;opacity:0" onchange="dvParamDateSet(this.value)">');
+  } else if(_dvParamCat==='aff'){
+    h='<div style="margin:8px 0 18px 40px"><label style="display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer;margin-bottom:16px">'+
+      '<input type="radio" name="dvp_pct" value="total"'+(P.pctMode!=='groupe'?' checked':'')+'> Pourcentage sur le total général</label>'+
+      '<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer;margin-bottom:20px">'+
+      '<input type="radio" name="dvp_pct" value="groupe"'+(P.pctMode==='groupe'?' checked':'')+'> Pourcentage sur le groupe principal</label>'+
+      '<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer">'+
+      '<input type="checkbox" id="dvp_arr"'+(P.arrondi?' checked':'')+'> Arrondi</label></div>';
+  } else if(_dvParamCat==='com'){
+    h='<div style="display:flex;margin-bottom:22px"><span style="'+lab+';width:110px">Texte libre 1</span>'+
+      '<textarea id="dvp_txt1" rows="12" style="'+inp+';resize:vertical">'+pvEsc(P.txt1||'')+'</textarea></div>'+
+      [2,3,4,5].map(i=>'<div style="display:flex;align-items:center;margin-bottom:14px"><span style="'+lab+';width:110px">Texte libre '+i+'</span>'+
+        '<input id="dvp_txt'+i+'" style="'+inp+'" value="'+pvEscA(P['txt'+i]||'')+'"></div>').join('');
+  } else {
+    h=F('Page de garde','tPage')+F('Devis à 1 chiffre','t1')+F('Devis à 2 chiffres','t2')+F('Document principal','tDoc');
+  }
+  document.getElementById('dv_param_body').innerHTML=h;
+}
+function dvParamDate(){ const n=document.getElementById('dvp_dateN'); if(!n) return;
+  try{ n.showPicker(); }catch(e){ n.click(); } }
+function dvParamDateSet(v){ const f=document.getElementById('dvp_date');
+  if(f&&v){ const x=v.split('-'); f.value=x[2]+'.'+x[1]+'.'+x[0]; } }
+function dvParamOk(){
+  dvParamKeep();
+  const D=dvA(); if(D){ D.param=window._dvParamTmp; dvPersist(); dvRender(); }
+  document.getElementById('dv_param_ov').style.display='none';
+  toast('Paramètres du devis enregistrés.');
+}
 function dvToolbarHTML(){
   const S='<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px">';
   const ic={
@@ -16919,7 +17003,7 @@ function dvToolbarHTML(){
       const av=lbl=>'dvTbTog(null);toast('+PV_Q+lbl+' — à venir.'+PV_Q+')';
       const docsOn=!(D&&D.docsOff);
       return men('dv_tb_menu_w','dvTbMenuW',ic['wrench'],'Outils',
-          li('Paramètres …',av('Paramètres')))+
+          li('Paramètres …','dvTbTog(null);dvParamOpen()'))+
         men('dv_tb_menu_d','dvTbMenuD',ic['doc'],'Documents',
           li('Document impression MO … [Ancien document]',av('Document impression MO'))+
           li('Document impression TRAVAIL … [Ancien document]',av('Document impression TRAVAIL'))+

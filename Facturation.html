@@ -16284,15 +16284,93 @@ function dvPdfMenu(){
     it('Supprimer', selF?('dvPdfMenu();dvPdfDelAsk('+PV_Q+pvEscA(selF)+PV_Q+')'):'', !!selF);
   m.style.display='block';
 }
-/* Partager = révéler le fichier dans le Finder (fiche de partage macOS accessible de là). */
-async function dvPdfShare(nom){
+/* ===== Fenêtre « Partager le fichier PDF » (clone Deltaproject) ===== */
+function dvPdfShare(nom){
   if(!nom) return;
+  let ov=document.getElementById('dv_share_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='dv_share_ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10050';
+    document.body.appendChild(ov); }
+  const lab='display:inline-block;width:118px;text-align:right;padding-right:10px;font-size:13px;color:#222;flex:none';
+  const inp='flex:1;border:1px solid #c8c8c8;border-radius:4px;padding:5px 8px;font-size:13px;font-family:inherit;background:#fff';
+  const sect='font-weight:700;font-size:13.5px;margin:0 0 10px 0';
+  const row='display:flex;align-items:center;margin:0 0 8px 0';
+  const btn='border:1px solid #c8c8c8;border-radius:6px;background:#f6f6f6;padding:5px 14px;font-size:13px;cursor:pointer;font-family:inherit';
+  const dot='border:1px solid #c8c8c8;border-radius:6px;background:#f6f6f6;width:34px;padding:4px 0;font-size:13px;cursor:pointer;flex:none;margin-left:8px';
+  const conc=nom.replace(/\.pdf$/i,'');
+  const dest=localStorage.getItem('sa_dv_share_dest')||'';
+  ov.innerHTML=
+  '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:720px;max-width:94vw;max-height:92vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.35)">'+
+    '<div style="background:#003346;color:#fff;font-weight:700;font-size:14px;text-align:center;padding:9px 14px;border-radius:10px 10px 0 0">Partager le fichier PDF</div>'+
+    '<div style="padding:16px 22px 18px 22px">'+
+      '<div style="'+sect+'">Fichiers PDF</div>'+
+      '<div style="'+row+'"><span style="'+lab+'">Fichier</span><input id="dvs_nom" style="'+inp+';background:#f4f4f4" readonly value="'+pvEsc(nom)+'"></div>'+
+      '<div style="border-top:1px solid #ddd;margin:14px 0"></div>'+
+      '<div style="'+sect+'">Exporter le fichier PDF</div>'+
+      '<div style="'+row+'"><span style="'+lab+'">Dossier</span><input id="dvs_dest" style="'+inp+'" placeholder="Dossier de destination …" value="'+pvEsc(dest)+'">'+
+        '<button style="'+dot+'" title="Choisir le dossier dans le Finder" onclick="dvShareDir()">…</button></div>'+
+      '<div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin:2px 0 0 0">'+
+        '<label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="dvs_reveal"> Afficher le dossier</label>'+
+        '<button style="'+btn+'" onclick="dvShareSave()">Enregistrer</button></div>'+
+      '<div style="border-top:1px solid #ddd;margin:14px 0"></div>'+
+      '<div style="'+sect+'">Message par courrier</div>'+
+      '<div style="'+row+'"><span style="'+lab+'">À</span><input id="dvs_to" style="'+inp+'" placeholder="adresse@exemple.ch">'+
+        '<button style="'+dot+'" title="Choisir dans le carnet d’adresses" onclick="dvShareTo()">◀</button></div>'+
+      '<div style="'+row+'"><span style="'+lab+'">Civilité courrier</span><input id="dvs_civ" style="'+inp+'"></div>'+
+      '<div style="'+row+'"><span style="'+lab+'">Concerne</span><input id="dvs_conc" style="'+inp+'" value="'+pvEsc(conc)+'"></div>'+
+      '<div style="display:flex;margin:0 0 8px 0"><span style="'+lab+';padding-top:5px">Contenu</span>'+
+        '<textarea id="dvs_body" rows="5" style="'+inp+';resize:vertical"></textarea></div>'+
+      '<div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin:2px 0 0 0">'+
+        '<label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="dvs_mail" checked> Utiliser Apple Mail</label>'+
+        '<button style="'+btn+'" onclick="dvShareMail()">Préparer le courrier</button></div>'+
+      '<div style="display:flex;justify-content:flex-end;margin:18px 0 0 0">'+
+        '<button style="'+btn+';background:#0a84ff;border-color:#0a84ff;color:#fff;font-weight:600;padding:6px 22px" onclick="dvShareClose()">Fermer</button></div>'+
+    '</div></div>';
+  ov.style.display='block'; window._dvShareNom=nom;
+}
+function dvShareClose(){ const ov=document.getElementById('dv_share_ov'); if(ov) ov.style.display='none'; }
+async function dvShareDir(){
+  try{ const r=await fetch('http://127.0.0.1:7788/pickdir'); const j=await r.json();
+    if(j&&j.ok&&j.dir){ const f=document.getElementById('dvs_dest'); if(f) f.value=j.dir; } }
+  catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
+}
+async function dvShareSave(){
+  const nom=window._dvShareNom||''; const dest=(document.getElementById('dvs_dest')||{}).value||'';
+  if(!dest.trim()){ toast('Indiquez d’abord un dossier de destination (bouton …).'); return; }
+  try{ localStorage.setItem('sa_dv_share_dest',dest.trim()); }catch(e){}
+  const rev=(document.getElementById('dvs_reveal')||{}).checked?'1':'0';
   try{
-    const r=await fetch('http://127.0.0.1:7788/revealpdf?name='+encodeURIComponent(nom));
+    const r=await fetch('http://127.0.0.1:7788/copypdf?name='+encodeURIComponent(nom)+'&dest='+encodeURIComponent(dest.trim())+'&reveal='+rev);
     const j=await r.json();
-    if(j&&j.ok) toast('« '+nom+' » révélé dans le Finder — partagez-le depuis là (clic droit → Partager).');
-    else toast('Fichier introuvable sur le disque : '+nom);
+    if(j&&j.ok) toast('« '+nom+' » enregistré dans '+dest.trim());
+    else toast((j&&j.error)||'Échec de l’enregistrement.');
   }catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
+}
+function dvShareTo(){
+  if(typeof adrPickOpen!=='function'){ toast('Carnet d’adresses indisponible.'); return; }
+  adrPickOpen({titre:'Choisir le destinataire'},function(r){
+    const f=document.getElementById('dvs_to'); if(f&&r&&r.mail) f.value=r.mail;
+    if(f&&r&&!r.mail) toast('Cette adresse n’a pas de courriel dans le carnet.');
+  });
+}
+async function dvShareMail(){
+  const nom=window._dvShareNom||'';
+  const to=((document.getElementById('dvs_to')||{}).value||'').trim();
+  const civ=((document.getElementById('dvs_civ')||{}).value||'').trim();
+  const conc=((document.getElementById('dvs_conc')||{}).value||'').trim();
+  const txt=((document.getElementById('dvs_body')||{}).value||'');
+  const body=(civ?civ+String.fromCharCode(10)+String.fromCharCode(10):'')+txt;
+  if((document.getElementById('dvs_mail')||{}).checked){
+    try{
+      const r=await fetch('http://127.0.0.1:7788/mailpdf?name='+encodeURIComponent(nom)+'&to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body));
+      const j=await r.json();
+      if(j&&j.ok) toast('Brouillon créé dans Apple Mail avec « '+nom+' » en pièce jointe.');
+      else toast((j&&j.error)||'Échec de la préparation du courrier.');
+    }catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
+  }else{
+    location.href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body);
+    toast('Courriel préparé (sans pièce jointe — cochez « Utiliser Apple Mail » pour joindre le PDF).');
+  }
 }
 /* Supprimer = retirer le fichier de la liste (le PDF reste sur le disque). */
 function dvPdfDelAsk(nom){

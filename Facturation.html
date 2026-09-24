@@ -15615,6 +15615,7 @@ let _dvSel=null, _dvSelG=null;
    tout menu ouvert (le clic sur le bouton d'un menu reste géré par son toggle). */
 document.addEventListener('mousedown', function(e){
   ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p','dv_doc_menu_m','dv_doc_menu_g','dv_ca_menu',
+   'dv_ap_m1','dv_ap_m2','dv_ap_m3',
    'adr_out_menu','adr_new_menu','rap_out_menu','rap_doc_menu','fh_opt_menu','fh_pen_menu'].forEach(function(id){
     const m=document.getElementById(id);
     if(m && m.style.display && m.style.display!=='none' && !(m.parentElement||m).contains(e.target)) m.style.display='none';
@@ -15726,6 +15727,9 @@ function dvDocShow(titre, pagesHtml){
   };
   const bSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9';
   const B=(k,fn,tt,off,menu)=>'<button class="btn btn-sm" '+(off?'disabled ':'')+'style="'+bSt+(off?';opacity:.45;pointer-events:none':'')+'" title="'+tt+'"'+(fn?' onclick="'+fn+'"':'')+'>'+ic[k]+(menu?' <span style="font-size:8px;color:#666">▾</span>':'')+'</button>';
+  const M=(n,k,tt)=>'<span style="position:relative;display:inline-flex">'+
+    '<button class="btn btn-sm" style="'+bSt+'" title="'+tt+'" onclick="dvApMenu('+n+')">'+ic[k]+' <span style="font-size:8px;color:#666">▾</span></button>'+
+    '<div id="dv_ap_m'+n+'" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:270px;z-index:70;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0"></div></span>';
   // Dimension initiale : format de la page A4 (794×1123 px), réduite au besoin pour tenir à l'écran.
   const chrome=34+34+24; // barre de titre + barre d'outils + marges internes
   const sc0=Math.min(1, (window.innerHeight-30-chrome-24)/1123, (window.innerWidth-60-24)/794);
@@ -15753,9 +15757,7 @@ function dvDocShow(titre, pagesHtml){
         '<option value="fit" selected>Ajuster</option>'+
         ['50','75','100','125','150','200'].map(z=>'<option value="'+z+'">'+z+'&nbsp;%</option>').join('')+'</select>'+
       '<span style="flex:1"></span>'+
-      B('doc','toast('+String.fromCharCode(39)+'Génération du PDF — à venir.'+String.fromCharCode(39)+')','Exporter en PDF',0,1)+
-      B('share','','Partager — à venir',1,1)+
-      B('gear','','Réglages — à venir',1,1)+'</div>'+
+      M(1,'doc','Fichier PDF')+M(2,'share','Partager')+M(3,'gear','Réglages de la fenêtre')+'</div>'+
     '<div id="dv_doc_sc" style="flex:1;overflow:auto;background:#565b5e;padding:12px;display:flex;align-items:flex-start;justify-content:center">'+pagesHtml+'</div>';
   document.body.appendChild(win);
   // Déplacement par la barre de titre
@@ -15803,6 +15805,34 @@ function dvApZoom(v){
   } else { window._dvApFit=false; z=(parseInt(v)||100)/100; }
   document.querySelectorAll('#dv_doc_sc .offre-page').forEach(pg=>{ pg.style.zoom=z; });
 }
+/* Menus des icônes de droite de l'aperçu : fichier PDF, partager, réglages de la fenêtre. */
+function dvApMenu(n){
+  [1,2,3].filter(x=>x!==n).forEach(x=>{ const m=document.getElementById('dv_ap_m'+x); if(m) m.style.display='none'; });
+  const m=document.getElementById('dv_ap_m'+n); if(!m) return;
+  if(m.style.display==='block'){ m.style.display='none'; return; }
+  const it=(lbl,fn,chk,hasChk)=>'<div style="padding:4px 16px 4px '+(hasChk?'10px':'16px')+';cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+(hasChk?'<span style=\u0022width:20px;display:inline-block;flex:none\u0022>'+(chk?'✓':'')+'</span>':'')+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+  const aven=lbl=>'dvApMenu('+n+');toast('+PV_Q+lbl+' — à venir.'+PV_Q+')';
+  if(n===1) m.innerHTML=
+    it('Ouvrir dans l'+PV_Q+'aperçu', aven('Ouvrir dans l’aperçu'))+
+    it('Sauvegarder et ouvrir', aven('Sauvegarder et ouvrir'));
+  else if(n===2) m.innerHTML=
+    it('Enregistrer le PDF en pièce jointe …', aven('Enregistrer le PDF en pièce jointe'))+
+    it('Partager le fichier PDF …', aven('Partager le fichier PDF'));
+  else { const o=dvApOptO(); m.innerHTML=
+    it('Zone de travail à gauche','dvApOptC('+PV_Q+'zone'+PV_Q+','+PV_Q+'gauche'+PV_Q+')', o.zone==='gauche',1)+
+    it('Zone de travail à droite','dvApOptC('+PV_Q+'zone'+PV_Q+','+PV_Q+'droite'+PV_Q+')', o.zone==='droite',1)+
+    it('Masquer la zone de travail','dvApOptC('+PV_Q+'zone'+PV_Q+','+PV_Q+'masquer'+PV_Q+')', o.zone==='masquer',1)+
+    sep+
+    it('Afficher les éléments masqués','dvApOptC('+PV_Q+'masques'+PV_Q+')', !!o.masques,1); }
+  m.style.display='block';
+}
+function dvApOptO(){ try{ return Object.assign({zone:'droite',masques:true}, JSON.parse(localStorage.getItem('sa_apercu_opt')||'{}')); }
+  catch(e){ return {zone:'droite',masques:true}; } }
+function dvApOptC(k,v){ const o=dvApOptO();
+  if(k==='zone') o.zone=v; else o.masques=!o.masques;
+  try{ localStorage.setItem('sa_apercu_opt', JSON.stringify(o)); }catch(e){}
+  const m=document.getElementById('dv_ap_m3'); if(m) m.style.display='none'; }
 /* ── « Soumis à honoraires » (document Honoraires) : tableau CFC, groupes 1 chiffre en noir,
    groupes 2-3 chiffres en gris, % soumis et Honoraires (0 tant que non saisis). ── */
 function dvDocFenHon(){

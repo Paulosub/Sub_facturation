@@ -3656,7 +3656,8 @@ function goTab(name, opts) {
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
   if(name==='controle-cout') ccRender();
-  if(name==='devis') dvRender();
+  document.body.style.overflow = (name==='devis') ? 'hidden' : '';
+  if(name==='devis'){ window.scrollTo(0,0); dvRender(); }
   if(name==='heures') renderHeures();
   if(name==='feuille-heures') fhRender();
   if(name==='rapport') rapRender();
@@ -15586,6 +15587,7 @@ function dvRender(){
    quel que soit l'écran ; seuls le tableau et le catalogue défilent en interne. */
 function dvFit(){
   const fw=document.getElementById('dv_flex'); if(!fw) return;
+  window.scrollTo(0,0);
   const top=fw.getBoundingClientRect().top;
   fw.style.height=Math.max(320, window.innerHeight-top-18)+'px';
 }

@@ -16276,12 +16276,39 @@ function dvPdfMenu(){
   const selF=window._dvPdfSel;
   m.innerHTML=
     it('Ouvrir', selF?('dvPdfMenu();dvPdfOpen('+PV_Q+pvEscA(selF)+PV_Q+')'):'', !!selF)+
-    it('Partager le fichier PDF …','',false)+
+    it('Partager le fichier PDF …', selF?('dvPdfMenu();dvPdfShare('+PV_Q+pvEscA(selF)+PV_Q+')'):'', !!selF)+
     '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
     it('Import fichier PDF …','dvPdfMenu();toast('+PV_Q+'Import d’un fichier PDF — à définir.'+PV_Q+')',true)+
     it('Fusionner PDF …','',false)+
-    it('Supprimer','',false);
+    it('Supprimer', selF?('dvPdfMenu();dvPdfDelAsk('+PV_Q+pvEscA(selF)+PV_Q+')'):'', !!selF);
   m.style.display='block';
+}
+/* Partager = révéler le fichier dans le Finder (fiche de partage macOS accessible de là). */
+async function dvPdfShare(nom){
+  if(!nom) return;
+  try{
+    const r=await fetch('http://127.0.0.1:7788/revealpdf?name='+encodeURIComponent(nom));
+    const j=await r.json();
+    if(j&&j.ok) toast('« '+nom+' » révélé dans le Finder — partagez-le depuis là (clic droit → Partager).');
+    else toast('Fichier introuvable sur le disque : '+nom);
+  }catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
+}
+/* Supprimer = retirer le fichier de la liste (le PDF reste sur le disque). */
+function dvPdfDelAsk(nom){
+  dvMini('<div style="display:flex;gap:14px;align-items:center"><div style="font-size:26px">⚠︎</div>'+
+    '<div style="font-size:13.5px">Retirer « '+pvEsc(nom)+' » de la liste des fichiers PDF ?<br>'+
+    '<span style="color:#777;font-size:12px">Le fichier reste sur le disque (dossier « PDF Devis »).</span></div></div>'+
+    '<div style="text-align:right;margin-top:16px"><button class="btn btn-sm" onclick="dvMiniClose()">Non</button> '+
+    '<button class="btn btn-sm" style="background:#2f6fde;color:#fff" onclick="dvMiniClose();dvPdfDelDo('+PV_Q+pvEscA(nom)+PV_Q+')">Oui</button></div>');
+}
+function dvPdfDelDo(nom){
+  const D=dvA(); if(!D) return;
+  let n=0;
+  Object.keys(D.docs||{}).forEach(k=>{ const dd=D.docs[k]||{};
+    if(Array.isArray(dd.fichs)){ const l=dd.fichs.length; dd.fichs=dd.fichs.filter(f=>f.nom!==nom); n+=l-dd.fichs.length; } });
+  if(window._dvPdfSel===nom) window._dvPdfSel=null;
+  dvPersist(); dvRender();
+  toast(n?('« '+nom+' » retiré de la liste.'):'Fichier non trouvé dans la liste.');
 }
 /* Sélection d'un document (Devis général / Honoraires / Devis descriptif) : active les icônes +/−/roue. */
 function dvDocSel(n,tr){ window._dvDocSel=n;

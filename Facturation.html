@@ -948,7 +948,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
       <div id="adr_nav_tabs" style="display:flex;border:1px solid #c9c9c9;border-radius:7px;overflow:hidden;background:#fff"></div>
       <span style="flex:1"></span>
       <span style="position:relative"><span style="position:absolute;left:9px;top:5px;color:#999;font-size:13px">⌕</span>
-      <input id="adr_pick_f" oninput="adrPickFill()" style="width:240px;box-sizing:border-box;padding:6px 9px 6px 26px;border:1px solid #c9c9c9;border-radius:7px;font-size:13px;background:#fff"></span>
+      <input id="adr_pick_f" oninput="_adrNavRan=true;adrPickFill()" style="width:240px;box-sizing:border-box;padding:6px 9px 6px 26px;border:1px solid #c9c9c9;border-radius:7px;font-size:13px;background:#fff"></span>
     </div>
     <div id="adr_nav_body" style="flex:1;display:flex;gap:12px;padding:12px 14px;min-height:0">
       <div id="adr_nav_left" style="width:300px;flex:none;display:flex;flex-direction:column;min-height:0"></div>
@@ -11739,7 +11739,7 @@ function adrEditSave(){
 /* ── Navigateur d'adresses (clone de la fenêtre Deltaproject) ── */
 let _adrNavTab='rech', _adrNavEnt=null, _adrNavSel=-1;
 function adrNavReset(){
-  _adrNavTab='rech'; _adrNavEnt=null; _adrNavSel=-1;
+  _adrNavTab='rech'; _adrNavEnt=null; _adrNavSel=-1; _adrNavRan=false; _adrNavGrp='fav'; _adrNavProp=null; _adrNavRole=null;
   ['adr_pick_f','adr_nav_nom','adr_nav_comp'].forEach(id=>{ const x=document.getElementById(id); if(x) x.value=''; });
   const t=document.getElementById('adr_nav_typ'); if(t) t.value='';
 }
@@ -11750,7 +11750,7 @@ function adrNavTabsFill(){
     (x[0]===_adrNavTab?';background:#2f7fe8;color:#fff;font-weight:600':'')+'">'+x[1]+'</div>').join('');
 }
 function adrNavTabGo(k){
-  _adrNavTab=k; _adrNavSel=-1; adrNavTabsFill(); adrPickFill();
+  _adrNavTab=k; _adrNavSel=-1; _adrNavRan=false; adrNavTabsFill(); adrPickFill();
 }
 function adrCfcPick(){
   _adrPickMode='cfc'; adrNavReset(); _adrNavTab='cfc';
@@ -11765,11 +11765,11 @@ function adrPickOpen(opts, cb){
   document.getElementById('adr_pick_ov').style.display='block';
   adrNavTabsFill(); adrPickFill();
 }
-function adrNavEntGo(id){ _adrNavEnt=(_adrNavEnt===id?null:id); _adrNavSel=-1; adrNavEntsFill(); adrNavRight(); }
+function adrNavEntGo(id){ _adrNavEnt=(_adrNavEnt===id?null:id); _adrNavSel=-1; _adrNavRan=true; adrNavEntsFill(); adrNavRight(); }
 function adrNavSelGo(i){ _adrNavSel=i; adrNavRight(); }
 function adrNavOk(){ if(_adrNavSel>=0) adrPickGo(_adrNavSel); }
 /* États des onglets du Navigateur d'adresses */
-let _adrNavCols='adr', _adrNavGrp='all', _adrNavProp=null, _adrNavRole=null;
+let _adrNavCols='adr', _adrNavGrp='fav', _adrNavProp=null, _adrNavRole=null, _adrNavRan=false;
 const ADR_NAV_PROPS=[['Branche','Entreprise'],['Branche','Maître d’ouvrage'],['Branche','Architecte'],['Branche','Direction de travaux'],
   ['Branche','Ingénieur civil'],['Branche','Ingénieur bois'],['Branche','Ingénieur CVCE'],['Branche','Géomètre'],
   ['Branche','Ingénieur en physique du bâtiment'],['Branche','Ingénieur en acoustique'],['Branche','Mandataire spécialisé'],
@@ -11805,16 +11805,16 @@ function adrNavLeftFill(){
   L.style.display=cfcChoix?'none':'flex';
   if(cfcChoix) return;
   const lab=t=>'<span style="width:104px;text-align:right;padding-right:10px;flex:none">'+t+'</span>';
-  const cher='<div style="text-align:right;margin-top:2px"><button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrNavRight()">Chercher</button></div>';
+  const cher='<div style="text-align:right;margin-top:2px"><button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="_adrNavRan=true;adrNavRight()">Chercher</button></div>';
   if(_adrNavTab==='rech'){
     L.innerHTML='<div style="flex:none;padding:6px 4px 12px 4px;font-size:13px">'+
       '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Type')+
-        '<select id="adr_nav_typ" onchange="adrNavEntsFill();adrNavRight()" style="flex:1;'+adrNavInSt()+';background:#fff">'+
+        '<select id="adr_nav_typ" onchange="adrNavEntsFill();_adrNavRan=true;adrNavRight()" style="flex:1;'+adrNavInSt()+';background:#fff">'+
         '<option value=""></option><option value="soc">Société</option><option value="pers">Personne</option><option value="fam">Famille</option><option value="com">Communauté</option><option value="ass">Association</option></select></div>'+
-      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Nom')+'<input id="adr_nav_nom" oninput="adrNavEntsFill();adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+
-      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Complément')+'<input id="adr_nav_comp" oninput="adrNavEntsFill();adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Nom')+'<input id="adr_nav_nom" oninput="adrNavEntsFill();_adrNavRan=true;adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Complément')+'<input id="adr_nav_comp" oninput="adrNavEntsFill();_adrNavRan=true;adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+
       '<div style="display:flex;justify-content:space-between;margin-top:2px"><button class="btn btn-sm" disabled style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9;opacity:.45">Nouveau …</button>'+
-      '<button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrNavEntsFill();adrNavRight()">Chercher</button></div></div>'+
+      '<button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrNavEntsFill();_adrNavRan=true;adrNavRight()">Chercher</button></div></div>'+
       '<div id="adr_nav_ents" style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff"></div>';
     adrNavEntsFill();
   } else if(_adrNavTab==='grp'){
@@ -11852,12 +11852,12 @@ function adrNavLeftFill(){
     L.innerHTML='<div style="flex:none;padding:10px 4px;font-size:13px">'+
       '<label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer"><input type="radio" name="adr_nav_soum" value="act" checked> Soumissionnaires</label>'+
       '<label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer"><input type="radio" name="adr_nav_soum" value="anc"> Anciens soumissionnaires</label>'+
-      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('CFC')+'<input id="adr_nav_cfc" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+')adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+cher+'</div>';
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('CFC')+'<input id="adr_nav_cfc" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+'){_adrNavRan=true;adrNavRight()}" style="flex:1;'+adrNavInSt()+'"></div>'+cher+'</div>';
   } else if(_adrNavTab==='cfc'){
     L.innerHTML='<div style="flex:none;padding:10px 4px;font-size:13px">'+
       '<div style="display:flex;align-items:center;margin-bottom:10px"><span style="flex:none;padding-right:10px">Critère de recherche</span>'+
       '<select id="adr_nav_crit" style="flex:1;'+adrNavInSt()+';background:#fff"><option value="cont">contient</option><option value="deb">commence par</option></select></div>'+
-      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('CFC')+'<input id="adr_nav_cfc" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+')adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+cher+'</div>';
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('CFC')+'<input id="adr_nav_cfc" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+'){_adrNavRan=true;adrNavRight()}" style="flex:1;'+adrNavInSt()+'"></div>'+cher+'</div>';
   }
 }
 /* Liste des entités (onglet Recherche) */
@@ -11952,7 +11952,8 @@ function adrNavRight(){
   const crit=((document.getElementById('adr_nav_crit')||{}).value||'cont');
   const soumR=document.querySelector('input[name=adr_nav_soum]:checked');
   const items=[];
-  adrData.adr.forEach(a=>{
+  const enAttente=((_adrNavTab==='rech'||_adrNavTab==='soum'||_adrNavTab==='cfc')&&!_adrNavRan);
+  if(!enAttente) adrData.adr.forEach(a=>{
     if(a.masque&&!_adrMasked) return;
     if(_adrPickCfc && !adrCfcMatch(a.cfc,_adrPickCfc)) return;
     const e=adrEntById(a.entId)||{};
@@ -11994,7 +11995,7 @@ function adrNavRight(){
       '<td style="padding:3px 8px;color:#41606f;font-weight:700;font-size:10px">'+((ADR_TYPES[e.type]||['?'])[0])+'</td>'+
       CS.map(c2=>td(c2[1](a,e))).join('')+'</tr>').join('')+
     '</table>'+(items.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+
-      (_adrNavTab==='prop'&&!_adrNavProp?'Choisissez une propriété à gauche.':'Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.')+'</div>');
+      (enAttente?'':(_adrNavTab==='prop'&&!_adrNavProp?'Choisissez une propriété à gauche.':'Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.'))+'</div>');
   if(okB){ okB.style.opacity=_adrNavSel>=0?'1':'.5'; okB.style.pointerEvents=_adrNavSel>=0?'auto':'none'; }
 }
 /* Menus ⚙︎ (colonnes) et ✚ du bas de fenêtre */

@@ -941,13 +941,35 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
   </div>
 </div>
 <div id="adr_pick_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:10060">
-  <div style="background:#fff;width:640px;max-width:94vw;margin:52px auto;border-radius:10px;padding:16px 20px;box-shadow:0 8px 40px rgba(0,0,0,.35)">
-    <div id="adr_pick_t" style="font-weight:700;margin-bottom:8px">Choisir dans le carnet d'adresses</div>
-    <input id="adr_pick_f" placeholder="Filtrer par nom, société, CFC…" oninput="adrPickFill()" style="width:100%;box-sizing:border-box;padding:7px 9px;margin-bottom:8px;border:1px solid #ccc;border-radius:6px">
-    <div id="adr_pick_ls" style="max-height:380px;overflow:auto;border:1px solid #ddd;border-radius:6px"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:10px;align-items:center">
+  <div style="background:#f4f4f4;width:1120px;max-width:96vw;margin:36px auto;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;height:calc(100vh - 84px);max-height:760px;overflow:hidden">
+    <div id="adr_pick_t" style="background:#003346;color:#fff;font-weight:700;font-size:14px;text-align:center;padding:9px 14px;border-radius:10px 10px 0 0;flex:none">Navigateur d'adresses</div>
+    <div style="display:flex;align-items:center;gap:0;padding:10px 14px 0 14px;flex:none">
+      <div id="adr_nav_tabs" style="display:flex;border:1px solid #c9c9c9;border-radius:7px;overflow:hidden;background:#fff"></div>
+      <span style="flex:1"></span>
+      <span style="position:relative"><span style="position:absolute;left:9px;top:5px;color:#999;font-size:13px">⌕</span>
+      <input id="adr_pick_f" oninput="adrPickFill()" style="width:240px;box-sizing:border-box;padding:6px 9px 6px 26px;border:1px solid #c9c9c9;border-radius:7px;font-size:13px;background:#fff"></span>
+    </div>
+    <div id="adr_nav_body" style="flex:1;display:flex;gap:12px;padding:12px 14px;min-height:0">
+      <div id="adr_nav_left" style="width:300px;flex:none;display:flex;flex-direction:column;min-height:0">
+        <div style="flex:none;padding:6px 4px 12px 4px;font-size:13px">
+          <div style="display:flex;align-items:center;margin-bottom:8px"><span style="width:88px;text-align:right;padding-right:10px">Type</span>
+            <select id="adr_nav_typ" onchange="adrPickFill()" style="flex:1;padding:4px 6px;border:1px solid #c9c9c9;border-radius:6px;background:#fff;font-size:13px">
+              <option value=""></option><option value="soc">Société</option><option value="pers">Personne</option><option value="fam">Famille</option><option value="com">Communauté</option><option value="ass">Association</option></select></div>
+          <div style="display:flex;align-items:center;margin-bottom:8px"><span style="width:88px;text-align:right;padding-right:10px">Nom</span>
+            <input id="adr_nav_nom" oninput="adrPickFill()" style="flex:1;padding:4px 7px;border:1px solid #c9c9c9;border-radius:6px;font-size:13px"></div>
+          <div style="display:flex;align-items:center;margin-bottom:8px"><span style="width:88px;text-align:right;padding-right:10px">Complément</span>
+            <input id="adr_nav_comp" oninput="adrPickFill()" style="flex:1;padding:4px 7px;border:1px solid #c9c9c9;border-radius:6px;font-size:13px"></div>
+          <div style="text-align:right"><button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrPickFill()">Chercher</button></div>
+        </div>
+        <div id="adr_nav_ents" style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff"></div>
+      </div>
+      <div id="adr_pick_ls" style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff;min-height:0"></div>
+    </div>
+    <div style="flex:none;display:flex;align-items:center;padding:0 14px 12px 14px;gap:10px">
       <span id="adr_pick_i" style="color:#888;font-size:11.5px"></span>
-      <button class="btn btn-sm" onclick="document.getElementById('adr_pick_ov').style.display='none'">Annuler</button>
+      <span style="flex:1"></span>
+      <button class="btn btn-sm" style="padding:5px 20px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="document.getElementById('adr_pick_ov').style.display='none'">Annuler</button>
+      <button class="btn btn-sm" id="adr_nav_ok" style="padding:5px 24px;background:#f2f2f2;border:1px solid #c9c9c9;opacity:.5" onclick="adrNavOk()">OK</button>
     </div>
   </div>
 </div>
@@ -11717,51 +11739,110 @@ function adrEditSave(){
   document.getElementById('adr_ov').style.display='none';
   adrPersist(); adrRender();
 }
+/* ── Navigateur d'adresses (clone de la fenêtre Deltaproject) ── */
+let _adrNavTab='rech', _adrNavEnt=null, _adrNavSel=-1;
+function adrNavReset(){
+  _adrNavTab='rech'; _adrNavEnt=null; _adrNavSel=-1;
+  ['adr_pick_f','adr_nav_nom','adr_nav_comp'].forEach(id=>{ const x=document.getElementById(id); if(x) x.value=''; });
+  const t=document.getElementById('adr_nav_typ'); if(t) t.value='';
+}
+function adrNavTabsFill(){
+  const tabs=[['rech','Recherche'],['grp','Groupes'],['prop','Propriétés'],['int','Intervenants'],['soum','Soumissionnaires'],['cfc','CFC']];
+  document.getElementById('adr_nav_tabs').innerHTML=tabs.map(x=>
+    '<div onclick="adrNavTabGo('+PV_Q+x[0]+PV_Q+')" style="padding:6px 14px;font-size:13px;cursor:pointer;border-right:1px solid #ddd;white-space:nowrap'+
+    (x[0]===_adrNavTab?';background:#2f7fe8;color:#fff;font-weight:600':'')+'">'+x[1]+'</div>').join('');
+}
+function adrNavTabGo(k){
+  if(k==='grp'||k==='prop'||k==='int'||k==='soum'){ toast('Onglet — à venir (voir la vue Affaires · Adresses).'); return; }
+  _adrNavTab=k; _adrNavSel=-1; adrNavTabsFill(); adrPickFill();
+}
 function adrCfcPick(){
-  _adrPickMode='cfc';
+  _adrPickMode='cfc'; adrNavReset(); _adrNavTab='cfc';
   document.getElementById('adr_pick_t').textContent='Choisir un CFC';
-  document.getElementById('adr_pick_f').value='';
   document.getElementById('adr_pick_ov').style.display='block';
-  adrPickFill();
+  adrNavTabsFill(); adrPickFill();
 }
 function adrPickOpen(opts, cb){
   _adrPickMode='adr'; _adrPickCb=cb; _adrPickCfc=(opts&&opts.cfc)||'';
-  document.getElementById('adr_pick_t').textContent=(opts&&opts.titre)||'Choisir dans le carnet d’adresses';
-  document.getElementById('adr_pick_f').value='';
+  adrNavReset();
+  document.getElementById('adr_pick_t').textContent=(opts&&opts.titre)||'Navigateur d’adresses';
   document.getElementById('adr_pick_ov').style.display='block';
-  adrPickFill();
+  adrNavTabsFill(); adrPickFill();
 }
+function adrNavEntGo(id){ _adrNavEnt=(_adrNavEnt===id?null:id); _adrNavSel=-1; adrPickFill(); }
+function adrNavSelGo(i){ _adrNavSel=i; adrPickFill(); }
+function adrNavOk(){ if(_adrNavSel>=0) adrPickGo(_adrNavSel); }
 function adrPickFill(){
-  const f=(document.getElementById('adr_pick_f').value||'').toLowerCase();
+  const f=((document.getElementById('adr_pick_f')||{}).value||'').toLowerCase();
   const box=document.getElementById('adr_pick_ls');
-  const row=(html,fn)=>'<div onclick="'+fn+'" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" style="padding:6px 10px;cursor:pointer;font-size:12.5px;border-top:1px solid #f2f2f2">'+html+'</div>';
-  if(_adrPickMode==='cfc'){
+  const left=document.getElementById('adr_nav_left');
+  const cfcMode=(_adrPickMode==='cfc'||_adrNavTab==='cfc');
+  if(left) left.style.display=cfcMode?'none':'flex';
+  const okB=document.getElementById('adr_nav_ok');
+  if(okB){ okB.style.opacity=(_adrNavSel>=0&&!cfcMode)?'1':'.5'; okB.style.pointerEvents=(_adrNavSel>=0&&!cfcMode)?'auto':'none'; }
+  if(cfcMode){
+    const act=(c)=>_adrPickMode==='cfc'
+      ? 'adrPickCfcGo('+PV_Q+pvEscA(c)+PV_Q+')'
+      : '_adrPickCfc='+PV_Q+pvEscA(c)+PV_Q+';adrNavTabGo('+PV_Q+'rech'+PV_Q+')';
     box.innerHTML=pvCfcAll().filter(x=>!f||(x[0]+' '+x[1]).toLowerCase().includes(f))
-      .map(x=>row('<b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1]),'adrPickCfcGo('+PV_Q+pvEscA(x[0])+PV_Q+')')).join('');
-    document.getElementById('adr_pick_i').textContent='';
+      .map(x=>'<div onclick="'+act(x[0])+'" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" style="padding:6px 10px;cursor:pointer;font-size:12.5px;border-top:1px solid #f2f2f2"><b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1])+'</div>').join('');
+    document.getElementById('adr_pick_i').textContent=_adrPickMode==='cfc'?'':'Choisissez un CFC pour filtrer les adresses.';
     return;
   }
+  const typ=((document.getElementById('adr_nav_typ')||{}).value||'');
+  const nomF=((document.getElementById('adr_nav_nom')||{}).value||'').toLowerCase();
+  const compF=((document.getElementById('adr_nav_comp')||{}).value||'').toLowerCase();
+  /* colonne de gauche : les entités qui correspondent aux critères */
+  const ents=adrData.ent.filter(e=>{
+    if(e.masque&&!_adrMasked) return false;
+    if(typ&&e.type!==typ) return false;
+    if(nomF&&!(e.nom||'').toLowerCase().includes(nomF)) return false;
+    if(compF&&!(e.comp||'').toLowerCase().includes(compF)) return false;
+    if(f&&!((e.nom||'')+' '+(e.comp||'')).toLowerCase().includes(f)){
+      const has=adrData.adr.some(a=>a.entId===e.id&&((a.mail||'')+' '+(a.loc||'')+' '+(a.cfc||'')+' '+(a.parent||'')).toLowerCase().includes(f));
+      if(!has) return false; }
+    return true;
+  }).sort((x,z)=>(x.nom||'').localeCompare(z.nom||'','fr',{sensitivity:'base'}));
+  const entBox=document.getElementById('adr_nav_ents');
+  if(entBox) entBox.innerHTML=
+    '<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+    '<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px;width:34px">Type</th>'+
+    '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Nom</th>'+
+    '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Complément</th></tr>'+
+    ents.map((e,i)=>'<tr onclick="adrNavEntGo('+PV_Q+pvEscA(e.id)+PV_Q+')" style="cursor:pointer;'+
+      (e.id===_adrNavEnt?'background:#cfe3fa':(i%2?'':'background:#f2f6fa'))+'">'+
+      '<td style="padding:3px 8px;color:#41606f;font-weight:700;font-size:10px">'+((ADR_TYPES[e.type]||['?'])[0])+'</td>'+
+      '<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">'+pvEsc(e.nom||'')+'</td>'+
+      '<td style="padding:3px 8px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px">'+pvEsc(e.comp||'')+'</td></tr>').join('')+
+    '</table>'+(ents.length?'':'<div style="padding:10px;color:#999;font-size:12px">Aucune entité.</div>');
+  /* tableau de droite : les adresses (de l'entité choisie, sinon toutes celles qui correspondent) */
   const items=[];
   adrData.adr.forEach(a=>{
     if(a.masque&&!_adrMasked) return;
     if(_adrPickCfc && !adrCfcMatch(a.cfc,_adrPickCfc)) return;
     const e=adrEntById(a.entId)||{};
-    const txt=(e.nom+' '+(e.comp||'')+' '+(a.parent||'')+' '+(a.cfc||'')+' '+(a.mail||'')+' '+(a.loc||'')).toLowerCase();
+    if(_adrNavEnt&&a.entId!==_adrNavEnt) return;
+    if(typ&&e.type!==typ) return;
+    if(nomF&&!(e.nom||'').toLowerCase().includes(nomF)) return;
+    if(compF&&!(e.comp||'').toLowerCase().includes(compF)) return;
+    const txt=((e.nom||'')+' '+(e.comp||'')+' '+(a.parent||'')+' '+(a.cfc||'')+' '+(a.mail||'')+' '+(a.loc||'')).toLowerCase();
     if(f && !txt.includes(f)) return;
     items.push({a,e});
   });
-  items.sort((x,z)=>x.e.nom.localeCompare(z.e.nom,'fr',{sensitivity:'base'}));
-  box.innerHTML=items.slice(0,120).map(({a,e},i)=>row(
-    '<span style="display:inline-block;width:16px;color:#41606f;font-weight:700;font-size:10px">'+(ADR_TYPES[e.type]||['?'])[0]+'</span><b>'+pvEsc(e.nom)+'</b>'+
-    (e.comp?' <span style="color:#777">'+pvEsc(e.comp)+'</span>':'')+
-    (a.parent?' <span style="color:#999">('+pvEsc(a.parent)+')</span>':'')+
-    (a.cfc?' <span style="color:#1d7a37;font-size:11px">CFC '+pvEsc(a.cfc)+'</span>':'')+
-    (a.statut?' <span style="color:#b26a12;font-size:11px">'+pvEsc(a.statut)+'</span>':'')+
-    '<div style="color:#888;font-size:11px">'+pvEsc([a.tel||a.mob,a.mail,(a.npa+' '+(a.loc||'')).trim()].filter(Boolean).join(' · '))+'</div>',
-    'adrPickGo('+i+')')).join('')
-    ||'<div style="padding:10px;color:#999;font-size:12px">Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.</div>';
+  items.sort((x,z)=>(x.e.nom||'').localeCompare(z.e.nom||'','fr',{sensitivity:'base'}));
   window._adrPickItems=items;
-  document.getElementById('adr_pick_i').textContent=items.length+' adresse(s)'+(_adrPickCfc?' — CFC '+_adrPickCfc:'');
+  const th=t=>'<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px;white-space:nowrap">'+t+'</th>';
+  const td=(v,mx)=>'<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(mx||130)+'px">'+pvEsc(v||'')+'</td>';
+  box.innerHTML=
+    '<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+    '<tr>'+th('Type')+th('Entité')+th('Appartient à')+th('Type d’adresse')+th('Identité')+th('Fonction')+th('Rue et n°')+th('Localité')+th('CFC')+'</tr>'+
+    items.slice(0,300).map(({a,e},i)=>'<tr onclick="adrNavSelGo('+i+')" ondblclick="adrPickGo('+i+')" style="cursor:pointer;'+
+      (i===_adrNavSel?'background:#cfe3fa':(i%2?'':'background:#f2f6fa'))+'" title="Double-clic : choisir">'+
+      '<td style="padding:3px 8px;color:#41606f;font-weight:700;font-size:10px">'+((ADR_TYPES[e.type]||['?'])[0])+'</td>'+
+      td(e.nom,150)+td(a.parent,110)+td(a.typ||'Adresse',90)+td(e.comp,110)+td(a.fonction,100)+
+      td([a.rue,a.rue2].filter(Boolean).join(', '),140)+td(((a.npa||'')+' '+(a.loc||'')).trim(),110)+td(a.cfc,80)+'</tr>').join('')+
+    '</table>'+(items.length?'':'<div style="padding:10px;color:#999;font-size:12px">Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.</div>');
+  document.getElementById('adr_pick_i').textContent=items.length+' adresse(s)'+(_adrPickCfc?' — CFC '+_adrPickCfc:'')+(_adrNavEnt?' — entité filtrée (recliquez pour tout afficher)':'');
 }
 function adrPickCfcGo(code){
   document.getElementById('adr_pick_ov').style.display='none';

@@ -15717,14 +15717,23 @@ function dvRender(){
   const vue=(D.vueT)||'std';
   const vPct=(vue!=='desc'), vHon=(vue==='hon'||vue==='toutes'||vue==='prix'),
         vCom=(vue==='toutes'||vue==='prix'), vDsc=(vue==='toutes'||vue==='prix'||vue==='desc');
-  const minW=vue==='std'?720:(vue==='hon'?950:(vue==='desc'?1000:1500));
-  const xtraTh=(vPct?'<th style="width:70px">Pourcent</th>':'')+
-    (vHon?'<th style="width:70px">% soumis</th><th style="width:95px">Montant sou…</th><th style="width:70px">Définitif</th>':'')+
-    (vCom?'<th style="width:180px">Commentaire</th>':'')+
-    (vDsc?'<th style="min-width:260px">Descriptif</th>':'');
-  h+='<div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+dvToolbarHTML()+'<div style="overflow:auto;flex:1;border:1px solid #d5d5d5;border-radius:4px"><table class="cc-tb" style="min-width:'+minW+'px"><thead><tr>'+
-    '<th class="cc-g" style="width:64px;padding-left:11px">N°</th><th class="cc-g" style="padding-left:11px">Désignation</th>'+
-    '<th>Montant HT</th><th>TVA</th><th>Montant TTC</th>'+xtraTh+'<th style="width:28px"></th></tr></thead><tbody>';
+  /* Largeurs FIGÉES de N° à Pourcent (identiques dans toutes les vues) ; seules les colonnes
+     supplémentaires — et un espace vide à droite dans les vues courtes — s'adaptent. */
+  const spacer=!vDsc;
+  const minW=vue==='std'?880:(vue==='hon'?1110:(vue==='desc'?1060:1540));
+  let cg='<col style="width:64px"><col style="width:380px"><col style="width:110px"><col style="width:100px"><col style="width:110px">'+
+    (vPct?'<col style="width:70px">':'')+
+    (vHon?'<col style="width:70px"><col style="width:95px"><col style="width:70px">':'')+
+    (vCom?'<col style="width:180px">':'')+
+    (vDsc?'<col>':'')+
+    '<col style="width:28px">'+(spacer?'<col>':'');
+  const xtraTh=(vPct?'<th>Pourcent</th>':'')+
+    (vHon?'<th>% soumis</th><th>Montant sou…</th><th>Définitif</th>':'')+
+    (vCom?'<th>Commentaire</th>':'')+
+    (vDsc?'<th>Descriptif</th>':'');
+  h+='<div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+dvToolbarHTML()+'<div style="overflow:auto;flex:1;border:1px solid #d5d5d5;border-radius:4px"><table class="cc-tb" style="min-width:'+minW+'px;width:100%;table-layout:fixed"><colgroup>'+cg+'</colgroup><thead><tr>'+
+    '<th class="cc-g" style="padding-left:11px">N°</th><th class="cc-g" style="padding-left:11px">Désignation</th>'+
+    '<th>Montant HT</th><th>TVA</th><th>Montant TTC</th>'+xtraTh+'<th></th>'+(spacer?'<th></th>':'')+'</tr></thead><tbody>';
   const items=[];
   Object.keys(C.grp).forEach(g=>items.push({g:1, cfc:g}));
   D.pos.forEach(pp=>items.push({g:0, p:pp, cfc:pp.cfc||'zzz'}));
@@ -15737,7 +15746,7 @@ function dvRender(){
         '<td>'+B+ccF(ht)+B2+'</td><td>'+ccF(t-ht)+'</td><td>'+B+ccF(t)+B2+'</td>'+
         (vPct?'<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'0.00')+'</td>':'')+
         (vHon?'<td></td><td>'+B+'0.00'+B2+'</td><td></td>':'')+
-        (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td></tr>';
+        (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td>'+(spacer?'<td></td>':'')+'</tr>';
       return; }
     const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100), hasCalc=!!(pp.calc&&pp.calc.rows&&pp.calc.rows.length);
     const desc=(pp.calc&&pp.calc.desc)||'';
@@ -15751,7 +15760,7 @@ function dvRender(){
       (vHon?'<td>0.0</td><td>0.00</td><td></td>':'')+
       (vCom?'<td></td>':'')+
       (vDsc?'<td style="white-space:nowrap">'+pvEsc(desc)+'</td>':'')+
-      '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td></tr>';
+      '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td>'+(spacer?'<td></td>':'')+'</tr>';
     /* Vue « … avec le calcul de prix » : sous-lignes du calcul détaillé sous chaque position. */
     if(vue==='prix'){
       const nb=5+(vPct?1:0)+(vHon?3:0); // cellules vides avant Commentaire
@@ -15771,7 +15780,7 @@ function dvRender(){
     '<td>'+ccF(C.totHT)+'</td><td>'+ccF(C.totTTC-C.totHT)+'</td><td>'+ccF(C.totTTC)+'</td>'+
     (vPct?'<td>'+(C.totTTC>0.005?'100.00':'')+'</td>':'')+
     (vHon?'<td></td><td><b>0.00</b></td><td></td>':'')+
-    (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td></tr>';
+    (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td>'+(spacer?'<td></td>':'')+'</tr>';
   h+='</tbody></table></div>';
   // ── zone Documents (comme la fenêtre du bureau — génération PDF à venir) ──
   h+='<div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;flex:none">'+

@@ -14640,6 +14640,20 @@ function dvCatList(){
   }).join('');
 }
 function dvCatRefresh(){ const b=document.getElementById('dv_cat_ls'); if(b) b.innerHTML=dvCatList(); }
+/* Options du devis — paramètres sortis du tableau : statut, date, TVA, position libre, envoi au CC. */
+function dvDlgOpt(){
+  const D=dvA(); if(!D) return;
+  const tva=(D.tva!=null?D.tva:8.1);
+  ccDlg('<div style="font-weight:700;margin-bottom:10px">Options du devis — '+pvEsc(_dvAff)+'</div>'+
+    '<div class="cc-cols"><div><label>Statut</label><select onchange="dvSetMeta('+PV_Q+'statut'+PV_Q+',this)">'+
+      ['en cours','transmis','validé'].map(st=>'<option'+(D.statut===st?' selected':'')+'>'+st+'</option>').join('')+'</select></div>'+
+    '<div><label>Date</label><input type="date" value="'+(D.date||'')+'" onchange="dvSetMeta('+PV_Q+'date'+PV_Q+',this)"></div>'+
+    '<div><label>TVA %</label><input type="text" style="text-align:right" value="'+tva+'" onchange="dvSetTva(this)"></div></div>'+
+    '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'+
+    '<button class="btn btn-sm" onclick="ccDlgClose();dvAddPos()">✚ Position libre</button>'+
+    '<button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="ccDlgClose();dvSend2CC()" title="Reporte les montants TTC du devis dans la colonne DG du contrôle du coût">→ Contrôle du coût (DG)</button></div>'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="ccDlgClose()">Fermer</button></div>', 560);
+}
 function dvRender(){
   const out=document.getElementById('dv_out'), ctx=document.getElementById('dv_ctx');
   if(!out) return;
@@ -14667,12 +14681,7 @@ function dvRender(){
     '<span style="font-weight:700;font-size:14px">Devis général '+pvEsc(_dvAff)+'</span>'+
     '<span style="color:#777;font-size:12px">'+pvEsc(ccAffName(_dvAff)).slice(0,50)+'</span>'+
     '<span style="flex:1"></span>'+
-    '<button class="btn btn-sm" onclick="dvAddPos()">✚ Position libre</button>'+
-    '<button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="dvSend2CC()" title="Reporte les montants TTC du devis dans la colonne DG du contrôle du coût">→ Contrôle du coût (DG)</button>'+
-    '<label style="font-size:12px;color:#555">Statut <select onchange="dvSetMeta('+PV_Q+'statut'+PV_Q+',this)" style="font-size:12px;border:1px solid #ccc;border-radius:3px;padding:2px 4px">'+
-      ['en cours','transmis','validé'].map(st=>'<option'+(D.statut===st?' selected':'')+'>'+st+'</option>').join('')+'</select></label>'+
-    '<label style="font-size:12px;color:#555">Date <input type="date" value="'+(D.date||'')+'" onchange="dvSetMeta('+PV_Q+'date'+PV_Q+',this)" style="font-size:12px;border:1px solid #ccc;border-radius:3px;padding:2px 4px"></label>'+
-    '<label style="font-size:12px;color:#555">TVA % <input value="'+tva+'" onchange="dvSetTva(this)" style="width:52px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:2px 4px;font-size:12px"></label>'+
+    '<button class="btn btn-sm" onclick="dvDlgOpt()" title="Options du devis (statut, date, TVA, position libre, envoi au contrôle du coût)">⚙︎ Options</button>'+
     '</div>';
   // Totaux en tête — comme la fenêtre du bureau
   h+='<div style="display:grid;grid-template-columns:110px 160px;gap:1px 10px;font-size:12.5px;margin:4px 0 10px auto;background:#f4f7f9;border:1px solid #d9e2e6;border-radius:6px;padding:8px 12px;width:300px">'+

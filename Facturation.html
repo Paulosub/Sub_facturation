@@ -15440,7 +15440,6 @@ function dvDlgInfo(){
     '#dv_ri_wrap table{border-collapse:collapse;table-layout:fixed;width:100%}'+
     '#dv_ri_wrap th{background:#f0f0f0;border:1px solid #c9cfd3;font-weight:normal;font-size:12.5px;color:#000;padding:3px 6px;text-align:left;position:sticky;top:0;z-index:1}'+
     '#dv_ri_wrap td{border:1px solid #dfe4e7;padding:0;height:23px;overflow:hidden}'+
-    '#dv_ri_wrap td.dv-ri-h{background:#f2f4f5;cursor:pointer;user-select:none}'+
     '#dv_ri_wrap input{width:100%;height:23px;border:0;padding:0 6px;background:transparent;font:inherit;font-size:13px;box-sizing:border-box;display:block}'+
     '#dv_ri_wrap input:focus{outline:2px solid #4a90d9;outline-offset:-2px;background:#fff}'+
     '#dv_ri_wrap tr.dv-ri-sel td{background:#cfe3f5}'+
@@ -15449,8 +15448,8 @@ function dvDlgInfo(){
     '<div style="font-weight:700;text-align:center;margin-bottom:8px">Remarques préliminaires</div>'+
     '<div style="font-size:13px;margin-bottom:6px">Informations pour le devis</div>'+
     '<div id="dv_ri_wrap" tabindex="0" style="height:680px" onkeydown="dvRiKey(event)">'+
-    '<table><colgroup><col style="width:22px"><col id="dv_ri_cnom" style="width:150px"><col></colgroup>'+
-    '<thead><tr><th></th>'+
+    '<table><colgroup><col id="dv_ri_cnom" style="width:150px"><col></colgroup>'+
+    '<thead><tr>'+
     '<th style="position:sticky;top:0"><span style="position:relative;display:block">Nom'+
     '<span class="dv-ri-rs" onmousedown="dvRiRsDown(event)" title="Glisser pour ajuster la largeur"></span></span></th>'+
     '<th>Texte</th></tr></thead>'+
@@ -15464,7 +15463,7 @@ function dvDlgInfo(){
     '<span style="width:14px"></span>'+
     '<button class="btn btn-sm" onclick="dvRiCopy()" title="Copier les lignes sélectionnées (Ctrl/Cmd+C)">Copier</button>'+
     '<button class="btn btn-sm" onclick="dvRiPaste()" title="Coller sur les lignes à partir de la sélection (Ctrl/Cmd+V)">Coller</button>'+
-    '<span style="font-size:11px;color:#8a949a;margin-left:6px">Clic sur la marge grise = sélection de ligne, Maj+clic = plage</span></div>'+
+    '<span style="font-size:11px;color:#8a949a;margin-left:6px">Clic = sélection de la ligne, Maj+clic = sélection de plusieurs lignes</span></div>'+
     '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="dvRiCancel()">Annuler</button> '+
     '<button class="btn btn-sm" style="background:#2f6fde;color:#fff" onclick="dvRiOk()">OK</button></div>', 1120);
   const box=document.getElementById('cc_ecr_box');
@@ -15496,8 +15495,7 @@ function dvRiRender(){
   const D=dvA(); const tb=document.getElementById('dv_ri_tb'); if(!D||!tb) return;
   let h='';
   for(let i=0;i<_dvRiN;i++){ const r=D.rem[i]||{};
-    h+='<tr'+(dvRiInSel(i)?' class="dv-ri-sel"':'')+'>'+
-      '<td class="dv-ri-h" onmousedown="dvRiSelRow('+i+',event)" title="Clic : sélectionner la ligne">&nbsp;</td>'+
+    h+='<tr'+(dvRiInSel(i)?' class="dv-ri-sel"':'')+' onmousedown="dvRiSelRow('+i+',event)">'+
       '<td><input data-i="'+i+'" data-k="nom" value="'+pvEscA(r.nom||'')+'" oninput="dvRiSet('+i+','+PV_Q+'nom'+PV_Q+',this)"></td>'+
       '<td><input data-i="'+i+'" data-k="txt" value="'+pvEscA(r.txt||'')+'" oninput="dvRiSet('+i+','+PV_Q+'txt'+PV_Q+',this)"></td></tr>';
   }
@@ -15506,24 +15504,36 @@ function dvRiRender(){
 function dvRiSelRange(){ if(_dvRiA==null) return null;
   return [Math.min(_dvRiA,_dvRiB), Math.max(_dvRiA,_dvRiB)]; }
 function dvRiInSel(i){ const r=dvRiSelRange(); return r && i>=r[0] && i<=r[1]; }
-function dvRiMark(){ document.querySelectorAll('#dv_ri_tb tr').forEach((tr,i)=>{
-  tr.classList.toggle('dv-ri-sel', !!dvRiInSel(i)); }); }
-function dvRiSelRow(i,ev){ ev.preventDefault();
-  if(ev.shiftKey && _dvRiA!=null){ _dvRiB=i; } else { _dvRiA=i; _dvRiB=i; }
-  const w=document.getElementById('dv_ri_wrap'); if(w) w.focus({preventScroll:true});
-  dvRiMark(); }
+function dvRiMark(){ const r=dvRiSelRange();
+  const editing=document.activeElement && document.activeElement.tagName==='INPUT';
+  const show=r && !(r[0]===r[1] && editing);
+  document.querySelectorAll('#dv_ri_tb tr').forEach((tr,i)=>{
+    tr.classList.toggle('dv-ri-sel', !!(show && dvRiInSel(i))); }); }
+function dvRiSelRow(i,ev){
+  const inInput=ev.target && ev.target.tagName==='INPUT';
+  if(ev.shiftKey && _dvRiA!=null){ _dvRiB=i; ev.preventDefault(); }
+  else { _dvRiA=i; _dvRiB=i; }
+  if(!inInput){ ev.preventDefault();
+    const w=document.getElementById('dv_ri_wrap'); if(w) w.focus({preventScroll:true}); }
+  setTimeout(dvRiMark,0); }
 function dvRiSet(i,k,el){ const D=dvA();
   while(D.rem.length<=i) D.rem.push({nom:'',txt:''});
   D.rem[i][k]=el.value; }
 function dvRiKey(e){
+  const mod=e.metaKey||e.ctrlKey;
   if(e.target.tagName==='INPUT'){
+    const r=dvRiSelRange();
+    /* Cmd/Ctrl+C sur une plage de plusieurs lignes = copier les lignes ;
+       Cmd/Ctrl+V avec plusieurs lignes copiées = coller les lignes.
+       Sinon, copier/coller natif du texte dans la cellule. */
+    if(mod && r && r[0]!==r[1] && (e.key==='c'||e.key==='C')){ e.preventDefault(); dvRiCopy(); return; }
+    if(mod && _dvRiClip && _dvRiClip.length>1 && (e.key==='v'||e.key==='V')){ e.preventDefault(); dvRiPaste(); return; }
     if(e.key==='Enter'){ e.preventDefault();
       const i=+e.target.dataset.i, k=e.target.dataset.k;
       const nx=document.querySelector('#dv_ri_tb input[data-i="'+(i+1)+'"][data-k="'+k+'"]');
       if(nx) nx.focus(); }
     return; }
   const r=dvRiSelRange(); if(!r) return;
-  const mod=e.metaKey||e.ctrlKey;
   if(mod && (e.key==='c'||e.key==='C')){ e.preventDefault(); dvRiCopy(); }
   else if(mod && (e.key==='v'||e.key==='V')){ e.preventDefault(); dvRiPaste(); }
   else if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault();
@@ -15531,13 +15541,13 @@ function dvRiKey(e){
     dvRiRender(); }
 }
 function dvRiCopy(){ const r=dvRiSelRange(); const D=dvA();
-  if(!r){ toast('Sélectionnez une ou plusieurs lignes (marge grise).'); return; }
+  if(!r){ toast('Cliquez sur une ligne (Maj+clic = plusieurs lignes) puis Copier.'); return; }
   _dvRiClip=[]; for(let i=r[0];i<=r[1];i++){ const x=D.rem[i]||{};
     _dvRiClip.push({nom:x.nom||'', txt:x.txt||''}); }
   toast(_dvRiClip.length+' ligne(s) copiée(s)'); }
 function dvRiPaste(){ const r=dvRiSelRange(); const D=dvA();
   if(!_dvRiClip||!_dvRiClip.length){ toast('Rien à coller — copiez d'+"'"+'abord des lignes.'); return; }
-  if(!r){ toast('Sélectionnez la ligne de destination (marge grise).'); return; }
+  if(!r){ toast('Cliquez sur la ligne de destination puis Coller.'); return; }
   const at=r[0];
   _dvRiClip.forEach((c,j)=>{ while(D.rem.length<=at+j) D.rem.push({nom:'',txt:''});
     D.rem[at+j]={nom:c.nom, txt:c.txt}; });
@@ -15551,11 +15561,11 @@ function dvRiAdd(){ const D=dvA(); const r=dvRiSelRange();
   _dvRiA=at; _dvRiB=at; dvRiRender();
   const f=document.querySelector('#dv_ri_tb input[data-i="'+at+'"][data-k="txt"]'); if(f) f.focus(); }
 function dvRiDel(){ const D=dvA(); const r=dvRiSelRange();
-  if(!r){ toast('Sélectionnez les lignes à supprimer (marge grise).'); return; }
+  if(!r){ toast('Cliquez sur la ou les lignes à supprimer.'); return; }
   if(r[0]<D.rem.length) D.rem.splice(r[0], Math.min(r[1],D.rem.length-1)-r[0]+1);
   _dvRiA=null; _dvRiB=null; dvRiRender(); }
 function dvRiMove(mode){ const D=dvA(); const r=dvRiSelRange();
-  if(!r){ toast('Sélectionnez les lignes à déplacer (marge grise).'); return; }
+  if(!r){ toast('Cliquez sur la ou les lignes à déplacer.'); return; }
   while(D.rem.length<=r[1]) D.rem.push({nom:'',txt:''});
   const n=r[1]-r[0]+1;
   let j=(mode===0)?0:(mode===1)?r[0]-1:(mode===2)?r[0]+1:D.rem.length-n;

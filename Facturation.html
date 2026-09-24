@@ -16126,6 +16126,7 @@ async function dvDocPdfSend(mode){
       setTimeout(()=>URL.revokeObjectURL(u2),4000);
       toast('Serveur de sauvegarde (7788) indisponible — le PDF a été téléchargé.');
     } else {
+      dvDocWinClose(); /* le fichier part dans Aperçu → on ferme la fenêtre popup */
       toast(mode==='save'?'PDF enregistré dans « PDF Devis » et ouvert dans Aperçu.':'PDF ouvert dans Aperçu.');
     }
     if(mode==='save'){
@@ -16262,7 +16263,7 @@ async function dvPdfOpen(nom){
   try{
     const r=await fetch('http://127.0.0.1:7788/openpdf?name='+encodeURIComponent(nom));
     const j=await r.json();
-    if(j&&j.ok) toast('« '+nom+' » ouvert dans Aperçu.');
+    if(j&&j.ok){ dvDocWinClose(); toast('« '+nom+' » ouvert dans Aperçu.'); }
     else toast('Fichier introuvable sur le disque : '+nom);
   }catch(e){ toast('Serveur de sauvegarde (7788) indisponible — impossible d’ouvrir le PDF.'); }
 }

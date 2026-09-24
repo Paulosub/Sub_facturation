@@ -418,6 +418,12 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
   body.offre-open .offre-page{box-shadow:none!important;margin:0!important;transform:none!important;break-after:page;page-break-after:always}
   body.offre-open .offre-page:last-child{break-after:auto}
   body.offre-open .offre-page.land{page:landscape}
+  body.dvdoc-open>*:not(#dv_doc_win){display:none!important}
+  body.dvdoc-open #dv_doc_win{position:static!important;width:auto!important;height:auto!important;border:none!important;box-shadow:none!important;border-radius:0!important;overflow:visible!important;display:block!important;transform:none!important}
+  body.dvdoc-open #dv_doc_ttl,body.dvdoc-open #dv_ap_bar{display:none!important}
+  body.dvdoc-open #dv_doc_sc{overflow:visible!important;background:#fff!important;padding:0!important;display:block!important}
+  body.dvdoc-open .offre-page{box-shadow:none!important;margin:0!important;transform:none!important;break-after:page;page-break-after:always}
+  body.dvdoc-open .offre-page:last-child{break-after:auto}
   @page landscape{size:A4 landscape;margin:0}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   body{height:auto!important;overflow:visible!important;background:#fff!important}
@@ -15700,80 +15706,10 @@ function dvDocCtx(){
   return { aff, ouvrage: ccAffName(aff)||'', c };
 }
 function dvDocShow(titre, pagesHtml){
-  /* Aperçu dans une fenêtre POPUP séparée (comme la fenêtre du bureau), avec sa barre
-     d'outils : imprimante/réglages/crayon · pages/zoom · document/partager/roue. */
-  const w=window.open('','dv_apercu','width=1240,height=940');
-  if(!w){ dvDocShowOverlay(titre, pagesHtml); return; } // popups bloquées (p.ex. aperçu intégré) → plein écran
+  /* Aperçu dans une fenêtre POPUP flottante : barre de titre déplaçable avec pastille de
+     fermeture, barre d'outils, pages A4 défilantes ; redimensionnable par le coin. */
+  dvDocWinClose();
   const total=(pagesHtml.match(/class="offre-page/g)||[]).length||1;
-  const S='<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">';
-  const ic={
-    print:S+'<path d="M4 5.5V2h7v3.5M3 5.5h9a1 1 0 0 1 1 1V11h-2.5v2H4.5v-2H2V6.5a1 1 0 0 1 1-1z"/><path d="M4.5 10.5h6"/></svg>',
-    sliders:S+'<path d="M2 4h11M2 7.5h11M2 11h11"/><circle cx="5" cy="4" r="1.5" fill="#f2f2f2"/><circle cx="10" cy="7.5" r="1.5" fill="#f2f2f2"/><circle cx="6.5" cy="11" r="1.5" fill="#f2f2f2"/></svg>',
-    pencil:S+'<path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg>',
-    first:S+'<path d="M4 3v9M11 3 6.5 7.5 11 12"/></svg>',
-    prev:S+'<path d="M9.5 3 5 7.5 9.5 12"/></svg>',
-    next:S+'<path d="M5.5 3 10 7.5 5.5 12"/></svg>',
-    last:S+'<path d="M11 3v9M4 3l4.5 4.5L4 12"/></svg>',
-    doc:S+'<path d="M4 2h5l3 3v8.5H4z"/><path d="M6 8h4M6 10.3h4" stroke-width="1"/></svg>',
-    share:S+'<path d="M7.5 9.5V2.5M4.8 5 7.5 2.3 10.2 5"/><path d="M4 7.5H3v5h9v-5h-1"/></svg>',
-    gear:'<span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span>'
-  };
-  const bSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9;border-radius:4px;cursor:pointer;font-size:11px';
-  const B=(k,fn,tt,off,menu)=>'<button '+(off?'disabled ':'')+'style="'+bSt+(off?';opacity:.45':'')+'" title="'+tt+'"'+(fn?' onclick="'+fn+'"':'')+'>'+ic[k]+(menu?' <span style="font-size:8px;color:#666">▾</span>':'')+'</button>';
-  const bar='<div id="bar">'+
-    B('print','window.print()','Imprimer')+
-    B('sliders','','Réglages de l'+String.fromCharCode(39)+'aperçu — à venir',1)+
-    B('pencil','','Annoter — à venir',1)+
-    '<span style="flex:1"></span>'+
-    B('first','go(1)','Première page')+B('prev','go(&quot;-&quot;)','Page précédente')+
-    '<input id="pgin" value="1" onchange="go(this.value)" style="width:34px;text-align:center;border:1px solid #c9c9c9;border-radius:4px;padding:3px 2px;font-size:12px"> '+
-    '<span style="font-size:12px;color:#555">/ '+total+'</span>'+
-    B('next','go(&quot;+&quot;)','Page suivante')+B('last','go('+total+')','Dernière page')+
-    '<select onchange="zo(this.value)" style="margin-left:10px;border:1px solid #c9c9c9;border-radius:4px;padding:3px 4px;font-size:12px">'+
-      ['50','75','100','125','150','200'].map(z=>'<option value="'+z+'"'+(z==='100'?' selected':'')+'>'+z+'&nbsp;%</option>').join('')+'</select>'+
-    '<span style="flex:1"></span>'+
-    B('doc','alert('+String.fromCharCode(39)+'Génération du PDF — à venir.'+String.fromCharCode(39)+')','Exporter en PDF',0,1)+
-    B('share','','Partager — à venir',1,1)+
-    B('gear','','Réglages — à venir',1,1)+
-    '</div>';
-  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+pvEsc(titre)+'</title><style>'+
-    "@font-face{font-family:'AkkuratDoc';font-weight:300;src:local('Akkurat LL TT Light'),local('AkkuratLLTT-Light')}"+
-    "@font-face{font-family:'AkkuratDoc';src:local('Akkurat LL TT Bold'),local('AkkuratLLTT-Bold')}"+
-    'body{margin:0;background:#565b5e;font-family:Arial,Helvetica,sans-serif}'+
-    '#bar{position:sticky;top:0;z-index:10;background:#ececec;border-bottom:1px solid #bbb;padding:5px 14px;display:flex;align-items:center;gap:6px}'+
-    '#sc{padding:26px 16px;display:flex;flex-direction:column;align-items:center;gap:22px}'+
-    ".offre-page{width:210mm;min-height:297mm;background:#fff;position:relative;box-shadow:0 4px 18px rgba(0,0,0,.4);padding:15mm 14mm 16mm 14mm;box-sizing:border-box;font-family:'AkkuratDoc','Akkurat','Akkurat Pro',Arial,sans-serif;font-weight:300;font-size:9.1pt;line-height:1.42;color:#1a1a1a;flex-shrink:0;overflow:hidden}"+
-    '.offre-ct{margin-left:31mm}'+
-    '.offre-foot{position:absolute;left:14mm;right:14mm;bottom:9mm;display:flex;font-size:7.4pt;line-height:1.3}'+
-    '.offre-foot .c{width:31%}.offre-foot .pg{margin-left:auto;color:#555;align-self:flex-end}'+
-    '.offre-foot u{text-decoration:none;border-bottom:.4pt solid #1a1a1a;padding-bottom:.3mm}'+
-    '.offre-logo{position:absolute;right:7mm;bottom:24mm;writing-mode:vertical-rl;transform:rotate(180deg);font-weight:bold;font-size:10.5pt;letter-spacing:3px;color:#c7cacb;line-height:1.15;white-space:nowrap}'+
-    '@media print{#bar{display:none}body{background:#fff}#sc{padding:0;display:block}.offre-page{box-shadow:none;page-break-after:always}.offre-page:last-child{page-break-after:auto}}'+
-    '</style></head><body>'+bar+'<div id="sc">'+pagesHtml+'</div>'+
-    '<scr'+'ipt>let pg=1;'+
-    'function go(v){const ps=document.querySelectorAll(".offre-page");if(v==="-")pg--;else if(v==="+")pg++;else pg=parseInt(v)||1;'+
-    'pg=Math.max(1,Math.min(ps.length,pg));document.getElementById("pgin").value=pg;ps[pg-1].scrollIntoView({behavior:"smooth",block:"start"});}'+
-    'function zo(v){document.querySelectorAll(".offre-page").forEach(p=>p.style.zoom=(parseInt(v)||100)/100);}'+
-    '<\/scr'+'ipt></body></html>';
-  w.document.open(); w.document.write(html); w.document.close();
-  try{ w.focus(); }catch(e){}
-}
-/* Repli : visionneuse plein écran (offre-overlay) quand la popup est impossible. */
-function dvDocShowOverlay(titre, pagesHtml){
-  document.querySelector('#offre-bar .t').textContent=titre;
-  document.getElementById('offre-title').textContent='— '+(_dvAff||'');
-  const sel=document.getElementById('offre-version'); if(sel) sel.style.display='none';
-  const vc=document.getElementById('offre-version-comment'); if(vc) vc.textContent='';
-  document.getElementById('offre-scroll').innerHTML=pagesHtml;
-  _offreDl=()=>toast('Génération du PDF — à venir.');
-  _offrePrint=()=>window.print();
-  document.getElementById('offre-overlay').classList.add('on');
-  document.body.classList.add('offre-open');
-  dvApBar();
-}
-function dvApBar(){
-  const old=document.getElementById('dv_ap_bar'); if(old) old.remove();
-  const total=document.querySelectorAll('#offre-scroll .offre-page').length||1;
   window._dvApPg=1;
   const S='<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">';
   const ic={
@@ -15790,30 +15726,51 @@ function dvApBar(){
   };
   const bSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9';
   const B=(k,fn,tt,off,menu)=>'<button class="btn btn-sm" '+(off?'disabled ':'')+'style="'+bSt+(off?';opacity:.45;pointer-events:none':'')+'" title="'+tt+'"'+(fn?' onclick="'+fn+'"':'')+'>'+ic[k]+(menu?' <span style="font-size:8px;color:#666">▾</span>':'')+'</button>';
-  const bar=document.createElement('div');
-  bar.id='dv_ap_bar';
-  bar.style.cssText='background:#ececec;border-bottom:1px solid #bbb;padding:5px 14px;display:flex;align-items:center;gap:6px;flex-shrink:0';
-  bar.innerHTML=
-    B('print','offreModalPrint()','Imprimer')+
-    B('sliders','','Réglages de l'+String.fromCharCode(39)+'aperçu — à venir',1)+
-    B('pencil','','Annoter — à venir',1)+
-    '<span style="flex:1"></span>'+
-    B('first','dvApGo(1)','Première page')+
-    B('prev','dvApGo('+String.fromCharCode(39)+'-'+String.fromCharCode(39)+')','Page précédente')+
-    '<input id="dv_ap_pg" value="1" onchange="dvApGo(parseInt(this.value)||1)" style="width:34px;text-align:center;border:1px solid #c9c9c9;border-radius:4px;padding:3px 2px;font-size:12px;background:#fff"> '+
-    '<span style="font-size:12px;color:#555">/ '+total+'</span>'+
-    B('next','dvApGo('+String.fromCharCode(39)+'+'+String.fromCharCode(39)+')','Page suivante')+
-    B('last','dvApGo('+total+')','Dernière page')+
-    '<select onchange="dvApZoom(this.value)" style="margin-left:10px;border:1px solid #c9c9c9;border-radius:4px;padding:3px 4px;font-size:12px;background:#fff">'+
-      ['50','75','100','125','150','200'].map(z=>'<option value="'+z+'"'+(z==='100'?' selected':'')+'>'+z+'&nbsp;%</option>').join('')+'</select>'+
-    '<span style="flex:1"></span>'+
-    B('doc','offreModalDownload()','Exporter en PDF',0,1)+
-    B('share','','Partager — à venir',1,1)+
-    B('gear','','Réglages — à venir',1,1);
-  document.getElementById('offre-bar').insertAdjacentElement('afterend', bar);
+  const win=document.createElement('div');
+  win.id='dv_doc_win';
+  win.style.cssText='position:fixed;top:30px;left:50%;transform:translateX(-50%);width:min(1240px,96vw);height:calc(100vh - 62px);background:#fff;border:1px solid #8a8a8a;border-radius:9px;box-shadow:0 18px 60px rgba(0,0,0,.5);z-index:5000;display:flex;flex-direction:column;overflow:hidden;min-width:640px;min-height:400px;resize:both';
+  win.innerHTML=
+    '<div id="dv_doc_ttl" style="background:linear-gradient(#f4f4f4,#e2e2e2);border-bottom:1px solid #c6c6c6;padding:7px 12px;display:flex;align-items:center;cursor:move;user-select:none;flex:none">'+
+      '<span onclick="dvDocWinClose()" title="Fermer" style="width:12px;height:12px;border-radius:50%;background:#ff5f57;border:1px solid #dd3c33;display:inline-block;cursor:pointer;flex:none"></span>'+
+      '<span style="flex:1;text-align:center;font-weight:700;font-size:13px;color:#333">'+pvEsc(titre)+'</span>'+
+      '<span style="width:12px;flex:none"></span></div>'+
+    '<div id="dv_ap_bar" style="background:#ececec;border-bottom:1px solid #bbb;padding:5px 14px;display:flex;align-items:center;gap:6px;flex:none">'+
+      B('print','window.print()','Imprimer')+
+      B('sliders','','Réglages de l'+String.fromCharCode(39)+'aperçu — à venir',1)+
+      B('pencil','','Annoter — à venir',1)+
+      '<span style="flex:1"></span>'+
+      B('first','dvApGo(1)','Première page')+
+      B('prev','dvApGo('+String.fromCharCode(39)+'-'+String.fromCharCode(39)+')','Page précédente')+
+      '<input id="dv_ap_pg" value="1" onchange="dvApGo(parseInt(this.value)||1)" style="width:34px;text-align:center;border:1px solid #c9c9c9;border-radius:4px;padding:3px 2px;font-size:12px;background:#fff"> '+
+      '<span style="font-size:12px;color:#555">/ '+total+'</span>'+
+      B('next','dvApGo('+String.fromCharCode(39)+'+'+String.fromCharCode(39)+')','Page suivante')+
+      B('last','dvApGo('+total+')','Dernière page')+
+      '<select onchange="dvApZoom(this.value)" style="margin-left:10px;border:1px solid #c9c9c9;border-radius:4px;padding:3px 4px;font-size:12px;background:#fff">'+
+        ['50','75','100','125','150','200'].map(z=>'<option value="'+z+'"'+(z==='100'?' selected':'')+'>'+z+'&nbsp;%</option>').join('')+'</select>'+
+      '<span style="flex:1"></span>'+
+      B('doc','toast('+String.fromCharCode(39)+'Génération du PDF — à venir.'+String.fromCharCode(39)+')','Exporter en PDF',0,1)+
+      B('share','','Partager — à venir',1,1)+
+      B('gear','','Réglages — à venir',1,1)+'</div>'+
+    '<div id="dv_doc_sc" style="flex:1;overflow:auto;background:#565b5e;padding:26px 16px 40px;display:flex;flex-direction:column;align-items:center;gap:22px">'+pagesHtml+'</div>';
+  document.body.appendChild(win);
+  // Déplacement par la barre de titre
+  const ttl=win.querySelector('#dv_doc_ttl');
+  ttl.addEventListener('mousedown', function(e){
+    if(e.target.title==='Fermer') return;
+    const r=win.getBoundingClientRect();
+    win.style.transform='none'; win.style.left=r.left+'px'; win.style.top=r.top+'px';
+    const dx=e.clientX-r.left, dy=e.clientY-r.top;
+    const mv=ev=>{ win.style.left=(ev.clientX-dx)+'px'; win.style.top=Math.max(0,ev.clientY-dy)+'px'; };
+    const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); };
+    document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+    e.preventDefault();
+  });
+  document.body.classList.add('dvdoc-open');
 }
+function dvDocWinClose(){ const w=document.getElementById('dv_doc_win'); if(w) w.remove();
+  document.body.classList.remove('dvdoc-open'); }
 function dvApGo(v){
-  const pages=[...document.querySelectorAll('#offre-scroll .offre-page')];
+  const pages=[...document.querySelectorAll('#dv_doc_sc .offre-page')];
   if(!pages.length) return;
   let n=window._dvApPg||1;
   if(v==='-') n-=1; else if(v==='+') n+=1; else n=parseInt(v)||1;
@@ -15823,7 +15780,7 @@ function dvApGo(v){
   pages[n-1].scrollIntoView({behavior:'smooth', block:'start'});
 }
 function dvApZoom(v){
-  document.querySelectorAll('#offre-scroll .offre-page').forEach(pg=>{ pg.style.zoom=(parseInt(v)||100)/100; });
+  document.querySelectorAll('#dv_doc_sc .offre-page').forEach(pg=>{ pg.style.zoom=(parseInt(v)||100)/100; });
 }
 /* ── « Soumis à honoraires » (document Honoraires) : tableau CFC, groupes 1 chiffre en noir,
    groupes 2-3 chiffres en gris, % soumis et Honoraires (0 tant que non saisis). ── */

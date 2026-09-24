@@ -15661,6 +15661,27 @@ function dvCalc(D){
   Object.keys(grp).forEach(g=>{ let t=0; codes.forEach(c=>{ if(ccNorm(c)===g||ccNorm(c).startsWith(g)) t+=own[c]; }); agg[g]=t; });
   return {own:own, grp:agg, totTTC:totTTC, totHT:totTTC/(1+tva/100), honHT:honTTC/(1+tva/100), tva:tva};
 }
+/* Honoraires d'architecte : repris du contrat SIGNÉ de l'affaire (position CFC 291
+   gérée automatiquement). Contrat partiel (p.ex. 32.5% des phases) → montant
+   extrapolé à 100% et ARRONDI au franc ; contrat à 100% → montant tel quel. */
+function dvHonSync(){
+  const D=dvA(); if(!D||!_dvAff) return;
+  const liste=(typeof contrats!=='undefined'&&Array.isArray(contrats))?contrats:[];
+  const cs=liste.filter(c=>c.affaire===_dvAff && c.signe && !c.annule);
+  const i=D.pos.findIndex(p2=>p2.id==='hon_contrat');
+  if(!cs.length){ if(i>=0){ D.pos.splice(i,1); dvPersist(); } return; }
+  let tot=0, partiel=false;
+  cs.forEach(c=>{
+    const pct=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
+    const m=parseFloat(c.httc)||0;
+    if(pct>0.01&&pct<99.995){ partiel=true; tot+=m/(pct/100); } else tot+=m;
+  });
+  tot=partiel?Math.round(tot):Math.round(tot*100)/100;
+  const lbl='Honoraires d'+String.fromCharCode(8217)+'architecte (contrat sign'+String.fromCharCode(233)+(partiel?', extrapol'+String.fromCharCode(233)+' '+String.fromCharCode(224)+' 100%':'')+')';
+  if(i>=0){
+    if(ccP(D.pos[i].ttc)!==tot||D.pos[i].lbl!==lbl){ D.pos[i].ttc=String(tot); D.pos[i].lbl=lbl; dvPersist(); }
+  } else { D.pos.push({id:'hon_contrat', cfc:'291', lbl:lbl, ttc:String(tot)}); dvPersist(); }
+}
 function dvSelAff(v){ _dvAff=v; dvRender(); }
 function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';
   document.getElementById('dv_aff_f').value=''; dvAffFill(); }
@@ -17115,6 +17136,7 @@ function dvRender(){
       '</tbody></table>';
     return;
   }
+  dvHonSync();
   const D=dvA(), C=dvCalc(D), tva=C.tva;
   ctx.textContent='';
   let h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'+

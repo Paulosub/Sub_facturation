@@ -15914,10 +15914,36 @@ document.addEventListener('mousedown', function(e){
     if(m && m.style.display && m.style.display!=='none' && !(m.parentElement||m).contains(e.target)) m.style.display='none';
   });
 });
-function dvTbMenu(){ const m=document.getElementById('dv_tb_menu'); if(m) m.style.display=(m.style.display==='none'?'block':'none');
-  const t=document.getElementById('dv_tb_menu_t'); if(t) t.style.display='none'; }
-function dvTbMenuT(){ const m=document.getElementById('dv_tb_menu_t'); if(m) m.style.display=(m.style.display==='none'?'block':'none');
-  const c=document.getElementById('dv_tb_menu'); if(c) c.style.display='none'; }
+const DV_TB_MENUS=['dv_tb_menu','dv_tb_menu_t','dv_tb_menu_w','dv_tb_menu_d','dv_tb_menu_g2'];
+function dvTbTog(id){ DV_TB_MENUS.filter(x=>x!==id).forEach(x=>{ const e=document.getElementById(x); if(e) e.style.display='none'; });
+  const m=document.getElementById(id); if(m) m.style.display=(m.style.display==='none'?'block':'none'); }
+function dvTbMenu(){ dvTbTog('dv_tb_menu'); }
+function dvTbMenuT(){ dvTbTog('dv_tb_menu_t'); }
+function dvTbMenuW(){ dvTbTog('dv_tb_menu_w'); }
+function dvTbMenuD(){ dvTbTog('dv_tb_menu_d'); }
+function dvTbMenuG(){ dvTbTog('dv_tb_menu_g2'); }
+/* Copier / exporter le tableau du devis affiche (lecture du DOM), et masquer les documents */
+function dvTblRows(){
+  const t=document.querySelector('#dv_flex > div:nth-child(2) table'); if(!t) return [];
+  return [...t.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(c=>c.innerText.replace(/\s+/g,' ').trim()));
+}
+function dvTblCopy(){
+  const NL=String.fromCharCode(10), TAB=String.fromCharCode(9);
+  const txt=dvTblRows().map(r=>r.join(TAB)).join(NL);
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(
+    ()=>toast('Tableau copie dans le presse-papier.'),
+    ()=>toast('Copie impossible dans ce navigateur.'));
+}
+function dvTblCsv(){
+  const NL=String.fromCharCode(10);
+  const esc=v=>('"'+String(v).split('"').join('""')+'"');
+  const csv=String.fromCharCode(65279)+dvTblRows().map(r=>r.map(esc).join(';')).join(NL);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='devis_'+(_dvAff||'tableau')+'.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function dvDocsTog(){ const D=dvA(); if(!D) return; D.docsOff=!D.docsOff; dvPersist(); dvRender(); }
 /* Choix de la vue du tableau DG (menu de l'icône tableau) — mémorisé par devis.
    L'effet des vues autres que Standard sur les colonnes sera défini avec Paulo. */
 function dvTbVue(k){ const D=dvA(); if(D){ D.vueT=k; dvPersist(); } dvRender(); }
@@ -16873,7 +16899,36 @@ function dvToolbarHTML(){
   return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
     pencil+'<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Supprimer la ligne sélectionnée" onclick="dvDelSel()">'+ic['minus']+'</button>'+b('filter',1,'Filtre')+
     '<span style="width:10px"></span>'+
-    tblBtn+b('wrench',1,'Outils')+b('doc',1,'Documents')+b('gear',1,'Paramètres')+
+    tblBtn+
+    (function(){
+      const men=(id,fn,icn,tt,items)=>'<div style="position:relative">'+
+        '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="'+tt+'" onclick="'+fn+'()">'+icn+' <span style="font-size:8px;color:#666">▾</span></button>'+
+        '<div id="'+id+'" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:280px;z-index:60;font-size:13px;white-space:nowrap;padding:4px 0">'+items+'</div></div>';
+      const li=(lbl,act,chk)=>'<div style="padding:6px 16px 6px '+(chk!=null?'10px':'16px')+';cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+act+'">'+(chk!=null?'<span style=\u0022width:20px;display:inline-block;flex:none\u0022>'+(chk?'✓':'')+'</span>':'')+lbl+'</div>';
+      const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+      const av=lbl=>'dvTbTog(null);toast('+PV_Q+lbl+' — à venir.'+PV_Q+')';
+      const docsOn=!(D&&D.docsOff);
+      return men('dv_tb_menu_w','dvTbMenuW',ic['wrench'],'Outils',
+          li('Paramètres …',av('Paramètres')))+
+        men('dv_tb_menu_d','dvTbMenuD',ic['doc'],'Documents',
+          li('Document impression MO … [Ancien document]',av('Document impression MO'))+
+          li('Document impression TRAVAIL … [Ancien document]',av('Document impression TRAVAIL'))+
+          sep+
+          li('Ajouter une présentation par défaut',av('Ajouter une présentation par défaut'))+
+          li('Renommer la présentation …',av('Renommer la présentation'))+
+          li('Supprimer la présentation',av('Supprimer la présentation'))+
+          sep+
+          li('Honoraires … [Ancien document]','dvTbTog(null);dvDocOuvrirGo('+PV_Q+'Honoraires'+PV_Q+')')+
+          li('Feuille de position … [Ancien document]',av('Feuille de position')))+
+        men('dv_tb_menu_g2','dvTbMenuG',ic['gear'],'Paramètres',
+          li('Exporter le devis …',av('Exporter le devis'))+
+          li('Exporter le descriptif …',av('Exporter le descriptif'))+
+          sep+
+          li('Copier le contenu du tableau dans le presse-papier','dvTbTog(null);dvTblCopy()')+
+          li('Exporter le tableau dans un fichier CSV …','dvTbTog(null);dvTblCsv()')+
+          sep+
+          li('Afficher les documents','dvTbTog(null);dvDocsTog()',docsOn));
+    })()+
     '</div>';
 }
 function dvRender(){
@@ -16993,7 +17048,7 @@ function dvRender(){
   const dbSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9';
   const dbSvg=d=>'<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.7" stroke-linecap="round"><path d="'+d+'"/></svg>';
   const db=(inner,tt)=>'<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="'+tt+' — sélectionnez d'+PV_Q+'abord un document">'+inner+' <span style="font-size:8px;color:#666">▾</span></button>';
-  h+='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;align-items:stretch;flex:none">'+
+  h+='<div id="dv_docs_zone" style="display:'+(D.docsOff?'none':'flex')+';flex-wrap:wrap;gap:12px;margin-top:10px;align-items:stretch;flex:none">'+
     '<div style="flex:1 1 430px;min-width:0;max-width:640px;display:flex;flex-direction:column">'+
     '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;height:26px"><span style="font-size:12px;font-weight:700;color:#003346;margin-right:4px">Documents</span>'+
     '<span id="dv_doc_btns" style="display:inline-flex;gap:5px">'+

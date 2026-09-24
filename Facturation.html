@@ -17060,11 +17060,16 @@ function dvRender(){
   h+='<div id="dv_flex" style="display:flex;gap:12px;align-items:stretch;height:420px">';
   // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
   const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
-  h+='<div style="width:320px;flex:none;border:1px solid #cfd8db;border-radius:6px;height:100%;box-sizing:border-box;overflow:auto;background:#fff">'+
+  h+='<div style="width:320px;flex:none;display:flex;flex-direction:column;height:100%">'+
+    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;flex:none">'+
+      '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Ajouter un CFC au catalogue" onclick="toast('+PV_Q+'Ajouter un CFC \u2014 \u00e0 venir.'+PV_Q+')"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M7.5 3v9M3 7.5h9" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round"/></svg></button>'+
+      '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="\u00c9diter le CFC s\u00e9lectionn\u00e9" onclick="toast('+PV_Q+'\u00c9diter le CFC \u2014 \u00e0 venir.'+PV_Q+')"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z" fill="none" stroke="#444" stroke-width="1.3"/></svg></button>'+
+    '</div>'+
+    '<div style="flex:1;border:1px solid #cfd8db;border-radius:6px;box-sizing:border-box;overflow:auto;background:#fff;min-height:0">'+
     '<div style="position:sticky;top:0;z-index:1;background:#eef3f5;border-bottom:1px solid #d9e2e6">'+
       '<div style="display:flex;gap:6px;padding:4px 10px 2px 6px;font-size:10.5px;color:#003346;font-weight:700"><span style="width:10px;flex:none"></span><span style="width:48px;flex:none">N°</span><span>Texte</span></div>'+
       '<div style="padding:0 8px 6px"><input placeholder="Rechercher un CFC (code ou texte)…" value="'+pvEsc(window._dvCatFilt||'')+'" oninput="window._dvCatFilt=this.value;dvCatRefresh()" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:4px 7px;font-size:11.5px"></div></div>'+
-    '<div id="dv_cat_ls">'+dvCatList()+'</div></div>';
+    '<div id="dv_cat_ls">'+dvCatList()+'</div></div></div>';
   // ── devis (droite) : saisie du TTC, HT / TVA / Pourcent calculés ──
   /* Vues du tableau (menu icône tableau) : std / hon / toutes / prix / desc — fidèles aux captures. */
   const vue=(D.vueT)||'std';

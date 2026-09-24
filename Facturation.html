@@ -15757,7 +15757,7 @@ function dvDocShow(titre, pagesHtml){
         '<option value="fit" selected>Ajuster</option>'+
         ['50','75','100','125','150','200'].map(z=>'<option value="'+z+'">'+z+'&nbsp;%</option>').join('')+'</select>'+
       '<span style="flex:1"></span>'+
-      M(1,'doc','Fichier PDF')+M(2,'share','Partager')+M(3,'gear','Réglages de la fenêtre')+'</div>'+
+      M(1,'doc','Fichier PDF')+M(2,'share','Partager')+'</div>'+
     '<div id="dv_doc_sc" style="flex:1;overflow:auto;background:#565b5e;padding:12px;display:flex;align-items:flex-start;justify-content:center">'+pagesHtml+'</div>';
   document.body.appendChild(win);
   // Déplacement par la barre de titre

@@ -17437,9 +17437,9 @@ function dvRender(){
       let h2='<span style="color:#555">Honoraires HT</span><span style="text-align:right" title="Montant HT pour 100% des prestations">'+ccF(K?K.m100ht:C.honHT)+'</span>';
       if(K){
         const pctT=(K.pct>0.01&&K.pct<99.995)?(K.pct.toFixed(1).replace('.0','')+'%'):'100%';
-        h2+='<span style="color:#555;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px">Contrat d’architecte</span>'+
+        h2+='<span style="color:#555;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px;white-space:nowrap">Contrat d’architecte <span style="color:#999">('+pctT+')</span></span>'+
           '<span style="text-align:right;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px" title="Montant TTC du contrat d’honoraires'+(K.signe?' (signé)':' (non signé)')+'">'+
-          ccF(K.httc)+' <span style="color:#999">('+pctT+')</span></span>';
+          ccF(K.httc)+'</span>';
       }
       return h2;
     })()+'</div>';

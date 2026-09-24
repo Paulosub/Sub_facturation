@@ -14675,7 +14675,7 @@ function dvRender(){
     return;
   }
   const D=dvA(), C=dvCalc(D), tva=C.tva;
-  ctx.textContent=D.pos.length+' positions';
+  ctx.textContent='';
   let h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'+
     '<button class="btn btn-sm" onclick="dvSelAff(null)">← Affaires</button>'+
     '<span style="font-weight:700;font-size:14px">Devis général '+pvEsc(_dvAff)+'</span>'+

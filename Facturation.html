@@ -15917,6 +15917,16 @@ document.addEventListener('mousedown', function(e){
 const DV_TB_MENUS=['dv_tb_menu','dv_tb_menu_t','dv_tb_menu_w','dv_tb_menu_d','dv_tb_menu_g2'];
 function dvTbTog(id){ DV_TB_MENUS.filter(x=>x!==id).forEach(x=>{ const e=document.getElementById(x); if(e) e.style.display='none'; });
   const m=document.getElementById(id); if(m) m.style.display=(m.style.display==='none'?'block':'none'); }
+/* Fermeture automatique de tous les menus deroulants au clic en dehors */
+document.addEventListener('click',function(ev){
+  document.querySelectorAll("div[id*='menu'],div[id^='dv_ap_m'],#adr_nav_mcols,#adr_nav_mplus").forEach(function(m){
+    if(m.style.display!=='block') return;
+    if(getComputedStyle(m).position!=='absolute') return;
+    var w=m.parentElement;
+    if((w&&w.contains(ev.target))||m.contains(ev.target)) return;
+    m.style.display='none';
+  });
+});
 function dvTbMenu(){ dvTbTog('dv_tb_menu'); }
 function dvTbMenuT(){ dvTbTog('dv_tb_menu_t'); }
 function dvTbMenuW(){ dvTbTog('dv_tb_menu_w'); }

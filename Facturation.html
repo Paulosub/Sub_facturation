@@ -15568,14 +15568,14 @@ function dvRender(){
     '<td>'+ccF(C.totHT)+'</td><td>'+ccF(C.totTTC-C.totHT)+'</td><td>'+ccF(C.totTTC)+'</td><td>'+(C.totTTC>0.005?'100.00':'')+'</td><td></td></tr>';
   h+='</tbody></table></div>';
   // ── zone Documents (comme la fenêtre du bureau — génération PDF à venir) ──
-  h+='<div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;height:225px;flex:none">'+
+  h+='<div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;flex:none">'+
     '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Documents</div>'+
-    '<div style="flex:1;overflow:auto"><table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
+    '<div style="flex:1"><table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
     Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+
     '</tbody></table></div><div style="font-size:11px;color:#999;margin-top:4px">Génération des documents PDF à venir — transmettez-moi un exemplaire de référence du bureau.</div></div>'+
     '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
-    '<div style="flex:1;overflow:auto"><table class="pv-tb"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
+    '<div style="flex:1"><table class="pv-tb" style="height:100%"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
     '<tr><td colspan="2" style="color:#999">—</td></tr></tbody></table></div></div></div>';
   h+='</div>';
   h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';

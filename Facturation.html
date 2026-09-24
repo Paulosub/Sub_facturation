@@ -15845,7 +15845,17 @@ function dvDocOptC(g,k){ const o=dvDocOptO(); if(!o) return;
   dvPersist();
   const m=document.getElementById('dv_doc_menu_g'); if(m) m.style.display='none'; }
 function dvDocOuvrir(){
-  const n=window._dvDocSel;
+  const n=window._dvDocSel; if(!n) return;
+  const D=dvA(); const dd=(D&&D.docs)?(D.docs[n]||{}):{};
+  // Document ET PDF disponibles : avertir avant d'ouvrir.
+  // Oui = ne rien faire (l'utilisateur supprime d'abord le PDF via −) ; Non = ouvrir l'aperçu.
+  if(dd.doc && dd.pdf){
+    dvWarn("Il existe déjà un PDF pour ce document. Si vous faites des modifications, vous devez d'abord le supprimer, puis en créer un nouveau. Voulez-vous d'abord le supprimer ?",
+      function(){}, function(){ dvDocOuvrirGo(n); });
+    return; }
+  dvDocOuvrirGo(n); }
+function dvDocOuvrirGo(n){
+  window._dvDocSel=n;
   if(n==='Devis général') dvDocFenDG();
   else if(n==='Honoraires') dvDocFenHon();
   else if(n==='Devis descriptif') dvDocFenDesc();

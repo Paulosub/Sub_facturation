@@ -885,7 +885,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <button class="btn btn-sm" onclick="adrAdrNew()" title="Nouvelle adresse pour l'entité">✚</button>
           <button class="btn btn-sm" onclick="adrEditOpen()" title="Éditer l'adresse (fenêtre)">✏</button>
           <button class="btn btn-sm" style="color:#b00" onclick="adrAdrDel()" title="Supprimer l'adresse">−</button>
-          <span style="position:relative"><button class="btn btn-sm" onclick="adrMenu(event,'adr_out_menu')">⚙︎ ▾</button>
+          <span style="position:relative"><button class="btn btn-sm" onclick="adrMenu(event,'adr_out_menu')"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span> ▾</button>
             <div id="adr_out_menu" class="adr-menu" style="display:none;left:auto;right:0"></div></span>
         </div>
         <div id="adr_list"></div>
@@ -1259,7 +1259,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
           <div id="rap_doc_menu" class="rap-menu" style="display:none"></div>
         </span>
         <span style="position:relative">
-          <button class="btn btn-sm" onclick="rapMenu(event,'rap_out_menu')" title="Exporter" style="font-size:15px;line-height:1;padding:5px 10px">⚙︎ ▾</button>
+          <button class="btn btn-sm" onclick="rapMenu(event,'rap_out_menu')" title="Exporter" style="font-size:16px;line-height:1;padding:5px 10px">⚙︎ ▾</button>
           <div id="rap_out_menu" class="rap-menu" style="display:none"></div>
         </span>
         <span style="margin-left:auto;color:#555;font-size:12px">Prévu
@@ -12025,7 +12025,7 @@ function pvListHTML(out){
     '<div style="display:flex;gap:8px;margin-bottom:4px">'+
     '<button class="btn btn-sm" onclick="pvSelAff('+PV_Q+PV_Q+')">← Affaires</button>'+
     '<button class="btn btn-sm" onclick="pvCreate()">✚ Créer un PV</button>'+
-    '<button class="btn btn-sm" onclick="_pvCur='+PV_Q+'CFG'+PV_Q+';pvRender()">⚙︎ Général de l'.replace('x','x')+"'affaire</button></div>";
+    '<button class="btn btn-sm" onclick="_pvCur='+PV_Q+'CFG'+PV_Q+';pvRender()"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span> Général de l'.replace('x','x')+"'affaire</button></div>";
   if(!A.pvs.length){ h+='<div style="color:#999;font-size:13px;padding:14px 4px">Aucun PV pour cette affaire. Cliquez sur « Créer un PV » — au premier PV, choisissez les CFC dans « Général ».</div>'; }
   else {
     h+='<table class="pv-tb"><thead><tr><th>N°</th><th>Référence</th><th>Séance</th><th>Statut</th><th style="text-align:right">Actions</th></tr></thead><tbody>';
@@ -15711,7 +15711,7 @@ function dvToolbarHTML(){
     table:S+'<rect x="2" y="3" width="11" height="9" fill="none" stroke="#444" stroke-width="1.2"/><line x1="2" y1="6" x2="13" y2="6" stroke="#444" stroke-width="1"/><line x1="6" y1="3" x2="6" y2="12" stroke="#444" stroke-width="1"/><line x1="9.5" y1="3" x2="9.5" y2="12" stroke="#444" stroke-width="1"/></svg>',
     wrench:S+'<path d="M13.2 4.6a3.1 3.1 0 0 1-4.2 3.6L4.4 12.8 2.6 11l4.6-4.6A3.1 3.1 0 0 1 10.8 2.2L9.1 3.9l1.6 1.6 2.5-0.9z" fill="#555"/></svg>',
     doc:S+'<path d="M4 2h5l3 3v8.5H4z" fill="none" stroke="#444" stroke-width="1.2"/><line x1="6" y1="8" x2="10" y2="8" stroke="#444" stroke-width="1"/><line x1="6" y1="10.3" x2="10" y2="10.3" stroke="#444" stroke-width="1"/></svg>',
-    gear:'<span style="font-size:13px;line-height:1">⚙︎</span>',
+    gear:'<span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span>',
     moon:S+'<path d="M11.5 8.6A5 5 0 0 1 6.2 3a5 5 0 1 0 5.3 5.6z" fill="#555"/></svg>'
   };
   const b=(k,menu,tt)=>'<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="'+tt+' — à venir">'+ic[k]+(menu?' <span style="font-size:8px;color:#666">▾</span>':'')+'</button>';
@@ -15872,7 +15872,7 @@ function dvRender(){
       '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Effacer le PDF …</div>'+
     '</div></span>'+
     '<span style="position:relative;display:inline-flex">'+
-    '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Réglages — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuG()"><span style="font-size:13px;line-height:1">⚙︎</span> <span style="font-size:8px;color:#666">▾</span></button>'+
+    '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Réglages — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuG()"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span> <span style="font-size:8px;color:#666">▾</span></button>'+
     '<div id="dv_doc_menu_g" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:390px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0"></div>'+
     '</span>'+'</span></div>'+
     '<table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
@@ -15954,7 +15954,7 @@ function dvDlgCalc(pid){
     '<th style="width:86px">Prix TTC</th><th style="width:96px">Montant</th><th style="width:40px">Var</th>'+
     '</tr></thead><tbody id="dv_ca_tb"></tbody></table></div>'+
   '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'+
-    '<div style="position:relative"><button class="btn btn-sm" onclick="dvCalcMenu()" title="Actions du calcul">⚙︎</button>'+
+    '<div style="position:relative"><button class="btn btn-sm" onclick="dvCalcMenu()" title="Actions du calcul"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span></button>'+
     '<div id="dv_ca_menu" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:330px;z-index:50;font-size:12.5px">'+
       '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcCopy()">Copier le calcul</div>'+
       '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcPaste()">Coller le calcul</div>'+

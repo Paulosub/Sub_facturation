@@ -15710,6 +15710,7 @@ function dvDocShow(titre, pagesHtml){
   /* Aperçu dans une fenêtre POPUP flottante au format de la page : UNE page affichée à la
      fois (pas de défilement), navigation par les flèches centrales, zoom « Ajuster ». */
   dvDocWinClose();
+  window._dvApDoc=window._dvDocSel||'Devis général';
   const total=(pagesHtml.match(/class="offre-page/g)||[]).length||1;
   window._dvApPg=1; window._dvApFit=true;
   const S='<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">';
@@ -15814,8 +15815,8 @@ function dvApMenu(n){
   const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
   const aven=lbl=>'dvApMenu('+n+');toast('+PV_Q+lbl+' — à venir.'+PV_Q+')';
   if(n===1) m.innerHTML=
-    it('Ouvrir dans l'+PV_Q+'aperçu', aven('Ouvrir dans l’aperçu'))+
-    it('Sauvegarder et ouvrir', aven('Sauvegarder et ouvrir'));
+    it('Ouvrir dans l'+PV_Q+'aperçu', 'dvApMenu(1);dvDocPdfSend('+PV_Q+'open'+PV_Q+')')+
+    it('Sauvegarder et ouvrir', 'dvApMenu(1);dvDocPdfSend('+PV_Q+'save'+PV_Q+')');
   else if(n===2) m.innerHTML=
     it('Enregistrer le PDF en pièce jointe …', aven('Enregistrer le PDF en pièce jointe'))+
     it('Partager le fichier PDF …', aven('Partager le fichier PDF'));
@@ -15833,6 +15834,137 @@ function dvApOptC(k,v){ const o=dvApOptO();
   if(k==='zone') o.zone=v; else o.masques=!o.masques;
   try{ localStorage.setItem('sa_apercu_opt', JSON.stringify(o)); }catch(e){}
   const m=document.getElementById('dv_ap_m3'); if(m) m.style.display='none'; }
+/* ── PDF des documents du devis : génération pdf-lib (mise en page simple, design à
+   affiner plus tard), envoi au serveur local 7788 qui l'ouvre dans Aperçu (macOS).
+   mode 'save' : enregistré dans « Sauvegarde Facturation/PDF Devis » et joint au
+   document (coches Document/PDF disponibles + ligne dans Fichiers PDF). ── */
+async function dvDocPdfGen(){
+  const docName=window._dvApDoc||'Devis général';
+  const {PDFDocument, StandardFonts, rgb}=PDFLib;
+  const pdf=await PDFDocument.create();
+  const F=await pdf.embedFont(StandardFonts.Helvetica);
+  const FB=await pdf.embedFont(StandardFonts.HelveticaBold);
+  const W=595.28, PH=841.89, M=42;
+  const D=dvA(), K=dvDocCtx(), tva=(D&&D.tva!=null?D.tva:8.1);
+  const black=rgb(0,0,0), gris=rgb(.45,.45,.45), blanc=rgb(1,1,1);
+  const T=(pg,x,y,sv,f,sz,c)=>pg.drawText(String(sv==null?'':sv),{x,y:PH-y,size:sz||8.5,font:f||F,color:c||black});
+  const TR=(pg,xr,y,sv,f,sz,c)=>{ const f2=f||F, z=sz||8.5; const w=f2.widthOfTextAtSize(String(sv==null?'':sv),z); T(pg,xr-w,y,sv,f2,z,c); };
+  const LN=(pg,x1,y,x2,w,c)=>pg.drawLine({start:{x:x1,y:PH-y},end:{x:x2,y:PH-y},thickness:w||0.5,color:c||black});
+  const foot=(pg,i,n)=>{ T(pg,M,PH-24,'RUE DE LA GARE 12 · CH – 1096 CULLY · +41 21 711 50 50 · INFO@SUBSTANCES.CH',F,6.5,gris);
+    TR(pg,W-M,PH-24,i+' | '+n,F,6.5,gris); };
+  const jours=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  const mois=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const dt=new Date();
+  const mo=K.c?[K.c.nom,K.c.adr,K.c.loc].filter(Boolean).join(', '):'';
+  const wrap=(sv,max)=>{ const out=[]; let cur=''; String(sv||'').split(/\s+/).forEach(w2=>{ if((cur+' '+w2).trim().length>max){ out.push(cur.trim()); cur=w2; } else cur+=' '+w2; }); if(cur.trim()) out.push(cur.trim()); return out; };
+  if(docName==='Devis général'){
+    const pg=pdf.addPage([W,PH]);
+    const dateL=jours[dt.getDay()]+', '+dt.getDate()+' '+mois[dt.getMonth()]+' '+dt.getFullYear();
+    T(pg,M,56,'Devis général',FB,9); T(pg,M,68,K.aff+'.DG.1',F,9); T(pg,M,80,'CULLY – '+dateL,F,9);
+    const X=170, XE=W-M; let y=150;
+    const sec=(t2,v2)=>{ T(pg,X,y,t2,F,8,gris); LN(pg,X,y+4,XE,0.4); if(v2) T(pg,X,y+17,v2,F,9); y+=36; };
+    sec('OUVRAGE',K.ouvrage); sec("MAÎTRE DE L'OUVRAGE",mo);
+    sec('ARCHITECTE','Substances Architectes Sàrl, Rue de la Gare 12, 1096 Cully');
+    sec('DIRECTION DES TRAVAUX','');
+    y+=26;
+    T(pg,X-64,y,K.aff+' - Devis général',FB,11.5); TR(pg,XE,y,'±15%',FB,11.5);
+    LN(pg,X-64,y+5,XE,0.6); T(pg,X-64,y+17,'Phase:',F,9);
+    y+=70;
+    const sig=t2=>{ T(pg,X,y,t2,F,9); y+=30;
+      T(pg,X,y,'Lieu, date',F,9); LN(pg,X+50,y+2,X+180,0.4);
+      T(pg,X+200,y-5,'Tampon,',F,9); T(pg,X+200,y+6,'signature',F,9); LN(pg,X+248,y+2,XE,0.4);
+      y+=44; };
+    sig("Le Maître de l'ouvrage :"); sig("L'architecte :");
+    foot(pg,1,1);
+  } else if(docName==='Honoraires'){
+    const C=dvCalc(D);
+    const items=[];
+    Object.keys(C.grp).forEach(g=>items.push({g:1,cfc:g}));
+    D.pos.forEach(pp=>items.push({g:0,p:pp,cfc:pp.cfc||'zzz'}));
+    items.sort((x2,y2)=>{ const c2=ccCmp(x2.cfc,y2.cfc); return c2!==0?c2:(y2.g-x2.g); });
+    const dateC=('0'+dt.getDate()).slice(-2)+'.'+('0'+(dt.getMonth()+1)).slice(-2)+'.'+String(dt.getFullYear()).slice(-2);
+    const XN=M, XD=M+46, XH=352, XS=418, XO=W-M;
+    let pg=null, y=0, pi=0;
+    const pagesArr=[];
+    const head=first=>{ pg=pdf.addPage([W,PH]); pagesArr.push(pg); pi++;
+      LN(pg,M,44,W-M,0.4,gris);
+      T(pg,M,78,'Soumis à honoraires',FB,12); LN(pg,M,84,W-M,0.6);
+      y=100;
+      if(first){ const lab=(t2,v2)=>{ T(pg,M,y,t2,F,9); T(pg,M+108,y,v2,F,9); y+=13; };
+        lab('N°',K.aff); lab('Affaire',K.ouvrage); lab("Maître d'ouvrage",(K.c&&K.c.nom)||'');
+        lab('Architecte','Substances Architectes Sàrl'); lab('Date',dateC); lab('Filtre',''); y+=8; }
+      T(pg,XN,y,'N°',FB,8.5); T(pg,XD,y,'Désignation',FB,8.5);
+      TR(pg,XH,y,'Montant HT',FB,8.5); TR(pg,XS,y,'% soumis',FB,8.5); TR(pg,XO,y,'Honoraires',FB,8.5);
+      LN(pg,M,y+4,W-M,0.6); y+=17; };
+    head(true);
+    items.forEach(it2=>{
+      if(y>PH-60){ head(false); }
+      if(it2.g){ const t2=C.grp[it2.cfc]||0, ht=t2/(1+tva/100), Lg=it2.cfc.length;
+        if(Lg===1){ pg.drawRectangle({x:M,y:PH-y-3.5,width:W-2*M,height:13,color:black});
+          T(pg,XN+2,y+6,it2.cfc,FB,8.5,blanc); T(pg,XD,y+6,ccCatLbl(it2.cfc)||'',FB,8.5,blanc);
+          TR(pg,XH,y+6,ccF(ht),FB,8.5,blanc); TR(pg,XO,y+6,'0.00',FB,8.5,blanc); }
+        else { pg.drawRectangle({x:M,y:PH-y-3.5,width:W-2*M,height:13,color:rgb(.885,.885,.885)});
+          T(pg,XN+2,y+6,it2.cfc,FB,8.5); T(pg,XD,y+6,ccCatLbl(it2.cfc)||'',FB,8.5);
+          TR(pg,XH,y+6,ccF(ht),FB,8.5); TR(pg,XO,y+6,'0.00',FB,8.5); }
+        y+=15; return; }
+      const pp=it2.p, t2=ccP(pp.ttc), ht=t2/(1+tva/100);
+      T(pg,XN+2,y+6,pp.cfc||'',F,8.5); T(pg,XD,y+6,(pp.lbl||'').slice(0,58),F,8.5);
+      TR(pg,XH,y+6,ccF(ht),F,8.5); TR(pg,XS,y+6,'0.0',F,8.5); TR(pg,XO,y+6,'0.00',F,8.5);
+      y+=15; });
+    pagesArr.forEach((pp2,ii)=>foot(pp2,ii+1,pagesArr.length));
+  } else {
+    const pg=pdf.addPage([W,PH]);
+    LN(pg,M,44,W-M,0.4,gris);
+    T(pg,M,78,'Descriptif',FB,12); LN(pg,M,84,W-M,0.6);
+    let y=108; const XL=M, XV=M+150;
+    const lab=(t2,v2)=>{ T(pg,XL,y,t2,F,9); if(v2) T(pg,XV,y,v2,F,9); y+=13; };
+    lab('N°',K.aff); lab('Affaire',K.ouvrage); y+=6;
+    T(pg,XL,y,"Maître d'ouvrage",F,9);
+    [(K.c&&K.c.nom)||'',(K.c&&K.c.adr)||'',(K.c&&K.c.loc)||''].filter(Boolean).forEach(l2=>{ T(pg,XV,y,l2,F,9); y+=12; });
+    y+=8; T(pg,XL,y,'Architecte',F,9);
+    ['Substances Architectes Sàrl','Rue de la Gare 12','1096 Cully'].forEach((l2,i2)=>{ T(pg,XV,y+i2*12,l2,F,9); });
+    T(pg,XV+150,y,'021 711 50 50',F,9); T(pg,XV+150,y+12,'info@substances.ch',F,9);
+    y+=44;
+    lab('Indice',''); lab('Etat de la planification',''); lab('Etat du projet','');
+    lab("Marge d'approximation",'±15%');
+    lab('Date',dt.getDate()+' '+mois[dt.getMonth()]+' '+dt.getFullYear()); lab('Filtre','');
+    y+=10; T(pg,XL,y,'Informations',F,8.5,gris); LN(pg,XL,y+4,W-M,0.4,gris); y+=20;
+    ((Array.isArray(D.rem)?D.rem:[]).filter(r2=>(r2.nom||'').trim()||(r2.txt||'').trim())).forEach(r2=>{
+      T(pg,XL,y,r2.nom||'',F,9);
+      wrap(r2.txt,78).forEach(l2=>{ T(pg,XV,y,l2,F,9); y+=12; });
+      y+=8; });
+    foot(pg,1,1);
+  }
+  return await pdf.save();
+}
+async function dvDocPdfSend(mode){
+  try{
+    const docName=window._dvApDoc||'Devis général';
+    const bytes=await dvDocPdfGen();
+    const slug=docName.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_');
+    const dt=new Date();
+    const ts=dt.getFullYear()+('0'+(dt.getMonth()+1)).slice(-2)+('0'+dt.getDate()).slice(-2);
+    const name=(_dvAff||'devis')+'_'+slug+'_'+ts+'.pdf';
+    let ok=false, resp=null;
+    try{
+      const r=await fetch('http://127.0.0.1:7788/pdf?name='+encodeURIComponent(name)+'&mode='+(mode==='save'?'save':'open'),
+        {method:'POST', headers:{'Content-Type':'application/pdf'}, body:bytes});
+      resp=await r.json(); ok=!!(resp&&resp.ok);
+    }catch(e){}
+    if(!ok){
+      const bl=new Blob([bytes],{type:'application/pdf'}); const u2=URL.createObjectURL(bl);
+      const a2=document.createElement('a'); a2.href=u2; a2.download=name; a2.click();
+      setTimeout(()=>URL.revokeObjectURL(u2),4000);
+      toast('Serveur de sauvegarde (7788) indisponible — le PDF a été téléchargé.');
+    } else {
+      toast(mode==='save'?'PDF enregistré dans « PDF Devis » et ouvert dans Aperçu.':'PDF ouvert dans Aperçu.');
+    }
+    if(mode==='save'){
+      const D=dvA(); if(D){ D.docs=D.docs||{}; D.docs[docName]={pdf:name, date:Date.now()};
+        dvPersist(); dvRender(); }
+    }
+  }catch(e){ toast('Erreur PDF : '+e.message); }
+}
 /* ── « Soumis à honoraires » (document Honoraires) : tableau CFC, groupes 1 chiffre en noir,
    groupes 2-3 chiffres en gris, % soumis et Honoraires (0 tant que non saisis). ── */
 function dvDocFenHon(){
@@ -16160,14 +16292,21 @@ function dvRender(){
     '<div id="dv_doc_menu_g" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:390px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0"></div>'+
     '</span>'+'</span></div>'+
     '<table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
-    ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
+    ['Devis général','Honoraires','Devis descriptif'].map(n=>{ const dd=(D.docs||{})[n];
+      const cell=dd?'<td style="text-align:center;color:#1a1a1a;font-weight:bold">✓</td>':'<td style="text-align:center;color:#b0b8bc">×</td>';
+      return '<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td>'+cell+cell+'</tr>'; }).join('')+
     Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+
     '</tbody></table></div>'+
     '<div style="flex:none;width:calc(25% - 6px);min-width:300px;display:flex;flex-direction:column">'+
     '<div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
     '<div style="display:flex;gap:8px;align-items:flex-start">'+
     '<table class="pv-tb" style="flex:1"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
-    Array.from({length:10}).map(()=>'<tr><td>&nbsp;</td><td></td></tr>').join('')+'</tbody></table>'+
+    (()=>{ const rowsP=Object.keys(D.docs||{}).map(n=>{ const dd=D.docs[n];
+        const d2=dd.date?new Date(dd.date):null;
+        const ds=d2?(('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear()+' '+('0'+d2.getHours()).slice(-2)+':'+('0'+d2.getMinutes()).slice(-2)):'';
+        return '<tr><td>'+pvEsc(dd.pdf||'')+'</td><td>'+ds+'</td></tr>'; });
+      while(rowsP.length<10) rowsP.push('<tr><td>&nbsp;</td><td></td></tr>');
+      return rowsP.join(''); })()+'</tbody></table>'+
     '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none;flex:none" title="Export PDF — sélectionnez d'+PV_Q+'abord un fichier">'+
     '<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M4 2h5l3 3v8.5H4z" fill="none" stroke="#444" stroke-width="1.2"/><line x1="6" y1="8" x2="10" y2="8" stroke="#444" stroke-width="1"/><line x1="6" y1="10.3" x2="10" y2="10.3" stroke="#444" stroke-width="1"/></svg>'+
     ' <span style="font-size:8px;color:#666">▾</span></button>'+

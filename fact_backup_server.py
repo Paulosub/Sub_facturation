@@ -153,6 +153,42 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         u = urllib.parse.urlparse(self.path)
+
+        if u.path == "/pdf":
+            # Reçoit un PDF (corps binaire) et l'ouvre dans Aperçu (macOS).
+            #   ?name=<fichier.pdf>       nom du fichier
+            #   &mode=open                fichier temporaire, juste ouvert dans Aperçu
+            #   &mode=save                enregistré dans BASE_DIR/"PDF Devis"/ puis ouvert
+            q = urllib.parse.parse_qs(u.query)
+            name = os.path.basename((q.get("name", ["document.pdf"])[0]).strip() or "document.pdf")
+            if not name.lower().endswith(".pdf"):
+                name += ".pdf"
+            mode = (q.get("mode", ["open"])[0]).strip()
+            length = int(self.headers.get("Content-Length", 0))
+            data = self.rfile.read(length)
+            try:
+                if mode == "save":
+                    target = os.path.join(BASE_DIR, "PDF Devis")
+                else:
+                    target = os.path.join("/tmp", "fact_pdf")
+                os.makedirs(target, exist_ok=True)
+                full = os.path.join(target, name)
+                with open(full, "wb") as fh:
+                    fh.write(data)
+                opened = True
+                try:
+                    subprocess.Popen(["open", "-a", "Preview", full])
+                except Exception:
+                    try:
+                        subprocess.Popen(["open", full])
+                    except Exception:
+                        opened = False
+                self._json(200, {"ok": True, "name": name, "path": full,
+                                 "saved": mode == "save", "opened": opened})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         if u.path != "/save":
             self._json(404, {"ok": False, "error": "Ressource inconnue."})
             return

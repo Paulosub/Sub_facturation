@@ -15530,7 +15530,7 @@ function dvRender(){
     '<span style="color:#555">Total HT</span><b style="text-align:right">'+ccF(C.totHT)+'</b>'+
     '<span style="color:#555">Total TTC</span><b style="text-align:right">'+ccF(C.totTTC)+'</b>'+
     '<span style="color:#555">Honoraires HT</span><span style="text-align:right">'+ccF(C.honHT)+'</span></div>';
-  h+='<div style="display:flex;gap:12px;align-items:stretch;height:calc(100vh - 308px)">';
+  h+='<div id="dv_flex" style="display:flex;gap:12px;align-items:stretch;height:420px">';
   // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
   const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
   h+='<div style="width:430px;flex:none;border:1px solid #cfd8db;border-radius:6px;height:100%;box-sizing:border-box;overflow:auto;background:#fff">'+
@@ -15580,7 +15580,16 @@ function dvRender(){
   h+='</div>';
   h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';
   out.innerHTML=h;
+  dvFit();
 }
+/* Ajuste la hauteur de la vue pour qu'elle remplisse EXACTEMENT la fenêtre — aucun scroll de page,
+   quel que soit l'écran ; seuls le tableau et le catalogue défilent en interne. */
+function dvFit(){
+  const fw=document.getElementById('dv_flex'); if(!fw) return;
+  const top=fw.getBoundingClientRect().top;
+  fw.style.height=Math.max(320, window.innerHeight-top-18)+'px';
+}
+window.addEventListener('resize', ()=>{ try{ dvFit(); }catch(e){} });
 
 /* ═══════════════════════════════════════════════════════════════════════════
    CALCUL DÉTAILLÉ D'UNE POSITION DU DEVIS — « Calcul pour 199 » : s'ouvre au

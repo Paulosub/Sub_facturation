@@ -950,23 +950,20 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
       <input id="adr_pick_f" oninput="adrPickFill()" style="width:240px;box-sizing:border-box;padding:6px 9px 6px 26px;border:1px solid #c9c9c9;border-radius:7px;font-size:13px;background:#fff"></span>
     </div>
     <div id="adr_nav_body" style="flex:1;display:flex;gap:12px;padding:12px 14px;min-height:0">
-      <div id="adr_nav_left" style="width:300px;flex:none;display:flex;flex-direction:column;min-height:0">
-        <div style="flex:none;padding:6px 4px 12px 4px;font-size:13px">
-          <div style="display:flex;align-items:center;margin-bottom:8px"><span style="width:88px;text-align:right;padding-right:10px">Type</span>
-            <select id="adr_nav_typ" onchange="adrPickFill()" style="flex:1;padding:4px 6px;border:1px solid #c9c9c9;border-radius:6px;background:#fff;font-size:13px">
-              <option value=""></option><option value="soc">Société</option><option value="pers">Personne</option><option value="fam">Famille</option><option value="com">Communauté</option><option value="ass">Association</option></select></div>
-          <div style="display:flex;align-items:center;margin-bottom:8px"><span style="width:88px;text-align:right;padding-right:10px">Nom</span>
-            <input id="adr_nav_nom" oninput="adrPickFill()" style="flex:1;padding:4px 7px;border:1px solid #c9c9c9;border-radius:6px;font-size:13px"></div>
-          <div style="display:flex;align-items:center;margin-bottom:8px"><span style="width:88px;text-align:right;padding-right:10px">Complément</span>
-            <input id="adr_nav_comp" oninput="adrPickFill()" style="flex:1;padding:4px 7px;border:1px solid #c9c9c9;border-radius:6px;font-size:13px"></div>
-          <div style="text-align:right"><button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrPickFill()">Chercher</button></div>
-        </div>
-        <div id="adr_nav_ents" style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff"></div>
-      </div>
+      <div id="adr_nav_left" style="width:300px;flex:none;display:flex;flex-direction:column;min-height:0"></div>
       <div id="adr_pick_ls" style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff;min-height:0"></div>
     </div>
     <div style="flex:none;display:flex;align-items:center;padding:0 14px 12px 14px;gap:10px">
       <span id="adr_pick_i" style="color:#888;font-size:11.5px"></span>
+      <span style="flex:1"></span>
+      <span style="position:relative">
+        <button class="btn btn-sm" style="padding:5px 12px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrNavMenu('cols')">⚙︎ <span style="font-size:8px;color:#666">▾</span></button>
+        <div id="adr_nav_mcols" style="display:none;position:absolute;bottom:34px;left:0;background:#fff;border:1px solid #ccc;border-radius:7px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:230px;padding:5px 0;font-size:13px;z-index:5"></div>
+      </span>
+      <span style="position:relative">
+        <button class="btn btn-sm" style="padding:5px 12px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrNavMenu('plus')">✚ <span style="font-size:8px;color:#666">▾</span></button>
+        <div id="adr_nav_mplus" style="display:none;position:absolute;bottom:34px;left:0;background:#fff;border:1px solid #ccc;border-radius:7px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:250px;padding:5px 0;font-size:13px;white-space:nowrap;z-index:5"></div>
+      </span>
       <span style="flex:1"></span>
       <button class="btn btn-sm" style="padding:5px 20px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="document.getElementById('adr_pick_ov').style.display='none'">Annuler</button>
       <button class="btn btn-sm" id="adr_nav_ok" style="padding:5px 24px;background:#f2f2f2;border:1px solid #c9c9c9;opacity:.5" onclick="adrNavOk()">OK</button>
@@ -11753,7 +11750,6 @@ function adrNavTabsFill(){
     (x[0]===_adrNavTab?';background:#2f7fe8;color:#fff;font-weight:600':'')+'">'+x[1]+'</div>').join('');
 }
 function adrNavTabGo(k){
-  if(k==='grp'||k==='prop'||k==='int'||k==='soum'){ toast('Onglet — à venir (voir la vue Affaires · Adresses).'); return; }
   _adrNavTab=k; _adrNavSel=-1; adrNavTabsFill(); adrPickFill();
 }
 function adrCfcPick(){
@@ -11769,30 +11765,108 @@ function adrPickOpen(opts, cb){
   document.getElementById('adr_pick_ov').style.display='block';
   adrNavTabsFill(); adrPickFill();
 }
-function adrNavEntGo(id){ _adrNavEnt=(_adrNavEnt===id?null:id); _adrNavSel=-1; adrPickFill(); }
-function adrNavSelGo(i){ _adrNavSel=i; adrPickFill(); }
+function adrNavEntGo(id){ _adrNavEnt=(_adrNavEnt===id?null:id); _adrNavSel=-1; adrNavEntsFill(); adrNavRight(); }
+function adrNavSelGo(i){ _adrNavSel=i; adrNavRight(); }
 function adrNavOk(){ if(_adrNavSel>=0) adrPickGo(_adrNavSel); }
-function adrPickFill(){
-  const f=((document.getElementById('adr_pick_f')||{}).value||'').toLowerCase();
-  const box=document.getElementById('adr_pick_ls');
-  const left=document.getElementById('adr_nav_left');
-  const cfcMode=(_adrPickMode==='cfc'||_adrNavTab==='cfc');
-  if(left) left.style.display=cfcMode?'none':'flex';
-  const okB=document.getElementById('adr_nav_ok');
-  if(okB){ okB.style.opacity=(_adrNavSel>=0&&!cfcMode)?'1':'.5'; okB.style.pointerEvents=(_adrNavSel>=0&&!cfcMode)?'auto':'none'; }
-  if(cfcMode){
-    const act=(c)=>_adrPickMode==='cfc'
-      ? 'adrPickCfcGo('+PV_Q+pvEscA(c)+PV_Q+')'
-      : '_adrPickCfc='+PV_Q+pvEscA(c)+PV_Q+';adrNavTabGo('+PV_Q+'rech'+PV_Q+')';
-    box.innerHTML=pvCfcAll().filter(x=>!f||(x[0]+' '+x[1]).toLowerCase().includes(f))
-      .map(x=>'<div onclick="'+act(x[0])+'" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" style="padding:6px 10px;cursor:pointer;font-size:12.5px;border-top:1px solid #f2f2f2"><b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1])+'</div>').join('');
-    document.getElementById('adr_pick_i').textContent=_adrPickMode==='cfc'?'':'Choisissez un CFC pour filtrer les adresses.';
-    return;
+/* États des onglets du Navigateur d'adresses */
+let _adrNavCols='adr', _adrNavGrp='all', _adrNavProp=null, _adrNavRole=null;
+const ADR_NAV_PROPS=[['Branche','Entreprise'],['Branche','Maître d’ouvrage'],['Branche','Architecte'],['Branche','Direction de travaux'],
+  ['Branche','Ingénieur civil'],['Branche','Ingénieur bois'],['Branche','Ingénieur CVCE'],['Branche','Géomètre'],
+  ['Branche','Ingénieur en physique du bâtiment'],['Branche','Ingénieur en acoustique'],['Branche','Mandataire spécialisé'],
+  ['Branche','Architecte d’intérieur'],['Branche','Expert incendie'],['Branche','Commune'],['Branche','Experts'],
+  ['Branche','Avocat'],['Branche','Assurances'],['Branche','Locataire'],['Branche','Acheteur'],
+  ['Mailing','Carte de voeux'],['Mailing','Apéro de bureau'],
+  ['Affiliation','Membre SIA'],['Affiliation','Membre BNI'],
+  ['Fournisseur','Matériaux'],['Fournisseur','Matériel de bureau']];
+const ADR_NAV_ROLES=['Maître d’ouvrage','Autres MO','Entreprise totale','Architecte','Autres architectes','Directeur des travaux',
+  'Ingénieur civil','Paysagiste','Entreprises','Entreprise générale','Directeur d’affaire','Représentant directeur',
+  'Responsable de l’affaire','Représentant resp.','Consultant du MO','Représentant du MO','Economiste','Collaborateurs',
+  'Collaborateurs externes','Gérant d’immeubles','Spécialistes','Planificateur principal','Planificateur de coût','Experts','Autorités'];
+/* Jeux de colonnes du tableau de droite (menu ⚙︎ du bas, comme Deltaproject) */
+const ADR_NAV_COLSETS={
+  std:  {lbl:'Standard', cols:[['Entité',(a,e)=>e.nom],['Appartient à',a=>a.parent],['Type d’adresse',a=>a.typ||'Adresse'],
+        ['Identité 1',a=>a.civ],['Identité 2',(a,e)=>e.comp],['Rue et n°',a=>[a.rue,a.rue2].filter(Boolean).join(', ')],['Localité',a=>((a.npa||'')+' '+(a.loc||'')).trim()]]},
+  adr:  {lbl:'Adresse', cols:[['Entité',(a,e)=>e.nom],['Appartient à',a=>a.parent],['Type d’adresse',a=>a.typ||'Adresse'],
+        ['Identité',(a,e)=>e.comp],['Fonction',a=>a.fonction],['Rue et n°',a=>[a.rue,a.rue2].filter(Boolean).join(', ')],
+        ['Localité',a=>((a.npa||'')+' '+(a.loc||'')).trim()],['CFC',a=>a.cfc]]},
+  com:  {lbl:'Communication', cols:[['Entité',(a,e)=>e.nom],['Tél',a=>a.tel],['Mobile',a=>a.mob],['Mail',a=>a.mail],['Web',a=>a.web]]},
+  adrcom:{lbl:'Adresse + Communication', cols:[['Entité',(a,e)=>e.nom],['Appartient à',a=>a.parent],['Identité',(a,e)=>e.comp],
+        ['Rue et n°',a=>[a.rue,a.rue2].filter(Boolean).join(', ')],['Localité',a=>((a.npa||'')+' '+(a.loc||'')).trim()],
+        ['Tél',a=>a.tel||a.mob],['Mail',a=>a.mail],['CFC',a=>a.cfc]]},
+  tous: {lbl:'Tous', cols:[['Entité',(a,e)=>e.nom],['Appartient à',a=>a.parent],['Type d’adresse',a=>a.typ||'Adresse'],
+        ['Civilité',a=>a.civ],['Identité',(a,e)=>e.comp],['Fonction',a=>a.fonction],['Profession',a=>a.prof],
+        ['Rue et n°',a=>[a.rue,a.rue2].filter(Boolean).join(', ')],['Localité',a=>((a.npa||'')+' '+(a.loc||'')).trim()],['Pays',a=>a.pays],
+        ['Tél',a=>a.tel],['Mobile',a=>a.mob],['Mail',a=>a.mail],['Web',a=>a.web],['CFC',a=>a.cfc],['Statut',a=>a.statut]]}};
+function adrNavInSt(){ return 'padding:4px 7px;border:1px solid #c9c9c9;border-radius:6px;font-size:13px'; }
+/* Colonne de gauche : contenu selon l'onglet actif */
+function adrNavLeftFill(){
+  const L=document.getElementById('adr_nav_left'); if(!L) return;
+  const cfcChoix=(_adrPickMode==='cfc');
+  L.style.display=cfcChoix?'none':'flex';
+  if(cfcChoix) return;
+  const lab=t=>'<span style="width:104px;text-align:right;padding-right:10px;flex:none">'+t+'</span>';
+  const cher='<div style="text-align:right;margin-top:2px"><button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrNavRight()">Chercher</button></div>';
+  if(_adrNavTab==='rech'){
+    L.innerHTML='<div style="flex:none;padding:6px 4px 12px 4px;font-size:13px">'+
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Type')+
+        '<select id="adr_nav_typ" onchange="adrNavEntsFill();adrNavRight()" style="flex:1;'+adrNavInSt()+';background:#fff">'+
+        '<option value=""></option><option value="soc">Société</option><option value="pers">Personne</option><option value="fam">Famille</option><option value="com">Communauté</option><option value="ass">Association</option></select></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Nom')+'<input id="adr_nav_nom" oninput="adrNavEntsFill();adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('Complément')+'<input id="adr_nav_comp" oninput="adrNavEntsFill();adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+
+      '<div style="display:flex;justify-content:space-between;margin-top:2px"><button class="btn btn-sm" disabled style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9;opacity:.45">Nouveau …</button>'+
+      '<button class="btn btn-sm" style="padding:4px 16px;background:#f2f2f2;border:1px solid #c9c9c9" onclick="adrNavEntsFill();adrNavRight()">Chercher</button></div></div>'+
+      '<div id="adr_nav_ents" style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff"></div>';
+    adrNavEntsFill();
+  } else if(_adrNavTab==='grp'){
+    const grps=[]; adrData.adr.forEach(a=>(a.props||[]).forEach(pr=>{
+      if(String(pr.g||'').toLowerCase()==='groupe'&&pr.p&&!grps.includes(pr.p)) grps.push(pr.p); }));
+    grps.sort((x,z)=>x.localeCompare(z,'fr',{sensitivity:'base'}));
+    const tr=(k,ic,nm)=>'<tr onclick="_adrNavGrp='+PV_Q+pvEscA(k)+PV_Q+';_adrNavSel=-1;adrNavLeftFill();adrNavRight()" style="cursor:pointer;'+
+      (k===_adrNavGrp?'background:#2f7fe8;color:#fff':'')+'"><td style="padding:4px 8px;width:30px;text-align:center">'+ic+'</td><td style="padding:4px 8px">'+pvEsc(nm)+'</td></tr>';
+    L.innerHTML='<div style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff">'+
+      '<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+      '<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Type</th><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Nom du groupe</th></tr>'+
+      tr('fav','☰','Mes favoris')+tr('all','⚙','Toutes les adresses')+
+      grps.map(g=>tr('g:'+g,'⚙',g)).join('')+'</table>'+
+      '<div style="padding:8px;color:#999;font-size:11.5px">Un groupe = propriété « Groupe » sur la fiche d’adresse.</div></div>';
+  } else if(_adrNavTab==='prop'){
+    const all=ADR_NAV_PROPS.slice();
+    adrData.adr.forEach(a=>(a.props||[]).forEach(pr=>{
+      if(pr.g&&pr.p&&String(pr.g).toLowerCase()!=='groupe'&&!all.some(x=>x[0].toLowerCase()===String(pr.g).toLowerCase()&&x[1].toLowerCase()===String(pr.p).toLowerCase())) all.push([pr.g,pr.p]); }));
+    const tr=(g,p)=>{ const on=_adrNavProp&&_adrNavProp[0]===g&&_adrNavProp[1]===p;
+      return '<tr onclick="_adrNavProp=['+PV_Q+pvEscA(g)+PV_Q+','+PV_Q+pvEscA(p)+PV_Q+'];_adrNavSel=-1;adrNavLeftFill();adrNavRight()" style="cursor:pointer;'+
+      (on?'background:#2f7fe8;color:#fff':'')+'"><td style="padding:3px 8px;white-space:nowrap">'+pvEsc(g)+'</td><td style="padding:3px 8px">'+pvEsc(p)+'</td></tr>'; };
+    L.innerHTML='<div style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff">'+
+      '<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+      '<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Groupe</th><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Propriété</th></tr>'+
+      all.map(x=>tr(x[0],x[1])).join('')+'</table></div>';
+  } else if(_adrNavTab==='int'){
+    const tr=r=>{ const n=adrNavRoleRows(r).length;
+      return '<tr onclick="_adrNavRole='+PV_Q+pvEscA(r)+PV_Q+';_adrNavSel=-1;adrNavLeftFill();adrNavRight()" style="cursor:pointer;'+
+      (r===_adrNavRole?'background:#2f7fe8;color:#fff':'')+'"><td style="padding:4px 8px">'+pvEsc(r)+(n?' ('+n+')':'')+'</td></tr>'; };
+    L.innerHTML='<div style="flex:1;overflow:auto;border:1px solid #c9c9c9;border-radius:6px;background:#fff">'+
+      '<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+      '<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Rôle</th></tr>'+
+      ADR_NAV_ROLES.map(tr).join('')+'</table></div>';
+  } else if(_adrNavTab==='soum'){
+    L.innerHTML='<div style="flex:none;padding:10px 4px;font-size:13px">'+
+      '<label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer"><input type="radio" name="adr_nav_soum" value="act" checked> Soumissionnaires</label>'+
+      '<label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer"><input type="radio" name="adr_nav_soum" value="anc"> Anciens soumissionnaires</label>'+
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('CFC')+'<input id="adr_nav_cfc" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+')adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+cher+'</div>';
+  } else if(_adrNavTab==='cfc'){
+    L.innerHTML='<div style="flex:none;padding:10px 4px;font-size:13px">'+
+      '<div style="display:flex;align-items:center;margin-bottom:10px"><span style="flex:none;padding-right:10px">Critère de recherche</span>'+
+      '<select id="adr_nav_crit" style="flex:1;'+adrNavInSt()+';background:#fff"><option value="cont">contient</option><option value="deb">commence par</option></select></div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:8px">'+lab('CFC')+'<input id="adr_nav_cfc" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+')adrNavRight()" style="flex:1;'+adrNavInSt()+'"></div>'+cher+'</div>';
   }
+}
+/* Liste des entités (onglet Recherche) */
+function adrNavEntsFill(){
+  const entBox=document.getElementById('adr_nav_ents'); if(!entBox) return;
+  const f=((document.getElementById('adr_pick_f')||{}).value||'').toLowerCase();
   const typ=((document.getElementById('adr_nav_typ')||{}).value||'');
   const nomF=((document.getElementById('adr_nav_nom')||{}).value||'').toLowerCase();
   const compF=((document.getElementById('adr_nav_comp')||{}).value||'').toLowerCase();
-  /* colonne de gauche : les entités qui correspondent aux critères */
   const ents=adrData.ent.filter(e=>{
     if(e.masque&&!_adrMasked) return false;
     if(typ&&e.type!==typ) return false;
@@ -11803,47 +11877,164 @@ function adrPickFill(){
       if(!has) return false; }
     return true;
   }).sort((x,z)=>(x.nom||'').localeCompare(z.nom||'','fr',{sensitivity:'base'}));
-  const entBox=document.getElementById('adr_nav_ents');
-  if(entBox) entBox.innerHTML=
-    '<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+  entBox.innerHTML='<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
     '<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px;width:34px">Type</th>'+
     '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Nom</th>'+
     '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px">Complément</th></tr>'+
     ents.map((e,i)=>'<tr onclick="adrNavEntGo('+PV_Q+pvEscA(e.id)+PV_Q+')" style="cursor:pointer;'+
-      (e.id===_adrNavEnt?'background:#cfe3fa':(i%2?'':'background:#f2f6fa'))+'">'+
-      '<td style="padding:3px 8px;color:#41606f;font-weight:700;font-size:10px">'+((ADR_TYPES[e.type]||['?'])[0])+'</td>'+
+      (e.id===_adrNavEnt?'background:#2f7fe8;color:#fff':(i%2?'':'background:#f2f6fa'))+'">'+
+      '<td style="padding:3px 8px;font-weight:700;font-size:10px;'+(e.id===_adrNavEnt?'':'color:#41606f')+'">'+((ADR_TYPES[e.type]||['?'])[0])+'</td>'+
       '<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">'+pvEsc(e.nom||'')+'</td>'+
-      '<td style="padding:3px 8px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px">'+pvEsc(e.comp||'')+'</td></tr>').join('')+
+      '<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;'+(e.id===_adrNavEnt?'':'color:#555')+'">'+pvEsc(e.comp||'')+'</td></tr>').join('')+
     '</table>'+(ents.length?'':'<div style="padding:10px;color:#999;font-size:12px">Aucune entité.</div>');
-  /* tableau de droite : les adresses (de l'entité choisie, sinon toutes celles qui correspondent) */
+}
+/* Intervenants : lignes par rôle depuis les PV de chantier + collaborateurs */
+function adrNavRoleRows(role){
+  const rows=[]; const seen={};
+  const push=(soc,resp,dom,fon,cfc,note)=>{ const k=soc+'|'+resp; if(seen[k]) return; seen[k]=1; rows.push({soc,resp,dom,fon,cfc,note}); };
+  const PV=(typeof pvData!=='undefined'&&pvData)?pvData:{};
+  if(role==='Maître d’ouvrage'){
+    Object.keys(PV).forEach(c=>((PV[c].cfg||{}).interv||[]).forEach(it=>{ if(it.grp==='mo') push(it.soc||it.nom||'',it.nom||'','','Maître de l’ouvrage','',pvAffName(c)); }));
+  } else if(role==='Entreprises'){
+    Object.keys(PV).forEach(c=>{ const cfg=PV[c].cfg||{}; (cfg.cfc||[]).forEach(cc=>{ const en=(cfg.ent||{})[cc]||{};
+      if(en.soc) push(en.soc,en.resp||'',pvCfcLabel(cc),'Entreprise',cc,pvAffName(c)); }); });
+  } else if(role==='Collaborateurs'){
+    let cs=[]; try{ cs=JSON.parse(localStorage.getItem('sa_collaborateurs')||'[]')||[]; }catch(e){}
+    cs.forEach(c2=>{ const n=((c2.prenom?c2.prenom+' ':'')+(c2.nom||c2.name||'')).trim()||String(c2);
+      push('Substances Architectes',n,'', c2.fonction||'Collaborateur','',''); });
+  } else if(role==='Architecte'){
+    push('Substances Architectes Sàrl','','','Architecte','','Rue de la Gare 12, 1096 Cully');
+  } else {
+    const rl=role.toLowerCase();
+    Object.keys(PV).forEach(c=>((PV[c].cfg||{}).interv||[]).forEach(it=>{ if(String(it.role||'').toLowerCase().includes(rl)) push(it.soc||'',it.nom||'','',it.role||'','',pvAffName(c)); }));
+  }
+  return rows;
+}
+/* Tableau de droite (+ compteur + bouton OK) */
+function adrNavRight(){
+  const box=document.getElementById('adr_pick_ls'); if(!box) return;
+  const f=((document.getElementById('adr_pick_f')||{}).value||'').toLowerCase();
+  const okB=document.getElementById('adr_nav_ok');
+  const th=t=>'<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px;white-space:nowrap">'+t+'</th>';
+  const td=(v,inv)=>'<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">'+pvEsc(v||'')+'</td>';
+  if(_adrPickMode==='cfc'){
+    if(okB){ okB.style.opacity='.5'; okB.style.pointerEvents='none'; }
+    box.innerHTML=pvCfcAll().filter(x=>!f||(x[0]+' '+x[1]).toLowerCase().includes(f))
+      .map(x=>'<div onclick="adrPickCfcGo('+PV_Q+pvEscA(x[0])+PV_Q+')" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" style="padding:6px 10px;cursor:pointer;font-size:12.5px;border-top:1px solid #f2f2f2"><b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1])+'</div>').join('');
+    document.getElementById('adr_pick_i').textContent='';
+    return;
+  }
+  if(_adrNavTab==='int'){
+    const rows=_adrNavRole?adrNavRoleRows(_adrNavRole).filter(r=>!f||(r.soc+' '+r.resp+' '+r.dom+' '+r.fon).toLowerCase().includes(f)):[];
+    /* on relie chaque ligne au carnet quand le nom s'y trouve, pour permettre OK */
+    window._adrPickItems=rows.map(r=>{
+      const nm=(r.resp||r.soc||'').toLowerCase(); let hit=null;
+      adrData.adr.forEach(a=>{ if(hit) return; const e=adrEntById(a.entId)||{};
+        const t2=((e.nom||'')+' '+(e.comp||'')).toLowerCase();
+        if(nm&&(t2.includes(nm)||nm.includes((e.nom||'').toLowerCase())&&(e.nom||''))) hit={a,e}; });
+      return hit?Object.assign({},hit,{row:r}):{row:r};
+    });
+    box.innerHTML='<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+      '<tr>'+th('Entité')+th('Responsable')+th('Domaine spécialisé')+th('Fonction')+th('CFC')+th('Note')+'</tr>'+
+      window._adrPickItems.slice(0,300).map((it,i)=>'<tr onclick="adrNavSelGo('+i+')" ondblclick="adrPickGo('+i+')" style="cursor:pointer;'+
+        (i===_adrNavSel?'background:#cfe3fa':(i%2?'':'background:#f2f6fa'))+'">'+
+        td(it.row.soc)+td(it.row.resp)+td(it.row.dom)+td(it.row.fon)+td(it.row.cfc)+td(it.row.note)+'</tr>').join('')+
+      '</table>'+(rows.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+(_adrNavRole?'Aucun intervenant pour ce rôle.':'Choisissez un rôle à gauche.')+'</div>');
+    document.getElementById('adr_pick_i').textContent=rows.length+' intervenant(s)'+(_adrNavRole?' — '+_adrNavRole:'');
+    if(okB){ const on=_adrNavSel>=0&&window._adrPickItems[_adrNavSel]&&window._adrPickItems[_adrNavSel].a;
+      okB.style.opacity=on?'1':'.5'; okB.style.pointerEvents=on?'auto':'none'; }
+    return;
+  }
+  /* onglets à base d'adresses : rech / grp / prop / soum / cfc */
+  const typ=((document.getElementById('adr_nav_typ')||{}).value||'');
+  const nomF=((document.getElementById('adr_nav_nom')||{}).value||'').toLowerCase();
+  const compF=((document.getElementById('adr_nav_comp')||{}).value||'').toLowerCase();
+  const cfcF=((document.getElementById('adr_nav_cfc')||{}).value||'').trim();
+  const crit=((document.getElementById('adr_nav_crit')||{}).value||'cont');
+  const soumR=document.querySelector('input[name=adr_nav_soum]:checked');
   const items=[];
   adrData.adr.forEach(a=>{
     if(a.masque&&!_adrMasked) return;
     if(_adrPickCfc && !adrCfcMatch(a.cfc,_adrPickCfc)) return;
     const e=adrEntById(a.entId)||{};
-    if(_adrNavEnt&&a.entId!==_adrNavEnt) return;
-    if(typ&&e.type!==typ) return;
-    if(nomF&&!(e.nom||'').toLowerCase().includes(nomF)) return;
-    if(compF&&!(e.comp||'').toLowerCase().includes(compF)) return;
+    if(_adrNavTab==='rech'){
+      if(_adrNavEnt&&a.entId!==_adrNavEnt) return;
+      if(typ&&e.type!==typ) return;
+      if(nomF&&!(e.nom||'').toLowerCase().includes(nomF)) return;
+      if(compF&&!(e.comp||'').toLowerCase().includes(compF)) return;
+    } else if(_adrNavTab==='grp'){
+      if(_adrNavGrp!=='all'){
+        const want=_adrNavGrp==='fav'?'mes favoris':_adrNavGrp.slice(2).toLowerCase();
+        if(!(a.props||[]).some(pr=>String(pr.g||'').toLowerCase()==='groupe'&&String(pr.p||'').toLowerCase()===want)) return; }
+    } else if(_adrNavTab==='prop'){
+      if(!_adrNavProp) return;
+      if(!(a.props||[]).some(pr=>String(pr.g||'').toLowerCase()===_adrNavProp[0].toLowerCase()&&String(pr.p||'').toLowerCase()===_adrNavProp[1].toLowerCase())) return;
+    } else if(_adrNavTab==='soum'){
+      if(cfcF&&!adrCfcMatch(a.cfc,cfcF)) return;
+      const anc=(a.statut==='Entreprise liquidée'||a.statut==='A éviter'||a.statut==='Arrêt de livraison');
+      if(soumR&&soumR.value==='anc'?!anc:anc) return;
+      if(!cfcF&&!(a.cfc||'').trim()) return;
+    } else if(_adrNavTab==='cfc'){
+      if(cfcF){
+        const codes=String(a.cfc||'').split(',').map(s=>s.trim()).filter(Boolean);
+        if(crit==='deb'){ if(!codes.some(c2=>c2.indexOf(cfcF)===0)) return; }
+        else { if(!codes.some(c2=>c2.includes(cfcF))) return; }
+      }
+    }
     const txt=((e.nom||'')+' '+(e.comp||'')+' '+(a.parent||'')+' '+(a.cfc||'')+' '+(a.mail||'')+' '+(a.loc||'')).toLowerCase();
     if(f && !txt.includes(f)) return;
     items.push({a,e});
   });
   items.sort((x,z)=>(x.e.nom||'').localeCompare(z.e.nom||'','fr',{sensitivity:'base'}));
   window._adrPickItems=items;
-  const th=t=>'<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc;font-size:11px;white-space:nowrap">'+t+'</th>';
-  const td=(v,mx)=>'<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(mx||130)+'px">'+pvEsc(v||'')+'</td>';
-  box.innerHTML=
-    '<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
-    '<tr>'+th('Type')+th('Entité')+th('Appartient à')+th('Type d’adresse')+th('Identité')+th('Fonction')+th('Rue et n°')+th('Localité')+th('CFC')+'</tr>'+
+  const CS=(ADR_NAV_COLSETS[_adrNavCols]||ADR_NAV_COLSETS.adr).cols;
+  box.innerHTML='<table style="border-collapse:collapse;width:100%;font-size:12.5px">'+
+    '<tr>'+th('Type')+CS.map(c2=>th(c2[0])).join('')+'</tr>'+
     items.slice(0,300).map(({a,e},i)=>'<tr onclick="adrNavSelGo('+i+')" ondblclick="adrPickGo('+i+')" style="cursor:pointer;'+
       (i===_adrNavSel?'background:#cfe3fa':(i%2?'':'background:#f2f6fa'))+'" title="Double-clic : choisir">'+
       '<td style="padding:3px 8px;color:#41606f;font-weight:700;font-size:10px">'+((ADR_TYPES[e.type]||['?'])[0])+'</td>'+
-      td(e.nom,150)+td(a.parent,110)+td(a.typ||'Adresse',90)+td(e.comp,110)+td(a.fonction,100)+
-      td([a.rue,a.rue2].filter(Boolean).join(', '),140)+td(((a.npa||'')+' '+(a.loc||'')).trim(),110)+td(a.cfc,80)+'</tr>').join('')+
-    '</table>'+(items.length?'':'<div style="padding:10px;color:#999;font-size:12px">Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.</div>');
-  document.getElementById('adr_pick_i').textContent=items.length+' adresse(s)'+(_adrPickCfc?' — CFC '+_adrPickCfc:'')+(_adrNavEnt?' — entité filtrée (recliquez pour tout afficher)':'');
+      CS.map(c2=>td(c2[1](a,e))).join('')+'</tr>').join('')+
+    '</table>'+(items.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+
+      (_adrNavTab==='prop'&&!_adrNavProp?'Choisissez une propriété à gauche.':'Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.')+'</div>');
+  document.getElementById('adr_pick_i').textContent=items.length+' adresse(s)'+(_adrPickCfc?' — CFC '+_adrPickCfc:'')+(_adrNavEnt&&_adrNavTab==='rech'?' — entité filtrée (recliquez pour tout afficher)':'');
+  if(okB){ okB.style.opacity=_adrNavSel>=0?'1':'.5'; okB.style.pointerEvents=_adrNavSel>=0?'auto':'none'; }
 }
+/* Menus ⚙︎ (colonnes) et ✚ du bas de fenêtre */
+function adrNavMenu(w){
+  const mc=document.getElementById('adr_nav_mcols'), mp=document.getElementById('adr_nav_mplus');
+  const m=(w==='cols')?mc:mp, o=(w==='cols')?mp:mc; if(o) o.style.display='none'; if(!m) return;
+  if(m.style.display==='block'){ m.style.display='none'; return; }
+  const it=(lbl,fn,chk)=>'<div style="padding:4px 16px 4px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+
+    '<span style="width:20px;display:inline-block;flex:none">'+(chk?'✓':'')+'</span>'+lbl+'</div>';
+  if(w==='cols'){
+    m.innerHTML=['std','adr','com','adrcom','tous'].map(k=>
+      it(ADR_NAV_COLSETS[k].lbl,'adrNavMenu('+PV_Q+'cols'+PV_Q+');_adrNavCols='+PV_Q+k+PV_Q+';adrNavRight()',k===_adrNavCols)).join('');
+  } else {
+    const e=_adrNavEnt?adrEntById(_adrNavEnt):null;
+    m.innerHTML=
+      it('Nouvelle adresse …','adrNavMenu('+PV_Q+'plus'+PV_Q+');adrNavNew()',false)+
+      it('Lier une entité …','adrNavMenu('+PV_Q+'plus'+PV_Q+');toast('+PV_Q+'Lier une entité — à venir.'+PV_Q+')',false)+
+      (e?'<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
+        it('’'+pvEsc(e.nom)+'’ : lier à une entité …','adrNavMenu('+PV_Q+'plus'+PV_Q+');toast('+PV_Q+'Lier à une entité — à venir.'+PV_Q+')',false):'');
+  }
+  m.style.display='block';
+}
+/* Nouvelle adresse depuis le navigateur : entité société + adresse, puis fiche d'édition */
+function adrNavNew(){
+  chPrompt('Nom de la nouvelle adresse (société) :','',nom=>{
+    nom=String(nom==null?'':nom).trim(); if(!nom) return;
+    const e={id:adrId(), type:'soc', nom:nom, comp:'', masque:false};
+    adrData.ent.push(e);
+    const a={id:adrId(), entId:e.id, typ:'Adresse', parent:'', ad1:nom, ad2:'', ad3:'', rue:'', rue2:'',
+      npa:'', loc:'', pays:'Suisse', tel:'', mob:'', fax:'', mail:'', skype:'', web:'',
+      desc:'', abrev:'', cfc:'', civ:'', masque:false, rem:'', fonction:'', prof:'', langue:'Français', statut:'',
+      props:[], notes:[], cree:pvDpt(fhISO(new Date())), num:++adrData.seq};
+    adrData.adr.push(a); adrPersist();
+    _adrNavEnt=e.id; _adrNavSel=-1; adrNavLeftFill(); adrNavRight();
+    toast('« '+nom+' » créée — complétez la fiche dans Affaires · Adresses.');
+  });
+}
+function adrPickFill(){ adrNavLeftFill(); adrNavRight(); }
 function adrPickCfcGo(code){
   document.getElementById('adr_pick_ov').style.display='none';
   const x=document.getElementById('ae_cfc');
@@ -11851,6 +12042,7 @@ function adrPickCfcGo(code){
 }
 function adrPickGo(i){
   const it=(window._adrPickItems||[])[i]; if(!it) return;
+  if(!it.a){ toast('Cet intervenant n’est pas dans le carnet d’adresses.'); return; }
   document.getElementById('adr_pick_ov').style.display='none';
   const {a,e}=it;
   const estSoc=(e.type!=='pers');

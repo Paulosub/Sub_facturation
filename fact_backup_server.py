@@ -149,6 +149,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": str(e)})
             return
 
+        if u.path == "/openpdf":
+            # Ouvre dans Aperçu un PDF déjà enregistré dans « PDF Devis ».
+            q = urllib.parse.parse_qs(u.query)
+            name = os.path.basename((q.get("name", [""])[0]).strip())
+            full = os.path.join(BASE_DIR, "PDF Devis", name)
+            if not name or not os.path.isfile(full):
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % name})
+                return
+            try:
+                subprocess.Popen(["open", "-a", "Preview", full])
+                self._json(200, {"ok": True, "path": full})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         self._json(404, {"ok": False, "error": "Ressource inconnue."})
 
     def do_POST(self):

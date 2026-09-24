@@ -16240,6 +16240,19 @@ function dvDocFenDG(){
     offreFoot(1,1)+'</div>';
   dvDocShow('Devis général', page);
 }
+/* Sélection d'un fichier dans la liste Fichiers PDF ; double-clic = ouvrir dans Aperçu. */
+function dvPdfSel(nom,tr){ window._dvPdfSel=nom;
+  document.querySelectorAll('#dv_tb_pdfs tr.dv-sel').forEach(x=>x.classList.remove('dv-sel'));
+  if(tr) tr.classList.add('dv-sel'); }
+async function dvPdfOpen(nom){
+  if(!nom) return;
+  try{
+    const r=await fetch('http://127.0.0.1:7788/openpdf?name='+encodeURIComponent(nom));
+    const j=await r.json();
+    if(j&&j.ok) toast('« '+nom+' » ouvert dans Aperçu.');
+    else toast('Fichier introuvable sur le disque : '+nom);
+  }catch(e){ toast('Serveur de sauvegarde (7788) indisponible — impossible d’ouvrir le PDF.'); }
+}
 /* Menu de l'icône à droite de Fichiers PDF (active dès qu'un « PDF disponible » existe). */
 function dvPdfMenu(){
   const m=document.getElementById('dv_pdf_menu'); if(!m) return;
@@ -16248,8 +16261,9 @@ function dvPdfMenu(){
   const it=(lbl,fn,en)=> en
     ? '<div style="padding:4px 16px 4px 12px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+lbl+'</div>'
     : '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">'+lbl+'</div>';
+  const selF=window._dvPdfSel;
   m.innerHTML=
-    it('Ouvrir','',false)+
+    it('Ouvrir', selF?('dvPdfMenu();dvPdfOpen('+PV_Q+pvEscA(selF)+PV_Q+')'):'', !!selF)+
     it('Partager le fichier PDF …','',false)+
     '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
     it('Import fichier PDF …','dvPdfMenu();toast('+PV_Q+'Import d’un fichier PDF — à définir.'+PV_Q+')',true)+
@@ -16259,7 +16273,7 @@ function dvPdfMenu(){
 }
 /* Sélection d'un document (Devis général / Honoraires / Devis descriptif) : active les icônes +/−/roue. */
 function dvDocSel(n,tr){ window._dvDocSel=n;
-  document.querySelectorAll('#dv_out .pv-tb tr.dv-sel').forEach(x=>x.classList.remove('dv-sel'));
+  document.querySelectorAll('#dv_tb_docs tr.dv-sel').forEach(x=>x.classList.remove('dv-sel'));
   if(tr) tr.classList.add('dv-sel');
   document.querySelectorAll('#dv_doc_btns button').forEach(b=>{
     b.disabled=false; b.style.opacity=''; b.style.pointerEvents='';
@@ -16438,7 +16452,7 @@ function dvRender(){
   h+='</tbody></table></div>';
   // ── zone Documents (comme la fenêtre du bureau — génération PDF à venir) ──
   // Icônes +/−/roue grisées tant qu'aucun document n'est sélectionné (clic sur une ligne nommée).
-  window._dvDocSel=null;
+  window._dvDocSel=null; window._dvPdfSel=null;
   // Même style que les icônes de la barre au-dessus du tableau DG.
   const dbSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9';
   const dbSvg=d=>'<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.7" stroke-linecap="round"><path d="'+d+'"/></svg>';
@@ -16460,7 +16474,7 @@ function dvRender(){
     '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Réglages — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuG()"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span> <span style="font-size:8px;color:#666">▾</span></button>'+
     '<div id="dv_doc_menu_g" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:390px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0"></div>'+
     '</span>'+'</span></div>'+
-    '<table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
+    '<table id="dv_tb_docs" class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>{ const dd=(D.docs||{})[n]||{};
       if(dd.pdf && dd.doc==null) dd.doc=true; // migration ancien format
       if(dd.fich){ dd.fichs=[dd.fich]; delete dd.fich; } // migration pièce jointe unique → liste
@@ -16471,13 +16485,13 @@ function dvRender(){
     '<div style="flex:none;width:calc(25% - 6px);min-width:300px;display:flex;flex-direction:column">'+
     '<div style="display:flex;align-items:center;margin-bottom:4px;height:26px"><span style="font-size:12px;font-weight:700;color:#003346">Fichiers PDF</span></div>'+
     '<div style="display:flex;gap:8px;align-items:flex-start">'+
-    '<table class="pv-tb" style="flex:1"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
+    '<table id="dv_tb_pdfs" class="pv-tb" style="flex:1"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
     (()=>{ const all=[]; Object.keys(D.docs||{}).forEach(n2=>{ const l2=(D.docs[n2]||{}).fichs;
         if(Array.isArray(l2)) l2.forEach(f2=>all.push(f2)); });
       all.sort((x2,y2)=>(y2.date||0)-(x2.date||0));
       const rowsP=all.map(f2=>{ const d2=f2.date?new Date(f2.date):null;
         const ds=d2?(('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear()+' '+('0'+d2.getHours()).slice(-2)+':'+('0'+d2.getMinutes()).slice(-2)):'';
-        return '<tr><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
+        return '<tr style="cursor:pointer" title="Clic : sélectionner — double-clic : ouvrir" onclick="dvPdfSel('+PV_Q+pvEscA(f2.nom||'')+PV_Q+',this)" ondblclick="dvPdfOpen('+PV_Q+pvEscA(f2.nom||'')+PV_Q+')"><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
       while(rowsP.length<10) rowsP.push('<tr><td>&nbsp;</td><td></td></tr>');
       return rowsP.join(''); })()+'</tbody></table>'+
     (()=>{ const anyPdf=Object.keys(D.docs||{}).some(k=>D.docs[k]&&D.docs[k].pdf);

@@ -11943,7 +11943,7 @@ function adrNavRight(){
       '</table>'+(rows.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+(_adrNavRole?'Aucun intervenant pour ce rôle.':'Choisissez un rôle à gauche.')+'</div>');
     if(okB){ const on=_adrNavSel>=0&&window._adrPickItems[_adrNavSel]&&window._adrPickItems[_adrNavSel].a;
       okB.style.opacity=on?'1':'.5'; okB.style.pointerEvents=on?'auto':'none'; }
-    const pw2=document.getElementById('adr_nav_plusw'); if(pw2) pw2.style.display=_adrNavSel>=0?'inline':'none';
+    const pw2=document.getElementById('adr_nav_plusw'); if(pw2) pw2.style.display='none';
     return;
   }
   /* onglets à base d'adresses : rech / grp / prop / soum / cfc */
@@ -11999,7 +11999,7 @@ function adrNavRight(){
     '</table>'+(items.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+
       (enAttente?'':(_adrNavTab==='prop'&&!_adrNavProp?'Choisissez une propriété à gauche.':'Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.'))+'</div>');
   if(okB){ okB.style.opacity=_adrNavSel>=0?'1':'.5'; okB.style.pointerEvents=_adrNavSel>=0?'auto':'none'; }
-  const pw=document.getElementById('adr_nav_plusw'); if(pw) pw.style.display=_adrNavSel>=0?'inline':'none';
+  const pw=document.getElementById('adr_nav_plusw'); if(pw) pw.style.display=(_adrNavTab==='rech'&&_adrNavEnt)?'inline':'none';
 }
 /* Menus ⚙︎ (colonnes) et ✚ du bas de fenêtre */
 function adrNavMenu(w){

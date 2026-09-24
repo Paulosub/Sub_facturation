@@ -164,6 +164,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if not name.lower().endswith(".pdf"):
                 name += ".pdf"
             mode = (q.get("mode", ["open"])[0]).strip()
+            do_open = (q.get("open", ["1"])[0]).strip() != "0"
             length = int(self.headers.get("Content-Length", 0))
             data = self.rfile.read(length)
             try:
@@ -175,14 +176,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 full = os.path.join(target, name)
                 with open(full, "wb") as fh:
                     fh.write(data)
-                opened = True
-                try:
-                    subprocess.Popen(["open", "-a", "Preview", full])
-                except Exception:
+                opened = False
+                if do_open:
+                    opened = True
                     try:
-                        subprocess.Popen(["open", full])
+                        subprocess.Popen(["open", "-a", "Preview", full])
                     except Exception:
-                        opened = False
+                        try:
+                            subprocess.Popen(["open", full])
+                        except Exception:
+                            opened = False
                 self._json(200, {"ok": True, "name": name, "path": full,
                                  "saved": mode == "save", "opened": opened})
             except Exception as e:

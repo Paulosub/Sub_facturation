@@ -15630,9 +15630,72 @@ function dvTbMenuT(){ const m=document.getElementById('dv_tb_menu_t'); if(m) m.s
 function dvTbVue(k){ const D=dvA(); if(D){ D.vueT=k; dvPersist(); } dvRender(); }
 function dvUnmark(){ document.querySelectorAll('#dv_out tr.dv-sel').forEach(x=>x.classList.remove('dv-sel')); }
 function dvSelPos(id,tr){ _dvSel=id; _dvSelG=null; dvUnmark(); if(tr) tr.classList.add('dv-sel'); }
-function dvDocMenuP(){ const m=document.getElementById('dv_doc_menu_p');
-  if(m) m.style.display=(m.style.display==='none'?'block':'none');
-  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_m'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; }); }
+function dvDocMenuP(){ const m=document.getElementById('dv_doc_menu_p'); if(!m) return;
+  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_m'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; });
+  if(m.style.display==='block'){ m.style.display='none'; return; }
+  const n=window._dvDocSel; const D=dvA(); const dd=(n&&D&&D.docs)?(D.docs[n]||{}):{};
+  const it=(lbl,fn,en)=> en
+    ? '<div style="padding:4px 16px 4px 12px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+lbl+'</div>'
+    : '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">'+lbl+'</div>';
+  m.innerHTML=
+    it('Ouvrir …','dvDocMenuP();dvDocOuvrir()', true)+
+    it('Ouvrir PDF …','', false)+
+    '<div style="height:10px"></div>'+
+    it('Créer un PDF comme jointe au document …','dvDocMenuP();dvDlgNomFich()', !!dd.doc);
+  m.style.display='block'; }
+/* Fenêtre « Nom du fichier » (création d'un PDF en pièce jointe du document). */
+function dvDlgNomFich(){
+  const n=window._dvDocSel; if(!n) return;
+  window._dvNfDoc=n;
+  let ov=document.getElementById('dv_nf_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='dv_nf_ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:6000;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.10)';
+    document.body.appendChild(ov); }
+  ov.innerHTML='<div style="margin-top:18vh;width:560px;background:#ececec;border:1px solid #a8a8a8;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.45);overflow:hidden">'+
+    '<div style="background:linear-gradient(#f4f4f4,#e2e2e2);border-bottom:1px solid #c6c6c6;padding:7px 10px;display:flex;align-items:center">'+
+      '<span onclick="dvNfClose()" title="Fermer" style="width:12px;height:12px;border-radius:50%;background:#ff5f57;border:1px solid #dd3c33;cursor:pointer;flex:none"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px;flex:none"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#61c554;border:1px solid #3f9b34;margin-left:7px;flex:none"></span>'+
+      '<span style="flex:1;text-align:center;font-weight:700;font-size:14px;color:#333;margin-right:57px">Nom du fichier</span></div>'+
+    '<div style="display:flex;align-items:center;gap:14px;padding:22px 24px 10px">'+
+      '<span style="font-size:14px;flex:none">Nom du fichier</span>'+
+      '<input id="dv_nf_in" value="'+pvEscA(n+'.pdf')+'" onkeydown="if(event.key==='+PV_Q+'Enter'+PV_Q+')dvNfOk()" style="flex:1;border:2px solid #6aa8e8;border-radius:4px;padding:5px 8px;font-size:14px;background:#fff">'+
+    '</div>'+
+    '<div style="display:flex;justify-content:flex-end;gap:12px;padding:10px 22px 18px">'+
+      '<button onclick="dvNfClose()" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 22px;font-size:14px;cursor:pointer">Annuler</button>'+
+      '<button onclick="dvNfOk()" style="background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;border-radius:7px;padding:5px 30px;font-size:14px;cursor:pointer;font-weight:600">OK</button></div></div>';
+  ov.style.display='flex';
+  const inp=document.getElementById('dv_nf_in'); if(inp){ inp.focus(); inp.select(); }
+}
+function dvNfClose(){ const ov=document.getElementById('dv_nf_ov'); if(ov) ov.style.display='none'; }
+async function dvNfOk(){
+  const inp=document.getElementById('dv_nf_in');
+  let nom=(inp&&inp.value.trim())||'';
+  if(!nom){ toast('Indiquez un nom de fichier.'); return; }
+  if(!/\.pdf$/i.test(nom)) nom+='.pdf';
+  dvNfClose();
+  const docName=window._dvNfDoc; if(!docName) return;
+  window._dvApDoc=docName;
+  try{
+    const bytes=await dvDocPdfGen();
+    let ok=false;
+    try{
+      const r=await fetch('http://127.0.0.1:7788/pdf?name='+encodeURIComponent(nom)+'&mode=save&open=0',
+        {method:'POST', headers:{'Content-Type':'application/pdf'}, body:bytes});
+      const j=await r.json(); ok=!!(j&&j.ok);
+    }catch(e){}
+    if(!ok){
+      const bl=new Blob([bytes],{type:'application/pdf'}); const u2=URL.createObjectURL(bl);
+      const a2=document.createElement('a'); a2.href=u2; a2.download=nom; a2.click();
+      setTimeout(()=>URL.revokeObjectURL(u2),4000);
+      toast('Serveur de sauvegarde (7788) indisponible — le PDF a été téléchargé.');
+    } else toast('PDF « '+nom+' » créé en pièce jointe du document.');
+    // Pièce jointe : ligne dans Fichiers PDF UNIQUEMENT (pas de coche « PDF disponible »).
+    const D=dvA(); if(D){ D.docs=D.docs||{}; const dd=D.docs[docName]||(D.docs[docName]={});
+      dd.doc=true; dd.fich={nom, date:Date.now()};
+      dvPersist(); dvRender(); }
+  }catch(e){ toast('Erreur PDF : '+e.message); }
+}
 function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m'); if(!m) return;
   ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p','dv_doc_menu_g'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; });
   if(m.style.display==='block'){ m.style.display='none'; return; }
@@ -15642,17 +15705,17 @@ function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m'); if(!m) 
     : '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">'+lbl+'</div>';
   m.innerHTML=
     it('Effacer le document …','dvDocMenuM();dvDocDelDoc()', !!dd.doc)+
-    it('Effacer le PDF …','dvDocMenuM();dvDocDelPdf()', !!dd.pdf);
+    it('Effacer le PDF …','dvDocMenuM();dvDocDelPdf()', !!(dd.pdf||dd.fich));
   m.style.display='block'; }
 /* Suppressions : le PDF doit être effacé AVANT le document. */
 function dvDocDelDoc(){ const n=window._dvDocSel; const D=dvA(); if(!n||!D) return;
   const dd=(D.docs||{})[n]; if(!dd||!dd.doc) return;
-  if(dd.pdf){ dvErr('Un fichier PDF existe déjà.'); return; }
+  if(dd.pdf||dd.fich){ dvErr('Un fichier PDF existe déjà.'); return; }
   delete D.docs[n]; dvPersist(); dvRender();
   toast('Document « '+n+' » effacé.'); }
 function dvDocDelPdf(){ const n=window._dvDocSel; const D=dvA(); if(!n||!D) return;
-  const dd=(D.docs||{})[n]; if(!dd||!dd.pdf) return;
-  dd.pdf=null; dd.date=null; dvPersist(); dvRender();
+  const dd=(D.docs||{})[n]; if(!dd||(!dd.pdf&&!dd.fich)) return;
+  dd.pdf=null; dd.date=null; dd.fich=null; dvPersist(); dvRender();
   toast('PDF de « '+n+' » effacé.'); }
 /* Fenêtre d'erreur type macOS : barre de titre « Erreur », panneau stop rouge, bouton OK. */
 function dvErr(msg){
@@ -16322,12 +16385,7 @@ function dvRender(){
     '<span id="dv_doc_btns" style="display:inline-flex;gap:5px">'+
     '<span style="position:relative;display:inline-flex">'+
     '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Ajouter — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuP()">'+dbSvg('M7.5 3v9M3 7.5h9')+' <span style="font-size:8px;color:#666">▾</span></button>'+
-    '<div id="dv_doc_menu_p" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:330px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0">'+
-      '<div style="padding:4px 16px 4px 12px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvDocMenuP();dvDocOuvrir()">Ouvrir …</div>'+
-      '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Ouvrir PDF …</div>'+
-      '<div style="height:10px"></div>'+
-      '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Créer un PDF comme jointe au document …</div>'+
-    '</div></span>'+
+    '<div id="dv_doc_menu_p" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:330px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0"></div></span>'+
     '<span style="position:relative;display:inline-flex">'+
     '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Supprimer — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuM()">'+dbSvg('M3 7.5h9')+' <span style="font-size:8px;color:#666">▾</span></button>'+
     '<div id="dv_doc_menu_m" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:250px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0">'+
@@ -16349,7 +16407,12 @@ function dvRender(){
     '<div style="display:flex;align-items:center;margin-bottom:4px;height:26px"><span style="font-size:12px;font-weight:700;color:#003346">Fichiers PDF</span></div>'+
     '<div style="display:flex;gap:8px;align-items:flex-start">'+
     '<table class="pv-tb" style="flex:1"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
-    Array.from({length:10}).map(()=>'<tr><td>&nbsp;</td><td></td></tr>').join('')+'</tbody></table>'+
+    (()=>{ const rowsP=Object.keys(D.docs||{}).filter(n2=>D.docs[n2]&&D.docs[n2].fich).map(n2=>{ const f2=D.docs[n2].fich;
+        const d2=f2.date?new Date(f2.date):null;
+        const ds=d2?(('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear()+' '+('0'+d2.getHours()).slice(-2)+':'+('0'+d2.getMinutes()).slice(-2)):'';
+        return '<tr><td>'+pvEsc(f2.nom||'')+'</td><td>'+ds+'</td></tr>'; });
+      while(rowsP.length<10) rowsP.push('<tr><td>&nbsp;</td><td></td></tr>');
+      return rowsP.join(''); })()+'</tbody></table>'+
     '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none;flex:none" title="Export PDF — sélectionnez d'+PV_Q+'abord un fichier">'+
     '<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M4 2h5l3 3v8.5H4z" fill="none" stroke="#444" stroke-width="1.2"/><line x1="6" y1="8" x2="10" y2="8" stroke="#444" stroke-width="1"/><line x1="6" y1="10.3" x2="10" y2="10.3" stroke="#444" stroke-width="1"/></svg>'+
     ' <span style="font-size:8px;color:#666">▾</span></button>'+

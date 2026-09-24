@@ -960,7 +960,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
         <button class="btn btn-sm" onclick="adrNavMenu('cols')"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span> ▾</button>
         <div id="adr_nav_mcols" style="display:none;position:absolute;bottom:34px;left:0;background:#fff;border:1px solid #ccc;border-radius:7px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:230px;padding:5px 0;font-size:13px;z-index:5"></div>
       </span>
-      <span style="position:relative">
+      <span id="adr_nav_plusw" style="position:relative;display:none">
         <button class="btn btn-sm" onclick="adrNavMenu('plus')">✚ ▾</button>
         <div id="adr_nav_mplus" style="display:none;position:absolute;bottom:34px;left:0;background:#fff;border:1px solid #ccc;border-radius:7px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:250px;padding:5px 0;font-size:13px;white-space:nowrap;z-index:5"></div>
       </span>
@@ -11919,6 +11919,7 @@ function adrNavRight(){
   const td=(v,inv)=>'<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">'+pvEsc(v||'')+'</td>';
   if(_adrPickMode==='cfc'){
     if(okB){ okB.style.opacity='.5'; okB.style.pointerEvents='none'; }
+    const pw3=document.getElementById('adr_nav_plusw'); if(pw3) pw3.style.display='none';
     box.innerHTML=pvCfcAll().filter(x=>!f||(x[0]+' '+x[1]).toLowerCase().includes(f))
       .map(x=>'<div onclick="adrPickCfcGo('+PV_Q+pvEscA(x[0])+PV_Q+')" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" style="padding:6px 10px;cursor:pointer;font-size:12.5px;border-top:1px solid #f2f2f2"><b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1])+'</div>').join('');
     document.getElementById('adr_pick_i').textContent='';
@@ -11942,6 +11943,7 @@ function adrNavRight(){
       '</table>'+(rows.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+(_adrNavRole?'Aucun intervenant pour ce rôle.':'Choisissez un rôle à gauche.')+'</div>');
     if(okB){ const on=_adrNavSel>=0&&window._adrPickItems[_adrNavSel]&&window._adrPickItems[_adrNavSel].a;
       okB.style.opacity=on?'1':'.5'; okB.style.pointerEvents=on?'auto':'none'; }
+    const pw2=document.getElementById('adr_nav_plusw'); if(pw2) pw2.style.display=_adrNavSel>=0?'inline':'none';
     return;
   }
   /* onglets à base d'adresses : rech / grp / prop / soum / cfc */
@@ -11997,6 +11999,7 @@ function adrNavRight(){
     '</table>'+(items.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+
       (enAttente?'':(_adrNavTab==='prop'&&!_adrNavProp?'Choisissez une propriété à gauche.':'Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.'))+'</div>');
   if(okB){ okB.style.opacity=_adrNavSel>=0?'1':'.5'; okB.style.pointerEvents=_adrNavSel>=0?'auto':'none'; }
+  const pw=document.getElementById('adr_nav_plusw'); if(pw) pw.style.display=_adrNavSel>=0?'inline':'none';
 }
 /* Menus ⚙︎ (colonnes) et ✚ du bas de fenêtre */
 function adrNavMenu(w){

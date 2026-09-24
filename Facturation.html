@@ -14707,9 +14707,9 @@ function dvRender(){
     h+='<tr>'+
       '<td class="cc-g"><input class="cc-in cc-int" list="dv_cfc_dl" style="width:58px" value="'+pvEsc(pp.cfc||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'cfc'+PV_Q+',this)"></td>'+
       '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(pp.lbl||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'lbl'+PV_Q+',this)"></td>'+
-      '<td style="background:#f7f9fa;cursor:pointer" title="Clic : calcul détaillé de la position" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(ht):'')+'</td>'+
+      '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(ht):'')+'</td>'+
       '<td>'+(t?ccF(t-ht):'')+'</td>'+
-      '<td style="cursor:pointer;background:#f7f9fa" data-ttc="'+pvEsc(pp.cfc||'')+'" title="Clic : ouvrir le calcul de la position (les montants ne se modifient pas directement dans le tableau)" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(t):'')+'</td>'+
+      '<td style="cursor:pointer" data-ttc="'+pvEsc(pp.cfc||'')+'" title="Clic : ouvrir le calcul de la position (les montants ne se modifient pas directement dans le tableau)" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(t):'')+'</td>'+
       '<td>'+(t&&C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td>'+
       '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td></tr>';
   });

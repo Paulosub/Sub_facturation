@@ -16043,6 +16043,30 @@ function dvTblCsv(){
   a.download='devis_'+(_dvAff||'tableau')+'.csv'; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 }
+/* Présentations d'impression du devis (menu feuille) — liste de noms par devis */
+function dvPresAdd(){
+  const D=dvA(); if(!D) return;
+  chPrompt('Nom de la nouvelle présentation :','Standard',nm=>{
+    nm=String(nm==null?'':nm).trim(); if(!nm) return;
+    D.presis=D.presis||[];
+    if(D.presis.includes(nm)){ toast('La présentation « '+nm+' » existe déjà.'); return; }
+    D.presis.push(nm); dvPersist(); dvRender();
+    toast('Présentation « '+nm+' » ajoutée.');
+  });
+}
+function dvPresRen(){
+  const D=dvA(); if(!D||!(D.presis||[]).length) return;
+  const cur=D.presis[D.presis.length-1];
+  chPrompt('Nouveau nom de la présentation « '+cur+' » :',cur,nm=>{
+    nm=String(nm==null?'':nm).trim(); if(!nm) return;
+    D.presis[D.presis.length-1]=nm; dvPersist(); dvRender();
+  });
+}
+function dvPresDel(){
+  const D=dvA(); if(!D||!(D.presis||[]).length) return;
+  const cur=D.presis[D.presis.length-1];
+  chConfirm('Supprimer la présentation « '+cur+' » ?', ()=>{ D.presis.pop(); dvPersist(); dvRender(); });
+}
 function dvDocsTog(){ const D=dvA(); if(!D) return; D.docsOff=!D.docsOff; dvPersist(); dvRender(); }
 /* Choix de la vue du tableau DG (menu de l'icône tableau) — mémorisé par devis.
    L'effet des vues autres que Standard sur les colonnes sera défini avec Paulo. */
@@ -17095,15 +17119,28 @@ function dvToolbarHTML(){
       return men('dv_tb_menu_w','dvTbMenuW',ic['wrench'],'Outils',
           li('Paramètres …','dvTbTog(null);dvParamOpen()'))+
         men('dv_tb_menu_d','dvTbMenuD',ic['doc'],'Documents',
-          li('Document impression MO … [Ancien document]',av('Document impression MO'))+
-          li('Document impression TRAVAIL … [Ancien document]',av('Document impression TRAVAIL'))+
-          sep+
-          li('Ajouter une présentation par défaut',av('Ajouter une présentation par défaut'))+
-          li('Renommer la présentation …',av('Renommer la présentation'))+
-          li('Supprimer la présentation',av('Supprimer la présentation'))+
-          sep+
-          li('Honoraires … [Ancien document]','dvTbTog(null);dvDocOuvrirGo('+PV_Q+'Honoraires'+PV_Q+')')+
-          li('Feuille de position … [Ancien document]',av('Feuille de position')))+
+          (function(){
+            const pres=(D&&D.presis)||[];
+            const gris=lbl=>'<div style="padding:6px 16px;color:#b5b5b5">'+lbl+'</div>';
+            if(!pres.length){
+              /* menu AVANT toute présentation enregistrée (modèle Deltaproject) */
+              return li('Document Standard … [Ancien document]',av('Document Standard'))+
+                li('Ajouter une présentation par défaut','dvTbTog(null);dvPresAdd()')+
+                li('Renommer la présentation …',av('Renommer la présentation'))+
+                sep+
+                li('Honoraires … [Ancien document]','dvTbTog(null);dvDocOuvrirGo('+PV_Q+'Honoraires'+PV_Q+')')+
+                gris('Feuille de position … [Ancien document]');
+            }
+            /* menu COMPLET dès qu'au moins une présentation existe */
+            return pres.map(nm=>li('Document impression '+pvEsc(nm)+' … [Ancien document]',av('Document impression '+pvEscA(nm)))).join('')+
+              sep+
+              li('Ajouter une présentation par défaut','dvTbTog(null);dvPresAdd()')+
+              li('Renommer la présentation …','dvTbTog(null);dvPresRen()')+
+              li('Supprimer la présentation','dvTbTog(null);dvPresDel()')+
+              sep+
+              li('Honoraires … [Ancien document]','dvTbTog(null);dvDocOuvrirGo('+PV_Q+'Honoraires'+PV_Q+')')+
+              li('Feuille de position … [Ancien document]',av('Feuille de position'));
+          })())+
         men('dv_tb_menu_g2','dvTbMenuG',ic['gear'],'Paramètres',
           li('Exporter le devis …',av('Exporter le devis'))+
           li('Exporter le descriptif …',av('Exporter le descriptif'))+

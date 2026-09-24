@@ -15434,14 +15434,13 @@ function dvDlgInfo(){
   const D=dvA(); if(!D) return;
   if(!Array.isArray(D.rem)) D.rem=[];
   window._dvRiSnap=JSON.stringify(D.rem); _dvRiA=null; _dvRiB=null; _dvRiClip=null;
-  const wrapH=Math.max(300, window.innerHeight-340);
   const tb=(l,fn,tt)=>'<button class="btn btn-sm" style="min-width:34px" onclick="'+fn+'" title="'+tt+'">'+l+'</button>';
   ccDlg('<style>'+
     '#dv_ri_wrap{border:1px solid #b8c2c7;overflow:auto;background:#fff}'+
     '#dv_ri_wrap table{border-collapse:collapse;table-layout:fixed;width:100%}'+
-    '#dv_ri_wrap th{background:#eef1f3;border:1px solid #cfd6da;font-weight:600;font-size:12px;padding:3px 6px;text-align:left;position:sticky;top:0;z-index:1}'+
+    '#dv_ri_wrap th{background:#f0f0f0;border:1px solid #c9cfd3;font-weight:normal;font-size:12.5px;color:#000;padding:3px 6px;text-align:left;position:sticky;top:0;z-index:1}'+
     '#dv_ri_wrap td{border:1px solid #dfe4e7;padding:0;height:23px;overflow:hidden}'+
-    '#dv_ri_wrap td.dv-ri-h{background:#f2f4f5;text-align:center;color:#9aa4aa;font-size:11px;cursor:pointer;user-select:none}'+
+    '#dv_ri_wrap td.dv-ri-h{background:#f2f4f5;cursor:pointer;user-select:none}'+
     '#dv_ri_wrap input{width:100%;height:23px;border:0;padding:0 6px;background:transparent;font:inherit;font-size:13px;box-sizing:border-box;display:block}'+
     '#dv_ri_wrap input:focus{outline:2px solid #4a90d9;outline-offset:-2px;background:#fff}'+
     '#dv_ri_wrap tr.dv-ri-sel td{background:#cfe3f5}'+
@@ -15449,8 +15448,8 @@ function dvDlgInfo(){
     '</style>'+
     '<div style="font-weight:700;text-align:center;margin-bottom:8px">Remarques préliminaires</div>'+
     '<div style="font-size:13px;margin-bottom:6px">Informations pour le devis</div>'+
-    '<div id="dv_ri_wrap" tabindex="0" style="height:'+wrapH+'px" onkeydown="dvRiKey(event)">'+
-    '<table><colgroup><col style="width:34px"><col id="dv_ri_cnom" style="width:150px"><col></colgroup>'+
+    '<div id="dv_ri_wrap" tabindex="0" style="height:340px" onkeydown="dvRiKey(event)">'+
+    '<table><colgroup><col style="width:22px"><col id="dv_ri_cnom" style="width:150px"><col></colgroup>'+
     '<thead><tr><th></th>'+
     '<th style="position:sticky;top:0"><span style="position:relative;display:block">Nom'+
     '<span class="dv-ri-rs" onmousedown="dvRiRsDown(event)" title="Glisser pour ajuster la largeur"></span></span></th>'+
@@ -15467,18 +15466,38 @@ function dvDlgInfo(){
     '<button class="btn btn-sm" onclick="dvRiPaste()" title="Coller sur les lignes à partir de la sélection (Ctrl/Cmd+V)">Coller</button>'+
     '<span style="font-size:11px;color:#8a949a;margin-left:6px">Clic sur la marge grise = sélection de ligne, Maj+clic = plage</span></div>'+
     '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="dvRiCancel()">Annuler</button> '+
-    '<button class="btn btn-sm" style="background:#2f6fde;color:#fff" onclick="dvRiOk()">OK</button></div>', 980);
+    '<button class="btn btn-sm" style="background:#2f6fde;color:#fff" onclick="dvRiOk()">OK</button></div>', 700);
+  const box=document.getElementById('cc_ecr_box');
+  box.style.resize='both'; box.style.overflow='auto'; box.style.minWidth='560px';
   const w=document.getElementById('dv_ri_wrap');
-  const nVis=Math.floor((w.clientHeight-25)/24);
-  _dvRiN=Math.max(nVis, D.rem.length);
+  window._dvRiDelta=null;
+  _dvRiN=Math.max(Math.floor((w.clientHeight-26)/24), D.rem.length);
   dvRiRender();
+  try{ window._dvRiRO=new ResizeObserver(()=>{ try{ dvRiFit(); }catch(e){} });
+    window._dvRiRO.observe(box); }catch(e){}
+}
+/* Agrandissement de la fenêtre (coin bas-droit) : la zone tableau suit et des lignes s'ajoutent visuellement. */
+function dvRiFit(){
+  const box=document.getElementById('cc_ecr_box'), w=document.getElementById('dv_ri_wrap');
+  if(!box||!w) return;
+  if(window._dvRiDelta==null){ window._dvRiDelta=box.clientHeight-w.clientHeight; return; }
+  const h=Math.max(160, box.clientHeight-window._dvRiDelta);
+  if(Math.abs(h-w.clientHeight)<2) return;
+  w.style.height=h+'px';
+  const n=Math.max(Math.floor((h-26)/24), dvA().rem.length);
+  if(n!==_dvRiN){ _dvRiN=n; dvRiRender(); }
+}
+function dvRiUnhook(){
+  try{ if(window._dvRiRO){ window._dvRiRO.disconnect(); window._dvRiRO=null; } }catch(e){}
+  const box=document.getElementById('cc_ecr_box');
+  if(box){ box.style.resize=''; box.style.overflow=''; box.style.minWidth=''; box.style.height=''; }
 }
 function dvRiRender(){
   const D=dvA(); const tb=document.getElementById('dv_ri_tb'); if(!D||!tb) return;
   let h='';
   for(let i=0;i<_dvRiN;i++){ const r=D.rem[i]||{};
     h+='<tr'+(dvRiInSel(i)?' class="dv-ri-sel"':'')+'>'+
-      '<td class="dv-ri-h" onmousedown="dvRiSelRow('+i+',event)">'+(i+1)+'</td>'+
+      '<td class="dv-ri-h" onmousedown="dvRiSelRow('+i+',event)" title="Clic : sélectionner la ligne">&nbsp;</td>'+
       '<td><input data-i="'+i+'" data-k="nom" value="'+pvEscA(r.nom||'')+'" oninput="dvRiSet('+i+','+PV_Q+'nom'+PV_Q+',this)"></td>'+
       '<td><input data-i="'+i+'" data-k="txt" value="'+pvEscA(r.txt||'')+'" oninput="dvRiSet('+i+','+PV_Q+'txt'+PV_Q+',this)"></td></tr>';
   }
@@ -15551,8 +15570,8 @@ function dvRiRsDown(ev){ ev.preventDefault();
   document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up); }
 function dvRiOk(){ const D=dvA();
   while(D.rem.length && !((D.rem[D.rem.length-1].nom||'').trim()||(D.rem[D.rem.length-1].txt||'').trim())) D.rem.pop();
-  dvPersist(); ccDlgClose(); }
-function dvRiCancel(){ const D=dvA(); D.rem=window._dvRiSnap?JSON.parse(window._dvRiSnap):[]; ccDlgClose(); }
+  dvRiUnhook(); dvPersist(); ccDlgClose(); }
+function dvRiCancel(){ const D=dvA(); D.rem=window._dvRiSnap?JSON.parse(window._dvRiSnap):[]; dvRiUnhook(); ccDlgClose(); }
 /* Options du devis — paramètres sortis du tableau : statut, date, TVA, position libre, envoi au CC. */
 function dvDlgOpt(){
   const D=dvA(); if(!D) return;

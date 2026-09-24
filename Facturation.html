@@ -17521,7 +17521,7 @@ function dvRender(){
       (vHon?'<td>0.0</td><td>0.00</td><td></td>':'')+
       (vCom?'<td></td>':'')+
       (vDsc?'<td style="white-space:nowrap">'+pvEsc(desc)+'</td>':'')+
-      '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td>'+(spacer?'<td></td>':'')+'</tr>';
+      '<td></td>'+(spacer?'<td></td>':'')+'</tr>';
     /* Vue « … avec le calcul de prix » : sous-lignes du calcul détaillé sous chaque position. */
     if(vue==='prix'){
       const nb=5+(vPct?1:0)+(vHon?3:0); // cellules vides avant Commentaire

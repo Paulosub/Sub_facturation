@@ -16507,7 +16507,7 @@ function dvRender(){
       while(rowsP.length<10) rowsP.push('<tr><td>&nbsp;</td><td></td></tr>');
       return rowsP.join(''); })()+'</tbody></table>'+
     (()=>{ const anyPdf=Object.keys(D.docs||{}).some(k=>D.docs[k]&&D.docs[k].pdf);
-      return '<span style="position:relative;display:inline-flex;flex:none">'+
+      return '<span style="position:relative;display:inline-flex;flex:none;align-self:flex-start">'+
         '<button class="btn btn-sm" '+(anyPdf?'':'disabled ')+'style="'+dbSt+(anyPdf?'':';opacity:.45;pointer-events:none')+';flex:none" title="'+(anyPdf?'Fichier PDF':'Fichier PDF — un « PDF disponible » est requis')+'"'+(anyPdf?' onclick="dvPdfMenu()"':'')+'>'; })()+
     '<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M4 2h5l3 3v8.5H4z" fill="none" stroke="#444" stroke-width="1.2"/><line x1="6" y1="8" x2="10" y2="8" stroke="#444" stroke-width="1"/><line x1="6" y1="10.3" x2="10" y2="10.3" stroke="#444" stroke-width="1"/></svg>'+
     ' <span style="font-size:8px;color:#666">▾</span></button>'+

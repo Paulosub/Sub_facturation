@@ -17091,13 +17091,19 @@ function dvRender(){
   Object.keys(C.grp).forEach(g=>items.push({g:1, cfc:g}));
   D.pos.forEach(pp=>items.push({g:0, p:pp, cfc:pp.cfc||'zzz'}));
   items.sort((a,b)=>{ const c=ccCmp(a.cfc,b.cfc); return c!==0?c:(b.g-a.g); });
+  /* Colonne Pourcent selon Paramètres · Affichage : sur le total général,
+     ou sur le groupe principal (total du CFC à 1 chiffre, p.ex. CFC 2). */
+  const pctOf=(t,cfc)=>{
+    const base=((D.param||{}).pctMode==='groupe')?(C.grp[String(cfc||'').charAt(0)]||0):C.totTTC;
+    return base>0.005?(t/base*100).toFixed(2):'0.00';
+  };
   items.forEach(it=>{
     if(it.g){ const t=C.grp[it.cfc]||0, ht=t/(1+tva/100), L=it.cfc.length;
       const cls=L===1?'cc-l1':(L===2?'cc-l2':''), B=L<=2?'<b>':'', B2=L<=2?'</b>':'';
       h+='<tr class="'+cls+'" data-gcfc="'+pvEsc(it.cfc)+'" onclick="dvSelGrp('+PV_Q+pvEscA(it.cfc)+PV_Q+',this)"><td class="cc-g" style="padding-left:11px">'+B+pvEsc(it.cfc)+B2+'</td>'+
         '<td class="cc-g" style="padding-left:11px">'+B+pvEsc(ccCatLbl(it.cfc)||'')+B2+'</td>'+
         '<td>'+B+ccF(ht)+B2+'</td><td>'+ccF(t-ht)+'</td><td>'+B+ccF(t)+B2+'</td>'+
-        (vPct?'<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'0.00')+'</td>':'')+
+        (vPct?'<td>'+pctOf(t,it.cfc)+'</td>':'')+
         (vHon?'<td></td><td>'+B+'0.00'+B2+'</td><td></td>':'')+
         (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td>'+(spacer?'<td></td>':'')+'</tr>';
       return; }
@@ -17109,7 +17115,7 @@ function dvRender(){
       '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+ccF(ht)+'</td>'+
       '<td>'+ccF(t-ht)+'</td>'+
       '<td>'+ccF(t)+'</td>'+
-      (vPct?'<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'0.00')+'</td>':'')+
+      (vPct?'<td>'+pctOf(t,pp.cfc)+'</td>':'')+
       (vHon?'<td>0.0</td><td>0.00</td><td></td>':'')+
       (vCom?'<td></td>':'')+
       (vDsc?'<td style="white-space:nowrap">'+pvEsc(desc)+'</td>':'')+

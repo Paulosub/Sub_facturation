@@ -979,6 +979,7 @@ input, textarea, [contenteditable="true"], [contenteditable=""], [contenteditabl
   user-select:text; -webkit-user-select:text;
 }
 </style>
+<style id="noprint-style">@media print{.dv-noprint{display:none!important}}</style>
 <style id="pv-style">
 #pv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
 #pv_out .pv-tb th{font-weight:bold;padding:6px 10px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
@@ -15663,12 +15664,31 @@ function dvCalc(D){
 /* Honoraires d'architecte : repris du contrat SIGNÉ de l'affaire (position CFC 291
    gérée automatiquement). Contrat partiel (p.ex. 32.5% des phases) → montant
    extrapolé à 100% et ARRONDI au franc ; contrat à 100% → montant tel quel. */
+/* Données du contrat d'architecte de l'affaire courante (signé ou non) :
+   montants du contrat, pourcentage des phases, extrapolation à 100% (TTC et HT). */
+function dvHonContrat(){
+  const liste=(typeof contrats!=='undefined'&&Array.isArray(contrats))?contrats:[];
+  const cs=liste.filter(c=>c.affaire===_dvAff && !c.annule);
+  if(!cs.length) return null;
+  let httc=0, hht=0, pct=0, signe=false, m100=0, m100ht=0, partiel=false;
+  cs.forEach(c=>{
+    const p2=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
+    const mt=parseFloat(c.httc)||0, mh=parseFloat(c.hht)||0;
+    httc+=mt; hht+=mh; pct+=p2; if(c.signe) signe=true;
+    if(p2>0.01&&p2<99.995){ partiel=true; m100+=mt/(p2/100); m100ht+=mh/(p2/100); }
+    else { m100+=mt; m100ht+=mh; }
+  });
+  if(partiel){ m100=Math.round(m100); m100ht=Math.round(m100ht); }
+  return {cs:cs, httc:httc, hht:hht, pct:pct, signe:signe, partiel:partiel, m100:m100, m100ht:m100ht};
+}
 function dvHonSync(){
   const D=dvA(); if(!D||!_dvAff) return;
-  const liste=(typeof contrats!=='undefined'&&Array.isArray(contrats))?contrats:[];
-  const cs=liste.filter(c=>c.affaire===_dvAff && c.signe && !c.annule);
+  const K=dvHonContrat();
+  const cs=(K&&K.signe)?K.cs.filter(c=>c.signe):[];
   const i=D.pos.findIndex(p2=>p2.id==='hon_contrat');
   if(!cs.length){ if(i>=0){ D.pos.splice(i,1); dvPersist(); } return; }
+  /* montant modifié à la main : on ne l'écrase pas */
+  if(i>=0&&D.pos[i].man) return;
   let tot=0, partiel=false;
   cs.forEach(c=>{
     const pct=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
@@ -15680,6 +15700,30 @@ function dvHonSync(){
   if(i>=0){
     if(ccP(D.pos[i].ttc)!==tot||D.pos[i].lbl!==lbl){ D.pos[i].ttc=String(tot); D.pos[i].lbl=lbl; dvPersist(); }
   } else { D.pos.push({id:'hon_contrat', cfc:'291', lbl:lbl, ttc:String(tot)}); dvPersist(); }
+}
+/* Report du montant 291 modifié à la main dans le contrat d'architecte :
+   les montants du contrat sont recalculés au prorata (montant à 100% saisi × % des phases). */
+function dvHonMajContrat(){
+  const D=dvA(); if(!D) return;
+  const p2=D.pos.find(x=>x.id==='hon_contrat'); if(!p2) return;
+  const K=dvHonContrat(); if(!K||!K.signe){ toast('Aucun contrat signé à mettre à jour.'); return; }
+  const manuel=(typeof dvCalcTot==='function'&&document.getElementById('dv_ca_tb'))?dvCalcTot().ttc:ccP(p2.ttc);
+  if(!(manuel>0)){ toast('Montant invalide.'); return; }
+  chConfirm('Mettre le contrat d’architecte à jour avec '+ccF(manuel)+' TTC (montant à 100%) ?', ()=>{
+    K.cs.filter(c=>c.signe).forEach(c=>{
+      const pct=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0);
+      const part=(pct>0.01&&pct<99.995)?(pct/100):1;
+      const ratio=(parseFloat(c.httc)||0)>0?((parseFloat(c.hht)||0)/(parseFloat(c.httc)||1)):(1/1.081);
+      c.httc=Math.round(manuel*part*100)/100;
+      c.hht=Math.round(c.httc*ratio*100)/100;
+    });
+    persist();
+    p2.ttc=String(manuel); p2.man=false; dvPersist();
+    if(typeof ccDlgClose==='function') ccDlgClose();
+    dvRender();
+    if(typeof renderContratsTable==='function') try{ renderContratsTable(); }catch(e){}
+    toast('Contrat d’architecte mis à jour — la position 291 suit à nouveau le contrat.');
+  });
 }
 function dvSelAff(v){ _dvAff=v; dvRender(); }
 function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';
@@ -15709,7 +15753,7 @@ function dvCatAdd(code){ const D=dvA(); if(!D) return;
 function dvAddPos(){ const D=dvA(); D.pos.push({id:pvId(), cfc:'', lbl:'', ttc:''}); dvPersist(); dvRender(); }
 function dvDelPos(id){ const D=dvA(); D.pos=D.pos.filter(x=>x.id!==id); dvPersist(); dvRender(); }
 function dvSet(id,k,el){ const D=dvA(); const pp=D.pos.find(x=>x.id===id); if(!pp) return;
-  if(k==='ttc') pp.ttc=ccP(el.value);
+  if(k==='ttc'){ pp.ttc=ccP(el.value); if(id==='hon_contrat') pp.man=true; }
   else { pp[k]=el.value; if(k==='cfc'&&!pp.lbl){ const l=ccCatLbl(el.value); if(l) pp.lbl=l; } }
   dvPersist(); dvRender();
 }
@@ -17397,15 +17441,17 @@ function dvRender(){
   h+='<div style="display:grid;grid-template-columns:110px 160px;gap:1px 10px;font-size:12.5px;margin:4px auto 10px 332px;background:#f4f7f9;border:1px solid #d9e2e6;border-radius:6px;padding:8px 12px;width:300px">'+
     '<span style="color:#555">Total HT</span><b style="text-align:right">'+ccF(C.totHT)+'</b>'+
     '<span style="color:#555">Total TTC</span><b style="text-align:right">'+ccF(C.totTTC)+'</b>'+
-    '<span style="color:#555">Honoraires HT</span><span style="text-align:right">'+ccF(C.honHT)+'</span>'+
     (function(){
-      const cs=((typeof contrats!=='undefined'&&Array.isArray(contrats))?contrats:[]).filter(c=>c.affaire===_dvAff&&!c.annule);
-      if(!cs.length) return '';
-      let m=0, pct=0, signe=false;
-      cs.forEach(c=>{ m+=parseFloat(c.httc)||0; pct+=Object.values(c.phases||{}).reduce((s,v)=>s+(parseFloat(v)||0),0); if(c.signe) signe=true; });
-      const info=(pct>0.01&&pct<99.995?pct.toFixed(1).replace('.0','')+'% des phases':'100%')+(signe?', signé':', non signé');
-      return '<span style="color:#555;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px">Contrat d’architecte</span>'+
-        '<span style="text-align:right;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px" title="Montant TTC du contrat d’honoraires ('+info+')">'+ccF(m)+'<span style="color:#999;font-size:10.5px"> · '+info+'</span></span>';
+      const K=dvHonContrat();
+      /* Honoraires HT : montant HT pour 100% des prestations (contrat extrapolé), sinon total des chapitres 29x */
+      let h2='<span style="color:#555">Honoraires HT</span><span style="text-align:right" title="Montant HT pour 100% des prestations">'+ccF(K?K.m100ht:C.honHT)+'</span>';
+      if(K){
+        const pctT=(K.pct>0.01&&K.pct<99.995)?(K.pct.toFixed(1).replace('.0','')+'%'):'100%';
+        h2+='<span style="color:#555;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px">Contrat d’architecte</span>'+
+          '<span style="text-align:right;border-top:1px solid #d9e2e6;padding-top:3px;margin-top:2px" title="Montant TTC du contrat d’honoraires'+(K.signe?' (signé)':' (non signé)')+'">'+
+          ccF(K.httc)+' <span style="color:#999">('+pctT+')</span></span>';
+      }
+      return h2;
     })()+'</div>';
   h+='<div id="dv_flex" style="display:flex;gap:12px;align-items:stretch;height:420px">';
   // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
@@ -17470,7 +17516,7 @@ function dvRender(){
       '<td class="cc-g" style="padding-left:11px">'+pvEsc(pp.lbl||'')+'</td>'+
       '<td style="background:#d6d9db;cursor:pointer" title="Clic : calcul détaillé de la position — montant modifiable" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+fA(ht)+'</td>'+
       '<td>'+fA(t-ht)+'</td>'+
-      '<td>'+fA(t)+'</td>'+
+      '<td>'+fA(t)+(pp.id==='hon_contrat'&&pp.man?'<span class="dv-noprint" title="Montant modifié manuellement (contrat non mis à jour)" style="color:#b04a4a;font-weight:700"> *</span>':'')+'</td>'+
       (vPct?'<td>'+pctOf(t,pp.cfc)+'</td>':'')+
       (vHon?'<td>0.0</td><td>0.00</td><td></td>':'')+
       (vCom?'<td></td>':'')+
@@ -17602,6 +17648,7 @@ function dvDlgCalc(pid){
     tb('✚','dvCalcAdd()','Ajouter une ligne')+tb('−','dvCalcDel()','Supprimer la ligne sélectionnée')+
     '<span style="width:14px"></span>'+
     tb('⏫','dvCalcMove(0)','Déplacer en premier')+tb('↑','dvCalcMove(1)','Monter')+tb('↓','dvCalcMove(2)','Descendre')+tb('⏬','dvCalcMove(3)','Déplacer en dernier')+
+    (p.id==='hon_contrat'&&p.man?'<button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="dvHonMajContrat()" title="Reporter le montant modifié dans le contrat d’architecte (au prorata du pourcentage des phases)">Mettre le contrat à jour</button>':'')+
     '<span style="flex:1"></span>'+
     '<div style="display:grid;grid-template-columns:80px 130px;gap:1px 10px;font-size:12.5px">'+
     '<span style="color:#555">Total HT</span><span id="dv_ca_ht" style="text-align:right">0.00</span>'+
@@ -17773,6 +17820,7 @@ function dvCalcOk(){
   const p=dvCalcP(); if(!p) return;
   p.calc.compos=(document.getElementById('dv_ca_compos')||{}).value||'';
   p.calc.desc=(document.getElementById('dv_ca_desc')||{}).value||'';
+  if(p.id==='hon_contrat'&&ccP(p.ttc)!==dvCalcTot().ttc) p.man=true;
   p.ttc=dvCalcTot().ttc;
   if(!dvCalcHasContent()) p.calc=null;   // calcul vide → la position redevient saisissable directement
   dvPersist(); ccDlgClose(); dvRender();

@@ -14689,7 +14689,7 @@ function dvRender(){
     '<div id="dv_cat_ls">'+dvCatList()+'</div></div>';
   // ── devis (droite) : saisie du TTC, HT / TVA / Pourcent calculés ──
   h+='<div style="flex:1;min-width:0;overflow:auto;max-height:calc(100vh - 330px)"><table class="cc-tb" style="min-width:720px"><thead><tr>'+
-    '<th class="cc-g" style="width:64px">N°</th><th class="cc-g">Désignation</th>'+
+    '<th class="cc-g" style="width:64px;padding-left:11px">N°</th><th class="cc-g" style="padding-left:11px">Désignation</th>'+
     '<th>Montant HT</th><th>TVA</th><th>Montant TTC</th><th style="width:70px">Pourcent</th><th style="width:28px"></th></tr></thead><tbody>';
   const items=[];
   Object.keys(C.grp).forEach(g=>items.push({g:1, cfc:g}));
@@ -14698,8 +14698,8 @@ function dvRender(){
   items.forEach(it=>{
     if(it.g){ const t=C.grp[it.cfc]||0, ht=t/(1+tva/100), L=it.cfc.length;
       const cls=L===1?'cc-l1':(L===2?'cc-l2':''), B=L<=2?'<b>':'', B2=L<=2?'</b>':'';
-      h+='<tr class="'+cls+'"><td class="cc-g">'+B+pvEsc(it.cfc)+B2+'</td>'+
-        '<td class="cc-g">'+B+pvEsc(ccCatLbl(it.cfc)||'')+B2+'</td>'+
+      h+='<tr class="'+cls+'"><td class="cc-g" style="padding-left:11px">'+B+pvEsc(it.cfc)+B2+'</td>'+
+        '<td class="cc-g" style="padding-left:11px">'+B+pvEsc(ccCatLbl(it.cfc)||'')+B2+'</td>'+
         '<td>'+B+ccF(ht)+B2+'</td><td>'+ccF(t-ht)+'</td><td>'+B+ccF(t)+B2+'</td>'+
         '<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td><td></td></tr>';
       return; }
@@ -14713,7 +14713,7 @@ function dvRender(){
       '<td>'+(t&&C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td>'+
       '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td></tr>';
   });
-  h+='<tr class="cc-l1"><td class="cc-g"></td><td class="cc-g">TOTAL DEVIS</td>'+
+  h+='<tr class="cc-l1"><td class="cc-g"></td><td class="cc-g" style="padding-left:11px">TOTAL DEVIS</td>'+
     '<td>'+ccF(C.totHT)+'</td><td>'+ccF(C.totTTC-C.totHT)+'</td><td>'+ccF(C.totTTC)+'</td><td>'+(C.totTTC>0.005?'100.00':'')+'</td><td></td></tr>';
   h+='</tbody></table>';
   // ── zone Documents (comme la fenêtre du bureau — génération PDF à venir) ──

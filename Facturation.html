@@ -973,6 +973,29 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 #cc_out .cc-tgl{cursor:pointer;color:#8aa0a8;display:inline-block;width:12px}
 #cc_ecr_box label{display:block;font-size:11px;color:#5a6b72;margin:9px 0 2px;text-transform:uppercase;letter-spacing:.3px}
 #cc_ecr_box input[type=text],#cc_ecr_box input[type=date],#cc_ecr_box input[type=number],#cc_ecr_box select,#cc_ecr_box textarea{width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:12.5px;font-family:inherit}
+
+/* ── Devis général (mêmes styles) ── */
+#dv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
+#dv_out .pv-tb th{font-weight:bold;padding:6px 10px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+#dv_out .pv-tb td{padding:5px 10px;border-top:1px solid #f0f0f0}
+#dv_out .cc-tb{border-collapse:collapse;min-width:1160px;width:100%;font-size:12px;background:#fff;border:1px solid #d5d5d5}
+#dv_out .cc-tb th{font-weight:bold;padding:5px 7px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:right;white-space:nowrap;font-size:10.5px;text-transform:uppercase;letter-spacing:.2px;position:sticky;top:0;z-index:2}
+#dv_out .cc-tb th.cc-g{text-align:left}
+#dv_out .cc-tb td{padding:2px 7px;border-top:1px solid #f2f2f2;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#dv_out .cc-tb td.cc-g{text-align:left}
+#dv_out .cc-l1>td{background:#e8eef1;font-weight:700;border-top:1px solid #b9c8cd}
+#dv_out .cc-l2>td{font-weight:700;background:#f5f8fa}
+#dv_out .cc-ecr>td{color:#555;font-size:11.5px;border-top:none;padding-top:0;padding-bottom:1px;background:#fcfdfe}
+#dv_out .cc-mut{color:#e08b00!important}
+#dv_out .cc-con{color:#1a73c8!important}
+#dv_out .cc-pay{color:#2e7d32!important}
+#dv_out .cc-red{color:#c62828!important;font-weight:700}
+#dv_out .cc-in{text-align:right;border:1px solid transparent;background:transparent;border-radius:3px;padding:1px 3px;font-size:12px;font-family:inherit;width:88px;font-variant-numeric:tabular-nums}
+#dv_out .cc-in:hover{border-color:#d7dde0}#dv_out .cc-in:focus{border-color:#0a6e84;background:#fff;outline:none}
+#dv_out .cc-int{text-align:left;width:96%;box-sizing:border-box}
+#dv_out .cc-act{visibility:hidden;cursor:pointer;color:#0a6e84;font-weight:700;padding:0 2px}
+#dv_out tr:hover .cc-act{visibility:visible}
+#dv_out .cc-tgl{cursor:pointer;color:#8aa0a8;display:inline-block;width:12px}
 #cc_ecr_box .cc-cols{display:flex;gap:14px}#cc_ecr_box .cc-cols>div{flex:1}
 #pv_out .pv-tb tbody tr:hover td{background:#eef4f9}
 .pv-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600}
@@ -1062,14 +1085,23 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 <!-- ── VUE : DEVIS (squelette à structurer) ── -->
 <div class="panel" id="panel-devis">
   <div class="home-wrap">
-    <div class="home-title" style="margin-top:52px">Devis</div>
-    <div class="home-sub">Établissement et suivi des devis par affaire</div>
-    <div class="adm-wrap">
-      <div style="padding:26px;border:1px dashed #c9c9c9;border-radius:8px;color:#777;font-size:13.5px;max-width:660px;line-height:1.55">
-        Module prêt à être construit : positions de devis, quantités et prix, totaux TVA comprise
-        et export PDF au graphisme du bureau.
+    <div class="home-title" style="margin-top:44px">Devis</div>
+    <div class="home-sub">Devis général par affaire — positions CFC avec quantités et prix, totaux TVA comprise, envoi vers le contrôle du coût (DG)</div>
+    <div class="adm-wrap" style="max-width:none;padding:2px 20px 44px">
+      <div class="adm-form" style="align-items:center;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-sm" id="dv_addaff" onclick="dvAddAffOpen()" title="Activer une affaire pour le devis général">✚ Ajouter une nouvelle affaire</button>
+        <span id="dv_ctx" style="margin-left:auto;color:#777;font-size:12px"></span>
       </div>
+      <div id="dv_out" style="margin-top:12px"></div>
     </div>
+  </div>
+</div>
+<div id="dv_aff_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:9000">
+  <div style="background:#fff;width:540px;max-width:92vw;margin:60px auto;border-radius:10px;padding:18px 22px;box-shadow:0 8px 40px rgba(0,0,0,.35)">
+    <div style="font-weight:700;margin-bottom:8px">Ajouter une affaire au devis général</div>
+    <input id="dv_aff_f" placeholder="Filtrer par code ou nom de projet…" oninput="dvAffFill()" style="width:100%;box-sizing:border-box;padding:7px 9px;margin-bottom:8px;border:1px solid #ccc;border-radius:6px">
+    <div id="dv_aff_ls" style="max-height:330px;overflow:auto;border:1px solid #ddd;border-radius:6px"></div>
+    <div style="text-align:right;margin-top:10px"><button class="btn btn-sm" onclick="document.getElementById('dv_aff_ov').style.display='none'">Annuler</button></div>
   </div>
 </div>
 
@@ -3623,6 +3655,7 @@ function goTab(name, opts) {
   if(name==='collaborateurs') renderCollab();
   if(name==='affaires') renderAffaires();
   if(name==='controle-cout') ccRender();
+  if(name==='devis') dvRender();
   if(name==='heures') renderHeures();
   if(name==='feuille-heures') fhRender();
   if(name==='rapport') rapRender();
@@ -10496,6 +10529,7 @@ function buildBackupPayload(){
     sa_vac_saisies: g('sa_vac_saisies') || [],
     sa_pv_data: g('sa_pv_data') || {},
     sa_cout: g('sa_cout') || {},
+    sa_devis: g('sa_devis') || {},
     sa_adr: g('sa_adr') || {ent:[],adr:[],seq:1},
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
@@ -10673,6 +10707,7 @@ function applyBackupData(data, name){
     if(Array.isArray(data.sa_vac_saisies)) localStorage.setItem('sa_vac_saisies', JSON.stringify(data.sa_vac_saisies));
     if(data.sa_pv_data && typeof data.sa_pv_data==='object') localStorage.setItem('sa_pv_data', JSON.stringify(data.sa_pv_data));
     if(data.sa_cout && typeof data.sa_cout==='object'){ localStorage.setItem('sa_cout', JSON.stringify(data.sa_cout)); try{ ccData=JSON.parse(JSON.stringify(data.sa_cout)); }catch(e){} }
+    if(data.sa_devis && typeof data.sa_devis==='object'){ localStorage.setItem('sa_devis', JSON.stringify(data.sa_devis)); try{ dvData=JSON.parse(JSON.stringify(data.sa_devis)); }catch(e){} }
     if(data.sa_adr && typeof data.sa_adr==='object') localStorage.setItem('sa_adr', JSON.stringify(data.sa_adr));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
@@ -13903,6 +13938,7 @@ function loadPersist() {
   try { const d=localStorage.getItem('sa_vac_saisies'); if(d) vacSaisies=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_pv_data'); if(d) pvData=JSON.parse(d); } catch(e){}
   try { const d2=localStorage.getItem('sa_cout'); if(d2) ccData=JSON.parse(d2); } catch(e){}
+  try { const d3=localStorage.getItem('sa_devis'); if(d3) dvData=JSON.parse(d3); } catch(e){}
   try { const d=localStorage.getItem('sa_adr'); if(d) adrData=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_annuel'); if(d) collabAnnuel=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_mensuel'); if(d) collabMensuel=JSON.parse(d); } catch(e){}
@@ -13950,6 +13986,7 @@ function ccF(n){ n=+n||0; const neg=n<-0.004; n=Math.abs(n); let p=n.toFixed(2).
 function ccF0(n){ return Math.abs(+n||0)<0.005 ? '' : ccF(n); }   // cellule vide quand zéro (comme le modèle)
 function ccDfr(d){ if(!d) return ''; const p=String(d).split('-'); return p.length===3 ? p[2]+'.'+p[1]+'.'+p[0].slice(2) : d; }
 function ccNorm(c){ return String(c||'').replace(/\./g,''); }
+function ccCmp(a,b){ const x=ccNorm(a), y=ccNorm(b); return x<y?-1:(x>y?1:0); }   // tri HIÉRARCHIQUE CFC : 10, 109, 11, 112… (lexicographique sur les chiffres)
 function ccLvl(c){ const L=ccNorm(c).length; return L<=1?1:(L===2?2:3); }
 function ccA(){ return ccData[_ccAff]; }
 function ccAffName(code){ const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===code):null; return f&&f.projet?f.projet:''; }
@@ -13958,13 +13995,15 @@ function ccAffName(code){ const f=(typeof affairesAll==='function')?affairesAll(
    utilisées au bureau (211.2, 281.6, …). Tout autre code reste saisissable librement. */
 const CC_CFC_CAT=[
 ['0','Terrain'],
-['00','Études préliminaires'],['000','Poste d’attente'],['001','Études destinées à l’appréciation du terrain'],['002','Arpentage, bornage'],['003','Expertises géotechniques'],['004','Frais d’établissement plan de quartier et plan directeur'],['005','Gabarits provisoires'],['006','Étude de l’impact sur l’environnement'],['009','Divers'],
+['00','Études préliminaires'],['000','Poste d’attente'],['001','Études destinées à l’appréciation du terrain'],['002','Arpentage, bornage'],['003','Expertises géotechniques'],['004','Frais d’établissement plan quartier et plan directeur'],['005','Gabarits provisoires'],['006','Étude de l’impact sur l’environnement'],['009','Divers'],
 ['01','Acquisition du terrain ou du droit de superficie'],['010','Poste d’attente'],['011','Acquisition du terrain'],['012','Acquisition du droit de superficie'],['013','Acquisition du droit de mitoyenneté'],['018','Assainissement de sites contaminés'],['019','Divers'],
-['02','Frais accessoires acquisition terrain ou droit de superficie'],['020','Poste d’attente'],['021','Droits de mutation'],['022','Frais de notaire'],['023','Émoluments du registre foncier'],['029','Divers'],
-['03','Contributions d’équipement'],['030','Poste d’attente'],['031','Routes'],['032','Eau'],['033','Électricité'],['034','Gaz'],['035','Chauffage à distance'],['036','Égouts'],['037','Téléréseau, télécommunications'],['039','Divers'],
-['04','Raccordements aux réseaux'],['040','Poste d’attente'],['041','Routes, places, chemins'],['042','Eau'],['043','Électricité'],['044','Gaz'],['045','Chauffage à distance'],['046','Égouts, canalisations'],['047','Téléréseau, télécommunications'],['049','Divers'],
-['05','Viabilisation, autres aménagements du terrain'],['051','Défrichage'],['052','Remise en état du terrain'],['059','Divers'],
-['06','Autres frais du terrain'],['09','Divers terrain'],
+['02','Frais accessoires acquisition terrain ou droit superficie'],['020','Poste d’attente'],['021','Droits de mutation'],['022','Frais de notaire'],['023','Inscription au registre foncier'],['024','Frais de justice et d’avocat'],['025','Commissions aux intermédiaires'],['029','Divers'],
+['03','Indemnisations, servitudes, participations'],['030','Poste d’attente'],['031','Indemnisation de locataires et de fermiers'],['032','Dédommagements'],['033','Constitution de servitudes'],['034','Radiation de servitudes'],['035','Patentes d’établissements publics'],['036','Participation à l’amélioration foncière'],['037','Participation au remembrement parcellaire'],['038','Participation des bordiers'],['039','Divers'],
+['04','Financement avant le début des travaux'],['040','Poste d’attente'],['041','Constitution d’hypothèques sur le terrain'],['042','Intérêts hypothécaires'],['043','Intérêts sur le droit de superficie'],['044','Intérêts bancaires'],['045','Intérêts sur fonds propres'],['046','Impôts fonciers'],['048','Assurances avant le début des travaux'],['049','Divers'],
+['05','Conduites de raccordement aux réseaux (hors de la parcelle)'],['050','Poste d’attente'],['051','Terrassements'],['052','Canalisations (raccordement au réseau)'],['053','Électricité (raccordement au réseau)'],['054','Chauffage, ventilation, conditionnement d’air, réfrigération'],['055','Eau et gaz (raccordement au réseau)'],['056','Travaux accessoires'],['059','Divers'],
+['06','Voies d’accès (hors de la parcelle)'],['060','Poste d’attente'],['061','Routes'],['062','Voie ferrée'],['063','Voie navigable'],['069','Divers'],
+['07','Réserve'],['08','Réserve'],
+['09','Honoraires'],['090','Poste d’attente'],['091','Architecte'],['092','Ingénieur civil'],['093','Ingénieur électricien'],['094','Ingénieur CVCR'],['095','Ingénieur en installations sanitaires'],['096','Spécialistes'],['096.0','Géomètre'],['096.1','Géologue, géotechnicien'],['096.6','Économiste de la construction'],['096.8','Agent immobilier'],['099','Divers'],
 ['1','Travaux préparatoires'],
 ['10','Relevés, études géotechniques'],['101','Relevés'],['102','Études géotechniques'],['109','Divers'],
 ['11','Déblaiement, préparation du terrain'],['110','Poste d’attente'],['111','Défrichage'],['112','Démolitions'],['113','Démontages'],['114','Abattage d’arbres'],['115','Déplacements de terre'],['119','Divers (désamiantage, dépollution)'],
@@ -13973,13 +14012,13 @@ const CC_CFC_CAT=[
 ['14','Adaptation du bâtiment existant'],['141','Consolidations'],['142','Réparations préalables'],['149','Divers'],
 ['15','Adaptation du réseau de conduites existant'],['150','Poste d’attente'],['151','Terrassements'],['152','Canalisations'],['153','Électricité'],['154','Chauffage, ventilation, conditionnement d’air, réfrigération'],['155','Installations sanitaires'],['159','Divers'],
 ['16','Adaptation des voies de circulation existantes'],['161','Routes, chemins'],['169','Divers'],
-['17','Fondations spéciales, protections des fouilles, étanchement d’ouvrages enterrés'],['170','Poste d’attente'],['171','Pieux'],['172','Parois moulées'],['173','Étayages'],['174','Ancrages'],['175','Étanchement d’ouvrages enterrés'],['176','Épuisement des eaux'],['179','Divers'],
-['18','Autres travaux préparatoires'],['19','Honoraires (travaux préparatoires)'],['191','Architecte'],['192','Ingénieur civil'],['193','Ingénieurs spécialisés'],['196','Géomètre'],['199','Divers (rapports, expertises)'],
+['17','Fondations spéciales, protections des fouilles, étanchement d’ouvrages enterrés'],['170','Poste d’attente'],['171','Pieux'],['172','Enceintes de fouille'],['173','Étayages'],['174','Ancrages'],['175','Étanchement d’ouvrages enterrés'],['176','Épuisement des eaux'],['179','Divers'],
+['18','Autres travaux préparatoires'],['19','Honoraires (travaux préparatoires)'],['191','Architecte'],['192','Ingénieur civil'],['193','Ingénieurs spécialisés'],['196','Géomètre'],['199','Rapport amiante'],
 ['2','Bâtiment'],
 ['20','Excavation'],['200','Poste d’attente'],['201','Fouilles en pleine masse'],['202','Terrassements spéciaux'],['209','Divers'],
-['21','Gros œuvre 1'],['211','Travaux de l’entreprise de maçonnerie'],['211.0','Installation de chantier'],['211.1','Terrassements'],['211.2','Échafaudages'],['211.4','Canalisations intérieures'],['211.5','Béton et béton armé'],['211.6','Maçonnerie / BA'],['212','Construction préfabriquée en béton'],['212.2','Éléments préfabriqués'],['213','Construction en acier'],['214','Charpente'],['214.1','Construction en bois'],['215','Construction légère préfabriquée'],['216','Taille de pierre'],['219','Divers'],
-['22','Gros œuvre 2'],['221','Fenêtres, portes extérieures'],['221.2','Fenêtres bois-métal'],['221.6','Portes extérieures'],['222','Ferblanterie'],['223','Protection contre la foudre'],['224','Couverture'],['225','Étanchéités et isolations spéciales'],['225.3','Étanchéités'],['225.4','Isolations spéciales'],['226','Crépissage de façade'],['227','Traitement des surfaces extérieures'],['228','Fermetures extérieures, stores'],['229','Divers'],
-['23','Installations électriques'],['230','Poste d’attente'],['231','Appareils à courant fort'],['232','Installations à courant fort'],['233','Lustrerie'],['235','Appareils à courant faible'],['236','Installations à courant faible'],['238','Installations provisoires'],['239','Divers'],
+['21','Gros œuvre 1'],['211','Travaux de l’entreprise de maçonnerie'],['211.0','Installation de chantier'],['211.1','Échafaudages'],['211.4','Canalisations intérieures'],['211.5','Béton et béton armé'],['211.6','Maçonnerie / BA'],['212','Construction préfabriquée en béton et en maçonnerie'],['212.2','Éléments préfabriqués en béton'],['213','Construction en acier'],['214','Construction en bois'],['214.1','Charpente'],['215','Construction légère préfabriquée'],['216','Taille de pierre'],['219','Divers'],
+['22','Gros œuvre 2'],['221','Fenêtres, portes extérieures'],['221.2','Fenêtres bois-métal'],['221.6','Portes extérieures'],['222','Ferblanterie'],['223','Protection contre la foudre'],['224','Couverture'],['224.1','Étanchéités souples (toitures plates)'],['224.3','Vitrages de toits (coupole)'],['225','Étanchéités et isolations spéciales'],['225.3','Étanchéités'],['225.4','Revêtements coupe-feu'],['226','Crépissage de façade'],['227','Traitement des surfaces extérieures'],['228','Fermetures extérieures, protection contre le soleil'],['229','Divers'],
+['23','Installations électriques'],['230','Poste d’attente'],['231','Appareils à courant fort'],['232','Installations de courant fort'],['233.1','Éclairage de secours'],['233.2','Éclairage de secours'],['233','Lustrerie'],['235','Appareils à courant faible'],['236','Installations à courant faible'],['238','Installations provisoires'],['239','Photovoltaïque'],
 ['24','Chauffage, ventilation, conditionnement d’air'],['240','Poste d’attente'],['242','Production de chaleur'],['243','Distribution de chaleur'],['244','Installations de ventilation'],['245','Installations de conditionnement d’air'],['247','Installations spéciales'],['248','Isolations de tuyauteries et gaines'],['249','Divers'],
 ['25','Installations sanitaires'],['250','Poste d’attente'],['251','Appareils sanitaires courants'],['252','Appareils sanitaires spéciaux'],['253','Éléments préfabriqués'],['254','Tuyauterie sanitaire'],['255','Isolations d’installations sanitaires'],['256','Unités de cuisine (agencements)'],['258','Agencements de cuisine'],['259','Divers'],
 ['26','Installations de transport'],['261','Ascenseurs et monte-charges'],['262','Escaliers roulants'],['269','Divers'],
@@ -14014,7 +14053,7 @@ function ccCat(){
   const seen={}, out=[];
   CC_CFC_CAT.forEach(x=>{ if(!seen[x[0]]){ seen[x[0]]=1; out.push(x); } });
   ((typeof pvCfcAll==='function')?pvCfcAll():[]).forEach(x=>{ if(!seen[x[0]]){ seen[x[0]]=1; out.push(x); } });
-  return out.sort((a,b)=>String(a[0]).localeCompare(String(b[0]),undefined,{numeric:true}));
+  return out.sort((a,b)=>ccCmp(a[0],b[0]));
 }
 function ccCatLbl(c){ const f=ccCat().find(x=>x[0]===c); return f?f[1]:''; }
 function ccNewAff(code){
@@ -14156,7 +14195,7 @@ function ccRender(){
   }
   const A=ccA(), C=ccAgg(A);
   ctx.textContent=A.rows.length+' postes · '+(A.ecr||[]).length+' écritures';
-  const rows=A.rows.slice().sort((a,b)=>String(a.cfc).localeCompare(String(b.cfc),undefined,{numeric:true}));
+  const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
   let h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'+
     '<button class="btn btn-sm" onclick="ccSelAff(null)">← Affaires</button>'+
     '<span style="font-weight:700;font-size:14px">'+pvEsc(_ccAff)+' — '+pvEsc(ccAffName(_ccAff)).slice(0,60)+'</span>'+
@@ -14252,7 +14291,7 @@ function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
   else if(e.type==='avenant') ccDlgCon('avenant',id); else if(e.type==='pay') ccDlgPay(id);
   else if(e.type==='prov') ccDlgProv(id); else if(e.type==='cp') ccDlgCp(e.cfc); }
 function ccCfcOpts(sel){ const A=ccA();
-  const rows=A.rows.slice().sort((a,b)=>String(a.cfc).localeCompare(String(b.cfc),undefined,{numeric:true}));
+  const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
   return rows.map(r=>'<option value="'+pvEsc(r.cfc)+'"'+(r.cfc===sel?' selected':'')+'>'+pvEsc(r.cfc)+' '+pvEsc(r.lbl||'')+'</option>').join('');
 }
 function ccToday(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -14264,7 +14303,7 @@ function ccDlgMut(id,cfc){
   const v=e||{genre:'transfert',src:cfc||((A.rows[0]||{}).cfc||''),dst:'',ht:'',tva:(A.tva!=null?A.tva:8.1),num:ccNum('mut'),des:'',date:ccToday(),statut:'brouillon',desc:''};
   window._ccMutSrc=v.src; window._ccMutId=id||null;
   const own=ccOwn(A);
-  const rows=A.rows.slice().sort((a,b)=>String(a.cfc).localeCompare(String(b.cfc),undefined,{numeric:true}));
+  const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
   const list=rows.map(r=>{ const o=own[r.cfc]||{};
     return '<div class="ccm-it" data-c="'+pvEsc(r.cfc)+'" onclick="_ccMutSrc=this.dataset.c;ccMutSel()" style="display:flex;gap:6px;padding:2px 8px;cursor:pointer;font-size:11.5px">'+
       '<span style="width:46px;font-weight:600">'+pvEsc(r.cfc)+'</span>'+
@@ -14491,6 +14530,179 @@ function ccSavePoste(){ const A=ccA();
   if(A.rows.some(r=>r.cfc===cfc)){ toast('Le poste '+cfc+' existe déjà.'); return; }
   A.rows.push({id:pvId(), cfc:cfc, lbl:document.getElementById('po_lbl').value||ccCatLbl(cfc), ent:'', dg:ccP(document.getElementById('po_dg').value)});
   ccPersist(); ccDlgClose(); ccRender(); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DEVIS GÉNÉRAL — reproduction de la fenêtre « Devis général » du bureau :
+   catalogue CFC complet à gauche (clic sur une position = ajout au devis),
+   devis à droite avec colonnes N° · Désignation · Montant HT · TVA ·
+   Montant TTC · Pourcent (SAISIE DU TTC, HT et TVA calculés), groupes 1/2
+   chiffres totalisés automatiquement, totaux Total HT / Total TTC /
+   Honoraires HT en tête, zone Documents. Envoi vers le contrôle du coût (DG).
+═══════════════════════════════════════════════════════════════════════════ */
+let dvData={}, _dvAff=null;
+function dvPersist(){ try{ localStorage.setItem('sa_devis', JSON.stringify(dvData)); return true; }
+  catch(e){ toast('Stockage plein — modification NON enregistrée.'); return false; } }
+function dvA(){ return dvData[_dvAff]; }
+function dvNewAff(code){
+  const pos=[];
+  if(typeof ccData!=='undefined'&&ccData[code]&&ccData[code].rows.length){
+    ccData[code].rows.forEach(r=>{ if(ccLvl(r.cfc)>=3) pos.push({id:pvId(), cfc:r.cfc, lbl:r.lbl||ccCatLbl(r.cfc), ttc:ccP(r.dg)||''}); });
+  } else {
+    (((typeof pvData!=='undefined'&&pvData[code]&&pvData[code].cfg)||{}).cfc||[]).forEach(c=>pos.push({id:pvId(), cfc:c, lbl:ccCatLbl(c), ttc:''}));
+  }
+  return {tva:8.1, date:ccToday(), statut:'en cours', pos:pos};
+}
+const DV_HON=['09','19','29','39','49','59','99'];   // chapitres honoraires (pour le total « Honoraires HT »)
+function dvCalc(D){
+  const tva=(D.tva!=null?D.tva:8.1), own={};
+  let totTTC=0, honTTC=0;
+  D.pos.forEach(p=>{ const t=ccP(p.ttc); if(!p.cfc) return; own[p.cfc]=(own[p.cfc]||0)+t; totTTC+=t;
+    const n=ccNorm(p.cfc); if(DV_HON.some(h=>n.startsWith(h))) honTTC+=t; });
+  const codes=Object.keys(own), grp={};
+  const ownN={}; codes.forEach(c=>ownN[ccNorm(c)]=1);
+  codes.forEach(c=>{ const n=ccNorm(c);
+    for(let L=1;L<n.length;L++){ const g=n.slice(0,L); if(!ownN[g]) grp[g]=1; } });
+  const agg={};
+  Object.keys(grp).forEach(g=>{ let t=0; codes.forEach(c=>{ if(ccNorm(c)===g||ccNorm(c).startsWith(g)) t+=own[c]; }); agg[g]=t; });
+  return {own:own, grp:agg, totTTC:totTTC, totHT:totTTC/(1+tva/100), honHT:honTTC/(1+tva/100), tva:tva};
+}
+function dvSelAff(v){ _dvAff=v; dvRender(); }
+function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';
+  document.getElementById('dv_aff_f').value=''; dvAffFill(); }
+function dvAffFill(){
+  const f=(document.getElementById('dv_aff_f').value||'').toLowerCase();
+  const ls=(typeof affairesAll==='function')?affairesAll():[];
+  const html=ls.filter(x=>!dvData[x.code] && ((x.code||'').toLowerCase().includes(f)||(x.projet||'').toLowerCase().includes(f)))
+    .slice(0,80).map(x=>'<div style="padding:6px 10px;cursor:pointer;font-size:12.5px" '+
+      'onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" '+
+      'onclick="dvAddAff('+PV_Q+pvEscA(x.code)+PV_Q+')"><b>'+pvEsc(x.code)+'</b> '+pvEsc(x.projet||'')+'</div>').join('');
+  document.getElementById('dv_aff_ls').innerHTML=html||'<div style="padding:10px;color:#999;font-size:12px">Aucune affaire trouvée.</div>';
+}
+function dvAddAff(code){
+  document.getElementById('dv_aff_ov').style.display='none';
+  if(!dvData[code]) dvData[code]=dvNewAff(code);
+  _dvAff=code; dvPersist(); dvRender();
+  toast('Affaire '+code+' ajoutée'+(dvData[code].pos.length?' — postes repris du contrôle du coût / PV.':' — cliquez les positions du catalogue à gauche.'));
+}
+function dvDelAff(code){ chConfirm('Supprimer le devis général de l’affaire '+code+' ?', ()=>{
+  delete dvData[code]; if(_dvAff===code) _dvAff=null; dvPersist(); dvRender(); }); }
+function dvCatAdd(code){ const D=dvA(); if(!D) return;
+  if(D.pos.some(x=>x.cfc===code)){ toast('La position '+code+' est déjà au devis.'); return; }
+  D.pos.push({id:pvId(), cfc:code, lbl:ccCatLbl(code), ttc:''}); dvPersist(); dvRender();
+  const inp=document.querySelector('#dv_out input[data-ttc="'+code.replace(/"/g,'')+'"]'); if(inp) inp.focus();
+}
+function dvAddPos(){ const D=dvA(); D.pos.push({id:pvId(), cfc:'', lbl:'', ttc:''}); dvPersist(); dvRender(); }
+function dvDelPos(id){ const D=dvA(); D.pos=D.pos.filter(x=>x.id!==id); dvPersist(); dvRender(); }
+function dvSet(id,k,el){ const D=dvA(); const pp=D.pos.find(x=>x.id===id); if(!pp) return;
+  if(k==='ttc') pp.ttc=ccP(el.value);
+  else { pp[k]=el.value; if(k==='cfc'&&!pp.lbl){ const l=ccCatLbl(el.value); if(l) pp.lbl=l; } }
+  dvPersist(); dvRender();
+}
+function dvSetTva(el){ dvA().tva=ccP(el.value)||8.1; dvPersist(); dvRender(); }
+function dvSetMeta(k,el){ dvA()[k]=el.value; dvPersist(); }
+function dvSend2CC(){
+  const D=dvA(); const C=dvCalc(D);
+  chConfirm('Reporter le devis dans le contrôle du coût : la colonne DG des CFC concernés sera remplacée par les montants TTC du devis. Continuer ?', ()=>{
+    if(typeof ccData==='undefined') return;
+    if(!ccData[_dvAff]) ccData[_dvAff]={tva:C.tva, rows:[], ecr:[]};
+    const A=ccData[_dvAff];
+    Object.keys(C.own).forEach(cfc=>{ ccEnsureRow(A,cfc);
+      const r=A.rows.find(x=>x.cfc===cfc); r.dg=Math.round(C.own[cfc]*100)/100;
+      const p=D.pos.find(x=>x.cfc===cfc&&x.lbl); if(p&&!r.lbl) r.lbl=p.lbl; });
+    ccPersist(); toast('DG mis à jour dans le contrôle du coût ('+Object.keys(C.own).length+' CFC).');
+  });
+}
+function dvRender(){
+  const out=document.getElementById('dv_out'), ctx=document.getElementById('dv_ctx');
+  if(!out) return;
+  const ba=document.getElementById('dv_addaff');
+  if(ba) ba.style.display=_dvAff?'none':'';
+  if(!_dvAff||!dvA()){
+    ctx.textContent=Object.keys(dvData).length+' affaire(s)';
+    const codes=Object.keys(dvData).sort();
+    if(!codes.length){ out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Aucune affaire — ajoutez-en une avec le bouton ✚ (les postes du contrôle du coût ou du PV sont repris).</div>'; return; }
+    out.innerHTML='<table class="pv-tb"><thead><tr><th>Affaire</th><th>Projet</th><th>Statut</th><th style="text-align:right">Positions</th><th style="text-align:right">Total HT</th><th style="text-align:right">Total TTC</th><th></th></tr></thead><tbody>'+
+      codes.map(c=>{ const D=dvData[c], T=dvCalc(D);
+        return '<tr style="cursor:pointer" onclick="dvSelAff('+PV_Q+pvEscA(c)+PV_Q+')">'+
+        '<td><b>'+pvEsc(c)+'</b></td><td>'+pvEsc(ccAffName(c)).slice(0,60)+'</td><td>'+pvEsc(D.statut||'')+'</td>'+
+        '<td style="text-align:right">'+D.pos.length+'</td>'+
+        '<td style="text-align:right">'+ccF(T.totHT)+'</td>'+
+        '<td style="text-align:right"><b>'+ccF(T.totTTC)+'</b></td>'+
+        '<td style="text-align:right"><span class="cc-act" onclick="event.stopPropagation();dvDelAff('+PV_Q+pvEscA(c)+PV_Q+')" title="Supprimer">✕</span></td></tr>'; }).join('')+
+      '</tbody></table>';
+    return;
+  }
+  const D=dvA(), C=dvCalc(D), tva=C.tva;
+  ctx.textContent=D.pos.length+' positions';
+  let h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'+
+    '<button class="btn btn-sm" onclick="dvSelAff(null)">← Affaires</button>'+
+    '<span style="font-weight:700;font-size:14px">Devis général '+pvEsc(_dvAff)+'</span>'+
+    '<span style="color:#777;font-size:12px">'+pvEsc(ccAffName(_dvAff)).slice(0,50)+'</span>'+
+    '<span style="flex:1"></span>'+
+    '<button class="btn btn-sm" onclick="dvAddPos()">✚ Position libre</button>'+
+    '<button class="btn btn-sm" style="background:#0a6e84;color:#fff" onclick="dvSend2CC()" title="Reporte les montants TTC du devis dans la colonne DG du contrôle du coût">→ Contrôle du coût (DG)</button>'+
+    '<label style="font-size:12px;color:#555">Statut <select onchange="dvSetMeta('+PV_Q+'statut'+PV_Q+',this)" style="font-size:12px;border:1px solid #ccc;border-radius:3px;padding:2px 4px">'+
+      ['en cours','transmis','validé'].map(st=>'<option'+(D.statut===st?' selected':'')+'>'+st+'</option>').join('')+'</select></label>'+
+    '<label style="font-size:12px;color:#555">Date <input type="date" value="'+(D.date||'')+'" onchange="dvSetMeta('+PV_Q+'date'+PV_Q+',this)" style="font-size:12px;border:1px solid #ccc;border-radius:3px;padding:2px 4px"></label>'+
+    '<label style="font-size:12px;color:#555">TVA % <input value="'+tva+'" onchange="dvSetTva(this)" style="width:52px;text-align:right;border:1px solid #ccc;border-radius:3px;padding:2px 4px;font-size:12px"></label>'+
+    '</div>';
+  // Totaux en tête — comme la fenêtre du bureau
+  h+='<div style="display:grid;grid-template-columns:110px 160px;gap:1px 10px;font-size:12.5px;margin:4px 0 10px;background:#f4f7f9;border:1px solid #d9e2e6;border-radius:6px;padding:8px 12px;width:300px">'+
+    '<span style="color:#555">Total HT</span><b style="text-align:right">'+ccF(C.totHT)+'</b>'+
+    '<span style="color:#555">Total TTC</span><b style="text-align:right">'+ccF(C.totTTC)+'</b>'+
+    '<span style="color:#555">Honoraires HT</span><span style="text-align:right">'+ccF(C.honHT)+'</span></div>';
+  h+='<div style="display:flex;gap:12px;align-items:flex-start">';
+  // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
+  const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
+  h+='<div style="width:340px;flex:none;border:1px solid #cfd8db;border-radius:6px;max-height:calc(100vh - 330px);overflow:auto;background:#fff">'+
+    '<div style="display:flex;gap:8px;padding:4px 10px;font-size:10.5px;color:#003346;font-weight:700;background:#eef3f5;position:sticky;top:0;z-index:1"><span style="width:44px">N°</span><span>Texte</span></div>'+
+    ccCat().map(x=>{ const grpRow=ccNorm(x[0]).length<=2;
+      return '<div '+(grpRow?'':'onclick="dvCatAdd('+PV_Q+pvEscA(x[0])+PV_Q+')" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'"')+
+      ' style="display:flex;gap:8px;padding:1px 10px;font-size:11.5px;'+(grpRow?'font-weight:700;':'cursor:pointer;')+(inDevis[x[0]]?'color:#0a6e84;':'')+'">'+
+      '<span style="width:44px;flex:none">'+pvEsc(x[0])+'</span><span style="min-width:0">'+pvEsc(x[1])+(inDevis[x[0]]?' ✓':'')+'</span></div>'; }).join('')+
+    '</div>';
+  // ── devis (droite) : saisie du TTC, HT / TVA / Pourcent calculés ──
+  h+='<div style="flex:1;min-width:0;overflow:auto;max-height:calc(100vh - 330px)"><table class="cc-tb" style="min-width:720px"><thead><tr>'+
+    '<th class="cc-g" style="width:64px">N°</th><th class="cc-g">Désignation</th>'+
+    '<th>Montant HT</th><th>TVA</th><th>Montant TTC</th><th style="width:70px">Pourcent</th><th style="width:28px"></th></tr></thead><tbody>';
+  const items=[];
+  Object.keys(C.grp).forEach(g=>items.push({g:1, cfc:g}));
+  D.pos.forEach(pp=>items.push({g:0, p:pp, cfc:pp.cfc||'zzz'}));
+  items.sort((a,b)=>{ const c=ccCmp(a.cfc,b.cfc); return c!==0?c:(b.g-a.g); });
+  items.forEach(it=>{
+    if(it.g){ const t=C.grp[it.cfc]||0, ht=t/(1+tva/100), L=it.cfc.length;
+      const cls=L===1?'cc-l1':(L===2?'cc-l2':''), B=L<=2?'<b>':'', B2=L<=2?'</b>':'';
+      h+='<tr class="'+cls+'"><td class="cc-g">'+B+pvEsc(it.cfc)+B2+'</td>'+
+        '<td class="cc-g">'+B+pvEsc(ccCatLbl(it.cfc)||'')+B2+'</td>'+
+        '<td>'+B+ccF(ht)+B2+'</td><td>'+ccF(t-ht)+'</td><td>'+B+ccF(t)+B2+'</td>'+
+        '<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td><td></td></tr>';
+      return; }
+    const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100);
+    h+='<tr>'+
+      '<td class="cc-g"><input class="cc-in cc-int" list="dv_cfc_dl" style="width:58px" value="'+pvEsc(pp.cfc||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'cfc'+PV_Q+',this)"></td>'+
+      '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(pp.lbl||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'lbl'+PV_Q+',this)"></td>'+
+      '<td style="color:#888;background:#f7f9fa">'+(t?ccF(ht):'')+'</td>'+
+      '<td style="color:#888">'+(t?ccF(t-ht):'')+'</td>'+
+      '<td><input class="cc-in" data-ttc="'+pvEsc(pp.cfc||'')+'" value="'+(t?ccF(t):'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'ttc'+PV_Q+',this)"></td>'+
+      '<td>'+(t&&C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td>'+
+      '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td></tr>';
+  });
+  h+='<tr class="cc-l1"><td class="cc-g"></td><td class="cc-g">TOTAL DEVIS</td>'+
+    '<td>'+ccF(C.totHT)+'</td><td>'+ccF(C.totTTC-C.totHT)+'</td><td>'+ccF(C.totTTC)+'</td><td>'+(C.totTTC>0.005?'100.00':'')+'</td><td></td></tr>';
+  h+='</tbody></table>';
+  // ── zone Documents (comme la fenêtre du bureau — génération PDF à venir) ──
+  h+='<div style="display:flex;gap:12px;margin-top:12px;align-items:flex-start">'+
+    '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Documents</div>'+
+    '<table class="pv-tb"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
+    ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
+    '</tbody></table><div style="font-size:11px;color:#999;margin-top:4px">Génération des documents PDF à venir — transmettez-moi un exemplaire de référence du bureau.</div></div>'+
+    '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
+    '<table class="pv-tb"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
+    '<tr><td colspan="2" style="color:#999">—</td></tr></tbody></table></div></div>';
+  h+='</div>';
+  h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';
+  out.innerHTML=h;
+}
 
 /* ═══════════════════════════════════════════════════
    INIT

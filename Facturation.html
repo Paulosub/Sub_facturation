@@ -15663,7 +15663,7 @@ function dvToolbarHTML(){
   const tblBtn='<div style="position:relative">'+
     '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Affichage du tableau" onclick="dvTbMenuT()">'+ic['table']+' <span style="font-size:8px;color:#666">▾</span></button>'+
     '<div id="dv_tb_menu_t" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:300px;z-index:60;font-size:13px;white-space:nowrap">'+
-    vues.map(v=>'<div style="padding:8px 16px 8px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbVue('+PV_Q+v[0]+PV_Q+')">'+
+    vues.map(v=>'<div style="padding:4px 16px 4px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbVue('+PV_Q+v[0]+PV_Q+')">'+
       '<span style="width:20px;display:inline-block">'+(v[0]===vue?'✓':'')+'</span>'+v[1]+'</div>').join('')+
     '</div></div>';
   return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+

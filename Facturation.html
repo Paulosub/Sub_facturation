@@ -17819,7 +17819,7 @@ function dvDlgCalc(pid){
     '#dv_ca_wrap tr.dv-ca-sel td{background:#cfe3f5}'+
     '#dv_ca_wrap td.mt{padding:0 6px;text-align:right;color:#555;font-size:13px;line-height:23px}'+
     '</style>'+
-  '<div id="dv_ca_wrap" onkeydown="dvCalcKey(event)">'+
+  '<div id="dv_ca_wrap" tabindex="0" onkeydown="dvCalcKey(event)">'+
     '<table><colgroup><col style="width:220px"><col style="width:70px"><col style="width:150px"><col style="width:80px">'+
     '<col style="width:56px"><col style="width:92px"><col style="width:54px"><col style="width:92px"><col style="width:100px"><col style="width:46px"></colgroup>'+
     '<thead><tr>'+
@@ -17907,24 +17907,27 @@ function dvCalcMove(mode){ const p=dvCalcP(); const rows=p.calc.rows; const i=_d
   if(j<0||j>=rows.length||j===i) return;
   const r=rows.splice(i,1)[0]; rows.splice(j,0,r); _dvCalcSel=j; dvCalcRender(); }
 function dvCalcMenu(){ const m=document.getElementById('dv_ca_menu'); if(m) m.style.display=(m.style.display==='none'?'block':'none'); }
-/* ⌘C / ⌘V dans le tableau : copie la CELLULE en cours et colle dans la cellule sélectionnée */
+/* ⌘C / ⌘V dans le tableau : copie la LIGNE sélectionnée, puis la colle SUR la ligne
+   sélectionnée au moment du coller (le texte sélectionné dans une cellule garde la copie native). */
 function dvCalcKey(ev){
   if(!(ev.metaKey||ev.ctrlKey)) return;
   const el=document.activeElement;
-  if(!el||el.tagName!=='INPUT'||!el.closest('#dv_ca_wrap')) return;
+  const dansTable=el&&el.closest&&el.closest('#dv_ca_wrap');
+  if(!dansTable) return;
   const k=ev.key.toLowerCase();
+  const p=dvCalcP(); if(!p) return;
   if(k==='c'){
-    /* si du texte est sélectionné dans la cellule, on laisse la copie native ; sinon on copie toute la cellule */
-    if(el.selectionStart!==el.selectionEnd) return;
-    window._dvCalcCellClip=el.value;
-    try{ navigator.clipboard&&navigator.clipboard.writeText(el.value); }catch(e){}
+    if(el.tagName==='INPUT'&&el.selectionStart!==el.selectionEnd) return; /* copie native du texte */
+    if(_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord une ligne.'); return; }
     ev.preventDefault();
-    toast('Cellule copiée : « '+(el.value||'')+' »');
-  } else if(k==='v'&&window._dvCalcCellClip!=null){
+    window._dvCalcRowClip=JSON.parse(JSON.stringify(p.calc.rows[_dvCalcSel]));
+    toast('Ligne '+(_dvCalcSel+1)+' copiée.');
+  } else if(k==='v'&&window._dvCalcRowClip){
+    if(_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord la ligne de destination.'); return; }
     ev.preventDefault();
-    el.value=window._dvCalcCellClip;
-    el.dispatchEvent(new Event('change'));
-    toast('Cellule collée.');
+    p.calc.rows[_dvCalcSel]=JSON.parse(JSON.stringify(window._dvCalcRowClip));
+    dvCalcRender();
+    toast('Ligne collée sur la ligne '+(_dvCalcSel+1)+'.');
   }
 }
 function dvCalcCopy(){ const p=dvCalcP(); _dvCalcClipRows=JSON.parse(JSON.stringify(p.calc.rows)); toast('Calcul copié ('+_dvCalcClipRows.length+' ligne(s)).'); }

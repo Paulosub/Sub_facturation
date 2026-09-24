@@ -16864,6 +16864,50 @@ function dvDocParamOk(){
   document.getElementById('dv_docp_ov').style.display='none';
   toast('Paramètres du document enregistrés.');
 }
+/* « Feuille de position … » : feuille de la position (ou du groupe) SÉLECTIONNÉE dans le
+   tableau du devis — tête d'ouvrage, tableau CFC/Texte/Montant avec le détail du calcul,
+   total ; même fenêtre popup (pinceau = Paramètres du document, impression active). */
+function dvDocFenPos(){
+  const D=dvA(); if(!D) return;
+  const moisC=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  const dt=new Date();
+  const dateC=dt.getDate()+' '+moisC[dt.getMonth()]+' '+dt.getFullYear();
+  const mtF=v=>ccF(Math.round(v)).slice(0,-3);
+  const C=dvCalc(D);
+  let cfc='', lbl='', tot=0, det=[];
+  if(window._dvSel){
+    const p2=D.pos.find(x=>x.id===window._dvSel);
+    if(!p2){ toast('Sélectionnez d’abord une position dans le tableau du devis.'); return; }
+    cfc=p2.cfc||''; lbl=p2.lbl||''; tot=ccP(p2.ttc);
+    ((p2.calc&&p2.calc.rows)||[]).forEach(r=>{ if(r.on===false) return;
+      const q=parseFloat(r.qty), pu=ccP(r.pttc);
+      const m=(isNaN(q)?1:q)*pu;
+      det.push({t:(r.com&&String(r.com).trim())||'Prix '+mtF(pu), m:m||pu}); });
+  } else if(window._dvSelG){
+    cfc=window._dvSelG; lbl=ccCatLbl(cfc)||''; tot=(C.grp[ccNorm(cfc)]||C.own[cfc]||0);
+  } else { toast('Sélectionnez d’abord une position (ou un groupe) dans le tableau du devis.'); return; }
+  const ouvrage=ccAffName(_dvAff)||'';
+  const tiret='<div style="color:#888;line-height:1;margin:1mm 0">—</div>';
+  const row=(a,b,c2,st)=>'<div style="display:flex;gap:4mm;font-size:9pt;'+(st||'')+'">'+
+    '<span style="width:18mm;flex:none">'+a+'</span><span style="flex:1;min-width:0">'+b+'</span>'+
+    '<span style="width:26mm;flex:none;text-align:right">'+c2+'</span></div>';
+  const page='<div class="offre-page">'+
+    '<div style="position:absolute;top:13mm;left:14mm;font-size:9pt;line-height:1.45">'+
+      '<div>'+pvEsc(ouvrage)+'</div>'+tiret+
+      '<div>Cully - '+dateC+'</div></div>'+
+    '<div class="offre-ct" style="margin-top:34mm">'+
+      '<div style="border-top:.4pt solid #555;margin-bottom:1mm"></div>'+
+      row('CFC','Texte','Montant','color:#555;font-size:8.4pt;padding:.6mm 0')+
+      '<div style="border-top:.4pt solid #555;margin-bottom:4mm"></div>'+
+      row('<b>'+pvEsc(cfc)+'</b>','<b>'+pvEsc(lbl)+'</b>','<b>'+mtF(tot)+'</b>','margin-bottom:1.6mm')+
+      det.map(x=>row('', pvEsc(x.t), mtF(x.m),'margin-bottom:1mm')).join('')+
+      '<div style="height:6mm"></div>'+
+      row('','<b>Total</b>','<b>'+mtF(tot)+'</b>','')+
+    '</div>'+
+    '<div class="offre-logo">SUBSTANCES<br>ARCHITECTES</div>'+
+    offreFoot(1,1)+'</div>';
+  dvDocShow('Devis général', page);
+}
 /* Sélection d'un fichier dans la liste Fichiers PDF ; double-clic = ouvrir dans Aperçu. */
 function dvPdfSel(nom,tr,ev){
   /* clic = sélection simple ; ⌘/Ctrl/Maj + clic = ajouter/retirer de la sélection multiple */
@@ -17298,7 +17342,7 @@ function dvToolbarHTML(){
                 li('Renommer la présentation …',av('Renommer la présentation'))+
                 sep+
                 li('Honoraires … [Ancien document]','dvTbTog(null);dvDocOuvrirGo('+PV_Q+'Honoraires'+PV_Q+')')+
-                gris('Feuille de position … [Ancien document]');
+                li('Feuille de position … [Ancien document]','dvTbTog(null);dvDocFenPos()');
             }
             /* menu COMPLET dès qu'au moins une présentation existe */
             return pres.map(nm=>li('Document impression '+pvEsc(nm)+' … [Ancien document]',av('Document impression '+pvEscA(nm)))).join('')+
@@ -17308,7 +17352,7 @@ function dvToolbarHTML(){
               li('Supprimer la présentation','dvTbTog(null);dvPresDel()')+
               sep+
               li('Honoraires … [Ancien document]','dvTbTog(null);dvDocOuvrirGo('+PV_Q+'Honoraires'+PV_Q+')')+
-              li('Feuille de position … [Ancien document]',av('Feuille de position'));
+              li('Feuille de position … [Ancien document]','dvTbTog(null);dvDocFenPos()');
           })())+
         men('dv_tb_menu_g2','dvTbMenuG',ic['gear'],'Paramètres',
           li('Exporter le devis …',av('Exporter le devis'))+

@@ -16321,7 +16321,6 @@ function dvPdfShare(nom){
       '<div style="display:flex;margin:0 0 8px 0"><span style="'+lab+';padding-top:5px">Contenu</span>'+
         '<textarea id="dvs_body" rows="5" style="'+inp+';resize:vertical"></textarea></div>'+
       '<div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin:2px 0 0 0">'+
-        '<label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="dvs_mail" checked> Utiliser Apple Mail</label>'+
         '<button style="'+btn+'" onclick="dvShareMail()">Préparer le courrier</button></div>'+
       '<div style="display:flex;justify-content:flex-end;margin:18px 0 0 0">'+
         '<button style="'+btn+';background:#0a84ff;border-color:#0a84ff;color:#fff;font-weight:600;padding:6px 22px" onclick="dvShareClose()">Fermer</button></div>'+
@@ -16360,17 +16359,12 @@ async function dvShareMail(){
   const conc=((document.getElementById('dvs_conc')||{}).value||'').trim();
   const txt=((document.getElementById('dvs_body')||{}).value||'');
   const body=(civ?civ+String.fromCharCode(10)+String.fromCharCode(10):'')+txt;
-  if((document.getElementById('dvs_mail')||{}).checked){
-    try{
-      const r=await fetch('http://127.0.0.1:7788/mailpdf?name='+encodeURIComponent(nom)+'&to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body));
-      const j=await r.json();
-      if(j&&j.ok) toast('Brouillon créé dans Apple Mail avec « '+nom+' » en pièce jointe.');
-      else toast((j&&j.error)||'Échec de la préparation du courrier.');
-    }catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
-  }else{
-    location.href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body);
-    toast('Courriel préparé (sans pièce jointe — cochez « Utiliser Apple Mail » pour joindre le PDF).');
-  }
+  try{
+    const r=await fetch('http://127.0.0.1:7788/mailpdf?name='+encodeURIComponent(nom)+'&to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body));
+    const j=await r.json();
+    if(j&&j.ok) toast('Brouillon créé dans Apple Mail avec « '+nom+' » en pièce jointe.');
+    else toast((j&&j.error)||'Échec de la préparation du courrier.');
+  }catch(e){ toast('Serveur de sauvegarde arrêté — lancez fact_backup_server.py.'); }
 }
 /* Supprimer = retirer le fichier de la liste (le PDF reste sur le disque). */
 function dvPdfDelAsk(nom){

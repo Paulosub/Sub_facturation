@@ -16359,7 +16359,10 @@ async function dvShareMail(){
   const civ=((document.getElementById('dvs_civ')||{}).value||'').trim();
   const conc=((document.getElementById('dvs_conc')||{}).value||'').trim();
   const txt=((document.getElementById('dvs_body')||{}).value||'');
-  const body=(civ?civ+String.fromCharCode(10)+String.fromCharCode(10):'')+txt;
+  const NL=String.fromCharCode(10);
+  /* La civilité s'écrit dans le courriel suivie d'une virgule puis d'un retour à la ligne. */
+  const civL=civ?(/[,;:.!?]$/.test(civ)?civ:civ+',')+NL+NL:'';
+  const body=civL+txt;
   try{
     const r=await fetch('http://127.0.0.1:7788/mailpdf?name='+encodeURIComponent(nom)+'&to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(conc)+'&body='+encodeURIComponent(body));
     const j=await r.json();

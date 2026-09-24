@@ -4776,6 +4776,7 @@ function offreDateFR(iso){ if(!iso) return ''; const p=iso.split('-'); if(p.leng
 function offreEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function offreParas(txt){ return (txt||'').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<div class="offre-p">${offreEsc(x).replace(/\n/g,'<br>')}</div>`).join(''); }
 function closeOffre(){ document.getElementById('offre-overlay').classList.remove('on'); document.body.classList.remove('offre-open');
+  const ab=document.getElementById('dv_ap_bar'); if(ab) ab.remove();
   const t=document.querySelector('#offre-bar .t'); if(t) t.textContent='Offre / contrat d'+String.fromCharCode(39)+'honoraires';
   try{ _offreDl=generateOffrePDF; _offrePrint=printOffreFaithful; }catch(e){} }
 /* Téléchargement contextuel depuis la modale (offre d'un contrat, ou facture). */
@@ -15708,6 +15709,63 @@ function dvDocShow(titre, pagesHtml){
   _offrePrint=()=>window.print();
   document.getElementById('offre-overlay').classList.add('on');
   document.body.classList.add('offre-open');
+  dvApBar();
+}
+/* ── Barre d'outils des aperçus de documents (imprimante/réglages/crayon · pages/zoom · PDF/partage/roue),
+   même graphisme que les icônes de l'app. Retirée par closeOffre. ── */
+function dvApBar(){
+  const old=document.getElementById('dv_ap_bar'); if(old) old.remove();
+  const total=document.querySelectorAll('#offre-scroll .offre-page').length||1;
+  window._dvApPg=1;
+  const S='<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">';
+  const ic={
+    print:S+'<path d="M4 5.5V2h7v3.5M3 5.5h9a1 1 0 0 1 1 1V11h-2.5v2H4.5v-2H2V6.5a1 1 0 0 1 1-1z"/><path d="M4.5 10.5h6"/></svg>',
+    sliders:S+'<path d="M2 4h11M2 7.5h11M2 11h11"/><circle cx="5" cy="4" r="1.5" fill="#f2f2f2"/><circle cx="10" cy="7.5" r="1.5" fill="#f2f2f2"/><circle cx="6.5" cy="11" r="1.5" fill="#f2f2f2"/></svg>',
+    pencil:S+'<path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg>',
+    first:S+'<path d="M4 3v9M11 3 6.5 7.5 11 12"/></svg>',
+    prev:S+'<path d="M9.5 3 5 7.5 9.5 12"/></svg>',
+    next:S+'<path d="M5.5 3 10 7.5 5.5 12"/></svg>',
+    last:S+'<path d="M11 3v9M4 3l4.5 4.5L4 12"/></svg>',
+    doc:S+'<path d="M4 2h5l3 3v8.5H4z"/><path d="M6 8h4M6 10.3h4" stroke-width="1"/></svg>',
+    share:S+'<path d="M7.5 9.5V2.5M4.8 5 7.5 2.3 10.2 5"/><path d="M4 7.5H3v5h9v-5h-1"/></svg>',
+    gear:'<span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span>'
+  };
+  const bSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9';
+  const B=(k,fn,tt,off,menu)=>'<button class="btn btn-sm" '+(off?'disabled ':'')+'style="'+bSt+(off?';opacity:.45;pointer-events:none':'')+'" title="'+tt+'"'+(fn?' onclick="'+fn+'"':'')+'>'+ic[k]+(menu?' <span style="font-size:8px;color:#666">▾</span>':'')+'</button>';
+  const bar=document.createElement('div');
+  bar.id='dv_ap_bar';
+  bar.style.cssText='background:#ececec;border-bottom:1px solid #bbb;padding:5px 14px;display:flex;align-items:center;gap:6px;flex-shrink:0';
+  bar.innerHTML=
+    B('print','offreModalPrint()','Imprimer')+
+    B('sliders','','Réglages de l'+String.fromCharCode(39)+'aperçu — à venir',1)+
+    B('pencil','','Annoter — à venir',1)+
+    '<span style="flex:1"></span>'+
+    B('first','dvApGo(1)','Première page')+
+    B('prev','dvApGo('+String.fromCharCode(39)+'-'+String.fromCharCode(39)+')','Page précédente')+
+    '<input id="dv_ap_pg" value="1" onchange="dvApGo(parseInt(this.value)||1)" style="width:34px;text-align:center;border:1px solid #c9c9c9;border-radius:4px;padding:3px 2px;font-size:12px;background:#fff"> '+
+    '<span style="font-size:12px;color:#555">/ '+total+'</span>'+
+    B('next','dvApGo('+String.fromCharCode(39)+'+'+String.fromCharCode(39)+')','Page suivante')+
+    B('last','dvApGo('+total+')','Dernière page')+
+    '<select onchange="dvApZoom(this.value)" style="margin-left:10px;border:1px solid #c9c9c9;border-radius:4px;padding:3px 4px;font-size:12px;background:#fff">'+
+      ['50','75','100','125','150','200'].map(z=>'<option value="'+z+'"'+(z==='100'?' selected':'')+'>'+z+'&nbsp;%</option>').join('')+'</select>'+
+    '<span style="flex:1"></span>'+
+    B('doc','offreModalDownload()','Exporter en PDF',0,1)+
+    B('share','','Partager — à venir',1,1)+
+    B('gear','','Réglages — à venir',1,1);
+  document.getElementById('offre-bar').insertAdjacentElement('afterend', bar);
+}
+function dvApGo(v){
+  const pages=[...document.querySelectorAll('#offre-scroll .offre-page')];
+  if(!pages.length) return;
+  let n=window._dvApPg||1;
+  if(v==='-') n-=1; else if(v==='+') n+=1; else n=parseInt(v)||1;
+  n=Math.max(1, Math.min(pages.length, n));
+  window._dvApPg=n;
+  const inp=document.getElementById('dv_ap_pg'); if(inp) inp.value=n;
+  pages[n-1].scrollIntoView({behavior:'smooth', block:'start'});
+}
+function dvApZoom(v){
+  document.querySelectorAll('#offre-scroll .offre-page').forEach(pg=>{ pg.style.zoom=(parseInt(v)||100)/100; });
 }
 /* ── « Soumis à honoraires » (document Honoraires) : tableau CFC, groupes 1 chiffre en noir,
    groupes 2-3 chiffres en gris, % soumis et Honoraires (0 tant que non saisis). ── */
@@ -15825,15 +15883,7 @@ function dvDocFenDG(){
       '<div style="margin-top:14mm">'+sig('Le Maître de l'+PV_Q+'ouvrage :')+sig('L'+PV_Q+'architecte :')+'</div>'+
     '</div>'+
     offreFoot(1,1)+'</div>';
-  document.querySelector('#offre-bar .t').textContent='Devis général';
-  document.getElementById('offre-title').textContent='— '+aff+' '+(ouvrage||'');
-  const sel=document.getElementById('offre-version'); if(sel){ sel.style.display='none'; }
-  const vc=document.getElementById('offre-version-comment'); if(vc) vc.textContent='';
-  document.getElementById('offre-scroll').innerHTML=page;
-  _offreDl=()=>toast('Génération du PDF du devis — à venir.');
-  _offrePrint=()=>window.print();
-  document.getElementById('offre-overlay').classList.add('on');
-  document.body.classList.add('offre-open');
+  dvDocShow('Devis général', page);
 }
 /* Sélection d'un document (Devis général / Honoraires / Devis descriptif) : active les icônes +/−/roue. */
 function dvDocSel(n,tr){ window._dvDocSel=n;

@@ -17941,9 +17941,15 @@ function dvCalcPaste(){
   const p0=dvCalcP();
   if(p0&&_dvCalcSel!=null&&_dvCalcSel>=0&&p0.calc.rows[_dvCalcSel]){
     const cp=JSON.parse(JSON.stringify(_dvCalcClipRows));
-    p0.calc.rows.splice(_dvCalcSel+1,0,...cp);
-    _dvCalcSel=_dvCalcSel+1; dvCalcRender();
-    toast(cp.length+' ligne(s) collée(s) sous la ligne sélectionnée.');
+    /* on ÉCRASE les lignes existantes à partir de la ligne sous la sélection ;
+       des lignes ne sont ajoutées que si le collé dépasse la fin du tableau */
+    const deb=_dvCalcSel+1;
+    cp.forEach((r2,i2)=>{
+      if(deb+i2<p0.calc.rows.length) p0.calc.rows[deb+i2]=r2;
+      else p0.calc.rows.push(r2);
+    });
+    _dvCalcSel=deb; dvCalcRender();
+    toast(cp.length+' ligne(s) collée(s) dès la ligne '+(deb+1)+'.');
     return;
   }
   if(dvCalcHasContent()){

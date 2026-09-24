@@ -15622,7 +15622,10 @@ function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m');
    du calcul (multiples), g4 = arrondi (exclusif, optionnel), g5 = divers (multiples).
    Les options sont mémorisées par devis (D.docOpt) — leur effet servira au PDF. */
 function dvDocOptO(){ const D=dvA(); if(!D) return null;
-  const o=D.docOpt||(D.docOpt={g1:'saisies', g2:null, g3:{}, g4:null, g5:{sansMont:true}});
+  if(D.docOpt && D.docOpt.g1){ D.docOpt={'Devis général':D.docOpt}; } // migration ancien format global
+  if(!D.docOpt) D.docOpt={};
+  const d=window._dvDocSel||'Devis général';
+  const o=D.docOpt[d]||(D.docOpt[d]={g1:'saisies', g2:null, g3:{}, g4:null, g5:{sansMont:true}});
   if(!o.g3) o.g3={}; if(!o.g5) o.g5={sansMont:true}; return o; }
 function dvDocMenuG(){
   const m=document.getElementById('dv_doc_menu_g'); if(!m) return;
@@ -15631,13 +15634,17 @@ function dvDocMenuG(){
   const o=dvDocOptO(); if(!o) return;
   const it=(chk,lbl,g,k)=>'<div style="padding:4px 16px 4px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvDocOptC('+PV_Q+g+PV_Q+','+PV_Q+k+PV_Q+')"><span style="width:20px;display:inline-block;flex:none">'+(chk?'✓':'')+'</span>'+lbl+'</div>';
   const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
-  m.innerHTML=
+  // Le contenu dépend du document sélectionné (Devis général / Honoraires / Devis descriptif).
+  const d=window._dvDocSel||'Devis général';
+  const dg=(d==='Devis général'), dd=(d==='Devis descriptif');
+  let html=
     it(o.g1==='subdiv','Afficher les subdivisions','g1','subdiv')+
     it(o.g1==='pos13','Seulement positions de 1 à 3 chiffres','g1','pos13')+
-    it(o.g1==='saisies','Afficher les positions saisies et les totalisateurs','g1','saisies')+
+    it(o.g1==='saisies','Afficher les positions saisies et les totalisateurs','g1','saisies');
+  if(!dd) html+=
     it(o.g1==='basecom','Base et commentaire de la position','g1','basecom')+
-    it(o.g1==='basecol','Base et commentaire dans colonne séparée','g1','basecol')+
-    sep+
+    it(o.g1==='basecol','Base et commentaire dans colonne séparée','g1','basecol');
+  if(dg) html+=sep+
     it(o.g2==='calcRem','Uniquement les montants avec calculs et remarque','g2','calcRem')+
     it(o.g2==='tousDetail','Tous les montants détaillés','g2','tousDetail')+
     sep+
@@ -15648,16 +15655,16 @@ function dvDocMenuG(){
     it(!!o.g3.prixTTC,'Prix TTC','g3','prixTTC')+
     it(!!o.g3.prixHT,'Prix HT','g3','prixHT')+
     it(!!o.g3.affMont,'Afficher les montants','g3','affMont')+
-    it(!!o.g3.variantes,'Variantes','g3','variantes')+
-    sep+
-    it(o.g4==='noDec','Masquer les décimales','g4','noDec')+
+    it(!!o.g3.variantes,'Variantes','g3','variantes');
+  html+=sep+it(o.g4==='noDec','Masquer les décimales','g4','noDec');
+  if(!dd) html+=
     it(o.g4==='arr10','Arrondir à 10','g4','arr10')+
     it(o.g4==='arr100','Arrondir à 100','g4','arr100')+
-    it(o.g4==='arr1000','Arrondir à 1000','g4','arr1000')+
-    sep+
-    it(!!o.g5.sansMont,'Afficher les positions sans montant','g5','sansMont')+
-    it(!!o.g5.descriptif,'Descriptif','g5','descriptif')+
-    it(!!o.g5.assembler,'Assembler les descriptifs des ouvrages','g5','assembler');
+    it(o.g4==='arr1000','Arrondir à 1000','g4','arr1000');
+  html+=sep+it(!!o.g5.sansMont,'Afficher les positions sans montant','g5','sansMont');
+  if(dg) html+=it(!!o.g5.descriptif,'Descriptif','g5','descriptif');
+  html+=it(!!o.g5.assembler,'Assembler les descriptifs des ouvrages','g5','assembler');
+  m.innerHTML=html;
   m.style.display='block';
 }
 function dvDocOptC(g,k){ const o=dvDocOptO(); if(!o) return;

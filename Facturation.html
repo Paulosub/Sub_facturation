@@ -14612,6 +14612,33 @@ function dvSend2CC(){
     ccPersist(); toast('DG mis à jour dans le contrôle du coût ('+Object.keys(C.own).length+' CFC).');
   });
 }
+/* Catalogue CFC repliable : groupes à 1 chiffre (CFC 0, 1, 2 …) et à 2 chiffres se compactent
+   d'un clic (▸/▾, repliés par défaut) ; la recherche (code ou texte) ignore le repli. */
+function dvCatList(){
+  const D=dvA(); if(!D) return '';
+  window._dvCatOpen=window._dvCatOpen||{};
+  const filt=String(window._dvCatFilt||'').toLowerCase().trim();
+  const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
+  return ccCat().map(x=>{
+    const n=ccNorm(x[0]);
+    if(filt){ if(!(String(x[0]).toLowerCase().includes(filt)||String(x[1]).toLowerCase().includes(filt))) return ''; }
+    else {
+      if(n.length>=2 && !window._dvCatOpen[n.slice(0,1)]) return '';
+      if(n.length>=3 && !window._dvCatOpen[n.slice(0,2)]) return '';
+    }
+    if(n.length<=2){
+      const open=!!window._dvCatOpen[n];
+      return '<div onclick="window._dvCatOpen['+PV_Q+n+PV_Q+']=!window._dvCatOpen['+PV_Q+n+PV_Q+'];dvCatRefresh()"'+
+        ' style="display:flex;gap:6px;padding:2px 10px 2px '+(n.length===1?'6':'18')+'px;font-weight:700;cursor:pointer;font-size:11.5px;'+(n.length===1?'background:#f2f6f8;border-top:1px solid #e4ebee;':'')+'">'+
+        '<span style="width:10px;flex:none;color:#8aa0a8">'+(filt?'':(open?'▾':'▸'))+'</span>'+
+        '<span style="width:40px;flex:none">'+pvEsc(x[0])+'</span><span style="min-width:0">'+pvEsc(x[1])+'</span></div>';
+    }
+    return '<div onclick="dvCatAdd('+PV_Q+pvEscA(x[0])+PV_Q+')" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'"'+
+      ' style="display:flex;gap:6px;padding:1px 10px 1px 32px;font-size:11.5px;cursor:pointer;'+(inDevis[x[0]]?'color:#0a6e84;':'')+'">'+
+      '<span style="width:44px;flex:none">'+pvEsc(x[0])+'</span><span style="min-width:0">'+pvEsc(x[1])+(inDevis[x[0]]?' ✓':'')+'</span></div>';
+  }).join('');
+}
+function dvCatRefresh(){ const b=document.getElementById('dv_cat_ls'); if(b) b.innerHTML=dvCatList(); }
 function dvRender(){
   const out=document.getElementById('dv_out'), ctx=document.getElementById('dv_ctx');
   if(!out) return;
@@ -14655,12 +14682,10 @@ function dvRender(){
   // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
   const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
   h+='<div style="width:340px;flex:none;border:1px solid #cfd8db;border-radius:6px;max-height:calc(100vh - 330px);overflow:auto;background:#fff">'+
-    '<div style="display:flex;gap:8px;padding:4px 10px;font-size:10.5px;color:#003346;font-weight:700;background:#eef3f5;position:sticky;top:0;z-index:1"><span style="width:44px">N°</span><span>Texte</span></div>'+
-    ccCat().map(x=>{ const grpRow=ccNorm(x[0]).length<=2;
-      return '<div '+(grpRow?'':'onclick="dvCatAdd('+PV_Q+pvEscA(x[0])+PV_Q+')" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'"')+
-      ' style="display:flex;gap:8px;padding:1px 10px;font-size:11.5px;'+(grpRow?'font-weight:700;':'cursor:pointer;')+(inDevis[x[0]]?'color:#0a6e84;':'')+'">'+
-      '<span style="width:44px;flex:none">'+pvEsc(x[0])+'</span><span style="min-width:0">'+pvEsc(x[1])+(inDevis[x[0]]?' ✓':'')+'</span></div>'; }).join('')+
-    '</div>';
+    '<div style="position:sticky;top:0;z-index:1;background:#eef3f5;border-bottom:1px solid #d9e2e6">'+
+      '<div style="display:flex;gap:8px;padding:4px 10px 2px;font-size:10.5px;color:#003346;font-weight:700"><span style="width:54px">N°</span><span>Texte</span></div>'+
+      '<div style="padding:0 8px 6px"><input placeholder="Rechercher un CFC (code ou texte)…" value="'+pvEsc(window._dvCatFilt||'')+'" oninput="window._dvCatFilt=this.value;dvCatRefresh()" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:4px 7px;font-size:11.5px"></div></div>'+
+    '<div id="dv_cat_ls">'+dvCatList()+'</div></div>';
   // ── devis (droite) : saisie du TTC, HT / TVA / Pourcent calculés ──
   h+='<div style="flex:1;min-width:0;overflow:auto;max-height:calc(100vh - 330px)"><table class="cc-tb" style="min-width:720px"><thead><tr>'+
     '<th class="cc-g" style="width:64px">N°</th><th class="cc-g">Désignation</th>'+

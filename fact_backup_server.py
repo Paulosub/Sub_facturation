@@ -149,6 +149,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": str(e)})
             return
 
+        if u.path == "/revealpdf":
+            # Révèle dans le Finder un PDF de « PDF Devis » (pour le partager de là).
+            q = urllib.parse.parse_qs(u.query)
+            name = os.path.basename((q.get("name", [""])[0]).strip())
+            full = os.path.join(BASE_DIR, "PDF Devis", name)
+            if not name or not os.path.isfile(full):
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % name})
+                return
+            try:
+                subprocess.Popen(["open", "-R", full])
+                self._json(200, {"ok": True, "path": full})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         if u.path == "/openpdf":
             # Ouvre dans Aperçu un PDF déjà enregistré dans « PDF Devis ».
             q = urllib.parse.parse_qs(u.query)
@@ -160,6 +175,90 @@ class Handler(http.server.BaseHTTPRequestHandler):
             try:
                 subprocess.Popen(["open", "-a", "Preview", full])
                 self._json(200, {"ok": True, "path": full})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
+        if u.path == "/getpdf":
+            # Renvoie les octets d'un PDF de « PDF Devis » (pour la fusion côté app).
+            q = urllib.parse.parse_qs(u.query)
+            name = os.path.basename((q.get("name", [""])[0]).strip())
+            full = os.path.join(BASE_DIR, "PDF Devis", name)
+            if not name or not os.path.isfile(full):
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % name})
+                return
+            try:
+                with open(full, "rb") as fh:
+                    data = fh.read()
+                self.send_response(200)
+                self._cors()
+                self.send_header("Content-Type", "application/pdf")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
+        if u.path == "/copypdf":
+            # Exporte (copie) un PDF de « PDF Devis » vers un dossier choisi.
+            # &reveal=1 → révèle ensuite la copie dans le Finder.
+            q = urllib.parse.parse_qs(u.query)
+            name = os.path.basename((q.get("name", [""])[0]).strip())
+            dest = os.path.expanduser((q.get("dest", [""])[0]).strip())
+            full = os.path.join(BASE_DIR, "PDF Devis", name)
+            if not name or not os.path.isfile(full):
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % name})
+                return
+            if not dest or not os.path.isdir(dest):
+                self._json(400, {"ok": False, "error": "Dossier de destination introuvable : %s" % dest})
+                return
+            try:
+                import shutil
+                out = os.path.join(dest, name)
+                shutil.copy2(full, out)
+                if (q.get("reveal", ["0"])[0]) == "1":
+                    subprocess.Popen(["open", "-R", out])
+                self._json(200, {"ok": True, "path": out})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
+        if u.path == "/mailpdf":
+            # Crée dans Apple Mail un brouillon (visible) avec le ou les PDF en pièces jointes
+            # (plusieurs paramètres name= possibles).
+            q = urllib.parse.parse_qs(u.query)
+            names = [os.path.basename(n.strip()) for n in q.get("name", []) if n.strip()]
+            to = (q.get("to", [""])[0]).strip()
+            subject = (q.get("subject", [""])[0]).strip()
+            body = (q.get("body", [""])[0])
+            fulls = [os.path.join(BASE_DIR, "PDF Devis", n) for n in names]
+            missing = [names[i] for i, f in enumerate(fulls) if not os.path.isfile(f)]
+            if not names or missing:
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % (", ".join(missing) or "(aucun)")})
+                return
+            try:
+                esc = lambda s: s.replace("\\", "\\\\").replace('"', '\\"')
+                lines = [
+                    'tell application "Mail"',
+                    '  activate',
+                    # échapper d'abord, puis convertir les retours à la ligne en « " & return & " »
+                    # (dans l'autre ordre, les guillemets insérés sont échappés et apparaissent en clair dans le mail)
+                    '  set m to make new outgoing message with properties {subject:"%s", content:"%s" & return & return, visible:true}' % (esc(subject), esc(body.replace("\r", "")).replace("\n", '" & return & "')),
+                ]
+                if to:
+                    lines.append('  tell m to make new to recipient at end of to recipients with properties {address:"%s"}' % esc(to))
+                for full in fulls:
+                    lines.append('  tell content of m to make new attachment with properties {file name:POSIX file "%s"} at after last paragraph' % esc(full))
+                lines.append('end tell')
+                args = ["osascript"]
+                for line in lines:
+                    args += ["-e", line]
+                r = subprocess.run(args, capture_output=True, text=True, timeout=60)
+                if r.returncode != 0:
+                    self._json(500, {"ok": False, "error": (r.stderr or "osascript a échoué").strip()})
+                    return
+                self._json(200, {"ok": True})
             except Exception as e:
                 self._json(500, {"ok": False, "error": str(e)})
             return

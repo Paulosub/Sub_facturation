@@ -17828,14 +17828,7 @@ function dvDlgCalc(pid){
     '</tr></thead><tbody id="dv_ca_tb"></tbody></table></div>'+
   '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'+
     '<div style="position:relative"><button class="btn btn-sm" onclick="dvCalcMenu()" title="Actions du calcul"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span></button>'+
-    '<div id="dv_ca_menu" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:330px;z-index:50;font-size:12.5px">'+
-      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcCopy()">Copier le calcul</div>'+
-      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcPaste()">Coller le calcul</div>'+
-      '<div style="border-top:1px solid #e4e4e4;padding:7px 14px;color:#b5b5b5" title="À venir">Navigateur …</div>'+
-      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcArrOpen()">Arrondi …</div>'+
-      '<div style="border-top:1px solid #e4e4e4;padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcClipTable()">Copier le contenu du tableau dans le presse-papier</div>'+
-      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcCsv()">Exporter le tableau dans un fichier CSV …</div>'+
-    '</div></div>'+
+    '<div id="dv_ca_menu" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:330px;z-index:50;font-size:12.5px;white-space:nowrap"></div></div>'+
     '<span style="flex:1"></span>'+
     '<span style="color:#b5b5b5;font-size:12.5px" title="À venir">Total fixé TTC</span><button class="btn btn-sm" disabled style="opacity:.4">◀</button></div>'+
   '<div style="display:flex;gap:24px;align-items:center;margin-top:10px;flex-wrap:wrap">'+
@@ -17906,7 +17899,38 @@ function dvCalcMove(mode){ const p=dvCalcP(); const rows=p.calc.rows; const i=_d
   let j=(mode===0)?0:(mode===1)?i-1:(mode===2)?i+1:rows.length-1;
   if(j<0||j>=rows.length||j===i) return;
   const r=rows.splice(i,1)[0]; rows.splice(j,0,r); _dvCalcSel=j; dvCalcRender(); }
-function dvCalcMenu(){ const m=document.getElementById('dv_ca_menu'); if(m) m.style.display=(m.style.display==='none'?'block':'none'); }
+function dvCalcMenu(){
+  const m=document.getElementById('dv_ca_menu'); if(!m) return;
+  if(m.style.display==='block'){ m.style.display='none'; return; }
+  const p=dvCalcP();
+  const selOk=p&&_dvCalcSel!=null&&_dvCalcSel>=0&&p.calc.rows[_dvCalcSel];
+  const it=(lbl,fn,en,top)=> en
+    ? '<div style="'+(top?'border-top:1px solid #e4e4e4;':'')+'padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();'+fn+'">'+lbl+'</div>'
+    : '<div style="'+(top?'border-top:1px solid #e4e4e4;':'')+'padding:7px 14px;color:#b5b5b5">'+lbl+'</div>';
+  m.innerHTML=
+    it('Copier le calcul','dvCalcCopy()',true)+
+    it('Coller le calcul','dvCalcPaste()',!!(_dvCalcClipRows&&_dvCalcClipRows.length))+
+    it('Copier la ligne','dvCalcRowCopy()',!!selOk,1)+
+    it('Coller la ligne','dvCalcRowPaste()',!!(window._dvCalcRowClip&&selOk))+
+    it('Navigateur …','',false,1)+
+    it('Arrondi …','dvCalcArrOpen()',true)+
+    it('Copier le contenu du tableau dans le presse-papier','dvCalcClipTable()',true,1)+
+    it('Exporter le tableau dans un fichier CSV …','dvCalcCsv()',true);
+  m.style.display='block';
+}
+/* Copier / coller une LIGNE du calcul (même mécanique que ⌘C/⌘V) */
+function dvCalcRowCopy(){
+  const p=dvCalcP(); if(!p||_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord une ligne.'); return; }
+  window._dvCalcRowClip=JSON.parse(JSON.stringify(p.calc.rows[_dvCalcSel]));
+  toast('Ligne '+(_dvCalcSel+1)+' copiée — sélectionnez la ligne de destination puis « Coller la ligne ».');
+}
+function dvCalcRowPaste(){
+  const p=dvCalcP(); if(!p||!window._dvCalcRowClip) return;
+  if(_dvCalcSel==null||_dvCalcSel<0||!p.calc.rows[_dvCalcSel]){ toast('Sélectionnez d’abord la ligne de destination.'); return; }
+  p.calc.rows[_dvCalcSel]=JSON.parse(JSON.stringify(window._dvCalcRowClip));
+  dvCalcRender();
+  toast('Ligne collée sur la ligne '+(_dvCalcSel+1)+'.');
+}
 /* ⌘C / ⌘V dans le tableau : copie la LIGNE sélectionnée, puis la colle SUR la ligne
    sélectionnée au moment du coller (le texte sélectionné dans une cellule garde la copie native). */
 function dvCalcKey(ev){

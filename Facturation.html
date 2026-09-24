@@ -941,8 +941,9 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
   </div>
 </div>
 <div id="adr_pick_ov" style="display:none;position:fixed;inset:0;background:rgba(0,20,30,.45);z-index:10060">
-  <div style="background:#f4f4f4;width:1120px;max-width:96vw;margin:36px auto;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;height:calc(100vh - 84px);max-height:760px;overflow:hidden">
+  <div id="adr_pick_w" style="background:#f4f4f4;width:1120px;max-width:97vw;margin:36px auto;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;height:calc(100vh - 84px);max-height:94vh;overflow:hidden;resize:both;min-width:760px;min-height:420px;position:relative">
     <div id="adr_pick_t" style="background:#003346;color:#fff;font-weight:700;font-size:14px;text-align:center;padding:9px 14px;border-radius:10px 10px 0 0;flex:none">Navigateur d'adresses</div>
+    <button title="Agrandir / réduire la fenêtre" onclick="adrNavMax()" style="position:absolute;top:6px;right:10px;background:none;border:none;color:#fff;font-size:15px;cursor:pointer;line-height:1;padding:2px 4px">⤢</button>
     <div style="display:flex;align-items:center;gap:0;padding:10px 14px 0 14px;flex:none">
       <div id="adr_nav_tabs" style="display:flex;border:1px solid #c9c9c9;border-radius:7px;overflow:hidden;background:#fff"></div>
       <span style="flex:1"></span>
@@ -11939,7 +11940,6 @@ function adrNavRight(){
         (i===_adrNavSel?'background:#cfe3fa':(i%2?'':'background:#f2f6fa'))+'">'+
         td(it.row.soc)+td(it.row.resp)+td(it.row.dom)+td(it.row.fon)+td(it.row.cfc)+td(it.row.note)+'</tr>').join('')+
       '</table>'+(rows.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+(_adrNavRole?'Aucun intervenant pour ce rôle.':'Choisissez un rôle à gauche.')+'</div>');
-    document.getElementById('adr_pick_i').textContent=rows.length+' intervenant(s)'+(_adrNavRole?' — '+_adrNavRole:'');
     if(okB){ const on=_adrNavSel>=0&&window._adrPickItems[_adrNavSel]&&window._adrPickItems[_adrNavSel].a;
       okB.style.opacity=on?'1':'.5'; okB.style.pointerEvents=on?'auto':'none'; }
     return;
@@ -11995,7 +11995,6 @@ function adrNavRight(){
       CS.map(c2=>td(c2[1](a,e))).join('')+'</tr>').join('')+
     '</table>'+(items.length?'':'<div style="padding:10px;color:#999;font-size:12px">'+
       (_adrNavTab==='prop'&&!_adrNavProp?'Choisissez une propriété à gauche.':'Aucune adresse'+(_adrPickCfc?' pour le CFC '+pvEsc(_adrPickCfc):'')+'.')+'</div>');
-  document.getElementById('adr_pick_i').textContent=items.length+' adresse(s)'+(_adrPickCfc?' — CFC '+_adrPickCfc:'')+(_adrNavEnt&&_adrNavTab==='rech'?' — entité filtrée (recliquez pour tout afficher)':'');
   if(okB){ okB.style.opacity=_adrNavSel>=0?'1':'.5'; okB.style.pointerEvents=_adrNavSel>=0?'auto':'none'; }
 }
 /* Menus ⚙︎ (colonnes) et ✚ du bas de fenêtre */
@@ -12034,6 +12033,12 @@ function adrNavNew(){
   });
 }
 function adrPickFill(){ adrNavLeftFill(); adrNavRight(); }
+/* ⤢ : bascule plein écran de la fenêtre (le coin bas-droit permet aussi le redimensionnement libre) */
+function adrNavMax(){
+  const w=document.getElementById('adr_pick_w'); if(!w) return;
+  if(w.dataset.max==='1'){ w.dataset.max=''; w.style.width='1120px'; w.style.height='calc(100vh - 84px)'; w.style.margin='36px auto'; }
+  else { w.dataset.max='1'; w.style.width='97vw'; w.style.height='94vh'; w.style.margin='2vh auto'; }
+}
 function adrPickCfcGo(code){
   document.getElementById('adr_pick_ov').style.display='none';
   const x=document.getElementById('ae_cfc');

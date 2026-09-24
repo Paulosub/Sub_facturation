@@ -970,6 +970,16 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
     </div>
   </div>
 </div>
+<style id="noselect-style">
+/* Pas de sélection de texte sur les éléments cliquables (boutons, menus, lignes,
+   onglets…) dans toute l'app — les champs de saisie restent sélectionnables. */
+button, .btn, [onclick], [ondblclick], label, th, select, summary {
+  user-select:none; -webkit-user-select:none;
+}
+input, textarea, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"] {
+  user-select:text; -webkit-user-select:text;
+}
+</style>
 <style id="pv-style">
 #pv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
 #pv_out .pv-tb th{font-weight:bold;padding:6px 10px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}

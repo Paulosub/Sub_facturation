@@ -14677,13 +14677,13 @@ function dvRender(){
         '<td>'+B+ccF(ht)+B2+'</td><td>'+ccF(t-ht)+'</td><td>'+B+ccF(t)+B2+'</td>'+
         '<td>'+(C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td><td></td></tr>';
       return; }
-    const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100);
+    const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100), hasCalc=!!(pp.calc&&pp.calc.rows&&pp.calc.rows.length);
     h+='<tr>'+
       '<td class="cc-g"><input class="cc-in cc-int" list="dv_cfc_dl" style="width:58px" value="'+pvEsc(pp.cfc||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'cfc'+PV_Q+',this)"></td>'+
       '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(pp.lbl||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'lbl'+PV_Q+',this)"></td>'+
-      '<td style="color:#888;background:#f7f9fa">'+(t?ccF(ht):'')+'</td>'+
+      '<td style="color:#888;background:#f7f9fa;cursor:pointer" title="Double-clic : calcul détaillé de la position" ondblclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(ht):'')+(hasCalc?' <b style="color:#0a6e84" title="Calcul détaillé">ƒ</b>':'')+'</td>'+
       '<td style="color:#888">'+(t?ccF(t-ht):'')+'</td>'+
-      '<td><input class="cc-in" data-ttc="'+pvEsc(pp.cfc||'')+'" value="'+(t?ccF(t):'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'ttc'+PV_Q+',this)"></td>'+
+      '<td><input class="cc-in" data-ttc="'+pvEsc(pp.cfc||'')+'" '+(hasCalc?'disabled title="Montant issu du calcul détaillé — double-cliquez la cellule grise pour le modifier" style="color:#0a6e84;font-weight:600" ':'')+'value="'+(t?ccF(t):'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'ttc'+PV_Q+',this)"></td>'+
       '<td>'+(t&&C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td>'+
       '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td></tr>';
   });
@@ -14702,6 +14702,226 @@ function dvRender(){
   h+='</div>';
   h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';
   out.innerHTML=h;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALCUL DÉTAILLÉ D'UNE POSITION DU DEVIS — « Calcul pour 199 » : s'ouvre au
+   double-clic sur la cellule grise (Montant HT). Lignes : Commentaire · Base
+   (plus tard) · Calcul de quantités (expression 4+4*4 évaluée) · Quantité
+   (modifiable librement) · Unité · Prix HT ⇄ Prix TTC (l'un OU l'autre, TVA
+   modifiable) · Montant (NON modifiable = quantité × prix TTC) · Var (× =
+   additionné, « vue » = variante non additionnée). Roue crantée : copier /
+   coller le calcul (avertissement Remplacer / Compléter), Arrondi automatique,
+   copie presse-papier, export CSV — Navigateur grisé (plus tard). Montant de
+   position, Soumis aux honoraires et Calcul définitif : en attente (grisés).
+   Le Descriptif est conservé pour le futur descriptif de construction.
+═══════════════════════════════════════════════════════════════════════════ */
+let _dvCalcPid=null, _dvCalcSel=-1, _dvCalcClipRows=null;
+function dvEvalQ(x){ x=String(x==null?'':x).trim().replace(/,/g,'.');
+  if(x==='') return null;
+  if(!/^[-+*/(). 0-9]+$/.test(x)) return null;
+  try{ const v=Function('"use strict";return ('+x+')')(); return (typeof v==='number'&&isFinite(v))?Math.round(v*1000)/1000:null; }
+  catch(e){ return null; } }
+function dvCalcP(){ const D=dvA(); return D?D.pos.find(x=>x.id===_dvCalcPid):null; }
+function dvCalcTot(){ const p=dvCalcP(); let ht=0,ttc=0;
+  ((p&&p.calc&&p.calc.rows)||[]).forEach(r=>{ if(r.on===false) return;
+    const q=(ccP(r.qty)>0?ccP(r.qty):1); ht+=q*ccP(r.pht); ttc+=q*ccP(r.pttc); });
+  return {ht:Math.round(ht*100)/100, ttc:Math.round(ttc*100)/100}; }
+function dvDlgCalc(pid){
+  const D=dvA(); const p=D.pos.find(x=>x.id===pid); if(!p) return;
+  _dvCalcPid=pid; _dvCalcSel=-1;
+  window._dvCalcSnap = p.calc ? JSON.stringify(p.calc) : null;
+  window._dvCalcTtcSnap = p.ttc;
+  if(!p.calc) p.calc={rows:[], compos:'', desc:''};
+  if(!p.calc.rows) p.calc.rows=[];
+  if(!p.calc.rows.length && ccP(p.ttc)>0){ const tva=(D.tva!=null?D.tva:8.1);
+    p.calc.rows.push({com:'', base:'', qexp:'', qty:'', unit:'', pht:Math.round(ccP(p.ttc)/(1+tva/100)*100)/100, tva:tva, pttc:ccP(p.ttc), on:true}); }
+  const tb=(l,fn,tt)=>'<button class="btn btn-sm" style="min-width:34px" onclick="'+fn+'" title="'+tt+'">'+l+'</button>';
+  ccDlg(
+  '<div style="font-weight:700;text-align:center;margin-bottom:6px">Calcul pour '+pvEsc(p.cfc||'')+'</div>'+
+  '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">'+
+    tb('✚','dvCalcAdd()','Ajouter une ligne')+tb('−','dvCalcDel()','Supprimer la ligne sélectionnée')+
+    '<span style="width:14px"></span>'+
+    tb('⏫','dvCalcMove(0)','Déplacer en premier')+tb('↑','dvCalcMove(1)','Monter')+tb('↓','dvCalcMove(2)','Descendre')+tb('⏬','dvCalcMove(3)','Déplacer en dernier')+
+    '<span style="flex:1"></span>'+
+    '<div style="display:grid;grid-template-columns:80px 130px;gap:1px 10px;font-size:12.5px">'+
+    '<span style="color:#555">Total HT</span><span id="dv_ca_ht" style="text-align:right">0.00</span>'+
+    '<span style="color:#555;font-weight:700">Total TTC</span><b id="dv_ca_ttc" style="text-align:right">0.00</b></div></div>'+
+  '<div style="border:1px solid #cfd8db;border-radius:6px;max-height:300px;overflow:auto">'+
+    '<table class="cc-tb" style="min-width:1020px"><thead><tr>'+
+    '<th class="cc-g" style="min-width:180px">Commentaire</th><th class="cc-g" style="width:70px">Base</th>'+
+    '<th class="cc-g" style="min-width:130px">Calcul de quantités</th><th style="width:74px">Quantité</th>'+
+    '<th class="cc-g" style="width:48px">Unité</th><th style="width:86px">Prix HT</th><th style="width:48px">TVA</th>'+
+    '<th style="width:86px">Prix TTC</th><th style="width:96px">Montant</th><th style="width:40px">Var</th>'+
+    '</tr></thead><tbody id="dv_ca_tb"></tbody></table></div>'+
+  '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'+
+    '<div style="position:relative"><button class="btn btn-sm" onclick="dvCalcMenu()" title="Actions du calcul">⚙︎</button>'+
+    '<div id="dv_ca_menu" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:330px;z-index:50;font-size:12.5px">'+
+      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcCopy()">Copier le calcul</div>'+
+      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcPaste()">Coller le calcul</div>'+
+      '<div style="border-top:1px solid #e4e4e4;padding:7px 14px;color:#b5b5b5" title="À venir">Navigateur …</div>'+
+      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcArrOpen()">Arrondi …</div>'+
+      '<div style="border-top:1px solid #e4e4e4;padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcClipTable()">Copier le contenu du tableau dans le presse-papier</div>'+
+      '<div style="padding:7px 14px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCalcMenu();dvCalcCsv()">Exporter le tableau dans un fichier CSV …</div>'+
+    '</div></div>'+
+    '<span style="flex:1"></span>'+
+    '<span style="color:#b5b5b5;font-size:12.5px" title="À venir">Total fixé TTC</span><button class="btn btn-sm" disabled style="opacity:.4">◀</button></div>'+
+  '<div style="display:flex;gap:24px;align-items:center;margin-top:10px;flex-wrap:wrap">'+
+    '<label style="font-size:12.5px;color:#333;display:flex;align-items:center;gap:8px;flex:1;min-width:300px">Commentaire de la position '+
+      '<input type="text" id="dv_ca_compos" value="'+pvEsc((p.calc.compos||''))+'" style="flex:1;border:1px solid #ccc;border-radius:4px;padding:5px 8px;font-size:12.5px"></label>'+
+    '<label style="font-size:12.5px;color:#b5b5b5;display:flex;align-items:center;gap:8px" title="En attente — impact sur le DG à vérifier">Montant de position '+
+      '<select disabled style="opacity:.5;font-size:12.5px;padding:3px 6px"><option>Inclure</option></select></label></div>'+
+  '<div style="display:flex;gap:24px;align-items:center;margin-top:8px;flex-wrap:wrap">'+
+    '<label style="font-size:12.5px;color:#b5b5b5;display:flex;align-items:center;gap:8px" title="À venir">Soumis aux honoraires '+
+      '<input disabled value="0.00" style="opacity:.5;width:70px;text-align:right;border:1px solid #ddd;border-radius:4px;padding:4px 6px;font-size:12.5px"> % <button class="btn btn-sm" disabled style="opacity:.4">◀</button></label>'+
+    '<label style="font-size:12.5px;color:#b5b5b5;display:flex;align-items:center;gap:6px" title="À venir"><input type="checkbox" disabled style="opacity:.5"> Calcul définitif</label></div>'+
+  '<div style="font-size:12.5px;color:#333;margin-top:10px">Descriptif <span style="color:#999">— description des travaux prévus dans ce CFC (servira au descriptif de construction)</span></div>'+
+  '<textarea id="dv_ca_desc" rows="6" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:12.5px;margin-top:4px">'+pvEsc(p.calc.desc||'')+'</textarea>'+
+  '<div style="text-align:right;margin-top:12px"><button class="btn btn-sm" onclick="dvCalcCancel()">Annuler</button> '+
+  '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="dvCalcOk()">OK</button></div>', 1120);
+  dvCalcRender();
+}
+function dvCalcRender(){
+  const p=dvCalcP(); const tb=document.getElementById('dv_ca_tb'); if(!p||!tb) return;
+  const rows=p.calc.rows;
+  tb.innerHTML=rows.map((r,i)=>{
+    const q=ccP(r.qty), m=(q>0?q:1)*ccP(r.pttc);
+    const sel=(i===_dvCalcSel);
+    const inp=(k,v,st,ph)=>'<input class="cc-in'+(st&&st.indexOf('cc-int')>=0?' cc-int':'')+'" style="'+(st||'')+'" '+(ph?'placeholder="'+ph+'" ':'')+'value="'+pvEsc(v==null?'':String(v))+'" onchange="dvCalcSet('+i+','+PV_Q+k+PV_Q+',this)">';
+    return '<tr onclick="dvCalcSel2('+i+')" style="'+(sel?'outline:2px solid #4a90d9;outline-offset:-2px;':'')+'">'+
+      '<td class="cc-g">'+inp('com',r.com,'cc-int;width:96%','type de travaux…')+'</td>'+
+      '<td class="cc-g"><input class="cc-in cc-int" disabled title="À venir" style="opacity:.4;width:56px" value="'+pvEsc(r.base||'')+'"></td>'+
+      '<td class="cc-g">'+inp('qexp',r.qexp,'cc-int;width:96%','ex. 4+4*4')+'</td>'+
+      '<td>'+inp('qty',(r.qty===''||r.qty==null)?'':r.qty,'width:60px')+'</td>'+
+      '<td class="cc-g">'+inp('unit',r.unit,'cc-int;width:38px')+'</td>'+
+      '<td>'+inp('pht',ccP(r.pht)?ccF(ccP(r.pht)):'','width:76px')+'</td>'+
+      '<td>'+inp('tva',(r.tva!=null?r.tva:8.1),'width:40px')+'</td>'+
+      '<td>'+inp('pttc',ccP(r.pttc)?ccF(ccP(r.pttc)):'','width:76px')+'</td>'+
+      '<td style="color:#555">'+(ccP(r.pttc)?ccF(m):'')+'</td>'+
+      '<td style="text-align:center;cursor:pointer" onclick="event.stopPropagation();dvCalcVar('+i+')" title="'+(r.on===false?'Variante NON additionnée — cliquer pour additionner':'Additionné — cliquer pour passer en variante (vue)')+'">'+
+        (r.on===false?'<span style="color:#b5b5b5;font-size:11px">vue</span>':'<b>×</b>')+'</td></tr>';
+  }).join('');
+  const t=dvCalcTot();
+  const eh=document.getElementById('dv_ca_ht'), et=document.getElementById('dv_ca_ttc');
+  if(eh) eh.textContent=ccF(t.ht); if(et) et.textContent=ccF(t.ttc);
+}
+function dvCalcSel2(i){ if(_dvCalcSel!==i){ _dvCalcSel=i; dvCalcRender(); } }
+function dvCalcSet(i,k,el){
+  const p=dvCalcP(); const r=p.calc.rows[i]; if(!r) return;
+  if(k==='qexp'){ r.qexp=el.value; const v=dvEvalQ(el.value);
+    if(el.value.trim()!==''&&v==null) toast('Calcul de quantités invalide — utilisez chiffres et + − × ⁄ ( ).');
+    if(v!=null) r.qty=v; }
+  else if(k==='qty'){ r.qty=(el.value.trim()==='')?'':ccP(el.value); }
+  else if(k==='pht'){ r.pht=ccP(el.value); r.pttc=Math.round(r.pht*(1+ccP(r.tva)/100)*100)/100; }
+  else if(k==='pttc'){ r.pttc=ccP(el.value); r.pht=Math.round(r.pttc/(1+ccP(r.tva)/100)*100)/100; }
+  else if(k==='tva'){ r.tva=ccP(el.value);
+    if(ccP(r.pht)>0) r.pttc=Math.round(ccP(r.pht)*(1+r.tva/100)*100)/100;
+    else if(ccP(r.pttc)>0) r.pht=Math.round(ccP(r.pttc)/(1+r.tva/100)*100)/100; }
+  else r[k]=el.value;
+  dvCalcRender();
+}
+function dvCalcVar(i){ const p=dvCalcP(); const r=p.calc.rows[i]; if(!r) return;
+  r.on=(r.on===false); dvCalcRender(); }
+function dvCalcNewRow(){ const D=dvA(); return {com:'', base:'', qexp:'', qty:'', unit:'', pht:0, tva:(D.tva!=null?D.tva:8.1), pttc:0, on:true}; }
+function dvCalcAdd(){ const p=dvCalcP(); const rows=p.calc.rows;
+  const at=(_dvCalcSel>=0?_dvCalcSel+1:rows.length);
+  rows.splice(at,0,dvCalcNewRow()); _dvCalcSel=at; dvCalcRender(); }
+function dvCalcDel(){ const p=dvCalcP(); const rows=p.calc.rows;
+  if(_dvCalcSel<0||_dvCalcSel>=rows.length){ toast('Sélectionnez une ligne (clic) puis −.'); return; }
+  rows.splice(_dvCalcSel,1); if(_dvCalcSel>=rows.length) _dvCalcSel=rows.length-1; dvCalcRender(); }
+function dvCalcMove(mode){ const p=dvCalcP(); const rows=p.calc.rows; const i=_dvCalcSel;
+  if(i<0||i>=rows.length){ toast('Sélectionnez une ligne à déplacer.'); return; }
+  let j=(mode===0)?0:(mode===1)?i-1:(mode===2)?i+1:rows.length-1;
+  if(j<0||j>=rows.length||j===i) return;
+  const r=rows.splice(i,1)[0]; rows.splice(j,0,r); _dvCalcSel=j; dvCalcRender(); }
+function dvCalcMenu(){ const m=document.getElementById('dv_ca_menu'); if(m) m.style.display=(m.style.display==='none'?'block':'none'); }
+function dvCalcCopy(){ const p=dvCalcP(); _dvCalcClipRows=JSON.parse(JSON.stringify(p.calc.rows)); toast('Calcul copié ('+_dvCalcClipRows.length+' ligne(s)).'); }
+function dvCalcHasContent(){ const p=dvCalcP();
+  return (p.calc.rows||[]).some(r=>(r.com||'').trim()||(r.qexp||'').trim()||ccP(r.qty)||ccP(r.pht)||ccP(r.pttc)); }
+function dvCalcPaste(){
+  if(!_dvCalcClipRows||!_dvCalcClipRows.length){ toast('Aucun calcul copié.'); return; }
+  if(dvCalcHasContent()){
+    dvMini('<div style="display:flex;gap:14px;align-items:flex-start"><div style="font-size:26px">⚠︎</div>'+
+      '<div style="font-size:13px;line-height:1.5">Vous avez déjà inséré un calcul. Voulez-vous le remplacer ou le compléter par le contenu du presse-papier ?</div></div>'+
+      '<div style="text-align:right;margin-top:16px"><button class="btn btn-sm" onclick="dvMiniClose()">Annuler</button> '+
+      '<button class="btn btn-sm" onclick="dvCalcPasteDo(0)">Remplacer</button> '+
+      '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="dvCalcPasteDo(1)">Compléter</button></div>');
+  } else dvCalcPasteDo(0);
+}
+function dvCalcPasteDo(mode){
+  dvMiniClose(); const p=dvCalcP(); const cp=JSON.parse(JSON.stringify(_dvCalcClipRows));
+  if(mode===0) p.calc.rows=cp; else p.calc.rows=p.calc.rows.concat(cp);
+  _dvCalcSel=-1; dvCalcRender();
+}
+function dvCalcArrOpen(){
+  dvMini('<div style="font-weight:700;margin-bottom:12px;text-align:center">Arrondir</div>'+
+    '<label style="display:flex;align-items:center;gap:10px;font-size:13px">Montant '+
+    '<input type="text" id="dv_arr_mnt" style="flex:1;border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:13px;text-align:right"></label>'+
+    '<div style="font-size:11.5px;color:#888;margin-top:6px">Montant TTC final souhaité — une ligne « Arrondi » sera calculée automatiquement.</div>'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="dvMiniClose()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#0a4a5e;color:#fff" onclick="dvCalcArrDo()">OK</button></div>');
+  setTimeout(()=>{ const e=document.getElementById('dv_arr_mnt'); if(e) e.focus(); },50);
+}
+function dvCalcArrDo(){
+  const target=ccP(document.getElementById('dv_arr_mnt').value); dvMiniClose();
+  if(!(target>0)){ toast('Indiquez le montant TTC final.'); return; }
+  const p=dvCalcP(); const D=dvA(); const tva=(D.tva!=null?D.tva:8.1);
+  const diff=Math.round((target-dvCalcTot().ttc)*100)/100;
+  if(Math.abs(diff)<0.005){ toast('Le total est déjà à '+ccF(target)+'.'); return; }
+  p.calc.rows.push({com:'Arrondi', base:'', qexp:'', qty:'', unit:'', pht:Math.round(diff/(1+tva/100)*100)/100, tva:tva, pttc:diff, on:true});
+  _dvCalcSel=p.calc.rows.length-1; dvCalcRender();
+}
+function dvCalcTsv(sep){
+  const p=dvCalcP();
+  const head=['Commentaire','Base','Calcul de quantités','Quantité','Unité','Prix HT','TVA','Prix TTC','Montant','Var'];
+  const lines=[head.join(sep)];
+  p.calc.rows.forEach(r=>{ const q=ccP(r.qty), m=(q>0?q:1)*ccP(r.pttc);
+    lines.push([r.com||'', r.base||'', r.qexp||'', (r.qty===''||r.qty==null)?'':r.qty, r.unit||'',
+      ccP(r.pht)?ccP(r.pht).toFixed(2):'', (r.tva!=null?r.tva:''), ccP(r.pttc)?ccP(r.pttc).toFixed(2):'',
+      ccP(r.pttc)?m.toFixed(2):'', (r.on===false?'vue':'x')].join(sep)); });
+  const t=dvCalcTot();
+  lines.push(['TOTAL','','','','', t.ht.toFixed(2),'', '', t.ttc.toFixed(2),''].join(sep));
+  return lines.join('\n');
+}
+function dvCalcClipTable(){
+  const txt=dvCalcTsv('\t');
+  const done=()=>toast('Tableau copié dans le presse-papier.');
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,()=>dvCalcClipFallback(txt,done)); }
+  else dvCalcClipFallback(txt,done);
+}
+function dvCalcClipFallback(txt,done){
+  const ta=document.createElement('textarea'); ta.value=txt; ta.style.cssText='position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ toast('Copie impossible dans ce navigateur.'); }
+  ta.remove();
+}
+function dvCalcCsv(){
+  const p=dvCalcP();
+  const blob=new Blob(['﻿'+dvCalcTsv(';')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='calcul_'+String(p.cfc||'position').replace(/[^0-9A-Za-z.\-]/g,'_')+'.csv';
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },300);
+}
+function dvMini(html){
+  let ov=document.getElementById('dv_mini_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='dv_mini_ov';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,20,30,.35);z-index:9500'; document.body.appendChild(ov); }
+  ov.innerHTML='<div style="background:#fff;width:440px;max-width:90vw;margin:150px auto;border-radius:10px;padding:16px 20px;box-shadow:0 8px 40px rgba(0,0,0,.35)">'+html+'</div>';
+  ov.style.display='block';
+}
+function dvMiniClose(){ const ov=document.getElementById('dv_mini_ov'); if(ov) ov.style.display='none'; }
+function dvCalcOk(){
+  const p=dvCalcP(); if(!p) return;
+  p.calc.compos=(document.getElementById('dv_ca_compos')||{}).value||'';
+  p.calc.desc=(document.getElementById('dv_ca_desc')||{}).value||'';
+  p.ttc=dvCalcTot().ttc;
+  if(!dvCalcHasContent()) p.calc=null;   // calcul vide → la position redevient saisissable directement
+  dvPersist(); ccDlgClose(); dvRender();
+}
+function dvCalcCancel(){
+  const p=dvCalcP();
+  if(p){ p.calc=window._dvCalcSnap?JSON.parse(window._dvCalcSnap):null; p.ttc=window._dvCalcTtcSnap; }
+  ccDlgClose(); dvRender();
 }
 
 /* ═══════════════════════════════════════════════════

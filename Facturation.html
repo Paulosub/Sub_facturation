@@ -15696,10 +15696,12 @@ function dvHonSync(){
     if(pct>0.01&&pct<99.995){ partiel=true; tot+=m/(pct/100); } else tot+=m;
   });
   tot=partiel?Math.round(tot):Math.round(tot*100)/100;
-  const lbl='Honoraires d'+String.fromCharCode(8217)+'architecte (contrat sign'+String.fromCharCode(233)+(partiel?', extrapol'+String.fromCharCode(233)+' '+String.fromCharCode(224)+' 100%':'')+')';
+  /* on ne copie QUE le montant — le libellé du CFC 291 reste celui du catalogue (« Architecte ») */
   if(i>=0){
-    if(ccP(D.pos[i].ttc)!==tot||D.pos[i].lbl!==lbl){ D.pos[i].ttc=String(tot); D.pos[i].lbl=lbl; dvPersist(); }
-  } else { D.pos.push({id:'hon_contrat', cfc:'291', lbl:lbl, ttc:String(tot)}); dvPersist(); }
+    /* migration : anciennes positions créées avec le libellé long → libellé du catalogue */
+    if(/contrat sign/.test(D.pos[i].lbl||'')){ D.pos[i].lbl=ccCatLbl('291')||'Architecte'; dvPersist(); }
+    if(ccP(D.pos[i].ttc)!==tot){ D.pos[i].ttc=String(tot); dvPersist(); }
+  } else { D.pos.push({id:'hon_contrat', cfc:'291', lbl:ccCatLbl('291')||'Architecte', ttc:String(tot)}); dvPersist(); }
 }
 /* Report du montant 291 modifié à la main dans le contrat d'architecte :
    les montants du contrat sont recalculés au prorata (montant à 100% saisi × % des phases). */

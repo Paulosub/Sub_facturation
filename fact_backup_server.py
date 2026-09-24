@@ -219,7 +219,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 lines = [
                     'tell application "Mail"',
                     '  activate',
-                    '  set m to make new outgoing message with properties {subject:"%s", content:"%s" & return & return, visible:true}' % (esc(subject), esc(body.replace("\r", "").replace("\n", '" & return & "'))),
+                    # échapper d'abord, puis convertir les retours à la ligne en « " & return & " »
+                    # (dans l'autre ordre, les guillemets insérés sont échappés et apparaissent en clair dans le mail)
+                    '  set m to make new outgoing message with properties {subject:"%s", content:"%s" & return & return, visible:true}' % (esc(subject), esc(body.replace("\r", "")).replace("\n", '" & return & "')),
                 ]
                 if to:
                     lines.append('  tell m to make new to recipient at end of to recipients with properties {address:"%s"}' % esc(to))

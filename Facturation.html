@@ -15613,7 +15613,10 @@ function dvUnmark(){ document.querySelectorAll('#dv_out tr.dv-sel').forEach(x=>x
 function dvSelPos(id,tr){ _dvSel=id; _dvSelG=null; dvUnmark(); if(tr) tr.classList.add('dv-sel'); }
 function dvDocMenuP(){ const m=document.getElementById('dv_doc_menu_p');
   if(m) m.style.display=(m.style.display==='none'?'block':'none');
-  ['dv_tb_menu','dv_tb_menu_t'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; }); }
+  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_m'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; }); }
+function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m');
+  if(m) m.style.display=(m.style.display==='none'?'block':'none');
+  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; }); }
 function dvDocOuvrir(){ toast('Ouvrir « '+(window._dvDocSel||'document')+' » — fenêtre à définir.'); }
 /* Sélection d'un document (Devis général / Honoraires / Devis descriptif) : active les icônes +/−/roue. */
 function dvDocSel(n,tr){ window._dvDocSel=n;
@@ -15813,7 +15816,12 @@ function dvRender(){
       '<div style="height:10px"></div>'+
       '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Créer un PDF comme jointe au document …</div>'+
     '</div></span>'+
-    db(dbSvg('M3 7.5h9'),'Supprimer')+
+    '<span style="position:relative;display:inline-flex">'+
+    '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Supprimer — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuM()">'+dbSvg('M3 7.5h9')+' <span style="font-size:8px;color:#666">▾</span></button>'+
+    '<div id="dv_doc_menu_m" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:250px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0">'+
+      '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Effacer le document …</div>'+
+      '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Effacer le PDF …</div>'+
+    '</div></span>'+
     db('<span style="font-size:13px;line-height:1">⚙︎</span>','Réglages')+'</span></div>'+
     '<table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+

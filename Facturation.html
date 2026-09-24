@@ -16328,6 +16328,7 @@ function dvDocShow(titre, pagesHtml){
     print:S+'<path d="M4 5.5V2h7v3.5M3 5.5h9a1 1 0 0 1 1 1V11h-2.5v2H4.5v-2H2V6.5a1 1 0 0 1 1-1z"/><path d="M4.5 10.5h6"/></svg>',
     sliders:S+'<path d="M2 4h11M2 7.5h11M2 11h11"/><circle cx="5" cy="4" r="1.5" fill="#f2f2f2"/><circle cx="10" cy="7.5" r="1.5" fill="#f2f2f2"/><circle cx="6.5" cy="11" r="1.5" fill="#f2f2f2"/></svg>',
     pencil:S+'<path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg>',
+    brush:S+'<path d="M12.6 2.4c.6.6.5 1.5-.1 2.1L8 9 6 7 10.5 2.5c.6-.6 1.5-.7 2.1-.1z"/><path d="M6 7c-1.6.3-2.3 1.2-2.5 2.6-.1 1-.4 1.7-1.5 2.4 1.8.8 4.4.4 5.3-.8.7-.9.8-2.2.7-3.2z" fill="#f2f2f2"/></svg>',
     first:S+'<path d="M4 3v9M11 3 6.5 7.5 11 12"/></svg>',
     prev:S+'<path d="M9.5 3 5 7.5 9.5 12"/></svg>',
     next:S+'<path d="M5.5 3 10 7.5 5.5 12"/></svg>',
@@ -16354,9 +16355,8 @@ function dvDocShow(titre, pagesHtml){
       '<span style="flex:1;text-align:center;font-weight:700;font-size:13px;color:#333">'+pvEsc(titre)+'</span>'+
       '<span style="width:12px;flex:none"></span></div>'+
     '<div id="dv_ap_bar" style="background:#ececec;border-bottom:1px solid #bbb;padding:5px 14px;display:flex;align-items:center;gap:6px;flex:none">'+
-      B('print','','Imprimer — à venir',1)+
-      B('sliders','','Réglages de l'+String.fromCharCode(39)+'aperçu — à venir',1)+
-      B('pencil','','Annoter — à venir',1)+
+      B('brush','dvDocParamOpen()','Paramètres du document')+
+      B('print','dvDocPrint()','Imprimer')+
       '<span style="flex:1"></span>'+
       B('first','dvApGo(1)','Première page')+
       B('prev','dvApGo('+String.fromCharCode(39)+'-'+String.fromCharCode(39)+')','Page précédente')+
@@ -16367,8 +16367,7 @@ function dvDocShow(titre, pagesHtml){
       '<select id="dv_ap_zoom" onchange="dvApZoom(this.value)" style="margin-left:10px;border:1px solid #c9c9c9;border-radius:4px;padding:3px 4px;font-size:12px;background:#fff">'+
         '<option value="fit" selected>Ajuster</option>'+
         ['50','75','100','125','150','200'].map(z=>'<option value="'+z+'">'+z+'&nbsp;%</option>').join('')+'</select>'+
-      '<span style="flex:1"></span>'+
-      M(1,'doc','Fichier PDF')+M(2,'share','Partager')+'</div>'+
+      '<span style="flex:1"></span>'+'</div>'+
     '<div id="dv_doc_sc" style="flex:1;overflow:auto;background:#565b5e;padding:12px;display:flex;align-items:flex-start;justify-content:center">'+pagesHtml+'</div>';
   document.body.appendChild(win);
   // Déplacement par la barre de titre
@@ -16731,6 +16730,158 @@ function dvDocFenStd(){
     '<div class="offre-logo">SUBSTANCES<br>ARCHITECTES</div>'+
     offreFoot(1,1)+'</div>';
   dvDocShow('Devis général', page);
+}
+/* Impression du document affiché dans la fenêtre popup : les pages sont copiées dans
+   une fenêtre d'impression avec les styles de l'app. */
+function dvDocPrint(){
+  const sc=document.getElementById('dv_doc_sc'); if(!sc) return;
+  const w=window.open('','_blank');
+  if(!w){ toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+  const css=[...document.querySelectorAll('style')].map(s2=>s2.textContent).join(String.fromCharCode(10));
+  w.document.write('<html><head><title>Impression</title><style>'+css+
+    '</style><style>body{margin:0;background:#fff}.offre-page{box-shadow:none!important;margin:0 auto!important;zoom:1!important;display:block!important;page-break-after:always}</style></head><body>'+sc.innerHTML+'</body></html>');
+  w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 350);
+}
+/* ===== Fenêtre « Paramètres » du document (pinceau — clone Deltaproject) ===== */
+function dvDocParam(){ const D=dvA(); if(!D) return {};
+  if(!D.paramDoc) D.paramDoc={
+    garde:true, infos:false, rec1:false, rec2:false, principal:true,
+    pvGarde:0, pvInfos:0, pvRec1:0, pvRec2:0, modele:'Standard – project1',
+    p13:false, baseCom:false, baseComCol:false, descr:false, exclure:true, pct:true,
+    sepTva:false, sansDec:false, sansMont:true, montants:true, saisies:true,
+    cBases:false, cDet:false, cVar:false, cComB:false, cQpm:false, cCalcQ:false,
+    fT:'Serif', fTs:9, fP:'Serif', fPs:9, fI:'Serif', fIs:8, interligne:15,
+    tr1:false, tr1e:0.75, tr2:false, tr2e:0.75, decaler:false, fmtLigne:'sans',
+    tCfc:'CFC', tTxt:'Texte', tCom:'Commentaire', t4:'à 4 chiffres', t3:'à 3 chiffres',
+    t2c:'à 2 chiffres', t1c:'à 1 chiffre', tMt:'Montant', tOuv:'OUV', tLoc:'LOC',
+    tEc:'[%]', tNom:'Nom', tDesc:'Description',
+    arr:false, arrPas:1000};
+  return D.paramDoc; }
+let _dvDocPCat='doc';
+function dvDocParamOpen(){
+  if(!dvA()){ toast('Ouvrez d’abord un devis.'); return; }
+  window._dvDocPTmp=JSON.parse(JSON.stringify(dvDocParam()));
+  _dvDocPCat='doc';
+  let ov=document.getElementById('dv_docp_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='dv_docp_ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10060';
+    document.body.appendChild(ov); }
+  ov.innerHTML=
+  '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:900px;max-width:95vw;background:#f4f4f4;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;height:640px;max-height:92vh">'+
+    '<div style="background:#003346;color:#fff;font-weight:700;font-size:14px;text-align:center;padding:9px 14px;border-radius:10px 10px 0 0">Paramètres</div>'+
+    '<div style="flex:1;display:flex;gap:12px;padding:12px 16px;min-height:0">'+
+      '<div id="dv_docp_cats" style="width:210px;flex:none;border:1px solid #7fb4e8;border-radius:4px;background:#fff;overflow:auto"></div>'+
+      '<div id="dv_docp_body" style="flex:1;border:1px solid #c9c9c9;border-radius:4px;background:#efefef;overflow:auto;padding:18px 22px"></div>'+
+    '</div>'+
+    '<div style="flex:none;display:flex;justify-content:flex-end;gap:10px;padding:0 16px 14px 16px">'+
+      '<button class="btn btn-sm" style="padding:5px 20px;background:#fff;border:1px solid #c9c9c9;border-radius:7px" onclick="document.getElementById('+PV_Q+'dv_docp_ov'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+'">Annuler</button>'+
+      '<button class="btn btn-sm" style="padding:5px 26px;background:#0a84ff;border:1px solid #0a84ff;border-radius:7px;color:#fff;font-weight:600" onclick="dvDocParamOk()">OK</button></div>'+
+  '</div>';
+  ov.style.display='block';
+  dvDocParamFill();
+}
+function dvDocPCat(k){ dvDocParamKeep(); _dvDocPCat=k; dvDocParamFill(); }
+function dvDocParamKeep(){
+  const P=window._dvDocPTmp||{};
+  const gv=id=>{ const x=document.getElementById('dvdp_'+id); return x?x.value:null; };
+  const gc=id=>{ const x=document.getElementById('dvdp_'+id); return x?x.checked:null; };
+  ['garde','infos','rec1','rec2','principal','p13','baseCom','descr','exclure','pct','sepTva','sansDec','sansMont','montants','saisies',
+   'cBases','cDet','cComB','cQpm','tr1','tr2','decaler','arr'].forEach(k=>{ const v=gc(k); if(v!=null) P[k]=v; });
+  ['pvGarde','pvInfos','pvRec1','pvRec2'].forEach(k=>{ const v=gv(k); if(v!=null) P[k]=parseInt(v)||0; });
+  ['modele','fT','fP','fI','tCfc','tTxt','tCom','t4','t3','t2c','t1c','tMt','tOuv','tLoc','tEc','tNom','tDesc'].forEach(k=>{ const v=gv(k); if(v!=null) P[k]=v; });
+  ['fTs','fPs','fIs','interligne'].forEach(k=>{ const v=gv(k); if(v!=null) P[k]=parseFloat(v)||P[k]; });
+  ['tr1e','tr2e'].forEach(k=>{ const v=gv(k); if(v!=null) P[k]=parseFloat(v)||0.75; });
+  const r=document.querySelector('input[name=dvdp_fmt]:checked'); if(r) P.fmtLigne=r.value;
+  const r2=document.querySelector('input[name=dvdp_arrp]:checked'); if(r2) P.arrPas=parseInt(r2.value);
+}
+function dvDocParamFill(){
+  const P=window._dvDocPTmp||{};
+  const cats=[['doc','Document'],['pos','Positions'],['calc','Calcul'],['pol','Police'],['pres','Présentation et style'],['tit','Titres de colonnes'],['arr','Arrondir']];
+  document.getElementById('dv_docp_cats').innerHTML=
+    '<div style="padding:5px 10px;border-bottom:1px solid #ddd;font-size:13px">Catégorie</div>'+
+    cats.map(c=>'<div onclick="dvDocPCat('+PV_Q+c[0]+PV_Q+')" style="padding:5px 10px;font-size:13.5px;cursor:pointer'+
+      (c[0]===_dvDocPCat?';background:#2f7fe8;color:#fff':'')+'">'+c[1]+'</div>').join('');
+  const inp='border:1px solid #c8c8c8;border-radius:3px;padding:5px 8px;font-size:13px;background:#fff;font-family:inherit';
+  const ck=(k,l,gris)=>'<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;margin-bottom:14px;'+(gris?'color:#aaa':'cursor:pointer')+'">'+
+    '<input type="checkbox" id="dvdp_'+k+'"'+(P[k]?' checked':'')+(gris?' disabled':'')+'> '+l+'</label>';
+  let h='';
+  if(_dvDocPCat==='doc'){
+    const lig=(k,l,pv)=>'<div style="display:flex;align-items:center;margin-bottom:12px">'+
+      '<label style="flex:1;display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="dvdp_'+k+'"'+(P[k]?' checked':'')+'> '+l+'</label>'+
+      (pv?'<input id="dvdp_'+pv+'" style="'+inp+';width:52px;text-align:left" value="'+(P[pv]||0)+'">':'<span style="width:52px"></span>')+'</div>';
+    h='<div style="text-align:right;font-size:13.5px;margin-bottom:10px">Pages vides</div>'+
+      lig('garde','Page de garde','pvGarde')+
+      lig('infos','Informations','pvInfos')+
+      lig('rec1','Récapitulatif à 1 chiffre','pvRec1')+
+      lig('rec2','Récapitulatif à 2 chiffres','pvRec2')+
+      lig('principal','Document principal','')+
+      '<div style="margin-top:26px;font-size:13.5px">Modèle:</div>'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">'+
+      '<input id="dvdp_modele" style="'+inp+';flex:1" value="'+pvEscA(P.modele||'')+'">'+
+      '<button class="btn btn-sm" style="padding:3px 10px;background:#f2f2f2;border:1px solid #c9c9c9" title="Choisir un modèle — à venir" onclick="toast('+PV_Q+'Choix du modèle — à venir.'+PV_Q+')">◀</button></div>';
+  } else if(_dvDocPCat==='pos'){
+    h=ck('p13','Seulement positions de 1 à 3 chiffres')+
+      ck('baseCom','Base et commentaire de la position')+
+      ck('baseComCol','Base et commentaire dans colonne séparée',1)+
+      ck('descr','Intégrer le descriptif')+
+      ck('exclure','Afficher les positions à exclure')+
+      ck('pct','Pourcentages')+
+      ck('sepTva','Séparer la TVA')+
+      ck('sansDec','Ne pas afficher les décimales')+
+      ck('sansMont','Afficher les positions sans montant')+
+      ck('montants','Afficher les montants')+
+      ck('saisies','Afficher les positions saisies et les totalisateurs');
+  } else if(_dvDocPCat==='calc'){
+    h=ck('cBases','Bases de prix')+
+      ck('cDet','Montants détaillés')+
+      ck('cVar','Variantes',1)+
+      ck('cComB','Commentaires et bases des prix')+
+      ck('cQpm','Quantités, prix et montants')+
+      ck('cCalcQ','Calculs des quantités',1);
+  } else if(_dvDocPCat==='pol'){
+    const fam=(k)=>'<select id="dvdp_'+k+'" style="'+inp+';flex:1;background:#fff">'+
+      ['Serif','Sans Serif','Akkurat','Monospace'].map(f2=>'<option'+(P[k]===f2?' selected':'')+'>'+f2+'</option>').join('')+'</select>';
+    const sz=(k)=>'<input id="dvdp_'+k+'" type="number" style="'+inp+';width:64px;margin-left:10px" value="'+(P[k]||9)+'">';
+    const bloc=(l,k,ks)=>'<div style="font-size:13.5px;margin-bottom:6px">'+l+'</div><div style="display:flex;align-items:center;margin-bottom:16px">'+fam(k)+sz(ks)+'</div>';
+    h=bloc('Police des titres','fT','fTs')+bloc('Police des positions','fP','fPs')+
+      bloc('Police des informations détaillées','fI','fIs')+
+      '<div style="font-size:13.5px;margin:14px 0 6px 0">Interligne</div>'+
+      '<input id="dvdp_interligne" style="'+inp+';width:120px" value="'+(P.interligne||15)+'">';
+  } else if(_dvDocPCat==='pres'){
+    const trait=(k,ke,l)=>'<div style="display:flex;align-items:center;margin-bottom:14px;gap:10px">'+
+      '<label style="flex:1;display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="dvdp_'+k+'"'+(P[k]?' checked':'')+'> '+l+'</label>'+
+      '<input id="dvdp_'+ke+'" style="'+inp+';width:56px" value="'+(P[ke]||0.75)+'">'+
+      '<span style="display:inline-block;width:52px;height:30px;background:#000;border:1px solid #888"></span></div>';
+    const rad=(v,l)=>'<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer;margin-bottom:14px">'+
+      '<input type="radio" name="dvdp_fmt" value="'+v+'"'+(P.fmtLigne===v?' checked':'')+'> '+l+'</label>';
+    h='<div style="text-align:right;font-size:13.5px;margin-bottom:10px;padding-right:60px">Épaisseur</div>'+
+      trait('tr1','tr1e','Trait sous les positions à 1 chiffre')+
+      trait('tr2','tr2e','Trait sous les positions à 2 chiffres')+
+      ck('decaler','Décaler les montants')+
+      '<div style="height:24px"></div>'+
+      rad('sans','Sans formatage de ligne')+rad('alt','Fond alterné')+rad('gris','Détails en gris');
+  } else if(_dvDocPCat==='tit'){
+    const F=(k,l)=>'<div style="display:flex;align-items:center;margin-bottom:12px"><span style="width:220px;flex:none;font-size:13.5px">'+l+'</span>'+
+      '<input id="dvdp_'+k+'" style="'+inp+';flex:1" value="'+pvEscA(P[k]||'')+'"></div>';
+    h=F('tCfc','Titre: N° CFC')+F('tTxt','Titre: Texte CFC')+F('tCom','Titre: Commentaire')+
+      F('t4','Titre: Montants à 4 chiffres')+F('t3','Titre: Montants à 3 chiffres')+
+      F('t2c','Titre: Montants à 2 chiffres')+F('t1c','Titre: Montants à 1 chiffre')+
+      F('tMt','Titre: Montant')+F('tOuv','Titre: Ouvrage')+F('tLoc','Titre: Localisation')+
+      F('tEc','Titre: Ecart')+'<div style="height:10px"></div>'+F('tNom','Nom')+F('tDesc','Description');
+  } else {
+    const rad=(v,l)=>'<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer;margin:0 0 14px 30px">'+
+      '<input type="radio" name="dvdp_arrp" value="'+v+'"'+(P.arrPas===v?' checked':'')+'> '+l+'</label>';
+    h='<div style="font-size:13.5px;margin-bottom:14px">Choix d’arrondis</div>'+
+      ck('arr','Arrondir')+rad(10,'Arrondir à 10')+rad(100,'Arrondir à 100')+rad(1000,'Arrondir à 1000');
+  }
+  document.getElementById('dv_docp_body').innerHTML=h;
+}
+function dvDocParamOk(){
+  dvDocParamKeep();
+  const D=dvA(); if(D){ D.paramDoc=window._dvDocPTmp; dvPersist(); }
+  document.getElementById('dv_docp_ov').style.display='none';
+  toast('Paramètres du document enregistrés.');
 }
 /* Sélection d'un fichier dans la liste Fichiers PDF ; double-clic = ouvrir dans Aperçu. */
 function dvPdfSel(nom,tr,ev){

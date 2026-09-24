@@ -14681,9 +14681,9 @@ function dvRender(){
     h+='<tr>'+
       '<td class="cc-g"><input class="cc-in cc-int" list="dv_cfc_dl" style="width:58px" value="'+pvEsc(pp.cfc||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'cfc'+PV_Q+',this)"></td>'+
       '<td class="cc-g"><input class="cc-in cc-int" value="'+pvEsc(pp.lbl||'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'lbl'+PV_Q+',this)"></td>'+
-      '<td style="color:#888;background:#f7f9fa;cursor:pointer" title="Double-clic : calcul détaillé de la position" ondblclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(ht):'')+(hasCalc?' <b style="color:#0a6e84" title="Calcul détaillé">ƒ</b>':'')+'</td>'+
+      '<td style="color:#888;background:#f7f9fa;cursor:pointer" title="Clic : calcul détaillé de la position" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?ccF(ht):'')+(hasCalc?' <b style="color:#0a6e84" title="Calcul détaillé">ƒ</b>':'')+'</td>'+
       '<td style="color:#888">'+(t?ccF(t-ht):'')+'</td>'+
-      '<td><input class="cc-in" data-ttc="'+pvEsc(pp.cfc||'')+'" '+(hasCalc?'disabled title="Montant issu du calcul détaillé — double-cliquez la cellule grise pour le modifier" style="color:#0a6e84;font-weight:600" ':'')+'value="'+(t?ccF(t):'')+'" onchange="dvSet('+PV_Q+pp.id+PV_Q+','+PV_Q+'ttc'+PV_Q+',this)"></td>'+
+      '<td style="cursor:pointer" data-ttc="'+pvEsc(pp.cfc||'')+'" title="Clic : ouvrir le calcul de la position (les montants ne se modifient pas directement dans le tableau)" onclick="dvDlgCalc('+PV_Q+pp.id+PV_Q+')">'+(t?('<b'+(hasCalc?' style="color:#0a6e84"':'')+'>'+ccF(t)+'</b>'):'<span style="color:#b5b5b5">—</span>')+'</td>'+
       '<td>'+(t&&C.totTTC>0.005?(t/C.totTTC*100).toFixed(2):'')+'</td>'+
       '<td><span class="cc-act" onclick="dvDelPos('+PV_Q+pp.id+PV_Q+')" title="Supprimer la position">✕</span></td></tr>';
   });

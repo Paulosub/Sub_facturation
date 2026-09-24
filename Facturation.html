@@ -16797,7 +16797,7 @@ function dvDocParamKeep(){
 }
 function dvDocParamFill(){
   const P=window._dvDocPTmp||{};
-  const cats=[['doc','Document'],['pos','Positions'],['calc','Calcul'],['pol','Police'],['pres','Présentation et style'],['tit','Titres de colonnes'],['arr','Arrondir']];
+  const cats=[['doc','Document'],['pos','Positions'],['calc','Calcul'],['tit','Titres de colonnes'],['arr','Arrondir']];
   document.getElementById('dv_docp_cats').innerHTML=
     '<div style="padding:5px 10px;border-bottom:1px solid #ddd;font-size:13px">Catégorie</div>'+
     cats.map(c=>'<div onclick="dvDocPCat('+PV_Q+c[0]+PV_Q+')" style="padding:5px 10px;font-size:13.5px;cursor:pointer'+
@@ -16815,11 +16815,7 @@ function dvDocParamFill(){
       lig('infos','Informations','pvInfos')+
       lig('rec1','Récapitulatif à 1 chiffre','pvRec1')+
       lig('rec2','Récapitulatif à 2 chiffres','pvRec2')+
-      lig('principal','Document principal','')+
-      '<div style="margin-top:26px;font-size:13.5px">Modèle:</div>'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">'+
-      '<input id="dvdp_modele" style="'+inp+';flex:1" value="'+pvEscA(P.modele||'')+'">'+
-      '<button class="btn btn-sm" style="padding:3px 10px;background:#f2f2f2;border:1px solid #c9c9c9" title="Choisir un modèle — à venir" onclick="toast('+PV_Q+'Choix du modèle — à venir.'+PV_Q+')">◀</button></div>';
+      lig('principal','Document principal','');
   } else if(_dvDocPCat==='pos'){
     h=ck('p13','Seulement positions de 1 à 3 chiffres')+
       ck('baseCom','Base et commentaire de la position')+
@@ -16839,29 +16835,7 @@ function dvDocParamFill(){
       ck('cComB','Commentaires et bases des prix')+
       ck('cQpm','Quantités, prix et montants')+
       ck('cCalcQ','Calculs des quantités',1);
-  } else if(_dvDocPCat==='pol'){
-    const fam=(k)=>'<select id="dvdp_'+k+'" style="'+inp+';flex:1;background:#fff">'+
-      ['Serif','Sans Serif','Akkurat','Monospace'].map(f2=>'<option'+(P[k]===f2?' selected':'')+'>'+f2+'</option>').join('')+'</select>';
-    const sz=(k)=>'<input id="dvdp_'+k+'" type="number" style="'+inp+';width:64px;margin-left:10px" value="'+(P[k]||9)+'">';
-    const bloc=(l,k,ks)=>'<div style="font-size:13.5px;margin-bottom:6px">'+l+'</div><div style="display:flex;align-items:center;margin-bottom:16px">'+fam(k)+sz(ks)+'</div>';
-    h=bloc('Police des titres','fT','fTs')+bloc('Police des positions','fP','fPs')+
-      bloc('Police des informations détaillées','fI','fIs')+
-      '<div style="font-size:13.5px;margin:14px 0 6px 0">Interligne</div>'+
-      '<input id="dvdp_interligne" style="'+inp+';width:120px" value="'+(P.interligne||15)+'">';
-  } else if(_dvDocPCat==='pres'){
-    const trait=(k,ke,l)=>'<div style="display:flex;align-items:center;margin-bottom:14px;gap:10px">'+
-      '<label style="flex:1;display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="dvdp_'+k+'"'+(P[k]?' checked':'')+'> '+l+'</label>'+
-      '<input id="dvdp_'+ke+'" style="'+inp+';width:56px" value="'+(P[ke]||0.75)+'">'+
-      '<span style="display:inline-block;width:52px;height:30px;background:#000;border:1px solid #888"></span></div>';
-    const rad=(v,l)=>'<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer;margin-bottom:14px">'+
-      '<input type="radio" name="dvdp_fmt" value="'+v+'"'+(P.fmtLigne===v?' checked':'')+'> '+l+'</label>';
-    h='<div style="text-align:right;font-size:13.5px;margin-bottom:10px;padding-right:60px">Épaisseur</div>'+
-      trait('tr1','tr1e','Trait sous les positions à 1 chiffre')+
-      trait('tr2','tr2e','Trait sous les positions à 2 chiffres')+
-      ck('decaler','Décaler les montants')+
-      '<div style="height:24px"></div>'+
-      rad('sans','Sans formatage de ligne')+rad('alt','Fond alterné')+rad('gris','Détails en gris');
-  } else if(_dvDocPCat==='tit'){
+    } else if(_dvDocPCat==='tit'){
     const F=(k,l)=>'<div style="display:flex;align-items:center;margin-bottom:12px"><span style="width:220px;flex:none;font-size:13.5px">'+l+'</span>'+
       '<input id="dvdp_'+k+'" style="'+inp+';flex:1" value="'+pvEscA(P[k]||'')+'"></div>';
     h=F('tCfc','Titre: N° CFC')+F('tTxt','Titre: Texte CFC')+F('tCom','Titre: Commentaire')+

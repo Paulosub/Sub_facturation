@@ -15639,9 +15639,10 @@ function dvDocMenuP(){ const m=document.getElementById('dv_doc_menu_p'); if(!m) 
   const it=(lbl,fn,en)=> en
     ? '<div style="padding:4px 16px 4px 12px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+lbl+'</div>'
     : '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">'+lbl+'</div>';
+  const pdfNom=(typeof dd.pdf==='string'&&dd.pdf)?dd.pdf:((Array.isArray(dd.fichs)&&dd.fichs[0]||{}).nom||'');
   m.innerHTML=
     it('Ouvrir …','dvDocMenuP();dvDocOuvrir()', true)+
-    it('Ouvrir PDF …','', false)+
+    it('Ouvrir PDF …', (dd.pdf&&pdfNom)?('dvDocMenuP();dvPdfOpen('+PV_Q+pvEscA(pdfNom)+PV_Q+')'):'', !!(dd.pdf&&pdfNom))+
     '<div style="height:10px"></div>'+
     it('Créer un PDF comme jointe au document …','dvDocMenuP();dvDlgNomFich()', !!dd.doc);
   m.style.display='block'; }

@@ -15530,16 +15530,16 @@ function dvRender(){
     '<span style="color:#555">Total HT</span><b style="text-align:right">'+ccF(C.totHT)+'</b>'+
     '<span style="color:#555">Total TTC</span><b style="text-align:right">'+ccF(C.totTTC)+'</b>'+
     '<span style="color:#555">Honoraires HT</span><span style="text-align:right">'+ccF(C.honHT)+'</span></div>';
-  h+='<div style="display:flex;gap:12px;align-items:flex-start">';
+  h+='<div style="display:flex;gap:12px;align-items:stretch;height:calc(100vh - 238px)">';
   // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
   const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
-  h+='<div style="width:340px;flex:none;border:1px solid #cfd8db;border-radius:6px;max-height:calc(100vh - 330px);overflow:auto;background:#fff">'+
+  h+='<div style="width:430px;flex:none;border:1px solid #cfd8db;border-radius:6px;height:100%;box-sizing:border-box;overflow:auto;background:#fff">'+
     '<div style="position:sticky;top:0;z-index:1;background:#eef3f5;border-bottom:1px solid #d9e2e6">'+
       '<div style="display:flex;gap:8px;padding:4px 10px 2px;font-size:10.5px;color:#003346;font-weight:700"><span style="width:54px">N°</span><span>Texte</span></div>'+
       '<div style="padding:0 8px 6px"><input placeholder="Rechercher un CFC (code ou texte)…" value="'+pvEsc(window._dvCatFilt||'')+'" oninput="window._dvCatFilt=this.value;dvCatRefresh()" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:4px 7px;font-size:11.5px"></div></div>'+
     '<div id="dv_cat_ls">'+dvCatList()+'</div></div>';
   // ── devis (droite) : saisie du TTC, HT / TVA / Pourcent calculés ──
-  h+='<div style="flex:1;min-width:0">'+dvToolbarHTML()+'<div style="overflow:auto;max-height:calc(100vh - 360px)"><table class="cc-tb" style="min-width:720px"><thead><tr>'+
+  h+='<div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+dvToolbarHTML()+'<div style="overflow:auto;flex:1;border:1px solid #d5d5d5;border-radius:4px"><table class="cc-tb" style="min-width:720px"><thead><tr>'+
     '<th class="cc-g" style="width:64px;padding-left:11px">N°</th><th class="cc-g" style="padding-left:11px">Désignation</th>'+
     '<th>Montant HT</th><th>TVA</th><th>Montant TTC</th><th style="width:70px">Pourcent</th><th style="width:28px"></th></tr></thead><tbody>';
   const items=[];
@@ -15568,14 +15568,14 @@ function dvRender(){
     '<td>'+ccF(C.totHT)+'</td><td>'+ccF(C.totTTC-C.totHT)+'</td><td>'+ccF(C.totTTC)+'</td><td>'+(C.totTTC>0.005?'100.00':'')+'</td><td></td></tr>';
   h+='</tbody></table></div>';
   // ── zone Documents (comme la fenêtre du bureau — génération PDF à venir) ──
-  h+='<div style="display:flex;gap:12px;margin-top:12px;align-items:flex-start">'+
-    '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Documents</div>'+
-    '<table class="pv-tb"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
+  h+='<div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;height:225px;flex:none">'+
+    '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Documents</div>'+
+    '<div style="flex:1;overflow:auto"><table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
-    '</tbody></table><div style="font-size:11px;color:#999;margin-top:4px">Génération des documents PDF à venir — transmettez-moi un exemplaire de référence du bureau.</div></div>'+
-    '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
-    '<table class="pv-tb"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
-    '<tr><td colspan="2" style="color:#999">—</td></tr></tbody></table></div></div>';
+    '</tbody></table></div><div style="font-size:11px;color:#999;margin-top:4px">Génération des documents PDF à venir — transmettez-moi un exemplaire de référence du bureau.</div></div>'+
+    '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
+    '<div style="flex:1;overflow:auto"><table class="pv-tb"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
+    '<tr><td colspan="2" style="color:#999">—</td></tr></tbody></table></div></div></div>';
   h+='</div>';
   h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';
   out.innerHTML=h;

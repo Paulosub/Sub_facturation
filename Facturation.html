@@ -15572,6 +15572,7 @@ function dvRender(){
     '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Documents</div>'+
     '<div style="flex:1;overflow:auto"><table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
+    Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+
     '</tbody></table></div><div style="font-size:11px;color:#999;margin-top:4px">Génération des documents PDF à venir — transmettez-moi un exemplaire de référence du bureau.</div></div>'+
     '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
     '<div style="flex:1;overflow:auto"><table class="pv-tb"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+

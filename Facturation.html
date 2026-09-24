@@ -15426,6 +15426,57 @@ function dvCatList(){
   }).join('');
 }
 function dvCatRefresh(){ const b=document.getElementById('dv_cat_ls'); if(b) b.innerHTML=dvCatList(); }
+/* « Informations pour le devis » → fenêtre REMARQUES PRÉLIMINAIRES (fidèle au modèle) :
+   table Nom | Texte, lignes réordonnables (✚ − ⏫ ↑ ↓ ⏬), Annuler / OK.
+   Ces remarques serviront au document PDF du devis. */
+let _dvRiSel=-1;
+function dvDlgInfo(){
+  const D=dvA(); if(!D) return;
+  if(!Array.isArray(D.rem)) D.rem=[];
+  window._dvRiSnap=JSON.stringify(D.rem); _dvRiSel=-1;
+  const tb=(l,fn,tt)=>'<button class="btn btn-sm" style="min-width:34px" onclick="'+fn+'" title="'+tt+'">'+l+'</button>';
+  ccDlg('<div style="font-weight:700;text-align:center;margin-bottom:8px">Remarques préliminaires</div>'+
+    '<div style="font-size:13px;margin-bottom:6px">Informations pour le devis</div>'+
+    '<div style="border:1px solid #cfd8db;border-radius:4px;max-height:480px;overflow:auto">'+
+    '<table class="cc-tb" style="min-width:100%"><thead><tr>'+
+    '<th class="cc-g" style="width:150px">Nom</th><th class="cc-g">Texte</th></tr></thead>'+
+    '<tbody id="dv_ri_tb"></tbody></table></div>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+    tb('✚','dvRiAdd()','Ajouter une remarque')+tb('−','dvRiDel()','Supprimer la remarque sélectionnée')+
+    '<span style="width:14px"></span>'+
+    tb('⏫','dvRiMove(0)','Déplacer en premier')+tb('↑','dvRiMove(1)','Monter')+tb('↓','dvRiMove(2)','Descendre')+tb('⏬','dvRiMove(3)','Déplacer en dernier')+'</div>'+
+    '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="dvRiCancel()">Annuler</button> '+
+    '<button class="btn btn-sm" style="background:#2f6fde;color:#fff" onclick="dvRiOk()">OK</button></div>', 980);
+  dvRiRender();
+}
+function dvRiRender(){
+  const D=dvA(); const tb=document.getElementById('dv_ri_tb'); if(!D||!tb) return;
+  const rows=D.rem;
+  let h=rows.map((r,i)=>'<tr onclick="dvRiSelFn('+i+',this)" style="'+(i===_dvRiSel?'outline:2px solid #4a90d9;outline-offset:-2px;':'')+'">'+
+    '<td class="cc-g"><input class="cc-in cc-int" style="width:120px" value="'+pvEsc(r.nom||'')+'" onchange="dvRiSet('+i+','+PV_Q+'nom'+PV_Q+',this)"></td>'+
+    '<td class="cc-g"><input class="cc-in cc-int" style="width:98%" value="'+pvEsc(r.txt||'')+'" onchange="dvRiSet('+i+','+PV_Q+'txt'+PV_Q+',this)"></td></tr>').join('');
+  for(let i=rows.length;i<26;i++) h+='<tr><td class="cc-g">&nbsp;</td><td></td></tr>';
+  tb.innerHTML=h;
+}
+function dvRiSelFn(i,tr){ if(_dvRiSel!==i){ _dvRiSel=i;
+  document.querySelectorAll('#dv_ri_tb tr').forEach(x=>{ x.style.outline=''; });
+  if(tr){ tr.style.outline='2px solid #4a90d9'; tr.style.outlineOffset='-2px'; } } }
+function dvRiSet(i,k,el){ const D=dvA(); if(D.rem[i]) D.rem[i][k]=el.value; }
+function dvRiAdd(){ const D=dvA();
+  const at=(_dvRiSel>=0?_dvRiSel+1:D.rem.length);
+  D.rem.splice(at,0,{nom:(D.rem.length+1)+'.', txt:''}); _dvRiSel=at; dvRiRender();
+  const ins=document.querySelectorAll('#dv_ri_tb input'); const f=ins[at*2+1]; if(f) f.focus(); }
+function dvRiDel(){ const D=dvA();
+  if(_dvRiSel<0||_dvRiSel>=D.rem.length){ toast('Sélectionnez une remarque (clic) puis −.'); return; }
+  D.rem.splice(_dvRiSel,1); if(_dvRiSel>=D.rem.length) _dvRiSel=D.rem.length-1; dvRiRender(); }
+function dvRiMove(mode){ const D=dvA(); const rows=D.rem; const i=_dvRiSel;
+  if(i<0||i>=rows.length){ toast('Sélectionnez une remarque à déplacer.'); return; }
+  let j=(mode===0)?0:(mode===1)?i-1:(mode===2)?i+1:rows.length-1;
+  if(j<0||j>=rows.length||j===i) return;
+  const r=rows.splice(i,1)[0]; rows.splice(j,0,r); _dvRiSel=j; dvRiRender(); }
+function dvRiOk(){ const D=dvA(); D.rem=D.rem.filter(r=>(r.nom||'').trim()||(r.txt||'').trim());
+  dvPersist(); ccDlgClose(); }
+function dvRiCancel(){ const D=dvA(); D.rem=window._dvRiSnap?JSON.parse(window._dvRiSnap):[]; ccDlgClose(); }
 /* Options du devis — paramètres sortis du tableau : statut, date, TVA, position libre, envoi au CC. */
 function dvDlgOpt(){
   const D=dvA(); if(!D) return;
@@ -15491,7 +15542,7 @@ function dvToolbarHTML(){
     '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Édition" onclick="dvTbMenu()">'+ic['pencil']+' <span style="font-size:8px;color:#666">▾</span></button>'+
     '<div id="dv_tb_menu" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:250px;z-index:60;font-size:13px;white-space:nowrap">'+
       '<div style="padding:8px 16px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbMenu();dvEditSelPos()">Éditer la position …</div>'+
-      '<div style="padding:8px 16px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbMenu();dvDlgOpt()">Informations pour le devis …</div>'+
+      '<div style="padding:8px 16px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbMenu();dvDlgInfo()">Informations pour le devis …</div>'+
     '</div></div>';
   return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
     pencil+'<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Supprimer la ligne sélectionnée" onclick="dvDelSel()">'+ic['minus']+'</button>'+b('filter',1,'Filtre')+

@@ -15735,10 +15735,19 @@ function dvValideTog(){
     chConfirm('VALIDER ce devis ?\nLes montants ne seront plus modifiables (y compris les honoraires du contrat d’architecte).', ()=>{ D.valide=true; dvPersist(); dvRender(); });
   }
 }
+/* Dans le DG, le clic droit n'affiche un menu QUE sur les lignes prévues
+   (positions/groupes, Documents, Fichiers PDF) — partout ailleurs : rien,
+   pas même le menu natif du navigateur. */
+document.addEventListener('contextmenu',function(ev){
+  const pd=ev.target.closest('#panel-devis'); if(!pd) return;
+  if(ev.target.closest('#dv_flex tr[data-pid],#dv_flex tr[data-gcfc],#dv_tb_docs tr[onclick],#dv_tb_pdfs tr[data-nom]')) return;
+  ev.preventDefault();
+  ['dv_ctx_pos','dv_ctx_doc','dv_ctx_pdf'].forEach(id2=>{ const x=document.getElementById(id2); if(x) x.style.display='none'; });
+});
 /* Menu contextuel (clic droit) sur une position du DG — modèle Deltaproject */
-function dvCtxMenu(ev,id){
+function dvCtxMenu(ev,id,grp){
   ev.preventDefault(); ev.stopPropagation();
-  dvSelPos(id, ev.target.closest('tr'));
+  if(grp) dvSelGrp(id, ev.target.closest('tr')); else dvSelPos(id, ev.target.closest('tr'));
   let m=document.getElementById('dv_ctx_pos');
   if(!m){ m=document.createElement('div'); m.id='dv_ctx_pos';
     m.style.cssText='display:none;position:fixed;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:230px;z-index:10070;font-size:13px;padding:4px 0;white-space:nowrap';
@@ -15746,10 +15755,12 @@ function dvCtxMenu(ev,id){
     document.addEventListener('click',()=>{ m.style.display='none'; });
     document.addEventListener('contextmenu',e2=>{ if(!e2.target.closest('#dv_flex tr[data-pid]')) m.style.display='none'; });
   }
-  const it=(lbl,fn)=>'<div style="padding:6px 18px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'dv_ctx_pos'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'">'+lbl+'</div>';
+  const it=(lbl,fn,en)=> (en===false)
+    ? '<div style="padding:6px 18px;color:#b5b5b5">'+lbl+'</div>'
+    : '<div style="padding:6px 18px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'dv_ctx_pos'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'">'+lbl+'</div>';
   m.innerHTML=
-    it('Éditer la position …','dvDlgCalc('+PV_Q+pvEscA(id)+PV_Q+')')+
-    it('Supprimer la position …','dvCtxDel('+PV_Q+pvEscA(id)+PV_Q+')')+
+    it('Éditer la position …', grp?'':'dvDlgCalc('+PV_Q+pvEscA(id)+PV_Q+')', !grp)+
+    it('Supprimer la position …', grp?('dvCtxDelGrp('+PV_Q+pvEscA(id)+PV_Q+')'):('dvCtxDel('+PV_Q+pvEscA(id)+PV_Q+')'))+
     it('Indexer la position …','toast('+PV_Q+'Indexation de la position — à venir.'+PV_Q+')')+
     it('Modifier la TVA','dvCtxTva()');
   m.style.display='block';
@@ -15762,6 +15773,15 @@ function dvCtxDel(id){
   if(D.valide){ toast('Devis VALIDÉ — lignes verrouillées.'); return; }
   const p2=D.pos.find(x=>x.id===id); if(!p2) return;
   chConfirm('Supprimer la position '+(p2.cfc||'')+' « '+(p2.lbl||'')+' » ?', ()=>dvDelPos(id));
+}
+function dvCtxDelGrp(g){
+  const D=dvA(); if(!D) return;
+  if(D.valide){ toast('Devis VALIDÉ — lignes verrouillées.'); return; }
+  const gN=ccNorm(g);
+  const n=D.pos.filter(x=>ccNorm(x.cfc).startsWith(gN)).length;
+  if(!n){ toast('Aucune position dans le groupe '+g+'.'); return; }
+  chConfirm('Supprimer les '+n+' position(s) du groupe CFC '+g+' ?', ()=>{
+    D.pos=D.pos.filter(x=>!ccNorm(x.cfc).startsWith(gN)); _dvSel=null; _dvSelG=null; dvPersist(); dvRender(); });
 }
 function dvCtxTva(){
   const D=dvA(); if(!D) return;
@@ -17622,7 +17642,7 @@ function dvRender(){
   items.forEach(it=>{
     if(it.g){ const t=C.grp[it.cfc]||0, ht=t/(1+tva/100), L=it.cfc.length;
       const cls=L===1?'cc-l1':(L===2?'cc-l2':''), B=L<=2?'<b>':'', B2=L<=2?'</b>':'';
-      h+='<tr class="'+cls+'" data-gcfc="'+pvEsc(it.cfc)+'" onclick="dvSelGrp('+PV_Q+pvEscA(it.cfc)+PV_Q+',this)"><td class="cc-g" style="padding-left:11px">'+B+pvEsc(it.cfc)+B2+'</td>'+
+      h+='<tr class="'+cls+'" data-gcfc="'+pvEsc(it.cfc)+'" onclick="dvSelGrp('+PV_Q+pvEscA(it.cfc)+PV_Q+',this)" oncontextmenu="dvCtxMenu(event,'+PV_Q+pvEscA(it.cfc)+PV_Q+',1)"><td class="cc-g" style="padding-left:11px">'+B+pvEsc(it.cfc)+B2+'</td>'+
         '<td class="cc-g" style="padding-left:11px">'+B+pvEsc(ccCatLbl(it.cfc)||'')+B2+'</td>'+
         '<td>'+B+fA(ht)+B2+'</td><td>'+fA(t-ht)+'</td><td>'+B+fA(t)+B2+'</td>'+
         (vPct?'<td>'+pctOf(t,it.cfc)+'</td>':'')+

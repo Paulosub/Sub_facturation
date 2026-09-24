@@ -15429,52 +15429,128 @@ function dvCatRefresh(){ const b=document.getElementById('dv_cat_ls'); if(b) b.i
 /* « Informations pour le devis » → fenêtre REMARQUES PRÉLIMINAIRES (fidèle au modèle) :
    table Nom | Texte, lignes réordonnables (✚ − ⏫ ↑ ↓ ⏬), Annuler / OK.
    Ces remarques serviront au document PDF du devis. */
-let _dvRiSel=-1;
+let _dvRiA=null,_dvRiB=null,_dvRiN=0,_dvRiClip=null;
 function dvDlgInfo(){
   const D=dvA(); if(!D) return;
   if(!Array.isArray(D.rem)) D.rem=[];
-  window._dvRiSnap=JSON.stringify(D.rem); _dvRiSel=-1;
+  window._dvRiSnap=JSON.stringify(D.rem); _dvRiA=null; _dvRiB=null; _dvRiClip=null;
+  const wrapH=Math.max(300, window.innerHeight-340);
   const tb=(l,fn,tt)=>'<button class="btn btn-sm" style="min-width:34px" onclick="'+fn+'" title="'+tt+'">'+l+'</button>';
-  ccDlg('<div style="font-weight:700;text-align:center;margin-bottom:8px">Remarques préliminaires</div>'+
+  ccDlg('<style>'+
+    '#dv_ri_wrap{border:1px solid #b8c2c7;overflow:auto;background:#fff}'+
+    '#dv_ri_wrap table{border-collapse:collapse;table-layout:fixed;width:100%}'+
+    '#dv_ri_wrap th{background:#eef1f3;border:1px solid #cfd6da;font-weight:600;font-size:12px;padding:3px 6px;text-align:left;position:sticky;top:0;z-index:1}'+
+    '#dv_ri_wrap td{border:1px solid #dfe4e7;padding:0;height:23px;overflow:hidden}'+
+    '#dv_ri_wrap td.dv-ri-h{background:#f2f4f5;text-align:center;color:#9aa4aa;font-size:11px;cursor:pointer;user-select:none}'+
+    '#dv_ri_wrap input{width:100%;height:23px;border:0;padding:0 6px;background:transparent;font:inherit;font-size:13px;box-sizing:border-box;display:block}'+
+    '#dv_ri_wrap input:focus{outline:2px solid #4a90d9;outline-offset:-2px;background:#fff}'+
+    '#dv_ri_wrap tr.dv-ri-sel td{background:#cfe3f5}'+
+    '.dv-ri-rs{position:absolute;right:-4px;top:0;width:8px;height:100%;cursor:col-resize;z-index:2}'+
+    '</style>'+
+    '<div style="font-weight:700;text-align:center;margin-bottom:8px">Remarques préliminaires</div>'+
     '<div style="font-size:13px;margin-bottom:6px">Informations pour le devis</div>'+
-    '<div style="border:1px solid #cfd8db;border-radius:4px;max-height:480px;overflow:auto">'+
-    '<table class="cc-tb" style="min-width:100%"><thead><tr>'+
-    '<th class="cc-g" style="width:150px">Nom</th><th class="cc-g">Texte</th></tr></thead>'+
+    '<div id="dv_ri_wrap" tabindex="0" style="height:'+wrapH+'px" onkeydown="dvRiKey(event)">'+
+    '<table><colgroup><col style="width:34px"><col id="dv_ri_cnom" style="width:150px"><col></colgroup>'+
+    '<thead><tr><th></th>'+
+    '<th style="position:sticky;top:0"><span style="position:relative;display:block">Nom'+
+    '<span class="dv-ri-rs" onmousedown="dvRiRsDown(event)" title="Glisser pour ajuster la largeur"></span></span></th>'+
+    '<th>Texte</th></tr></thead>'+
     '<tbody id="dv_ri_tb"></tbody></table></div>'+
-    '<div style="display:flex;gap:8px;margin-top:8px">'+
-    tb('✚','dvRiAdd()','Ajouter une remarque')+tb('−','dvRiDel()','Supprimer la remarque sélectionnée')+
+    '<div style="display:flex;gap:8px;margin-top:8px;align-items:center">'+
+    tb('✚','dvRiAdd()','Insérer une ligne (à la sélection, sinon en fin)')+
+    tb('−','dvRiDel()','Supprimer les lignes sélectionnées')+
     '<span style="width:14px"></span>'+
-    tb('⏫','dvRiMove(0)','Déplacer en premier')+tb('↑','dvRiMove(1)','Monter')+tb('↓','dvRiMove(2)','Descendre')+tb('⏬','dvRiMove(3)','Déplacer en dernier')+'</div>'+
+    tb('⏫','dvRiMove(0)','Déplacer en premier')+tb('↑','dvRiMove(1)','Monter')+
+    tb('↓','dvRiMove(2)','Descendre')+tb('⏬','dvRiMove(3)','Déplacer en dernier')+
+    '<span style="width:14px"></span>'+
+    '<button class="btn btn-sm" onclick="dvRiCopy()" title="Copier les lignes sélectionnées (Ctrl/Cmd+C)">Copier</button>'+
+    '<button class="btn btn-sm" onclick="dvRiPaste()" title="Coller sur les lignes à partir de la sélection (Ctrl/Cmd+V)">Coller</button>'+
+    '<span style="font-size:11px;color:#8a949a;margin-left:6px">Clic sur la marge grise = sélection de ligne, Maj+clic = plage</span></div>'+
     '<div style="text-align:right;margin-top:14px"><button class="btn btn-sm" onclick="dvRiCancel()">Annuler</button> '+
     '<button class="btn btn-sm" style="background:#2f6fde;color:#fff" onclick="dvRiOk()">OK</button></div>', 980);
+  const w=document.getElementById('dv_ri_wrap');
+  const nVis=Math.floor((w.clientHeight-25)/24);
+  _dvRiN=Math.max(nVis, D.rem.length);
   dvRiRender();
 }
 function dvRiRender(){
   const D=dvA(); const tb=document.getElementById('dv_ri_tb'); if(!D||!tb) return;
-  const rows=D.rem;
-  let h=rows.map((r,i)=>'<tr onclick="dvRiSelFn('+i+',this)" style="'+(i===_dvRiSel?'outline:2px solid #4a90d9;outline-offset:-2px;':'')+'">'+
-    '<td class="cc-g"><input class="cc-in cc-int" style="width:120px" value="'+pvEsc(r.nom||'')+'" onchange="dvRiSet('+i+','+PV_Q+'nom'+PV_Q+',this)"></td>'+
-    '<td class="cc-g"><input class="cc-in cc-int" style="width:98%" value="'+pvEsc(r.txt||'')+'" onchange="dvRiSet('+i+','+PV_Q+'txt'+PV_Q+',this)"></td></tr>').join('');
-  for(let i=rows.length;i<26;i++) h+='<tr><td class="cc-g">&nbsp;</td><td></td></tr>';
+  let h='';
+  for(let i=0;i<_dvRiN;i++){ const r=D.rem[i]||{};
+    h+='<tr'+(dvRiInSel(i)?' class="dv-ri-sel"':'')+'>'+
+      '<td class="dv-ri-h" onmousedown="dvRiSelRow('+i+',event)">'+(i+1)+'</td>'+
+      '<td><input data-i="'+i+'" data-k="nom" value="'+pvEscA(r.nom||'')+'" oninput="dvRiSet('+i+','+PV_Q+'nom'+PV_Q+',this)"></td>'+
+      '<td><input data-i="'+i+'" data-k="txt" value="'+pvEscA(r.txt||'')+'" oninput="dvRiSet('+i+','+PV_Q+'txt'+PV_Q+',this)"></td></tr>';
+  }
   tb.innerHTML=h;
 }
-function dvRiSelFn(i,tr){ if(_dvRiSel!==i){ _dvRiSel=i;
-  document.querySelectorAll('#dv_ri_tb tr').forEach(x=>{ x.style.outline=''; });
-  if(tr){ tr.style.outline='2px solid #4a90d9'; tr.style.outlineOffset='-2px'; } } }
-function dvRiSet(i,k,el){ const D=dvA(); if(D.rem[i]) D.rem[i][k]=el.value; }
-function dvRiAdd(){ const D=dvA();
-  const at=(_dvRiSel>=0?_dvRiSel+1:D.rem.length);
-  D.rem.splice(at,0,{nom:(D.rem.length+1)+'.', txt:''}); _dvRiSel=at; dvRiRender();
-  const ins=document.querySelectorAll('#dv_ri_tb input'); const f=ins[at*2+1]; if(f) f.focus(); }
-function dvRiDel(){ const D=dvA();
-  if(_dvRiSel<0||_dvRiSel>=D.rem.length){ toast('Sélectionnez une remarque (clic) puis −.'); return; }
-  D.rem.splice(_dvRiSel,1); if(_dvRiSel>=D.rem.length) _dvRiSel=D.rem.length-1; dvRiRender(); }
-function dvRiMove(mode){ const D=dvA(); const rows=D.rem; const i=_dvRiSel;
-  if(i<0||i>=rows.length){ toast('Sélectionnez une remarque à déplacer.'); return; }
-  let j=(mode===0)?0:(mode===1)?i-1:(mode===2)?i+1:rows.length-1;
-  if(j<0||j>=rows.length||j===i) return;
-  const r=rows.splice(i,1)[0]; rows.splice(j,0,r); _dvRiSel=j; dvRiRender(); }
-function dvRiOk(){ const D=dvA(); D.rem=D.rem.filter(r=>(r.nom||'').trim()||(r.txt||'').trim());
+function dvRiSelRange(){ if(_dvRiA==null) return null;
+  return [Math.min(_dvRiA,_dvRiB), Math.max(_dvRiA,_dvRiB)]; }
+function dvRiInSel(i){ const r=dvRiSelRange(); return r && i>=r[0] && i<=r[1]; }
+function dvRiMark(){ document.querySelectorAll('#dv_ri_tb tr').forEach((tr,i)=>{
+  tr.classList.toggle('dv-ri-sel', !!dvRiInSel(i)); }); }
+function dvRiSelRow(i,ev){ ev.preventDefault();
+  if(ev.shiftKey && _dvRiA!=null){ _dvRiB=i; } else { _dvRiA=i; _dvRiB=i; }
+  const w=document.getElementById('dv_ri_wrap'); if(w) w.focus({preventScroll:true});
+  dvRiMark(); }
+function dvRiSet(i,k,el){ const D=dvA();
+  while(D.rem.length<=i) D.rem.push({nom:'',txt:''});
+  D.rem[i][k]=el.value; }
+function dvRiKey(e){
+  if(e.target.tagName==='INPUT'){
+    if(e.key==='Enter'){ e.preventDefault();
+      const i=+e.target.dataset.i, k=e.target.dataset.k;
+      const nx=document.querySelector('#dv_ri_tb input[data-i="'+(i+1)+'"][data-k="'+k+'"]');
+      if(nx) nx.focus(); }
+    return; }
+  const r=dvRiSelRange(); if(!r) return;
+  const mod=e.metaKey||e.ctrlKey;
+  if(mod && (e.key==='c'||e.key==='C')){ e.preventDefault(); dvRiCopy(); }
+  else if(mod && (e.key==='v'||e.key==='V')){ e.preventDefault(); dvRiPaste(); }
+  else if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault();
+    const D=dvA(); for(let i=r[0];i<=r[1];i++){ if(D.rem[i]) D.rem[i]={nom:'',txt:''}; }
+    dvRiRender(); }
+}
+function dvRiCopy(){ const r=dvRiSelRange(); const D=dvA();
+  if(!r){ toast('Sélectionnez une ou plusieurs lignes (marge grise).'); return; }
+  _dvRiClip=[]; for(let i=r[0];i<=r[1];i++){ const x=D.rem[i]||{};
+    _dvRiClip.push({nom:x.nom||'', txt:x.txt||''}); }
+  toast(_dvRiClip.length+' ligne(s) copiée(s)'); }
+function dvRiPaste(){ const r=dvRiSelRange(); const D=dvA();
+  if(!_dvRiClip||!_dvRiClip.length){ toast('Rien à coller — copiez d'+"'"+'abord des lignes.'); return; }
+  if(!r){ toast('Sélectionnez la ligne de destination (marge grise).'); return; }
+  const at=r[0];
+  _dvRiClip.forEach((c,j)=>{ while(D.rem.length<=at+j) D.rem.push({nom:'',txt:''});
+    D.rem[at+j]={nom:c.nom, txt:c.txt}; });
+  if(D.rem.length>_dvRiN) _dvRiN=D.rem.length;
+  _dvRiA=at; _dvRiB=at+_dvRiClip.length-1; dvRiRender(); }
+function dvRiAdd(){ const D=dvA(); const r=dvRiSelRange();
+  const at=r?r[0]:D.rem.length;
+  while(D.rem.length<at) D.rem.push({nom:'',txt:''});
+  D.rem.splice(at,0,{nom:'',txt:''});
+  if(D.rem.length>_dvRiN) _dvRiN=D.rem.length;
+  _dvRiA=at; _dvRiB=at; dvRiRender();
+  const f=document.querySelector('#dv_ri_tb input[data-i="'+at+'"][data-k="txt"]'); if(f) f.focus(); }
+function dvRiDel(){ const D=dvA(); const r=dvRiSelRange();
+  if(!r){ toast('Sélectionnez les lignes à supprimer (marge grise).'); return; }
+  if(r[0]<D.rem.length) D.rem.splice(r[0], Math.min(r[1],D.rem.length-1)-r[0]+1);
+  _dvRiA=null; _dvRiB=null; dvRiRender(); }
+function dvRiMove(mode){ const D=dvA(); const r=dvRiSelRange();
+  if(!r){ toast('Sélectionnez les lignes à déplacer (marge grise).'); return; }
+  while(D.rem.length<=r[1]) D.rem.push({nom:'',txt:''});
+  const n=r[1]-r[0]+1;
+  let j=(mode===0)?0:(mode===1)?r[0]-1:(mode===2)?r[0]+1:D.rem.length-n;
+  if(j<0||j>D.rem.length-n||j===r[0]) return;
+  const bloc=D.rem.splice(r[0],n); D.rem.splice(j,0,...bloc);
+  _dvRiA=j; _dvRiB=j+n-1; dvRiRender(); }
+function dvRiRsDown(ev){ ev.preventDefault();
+  const col=document.getElementById('dv_ri_cnom'); if(!col) return;
+  const x0=ev.clientX, w0=col.offsetWidth||parseInt(col.style.width)||150;
+  const mv=e=>{ col.style.width=Math.max(60, Math.min(600, w0+e.clientX-x0))+'px'; };
+  const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); };
+  document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up); }
+function dvRiOk(){ const D=dvA();
+  while(D.rem.length && !((D.rem[D.rem.length-1].nom||'').trim()||(D.rem[D.rem.length-1].txt||'').trim())) D.rem.pop();
   dvPersist(); ccDlgClose(); }
 function dvRiCancel(){ const D=dvA(); D.rem=window._dvRiSnap?JSON.parse(window._dvRiSnap):[]; ccDlgClose(); }
 /* Options du devis — paramètres sortis du tableau : statut, date, TVA, position libre, envoi au CC. */

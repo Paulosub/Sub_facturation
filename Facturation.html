@@ -16469,8 +16469,8 @@ function dvRender(){
   const dbSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9';
   const dbSvg=d=>'<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.7" stroke-linecap="round"><path d="'+d+'"/></svg>';
   const db=(inner,tt)=>'<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="'+tt+' — sélectionnez d'+PV_Q+'abord un document">'+inner+' <span style="font-size:8px;color:#666">▾</span></button>';
-  h+='<div style="display:flex;gap:12px;margin-top:10px;align-items:flex-start;flex:none">'+
-    '<div style="flex:none;width:calc(25% - 6px);min-width:340px;display:flex;flex-direction:column">'+
+  h+='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;align-items:stretch;flex:none">'+
+    '<div style="flex:1 1 430px;min-width:0;max-width:640px;display:flex;flex-direction:column">'+
     '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;height:26px"><span style="font-size:12px;font-weight:700;color:#003346;margin-right:4px">Documents</span>'+
     '<span id="dv_doc_btns" style="display:inline-flex;gap:5px">'+
     '<span style="position:relative;display:inline-flex">'+
@@ -16486,7 +16486,7 @@ function dvRender(){
     '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Réglages — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuG()"><span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span> <span style="font-size:8px;color:#666">▾</span></button>'+
     '<div id="dv_doc_menu_g" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:390px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0"></div>'+
     '</span>'+'</span></div>'+
-    '<table id="dv_tb_docs" class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
+    '<table id="dv_tb_docs" class="pv-tb" style="height:100%"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>{ const dd=(D.docs||{})[n]||{};
       if(dd.pdf && dd.doc==null) dd.doc=true; // migration ancien format
       if(dd.fich){ dd.fichs=[dd.fich]; delete dd.fich; } // migration pièce jointe unique → liste
@@ -16494,10 +16494,10 @@ function dvRender(){
       return '<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td>'+mk(dd.doc)+mk(dd.pdf)+'</tr>'; }).join('')+
     Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+
     '</tbody></table></div>'+
-    '<div style="flex:none;width:calc(25% - 6px);min-width:300px;display:flex;flex-direction:column">'+
+    '<div style="flex:1 1 420px;min-width:0;max-width:720px;display:flex;flex-direction:column">'+
     '<div style="display:flex;align-items:center;margin-bottom:4px;height:26px"><span style="font-size:12px;font-weight:700;color:#003346">Fichiers PDF</span></div>'+
-    '<div style="display:flex;gap:8px;align-items:flex-start">'+
-    '<table id="dv_tb_pdfs" class="pv-tb" style="flex:1"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
+    '<div style="display:flex;gap:8px;align-items:stretch;flex:1;min-height:0">'+
+    '<table id="dv_tb_pdfs" class="pv-tb" style="flex:1;height:100%"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
     (()=>{ const all=[]; Object.keys(D.docs||{}).forEach(n2=>{ const l2=(D.docs[n2]||{}).fichs;
         if(Array.isArray(l2)) l2.forEach(f2=>all.push(f2)); });
       all.sort((x2,y2)=>(y2.date||0)-(x2.date||0));

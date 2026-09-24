@@ -976,6 +976,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
 
 /* ── Devis général (mêmes styles) ── */
 #dv_out .cc-tb tr.dv-sel td{background:#cfe3f5 !important}
+#dv_out .pv-tb tr.dv-sel td{background:#cfe3f5 !important}
 #dv_out .pv-tb{border-collapse:collapse;width:100%;font-size:12.5px;background:#fff;border:1px solid #d5d5d5}
 #dv_out .pv-tb th{font-weight:bold;padding:6px 10px;background:#eef3f5;color:#003346;border-bottom:1px solid #c9d3d6;text-align:left;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
 #dv_out .pv-tb td{padding:5px 10px;border-top:1px solid #f0f0f0}
@@ -15610,6 +15611,13 @@ function dvTbMenuT(){ const m=document.getElementById('dv_tb_menu_t'); if(m) m.s
 function dvTbVue(k){ const D=dvA(); if(D){ D.vueT=k; dvPersist(); } dvRender(); }
 function dvUnmark(){ document.querySelectorAll('#dv_out tr.dv-sel').forEach(x=>x.classList.remove('dv-sel')); }
 function dvSelPos(id,tr){ _dvSel=id; _dvSelG=null; dvUnmark(); if(tr) tr.classList.add('dv-sel'); }
+/* Sélection d'un document (Devis général / Honoraires / Devis descriptif) : active les icônes +/−/roue. */
+function dvDocSel(n,tr){ window._dvDocSel=n;
+  document.querySelectorAll('#dv_out .pv-tb tr.dv-sel').forEach(x=>x.classList.remove('dv-sel'));
+  if(tr) tr.classList.add('dv-sel');
+  document.querySelectorAll('#dv_doc_btns button').forEach(b=>{
+    b.disabled=false; b.style.opacity=''; b.style.pointerEvents='';
+    b.title=b.title.replace(/ — sélectionnez.*$/,' — '+n+' (menu à venir)'); }); }
 function dvSelGrp(g,tr){ _dvSelG=g; _dvSel=null; dvUnmark(); if(tr) tr.classList.add('dv-sel'); }
 function dvDelSel(){
   const D=dvA(); if(!D) return;
@@ -15783,15 +15791,30 @@ function dvRender(){
     (vCom?'<td></td>':'')+(vDsc?'<td></td>':'')+'<td></td>'+(spacer?'<td></td>':'')+'</tr>';
   h+='</tbody></table></div>';
   // ── zone Documents (comme la fenêtre du bureau — génération PDF à venir) ──
-  h+='<div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;flex:none">'+
-    '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Documents</div>'+
-    '<div style="flex:1"><table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
-    ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
+  // Icônes +/−/roue grisées tant qu'aucun document n'est sélectionné (clic sur une ligne nommée).
+  window._dvDocSel=null;
+  const dbSt='padding:2px 7px;border:1px solid #9c9c9c;border-radius:5px;background:linear-gradient(#fefefe,#d8d8d8);box-shadow:0 1px 1px rgba(0,0,0,.15);cursor:pointer;line-height:1;height:22px';
+  const dbSvg=d=>'<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#3f3f3f" stroke-width="1.9" stroke-linecap="round" style="vertical-align:-1px"><path d="'+d+'"/></svg>';
+  const db=(inner,tt)=>'<button disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="'+tt+' — sélectionnez d'+PV_Q+'abord un document">'+inner+' <span style="font-size:8px;color:#666">▾</span></button>';
+  h+='<div style="display:flex;gap:12px;margin-top:10px;align-items:flex-start;flex:none">'+
+    '<div style="flex:none;width:calc(25% - 6px);min-width:340px;display:flex;flex-direction:column">'+
+    '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:#003346;margin-right:4px">Documents</span>'+
+    '<span id="dv_doc_btns" style="display:inline-flex;gap:5px">'+
+    db(dbSvg('M8 3.5v9M3.5 8h9'),'Ajouter')+db(dbSvg('M3.5 8h9'),'Supprimer')+
+    db('<span style="font-size:11px;vertical-align:0">⚙︎</span>','Réglages')+'</span></div>'+
+    '<table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
+    ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
     Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+
-    '</tbody></table></div></div>'+
-    '<div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
-    '<div style="flex:1"><table class="pv-tb"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
-    Array.from({length:10}).map(()=>'<tr><td>&nbsp;</td><td></td></tr>').join('')+'</tbody></table></div></div></div>';
+    '</tbody></table></div>'+
+    '<div style="flex:none;width:calc(25% - 6px);min-width:300px;display:flex;flex-direction:column">'+
+    '<div style="font-size:12px;font-weight:700;color:#003346;margin-bottom:4px">Fichiers PDF</div>'+
+    '<div style="display:flex;gap:8px;align-items:flex-start">'+
+    '<table class="pv-tb" style="flex:1"><thead><tr><th>Nom du fichier</th><th>Date de dernière modification</th></tr></thead><tbody>'+
+    Array.from({length:10}).map(()=>'<tr><td>&nbsp;</td><td></td></tr>').join('')+'</tbody></table>'+
+    '<button disabled style="'+dbSt+';opacity:.45;pointer-events:none;flex:none" title="Export PDF — sélectionnez d'+PV_Q+'abord un fichier">'+
+    '<svg width="13" height="13" viewBox="0 0 16 16" style="vertical-align:-2px"><path d="M4 1.5h6l3 3V14H4z" fill="none" stroke="#3f3f3f" stroke-width="1.3"/><path d="M10 1.5v3h3" fill="none" stroke="#3f3f3f" stroke-width="1.1"/><text x="4.6" y="11.6" font-size="4.6" fill="#3f3f3f" font-family="sans-serif">PDF</text></svg>'+
+    ' <span style="font-size:8px;color:#666">▾</span></button>'+
+    '</div></div></div>';
   h+='</div>';
   h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';
   out.innerHTML=h;

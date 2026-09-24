@@ -15601,7 +15601,13 @@ function dvDlgOpt(){
 /* Barre d'icônes du Devis général (reproduite de l'app du bureau) — fonctions à brancher au fur
    et à mesure : crayon (édition), −, filtre, tableau, clé, document, roue crantée, mode sombre. */
 let _dvSel=null, _dvSelG=null;
-function dvTbMenu(){ const m=document.getElementById('dv_tb_menu'); if(m) m.style.display=(m.style.display==='none'?'block':'none'); }
+function dvTbMenu(){ const m=document.getElementById('dv_tb_menu'); if(m) m.style.display=(m.style.display==='none'?'block':'none');
+  const t=document.getElementById('dv_tb_menu_t'); if(t) t.style.display='none'; }
+function dvTbMenuT(){ const m=document.getElementById('dv_tb_menu_t'); if(m) m.style.display=(m.style.display==='none'?'block':'none');
+  const c=document.getElementById('dv_tb_menu'); if(c) c.style.display='none'; }
+/* Choix de la vue du tableau DG (menu de l'icône tableau) — mémorisé par devis.
+   L'effet des vues autres que Standard sur les colonnes sera défini avec Paulo. */
+function dvTbVue(k){ const D=dvA(); if(D){ D.vueT=k; dvPersist(); } dvRender(); }
 function dvUnmark(){ document.querySelectorAll('#dv_out tr.dv-sel').forEach(x=>x.classList.remove('dv-sel')); }
 function dvSelPos(id,tr){ _dvSel=id; _dvSelG=null; dvUnmark(); if(tr) tr.classList.add('dv-sel'); }
 function dvSelGrp(g,tr){ _dvSelG=g; _dvSel=null; dvUnmark(); if(tr) tr.classList.add('dv-sel'); }
@@ -15651,10 +15657,19 @@ function dvToolbarHTML(){
       '<div style="padding:8px 16px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbMenu();dvEditSelPos()">Éditer la position …</div>'+
       '<div style="padding:8px 16px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbMenu();dvDlgInfo()">Informations pour le devis …</div>'+
     '</div></div>';
+  const D=dvA(); const vue=(D&&D.vueT)||'std';
+  const vues=[['std','Standard'],['hon','Avec colonnes honoraires'],['toutes','Toutes les colonnes'],
+    ['prix','Toutes les colonnes avec le calcul de prix'],['desc','Avec le descriptif']];
+  const tblBtn='<div style="position:relative">'+
+    '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Affichage du tableau" onclick="dvTbMenuT()">'+ic['table']+' <span style="font-size:8px;color:#666">▾</span></button>'+
+    '<div id="dv_tb_menu_t" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:300px;z-index:60;font-size:13px;white-space:nowrap">'+
+    vues.map(v=>'<div style="padding:8px 16px 8px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvTbVue('+PV_Q+v[0]+PV_Q+')">'+
+      '<span style="width:20px;display:inline-block">'+(v[0]===vue?'✓':'')+'</span>'+v[1]+'</div>').join('')+
+    '</div></div>';
   return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
     pencil+'<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Supprimer la ligne sélectionnée" onclick="dvDelSel()">'+ic['minus']+'</button>'+b('filter',1,'Filtre')+
     '<span style="width:10px"></span>'+
-    b('table',1,'Affichage du tableau')+b('wrench',1,'Outils')+b('doc',1,'Documents')+b('gear',1,'Paramètres')+b('moon',0,'Mode sombre')+
+    tblBtn+b('wrench',1,'Outils')+b('doc',1,'Documents')+b('gear',1,'Paramètres')+b('moon',0,'Mode sombre')+
     '</div>';
 }
 function dvRender(){

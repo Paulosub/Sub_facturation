@@ -16735,13 +16735,20 @@ function dvDocFenStd(){
    une fenêtre d'impression avec les styles de l'app. */
 function dvDocPrint(){
   const sc=document.getElementById('dv_doc_sc'); if(!sc) return;
-  const w=window.open('','_blank');
-  if(!w){ toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+  /* iframe cachée dans la page → la boîte d'impression du Mac s'ouvre directement,
+     sans fenêtre pop-up intermédiaire */
+  const old=document.getElementById('dv_print_fr'); if(old) old.remove();
+  const fr=document.createElement('iframe');
+  fr.id='dv_print_fr';
+  fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(fr);
   const css=[...document.querySelectorAll('style')].map(s2=>s2.textContent).join(String.fromCharCode(10));
-  w.document.write('<html><head><title>Impression</title><style>'+css+
-    '</style><style>body{margin:0;background:#fff}.offre-page{box-shadow:none!important;margin:0 auto!important;zoom:1!important;display:block!important;page-break-after:always}</style></head><body>'+sc.innerHTML+'</body></html>');
-  w.document.close();
-  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 350);
+  const doc=fr.contentDocument;
+  doc.open();
+  doc.write('<html><head><title>Devis général</title><style>'+css+
+    '</style><style>body{margin:0;background:#fff}.offre-page{box-shadow:none!important;margin:0 auto!important;zoom:1!important;display:block!important;page-break-after:always}@page{size:A4;margin:0}</style></head><body>'+sc.innerHTML+'</body></html>');
+  doc.close();
+  setTimeout(()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ toast('Impression impossible : '+e.message); } }, 350);
 }
 /* ===== Fenêtre « Paramètres » du document (pinceau — clone Deltaproject) ===== */
 function dvDocParam(){ const D=dvA(); if(!D) return {};

@@ -15616,7 +15616,56 @@ function dvDocMenuP(){ const m=document.getElementById('dv_doc_menu_p');
   ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_m'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; }); }
 function dvDocMenuM(){ const m=document.getElementById('dv_doc_menu_m');
   if(m) m.style.display=(m.style.display==='none'?'block':'none');
-  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; }); }
+  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p','dv_doc_menu_g'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; }); }
+/* Roue crantée de Documents : options du document (fidèle à la fenêtre du bureau).
+   g1 = mode d'affichage (exclusif), g2 = montants (exclusif, optionnel), g3 = détails
+   du calcul (multiples), g4 = arrondi (exclusif, optionnel), g5 = divers (multiples).
+   Les options sont mémorisées par devis (D.docOpt) — leur effet servira au PDF. */
+function dvDocOptO(){ const D=dvA(); if(!D) return null;
+  const o=D.docOpt||(D.docOpt={g1:'saisies', g2:null, g3:{}, g4:null, g5:{sansMont:true}});
+  if(!o.g3) o.g3={}; if(!o.g5) o.g5={sansMont:true}; return o; }
+function dvDocMenuG(){
+  const m=document.getElementById('dv_doc_menu_g'); if(!m) return;
+  ['dv_tb_menu','dv_tb_menu_t','dv_doc_menu_p','dv_doc_menu_m'].forEach(id=>{ const x=document.getElementById(id); if(x) x.style.display='none'; });
+  if(m.style.display==='block'){ m.style.display='none'; return; }
+  const o=dvDocOptO(); if(!o) return;
+  const it=(chk,lbl,g,k)=>'<div style="padding:4px 16px 4px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvDocOptC('+PV_Q+g+PV_Q+','+PV_Q+k+PV_Q+')"><span style="width:20px;display:inline-block;flex:none">'+(chk?'✓':'')+'</span>'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+  m.innerHTML=
+    it(o.g1==='subdiv','Afficher les subdivisions','g1','subdiv')+
+    it(o.g1==='pos13','Seulement positions de 1 à 3 chiffres','g1','pos13')+
+    it(o.g1==='saisies','Afficher les positions saisies et les totalisateurs','g1','saisies')+
+    it(o.g1==='basecom','Base et commentaire de la position','g1','basecom')+
+    it(o.g1==='basecol','Base et commentaire dans colonne séparée','g1','basecol')+
+    sep+
+    it(o.g2==='calcRem','Uniquement les montants avec calculs et remarque','g2','calcRem')+
+    it(o.g2==='tousDetail','Tous les montants détaillés','g2','tousDetail')+
+    sep+
+    it(!!o.g3.comCalc,'Commentaire du calcul','g3','comCalc')+
+    it(!!o.g3.basePrix,'Bases de prix','g3','basePrix')+
+    it(!!o.g3.affCalc,'Afficher le calcul','g3','affCalc')+
+    it(!!o.g3.qtes,'Quantités','g3','qtes')+
+    it(!!o.g3.prixTTC,'Prix TTC','g3','prixTTC')+
+    it(!!o.g3.prixHT,'Prix HT','g3','prixHT')+
+    it(!!o.g3.affMont,'Afficher les montants','g3','affMont')+
+    it(!!o.g3.variantes,'Variantes','g3','variantes')+
+    sep+
+    it(o.g4==='noDec','Masquer les décimales','g4','noDec')+
+    it(o.g4==='arr10','Arrondir à 10','g4','arr10')+
+    it(o.g4==='arr100','Arrondir à 100','g4','arr100')+
+    it(o.g4==='arr1000','Arrondir à 1000','g4','arr1000')+
+    sep+
+    it(!!o.g5.sansMont,'Afficher les positions sans montant','g5','sansMont')+
+    it(!!o.g5.descriptif,'Descriptif','g5','descriptif')+
+    it(!!o.g5.assembler,'Assembler les descriptifs des ouvrages','g5','assembler');
+  m.style.display='block';
+}
+function dvDocOptC(g,k){ const o=dvDocOptO(); if(!o) return;
+  if(g==='g1') o.g1=k;
+  else if(g==='g2'||g==='g4') o[g]=(o[g]===k?null:k);
+  else o[g][k]=!o[g][k];
+  dvPersist();
+  const m=document.getElementById('dv_doc_menu_g'); if(m) m.style.display='none'; }
 function dvDocOuvrir(){ toast('Ouvrir « '+(window._dvDocSel||'document')+' » — fenêtre à définir.'); }
 /* Sélection d'un document (Devis général / Honoraires / Devis descriptif) : active les icônes +/−/roue. */
 function dvDocSel(n,tr){ window._dvDocSel=n;
@@ -15822,7 +15871,10 @@ function dvRender(){
       '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Effacer le document …</div>'+
       '<div style="padding:4px 16px 4px 12px;color:#b5b5b5">Effacer le PDF …</div>'+
     '</div></span>'+
-    db('<span style="font-size:13px;line-height:1">⚙︎</span>','Réglages')+'</span></div>'+
+    '<span style="position:relative;display:inline-flex">'+
+    '<button class="btn btn-sm" disabled style="'+dbSt+';opacity:.45;pointer-events:none" title="Réglages — sélectionnez d'+PV_Q+'abord un document" onclick="dvDocMenuG()"><span style="font-size:13px;line-height:1">⚙︎</span> <span style="font-size:8px;color:#666">▾</span></button>'+
+    '<div id="dv_doc_menu_g" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:390px;z-index:60;font-size:13px;white-space:nowrap;text-align:left;padding:4px 0"></div>'+
+    '</span>'+'</span></div>'+
     '<table class="pv-tb" style="height:auto"><thead><tr><th>Nom du document</th><th style="text-align:center">Document disponible</th><th style="text-align:center">PDF disponible</th></tr></thead><tbody>'+
     ['Devis général','Honoraires','Devis descriptif'].map(n=>'<tr style="cursor:pointer" onclick="dvDocSel('+PV_Q+n+PV_Q+',this)"><td>'+n+'</td><td style="text-align:center;color:#b0b8bc">×</td><td style="text-align:center;color:#b0b8bc">×</td></tr>').join('')+
     Array.from({length:7}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td></tr>').join('')+

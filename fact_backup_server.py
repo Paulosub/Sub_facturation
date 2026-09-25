@@ -268,6 +268,46 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         u = urllib.parse.urlparse(self.path)
 
+        if u.path == "/saveas":
+            # Fenêtre Finder « Enregistrer sous » (macOS) puis écriture du corps reçu
+            # à l'emplacement choisi.  ?name=<nom proposé>&prompt=<titre du dialogue>
+            q = urllib.parse.parse_qs(u.query)
+            name = os.path.basename((q.get("name", ["export.txt"])[0]).strip() or "export.txt")
+            prompt = (q.get("prompt", ["Enregistrer sous"])[0]).strip() or "Enregistrer sous"
+            length = int(self.headers.get("Content-Length", 0))
+            data = self.rfile.read(length)
+            esc = lambda s: s.replace("\\", "\\\\").replace('"', '\\"')
+            script = (
+                'tell application "System Events"\n'
+                '  activate\n'
+                '  try\n'
+                '    set f to choose file name with prompt "%s" default name "%s"\n'
+                '    return POSIX path of f\n'
+                '  on error number -128\n'
+                '    return "__CANCELLED__"\n'
+                '  end try\n'
+                'end tell'
+            ) % (esc(prompt), esc(name))
+            try:
+                args = ["osascript"]
+                for line in script.split("\n"):
+                    args += ["-e", line]
+                r = subprocess.run(args, capture_output=True, text=True, timeout=600)
+                out = (r.stdout or "").strip()
+                if r.returncode != 0 or out == "" or out == "__CANCELLED__":
+                    self._json(200, {"ok": True, "cancelled": True})
+                    return
+                # conserver l'extension proposée si l'utilisateur l'a retirée
+                ext = os.path.splitext(name)[1]
+                if ext and not out.lower().endswith(ext.lower()):
+                    out += ext
+                with open(out, "wb") as fh:
+                    fh.write(data)
+                self._json(200, {"ok": True, "path": out})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         if u.path == "/pdf":
             # Reçoit un PDF (corps binaire) et l'ouvre dans Aperçu (macOS).
             #   ?name=<fichier.pdf>       nom du fichier

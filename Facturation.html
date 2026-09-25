@@ -16270,8 +16270,8 @@ function dvExpDevisOk(){
   o.mode=document.querySelector('input[name="dv_exp_mode"][value="ft"]:checked')?'ft':'dg';
   o.com=g('dv_exp_com'); o.calc=g('dv_exp_calc'); o.desc=g('dv_exp_desc');
   dvPersist(); dvExpClose();
-  if(o.mode==='ft'){ toast('Export vers FastTrack — à venir.'); return; }
-  dvExpDevisCsv(o);
+  if(o.mode==='ft'){ dvExpFastTrack(); return; }
+  dvExpDevisRtf(o);
 }
 /* 2. Exporter le descriptif (+ montants) */
 function dvExpDescDlg(){
@@ -16300,11 +16300,7 @@ function dvExpDl(rows, suffixe){
   const NL=String.fromCharCode(13)+String.fromCharCode(10);
   const esc=v=>('"'+String(v==null?'':v).split('"').join('""')+'"');
   const csv=String.fromCharCode(65279)+rows.map(r=>r.map(esc).join(';')).join(NL);
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-  a.download=(_dvAff||'devis')+'_'+suffixe+'.csv'; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
-  toast('Export « '+a.download+' » créé.');
+  dvExpSave(csv, (_dvAff||'devis')+'_'+suffixe+'.csv', 'Exporter le descriptif', 'text/csv;charset=utf-8');
 }
 function dvExpDevisCsv(o){
   const D=dvA(); if(!D) return;
@@ -16332,19 +16328,109 @@ function dvExpDevisCsv(o){
   rows.push(['','TOTAL DEVIS', n2(C.totHT), n2(C.totTTC-C.totHT), n2(C.totTTC), C.totTTC>0.005?'100.00':''].concat(extra()));
   dvExpDl(rows,'devis_general');
 }
+function dvExpDescRtfTxt(D,o){
+  return dvExpDevisRtfTxt(D,{desc:true, calc:false, com:false, noMont:!o.montants});
+}
 function dvExpDescCsv(o){
   const D=dvA(); if(!D) return;
-  const tva=(D.tva!=null?D.tva:8.1), {C,items}=dvExpItems(D);
-  const n2=v=>(Math.round((+v||0)*100)/100).toFixed(2);
-  const head=['N°','Désignation','Descriptif']; if(o.montants) head.push('Montant HT','TVA','Montant TTC');
-  const rows=[head];
-  items.forEach(it=>{
-    if(it.g){ const t=C.grp[it.cfc]||0, ht=t/(1+tva/100);
-      rows.push([it.cfc, ccCatLbl(it.cfc)||'', ''].concat(o.montants?[n2(ht),n2(t-ht),n2(t)]:[])); return; }
-    const pp=it.p, t=ccP(pp.ttc), ht=t/(1+tva/100);
-    rows.push([pp.cfc||'', pp.lbl||'', (pp.calc&&pp.calc.desc)||''].concat(o.montants?[n2(ht),n2(t-ht),n2(t)]:[]));
+  dvExpSave(dvExpDescRtfTxt(D,o), (_dvAff||'devis')+'_descriptif.rtf', 'Exporter le descriptif', 'application/rtf');
+}
+/* Enregistrement via la fenêtre Finder « Enregistrer sous » (serveur 7788, route /saveas) ;
+   sans serveur : téléchargement classique du navigateur. */
+async function dvExpSave(content, name, prompt, mime){
+  try{
+    const r=await fetch('http://127.0.0.1:7788/saveas?name='+encodeURIComponent(name)+'&prompt='+encodeURIComponent(prompt||'Enregistrer sous'),
+      {method:'POST', headers:{'Content-Type':mime||'application/octet-stream'}, body:content});
+    const j=await r.json();
+    if(j&&j.ok){ if(j.cancelled) return; toast('Enregistré : '+j.path.split('/').pop()); return; }
+    throw new Error((j&&j.error)||'échec');
+  }catch(e){
+    if(e && e.message && e.message!=='Failed to fetch' && !/NetworkError|Load failed/.test(e.message)){ toast('Erreur d’enregistrement : '+e.message); return; }
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([content],{type:mime||'application/octet-stream'}));
+    a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast('Serveur de sauvegarde (7788) indisponible — fichier téléchargé : '+name);
+  }
+}
+/* Export FastTrack : arborescence CFC en texte tabulé (UTF-8, CRLF), une ligne par position
+   saisie ; colonnes = niveaux 1, 2, 3 chiffres et sous-position ; un niveau parent n'est écrit
+   qu'à sa première apparition. 5 cellules si la ligne s'arrête avant le 4e niveau, 4 sinon. */
+function dvExpFastTrackTxt(D){
+  const pos=D.pos.filter(pp=>pp.cfc).slice().sort((x,y)=>ccCmp(x.cfc,y.cfc));
+  const norms=pos.map(pp=>ccNorm(pp.cfc));
+  const lblOf=c=>{ const pp=pos.find(x=>x.cfc===c); return (pp&&pp.lbl)||ccCatLbl(c)||''; };
+  const out=[]; let prev=[];
+  pos.forEach((pp,i)=>{
+    const n=norms[i];
+    if(norms.some((m,j)=>j!==i && m.length>n.length && m.startsWith(n))) return; // parent : écrit avec ses enfants
+    const idx=Math.min(n.length,4)-1;
+    const path=[]; for(let k=0;k<idx;k++) path.push(n.slice(0,k+1)); path.push(pp.cfc);
+    const cells=Array(idx<3?5:4).fill('');
+    let neuf=false;
+    for(let k=0;k<=idx;k++){
+      const code=path[k];
+      if(neuf || k===idx || prev[k]!==code){ neuf=true;
+        cells[k]=code+' '+(k===idx?(pp.lbl||ccCatLbl(code)||''):lblOf(code)); }
+    }
+    prev=path; out.push(cells.join('\t'));
   });
-  dvExpDl(rows,'descriptif');
+  return out.map(l=>l+'\r\n').join('');
+}
+function dvExpFastTrack(){
+  const D=dvA(); if(!D) return;
+  dvExpSave(dvExpFastTrackTxt(D), (_dvAff||'devis')+'.txt', 'Exporter vers FastTrack', 'text/plain;charset=utf-8');
+}
+/* Export du devis général en RTF (Lucida Grande 13 pt) : « CFC Désignation<tab>Montant TTC »,
+   groupes et positions dans l'ordre du tableau ; options commentaire / calcul / descriptif. */
+function dvRtfEsc(t){
+  let r='';
+  for(const ch of String(t==null?'':t)){
+    const c=ch.codePointAt(0);
+    if(ch==='\\'||ch==='{'||ch==='}') r+='\\'+ch;
+    else if(ch==='\t') r+='\\tab ';
+    else if(ch==='\n') r+='\\line ';
+    else if(c<128) r+=ch;
+    else if(c<256) r+="\\'"+c.toString(16).padStart(2,'0');
+    else { const m={0x2019:0x92,0x2018:0x91,0x201C:0x93,0x201D:0x94,0x2013:0x96,0x2014:0x97,0x2026:0x85,0x20AC:0x80,0x2212:0x2d};
+      if(m[c]!=null) r+=(m[c]<128?String.fromCharCode(m[c]):"\\'"+m[c].toString(16));
+      else r+='\\u'+(c>32767?c-65536:c)+'?'; }
+  }
+  return r;
+}
+function dvExpDevisRtfTxt(D,o){
+  /* Format du bureau : « CFC Désignation\tab TTC\par » pour chaque groupe et position ;
+     sous chaque position (options calcul/commentaire) une ligne par ligne de calcul
+     « ␣commentaire␣expression␣quantité␣TVA␣montant » — sans calcul : « ␣␣␣0.0 TVA TTC » ;
+     descriptif (option) en \f2\fs18 après les lignes de calcul. */
+  const tva=(D.tva!=null?D.tva:8.1), {C,items}=dvExpItems(D);
+  const f=v=>ccF(v).replace('−','-');
+  const nb=v=>{ const x=+v||0; return Number.isInteger(x)?x.toFixed(1):String(Math.round(x*1e6)/1e6); };
+  const L=[];
+  items.forEach(it=>{
+    const mt=v=>o.noMont?'':('\\tab '+f(v));
+    if(it.g){ L.push(dvRtfEsc(it.cfc+' '+(ccCatLbl(it.cfc)||''))+mt(C.grp[it.cfc]||0)+'\\par'); return; }
+    const pp=it.p, ttc=ccP(pp.ttc);
+    L.push(dvRtfEsc((pp.cfc||'')+' '+(pp.lbl||''))+mt(ttc)+'\\par');
+    if(o.calc||o.com){
+      const rows=(pp.calc&&Array.isArray(pp.calc.rows)&&pp.calc.rows.length)?pp.calc.rows:null;
+      if(rows) rows.forEach(r=>{
+        const q=ccP(r.qty), pu=ccP(r.pttc), mt=Math.round((q||1)*pu*100)/100;
+        const tv=(r.tva!=null&&r.tva!=='')?r.tva:tva;
+        const sansPrix=(r.pttc===''||r.pttc==null||isNaN(+r.pttc))&&(r.pht===''||r.pht==null||isNaN(+r.pht));
+        if(o.calc) L.push(' '+dvRtfEsc(o.com?(r.com||''):'')+' '+dvRtfEsc(r.qexp||'')+' '+nb(q)+' '+nb(tv)+' '+(sansPrix?'':f(mt))+'\\par');
+        else if(r.com) L.push(' '+dvRtfEsc(r.com)+'\\par');
+      });
+      else if(o.calc) L.push('   '+nb(0)+' '+nb(tva)+' '+f(ttc)+'\\par');
+    }
+    if(o.desc && pp.calc && pp.calc.desc)
+      L.push('\\f2\\fs18\\ul0\\cf0 '+dvRtfEsc(pp.calc.desc)+'\\f1\\fs26\\ul0\\par');
+  });
+  return '{\\rtf1\\ansi\n{\\fonttbl\\f0\\fnil Monospaced;\\f1\\fnil Lucida Grande;'+(o.desc?'\\f2\\fnil ;':'')+'}\n\n\\f1\\fs26\\i0\\b0 '+
+    L.join('\n')+'\n\\par\n}\n';
+}
+function dvExpDevisRtf(o){
+  const D=dvA(); if(!D) return;
+  dvExpSave(dvExpDevisRtfTxt(D,o), (_dvAff||'devis')+'.rtf', 'Exporter le devis général', 'application/rtf');
 }
 /* Présentations d'impression du devis (menu feuille) — liste de noms par devis */
 function dvPresAdd(){

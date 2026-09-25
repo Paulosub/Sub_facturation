@@ -16059,8 +16059,45 @@ function ccAfEcr(){ const r=ccAfNeed(); if(r) ccRowMenu(r.cfc); }
 function ccAfTva(){ const A=ccA(); if(!A) return;
   chPrompt('TVA du contrôle du coût (%) :', String(A.tva!=null?A.tva:8.1), v=>{
     const t=ccP(v); if(!(t>=0)) return; A.tva=t; ccPersist(); ccRender(); }); }
+/* Largeurs automatiques : chaque colonne prend la largeur de son contenu le plus long
+   (en-tête compris) ; la Désignation absorbe l'espace restant ; les largeurs réglées
+   à la main (joint de l'en-tête) sont respectées ; défilement horizontal si besoin. */
+function ccAutoFit(){
+  const t=document.getElementById('cc_af_tb'); if(!t) return;
+  const cols=[...t.querySelectorAll('colgroup col')]; if(!cols.length) return;
+  const A=ccA()||{}; const cw=A.colW||{};
+  const cv=ccAutoFit._cv||(ccAutoFit._cv=document.createElement('canvas')); const g=cv.getContext('2d');
+  const need=cols.map(()=>34);
+  const fam=getComputedStyle(t).fontFamily;
+  [...t.querySelectorAll('tr')].forEach(tr=>{
+    if(tr.classList.contains('cc-af-fill')) return;
+    [...tr.children].forEach((c,i)=>{
+      if(i>=need.length||c.colSpan>1) return;
+      const inp=c.querySelector('input');
+      let txt=inp?inp.value:c.innerText; txt=String(txt||'').replace(/\s+/g,' ').trim();
+      const cs=getComputedStyle(c);
+      g.font=cs.fontWeight+' '+cs.fontSize+' '+fam;
+      let wpx=g.measureText(txt).width+18;
+      if(inp) wpx+=10;
+      if(c.querySelector('.cc-tgl')) wpx+=12;
+      if(c.tagName==='TH') wpx+=10;
+      need[i]=Math.max(need[i], Math.ceil(wpx));
+    });
+  });
+  const hdr=[...t.querySelectorAll('thead th')].map(x=>x.innerText.trim());
+  let flex=hdr.indexOf('D\u00e9signation'); if(flex<0) flex=1;
+  let tot=0;
+  cols.forEach((col,i)=>{
+    const k=col.getAttribute('data-ck');
+    let wpx=(k&&cw[k])?cw[k]:Math.min(need[i], i===flex?9999:420);
+    if(i===flex&&!(k&&cw[k])){ col.style.width=''; tot+=need[i]; return; }
+    col.style.width=wpx+'px'; tot+=wpx;
+  });
+  t.style.minWidth=tot+'px';
+}
 function ccAfFill(){
   const w=document.getElementById('cc_af_wrap'), tb=document.querySelector('#cc_af_tb tbody'); if(!w||!tb) return;
+  ccAutoFit();
   /* le cadre (menu latéral + tableau) occupe toute la page */
   const root=document.getElementById('cc_af_root');
   if(root){ const rt=root.getBoundingClientRect().top; root.style.height=Math.max(280, window.innerHeight-rt-14)+'px'; }

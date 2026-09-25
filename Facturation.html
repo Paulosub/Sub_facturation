@@ -17752,7 +17752,41 @@ function dvToolbarHTML(){
           sep+
           li('Afficher les documents','dvTbTog(null);dvDocsTog()',docsOn));
     })()+
+    '<span style="flex:1"></span>'+
+    (function(){
+      const off=dvCatOff();
+      const icn=off
+        ? '<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h4v4M13 2 8.5 6.5M6 13H2V9M2 13l4.5-4.5"/></svg>'
+        : '<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6H9V2M9 6l4.5-4.5M2 9h4v4M6 9 1.5 13.5"/></svg>';
+      return '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="'+(off?'Afficher la liste des CFC':'Masquer la liste des CFC et agrandir le tableau')+'" onclick="dvCatTog()">'+icn+'</button>'+
+        '<span style="position:relative;display:inline-flex;align-items:center">'+
+          '<svg width="14" height="14" viewBox="0 0 15 15" style="position:absolute;left:8px;pointer-events:none" fill="none" stroke="#777" stroke-width="1.4" stroke-linecap="round"><circle cx="6.3" cy="6.3" r="4.3"/><path d="M9.5 9.5 13 13"/></svg>'+
+          '<input id="dv_tbl_q" value="'+pvEscA(window._dvTblQ||'')+'" oninput="window._dvTblQ=this.value;dvTblFilter()" placeholder="" title="Rechercher dans le tableau (N° ou désignation)" style="width:190px;border:1px solid #c9c9c9;border-radius:6px;padding:4px 8px 4px 28px;font-size:12px;background:#fff"></span>';
+    })()+
     '</div>';
+}
+/* Liste des CFC masquée / affichée (icône flèches) — préférence locale du poste. */
+function dvCatOff(){ try{ return localStorage.getItem('sa_dv_catoff')==='1'; }catch(e){ return false; } }
+function dvCatTog(){ try{ localStorage.setItem('sa_dv_catoff', dvCatOff()?'0':'1'); }catch(e){} dvRender(); }
+/* Recherche dans le tableau DG : lignes dont le N° ou la désignation contient le texte,
+   avec leurs groupes parents ; sous-lignes de calcul suivant leur position ; TOTAL toujours visible. */
+function dvTblFilter(){
+  const t=document.querySelector('#dv_flex > div:nth-child(2) table'); if(!t) return;
+  const nrm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const q=nrm((window._dvTblQ||'').trim());
+  const rows=[...t.querySelectorAll('tbody tr')];
+  if(!q){ rows.forEach(r=>r.style.display=''); return; }
+  const info=rows.map(r=>{ const td=r.querySelectorAll('td'); const code=(td[0]&&td[0].innerText||'').trim();
+    return {r, code, norm:ccNorm(code), txt:nrm(code+' '+(td[1]&&td[1].innerText||''))}; });
+  const hit=new Set(); info.forEach(x=>{ if(x.code && x.txt.includes(q)) hit.add(x.norm); });
+  const keep=x=>{ if(!x.code) return false; for(const h of hit){ if(h===x.norm || h.startsWith(x.norm)) return true; } return false; };
+  let last=false;
+  info.forEach(x=>{
+    if(/TOTAL DEVIS/.test(x.r.innerText)){ x.r.style.display=''; return; }
+    if(!x.code){ x.r.style.display=last?'':'none'; return; }
+    last=keep(x) && hit.has(x.norm) || keep(x);
+    x.r.style.display=keep(x)?'':'none';
+  });
 }
 function dvRender(){
   const out=document.getElementById('dv_out'), ctx=document.getElementById('dv_ctx');
@@ -17787,7 +17821,7 @@ function dvRender(){
       :'<button class="btn btn-sm" style="background:#fcf0dc;border:1px solid #dcc79a;color:#8a6410" onclick="dvValideTog()" title="Devis en BROUILLON — cliquer pour le valider (verrouille les montants)">Brouillon — valider …</button>')+
     '</div>';
   // Totaux en tête — comme la fenêtre du bureau
-  h+='<div style="display:grid;grid-template-columns:110px 160px;gap:1px 10px;font-size:12.5px;margin:4px auto 10px 332px;background:#f4f7f9;border:1px solid #d9e2e6;border-radius:6px;padding:8px 12px;width:300px">'+
+  h+='<div style="display:grid;grid-template-columns:110px 160px;gap:1px 10px;font-size:12.5px;margin:4px auto 10px '+(dvCatOff()?0:332)+'px;background:#f4f7f9;border:1px solid #d9e2e6;border-radius:6px;padding:8px 12px;width:300px">'+
     '<span style="color:#555">Total HT</span><b style="text-align:right">'+ccF(C.totHT)+'</b>'+
     '<span style="color:#555">Total TTC</span><b style="text-align:right">'+ccF(C.totTTC)+'</b>'+
     (function(){
@@ -17805,7 +17839,7 @@ function dvRender(){
   h+='<div id="dv_flex" style="display:flex;gap:12px;align-items:stretch;height:420px">';
   // ── catalogue CFC (gauche) : clic sur une position = ajout au devis ──
   const inDevis={}; D.pos.forEach(p=>{ if(p.cfc) inDevis[p.cfc]=1; });
-  h+='<div style="width:320px;flex:none;display:flex;flex-direction:column;height:100%">'+
+  h+='<div id="dv_cat_col" style="width:320px;flex:none;display:'+(dvCatOff()?'none':'flex')+';flex-direction:column;height:100%">'+
     '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;flex:none">'+
       '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Ajouter un CFC au catalogue" onclick="dvCfcDlg(0)"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M7.5 3v9M3 7.5h9" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round"/></svg></button>'+
       '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="\u00c9diter le CFC s\u00e9lectionn\u00e9" onclick="dvCfcDlg(1)"><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z" fill="none" stroke="#444" stroke-width="1.3"/></svg></button>'+
@@ -17947,6 +17981,7 @@ function dvRender(){
   h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';
   out.innerHTML=h;
   dvFit();
+  if(window._dvTblQ) dvTblFilter();
 }
 /* Ajuste la hauteur de la vue pour qu'elle remplisse EXACTEMENT la fenêtre — aucun scroll de page,
    quel que soit l'écran ; seuls le tableau et le catalogue défilent en interne. */

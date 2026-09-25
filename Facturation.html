@@ -16160,9 +16160,12 @@ function dvCdOk(){
   const src=dvData[window._dvCdDev]; if(!src) return;
   const code=window._dvImpAff||dvAffCode(window._dvCdDev);
   dvExpClose();
-  const D=dvNewAff(code);
-  D.pos=JSON.parse(JSON.stringify(src.pos||[])).map(p=>Object.assign(p,{id:pvId()}));
-  D.tva=(src.tva!=null?src.tva:D.tva); D.version=''; D.notes='';
+  // TOUT le devis choisi est copié dans l'affaire cible (positions, calculs, TVA, remarques,
+  // réglages) ; seuls l'identité de la version et les documents / PDF déjà générés sont neufs.
+  const D=JSON.parse(JSON.stringify(src));
+  D.pos=(D.pos||[]).map(p=>Object.assign(p,{id:pvId()}));
+  Object.assign(D,{aff:code, user:'Paulo', version:'', nver:1, etat:'Brouillon', valide:false, notes:'',
+    date:ccToday(), docs:{}});
   const key=dvData[code]?(code+'~'+Date.now().toString(36)):code;
   setTimeout(()=>dvEditDlg(D, key), 0);
 }

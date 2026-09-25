@@ -15897,15 +15897,20 @@ function dvListHTML(){
   const menuBox=(id,inner)=>'<div id="'+id+'" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:240px;z-index:60;font-size:13px;white-space:nowrap;padding:4px 0">'+inner+'</div>';
   const sel=!!(window._dvLsSel&&dvData[window._dvLsSel]);
   const bar='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center">'+
-    B('plus','dvAddAffOpen()','Nouveau devis')+
+    B('plus','dvImpAffDlg('+PV_Q+'new'+PV_Q+')','Nouveau devis')+
     B('dup','dvListDup()','Dupliquer le devis sélectionné')+
     '<div style="position:relative">'+B('pencil','dvListMenu('+PV_Q+'dv_ls_menu_e'+PV_Q+')','Édition',1)+
       menuBox('dv_ls_menu_e', item('Editer …','dvListMenu(null);dvListEdit()',true)+item('Ouvrir …','dvListMenu(null);dvListOpen()',true))+'</div>'+
     B('minus','dvListDel()','Supprimer le devis sélectionné')+
-    '<div style="position:relative">'+B('dl','dvListMenu('+PV_Q+'dv_ls_menu_i'+PV_Q+')','Importer / exporter',1)+
-      menuBox('dv_ls_menu_i', item('Importer un devis …','',false)+item('Exporter la liste des devis …','',false))+'</div>'+
+    '<div style="position:relative">'+B('dl','dvImpAffDlg()','Importer un devis',1)+
+      menuBox('dv_ls_menu_i', item('Importer un devis CFC d’une affaire …','dvListMenu(null);dvImpCfc()',true)+
+        item('Importer un devis externe (format *.deltakv) …','dvListMenu(null);dvImpDeltakv()',true))+'</div>'+
     '<div style="position:relative">'+B('gear','dvListMenu('+PV_Q+'dv_ls_menu_g'+PV_Q+')','Paramètres',1)+
-      menuBox('dv_ls_menu_g', item('Réglages de la liste …','',false))+'</div>'+
+      menuBox('dv_ls_menu_g', item('Copier le contenu du tableau dans le presse-papier','dvListMenu(null);dvListCopy()',true)+
+        item('Exporter le tableau dans un fichier CSV …','dvListMenu(null);dvListCsv()',true)+
+        '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
+        item('Dupliquer et modifier la subdivision','',false)+
+        item('Exporter (format *.deltakv) …','dvListMenu(null);dvListDeltakv()',true))+'</div>'+
     '</div>';
   const cols=[['aff','N° d’affaire','left','9%'],['user','Utilisateur','left','8%'],['date','Date','left','7%'],['version','Version','left','22%'],
     ['nver','N° de version','right','7%'],['etat','Statut','left','8%'],['notes','Notes','left','39%']];
@@ -15952,8 +15957,10 @@ function dvListDel(){ const k=dvListNeedSel(); if(!k) return;
   dvWarn('Voulez-vous vraiment supprimer cette inscription ?', ()=>{
     delete dvData[k]; if(_dvAff===k) _dvAff=null; window._dvLsSel=null; dvPersist(); dvRender(); }, ()=>{}); }
 /* Fenêtre « Editer le devis général » (modèle du bureau) */
-function dvListEdit(){ const k=dvListNeedSel(); if(!k) return;
-  const D=dvData[k]; window._dvLsEditK=k;
+function dvListEdit(){ const k=dvListNeedSel(); if(!k) return; dvEditDlg(dvData[k], null); }
+/* D : devis à éditer ; newKey : clé si le devis est NOUVEAU (créé seulement au OK). */
+function dvEditDlg(D, newKey){
+  window._dvLsEditD=D; window._dvLsEditNew=newKey||null;
   const fs='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
   const lab=(t,w)=>'<span style="width:'+(w||104)+'px;flex:none;text-align:right;font-size:14px;color:#1a1a1a">'+t+'</span>';
   const chk=(t,on)=>'<label style="display:flex;align-items:center;gap:10px;margin:0 0 18px 128px;font-size:14px;color:#9a9a9a">'+
@@ -15996,14 +16003,84 @@ function dvLeParseDate(t){ t=String(t||'').trim();
   const m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);
   if(m){ const y=m[3].length===2?('20'+m[3]):m[3]; return y+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2); }
   if(/^\d{4}-\d{2}-\d{2}$/.test(t)) return t; return null; }
-function dvListEditOk(){ const D=dvData[window._dvLsEditK]; if(!D) return;
+function dvListEditOk(){ const D=window._dvLsEditD; if(!D) return;
   const g=id=>(document.getElementById(id)||{}).value;
   const iso=dvLeParseDate(g('dv_le_date')); if(!iso){ toast('Date invalide — format jj.mm.aaaa.'); return; }
   D.date=iso; D.user=(g('dv_le_user')||'').trim()||'Paulo';
   D.version=(g('dv_le_ver')||'').trim(); D.nver=Math.max(1, parseInt(g('dv_le_nver'))||1);
   D.notes=String(g('dv_le_notes')||'').trim();
   const e=g('dv_le_etat'); D.valide=(e==='Validé'); if(e!=='Validé') D.etat=e;
-  dvExpClose(); dvPersist(); dvRender(); }
+  dvExpClose();
+  const nk=window._dvLsEditNew; window._dvLsEditNew=null;
+  if(nk){ dvData[nk]=D; window._dvLsSel=nk; _dvAff=nk; dvPersist(); dvRender();
+    toast('Devis '+dvAffCode(nk)+' créé'+(D.pos.length?' — postes repris du contrôle du coût / PV.':' — cliquez les positions du catalogue à gauche.'));
+    return; }
+  dvPersist(); dvRender(); }
+/* ── Import : fenêtre « Choix de l'affaire » (recherche, liste Numéro | Affaire), puis menu des imports ── */
+function dvImpAffDlg(mode){
+  dvListMenu(null); window._dvImpSel=null; window._dvAffDlgMode=(mode==='new')?'new':'imp';
+  const lh=Math.max(260, Math.min(560, Math.round(window.innerHeight*0.58)));
+  dvMacDlg('Choix de l’affaire',
+    '<style>#dv_imp_tb{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px}'+
+      '#dv_imp_tb th{font-weight:normal;text-align:left;padding:3px 8px;background:#fff;position:sticky;top:0;border-bottom:1px solid #e2e2e2;color:#1a1a1a}'+
+      '#dv_imp_tb td{padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}'+
+      '#dv_imp_tb tbody tr:nth-child(odd) td{background:#eef3fb}#dv_imp_tb tbody tr:nth-child(even) td{background:#fff}'+
+      '#dv_imp_tb tbody tr.dv-imp-sel td{background:#2f6fde !important;color:#fff}</style>'+
+    '<div style="padding:14px 16px 4px">'+
+      '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><span style="position:relative;display:inline-flex;align-items:center">'+
+        '<svg width="15" height="15" viewBox="0 0 15 15" style="position:absolute;left:9px;pointer-events:none" fill="none" stroke="#777" stroke-width="1.4" stroke-linecap="round"><circle cx="6.3" cy="6.3" r="4.3"/><path d="M9.5 9.5 13 13"/></svg>'+
+        '<input id="dv_imp_q" oninput="dvImpFill()" style="width:240px;border:2px solid #9fc0e8;border-radius:7px;padding:5px 8px 5px 30px;font-size:13px;background:#fff"></span></div>'+
+      '<div style="border:1px solid #9a9a9a;height:'+lh+'px;overflow:auto;background:#fff">'+
+        '<table id="dv_imp_tb"><thead><tr><th style="width:110px;border-right:1px solid #e2e2e2">Numéro</th><th>Affaire</th></tr></thead><tbody id="dv_imp_ls"></tbody></table></div>'+
+    '</div>', 'dvImpAffOk()', 430);
+  dvImpFill();
+  const q=document.getElementById('dv_imp_q'); if(q) q.focus();
+}
+function dvImpFill(){
+  const tb=document.getElementById('dv_imp_ls'); if(!tb) return;
+  const nrm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const f=nrm((document.getElementById('dv_imp_q')||{}).value);
+  const ls=((typeof affairesAll==='function')?affairesAll():[]).filter(x=>x.code && /[0-9A-Za-z]/.test(x.code))
+    .filter(x=>!f || nrm(x.code+' '+(x.projet||'')).includes(f));
+  let h=ls.map(x=>'<tr data-c="'+pvEscA(x.code)+'" class="'+(x.code===window._dvImpSel?'dv-imp-sel':'')+'" onclick="dvImpSel(this)" ondblclick="dvImpSel(this);dvImpAffOk()">'+
+    '<td>'+pvEsc(x.code)+'</td><td title="'+pvEscA(x.projet||'')+'">'+pvEsc(x.projet||'')+'</td></tr>').join('');
+  for(let i=ls.length;i<22;i++) h+='<tr><td>&nbsp;</td><td></td></tr>';
+  tb.innerHTML=h;
+}
+function dvImpSel(tr){ window._dvImpSel=tr.getAttribute('data-c');
+  document.querySelectorAll('#dv_imp_ls tr.dv-imp-sel').forEach(x=>x.classList.remove('dv-imp-sel')); tr.classList.add('dv-imp-sel'); }
+function dvImpAffOk(){
+  if(!window._dvImpSel){ toast('Sélectionnez une affaire dans la liste.'); return; }
+  window._dvImpAff=window._dvImpSel;
+  dvExpClose();
+  if(window._dvAffDlgMode==='new'){   // + : 1. choix de l'affaire → 2. fenêtre Editer → 3. création + ouverture
+    const code=window._dvImpSel;
+    const key=dvData[code]?(code+'~'+Date.now().toString(36)):code;
+    setTimeout(()=>dvEditDlg(dvNewAff(code), key), 0);
+    return;
+  }
+  // la fenêtre se ferme et le menu de l'icône s'ouvre (après le clic, pour ne pas être refermé aussitôt)
+  setTimeout(()=>{ const m=document.getElementById('dv_ls_menu_i'); if(m) m.style.display='block'; }, 0);
+}
+/* Roue crantée de la liste : copier / exporter la liste des devis telle qu'affichée (tri compris). */
+function dvListTable(){
+  const head=['N° d’affaire','Utilisateur','Date','Version','N° de version','Statut','Notes'];
+  return [head].concat(dvListRows().map(r=>[r.aff,r.user,dvD4(r.date),r.version,String(r.nver),r.etat,r.notes]));
+}
+function dvListCopy(){
+  const txt=dvListTable().map(r=>r.join('\t')).join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(
+    ()=>toast('Liste des devis copiée dans le presse-papier.'), ()=>toast('Copie impossible dans ce navigateur.'));
+}
+function dvListCsv(){
+  const esc=v=>('"'+String(v==null?'':v).split('"').join('""')+'"');
+  const csv=String.fromCharCode(65279)+dvListTable().map(r=>r.map(esc).join(';')).join('\r\n');
+  dvExpSave(csv, 'liste_devis.csv', 'Exporter le tableau dans un fichier CSV', 'text/csv;charset=utf-8');
+}
+function dvListDeltakv(){ const k=dvListNeedSel(); if(!k) return;
+  toast('Export *.deltakv du devis '+dvAffCode(k)+' — format à définir (envoyez un fichier exemple).'); }
+function dvImpCfc(){ toast('Importer un devis CFC de l’affaire '+(window._dvImpAff||'')+' — action à définir.'); }
+function dvImpDeltakv(){ toast('Importer un devis externe (*.deltakv) pour l’affaire '+(window._dvImpAff||'')+' — action à définir.'); }
 window.addEventListener('resize', ()=>{ try{ if(!_dvAff) dvListFill(); }catch(e){} });
 function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';
   document.getElementById('dv_aff_f').value=''; dvAffFill(); }

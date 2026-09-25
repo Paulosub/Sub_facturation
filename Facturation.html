@@ -15384,13 +15384,20 @@ function ccRender(){
       Bt('moon',av('Mode sombre'),'Mode sombre')+'</div>';
     const totDg=C.tot.dg||0;
     const tvaP=(A.tva!=null?A.tva:8.1)/100;
-    const base=A.hdrDg||'ttc';
-    const conv=v=>base==='ht'?v/(1+tvaP):(base==='tva'?v-v/(1+tvaP):v);
-    const dgLbl=base==='ht'?'DG HT':(base==='tva'?'TVA':'DG');
-    const avecPct=A.hdrPct!==false;
-    const subM=A.hdrSub||'cfc';
-    const subLbl=subM==='ouv'?'Ouvrage':(subM==='loc'?'Localisation':'Désignation');
-    const subVal=r=>subM==='cfc'?(r.lbl||''):(r[subM==='ouv'?'ouvrage':'loc']||'');
+    /* colonnes additives, dans l'ordre du modèle :
+       CFC · Désignation · DG · DG % · OUV · LOC · TVA DG · DG indexé · DG (HT) */
+    const on2=k2=>ccColOn(A,k2);
+    const FI=v=>Math.abs(v)>0.005?ccF(Math.round(v)).slice(0,-3):'';
+    const COLS=[
+      on2('des')&&{t:'Désignation',al:'left',w:'26%',v:(r,a)=>pvEsc(r.lbl||''),tot:()=> 'Total'},
+      on2('ttc')&&{t:'DG',w:'10%',v:(r,a)=>FI(a.dg),tot:()=>FI(totDg),num:1},
+      on2('pct')&&{t:'DG %',w:'7%',v:(r,a)=>totDg>0.005&&Math.abs(a.dg)>0.005?((a.dg/totDg*100)<0.05?'<0.1':(a.dg/totDg*100).toFixed(1)):'',tot:()=>totDg>0.005?'100.0':'',num:1},
+      on2('ouv')&&{t:'OUV',al:'left',w:'8%',v:r=>pvEsc(r.ouvrage||''),tot:()=>''},
+      on2('loc')&&{t:'LOC',al:'left',w:'8%',v:r=>pvEsc(r.locx||''),tot:()=>''},
+      on2('tva')&&{t:'TVA DG',w:'9%',v:(r,a)=>FI(a.dg-a.dg/(1+tvaP)),tot:()=>FI(totDg-totDg/(1+tvaP)),num:1},
+      on2('idx')&&{t:'DG indexé',w:'9%',v:(r,a)=>FI(a.dg),tot:()=>FI(totDg),num:1},
+      on2('ht')&&{t:'DG',w:'10%',v:(r,a)=>FI(a.dg/(1+tvaP)),tot:()=>FI(totDg/(1+tvaP)),num:1}
+    ].filter(Boolean);
     let hd='<div id="cc_af_root" style="display:flex;align-items:stretch;gap:0">'+
       '<div style="width:205px;flex:none;background:#f5f5f5;border:1px solid #d8d8d8;border-right:0;border-radius:8px 0 0 8px;padding:6px 0">'+sideH+'</div>'+
       '<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">'+barDG+
@@ -15400,14 +15407,13 @@ function ccRender(){
       '#cc_af_tb td:nth-child(-n+2){text-align:left}'+
       '#cc_af_tb tbody tr:nth-child(odd) td{background:#eef3fb}#cc_af_tb tbody tr:nth-child(even) td{background:#fff}'+
       '</style>'+
-      '<table id="cc_af_tb"><colgroup><col style="width:64px"><col style="width:38%"><col style="width:'+(avecPct?'31%':'55%')+'">'+(avecPct?'<col style="width:24%">':'')+'</colgroup>'+
-      '<thead oncontextmenu="ccHdrCtx(event)"><tr>'+th('CFC','left')+th(subLbl,'left')+th(dgLbl)+(avecPct?th('DG %'):'')+'</tr></thead><tbody>'+
-      '<tr><td></td><td style="font-weight:700">Total</td><td style="font-weight:700">'+F0(conv(totDg))+'</td>'+(avecPct?'<td style="font-weight:700">'+(totDg>0.005?'100.00':'')+'</td>':'')+'</tr>'+
+      '<table id="cc_af_tb"><colgroup><col style="width:64px">'+COLS.map(c2=>'<col style="width:'+c2.w+'">').join('')+'</colgroup>'+
+      '<thead oncontextmenu="ccHdrCtx(event)"><tr>'+th('CFC','left')+COLS.map(c2=>th(c2.t,c2.al||'right')).join('')+'</tr></thead><tbody>'+
+      '<tr><td></td>'+COLS.map(c2=>'<td style="font-weight:700;text-align:'+(c2.al||'right')+'">'+c2.tot()+'</td>').join('')+'</tr>'+
       rows.map(r=>{ const lvl=ccLvl(r.cfc), gras=lvl<=2?'font-weight:700;':'';
         const a=C.agg[r.cfc]||{dg:0};
-        const pct=totDg>0.005&&Math.abs(a.dg)>0.005?(a.dg/totDg*100).toFixed(2):'';
-        return '<tr><td style="'+gras+'">'+pvEsc(r.cfc)+'</td><td style="'+gras+'">'+pvEsc(subVal(r))+'</td>'+
-          '<td style="'+gras+'">'+F0(conv(a.dg))+'</td>'+(avecPct?'<td style="'+gras+'">'+pct+'</td>':'')+'</tr>'; }).join('')+
+        return '<tr><td style="'+gras+'">'+pvEsc(r.cfc)+'</td>'+
+          COLS.map(c2=>'<td style="'+gras+'text-align:'+(c2.al||'right')+'">'+c2.v(r,a)+'</td>').join('')+'</tr>'; }).join('')+
       '</tbody></table></div></div></div>';
     out.innerHTML=hd+'<datalist id="cc_ent_dl"></datalist>';
     setTimeout(ccAfFill,0);
@@ -15834,11 +15840,13 @@ function ccDgImport(force){
   toast(n?(n+' montant(s) repris du devis général '+code+'.'):'Aucune position avec montant dans le devis.');
 }
 /* Clic droit sur la barre supérieure du tableau CC : menu Subdivision ▶ / DG ▶ */
-function ccHdrSet(k,v){
+function ccColOn(A,k){ const def={des:1,ttc:1,pct:1};
+  const c=A.cols||{}; return c[k]!=null?!!c[k]:!!def[k]; }
+function ccHdrSet(k){
   const A=ccA(); if(!A) return;
-  if(k==='hdrIdx'){ A.hdrIdx=!A.hdrIdx; if(A.hdrIdx) toast('Devis général indexé — indexation à définir.'); }
-  else if(k==='hdrPct'){ A.hdrPct=(A.hdrPct===false); }
-  else A[k]=v;
+  A.cols=A.cols||{};
+  A.cols[k]=!ccColOn(A,k);
+  if(k==='idx'&&A.cols[k]) toast('Devis général indexé — indexation à définir (valeur = DG pour l’instant).');
   ccPersist(); ccRender();
 }
 function ccHdrCtx(ev){
@@ -15858,19 +15866,20 @@ function ccHdrCtx(ev){
   const ck=(on,lbl,fn,gris)=>'<div style="padding:6px 16px 6px 10px;display:flex;align-items:center;'+(gris?'color:#b5b5b5':'cursor:pointer')+'"'+
     (gris?'':' onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'cc_hdr_ctx'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'"')+
     '><span style="width:18px;display:inline-block;flex:none">'+(on?'✓':'')+'</span>'+lbl+'</div>';
-  const sub=A2.hdrSub||'cfc', dgb=A2.hdrDg||'ttc';
+  const on=k2=>ccColOn(A2,k2);
+  const tg=k2=>'ccHdrSet('+PV_Q+k2+PV_Q+')';
   m.innerHTML=
     fly('Subdivision',
-      ck(sub==='cfc','Désignation CFC','ccHdrSet('+PV_Q+'hdrSub'+PV_Q+','+PV_Q+'cfc'+PV_Q+')')+
-      ck(sub==='ouv','Ouvrage','ccHdrSet('+PV_Q+'hdrSub'+PV_Q+','+PV_Q+'ouv'+PV_Q+')')+
-      ck(sub==='loc','Localisation','ccHdrSet('+PV_Q+'hdrSub'+PV_Q+','+PV_Q+'loc'+PV_Q+')'))+
+      ck(on('des'),'Désignation CFC',tg('des'))+
+      ck(on('ouv'),'Ouvrage',tg('ouv'))+
+      ck(on('loc'),'Localisation',tg('loc')))+
     fly('DG',
-      ck(dgb==='ttc','Devis général TTC','ccHdrSet('+PV_Q+'hdrDg'+PV_Q+','+PV_Q+'ttc'+PV_Q+')')+
-      ck(dgb==='tva','TVA','ccHdrSet('+PV_Q+'hdrDg'+PV_Q+','+PV_Q+'tva'+PV_Q+')')+
-      ck(dgb==='ht','Devis général HT','ccHdrSet('+PV_Q+'hdrDg'+PV_Q+','+PV_Q+'ht'+PV_Q+')')+
+      ck(on('ttc'),'Devis général TTC',tg('ttc'))+
+      ck(on('tva'),'TVA',tg('tva'))+
+      ck(on('ht'),'Devis général HT',tg('ht'))+
       '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
-      ck(!!A2.hdrIdx,'Devis général indexé','ccHdrSet('+PV_Q+'hdrIdx'+PV_Q+',null)')+
-      ck(A2.hdrPct!==false,'Pourcentages [%]','ccHdrSet('+PV_Q+'hdrPct'+PV_Q+',null)'));
+      ck(on('idx'),'Devis général indexé',tg('idx'))+
+      ck(on('pct'),'Pourcentages [%]',tg('pct')));
   m.style.display='block';
   m.style.left=Math.min(ev.clientX, innerWidth-220)+'px';
   m.style.top=Math.min(ev.clientY, innerHeight-120)+'px';
@@ -15905,8 +15914,9 @@ function ccAfFill(){
   if(root){ const rt=root.getBoundingClientRect().top; root.style.height=Math.max(280, window.innerHeight-rt-14)+'px'; }
   const top=w.getBoundingClientRect().top; const h=Math.max(240, window.innerHeight-top-14); w.style.height=h+'px';
   tb.querySelectorAll('tr.cc-af-fill').forEach(r=>r.remove());
+  const ncol=(document.querySelector('#cc_af_tb thead tr')||{cells:{length:11}}).cells.length;
   const n=Math.max(0, Math.floor((h-26)/24)-tb.children.length);
-  for(let i2=0;i2<n;i2++){ const r=document.createElement('tr'); r.className='cc-af-fill'; r.innerHTML='<td colspan="11">&nbsp;</td>'; tb.appendChild(r); }
+  for(let i2=0;i2<n;i2++){ const r=document.createElement('tr'); r.className='cc-af-fill'; r.innerHTML='<td colspan="'+ncol+'">&nbsp;</td>'; tb.appendChild(r); }
 }
 function ccAfCtx(ev,rid,cfc){
   ev.preventDefault(); ev.stopPropagation();

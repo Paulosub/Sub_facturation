@@ -15407,7 +15407,7 @@ function ccRender(){
       '#cc_af_tb td:nth-child(-n+2){text-align:left}'+
       '#cc_af_tb tbody tr:nth-child(odd) td{background:#eef3fb}#cc_af_tb tbody tr:nth-child(even) td{background:#fff}'+
       '</style>'+
-      '<table id="cc_af_tb"><colgroup><col style="width:64px">'+COLS.map(c2=>'<col style="width:'+c2.w+'">').join('')+'</colgroup>'+
+      '<table id="cc_af_tb"><colgroup><col style="width:44px">'+COLS.map(c2=>'<col style="width:'+c2.w+'">').join('')+'</colgroup>'+
       '<thead oncontextmenu="ccHdrCtx(event)"><tr>'+th('CFC','left')+COLS.map(c2=>th(c2.t,c2.al||'right')).join('')+'</tr></thead><tbody>'+
       '<tr><td></td>'+COLS.map(c2=>'<td style="font-weight:700;text-align:'+(c2.al||'right')+'">'+c2.tot()+'</td>').join('')+'</tr>'+
       rows.map(r=>{ const lvl=ccLvl(r.cfc), gras=lvl<=2?'font-weight:700;':'';

@@ -15777,20 +15777,51 @@ function chErr(msg){
       '<button onclick="document.getElementById('+PV_Q+'ch_err_ov'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+'" style="background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;border-radius:7px;padding:5px 34px;font-size:14px;cursor:pointer;font-weight:600">OK</button></div></div>';
   ov.style.display='flex';
 }
+/* Fenêtre d'avertissement façon macOS (logo de l'app, Non / Oui) */
+function chWarn2(msg, onOui, onNon){
+  window._chWarnCb=onOui||null; window._chWarnNo=onNon||null;
+  let ov=document.getElementById('ch_warn_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='ch_warn_ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.12);align-items:flex-start;justify-content:center';
+    document.body.appendChild(ov); }
+  const close='document.getElementById('+PV_Q+'ch_warn_ov'+PV_Q+').style.display='+PV_Q+'none'+PV_Q;
+  ov.innerHTML='<div style="margin-top:18vh;width:620px;max-width:92vw;background:#ececec;border:1px solid #a8a8a8;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.45);overflow:hidden">'+
+    '<div style="background:linear-gradient(#f4f4f4,#e2e2e2);border-bottom:1px solid #c6c6c6;padding:7px 10px;display:flex;align-items:center">'+
+      '<span onclick="'+close+'" style="width:12px;height:12px;border-radius:50%;background:#ff5f57;border:1px solid #dd3c33;cursor:pointer;flex:none"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px"></span>'+
+      '<span style="flex:1;text-align:center;font-weight:700;font-size:14px;color:#333;margin-right:57px">Avertissement</span></div>'+
+    '<div style="display:flex;gap:22px;align-items:center;padding:28px 30px 12px">'+
+      '<div style="flex:none;width:56px;height:56px;border:2.5px solid #4a4a4a;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:34px;color:#111;font-family:Arial">A</div>'+
+      '<div style="font-size:14.5px;color:#1a1a1a;line-height:1.5">'+msg+'</div></div>'+
+    '<div style="display:flex;justify-content:flex-end;gap:12px;padding:8px 26px 20px">'+
+      '<button onclick="'+close+';if(window._chWarnNo){var cb2=window._chWarnNo;window._chWarnNo=null;cb2();}" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 30px;font-size:14px;cursor:pointer">Non</button>'+
+      '<button onclick="'+close+';if(window._chWarnCb){var cb=window._chWarnCb;window._chWarnCb=null;cb();}" style="background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;border-radius:7px;padding:5px 34px;font-size:14px;cursor:pointer;font-weight:600">Oui</button></div></div>';
+  ov.style.display='flex';
+}
 /* Devis original : reprend les montants du devis général VALIDÉ de l'affaire */
-function ccDgImport(){
+function ccDgImport(force){
   const A=ccA(); if(!A) return;
   const code=ccAffCode(_ccAff);
   const ks=Object.keys(dvData).filter(x=>x.split('~')[0]===code);
   const k=ks.find(x=>dvEtat(dvData[x])==='Validé');
   if(!k){ chErr('Il n’existe aucun devis général dont le statut est validé.'); return; }
+  if(A.dgImporte&&!force){
+    chWarn2('Un devis a déjà été attribué. Il sera complété ou remplacé en cas de nouvelle attribution. Souhaitez-vous poursuivre ?',
+      ()=>ccDgImport(true),
+      ()=>{ window._ccSideSel=[1,'ed']; ccRender(); });  /* Non = retour au contrôle du coût */
+    return;
+  }
   let n=0, tva=(dvData[k].tva!=null?dvData[k].tva:8.1);
+  /* Oui après l'avertissement = le devis attribué est REMPLACÉ : anciens DG remis à zéro */
+  if(force) A.rows.forEach(r=>{ r.dg=0; });
   (dvData[k].pos||[]).forEach(p2=>{ if(!p2.cfc) return;
     const m=ccP(p2.ttc); if(!(m>0)) return;
     let r=A.rows.find(x=>x.cfc===p2.cfc);
     if(!r){ r={id:pvId(), cfc:p2.cfc, lbl:p2.lbl||ccCatLbl(p2.cfc), ent:'', dg:0}; A.rows.push(r); }
     r.dg=m; n++;
   });
+  A.dgImporte=true;
   ccPersist(); ccRender();
   toast(n?(n+' montant(s) repris du devis général '+code+'.'):'Aucune position avec montant dans le devis.');
 }

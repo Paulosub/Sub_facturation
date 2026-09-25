@@ -3816,7 +3816,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }, 150);
 });
 /* Bouton Retour : remonte d'un niveau (vue → sous-hub → accueil). */
-function goBack(){ goTab(VIEW_PARENT[currentView] || 'home'); }
+function goBack(){
+  /* dans un devis ou un contrôle du coût ouvert, ‹ Retour revient d'abord à la LISTE */
+  if(currentView==='devis' && typeof _dvAff!=='undefined' && _dvAff){ dvSelAff(null); return; }
+  if(currentView==='controle-cout' && typeof _ccAff!=='undefined' && _ccAff){ ccSelAff(null); return; }
+  goTab(VIEW_PARENT[currentView] || 'home');
+}
 /* Ouvre un sous-hub depuis l'accueil (contrôle d'accès pour Factures / Cockpit, désactivé pour l'instant). */
 function openHub(section){
   const protectedHubs=['factures','cockpit','admin'];

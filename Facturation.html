@@ -15275,21 +15275,11 @@ function ccRender(){
   const out=document.getElementById('cc_out'), ctx=document.getElementById('cc_ctx');
   if(!out) return;
   const ba=document.getElementById('cc_addaff');
-  if(ba) ba.style.display=_ccAff?'none':'';
+  if(ba) ba.style.display='none';   /* remplacé par le ✚ de la barre de la liste */
   if(!_ccAff||!ccA()){
     ctx.textContent=Object.keys(ccData).length+' affaire(s)';
-    const codes=Object.keys(ccData).sort();
-    if(!codes.length){ out.innerHTML='<div style="color:#999;font-size:13px;padding:18px 4px">Aucune affaire — ajoutez-en une avec le bouton ✚ (les CFC et entreprises du module PV sont repris automatiquement).</div>'; return; }
-    out.innerHTML='<table class="pv-tb"><thead><tr><th>Affaire</th><th>Projet</th><th style="text-align:right">Postes</th><th style="text-align:right">DG rév. TTC</th><th style="text-align:right">Coût probable TTC</th><th style="text-align:right">État du coût</th><th></th></tr></thead><tbody>'+
-      codes.map(c=>{ const T=ccAgg(ccData[c]).tot;
-        return '<tr style="cursor:pointer" onclick="ccSelAff('+PV_Q+pvEscA(c)+PV_Q+')">'+
-        '<td><b>'+pvEsc(c)+'</b></td><td>'+pvEsc(ccAffName(c)).slice(0,60)+'</td>'+
-        '<td style="text-align:right">'+ccData[c].rows.length+'</td>'+
-        '<td style="text-align:right">'+ccF(T.dgRev)+'</td>'+
-        '<td style="text-align:right">'+ccF(T.prob)+'</td>'+
-        '<td style="text-align:right;color:'+(T.etat>0.005?'#c62828':'#1e6b2d')+'">'+ccF(T.etat)+'</td>'+
-        '<td style="text-align:right"><span class="cc-act" onclick="event.stopPropagation();ccDelAff('+PV_Q+pvEscA(c)+PV_Q+')" title="Supprimer">✕</span></td></tr>'; }).join('')+
-      '</tbody></table>';
+    out.innerHTML=ccListHTML();
+    setTimeout(ccListFill,0);
     return;
   }
   const A=ccA(), C=ccAgg(A);
@@ -15392,6 +15382,136 @@ function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
 function ccCfcOpts(sel){ const A=ccA();
   const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
   return rows.map(r=>'<option value="'+pvEsc(r.cfc)+'"'+(r.cfc===sel?' selected':'')+'>'+pvEsc(r.cfc)+' '+pvEsc(r.lbl||'')+'</option>').join('');
+}
+/* ══ Liste des affaires du Contrôle du coût — MÊME graphisme, icônes et menus que la
+   liste des devis (modèle du bureau) : barre ✚ ⎘ ✏▾ − ⬇▾ ⚙▾, colonnes triées,
+   sélection + double-clic = ouvrir. ══ */
+window._ccLsSort=window._ccLsSort||{k:'aff',asc:true}; window._ccLsSel=null;
+function ccListRows(){
+  const S=window._ccLsSort;
+  const rows=Object.keys(ccData).map(k=>{ const D=ccData[k];
+    return {k, aff:k, user:D.user||'Paulo', date:D.date||'', version:D.version||'Contrôle du coût',
+      nver:+D.nver||1, etat:D.etat||'Brouillon', notes:D.notes||''}; });
+  rows.sort((x,y)=>{ let a=x[S.k], b=y[S.k];
+    const c=(typeof a==='number')?(a-b):String(a).localeCompare(String(b),'fr',{numeric:true});
+    return (S.asc?c:-c) || String(x.aff).localeCompare(String(y.aff)); });
+  return rows;
+}
+function ccListHTML(){
+  const S=window._ccLsSort;
+  const Sv='<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">';
+  const ic={
+    plus:Sv+'<path d="M7.5 3v9M3 7.5h9"/></svg>',
+    dup:Sv.replace('1.5','1.2')+'<rect x="2.5" y="4.5" width="7" height="8" rx="1"/><path d="M5.5 4.5V2.5h7v8h-3"/></svg>',
+    pencil:Sv.replace('1.5','1.3')+'<path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg>',
+    minus:Sv.replace('1.5','1.7')+'<path d="M3 7.5h9"/></svg>',
+    dl:Sv.replace('1.5','1.4')+'<path d="M7.5 2v7M4.5 6.2 7.5 9.2l3-3M2.5 10.5v2h10v-2"/></svg>',
+    gear:'<span style="font-size:16px;line-height:1;vertical-align:-2px">⚙︎</span>'
+  };
+  const bSt='padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9';
+  const tri='<span style="font-size:8px;color:#666">▾</span>';
+  const B=(k,fn,tt,menu)=>'<button class="btn btn-sm" style="'+bSt+'" title="'+tt+'" onclick="'+fn+'">'+ic[k]+(menu?' '+tri:'')+'</button>';
+  const item=(lbl,fn,on)=>on
+    ? '<div style="padding:5px 16px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+lbl+'</div>'
+    : '<div style="padding:5px 16px;color:#b5b5b5">'+lbl+'</div>';
+  const menuBox=(id,inner)=>'<div id="'+id+'" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:240px;z-index:60;font-size:13px;white-space:nowrap;padding:4px 0">'+inner+'</div>';
+  const bar='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center">'+
+    B('plus','ccAddAffOpen()','Ajouter une affaire au contrôle du coût')+
+    B('dup','toast('+PV_Q+'Dupliquer — à venir.'+PV_Q+')','Dupliquer')+
+    '<div style="position:relative">'+B('pencil','ccListMenu('+PV_Q+'cc_ls_menu_e'+PV_Q+')','Édition',1)+
+      menuBox('cc_ls_menu_e', item('Editer …','ccListMenu(null);ccListEdit()',true)+item('Ouvrir …','ccListMenu(null);ccListOpen()',true))+'</div>'+
+    B('minus','ccListDel()','Supprimer l’affaire sélectionnée')+
+    '<div style="position:relative">'+B('dl','ccListMenu('+PV_Q+'cc_ls_menu_i'+PV_Q+')','Importer',1)+
+      menuBox('cc_ls_menu_i', item('Importer …','',false))+'</div>'+
+    '<div style="position:relative">'+B('gear','ccListMenu('+PV_Q+'cc_ls_menu_g'+PV_Q+')','Paramètres',1)+
+      menuBox('cc_ls_menu_g', item('Copier le contenu du tableau dans le presse-papier','ccListMenu(null);ccListCopy()',true)+
+        item('Exporter le tableau dans un fichier CSV …','ccListMenu(null);ccListCsv()',true))+'</div>'+
+    '</div>';
+  const cols=[['aff','N° d’affaire','left','9%'],['user','Utilisateur','left','8%'],['date','Date','left','7%'],['version','Version','left','22%'],
+    ['nver','N° de version','right','7%'],['etat','Statut','left','8%'],['notes','Notes','left','39%']];
+  const th=cols.map(c=>'<th onclick="ccListSort('+PV_Q+c[0]+PV_Q+')" style="text-align:'+c[2]+';width:'+c[3]+';cursor:pointer;user-select:none;font-weight:normal;font-size:12.5px;color:#1a1a1a;padding:3px 8px;border-right:1px solid #e2e2e2;background:#fff;position:sticky;top:0">'+c[1]+
+    (S.k===c[0]?' <span style="font-size:9px;color:#888">'+(S.asc?'▲':'▼')+'</span>':'')+'</th>').join('');
+  const rows=ccListRows();
+  const tr=rows.map(r=>'<tr data-k="'+pvEscA(r.k)+'" class="'+(r.k===window._ccLsSel?'dv-ls-sel':'')+'" onclick="ccListSel(this)" ondblclick="ccSelAff('+PV_Q+pvEscA(r.k)+PV_Q+')">'+
+    '<td>'+pvEsc(r.aff)+'</td><td>'+pvEsc(r.user)+'</td><td>'+pvEsc(dvD4(r.date))+'</td><td>'+pvEsc(r.version)+'</td>'+
+    '<td style="text-align:right">'+r.nver+'</td><td>'+pvEsc(r.etat)+'</td><td>'+pvEsc(r.notes)+'</td></tr>').join('');
+  return '<style>#cc_ls_tb{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}'+
+    '#cc_ls_tb td{padding:3px 8px;height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a}'+
+    '#cc_ls_tb tbody tr:nth-child(odd) td{background:#eef3fb}#cc_ls_tb tbody tr:nth-child(even) td{background:#fff}'+
+    '#cc_ls_tb tbody tr[data-k]{cursor:default}#cc_ls_tb tbody tr.dv-ls-sel td{background:#cfe3f5 !important}</style>'+
+    bar+'<div id="cc_ls_wrap" style="border:1px solid #9fc0e8;overflow:auto;background:#fff">'+
+    '<table id="cc_ls_tb"><thead><tr style="border-bottom:1px solid #e2e2e2">'+th+'</tr></thead><tbody>'+tr+'</tbody></table></div>';
+}
+function ccListFill(){
+  const w=document.getElementById('cc_ls_wrap'), tb=document.querySelector('#cc_ls_tb tbody'); if(!w||!tb) return;
+  const top=w.getBoundingClientRect().top; const h=Math.max(200, window.innerHeight-top-18); w.style.height=h+'px';
+  tb.querySelectorAll('tr.dv-ls-fill').forEach(r=>r.remove());
+  const rh=24; const n=Math.max(0, Math.floor((h-26)/rh)-tb.children.length);
+  for(let i=0;i<n;i++){ const r=document.createElement('tr'); r.className='dv-ls-fill'; r.innerHTML='<td colspan="7">&nbsp;</td>'; tb.appendChild(r); }
+}
+function ccListSort(k){ const S=window._ccLsSort; if(S.k===k) S.asc=!S.asc; else { S.k=k; S.asc=true; } ccRender(); }
+function ccListSel(tr){ window._ccLsSel=tr.getAttribute('data-k');
+  document.querySelectorAll('#cc_ls_tb tr.dv-ls-sel').forEach(x=>x.classList.remove('dv-ls-sel')); tr.classList.add('dv-ls-sel'); }
+function ccListMenu(id){ ['cc_ls_menu_e','cc_ls_menu_i','cc_ls_menu_g'].forEach(x=>{ const m=document.getElementById(x); if(m&&x!==id) m.style.display='none'; });
+  if(!id) return; const m=document.getElementById(id); if(m){
+    if(id==='cc_ls_menu_e'){ const on=!!(window._ccLsSel&&ccData[window._ccLsSel]);
+      m.querySelectorAll('div').forEach(d2=>{ d2.style.color=on?'':'#b5b5b5'; d2.style.pointerEvents=on?'':'none'; }); }
+    m.style.display=(m.style.display==='block'?'none':'block'); } }
+function ccListNeedSel(){ const k=window._ccLsSel; if(!k||!ccData[k]){ toast('Sélectionnez d’abord une affaire dans la liste.'); return null; } return k; }
+function ccListOpen(){ const k=ccListNeedSel(); if(k) ccSelAff(k); }
+function ccListDel(){ const k=ccListNeedSel(); if(k) ccDelAff(k); }
+function ccListEdit(){
+  const k=ccListNeedSel(); if(!k) return;
+  const D=ccData[k];
+  const fs='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
+  const lab=(t,w)=>'<span style="width:'+(w||104)+'px;flex:none;text-align:right;font-size:14px;color:#1a1a1a">'+t+'</span>';
+  dvMacDlg('Editer le contrôle du coût',
+    '<div style="padding:22px 24px 4px">'+
+      '<div style="display:flex;align-items:center;gap:22px;margin-bottom:16px">'+lab('Version')+
+        '<input id="cc_le_ver" value="'+pvEscA(D.version||'Contrôle du coût')+'" style="'+fs+';width:300px;border:2px solid #7fb0e6">'+
+        '<span style="flex:1"></span>'+lab('N° de version',110)+
+        '<input id="cc_le_nver" value="'+pvEscA(D.nver||1)+'" style="'+fs+';width:170px"></div>'+
+      '<div style="display:flex;align-items:center;gap:22px;margin-bottom:16px">'+lab('Statut')+
+        '<select id="cc_le_etat" style="'+fs+';width:150px;border-radius:6px;padding:5px 10px">'+
+          ['Brouillon','Provisoire','Validé','Annulé'].map(x=>'<option'+(x===(D.etat||'Brouillon')?' selected':'')+'>'+x+'</option>').join('')+'</select>'+
+        '<span style="flex:1"></span>'+lab('Date',60)+
+        '<input id="cc_le_date" value="'+pvEscA(dvD4(D.date||ccToday()))+'" placeholder="jj.mm.aaaa" style="'+fs+';width:130px"></div>'+
+      '<div style="display:flex;align-items:center;gap:22px;margin-bottom:16px">'+lab('Utilisateur')+
+        '<input id="cc_le_user" value="'+pvEscA(D.user||'Paulo')+'" style="'+fs+';width:285px"></div>'+
+      '<div style="display:flex;align-items:flex-start;gap:22px;margin-bottom:6px">'+lab('Notes')+
+        '<textarea id="cc_le_notes" rows="3" style="'+fs+';flex:1;resize:vertical">'+pvEsc(D.notes||'')+'</textarea></div>'+
+    '</div>',
+    'ccListEditOk('+PV_Q+pvEscA(k)+PV_Q+')', 640);
+}
+function ccListEditOk(k){
+  const D=ccData[k]; if(!D) return;
+  const gv=id=>((document.getElementById(id)||{}).value||'');
+  D.version=gv('cc_le_ver'); D.nver=parseInt(gv('cc_le_nver'))||1;
+  D.etat=gv('cc_le_etat'); D.user=gv('cc_le_user'); D.notes=gv('cc_le_notes');
+  const m=gv('cc_le_date').match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if(m) D.date=m[3]+'-'+m[2]+'-'+m[1];
+  ccPersist(); dvExpClose(); ccRender();
+}
+function ccListTable(){
+  const NL=String.fromCharCode(10), TAB=String.fromCharCode(9);
+  const head=['N° d’affaire','Utilisateur','Date','Version','N° de version','Statut','Notes'];
+  const lg=ccListRows().map(r=>[r.aff,r.user,dvD4(r.date),r.version,r.nver,r.etat,r.notes]);
+  return {head:head, rows:lg, NL:NL, TAB:TAB};
+}
+function ccListCopy(){
+  const T=ccListTable();
+  const txt=[T.head.join(T.TAB)].concat(T.rows.map(r=>r.join(T.TAB))).join(T.NL);
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(
+    ()=>toast('Tableau copié dans le presse-papier.'), ()=>toast('Copie impossible.'));
+}
+function ccListCsv(){
+  const T=ccListTable();
+  const esc=v=>('"'+String(v).split('"').join('""')+'"');
+  const csv=String.fromCharCode(65279)+[T.head.map(esc).join(';')].concat(T.rows.map(r=>r.map(esc).join(';'))).join(T.NL);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='controle_du_cout.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 }
 function ccToday(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 /* Mutation — fenêtre fidèle au contrôle des coûts : liste des CFC à gauche (montant + mutations

@@ -15938,7 +15938,7 @@ function dvListFill(){
 function dvListSort(k){ const S=window._dvLsSort; if(S.k===k) S.asc=!S.asc; else { S.k=k; S.asc=true; } dvRender(); }
 function dvListSel(tr){ window._dvLsSel=tr.getAttribute('data-k');
   document.querySelectorAll('#dv_ls_tb tr.dv-ls-sel').forEach(x=>x.classList.remove('dv-ls-sel')); tr.classList.add('dv-ls-sel'); }
-function dvListMenu(id){ ['dv_ls_menu_e','dv_ls_menu_i','dv_ls_menu_g','dv_le_umenu'].forEach(x=>{ const m=document.getElementById(x); if(m&&x!==id) m.style.display='none'; });
+function dvListMenu(id){ ['dv_ls_menu_e','dv_ls_menu_i','dv_ls_menu_g','dv_le_umenu','dv_cd_menu'].forEach(x=>{ const m=document.getElementById(x); if(m&&x!==id) m.style.display='none'; });
   if(!id) return; const m=document.getElementById(id); if(m){
     if(id==='dv_ls_menu_e'){ const on=!!(window._dvLsSel&&dvData[window._dvLsSel]);
       m.querySelectorAll('div').forEach((d,i)=>{ d.style.color=on?'':'#b5b5b5'; d.style.pointerEvents=on?'':'none'; }); }
@@ -15963,15 +15963,15 @@ function dvEditDlg(D, newKey){
   window._dvLsEditD=D; window._dvLsEditNew=newKey||null;
   const fs='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
   const lab=(t,w)=>'<span style="width:'+(w||104)+'px;flex:none;text-align:right;font-size:14px;color:#1a1a1a">'+t+'</span>';
-  const chk=(t,on)=>'<label style="display:flex;align-items:center;gap:10px;margin:0 0 18px 128px;font-size:14px;color:#9a9a9a">'+
-    '<input type="checkbox" disabled '+(on?'checked':'')+' style="width:17px;height:17px;margin:0">'+t+'</label>';
+  const chk=(t,on,actif,id)=>'<label style="display:flex;align-items:center;gap:10px;margin:0 0 18px 128px;font-size:14px;color:'+(actif?'#1a1a1a':'#9a9a9a')+'">'+
+    '<input type="checkbox"'+(id?' id="'+id+'"':'')+(actif?'':' disabled')+(on?' checked':'')+' style="width:17px;height:17px;margin:0;accent-color:#1e6fe8">'+t+'</label>';
   const etat=dvEtat(D);
   const users=((typeof collaborateurs!=='undefined'&&collaborateurs)||[]).map(c=>String(c.nom||'').trim().split(/\s+/)[0]).filter(Boolean);
   const cal='<svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-3px"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5" fill="#fff" stroke="#555"/><path d="M1.5 5.5h13" stroke="#555"/><path d="M4.5 1v3M11.5 1v3" stroke="#555" stroke-linecap="round"/><text x="8" y="12.6" font-size="6.5" text-anchor="middle" fill="#333" font-family="Arial">31</text></svg>';
-  dvMacDlg('Editer le devis général',
+  dvMacDlg(newKey?'Nouveau devis général':'Editer le devis général',
     '<div style="padding:22px 24px 4px">'+
       '<div style="display:flex;align-items:center;gap:22px;margin-bottom:16px">'+lab('Version')+
-        '<input id="dv_le_ver" value="'+pvEscA(D.version||'')+'" style="'+fs+';width:300px;border:2px solid #7fb0e6">'+
+        '<input id="dv_le_ver" value="'+pvEscA(D.version||'')+'" oninput="dvLeOkState()" style="'+fs+';width:300px;border:2px solid #7fb0e6">'+
         '<span style="flex:1"></span>'+lab('N° de version',110)+
         '<input id="dv_le_nver" value="'+pvEscA(D.nver||1)+'" style="'+fs+';width:170px"></div>'+
       '<div style="display:flex;align-items:center;gap:22px;margin-bottom:20px">'+lab('Statut')+
@@ -15983,7 +15983,7 @@ function dvEditDlg(D, newKey){
           '<button type="button" onclick="dvLeCal()" title="Calendrier" style="background:linear-gradient(#fefefe,#e0e0e0);border:1px solid #b0b0b0;border-radius:4px;padding:3px 5px;cursor:pointer">'+cal+'</button>'+
           '<input id="dv_le_datep" type="date" value="'+pvEscA(D.date||ccToday())+'" onchange="dvLeCalSet(this.value)" style="position:absolute;right:0;top:100%;width:1px;height:1px;opacity:0;border:0;padding:0">'+
         '</span></div>'+
-      chk('Séparer la TVA',true)+chk('Devis avec subdivisions',false)+
+      chk('Séparer la TVA',D.sepTva!==false,!!newKey,'dv_le_sep')+chk('Devis avec subdivisions',false,false)+
       '<div style="display:flex;align-items:center;gap:22px;margin-bottom:20px">'+lab('Utilisateur')+
         '<input id="dv_le_user" value="'+pvEscA(D.user||'Paulo')+'" style="'+fs+';width:285px">'+
         '<span style="position:relative;display:inline-flex">'+
@@ -15994,8 +15994,14 @@ function dvEditDlg(D, newKey){
       '<div style="display:flex;align-items:flex-start;gap:22px">'+lab('Note')+
         '<textarea id="dv_le_notes" style="'+fs+';flex:1;height:250px;resize:none;border:1px solid #9a9a9a">'+pvEsc(D.notes||'')+'</textarea></div>'+
     '</div>', 'dvListEditOk()', 660);
+  const btns=[...document.querySelectorAll('#dv_exp_ov button')]; const ok=btns[btns.length-1]; if(ok) ok.id='dv_le_ok';
+  dvLeOkState();
   const v=document.getElementById('dv_le_ver'); if(v){ v.focus(); v.select(); }
 }
+/* OK actif seulement quand la version est renseignée (comme la fenêtre du bureau). */
+function dvLeOkState(){ const b=document.getElementById('dv_le_ok'), v=document.getElementById('dv_le_ver'); if(!b||!v) return;
+  const on=!!v.value.trim(); b.disabled=!on; b.style.opacity=on?'':'.45'; b.style.cursor=on?'pointer':'default';
+  b.style.background=on?'linear-gradient(#5aa7f8,#1e6fe8)':'#f4f4f4'; b.style.color=on?'#fff':'#9a9a9a'; b.style.borderColor=on?'#1a5fd0':'#d0d0d0'; }
 function dvLeCal(){ const p=document.getElementById('dv_le_datep'); if(!p) return;
   try{ p.showPicker(); }catch(e){ p.focus(); p.click(); } }
 function dvLeCalSet(iso){ const t=document.getElementById('dv_le_date'); if(t&&iso) t.value=dvD4(iso); }
@@ -16009,6 +16015,8 @@ function dvListEditOk(){ const D=window._dvLsEditD; if(!D) return;
   D.date=iso; D.user=(g('dv_le_user')||'').trim()||'Paulo';
   D.version=(g('dv_le_ver')||'').trim(); D.nver=Math.max(1, parseInt(g('dv_le_nver'))||1);
   D.notes=String(g('dv_le_notes')||'').trim();
+  if(!D.version){ toast('Indiquez une version.'); return; }
+  const sep=document.getElementById('dv_le_sep'); if(sep && !sep.disabled) D.sepTva=sep.checked;
   const e=g('dv_le_etat'); D.valide=(e==='Validé'); if(e!=='Validé') D.etat=e;
   dvExpClose();
   const nk=window._dvLsEditNew; window._dvLsEditNew=null;
@@ -16056,7 +16064,8 @@ function dvImpAffOk(){
   if(window._dvAffDlgMode==='new'){   // + : 1. choix de l'affaire → 2. fenêtre Editer → 3. création + ouverture
     const code=window._dvImpSel;
     const key=dvData[code]?(code+'~'+Date.now().toString(36)):code;
-    setTimeout(()=>dvEditDlg(dvNewAff(code), key), 0);
+    const Dn=dvNewAff(code); Dn.version=''; Dn.notes='';
+    setTimeout(()=>dvEditDlg(Dn, key), 0);
     return;
   }
   // la fenêtre se ferme et le menu de l'icône s'ouvre (après le clic, pour ne pas être refermé aussitôt)
@@ -16079,7 +16088,84 @@ function dvListCsv(){
 }
 function dvListDeltakv(){ const k=dvListNeedSel(); if(!k) return;
   toast('Export *.deltakv du devis '+dvAffCode(k)+' — format à définir (envoyez un fichier exemple).'); }
-function dvImpCfc(){ toast('Importer un devis CFC de l’affaire '+(window._dvImpAff||'')+' — action à définir.'); }
+/* ── « Importer un devis CFC d'une affaire » : fenêtre « Choix du devis » ──
+   gauche : affaires (filtre ▾ : seulement celles qui ont un devis = « Filtré ») ;
+   droite : devis de l'affaire choisie ; OK actif dès qu'un devis est sélectionné.
+   OK → nouveau devis pour l'affaire cible avec les positions CFC du devis choisi,
+   via la fenêtre « Editer le devis général » (créé et ouvert au OK). */
+function dvImpCfc(){ window._dvCdAff=null; window._dvCdDev=null;
+  if(window._dvCdFilt==null) window._dvCdFilt=true;
+  const H=Math.max(300, Math.min(540, Math.round(window.innerHeight*0.56)));
+  const tbCss='border-collapse:collapse;table-layout:fixed;width:100%;font-size:13.5px';
+  dvMacDlg('Choix du devis',
+    '<style>.dv-cd th{font-weight:normal;text-align:left;padding:3px 8px;background:#fff;position:sticky;top:0;border-bottom:1px solid #e2e2e2;border-right:1px solid #e2e2e2;color:#1a1a1a;white-space:nowrap;overflow:hidden}'+
+      '.dv-cd td{padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}'+
+      '.dv-cd tbody tr:nth-child(odd) td{background:#eef3fb}.dv-cd tbody tr:nth-child(even) td{background:#fff}'+
+      '.dv-cd tbody tr.dv-cd-sel td{background:#2f6fde !important;color:#fff}'+
+      '#dv_cd_right td{border-right:1px solid #e2e2e2}</style>'+
+    '<div style="padding:12px 14px 4px">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+
+        '<span style="position:relative;display:inline-flex">'+
+          '<button class="btn btn-sm" style="padding:3px 9px;background:#f2f2f2;border:1px solid #c9c9c9" title="Filtre" onclick="dvListMenu('+PV_Q+'dv_cd_menu'+PV_Q+')">'+
+            '<svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px"><path d="M2 3h11l-4 4.5V12l-3-1.2V7.5L2 3z" fill="#555"/></svg> <span style="font-size:8px;color:#666">▾</span></button>'+
+          '<div id="dv_cd_menu" style="display:none;position:absolute;left:0;top:28px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:230px;z-index:70;font-size:13px;padding:4px 0;white-space:nowrap"></div></span>'+
+        '<span id="dv_cd_flbl" style="font-size:14px;color:#333"></span></div>'+
+      '<div style="display:flex;gap:12px;height:'+H+'px">'+
+        '<div style="width:250px;flex:none;border:1px solid #6fa3e0;overflow:auto;background:#fff">'+
+          '<table class="dv-cd" style="'+tbCss+'"><thead><tr><th style="width:95px">Numéro</th><th>Affaire</th></tr></thead><tbody id="dv_cd_aff"></tbody></table></div>'+
+        '<div id="dv_cd_right" style="flex:1;border:1px solid #9a9a9a;overflow:auto;background:#fff">'+
+          '<table class="dv-cd" style="'+tbCss+'"><thead><tr><th style="width:15%">N° d’affaire</th><th style="width:12%">Utilisateur</th><th style="width:12%">Date</th><th style="width:22%">Version</th><th style="width:12%">N° de version</th><th style="width:12%">Statut</th><th>Notes</th></tr></thead><tbody id="dv_cd_dev"></tbody></table></div>'+
+      '</div></div>', 'dvCdOk()', 870);
+  const btns=[...document.querySelectorAll('#dv_exp_ov button')]; const ok=btns[btns.length-1]; if(ok) ok.id='dv_cd_ok';
+  dvCdFillAff(); dvCdFillDev(); dvCdOkState();
+}
+function dvCdAffList(){
+  const ls=((typeof affairesAll==='function')?affairesAll():[]).filter(x=>x.code && /[0-9A-Za-z]/.test(x.code));
+  const avec={}; Object.keys(dvData).forEach(k=>{ avec[dvAffCode(k)]=1; });
+  Object.keys(avec).forEach(c=>{ if(!ls.some(x=>x.code===c)) ls.push({code:c, projet:ccAffName(c)||''}); });
+  ls.sort((a,b)=>String(a.code).localeCompare(String(b.code),'fr',{numeric:true}));
+  return window._dvCdFilt ? ls.filter(x=>avec[x.code]) : ls;
+}
+function dvCdFillAff(){
+  const tb=document.getElementById('dv_cd_aff'); if(!tb) return;
+  const ls=dvCdAffList();
+  let h=ls.map(x=>'<tr data-c="'+pvEscA(x.code)+'" class="'+(x.code===window._dvCdAff?'dv-cd-sel':'')+'" onclick="dvCdSelAff(this)">'+
+    '<td>'+pvEsc(x.code)+'</td><td title="'+pvEscA(x.projet||'')+'">'+pvEsc(x.projet||'')+'</td></tr>').join('');
+  for(let i=ls.length;i<30;i++) h+='<tr><td>&nbsp;</td><td></td></tr>';
+  tb.innerHTML=h;
+  const l=document.getElementById('dv_cd_flbl'); if(l) l.textContent=window._dvCdFilt?'Filtré':'';
+  const m=document.getElementById('dv_cd_menu');
+  if(m){ const it=(lbl,v)=>'<div style="padding:5px 16px 5px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="dvCdFilt('+v+')"><span style="width:20px;display:inline-block">'+((!!window._dvCdFilt)===v?'✓':'')+'</span>'+lbl+'</div>';
+    m.innerHTML=it('Affaires avec un devis',true)+it('Toutes les affaires',false); }
+}
+function dvCdFilt(v){ window._dvCdFilt=v; const m=document.getElementById('dv_cd_menu'); if(m) m.style.display='none'; dvCdFillAff(); }
+function dvCdSelAff(tr){ window._dvCdAff=tr.getAttribute('data-c'); window._dvCdDev=null;
+  document.querySelectorAll('#dv_cd_aff tr.dv-cd-sel').forEach(x=>x.classList.remove('dv-cd-sel')); tr.classList.add('dv-cd-sel');
+  dvCdFillDev(); dvCdOkState(); }
+function dvCdFillDev(){
+  const tb=document.getElementById('dv_cd_dev'); if(!tb) return;
+  const a=window._dvCdAff;
+  const ks=a?Object.keys(dvData).filter(k=>dvAffCode(k)===a).sort((x,y)=>String(dvData[x].date||'').localeCompare(String(dvData[y].date||''))):[];
+  tb.innerHTML=ks.map(k=>{ const D=dvData[k];
+    return '<tr data-k="'+pvEscA(k)+'" class="'+(k===window._dvCdDev?'dv-cd-sel':'')+'" onclick="dvCdSelDev(this)" ondblclick="dvCdSelDev(this);dvCdOk()">'+
+      '<td>'+pvEsc(dvAffCode(k))+'</td><td>'+pvEsc(D.user||'Paulo')+'</td><td>'+pvEsc(dvD4(D.date))+'</td><td>'+pvEsc(D.version||'')+'</td>'+
+      '<td style="text-align:right">'+(+D.nver||1)+'</td><td>'+pvEsc(dvEtat(D))+'</td><td>'+pvEsc(D.notes||'')+'</td></tr>'; }).join('');
+}
+function dvCdSelDev(tr){ window._dvCdDev=tr.getAttribute('data-k');
+  document.querySelectorAll('#dv_cd_dev tr.dv-cd-sel').forEach(x=>x.classList.remove('dv-cd-sel')); tr.classList.add('dv-cd-sel'); dvCdOkState(); }
+function dvCdOkState(){ const b=document.getElementById('dv_cd_ok'); if(!b) return; const on=!!window._dvCdDev;
+  b.disabled=!on; b.style.opacity=on?'':'.45'; b.style.cursor=on?'pointer':'default';
+  b.style.background=on?'linear-gradient(#5aa7f8,#1e6fe8)':'#f4f4f4'; b.style.color=on?'#fff':'#9a9a9a'; b.style.borderColor=on?'#1a5fd0':'#d0d0d0'; }
+function dvCdOk(){
+  const src=dvData[window._dvCdDev]; if(!src) return;
+  const code=window._dvImpAff||dvAffCode(window._dvCdDev);
+  dvExpClose();
+  const D=dvNewAff(code);
+  D.pos=JSON.parse(JSON.stringify(src.pos||[])).map(p=>Object.assign(p,{id:pvId()}));
+  D.tva=(src.tva!=null?src.tva:D.tva); D.version=''; D.notes='';
+  const key=dvData[code]?(code+'~'+Date.now().toString(36)):code;
+  setTimeout(()=>dvEditDlg(D, key), 0);
+}
 function dvImpDeltakv(){ toast('Importer un devis externe (*.deltakv) pour l’affaire '+(window._dvImpAff||'')+' — action à définir.'); }
 window.addEventListener('resize', ()=>{ try{ if(!_dvAff) dvListFill(); }catch(e){} });
 function dvAddAffOpen(){ document.getElementById('dv_aff_ov').style.display='block';

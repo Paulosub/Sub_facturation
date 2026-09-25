@@ -18731,7 +18731,16 @@ function dvRender(){
     '</div></div></div>';
   h+='</div>';
   h+='<datalist id="dv_cfc_dl">'+ccCat().map(x=>'<option value="'+x[0]+'">'+x[0]+' '+pvEsc(x[1])+'</option>').join('')+'</datalist>';
+  /* le re-rendu ne fait pas remonter les listes : positions de défilement conservées */
+  const _cat=document.getElementById('dv_cat_ls');
+  const _sCat=_cat&&_cat.parentElement?_cat.parentElement.scrollTop:0;
+  const _tbl=out.querySelector('#dv_flex > div:nth-child(2) > div[style*="overflow"]');
+  const _sTbl=_tbl?_tbl.scrollTop:0;
   out.innerHTML=h;
+  const _cat2=document.getElementById('dv_cat_ls');
+  if(_cat2&&_cat2.parentElement) _cat2.parentElement.scrollTop=_sCat;
+  const _tbl2=out.querySelector('#dv_flex > div:nth-child(2) > div[style*="overflow"]');
+  if(_tbl2) _tbl2.scrollTop=_sTbl;
   dvFit();
   if(window._dvTblQ) dvTblFilter();
 }

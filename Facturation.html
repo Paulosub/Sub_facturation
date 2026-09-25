@@ -15302,7 +15302,7 @@ function ccRender(){
     return;
   }
   const A=ccA(), C=ccAgg(A);
-  ctx.textContent=A.rows.length+' postes · '+(A.ecr||[]).length+' écritures';
+  ctx.textContent='';
   const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
   /* ══ Vue AFFAIRE du contrôle du coût — modèle du bureau : menu latéral, barre
      d'icônes ✚ ✏ − entonnoir | tableau▾ Standard ⚙▾ feuille▾ lune, tableau zébré
@@ -15351,8 +15351,8 @@ function ccRender(){
       menuBox('cc_af_menu_f', item('Filtrer …','',false))+'</div>'+
     '<span style="width:12px"></span>'+
     '<div style="position:relative">'+Bt('tbl','ccListMenu('+PV_Q+'cc_af_menu_t'+PV_Q+')','Affichage du tableau',1)+
-      menuBox('cc_af_menu_t', item('Standard','ccListMenu(null)',true))+'</div>'+
-    '<span style="font-size:13px">Standard</span>'+
+      menuBox('cc_af_menu_t', ccPresMenuHTML(A))+'</div>'+
+    '<span style="font-size:13px">'+pvEsc(A.presAct||'Standard')+'</span>'+
     '<span style="width:8px"></span>'+
     '<div style="position:relative">'+Bt('gear','ccListMenu('+PV_Q+'cc_af_menu_g'+PV_Q+')','Paramètres',1)+
       menuBox('cc_af_menu_g', item('Modifier la TVA …','ccListMenu(null);ccAfTva()',true)+
@@ -15361,7 +15361,6 @@ function ccRender(){
         item('Tout replier','ccListMenu(null);ccTglAll(false)',true))+'</div>'+
     '<div style="position:relative">'+Bt('doc','ccListMenu('+PV_Q+'cc_af_menu_d'+PV_Q+')','Documents',1)+
       menuBox('cc_af_menu_d', item('Document impression …','',false))+'</div>'+
-    Bt('moon',av('Mode sombre'),'Mode sombre')+
     '</div>';
   const F0=v=>Math.abs(v)>0.005?ccF0(v):'';
   if(sSel[0]===0&&sSel[1]==='ed'){
@@ -15375,23 +15374,43 @@ function ccRender(){
         menuBox('cc_dg_menu_f', item('Filtrer …','',false))+'</div>'+
       '<span style="width:12px"></span>'+
       '<div style="position:relative">'+Bt('tbl','ccListMenu('+PV_Q+'cc_dg_menu_t'+PV_Q+')','Affichage du tableau',1)+
-        menuBox('cc_dg_menu_t', item('Standard','ccListMenu(null)',true))+'</div>'+
-      '<span style="font-size:13px">Standard</span><span style="width:8px"></span>'+
+        menuBox('cc_dg_menu_t', ccPresMenuHTML(A))+'</div>'+
+      '<span style="font-size:13px">'+pvEsc(A.presAct||'Standard')+'</span><span style="width:8px"></span>'+
       '<div style="position:relative">'+Bt('gear','ccListMenu('+PV_Q+'cc_dg_menu_g'+PV_Q+')','Paramètres',1)+
-        menuBox('cc_dg_menu_g', item('Copier le contenu du tableau dans le presse-papier','',false)+item('Exporter le tableau dans un fichier CSV …','',false))+'</div>'+
+        menuBox('cc_dg_menu_g', (function(){
+          const ck2=(on3,lbl,fn)=>'<div style="padding:6px 16px 6px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="ccListMenu(null);'+fn+'"><span style="width:18px;display:inline-block;flex:none">'+(on3?'✓':'')+'</span>'+lbl+'</div>';
+          const flyP='<div style="position:relative;padding:6px 14px 6px 28px;cursor:default;display:flex;align-items:center;justify-content:space-between;gap:24px"'+
+            ' onmouseover="this.style.background='+PV_Q+'#2f6fde'+PV_Q+';this.firstElementChild.style.color='+PV_Q+'#fff'+PV_Q+';this.lastElementChild.style.display='+PV_Q+'block'+PV_Q+'"'+
+            ' onmouseout="this.style.background='+PV_Q+PV_Q+';this.firstElementChild.style.color='+PV_Q+PV_Q+';this.lastElementChild.style.display='+PV_Q+'none'+PV_Q+'">'+
+            '<span>Pourcentages</span><span style="font-size:11px">▶</span>'+
+            '<div style="display:none;position:absolute;left:100%;top:-4px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:280px;padding:4px 0">'+
+              ck2(A.dgPctMode!=='grp','Pourcentage sur le total général','ccDgOpt('+PV_Q+'dgPctMode'+PV_Q+','+PV_Q+'total'+PV_Q+')')+
+              ck2(A.dgPctMode==='grp','Pourcentage sur les groupes principaux','ccDgOpt('+PV_Q+'dgPctMode'+PV_Q+','+PV_Q+'grp'+PV_Q+')')+
+            '</div></div>';
+          return flyP+
+            ck2(A.dgSansDec!==false,'Montants sans décimales','ccDgOpt('+PV_Q+'dgSansDec'+PV_Q+',null)')+
+            ck2(!!A.dgP13,'Seulement les positions de 1 à 3 chiffres','ccDgOpt('+PV_Q+'dgP13'+PV_Q+',null)')+
+            ck2(!!A.dgRecapOuv,'Récapitulatif par ouvrage à la fin','ccDgOpt('+PV_Q+'dgRecapOuv'+PV_Q+',null)')+
+            '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
+            ck2(false,'Copier le contenu du tableau dans le presse-papier','ccDgCopy()')+
+            ck2(false,'Exporter le tableau dans un fichier CSV','ccDgCsv()');
+        })())+'</div>'+
       '<div style="position:relative">'+Bt('doc','ccListMenu('+PV_Q+'cc_dg_menu_d'+PV_Q+')','Documents',1)+
-        menuBox('cc_dg_menu_d', item('Document impression …','',false))+'</div>'+
-      Bt('moon',av('Mode sombre'),'Mode sombre')+'</div>';
+        menuBox('cc_dg_menu_d', item('Devis général … [Ancien document]','ccListMenu(null);ccDgDocOpen()',true))+'</div>'+
+      '</div>';
     const totDg=C.tot.dg||0;
     const tvaP=(A.tva!=null?A.tva:8.1)/100;
     /* colonnes additives, dans l'ordre du modèle :
        CFC · Désignation · DG · DG % · OUV · LOC · TVA DG · DG indexé · DG (HT) */
     const on2=k2=>ccColOn(A,k2);
-    const FI=v=>Math.abs(v)>0.005?ccF(Math.round(v)).slice(0,-3):'';
+    const FI=(A.dgSansDec!==false)?(v=>Math.abs(v)>0.005?ccF(Math.round(v)).slice(0,-3):''):(v=>Math.abs(v)>0.005?ccF(v):'');
+    const pctBase=cfc=>{ if(A.dgPctMode!=='grp') return totDg;
+      const g=String(ccNorm(cfc)||'').charAt(0); return (C.agg[g]||{}).dg||totDg; };
     const DEFS={
       des:{t:'Désignation',al:'left',w:'auto',v:(r,a)=>pvEsc(r.lbl||''),tot:()=> 'Total'},
       ttc:{t:'DG',w:'10%',v:(r,a)=>FI(a.dg),tot:()=>FI(totDg),num:1},
-      pct:{t:'DG %',w:'7%',v:(r,a)=>totDg>0.005&&Math.abs(a.dg)>0.005?((a.dg/totDg*100)<0.05?'<0.1':(a.dg/totDg*100).toFixed(1)):'',tot:()=>totDg>0.005?'100.0':'',num:1},
+      pct:{t:'DG %',w:'7%',v:(r,a)=>{ const b=pctBase(r.cfc); if(!(b>0.005)||Math.abs(a.dg)<0.005) return '';
+        const p3=a.dg/b*100; return p3<0.05?'<0.1':p3.toFixed(1); },tot:()=>totDg>0.005?'100.0':'',num:1},
       ouv:{t:'OUV',al:'left',w:'8%',v:r=>pvEsc(r.ouvrage||''),tot:()=>''},
       loc:{t:'LOC',al:'left',w:'8%',v:r=>pvEsc(r.locx||''),tot:()=>''},
       tva:{t:'TVA DG',w:'9%',v:(r,a)=>FI(a.dg-a.dg/(1+tvaP)),tot:()=>FI(totDg-totDg/(1+tvaP)),num:1},
@@ -15401,6 +15420,7 @@ function ccRender(){
     const ORD0=['des','ttc','pct','ouv','loc','tva','idx','ht'];
     let ordre=(Array.isArray(A.colOrder)?A.colOrder.filter(k2=>ORD0.includes(k2)):[]).concat(ORD0.filter(k2=>!(A.colOrder||[]).includes(k2)));
     const COLS=ordre.filter(on2).map(k2=>Object.assign({k:k2},DEFS[k2]));
+    const rowsDG=A.dgP13?rows.filter(r=>ccNorm(r.cfc).length<=3):rows;
     let hd='<div id="cc_af_root" style="display:flex;align-items:stretch;gap:0">'+
       '<div style="width:205px;flex:none;background:#f5f5f5;border:1px solid #d8d8d8;border-right:0;border-radius:8px 0 0 8px;padding:6px 0">'+sideH+'</div>'+
       '<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">'+barDG+
@@ -15421,7 +15441,7 @@ function ccRender(){
           '<span draggable="false" onmousedown="ccColRsDown(event,'+PV_Q+'0'+c2.k+PV_Q+')" style="position:absolute;right:-10px;top:-4px;width:9px;height:22px;cursor:col-resize"></span></span></th>').join('')+
         '</tr></thead><tbody>'+
       '<tr><td></td>'+COLS.map(c2=>'<td style="font-weight:700;text-align:'+(c2.al||'right')+'">'+c2.tot()+'</td>').join('')+'</tr>'+
-      rows.map(r=>{ const lvl=ccLvl(r.cfc), gras=lvl<=2?'font-weight:700;':'';
+      rowsDG.map(r=>{ const lvl=ccLvl(r.cfc), gras=lvl<=2?'font-weight:700;':'';
         const a=C.agg[r.cfc]||{dg:0};
         return '<tr><td style="'+gras+'">'+pvEsc(r.cfc)+'</td>'+
           COLS.map(c2=>'<td style="'+gras+'text-align:'+(c2.al||'right')+'">'+c2.v(r,a)+'</td>').join('')+'</tr>'; }).join('')+
@@ -15859,6 +15879,96 @@ function ccHdrSet(k){
   A.cols[k]=!ccColOn(A,k);
   if(k==='idx'&&A.cols[k]) toast('Devis général indexé — indexation à définir (valeur = DG pour l’instant).');
   ccPersist(); ccRender();
+}
+/* Feuille (vue Devis original) : ouvre le document Devis général de l'affaire */
+function ccDgDocOpen(){
+  const code=ccAffCode(_ccAff);
+  const k=Object.keys(dvData).find(x=>x.split('~')[0]===code);
+  if(!k){ chErr('Il n’existe aucun devis général pour l’affaire '+code+'.'); return; }
+  const old=_dvAff; _dvAff=k;
+  try{ dvDocFenStd(); } finally { _dvAff=old; }
+}
+/* Options ⚙ de la vue Devis original */
+function ccDgOpt(k,v){
+  const A=ccA(); if(!A) return;
+  if(k==='dgPctMode') A.dgPctMode=v;
+  else if(k==='dgSansDec') A.dgSansDec=(A.dgSansDec===false);
+  else { A[k]=!A[k]; if(k==='dgRecapOuv'&&A[k]) toast('Récapitulatif par ouvrage — contenu à définir.'); }
+  ccPersist(); ccRender();
+}
+function ccDgRowsTxt(){
+  const t=document.getElementById('cc_af_tb'); if(!t) return [];
+  return [...t.querySelectorAll('tr')].filter(r=>!r.classList.contains('cc-af-fill'))
+    .map(r=>[...r.children].map(c=>c.innerText.replace(/\s+/g,' ').trim()));
+}
+function ccDgCopy(){
+  const NL=String.fromCharCode(10), TAB=String.fromCharCode(9);
+  const txt=ccDgRowsTxt().map(r=>r.join(TAB)).join(NL);
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(
+    ()=>toast('Tableau copié dans le presse-papier.'), ()=>toast('Copie impossible.'));
+}
+function ccDgCsv(){
+  const NL=String.fromCharCode(10);
+  const esc=v=>('"'+String(v).split('"').join('""')+'"');
+  const csv=String.fromCharCode(65279)+ccDgRowsTxt().map(r=>r.map(esc).join(';')).join(NL);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='devis_original_'+ccAffCode(_ccAff)+'.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+/* Présentations du tableau (menu quadrillage) : jeux de colonnes/ordre/largeurs nommés */
+function ccPresMenuHTML(A){
+  const it=(lbl,fn,en,chk)=> en
+    ? '<div style="padding:6px 16px 6px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="ccListMenu(null);'+fn+'"><span style="width:18px;display:inline-block;flex:none">'+(chk?'✓':'')+'</span>'+lbl+'</div>'
+    : '<div style="padding:6px 16px 6px 28px;color:#b5b5b5">'+lbl+'</div>';
+  const act=A.presAct||'';
+  let h=it('Standard','ccPresApply('+PV_Q+PV_Q+')',true,!act);
+  (A.presList||[]).forEach(p2=>{ h+=it(pvEsc(p2.nom),'ccPresApply('+PV_Q+pvEscA(p2.nom)+PV_Q+')',true,act===p2.nom); });
+  h+='<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
+    it('Enregistrer la présentation …','ccPresSave()',true,false)+
+    it('Renommer la présentation …', act?'ccPresRen()':'', !!act, false)+
+    it('Supprimer la présentation …', act?'ccPresDel()':'', !!act, false);
+  return h;
+}
+function ccPresApply(nom){
+  const A=ccA(); if(!A) return;
+  if(!nom){ A.presAct=''; A.cols=null; A.colOrder=null; A.colW=null; }
+  else{
+    const p2=(A.presList||[]).find(x=>x.nom===nom); if(!p2) return;
+    A.presAct=nom;
+    A.cols=p2.cols?JSON.parse(JSON.stringify(p2.cols)):null;
+    A.colOrder=p2.colOrder?p2.colOrder.slice():null;
+    A.colW=p2.colW?JSON.parse(JSON.stringify(p2.colW)):null;
+  }
+  ccPersist(); ccRender();
+}
+function ccPresSave(){
+  const A=ccA(); if(!A) return;
+  chPrompt('Nom de la présentation :', A.presAct||'', nom=>{
+    nom=String(nom==null?'':nom).trim(); if(!nom||nom==='Standard') return;
+    A.presList=A.presList||[];
+    const p2={nom:nom, cols:A.cols?JSON.parse(JSON.stringify(A.cols)):null,
+      colOrder:A.colOrder?A.colOrder.slice():null, colW:A.colW?JSON.parse(JSON.stringify(A.colW)):null};
+    const i2=A.presList.findIndex(x=>x.nom===nom);
+    if(i2>=0) A.presList[i2]=p2; else A.presList.push(p2);
+    A.presAct=nom; ccPersist(); ccRender();
+    toast('Présentation « '+nom+' » enregistrée.');
+  });
+}
+function ccPresRen(){
+  const A=ccA(); if(!A||!A.presAct) return;
+  const p2=(A.presList||[]).find(x=>x.nom===A.presAct); if(!p2) return;
+  chPrompt('Nouveau nom de la présentation :', p2.nom, nom=>{
+    nom=String(nom==null?'':nom).trim(); if(!nom||nom==='Standard') return;
+    p2.nom=nom; A.presAct=nom; ccPersist(); ccRender();
+  });
+}
+function ccPresDel(){
+  const A=ccA(); if(!A||!A.presAct) return;
+  chConfirm('Supprimer la présentation « '+A.presAct+' » ?', ()=>{
+    A.presList=(A.presList||[]).filter(x=>x.nom!==A.presAct);
+    ccPresApply('');
+  });
 }
 /* Redimensionnement des colonnes par le joint de l'en-tête */
 function ccColRsDown(ev,k){

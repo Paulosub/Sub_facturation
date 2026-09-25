@@ -15383,6 +15383,14 @@ function ccRender(){
         menuBox('cc_dg_menu_d', item('Document impression …','',false))+'</div>'+
       Bt('moon',av('Mode sombre'),'Mode sombre')+'</div>';
     const totDg=C.tot.dg||0;
+    const tvaP=(A.tva!=null?A.tva:8.1)/100;
+    const base=A.hdrDg||'ttc';
+    const conv=v=>base==='ht'?v/(1+tvaP):(base==='tva'?v-v/(1+tvaP):v);
+    const dgLbl=base==='ht'?'DG HT':(base==='tva'?'TVA':'DG');
+    const avecPct=A.hdrPct!==false;
+    const subM=A.hdrSub||'cfc';
+    const subLbl=subM==='ouv'?'Ouvrage':(subM==='loc'?'Localisation':'Désignation');
+    const subVal=r=>subM==='cfc'?(r.lbl||''):(r[subM==='ouv'?'ouvrage':'loc']||'');
     let hd='<div id="cc_af_root" style="display:flex;align-items:stretch;gap:0">'+
       '<div style="width:205px;flex:none;background:#f5f5f5;border:1px solid #d8d8d8;border-right:0;border-radius:8px 0 0 8px;padding:6px 0">'+sideH+'</div>'+
       '<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">'+barDG+
@@ -15392,14 +15400,14 @@ function ccRender(){
       '#cc_af_tb td:nth-child(-n+2){text-align:left}'+
       '#cc_af_tb tbody tr:nth-child(odd) td{background:#eef3fb}#cc_af_tb tbody tr:nth-child(even) td{background:#fff}'+
       '</style>'+
-      '<table id="cc_af_tb"><colgroup><col style="width:64px"><col style="width:38%"><col style="width:31%"><col style="width:24%"></colgroup>'+
-      '<thead><tr>'+th('CFC','left')+th('Désignation','left')+th('DG')+th('DG %')+'</tr></thead><tbody>'+
-      '<tr><td></td><td style="font-weight:700">Total</td><td style="font-weight:700">'+F0(totDg)+'</td><td style="font-weight:700">'+(totDg>0.005?'100.00':'')+'</td></tr>'+
+      '<table id="cc_af_tb"><colgroup><col style="width:64px"><col style="width:38%"><col style="width:'+(avecPct?'31%':'55%')+'">'+(avecPct?'<col style="width:24%">':'')+'</colgroup>'+
+      '<thead oncontextmenu="ccHdrCtx(event)"><tr>'+th('CFC','left')+th(subLbl,'left')+th(dgLbl)+(avecPct?th('DG %'):'')+'</tr></thead><tbody>'+
+      '<tr><td></td><td style="font-weight:700">Total</td><td style="font-weight:700">'+F0(conv(totDg))+'</td>'+(avecPct?'<td style="font-weight:700">'+(totDg>0.005?'100.00':'')+'</td>':'')+'</tr>'+
       rows.map(r=>{ const lvl=ccLvl(r.cfc), gras=lvl<=2?'font-weight:700;':'';
         const a=C.agg[r.cfc]||{dg:0};
         const pct=totDg>0.005&&Math.abs(a.dg)>0.005?(a.dg/totDg*100).toFixed(2):'';
-        return '<tr><td style="'+gras+'">'+pvEsc(r.cfc)+'</td><td style="'+gras+'">'+pvEsc(r.lbl||'')+'</td>'+
-          '<td style="'+gras+'">'+F0(a.dg)+'</td><td style="'+gras+'">'+pct+'</td></tr>'; }).join('')+
+        return '<tr><td style="'+gras+'">'+pvEsc(r.cfc)+'</td><td style="'+gras+'">'+pvEsc(subVal(r))+'</td>'+
+          '<td style="'+gras+'">'+F0(conv(a.dg))+'</td>'+(avecPct?'<td style="'+gras+'">'+pct+'</td>':'')+'</tr>'; }).join('')+
       '</tbody></table></div></div></div>';
     out.innerHTML=hd+'<datalist id="cc_ent_dl"></datalist>';
     setTimeout(ccAfFill,0);
@@ -15826,6 +15834,13 @@ function ccDgImport(force){
   toast(n?(n+' montant(s) repris du devis général '+code+'.'):'Aucune position avec montant dans le devis.');
 }
 /* Clic droit sur la barre supérieure du tableau CC : menu Subdivision ▶ / DG ▶ */
+function ccHdrSet(k,v){
+  const A=ccA(); if(!A) return;
+  if(k==='hdrIdx'){ A.hdrIdx=!A.hdrIdx; if(A.hdrIdx) toast('Devis général indexé — indexation à définir.'); }
+  else if(k==='hdrPct'){ A.hdrPct=(A.hdrPct===false); }
+  else A[k]=v;
+  ccPersist(); ccRender();
+}
 function ccHdrCtx(ev){
   ev.preventDefault(); ev.stopPropagation();
   let m=document.getElementById('cc_hdr_ctx');
@@ -15835,14 +15850,27 @@ function ccHdrCtx(ev){
     document.addEventListener('click',()=>{ m.style.display='none'; });
   }
   const fly=(lbl,items)=>'<div style="position:relative;padding:6px 14px 6px 22px;cursor:default;display:flex;align-items:center;justify-content:space-between;gap:24px"'+
-    ' onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+';this.lastElementChild.style.display='+PV_Q+'block'+PV_Q+'"'+
-    ' onmouseout="this.style.background='+PV_Q+PV_Q+';this.lastElementChild.style.display='+PV_Q+'none'+PV_Q+'">'+
+    ' onmouseover="this.style.background='+PV_Q+'#2f6fde'+PV_Q+';this.firstElementChild.style.color='+PV_Q+'#fff'+PV_Q+';this.lastElementChild.style.display='+PV_Q+'block'+PV_Q+'"'+
+    ' onmouseout="this.style.background='+PV_Q+PV_Q+';this.firstElementChild.style.color='+PV_Q+PV_Q+';this.lastElementChild.style.display='+PV_Q+'none'+PV_Q+'">'+
     '<span style="font-weight:600">'+lbl+'</span><span style="font-size:11px">▶</span>'+
-    '<div style="display:none;position:absolute;left:100%;top:-4px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:190px;padding:4px 0">'+items+'</div></div>';
-  const gi=lbl=>'<div style="padding:6px 16px;color:#b5b5b5">'+lbl+'</div>';
+    '<div style="display:none;position:absolute;left:100%;top:-4px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:200px;padding:4px 0">'+items+'</div></div>';
+  const A2=ccA()||{};
+  const ck=(on,lbl,fn,gris)=>'<div style="padding:6px 16px 6px 10px;display:flex;align-items:center;'+(gris?'color:#b5b5b5':'cursor:pointer')+'"'+
+    (gris?'':' onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'cc_hdr_ctx'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'"')+
+    '><span style="width:18px;display:inline-block;flex:none">'+(on?'✓':'')+'</span>'+lbl+'</div>';
+  const sub=A2.hdrSub||'cfc', dgb=A2.hdrDg||'ttc';
   m.innerHTML=
-    fly('Subdivision', gi('À définir …'))+
-    fly('DG', gi('À définir …'));
+    fly('Subdivision',
+      ck(sub==='cfc','Désignation CFC','ccHdrSet('+PV_Q+'hdrSub'+PV_Q+','+PV_Q+'cfc'+PV_Q+')')+
+      ck(sub==='ouv','Ouvrage','ccHdrSet('+PV_Q+'hdrSub'+PV_Q+','+PV_Q+'ouv'+PV_Q+')')+
+      ck(sub==='loc','Localisation','ccHdrSet('+PV_Q+'hdrSub'+PV_Q+','+PV_Q+'loc'+PV_Q+')'))+
+    fly('DG',
+      ck(dgb==='ttc','Devis général TTC','ccHdrSet('+PV_Q+'hdrDg'+PV_Q+','+PV_Q+'ttc'+PV_Q+')')+
+      ck(dgb==='tva','TVA','ccHdrSet('+PV_Q+'hdrDg'+PV_Q+','+PV_Q+'tva'+PV_Q+')')+
+      ck(dgb==='ht','Devis général HT','ccHdrSet('+PV_Q+'hdrDg'+PV_Q+','+PV_Q+'ht'+PV_Q+')')+
+      '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
+      ck(!!A2.hdrIdx,'Devis général indexé','ccHdrSet('+PV_Q+'hdrIdx'+PV_Q+',null)')+
+      ck(A2.hdrPct!==false,'Pourcentages [%]','ccHdrSet('+PV_Q+'hdrPct'+PV_Q+',null)'));
   m.style.display='block';
   m.style.left=Math.min(ev.clientX, innerWidth-220)+'px';
   m.style.top=Math.min(ev.clientY, innerHeight-120)+'px';

@@ -15356,10 +15356,10 @@ function ccRender(){
   const F0=v=>Math.abs(v)>0.005?ccF0(v):'';
   const cols='<colgroup><col style="width:64px"><col style="width:24%"><col style="width:17%"><col style="width:8%"><col style="width:7%"><col style="width:7%"><col style="width:8%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:8%"></colgroup>';
   const th=(t,al)=>'<th style="text-align:'+(al||'right')+';font-weight:normal;font-size:12.5px;color:#1a1a1a;padding:3px 8px;border-right:1px solid #e2e2e2;background:#fff;position:sticky;top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+t+'</th>';
-  let h='<div style="display:flex;align-items:stretch;gap:0">'+
+  let h='<div id="cc_af_root" style="display:flex;align-items:stretch;gap:0">'+
     '<div style="width:205px;flex:none;background:#f5f5f5;border:1px solid #d8d8d8;border-right:0;border-radius:8px 0 0 8px;padding:6px 0">'+sideH+'</div>'+
-    '<div style="flex:1;min-width:0;display:flex;flex-direction:column">'+bar+
-    '<div id="cc_af_wrap" style="border:1px solid #9fc0e8;overflow:auto;background:#fff;flex:1">'+
+    '<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">'+bar+
+    '<div id="cc_af_wrap" style="border:1px solid #9fc0e8;overflow:auto;background:#fff;flex:1;min-height:0">'+
     '<style>#cc_af_tb{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}'+
     '#cc_af_tb td{padding:2px 8px;height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:right}'+
     '#cc_af_tb td:nth-child(-n+3){text-align:left}'+
@@ -15733,7 +15733,10 @@ function ccAfTva(){ const A=ccA(); if(!A) return;
     const t=ccP(v); if(!(t>=0)) return; A.tva=t; ccPersist(); ccRender(); }); }
 function ccAfFill(){
   const w=document.getElementById('cc_af_wrap'), tb=document.querySelector('#cc_af_tb tbody'); if(!w||!tb) return;
-  const top=w.getBoundingClientRect().top; const h=Math.max(240, window.innerHeight-top-18); w.style.height=h+'px';
+  /* le cadre (menu latéral + tableau) occupe toute la page */
+  const root=document.getElementById('cc_af_root');
+  if(root){ const rt=root.getBoundingClientRect().top; root.style.height=Math.max(280, window.innerHeight-rt-14)+'px'; }
+  const top=w.getBoundingClientRect().top; const h=Math.max(240, window.innerHeight-top-14); w.style.height=h+'px';
   tb.querySelectorAll('tr.cc-af-fill').forEach(r=>r.remove());
   const n=Math.max(0, Math.floor((h-26)/24)-tb.children.length);
   for(let i2=0;i2<n;i2++){ const r=document.createElement('tr'); r.className='cc-af-fill'; r.innerHTML='<td colspan="11">&nbsp;</td>'; tb.appendChild(r); }

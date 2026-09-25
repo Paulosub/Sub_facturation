@@ -15419,7 +15419,7 @@ function ccRender(){
     '#cc_af_tb input{width:100%;border:0;background:transparent;font:inherit;font-size:13px;padding:0}'+
     '#cc_af_tb input:focus{outline:2px solid #4a90d9;outline-offset:-1px;background:#fff}'+
     '</style>'+
-    '<table id="cc_af_tb">'+cols+'<thead><tr>'+
+    '<table id="cc_af_tb">'+cols+'<thead oncontextmenu="ccHdrCtx(event)"><tr>'+
     th('CFC','left')+th('Désignation','left')+th('Entreprise','left')+th('DG')+th('Transferts')+th('Variations')+
     th('DG rév. TTC')+th('Contrats + avenants')+th('Paiements')+th('Coût probable TTC')+th('État du coût TTC')+
     '</tr></thead><tbody>';
@@ -15793,6 +15793,28 @@ function ccDgImport(){
   });
   ccPersist(); ccRender();
   toast(n?(n+' montant(s) repris du devis général '+code+'.'):'Aucune position avec montant dans le devis.');
+}
+/* Clic droit sur la barre supérieure du tableau CC : menu Subdivision ▶ / DG ▶ */
+function ccHdrCtx(ev){
+  ev.preventDefault(); ev.stopPropagation();
+  let m=document.getElementById('cc_hdr_ctx');
+  if(!m){ m=document.createElement('div'); m.id='cc_hdr_ctx';
+    m.style.cssText='display:none;position:fixed;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:190px;z-index:10070;font-size:13.5px;padding:4px 0;white-space:nowrap';
+    document.body.appendChild(m);
+    document.addEventListener('click',()=>{ m.style.display='none'; });
+  }
+  const fly=(lbl,items)=>'<div style="position:relative;padding:6px 14px 6px 22px;cursor:default;display:flex;align-items:center;justify-content:space-between;gap:24px"'+
+    ' onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+';this.lastElementChild.style.display='+PV_Q+'block'+PV_Q+'"'+
+    ' onmouseout="this.style.background='+PV_Q+PV_Q+';this.lastElementChild.style.display='+PV_Q+'none'+PV_Q+'">'+
+    '<span style="font-weight:600">'+lbl+'</span><span style="font-size:11px">▶</span>'+
+    '<div style="display:none;position:absolute;left:100%;top:-4px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:190px;padding:4px 0">'+items+'</div></div>';
+  const gi=lbl=>'<div style="padding:6px 16px;color:#b5b5b5">'+lbl+'</div>';
+  m.innerHTML=
+    fly('Subdivision', gi('À définir …'))+
+    fly('DG', gi('À définir …'));
+  m.style.display='block';
+  m.style.left=Math.min(ev.clientX, innerWidth-220)+'px';
+  m.style.top=Math.min(ev.clientY, innerHeight-120)+'px';
 }
 function ccSideTgl(i2){ window._ccSideOpen=window._ccSideOpen||{};
   window._ccSideOpen[i2]=(window._ccSideOpen[i2]===false); ccRender(); }

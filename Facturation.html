@@ -15388,16 +15388,19 @@ function ccRender(){
        CFC · Désignation · DG · DG % · OUV · LOC · TVA DG · DG indexé · DG (HT) */
     const on2=k2=>ccColOn(A,k2);
     const FI=v=>Math.abs(v)>0.005?ccF(Math.round(v)).slice(0,-3):'';
-    const COLS=[
-      on2('des')&&{t:'Désignation',al:'left',w:'auto',v:(r,a)=>pvEsc(r.lbl||''),tot:()=> 'Total'},
-      on2('ttc')&&{t:'DG',w:'10%',v:(r,a)=>FI(a.dg),tot:()=>FI(totDg),num:1},
-      on2('pct')&&{t:'DG %',w:'7%',v:(r,a)=>totDg>0.005&&Math.abs(a.dg)>0.005?((a.dg/totDg*100)<0.05?'<0.1':(a.dg/totDg*100).toFixed(1)):'',tot:()=>totDg>0.005?'100.0':'',num:1},
-      on2('ouv')&&{t:'OUV',al:'left',w:'8%',v:r=>pvEsc(r.ouvrage||''),tot:()=>''},
-      on2('loc')&&{t:'LOC',al:'left',w:'8%',v:r=>pvEsc(r.locx||''),tot:()=>''},
-      on2('tva')&&{t:'TVA DG',w:'9%',v:(r,a)=>FI(a.dg-a.dg/(1+tvaP)),tot:()=>FI(totDg-totDg/(1+tvaP)),num:1},
-      on2('idx')&&{t:'DG indexé',w:'9%',v:(r,a)=>FI(a.dg),tot:()=>FI(totDg),num:1},
-      on2('ht')&&{t:'DG',w:'10%',v:(r,a)=>FI(a.dg/(1+tvaP)),tot:()=>FI(totDg/(1+tvaP)),num:1}
-    ].filter(Boolean);
+    const DEFS={
+      des:{t:'Désignation',al:'left',w:'auto',v:(r,a)=>pvEsc(r.lbl||''),tot:()=> 'Total'},
+      ttc:{t:'DG',w:'10%',v:(r,a)=>FI(a.dg),tot:()=>FI(totDg),num:1},
+      pct:{t:'DG %',w:'7%',v:(r,a)=>totDg>0.005&&Math.abs(a.dg)>0.005?((a.dg/totDg*100)<0.05?'<0.1':(a.dg/totDg*100).toFixed(1)):'',tot:()=>totDg>0.005?'100.0':'',num:1},
+      ouv:{t:'OUV',al:'left',w:'8%',v:r=>pvEsc(r.ouvrage||''),tot:()=>''},
+      loc:{t:'LOC',al:'left',w:'8%',v:r=>pvEsc(r.locx||''),tot:()=>''},
+      tva:{t:'TVA DG',w:'9%',v:(r,a)=>FI(a.dg-a.dg/(1+tvaP)),tot:()=>FI(totDg-totDg/(1+tvaP)),num:1},
+      idx:{t:'DG indexé',w:'9%',v:(r,a)=>FI(a.dg),tot:()=>FI(totDg),num:1},
+      ht:{t:'DG',w:'10%',v:(r,a)=>FI(a.dg/(1+tvaP)),tot:()=>FI(totDg/(1+tvaP)),num:1}
+    };
+    const ORD0=['des','ttc','pct','ouv','loc','tva','idx','ht'];
+    let ordre=(Array.isArray(A.colOrder)?A.colOrder.filter(k2=>ORD0.includes(k2)):[]).concat(ORD0.filter(k2=>!(A.colOrder||[]).includes(k2)));
+    const COLS=ordre.filter(on2).map(k2=>Object.assign({k:k2},DEFS[k2]));
     let hd='<div id="cc_af_root" style="display:flex;align-items:stretch;gap:0">'+
       '<div style="width:205px;flex:none;background:#f5f5f5;border:1px solid #d8d8d8;border-right:0;border-radius:8px 0 0 8px;padding:6px 0">'+sideH+'</div>'+
       '<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">'+barDG+
@@ -15408,7 +15411,10 @@ function ccRender(){
       '#cc_af_tb tbody tr:nth-child(odd) td{background:#eef3fb}#cc_af_tb tbody tr:nth-child(even) td{background:#fff}'+
       '</style>'+
       '<table id="cc_af_tb"><colgroup><col style="width:44px">'+COLS.map(c2=>(c2.w==='auto'?'<col>':'<col style="width:'+c2.w+'">')).join('')+'</colgroup>'+
-      '<thead oncontextmenu="ccHdrCtx(event)"><tr>'+th('CFC','left')+COLS.map(c2=>th(c2.t,c2.al||'right')).join('')+'</tr></thead><tbody>'+
+      '<thead oncontextmenu="ccHdrCtx(event)"><tr>'+th('CFC','left')+
+        COLS.map(c2=>'<th draggable="true" data-ck="'+c2.k+'" ondragstart="ccColDragS(event)" ondragover="event.preventDefault()" ondrop="ccColDrop(event)"'+
+          ' title="Glisser pour déplacer la colonne" style="cursor:grab;text-align:'+(c2.al||'right')+';font-weight:normal;font-size:12.5px;color:#1a1a1a;padding:3px 8px;border-right:1px solid #e2e2e2;background:#fff;position:sticky;top:0;white-space:nowrap">'+c2.t+'</th>').join('')+
+        '</tr></thead><tbody>'+
       '<tr><td></td>'+COLS.map(c2=>'<td style="font-weight:700;text-align:'+(c2.al||'right')+'">'+c2.tot()+'</td>').join('')+'</tr>'+
       rows.map(r=>{ const lvl=ccLvl(r.cfc), gras=lvl<=2?'font-weight:700;':'';
         const a=C.agg[r.cfc]||{dg:0};
@@ -15848,6 +15854,22 @@ function ccHdrSet(k){
   A.cols[k]=!ccColOn(A,k);
   if(k==='idx'&&A.cols[k]) toast('Devis général indexé — indexation à définir (valeur = DG pour l’instant).');
   ccPersist(); ccRender();
+}
+/* Glisser-déposer des colonnes de la vue Devis original */
+function ccColDragS(ev){ window._ccColDrag=ev.target.getAttribute('data-ck');
+  try{ ev.dataTransfer.setData('text/plain', window._ccColDrag); }catch(e){} }
+function ccColDrop(ev){
+  ev.preventDefault();
+  const src=window._ccColDrag, dst=ev.target.closest('th')&&ev.target.closest('th').getAttribute('data-ck');
+  window._ccColDrag=null;
+  if(!src||!dst||src===dst) return;
+  const A=ccA(); if(!A) return;
+  const ORD0=['des','ttc','pct','ouv','loc','tva','idx','ht'];
+  let o=(Array.isArray(A.colOrder)?A.colOrder.filter(k2=>ORD0.includes(k2)):[]).concat(ORD0.filter(k2=>!(A.colOrder||[]).includes(k2)));
+  const i2=o.indexOf(src), j2=o.indexOf(dst);
+  if(i2<0||j2<0) return;
+  o.splice(i2,1); o.splice(j2,0,src);
+  A.colOrder=o; ccPersist(); ccRender();
 }
 function ccHdrCtx(ev){
   ev.preventDefault(); ev.stopPropagation();

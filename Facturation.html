@@ -15758,12 +15758,32 @@ function chCalDo(mode){
   if(ov) ov.style.display='none';
 }
 /* Vue affaire CC : menu latéral, sélection de ligne, remplissage, actions de la barre */
-/* Devis original : reprend les montants du devis général de l'affaire dans la colonne DG */
+/* Fenêtre d'erreur façon macOS (panneau rouge + OK) */
+function chErr(msg){
+  let ov=document.getElementById('ch_err_ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='ch_err_ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.12);align-items:flex-start;justify-content:center';
+    document.body.appendChild(ov); }
+  ov.innerHTML='<div style="margin-top:18vh;width:560px;max-width:92vw;background:#ececec;border:1px solid #a8a8a8;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.45);overflow:hidden">'+
+    '<div style="background:linear-gradient(#f4f4f4,#e2e2e2);border-bottom:1px solid #c6c6c6;padding:7px 10px;display:flex;align-items:center">'+
+      '<span onclick="document.getElementById('+PV_Q+'ch_err_ov'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+'" style="width:12px;height:12px;border-radius:50%;background:#ff5f57;border:1px solid #dd3c33;cursor:pointer;flex:none"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px"></span>'+
+      '<span style="flex:1;text-align:center;font-weight:700;font-size:14px;color:#333;margin-right:57px">Erreur</span></div>'+
+    '<div style="display:flex;gap:20px;align-items:center;padding:26px 28px 10px">'+
+      '<svg width="56" height="56" viewBox="0 0 56 56" style="flex:none"><polygon points="17,3 39,3 53,17 53,39 39,53 17,53 3,39 3,17" fill="#d33a2c" stroke="#a02318" stroke-width="2"/><text x="28" y="38" text-anchor="middle" font-size="30" font-weight="bold" fill="#fff" font-family="Arial">!</text></svg>'+
+      '<div style="font-size:14.5px;color:#1a1a1a">'+msg+'</div></div>'+
+    '<div style="display:flex;justify-content:flex-end;padding:6px 24px 18px">'+
+      '<button onclick="document.getElementById('+PV_Q+'ch_err_ov'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+'" style="background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;border-radius:7px;padding:5px 34px;font-size:14px;cursor:pointer;font-weight:600">OK</button></div></div>';
+  ov.style.display='flex';
+}
+/* Devis original : reprend les montants du devis général VALIDÉ de l'affaire */
 function ccDgImport(){
   const A=ccA(); if(!A) return;
   const code=ccAffCode(_ccAff);
-  const k=Object.keys(dvData).find(x=>x.split('~')[0]===code);
-  if(!k){ toast('Aucun devis général pour l’affaire '+code+'.'); return; }
+  const ks=Object.keys(dvData).filter(x=>x.split('~')[0]===code);
+  const k=ks.find(x=>dvEtat(dvData[x])==='Validé');
+  if(!k){ chErr('Il n’existe aucun devis général dont le statut est validé.'); return; }
   let n=0, tva=(dvData[k].tva!=null?dvData[k].tva:8.1);
   (dvData[k].pos||[]).forEach(p2=>{ if(!p2.cfc) return;
     const m=ccP(p2.ttc); if(!(m>0)) return;

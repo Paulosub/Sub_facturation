@@ -14298,7 +14298,8 @@ function ccNorm(c){ return String(c||'').replace(/\./g,''); }
 function ccCmp(a,b){ const x=ccNorm(a), y=ccNorm(b); return x<y?-1:(x>y?1:0); }   // tri HIÉRARCHIQUE CFC : 10, 109, 11, 112… (lexicographique sur les chiffres)
 function ccLvl(c){ const L=ccNorm(c).length; return L<=1?1:(L===2?2:3); }
 function ccA(){ return ccData[_ccAff]; }
-function ccAffName(code){ const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===code):null; return f&&f.projet?f.projet:''; }
+function ccAffCode(k){ return String(k||'').split('~')[0]; }
+function ccAffName(code){ code=ccAffCode(code); const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===code):null; return f&&f.projet?f.projet:''; }
 /* Catalogue CFC OFFICIEL du bureau — importé depuis Export_CFC.csv (837 positions).
    Utilisé par tous les modules (devis général, contrôle du coût, dialogues, libellés automatiques). */
 const CC_CFC_CAT=[
@@ -15242,14 +15243,27 @@ function ccAffFill(){
 }
 function ccAddAff(code){
   document.getElementById('cc_aff_ov').style.display='none';
+  /* import « Choix du contrôle du coût » : la source copiée intégralement dans l'affaire cible */
+  if(window._ccImpSrc&&ccData[window._ccImpSrc]){
+    const src=window._ccImpSrc; window._ccImpSrc=null;
+    const D=JSON.parse(JSON.stringify(ccData[src]));
+    D.date=ccToday(); D.etat='Brouillon';
+    D.version='Import '+ccAffCode(src)+(ccData[src].version&&ccData[src].version!=='Contrôle du coût'?' — '+ccData[src].version:'');
+    const nk=ccData[code]?(code+'~'+Date.now().toString(36)):code;
+    ccData[nk]=D; window._ccLsSel=nk; _ccAff=null;
+    ccPersist(); ccRender();
+    toast('Contrôle du coût de '+ccAffCode(src)+' importé dans '+code+'.');
+    return;
+  }
   if(!ccData[code]) ccData[code]=ccNewAff(code);
-  _ccAff=code; ccPersist(); ccRender();
+  window._ccLsSel=code; _ccAff=null; ccPersist(); ccRender();
+  ccListEdit();
   toast('Affaire '+code+' ajoutée'+(ccData[code].rows.length?' — CFC et entreprises repris du module PV.':' — ajoutez les postes CFC.'));
 }
 function ccDelAff(code){ chConfirm('Supprimer le contrôle du coût de l’affaire '+code+' (postes et écritures) ?', ()=>{
   delete ccData[code]; if(_ccAff===code) _ccAff=null; ccPersist(); ccRender(); }); }
 function ccImportPV(){
-  const A=ccA(); const pvc=(typeof pvData!=='undefined'&&pvData[_ccAff]&&pvData[_ccAff].cfg)?pvData[_ccAff].cfg:null;
+  const A=ccA(); const cod=ccAffCode(_ccAff); const pvc=(typeof pvData!=='undefined'&&pvData[cod]&&pvData[cod].cfg)?pvData[cod].cfg:null;
   if(!pvc||!Array.isArray(pvc.cfc)||!pvc.cfc.length){ toast('Aucune configuration PV pour cette affaire.'); return; }
   let n=0; pvc.cfc.forEach(c=>{ if(!A.rows.some(r=>r.cfc===c)){ const e=(pvc.ent||{})[c]||{};
     A.rows.push({id:pvId(), cfc:c, lbl:ccCatLbl(c), ent:e.soc||'', dg:0}); n++; } });
@@ -15287,7 +15301,7 @@ function ccRender(){
   const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
   let h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'+
     '<button class="btn btn-sm" onclick="ccSelAff(null)">← Affaires</button>'+
-    '<span style="font-weight:700;font-size:14px">'+pvEsc(_ccAff)+' — '+pvEsc(ccAffName(_ccAff)).slice(0,60)+'</span>'+
+    '<span style="font-weight:700;font-size:14px">'+pvEsc(ccAffCode(_ccAff))+(ccData[_ccAff]&&ccData[_ccAff].version&&ccData[_ccAff].version!=='Contrôle du coût'?' — '+pvEsc(ccData[_ccAff].version):'')+' — '+pvEsc(ccAffName(_ccAff)).slice(0,60)+'</span>'+
     '<span style="flex:1"></span>'+
     '<button class="btn btn-sm" onclick="ccDlgPoste()">✚ Poste CFC</button>'+
     '<button class="btn btn-sm" onclick="ccImportPV()" title="Reprend les CFC et entreprises du module PV de chantier">⟳ CFC du PV</button>'+
@@ -15390,7 +15404,7 @@ window._ccLsSort=window._ccLsSort||{k:'aff',asc:true}; window._ccLsSel=null;
 function ccListRows(){
   const S=window._ccLsSort;
   const rows=Object.keys(ccData).map(k=>{ const D=ccData[k];
-    return {k, aff:k, user:D.user||'Paulo', date:D.date||'', version:D.version||'Contrôle du coût',
+    return {k, aff:ccAffCode(k), user:D.user||'Paulo', date:D.date||'', version:D.version||'Contrôle du coût',
       nver:+D.nver||1, etat:D.etat||'Brouillon', notes:D.notes||''}; });
   rows.sort((x,y)=>{ let a=x[S.k], b=y[S.k];
     const c=(typeof a==='number')?(a-b):String(a).localeCompare(String(b),'fr',{numeric:true});
@@ -15417,15 +15431,19 @@ function ccListHTML(){
   const menuBox=(id,inner)=>'<div id="'+id+'" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:240px;z-index:60;font-size:13px;white-space:nowrap;padding:4px 0">'+inner+'</div>';
   const bar='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center">'+
     B('plus','ccAddAffOpen()','Ajouter une affaire au contrôle du coût')+
-    B('dup','toast('+PV_Q+'Dupliquer — à venir.'+PV_Q+')','Dupliquer')+
+    B('dup','ccListDup()','Dupliquer le contrôle du coût sélectionné')+
     '<div style="position:relative">'+B('pencil','ccListMenu('+PV_Q+'cc_ls_menu_e'+PV_Q+')','Édition',1)+
       menuBox('cc_ls_menu_e', item('Editer …','ccListMenu(null);ccListEdit()',true)+item('Ouvrir …','ccListMenu(null);ccListOpen()',true))+'</div>'+
     B('minus','ccListDel()','Supprimer l’affaire sélectionnée')+
     '<div style="position:relative">'+B('dl','ccListMenu('+PV_Q+'cc_ls_menu_i'+PV_Q+')','Importer',1)+
-      menuBox('cc_ls_menu_i', item('Importer …','',false))+'</div>'+
+      menuBox('cc_ls_menu_i', item('Importer un contrôle du coût d’une affaire …','ccListMenu(null);ccImpCfc()',true)+
+        item('Importer un contrôle externe (format *.deltakv) …','ccListMenu(null);toast('+PV_Q+'Import externe (*.deltakv) — action à définir.'+PV_Q+')',true))+'</div>'+
     '<div style="position:relative">'+B('gear','ccListMenu('+PV_Q+'cc_ls_menu_g'+PV_Q+')','Paramètres',1)+
       menuBox('cc_ls_menu_g', item('Copier le contenu du tableau dans le presse-papier','ccListMenu(null);ccListCopy()',true)+
-        item('Exporter le tableau dans un fichier CSV …','ccListMenu(null);ccListCsv()',true))+'</div>'+
+        item('Exporter le tableau dans un fichier CSV …','ccListMenu(null);ccListCsv()',true)+
+        '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
+        item('Dupliquer et modifier la subdivision','',false)+
+        item('Exporter (format *.deltakv) …','ccListMenu(null);ccListDeltakv()',true))+'</div>'+
     '</div>';
   const cols=[['aff','N° d’affaire','left','9%'],['user','Utilisateur','left','8%'],['date','Date','left','7%'],['version','Version','left','22%'],
     ['nver','N° de version','right','7%'],['etat','Statut','left','8%'],['notes','Notes','left','39%']];
@@ -15460,6 +15478,42 @@ function ccListMenu(id){ ['cc_ls_menu_e','cc_ls_menu_i','cc_ls_menu_g'].forEach(
 function ccListNeedSel(){ const k=window._ccLsSel; if(!k||!ccData[k]){ toast('Sélectionnez d’abord une affaire dans la liste.'); return null; } return k; }
 function ccListOpen(){ const k=ccListNeedSel(); if(k) ccSelAff(k); }
 function ccListDel(){ const k=ccListNeedSel(); if(k) ccDelAff(k); }
+function ccListDup(){
+  const k=ccListNeedSel(); if(!k) return;
+  const code=ccAffCode(k);
+  const D=JSON.parse(JSON.stringify(ccData[k]));
+  D.date=ccToday(); D.etat='Brouillon';
+  D.version=(ccData[k].version||'Contrôle du coût')+' Copie';
+  const nk=code+'~'+Date.now().toString(36);
+  ccData[nk]=D; window._ccLsSel=nk;
+  ccPersist(); ccRender();
+  toast('Contrôle du coût '+code+' dupliqué — « '+D.version+' ».');
+}
+function ccListDeltakv(){ const k=ccListNeedSel(); if(!k) return;
+  toast('Export *.deltakv du contrôle du coût '+ccAffCode(k)+' — format à définir (envoyez un fichier exemple).'); }
+/* Import : « Choix du contrôle du coût » (source) puis affaire cible via la fenêtre ✚ */
+function ccImpCfc(){
+  const ks=Object.keys(ccData);
+  if(!ks.length){ toast('Aucun contrôle du coût à importer.'); return; }
+  const rows=ks.map(k=>'<tr onclick="window._ccImpPick='+PV_Q+pvEscA(k)+PV_Q+';[...this.parentElement.children].forEach(x=>x.classList.remove('+PV_Q+'dv-imp-sel'+PV_Q+'));this.classList.add('+PV_Q+'dv-imp-sel'+PV_Q+')">'+
+    '<td>'+pvEsc(ccAffCode(k))+'</td><td>'+pvEsc(ccData[k].version||'Contrôle du coût')+'</td><td>'+pvEsc(dvD4(ccData[k].date||''))+'</td><td style="text-align:right">'+ccData[k].rows.length+'</td></tr>').join('');
+  dvMacDlg('Choix du contrôle du coût',
+    '<style>#cc_imp_tb{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px}'+
+      '#cc_imp_tb th{font-weight:normal;text-align:left;padding:3px 8px;background:#fff;position:sticky;top:0;border-bottom:1px solid #e2e2e2}'+
+      '#cc_imp_tb td{padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}'+
+      '#cc_imp_tb tbody tr:nth-child(odd) td{background:#eef3fb}#cc_imp_tb tbody tr:nth-child(even) td{background:#fff}'+
+      '#cc_imp_tb tbody tr.dv-imp-sel td{background:#2f6fde !important;color:#fff}</style>'+
+    '<div style="padding:14px 16px 4px"><div style="border:1px solid #9fc0e8;background:#fff;height:300px;overflow:auto">'+
+      '<table id="cc_imp_tb"><thead><tr><th style="width:20%">N° d’affaire</th><th>Version</th><th style="width:20%">Date</th><th style="width:14%;text-align:right">Postes</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '</div><div style="font-size:12px;color:#666;margin:8px 2px">OK → choisissez ensuite l’affaire CIBLE ; le contrôle du coût choisi y est copié intégralement.</div></div>',
+    'ccImpCfcOk()', 620);
+  window._ccImpPick=null;
+}
+function ccImpCfcOk(){
+  if(!window._ccImpPick){ toast('Sélectionnez d’abord un contrôle du coût.'); return; }
+  window._ccImpSrc=window._ccImpPick; dvExpClose();
+  ccAddAffOpen();
+}
 function ccListEdit(){
   const k=ccListNeedSel(); if(!k) return;
   const D=ccData[k];

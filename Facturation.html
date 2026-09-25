@@ -15329,7 +15329,13 @@ function ccRender(){
   const menuBox=(id,inner)=>'<div id="'+id+'" style="display:none;position:absolute;left:0;top:26px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:250px;z-index:60;font-size:13px;white-space:nowrap;padding:4px 0">'+inner+'</div>';
   const av=l=>'ccListMenu(null);toast('+PV_Q+l+' — à venir.'+PV_Q+')';
   const side=['DEVIS GENERAL','CONTRÔLE DU COÛT','MUTATIONS','ADJUDICATIONS','PAIEMENTS','COMPTES D’ENTREPRISE','ORDRES DE PAIEMENT','ARRÊTÉS DE COMPTE','DESCRIPTIF','HONORAIRES'];
-  const sideH=side.map((s2,i2)=>'<div onclick="ccSideGo('+i2+')" style="display:flex;align-items:center;gap:6px;padding:7px 10px;cursor:pointer;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:#1a1a1a'+(i2===1?';background:#e3ebf5':'')+'"><span style="color:#555;font-size:10px">▸</span>'+s2+'</div>').join('');
+  const sSel=window._ccSideSel||[1,'ed'];
+  const sideH=side.map((s2,i2)=>
+    '<div onclick="ccSideGo('+i2+','+PV_Q+'ed'+PV_Q+')" style="display:flex;align-items:center;gap:6px;padding:6px 10px 4px;cursor:pointer;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:#1a1a1a"><span style="color:#333;font-size:9px">▼</span>'+s2+'</div>'+
+    [['ed','Edition'],['doc','Documents']].map(sb=>
+      '<div onclick="ccSideGo('+i2+','+PV_Q+sb[0]+PV_Q+')" style="padding:4px 10px 4px 30px;cursor:pointer;font-size:12.5px;color:'+
+      (sSel[0]===i2&&sSel[1]===sb[0]?'#fff;background:#b0b0b0':'#1a1a1a')+'">'+sb[1]+'</div>').join('')
+  ).join('');
   const bar='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
     '<div style="position:relative">'+Bt('plus','ccListMenu('+PV_Q+'cc_af_menu_p'+PV_Q+')','Ajouter',1)+
       menuBox('cc_af_menu_p', item('Poste CFC …','ccListMenu(null);ccDlgPoste()',true)+
@@ -15707,16 +15713,18 @@ function chCalDo(mode){
   if(ov) ov.style.display='none';
 }
 /* Vue affaire CC : menu latéral, sélection de ligne, remplissage, actions de la barre */
-function ccSideGo(i2){
-  if(i2===1) return; /* Contrôle du coût = vue courante */
-  if(i2===0){
+function ccSideGo(i2, sub){
+  sub=sub||'ed';
+  const noms=['Devis général','Contrôle du coût','Mutations','Adjudications','Paiements','Comptes d’entreprise','Ordres de paiement','Arrêtés de compte','Descriptif','Honoraires'];
+  if(i2===1&&sub==='ed'){ window._ccSideSel=[1,'ed']; ccRender(); return; } /* vue courante */
+  if(i2===0&&sub==='ed'){
     const code=ccAffCode(_ccAff);
     const k=Object.keys(dvData).find(x=>x.split('~')[0]===code);
     if(k){ goTab('devis'); dvSelAff(k); } else toast('Aucun devis général pour l’affaire '+code+'.');
     return;
   }
-  const noms=['','','Mutations','Adjudications','Paiements','Comptes d’entreprise','Ordres de paiement','Arrêtés de compte','Descriptif','Honoraires'];
-  toast(noms[i2]+' — à venir.');
+  window._ccSideSel=[i2,sub]; ccRender();
+  toast(noms[i2]+' · '+(sub==='doc'?'Documents':'Edition')+' — à venir.');
 }
 function ccAfSel(tr){ window._ccSelRow=tr.getAttribute('data-rid');
   document.querySelectorAll('#cc_af_tb tr.cc-af-sel').forEach(x=>x.classList.remove('cc-af-sel'));

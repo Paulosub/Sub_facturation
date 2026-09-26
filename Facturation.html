@@ -15366,7 +15366,7 @@ function ccRender(){
     '<div style="position:relative">'+Bt('plus','ccListMenu('+Q+'cc_af_menu_p'+Q+')','Nouvelle écriture',1)+
       menuBox('cc_af_menu_p',
         fly('Mutations 1', mutItems)+
-        itG('Contrat …','ccDlgCon('+Q+'contrat'+Q+',null,'+cq+')',!!cfcSel)+
+        itG('Contrat …','ccConSelAdr('+cq+')',!!cfcSel)+
         itG('Avenant …','ccDlgCon('+Q+'avenant'+Q+',null,'+cq+')',aContrat)+
         itG('Informations montants bruts …','',false)+sep+
         itG('Paiement sur contrat …','ccDlgPay(null,'+cq+',false)',aContrat)+
@@ -15551,7 +15551,8 @@ function ccEcrRows(A,cfc){
       c4=(sgn<0?'−':'')+ccF(Math.abs(sgn));
     } else if(e.type==='contrat'||e.type==='avenant'){
       const m=(e.pos||[]).filter(p2=>p2.cfc===cfc).reduce((s,p2)=>s+ccP(p2.mnt),0);
-      lbl='&gt; '+(e.type==='avenant'?'Avenant':'Contrat')+' '+(e.num||'')+' · '+ccDfr(e.date)+(e.ent?' · '+pvEsc(e.ent):'')+(e.statut&&e.statut!=='definitif'?' · '+pvEsc(e.statut):'');
+      const dd=String(e.date||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      lbl='&gt;'+pvEsc(e.des&&e.type==='contrat'?e.des:(e.type==='avenant'?'Avenant':'Contrat'))+' '+(dd?dd[3]+'.'+dd[2]+'.'+dd[1].slice(2):'')+'['+(e.num||'')+']'+(e.statut&&e.statut!=='definitif'?' · '+pvEsc(e.statut):'');
       c7=ccF(m); if(e.type==='avenant') c5=ccF(m);
     } else if(e.type==='pay'){
       lbl='&gt; '+(e.typeP==='final'?'facture finale':'situation '+(e.numP||''))+(e.numF?' · fact. '+pvEsc(e.numF):'')+' · '+ccDfr(e.dateF||e.date)+(e.statut?' · '+pvEsc(e.statut):'');
@@ -15559,8 +15560,8 @@ function ccEcrRows(A,cfc){
     } else if(e.type==='prov'){ lbl='&gt; provision'+(e.des?' · '+pvEsc(e.des):' ')+' · '+ccF(ccP(e.mnt)); }
     else if(e.type==='cp'){ lbl='&gt; coût probable perso'; c9=ccF(ccP(e.mnt)); }
     h+='<tr class="cc-ecr'+(e.id===window._ccSelEcr?' cc-af-sel':'')+'" data-eid="'+pvEscA(e.id)+'" onclick="ccAfSelE(this)" ondblclick="ccAfSelE(this);ccAfEdit()" style="cursor:default"><td></td>'+
-      '<td style="padding-left:22px;color:#666;font-size:12px">'+lbl+'</td>'+
-      '<td></td><td></td><td style="color:#b06f00">'+c4+'</td><td style="color:#1a5f9e">'+c5+'</td><td></td>'+
+      '<td></td><td style="color:#555;font-size:12.5px">'+lbl+'</td>'+
+      '<td></td><td style="color:#b06f00">'+c4+'</td><td style="color:#1a5f9e">'+c5+'</td><td></td>'+
       '<td style="color:#1a5f9e">'+c7+'</td><td style="color:'+(red?'#c62828':'#2e7d32')+'">'+c8+'</td>'+
       '<td>'+c9+'</td><td></td></tr>';
   });
@@ -15583,7 +15584,7 @@ function ccRowMenu(cfc){
     '<div style="text-align:right;margin-top:12px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button></div>');
 }
 function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
-  if(e.type==='mut') ccDlgMut(id); else if(e.type==='contrat') ccDlgCon('contrat',id);
+  if(e.type==='mut') ccDlgMut(id); else if(e.type==='contrat') ccConWin(id);
   else if(e.type==='avenant') ccDlgCon('avenant',id); else if(e.type==='pay') ccDlgPay(id);
   else if(e.type==='prov') ccDlgProv(id); else if(e.type==='cp') ccDlgCp(e.cfc); }
 function ccCfcOpts(sel){ const A=ccA();
@@ -16335,6 +16336,356 @@ function ccSaveCon(type,id){
   const r=A.rows.find(x=>x.cfc===o.lot); if(r&&!r.ent&&o.ent) r.ent=o.ent;
   _ccOpen[o.lot]=true; ccPersist(); ccDlgClose(); ccRender();
 }
+/* ══════════════════════════════════════════════════════════════════════════
+   CONTRAT (contrôle du coût) — circuit du bureau :
+   ✚ Contrat … → « Sélectionner l'adresse » → ✚ « Modifier » (Entité ◀ / Responsable ◀
+   via le Navigateur d'adresses) → OK → OK → fenêtre « Contrat <entreprise> » :
+   CFC du devis à gauche, lot, positions (brut/net), conditions (TVA…), désignation,
+   n°, date, statut, description, annexes, niveau des prestations.
+   ══════════════════════════════════════════════════════════════════════════ */
+const CC_CON_STATUTS=[['brouillon','Brouillon'],['en traitement','En traitement'],['sur demande','Sur demande'],['pour signature','Pour signature'],['definitif','Définitif']];
+/* fenêtres empilables façon macOS */
+function ccMac(id,title,body,foot,width,lvl){
+  let ov=document.getElementById(id);
+  if(!ov){ ov=document.createElement('div'); ov.id=id; document.body.appendChild(ov); }
+  ov.style.cssText='position:fixed;inset:0;z-index:'+(10010+(lvl||0)*4)+';display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.10)';
+  const Q=PV_Q;
+  ov.innerHTML='<div style="margin-top:'+(lvl>1?'10vh':'5vh')+';width:'+width+'px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;background:#ececec;border:1px solid #a8a8a8;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.45);overflow:hidden">'+
+    '<div style="flex:none;background:linear-gradient(#f4f4f4,#e2e2e2);border-bottom:1px solid #c6c6c6;padding:7px 10px;display:flex;align-items:center">'+
+      '<span onclick="ccMacClose('+Q+id+Q+')" style="width:12px;height:12px;border-radius:50%;background:#ff5f57;border:1px solid #dd3c33;cursor:pointer;flex:none"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px"></span>'+
+      '<span style="width:12px;height:12px;border-radius:50%;background:#dcdcdc;border:1px solid #c2c2c2;margin-left:7px"></span>'+
+      '<span style="flex:1;text-align:center;font-weight:700;font-size:14px;color:#333;margin-right:57px">'+pvEsc(title)+'</span></div>'+
+    '<div style="flex:1;overflow:auto;min-height:0">'+body+'</div>'+
+    '<div style="flex:none;display:flex;align-items:center;gap:12px;padding:10px 18px 16px">'+foot+'</div></div>';
+}
+function ccMacClose(id){ const ov=document.getElementById(id); if(ov) ov.remove(); }
+function ccMacBtns(okFn,okOn,okId){
+  const Q=PV_Q;
+  return '<span style="flex:1"></span>'+
+    '<button onclick="'+okFn.split('|')[0]+'" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 26px;font-size:14px;cursor:pointer">Annuler</button>'+
+    '<button id="'+(okId||'')+'" onclick="'+okFn.split('|')[1]+'" style="border-radius:7px;padding:5px 34px;font-size:14px;cursor:pointer;font-weight:600;'+
+      (okOn?'background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0':'background:#f4f4f4;color:#aaa;border:1px solid #cfcfcf;pointer-events:none')+'">OK</button>';
+}
+function ccBtnOn(id,on){ const b=document.getElementById(id); if(!b) return;
+  b.style.cssText='border-radius:7px;padding:5px 34px;font-size:14px;cursor:pointer;font-weight:600;'+
+    (on?'background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0':'background:#f4f4f4;color:#aaa;border:1px solid #cfcfcf;pointer-events:none'); }
+const CC_GB='background:linear-gradient(#fefefe,#e0e0e0);border:1px solid #b0b0b0;border-radius:4px;padding:3px 9px;cursor:pointer;font-size:12px';
+function ccAdrBloc(a,e){ if(!a) return '';
+  const l1=(e&&e.type==='pers')?((e.comp?e.comp+' ':'')+(e.nom||'')):(a.ad1||(e&&e.nom)||'');
+  return [l1,a.ad2,a.rue,a.rue2,((a.npa||'')+' '+(a.loc||'')).trim()].filter(x=>String(x||'').trim()).join(String.fromCharCode(10)); }
+
+/* 1. Sélectionner l'adresse */
+function ccConSelAdr(cfc){
+  const A=ccA(); if(!A) return;
+  window._ccConCfc=cfc||''; window._ccConAdrSel=null;
+  A.adrCon=A.adrCon||[];
+  const Q=PV_Q;
+  ccMac('cc_con_sel','Sélectionner l’adresse',
+    '<div style="padding:12px 16px 0">'+
+      '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><input id="cc_con_q" oninput="ccConSelFill()" placeholder="⌕" style="width:240px;border:2px solid #9fc0e8;border-radius:7px;padding:5px 9px;font-size:13px;background:#fff"></div>'+
+      '<div style="border:1px solid #9a9a9a;background:#fff;height:520px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px">'+
+      '<thead><tr><th style="text-align:left;font-weight:normal;padding:4px 8px;border-bottom:1px solid #e2e2e2;position:sticky;top:0;background:#fff">Adresse</th></tr></thead>'+
+      '<tbody id="cc_con_ls"></tbody></table></div></div>',
+    '<button onclick="ccConAdrEdit(null)" title="Nouvelle adresse" style="'+CC_GB+';font-size:15px;padding:2px 9px">✚</button>'+
+      ccMacBtns('ccMacClose('+Q+'cc_con_sel'+Q+')|ccConSelOk()',false,'cc_con_sel_ok'), 580, 0);
+  ccConSelFill();
+}
+function ccConSelFill(){
+  const A=ccA(); const tb=document.getElementById('cc_con_ls'); if(!A||!tb) return;
+  const q=((document.getElementById('cc_con_q')||{}).value||'').toLowerCase();
+  const Q=PV_Q;
+  tb.innerHTML=(A.adrCon||[]).filter(x=>!q||(x.ent+' '+(x.resp||'')).toLowerCase().includes(q)).map(x=>
+    '<tr onclick="window._ccConAdrSel='+Q+x.id+Q+';ccConSelFill()" ondblclick="window._ccConAdrSel='+Q+x.id+Q+';ccConSelOk()" style="cursor:default'+
+    (x.id===window._ccConAdrSel?';background:#2f6fde;color:#fff':'')+'"><td style="padding:4px 8px">'+pvEsc(x.ent)+(x.resp?' <span style="opacity:.7">— '+pvEsc(x.resp)+'</span>':'')+'</td></tr>').join('');
+  ccBtnOn('cc_con_sel_ok', !!window._ccConAdrSel);
+}
+function ccConSelOk(){
+  const A=ccA(); const x=(A.adrCon||[]).find(y=>y.id===window._ccConAdrSel); if(!x) return;
+  ccMacClose('cc_con_sel');
+  ccConWin(null, x);
+}
+/* 2. Fenêtre « Modifier » : Entité + Responsable (◀ = Navigateur d'adresses, ⓘ = infos) */
+function ccConAdrEdit(id){
+  const A=ccA(); const x=id?(A.adrCon||[]).find(y=>y.id===id):null;
+  window._ccCae=x?JSON.parse(JSON.stringify(x)):{id:pvId(),ent:'',entBloc:'',entTel:'',entMail:'',resp:'',respBloc:'',respTel:'',respMail:''};
+  const Q=PV_Q;
+  const ta='width:100%;height:150px;box-sizing:border-box;border:1px solid #9a9a9a;background:#fff;padding:5px 7px;font-size:13.5px;font-family:inherit;resize:none';
+  const inp='flex:1;border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff';
+  const bloc=(lbl,k,fnPick,fnInfo)=>'<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span style="width:100px;text-align:right;font-size:14px">'+lbl+'</span>'+
+      '<input id="cc_cae_'+k+'" value="'+pvEscA(window._ccCae[k]||'')+'" oninput="window._ccCae.'+k+'=this.value;ccConAdrOkState()" style="'+inp+'">'+
+      '<button onclick="'+fnPick+'" style="'+CC_GB+'" title="Navigateur d’adresses">◀</button></div>'+
+    '<div style="display:flex;gap:14px;margin:0 0 16px 114px"><textarea id="cc_cae_'+k+'Bloc" oninput="window._ccCae.'+k+'Bloc=this.value" style="'+ta+'">'+pvEsc(window._ccCae[k+'Bloc']||'')+'</textarea>'+
+      '<button onclick="'+fnInfo+'" style="'+CC_GB+';align-self:flex-start;font-weight:700;font-family:Georgia,serif" title="Informations">i</button></div>';
+  ccMac('cc_con_mod','Modifier',
+    '<div style="padding:18px 20px 0">'+bloc('Entité','ent','ccConPickEnt()','ccConInfo('+Q+'ent'+Q+')')+bloc('Responsable','resp','ccConPickResp()','ccConInfo('+Q+'resp'+Q+')')+'</div>',
+    ccMacBtns('ccMacClose('+Q+'cc_con_mod'+Q+')|ccConAdrOk()',!!window._ccCae.ent,'cc_con_mod_ok'), 720, 1);
+}
+function ccConAdrOkState(){ ccBtnOn('cc_con_mod_ok', !!String(window._ccCae.ent||'').trim()); }
+function ccConPickEnt(){
+  adrPickOpen({titre:'Navigateur d’adresses'}, function(r,a,e){
+    const X=window._ccCae; X.ent=(e&&e.type!=='pers')?e.nom:(r.soc||r.nom||'');
+    X.entBloc=ccAdrBloc(a,e); X.entTel=r.tel||''; X.entMail=r.mail||'';
+    ccConAdrRefresh(); });
+}
+function ccConPickResp(){
+  adrPickOpen({titre:'Navigateur d’adresses'}, function(r,a,e){
+    const X=window._ccCae; X.resp=r.nom||((e&&e.nom)||'');
+    X.respBloc=ccAdrBloc(a,e); X.respTel=r.tel||''; X.respMail=r.mail||'';
+    ccConAdrRefresh(); });
+  /* ouvert sur les personnes de l'entreprise choisie */
+  setTimeout(()=>{ const f=document.getElementById('adr_pick_f');
+    if(f&&window._ccCae.ent){ f.value=window._ccCae.ent; window._adrNavRan=true; if(typeof adrPickFill==='function') adrPickFill(); } },30);
+}
+function ccConAdrRefresh(){ const X=window._ccCae;
+  ['ent','entBloc','resp','respBloc'].forEach(k=>{ const f=document.getElementById('cc_cae_'+k); if(f) f.value=X[k]||''; });
+  ccConAdrOkState(); }
+function ccConInfo(k){ const X=window._ccCae;
+  const t=[X[k==='ent'?'entTel':'respTel'],X[k==='ent'?'entMail':'respMail']].filter(Boolean).join(' · ');
+  toast(t||'Aucune information de contact.'); }
+function ccConAdrOk(){
+  const A=ccA(); const X=window._ccCae; if(!String(X.ent||'').trim()) return;
+  A.adrCon=A.adrCon||[];
+  const i=A.adrCon.findIndex(y=>y.id===X.id); if(i>=0) A.adrCon[i]=X; else A.adrCon.push(X);
+  ccPersist(); ccMacClose('cc_con_mod');
+  window._ccConAdrSel=X.id; ccConSelFill();
+}
+
+/* 3. Fenêtre « Contrat <entreprise> » */
+function ccConCalc(C){
+  const brut=(C.pos||[]).reduce((s,p)=>s+ccP(p.brut),0);
+  let run=brut;
+  (C.conds||[]).forEach(c=>{ const m=run*ccP(c.pct)/100*(c.genre==='R'?-1:1); c._mnt=m; if(c.m!==false) run+=m; });
+  const ratio=brut>0.005?run/brut:(1+((C.conds||[]).filter(c=>c.m!==false&&c.genre!=='R').reduce((s,c)=>s+ccP(c.pct),0)/100));
+  (C.pos||[]).forEach(p=>{ p._net=ccP(p.brut)*ratio; });
+  return {brut:brut, net:run, ratio:ratio};
+}
+function ccConWin(id, adr){
+  const A=ccA(); if(!A) return;
+  let C;
+  if(id){ const e=A.ecr.find(x=>x.id===id); if(!e) return; C=JSON.parse(JSON.stringify(e));
+    if(!C.conds) C.conds=[{niv:1,ref:0,des:'TVA',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}];
+    (C.pos||[]).forEach(p=>{ if(p.brut==null){ p.brut=ccP(p.mnt)/(1+ccP(A.tva!=null?A.tva:8.1)/100); } if(!p.txt) p.txt=ccCatLbl(p.cfc)||''; });
+  } else {
+    const cfc=window._ccConCfc||'';
+    const lastC=[...A.ecr].reverse().find(x=>x.type==='contrat'&&x.conds);
+    C={type:'contrat', ent:adr.ent, resp:adr.resp||'', adrId:adr.id, lot:cfc, lotLbl:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'',
+      pos:cfc?[{cfc:cfc, txt:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'', refc:'', brut:0}]:[],
+      conds:[{niv:1,ref:0,des:'TVA',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}],
+      saisie:'brut', prio:true, des:'Contrat', num:ccNum('contrat'), date:ccToday(), statut:'definitif', desc:'', annexes:[], niveau:0};
+    void lastC;
+  }
+  window._ccCW=C; window._ccCWid=id||null; window._ccCWpos=0; window._ccCWcond=0;
+  ccConWinRender();
+}
+function ccConWinRender(){
+  const A=ccA(), C=window._ccCW; if(!A||!C) return;
+  const Q=PV_Q, K=ccConCalc(C), AG=ccAgg(A);
+  const F=v=>ccF(v);
+  const th=(t,al,w)=>'<th style="text-align:'+(al||'left')+';font-weight:normal;padding:3px 7px;border-bottom:1px solid #e2e2e2;border-right:1px solid #eee;background:#fff;position:sticky;top:0;white-space:nowrap'+(w?';width:'+w:'')+'">'+t+'</th>';
+  const zeb=i=>i%2?'#fff':'#eef3fb';
+  /* adjudication existante par CFC (autres contrats) */
+  const adj={}; (A.ecr||[]).forEach(e=>{ if((e.type==='contrat'||e.type==='avenant')&&e.id!==window._ccCWid) (e.pos||[]).forEach(p=>{ adj[p.cfc]=(adj[p.cfc]||0)+ccP(p.mnt); }); });
+  const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
+  const gauche='<div style="border:1px solid #7fb4e8;background:#fff;height:100%;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
+    '<thead><tr>'+th('CFC')+th('Montant du devis','right')+th('Adjudication','right')+'</tr></thead><tbody>'+
+    rows.map((r,i)=>{ const inC=(C.pos||[]).some(p=>p.cfc===r.cfc);
+      return '<tr ondblclick="ccCWaddCfc('+Q+pvEscA(r.cfc)+Q+')" title="Double-clic : ajouter ce CFC au contrat" style="cursor:default;background:'+(inC?'#2f6fde;color:#fff':zeb(i))+'">'+
+      '<td style="padding:2px 7px">'+pvEsc(r.cfc)+'</td><td style="padding:2px 7px;text-align:right">'+F((AG.agg[r.cfc]||{}).dg||0)+'</td><td style="padding:2px 7px;text-align:right">'+F(adj[r.cfc]||0)+'</td></tr>'; }).join('')+
+    '</tbody></table></div>';
+  const inS='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
+  const cellIn='width:100%;border:0;background:transparent;font:inherit;padding:0';
+  const net=C.saisie==='net';
+  const posRows=(C.pos||[]).map((p,i)=>'<tr onclick="window._ccCWpos='+i+';ccConWinRender()" style="background:'+(i===window._ccCWpos?'#2f6fde;color:#fff':zeb(i))+'">'+
+      '<td style="padding:2px 7px">'+pvEsc(p.cfc)+'</td>'+
+      '<td style="padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">'+pvEsc(p.txt||'')+'</td>'+
+      '<td style="padding:2px 7px"><input value="'+pvEscA(p.refc||'')+'" onclick="event.stopPropagation()" onchange="window._ccCW.pos['+i+'].refc=this.value" style="'+cellIn+';color:inherit"></td>'+
+      '<td style="padding:2px 7px;text-align:right">'+(net?F(ccP(p.brut)):'<input value="'+(ccP(p.brut)?ccP(p.brut):'')+'" onclick="event.stopPropagation()" onchange="ccCWset('+i+',this.value)" style="'+cellIn+';text-align:right;color:inherit">')+'</td>'+
+      '<td style="padding:2px 7px;text-align:right">'+(net?'<input value="'+(p._net?Math.round(p._net*100)/100:'')+'" onclick="event.stopPropagation()" onchange="ccCWset('+i+',this.value)" style="'+cellIn+';text-align:right;color:inherit">':F(p._net||0))+'</td></tr>').join('')+
+    '<tr style="font-weight:700"><td></td><td style="padding:2px 7px">Total</td><td></td><td style="padding:2px 7px;text-align:right">'+F(K.brut)+'</td><td style="padding:2px 7px;text-align:right">'+F(K.net)+'</td></tr>';
+  const condRows=(C.conds||[]).map((c,i)=>'<tr onclick="window._ccCWcond='+i+';ccConWinRender()" style="background:'+(i===window._ccCWcond?'#2f6fde;color:#fff':zeb(i))+'">'+
+      '<td style="padding:2px 7px">'+(i+1)+'</td><td style="padding:2px 7px">'+(c.ref||0)+'</td>'+
+      '<td style="padding:2px 7px"><input value="'+pvEscA(c.des||'')+'" onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].des=this.value" style="'+cellIn+';color:inherit"></td>'+
+      '<td style="padding:2px 7px"><select onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].genre=this.value;ccConWinRender()" style="border:0;background:transparent;color:inherit;font:inherit"><option value="M"'+(c.genre!=='R'?' selected':'')+'>M</option><option value="R"'+(c.genre==='R'?' selected':'')+'>R</option></select></td>'+
+      '<td style="padding:2px 7px"><input value="'+pvEscA(c.refc||'')+'" onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].refc=this.value" style="'+cellIn+';color:inherit"></td>'+
+      '<td style="padding:2px 7px;text-align:right"><input value="'+(c.pct!=null?c.pct:'')+'" onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].pct=ccP(this.value);ccConWinRender()" style="'+cellIn+';text-align:right;color:inherit"></td>'+
+      '<td style="padding:2px 7px;text-align:right">'+F(c._mnt||0)+'</td>'+
+      '<td style="padding:2px 7px;text-align:center"><input type="checkbox"'+(c.m!==false?' checked':'')+' onclick="event.stopPropagation();window._ccCW.conds['+i+'].m=this.checked;ccConWinRender()"></td></tr>').join('');
+  const SV='<svg width="14" height="14" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">';
+  const ib=(svg,fn,tt,menu)=>'<button onclick="'+fn+'" title="'+tt+'" style="'+CC_GB+'">'+svg+(menu?' <span style="font-size:8px">▾</span>':'')+'</button>';
+  const icP=SV+'<path d="M7.5 3v9M3 7.5h9"/></svg>', icM=SV+'<path d="M3 7.5h9"/></svg>',
+    icE=SV.replace('1.5','1.3')+'<path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg>',
+    icU=SV+'<path d="M3 10 7.5 5.5 12 10"/></svg>', icD=SV+'<path d="M3 5 7.5 9.5 12 5"/></svg>';
+  const mb=(id,inner,left)=>'<div id="'+id+'" style="display:none;position:absolute;left:'+(left||0)+'px;top:28px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:260px;z-index:5;font-size:13.5px;white-space:nowrap;padding:4px 0">'+inner+'</div>';
+  const mi=(lbl,fn,on)=>on?'<div style="padding:6px 16px;cursor:pointer" onmouseover="this.style.background='+Q+'#eef4f9'+Q+'" onmouseout="this.style.background='+Q+Q+'" onclick="ccCWmenu(null);'+fn+'">'+lbl+'</div>':'<div style="padding:6px 16px;color:#b5b5b5">'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+  const hasPos=(C.pos||[]).length>0;
+  const droite=
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:14px">Lot d’adjudication</span>'+
+      '<input value="'+pvEscA(C.lot||'')+'" readonly style="'+inS+';width:90px">'+
+      '<input value="'+pvEscA(C.lotLbl||'')+'" onchange="window._ccCW.lotLbl=this.value" style="'+inS+';flex:1">'+
+      '<button onclick="ccCatChoix(function(c){window._ccCW.lot=c;window._ccCW.lotLbl=ccCatLbl(c)||c;ccConWinRender();})" style="'+CC_GB+'">◀</button></div>'+
+    '<div style="display:flex;align-items:center;margin-bottom:6px"><b style="font-size:14px;flex:1">Positions du contrat :</b>'+
+      '<label style="font-size:13.5px;display:flex;align-items:center;gap:6px"><input type="checkbox"'+(C.prio!==false?' checked':'')+' onchange="window._ccCW.prio=this.checked"> Contrat prioritaire sur le devis pour le coût probable</label></div>'+
+    '<div style="border:1px solid #9a9a9a;background:#fff;height:150px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">'+
+      '<thead><tr>'+th('CFC','left','70px')+th('Texte')+th('Réf. cond.','left','90px')+th('Brut','right','110px')+th('Net','right','110px')+'</tr></thead><tbody>'+posRows+'</tbody></table></div>'+
+    '<div style="display:flex;align-items:center;gap:6px;margin:8px 0 12px">'+
+      '<span style="position:relative">'+ib(icP,'ccCWmenu('+Q+'cw_m_p'+Q+')','Ajouter',1)+mb('cw_m_p',mi('Nouvelle position …','ccCatChoix(ccCWaddCfc)',true))+'</span>'+
+      ib(icM,'ccCWdelPos()','Supprimer la position')+
+      '<span style="position:relative">'+ib(icE,'ccCWmenu('+Q+'cw_m_e'+Q+')','Éditer',1)+mb('cw_m_e',mi('Modifier le descriptif …','ccCWdesc()',hasPos)+mi('Informations montants bruts …','',false))+'</span>'+
+      ib(icU,'ccCWmove(-1)','Monter')+ib(icD,'ccCWmove(1)','Descendre')+
+      '<span style="flex:1"></span>'+
+      '<select onchange="window._ccCW.saisie=this.value;ccConWinRender()" style="'+inS+';border-radius:6px"><option value="brut"'+(!net?' selected':'')+'>Saisie du brut</option><option value="net"'+(net?' selected':'')+'>Saisie du net</option></select></div>'+
+    '<b style="font-size:14px">Conditions du contrat :</b>'+
+    '<div style="border:1px solid #9a9a9a;background:#fff;height:120px;overflow:auto;margin-top:6px"><table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">'+
+      '<thead><tr>'+th('NIV','left','40px')+th('REF','left','40px')+th('Désignation')+th('Ge…','left','46px')+th('Réf. cond.','left','90px')+th('Conditions','right','90px')+th('Montant','right','100px')+th('M','center','30px')+'</tr></thead><tbody>'+condRows+'</tbody></table></div>'+
+    '<div style="margin:8px 0 14px;position:relative;display:inline-block">'+ib('<span style="font-size:14px">⚙︎</span>','ccCWmenu('+Q+'cw_m_c'+Q+')','Conditions',1)+
+      mb('cw_m_c',mi('Ajouter une condition au-dessus','ccCWcondAdd(0)',true)+mi('Ajouter une condition au-dessous','ccCWcondAdd(1)',true)+mi('Navigateur …','',false)+sep+
+        mi('Les conditions du dernier contrat','ccCWcondLast()',true)+sep+mi('Supprimer la condition …','ccCWcondDel()',(C.conds||[]).length>0))+'</div>'+
+    '<div style="display:grid;grid-template-columns:1.4fr .8fr 1.1fr 1.1fr;gap:4px 18px;align-items:center;font-size:14px">'+
+      '<span>Désignation</span><span>Numéro</span><span>Date</span><span>Statut</span>'+
+      '<input id="cw_des" value="'+pvEscA(C.des||'Contrat')+'" style="'+inS+'">'+
+      '<span style="display:flex;gap:6px"><input id="cw_num" value="'+pvEscA(C.num||'')+'" style="'+inS+';width:70px"><button onclick="document.getElementById('+Q+'cw_num'+Q+').value=ccNum('+Q+'contrat'+Q+')" style="'+CC_GB+'" title="Prochain numéro">◀</button></span>'+
+      '<span style="display:flex;gap:6px"><input id="cw_date" value="'+pvEscA(dvD4(C.date||ccToday()))+'" style="'+inS+';width:120px">'+chCalBtn('cw_date')+'</span>'+
+      '<select id="cw_statut" style="'+inS+';border-radius:6px">'+CC_CON_STATUTS.map(s=>'<option value="'+s[0]+'"'+(C.statut===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select></div>'+
+    '<div style="font-size:14px;margin:14px 0 6px">Description</div>'+
+    '<textarea id="cw_desc" style="width:100%;height:80px;box-sizing:border-box;border:1px solid #9a9a9a;background:#fff;padding:5px 7px;font-size:13.5px;font-family:inherit;resize:vertical">'+pvEsc(C.desc||'')+'</textarea>'+
+    '<div style="display:flex;align-items:center;gap:12px;margin:8px 0 16px"><span style="position:relative">'+ib(icE,'ccCWmenu('+Q+'cw_m_a'+Q+')','Annexes',1)+mb('cw_m_a',mi('Ouvrir l’annexe …','ccCWannexes()',true))+'</span>'+
+      '<span style="font-size:14px">Annexes: '+((C.annexes||[]).length)+'</span></div>'+
+    '<div style="display:flex;align-items:center;gap:22px;font-size:14px"><span>Niveau des prestations</span>'+
+      '<span style="display:inline-flex;flex-direction:column;width:380px"><input type="range" min="0" max="100" step="10" value="'+(C.niveau||0)+'" onchange="window._ccCW.niveau=+this.value" list="cw_ticks" style="width:100%">'+
+      '<span style="display:flex;justify-content:space-between;font-size:11px;color:#444">'+[0,10,20,30,40,50,60,70,80,90,100].map(v=>'<span>'+v+'</span>').join('')+'</span></span></div>';
+  ccMac('cc_con_win','Contrat '+(C.ent||''),
+    '<div style="display:flex;gap:14px;padding:14px 16px 0;height:74vh"><div style="width:300px;flex:none">'+gauche+'</div><div style="flex:1;min-width:0;overflow:auto;padding-right:4px">'+droite+'</div></div>',
+    ccMacBtns('ccMacClose('+Q+'cc_con_win'+Q+')|ccConSave()',true,'cc_cw_ok'), 1180, 0);
+}
+function ccCWmenu(id){ ['cw_m_p','cw_m_e','cw_m_c','cw_m_a'].forEach(x=>{ const m=document.getElementById(x); if(m&&x!==id) m.style.display='none'; });
+  if(!id) return; const m=document.getElementById(id); if(m) m.style.display=m.style.display==='block'?'none':'block'; }
+function ccCWkeep(){ const C=window._ccCW; const g=id=>(document.getElementById(id)||{}).value;
+  if(g('cw_des')!=null){ C.des=g('cw_des'); C.num=g('cw_num'); C.statut=g('cw_statut'); C.desc=g('cw_desc');
+    const m=String(g('cw_date')||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); if(m) C.date=m[3]+'-'+m[2]+'-'+m[1]; } }
+function ccCWset(i,v){ const C=window._ccCW; const p=C.pos[i]; if(!p) return; ccCWkeep();
+  if(C.saisie==='net'){ const K=ccConCalc(C); p.brut=K.ratio>0?ccP(v)/K.ratio:ccP(v); } else p.brut=ccP(v);
+  ccConWinRender(); }
+function ccCWaddCfc(cfc){ const C=window._ccCW; if(!C||!cfc) return; ccCWkeep();
+  if((C.pos||[]).some(p=>p.cfc===cfc)){ toast('Le CFC '+cfc+' est déjà dans le contrat.'); return; }
+  const A=ccA();
+  C.pos.push({cfc:cfc, txt:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'', refc:'', brut:0});
+  if(!C.lot){ C.lot=cfc; C.lotLbl=ccCatLbl(cfc)||''; }
+  window._ccCWpos=C.pos.length-1; ccConWinRender(); }
+function ccCWdelPos(){ const C=window._ccCW; const i=window._ccCWpos; if(!C.pos[i]) return; ccCWkeep();
+  C.pos.splice(i,1); window._ccCWpos=Math.max(0,i-1); ccConWinRender(); }
+function ccCWmove(d){ const C=window._ccCW; const i=window._ccCWpos, j=i+d; if(!C.pos[i]||!C.pos[j]) return; ccCWkeep();
+  const t=C.pos[i]; C.pos[i]=C.pos[j]; C.pos[j]=t; window._ccCWpos=j; ccConWinRender(); }
+function ccCWdesc(){ const C=window._ccCW; const p=C.pos[window._ccCWpos]; if(!p) return; ccCWkeep();
+  chPrompt('Texte de la position '+p.cfc+' dans ce contrat :', p.txt||'', v=>{ if(v==null) return; p.txt=String(v).trim(); ccConWinRender(); }); }
+function ccCWcondAdd(dessous){ const C=window._ccCW; ccCWkeep(); C.conds=C.conds||[];
+  const i=Math.min(window._ccCWcond||0, C.conds.length); const at=C.conds.length?(dessous?i+1:i):0;
+  C.conds.splice(at,0,{niv:at+1,ref:0,des:'',genre:'R',refc:'',pct:0,m:true}); window._ccCWcond=at; ccConWinRender(); }
+function ccCWcondDel(){ const C=window._ccCW; const i=window._ccCWcond; if(!C.conds[i]) return;
+  chConfirm('Supprimer la condition « '+(C.conds[i].des||'')+' » ?', ()=>{ ccCWkeep(); C.conds.splice(i,1); window._ccCWcond=0; ccConWinRender(); }); }
+function ccCWcondLast(){ const A=ccA(); const C=window._ccCW;
+  const last=[...(A.ecr||[])].reverse().find(x=>x.type==='contrat'&&x.conds&&x.id!==window._ccCWid);
+  if(!last){ toast('Aucun contrat précédent avec des conditions.'); return; }
+  ccCWkeep(); C.conds=JSON.parse(JSON.stringify(last.conds)); ccConWinRender(); }
+function ccConSave(){
+  const A=ccA(); const C=window._ccCW; if(!A||!C) return; ccCWkeep();
+  if(!(C.pos||[]).length){ chErr('Ajoutez au moins une position au contrat.'); return; }
+  ccConCalc(C);
+  C.pos.forEach(p=>{ p.mnt=Math.round((p._net||0)*100)/100; delete p._net; });
+  (C.conds||[]).forEach(c=>{ delete c._mnt; });
+  if(window._ccCWid){ const e=A.ecr.find(x=>x.id===window._ccCWid); Object.assign(e,C); }
+  else { C.id=pvId(); A.ecr.push(C); }
+  C.pos.forEach(p=>{ ccEnsureRow(A,p.cfc); const r=A.rows.find(x=>x.cfc===p.cfc); if(r&&C.ent) r.ent=C.ent; });
+  _ccOpen[C.lot||C.pos[0].cfc]=true;
+  ccPersist(); ccMacClose('cc_con_win'); ccRender();
+  toast('Contrat '+(C.num||'')+' — '+(C.ent||'')+' enregistré.');
+}
+
+/* Choix de la position (catalogue CFC) */
+function ccCatChoix(cb){
+  window._ccCatCb=cb; window._ccCatSel=null;
+  const Q=PV_Q;
+  ccMac('cc_cat_ch','Choix de la position',
+    '<div style="padding:12px 16px 0"><div style="display:flex;align-items:center;margin-bottom:10px"><span style="font-size:14px;flex:1">Catalogue</span>'+
+      '<input id="cc_cat_q" oninput="ccCatFill()" style="width:300px;border:2px solid #9fc0e8;border-radius:7px;padding:5px 9px;font-size:13px;background:#fff" placeholder="⌕"></div>'+
+      '<div style="border:1px solid #9a9a9a;background:#fff;height:520px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px">'+
+      '<thead><tr><th style="text-align:left;font-weight:normal;padding:4px 8px;width:90px;position:sticky;top:0;background:#fff;border-bottom:1px solid #e2e2e2">N°</th><th style="text-align:left;font-weight:normal;padding:4px 8px;position:sticky;top:0;background:#fff;border-bottom:1px solid #e2e2e2">Texte</th></tr></thead>'+
+      '<tbody id="cc_cat_ls"></tbody></table></div></div>',
+    ccMacBtns('ccMacClose('+Q+'cc_cat_ch'+Q+')|ccCatOk()',false,'cc_cat_ok'), 640, 2);
+  ccCatFill();
+}
+function ccCatFill(){
+  const tb=document.getElementById('cc_cat_ls'); if(!tb) return;
+  const q=((document.getElementById('cc_cat_q')||{}).value||'').toLowerCase();
+  const Q=PV_Q;
+  tb.innerHTML=ccCat().filter(x=>!q||(x[0]+' '+x[1]).toLowerCase().includes(q)).slice(0,1500).map((x,i)=>{ const b=ccNorm(x[0]).length<=2;
+    return '<tr onclick="window._ccCatSel='+Q+pvEscA(x[0])+Q+';ccCatFill()" ondblclick="window._ccCatSel='+Q+pvEscA(x[0])+Q+';ccCatOk()" style="cursor:default;'+(b?'font-weight:700;':'')+
+      'background:'+(x[0]===window._ccCatSel?'#2f6fde;color:#fff':(i%2?'#fff':'#eef3fb'))+'"><td style="padding:2px 8px">'+pvEsc(x[0])+'</td><td style="padding:2px 8px">'+pvEsc(x[1])+'</td></tr>'; }).join('');
+  ccBtnOn('cc_cat_ok', !!window._ccCatSel);
+}
+function ccCatOk(){ const c=window._ccCatSel; if(!c) return; ccMacClose('cc_cat_ch'); const cb=window._ccCatCb; window._ccCatCb=null; if(cb) cb(c); }
+
+/* Annexes du contrat : fenêtre « Document » + « Nouvelle annexe » */
+function ccCWannexes(){ ccCWkeep(); window._ccAnxSel=null; ccAnxRender(); }
+function ccAnxRender(){
+  const C=window._ccCW; C.annexes=C.annexes||[]; const Q=PV_Q;
+  const SV='<svg width="14" height="14" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">';
+  const sel=window._ccAnxSel!=null&&C.annexes[window._ccAnxSel];
+  const b=(svg,fn,on)=>'<button onclick="'+fn+'" style="'+CC_GB+(on?'':';opacity:.45;pointer-events:none')+'">'+svg+'</button>';
+  ccMac('cc_anx','Document',
+    '<div style="padding:12px 16px 0"><div style="border:1px solid #7fb4e8;background:#fff;height:520px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed">'+
+      '<thead><tr><th style="text-align:left;font-weight:normal;padding:4px 8px;border-bottom:1px solid #e2e2e2">Document</th><th style="text-align:left;font-weight:normal;padding:4px 8px;border-bottom:1px solid #e2e2e2">Emplacement</th></tr></thead><tbody>'+
+      C.annexes.map((a,i)=>'<tr onclick="window._ccAnxSel='+i+';ccAnxRender()" ondblclick="window._ccAnxSel='+i+';ccAnxOpen(0)" style="cursor:default;background:'+(i===window._ccAnxSel?'#2f6fde;color:#fff':'#fff')+'">'+
+        '<td style="padding:3px 8px">'+pvEsc(a.titre)+'</td><td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+pvEsc(a.path||'')+'</td></tr>').join('')+
+      '</tbody></table></div>'+
+      '<div style="display:flex;gap:6px;margin-top:8px;position:relative">'+
+        b(SV+'<path d="M7.5 3v9M3 7.5h9"/></svg>','ccAnxEdit(null)',true)+
+        b(SV.replace('1.5','1.3')+'<path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg>','ccAnxEdit(window._ccAnxSel)',!!sel)+
+        b(SV+'<path d="M3 7.5h9"/></svg>','ccAnxDel()',!!sel)+
+        '<span style="position:relative"><button onclick="var m=document.getElementById('+Q+'anx_m'+Q+');m.style.display=m.style.display==='+Q+'block'+Q+'?'+Q+'none'+Q+':'+Q+'block'+Q+'" style="'+CC_GB+(sel?'':';opacity:.45;pointer-events:none')+'"><span style="font-size:14px">⚙︎</span> <span style="font-size:8px">▾</span></button>'+
+          '<div id="anx_m" style="display:none;position:absolute;left:0;top:28px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:200px;z-index:5;font-size:13.5px;padding:4px 0">'+
+            '<div style="padding:6px 16px;cursor:pointer" onclick="ccAnxOpen(1)">Afficher l’annexe</div><div style="padding:6px 16px;cursor:pointer" onclick="ccAnxOpen(0)">Ouvrir l’annexe</div></div></span>'+
+      '</div></div>',
+    ccMacBtns('ccMacClose('+Q+'cc_anx'+Q+')|ccMacClose('+Q+'cc_anx'+Q+');ccConWinRender()',true), 620, 1);
+}
+function ccAnxEdit(i){
+  const C=window._ccCW; const a=(i!=null&&C.annexes[i])?C.annexes[i]:{titre:'',ref:true,path:''};
+  window._ccAnxEditI=i; const Q=PV_Q;
+  const inS='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
+  ccMac('cc_anx_new', i!=null?'Modifier l’annexe':'Nouvelle annexe',
+    '<div style="padding:16px 20px 0;font-size:14px">'+
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><span style="width:150px;text-align:right">Titre du document</span>'+
+        '<input id="anx_t" value="'+pvEscA(a.titre)+'" oninput="ccBtnOn('+Q+'anx_ok'+Q+',!!this.value.trim())" style="'+inS+';flex:1"></div>'+
+      '<label style="display:flex;align-items:center;gap:8px;margin:0 0 12px 164px"><input type="checkbox" id="anx_ref"'+(a.ref!==false?' checked':'')+'> Référence sur un fichier</label>'+
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span style="width:150px;text-align:right">Fichier / Emplacement</span>'+
+        '<input id="anx_p" value="'+pvEscA(a.path||'')+'" style="'+inS+';flex:1"><button onclick="ccAnxPick()" style="'+CC_GB+'">…</button></div>'+
+      '<div style="text-align:center;color:#333;margin-bottom:4px">Utiliser l’emplacement relatif au dossier d’affaire</div></div>',
+    ccMacBtns('ccMacClose('+Q+'cc_anx_new'+Q+')|ccAnxOk()',!!a.titre,'anx_ok'), 640, 2);
+  setTimeout(()=>{ const f=document.getElementById('anx_t'); if(f){ f.focus(); f.select(); } },30);
+}
+async function ccAnxPick(){
+  try{ const r=await fetch('http://127.0.0.1:7788/pickfile'); const j=await r.json();
+    if(j&&j.path){ document.getElementById('anx_p').value=j.path;
+      const t=document.getElementById('anx_t'); if(t&&!t.value.trim()){ t.value=j.path.split('/').pop().replace(/\.[^.]+$/,''); ccBtnOn('anx_ok',true); } } }
+  catch(e){ toast('Serveur de sauvegarde (7788) indisponible — saisissez le chemin à la main.'); }
+}
+function ccAnxOk(){
+  const C=window._ccCW; const t=(document.getElementById('anx_t').value||'').trim(); if(!t) return;
+  const a={titre:t, ref:document.getElementById('anx_ref').checked, path:(document.getElementById('anx_p').value||'').trim()};
+  if(window._ccAnxEditI!=null&&C.annexes[window._ccAnxEditI]) C.annexes[window._ccAnxEditI]=a; else { C.annexes.push(a); window._ccAnxSel=C.annexes.length-1; }
+  ccMacClose('cc_anx_new'); ccAnxRender();
+}
+function ccAnxDel(){ const C=window._ccCW; const i=window._ccAnxSel; if(i==null||!C.annexes[i]) return;
+  chConfirm('Supprimer l’annexe « '+C.annexes[i].titre+' » ?', ()=>{ C.annexes.splice(i,1); window._ccAnxSel=null; ccAnxRender(); }); }
+async function ccAnxOpen(reveal){
+  const C=window._ccCW; const a=C.annexes[window._ccAnxSel]; const m=document.getElementById('anx_m'); if(m) m.style.display='none';
+  if(!a||!a.path){ toast('Aucun fichier référencé pour cette annexe.'); return; }
+  try{ const r=await fetch('http://127.0.0.1:7788/'+(reveal?'revealpath':'openpath')+'?path='+encodeURIComponent(a.path)); const j=await r.json();
+    if(!(j&&j.ok)) chErr('Fichier introuvable : '+pvEsc(a.path)); }
+  catch(e){ toast('Serveur de sauvegarde (7788) indisponible.'); }
+}
+
 /* Paiement — sur contrat (cumul affiché) ou hors contrat ; Situation / Paiement final ; statut */
 function ccDlgPay(id,cfc,hors){
   const A=ccA(); const e=id?A.ecr.find(x=>x.id===id):null;

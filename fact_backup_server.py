@@ -179,6 +179,47 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": str(e)})
             return
 
+        if u.path == "/pickfile":
+            # Sélecteur de FICHIER natif (annexes de contrat) → chemin POSIX.
+            try:
+                script = (
+                    'tell application "System Events"\n'
+                    '  activate\n'
+                    '  try\n'
+                    '    set f to choose file with prompt "Choisir le fichier de l\'annexe"\n'
+                    '    return POSIX path of f\n'
+                    '  on error number -128\n'
+                    '    return "__CANCELLED__"\n'
+                    '  end try\n'
+                    'end tell'
+                )
+                args = ["osascript"]
+                for line in script.split("\n"):
+                    args += ["-e", line]
+                r = subprocess.run(args, capture_output=True, text=True, timeout=300)
+                out = (r.stdout or "").strip()
+                if r.returncode != 0 or out == "" or out == "__CANCELLED__":
+                    self._json(200, {"ok": True, "cancelled": True})
+                    return
+                self._json(200, {"ok": True, "path": out})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
+        if u.path in ("/openpath", "/revealpath"):
+            # Ouvre (ou révèle dans le Finder) un fichier d'annexe existant.
+            q = urllib.parse.parse_qs(u.query)
+            path = os.path.expanduser((q.get("path", [""])[0]).strip())
+            if not path or not os.path.exists(path):
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % path})
+                return
+            try:
+                subprocess.Popen(["open", "-R", path] if u.path == "/revealpath" else ["open", path])
+                self._json(200, {"ok": True})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         if u.path == "/getpdf":
             # Renvoie les octets d'un PDF de « PDF Devis » (pour la fusion côté app).
             q = urllib.parse.parse_qs(u.query)

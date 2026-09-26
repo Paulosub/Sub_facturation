@@ -15343,27 +15343,61 @@ function ccRender(){
         '<div onclick="ccSideGo('+i2+','+PV_Q+sb[0]+PV_Q+')" style="padding:4px 10px 4px 30px;cursor:pointer;font-size:12.5px;color:'+
         (sSel[0]===i2&&sSel[1]===sb[0]?'#fff;background:#b0b0b0':'#1a1a1a')+'">'+sb[1]+'</div>').join(''):'');
   }).join('');
+  /* ── barre du modèle : ✚▾ ✏ − filtre▾ | quadrillage▾ Standard ⚙▾ feuille▾ ── */
+  const selR=A.rows.find(x=>x.id===window._ccSelRow);
+  const selE=(A.ecr||[]).find(x=>x.id===window._ccSelEcr);
+  const cfcSel=selR?selR.cfc:(selE?(selE.cfc||selE.src||((selE.pos||[])[0]||{}).cfc):'');
+  const aContrat=cfcSel&&(A.ecr||[]).some(e=>e.type==='contrat'&&(e.pos||[]).some(p2=>p2.cfc===cfcSel));
+  const Q=PV_Q, cq=Q+pvEscA(cfcSel||'')+Q;
+  const itG=(lbl,fn,on)=>item(lbl,'ccListMenu(null);'+fn,!!on);
+  const fly=(lbl,inner)=>'<div style="position:relative;padding:5px 14px 5px 16px;display:flex;justify-content:space-between;gap:30px;cursor:default"'+
+    ' onmouseover="this.style.background='+Q+'#2f6fde'+Q+';this.style.color='+Q+'#fff'+Q+';this.lastElementChild.style.display='+Q+'block'+Q+'"'+
+    ' onmouseout="this.style.background='+Q+Q+';this.style.color='+Q+Q+';this.lastElementChild.style.display='+Q+'none'+Q+'">'+
+    '<span>'+lbl+'</span><span style="font-size:11px">▶</span>'+
+    '<div style="display:none;position:absolute;left:100%;top:-4px;background:#fff;color:#1a1a1a;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:240px;padding:4px 0;max-height:70vh;overflow:auto">'+inner+'</div></div>';
+  const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+  const mutItems=Object.keys(CC_MUT_GENRES).map(g=>itG(CC_MUT_GENRES[g]+' …','ccAfMut('+cq+','+Q+g+Q+')',!!cfcSel)).join('');
+  const DT=A.details||{};
+  const dOn=k=>DT[k]!=null?!!DT[k]:['mut','con','ave','pay'].includes(k);
+  const ckI=(on3,lbl,fn)=>'<div style="padding:5px 16px 5px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+Q+'#eef4f9'+Q+'" onmouseout="this.style.background='+Q+Q+'" onclick="'+fn+'"><span style="width:18px;flex:none">'+(on3?'✓':'')+'</span>'+lbl+'</div>';
+  const navI=A.rows.filter(r=>ccNorm(r.cfc).length<=2).slice().sort((x,y)=>String(x.cfc).localeCompare(String(y.cfc)))
+    .map(r=>'<div style="padding:4px 16px;cursor:pointer" onmouseover="this.style.background='+Q+'#eef4f9'+Q+'" onmouseout="this.style.background='+Q+Q+'" onclick="ccListMenu(null);ccAfNav('+Q+pvEscA(r.id)+Q+')">'+pvEsc(r.cfc)+' '+pvEsc(r.lbl||'')+'</div>').join('');
   const bar='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
-    '<div style="position:relative">'+Bt('plus','ccListMenu('+PV_Q+'cc_af_menu_p'+PV_Q+')','Ajouter',1)+
-      menuBox('cc_af_menu_p', item('Poste CFC …','ccListMenu(null);ccDlgPoste()',true)+
-        item('Nouvelle écriture …','ccListMenu(null);ccAfEcr()',true)+
-        item('CFC et entreprises du PV de chantier','ccListMenu(null);ccImportPV()',true))+'</div>'+
-    Bt('pencil','ccAfEdit()','Éditer le poste sélectionné')+
-    Bt('minus','ccAfDel()','Supprimer le poste sélectionné')+
-    '<div style="position:relative">'+Bt('filt','ccListMenu('+PV_Q+'cc_af_menu_f'+PV_Q+')','Filtre',1)+
-      menuBox('cc_af_menu_f', item('Filtrer …','',false))+'</div>'+
+    '<div style="position:relative">'+Bt('plus','ccListMenu('+Q+'cc_af_menu_p'+Q+')','Nouvelle écriture',1)+
+      menuBox('cc_af_menu_p',
+        fly('Mutations 1', mutItems)+
+        itG('Contrat …','ccDlgCon('+Q+'contrat'+Q+',null,'+cq+')',!!cfcSel)+
+        itG('Avenant …','ccDlgCon('+Q+'avenant'+Q+',null,'+cq+')',aContrat)+
+        itG('Informations montants bruts …','',false)+sep+
+        itG('Paiement sur contrat …','ccDlgPay(null,'+cq+',false)',aContrat)+
+        itG('Paiement hors contrat …','ccDlgPay(null,'+cq+',true)',!!cfcSel)+
+        itG('Coût probable perso …','ccDlgCp('+cq+')',!!cfcSel)+
+        itG('Provisions …','ccDlgProv(null,'+cq+')',!!cfcSel)+sep+
+        itG('Editer l’écriture …','ccAfEdit()',!!selE)+
+        itG('Supprimer l’écriture …','ccAfDel()',!!selE))+'</div>'+
+    Bt('pencil','ccAfEdit()','Éditer l’écriture sélectionnée')+
+    Bt('minus','ccAfDel()','Supprimer l’écriture sélectionnée')+
+    '<div style="position:relative">'+Bt('filt','ccListMenu('+Q+'cc_af_menu_f'+Q+')','Filtre',1)+
+      menuBox('cc_af_menu_f', itG('Editer le filtre …','ccAfFiltre()',true)+itG('Désactiver le filtre','ccAfFiltreOff()',!!A.filtre))+'</div>'+
     '<span style="width:12px"></span>'+
-    '<div style="position:relative">'+Bt('tbl','ccListMenu('+PV_Q+'cc_af_menu_t'+PV_Q+')','Affichage du tableau',1)+
-      menuBox('cc_af_menu_t', ccPresMenuHTML(A))+'</div>'+
+    '<div style="position:relative">'+Bt('tbl','ccListMenu('+Q+'cc_af_menu_t'+Q+')','Affichage du tableau',1)+
+      menuBox('cc_af_menu_t', ccPresMenuHTML(A)+sep+fly('Navigation', navI||'<div style="padding:5px 16px;color:#b5b5b5">Aucun groupe</div>'))+'</div>'+
     '<span style="font-size:13px">'+pvEsc(A.presAct||'Standard')+'</span>'+
     '<span style="width:8px"></span>'+
-    '<div style="position:relative">'+Bt('gear','ccListMenu('+PV_Q+'cc_af_menu_g'+PV_Q+')','Paramètres',1)+
-      menuBox('cc_af_menu_g', item('Modifier la TVA …','ccListMenu(null);ccAfTva()',true)+
-        '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
-        item('Tout déplier','ccListMenu(null);ccTglAll(true)',true)+
-        item('Tout replier','ccListMenu(null);ccTglAll(false)',true))+'</div>'+
-    '<div style="position:relative">'+Bt('doc','ccListMenu('+PV_Q+'cc_af_menu_d'+PV_Q+')','Documents',1)+
-      menuBox('cc_af_menu_d', item('Document impression …','',false))+'</div>'+
+    '<div style="position:relative">'+Bt('gear','ccListMenu('+Q+'cc_af_menu_g'+Q+')','Paramètres',1)+
+      menuBox('cc_af_menu_g', itG('Affichage …','toast('+Q+'Affichage — à venir.'+Q+')',true)+
+        fly('Détails',
+          ckI(dOn('mut'),'Détails des mutations 1','ccAfDet('+Q+'mut'+Q+')')+
+          ckI(dOn('con'),'Détails des contrats','ccAfDet('+Q+'con'+Q+')')+
+          ckI(dOn('ave'),'Détails des avenants','ccAfDet('+Q+'ave'+Q+')')+
+          ckI(dOn('adj'),'Détails des adjudications','ccAfDet('+Q+'adj'+Q+')')+
+          ckI(dOn('pay'),'Détails des paiements','ccAfDet('+Q+'pay'+Q+')')+
+          ckI(dOn('prov'),'Détails des provisions','ccAfDet('+Q+'prov'+Q+')')+
+          ckI(dOn('cp'),'Détails des coûts probables perso','ccAfDet('+Q+'cp'+Q+')'))+sep+
+        itG('Copier le contenu du tableau dans le presse-papier','ccDgCopy()',true)+
+        itG('Exporter le tableau dans un fichier CSV','ccDgCsv()',true))+'</div>'+
+    '<div style="position:relative">'+Bt('doc','ccListMenu('+Q+'cc_af_menu_d'+Q+')','Documents',1)+
+      menuBox('cc_af_menu_d', itG('Contrôle des coûts … [Ancien document]','toast('+Q+'Document Contrôle des coûts — à venir.'+Q+')',true))+'</div>'+
     '</div>';
   const F0=v=>Math.abs(v)>0.005?ccF0(v):'';
   if(sSel[0]===0&&sSel[1]==='ed'){
@@ -15477,16 +15511,18 @@ function ccRender(){
     '<td style="font-weight:700">'+F0(C.tot.dgRev)+'</td><td>'+F0(C.tot.con)+'</td><td>'+F0(C.tot.pay)+'</td>'+
     '<td style="font-weight:700">'+F0(C.tot.prob)+'</td>'+
     '<td style="color:'+(C.tot.etat>0.005?'#c62828':'#1e6b2d')+'">'+F0(C.tot.etat)+'</td></tr>';
+  const fq=String(A.filtre||'').toLowerCase();
   rows.forEach(r=>{
+    if(fq&&!(String(r.cfc)+' '+(r.lbl||'')+' '+(r.ent||'')).toLowerCase().includes(fq)) return;
     const a=C.agg[r.cfc]||{dg:0,mut:0,con:0,ave:0,prov:0,pay:0,dgRev:0,prob:0,etat:0};
     const lvl=ccLvl(r.cfc);
     const hasEcr=ccEcrOf(A,r.cfc).length>0;
     const gras=lvl<=2?'font-weight:700;':'';
-    h+='<tr data-rid="'+pvEscA(r.id)+'" data-cfc="'+pvEscA(r.cfc)+'" onclick="ccAfSel(this)" oncontextmenu="ccAfCtx(event,'+PV_Q+pvEscA(r.id)+PV_Q+','+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+
+    h+='<tr'+(r.id===window._ccSelRow?' class="cc-af-sel"':'')+' data-rid="'+pvEscA(r.id)+'" data-cfc="'+pvEscA(r.cfc)+'" onclick="ccAfSel(this)" ondblclick="ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')" oncontextmenu="ccAfCtx(event,'+PV_Q+pvEscA(r.id)+PV_Q+','+PV_Q+pvEscA(r.cfc)+PV_Q+')" style="cursor:default">'+
       '<td style="'+gras+'"><span class="cc-tgl" style="cursor:pointer;display:inline-block;width:12px;color:#666" onclick="event.stopPropagation();ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+(hasEcr?(_ccOpen[r.cfc]?'▾':'▸'):'')+'</span>'+pvEsc(r.cfc)+'</td>'+
-      '<td style="'+gras+'"><input value="'+pvEsc(r.lbl||'')+'" onclick="event.stopPropagation()" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'lbl'+PV_Q+',this)"></td>'+
-      '<td><input value="'+pvEsc(r.ent||'')+'" list="cc_ent_dl" onclick="event.stopPropagation()" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'ent'+PV_Q+',this)"></td>'+
-      '<td><input style="text-align:right" value="'+(ccP(r.dg)?ccF(r.dg):'')+'" onclick="event.stopPropagation()" onchange="ccSetRow('+PV_Q+r.id+PV_Q+','+PV_Q+'dg'+PV_Q+',this)"></td>'+
+      '<td style="'+gras+'">'+pvEsc(r.lbl||'')+'</td>'+
+      '<td>'+pvEsc(r.ent||'')+'</td>'+
+      '<td style="'+gras+'">'+F0(a.dg)+'</td>'+
       '<td>'+F0(a.mut)+'</td><td>'+F0(a.ave)+'</td>'+
       '<td style="'+gras+'">'+F0(a.dgRev)+'</td><td>'+F0(a.con)+'</td>'+
       '<td'+(a.ff?' style="color:#c62828"':'')+'>'+(a.ff?'FF ':'')+F0(a.pay)+'</td>'+
@@ -15500,7 +15536,10 @@ function ccRender(){
   out.innerHTML=h;
 }
 function ccEcrRows(A,cfc){
-  const es=ccEcrOf(A,cfc); let h='';
+  const DT=A.details||{};
+  const dOn=k=>DT[k]!=null?!!DT[k]:['mut','con','ave','pay'].includes(k);
+  const typK={mut:'mut',contrat:'con',avenant:'ave',pay:'pay',prov:'prov',cp:'cp',adj:'adj'};
+  const es=ccEcrOf(A,cfc).filter(e=>dOn(typK[e.type]||e.type)); let h='';
   es.forEach(e=>{
     /* colonnes : 0 CFC · 1 Désignation · 2 Entreprise · 3 DG · 4 Transferts · 5 Variations ·
        6 DG rév. · 7 Contrats+avenants · 8 Paiements · 9 Coût probable · 10 État */
@@ -15519,10 +15558,8 @@ function ccEcrRows(A,cfc){
       c8=(e.typeP==='final'?'FF ':'')+ccF(ccP(e.mnt)); red=(e.typeP==='final');
     } else if(e.type==='prov'){ lbl='&gt; provision'+(e.des?' · '+pvEsc(e.des):' ')+' · '+ccF(ccP(e.mnt)); }
     else if(e.type==='cp'){ lbl='&gt; coût probable perso'; c9=ccF(ccP(e.mnt)); }
-    h+='<tr class="cc-ecr"><td></td>'+
-      '<td style="padding-left:22px;color:#666;font-size:12px">'+lbl+
-        ' <span style="cursor:pointer" onclick="event.stopPropagation();ccEditEcr('+PV_Q+e.id+PV_Q+')" title="Éditer">✎</span>'+
-        ' <span style="cursor:pointer" onclick="event.stopPropagation();ccDelEcr('+PV_Q+e.id+PV_Q+')" title="Supprimer">✕</span></td>'+
+    h+='<tr class="cc-ecr'+(e.id===window._ccSelEcr?' cc-af-sel':'')+'" data-eid="'+pvEscA(e.id)+'" onclick="ccAfSelE(this)" ondblclick="ccAfSelE(this);ccAfEdit()" style="cursor:default"><td></td>'+
+      '<td style="padding-left:22px;color:#666;font-size:12px">'+lbl+'</td>'+
       '<td></td><td></td><td style="color:#b06f00">'+c4+'</td><td style="color:#1a5f9e">'+c5+'</td><td></td>'+
       '<td style="color:#1a5f9e">'+c7+'</td><td style="color:'+(red?'#c62828':'#2e7d32')+'">'+c8+'</td>'+
       '<td>'+c9+'</td><td></td></tr>';
@@ -16049,16 +16086,40 @@ function ccSideGo(i2, sub){
   window._ccSideSel=[i2,sub]; ccRender();
   toast(noms[i2]+' · '+(sub==='doc'?'Documents':'Edition')+' — à venir.');
 }
-function ccAfSel(tr){ window._ccSelRow=tr.getAttribute('data-rid');
+function ccAfSel(tr){ window._ccSelRow=tr.getAttribute('data-rid'); window._ccSelEcr=null;
+  document.querySelectorAll('#cc_af_tb tr.cc-af-sel').forEach(x=>x.classList.remove('cc-af-sel'));
+  tr.classList.add('cc-af-sel'); }
+function ccAfSelE(tr){ window._ccSelEcr=tr.getAttribute('data-eid'); window._ccSelRow=null;
   document.querySelectorAll('#cc_af_tb tr.cc-af-sel').forEach(x=>x.classList.remove('cc-af-sel'));
   tr.classList.add('cc-af-sel'); }
 function ccAfNeed(){ const A=ccA(); const id=window._ccSelRow;
   const r=A&&A.rows.find(x=>x.id===id);
   if(!r){ toast('Sélectionnez d’abord un poste dans le tableau.'); return null; } return r; }
-function ccAfEdit(){ const r=ccAfNeed(); if(!r) return;
-  const inp=document.querySelector('#cc_af_tb tr[data-rid="'+r.id+'"] td:nth-child(2) input'); if(inp) inp.focus(); }
-function ccAfDel(){ const r=ccAfNeed(); if(r) ccDelPoste(r.id); }
+/* ✏ / − : n'agissent que sur une ÉCRITURE isolée (sous-ligne dépliée) */
+function ccAfEdit(){ const A=ccA(); const e=A&&(A.ecr||[]).find(x=>x.id===window._ccSelEcr);
+  if(!e){ chErr('Vous ne pouvez éditer que des écritures isolées.'); return; }
+  ccEditEcr(e.id); }
+function ccAfDel(){ const A=ccA(); const e=A&&(A.ecr||[]).find(x=>x.id===window._ccSelEcr);
+  if(!e){ chErr('Vous ne pouvez supprimer que des écritures isolées.'); return; }
+  chWarn2('Voulez-vous vraiment supprimer cette écriture ?', ()=>{
+    A.ecr=A.ecr.filter(x=>x.id!==e.id); window._ccSelEcr=null; ccPersist(); ccRender(); }); }
 function ccAfEcr(){ const r=ccAfNeed(); if(r) ccRowMenu(r.cfc); }
+function ccAfMut(cfc,genre){
+  if(!cfc){ toast('Sélectionnez d’abord un poste.'); return; }
+  ccDlgMut(null,cfc);
+  setTimeout(()=>{ document.querySelectorAll('#cc_ecr_box select').forEach(s2=>{
+    if([...s2.options].some(o=>o.value===genre)){ s2.value=genre; s2.dispatchEvent(new Event('change')); } }); },30);
+}
+function ccAfFiltre(){ const A=ccA(); if(!A) return;
+  chPrompt('Filtrer les postes (CFC, désignation ou entreprise contient) :', A.filtre||'', v=>{
+    A.filtre=String(v==null?'':v).trim(); ccPersist(); ccRender(); }); }
+function ccAfFiltreOff(){ const A=ccA(); if(!A) return; A.filtre=''; ccPersist(); ccRender(); }
+function ccAfDet(k){ const A=ccA(); if(!A) return; A.details=A.details||{};
+  const def=['mut','con','ave','pay'].includes(k);
+  A.details[k]=!(A.details[k]!=null?A.details[k]:def); ccPersist(); ccRender();
+  setTimeout(()=>ccListMenu('cc_af_menu_g'),0); }
+function ccAfNav(id){ window._ccSelRow=id; window._ccSelEcr=null; ccRender();
+  setTimeout(()=>{ const tr=document.querySelector('#cc_af_tb tr[data-rid="'+id+'"]'); if(tr) tr.scrollIntoView({block:'center'}); },30); }
 function ccAfTva(){ const A=ccA(); if(!A) return;
   chPrompt('TVA du contrôle du coût (%) :', String(A.tva!=null?A.tva:8.1), v=>{
     const t=ccP(v); if(!(t>=0)) return; A.tva=t; ccPersist(); ccRender(); }); }

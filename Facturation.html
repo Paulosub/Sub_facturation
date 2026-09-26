@@ -15518,7 +15518,7 @@ function ccRender(){
     const lvl=ccLvl(r.cfc);
     const hasEcr=ccEcrOf(A,r.cfc).length>0;
     const gras=lvl<=2?'font-weight:700;':'';
-    h+='<tr'+(r.id===window._ccSelRow?' class="cc-af-sel"':'')+' data-rid="'+pvEscA(r.id)+'" data-cfc="'+pvEscA(r.cfc)+'" onclick="ccAfSel(this)" ondblclick="ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')" oncontextmenu="ccAfCtx(event,'+PV_Q+pvEscA(r.id)+PV_Q+','+PV_Q+pvEscA(r.cfc)+PV_Q+')" style="cursor:default">'+
+    h+='<tr'+(r.id===window._ccSelRow?' class="cc-af-sel"':'')+' data-rid="'+pvEscA(r.id)+'" data-cfc="'+pvEscA(r.cfc)+'" onclick="ccAfSel(this)" oncontextmenu="ccAfCtx(event,'+PV_Q+pvEscA(r.id)+PV_Q+','+PV_Q+pvEscA(r.cfc)+PV_Q+')" style="cursor:default">'+
       '<td style="'+gras+'"><span class="cc-tgl" style="cursor:pointer;display:inline-block;width:12px;color:#666" onclick="event.stopPropagation();ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+(hasEcr?(_ccOpen[r.cfc]?'▾':'▸'):'')+'</span>'+pvEsc(r.cfc)+'</td>'+
       '<td style="'+gras+'">'+pvEsc(r.lbl||'')+'</td>'+
       '<td>'+pvEsc(r.ent||'')+'</td>'+
@@ -15559,7 +15559,7 @@ function ccEcrRows(A,cfc){
       c8=(e.typeP==='final'?'FF ':'')+ccF(ccP(e.mnt)); red=(e.typeP==='final');
     } else if(e.type==='prov'){ lbl='&gt; provision'+(e.des?' · '+pvEsc(e.des):' ')+' · '+ccF(ccP(e.mnt)); }
     else if(e.type==='cp'){ lbl='&gt; coût probable perso'; c9=ccF(ccP(e.mnt)); }
-    h+='<tr class="cc-ecr'+(e.id===window._ccSelEcr?' cc-af-sel':'')+'" data-eid="'+pvEscA(e.id)+'" onclick="ccAfSelE(this)" ondblclick="ccAfSelE(this);ccAfEdit()" style="cursor:default"><td></td>'+
+    h+='<tr class="cc-ecr'+(e.id===window._ccSelEcr?' cc-af-sel':'')+'" data-eid="'+pvEscA(e.id)+'" onclick="ccAfSelE(this)" style="cursor:default"><td></td>'+
       '<td></td><td style="color:#555;font-size:12.5px">'+lbl+'</td>'+
       '<td></td><td style="color:#b06f00">'+c4+'</td><td style="color:#1a5f9e">'+c5+'</td><td></td>'+
       '<td style="color:#1a5f9e">'+c7+'</td><td style="color:'+(red?'#c62828':'#2e7d32')+'">'+c8+'</td>'+
@@ -16087,12 +16087,25 @@ function ccSideGo(i2, sub){
   window._ccSideSel=[i2,sub]; ccRender();
   toast(noms[i2]+' · '+(sub==='doc'?'Documents':'Edition')+' — à venir.');
 }
-function ccAfSel(tr){ window._ccSelRow=tr.getAttribute('data-rid'); window._ccSelEcr=null;
-  document.querySelectorAll('#cc_af_tb tr.cc-af-sel').forEach(x=>x.classList.remove('cc-af-sel'));
-  tr.classList.add('cc-af-sel'); }
-function ccAfSelE(tr){ window._ccSelEcr=tr.getAttribute('data-eid'); window._ccSelRow=null;
-  document.querySelectorAll('#cc_af_tb tr.cc-af-sel').forEach(x=>x.classList.remove('cc-af-sel'));
-  tr.classList.add('cc-af-sel'); }
+/* la sélection réactive les menus (✚ Contrat …, etc.) : re-rendu en gardant le défilement */
+function ccAfRerender(){
+  const w=document.getElementById('cc_af_wrap'); const st=w?w.scrollTop:0, sl=w?w.scrollLeft:0;
+  ccRender();
+  const w2=document.getElementById('cc_af_wrap'); if(w2){ w2.scrollTop=st; w2.scrollLeft=sl; }
+}
+/* le re-rendu remplace la ligne : le double-clic est donc détecté ici (2 clics < 450 ms) */
+function ccAfSel(tr){ const id=tr.getAttribute('data-rid'), t=Date.now();
+  if(window._ccSelRow===id&&!window._ccSelEcr){
+    if(t-(window._ccClickT||0)<450){ window._ccClickT=0; ccTgl(tr.getAttribute('data-cfc')); }
+    else window._ccClickT=t;
+    return; }
+  window._ccClickT=t; window._ccSelRow=id; window._ccSelEcr=null; ccAfRerender(); }
+function ccAfSelE(tr){ const id=tr.getAttribute('data-eid'), t=Date.now();
+  if(window._ccSelEcr===id){
+    if(t-(window._ccClickT||0)<450){ window._ccClickT=0; ccAfEdit(); }
+    else window._ccClickT=t;
+    return; }
+  window._ccClickT=t; window._ccSelEcr=id; window._ccSelRow=null; ccAfRerender(); }
 function ccAfNeed(){ const A=ccA(); const id=window._ccSelRow;
   const r=A&&A.rows.find(x=>x.id===id);
   if(!r){ toast('Sélectionnez d’abord un poste dans le tableau.'); return null; } return r; }

@@ -16356,6 +16356,58 @@ function ccSaveCon(type,id){
    CFC du devis à gauche, lot, positions (brut/net), conditions (TVA…), désignation,
    n°, date, statut, description, annexes, niveau des prestations.
    ══════════════════════════════════════════════════════════════════════════ */
+/* Types de conditions (colonne Ge…) : code, signe (+ majoration / − déduction), mode
+   % (pourcentage de la base courante) ou − (montant fixe déduit) */
+const CC_COND_TYPES=[
+  {k:'esc',lbl:'Escompte',code:'E',s:-1,m:'pct'},
+  {k:'ded',lbl:'Déduction',code:'D',s:-1,m:'pct'},
+  {k:'gar',lbl:'Garantie',code:'G',s:-1,m:'pct',M:false},
+  {k:'dgar',lbl:'Déduction de garantie',code:'DG',s:-1,m:'pct'},
+  {k:'rab',lbl:'Rabais',code:'R',s:-1,m:'pct'},
+  {k:'tva',lbl:'TVA',code:'M',s:1,m:'pct'},
+  {k:'recp',lbl:'Taxes de recyclage (%)',code:'T',s:-1,m:'pct'},
+  {k:'recm',lbl:'Taxes de recyclage (−)',code:'T',s:-1,m:'mnt'},
+  {k:'prop',lbl:'Prorata (%)',code:'P',s:-1,m:'pct'},
+  {k:'prom',lbl:'Prorata (−)',code:'P',s:-1,m:'mnt'},
+  {k:'pubp',lbl:'Panneau publicitaire (%)',code:'PP',s:-1,m:'pct'},
+  {k:'pubm',lbl:'Panneau publicitaire (−)',code:'PP',s:-1,m:'mnt'},
+  {k:'assp',lbl:'Assurance (%)',code:'A',s:-1,m:'pct'},
+  {k:'assm',lbl:'Assurance (−)',code:'A',s:-1,m:'mnt'},
+  {k:'enep',lbl:'Frais en énergie (%)',code:'FE',s:-1,m:'pct'},
+  {k:'enem',lbl:'Frais en énergie (−)',code:'FE',s:-1,m:'mnt'},
+  {k:'eaup',lbl:'Frais en eau (%)',code:'FW',s:-1,m:'pct'},
+  {k:'eaum',lbl:'Frais en eau (−)',code:'FW',s:-1,m:'mnt'},
+  {k:'autp',lbl:'Autres (%)',code:'X',s:-1,m:'pct'},
+  {k:'autm',lbl:'Autres (−)',code:'X',s:-1,m:'mnt'}];
+function ccCondT(c){ if(!c) return CC_COND_TYPES[5];
+  let t=c.type&&CC_COND_TYPES.find(x=>x.k===c.type);
+  if(!t) t=c.genre==='R'?CC_COND_TYPES[4]:CC_COND_TYPES[5];   /* anciennes conditions M / R */
+  return t; }
+function ccCWgenre(ev,i){
+  ev.stopPropagation();
+  let m=document.getElementById('cw_genre_pop');
+  if(!m){ m=document.createElement('div'); m.id='cw_genre_pop';
+    m.style.cssText='display:none;position:fixed;z-index:10050;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.28);padding:4px 0;font-size:13.5px;min-width:250px;max-height:80vh;overflow:auto';
+    document.body.appendChild(m);
+    document.addEventListener('mousedown',e2=>{ const p2=document.getElementById('cw_genre_pop'); if(p2&&!p2.contains(e2.target)) p2.style.display='none'; }); }
+  const cur=ccCondT(window._ccCW.conds[i]).k, Q=PV_Q;
+  m.innerHTML=CC_COND_TYPES.map(t=>'<div onclick="ccCWgenreSet('+i+','+Q+t.k+Q+')" style="padding:4px 18px;cursor:pointer'+(t.k===cur?';background:#2f6fde;color:#fff':'')+'"'+
+    (t.k===cur?'':' onmouseover="this.style.background='+Q+'#eef4f9'+Q+'" onmouseout="this.style.background='+Q+Q+'"')+'>'+t.lbl+'</div>').join('');
+  const r=ev.target.getBoundingClientRect();
+  m.style.display='block';
+  m.style.left=Math.min(r.left, innerWidth-270)+'px';
+  m.style.top=Math.max(8, Math.min(r.bottom-40, innerHeight-m.offsetHeight-8))+'px';
+}
+function ccCWgenreSet(i,k){
+  const c=window._ccCW.conds[i], t=CC_COND_TYPES.find(x=>x.k===k); if(!c||!t) return;
+  ccCWkeep();
+  const ancienLbl=ccCondT(c).lbl;
+  c.type=k; c.genre=t.code;
+  if(!c.des||c.des===ancienLbl) c.des=t.lbl;
+  if(t.M===false) c.m=false;
+  const p=document.getElementById('cw_genre_pop'); if(p) p.style.display='none';
+  window._ccCWcond=i; ccConWinRender();
+}
 const CC_CON_STATUTS=[['brouillon','Brouillon'],['en traitement','En traitement'],['sur demande','Sur demande'],['pour signature','Pour signature'],['definitif','Définitif']];
 /* fenêtres empilables façon macOS */
 function ccMac(id,title,body,foot,width,lvl){
@@ -16468,8 +16520,9 @@ function ccConAdrOk(){
 function ccConCalc(C){
   const brut=(C.pos||[]).reduce((s,p)=>s+ccP(p.brut),0);
   let run=brut;
-  (C.conds||[]).forEach(c=>{ const m=run*ccP(c.pct)/100*(c.genre==='R'?-1:1); c._mnt=m; if(c.m!==false) run+=m; });
-  const ratio=brut>0.005?run/brut:(1+((C.conds||[]).filter(c=>c.m!==false&&c.genre!=='R').reduce((s,c)=>s+ccP(c.pct),0)/100));
+  (C.conds||[]).forEach(c=>{ const t=ccCondT(c);
+    const m=t.s*(t.m==='mnt'?ccP(c.pct):run*ccP(c.pct)/100); c._mnt=m; if(c.m!==false) run+=m; });
+  const ratio=brut>0.005?run/brut:(1+((C.conds||[]).filter(c=>c.m!==false&&ccCondT(c).s>0).reduce((s,c)=>s+ccP(c.pct),0)/100));
   (C.pos||[]).forEach(p=>{ p._net=ccP(p.brut)*ratio; });
   return {brut:brut, net:run, ratio:ratio};
 }
@@ -16477,14 +16530,14 @@ function ccConWin(id, adr){
   const A=ccA(); if(!A) return;
   let C;
   if(id){ const e=A.ecr.find(x=>x.id===id); if(!e) return; C=JSON.parse(JSON.stringify(e));
-    if(!C.conds) C.conds=[{niv:1,ref:0,des:'TVA',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}];
+    if(!C.conds) C.conds=[{niv:1,ref:0,des:'TVA',type:'tva',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}];
     (C.pos||[]).forEach(p=>{ if(p.brut==null){ p.brut=ccP(p.mnt)/(1+ccP(A.tva!=null?A.tva:8.1)/100); } if(!p.txt) p.txt=ccCatLbl(p.cfc)||''; });
   } else {
     const cfc=window._ccConCfc||'';
     const lastC=[...A.ecr].reverse().find(x=>x.type==='contrat'&&x.conds);
     C={type:'contrat', ent:adr.ent, resp:adr.resp||'', adrId:adr.id, lot:cfc, lotLbl:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'',
       pos:cfc?[{cfc:cfc, txt:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'', refc:'', brut:0}]:[],
-      conds:[{niv:1,ref:0,des:'TVA',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}],
+      conds:[{niv:1,ref:0,des:'TVA',type:'tva',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}],
       saisie:'brut', prio:true, des:'Contrat', num:ccNum('contrat'), date:ccToday(), statut:'definitif', desc:'', annexes:[], niveau:0};
     void lastC;
   }
@@ -16519,7 +16572,7 @@ function ccConWinRender(){
   const condRows=(C.conds||[]).map((c,i)=>'<tr onclick="window._ccCWcond='+i+';ccConWinRender()" style="background:'+(i===window._ccCWcond?'#2f6fde;color:#fff':zeb(i))+'">'+
       '<td style="padding:2px 7px">'+(i+1)+'</td><td style="padding:2px 7px">'+(c.ref||0)+'</td>'+
       '<td style="padding:2px 7px"><input value="'+pvEscA(c.des||'')+'" onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].des=this.value" style="'+cellIn+';color:inherit"></td>'+
-      '<td style="padding:2px 7px"><select onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].genre=this.value;ccConWinRender()" style="border:0;background:transparent;color:inherit;font:inherit"><option value="M"'+(c.genre!=='R'?' selected':'')+'>M</option><option value="R"'+(c.genre==='R'?' selected':'')+'>R</option></select></td>'+
+      '<td onclick="ccCWgenre(event,'+i+')" title="'+pvEscA(ccCondT(c).lbl)+' — cliquer pour changer le type de condition" style="padding:2px 7px;cursor:pointer;text-decoration:underline dotted">'+ccCondT(c).code+'</td>'+
       '<td style="padding:2px 7px"><input value="'+pvEscA(c.refc||'')+'" onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].refc=this.value" style="'+cellIn+';color:inherit"></td>'+
       '<td style="padding:2px 7px;text-align:right"><input value="'+(c.pct!=null?c.pct:'')+'" onclick="event.stopPropagation()" onchange="window._ccCW.conds['+i+'].pct=ccP(this.value);ccConWinRender()" style="'+cellIn+';text-align:right;color:inherit"></td>'+
       '<td style="padding:2px 7px;text-align:right">'+F(c._mnt||0)+'</td>'+
@@ -16594,7 +16647,7 @@ function ccCWdesc(){ const C=window._ccCW; const p=C.pos[window._ccCWpos]; if(!p
   chPrompt('Texte de la position '+p.cfc+' dans ce contrat :', p.txt||'', v=>{ if(v==null) return; p.txt=String(v).trim(); ccConWinRender(); }); }
 function ccCWcondAdd(dessous){ const C=window._ccCW; ccCWkeep(); C.conds=C.conds||[];
   const i=Math.min(window._ccCWcond||0, C.conds.length); const at=C.conds.length?(dessous?i+1:i):0;
-  C.conds.splice(at,0,{niv:at+1,ref:0,des:'',genre:'R',refc:'',pct:0,m:true}); window._ccCWcond=at; ccConWinRender(); }
+  C.conds.splice(at,0,{niv:at+1,ref:0,des:'Rabais',type:'rab',genre:'R',refc:'',pct:0,m:true}); window._ccCWcond=at; ccConWinRender(); }
 function ccCWcondDel(){ const C=window._ccCW; const i=window._ccCWcond; if(!C.conds[i]) return;
   chConfirm('Supprimer la condition « '+(C.conds[i].des||'')+' » ?', ()=>{ ccCWkeep(); C.conds.splice(i,1); window._ccCWcond=0; ccConWinRender(); }); }
 function ccCWcondLast(){ const A=ccA(); const C=window._ccCW;

@@ -8082,8 +8082,11 @@ function chConfirm(message, onYes, opts){
   ov.querySelector('#ch-confirm-hd').textContent = opts.title || 'Confirmation';
   ov.querySelector('#ch-confirm-msg').textContent = message;
   const yes = ov.querySelector('#ch-confirm-yes'), no = ov.querySelector('#ch-confirm-no');
-  yes.textContent = opts.yesText || 'Supprimer';
-  yes.style.background = opts.yesColor || '#b04a4a';
+  /* bouton par défaut : « Supprimer » (rouge) seulement pour une suppression,
+     sinon « Confirmer » (validation, remplacement, passage en brouillon…) */
+  const destructif = /supprim|effac|retir|détruire|vider/i.test(String(message||''));
+  yes.textContent = opts.yesText || (destructif ? 'Supprimer' : 'Confirmer');
+  yes.style.background = opts.yesColor || (destructif ? '#b04a4a' : '#0a6e84');
   no.textContent = opts.noText || 'Annuler';
   const onKey = (e)=>{ if(e.key==='Escape') close(); };
   function close(){ ov.style.display='none'; document.removeEventListener('keydown', onKey); }

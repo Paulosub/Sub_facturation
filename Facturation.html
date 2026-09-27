@@ -16359,26 +16359,28 @@ function ccSaveCon(type,id){
 /* Types de conditions (colonne Ge…) : code, signe (+ majoration / − déduction), mode
    % (pourcentage de la base courante) ou − (montant fixe déduit) */
 const CC_COND_TYPES=[
-  {k:'esc',lbl:'Escompte',code:'E',s:-1,m:'pct'},
-  {k:'ded',lbl:'Déduction',code:'D',s:-1,m:'pct'},
-  {k:'gar',lbl:'Garantie',code:'G',s:-1,m:'pct',M:false},
-  {k:'dgar',lbl:'Déduction de garantie',code:'DG',s:-1,m:'pct'},
-  {k:'rab',lbl:'Rabais',code:'R',s:-1,m:'pct'},
-  {k:'tva',lbl:'TVA',code:'M',s:1,m:'pct'},
-  {k:'recp',lbl:'Taxes de recyclage (%)',code:'T',s:-1,m:'pct'},
-  {k:'recm',lbl:'Taxes de recyclage (−)',code:'T',s:-1,m:'mnt'},
-  {k:'prop',lbl:'Prorata (%)',code:'P',s:-1,m:'pct'},
-  {k:'prom',lbl:'Prorata (−)',code:'P',s:-1,m:'mnt'},
-  {k:'pubp',lbl:'Panneau publicitaire (%)',code:'PP',s:-1,m:'pct'},
-  {k:'pubm',lbl:'Panneau publicitaire (−)',code:'PP',s:-1,m:'mnt'},
-  {k:'assp',lbl:'Assurance (%)',code:'A',s:-1,m:'pct'},
-  {k:'assm',lbl:'Assurance (−)',code:'A',s:-1,m:'mnt'},
-  {k:'enep',lbl:'Frais en énergie (%)',code:'FE',s:-1,m:'pct'},
-  {k:'enem',lbl:'Frais en énergie (−)',code:'FE',s:-1,m:'mnt'},
-  {k:'eaup',lbl:'Frais en eau (%)',code:'FW',s:-1,m:'pct'},
-  {k:'eaum',lbl:'Frais en eau (−)',code:'FW',s:-1,m:'mnt'},
-  {k:'autp',lbl:'Autres (%)',code:'X',s:-1,m:'pct'},
-  {k:'autm',lbl:'Autres (−)',code:'X',s:-1,m:'mnt'}];
+  /* lbl = libellé de la liste, code = abréviation (colonne Ge…), d = désignation reprise,
+     s = +1 ajouté / −1 déduit, m = pct (en %) / mnt (montant fixe) — valeurs fixées par Paulo le 27.09.26 */
+  {k:'esc',lbl:'Escompte',code:'S',d:'Escompte',s:-1,m:'pct'},
+  {k:'ded',lbl:'Déduction',code:'P',d:'Déduction',s:-1,m:'pct'},
+  {k:'gar',lbl:'Garantie',code:'G%',d:'Garantie',s:-1,m:'pct'},
+  {k:'dgar',lbl:'Déduction de garantie',code:'G-',d:'Déduction de garantie',s:-1,m:'mnt'},
+  {k:'rab',lbl:'Rabais',code:'%',d:'Rabais',s:-1,m:'pct'},
+  {k:'tva',lbl:'TVA',code:'M',d:'TVA',s:1,m:'pct'},
+  {k:'recp',lbl:'Taxes de recyclage (%)',code:'L%',d:'Taxes de recyclage',s:1,m:'pct'},
+  {k:'recm',lbl:'Taxes de recyclage (−)',code:'L-',d:'Taxes de recyclage',s:-1,m:'mnt'},
+  {k:'prop',lbl:'Prorata (%)',code:'C%',d:'Prorata',s:-1,m:'pct'},
+  {k:'prom',lbl:'Prorata (−)',code:'C-',d:'Prorata',s:-1,m:'mnt'},
+  {k:'pubp',lbl:'Panneau publicitaire (%)',code:'B%',d:'Panneau publicitaire',s:1,m:'pct'},
+  {k:'pubm',lbl:'Panneau publicitaire (−)',code:'B-',d:'Panneau publicitaire',s:-1,m:'mnt'},
+  {k:'assp',lbl:'Assurance (%)',code:'V%',d:'Assurance',s:1,m:'pct'},
+  {k:'assm',lbl:'Assurance (−)',code:'V-',d:'Assurance',s:-1,m:'mnt'},
+  {k:'enep',lbl:'Frais en énergie (%)',code:'E%',d:'Frais en énergie',s:1,m:'pct'},
+  {k:'enem',lbl:'Frais en énergie (−)',code:'E-',d:'Frais en énergie',s:-1,m:'mnt'},
+  {k:'eaup',lbl:'Frais en eau (%)',code:'W%',d:'Frais en eau',s:1,m:'pct'},
+  {k:'eaum',lbl:'Frais en eau (−)',code:'W-',d:'Frais en eau',s:-1,m:'pct'},
+  {k:'autp',lbl:'Autres (%)',code:'U%',d:'Autres',s:-1,m:'pct'},
+  {k:'autm',lbl:'Autres (−)',code:'U-',d:'Autres',s:-1,m:'mnt'}];
 function ccCondT(c){ if(!c) return CC_COND_TYPES[5];
   let t=c.type&&CC_COND_TYPES.find(x=>x.k===c.type);
   if(!t) t=c.genre==='R'?CC_COND_TYPES[4]:CC_COND_TYPES[5];   /* anciennes conditions M / R */
@@ -16401,10 +16403,10 @@ function ccCWgenre(ev,i){
 function ccCWgenreSet(i,k){
   const c=window._ccCW.conds[i], t=CC_COND_TYPES.find(x=>x.k===k); if(!c||!t) return;
   ccCWkeep();
-  const ancienLbl=ccCondT(c).lbl;
+  const ancien=ccCondT(c);
   c.type=k; c.genre=t.code;
-  if(!c.des||c.des===ancienLbl) c.des=t.lbl;
-  if(t.M===false) c.m=false;
+  if(!c.des||c.des===ancien.lbl||c.des===ancien.d) c.des=t.d||t.lbl;
+  c.m=(t.M!==false);
   const p=document.getElementById('cw_genre_pop'); if(p) p.style.display='none';
   window._ccCWcond=i; ccConWinRender();
 }

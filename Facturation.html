@@ -10585,6 +10585,8 @@ function buildBackupPayload(){
     sa_devis: g('sa_devis') || {},
     sa_cfc_edits: g('sa_cfc_edits') || {},
     sa_cond_groupes: g('sa_cond_groupes') || null,
+    sa_banques: g('sa_banques') || [],
+    sa_banques_ent: g('sa_banques_ent') || {},
     sa_adr: g('sa_adr') || {ent:[],adr:[],seq:1},
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
@@ -10766,6 +10768,8 @@ function applyBackupData(data, name){
     if(data.sa_adr && typeof data.sa_adr==='object') localStorage.setItem('sa_adr', JSON.stringify(data.sa_adr));
     if(data.sa_cfc_edits && typeof data.sa_cfc_edits==='object') localStorage.setItem('sa_cfc_edits', JSON.stringify(data.sa_cfc_edits));
     if(Array.isArray(data.sa_cond_groupes)) localStorage.setItem('sa_cond_groupes', JSON.stringify(data.sa_cond_groupes));
+    if(Array.isArray(data.sa_banques)) localStorage.setItem('sa_banques', JSON.stringify(data.sa_banques));
+    if(data.sa_banques_ent && typeof data.sa_banques_ent==='object') localStorage.setItem('sa_banques_ent', JSON.stringify(data.sa_banques_ent));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
     // Message de réussite : posé AVANT le rechargement, affiché en toast au démarrage (sinon il disparaîtrait).
@@ -15371,8 +15375,8 @@ function ccRender(){
         itG('Contrat …','ccConSelAdr('+cq+')',!!cfcSel)+
         itG('Avenant …','ccAveNew('+cq+')',aContrat)+
         itG('Informations montants bruts …','',false)+sep+
-        itG('Paiement sur contrat …','ccDlgPay(null,'+cq+',false)',aContrat)+
-        itG('Paiement hors contrat …','ccDlgPay(null,'+cq+',true)',!!cfcSel)+
+        itG('Paiement sur contrat …','ccPayNew('+cq+')',aContrat)+
+        itG('Paiement hors contrat …','ccPayHorsNew('+cq+')',!!cfcSel)+
         itG('Coût probable perso …','ccDlgCp('+cq+')',!!cfcSel)+
         itG('Provisions …','ccDlgProv(null,'+cq+')',!!cfcSel)+sep+
         itG('Editer l’écriture …','ccAfEdit()',!!selE)+
@@ -15587,7 +15591,7 @@ function ccRowMenu(cfc){
 }
 function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
   if(e.type==='mut') ccDlgMut(id); else if(e.type==='contrat') ccConWin(id);
-  else if(e.type==='avenant') ccConWin(id); else if(e.type==='pay') ccDlgPay(id);
+  else if(e.type==='avenant') ccConWin(id); else if(e.type==='pay'){ if(e.ref||e.hors) ccPayEdit(id); else ccDlgPay(id); }
   else if(e.type==='prov') ccDlgProv(id); else if(e.type==='cp') ccDlgCp(e.cfc); }
 function ccCfcOpts(sel){ const A=ccA();
   const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
@@ -16446,6 +16450,7 @@ function ccAdrBloc(a,e){ if(!a) return '';
 /* 1. Sélectionner l'adresse */
 function ccConSelAdr(cfc){
   const A=ccA(); if(!A) return;
+  if(window._ccSelAdrMode!=='pay') window._ccSelAdrMode=null;
   window._ccConCfc=cfc||''; window._ccConAdrSel=null;
   A.adrCon=A.adrCon||[];
   const Q=PV_Q;
@@ -16471,6 +16476,7 @@ function ccConSelFill(){
 function ccConSelOk(){
   const A=ccA(); const x=(A.adrCon||[]).find(y=>y.id===window._ccConAdrSel); if(!x) return;
   ccMacClose('cc_con_sel');
+  if(window._ccSelAdrMode==='pay'){ window._ccSelAdrMode=null; ccPayHorsWin(x); return; }
   ccConWin(null, x);
 }
 /* 2. Fenêtre « Modifier » : Entité + Responsable (◀ = Navigateur d'adresses, ⓘ = infos) */
@@ -16610,6 +16616,7 @@ function ccCondGroupes(){ let g=null;
 function ccCondGroupesSave(g){ try{ localStorage.setItem('sa_cond_groupes',JSON.stringify(g)); }catch(e){} }
 function ccCondNavAll(){ const g=ccCondGroupes()[window._ccCnG||0]; window._ccCnSel=((g&&g.conds)||[]).map((c,i)=>i); }
 function ccCondNav(){ window._ccCnG=0; ccCondNavAll(); ccCondNavRender(); }
+function ccCWcondNav(){ window._ccCondTarget=null; window._ccCondBack=null; ccCondNav(); }
 function ccCondNavRender(){
   const G=ccCondGroupes(), Q=PV_Q, gi=window._ccCnG||0, g=G[gi]||{conds:[]};
   const th=t=>'<th style="text-align:left;font-weight:normal;padding:4px 8px;border-bottom:1px solid #e2e2e2;background:#fff;position:sticky;top:0">'+t+'</th>';
@@ -16628,12 +16635,14 @@ function ccCondNavPick(ev,i){ let s=window._ccCnSel||[];
   if(ev.metaKey||ev.ctrlKey||ev.shiftKey) s=s.includes(i)?s.filter(x=>x!==i):s.concat([i]); else s=[i];
   window._ccCnSel=s; ccCondNavRender(); }
 function ccCondNavOk(){
-  const G=ccCondGroupes(), g=G[window._ccCnG||0]; const C=window._ccCW; if(!g||!C) return;
+  const G=ccCondGroupes(), g=G[window._ccCnG||0]; const C=window._ccCondTarget||window._ccCW; if(!g||!C) return;
   const ch=(window._ccCnSel||[]).map(i=>g.conds[i]).filter(Boolean); if(!ch.length) return;
-  ccCWkeep();
+  if(!window._ccCondTarget) ccCWkeep();
   C.conds=JSON.parse(JSON.stringify(ch)).map((c,i)=>Object.assign(c,{niv:i+1}));
-  window._ccCWcond=0;
-  ccMacClose('cc_cond_nav'); ccConWinRender();
+  window._ccCWcond=0; window._ccPWcond=0;
+  ccMacClose('cc_cond_nav');
+  const back=window._ccCondBack; window._ccCondTarget=null; window._ccCondBack=null;
+  if(back) back(); else ccConWinRender();
 }
 function ccCondGrpMenu(ev,i){
   let m=document.getElementById('cc_cg_ctx');
@@ -16721,7 +16730,7 @@ function ccConWinRender(){
     '<div style="margin:8px 0 14px;position:relative;display:inline-block">'+ib('<span style="font-size:14px">⚙︎</span>','ccCWmenu('+Q+'cw_m_c'+Q+')','Conditions',1)+
       /* avenant : conditions héritées du contrat → ajout/suppression grisés, Navigateur actif */
       mb('cw_m_c',mi('Ajouter une condition au-dessus','ccCWcondAdd(0)',C.type!=='avenant')+mi('Ajouter une condition au-dessous','ccCWcondAdd(1)',C.type!=='avenant')+
-        mi('Navigateur …','ccCondNav()',true)+sep+
+        mi('Navigateur …','ccCWcondNav()',true)+sep+
         mi('Les conditions du dernier contrat','ccCWcondLast()',true)+sep+mi('Supprimer la condition …','ccCWcondDel()',C.type!=='avenant'&&(C.conds||[]).length>0))+'</div>'+
     '<div style="display:grid;grid-template-columns:1.4fr .8fr 1.1fr 1.1fr;gap:4px 18px;align-items:center;font-size:14px">'+
       '<span>Désignation</span><span>Numéro</span><span>Date</span><span>Statut</span>'+
@@ -16810,9 +16819,10 @@ function ccCatFill(){
 function ccCatOk(){ const c=window._ccCatSel; if(!c) return; ccMacClose('cc_cat_ch'); const cb=window._ccCatCb; window._ccCatCb=null; if(cb) cb(c); }
 
 /* Annexes du contrat : fenêtre « Document » + « Nouvelle annexe » */
-function ccCWannexes(){ ccCWkeep(); window._ccAnxSel=null; ccAnxRender(); }
+function ccCWannexes(){ ccCWkeep(); window._ccAnxT=null; window._ccAnxBack=null; window._ccAnxSel=null; ccAnxRender(); }
+function ccAnxDone(){ const f=window._ccAnxBack; window._ccAnxBack=null; window._ccAnxT=null; if(f) f(); else ccConWinRender(); }
 function ccAnxRender(){
-  const C=window._ccCW; C.annexes=C.annexes||[]; const Q=PV_Q;
+  const C=window._ccAnxT||window._ccCW; C.annexes=C.annexes||[]; const Q=PV_Q;
   const SV='<svg width="14" height="14" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">';
   const sel=window._ccAnxSel!=null&&C.annexes[window._ccAnxSel];
   const b=(svg,fn,on)=>'<button onclick="'+fn+'" style="'+CC_GB+(on?'':';opacity:.45;pointer-events:none')+'">'+svg+'</button>';
@@ -16830,10 +16840,10 @@ function ccAnxRender(){
           '<div id="anx_m" style="display:none;position:absolute;left:0;top:28px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:200px;z-index:5;font-size:13.5px;padding:4px 0">'+
             '<div style="padding:6px 16px;cursor:pointer" onclick="ccAnxOpen(1)">Afficher l’annexe</div><div style="padding:6px 16px;cursor:pointer" onclick="ccAnxOpen(0)">Ouvrir l’annexe</div></div></span>'+
       '</div></div>',
-    ccMacBtns('ccMacClose('+Q+'cc_anx'+Q+')|ccMacClose('+Q+'cc_anx'+Q+');ccConWinRender()',true), 620, 1);
+    ccMacBtns('ccMacClose('+Q+'cc_anx'+Q+');ccAnxDone()|ccMacClose('+Q+'cc_anx'+Q+');ccAnxDone()',true), 620, 1);
 }
 function ccAnxEdit(i){
-  const C=window._ccCW; const a=(i!=null&&C.annexes[i])?C.annexes[i]:{titre:'',ref:true,path:''};
+  const C=window._ccAnxT||window._ccCW; const a=(i!=null&&C.annexes[i])?C.annexes[i]:{titre:'',ref:true,path:''};
   window._ccAnxEditI=i; const Q=PV_Q;
   const inS='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
   ccMac('cc_anx_new', i!=null?'Modifier l’annexe':'Nouvelle annexe',
@@ -16854,20 +16864,346 @@ async function ccAnxPick(){
   catch(e){ toast('Serveur de sauvegarde (7788) indisponible — saisissez le chemin à la main.'); }
 }
 function ccAnxOk(){
-  const C=window._ccCW; const t=(document.getElementById('anx_t').value||'').trim(); if(!t) return;
+  const C=window._ccAnxT||window._ccCW; const t=(document.getElementById('anx_t').value||'').trim(); if(!t) return;
   const a={titre:t, ref:document.getElementById('anx_ref').checked, path:(document.getElementById('anx_p').value||'').trim()};
   if(window._ccAnxEditI!=null&&C.annexes[window._ccAnxEditI]) C.annexes[window._ccAnxEditI]=a; else { C.annexes.push(a); window._ccAnxSel=C.annexes.length-1; }
   ccMacClose('cc_anx_new'); ccAnxRender();
 }
-function ccAnxDel(){ const C=window._ccCW; const i=window._ccAnxSel; if(i==null||!C.annexes[i]) return;
+function ccAnxDel(){ const C=window._ccAnxT||window._ccCW; const i=window._ccAnxSel; if(i==null||!C.annexes[i]) return;
   chConfirm('Supprimer l’annexe « '+C.annexes[i].titre+' » ?', ()=>{ C.annexes.splice(i,1); window._ccAnxSel=null; ccAnxRender(); }); }
 async function ccAnxOpen(reveal){
-  const C=window._ccCW; const a=C.annexes[window._ccAnxSel]; const m=document.getElementById('anx_m'); if(m) m.style.display='none';
+  const C=window._ccAnxT||window._ccCW; const a=C.annexes[window._ccAnxSel]; const m=document.getElementById('anx_m'); if(m) m.style.display='none';
   if(!a||!a.path){ toast('Aucun fichier référencé pour cette annexe.'); return; }
   try{ const r=await fetch('http://127.0.0.1:7788/'+(reveal?'revealpath':'openpath')+'?path='+encodeURIComponent(a.path)); const j=await r.json();
     if(!(j&&j.ok)) chErr('Fichier introuvable : '+pvEsc(a.path)); }
   catch(e){ toast('Serveur de sauvegarde (7788) indisponible.'); }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PAIEMENT SUR CONTRAT — fenêtre du bureau « <entreprise> » :
+   positions en CUMUL d'acomptes bruts (cumul à ce jour), paiement net de la
+   situation = (cumul − cumul précédent) × conditions du contrat hors TVA × TVA ;
+   conditions « Paiements à ce jour » (SI) + TVA (M) ; coordonnées bancaires,
+   facture de l'entreprise, annexes ; désignation, type, statut, niveau, n°, dates.
+   ══════════════════════════════════════════════════════════════════════════ */
+const CC_PAY_STATUTS=['réceptionné','libéré','transmis','débité'];
+function ccPayContrat(A,cfc){
+  const selE=(A.ecr||[]).find(x=>x.id===window._ccSelEcr);
+  if(selE&&selE.type==='contrat') return selE;
+  if(selE&&selE.type==='avenant') return (A.ecr||[]).find(x=>x.id===selE.ref)||null;
+  const cs=(A.ecr||[]).filter(e=>e.type==='contrat'&&(e.pos||[]).some(p=>p.cfc===cfc));
+  return cs[cs.length-1]||null;
+}
+/* taux « conditions du contrat hors TVA » (rabais, escompte…) et taux de TVA */
+function ccPayTaux(A,k){
+  const tvaDef=(A.tva!=null?A.tva:8.1);
+  const cs=(k&&k.conds)||[{type:'tva',pct:tvaDef,m:true}];
+  let r=1, tva=0;
+  cs.forEach(c=>{ const t=ccCondT(c); if(c.m===false) return;
+    if(t.k==='tva'){ tva=ccP(c.pct); return; }
+    if(t.m==='pct') r*=1+t.s*ccP(c.pct)/100; });
+  return {r:r, tva:(cs.some(c=>ccCondT(c).k==='tva')?tva:tvaDef)};
+}
+/* brut adjugé par CFC : contrat + avenants liés */
+function ccPayAdj(A,k){
+  const out={}, ordre=[];
+  const lies=[k].concat((A.ecr||[]).filter(e=>e.type==='avenant'&&e.ref===k.id));
+  const K=ccConCalc(JSON.parse(JSON.stringify(k.conds?k:Object.assign({},k,{conds:[{type:'tva',pct:(A.tva!=null?A.tva:8.1),m:true}]}))));
+  const ratio=K.ratio>0?K.ratio:1;
+  lies.forEach(e=>(e.pos||[]).forEach(p=>{ if(!out[p.cfc]){ out[p.cfc]={brut:0,net:0,txt:p.txt||ccCatLbl(p.cfc)||''}; ordre.push(p.cfc); }
+    const b=p.brut!=null?ccP(p.brut):ccP(p.mnt)/ratio; out[p.cfc].brut+=b; out[p.cfc].net+=ccP(p.mnt)||b*ratio; }));
+  return {par:out, ordre:ordre};
+}
+/* cumul brut du paiement précédent (même contrat), par CFC */
+function ccPayPrev(A,P){
+  const prev=(A.ecr||[]).filter(e=>e.type==='pay'&&e.ref===P.ref&&e.id!==window._ccPWid&&(+e.numP||0)<(+P.numP||0))
+    .sort((a,b)=>(+a.numP||0)-(+b.numP||0));
+  const last=prev[prev.length-1];
+  const cum={}; ((last&&last.pos)||[]).forEach(p=>{ cum[p.cfc]=ccP(p.cum); });
+  return {cum:cum, last:last||null, paye:prev.reduce((s,e)=>s+ccP(e.mnt),0)};
+}
+function ccPayCalc(A,P){
+  const k=(A.ecr||[]).find(e=>e.id===P.ref); const T=ccPayTaux(A,k); const PR=ccPayPrev(A,P);
+  let cum=0, prevC=0;
+  (P.pos||[]).forEach(p=>{ const pc=PR.cum[p.cfc]||0; cum+=ccP(p.cum); prevC+=pc;
+    p._net=(ccP(p.cum)-pc)*T.r*(1+T.tva/100); });
+  const ht=cum*T.r, si=-prevC*T.r, tvaM=(ht+si)*T.tva/100;
+  (P.conds||[]).forEach(c=>{ const t=c.type==='si'?'si':ccCondT(c).k;
+    c._mnt=t==='si'?si:(t==='tva'?tvaM:0); if(t==='tva') c.pct=T.tva; });
+  return {cum:cum, net:ht+si+tvaM, T:T};
+}
+function ccPayNew(cfc){
+  const A=ccA(); if(!A) return;
+  const k=ccPayContrat(A,cfc); if(!k){ chErr('Il n’existe aucun contrat pour ce CFC.'); return; }
+  const AD=ccPayAdj(A,k);
+  const nP=(A.ecr||[]).filter(e=>e.type==='pay'&&e.ref===k.id).reduce((m,e)=>Math.max(m,+e.numP||0),0)+1;
+  const d=new Date(); d.setDate(d.getDate()+30);
+  const dp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const P={type:'pay', ref:k.id, cfc:null, ent:k.ent||'', lot:k.lot||'', lotLbl:k.lotLbl||ccCatLbl(k.lot)||'',
+    pos:AD.ordre.map(c=>({cfc:c, txt:AD.par[c].txt, refc:'', cum:0})),
+    conds:[{niv:1,ref:0,des:'Paiements à ce jour',type:'si',genre:'SI',refc:''},{niv:2,ref:1,des:'TVA',type:'tva',genre:'M',refc:'',pct:ccPayTaux(A,k).tva,m:true}],
+    saisie:'brut', des:'', typeP:'sit', statut:'transmis', niveau:0, dernier:false,
+    numP:nP, numF:'', dateF:ccToday(), dateP:dp, desc:'', banque:null, facture:null, annexes:[]};
+  /* le cumul repart du paiement précédent */
+  const PR=ccPayPrev(A,P); P.pos.forEach(p=>{ p.cum=PR.cum[p.cfc]||0; });
+  const bk=ccBanqueEnt(P.ent); if(bk) P.banque=JSON.parse(JSON.stringify(bk));
+  window._ccPW=P; window._ccPWid=null; window._ccPWpos=0; ccPayRender();
+}
+function ccPayHorsNew(cfc){ window._ccSelAdrMode='pay'; ccConSelAdr(cfc); }
+function ccPayHorsWin(adr){
+  const A=ccA(); if(!A) return; const cfc=window._ccConCfc||'';
+  const nP=(A.ecr||[]).filter(e=>e.type==='pay'&&!e.ref&&e.ent===adr.ent).reduce((m,e)=>Math.max(m,+e.numP||0),0)+1;
+  const d=new Date(); d.setDate(d.getDate()+30);
+  const dp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const P={type:'pay', hors:true, ref:null, cfc:cfc, ent:adr.ent, adrId:adr.id, lot:cfc, lotLbl:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'',
+    pos:cfc?[{cfc:cfc, txt:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'', refc:'', brut:0}]:[],
+    conds:[{niv:1,ref:0,des:'TVA',type:'tva',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}],
+    saisie:'brut', des:'', typeP:'sit', statut:'transmis', dernier:false,
+    numP:nP, numF:'', dateF:ccToday(), dateP:dp, desc:'', banque:ccBanqueEnt(adr.ent)||null, facture:null, annexes:[]};
+  window._ccPW=P; window._ccPWid=null; window._ccPWpos=0; window._ccPWcond=0; ccPayRender();
+}
+function ccPayAddCfc(cfc){ const A=ccA(), P=window._ccPW; if(!P||!cfc) return; ccPayKeep();
+  if((P.pos||[]).some(p=>p.cfc===cfc)){ toast('Le CFC '+cfc+' est déjà dans le paiement.'); return; }
+  P.pos.push({cfc:cfc, txt:ccCatLbl(cfc)||((A.rows.find(r=>r.cfc===cfc)||{}).lbl)||'', refc:'', brut:0});
+  if(!P.lot){ P.lot=cfc; P.lotLbl=ccCatLbl(cfc)||''; }
+  window._ccPWpos=P.pos.length-1; ccPayRender(); }
+function ccPayDelPos(){ const P=window._ccPW, i=window._ccPWpos; if(!P.pos[i]) return; ccPayKeep(); P.pos.splice(i,1); window._ccPWpos=Math.max(0,i-1); ccPayRender(); }
+function ccPayMove(dd){ const P=window._ccPW, i=window._ccPWpos, j=i+dd; if(!P.pos[i]||!P.pos[j]) return; ccPayKeep();
+  const t=P.pos[i]; P.pos[i]=P.pos[j]; P.pos[j]=t; window._ccPWpos=j; ccPayRender(); }
+function ccPayCondAdd(dessous){ const P=window._ccPW; ccPayKeep(); const i=Math.min(window._ccPWcond||0,P.conds.length);
+  const at=P.conds.length?(dessous?i+1:i):0; P.conds.splice(at,0,{niv:at+1,ref:0,des:'Rabais',type:'rab',genre:'%',refc:'',pct:0,m:true}); window._ccPWcond=at; ccPayRender(); }
+function ccPayCondDel(){ const P=window._ccPW, i=window._ccPWcond||0; if(!P.conds[i]) return;
+  chConfirm('Supprimer la condition « '+(P.conds[i].des||'')+' » ?',()=>{ ccPayKeep(); P.conds.splice(i,1); window._ccPWcond=0; ccPayRender(); }); }
+function ccPayCondNav(){ ccPayKeep(); window._ccCondTarget=window._ccPW; window._ccCondBack=ccPayRender; ccCondNav(); }
+function ccPayEdit(id){
+  const A=ccA(); const e=(A.ecr||[]).find(x=>x.id===id); if(!e) return;
+  const P=JSON.parse(JSON.stringify(e));
+  if(!P.pos){ const k=(A.ecr||[]).find(x=>x.id===P.ref); const AD=k?ccPayAdj(A,k):{ordre:[],par:{}};
+    const T=ccPayTaux(A,k); P.pos=AD.ordre.map((c,i)=>({cfc:c,txt:AD.par[c].txt,refc:'',cum:i===0?ccP(P.mnt)/(T.r*(1+T.tva/100)):0})); }
+  if(!P.conds) P.conds=[{niv:1,ref:0,des:'Paiements à ce jour',type:'si',genre:'SI',refc:''},{niv:2,ref:1,des:'TVA',type:'tva',genre:'M',refc:'',pct:8.1,m:true}];
+  P.annexes=P.annexes||[]; if(!P.typeP) P.typeP='sit'; if(!P.statut) P.statut='transmis';
+  window._ccPW=P; window._ccPWid=id; window._ccPWpos=0; ccPayRender();
+}
+function ccPayKeep(){ const P=window._ccPW; const g=id=>{ const x=document.getElementById(id); return x?x.value:null; };
+  if(g('pw_des')==null) return;
+  P.des=g('pw_des'); P.typeP=g('pw_type'); P.statut=g('pw_statut'); P.desc=g('pw_desc');
+  P.numP=g('pw_nump'); P.numF=g('pw_numf');
+  const iso=v=>{ const m=String(v||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m?m[3]+'-'+m[2]+'-'+m[1]:v; };
+  P.dateF=iso(g('pw_datef')); P.dateP=iso(g('pw_datep'));
+  P.dernier=!!(document.getElementById('pw_dern')||{}).checked;
+  P.niveau=+(g('pw_niv')||0); }
+function ccPayRender(){
+  const A=ccA(), P=window._ccPW; if(!A||!P) return;
+  const H=!!P.hors;
+  const Q=PV_Q, K=H?(r=>({cum:r.brut,net:r.net}))(ccConCalc(P)):ccPayCalc(A,P), k=(A.ecr||[]).find(e=>e.id===P.ref), AD=k?ccPayAdj(A,k):{par:{}};
+  const F=v=>ccF(v), zeb=i=>i%2?'#fff':'#eef3fb';
+  const th=(t,al,w)=>'<th style="text-align:'+(al||'left')+';font-weight:normal;padding:3px 7px;border-bottom:1px solid #e2e2e2;border-right:1px solid #eee;background:#fff;position:sticky;top:0;white-space:nowrap'+(w?';width:'+w:'')+'">'+t+'</th>';
+  const inS='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
+  const cellIn='width:100%;border:1px solid #bdbdbd;background:#ececec;font:inherit;padding:1px 4px;text-align:right;box-sizing:border-box';
+  const net=P.saisie==='net';
+  let adjB=0, adjN=0;
+  const posRowsH=(P.pos||[]).map((p,i)=>'<tr onclick="window._ccPWpos='+i+';ccPayKeep();ccPayRender()" style="background:'+(i===window._ccPWpos?'#2f6fde;color:#fff':zeb(i))+'">'+
+      '<td style="padding:2px 7px">'+pvEsc(p.cfc)+'</td><td style="padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+pvEsc(p.txt||'')+'</td>'+
+      '<td style="padding:2px 7px"><input value="'+pvEscA(p.refc||'')+'" onclick="event.stopPropagation()" onchange="window._ccPW.pos['+i+'].refc=this.value" style="width:100%;border:0;background:transparent;font:inherit;color:inherit"></td>'+
+      '<td style="padding:2px 7px">'+(net?'<span style="display:block;text-align:right">'+F(ccP(p.brut))+'</span>':'<input value="'+(ccP(p.brut)?ccP(p.brut):'')+'" onclick="event.stopPropagation()" onchange="ccPaySet('+i+',this.value)" style="'+cellIn+'">')+'</td>'+
+      '<td style="padding:2px 7px">'+(net?'<input value="'+(p._net?Math.round(p._net*100)/100:'')+'" onclick="event.stopPropagation()" onchange="ccPaySet('+i+',this.value)" style="'+cellIn+'">':'<span style="display:block;text-align:right">'+(p._net?F(p._net):'')+'</span>')+'</td></tr>').join('')+
+    '<tr style="font-weight:700"><td style="padding:2px 7px">Total</td><td></td><td></td><td style="padding:2px 7px;text-align:right">'+(K.cum?F(K.cum):'')+'</td><td style="padding:2px 7px;text-align:right">'+(K.net?F(K.net):'')+'</td></tr>';
+  const posRows=(P.pos||[]).map((p,i)=>{ const a=AD.par[p.cfc]||{brut:0,net:0}; adjB+=a.brut; adjN+=a.net;
+    return '<tr onclick="window._ccPWpos='+i+';ccPayKeep();ccPayRender()" style="background:'+(i===window._ccPWpos?'#2f6fde;color:#fff':zeb(i))+'">'+
+      '<td style="padding:2px 7px">'+pvEsc(p.cfc)+'</td><td style="padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+pvEsc(p.txt||'')+'</td>'+
+      '<td style="padding:2px 7px"><input value="'+pvEscA(p.refc||'')+'" onclick="event.stopPropagation()" onchange="window._ccPW.pos['+i+'].refc=this.value" style="width:100%;border:0;background:transparent;font:inherit;color:inherit"></td>'+
+      '<td style="padding:2px 7px;text-align:right">'+F(a.brut)+'</td><td style="padding:2px 7px;text-align:right">'+F(a.net)+'</td>'+
+      '<td style="padding:2px 7px">'+(net?'<span style="display:block;text-align:right">'+F(ccP(p.cum))+'</span>':'<input value="'+(ccP(p.cum)?ccP(p.cum):'')+'" onclick="event.stopPropagation()" onchange="ccPaySet('+i+',this.value)" style="'+cellIn+'">')+'</td>'+
+      '<td style="padding:2px 7px">'+(net?'<input value="'+(p._net?Math.round(p._net*100)/100:'')+'" onclick="event.stopPropagation()" onchange="ccPaySet('+i+',this.value)" style="'+cellIn+'">':'<span style="display:block;text-align:right">'+(p._net?F(p._net):'')+'</span>')+'</td></tr>'; }).join('')+
+    '<tr style="font-weight:700"><td style="padding:2px 7px">Total</td><td></td><td></td><td style="padding:2px 7px;text-align:right">'+F(adjB)+'</td><td style="padding:2px 7px;text-align:right">'+F(adjN)+'</td>'+
+      '<td style="padding:2px 7px;text-align:right">'+(K.cum?F(K.cum):'')+'</td><td style="padding:2px 7px;text-align:right">'+(K.net?F(K.net):'')+'</td></tr>';
+  const condRows=(P.conds||[]).map((c,i)=>'<tr onclick="window._ccPWcond='+i+';ccPayKeep();ccPayRender()" style="background:'+(H&&i===(window._ccPWcond||0)?'#2f6fde;color:#fff':zeb(i))+'"><td style="padding:2px 7px">'+(i+1)+'</td><td style="padding:2px 7px">'+(c.ref||0)+'</td>'+
+      '<td style="padding:2px 7px">'+pvEsc(c.des||'')+'</td><td style="padding:2px 7px">'+(c.type==='si'?'SI':ccCondT(c).code)+'</td><td style="padding:2px 7px">'+pvEsc(c.refc||'')+'</td>'+
+      '<td style="padding:2px 7px;text-align:right">'+(c.type==='si'?'':(H?'<input value="'+(c.pct!=null?c.pct:'')+'" onclick="event.stopPropagation()" onchange="window._ccPW.conds['+i+'].pct=ccP(this.value);ccPayKeep();ccPayRender()" style="width:100%;border:0;background:transparent;font:inherit;color:inherit;text-align:right">':(c.pct!=null?(+c.pct).toFixed(2):'')))+'</td><td style="padding:2px 7px;text-align:right">'+(c._mnt?F(c._mnt):'')+'</td></tr>').join('');
+  const SV='<svg width="14" height="14" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">';
+  const icE=SV+'<path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg>';
+  const icCalc=SV+'<rect x="2.5" y="1.5" width="10" height="12" rx="1"/><path d="M4.5 4h6M4.5 7h1M7 7h1M9.5 7h1M4.5 9.5h1M7 9.5h1M9.5 9.5h1M4.5 12h1M7 12h1M9.5 12h1"/></svg>';
+  const ib=(svg,fn,tt,menu)=>'<button onclick="'+fn+'" title="'+tt+'" style="'+CC_GB+'">'+svg+(menu?' <span style="font-size:8px">▾</span>':'')+'</button>';
+  const mb=(id,inner,up)=>'<div id="'+id+'" style="display:none;position:absolute;left:0;'+(up?'bottom:30px':'top:28px')+';background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:280px;z-index:5;font-size:13.5px;white-space:nowrap;padding:4px 0">'+inner+'</div>';
+  const mi=(lbl,fn,on)=>on?'<div style="padding:6px 16px;cursor:pointer" onmouseover="this.style.background='+Q+'#eef4f9'+Q+'" onmouseout="this.style.background='+Q+Q+'" onclick="ccPayMenu(null);'+fn+'">'+lbl+'</div>':'<div style="padding:6px 16px;color:#b5b5b5">'+lbl+'</div>';
+  const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
+  const bk=P.banque, banqueTxt=bk?(bk.iban||bk.compte||bk.nom||''):'';
+  const anxTxt=P.facture?'Facture ajoutée':('Annexes: '+((P.annexes||[]).length));
+  const d4=v=>dvD4(v||'');
+  const body=
+    '<div style="padding:12px 16px 0;font-size:14px">'+
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span>Lot d’adjudication</span>'+
+      '<input value="'+pvEscA(P.lot||'')+'" readonly style="'+inS+';width:90px"><input value="'+pvEscA(P.lotLbl||'')+'" readonly style="'+inS+';flex:1">'+
+      (H?'<button onclick="ccPayKeep();ccCatChoix(function(c){window._ccPW.lot=c;window._ccPW.lotLbl=ccCatLbl(c)||c;window._ccPW.cfc=c;ccPayRender();})" style="'+CC_GB+'">◀</button>':'')+'</div>'+
+    '<b>Positions du paiement</b>'+
+    '<div style="border:1px solid #9a9a9a;background:#fff;height:170px;overflow:auto;margin-top:6px"><table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">'+
+      (H?'<thead><tr>'+th('CFC','left','60px')+th('Texte')+th('Réf. cond.','left','90px')+th('Paiement brut','right','150px')+th('Paiement net','right','150px')+'</tr></thead><tbody>'+posRowsH:
+      '<thead><tr>'+th('CFC','left','60px')+th('Texte')+th('Réf. cond.','left','90px')+th('Adjudication brute','right','130px')+th('Adjudication nette','right','130px')+th('Cumul acptes bruts','right','140px')+th('Paiement net','right','120px')+'</tr></thead><tbody>'+posRows)+'</tbody></table></div>'+
+    '<div style="display:flex;align-items:center;gap:6px;margin:8px 0 12px">'+
+      (H?ib(SV+'<path d="M7.5 3v9M3 7.5h9"/></svg>','ccCatChoix(ccPayAddCfc)','Nouvelle position')+ib(SV+'<path d="M3 7.5h9"/></svg>','ccPayDelPos()','Supprimer la position'):'')+
+      '<span style="position:relative">'+ib(icE,'ccPayMenu('+Q+'pw_m_e'+Q+')','Éditer',1)+mb('pw_m_e',mi('Modifier le descriptif …','ccPayDesc()',true))+'</span>'+
+      (H?ib(SV+'<path d="M3 10 7.5 5.5 12 10"/></svg>','ccPayMove(-1)','Monter')+ib(SV+'<path d="M3 5 7.5 9.5 12 5"/></svg>','ccPayMove(1)','Descendre'):'')+
+      '<span style="flex:1"></span><select onchange="ccPayKeep();window._ccPW.saisie=this.value;ccPayRender()" style="'+inS+';border-radius:6px"><option value="brut"'+(!net?' selected':'')+'>Saisie du brut</option><option value="net"'+(net?' selected':'')+'>Saisie du net</option></select></div>'+
+    '<b>Conditions du paiement</b>'+
+    '<div style="border:1px solid #9a9a9a;background:#fff;height:130px;overflow:auto;margin-top:6px"><table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">'+
+      '<thead><tr>'+th('Ni…','left','40px')+th('Ré…','left','40px')+th('Désignation')+th('Ge…','left','50px')+th('Réf. cond.','left','100px')+th('Conditions','right','110px')+th('Montant','right','120px')+'</tr></thead><tbody>'+condRows+'</tbody></table></div>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin:8px 0 12px">'+
+      '<span style="position:relative">'+ib('<span style="font-size:14px">⚙︎</span>','ccPayMenu('+Q+'pw_m_c'+Q+')','Conditions',1)+
+        mb('pw_m_c',H?(mi('Ajouter une condition au-dessus','ccPayCondAdd(0)',true)+mi('Ajouter une condition au-dessous','ccPayCondAdd(1)',true)+mi('Ajouter la TVA','ccPayTva()',true)+mi('Navigateur …','ccPayCondNav()',true)+sep+mi('Supprimer la condition …','ccPayCondDel()',(P.conds||[]).length>0)):
+          (mi('Ajouter une condition au-dessus','',false)+mi('Ajouter une condition au-dessous','',false)+sep+mi('Conditions du dernier paiement','ccPayCondLast()',true)+mi('Insérer la TVA','ccPayTva()',true)+sep+mi('Supprimer la condition …','',false)),true)+'</span>'+
+      (H?'':ib(icCalc,'ccPayCalc2()','Calculette'))+
+      '<span style="position:relative">'+ib(icE,'ccPayMenu('+Q+'pw_m_a'+Q+')','Coordonnées bancaires, facture, annexes',1)+
+        mb('pw_m_a',mi('Coordonnées bancaires …','ccBanqueEdit()',true)+mi('Facture de l’entreprise en annexe …','window._ccPW.facture?ccFichierWin():ccPayFacture()',true)+mi('Annexe …','ccPayAnnexes()',true),true)+'</span>'+
+      '<span style="margin-left:6px">Coordonnées bancaires:</span><span style="min-width:60px">'+pvEsc(banqueTxt)+'</span>'+
+      '<span style="margin-left:18px">'+anxTxt+'</span></div>'+
+    '<div style="display:flex;gap:18px">'+
+      '<div style="flex:1"><div style="margin-bottom:6px">Description</div><textarea id="pw_desc" style="width:100%;height:170px;box-sizing:border-box;border:1px solid #9a9a9a;background:#fff;padding:5px 7px;font-size:13.5px;font-family:inherit;resize:vertical">'+pvEsc(P.desc||'')+'</textarea>'+
+        '<label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input type="checkbox" id="pw_dern"'+(P.dernier?' checked':'')+'> Dernier paiement</label></div>'+
+      '<div style="width:440px;flex:none"><div style="margin-bottom:6px">Désignation</div><input id="pw_des" value="'+pvEscA(P.des||'')+'" style="'+inS+';width:100%;margin-bottom:12px">'+
+        '<select id="pw_type" style="'+inS+';width:100%;border-radius:6px;margin-bottom:12px"><option value="sit"'+(P.typeP!=='final'?' selected':'')+'>'+(H?'Paiement':'Situation')+'</option><option value="final"'+(P.typeP==='final'?' selected':'')+'>Paiement final</option></select>'+
+        '<select id="pw_statut" style="'+inS+';width:100%;border-radius:6px;margin-bottom:14px">'+CC_PAY_STATUTS.map(s=>'<option'+(P.statut===s?' selected':'')+'>'+s+'</option>').join('')+'</select>'+
+        (H?'':'<div style="margin-bottom:6px">Niveau des prestations</div><input id="pw_niv" type="range" min="0" max="100" step="10" value="'+(P.niveau||0)+'" style="width:100%">'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#444">'+[0,10,20,30,40,50,60,70,80,90,100].map(v=>'<span>'+v+'</span>').join('')+'</div>')+'</div></div>'+
+    '<div style="display:grid;grid-template-columns:70px 150px 40px 1fr 90px 150px 40px;gap:10px 10px;align-items:center;margin-top:18px">'+
+      '<span>N° pmt</span><input id="pw_nump" value="'+pvEscA(P.numP||'')+'" style="'+inS+'"><button onclick="document.getElementById('+Q+'pw_nump'+Q+').value=ccPayNextNum()" style="'+CC_GB+'">◀</button><span></span>'+
+      '<span style="text-align:right">Date fact.</span><input id="pw_datef" value="'+pvEscA(d4(P.dateF))+'" style="'+inS+'">'+chCalBtn('pw_datef')+
+      '<span>N° fact</span><input id="pw_numf" value="'+pvEscA(P.numF||'')+'" style="'+inS+'"><span></span><span></span>'+
+      '<span style="text-align:right">Date pmt</span><input id="pw_datep" value="'+pvEscA(d4(P.dateP))+'" style="'+inS+'">'+chCalBtn('pw_datep')+
+    '</div></div>';
+  let body2=body;
+  if(H){ const AG=ccAgg(A); const rowsA=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
+    const gauche='<div style="width:300px;flex:none;border:1px solid #7fb4e8;background:#fff;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+th('CFC')+th('Montant DG','right')+'</tr></thead><tbody>'+
+      rowsA.map((r,i)=>{ const inP=(P.pos||[]).some(p=>p.cfc===r.cfc);
+        return '<tr ondblclick="ccPayAddCfc('+Q+pvEscA(r.cfc)+Q+')" title="Double-clic : ajouter au paiement" style="cursor:default;background:'+(inP?'#2f6fde;color:#fff':zeb(i))+'"><td style="padding:2px 7px">'+pvEsc(r.cfc)+'</td><td style="padding:2px 7px;text-align:right">'+F((AG.agg[r.cfc]||{}).dg||0)+'</td></tr>'; }).join('')+'</tbody></table></div>';
+    body2='<div style="display:flex;gap:14px;padding:12px 0 0 16px;height:78vh">'+gauche+'<div style="flex:1;min-width:0;overflow:auto">'+body.replace('padding:12px 16px 0;font-size:14px','padding:0 16px 0 0;font-size:14px')+'</div></div>'; }
+  ccMac('cc_pay_win',P.ent||'Paiement',body2,ccMacBtns('ccMacClose('+Q+'cc_pay_win'+Q+')|ccPaySave()',true,'cc_pw_ok'),H?1280:1080,0);
+}
+function ccPayMenu(id){ ['pw_m_e','pw_m_c','pw_m_a'].forEach(x=>{ const m=document.getElementById(x); if(m&&x!==id) m.style.display='none'; });
+  if(!id) return; const m=document.getElementById(id); if(m) m.style.display=m.style.display==='block'?'none':'block'; }
+function ccPaySet(i,v){ const A=ccA(), P=window._ccPW; const p=P.pos[i]; if(!p) return; ccPayKeep();
+  if(P.hors){ if(P.saisie==='net'){ const K=ccConCalc(P); p.brut=K.ratio>0?ccP(v)/K.ratio:ccP(v); } else p.brut=ccP(v); ccPayRender(); return; }
+  if(P.saisie==='net'){ const T=ccPayTaux(A,(A.ecr||[]).find(e=>e.id===P.ref)); const pc=ccPayPrev(A,P).cum[p.cfc]||0;
+    p.cum=pc+ccP(v)/(T.r*(1+T.tva/100)||1); } else p.cum=ccP(v);
+  ccPayRender(); }
+function ccPayDesc(){ const P=window._ccPW; const p=P.pos[window._ccPWpos]; if(!p) return; ccPayKeep();
+  chPrompt('Texte de la position '+p.cfc+' :', p.txt||'', v=>{ if(v==null) return; p.txt=String(v).trim(); ccPayRender(); }); }
+function ccPayNextNum(){ const A=ccA(), P=window._ccPW;
+  return (A.ecr||[]).filter(e=>e.type==='pay'&&e.ref===P.ref&&e.id!==window._ccPWid).reduce((m,e)=>Math.max(m,+e.numP||0),0)+1; }
+function ccPayCondLast(){ const A=ccA(), P=window._ccPW; ccPayKeep();
+  const l=[...(A.ecr||[])].reverse().find(e=>e.type==='pay'&&e.conds&&e.id!==window._ccPWid);
+  if(!l){ toast('Aucun paiement précédent avec des conditions.'); return; }
+  P.conds=JSON.parse(JSON.stringify(l.conds)); ccPayRender(); }
+function ccPayTva(){ const A=ccA(), P=window._ccPW; ccPayKeep();
+  if((P.conds||[]).some(c=>c.type==='tva'||ccCondT(c).k==='tva')){ toast('La TVA figure déjà dans les conditions.'); return; }
+  P.conds.push({niv:P.conds.length+1,ref:P.conds.length,des:'TVA',type:'tva',genre:'M',refc:'',pct:(A.tva!=null?A.tva:8.1),m:true}); ccPayRender(); }
+async function ccPayCalc2(){ try{ await fetch('http://127.0.0.1:7788/calc'); }catch(e){ toast('Serveur de sauvegarde (7788) indisponible — calculette non ouverte.'); } }
+async function ccPayFacture(){
+  const P=window._ccPW; ccPayKeep();
+  try{ const r=await fetch('http://127.0.0.1:7788/pickfile'); const j=await r.json();
+    if(j&&j.path){ P.facture={titre:'Facture de l’entreprise', ref:true, path:j.path};
+      P.annexes=(P.annexes||[]).filter(a=>!a.facture).concat([{titre:'Facture '+(P.numF||'')+' — '+(P.ent||''), ref:true, path:j.path, facture:true}]);
+      ccPayRender(); toast('Facture ajoutée : '+j.path.split('/').pop()); } }
+  catch(e){ toast('Serveur de sauvegarde (7788) indisponible — utilisez « Annexe … » pour saisir le chemin.'); }
+}
+function ccFichierWin(){
+  const P=window._ccPW; if(!P||!P.facture) return; const Q=PV_Q;
+  const nom=String(P.facture.path||'').split('/').pop();
+  const btn=(l,fn,prim)=>'<button onclick="'+fn+'" style="border-radius:7px;padding:5px 26px;font-size:14px;cursor:pointer;'+(prim?'background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;font-weight:600':'background:#fff;border:1px solid #b5b5b5')+'">'+l+'</button>';
+  ccMac('cc_fic','Fichier',
+    '<div style="padding:16px 20px 0;font-size:14px"><div style="display:flex;align-items:center;gap:16px;margin-bottom:14px"><span>Nom du fichier</span><span style="flex:1">'+pvEsc(nom)+'</span>'+btn('Montrer','ccFichierMontrer()')+'</div>'+
+      '<div style="display:flex;justify-content:flex-end">'+btn('Exporter','ccFichierExporter()')+'</div></div>',
+    '<span style="flex:1"></span>'+btn('Supprimer','ccFichierSuppr()')+btn('Fermer','ccMacClose('+Q+'cc_fic'+Q+')',true), 560, 2);
+}
+function ccFichierMontrer(){
+  const P=window._ccPW; if(!P||!P.facture) return; const Q=PV_Q;
+  const url='http://127.0.0.1:7788/rawpath?path='+encodeURIComponent(P.facture.path);
+  ccMac('cc_fic_vue',String(P.facture.path).split('/').pop(),
+    '<div style="padding:8px;height:82vh"><iframe src="'+url+'" style="width:100%;height:100%;border:1px solid #bbb;background:#fff"></iframe></div>',
+    '<span style="flex:1"></span><button onclick="ccMacClose('+Q+'cc_fic_vue'+Q+')" style="background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;border-radius:7px;padding:5px 30px;font-size:14px;cursor:pointer;font-weight:600">Fermer</button>', 1000, 3);
+}
+async function ccFichierExporter(){
+  const P=window._ccPW; if(!P||!P.facture) return;
+  try{ const r=await fetch('http://127.0.0.1:7788/pickdir'); const j=await r.json(); if(!j||!j.dir) return;
+    const r2=await fetch('http://127.0.0.1:7788/copypath?path='+encodeURIComponent(P.facture.path)+'&dest='+encodeURIComponent(j.dir)); const j2=await r2.json();
+    if(j2&&j2.ok) toast('Facture exportée dans '+j.dir); else chErr('Export impossible : '+pvEsc((j2&&j2.error)||'')); }
+  catch(e){ toast('Serveur de sauvegarde (7788) indisponible.'); }
+}
+function ccFichierSuppr(){ const P=window._ccPW; if(!P) return;
+  chConfirm('Supprimer la facture de l’entreprise de ce paiement ?\n(Le fichier reste sur le disque.)',()=>{
+    P.facture=null; P.annexes=(P.annexes||[]).filter(a=>!a.facture); ccMacClose('cc_fic'); ccPayRender(); }); }
+function ccPayAnnexes(){ ccPayKeep(); window._ccAnxT=window._ccPW; window._ccAnxBack=()=>{ window._ccAnxT=null; ccPayRender(); }; window._ccAnxSel=null; ccAnxRender(); }
+function ccPaySave(){
+  const A=ccA(), P=window._ccPW; if(!A||!P) return; ccPayKeep();
+  if(P.hors&&!(P.pos||[]).length){ chErr('Ajoutez au moins une position au paiement.'); return; }
+  const K=P.hors?ccConCalc(P):ccPayCalc(A,P);
+  P.mnt=Math.round(K.net*100)/100;
+  if(P.hors){ P.cfc=P.lot||P.pos[0].cfc; P.pos.forEach(p=>{ p.mnt=Math.round((p._net||0)*100)/100; ccEnsureRow(A,p.cfc); }); }
+  P.pos.forEach(p=>{ delete p._net; }); (P.conds||[]).forEach(c=>{ delete c._mnt; });
+  if(P.banque&&P.ent) ccBanqueEntSave(P.ent,P.banque);
+  if(window._ccPWid){ const e=A.ecr.find(x=>x.id===window._ccPWid); Object.assign(e,P); }
+  else { P.id=pvId(); A.ecr.push(P); }
+  ccPersist(); ccMacClose('cc_pay_win'); ccRender();
+  toast('Paiement '+P.numP+' — '+ccF(P.mnt)+' enregistré.');
+}
+
+/* ── Coordonnées bancaires : « Editer le compte bancaire » + navigateurs ── */
+function ccBanques(){ try{ return JSON.parse(localStorage.getItem('sa_banques')||'[]')||[]; }catch(e){ return []; } }
+function ccBanquesSave(L){ try{ localStorage.setItem('sa_banques',JSON.stringify(L)); }catch(e){} }
+function ccBanqueEnt(ent){ try{ const m=JSON.parse(localStorage.getItem('sa_banques_ent')||'{}')||{}; const l=m[ent]||[]; return l[l.length-1]||null; }catch(e){ return null; } }
+function ccBanqueEntList(ent){ try{ const m=JSON.parse(localStorage.getItem('sa_banques_ent')||'{}')||{}; return m[ent]||[]; }catch(e){ return []; } }
+function ccBanqueEntSave(ent,b){ try{ const m=JSON.parse(localStorage.getItem('sa_banques_ent')||'{}')||{};
+  const l=(m[ent]||[]).filter(x=>(x.iban||'')+(x.compte||'')!==(b.iban||'')+(b.compte||'')); l.push(b); m[ent]=l;
+  localStorage.setItem('sa_banques_ent',JSON.stringify(m)); }catch(e){} }
+const CC_BK_F=[['nom','Banque/Etablissement'],['rue','Rue et n°'],['npa','NPA/Localité'],['clearing','N° de clearing'],['swift','SWIFT'],['postal','Compte postal']];
+function ccBanqueEdit(){
+  const P=window._ccPW; ccPayKeep();
+  const b=Object.assign({nom:'',rue:'',npa:'',loc:'',clearing:'',swift:'',postal:'',iban:'',compte:'Voir bulletin de versement'},P.banque||{});
+  window._ccBk=b; const Q=PV_Q;
+  const inS='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box';
+  const row=(k,l,extra)=>'<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><span style="width:180px;text-align:right">'+l+'</span>'+
+    (k==='npa'?'<input id="bk_npa" value="'+pvEscA(b.npa)+'" style="'+inS+';width:120px"><input id="bk_loc" value="'+pvEscA(b.loc)+'" style="'+inS+';flex:1">':'<input id="bk_'+k+'" value="'+pvEscA(b[k]||'')+'" style="'+inS+';flex:1">')+'</div>';
+  const btn=(l,fn,prim)=>'<button onclick="'+fn+'" style="border-radius:7px;padding:5px 24px;font-size:14px;cursor:pointer;'+(prim?'background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;font-weight:600':'background:#fff;border:1px solid #b5b5b5')+'">'+l+'</button>';
+  ccMac('cc_bk','Editer le compte bancaire',
+    '<div style="padding:14px 18px 0;font-size:14px"><b>Banque/Etablissement</b><div style="height:8px"></div>'+
+      CC_BK_F.map(f=>row(f[0],f[1])).join('')+'<b>Compte bancaire</b><div style="height:8px"></div>'+row('iban','IBAN')+row('compte','N° compte bancaire')+'</div>',
+    '<span style="flex:1"></span>'+btn('Comptes','ccBanqueComptes()')+btn('Chercher','ccBanqueNav()',true)+btn('Annuler','ccMacClose('+Q+'cc_bk'+Q+')')+btn('OK','ccBanqueOk()'),
+    700, 1);
+}
+function ccBanqueLire(){ const b=window._ccBk; ['nom','rue','npa','loc','clearing','swift','postal','iban','compte'].forEach(k=>{ const f=document.getElementById('bk_'+k); if(f) b[k]=f.value.trim(); }); return b; }
+function ccBanqueOk(){ const b=ccBanqueLire(); const P=window._ccPW; P.banque=JSON.parse(JSON.stringify(b));
+  if(b.nom){ const L=ccBanques(); if(!L.some(x=>x.nom===b.nom&&x.rue===b.rue&&x.loc===b.loc)){ L.push({nom:b.nom,rue:b.rue,npa:b.npa,loc:b.loc,pays:'CH',clearing:b.clearing,swift:b.swift}); ccBanquesSave(L); } }
+  ccMacClose('cc_bk'); ccPayRender(); }
+function ccBanqueRemplir(x){ const b=ccBanqueLire(); Object.assign(b,x); ['nom','rue','npa','loc','clearing','swift','postal','iban','compte'].forEach(k=>{ const f=document.getElementById('bk_'+k); if(f&&b[k]!=null) f.value=b[k]; }); }
+/* Navigateur d'établissement bancaire (établissements enregistrés) */
+function ccBanqueNav(){ window._ccBkSel=null; ccBanqueNavRender(); }
+function ccBanqueNavRender(){
+  const L=ccBanques(), Q=PV_Q, q=((document.getElementById('bkn_q')||{}).value||'').toLowerCase();
+  const th=t=>'<th style="text-align:left;font-weight:normal;padding:4px 8px;border-bottom:1px solid #e2e2e2;background:#fff;position:sticky;top:0">'+t+'</th>';
+  const rows=L.map((x,i)=>({x,i})).filter(o=>!q||(o.x.nom+' '+o.x.rue+' '+o.x.loc).toLowerCase().includes(q));
+  ccMac('cc_bkn','Navigateur d’établissement bancaire',
+    '<div style="padding:12px 16px 0"><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><input id="bkn_q" value="'+pvEscA(q)+'" oninput="ccBanqueNavRender();var f=document.getElementById('+Q+'bkn_q'+Q+');f.focus();f.setSelectionRange(f.value.length,f.value.length)" placeholder="⌕" style="width:300px;border:2px solid #9fc0e8;border-radius:7px;padding:5px 9px;font-size:13px;background:#fff"></div>'+
+    '<div style="border:1px solid #9a9a9a;background:#fff;height:480px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px">'+
+    '<thead><tr>'+th('Banque/Etablissement')+th('Rue et n°')+th('NPA')+th('Localité')+th('Pays')+'</tr></thead><tbody>'+
+    rows.map((o,j)=>'<tr onclick="window._ccBkSel='+o.i+';ccBanqueNavRender()" ondblclick="window._ccBkSel='+o.i+';ccBanqueNavOk()" style="cursor:default;background:'+(o.i===window._ccBkSel?'#2f6fde;color:#fff':(j%2?'#fff':'#eef3fb'))+'">'+
+      '<td style="padding:3px 8px">'+pvEsc(o.x.nom)+'</td><td style="padding:3px 8px">'+pvEsc(o.x.rue||'')+'</td><td style="padding:3px 8px">'+pvEsc(o.x.npa||'')+'</td><td style="padding:3px 8px">'+pvEsc(o.x.loc||'')+'</td><td style="padding:3px 8px">'+pvEsc(o.x.pays||'')+'</td></tr>').join('')+
+    '</tbody></table>'+(rows.length?'':'<div style="padding:12px;color:#999;font-size:13px">Aucun établissement enregistré — « Nouveau … » ou saisissez-le dans la fenêtre du compte (il sera mémorisé).</div>')+'</div></div>',
+    '<span style="flex:1"></span><button onclick="ccBanqueNavNew()" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 22px;font-size:14px;cursor:pointer">Nouveau …</button>'+
+      ccMacBtns('ccMacClose('+Q+'cc_bkn'+Q+')|ccBanqueNavOk()',window._ccBkSel!=null,'bkn_ok'), 980, 2);
+}
+function ccBanqueNavOk(){ const x=ccBanques()[window._ccBkSel]; if(!x) return; ccMacClose('cc_bkn'); ccBanqueRemplir({nom:x.nom,rue:x.rue,npa:x.npa,loc:x.loc,clearing:x.clearing||'',swift:x.swift||''}); }
+function ccBanqueNavNew(){ ccMacClose('cc_bkn'); ccBanqueRemplir({nom:'',rue:'',npa:'',loc:'',clearing:'',swift:''});
+  const f=document.getElementById('bk_nom'); if(f) f.focus(); toast('Saisissez le nouvel établissement : il sera mémorisé au OK.'); }
+/* Comptes : comptes déjà utilisés pour cette entreprise */
+function ccBanqueComptes(){
+  const P=window._ccPW, L=ccBanqueEntList(P.ent||''), Q=PV_Q;
+  if(!L.length){ toast('Aucun compte enregistré pour '+(P.ent||'cette entreprise')+'.'); return; }
+  window._ccBkcSel=null;
+  ccMac('cc_bkc','Comptes — '+(P.ent||''),
+    '<div style="padding:12px 16px 0"><div style="border:1px solid #9a9a9a;background:#fff;height:260px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px">'+
+    L.map((x,i)=>'<tr onclick="window._ccBkcSel='+i+';[...this.parentElement.children].forEach(t=>t.style.background='+Q+Q+');this.style.background='+Q+'#cfe3f5'+Q+'" ondblclick="window._ccBkcSel='+i+';ccBanqueComptesOk()" style="cursor:default"><td style="padding:4px 8px">'+pvEsc(x.nom||'')+'</td><td style="padding:4px 8px">'+pvEsc(x.iban||x.compte||'')+'</td></tr>').join('')+
+    '</table></div></div>', ccMacBtns('ccMacClose('+Q+'cc_bkc'+Q+')|ccBanqueComptesOk()',true), 620, 2);
+}
+function ccBanqueComptesOk(){ const P=window._ccPW, x=ccBanqueEntList(P.ent||'')[window._ccBkcSel]; if(!x) return; ccMacClose('cc_bkc'); ccBanqueRemplir(x); }
 
 /* Paiement — sur contrat (cumul affiché) ou hors contrat ; Situation / Paiement final ; statut */
 function ccDlgPay(id,cfc,hors){

@@ -206,6 +206,55 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": str(e)})
             return
 
+        if u.path == "/rawpath":
+            # Sert le contenu d'un fichier d'annexe (affichage dans la fenêtre « Montrer »).
+            q = urllib.parse.parse_qs(u.query)
+            path = os.path.expanduser((q.get("path", [""])[0]).strip())
+            if not path or not os.path.isfile(path):
+                self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % path})
+                return
+            import mimetypes
+            ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
+            try:
+                with open(path, "rb") as fh:
+                    data = fh.read()
+                self.send_response(200)
+                self._cors()
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
+        if u.path == "/copypath":
+            # Exporte (copie) un fichier d'annexe vers un dossier choisi.
+            q = urllib.parse.parse_qs(u.query)
+            path = os.path.expanduser((q.get("path", [""])[0]).strip())
+            dest = os.path.expanduser((q.get("dest", [""])[0]).strip())
+            if not path or not os.path.isfile(path) or not dest or not os.path.isdir(dest):
+                self._json(404, {"ok": False, "error": "Fichier ou dossier introuvable."})
+                return
+            try:
+                import shutil
+                out = os.path.join(dest, os.path.basename(path))
+                shutil.copy2(path, out)
+                subprocess.Popen(["open", "-R", out])
+                self._json(200, {"ok": True, "path": out})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
+        if u.path == "/calc":
+            # Ouvre la Calculette du Mac (icône calculatrice de la fenêtre de paiement).
+            try:
+                subprocess.Popen(["open", "-a", "Calculator"])
+                self._json(200, {"ok": True})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         if u.path in ("/openpath", "/revealpath"):
             # Ouvre (ou révèle dans le Finder) un fichier d'annexe existant.
             q = urllib.parse.parse_qs(u.query)

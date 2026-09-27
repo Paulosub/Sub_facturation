@@ -17575,18 +17575,36 @@ function ccAutoFit(){
   });
   const hdr=[...t.querySelectorAll('thead th')].map(x=>x.innerText.trim());
   let flex=hdr.indexOf('D\u00e9signation'); if(flex<0) flex=1;
-  let tot=0;
+  const W=[], isNum=[];
   cols.forEach((col,i)=>{
     const k=col.getAttribute('data-ck');
     const num=ths[i]&&ths[i].getAttribute('data-num')==='1';
     const fixe=(k==='cfc'&&t.getAttribute('data-wkey')==='ccW');
     let wpx=(k&&cw[k]&&!fixe)?cw[k]:Math.min(need[i], (i===flex||num)?9999:420);
     if(num) wpx=Math.max(wpx, need[i]);   /* les chiffres sont toujours affichés en entier */
-    if(i===flex&&!(k&&cw[k])){ col.style.width=''; tot+=need[i]; return; }
-    col.style.width=wpx+'px'; tot+=wpx;
+    W[i]=wpx; isNum[i]=num;
   });
-  t.style.minWidth=tot+'px';
+  /* jamais de défilement horizontal : le tableau tient dans la largeur affichée.
+     1) les colonnes de texte se resserrent (texte tronqué « … ») ; 2) s'il le faut encore,
+     tout le tableau est réduit (zoom) pour que les montants restent entiers. */
+  t.style.zoom=''; t.style.minWidth=''; t.style.width='100%';
+  const wrap=t.parentElement;
+  const avail=Math.max(200, (wrap?wrap.clientWidth:t.clientWidth)-1);
+  let tot=W.reduce((a,b)=>a+b,0);
+  if(tot<=avail){
+    cols.forEach((col,i)=>{ const k=col.getAttribute('data-ck');
+      col.style.width=(i===flex&&!(k&&cw[k]))?'':W[i]+'px'; });
+    return;
+  }
+  const minT=i=>i===flex?120:Math.min(W[i],70);
+  const shr=W.map((w,i)=>isNum[i]?0:Math.max(0,w-minT(i)));
+  const S=shr.reduce((a,b)=>a+b,0);
+  if(S>0){ const take=Math.min(tot-avail,S); W.forEach((w,i)=>{ W[i]=w-shr[i]*take/S; }); tot-=take; }
+  cols.forEach((col,i)=>{ col.style.width=Math.floor(W[i])+'px'; });
+  if(tot>avail+0.5){ t.style.width=Math.ceil(tot)+'px'; t.style.zoom=Math.max(0.05, (avail-1)/tot).toFixed(4); }
 }
+window.addEventListener('resize', ()=>{ clearTimeout(window._ccRsT);
+  window._ccRsT=setTimeout(()=>{ if(document.getElementById('cc_af_tb')&&typeof ccAfFill==='function') ccAfFill(); },120); });
 function ccAfFill(){
   const w=document.getElementById('cc_af_wrap'), tb=document.querySelector('#cc_af_tb tbody'); if(!w||!tb) return;
   ccAutoFit();
@@ -17596,8 +17614,12 @@ function ccAfFill(){
   const top=w.getBoundingClientRect().top; const h=Math.max(240, window.innerHeight-top-14); w.style.height=h+'px';
   tb.querySelectorAll('tr.cc-af-fill').forEach(r=>r.remove());
   const ncol=(document.querySelector('#cc_af_tb thead tr')||{cells:{length:11}}).cells.length;
-  const n=Math.max(0, Math.floor((h-26)/24)-tb.children.length);
-  for(let i2=0;i2<n;i2++){ const r=document.createElement('tr'); r.className='cc-af-fill'; r.innerHTML='<td colspan="'+ncol+'">&nbsp;</td>'; tb.appendChild(r); }
+  /* lignes zébrées jusqu'au bas du cadre (hauteur réelle d'une ligne, zoom compris) */
+  const add=()=>{ const r=document.createElement('tr'); r.className='cc-af-fill'; r.innerHTML='<td colspan="'+ncol+'">&nbsp;</td>'; tb.appendChild(r); return r; };
+  const t0=document.getElementById('cc_af_tb');
+  const r1=add(), rh=r1.getBoundingClientRect().height||12;
+  const n=Math.max(0, Math.floor((w.clientHeight-t0.getBoundingClientRect().height)/rh));
+  for(let i2=0;i2<n;i2++) add();
 }
 function ccAfCtx(ev,rid,cfc){
   ev.preventDefault(); ev.stopPropagation();

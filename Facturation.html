@@ -16562,6 +16562,37 @@ function ccAveNew(cfc){
   window._ccCW=C; window._ccCWid=null; window._ccCWpos=0; window._ccCWcond=0;
   ccConWinRender();
 }
+/* « Informations montants bruts » (avenant) : contrat + avenants liés, paiements, solde, en BRUT */
+function ccCWbruts(){
+  const A=ccA(), C=window._ccCW; if(!A||!C||!C.ref) return;
+  const k=(A.ecr||[]).find(e=>e.id===C.ref); if(!k){ chErr('Contrat introuvable.'); return; }
+  const lies=[k].concat((A.ecr||[]).filter(e=>e.type==='avenant'&&e.ref===k.id&&e.id!==window._ccCWid));
+  const K=ccConCalc(JSON.parse(JSON.stringify(k.conds?k:Object.assign({},k,{conds:[{type:'tva',pct:(A.tva!=null?A.tva:8.1),m:true}]}))));
+  const ratio=K.ratio>0?K.ratio:1;
+  const brutDe=p=>p.brut!=null?ccP(p.brut):ccP(p.mnt)/ratio;
+  const ordre=[], par={};
+  lies.forEach(e=>(e.pos||[]).forEach(p=>{ if(!par[p.cfc]){ par[p.cfc]={adj:0,pay:0,txt:p.txt||ccCatLbl(p.cfc)||'',ouv:''}; ordre.push(p.cfc); } par[p.cfc].adj+=brutDe(p); }));
+  let payTot=0;
+  (A.ecr||[]).filter(e=>e.type==='pay'&&(e.ref===k.id||lies.some(l=>l.id===e.ref))).forEach(e=>{
+    const b=ccP(e.mnt)/ratio; payTot+=b; const c=(typeof ccPayCfc==='function'?ccPayCfc(A,e):null)||k.lot;
+    if(!par[c]){ par[c]={adj:0,pay:0,txt:ccCatLbl(c)||'',ouv:''}; ordre.push(c); } par[c].pay+=b; });
+  const adjTot=ordre.reduce((s,c)=>s+par[c].adj,0);
+  const F=v=>ccF(v), Q=PV_Q;
+  const th=(t,al)=>'<th style="text-align:'+(al||'left')+';font-weight:normal;padding:4px 8px;border-bottom:1px solid #e2e2e2;border-right:1px solid #eee;background:#fff;position:sticky;top:0;white-space:nowrap">'+t+'</th>';
+  const ligne=(l,v)=>'<div style="display:flex;gap:14px;font-size:14px;margin-bottom:10px"><span style="width:230px">'+l+'</span><span style="width:120px;text-align:right">'+v+'</span></div>';
+  ccMac('cc_bruts','Informations montants bruts',
+    '<div style="padding:14px 16px 0">'+
+      '<div style="font-weight:700;font-size:14px;margin-bottom:14px">Montants bruts pour l’avenant d’ajustement de la TVA</div>'+
+      ligne('Contrat + avenants liés (brut)',F(adjTot))+ligne('Paiements à ce jour (brut)',F(payTot))+ligne('Différence',F(adjTot-payTot))+
+      '<div style="font-weight:700;font-size:14px;margin:16px 0 6px">Positions</div>'+
+      '<div style="border:1px solid #7fb4e8;background:#fff;height:280px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed">'+
+      '<thead><tr>'+th('N°')+th('Désignation')+th('Ouvrage')+th('Adjudication brute','right')+th('Paiement brut','right')+th('Solde à encaisser','right')+'</tr></thead><tbody>'+
+      ordre.map((c,i)=>{ const x=par[c]; return '<tr style="background:'+(i%2?'#fff':'#eef3fb')+'"><td style="padding:3px 8px">'+pvEsc(c)+'</td>'+
+        '<td style="padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+pvEsc(x.txt)+'</td><td style="padding:3px 8px">'+pvEsc(x.ouv)+'</td>'+
+        '<td style="padding:3px 8px;text-align:right">'+F(x.adj)+'</td><td style="padding:3px 8px;text-align:right">'+F(x.pay)+'</td><td style="padding:3px 8px;text-align:right">'+F(x.adj-x.pay)+'</td></tr>'; }).join('')+
+      '</tbody></table></div></div>',
+    ccMacBtns('ccMacClose('+Q+'cc_bruts'+Q+')|ccMacClose('+Q+'cc_bruts'+Q+')',true), 900, 2);
+}
 function ccCWnextNum(){ const A=ccA(), C=window._ccCW;
   if(C.type==='avenant') return (A.ecr||[]).filter(e=>e.type==='avenant'&&e.ref===C.ref&&e.id!==window._ccCWid).length+1;
   return ccNum('contrat'); }
@@ -16619,7 +16650,7 @@ function ccConWinRender(){
     '<div style="display:flex;align-items:center;gap:6px;margin:8px 0 12px">'+
       '<span style="position:relative">'+ib(icP,'ccCWmenu('+Q+'cw_m_p'+Q+')','Ajouter',1)+mb('cw_m_p',mi('Nouvelle position …','ccCatChoix(ccCWaddCfc)',true))+'</span>'+
       ib(icM,'ccCWdelPos()','Supprimer la position')+
-      '<span style="position:relative">'+ib(icE,'ccCWmenu('+Q+'cw_m_e'+Q+')','Éditer',1)+mb('cw_m_e',mi('Modifier le descriptif …','ccCWdesc()',hasPos)+mi('Informations montants bruts …','',false))+'</span>'+
+      '<span style="position:relative">'+ib(icE,'ccCWmenu('+Q+'cw_m_e'+Q+')','Éditer',1)+mb('cw_m_e',mi('Modifier le descriptif …','ccCWdesc()',hasPos)+mi('Informations montants bruts …','ccCWbruts()',C.type==='avenant'&&!!C.ref))+'</span>'+
       ib(icU,'ccCWmove(-1)','Monter')+ib(icD,'ccCWmove(1)','Descendre')+
       '<span style="flex:1"></span>'+
       '<select onchange="window._ccCW.saisie=this.value;ccConWinRender()" style="'+inS+';border-radius:6px"><option value="brut"'+(!net?' selected':'')+'>Saisie du brut</option><option value="net"'+(net?' selected':'')+'>Saisie du net</option></select></div>'+
@@ -16627,8 +16658,10 @@ function ccConWinRender(){
     '<div style="border:1px solid #9a9a9a;background:#fff;height:120px;overflow:auto;margin-top:6px"><table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">'+
       '<thead><tr>'+th('NIV','left','40px')+th('REF','left','40px')+th('Désignation')+th('Ge…','left','46px')+th('Réf. cond.','left','90px')+th('Conditions','right','90px')+th('Montant','right','100px')+th('M','center','30px')+'</tr></thead><tbody>'+condRows+'</tbody></table></div>'+
     '<div style="margin:8px 0 14px;position:relative;display:inline-block">'+ib('<span style="font-size:14px">⚙︎</span>','ccCWmenu('+Q+'cw_m_c'+Q+')','Conditions',1)+
-      mb('cw_m_c',mi('Ajouter une condition au-dessus','ccCWcondAdd(0)',true)+mi('Ajouter une condition au-dessous','ccCWcondAdd(1)',true)+mi('Navigateur …','',false)+sep+
-        mi('Les conditions du dernier contrat','ccCWcondLast()',true)+sep+mi('Supprimer la condition …','ccCWcondDel()',(C.conds||[]).length>0))+'</div>'+
+      /* avenant : conditions héritées du contrat → ajout/suppression grisés, Navigateur actif */
+      mb('cw_m_c',mi('Ajouter une condition au-dessus','ccCWcondAdd(0)',C.type!=='avenant')+mi('Ajouter une condition au-dessous','ccCWcondAdd(1)',C.type!=='avenant')+
+        mi('Navigateur …','toast('+Q+'Navigateur des conditions — à venir (envoyez la capture de sa fenêtre).'+Q+')',C.type==='avenant')+sep+
+        mi('Les conditions du dernier contrat','ccCWcondLast()',true)+sep+mi('Supprimer la condition …','ccCWcondDel()',C.type!=='avenant'&&(C.conds||[]).length>0))+'</div>'+
     '<div style="display:grid;grid-template-columns:1.4fr .8fr 1.1fr 1.1fr;gap:4px 18px;align-items:center;font-size:14px">'+
       '<span>Désignation</span><span>Numéro</span><span>Date</span><span>Statut</span>'+
       '<input id="cw_des" value="'+pvEscA(C.des!=null?C.des:'Contrat')+'" style="'+inS+'">'+

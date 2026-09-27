@@ -15521,7 +15521,7 @@ function ccRender(){
     const hasEcr=ccEcrOf(A,r.cfc).length>0;
     const gras=lvl<=2?'font-weight:700;':'';
     h+='<tr'+(r.id===window._ccSelRow?' class="cc-af-sel"':'')+' data-rid="'+pvEscA(r.id)+'" data-cfc="'+pvEscA(r.cfc)+'" onclick="ccAfSel(this)" oncontextmenu="ccAfCtx(event,'+PV_Q+pvEscA(r.id)+PV_Q+','+PV_Q+pvEscA(r.cfc)+PV_Q+')" style="cursor:default">'+
-      '<td style="'+gras+'"><span class="cc-tgl" style="cursor:pointer;display:inline-block;width:12px;color:#666" onclick="event.stopPropagation();ccTgl('+PV_Q+pvEscA(r.cfc)+PV_Q+')">'+(hasEcr?(_ccOpen[r.cfc]?'▾':'▸'):'')+'</span>'+pvEsc(r.cfc)+'</td>'+
+      '<td style="'+gras+'">'+pvEsc(r.cfc)+'</td>'+
       '<td style="'+gras+'">'+pvEsc(r.lbl||'')+'</td>'+
       '<td>'+pvEsc(r.ent||'')+'</td>'+
       '<td style="'+gras+'">'+F0(a.dg)+'</td>'+
@@ -15530,7 +15530,7 @@ function ccRender(){
       '<td'+(a.ff?' style="color:#c62828"':'')+'>'+(a.ff?'FF ':'')+F0(a.pay)+'</td>'+
       '<td style="'+gras+'">'+F0(a.prob)+'</td>'+
       '<td style="color:'+(a.etat>0.005?'#c62828':(a.etat<-0.005?'#1e6b2d':'#555'))+'">'+F0(a.etat)+'</td></tr>';
-    if(_ccOpen[r.cfc]) h+=ccEcrRows(A,r.cfc);
+    h+=ccEcrRows(A,r.cfc);   /* jamais replié : toutes les écritures toujours visibles */
   });
   h+='</tbody></table></div></div></div>';
   setTimeout(ccAfFill,0);
@@ -16098,8 +16098,7 @@ function ccAfRerender(){
 /* le re-rendu remplace la ligne : le double-clic est donc détecté ici (2 clics < 450 ms) */
 function ccAfSel(tr){ const id=tr.getAttribute('data-rid'), t=Date.now();
   if(window._ccSelRow===id&&!window._ccSelEcr){
-    if(t-(window._ccClickT||0)<450){ window._ccClickT=0; ccTgl(tr.getAttribute('data-cfc')); }
-    else window._ccClickT=t;
+    window._ccClickT=t;
     return; }
   window._ccClickT=t; window._ccSelRow=id; window._ccSelEcr=null; ccAfRerender(); }
 function ccAfSelE(tr){ const id=tr.getAttribute('data-eid'), t=Date.now();

@@ -15184,6 +15184,7 @@ function ccTtc(e){ return Math.round((ccP(e.ht)*(1+ccP(e.tva)/100))*100)/100; }
    variation / renchérissement / perte = + sur l'origine ; bénéfice d'adjudication = − sur l'origine. */
 function ccMutEff(e){ const t=ccTtc(e);
   if(e.genre==='benef') return {src:-t, dst:0};
+  if(e.genre==='variation'&&e.sens==='moins') return {src:-t, dst:0};
   if(e.genre==='perte'||e.genre==='variation'||e.genre==='rench') return {src:t, dst:0};
   return {src:-t, dst:t}; }
 const CC_MUT_GENRES={transfert:'Transfert', variation:'Variation', rench:'Renchérissement', benef:'Bénéfice d’adjudication', perte:'Perte sur adjudication'};
@@ -15362,7 +15363,8 @@ function ccRender(){
     '<span>'+lbl+'</span><span style="font-size:11px">▶</span>'+
     '<div style="display:none;position:absolute;left:100%;top:-4px;background:#fff;color:#1a1a1a;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:240px;padding:4px 0;max-height:70vh;overflow:auto">'+inner+'</div></div>';
   const sep='<div style="border-top:1px solid #ddd;margin:5px 0"></div>';
-  const mutItems=Object.keys(CC_MUT_GENRES).map(g=>itG(CC_MUT_GENRES[g]+' …','ccAfMut('+cq+','+Q+g+Q+')',!!cfcSel)).join('');
+  const mutItems=[['transfert','Transfert'],['plus','Variation de coût'],['rench','Renchérissement'],['benef','Bénéfice d’adjudication'],['perte','Perte sur adjudication']]
+    .map(g=>itG(g[1]+' …','ccMutWin(null,'+cq+','+Q+g[0]+Q+')',!!cfcSel)).join('');
   const DT=A.details||{};
   const dOn=k=>DT[k]!=null?!!DT[k]:['mut','con','ave','pay'].includes(k);
   const ckI=(on3,lbl,fn)=>'<div style="padding:5px 16px 5px 10px;cursor:pointer;display:flex;align-items:center" onmouseover="this.style.background='+Q+'#eef4f9'+Q+'" onmouseout="this.style.background='+Q+Q+'" onclick="'+fn+'"><span style="width:18px;flex:none">'+(on3?'✓':'')+'</span>'+lbl+'</div>';
@@ -15551,7 +15553,7 @@ function ccEcrRows(A,cfc){
        6 DG rév. · 7 Contrats+avenants · 8 Paiements · 9 Coût probable · 10 État */
     let lbl='', c4='', c5='', c7='', c8='', c9='', red=false;
     if(e.type==='mut'){
-      const g=(e.genre==='transfert'||!CC_MUT_GENRES[e.genre])?('transfert'+(e.src===cfc?' → '+(e.dst||'?'):' ← '+(e.src||'?'))):CC_MUT_GENRES[e.genre].toLowerCase();
+      const g=(e.genre==='transfert'||!CC_MUT_GENRES[e.genre])?('transfert'+(e.src===cfc?' → '+(e.dst||'?'):' ← '+(e.src||'?'))):(e.genre==='variation'?(e.sens==='moins'?'moins-value':'plus-value'):CC_MUT_GENRES[e.genre].toLowerCase());
       lbl='&gt; '+g+(e.num?' ['+e.num+']':'')+(e.des?' · '+pvEsc(e.des):'')+(e.date?' · '+ccDfr(e.date):'')+(e.statut==='brouillon'?' · brouillon':'');
       const f=ccMutEff(e); const sgn=(e.src===cfc)?f.src:f.dst;
       c4=(sgn<0?'−':'')+ccF(Math.abs(sgn));
@@ -15590,7 +15592,7 @@ function ccRowMenu(cfc){
     '<div style="text-align:right;margin-top:12px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button></div>');
 }
 function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
-  if(e.type==='mut') ccDlgMut(id); else if(e.type==='contrat') ccConWin(id);
+  if(e.type==='mut') ccMutWin(id); else if(e.type==='contrat') ccConWin(id);
   else if(e.type==='avenant') ccConWin(id); else if(e.type==='pay'){ if(e.ref||e.hors) ccPayEdit(id); else ccDlgPay(id); }
   else if(e.type==='prov') ccProvWin(e.cfc,id); else if(e.type==='cp') ccDlgCp(e.cfc); }
 function ccCfcOpts(sel){ const A=ccA();
@@ -16202,7 +16204,7 @@ function ccAfCtx(ev,rid,cfc){
   const it=(lbl,fn)=>'<div style="padding:6px 18px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="document.getElementById('+PV_Q+'cc_af_ctx'+PV_Q+').style.display='+PV_Q+'none'+PV_Q+';'+fn+'">'+lbl+'</div>';
   m.innerHTML=
     it('Nouvelle écriture …','ccRowMenu('+PV_Q+pvEscA(cfc)+PV_Q+')')+
-    it('Nouvelle mutation …','ccDlgMut(null,'+PV_Q+pvEscA(cfc)+PV_Q+')')+
+    it('Nouvelle mutation …','ccMutWin(null,'+PV_Q+pvEscA(cfc)+PV_Q+','+PV_Q+'transfert'+PV_Q+')')+
     '<div style="border-top:1px solid #ddd;margin:5px 0"></div>'+
     it('Supprimer le poste …','ccDelPoste('+PV_Q+pvEscA(rid)+PV_Q+')');
   m.style.display='block';
@@ -16450,7 +16452,7 @@ function ccAdrBloc(a,e){ if(!a) return '';
 /* 1. Sélectionner l'adresse */
 function ccConSelAdr(cfc){
   const A=ccA(); if(!A) return;
-  if(window._ccSelAdrMode!=='pay'&&window._ccSelAdrMode!=='prov') window._ccSelAdrMode=null;
+  if(!['pay','prov','mut'].includes(window._ccSelAdrMode)) window._ccSelAdrMode=null;
   window._ccConCfc=cfc||''; window._ccConAdrSel=null;
   A.adrCon=A.adrCon||[];
   const Q=PV_Q;
@@ -16477,6 +16479,7 @@ function ccConSelOk(){
   const A=ccA(); const x=(A.adrCon||[]).find(y=>y.id===window._ccConAdrSel); if(!x) return;
   ccMacClose('cc_con_sel');
   if(window._ccSelAdrMode==='pay'){ window._ccSelAdrMode=null; ccPayHorsWin(x); return; }
+  if(window._ccSelAdrMode==='mut'){ window._ccSelAdrMode=null; if(window._ccMW){ window._ccMW[window._ccMutEntK||'ent']=x.ent; ccMutRender(); } return; }
   if(window._ccSelAdrMode==='prov'){ window._ccSelAdrMode=null; if(window._ccPV){ window._ccPV.ent=x.ent; ccProvRender(); } return; }
   ccConWin(null, x);
 }
@@ -17205,6 +17208,161 @@ function ccBanqueComptes(){
     '</table></div></div>', ccMacBtns('ccMacClose('+Q+'cc_bkc'+Q+')|ccBanqueComptesOk()',true), 620, 2);
 }
 function ccBanqueComptesOk(){ const P=window._ccPW, x=ccBanqueEntList(P.ent||'')[window._ccBkcSel]; if(!x) return; ccMacClose('cc_bkc'); ccBanqueRemplir(x); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MUTATIONS — fenêtres du bureau :
+   « Transfert » (liste des CFC à gauche = origine, destination + entreprise,
+   avant / mutation / après pour l'origine et la destination) et fenêtre à une
+   position pour « Variation de coût » (plus-value / moins-value), Renchérissement,
+   Bénéfice / Perte sur adjudication (mutation + DG après mutation).
+   ══════════════════════════════════════════════════════════════════════════ */
+const CC_MUT_CHOIX=[['transfert','Transfert'],['plus','Plus-value'],['moins','Moins-value'],['rench','Renchérissement'],['benef','Bénéfice d’adjudication'],['perte','Perte sur adjudication']];
+function ccMutKey(e){ if(!e) return 'transfert'; if(e.genre==='variation') return e.sens==='moins'?'moins':'plus'; return e.genre||'transfert'; }
+function ccMutTitre(k){ return k==='transfert'?'Transfert':(k==='plus'||k==='moins')?'Variation de coût':(CC_MUT_CHOIX.find(x=>x[0]===k)||[,''])[1]; }
+/* DG (TTC) d'un CFC avant cette mutation : DG + mutations, sans la mutation éditée */
+function ccMutAvant(A,cfc){
+  if(!cfc) return 0; const own=ccOwn(A)[cfc]||{dg:0,mut:0};
+  let v=ccP(own.dg)+ccP(own.mut);
+  const e=window._ccMWid&&(A.ecr||[]).find(x=>x.id===window._ccMWid);
+  if(e){ const f=ccMutEff(e); if(e.src===cfc) v-=f.src; if(e.dst===cfc) v-=f.dst; }
+  return v;
+}
+function ccMutWin(id,cfc,genre){
+  const A=ccA(); if(!A) return;
+  const e=id?(A.ecr||[]).find(x=>x.id===id):null;
+  const tva=(A.tva!=null?A.tva:8.1);
+  let k=e?ccMutKey(e):(genre==='variation'?'plus':(genre||'transfert'));
+  const M=e?JSON.parse(JSON.stringify(e)):{type:'mut', genre:'transfert', src:cfc||'', dst:'', ent:'', dstEnt:'', ht:0, tva:tva,
+    num:ccNum('mut'), des:'', date:ccToday(), statut:'brouillon', desc:'', annexes:[]};
+  if(!e&&k==='transfert'){ M.src=cfc||''; }
+  M.annexes=M.annexes||[]; if(M.tva==null) M.tva=tva;
+  window._ccMW=M; window._ccMWid=id||null; window._ccMWk=k; window._ccMWfull=false; window._ccMWfullD=false;
+  ccMutRender();
+}
+function ccMutKeep(){ const M=window._ccMW; const g=id=>{ const x=document.getElementById(id); return x?x.value:null; };
+  if(g('mw_num')!=null) M.num=g('mw_num');
+  if(g('mw_des')!=null) M.des=g('mw_des');
+  if(g('mw_desc')!=null) M.desc=g('mw_desc');
+  if(g('mw_statut')!=null) M.statut=g('mw_statut');
+  const m=String(g('mw_date')||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); if(m) M.date=m[3]+'-'+m[2]+'-'+m[1]; }
+function ccMutSigne(k){ return (k==='moins'||k==='benef'||k==='transfert')?-1:1; }  /* effet sur la position (origine) */
+function ccMutSet(champ,v){
+  const A=ccA(), M=window._ccMW, k=window._ccMWk; ccMutKeep();
+  const f=1+ccP(M.tva)/100, s=ccMutSigne(k);
+  if(champ==='tva') M.tva=ccP(v);
+  else if(champ==='ht') M.ht=Math.abs(ccP(v));
+  else if(champ==='ttc') M.ht=Math.abs(ccP(v))/f;
+  else if(champ==='apHt'||champ==='apTtc'){ /* après mutation de la position (origine) saisi : mutation = écart */
+    const av=ccMutAvant(A,M.src); const ap=champ==='apHt'?ccP(v)*f:ccP(v); M.ht=Math.abs((ap-av)/f);
+    if(k!=='transfert'){ const d=ap-av; if(k==='plus'&&d<0) window._ccMWk='moins'; if(k==='moins'&&d>0) window._ccMWk='plus'; } }
+  else if(champ==='dApHt'||champ==='dApTtc'){ const av=ccMutAvant(A,M.dst); const ap=champ==='dApHt'?ccP(v)*f:ccP(v); M.ht=Math.abs((ap-av)/f); }
+  M.ht=Math.round(ccP(M.ht)*1e6)/1e6; void s;   /* 6 décimales : un TTC saisi reste exact au centime */
+  ccMutRender();
+}
+function ccMutGenre(v){ ccMutKeep(); window._ccMWk=v; ccMutRender(); }
+function ccMutRender(){
+  const A=ccA(), M=window._ccMW, k=window._ccMWk, Q=PV_Q; if(!A||!M) return;
+  const f=1+ccP(M.tva)/100, ht=ccP(M.ht), ttc=Math.round(ht*f*100)/100, s=ccMutSigne(k);
+  const F=v=>ccF(v), n2=v=>Math.abs(v)>0.004?(Math.round(v*100)/100).toFixed(2):'';
+  const inS='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box;text-align:right';
+  const selS='width:100%;border:1px solid #c4c4c4;border-radius:7px;padding:5px 8px;font-size:14px;background:#fff';
+  const boxS='border:1px solid #b9b9b9;padding:12px 14px;background:#ececec';
+  const icOut='<svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="#444" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h4v4M13 2 8.5 6.5M6 13H2V9M2 13l4.5-4.5"/></svg>';
+  const icIn='<svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="#444" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6.5h-4v-4M8.5 6.5 13 2M2.5 8.5h4v4M6.5 8.5 2 13"/></svg>';
+  const listeCfc=full=>full?ccCat():A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc)).map(r=>[r.cfc,r.lbl||ccCatLbl(r.cfc)||'']);
+  const selCfc=(val,full,fn,tg)=>{ const L=listeCfc(full); if(val&&!L.some(x=>x[0]===val)) L.unshift([val,ccCatLbl(val)||'']);
+    return '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px"><select onchange="'+fn+'(this.value)" style="'+selS+'">'+(val?'':'<option value="">—</option>')+
+      L.map(x=>'<option value="'+pvEscA(x[0])+'"'+(x[0]===val?' selected':'')+'>'+pvEsc(x[0]+' '+x[1])+'</option>').join('')+'</select>'+
+      '<button onclick="ccMutKeep();'+tg+'=!'+tg+';ccMutRender()" title="'+(full?'Seulement les CFC du contrôle du coût':'Liste complète des CFC')+'" style="'+CC_GB+';padding:5px 8px;flex:none">'+(full?icIn:icOut)+'</button></div>'; };
+  const ents=[]; (A.adrCon||[]).forEach(x=>{ if(x.ent&&!ents.includes(x.ent)) ents.push(x.ent); }); A.rows.forEach(r=>{ if(r.ent&&!ents.includes(r.ent)) ents.push(r.ent); });
+  const selEnt=(val,fn)=>'<select onchange="'+fn+'(this.value)" style="'+selS+'">'+ents.concat(val&&!ents.includes(val)?[val]:[]).map(n=>'<option'+(n===val?' selected':'')+'>'+pvEsc(n)+'</option>').join('')+
+    '<option disabled>────────</option><option value=""'+(!val?' selected':'')+'>Aucune entreprise</option><option value="__add">Ajouter</option></select>';
+  const genreSel='<select onchange="ccMutGenre(this.value)" style="'+selS+';width:320px;border:2px solid #7fb0e6">'+CC_MUT_CHOIX.map(x=>'<option value="'+x[0]+'"'+(x[0]===k?' selected':'')+'>'+x[1]+'</option>').join('')+'</select>';
+  const statutSel='<select id="mw_statut" style="'+selS+'"><option value="brouillon"'+(M.statut==='brouillon'?' selected':'')+'>Brouillon</option><option value="definitif"'+(M.statut!=='brouillon'?' selected':'')+'>Définitif</option></select>';
+  const numRow='<input id="mw_num" value="'+pvEscA(M.num||'')+'" style="'+inS+';text-align:left;width:180px"><button onclick="document.getElementById('+Q+'mw_num'+Q+').value=ccNum('+Q+'mut'+Q+')" style="'+CC_GB+'">◀</button>';
+  const avO=ccMutAvant(A,M.src), apO=avO+s*ttc;
+  let body;
+  if(k==='transfert'){
+    const avD=ccMutAvant(A,M.dst), apD=avD+ttc;
+    const own=ccOwn(A);
+    const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
+    const th=(t,al)=>'<th style="text-align:'+(al||'left')+';font-weight:normal;padding:3px 7px;border-bottom:1px solid #e2e2e2;border-right:1px solid #eee;background:#fff;position:sticky;top:0">'+t+'</th>';
+    const gauche='<div style="width:300px;flex:none;border:1px solid #7fb4e8;background:#fff;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+th('CFC')+th('Montant','right')+th('Mutation','right')+'</tr></thead><tbody>'+
+      rows.map((r,i)=>{ const o=own[r.cfc]||{dg:0,mut:0};
+        return '<tr onclick="ccMutKeep();window._ccMW.src='+Q+pvEscA(r.cfc)+Q+';ccMutRender()" style="cursor:default;background:'+(r.cfc===M.src?'#2f6fde;color:#fff':(i%2?'#fff':'#eef3fb'))+'">'+
+          '<td style="padding:2px 7px">'+pvEsc(r.cfc)+'</td><td style="padding:2px 7px;text-align:right">'+F(ccP(o.dg))+'</td><td style="padding:2px 7px;text-align:right">'+F(ccP(o.mut))+'</td></tr>'; }).join('')+'</tbody></table></div>';
+    const lig=(l,v)=>'<div style="display:flex;justify-content:space-between;margin:10px 0"><span style="flex:1;text-align:right;padding-right:26px">'+l+'</span><span style="width:110px;text-align:right">'+v+'</span></div>';
+    const ap=(id1,v1,v2,id3,v3)=>'<input id="'+id1+'" value="'+v1+'" onchange="ccMutSet('+Q+id1+Q+',this.value)" style="'+inS+';width:100%;margin:6px 0">'+
+      '<div style="text-align:right;margin:10px 4px">'+v2+'</div><input id="'+id3+'" value="'+v3+'" onchange="ccMutSet('+Q+id3+Q+',this.value)" style="'+inS+';width:100%;margin:6px 0">';
+    const srcRow=A.rows.find(r=>r.cfc===M.src);
+    body='<div style="display:flex;gap:16px;padding:12px 16px 0;height:78vh">'+gauche+
+      '<div style="flex:1;min-width:0;overflow:auto;font-size:14px">'+
+        '<div style="display:flex;align-items:center;gap:18px;margin-bottom:14px"><span>Genre de mutation</span>'+genreSel+'<span style="margin-left:30px">Statut</span><span style="width:280px">'+statutSel+'</span></div>'+
+        '<div style="display:grid;grid-template-columns:1.4fr 1fr .7fr;gap:14px">'+
+          '<div style="'+boxS+'"><b>Origine de la mutation</b><div style="margin-top:14px">'+(M.src?pvEsc(M.src+' '+((srcRow&&srcRow.lbl)||ccCatLbl(M.src)||'')):'')+'</div>'+
+            '<div style="margin-top:8px;color:#555">'+pvEsc((srcRow&&srcRow.ent)||'')+'</div></div>'+
+          '<div style="'+boxS+'"><b>Avant mutation</b>'+lig('Total HT',M.src?F(avO/f):'0')+lig('TVA',M.src?F(avO-avO/f):'0')+lig('Total TVA incl.',M.src?F(avO):'0')+'</div>'+
+          '<div style="'+boxS+'"><b>Après mutation</b>'+ap('apHt',(apO/f).toFixed(2),F(apO-apO/f),'apTtc',apO.toFixed(2))+'</div>'+
+          '<div style="'+boxS+'"><b>Destination de la mutation</b><div style="height:14px"></div>'+
+            selCfc(M.dst,window._ccMWfullD,'ccMutDst','window._ccMWfullD')+selEnt(M.dstEnt,'ccMutDstEnt')+'</div>'+
+          '<div style="'+boxS+'"><b>Mutation</b>'+
+            '<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px"><span style="width:110px;text-align:right">Total HT</span><input id="ht" value="'+n2(ht)+'" onchange="ccMutSet('+Q+'ht'+Q+',this.value)" style="'+inS+';flex:1"></div>'+
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="width:110px;text-align:right">TVA</span><input value="'+M.tva+'" onchange="ccMutSet('+Q+'tva'+Q+',this.value)" style="'+inS+';width:70px"> %</div>'+
+            '<div style="display:flex;align-items:center;gap:10px"><span style="width:110px;text-align:right">Total TVA incl.</span><input id="ttc" value="'+n2(ttc)+'" onchange="ccMutSet('+Q+'ttc'+Q+',this.value)" style="'+inS+';flex:1"></div></div>'+
+          '<div style="'+boxS+'"><b>Après mutation</b>'+ap('dApHt',(apD/f).toFixed(2),F(apD-apD/f),'dApTtc',apD.toFixed(2))+'</div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:200px 360px 40px;gap:12px 12px;align-items:center;margin-top:16px">'+
+          '<span>Numéro de mutation</span>'+numRow+
+          '<span>Désignation</span><input id="mw_des" value="'+pvEscA(M.des||'')+'" style="'+inS+';text-align:left"><span></span>'+
+          '<span>Date</span><input id="mw_date" value="'+pvEscA(dvD4(M.date||ccToday()))+'" style="'+inS+';text-align:left">'+chCalBtn('mw_date')+'</div>'+
+        '<div style="margin:14px 0 6px">Description</div><textarea id="mw_desc" style="width:100%;height:130px;box-sizing:border-box;border:1px solid #9a9a9a;background:#fff;padding:5px 7px;font-size:13.5px;font-family:inherit;resize:vertical">'+pvEsc(M.desc||'')+'</textarea>'+
+      '</div></div>';
+  } else {
+    const avTva=avO-avO/f;
+    body='<div style="padding:12px 16px 0;font-size:14px">'+
+      '<div style="display:flex;align-items:center;gap:18px;margin-bottom:16px"><span>Genre de mutation</span>'+genreSel+'<span style="flex:1"></span>'+
+        '<input id="mw_date" value="'+pvEscA(dvD4(M.date||ccToday()))+'" style="'+inS+';text-align:left;width:150px">'+chCalBtn('mw_date')+'</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'+
+        '<div style="'+boxS+'"><b>Position</b><div style="height:14px"></div>'+selCfc(M.src,window._ccMWfull,'ccMutSrc','window._ccMWfull')+selEnt(M.ent,'ccMutEnt')+'</div>'+
+        '<div style="'+boxS+'"><div style="display:grid;grid-template-columns:130px 1fr 1fr;gap:12px 14px;align-items:center">'+
+          '<span></span><b style="text-align:center">Mutation</b><b style="text-align:center">DG après mutation</b>'+
+          '<span style="text-align:right">Total hors TVA</span><input id="ht" value="'+n2(ht)+'" onchange="ccMutSet('+Q+'ht'+Q+',this.value)" style="'+inS+'"><input id="apHt" value="'+(M.src?(apO/f).toFixed(2):'')+'" onchange="ccMutSet('+Q+'apHt'+Q+',this.value)" style="'+inS+'">'+
+          '<span style="text-align:right">TVA</span><span style="display:flex;align-items:center;gap:6px"><input value="'+M.tva+'" onchange="ccMutSet('+Q+'tva'+Q+',this.value)" style="'+inS+';width:64px"> % <span style="flex:1;text-align:right">'+(ttc-ht).toFixed(1)+'</span></span><span style="text-align:right;padding-right:8px">'+(M.src?F(apO-apO/f):'')+'</span>'+
+          '<span style="text-align:right">Total TVA incluse</span><input id="ttc" value="'+n2(ttc)+'" onchange="ccMutSet('+Q+'ttc'+Q+',this.value)" style="'+inS+'"><input id="apTtc" value="'+(M.src?apO.toFixed(2):'')+'" onchange="ccMutSet('+Q+'apTtc'+Q+',this.value)" style="'+inS+'">'+
+        '</div></div></div>'+
+      '<div style="display:grid;grid-template-columns:200px 360px 40px;gap:12px 12px;align-items:center;margin-top:16px">'+
+        '<span>Numéro de mutation</span>'+numRow+
+        '<span>Statut</span><span style="grid-column:span 2">'+statutSel+'</span>'+
+        '<span>Remarque</span><input id="mw_des" value="'+pvEscA(M.des||'')+'" style="'+inS+';text-align:left;grid-column:span 2"></div>'+
+      '<div style="margin:14px 0 6px">Commentaire</div><textarea id="mw_desc" style="width:100%;height:150px;box-sizing:border-box;border:1px solid #9a9a9a;background:#fff;padding:5px 7px;font-size:13.5px;font-family:inherit;resize:vertical">'+pvEsc(M.desc||'')+'</textarea>'+
+      '<div style="margin-top:8px;position:relative"><button onclick="var m=document.getElementById('+Q+'mw_m'+Q+');m.style.display=m.style.display==='+Q+'block'+Q+'?'+Q+'none'+Q+':'+Q+'block'+Q+'" style="'+CC_GB+'"><svg width="14" height="14" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.3"><path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg> <span style="font-size:8px">▾</span></button>'+
+        '<span style="margin-left:10px">Annexes: '+M.annexes.length+'</span>'+
+        '<div id="mw_m" style="display:none;position:absolute;left:0;bottom:32px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:13.5px;padding:4px 0;z-index:5;min-width:180px"><div style="padding:6px 16px;cursor:pointer" onclick="ccMutAnnexes()">Annexe …</div></div></div>'+
+      '</div>';
+  }
+  const okOn=!!M.src&&ht>0&&(k!=='transfert'||(!!M.dst&&M.dst!==M.src));
+  ccMac('cc_mut',ccMutTitre(k),body,
+    '<span style="flex:1"></span><button onclick="ccMacClose('+Q+'cc_mut'+Q+')" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 26px;font-size:14px;cursor:pointer">Annuler</button>'+
+    '<button onclick="ccMutSave()" style="border-radius:7px;padding:5px 34px;font-size:14px;cursor:pointer;'+(okOn?'background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;font-weight:600':'background:#f4f4f4;color:#aaa;border:1px solid #cfcfcf;pointer-events:none')+'">OK</button>',
+    k==='transfert'?1380:1100, 0);
+}
+function ccMutSrc(v){ ccMutKeep(); window._ccMW.src=v; ccMutRender(); }
+function ccMutDst(v){ ccMutKeep(); window._ccMW.dst=v; ccMutRender(); }
+function ccMutEnt(v){ ccMutKeep(); if(v==='__add'){ window._ccSelAdrMode='mut'; window._ccMutEntK='ent'; ccConSelAdr(window._ccMW.src); return; } window._ccMW.ent=v; ccMutRender(); }
+function ccMutDstEnt(v){ ccMutKeep(); if(v==='__add'){ window._ccSelAdrMode='mut'; window._ccMutEntK='dstEnt'; ccConSelAdr(window._ccMW.dst); return; } window._ccMW.dstEnt=v; ccMutRender(); }
+function ccMutAnnexes(){ ccMutKeep(); window._ccAnxT=window._ccMW; window._ccAnxBack=()=>{ window._ccAnxT=null; ccMutRender(); }; window._ccAnxSel=null; ccAnxRender(); }
+function ccMutSave(){
+  const A=ccA(), M=window._ccMW, k=window._ccMWk; if(!A||!M) return; ccMutKeep();
+  if(!M.src||!(ccP(M.ht)>0)) return;
+  if(k==='transfert'){ if(!M.dst||M.dst===M.src){ chErr('Choisissez une destination différente de l’origine.'); return; } M.genre='transfert'; delete M.sens; }
+  else { M.dst=null; if(k==='plus'||k==='moins'){ M.genre='variation'; M.sens=k; } else { M.genre=k; delete M.sens; } }
+  M.ht=Math.round(ccP(M.ht)*1e6)/1e6;
+  if(window._ccMWid){ const e=A.ecr.find(x=>x.id===window._ccMWid); Object.assign(e,M); } else { M.id=pvId(); A.ecr.push(M); }
+  ccEnsureRow(A,M.src); if(M.dst) ccEnsureRow(A,M.dst);
+  if(M.ent){ const r=A.rows.find(x=>x.cfc===M.src); if(r&&!r.ent) r.ent=M.ent; }
+  ccPersist(); ccMacClose('cc_mut'); ccRender();
+  toast(ccMutTitre(k)+' '+(M.num||'')+' enregistré'+(k==='transfert'?'':'e')+'.');
+}
 
 /* Paiement — sur contrat (cumul affiché) ou hors contrat ; Situation / Paiement final ; statut */
 function ccDlgPay(id,cfc,hors){

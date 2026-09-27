@@ -15367,7 +15367,7 @@ function ccRender(){
       menuBox('cc_af_menu_p',
         fly('Mutations 1', mutItems)+
         itG('Contrat …','ccConSelAdr('+cq+')',!!cfcSel)+
-        itG('Avenant …','ccDlgCon('+Q+'avenant'+Q+',null,'+cq+')',aContrat)+
+        itG('Avenant …','ccAveNew('+cq+')',aContrat)+
         itG('Informations montants bruts …','',false)+sep+
         itG('Paiement sur contrat …','ccDlgPay(null,'+cq+',false)',aContrat)+
         itG('Paiement hors contrat …','ccDlgPay(null,'+cq+',true)',!!cfcSel)+
@@ -15552,7 +15552,7 @@ function ccEcrRows(A,cfc){
     } else if(e.type==='contrat'||e.type==='avenant'){
       const m=(e.pos||[]).filter(p2=>p2.cfc===cfc).reduce((s,p2)=>s+ccP(p2.mnt),0);
       const dd=String(e.date||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
-      lbl='&gt;'+pvEsc(e.des&&e.type==='contrat'?e.des:(e.type==='avenant'?'Avenant':'Contrat'))+' '+(dd?dd[3]+'.'+dd[2]+'.'+dd[1].slice(2):'')+'['+(e.num||'')+']'+(e.statut&&e.statut!=='definitif'?' · '+pvEsc(e.statut):'');
+      lbl='&gt;'+pvEsc(e.des||(e.type==='avenant'?'Avenant':'Contrat'))+' '+(dd?dd[3]+'.'+dd[2]+'.'+dd[1].slice(2):'')+'['+(e.num||'')+']'+(e.statut&&e.statut!=='definitif'?' · '+pvEsc(e.statut):'');
       c7=ccF(m); if(e.type==='avenant') c5=ccF(m);
     } else if(e.type==='pay'){
       lbl='&gt; '+(e.typeP==='final'?'facture finale':'situation '+(e.numP||''))+(e.numF?' · fact. '+pvEsc(e.numF):'')+' · '+ccDfr(e.dateF||e.date)+(e.statut?' · '+pvEsc(e.statut):'');
@@ -15585,7 +15585,7 @@ function ccRowMenu(cfc){
 }
 function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
   if(e.type==='mut') ccDlgMut(id); else if(e.type==='contrat') ccConWin(id);
-  else if(e.type==='avenant') ccDlgCon('avenant',id); else if(e.type==='pay') ccDlgPay(id);
+  else if(e.type==='avenant') ccConWin(id); else if(e.type==='pay') ccDlgPay(id);
   else if(e.type==='prov') ccDlgProv(id); else if(e.type==='cp') ccDlgCp(e.cfc); }
 function ccCfcOpts(sel){ const A=ccA();
   const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
@@ -16546,6 +16546,25 @@ function ccConWin(id, adr){
   window._ccCW=C; window._ccCWid=id||null; window._ccCWpos=0; window._ccCWcond=0;
   ccConWinRender();
 }
+/* Avenant : même fenêtre que le contrat (sans la colonne des CFC), données reprises du contrat */
+function ccAveNew(cfc){
+  const A=ccA(); if(!A) return;
+  const cs=(A.ecr||[]).filter(e=>e.type==='contrat'&&(e.pos||[]).some(p=>p.cfc===cfc));
+  const k=cs[cs.length-1];
+  if(!k){ chErr('Il n’existe aucun contrat pour ce CFC.'); return; }
+  const nAv=(A.ecr||[]).filter(e=>e.type==='avenant'&&e.ref===k.id).length;
+  const tva=(A.tva!=null?A.tva:8.1);
+  const C={type:'avenant', ref:k.id, ent:k.ent||'', resp:k.resp||'', adrId:k.adrId||null,
+    lot:k.lot||cfc, lotLbl:k.lotLbl||ccCatLbl(k.lot||cfc)||'',
+    pos:(k.pos||[]).map(p=>({cfc:p.cfc, txt:p.txt||ccCatLbl(p.cfc)||'', refc:'', brut:0})),
+    conds:k.conds?JSON.parse(JSON.stringify(k.conds)):[{niv:1,ref:0,des:'TVA',type:'tva',genre:'M',refc:'',pct:tva,m:true}],
+    saisie:'brut', prio:k.prio!==false, des:'', num:nAv+1, date:ccToday(), statut:'definitif', desc:'', annexes:[], niveau:0};
+  window._ccCW=C; window._ccCWid=null; window._ccCWpos=0; window._ccCWcond=0;
+  ccConWinRender();
+}
+function ccCWnextNum(){ const A=ccA(), C=window._ccCW;
+  if(C.type==='avenant') return (A.ecr||[]).filter(e=>e.type==='avenant'&&e.ref===C.ref&&e.id!==window._ccCWid).length+1;
+  return ccNum('contrat'); }
 function ccConWinRender(){
   const A=ccA(), C=window._ccCW; if(!A||!C) return;
   const Q=PV_Q, K=ccConCalc(C), AG=ccAgg(A);
@@ -16612,8 +16631,8 @@ function ccConWinRender(){
         mi('Les conditions du dernier contrat','ccCWcondLast()',true)+sep+mi('Supprimer la condition …','ccCWcondDel()',(C.conds||[]).length>0))+'</div>'+
     '<div style="display:grid;grid-template-columns:1.4fr .8fr 1.1fr 1.1fr;gap:4px 18px;align-items:center;font-size:14px">'+
       '<span>Désignation</span><span>Numéro</span><span>Date</span><span>Statut</span>'+
-      '<input id="cw_des" value="'+pvEscA(C.des||'Contrat')+'" style="'+inS+'">'+
-      '<span style="display:flex;gap:6px"><input id="cw_num" value="'+pvEscA(C.num||'')+'" style="'+inS+';width:70px"><button onclick="document.getElementById('+Q+'cw_num'+Q+').value=ccNum('+Q+'contrat'+Q+')" style="'+CC_GB+'" title="Prochain numéro">◀</button></span>'+
+      '<input id="cw_des" value="'+pvEscA(C.des!=null?C.des:'Contrat')+'" style="'+inS+'">'+
+      '<span style="display:flex;gap:6px"><input id="cw_num" value="'+pvEscA(C.num||'')+'" style="'+inS+';width:70px"><button onclick="document.getElementById('+Q+'cw_num'+Q+').value=ccCWnextNum()" style="'+CC_GB+'" title="Prochain numéro">◀</button></span>'+
       '<span style="display:flex;gap:6px"><input id="cw_date" value="'+pvEscA(dvD4(C.date||ccToday()))+'" style="'+inS+';width:120px">'+chCalBtn('cw_date')+'</span>'+
       '<select id="cw_statut" style="'+inS+';border-radius:6px">'+CC_CON_STATUTS.map(s=>'<option value="'+s[0]+'"'+(C.statut===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select></div>'+
     '<div style="font-size:14px;margin:14px 0 6px">Description</div>'+
@@ -16623,9 +16642,11 @@ function ccConWinRender(){
     '<div style="display:flex;align-items:center;gap:22px;font-size:14px"><span>Niveau des prestations</span>'+
       '<span style="display:inline-flex;flex-direction:column;width:380px"><input type="range" min="0" max="100" step="10" value="'+(C.niveau||0)+'" onchange="window._ccCW.niveau=+this.value" list="cw_ticks" style="width:100%">'+
       '<span style="display:flex;justify-content:space-between;font-size:11px;color:#444">'+[0,10,20,30,40,50,60,70,80,90,100].map(v=>'<span>'+v+'</span>').join('')+'</span></span></div>';
-  ccMac('cc_con_win','Contrat '+(C.ent||''),
-    '<div style="display:flex;gap:14px;padding:14px 16px 0;height:74vh"><div style="width:300px;flex:none">'+gauche+'</div><div style="flex:1;min-width:0;overflow:auto;padding-right:4px">'+droite+'</div></div>',
-    ccMacBtns('ccMacClose('+Q+'cc_con_win'+Q+')|ccConSave()',true,'cc_cw_ok'), 1180, 0);
+  const isAv=C.type==='avenant';
+  const droite2=isAv?droite.replace('Positions du contrat :','Positions de l’avenant :').replace('Conditions du contrat :','Conditions de l’avenant :'):droite;
+  ccMac('cc_con_win',(isAv?'Avenant ':'Contrat ')+(C.ent||''),
+    '<div style="display:flex;gap:14px;padding:14px 16px 0;height:74vh">'+(isAv?'':'<div style="width:300px;flex:none">'+gauche+'</div>')+'<div style="flex:1;min-width:0;overflow:auto;padding-right:4px">'+droite2+'</div></div>',
+    ccMacBtns('ccMacClose('+Q+'cc_con_win'+Q+')|ccConSave()',true,'cc_cw_ok'), isAv?900:1180, 0);
 }
 function ccCWmenu(id){ ['cw_m_p','cw_m_e','cw_m_c','cw_m_a'].forEach(x=>{ const m=document.getElementById(x); if(m&&x!==id) m.style.display='none'; });
   if(!id) return; const m=document.getElementById(id); if(m) m.style.display=m.style.display==='block'?'none':'block'; }

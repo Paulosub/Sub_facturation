@@ -10584,6 +10584,7 @@ function buildBackupPayload(){
     sa_cout: g('sa_cout') || {},
     sa_devis: g('sa_devis') || {},
     sa_cfc_edits: g('sa_cfc_edits') || {},
+    sa_cond_groupes: g('sa_cond_groupes') || null,
     sa_adr: g('sa_adr') || {ent:[],adr:[],seq:1},
     sa_collab_annuel: g('sa_collab_annuel') || {},
     sa_collab_mensuel: g('sa_collab_mensuel') || {},
@@ -10764,6 +10765,7 @@ function applyBackupData(data, name){
     if(data.sa_devis && typeof data.sa_devis==='object'){ localStorage.setItem('sa_devis', JSON.stringify(data.sa_devis)); try{ dvData=JSON.parse(JSON.stringify(data.sa_devis)); }catch(e){} }
     if(data.sa_adr && typeof data.sa_adr==='object') localStorage.setItem('sa_adr', JSON.stringify(data.sa_adr));
     if(data.sa_cfc_edits && typeof data.sa_cfc_edits==='object') localStorage.setItem('sa_cfc_edits', JSON.stringify(data.sa_cfc_edits));
+    if(Array.isArray(data.sa_cond_groupes)) localStorage.setItem('sa_cond_groupes', JSON.stringify(data.sa_cond_groupes));
     if(data.sa_collab_annuel && typeof data.sa_collab_annuel==='object') localStorage.setItem('sa_collab_annuel', JSON.stringify(data.sa_collab_annuel));
     if(data.sa_collab_mensuel && typeof data.sa_collab_mensuel==='object') localStorage.setItem('sa_collab_mensuel', JSON.stringify(data.sa_collab_mensuel));
     // Message de réussite : posé AVANT le rechargement, affiché en toast au démarrage (sinon il disparaîtrait).
@@ -16593,6 +16595,66 @@ function ccCWbruts(){
       '</tbody></table></div></div>',
     ccMacBtns('ccMacClose('+Q+'cc_bruts'+Q+')|ccMacClose('+Q+'cc_bruts'+Q+')',true), 900, 2);
 }
+/* « Sélection des conditions » (⚙ ▸ Navigateur …) : groupes de conditions types, communs
+   à toutes les affaires (sa_cond_groupes). OK insère la ou les conditions choisies. */
+function ccCondStd(type,des,pct){ const t=CC_COND_TYPES.find(x=>x.k===type)||CC_COND_TYPES[5];
+  return {niv:0,ref:0,des:des||t.d||t.lbl,type:t.k,genre:t.code,refc:'',pct:pct||0,m:true}; }
+const CC_COND_GRP_DEF={
+  'Conditions':()=>[ccCondStd('rab','Rabais'),ccCondStd('esc','Escompte'),ccCondStd('gar','Retenue'),ccCondStd('prop','Prorata'),ccCondStd('tva','TVA',(ccA()&&ccA().tva!=null)?ccA().tva:8.1)],
+  'Conditions électro':()=>[ccCondStd('rab','Rabais'),ccCondStd('ded','Deduction'),ccCondStd('esc','Escompte'),ccCondStd('recp','Taxes de recyclage'),ccCondStd('tva','TVA',(ccA()&&ccA().tva!=null)?ccA().tva:8.1)]};
+function ccCondGroupes(){ let g=null;
+  try{ g=JSON.parse(localStorage.getItem('sa_cond_groupes')||'null'); }catch(e){}
+  if(!Array.isArray(g)) g=[{nom:'Conditions',conds:[]},{nom:'Conditions électro',conds:[]}];
+  /* groupes du bureau : contenu par défaut tant qu'ils sont vides */
+  g.forEach(x=>{ if((!x.conds||!x.conds.length)&&CC_COND_GRP_DEF[x.nom]) x.conds=CC_COND_GRP_DEF[x.nom](); });
+  return g; }
+function ccCondGroupesSave(g){ try{ localStorage.setItem('sa_cond_groupes',JSON.stringify(g)); }catch(e){} }
+function ccCondNavAll(){ const g=ccCondGroupes()[window._ccCnG||0]; window._ccCnSel=((g&&g.conds)||[]).map((c,i)=>i); }
+function ccCondNav(){ window._ccCnG=0; ccCondNavAll(); ccCondNavRender(); }
+function ccCondNavRender(){
+  const G=ccCondGroupes(), Q=PV_Q, gi=window._ccCnG||0, g=G[gi]||{conds:[]};
+  const th=t=>'<th style="text-align:left;font-weight:normal;padding:4px 8px;border-bottom:1px solid #e2e2e2;background:#fff;position:sticky;top:0">'+t+'</th>';
+  ccMac('cc_cond_nav','Sélection des conditions',
+    '<div style="display:flex;gap:14px;padding:14px 16px 0;height:560px">'+
+      '<div style="width:300px;flex:none;border:1px solid #7fb4e8;background:#fff;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>'+th('Groupe')+'</tr></thead><tbody>'+
+        G.map((x,i)=>'<tr onclick="window._ccCnG='+i+';ccCondNavAll();ccCondNavRender()" oncontextmenu="event.preventDefault();ccCondGrpMenu(event,'+i+')" title="Clic droit : enregistrer les conditions du contrat dans ce groupe, renommer, supprimer" style="cursor:default;background:'+(i===gi?'#2f6fde;color:#fff':(i%2?'#fff':'#eef3fb'))+'"><td style="padding:3px 8px">'+pvEsc(x.nom)+'</td></tr>').join('')+
+      '</tbody></table></div>'+
+      '<div style="flex:1;border:1px solid #9a9a9a;background:#fff;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>'+th('Condition')+'</tr></thead><tbody>'+
+        (g.conds||[]).map((c,i)=>{ const on=window._ccCnSel.includes(i);
+          return '<tr onclick="ccCondNavPick(event,'+i+')" style="cursor:default;background:'+(on?'#2f6fde;color:#fff':(i%2?'#fff':'#eef3fb'))+'"><td style="padding:3px 8px">'+pvEsc(c.des||ccCondT(c).lbl)+'</td></tr>'; }).join('')+
+      '</tbody></table></div></div>',
+    ccMacBtns('ccMacClose('+Q+'cc_cond_nav'+Q+')|ccCondNavOk()',window._ccCnSel.length>0,'cc_cn_ok'), 980, 2);
+}
+function ccCondNavPick(ev,i){ let s=window._ccCnSel||[];
+  if(ev.metaKey||ev.ctrlKey||ev.shiftKey) s=s.includes(i)?s.filter(x=>x!==i):s.concat([i]); else s=[i];
+  window._ccCnSel=s; ccCondNavRender(); }
+function ccCondNavOk(){
+  const G=ccCondGroupes(), g=G[window._ccCnG||0]; const C=window._ccCW; if(!g||!C) return;
+  const ch=(window._ccCnSel||[]).map(i=>g.conds[i]).filter(Boolean); if(!ch.length) return;
+  ccCWkeep();
+  C.conds=JSON.parse(JSON.stringify(ch)).map((c,i)=>Object.assign(c,{niv:i+1}));
+  window._ccCWcond=0;
+  ccMacClose('cc_cond_nav'); ccConWinRender();
+}
+function ccCondGrpMenu(ev,i){
+  let m=document.getElementById('cc_cg_ctx');
+  if(!m){ m=document.createElement('div'); m.id='cc_cg_ctx';
+    m.style.cssText='display:none;position:fixed;z-index:10060;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:13.5px;padding:4px 0;white-space:nowrap';
+    document.body.appendChild(m); document.addEventListener('click',()=>{ m.style.display='none'; }); }
+  const it=(l,fn)=>'<div style="padding:6px 16px;cursor:pointer" onmouseover="this.style.background='+PV_Q+'#eef4f9'+PV_Q+'" onmouseout="this.style.background='+PV_Q+PV_Q+'" onclick="'+fn+'">'+l+'</div>';
+  m.innerHTML=it('Enregistrer les conditions du contrat dans ce groupe','ccCondGrpSave('+i+')')+
+    it('Nouveau groupe …','ccCondGrpNew()')+it('Renommer le groupe …','ccCondGrpRen('+i+')')+it('Supprimer le groupe …','ccCondGrpDel('+i+')');
+  m.style.display='block'; m.style.left=ev.clientX+'px'; m.style.top=ev.clientY+'px';
+}
+function ccCondGrpSave(i){ const G=ccCondGroupes(), C=window._ccCW; if(!G[i]||!C) return; ccCWkeep();
+  G[i].conds=JSON.parse(JSON.stringify(C.conds||[])).map(c=>{ delete c._mnt; return c; });
+  ccCondGroupesSave(G); ccCondNavRender(); toast('Conditions enregistrées dans « '+G[i].nom+' ».'); }
+function ccCondGrpNew(){ chPrompt('Nom du nouveau groupe de conditions :','',n=>{ n=String(n==null?'':n).trim(); if(!n) return;
+  const G=ccCondGroupes(); G.push({nom:n,conds:[]}); ccCondGroupesSave(G); window._ccCnG=G.length-1; ccCondNavRender(); }); }
+function ccCondGrpRen(i){ const G=ccCondGroupes(); if(!G[i]) return;
+  chPrompt('Nouveau nom du groupe :',G[i].nom,n=>{ n=String(n==null?'':n).trim(); if(!n) return; G[i].nom=n; ccCondGroupesSave(G); ccCondNavRender(); }); }
+function ccCondGrpDel(i){ const G=ccCondGroupes(); if(!G[i]) return;
+  chConfirm('Supprimer le groupe « '+G[i].nom+' » ?',()=>{ G.splice(i,1); ccCondGroupesSave(G); window._ccCnG=0; ccCondNavRender(); }); }
 function ccCWnextNum(){ const A=ccA(), C=window._ccCW;
   if(C.type==='avenant') return (A.ecr||[]).filter(e=>e.type==='avenant'&&e.ref===C.ref&&e.id!==window._ccCWid).length+1;
   return ccNum('contrat'); }
@@ -16660,7 +16722,7 @@ function ccConWinRender(){
     '<div style="margin:8px 0 14px;position:relative;display:inline-block">'+ib('<span style="font-size:14px">⚙︎</span>','ccCWmenu('+Q+'cw_m_c'+Q+')','Conditions',1)+
       /* avenant : conditions héritées du contrat → ajout/suppression grisés, Navigateur actif */
       mb('cw_m_c',mi('Ajouter une condition au-dessus','ccCWcondAdd(0)',C.type!=='avenant')+mi('Ajouter une condition au-dessous','ccCWcondAdd(1)',C.type!=='avenant')+
-        mi('Navigateur …','toast('+Q+'Navigateur des conditions — à venir (envoyez la capture de sa fenêtre).'+Q+')',C.type==='avenant')+sep+
+        mi('Navigateur …','ccCondNav()',true)+sep+
         mi('Les conditions du dernier contrat','ccCWcondLast()',true)+sep+mi('Supprimer la condition …','ccCWcondDel()',C.type!=='avenant'&&(C.conds||[]).length>0))+'</div>'+
     '<div style="display:grid;grid-template-columns:1.4fr .8fr 1.1fr 1.1fr;gap:4px 18px;align-items:center;font-size:14px">'+
       '<span>Désignation</span><span>Numéro</span><span>Date</span><span>Statut</span>'+

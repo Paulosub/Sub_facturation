@@ -15378,7 +15378,7 @@ function ccRender(){
         itG('Paiement sur contrat …','ccPayNew('+cq+')',aContrat)+
         itG('Paiement hors contrat …','ccPayHorsNew('+cq+')',!!cfcSel)+
         itG('Coût probable perso …','ccDlgCp('+cq+')',!!cfcSel)+
-        itG('Provisions …','ccDlgProv(null,'+cq+')',!!cfcSel)+sep+
+        itG('Provisions …','ccProvWin('+cq+',null)',!!cfcSel)+sep+
         itG('Editer l’écriture …','ccAfEdit()',!!selE)+
         itG('Supprimer l’écriture …','ccAfDel()',!!selE))+'</div>'+
     Bt('pencil','ccAfEdit()','Éditer l’écriture sélectionnée')+
@@ -15585,14 +15585,14 @@ function ccRowMenu(cfc){
     b('Avenant…','ccDlgCon('+PV_Q+'avenant'+PV_Q+',null,'+PV_Q+pvEscA(cfc)+PV_Q+')','#1a73c8')+
     b('Paiement sur contrat…','ccDlgPay(null,'+PV_Q+pvEscA(cfc)+PV_Q+',false)','#2e7d32')+
     b('Paiement hors contrat…','ccDlgPay(null,'+PV_Q+pvEscA(cfc)+PV_Q+',true)','#2e7d32')+
-    b('Provision…','ccDlgProv(null,'+PV_Q+pvEscA(cfc)+PV_Q+')')+
+    b('Provision…','ccDlgClose();ccProvWin('+PV_Q+pvEscA(cfc)+PV_Q+',null)')+
     b('Coût probable perso…','ccDlgCp('+PV_Q+pvEscA(cfc)+PV_Q+')')+
     '<div style="text-align:right;margin-top:12px"><button class="btn btn-sm" onclick="ccDlgClose()">Annuler</button></div>');
 }
 function ccEditEcr(id){ const e=ccA().ecr.find(x=>x.id===id); if(!e) return;
   if(e.type==='mut') ccDlgMut(id); else if(e.type==='contrat') ccConWin(id);
   else if(e.type==='avenant') ccConWin(id); else if(e.type==='pay'){ if(e.ref||e.hors) ccPayEdit(id); else ccDlgPay(id); }
-  else if(e.type==='prov') ccDlgProv(id); else if(e.type==='cp') ccDlgCp(e.cfc); }
+  else if(e.type==='prov') ccProvWin(e.cfc,id); else if(e.type==='cp') ccDlgCp(e.cfc); }
 function ccCfcOpts(sel){ const A=ccA();
   const rows=A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc));
   return rows.map(r=>'<option value="'+pvEsc(r.cfc)+'"'+(r.cfc===sel?' selected':'')+'>'+pvEsc(r.cfc)+' '+pvEsc(r.lbl||'')+'</option>').join('');
@@ -16450,7 +16450,7 @@ function ccAdrBloc(a,e){ if(!a) return '';
 /* 1. Sélectionner l'adresse */
 function ccConSelAdr(cfc){
   const A=ccA(); if(!A) return;
-  if(window._ccSelAdrMode!=='pay') window._ccSelAdrMode=null;
+  if(window._ccSelAdrMode!=='pay'&&window._ccSelAdrMode!=='prov') window._ccSelAdrMode=null;
   window._ccConCfc=cfc||''; window._ccConAdrSel=null;
   A.adrCon=A.adrCon||[];
   const Q=PV_Q;
@@ -16477,6 +16477,7 @@ function ccConSelOk(){
   const A=ccA(); const x=(A.adrCon||[]).find(y=>y.id===window._ccConAdrSel); if(!x) return;
   ccMacClose('cc_con_sel');
   if(window._ccSelAdrMode==='pay'){ window._ccSelAdrMode=null; ccPayHorsWin(x); return; }
+  if(window._ccSelAdrMode==='prov'){ window._ccSelAdrMode=null; if(window._ccPV){ window._ccPV.ent=x.ent; ccProvRender(); } return; }
   ccConWin(null, x);
 }
 /* 2. Fenêtre « Modifier » : Entité + Responsable (◀ = Navigateur d'adresses, ⓘ = infos) */
@@ -17254,6 +17255,76 @@ function ccSavePay(id,hors){
   const c=ccPayCfc(A,o); if(c){ ccEnsureRow(A,c); _ccOpen[c]=true; }
   ccPersist(); ccDlgClose(); ccRender();
 }
+/* ══ Fenêtre « Provision » (modèle du bureau) : CFC (⤢ liste du contrôle du coût /
+   ⤡ catalogue complet), entreprise (Aucune / Ajouter), écriture HT ↔ TTC avec TVA,
+   totaux TVA incl. du CFC (saisissables : l'écriture = total visé − provisions déjà posées),
+   remarque, date, annexes. ══ */
+function ccProvWin(cfc,id){
+  const A=ccA(); if(!A) return;
+  const e=id?(A.ecr||[]).find(x=>x.id===id):null;
+  const tva=(A.tva!=null?A.tva:8.1);
+  const V=e?JSON.parse(JSON.stringify(e)):{type:'prov', cfc:cfc||'', ent:'', mnt:0, tva:tva, des:'', date:ccToday(), annexes:[]};
+  if(V.tva==null) V.tva=tva; V.annexes=V.annexes||[];
+  window._ccPV=V; window._ccPVid=id||null; window._ccPVfull=false;
+  ccProvRender();
+}
+function ccProvAutres(){ const A=ccA(), V=window._ccPV;
+  return (A.ecr||[]).filter(x=>x.type==='prov'&&x.cfc===V.cfc&&x.id!==window._ccPVid).reduce((s,x)=>s+ccP(x.mnt),0); }
+function ccProvRender(){
+  const A=ccA(), V=window._ccPV, Q=PV_Q; if(!A||!V) return;
+  const inS='border:1px solid #c4c4c4;border-radius:3px;padding:4px 7px;font-size:14px;background:#fff;box-sizing:border-box;text-align:right';
+  const selS='width:100%;border:1px solid #c4c4c4;border-radius:7px;padding:5px 8px;font-size:14px;background:#fff';
+  const liste=window._ccPVfull?ccCat():A.rows.slice().sort((a,b)=>ccCmp(a.cfc,b.cfc)).map(r=>[r.cfc,r.lbl||ccCatLbl(r.cfc)||'']);
+  if(V.cfc&&!liste.some(x=>x[0]===V.cfc)) liste.unshift([V.cfc,ccCatLbl(V.cfc)||'']);
+  const ents=[]; (A.adrCon||[]).forEach(x=>{ if(x.ent&&!ents.includes(x.ent)) ents.push(x.ent); }); A.rows.forEach(r=>{ if(r.ent&&!ents.includes(r.ent)) ents.push(r.ent); });
+  if(V.ent&&!ents.includes(V.ent)) ents.push(V.ent);
+  const f=1+ccP(V.tva)/100, ttc=ccP(V.mnt), ht=ttc/f, aut=ccProvAutres(), totT=aut+ttc, totH=totT/f;
+  const n2=v=>Math.abs(v)>0.004?(Math.round(v*100)/100).toFixed(2):'';
+  const icOut='<svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="#444" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h4v4M13 2 8.5 6.5M6 13H2V9M2 13l4.5-4.5"/></svg>';
+  const icIn='<svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="#444" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6.5h-4v-4M8.5 6.5 13 2M2.5 8.5h4v4M6.5 8.5 2 13"/></svg>';
+  const body='<div style="padding:16px 20px 4px;font-size:14px;display:grid;grid-template-columns:1fr 44px 110px 190px 190px;gap:12px 12px;align-items:center">'+
+    '<span></span><span></span><span></span><span style="text-align:center">Ecriture</span><span style="text-align:center">Total TVA incl.</span>'+
+    '<select onchange="ccProvKeep();window._ccPV.cfc=this.value;ccProvRender()" style="'+selS+'">'+liste.map(x=>'<option value="'+pvEscA(x[0])+'"'+(x[0]===V.cfc?' selected':'')+'>'+pvEsc(x[0]+' '+x[1])+'</option>').join('')+'</select>'+
+    '<button onclick="ccProvKeep();window._ccPVfull=!window._ccPVfull;ccProvRender()" title="'+(window._ccPVfull?'Seulement les CFC du contrôle du coût':'Liste complète des CFC')+'" style="'+CC_GB+';padding:5px 8px">'+(window._ccPVfull?icIn:icOut)+'</button>'+
+    '<span style="text-align:right">Hors TVA</span><input id="pv_ht" value="'+n2(ht)+'" onchange="ccProvSet('+Q+'ht'+Q+',this.value)" style="'+inS+'"><input id="pv_tht" value="'+(totH?(Math.round(totH*100)/100).toFixed(2):'0.00')+'" onchange="ccProvSet('+Q+'tht'+Q+',this.value)" style="'+inS+'">'+
+    '<select onchange="ccProvEnt(this.value)" style="'+selS+'">'+ents.map(n=>'<option'+(n===V.ent?' selected':'')+'>'+pvEsc(n)+'</option>').join('')+
+      '<option disabled>────────</option><option value=""'+(!V.ent?' selected':'')+'>Aucune entreprise</option><option value="__add">Ajouter</option></select>'+
+    '<span></span><span style="text-align:right">TVA</span><span style="display:flex;align-items:center;gap:6px"><input id="pv_tva" value="'+V.tva+'" onchange="ccProvSet('+Q+'tva'+Q+',this.value)" style="'+inS+';width:70px"> %</span><span style="text-align:right;padding-right:8px">'+(totT-totH).toFixed(2)+'</span>'+
+    '<span></span><span></span><span style="text-align:right">Montant</span><input id="pv_ttc" value="'+n2(ttc)+'" onchange="ccProvSet('+Q+'ttc'+Q+',this.value)" style="'+inS+'"><input id="pv_tttc" value="'+(Math.round(totT*100)/100).toFixed(2)+'" onchange="ccProvSet('+Q+'tttc'+Q+',this.value)" style="'+inS+'">'+
+    '</div>'+
+    '<div style="padding:10px 20px 0;font-size:14px;display:grid;grid-template-columns:1fr 190px 40px;gap:8px 12px;align-items:center">'+
+      '<span>Remarque</span><span></span><span></span>'+
+      '<input id="pv_des" value="'+pvEscA(V.des||'')+'" style="'+inS+';text-align:left">'+
+      '<input id="pv_date" value="'+pvEscA(dvD4(V.date||ccToday()))+'" style="'+inS+';text-align:left">'+chCalBtn('pv_date')+
+    '</div>'+
+    '<div style="padding:10px 20px 0;position:relative"><button onclick="var m=document.getElementById('+Q+'pv_m'+Q+');m.style.display=m.style.display==='+Q+'block'+Q+'?'+Q+'none'+Q+':'+Q+'block'+Q+'" style="'+CC_GB+'"><svg width="14" height="14" viewBox="0 0 15 15" style="vertical-align:-2px" fill="none" stroke="#444" stroke-width="1.3"><path d="M2 12.5l1-3.5L9.5 2.5l2.5 2.5L5.5 11.5 2 12.5z"/></svg> <span style="font-size:8px">▾</span></button>'+
+      '<span style="margin-left:10px;font-size:14px">Annexes: '+V.annexes.length+'</span>'+
+      '<div id="pv_m" style="display:none;position:absolute;left:20px;top:40px;background:#fff;border:1px solid #c9c9c9;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:13.5px;padding:4px 0;z-index:5;min-width:180px">'+
+        '<div style="padding:6px 16px;cursor:pointer" onclick="ccProvAnnexes()">Annexe …</div></div></div>';
+  ccMac('cc_prov','Provision',body,
+    '<span style="flex:1"></span><button onclick="ccMacClose('+Q+'cc_prov'+Q+')" style="background:#fff;border:1px solid #b5b5b5;border-radius:7px;padding:5px 26px;font-size:14px;cursor:pointer">Annuler</button>'+
+    '<button id="pv_ok" onclick="ccProvSave()" style="border-radius:7px;padding:5px 30px;font-size:14px;cursor:pointer;'+(ttc?'background:linear-gradient(#5aa7f8,#1e6fe8);color:#fff;border:1px solid #1a5fd0;font-weight:600':'background:#f4f4f4;color:#aaa;border:1px solid #cfcfcf;pointer-events:none')+'">Valider</button>', 900, 0);
+}
+function ccProvKeep(){ const V=window._ccPV; const g=id=>{ const x=document.getElementById(id); return x?x.value:null; };
+  if(g('pv_des')!=null) V.des=g('pv_des');
+  const m=String(g('pv_date')||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/); if(m) V.date=m[3]+'-'+m[2]+'-'+m[1]; }
+function ccProvSet(k,v){ const V=window._ccPV; ccProvKeep(); const f=()=>1+ccP(V.tva)/100, aut=ccProvAutres();
+  if(k==='tva') V.tva=ccP(v);
+  else if(k==='ht') V.mnt=ccP(v)*f();
+  else if(k==='ttc') V.mnt=ccP(v);
+  else if(k==='tht') V.mnt=ccP(v)*f()-aut;
+  else if(k==='tttc') V.mnt=ccP(v)-aut;
+  V.mnt=Math.round(V.mnt*100)/100; ccProvRender(); }
+function ccProvEnt(v){ ccProvKeep();
+  if(v==='__add'){ window._ccSelAdrMode='prov'; ccConSelAdr(window._ccPV.cfc); return; }
+  window._ccPV.ent=v; ccProvRender(); }
+function ccProvAnnexes(){ ccProvKeep(); window._ccAnxT=window._ccPV; window._ccAnxBack=()=>{ window._ccAnxT=null; ccProvRender(); }; window._ccAnxSel=null; ccAnxRender(); }
+function ccProvSave(){ const A=ccA(), V=window._ccPV; if(!A||!V) return; ccProvKeep();
+  if(!ccP(V.mnt)){ return; }
+  if(!V.cfc){ chErr('Choisissez un CFC.'); return; }
+  ccEnsureRow(A,V.cfc);
+  if(window._ccPVid){ const e=A.ecr.find(x=>x.id===window._ccPVid); Object.assign(e,V); } else { V.id=pvId(); A.ecr.push(V); }
+  ccPersist(); ccMacClose('cc_prov'); ccRender(); toast('Provision de '+ccF(V.mnt)+' enregistrée sur le CFC '+V.cfc+'.'); }
 function ccDlgProv(id,cfc){
   const A=ccA(); const e=id?A.ecr.find(x=>x.id===id):null;
   const v=e||{cfc:cfc||'',mnt:'',des:''};

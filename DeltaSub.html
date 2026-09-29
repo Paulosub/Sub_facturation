@@ -337,7 +337,7 @@ const NAV=[
   {s:'Affaires',        items:[['aff-gestion','Gestion'],['aff-controlling','Controlling'],['aff-mes','Mes affaires'],['aff-toutes','Toutes les affaires']]},
   {s:'Collaborateurs',  items:[['collab-actuels','Collaborateurs actuels'],['collab-anciens','Anciens collaborateurs'],['collab-tous','Tous les collaborateurs']]},
   {s:'Notes de frais',  items:[['frais','Saisie'],['frais-rapport','Rapport']]},
-  {s:'Heures',          items:[['h-saisie','Saisie'],['h-rapport','Rapport']]},
+  {s:'Heures',          items:[['h-saisie','Saisie'],['h-rapport','Rapport'],['h-dispo','Disponibilité']]},
   {s:'Tâches',          items:[['taches','Tâches']]},
   {s:'Bâtiment',        items:[['devis','Devis'],['coco','Contrôle des coûts'],['coplan','Planification des coûts']]},
   {s:'Management',      items:[['mgmt','Statistiques']]},
@@ -904,7 +904,8 @@ function collabView(filter){ return {
       {i:'edit',t:'Editer le collaborateur',fn:()=>cur()&&editStaff(cur())},
       {i:'minus',t:'Supprimer le collaborateur',fn:()=>cur()&&delStaff(cur())},
       {i:'wrench',t:'Paramètres',menu:()=>[{t:'Coût de revient',dis:!cur(),fn:()=>staffRates(cur())},{t:'Durée prévue',dis:!cur(),fn:()=>staffTargets(cur())},
-        {t:'Vacances',dis:!cur(),fn:()=>staffHolidays(cur())},{t:'Verrouillage des heures',dis:!cur(),fn:()=>staffFreeze(gridSel(CO.g,id=>DS.get('staff',id)))}]},
+        {t:'Vacances',dis:!cur(),fn:()=>staffHolidays(cur())},{t:'Disponibilité …',dis:gridSel(CO.g,id=>DS.get('staff',id)).length!==1,fn:()=>staffProjectTimes(gridSel(CO.g,id=>DS.get('staff',id))[0])},'-',
+        {t:'Verrouillage des heures',dis:!cur(),fn:()=>staffFreeze(gridSel(CO.g,id=>DS.get('staff',id)))}]},
       {i:'gear',t:'Fonctions',menu:()=>[{t:'Courriel …',fn:()=>mailList(gridSel(CO.g,id=>DS.get('staff',id)).map(s=>DS.get('contact',s.PERSON_ID)).filter(Boolean))},
         {t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(CO.g)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(CO.g,'Collaborateurs')}]}
     ],{count:1});
@@ -953,6 +954,7 @@ function pickContact(title,fn){
 }
 async function delStaff(s){
   if(DS.by('appuser_staff','STAFFS_ID',s.ID).length){ toast('Ce collaborateur est déjà défini dans la gestion d’utilisateurs. Vous devez préalablement l’en retirer.',true); return; }
+  if(DS.by('staffprojecttime','STAFF_ID',s.ID).length){ toast('Cette inscription est déjà utilisée et ne peut pas être supprimée. (disponibilités saisies)',true); return; }
   if(DS.by('timelog','STAFF_ID',s.ID).length){ toast('Ce collaborateur a des heures saisies : décochez plutôt « Collaborateur actuel ».',true); return; }
   if(await confirmDlg('Voulez-vous vraiment supprimer ce collaborateur ?','Supprimer')) DS.del('staff',s.ID);
 }
@@ -1002,6 +1004,90 @@ function staffHolidays(s){
     h('label',{},'Solde à reporter'),sol, h('label',{},'Dernière modification'),h('span',{},dfr(s.HOLIDAYBALANCECHANGEDDATE))),
     buttons:[{t:'Annuler'},{t:'Reporter le solde sur '+(y+1),fn:()=>DS.save('staff',{...s,HOLIDAYBALANCEYEAR:y+1,HOLIDAYBALANCE:(+a.value||0)+((+b.value||0)-taken),HOLIDAYBALANCECHANGEDDATE:today()})},
       {t:'OK',pri:true,fn:()=>DS.save('staff',{...s,HOLIDAYS:a.value===''?null:+a.value,HOLIDAYBALANCE:b.value===''?null:+b.value,HOLIDAYBALANCEYEAR:y,HOLIDAYBALANCECHANGEDDATE:today()})}]});
+}
+/* Disponibilité (STAFFPROJECTTIME) — « Heures disponibles pour les affaires » par mois (StaffProjectTimesDialog de Deltaproject) */
+let SPT_COPY=null;   // collègue mémorisé pour « Formation ▾ » (comme staffCopyFrom)
+function staffProjectTimes(s){
+  const o={}, box=h('div',{style:{width:'900px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const rows=()=>DS.by('staffprojecttime','STAFF_ID',s.ID).sort((a,b)=>b.TIMEYEAR-a.TIMEYEAR||b.TIMEMONTH-a.TIMEMONTH);
+  const hh=v=>numJ(+v||0)+' h';
+  const draw=()=>grid(box,Object.assign(o,{state:{},sort:null,rows:rows(),onDbl:r=>sptEdit(s,r,null,null,draw),
+    cols:[{k:'TIMEYEAR',t:'Année',w:60},{k:'mo',t:'Mois',w:90,f:r=>esc(MOIS_L[r.TIMEMONTH])},{k:'p',t:'Heures prévues',w:110,cls:'r',f:r=>hh(dpTarget(s.ID,r.TIMEYEAR,r.TIMEMONTH))},
+      {k:'v',t:'Vacances',w:90,cls:'r',f:r=>hh(r.HOLIDAY)},{k:'f',t:'Formation',w:90,cls:'r',f:r=>hh(r.EDUCATION)},{k:'i',t:'Travail interne',w:110,cls:'r',f:r=>hh(r.INTERNALTIME)},
+      {k:'d',t:'Disponibilité',w:100,cls:'r',f:r=>'<b>'+hh(r.TIMEBUDGET)+'</b>'},{k:'REMARK',t:'Remarque'}]}));
+  const cur=()=>DS.get('staffprojecttime',o.sel);
+  const plusMenu=()=>{ const y=(cur()||{}).TIMEYEAR||new Date().getFullYear(), used=m=>DS.by('staffprojecttime','STAFF_ID',s.ID).some(r=>r.TIMEYEAR===y&&r.TIMEMONTH===m);
+    let fy=new Date().getFullYear(); while(DS.by('staffprojecttime','STAFF_ID',s.ID).some(r=>r.TIMEYEAR===fy)) fy++;
+    return [...MOIS_L.map((mn,m)=>({t:mn+' '+y,dis:used(m),fn:()=>sptEdit(s,null,y,m,draw)})),'-',{t:'Nouvelle saisie …',fn:()=>sptEdit(s,null,null,null,draw)},'-',{t:'Année '+fy+' …',fn:()=>sptYear(s,fy,draw)}]; };
+  const del=async()=>{ const r=cur(); if(!r) return;
+    if(DS.all('planningassignment').some(a=>a.STAFFPROJECTTIME_ID===r.ID)){ dialog({title:'Information',body:h('div',{},'Cette inscription est déjà utilisée et ne peut pas être supprimée.'),buttons:[{t:'OK',pri:true}]}); return; }
+    if(await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')){ await DS.del('staffprojecttime',r.ID); o.sel=null; draw(); } };
+  draw();
+  dialog({title:'Disponibilité',body:h('div',{},h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',marginBottom:'8px'}},h('label',{},'Collaborateur'),h('b',{},staffName(s))),
+    h('div',{style:{fontWeight:600,margin:'4px 0'}},'Heures disponibles pour les affaires'),box,
+    phead([{i:'plus',t:'Nouvelle saisie',menu:plusMenu},{i:'edit',t:'Modifier',fn:()=>cur()&&sptEdit(s,cur(),null,null,draw)},{i:'minus',t:'Supprimer',fn:del}])),buttons:[{t:'Fermer',pri:true}]});
+}
+/* Fiche mensuelle « Heures disponibles pour les affaires » (StaffProjectTimeDialog) : r existant, ou nouvelle (y,m donnés, ou libres = « Nouvelle saisie ») */
+function sptEdit(s,r,y,m,after){
+  const all=()=>DS.by('staffprojecttime','STAFF_ID',s.ID), used=(yy,mm)=>all().some(x=>x.TIMEYEAR===yy&&x.TIMEMONTH===mm&&(!r||x.ID!==r.ID));
+  const free=!r&&y==null;
+  if(free){ /* mois courant, puis premier mois libre */ const d=new Date(); y=d.getFullYear(); m=d.getMonth(); let n=0; while(used(y,m)&&n++<240){ m++; if(m>11){ m=0; y++; } } }
+  const v=r?{...r}:{ID:null,STAFF_ID:s.ID,TIMEYEAR:y,TIMEMONTH:m,DEVIATION:0,HOLIDAY:0,EDUCATION:0,OFFICIALABSENCE:0,OTHERABSENCE:0,INTERNALTIME:0,TIMEBUDGET:0,REMARK:null};
+  const fmt=x=>numJ(+x||0), inp=(k)=>h('input',{class:'inp',value:fmt(v[k]),style:{width:'110px',textAlign:'right'}});
+  const F={DEVIATION:inp('DEVIATION'),HOLIDAY:inp('HOLIDAY'),EDUCATION:inp('EDUCATION'),OFFICIALABSENCE:inp('OFFICIALABSENCE'),OTHERABSENCE:inp('OTHERABSENCE'),INTERNALTIME:inp('INTERNALTIME'),TIMEBUDGET:inp('TIMEBUDGET')};
+  const yL=h('span',{style:{display:'inline-block',minWidth:'60px'}}), mL=h('span',{style:{display:'inline-block',minWidth:'90px'}}), prevL=h('span'), resL=h('b'), mark=h('div',{style:{color:'#c62828',display:'none'}},'Cette entrée doit être mise à jour.');
+  const rem=h('textarea',{class:'inp',rows:3,maxlength:1024,style:{width:'100%'}},v.REMARK||'');
+  let dirty=false, okBtn=null;
+  const prev=()=>dpTarget(s.ID,v.TIMEYEAR,v.TIMEMONTH);   // toujours le mois affiché (corrige le défaut de Deltaproject)
+  const vals=()=>{ const o2={}; Object.keys(F).forEach(k=>o2[k]=parseJ(F[k].value)); return o2; };
+  const guards=()=>{ if(!okBtn) okBtn=$$('.dlg .ft .btn.pri').at(-1); const ok=v.TIMEYEAR!=null&&v.TIMEMONTH!=null&&!dirty&&parseJ(F.TIMEBUDGET.value)>=0&&!used(v.TIMEYEAR,v.TIMEMONTH);
+    if(okBtn) okBtn.disabled=!ok; mark.style.display=dirty?'':'none'; };
+  const calc=()=>{ yL.textContent=v.TIMEYEAR; mL.textContent=MOIS_L[v.TIMEMONTH]; prevL.textContent=numJ(prev())+' h'; resL.textContent=numJ(dpCalc(prev(),vals()))+' h'; guards(); };
+  ['DEVIATION','HOLIDAY','EDUCATION','OFFICIALABSENCE','OTHERABSENCE','INTERNALTIME'].forEach(k=>F[k].oninput=()=>{ dirty=true; calc(); });
+  F.TIMEBUDGET.oninput=()=>{ dirty=false; calc(); };
+  Object.values(F).forEach(e=>e.onblur=()=>{ if(e.value.trim()!=='') e.value=fmt(parseJ(e.value)); });
+  const drop=menu=>ibtn({t:'Choisir',menu});
+  const setF=(k,x)=>{ F[k].value=fmt(x); if(k==='TIMEBUDGET') dirty=false; else dirty=true; calc(); };
+  const yBtn=free?drop(()=>[-1,1].map(n=>({t:String(v.TIMEYEAR+n),fn:()=>{ v.TIMEYEAR+=n; if(used(v.TIMEYEAR,v.TIMEMONTH)){ let k=0; v.TIMEMONTH=0; while(used(v.TIMEYEAR,v.TIMEMONTH)&&k++<11) v.TIMEMONTH++; } calc(); }}))):null;
+  const mBtn=free?drop(()=>MOIS_L.map((mn,i)=>({t:mn,dis:used(v.TIMEYEAR,i),chk:i===v.TIMEMONTH,fn:()=>{ v.TIMEMONTH=i; calc(); }}))):null;
+  const eduBtn=drop(()=>{ const it=[{t:'Choisir …',fn:()=>{ const o2={}, bx=h('div',{style:{width:'300px',height:'260px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+      grid(bx,Object.assign(o2,{cols:[{k:'n',t:'Collaborateur',f:x=>esc(staffName(x))}],rows:staffList().filter(x=>x.ID!==s.ID),sort:null,onDbl:x=>{ o2.sel=String(x.ID); $$('.dlg .ft .btn.pri').at(-1).click(); }}));
+      dialog({title:'Choisir un collaborateur',body:bx,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const c=DS.get('staff',o2.sel); if(!c) return false; SPT_COPY=c.ID; const src=DS.by('staffprojecttime','STAFF_ID',c.ID).find(x=>x.TIMEYEAR===v.TIMEYEAR&&x.TIMEMONTH===v.TIMEMONTH); setF('EDUCATION',src?+src.EDUCATION||0:0); }}]}); }}];
+    const c=SPT_COPY&&DS.get('staff',SPT_COPY); if(c){ const src=DS.by('staffprojecttime','STAFF_ID',c.ID).find(x=>x.TIMEYEAR===v.TIMEYEAR&&x.TIMEMONTH===v.TIMEMONTH), x=src?+src.EDUCATION||0:0;
+      it.push({t:numJ(x)+' h ('+(c.INITIALS||staffName(c))+')',fn:()=>setF('EDUCATION',x)}); }
+    return it; });
+  const intBtn=drop(()=>[5,10,15,20,25,30,40,50].map(p=>{ const x=prev()*p/100; return {t:numJ(x)+' h ('+p+' %)',fn:()=>setF('INTERNALTIME',x)}; }));
+  const budBtn=drop(()=>{ const R=dpCalc(prev(),vals()), sug=[R]; if(R>=0) [10*Math.floor(R/10),Math.floor(R),Math.ceil(R),10*Math.ceil(R/10)].forEach(x=>{ if(!sug.some(z=>Math.abs(z-x)<1e-9)) sug.push(x); });
+    return sug.flatMap((x,i)=>[...(i===1?['-']:[]),{t:numJ(x)+' h',fn:()=>setF('TIMEBUDGET',x)}]); });
+  const line=(el,btn)=>h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},el,h('span',{},'h'),btn||'');
+  const body=h('div',{style:{minWidth:'460px'}},formRows([
+    ['Collaborateur',h('b',{},staffName(s))],
+    ['Année',h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},yL,yBtn||'')],['Mois',h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},mL,mBtn||'')],
+    ['Heures prévues',prevL],['Déduction sur les heures prévues',line(F.DEVIATION)],['Vacances',line(F.HOLIDAY)],['Formation',line(F.EDUCATION,eduBtn)],
+    ['Militaire, service civil',line(F.OFFICIALABSENCE)],['Autres absences',line(F.OTHERABSENCE)],['Travail interne',line(F.INTERNALTIME,intBtn)],
+    ['Résultat calculé',resL],[h('b',{},'Disponibilité'),h('div',{},line(F.TIMEBUDGET,budBtn),mark)],['Note interne',rem]],440));
+  dialog({title:'Heures disponibles pour les affaires',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    if(dirty||parseJ(F.TIMEBUDGET.value)<0||used(v.TIMEYEAR,v.TIMEMONTH)) return false;
+    Object.assign(v,vals(),{REMARK:rem.value.trim()||null}); await DS.save('staffprojecttime',v); after&&after(); }}]});
+  calc(); setTimeout(()=>{ F.TIMEBUDGET.focus(); F.TIMEBUDGET.select(); calc(); },0);
+}
+/* « Travail interne » : création des mois manquants d'une année (StaffProjectTimeYearDialog) */
+function sptYear(s,y,after){
+  const rN=h('input',{type:'radio',name:'spty',checked:true}), rH=h('input',{type:'radio',name:'spty'}), rP=h('input',{type:'radio',name:'spty'});
+  const fH=h('input',{class:'inp',value:'0.00',style:{width:'90px',textAlign:'right'}}), fP=h('input',{class:'inp',value:'0.00',style:{width:'90px',textAlign:'right'}});
+  const bH=ibtn({menu:()=>[5,10,15,20].map(x=>({t:x+' h',fn:()=>{ fH.value=numJ(x); }}))}), bP=ibtn({menu:()=>[5,10,15,20,25].map(x=>({t:x+' %',fn:()=>{ fP.value=numJ(x); }}))});
+  const en=()=>{ fH.disabled=bH.disabled=!rH.checked; fP.disabled=bP.disabled=!rP.checked; }; [rN,rH,rP].forEach(x=>x.onchange=en); en();
+  dialog({title:'Travail interne',body:h('div',{style:{minWidth:'420px'}},formRows([['Année',h('b',{},String(y))]]),
+    h('div',{style:{fontWeight:600,margin:'10px 0 6px'}},'Heures prévues par mois pour le travail interne'),
+    h('div',{style:{display:'grid',gridTemplateColumns:'150px auto',gap:'6px 10px',alignItems:'center'}},
+      h('label',{},rN,' Aucun'),h('span'),h('label',{},rH,' En heures'),h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},fH,'h',bH),
+      h('label',{},rP,' En pourcentage'),h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},fP,'%',bP))),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+      const have=new Set(DS.by('staffprojecttime','STAFF_ID',s.ID).filter(r=>r.TIMEYEAR===y).map(r=>r.TIMEMONTH)), ms=[...Array(12).keys()].filter(m=>!have.has(m));
+      if(!ms.length) return; const ids=DS.newIds('staffprojecttime',ms.length), hh=parseJ(fH.value), pp=parseJ(fP.value);
+      await DS.commit(ms.map((m,i)=>{ const p=dpTarget(s.ID,y,m), it=rH.checked?hh:rP.checked?p*pp/100:0;
+        return {t:'staffprojecttime',id:ids[i],val:{ID:ids[i],STAFF_ID:s.ID,TIMEYEAR:y,TIMEMONTH:m,DEVIATION:0,HOLIDAY:0,EDUCATION:0,OFFICIALABSENCE:0,OTHERABSENCE:0,INTERNALTIME:it,TIMEBUDGET:p-it,REMARK:null}}; }));
+      toast(ms.length+' mois créés pour '+y+'.'); after&&after(); }}]});
 }
 function staffFreeze(list){
   if(!list.length) return; const s0=list[0];
@@ -1709,6 +1795,100 @@ VIEWS['h-rapport']={
     this.draw=draw; draw();
   },
   refresh(ts){ if(hit(ts,'timelog','stafftargettime','targettime','staff','publicholiday')) this.draw(); }
+};
+
+/* ═══ HEURES · Disponibilité (PlanningFrame de Deltaproject) — consultation seule ; la saisie se fait dans Collaborateurs ▸ Paramètres ▸ Disponibilité ═══ */
+const DP_T=['Heures disponibles','Heures planifiées','Heures planifiées et cahier des charges','Solde des heures disponibles'];
+const DP={t:0,staff:null,y:0,m:0,g:{}};
+{ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); DP.y=d.getFullYear(); DP.m=d.getMonth();   // Deltaproject s'ouvre sur le mois précédent
+  try{ const t=+localStorage.getItem('ds_dp_type'); if(t>=0&&t<=3) DP.t=t; }catch(_){} }
+/* arrondi de Deltaproject (Formatter.round) : au centième, demi à l'écart de zéro ; zéro = « 0.00 », absent = vide */
+const numJ=v=>v==null?'':num(Math.sign(v)*Math.round(Math.abs(v)*100)/100);
+const parseJ=v=>{ const n=parseFloat(String(v??'').replace(/['’\s]/g,'')); return isFinite(n)?n:0; };
+/* collaborateurs visibles : ceux de l'utilisateur (APPUSER_STAFF, anciens compris), sinon tous */
+function dpStaffs(){ const u=ME.u, l=u?DS.by('appuser_staff','APPUSER_ID',u.ID).map(x=>DS.get('staff',x.STAFFS_ID)).filter(Boolean):[];
+  return (l.length?l:staffList(true)).sort((a,b)=>cmp(staffName(a),staffName(b))); }
+/* heures prévues de Deltaproject pour la disponibilité : STAFFTARGETTIME seul (pas de repli sur TARGETTIME) */
+function dpTarget(sid,y,m){ const st=DS.by('stafftargettime','STAFF_ID',sid).find(x=>x.TARGETTIMEYEAR===y); return st?(+st['TARGETHOURS'+m]||0):0; }
+/* « Résultat calculé » = prévues − déduction − vacances − formation − militaire − autres absences − travail interne */
+const dpCalc=(prev,v)=>prev-(+v.DEVIATION||0)-(+v.HOLIDAY||0)-(+v.EDUCATION||0)-(+v.OFFICIALABSENCE||0)-(+v.OTHERABSENCE||0)-(+v.INTERNALTIME||0);
+const dpSpt=(sid,y)=>sid?DS.by('staffprojecttime','STAFF_ID',sid).filter(r=>r.TIMEYEAR===y):[];
+/* ordre des lignes d'affaire = ordre d'itération d'une HashMap Java<Integer> (capacité 16, doublée au-delà de 75 %) */
+function dpJavaOrder(ids){ let cap=16; while(ids.length>cap*.75) cap*=2; return ids.map((k,i)=>[k,i]).sort((a,b)=>((a[0]&(cap-1))-(b[0]&(cap-1)))||a[1]-b[1]).map(x=>x[0]); }
+function dpModel(){ const sid=DP.staff, y=DP.y, S=dpSpt(sid,y), R={rows:[],month:DP.t===2};
+  const row=(d,v,o)=>Object.assign({d,v},o||{});
+  const byM=f=>{ const v=Array(12).fill(null); S.forEach(r=>v[r.TIMEMONTH]=f(r)); return v; };
+  if(DP.t===0){
+    R.rows=[row('Heures prévues',byM(r=>dpTarget(sid,y,r.TIMEMONTH)),{b:1,hl:1}),row('Déduction sur les heures prévues',byM(r=>+r.DEVIATION||0)),
+      row('Vacances',byM(r=>+r.HOLIDAY||0)),row('Formation',byM(r=>+r.EDUCATION||0)),row('Militaire, service civil',byM(r=>+r.OFFICIALABSENCE||0)),
+      row('Autres absences',byM(r=>+r.OTHERABSENCE||0)),row('Travail interne',byM(r=>+r.INTERNALTIME||0)),
+      row('Disponibilité du collaborateur',byM(r=>+r.TIMEBUDGET||0),{b:1,hl:1})];
+    return R; }
+  /* planification DELTAplanning : PLANNINGASSIGNMENT → PLANNINGTIME → PLANNINGROLE → PLANNINGSUBPROJECT (vide au bureau) */
+  const assOf=r=>DS.all('planningassignment').filter(a=>a.STAFFPROJECTTIME_ID===r.ID).sort((a,b)=>a.ID-b.ID);
+  if(DP.t===2){ const r=S.find(x=>x.TIMEMONTH===DP.m);
+    R.rows=(r?assOf(r):[]).map(a=>{ const pt=DS.get('planningtime',a.PLANNINGTIME_ID)||{}, pm=DS.get('planningmonth',pt.PLANNINGMONTH_ID)||{}, p=DS.get('project',pm.PROJECT_ID), sp=DS.get('projectsubphase',pm.SUBPHASE_ID);
+      return {ID:a.ID,c:[p?(p.NUMBER||'')+' '+(p.TITLE||''):'',(DS.get('subproject',pm.SUBPROJECT_ID)||{}).CODE||'',sp?(sp.NUMBER??'')+' '+nm(sp):'',a.TIMEPERIOD,a.NOTE||'']}; });
+    return R; }
+  const tb=byM(r=>+r.TIMEBUDGET||0), P=new Map(), add=(pid,m,x)=>{ if(!P.has(pid)) P.set(pid,Array(12).fill(null)); const v=P.get(pid); v[m]=(v[m]||0)+x; };
+  if(DP.t===3){ if(sid) DS.by('timelog','STAFF_ID',sid).filter(t=>t.TIMEYEAR===y&&t.PROJECT_ID!=null).sort((a,b)=>a.PROJECT_ID-b.PROJECT_ID||a.TIMEMONTH-b.TIMEMONTH)
+      .forEach(t=>{ const p=DS.get('project',t.PROJECT_ID); if(p&&!p.ISINTERNAL) add(p.ID,t.TIMEMONTH,+t.TIMEPERIOD||0); }); }   // affaires non internes, vacances exclues
+  else S.forEach(r=>assOf(r).forEach(a=>{ const pt=DS.get('planningtime',a.PLANNINGTIME_ID)||{}, pr=DS.get('planningrole',pt.PLANNINGROLE_ID)||{}, ps=DS.get('planningsubproject',pr.PLANNINGSUBPROJECT_ID)||{};
+      if(ps.PROJECT_ID!=null) add(ps.PROJECT_ID,r.TIMEMONTH,+a.TIMEPERIOD||0); }));
+  const ids=dpJavaOrder([...P.keys()].sort((a,b)=>a-b)), tot=Array(12).fill(0), av=tb.slice();
+  ids.forEach(id=>P.get(id).forEach((x,m)=>{ if(x==null) return; tot[m]+=x; if(av[m]!=null) av[m]-=x; }));
+  const proj=ids.map(id=>row((DS.get('project',id)||{}).TITLE||'',P.get(id)));
+  if(DP.t===1) R.rows=[row('Disponibilité du collaborateur [h]',tb,{b:1,hl:1}),...proj,row('Heures planifiées [h]',tot,{b:1,hl:1}),row('Solde disponible [h]',av,{hl:1,sign:1})];
+  else R.rows=[row('Disponibilité pour les affaires',tb,{b:1,hl:1}),...proj,row('Total des heures effectuées [h]',tot,{b:1,hl:1}),
+    row('Part effectuée [%]',tb.map((b,m)=>b==null||b===0?null:tot[m]/b*100),{rate:1}),row('Solde du temps disponible [h]',av,{hl:1})];
+  return R; }
+function dpNote(txt){ dialog({title:'Cahier des charges',body:h('div',{style:{whiteSpace:'pre-wrap',maxWidth:'520px',minWidth:'320px'}},txt),buttons:[{t:'Fermer',pri:true}]}); }
+function dpPrint(){ const s=DS.get('staff',DP.staff); if(!s||!(DP.t===0||DP.t===3)) return; const R=dpModel(), title=DP.t===0?'Planification du temps disponible':'Solde des heures disponibles', nmS=staffName(s);
+  const cell=(r,m)=>{ const v=r.v[m], red=r.rate&&v!=null&&v<80; return `<td class="r"${red?' style="color:#f00"':''}>${numJ(v)}</td>`; };
+  const w=open('','_blank'); if(!w) return;
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+    @page{size:A4 landscape;margin:25mm 15mm 20mm 15mm;@top-right{content:"${esc(title)}";font:9pt Akkurat,Helvetica,Arial,sans-serif;vertical-align:bottom;border-bottom:.25pt solid #999}
+      @bottom-left{content:"Créé par ${esc(ME.id||'')}";font:8pt Akkurat,Helvetica,Arial,sans-serif}@bottom-center{content:"${esc(dfr(today()))}";font:8pt Akkurat,Helvetica,Arial,sans-serif}
+      @bottom-right{content:"Page " counter(page) " | " counter(pages);font:8pt Akkurat,Helvetica,Arial,sans-serif}}
+    body{font:8.5pt Akkurat,Helvetica,Arial,sans-serif;margin:0}.tt{display:flex;justify-content:space-between;font-size:13pt;margin-top:10mm;padding-bottom:2mm;border-bottom:.5pt solid #000}
+    .inf{display:grid;grid-template-columns:30mm 1fr;gap:1mm 4mm;margin:5mm 0}.inf b{font-weight:700}table{border-collapse:collapse;width:194mm;margin-top:4mm}
+    th,td{padding:1.2mm 1mm;border-bottom:.25pt solid #ccc;text-align:left;white-space:nowrap}th{border-bottom:.6pt solid #000}th.r,td.r{text-align:right;width:10mm}td.d{width:${DP.t===0?74:70}mm;white-space:normal}
+    tr.b td{font-weight:700;border-top:.5pt solid #000}</style></head><body>
+    <div class="tt"><span>${esc(title)} de ${esc(nmS)}</span><span>Année ${DP.y}</span></div>
+    <div class="inf"><b>Date</b><span>${esc(dLong(today()))}</span><b>Collaborateur</b><span>${esc(nmS)}</span><b>Année</b><span>${DP.y}</span></div>
+    <table><tr><th>Désignation</th>${MOIS.map(m=>`<th class="r">${esc(m)}</th>`).join('')}</tr>
+    ${R.rows.map(r=>`<tr class="${r.b?'b':''}"><td class="d">${esc(r.d)}</td>${MOIS.map((_,m)=>cell(r,m)).join('')}</tr>`).join('')}</table></body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300); }
+VIEWS['h-dispo']={
+  tools(){ const S=!!DP.staff, mo=DP.t===2&&S, set=()=>go('h-dispo');
+    const ty=h('select',{class:'inp',style:{maxWidth:'230px'}},...DP_T.map((x,i)=>h('option',{value:i,selected:i===DP.t||null},x)));
+    ty.onchange=()=>{ DP.t=+ty.value; try{ localStorage.setItem('ds_dp_type',DP.t); }catch(_){} set(); };
+    const ms=h('select',{class:'inp',style:{width:'120px'},disabled:!mo||null},...MOIS_L.map((x,i)=>h('option',{value:i,selected:i===DP.m||null},x)));
+    ms.onchange=()=>{ DP.m=+ms.value; set(); };
+    const stepM=n=>{ DP.m+=n; if(DP.m<0){ DP.m=11; DP.y--; } if(DP.m>11){ DP.m=0; DP.y++; } set(); };
+    const R=VIEWS['h-dispo'].last, has=R&&R.rows.length;
+    return [[ty],[{i:'prev',t:'Mois précédent',dis:!mo,fn:()=>stepM(-1)},ms,{i:'next',t:'Mois suivant',dis:!mo,fn:()=>stepM(1)}],
+      [{i:'prev',t:'Année précédente',dis:!S,fn:()=>{ DP.y--; set(); }},h('span',{style:{alignSelf:'center',minWidth:'44px',textAlign:'center'}},String(DP.y)),{i:'next',t:'Année suivante',dis:!S,fn:()=>{ DP.y++; set(); }}],
+      [{i:'doc',t:'Rapports',dis:!(S&&(DP.t===0||DP.t===3)),menu:()=>[{t:'Afficher le rapport …',fn:()=>dpPrint()}]},
+       {i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',dis:!has,fn:()=>copyTable(DP.g)},{t:'Exporter le tableau dans un fichier CSV …',dis:!has,fn:()=>csvTable(DP.g,DP_T[DP.t].replace(/ /g,'_'))}]}]]; },
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(240), Rc=h('div',{class:'col fill'}), head=h('div',{class:'ph2',style:{fontWeight:600}}), pane=h('div',{class:'pane'}); cols.append(L.el,Rc); Rc.append(head,pane);
+    const sl=dpStaffs();
+    if(!DP.staff||!sl.some(s=>s.ID===DP.staff)) DP.staff=[HR.staff,(ME.staff||{}).ID].find(id=>sl.some(s=>s.ID===id))??(sl[0]||{}).ID??null;
+    grid(L.pane,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s)),v:staffName}],rows:sl,sel:DP.staff,onSel:s=>{ DP.staff=s.ID; draw(); setTools(this.tools()); }});
+    const draw=()=>{ const R=dpModel(); this.last=R;
+      head.textContent=`${DP_T[DP.t]} — ${staffName(DS.get('staff',DP.staff))} — ${DP.t===2?MOIS_L[DP.m]+' ':''}${DP.y}`;
+      if(R.month){ grid(pane,Object.assign(DP.g,{state:{},sort:null,key:r=>r.ID,cols:['Affaire','Ouvrage','Phase partielle','Durée','Cahier des charges'].map((t,j)=>({k:'c'+j,t,cls:j===3?'r':'',w:[260,90,200,80,null][j],f:r=>j===3?numJ(r.c[3]):esc(r.c[j])})),
+        rows:R.rows,onDbl:r=>{ if(r.c[4]) dpNote(r.c[4]); },empty:'Aucune donnée pour cette période.'})); return; }
+      R.rows.forEach((r,i)=>r._k=i);
+      const clr=(r,m)=>{ const v=r.v[m]; if(v==null) return ''; if(r.sign) return v>0?'#008f00':v<0?'#f00':''; if(r.rate) return v<80?'#f00':''; return ''; };
+      grid(pane,Object.assign(DP.g,{state:{},sort:null,key:r=>r._k,rows:R.rows,
+        cols:[{k:'d',t:'Désignation',w:300,f:r=>r.b?'<b>'+esc(r.d)+'</b>':esc(r.d)},...MOIS_L.map((n,m)=>({k:'m'+m,t:n,cls:'r',w:84,f:r=>{ const c=clr(r,m), s=numJ(r.v[m]); return (c?`<span style="color:${c}">`:'')+(r.b?'<b>'+s+'</b>':s)+(c?'</span>':''); }}))]}));
+      $$('tbody tr',pane).forEach((tr,i)=>{ if(R.rows[i]&&R.rows[i].hl) tr.style.background='rgba(20,20,20,.16)'; }); };
+    this.draw=draw; draw();
+  },
+  refresh(ts){ if(hit(ts,'staffprojecttime','stafftargettime','timelog','project','staff','appuser_staff','planningassignment')){ this.draw(); setTools(this.tools()); } }
 };
 
 /* ═══ MODÈLES · Administrateur (p.10-11) — propriétés, statuts, heures prévues, jours fériés ═══ */

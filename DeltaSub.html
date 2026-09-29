@@ -2371,6 +2371,102 @@ function ccPrintBon(C,p,x){ if(!x) return; const r=ccCond(x.lignes||[],x.conditi
     <tr><td><b>Montant à payer</b></td><td class="r"><b>${num(docNet(x))}</b></td></tr></table><p>${esc(x.genreTexte||x.commentaire||'')} — facture ${esc(x.numeroFacture||'')} du ${dfr(x.dateFacture)} — paiement le ${dfr(x.datePaiement)}</p>
     <p style="margin-top:40px">Signature : ______________________</p></body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   BÂTIMENT · PLANIFICATION DES COÛTS (eCCC-Bâtiment) — en-tête COSTPLANNINGDOCUMENT, contenu 'costplanning'
+═══════════════════════════════════════════════════════════════════════════ */
+const CP_ST={0:'Brouillon',1:'Provisoire',2:'Définitif'};
+/* coût d'un élément saisi : quantité × prix (ou quantité × % si prix en pourcent) ; groupes = Σ enfants */
+function cpCompute(P){
+  const E=P.elements||[], by=new Map(E.map(e=>[e.code,e])), kids=new Map();
+  const par=c=>{ if(c.includes('.')) return c.slice(0,c.lastIndexOf('.')); return c.length>1?c.slice(0,1):null; };
+  E.forEach(e=>{ const p=par(e.code); if(p&&by.has(p)){ if(!kids.has(p)) kids.set(p,[]); kids.get(p).push(e.code); } });
+  const val=new Map();
+  const v=c=>{ if(val.has(c)) return val.get(c); const e=by.get(c), k=kids.get(c)||[]; let x;
+    if(k.length) x=k.reduce((a,ch)=>a+v(ch),0);
+    else x=e._edit?(e.prixEnPourcent?(+e.quantite||0)*(+e.prix||0)/100:(+e.quantite||0)*(+e.prix||0)):(+e.cout||0);
+    if(e.eventuelle) x=0; val.set(c,x); return x; };
+  E.forEach(e=>v(e.code));
+  const tops=E.filter(e=>e.niveau===1), sum=(a,b)=>tops.filter(e=>e.code>=a&&e.code<=b).reduce((s,e)=>s+val.get(e.code),0);
+  const r=P.coutRealisation||{de:'B',a:'W'}, o=P.coutOuvrage||{de:'C',a:'G'};
+  return {val,kids,T:{inv:tops.reduce((s,e)=>s+val.get(e.code),0),real:sum(r.de,r.a),ouv:sum(o.de,o.a)}};
+}
+const CPV={g:{},d:{},q:'',open:null,sec:'ELEMENTS',only:true};
+VIEWS['coplan']={
+  render(m,arg){
+    if(arg&&arg.project) CPV.g.sel=String(arg.project);
+    if(CPV.open){ cpEditor(m,CPV.open); return; }
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const A=col(330), B=h('div',{class:'col fill'}), pane=h('div',{class:'pane'}); cols.append(A.el,B);
+    A.el.prepend(phead([],{search:q=>{ CPV.q=q; drawA(); }}));
+    const docs=pid=>DS.by('costplanningdocument','PROJECT_ID',pid).filter(d=>!d.ISMARKEDASDELETED);
+    const drawA=()=>grid(A.pane,Object.assign(CPV.g,{cols:[{k:'NUMBER',t:'Numéro',w:80},{k:'TITLE',t:'Affaire'},{k:'n',t:'Doc.',w:44,cls:'r',f:p=>docs(p.ID).length||''}],
+      rows:DS.all('project').filter(p=>(p.PROJECTSTATECODE!==5||docs(p.ID).length)&&matchQ(CPV.q,p.NUMBER,p.TITLE)),sort:['NUMBER',-1],onSel:drawB}));
+    const head=phead([{i:'plus',t:'Nouveau document',fn:()=>cpNew(DS.get('project',CPV.g.sel))},
+      {i:'edit',t:'Ouvrir',fn:()=>CPV.d.sel&&(CPV.open=+CPV.d.sel,go('coplan'))},
+      {i:'minus',t:'Supprimer',fn:async()=>{ const d=DS.get('costplanningdocument',CPV.d.sel); if(d&&await confirmDlg('Supprimer ce document ?','Supprimer')) DS.save('costplanningdocument',{...d,ISMARKEDASDELETED:1}); }}],{count:1});
+    B.append(head,pane);
+    const drawB=()=>{ const p=DS.get('project',CPV.g.sel), rows=p?docs(p.ID):[];
+      grid(pane,Object.assign(CPV.d,{cols:[{k:'USERID',t:'Utilisateur',w:90},{k:'CHANGEDDATE',t:'Date',w:90,f:d=>dfr(d.CHANGEDDATE)},{k:'VERSION',t:'Version',w:220},{k:'VERSIONNUMBER',t:'N° de version',w:90,cls:'r'},
+        {k:'STATECODE',t:'Statut',w:100,f:d=>CP_ST[d.STATECODE]||''},{k:'t',t:'Coût d’investissement',w:150,cls:'r',f:d=>{ const P=DS.get('costplanning',d.ID); return P?num(cpCompute(P).T.inv):''; }},{k:'NOTE',t:'Notes'}],
+        rows,sort:['CHANGEDDATE',-1],onDbl:d=>{ CPV.open=d.ID; go('coplan'); },empty:p?'Aucune planification des coûts.':'Sélectionnez une affaire.'}));
+      head.setCount(rows.length+' Documents'); };
+    this.drawA=drawA; this.drawB=drawB; drawA(); drawB();
+  },
+  refresh(ts){ if(!CPV.open&&hit(ts,'costplanningdocument','costplanning')){ this.drawA(); this.drawB(); } }
+};
+async function cpNew(p){
+  if(!p){ toast('Sélectionnez une affaire.',true); return; }
+  const src=DS.all('costplanning').sort((a,b)=>(b.elements||[]).length-(a.elements||[]).length)[0];
+  if(!src){ toast('Aucun catalogue eCCC-Bâtiment disponible (importez d’abord les planifications Deltaproject).',true); return; }
+  const id=DS.newIds('costplanningdocument')[0];
+  const P={id,projetId:p.ID,entete:{},titre:'Estimation des coûts',date:today(),indice:100,pourcentage:'totalGeneral',coutRealisation:{de:'B',a:'W'},coutOuvrage:{de:'C',a:'G'},ouvrages:[],unitesFonctionnelles:src.unitesFonctionnelles||[],
+    elements:(src.elements||[]).map(e=>({code:e.code,libelle:e.libelle,niveau:e.niveau,unite:e.unite,grandeurRef:e.grandeurRef,uniteUNECE:e.uniteUNECE,quantite:0,prix:0,cout:0,prixEnPourcent:e.prixEnPourcent,standard:e.standard,eventuelle:false,remarque:'',parOuvrage:[]})),
+    quantitesReferentielles:(src.quantitesReferentielles||[]).map(q=>({code:q.code,libelle:q.libelle,unite:q.unite,uniteUNECE:q.uniteUNECE,quantite:0,standard:q.standard,parOuvrage:[]})),totaux:{}};
+  await DS.commit([{t:'costplanningdocument',id,val:{ID:id,PROJECT_ID:p.ID,VERSION:'Estimation des coûts',VERSIONNUMBER:DS.by('costplanningdocument','PROJECT_ID',p.ID).length+1,STATECODE:0,CHANGEDDATE:today(),USERID:ME.id,ISMARKEDASDELETED:0,ISAPPLYSUBPROJECTS:0}},{t:'costplanning',id,val:P}]);
+  CPV.open=id; go('coplan');
+}
+function cpEditor(m,id){
+  const doc=DS.get('costplanningdocument',id), p=DS.get('project',doc&&doc.PROJECT_ID);
+  let P=JSON.parse(JSON.stringify(DS.get('costplanning',id)||{elements:[],quantitesReferentielles:[]}));
+  const save=async()=>{ const R=cpCompute(P); P.elements.forEach(e=>{ if(e._edit){ e.cout=r2(R.val.get(e.code)); delete e._edit; } }); P.totaux={coutInvestissement:r2(R.T.inv),coutRealisation:r2(R.T.real),coutOuvrage:r2(R.T.ouv)};
+    await DS.commit([{t:'costplanning',id,val:P},{t:'costplanningdocument',id,val:{...doc,CHANGEDDATE:today(),USERID:ME.id}}]); draw(); };
+  const bar=h('div',{class:'ph2',style:{gap:'6px'}}), side=h('div',{class:'col',style:{flex:'0 0 230px',background:'var(--side)'}}), main=h('div',{class:'col fill'}), pane=h('div',{class:'pane'}), tot=h('div',{style:{marginLeft:'auto',display:'grid',gridTemplateColumns:'auto auto',gap:'0 12px'}});
+  const body=h('div',{class:'cols'}); body.append(side,main); main.append(pane); m.append(bar,body);
+  ['ELEMENTS','QUANTITES REFERENTIELLES','APERCU'].forEach(s=>{ const it=h('div',{class:'item'+(s===CPV.sec?' on':''),style:{paddingLeft:'14px',fontWeight:600,fontSize:'12.5px'}},s); it.onclick=()=>{ CPV.sec=s; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it); });
+  bar.append(ibtn({label:'‹ Liste',fn:()=>{ CPV.open=null; go('coplan'); }}),h('b',{style:{margin:'0 10px'}},(P.titre||'Estimation des coûts')+'  '+projLabel(p)),
+    ibtn({i:'list',t:'Présentation',menu:()=>[{t:'Afficher uniquement les articles avec un montant',chk:CPV.only,fn:()=>{ CPV.only=!CPV.only; draw(); }}]}),ibtn({i:'save',t:'Enregistrer',fn:save}),tot);
+  const G={};
+  const draw=()=>{ const R=cpCompute(P); pane.innerHTML='';
+    tot.innerHTML=`<span>Coût de l’investissement</span><b style="text-align:right">${num(R.T.inv)}</b><span>Coût de la réalisation</span><b style="text-align:right">${num(R.T.real)}</b><span>Coût de l’ouvrage</span><b style="text-align:right">${num(R.T.ouv)}</b>`;
+    if(CPV.sec==='ELEMENTS'){
+      const rows=P.elements.filter(e=>!CPV.only||R.val.get(e.code));
+      grid(pane,Object.assign(G,{key:e=>e.code,cols:[{k:'code',t:'Code',w:80,f:e=>e.niveau<3?`<b>${esc(e.code)}</b>`:esc(e.code)},{k:'libelle',t:'Désignation',w:300,f:e=>e.niveau<3?`<b>${esc(e.libelle)}</b>`:esc(e.libelle)},
+        {k:'grandeurRef',t:'Grand. réf.',w:80},{k:'quantite',t:'Quantité',w:90,cls:'r',f:e=>R.kids.has(e.code)?'':num(e.quantite)},{k:'unite',t:'Unité',w:50},{k:'prix',t:'Prix',w:90,cls:'r',f:e=>R.kids.has(e.code)?'':num(e.prix)+(e.prixEnPourcent?' %':'')},
+        {k:'c',t:'Coûts',w:120,cls:'r',f:e=>{ const v=R.val.get(e.code); return e.niveau<3?`<b>${num(v)}</b>`:num(v); }},{k:'pct',t:'[%]',w:60,cls:'r',f:e=>R.T.inv&&R.val.get(e.code)?num(R.val.get(e.code)/R.T.inv*100,1):''},{k:'remarque',t:'Remarque'}],
+        rows,sort:null,onDbl:e=>{ if(R.kids.has(e.code)){ toast('Groupe : le coût est la somme des éléments.',true); return; }
+          const q=h('input',{class:'inp',type:'number',step:'any',value:e.quantite??0}), pr=h('input',{class:'inp',type:'number',step:'any',value:e.prix??0}), pc=h('input',{type:'checkbox',checked:e.prixEnPourcent||null}), ev=h('input',{type:'checkbox',checked:e.eventuelle||null}), rem=h('input',{class:'inp',value:e.remarque||''});
+          const gr=h('select',{class:'inp'},h('option',{value:''},''),...P.quantitesReferentielles.map(x=>h('option',{value:x.code,selected:x.code===e.grandeurRef||null},x.code+' '+x.libelle+(x.quantite?' ('+num(x.quantite)+' '+(x.unite||'')+')':''))));
+          gr.onchange=()=>{ const x=P.quantitesReferentielles.find(y=>y.code===gr.value); if(x&&x.quantite) q.value=x.quantite; };
+          dialog({title:'Référence de coût '+e.code+' '+e.libelle,body:formRows([['Grandeur référentielle',gr],['Quantité',h('div',{},q,' '+(e.unite||''))],['Prix',h('div',{},pr,' ',h('label',{},pc,' prix en pourcent'))],['',h('label',{style:{textAlign:'left'}},ev,' Position éventuelle (ne pas inclure le montant)')],['Remarque',rem]],520),
+            buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ Object.assign(e,{grandeurRef:gr.value||e.grandeurRef,quantite:+q.value||0,prix:+pr.value||0,prixEnPourcent:pc.checked,eventuelle:ev.checked,remarque:rem.value,_edit:true}); save(); }}]}); }}));
+    }
+    if(CPV.sec==='QUANTITES REFERENTIELLES'){
+      grid(pane,{key:x=>x.code,cols:[{k:'code',t:'Abrév.',w:70},{k:'libelle',t:'Désignation',w:320},{k:'unite',t:'Unité',w:60},{k:'quantite',t:'Quantité réf.',w:110,cls:'r',f:x=>num(x.quantite)},
+        {k:'r',t:'Coût de réalisation/QR',w:150,cls:'r',f:x=>x.quantite?num(R.T.real/x.quantite):''},{k:'o',t:'Coût de l’ouvrage/QR',w:150,cls:'r',f:x=>x.quantite?num(R.T.ouv/x.quantite):''}],
+        rows:P.quantitesReferentielles.filter(x=>!CPV.only||x.quantite),sort:null,onDbl:x=>{ const q=h('input',{class:'inp',type:'number',step:'any',value:x.quantite??0});
+          dialog({title:x.code+' '+x.libelle,body:formRows([['Quantité réf.',h('div',{},q,' '+(x.unite||''))]]),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ x.quantite=+q.value||0; save(); }}]}); }});
+    }
+    if(CPV.sec==='APERCU'){
+      const fa=(P.quantitesReferentielles.find(x=>x.code==='FA')||{}).quantite;
+      const rows=P.elements.filter(e=>e.niveau===1&&R.val.get(e.code));
+      grid(pane,{key:e=>e.code,cols:[{k:'code',t:'Code',w:60},{k:'libelle',t:'Désignation',w:320},{k:'c',t:'Coûts',w:130,cls:'r',f:e=>num(R.val.get(e.code))},{k:'pi',t:'Coût investis. %',w:110,cls:'r',f:e=>R.T.inv?num(R.val.get(e.code)/R.T.inv*100,1):''},
+        {k:'m2',t:'CHF/m² SP',w:100,cls:'r',f:e=>fa?num(R.val.get(e.code)/fa):''}],rows,sort:null});
+      pane.append(h('div',{class:'card',html:`<div class="kv" style="max-width:520px"><b>Coût de l’investissement (A…Z)</b><span>${num(R.T.inv)}</span><b>Coût de la réalisation (${esc((P.coutRealisation||{}).de||'B')}…${esc((P.coutRealisation||{}).a||'W')})</b><span>${num(R.T.real)}</span><b>Coût de l’ouvrage (${esc((P.coutOuvrage||{}).de||'C')}…${esc((P.coutOuvrage||{}).a||'G')})</b><span>${num(R.T.ouv)}</span>${fa?`<b>Coût de l’ouvrage / SP</b><span>${num(R.T.ouv/fa)} CHF/m²</span>`:''}</div>`}));
+    }
+  };
+  draw();
+}
+
 /* ═══ NOTES DE FRAIS · Saisie (p.31) — frais du collaborateur, par mois ═══ */
 const NF={g:{},staff:null,y:new Date().getFullYear(),m:new Date().getMonth()};
 VIEWS['frais']={

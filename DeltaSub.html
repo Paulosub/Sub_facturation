@@ -1874,95 +1874,131 @@ function dvCsv(p,doc,E){ const {M}=dvCompute(E); const ouv=dvOuvCodes(E);
 
 /* ═══════════════════════════════════════════════════════════════════════════
    BÂTIMENT · CONTRÔLE DES COÛTS (manuel p.76-86) — en-tête COSTCONTROLDOCUMENT, contenu 'costcontrol'
+   Schéma = sortie de outils_deltaproject/convertir_couts.py (spec § 22). Moteur = portage fidèle de
+   calculer_conditions / calculer_controle / cout_probable (vérifiés sur les contrôles réels du bureau).
 ═══════════════════════════════════════════════════════════════════════════ */
 const CC_STATE={0:'Créé',1:'Provisoire',2:'En cours',3:'Etat intermédiaire',4:'Terminée'};
-const CC_CTR_ST={brouillon:'Brouillon',traitement:'En traitement',definitif:'Définitif',demande:'Sur demande',signature:'Pour signature'};
-const CC_PAY_ST={receptionne:'réceptionné',libere:'libéré',transmis:'transmis',debite:'débité'};
-const CC_ORD_ST={brouillon:'Brouillon',controle:'Contrôlé',transmis:'Transmis',debite:'Débité',traitement:'En traitement'};
-const CC_MUT_ST={brouillon:'Brouillon',provisoire:'Provisoire',demande:'Demande transmise',acceptee:'Acceptée',rejetee:'Rejetée'};
-const COND_DEF={1:['R1','Rabais','pct'],2:['P1','Déduction','fix'],3:['S1','Escompte','pct'],4:['G1','Retenue de garantie (%)','pct'],5:['G2','Retenue de garantie (P)','fix'],6:['M1','TVA','pct'],
-  8:['oc','Taxes de recyclage (%)','pct'],9:['al','Taxes de recyclage (-)','fix'],10:['','Prorata (%)','pct'],11:['','Prorata (-)','fix'],12:['','Panneau publicitaire (%)','pct'],13:['','Panneau publicitaire (-)','fix'],
-  14:['','Assurance (%)','pct'],15:['','Assurance (-)','fix'],16:['','Frais en énergie (%)','pct'],17:['','Frais en énergie (-)','fix'],18:['','Frais en eau (%)','pct'],19:['','Frais en eau (-)','fix'],
-  20:['SI','Paiements à ce jour','fix'],21:['','Autres (%)','pct'],22:['','Autres (-)','fix']};
-const condPct=k=>(COND_DEF[k]||[])[2]!=='fix';
-const condGenre=k=>k===6?'M':k===20?'SI':k===3?'S':(k===4||k===5)?'G':condPct(k)?'%':'-';
-/* Moteur de conditions (§6.3) : chaîne NIV/REF appliquée ligne par ligne ; forfaits répartis au prorata ; TVA = conditions kind 6 */
-function ccConds(lines,conds){
-  const L=lines.map(l=>({R:{0:+l.brut||0},last:+l.brut||0,tva:0,ref:l.ref||''})), amt={};
-  (conds||[]).filter(c=>c.on!==false).slice().sort((a,b)=>a.niv-b.niv).forEach(c=>{
-    const ap=L.map(x=>!c.refCond||c.refCond===x.ref), base=L.map((x,i)=>ap[i]?(x.R[c.ref]!=null?x.R[c.ref]:x.last):0);
-    const sb=base.reduce((a,b)=>a+b,0); let tot=0;
-    L.forEach((x,i)=>{ if(!ap[i]){ x.R[c.niv]=x.last; return; }
-      let m; if(condPct(c.kind)) m=base[i]*(+c.val||0)/100; else { const v=c.kind===20?-Math.abs(+c.val||0):(+c.val||0); m=sb?v*base[i]/sb:(i===0?v:0); }
-      x.R[c.niv]=base[i]+m; x.last=x.R[c.niv]; if(c.kind===6) x.tva+=m; tot+=m; });
-    amt[c.niv]=tot; });
-  const net=L.reduce((a,x)=>a+x.last,0), tva=L.reduce((a,x)=>a+x.tva,0), brut=lines.reduce((a,l)=>a+(+l.brut||0),0);
-  return {brut,net,tva,ht:net-tva,amt,lines:L.map(x=>({net:x.last,tva:x.tva}))};
-}
-/* Saisie du net : brut obtenu en inversant la chaîne (§6.3) — itération (convergence en quelques pas) */
-function ccBrutFromNet(net,ref,conds,others){ let b=net; for(let k=0;k<30;k++){ const r=ccConds([...others,{brut:b,ref}],conds); const got=r.lines[r.lines.length-1].net; if(Math.abs(got-net)<0.001) break; b+= (net-got)*(b&&got?b/got:1); } return b; }
-const ccEnt=(C,id)=>id==null?null:(DS.get('contact',id)||null);
-const ccEntName=(C,id)=>{ if(id==null) return 'Aucune entreprise'; const c=DS.get('contact',id); const e=(C.entreprises||{})[id]; return c?(contactName(c)+(c.LOCATION?' '+c.LOCATION:'')):(e?[e.nom,e.lieu].filter(Boolean).join(' '):'#'+id); };
-/* Calcul complet d'un contrôle des coûts : structures (CFC × entreprise) puis titres CFC et total */
-function ccCompute(C){
-  const S=new Map(), key=(cfc,ent)=>cfc+'|'+(ent??'-');
-  const blank=()=>({dg:0,dght:0,mut:0,mutht:0,tr:0,va:0,ctr:0,ctrht:0,ave:0,aveht:0,pay:0,payht:0,payC:0,payH:0,prov:0,cpp:null,zero:false,fin:false,ret:0,prio:true,hasCtr:false,det:[]});
-  const at=(cfc,ent)=>{ cfc=String(cfc); const k=key(cfc,ent); if(!S.has(k)) S.set(k,{cfc,ent:ent??null,...blank()}); return S.get(k); };
-  (C.positions||[]).forEach(p=>{ const s=at(p.cfc,null); s.dg+=+(p.dg||{}).ttc||0; s.dght+=+(p.dg||{}).ht||0; });
-  (C.mutations||[]).forEach(m=>{ const tt=+m.ttc||0, hh=+m.ht||0, tr=m.genre==='transfert';
-    const add=(pt,sg)=>{ if(!pt) return; const s=at(pt.cfc,pt.ent); s.mut+=sg*tt; s.mutht+=sg*hh; if(tr) s.tr+=sg*tt; else s.va+=sg*tt; s.det.push({k:'mut',txt:(m.remarque||m.code||'')+' ['+(m.num??'')+']',v:sg*tt,col:'mut',ref:m,d:m.date}); };
-    if(tr){ add(m.de,-1); add(m.vers,1); } else add(m.vers,1); });
-  const ctrs=C.contrats||[];
-  ctrs.forEach(c=>{ const r=ccConds(c.lignes||[],c.conds); (c.lignes||[]).forEach((l,i)=>{ const s=at(l.cfc,c.ent), v=r.lines[i];
-      if(c.type==='avenant'){ s.ave+=v.net; s.aveht+=v.net-v.tva; } else { s.ctr+=v.net; s.ctrht+=v.net-v.tva; } s.hasCtr=true; if(c.prioritaire===false) s.prio=false;
-      s.det.push({k:'ctr',txt:(c.designation||(c.type==='avenant'?'Avenant':'Contrat'))+' '+dfr(c.date)+' ['+(c.type==='avenant'?((ctrs.find(x=>x.id===c.parent)||{}).num||'')+'-':'')+(c.num||'')+']',v:v.net,col:'contrat',ref:c,d:c.date}); }); });
-  const pays=(C.paiements||[]).slice().sort((a,b)=>cmp(a.datePaiement||a.dateFacture,b.datePaiement||b.dateFacture)||cmp(+a.num,+b.num));
-  pays.forEach(p=>{ const r=ccConds(p.lignes||[],p.conds), gar=Object.entries(r.amt).filter(([n])=>{ const c=(p.conds||[]).find(x=>x.niv==n); return c&&(c.kind===4||c.kind===5); }).reduce((a,[,v])=>a+v,0);
-    (p.lignes||[]).forEach((l,i)=>{ const s=at(l.cfc,p.ent), v=r.lines[i]; s.pay+=v.net; s.payht+=v.net-v.tva; if(p.contrat) s.payC+=v.net; else s.payH+=v.net; if(p.dernier) s.fin=true;
-      s.ret=-gar*(r.brut?(+l.brut||0)/r.brut:0)*(1+(r.tva&&r.ht?r.tva/r.ht:0));
-      s.det.push({k:'pay',txt:(p.commentaire||((C.config&&(C.config.payGenres||[]).find(g=>g.code===p.code))||{}).texte||'Paiement')+' '+dfr(p.datePaiement||p.dateFacture)+' ['+(p.num||'')+']',v:v.net,col:'paiement',ref:p,d:p.datePaiement,last:p.dernier}); }); });
-  (C.ecritures||[]).forEach(e=>{ const s=at(e.cfc,e.ent);
-    if(e.type==='provision'){ s.prov+=+e.ttc||0; s.det.push({k:'prov',txt:(e.remarque||'Réserve')+' '+dfr(e.date),v:+e.ttc||0,col:'mut',ref:e}); }
-    if(e.type==='cp_perso'){ s.cpp=(s.cpp||0)+(+e.ttc||0); if(e.zero) s.zero=true; s.det.push({k:'cpp',txt:(e.remarque||'Coût probable')+' '+dfr(e.date),v:+e.ttc||0,col:'mut',ref:e}); } });
-  /* coût probable au niveau du CFC (§11.1) */
-  const byCfc=new Map(); S.forEach(s=>{ if(!byCfc.has(s.cfc)) byCfc.set(s.cfc,[]); byCfc.get(s.cfc).push(s); });
-  const leaf=new Map();
-  byCfc.forEach((ss,cfc)=>{ const t={cfc,dg:0,dght:0,mut:0,tr:0,va:0,ctr:0,ave:0,pay:0,payC:0,payH:0,prov:0,ents:ss.filter(s=>s.ent!=null)};
-    ss.forEach(s=>{ ['dg','dght','mut','tr','va','ctr','ave','pay','payC','payH','prov'].forEach(k=>t[k]+=s[k]); });
-    t.dgRev=t.dg+t.mut; t.cpa=t.ctr+t.ave;
-    const perso=ss.filter(s=>s.cpp!=null);
-    let cp;
-    if(perso.length) cp=perso.some(s=>s.zero)?0:perso.reduce((a,s)=>a+s.cpp,0);
-    else { const withC=ss.filter(s=>s.hasCtr), noC=ss.filter(s=>!s.hasCtr);
-      if(!withC.length){ cp=t.dgRev; if(t.payH>cp) cp=t.payH; }
-      else { const sumE=withC.reduce((a,s)=>a+(s.fin?s.pay:Math.max(s.ctr+s.ave,s.pay+(s.ret||0))),0)+noC.reduce((a,s)=>a+s.pay,0);
-        const allFin=withC.every(s=>s.fin), prio=withC.every(s=>s.prio);
-        cp=(sumE<t.dgRev&&!prio&&!allFin)?t.dgRev:sumE; } }
-    t.cp=cp+(perso.length?0:t.prov); t.etat=t.cp-t.dgRev; leaf.set(cfc,t); });
-  /* titres CFC (positions de niveau supérieur) */
-  const codes=new Set([...leaf.keys(),...(C.positions||[]).map(p=>String(p.cfc))]);
-  const titles=new Map(), lbl=new Map((C.positions||[]).map(p=>[String(p.cfc),[p.lbl,p.lbl2].filter(Boolean).join(' ')]));
-  const addUp=(c,t)=>{ let x=cfcParent(c); while(x){ if(!titles.has(x)) titles.set(x,{cfc:x,dg:0,mut:0,tr:0,va:0,ctr:0,ave:0,pay:0,payC:0,payH:0,prov:0,dgRev:0,cpa:0,cp:0,etat:0,title:true});
-    const T=titles.get(x); ['dg','mut','tr','va','ctr','ave','pay','payC','payH','prov','dgRev','cpa','cp','etat'].forEach(k=>T[k]+=t[k]||0); x=cfcParent(x); } };
-  leaf.forEach((t,c)=>addUp(c,t));
-  const TOT={dg:0,mut:0,tr:0,va:0,ctr:0,ave:0,pay:0,payC:0,payH:0,prov:0,dgRev:0,cpa:0,cp:0,etat:0};
-  leaf.forEach(t=>Object.keys(TOT).forEach(k=>TOT[k]+=t[k]||0));
-  const top=c=>{ let x=c; while(cfcParent(x)) x=cfcParent(x); return x; };
-  const pct=c=>{ const v=(leaf.get(c)||titles.get(c)||{}).dg||0; const b=((C.presentationOpts||{}).pct==='total')?TOT.dg:((leaf.get(top(c))||titles.get(top(c))||{}).dg||TOT.dg); return b?v/b*100:0; };
-  return {S,leaf,titles,TOT,lbl,pct,codes:[...new Set([...leaf.keys(),...titles.keys()])].sort(cfcCmp)};
-}
-/* Présentations du bureau (§2.3) */
-const CC_COLS={
-  dg:{t:'DG TTC',v:r=>r.dg,det:'none'}, mut:{t:'Mutations TTC',v:r=>r.mut,det:'mut'}, tr:{t:'Transferts TTC',v:r=>r.tr,det:'mut'}, va:{t:'Variations TTC',v:r=>r.va,det:'mut'},
-  cpa:{t:'Contrats + avenants TTC',v:r=>r.cpa??(r.ctr+r.ave),det:'ctr'}, ave:{t:'Avenants TTC',v:r=>r.ave,det:'none'}, prov:{t:'Provision TTC',v:r=>r.prov,det:'prov'},
-  dgRev:{t:'DG rév. TTC',v:r=>r.dgRev??(r.dg+r.mut),det:'none'}, pay:{t:'Paiements TTC',v:r=>r.pay,det:'pay'}, cp:{t:'Coût probable TTC',v:r=>r.cp,det:'none'},
-  etat:{t:'Etat du coût TTC',v:r=>r.etat,det:'none'}, dgp:{t:'DG %',pct:true}, ctrMp:{t:'Contrat moins paiements TTC',v:r=>(r.cpa??(r.ctr+r.ave))-r.pay,det:'none'}
-};
-const CC_PRES={'Standard':['dg','mut','cpa','ave','prov','dgRev','pay','cp','etat','dgp'],'Récapitulatif':['dg','dgp','dgRev','cpa','cp','pay'],'Maître de l’ouvrage':['dg','mut','prov','dgRev','cpa','pay'],
-  'Paiements':['cpa','pay','ctrMp']};
+const CTR_ST={brouillon:'Brouillon',enTraitement:'En traitement',surDemande:'Sur demande',pourSignature:'Pour signature',definitif:'Définitif'};
+const MUT_ST={brouillon:'Brouillon',provisoire:'Provisoire',demandeTransmise:'Demande transmise',acceptee:'Acceptée',rejetee:'Rejetée'};
+const PAY_ST={receptionne:'réceptionné',libere:'libéré',transmis:'transmis',debite:'débité'};
+const ORD_ST={enTraitement:'En traitement',controle:'Contrôlé',transmis:'Transmis',debite:'Débité'};
+const ARR_ST={etabli:'établi',pourSignature:'pour signature',definitif:'définitif'};
+const GAR_T={banque:'Banque',assurance:'Assurance',comptant:'Comptant',sansGarantie:'Sans garantie'};
+/* kind → [genre, nature (pct | forfait | cumul), libellé] */
+const COND={1:['rabais','pct','Rabais'],2:['deduction','forfait','Déduction'],3:['escompte','pct','Escompte'],4:['retenueGarantie','pct','Retenue de garantie (%)'],
+  5:['retenueGarantieForfait','forfait','Retenue de garantie (P)'],6:['tva','pct','TVA'],7:['arrondi','forfait','Arrondi'],8:['taxesRecyclage','pct','Taxes de recyclage (%)'],
+  9:['taxesRecyclageForfait','forfait','Taxes de recyclage (-)'],10:['prorata','pct','Prorata (%)'],11:['prorataForfait','forfait','Prorata (-)'],12:['panneau','pct','Panneau publicitaire (%)'],
+  13:['panneauForfait','forfait','Panneau publicitaire (-)'],14:['assurance','pct','Assurance (%)'],15:['assuranceForfait','forfait','Assurance (-)'],16:['energie','pct','Frais en énergie (%)'],
+  17:['energieForfait','forfait','Frais en énergie (-)'],18:['eau','pct','Frais en eau (%)'],19:['eauForfait','forfait','Frais en eau (-)'],20:['paiementsAnterieurs','cumul','Paiements à ce jour'],
+  21:['autres','pct','Autres (%)'],22:['autresForfait','forfait','Autres (-)']};
+const condNat=k=>(COND[k]||['','pct'])[1];
+const condGenre=k=>k===6?'M':k===20?'SI':k===3?'S':(k===4||k===5)?'G':condNat(k)==='pct'?'%':'-';
 
-const CCV={g:{},d:{},q:'',open:null,sec:'CONTRÔLE DU COÛT',pres:'Standard',det:true,only3:false,sel:null};
-try{ CCV.pres=localStorage.getItem('ds_cc_pres')||'Standard'; }catch(_){}
+/* A. Moteur de conditions (calculer_conditions) — par ligne ; forfaits répartis au prorata ; plusieurs conditions au même niveau sur la même base */
+function ccCond(lignes,conditions){
+  const conds=(conditions||[]).slice().sort((a,b)=>a.niveau-b.niveau);
+  const L=lignes.map(l=>({brut:+(l.brutCalcul??l.brut)||0,refCond:l.refCond||'',forf:l.partsForfaits||null,R:{0:+(l.brutCalcul??l.brut)||0},m:{},kind:{}}));
+  const par={};
+  conds.forEach(c=>{ const n=c.niveau, ref=c.reference||0, nat=condNat(c.kind);
+    const bases=L.map(l=>{ const ks=Object.keys(l.R).map(Number).filter(x=>x<=ref); return l.R[ks.length?Math.max(...ks):0]; });
+    const ap=L.map(l=>c.appliquee!==false&&(!c.refCond||c.refCond===l.refCond));
+    const tf=nat==='forfait'?(+c.valeur||0):nat==='cumul'?-(+c.valeur||0):0;
+    const conc=ap.filter(Boolean).length, sb=bases.reduce((a,b,i)=>a+(ap[i]?b:0),0); let tot=0;
+    L.forEach((l,i)=>{ let m=0;
+      if(ap[i]){ if(nat==='pct') m=bases[i]*(+c.valeur||0)/100; else if(l.forf&&l.forf[n]!=null) m=+l.forf[n]; else m=tf*(sb?bases[i]/sb:1/conc); }
+      if(n in l.m){ l.R[n]+=m; l.m[n]+=m; } else { l.R[n]=bases[i]+m; l.m[n]=m; }
+      l.kind[c.kind]=(l.kind[c.kind]||0)+m; tot+=m; });
+    par[n]=(par[n]||0)+tot; });
+  const T={brut:0,net:0,tva:0}, out=L.map(l=>{ const ks=Object.keys(l.R).map(Number); const net=l.R[Math.max(...ks)], tva=l.kind[6]||0; T.brut+=l.brut; T.net+=net; T.tva+=tva; return {net,tva,m:l.m}; });
+  T.ht=T.net-T.tva; return {lines:out,T,par};
+}
+/* recalcule et fige net / tva des lignes d'un document édité */
+function ccApply(doc){ const r=ccCond(doc.lignes||[],doc.conditions); (doc.lignes||[]).forEach((l,i)=>{ l.net=r2(r.lines[i].net); l.tva=r2(r.lines[i].tva); }); (doc.conditions||[]).forEach(c=>c.montant=r2(r.par[c.niveau]||0)); return r; }
+/* totaux d'un document : valeurs stockées (documents importés = source de vérité) */
+const docNet=d=>(d.lignes||[]).reduce((a,l)=>a+(+l.net||0),0), docTva=d=>(d.lignes||[]).reduce((a,l)=>a+(+l.tva||0),0), docBrut=d=>(d.lignes||[]).reduce((a,l)=>a+(+l.brut||0),0);
+/* Saisie du net : brut d'une ligne pour obtenir un net donné (inversion itérative de la chaîne) */
+function ccBrutFromNet(doc,i,net){ let b=+doc.lignes[i].brut||net; for(let k=0;k<40;k++){ const L=doc.lignes.map((l,j)=>j===i?{...l,brut:b,brutCalcul:undefined,partsForfaits:null}:l); const got=ccCond(L,doc.conditions).lines[i].net; if(Math.abs(got-net)<0.0005) break; b+=(net-got)*(got?b/got:1); if(!isFinite(b)) return net; } return b; }
+
+/* C-E. Calcul du contrôle des coûts (calculer_controle + cout_probable) */
+const CC_F=['dg','mutations','transferts','variations','rencherissement','dgRevise','contrats','avenants','contratsAvenants','paiementsContrat','paiementsHorsContrat','paiements','retenues','provisions','coutProbablePerso','coutProbable','etatCout'];
+const ccZero=()=>Object.fromEntries(CC_F.map(k=>[k,0]));
+const cfcAnc=c=>{ const [base,dec]=String(c).split('.'); const o=[1,2,3].filter(n=>n<base.length).map(n=>base.slice(0,n)); if(dec!==undefined){ o.push(base); for(let k=1;k<dec.length;k++) o.push(base+'.'+dec.slice(0,k)); } return o.filter(Boolean); };
+const cfcPar=(c,ex)=>{ c=String(c); while(c.length>1){ c=c.slice(0,-1).replace(/\.$/,''); if(ex.has(c)) return c; } return null; };
+function ccCalc(C){
+  const pos=new Map((C.positions||[]).map(p=>[String(p.cfc),p])), ouvP=C.ouvragesProjet==null?null:new Set(C.ouvragesProjet);
+  const norm=c=>{ c=String(c); if(pos.has(c)||!c.endsWith('.0')) return c; return pos.has(c.slice(0,-2))?c.slice(0,-2):c; };
+  const ign=o=>!!(o&&ouvP&&!ouvP.has(o));
+  const S=new Map(), st=(cfc,ouv)=>{ const k=cfc+'\u0001'+(ouv||''); if(!S.has(k)) S.set(k,{cfc,ouv:ouv||'',v:ccZero(),ent:new Map(),perso:null,zero:false,det:[]}); return S.get(k); };
+  const en=(s,id)=>{ const k=id??null; if(!s.ent.has(k)) s.ent.set(k,{c:0,a:0,pay:0,ret:0,prio:false,gen:0,genDernier:false,contrats:new Set(),soldes:new Set(),genSolde:false,gDernier:0}); return s.ent.get(k); };
+  (C.positions||[]).forEach(p=>{ const po=p.parOuvrage||[];
+    if(po.length){ po.forEach(o=>{ if(!ign(o.ouvrage)) st(String(p.cfc),o.ouvrage).v.dg+=+o.dgTTC||0; }); const reste=(+p.dgTTC||0)-po.reduce((a,o)=>a+(+o.dgTTC||0),0); if(Math.abs(reste)>0.005) st(String(p.cfc),'').v.dg+=reste; }
+    else if(p.dgTTC) st(String(p.cfc),'').v.dg+=+p.dgTTC; });
+  (C.mutations||[]).forEach(m=>{ if(m.centre!==1&&m.centre!=null) return; const f={transfert:'transferts',transfertSansContrepartie:'transferts',variation:'variations',rencherissement:'rencherissement'}[m.genre]||'variations';
+    const t=+m.ttc||0, lb=(m.remarque||m.genreTexte||m.code||'')+' ['+(m.numero??'')+']';
+    if(m.origine&&!ign(m.origine.ouvrage)){ const s=st(norm(m.origine.cfc),m.origine.ouvrage); s.v[f]-=t; s.det.push({k:'mut',ent:m.origine.contactId??null,txt:lb,v:-t,ref:m,d:m.date}); }
+    if(m.destination&&!ign(m.destination.ouvrage)){ const s=st(norm(m.destination.cfc),m.destination.ouvrage); s.v[f]+=t; s.det.push({k:'mut',ent:m.destination.contactId??null,txt:lb,v:t,ref:m,d:m.date}); } });
+  (C.ecritures||[]).forEach(e=>{ if(ign(e.ouvrage)) return; const s=st(norm(e.cfc),e.ouvrage);
+    if(e.type==='provision'){ s.v.provisions+=+e.ttc||0; s.det.push({k:'prov',ent:e.contactId??null,txt:(e.remarque||'Réserve')+' '+dfr(e.date),v:+e.ttc||0,ref:e,d:e.date}); }
+    else if(e.type==='coutProbablePerso'){ s.perso=(s.perso||0)+(+e.ttc||0); s.v.coutProbablePerso+=+e.ttc||0; s.zero=s.zero||!!e.coutProbableZero; s.det.push({k:'cpp',ent:e.contactId??null,txt:(e.remarque||'Coût probable')+' '+dfr(e.date),v:+e.ttc||0,ref:e,d:e.date}); } });
+  const ctrs=new Map((C.contrats||[]).map(c=>[c.id,c])), rac=new Map((C.contrats||[]).map(c=>[c.id,c.type==='avenant'&&c.lieAuContrat!==false&&c.contratParentId?c.contratParentId:c.id]));
+  const struct=new Map((C.contrats||[]).map(c=>[c.id,new Set((c.lignes||[]).map(l=>norm(l.cfc)+'\u0001'+(l.ouvrage||'')))]));
+  (C.contrats||[]).forEach(c=>{ const r=rac.get(c.id);
+    (c.lignes||[]).forEach(l0=>{ const cfc=norm(l0.cfc); if(ign(l0.ouvrage)) return;
+      if(r!==c.id&&!(struct.get(r)||new Set()).has(cfc+'\u0001'+(l0.ouvrage||''))) return;   // ligne d'avenant lié hors structure du contrat : ignorée (Deltaproject)
+      const s=st(cfc,l0.ouvrage), e=en(s,c.contactId), n=+l0.net||0;
+      if(c.type==='contrat'){ s.v.contrats+=n; e.c+=n; } else { s.v.avenants+=n; e.a+=n; }
+      e.prio=e.prio||!!(ctrs.get(r)||{}).prioritaireSurDevis; e.contrats.add(r);
+      s.det.push({k:'ctr',ent:c.contactId,txt:(c.designation||(c.type==='avenant'?'Avenant':'Contrat'))+' '+dfr(c.date)+' ['+(c.type==='avenant'?((ctrs.get(c.contratParentId)||{}).numero||'')+'-':'')+(c.numero||'')+']',v:n,ref:c,d:c.date}); }); });
+  (C.paiements||[]).forEach(p=>{ (p.lignes||[]).forEach(l0=>{ const cfc=norm(l0.cfc); if(ign(l0.ouvrage)) return; const s=st(cfc,l0.ouvrage), n=+l0.net||0; let e;
+      if(p.contratId){ const c=ctrs.get(p.contratId)||{}; e=en(s,c.contactId); s.v.paiementsContrat+=n; e.pay+=n; }
+      else { e=en(s,p.contactId); s.v.paiementsHorsContrat+=n; e.gen+=n; e.genDernier=e.genDernier||!!p.dernier; }
+      if(p.dernier&&(+l0.brut||n)){ if(p.contratId) e.soldes.add(rac.get(p.contratId)||p.contratId); else e.genSolde=true; }
+      s.det.push({k:'pay',ent:p.contratId?(ctrs.get(p.contratId)||{}).contactId:p.contactId,txt:(p.genreTexte||p.commentaire||'Paiement')+' '+dfr(p.datePaiement||p.dateFacture)+' ['+(p.numero||'')+']',v:n,ref:p,d:p.datePaiement,last:!!p.dernier}); }); });
+  (C.paiements||[]).forEach(p=>{ if(!p.contratId) return; const g=(p.conditions||[]).filter(c=>c.kind===4&&c.appliquee!==false).reduce((a,c)=>a-(+c.valeur||0),0);
+    (p.lignes||[]).forEach(l0=>{ if(ign(l0.ouvrage)||!(+l0.brut||+l0.net)) return; const s=st(norm(l0.cfc),l0.ouvrage), e=en(s,(ctrs.get(p.contratId)||{}).contactId);
+      if(g>0&&g<100) e.ret+=(+l0.net||0)*g/(100-g); e.gDernier=g; }); });
+  const res=new Map();
+  S.forEach(s=>{ const v=s.v; v.mutations=v.transferts+v.variations+v.rencherissement; v.dgRevise=v.dg+v.mutations; v.contratsAvenants=v.contrats+v.avenants; v.paiements=v.paiementsContrat+v.paiementsHorsContrat;
+    v.coutProbable=ccCP(v,s); v.etatCout=v.coutProbable-v.dgRevise;
+    const r=res.get(s.cfc)||ccZero(); CC_F.forEach(k=>r[k]+=v[k]); res.set(s.cfc,r); });
+  const tous=new Set([...pos.keys(),...res.keys()]); [...tous].forEach(c=>cfcAnc(c).forEach(a=>tous.add(a)));
+  const ordre=[...tous].sort((a,b)=>b.length-a.length||cfcCmp(a,b)), tot=new Map(ordre.map(c=>[c,{...(res.get(c)||ccZero())}])), ex=new Set(ordre);
+  ordre.forEach(c=>{ const p=cfcPar(c,ex); if(p) CC_F.forEach(k=>tot.get(p)[k]+=tot.get(c)[k]); });
+  const G=ccZero(); ordre.forEach(c=>{ if(!cfcPar(c,ex)) CC_F.forEach(k=>G[k]+=tot.get(c)[k]); });
+  /* lignes entreprise par CFC (toutes structures/ouvrages confondus) */
+  const ents=new Map(); S.forEach(s=>{ s.ent.forEach((e,id)=>{ if(!(e.c||e.a||e.pay||e.gen)) return; const k=s.cfc; if(!ents.has(k)) ents.set(k,new Map()); const m=ents.get(k);
+    const x=m.get(id)||{contratsAvenants:0,avenants:0,contrats:0,paiements:0,paiementsContrat:0,paiementsHorsContrat:0}; x.contrats+=e.c; x.avenants+=e.a; x.contratsAvenants+=e.c+e.a; x.paiementsContrat+=e.pay; x.paiementsHorsContrat+=e.gen; x.paiements+=e.pay+e.gen; m.set(id,x); }); });
+  const det=new Map(); S.forEach(s=>{ if(!det.has(s.cfc)) det.set(s.cfc,[]); det.get(s.cfc).push(...s.det); });
+  return {tot,G,ents,det,ex,lbl:new Map([...pos].map(([k,p])=>[k,[p.libelle,p.libelle2].filter(Boolean).join(' ')])),codes:[...tous].sort(cfcCmp),par:c=>cfcPar(c,ex)};
+}
+function ccCP(v,s){
+  if(s.zero) return 0; if(s.perso!=null) return s.perso;
+  const act=[...s.ent].filter(([,e])=>e.c||e.a||e.pay||e.gen);
+  act.forEach(([,e])=>{ e.dp=e.genSolde||(e.contrats.size>0&&[...e.contrats].every(x=>e.soldes.has(x))); });
+  const avec=act.filter(([,e])=>e.c||e.a), prov=act.filter(([k])=>k!=null).length<=1?v.provisions:0;
+  if(!avec.length){ const ge=act.filter(([,e])=>e.gen).map(([,e])=>e), gen=ge.reduce((a,e)=>a+e.gen,0);
+    if(ge.length&&ge.every(e=>e.dp)) return gen; return (ge.length?Math.max(v.dgRevise,gen):v.dgRevise)+prov; }
+  let cp=0, prio=false, fin=true;
+  act.forEach(([,e])=>{ const payes=e.pay+e.gen; if(!(e.c||e.a)){ cp+=e.gen; return; }
+    if(e.dp) cp+=payes; else { fin=false; const ret=e.gDernier>0?e.ret:0; cp+=Math.max(e.c+e.a,e.pay+ret)+e.gen; } prio=prio||e.prio; });
+  if(!fin&&!prio&&cp<v.dgRevise) cp=v.dgRevise;
+  return cp+prov;
+}
+/* Colonnes (identifiants Deltaproject des présentations) */
+const CC_COL={
+  kag:{t:'CFC',sp:'cfc'}, kagText:{t:'Désignation',sp:'lbl'}, entrepreneur:{t:'Entreprise',sp:'ent'},
+  kvTot:{t:'DG TTC',f:'dg'}, kvValue:{t:'DG',f:'dg'}, kvProcent:{t:'DG %',pct:'dg'},
+  mutationTransferTot1:{t:'Transferts TTC',f:'transferts',det:'mut'}, mutationIncreaseTot1:{t:'Variations TTC',f:'variations',det:'mut'}, mutationTot1:{t:'Mutations TTC',f:'mutations',det:'mut'},
+  kv1Tot:{t:'DG rév. TTC',f:'dgRevise'}, kv1Procent:{t:'DG rév. %',pct:'dgRevise'},
+  contractTot:{t:'Contrats TTC',f:'contrats',det:'ctr',e:1}, addendumToContractTot:{t:'Avenants TTC',f:'avenants',e:1}, contractAndAddendumTot:{t:'Contrats + avenants TTC',f:'contratsAvenants',det:'ctr',e:1},
+  payementTot:{t:'Paiements TTC',f:'paiements',det:'pay',e:1}, forcastCalculatedTot:{t:'Coût probable TTC',f:'coutProbable',det:'cpp'},
+  additionalCostsTot:{t:'Provision TTC',f:'provisions',det:'prov'}, balanceOfCostsTot:{t:'Etat du coût TTC',f:'etatCout'},
+  contractMinusPayment:{t:'Contrat moins paiements TTC',fn:v=>(v.contratsAvenants||0)-(v.paiements||0),e:1}, kvMinusPayment:{t:'DG rév. moins paiements TTC',fn:v=>(v.dgRevise||0)-(v.paiements||0)},
+  awardingProfit:{t:'Bénéfice d’adjudication',fn:v=>v.contratsAvenants?(v.contratsAvenants-v.dgRevise):0}
+};
+const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationTot1','contractAndAddendumTot','addendumToContractTot','additionalCostsTot','kv1Tot','payementTot','forcastCalculatedTot','balanceOfCostsTot','kvProcent']};
+
+const CCV={g:{},d:{},q:'',open:null,sec:'CONTRÔLE DU COÛT',pres:null,det:true,only3:false,sel:null,detSel:null};
 VIEWS['coco']={
   render(m,arg){
     if(arg&&arg.project) CCV.g.sel=String(arg.project);
@@ -1980,19 +2016,18 @@ VIEWS['coco']={
     B.append(head,pane);
     const drawB=()=>{ const p=DS.get('project',CCV.g.sel), rows=p?docs(p.ID):[];
       grid(pane,Object.assign(CCV.d,{cols:[{k:'USERID',t:'Utilisateur',w:90},{k:'CHANGEDDATE',t:'Date',w:90,f:d=>dfr(d.CHANGEDDATE)},{k:'VERSION',t:'Version',w:220},{k:'VERSIONNUMBER',t:'N° de version',w:90,cls:'r'},
-        {k:'STATECODE',t:'Statut',w:120,f:d=>CC_STATE[d.STATECODE]||''},{k:'cp',t:'Coût probable TTC',w:130,cls:'r',f:d=>{ const C=DS.get('costcontrol',d.ID); return C?num(ccCompute(C).TOT.cp):'<span style="color:#aaa">—</span>'; }},{k:'NOTE',t:'Notes'}],
+        {k:'STATECODE',t:'Statut',w:120,f:d=>CC_STATE[d.STATECODE]||''},{k:'cp',t:'Coût probable TTC',w:130,cls:'r',f:d=>{ const C=DS.get('costcontrol',d.ID); return C?num(ccCalc(C).G.coutProbable):'<span style="color:#aaa">—</span>'; }},{k:'NOTE',t:'Notes'}],
         rows,sort:['CHANGEDDATE',-1],onDbl:d=>ccOpen(d.ID),empty:p?'Aucun contrôle des coûts pour cette affaire.':'Sélectionnez une affaire.'}));
       head.setCount(rows.length+' Contrôles des coûts'); };
     this.drawA=drawA; this.drawB=drawB; drawA(); drawB();
   },
   refresh(ts){ if(CCV.open){ if(hit(ts,'costcontrol')&&this.editorRefresh) this.editorRefresh(); return; } if(hit(ts,'costcontroldocument','costcontrol','project')){ this.drawA(); this.drawB(); } }
 };
-async function ccOpen(id){ CCV.open=+id; CCV.sel=null; go('coco'); }
-function ccEmpty(id,pid){ return {id,DOCUMENT_ID:id,PROJECT_ID:pid,config:{payGenres:[{code:'AC',texte:'Situation',facture:'Situation',genre:'contrat'},{code:'TC',texte:'Paiement de renchérissement',facture:'Facture de renchérissement',genre:'rencherissement'},
-  {code:'GC',texte:'Paiement',facture:'Facture',genre:'hors_contrat'},{code:'AZ',texte:'Paiement final',facture:'Facture finale',genre:'contrat_final'}],
-  mutGenres:[['T1','Transfert','transfert'],['M2','Plus-value','variation'],['M3','Moins-value','variation'],['M4','Décision MO','variation'],['M5','Décision DT','variation'],['M6','Exigence autorités','variation'],['T7','Bénéfice d’adjudication','transfert'],['T8','Perte sur adjudication','transfert'],['C9','Renchérissement','rencherissement']].map(([code,texte,genre])=>({code,texte,genre})),
-  compta:{joursPaiement:30,statutPaiementDefaut:'transmis',statutMutationDefaut:'acceptee',contratPrioritaireDefaut:true,texteCompte:'Voir bulletin de versement'}},
-  positions:[],entreprises:{},mutations:[],ecritures:[],contrats:[],paiements:[],ordres:[],arretes:[],comptesMO:[]}; }
+function ccOpen(id){ CCV.open=+id; CCV.sel=null; CCV.detSel=null; CCV.pres=null; go('coco'); }
+function ccEmpty(id,pid){ return {id,projetId:pid,entete:{},parametres:{centres:{},joursPaiementApresFacture:30,statutPaiementDefaut:'transmis',statutMutationDefaut:'acceptee',contratPrioritaireDefaut:true,texteCompte:'Voir bulletin de versement'},
+  genresMutation:[['T1','Transfert','transfert'],['M2','Plus-value','variation'],['M3','Moins-value','variation'],['M4','Décision MO','variation'],['M5','Décision DT','variation'],['M6','Exigence autorités','variation'],['T7','Bénéfice d’adjudication','transfert'],['T8','Perte sur adjudication','transfert'],['C9','Renchérissement','rencherissement']].map(([code,texte,genre])=>({code,texte,genre,actif:true})),
+  genresPaiement:[{code:'AC',texte:'Situation',texteFacture:'Situation',genre:'surContrat'},{code:'AZ',texte:'Paiement final',texteFacture:'Facture finale',genre:'surContratFinal'},{code:'GC',texte:'Paiement',texteFacture:'Facture',genre:'horsContrat'},{code:'TC',texte:'Paiement de renchérissement',texteFacture:'Facture de renchérissement',genre:'rencherissement'}],
+  catalogueConditions:[],titresColonnes:{},comptesMO:[],entreprises:[],ouvragesProjet:null,positions:[],mutations:[],ecritures:[],contrats:[],paiements:[],ordresPaiement:[],arretes:[],presentations:{controle:[{nom:'Standard',favori:true,colonnes:CC_PRES_DEF.Standard.map(id=>({id,largeur:100,details:!!CC_COL[id].det}))}]},annexes:[]}; }
 function ccEditDoc(p,d){
   const isNew=!d; const v=d?{...d}:{ID:null,PROJECT_ID:p.ID,VERSION:'',VERSIONNUMBER:DS.by('costcontroldocument','PROJECT_ID',p.ID).length+1,STATECODE:0,CHANGEDDATE:today(),USERID:ME.id,ISMARKEDASDELETED:0,NOTE:''};
   dialog({title:isNew?'Nouveau contrôle des coûts':'Contrôle des coûts',body:formRows([['Version',tI(v,'VERSION')],['N° de version',nI(v,'VERSIONNUMBER','90px')],['Statut',h('select',{class:'inp','data-k':'STATECODE'},...Object.entries(CC_STATE).map(([k,t])=>h('option',{value:k,selected:+k===v.STATECODE||null},t)))],
@@ -2002,258 +2037,271 @@ function ccEditDoc(p,d){
 }
 async function ccDuplicate(d){ if(!d) return; const C=DS.get('costcontrol',d.ID), id=DS.newIds('costcontroldocument')[0];
   await DS.commit([{t:'costcontroldocument',id,val:{...d,ID:id,VERSION:(d.VERSION||'')+' (état intermédiaire)',VERSIONNUMBER:(d.VERSIONNUMBER||0)+1,STATECODE:3,CHANGEDDATE:today(),USERID:ME.id}},
-    ...(C?[{t:'costcontrol',id,val:{...JSON.parse(JSON.stringify(C)),id,DOCUMENT_ID:id}}]:[])]); CCV.d.sel=String(id); toast('Contrôle des coûts dupliqué.'); }
+    ...(C?[{t:'costcontrol',id,val:{...JSON.parse(JSON.stringify(C)),id}}]:[])]); CCV.d.sel=String(id); toast('Contrôle des coûts dupliqué.'); }
+const ccEntName=(C,id)=>{ if(id==null) return 'Aucune entreprise'; const c=DS.get('contact',id); if(c) return contactName(c)+(c.LOCATION?', '+c.LOCATION:''); const e=(C.entreprises||[]).find(x=>x.contactId===id); return e?e.nomCourt:'#'+id; };
+const ccNextNum=(list,f)=>String(Math.max(0,...list.map(x=>parseInt(x[f],10)||0))+1);
 
 /* ── Fenêtre « Contrôle des coûts <affaire> » ── */
 const CC_SECS=['CONTRÔLE DU COÛT','DEVIS GENERAL','MUTATIONS','ADJUDICATIONS','PAIEMENTS','ORDRES DE PAIEMENT','COMPTES D’ENTREPRISE','ARRÊTÉS DE COMPTE'];
 function ccEditor(m,id){
   const doc=DS.get('costcontroldocument',id), p=DS.get('project',doc&&doc.PROJECT_ID);
-  let C=JSON.parse(JSON.stringify(DS.get('costcontrol',id)||ccEmpty(id,doc.PROJECT_ID)));
-  ['positions','mutations','ecritures','contrats','paiements','ordres','arretes'].forEach(k=>C[k]=C[k]||[]); C.entreprises=C.entreprises||{}; C.config=C.config||ccEmpty(id,0).config;
-  const save=async()=>{ await DS.commit([{t:'costcontrol',id,val:C},{t:'costcontroldocument',id,val:{...DS.get('costcontroldocument',id),CHANGEDDATE:today(),USERID:ME.id}}]); };
-  const touch=async()=>{ try{ await save(); }catch(e){ if(e.conflict) C=JSON.parse(JSON.stringify(DS.get('costcontrol',id))); } draw(); };
-  const nid=pre=>pre+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  let C=null; const load=()=>{ C=JSON.parse(JSON.stringify(DS.get('costcontrol',id)||ccEmpty(id,doc.PROJECT_ID)));
+    ['positions','mutations','ecritures','contrats','paiements','ordresPaiement','arretes','entreprises'].forEach(k=>C[k]=C[k]||[]); C.parametres=C.parametres||{}; C.presentations=C.presentations||{}; }; load();
+  const save=()=>DS.commit([{t:'costcontrol',id,val:C},{t:'costcontroldocument',id,val:{...DS.get('costcontroldocument',id),CHANGEDDATE:today(),USERID:ME.id}}]);
+  const touch=async()=>{ try{ await save(); }catch(e){ if(e.conflict) load(); } draw(); };
+  const pres=()=>{ const L=(C.presentations.controle||[]); if(!L.length) return {nom:'Standard',colonnes:CC_PRES_DEF.Standard.map(id=>({id,details:!!CC_COL[id].det}))};
+    return L.find(x=>x.nom===CCV.pres)||L.find(x=>x.favori)||L[0]; };
   const bar=h('div',{class:'ph2',style:{gap:'6px'}}), side=h('div',{class:'col',style:{flex:'0 0 210px',background:'var(--side)'}}), main=h('div',{class:'col fill'}), pane=h('div',{class:'pane'});
   const body=h('div',{class:'cols'}); body.append(side,main); main.append(pane); m.append(bar,body);
-  CC_SECS.forEach(s=>{ const it=h('div',{class:'item'+(s===CCV.sec?' on':''),style:{paddingLeft:'14px',fontWeight:600,letterSpacing:'.04em',fontSize:'12.5px'}},s); it.onclick=()=>{ CCV.sec=s; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it); });
-  const cur=()=>CCV.sel?(()=>{ const [c,e]=CCV.sel.split('|'); return {cfc:c,ent:e==='-'||e===undefined?null:+e}; })():null;
-  const ctrOf=s=>s?(C.contrats.find(c=>c.type==='contrat'&&c.ent===s.ent&&(c.lignes||[]).some(l=>String(l.cfc)===s.cfc))||null):null;
+  CC_SECS.forEach(s=>{ const it=h('div',{class:'item'+(s===CCV.sec?' on':''),style:{paddingLeft:'14px',fontWeight:600,letterSpacing:'.04em',fontSize:'12.5px'}},s); it.onclick=()=>{ CCV.sec=s; CCV.detSel=null; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it); });
+  const cur=()=>CCV.sel?(()=>{ const [c,e]=CCV.sel.split('|'); return {cfc:c,ent:e==='-'||e===undefined||e==='null'?null:+e}; })():null;
+  const ctrOf=s=>s?(C.contrats.find(c=>c.type==='contrat'&&c.contactId===s.ent&&(c.lignes||[]).some(l=>String(l.cfc)===s.cfc))||null):null;
   const addMenu=()=>{ const s=cur(), ctr=ctrOf(s); return [
     {t:'Mutations 1 ▸ Transfert …',fn:()=>ccMut(C,'transfert',null,s,touch)},{t:'Mutations 1 ▸ Variation …',fn:()=>ccMut(C,'variation',null,s,touch)},{t:'Mutations 1 ▸ Renchérissement …',fn:()=>ccMut(C,'rencherissement',null,s,touch)},
-    {t:'Contrat …',fn:()=>ccContract(C,p,null,'contrat',s,touch)},{t:'Avenant …',dis:!ctr,fn:()=>ccContract(C,p,null,'avenant',s,touch,ctr)},'-',
-    {t:'Paiement sur contrat …',dis:!ctr,fn:()=>ccPayment(C,p,null,ctr,s,touch)},{t:'Paiement hors contrat …',fn:()=>ccPayment(C,p,null,null,s,touch)},
-    {t:'Coût probable perso …',fn:()=>ccEntry(C,'cp_perso',null,s,touch)},{t:'Provisions …',fn:()=>ccEntry(C,'provision',null,s,touch)}]; };
+    {t:'Contrat …',fn:()=>ccContract(C,null,'contrat',s,touch)},{t:'Avenant …',dis:!ctr,fn:()=>ccContract(C,null,'avenant',s,touch,ctr)},'-',
+    {t:'Paiement sur contrat …',dis:!ctr,fn:()=>ccPayment(C,null,ctr,s,touch)},{t:'Paiement hors contrat …',fn:()=>ccPayment(C,null,null,s,touch)},
+    {t:'Coût probable perso …',fn:()=>ccEntry(C,'coutProbablePerso',null,s,touch)},{t:'Provisions …',fn:()=>ccEntry(C,'provision',null,s,touch)}]; };
+  const G={};
   bar.append(ibtn({label:'‹ Liste',fn:()=>{ CCV.open=null; go('coco'); }}),h('b',{style:{margin:'0 10px'}},'Contrôle des coûts  '+projLabel(p)+' — '+(doc.VERSION||'')),
-    ibtn({i:'plus',t:'Nouvelle écriture',menu:addMenu}),ibtn({i:'edit',t:'Editer l’écriture',fn:()=>ccEditDetail()}),ibtn({i:'minus',t:'Supprimer l’écriture',fn:()=>ccDelDetail()}),
-    ibtn({i:'list',t:'Présentation',menu:()=>[...Object.keys(CC_PRES).map(k=>({t:k,chk:CCV.pres===k,fn:()=>{ CCV.pres=k; try{localStorage.setItem('ds_cc_pres',k);}catch(_){} draw(); }})),'-',
+    ibtn({i:'plus',t:'Nouvelle écriture',menu:addMenu}),ibtn({i:'edit',t:'Editer l’écriture',fn:()=>editDet()}),ibtn({i:'minus',t:'Supprimer l’écriture',fn:()=>delDet()}),
+    ibtn({i:'list',t:'Présentation',menu:()=>[...(C.presentations.controle||[{nom:'Standard'}]).map(x=>({t:x.nom,chk:pres().nom===x.nom,fn:()=>{ CCV.pres=x.nom; draw(); }})),'-',
       {t:'Afficher les détails',chk:CCV.det,fn:()=>{ CCV.det=!CCV.det; draw(); }},{t:'N’afficher que les positions de 1 à 3 chiffres',chk:CCV.only3,fn:()=>{ CCV.only3=!CCV.only3; draw(); }}]}),
-    ibtn({i:'wrench',t:'Paramètres',menu:()=>[{t:'Attribuer le devis général validé …',fn:()=>ccAssignDG(C,p,touch)},{t:'Configuration … (jours de paiement, texte du compte)',fn:()=>ccConfig(C,touch)}]}),
+    ibtn({i:'wrench',t:'Paramètres',menu:()=>[{t:'Attribuer le devis général validé …',fn:()=>ccAssignDG(C,p,touch)},{t:'Configuration …',fn:()=>ccConfig(C,touch)}]}),
     ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(G,'Controle_couts_'+(p.NUMBER||''))},{t:'Imprimer le tableau (A4 paysage)',fn:()=>ccPrint(p,doc,G)}]}),
     ibtn({i:'save',t:'Enregistrer',fn:()=>save().then(()=>toast('Enregistré.'))}));
-  let G={};
-  const money=v=>v?num(v):'';
-  const draw=()=>{ pane.innerHTML=''; const R=ccCompute(C); const sec=CCV.sec;
+  const COLOR={mut:'#993300',ctr:'#FF6633',pay:'#003366',prov:'#555',cpp:'#555'};
+  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec;
     if(sec==='CONTRÔLE DU COÛT'||sec==='DEVIS GENERAL'){
-      const keys=sec==='DEVIS GENERAL'?['dg','dgp']:CC_PRES[CCV.pres]||CC_PRES.Standard;
-      const rows=[]; const colsDet=new Set(keys.map(k=>CC_COLS[k].det).filter(d=>d&&d!=='none'));
-      R.codes.forEach(c=>{ if(CCV.only3&&cfcLevel(c)>3) return; const t=R.leaf.get(c)||R.titles.get(c); if(!t) return;
-        rows.push({k:c+'|-',lvl:cfcLevel(c),title:!R.leaf.has(c),cfc:c,lbl:R.lbl.get(c)||'',ent:'',v:t});
-        if(R.leaf.has(c)&&sec!=='DEVIS GENERAL'){ R.leaf.get(c).ents.forEach(s=>{ rows.push({k:c+'|'+s.ent,sub:true,cfc:'',lbl:'',ent:ccEntName(C,s.ent),v:{...s,cpa:s.ctr+s.ave,dgRev:s.dg+s.mut}});
-            if(CCV.det) s.det.filter(d=>colsDet.has(d.k==='cpp'?'prov':d.k)).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|'+s.ent+'|'+d.k+i,det:d,cfc:'',lbl:'',ent:'-'+d.txt,v:{}})); });
-          const s0=R.leaf.get(c); const own=[...R.S.values()].find(s=>s.cfc===c&&s.ent==null);
-          if(CCV.det&&own) own.det.filter(d=>colsDet.has(d.k==='cpp'?'prov':d.k)).forEach((d,i)=>rows.push({k:c+'|-|'+d.k+i,det:d,cfc:'',lbl:'',ent:'-'+d.txt,v:{}})); } });
-      rows.push({k:'TOTAL',tot:true,cfc:'',lbl:'Total général',ent:'',v:R.TOT});
-      const COLOR={mut:'#993300',contrat:'#FF6633',paiement:'#003366'};
-      const cell=(r,k)=>{ const c=CC_COLS[k]; if(r.det){ return r.det.k===c.det||(c.det==='prov'&&r.det.k==='cpp')?`<i style="color:${COLOR[r.det.col]||'#555'}">${r.det.last?'F':''}${num(r.det.v)}</i>`:''; }
-        if(c.pct) return r.sub||r.tot?'':(R.pct(r.cfc)?num(R.pct(r.cfc),1):''); const v=c.v(r.v)||0;
-        if(k==='pay'&&v&&!r.tot&&!r.title){ const b=(r.v.cpa??(r.v.ctr+r.v.ave))||r.v.dgRev||r.v.dg; return `<span style="color:${v<=b+0.05?'#2e7d46':'#c62828'}">${num(v)}</span>`; }
-        return money(v); };
-      const B=r=>r.tot||(r.title&&r.lvl<=3)?'font-weight:700;':'';
-      G={key:r=>r.k,cols:[{k:'cfc',t:'CFC',w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`},{k:'lbl',t:'Désignation',w:230,f:r=>`<span style="${B(r)}">${esc(r.lbl)}</span>`},
-        {k:'ent',t:'Entreprise',w:220,f:r=>r.det?`<i style="color:${COLOR[r.det.col]||'#555'}">${esc(r.ent)}</i>`:esc(r.ent)},
-        ...keys.map(k=>({k,t:CC_COLS[k].t,w:k==='dgp'?60:118,cls:'r',f:r=>`<span style="${B(r)}">${cell(r,k)}</span>`}))],
-        rows,sort:null,sel:CCV.sel,onSel:r=>{ CCV.sel=r.det?null:(r.k.split('|').slice(0,2).join('|')); CCV.detSel=r.det||null; },onDbl:r=>{ if(r.det){ CCV.detSel=r.det; ccEditDetail(); } }};
+      const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]);
+      const detK=new Set(sec==='DEVIS GENERAL'?[]:pres().colonnes.filter(c=>c.details&&CC_COL[c.id]&&CC_COL[c.id].det).map(c=>CC_COL[c.id].det)); if(detK.has('prov')) detK.add('cpp');
+      const top=c=>{ let x=c; while(R.par(x)) x=R.par(x); return x; };
+      const rows=[];
+      R.codes.forEach(c=>{ if(CCV.only3&&cfcLevel(c)>3) return; const v=R.tot.get(c); if(!v) return; const title=[...R.ex].some(x=>R.par(x)===c);
+        if(!Object.values(v).some(x=>Math.abs(x)>0.004)&&!R.lbl.has(c)) return;
+        rows.push({k:c+'|-',cfc:c,lbl:R.lbl.get(c)||'',ent:'',v,lvl:cfcLevel(c),title});
+        if(sec==='DEVIS GENERAL') return;
+        const E=R.ents.get(c); if(E) E.forEach((x,eid)=>{ rows.push({k:c+'|'+eid,cfc:'',lbl:'',ent:ccEntName(C,eid),v:x,sub:true});
+          if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.ent??null)===(eid??null)).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|'+eid+'|'+d.k+i,det:d,cfc:'',lbl:'',ent:'-'+d.txt,v:{}})); });
+        if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.k==='mut'||d.k==='prov'||d.k==='cpp')&&!(E&&E.has(d.ent??null))).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|-|'+d.k+i,det:d,cfc:'',lbl:'',ent:'-'+d.txt,v:{}})); });
+      rows.push({k:'TOTAL',tot:true,cfc:'',lbl:'Total général',ent:'',v:R.G});
+      const pct=(r,f)=>{ if(r.sub||r.tot||r.det) return ''; const base=(R.tot.get(top(r.cfc))||{})[f]; return base?num(r.v[f]/base*100,1):''; };
+      const cell=(r,id)=>{ const c=CC_COL[id];
+        if(r.det) return c.det&&(c.det===r.det.k||(c.det==='prov'&&r.det.k==='cpp')||(c.det==='cpp'&&r.det.k==='cpp'))?`<i style="color:${COLOR[r.det.k]}">${r.det.last?'F':''}${num(r.det.v)}</i>`:'';
+        if(c.pct) return pct(r,c.pct); if(r.sub&&!c.e) return '';
+        const v=c.fn?c.fn(r.v):(r.v[c.f]||0); if(!v) return '';
+        if(id==='payementTot'&&!r.tot&&!r.sub){ const b=r.v.contratsAvenants||r.v.dgRevise; return `<span style="color:${v<=b+0.05?'#2e7d46':'#c62828'}">${num(v)}</span>`; }
+        return num(v); };
+      const B=r=>r.tot||(r.title&&r.lvl<=2)?'font-weight:700;':'';
+      const title=id=>{ const t=(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):CC_COL[id].t; };
+      Object.assign(G,{key:r=>r.k,cols:ids.map(id=>{ const c=CC_COL[id];
+          if(c.sp==='cfc') return {k:'cfc',t:title(id),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`};
+          if(c.sp==='lbl') return {k:'lbl',t:title(id),w:230,f:r=>`<span style="${B(r)}">${esc(r.lbl)}</span>`};
+          if(c.sp==='ent') return {k:'ent',t:title(id),w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)};
+          return {k:id,t:title(id),w:c.pct?60:118,cls:'r',f:r=>`<span style="${B(r)}">${cell(r,id)}</span>`}; }),
+        rows,sort:null,sel:CCV.sel,onSel:r=>{ if(r.det){ CCV.detSel=r.det; } else { CCV.sel=r.k.split('|').slice(0,2).join('|'); CCV.detSel=null; } },onDbl:r=>{ if(r.det){ CCV.detSel=r.det; editDet(); } }});
+      if(!ids.some(i=>CC_COL[i].sp==='ent')&&sec!=='DEVIS GENERAL') G.cols.splice(2,0,{k:'ent',t:'Entreprise',w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)});
       grid(pane,G); return; }
-    if(sec==='MUTATIONS'){ G={cols:[{k:'num',t:'N°',w:50,cls:'r'},{k:'date',t:'Date',w:86,f:x=>dfr(x.date)},{k:'code',t:'Genre',w:140,f:x=>esc(((C.config.mutGenres||[]).find(g=>g.code===x.code)||{}).texte||x.genre)},
-        {k:'de',t:'Origine',w:180,f:x=>x.de?esc(x.de.cfc+' '+(R.lbl.get(String(x.de.cfc))||'')):''},{k:'vers',t:'Destination / position',w:200,f:x=>x.vers?esc(x.vers.cfc+' '+(R.lbl.get(String(x.vers.cfc))||'')):''},
-        {k:'ttc',t:'Montant TTC',w:110,cls:'r',f:x=>num(x.ttc)},{k:'statut',t:'Statut',w:110,f:x=>CC_MUT_ST[x.statut]||x.statut||''},{k:'remarque',t:'Remarque'}],
-        key:x=>x.id,rows:C.mutations,sort:['num',1],onDbl:x=>ccMut(C,x.genre,x,null,touch),onSel:x=>{ CCV.detSel={k:'mut',ref:x}; }};
-      grid(pane,G); return; }
-    if(sec==='ADJUDICATIONS'){ G={cols:[{k:'lot',t:'N°',w:70,f:c=>esc((c.lot||{}).num||'')},{k:'lt',t:'Lot d’adjudication',w:200,f:c=>esc((c.lot||{}).txt||'')},{k:'e',t:'Entreprise',w:220,f:c=>esc(ccEntName(C,c.ent))},
-        {k:'type',t:'Genre',w:80,f:c=>c.type==='avenant'?'Avenant':'Contrat'},{k:'net',t:'Montant TTC',w:120,cls:'r',f:c=>num(ccConds(c.lignes||[],c.conds).net)},{k:'num',t:'Numéro du contrat',w:110,f:c=>esc((c.type==='avenant'?((C.contrats.find(x=>x.id===c.parent)||{}).num||'')+'-':'')+(c.num||''))},
-        {k:'date',t:'Date',w:86,f:c=>dfr(c.date)},{k:'statut',t:'Statut',w:110,f:c=>CC_CTR_ST[c.statut]||c.statut||''}],
-        key:c=>c.id,rows:C.contrats,sort:['lot',1],onSel:c=>{ CCV.detSel={k:'ctr',ref:c}; },onDbl:c=>ccContract(C,p,c,c.type,null,touch)};
-      grid(pane,G); return; }
-    if(sec==='PAIEMENTS'){ const ps=C.paiements.map(x=>({...x,_r:ccConds(x.lignes||[],x.conds)}));
-      G={cols:[{k:'lot',t:'N°',w:70,f:x=>esc((x.lot||{}).num||'')},{k:'lt',t:'Lot d’adjudication',w:170,f:x=>esc((x.lot||{}).txt||'')},{k:'e',t:'Entreprise',w:200,f:x=>esc(ccEntName(C,x.ent))},{k:'num',t:'N° pmt',w:60,cls:'r'},
-        {k:'dp',t:'Date pmt',w:86,f:x=>dfr(x.datePaiement),v:x=>x.datePaiement},{k:'g',t:'Genre',w:120,f:x=>esc(x.commentaire||'')+(x.dernier?' ✔F':'')},{k:'ht',t:'Paiements HT',w:110,cls:'r',f:x=>num(x._r.ht)},{k:'tva',t:'TVA',w:90,cls:'r',f:x=>num(x._r.tva)},
-        {k:'ttc',t:'Paiements TTC',w:120,cls:'r',f:x=>num(x._r.net)},{k:'st',t:'Statut',w:90,f:x=>CC_PAY_ST[x.statut]||x.statut||''},{k:'o',t:'Ordre',w:60,f:x=>esc(((C.ordres||[]).find(o=>o.id===x.ordre)||{}).num||'')}],
-        key:x=>x.id,rows:ps,sort:['dp',1],onSel:x=>{ CCV.detSel={k:'pay',ref:C.paiements.find(y=>y.id===x.id)}; },onDbl:x=>ccPayment(C,p,C.paiements.find(y=>y.id===x.id),C.contrats.find(c=>c.id===x.contrat)||null,null,touch)};
-      grid(pane,G);
-      const byT={}; ps.forEach(x=>(x.conds||[]).filter(c=>c.kind===6&&c.on!==false).forEach(c=>{ const k=String(c.val); byT[k]=byT[k]||{ht:0,tva:0}; }));
-      ps.forEach(x=>{ const t=((x.conds||[]).find(c=>c.kind===6)||{}).val; const k=String(t??0); byT[k]=byT[k]||{ht:0,tva:0}; byT[k].ht+=x._r.ht; byT[k].tva+=x._r.tva; });
-      pane.append(h('div',{class:'card'},h('h3',{},'Récapitulatif de TVA'),h('div',{html:'<table class="g" style="width:auto">'+Object.entries(byT).map(([t,v])=>`<tr><td>Part TVA ${esc(t)}</td><td class="r">${num(v.ht)}</td><td class="r">${num(v.tva)}</td><td class="r">${num(v.ht+v.tva)}</td></tr>`).join('')+`<tr style="font-weight:700"><td>Total</td><td class="r">${num(ps.reduce((a,x)=>a+x._r.ht,0))}</td><td class="r">${num(ps.reduce((a,x)=>a+x._r.tva,0))}</td><td class="r">${num(ps.reduce((a,x)=>a+x._r.net,0))}</td></tr></table>`})));
+    if(sec==='MUTATIONS'){ Object.assign(G,{key:x=>x.id,cols:[{k:'numero',t:'N°',w:50,cls:'r'},{k:'date',t:'Date',w:86,f:x=>dfr(x.date)},{k:'g',t:'Genre',w:140,f:x=>esc(x.genreTexte||((C.genresMutation||[]).find(g=>g.code===x.code)||{}).texte||x.genre)},
+        {k:'o',t:'Origine',w:200,f:x=>x.origine?esc(x.origine.cfc+' '+(R.lbl.get(String(x.origine.cfc))||'')):''},{k:'d',t:'Destination / position',w:200,f:x=>x.destination?esc(x.destination.cfc+' '+(R.lbl.get(String(x.destination.cfc))||'')):''},
+        {k:'ttc',t:'Montant TTC',w:110,cls:'r',f:x=>num(x.ttc)},{k:'statut',t:'Statut',w:110,f:x=>MUT_ST[x.statut]||x.statut||''},{k:'remarque',t:'Remarque'}],
+        rows:C.mutations,sort:['numero',1],onSel:x=>CCV.detSel={k:'mut',ref:x},onDbl:x=>ccMut(C,x.genre,x,null,touch)}); grid(pane,G); return; }
+    if(sec==='ADJUDICATIONS'){ Object.assign(G,{key:c=>c.id,cols:[{k:'lot',t:'N°',w:70,f:c=>esc((c.lot||{}).numero||'')},{k:'lt',t:'Lot d’adjudication',w:200,f:c=>esc((c.lot||{}).texte||'')},{k:'e',t:'Entreprise',w:240,f:c=>esc(ccEntName(C,c.contactId))},
+        {k:'type',t:'Genre',w:80,f:c=>c.type==='avenant'?'Avenant':'Contrat'},{k:'net',t:'Montant TTC',w:120,cls:'r',f:c=>num(docNet(c))},{k:'num',t:'Numéro du contrat',w:110,f:c=>esc((c.type==='avenant'?((C.contrats.find(x=>x.id===c.contratParentId)||{}).numero||'')+'-':'')+(c.numero||''))},
+        {k:'date',t:'Date',w:86,f:c=>dfr(c.date)},{k:'statut',t:'Statut',w:110,f:c=>CTR_ST[c.statut]||c.statut||''}],
+        rows:C.contrats,sort:['lot',1],onSel:c=>CCV.detSel={k:'ctr',ref:c},onDbl:c=>ccContract(C,c,c.type,null,touch)}); grid(pane,G); return; }
+    if(sec==='PAIEMENTS'){ Object.assign(G,{key:x=>x.id,cols:[{k:'lot',t:'N°',w:70,f:x=>esc((x.lot||{}).numero||'')},{k:'lt',t:'Lot d’adjudication',w:170,f:x=>esc((x.lot||{}).texte||'')},{k:'e',t:'Entreprise',w:220,f:x=>esc(ccEntName(C,x.contactId))},
+        {k:'numero',t:'N° pmt',w:60,cls:'r'},{k:'dp',t:'Date pmt',w:86,f:x=>dfr(x.datePaiement),v:x=>x.datePaiement},{k:'g',t:'Genre',w:140,f:x=>esc(x.genreTexte||x.commentaire||'')+(x.dernier?' (dernier)':'')},
+        {k:'ht',t:'Paiements HT',w:110,cls:'r',f:x=>num(docNet(x)-docTva(x))},{k:'tva',t:'TVA',w:90,cls:'r',f:x=>num(docTva(x))},{k:'ttc',t:'Paiements TTC',w:120,cls:'r',f:x=>num(docNet(x))},
+        {k:'st',t:'Statut',w:90,f:x=>PAY_ST[x.statut]||x.statut||''},{k:'o',t:'Ordre',w:60,f:x=>esc(((C.ordresPaiement||[]).find(o=>o.id===x.ordreId||(o.paiementIds||[]).includes(x.id))||{}).numero||'')}],
+        rows:C.paiements,sort:['dp',1],onSel:x=>CCV.detSel={k:'pay',ref:x},onDbl:x=>ccPayment(C,x,C.contrats.find(c=>c.id===x.contratId)||null,null,touch)}); grid(pane,G);
+      const byT={}; C.paiements.forEach(x=>(x.lignes||[]).forEach(l=>{ const t=((x.conditions||[]).find(c=>c.kind===6&&c.appliquee!==false&&(!c.refCond||c.refCond===(l.refCond||'')))||{}).valeur??0; const k=String(t); byT[k]=byT[k]||{ht:0,tva:0}; byT[k].ht+=(+l.net||0)-(+l.tva||0); byT[k].tva+=+l.tva||0; }));
+      pane.append(h('div',{class:'card'},h('h3',{},'Récapitulatif de TVA'),h('div',{html:'<table class="g" style="width:auto">'+Object.entries(byT).map(([t,v])=>`<tr><td>Part TVA ${esc(t)}</td><td class="r">${num(v.ht)}</td><td class="r">${num(v.tva)}</td><td class="r">${num(v.ht+v.tva)}</td></tr>`).join('')+`<tr style="font-weight:700"><td>Total</td><td class="r">${num(Object.values(byT).reduce((a,v)=>a+v.ht,0))}</td><td class="r">${num(Object.values(byT).reduce((a,v)=>a+v.tva,0))}</td><td class="r">${num(Object.values(byT).reduce((a,v)=>a+v.ht+v.tva,0))}</td></tr></table>`})));
       return; }
-    if(sec==='ORDRES DE PAIEMENT'){ ccOrders(pane,C,p,touch,nid); return; }
-    if(sec==='COMPTES D’ENTREPRISE'){ const ents=[...new Set([...C.contrats.map(c=>c.ent),...C.paiements.map(x=>x.ent)])].filter(x=>x!=null);
-      G={key:e=>e,cols:[{k:'e',t:'Entreprise',w:260,f:e=>esc(ccEntName(C,e))},{k:'c',t:'Contrats TTC',w:120,cls:'r',f:e=>num(C.contrats.filter(c=>c.ent===e&&c.type==='contrat').reduce((a,c)=>a+ccConds(c.lignes||[],c.conds).net,0))},
-        {k:'a',t:'Avenants TTC',w:120,cls:'r',f:e=>num(C.contrats.filter(c=>c.ent===e&&c.type==='avenant').reduce((a,c)=>a+ccConds(c.lignes||[],c.conds).net,0))},
-        {k:'p',t:'Paiements TTC',w:120,cls:'r',f:e=>num(C.paiements.filter(x=>x.ent===e).reduce((a,x)=>a+ccConds(x.lignes||[],x.conds).net,0))},
-        {k:'d',t:'Contrat − paiements sur contrat TTC',w:190,cls:'r',f:e=>num(C.contrats.filter(c=>c.ent===e).reduce((a,c)=>a+ccConds(c.lignes||[],c.conds).net,0)-C.paiements.filter(x=>x.ent===e&&x.contrat).reduce((a,x)=>a+ccConds(x.lignes||[],x.conds).net,0))}],rows:ents,sort:['e',1]};
+    if(sec==='ORDRES DE PAIEMENT'){ ccOrders(pane,C,p,touch); return; }
+    if(sec==='COMPTES D’ENTREPRISE'){ const ents=[...new Set([...C.contrats.map(c=>c.contactId),...C.paiements.map(x=>x.contactId)])].filter(x=>x!=null);
+      const ctrN=(e,t)=>C.contrats.filter(c=>c.contactId===e&&c.type===t).reduce((a,c)=>a+docNet(c),0), payN=(e,onlyC)=>C.paiements.filter(x=>x.contactId===e&&(!onlyC||x.contratId)).reduce((a,x)=>a+docNet(x),0);
+      Object.assign(G,{key:e=>e,cols:[{k:'e',t:'Entreprise',w:280,f:e=>esc(ccEntName(C,e)),v:e=>ccEntName(C,e)},{k:'c',t:'Contrats TTC',w:120,cls:'r',f:e=>num(ctrN(e,'contrat'))},{k:'a',t:'Avenants TTC',w:120,cls:'r',f:e=>num(ctrN(e,'avenant'))},
+        {k:'ca',t:'Contrats + avenants TTC',w:150,cls:'r',f:e=>num(ctrN(e,'contrat')+ctrN(e,'avenant'))},{k:'p',t:'Paiements TTC',w:120,cls:'r',f:e=>num(payN(e))},{k:'d',t:'Contrat − paiements sur contrat TTC',w:200,cls:'r',f:e=>num(ctrN(e,'contrat')+ctrN(e,'avenant')-payN(e,true))}],rows:ents,sort:['e',1]});
       grid(pane,G); return; }
-    if(sec==='ARRÊTÉS DE COMPTE'){ G={key:a=>a.id,cols:[{k:'num',t:'N°',w:50},{k:'e',t:'Entreprise',w:240,f:a=>esc(ccEntName(C,(C.contrats.find(c=>c.id===a.contrat)||{}).ent))},{k:'date',t:'Date',w:86,f:a=>dfr(a.date)},
-        {k:'st',t:'Statut',w:90,f:a=>esc(a.statut||'')},{k:'g',t:'Genre de garantie',w:130,f:a=>esc((a.garantie||{}).genre||'')},{k:'m',t:'Montant de garantie',w:130,cls:'r',f:a=>num((a.garantie||{}).montant)},
-        {k:'d',t:'Début de la garantie',w:120,f:a=>dfr((a.garantie||{}).debut)},{k:'f',t:'Echéance de la garantie',w:130,f:a=>dfr((a.garantie||{}).fin)},{k:'net',t:'Facture finale nette',w:130,cls:'r',f:a=>num(ccConds(a.lignes||[],a.conds).net)}],
-        rows:C.arretes,sort:['num',1],onDbl:a=>ccArrete(C,a,touch)}; grid(pane,G); return; }
+    if(sec==='ARRÊTÉS DE COMPTE'){ Object.assign(G,{key:a=>a.id,cols:[{k:'numero',t:'N°',w:50},{k:'e',t:'Entreprise',w:240,f:a=>esc(ccEntName(C,a.contactId))},{k:'date',t:'Date',w:86,f:a=>dfr(a.date)},
+        {k:'st',t:'Statut',w:100,f:a=>ARR_ST[a.statut]||a.statut||''},{k:'g',t:'Genre de garantie',w:130,f:a=>GAR_T[(a.garantie||{}).genre]||''},{k:'m',t:'Montant de garantie',w:130,cls:'r',f:a=>num((a.garantie||{}).montant)},
+        {k:'d',t:'Début de la garantie',w:120,f:a=>dfr((a.garantie||{}).debut)},{k:'f',t:'Echéance de la garantie',w:130,f:a=>dfr((a.garantie||{}).fin),v:a=>(a.garantie||{}).fin},{k:'net',t:'Facture finale nette',w:130,cls:'r',f:a=>num(docNet(a))}],
+        rows:C.arretes,sort:['numero',1],onDbl:a=>ccArrete(C,a,touch)}); grid(pane,G); return; }
   };
-  const ccEditDetail=()=>{ const d=CCV.detSel; if(!d){ toast('Vous ne pouvez éditer que des écritures isolées (sélectionnez une ligne de détail).',true); return; }
-    if(d.k==='mut') ccMut(C,d.ref.genre,d.ref,null,touch); else if(d.k==='ctr') ccContract(C,p,d.ref,d.ref.type,null,touch); else if(d.k==='pay') ccPayment(C,p,d.ref,C.contrats.find(c=>c.id===d.ref.contrat)||null,null,touch);
-    else if(d.k==='prov'||d.k==='cpp') ccEntry(C,d.ref.type,d.ref,null,touch); };
-  const ccDelDetail=async()=>{ const d=CCV.detSel; if(!d){ toast('Vous ne pouvez supprimer que des écritures isolées.',true); return; }
-    if(d.k==='pay'&&['transmis','debite'].includes(d.ref.statut)){ toast('Le statut du paiement est '+CC_PAY_ST[d.ref.statut]+', il ne peut donc pas être effacé.',true); return; }
-    if(d.k==='ctr'&&C.paiements.some(x=>x.contrat===d.ref.id)){ toast('Des paiements ont été comptabilisés sur ce contrat, il ne peut donc pas être effacé.',true); return; }
+  const editDet=()=>{ const d=CCV.detSel; if(!d){ toast('Vous ne pouvez éditer que des écritures isolées (sélectionnez une ligne de détail).',true); return; }
+    if(d.k==='mut') ccMut(C,d.ref.genre,d.ref,null,touch); else if(d.k==='ctr') ccContract(C,d.ref,d.ref.type,null,touch); else if(d.k==='pay') ccPayment(C,d.ref,C.contrats.find(c=>c.id===d.ref.contratId)||null,null,touch);
+    else ccEntry(C,d.ref.type,d.ref,null,touch); };
+  const delDet=async()=>{ const d=CCV.detSel; if(!d){ toast('Vous ne pouvez supprimer que des écritures isolées.',true); return; }
+    if(d.k==='pay'&&['transmis','debite'].includes(d.ref.statut)){ toast('Le statut du paiement est '+PAY_ST[d.ref.statut]+', il ne peut donc pas être effacé.',true); return; }
+    if(d.k==='ctr'&&C.paiements.some(x=>x.contratId===d.ref.id)){ toast('Des paiements ont été comptabilisés sur ce contrat, il ne peut donc pas être effacé.',true); return; }
     if(!await confirmDlg('Voulez-vous vraiment supprimer cette écriture ?','Supprimer')) return;
-    const L={mut:'mutations',ctr:'contrats',pay:'paiements',prov:'ecritures',cpp:'ecritures'}[d.k]; C[L]=C[L].filter(x=>x!==d.ref); CCV.detSel=null; touch(); };
-  VIEWS['coco'].editorRefresh=()=>{ if(!$('.ov')){ C=JSON.parse(JSON.stringify(DS.get('costcontrol',id)||C)); ['positions','mutations','ecritures','contrats','paiements','ordres','arretes'].forEach(k=>C[k]=C[k]||[]); draw(); } };
+    const L={mut:'mutations',ctr:'contrats',pay:'paiements',prov:'ecritures',cpp:'ecritures'}[d.k]; C[L]=C[L].filter(x=>x.id!==d.ref.id); CCV.detSel=null; touch(); };
+  VIEWS['coco'].editorRefresh=()=>{ if(!$('.ov')){ load(); draw(); } };
   draw();
 }
-/* Choix de position (CFC) et d'entreprise pour les fenêtres */
-function ccPosSelect(C,val){ const R=ccCompute(C); return h('select',{class:'inp'},h('option',{value:''},''),...R.codes.filter(c=>R.leaf.has(c)||(C.positions||[]).some(p=>String(p.cfc)===c)).map(c=>h('option',{value:c,selected:String(val)===c||null},c+' '+(R.lbl.get(c)||'')))); }
-function ccEntPicker(C,val,onCh){ const lab=h('span',{style:{flex:1}},ccEntName(C,val)); let v=val;
-  const w=h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},lab,ibtn({i:'person',t:'Choisir l’entreprise',fn:()=>pickContact('Entreprise',c=>{ v=c.ID; C.entreprises[c.ID]=C.entreprises[c.ID]||{nom:contactName(c),npa:c.POSTALCODE||'',lieu:c.LOCATION||'',adrId:c.ID}; lab.textContent=ccEntName(C,v); onCh&&onCh(v); })}),
+/* ── champs communs des fenêtres ── */
+function ccPosSelect(C,val){ const R=ccCalc(C); return h('select',{class:'inp'},h('option',{value:''},''),...R.codes.filter(c=>R.lbl.has(c)||R.tot.get(c)&&R.tot.get(c).dg).map(c=>h('option',{value:c,selected:String(val)===c||null},c+' '+(R.lbl.get(c)||'')))); }
+function ccEntPicker(C,val,onCh){ const lab=h('span',{style:{flex:1}},ccEntName(C,val)); let v=val??null;
+  const w=h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},lab,ibtn({i:'person',t:'Choisir l’entreprise',fn:()=>pickContact('Entreprise',c=>{ v=c.ID; if(!C.entreprises.some(e=>e.contactId===c.ID)) C.entreprises.push({contactId:c.ID,nomCourt:contactName(c)+(c.LOCATION?', '+c.LOCATION:'')}); lab.textContent=ccEntName(C,v); onCh&&onCh(v); })}),
     ibtn({label:'Aucune',t:'Aucune entreprise',fn:()=>{ v=null; lab.textContent=ccEntName(C,null); onCh&&onCh(null); }})); w.get=()=>v; return w; }
-function htTtc(taux,onCh){ const ht=h('input',{class:'inp',type:'number',step:'any',style:{width:'130px'}}), tva=h('input',{class:'inp',type:'number',step:'any',value:taux??8.1,style:{width:'60px'}}), ttc=h('input',{class:'inp',type:'number',step:'any',style:{width:'130px'}}), tv=h('span');
-  const f=from=>{ const t=+tva.value||0; if(from==='ht') ttc.value=ht.value===''?'':r2(+ht.value*(1+t/100)); else ht.value=ttc.value===''?'':r2(+ttc.value/(1+t/100)); tv.textContent=num((+ttc.value||0)-(+ht.value||0)); onCh&&onCh(); };
-  ht.oninput=()=>f('ht'); ttc.oninput=()=>f('ttc'); tva.oninput=()=>f('ht');
-  return {ht,tva,ttc,tv,set(o){ ht.value=o.ht??''; tva.value=o.taux??8.1; ttc.value=o.ttc??''; f('ttc'); },el:formRows([['Total HT',ht],['TVA',h('div',{},tva,' %  ',tv)],['Total TVA incl.',ttc]],300)}; }
-/* Transfert / Variation / Renchérissement (§4.3-4.4) */
+function htTtc(o){ const ht=h('input',{class:'inp',type:'number',step:'any',style:{width:'130px'}}), tva=h('input',{class:'inp',type:'number',step:'any',style:{width:'60px'}}), ttc=h('input',{class:'inp',type:'number',step:'any',style:{width:'130px'}}), tv=h('span');
+  const f=from=>{ const t=+tva.value||0; if(from==='ht') ttc.value=ht.value===''?'':r2(+ht.value*(1+t/100)); else ht.value=ttc.value===''?'':r2(+ttc.value/(1+t/100)); tv.textContent=num((+ttc.value||0)-(+ht.value||0)); };
+  ht.oninput=()=>f('ht'); ttc.oninput=()=>f('ttc'); tva.oninput=()=>f('ttc');
+  ht.value=o.ht??''; tva.value=o.tauxTVA??8.1; ttc.value=o.ttc??''; f('ttc');
+  return {ht,tva,ttc,get:()=>({ht:+ht.value||0,tauxTVA:+tva.value||0,tva:r2((+ttc.value||0)-(+ht.value||0)),ttc:+ttc.value||0}),el:formRows([['Total HT',ht],['TVA',h('div',{},tva,' %  ',tv)],['Total TVA incl.',ttc]],300)}; }
+/* Transfert / Variation / Renchérissement (§4.3-4.4) — montant signé : destination +ttc, origine −ttc */
 function ccMut(C,genre,m,s,touch){
-  const isNew=!m; const v=m?JSON.parse(JSON.stringify(m)):{id:'m'+Date.now().toString(36),centre:1,genre,code:genre==='transfert'?'T1':genre==='rencherissement'?'C9':'M2',date:today(),statut:(C.config.compta||{}).statutMutationDefaut||'acceptee',
-    num:Math.max(0,...C.mutations.map(x=>+x.num||0))+1,de:genre==='transfert'?{cfc:s?s.cfc:'',ent:s?s.ent:null,ouv:''}:null,vers:{cfc:genre==='transfert'?'':(s?s.cfc:''),ent:genre==='transfert'?null:(s?s.ent:null),ouv:''},ht:null,taux:8.1,ttc:null,remarque:'',commentaire:''};
-  const gen=h('select',{class:'inp'},...(C.config.mutGenres||[]).filter(g=>g.genre===genre||(genre==='transfert'&&g.genre==='transfert')).map(g=>h('option',{value:g.code,selected:g.code===v.code||null},g.texte)));
-  const st=h('select',{class:'inp'},...Object.entries(CC_MUT_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t)));
-  const deP=v.de?ccPosSelect(C,v.de.cfc):null, deE=v.de?ccEntPicker(C,v.de.ent):null, vP=ccPosSelect(C,v.vers.cfc), vE=ccEntPicker(C,v.vers.ent);
-  const M=htTtc(v.taux); M.set(v);
-  const num2=h('input',{class:'inp',type:'number',value:v.num,style:{width:'80px'}}), rem=h('input',{class:'inp',value:v.remarque||''}), dt=h('input',{class:'inp',type:'date',value:v.date||''}), com=h('textarea',{class:'inp',rows:2},v.commentaire||'');
-  const body=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px 24px',minWidth:'820px'}},
-    formRows([['Genre de mutation',gen],['Statut',st]],360),h('div'),
-    v.de?h('div',{},h('h3',{},'Origine de la mutation'),formRows([['CFC',deP],['Entreprise',deE]],360)):null,
-    h('div',{},h('h3',{},genre==='transfert'?'Destination de la mutation':'Position'),formRows([['CFC',vP],['Entreprise',vE]],360)),
+  const isNew=!m, pp=C.parametres||{}; const v=m?JSON.parse(JSON.stringify(m)):{id:'m'+Date.now().toString(36),centre:1,numero:+ccNextNum(C.mutations,'numero'),genre,
+    code:genre==='transfert'?'T1':genre==='rencherissement'?'C9':'M2',date:today(),statut:pp.statutMutationDefaut||'acceptee',remarque:'',commentaire:'',
+    origine:genre==='transfert'?{cfc:s?s.cfc:'',contactId:s?s.ent:null,ouvrage:'',localisation:''}:null,destination:{cfc:genre==='transfert'?'':(s?s.cfc:''),contactId:genre==='transfert'?null:(s?s.ent:null),ouvrage:'',localisation:''},ht:null,tauxTVA:8.1,tva:null,ttc:null};
+  const gl=(C.genresMutation||[]).filter(g=>genre==='transfert'?g.genre==='transfert':g.genre===genre||(genre==='variation'&&g.genre==='variation'));
+  const gen=h('select',{class:'inp'},...(gl.length?gl:[{code:v.code,texte:v.genreTexte||v.code}]).map(g=>h('option',{value:g.code,selected:g.code===v.code||null},g.texte)));
+  const st=h('select',{class:'inp'},...Object.entries(MUT_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t)));
+  const oP=v.origine?ccPosSelect(C,v.origine.cfc):null, oE=v.origine?ccEntPicker(C,v.origine.contactId):null, dP=ccPosSelect(C,v.destination.cfc), dE=ccEntPicker(C,v.destination.contactId);
+  const M=htTtc(v), num2=h('input',{class:'inp',type:'number',value:v.numero,style:{width:'80px'}}), rem=h('input',{class:'inp',value:v.remarque||''}), dt=h('input',{class:'inp',type:'date',value:v.date||''}), com=h('textarea',{class:'inp',rows:2},v.commentaire||'');
+  const body=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px 24px',minWidth:'820px'}},formRows([['Genre de mutation',gen],['Statut',st]],360),h('div'),
+    v.origine?h('div',{},h('h3',{},'Origine de la mutation'),formRows([['CFC',oP],['Entreprise',oE]],360)):null,
+    h('div',{},h('h3',{},genre==='transfert'?'Destination de la mutation':'Position'),formRows([['CFC',dP],['Entreprise',dE]],360)),
     h('div',{},h('h3',{},'Mutation'),M.el),
-    formRows([['Numéro de mutation',h('div',{},num2,' ',ibtn({label:'◂',t:'Prochain numéro libre',fn:()=>num2.value=Math.max(0,...C.mutations.map(x=>+x.num||0))+1}))],['Remarque',rem],['Date',dt],['Commentaire',com]],360));
+    formRows([['Numéro de mutation',h('div',{},num2,' ',ibtn({label:'◂',t:'Prochain numéro libre',fn:()=>num2.value=ccNextNum(C.mutations,'numero')}))],['Remarque',rem],['Date',dt],['Commentaire',com]],360));
   dialog({title:genre==='transfert'?'Transfert':genre==='rencherissement'?'Renchérissement':'Variation de coût',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
-    if(!vP.value||(v.de&&!deP.value)){ toast('Choisissez les positions.',true); return false; }
-    if(v.de&&deP.value===vP.value&&deE.get()===vE.get()){ toast('Vous exécutez une mutation sur elle-même.',true); return false; }
+    if(!dP.value||(v.origine&&!oP.value)){ toast('Choisissez les positions.',true); return false; }
+    if(v.origine&&oP.value===dP.value&&oE.get()===dE.get()){ toast('Vous exécutez une mutation sur elle-même.',true); return false; }
     if(!num2.value){ toast('Veuillez définir un numéro de mutation.',true); return false; }
-    if(C.mutations.some(x=>x!==m&&+x.num===+num2.value)){ toast('Ce numéro de mutation est déjà utilisé.',true); return false; }
-    Object.assign(v,{code:gen.value,statut:st.value,num:+num2.value,remarque:rem.value,date:dt.value,commentaire:com.value,ht:+M.ht.value||0,taux:+M.tva.value||0,ttc:+M.ttc.value||0,vers:{cfc:vP.value,ent:vE.get(),ouv:''}});
-    if(v.de) v.de={cfc:deP.value,ent:deE.get(),ouv:''};
+    if(C.mutations.some(x=>x.id!==v.id&&+x.numero===+num2.value&&(x.centre||1)===1)){ toast('Ce numéro de mutation est déjà utilisé.',true); return false; }
+    const g=(C.genresMutation||[]).find(x=>x.code===gen.value)||{};
+    Object.assign(v,M.get(),{code:gen.value,genreTexte:g.texte||v.genreTexte,statut:st.value,numero:+num2.value,remarque:rem.value,date:dt.value,commentaire:com.value,destination:{cfc:dP.value,contactId:dE.get(),ouvrage:'',localisation:''}});
+    if(v.origine) v.origine={cfc:oP.value,contactId:oE.get(),ouvrage:'',localisation:''};
     if(isNew) C.mutations.push(v); else Object.assign(m,v); touch(); }}]});
 }
 /* Provision / coût probable perso (§11.3) */
 function ccEntry(C,type,e,s,touch){
-  const isNew=!e; const v=e?{...e}:{id:'e'+Date.now().toString(36),type,cfc:s?s.cfc:'',ent:s?s.ent:null,ouv:'',date:today(),remarque:'',ht:null,taux:8.1,ttc:null,zero:false};
-  const P=ccPosSelect(C,v.cfc), E=ccEntPicker(C,v.ent), M=htTtc(v.taux); M.set(v);
-  const z=h('input',{type:'checkbox',checked:v.zero||null}), rem=h('input',{class:'inp',value:v.remarque||''}), dt=h('input',{class:'inp',type:'date',value:v.date||''});
+  const isNew=!e; const v=e?{...e}:{id:'e'+Date.now().toString(36),type,cfc:s?s.cfc:'',contactId:s?s.ent:null,ouvrage:'',localisation:'',date:today(),remarque:'',ht:null,tauxTVA:8.1,tva:null,ttc:null,coutProbableZero:false};
+  const P=ccPosSelect(C,v.cfc), E=ccEntPicker(C,v.contactId), M=htTtc(v);
+  const z=h('input',{type:'checkbox',checked:v.coutProbableZero||null}), rem=h('input',{class:'inp',value:v.remarque||''}), dt=h('input',{class:'inp',type:'date',value:v.date||''});
   dialog({title:type==='provision'?'Provision':'Coût probable',body:h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px 24px',minWidth:'760px'}},
-    formRows([['CFC',P],['Entreprise',E],['Remarque',rem],['Date',dt]],360),h('div',{},h('h3',{},'Ecriture'),M.el,type==='cp_perso'?h('label',{},z,' Coût probable à zéro'):null)),
+    formRows([['CFC',P],['Entreprise',E],['Remarque',rem],['Date',dt]],360),h('div',{},h('h3',{},'Ecriture'),M.el,type==='coutProbablePerso'?h('label',{},z,' Coût probable à zéro'):null)),
     buttons:[{t:'Annuler'},{t:'Valider',pri:true,fn:()=>{ if(!P.value){ toast('Choisissez la position.',true); return false; }
-      Object.assign(v,{cfc:P.value,ent:E.get(),remarque:rem.value,date:dt.value,ht:+M.ht.value||0,taux:+M.tva.value||0,ttc:+M.ttc.value||0,zero:z.checked});
+      Object.assign(v,M.get(),{cfc:P.value,contactId:E.get(),remarque:rem.value,date:dt.value,coutProbableZero:z.checked});
       if(isNew) C.ecritures.push(v); else Object.assign(e,v); touch(); }}]});
 }
-/* Tableau de conditions éditable (commun contrat / avenant / paiement / arrêté) */
-function condTable(conds,recalc){
-  const box=h('div',{style:{maxHeight:'220px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
-  const draw=(res)=>{ box.innerHTML=''; const t=h('table',{class:'g',style:{tableLayout:'auto'}});
+/* Tableau de conditions éditable (contrat / avenant / paiement / arrêté) */
+function condTable(doc,recalc){
+  const box=h('div',{style:{maxHeight:'230px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=r=>{ box.innerHTML=''; const t=h('table',{class:'g',style:{tableLayout:'auto'}});
     t.append(h('thead',{},h('tr',{},...['NIV','REF','Désignation','Genre','Réf. cond.','Conditions','Montant','M',''].map(x=>h('th',{},x)))));
     const tb=h('tbody');
-    conds.sort((a,b)=>a.niv-b.niv).forEach((c,i)=>{ const inp=(k,w,num2)=>{ const e=h('input',{class:'inp',value:c[k]??'',style:{width:w,height:'22px'}}); e.onchange=()=>{ c[k]=num2?(e.value===''?0:+e.value):e.value; recalc(); }; return e; };
-      const kind=h('select',{class:'inp',style:{height:'22px'}},...Object.entries(COND_DEF).map(([k,d])=>h('option',{value:k,selected:+k===c.kind||null},d[1]))); kind.onchange=()=>{ c.kind=+kind.value; if(!c.lbl||Object.values(COND_DEF).some(d=>d[1]===c.lbl)) c.lbl=COND_DEF[c.kind][1]; recalc(); };
-      const on=h('input',{type:'checkbox',checked:c.on!==false||null}); on.onchange=()=>{ c.on=on.checked; recalc(); };
-      tb.append(h('tr',{},h('td',{},inp('niv','40px',1)),h('td',{},inp('ref','40px',1)),h('td',{},inp('lbl','180px')),h('td',{},kind,' ',condGenre(c.kind)),h('td',{},inp('refCond','60px')),
-        h('td',{},inp('val','90px',1),condPct(c.kind)?' %':''),h('td',{class:'r'},num(res&&res.amt[c.niv])),h('td',{},on),h('td',{},ibtn({i:'minus',fn:()=>{ conds.splice(conds.indexOf(c),1); recalc(); }})))); });
+    doc.conditions.sort((a,b)=>a.niveau-b.niveau).forEach(c=>{ const inp=(k,w,isN)=>{ const e=h('input',{class:'inp',value:c[k]??'',style:{width:w,height:'22px'}}); e.onchange=()=>{ c[k]=isN?(e.value===''?0:+e.value):e.value; recalc(true); }; return e; };
+      const kind=h('select',{class:'inp',style:{height:'22px'}},...Object.entries(COND).map(([k,d])=>h('option',{value:k,selected:+k===c.kind||null},d[2]))); kind.onchange=()=>{ const old=COND[c.kind]; c.kind=+kind.value; c.genre=COND[c.kind][0]; if(!c.libelle||(old&&c.libelle===old[2])) c.libelle=COND[c.kind][2]; recalc(true); };
+      const on=h('input',{type:'checkbox',checked:c.appliquee!==false||null}); on.onchange=()=>{ c.appliquee=on.checked; recalc(true); };
+      tb.append(h('tr',{},h('td',{},inp('niveau','40px',1)),h('td',{},inp('reference','40px',1)),h('td',{},inp('libelle','170px')),h('td',{},kind,' ',condGenre(c.kind)),h('td',{},inp('refCond','60px')),
+        h('td',{},inp('valeur','95px',1),condNat(c.kind)==='pct'?' %':''),h('td',{class:'r'},num(r&&r.par[c.niveau])),h('td',{},on),h('td',{},ibtn({i:'minus',fn:()=>{ doc.conditions.splice(doc.conditions.indexOf(c),1); recalc(true); }})))); });
     t.append(tb); box.append(t); };
-  const add=()=>{ const n=Math.max(0,...conds.map(c=>c.niv))+1; conds.push({niv:n,ref:n-1,kind:1,lbl:'Rabais',refCond:'',val:0,on:true}); recalc(); };
-  const addTva=()=>{ const n=Math.max(0,...conds.map(c=>c.niv))+1; conds.push({niv:n,ref:n-1,kind:6,lbl:'TVA',refCond:'',val:8.1,on:true}); recalc(); };
-  return {box,draw,bar:h('div',{style:{display:'flex',gap:'4px',margin:'4px 0'}},ibtn({i:'plus',t:'Nouvelle condition',fn:add}),ibtn({label:'Ajouter la TVA',fn:addTva}))};
+  const add=kind=>{ const n=Math.max(0,...doc.conditions.map(c=>c.niveau))+1; doc.conditions.push({niveau:n,reference:n-1,kind,genre:COND[kind][0],libelle:COND[kind][2],refCond:'',valeur:kind===6?8.1:0,appliquee:true}); recalc(true); };
+  return {box,draw,bar:h('div',{style:{display:'flex',gap:'4px',margin:'4px 0'}},ibtn({i:'plus',t:'Nouvelle condition',fn:()=>add(1)}),ibtn({label:'Ajouter la TVA',fn:()=>add(6)}),ibtn({label:'Arrondi',fn:()=>add(7)}))};
+}
+/* Grille des lignes (contrat / paiement) avec saisie du brut ou du net */
+function linesGrid(C,doc,cols,recalc){
+  const box=h('div',{style:{maxHeight:'220px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=r=>{ box.innerHTML=''; const t=h('table',{class:'g',style:{tableLayout:'auto'}}), R=ccCalc(C), net=doc.saisie==='net';
+    t.append(h('thead',{},h('tr',{},...['CFC','Texte','Réf. cond.',...cols.map(c=>c.t),doc.cumul?'Cumul acptes bruts':'Brut','Net',''].map(x=>h('th',{},x)))));
+    const tb=h('tbody');
+    doc.lignes.forEach((l,i)=>{ const pos=ccPosSelect(C,l.cfc); pos.style.width='110px'; pos.onchange=()=>{ l.cfc=pos.value; recalc(true); };
+      const ref=h('input',{class:'inp',value:l.refCond||'',style:{width:'60px'}}); ref.onchange=()=>{ l.refCond=ref.value; recalc(true); };
+      const br=h('input',{class:'inp',type:'number',step:'any',value:r2(+l.brut||0),style:{width:'125px'},disabled:net||null}); br.onchange=()=>{ l.brut=+br.value||0; delete l.brutCalcul; l.partsForfaits=null; recalc(true); };
+      const ne=h('input',{class:'inp',type:'number',step:'any',value:r2(r.lines[i].net),style:{width:'125px'},disabled:!net||null}); ne.onchange=()=>{ l.brut=r2(ccBrutFromNet(doc,i,+ne.value||0)); delete l.brutCalcul; l.partsForfaits=null; recalc(true); };
+      tb.append(h('tr',{},h('td',{},pos),h('td',{},R.lbl.get(String(l.cfc))||''),h('td',{},ref),...cols.map(c=>h('td',{class:'r'},c.f(l))),h('td',{},br),h('td',{},ne),h('td',{},ibtn({i:'minus',fn:()=>{ doc.lignes.splice(i,1); recalc(true); }})))); });
+    tb.append(h('tr',{style:{fontWeight:700}},h('td',{},'Total'),h('td'),h('td'),...cols.map(()=>h('td')),h('td',{class:'r'},num(r.T.brut)),h('td',{class:'r'},num(r.T.net)),h('td')));
+    t.append(tb); box.append(t); };
+  return {box,draw};
 }
 /* Contrat / avenant (§6.2, §6.4) */
-function ccContract(C,p,c,type,s,touch,parent){
-  const isNew=!c; const par=parent||(c&&C.contrats.find(x=>x.id===c.parent));
-  const v=c?JSON.parse(JSON.stringify(c)):{id:'c'+Date.now().toString(36),type,parent:par?par.id:null,lie:true,num:type==='avenant'?String(C.contrats.filter(x=>x.parent===(par&&par.id)).length+1):String(Math.max(0,...C.contrats.filter(x=>x.type==='contrat').map(x=>+x.num||0))+1),
-    designation:type==='avenant'?'Avenant':'Contrat',date:today(),statut:'traitement',ent:par?par.ent:(s?s.ent:null),lot:par?{...par.lot}:{num:s?s.cfc:'',txt:''},prioritaire:(C.config.compta||{}).contratPrioritaireDefaut!==false,saisie:'brut',niveau:0,delaiGarantie:'',description:'',
-    lignes:par?[]:(s?[{cfc:s.cfc,ouv:'',ref:'',brut:0}]:[]),conds:par?JSON.parse(JSON.stringify(par.conds||[])):[{niv:1,ref:0,kind:6,lbl:'TVA',refCond:'',val:8.1,on:true}]};
-  const E=ccEntPicker(C,v.ent,x=>v.ent=x);
-  const lotN=h('input',{class:'inp',value:(v.lot||{}).num||'',style:{width:'90px'}}), lotT=h('input',{class:'inp',value:(v.lot||{}).txt||''});
+function ccContract(C,c,type,s,touch,parent){
+  const isNew=!c, par=parent||(c&&C.contrats.find(x=>x.id===c.contratParentId));
+  const v=c?JSON.parse(JSON.stringify(c)):{id:(type==='avenant'?'a':'c')+Date.now().toString(36),type,contratParentId:par?par.id:null,lieAuContrat:true,
+    numero:type==='avenant'?String(C.contrats.filter(x=>x.contratParentId===(par&&par.id)).length+1):ccNextNum(C.contrats.filter(x=>x.type==='contrat'),'numero'),
+    designation:type==='avenant'?'Avenant':'Contrat',date:today(),statut:'enTraitement',contactId:par?par.contactId:(s?s.ent:null),lot:par?{...par.lot}:{numero:s?s.cfc:'',texte:s?'':''},
+    prioritaireSurDevis:(C.parametres||{}).contratPrioritaireDefaut!==false,saisie:(C.parametres||{}).saisieBrutDefaut===false?'net':'brut',niveauPrestations:0,delaiGarantie:'',description:'',annexes:[],
+    lignes:par?[]:(s?[{cfc:s.cfc,ouvrage:'',localisation:'',refCond:'',brut:0}]:[]),conditions:par?JSON.parse(JSON.stringify(par.conditions||[])):[{niveau:1,reference:0,kind:6,genre:'tva',libelle:'TVA',refCond:'',valeur:8.1,appliquee:true}]};
+  let edited=isNew; const E=ccEntPicker(C,v.contactId,x=>v.contactId=x);
+  const lotN=h('input',{class:'inp',value:(v.lot||{}).numero||'',style:{width:'90px'}}), lotT=h('input',{class:'inp',value:(v.lot||{}).texte||''});
   const saisie=h('select',{class:'inp',style:{width:'140px'}},h('option',{value:'net',selected:v.saisie==='net'||null},'Saisie du net'),h('option',{value:'brut',selected:v.saisie!=='net'||null},'Saisie du brut'));
-  const prio=h('input',{type:'checkbox',checked:v.prioritaire!==false||null});
-  const lb=h('div',{style:{maxHeight:'220px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}), tot=h('b');
-  const CT=condTable(v.conds,()=>recalc());
-  const recalc=()=>{ const r=ccConds(v.lignes,v.conds); lb.innerHTML=''; const t=h('table',{class:'g',style:{tableLayout:'auto'}});
-    t.append(h('thead',{},h('tr',{},...['CFC','Texte','Réf. cond.','Brut','Net',''].map(x=>h('th',{},x)))));
-    const tb=h('tbody'), R=ccCompute(C);
-    v.lignes.forEach((l,i)=>{ const pos=ccPosSelect(C,l.cfc); pos.style.width='110px'; pos.onchange=()=>{ l.cfc=pos.value; recalc(); };
-      const ref=h('input',{class:'inp',value:l.ref||'',style:{width:'60px'}}); ref.onchange=()=>{ l.ref=ref.value; recalc(); };
-      const br=h('input',{class:'inp',type:'number',step:'any',value:r2(+l.brut||0),style:{width:'120px'},disabled:saisie.value==='net'||null}); br.onchange=()=>{ l.brut=+br.value||0; recalc(); };
-      const ne=h('input',{class:'inp',type:'number',step:'any',value:r2(r.lines[i].net),style:{width:'120px'},disabled:saisie.value!=='net'||null});
-      ne.onchange=()=>{ const others=v.lignes.filter((_,j)=>j!==i).map(x=>({brut:x.brut,ref:x.ref})); l.brut=r2(ccBrutFromNet(+ne.value||0,l.ref,v.conds,others.length?[]:[])); recalc(); };
-      tb.append(h('tr',{},h('td',{},pos),h('td',{},R.lbl.get(String(l.cfc))||''),h('td',{},ref),h('td',{},br),h('td',{},ne),h('td',{},ibtn({i:'minus',fn:()=>{ v.lignes.splice(i,1); recalc(); }})))); });
-    tb.append(h('tr',{style:{fontWeight:700}},h('td',{},'Total'),h('td'),h('td'),h('td',{class:'r'},num(r.brut)),h('td',{class:'r'},num(r.net)),h('td')));
-    t.append(tb); lb.append(t); CT.draw(r); tot.textContent='Net '+num(r.net)+' CHF (dont TVA '+num(r.tva)+')'; };
-  saisie.onchange=()=>recalc();
-  const num2=h('input',{class:'inp',value:v.num||'',style:{width:'70px'}}), des=h('input',{class:'inp',value:v.designation||''}), dt=h('input',{class:'inp',type:'date',value:v.date||''});
-  const st=h('select',{class:'inp'},...Object.entries(CC_CTR_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t))), dsc=h('textarea',{class:'inp',rows:2},v.description||''), gar=h('input',{class:'inp',value:v.delaiGarantie||''});
+  const prio=h('input',{type:'checkbox',checked:v.prioritaireSurDevis!==false||null}), tot=h('b');
+  const LG=linesGrid(C,v,[],()=>recalc(true)), CT=condTable(v,x=>recalc(x));
+  const recalc=ch=>{ if(ch) edited=true; const r=ccCond(v.lignes,v.conditions); LG.draw(r); CT.draw(r); tot.textContent='Net '+num(r.T.net)+' CHF (dont TVA '+num(r.T.tva)+')'+(!edited&&v.totauxDelta&&Math.abs(r.T.net-v.totauxDelta.net)>0.05?' — stocké '+num(v.totauxDelta.net):''); };
+  saisie.onchange=()=>{ v.saisie=saisie.value; recalc(); };
+  const num2=h('input',{class:'inp',value:v.numero||'',style:{width:'70px'}}), des=h('input',{class:'inp',value:v.designation||''}), dt=h('input',{class:'inp',type:'date',value:v.date||''});
+  const st=h('select',{class:'inp'},...Object.entries(CTR_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t))), dsc=h('textarea',{class:'inp',rows:2},v.description||''), gar=h('input',{class:'inp',value:v.delaiGarantie||''});
   const body=h('div',{style:{minWidth:'980px'}},formRows([['Entreprise',E],['Lot d’adjudication',h('div',{style:{display:'flex',gap:'6px'}},lotN,lotT)]],900),
-    h('div',{style:{display:'flex',alignItems:'center',gap:'10px',margin:'10px 0 4px'}},h('b',{},type==='avenant'?'Positions de l’avenant (lié au contrat) :':'Positions du contrat :'),type==='contrat'?h('label',{},prio,' Contrat prioritaire sur le devis pour le coût probable'):null,h('div',{style:{flex:1}}),saisie,ibtn({i:'plus',t:'Ajouter Position',fn:()=>{ v.lignes.push({cfc:'',ouv:'',ref:'',brut:0}); recalc(); }})),lb,
+    h('div',{style:{display:'flex',alignItems:'center',gap:'10px',margin:'10px 0 4px'}},h('b',{},type==='avenant'?'Positions de l’avenant (lié au contrat) :':'Positions du contrat :'),type==='contrat'?h('label',{},prio,' Contrat prioritaire sur le devis pour le coût probable'):null,h('div',{style:{flex:1}}),saisie,ibtn({i:'plus',t:'Ajouter Position',fn:()=>{ v.lignes.push({cfc:'',ouvrage:'',localisation:'',refCond:'',brut:0}); recalc(true); }})),LG.box,
     h('div',{style:{display:'flex',alignItems:'center',gap:'10px',margin:'10px 0 0'}},h('b',{},type==='avenant'?'Conditions de l’avenant :':'Conditions du contrat :'),h('div',{style:{flex:1}}),tot),CT.bar,CT.box,
     h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 24px',marginTop:'10px'}},formRows([['Désignation',des],['Numéro',num2],['Date',dt],['Statut',st]],420),formRows([['Description',dsc],['Délai de garantie',gar]],420)));
   recalc();
-  dialog({title:(type==='avenant'?'Avenant ':'')+ccEntName(C,v.ent),width:'1080px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+  dialog({title:(type==='avenant'?'Avenant ':'')+ccEntName(C,v.contactId),width:'1080px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
     if(!lotN.value.trim()){ toast('Veuillez définir le lot d’adjudication.',true); return false; }
     if(!num2.value.trim()){ toast('Vous n’avez défini aucun numéro de contrat.',true); return false; }
-    if(type==='contrat'&&C.contrats.some(x=>x.type==='contrat'&&x!==c&&x.num===num2.value.trim())){ toast('Le numéro de contrat '+num2.value+' est déjà utilisé.',true); return false; }
-    const last=v.conds.slice().sort((a,b)=>b.niv-a.niv)[0]; if((!last||last.kind!==6)&&!await confirmDlg('La dernière condition n’est pas le TVA. Voulez-vous enregistrer ce contrat?','Enregistrer')) return false;
-    Object.assign(v,{ent:E.get(),lot:{num:lotN.value.trim(),txt:lotT.value.trim()},saisie:saisie.value,prioritaire:prio.checked,num:num2.value.trim(),designation:des.value,date:dt.value,statut:st.value,description:dsc.value,delaiGarantie:gar.value});
+    if(type==='contrat'&&C.contrats.some(x=>x.type==='contrat'&&x.id!==v.id&&x.numero===num2.value.trim())){ toast('Le numéro de contrat '+num2.value+' est déjà utilisé.',true); return false; }
+    const last=v.conditions.slice().sort((a,b)=>b.niveau-a.niveau)[0]; if((!last||last.kind!==6)&&!await confirmDlg('La dernière condition n’est pas le TVA. Voulez-vous enregistrer ce contrat?','Enregistrer')) return false;
+    if(edited) ccApply(v);
+    Object.assign(v,{contactId:E.get(),lot:{numero:lotN.value.trim(),texte:lotT.value.trim()},saisie:saisie.value,prioritaireSurDevis:prio.checked,numero:num2.value.trim(),designation:des.value,date:dt.value,statut:st.value,description:dsc.value,delaiGarantie:gar.value});
     if(isNew) C.contrats.push(v); else Object.assign(c,v); touch(); }}]});
 }
-/* Paiement sur contrat / hors contrat (§7.1-7.2) : situations cumulées, retenue de garantie, paiements à ce jour */
-function ccPayment(C,p,x,ctr,s,touch){
-  const isNew=!x, cfgD=(C.config.compta||{}).joursPaiement||30;
-  const prevOf=v=>C.paiements.filter(y=>y!==x&&y.contrat&&v.contrat&&y.contrat===v.contrat).sort((a,b)=>cmp(+a.num,+b.num)||cmp(a.datePaiement,b.datePaiement));
-  const linked=ctr?[ctr,...C.contrats.filter(a=>a.parent===ctr.id&&a.lie!==false)]:[];
+/* Paiement sur contrat / hors contrat (§7) : situation = brut CUMULÉ ; retenue de garantie ; « Paiements à ce jour » figé */
+function ccPayment(C,x,ctr,s,touch){
+  const isNew=!x, pp=C.parametres||{}, jours=pp.joursPaiementApresFacture||30;
+  const linked=ctr?[ctr,...C.contrats.filter(a=>a.contratParentId===ctr.id&&a.lieAuContrat!==false)]:[];
+  const ids=new Set(linked.map(c=>c.id));
+  const prevOf=()=>C.paiements.filter(y=>y.id!==(x&&x.id)&&y.contratId&&ids.has(y.contratId));
   let v;
   if(x) v=JSON.parse(JSON.stringify(x));
-  else { const last=ctr?prevOf({contrat:ctr.id}).slice(-1)[0]:null;
-    const lignes=ctr?[...new Set(linked.flatMap(c=>(c.lignes||[]).map(l=>String(l.cfc))))].map(cfc=>({cfc,ouv:'',ref:((ctr.lignes||[]).find(l=>String(l.cfc)===cfc)||{}).ref||'',brut:last?(((last.lignes||[]).find(l=>String(l.cfc)===cfc)||{}).brut||0):0})):(s?[{cfc:s.cfc,ouv:'',ref:'',brut:0}]:[]);
-    let conds;
-    if(last) conds=JSON.parse(JSON.stringify(last.conds||[]));
-    else if(ctr){ conds=JSON.parse(JSON.stringify(ctr.conds||[])).filter(c=>c.kind!==6); let n=Math.max(0,...conds.map(c=>c.niv));
-      conds.push({niv:++n,ref:n-1,kind:4,lbl:'Retenue de garantie (%)',refCond:'',val:-10,on:true},{niv:++n,ref:n-1,kind:20,lbl:'Paiements à ce jour',refCond:'',val:0,on:true});
-      const tva=(ctr.conds||[]).filter(c=>c.kind===6); tva.forEach(t=>conds.push({...t,niv:++n,ref:n-1})); if(!tva.length) conds.push({niv:++n,ref:n-1,kind:6,lbl:'TVA',refCond:'',val:8.1,on:true}); }
-    else conds=[{niv:1,ref:0,kind:3,lbl:'Escompte',refCond:'',val:0,on:false},{niv:2,ref:1,kind:6,lbl:'TVA',refCond:'',val:8.1,on:true}];
-    const df=today(), dp=(()=>{ const d=new Date(); d.setDate(d.getDate()+cfgD); return diso(d); })();
-    v={id:'p'+Date.now().toString(36),contrat:ctr?ctr.id:null,code:ctr?'AC':'GC',genre:ctr?'contrat':'hors_contrat',dernier:false,num:String(Math.max(0,...C.paiements.map(y=>+y.num||0))+1),numFacture:'',dateFacture:df,datePaiement:dp,
-      statut:(C.config.compta||{}).statutPaiementDefaut||'transmis',commentaire:ctr?'Situation':'Paiement',description:'',niveau:0,ent:ctr?ctr.ent:(s?s.ent:null),lot:ctr?{...ctr.lot}:{num:s?s.cfc:'',txt:''},saisie:'net',lignes,conds,banque:{},annexes:[],ordre:null}; }
-  /* « Paiements à ce jour » = Σ HT (après conditions, avant TVA) des paiements précédents du même contrat */
-  const syncSI=()=>{ const si=v.conds.find(c=>c.kind===20); if(!si||!v.contrat) return; si.val=prevOf(v).reduce((a,y)=>a+ccConds(y.lignes||[],y.conds).ht,0); };
-  if(isNew) syncSI();
-  const E=ccEntPicker(C,v.ent,y=>v.ent=y);
+  else { const prev=prevOf(), last=prev[prev.length-1];
+    const cfcs=ctr?[...new Set(linked.flatMap(c=>(c.lignes||[]).map(l=>String(l.cfc))))]:(s?[s.cfc]:[]);
+    const lignes=cfcs.map(cfc=>({cfc,ouvrage:'',localisation:'',refCond:((ctr&&ctr.lignes||[]).find(l=>String(l.cfc)===cfc)||{}).refCond||'',brut:last?(((last.lignes||[]).find(l=>String(l.cfc)===cfc)||{}).brut||0):0}));
+    let conditions;
+    if(last) conditions=JSON.parse(JSON.stringify(last.conditions||[]));
+    else if(ctr){ conditions=JSON.parse(JSON.stringify(ctr.conditions||[])).filter(c=>c.kind!==6); let n=Math.max(0,...conditions.map(c=>c.niveau));
+      conditions.push({niveau:++n,reference:n-1,kind:4,genre:'retenueGarantie',libelle:'Retenue de garantie (%)',refCond:'',valeur:-10,appliquee:true},{niveau:++n,reference:n-1,kind:20,genre:'paiementsAnterieurs',libelle:'Paiements à ce jour',refCond:'',valeur:0,appliquee:true});
+      const tv=(ctr.conditions||[]).filter(c=>c.kind===6); (tv.length?tv:[{kind:6,genre:'tva',libelle:'TVA',refCond:'',valeur:8.1,appliquee:true}]).forEach(t=>conditions.push({...t,niveau:n+1,reference:n})); }
+    else conditions=[{niveau:1,reference:0,kind:3,genre:'escompte',libelle:'Escompte',refCond:'',valeur:0,appliquee:false},{niveau:2,reference:1,kind:6,genre:'tva',libelle:'TVA',refCond:'',valeur:8.1,appliquee:true}];
+    const g=(C.genresPaiement||[]).find(z=>z.genre===(ctr?'surContrat':'horsContrat'))||{};
+    v={id:'p'+Date.now().toString(36),contratId:ctr?ctr.id:null,genre:ctr?'surContrat':'horsContrat',genreCode:ctr?1:3,genreTexte:g.texte||(ctr?'Situation':'Paiement'),dernier:false,numero:ccNextNum(C.paiements,'numero'),numeroFacture:'',
+      dateFacture:today(),datePaiement:(()=>{ const d=new Date(); d.setDate(d.getDate()+jours); return diso(d); })(),statut:pp.statutPaiementDefaut||'transmis',commentaire:g.texte||'',description:'',
+      contactId:ctr?ctr.contactId:(s?s.ent:null),lot:ctr?{...ctr.lot}:{numero:s?s.cfc:'',texte:''},saisie:'net',lignes,conditions,banque:{texteCompte:pp.texteCompte||''},annexes:[]}; }
+  v.cumul=!!ctr;
+  /* « Paiements à ce jour » = Σ (net − TVA) des paiements antérieurs du même contrat (+ avenants liés) */
+  const syncSI=()=>{ const si=v.conditions.find(c=>c.kind===20); if(!si||!ctr) return; si.valeur=r2(prevOf().reduce((a,y)=>a+docNet(y)-docTva(y),0)); };
+  let edited=isNew; if(isNew) syncSI();
+  const E=ccEntPicker(C,v.contactId,y=>v.contactId=y);
   const saisie=h('select',{class:'inp',style:{width:'140px'}},h('option',{value:'net',selected:v.saisie==='net'||null},'Saisie du net'),h('option',{value:'brut',selected:v.saisie!=='net'||null},'Saisie du brut'));
-  const lb=h('div',{style:{maxHeight:'200px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}), tot=h('b');
-  const CT=condTable(v.conds,()=>recalc());
-  const adj=cfc=>linked.reduce((a,c)=>{ const r=ccConds(c.lignes||[],c.conds); (c.lignes||[]).forEach((l,i)=>{ if(String(l.cfc)===cfc){ a.b+=+l.brut||0; a.n+=r.lines[i].net; } }); return a; },{b:0,n:0});
-  const recalc=()=>{ const r=ccConds(v.lignes,v.conds), R=ccCompute(C); lb.innerHTML=''; const t=h('table',{class:'g',style:{tableLayout:'auto'}});
-    t.append(h('thead',{},h('tr',{},...['CFC','Texte','Réf. cond.',...(ctr?['Adjudication brute','Adjudication nette']:[]),ctr?'Cumul acptes bruts':'Paiement brut','Paiement net',''].map(y=>h('th',{},y)))));
-    const tb=h('tbody');
-    v.lignes.forEach((l,i)=>{ const pos=ccPosSelect(C,l.cfc); pos.style.width='110px'; pos.onchange=()=>{ l.cfc=pos.value; recalc(); };
-      const a=adj(String(l.cfc)); const br=h('input',{class:'inp',type:'number',step:'any',value:r2(+l.brut||0),style:{width:'120px'},disabled:saisie.value==='net'||null}); br.onchange=()=>{ l.brut=+br.value||0; recalc(); };
-      const ne=h('input',{class:'inp',type:'number',step:'any',value:r2(r.lines[i].net),style:{width:'120px'},disabled:saisie.value!=='net'||null});
-      ne.onchange=()=>{ l.brut=r2(ccBrutFromNet(+ne.value||0,l.ref,v.conds,[])); recalc(); };
-      tb.append(h('tr',{},h('td',{},pos),h('td',{},R.lbl.get(String(l.cfc))||''),h('td',{},l.ref||''),...(ctr?[h('td',{class:'r'},num(a.b)),h('td',{class:'r'},num(a.n))]:[]),h('td',{},br),h('td',{},ne),h('td',{},ibtn({i:'minus',fn:()=>{ v.lignes.splice(i,1); recalc(); }})))); });
-    tb.append(h('tr',{style:{fontWeight:700}},h('td',{},'Total'),h('td'),h('td'),...(ctr?[h('td'),h('td')]:[]),h('td',{class:'r'},num(r.brut)),h('td',{class:'r'},num(r.net)),h('td')));
-    t.append(tb); lb.append(t); CT.draw(r); tot.textContent='Paiement net '+num(r.net)+' CHF (TVA '+num(r.tva)+')'; };
-  saisie.onchange=()=>recalc();
+  const tot=h('b');
+  const adj=cfc=>linked.reduce((a,c)=>{ (c.lignes||[]).forEach(l=>{ if(String(l.cfc)===cfc){ a.b+=+l.brut||0; a.n+=+l.net||0; } }); return a; },{b:0,n:0});
+  const LG=linesGrid(C,v,ctr?[{t:'Adjudication brute',f:l=>num(adj(String(l.cfc)).b)},{t:'Adjudication nette',f:l=>num(adj(String(l.cfc)).n)}]:[],()=>recalc(true)), CT=condTable(v,y=>recalc(y));
+  const recalc=ch=>{ if(ch) edited=true; const r=ccCond(v.lignes,v.conditions); LG.draw(r); CT.draw(r); tot.textContent='Paiement net '+num(r.T.net)+' CHF (TVA '+num(r.T.tva)+')'; };
+  saisie.onchange=()=>{ v.saisie=saisie.value; recalc(); };
   const last=h('input',{type:'checkbox',checked:v.dernier||null});
-  last.onchange=()=>{ const g=v.conds.find(c=>c.kind===4||c.kind===5); if(g) g.on=!last.checked; if(last.checked&&ctr){ v.code='AZ'; com.value='Paiement final'; } recalc(); };
-  const com=h('input',{class:'inp',value:v.commentaire||'',style:{width:'160px'}}), st=h('select',{class:'inp'},...Object.entries(CC_PAY_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t)));
-  const code=h('select',{class:'inp'},...(C.config.payGenres||[]).map(g=>h('option',{value:g.code,selected:g.code===v.code||null},g.texte)));
-  const num2=h('input',{class:'inp',value:v.num||'',style:{width:'70px'}}), df=h('input',{class:'inp',type:'date',value:v.dateFacture||''}), nf=h('input',{class:'inp',value:v.numFacture||'',style:{width:'120px'}}), dp=h('input',{class:'inp',type:'date',value:v.datePaiement||''});
-  df.onchange=()=>{ const d=new Date(df.value+'T00:00'); d.setDate(d.getDate()+cfgD); dp.value=diso(d); };
+  last.onchange=()=>{ v.conditions.filter(c=>c.kind===4||c.kind===5).forEach(c=>c.appliquee=!last.checked);
+    if(last.checked&&ctr){ const g=(C.genresPaiement||[]).find(z=>z.genre==='surContratFinal'); if(g){ code.value=g.code; com.value=g.texte; } } recalc(true); };
+  const com=h('input',{class:'inp',value:v.commentaire||'',style:{width:'180px'}}), st=h('select',{class:'inp'},...Object.entries(PAY_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t)));
+  const code=h('select',{class:'inp'},...(C.genresPaiement||[]).map(g=>h('option',{value:g.code,selected:g.texte===v.genreTexte||null},g.texte)));
+  const num2=h('input',{class:'inp',value:v.numero||'',style:{width:'80px'}}), df=h('input',{class:'inp',type:'date',value:v.dateFacture||''}), nf=h('input',{class:'inp',value:v.numeroFacture||'',style:{width:'120px'}}), dp=h('input',{class:'inp',type:'date',value:v.datePaiement||''});
+  df.onchange=()=>{ const d=new Date(df.value+'T00:00'); d.setDate(d.getDate()+jours); dp.value=diso(d); };
   const dsc=h('textarea',{class:'inp',rows:2},v.description||'');
-  const body=h('div',{style:{minWidth:'980px'}},formRows([['Entreprise',E],['Lot d’adjudication',h('span',{},((v.lot||{}).num||'')+' '+((v.lot||{}).txt||''))]],900),
-    h('div',{style:{display:'flex',alignItems:'center',gap:'10px',margin:'10px 0 4px'}},h('b',{},'Positions du paiement'),h('div',{style:{flex:1}}),saisie,ibtn({i:'plus',fn:()=>{ v.lignes.push({cfc:'',ouv:'',ref:'',brut:0}); recalc(); }})),lb,
-    h('div',{style:{display:'flex',alignItems:'center',gap:'10px',margin:'10px 0 0'}},h('b',{},'Conditions du paiement'),h('div',{style:{flex:1}}),ibtn({label:'Recalculer « Paiements à ce jour »',fn:()=>{ syncSI(); recalc(); }}),tot),CT.bar,CT.box,
+  const body=h('div',{style:{minWidth:'980px'}},formRows([['Entreprise',E],['Lot d’adjudication',h('span',{},((v.lot||{}).numero||'')+' '+((v.lot||{}).texte||''))]],900),
+    h('div',{style:{display:'flex',alignItems:'center',gap:'10px',margin:'10px 0 4px'}},h('b',{},'Positions du paiement'),h('div',{style:{flex:1}}),saisie,ibtn({i:'plus',fn:()=>{ v.lignes.push({cfc:'',ouvrage:'',localisation:'',refCond:'',brut:0}); recalc(true); }})),LG.box,
+    h('div',{style:{display:'flex',alignItems:'center',gap:'10px',margin:'10px 0 0'}},h('b',{},'Conditions du paiement'),h('div',{style:{flex:1}}),ctr?ibtn({label:'Recalculer « Paiements à ce jour »',fn:()=>{ syncSI(); recalc(true); }}):null,tot),CT.bar,CT.box,
     h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 24px',marginTop:'10px'}},formRows([['Description',dsc],['Commentaire',com],['Genre de paiement',code],['Statut',st],['',h('label',{style:{textAlign:'left'}},last,' Dernier paiement')]],420),
       formRows([['N° pmt',num2],['Date fact.',df],['N° fact',nf],['Date pmt',dp]],360)));
   recalc();
-  if(x&&['transmis','debite'].includes(x.statut)) toast('Paiement '+CC_PAY_ST[x.statut]+' : vérifiez avant toute modification.',true);
-  dialog({title:ccEntName(C,v.ent),width:'1080px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
-    const r=ccConds(v.lignes,v.conds); if(!r.net){ toast('Ce paiement n’a pas de montant.',true); return false; }
-    if(C.paiements.some(y=>y!==x&&String(y.num)===num2.value.trim())){ toast('Le numéro de paiement '+num2.value+' est déjà utilisé.',true); return false; }
-    if(ctr&&!last.checked){ const tot2=prevOf(v).reduce((a,y)=>a+ccConds(y.lignes||[],y.conds).net,0)+r.net, cmax=linked.reduce((a,c)=>a+ccConds(c.lignes||[],c.conds).net,0);
+  if(x&&['transmis','debite'].includes(x.statut)) toast('Paiement '+PAY_ST[x.statut]+' : modification à faire avec prudence.',true);
+  dialog({title:ccEntName(C,v.contactId),width:'1080px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    const r=ccCond(v.lignes,v.conditions); if(!r.T.net){ toast('Ce paiement n’a pas de montant.',true); return false; }
+    if(C.paiements.some(y=>y.id!==v.id&&String(y.numero)===num2.value.trim())){ toast('Le numéro de paiement '+num2.value+' est déjà utilisé.',true); return false; }
+    if(ctr&&!last.checked){ const tot2=prevOf().reduce((a,y)=>a+docNet(y),0)+r.T.net, cmax=linked.reduce((a,c)=>a+docNet(c),0);
       if(tot2>cmax+0.05&&!await confirmDlg('En tenant compte de la retenue de garantie, le total des paiements sera supérieur à l’adjudication. Souhaitez-vous enregistrer ce paiement?','Enregistrer')) return false; }
-    const g=(C.config.payGenres||[]).find(z=>z.code===code.value)||{};
-    Object.assign(v,{saisie:saisie.value,dernier:last.checked,commentaire:com.value,statut:st.value,code:code.value,genre:g.genre||v.genre,num:num2.value.trim(),dateFacture:df.value,numFacture:nf.value,datePaiement:dp.value,description:dsc.value});
+    if(edited) ccApply(v);
+    const g=(C.genresPaiement||[]).find(z=>z.code===code.value)||{};
+    delete v.cumul;
+    Object.assign(v,{saisie:saisie.value,dernier:last.checked,commentaire:com.value,statut:st.value,genre:g.genre||v.genre,genreTexte:g.texte||v.genreTexte,numero:num2.value.trim(),dateFacture:df.value,numeroFacture:nf.value,datePaiement:dp.value,description:dsc.value});
     if(isNew) C.paiements.push(v); else Object.assign(x,v); touch(); }}]});
 }
 /* Attribuer le devis général validé (§3) */
@@ -2265,58 +2313,62 @@ async function ccAssignDG(C,p,touch){
   grid(box,Object.assign(o,{cols:[{k:'VERSION',t:'Version'},{k:'CHANGEDDATE',t:'Date',w:90,f:d=>dfr(d.CHANGEDDATE)},{k:'t',t:'Total TTC',w:120,cls:'r',f:d=>num(dvCompute(DS.get('costestimate',d.ID)).T.ttc)}],rows:ds}));
   dialog({title:'Attribuer le devis général',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const d=DS.get('costestimatedocument',o.sel); if(!d) return false; const E=DS.get('costestimate',d.ID), {M}=dvCompute(E);
     const map=new Map(C.positions.map(x=>[String(x.cfc),x]));
-    (E.positions||[]).forEach(x=>{ const n=M.get(String(x.cfc)); if(!n||!n.leaf) return; const tva=((((x.parts||[])[0]||{}).lignes||[])[0]||{}).tva??8.1;
-      const pos=map.get(String(x.cfc))||{cfc:String(x.cfc),lbl:x.texte||'',lbl2:x.texte2||'',genere:false}; pos.dg={ht:r2(n.ht),taux:tva,ttc:r2(n.ttc)}; map.set(String(x.cfc),pos); });
-    C.positions=[...map.values()].sort((a,b)=>cfcCmp(a.cfc,b.cfc)); touch(); toast('Devis attribué.'); }}]});
+    (E.positions||[]).forEach(x=>{ const n=M.get(String(x.cfc)), cfc=String(x.cfc); const po=map.get(cfc)||{cfc,libelle:x.texte||'',libelle2:x.texte2||'',genere:!n||!n.leaf,commentaire:'',lignesCalcul:[],parOuvrage:[]};
+      if(n&&n.leaf){ const tva=(((x.parts||[])[0]||{}).lignes||[])[0]; po.tauxTVA=tva?tva.tva:8.1; po.dgTTC=r2(n.ttc); po.dgHT=r2(n.ht); po.dgTVA=r2(n.ttc-n.ht);
+        po.parOuvrage=Object.entries(n.byOuv).filter(([o])=>o).map(([o,a])=>({ouvrage:o,localisation:'',ouvrageId:((E.ouvrages||[]).find(z=>z.code===o)||{}).SUBPROJECT_ID||null,dgHT:r2(a.ht),dgTVA:r2(a.ttc-a.ht),dgTTC:r2(a.ttc),actif:true})); }
+      else { po.dgTTC=po.dgTTC||0; po.dgHT=po.dgHT||0; po.dgTVA=po.dgTVA||0; }
+      map.set(cfc,po); });
+    C.positions=[...map.values()].sort((a,b)=>cfcCmp(a.cfc,b.cfc)); if(!C.ouvragesProjet) C.ouvragesProjet=DS.by('subproject','PROJECT_ID',p.ID).map(s=>s.CODE);
+    touch(); toast('Devis attribué.'); }}]});
 }
-function ccConfig(C,touch){ const cp=C.config.compta||(C.config.compta={}); const j=h('input',{class:'inp',type:'number',value:cp.joursPaiement??30,style:{width:'70px'}}), t=h('input',{class:'inp',value:cp.texteCompte||''});
-  const pr=h('input',{type:'checkbox',checked:cp.contratPrioritaireDefaut!==false||null});
+function ccConfig(C,touch){ const pp=C.parametres||(C.parametres={}); const j=h('input',{class:'inp',type:'number',value:pp.joursPaiementApresFacture??30,style:{width:'70px'}}), t=h('input',{class:'inp',value:pp.texteCompte||''});
+  const pr=h('input',{type:'checkbox',checked:pp.contratPrioritaireDefaut!==false||null});
   dialog({title:'Configuration',body:formRows([['Date de paiement',h('div',{},j,' jours après la date de facture')],['Insérer à la place du numéro de compte',t],['',h('label',{style:{textAlign:'left'}},pr,' Prédéfinir le contrat comme prioritaire sur le devis pour le coût probable')]],620),
-    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ cp.joursPaiement=+j.value||30; cp.texteCompte=t.value; cp.contratPrioritaireDefaut=pr.checked; touch(); }}]}); }
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ pp.joursPaiementApresFacture=+j.value||30; pp.texteCompte=t.value; pp.contratPrioritaireDefaut=pr.checked; touch(); }}]}); }
 /* Ordres de paiement (§8) + bon de paiement */
-function ccOrders(pane,C,p,touch,nid){
-  const oo={}, op={}, L=h('div',{class:'col',style:{flex:'0 0 420px',border:0,borderRight:'1px solid var(--line)'}}), R=h('div',{class:'col fill',style:{border:0}}), lp=h('div',{class:'pane'}), rp=h('div',{class:'pane'});
+function ccOrders(pane,C,p,touch){
+  const oo={}, op={}, L=h('div',{class:'col',style:{flex:'0 0 440px',border:0,borderRight:'1px solid var(--line)'}}), R=h('div',{class:'col fill',style:{border:0}}), lp=h('div',{class:'pane'}), rp=h('div',{class:'pane'});
   const wrap=h('div',{class:'cols',style:{padding:0,height:'100%'}}); wrap.append(L,R); pane.append(wrap);
-  const cur=()=>C.ordres.find(o=>o.id===oo.sel);
-  const edO=o=>{ const v=o?{...o}:{id:nid('o'),num:String(Math.max(0,...C.ordres.map(x=>+x.num||0))+1),date:today(),valeur:today(),statut:'brouillon',paiements:[]};
-    const n=h('input',{class:'inp',value:v.num,style:{width:'80px'}}), d=h('input',{class:'inp',type:'date',value:v.date||''}), dv=h('input',{class:'inp',type:'date',value:v.valeur||''}), st=h('select',{class:'inp'},...Object.entries(CC_ORD_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t)));
+  const OP=C.ordresPaiement, cur=()=>OP.find(o=>o.id===oo.sel), paysOf=o=>C.paiements.filter(x=>(o.paiementIds||[]).includes(x.id));
+  const edO=o=>{ const v=o?{...o}:{id:'o'+Date.now().toString(36),numero:ccNextNum(OP,'numero'),date:today(),dateValeur:today(),statut:'enTraitement',paiementIds:[]};
+    const n=h('input',{class:'inp',value:v.numero,style:{width:'80px'}}), d=h('input',{class:'inp',type:'date',value:v.date||''}), dv=h('input',{class:'inp',type:'date',value:v.dateValeur||''}), st=h('select',{class:'inp'},...Object.entries(ORD_ST).map(([k,t])=>h('option',{value:k,selected:k===v.statut||null},t)));
     dialog({title:'Ordre de paiement',body:formRows([['Numéro',n],['Date',d],['Date de valeur',dv],['Statut',st]],380),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
-      const chg=o&&o.statut!==st.value; Object.assign(v,{num:n.value,date:d.value,valeur:dv.value,statut:st.value});
-      if(o){ Object.assign(o,v); if(chg&&['transmis','debite'].includes(st.value)&&await confirmDlg('Souhaitez-vous attribuer un nouveau statut à cet ordre de paiement? (propagé aux paiements)','Oui')) C.paiements.filter(x=>x.ordre===o.id).forEach(x=>x.statut=st.value); } else C.ordres.push(v); touch(); }}]}); };
-  L.append(phead([{i:'plus',fn:()=>edO()},{i:'edit',fn:()=>cur()&&edO(cur())},{i:'minus',fn:async()=>{ const o=cur(); if(o&&await confirmDlg('Supprimer cet ordre de paiement ?','Supprimer')){ C.paiements.filter(x=>x.ordre===o.id).forEach(x=>x.ordre=null); C.ordres=C.ordres.filter(x=>x!==o); touch(); } }}]),lp);
-  R.append(phead([{i:'plus',t:'Ajouter des paiements',fn:()=>{ const o=cur(); if(!o) return; const free=C.paiements.filter(x=>!x.ordre), s2={multi:true}, box=h('div',{style:{width:'640px',height:'320px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
-      grid(box,Object.assign(s2,{key:x=>x.id,cols:[{k:'num',t:'N° pmt',w:60},{k:'e',t:'Créditeur',f:x=>esc(ccEntName(C,x.ent))},{k:'m',t:'Montant',w:120,cls:'r',f:x=>num(ccConds(x.lignes||[],x.conds).net)},{k:'s',t:'Statut',w:90,f:x=>CC_PAY_ST[x.statut]||''}],rows:free}));
-      dialog({title:'Paiements pour ordre',body:box,buttons:[{t:'Fermer'},{t:'OK',pri:true,fn:()=>{ free.filter(x=>s2.selSet.has(x.id)).forEach(x=>x.ordre=o.id); touch(); }}]}); }},
-    {i:'minus',t:'Retirer le paiement',fn:()=>{ const x=C.paiements.find(y=>y.id===op.sel); if(x){ x.ordre=null; touch(); } }},
+      const chg=o&&o.statut!==st.value; Object.assign(v,{numero:n.value,date:d.value,dateValeur:dv.value,statut:st.value});
+      if(o){ Object.assign(o,v); if(chg&&['transmis','debite'].includes(st.value)&&await confirmDlg('Souhaitez-vous attribuer un nouveau statut à cet ordre de paiement? (propagé aux paiements)','Oui')) paysOf(o).forEach(x=>x.statut=st.value); } else OP.push(v); touch(); }}]}); };
+  L.append(phead([{i:'plus',fn:()=>edO()},{i:'edit',fn:()=>cur()&&edO(cur())},{i:'minus',fn:async()=>{ const o=cur(); if(o&&await confirmDlg('Supprimer cet ordre de paiement ?','Supprimer')){ C.ordresPaiement=OP.filter(x=>x!==o); touch(); } }}]),lp);
+  R.append(phead([{i:'plus',t:'Ajouter des paiements',fn:()=>{ const o=cur(); if(!o) return; const used=new Set(OP.flatMap(x=>x.paiementIds||[])), free=C.paiements.filter(x=>!used.has(x.id)), s2={multi:true}, box=h('div',{style:{width:'680px',height:'320px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+      grid(box,Object.assign(s2,{key:x=>x.id,cols:[{k:'numero',t:'N° pmt',w:60},{k:'e',t:'Créditeur',f:x=>esc(ccEntName(C,x.contactId))},{k:'m',t:'Montant',w:120,cls:'r',f:x=>num(docNet(x))},{k:'s',t:'Statut',w:90,f:x=>PAY_ST[x.statut]||''}],rows:free}));
+      dialog({title:'Paiements pour ordre',body:box,buttons:[{t:'Fermer'},{t:'OK',pri:true,fn:()=>{ o.paiementIds=[...(o.paiementIds||[]),...free.filter(x=>s2.selSet.has(x.id)).map(x=>x.id)]; touch(); }}]}); }},
+    {i:'minus',t:'Retirer le paiement',fn:()=>{ const o=cur(); if(o&&op.sel){ o.paiementIds=(o.paiementIds||[]).filter(i=>i!==op.sel); touch(); } }},
     {i:'doc',t:'Documents',menu:()=>[{t:'Ordre de paiement',dis:!cur(),fn:()=>ccPrintOrder(C,p,cur())},{t:'Bon de paiement',dis:!op.sel,fn:()=>ccPrintBon(C,p,C.paiements.find(y=>y.id===op.sel))}]}]),rp);
-  const drawR=()=>{ const o=cur(); const ps=o?C.paiements.filter(x=>x.ordre===o.id):[];
-    grid(rp,Object.assign(op,{key:x=>x.id,cols:[{k:'lot',t:'N°',w:60,f:x=>esc((x.lot||{}).num||'')},{k:'b',t:'Bénéficiaire',w:260,f:x=>esc(ccEntName(C,x.ent))},{k:'num',t:'N° Paiement',w:80,cls:'r'},
-      {k:'m',t:'Paiements TTC',w:130,cls:'r',f:x=>num(ccConds(x.lignes||[],x.conds).net)},{k:'s',t:'Statut',w:90,f:x=>CC_PAY_ST[x.statut]||''}],rows:ps,sort:['num',1]}));
-    rp.append(h('div',{class:'card',style:{fontWeight:700}},'Total '+num(ps.reduce((a,x)=>a+ccConds(x.lignes||[],x.conds).net,0))+' CHF')); };
-  grid(lp,Object.assign(oo,{key:o=>o.id,cols:[{k:'num',t:'N°',w:50},{k:'date',t:'Date',w:90,f:o=>dfr(o.date)},{k:'n',t:'Paiements',w:80,cls:'r',f:o=>C.paiements.filter(x=>x.ordre===o.id).length},{k:'statut',t:'Statut',f:o=>CC_ORD_ST[o.statut]||o.statut||''}],
-    rows:C.ordres,sort:['num',-1],onSel:drawR,onDbl:edO})); drawR();
+  const drawR=()=>{ const o=cur(), ps=o?paysOf(o):[];
+    grid(rp,Object.assign(op,{key:x=>x.id,cols:[{k:'lot',t:'N°',w:60,f:x=>esc((x.lot||{}).numero||'')},{k:'b',t:'Bénéficiaire',w:280,f:x=>esc(ccEntName(C,x.contactId))},{k:'numero',t:'N° Paiement',w:80,cls:'r'},
+      {k:'m',t:'Paiements TTC',w:130,cls:'r',f:x=>num(docNet(x))},{k:'s',t:'Statut',w:90,f:x=>PAY_ST[x.statut]||''}],rows:ps,sort:['numero',1]}));
+    rp.append(h('div',{class:'card',style:{fontWeight:700}},'Total '+num(ps.reduce((a,x)=>a+docNet(x),0))+' CHF')); };
+  grid(lp,Object.assign(oo,{key:o=>o.id,cols:[{k:'numero',t:'N°',w:50},{k:'date',t:'Date',w:90,f:o=>dfr(o.date)},{k:'mo',t:'Maître d’ouvrage',w:140,f:o=>esc(contactName(DS.get('contact',o.maitreOuvrageContactId)))},{k:'n',t:'Pmts',w:50,cls:'r',f:o=>(o.paiementIds||[]).length},{k:'statut',t:'Statut',f:o=>ORD_ST[o.statut]||o.statut||''}],
+    rows:OP,sort:['numero',-1],onSel:drawR,onDbl:edO})); drawR();
 }
-function ccArrete(C,a,touch){ const v=JSON.parse(JSON.stringify(a)); const g=v.garantie||(v.garantie={});
-  const gen=h('select',{class:'inp'},...['banque','assurance','comptant','sans'].map(k=>h('option',{value:k,selected:k===g.genre||null},{banque:'Banque',assurance:'Assurance',comptant:'Comptant',sans:'Sans garantie'}[k])));
+function ccArrete(C,a,touch){ const g=Object.assign({},a.garantie||{});
+  const gen=h('select',{class:'inp'},...Object.entries(GAR_T).map(([k,t])=>h('option',{value:k,selected:k===g.genre||null},t)));
   const mt=h('input',{class:'inp',type:'number',step:'any',value:g.montant??''}), db=h('input',{class:'inp',type:'date',value:g.debut||''}), fn=h('input',{class:'inp',type:'date',value:g.fin||''});
   const plus=n=>{ const d=new Date((db.value||today())+'T00:00'); d.setFullYear(d.getFullYear()+n); d.setDate(d.getDate()-1); fn.value=diso(d); };
-  const st=h('select',{class:'inp'},...['établi','pour signature','définitif'].map(k=>h('option',{selected:k===v.statut||null},k)));
-  dialog({title:'Arrêté de compte — '+ccEntName(C,(C.contrats.find(c=>c.id===v.contrat)||{}).ent),body:h('div',{},h('div',{style:{marginBottom:'8px'}},'Facture finale nette : ',h('b',{},num(ccConds(v.lignes||[],v.conds).net)+' CHF')),
+  const st=h('select',{class:'inp'},...Object.entries(ARR_ST).map(([k,t])=>h('option',{value:k,selected:k===a.statut||null},t)));
+  dialog({title:'Arrêté de compte — '+ccEntName(C,a.contactId),body:h('div',{},h('div',{style:{marginBottom:'8px'}},'Facture finale nette : ',h('b',{},num(docNet(a))+' CHF')),
     formRows([['Statut',st],['Type de garantie',gen],['Montant de la garantie',mt],['Début de la garantie',db],['Echéance de la garantie',h('div',{},fn,' ',ibtn({label:'+2 années',fn:()=>plus(2)}),ibtn({label:'+5 années',fn:()=>plus(5)}))]],560)),
-    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ Object.assign(g,{genre:gen.value,montant:+mt.value||0,debut:db.value,fin:fn.value}); v.statut=st.value; Object.assign(a,v); touch(); }}]}); }
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ a.garantie=Object.assign(g,{genre:gen.value,montant:+mt.value||0,debut:db.value,fin:fn.value}); a.statut=st.value; touch(); }}]}); }
 function ccPrint(p,doc,G){ const w=open('','_blank'); if(!w) return; const txt=tableText(G,'\t').split('\n').map(l=>l.split('\t'));
   w.document.write(`<html><head><meta charset="utf-8"><title>Contrôle des coûts</title><style>@page{size:A4 landscape;margin:10mm}body{font:7.5pt Akkurat,Helvetica,Arial,sans-serif}h1{font-size:11pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{padding:1.5px 4px;border-bottom:.3pt solid #ccc;text-align:right}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}th{border-bottom:.8pt solid #000}</style></head><body><h1>Contrôle des coûts — ${esc(projLabel(p))} — ${esc(doc.VERSION||'')} — ${dfr(today())}</h1><table>`+
     txt.map((r,i)=>'<tr>'+r.map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')+'</tr>').join('')+'</table></body></html>'); w.document.close(); setTimeout(()=>w.print(),300); }
-function ccPrintOrder(C,p,o){ const ps=C.paiements.filter(x=>x.ordre===o.id), w=open('','_blank'); if(!w) return; const tx=(C.config.compta||{}).texteCompte||'';
-  w.document.write(`<html><head><meta charset="utf-8"><title>Ordre de paiement ${esc(o.num)}</title><style>body{font:9pt Akkurat,Helvetica,Arial,sans-serif;margin:16mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;border-bottom:.4pt solid #bbb;text-align:left;vertical-align:top}.r{text-align:right}</style></head><body>
-    <h1>Ordre de paiement n° ${esc(o.num)}</h1><div>${esc(projLabel(p))} — ${dfr(o.date)}${o.valeur?' — date de valeur '+dfr(o.valeur):''}</div><table style="margin-top:12px"><tr><th>N°</th><th>Bénéficiaire</th><th>Compte</th><th>N° pmt</th><th class="r">Montant</th></tr>`+
-    ps.map(x=>{ const c=DS.get('contact',x.ent); return `<tr><td>${esc((x.lot||{}).num||'')}</td><td>${esc(ccEntName(C,x.ent))}<br>${c?esc(locality(c)):''}</td><td>${esc((x.banque||{}).iban||tx)}</td><td>${esc(x.num)}</td><td class="r">${num(ccConds(x.lignes||[],x.conds).net)}</td></tr>`; }).join('')+
-    `<tr><td colspan="4"><b>Total des paiements</b></td><td class="r"><b>${num(ps.reduce((a,x)=>a+ccConds(x.lignes||[],x.conds).net,0))}</b></td></tr></table></body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
-function ccPrintBon(C,p,x){ if(!x) return; const r=ccConds(x.lignes||[],x.conds), w=open('','_blank'); if(!w) return; const ctr=C.contrats.find(c=>c.id===x.contrat);
-  w.document.write(`<html><head><meta charset="utf-8"><title>Bon de paiement ${esc(x.num)}</title><style>body{font:9.5pt Akkurat,Helvetica,Arial,sans-serif;margin:18mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td{padding:3px 6px;border-bottom:.4pt solid #ddd}.r{text-align:right}</style></head><body>
-    <h1>Bon de paiement n° ${esc(x.num)}</h1><div>${esc(projLabel(p))}</div><p><b>${esc(ccEntName(C,x.ent))}</b><br>Lot ${esc((x.lot||{}).num||'')} ${esc((x.lot||{}).txt||'')}${ctr?'<br>Contrat n° '+esc(ctr.num)+' du '+dfr(ctr.date):''}</p>
-    <table><tr><td>Montant brut</td><td class="r">${num(r.brut)}</td></tr>${(x.conds||[]).filter(c=>c.on!==false).sort((a,b)=>a.niv-b.niv).map(c=>`<tr><td>${esc(c.lbl||COND_DEF[c.kind][1])} ${condPct(c.kind)?num(c.val,2)+' %':''}</td><td class="r">${num(r.amt[c.niv])}</td></tr>`).join('')}
-    <tr><td><b>Montant à payer</b></td><td class="r"><b>${num(r.net)}</b></td></tr></table><p>${esc(x.commentaire||'')} — facture ${esc(x.numFacture||'')} du ${dfr(x.dateFacture)} — paiement le ${dfr(x.datePaiement)}</p>
+function ccPrintOrder(C,p,o){ const ps=C.paiements.filter(x=>(o.paiementIds||[]).includes(x.id)), w=open('','_blank'); if(!w) return; const tx=(C.parametres||{}).texteCompte||'';
+  w.document.write(`<html><head><meta charset="utf-8"><title>Ordre de paiement ${esc(o.numero)}</title><style>body{font:9pt Akkurat,Helvetica,Arial,sans-serif;margin:16mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;border-bottom:.4pt solid #bbb;text-align:left;vertical-align:top}.r{text-align:right}</style></head><body>
+    <h1>Ordre de paiement n° ${esc(o.numero)}</h1><div>${esc(projLabel(p))} — ${dfr(o.date)}${o.dateValeur?' — date de valeur '+dfr(o.dateValeur):''}</div><table style="margin-top:12px"><tr><th>N°</th><th>Bénéficiaire</th><th>Compte</th><th>N° pmt</th><th class="r">Montant</th></tr>`+
+    ps.map(x=>{ const c=DS.get('contact',x.contactId), b=x.banque||{}; return `<tr><td>${esc((x.lot||{}).numero||'')}</td><td>${esc(ccEntName(C,x.contactId))}<br>${c?esc(locality(c)):''}</td><td>${esc(b.iban||b.texteCompte||tx)}</td><td>${esc(x.numero)}</td><td class="r">${num(docNet(x))}</td></tr>`; }).join('')+
+    `<tr><td colspan="4"><b>Total des paiements</b></td><td class="r"><b>${num(ps.reduce((a,x)=>a+docNet(x),0))}</b></td></tr></table></body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
+function ccPrintBon(C,p,x){ if(!x) return; const r=ccCond(x.lignes||[],x.conditions), w=open('','_blank'); if(!w) return; const ctr=C.contrats.find(c=>c.id===x.contratId);
+  w.document.write(`<html><head><meta charset="utf-8"><title>Bon de paiement ${esc(x.numero)}</title><style>body{font:9.5pt Akkurat,Helvetica,Arial,sans-serif;margin:18mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td{padding:3px 6px;border-bottom:.4pt solid #ddd}.r{text-align:right}</style></head><body>
+    <h1>Bon de paiement n° ${esc(x.numero)}</h1><div>${esc(projLabel(p))}</div><p><b>${esc(ccEntName(C,x.contactId))}</b><br>Lot ${esc((x.lot||{}).numero||'')} ${esc((x.lot||{}).texte||'')}${ctr?'<br>Contrat n° '+esc(ctr.numero)+' du '+dfr(ctr.date):''}</p>
+    <table><tr><td>${ctr?'Cumul des acomptes bruts':'Montant brut'}</td><td class="r">${num(docBrut(x))}</td></tr>${(x.conditions||[]).filter(c=>c.appliquee!==false).sort((a,b)=>a.niveau-b.niveau).map(c=>`<tr><td>${esc(c.libelle||(COND[c.kind]||[])[2]||'')} ${condNat(c.kind)==='pct'?num(c.valeur,2)+' %':''}</td><td class="r">${num(r.par[c.niveau])}</td></tr>`).join('')}
+    <tr><td><b>Montant à payer</b></td><td class="r"><b>${num(docNet(x))}</b></td></tr></table><p>${esc(x.genreTexte||x.commentaire||'')} — facture ${esc(x.numeroFacture||'')} du ${dfr(x.dateFacture)} — paiement le ${dfr(x.datePaiement)}</p>
     <p style="margin-top:40px">Signature : ______________________</p></body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
 
 /* ═══ NOTES DE FRAIS · Saisie (p.31) — frais du collaborateur, par mois ═══ */

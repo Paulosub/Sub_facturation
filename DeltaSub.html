@@ -1615,6 +1615,39 @@ function admPane(R,c){
   if(c==='Frais standard') simple('costcategory',[{k:'g',t:'Groupe de frais',w:200,f:x=>esc(nm(DS.get('costcategorygroup',x.COSTCATEGORYGROUP_ID)))},{k:'n',t:'Genre de frais',f:x=>esc(nm(x))},{k:'UNIT',t:'Unité',w:60},{k:'UNITPRICE',t:'Prix',w:80,cls:'r',f:x=>num(x.UNITPRICE)}],DS.all('costcategory'),nameEd('costcategory'),['g',1]);
 }
 
+/* ═══ MANAGEMENT · Statistiques — heures par type d'activité et par année (reporting p.26) ═══ */
+const MG={staff:null,mode:'Barres empilées'};
+const ACT_CAT=t=>t==null||t<50?'Heures facturables':t<90?'Heures non facturables':'Heures d’absences';
+VIEWS['mgmt']={
+  tools(){ return [[{i:'person',t:'Collaborateur',menu:()=>[{t:'Tous les collaborateurs',chk:!MG.staff,fn:()=>{ MG.staff=null; go('mgmt'); }},...staffList(true).map(s=>({t:staffName(s),chk:MG.staff===s.ID,fn:()=>{ MG.staff=s.ID; go('mgmt'); }}))]},
+    {i:'analyse',t:'Graphique',menu:()=>['Courbes','Barres','Barres empilées'].map(x=>({t:x,chk:MG.mode===x,fn:()=>{ MG.mode=x; go('mgmt'); }}))}]]; },
+  render(m){
+    const E=DS.all('timelog').filter(r=>!MG.staff||r.STAFF_ID===MG.staff);
+    const years=[...new Set(E.map(r=>r.TIMEYEAR))].sort((a,b)=>b-a).slice(0,8), S={}, cat={};
+    E.forEach(r=>{ const a=DS.get('projectactivity',r.ACTIVITY_ID), t=r.ISHOLIDAY?'V':(a?a.TYPECODE||0:0); const k=r.ISHOLIDAY?'Vacances':ACT_T[t]; cat[k]=r.ISHOLIDAY?'Vacances':ACT_CAT(t);
+      (S[k]=S[k]||{})[r.TIMEYEAR]=((S[k]||{})[r.TIMEYEAR]||0)+(+r.TIMEPERIOD||0); });
+    const order=['Heures facturables','Heures non facturables','Heures d’absences','Vacances'], tot={};
+    let html=`<div class="card" style="overflow:auto"><h3>Heures par type d’activité${MG.staff?' — '+esc(staffName(DS.get('staff',MG.staff))):' — tout le bureau'}</h3><table class="g" style="width:auto;min-width:760px"><thead><tr><th style="width:280px">Type d’activité</th>${years.map(y=>`<th class="r" style="width:80px">${y}</th><th class="r" style="width:70px">+/-</th>`).join('')}</tr></thead><tbody>`;
+    const row=(lbl,vals,bold)=>`<tr${bold?' style="font-weight:600;background:#f1f1f1"':''}><td>${esc(lbl)}</td>${years.map((y,i)=>{ const v=vals[y]||0, p=vals[years[i+1]]||0; return `<td class="r">${num(v,1)}</td><td class="r" style="color:${v-p<0?'#c62828':'#2e7d46'}">${i<years.length-1&&p?(v-p>0?'+':'')+num((v-p)/p*100,0)+'%':''}</td>`; }).join('')}</tr>`;
+    order.forEach(c=>{ const ks=Object.keys(S).filter(k=>cat[k]===c); if(!ks.length) return; const sub={};
+      ks.forEach(k=>{ html+=c==='Vacances'?'':row(k,S[k]); years.forEach(y=>sub[y]=(sub[y]||0)+(S[k][y]||0)); }); html+=row(c,sub,1); tot[c]=sub; });
+    const g={}; years.forEach(y=>g[y]=order.reduce((s,c)=>s+((tot[c]||{})[y]||0),0)); html+=row('Total général',g,1)+'</tbody></table>';
+    /* graphique SVG */
+    const ys=years.slice().reverse(), W=760, H=260, pad=44, max=Math.max(1,...ys.map(y=>MG.mode==='Barres empilées'?g[y]:Math.max(...order.map(c=>(tot[c]||{})[y]||0)))), col={'Heures facturables':'#1f6fe0','Heures non facturables':'#9bb8e8','Heures d’absences':'#c77700','Vacances':'#f0c070'};
+    const X=i=>pad+(i+.5)*(W-pad-10)/ys.length, Y=v=>H-24-(v/max)*(H-40), bw=(W-pad-10)/ys.length*.6;
+    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:${W}px;max-width:100%;margin-top:14px;font:11px sans-serif">`;
+    for(let k=0;k<=4;k++){ const v=max*k/4; svg+=`<line x1="${pad}" x2="${W-10}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e5e5e5"/><text x="${pad-6}" y="${Y(v)+4}" text-anchor="end" fill="#777">${num(v,0)}</text>`; }
+    ys.forEach((y,i)=>{ svg+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle" fill="#555">${y}</text>`;
+      if(MG.mode==='Barres empilées'){ let acc=0; order.forEach(c=>{ const v=(tot[c]||{})[y]||0; if(!v) return; svg+=`<rect x="${X(i)-bw/2}" y="${Y(acc+v)}" width="${bw}" height="${Y(acc)-Y(acc+v)}" fill="${col[c]}"><title>${c} ${y} : ${num(v,1)} h</title></rect>`; acc+=v; }); }
+      else if(MG.mode==='Barres'){ const w=bw/order.length; order.forEach((c,j)=>{ const v=(tot[c]||{})[y]||0; svg+=`<rect x="${X(i)-bw/2+j*w}" y="${Y(v)}" width="${w-1}" height="${Y(0)-Y(v)}" fill="${col[c]}"><title>${c} ${y} : ${num(v,1)} h</title></rect>`; }); } });
+    if(MG.mode==='Courbes') order.forEach(c=>{ svg+=`<polyline fill="none" stroke="${col[c]}" stroke-width="2" points="${ys.map((y,i)=>X(i)+','+Y((tot[c]||{})[y]||0)).join(' ')}"/>`; });
+    svg+=`<text transform="rotate(-90)" x="${-H/2}" y="12" text-anchor="middle" fill="#555">Heures [h]</text></svg>`;
+    html+=svg+`<div style="display:flex;gap:14px;margin-top:4px">${order.map(c=>`<span><span style="display:inline-block;width:10px;height:10px;background:${col[c]};margin-right:4px"></span>${c}</span>`).join('')}</div></div>`;
+    m.append(h('div',{style:{overflow:'auto',flex:1},html}));
+  },
+  refresh(ts){ if(hit(ts,'timelog')) go('mgmt'); }
+};
+
 /* ═══ NOTES DE FRAIS · Saisie (p.31) — frais du collaborateur, par mois ═══ */
 const NF={g:{},staff:null,y:new Date().getFullYear(),m:new Date().getMonth()};
 VIEWS['frais']={

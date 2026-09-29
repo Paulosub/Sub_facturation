@@ -184,7 +184,7 @@ const DS={
     miss.forEach(t=>this.loaded.add(t)); this._ingest(d); },
   newIds(t,n=1){ const x=new XMLHttpRequest(); x.open('GET','/api/ids?t='+t+'&n='+n,false); x.send(); return JSON.parse(x.responseText); },
   async commit(ops){
-    const body={who:this.who(), ops:ops.map(o=>({t:o.t,id:String(o.id),val:o.val,bseq:(this.S[o.t]||{})[String(o.id)]||0}))};
+    const body={who:this.who(), ops:ops.map(o=>({t:o.t,id:String(o.id),val:o.val,bseq:o.bseq!=null?o.bseq:((this.S[o.t]||{})[String(o.id)]||0)}))};   // o.bseq : version lue à l'ouverture d'un dialogue
     let r;
     try{ r=await fetch('/api/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
     catch(e){ NET.fail('serveur injoignable'); toast('✗ Enregistrement impossible : serveur injoignable.',true); throw e; }
@@ -3304,7 +3304,7 @@ function tplPageHTML(pg,k,o){
     const sel=o.sel===i&&!layer?'outline:1.5px solid #3875d7;':'', ev=layer?'':`data-i="${i}"`;
     const txt=`font-family:${tplFont(e.police)};font-size:${(e.taille||9)*k}px;color:${e.couleur||'#000'};${e.gras?'font-weight:700;':''}${e.italique?'font-style:italic;':''}${e.souligne?'text-decoration:underline;':''}text-align:${{centre:'center',droite:'right',justifie:'justify'}[e.alignement]||'left'};line-height:1.2;white-space:pre-wrap;overflow:hidden;`;
     if(e.t==='texte') return `<div ${ev} style="position:absolute;${st}${txt}${e.fond?'background:'+e.fond+';':''}${e.cadre?'border:'+(e.trait||.5)*k+'px solid #000;':''}${sel}">${esc(e.texte||'')}</div>`;
-    if(e.t==='champ'){ const v=o.vals?o.vals(e):null; const shown=v==null?`<span style="color:#1f5fbf">${esc(e.texte||e.champ)}</span>`:esc(v);
+    if(e.t==='champ'){ const v=o.vals?o.vals(e):null; const shown=v==null?`<span style="color:#1f5fbf">${esc(e.texte||e.champ)}</span>`:(typeof v==='object'&&v.html!=null?v.html:esc(v));
       return `<div ${ev} style="position:absolute;${st}${txt}${o.vals?'':'background:rgba(56,117,215,.07);'}${sel}">${shown}</div>`; }
     if(e.t==='tableau'){ const inner=o.table?o.table(e,k):`<div style="font:${9*k}px sans-serif;color:#1f5fbf;padding:${2*k}px">▦ ${esc((tplFields()[e.champ]||{}).label||e.nom||e.champ||'Tableau')}</div>`;
       return `<div ${ev} style="position:absolute;${st}${o.table?'':'border:1px dashed #7aa0d8;'}${sel}overflow:hidden">${inner}</div>`; }
@@ -3517,12 +3517,15 @@ function tplPrint(o){
   const pages=[]; let i=0;
   /* texte « coulant » (o.flow = {champ, text}) : un long texte (p. ex. description d'une tâche) est réparti sur page1 puis pageN */
   const fe=pg=>(pg.elements||[]).find(e=>e.champ===(o.flow&&o.flow.champ)), f1=o.flow&&fe(p1);
-  if(f1){ const fN=fe(pN)||f1, lines=split(o.flow.text||'',Math.max(10,Math.floor((f1.l||500)/((f1.taille||9)*.5)))), capF=e=>Math.max(1,Math.floor((e.h||100)/((e.taille||9)*1.2)));
+  if(f1){ const cx=document.createElement('canvas').getContext('2d'); cx.font=(f1.italique?'italic ':'')+(f1.gras?'700 ':'')+(f1.taille||9)+'px '+tplFont(f1.police);
+    const maxW=(f1.l||500)-2, wrap=t=>{ const out=[]; String(t).split('\n').forEach(par=>{ const b=par[0]==='£', src=b?par.slice(1):par; let line='';
+      src.split(/(\s+)/).forEach(w=>{ if(line.trim()&&cx.measureText((line+w).trimEnd()).width>maxW){ out.push((b?'£':'')+line.trimEnd()); line=w.trimStart(); } else line+=w; }); out.push((b?'£':'')+line); }); return out; };
+    const fN=fe(pN)||f1, lines=wrap(o.flow.text||''), capF=e=>Math.max(1,Math.floor((e.h||100)/((e.taille||9)*1.35)));
     do{ const e=pages.length?fN:f1, c=capF(e); pages.push({pg:pages.length?pN:p1,rows:[],flow:lines.slice(i,i+c).join('\n')}); i+=c; } while(i<lines.length); }
   else do{ const pg=pages.length?pN:p1, c=cap(pg); pages.push({pg,rows:rows.slice(i,i+c)}); i+=c; } while(i<rows.length);
   const k=96/72, N=pages.length;
   const out=pages.map((x,n)=>{ const b=body(x.pg), hasH=(x.pg.elements||[]).some(z=>/TableHeader$/.test(z.champ||''));
-    return tplPageHTML(x.pg,k,{noScale:true,vals:e=>x.flow!=null&&e.champ===o.flow.champ?x.flow:tplFieldValue(e,ctx,n+1,N),table:(e,kk)=>{
+    return tplPageHTML(x.pg,k,{noScale:true,vals:e=>x.flow!=null&&e.champ===o.flow.champ?{html:x.flow.split('\n').map(l=>l[0]==='£'?'<b>'+esc(l.slice(1))+'</b>':esc(l)).join('\n')}:tplFieldValue(e,ctx,n+1,N),table:(e,kk)=>{
       if(/TableHeader$/.test(e.champ||'')) return o.noHeader?'':tplTableHTML(e,kk,o.cols,[],true);
       if(e===b) return (hasH||o.noHeader?'':tplTableHTML(e,kk,o.cols,[],true))+tplTableHTML(e,kk,o.cols,x.rows,false);
       const t2=(o.tables||{})[e.champ]; return t2&&n===0?tplTableHTML(e,kk,t2.cols,t2.rows,false):''; }}); }).join('');
@@ -3744,8 +3747,8 @@ function ptNew(p){ return {ID:null,PROJECT_ID:p.ID,SUBJECT:'',DESCRIPTION:null,U
   ISURGENT:0,ISUNTOUCHED:1,PROJECTTASKSTATECODE:-1,PROJECTTASKPRIORITYCODE:0,STAFF_ID:null,CONTACT_ID:null,SUBPROJECT_ID:null}; }
 /* reprise du catalogue (Task.copyFrom) : Brouillon, nom français (repli sur l'allemand si vide) et description */
 function ptFromCatalog(p,x){ return {...ptNew(p),PROJECTTASKSTATECODE:0,SUBJECT:x.NAMEFR||x.NAMEGE||'',DESCRIPTION:x.DESCRIPTION||null}; }
-const ptText=(t,withProj)=>[dfr(t.STARTDATE),withProj?ptProj(DS.get('project',t.PROJECT_ID)):'',t.SUBJECT,t.DESCRIPTION,PT_STATE[t.PROJECTTASKSTATECODE],PT_PRIO[t.PROJECTTASKPRIORITYCODE],
-  staffName(DS.get('staff',t.STAFF_ID)),ptContact(DS.get('contact',t.CONTACT_ID)),dfr(t.DEADLINE),dfr(t.DONEDATE),t.USERNAME,ptSub(DS.get('subproject',t.SUBPROJECT_ID))];
+const ptText=(t,mod)=>[dfr(t.STARTDATE),mod?ptProj(DS.get('project',t.PROJECT_ID)):'',t.SUBJECT,t.DESCRIPTION,mod?'':PT_STATE[t.PROJECTTASKSTATECODE],PT_PRIO[t.PROJECTTASKPRIORITYCODE],
+  mod?'':staffName(DS.get('staff',t.STAFF_ID)),ptContact(DS.get('contact',t.CONTACT_ID)),dfr(t.DEADLINE),dfr(t.DONEDATE),t.USERNAME,ptSub(DS.get('subproject',t.SUBPROJECT_ID))];
 const PTC={
   u:{k:'u',t:'●',w:24,cls:'c',f:r=>r.ISUNTOUCHED?ptIco('dot'):'',v:r=>r.ISUNTOUCHED?1:0},
   x:{k:'x',t:'!',w:24,cls:'c',f:r=>r.ISURGENT?ptIco('bolt'):'',v:r=>r.ISURGENT?1:0},
@@ -3762,28 +3765,28 @@ const PTC={
   dl:{k:'DEADLINE',t:'Délai',w:84,f:r=>dfr(r.DEADLINE)},
   dd:{k:'DONEDATE',t:'Réglé le',w:84,f:r=>dfr(r.DONEDATE)},
   by:{k:'USERNAME',t:'Créé par',w:110},
-  o:{k:'o',t:'Ouvrage',w:150,f:r=>esc(ptSub(DS.get('subproject',r.SUBPROJECT_ID)))}};
+  o:{k:'o',t:'Ouvrage',w:150,f:r=>esc(ptSub(DS.get('subproject',r.SUBPROJECT_ID))),v:r=>ptSub(DS.get('subproject',r.SUBPROJECT_ID))}};
 const PT_MCOLS=['u','x','d','p','s','de','pi','pr','c','dl','dd','by','o'].map(k=>PTC[k]);             // module : 13 colonnes
 const PT_DCOLS=['d','by','s','de','si','st','pi','pr','r','c','x','dl','dd','o'].map(k=>PTC[k]);        // domaine : 14 colonnes
 const ptExport=(o,name)=>[{t:'Copier le contenu du tableau dans le presse-papier',dis:!(o.view&&o.view.length),fn:()=>copyTable(o)},{t:'Exporter le tableau dans un fichier CSV …',dis:!(o.view&&o.view.length),fn:()=>csvTable(o,name)}];
 
 /* ── Module TÂCHES : tâches dont le collaborateur choisi est responsable, affaires « En cours » seulement ── */
-const PTM={staff:null,q:'',g:{}}; try{ PTM.staff=+localStorage.getItem('ds_h_staff')||null; }catch(_){}   // mémoire partagée avec Heures (lastStaffSelection)
+const PTM={staff:null,q:'',g:{},sg:{}}; try{ PTM.staff=+localStorage.getItem('ds_h_staff')||null; }catch(_){}   // mémoire partagée avec Heures (lastStaffSelection)
 function ptStaffs(){ const u=ME.u; return u?DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean).sort((a,b)=>cmp(staffName(a),staffName(b))):[]; }
 function ptModuleRows(kind,sid){ if(!sid) return []; return DS.by('projecttask','STAFF_ID',sid).filter(t=>{ const p=DS.get('project',t.PROJECT_ID);
   if(!p||p.PROJECTSTATECODE!==2) return false;
   if(kind==='done') return t.PROJECTTASKSTATECODE===3;
   return t.PROJECTTASKSTATECODE===1&&(kind!=='urgent'||!!t.ISURGENT); }); }
 function taskModule(kind){ return {
-  render(m){ PTM.q='';
+  render(m){ PTM.q=''; try{ const x=+localStorage.getItem('ds_h_staff'); if(x) PTM.staff=x; }catch(_){}
     const cols=h('div',{class:'cols'}); m.append(cols);
     const L=col(240), R=h('div',{class:'col fill'}), pane=h('div',{class:'pane'}); cols.append(L.el,R);
     const sl=ptStaffs();
     if(!sl.some(s=>s.ID===PTM.staff)) PTM.staff=sl.some(s=>s.ID===(ME.staff||{}).ID)?ME.staff.ID:null;
     if(!sl.length) L.pane.append(h('div',{class:'empty'},ME.u?'Aucun collaborateur n’est lié à votre utilisateur.':'Choisissez votre nom d’utilisateur (en bas à gauche).'));
-    else grid(L.pane,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s)),v:staffName}],rows:sl,sel:PTM.staff,sort:['n',1],
-      onSel:s=>{ PTM.staff=s.ID; try{ localStorage.setItem('ds_h_staff',s.ID); }catch(_){} PTM.g.sel=null; draw(); }});
-    const cur=()=>{ const t=DS.get('projecttask',PTM.g.sel); return t&&ptModuleRows(kind,PTM.staff).some(x=>x.ID===t.ID)?t:null; };
+    else grid(L.pane,Object.assign(PTM.sg,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s)),v:staffName}],rows:sl,sel:PTM.staff,sort:['n',1],
+      onSel:s=>{ PTM.staff=s.ID; try{ localStorage.setItem('ds_h_staff',s.ID); }catch(_){} PTM.g.sel=null; draw(); }}));
+    const cur=()=>{ const t=DS.get('projecttask',PTM.g.sel); return t&&(PTM.g.view||[]).some(x=>x.ID===t.ID)?t:null; };
     const head=phead([{i:'edit',fn:()=>cur()&&ptEditReduced(cur())},
       {i:'doc',menu:()=>[{t:'Tâche d’affaire …',dis:!cur(),fn:()=>ptPrintTask(cur())}]},
       {i:'gear',menu:()=>ptExport(PTM.g,'Taches')}],{count:1,search:q=>{ PTM.q=q; draw(); }});
@@ -3805,9 +3808,10 @@ function ptNotesEditor(taskId){
   const draw=()=>grid(box,Object.assign(o,{key,cols:[{k:'CHANGEDDATE',t:'Date',w:84,f:n=>dfr(n.CHANGEDDATE)},{k:'OWNER',t:'Auteur',w:80},{k:'SUBJECT',t:'Sujet',w:150},{k:'CONTENT',t:'Texte'}],rows:notes,sort:null,onDbl:n=>ed(n)}));
   const cur=()=>notes.find(n=>key(n)===String(o.sel));
   const ed=n=>{ const s=h('input',{class:'inp',maxlength:64,value:n?n.SUBJECT||'':''}), c=h('textarea',{class:'inp',rows:8,maxlength:1024,style:{width:'100%'}},n?n.CONTENT||'':'');
-    dialog({title:n?'Modifier la note':'Nouvelle note',body:h('div',{style:{minWidth:'440px'}},formRows([['Concerne',s]]),h('div',{style:{height:'6px'}}),c),
-      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(!s.value.trim()){ toast('Saisissez le champ « Concerne ».',true); return false; }
-        const x=n||{ID:null,_k:'n'+(++tmp)}; Object.assign(x,{SUBJECT:s.value.trim(),CONTENT:c.value.trim()||null,CHANGEDDATE:today(),OWNER:ME.id,_d:1}); if(!n) notes.push(x); o.sel=key(x); draw(); }}]}); };
+    const D=dialog({title:n?'Modifier la note':'Nouvelle note',body:h('div',{style:{minWidth:'440px'}},formRows([['Concerne',s]]),h('div',{style:{height:'6px'}}),c),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(!s.value.trim()) return false;
+        const x=n||{ID:null,_k:'n'+(++tmp)}; Object.assign(x,{SUBJECT:s.value.trim(),CONTENT:c.value.trim()||null,CHANGEDDATE:today(),OWNER:ME.id,_d:1}); if(!n) notes.push(x); o.sel=key(x); draw(); }}]});
+    const okB=D.bd.parentNode.querySelector('.ft .btn.pri'), g2=()=>{ okB.disabled=!s.value.trim(); }; s.oninput=g2; g2(); };
   const el=h('div',{},phead([{i:'plus',t:'Nouvelle note',fn:()=>ed()},{i:'edit',t:'Modifier la note',fn:()=>cur()&&ed(cur())},
     {i:'minus',t:'Supprimer la note',fn:async()=>{ const n=cur(); if(!n) return; if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
       notes.splice(notes.indexOf(n),1); if(n.ID!=null) del.add(n.ID); o.sel=null; draw(); }}]),box);
@@ -3819,7 +3823,7 @@ const ptRO=x=>h('div',{class:'inp',style:{background:'#f4f4f4',minHeight:'24px',
 const ptOk=()=>$$('.dlg .ft .btn.pri').at(-1);
 
 /* ── Dialogue réduit du module (« Edition ») : priorité, délai, urgent, notes, réglé ── */
-function ptEditReduced(t0){ const t=DS.get('projecttask',t0.ID); if(!t) return; const v={...t}, p=DS.get('project',v.PROJECT_ID);
+function ptEditReduced(t0){ const t=DS.get('projecttask',t0.ID); if(!t) return; const bs=(DS.S.projecttask||{})[String(t.ID)]||0, v={...t}, p=DS.get('project',v.PROJECT_ID);
   const prio=h('select',{class:'inp',style:{width:'160px'}},...Object.entries(PT_PRIO).map(([k,x])=>h('option',{value:k,selected:+k===(v.PROJECTTASKPRIORITYCODE||0)||null},x)));
   const dl=h('input',{class:'inp',type:'date',value:v.DEADLINE||'',style:{width:'160px'}}), urg=h('input',{type:'checkbox',checked:!!v.ISURGENT||null});
   const done=h('input',{type:'checkbox',checked:v.PROJECTTASKSTATECODE===3||null}), dd=h('input',{class:'inp',type:'date',value:v.DONEDATE||'',style:{width:'160px',display:v.PROJECTTASKSTATECODE===3?'':'none'}});
@@ -3832,34 +3836,37 @@ function ptEditReduced(t0){ const t=DS.get('projecttask',t0.ID); if(!t) return; 
     if(!(v.SUBJECT||'').trim()) return false;
     Object.assign(v,{PROJECTTASKPRIORITYCODE:+prio.value,DEADLINE:dl.value||null,ISURGENT:urg.checked?1:0,ISUNTOUCHED:0});
     if(done.checked) Object.assign(v,{PROJECTTASKSTATECODE:3,DONEDATE:dd.value||null}); else Object.assign(v,{PROJECTTASKSTATECODE:1,DONEDATE:null});
-    await DS.commit([{t:'projecttask',id:v.ID,val:v},...N.ops(v.ID)]); }}]});
+    await DS.commit([{t:'projecttask',id:v.ID,val:v,bseq:bs},...N.ops(v.ID)]); }}]});
   if(!(v.SUBJECT||'').trim()){ const b=ptOk(); if(b){ b.disabled=true; b.title='Concerne vide : la tâche doit être complétée dans l’affaire.'; } }
 }
 
 /* ── Domaine « Tâches » de l'affaire ── */
-AM.pt={g:{multi:true},state:null,keep:new Set(),pid:null,q:''};
-function ptDomain(C,top,pane,p){ const S=AM.pt; if(S.pid!==p.ID){ S.pid=p.ID; S.keep.clear(); S.g.selSet=new Set(); S.g.sel=null; }
+AM.pt={g:{multi:true},state:null,keep:new Set(),pid:null,q:'',qr:''};
+function ptDomain(C,top,pane,p){ const S=AM.pt; if(S.pid!==p.ID){ S.pid=p.ID; S.keep.clear(); S.g.selSet=new Set(); S.g.sel=null; S.q=''; S.qr=''; }
   const flt=h('span',{style:{color:'#333',alignSelf:'center',marginLeft:'4px'}});
   const sel=()=>gridSel(S.g,id=>DS.get('projecttask',id)), one=()=>{ const s=sel(); return s.length===1?s[0]:null; };
   const setF=k=>{ S.state=k; S.keep.clear(); draw(); };
-  const head=phead([{i:'plus',t:'Nouvelle tâche',fn:()=>ptPickCatalog(p)},{i:'edit',t:'Editer la tâche',fn:()=>one()&&ptEditFull(one(),p)},{i:'minus',t:'Supprimer la tâche',fn:()=>one()&&ptDelete(one())},
+  const bE=ibtn({i:'edit',t:'Editer la tâche',fn:()=>one()&&ptEditFull(one(),p)}), bD=ibtn({i:'minus',t:'Supprimer la tâche',fn:()=>one()&&ptDelete(one())}), upd=()=>{ bE.disabled=bD.disabled=!one(); };
+  const head=phead([{i:'plus',t:'Nouvelle tâche',fn:()=>ptPickCatalog(p)},bE,bD,
     {i:'doc',menu:()=>[{t:'Tâche …',dis:!one(),fn:()=>ptPrintTask(one())},{t:'Liste des tâches de l’affaire …',dis:!(S.g.view&&S.g.view.length),fn:()=>{ const ids=new Set(sel().map(t=>t.ID)); ptPrintList(ids.size?S.g.view.filter(t=>ids.has(t.ID)):S.g.view,p,S.state); }}]},
     {i:'gear',menu:()=>ptExport(S.g,'Taches_'+(p.NUMBER||p.ID))},
     {i:'filter',t:'Filtre',menu:()=>[{t:'Afficher tout',chk:S.state==null,fn:()=>setF(null)},...[0,1,2,3].map(k=>({t:PT_STATE[k],chk:S.state===k,fn:()=>setF(k)}))]},flt],
-    {count:1,search:q=>{ S.q=q; draw(); }});
+    {count:1,search:q=>{ S.q=q; S.qr=head.sinput.value; draw(); }});
+  if(head.sinput) head.sinput.value=S.q?S.qr:'';
   top.append(head,pane); C.append(top);
   const draw=()=>{ let rows=DS.by('projecttask','PROJECT_ID',p.ID).filter(t=>S.state==null||t.PROJECTTASKSTATECODE===S.state||S.keep.has(String(t.ID)));
     if(S.q) rows=rows.filter(t=>matchQ(S.q,...ptText(t)));
-    grid(pane,Object.assign(S.g,{cols:PT_DCOLS,rows,sort:['STARTDATE',1],onDbl:t=>ptEditFull(t,p),empty:'Aucune tâche.'}));
+    const vis=new Set(rows.map(t=>String(t.ID))); S.g.selSet=new Set([...(S.g.selSet||[])].filter(k=>vis.has(k))); if(S.g.sel!=null&&!vis.has(String(S.g.sel))) S.g.sel=null;   // pas d'action sur une ligne masquée
+    grid(pane,Object.assign(S.g,{cols:PT_DCOLS,rows,sort:['STARTDATE',1],onSel:upd,onDbl:t=>ptEditFull(t,p),empty:'Aucune tâche.'})); upd();
     head.setCount(rows.length+' Tâches'); flt.textContent=S.state==null?'':PT_STATE[S.state]; };
   draw(); }
 /* Dialogue complet (« Nouveau » / « Edition ») */
-function ptEditFull(t0,p){ const isNew=t0.ID==null, t=isNew?t0:DS.get('projecttask',t0.ID); if(!t) return; const v={...t};
+function ptEditFull(t0,p){ const isNew=t0.ID==null, t=isNew?t0:DS.get('projecttask',t0.ID); if(!t) return; const bs=isNew?0:((DS.S.projecttask||{})[String(t.ID)]||0), v={...t};
   const subj=h('input',{class:'inp',maxlength:255,value:v.SUBJECT||''}), desc=h('textarea',{class:'inp',rows:6,maxlength:4096,style:{width:'100%'}},v.DESCRIPTION||'');
   const st=h('select',{class:'inp',style:{width:'180px'}},h('option',{value:''},''),...[0,1,2,3].map(k=>h('option',{value:k,selected:k===v.PROJECTTASKSTATECODE||null},PT_STATE[k])));
   const pr=h('select',{class:'inp',style:{width:'180px'}},...[0,1,2,3].map(k=>h('option',{value:k,selected:k===(v.PROJECTTASKPRIORITYCODE||0)||null},PT_PRIO[k])));
   const sL=h('span',{style:{minWidth:'220px'}}), cL=h('span',{style:{minWidth:'220px'}});
-  const showS=()=>{ sL.textContent=staffName(DS.get('staff',v.STAFF_ID)); }, showC=()=>{ cL.textContent=ptContact(DS.get('contact',v.CONTACT_ID)); };
+  const showS=()=>{ sL.textContent=staffName(DS.get('staff',v.STAFF_ID)); sInf.disabled=!v.STAFF_ID; }, showC=()=>{ cL.textContent=ptContact(DS.get('contact',v.CONTACT_ID)); cInf.disabled=!v.CONTACT_ID; };
   const card=c=>{ if(c) dialog({title:'Adresse',body:h('div',{style:{minWidth:'360px'}},contactCard(c,'Adresse')),buttons:[{t:'Fermer',pri:true}]}); };
   const sBtn=ibtn({i:'next',t:'Responsable',menu:()=>[{t:'Choisir …',fn:()=>ptPickStaff(p,v.STAFF_ID,s=>{ v.STAFF_ID=s.ID; showS(); })},{t:'Supprimer',dis:!v.STAFF_ID,fn:()=>{ v.STAFF_ID=null; showS(); }}]});
   const cBtn=ibtn({i:'next',t:'Entité',menu:()=>[{t:'Choisir …',fn:()=>pickContact('Navigateur d’adresses',c=>{ v.CONTACT_ID=c.ID; showC(); })},{t:'Supprimer',dis:!v.CONTACT_ID,fn:()=>{ v.CONTACT_ID=null; showC(); }}]});
@@ -3877,7 +3884,7 @@ function ptEditFull(t0,p){ const isNew=t0.ID==null, t=isNew?t0:DS.get('projectta
     Object.assign(v,{SUBJECT:subj.value.trim(),DESCRIPTION:desc.value.trim()||null,PROJECTTASKSTATECODE:+st.value,PROJECTTASKPRIORITYCODE:+pr.value,DEADLINE:dl.value||null,ISURGENT:urg.checked?1:0,SUBPROJECT_ID:+sub.value||null});
     if(v.PROJECTTASKSTATECODE!==3) v.DONEDATE=null;          // Réglé : DONEDATE laissé tel quel (Deltaproject) ; ISUNTOUCHED jamais modifié ici
     if(isNew) v.ID=DS.newIds('projecttask')[0];
-    await DS.commit([{t:'projecttask',id:v.ID,val:v},...N.ops(v.ID)]);
+    await DS.commit([{t:'projecttask',id:v.ID,val:v,bseq:bs},...N.ops(v.ID)]);
     AM.pt.keep.add(String(v.ID)); AM.pt.g.selSet=new Set([String(v.ID)]); AM.pt.g.sel=String(v.ID); }}]});
   guard();
 }
@@ -3896,19 +3903,21 @@ async function ptDelete(t){
 function ptPickCatalog(p){ const og={}, ot={multi:true};
   const bg=h('div',{style:{width:'260px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}), bt=h('div',{style:{width:'380px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
   const name=x=>x.NAMEFR||x.NAMEGE||'';
-  const drawT=()=>grid(bt,Object.assign(ot,{cols:[{k:'n',t:'Désignation',f:x=>esc(name(x))}],rows:og.sel?DS.all('task').filter(x=>x.TASKGROUP_ID===+og.sel).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)):[],sort:null,onDbl:()=>ptOk().click()}));
-  grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(name(x))}],rows:DS.all('taskgroup').sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),sort:null,onSel:()=>{ ot.selSet=new Set(); drawT(); }}));
+  let upd=()=>{};
+  const drawT=()=>grid(bt,Object.assign(ot,{cols:[{k:'n',t:'Désignation',f:x=>esc(name(x))}],rows:og.sel?DS.all('task').filter(x=>x.TASKGROUP_ID===+og.sel).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)):[],sort:null,onSel:()=>upd(),onDbl:()=>ptOk().click()}));
+  grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(name(x))}],rows:DS.all('taskgroup').sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),sort:null,onSel:()=>{ ot.selSet=new Set(); drawT(); upd(); }}));
   drawT();
-  dialog({title:'Sélection des tâches',body:h('div',{style:{display:'flex',gap:'8px'}},bg,bt),buttons:[{t:'Nouveau',fn:()=>{ setTimeout(()=>ptEditFull(ptNew(p),p),50); }},{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
-    const xs=gridSel(ot,id=>DS.get('task',id)).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)); if(!xs.length){ toast('Sélectionnez au moins une tâche.',true); return false; }
+  const D=dialog({title:'Sélection des tâches',body:h('div',{style:{display:'flex',gap:'8px'}},bg,bt),buttons:[{t:'Nouveau',fn:()=>{ setTimeout(()=>ptEditFull(ptNew(p),p),50); }},{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    const xs=gridSel(ot,id=>DS.get('task',id)).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)); if(!xs.length) return false;
     if(xs.length===1){ setTimeout(()=>ptEditFull(ptFromCatalog(p,xs[0]),p),50); return; }
     const ids=DS.newIds('projecttask',xs.length);
     await DS.commit(xs.map((x,i)=>({t:'projecttask',id:ids[i],val:{...ptFromCatalog(p,x),ID:ids[i]}})));
-    ids.forEach(id=>AM.pt.keep.add(String(id))); AM.pt.g.selSet=new Set([String(ids[0])]); AM.pt.g.sel=String(ids[0]); toast(xs.length+' tâches créées (Brouillon).'); }}]}); }
+    ids.forEach(id=>AM.pt.keep.add(String(id))); AM.pt.g.selSet=new Set([String(ids[0])]); AM.pt.g.sel=String(ids[0]); toast(xs.length+' tâches créées (Brouillon).'); }}]});
+  const okB=D.bd.parentNode.querySelector('.ft .btn.pri'); upd=()=>{ okB.disabled=!(ot.selSet&&ot.selSet.size); }; upd(); }
 
 /* ── Impressions : anciens modèles du bureau « projectTask » / « projectTaskList » (secours HTML) ── */
-function ptDescText(t,withNotes){ let s=(t.SUBJECT||'')+'\n'+(t.DESCRIPTION||'');
-  if(withNotes) DS.by('projecttasknote','PROJECTTASK_ID',t.ID).filter(n=>n.CONTENT).forEach(n=>{ s+='\n\nNote du '+dfr(n.CHANGEDDATE)+': '+(n.SUBJECT||'')+'\n'+n.CONTENT; });
+function ptDescText(t,withNotes){ let s='£'+(t.SUBJECT||'')+'\n'+(t.DESCRIPTION||'');   // « £ » = ligne en gras (Tasksreport)
+  if(withNotes) DS.by('projecttasknote','PROJECTTASK_ID',t.ID).filter(n=>n.CONTENT).forEach(n=>{ s+='\n\n£Note du '+dfr(n.CHANGEDDATE)+':'+(n.SUBJECT||'')+'\n'+n.CONTENT; });
   return s; }
 function ptPrintTask(t){ if(!t) return; const p=DS.get('project',t.PROJECT_ID);
   const ti=h('input',{class:'inp',value:'Tâche',style:{width:'280px'}}), wn=h('input',{type:'checkbox',checked:true}), cv=h('input',{type:'checkbox'});
@@ -3916,31 +3925,33 @@ function ptPrintTask(t){ if(!t) return; const p=DS.get('project',t.PROJECT_ID);
     const title=ti.value.trim()||'Tâche', stf=DS.get('staff',t.STAFF_ID), c=DS.get('contact',t.CONTACT_ID);
     const fb=()=>ptPrintHTML(t,p,title,wn.checked);
     tplOr(()=>tplPrint({type:'projectTask',project:p,title,cover:cv.checked,ctx:{fields:{projectTaskTitle:t.SUBJECT||'',documentTitle:title,
-        projectTaskStaff:staffName(stf),projectTaskContact:(c&&c.SHORTLABEL)||ptContact(c),projectTaskDeadline:dLong(t.DEADLINE),
+        projectTaskStaff:((stf&&DS.get('contact',stf.PERSON_ID))||{}).SHORTLABEL||staffName(stf),projectTaskContact:(c&&c.SHORTLABEL)||ptContact(c),projectTaskDeadline:dLong(t.DEADLINE),
         projectTaskStatus:PT_STATE[t.PROJECTTASKSTATECODE]||'',projectTaskPriority:PT_PRIO[t.PROJECTTASKPRIORITYCODE]||''}},
       flow:{champ:'projectTaskDesc',text:ptDescText(t,wn.checked)},fallback:fb}),fb); }}]}); }
 function ptPrintHTML(t,p,title,withNotes){ const w=open('','_blank'); if(!w) return; const R=(k,v)=>`<tr><th>${esc(k)}</th><td>${esc(v||'')}</td></tr>`;
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>@page{size:A4;margin:18mm}body{font:10pt Akkurat,Helvetica,Arial,sans-serif}h1{font-size:13pt;font-weight:400;display:flex;justify-content:space-between;border-bottom:.5pt solid #000;padding-bottom:4px}
     table{border-collapse:collapse;margin:8px 0;width:100%}th{text-align:left;width:40mm;font-weight:400;color:#555;padding:2px 0;vertical-align:top}td{padding:2px 0}h2{font-size:10pt;margin:14px 0 4px}.d{white-space:pre-wrap}</style></head><body>
-    <h1><span>${esc(t.SUBJECT||'')}</span><span>${esc(dLong(t.STARTDATE))}</span></h1><table>${R('Affaire',ptProj(p))}${R('Maître d’ouvrage',projMO(p))}</table>
+    <h1><span>${esc(t.SUBJECT||'')}</span><span>${esc(dLong(t.STARTDATE))}</span></h1><table>${R('Affaire',ptProj(p))}${R('Maître d’ouvrage',projMO(p))}${R('Architecte',tplMember(p,1,''))}${R('Directeur de projet',tplMember(p,4,''))}${R('Direction des travaux',tplMember(p,2,''))}</table>
     <table>${R('Responsable',staffName(DS.get('staff',t.STAFF_ID)))}${R('Entité',ptContact(DS.get('contact',t.CONTACT_ID)))}${R('Créé par',ptCreated(t))}${R('Délai',dLong(t.DEADLINE))}${R('Réglé le',dLong(t.DONEDATE))}${R('Statut',PT_STATE[t.PROJECTTASKSTATECODE])}${R('Priorité',PT_PRIO[t.PROJECTTASKPRIORITYCODE])}</table>
-    <h2>Description de la tâche :</h2><div class="d">${esc(ptDescText(t,withNotes).split('\n').slice(1).join('\n'))}</div></body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
+    <h2>Description de la tâche :</h2><div class="d">${ptDescText(t,withNotes).split('\n').slice(1).map(l=>l[0]==='£'?'<b>'+esc(l.slice(1))+'</b>':esc(l)).join('\n')}</div></body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
 function ptPrintList(list,p,state){ const title='Liste des tâches de l’affaire';
   const cols=[{t:'Date',w:30},{t:'Créé par',w:30},{t:'Concerne',w:30},{t:'Statut',w:30},{t:'Priorité',w:30},{t:'Responsable',w:30},{t:'Entité',w:30},{t:'Délai',w:30},{t:'Réglé le',w:30},{t:'Ouvrage',w:30}];
   const rows=list.map(t=>[dfr(t.STARTDATE),t.USERNAME||'',t.SUBJECT||'',PT_STATE[t.PROJECTTASKSTATECODE]||'',PT_PRIO[t.PROJECTTASKPRIORITYCODE]||'',staffName(DS.get('staff',t.STAFF_ID)),
     ptContact(DS.get('contact',t.CONTACT_ID)),dfr(t.DEADLINE),dfr(t.DONEDATE),(DS.get('subproject',t.SUBPROJECT_ID)||{}).CODE||'']);
   const fb=()=>{ const w=open('','_blank'); if(!w) return; w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:12mm}body{font:8.5pt Akkurat,Helvetica,Arial,sans-serif}h1{font-size:12pt;font-weight:400}
     table{border-collapse:collapse;width:100%}td,th{padding:2px 5px;border-bottom:.4pt solid #ccc;text-align:left;vertical-align:top}th{border-bottom:.8pt solid #000}tr:nth-child(even) td{background:#eaeaea}</style></head><body>
-    <h1>${esc(title)} — ${esc(ptProj(p))}${state!=null?' — '+esc(PT_STATE[state]):''}</h1><table><tr>${cols.map(c=>`<th>${c.t}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table></body></html>`);
+    <h1 style="display:flex;justify-content:space-between"><span>${esc(title)}${state!=null?' — '+esc(PT_STATE[state]):''}</span><span>${esc(dLong(today()))}</span></h1>
+    <table style="width:auto;margin-bottom:8px">${[['Affaire',ptProj(p)],['Maître d’ouvrage',projMO(p)],['Architecte',tplMember(p,1,'')],['Directeur de projet',tplMember(p,4,'')],['Direction de travaux',tplMember(p,2,'')]].map(([k,v])=>`<tr><td style="border:0;color:#555;width:40mm">${esc(k)}</td><td style="border:0">${esc(v||'')}</td></tr>`).join('')}</table><table><tr>${cols.map(c=>`<th>${c.t}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table></body></html>`);
     w.document.close(); setTimeout(()=>w.print(),300); };
   tplOr(()=>tplPrint({type:'projectTaskList',project:p,title,ctx:{filtre:state!=null?PT_STATE[state]:''},cols,rows,fallback:fb}),fb); }
 
 /* ── Administrateur ▸ Tâches : catalogue des groupes et tâches standard (TASKGROUP / TASK) ── */
 function admTasks(R){
-  const og={}, ot={}, bg=h('div',{class:'pane'}), bt=h('div',{class:'pane'});
+  const T0=ADM.tk||(ADM.tk={og:{},ot:{}}), og=T0.og, ot=T0.ot, bg=h('div',{class:'pane'}), bt=h('div',{class:'pane'});
+  if(og.sel!=null&&!DS.get('taskgroup',og.sel)) og.sel=null; { const x=ot.sel!=null&&DS.get('task',ot.sel); if(!x||!og.sel||x.TASKGROUP_ID!==+og.sel) ot.sel=null; }
   const name=x=>x.NAMEFR||x.NAMEGE||'';
   const groups=()=>DS.all('taskgroup').sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)), tasks=()=>og.sel?DS.all('task').filter(x=>x.TASKGROUP_ID===+og.sel).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)):[];
-  const drawG=()=>grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(name(x))}],rows:groups(),sort:null,onSel:()=>drawT(),onDbl:x=>edG(x)}));
+  const drawG=()=>grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(name(x))}],rows:groups(),sort:null,onSel:()=>{ ot.sel=null; drawT(); },onDbl:x=>edG(x)}));
   const drawT=()=>grid(bt,Object.assign(ot,{cols:[{k:'n',t:'Tâche',w:260,f:x=>esc(name(x))},{k:'DESCRIPTION',t:'Description',f:x=>esc(ptCrop(x.DESCRIPTION))}],rows:tasks(),sort:null,onDbl:x=>edT(x)}));
   const form=(v,withDesc)=>{ const I=k=>h('input',{class:'inp',maxlength:64,value:v[k]||''}), F={NAMEGE:I('NAMEGE'),NAMEFR:I('NAMEFR'),NAMEIT:I('NAMEIT'),NAMEEN:I('NAMEEN')};
     const d=withDesc?h('textarea',{class:'inp',rows:6,maxlength:1024,style:{width:'100%'}},v.DESCRIPTION||''):null;
@@ -3957,7 +3968,7 @@ function admTasks(R){
     ...['first','prev','next','last'].map(k=>({i:k,t:{first:'Au début',prev:'Monter',next:'Descendre',last:'À la fin'}[k],fn:async()=>{ await move(list,o,t,k); t==='taskgroup'?drawG():drawT(); }}))]);
   const delG=async()=>{ const g=DS.get('taskgroup',og.sel); if(!g) return; if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
     await DS.commit([{t:'taskgroup',id:g.ID,val:null},...DS.all('task').filter(x=>x.TASKGROUP_ID===g.ID).map(x=>({t:'task',id:x.ID,val:null}))]); og.sel=null; drawG(); drawT(); };
-  const delT=async()=>{ const x=DS.get('task',ot.sel); if(!x) return; if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return; await DS.del('task',x.ID); ot.sel=null; drawT(); };
+  const delT=async()=>{ const x=DS.get('task',ot.sel); if(!x||x.TASKGROUP_ID!==+og.sel) return; if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return; await DS.del('task',x.ID); ot.sel=null; drawT(); };
   const L=h('div',{class:'col',style:{width:'280px',flex:'0 0 280px'}},bar(edG,groups,og,'taskgroup',delG),bg), Rt=h('div',{class:'col fill'},bar(edT,tasks,ot,'task',delT),bt);
   R.append(h('div',{class:'cols',style:{flex:1}},L,Rt)); drawG(); drawT(); }
 

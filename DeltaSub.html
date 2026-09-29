@@ -1012,6 +1012,449 @@ function staffFreeze(list){
     buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.commit(list.map(s=>({t:'staff',id:s.ID,val:{...s,ISTIMELOGFROZEN:on.checked?1:0,TIMELOGFREEZINGDATE:on.checked?d.value:s.TIMELOGFREEZINGDATE}})))}]});
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   AFFAIRES (manuel p.24-29, p.34) — PROJECT, PROJECTMEMBER, PROJECTPHASE…
+═══════════════════════════════════════════════════════════════════════════ */
+const PSTATE={1:'Configuration',2:'En cours',3:'En attente',4:'Terminée',5:'Archivée'};
+projState=p=>p?(PSTATE[p.PROJECTSTATECODE]||''):'';
+/* Rôles des intervenants : [code, libellé, unique] dans l'ordre d'affichage de Deltaproject */
+const ROLES=[[8,'Maître d’ouvrage',1],[23,'Autres MO',0],[31,'Entreprise totale',1],[1,'Architecte',1],[22,'Autres architectes',0],[2,'Directeur des travaux',1],
+  [3,'Ingénieur civil',1],[35,'Paysagiste',1],[19,'Entreprises',0],[25,'Entreprise générale',0],[4,'Directeur d’affaire',1],[5,'Représentant directeur',1],
+  [6,'Responsable de l’affaire',1],[7,'Représentant resp.',1],[50,'Consultant du MO',1],[51,'Représentant du MO',1],[32,'Economiste',0],[12,'Collaborateurs',0],
+  [13,'Collaborateurs externes',0],[24,'Gérant d’immeubles',0],[10,'Spécialistes',0],[26,'Planificateur principal',0],[21,'Planificateur de coût',1],[11,'Experts',0],
+  [14,'Autorités',0],[20,'Assurances',0],[16,'Locataires',0],[17,'Acheteurs',0],[18,'Voisins',0],[27,'Gérance immobilière',0],[28,'Clients',0],[29,'Exploitants',0],
+  [30,'Participants concours',0],[36,'Manager BIM',0],[37,'Coordinateur BIM',0],[38,'Responsable BIM',0],[39,'Coordinateur ICT',0],[33,'Garant (SIA 1018/1019)',1],
+  [34,'Usines',0],[15,'Autres',0],[90,'Intervenants archivés',0]];
+const ROLE=Object.fromEntries(ROLES.map(r=>[r[0],r[1]])), ROLE_ORD=Object.fromEntries(ROLES.map((r,i)=>[r[0],i]));
+teamRole=c=>c==null?'':(ROLE[c]||String(c));
+const ACT_T={0:'Affaires',1:'Etudes',50:'Travaux de bureau',51:'Formation continue',52:'Direction',53:'Concours',54:'Acquisition',55:'Conseil d’administration',
+  90:'Absences justifiées (mariage, naissance, …)',91:'Maladie, accident, maternité',92:'Militaire, service civil',93:'Formation, apprentis'};
+const TSTATE={0:'Saisi',1:'Refusé',2:'Corrigé',3:'Approuvé'};
+const projActive=p=>p&&p.PROJECTSTATECODE!==5;
+/* Affaires où un collaborateur est intervenant « Collaborateurs » (rôle 12) : condition de saisie des heures */
+function staffProjects(staff){ if(!staff) return []; const pid=staff.PERSON_ID;
+  return [...new Set(DS.all('projectmember').filter(m=>m.TEAMROLECODE===12&&m.RESPCONTACT_ID===pid).map(m=>m.PROJECT_ID))].map(id=>DS.get('project',id)).filter(Boolean); }
+const lang4=(v)=>[['NAMEGE','Deutsch'],['NAMEFR','Français'],['NAMEIT','Italiano'],['NAMEEN','English']].map(([k,t])=>[t,h('input',{class:'inp',value:v[k]||'','data-k':k})]);
+function formRows(rows,minW){ return h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:(minW||440)+'px'}},...rows.flatMap(([l,x])=>[h('label',{},l),x])); }
+function readK(bd,v,nums){ $$('[data-k]',bd).forEach(e=>{ const k=e.dataset.k; if(e.type==='checkbox'){ v[k]=e.checked?1:0; return; } const x=e.value.trim(); v[k]=x===''?null:((nums||[]).includes(k)?+x:x); }); return v; }
+const nI=(v,k,w)=>h('input',{class:'inp',type:'number',step:'any',value:v[k]??'','data-k':k,style:{width:w||'120px'}});
+const tI=(v,k,w)=>h('input',{class:'inp',value:v[k]??'','data-k':k,style:w?{width:w}:null});
+
+/* ── Fiche affaire (6 onglets) ── */
+function editProject(p){
+  const isNew=!p; const v=p?{...p}:{ID:null,PROJECTSTATECODE:1,CURRENCY:'CHF',ISINTERNAL:0,ISTIMEPHASEMANDATORY:1,ISTIMEDESCMANDATORY:1,ISEXPENSESDESCMANDATORY:1,ISTIMESUBPROJECTMANDATORY:0,ISEXPENSESPHASEMANDATORY:0,NEXTUNIQUEPLANID:1,ISPATHTOPROJECTDOCUMENTSRELATIVE:1};
+  const TABS=['Affaire','Genres d’affaire','Délais','Paramètres','Adresses','Références']; let tab='Affaire';
+  const chk=(k,l)=>h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':k,checked:!!v[k]||null}),' '+l);
+  const phs=v.ID?DS.by('projectphase','PROJECT_ID',v.ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)):[];
+  const kinds=new Set(v.ID?DS.by('project_projectkind','PROJECT_ID',v.ID).map(l=>l.PROJECTKINDS_ID):[]);
+  const adr={}; ['CONTACT1_ID','CONTACT2_ID','CONTACT3_ID','CONTACT4_ID'].forEach(k=>adr[k]=v[k]);
+  const pane={
+    'Affaire':formRows([[h('b',{},'Numéro d’affaire'),tI(v,'NUMBER','160px')],['Désignation de l’affaire',tI(v,'TITLE')],['Complément',h('textarea',{class:'inp',rows:3,'data-k':'DESCRIPTION'},v.DESCRIPTION||'')],
+      ['Type d’affaire',chk('ISINTERNAL','Interne')],['Statut de l’affaire',h('select',{class:'inp','data-k':'PROJECTSTATECODE',style:{width:'200px'}},...Object.entries(PSTATE).map(([k,t])=>h('option',{value:k,selected:+k===v.PROJECTSTATECODE||null},t)))],
+      ['Phase en cours',h('select',{class:'inp','data-k':'CURRENTPROJECTPHASE_ID',style:{width:'300px'}},h('option',{value:''},''),...phs.map(x=>h('option',{value:x.ID,selected:x.ID===v.CURRENTPROJECTPHASE_ID||null},(x.NUMBER??'')+' '+nm(x))))],
+      ['Tri',tI(v,'SORTLABEL','200px')],['Indice ICC',nI(v,'BASISINDEX')],['Volume construit',h('div',{},nI(v,'VOLUME'),' m3')],['Surface de plancher',h('div',{},nI(v,'AREA'),' m2')]],620),
+    'Genres d’affaire':(()=>{ const box=h('div',{style:{height:'380px',overflow:'auto',border:'1px solid var(--line)',background:'#fff',minWidth:'620px'}});
+      const rows=DS.all('projectkind').sort((a,b)=>cmp((DS.get('projectgroup',a.PROJECTGROUP_ID)||{}).SORTORDER,(DS.get('projectgroup',b.PROJECTGROUP_ID)||{}).SORTORDER)||cmp(a.SORTORDER,b.SORTORDER));
+      grid(box,{cols:[{k:'c',t:'',w:34,cls:'c',f:k=>`<input type="checkbox" data-kind="${k.ID}" ${kinds.has(k.ID)?'checked':''}>`},{k:'g',t:'Groupe d’affaires',f:k=>esc(nm(DS.get('projectgroup',k.PROJECTGROUP_ID)))},{k:'n',t:'Genre d’affaire',f:k=>esc(nm(k))}],rows});
+      box.addEventListener('change',e=>{ const id=+e.target.dataset.kind; if(e.target.checked) kinds.add(id); else kinds.delete(id); }); return box; })(),
+    'Délais':formRows([['Début du projet',h('input',{class:'inp',type:'date','data-k':'PROJECTSTARTDATE',value:v.PROJECTSTARTDATE||'',style:{width:'160px'}})],['Fin du projet',h('input',{class:'inp',type:'date','data-k':'PROJECTENDDATE',value:v.PROJECTENDDATE||'',style:{width:'160px'}})],
+      ['Début de planification',tI(v,'STARTOFPLANNING')],['Fin de planification',tI(v,'ENDOFPLANNING')],['Début des travaux',tI(v,'STARTOFCONSTRUCTION')],['Fin des travaux',tI(v,'ENDOFCONSTRUCTION')],['Remise des clés',tI(v,'MOVEINDEADLINE')]],620),
+    'Paramètres':formRows([['Monnaie',tI(v,'CURRENCY','80px')],[h('b',{},'Temps de travail'),h('span')],['',chk('ISTIMEPHASEMANDATORY','Phase obligatoire')],['',chk('ISTIMESUBPROJECTMANDATORY','Subdivision obligatoire')],['',chk('ISTIMEDESCMANDATORY','Commentaire obligatoire')],
+      [h('b',{},'Notes de frais'),h('span')],['',chk('ISEXPENSESPHASEMANDATORY','Phase obligatoire')],['',chk('ISEXPENSESDESCMANDATORY','Description obligatoire')],
+      [h('b',{},'Plan-ID'),h('span')],['Prochain plan-ID',nI(v,'NEXTUNIQUEPLANID','90px')],['',chk('ISUNIQUEPLANIDLOCKED','Créer automatiquement')],
+      ['Emplacement du dossier d’affaire',tI(v,'PROJECTFOLDER')],['URL de la messagerie',tI(v,'MAILBOXURL')]],620),
+    'Adresses':(()=>{ const rows=[['CONTACT1_ID','Adresse d’affaire'],['CONTACT2_ID','Adresse de facturation'],['CONTACT3_ID','Adresse de livraison'],['CONTACT4_ID','Lieu de dépôt des offres']];
+      return formRows(rows.map(([k,l])=>{ const d=h('div',{style:{whiteSpace:'pre-line',flex:1,minHeight:'48px',border:'1px solid #ccc',borderRadius:'4px',padding:'4px 6px',background:'#fff'}});
+        const upd=()=>d.textContent=adrLines(DS.get('contact',adr[k])).join('\n')||'—'; upd();
+        return [l,h('div',{style:{display:'flex',gap:'6px',alignItems:'flex-start'}},d,ibtn({i:'person',t:'Choisir',fn:()=>pickContact(l,c=>{ adr[k]=c.ID; upd(); })}),ibtn({i:'minus',t:'Supprimer cette adresse',fn:()=>{ adr[k]=null; upd(); }}))]; }),620); })(),
+    'Références':formRows([['Numéro d’affaire externe',tI(v,'EXTERNALNUMBER')],['District',tI(v,'LOCATION')],['Zone/quartier',tI(v,'PLOT')],['Numéro registre foncier',tI(v,'LANDREGISTERNR')],['Service comptabilité',tI(v,'ACCOUNTINGAREA')]],620)
+  };
+  const host=h('div',{style:{minHeight:'420px'}}), segH=h('div',{style:{textAlign:'center',marginBottom:'12px'}});
+  const show=t=>{ tab=t; segH.replaceChildren(seg(TABS,t,show)); Object.entries(pane).forEach(([k,e])=>e.style.display=k===t?'':'none'); };
+  Object.values(pane).forEach(e=>host.append(e)); show('Affaire');
+  dialog({title:isNew?'Nouvelle affaire':'Editer l’affaire',body:h('div',{},segH,host),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{
+    readK(bd,v,['PROJECTSTATECODE','CURRENTPROJECTPHASE_ID','BASISINDEX','VOLUME','AREA','NEXTUNIQUEPLANID']); Object.assign(v,adr);
+    if(!v.NUMBER){ toast('Le numéro d’affaire est obligatoire.',true); show('Affaire'); return false; }
+    if(DS.all('project').some(x=>x.NUMBER===v.NUMBER&&x.ID!==v.ID)){ toast('Ce numéro d’affaire existe déjà.',true); return false; }
+    if(v.ID==null) v.ID=DS.newIds('project')[0];
+    const ops=[{t:'project',id:v.ID,val:v}], old=new Set(DS.by('project_projectkind','PROJECT_ID',v.ID).map(l=>l.PROJECTKINDS_ID));
+    kinds.forEach(k=>{ if(!old.has(k)) ops.push({t:'project_projectkind',id:v.ID+'-'+k,val:{PROJECT_ID:v.ID,PROJECTKINDS_ID:k}}); });
+    old.forEach(k=>{ if(!kinds.has(k)) ops.push({t:'project_projectkind',id:v.ID+'-'+k,val:null}); });
+    await DS.commit(ops); AF.g.sel=String(v.ID); toast('Affaire enregistrée.');
+  }}]});
+}
+async function delProject(p){
+  if(DS.by('timelog','PROJECT_ID',p.ID).length||DS.by('projectcost','PROJECT_ID',p.ID).length||DS.by('costestimatedocument','PROJECT_ID',p.ID).length||DS.by('costcontroldocument','PROJECT_ID',p.ID).length){
+    toast('Des documents, des heures ou des frais ont déjà été saisis dans cette affaire. Suppression impossible.',true); return; }
+  if(!await confirmDlg('Voulez-vous vraiment supprimer cette affaire ?','Supprimer')) return;
+  const ops=[{t:'project',id:p.ID,val:null}];
+  [['projectmember','PROJECT_ID'],['projectphase','PROJECT_ID'],['projectactivitygroup','PROJECT_ID'],['projectrategroup','PROJECT_ID'],['subproject','PROJECT_ID']].forEach(([t,f])=>DS.by(t,f,p.ID).forEach(r=>ops.push({t,id:r.ID,val:null})));
+  await DS.commit(ops); AF.g.sel=null;
+}
+
+/* ── Configurer les phases (p.27) ── */
+function cfgPhases(p){
+  const o1={}, o2={}; const L=h('div',{style:{height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}), R=h('div',{style:{height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const bc=[{k:'TIMEAMOUNTBUDGET',t:'Budget CHF',w:100,cls:'r',f:x=>num(x.TIMEAMOUNTBUDGET)},{k:'TIMEBUDGET',t:'Budget h',w:80,cls:'r',f:x=>num(x.TIMEBUDGET)},{k:'COSTBUDGET',t:'Budget NK CHF',w:100,cls:'r',f:x=>num(x.COSTBUDGET)}];
+  const drawL=()=>{ grid(L,Object.assign(o1,{cols:[{k:'NUMBER',t:'Nr.',w:44},{k:'n',t:'Phase',f:x=>esc(nm(x)),v:nm},...bc],rows:DS.by('projectphase','PROJECT_ID',p.ID),sort:['NUMBER',1],onSel:drawR,onDbl:x=>ed('projectphase',x)})); drawR(); };
+  const drawR=()=>grid(R,Object.assign(o2,{cols:[{k:'NUMBER',t:'Nr.',w:44},{k:'n',t:'Phase partielle',f:x=>esc(nm(x))+(x.ISTERMINATED?' 🔒':''),v:nm},...bc],rows:o1.sel?DS.by('projectsubphase','PROJECTPHASE_ID',+o1.sel):[],sort:['NUMBER',1],onDbl:x=>ed('projectsubphase',x)}));
+  const ed=(t,x)=>{ const sub=t==='projectsubphase'; if(sub&&!o1.sel&&!x) return;
+    const v=x?{...x}:(sub?{ID:null,PROJECTPHASE_ID:+o1.sel}:{ID:null,PROJECT_ID:p.ID});
+    const rows=[['Numéro',nI(v,'NUMBER','80px')],...lang4(v),[h('b',{},'Budget'),h('span')],['Honoraires',h('div',{},nI(v,'TIMEAMOUNTBUDGET'),' CHF  ',nI(v,'TIMEBUDGET','90px'),' h')],['Prévision des frais',h('div',{},nI(v,'COSTBUDGET'),' CHF')]];
+    if(sub) rows.push(['',h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':'ISTERMINATED',checked:!!v.ISTERMINATED||null}),' Verrouillé (saisies des heures et des frais vérrouillées)')]);
+    dialog({title:sub?'Editer la phase partielle':'Editer la phase',body:formRows(rows),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['NUMBER','TIMEAMOUNTBUDGET','TIMEBUDGET','COSTBUDGET']); await DS.save(t,v); drawL(); }}]}); };
+  const del=async(t,o)=>{ if(!o.sel) return; const f=t==='projectphase'?'PHASE_ID':'SUBPHASE_ID';
+    if(DS.all('timelog').some(r=>r[f]===+o.sel)){ toast('Des heures sont déjà comptabilisées sur cette phase. Elle ne peut pas être effacée.',true); return; }
+    if(await confirmDlg('Supprimer cette '+(t==='projectphase'?'phase':'phase partielle')+' ?','Supprimer')){ await DS.del(t,o.sel); drawL(); } };
+  const std=async()=>{ if(DS.by('projectphase','PROJECT_ID',p.ID).length&&!await confirmDlg('Des phases existent déjà. Ajouter quand même les phases standards ?','Ajouter')) return;
+    const ph=DS.all('phase'), ids=DS.newIds('projectphase',ph.length), ops=[]; const sp=DS.all('subphase'), sids=DS.newIds('projectsubphase',sp.length); let j=0;
+    ph.forEach((x,i)=>{ ops.push({t:'projectphase',id:ids[i],val:{ID:ids[i],PROJECT_ID:p.ID,NUMBER:x.NUMBER,NAMEFR:x.NAMEFR,NAMEGE:x.NAMEGE,NAMEIT:x.NAMEIT,NAMEEN:x.NAMEEN}});
+      sp.filter(s=>s.PHASE_ID===x.ID).forEach(s=>{ const id=sids[j++]; ops.push({t:'projectsubphase',id,val:{ID:id,PROJECTPHASE_ID:ids[i],NUMBER:s.NUMBER,NAMEFR:s.NAMEFR,NAMEGE:s.NAMEGE,NAMEIT:s.NAMEIT,NAMEEN:s.NAMEEN,ISTERMINATED:0}}); }); });
+    await DS.commit(ops); drawL(); };
+  drawL();
+  dialog({title:'Configurer les phases — '+projLabel(p),body:h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',minWidth:'1000px'}},
+    h('div',{},phead([{i:'plus',t:'Nouvelle phase',fn:()=>ed('projectphase')},{i:'edit',fn:()=>o1.sel&&ed('projectphase',DS.get('projectphase',o1.sel))},{i:'minus',fn:()=>del('projectphase',o1)},{i:'import',t:'Insérer les phases et phases partielles standards',fn:std}]),L),
+    h('div',{},phead([{i:'plus',t:'Nouvelle phase partielle',fn:()=>ed('projectsubphase')},{i:'edit',fn:()=>o2.sel&&ed('projectsubphase',DS.get('projectsubphase',o2.sel))},{i:'minus',fn:()=>del('projectsubphase',o2)}]),R)),
+    buttons:[{t:'Fermer',pri:true}]});
+}
+/* ── Configurer les activités (p.26) : groupes | activités | collaborateurs autorisés ── */
+function cfgActivities(p){
+  const o1={},o2={},o3={}; const box=()=>h('div',{style:{height:'320px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const A=box(),B=box(),C=box();
+  const rg=DS.by('projectrategroup','PROJECT_ID',p.ID);
+  const drawA=()=>{ grid(A,Object.assign(o1,{cols:[{k:'n',t:'Groupe d’activités',f:x=>esc(nm(x)),v:nm},{k:'TIMEAMOUNTBUDGET',t:'Prévision CHF',w:95,cls:'r',f:x=>num(x.TIMEAMOUNTBUDGET)},{k:'TIMEBUDGET',t:'Prévision h',w:80,cls:'r',f:x=>num(x.TIMEBUDGET)}],
+      rows:DS.by('projectactivitygroup','PROJECT_ID',p.ID),sort:['SORTORDER',1],onSel:()=>{ o2.sel=null; drawB(); },onDbl:x=>ed('projectactivitygroup',x)})); drawB(); };
+  const drawB=()=>{ grid(B,Object.assign(o2,{cols:[{k:'n',t:'Activité',f:x=>esc(nm(x)),v:nm},{k:'TIMEAMOUNTBUDGET',t:'Prévision CHF',w:95,cls:'r',f:x=>num(x.TIMEAMOUNTBUDGET)},{k:'TIMEBUDGET',t:'Prévision h',w:80,cls:'r',f:x=>num(x.TIMEBUDGET)},{k:'r',t:'Tarif',w:120,f:x=>esc(nm(DS.get('projectrategroup',x.PROJECTRATEGROUP_ID)))}],
+      rows:o1.sel?DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',+o1.sel):[],sort:['SORTORDER',1],onSel:drawC,onDbl:x=>ed('projectactivity',x)})); drawC(); };
+  const drawC=()=>grid(C,Object.assign(o3,{cols:[{k:'n',t:'Collaborateur',f:l=>esc(staffName(DS.get('staff',l.STAFFS_ID)))}],key:l=>l.STAFFS_ID,rows:o2.sel?DS.by('projectactivity_staff','PROJECTACTIVITY_ID',+o2.sel):[]}));
+  const ed=(t,x)=>{ const act=t==='projectactivity'; if(act&&!o1.sel&&!x) return;
+    const v=x?{...x}:(act?{ID:null,PROJECTACTIVITYGROUP_ID:+o1.sel,TYPECODE:0,SORTORDER:DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',+o1.sel).length}:{ID:null,PROJECT_ID:p.ID,SORTORDER:DS.by('projectactivitygroup','PROJECT_ID',p.ID).length});
+    const rows=[...lang4(v)];
+    if(act){ rows.push(['Type d’activité',h('select',{class:'inp','data-k':'TYPECODE'},...Object.entries(ACT_T).map(([k,tt])=>h('option',{value:k,selected:+k===v.TYPECODE||null},tt)))]);
+      rows.push(['Tarif',h('select',{class:'inp','data-k':'PROJECTRATEGROUP_ID'},h('option',{value:''},''),...rg.sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).map(r=>h('option',{value:r.ID,selected:r.ID===v.PROJECTRATEGROUP_ID||null},nm(r)+' ('+num(rateOfGroup(r.ID,today()),0)+' CHF)')))]); }
+    rows.push([act?'Temps prévu : Honoraires':'Prévision',h('div',{},nI(v,'TIMEAMOUNTBUDGET'),' CHF  ',nI(v,'TIMEBUDGET','90px'),' h')]);
+    dialog({title:act?(x?'Editer l’activité':'Nouvelle activité'):(x?'Editer le groupe d’activités':'Nouveau groupe d’activités'),body:formRows(rows),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['TYPECODE','PROJECTRATEGROUP_ID','TIMEAMOUNTBUDGET','TIMEBUDGET']); await DS.save(t,v); drawA(); }}]}); };
+  const del=async(t,o,f)=>{ if(!o.sel) return; if(DS.all('timelog').some(r=>r[f]===+o.sel)){ toast('Des heures sont déjà comptabilisées sur cette activité. Elle ne peut pas être effacée.',true); return; }
+    if(await confirmDlg('Supprimer ?','Supprimer')){ await DS.del(t,o.sel); drawA(); } };
+  const addStaff=()=>{ if(!o2.sel) return; pickStaff(ss=>DS.commit(ss.map(s=>({t:'projectactivity_staff',id:o2.sel+'-'+s.ID,val:{PROJECTACTIVITY_ID:+o2.sel,STAFFS_ID:s.ID}}))).then(drawC)); };
+  const allToStaff=()=>pickStaff(ss=>{ const ops=[]; DS.by('projectactivitygroup','PROJECT_ID',p.ID).forEach(g=>DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',g.ID).forEach(a=>ss.forEach(s=>ops.push({t:'projectactivity_staff',id:a.ID+'-'+s.ID,val:{PROJECTACTIVITY_ID:a.ID,STAFFS_ID:s.ID}}))));
+    DS.commit(ops).then(()=>{ drawC(); toast('Activités attribuées.'); }); });
+  drawA();
+  dialog({title:'Configurer les activités — '+projLabel(p),body:h('div',{style:{display:'grid',gridTemplateColumns:'1.1fr 1.3fr .8fr',gap:'10px',minWidth:'1120px'}},
+    h('div',{},phead([{i:'plus',t:'Ajouter',menu:()=>[{t:'Ajouter un groupe d’activités',fn:()=>ed('projectactivitygroup')},{t:'Importer du dossier standard',fn:()=>importStdActivities(p).then(drawA)}]},{i:'edit',fn:()=>o1.sel&&ed('projectactivitygroup',DS.get('projectactivitygroup',o1.sel))},{i:'minus',fn:()=>del('projectactivitygroup',o1,'ACTIVITYGROUP_ID')},
+      {i:'gear',menu:()=>[{t:'Attribuer toutes les activités à un collaborateur',fn:allToStaff}]}]),A),
+    h('div',{},phead([{i:'plus',t:'Nouvelle activité',fn:()=>ed('projectactivity')},{i:'edit',fn:()=>o2.sel&&ed('projectactivity',DS.get('projectactivity',o2.sel))},{i:'minus',fn:()=>del('projectactivity',o2,'ACTIVITY_ID')}]),B),
+    h('div',{},phead([{i:'plus',t:'Ajouter un collaborateur',fn:addStaff},{i:'minus',t:'Supprimer un collaborateur',fn:async()=>{ if(o2.sel&&o3.sel){ await DS.commit([{t:'projectactivity_staff',id:o2.sel+'-'+o3.sel,val:null}]); drawC(); } }}]),C)),
+    buttons:[{t:'Fermer',pri:true}]});
+}
+async function importStdActivities(p){
+  const gs=DS.all('activitygroup'), acts=DS.all('activity'), gi=DS.newIds('projectactivitygroup',gs.length), ai=DS.newIds('projectactivity',acts.length); const ops=[]; let j=0;
+  const base=DS.by('projectactivitygroup','PROJECT_ID',p.ID).length;
+  gs.forEach((g,i)=>{ ops.push({t:'projectactivitygroup',id:gi[i],val:{ID:gi[i],PROJECT_ID:p.ID,NAMEFR:g.NAMEFR,NAMEGE:g.NAMEGE,NAMEIT:g.NAMEIT,NAMEEN:g.NAMEEN,SORTORDER:base+i}});
+    acts.filter(a=>a.ACTIVITYGROUP_ID===g.ID).forEach((a,k)=>{ const id=ai[j++]; ops.push({t:'projectactivity',id,val:{ID:id,PROJECTACTIVITYGROUP_ID:gi[i],NAMEFR:a.NAMEFR,NAMEGE:a.NAMEGE,NAMEIT:a.NAMEIT,NAMEEN:a.NAMEEN,TYPECODE:a.TYPECODE||0,SORTORDER:k}}); }); });
+  await DS.commit(ops); toast('Activités standards importées.');
+}
+function pickStaff(fn){ const o={multi:true}, box=h('div',{style:{width:'320px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  grid(box,Object.assign(o,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s)),v:staffName}],rows:staffList(),sort:['n',1]}));
+  dialog({title:'Choisir des collaborateurs',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>fn(gridSel(o,id=>DS.get('staff',id)))}]}); }
+/* ── Tarifs de facturation (PROJECTRATEGROUP + PROJECTRATE historisé) ── */
+function rateOfGroup(gid,dateIso){ const r=DS.by('projectrate','PROJECTRATEGROUP_ID',gid).filter(x=>!x.VALIDFROM||x.VALIDFROM<=dateIso).sort((a,b)=>cmp(b.VALIDFROM,a.VALIDFROM))[0]; return r?r.RATE:0; }
+function cfgRates(p){
+  const o={}, box=h('div',{style:{width:'560px',height:'280px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const rows=()=>DS.by('projectrategroup','PROJECT_ID',p.ID).flatMap(g=>{ const rs=DS.by('projectrate','PROJECTRATEGROUP_ID',g.ID); return (rs.length?rs:[{ID:'g'+g.ID}]).map(r=>({...r,_g:g,key:g.ID+':'+r.ID})); });
+  const draw=()=>grid(box,Object.assign(o,{key:r=>r.key,cols:[{k:'n',t:'Niveau de tarification',f:r=>esc(nm(r._g)),v:r=>r._g.SORTORDER},{k:'RATE',t:'Tarif horaire',w:110,cls:'r',f:r=>r.RATE!=null?num(r.RATE):''},{k:'VALIDFROM',t:'Valable dès le',w:110,f:r=>dfr(r.VALIDFROM)}],rows:rows(),sort:['n',1]}));
+  const sel=()=>(o.view||[]).find(r=>r.key===o.sel);
+  const edG=g=>{ const v=g?{...g}:{ID:null,PROJECT_ID:p.ID,SORTORDER:DS.by('projectrategroup','PROJECT_ID',p.ID).length};
+    dialog({title:g?'Editer le groupe de tarifs':'Nouveau tarif',body:formRows(lang4(v)),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v); await DS.save('projectrategroup',v); draw(); }}]}); };
+  const edR=(g,r)=>{ const v=r&&r.RATE!=null?{ID:r.ID,PROJECTRATEGROUP_ID:g.ID,RATE:r.RATE,VALIDFROM:r.VALIDFROM}:{ID:null,PROJECTRATEGROUP_ID:g.ID,VALIDFROM:today()};
+    dialog({title:'Nouveau tarif de facturation — '+nm(g),body:formRows([['Tarif de facturation',h('div',{},nI(v,'RATE'),' CHF / h')],['Valable dès le',h('input',{class:'inp',type:'date','data-k':'VALIDFROM',value:v.VALIDFROM||''})]]),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['RATE']); await DS.save('projectrate',v); draw(); }}]}); };
+  const std=async()=>{ const rs=DS.all('rate'), gi=DS.newIds('projectrategroup',rs.length), ri=DS.newIds('projectrate',rs.length);
+    await DS.commit(rs.flatMap((r,i)=>[{t:'projectrategroup',id:gi[i],val:{ID:gi[i],PROJECT_ID:p.ID,NAMEFR:r.NAMEFR,NAMEGE:r.NAMEGE,NAMEIT:r.NAMEIT,NAMEEN:r.NAMEEN,SORTORDER:r.SORTORDER??i}},
+      {t:'projectrate',id:ri[i],val:{ID:ri[i],PROJECTRATEGROUP_ID:gi[i],RATE:r.RATE,VALIDFROM:r.VALIDFROM}}])); draw(); };
+  draw();
+  dialog({title:'Configurer les tarifs de facturation — '+projLabel(p),body:h('div',{},phead([
+    {i:'plus',menu:()=>[{t:'Nouveau tarif',fn:()=>edG()},{t:'Nouveau tarif de facturation (taux daté)',dis:!sel(),fn:()=>edR(sel()._g)},{t:'Importer du dossier standard',fn:std}]},
+    {i:'edit',menu:()=>[{t:'Editer le groupe de tarifs',dis:!sel(),fn:()=>edG(sel()._g)},{t:'Editer le tarif',dis:!sel()||sel().RATE==null,fn:()=>edR(sel()._g,sel())}]},
+    {i:'minus',fn:async()=>{ const r=sel(); if(!r) return; if(r.RATE!=null){ if(await confirmDlg('Supprimer ce taux ?','Supprimer')){ await DS.del('projectrate',r.ID); draw(); } }
+      else if(!DS.by('projectactivity','PROJECTRATEGROUP_ID',r._g.ID).length&&await confirmDlg('Supprimer ce niveau de tarif ?','Supprimer')){ await DS.del('projectrategroup',r._g.ID); draw(); } }}]),box),buttons:[{t:'Fermer',pri:true}]});
+}
+/* ── Intervenants de l'affaire (p.25) ── */
+function memberSort(a,b){ return cmp(ROLE_ORD[a.TEAMROLECODE]??99,ROLE_ORD[b.TEAMROLECODE]??99)||cmp(a.SORTORDER,b.SORTORDER)||cmp(contactName(DS.get('contact',a.CONTACT_ID)),contactName(DS.get('contact',b.CONTACT_ID))); }
+function editMember(p,m,role,after){
+  const v=m?{...m}:{ID:null,PROJECT_ID:p.ID,TEAMROLECODE:role??12,ISHIDDEN:0,SORTORDER:DS.by('projectmember','PROJECT_ID',p.ID).length};
+  const ent=h('div',{style:{whiteSpace:'pre-line',flex:1,minHeight:'48px',border:'1px solid #ccc',borderRadius:'4px',padding:'4px 6px',background:'#fff'}});
+  const resp=h('select',{class:'inp'});
+  const upd=()=>{ const c=DS.get('contact',v.CONTACT_ID); ent.textContent=adrLines(c).join('\n')||'—';
+    const o=c&&ownerOf(c); const people=o?DS.by('contact','CONTACTRELATION_ID',o.ID).concat(o.TYPECODE===1?[c]:[]):[];
+    resp.replaceChildren(h('option',{value:''},''),...people.map(x=>h('option',{value:x.ID,selected:x.ID===v.RESPCONTACT_ID||null},contactName(x)+(x.COMPANYROLE?' — '+x.COMPANYROLE:'')))); };
+  upd();
+  const body=formRows([['Rôle',h('select',{class:'inp','data-k':'TEAMROLECODE'},...ROLES.map(([c,t])=>h('option',{value:c,selected:c===v.TEAMROLECODE||null},t)))],
+    ['Entité',h('div',{style:{display:'flex',gap:'6px',alignItems:'flex-start'}},ent,ibtn({i:'person',t:'Choisir dans les adresses',fn:()=>pickContact('Choisir l’entité',c=>{ v.CONTACT_ID=c.ID; if(ownerOf(c)&&ownerOf(c).TYPECODE===1) v.RESPCONTACT_ID=c.ID; upd(); })}))],
+    ['Responsable',resp],['Domaine spécialisé',tI(v,'PROJECTDIVISION')],['Fonction',tI(v,'PROJECTROLE')],['CFC',tI(v,'BKP')],['Note',tI(v,'NOTE')],
+    ['',h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':'ISHIDDEN',checked:!!v.ISHIDDEN||null}),' Masquer dans la liste des affaires')]],560);
+  dialog({title:m?'Modifier l’intervenant':'Nouvel intervenant',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{
+    readK(bd,v,['TEAMROLECODE']); v.RESPCONTACT_ID=+resp.value||null;
+    if(!v.CONTACT_ID){ toast('Choisissez une entité.',true); return false; }
+    const uniq=(ROLES.find(r=>r[0]===v.TEAMROLECODE)||[])[2];
+    if(uniq&&DS.by('projectmember','PROJECT_ID',p.ID).some(x=>x.TEAMROLECODE===v.TEAMROLECODE&&x.ID!==v.ID&&!x.ISHIDDEN)&&!await confirmDlg('Ce rôle n’admet normalement qu’une seule entité. Ajouter quand même ?','Ajouter')) return false;
+    await DS.save('projectmember',v); after&&after(v); }}]});
+}
+function cfgMembers(p){
+  const oR={}, oM={}, L=h('div',{style:{height:'380px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}), R=h('div',{style:{height:'380px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const ms=()=>DS.by('projectmember','PROJECT_ID',p.ID);
+  const drawL=()=>{ const cnt={}; ms().forEach(m=>cnt[m.TEAMROLECODE]=(cnt[m.TEAMROLECODE]||0)+1);
+    grid(L,Object.assign(oR,{key:r=>r[0],cols:[{k:'r',t:'Rôle',f:r=>esc(r[1])+(cnt[r[0]]?` (${cnt[r[0]]})`:''),v:r=>ROLE_ORD[r[0]]}],rows:ROLES,onSel:drawR})); drawR(); };
+  const drawR=()=>grid(R,Object.assign(oM,{cols:[{k:'e',t:'Entité',w:170,f:m=>esc(contactName(DS.get('contact',m.CONTACT_ID)))},{k:'r',t:'Responsable',w:150,f:m=>esc(contactName(DS.get('contact',m.RESPCONTACT_ID)))},
+    {k:'PROJECTDIVISION',t:'Domaine spécialisé',w:120},{k:'PROJECTROLE',t:'Fonction',w:100},{k:'BKP',t:'CFC',w:70},{k:'NOTE',t:'Notes',w:120},{k:'ISHIDDEN',t:'Masqué',w:60,cls:'c',f:m=>m.ISHIDDEN?'✔':'✕'}],
+    rows:ms().filter(m=>String(m.TEAMROLECODE)===String(oR.sel)),sort:['SORTORDER',1],onDbl:m=>editMember(p,m,null,drawL)}));
+  const importFrom=()=>pickProject('Importer les intervenants d’une affaire existante',src=>{ const list=DS.by('projectmember','PROJECT_ID',src.ID); const ids=DS.newIds('projectmember',list.length);
+    DS.commit(list.map((m,i)=>({t:'projectmember',id:ids[i],val:{...m,ID:ids[i],PROJECT_ID:p.ID}}))).then(drawL); });
+  if(oR.sel==null) oR.sel='12'; drawL();
+  dialog({title:'Définir les intervenants — '+projLabel(p),body:h('div',{style:{display:'grid',gridTemplateColumns:'260px 1fr',gap:'10px',minWidth:'1060px'}},
+    h('div',{},h('div',{class:'ph2'},h('b',{},'Rôles')),L),
+    h('div',{},phead([{i:'plus',t:'Attribuer un nouvel intervenant',fn:()=>editMember(p,null,+oR.sel,drawL)},{i:'edit',t:'Editer',fn:()=>oM.sel&&editMember(p,DS.get('projectmember',oM.sel),null,drawL)},
+      {i:'minus',t:'Supprimer l’intervenant',fn:async()=>{ if(oM.sel&&await confirmDlg('Supprimer cet intervenant de l’affaire ?','Supprimer')){ await DS.del('projectmember',oM.sel); drawL(); } }},
+      {i:'import',t:'Importer les intervenants d’une affaire existante',fn:importFrom}]),R)),buttons:[{t:'Fermer',pri:true}]});
+}
+function pickProject(title,fn){ const o={}; let q=''; const box=h('div',{style:{width:'520px',height:'340px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'NUMBER',t:'Numéro',w:90},{k:'TITLE',t:'Affaire'},{k:'s',t:'Statut',w:90,f:projState}],rows:projects().filter(p=>matchQ(q,p.NUMBER,p.TITLE)),sort:['NUMBER',-1],onDbl:()=>$('.ov:last-child .btn.pri').click()}));
+  const s=h('input',{class:'inp',placeholder:'Rechercher'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); }; draw();
+  dialog({title,body:h('div',{},s,h('div',{style:{height:'8px'}}),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const p=DS.get('project',o.sel); if(!p) return false; fn(p); }}]}); }
+/* ── Subdivisions : ouvrages et localisations (p.28) ── */
+function cfgSubprojects(p){
+  const o={}, box=h('div',{style:{width:'820px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'o',t:'Ouvrage',f:x=>esc([x.CODE,x.DESCRIPTION].filter(Boolean).join(' ')+(x.LOCATIONCODE||x.LOCATIONDESCRIPTION?' | '+[x.LOCATIONCODE,x.LOCATIONDESCRIPTION].filter(Boolean).join(' '):''))},
+    {k:'mo',t:'Maître d’ouvrage',w:170,f:x=>esc(contactName(DS.get('contact',x.CONTACT_ID)))},{k:'TIMEAMOUNTBUDGET',t:'Prévision honor. CHF',w:120,cls:'r',f:x=>num(x.TIMEAMOUNTBUDGET)},{k:'TIMEBUDGET',t:'Prévision honor. h',w:110,cls:'r',f:x=>num(x.TIMEBUDGET)},{k:'COSTBUDGET',t:'Prévision frais CHF',w:120,cls:'r',f:x=>num(x.COSTBUDGET)}],
+    rows:DS.by('subproject','PROJECT_ID',p.ID),sort:['SORTORDER',1],onDbl:x=>ed(x)}));
+  const ed=x=>{ const v=x?{...x}:{ID:null,PROJECT_ID:p.ID,SORTORDER:DS.by('subproject','PROJECT_ID',p.ID).length};
+    const mo=h('div',{style:{whiteSpace:'pre-line',flex:1,minHeight:'40px',border:'1px solid #ccc',borderRadius:'4px',padding:'4px 6px',background:'#fff'}}); const u=()=>mo.textContent=adrLines(DS.get('contact',v.CONTACT_ID)).join('\n')||'—'; u();
+    dialog({title:x?'Editer les ouvrages et localisations':'Nouvel ouvrage',body:formRows([[h('b',{},'Ouvrage'),h('span')],['Code Ouvrage',tI(v,'CODE','120px')],['Désignation Ouv.',tI(v,'DESCRIPTION')],['Code Localisation',tI(v,'LOCATIONCODE','120px')],['Désignation Loc.',tI(v,'LOCATIONDESCRIPTION')],
+      [h('b',{},'Maître d’ouvrage'),h('div',{style:{display:'flex',gap:'6px'}},mo,ibtn({i:'person',fn:()=>pickContact('Maître d’ouvrage',c=>{ v.CONTACT_ID=c.ID; u(); })}),ibtn({i:'minus',fn:()=>{ v.CONTACT_ID=null; u(); }}))],
+      [h('b',{},'Temps prévu'),h('span')],['Prévision honoraires',h('div',{},nI(v,'TIMEAMOUNTBUDGET'),' CHF  ',nI(v,'TIMEBUDGET','90px'),' h')],['Prévision frais',h('div',{},nI(v,'COSTBUDGET'),' CHF')]]),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['TIMEAMOUNTBUDGET','TIMEBUDGET','COSTBUDGET']); await DS.save('subproject',v); draw(); }}]}); };
+  draw();
+  dialog({title:'Editer les ouvrages et localisations — '+projLabel(p),body:h('div',{},phead([{i:'plus',fn:()=>ed()},{i:'edit',fn:()=>o.sel&&ed(DS.get('subproject',o.sel))},
+    {i:'minus',fn:async()=>{ if(!o.sel) return; if(DS.all('timelog').some(r=>r.SUBPROJECT_ID===+o.sel)){ toast('Des documents, des heures ou des frais ont déjà été saisis dans cette subdivision. Suppression impossible.',true); return; }
+      if(await confirmDlg('Supprimer cet ouvrage ?','Supprimer')){ await DS.del('subproject',o.sel); draw(); } }}]),box),buttons:[{t:'Fermer',pri:true}]});
+}
+
+/* ── AFFAIRES · Gestion ── */
+const AF={g:{},q:'',arch:false,filt:{}};
+try{ AF.arch=localStorage.getItem('ds_af_arch')==='1'; }catch(_){}
+VIEWS['aff-gestion']={
+  render(m){
+    const cur=()=>DS.get('project',AF.g.sel), need=f=>()=>{ const p=cur(); if(!p){ toast('Sélectionnez une affaire.',true); return; } f(p); };
+    const R=h('div',{class:'col fill',style:{margin:'6px'}}), pane=h('div',{class:'pane'});
+    const head=phead([
+      {i:'plus',t:'Nouvelle affaire',fn:()=>editProject()},{i:'edit',t:'Editer l’affaire',fn:need(editProject)},{i:'minus',t:'Supprimer l’affaire',fn:need(delProject)},
+      {i:'person',t:'Intervenants',menu:()=>[{t:'Attribuer les intervenants',fn:need(cfgMembers)},{t:'Attribuer les activités aux collaborateurs',fn:need(cfgActivities)}]},
+      {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)}]},
+      {i:'tree',t:'Subdivisions',menu:()=>[{t:'Configurer la subdivision par ouvrages et localisations',fn:need(cfgSubprojects)}]},
+      {i:'doc',t:'Documents',menu:()=>[{t:'Liste des affaires',fn:()=>printProjects(AF.g.view)}]},
+      {i:'gear',t:'Fonctions',menu:()=>[{t:'Afficher les non archivées',chk:!AF.arch,fn:()=>{ AF.arch=!AF.arch; try{localStorage.setItem('ds_af_arch',AF.arch?'1':'0');}catch(_){} draw(); }},'-',
+        {t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(AF.g)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(AF.g,'Affaires')}]},
+      {i:'filter',t:'Filtre',menu:()=>[{t:'Tous les statuts',chk:!AF.filt.s,fn:()=>{ AF.filt.s=null; draw(); }},...Object.entries(PSTATE).map(([k,t])=>({t,chk:AF.filt.s==k,fn:()=>{ AF.filt.s=k; draw(); }})),'-',
+        {t:'Affaires internes',chk:AF.filt.i===1,fn:()=>{ AF.filt.i=AF.filt.i===1?null:1; draw(); }},{t:'Affaires externes',chk:AF.filt.i===0,fn:()=>{ AF.filt.i=AF.filt.i===0?null:0; draw(); }}]}
+    ],{count:1,search:q=>{ AF.q=q; draw(); }});
+    R.append(head,pane); m.append(R);
+    const draw=()=>{ const rows=DS.all('project').filter(p=>(AF.arch||p.PROJECTSTATECODE!==5)&&(!AF.filt.s||p.PROJECTSTATECODE==AF.filt.s)&&(AF.filt.i==null||(+!!p.ISINTERNAL)===AF.filt.i)&&matchQ(AF.q,p.NUMBER,p.TITLE,p.DESCRIPTION));
+      grid(pane,Object.assign(AF.g,{cols:[{k:'NUMBER',t:'Numéro',w:100},{k:'TITLE',t:'Affaire',w:380},{k:'st',t:'Statut',w:110,f:projState,v:p=>p.PROJECTSTATECODE},
+        {k:'PROJECTSTARTDATE',t:'Début',w:100,f:p=>dfr(p.PROJECTSTARTDATE)},{k:'PROJECTENDDATE',t:'Fin',w:100,f:p=>dfr(p.PROJECTENDDATE)},{k:'act',t:'Actif',w:60,cls:'c',f:p=>projActive(p)?'✔':'✕'},
+        {k:'mo',t:'Maître d’ouvrage',w:220,f:p=>esc(projMO(p)),v:projMO},{k:'ph',t:'Phase en cours',f:p=>esc(nm(DS.get('projectphase',p.CURRENTPROJECTPHASE_ID)))}],
+        rows,sort:['NUMBER',-1],onDbl:p=>editProject(p)}));
+      head.setCount(rows.length+' Affaires'); };
+    this.draw=draw; draw();
+  },
+  refresh(ts){ if(hit(ts,'project','projectmember','projectphase')) this.draw(); }
+};
+function projMO(p){ const m=DS.by('projectmember','PROJECT_ID',p.ID).find(x=>x.TEAMROLECODE===8); return m?contactName(DS.get('contact',m.CONTACT_ID)):''; }
+
+/* ── Frais (PROJECTCOST) : fenêtre commune aux frais d'affaire et aux notes de frais ── */
+const pcDate=r=>new Date(r.DATEYEAR,r.DATEMONTH,r.DATEDAY);
+const pcAmount=r=>(+r.QUANTITY||0)*(+r.UNITPRICE||0)*(r.FOREIGNCURRENCYCODE?(+r.FOREIGNCURRENCYRATE||1):1);
+function editCost(r,pre){
+  pre=pre||{}; const d0=r?pcDate(r):(pre.date||new Date());
+  const v=r?{...r}:{ID:null,PROJECT_ID:pre.project||null,STAFF_ID:pre.staff||null,DATEYEAR:d0.getFullYear(),DATEMONTH:d0.getMonth(),DATEDAY:d0.getDate(),QUANTITY:1,UNITPRICE:null,
+    FOREIGNCURRENCYRATE:1,EXTERNALRATE:1,VATRATE:8.1,PROJECTCOSTSTATECODE:0,ISCHARGEABLE:1,ISCHARGED:0,ISREFUNDABLE:pre.staff?1:0,ISREFUNDED:0};
+  if(v.PROJECTCOSTSTATECODE===3&&!pre.controller){ toast('Frais approuvé : il n’est plus modifiable.',true); return; }
+  const f={}, W={}; ['proj','grp','cat','sub','ph','sp'].forEach(k=>W[k]=h('div'));
+  const sel=(opts,val,empty)=>h('select',{class:'inp'},h('option',{value:''},empty||''),...opts.map(([k,t])=>h('option',{value:k,selected:String(k)===String(val)||null},t)));
+  const unit=h('span'), amt=h('b');
+  const fill=()=>{
+    const pid=+(f.proj?f.proj.value:v.PROJECT_ID)||null;
+    const plist=pre.staff?staffProjects(DS.get('staff',pre.staff)).filter(p=>p.PROJECTSTATECODE===2).concat(pid&&!staffProjects(DS.get('staff',pre.staff)).some(p=>p.ID===pid)?[DS.get('project',pid)]:[]).filter(Boolean):projects();
+    f.proj=sel(plist.map(p=>[p.ID,projLabel(p)]),pid,'— Affaire —'); W.proj.replaceChildren(f.proj);
+    const gv=f.grp&&f.grp.dataset.p==pid?+f.grp.value:v.COSTCATEGORYGROUP_ID;
+    f.grp=sel(DS.by('projectcostcategorygroup','PROJECT_ID',pid).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).map(g=>[g.ID,nm(g)]),gv); f.grp.dataset.p=pid; W.grp.replaceChildren(f.grp);
+    f.cat=sel(DS.by('projectcostcategory','PROJECTCOSTCATEGORYGROUP_ID',+f.grp.value||null).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).map(c=>[c.ID,nm(c)]),v.COSTCATEGORY_ID); W.cat.replaceChildren(f.cat);
+    f.sub=sel(DS.by('subproject','PROJECT_ID',pid).map(x=>[x.ID,[x.CODE,x.DESCRIPTION].filter(Boolean).join(' ')]),v.SUBPROJECT_ID,'— Ouvrage —'); W.sub.replaceChildren(f.sub);
+    f.ph=sel(DS.by('projectphase','PROJECT_ID',pid).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)).map(x=>[x.ID,(x.NUMBER??'')+' '+nm(x)]),v.PHASE_ID,'— Phase —'); W.ph.replaceChildren(f.ph);
+    f.sp=sel(DS.by('projectsubphase','PROJECTPHASE_ID',+f.ph.value||null).filter(x=>!x.ISTERMINATED||x.ID===v.SUBPHASE_ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)).map(x=>[x.ID,(x.NUMBER??'')+' '+nm(x)]),v.SUBPHASE_ID,'— Phase partielle —'); W.sp.replaceChildren(f.sp);
+    f.proj.onchange=()=>{ v.COSTCATEGORY_ID=v.SUBPHASE_ID=null; fill(); }; f.grp.onchange=()=>{ v.COSTCATEGORY_ID=null; fill(); };
+    f.ph.onchange=()=>{ v.PHASE_ID=+f.ph.value||null; v.SUBPHASE_ID=null; fill(); };
+    f.cat.onchange=()=>{ const c=DS.get('projectcostcategory',+f.cat.value); v.COSTCATEGORY_ID=c?c.ID:null; if(c){ q.value=q.value||1; pr.value=c.UNITPRICE??''; v.UNIT=c.UNIT; } calc(); };
+  };
+  const date=h('input',{class:'inp',type:'date',value:diso(d0),style:{width:'160px'}});
+  const q=h('input',{class:'inp',type:'number',step:'any',value:v.QUANTITY??'',style:{width:'100px'}}), pr=h('input',{class:'inp',type:'number',step:'any',value:v.UNITPRICE??'',style:{width:'100px'}});
+  const fx=h('input',{type:'checkbox',checked:!!v.FOREIGNCURRENCYCODE||null}), fxc=h('input',{class:'inp',value:v.FOREIGNCURRENCYCODE||'',style:{width:'60px'}}), rate=h('input',{class:'inp',type:'number',step:'any',value:v.FOREIGNCURRENCYRATE??1,style:{width:'80px'}});
+  const desc=h('input',{class:'inp',value:v.DESCRIPTION||''}), doc=h('input',{class:'inp',value:v.DOCUMENTNUMBER||'',style:{width:'120px'}}), vat=h('input',{class:'inp',type:'number',step:'0.1',value:v.VATRATE??'',style:{width:'70px'}});
+  const refund=h('input',{type:'checkbox',checked:!!v.ISREFUNDABLE||null}), charge=h('input',{type:'checkbox',checked:!!v.ISCHARGEABLE||null});
+  const calc=()=>{ rate.disabled=fxc.disabled=!fx.checked; const c=DS.get('projectcostcategory',+(f.cat&&f.cat.value)); unit.textContent=' '+((c&&c.UNIT)||v.UNIT||'');
+    amt.textContent=num((+q.value||0)*(+pr.value||0)*(fx.checked?(+rate.value||1):1))+' CHF'; };
+  fill(); q.oninput=pr.oninput=rate.oninput=fx.onchange=calc; calc();
+  const body=h('div',{style:{minWidth:'760px'}},
+    h('div',{style:{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:'8px'}},h('div',{},h('div',{},h('b',{},'Affaire')),W.proj),h('div',{},h('div',{},h('b',{},'Groupe de frais')),W.grp),h('div',{},h('div',{},h('b',{},'Genre de frais')),W.cat)),
+    h('div',{style:{height:'10px'}}),
+    formRows([['Date',date],['Quantité',h('div',{},q,unit)],['Prix',h('div',{},pr,' CHF / unité   ',h('label',{},fx,' Monnaie étrangère '),fxc,'  Cours ',rate)],['Montant',amt],
+      [h('b',{},'Désignation'),desc],['N° de la pièce',doc],['Taux TVA',h('div',{},vat,' %')],['',h('label',{style:{textAlign:'left'}},refund,' Remboursable')],['',h('label',{style:{textAlign:'left'}},charge,' Facturable')]],700),
+    h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'8px',marginTop:'10px'}},W.sub,W.ph,W.sp));
+  dialog({title:r?'Edition':'Nouveau',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    const pid=+f.proj.value||null, pj=DS.get('project',pid)||{}, dt=new Date(date.value+'T00:00');
+    if(!pid||!+f.grp.value||!+f.cat.value){ toast('Affaire, groupe de frais et genre de frais sont obligatoires.',true); return false; }
+    if(isNaN(dt)){ toast('Date invalide.',true); return false; }
+    if(pj.ISEXPENSESDESCMANDATORY&&!desc.value.trim()){ toast('La désignation est obligatoire pour cette affaire.',true); return false; }
+    if(pj.ISEXPENSESPHASEMANDATORY&&!+f.ph.value){ toast('La phase est obligatoire pour cette affaire.',true); return false; }
+    const c=DS.get('projectcostcategory',+f.cat.value);
+    Object.assign(v,{PROJECT_ID:pid,COSTCATEGORYGROUP_ID:+f.grp.value,COSTCATEGORY_ID:+f.cat.value,UNIT:(c&&c.UNIT)||v.UNIT||null,DATEYEAR:dt.getFullYear(),DATEMONTH:dt.getMonth(),DATEDAY:dt.getDate(),
+      QUANTITY:+q.value||0,UNITPRICE:+pr.value||0,FOREIGNCURRENCYCODE:fx.checked?(fxc.value.trim()||null):null,FOREIGNCURRENCYRATE:fx.checked?(+rate.value||1):1,
+      DESCRIPTION:desc.value.trim()||null,DOCUMENTNUMBER:doc.value.trim()||null,VATRATE:vat.value===''?null:+vat.value,ISREFUNDABLE:refund.checked?1:0,ISCHARGEABLE:charge.checked?1:0,
+      SUBPROJECT_ID:+f.sub.value||null,PHASE_ID:+f.ph.value||null,SUBPHASE_ID:+f.sp.value||null});
+    if(v.PROJECTCOSTSTATECODE===1) v.PROJECTCOSTSTATECODE=2;   // un frais refusé puis modifié devient « Corrigé »
+    await DS.save('projectcost',v); toast('Frais enregistré.');
+  }}]});
+}
+const COSTCOLS=[{k:'d',t:'Date',w:86,f:r=>dfr(diso(pcDate(r))),v:r=>pcDate(r).getTime()},{k:'g',t:'Groupe de frais',w:140,f:r=>esc(nm(DS.get('projectcostcategorygroup',r.COSTCATEGORYGROUP_ID)))},
+  {k:'c',t:'Genre de frais',w:170,f:r=>esc(nm(DS.get('projectcostcategory',r.COSTCATEGORY_ID)))},{k:'DOCUMENTNUMBER',t:'N° pièce',w:70},{k:'QUANTITY',t:'Quantité',w:70,cls:'r',f:r=>num(r.QUANTITY)},
+  {k:'UNIT',t:'Unité',w:50},{k:'a',t:'Montant',w:90,cls:'r',f:r=>num(pcAmount(r)),v:pcAmount},{k:'m',t:'Monnaie',w:60,f:r=>r.FOREIGNCURRENCYCODE||'CHF'},{k:'DESCRIPTION',t:'Désignation',w:200},
+  {k:'s',t:'Statut',w:80,f:r=>TSTATE[r.PROJECTCOSTSTATECODE]||''},{k:'fa',t:'Facturable',w:70,cls:'c',f:r=>r.ISCHARGEABLE?'✔':'✕'},{k:'fd',t:'Facturé',w:60,cls:'c',f:r=>r.ISCHARGED?'✔':'✕'}];
+async function delCost(r){ if(!r) return; if(r.PROJECTCOSTSTATECODE===3||r.ISCHARGED){ toast('Frais approuvé ou facturé : suppression impossible.',true); return; }
+  if(await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) DS.del('projectcost',r.ID); }
+function monthNav(state,redraw){ const mo=h('select',{class:'inp',style:{width:'120px'}},...MOISL.map((m,i)=>h('option',{value:i,selected:i===state.m||null},m)));
+  mo.onchange=()=>{ state.m=+mo.value; redraw(); };
+  return [ibtn({i:'prev',fn:()=>{ state.m--; if(state.m<0){ state.m=11; state.y--; } redraw(); }}),mo,ibtn({i:'next',fn:()=>{ state.m++; if(state.m>11){ state.m=0; state.y++; } redraw(); }}),
+    ibtn({i:'prev',fn:()=>{ state.y--; redraw(); }}),h('span',{style:{alignSelf:'center'}},String(state.y)),ibtn({i:'next',fn:()=>{ state.y++; redraw(); }})]; }
+
+/* ── AFFAIRES · Mes affaires / Toutes les affaires : liste | domaine d'affaire | contenu ── */
+const DOMAINS=['Intervenants','Soumissionnaires','Liste d’adresses','Documents','Messages brefs','Séances','Notes','Tâches','Frais','Calcul des honoraires','Contrats honoraires',
+  'Avancement des prestations','Factures','Liste des plans','Liste de distribution','Devis général','Soumission','Contrôle des coûts'];
+const AM={g:{},d:{},dom:'Intervenants',q:'',grpBy:'role',roleF:null,fr:{y:new Date().getFullYear(),m:new Date().getMonth()}};
+try{ AM.dom=localStorage.getItem('ds_am_dom')||AM.dom; }catch(_){}
+function affNav(mine){ return {
+  render(m,arg){
+    if(arg&&arg.project){ AM.g.sel=String(arg.project); }
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const A=col(330), B=col(210), C=h('div',{class:'col fill'}); cols.append(A.el,B.el,C);
+    const st=ME.staff, list=mine?staffProjects(st).filter(p=>p.PROJECTSTATECODE===2):DS.all('project').filter(p=>[2,3,4].includes(p.PROJECTSTATECODE)||(arg&&arg.project===p.ID));
+    A.el.prepend(phead([],{count:1,search:q=>{ AM.q=q; drawA(); }}));
+    const drawA=()=>{ grid(A.pane,Object.assign(AM.g,{cols:[{k:'NUMBER',t:'Numéro',w:90},{k:'TITLE',t:'Affaire'}],rows:list.filter(p=>matchQ(AM.q,p.NUMBER,p.TITLE)),sort:['NUMBER',-1],onSel:drawC,onDbl:p=>editProject(p)}));
+      A.el.firstChild.setCount&&A.el.firstChild.setCount(list.length+' Affaires'); };
+    grid(B.pane,Object.assign(AM.d,{key:d=>d,cols:[{k:'d',t:'Domaine d’affaire',f:d=>esc(d)+(domainUsed(d)?'':' <span style="color:#aaa">·</span>')}],rows:DOMAINS,sel:AM.dom,sort:null,
+      onSel:d=>{ AM.dom=d; try{localStorage.setItem('ds_am_dom',d);}catch(_){} drawC(); }}));
+    AM.d.state={};
+    const drawC=()=>{ C.innerHTML=''; const p=DS.get('project',AM.g.sel); if(!p){ C.append(h('div',{class:'ph'},mine&&!list.length?'Vous n’êtes intervenant « Collaborateurs » dans aucune affaire en cours.':'Sélectionnez une affaire.')); return; } domainView(C,p,AM.dom); };
+    this.drawA=drawA; this.drawC=drawC; drawA(); drawC();
+  },
+  refresh(ts){ if(hit(ts,'project')) this.drawA(); this.drawC(); } }; }
+VIEWS['aff-mes']=affNav(true); VIEWS['aff-toutes']=affNav(false);
+const domainUsed=d=>['Intervenants','Soumissionnaires','Liste d’adresses','Notes','Frais','Devis général','Contrôle des coûts','Séances'].includes(d);
+function contactCard(c,title){ const L=(k,v,html)=>[h('b',{},k),html?h('span',{html:v}):h('span',{},v||'')];
+  return h('div',{style:{flex:1}},h('div',{style:{fontWeight:600,textAlign:'center',marginBottom:'8px'}},title),!c?h('div',{class:'empty'},'—'):
+    h('div',{class:'kv'},...L('',adrLines(c).map(esc).join('<br>'),true),...L('Téléphone',phone(c,1)),...L('Tél. mobile',phone(c,2)),...L('Courriel',c.EMAIL1?`<a href="mailto:${esc(c.EMAIL1)}">${esc(c.EMAIL1)}</a>`:'',true))); }
+function domainView(C,p,d){
+  const top=h('div',{class:'col',style:{flex:1,border:0}}), pane=h('div',{class:'pane'});
+  if(d==='Intervenants'||d==='Liste d’adresses'){
+    const o=AM.im||(AM.im={});
+    const det=h('div',{style:{flex:'0 0 190px',borderTop:'1px solid var(--line)',display:'flex',gap:'20px',padding:'10px 16px',overflow:'auto'}});
+    const groups=DS.by('projectmemberrolegroup','PROJECT_ID',p.ID);
+    const rows=()=>DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>!x.ISHIDDEN&&(!AM.roleF||(AM.roleF.g?AM.roleF.g.includes(x.TEAMROLECODE):x.TEAMROLECODE===AM.roleF.r))&&matchQ(AM.qm,teamRole(x.TEAMROLECODE),contactName(DS.get('contact',x.CONTACT_ID)),contactName(DS.get('contact',x.RESPCONTACT_ID)),x.BKP,x.PROJECTDIVISION,x.PROJECTROLE))
+      .sort(AM.grpBy==='cfc'?(a,b)=>cmp(a.BKP,b.BKP)||memberSort(a,b):memberSort);
+    const list=d==='Liste d’adresses';
+    const head=phead([
+      {i:'plus',t:'Nouvel intervenant',fn:()=>editMember(p,null,12)},{i:'edit',t:'Intervenant',fn:()=>o.sel&&editMember(p,DS.get('projectmember',o.sel))},
+      {i:'minus',t:'Supprimer l’intervenant',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer cet intervenant de l’affaire ?','Supprimer')) DS.del('projectmember',o.sel); }},
+      {i:'doc',t:'Documents',menu:()=>[{t:'Liste d’adresses',fn:()=>printAdr(rows().map(x=>DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)).filter(Boolean),'Liste d’adresses — '+projLabel(p))},
+        {t:'Liste d’adresses par CFC',fn:()=>printAdr(rows().filter(x=>x.BKP).sort((a,b)=>cmp(a.BKP,b.BKP)).map(x=>({...DS.get('contact',x.CONTACT_ID),BKP:x.BKP})),'Liste par CFC — '+projLabel(p))}]},
+      {i:'gear',t:'Fonctions',menu:()=>[{t:'Courriel',fn:()=>mailList(rows().map(x=>DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)).filter(Boolean))},
+        {t:'Copier l’intervenant',dis:!o.sel,fn:()=>{ const x=DS.get('projectmember',o.sel); navigator.clipboard.writeText(adrLines(DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)).join('\n')); toast('Intervenant copié.'); }},
+        '-',{t:'Groupés par rôles',chk:AM.grpBy==='role',fn:()=>{ AM.grpBy='role'; draw(); }},{t:'Groupés par CFC',chk:AM.grpBy==='cfc',fn:()=>{ AM.grpBy='cfc'; draw(); }},
+        '-',{t:'Définir les intervenants …',fn:()=>cfgMembers(p)}]},
+      {i:'filter',t:'Filtre par rôle',menu:()=>[{t:'Afficher tout',chk:!AM.roleF,fn:()=>{ AM.roleF=null; draw(); }},
+        ...groups.map(g=>({t:'<'+g.NAME+'>',chk:AM.roleF&&AM.roleF.gid===g.ID,fn:()=>{ AM.roleF={gid:g.ID,g:String(g.TEAMROLECODES||'').split(',').filter(Boolean).map(Number)}; draw(); }})),
+        ...ROLES.filter(r=>DS.by('projectmember','PROJECT_ID',p.ID).some(x=>x.TEAMROLECODE===r[0])).map(r=>({t:r[1],chk:AM.roleF&&AM.roleF.r===r[0],fn:()=>{ AM.roleF={r:r[0]}; draw(); }}))]}
+    ],{count:1,search:q=>{ AM.qm=q; draw(); }});
+    const cols=list?[{k:'r',t:'Rôle',w:150,f:x=>esc(teamRole(x.TEAMROLECODE))},{k:'e',t:'Entité',w:180,f:x=>esc(contactName(DS.get('contact',x.CONTACT_ID)))},{k:'resp',t:'Responsable',w:150,f:x=>esc(contactName(DS.get('contact',x.RESPCONTACT_ID)))},
+        {k:'adr',t:'Adresse',w:220,f:x=>esc(adrLines(DS.get('contact',x.CONTACT_ID)).slice(-2).join(', '))},{k:'tel',t:'Téléphone',w:120,f:x=>esc(phone(DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID),1))},
+        {k:'mob',t:'Tél. mobile',w:120,f:x=>esc(phone(DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID),2))},{k:'mail',t:'Courriel',f:x=>esc((DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)||{}).EMAIL1)}]
+      :[{k:'r',t:'Rôle',w:150,f:x=>esc(teamRole(x.TEAMROLECODE))},{k:'e',t:'Entité',w:200,f:x=>esc(contactName(DS.get('contact',x.CONTACT_ID)))},{k:'resp',t:'Responsable',w:160,f:x=>esc(contactName(DS.get('contact',x.RESPCONTACT_ID)))},
+        {k:'PROJECTDIVISION',t:'Domaine spécialisé',w:140},{k:'PROJECTROLE',t:'Fonction',w:120},{k:'BKP',t:'CFC',w:70},{k:'NOTE',t:'Notes'}];
+    const draw=()=>{ const rs=rows(); grid(pane,Object.assign(o,{cols,rows:rs,state:{},onSel:x=>card(x),onDbl:x=>editMember(p,x)})); head.setCount(rs.length+' Intervenants'); card(DS.get('projectmember',o.sel)); };
+    const card=x=>{ det.replaceChildren(contactCard(x&&DS.get('contact',x.CONTACT_ID),'Entité'),h('div',{style:{width:'1px',background:'var(--line)'}}),contactCard(x&&DS.get('contact',x.RESPCONTACT_ID),'Responsable')); };
+    top.append(head,pane); C.append(top); if(!list) C.append(det); draw(); return;
+  }
+  if(d==='Soumissionnaires'){
+    const o={}; const rows=()=>DS.by('projecttenderer','PROJECT_ID',p.ID);
+    const ed=x=>{ const v=x?{...x}:{ID:null,PROJECT_ID:p.ID,ISACCEPTED:0}; const e=h('input',{class:'inp',readonly:true,value:contactName(DS.get('contact',v.CONTACT_ID))});
+      dialog({title:x?'Modifier':'Nouveau',body:formRows([['CFC',tI(v,'BKP','120px')],['Entité',h('div',{style:{display:'flex',gap:'6px'}},e,ibtn({i:'person',fn:()=>pickContact('Entité',c=>{ v.CONTACT_ID=c.ID; e.value=contactName(c); })}))],
+        ['',h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':'ISACCEPTED',checked:!!v.ISACCEPTED||null}),' Commande reçue')],['Note',tI(v,'NOTE')]]),
+        buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v); if(!v.CONTACT_ID) return false; await DS.save('projecttenderer',v); }}]}); };
+    top.append(phead([{i:'plus',fn:()=>ed()},{i:'edit',fn:()=>o.sel&&ed(DS.get('projecttenderer',o.sel))},{i:'minus',fn:async()=>{ if(o.sel&&await confirmDlg('Voulez-vous vraiment retirer cette adresse de la liste ?','Retirer')) DS.del('projecttenderer',o.sel); }}]),pane); C.append(top);
+    grid(pane,Object.assign(o,{cols:[{k:'BKP',t:'CFC',w:80},{k:'e',t:'Entité',w:260,f:x=>esc(contactName(DS.get('contact',x.CONTACT_ID)))},{k:'r',t:'Responsable',w:180,f:x=>esc(contactName(DS.get('contact',x.RESPCONTACT_ID)))},
+      {k:'ISACCEPTED',t:'Commande reçue',w:110,cls:'c',f:x=>x.ISACCEPTED?'✔':''},{k:'NOTE',t:'Note'}],rows:rows(),sort:['BKP',1],onDbl:ed,empty:'Aucun soumissionnaire.'})); return;
+  }
+  if(d==='Notes'){
+    const o={}; const ed=x=>{ const v=x?{...x}:{ID:null,PROJECT_ID:p.ID,OWNER:ME.id,CHANGEDDATE:today()};
+      const s=tI(v,'SUBJECT'), t=h('textarea',{class:'inp',rows:10,'data-k':'CONTENT'},v.CONTENT||'');
+      dialog({title:x?'Modifier la note':'Nouvelle note',body:formRows([['Concerne',s],['Date',h('input',{class:'inp',type:'date','data-k':'CHANGEDDATE',value:v.CHANGEDDATE||'',style:{width:'160px'}})],['Utilisateur',h('span',{},v.OWNER||'')],
+        ['Ouvrage',h('select',{class:'inp','data-k':'SUBPROJECT_ID'},h('option',{value:''},''),...DS.by('subproject','PROJECT_ID',p.ID).map(x2=>h('option',{value:x2.ID,selected:x2.ID===v.SUBPROJECT_ID||null},[x2.CODE,x2.DESCRIPTION].filter(Boolean).join(' '))))],['',t]],600),
+        buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['SUBPROJECT_ID']); await DS.save('projectnote',v); }}]}); };
+    top.append(phead([{i:'plus',fn:()=>ed()},{i:'edit',fn:()=>o.sel&&ed(DS.get('projectnote',o.sel))},{i:'minus',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer cette note ?','Supprimer')) DS.del('projectnote',o.sel); }}]),pane); C.append(top);
+    grid(pane,Object.assign(o,{cols:[{k:'CHANGEDDATE',t:'Date',w:90,f:x=>dfr(x.CHANGEDDATE)},{k:'OWNER',t:'Utilisateur',w:90},{k:'SUBJECT',t:'Sujet',w:220},{k:'CONTENT',t:'Texte'},{k:'o',t:'Ouvrage',w:120,f:x=>esc((DS.get('subproject',x.SUBPROJECT_ID)||{}).CODE)}],
+      rows:DS.by('projectnote','PROJECT_ID',p.ID),sort:['CHANGEDDATE',-1],onDbl:ed,empty:'Aucune note.'})); return;
+  }
+  if(d==='Frais'){
+    const o={}, S=AM.fr, draw=()=>{ const rows=DS.by('projectcost','PROJECT_ID',p.ID).filter(r=>r.DATEYEAR===S.y&&r.DATEMONTH===S.m);
+      grid(pane,Object.assign(o,{cols:[...COSTCOLS,{k:'col',t:'Collaborateur',w:140,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))},{k:'ph',t:'Phase',w:140,f:r=>esc(nm(DS.get('projectphase',r.PHASE_ID)))}],rows,sort:['g',1],onDbl:r=>editCost(r),empty:'Aucun frais pour ce mois.'}));
+      head.setCount('Total '+num(rows.reduce((s,r)=>s+pcAmount(r),0))+' CHF'); nav.replaceChildren(...monthNav(S,draw)); };
+    const nav=h('div',{style:{display:'flex',gap:'4px',marginLeft:'10px'}});
+    const head=phead([{i:'plus',fn:()=>editCost(null,{project:p.ID,date:new Date(S.y,S.m,Math.min(new Date().getDate(),28))})},{i:'edit',fn:()=>o.sel&&editCost(DS.get('projectcost',o.sel))},{i:'minus',fn:()=>delCost(DS.get('projectcost',o.sel))},nav],{count:1});
+    top.append(head,pane); C.append(top); draw(); return;
+  }
+  if(d==='Devis général'){ C.append(h('div',{class:'ph'},h('h2',{},'Devis général'),'Les devis de l’affaire s’ouvrent dans ',h('a',{href:'#',onclick:e=>{ e.preventDefault(); go('devis',{project:p.ID}); }},'Bâtiment ▸ Devis'),'.')); return; }
+  if(d==='Contrôle des coûts'){ C.append(h('div',{class:'ph'},h('h2',{},'Contrôle des coûts'),'Les contrôles des coûts de l’affaire s’ouvrent dans ',h('a',{href:'#',onclick:e=>{ e.preventDefault(); go('coco',{project:p.ID}); }},'Bâtiment ▸ Contrôle des coûts'),'.')); return; }
+  const why={'Calcul des honoraires':'Les honoraires sont calculés dans l’app Facturation (contrats SIA).','Contrats honoraires':'Les contrats d’honoraires sont gérés dans l’app Facturation.',
+    'Factures':'La facturation se fait dans l’app Facturation.','Avancement des prestations':'Suivi dans l’app Facturation (avancement par phase SIA).','Séances':'Les procès-verbaux de chantier sont rédigés dans le module PV existant.'};
+  C.append(h('div',{class:'ph'},h('h2',{},d),why[d]||'Domaine non utilisé au bureau dans Deltaproject (aucune donnée). Il sera reproduit sur demande.'));
+}
+
+/* ═══ NOTES DE FRAIS · Saisie (p.31) — frais du collaborateur, par mois ═══ */
+const NF={g:{},staff:null,y:new Date().getFullYear(),m:new Date().getMonth()};
+VIEWS['frais']={
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(260), R=h('div',{class:'col fill'}), pane=h('div',{class:'pane'}); cols.append(L.el,R);
+    if(!NF.staff) NF.staff=(ME.staff||staffList()[0]||{}).ID;
+    grid(L.pane,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s))}],rows:staffList(),sel:NF.staff,onSel:s=>{ NF.staff=s.ID; draw(); }});
+    const nav=h('div',{style:{display:'flex',gap:'4px',marginLeft:'10px'}});
+    const head=phead([{i:'plus',t:'Nouveau',fn:()=>editCost(null,{staff:NF.staff,date:new Date(NF.y,NF.m,Math.min(new Date().getDate(),28))})},
+      {i:'dup',t:'Copier',menu:()=>[{t:'Dupliquer',dis:!NF.g.sel,fn:()=>dupCost(0)},{t:'Dupliquer dans le mois prochain',dis:!NF.g.sel,fn:()=>dupCost(1)}]},
+      {i:'edit',fn:()=>NF.g.sel&&editCost(DS.get('projectcost',NF.g.sel),{staff:NF.staff})},{i:'minus',fn:()=>delCost(DS.get('projectcost',NF.g.sel))},nav],{count:1});
+    R.append(head,pane);
+    const dupCost=async n=>{ const r=DS.get('projectcost',NF.g.sel); if(!r) return; const d=pcDate(r); d.setMonth(d.getMonth()+n);
+      await DS.save('projectcost',{...r,ID:null,DATEYEAR:d.getFullYear(),DATEMONTH:d.getMonth(),DATEDAY:d.getDate(),PROJECTCOSTSTATECODE:0,ISCHARGED:0,CHARGEDDATE:null,ISREFUNDED:0}); toast('Frais dupliqué.'); };
+    const draw=()=>{ const rows=DS.by('projectcost','STAFF_ID',NF.staff).filter(r=>r.DATEYEAR===NF.y&&r.DATEMONTH===NF.m);
+      grid(pane,Object.assign(NF.g,{cols:[...COSTCOLS,{k:'p',t:'Affaire',w:90,f:r=>esc((DS.get('project',r.PROJECT_ID)||{}).NUMBER)},{k:'o',t:'Ouvrage',w:90,f:r=>esc((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE)}],rows,sort:['d',1],onDbl:r=>editCost(r,{staff:NF.staff}),empty:'Aucun frais ce mois-ci.'}));
+      head.setCount('Total '+num(rows.reduce((s,r)=>s+pcAmount(r),0))+' CHF · remboursable '+num(rows.filter(r=>r.ISREFUNDABLE).reduce((s,r)=>s+pcAmount(r),0))+' CHF'); nav.replaceChildren(...monthNav(NF,draw)); };
+    this.draw=draw; draw();
+  },
+  refresh(ts){ if(hit(ts,'projectcost')) this.draw(); }
+};
+function printProjects(rows){ const w=open('','_blank'); if(!w) return;
+  w.document.write(`<html><head><meta charset="utf-8"><title>Liste des affaires</title><style>body{font:10pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:3px 6px;border-bottom:.5pt solid #ccc}th{font-weight:600}tr:nth-child(even) td{background:#f3f6fb}</style></head><body><h1>Liste des affaires — ${dfr(today())}</h1><table><tr><th>Numéro</th><th>Affaire</th><th>Maître d’ouvrage</th><th>Début</th><th>Fin</th><th>Statut</th></tr>`+
+    rows.map(p=>`<tr><td>${esc(p.NUMBER)}</td><td>${esc(p.TITLE)}</td><td>${esc(projMO(p))}</td><td>${dfr(p.PROJECTSTARTDATE)}</td><td>${dfr(p.PROJECTENDDATE)}</td><td>${projState(p)}</td></tr>`).join('')+'</table></body></html>');
+  w.document.close(); setTimeout(()=>w.print(),300); }
+
 /* ═══ HEURES · SAISIE — agenda semaine / mois (manuel p.26 et p.30) ═══ */
 const HS={ staff:null, mode:'sem', d:new Date(), sel:null, px:48, wk:true };
 try{ HS.staff=+localStorage.getItem('ds_h_staff')||null; HS.mode=localStorage.getItem('ds_h_mode')||'sem'; }catch(_){}
@@ -1082,10 +1525,14 @@ function hsWeek(p){
   sc.append(body); p.append(head,sc);
   sc.scrollTop=7.5*PX;
 }
+/* Couleurs de l'agenda selon l'état (TIMELOGSTATECODE) : bleu saisi, vert approuvé, rouge refusé, orange vacances, bleu clair non modifiable */
+function tlLocked(r){ const s=DS.get('staff',r.STAFF_ID); const sp=DS.get('projectsubphase',r.SUBPHASE_ID);
+  return r.TIMELOGSTATECODE===3||!!(s&&s.ISTIMELOGFROZEN&&s.TIMELOGFREEZINGDATE&&diso(tlDate(r))<=s.TIMELOGFREEZINGDATE)||!!(sp&&sp.ISTERMINATED); }
+function tlColors(r){ if(r.ISHOLIDAY) return ['#c77700','#f6dfb7']; if(r.TIMELOGSTATECODE===3) return ['#2f9e2f','#cbe8c0']; if(r.TIMELOGSTATECODE===1) return ['#c62828','#f5c6c6'];
+  if(tlLocked(r)) return ['#6fa3e8','#dce9f9']; return ['#1f6fe0','#b9d3f5']; }
 function hsBlock(r,PX){
   const t1=(r.TIMEHOUR1||0)*60+(r.TIMEMINUTE1||0), t2=r.TIMEHOUR2!=null?r.TIMEHOUR2*60+(r.TIMEMINUTE2||0):t1+(+r.TIMEPERIOD||0)*60;
-  const pj=DS.get('project',r.PROJECT_ID), green=!r.ISCHARGEABLE, hol=!!r.ISHOLIDAY;
-  const c1=hol?'#c77700':green?'#2f9e2f':'#1f6fe0', c2=hol?'#f6dfb7':green?'#cbe8c0':'#b9d3f5';
+  const pj=DS.get('project',r.PROJECT_ID), hol=!!r.ISHOLIDAY, [c1,c2]=tlColors(r);
   const b=h('div',{class:'tlb','data-id':r.ID,style:{position:'absolute',left:'1px',right:'1px',top:(t1*PX/60)+'px',height:Math.max(PX/4,(t2-t1)*PX/60-1)+'px',
     background:c2,overflow:'hidden',cursor:'default',outline:HS.sel==r.ID?'2px solid #111':'none',zIndex:HS.sel==r.ID?2:1}},
     h('div',{style:{background:c1,color:'#fff',padding:'1px 4px',whiteSpace:'nowrap'}},`${hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)} – ${r.TIMEHOUR2!=null?hm(r.TIMEHOUR2,r.TIMEMINUTE2||0):''}, ${(+r.TIMEPERIOD||0).toFixed(2).replace(/0$/,'')} h`),
@@ -1110,7 +1557,7 @@ function hsMonth(p){
     const cell=h('div',{style:{borderTop:'1px solid var(--line2)',borderLeft:'1px solid var(--line2)',padding:'3px 4px',background:out?'#f7f7f7':dd.getDay()%6===0?'#f1f1f1':'#fff',color:out?'#aaa':null,overflow:'hidden'}},
       h('div',{style:{display:'flex',justifyContent:'space-between',fontWeight:600}},h('span',{},dd.getDate()+'.'),h('span',{style:{fontWeight:400}},t?hrs(t)+' h':'')));
     L.sort((a,b)=>(a.TIMEHOUR1*60+a.TIMEMINUTE1)-(b.TIMEHOUR1*60+b.TIMEMINUTE1)).forEach(r=>{
-      const x=h('div',{style:{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',fontSize:'11.5px',padding:'1px 3px',marginTop:'2px',borderRadius:'3px',background:r.ISHOLIDAY?'#f6dfb7':r.ISCHARGEABLE?'#b9d3f5':'#cbe8c0'}},
+      const x=h('div',{style:{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',fontSize:'11.5px',padding:'1px 3px',marginTop:'2px',borderRadius:'3px',background:tlColors(r)[1]}},
         hrs(r.TIMEPERIOD)+' '+(r.ISHOLIDAY?'Vacances':(DS.get('project',r.PROJECT_ID)||{}).NUMBER||''));
       x.ondblclick=()=>hsEdit(r); cell.append(x); });
     cell.ondblclick=e=>{ if(e.target===cell&&!out) hsEdit(null,{date:dd}); };
@@ -1124,6 +1571,7 @@ function hsEdit(r,pre){
   if(!HS.staff){ toast('Choisissez d’abord un collaborateur.',true); return; }
   pre=pre||{}; const d0=r?tlDate(r):(pre.date||new Date());
   if(hsFrozen(d0)){ toast('Saisie des heures verrouillée pour cette période.',true); return; }
+  if(r&&tlLocked(r)){ toast(r.TIMELOGSTATECODE===3?'Inscription approuvée : elle n’est plus modifiable.':'Inscription verrouillée (phase partielle terminée).',true); return; }
   const v=r?{...r}:{ID:null,STAFF_ID:HS.staff,TIMEYEAR:d0.getFullYear(),TIMEMONTH:d0.getMonth(),TIMEDAY:d0.getDate(),
     TIMEHOUR1:pre.h1??8,TIMEMINUTE1:pre.m1??0,TIMEHOUR2:pre.h2??(pre.h1!=null?pre.h1+1:9),TIMEMINUTE2:pre.m2??0,TIMEPERIOD:null,
     PROJECT_ID:null,PHASE_ID:null,SUBPHASE_ID:null,ACTIVITYGROUP_ID:null,ACTIVITY_ID:null,SUBPROJECT_ID:null,DESCRIPTION:'',
@@ -1138,23 +1586,28 @@ function hsEdit(r,pre){
   f.t1=h('input',{class:'inp',type:'time',step:900,value:hm(v.TIMEHOUR1,v.TIMEMINUTE1)});
   f.t2=h('input',{class:'inp',type:'time',step:900,value:v.TIMEHOUR2!=null?hm(v.TIMEHOUR2,v.TIMEMINUTE2):''});
   f.dur=h('input',{class:'inp',readonly:true,style:{width:'80px'}});
-  f.hol=h('input',{type:'checkbox',checked:!!v.ISHOLIDAY||null});
+  f.hol=h('input',{type:'radio',name:'hs-k',checked:!!v.ISHOLIDAY||null}); f.work=h('input',{type:'radio',name:'hs-k',checked:!v.ISHOLIDAY||null});
   f.ch=h('input',{type:'checkbox',checked:!!v.ISCHARGEABLE||null});
   f.desc=h('input',{class:'inp',value:v.DESCRIPTION||''});
   const wrap={}; ['proj','ag','act','ph','sp','sub'].forEach(k=>wrap[k]=h('div'));
   const fill=()=>{
     const pid=+(f.proj?f.proj.value:v.PROJECT_ID)||null;
-    f.proj=sel(projects().map(p=>[p.ID,projLabel(p)]),pid,'— Affaire —'); wrap.proj.replaceChildren(f.proj);
+    let plist=staffProjects(DS.get('staff',v.STAFF_ID)).filter(p=>p.PROJECTSTATECODE===2);
+    if(!plist.length) plist=DS.all('project').filter(p=>p.PROJECTSTATECODE===2);   // collaborateur sans affectation : toutes les affaires en cours
+    if(pid&&!plist.some(p=>p.ID===pid)&&DS.get('project',pid)) plist=plist.concat([DS.get('project',pid)]);
+    f.proj=sel(plist.sort((a,b)=>cmp(b.NUMBER,a.NUMBER)).map(p=>[p.ID,projLabel(p)]),pid,'— Affaire —'); wrap.proj.replaceChildren(f.proj);
     const ags=DS.by('projectactivitygroup','PROJECT_ID',pid).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
     const agv=f.ag&&f.ag.dataset.p==pid?+f.ag.value:v.ACTIVITYGROUP_ID;
     f.ag=sel(ags.map(a=>[a.ID,nm(a)]),agv); f.ag.dataset.p=pid; wrap.ag.replaceChildren(f.ag);
-    const acts=DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',+f.ag.value||null).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
+    let acts=DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',+f.ag.value||null).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
+    const allowed=acts.filter(a=>DS.get('projectactivity_staff',a.ID+'-'+v.STAFF_ID));
+    if(allowed.length) acts=allowed.concat(acts.filter(a=>a.ID===v.ACTIVITY_ID&&!allowed.includes(a)));
     f.act=sel(acts.map(a=>[a.ID,nm(a)]),v.ACTIVITY_ID); wrap.act.replaceChildren(f.act);
     const phs=DS.by('projectphase','PROJECT_ID',pid).sort((a,b)=>cmp(a.NUMBER,b.NUMBER));
     const phv=f.ph&&f.ph.dataset.p==pid?+f.ph.value:v.PHASE_ID;
     f.ph=sel(phs.map(x=>[x.ID,(x.NUMBER!=null?x.NUMBER+' ':'')+nm(x)]),phv); f.ph.dataset.p=pid; wrap.ph.replaceChildren(f.ph);
     const sps=DS.by('projectsubphase','PROJECTPHASE_ID',+f.ph.value||null).sort((a,b)=>cmp(a.NUMBER,b.NUMBER));
-    f.sp=sel(sps.map(x=>[x.ID,(x.NUMBER!=null?x.NUMBER+' ':'')+nm(x)]),v.SUBPHASE_ID); wrap.sp.replaceChildren(f.sp);
+    f.sp=sel(sps.filter(x=>!x.ISTERMINATED||x.ID===v.SUBPHASE_ID).map(x=>[x.ID,(x.NUMBER!=null?x.NUMBER+' ':'')+nm(x)]),v.SUBPHASE_ID); wrap.sp.replaceChildren(f.sp);
     const subs=DS.by('subproject','PROJECT_ID',pid).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
     f.sub=sel(subs.map(x=>[x.ID,[x.CODE,x.DESCRIPTION].filter(Boolean).join(' ')]),v.SUBPROJECT_ID); wrap.sub.replaceChildren(f.sub);
     f.proj.onchange=()=>{ v.ACTIVITY_ID=v.SUBPHASE_ID=v.SUBPROJECT_ID=null; fill(); };
@@ -1167,7 +1620,8 @@ function hsEdit(r,pre){
   f.t1.oninput=f.t2.oninput=upd; upd();
   const row=(l,x,full)=>[h('label',{},l),full?h('div',{class:'full'},x):x];
   const body=h('div',{class:'form',style:{minWidth:'560px'}},
-    row('Collaborateur',h('b',{},staffName(DS.get('staff',v.STAFF_ID)))), h('span'),h('span'),
+    h('span'),h('div',{class:'full'},h('label',{},f.work,' Temps de travail'),'    ',h('label',{},f.hol,' Vacances')),
+    row('Collaborateur',h('b',{},staffName(DS.get('staff',v.STAFF_ID)))), row('Statut',h('span',{},TSTATE[v.TIMELOGSTATECODE||0])),
     row('Date',f.date), row('Durée (h)',f.dur),
     row('De',f.t1), row('À',f.t2),
     row('Affaire',wrap.proj,true),
@@ -1175,13 +1629,15 @@ function hsEdit(r,pre){
     row('Phase',wrap.ph), row('Sous-phase',wrap.sp),
     row('Subdivision',wrap.sub,true),
     row('Description',f.desc,true),
-    row('Facturable',f.ch), row('Vacances / absence',f.hol));
+    row('Facturable',f.ch), h('span'),h('span'));
+  const kind=()=>{ const on=!f.hol.checked; [wrap.proj,wrap.ag,wrap.act,wrap.ph,wrap.sp,wrap.sub].forEach(w=>$$('select',w).forEach(x=>x.disabled=!on)); };
+  f.hol.onchange=f.work.onchange=kind; setTimeout(kind,0);
   dialog({title:r?'Modifier la saisie':'Nouvelle saisie',body,buttons:[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:async()=>{
     const dt=new Date(f.date.value+'T00:00'); if(isNaN(dt)){ toast('Date invalide.',true); return false; }
     const [a,b]=[f.t1.value,f.t2.value].map(s=>s?s.split(':').map(Number):null);
     if(!a||!b||b[0]*60+b[1]<=a[0]*60+a[1]){ toast('Heures de début et de fin invalides.',true); return false; }
     const pid=+f.proj.value||null, hol=f.hol.checked;
-    if(!pid&&!hol){ toast('Choisissez une affaire.',true); return false; }
+    if(!hol&&(!pid||!+f.ag.value||!+f.act.value)){ toast('Affaire, groupe d’activités et activité sont obligatoires.',true); return false; }
     const pj=DS.get('project',pid)||{};
     if(!hol&&pj.ISTIMEPHASEMANDATORY&&!+f.ph.value){ toast('La phase est obligatoire pour cette affaire.',true); return false; }
     if(!hol&&pj.ISTIMESUBPROJECTMANDATORY&&!+f.sub.value){ toast('La subdivision est obligatoire pour cette affaire.',true); return false; }
@@ -1190,6 +1646,8 @@ function hsEdit(r,pre){
       TIMEPERIOD:(b[0]*60+b[1]-a[0]*60-a[1])/60,PROJECT_ID:pid,ACTIVITYGROUP_ID:+f.ag.value||null,ACTIVITY_ID:+f.act.value||null,
       PHASE_ID:+f.ph.value||null,SUBPHASE_ID:+f.sp.value||null,SUBPROJECT_ID:+f.sub.value||null,DESCRIPTION:f.desc.value.trim()||null,
       ISCHARGEABLE:f.ch.checked?1:0,ISHOLIDAY:hol?1:0});
+    if(hol) Object.assign(v,{PROJECT_ID:null,ACTIVITYGROUP_ID:null,ACTIVITY_ID:null,PHASE_ID:null,SUBPHASE_ID:null,SUBPROJECT_ID:null});
+    if(v.TIMELOGSTATECODE===1) v.TIMELOGSTATECODE=2;   // refusée puis modifiée → « Corrigé »
     await DS.save('timelog',v); HS.sel=v.ID; HS.d=dt; toast('Saisie enregistrée.');
   }}]});
 }

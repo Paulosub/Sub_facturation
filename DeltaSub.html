@@ -70,6 +70,20 @@ table.g td.r,table.g th.r{text-align:right;font-variant-numeric:tabular-nums}
 table.g td.c,table.g th.c{text-align:center}
 table.g tr.grp td{font-weight:600;background:#f4f4f4!important;color:#333}
 .empty{padding:18px;color:var(--muted)}
+.ph2{display:flex;align-items:center;gap:4px;padding:4px 6px;border-bottom:1px solid var(--line);background:#f5f5f5;flex:0 0 auto}
+.ph2 .ib{height:26px;min-width:30px}
+.ph2 .cnt{color:#555;margin-right:8px;white-space:nowrap}
+.psearch{height:24px;width:170px;border:1px solid #c4c4c4;border-radius:12px;padding:0 10px;background:#fff}
+.seg{display:inline-flex;border:1px solid #b9b9b9;border-radius:5px;overflow:hidden;background:#fff}
+.seg button{border:0;border-left:1px solid #c9c9c9;background:linear-gradient(#fdfdfd,#ececec);padding:3px 12px;cursor:pointer}
+.seg button:first-child{border-left:0}
+.seg button.on{background:#6d6d6d;color:#fff}
+.det{padding:10px 16px;overflow:auto}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px}
+.kv b{font-weight:400;color:#666;text-align:right}
+.ty{display:inline-flex;width:18px;height:16px;align-items:center;justify-content:center;color:#555}
+.ty svg{width:15px;height:15px}
+tr.on .ty{color:#fff}
 /* ── Fiches (formulaires) ── */
 .card{padding:14px 18px}
 .card h3{margin:0 0 10px;font-size:13px;font-weight:600;color:#333}
@@ -146,7 +160,7 @@ function toast(msg,err){ const t=$('#toast'); t.textContent=msg; t.className='on
 const HEAVY=['projectcatalogpos','catalogpos','doctemplate','formtemplate'];   // chargées à la demande
 const DS={
   seq:0, T:{}, S:{}, _idx:{}, _ls:[], loaded:new Set(),
-  who(){ try{ return localStorage.getItem('ds_poste')||''; }catch(_){ return ''; } },
+  who(){ try{ const u=DS.get('appuser',localStorage.getItem('ds_user')); return u?u.USERID:''; }catch(_){ return ''; } },
   all(t){ return Object.values(this.T[t]||{}); },
   get(t,id){ return id==null?null:(this.T[t]||{})[String(id)]||null; },
   /* index champ → [enregistrements], recalculé seulement quand la collection change */
@@ -196,7 +210,7 @@ const DS={
     finally{ this._polling=false; }
   }
 };
-const NET={ ok(){ const n=$('#net'); n.className=''; n.textContent='● Base du bureau'+(DS.who()?' — '+DS.who():''); n.title='Données partagées (serveur DeltaSub). Double-clic : nommer ce poste.'; },
+const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefined'&&ME.u; n.textContent='● Base du bureau'+(u?' — '+(staffName(ME.staff)||u.NAME):''); n.title='Données partagées (serveur DeltaSub). Double-clic : changer d’utilisateur.'; },
   fail(m){ const n=$('#net'); n.className='err'; n.textContent='● Hors ligne'; n.title=m; } };
 
 /* Libellés des tables Deltaproject (colonnes NAMEFR / NAMEGE…) */
@@ -257,7 +271,7 @@ function dialog(o){
   const ov=h('div',{class:'ov'}), d=h('div',{class:'dlg',style:o.width?{width:o.width}:null});
   const bd=h('div',{class:'bd'}); bd.append(o.body);
   const ft=h('div',{class:'ft'});
-  const close=()=>ov.remove();
+  const close=()=>{ ov.remove(); if(VIEW&&VIEW.pend&&!$('.ov')){ const p=VIEW.pend; VIEW.pend=null; VIEW.v.refresh&&VIEW.v.refresh(p); } };
   (o.buttons||[{t:'Fermer'}]).forEach(b=>{ const x=h('button',{class:'btn'+(b.pri?' pri':'')},b.t);
     x.onclick=async()=>{ if(b.fn){ try{ if(await b.fn(bd)===false) return; }catch(e){ if(!e.conflict) console.error(e); return; } } close(); }; ft.append(x); });
   d.append(h('div',{class:'tt'},o.title||''),bd,ft); ov.append(d); document.body.append(ov);
@@ -268,21 +282,31 @@ function dialog(o){
 function confirmDlg(msg,yes='Confirmer'){ return new Promise(res=>dialog({title:'Confirmation',body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'460px'}},msg),
   buttons:[{t:'Annuler',fn:()=>res(false)},{t:yes,pri:true,fn:()=>res(true)}]})); }
 
-/* Tableau triable à sélection : grid(el, {cols:[{k,t,w,cls,f:(r)=>html, v:(r)=>valeur de tri}], rows, key, sel, onSel, onDbl, sort}) */
+/* Tableau triable : grid(el, {cols:[{k,t,w,cls,f:(r)=>html, v:(r)=>valeur de tri}], rows, key, sel, onSel, onDbl, sort, multi})
+   multi : o.selSet (Set des clés) — Maj = plage, Cmd/Ctrl = ajout/retrait ; onSel reçoit la ligne cliquée. */
 function grid(el,o){
   const st=o.state||(o.state={}); if(st.sort==null&&o.sort) st.sort=o.sort;
   const key=o.key||(r=>r.ID);
   let rows=o.rows.slice();
   if(st.sort){ const [k,dir]=st.sort; const c=o.cols.find(c=>c.k===k)||{}; const g=c.v||(r=>r[k]); rows.sort((a,b)=>cmp(g(a),g(b))*(dir<0?-1:1)); }
+  o.view=rows;
+  if(o.multi&&!o.selSet) o.selSet=new Set(o.sel!=null?[String(o.sel)]:[]);
+  const isOn=k=>o.multi?o.selSet.has(k):String(o.sel)===k;
   const t=h('table',{class:'g'}), cg=h('colgroup'), th=h('tr');
   o.cols.forEach(c=>{ cg.append(h('col',{style:c.w?{width:c.w+'px'}:null}));
-    const x=h('th',{class:(c.cls||'')+(st.sort&&st.sort[0]===c.k?' sort'+(st.sort[1]<0?' desc':''):'')},c.t);
+    const x=h('th',{class:(c.cls||'')+(st.sort&&st.sort[0]===c.k?' sort'+(st.sort[1]<0?' desc':''):''),title:c.t},c.t);
     x.onclick=()=>{ st.sort=[c.k, st.sort&&st.sort[0]===c.k?-st.sort[1]:1]; grid(el,o); }; th.append(x); });
-  const tb=h('tbody');
-  rows.forEach(r=>{ const k=String(key(r)), tr=h('tr',{'data-k':k,class:String(o.sel)===k?'on':null});
-    if(r._grp){ tr.className='grp'; tr.append(h('td',{colspan:o.cols.length},r._grp)); tb.append(tr); return; }
+  const tb=h('tbody'); let anchor=null;
+  rows.forEach((r,i)=>{ const k=String(key(r)), tr=h('tr',{'data-k':k,class:isOn(k)?'on':null});
     o.cols.forEach(c=>tr.append(h('td',{class:c.cls||null,html:c.f?c.f(r):esc(r[c.k])})));
-    tr.onclick=()=>{ o.sel=k; $$('tr.on',tb).forEach(x=>x.classList.remove('on')); tr.classList.add('on'); o.onSel&&o.onSel(r); };
+    tr.onclick=e=>{
+      if(o.multi){
+        if(e.shiftKey&&anchor!=null){ const [a,b]=[anchor,i].sort((x,y)=>x-y); if(!(e.metaKey||e.ctrlKey)) o.selSet.clear(); for(let j=a;j<=b;j++) o.selSet.add(String(key(rows[j]))); }
+        else if(e.metaKey||e.ctrlKey){ o.selSet.has(k)?o.selSet.delete(k):o.selSet.add(k); anchor=i; }
+        else { o.selSet.clear(); o.selSet.add(k); anchor=i; }
+        $$('tr',tb).forEach(x=>x.classList.toggle('on',o.selSet.has(x.dataset.k)));
+      } else { $$('tr.on',tb).forEach(x=>x.classList.remove('on')); tr.classList.add('on'); anchor=i; }
+      o.sel=k; o.onSel&&o.onSel(r); };
     if(o.onDbl) tr.ondblclick=()=>o.onDbl(r);
     tb.append(tr); });
   t.append(cg,h('thead',{},th),tb); el.innerHTML=''; el.append(t);
@@ -290,6 +314,17 @@ function grid(el,o){
   const s=tb.querySelector('tr.on'); if(s&&o.scroll!==false) s.scrollIntoView({block:'nearest'});
   return o;
 }
+/* Enregistrements sélectionnés d'une grille multi */
+function gridSel(o,get){ return o&&o.selSet?[...o.selSet].map(get).filter(Boolean):[]; }
+/* Barre d'outils propre à un panneau : phead([boutons], {search:fn, count:()=>texte}) */
+function phead(btns,opt){ opt=opt||{};
+  const b=h('div',{class:'ph2'}); (btns||[]).forEach(x=>b.append(x.nodeType?x:ibtn(x)));
+  b.append(h('div',{style:{flex:1}}));
+  if(opt.count){ const c=h('span',{class:'cnt'}); b.append(c); b.setCount=t=>c.textContent=t; }
+  if(opt.search){ const i=h('input',{class:'psearch',placeholder:'Rechercher'}); i.oninput=()=>opt.search(i.value.trim().toLowerCase()); b.append(i); b.sinput=i; }
+  return b; }
+/* Onglets segmentés : seg(['Adresse','Propriétés'], actif, fn) */
+function seg(labels,cur,fn){ const d=h('div',{class:'seg'}); labels.forEach(l=>{ const x=h('button',{class:l===cur?'on':null},l); x.onclick=()=>fn(l); d.append(x); }); return d; }
 /* Colonne de la navigation : col(titre?, largeur) → {el, pane} */
 function col(w,cls){ const c=h('div',{class:'col'+(cls?' '+cls:''),style:w?{width:w+'px',flex:'0 0 '+w+'px'}:null}); const p=h('div',{class:'pane'}); c.append(p); return {el:c,pane:p}; }
 
@@ -297,15 +332,15 @@ function col(w,cls){ const c=h('div',{class:'col'+(cls?' '+cls:''),style:w?{widt
    NAVIGATION — arbre des modules (à gauche), comme Deltaproject
 ═══════════════════════════════════════════════════════════════════════════ */
 const NAV=[
-  {s:'Adresses',        items:[['adr-entites','Entités'],['adr-liste','Liste des adresses'],['adr-groupes','Groupes d’adresses']]},
+  {s:'Adresses',        items:[['adr-entites','Entités'],['adr-liste','Liste des adresses'],['adr-favoris','Mes favoris'],['adr-groupes','Groupes d’adresses'],['adr-props','Propriétés'],['adr-chercher','Chercher']]},
   {s:'Affaires',        items:[['aff-gestion','Gestion'],['aff-controlling','Controlling'],['aff-mes','Mes affaires'],['aff-toutes','Toutes les affaires']]},
-  {s:'Collaborateurs',  items:[['collab','Collaborateurs']]},
+  {s:'Collaborateurs',  items:[['collab-actuels','Collaborateurs actuels'],['collab-anciens','Anciens collaborateurs'],['collab-tous','Tous les collaborateurs']]},
   {s:'Notes de frais',  items:[['frais','Saisie']]},
   {s:'Heures',          items:[['h-saisie','Saisie'],['h-rapport','Rapport']]},
   {s:'Tâches',          items:[['taches','Tâches']]},
   {s:'Bâtiment',        items:[['devis','Devis'],['coco','Contrôle des coûts'],['coplan','Planification des coûts']]},
   {s:'Management',      items:[['mgmt','Statistiques']]},
-  {s:'Modèles',         items:[['modeles','Modèles'],['config','Configuration']]}
+  {s:'Modèles',         items:[['modeles','Modèles'],['config','Administrateur']]}
 ];
 const VIEWS={};           // id → {tools(), render(main), refresh?(tables), search?}
 let VIEW=null;
@@ -331,7 +366,10 @@ function go(id,arg){
 }
 $('#search').addEventListener('input',e=>{ if(VIEW&&VIEW.v.search) VIEW.v.search(e.target.value.trim().toLowerCase()); });
 /* Modifications reçues des autres postes : la vue courante se met à jour si elle en dépend */
-DS.on(ts=>{ if(VIEW&&VIEW.v.refresh&&!$('.ov')) VIEW.v.refresh(ts); });
+const hit=(ts,...n)=>ts.includes('*')||n.some(x=>ts.includes(x));
+DS.on(ts=>setTimeout(()=>{ if(!VIEW||!VIEW.v.refresh) return;
+  if($('.ov')){ VIEW.pend=[...new Set([...(VIEW.pend||[]),...ts])]; return; }   // fenêtre ouverte : mise à jour à sa fermeture
+  VIEW.v.refresh(ts); },0));
 
 /* Vue provisoire des modules pas encore reproduits */
 VIEWS._todo={ render(m){ const n=NAV.flatMap(s=>s.items.map(i=>[i[0],s.s+' · '+i[1]])).find(x=>x[0]===VIEW.id);
@@ -341,6 +379,824 @@ VIEWS._todo={ render(m){ const n=NAV.flatMap(s=>s.items.map(i=>[i[0],s.s+' · '+
    MODULES
 ═══════════════════════════════════════════════════════════════════════════ */
 /* (les modules sont ajoutés ci-dessous, un bloc par module) */
+
+/* ─── Référentiels communs ─── */
+/* CONTACTOWNER = l'entité (personne : NAME1 = nom, NAME2 = prénom ; société : NAME1 = raison sociale).
+   CONTACT = une de ses adresses (NAME1..3 = lignes d'adresse libres, parfois avec la civilité). */
+function ownerName(o,nomPrenom){ if(!o) return ''; return (o.TYPECODE===1&&o.NAME2)?(nomPrenom?o.NAME1+' '+o.NAME2:o.NAME2+' '+o.NAME1):[o.NAME1,o.NAME2].filter(Boolean).join(' '); }
+function contactName(c){ if(!c) return ''; const o=DS.get('contactowner',c.CONTACTOWNER_ID); return ownerName(o)||[c.NAME1,c.NAME2].filter(Boolean).join(' ')||c.SHORTLABEL||''; }
+function staffName(s){ return s?(contactName(DS.get('contact',s.PERSON_ID))||s.INITIALS||('#'+s.ID)):''; }
+function staffList(all){ return DS.all('staff').filter(s=>all||s.ISACTIVE).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)||cmp(staffName(a),staffName(b))); }
+function projLabel(p){ return p?[p.NUMBER,p.TITLE].filter(Boolean).join(': '):''; }
+function projects(){ return DS.all('project').sort((a,b)=>cmp(a.SORTLABEL||a.NUMBER,b.SORTLABEL||b.NUMBER)); }
+/* TIMELOG : TIMEMONTH est de 0 à 11 (convention Java de Deltaproject) */
+const tlDate=r=>new Date(r.TIMEYEAR,r.TIMEMONTH,r.TIMEDAY);
+const dayKey=d=>d.getFullYear()*10000+d.getMonth()*100+d.getDate();
+const tlKey=r=>r.TIMEYEAR*10000+r.TIMEMONTH*100+r.TIMEDAY;
+const hm=(h,m)=>String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+function mondayOf(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
+function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const n=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-n);
+  const y=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return [t.getUTCFullYear(),Math.ceil(((t-y)/864e5+1)/7)]; }
+const JOURS=['Di','Lu','Ma','Me','Je','Ve','Sa'], MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const MOISL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+/* ─── Utilisateur de ce poste (APPUSER, sans mot de passe) ─── */
+const ME={ get u(){ let id=null; try{ id=localStorage.getItem('ds_user'); }catch(_){} return DS.get('appuser',id); },
+  get staff(){ const u=this.u; if(!u) return null;   // un utilisateur peut être lié à plusieurs collaborateurs : celui qui porte son nom
+    const ss=DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean);
+    return ss.find(s=>u.NAME&&staffName(s).toLowerCase().includes(u.NAME.toLowerCase()))||ss.find(s=>s.ISACTIVE)||ss[0]||null; },
+  get id(){ const u=this.u; return u?u.USERID:(DS.who()||'poste'); } };
+function chooseUser(force){
+  if(ME.u&&!force) return;
+  const users=DS.all('appuser').filter(u=>u.ISENABLED).sort((a,b)=>cmp(a.NAME,b.NAME)), o={};
+  const box=h('div',{style:{width:'360px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  grid(box,Object.assign(o,{cols:[{k:'NAME',t:'Nom',f:u=>esc(staffName(DS.get('staff',(DS.by('appuser_staff','APPUSER_ID',u.ID)[0]||{}).STAFFS_ID))||u.NAME)},{k:'USERID',t:'Nom d’utilisateur',w:130}],rows:users,sel:ME.u&&ME.u.ID,onDbl:u=>{ o.sel=String(u.ID); $('.ov .btn.pri').click(); }}));
+  dialog({title:'Qui utilise ce poste ?',body:h('div',{},h('div',{style:{marginBottom:'8px'}},'Choisissez votre nom (mémorisé sur ce poste).'),box),
+    buttons:[{t:'OK',pri:true,fn:()=>{ if(!o.sel){ toast('Choisissez un utilisateur.',true); return false; } try{ localStorage.setItem('ds_user',o.sel); }catch(_){} NET.ok(); if(VIEW) go(VIEW.id); }}]});
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADRESSES (manuel p.16-21) — CONTACTOWNER = entité, CONTACT = adresse
+═══════════════════════════════════════════════════════════════════════════ */
+const OWNER_T=['Société','Personne','Famille','Communauté','Association'];
+const ADR_T=['Adresse','Adresse postale','Adresse de livraison','Adresse de facturation','Autre adresse'];
+const LANG_T={1:'Allemand',2:'Français',3:'Italien',4:'Anglais'};
+const TYI=['<path d="M3 14V3h7v11M10 7h3v7M5 5h1M7 5h1M5 8h1M7 8h1M5 11h1M7 11h1"/>',
+  '<circle cx="8" cy="5" r="2.5"/><path d="M3.5 14c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5"/>',
+  '<circle cx="5.5" cy="5.5" r="2"/><circle cx="11" cy="6" r="1.7"/><path d="M1.5 14c0-2.6 1.8-4 4-4s4 1.4 4 4M9.5 13.5c.2-2 1.3-3 3-3s2.5 1 2.5 3"/>',
+  '<circle cx="4" cy="6" r="1.6"/><circle cx="8" cy="4.5" r="1.6"/><circle cx="12" cy="6" r="1.6"/><path d="M1.5 13c0-2 1.2-3.3 2.5-3.3M14.5 13c0-2-1.2-3.3-2.5-3.3M5 13c0-2.5 1.3-4.3 3-4.3s3 1.8 3 4.3"/>',
+  '<path d="M2 6l6-3 6 3M3 6v7M13 6v7M6 7v6M10 7v6M1.5 13.5h13"/>'];
+const tyIcon=(t,title)=>`<span class="ty" title="${esc(title||OWNER_T[t]||'')}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${TYI[t]||TYI[0]}</svg></span>`;
+const LINKI='<span class="ty" title="Adresse liée"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6.5 9.5l3-3M5 8l-1.5 1.5a2.1 2.1 0 0 0 3 3L8 11M11 8l1.5-1.5a2.1 2.1 0 0 0-3-3L8 5"/></svg></span>';
+const CARDI='<span class="ty" title="Adresse propre"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="3.5" width="12" height="9" rx="1"/><path d="M4.5 6.5h4M4.5 9h6"/></svg></span>';
+const today=()=>diso(new Date());
+function phone(c,n){ const p=n===2?['PHONECOUNTRY2','PHONEAREA2','PHONENUMBER2']:n===3?['FAXCOUNTRY1','FAXAREA1','FAXNUMBER1']:['PHONECOUNTRY1','PHONEAREA1','PHONENUMBER1'];
+  if(!c||!c[p[2]]) return ''; const a=(c[p[1]]||'').trim(); return (c[p[0]]?c[p[0]]+' '+a.replace(/^0/,''):a)+' '+c[p[2]]; }
+const ownerOf=c=>c?DS.get('contactowner',c.CONTACTOWNER_ID):null;
+const relOf=c=>c&&c.CONTACTRELATION_ID?DS.get('contactowner',c.CONTACTRELATION_ID):null;
+const locality=c=>c?[c.POSTALCODE,c.LOCATION].filter(Boolean).join(' '):'';
+function adrLines(c){ return c?[c.NAME1,c.NAME2,c.NAME3,c.STREET,c.POBOX,[c.COUNTRYCODE&&c.COUNTRYCODE!=='CH'?c.COUNTRYCODE+'-':'',locality(c)].join('')].filter(Boolean):[]; }
+function entityAddresses(e){ const m=new Map(); DS.by('contact','CONTACTOWNER_ID',e.ID).concat(DS.by('contact','CONTACTRELATION_ID',e.ID)).forEach(c=>m.set(c.ID,c)); return [...m.values()]; }
+function contactProps(c){ return DS.by('contact_property','CONTACT_ID',c.ID).map(l=>DS.get('property',l.PROPERTIES_ID)).filter(Boolean); }
+const propGroup=p=>DS.get('propertygroup',p.PROPERTYGROUP_ID);
+const matchQ=(q,...xs)=>!q||xs.some(x=>x!=null&&String(x).toLowerCase().includes(q));
+/* colonnes d'adresses (Liste des adresses, présentations) */
+const ACOL={
+  ty:{k:'ty',t:'Type',w:44,cls:'c',f:c=>{ const o=ownerOf(c); return tyIcon(o?o.TYPECODE:0); },v:c=>(ownerOf(c)||{}).TYPECODE},
+  ent:{k:'ent',t:'Entité',w:170,f:c=>esc(ownerName(ownerOf(c),true)),v:c=>ownerName(ownerOf(c),true)},
+  rel:{k:'rel',t:'Appartient à',w:150,f:c=>esc(ownerName(relOf(c),true)),v:c=>ownerName(relOf(c),true)},
+  atype:{k:'atype',t:'Type d’adresse',w:110,f:c=>esc(ADR_T[c.ADDRESSTYPECODE]||''),v:c=>c.ADDRESSTYPECODE},
+  n1:{k:'NAME1',t:'Identité 1',w:160}, n2:{k:'NAME2',t:'Identité 2',w:150}, n3:{k:'NAME3',t:'Identité 3',w:120},
+  street:{k:'STREET',t:'Rue et n°',w:160}, pobox:{k:'POBOX',t:'Complément',w:110},
+  loc:{k:'loc',t:'Localité',w:140,f:c=>esc(locality(c)),v:c=>c.LOCATION}, pays:{k:'COUNTRYCODE',t:'Pays',w:50},
+  tel:{k:'tel',t:'Téléphone',w:120,f:c=>esc(phone(c,1)),v:c=>phone(c,1)}, mob:{k:'mob',t:'Tél. mobile',w:120,f:c=>esc(phone(c,2)),v:c=>phone(c,2)},
+  fax:{k:'fax',t:'Fax',w:110,f:c=>esc(phone(c,3)),v:c=>phone(c,3)}, mail:{k:'EMAIL1',t:'Courriel',w:180}, web:{k:'INTERNET',t:'Site internet',w:150},
+  skype:{k:'SKYPE',t:'Skype',w:90}, cfc:{k:'BKP',t:'CFC',w:70}, abr:{k:'SHORTLABEL',t:'Abréviation',w:90}, sal:{k:'SALUTATION1',t:'Civilité courrier',w:130},
+  fn:{k:'COMPANYROLE',t:'Fonction',w:120}, prof:{k:'PROFESSION',t:'Profession',w:120},
+  lang:{k:'lang',t:'Langue',w:70,f:c=>esc(LANG_T[c.LANGUAGECODE]||''),v:c=>c.LANGUAGECODE},
+  stat:{k:'stat',t:'Statut',w:110,f:c=>esc(nm(DS.get('contactstate',c.CONTACTSTATE_ID))),v:c=>nm(DS.get('contactstate',c.CONTACTSTATE_ID))},
+  rem:{k:'REMARK',t:'Remarque',w:200}, cre:{k:'CREATED',t:'Créé le',w:80,f:c=>dfr(c.CREATED)}, upd:{k:'UPDATED',t:'Modifié le',w:80,f:c=>dfr(c.UPDATED)}
+};
+const PRES={
+  'Standard':['ty','ent','atype','n1','n2','loc','tel','mob','fax','mail','web','cfc'],
+  'Adresse':['ty','ent','rel','atype','n1','n2','n3','street','pobox','loc','pays'],
+  'Communication':['ty','ent','n1','n2','tel','mob','fax','mail','skype','web'],
+  'Adresse + Communication':['ty','ent','rel','atype','n1','n2','n3','street','pobox','loc','pays','tel','mob','fax','mail','skype','web'],
+  'Tous':['ty','ent','rel','atype','n1','n2','n3','street','pobox','loc','pays','tel','mob','fax','mail','skype','web','abr','sal','fn','prof','lang','stat','rem','cre','upd','cfc']
+};
+
+/* ── Fenêtre « Entité » (nouvelle / modifier) ── */
+function editOwner(o,type,after){
+  const isNew=!o; const v=o?{...o}:{ID:null,TYPECODE:type??0,NAME1:'',NAME2:'',FORMOFADDRESS:type===1?'':type===2?'Famille':'Société',ISHIDDEN:0,CREATED:today()};
+  const f={ty:h('select',{class:'inp'},...OWNER_T.map((t,i)=>h('option',{value:i,selected:i===v.TYPECODE||null},t))),
+    hd:h('input',{class:'inp',value:v.FORMOFADDRESS||'',list:'dl-hd'}), n1:h('input',{class:'inp',value:v.NAME1||''}), n2:h('input',{class:'inp',value:v.NAME2||''}),
+    hid:h('input',{type:'checkbox',checked:!!v.ISHIDDEN||null}), rem:h('textarea',{class:'inp',rows:3},v.REMARK||''),
+    uid:h('input',{class:'inp',value:v.UID||''}), avs:h('input',{class:'inp',value:v.SOCIALSECURITYNUMBER||''}), bd:h('input',{class:'inp',type:'date',value:v.BIRTHDAY||''})};
+  const l2=h('label',{},'Complément');
+  const sync=()=>{ const t=+f.ty.value; l2.textContent=t===1?'Prénom':'Complément'; f.avs.disabled=f.bd.disabled=t!==1; f.uid.disabled=t===1||t===2; };
+  f.ty.onchange=sync; sync();
+  const body=h('div',{},h('datalist',{id:'dl-hd'},...['Société','Monsieur','Madame','Madame et Monsieur','Famille','Commune'].map(x=>h('option',{value:x}))),
+    h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'460px'}},
+    h('label',{},h('b',{},'Type')),f.ty, h('label',{},'En-tête adresse'),f.hd, h('label',{},h('b',{},'Nom')),f.n1, l2,f.n2,
+    h('label',{},'Affichage'),h('label',{style:{textAlign:'left'}},f.hid,' Masquer l’entité dans les listes'),
+    h('label',{},'Remarque'),f.rem, h('label',{},'Créée le'),h('span',{},dfr(v.CREATED)+(v.UPDATED?' (Modifiée le '+dfr(v.UPDATED)+')':'')),
+    h('label',{},'IDE'),f.uid, h('label',{},'N° AVS'),f.avs, h('label',{},'Date d’anniversaire'),f.bd));
+  dialog({title:isNew?'Nouvelle '+OWNER_T[v.TYPECODE].toLowerCase():'Editer l’entité',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    if(!f.n1.value.trim()){ toast('Le nom est obligatoire.',true); return false; }
+    if(isNew){ const d=DS.all('contactowner').filter(x=>(x.NAME1||'').toLowerCase()===f.n1.value.trim().toLowerCase()&&(x.NAME2||'').toLowerCase()===f.n2.value.trim().toLowerCase());
+      if(d.length&&!await confirmDlg(`Attention aux doublons. Il y a déjà ${d.length} entité(s) ${f.n1.value.trim()} ${f.n2.value.trim()}.\nVoulez-vous quand même la créer?`,'Créer')) return false; }
+    const t=+f.ty.value;
+    Object.assign(v,{TYPECODE:t,FORMOFADDRESS:f.hd.value.trim()||null,NAME1:f.n1.value.trim(),NAME2:f.n2.value.trim()||null,ISHIDDEN:f.hid.checked?1:0,REMARK:f.rem.value.trim()||null,
+      UID:t===1||t===2?null:(f.uid.value.trim()||null),SOCIALSECURITYNUMBER:t===1?(f.avs.value.trim()||null):null,BIRTHDAY:t===1?(f.bd.value||null):null,UPDATED:isNew?null:today()});
+    await DS.save('contactowner',v); toast('Entité enregistrée.');
+    if(after) after(v,isNew);
+  }}]});
+}
+/* ── Fenêtre « Adresse » (nouvelle / modifier) ── */
+function editContact(c,owner,rel,after){
+  const isNew=!c; const o=owner||ownerOf(c), r=rel!==undefined?rel:relOf(c);
+  let v;
+  if(c) v={...c};
+  else { const base=r?entityAddresses(r).find(x=>x.CONTACTOWNER_ID===r.ID):null;
+    v={ID:null,CONTACTOWNER_ID:o.ID,CONTACTRELATION_ID:r?r.ID:null,ADDRESSTYPECODE:0,LANGUAGECODE:2,COUNTRYCODE:'CH',ISHIDDEN:0,CREATED:today(),
+      NAME1:r?r.NAME1:(o.TYPECODE===1?[o.FORMOFADDRESS].filter(Boolean).join(''):o.NAME1), NAME2:r?(o.TYPECODE===1?[o.NAME2,o.NAME1].filter(Boolean).join(' '):o.NAME1):(o.TYPECODE===1?[o.NAME2,o.NAME1].filter(Boolean).join(' '):o.NAME2),
+      STREET:base?base.STREET:null,POBOX:base?base.POBOX:null,POSTALCODE:base?base.POSTALCODE:null,LOCATION:base?base.LOCATION:null,
+      PHONECOUNTRY1:base?base.PHONECOUNTRY1:'+41',PHONEAREA1:base?base.PHONEAREA1:null,PHONENUMBER1:base?base.PHONENUMBER1:null,PHONECOUNTRY2:'+41'}; }
+  const I=(k,w)=>h('input',{class:'inp',value:v[k]??'',style:w?{width:w}:null,'data-k':k});
+  const tri=(a,b,c2)=>h('div',{style:{display:'flex',gap:'4px'}},I(a,'52px'),I(b,'58px'),I(c2));
+  const L=(t,b)=>h('label',{},b?h('b',{},t):t);
+  const left=h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr'}},
+    L('Entité',1),h('input',{class:'inp',readonly:true,value:ownerName(o,true)}),
+    L('appartient à'),h('input',{class:'inp',readonly:true,value:ownerName(r,true)}),
+    L('Adresse',1),I('NAME1'), h('span'),I('NAME2'), h('span'),I('NAME3'),
+    L('Rue'),I('STREET'), L('Rue 2'),I('POBOX'),
+    L('NPA/Localité'),h('div',{style:{display:'flex',gap:'4px'}},I('POSTALCODE','70px'),I('LOCATION')),
+    L('Pays'),I('COUNTRYCODE','60px'),
+    L('Téléphone',1),tri('PHONECOUNTRY1','PHONEAREA1','PHONENUMBER1'),
+    L('Tél. mobile'),tri('PHONECOUNTRY2','PHONEAREA2','PHONENUMBER2'),
+    L('Fax'),tri('FAXCOUNTRY1','FAXAREA1','FAXNUMBER1'),
+    L('Courriel',1),I('EMAIL1'), L('Skype'),I('SKYPE'), L('Site internet'),I('INTERNET'));
+  const at=h('select',{class:'inp','data-k':'ADDRESSTYPECODE'},...ADR_T.map((t,i)=>h('option',{value:i,selected:i===v.ADDRESSTYPECODE||null},t)));
+  const lg=h('select',{class:'inp','data-k':'LANGUAGECODE'},...Object.entries(LANG_T).map(([k,t])=>h('option',{value:k,selected:+k===v.LANGUAGECODE||null},t)));
+  const stt=h('select',{class:'inp','data-k':'CONTACTSTATE_ID'},h('option',{value:''},''),...DS.all('contactstate').sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).map(x=>h('option',{value:x.ID,selected:x.ID===v.CONTACTSTATE_ID||null},nm(x))));
+  const hid=h('input',{type:'checkbox',checked:!!v.ISHIDDEN||null});
+  const sal=I('SALUTATION1'); sal.setAttribute('list','dl-sal');
+  const right=h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr'}},
+    L('Type d’adresse'),at, L('Description'),I('ADDRESSDESC'), L('Abréviation',1),I('SHORTLABEL'), L('CFC'),I('BKP'),
+    L('Civilité courrier'),sal, L('Affichage'),h('label',{style:{textAlign:'left'}},hid,' Masquer l’adresse dans les listes'),
+    L('Remarque'),h('textarea',{class:'inp',rows:3,'data-k':'REMARK'},v.REMARK||''),
+    L('Fonction'),I('COMPANYROLE'), L('Profession'),I('PROFESSION'), L('Langue'),lg, L('Statut'),stt,
+    L('Créée le'),h('span',{},dfr(v.CREATED)+(v.UPDATED?' (Modifiée le '+dfr(v.UPDATED)+')':'')), L('Numéro'),h('span',{},v.ID??'—'));
+  const body=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'18px',minWidth:'880px'}},
+    h('datalist',{id:'dl-sal'},...['Monsieur ^0,','Madame ^0,','Bonjour Monsieur ^0,','Bonjour Madame ^0,','Cher Monsieur ^0,','Chère Madame ^0,','Cher ^1,','Chère ^1,','Bonjour ^1,','Madame, Monsieur,'].map(x=>h('option',{value:x}))),
+    left,h('div',{style:{borderLeft:'1px solid var(--line)',paddingLeft:'18px'}},right));
+  dialog({title:isNew?'Nouvelle adresse':'Editer l’adresse',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{
+    $$('[data-k]',bd).forEach(e=>{ const k=e.dataset.k, x=e.value.trim(); v[k]=x===''?null:(['ADDRESSTYPECODE','LANGUAGECODE','CONTACTSTATE_ID'].includes(k)?+x:x); });
+    if(v.EMAIL1&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.EMAIL1)){ toast('Cette adresse courriel est incomplète ou incorrecte.',true); return false; }
+    v.ISHIDDEN=hid.checked?1:0; if(!isNew) v.UPDATED=today();
+    await DS.save('contact',v); toast('Adresse enregistrée.'); if(after) after(v);
+  }}]});
+}
+/* ── Navigateur des entités (choix d'une entité existante) ── */
+function pickOwner(title,fn){
+  const o={}; let q='';
+  const box=h('div',{style:{width:'520px',height:'340px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'TYPECODE',t:'Type',w:44,cls:'c',f:e=>tyIcon(e.TYPECODE)},{k:'NAME1',t:'Nom'},{k:'NAME2',t:'Complément/Prénom'}],
+    rows:DS.all('contactowner').filter(e=>!e.ISHIDDEN&&matchQ(q,e.NAME1,e.NAME2)).slice(0,500),sort:['NAME1',1],onDbl:()=>$('.ov:last-child .btn.pri').click()}));
+  const s=h('input',{class:'inp',placeholder:'Critère de recherche (contient)'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); };
+  draw();
+  dialog({title:title||'Navigateur des entités',body:h('div',{},s,h('div',{style:{height:'8px'}}),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const e=DS.get('contactowner',o.sel); if(!e){ toast('Choisissez une entité.',true); return false; } fn(e); }}]});
+}
+/* ── Panneau de détail d'une adresse (onglets) ── */
+const AD={tab:'Adresse'};
+function adrDetail(el,c,redraw){
+  el.innerHTML='';
+  const tabs=['Adresse','Propriétés','Notes','Intervenant','Soumissionnaire'];
+  const top=h('div',{style:{padding:'6px',borderBottom:'1px solid var(--line)',textAlign:'center'}},seg(tabs,AD.tab,t=>{ AD.tab=t; adrDetail(el,c,redraw); }));
+  const body=h('div',{class:'det',style:{flex:1}}); el.append(top,body);
+  if(!c){ body.append(h('div',{class:'empty'},'Aucune adresse sélectionnée.')); return; }
+  if(AD.tab==='Adresse'){
+    const L=(k,v,html)=>[h('b',{},k),html?h('span',{html:v}):h('span',{},v||'')];
+    const mail=c.EMAIL1?`<a href="mailto:${esc(c.EMAIL1)}">${esc(c.EMAIL1)}</a>`:'', web=c.INTERNET?`<a href="${esc(/^https?:/.test(c.INTERNET)?c.INTERNET:'https://'+c.INTERNET)}" target="_blank" rel="noopener">${esc(c.INTERNET)}</a>`:'';
+    const map=adrLines(c).length?` <a title="Affiche la carte des environs" href="https://map.search.ch/${encodeURIComponent([c.STREET,locality(c)].filter(Boolean).join(', '))}" target="_blank" rel="noopener">⌕</a>`:'';
+    body.append(h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}},
+      h('div',{class:'kv'},...L('Entité',ownerName(ownerOf(c),true)),...L('appartient à',ownerName(relOf(c),true)),...L('Type d’adresse',ADR_T[c.ADDRESSTYPECODE]),
+        ...L('Adresse',adrLines(c).map(esc).join('<br>')+map,true)),
+      h('div',{class:'kv'},...L('Téléphone',phone(c,1)),...L('Tél. mobile',phone(c,2)),...L('Fax',phone(c,3)),...L('Courriel',mail,true),...L('Skype',c.SKYPE),...L('Site internet',web,true),...L('CFC',c.BKP),
+        ...(c.REMARK?L('Remarque',c.REMARK):[]))));
+  }
+  if(AD.tab==='Propriétés'){
+    const o={};
+    const wrap=h('div');
+    const draw=()=>grid(wrap,Object.assign(o,{cols:[{k:'g',t:'Groupe de propriétés',f:p=>esc(nm(propGroup(p))),v:p=>nm(propGroup(p))},{k:'p',t:'Propriété',f:p=>esc(nm(p)),v:nm}],rows:contactProps(c),key:p=>p.ID,empty:'Aucune propriété.'}));
+    body.append(phead([{i:'plus',t:'Ajouter des propriétés',fn:()=>pickProps(ps=>addProps([c],ps))},{i:'minus',t:'Retirer la propriété',fn:async()=>{ if(!o.sel) return; await DS.commit([{t:'contact_property',id:c.ID+'-'+o.sel,val:null}]); }}]),wrap); draw();
+  }
+  if(AD.tab==='Notes'){
+    const o={}, wrap=h('div');
+    const notes=DS.by('contactnote','CONTACT_ID',c.ID).filter(n=>n.ISPUBLIC||n.OWNER===ME.id);
+    const ed=n=>{ const v=n?{...n}:{ID:null,CONTACT_ID:c.ID,OWNER:ME.id,ISPUBLIC:1,CHANGEDDATE:today()};
+      const s=h('input',{class:'inp',value:v.SUBJECT||''}), t=h('textarea',{class:'inp',rows:8},v.CONTENT||''), pub=h('input',{type:'checkbox',checked:!!v.ISPUBLIC||null});
+      dialog({title:n?'Modifier la note':'Nouvelle note',body:h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'520px'}},h('label',{},'Concerne'),s,h('label',{},'Texte'),t,h('label',{},'Publique'),h('label',{style:{textAlign:'left'}},pub,' visible par tous')),
+        buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ Object.assign(v,{SUBJECT:s.value.trim(),CONTENT:t.value,ISPUBLIC:pub.checked?1:0,CHANGEDDATE:today()}); return DS.save('contactnote',v); }}]}); };
+    body.append(phead([{i:'plus',t:'Nouvelle note',fn:()=>ed()},{i:'edit',t:'Modifier la note',fn:()=>o.sel&&ed(DS.get('contactnote',o.sel))},{i:'minus',t:'Supprimer la note',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer cette note ?','Supprimer')) DS.del('contactnote',o.sel); }}]),wrap);
+    grid(wrap,Object.assign(o,{cols:[{k:'CHANGEDDATE',t:'Date',w:85,f:n=>dfr(n.CHANGEDDATE)},{k:'OWNER',t:'Auteur',w:70},{k:'SUBJECT',t:'Sujet',w:180},{k:'CONTENT',t:'Texte'}],rows:notes,sort:['CHANGEDDATE',-1],onDbl:ed,empty:'Aucune note.'}));
+  }
+  if(AD.tab==='Intervenant'){
+    const rows=DS.by('projectmember','CONTACT_ID',c.ID); const wrap=h('div'); body.append(wrap);
+    grid(wrap,{cols:[{k:'n',t:'Numéro',w:80,f:m=>esc((DS.get('project',m.PROJECT_ID)||{}).NUMBER),v:m=>(DS.get('project',m.PROJECT_ID)||{}).NUMBER},{k:'a',t:'Affaire',w:220,f:m=>esc((DS.get('project',m.PROJECT_ID)||{}).TITLE)},
+      {k:'s',t:'Statut de l’affaire',w:110,f:m=>esc(projState(DS.get('project',m.PROJECT_ID)))},{k:'r',t:'Rôle',w:140,f:m=>esc(teamRole(m.TEAMROLECODE))},{k:'PROJECTDIVISION',t:'Domaine spécialisé',w:130},
+      {k:'PROJECTROLE',t:'Fonction',w:110},{k:'BKP',t:'CFC',w:60},{k:'NOTE',t:'Note',w:140},{k:'resp',t:'Responsable',f:m=>esc(contactName(DS.get('contact',m.RESPCONTACT_ID)))}],
+      rows,sort:['n',-1],onDbl:m=>go('aff-toutes',{project:m.PROJECT_ID}),empty:'Cette adresse n’est intervenante dans aucune affaire.'});
+  }
+  if(AD.tab==='Soumissionnaire'){
+    const wrap=h('div'); body.append(wrap);
+    grid(wrap,{cols:[{k:'n',t:'Numéro',w:80,f:m=>esc((DS.get('project',m.PROJECT_ID)||{}).NUMBER)},{k:'a',t:'Affaire',w:240,f:m=>esc((DS.get('project',m.PROJECT_ID)||{}).TITLE)},
+      {k:'s',t:'Statut de l’affaire',w:120,f:m=>esc(projState(DS.get('project',m.PROJECT_ID)))},{k:'BKP',t:'CFC',w:80},{k:'resp',t:'Responsable',f:m=>esc(contactName(DS.get('contact',m.RESPCONTACT_ID)))}],
+      rows:DS.by('projecttenderer','CONTACT_ID',c.ID),empty:'Aucune soumission.'});
+  }
+}
+/* rôles et états d'affaire : complétés par le module Affaires */
+let teamRole=c=>c==null?'':String(c), projState=p=>p?String(p.PROJECTSTATECODE??''):'';
+/* ── Propriétés : sélection et attribution ── */
+function pickProps(fn){
+  const o={multi:true}, box=h('div',{style:{width:'460px',height:'360px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const rows=DS.all('property').sort((a,b)=>cmp((propGroup(a)||{}).SORTORDER,(propGroup(b)||{}).SORTORDER)||cmp(a.SORTORDER,b.SORTORDER));
+  grid(box,Object.assign(o,{cols:[{k:'g',t:'Groupe de propriétés',f:p=>esc(nm(propGroup(p)))},{k:'p',t:'Propriété',f:p=>esc(nm(p))}],rows}));
+  dialog({title:'Sélectionner les propriétés',body:h('div',{},h('div',{style:{marginBottom:'6px',color:'#555'}},'Cmd-clic pour en choisir plusieurs.'),box),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>fn(gridSel(o,id=>DS.get('property',id)))}]});
+}
+async function addProps(contacts,props){
+  const ops=[]; contacts.forEach(c=>props.forEach(p=>{ const id=c.ID+'-'+p.ID; if(!DS.get('contact_property',id)) ops.push({t:'contact_property',id,val:{CONTACT_ID:c.ID,PROPERTIES_ID:p.ID}}); }));
+  if(ops.length){ await DS.commit(ops); toast(ops.length+' propriété(s) attribuée(s).'); }
+}
+/* ── Groupes : favoris, statiques, intelligents ── */
+function favGroup(create){
+  let g=DS.all('contactgroup').find(x=>!x.ISSMART&&x.NAME==='Mes favoris'&&x.OWNER===ME.id);
+  if(!g&&create){ g={ID:null,NAME:'Mes favoris',ISSMART:0,OWNER:ME.id,SORTDATE:today()}; }
+  return g;
+}
+async function addToGroup(g,contacts){
+  if(g.ID==null) await DS.save('contactgroup',g);
+  const ops=contacts.filter(c=>!DS.get('contactgroup_contact',g.ID+'-'+c.ID)).map(c=>({t:'contactgroup_contact',id:g.ID+'-'+c.ID,val:{CONTACTGROUPS_ID:g.ID,CONTACTS_ID:c.ID}}));
+  if(ops.length) await DS.commit(ops); toast(ops.length+' adresse(s) ajoutée(s) à « '+(g.NAME||'')+' ».');
+}
+function groupMembers(g){
+  if(!g) return DS.all('contact');
+  if(!g.ISSMART) return DS.by('contactgroup_contact','CONTACTGROUPS_ID',g.ID).map(l=>DS.get('contact',l.CONTACTS_ID)).filter(Boolean);
+  const cl=DS.by('contactqueryclause','CONTACTQUERY_ID',g.CONTACTQUERY_ID).filter(x=>x.ISENABLED), q=DS.get('contactquery',g.CONTACTQUERY_ID)||{ISANDOPERATOR:1};
+  if(!cl.length) return [];
+  const tests=cl.map(x=>smartTest(x)).filter(Boolean);
+  return DS.all('contact').filter(c=>!c.ISHIDDEN&&(q.ISANDOPERATOR?tests.every(t=>t(c)):tests.some(t=>t(c))));
+}
+const SMART_F=['Nom/Société','Prénom','Localité','Remarque','Code','Rue','Courriel','Fonction','Profession','Abréviation'];
+const SMART_FV=[c=>(ownerOf(c)||{}).NAME1,c=>(ownerOf(c)||{}).NAME2,c=>c.LOCATION,c=>c.REMARK,c=>c.CODELABEL,c=>c.STREET,c=>c.EMAIL1,c=>c.COMPANYROLE,c=>c.PROFESSION,c=>c.SHORTLABEL];
+const SMART_OP=['est exactement','n’est pas','contient','ne contient pas','commence par','finit par'];
+function txtOp(op,val,pat){ val=String(val||'').toLowerCase(); pat=String(pat||'').toLowerCase();
+  return [val===pat,val!==pat,val.includes(pat),!val.includes(pat),val.startsWith(pat),val.endsWith(pat)][op||0]; }
+function smartTest(x){
+  const P=x.POSITION;
+  if(P<=4){ const g=SMART_FV[x.FIELDID]; return g?c=>txtOp(x.OP,g(c),x.PATTERN1):null; }
+  if(P===5) return c=>txtOp(x.OP,c.BKP,x.PATTERN1);
+  if(P===6) return c=>{ const n=parseInt(c.POSTALCODE,10), a=+x.PATTERN1, b=+x.PATTERN2; if(!isFinite(n)) return false; return [n>=a&&n<=b,n===a,n>a,n<a][x.OP||0]; };
+  if(P===7) return c=>(x.OP?c.CONTACTSTATE_ID!=x.PATTERN1:c.CONTACTSTATE_ID==x.PATTERN1);
+  if(P===8||P===9) return c=>{ const d=(P===8?c.UPDATED||c.CREATED:c.CREATED)||''; const a=x.PATTERN1||'', b=x.PATTERN2||''; return [d===a,d&&d<a,d>a,d>=a&&d<=b][x.OP||0]; };
+  if(P===10){ const inc=String(x.PATTERN1||'').split(',').filter(Boolean).map(Number), exc=String(x.PATTERN2||'').split(',').filter(Boolean).map(Number);
+    return c=>{ const ps=new Set(DS.by('contact_property','CONTACT_ID',c.ID).map(l=>l.PROPERTIES_ID));
+      if(exc.some(p=>ps.has(p))) return false; if(!inc.length) return true; return x.OP?inc.every(p=>ps.has(p)):inc.some(p=>ps.has(p)); }; }
+  return null;
+}
+function editSmartGroup(g){
+  const isNew=!g; g=g?{...g}:{ID:null,NAME:'',ISSMART:1,OWNER:ME.id,SORTDATE:today()};
+  const q=g.CONTACTQUERY_ID?{...DS.get('contactquery',g.CONTACTQUERY_ID)}:{ID:null,ISANDOPERATOR:1,MAXRESULT:-1};
+  const old=g.CONTACTQUERY_ID?DS.by('contactqueryclause','CONTACTQUERY_ID',g.CONTACTQUERY_ID):[];
+  const C=[...Array(11)].map((_,i)=>({...(old.find(x=>x.POSITION===i)||{ID:null,POSITION:i,ISENABLED:0,OP:0,FIELDID:i<5?i:-1,PATTERN1:null,PATTERN2:null})}));
+  const name=h('input',{class:'inp',value:g.NAME||''});
+  const all=h('input',{type:'radio',name:'sg-op',checked:q.ISANDOPERATOR?true:null}), any=h('input',{type:'radio',name:'sg-op',checked:q.ISANDOPERATOR?null:true});
+  const rows=h('div',{style:{display:'grid',gridTemplateColumns:'auto 150px 150px 1fr auto 1fr',gap:'5px 8px',alignItems:'center',marginTop:'10px'}});
+  const opSel=(ops,v)=>h('select',{class:'inp'},...ops.map((t,i)=>h('option',{value:i,selected:i===(v||0)||null},t)));
+  const ctl=[];
+  C.forEach((x,i)=>{
+    const cb=h('input',{type:'checkbox',checked:!!x.ISENABLED||null}); let a,b,c,d;
+    if(i<5){ a=h('select',{class:'inp'},...SMART_F.map((t,j)=>h('option',{value:j,selected:j===x.FIELDID||null},t))); b=opSel(SMART_OP,x.OP); c=h('input',{class:'inp',value:x.PATTERN1||''}); rows.append(cb,a,b,c,h('span'),h('span')); }
+    else if(i===5){ a=h('span',{},'CFC'); b=opSel(SMART_OP,x.OP); c=h('input',{class:'inp',value:x.PATTERN1||''}); rows.append(cb,a,b,c,h('span'),h('span')); }
+    else if(i===6){ a=h('span',{},'NPA (plage)'); b=opSel(['compris entre','est exactement','plus grand que','plus petit que'],x.OP); c=h('input',{class:'inp',value:x.PATTERN1||''}); d=h('input',{class:'inp',value:x.PATTERN2||''}); rows.append(cb,a,b,c,h('span',{},'et'),d); }
+    else if(i===7){ a=h('span',{},'Statut'); b=opSel(['est','n’est pas'],x.OP); c=h('select',{class:'inp'},...DS.all('contactstate').sort((p,q2)=>cmp(p.SORTORDER,q2.SORTORDER)).map(s=>h('option',{value:s.ID,selected:String(s.ID)===String(x.PATTERN1)||null},nm(s)))); rows.append(cb,a,b,c,h('span'),h('span')); }
+    else if(i<10){ a=h('span',{},i===8?'Dernière modification':'Création'); b=opSel(['est exactement','avant le','après le','compris entre'],x.OP); c=h('input',{class:'inp',type:'date',value:x.PATTERN1||''}); d=h('input',{class:'inp',type:'date',value:x.PATTERN2||''}); rows.append(cb,a,b,c,h('span',{},'et'),d); }
+    ctl[i]={cb,a,b,c,d};
+  });
+  /* propriétés incluses / exclues (position 10) */
+  const P10=C[10], cb10=h('input',{type:'checkbox',checked:!!P10.ISENABLED||null});
+  const r1=h('input',{type:'radio',name:'sg-p',checked:P10.OP?true:null}), r0=h('input',{type:'radio',name:'sg-p',checked:P10.OP?null:true});
+  const inc=new Set(String(P10.PATTERN1||'').split(',').filter(Boolean).map(Number)), exc=new Set(String(P10.PATTERN2||'').split(',').filter(Boolean).map(Number));
+  const plist=(set,title)=>{ const w=h('div',{style:{height:'140px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}), o={};
+    const draw=()=>grid(w,Object.assign(o,{cols:[{k:'g',t:'Groupe de propriétés',f:p=>esc(nm(propGroup(p)))},{k:'p',t:'Propriété',f:p=>esc(nm(p))}],rows:[...set].map(id=>DS.get('property',id)).filter(Boolean)}));
+    draw();
+    return h('div',{style:{flex:1}},h('div',{style:{fontWeight:600,margin:'4px 0'}},title),w,h('div',{style:{display:'flex',gap:'4px',marginTop:'4px'}},
+      ibtn({i:'plus',fn:()=>pickProps(ps=>{ ps.forEach(p=>set.add(p.ID)); draw(); })}),ibtn({i:'minus',fn:()=>{ if(o.sel){ set.delete(+o.sel); draw(); } }}))); };
+  const body=h('div',{style:{minWidth:'820px'}},
+    h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr'}},h('label',{},'Nom du groupe'),name),
+    h('div',{style:{marginTop:'10px'}},h('label',{},all,' Correspond à tous les critères suivants'),'   ',h('label',{},any,' Correspond à un des critères suivants')),
+    rows,
+    h('div',{style:{marginTop:'12px',borderTop:'1px solid var(--line)',paddingTop:'8px'}},h('label',{},cb10,' Propriétés d’adresses'),'   ',h('label',{},r0,' Comprend une propriété'),'  ',h('label',{},r1,' Comprend toutes les propriétés'),
+      h('div',{style:{display:'flex',gap:'14px'}},plist(inc,'Propriétés d’adresses incluses'),plist(exc,'Propriétés d’adresses exclues'))));
+  dialog({title:'Editer le groupe intelligent',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    if(!name.value.trim()){ toast('Donnez un nom au groupe.',true); return false; }
+    q.ISANDOPERATOR=all.checked?1:0; if(q.ID==null) q.ID=DS.newIds('contactquery')[0];
+    g.NAME=name.value.trim(); g.CONTACTQUERY_ID=q.ID; if(g.ID==null) g.ID=DS.newIds('contactgroup')[0];
+    const ids=DS.newIds('contactqueryclause',C.filter(x=>x.ID==null).length); let k=0;
+    C.forEach((x,i)=>{ if(x.ID==null) x.ID=ids[k++]; x.CONTACTQUERY_ID=q.ID; const t=ctl[i];
+      if(i<10){ x.ISENABLED=t.cb.checked?1:0; x.OP=+t.b.value; if(i<5) x.FIELDID=+t.a.value; x.PATTERN1=t.c.value||null; x.PATTERN2=t.d?(t.d.value||null):null; }
+      else { x.ISENABLED=cb10.checked?1:0; x.OP=r1.checked?1:0; x.PATTERN1=[...inc].join(',')||null; x.PATTERN2=[...exc].join(',')||null; } });
+    await DS.commit([{t:'contactquery',id:q.ID,val:q},{t:'contactgroup',id:g.ID,val:g},...C.map(x=>({t:'contactqueryclause',id:x.ID,val:x}))]);
+    toast('Groupe enregistré.');
+  }}]});
+}
+
+/* ── Liste d'adresses réutilisable (Liste des adresses, Favoris, Groupes, Propriétés, Chercher) ── */
+const AL={pres:'Standard', det:true};
+try{ AL.pres=localStorage.getItem('ds_al_pres')||'Standard'; }catch(_){}
+function adrList(el,getRows,opt){
+  opt=opt||{};
+  const st={q:'', g:{multi:true,state:{sort:['ent',1]}}};
+  const wrap=h('div',{class:'split',style:{gap:0}}), top=h('div',{class:'col',style:{flex:AL.det?'1 1 60%':'1',border:0}}), pane=h('div',{class:'pane'});
+  const det=h('div',{class:'col',style:{flex:'0 0 40%',borderLeft:0,borderRight:0,borderBottom:0,display:AL.det?'flex':'none'}});
+  const sel=()=>gridSel(st.g,id=>DS.get('contact',id));
+  const cur=()=>DS.get('contact',st.g.sel);
+  const head=phead([
+    {i:'edit',t:'Modifier l’adresse',fn:()=>cur()&&editContact(cur())},
+    {i:'doc',t:'Prévisualisation',menu:()=>[{t:'Liste d’adresses',fn:()=>printAdr(st.g.view,'Liste d’adresses')},{t:'Liste d’adresses par CFC',fn:()=>printAdr(st.g.view.slice().sort((a,b)=>cmp(a.BKP,b.BKP)),'Liste d’adresses par CFC')}]},
+    {i:'gear',t:'Fonctions',menu:()=>{ const n=sel().length; return [
+      {t:'Ajouter aux favoris',dis:!n,fn:()=>addToGroup(favGroup(true),sel())},
+      {t:'Ajouter à un groupe d’adresses …',dis:!n,fn:()=>pickGroup(g=>addToGroup(g,sel()))},
+      ...(opt.group&&!opt.group.ISSMART?[{t:'Retirer du groupe',dis:!n,fn:async()=>{ if(await confirmDlg(`Retirer ${n} adresse(s) du groupe « ${opt.group.NAME} » ?`,'Retirer')) DS.commit(sel().map(c=>({t:'contactgroup_contact',id:opt.group.ID+'-'+c.ID,val:null}))); }}]:[]),
+      '-',{t:'Ajouter des propriétés …',dis:!n,fn:()=>pickProps(ps=>addProps(sel(),ps))},
+      '-',{t:'Courriel …',dis:!n,fn:()=>mailList(sel())},
+      '-',{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(st.g)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(st.g,'Adresses')},
+      '-',...Object.keys(PRES).map(p=>({t:p,chk:AL.pres===p,fn:()=>{ AL.pres=p; try{localStorage.setItem('ds_al_pres',p);}catch(_){} draw(); }})),
+      '-',{t:'Afficher les détails des adresses',chk:AL.det,fn:()=>{ AL.det=!AL.det; top.style.flex=AL.det?'1 1 60%':'1'; det.style.display=AL.det?'flex':'none'; }},
+      {t:'Actualiser la liste',fn:()=>draw()}]; }}
+  ],{count:1,search:q=>{ st.q=q; draw(); }});
+  top.append(head,pane); wrap.append(top,det); el.append(wrap);
+  const draw=()=>{
+    const rows=getRows().filter(c=>!c.ISHIDDEN&&(!st.q||matchQ(st.q,ownerName(ownerOf(c),true),c.NAME1,c.NAME2,c.NAME3,c.LOCATION,c.STREET,c.EMAIL1,c.BKP,c.SHORTLABEL,st.q.length>2&&AL.pres==='Tous'?c.REMARK:null)));
+    grid(pane,Object.assign(st.g,{cols:PRES[AL.pres].map(k=>ACOL[k]),rows,onSel:c=>adrDetail(det,c),onDbl:c=>editContact(c)}));
+    head.setCount(rows.length+' Adresses'); adrDetail(det,cur());
+  };
+  draw(); return {draw};
+}
+function pickGroup(fn){
+  const o={}, box=h('div',{style:{width:'420px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  grid(box,Object.assign(o,{cols:[{k:'NAME',t:'Nom du groupe'},{k:'SORTDATE',t:'Date',w:90,f:g=>dfr(g.SORTDATE)}],rows:DS.all('contactgroup').filter(g=>!g.ISSMART&&g.NAME),sort:['NAME',1]}));
+  dialog({title:'Navigateur de groupes d’adresses',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const g=DS.get('contactgroup',o.sel); if(!g) return false; fn(g); }}]});
+}
+function mailList(cs){
+  const ok=cs.filter(c=>c.EMAIL1), ko=cs.filter(c=>!c.EMAIL1);
+  const sep=h('select',{class:'inp'},h('option',{value:','},'Virgule (Standard)'),h('option',{value:';'},'Point-virgule (Outlook)'));
+  const ta=h('textarea',{class:'inp',rows:6,readonly:true}); const upd=()=>ta.value=ok.map(c=>c.EMAIL1).join(sep.value+' '); sep.onchange=upd; upd();
+  dialog({title:'Valider les courriels',body:h('div',{style:{minWidth:'520px'}},h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr'}},h('label',{},'Séparateur des courriels'),sep),h('div',{style:{height:'8px'}}),ta,
+    ko.length?h('div',{style:{marginTop:'8px',color:'#9a5b00'}},'Les contacts suivants n’ont pas d’E-mail : '+ko.map(c=>contactName(c)).join(', ')):null),
+    buttons:[{t:'Fermer'},{t:'Copier dans le presse-papier',pri:true,fn:()=>{ navigator.clipboard.writeText(ta.value); toast('Courriels copiés.'); }}]});
+}
+/* Export / copie du tableau affiché (colonnes et ordre courants) */
+function tableText(g,sep){ const cell=(c,r)=>{ const d=document.createElement('div'); d.innerHTML=c.f?c.f(r):esc(r[c.k]); return (d.textContent||'').trim(); };
+  const cols=g.cols.filter(c=>c.k!=='ty');
+  return [cols.map(c=>c.t).join(sep),...g.view.map(r=>cols.map(c=>{ const v=cell(c,r); return sep===';'&&/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(sep))].join('\n'); }
+function copyTable(g){ navigator.clipboard.writeText(tableText(g,'\t')); toast('Tableau copié ('+g.view.length+' lignes).'); }
+function csvTable(g,name){ const b=new Blob(['﻿'+tableText(g,';')],{type:'text/csv;charset=utf-8'}); const a=h('a',{href:URL.createObjectURL(b),download:name+'_'+today()+'.csv'}); document.body.append(a); a.click(); a.remove(); }
+function printAdr(rows,title){
+  const w=open('','_blank'); if(!w) return;
+  w.document.write(`<html><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:10pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:3px 6px;vertical-align:top;border-bottom:.5pt solid #ccc}th{font-weight:600}tr:nth-child(even) td{background:#f3f6fb}</style></head><body><h1>${esc(title)} — ${dfr(today())}</h1><table><tr><th>CFC</th><th>Adresse</th><th>Téléphone</th><th>Tél. mobile</th><th>Courriel</th></tr>`+
+    rows.map(c=>`<tr><td>${esc(c.BKP||'')}</td><td>${adrLines(c).map(esc).join('<br>')}</td><td>${esc(phone(c,1))}</td><td>${esc(phone(c,2))}</td><td>${esc(c.EMAIL1||'')}</td></tr>`).join('')+'</table></body></html>');
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
+
+/* ── ADRESSES · Entités ── */
+const AE={ent:null,q:'',qa:'',hid:false,go:{},ga:{}};
+VIEWS['adr-entites']={
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(null); L.el.style.flex='0 0 38%'; const R=h('div',{class:'col fill'});
+    const lp=L.pane, top=h('div',{class:'col',style:{flex:'1 1 55%',border:0,borderBottom:'1px solid var(--line)'}}), ap=h('div',{class:'pane'});
+    const det=h('div',{class:'col',style:{flex:'0 0 45%',border:0}});
+    const curE=()=>DS.get('contactowner',AE.go.sel), curA=()=>DS.get('contact',AE.ga.sel);
+    const lh=phead([
+      {i:'plus',t:'Nouveau',menu:()=>OWNER_T.map((t,i)=>({t:'Nouvelle '+t.toLowerCase(),fn:()=>editOwner(null,i,(e,isNew)=>{ AE.go.sel=String(e.ID); if(isNew) editContact(null,e,null); })}))},
+      {i:'edit',t:'Modifier',menu:()=>[{t:'Modifier l’entité',dis:!curE(),fn:()=>editOwner(curE())},{t:'Modifier les coordonnées bancaires',dis:!curE(),fn:()=>bankDlg(curE())}]},
+      {i:'minus',t:'Supprimer l’entité',fn:()=>curE()&&delOwner(curE())},
+      {i:'gear',t:'Fonctions',menu:()=>[{t:'Afficher tous les CFC',dis:!curE(),fn:()=>ownerInfo(curE(),'CFC')},{t:'Afficher toutes les propriétés',dis:!curE(),fn:()=>ownerInfo(curE(),'Propriétés')},
+        {t:'En tant qu’intervenant',dis:!curE(),fn:()=>ownerInfo(curE(),'Intervenants')},'-',
+        {t:'Afficher les entités masquées',chk:AE.hid,fn:()=>{ AE.hid=!AE.hid; drawE(); }},{t:'Export tableau',fn:()=>csvTable(AE.go,'Entites')}]}
+    ],{search:q=>{ AE.q=q; drawE(); }});
+    L.el.prepend(lh);
+    const rh=phead([
+      {i:'plus',t:'Nouveau',menu:()=>[{t:'Nouvelle adresse',dis:!curE(),fn:()=>editContact(null,curE(),null,c=>AE.ga.sel=String(c.ID))},
+        {t:'Lier une entité',dis:!curE(),fn:()=>pickOwner(ownerName(curE(),true)+' : lier à une entité',e=>editContact(null,e,curE(),c=>AE.ga.sel=String(c.ID)))}]},
+      {i:'edit',t:'Modifier l’adresse',fn:()=>curA()&&editContact(curA())},
+      {i:'minus',t:'Supprimer l’adresse',fn:()=>curA()&&delContact(curA())},
+      {i:'gear',t:'Fonctions',menu:()=>[{t:'Ajouter aux favoris',dis:!curA(),fn:()=>addToGroup(favGroup(true),[curA()])},{t:'Ajouter à un groupe d’adresses',dis:!curA(),fn:()=>pickGroup(g=>addToGroup(g,[curA()]))},
+        {t:'Copier l’adresse dans le presse-papier',dis:!curA(),fn:()=>{ navigator.clipboard.writeText(adrLines(curA()).join('\n')); toast('Adresse copiée.'); }}]}
+    ],{count:1,search:q=>{ AE.qa=q; drawA(); }});
+    top.append(rh,ap); R.append(top,det); cols.append(L.el,R);
+    const drawE=()=>{ const rows=DS.all('contactowner').filter(e=>(AE.hid||!e.ISHIDDEN)&&matchQ(AE.q,e.NAME1,e.NAME2));
+      grid(lp,Object.assign(AE.go,{cols:[{k:'TYPECODE',t:'Type',w:44,cls:'c',f:e=>tyIcon(e.TYPECODE)},{k:'NAME1',t:'Nom'},{k:'NAME2',t:'Complément/Prénom'}],rows,sort:AE.go.state&&AE.go.state.sort?null:['NAME1',1],
+        onSel:()=>{ AE.ga.sel=null; drawA(); },onDbl:e=>editOwner(e)}));
+      AE.nE=rows.length; drawA(); };
+    const drawA=()=>{ const e=curE(); const rows=e?entityAddresses(e).filter(c=>(AE.hid||!c.ISHIDDEN)&&matchQ(AE.qa,c.NAME1,c.NAME2,c.NAME3,c.LOCATION,c.STREET)):[];
+      if(!AE.ga.sel&&rows[0]) AE.ga.sel=String((rows.find(c=>c.CONTACTOWNER_ID===e.ID)||rows[0]).ID);
+      grid(ap,Object.assign(AE.ga,{cols:[{k:'ty',t:'…',w:30,cls:'c',f:c=>c.CONTACTRELATION_ID&&c.CONTACTOWNER_ID!==(e&&e.ID)?LINKI:CARDI},ACOL.ent,ACOL.rel,ACOL.atype,ACOL.n1,ACOL.n2,ACOL.n3,ACOL.street,ACOL.pobox,ACOL.loc],
+        rows,onSel:c=>adrDetail(det,c),onDbl:c=>editContact(c)}));
+      rh.setCount((AE.nE||0)+' Entités / '+rows.length+' Adresses'); adrDetail(det,curA()); };
+    this.drawE=drawE; drawE();
+  },
+  refresh(ts){ if(hit(ts,'contactowner','contact','contact_property','contactnote','projectmember')) this.drawE(); }
+};
+async function delOwner(e){
+  const used=[];
+  const cs=DS.by('contact','CONTACTOWNER_ID',e.ID);
+  if(DS.all('staff').some(s=>cs.some(c=>c.ID===s.PERSON_ID))) used.push('Collaborateur');
+  if(cs.some(c=>DS.by('projectmember','CONTACT_ID',c.ID).length)) used.push('Intervenant d’affaire');
+  if(DS.all('project').some(p=>[p.CONTACT1_ID,p.CONTACT2_ID,p.CONTACT3_ID,p.CONTACT4_ID].some(x=>cs.some(c=>c.ID===x)))) used.push('Adresse d’affaire');
+  if(DS.by('contact','CONTACTRELATION_ID',e.ID).length) used.push('Entité liée à d’autres adresses');
+  if(used.length){ if(await confirmDlg('Cette entité est utilisée comme:\n• '+used.join('\n• ')+'\n\nElle ne peut pas être supprimée. Voulez-vous la masquer dans les listes ?','Masquer')) DS.save('contactowner',{...e,ISHIDDEN:1}); return; }
+  if(!await confirmDlg(`Supprimer l’entité « ${ownerName(e,true)} » et ses ${cs.length} adresse(s) ?`,'Supprimer')) return;
+  const ops=[{t:'contactowner',id:e.ID,val:null}];
+  cs.forEach(c=>{ ops.push({t:'contact',id:c.ID,val:null}); DS.by('contact_property','CONTACT_ID',c.ID).forEach(l=>ops.push({t:'contact_property',id:c.ID+'-'+l.PROPERTIES_ID,val:null})); });
+  await DS.commit(ops); AE.go.sel=null; toast('Entité supprimée.');
+}
+async function delContact(c){
+  if(DS.by('projectmember','CONTACT_ID',c.ID).length||DS.all('staff').some(s=>[s.PERSON_ID,s.COMPANYCONTACT_ID,s.HOMECONTACT_ID].includes(c.ID))){
+    if(await confirmDlg('Cette adresse est utilisée (intervenant d’affaire ou collaborateur). Voulez-vous la masquer dans les listes ?','Masquer')) DS.save('contact',{...c,ISHIDDEN:1}); return; }
+  if(!await confirmDlg('Voulez-vous vraiment supprimer l’adresse de la base de données ?','Supprimer')) return;
+  await DS.commit([{t:'contact',id:c.ID,val:null},...DS.by('contact_property','CONTACT_ID',c.ID).map(l=>({t:'contact_property',id:c.ID+'-'+l.PROPERTIES_ID,val:null}))]); AE.ga.sel=null;
+}
+function ownerInfo(e,what){
+  const cs=entityAddresses(e), box=h('div',{style:{width:'620px',height:'320px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  if(what==='CFC') grid(box,{cols:[{k:'e',t:'Entité',f:c=>esc(contactName(c))},{k:'BKP',t:'CFC'}],rows:cs.filter(c=>c.BKP)});
+  if(what==='Propriétés') grid(box,{cols:[{k:'e',t:'Entité'},{k:'g',t:'Groupe de propriétés'},{k:'p',t:'Propriétés'}],key:r=>r.k,rows:cs.flatMap(c=>contactProps(c).map(p=>({k:c.ID+'-'+p.ID,e:contactName(c),g:nm(propGroup(p)),p:nm(p)})))});
+  if(what==='Intervenants') grid(box,{cols:[{k:'e',t:'Entité'},{k:'n',t:'Affaire'},{k:'r',t:'Rôle'}],key:r=>r.k,rows:cs.flatMap(c=>DS.by('projectmember','CONTACT_ID',c.ID).map(m=>({k:m.ID,e:contactName(c),n:projLabel(DS.get('project',m.PROJECT_ID)),r:teamRole(m.TEAMROLECODE)})))});
+  dialog({title:what,body:box});
+}
+function bankDlg(e){
+  const o={}, box=h('div',{style:{width:'620px',height:'220px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'NAME',t:'Nom'},{k:'IBAN',t:'IBAN'},{k:'SWIFT',t:'SWIFT',w:100},{k:'LOCATION',t:'Localité',w:120}],rows:DS.by('bankaccount','CONTACTOWNER_ID',e.ID),onDbl:r=>ed(r)}));
+  const ed=r=>{ const v=r?{...r}:{ID:null,CONTACTOWNER_ID:e.ID}; const F=[['NAME','Nom'],['STREET','Rue et n°'],['POSTALCODE','NPA'],['LOCATION','Localité'],['CLEARINGNR','N° de clearing'],['SWIFT','SWIFT'],['IBAN','IBAN'],['ACCOUNT1','N° compte bancaire'],['ACCOUNT2','Compte postal']];
+    const ins=F.map(([k])=>h('input',{class:'inp',value:v[k]||''}));
+    dialog({title:r?'Coordonnée bancaire':'Nouvelle coordonnée bancaire',body:h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'460px'}},...F.flatMap(([k,t],i)=>[h('label',{},t),ins[i]])),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ F.forEach(([k],i)=>v[k]=ins[i].value.trim()||null);
+        if(v.IBAN&&!ibanOk(v.IBAN)&&!await confirmDlg('L’IBAN est incorrect. Voulez-vous vraiment enregistrer ?','Enregistrer')) return false;
+        await DS.save('bankaccount',v); draw(); }}]}); };
+  draw();
+  dialog({title:'Coordonnées bancaires — '+ownerName(e,true),body:h('div',{},phead([{i:'plus',fn:()=>ed()},{i:'edit',fn:()=>o.sel&&ed(DS.get('bankaccount',o.sel))},{i:'minus',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer cette coordonnée bancaire ?','Supprimer')){ await DS.del('bankaccount',o.sel); draw(); } }}]),box)});
+}
+function ibanOk(s){ s=s.replace(/\s/g,'').toUpperCase(); if(!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(s)) return false;
+  const r=(s.slice(4)+s.slice(0,4)).replace(/[A-Z]/g,c=>c.charCodeAt(0)-55); let m=0; for(const ch of r) m=(m*10+ +ch)%97; return m===1; }
+
+/* ── ADRESSES · Liste, Favoris, Groupes, Propriétés, Chercher ── */
+VIEWS['adr-liste']={ render(m){ this.l=adrList(m,()=>DS.all('contact')); }, refresh(ts){ if(hit(ts,'contact','contactowner','contact_property','contactnote')) this.l.draw(); } };
+VIEWS['adr-favoris']={ render(m){ this.l=adrList(m,()=>{ const g=favGroup(); return g?groupMembers(g):[]; },{group:favGroup()||{ID:-1,NAME:'Mes favoris',ISSMART:0}}); },
+  refresh(ts){ if(hit(ts,'contact','contactgroup','contactgroup_contact')) go('adr-favoris'); } };
+const AG={g:{}};
+VIEWS['adr-groupes']={
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(330), R=h('div',{class:'col fill'}); cols.append(L.el,R);
+    const cur=()=>DS.get('contactgroup',AG.g.sel);
+    L.el.prepend(phead([{i:'plus',t:'Nouveau',menu:()=>[{t:'Nouveau groupe d’adresses intelligent',fn:()=>editSmartGroup()},{t:'Nouveau groupe d’adresses statique',fn:()=>editStaticGroup()}]},
+      {i:'edit',t:'Modifier le groupe',fn:()=>{ const g=cur(); if(g) g.ISSMART?editSmartGroup(g):editStaticGroup(g); }},
+      {i:'minus',t:'Supprimer le groupe',fn:async()=>{ const g=cur(); if(!g||!await confirmDlg(`Supprimer le groupe « ${g.NAME||''} » ? (les adresses ne sont pas supprimées)`,'Supprimer')) return;
+        const ops=[{t:'contactgroup',id:g.ID,val:null}];
+        if(g.ISSMART){ ops.push({t:'contactquery',id:g.CONTACTQUERY_ID,val:null}); DS.by('contactqueryclause','CONTACTQUERY_ID',g.CONTACTQUERY_ID).forEach(x=>ops.push({t:'contactqueryclause',id:x.ID,val:null})); }
+        else DS.by('contactgroup_contact','CONTACTGROUPS_ID',g.ID).forEach(l=>ops.push({t:'contactgroup_contact',id:g.ID+'-'+l.CONTACTS_ID,val:null}));
+        await DS.commit(ops); AG.g.sel=null; }}]));
+    const drawR=()=>{ R.innerHTML=''; this.l=adrList(R,()=>groupMembers(cur()),{group:cur()}); };
+    const rows=[{ID:0,NAME:'Toutes les adresses',SORTDATE:null,ISSMART:null},...DS.all('contactgroup').filter(g=>g.NAME&&(g.NAME!=='Mes favoris'))];
+    grid(L.pane,Object.assign(AG.g,{cols:[{k:'NAME',t:'Nom du groupe'},{k:'SORTDATE',t:'Date',w:84,f:g=>dfr(g.SORTDATE)},{k:'ISSMART',t:'Type',w:80,f:g=>g.ISSMART==null?'':g.ISSMART?'Intelligent':'Statique'}],
+      rows,sort:['NAME',1],onSel:drawR,onDbl:g=>{ if(g.ID) g.ISSMART?editSmartGroup(g):editStaticGroup(g); }}));
+    if(AG.g.sel==null) AG.g.sel='0'; drawR();
+  },
+  refresh(ts){ if(hit(ts,'contactgroup','contactquery','contactqueryclause','contactgroup_contact')) go('adr-groupes'); else if(hit(ts,'contact','contactowner','contact_property')) this.l&&this.l.draw(); }
+};
+function editStaticGroup(g){ const v=g?{...g}:{ID:null,NAME:'',ISSMART:0,OWNER:ME.id,SORTDATE:today()}; const n=h('input',{class:'inp',value:v.NAME||'',style:{width:'320px'}});
+  dialog({title:g?'Editer le groupe d’adresses statique':'Nouveau groupe d’adresses statique',body:h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr'}},h('label',{},'Nom du groupe'),n),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(!n.value.trim()) return false; v.NAME=n.value.trim(); return DS.save('contactgroup',v); }}]}); }
+const APR={g:{}};
+VIEWS['adr-props']={
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(330), R=h('div',{class:'col fill'}); cols.append(L.el,R);
+    const rows=DS.all('property').sort((a,b)=>cmp((propGroup(a)||{}).SORTORDER,(propGroup(b)||{}).SORTORDER)||cmp(a.SORTORDER,b.SORTORDER));
+    const drawR=()=>{ R.innerHTML=''; const p=DS.get('property',APR.g.sel); this.l=adrList(R,()=>p?DS.by('contact_property','PROPERTIES_ID',p.ID).map(l=>DS.get('contact',l.CONTACT_ID)).filter(Boolean):[]); };
+    L.el.prepend(phead([{i:'minus',t:'Retirer la propriété des adresses sélectionnées',fn:async()=>{ const p=DS.get('property',APR.g.sel); if(!p||!this.l) return; }}]));
+    grid(L.pane,Object.assign(APR.g,{cols:[{k:'g',t:'Groupe',f:p=>esc(nm(propGroup(p)))},{k:'p',t:'Propriétés',f:p=>esc(nm(p))},{k:'n',t:'Nb',w:44,cls:'r',f:p=>DS.by('contact_property','PROPERTIES_ID',p.ID).length}],rows,onSel:drawR}));
+    drawR();
+  },
+  refresh(ts){ if(hit(ts,'contact_property','property')) go('adr-props'); }
+};
+const ACH={q:'',mode:'contient',cfc:false,notes:false};
+VIEWS['adr-chercher']={
+  render(m){
+    const q=h('input',{class:'inp',style:{width:'280px'},value:ACH.q,placeholder:'Critère de recherche'});
+    const md=h('select',{class:'inp',style:{width:'130px'}},...['commence par','contient'].map(x=>h('option',{selected:x===ACH.mode||null},x)));
+    const cf=h('input',{type:'checkbox',checked:ACH.cfc||null}), no=h('input',{type:'checkbox',checked:ACH.notes||null});
+    const bar=h('div',{class:'ph2',style:{gap:'10px'}},h('span',{},'Critère de recherche'),q,md,h('label',{},cf,' CFC'),h('label',{},no,' Notes'));
+    const R=h('div',{class:'col fill',style:{margin:'6px'}}); m.append(bar,R);
+    const test=v=>{ v=String(v||'').toLowerCase(); return ACH.mode==='contient'?v.includes(ACH.q.toLowerCase()):v.startsWith(ACH.q.toLowerCase()); };
+    const rows=()=>!ACH.q?[]:DS.all('contact').filter(c=>{ const o=ownerOf(c)||{};
+      return [o.NAME1,o.NAME2,c.NAME1,c.NAME2,c.NAME3,c.LOCATION,c.STREET,c.EMAIL1,c.SHORTLABEL].some(test)||(ACH.cfc&&test(c.BKP))||(ACH.notes&&DS.by('contactnote','CONTACT_ID',c.ID).some(n=>test(n.SUBJECT)||test(n.CONTENT))); });
+    const l=adrList(R,rows); this.l=l;
+    const upd=()=>{ ACH.q=q.value.trim(); ACH.mode=md.value; ACH.cfc=cf.checked; ACH.notes=no.checked; l.draw(); };
+    q.oninput=md.onchange=cf.onchange=no.onchange=upd; q.focus();
+  },
+  refresh(ts){ if(hit(ts,'contact','contactowner')) this.l.draw(); }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COLLABORATEURS (manuel p.22-23) — STAFF + STAFFRATE, STAFFTARGETTIME, TARGETTIME
+═══════════════════════════════════════════════════════════════════════════ */
+const CO={g:{}};
+function collabView(filter){ return {
+  render(m){
+    const cur=()=>DS.get('staff',CO.g.sel);
+    const R=h('div',{class:'col fill',style:{margin:'6px'}}), pane=h('div',{class:'pane'});
+    const head=phead([
+      {i:'plus',t:'Ajouter un collaborateur',fn:()=>editStaff()},
+      {i:'edit',t:'Editer le collaborateur',fn:()=>cur()&&editStaff(cur())},
+      {i:'minus',t:'Supprimer le collaborateur',fn:()=>cur()&&delStaff(cur())},
+      {i:'wrench',t:'Paramètres',menu:()=>[{t:'Coût de revient',dis:!cur(),fn:()=>staffRates(cur())},{t:'Durée prévue',dis:!cur(),fn:()=>staffTargets(cur())},
+        {t:'Vacances',dis:!cur(),fn:()=>staffHolidays(cur())},{t:'Verrouillage des heures',dis:!cur(),fn:()=>staffFreeze(gridSel(CO.g,id=>DS.get('staff',id)))}]},
+      {i:'gear',t:'Fonctions',menu:()=>[{t:'Courriel …',fn:()=>mailList(gridSel(CO.g,id=>DS.get('staff',id)).map(s=>DS.get('contact',s.PERSON_ID)).filter(Boolean))},
+        {t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(CO.g)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(CO.g,'Collaborateurs')}]}
+    ],{count:1});
+    R.append(head,pane); m.append(R);
+    const P=s=>DS.get('contact',s.PERSON_ID)||{};
+    const rows=DS.all('staff').filter(filter);
+    CO.g.multi=true;
+    grid(pane,Object.assign(CO.g,{cols:[{k:'n',t:'Collaborateur',w:170,f:s=>esc(staffName(s)),v:staffName},{k:'rel',t:'Appartient à',w:170,f:s=>esc(ownerName(relOf(P(s)),true))},
+      {k:'fn',t:'Fonction',w:150,f:s=>esc(P(s).COMPANYROLE)},{k:'INITIALS',t:'Abréviation',w:80},{k:'ISINTERNAL',t:'Interne',w:60,cls:'c',f:s=>s.ISINTERNAL?'✔':''},
+      {k:'tel',t:'Téléphone',w:120,f:s=>esc(phone(P(s),1))},{k:'mob',t:'Téléphone mobile',w:120,f:s=>esc(phone(P(s),2))},{k:'mail',t:'Courriel',w:190,f:s=>esc(P(s).EMAIL1)},
+      {k:'JOININGDATE',t:'Engagement',w:90,f:s=>dfr(s.JOININGDATE)},{k:'QUITTINGDATE',t:'Départ',w:90,f:s=>dfr(s.QUITTINGDATE)},
+      {k:'fr',t:'Verrouillage avant',w:120,f:s=>s.ISTIMELOGFROZEN?dfr(s.TIMELOGFREEZINGDATE):''}],
+      rows,sort:['SORTORDER',1],onDbl:s=>editStaff(s)}));
+    head.setCount(rows.length+' Collaborateurs');
+  },
+  refresh(ts){ if(hit(ts,'staff','contact','contactowner')) go(VIEW.id); } }; }
+VIEWS['collab-actuels']=collabView(s=>s.ISACTIVE);
+VIEWS['collab-anciens']=collabView(s=>!s.ISACTIVE);
+VIEWS['collab-tous']=collabView(()=>true);
+function editStaff(s){
+  const isNew=!s; const v=s?{...s}:{ID:null,ISACTIVE:1,ISINTERNAL:1,JOININGDATE:today(),SORTORDER:DS.all('staff').length};
+  const pick=(k,title)=>{ const shown=h('div',{style:{whiteSpace:'pre-line',minHeight:'54px',border:'1px solid #ccc',borderRadius:'4px',padding:'4px 6px',background:'#fff'}});
+    const upd=()=>shown.textContent=adrLines(DS.get('contact',v[k])).join('\n')||'—'; upd();
+    const b=ibtn({i:'person',t:'Choisir l’adresse',fn:()=>pickContact(title,c=>{ v[k]=c.ID; upd(); })});
+    return h('div',{style:{display:'flex',gap:'6px',alignItems:'flex-start'}},h('div',{style:{flex:1}},shown),b); };
+  const ini=h('input',{class:'inp',value:v.INITIALS||'',style:{width:'80px'}}), jd=h('input',{class:'inp',type:'date',value:v.JOININGDATE||''}), qd=h('input',{class:'inp',type:'date',value:v.QUITTINGDATE||''});
+  const act=h('input',{type:'checkbox',checked:!!v.ISACTIVE||null}), int=h('input',{type:'checkbox',checked:!!v.ISINTERNAL||null});
+  const body=h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'520px'}},
+    h('label',{},h('b',{},'Collaborateur')),pick('PERSON_ID','Adresse professionnelle du collaborateur'),
+    h('label',{},'Employeur'),pick('COMPANYCONTACT_ID','Adresse de l’employeur'),
+    h('label',{},'Adresse privée'),pick('HOMECONTACT_ID','Adresse privée'),
+    h('label',{},'Abréviation'),ini, h('label',{},h('b',{},'Engagement')),jd, h('label',{},'Départ'),qd,
+    h('span'),h('label',{style:{textAlign:'left'}},act,' Collaborateur actuel'), h('span'),h('label',{style:{textAlign:'left'}},int,' Collaborateur interne'));
+  dialog({title:isNew?'Ajouter un collaborateur':'Editer le collaborateur',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+    if(!v.PERSON_ID){ toast('Choisissez l’adresse du collaborateur.',true); return false; }
+    if(!jd.value){ toast('La date d’engagement est obligatoire.',true); return false; }
+    Object.assign(v,{INITIALS:ini.value.trim()||null,JOININGDATE:jd.value,QUITTINGDATE:qd.value||null,ISACTIVE:act.checked?1:0,ISINTERNAL:int.checked?1:0});
+    return DS.save('staff',v); }}]});
+}
+function pickContact(title,fn){
+  const o={}; let q='';
+  const box=h('div',{style:{width:'620px',height:'340px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=()=>grid(box,Object.assign(o,{cols:[ACOL.ty,ACOL.ent,ACOL.rel,ACOL.n1,ACOL.n2,ACOL.loc],rows:DS.all('contact').filter(c=>!c.ISHIDDEN&&matchQ(q,ownerName(ownerOf(c),true),c.NAME1,c.NAME2,c.LOCATION)).slice(0,400),sort:['ent',1],onDbl:()=>$('.ov:last-child .btn.pri').click()}));
+  const s=h('input',{class:'inp',placeholder:'Critère de recherche (contient)'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); }; draw();
+  dialog({title:title||'Navigateur d’adresses',body:h('div',{},s,h('div',{style:{height:'8px'}}),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const c=DS.get('contact',o.sel); if(!c) return false; fn(c); }}]});
+}
+async function delStaff(s){
+  if(DS.by('appuser_staff','STAFFS_ID',s.ID).length){ toast('Ce collaborateur est déjà défini dans la gestion d’utilisateurs. Vous devez préalablement l’en retirer.',true); return; }
+  if(DS.by('timelog','STAFF_ID',s.ID).length){ toast('Ce collaborateur a des heures saisies : décochez plutôt « Collaborateur actuel ».',true); return; }
+  if(await confirmDlg('Voulez-vous vraiment supprimer ce collaborateur ?','Supprimer')) DS.del('staff',s.ID);
+}
+/* Coût de revient horaire (STAFFRATE, valable dès le…) */
+function rateAt(staffId,dateIso){ const r=DS.by('staffrate','STAFF_ID',staffId).filter(x=>x.VALIDFROM&&x.VALIDFROM<=dateIso).sort((a,b)=>cmp(b.VALIDFROM,a.VALIDFROM))[0]; return r?r.RATE:0; }
+function staffRates(s){
+  const o={}, box=h('div',{style:{width:'380px',height:'220px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'VALIDFROM',t:'Valable dès le',f:r=>dfr(r.VALIDFROM)},{k:'RATE',t:'Tarif',cls:'r',f:r=>num(r.RATE,1)+' CHF'}],rows:DS.by('staffrate','STAFF_ID',s.ID),sort:['VALIDFROM',-1],onDbl:r=>ed(r)}));
+  const ed=r=>{ const v=r?{...r}:{ID:null,STAFF_ID:s.ID,VALIDFROM:today(),RATE:null}; const a=h('input',{class:'inp',type:'number',step:'0.05',value:v.RATE??''}), d=h('input',{class:'inp',type:'date',value:v.VALIDFROM||''});
+    dialog({title:'Coût de revient',body:h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr'}},h('label',{},'Coût de revient'),h('div',{},a,' Monnaie standard (CHF)'),h('label',{},'Valable dès le'),d),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!d.value||a.value==='') return false; v.RATE=+a.value; v.VALIDFROM=d.value; await DS.save('staffrate',v); draw(); }}]}); };
+  draw();
+  dialog({title:'Coût de revient',body:h('div',{},h('div',{style:{marginBottom:'6px'}},'Collaborateur : ',h('b',{},staffName(s))),h('div',{style:{fontWeight:600,margin:'8px 0 4px'}},'Coût de revient horaire (charges salariales)'),
+    phead([{i:'plus',fn:()=>ed()},{i:'edit',fn:()=>o.sel&&ed(DS.get('staffrate',o.sel))},{i:'minus',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer ce coût de revient ?','Supprimer')){ await DS.del('staffrate',o.sel); draw(); } }}]),box)});
+}
+/* Durée prévue (STAFFTARGETTIME) — TARGETHOURS0..11 = janvier..décembre, OVERTIME0..11 = heures d'appoint */
+const sumT=(r,p)=>[...Array(12)].reduce((s,_,i)=>s+(+r[p+i]||0),0);
+function staffTargets(s){
+  const o={}, box=h('div',{style:{width:'360px',height:'220px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'TARGETTIMEYEAR',t:'Année'},{k:'t',t:'Heures prévues',cls:'r',f:r=>num(sumT(r,'TARGETHOURS'))}],rows:DS.by('stafftargettime','STAFF_ID',s.ID),sort:['TARGETTIMEYEAR',-1],onDbl:r=>ed(r)}));
+  const ed=r=>{ const v=r?{...r}:{ID:null,STAFF_ID:s.ID,TARGETTIMEYEAR:new Date().getFullYear()};
+    const y=h('input',{class:'inp',type:'number',value:v.TARGETTIMEYEAR,style:{width:'90px'}});
+    const T=[...Array(12)].map((_,i)=>h('input',{class:'inp',type:'number',step:'0.25',value:v['TARGETHOURS'+i]??'',style:{width:'90px'}}));
+    const O=[...Array(12)].map((_,i)=>h('input',{class:'inp',type:'number',step:'0.25',value:v['OVERTIME'+i]??'',style:{width:'90px'}}));
+    const red=h('input',{class:'inp',type:'number',step:'0.25',value:v.TARGETTIMEREDUCTION??'',style:{width:'90px'}}), rem=h('textarea',{class:'inp',rows:2},v.REMARK||'');
+    const std=ibtn({label:'Insérer les heures prévues standard',t:'Définir les heures prévues',fn:()=>{ const t=DS.all('targettime').find(x=>x.TARGETTIMEYEAR===+y.value); if(!t){ toast('Aucune série d’heures prévues pour '+y.value+'.',true); return; } T.forEach((e,i)=>e.value=t['TARGETHOURS'+i]??''); }});
+    const g=h('div',{style:{display:'grid',gridTemplateColumns:'110px 100px 130px',gap:'4px 10px',alignItems:'center'}},h('b',{},'Mois'),h('b',{},'Heures prévues'),h('b',{},'Heures d’appoint prévues'),
+      ...MOISL.flatMap((mn,i)=>[h('span',{},mn),T[i],O[i]]));
+    dialog({title:'Editer heures prévues',body:h('div',{},h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',marginBottom:'10px'}},h('label',{},'Collaborateur'),h('b',{},staffName(s)),h('label',{},'Année'),y),std,h('div',{style:{height:'10px'}}),g,
+      h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',marginTop:'10px'}},h('label',{},'Report des heures supplémentaires'),red,h('label',{},'Remarques'),rem)),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ v.TARGETTIMEYEAR=+y.value; T.forEach((e,i)=>v['TARGETHOURS'+i]=e.value===''?null:+e.value); O.forEach((e,i)=>v['OVERTIME'+i]=e.value===''?null:+e.value);
+        v.TARGETTIMEREDUCTION=red.value===''?null:+red.value; v.REMARK=rem.value.trim()||null; await DS.save('stafftargettime',v); draw(); }}]}); };
+  draw();
+  dialog({title:'Editer la durée prévue',body:h('div',{},h('div',{style:{marginBottom:'6px'}},'Collaborateur : ',h('b',{},staffName(s))),
+    phead([{i:'plus',fn:()=>ed()},{i:'edit',fn:()=>o.sel&&ed(DS.get('stafftargettime',o.sel))},{i:'minus',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer cette année ?','Supprimer')){ await DS.del('stafftargettime',o.sel); draw(); } }}]),box)});
+}
+/* Vacances : droit annuel, droit de l'année (solde inclus), vacances saisies (TIMELOG.ISHOLIDAY) */
+function holidaysTaken(sid,y){ return DS.by('timelog','STAFF_ID',sid).filter(r=>r.ISHOLIDAY&&r.TIMEYEAR===y).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0); }
+function staffHolidays(s){
+  const y=s.HOLIDAYBALANCEYEAR||new Date().getFullYear();
+  const a=h('input',{class:'inp',type:'number',step:'0.25',value:s.HOLIDAYS??'',style:{width:'100px'}}), b=h('input',{class:'inp',type:'number',step:'0.25',value:s.HOLIDAYBALANCE??'',style:{width:'100px'}});
+  const taken=holidaysTaken(s.ID,y), sol=h('b');
+  const upd=()=>sol.textContent=hrs((+b.value||0)-taken)+' Heures'; b.oninput=upd; upd();
+  dialog({title:'Vacances',body:h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'420px'}},
+    h('label',{},'Collaborateur'),h('b',{},staffName(s)), h('label',{},'Droit aux vacances annuel'),h('div',{},a,' Heures'),
+    h('label',{},'Droit aux vacances '+y),h('div',{},b,' Heures'), h('label',{},'Vacances saisies '+y),h('span',{},hrs(taken)+' Heures'),
+    h('label',{},'Solde à reporter'),sol, h('label',{},'Dernière modification'),h('span',{},dfr(s.HOLIDAYBALANCECHANGEDDATE))),
+    buttons:[{t:'Annuler'},{t:'Reporter le solde sur '+(y+1),fn:()=>DS.save('staff',{...s,HOLIDAYBALANCEYEAR:y+1,HOLIDAYBALANCE:(+a.value||0)+((+b.value||0)-taken),HOLIDAYBALANCECHANGEDDATE:today()})},
+      {t:'OK',pri:true,fn:()=>DS.save('staff',{...s,HOLIDAYS:a.value===''?null:+a.value,HOLIDAYBALANCE:b.value===''?null:+b.value,HOLIDAYBALANCEYEAR:y,HOLIDAYBALANCECHANGEDDATE:today()})}]});
+}
+function staffFreeze(list){
+  if(!list.length) return; const s0=list[0];
+  const on=h('input',{type:'checkbox',checked:!!s0.ISTIMELOGFROZEN||null}), d=h('input',{class:'inp',type:'date',value:s0.TIMELOGFREEZINGDATE||today(),style:{width:'150px'}});
+  const plus7=()=>{ const x=new Date(d.value||today()); x.setDate(x.getDate()+7); d.value=diso(x); on.checked=true; };
+  const eom=()=>{ const n=new Date(); d.value=diso(new Date(n.getFullYear(),n.getMonth()+2,0)); on.checked=true; };
+  dialog({title:'Verrouillage des heures',body:h('div',{style:{minWidth:'440px'}},h('div',{style:{marginBottom:'8px'}},'Collaborateur : ',h('b',{},list.map(staffName).join(', '))),
+    h('label',{},on,' Verrouiller les heures saisies jusqu’au '),d,h('div',{style:{display:'flex',gap:'6px',marginTop:'10px'}},ibtn({label:'Plus 7 jours',fn:plus7}),ibtn({label:'Fin du mois prochain',fn:eom}))),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.commit(list.map(s=>({t:'staff',id:s.ID,val:{...s,ISTIMELOGFROZEN:on.checked?1:0,TIMELOGFREEZINGDATE:on.checked?d.value:s.TIMELOGFREEZINGDATE}})))}]});
+}
+
+/* ═══ HEURES · SAISIE — agenda semaine / mois (manuel p.26 et p.30) ═══ */
+const HS={ staff:null, mode:'sem', d:new Date(), sel:null, px:48, wk:true };
+try{ HS.staff=+localStorage.getItem('ds_h_staff')||null; HS.mode=localStorage.getItem('ds_h_mode')||'sem'; }catch(_){}
+function hsEntries(from,to){   // saisies du collaborateur entre deux dates (incluses)
+  const a=dayKey(from), b=dayKey(to);
+  return DS.by('timelog','STAFF_ID',HS.staff).filter(r=>{ const k=tlKey(r); return k>=a&&k<=b; });
+}
+function hsFrozen(d){ const s=DS.get('staff',HS.staff); return !!(s&&s.ISTIMELOGFROZEN&&s.TIMELOGFREEZINGDATE&&diso(d)<=s.TIMELOGFREEZINGDATE); }
+function hsShift(n){ const d=new Date(HS.d); if(HS.mode==='sem') d.setDate(d.getDate()+7*n); else d.setMonth(d.getMonth()+n); HS.d=d; go('h-saisie'); }
+VIEWS['h-saisie']={
+  tools(){
+    const [y,w]=isoWeek(HS.d);
+    const seg=h('div',{style:{display:'flex'}},
+      ibtn({label:'Semaine',on:HS.mode==='sem',fn:()=>{ HS.mode='sem'; try{localStorage.setItem('ds_h_mode','sem');}catch(_){} go('h-saisie'); }}),
+      ibtn({label:'Mois',on:HS.mode==='mois',fn:()=>{ HS.mode='mois'; try{localStorage.setItem('ds_h_mode','mois');}catch(_){} go('h-saisie'); }}));
+    $$('.ib',seg).forEach((b,i)=>b.style.borderRadius=i?'0 5px 5px 0':'5px 0 0 5px');
+    const lbl=HS.mode==='sem'?'Semaine '+w:MOISL[HS.d.getMonth()];
+    return [[seg],
+      [{i:'today',label:'Aujourd’hui',t:'Aujourd’hui',fn:()=>{ HS.d=new Date(); go('h-saisie'); }}],
+      [{i:'first',t:'Reculer de 4',fn:()=>hsShift(-4)},{i:'prev',fn:()=>hsShift(-1)},h('span',{style:{alignSelf:'center',minWidth:'92px',textAlign:'center'}},lbl),{i:'next',fn:()=>hsShift(1)},{i:'last',t:'Avancer de 4',fn:()=>hsShift(4)}],
+      [{i:'prev',fn:()=>{ HS.d=new Date(HS.d.getFullYear()-1,HS.d.getMonth(),HS.d.getDate()); go('h-saisie'); }},h('span',{style:{alignSelf:'center'}},String(HS.d.getFullYear())),{i:'next',fn:()=>{ HS.d=new Date(HS.d.getFullYear()+1,HS.d.getMonth(),HS.d.getDate()); go('h-saisie'); }}],
+      [{i:'plus',t:'Nouvelle saisie',fn:()=>hsEdit(null,{date:new Date()})},{i:'edit',t:'Modifier',dis:!HS.sel,fn:()=>hsEdit(DS.get('timelog',HS.sel))},{i:'minus',t:'Supprimer',dis:!HS.sel,fn:()=>hsDelete()}],
+      [{i:'gear',t:'Options',menu:()=>[{t:'Afficher le week-end',chk:HS.wk,fn:()=>{ HS.wk=!HS.wk; go('h-saisie'); }}]}]];
+  },
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(260); cols.append(L.el);
+    const sl=staffList(); if(!HS.staff||!DS.get('staff',HS.staff)) HS.staff=(ME.staff||sl[0]||{}).ID;
+    grid(L.pane,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s))}],rows:sl,sel:HS.staff,
+      onSel:s=>{ HS.staff=s.ID; HS.sel=null; try{localStorage.setItem('ds_h_staff',s.ID);}catch(_){} VIEWS['h-saisie'].draw(); }});
+    const R=col(null,'fill'); cols.append(R.el); this.R=R; this.draw();
+  },
+  refresh(ts){ if(hit(ts,'timelog','staff')){ setTools(this.tools()); this.draw(); } },
+  draw(){ const p=this.R.pane; p.innerHTML=''; p.style.overflow='hidden'; p.style.display='flex'; p.style.flexDirection='column';
+    (HS.mode==='sem'?hsWeek:hsMonth)(p); }
+};
+function hsWeek(p){
+  const mon=mondayOf(HS.d), days=[...Array(HS.wk?7:5)].map((_,i)=>{ const d=new Date(mon); d.setDate(d.getDate()+i); return d; });
+  const E=hsEntries(days[0],days[days.length-1]), byDay={}; E.forEach(r=>(byDay[tlKey(r)]=byDay[tlKey(r)]||[]).push(r));
+  const tot=d=>(byDay[dayKey(d)]||[]).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
+  const [y,w]=isoWeek(mon), gut=64, PX=HS.px;
+  const head=h('div',{style:{display:'grid',gridTemplateColumns:`${gut}px repeat(${days.length},1fr)`,borderBottom:'1px solid var(--line)',textAlign:'center',paddingRight:'12px'}});
+  head.append(h('div',{style:{padding:'6px 0',fontWeight:600}},`${w}/${y}`,h('div',{style:{fontWeight:400,color:'#555'}},hrs(days.reduce((s,d)=>s+tot(d),0))+' h')));
+  days.forEach(d=>{ const we=d.getDay()%6===0;
+    head.append(h('div',{style:{padding:'6px 0',fontWeight:600,background:we?'#f1f1f1':null}},`${JOURS[d.getDay()]}, ${d.getDate()}. ${MOIS[d.getMonth()]}`,
+      h('div',{style:{fontWeight:400,color:'#555'}},hrs(tot(d))+' h'))); });
+  const sc=h('div',{style:{flex:1,minHeight:0,overflow:'auto',position:'relative'}});
+  const body=h('div',{style:{display:'grid',gridTemplateColumns:`${gut}px repeat(${days.length},1fr)`,position:'relative',height:(24*PX)+'px'}});
+  const gutter=h('div',{style:{position:'relative'}});
+  for(let i=1;i<24;i++) gutter.append(h('div',{style:{position:'absolute',top:(i*PX-8)+'px',right:'8px',color:'#555'}},i+':00'));
+  body.append(gutter);
+  days.forEach(d=>{
+    const we=d.getDay()%6===0, frozen=hsFrozen(d);
+    const c=h('div',{style:{position:'relative',borderLeft:'1px solid var(--line2)',background:we?'#f1f1f1':'#fff',
+      backgroundImage:`repeating-linear-gradient(to bottom,transparent 0,transparent ${PX-1}px,#e4e4e4 ${PX-1}px,#e4e4e4 ${PX}px)`}});
+    if(frozen) c.title='Saisie verrouillée jusqu’au '+dfr(DS.get('staff',HS.staff).TIMELOGFREEZINGDATE);
+    /* glisser sur une zone libre = nouvelle plage (pas de 15 min) */
+    c.onmousedown=e=>{ if(e.button||e.target!==c||frozen) return; const r=c.getBoundingClientRect(), q=v=>Math.max(0,Math.min(96,Math.round((v-r.top)/(PX/4))));
+      const a=q(e.clientY); const g=h('div',{style:{position:'absolute',left:'2px',right:'2px',background:'rgba(56,117,215,.25)',border:'1px dashed #3875d7'}}); c.append(g);
+      let b=a+4; const upd=()=>{ const s=Math.min(a,b), t=Math.max(a,b); g.style.top=(s*PX/4)+'px'; g.style.height=((t-s)*PX/4)+'px'; }; upd();
+      const mv=ev=>{ b=q(ev.clientY); if(b===a) b=a+1; upd(); };
+      const up=()=>{ removeEventListener('mousemove',mv); removeEventListener('mouseup',up); g.remove();
+        const s=Math.min(a,b), t=Math.max(a,b); hsEdit(null,{date:d,h1:Math.floor(s/4),m1:(s%4)*15,h2:Math.floor(t/4),m2:(t%4)*15}); };
+      addEventListener('mousemove',mv); addEventListener('mouseup',up); };
+    (byDay[dayKey(d)]||[]).forEach(r=>c.append(hsBlock(r,PX)));
+    body.append(c);
+  });
+  sc.append(body); p.append(head,sc);
+  sc.scrollTop=7.5*PX;
+}
+function hsBlock(r,PX){
+  const t1=(r.TIMEHOUR1||0)*60+(r.TIMEMINUTE1||0), t2=r.TIMEHOUR2!=null?r.TIMEHOUR2*60+(r.TIMEMINUTE2||0):t1+(+r.TIMEPERIOD||0)*60;
+  const pj=DS.get('project',r.PROJECT_ID), green=!r.ISCHARGEABLE, hol=!!r.ISHOLIDAY;
+  const c1=hol?'#c77700':green?'#2f9e2f':'#1f6fe0', c2=hol?'#f6dfb7':green?'#cbe8c0':'#b9d3f5';
+  const b=h('div',{class:'tlb','data-id':r.ID,style:{position:'absolute',left:'1px',right:'1px',top:(t1*PX/60)+'px',height:Math.max(PX/4,(t2-t1)*PX/60-1)+'px',
+    background:c2,overflow:'hidden',cursor:'default',outline:HS.sel==r.ID?'2px solid #111':'none',zIndex:HS.sel==r.ID?2:1}},
+    h('div',{style:{background:c1,color:'#fff',padding:'1px 4px',whiteSpace:'nowrap'}},`${hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)} – ${r.TIMEHOUR2!=null?hm(r.TIMEHOUR2,r.TIMEMINUTE2||0):''}, ${(+r.TIMEPERIOD||0).toFixed(2).replace(/0$/,'')} h`),
+    h('div',{style:{padding:'1px 4px',fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}},hol?'Vacances / absence':projLabel(pj)),
+    r.DESCRIPTION?h('div',{style:{padding:'0 4px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}},r.DESCRIPTION):null);
+  b.title=[projLabel(pj),nm(DS.get('projectphase',r.PHASE_ID)),nm(DS.get('projectactivity',r.ACTIVITY_ID)),r.DESCRIPTION].filter(Boolean).join('\n');
+  b.onclick=e=>{ e.stopPropagation(); HS.sel=r.ID; $$('.tlb').forEach(x=>{ x.style.outline='none'; x.style.zIndex=1; }); b.style.outline='2px solid #111'; b.style.zIndex=2; setTools(VIEWS['h-saisie'].tools()); };
+  b.ondblclick=e=>{ e.stopPropagation(); hsEdit(r); };
+  return b;
+}
+function hsMonth(p){
+  const y=HS.d.getFullYear(), mo=HS.d.getMonth(), first=new Date(y,mo,1), last=new Date(y,mo+1,0);
+  const E=hsEntries(first,last), byDay={}; E.forEach(r=>(byDay[tlKey(r)]=byDay[tlKey(r)]||[]).push(r));
+  const start=mondayOf(first), g=h('div',{style:{display:'grid',gridTemplateColumns:'54px repeat(7,1fr)',flex:1,overflow:'auto',gridAutoRows:'minmax(110px,auto)'}});
+  g.append(h('div'),...['Lu','Ma','Me','Je','Ve','Sa','Di'].map(j=>h('div',{style:{textAlign:'center',fontWeight:600,padding:'4px',borderBottom:'1px solid var(--line)',height:'26px'}},j)));
+  g.style.gridTemplateRows='26px';
+  let tm=0;
+  for(let d=new Date(start); d<=last || d.getDay()!==1; d.setDate(d.getDate()+1)){
+    if(d.getDay()===1){ const wk=isoWeek(d)[1]; let ws=0; for(let i=0;i<7;i++){ const x=new Date(d); x.setDate(x.getDate()+i); (byDay[dayKey(x)]||[]).forEach(r=>ws+=+r.TIMEPERIOD||0); }
+      g.append(h('div',{style:{padding:'4px',color:'#555',borderTop:'1px solid var(--line2)',textAlign:'center'}},'S'+wk,h('br'),hrs(ws))); }
+    const dd=new Date(d), L=byDay[dayKey(dd)]||[], out=dd.getMonth()!==mo, t=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0); if(!out) tm+=t;
+    const cell=h('div',{style:{borderTop:'1px solid var(--line2)',borderLeft:'1px solid var(--line2)',padding:'3px 4px',background:out?'#f7f7f7':dd.getDay()%6===0?'#f1f1f1':'#fff',color:out?'#aaa':null,overflow:'hidden'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',fontWeight:600}},h('span',{},dd.getDate()+'.'),h('span',{style:{fontWeight:400}},t?hrs(t)+' h':'')));
+    L.sort((a,b)=>(a.TIMEHOUR1*60+a.TIMEMINUTE1)-(b.TIMEHOUR1*60+b.TIMEMINUTE1)).forEach(r=>{
+      const x=h('div',{style:{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',fontSize:'11.5px',padding:'1px 3px',marginTop:'2px',borderRadius:'3px',background:r.ISHOLIDAY?'#f6dfb7':r.ISCHARGEABLE?'#b9d3f5':'#cbe8c0'}},
+        hrs(r.TIMEPERIOD)+' '+(r.ISHOLIDAY?'Vacances':(DS.get('project',r.PROJECT_ID)||{}).NUMBER||''));
+      x.ondblclick=()=>hsEdit(r); cell.append(x); });
+    cell.ondblclick=e=>{ if(e.target===cell&&!out) hsEdit(null,{date:dd}); };
+    g.append(cell);
+    if(d>last && d.getDay()===0) break;
+  }
+  p.append(h('div',{style:{padding:'6px 10px',borderBottom:'1px solid var(--line)',fontWeight:600}},`${MOISL[mo]} ${y} — ${hrs(tm)} h`),g);
+}
+/* Fiche de saisie : nouvelle (r=null, pre={date,h1,m1,h2,m2}) ou modification */
+function hsEdit(r,pre){
+  if(!HS.staff){ toast('Choisissez d’abord un collaborateur.',true); return; }
+  pre=pre||{}; const d0=r?tlDate(r):(pre.date||new Date());
+  if(hsFrozen(d0)){ toast('Saisie des heures verrouillée pour cette période.',true); return; }
+  const v=r?{...r}:{ID:null,STAFF_ID:HS.staff,TIMEYEAR:d0.getFullYear(),TIMEMONTH:d0.getMonth(),TIMEDAY:d0.getDate(),
+    TIMEHOUR1:pre.h1??8,TIMEMINUTE1:pre.m1??0,TIMEHOUR2:pre.h2??(pre.h1!=null?pre.h1+1:9),TIMEMINUTE2:pre.m2??0,TIMEPERIOD:null,
+    PROJECT_ID:null,PHASE_ID:null,SUBPHASE_ID:null,ACTIVITYGROUP_ID:null,ACTIVITY_ID:null,SUBPROJECT_ID:null,DESCRIPTION:'',
+    ISCHARGEABLE:1,ISCHARGED:0,ISHOLIDAY:0,TIMELOGSTATECODE:0,CHARGEDDATE:null};
+  if(!r&&!v.PROJECT_ID){ /* reprend la dernière affaire saisie par ce collaborateur */
+    const last=DS.by('timelog','STAFF_ID',HS.staff).filter(x=>!x.ISHOLIDAY).sort((a,b)=>tlKey(b)-tlKey(a)||(b.TIMEHOUR1-a.TIMEHOUR1))[0];
+    if(last){ v.PROJECT_ID=last.PROJECT_ID; v.ACTIVITYGROUP_ID=last.ACTIVITYGROUP_ID; v.ACTIVITY_ID=last.ACTIVITY_ID; v.PHASE_ID=last.PHASE_ID; v.SUBPHASE_ID=last.SUBPHASE_ID; } }
+  const sel=(opts,val,empty)=>{ const s=h('select',{class:'inp'}); if(empty!==false) s.append(h('option',{value:''},empty||'—'));
+    opts.forEach(([k,t])=>s.append(h('option',{value:k,selected:String(k)===String(val)||null},t))); return s; };
+  const f={};
+  f.date=h('input',{class:'inp',type:'date',value:diso(d0)});
+  f.t1=h('input',{class:'inp',type:'time',step:900,value:hm(v.TIMEHOUR1,v.TIMEMINUTE1)});
+  f.t2=h('input',{class:'inp',type:'time',step:900,value:v.TIMEHOUR2!=null?hm(v.TIMEHOUR2,v.TIMEMINUTE2):''});
+  f.dur=h('input',{class:'inp',readonly:true,style:{width:'80px'}});
+  f.hol=h('input',{type:'checkbox',checked:!!v.ISHOLIDAY||null});
+  f.ch=h('input',{type:'checkbox',checked:!!v.ISCHARGEABLE||null});
+  f.desc=h('input',{class:'inp',value:v.DESCRIPTION||''});
+  const wrap={}; ['proj','ag','act','ph','sp','sub'].forEach(k=>wrap[k]=h('div'));
+  const fill=()=>{
+    const pid=+(f.proj?f.proj.value:v.PROJECT_ID)||null;
+    f.proj=sel(projects().map(p=>[p.ID,projLabel(p)]),pid,'— Affaire —'); wrap.proj.replaceChildren(f.proj);
+    const ags=DS.by('projectactivitygroup','PROJECT_ID',pid).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
+    const agv=f.ag&&f.ag.dataset.p==pid?+f.ag.value:v.ACTIVITYGROUP_ID;
+    f.ag=sel(ags.map(a=>[a.ID,nm(a)]),agv); f.ag.dataset.p=pid; wrap.ag.replaceChildren(f.ag);
+    const acts=DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',+f.ag.value||null).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
+    f.act=sel(acts.map(a=>[a.ID,nm(a)]),v.ACTIVITY_ID); wrap.act.replaceChildren(f.act);
+    const phs=DS.by('projectphase','PROJECT_ID',pid).sort((a,b)=>cmp(a.NUMBER,b.NUMBER));
+    const phv=f.ph&&f.ph.dataset.p==pid?+f.ph.value:v.PHASE_ID;
+    f.ph=sel(phs.map(x=>[x.ID,(x.NUMBER!=null?x.NUMBER+' ':'')+nm(x)]),phv); f.ph.dataset.p=pid; wrap.ph.replaceChildren(f.ph);
+    const sps=DS.by('projectsubphase','PROJECTPHASE_ID',+f.ph.value||null).sort((a,b)=>cmp(a.NUMBER,b.NUMBER));
+    f.sp=sel(sps.map(x=>[x.ID,(x.NUMBER!=null?x.NUMBER+' ':'')+nm(x)]),v.SUBPHASE_ID); wrap.sp.replaceChildren(f.sp);
+    const subs=DS.by('subproject','PROJECT_ID',pid).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
+    f.sub=sel(subs.map(x=>[x.ID,[x.CODE,x.DESCRIPTION].filter(Boolean).join(' ')]),v.SUBPROJECT_ID); wrap.sub.replaceChildren(f.sub);
+    f.proj.onchange=()=>{ v.ACTIVITY_ID=v.SUBPHASE_ID=v.SUBPROJECT_ID=null; fill(); };
+    f.ag.onchange=()=>{ v.ACTIVITY_ID=null; fill(); }; f.ph.onchange=()=>{ v.SUBPHASE_ID=null; fill(); };
+    f.act.onchange=()=>v.ACTIVITY_ID=+f.act.value||null; f.sp.onchange=()=>v.SUBPHASE_ID=+f.sp.value||null; f.sub.onchange=()=>v.SUBPROJECT_ID=+f.sub.value||null;
+  };
+  fill();
+  const upd=()=>{ const [a,b]=[f.t1.value,f.t2.value].map(s=>s?s.split(':').map(Number):null);
+    f.dur.value=a&&b?hrs(Math.max(0,(b[0]*60+b[1]-a[0]*60-a[1])/60)):''; };
+  f.t1.oninput=f.t2.oninput=upd; upd();
+  const row=(l,x,full)=>[h('label',{},l),full?h('div',{class:'full'},x):x];
+  const body=h('div',{class:'form',style:{minWidth:'560px'}},
+    row('Collaborateur',h('b',{},staffName(DS.get('staff',v.STAFF_ID)))), h('span'),h('span'),
+    row('Date',f.date), row('Durée (h)',f.dur),
+    row('De',f.t1), row('À',f.t2),
+    row('Affaire',wrap.proj,true),
+    row('Groupe d’activités',wrap.ag), row('Activité',wrap.act),
+    row('Phase',wrap.ph), row('Sous-phase',wrap.sp),
+    row('Subdivision',wrap.sub,true),
+    row('Description',f.desc,true),
+    row('Facturable',f.ch), row('Vacances / absence',f.hol));
+  dialog({title:r?'Modifier la saisie':'Nouvelle saisie',body,buttons:[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:async()=>{
+    const dt=new Date(f.date.value+'T00:00'); if(isNaN(dt)){ toast('Date invalide.',true); return false; }
+    const [a,b]=[f.t1.value,f.t2.value].map(s=>s?s.split(':').map(Number):null);
+    if(!a||!b||b[0]*60+b[1]<=a[0]*60+a[1]){ toast('Heures de début et de fin invalides.',true); return false; }
+    const pid=+f.proj.value||null, hol=f.hol.checked;
+    if(!pid&&!hol){ toast('Choisissez une affaire.',true); return false; }
+    const pj=DS.get('project',pid)||{};
+    if(!hol&&pj.ISTIMEPHASEMANDATORY&&!+f.ph.value){ toast('La phase est obligatoire pour cette affaire.',true); return false; }
+    if(!hol&&pj.ISTIMESUBPROJECTMANDATORY&&!+f.sub.value){ toast('La subdivision est obligatoire pour cette affaire.',true); return false; }
+    if(!hol&&pj.ISTIMEDESCMANDATORY&&!f.desc.value.trim()){ toast('La description est obligatoire pour cette affaire.',true); return false; }
+    Object.assign(v,{TIMEYEAR:dt.getFullYear(),TIMEMONTH:dt.getMonth(),TIMEDAY:dt.getDate(),TIMEHOUR1:a[0],TIMEMINUTE1:a[1],TIMEHOUR2:b[0],TIMEMINUTE2:b[1],
+      TIMEPERIOD:(b[0]*60+b[1]-a[0]*60-a[1])/60,PROJECT_ID:pid,ACTIVITYGROUP_ID:+f.ag.value||null,ACTIVITY_ID:+f.act.value||null,
+      PHASE_ID:+f.ph.value||null,SUBPHASE_ID:+f.sp.value||null,SUBPROJECT_ID:+f.sub.value||null,DESCRIPTION:f.desc.value.trim()||null,
+      ISCHARGEABLE:f.ch.checked?1:0,ISHOLIDAY:hol?1:0});
+    await DS.save('timelog',v); HS.sel=v.ID; HS.d=dt; toast('Saisie enregistrée.');
+  }}]});
+}
+async function hsDelete(){ const r=DS.get('timelog',HS.sel); if(!r) return;
+  if(hsFrozen(tlDate(r))){ toast('Saisie des heures verrouillée pour cette période.',true); return; }
+  if(!await confirmDlg(`Supprimer la saisie du ${dfr(diso(tlDate(r)))} (${hrs(r.TIMEPERIOD)} h, ${projLabel(DS.get('project',r.PROJECT_ID))}) ?`,'Supprimer')) return;
+  await DS.del('timelog',r.ID); HS.sel=null; setTools(VIEWS['h-saisie'].tools()); toast('Saisie supprimée.'); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DÉMARRAGE
@@ -352,8 +1208,8 @@ VIEWS._todo={ render(m){ const n=NAV.flatMap(s=>s.items.map(i=>[i[0],s.s+' · '+
   }
   try{ await DS.boot(); }
   catch(e){ $('#boot-msg').textContent='Serveur DeltaSub injoignable ('+e.message+'). Vérifiez qu’il tourne sur le Mac Studio.'; return; }
-  buildNav(); NET.ok();
-  $('#net').ondblclick=()=>{ const n=prompt('Nom de ce poste (visible dans l’historique des modifications) :',DS.who()); if(n!==null){ try{ localStorage.setItem('ds_poste',n.trim()); }catch(_){} NET.ok(); } };
+  buildNav(); NET.ok(); chooseUser();
+  $('#net').ondblclick=()=>chooseUser(true);
   let last='aff-gestion'; try{ last=localStorage.getItem('ds_view')||last; }catch(_){}
   go(last);
   $('#boot').remove();

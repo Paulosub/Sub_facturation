@@ -42,7 +42,9 @@ SKIP_COLUMNS = {"APPUSER": {"PASSWORD", "LOGINLOCALUSER", "LOGINLOCALHOST", "LOG
 PROTECTED = {"projectfee", "projectfeecalculation", "projectfeecalculationamount", "projectfeetimeitem",
              "projectfeecostitem", "projectfeeadditionalitem", "projectcontract", "projectscheduledpayment",
              "projectpayment", "projectinvoice", "projectinvoicepos", "qrbill", "qrbillaccount",
-             "projectimplementation", "projecttask", "projecttasknote"}
+             "projectimplementation", "projecttask", "projecttasknote",
+             "planningsubproject", "planningrole", "planningroletemplate", "planningcostfactor", "planningmonth",
+             "planningtime", "planningassignment", "planningstaff", "planningstafftime"}
 
 _wlock = threading.Lock()
 

@@ -48,7 +48,10 @@ montants en CHF, TVA suisse.
   `CONTACTOWNER` = entité (personne : NAME1 = nom, NAME2 = prénom), `CONTACT` = adresse.
 - **Reprise des données Deltaproject** (lecture seule, depuis la dernière sauvegarde
   nocturne de `/Volumes/SUBSTANCES/Deltaproject/Backup/`) :
-  `outils_deltaproject/importer_dans_deltasub.sh` (REMPLACE les données DeltaSub).
+  `outils_deltaproject/importer_dans_deltasub.sh` (REMPLACE les données DeltaSub, **sauf** les
+  collections `PROTECTED` de `serveur_deltasub.py` — honoraires, contrats, factures, encaissements,
+  QR, avancement, tâches — saisies dans DeltaSub : elles sont gardées, seuls les enregistrements
+  manquants sont ajoutés).
   Les outils utilisent le Java embarqué dans `/Applications/DELTAproject.app`.
 - Cahier des charges : `ANALYSE_DELTAPROJECT.md` + manuel `rsrc/help/manual_fr.pdf` de l'app.
 

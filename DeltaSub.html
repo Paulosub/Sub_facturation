@@ -157,7 +157,7 @@ function toast(msg,err){ const t=$('#toast'); t.textContent=msg; t.className='on
    Chaque enregistrement garde la séquence lue (S) : à l'écriture, le serveur refuse si un autre poste
    l'a modifié entre-temps (conflit) et renvoie la version à jour.
 ═══════════════════════════════════════════════════════════════════════════ */
-const HEAVY=['projectcatalogpos','catalogpos','doctemplate','formtemplate','costestimate','costcontrol','costplanning'];   // chargées à la demande (DS.need)
+const HEAVY=['projectcatalogpos','catalogpos','doctemplate','formtemplate','costestimate','costcontrol','costplanning','modele','modelegroupe','arriereplan','image','modeledocument'];   // chargées à la demande (DS.need)
 const DS={
   seq:0, T:{}, S:{}, _idx:{}, _ls:[], loaded:new Set(),
   who(){ try{ const u=DS.get('appuser',localStorage.getItem('ds_user')); return u?u.USERID:''; }catch(_){ return ''; } },
@@ -340,7 +340,7 @@ const NAV=[
   {s:'Tâches',          items:[['taches','Tâches']]},
   {s:'Bâtiment',        items:[['devis','Devis'],['coco','Contrôle des coûts'],['coplan','Planification des coûts']]},
   {s:'Management',      items:[['mgmt','Statistiques']]},
-  {s:'Modèles',         items:[['modeles','Modèles'],['config','Administrateur']]}
+  {s:'Modèles',         items:[['tpl-images','Images'],['tpl-backgrounds','Arrière-plans'],['tpl-addressTemplates','Modèles d’adresses'],['tpl-labelTemplates','Modèles d’étiquettes'],['tpl-projectTemplates','Modèles d’affaires'],['tpl-staffTemplates','Modèles de collaborateurs'],['tpl-expensesTemplates','Modèles de frais'],['tpl-timeTemplates','Modèles de temps de travail'],['tpl-managementTemplates','Modèles de management'],['tpl-documents','Modèles de documents'],['config','Administrateur']]}
 ];
 const VIEWS={};           // id → {tools(), render(main), refresh?(tables), search?}
 let VIEW=null;
@@ -743,7 +743,7 @@ function tableText(g,sep){ const cell=(c,r)=>{ const d=document.createElement('d
   return [cols.map(c=>c.t).join(sep),...g.view.map(r=>cols.map(c=>{ const v=cell(c,r); return sep===';'&&/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(sep))].join('\n'); }
 function copyTable(g){ navigator.clipboard.writeText(tableText(g,'\t')); toast('Tableau copié ('+g.view.length+' lignes).'); }
 function csvTable(g,name){ const b=new Blob(['﻿'+tableText(g,';')],{type:'text/csv;charset=utf-8'}); const a=h('a',{href:URL.createObjectURL(b),download:name+'_'+today()+'.csv'}); document.body.append(a); a.click(); a.remove(); }
-function printAdr(rows,title){
+function printAdrHTML(rows,title){
   const w=open('','_blank'); if(!w) return;
   w.document.write(`<html><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:10pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:3px 6px;vertical-align:top;border-bottom:.5pt solid #ccc}th{font-weight:600}tr:nth-child(even) td{background:#f3f6fb}</style></head><body><h1>${esc(title)} — ${dfr(today())}</h1><table><tr><th>CFC</th><th>Adresse</th><th>Téléphone</th><th>Tél. mobile</th><th>Courriel</th></tr>`+
     rows.map(c=>`<tr><td>${esc(c.BKP||'')}</td><td>${adrLines(c).map(esc).join('<br>')}</td><td>${esc(phone(c,1))}</td><td>${esc(phone(c,2))}</td><td>${esc(c.EMAIL1||'')}</td></tr>`).join('')+'</table></body></html>');
@@ -1252,6 +1252,7 @@ VIEWS['aff-gestion']={
       {i:'person',t:'Intervenants',menu:()=>[{t:'Attribuer les intervenants',fn:need(cfgMembers)},{t:'Attribuer les activités aux collaborateurs',fn:need(cfgActivities)}]},
       {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)}]},
       {i:'tree',t:'Subdivisions',menu:()=>[{t:'Configurer la subdivision par ouvrages et localisations',fn:need(cfgSubprojects)}]},
+      {i:'save',t:'Modèles et documents externes',menu:()=>[{t:'Définir les modèles …',fn:need(p=>tplNeed().then(()=>defineTemplates(p)))},{t:'Dossier des documents externes …',fn:need(p=>editProject(p))}]},
       {i:'doc',t:'Documents',menu:()=>[{t:'Liste des affaires',fn:()=>printProjects(AF.g.view)}]},
       {i:'gear',t:'Fonctions',menu:()=>[{t:'Afficher les non archivées',chk:!AF.arch,fn:()=>{ AF.arch=!AF.arch; try{localStorage.setItem('ds_af_arch',AF.arch?'1':'0');}catch(_){} draw(); }},'-',
         {t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(AF.g)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(AF.g,'Affaires')}]},
@@ -1269,6 +1270,10 @@ VIEWS['aff-gestion']={
   },
   refresh(ts){ if(hit(ts,'project','projectmember','projectphase')) this.draw(); }
 };
+function defineTemplates(p){ const gs=DS.all('modelegroupe').filter(g=>g.categorie==='projectTemplates').sort((a,b)=>cmp(a.ordre,b.ordre));
+  const s=h('select',{class:'inp'},h('option',{value:''},'— groupe par défaut du bureau ('+tplDefaultGroup('projectTemplates')+') —'),...gs.map(g=>h('option',{value:g.groupe,selected:p.TEMPLATEGROUPNAME===g.groupe||null},g.libelle||g.groupe)));
+  dialog({title:'Définir les modèles — '+projLabel(p),body:h('div',{style:{minWidth:'480px'}},h('div',{style:{fontWeight:600,marginBottom:'4px'}},'Modèles des formulaires'),h('div',{style:{color:'#555',marginBottom:'6px'}},'Choix du groupe de modèles pour cette affaire.'),s),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.save('project',{...p,TEMPLATEGROUPNAME:s.value||null})}]}); }
 function projMO(p){ const m=DS.by('projectmember','PROJECT_ID',p.ID).find(x=>x.TEAMROLECODE===8); return m?contactName(DS.get('contact',m.CONTACT_ID)):''; }
 
 /* ── Frais (PROJECTCOST) : fenêtre commune aux frais d'affaire et aux notes de frais ── */
@@ -1374,7 +1379,7 @@ function domainView(C,p,d){
     const head=phead([
       {i:'plus',t:'Nouvel intervenant',fn:()=>editMember(p,null,12)},{i:'edit',t:'Intervenant',fn:()=>o.sel&&editMember(p,DS.get('projectmember',o.sel))},
       {i:'minus',t:'Supprimer l’intervenant',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer cet intervenant de l’affaire ?','Supprimer')) DS.del('projectmember',o.sel); }},
-      {i:'doc',t:'Documents',menu:()=>[{t:'Liste d’adresses',fn:()=>printAdr(rows().map(x=>DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)).filter(Boolean),'Liste d’adresses — '+projLabel(p))},
+      {i:'doc',t:'Documents',menu:()=>[{t:'Intervenants',fn:()=>printMembers(p,rows())},{t:'Liste d’adresses',fn:()=>printAdr(rows().map(x=>DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)).filter(Boolean),'Liste des adresses d’affaire',p)},
         {t:'Liste d’adresses par CFC',fn:()=>printAdr(rows().filter(x=>x.BKP).sort((a,b)=>cmp(a.BKP,b.BKP)).map(x=>({...DS.get('contact',x.CONTACT_ID),BKP:x.BKP})),'Liste par CFC — '+projLabel(p))}]},
       {i:'gear',t:'Fonctions',menu:()=>[{t:'Courriel',fn:()=>mailList(rows().map(x=>DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)).filter(Boolean))},
         {t:'Copier l’intervenant',dis:!o.sel,fn:()=>{ const x=DS.get('projectmember',o.sel); navigator.clipboard.writeText(adrLines(DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID)).join('\n')); toast('Intervenant copié.'); }},
@@ -1531,17 +1536,26 @@ function ctlGroup(p,rows,how){
     {k:'cost',t:'Frais des collaborateurs',cls:'r',f:g=>num(g.cost)},{k:'m',t:'Honoraires-Coûts des collaborateurs',cls:'r',f:g=>num(g.fee-g.cost)}],rows:[...G.values(),T],sort:null}));
   dialog({title:'Grouper les heures de l’affaire — '+how+' — '+projLabel(p),body:box,buttons:[{t:'Copier',fn:()=>{ copyTable(o); return false; }},{t:'Fermer',pri:true}]});
 }
-function ctlPrint(p,t,o){ const w=open('','_blank'); if(!w) return; const tl=t==='timelog';
+function ctlPrintHTML(p,t,o){ const w=open('','_blank'); if(!w) return; const tl=t==='timelog';
   const txt=tableText(o,'\t').split('\n').map(l=>l.split('\t'));
   w.document.write(`<html><head><meta charset="utf-8"><title>Analyse</title><style>body{font:9pt Akkurat,Helvetica,Arial,sans-serif;margin:12mm}h1{font-size:12pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:2px 5px;border-bottom:.5pt solid #ccc}th{font-weight:600}</style></head><body><h1>${tl?'Rapport d’heures':'Rapport de frais'} — ${esc(projLabel(p))} — ${dfr(today())}</h1><table>`+
     txt.map((r,i)=>'<tr>'+r.map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')+'</tr>').join('')+'</table></body></html>'); w.document.close(); setTimeout(()=>w.print(),300); }
 
 /* ═══ HEURES · Rapport (p.30) — heures prévues / effectives / solde / vacances ═══ */
 const HR={staff:null,y:new Date().getFullYear()};
+function hrPrint(){ const s=DS.get('staff',HR.staff); if(!s) return; const tg=targetFor(HR.staff,HR.y), E=DS.by('timelog','STAFF_ID',HR.staff).filter(r=>r.TIMEYEAR===HR.y);
+  const m=f=>[...Array(12)].map((_,i)=>E.filter(r=>r.TIMEMONTH===i&&f(r)).reduce((a,r)=>a+(+r.TIMEPERIOD||0),0)), eff=m(()=>1), vac=m(r=>r.ISHOLIDAY), prev=[...Array(12)].map((_,i)=>tg?(+tg['TARGETHOURS'+i]||0):0);
+  let cum=0; const rows=MOISL.map((mn,i)=>{ cum+=eff[i]-prev[i]; return [mn,hrs(prev[i]),hrs(eff[i]),hrs(eff[i]-prev[i]),hrs(cum),hrs(vac[i])]; });
+  const S=a=>a.reduce((x,y)=>x+y,0), TE=S(eff), TP=S(prev), TV=S(vac), o=ownerOf(DS.get('contact',s.PERSON_ID))||{};
+  rows.push(Object.assign(['Total',hrs(TP),hrs(TE),hrs(TE-TP),'',hrs(TV)],{_bold:1,_line:1}));
+  const fb=()=>{ const t=$('#hr-tb'); if(!t) return; const w=open('','_blank'); w.document.write(`<html><head><meta charset="utf-8"><title>Rapport annuel</title><style>body{font:9.5pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;border-bottom:.5pt solid #ccc;text-align:right}td:first-child,th:first-child{text-align:left}</style></head><body><h2 style="font-weight:400">Rapport annuel ${HR.y} — ${esc(staffName(s))}</h2>${t.outerHTML}</body></html>`); w.document.close(); setTimeout(()=>w.print(),300); };
+  tplOr(()=>tplPrint({cat:'timeTemplates',type:'timeAnnualReport',title:'Rapport annuel',ctx:{fields:{timeYear:String(HR.y),timeStaffName:o.NAME1||'',timeStaffFirstname:o.NAME2||'',timeStaffFirstnameAndName:staffName(s),
+      timeTotalTarget:hrs(TP),timeTotalAttendance:hrs(TE),timeTotalBalance:hrs(TE-TP),timeHolidaySpent:hrs(TV),timeHolidayBalance:hrs(s.HOLIDAYBALANCE),timeHolidaySaldo:hrs((+s.HOLIDAYBALANCE||0)-TV)}},
+    cols:[{t:'Période',w:22},{t:'Heures prévues',w:16,r:1},{t:'Heures effectives',w:16,r:1},{t:'Différence',w:15,r:1},{t:'Solde cumulé',w:15,r:1},{t:'Vacances',w:16,r:1}],rows,fallback:fb}),fb); }
 function targetFor(sid,y){ const st=DS.by('stafftargettime','STAFF_ID',sid).find(x=>x.TARGETTIMEYEAR===y); return st||DS.all('targettime').find(x=>x.TARGETTIMEYEAR===y)||null; }
 VIEWS['h-rapport']={
   tools(){ return [[{i:'prev',fn:()=>{ HR.y--; go('h-rapport'); }},h('span',{style:{alignSelf:'center',minWidth:'50px',textAlign:'center'}},String(HR.y)),{i:'next',fn:()=>{ HR.y++; go('h-rapport'); }}],
-    [{i:'print',t:'Imprimer',fn:()=>{ const t=$('#hr-tb'); if(!t) return; const w=open('','_blank'); w.document.write(`<html><head><meta charset="utf-8"><title>Rapport annuel</title><style>body{font:9.5pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;border-bottom:.5pt solid #ccc;text-align:right}td:first-child,th:first-child{text-align:left}</style></head><body><h2 style="font-weight:400">Rapport annuel ${HR.y} — ${esc(staffName(DS.get('staff',HR.staff)))}</h2>${t.outerHTML}</body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }}]]; },
+    [{i:'print',t:'Imprimer',fn:()=>hrPrint()}]]; },
   render(m){
     const cols=h('div',{class:'cols'}); m.append(cols);
     const L=col(260), R=h('div',{class:'col fill'}), pane=h('div',{class:'pane'}); cols.append(L.el,R); R.append(pane);
@@ -1854,7 +1868,7 @@ function dvEditor(m,id){
   VIEWS['devis'].editorRefresh=ts=>{ if(!dirty&&!$('.ov')){ E=JSON.parse(JSON.stringify(DS.get('costestimate',id)||E)); draw(); } };
   drawCat(); draw();
 }
-function dvPrint(p,doc,E,kind){
+function dvPrintHTML(p,doc,E,kind){
   const {M,T}=dvCompute(E), w=open('','_blank'); if(!w) return;
   const rows=(E.positions||[]).map(x=>M.get(String(x.cfc))).filter(n=>n.ttc||n.opt||n.hon).sort((a,b)=>cfcCmp(a.p.cfc,b.p.cfc));
   const title=kind==='hon'?'Calcul des honoraires':((E.reglages||{}).titres||{}).document||'Devis général';
@@ -2358,15 +2372,15 @@ function ccArrete(C,a,touch){ const g=Object.assign({},a.garantie||{});
   dialog({title:'Arrêté de compte — '+ccEntName(C,a.contactId),body:h('div',{},h('div',{style:{marginBottom:'8px'}},'Facture finale nette : ',h('b',{},num(docNet(a))+' CHF')),
     formRows([['Statut',st],['Type de garantie',gen],['Montant de la garantie',mt],['Début de la garantie',db],['Echéance de la garantie',h('div',{},fn,' ',ibtn({label:'+2 années',fn:()=>plus(2)}),ibtn({label:'+5 années',fn:()=>plus(5)}))]],560)),
     buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ a.garantie=Object.assign(g,{genre:gen.value,montant:+mt.value||0,debut:db.value,fin:fn.value}); a.statut=st.value; touch(); }}]}); }
-function ccPrint(p,doc,G){ const w=open('','_blank'); if(!w) return; const txt=tableText(G,'\t').split('\n').map(l=>l.split('\t'));
+function ccPrintHTML(p,doc,G){ const w=open('','_blank'); if(!w) return; const txt=tableText(G,'\t').split('\n').map(l=>l.split('\t'));
   w.document.write(`<html><head><meta charset="utf-8"><title>Contrôle des coûts</title><style>@page{size:A4 landscape;margin:10mm}body{font:7.5pt Akkurat,Helvetica,Arial,sans-serif}h1{font-size:11pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{padding:1.5px 4px;border-bottom:.3pt solid #ccc;text-align:right}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}th{border-bottom:.8pt solid #000}</style></head><body><h1>Contrôle des coûts — ${esc(projLabel(p))} — ${esc(doc.VERSION||'')} — ${dfr(today())}</h1><table>`+
     txt.map((r,i)=>'<tr>'+r.map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')+'</tr>').join('')+'</table></body></html>'); w.document.close(); setTimeout(()=>w.print(),300); }
-function ccPrintOrder(C,p,o){ const ps=C.paiements.filter(x=>(o.paiementIds||[]).includes(x.id)), w=open('','_blank'); if(!w) return; const tx=(C.parametres||{}).texteCompte||'';
+function ccPrintOrderHTML(C,p,o){ const ps=C.paiements.filter(x=>(o.paiementIds||[]).includes(x.id)), w=open('','_blank'); if(!w) return; const tx=(C.parametres||{}).texteCompte||'';
   w.document.write(`<html><head><meta charset="utf-8"><title>Ordre de paiement ${esc(o.numero)}</title><style>body{font:9pt Akkurat,Helvetica,Arial,sans-serif;margin:16mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;border-bottom:.4pt solid #bbb;text-align:left;vertical-align:top}.r{text-align:right}</style></head><body>
     <h1>Ordre de paiement n° ${esc(o.numero)}</h1><div>${esc(projLabel(p))} — ${dfr(o.date)}${o.dateValeur?' — date de valeur '+dfr(o.dateValeur):''}</div><table style="margin-top:12px"><tr><th>N°</th><th>Bénéficiaire</th><th>Compte</th><th>N° pmt</th><th class="r">Montant</th></tr>`+
     ps.map(x=>{ const c=DS.get('contact',x.contactId), b=x.banque||{}; return `<tr><td>${esc((x.lot||{}).numero||'')}</td><td>${esc(ccEntName(C,x.contactId))}<br>${c?esc(locality(c)):''}</td><td>${esc(b.iban||b.texteCompte||tx)}</td><td>${esc(x.numero)}</td><td class="r">${num(docNet(x))}</td></tr>`; }).join('')+
     `<tr><td colspan="4"><b>Total des paiements</b></td><td class="r"><b>${num(ps.reduce((a,x)=>a+docNet(x),0))}</b></td></tr></table></body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
-function ccPrintBon(C,p,x){ if(!x) return; const r=ccCond(x.lignes||[],x.conditions), w=open('','_blank'); if(!w) return; const ctr=C.contrats.find(c=>c.id===x.contratId);
+function ccPrintBonHTML(C,p,x){ if(!x) return; const r=ccCond(x.lignes||[],x.conditions), w=open('','_blank'); if(!w) return; const ctr=C.contrats.find(c=>c.id===x.contratId);
   w.document.write(`<html><head><meta charset="utf-8"><title>Bon de paiement ${esc(x.numero)}</title><style>body{font:9.5pt Akkurat,Helvetica,Arial,sans-serif;margin:18mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td{padding:3px 6px;border-bottom:.4pt solid #ddd}.r{text-align:right}</style></head><body>
     <h1>Bon de paiement n° ${esc(x.numero)}</h1><div>${esc(projLabel(p))}</div><p><b>${esc(ccEntName(C,x.contactId))}</b><br>Lot ${esc((x.lot||{}).numero||'')} ${esc((x.lot||{}).texte||'')}${ctr?'<br>Contrat n° '+esc(ctr.numero)+' du '+dfr(ctr.date):''}</p>
     <table><tr><td>${ctr?'Cumul des acomptes bruts':'Montant brut'}</td><td class="r">${num(docBrut(x))}</td></tr>${(x.conditions||[]).filter(c=>c.appliquee!==false).sort((a,b)=>a.niveau-b.niveau).map(c=>`<tr><td>${esc(c.libelle||(COND[c.kind]||[])[2]||'')} ${condNat(c.kind)==='pct'?num(c.valeur,2)+' %':''}</td><td class="r">${num(r.par[c.niveau])}</td></tr>`).join('')}
@@ -2470,6 +2484,340 @@ function cpEditor(m,id){
   draw();
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODÈLES (manuel p.88-93) — formulaires DELTA (collections modele, modelegroupe, arriereplan, image)
+   et modèles de documents (modeledocument, format .dpdoc). Unités : points (A4 = 595 × 842).
+═══════════════════════════════════════════════════════════════════════════ */
+const TPL_CATS=[['tpl-addressTemplates','addressTemplates','Modèles d’adresses'],['tpl-labelTemplates','labelTemplates','Modèles d’étiquettes'],['tpl-projectTemplates','projectTemplates','Modèles d’affaires'],
+  ['tpl-staffTemplates','staffTemplates','Modèles de collaborateurs'],['tpl-expensesTemplates','expensesTemplates','Modèles de frais'],['tpl-timeTemplates','timeTemplates','Modèles de temps de travail'],['tpl-managementTemplates','managementTemplates','Modèles de management']];
+const TPL_PAGE_L={cover:'Page de garde',page1:'1ère page',pageN:'Page suivante',pageToc1:'Sommaire (1ère page)',pageTocN:'Sommaire (page suivante)',last:'Dernière page'};
+const TPL_LANG={fr:'Français',de:'Deutsch',it:'Italiano',en:'English'};
+const TPL_TABLES=['modele','modelegroupe','arriereplan','image','modeledocument'];
+const tplNeed=()=>DS.need(TPL_TABLES);
+/* Catalogue des champs (Field$Type) avec leur libellé français, déduit des modèles DELTA (libellé d'aperçu le plus fréquent) */
+let _tplFields=null;
+function tplFields(){ if(_tplFields) return _tplFields; const c={};
+  DS.all('modele').forEach(m=>{ const L=(m.langues||{}).fr; if(!L) return; Object.values(L.pages||{}).forEach(pg=>(pg.elements||[]).forEach(e=>{ if((e.t==='champ'||e.t==='tableau')&&e.champ){ const x=c[e.champ]||(c[e.champ]={t:e.t,l:{}}); const lb=(e.texte||'').split('\n')[0].trim(); if(lb) x.l[lb]=(x.l[lb]||0)+1; } })); });
+  _tplFields=Object.fromEntries(Object.entries(c).map(([k,v])=>[k,{t:v.t,label:(Object.entries(v.l).sort((a,b)=>b[1]-a[1])[0]||[k])[0]}]));
+  return _tplFields; }
+const tplFont=f=>`${/akkurat/i.test(f||'')?"'Akkurat LL','AkkuratLL-Light','Akkurat',":''}'Helvetica Neue',Helvetica,Arial,sans-serif`;   // apostrophes : utilisé dans style="…"
+/* Rendu HTML d'une page (aperçu ou document rempli) : k = pixels par point ; vals(e) → texte d'un champ ; table(e) → HTML d'un tableau */
+function tplPageHTML(pg,k,o){
+  /* petite échelle : on rend à 1.6 px/pt puis on réduit d'un bloc (évite la taille de police minimale du navigateur) */
+  if(k<1.2&&!(o||{}).noScale){ const kr=1.6, W=(pg.largeur||595), H=(pg.hauteur||842);
+    return `<div style="width:${W*k}px;height:${H*k}px;overflow:hidden"><div style="transform:scale(${k/kr});transform-origin:0 0;width:${W*kr}px">${tplPageHTML(pg,kr,{...(o||{}),noScale:true})}</div></div>`; }
+  o=o||{}; const W=pg.largeur||595, H=pg.hauteur||842, ap=pg.arrierePlan?DS.get('arriereplan',String(pg.arrierePlan).replace(/\.xml$/,'')):null;
+  const el=(e,i,layer)=>{ const st=`left:${e.x*k}px;top:${e.y*k}px;width:${Math.max(e.l,1)*k}px;height:${Math.max(e.h,1)*k}px;`;
+    const sel=o.sel===i&&!layer?'outline:1.5px solid #3875d7;':'', ev=layer?'':`data-i="${i}"`;
+    const txt=`font-family:${tplFont(e.police)};font-size:${(e.taille||9)*k}px;color:${e.couleur||'#000'};${e.gras?'font-weight:700;':''}${e.italique?'font-style:italic;':''}${e.souligne?'text-decoration:underline;':''}text-align:${{centre:'center',droite:'right',justifie:'justify'}[e.alignement]||'left'};line-height:1.2;white-space:pre-wrap;overflow:hidden;`;
+    if(e.t==='texte') return `<div ${ev} style="position:absolute;${st}${txt}${e.fond?'background:'+e.fond+';':''}${e.cadre?'border:'+(e.trait||.5)*k+'px solid #000;':''}${sel}">${esc(e.texte||'')}</div>`;
+    if(e.t==='champ'){ const v=o.vals?o.vals(e):null; const shown=v==null?`<span style="color:#1f5fbf">${esc(e.texte||e.champ)}</span>`:esc(v);
+      return `<div ${ev} style="position:absolute;${st}${txt}${o.vals?'':'background:rgba(56,117,215,.07);'}${sel}">${shown}</div>`; }
+    if(e.t==='tableau'){ const inner=o.table?o.table(e,k):`<div style="font:${9*k}px sans-serif;color:#1f5fbf;padding:${2*k}px">▦ ${esc((tplFields()[e.champ]||{}).label||e.nom||e.champ||'Tableau')}</div>`;
+      return `<div ${ev} style="position:absolute;${st}${o.table?'':'border:1px dashed #7aa0d8;'}${sel}overflow:hidden">${inner}</div>`; }
+    if(e.t==='trait'){ const hz=(e.h||0)<=(e.l||0); const th=Math.max((e.trait||.5)*k,.6);
+      return `<div ${ev} style="position:absolute;left:${e.x*k}px;top:${e.y*k}px;width:${hz?e.l*k:th}px;height:${hz?th:e.h*k}px;background:${e.couleur||'#000'};${sel}"></div>${o.sel===i&&!layer?`<div data-i="${i}" style="position:absolute;${st}outline:1.5px dashed #3875d7"></div>`:''}`; }
+    if(e.t==='rectangle') return `<div ${ev} style="position:absolute;${st}border:${Math.max((e.trait||.5)*k,.6)}px solid ${e.couleur||'#000'};${e.fond?'background:'+e.fond+';':''}${sel}"></div>`;
+    if(e.t==='image'||e.t==='imageChamp'){ const im=e.fichier?DS.get('image',e.fichier):null;
+      return `<div ${ev} style="position:absolute;${st}${sel}">${im?`<img src="${im.data}" style="width:100%;height:100%;object-fit:contain">`:`<div style="width:100%;height:100%;border:1px dotted #aaa;font:${8*k}px sans-serif;color:#888;overflow:hidden">🖼 ${esc(e.fichier||e.champ||'Image')}</div>`}</div>`; }
+    if(e.t==='repere') return o.vals?'':`<div ${ev} style="position:absolute;${st}border-left:1px dotted #e08;${sel}"></div>`;
+    return '';
+  };
+  return `<div class="tplpage" style="position:relative;width:${W*k}px;height:${H*k}px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);overflow:hidden">`+
+    (ap?(ap.elements||[]).map((e,i)=>el(e,i,true)).join(''):'')+(pg.elements||[]).map((e,i)=>el(e,i,false)).join('')+'</div>';
+}
+function tplModelesOf(cat){ return DS.all('modele').filter(m=>m.categorie===cat); }
+const tplKey=m=>[m.categorie,m.groupe,m.type,m.nom].join('/');
+const tplLabel=m=>(m.libelle&&m.libelle.fr)||(m.libelle&&(m.libelle.de||m.libelle.it))||m.type;
+const TP={g:{},m:{},p:{},zoom:.9};
+function tplView(cat,title){ return {
+  tools(){ return [[{i:'wrench',t:'Groupes',menu:()=>[{t:'Nouveau groupe de modèles …',fn:()=>tplNewGroup(cat)},{t:'Utiliser ce groupe par défaut'+(tplCurGroup(cat)&&tplDefaultGroup(cat)===tplCurGroup(cat).groupe?' ✓':''),dis:!tplCurGroup(cat),fn:()=>tplSetDefaultGroup(cat,tplCurGroup(cat).groupe)},{t:'Renommer le groupe …',dis:!tplCurGroup(cat),fn:()=>tplRenameGroup(cat)},{t:'Supprimer le groupe',dis:!tplCurGroup(cat),fn:()=>tplDelGroup(cat)}]},
+    {i:'plus',t:'Nouveau modèle (copie)',fn:()=>tplNewModel(cat)},{i:'edit',t:'Editer le modèle (noms)',fn:()=>tplEditModel()},{i:'minus',t:'Supprimer le modèle',fn:()=>tplDelModel()},
+    {i:'doc',t:'Editer la page',fn:()=>tplOpenEditor()}]]; },
+  render(m){
+    if(TPL_TABLES.some(t=>!DS.loaded.has(t))){ m.append(h('div',{class:'ph'},'Chargement des modèles…')); tplNeed().then(()=>{ if(VIEW&&VIEW.v===this) go(VIEW.id); }); return; }
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const A=col(190), B=col(300), C=col(210), D=h('div',{class:'col fill',style:{background:'#e9e9e9'}}), prev=h('div',{class:'pane',style:{padding:'16px',display:'flex',justifyContent:'center'}}); D.append(prev); cols.append(A.el,B.el,C.el,D);
+    const groups=DS.all('modelegroupe').filter(g=>g.categorie===cat).sort((a,b)=>cmp(a.ordre,b.ordre)||cmp(a.groupe,b.groupe));
+    if(!TP.g.sel||!groups.some(g=>tplGKey(g)===TP.g.sel)) TP.g.sel=groups[0]&&tplGKey(groups[0]);
+    const drawD=()=>{ prev.innerHTML=''; const md=DS.get('modele',TP.m.sel), [lg,pn]=String(TP.p.sel||'').split('|'); const pg=md&&md.langues[lg]&&md.langues[lg].pages[pn];
+      if(!pg){ prev.append(h('div',{class:'ph'},'Choisissez une page.')); return; }
+      const k=Math.min(TP.zoom,(prev.clientWidth-40)/(pg.largeur||595)); const w=h('div',{html:tplPageHTML(pg,k>0?k:TP.zoom,{})}); w.ondblclick=()=>tplOpenEditor(); prev.append(w); };
+    const drawC=()=>{ const md=DS.get('modele',TP.m.sel); const rows=md?Object.entries(md.langues).flatMap(([lg,L])=>Object.keys(L.pages).sort((a,b)=>cmp(Object.keys(TPL_PAGE_L).indexOf(a),Object.keys(TPL_PAGE_L).indexOf(b))).map(pn=>({k:lg+'|'+pn,lg,pn}))):[];
+      if(!rows.some(r=>r.k===TP.p.sel)) TP.p.sel=(rows.find(r=>r.lg==='fr'&&r.pn==='page1')||rows[0]||{}).k;
+      grid(C.pane,Object.assign(TP.p,{key:r=>r.k,cols:[{k:'pn',t:'Modèle',f:r=>esc(TPL_PAGE_L[r.pn]||r.pn)},{k:'lg',t:'Langue',w:70,f:r=>TPL_LANG[r.lg]||r.lg}],rows,sort:null,onSel:drawD,onDbl:()=>tplOpenEditor()})); drawD(); };
+    const drawB=()=>{ const g=DS.get('modelegroupe',TP.g.sel); const rows=g?tplModelesOf(cat).filter(x=>x.groupe===g.groupe):[];
+      if(!rows.some(r=>tplKey(r)===TP.m.sel)) TP.m.sel=rows[0]&&tplKey(rows[0]);
+      grid(B.pane,Object.assign(TP.m,{key:tplKey,cols:[{k:'l',t:'Type de modèle',f:x=>esc(tplLabel(x)),v:tplLabel},{k:'nom',t:'Nom',w:100,f:x=>esc(x.nom)}],rows,sort:['l',1],onSel:drawC,onDbl:()=>tplEditModel()})); drawC(); };
+    grid(A.pane,Object.assign(TP.g,{key:tplGKey,cols:[{k:'l',t:'Groupe',f:g=>esc(g.libelle||g.groupe)+(g.verrouille?' 🔒':'')+(tplDefaultGroup(cat)===g.groupe?' <i style="opacity:.7">(par défaut)</i>':'')}],rows:groups,sort:null,onSel:drawB})); drawB();
+    this.redraw=()=>go(VIEW.id);
+  },
+  refresh(ts){ if(hit(ts,'modele','modelegroupe')&&!$('.ov')) go(VIEW.id); } }; }
+const tplGKey=g=>g.categorie+'/'+g.groupe;
+const tplCurGroup=cat=>{ const g=DS.get('modelegroupe',TP.g.sel); return g&&g.categorie===cat?g:null; };
+TPL_CATS.forEach(([id,cat,t])=>VIEWS[id]=tplView(cat,t));
+async function tplNewGroup(cat){ const src=DS.all('modelegroupe').filter(g=>g.categorie===cat);
+  const n=h('input',{class:'inp'}), cp=h('select',{class:'inp'},h('option',{value:''},'— vide —'),...src.map(g=>h('option',{value:tplGKey(g),selected:g.groupe==='Standard'||null},'Copier les modèles depuis « '+(g.libelle||g.groupe)+' »')));
+  dialog({title:'Nouveau groupe de modèles',body:formRows([['Nom du groupe',n],['',cp]],460),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const nm2=n.value.trim(); if(!nm2) return false;
+    if(src.some(g=>g.groupe===nm2)){ toast('Ce nom est déjà utilisé.',true); return false; }
+    const ops=[{t:'modelegroupe',id:cat+'/'+nm2,val:{categorie:cat,groupe:nm2,libelle:nm2,ordre:9,verrouille:false}}];
+    if(cp.value){ const from=DS.get('modelegroupe',cp.value); tplModelesOf(cat).filter(m=>m.groupe===from.groupe).forEach(m=>{ const c={...JSON.parse(JSON.stringify(m)),groupe:nm2}; ops.push({t:'modele',id:tplKey(c),val:c}); }); }
+    await DS.commit(ops); TP.g.sel=cat+'/'+nm2; toast('Groupe créé.'); }}]}); }
+function tplRenameGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « DELTA Originaux » ne peut pas être modifié.',true); return; }
+  const n=h('input',{class:'inp',value:g.libelle||g.groupe});
+  dialog({title:'Renommer le groupe',body:formRows([['Libellé',n]],420),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.save('modelegroupe',{...g,libelle:n.value.trim()||g.groupe})}]}); }
+async function tplDelGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « DELTA Originaux » ne peut pas être supprimé.',true); return; }
+  const ms=tplModelesOf(cat).filter(m=>m.groupe===g.groupe); if(ms.length){ toast('Seuls les groupes de modèles vides peuvent être supprimés.',true); return; }
+  if(await confirmDlg('Supprimer le groupe « '+(g.libelle||g.groupe)+' » ?','Supprimer')) DS.del('modelegroupe',tplGKey(g)); }
+function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez un groupe.',true); return; } if(g.verrouille){ toast('Le groupe « DELTA Originaux » n’est pas modifiable : créez un groupe.',true); return; }
+  const all=DS.all('modele').filter(m=>m.categorie===cat), src=h('select',{class:'inp'},...all.sort((a,b)=>cmp(tplLabel(a),tplLabel(b))).map(m=>h('option',{value:tplKey(m)},tplLabel(m)+' — '+(DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{}).libelle+' / '+m.nom)));
+  const nom=h('input',{class:'inp',value:'project1'}), fr=h('input',{class:'inp'});
+  dialog({title:'Nouveau modèle',body:formRows([['Copier les modèles depuis',src],['Nom',nom],['Français',fr]],560),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const s=DS.get('modele',src.value); if(!s) return false;
+    const c={...JSON.parse(JSON.stringify(s)),groupe:g.groupe,nom:nom.value.trim()||s.nom}; if(fr.value.trim()) c.libelle={...c.libelle,fr:fr.value.trim()};
+    if(DS.get('modele',tplKey(c))&&!await confirmDlg('Un modèle de ce type et de ce nom existe déjà dans le groupe. Le remplacer ?','Remplacer')) return false;
+    await DS.commit([{t:'modele',id:tplKey(c),val:c}]); TP.m.sel=tplKey(c); }}]}); }
+function tplEditModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
+  const f={}; Object.keys(TPL_LANG).forEach(l=>f[l]=h('input',{class:'inp',value:(m.libelle||{})[l]||''}));
+  dialog({title:'Editer le modèle',body:h('div',{},formRows([['Type de modèle',h('span',{},m.type)],['Nom',h('span',{},m.nom)],...Object.entries(TPL_LANG).map(([l,t])=>[t,f[l]])],480),g.verrouille?h('div',{style:{color:'#9a5b00',marginTop:'8px'}},'Groupe « DELTA Originaux » : lecture seule.'):null),
+    buttons:[{t:'Annuler'},...(g.verrouille?[]:[{t:'OK',pri:true,fn:()=>DS.commit([{t:'modele',id:tplKey(m),val:{...m,libelle:Object.fromEntries(Object.keys(TPL_LANG).map(l=>[l,f[l].value.trim()]))}}])}])]}); }
+async function tplDelModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
+  if(g.verrouille){ toast('Le groupe « DELTA Originaux » n’est pas modifiable.',true); return; }
+  if(await confirmDlg('Supprimer le modèle « '+tplLabel(m)+' » ('+m.nom+') du groupe « '+(g.libelle||m.groupe)+' » ?','Supprimer')) DS.del('modele',tplKey(m)); }
+
+/* ── Éditeur de page (fenêtre « <Groupe> - <Type> - <Nom> - <Page> (<Langue>) ») ── */
+function tplOpenEditor(){ const m=DS.get('modele',TP.m.sel); const [lg,pn]=String(TP.p.sel||'').split('|'); if(!m||!m.langues[lg]){ toast('Choisissez une page.',true); return; }
+  const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
+  tplEditor(JSON.parse(JSON.stringify(m.langues[lg].pages[pn])),(g.libelle||m.groupe)+' - '+tplLabel(m)+' - '+m.nom+' - '+(TPL_PAGE_L[pn]||pn)+' ('+(TPL_LANG[lg]||lg)+')',!!g.verrouille,
+    async pg=>{ const c=JSON.parse(JSON.stringify(DS.get('modele',tplKey(m)))); c.langues[lg].pages[pn]=pg; await DS.commit([{t:'modele',id:tplKey(m),val:c}]); toast('Modèle enregistré.'); }); }
+function tplEditor(pg,title,locked,onSave){
+  let sel=null, k=1.25, dirty=false; const undo=[];
+  const ov=h('div',{class:'ov',style:{padding:'2vh 2vw',alignItems:'stretch'}}), win=h('div',{class:'dlg',style:{width:'100%',maxWidth:'none',maxHeight:'none',height:'96vh'}});
+  const canvasWrap=h('div',{style:{flex:1,overflow:'auto',background:'#d6d6d6',padding:'24px',position:'relative'}}), canvas=h('div',{style:{position:'relative',margin:'0 auto',width:'max-content'}});
+  canvasWrap.append(canvas);
+  const props=h('div',{style:{width:'300px',borderLeft:'1px solid var(--line)',overflow:'auto',background:'#f6f6f6',padding:'10px'}});
+  const push=()=>{ undo.push(JSON.stringify(pg)); if(undo.length>60) undo.shift(); dirty=true; };
+  const draw=()=>{ canvas.innerHTML=tplPageHTML(pg,k,{sel}); const pgEl=canvas.firstChild;
+    if(sel!=null&&!locked){ const e=pg.elements[sel]; const hd=h('div',{style:{position:'absolute',left:((e.x+e.l)*k-5)+'px',top:((e.y+e.h)*k-5)+'px',width:'10px',height:'10px',background:'#3875d7',cursor:'nwse-resize',zIndex:5}}); hd.dataset.resize='1'; pgEl.append(hd); }
+    drawProps(); };
+  const fields=tplFields();
+  const drawProps=()=>{ props.innerHTML=''; const e=sel!=null?pg.elements[sel]:null;
+    props.append(h('div',{style:{fontWeight:600,marginBottom:'6px'}},'Page'),formRows([['Format',h('span',{},`${Math.round(pg.largeur/72*25.4)/10} cm × ${Math.round(pg.hauteur/72*25.4)/10} cm (${pg.orientation||''})`)],
+      ['Arrière-plan',(()=>{ const s=h('select',{class:'inp',disabled:locked||null},h('option',{value:''},'—'),...Object.keys(DS.T.arriereplan||{}).sort(cmp).map(nm2=>h('option',{value:nm2+'.xml',selected:String(pg.arrierePlan||'').replace(/\.xml$/,'')===nm2||null},nm2)));
+        s.onchange=()=>{ push(); pg.arrierePlan=s.value||null; draw(); }; return s; })()]],260));
+    if(!e){ props.append(h('div',{style:{color:'#777',marginTop:'10px'}},'Cliquez sur un élément pour le modifier ; glissez pour le déplacer ; poignée bleue pour le redimensionner. Flèches : déplacer de 1 pt (Maj : 10 pt).')); return; }
+    const num=(key,lbl)=>{ const i=h('input',{class:'inp',type:'number',step:'0.5',value:e[key]??'',disabled:locked||null}); i.onchange=()=>{ push(); e[key]=+i.value; draw(); }; return [lbl,i]; };
+    const txt=(key,lbl,area)=>{ const i=area?h('textarea',{class:'inp',rows:3,disabled:locked||null},e[key]||''):h('input',{class:'inp',value:e[key]||'',disabled:locked||null}); i.onchange=()=>{ push(); e[key]=i.value; draw(); }; return [lbl,i]; };
+    const chk=(key,lbl)=>{ const i=h('input',{type:'checkbox',checked:!!e[key]||null,disabled:locked||null}); i.onchange=()=>{ push(); e[key]=i.checked; draw(); }; return ['',h('label',{style:{textAlign:'left'}},i,' '+lbl)]; };
+    const rows=[['Elément',h('b',{},{texte:'Texte',champ:'Champ',tableau:'Tableau',trait:'Trait',rectangle:'Rectangle',image:'Image',imageChamp:'Image variable',repere:'Repère'}[e.t]||e.t)],num('x','X (pt)'),num('y','Y (pt)'),num('l','Largeur'),num('h','Hauteur')];
+    if(e.t==='texte') rows.push(txt('texte','Texte',1));
+    if(e.t==='champ'||e.t==='tableau'){ const s=h('select',{class:'inp',disabled:locked||null},...Object.entries(fields).filter(([,v])=>v.t===e.t).sort((a,b)=>cmp(a[1].label,b[1].label)).map(([f2,v])=>h('option',{value:f2,selected:f2===e.champ||null},v.label)));
+      s.onchange=()=>{ push(); e.champ=s.value; e.texte=(fields[s.value]||{}).label||s.value; draw(); }; rows.push(['Rubrique',s]);
+      if(e.t==='champ'){ const fm=e.format||(e.format=['','','']); ['Texte 1','Texte 2','Texte 3'].forEach((l,j)=>{ const i=h('input',{class:'inp',value:fm[j]||'',disabled:locked||null}); i.onchange=()=>{ push(); fm[j]=i.value; draw(); }; rows.push([l,i]); }); } }
+    if(['texte','champ','tableau'].includes(e.t)){ rows.push(txt('police','Police'),num('taille','Taille (pt)'));
+      const al=h('select',{class:'inp',disabled:locked||null},...['gauche','centre','droite','justifie'].map(a=>h('option',{value:a,selected:(e.alignement||'gauche')===a||null},a))); al.onchange=()=>{ push(); e.alignement=al.value; draw(); };
+      rows.push(['Alignement',al],chk('gras','Gras'),chk('italique','Italique'),chk('souligne','Souligné')); }
+    if(e.t==='trait'||e.t==='rectangle') rows.push(num('trait','Epaisseur (pt)'));
+    if(e.t==='image'){ const s=h('select',{class:'inp',disabled:locked||null},...DS.all('image').map(im=>h('option',{value:im.nom,selected:im.nom===e.fichier||null},im.nom))); s.onchange=()=>{ push(); e.fichier=s.value; draw(); }; rows.push(['Image',s]); }
+    if(e.t!=='trait'&&e.t!=='image'){ const c=h('input',{type:'color',value:/^#/.test(e.couleur||'')?e.couleur:'#000000',disabled:locked||null}); c.onchange=()=>{ push(); e.couleur=c.value; draw(); }; rows.push(['Couleur',c]); }
+    props.append(h('div',{style:{fontWeight:600,margin:'14px 0 6px'}},'Elément'),formRows(rows,260));
+    if(!locked) props.append(h('div',{style:{display:'flex',gap:'6px',marginTop:'10px',flexWrap:'wrap'}},ibtn({label:'Premier plan',fn:()=>{ push(); pg.elements.push(pg.elements.splice(sel,1)[0]); sel=pg.elements.length-1; draw(); }}),
+      ibtn({label:'Arrière-plan',fn:()=>{ push(); pg.elements.unshift(pg.elements.splice(sel,1)[0]); sel=0; draw(); }}),ibtn({label:'Dupliquer',fn:()=>{ push(); const c=JSON.parse(JSON.stringify(e)); c.x+=10; c.y+=10; pg.elements.push(c); sel=pg.elements.length-1; draw(); }}),
+      ibtn({i:'minus',label:'Supprimer',fn:()=>{ push(); pg.elements.splice(sel,1); sel=null; draw(); }})));
+  };
+  const add=t=>{ if(locked) return; push(); const base={x:60,y:60,l:160,h:16,police:'AkkuratLL-Light',taille:9,couleur:'#000000',alignement:'gauche'};
+    const e={texte:{...base,t:'texte',texte:'Texte'},champ:{...base,t:'champ',champ:'projectNumber',format:['','',''],texte:(fields.projectNumber||{}).label||'projectNumber'},tableau:{...base,t:'tableau',champ:'projectTableHeader',l:470,h:200},
+      traitH:{x:60,y:80,l:470,h:1,t:'trait',trait:.5,couleur:'#000000'},traitV:{x:60,y:80,l:1,h:120,t:'trait',trait:.5,couleur:'#000000'},rectangle:{x:60,y:80,l:200,h:80,t:'rectangle',trait:.5,couleur:'#000000'},
+      image:{x:60,y:60,l:80,h:40,t:'image',fichier:(DS.all('image')[0]||{}).nom}}[t];
+    pg.elements.push(e); sel=pg.elements.length-1; draw(); };
+  /* souris : sélection, déplacement, redimensionnement (pas de 0.5 pt) */
+  canvas.addEventListener('mousedown',ev=>{ const hd=ev.target.closest('[data-resize]'), it=ev.target.closest('[data-i]');
+    if(!hd&&!it){ sel=null; draw(); return; }
+    if(!hd) sel=+it.dataset.i; const e=pg.elements[sel]; if(!e){ draw(); return; }
+    if(locked){ draw(); return; }
+    const sx=ev.clientX, sy=ev.clientY, o0={...e}; let moved=false;
+    const mv=m2=>{ const dx=(m2.clientX-sx)/k, dy=(m2.clientY-sy)/k; if(!moved&&Math.abs(dx)+Math.abs(dy)<1) return; if(!moved){ push(); moved=true; }
+      const r=v=>Math.round(v*2)/2; if(hd){ e.l=Math.max(1,r(o0.l+dx)); e.h=Math.max(1,r(o0.h+dy)); } else { e.x=r(o0.x+dx); e.y=r(o0.y+dy); } draw(); };
+    const up=()=>{ removeEventListener('mousemove',mv); removeEventListener('mouseup',up); };
+    addEventListener('mousemove',mv); addEventListener('mouseup',up); draw(); ev.preventDefault(); });
+  ov.tabIndex=0; ov.addEventListener('keydown',ev=>{ if(ev.target.closest('input,textarea,select')) return; const e=sel!=null?pg.elements[sel]:null;
+    if((ev.metaKey||ev.ctrlKey)&&ev.key==='z'&&undo.length){ pg=JSON.parse(undo.pop()); sel=null; draw(); ev.preventDefault(); return; }
+    if(!e||locked) return; const d=ev.shiftKey?10:1;
+    const mv={ArrowLeft:[-d,0],ArrowRight:[d,0],ArrowUp:[0,-d],ArrowDown:[0,d]}[ev.key];
+    if(mv){ push(); e.x+=mv[0]; e.y+=mv[1]; draw(); ev.preventDefault(); }
+    if(ev.key==='Backspace'||ev.key==='Delete'){ push(); pg.elements.splice(sel,1); sel=null; draw(); ev.preventDefault(); } });
+  const zoomSel=h('select',{class:'inp',style:{width:'90px'}},...[.75,1,1.25,1.5,2].map(z=>h('option',{value:z,selected:z===k||null},Math.round(z*100)+' %'))); zoomSel.onchange=()=>{ k=+zoomSel.value; draw(); };
+  const close=async()=>{ if(dirty&&!locked&&!await confirmDlg('Voulez-vous fermer sans enregistrer les modifications ?','Fermer')) return; ov.remove(); };
+  const tools=h('div',{class:'ph2',style:{gap:'6px'}},...(locked?[h('span',{style:{color:'#9a5b00'}},'Groupe « DELTA Originaux » : lecture seule — créez un groupe pour modifier.')]:[
+    ibtn({label:'T  Texte',fn:()=>add('texte')}),ibtn({label:'⟦ ⟧ Champ',fn:()=>add('champ')}),ibtn({label:'▦ Tableau',fn:()=>add('tableau')}),ibtn({label:'― Trait',fn:()=>add('traitH')}),ibtn({label:'| Trait',fn:()=>add('traitV')}),
+    ibtn({label:'▭ Rectangle',fn:()=>add('rectangle')}),ibtn({label:'🖼 Image',fn:()=>add('image')}),ibtn({label:'↶ Annuler',t:'Cmd-Z',fn:()=>{ if(undo.length){ pg=JSON.parse(undo.pop()); sel=null; draw(); } }})]),
+    h('div',{style:{flex:1}}),'Zoom ',zoomSel);
+  const ft=h('div',{class:'ft'},h('button',{class:'btn',onclick:close},'Fermer'),...(locked?[]:[h('button',{class:'btn pri',onclick:async()=>{ await onSave(pg); dirty=false; }},'Enregistrer')]));
+  win.append(h('div',{class:'tt'},title),tools,h('div',{style:{display:'flex',flex:1,minHeight:0}},canvasWrap,props),ft); ov.append(win); document.body.append(ov); ov.focus(); draw();
+}
+
+/* ═══ Impression par modèles : remplit un formulaire DELTA avec les données et fait couler le tableau ═══ */
+function tplDefaultGroup(cat){ const s=DS.all('setting').find(x=>x.SETTINGNAME==='ds.tplGroup.'+(cat||'projectTemplates'));
+  if(s&&s.SETTINGVALUE) return s.SETTINGVALUE; const gs=DS.all('modelegroupe').filter(g=>g.categorie===(cat||'projectTemplates')).map(g=>g.groupe);
+  return gs.includes('Substances')?'Substances':gs.includes('Standard')?'Standard':'Default'; }
+async function tplSetDefaultGroup(cat,grp){ const s=DS.all('setting').find(x=>x.SETTINGNAME==='ds.tplGroup.'+cat)||{ID:null,SETTINGTYPE:0,SETTINGNAME:'ds.tplGroup.'+cat};
+  await DS.save('setting',{...s,SETTINGVALUE:grp}); toast('Groupe par défaut : '+grp); }
+/* modèle à utiliser : groupe de l'affaire (TEMPLATEGROUPNAME), sinon groupe par défaut, puis Standard, puis DELTA Originaux */
+function tplFind(cat,type,project){ const want=[project&&project.TEMPLATEGROUPNAME,tplDefaultGroup(cat),'Standard','Default'].filter(Boolean);
+  for(const g of want){ const ms=DS.all('modele').filter(m=>m.categorie===cat&&m.groupe===g&&m.type===type&&m.langues.fr);
+    if(ms.length) return ms.find(m=>m.nom==='project1')||ms.sort((a,b)=>cmp(a.nom,b.nom))[0]; }
+  return null; }
+const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const dLong=iso=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||''); return m?`${+m[3]} ${MOIS_L[+m[2]-1]} ${m[1]}`:''; };
+/* intervenant d'un rôle : entité (abréviation / adresse) ou responsable */
+function tplMember(p,role,what){ if(!p) return ''; const m=DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>x.TEAMROLECODE===role&&!x.ISHIDDEN).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER))[0]; if(!m) return '';
+  const c=DS.get('contact',m.CONTACT_ID), r=DS.get('contact',m.RESPCONTACT_ID);
+  if(what==='Contact') return adrLines(c).join('\n'); if(what==='Responsible') return r?contactName(r):''; return (c&&c.SHORTLABEL)||contactName(c); }
+const TPL_ROLE={projectAddressBuilder:8,projectArchitect:1,projectConstructionManager:2,projectProjectManager:4,projectContractor:31,constructionPlanners:26,projectAddressBuilderConsultantStandby:50};
+function tplFieldValue(e,ctx,pn,pt){
+  const f=e.champ||'', p=ctx.project, fm=e.format||['','',''], wrap=v=>v==null||v===''?'':(fm[0]||'')+v+(fm[2]||'');
+  if(ctx.fields&&f in ctx.fields) return wrap(ctx.fields[f]);
+  if(f==='pageNumber') return (fm[0]||'')+pn+(fm[1]!=null&&fm[1]!==''?fm[1]+pt:'')+(fm[2]||'');
+  if(f==='date') return wrap(dLong(ctx.date||today()));
+  if(f==='printDate') return wrap(dfr(today()));
+  if(f==='documentTitle') return wrap(ctx.title||'');
+  if(f==='documentSubject') return wrap(ctx.subject||'');
+  if(f==='user') return wrap(staffName(ME.staff)||(ME.u||{}).NAME||'');
+  if(f==='projectNumber') return wrap(p&&p.NUMBER);
+  if(f==='projectTitle') return wrap(p&&p.TITLE);
+  if(f==='projectNumberAndTitle') return wrap(projLabel(p));
+  if(f==='projectDescription') return wrap(p&&p.DESCRIPTION);
+  if(f==='projectCurrency') return wrap((p&&p.CURRENCY)||'CHF');
+  if(f==='projectAddress1'||f==='projectAddress2'){ const c=p&&DS.get('contact',f==='projectAddress1'?p.CONTACT1_ID:p.CONTACT2_ID); return wrap(adrLines(c).join('\n')); }
+  if(f==='projectBkpNumber') return wrap(ctx.cfc||'');
+  if(f==='amountTotal') return wrap(ctx.total!=null?num(ctx.total):'');
+  if(f==='amountTotalExcludedVat') return wrap(ctx.totalHT!=null?num(ctx.totalHT):'');
+  if(f==='amountVat') return wrap(ctx.totalTVA!=null?num(ctx.totalTVA):'');
+  if(f==='reportFilter') return wrap(ctx.filtre||'');
+  if(f==='timespace'||f==='timePeriod'||f==='expensesPeriod') return wrap(ctx.periode||'');
+  if(/^customText(\d)$/.test(f)) return wrap((ctx.textes||[])[+f.slice(-1)-1]||'');
+  const rm=/^(projectAddressBuilder|projectArchitect|projectConstructionManager|projectProjectManager|projectContractor|constructionPlanners|projectAddressBuilderConsultantStandby)(Contact|Responsible)?$/.exec(f);
+  if(rm){ if(rm[1]==='projectContractor'&&ctx.entreprise){ const c=DS.get('contact',ctx.entreprise); return wrap(rm[2]==='Contact'?adrLines(c).join('\n'):(c&&c.SHORTLABEL)||contactName(c)||ctx.entrepriseNom||''); }
+    return wrap(tplMember(p,TPL_ROLE[rm[1]],rm[2]||'')); }
+  return '';   // champ non alimenté : laissé vide (comme DELTA quand la donnée manque)
+}
+/* Rendu des lignes d'un tableau dans la zone du TableField */
+function tplTableHTML(e,k,cols,rows,head){
+  const fs=(e.taille||9)*k, rh=(e.hauteurLigne||((e.taille||9)*1.35))*k, W=e.l*k, tw=cols.reduce((a,c)=>a+(c.w||1),0);
+  const cell=(c,v,st)=>`<td style="box-sizing:border-box;width:${(c.w||1)/tw*W}px;text-align:${c.r?'right':c.c?'center':'left'};padding:0 ${2*k}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${st||''}">${v==null?'':esc(v)}</td>`;
+  const trs=head?`<tr style="height:${rh}px">${cols.map(c=>cell(c,c.t,'font-weight:600')).join('')}</tr>`
+    :rows.map((r,i)=>`<tr style="height:${rh}px;${e.rayures&&i%2?'background:'+(e.couleurRayure||'#eaeaea')+';':''}${r._bold?'font-weight:700;':''}${r._italic?'font-style:italic;':''}${r._color?'color:'+r._color+';':''}${r._line?'border-top:'+.5*k+'px solid #000;':''}">${cols.map((c,j)=>cell(c,r[j])).join('')}</tr>`).join('');
+  return `<table style="border-collapse:collapse;table-layout:fixed;width:${W}px;font-family:${tplFont(e.police)};font-size:${fs}px;line-height:1.1">${trs}</table>`;
+}
+/* Document complet : {cat,type,project,title,ctx,cols:[{t,w,r}],rows:[[...]], fallback:()=>void} */
+function tplPrint(o){
+  const md=tplFind(o.cat||'projectTemplates',o.type,o.project);
+  if(!md){ if(o.fallback) return o.fallback(); toast('Aucun modèle « '+o.type+' » disponible.',true); return; }
+  const P=md.langues.fr.pages, p1=P.page1||P.pageN||Object.values(P)[0], pN=P.pageN||p1, ctx={...(o.ctx||{}),project:o.project,title:o.title};
+  const body=pg=>{ const ts=(pg.elements||[]).filter(e=>e.t==='tableau'); return ts.filter(e=>!/TableHeader$/.test(e.champ||'')).sort((a,b)=>b.h-a.h)[0]; };
+  const cap=pg=>{ const b=body(pg); return b?Math.max(1,Math.floor(b.h/((b.hauteurLigne||((b.taille||9)*1.35))))):Infinity; };
+  /* retour à la ligne : un texte trop long pour sa colonne est réparti sur plusieurs lignes du tableau */
+  const b1=body(p1), tw=(o.cols||[]).reduce((a,c)=>a+(c.w||1),0)||1, fsz=(b1&&b1.taille)||9;
+  const cap1=(o.cols||[]).map(c=>Math.max(4,Math.floor(((b1?b1.l:500)*(c.w||1)/tw-4)/(fsz*.5))));
+  const split=(t,n)=>{ const out=[]; String(t).split('\n').forEach(par=>{ let line=''; par.split(/(\s+)/).forEach(w=>{ if((line+w).length>n&&line.trim()){ out.push(line.trimEnd()); line=w.trimStart(); } else line+=w; }); out.push(line); }); return out; };
+  const rows=[]; (o.rows||[]).forEach(r=>{ const parts=r.map((v,j)=>o.cols[j]&&!o.cols[j].r&&v!=null&&String(v).length>cap1[j]?split(v,cap1[j]):[v]);
+    const n=Math.max(...parts.map(x=>x.length)); for(let q=0;q<n;q++){ const row=parts.map(x=>x[q]??''); ['_bold','_italic','_color'].forEach(k=>{ if(r[k]) row[k]=r[k]; }); if(q===0&&r._line) row._line=1; rows.push(row); } });
+  const pages=[]; let i=0;
+  do{ const pg=pages.length?pN:p1, c=cap(pg); pages.push({pg,rows:rows.slice(i,i+c)}); i+=c; } while(i<rows.length);
+  const k=96/72, N=pages.length;
+  const out=pages.map((x,n)=>{ const b=body(x.pg), hasH=(x.pg.elements||[]).some(z=>/TableHeader$/.test(z.champ||''));
+    return tplPageHTML(x.pg,k,{noScale:true,vals:e=>tplFieldValue(e,ctx,n+1,N),table:(e,kk)=>{
+      if(/TableHeader$/.test(e.champ||'')) return o.noHeader?'':tplTableHTML(e,kk,o.cols,[],true);
+      if(e===b) return (hasH||o.noHeader?'':tplTableHTML(e,kk,o.cols,[],true))+tplTableHTML(e,kk,o.cols,x.rows,false);
+      const t2=(o.tables||{})[e.champ]; return t2&&n===0?tplTableHTML(e,kk,t2.cols,t2.rows,false):''; }}); }).join('');
+  const w=open('','_blank'); if(!w) return;
+  w.document.write(`<html><head><meta charset="utf-8"><title>${esc(o.title||tplLabel(md))}</title><style>@page{size:${p1.orientation==='paysage'?'A4 landscape':'A4'};margin:0}body{margin:0;background:#888}.tplpage{margin:0 auto 12px;box-shadow:none!important;page-break-after:always}@media print{body{background:#fff}.tplpage{margin:0}}</style></head><body>${out}</body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),400);
+}
+
+
+/* ═══ Impressions branchées sur les modèles du bureau (secours : mise en page HTML simple) ═══ */
+const tplReady=()=>TPL_TABLES.every(t=>DS.loaded.has(t));
+function tplOr(fn,fallback){ if(!tplReady()){ toast('Modèles en cours de chargement : impression simple.'); tplNeed(); return fallback(); } return fn(); }
+function printAdr(rows,title,project){ tplOr(()=>tplPrint({cat:project?'projectTemplates':'addressTemplates',type:project?'projectAddressList':'addressList',project,title,
+  cols:[{t:'CFC',w:9},{t:'Adresse',w:42},{t:'Téléphone',w:15},{t:'Tél. mobile',w:15},{t:'Courriel',w:24}],
+  rows:rows.map(c=>[c.BKP||'',adrLines(c).join(', '),phone(c,1),phone(c,2),c.EMAIL1||'']),fallback:()=>printAdrHTML(rows,title)}),()=>printAdrHTML(rows,title)); }
+function printProjects(rows){ tplOr(()=>tplPrint({type:'projectList',title:'Liste des affaires',cols:[{t:'Numéro',w:10},{t:'Affaire',w:40},{t:'Maître d’ouvrage',w:26},{t:'Début',w:9},{t:'Fin',w:9},{t:'Statut',w:10}],
+  rows:rows.map(p=>[p.NUMBER,p.TITLE,projMO(p),dfr(p.PROJECTSTARTDATE),dfr(p.PROJECTENDDATE),projState(p)]),fallback:()=>printProjectsHTML(rows)}),()=>printProjectsHTML(rows)); }
+function printMembers(p,list){ tplOr(()=>tplPrint({type:'projectMember',project:p,title:'Intervenants',cols:[{t:'Rôle',w:18},{t:'Entité',w:30},{t:'Responsable',w:20},{t:'Téléphone',w:14},{t:'Courriel',w:22}],
+  rows:list.map(m=>{ const c=DS.get('contact',m.CONTACT_ID), r=DS.get('contact',m.RESPCONTACT_ID)||c; return [teamRole(m.TEAMROLECODE),[contactName(c),locality(c)].filter(Boolean).join(', '),r&&r!==c?contactName(r):'',phone(r,1)||phone(r,2),(r||{}).EMAIL1||'']; })}),
+  ()=>printAdrHTML(list.map(m=>DS.get('contact',m.RESPCONTACT_ID)||DS.get('contact',m.CONTACT_ID)).filter(Boolean),'Intervenants — '+projLabel(p))); }
+function dvPrint(p,doc,E,kind){
+  const {M,T}=dvCompute(E), rows0=(E.positions||[]).map(x=>M.get(String(x.cfc))).filter(n=>n.ttc||n.opt||n.hon).sort((a,b)=>cfcCmp(a.p.cfc,b.p.cfc)), lv=n=>cfcLevel(n.p.cfc), t=n=>[n.p.texte,n.p.texte2].filter(Boolean).join(' ');
+  const title=kind==='hon'?'Calcul des honoraires':((E.reglages||{}).titres||{}).document||'Devis général';
+  const fb=()=>dvPrintHTML(p,doc,E,kind);
+  if(kind==='hon') return tplOr(()=>tplPrint({type:'projectCostcontrolFee',project:p,title,ctx:{total:T.hon,fields:{projectFeeConstructionSum:num(T.ht),constructionCostEstimateAccuracy:(E.reglages||{}).marge||''}},
+    cols:[{t:'CFC',w:10},{t:'Texte',w:44},{t:'Montant',w:17,r:1},{t:'[%]',w:9,r:1},{t:'Montant soumis',w:20,r:1}],
+    rows:[...rows0.filter(n=>n.hon||lv(n)===1).map(n=>Object.assign([n.p.cfc,t(n),num(n.ht),n.leaf&&dvHonPct(n.p)?num(dvHonPct(n.p),1):'',num(n.hon)],{_bold:lv(n)===1})),Object.assign(['','Montant soumis','','',num(T.hon)],{_bold:1,_line:1})],fallback:fb}),fb);
+  const info=(E.remarques||[]).flatMap(r=>[Object.assign(['',r.nom||'',''],{_bold:1}),...String(r.texte||'').split('\n').map(l=>Object.assign(['',l,''],{_italic:1}))]);
+  tplOr(()=>tplPrint({type:'projectCostcontrolEstimate',project:p,title,ctx:{date:doc.CHANGEDDATE,total:T.ttc,totalHT:T.ht,totalTVA:T.tva},cols:[{t:'N° CFC',w:12},{t:'Désignation',w:66},{t:'Montant TTC',w:22,r:1}],
+    rows:[...(info.length?[...info,['','','']]:[]),...rows0.map(n=>Object.assign([n.p.cfc,t(n),num(n.ttc)],{_bold:lv(n)<=2})),
+      Object.assign(['','Total hors TVA',num(T.ht)],{_line:1}),['','TVA',num(T.tva)],Object.assign(['','Total TTC',num(T.ttc)],{_bold:1})],fallback:fb}),fb);
+}
+function ccPrint(p,doc,G){ const fb=()=>ccPrintHTML(p,doc,G); const txt=tableText(G,'\t').split('\n').map(l=>l.split('\t'));
+  tplOr(()=>tplPrint({type:'projectCostcontrolOverview',project:p,title:'Contrôle des coûts',ctx:{date:doc.CHANGEDDATE},cols:txt[0].map((t,i)=>({t,w:i===1?22:i===2?18:i===0?6:10,r:i>2})),
+    rows:txt.slice(1).map(r=>Object.assign(r,{_bold:/^\d{1,2}$/.test(r[0])||r[1]==='Total général'})),fallback:fb}),fb); }
+function ccPrintOrder(C,p,o){ const fb=()=>ccPrintOrderHTML(C,p,o); const ps=C.paiements.filter(x=>(o.paiementIds||[]).includes(x.id)), mo=(C.comptesMO||[])[0]||{}, b=o.banque||{};
+  const tot=ps.reduce((a,x)=>a+docNet(x),0), tx=(C.parametres||{}).texteCompte||'';
+  tplOr(()=>tplPrint({type:'projectCostcontrolRemittanceOrder',project:p,title:'Ordre de paiement',ctx:{date:o.date,total:tot,fields:{constructionNumberOfRemittance:o.numero,constructionValutaDate:dLong(o.dateValeur),constructionNumberOfOrders:String(ps.length),
+      constructionBankAddrBuildingOwner:[b.nom||mo.banque,b.rue||mo.rue,[b.npa||mo.npa,b.lieu||mo.lieu].filter(Boolean).join(' ')].filter(Boolean).join('\n'),constructionBankAccountBuildingOwner:b.iban||mo.iban||b.compte||mo.compte||'',constructionBankContactBuildingOwner:b.contact||mo.contact||'',
+      constructionBankNameBuildingOwner:b.nom||mo.banque||'',constructionIbanBuildingOwner:b.iban||mo.iban||''}},
+    cols:[{t:'N°',w:9},{t:'Bénéficiaire',w:38},{t:'Compte',w:27},{t:'N° pmt',w:8,r:1},{t:'Montant',w:18,r:1}],
+    rows:ps.map(x=>{ const bb=x.banque||{}; return [(x.lot||{}).numero||'',ccEntName(C,x.contactId),bb.iban||bb.compte||bb.texteCompte||tx,x.numero||'',num(docNet(x))]; }),fallback:fb}),fb); }
+function ccPrintBon(C,p,x){ if(!x) return; const fb=()=>ccPrintBonHTML(C,p,x); const r=ccCond(x.lignes||[],x.conditions), ctr=C.contrats.find(c=>c.id===x.contratId), bb=x.banque||{}, mo=(C.comptesMO||[])[0]||{};
+  const ord=(C.ordresPaiement||[]).find(o=>(o.paiementIds||[]).includes(x.id));
+  tplOr(()=>tplPrint({type:'projectCostcontrolPaymentOrder',project:p,title:'Bon de paiement',noHeader:true,ctx:{date:x.datePaiement,total:docNet(x),cfc:(x.lot||{}).numero,entreprise:x.contactId,entrepriseNom:ccEntName(C,x.contactId),
+      fields:{projectPaymentNumber:x.numero,projectPaymentDate:dLong(x.datePaiement),projectInvoiceDate:dLong(x.dateFacture),constructionNumberOfRemittance:ord?ord.numero:'',
+        constructionCostcontrolDescriptor:[(x.lot||{}).numero,(x.lot||{}).texte].filter(Boolean).join(' ')+(ctr?' — contrat n° '+ctr.numero+' du '+dfr(ctr.date):''),
+        constructionBankNameEntrepreneur:bb.nom||'',constructionIbanEntrepreneur:bb.iban||bb.compte||bb.texteCompte||'',constructionBankNameBuildingOwner:mo.banque||'',constructionIbanBuildingOwner:mo.iban||''}},
+    cols:[{t:'',w:62},{t:'',w:16,r:1},{t:'',w:22,r:1}],
+    rows:[[ctr?'Cumul des acomptes bruts':'Montant brut','',num(docBrut(x))],...(x.conditions||[]).filter(c=>c.appliquee!==false).sort((a,b)=>a.niveau-b.niveau).map(c=>[c.libelle||(COND[c.kind]||[])[2]||'',condNat(c.kind)==='pct'?num(c.valeur,2)+' %':'',num(r.par[c.niveau])]),
+      Object.assign(['Montant à payer','',num(docNet(x))],{_bold:1,_line:1})],fallback:fb}),fb); }
+function ctlPrint(p,t,o){ const fb=()=>ctlPrintHTML(p,t,o); const txt=tableText(o,'\t').split('\n').map(l=>l.split('\t'));
+  tplOr(()=>tplPrint({type:t==='timelog'?'projectTime':'projectCost',project:p,title:t==='timelog'?'Rapport d’heures':'Rapport de frais',cols:txt[0].map(x=>({t:x,w:10})),rows:txt.slice(1),fallback:fb}),fb); }
+
+/* ── Images (logos) et arrière-plans ── */
+VIEWS['tpl-images']={
+  tools(){ return [[{i:'plus',t:'Ajouter une image (PNG / JPEG)',fn:()=>{ const f=h('input',{type:'file',accept:'image/png,image/jpeg'}); f.onchange=()=>{ const file=f.files[0]; if(!file) return;
+      if(!/png|jpe?g/i.test(file.type)){ toast('Ce format de fichier d’image n’est pas compatible.',true); return; }
+      if(DS.get('image',file.name)){ toast('Ce nom est déjà utilisé.',true); return; }
+      const r=new FileReader(); r.onload=()=>DS.commit([{t:'image',id:file.name,val:{nom:file.name,dossier:'Graphics',data:r.result}}]).then(()=>go('tpl-images')); r.readAsDataURL(file); }; f.click(); }},
+    {i:'minus',t:'Supprimer l’image',fn:async()=>{ const id=TP.im&&TP.im.sel; if(id&&await confirmDlg('Supprimer l’image « '+id+' » ?','Supprimer')) DS.del('image',id); }}]]; },
+  render(m){ if(TPL_TABLES.some(t=>!DS.loaded.has(t))){ m.append(h('div',{class:'ph'},'Chargement des modèles…')); tplNeed().then(()=>{ if(VIEW&&VIEW.v===this) go(VIEW.id); }); return; }
+    const cols=h('div',{class:'cols'}); m.append(cols); const A=col(320), B=h('div',{class:'col fill',style:{background:'#e9e9e9',alignItems:'center',justifyContent:'center'}}); cols.append(A.el,B);
+    TP.im=TP.im||{}; grid(A.pane,Object.assign(TP.im,{key:x=>x.nom,cols:[{k:'nom',t:'Fichier'}],rows:DS.all('image'),sort:['nom',1],onSel:x=>{ B.innerHTML=''; B.append(h('img',{src:x.data,style:{maxWidth:'80%',maxHeight:'80%',background:'#fff',padding:'10px',boxShadow:'0 1px 6px rgba(0,0,0,.2)'}})); }}));
+    const cur=DS.get('image',TP.im.sel); if(cur) B.append(h('img',{src:cur.data,style:{maxWidth:'80%',maxHeight:'80%',background:'#fff',padding:'10px'}})); },
+  refresh(ts){ if(hit(ts,'image')) go('tpl-images'); } };
+VIEWS['tpl-backgrounds']={
+  tools(){ return [[{i:'dup',t:'Dupliquer l’arrière-plan',fn:()=>{ const id=TP.bg&&TP.bg.sel; const a=DS.get('arriereplan',id); if(!a) return; const n=h('input',{class:'inp',value:id+' (copie)'});
+      dialog({title:'Dupliquer l’arrière-plan',body:formRows([['Nom',n]],420),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(DS.get('arriereplan',n.value.trim())){ toast('Ce nom est déjà utilisé.',true); return false; } return DS.commit([{t:'arriereplan',id:n.value.trim(),val:JSON.parse(JSON.stringify(a))}]); }}]}); }},
+    {i:'edit',t:'Editer l’arrière-plan',fn:()=>{ const id=TP.bg&&TP.bg.sel; const a=DS.get('arriereplan',id); if(a) tplEditor(JSON.parse(JSON.stringify(a)),'Arrière-plan - '+id,false,pg=>DS.commit([{t:'arriereplan',id,val:pg}]).then(()=>toast('Arrière-plan enregistré.'))); }},
+    {i:'minus',t:'Supprimer',fn:async()=>{ const id=TP.bg&&TP.bg.sel; if(id&&await confirmDlg('Supprimer l’arrière-plan « '+id+' » ?','Supprimer')) DS.del('arriereplan',id); }}]]; },
+  render(m){ if(TPL_TABLES.some(t=>!DS.loaded.has(t))){ m.append(h('div',{class:'ph'},'Chargement des modèles…')); tplNeed().then(()=>{ if(VIEW&&VIEW.v===this) go(VIEW.id); }); return; }
+    const cols=h('div',{class:'cols'}); m.append(cols); const A=col(340), B=h('div',{class:'col fill',style:{background:'#e9e9e9'}}), pv=h('div',{class:'pane',style:{padding:'16px',display:'flex',justifyContent:'center'}}); B.append(pv); cols.append(A.el,B);
+    TP.bg=TP.bg||{}; const ids=Object.keys(DS.T.arriereplan||{}).sort(cmp);
+    const show=id=>{ pv.innerHTML=''; const a=DS.get('arriereplan',id); if(!a) return; pv.append(h('div',{html:tplPageHTML(a,Math.min(1,(pv.clientWidth-40)/(a.largeur||595))||.9,{})})); pv.append(h('div',{style:{position:'absolute',margin:'4px',color:'#555'}},`${Math.round(a.largeur/72*25.4)/10} cm x ${Math.round(a.hauteur/72*25.4)/10} cm`)); };
+    grid(A.pane,Object.assign(TP.bg,{key:x=>x,cols:[{k:'n',t:'Arrière-plan',f:x=>esc(x)},{k:'e',t:'Eléments',w:70,cls:'r',f:x=>(DS.get('arriereplan',x).elements||[]).length||''}],rows:ids,sort:null,onSel:show}));
+    if(TP.bg.sel) setTimeout(()=>show(TP.bg.sel),0); },
+  refresh(ts){ if(hit(ts,'arriereplan')&&!$('.ov')) go('tpl-backgrounds'); } };
+/* Modèles de documents (.dpdoc) : consultation (en-têtes / pieds de page, sections) */
+VIEWS['tpl-documents']={
+  render(m){ if(TPL_TABLES.some(t=>!DS.loaded.has(t))){ m.append(h('div',{class:'ph'},'Chargement des modèles…')); tplNeed().then(()=>{ if(VIEW&&VIEW.v===this) go(VIEW.id); }); return; }
+    const cols=h('div',{class:'cols'}); m.append(cols); const A=col(420), B=h('div',{class:'col fill'}), pv=h('div',{class:'pane',style:{padding:'14px'}}); B.append(pv); cols.append(A.el,B);
+    TP.dd=TP.dd||{}; const rows=Object.entries(DS.T.modeledocument||{}).map(([id,v])=>({...v,id})).filter(v=>v.langue==='fr'||!v.langue);
+    grid(A.pane,Object.assign(TP.dd,{key:x=>x.id,cols:[{k:'description',t:'Modèle',f:x=>esc(x.description||x.type)},{k:'type',t:'Type',w:170},{k:'jeu',t:'Jeu',w:40,f:x=>({0:'Général',1:'Affaires'}[x.jeu]||x.jeu)}],rows,sort:['description',1],onSel:x=>show(x)}));
+    const show=x=>{ pv.innerHTML=''; const r=x.report||{}; const pt=(r.pageTemplates||[])[0]||{}; const P=pt.page||{};
+      const k=2.2, cells=(P.pageCells||[]).map(c=>{ const t=((c.text||{}).ts||[]).map(s=>s.text||('⟦'+String(s.f||'').split('|').pop()+'⟧')).join(' ');
+        return `<div style="position:absolute;left:${c.x*k}px;top:${c.y*k}px;width:${c.w*k}px;height:${c.h*k}px;font:${8}px sans-serif;border-${c.rs&&c.rs.b==='t'?'top':'bottom'}:.5px solid #999;text-align:${{left:'left',center:'center',right:'right'}[c.ha]||'left'};color:#1f5fbf;overflow:hidden">${c.image?'🖼 '+esc(c.image):esc(t)}</div>`; }).join('');
+      pv.append(h('div',{class:'kv',style:{marginBottom:'10px'}},h('b',{},'Titre'),h('span',{},r.reportTitle||''),h('b',{},'Type'),h('span',{},r.reportType||x.type),h('b',{},'Format'),h('span',{},(pt.nameFr||pt.id||'')+` — ${P.w||''} × ${P.h||''} mm`),
+        h('b',{},'Styles'),h('span',{},[r.rowStyleSet,r.textStyleSet].filter(Boolean).join(' / ')),h('b',{},'Sections'),h('span',{},(r.sections||[]).length+' section(s)'),h('b',{},'Etat'),h('span',{},(x.verrouille?'verrouillé':'modifiable')+(x.masque?' — masqué':''))),
+        h('div',{html:`<div style="position:relative;width:${(P.w||210)*k}px;height:${(P.h||297)*k}px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25)"><div style="position:absolute;left:${(P.l||20)*k}px;top:${(P.t||20)*k}px;right:${(P.r||15)*k}px;bottom:${(P.b||20)*k}px;border:1px dashed #ccc"></div>${cells}</div>`})); };
+    const cur=rows.find(r=>r.id===TP.dd.sel); if(cur) show(cur); } };
+
 /* ═══ NOTES DE FRAIS · Saisie (p.31) — frais du collaborateur, par mois ═══ */
 const NF={g:{},staff:null,y:new Date().getFullYear(),m:new Date().getMonth()};
 VIEWS['frais']={
@@ -2492,7 +2840,7 @@ VIEWS['frais']={
   },
   refresh(ts){ if(hit(ts,'projectcost')) this.draw(); }
 };
-function printProjects(rows){ const w=open('','_blank'); if(!w) return;
+function printProjectsHTML(rows){ const w=open('','_blank'); if(!w) return;
   w.document.write(`<html><head><meta charset="utf-8"><title>Liste des affaires</title><style>body{font:10pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:3px 6px;border-bottom:.5pt solid #ccc}th{font-weight:600}tr:nth-child(even) td{background:#f3f6fb}</style></head><body><h1>Liste des affaires — ${dfr(today())}</h1><table><tr><th>Numéro</th><th>Affaire</th><th>Maître d’ouvrage</th><th>Début</th><th>Fin</th><th>Statut</th></tr>`+
     rows.map(p=>`<tr><td>${esc(p.NUMBER)}</td><td>${esc(p.TITLE)}</td><td>${esc(projMO(p))}</td><td>${dfr(p.PROJECTSTARTDATE)}</td><td>${dfr(p.PROJECTENDDATE)}</td><td>${projState(p)}</td></tr>`).join('')+'</table></body></html>');
   w.document.close(); setTimeout(()=>w.print(),300); }
@@ -2714,6 +3062,7 @@ async function hsDelete(){ const r=DS.get('timelog',HS.sel); if(!r) return;
   go(last);
   $('#boot').remove();
   setInterval(()=>DS.poll(),4000);
+  setTimeout(()=>tplNeed().catch(()=>{}),2500);   // modèles d'impression chargés en arrière-plan
 })();
 </script>
 </body>

@@ -4,6 +4,7 @@
 # Produit :  <sortie>/schema.txt + tables/APP.*.csv          (base Derby)
 #            <sortie>/documents/costestimate.json             (devis, via convertir_devis.py)
 #            <sortie>/documents/costcontrol.json              (contrôles des coûts + planifications, via convertir_couts.py)
+#            <sortie>/documents/modeles.json                  (modèles, arrière-plans, logos, via convertir_modeles.py)
 # Utilise le Java embarqué dans /Applications/DELTAproject.app (aucune installation requise).
 # ⚠ La sortie contient des données clients : la placer hors du dépôt git (ou dans extraction_deltaproject/, ignoré).
 set -e
@@ -39,5 +40,6 @@ python3 $HERE/convertir_devis.py $TMP/raw_devis $OUT/documents/costestimate.json
 if [ -f $HERE/convertir_couts.py ]; then
   python3 $HERE/convertir_couts.py $TMP/raw_cc $OUT/documents/costcontrol.json --tables $OUT --racine "$FILES"
 fi
+python3 $HERE/convertir_modeles.py "${FILES:h}" $OUT/documents/modeles.json --tables $OUT
 rm -rf $TMP
 echo "Extraction terminée : $OUT"

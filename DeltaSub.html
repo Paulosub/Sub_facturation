@@ -2118,7 +2118,7 @@ function mgChart(el,o){ const W=Math.max(520,el.clientWidth||760), H=250, pad=52
   const step=Math.ceil(xs.length/24); xs.forEach((x,i)=>{ if(i%step===0) svg+=`<text x="${X(i)}" y="${H-4}" text-anchor="middle" fill="#555">${esc(x)}</text>`; });
   if(bars){ xs.forEach((_,i)=>{ let acc=0; S.forEach((s,j)=>{ const v=+s.vals[i]||0; if(stack){ if(v<=0) return; svg+=`<rect x="${X(i)-bw/2}" y="${Y(acc+v)}" width="${bw}" height="${Y(acc)-Y(acc+v)}" fill="${MG_COL[j%12]}"><title>${esc(s.name)} ${esc(xs[i])} : ${num(rJ(v))}</title></rect>`; acc+=v; }
       else { const w2=bw/S.length; svg+=`<rect x="${X(i)-bw/2+j*w2}" y="${Math.min(Y(v),Y(0))}" width="${Math.max(1,w2-1)}" height="${Math.abs(Y(0)-Y(v))}" fill="${MG_COL[j%12]}"><title>${esc(s.name)} ${esc(xs[i])} : ${num(rJ(v))}</title></rect>`; } }); }); }
-  else S.forEach((s,j)=>{ svg+=`<polyline fill="none" stroke="${MG_COL[j%12]}" stroke-width="2" points="${xs.map((_,i)=>X(i)+','+Y(+s.vals[i]||0)).join(' ')}"/>`; });
+  else S.forEach((s,j)=>{ svg+=`<polyline fill="none" stroke="${MG_COL[j%12]}" stroke-width="2" points="${xs.map((_,i)=>i<s.vals.length?X(i)+','+Y(+s.vals[i]||0):'').filter(Boolean).join(' ')}"/>`; });   // série plus courte que l'axe : pas de point (ex. catégorie « Année »)
   svg+=`<text transform="rotate(-90)" x="${-(H/2)}" y="12" text-anchor="middle" fill="#555">${esc(o.yLabel||'Heures [h]')}</text><text x="${W/2}" y="${H+22}" text-anchor="middle" font-weight="700">${esc(o.title||'')}</text></svg>`;
   leg='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:2px">'+S.map((s,j)=>`<span><span style="display:inline-block;width:10px;height:10px;background:${MG_COL[j%12]};margin-right:4px"></span>${esc(s.name)}</span>`).join('')+'</div>';
   el.innerHTML=svg+leg; el._svg=svg; }
@@ -2402,9 +2402,11 @@ VIEWS['mg-genres']={
 };
 
 /* ── MANAGEMENT ▸ Reporting (TimeReportFrame, 5 catégories ; non licencié au bureau, conservé) ── */
-const MGR={y:{},sf:'actual',g:{},s2:{},s1:{},pl:{},pInt:true,pSt:2,N:5,ref:true,ch:{}};
-try{ const o=JSON.parse(localStorage.getItem('ds_mg_rep')||'{}'); ['N','ref'].forEach(k=>{ if(o[k]!=null) MGR[k]=o[k]; }); }catch(_){}
-const mgrKeep=()=>{ try{ localStorage.setItem('ds_mg_rep',JSON.stringify({N:MGR.N,ref:MGR.ref})); }catch(_){} };
+/* sf1 = filtre de la liste 1 (Collaborateurs-affaires, Comparaison années), sf2 = liste 2 (Chiffres-clés, Collaborateurs, Heures suppl.) : indépendants, comme
+   staffListKindFilter1/2 de TimeReportFrame. N et « Année de référence » ne sont pas mémorisés (storePreferences vide dans l'original : 5 et cochée).
+   Écarts volontaires (spec_10 §6.6) : n° 5 colonne « Année » des lignes « % » = ratio des totaux (l'original somme les 12 ratios) ; n° 15 un TYPECODE hors des
+   12 types est compté par seuil (NPE dans l'original) ; n° 17 message « Sélectionnez un collaborateur. » (tableau vide sans message dans l'original). */
+const MGR={y:{},sf1:'actual',sf2:'actual',g:{},s2:{},s1:{},pl:{},pInt:true,pSt:2,N:5,ref:true,ch:{}};
 const MGR_CATS=[['kf','Chiffres-clés'],['st','Collaborateurs'],['tb','Heures supplémentaires'],['yr','Collaborateurs-affaires'],['cmp','Comparaison années']];
 const MGR_TYPES=[0,1,50,51,52,53,54,55,90,91,92,93], MGR_CATL={fac:'Heures facturables',nf:'Heures non facturables',abs:'Heures d’absences'};
 const mgrTC=t=>t<50?'fac':t<90?'nf':'abs';
@@ -2414,12 +2416,12 @@ function rpYear(logs,act){ const z=()=>Array(12).fill(0), ty=new Map(MGR_TYPES.m
   return {ty,cat,hol,sub,grand}; }
 const mgY=a=>[...a,a.reduce((x,y)=>x+y,0)];
 const mgPct=(a,b)=>{ const A=mgY(a), B=mgY(b); return A.map((v,i)=>B[i]?v/B[i]*100:0); };
-function mgrStaffs(){ return DS.all('staff').filter(s=>MGR.sf==='all'||(MGR.sf==='actual'?s.ISACTIVE:!s.ISACTIVE)).sort(mgByName); }
-function mgrModel(cat){ const y=MGR.y[cat]??new Date().getFullYear(), act=new Map(DS.all('projectactivity').map(a=>[a.ID,a])), M={cols:[],rows:[],models:[],xs:MOIS_L.slice()};
+function mgrStaffs(sf){ return DS.all('staff').filter(s=>sf==='all'||(sf==='actual'?s.ISACTIVE:!s.ISACTIVE)).sort((a,b)=>(+a.SORTORDER||0)-(+b.SORTORDER||0)||mgByName(a,b)); }
+function mgrModel(cat){ const y=MGR.y[cat]??new Date().getFullYear(), act=new Map(DS.all('projectactivity').map(a=>[a.ID,a])), M={cols:[],rows:[],models:[],xs:[...MOIS_L,'Année']};
   const s2=DS.get('staff',MGR.s2.sel), s1=DS.get('staff',MGR.s1.sel), pj=DS.get('project',MGR.pl.sel);
   const MC=first=>[{t:first,w:260},...MOIS_L.map(t=>({t,r:1,w:78})),{t:first==='Collaborateur'?'Total':'Année',r:1,w:90,q:1}];
   const row=(l,a,o)=>({c:[l,...a],...(o||{})});
-  if(cat==='tb'){ M.cols=MC('Collaborateur'); M.person=s2?staffName(s2):''; if(!s2){ M.empty='Sélectionnez un collaborateur.'; return M; }
+  if(cat==='tb'){ M.cols=MC('Collaborateur'); M.xs=MOIS_L.slice(); M.person=s2?staffName(s2):''; if(!s2){ M.empty='Sélectionnez un collaborateur.'; return M; }
     const tt=mgTT(s2.ID,y), pv=mgArr(tt,'TARGETHOURS'), ef=Array(12).fill(0); DS.by('timelog','STAFF_ID',s2.ID).forEach(t=>{ if(t.TIMEYEAR===y) ef[t.TIMEMONTH]+=+t.TIMEPERIOD||0; });
     const so=ef.map((v,i)=>v-pv[i]), cu=[]; so.forEach((v,i)=>cu.push((cu[i-1]||0)+v)); const R=tt?+tt.TARGETTIMEREDUCTION||0:0;
     M.rows=[row('Heures prévues',mgY(pv)),row('Heures effectives',mgY(ef)),row('Solde des heures',mgY(so)),row('Solde des heures cumulées de l’année',[...cu,cu[11]],{b:1})];
@@ -2428,11 +2430,11 @@ function mgrModel(cat){ const y=MGR.y[cat]??new Date().getFullYear(), act=new Ma
     return M; }
   const logsOf=(sf,pf)=>DS.all('timelog').filter(t=>(!sf||t.STAFF_ID===sf.ID)&&(!pf||t.PROJECT_ID===pf.ID));
   if(cat==='cmp'){ const N=MGR.N, ys=[...Array(N)].map((_,i)=>y-i), all=logsOf(s1,pj), Y=ys.map(yy=>rpYear(all.filter(t=>t.TIMEYEAR===yy),act));
-    M.cols=[{t:'Type d’activité',w:280},...ys.flatMap((yy,i)=>[{t:String(yy),r:1,w:90,q:MGR.ref&&i===0},{t:'+/-',r:1,w:80,col:'sign'}])]; M.flex=ys.flatMap(yy=>[String(yy),'+/-']); M.xs=ys.map(String);
+    M.cols=[{t:'Type d’activité',w:280},...ys.flatMap((yy,i)=>[{t:String(yy),r:1,w:90,q:MGR.ref&&i===0},{t:'+/-',r:1,w:80}])]; M.flex=ys.flatMap(yy=>[String(yy),'+/-']); M.xs=ys.map(String);
     const tot=a=>a.reduce((x,z)=>x+z,0), vals=f=>Y.map(f), line=(l,v,o)=>{ const c=[l]; v.forEach((x,i)=>{ const r=(MGR.ref||i===0)?0:i-1; c.push(x,x-v[r]); }); return {c,...(o||{})}; };
     ['fac','nf','abs'].forEach(k=>{ MGR_TYPES.filter(t=>mgrTC(t)===k).forEach(t=>M.rows.push(line(ACT_T[t]||String(t),vals(o=>tot(o.ty.get(t)))))); M.rows.push(line(MGR_CATL[k],vals(o=>tot(o.cat[k])),{b:1,lv:1}),{c:[],sp:1});
       M.models.push({name:MGR_CATL[k],series:[...MGR_TYPES.filter(t=>mgrTC(t)===k).map(t=>({name:ACT_T[t]||String(t),vals:vals(o=>tot(o.ty.get(t)))})),{name:MGR_CATL[k],vals:vals(o=>tot(o.cat[k])),tot:1}]}); });
-    M.rows.push({c:[],sp:1}); ['fac','nf','abs'].forEach(k=>M.rows.push(line(MGR_CATL[k],vals(o=>tot(o.cat[k])))));
+    ['fac','nf','abs'].forEach(k=>M.rows.push(line(MGR_CATL[k],vals(o=>tot(o.cat[k])))));
     M.rows.push(line('Vacances',vals(o=>tot(o.hol))),line('Total général',vals(o=>tot(o.grand)),{b:1,lv:1}));
     M.models.push({name:'Total général',series:[...['fac','nf','abs'].map(k=>({name:MGR_CATL[k],vals:vals(o=>tot(o.cat[k]))})),{name:'Vacances',vals:vals(o=>tot(o.hol))},{name:'Total général',vals:vals(o=>tot(o.grand)),tot:1}]});
     M.person=s1?staffName(s1):''; M.project=pLbl(pj); return M; }
@@ -2452,21 +2454,22 @@ function mgrModel(cat){ const y=MGR.y[cat]??new Date().getFullYear(), act=new Ma
   M.models.push({name:'Total des heures',series:[{name:MGR_CATL.fac,vals:A.cat.fac},{name:MGR_CATL.nf,vals:A.cat.nf},{name:MGR_CATL.abs,vals:A.cat.abs},{name:'Heures de vacances',vals:A.hol},{name:'Total des heures',vals:A.grand,tot:1}]});
   const tt=cat==='st'&&s2?mgTT(s2.ID,y):null;
   if(tt){ const T=mgArr(tt,'TARGETHOURS'), O=mgArr(tt,'OVERTIME'), s1v=A.grand.map((g,i)=>g-T[i]), gY=mgY(A.grand), TY=mgY(T), OY=mgY(O);
-    M.rows.push({c:[],sp:1},row('Total des heures',gY),row('Heures prévues',TY,{b:1,lv:1}),row('Solde',gY.map((g,i)=>g-TY[i]),{b:1,lv:1}),row(' %',gY.map((g,i)=>TY[i]?g/TY[i]*100:0)));
-    M.models.push({name:'Solde',noBar:1,series:[{name:'Solde',vals:s1v}]});
+    M.rows.push({c:[],sp:1},row('Total des heures',gY),row('Heures prévues',TY),row('Solde',gY.map((g,i)=>g-TY[i]),{b:1,lv:1}),row(' %',gY.map((g,i)=>TY[i]?g/TY[i]*100:0)));
+    M.models.push({name:'Solde',noBar:1,series:[{name:'Total des heures',vals:A.grand},{name:'Heures prévues',vals:T},{name:'Solde',vals:s1v}]});
     if(O.some(v=>v>0)){ const s2v=gY.map((g,i)=>g-TY[i]-OY[i]); M.rows.push(row('Heures d’appoint',OY),row('Solde des heures à effectuer y.c. heures d’appoint',s2v,{b:1,lv:1}),row(' %',gY.map((g,i)=>TY[i]+OY[i]?g/(TY[i]+OY[i])*100:0)));
-      M.models.push({name:'Solde des heures à effectuer y.c. heures d’appoint',noBar:1,series:[{name:'Solde y.c. heures d’appoint',vals:s2v.slice(0,12)}]}); } }
+      M.models.push({name:'Solde des heures à effectuer y.c. heures d’appoint',noBar:1,series:[{name:'Heures d’appoint',vals:O},{name:'Solde des heures à effectuer y.c. heures d’appoint',vals:s2v.slice(0,12)}]}); } }
   return M; }
 const MGR_DOC={kf:'managementTimeReportKeyFigures',st:'managementTimeReportStaff',tb:'managementTimeReportTimeBalance',yr:'managementTimeReportYear',cmp:'managementTimeReportCompare'};
 function mgrPane(R,cat){ if(MGR.y[cat]==null) MGR.y[cat]=new Date().getFullYear(); const A=cat==='yr'||cat==='cmp';
   const F=h('div',{class:'col',style:{width:'250px',flex:'0 0 250px',display:'flex',flexDirection:'column'}}), Rt=h('div',{class:'col fill',style:{minWidth:0}}), wrap=h('div',{class:'cols',style:{flex:1,minHeight:0}},F,Rt); R.append(wrap);
   const l1=h('div',{class:'pane',style:{flex:1}}), l2=h('div',{class:'pane',style:{flex:1,borderTop:'1px solid var(--line)'}}), lab=h('span',{style:{alignSelf:'center',color:'#555'}});
-  const drawF=()=>{ const sg=A?MGR.s1:MGR.s2; lab.textContent=(MGR.sf!=='all'||(A&&(MGR.pInt!=null||MGR.pSt!=null)))?'Filtré':'';
-    grid(l1,Object.assign(sg,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s))}],rows:mgrStaffs(),sort:null,onSel:()=>drawR()}));
+  const fk=A?'sf1':'sf2';
+  const drawF=()=>{ const sg=A?MGR.s1:MGR.s2; lab.textContent=(MGR[fk]!=='all'||(A&&(MGR.pInt!=null||MGR.pSt!=null)))?'Filtré':'';
+    grid(l1,Object.assign(sg,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s))}],rows:mgrStaffs(MGR[fk]),sort:null,onSel:()=>drawR()}));
     if(A) grid(l2,Object.assign(MGR.pl,{cols:[{k:'NUMBER',t:'Numéro',w:80},{k:'TITLE',t:'Affaire'}],rows:DS.all('project').filter(p=>(MGR.pInt==null||!!p.ISINTERNAL===MGR.pInt)&&(MGR.pSt==null||p.PROJECTSTATECODE===MGR.pSt)).sort((a,b)=>cmp(a.SORTLABEL||'',b.SORTLABEL||'')||cmp(a.NUMBER,b.NUMBER)),
       sort:null,onSel:()=>drawR(),empty:'Aucune affaire pour ce filtre (aucune sélection = toutes les affaires).'})); };
-  const clear=()=>{ MGR.s1.sel=MGR.s2.sel=MGR.pl.sel=null; drawF(); drawR(); };
-  const sMenu=[['all','Tous les collaborateurs'],['actual','Collaborateurs actuels'],['former','Anciens collaborateurs']].map(([k,t])=>({t,chk:MGR.sf===k,fn:()=>{ MGR.sf=k; drawF(); }}));
+  const clear=()=>{ if(A){ MGR.s1.sel=null; MGR.pl.sel=null; } else MGR.s2.sel=null; drawF(); drawR(); };
+  const sMenu=[['all','Tous les collaborateurs'],['actual','Collaborateurs actuels'],['former','Anciens collaborateurs']].map(([k,t])=>({t,chk:MGR[fk]===k,fn:()=>{ MGR[fk]=k; drawF(); }}));
   const menu=()=>A?[{t:'Filtre Collaborateurs',dis:true},...sMenu,'-',{t:'Filtre Affaires',dis:true},...[[null,'Afficher tout'],[true,'Affaire internes'],[false,'Affaire externes']].map(([k,t])=>({t:'   '+t,chk:MGR.pInt===k,fn:()=>{ MGR.pInt=k; drawF(); }})),'-',
       ...[[null,'Afficher tout'],...Object.entries(PSTATE).map(([k,t])=>[+k,t])].map(([k,t])=>({t:'   '+t,chk:MGR.pSt===k,fn:()=>{ MGR.pSt=k; drawF(); }})),'-',{t:'Annuler la sélection',dis:!(MGR.s1.sel||MGR.pl.sel),fn:clear}]
     :[...sMenu,'-',{t:'Annuler la sélection',dis:!MGR.s2.sel,fn:clear}];
@@ -2475,12 +2478,13 @@ function mgrPane(R,cat){ if(MGR.y[cat]==null) MGR.y[cat]=new Date().getFullYear(
     const S=MGR.ch[cat]||(MGR.ch[cat]={model:null,mode:'Courbes'}), mdl=M.models.find(x=>x.name===S.model)||M.models[0]; if(mdl) S.model=mdl.name;
     const print=()=>mgPrint(MGR_DOC[cat],'',{year:String(MGR.y[cat]),person:M.person||'',project:M.project||''},{table:mgRowsById(M),_flex:M.flex},M);
     Rt.append(phead([...mgYearBar({get y(){ return MGR.y[cat]; },set y(v){ MGR.y[cat]=v; }},drawR),
-      ...(cat==='cmp'?[{i:'analyse',t:'Tableau de bord',menu:()=>[...[2,3,5,10].map(n=>({t:'Comparer '+n+' ans',chk:MGR.N===n,fn:()=>{ MGR.N=n; mgrKeep(); drawR(); }})),'-',{t:'Année de référence '+MGR.y[cat],chk:MGR.ref,fn:()=>{ MGR.ref=!MGR.ref; mgrKeep(); drawR(); }}]}]:[]),
+      ...(cat==='cmp'?[{i:'analyse',t:'Comparer',menu:()=>[...[2,3,5,10].map(n=>({t:'Comparer '+n+' ans',chk:MGR.N===n,fn:()=>{ MGR.N=n; drawR(); }})),'-',{t:'Année de référence '+MGR.y[cat],chk:MGR.ref,fn:()=>{ MGR.ref=!MGR.ref; drawR(); }}]}]:[]),
       {i:'doc',t:'Rapports',menu:()=>[{t:'Afficher le rapport …',dis:!M.rows.length,fn:print},{t:'Enregistrer le diagramme …',fn:()=>mgSaveChart(cb,MGR_CATS.find(c=>c[0]===cat)[1])}]},mgGear(MGR.g,'Reporting_'+cat)]),pane,ch);
     mgRender(pane,MGR.g,M);
     if(mdl){ const modes=['Courbes','Barres','Barres empilées',...(cat==='kf'?['Secteurs']:[])]; if(mdl.noBar&&S.mode!=='Courbes') S.mode='Courbes';
-      ch.append(h('div',{style:{display:'flex',gap:'8px',alignItems:'center',marginBottom:'4px',flexWrap:'wrap'}},ibtn({i:'analyse',t:'Graphique',menu:()=>M.models.map(x=>({t:x.name,chk:x.name===mdl.name,fn:()=>{ S.model=x.name; drawR(); }}))}),
-        h('span',{style:{color:'#555'}},cat==='cmp'?'Années':'Mois'),...modes.map(k=>{ const r=h('input',{type:'radio',name:'mgrc'+cat,checked:S.mode===k||null,disabled:(mdl.noBar&&k!=='Courbes')||(k==='Secteurs'&&!mdl.pie)||null}); r.onchange=()=>{ S.mode=k; drawR(); }; return h('label',{},r,' '+(k==='Secteurs'?'Total : Secteurs':k)); })),cb);
+      ch.append(h('div',{style:{display:'flex',gap:'8px',alignItems:'flex-end',marginBottom:'4px',flexWrap:'wrap'}},ibtn({i:'analyse',t:'Graphique',menu:()=>M.models.map(x=>({t:x.name,chk:x.name===mdl.name,fn:()=>{ S.model=x.name; drawR(); }}))}),
+        h('b',{style:{alignSelf:'center',minWidth:'180px'}},mdl.name),h('span',{style:{color:'#555',alignSelf:'center'}},cat==='cmp'?'Années':'Mois'),...modes.map(k=>{ const r=h('input',{type:'radio',name:'mgrc'+cat,checked:S.mode===k||null,disabled:(mdl.noBar&&k!=='Courbes')||(k==='Secteurs'&&!mdl.pie)||null}); r.onchange=()=>{ S.mode=k; drawR(); };
+          const lb=h('label',{style:{alignSelf:'center'}},r,' '+k); return k==='Secteurs'?h('span',{style:{display:'inline-flex',flexDirection:'column',marginLeft:'8px'}},h('span',{style:{color:'#555',fontSize:'11.5px'}},'Total'),lb):lb; })),cb);
       const ser=S.mode==='Courbes'?mdl.series:mdl.series.filter(s=>!s.tot);
       requestAnimationFrame(()=>mgChart(cb,S.mode==='Secteurs'?{mode:'Secteurs',series:mdl.pie,xs:['x'],title:mdl.name+', '+MGR.y[cat]}:{xs:M.xs,series:ser,mode:S.mode,title:cat==='cmp'?mdl.name:mdl.name+', '+MGR.y[cat]})); } };
   drawF(); drawR(); return {tables:['timelog','stafftargettime','staff','project','projectactivity'],redraw:()=>{ drawF(); drawR(); }}; }

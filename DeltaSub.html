@@ -1428,6 +1428,193 @@ function domainView(C,p,d){
   C.append(h('div',{class:'ph'},h('h2',{},d),why[d]||'Domaine non utilisé au bureau dans Deltaproject (aucune donnée). Il sera reproduit sur demande.'));
 }
 
+/* ═══ AFFAIRES · Controlling (p.32-33) — contrôle et analyse des heures et des frais ═══ */
+const CT={g:{},a:{},act:'Critères d’analyse des heures',q:''};
+const CT_ACTS=[['Contrôle des heures d’affaires','Vérifier et valider les saisies d’heures'],['Critères d’analyse des heures','Analyser les heures par collaborateur, activité et phase. Créer les rapports horaires et les pièces jointes à la facture.'],
+  ['Contrôle des frais','Vérifier et valider les frais'],['Critères d’analyse des frais','Analyser les frais par collaborateur, groupe de frais et frais. Créer les rapports et les pièces jointes à la facture.']];
+function tlRate(r){ const a=DS.get('projectactivity',r.ACTIVITY_ID); return a&&a.PROJECTRATEGROUP_ID?rateOfGroup(a.PROJECTRATEGROUP_ID,diso(tlDate(r))):0; }
+const tlFee=r=>(+r.TIMEPERIOD||0)*tlRate(r), tlCost=r=>(+r.TIMEPERIOD||0)*rateAt(r.STAFF_ID,diso(tlDate(r)));
+VIEWS['aff-controlling']={
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const A=col(300), B=col(250), C=h('div',{class:'col fill'}); cols.append(A.el,B.el,C);
+    A.el.prepend(phead([],{search:q=>{ CT.q=q; drawA(); }}));
+    const drawA=()=>grid(A.pane,Object.assign(CT.g,{cols:[{k:'NUMBER',t:'Numéro',w:90},{k:'TITLE',t:'Affaire'}],rows:DS.all('project').filter(p=>p.PROJECTSTATECODE!==5&&matchQ(CT.q,p.NUMBER,p.TITLE)),sort:['NUMBER',-1],onSel:drawC}));
+    grid(B.pane,Object.assign(CT.a,{key:a=>a[0],cols:[{k:'t',t:'Controlling',f:a=>`<b>${esc(a[0])}</b><div style="white-space:normal;font-size:11.5px;opacity:.8">${esc(a[1])}</div>`}],rows:CT_ACTS,sel:CT.act,onSel:a=>{ CT.act=a[0]; drawC(); }}));
+    $$('td',B.pane).forEach(td=>{ td.style.whiteSpace='normal'; td.style.height='auto'; td.style.padding='8px'; });
+    const drawC=()=>{ C.innerHTML=''; const p=DS.get('project',CT.g.sel); if(!p){ C.append(h('div',{class:'ph'},'Sélectionnez une affaire.')); return; }
+      if(CT.act.startsWith('Contrôle des heures')) ctlCheck(C,p,'timelog'); else if(CT.act.startsWith('Contrôle des frais')) ctlCheck(C,p,'projectcost');
+      else if(CT.act.includes('heures')) ctlAnalyse(C,p,'timelog'); else ctlAnalyse(C,p,'projectcost'); };
+    this.drawC=drawC; drawA(); drawC();
+  },
+  refresh(ts){ if(hit(ts,'timelog','projectcost')) this.drawC(); }
+};
+/* Contrôle : Approuver / Refuser / Réinitialiser (TIMELOGSTATECODE / PROJECTCOSTSTATECODE) */
+function ctlCheck(C,p,t){
+  const tl=t==='timelog', SF=tl?'TIMELOGSTATECODE':'PROJECTCOSTSTATECODE', o={multi:true}, st=CT[t+'chk']||(CT[t+'chk']={y:new Date().getFullYear(),m:new Date().getMonth(),s:null,only:null});
+  const pane=h('div',{class:'pane'}), nav=h('div',{style:{display:'flex',gap:'4px',marginLeft:'8px'}});
+  const setState=async v=>{ const rs=gridSel(o,id=>DS.get(t,id)); if(!rs.length){ toast('Sélectionnez des inscriptions (Cmd-clic, Maj-clic).',true); return; }
+    await DS.commit(rs.map(r=>({t,id:r.ID,val:{...r,[SF]:v}}))); toast(rs.length+' inscription(s) : '+TSTATE[v]+'.'); };
+  const head=phead([ibtn({label:'Approuver',fn:()=>setState(3)}),ibtn({label:'Refuser',fn:()=>setState(1)}),ibtn({label:'Réinitialiser',fn:()=>setState(0)}),
+    {i:'filter',t:'Filtre',menu:()=>[{t:'Tous les états',chk:st.only==null,fn:()=>{ st.only=null; draw(); }},...Object.entries(TSTATE).map(([k,x])=>({t:x,chk:st.only==k,fn:()=>{ st.only=k; draw(); }})),'-',
+      {t:'Tous les collaborateurs',chk:!st.s,fn:()=>{ st.s=null; draw(); }},...staffList(true).filter(s=>DS.by(t,'PROJECT_ID',p.ID).some(r=>r.STAFF_ID===s.ID)).map(s=>({t:staffName(s),chk:st.s===s.ID,fn:()=>{ st.s=s.ID; draw(); }}))]},nav],{count:1});
+  C.append(head,pane);
+  const draw=()=>{ const dF=tl?tlDate:pcDate;
+    const rows=DS.by(t,'PROJECT_ID',p.ID).filter(r=>{ const d=dF(r); return d.getFullYear()===st.y&&d.getMonth()===st.m&&(!st.s||r.STAFF_ID===st.s)&&(st.only==null||String(r[SF]||0)===String(st.only)); });
+    const stCol={k:'st',t:'Statut',w:90,f:r=>`<span style="color:${['#1f6fe0','#c62828','#9a5b00','#2f9e2f'][r[SF]||0]}">${TSTATE[r[SF]||0]}</span>`};
+    const cols=tl?[{k:'d',t:'Date',w:86,f:r=>dfr(diso(tlDate(r))),v:r=>tlKey(r)*10000+r.TIMEHOUR1*100+r.TIMEMINUTE1},{k:'h1',t:'Début',w:60,f:r=>hm(r.TIMEHOUR1,r.TIMEMINUTE1)},{k:'h2',t:'Fin',w:60,f:r=>hm(r.TIMEHOUR2,r.TIMEMINUTE2)},
+      {k:'TIMEPERIOD',t:'Durée',w:60,cls:'r',f:r=>hrs(r.TIMEPERIOD)},stCol,{k:'s',t:'Personne',w:150,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))},{k:'a',t:'Activité',w:140,f:r=>esc(nm(DS.get('projectactivity',r.ACTIVITY_ID)))},
+      {k:'ph',t:'Phase',w:150,f:r=>esc(nm(DS.get('projectphase',r.PHASE_ID)))},{k:'DESCRIPTION',t:'Commentaire'}]
+      :[...COSTCOLS.slice(0,9),stCol,{k:'s',t:'Collaborateur',w:150,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))}];
+    grid(pane,Object.assign(o,{cols,rows,sort:['d',1]}));
+    head.setCount(rows.length+' inscriptions · '+(tl?hrs(rows.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0))+' h':num(rows.reduce((s,r)=>s+pcAmount(r),0))+' CHF')); nav.replaceChildren(...monthNav(st,draw)); };
+  draw();
+}
+/* Critères d'analyse : 6 listes de filtre + dates + facturable/facturé → tableau + totaux */
+function ctlAnalyse(C,p,t){
+  const tl=t==='timelog', F=CT[t+'an']||(CT[t+'an']={}), sels={};
+  if(F.pid!==p.ID){ Object.keys(F).forEach(k=>delete F[k]); F.pid=p.ID; }
+  const all=DS.by(t,'PROJECT_ID',p.ID).filter(r=>!r.ISHOLIDAY);
+  const mk=(key,title,rows,nameF,bud)=>{ const o={multi:true,selSet:new Set(F[key]||[])}; sels[key]=o;
+    const box=h('div',{style:{height:'130px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+    grid(box,Object.assign(o,{cols:[{k:'n',t:title,f:x=>esc(nameF(x))},...(bud?[{k:'b',t:'Prévision',w:80,cls:'r',f:x=>num(tl?x.TIMEAMOUNTBUDGET:(x.COSTBUDGET??x.BUDGET),0)}]:[])],rows,scroll:false}));
+    return h('div',{style:{minWidth:0}},box,h('a',{href:'#',style:{fontSize:'11px'},onclick:e=>{ e.preventDefault(); o.selSet.clear(); $$('tr.on',box).forEach(x=>x.classList.remove('on')); }},'✕ Annuler la sélection')); };
+  const phs=DS.by('projectphase','PROJECT_ID',p.ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER));
+  const lists=tl?[mk('sub','Ouvrage',DS.by('subproject','PROJECT_ID',p.ID),x=>[x.CODE,x.DESCRIPTION].filter(Boolean).join(' '),1),mk('ag','Groupe d’activités',DS.by('projectactivitygroup','PROJECT_ID',p.ID),nm,1),
+      mk('act','Activité',DS.by('projectactivitygroup','PROJECT_ID',p.ID).flatMap(g=>DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',g.ID)),nm,1),mk('ph','Phase',phs,x=>(x.NUMBER??'')+' '+nm(x),1),
+      mk('sp','Phase partielle',phs.flatMap(x=>DS.by('projectsubphase','PROJECTPHASE_ID',x.ID)),x=>(x.NUMBER??'')+' '+nm(x),1),mk('st','Collaborateur',[...new Set(all.map(r=>r.STAFF_ID))].map(id=>DS.get('staff',id)).filter(Boolean),staffName)]
+    :[mk('sub','Ouvrage',DS.by('subproject','PROJECT_ID',p.ID),x=>[x.CODE,x.DESCRIPTION].filter(Boolean).join(' '),1),mk('ag','Groupe de frais',DS.by('projectcostcategorygroup','PROJECT_ID',p.ID),nm,1),
+      mk('act','Genre de frais',DS.by('projectcostcategorygroup','PROJECT_ID',p.ID).flatMap(g=>DS.by('projectcostcategory','PROJECTCOSTCATEGORYGROUP_ID',g.ID)),nm,1),mk('ph','Phase',phs,x=>(x.NUMBER??'')+' '+nm(x),1),
+      mk('sp','Phase partielle',phs.flatMap(x=>DS.by('projectsubphase','PROJECTPHASE_ID',x.ID)),x=>(x.NUMBER??'')+' '+nm(x),1),mk('st','Collaborateur',[...new Set(all.map(r=>r.STAFF_ID).filter(Boolean))].map(id=>DS.get('staff',id)).filter(Boolean),staffName)];
+  const dOn=h('input',{type:'checkbox',checked:F.dOn||null}), d1=h('input',{class:'inp',type:'date',value:F.d1||'',style:{width:'150px'}}), d2=h('input',{class:'inp',type:'date',value:F.d2||'',style:{width:'150px'}});
+  const tri=(k,l)=>{ const c=h('input',{type:'checkbox',checked:F[k]!=null||null}), y=h('input',{type:'radio',name:t+k,checked:F[k]===1||null}), n=h('input',{type:'radio',name:t+k,checked:F[k]!==1||null}); F['_'+k]=()=>c.checked?(y.checked?1:0):null; return h('span',{},h('label',{},c,' '+l+' '),h('label',{},n,' Non '),h('label',{},y,' Oui')); };
+  const filt=h('div',{class:'ph2',style:{gap:'12px',flexWrap:'wrap'}},h('label',{},dOn,' Filtre par dates'),d1,'à',d2,tri('fa','Facturable'),tri('fd','Facturé'),
+    ibtn({label:'Réinitialiser le filtre',fn:()=>{ Object.keys(F).forEach(k=>{ if(k!=='pid') delete F[k]; }); C.innerHTML=''; ctlAnalyse(C,p,t); }}),ibtn({label:'Appliquer le filtre',fn:()=>apply()}));
+  const top=h('div',{style:{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'6px',padding:'6px'}},...lists);
+  const o={multi:true}, pane=h('div',{class:'pane'}), foot=h('div',{class:'ph2'});
+  C.append(top,filt,pane,foot);
+  const idOf={sub:'SUBPROJECT_ID',ag:tl?'ACTIVITYGROUP_ID':'COSTCATEGORYGROUP_ID',act:tl?'ACTIVITY_ID':'COSTCATEGORY_ID',ph:'PHASE_ID',sp:'SUBPHASE_ID',st:'STAFF_ID'};
+  const rowsNow=()=>all.filter(r=>{ for(const k in idOf){ const s=F[k]; if(s&&s.length&&!s.includes(String(r[idOf[k]]))) return false; }
+    if(F.dOn){ const d=diso(tl?tlDate(r):pcDate(r)); if(F.d1&&d<F.d1) return false; if(F.d2&&d>F.d2) return false; }
+    if(F.fa!=null&&(+!!r.ISCHARGEABLE)!==F.fa) return false; if(F.fd!=null&&(+!!r.ISCHARGED)!==F.fd) return false; return true; });
+  const apply=()=>{ for(const k in sels) F[k]=[...sels[k].selSet]; F.dOn=dOn.checked; F.d1=d1.value; F.d2=d2.value; F.fa=F._fa(); F.fd=F._fd(); draw(); };
+  const draw=()=>{ const rows=rowsNow();
+    const cols=tl?[{k:'d',t:'Date',w:86,f:r=>dfr(diso(tlDate(r))),v:r=>tlKey(r)*10000+r.TIMEHOUR1*100+r.TIMEMINUTE1},{k:'h1',t:'Début',w:54,f:r=>hm(r.TIMEHOUR1,r.TIMEMINUTE1)},{k:'h2',t:'Fin',w:54,f:r=>hm(r.TIMEHOUR2,r.TIMEMINUTE2)},
+      {k:'TIMEPERIOD',t:'Durée',w:60,cls:'r',f:r=>hrs(r.TIMEPERIOD)},{k:'st',t:'Statut',w:74,f:r=>TSTATE[r.TIMELOGSTATECODE||0]},{k:'fa',t:'Facturable',w:70,cls:'c',f:r=>r.ISCHARGEABLE?'✔':'✕'},{k:'fd',t:'Facturé',w:60,cls:'c',f:r=>r.ISCHARGED?'✔':'✕'},
+      {k:'s',t:'Personne',w:140,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))},{k:'ag',t:'Groupe d’activités',w:120,f:r=>esc(nm(DS.get('projectactivitygroup',r.ACTIVITYGROUP_ID)))},{k:'a',t:'Activité',w:130,f:r=>esc(nm(DS.get('projectactivity',r.ACTIVITY_ID)))},
+      {k:'ph',t:'Phase',w:140,f:r=>esc(nm(DS.get('projectphase',r.PHASE_ID)))},{k:'sp',t:'Phase partielle',w:140,f:r=>esc(nm(DS.get('projectsubphase',r.SUBPHASE_ID)))},{k:'tar',t:'Tarif',w:60,cls:'r',f:r=>num(tlRate(r),0)},{k:'DESCRIPTION',t:'Commentaire',w:220}]
+      :[...COSTCOLS,{k:'s',t:'Collaborateur',w:140,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))},{k:'ph',t:'Phase',w:140,f:r=>esc(nm(DS.get('projectphase',r.PHASE_ID)))}];
+    grid(pane,Object.assign(o,{cols,rows,sort:['d',1]}));
+    const tot=tl?`Total ${hrs(rows.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0))} h / CHF ${num(rows.reduce((s,r)=>s+tlFee(r),0))} / CHF ${num(rows.reduce((s,r)=>s+tlCost(r),0))}`:`Total CHF ${num(rows.reduce((s,r)=>s+pcAmount(r),0))}`;
+    foot.replaceChildren(ibtn({i:'gear',menu:()=>[{t:'Modifier le statut "Facturable"',fn:()=>ctlFlag(t,o,'ISCHARGEABLE')},{t:'Modifier le statut "Facturé"',fn:()=>ctlFlag(t,o,'ISCHARGED')},
+      ...(tl?[{t:'Modifier le commentaire',fn:()=>ctlComment(o)}]:[]),'-',...(tl?['Activités','Phases','Phases et activités','Collaborateur','Ouvrage'].map(g=>({t:'Grouper : '+g,fn:()=>ctlGroup(p,rowsNow(),g)})):[])]}),
+      ibtn({i:'doc',menu:()=>[{t:'Etablir le document d’analyse …',fn:()=>ctlPrint(p,t,o)}]}),h('div',{style:{flex:1}}),h('b',{title:tl?'heures / honoraires (tarif de facturation) / coûts salariaux (coût de revient)':''},tot),h('span',{class:'cnt',style:{marginLeft:'14px'}},rows.length+' positions de '+all.length));
+    if(tl&&rows.length&&!rows.some(r=>tlRate(r))) foot.append(h('span',{style:{color:'#9a5b00',marginLeft:'10px'},title:'Gestion ▸ Configurer les activités ▸ Tarif'},'⚠ aucune activité n’a de tarif : honoraires à 0')); };
+  draw();
+}
+async function ctlFlag(t,o,f){ const rs=gridSel(o,id=>DS.get(t,id)); if(!rs.length){ toast('Sélectionnez des positions.',true); return; }
+  const y=h('input',{type:'radio',name:'cf',checked:true}), n=h('input',{type:'radio',name:'cf'}), d=h('input',{class:'inp',type:'date',value:today(),style:{width:'150px'}});
+  dialog({title:'Editer la sélection',body:h('div',{style:{minWidth:'360px'}},h('div',{},rs.length+' position(s)'),h('p',{},h('label',{},y,f==='ISCHARGED'?' Facturé':' Facturable'),'   ',h('label',{},n,f==='ISCHARGED'?' Non facturé':' Non facturable')),f==='ISCHARGED'?h('div',{},'Date ',d):null),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.commit(rs.map(r=>({t,id:r.ID,val:{...r,[f]:y.checked?1:0,...(f==='ISCHARGED'?{CHARGEDDATE:y.checked?d.value:null}:{})}})))}]}); }
+function ctlComment(o){ const rs=gridSel(o,id=>DS.get('timelog',id)); if(!rs.length) return; const i=h('input',{class:'inp',value:rs[0].DESCRIPTION||'',style:{width:'420px'}});
+  dialog({title:'Modifier le commentaire',body:i,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.commit(rs.map(r=>({t:'timelog',id:r.ID,val:{...r,DESCRIPTION:i.value.trim()||null}})))}]}); }
+function ctlGroup(p,rows,how){
+  const key={'Activités':r=>nm(DS.get('projectactivity',r.ACTIVITY_ID))||'Pas d’activité','Phases':r=>nm(DS.get('projectphase',r.PHASE_ID))||'Pas de phase',
+    'Phases et activités':r=>(nm(DS.get('projectphase',r.PHASE_ID))||'Pas de phase')+' — '+(nm(DS.get('projectactivity',r.ACTIVITY_ID))||''),'Collaborateur':r=>staffName(DS.get('staff',r.STAFF_ID)),
+    'Ouvrage':r=>((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE)||'Pas d’ouvrage'}[how];
+  const bud={'Phases':r=>DS.get('projectphase',r.PHASE_ID),'Activités':r=>DS.get('projectactivity',r.ACTIVITY_ID),'Ouvrage':r=>DS.get('subproject',r.SUBPROJECT_ID)}[how];
+  const G=new Map(); rows.forEach(r=>{ const k=key(r); const g=G.get(k)||{k,h:0,fee:0,cost:0,bh:null,bf:null}; g.h+=+r.TIMEPERIOD||0; g.fee+=tlFee(r); g.cost+=tlCost(r); if(bud){ const b=bud(r); if(b){ g.bh=b.TIMEBUDGET; g.bf=b.TIMEAMOUNTBUDGET; } } G.set(k,g); });
+  const box=h('div',{style:{width:'980px',height:'420px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}), o={};
+  const T={k:'Total',h:0,fee:0,cost:0,bh:0,bf:0}; G.forEach(g=>{ T.h+=g.h; T.fee+=g.fee; T.cost+=g.cost; T.bh+=+g.bh||0; T.bf+=+g.bf||0; });
+  grid(box,Object.assign(o,{key:g=>g.k,cols:[{k:'k',t:'Désignation',w:260},{k:'bh',t:'Heures prévues',cls:'r',f:g=>g.bh!=null?hrs(g.bh):''},{k:'h',t:'Durée [h]',cls:'r',f:g=>hrs(g.h)},{k:'dh',t:'Budget-Durée [h]',cls:'r',f:g=>g.bh!=null?hrs(g.bh-g.h):''},
+    {k:'fee',t:'Honoraires',cls:'r',f:g=>num(g.fee)},{k:'bf',t:'Honoraires prévus',cls:'r',f:g=>g.bf!=null?num(g.bf):''},{k:'df',t:'Honoraires prévus-Honoraires',cls:'r',f:g=>g.bf!=null?num(g.bf-g.fee):''},
+    {k:'cost',t:'Frais des collaborateurs',cls:'r',f:g=>num(g.cost)},{k:'m',t:'Honoraires-Coûts des collaborateurs',cls:'r',f:g=>num(g.fee-g.cost)}],rows:[...G.values(),T],sort:null}));
+  dialog({title:'Grouper les heures de l’affaire — '+how+' — '+projLabel(p),body:box,buttons:[{t:'Copier',fn:()=>{ copyTable(o); return false; }},{t:'Fermer',pri:true}]});
+}
+function ctlPrint(p,t,o){ const w=open('','_blank'); if(!w) return; const tl=t==='timelog';
+  const txt=tableText(o,'\t').split('\n').map(l=>l.split('\t'));
+  w.document.write(`<html><head><meta charset="utf-8"><title>Analyse</title><style>body{font:9pt Akkurat,Helvetica,Arial,sans-serif;margin:12mm}h1{font-size:12pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:2px 5px;border-bottom:.5pt solid #ccc}th{font-weight:600}</style></head><body><h1>${tl?'Rapport d’heures':'Rapport de frais'} — ${esc(projLabel(p))} — ${dfr(today())}</h1><table>`+
+    txt.map((r,i)=>'<tr>'+r.map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')+'</tr>').join('')+'</table></body></html>'); w.document.close(); setTimeout(()=>w.print(),300); }
+
+/* ═══ HEURES · Rapport (p.30) — heures prévues / effectives / solde / vacances ═══ */
+const HR={staff:null,y:new Date().getFullYear()};
+function targetFor(sid,y){ const st=DS.by('stafftargettime','STAFF_ID',sid).find(x=>x.TARGETTIMEYEAR===y); return st||DS.all('targettime').find(x=>x.TARGETTIMEYEAR===y)||null; }
+VIEWS['h-rapport']={
+  tools(){ return [[{i:'prev',fn:()=>{ HR.y--; go('h-rapport'); }},h('span',{style:{alignSelf:'center',minWidth:'50px',textAlign:'center'}},String(HR.y)),{i:'next',fn:()=>{ HR.y++; go('h-rapport'); }}],
+    [{i:'print',t:'Imprimer',fn:()=>{ const t=$('#hr-tb'); if(!t) return; const w=open('','_blank'); w.document.write(`<html><head><meta charset="utf-8"><title>Rapport annuel</title><style>body{font:9.5pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;border-bottom:.5pt solid #ccc;text-align:right}td:first-child,th:first-child{text-align:left}</style></head><body><h2 style="font-weight:400">Rapport annuel ${HR.y} — ${esc(staffName(DS.get('staff',HR.staff)))}</h2>${t.outerHTML}</body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }}]]; },
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(260), R=h('div',{class:'col fill'}), pane=h('div',{class:'pane'}); cols.append(L.el,R); R.append(pane);
+    if(!HR.staff) HR.staff=(ME.staff||staffList()[0]||{}).ID;
+    grid(L.pane,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s))}],rows:staffList(),sel:HR.staff,onSel:s=>{ HR.staff=s.ID; draw(); }});
+    const draw=()=>{ const s=DS.get('staff',HR.staff), tg=targetFor(HR.staff,HR.y), E=DS.by('timelog','STAFF_ID',HR.staff).filter(r=>r.TIMEYEAR===HR.y);
+      const eff=[...Array(12)].map((_,i)=>E.filter(r=>r.TIMEMONTH===i).reduce((a,r)=>a+(+r.TIMEPERIOD||0),0));
+      const vac=[...Array(12)].map((_,i)=>E.filter(r=>r.TIMEMONTH===i&&r.ISHOLIDAY).reduce((a,r)=>a+(+r.TIMEPERIOD||0),0));
+      const prev=[...Array(12)].map((_,i)=>tg?(+tg['TARGETHOURS'+i]||0):0), app=[...Array(12)].map((_,i)=>tg?(+tg['OVERTIME'+i]||0):0);
+      let cum=0; const rows=[]; const line=(lbl,a,b,v,ap,bold)=>`<tr${bold?' style="font-weight:600;background:#f4f4f4"':''}><td>${lbl}</td><td>${hrs(b)}</td><td>${hrs(a)}</td><td>${hrs(a-b)}</td><td>${bold?'':hrs(cum)}</td><td>${hrs(v)}</td><td>${hrs(ap)}</td></tr>`;
+      const sum=(arr,i,j)=>arr.slice(i,j).reduce((x,y)=>x+y,0);
+      for(let i=0;i<12;i++){ cum+=eff[i]-prev[i]; rows.push(line(MOISL[i],eff[i],prev[i],vac[i],app[i])); if(i%3===2){ const q=(i+1)/3; rows.push(line(['1er','2ème','3ème','4ème'][q-1]+' trimestre',sum(eff,i-2,i+1),sum(prev,i-2,i+1),sum(vac,i-2,i+1),sum(app,i-2,i+1),1)); } }
+      const TE=sum(eff,0,12), TP=sum(prev,0,12), rep=tg&&tg.TARGETTIMEREDUCTION||0;
+      pane.innerHTML=`<div class="card"><h3>Rapport annuel ${HR.y} — ${esc(staffName(s))}</h3><table class="g" id="hr-tb" style="max-width:960px"><thead><tr><th>Période</th><th class="r">Heures prévues</th><th class="r">Heures effectives</th><th class="r">Différence</th><th class="r">Solde cumulé</th><th class="r">Vacances saisies</th><th class="r">Heures d’appoint prévues</th></tr></thead><tbody>`+
+        rows.join('').replace(/<td>/g,'<td class="r">').replace(/<tr([^>]*)><td class="r">/g,'<tr$1><td>')+
+        `<tr style="font-weight:700"><td>Total</td><td class="r">${hrs(TP)}</td><td class="r">${hrs(TE)}</td><td class="r">${hrs(TE-TP)}</td><td></td><td class="r">${hrs(sum(vac,0,12))}</td><td class="r">${hrs(sum(app,0,12))}</td></tr>`+
+        `<tr><td>Report des heures supplémentaires</td><td></td><td></td><td class="r">${hrs(rep)}</td><td></td><td></td><td></td></tr><tr style="font-weight:700"><td>Total incl. report des heures suppl.</td><td></td><td></td><td class="r">${hrs(TE-TP+rep)}</td><td></td><td></td><td></td></tr></tbody></table>`+
+        `<div class="kv" style="margin-top:14px;max-width:560px"><b>Droit aux vacances annuel</b><span>${hrs(s&&s.HOLIDAYS)} h</span><b>Droit aux vacances ${s&&s.HOLIDAYBALANCEYEAR||''}</b><span>${hrs(s&&s.HOLIDAYBALANCE)} h</span><b>Vacances saisies ${HR.y}</b><span>${hrs(sum(vac,0,12))} h</span>`+
+        (s&&s.HOLIDAYBALANCEYEAR===HR.y?`<b>Nouveau solde à reporter</b><span>${hrs((+s.HOLIDAYBALANCE||0)-sum(vac,0,12))} h</span>`:'')+`<b>Date de la dernière mise à jour du droit aux vacances</b><span>${dfr(s&&s.HOLIDAYBALANCECHANGEDDATE)}</span></div>`+
+        (tg?'':'<p style="color:#9a5b00">Aucune durée prévue pour cette année (Collaborateurs ▸ Paramètres ▸ Durée prévue).</p>')+'</div>'; };
+    this.draw=draw; draw();
+  },
+  refresh(ts){ if(hit(ts,'timelog','stafftargettime','staff')) this.draw(); }
+};
+
+/* ═══ MODÈLES · Administrateur (p.10-11) — propriétés, statuts, heures prévues, jours fériés ═══ */
+const ADM={cat:'Heures prévues'};
+function easter(y){ const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h2=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h2-k)%7,m=Math.floor((a+11*h2+22*l)/451),mo=Math.floor((h2+l-7*m+114)/31),da=((h2+l-7*m+114)%31)+1; return new Date(y,mo-1,da); }
+function holidayDate(x,y){ if(x.TYPECODE===1){ const d=easter(y); d.setDate(d.getDate()+(x.NOFDAYSEASTERSUNDAY||0)); return d; } if(x.TYPECODE===2&&x.DATEYEAR!==y) return null; return new Date(y,x.DATEMONTH,x.DATEDAY); }
+VIEWS['config']={
+  render(m){
+    const cols=h('div',{class:'cols'}); m.append(cols);
+    const L=col(230), R=h('div',{class:'col fill'}); cols.append(L.el,R);
+    const cats=['Adresses - Propriétés','Adresses - Statuts','Heures prévues','Jours fériés','Phases standard','Activités standard','Tarifs de facturation','Frais standard'];
+    grid(L.pane,{key:c=>c,cols:[{k:'c',t:'Catégorie',f:c=>esc(c)}],rows:cats,sel:ADM.cat,onSel:c=>{ ADM.cat=c; draw(); }});
+    const draw=()=>{ R.innerHTML=''; admPane(R,ADM.cat); }; this.draw=draw; draw();
+  },
+  refresh(){ this.draw(); }
+};
+function admPane(R,c){
+  const o={}, pane=h('div',{class:'pane'});
+  const simple=(t,cols,rows,edit,sort)=>{ R.append(phead([{i:'plus',fn:()=>edit()},{i:'edit',fn:()=>o.sel&&edit(DS.get(t,o.sel))},{i:'minus',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer ?','Supprimer')) DS.del(t,o.sel); }}]),pane);
+    grid(pane,Object.assign(o,{cols,rows,sort:sort||['SORTORDER',1],onDbl:edit})); };
+  const nameEd=(t,extra)=>x=>{ const v=x?{...x}:{ID:null,SORTORDER:DS.all(t).length,...(extra?extra():{})}; dialog({title:x?'Modifier':'Ajouter',body:formRows([['Français',h('input',{class:'inp','data-k':'NAMEFR',value:v.NAMEFR||''})]]),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:bd=>{ readK(bd,v); return DS.save(t,v); }}]}); };
+  if(c==='Adresses - Propriétés') simple('property',[{k:'g',t:'Groupe',f:p=>esc(nm(propGroup(p))),v:p=>(propGroup(p)||{}).SORTORDER},{k:'n',t:'Désignation',f:p=>esc(nm(p))}],DS.all('property'),x=>{
+    const v=x?{...x}:{ID:null,SORTORDER:DS.all('property').length}; const g=h('select',{class:'inp','data-k':'PROPERTYGROUP_ID'},...DS.all('propertygroup').map(pg=>h('option',{value:pg.ID,selected:pg.ID===v.PROPERTYGROUP_ID||null},nm(pg))));
+    dialog({title:x?'Modifier la propriété':'Ajouter une propriété',body:formRows([['Groupe',g],['Français',h('input',{class:'inp','data-k':'NAMEFR',value:v.NAMEFR||''})]]),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:bd=>{ readK(bd,v,['PROPERTYGROUP_ID']); return DS.save('property',v); }}]}); },['g',1]);
+  if(c==='Adresses - Statuts') simple('contactstate',[{k:'n',t:'Statut',f:x=>esc(nm(x))}],DS.all('contactstate'),nameEd('contactstate'));
+  if(c==='Heures prévues') simple('targettime',[{k:'TARGETTIMEYEAR',t:'Année',w:80},{k:'DESCRIPTION',t:'Description'},{k:'t',t:'Heures prévues',w:130,cls:'r',f:x=>num(sumT(x,'TARGETHOURS'))}],DS.all('targettime'),x=>{
+    const v=x?{...x}:{ID:null,TARGETTIMEYEAR:new Date().getFullYear()+1,DESCRIPTION:'100% - 8.5h/j'};
+    const days=h('button',{class:'btn'},'Calculer (jours ouvrés × 8.5 h)');
+    const T=[...Array(12)].map((_,i)=>h('input',{class:'inp',type:'number',step:'0.25','data-k':'TARGETHOURS'+i,value:v['TARGETHOURS'+i]??'',style:{width:'100px'}}));
+    days.onclick=()=>{ const y=+$('[data-k=TARGETTIMEYEAR]').value, hol=DS.all('publicholiday').filter(x=>x.ISON).map(x=>holidayDate(x,y)).filter(Boolean).map(d=>diso(d));
+      T.forEach((e,i)=>{ let n=0; for(let d=new Date(y,i,1);d.getMonth()===i;d.setDate(d.getDate()+1)) if(d.getDay()%6&&!hol.includes(diso(d))) n++; e.value=(n*8.5).toFixed(2); }); };
+    dialog({title:x?'Editer heures prévues':'Définir des heures prévues',body:h('div',{},formRows([['Année',nI(v,'TARGETTIMEYEAR','90px')],['Description',tI(v,'DESCRIPTION')]]),h('div',{style:{margin:'8px 0'}},days),
+      h('div',{style:{display:'grid',gridTemplateColumns:'110px 110px 110px 110px',gap:'4px 10px',alignItems:'center'}},...MOISL.flatMap((mn,i)=>[h('span',{},mn),T[i]]))),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:bd=>{ readK(bd,v,['TARGETTIMEYEAR',...[...Array(12)].map((_,i)=>'TARGETHOURS'+i)]); return DS.save('targettime',v); }}]}); },['TARGETTIMEYEAR',-1]);
+  if(c==='Jours fériés'){ const y=new Date().getFullYear();
+    simple('publicholiday',[{k:'n',t:'Le jour férié',f:x=>esc(nm(x))},{k:'d',t:'Date '+y,w:110,f:x=>{ const d=holidayDate(x,y); return d?dfr(diso(d)):''; },v:x=>{ const d=holidayDate(x,y); return d?d.getTime():0; }},{k:'ISON',t:'Visible',w:70,cls:'c',f:x=>x.ISON?'✔':''}],DS.all('publicholiday'),x=>{
+      const v=x?{...x}:{ID:null,TYPECODE:0,DATEDAY:1,DATEMONTH:0,ISON:1,OFFTYPECODE:0,SORTORDER:DS.all('publicholiday').length};
+      const ty=h('select',{class:'inp','data-k':'TYPECODE'},...['Chaque année le (jour.mois)','Chaque année, jours après Pâques','Unique'].map((t2,i)=>h('option',{value:i,selected:i===v.TYPECODE||null},t2)));
+      const dd=h('input',{class:'inp',type:'date',value:v.TYPECODE===1?'':diso(new Date(v.DATEYEAR||y,v.DATEMONTH||0,v.DATEDAY||1)),style:{width:'160px'}});
+      dialog({title:x?'Editer le jour férié':'Nouveau jour férié',body:formRows([['Français',tI(v,'NAMEFR')],['Date',ty],['Jour / mois (ou date unique)',dd],['Jours après Pâques',nI(v,'NOFDAYSEASTERSUNDAY','80px')],
+        ['Type',h('select',{class:'inp','data-k':'OFFTYPECODE'},...['Tout le jour','Matin','Après-midi'].map((t2,i)=>h('option',{value:i,selected:i===v.OFFTYPECODE||null},t2)))],['',h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':'ISON',checked:!!v.ISON||null}),' Visible')]]),
+        buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:bd=>{ readK(bd,v,['TYPECODE','NOFDAYSEASTERSUNDAY','OFFTYPECODE']); if(dd.value&&v.TYPECODE!==1){ const d=new Date(dd.value+'T00:00'); v.DATEDAY=d.getDate(); v.DATEMONTH=d.getMonth(); v.DATEYEAR=v.TYPECODE===2?d.getFullYear():null; } return DS.save('publicholiday',v); }}]}); },['d',1]); }
+  if(c==='Phases standard') simple('phase',[{k:'NUMBER',t:'Nr.',w:50},{k:'n',t:'Phase',f:x=>esc(nm(x))},{k:'s',t:'Phases partielles',f:x=>esc(DS.all('subphase').filter(s=>s.PHASE_ID===x.ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)).map(s=>s.NUMBER+' '+nm(s)).join(' · '))}],DS.all('phase'),nameEd('phase'),['NUMBER',1]);
+  if(c==='Activités standard') simple('activity',[{k:'g',t:'Groupe d’activités',w:200,f:x=>esc(nm(DS.get('activitygroup',x.ACTIVITYGROUP_ID)))},{k:'n',t:'Activité',f:x=>esc(nm(x))},{k:'t',t:'Type',w:180,f:x=>esc(ACT_T[x.TYPECODE||0])}],DS.all('activity'),nameEd('activity'),['g',1]);
+  if(c==='Tarifs de facturation') simple('rate',[{k:'n',t:'Niveau de tarification',f:x=>esc(nm(x))},{k:'RATE',t:'Tarif horaire',w:110,cls:'r',f:x=>num(x.RATE)},{k:'VALIDFROM',t:'Valable dès le',w:110,f:x=>dfr(x.VALIDFROM)}],DS.all('rate'),x=>{
+    const v=x?{...x}:{ID:null,SORTORDER:DS.all('rate').length,VALIDFROM:today()}; dialog({title:'Tarif de facturation',body:formRows([['Français',tI(v,'NAMEFR')],['Tarif horaire',nI(v,'RATE')],['Valable dès le',h('input',{class:'inp',type:'date','data-k':'VALIDFROM',value:v.VALIDFROM||''})]]),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:bd=>{ readK(bd,v,['RATE']); return DS.save('rate',v); }}]}); });
+  if(c==='Frais standard') simple('costcategory',[{k:'g',t:'Groupe de frais',w:200,f:x=>esc(nm(DS.get('costcategorygroup',x.COSTCATEGORYGROUP_ID)))},{k:'n',t:'Genre de frais',f:x=>esc(nm(x))},{k:'UNIT',t:'Unité',w:60},{k:'UNITPRICE',t:'Prix',w:80,cls:'r',f:x=>num(x.UNITPRICE)}],DS.all('costcategory'),nameEd('costcategory'),['g',1]);
+}
+
 /* ═══ NOTES DE FRAIS · Saisie (p.31) — frais du collaborateur, par mois ═══ */
 const NF={g:{},staff:null,y:new Date().getFullYear(),m:new Date().getMonth()};
 VIEWS['frais']={

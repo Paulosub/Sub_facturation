@@ -108,6 +108,7 @@ textarea.inp{height:auto;min-height:60px;padding:4px 6px}
 .dlg .ft{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
 .btn{height:26px;padding:0 16px;border:1px solid #b0b0b0;border-radius:5px;background:linear-gradient(#fff,#ececec);cursor:pointer}
 .btn.pri{background:linear-gradient(#5b9cf5,#2f73de);color:#fff;border-color:#2a63bf}
+.btn[disabled]{opacity:.45;cursor:default;pointer-events:none}
 /* ── Divers ── */
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:6px;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.on{opacity:.95}#toast.err{background:var(--err)}
@@ -340,6 +341,7 @@ const NAV=[
   {s:'Notes de frais',  items:[['frais','Saisie'],['frais-rapport','Rapport']]},
   {s:'Heures',          items:[['h-saisie','Saisie'],['h-rapport','Rapport'],['h-dispo','Disponibilité']]},
   {s:'Tâches',          items:[['taches-urgent','Urgent'],['taches-encours','En traitement'],['taches-regle','Réglé']]},
+  {s:'Factures',        items:[['fact-controle','Contrôle de factures']]},
   {s:'Bâtiment',        items:[['devis','Devis'],['coco','Contrôle des coûts'],['coplan','Planification des coûts']]},
   {s:'Management',      items:[['mg-genres','Affaires - Genres d’affaires'],['mg-heures','Heures'],['mg-controlling','Controlling'],['mg-collab','Collaborateurs'],['mg-mo','Maître d’ouvrage'],['mg-reporting','Reporting']]},
   {s:'Modèles',         items:[['tpl-images','Images'],['tpl-backgrounds','Arrière-plans'],['tpl-addressTemplates','Modèles d’adresses'],['tpl-labelTemplates','Modèles d’étiquettes'],['tpl-projectTemplates','Modèles d’affaires'],['tpl-staffTemplates','Modèles de collaborateurs'],['tpl-expensesTemplates','Modèles de frais'],['tpl-timeTemplates','Modèles de temps de travail'],['tpl-managementTemplates','Modèles de management'],['tpl-documents','Modèles de documents'],['config','Administrateur']]}
@@ -1490,7 +1492,7 @@ function affNav(mine){ return {
   },
   refresh(ts){ if(hit(ts,'project')) this.drawA(); this.drawC(); } }; }
 VIEWS['aff-mes']=affNav(true); VIEWS['aff-toutes']=affNav(false);
-const domainUsed=d=>['Intervenants','Soumissionnaires','Liste d’adresses','Notes','Tâches','Frais','Devis général','Contrôle des coûts','Séances'].includes(d);
+const domainUsed=d=>['Intervenants','Soumissionnaires','Liste d’adresses','Notes','Tâches','Frais','Contrats honoraires','Avancement des prestations','Factures','Devis général','Contrôle des coûts','Séances'].includes(d);
 function contactCard(c,title){ const L=(k,v,html)=>[h('b',{},k),html?h('span',{html:v}):h('span',{},v||'')];
   return h('div',{style:{flex:1}},h('div',{style:{fontWeight:600,textAlign:'center',marginBottom:'8px'}},title),!c?h('div',{class:'empty'},'—'):
     h('div',{class:'kv'},...L('',adrLines(c).map(esc).join('<br>'),true),...L('Téléphone',phone(c,1)),...L('Tél. mobile',phone(c,2)),...L('Courriel',c.EMAIL1?`<a href="mailto:${esc(c.EMAIL1)}">${esc(c.EMAIL1)}</a>`:'',true))); }
@@ -1546,6 +1548,9 @@ function domainView(C,p,d){
       rows:DS.by('projectnote','PROJECT_ID',p.ID),sort:['CHANGEDDATE',-1],onDbl:ed,empty:'Aucune note.'})); return;
   }
   if(d==='Tâches'){ ptDomain(C,top,pane,p); return; }
+  if(d==='Contrats honoraires'){ ctDomain(C,top,pane,p); return; }
+  if(d==='Avancement des prestations'){ imDomain(C,top,pane,p); return; }
+  if(d==='Factures'){ ivDomain(C,top,pane,p); return; }
   if(d==='Frais'){
     const o={}, S=AM.fr, draw=()=>{ const rows=DS.by('projectcost','PROJECT_ID',p.ID).filter(r=>r.DATEYEAR===S.y&&r.DATEMONTH===S.m);
       grid(pane,Object.assign(o,{cols:[...COSTCOLS,{k:'col',t:'Collaborateur',w:140,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))},{k:'ph',t:'Phase',w:140,f:r=>esc(nm(DS.get('projectphase',r.PHASE_ID)))}],rows,sort:['g',1],onDbl:r=>editCost(r),empty:'Aucun frais pour ce mois.'}));
@@ -1638,16 +1643,28 @@ function ctlAnalyse(C,p,t){
       :[...COSTCOLS,{k:'s',t:'Collaborateur',w:140,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))},{k:'ph',t:'Phase',w:140,f:r=>esc(nm(DS.get('projectphase',r.PHASE_ID)))}];
     grid(pane,Object.assign(o,{cols,rows,sort:['d',1]}));
     const tot=tl?`Total ${hrs(rows.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0))} h / CHF ${num(rows.reduce((s,r)=>s+tlFee(r),0))} / CHF ${num(rows.reduce((s,r)=>s+tlCost(r),0))}`:`Total CHF ${num(rows.reduce((s,r)=>s+pcAmount(r),0))}`;
-    foot.replaceChildren(ibtn({i:'gear',menu:()=>[{t:'Modifier le statut "Facturable"',fn:()=>ctlFlag(t,o,'ISCHARGEABLE')},{t:'Modifier le statut "Facturé"',fn:()=>ctlFlag(t,o,'ISCHARGED')},
+    foot.replaceChildren(ibtn({i:'gear',menu:()=>[{t:'Modifier le statut "Facturable"',fn:()=>ctlFlag(t,o,'ISCHARGEABLE')},{t:'Modifier le statut "Facturé" et transférer en facturation',fn:()=>ctlFlag(t,o,'ISCHARGED',p)},
       ...(tl?[{t:'Modifier le commentaire',fn:()=>ctlComment(o)}]:[]),'-',...(tl?['Activités','Phases','Phases et activités','Collaborateur','Ouvrage'].map(g=>({t:'Grouper : '+g,fn:()=>ctlGroup(p,rowsNow(),g)})):[])]}),
       ibtn({i:'doc',menu:()=>[{t:'Etablir le document d’analyse …',fn:()=>ctlPrint(p,t,o)}]}),h('div',{style:{flex:1}}),h('b',{title:tl?'heures / honoraires (tarif de facturation) / coûts salariaux (coût de revient)':''},tot),h('span',{class:'cnt',style:{marginLeft:'14px'}},rows.length+' positions de '+all.length));
     if(tl&&rows.length&&!rows.some(r=>tlRate(r))) foot.append(h('span',{style:{color:'#9a5b00',marginLeft:'10px'},title:'Gestion ▸ Configurer les activités ▸ Tarif'},'⚠ aucune activité n’a de tarif : honoraires à 0')); };
   draw();
 }
-async function ctlFlag(t,o,f){ const rs=gridSel(o,id=>DS.get(t,id)); if(!rs.length){ toast('Sélectionnez des positions.',true); return; }
-  const y=h('input',{type:'radio',name:'cf',checked:true}), n=h('input',{type:'radio',name:'cf'}), d=h('input',{class:'inp',type:'date',value:today(),style:{width:'150px'}});
-  dialog({title:'Editer la sélection',body:h('div',{style:{minWidth:'360px'}},h('div',{},rs.length+' position(s)'),h('p',{},h('label',{},y,f==='ISCHARGED'?' Facturé':' Facturable'),'   ',h('label',{},n,f==='ISCHARGED'?' Non facturé':' Non facturable')),f==='ISCHARGED'?h('div',{},'Date ',d):null),
-    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.commit(rs.map(r=>({t,id:r.ID,val:{...r,[f]:y.checked?1:0,...(f==='ISCHARGED'?{CHARGEDDATE:y.checked?d.value:null}:{})}})))}]}); }
+async function ctlFlag(t,o,f,p){ const rs=gridSel(o,id=>DS.get(t,id)); if(!rs.length){ toast('Sélectionnez des positions.',true); return; }
+  const chg=f==='ISCHARGED', canTr=chg&&!!p&&typeof fcTransferMenu==='function', pend=[];     // positions de facture transférées (lot 5) : écrites avec l'OK
+  if(chg&&rs.some(r=>!r.ISCHARGEABLE)&&typeof fcAlert==='function') await fcAlert('Certaines positions ne sont pas cochées "facturable".');
+  const bseq=rs.map(r=>(DS.S[t]||{})[String(r.ID)]);                                          // versions lues à l'ouverture (conflit 409)
+  const y=h('input',{type:'radio',name:'cf',checked:!chg||null}), n=h('input',{type:'radio',name:'cf'}), d=h('input',{class:'inp',type:'date',value:today(),style:{width:'150px'}});
+  const info=h('div',{style:{color:'#555',marginTop:'8px'}});
+  const tb=canTr?ibtn({label:'Transférer en facturation',menu:()=>fcTransferMenu(rs,t,p,ps=>{ pend.push(...ps); info.textContent=pend.length+' position(s) de facture, enregistrée(s) avec OK.'; },pend)}):null;
+  let ok=null; const guard=()=>{ d.disabled=chg&&!y.checked; if(tb) tb.disabled=!y.checked; if(ok) ok.disabled=!(y.checked||n.checked)||(chg&&y.checked&&!d.value); };
+  y.onchange=n.onchange=d.oninput=guard;
+  const D=dialog({title:'Editer la sélection',body:h('div',{style:{minWidth:'380px'}},h('div',{},chg?'Modifier le statut "Facturé" pour les positions sélectionnées'+(t==='projectcost'?'.':''):rs.length+' position(s)'),
+      h('p',{},h('label',{},y,chg?' Facturé':' Facturable'),'   ',h('label',{},n,chg?' Non facturé':' Non facturable')),
+      chg?h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},'Date',d,tb):null,info),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(ok&&ok.disabled) return false;
+      await DS.commit([...rs.map((r,i)=>({t,id:r.ID,bseq:bseq[i],val:{...r,[f]:y.checked?1:0,...(chg?{CHARGEDDATE:y.checked?d.value:null}:{})}})),...pend.map(x=>({t:'projectinvoicepos',id:x.ID,val:x}))]);
+      if(pend.length) toast(pend.length+' position(s) ajoutée(s) à la facture.'); }}]});
+  ok=D.bd.parentNode.querySelector('.ft .btn.pri'); guard(); }
 function ctlComment(o){ const rs=gridSel(o,id=>DS.get('timelog',id)); if(!rs.length) return; const i=h('input',{class:'inp',value:rs[0].DESCRIPTION||'',style:{width:'420px'}});
   dialog({title:'Modifier le commentaire',body:i,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.commit(rs.map(r=>({t:'timelog',id:r.ID,val:{...r,DESCRIPTION:i.value.trim()||null}})))}]}); }
 function ctlGroup(p,rows,how){
@@ -1914,7 +1931,7 @@ VIEWS['config']={
   render(m){
     const cols=h('div',{class:'cols'}); m.append(cols);
     const L=col(230), R=h('div',{class:'col fill'}); cols.append(L.el,R);
-    const cats=['Adresses - Propriétés','Adresses - Statuts','Heures prévues','Jours fériés','Phases standard','Activités standard','Tarifs de facturation','Frais standard','Tâches'];
+    const cats=['Adresses - Propriétés','Adresses - Statuts','Heures prévues','Jours fériés','Phases standard','Activités standard','Tarifs de facturation','Frais standard','Gabarits de facturation','Taux de TVA','Tâches'];
     grid(L.pane,{key:c=>c,cols:[{k:'c',t:'Catégorie',f:c=>esc(c)}],rows:cats,sel:ADM.cat,onSel:c=>{ ADM.cat=c; draw(); }});
     const draw=()=>{ R.innerHTML=''; admPane(R,ADM.cat); }; this.draw=draw; draw();
   },
@@ -1922,6 +1939,8 @@ VIEWS['config']={
 };
 function admPane(R,c){
   if(c==='Tâches'){ admTasks(R); return; }
+  if(c==='Gabarits de facturation'){ admInvoicePos(R); return; }
+  if(c==='Taux de TVA'){ admVat(R); return; }
   const o={}, pane=h('div',{class:'pane'});
   const simple=(t,cols,rows,edit,sort)=>{ R.append(phead([{i:'plus',fn:()=>edit()},{i:'edit',fn:()=>o.sel&&edit(DS.get(t,o.sel))},{i:'minus',fn:async()=>{ if(o.sel&&await confirmDlg('Supprimer ?','Supprimer')) DS.del(t,o.sel); }}]),pane);
     grid(pane,Object.assign(o,{cols,rows,sort:sort||['SORTORDER',1],onDbl:edit})); };
@@ -3842,6 +3861,902 @@ function ctrInfoPanel(el,c,p){ el.innerHTML=''; el.style.display='flex'; el.styl
       ['Coûts supplémentaires nets/TTC',h('span',{},m(ctrCost2(c)),' ',condBtn('cost'))],['Montant du contrat TTC',h('span',{title:warn?'Le calcul a changé depuis la dernière édition du contrat':''},m(c.CONTRACTAMOUNT),warn?' ⚠':'')]]),
     kv('Encaissements',[['Encaissements planifiés',m(DS.by('projectscheduledpayment','PROJECTCONTRACT_ID',c.ID).reduce((s,x)=>s+(+x.AMOUNT||0),0))],
       ['Facturé',m(DS.by('projectinvoice','PROJECTCONTRACT_ID',c.ID).reduce((s,x)=>s+(+x.AMOUNT||0),0))],['Encaissements',m(DS.by('projectpayment','PROJECTCONTRACT_ID',c.ID).reduce((s,x)=>s+(+x.AMOUNT||0),0))]])); }
+
+
+/* ── lot1.js ── */
+/* ═══ HONORAIRES · Contrats honoraires (lot 1 : ProjectContractFrame / ProjectContractDialog — cahier §3, §7.1, §7.2, §10.2)
+       et Avancement des prestations (lot 3 : ProjectImplementationFrame / ProjectImplementationDialog — cahier §5) ═══ */
+const CT_KIND={0:'Maître d’ouvrage',1:'Sous-traitant'};
+const CT_ORANGE='#ffd9a8';                                                   // net « sale » (même teinte que feeCondDialog)
+const ctForms=()=>!/NO/i.test(hfSet('isModuleFormVisible')||'[YES]');       // « [Ancien document] » visible (setting isModuleFormVisible)
+const ctSubLbl=s=>s?[s.CODE,s.DESCRIPTION].filter(Boolean).join(' '):'';
+const ctPhLbl=x=>x?[x.NUMBER,nm(x)].filter(y=>y!=null&&y!=='').join(' '):'';
+const ctOk=D=>D.bd.parentNode.querySelector('.ft .btn.pri');
+const ctNoSort=el=>$$('th',el).forEach(th=>th.onclick=null);                 // tableaux sans tri par en-tête (Tables.initTable(…, false))
+const ctDate=v=>h('input',{class:'inp',type:'date',value:v||'',style:{width:'160px'}});
+const ctAmtInp=(v,ro)=>h('input',{class:'inp',value:v,readonly:ro||null,style:{width:'140px',textAlign:'right'}});
+const ctAddDays=(iso,n)=>{ const [y,m,d]=iso.split('-').map(Number); return diso(new Date(y,m-1,d+n)); };
+const ctBseq=(t,id)=>id==null?0:((DS.S[t]||{})[String(id)]||0);             // version lue à l'ouverture d'un dialogue (conflit 409)
+const ctLine=(...x)=>h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},...x);
+const ctBox=(w,hh)=>h('div',{style:{width:w?w+'px':'100%',height:hh+'px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+function ctMsg(title,msg){ dialog({title,body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'460px'}},msg),buttons:[{t:'OK',pri:true}]}); }
+function ctAsk(title,msg,yes){ return new Promise(res=>dialog({title,body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'460px'}},msg),buttons:[{t:'Annuler',fn:()=>res(false)},{t:yes||'OK',pri:true,fn:()=>res(true)}]})); }
+const ctDelAsk=()=>ctAsk('Avertissement','Voulez-vous vraiment supprimer cette inscription ?','Supprimer');
+/* presse-papier : navigator.clipboard n'existe qu'en contexte sûr (localhost) ; les postes ouvrent http://<Mac-Studio>.local:7790 → repli execCommand */
+function ctCopy(x,msg){ const ok=()=>toast(msg||'Copié.'), ko=()=>toast('Copie impossible.',true);
+  if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(x).then(ok,ko); return; }
+  const t=h('textarea',{style:{position:'fixed',left:'-9999px',top:'0'}},x); document.body.append(t); t.select(); let r=false; try{ r=document.execCommand('copy'); }catch(_){} t.remove(); if(r) ok(); else ko(); }
+
+/* ── Utilisateur ◀ (AppUserBrowserDialog.getUserIdPopupMenu) : « utilisateur courant » puis « Choisir … » ; réutilisable par les autres lots ── */
+function ctPickUser(fn){ const o={}; let q='', D=null;
+  const box=ctBox(420,300), s=h('input',{class:'inp',placeholder:'Rechercher'});
+  const pick=()=>(o.view||[]).find(u=>String(u.ID)===String(o.sel))||null;          // seulement une ligne visible (recherche)
+  const draw=()=>{ grid(box,Object.assign(o,{cols:[{k:'USERID',t:'Nom d’utilisateur',w:150},{k:'NAME',t:'Nom'}],rows:DS.all('appuser').filter(u=>u.ISENABLED&&matchQ(q,u.USERID,u.NAME)),sort:['USERID',1],
+    onSel:()=>{ if(D) ctOk(D).disabled=false; },onDbl:()=>ctOk(D).click()})); if(D) ctOk(D).disabled=!pick(); };
+  s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); }; draw();
+  D=dialog({title:'Gestion des utilisateurs',body:h('div',{},s,h('div',{style:{height:'8px'}}),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const u=pick(); if(!u) return false; fn(u); }}]});
+  ctOk(D).disabled=true; }
+function ctUserField(get,set){ const L=h('input',{class:'inp',readonly:true,style:{width:'180px'}}), show=()=>{ L.value=get()||''; };
+  const me=()=>{ const u=ME.u, id=ME.id; return u&&u.NAME&&String(u.NAME).toLowerCase()!==String(id).toLowerCase()?id+' ('+u.NAME+')':id; };
+  const b=ibtn({i:'prev',t:'Utilisateur',menu:()=>[{t:me(),fn:()=>{ set(ME.id); show(); }},{t:'Choisir …',fn:()=>ctPickUser(u=>{ set(u.USERID); show(); })}]});
+  show(); const el=ctLine(L,b); el.refresh=show; return el; }
+
+/* ── Ordre manuel ⇈ ↑ ↓ ⇊ (§3.6) : ↓ = +2, ↑ = −2, ⇈ = 0, ⇊ = n+1, puis tri stable et renumérotation 1..n ── */
+function ctReorder(list,id,how){ const a=list.slice().sort((x,y)=>(+x.SORTORDER||0)-(+y.SORTORDER||0)).map((r,i)=>({r,s:i+1,i}));
+  const x=a.find(e=>String(e.r.ID)===String(id)); if(!x) return null;
+  x.s=how==='first'?0:how==='last'?a.length+1:x.s+(how==='prev'?-2:2);
+  return a.sort((p,q)=>p.s-q.s||p.i-q.i).map((e,j)=>({...e.r,SORTORDER:j+1})); }
+async function ctMoveRec(t,list,id,how){ const res=ctReorder(list,id,how); if(!res) return;
+  const ops=res.map(r=>{ const o=DS.get(t,r.ID); return o&&(+o.SORTORDER||0)!==r.SORTORDER?{t,id:r.ID,val:{...o,SORTORDER:r.SORTORDER}}:null; }).filter(Boolean);
+  if(ops.length) await DS.commit(ops); }
+const CT_MV={first:'Au début',prev:'Monter',next:'Descendre',last:'À la fin'};
+/* boutons d'ordre ; pos() → [indice, nombre] de la ligne sélectionnée */
+function ctMoveBtns(move){ const B={}; Object.keys(CT_MV).forEach(k=>B[k]=ibtn({i:k,t:CT_MV[k],fn:()=>move(k)}));
+  B.upd=(i,n)=>{ B.first.disabled=B.prev.disabled=!(i>0); B.next.disabled=B.last.disabled=!(i>=0&&i<n-1); }; B.list=['first','prev','next','last'].map(k=>B[k]); return B; }
+
+/* ── Règles pures (testées dans lot1_test.js) ── */
+const ctList=p=>DS.by('projectcontract','PROJECT_ID',p.ID).slice().sort((a,b)=>(+a.SORTORDER||0)-(+b.SORTORDER||0)||a.ID-b.ID);
+const ctNextNumber=list=>String(Math.max(0,...list.map(c=>String(c.NUMBER??'').trim()).filter(s=>/^\d+$/.test(s)).map(Number))+1);   // §13 n°8 : max numérique + 1
+const ctPayGuard=(name,amount,inv,pay)=>{ const a=hfNum(amount); return !!String(name||'').trim()&&a!=null&&(!!pay||(!!inv&&a===0)); };      // ProjectPaymentDialog.checkGuards
+const ctSchedGuard=(name,amount,inv,due)=>!!String(name||'').trim()&&hfNum(amount)!=null&&!!inv&&!!due;
+function ctNew(p){ const L=ctList(p); return {ID:null,PROJECT_ID:p.ID,NUMBER:ctNextNumber(L),NAME:'',CONTRACTDATE:today(),SORTORDER:L.length+1,SUPPLIERDESC:null,ISSUBCONTRACT:0,USERID:ME.id,
+  STATECODE:0,REMARK:null,CONTRACTFOLDER:null,TIMEAMOUNT1:0,TIMEAMOUNT2:0,TIMEHOUR:0,COSTAMOUNT1:0,COSTAMOUNT2:0,CONTRACTAMOUNT:0,ISINVOICEABLE:0,
+  CONTACT_ID:null,SUPPLIERCONTACT_ID:null,SUBPROJECT_ID:null,PROJECTFEECALCULATION_ID:null}; }
+/* calcul de base (PROJECTFEE_ID null) préparé en mémoire, écrit au seul OK ; t/k = conditions recopiées (ou défauts, VATRATE −1) */
+function ctNewBasic(t,k,hh){ return {calc:{ID:null,CALCULATIONDETAILS:null,CHANGEDDATE:today(),NAME:null,NUMBER:null,REMARK:null,TITLE:null,VERSION:null,PROJECTFEE_ID:null,TIMEHOUR:+hh||0,
+    TIMEAMOUNTPART1:0,TIMEAMOUNTPART2:0,TIMEAMOUNTPART3:0,TIMEHOURPART1:0,TIMEHOURPART2:0,TIMEHOURPART3:0,TIMECALCULATIONAMOUNT_ID:null,COSTCALCULATIONAMOUNT_ID:null},
+  ta:{...hfNewAmount(),...(t||{}),ID:null},ca:{...hfNewAmount(),...(k||{}),ID:null},bs:{f:0,t:0,k:0}}; }
+/* recopie depuis une variante et son en-tête (newProjectContract / applyProjectFeeCalculation) — la Désignation n'est pas recopiée */
+function ctCopyFromCalc(v,f,fee){ fee=fee||DS.get('projectfee',f.PROJECTFEE_ID);
+  const t=DS.get('projectfeecalculationamount',f.TIMECALCULATIONAMOUNT_ID)||{}, k=DS.get('projectfeecalculationamount',f.COSTCALCULATIONAMOUNT_ID)||{};
+  if(fee) Object.assign(v,{SUPPLIERDESC:fee.SUPPLIERDESC??null,CONTACT_ID:fee.CONTACT_ID??null,SUPPLIERCONTACT_ID:fee.SUPPLIERCONTACT_ID??null,ISSUBCONTRACT:+fee.ISSUBCONTRACT?1:0,SUBPROJECT_ID:fee.SUBPROJECT_ID??null});
+  return Object.assign(v,{PROJECTFEECALCULATION_ID:f.ID,TIMEHOUR:+f.TIMEHOUR||0,TIMEAMOUNT1:+t.AMOUNT1||0,TIMEAMOUNT2:+t.AMOUNT2||0,COSTAMOUNT1:+k.AMOUNT1||0,COSTAMOUNT2:+k.AMOUNT2||0,
+    CONTRACTAMOUNT:dpRound((+t.AMOUNT2||0)+(+k.AMOUNT2||0))}); }
+/* opérations de l'OK (identifiants déjà attribués) : contrat + calcul de base + 2 conditions, un seul commit */
+function ctOkOps(v,link,B,hh,bsC){
+  if(link){ const t=DS.get('projectfeecalculationamount',link.TIMECALCULATIONAMOUNT_ID)||{}, k=DS.get('projectfeecalculationamount',link.COSTCALCULATIONAMOUNT_ID)||{};
+    Object.assign(v,{PROJECTFEECALCULATION_ID:link.ID,TIMEHOUR:+link.TIMEHOUR||0,TIMEAMOUNT1:+t.AMOUNT1||0,TIMEAMOUNT2:+t.AMOUNT2||0,COSTAMOUNT1:+k.AMOUNT1||0,COSTAMOUNT2:+k.AMOUNT2||0});
+    return [{t:'projectcontract',id:v.ID,val:v,bseq:bsC}]; }
+  Object.assign(B.calc,{TIMEHOUR:+hh||0,TIMECALCULATIONAMOUNT_ID:B.ta.ID,COSTCALCULATIONAMOUNT_ID:B.ca.ID,PROJECTFEE_ID:null});
+  Object.assign(v,{PROJECTFEECALCULATION_ID:B.calc.ID,TIMEHOUR:+hh||0,TIMEAMOUNT1:+B.ta.AMOUNT1||0,TIMEAMOUNT2:+B.ta.AMOUNT2||0,COSTAMOUNT1:+B.ca.AMOUNT1||0,COSTAMOUNT2:+B.ca.AMOUNT2||0});
+  return [{t:'projectcontract',id:v.ID,val:v,bseq:bsC},{t:'projectfeecalculation',id:B.calc.ID,val:B.calc,bseq:B.bs.f},
+    {t:'projectfeecalculationamount',id:B.ta.ID,val:B.ta,bseq:B.bs.t},{t:'projectfeecalculationamount',id:B.ca.ID,val:B.ca,bseq:B.bs.k}]; }
+/* suppression (§3.6) : refus si factures ou planification RH ; sinon contrat + calcul de base + ses 2 conditions + planifications + encaissements */
+const ctBlocked=c=>DS.by('projectinvoice','PROJECTCONTRACT_ID',c.ID).length>0||DS.by('planningsubproject','PROJECTCONTRACT_ID',c.ID).length>0;
+function ctDeleteOps(c){ const ops=[{t:'projectcontract',id:c.ID,val:null}], f=ctrCalc(c);
+  if(isBasicCalc(f)){ ops.push({t:'projectfeecalculation',id:f.ID,val:null});
+    [f.TIMECALCULATIONAMOUNT_ID,f.COSTCALCULATIONAMOUNT_ID].filter(id=>id!=null&&DS.get('projectfeecalculationamount',id)).forEach(id=>ops.push({t:'projectfeecalculationamount',id,val:null})); }
+  ['projectscheduledpayment','projectpayment'].forEach(t=>DS.by(t,'PROJECTCONTRACT_ID',c.ID).forEach(x=>ops.push({t,id:x.ID,val:null})));
+  return ops; }
+
+/* ── Domaine « Contrats honoraires » : 12 colonnes (ProjectContractTableModel, type all), ordre par SORTORDER, sans tri, recherche ni export ── */
+const CT_COLS=p=>[{k:'NUMBER',t:'Numéro',w:80},{k:'NAME',t:'Désignation',w:190},{k:'CONTRACTDATE',t:'Date',w:100,f:c=>dfr(c.CONTRACTDATE)},
+  {k:'m',t:'Mandant',w:170,f:c=>esc(contactName(DS.get('contact',c.CONTACT_ID)))},{k:'s',t:'Mandataire',w:170,f:c=>esc(contactName(DS.get('contact',c.SUPPLIERCONTACT_ID)))},
+  {k:'SUPPLIERDESC',t:'Type de prestations',w:190},{k:'k',t:'Contrat avec',w:115,f:c=>esc(CT_KIND[+c.ISSUBCONTRACT?1:0])},{k:'o',t:'Ouvrage',w:130,f:c=>esc(ctSubLbl(DS.get('subproject',c.SUBPROJECT_ID)))},
+  {k:'USERID',t:'Utilisateur',w:90},{k:'st',t:'Statut',w:100,f:c=>esc(CT_STATE[c.STATECODE]??'')},{k:'CONTRACTAMOUNT',t:'Total',w:110,cls:'r',f:c=>hfN(+c.CONTRACTAMOUNT||0)},{k:'cur',t:'',w:48,f:()=>esc(hfCur(p))}];
+const CTS={g:{},pid:null,shift:false};
+function ctDomain(C,top,pane,p){ const S=CTS; if(S.pid!==p.ID){ S.pid=p.ID; S.g.sel=null; }
+  const cur=()=>{ const c=DS.get('projectcontract',S.g.sel); return c&&c.PROJECT_ID===p.ID?c:null; };
+  const info=h('div',{style:{flex:'0 0 auto',minHeight:'180px',maxHeight:'260px',borderTop:'1px solid var(--line)'}});
+  const editMenu=()=>{ const c=cur(); return [{t:'Editer le contrat …',dis:!c,fn:()=>ctEdit(c,p)},{t:'Planifier des encaissements …',dis:!c,fn:()=>ctSchedule(c)},{t:'Editer les encaissements …',dis:!c,fn:()=>ctPayments(c)}]; };
+  const bE=ibtn({i:'edit',t:'Editer',menu:editMenu}), bD=ibtn({i:'minus',t:'Supprimer le contrat',fn:()=>cur()&&ctDelete(cur())});
+  const M=ctMoveBtns(k=>{ const c=cur(); if(c) ctMoveRec('projectcontract',ctList(p),c.ID,k); });
+  const bDoc=ctForms()?ibtn({i:'doc',t:'Documents',menu:()=>[{t:'Afficher le rapport … [Ancien document]',dis:!cur(),fn:()=>ctPrintOverview(cur())}]}):null;
+  const upd=()=>{ const c=cur(), L=ctList(p); bE.disabled=bD.disabled=!c; M.upd(c?L.findIndex(x=>x.ID===c.ID):-1,L.length); if(bDoc) bDoc.disabled=!c; ctrInfoPanel(info,c,p); };
+  const head=phead([{i:'plus',t:'Nouveau',menu:()=>[{t:'Nouveau contrat …',fn:()=>ctEdit(null,p)},
+      {t:'Nouveau contrat basé sur un calcul …',dis:typeof feBrowse!=='function',fn:()=>feBrowse(p,(f,fee)=>setTimeout(()=>ctEdit(null,p,{calc:f,fee}),50))}]},
+    bE,bD,...M.list,bDoc].filter(Boolean));
+  pane.addEventListener('dblclick',e=>{ S.shift=e.shiftKey; },true);                                  // Maj + double-clic = planifier
+  pane.addEventListener('contextmenu',e=>{ const tr=e.target.closest('tr[data-k]'); if(!tr) return; e.preventDefault(); tr.click(); popMenu({x:e.clientX,y:e.clientY},editMenu()); });
+  top.append(head,pane); C.append(top,info);
+  const rows=ctList(p); if(S.g.sel!=null&&!rows.some(c=>String(c.ID)===String(S.g.sel))) S.g.sel=null;
+  grid(pane,Object.assign(S.g,{cols:CT_COLS(p),rows,sort:null,state:{},onSel:upd,onDbl:c=>S.shift?ctSchedule(c):ctEdit(c,p),empty:'Aucun contrat.'})); ctNoSort(pane); upd(); }
+async function ctDelete(c){
+  if(ctBlocked(c)){ ctMsg('Information','Le contrat ne peut pas être supprimé parce que les paiements ont été saisi.'); return; }
+  if(!await ctDelAsk()) return;
+  await DS.commit(ctDeleteOps(c)); CTS.g.sel=null; }
+
+/* ── « Choix du contrat » (ProjectContractBrowserDialog, type browser = colonnes 0 à 5) ; o={onlyInvoiceable, applyContact:false pour masquer la case} ── */
+function ctBrowse(p,o,fn){ o=o||{}; const g={}, box=ctBox(780,300), ap=h('input',{type:'checkbox',checked:true}); let D=null;
+  const upd=()=>{ if(D) ctOk(D).disabled=!DS.get('projectcontract',g.sel); };
+  grid(box,Object.assign(g,{cols:CT_COLS(p).slice(0,6),rows:ctList(p).filter(c=>!o.onlyInvoiceable||+c.ISINVOICEABLE===1),sort:null,onSel:upd,onDbl:()=>ctOk(D).click(),empty:'Aucun contrat.'})); ctNoSort(box);
+  D=dialog({title:'Choix du contrat',body:h('div',{},box,o.applyContact===false?null:h('label',{style:{display:'block',marginTop:'8px'}},ap,' Reprendre le débiteur')),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const c=DS.get('projectcontract',g.sel); if(!c) return false; fn(c,o.applyContact!==false&&ap.checked); }}]}); upd(); }
+
+/* ── Dialogue « Nouveau contrat » / « Editer le contrat » (§3.5) — opts={calc,fee} pour « Nouveau contrat basé sur un calcul » ── */
+function ctEdit(c0,p,opts){ opts=opts||{}; const isNew=!c0, c=isNew?null:DS.get('projectcontract',c0.ID); if(!isNew&&!c) return;
+  const v=isNew?ctNew(p):{...c}, bsC=isNew?0:ctBseq('projectcontract',c.ID), cur=hfCur(p), amt=id=>{ const a=DS.get('projectfeecalculationamount',id); return a?{...a}:null; };
+  let link=null, B=null;                                   // link : vraie variante (lecture seule) ; B : calcul de base (copies éditables)
+  if(isNew){ if(opts.calc){ link=opts.calc; ctCopyFromCalc(v,link,opts.fee); } else B=ctNewBasic(null,null,0); }
+  else { const f=ctrCalc(c);
+    if(f&&!isBasicCalc(f)) link=f;
+    else if(f){ B={calc:{...f},ta:amt(f.TIMECALCULATIONAMOUNT_ID),ca:amt(f.COSTCALCULATIONAMOUNT_ID),bs:{f:ctBseq('projectfeecalculation',f.ID),t:ctBseq('projectfeecalculationamount',f.TIMECALCULATIONAMOUNT_ID),k:ctBseq('projectfeecalculationamount',f.COSTCALCULATIONAMOUNT_ID)}};
+      if(!B.ta){ B.ta={...hfNewAmount(),AMOUNT1:+c.TIMEAMOUNT1||0,AMOUNT2:+c.TIMEAMOUNT2||0}; B.bs.t=0; } if(!B.ca){ B.ca={...hfNewAmount(),AMOUNT1:+c.COSTAMOUNT1||0,AMOUNT2:+c.COSTAMOUNT2||0}; B.bs.k=0; } }
+    else B=ctNewBasic({AMOUNT1:+c.TIMEAMOUNT1||0,AMOUNT2:+c.TIMEAMOUNT2||0},{AMOUNT1:+c.COSTAMOUNT1||0,AMOUNT2:+c.COSTAMOUNT2||0},c.TIMEHOUR); }   // contrat sans calcul : créé au OK
+  const T=()=>link?(DS.get('projectfeecalculationamount',link.TIMECALCULATIONAMOUNT_ID)||hfNewAmount()):B.ta;
+  const K=()=>link?(DS.get('projectfeecalculationamount',link.COSTCALCULATIONAMOUNT_ID)||hfNewAmount()):B.ca;
+  /* champs */
+  const fNum=h('input',{class:'inp',maxlength:64,value:v.NUMBER??'',style:{width:'160px'}}), fName=h('input',{class:'inp',maxlength:64,value:v.NAME||''});
+  const fDesc=h('input',{class:'inp',maxlength:128,value:v.SUPPLIERDESC||''}), fDate=ctDate(v.CONTRACTDATE);
+  const fMand=hfContactField(()=>v.CONTACT_ID,id=>{ v.CONTACT_ID=id; guard(); },'Mandant'), fSupp=hfContactField(()=>v.SUPPLIERCONTACT_ID,id=>{ v.SUPPLIERCONTACT_ID=id; guard(); },'Mandataire');
+  const rn='ctk'+Date.now(), kMO=h('input',{type:'radio',name:rn,checked:!+v.ISSUBCONTRACT||null}), kST=h('input',{type:'radio',name:rn,checked:!!+v.ISSUBCONTRACT||null});
+  const fSub=h('select',{class:'inp'},h('option',{value:''},''),...DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).map(s=>h('option',{value:s.ID},ctSubLbl(s))));
+  const fUser=ctUserField(()=>v.USERID,x=>{ v.USERID=x; });
+  const fState=h('select',{class:'inp',style:{width:'180px'}},...[0,1,2].map(k=>h('option',{value:k,selected:k===(+v.STATECODE||0)||null},CT_STATE[k])));
+  const fRem=h('textarea',{class:'inp',rows:3,maxlength:1024,style:{width:'100%'}},v.REMARK||'');
+  const fFold=h('input',{class:'inp',maxlength:1024,value:v.CONTRACTFOLDER||'',placeholder:'Chemin du dossier (coller)'});
+  const bFold=ibtn({i:'prev',t:'Emplacement du dossier d’affaire',menu:()=>{ const x=fFold.value.trim(); return [{t:'Supprimer',dis:!x,fn:()=>{ fFold.value=''; }},
+    {t:'Copier l’emplacement',dis:!x,fn:()=>ctCopy(x,'Emplacement copié : à coller dans le Finder (Aller ▸ Aller au dossier …).')}]; }});
+  /* rémunération */
+  const calcL=h('input',{class:'inp',readonly:true,style:{width:'280px'}});
+  const bCalc=(!isNew&&link)?ibtn({i:'prev',t:'Calcul des honoraires',menu:()=>[{t:'Choisir …',dis:typeof feBrowse!=='function',fn:()=>feBrowse(p,(f,fee)=>{ link=f; B=null; ctCopyFromCalc(v,f,fee); load(true); })},
+    {t:'Supprimer',dis:!link,fn:()=>{ B=ctNewBasic(T(),K(),link.TIMEHOUR); link=null; load(); }}]}):null;
+  const tB=ctAmtInp(''), tN=ctAmtInp('',true), tH=ctAmtInp(''), kB=ctAmtInp(''), kN=ctAmtInp('',true), tot=ctAmtInp('',true), warn=h('span',{style:{color:'var(--warn)'}});
+  const acc=h('input',{type:'checkbox',checked:!!+v.ISINVOICEABLE||null});
+  let dT=false, dK=false;                                   // isTimeAmount2Dirty / isCostAmount2Dirty : une frappe dans un brut
+  const condBtn=k=>ibtn({i:'prev',t:'Conditions',menu:()=>link?[{t:'Définir les conditions …',fn:()=>feeCondDialog(k==='t'?T():K(),{readOnly:true})}]:[{t:'Modifier les conditions …',fn:()=>{
+    const inp=k==='t'?tB:kB, br=hfNum(inp.value); if(br==null){ inp.focus(); return; }
+    feeCondDialog(k==='t'?B.ta:B.ca,{brut:br,onOk:a=>{ if(k==='t'){ B.ta=a; dT=false; } else { B.ca=a; dK=false; } inp.value=hfN(a.AMOUNT1);
+      v.CONTRACTAMOUNT=dpRound((+B.ta.AMOUNT2||0)+(+B.ca.AMOUNT2||0)); nets(); guard(); }}); }}]});
+  const nets=()=>{ tN.value=hfN(+T().AMOUNT2||0); kN.value=hfN(+K().AMOUNT2||0); tot.value=hfN(+v.CONTRACTAMOUNT||0);
+    tN.style.background=dT?CT_ORANGE:''; kN.style.background=dK?CT_ORANGE:'';
+    const w=Math.abs((+v.CONTRACTAMOUNT||0)-((+T().AMOUNT2||0)+(+K().AMOUNT2||0)))>0.005; warn.textContent=w?'⚠':''; warn.title=w?'Le calcul a changé depuis la dernière édition du contrat':''; };
+  const load=hdr=>{ const ro=!!link; dT=dK=false; calcL.value=link?[link.NUMBER,link.NAME].filter(x=>x!=null&&x!=='').join(' '):'-';
+    tB.value=hfN(+T().AMOUNT1||0); kB.value=hfN(+K().AMOUNT1||0); tH.value=hfN(link?+link.TIMEHOUR||0:+B.calc.TIMEHOUR||0); [tB,tH,kB].forEach(x=>x.readOnly=ro);
+    if(hdr){ fDesc.value=v.SUPPLIERDESC||''; fMand.refresh(); fSupp.refresh(); kMO.checked=!+v.ISSUBCONTRACT; kST.checked=!!+v.ISSUBCONTRACT; fSub.value=v.SUBPROJECT_ID!=null?String(v.SUBPROJECT_ID):''; }   // recopie de l'en-tête
+    nets(); guard(); };
+  tB.oninput=()=>{ dT=true; nets(); guard(); }; kB.oninput=()=>{ dK=true; nets(); guard(); }; tH.oninput=()=>guard();
+  const valid=()=>!!fNum.value.trim()&&!!fName.value.trim()&&!!v.CONTACT_ID&&!!v.SUPPLIERCONTACT_ID&&!dT&&!dK&&hfNum(tH.value)!=null;
+  let D=null; const guard=()=>{ if(D) ctOk(D).disabled=!valid(); };
+  fNum.oninput=fName.oninput=guard;
+  const cu=()=>h('span',{style:{color:'#555'}},cur);
+  const sec=t=>['',h('div',{style:{fontWeight:600,borderBottom:'1px solid var(--line)',padding:'8px 0 2px'}},t)];
+  const body=h('div',{style:{minWidth:'660px'}},formRows([['Numéro',fNum],['Désignation',fName],['Type de prestations',ctLine(fDesc,hfSuggest(fDesc,HF_SERVICES))],['Date',fDate],
+    ['Mandant',fMand],['Mandataire',fSupp],['Contrat avec',ctLine(h('label',{},kMO,' '+CT_KIND[0]),h('label',{style:{marginLeft:'14px'}},kST,' '+CT_KIND[1]))],['Ouvrage',fSub],
+    ['Utilisateur',fUser],['Statut',fState],['Remarque',fRem],['Emplacement du dossier d’affaire',ctLine(fFold,bFold)],
+    sec('Rémunération'),['Calcul des honoraires',ctLine(calcL,bCalc)],['Honoraires bruts/HT',ctLine(tB,cu())],['Honoraires nets/TTC',ctLine(tN,cu(),condBtn('t'))],
+    ['Temps prévu',ctLine(tH,h('span',{style:{color:'#555'}},'h'))],['Coûts supplémentaires bruts/HT',ctLine(kB,cu())],['Coûts supplémentaires nets/TTC',ctLine(kN,cu(),condBtn('k'))],
+    ['Total contrat honoraires net/TTC',ctLine(tot,cu(),warn)],['Facturation',h('label',{style:{textAlign:'left'}},acc,' Contrat accessible')]],660));
+  D=dialog({title:isNew?'Nouveau contrat':'Editer le contrat',body,width:'760px',buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!valid()) return false;
+    Object.assign(v,{NUMBER:fNum.value.trim(),NAME:fName.value.trim(),SUPPLIERDESC:fDesc.value.trim()||null,CONTRACTDATE:fDate.value||null,ISSUBCONTRACT:kST.checked?1:0,
+      SUBPROJECT_ID:+fSub.value||null,USERID:(v.USERID||'').trim()||null,STATECODE:+fState.value,REMARK:fRem.value.trim()||null,CONTRACTFOLDER:fFold.value.trim()||null,ISINVOICEABLE:acc.checked?1:0});
+    if(!link){ if(B.calc.ID==null) B.calc.ID=DS.newIds('projectfeecalculation')[0];
+      const need=[B.ta,B.ca].filter(a=>a.ID==null); if(need.length){ const ids=DS.newIds('projectfeecalculationamount',need.length); need.forEach((a,i)=>a.ID=ids[i]); } }
+    if(v.ID==null) v.ID=DS.newIds('projectcontract')[0];
+    await DS.commit(ctOkOps(v,link,B,hfNum(tH.value),bsC)); CTS.g.sel=String(v.ID); if(opts.onSaved) opts.onSaved(v); }}]});
+  load(true); }
+
+/* ── « Planifier les encaissements » / « Plan de paiements » (ProjectScheduledPaymentsDialog, §7.1) ── */
+function ctSchedule(c0,ro){ const g={}, t='projectscheduledpayment', box=ctBox(0,300), foot=h('div',{style:{marginTop:'8px',textAlign:'right',color:'#333'}});
+  const C0=()=>DS.get('projectcontract',c0.ID)||c0, p=DS.get('project',c0.PROJECT_ID), cur=hfCur(p);
+  const rows=()=>DS.by(t,'PROJECTCONTRACT_ID',c0.ID).slice().sort((a,b)=>(+a.SORTORDER||0)-(+b.SORTORDER||0)||a.ID-b.ID);
+  const one=()=>{ const x=DS.get(t,g.sel); return x&&x.PROJECTCONTRACT_ID===c0.ID?x:null; };
+  const bE=ibtn({i:'edit',t:'Editer',fn:()=>one()&&ctSchedEdit(one(),C0(),draw)}), bD=ibtn({i:'minus',t:'Supprimer',fn:async()=>{ const x=one(); if(!x||!await ctDelAsk()) return; await DS.del(t,x.ID); g.sel=null; draw(); }});
+  const M=ctMoveBtns(async k=>{ const x=one(); if(!x) return; await ctMoveRec(t,rows(),x.ID,k); draw(); });
+  const head=phead(ro?[mgGear(g,'Encaissements_planifies')]:[{i:'plus',t:'Nouveau',fn:()=>ctSchedEdit(null,C0(),draw)},bE,bD,...M.list,mgGear(g,'Encaissements_planifies')]);
+  const upd=()=>{ const x=one(), L=rows(); bE.disabled=bD.disabled=!x; M.upd(x?L.findIndex(y=>y.ID===x.ID):-1,L.length); };
+  const draw=()=>{ const L=rows(); if(g.sel!=null&&!L.some(x=>String(x.ID)===String(g.sel))) g.sel=null;
+    grid(box,Object.assign(g,{cols:[{k:'NAME',t:'Désignation',w:170},{k:'INVOICEDATE',t:'Date de la facture',w:125,f:x=>dfr(x.INVOICEDATE)},{k:'DUEDATE',t:'Date d’échéance',w:120,f:x=>dfr(x.DUEDATE)},
+      {k:'PAYMENTDATE',t:'Date encaissement',w:125,f:x=>dfr(x.PAYMENTDATE)},{k:'ph',t:'Phase',w:125,f:x=>esc(ctPhLbl(DS.get('projectphase',x.PHASE_ID)))},{k:'sp',t:'Phase partielle',w:125,f:x=>esc(ctPhLbl(DS.get('projectsubphase',x.SUBPHASE_ID)))},
+      {k:'AMOUNT',t:'Montant',cls:'r',f:x=>hfN(+x.AMOUNT||0)}],rows:L,sort:null,state:{},onSel:upd,onDbl:x=>{ if(!ro) ctSchedEdit(x,C0(),draw); },empty:'Aucun encaissement planifié.'})); ctNoSort(box); upd();
+    foot.textContent='Montant du contrat: '+hfN(+C0().CONTRACTAMOUNT||0)+' '+cur+' / Total: '+hfN(L.reduce((s,x)=>s+(+x.AMOUNT||0),0))+' '+cur; };
+  const body=h('div',{},formRows([['Contrat',h('input',{class:'inp',readonly:true,value:ctrLbl(C0())})]],600),h('div',{style:{margin:'10px 0 4px',fontWeight:600}},'Encaissements planifiés'),
+    h('div',{style:{border:'1px solid var(--line)'}},head,box),foot);
+  dialog({title:ro?'Plan de paiements':'Planifier les encaissements',body,width:'980px',buttons:[{t:'Fermer',pri:true}]}); draw(); }
+/* ligne « Nouvelle / Editer planification d'encaissement » (orthographe corrigée, §13 n°17) */
+function ctSchedEdit(x0,c,after){ const t='projectscheduledpayment', isNew=!x0, x=isNew?null:DS.get(t,x0.ID); if(!isNew&&!x) return;
+  const bs=isNew?0:ctBseq(t,x.ID), cur=hfCur(DS.get('project',c.PROJECT_ID));
+  const v=isNew?{ID:null,NAME:'',INVOICEDATE:null,DUEDATE:null,PAYMENTDATE:null,AMOUNT:0,REMARK:null,SORTORDER:DS.by(t,'PROJECTCONTRACT_ID',c.ID).length+1,PROJECTCONTRACT_ID:c.ID,PHASE_ID:null,SUBPHASE_ID:null}:{...x};
+  const fN=h('input',{class:'inp',maxlength:64,value:v.NAME||''}), fI=ctDate(v.INVOICEDATE), fD=ctDate(v.DUEDATE), fP=ctDate(v.PAYMENTDATE), fA=ctAmtInp(hfN(+v.AMOUNT||0));
+  const fR=h('textarea',{class:'inp',rows:3,maxlength:1024,style:{width:'100%'}},v.REMARK||'');
+  const pick=el=>{ try{ el.showPicker(); }catch(_){ el.focus(); } };
+  const bDue=ibtn({i:'prev',t:'Date d’échéance',menu:()=>{ const d=fI.value;
+    return [...(d?[0,10,20,30,60].map(n=>{ const iso=ctAddDays(d,n); return {t:(n?'Date de la facture + '+n+' Jours':'Date de la facture')+' ('+dfr(iso)+')',fn:()=>{ fD.value=iso; guard(); }}; }).concat('-'):[]),{t:'Choisir …',fn:()=>pick(fD)}]; }});
+  const gP={}, gS={}, bP=ctBox(0,130), bS=ctBox(0,130);
+  const phases=DS.by('projectphase','PROJECT_ID',c.PROJECT_ID).slice().sort((a,b)=>cmp(a.NUMBER,b.NUMBER));
+  const drawS=()=>{ grid(bS,Object.assign(gS,{cols:[{k:'NUMBER',t:'N°',w:50},{k:'n',t:'Phase partielle',f:s=>esc(nm(s))}],rows:v.PHASE_ID!=null?DS.by('projectsubphase','PROJECTPHASE_ID',v.PHASE_ID).slice().sort((a,b)=>cmp(a.NUMBER,b.NUMBER)):[],
+    sel:v.SUBPHASE_ID,sort:null,onSel:s=>{ v.SUBPHASE_ID=s.ID; }})); ctNoSort(bS); };
+  const drawP=()=>{ grid(bP,Object.assign(gP,{cols:[{k:'NUMBER',t:'N°',w:50},{k:'n',t:'Phase',f:y=>esc(nm(y))}],rows:phases,sel:v.PHASE_ID,sort:null,
+    onSel:y=>{ if(v.PHASE_ID!==y.ID){ v.PHASE_ID=y.ID; v.SUBPHASE_ID=null; drawS(); } }})); ctNoSort(bP); };
+  const clr=fn=>ibtn({label:'Annuler la sélection',fn});
+  const phBox=h('div',{style:{display:'flex',gap:'8px',width:'520px'}},
+    h('div',{style:{flex:1}},bP,h('div',{style:{marginTop:'4px'}},clr(()=>{ v.PHASE_ID=null; v.SUBPHASE_ID=null; gP.sel=null; drawP(); drawS(); }))),
+    h('div',{style:{flex:1}},bS,h('div',{style:{marginTop:'4px'}},clr(()=>{ v.SUBPHASE_ID=null; gS.sel=null; drawS(); }))));
+  let D=null; const guard=()=>{ if(D) ctOk(D).disabled=!ctSchedGuard(fN.value,fA.value,fI.value,fD.value); };
+  [fN,fA].forEach(e=>e.oninput=guard); [fI,fD].forEach(e=>{ e.onchange=guard; e.oninput=guard; });
+  const body=h('div',{},formRows([['Désignation',ctLine(fN,hfSuggest(fN,['Acompte','Encaissement final']))],['Date de la facture',fI],['Date d’échéance',ctLine(fD,bDue)],['Date encaissement',fP],
+    ['Montant',ctLine(fA,h('span',{style:{color:'#555'}},cur))],['Phase/Phase partielle',phBox],['Remarque',fR]],640));
+  D=dialog({title:isNew?'Nouvelle planification d’encaissement':'Editer planification d’encaissement',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    if(!ctSchedGuard(fN.value,fA.value,fI.value,fD.value)) return false;
+    Object.assign(v,{NAME:fN.value.trim(),INVOICEDATE:fI.value||null,DUEDATE:fD.value||null,PAYMENTDATE:fP.value||null,AMOUNT:hfNum(fA.value),REMARK:fR.value.trim()||null});
+    if(v.ID==null) v.ID=DS.newIds(t)[0];
+    await DS.commit([{t,id:v.ID,val:v,bseq:bs}]); if(after) after(); }}]});
+  drawP(); drawS(); guard(); }
+
+/* ── « Editer les encaissements » du contrat (ProjectPaymentsDialog, §7.2) : 🔒 = encaissement lié à une facture (✎ et − grisés) ── */
+function ctPayments(c0){ const g={}, t='projectpayment', box=ctBox(0,280), foot=h('div',{style:{marginTop:'8px',textAlign:'right',color:'#333'}});
+  const C0=()=>DS.get('projectcontract',c0.ID)||c0, cur=hfCur(DS.get('project',c0.PROJECT_ID));
+  const rows=()=>DS.by(t,'PROJECTCONTRACT_ID',c0.ID).slice().sort((a,b)=>(+a.SORTORDER||0)-(+b.SORTORDER||0)||a.ID-b.ID);
+  const one=()=>{ const x=DS.get(t,g.sel); return x&&x.PROJECTCONTRACT_ID===c0.ID?x:null; }, locked=x=>x&&x.PROJECTINVOICE_ID!=null;
+  const edit=x0=>{ const isNew=!x0, x=isNew?{ID:null,NAME:'',INVOICEDATE:null,PAYMENTDATE:null,AMOUNT:0,REMARK:null,SORTORDER:rows().length+1,PROJECTCONTRACT_ID:c0.ID,PROJECTINVOICE_ID:null}:DS.get(t,x0.ID);
+    if(!x||locked(x)) return; const bs=isNew?0:ctBseq(t,x.ID);
+    ctPaymentDialog(x,C0(),async y=>{ if(y.ID==null) y.ID=DS.newIds(t)[0]; await DS.commit([{t,id:y.ID,val:y,bseq:bs}]); g.sel=String(y.ID); draw(); }); };
+  const bE=ibtn({i:'edit',t:'Editer',fn:()=>{ const x=one(); if(x) edit(x); }}), bD=ibtn({i:'minus',t:'Supprimer',fn:async()=>{ const x=one(); if(!x||locked(x)||!await ctDelAsk()) return; await DS.del(t,x.ID); g.sel=null; draw(); }});
+  const head=phead([{i:'plus',t:'Nouveau',fn:()=>edit(null)},bE,bD,mgGear(g,'Encaissements')]);
+  const upd=()=>{ const x=one(); bE.disabled=bD.disabled=!x||locked(x); };
+  const draw=()=>{ const L=rows(); if(g.sel!=null&&!L.some(x=>String(x.ID)===String(g.sel))) g.sel=null;
+    grid(box,Object.assign(g,{cols:[{k:'lk',t:'🔒',w:34,cls:'c',f:x=>locked(x)?'🔒':''},{k:'NAME',t:'Désignation',w:190},{k:'inv',t:'Facture',w:170,f:x=>esc((DS.get('projectinvoice',x.PROJECTINVOICE_ID)||{}).NAME||'')},
+      {k:'INVOICEDATE',t:'Date de la facture',w:125,f:x=>dfr(x.INVOICEDATE)},{k:'PAYMENTDATE',t:'Date encaissement',w:125,f:x=>dfr(x.PAYMENTDATE)},{k:'AMOUNT',t:'Montant',cls:'r',f:x=>hfN(+x.AMOUNT||0)}],
+      rows:L,sort:null,state:{},onSel:upd,onDbl:x=>edit(x),empty:'Aucun encaissement.'})); ctNoSort(box); upd();
+    foot.textContent='Montant du contrat: '+hfN(+C0().CONTRACTAMOUNT||0)+' '+cur+' / Total: '+hfN(L.reduce((s,x)=>s+(+x.AMOUNT||0),0))+' '+cur; };
+  const body=h('div',{},formRows([['Contrat',h('input',{class:'inp',readonly:true,value:ctrLbl(C0())})]],600),h('div',{style:{margin:'10px 0 4px',fontWeight:600}},'Encaissements'),
+    h('div',{style:{border:'1px solid var(--line)'}},head,box),foot);
+  dialog({title:'Encaissements',body,width:'860px',buttons:[{t:'Fermer',pri:true}]}); draw(); }
+/* dialogue d'un encaissement « Nouveau » / « Editer » (ProjectPaymentDialog) — AUCUN commit : onOk(copie modifiée) (peut renvoyer false pour rester ouvert)
+   opts={title, invoiceName ou invoice (facture en cours d'édition : champ « Facture »), currency} — réutilisé par les factures (§7.3) */
+function ctPaymentDialog(pay,c,onOk,opts){ opts=opts||{}; const v={...pay}, cur=opts.currency||hfCur(c&&DS.get('project',c.PROJECT_ID));
+  const inv=opts.invoice||DS.get('projectinvoice',v.PROJECTINVOICE_ID);
+  const fN=h('input',{class:'inp',maxlength:64,value:v.NAME||''}), fF=h('input',{class:'inp',readonly:true,disabled:true,value:opts.invoiceName!=null?opts.invoiceName:((inv&&inv.NAME)||'')});
+  const fI=ctDate(v.INVOICEDATE), fP=ctDate(v.PAYMENTDATE), fA=ctAmtInp(hfN(+v.AMOUNT||0)), fR=h('textarea',{class:'inp',rows:3,maxlength:1024,style:{width:'100%'}},v.REMARK||'');
+  let D=null; const ok=()=>ctPayGuard(fN.value,fA.value,fI.value,fP.value), guard=()=>{ if(D) ctOk(D).disabled=!ok(); };
+  [fN,fA].forEach(e=>e.oninput=guard); [fI,fP].forEach(e=>{ e.onchange=guard; e.oninput=guard; });
+  const body=h('div',{},formRows([['Désignation',ctLine(fN,hfSuggest(fN,['Encaissement acompte','Encaissement final','Versement à sous-traitant']))],['Facture',fF],['Date de la facture',fI],
+    ['Date encaissement',fP],['Montant',ctLine(fA,h('span',{style:{color:'#555'}},cur))],['Remarque',fR]],520));
+  D=dialog({title:opts.title||(v.ID==null?'Nouveau':'Editer'),body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!ok()) return false;
+    Object.assign(v,{NAME:fN.value.trim(),INVOICEDATE:fI.value||null,PAYMENTDATE:fP.value||null,AMOUNT:hfNum(fA.value),REMARK:fR.value.trim()||null});
+    if(onOk) return await onOk(v); }}]});
+  guard(); return D; }
+
+/* ── Ancien document « Récapitulatif contrat honoraires » (modèle projectContractOverview, page de garde seule, §10.2) ── */
+function ctOverviewFields(c){ const K=DS.get('contact',c.CONTACT_ID), M=DS.get('contact',c.SUPPLIERCONTACT_ID);
+  const part=(x,k)=>k==='Adresse'?adrLines(x).join('\n'):k==='Téléphone'?phone(x,1):((x&&x.EMAIL1)||'');
+  const F={projectContractNumber:c.NUMBER??'',projectContractName:c.NAME||'',projectContractDate:dLong(c.CONTRACTDATE),projectContractStatus:CT_STATE[c.STATECODE]??'',
+    projectContractSupplierDesc:c.SUPPLIERDESC||'',constructionContractKind:CT_KIND[+c.ISSUBCONTRACT?1:0],projectContractContact:contactName(K),projectContractSupplier:contactName(M),
+    projectContractTimeHour:hfN(ctrHour(c)),projectContractTimeAmount:hfN(ctrTime2(c)),projectContractCostAmount:hfN(ctrCost2(c)),note:c.REMARK||''};
+  ['Adresse','Téléphone','Courriel'].forEach(k=>{ F['ct.Mandant.'+k]=part(K,k); F['ct.Mandataire.'+k]=part(M,k); });
+  return F; }
+function ctOverviewHTML(c,p,title,F){ const w=open('','_blank'); if(!w){ toast('Fenêtre d’impression bloquée par le navigateur.',true); return; } const cur=hfCur(p), R=(k,x)=>`<tr><th>${esc(k)}</th><td>${esc(x||'').replace(/\n/g,'<br>')}</td></tr>`;
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>@page{size:A4;margin:18mm}body{font:10pt Akkurat,Helvetica,Arial,sans-serif}h1{font-size:13pt;font-weight:400;display:flex;justify-content:space-between;border-bottom:.5pt solid #000;padding-bottom:4px}
+    table{border-collapse:collapse;margin:8px 0;width:100%}th{text-align:left;width:45mm;font-weight:400;color:#555;padding:2px 0;vertical-align:top}td{padding:2px 0;vertical-align:top}</style></head><body>
+    <h1><span>${esc(title)}</span><span>${esc(dLong(today()))}</span></h1><table>${R('Affaire',projLabel(p))}${R('Type de prestations',F.projectContractSupplierDesc)}${R('Numéro de contrat',F.projectContractNumber)}
+    ${R('Date du contrat',F.projectContractDate)}${R('Statut du contrat',F.projectContractStatus)}${R('Type de contrat',F.constructionContractKind)}</table>
+    <table>${R('Mandant',F['ct.Mandant.Adresse'])}${R('',[F['ct.Mandant.Téléphone'],F['ct.Mandant.Courriel']].filter(Boolean).join('\n'))}${R('Mandataire',F['ct.Mandataire.Adresse'])}${R('',[F['ct.Mandataire.Téléphone'],F['ct.Mandataire.Courriel']].filter(Boolean).join('\n'))}</table>
+    <table>${R('Temps prévu',F.projectContractTimeHour+' h')}${R('Honoraires TTC',F.projectContractTimeAmount+' '+cur)}${R('Frais TTC',F.projectContractCostAmount+' '+cur)}${R('Total TTC',hfN(+c.CONTRACTAMOUNT||0)+' '+cur)}</table>
+    ${F.note?`<p style="white-space:pre-wrap">${esc(F.note)}</p>`:''}</body></html>`); w.document.close(); setTimeout(()=>w.print(),300); }
+function ctPrintOverview(c){ if(!c) return; const p=DS.get('project',c.PROJECT_ID), T0='Récapitulatif contrat honoraires';
+  const ti=h('input',{class:'inp',value:T0,style:{width:'300px'}});
+  dialog({title:'Paramètres',body:formRows([['Titre du document',ti]],460),buttons:[{t:'Annuler'},{t:'Imprimer',pri:true,fn:()=>{
+    const title=ti.value.trim()||T0, F=ctOverviewFields(c), fb=()=>ctOverviewHTML(c,p,title,F);
+    tplOr(()=>{ const md=tplFind('projectTemplates','projectContractOverview',p); if(!md) return fb();
+      const P=md.langues.fr.pages, pg=JSON.parse(JSON.stringify(P.cover||P.page1||Object.values(P)[0]));
+      /* champs perdus à la conversion des modèles (restés en texte fixe : « Mandant (Adresse) », « Monnaie d'affaire »…) : rétablis d'après leur libellé */
+      (pg.elements||[]).forEach(e=>{ const tx=String(e.texte||'').trim(), m=/^(Mandant|Mandataire) \((Adresse|Téléphone|Courriel)\)$/.exec(tx);
+        if(m&&(e.t==='texte'||/^projectContract(Contact|Supplier)$/.test(e.champ||''))){ e.t='champ'; e.champ='ct.'+m[1]+'.'+m[2]; e.format=e.format||['','','']; }
+        else if(e.t==='texte'&&/^Monnaie d[’']affaire$/.test(tx)){ e.t='champ'; e.champ='projectCurrency'; e.format=['','','']; } });
+      const ctx={project:p,title,total:+c.CONTRACTAMOUNT||0,fields:F};
+      const html=tplPageHTML(pg,96/72,{noScale:true,vals:e=>tplFieldValue(e,ctx,1,1),table:()=>''});
+      const w=open('','_blank'); if(!w){ toast('Fenêtre d’impression bloquée par le navigateur.',true); return; }
+      w.document.write(`<html><head><meta charset="utf-8"><title>${esc(title)}</title><style>@page{size:A4;margin:0}body{margin:0;background:#888}.tplpage{margin:0 auto 12px;box-shadow:none!important}@media print{body{background:#fff}.tplpage{margin:0}}</style></head><body>${html}</body></html>`);
+      w.document.close(); setTimeout(()=>w.print(),400); },fb); }}]}); }
+
+/* ═══ Avancement des prestations (lot 3) : journal daté au niveau de l'affaire ; SCHEDULEDVALUE / CURRENTVALUE entiers, −1 = vide ═══ */
+const IM_PREV='#f3622d', IM_EFF='#fba71b';
+const imPct=x=>x==null||x===''||+x<0?'':String(Math.round(+x));
+const imVal=s=>{ s=String(s??'').trim(); return s===''?-1:parseInt(s,10); };
+const imGuard=(name,a,b)=>{ const A=String(a??'').trim(), Bv=String(b??'').trim(); return !!String(name||'').trim()&&(A!==''||Bv!=='')&&[A,Bv].every(s=>s===''||/^\d{1,3}$/.test(s)); };
+const imRows=p=>DS.by('projectimplementation','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.IMPLEMENTATIONDATE||'',b.IMPLEMENTATIONDATE||'')||a.ID-b.ID);
+/* données du graphique : dates distinctes ; par date, la dernière valeur ≥ 0 (null = pas de point, la date reste sur l'axe) */
+function imChartData(rows){ const L=rows.slice().sort((a,b)=>cmp(a.IMPLEMENTATIONDATE||'',b.IMPLEMENTATIONDATE||'')||a.ID-b.ID), xs=[...new Set(L.map(r=>r.IMPLEMENTATIONDATE).filter(Boolean))];
+  const pick=k=>xs.map(d=>{ let v=null; L.forEach(r=>{ if(r.IMPLEMENTATIONDATE===d&&r[k]!=null&&+r[k]>=0) v=+r[k]; }); return v; });
+  return {xs,prev:pick('SCHEDULEDVALUE'),eff:pick('CURRENTVALUE')}; }
+const IM_COLS=[{k:'d',t:'Date',w:90,f:r=>dfr(r.IMPLEMENTATIONDATE),v:r=>(r.IMPLEMENTATIONDATE||'')+'|'+String(r.ID).padStart(12,'0')},{k:'NAME',t:'Désignation',w:200},
+  {k:'SCHEDULEDVALUE',t:'Avancement prévu',w:135,cls:'r',f:r=>imPct(r.SCHEDULEDVALUE),v:r=>+r.SCHEDULEDVALUE},{k:'u1',t:'',w:36,f:()=>'%',v:()=>0},{k:'SCHEDULEDUSERID',t:'Utilisateur',w:90},{k:'SCHEDULEDREMARK',t:'Remarque',w:170},
+  {k:'CURRENTVALUE',t:'Avancement effectif',w:140,cls:'r',f:r=>imPct(r.CURRENTVALUE),v:r=>+r.CURRENTVALUE},{k:'u2',t:'',w:36,f:()=>'%',v:()=>0},{k:'CURRENTUSERID',t:'Utilisateur',w:90},{k:'CURRENTREMARK',t:'Remarque'}];
+const IMS={g:{},pid:null};
+function imDomain(C,top,pane,p){ const S=IMS; if(S.pid!==p.ID){ S.pid=p.ID; S.g.sel=null; S.g.state={}; }
+  const cur=()=>{ const r=DS.get('projectimplementation',S.g.sel); return r&&r.PROJECT_ID===p.ID?r:null; };
+  const bE=ibtn({i:'edit',t:'Editer',fn:()=>cur()&&imEdit(cur(),p)}), bD=ibtn({i:'minus',t:'Supprimer',fn:async()=>{ const r=cur(); if(!r||!await ctDelAsk()) return; await DS.del('projectimplementation',r.ID); S.g.sel=null; }});
+  const upd=()=>{ bE.disabled=bD.disabled=!cur(); };
+  const head=phead([{i:'plus',t:'Nouveau',fn:()=>imEdit(null,p)},bE,bD,mgGear(S.g,'Avancement_'+(p.NUMBER||p.ID))]);
+  const chart=h('div',{style:{flex:'0 0 auto',borderTop:'1px solid var(--line)',padding:'8px 12px',overflow:'auto',maxHeight:'340px'}});
+  top.append(head,pane); C.append(top,chart);
+  const rows=imRows(p); if(S.g.sel!=null&&!rows.some(r=>String(r.ID)===String(S.g.sel))) S.g.sel=null;
+  grid(pane,Object.assign(S.g,{cols:IM_COLS,rows,sort:['d',1],onSel:upd,onDbl:r=>imEdit(r,p),empty:'Aucune inscription.'})); upd();
+  imChart(chart,rows); }
+/* graphique « Avancement des prestations » (même gabarit que mgChart, couleurs et points creux de l'original ; pas de point pour une valeur < 0) */
+function imChart(el,rows){ const Dd=imChartData(rows), xs=Dd.xs;
+  if(!xs.length){ el.innerHTML='<div class="empty">Aucune donnée pour le graphique.</div>'; return; }
+  const S=[{name:'Avancement prévu',vals:Dd.prev,col:IM_PREV},{name:'Avancement effectif',vals:Dd.eff,col:IM_EFF}];
+  const W=Math.max(520,(el.clientWidth||790)-24), H=250, pad=52, all=S.flatMap(s=>s.vals.filter(v=>v!=null)), mx=Math.max(1,...all);
+  const raw=mx/5, mag=10**Math.floor(Math.log10(raw)), step=[1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw), top=Math.ceil(mx*1.05/step)*step;
+  const X=i=>pad+(i+.5)*(W-pad-10)/xs.length, Y=v=>H-20-(v/top)*(H-36);
+  let svg=`<svg viewBox="0 0 ${W} ${H+30}" style="width:100%;max-width:${W}px;font:11px sans-serif">`;
+  for(let v=0;v<=top+1e-9;v+=step) svg+=`<line x1="${pad}" x2="${W-10}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e5e5e5"/><text x="${pad-6}" y="${Y(v)+4}" text-anchor="end" fill="#777">${num(v,step%1?1:0)}</text>`;
+  const ev=Math.ceil(xs.length/12); xs.forEach((d,i)=>{ if(i%ev===0) svg+=`<text x="${X(i)}" y="${H-4}" text-anchor="middle" fill="#555">${esc(dfr(d))}</text>`; });
+  S.forEach(s=>{ s.vals.forEach((v,i)=>{ const w=s.vals[i+1]; if(v!=null&&w!=null) svg+=`<line x1="${X(i)}" y1="${Y(v)}" x2="${X(i+1)}" y2="${Y(w)}" stroke="${s.col}" stroke-width="2"/>`; });
+    s.vals.forEach((v,i)=>{ if(v!=null) svg+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="#fff" stroke="${s.col}" stroke-width="1.6"><title>${esc(s.name)} ${esc(dfr(xs[i]))} : ${v} %</title></circle>`; }); });
+  svg+=`<text transform="rotate(-90)" x="${-(H/2)}" y="12" text-anchor="middle" fill="#555">%</text><text x="${W/2}" y="${H+22}" text-anchor="middle" font-weight="700">Avancement des prestations</text></svg>`;
+  const leg='<div style="display:flex;gap:14px;justify-content:center;margin-top:2px">'+S.map(s=>`<span><svg width="12" height="12" style="vertical-align:-1px;margin-right:4px"><circle cx="6" cy="6" r="4" fill="#fff" stroke="${s.col}" stroke-width="1.6"/></svg>${esc(s.name)}</span>`).join('')+'</div>';
+  el.innerHTML=svg+leg; el._svg=svg; }
+/* dialogue « Nouveau » / « Editer » (ProjectImplementationDialog) */
+function imEdit(r0,p){ const t='projectimplementation', isNew=!r0, r=isNew?null:DS.get(t,r0.ID); if(!isNew&&!r) return;
+  const bs=isNew?0:ctBseq(t,r.ID);
+  const v=isNew?{ID:null,PROJECT_ID:p.ID,IMPLEMENTATIONDATE:today(),NAME:'',SCHEDULEDVALUE:-1,SCHEDULEDUSERID:ME.id,SCHEDULEDREMARK:null,CURRENTVALUE:-1,CURRENTUSERID:ME.id,CURRENTREMARK:null}:{...r};   // nouvelle ligne : les 2 utilisateurs = ME.id, même si le % est vide (A4) ; en édition : valeurs enregistrées
+  let last=v.IMPLEMENTATIONDATE||today(); const fD=ctDate(last); fD.onchange=()=>{ if(fD.value) last=fD.value; else fD.value=last; };   // date toujours renseignée
+  const fN=h('input',{class:'inp',maxlength:64,value:v.NAME||''});
+  const pct=x=>{ const i=h('input',{class:'inp',maxlength:3,inputmode:'numeric',value:imPct(x),style:{width:'64px',textAlign:'right'}});
+    i.addEventListener('input',()=>{ const s=i.value.replace(/\D/g,'').slice(0,3); if(s!==i.value) i.value=s; }); return i; };
+  const fS=pct(v.SCHEDULEDVALUE), fC=pct(v.CURRENTVALUE), unit=()=>h('span',{style:{color:'#555'}},'% (mes prestations)');
+  const uS=ctUserField(()=>v.SCHEDULEDUSERID,x=>{ v.SCHEDULEDUSERID=x; }), uC=ctUserField(()=>v.CURRENTUSERID,x=>{ v.CURRENTUSERID=x; });
+  const rS=h('textarea',{class:'inp',rows:3,maxlength:1024,style:{width:'100%'}},v.SCHEDULEDREMARK||''), rC=h('textarea',{class:'inp',rows:3,maxlength:1024,style:{width:'100%'}},v.CURRENTREMARK||'');
+  let D=null; const ok=()=>imGuard(fN.value,fS.value,fC.value), guard=()=>{ if(D) ctOk(D).disabled=!ok(); };
+  [fN,fS,fC].forEach(e=>e.addEventListener('input',guard));
+  const sep=()=>['',h('div',{style:{borderBottom:'1px solid var(--line)',margin:'4px 0'}})];
+  const body=h('div',{},formRows([['Date',fD],['Désignation',fN],sep(),['Avancement prévu',ctLine(fS,unit())],['Utilisateur',uS],['Remarque',rS],sep(),
+    ['Avancement effectif',ctLine(fC,unit())],['Utilisateur',uC],['Remarque',rC]],560));
+  D=dialog({title:isNew?'Nouveau':'Editer',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!ok()) return false;
+    Object.assign(v,{IMPLEMENTATIONDATE:fD.value||last,NAME:fN.value.trim(),SCHEDULEDVALUE:imVal(fS.value),CURRENTVALUE:imVal(fC.value),
+      SCHEDULEDUSERID:String(v.SCHEDULEDUSERID||'').trim()||null,CURRENTUSERID:String(v.CURRENTUSERID||'').trim()||null,SCHEDULEDREMARK:rS.value.trim()||null,CURRENTREMARK:rC.value.trim()||null});
+    if(v.ID==null) v.ID=DS.newIds(t)[0];
+    await DS.commit([{t,id:v.ID,val:v,bseq:bs}]); IMS.g.sel=String(v.ID); }}]});
+  guard(); }
+
+/* ── lot4.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   FACTURES d'affaire (DELTAfaktura, lot 4) — domaine « Factures », dialogue de facture et positions (8 genres),
+   gabarits, encaissement lié au contrat, suppression en cascade, ancien document « projectInvoice »,
+   Administrateur ▸ « Gabarits de facturation » et « Taux de TVA ».
+   Cahier des charges : spec_9_honoraires_facturation.md §6.1-6.10, §7.3, §10.1
+═══════════════════════════════════════════════════════════════════════════ */
+const IVS={pid:null,cf:{},g:{},st:null,q:'',qr:'',init:false};            // état du domaine ; le filtre de statut n'est pas mémorisé
+const IV_TERMS=['10 jours net','10 jours, escompte 2%','30 jours net','30 jours, escompte 2%','60 jours net','60 jours, escompte 2%','Selon accord','Paiement à la commande'];
+const ivPrefRound=()=>{ try{ return localStorage.getItem('ds_inv_round')==='1'; }catch(_){ return false; } };   // case « Arrondir » (préférence du poste, pas de la facture)
+const ivSetRound=b=>{ try{ localStorage.setItem('ds_inv_round',b?'1':'0'); }catch(_){} };
+const ivProj=f=>f?DS.get('project',f.PROJECT_ID):null;
+const ivContract=f=>f&&f.PROJECTCONTRACT_ID!=null?DS.get('projectcontract',f.PROJECTCONTRACT_ID):null;
+const ivDebtor=f=>f?DS.get('contact',f.CONTACT_ID):null;
+const ivSol=f=>(+f.AMOUNT||0)-(+f.AMOUNTPAID||0);
+const ivSame=(a,b)=>Math.abs((+a||0)-(+b||0))<0.005;                     // comparaison au centime
+const ivFormVisible=()=>{ const v=hfSet('isModuleFormVisible'); return v==null||/YES/i.test(String(v)); };
+const ivHasQ=t=>t===1, ivHasP=t=>t===1||t===3||t===4||t===5, ivHasA=t=>t>=1&&t<=6;   // quantité/unité, prix, montant affichés (§6.5.1)
+const ivSo=(a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0);
+const ivBox=(w,hh)=>h('div',{style:{width:w+'px',height:(hh||320)+'px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+const ivNoSort=el=>$$('th',el).forEach(th=>th.onclick=null);            // tableaux à ordre fixe
+const ivOkBtn=D=>D.bd.parentNode.querySelector('.ft .btn.pri');
+const ivLine=(...x)=>h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},...x);
+const ivNf=v=>{ const n=+v||0; return Math.abs(n*100-Math.round(n*100))<1e-6?hfN(n):num(n,Math.min(6,(String(n).split('.')[1]||'').length)); };   // quantité / prix saisis : 0.00 sans perdre une 3ᵉ décimale
+
+/* ── Colonnes (ProjectInvoiceTableModel) : 15 colonnes « allAndProject » ; le domaine masque la colonne 0 ── */
+const IV_COLS=[
+  {k:'pr',t:'Affaire',w:80,f:f=>esc((ivProj(f)||{}).NUMBER),v:f=>(ivProj(f)||{}).NUMBER},
+  {k:'NAME',t:'Désignation',w:200},
+  {k:'NUMBER',t:'Numéro',w:80},
+  {k:'INVOICEDATE',t:'Date de facture',w:96,f:f=>dfr(f.INVOICEDATE)},
+  {k:'DUEDATE',t:'Date d’échéance',w:96,f:f=>dfr(f.DUEDATE)},
+  {k:'st',t:'Statut',w:100,f:f=>esc(PI_STATE[+f.PROJECTINVOICESTATECODE||0]),v:f=>+f.PROJECTINVOICESTATECODE||0},
+  {k:'ct',t:'Contrat',w:150,f:f=>esc(ctrLbl(ivContract(f))),v:f=>ctrLbl(ivContract(f))},
+  {k:'deb',t:'Débiteur',w:170,f:f=>esc(contactName(ivDebtor(f))),v:f=>contactName(ivDebtor(f))},
+  {k:'cur',t:'Monnaie',w:62,f:f=>esc(hfCur(ivProj(f))),v:f=>hfCur(ivProj(f))},
+  {k:'AMOUNT',t:'Montant TTC',w:104,cls:'r',f:f=>hfN(+f.AMOUNT||0),v:f=>+f.AMOUNT||0},
+  {k:'qr',t:'QR',w:36,cls:'c',f:f=>f.QRBILL_ID!=null?'✔':'',v:f=>f.QRBILL_ID!=null?1:0},
+  {k:'AMOUNTPAID',t:'Encaissé',w:104,cls:'r',f:f=>hfN(+f.AMOUNTPAID||0),v:f=>+f.AMOUNTPAID||0},
+  {k:'sol',t:'Solde à encaisser',w:116,cls:'r',f:f=>hfN(ivSol(f)),v:ivSol},
+  {k:'PAYMENTDATE',t:'Encaissement',w:96,f:f=>dfr(f.PAYMENTDATE)},
+  {k:'DUNNINGLEVEL',t:'Nb rappels',w:76,cls:'r',f:f=>f.DUNNINGLEVEL==null?'':esc(f.DUNNINGLEVEL),v:f=>+f.DUNNINGLEVEL||0}];
+const IV_DCOLS=IV_COLS.slice(1);                                         // domaine : masque 011111111111111
+const IV_BCOLS=[1,2,3,5].map(i=>IV_COLS[i]);                             // sélecteurs (type browse)
+/* positions : 8 colonnes (Rabais et TVA n'existent plus) */
+const IV_PCOLS=[{k:'TYPECODE',t:'Genre',w:150,f:x=>esc(POS_TYPE[+x.TYPECODE]||'')},{k:'NAME',t:'Position'},
+  {k:'QUANTITY',t:'Quantité',w:80,cls:'r',f:x=>ivHasQ(+x.TYPECODE)?hfN(+x.QUANTITY||0):''},{k:'UNIT',t:'Unité',w:56,f:x=>ivHasQ(+x.TYPECODE)?esc(x.UNIT||''):''},
+  {k:'PRICE',t:'Prix',w:90,cls:'r',f:x=>ivHasP(+x.TYPECODE)?hfN(+x.PRICE||0):''},{k:'pc',t:'%',w:34,cls:'c',f:x=>+x.TYPECODE>=3&&+x.TYPECODE<=5?'%':''},
+  {k:'AMOUNT',t:'Montant',w:100,cls:'r',f:x=>ivHasA(+x.TYPECODE)?hfN(+x.AMOUNT||0):''},{k:'ISVISIBLE',t:'Visible',w:56,cls:'c',f:x=>+x.ISVISIBLE?'✔':''}];
+
+/* ── Règles (pures, testées dans lot4_test.js) ── */
+/* factures d'un filtre : 'none' = sans contrat ; 'all' = factures AVEC contrat seulement (§6.2) ; sinon l'ID du contrat ; null = rien */
+const ivRows=(pid,fk,st)=>fk==null?[]:DS.by('projectinvoice','PROJECT_ID',pid).filter(f=>(fk==='none'?f.PROJECTCONTRACT_ID==null:fk==='all'?f.PROJECTCONTRACT_ID!=null:String(f.PROJECTCONTRACT_ID)===String(fk))
+  &&(st==null||(+f.PROJECTINVOICESTATECODE||0)===st));
+/* recherche : insensible à la casse, sur le texte affiché de toutes les colonnes */
+function ivMatch(cols,r,q){ if(!q) return true; const d=document.createElement('div'); return cols.some(c=>{ d.innerHTML=c.f?c.f(r):esc(r[c.k]); return (d.textContent||'').toLowerCase().includes(q); }); }
+/* question 1 de l'OK : Montant > 0 et positions à recalculer ou total différent (aussi sans position) */
+const ivMismatch=(amt,pos,cinq)=>{ if(!(amt>0)) return false; const t=invCheck(pos,cinq); return t==null||!ivSame(amt,t); };
+/* question 2 de l'OK : Encaissé > 0, Encaissé ≥ Montant et statut ≠ Payée */
+const ivAskPaid=(amt,paid,st)=>paid>0&&(paid>amt||ivSame(paid,amt))&&+st!==3;
+/* encaissement créé depuis la facture (editProjectPayment@55-65) : SORTORDER = nombre d'encaissements du contrat + 1 */
+const ivNewPayment=(f,c)=>({ID:null,NAME:null,INVOICEDATE:null,PAYMENTDATE:null,AMOUNT:0,REMARK:null,SORTORDER:DS.by('projectpayment','PROJECTCONTRACT_ID',c.ID).length+1,PROJECTCONTRACT_ID:c.ID,PROJECTINVOICE_ID:f.ID});
+/* suppression (§6.10) : facture, positions, QR-facture et encaissement lié, en un seul commit */
+function ivDeleteOps(f){ const ops=[{t:'projectinvoice',id:f.ID,val:null}], del=(t,id)=>{ if(id!=null&&DS.get(t,id)&&!ops.some(o=>o.t===t&&String(o.id)===String(id))) ops.push({t,id,val:null}); };
+  invPos(f).forEach(x=>del('projectinvoicepos',x.ID)); del('qrbill',f.QRBILL_ID); del('projectpayment',f.PROJECTPAYMENT_ID);
+  DS.by('projectpayment','PROJECTINVOICE_ID',f.ID).forEach(x=>del('projectpayment',x.ID)); return ops; }
+/* tableau projectConditionTable : positions visibles ; quantité et unité pour le genre 1, prix pour 1, 3, 4, 5 */
+const IV_PRCOLS=[{t:'Position',w:50},{t:'Quantité',w:20,r:1},{t:'Unité',w:20},{t:'Prix',w:20,r:1},{t:'%',w:10},{t:'Montant',w:30,r:1}];
+const ivPrintRows=pos=>pos.filter(x=>+x.ISVISIBLE).map(x=>{ const t=+x.TYPECODE, r=[x.NAME||'',t===1?num(+x.QUANTITY||0):'',t===1?(x.UNIT||''):'',ivHasP(t)?num(+x.PRICE||0):'',t>=3&&t<=5?'%':'',ivHasA(t)?num(+x.AMOUNT||0):''];
+  if(t===0) r._bold=1; if(t===2||t===6){ r._bold=1; r._line=1; } return r; });
+/* import depuis le calcul : seulement si le contrat enregistré a un calcul en mode 3 (Coût de l'ouvrage) ou 4 (Temps employé effectif) */
+const ivFeeCalc=c=>{ const f=c&&DS.get('projectfeecalculation',c.PROJECTFEECALCULATION_ID), e=f&&DS.get('projectfee',f.PROJECTFEE_ID); return e&&[3,4].includes(+e.BILLINGCATEGORYCODE)?f:null; };
+const ivPosNew=()=>({ID:null,PROJECTINVOICE_ID:null,SORTORDER:0,TYPECODE:1,NAME:null,QUANTITY:1,UNIT:'h',PRICE:0,AMOUNT:0,ISVISIBLE:1});
+/* copyFrom : nom FR, genre, quantité, unité, prix, visible — jamais le montant (il faut recalculer) */
+const ivCopyPos=x=>({TYPECODE:+x.TYPECODE||0,NAME:x.NAME!=null?x.NAME:(nm(x)||null),QUANTITY:+x.QUANTITY||0,UNIT:x.UNIT||null,PRICE:+x.PRICE||0,ISVISIBLE:+x.ISVISIBLE?1:0,AMOUNT:0});
+const ivSchedLbl=(s,cur)=>[s.NAME||'',s.INVOICEDATE?dfr(s.INVOICEDATE):'-',s.PAYMENTDATE?dfr(s.PAYMENTDATE):'-',cur+' '+num(+s.AMOUNT||0)].join(', ');
+
+/* ── Petits dialogues ── */
+/* question Oui / Non (JOptionPane) → true / false ; Échap → null */
+function ivAsk(title,msg,yes='Oui',no='Non'){ return new Promise(res=>{ let done=false; const fin=v=>{ if(!done){ done=true; res(v); } };
+  const D=dialog({title,body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'480px'}},msg),buttons:[{t:no,fn:()=>fin(false)},{t:yes,pri:true,fn:()=>fin(true)}]});
+  D.bd.closest('.ov').addEventListener('keydown',e=>{ if(e.key==='Escape') fin(null); }); const b=ivOkBtn(D); if(b) b.focus(); }); }
+const ivCard=c=>{ if(c) dialog({title:'Adresse',body:h('div',{style:{minWidth:'360px'}},contactCard(c,'Adresse')),buttons:[{t:'Fermer',pri:true}]}); };
+const ivQr=(f,onSaved)=>{ if(!f) return; if(typeof qrEdit==='function') qrEdit(f,onSaved||(()=>{})); else toast('La QR-facture n’est pas encore disponible dans DeltaSub.',true); };
+const ivDocMenu=(f,onDone,withStatus=true)=>[{t:'Document de facturation … [Ancien document]',dis:!f,fn:()=>ivPrint(f,false,onDone)},
+  ...(withStatus?[{t:'Document de facturation avec requête de statut … [Ancien document]',dis:!f,fn:()=>ivPrint(f,true,onDone)}]:[])];
+/* sélecteur « Sélectionner une facture » (colonnes browse) — réutilisable par le transfert du controlling */
+function ivPickInvoice(list,title,fn){ const o={}; let okB=null; const box=ivBox(640,300);
+  grid(box,Object.assign(o,{cols:IV_BCOLS,rows:list,sort:['INVOICEDATE',1],state:{},onSel:()=>{ if(okB) okB.disabled=false; },onDbl:()=>okB&&okB.click(),empty:'Aucune facture.'}));
+  const D=dialog({title:title||'Sélectionner une facture',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const f=DS.get('projectinvoice',o.sel); if(!f) return false; fn(f); }}]});
+  okB=ivOkBtn(D); okB.disabled=true; }
+
+/* ═══ Domaine « Factures » de l'affaire (ProjectInvoiceFrame) ═══ */
+function ivDomain(C,top,pane,p){ const S=IVS;
+  if(!S.init){ S.init=true; let so=null; try{ so=JSON.parse(localStorage.getItem('ds_inv_sort')||'null'); }catch(_){}   // clé partagée avec le Contrôle (colonne Affaire absente ici)
+    S.g.state={sort:Array.isArray(so)&&IV_DCOLS.some(c=>c.k===so[0])?so:['INVOICEDATE',1]}; }
+  if(S.pid!==p.ID){ S.pid=p.ID; S.cf.sel=null; S.g.sel=null; S.st=null; S.q=''; S.qr=''; }
+  const cts=DS.by('projectcontract','PROJECT_ID',p.ID).slice().sort(ivSo);
+  const fRows=[{k:'none',t:'Sans contrat'},{k:'all',t:'Tous les contrats'},...cts.map(c=>({k:String(c.ID),t:ctrLbl(c)}))];
+  if(S.cf.sel!=null&&!fRows.some(r=>r.k===String(S.cf.sel))) S.cf.sel=null;         // aucune ligne sélectionnée d'office
+  const fk=()=>S.cf.sel==null?null:String(S.cf.sel);
+  const selC=()=>{ const k=fk(); return k&&k!=='none'&&k!=='all'?DS.get('projectcontract',k):null; };
+  const cur=()=>{ const f=DS.get('projectinvoice',S.g.sel); return f&&(S.g.view||[]).some(x=>x.ID===f.ID)?f:null; };   // pas d'action sur une ligne masquée
+  const saved=f=>{ S.g.sel=String(f.ID); };
+  const edit=f=>f&&ivEdit(f,p,{list:S.g.view||[],onSaved:saved});
+  const bN=ibtn({i:'plus',t:'Nouvelle facture',fn:()=>ivEdit(null,p,{contract:selC(),list:S.g.view||[],onSaved:saved})});
+  const bE=ibtn({i:'edit',t:'Editer la facture',fn:()=>edit(cur())}), bQ=ibtn({label:'QR',t:'Modifier la QR-facture',fn:()=>ivQr(cur())});
+  const bD=ibtn({i:'minus',t:'Supprimer la facture',fn:async()=>{ const f=cur(); if(f&&await ivDelete(f)) S.g.sel=null; }});
+  const bP=ivFormVisible()?ibtn({i:'doc',t:'Facture',menu:()=>ivDocMenu(cur())}):null;
+  const setSt=k=>{ S.st=k; draw(); };
+  const flt=h('span',{style:{color:'#333',alignSelf:'center',marginLeft:'4px'}});
+  const head=phead([bN,bE,bQ,bD,bP,mgGear(S.g,'Factures_'+(p.NUMBER||p.ID)),
+    {i:'filter',t:'Filtre',menu:()=>[{t:'Afficher tout',chk:S.st==null,fn:()=>setSt(null)},...[0,1,2,3].map(k=>({t:PI_STATE[k],chk:S.st===k,fn:()=>setSt(k)}))]},flt].filter(Boolean),
+    {count:1,search:q=>{ S.q=q; S.qr=head.sinput.value; draw(); }});
+  if(head.sinput) head.sinput.value=S.q?S.qr:'';
+  const upd=()=>{ const c=selC(); bN.disabled=!!(c&&+c.ISINVOICEABLE!==1); bE.disabled=bQ.disabled=bD.disabled=!cur(); if(bP) bP.disabled=!(S.g.view&&S.g.view.length); };
+  const L=col(200), info=h('div',{style:{flex:'0 0 auto',maxHeight:'250px',borderTop:'1px solid var(--line)'}});
+  top.style.minWidth='0'; top.append(head,pane);
+  C.append(h('div',{style:{display:'flex',flex:1,minHeight:0}},L.el,top),info);
+  pane.addEventListener('click',e=>{ if(e.target.closest('th')) setTimeout(()=>{ try{ localStorage.setItem('ds_inv_sort',JSON.stringify(S.g.state.sort)); }catch(_){} },0); });   // tri mémorisé
+  pane.addEventListener('contextmenu',e=>{ const tr=e.target.closest('tbody tr[data-k]'); if(!tr) return; e.preventDefault(); tr.click(); const f=cur(); if(!f) return;
+    popMenu({x:e.clientX,y:e.clientY},[{t:'Modifier …',fn:()=>edit(f)},{t:'Modifier la QR-facture …',fn:()=>ivQr(f)},'-',{t:'Afficher l’entité …',dis:!ivDebtor(f),fn:()=>ivCard(ivDebtor(f))}]); });
+  const draw=()=>{ let rows=ivRows(p.ID,fk(),S.st); if(S.q) rows=rows.filter(f=>ivMatch(IV_DCOLS,f,S.q));
+    grid(pane,Object.assign(S.g,{cols:IV_DCOLS,rows,sort:['INVOICEDATE',1],onSel:upd,onDbl:edit,empty:fk()==null?'Choisissez un filtre de contrat.':'Aucune facture.'}));
+    head.setCount(rows.length+' Factures'); flt.textContent=S.st==null?'':PI_STATE[S.st]; ctrInfoPanel(info,selC(),p); upd(); };
+  grid(L.pane,Object.assign(S.cf,{key:r=>r.k,cols:[{k:'t',t:'Filtre des contrats',f:r=>esc(r.t)}],rows:fRows,sort:null,state:{},onSel:()=>{ S.g.sel=null; draw(); }}));
+  ivNoSort(L.pane); draw(); }
+
+/* ═══ Dialogue « Nouvelle facture » / « Editer la facture » (ProjectInvoiceDialog) — o={contract, list, onSaved} ═══ */
+function ivEdit(f0,p,o){ o=o||{}; const isNew=!f0||f0.ID==null, f=isNew?null:DS.get('projectinvoice',f0.ID);
+  if(!isNew&&!f){ toast('Cette facture n’existe plus.',true); return; }
+  p=p||DS.get('project',(f||f0||{}).PROJECT_ID); if(!p) return;
+  const bs=isNew?0:((DS.S.projectinvoice||{})[String(f.ID)]||0), c0=isNew?(o.contract||null):null, cur=hfCur(p);
+  const v=isNew?{ID:null,PROJECT_ID:p.ID,NUMBER:null,NAME:null,ACCOUNTINGPERIOD:null,INVOICEDATE:today(),DUEDATE:null,PROJECTINVOICESTATECODE:0,TERMSOFPAYMENT:null,AMOUNT:0,AMOUNTPAID:0,
+      PAYMENTDATE:null,DUNNINGLEVEL:0,NOTE:null,TEMPLATEPROPERTIES:null,PROJECTCONTRACT_ID:c0?c0.ID:null,CONTACT_ID:c0?c0.CONTACT_ID:null,PROJECTPAYMENT_ID:null,QRBILL_ID:null}:{...f};
+  const savedC=DS.get('projectcontract',v.PROJECTCONTRACT_ID);                        // contrat enregistré : condition des imports depuis le calcul (§4.4)
+  /* positions : copie locale, écrites au seul OK (bseq lus maintenant) */
+  let tmp=0; const pk=x=>String(x._k), orig=new Map(), pbs=new Map(), delP=[];
+  const P=isNew?[]:invPos(f).map(x=>{ orig.set(x.ID,JSON.stringify(x)); pbs.set(x.ID,(DS.S.projectinvoicepos||{})[String(x.ID)]||0); return {...x,_k:'p'+x.ID}; });
+  /* encaissement lié (double lien PROJECTPAYMENT_ID ↔ PROJECTINVOICE_ID) : copie locale */
+  const pay0=isNew?null:(DS.get('projectpayment',v.PROJECTPAYMENT_ID)||DS.by('projectpayment','PROJECTINVOICE_ID',v.ID)[0]||null);
+  const payBs=pay0?((DS.S.projectpayment||{})[String(pay0.ID)]||0):0; let pay=pay0?{...pay0}:null, payDirty=false;
+  /* champs */
+  const I=(val,max,w)=>h('input',{class:'inp',maxlength:max||null,value:val??'',style:w?{width:w}:null});
+  const nI=val=>h('input',{class:'inp',value:hfN(+val||0),style:{width:'140px',textAlign:'right'}});
+  const dI=val=>h('input',{class:'inp',type:'date',value:val||'',style:{width:'160px'}});
+  const fNo=I(v.NUMBER,64,'160px'), fNm=I(v.NAME,255), fDt=dI(v.INVOICEDATE), fDue=dI(v.DUEDATE), fPer=I(v.ACCOUNTINGPERIOD,64), fTerm=I(v.TERMSOFPAYMENT,null), fNote=I(v.NOTE,255);
+  const fSt=h('select',{class:'inp',style:{width:'160px'}},...[0,1,2,3].map(k=>h('option',{value:k,selected:k===(+v.PROJECTINVOICESTATECODE||0)||null},PI_STATE[k])));
+  const fDun=I(v.DUNNINGLEVEL??'',8,'90px'); fDun.oninput=()=>{ const x=fDun.value.replace(/\D/g,''); if(x!==fDun.value) fDun.value=x; };   // chiffres, 8 au plus
+  const fAm=nI(v.AMOUNT), fPd=nI(v.AMOUNTPAID), fPdt=dI(v.PAYMENTDATE);
+  /* ◀ Désignation : planifications du contrat (remplissent Désignation, dates, Montant), puis 3 libellés */
+  const nameBtn=ibtn({i:'prev',t:'Suggestions',menu:()=>{ const sp=v.PROJECTCONTRACT_ID!=null?DS.by('projectscheduledpayment','PROJECTCONTRACT_ID',v.PROJECTCONTRACT_ID).slice().sort(ivSo):[];
+    return [...sp.map(s=>({t:ivSchedLbl(s,cur),fn:()=>{ fNm.value=s.NAME||''; fDt.value=s.INVOICEDATE||''; fDue.value=s.DUEDATE||''; fAm.value=hfN(+s.AMOUNT||0); guard(); }})),...(sp.length?['-']:[]),
+      ...['Facture','Facture d’acompte','Facture finale'].map(x=>({t:x,fn:()=>{ fNm.value=x; guard(); }}))]; }});
+  const perBtn=hfSuggest(fPer,()=>{ const y=(fDt.value||today()).slice(0,4); return [`Année ${y}`,'-',`1er semestre ${y}`,`2ème semestre ${y}`,'-',...['1er','2ème','3ème','4ème'].map(t=>`${t} trimestre ${y}`),'-',...MOIS_L.map(m=>`${m} ${y}`)]; });
+  const termBtn=hfSuggest(fTerm,IV_TERMS);
+  /* Contrat ◀ (lecture seule) : Choisir (contrats accessibles, « Reprendre le débiteur ») / Supprimer ; l'encaissement lié suit */
+  const cL=h('span',{style:{minWidth:'240px',display:'inline-block'}});
+  const cBtn=ibtn({i:'prev',t:'Contrat',menu:()=>[{t:'Choisir …',fn:()=>ivChooseContract(p,(c,take)=>{ v.PROJECTCONTRACT_ID=c.ID; if(take){ v.CONTACT_ID=c.CONTACT_ID; dF.refresh(); }
+      if(pay){ pay.PROJECTCONTRACT_ID=c.ID; payDirty=true; } showC(); guard(); })},
+    {t:'Supprimer',dis:v.PROJECTCONTRACT_ID==null,fn:()=>{ v.PROJECTCONTRACT_ID=null; if(pay){ pay.PROJECTCONTRACT_ID=null; payDirty=true; } showC(); guard(); }}]});
+  const dF=ivContactField(()=>v.CONTACT_ID,id=>{ v.CONTACT_ID=id; guard(); },p);
+  /* Encaissé : direct sans contrat ; avec contrat, lecture seule + ✎▾ (§7.3) */
+  const editPay=force=>{ const c=DS.get('projectcontract',v.PROJECTCONTRACT_ID); if(!c) return;
+    let x=pay?{...pay}:null, created=false; if(!x){ x=ivNewPayment(v,c); created=true; }
+    if(created||force) Object.assign(x,{NAME:fNm.value.trim()||null,INVOICEDATE:fDt.value||null,AMOUNT:hfNum(fAm.value)??0,PAYMENTDATE:fPdt.value||null});   // « Encaissement… » écrase toujours
+    const back=y=>{ pay={...y,PROJECTCONTRACT_ID:c.ID}; payDirty=true; fPd.value=hfN(+pay.AMOUNT||0); fPdt.value=pay.PAYMENTDATE||''; guard(); };
+    (typeof ctPaymentDialog==='function'?ctPaymentDialog:ivPaymentDialog)(x,c,back,{invoice:{...v,NAME:fNm.value.trim()},currency:cur}); };
+  const payBtn=ibtn({i:'edit',t:'Encaissement',menu:()=>[{t:'Editer …',fn:()=>editPay(false)},{t:'Encaissement …',fn:()=>editPay(true)}]});
+  const showC=()=>{ const c=DS.get('projectcontract',v.PROJECTCONTRACT_ID); cL.textContent=ctrLbl(c); fPd.readOnly=!!c; fPdt.disabled=!!c; payBtn.style.display=c?'':'none'; };
+  /* positions */
+  const round=h('input',{type:'checkbox',checked:ivPrefRound()||null}), dirtyL=h('span',{style:{color:'var(--err)',fontWeight:600,marginLeft:'10px'}});
+  const pbox=h('div',{style:{height:'210px',overflow:'auto',background:'#fff'}}), po={};
+  const renum=()=>P.forEach((x,i)=>x.SORTORDER=i+1), selIdx=()=>P.findIndex(x=>pk(x)===String(po.sel));
+  const bPe=ibtn({i:'edit',t:'Editer la position',fn:()=>{ const i=selIdx(); if(i>=0) editPos(P[i]); }});
+  const bPd=ibtn({i:'minus',t:'Supprimer la position',fn:async()=>{ const i=selIdx(); if(i<0) return; if((await ivAsk('Avertissement','Voulez-vous vraiment supprimer cette inscription ?'))!==true) return;
+    const [x]=P.splice(i,1); if(x.ID!=null&&orig.has(x.ID)) delP.push(x.ID); renum(); const n=P[Math.min(i,P.length-1)]; po.sel=n?pk(n):null; drawP(); }});
+  const move=how=>{ const i=selIdx(); if(i<0) return; const [x]=P.splice(i,1); P.splice(how==='first'?0:how==='last'?P.length:Math.max(0,Math.min(P.length,i+(how==='prev'?-1:1))),0,x); renum(); drawP(); };
+  const mv=Object.fromEntries(['first','prev','next','last'].map(k=>[k,ibtn({i:k,t:{first:'Au début',prev:'Monter',next:'Descendre',last:'À la fin'}[k],fn:()=>move(k)})]));
+  const updP=()=>{ const i=selIdx(); bPe.disabled=bPd.disabled=i<0; mv.first.disabled=mv.prev.disabled=i<=0; mv.next.disabled=mv.last.disabled=i<0||i>=P.length-1; };
+  const drawP=()=>{ grid(pbox,Object.assign(po,{key:pk,cols:IV_PCOLS,rows:P,sort:null,state:{},onSel:updP,onDbl:x=>editPos(x),empty:'Aucune position.'})); ivNoSort(pbox);
+    $$('tbody tr',pbox).forEach((tr,i)=>{ const t=+(P[i]||{}).TYPECODE; if(t===0) tr.classList.add('grp'); else if(t===2||t===6) tr.style.fontWeight='600'; });
+    dirtyL.textContent=posDirty(P)?'Recalcul nécessaire!':''; updP(); };
+  /* insertion juste après la ligne sélectionnée (SORTORDER de la sélection + tri stable), sinon en fin ; puis 1..n */
+  const insert=xs=>{ if(!xs||!xs.length) return; const i=selIdx(), ys=xs.map(x=>({...ivPosNew(),...x,ID:null,PROJECTINVOICE_ID:null,_k:'n'+(++tmp)}));
+    P.splice(i<0?P.length:i+1,0,...ys); renum(); po.sel=pk(ys[ys.length-1]); drawP(); };
+  /* « Total » du dialogue de position : valeur du moteur à la place de la position (information seulement) */
+  const calcFor=(d,idx)=>{ const L=P.slice(); if(idx==null||idx<0){ const i=selIdx(); L.splice(i<0?L.length:i+1,0,d); } else L[idx]=d; return invCalc(L,round.checked).amounts[L.indexOf(d)]; };
+  const editPos=(x,pre)=>{ const idx=x?P.indexOf(x):null;
+    ivPosDialog(x?{...x}:{...ivPosNew(),...(pre||{})},p,{isNew:!x,calc:d=>calcFor(d,idx),onOk:y=>{ if(x){ Object.assign(x,y); drawP(); } else insert([y]); }}); };
+  const bPn=ibtn({i:'plus',t:'Nouvelle position',menu:()=>{ const fe=ivFeeCalc(savedC), can=typeof feImportPositions==='function', imp=k=>()=>feImportPositions(fe,xs=>insert((xs||[]).map(ivCopyCalc)),k);
+    return [{t:'Nouvelle position …',fn:()=>editPos(null)},{t:'Navigateur de positions …',fn:()=>ivPickTemplates(xs=>xs.length===1?setTimeout(()=>editPos(null,xs[0]),50):insert(xs),()=>setTimeout(()=>editPos(null),50))},
+      ...(P.length?[]:[{t:'Importer des positions de factures …',fn:()=>ivPickInvoicePositions((o.list||[]).filter(x=>x.ID!==v.ID),insert)}]),
+      ...(fe?['-',{t:'Importer des positions de calcul (facteurs de calcul) …',dis:!can,fn:imp('factors')},{t:'Importer des positions de calcul (prestations supplémentaires) …',dis:!can,fn:imp('additional')}]:[])]; }});
+  const bCalc=ibtn({i:'analyse',t:'Recalculer les positions',fn:()=>{ const r=invCalc(P,round.checked); P.forEach((x,i)=>x.AMOUNT=r.amounts[i]); fAm.value=hfN(r.total); drawP(); guard(); }});
+  /* validation : Désignation, Date de facture, Débiteur ; Montant et Encaissé numériques (pas de numéro exigé) */
+  let okB=null; const valid=()=>!!fNm.value.trim()&&!!fDt.value&&v.CONTACT_ID!=null&&hfNum(fAm.value)!==null&&hfNum(fPd.value)!==null;
+  const guard=()=>{ if(okB) okB.disabled=!valid(); };
+  [fNm,fAm,fPd].forEach(x=>x.addEventListener('input',guard)); ['input','change'].forEach(ev=>fDt.addEventListener(ev,guard));
+  const B=t=>h('b',{},t), full=x=>h('div',{class:'full'},x);
+  const form=h('div',{class:'form'},
+    h('label',{},'Numéro'),fNo, h('label',{},'Statut de la facture'),fSt,
+    h('label',{},B('Désignation')),full(ivLine(fNm,nameBtn)),
+    h('label',{},B('Date de facture')),fDt, h('label',{},'Date d’échéance'),fDue,
+    h('label',{},'Contrat'),full(ivLine(cL,cBtn)),
+    h('label',{},B('Débiteur')),full(dF),
+    h('label',{},'Période facturée'),ivLine(fPer,perBtn), h('label',{},'Conditions de paiement'),ivLine(fTerm,termBtn),
+    h('label',{},'Montant'),ivLine(fAm,cur), h('label',{},'Nb rappels'),fDun,
+    h('label',{},'Encaissé'),ivLine(fPd,cur,payBtn), h('label',{},'Date dernier encaissement'),fPdt,
+    h('label',{},'Remarque'),full(fNote));
+  const body=h('div',{style:{minWidth:'780px'}},form,h('div',{style:{fontWeight:600,margin:'12px 0 4px'}},'Positions'),
+    h('div',{style:{border:'1px solid var(--line)'}},h('div',{class:'ph2'},bPn,bPe,bPd,mv.first,mv.prev,mv.next,mv.last,bCalc,h('label',{style:{marginLeft:'8px'}},round,' Arrondir'),dirtyL),pbox));
+  let busy=false;                                                        // double clic sur OK : une seule série de questions et un seul commit
+  const D=dialog({title:isNew?'Nouvelle facture':'Editer la facture',width:'860px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    if(busy||!valid()) return false; busy=true; try{ return await okFlow(); } finally{ busy=false; } }}]});
+  const okFlow=async()=>{
+    const amt=hfNum(fAm.value), paid=hfNum(fPd.value), cinq=round.checked; let st=+fSt.value;
+    if(ivMismatch(amt,P,cinq)&&(await ivAsk('Le total de la facture ne correspond pas au cumul des positions.','Le montant total de la facture ne prend pas en compte tous les montants. Souhaitez-vous valider la facture en l’état?'))!==true) return false;
+    if(ivAskPaid(amt,paid,st)){ const r=await ivAsk('Confirmation','Voulez-vous modifier le statut de la facture dans Payée ?'); if(r==null) return false; if(r) st=3; }
+    const T=s=>{ const x=String(s??'').trim(); return x===''?null:x; };
+    Object.assign(v,{NUMBER:T(fNo.value),NAME:T(fNm.value),INVOICEDATE:fDt.value,DUEDATE:fDue.value||null,ACCOUNTINGPERIOD:T(fPer.value),PROJECTINVOICESTATECODE:st,TERMSOFPAYMENT:T(fTerm.value),
+      DUNNINGLEVEL:fDun.value===''?0:+fDun.value,AMOUNT:amt,AMOUNTPAID:paid,PAYMENTDATE:fPdt.value||null,NOTE:T(fNote.value)});
+    ivSetRound(cinq);
+    if(v.ID==null) v.ID=DS.newIds('projectinvoice')[0];
+    const fresh=P.filter(x=>x.ID==null), ids=fresh.length?DS.newIds('projectinvoicepos',fresh.length):[]; fresh.forEach((x,i)=>x.ID=ids[i]);
+    const ops=[];
+    P.forEach(x=>{ const {_k,...y}=x; y.PROJECTINVOICE_ID=v.ID; if(orig.get(y.ID)!==JSON.stringify(y)) ops.push({t:'projectinvoicepos',id:y.ID,val:y,bseq:pbs.get(y.ID)||0}); });
+    delP.forEach(id=>ops.push({t:'projectinvoicepos',id,val:null,bseq:pbs.get(id)||0}));
+    if(pay&&payDirty){ if(pay.ID==null) pay.ID=DS.newIds('projectpayment')[0]; pay.PROJECTINVOICE_ID=v.ID; ops.push({t:'projectpayment',id:pay.ID,val:{...pay},bseq:pay0&&pay0.ID===pay.ID?payBs:0}); }
+    v.PROJECTPAYMENT_ID=pay?pay.ID:null;
+    ops.unshift({t:'projectinvoice',id:v.ID,val:{...v},bseq:bs});
+    await DS.commit(ops); o.onSaved&&o.onSaved({...v}); };
+  okB=ivOkBtn(D); showC(); drawP(); guard(); }
+/* positions importées du calcul (lot 2) : champs normalisés, montant conservé (prix = montant = H) */
+const ivCopyCalc=x=>({TYPECODE:x.TYPECODE!=null?+x.TYPECODE:1,NAME:x.NAME||'',QUANTITY:x.QUANTITY!=null?+x.QUANTITY:1,UNIT:x.UNIT!=null?x.UNIT:'gl',PRICE:+x.PRICE||0,AMOUNT:+x.AMOUNT||0,ISVISIBLE:x.ISVISIBLE!=null?(+x.ISVISIBLE?1:0):1});
+
+/* ═══ Dialogue « Nouvelle / Editer la position de facturation » — o={isNew, lock (Genre et Visible grisés), calc(brouillon)→montant, onOk(position)} ═══ */
+function ivPosDialog(x0,p,o){ o=o||{}; const x={...x0}, cur=hfCur(p), lock=!!o.lock;
+  const fT=h('select',{class:'inp',style:{width:'260px'},disabled:lock||null},...Object.entries(POS_TYPE).map(([k,t])=>h('option',{value:k,selected:+k===(+x.TYPECODE||0)||null},t)));
+  const nI=val=>h('input',{class:'inp',value:ivNf(val),style:{width:'120px',textAlign:'right'}});
+  const fN=h('input',{class:'inp',maxlength:255,value:x.NAME||''}), fQ=nI(x.QUANTITY), fU=h('input',{class:'inp',value:x.UNIT||'',style:{width:'80px'}}), fP=nI(x.PRICE);
+  const fA=h('input',{class:'inp',disabled:true,style:{width:'120px',textAlign:'right'}}), fV=h('input',{type:'checkbox',checked:+x.ISVISIBLE?true:null,disabled:lock||null}), pu=h('span');
+  const uBtn=hfSuggest(fU,HF_UNITS);
+  const draft=()=>({...x,TYPECODE:+fT.value,NAME:fN.value.trim(),QUANTITY:hfNum(fQ.value)??0,UNIT:fU.value.trim()||null,PRICE:hfNum(fP.value)??0,ISVISIBLE:fV.checked?1:0});
+  const ok=()=>!!fN.value.trim()&&hfNum(fQ.value)!==null&&hfNum(fP.value)!==null;
+  let okB=null;
+  const upd=()=>{ const t=+fT.value; fQ.disabled=!ivHasQ(t); fU.disabled=uBtn.disabled=!ivHasQ(t); fP.disabled=!ivHasP(t); pu.textContent=t===1?cur+' / unité':ivHasP(t)?'%':'';
+    let a=0; if(ok()){ try{ a=o.calc?o.calc(draft()):(t===1?dpRound((hfNum(fQ.value)||0)*(hfNum(fP.value)||0)):0); }catch(_){ a=0; } }
+    fA.value=ivHasA(t)?hfN(a||0):''; if(okB) okB.disabled=!ok(); };
+  /* changement de genre : sans quantité → 0 ; ≠ Position → unité vide ; TVA à prix 0 → taux par défaut ; sans prix → 0 */
+  fT.onchange=()=>{ const t=+fT.value; if(!ivHasQ(t)) fQ.value=hfN(0); if(t!==1) fU.value=''; if((t===4||t===5)&&!hfNum(fP.value)) fP.value=hfN(vatDefault()); if(!ivHasP(t)) fP.value=hfN(0); upd(); };
+  [fN,fQ,fU,fP].forEach(e=>e.addEventListener('input',upd)); fV.onchange=upd;
+  const pick=r=>{ fN.value=r.name; if(+fT.value===1){ fU.value=r.unit||''; fP.value=hfN(+r.price||0); } upd(); };
+  const nBtn=ibtn({i:'prev',t:'Sélectionner une position de facturation',menu:()=>[{t:'Activités …',fn:()=>ivPickName(p,'act',pick)},{t:'Phases …',fn:()=>ivPickName(p,'ph',pick)},
+    {t:'Frais …',fn:()=>ivPickName(p,'cost',pick)},{t:'Collaborateur …',fn:()=>ivPickName(p,'staff',pick)}]});
+  const body=formRows([['Genre',fT],[h('b',{},'Nom'),ivLine(fN,nBtn)],['Quantité',fQ],['Unité',ivLine(fU,uBtn)],['Prix ou taux',ivLine(fP,pu)],['Total',ivLine(fA,cur)],['',h('label',{},fV,' Visible')]],560);
+  const D=dialog({title:o.isNew?'Nouvelle position de facturation':'Editer la position de facturation',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(!ok()) return false;
+    const y=draft(); if(y.TYPECODE===7) y.AMOUNT=0;                   // le montant n'est écrit que pour un Commentaire (0)
+    o.onOk&&o.onOk(y); }}]});
+  okB=ivOkBtn(D); upd(); }
+/* navigateurs du Nom (« Sélectionner une position de facturation ») : nom « Groupe | Élément », unité h, prix 0 ; Frais : unité et prix du genre ; Collaborateur : STAFFRATE du jour */
+function ivPickName(p,kind,fn){ const rows=[]; let n=0; const add=(g,e,unit,price,b)=>rows.push({k:String(++n),name:e==null?g:(g?g+' | '+e:e),g,e,unit,price,b});
+  const byNo=(a,b)=>cmp(a.NUMBER,b.NUMBER);
+  if(kind==='act') DS.by('projectactivitygroup','PROJECT_ID',p.ID).slice().sort(ivSo).forEach(g=>{ add(nm(g),null,'h',0,1); DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',g.ID).slice().sort(ivSo).forEach(a=>add(nm(g),nm(a),'h',0)); });
+  if(kind==='ph') DS.by('projectphase','PROJECT_ID',p.ID).slice().sort(byNo).forEach(g=>{ add(nm(g),null,'h',0,1); DS.by('projectsubphase','PROJECTPHASE_ID',g.ID).slice().sort(byNo).forEach(s=>add(nm(g),nm(s),'h',0)); });
+  if(kind==='cost') DS.by('projectcostcategorygroup','PROJECT_ID',p.ID).slice().sort(ivSo).forEach(g=>{ add(nm(g),null,'h',0,1); DS.by('projectcostcategory','PROJECTCOSTCATEGORYGROUP_ID',g.ID).slice().sort(ivSo).forEach(c=>add(nm(g),nm(c),c.UNIT||'',+c.UNITPRICE||0)); });
+  if(kind==='staff') staffList().forEach(s=>add(null,staffName(s),'h',+rateAt(s.ID,today())||0));
+  const withP=kind==='cost'||kind==='staff', o={}; let okB=null; const box=ivBox(560,340);
+  grid(box,Object.assign(o,{key:r=>r.k,cols:[{k:'n',t:{act:'Activités',ph:'Phases',cost:'Frais',staff:'Collaborateur'}[kind],f:r=>r.b?'<b>'+esc(r.g)+'</b>':r.g?'<span style="padding-left:16px">'+esc(r.e)+'</span>':esc(r.e)},
+    ...(withP?[{k:'u',t:'Unité',w:60,f:r=>r.b?'':esc(r.unit)},{k:'pr',t:'Prix',w:90,cls:'r',f:r=>r.b?'':hfN(r.price)}]:[])],rows,sort:null,state:{},
+    onSel:()=>{ if(okB) okB.disabled=false; },onDbl:()=>okB&&okB.click(),empty:'Aucune inscription.'})); ivNoSort(box);
+  const D=dialog({title:'Sélectionner une position de facturation',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const r=rows.find(x=>x.k===String(o.sel)); if(!r) return false; fn(r); }}]});
+  okB=ivOkBtn(D); okB.disabled=true; }
+/* liste à cases (tout coché par défaut par l'appelant) */
+function ivCheckGrid(box,rows,cols,chk,onChange){ const o={};
+  grid(box,Object.assign(o,{key:r=>String(r.ID),sort:null,state:{},cols:[{k:'_c',t:'',w:28,cls:'c',f:r=>`<input type="checkbox"${chk.has(String(r.ID))?' checked':''}>`},...cols],rows,empty:'Aucune position.'})); ivNoSort(box);
+  box.onchange=e=>{ const tr=e.target.closest('tr[data-k]'); if(!tr||e.target.type!=='checkbox') return; if(e.target.checked) chk.add(tr.dataset.k); else chk.delete(tr.dataset.k); onChange&&onChange(); };
+  return o; }
+const IV_CHKCOLS=[{k:'t',t:'Genre',w:140,f:x=>esc(POS_TYPE[+x.TYPECODE]||'')},{k:'n',t:'Position',f:x=>esc(x.NAME!=null?x.NAME:nm(x))}];
+/* « Sélection des positions » : gabarits invoiceposgroup / invoicepos ; 1 position → dialogue pré-rempli, plusieurs → insertion directe */
+function ivPickTemplates(fn,onNew){ const og={}, chk=new Set(); let okB=null; const bg=ivBox(260,320), bp=ivBox(460,320);
+  const groups=DS.all('invoiceposgroup').sort(ivSo), items=()=>og.sel==null?[]:DS.by('invoicepos','INVOICEPOSGROUP_ID',+og.sel).slice().sort(ivSo);
+  const upd=()=>{ if(okB) okB.disabled=!items().some(x=>chk.has(String(x.ID))); };
+  const drawP=()=>{ ivCheckGrid(bp,items(),IV_CHKCOLS,chk,upd); upd(); };
+  const pickG=()=>{ chk.clear(); items().forEach(x=>chk.add(String(x.ID))); drawP(); };
+  if(groups.length) og.sel=String(groups[0].ID);
+  grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(nm(x))}],rows:groups,sort:null,state:{},onSel:pickG,empty:'Aucun gabarit (Administrateur ▸ Gabarits de facturation).'})); ivNoSort(bg);
+  const D=dialog({title:'Sélection des positions',body:h('div',{style:{display:'flex',gap:'8px'}},bg,bp),buttons:[...(onNew?[{t:'Nouveau',fn:()=>{ onNew(); }}]:[]),{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+    const xs=items().filter(x=>chk.has(String(x.ID))).map(ivCopyPos); if(!xs.length) return false; fn(xs); }}]});
+  okB=ivOkBtn(D); pickG(); }
+/* « Navigateur de factures » : factures du tableau courant, positions cochées par défaut, copie sans montant */
+function ivPickInvoicePositions(list,fn){ const oi={}, chk=new Set(); let okB=null; const bi=ivBox(470,320), bp=ivBox(420,320);
+  const multi=new Set(list.map(f=>f.PROJECT_ID)).size>1, pos=()=>{ const f=DS.get('projectinvoice',oi.sel); return f?invPos(f):[]; };
+  const upd=()=>{ if(okB) okB.disabled=!pos().some(x=>chk.has(String(x.ID))); };
+  grid(bi,Object.assign(oi,{cols:multi?[IV_COLS[0],...IV_BCOLS]:IV_BCOLS,rows:list,sort:['INVOICEDATE',1],state:{},empty:'Aucune facture.',
+    onSel:()=>{ chk.clear(); pos().forEach(x=>chk.add(String(x.ID))); ivCheckGrid(bp,pos(),IV_CHKCOLS,chk,upd); upd(); }}));
+  ivCheckGrid(bp,[],IV_CHKCOLS,chk,upd);
+  const D=dialog({title:'Navigateur de factures',body:h('div',{style:{display:'flex',gap:'8px'}},bi,bp),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+    const xs=pos().filter(x=>chk.has(String(x.ID))).map(ivCopyPos); if(!xs.length) return false; fn(xs); }}]});
+  okB=ivOkBtn(D); okB.disabled=true; }
+/* « Choix du contrat » : lot 1 (ctBrowse) s'il est présent, sinon navigateur simple (contrats accessibles, « Reprendre le débiteur » coché) */
+const ivChooseContract=(p,fn)=>typeof ctBrowse==='function'?ctBrowse(p,{onlyInvoiceable:true},fn):ivBrowseContract(p,fn);
+function ivBrowseContract(p,fn){ const o={}; let okB=null; const box=ivBox(760,280), take=h('input',{type:'checkbox',checked:true});
+  const rows=DS.by('projectcontract','PROJECT_ID',p.ID).filter(c=>+c.ISINVOICEABLE===1).sort(ivSo);
+  grid(box,Object.assign(o,{cols:[{k:'NUMBER',t:'Numéro',w:80},{k:'NAME',t:'Désignation',w:180},{k:'CONTRACTDATE',t:'Date',w:100,f:c=>dfr(c.CONTRACTDATE)},
+    {k:'m',t:'Mandant',w:150,f:c=>esc(contactName(DS.get('contact',c.CONTACT_ID)))},{k:'s',t:'Mandataire',w:150,f:c=>esc(contactName(DS.get('contact',c.SUPPLIERCONTACT_ID)))},{k:'SUPPLIERDESC',t:'Type de prestations'}],
+    rows,sort:null,state:{},onSel:()=>{ if(okB) okB.disabled=false; },onDbl:()=>okB&&okB.click(),empty:'Aucun contrat accessible (☐ « Contrat accessible » dans le contrat).'})); ivNoSort(box);
+  const D=dialog({title:'Choix du contrat',body:h('div',{},box,h('label',{style:{display:'block',marginTop:'8px'}},take,' Reprendre le débiteur')),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const c=DS.get('projectcontract',o.sel); if(!c) return false; fn(c,take.checked); }}]});
+  okB=ivOkBtn(D); okB.disabled=true; }
+/* Débiteur ◀ ⓘ : « Choisir … » (adresses de l'affaire) / « Supprimer » */
+function ivContactField(get,set,p){ const L=h('span',{style:{minWidth:'240px',display:'inline-block'}});
+  const inf=ibtn({i:'info',t:'Fiche d’adresse',fn:()=>ivCard(DS.get('contact',get()))});
+  const show=()=>{ const c=DS.get('contact',get()); L.textContent=c?contactName(c):''; inf.disabled=!c; };
+  const btn=ibtn({i:'prev',t:'Débiteur',menu:()=>[{t:'Choisir …',fn:()=>ivPickProjectContact(p,c=>{ set(c.ID); show(); })},{t:'Supprimer',dis:get()==null,fn:()=>{ set(null); show(); }}]});
+  show(); const el=ivLine(L,btn,inf); el.refresh=show; return el; }
+/* navigateur d'adresses de l'affaire (adresse de facturation, adresse d'affaire, intervenants) ; « Toutes les adresses … » ouvre le navigateur général */
+function ivPickProjectContact(p,fn){ const m=new Map(), add=(id,r)=>{ const c=DS.get('contact',id); if(c&&!m.has(c.ID)) m.set(c.ID,{ID:c.ID,c,r}); };
+  add(p.CONTACT2_ID,'Adresse de facturation'); add(p.CONTACT1_ID,'Adresse d’affaire');
+  DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>!x.ISHIDDEN).sort(memberSort).forEach(x=>{ add(x.CONTACT_ID,teamRole(x.TEAMROLECODE)); add(x.RESPCONTACT_ID,teamRole(x.TEAMROLECODE)); });
+  const rows=[...m.values()], o={}; let okB=null; const box=ivBox(660,340);
+  grid(box,Object.assign(o,{cols:[{k:'r',t:'Rôle',w:160},{k:'n',t:'Entité',f:x=>esc(contactName(x.c)),v:x=>contactName(x.c)},{k:'a',t:'Adresse',w:240,f:x=>esc(adrLines(x.c).slice(-2).join(', '))}],
+    rows,sort:null,state:{},onSel:()=>{ if(okB) okB.disabled=false; },onDbl:()=>okB&&okB.click(),empty:'Aucune adresse dans l’affaire.'}));
+  const D=dialog({title:'Navigateur d’adresses',body:box,buttons:[{t:'Toutes les adresses …',fn:()=>{ setTimeout(()=>pickContact('Navigateur d’adresses',fn),50); }},{t:'Annuler'},
+    {t:'OK',pri:true,fn:()=>{ const x=rows.find(r=>String(r.ID)===String(o.sel)); if(!x) return false; fn(x.c); }}]});
+  okB=ivOkBtn(D); okB.disabled=true; }
+/* encaissement (§7.2) si le lot 1 (ctPaymentDialog) n'est pas là : ne fait pas de commit, renvoie la valeur à onOk */
+function ivPaymentDialog(pay0,c,onOk,opts){ opts=opts||{}; const v={...pay0}, cur=opts.currency||hfCur(DS.get('project',c&&c.PROJECT_ID)), inv=opts.invoice||DS.get('projectinvoice',v.PROJECTINVOICE_ID);
+  const fN=h('input',{class:'inp',maxlength:64,value:v.NAME||''}), fI=h('input',{class:'inp',disabled:true,value:(inv&&inv.NAME)||''});
+  const d1=h('input',{class:'inp',type:'date',value:v.INVOICEDATE||'',style:{width:'160px'}}), d2=h('input',{class:'inp',type:'date',value:v.PAYMENTDATE||'',style:{width:'160px'}});
+  const am=h('input',{class:'inp',value:hfN(+v.AMOUNT||0),style:{width:'140px',textAlign:'right'}}), rem=h('textarea',{class:'inp',rows:3,maxlength:1024},v.REMARK||'');
+  const ok=()=>{ const a=hfNum(am.value); return !!fN.value.trim()&&a!==null&&(!!d2.value||(!!d1.value&&a===0)); };   // ProjectPaymentDialog.checkGuards
+  const D=dialog({title:opts.title||(v.ID==null?'Nouveau':'Editer'),body:formRows([[h('b',{},'Désignation'),ivLine(fN,hfSuggest(fN,['Encaissement acompte','Encaissement final','Versement à sous-traitant']))],
+    ['Facture',fI],['Date de la facture',d1],['Date encaissement',d2],['Montant',ivLine(am,cur)],['Remarque',rem]],500),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(!ok()) return false; onOk({...v,NAME:fN.value.trim(),INVOICEDATE:d1.value||null,PAYMENTDATE:d2.value||null,AMOUNT:hfNum(am.value),REMARK:rem.value.trim()||null}); }}]});
+  const b=ivOkBtn(D), g=()=>{ b.disabled=!ok(); }; [fN,am,d1,d2].forEach(x=>{ x.addEventListener('input',g); x.addEventListener('change',g); }); g(); }
+
+/* ═══ Suppression (§6.10) : confirmation « Avertissement », puis cascade en un commit ═══ */
+async function ivDelete(f0){ const f=f0&&DS.get('projectinvoice',f0.ID); if(!f) return false;
+  if((await ivAsk('Avertissement','Voulez-vous vraiment supprimer cette inscription ?'))!==true) return false;
+  await DS.commit(ivDeleteOps(f)); return true; }
+
+/* ═══ Impression : ancien document « projectInvoice » du groupe de l'affaire (§10.1) ; onDone : rechargement ═══ */
+async function ivPrint(f0,withStatus,onDone){ const f=f0&&DS.get('projectinvoice',f0.ID); if(!f) return;
+  const pos=invPos(f), p=DS.get('project',f.PROJECT_ID);
+  if(posDirty(pos)&&(await ivAsk('Confirmation','Les positions de la facture doivent être vérifiées. Afficher la facture quand même ?'))!==true) return;
+  const rows=ivPrintRows(pos), fields={projectInvoiceNumber:f.NUMBER||'',projectInvoiceDate:dLong(f.INVOICEDATE),projectPaymentDate:dLong(f.DUEDATE),
+    projectInvoiceAccountingPeriod:f.ACCOUNTINGPERIOD||'',projectPreviousPayementSummary:num(paidToDate(f)),address:adrLines(ivDebtor(f)).join('\n'),documentTitle:f.NAME||''};
+  const fb=()=>ivPrintHTML(f,p,fields,IV_PRCOLS,rows);
+  tplOr(()=>tplPrint({type:'projectInvoice',project:p,title:f.NAME||'Facture',cover:ivCover(f),ctx:{fields,total:+f.AMOUNT||0,totalHT:invHT(f),totalTVA:invVat(f)},cols:IV_PRCOLS,rows,fallback:fb}),fb);
+  /* « avec requête de statut » : proposé seulement pour une facture Planifiée (choix §13 n° 5), enregistré aussitôt */
+  if(withStatus&&(+f.PROJECTINVOICESTATECODE||0)===0&&(await ivAsk('Confirmation','Voulez-vous modifier le statut de la facture dans « Envoyée » ?'))===true){
+    const x=DS.get('projectinvoice',f.ID); if(x) try{ await DS.commit([{t:'projectinvoice',id:x.ID,val:{...x,PROJECTINVOICESTATECODE:1}}]); }catch(e){ if(!e.conflict) console.error(e); } }   // DS.commit affiche déjà le message
+  onDone&&onDone(); }
+/* page de garde : 3ᵉ valeur de TEMPLATEPROPERTIES (« 1 » = oui) ; sans réglage, oui (InvoiceDialog.includeCover = true @72-74) */
+const ivCover=f=>{ const x=String((f&&f.TEMPLATEPROPERTIES)||'').split(';')[2]; return x?x==='1':true; };
+function ivPrintHTML(f,p,F,cols,rows){ const w=open('','_blank'); if(!w) return; const cur=hfCur(p);
+  const info=[['N° de facture',F.projectInvoiceNumber],['Date de facture',F.projectInvoiceDate],['Date d’échéance',F.projectPaymentDate],['Période facturée',F.projectInvoiceAccountingPeriod]].filter(x=>x[1]);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.NAME||'Facture')}</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:9.5pt Akkurat,Helvetica,Arial,sans-serif}
+    .ad{margin:20mm 0 0 65mm;white-space:pre-line;min-height:28mm}.in td{padding:1px 10px 1px 0}h1{font-size:12pt;margin:12mm 0 2mm}table.t{border-collapse:collapse;width:100%;margin-top:5mm}
+    .t th{text-align:left;border-bottom:.6pt solid #000;padding:2px 4px;font-size:8.5pt}.t td{padding:2px 4px;border-bottom:.2pt solid #ddd}.t .r{text-align:right}.t tr.b td{font-weight:700}.t tr.l td{border-top:.6pt solid #000}</style></head><body>
+    <div class="ad">${esc(F.address)}</div><table class="in">${info.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table><h1>${esc(F.documentTitle)}</h1><div>${esc(projLabel(p))}</div>
+    <table class="t"><tr>${cols.map(c=>`<th class="${c.r?'r':''}">${esc(c.t)}</th>`).join('')}</tr>${rows.map(r=>`<tr class="${r._bold?'b':''} ${r._line?'l':''}">${r.map((x,j)=>`<td class="${cols[j].r?'r':''}">${esc(x)}</td>`).join('')}</tr>`).join('')}</table>
+    <p style="margin-top:6mm">Montant TTC : <b>${esc(cur)} ${num(+f.AMOUNT||0)}</b></p>${f.TERMSOFPAYMENT?`<p>Conditions de paiement : ${esc(f.TERMSOFPAYMENT)}</p>`:''}<p>Avec nos remerciements.</p></body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300); }
+
+/* ═══ Administrateur ▸ « Gabarits de facturation » (INVOICEPOSGROUP / INVOICEPOS) ═══ */
+const IVA={og:{},op:{}};
+function admInvoicePos(R){ const og=IVA.og, op=IVA.op, bg=h('div',{class:'pane'}), bp=h('div',{class:'pane'});
+  const groups=()=>DS.all('invoiceposgroup').sort(ivSo), items=()=>og.sel==null?[]:DS.by('invoicepos','INVOICEPOSGROUP_ID',+og.sel).slice().sort(ivSo);
+  if(og.sel!=null&&!DS.get('invoiceposgroup',og.sel)) og.sel=null; { const x=op.sel!=null&&DS.get('invoicepos',op.sel); if(!x||String(x.INVOICEPOSGROUP_ID)!==String(og.sel)) op.sel=null; }
+  const drawG=()=>{ grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(nm(x))}],rows:groups(),sort:null,state:{},onSel:()=>{ op.sel=null; drawP(); },onDbl:x=>edG(x)})); ivNoSort(bg); };
+  const drawP=()=>{ grid(bp,Object.assign(op,{cols:[{k:'t',t:'Genre',w:170,f:x=>esc(POS_TYPE[+x.TYPECODE]||'')},{k:'n',t:'Position',f:x=>esc(nm(x))},{k:'q',t:'Quantité',w:80,cls:'r',f:x=>ivHasQ(+x.TYPECODE)?hfN(+x.QUANTITY||0):''},
+      {k:'u',t:'Unité',w:56,f:x=>ivHasQ(+x.TYPECODE)?esc(x.UNIT||''):''},{k:'p',t:'Prix',w:90,cls:'r',f:x=>ivHasP(+x.TYPECODE)?hfN(+x.PRICE||0):''},{k:'pc',t:'%',w:34,cls:'c',f:x=>+x.TYPECODE>=3&&+x.TYPECODE<=5?'%':''},
+      {k:'v',t:'Visible',w:56,cls:'c',f:x=>+x.ISVISIBLE?'✔':''}],rows:items(),sort:null,state:{},onDbl:x=>edP(x),empty:og.sel==null?'Sélectionnez un groupe.':'Aucune position.'})); ivNoSort(bp); };
+  /* InvoicePosGroupDialog / InvoicePosDialog : un seul nom, celui de la langue de l'interface (Français) ; les autres langues sont conservées */
+  const names=v=>{ const F={NAMEFR:h('input',{class:'inp',maxlength:255,value:v.NAMEFR||''})}; return {F,rows:[[h('b',{},'Français'),F.NAMEFR]]}; };
+  const readN=(v,F)=>Object.keys(F).forEach(k=>v[k]=F[k].value.trim()||null);
+  const edG=g=>{ const v=g?{...g}:{ID:null,NAMEGE:null,NAMEFR:null,NAMEIT:null,NAMEEN:null,SORTORDER:Math.max(0,...groups().map(x=>+x.SORTORDER||0))+1}, bs=g?((DS.S.invoiceposgroup||{})[String(g.ID)]||0):0, N=names(v);
+    const D=dialog({title:g?'Editer le groupe':'Nouveau groupe',body:formRows(N.rows,480),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!N.F.NAMEFR.value.trim()) return false;
+      readN(v,N.F); if(v.ID==null) v.ID=DS.newIds('invoiceposgroup')[0]; await DS.commit([{t:'invoiceposgroup',id:v.ID,val:v,bseq:bs}]); og.sel=String(v.ID); op.sel=null; }}]});
+    const b=ivOkBtn(D), gd=()=>{ b.disabled=!N.F.NAMEFR.value.trim(); }; N.F.NAMEFR.addEventListener('input',gd); gd(); };
+  const edP=x=>{ if(og.sel==null&&!x) return;
+    const v=x?{...x}:{ID:null,INVOICEPOSGROUP_ID:+og.sel,SORTORDER:Math.max(0,...items().map(y=>+y.SORTORDER||0))+1,TYPECODE:1,NAMEGE:null,NAMEFR:null,NAMEIT:null,NAMEEN:null,QUANTITY:1,UNIT:null,PRICE:0,ISVISIBLE:1};
+    const bs=x?((DS.S.invoicepos||{})[String(x.ID)]||0):0, N=names(v);
+    const fT=h('select',{class:'inp',style:{width:'260px'}},...Object.entries(POS_TYPE).map(([k,t])=>h('option',{value:k,selected:+k===(+v.TYPECODE||0)||null},t)));
+    const nI=val=>h('input',{class:'inp',value:ivNf(val),style:{width:'120px',textAlign:'right'}});
+    const fQ=nI(v.QUANTITY), fU=h('input',{class:'inp',value:v.UNIT||'',style:{width:'80px'}}), uBtn=hfSuggest(fU,HF_UNITS), fP=nI(v.PRICE), pu=h('span'), fV=h('input',{type:'checkbox',checked:+v.ISVISIBLE?true:null});
+    let b=null; const ok=()=>!!N.F.NAMEFR.value.trim()&&hfNum(fQ.value)!==null&&hfNum(fP.value)!==null;
+    const upd=()=>{ const t=+fT.value; fQ.disabled=!ivHasQ(t); fU.disabled=uBtn.disabled=!ivHasQ(t); fP.disabled=!ivHasP(t); pu.textContent=t===1?'CHF / unité':ivHasP(t)?'%':''; if(b) b.disabled=!ok(); };
+    fT.onchange=()=>{ const t=+fT.value; if(!ivHasQ(t)) fQ.value=hfN(0); if(t!==1) fU.value=''; if((t===4||t===5)&&!hfNum(fP.value)) fP.value=hfN(vatDefault()); if(!ivHasP(t)) fP.value=hfN(0); upd(); };
+    [N.F.NAMEFR,fQ,fP].forEach(e=>e.addEventListener('input',upd));
+    const D=dialog({title:x?'Editer la position':'Nouvelle position',body:formRows([['Type',fT],...N.rows,['Quantité',fQ],['Unité',ivLine(fU,uBtn)],['Prix ou taux',ivLine(fP,pu)],['',h('label',{},fV,' Visible')]],520),
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!ok()) return false; readN(v,N.F);
+        Object.assign(v,{TYPECODE:+fT.value,QUANTITY:hfNum(fQ.value),UNIT:fU.value.trim()||null,PRICE:hfNum(fP.value),ISVISIBLE:fV.checked?1:0});
+        if(v.ID==null) v.ID=DS.newIds('invoicepos')[0]; await DS.commit([{t:'invoicepos',id:v.ID,val:v,bseq:bs}]); op.sel=String(v.ID); }}]});
+    b=ivOkBtn(D); upd(); };
+  const move=async(list,o,t,how)=>{ const a=list(), i=a.findIndex(x=>String(x.ID)===String(o.sel)); if(i<0) return; const r=a.slice(), [x]=r.splice(i,1);
+    r.splice(how==='first'?0:how==='last'?r.length:Math.max(0,Math.min(r.length,i+(how==='prev'?-1:1))),0,x);
+    const ops=r.map((y,j)=>({t,id:y.ID,val:{...y,SORTORDER:j+1}})).filter((op2,j)=>+r[j].SORTORDER!==j+1); if(ops.length) await DS.commit(ops); };
+  const bar=(ed,list,o,t,del,L)=>phead([{i:'plus',t:L[0],fn:()=>ed()},{i:'edit',t:L[1],fn:()=>{ const x=DS.get(t,o.sel); if(x) ed(x); }},{i:'minus',t:L[2],fn:del},
+    ...['first','prev','next','last'].map(k=>({i:k,t:{first:'Au début',prev:'Monter',next:'Descendre',last:'À la fin'}[k],fn:()=>move(list,o,t,k)}))]);
+  const delG=async()=>{ const g=DS.get('invoiceposgroup',og.sel); if(!g) return; if((await ivAsk('Avertissement','Voulez-vous vraiment supprimer cette inscription ?'))!==true) return;
+    await DS.commit([{t:'invoiceposgroup',id:g.ID,val:null},...DS.by('invoicepos','INVOICEPOSGROUP_ID',g.ID).map(x=>({t:'invoicepos',id:x.ID,val:null}))]); og.sel=null; op.sel=null; };
+  const delP=async()=>{ const x=DS.get('invoicepos',op.sel); if(!x) return; if((await ivAsk('Avertissement','Voulez-vous vraiment supprimer cette inscription ?'))!==true) return; await DS.del('invoicepos',x.ID); op.sel=null; };
+  /* gabarits de TVA restés à un ancien taux (81 et 85 à 7.7 au bureau) : proposition, jamais automatique */
+  const vd=vatDefault(), old=DS.all('invoicepos').filter(x=>(+x.TYPECODE===4||+x.TYPECODE===5)&&!ivSame(x.PRICE,vd));
+  if(old.length) R.append(h('div',{class:'ph2',style:{color:'var(--warn)',gap:'10px'}},`⚠ ${old.length} gabarit(s) de TVA au taux de ${[...new Set(old.map(x=>String(+x.PRICE||0)))].join(', ')} % au lieu du taux actuel de ${vd} %.`,
+    ibtn({label:'Passer au taux actuel …',fn:async()=>{ if(!await confirmDlg(`Passer ${old.length} gabarit(s) de TVA (${old.map(x=>nm(x)).join(', ')}) au taux de ${vd} % ?\nLes factures existantes ne sont pas modifiées.`,'Mettre à jour')) return;
+      await DS.commit(old.map(x=>({t:'invoicepos',id:x.ID,val:{...x,PRICE:vd}}))); }})));
+  const Lc=h('div',{class:'col',style:{width:'300px',flex:'0 0 300px'}},bar(edG,groups,og,'invoiceposgroup',delG,['Nouveau gabarit de facturation','Editer le gabarit de facturation','Effacer le gabarit de facturation']),bg), Rc=h('div',{class:'col fill'},bar(edP,items,op,'invoicepos',delP,['Nouvelle position','Editer la position','Supprimer la position']),bp);
+  R.append(h('div',{class:'cols',style:{flex:1}},Lc,Rc)); drawG(); drawP(); }
+
+/* ═══ Administrateur ▸ « Taux de TVA » : setting genVatRatePos (taux par défaut des conditions et des positions « % TVA ») ═══ */
+function admVat(R){ const o={}, pane=h('div',{class:'pane'}), set=()=>DS.all('setting').find(x=>x.SETTINGNAME==='genVatRatePos')||null;
+  const ed=()=>{ const s=set(), bs=s?((DS.S.setting||{})[String(s.ID)]||0):0, i=h('input',{class:'inp',value:String(vatDefault()),style:{width:'90px',textAlign:'right'}});
+    const val=()=>{ const x=hfNum(i.value); return x!=null&&x>=0&&x<100?x:null; };
+    const D=dialog({title:'Définir le taux de TVA',body:formRows([['Taux de TVA',ivLine(i,'%')]],340),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const x=val(); if(x==null) return false;   // SetVatDialog
+      const v=s?{...s,SETTINGVALUE:String(x)}:{ID:DS.newIds('setting')[0],SETTINGTYPE:1,SETTINGNAME:'genVatRatePos',SETTINGVALUE:String(x)}; await DS.commit([{t:'setting',id:v.ID,val:v,bseq:bs}]); }}]});
+    const b=ivOkBtn(D), g=()=>{ b.disabled=val()==null; }; i.addEventListener('input',g); g(); };
+  R.append(phead([{i:'edit',t:'Définir le taux de TVA',fn:ed}]),pane);
+  grid(pane,Object.assign(o,{key:r=>r.k,cols:[{k:'t',t:'Désignation',w:220},{k:'v',t:'Taux',w:90,cls:'r'},{k:'u',t:'Utilisation'}],
+    rows:[{k:'genVatRatePos',t:'Taux de TVA',v:String(vatDefault())+' %',u:'Conditions d’honoraires (taux « par défaut ») et positions de facture « % TVA » à prix 0'}],sort:null,state:{},onDbl:ed})); ivNoSort(pane); }
+
+/* ── lot5.js ── */
+/* ═══ FACTURES ▸ Contrôle de factures (deltaproject.invoice.ProjectInvoiceStateFrame) et Controlling ▸ « Transférer en facturation » (TimeLogChargedDialog / ProjectCostChargedDialog) ═══ */
+/* catégories (ProjectInvoiceMenuTableModel) : un statut + affaire En cours / En attente / Terminée ; « Toutes » sans aucun filtre */
+const FC_CATS=[['0','Planifiée'],['1','Envoyée'],['2','Rappel envoyé'],['3','Payée'],['all','Toutes']];
+const fcFilter=(invs,prj,cat)=>invs.filter(f=>{ if(cat==='all') return true; const p=prj(f.PROJECT_ID), s=p?+p.PROJECTSTATECODE:0;
+  return (+f.PROJECTINVOICESTATECODE||0)===+cat&&s>=2&&s<=4; }).sort((a,b)=>cmp(a.INVOICEDATE,b.INVOICEDATE)||(+a.ID||0)-(+b.ID||0));   // tri initial : date de facture
+const fcRows=cat=>fcFilter(DS.all('projectinvoice'),id=>DS.get('project',id),cat);
+const fcProj=f=>DS.get('project',f.PROJECT_ID)||null;
+const fcSt=f=>+f.PROJECTINVOICESTATECODE||0;
+/* 15 colonnes (ProjectInvoiceTableModel, type allAndProject) : celles du lot 4 (IV_COLS) si présentes */
+const FC_COLS=[{k:'pr',t:'Affaire',w:90,f:f=>esc((fcProj(f)||{}).NUMBER),v:f=>(fcProj(f)||{}).NUMBER},{k:'NAME',t:'Désignation',w:220},{k:'NUMBER',t:'Numéro',w:80},
+  {k:'INVOICEDATE',t:'Date de facture',w:100,f:f=>dfr(f.INVOICEDATE)},{k:'DUEDATE',t:'Date d’échéance',w:100,f:f=>dfr(f.DUEDATE)},{k:'st',t:'Statut',w:100,f:f=>esc(PI_STATE[fcSt(f)]||''),v:fcSt},
+  {k:'ct',t:'Contrat',w:170,f:f=>esc(ctrLbl(DS.get('projectcontract',f.PROJECTCONTRACT_ID))),v:f=>ctrLbl(DS.get('projectcontract',f.PROJECTCONTRACT_ID))},
+  {k:'db',t:'Débiteur',w:180,f:f=>esc(contactName(DS.get('contact',f.CONTACT_ID))),v:f=>contactName(DS.get('contact',f.CONTACT_ID))},
+  {k:'cur',t:'Monnaie',w:60,f:f=>esc(hfCur(fcProj(f))),v:f=>hfCur(fcProj(f))},{k:'AMOUNT',t:'Montant TTC',w:100,cls:'r',f:f=>hfN(+f.AMOUNT||0),v:f=>+f.AMOUNT||0},
+  {k:'qr',t:'QR',w:40,cls:'c',f:f=>f.QRBILL_ID!=null?'✔':'',v:f=>f.QRBILL_ID!=null?1:0},{k:'AMOUNTPAID',t:'Encaissé',w:100,cls:'r',f:f=>hfN(+f.AMOUNTPAID||0),v:f=>+f.AMOUNTPAID||0},
+  {k:'sol',t:'Solde à encaisser',w:110,cls:'r',f:f=>hfN((+f.AMOUNT||0)-(+f.AMOUNTPAID||0)),v:f=>(+f.AMOUNT||0)-(+f.AMOUNTPAID||0)},
+  {k:'PAYMENTDATE',t:'Encaissement',w:100,f:f=>dfr(f.PAYMENTDATE)},{k:'DUNNINGLEVEL',t:'Nb rappels',w:80,cls:'r',f:f=>f.DUNNINGLEVEL==null?'':esc(f.DUNNINGLEVEL),v:f=>+f.DUNNINGLEVEL||0}];
+const fcCols=()=>typeof IV_COLS!=='undefined'&&Array.isArray(IV_COLS)&&IV_COLS.length===15?IV_COLS:FC_COLS;
+/* sélecteurs de facture (type browse) : Désignation, Numéro, Date de facture, Statut — IV_BCOLS du lot 4 si présent */
+const FC_BROWSE=[{k:'NAME',t:'Désignation',w:280},{k:'NUMBER',t:'Numéro',w:90},{k:'INVOICEDATE',t:'Date de facture',w:110,f:f=>dfr(f.INVOICEDATE)},{k:'st',t:'Statut',w:110,f:f=>esc(PI_STATE[fcSt(f)]||''),v:fcSt}];
+/* texte affiché d'une ligne (recherche insensible à la casse sur toutes les colonnes) */
+function fcText(r,cols){ const d=fcText.d||(fcText.d=document.createElement('div')); return cols.map(c=>{ d.innerHTML=c.f?c.f(r):esc(r[c.k]); return d.textContent; }).join('\u0001').toLowerCase(); }
+const fcForms=()=>{ const v=hfSet('isModuleFormVisible'); return v==null||/YES/i.test(String(v)); };   // 📄▾ visible si [YES] (anciens documents)
+const FC={g:{},q:''};
+/* volet d'une catégorie : ✎ · QR · 📄▾ · ⚙▾ … recherche (150 px) ; double-clic = ✎ ; pas de + ni de −, pas de total ni de couleur */
+function fcPane(R,cat){ const g=FC.g, cols=fcCols(), pane=h('div',{class:'pane'});
+  if(!g.state){ let s=null; try{ s=JSON.parse(localStorage.getItem('ds_inv_sort')||'null'); }catch(_){}
+    const dk=(cols.find(c=>c.t==='Date de facture')||{}).k; g.state={sort:Array.isArray(s)&&cols.some(c=>c.k===s[0])?s:(dk?[dk,1]:null)}; }
+  const cur=()=>{ const f=DS.get('projectinvoice',g.sel); return f&&(g.view||[]).some(x=>x.ID===f.ID)?f:null; };
+  const edit=f=>{ if(!f||typeof ivEdit!=='function') return; g.sel=String(f.ID);
+    ivEdit(f,fcProj(f),{contract:DS.get('projectcontract',f.PROJECTCONTRACT_ID),list:(g.view||[]).slice(),onSaved:x=>{ g.sel=String((x&&x.ID)||f.ID); drawT(); }}); };   // liste = contenu de la catégorie (import de positions)
+  const bE=ibtn({i:'edit',t:'Modifier …',fn:()=>edit(cur())});
+  const bQ=ibtn({label:'QR',t:'Modifier la QR-facture …',fn:()=>{ const f=cur(); if(f&&typeof qrEdit==='function') qrEdit(f,()=>drawT()); }});
+  const bD=ibtn({i:'doc',t:'Facture',menu:()=>{ const f=cur(), ok=!!f&&typeof ivPrint==='function';
+    return [{t:'Document de facturation … [Ancien document]',dis:!ok,fn:()=>ivPrint(f,false,()=>drawT())},
+      ...(cat==='0'?[{t:'Document de facturation avec requête de statut … [Ancien document]',dis:!ok,fn:()=>ivPrint(f,true,()=>drawT())}]:[])]; }});   // l'original ne recharge pas : DeltaSub recharge
+  const head=phead([bE,bQ,...(fcForms()?[bD]:[]),mgGear(g,'Controle_factures')],{search:q=>{ FC.q=q; drawT(); }});
+  if(head.sinput){ head.sinput.value=FC.q; head.sinput.style.width='150px'; }
+  const upd=()=>{ const f=cur(); bE.disabled=!f||typeof ivEdit!=='function'; bQ.disabled=!f||typeof qrEdit!=='function'; bD.disabled=!(g.view&&g.view.length); };
+  const drawT=()=>{ let rows=fcRows(cat); if(FC.q) rows=rows.filter(r=>fcText(r,cols).includes(FC.q));
+    grid(pane,Object.assign(g,{cols,rows,sort:null,onSel:upd,onDbl:f=>edit(f),empty:'Aucune facture.'})); upd(); };
+  pane.addEventListener('click',e=>{ if(e.target.closest('th')) setTimeout(()=>{ try{ localStorage.setItem('ds_inv_sort',JSON.stringify(g.state.sort)); }catch(_){} upd(); },0); });   // tri par en-tête mémorisé
+  R.append(head,pane); drawT();
+  return {tables:['projectinvoice','projectinvoicepos','project','projectcontract','contact','contactowner','qrbill','projectpayment'],redraw:drawT}; }
+VIEWS['fact-controle']=mgCatView('inv_cat',FC_CATS,fcPane,240);
+
+/* ── Transfert depuis le controlling (§6.11) ── */
+/* avertissement modal qui se résout à la fermeture */
+const fcAlert=(msg,title)=>new Promise(res=>{ const D=dialog({title:title||'Avertissement',body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'460px'}},msg),buttons:[{t:'OK',pri:true,fn:()=>res()}]});
+  D.bd.closest('.ov').addEventListener('keydown',e=>{ if(e.key==='Escape') res(); }); });
+/* fenêtre dont la promesse vaut null si l'on annule (bouton ou Échap) */
+const fcModal=(o,res)=>{ const D=dialog(o); D.bd.closest('.ov').addEventListener('keydown',e=>{ if(e.key==='Escape') res(null); }); return D; };
+/* « Sélectionner une facture » : factures Planifiée de l'affaire (browseProjectInvoiceByState(draft)) */
+function fcPickInvoice(p){ return new Promise(res=>{ const o={}, rows=DS.by('projectinvoice','PROJECT_ID',p.ID).filter(f=>fcSt(f)===0).sort((a,b)=>cmp(a.INVOICEDATE,b.INVOICEDATE)||(+a.ID||0)-(+b.ID||0));
+  const box=h('div',{style:{width:'620px',height:'300px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}}); let okB=null;
+  grid(box,Object.assign(o,{cols:typeof IV_BCOLS!=='undefined'&&Array.isArray(IV_BCOLS)?IV_BCOLS:FC_BROWSE,rows,sort:null,onSel:()=>{ if(okB) okB.disabled=false; },onDbl:f=>{ o.sel=String(f.ID); if(okB){ okB.disabled=false; okB.click(); } },empty:'Aucune facture planifiée.'}));
+  const D=fcModal({title:'Sélectionner une facture',body:box,buttons:[{t:'Annuler',fn:()=>res(null)},{t:'OK',pri:true,fn:()=>{ const f=DS.get('projectinvoice',o.sel); if(!f) return false; res(f); }}]},res);
+  okB=D.bd.parentNode.querySelector('.ft .btn.pri'); okB.disabled=true; }); }
+/* libellé du filtre (getInvoicePosDesc / getSelectionDesc) : 1re sélection appliquée dans les listes de « Critères d'analyse » */
+function fcDesc(kind,p){ const F=(typeof CT!=='undefined'&&CT[kind+'an'])||{}; if(F.pid!==p.ID) return null; const one=(t,k)=>DS.get(t,(F[k]||[])[0]);
+  const s=one('staff','st'); if(s) return staffName(s);
+  const sp=one('projectsubphase','sp'), ph=one('projectphase','ph');
+  if(kind==='timelog'){ const a=one('projectactivity','act'), g=one('projectactivitygroup','ag'); return a?nm(a):g?nm(g):sp?nm(sp):ph?nm(ph):null; }
+  const ts=x=>[x.NUMBER,nm(x)].filter(v=>v!=null&&v!=='').join(' '); return sp?ts(sp):ph?ts(ph):null; }
+/* montant, quantité et prix d'une ligne d'heures (tarif tlRate) ou de frais */
+const fcAmt=(r,tl)=>tl?tlFee(r):pcAmount(r), fcQty=(r,tl)=>tl?(+r.TIMEPERIOD||0):(+r.QUANTITY||0), fcRate=(r,tl)=>tl?tlRate(r):(+r.UNITPRICE||0);
+const fcNum=x=>Math.round(x*1e6)/1e6;                                                     // efface le bruit des sommes flottantes
+/* clés de regroupement (ChargingType.getKey / getKeyName) → [clé, libellé, tri] ; tri par libellé, ou par numéro de phase */
+const fcPh=r=>DS.get('projectphase',r.PHASE_ID), fcSp=r=>DS.get('projectsubphase',r.SUBPHASE_ID), fcNo=x=>x?+x.NUMBER:null;
+const FC_KEYS={
+  ag:r=>{ const n=nm(DS.get('projectactivitygroup',r.ACTIVITYGROUP_ID)); return [r.ACTIVITYGROUP_ID,n,[n]]; },
+  act:r=>{ const a=DS.get('projectactivity',r.ACTIVITY_ID), n=[nm(a&&DS.get('projectactivitygroup',a.PROJECTACTIVITYGROUP_ID)),nm(a)].filter(Boolean).join(', '); return [r.ACTIVITY_ID,n,[n]]; },
+  ph:r=>{ const ph=fcPh(r); return [r.PHASE_ID,ph?nm(ph):'',[fcNo(ph),nm(ph)]]; },
+  sp:r=>{ const ph=fcPh(r), sp=fcSp(r); return [r.SUBPHASE_ID!=null?r.SUBPHASE_ID:'p'+r.PHASE_ID,!ph?'':!sp?nm(ph):nm(ph)+', '+nm(sp),[fcNo(ph),sp?+sp.NUMBER:-1]]; },   // sans phase partielle : une clé par phase, avant ses phases partielles
+  st:r=>{ const n=staffName(DS.get('staff',r.STAFF_ID)); return [r.STAFF_ID,n,[n]]; },
+  cat:r=>{ const c=DS.get('projectcostcategory',r.COSTCATEGORY_ID), n=[nm(c&&DS.get('projectcostcategorygroup',c.PROJECTCOSTCATEGORYGROUP_ID)),nm(c)].filter(Boolean).join(', '); return [r.COSTCATEGORY_ID,n,[n]]; }};
+const fcPos=o=>({ID:null,PROJECTINVOICE_ID:null,SORTORDER:0,TYPECODE:1,NAME:null,QUANTITY:1,UNIT:null,PRICE:0,AMOUNT:0,ISVISIBLE:1,...o});
+/* positions groupées (addProjectInvoicePositions) : Q = Σ, prix = tarif ; tarifs différents dans une clé → Q = 1, prix = Σ montants ; Visible = oui */
+function fcBuild(rows,kind,mode){ const tl=kind==='timelog', K=FC_KEYS[mode], M=new Map(); let mixed=false;
+  for(const r of rows){ const [k,name,so]=K(r), rate=fcRate(r,tl), x=M.get(k);
+    if(!x){ M.set(k,{so,m:false,pos:fcPos({NAME:name,QUANTITY:fcQty(r,tl),UNIT:tl?'h':(r.UNIT||null),PRICE:rate})}); continue; }
+    if(!x.m&&x.pos.PRICE===rate){ x.pos.QUANTITY+=fcQty(r,tl); continue; }
+    x.pos.PRICE=x.pos.QUANTITY*x.pos.PRICE+fcAmt(r,tl); x.pos.QUANTITY=1; x.m=mixed=true; }
+  const so=(a,b)=>{ for(let i=0;i<Math.max(a.length,b.length);i++){ const c=cmp(a[i],b[i]); if(c) return c; } return 0; };
+  const list=[...M.values()].sort((a,b)=>so(a.so,b.so)).map(x=>{ x.pos.QUANTITY=fcNum(x.pos.QUANTITY); if(x.m) x.pos.PRICE=dpRound(x.pos.PRICE); return x.pos; });
+  return {list,mixed}; }
+/* position unique : Q = 1, unité « h » (heures ; aucune pour les frais), prix = montant total arrondi */
+const fcSingle=(rows,kind,desc)=>fcPos({NAME:desc||null,QUANTITY:1,UNIT:kind==='timelog'?'h':null,PRICE:dpRound(rows.reduce((s,r)=>s+fcAmt(r,kind==='timelog'),0))});
+/* SORTORDER d'une nouvelle position = n + 1 (n = positions de la facture, y compris celles déjà transférées et pas encore enregistrées) */
+const fcBase=(inv,pend)=>{ const a=invPos(inv), b=(pend||[]).filter(x=>x.PROJECTINVOICE_ID===inv.ID);
+  return Math.max(a.length+b.length,...a.map(x=>+x.SORTORDER||0),...b.map(x=>+x.SORTORDER||0)); };
+/* menu du bouton « Transférer en facturation ▾ » — onDone(positions) reçoit les positions acceptées (avec ID), à écrire dans le DS.commit de l'OK */
+function fcTransferMenu(rows,kind,p,onDone,pend){ const tl=kind==='timelog';
+  const modes=tl?[['single',''],['ag',' par groupe d’activités'],['act',' par activité'],['ph',' par phase'],['sp',' par phase partielle'],['st',' par collaborateur']]
+    :[['single',''],['cat',' par genre de frais'],['ph',' par phase'],['sp',' par phase partielle']];
+  return modes.map(([m,t])=>({t:'Nouvelle position de facture'+t+' …',fn:()=>fcTransfer(rows,kind,p,m,onDone,pend||[]).catch(e=>console.error(e))})); }
+async function fcTransfer(rows,kind,p,mode,onDone,pend){
+  if(rows.some(r=>+(DS.get(kind,r.ID)||r).ISCHARGED)) await fcAlert('Toutes les positions facturables sont déjà choisies.');
+  const inv=await fcPickInvoice(p); if(!inv) return;
+  const base=fcBase(inv,pend), out=[];
+  if(mode==='single'){ const x=await fcPosDlg({...fcSingle(rows,kind,fcDesc(kind,p)),PROJECTINVOICE_ID:inv.ID,SORTORDER:base+1},p); if(x) out.push(x); }   // l'original l'ajoute même si l'on annule
+  else { const B=fcBuild(rows,kind,mode); if(B.mixed) await fcAlert('Cette activité a différents tarifs.');
+    for(const x0 of B.list){ const x=await fcPosDlg({...x0,PROJECTINVOICE_ID:inv.ID,SORTORDER:base+out.length+1,ISVISIBLE:1},p); if(x) out.push(x); } }   // chaque position n'est ajoutée que sur OK
+  if(!out.length) return;
+  const ids=DS.newIds('projectinvoicepos',out.length); out.forEach((x,i)=>x.ID=ids[i]); onDone(out); }
+/* dialogue « Nouvelle position de facturation » du lot 4 (ivPosDialog), Genre et Visible grisés (ProjectInvoicePosDialog.newProjectInvoicePos) ;
+   la promesse vaut la position validée, ou null si l'on annule (fenêtre fermée sans OK). Sans le lot 4 : position ajoutée directement. */
+const fcPosDlg=(pos,p)=>typeof ivPosDialog!=='function'?Promise.resolve(pos):new Promise(res=>{
+  ivPosDialog(pos,p,{isNew:true,lock:true,onOk:y=>res({...y,AMOUNT:0})});                 // montant non calculé : « Recalcul nécessaire! » dans la facture
+  const ov=[...document.querySelectorAll('.ov')].pop(), mo=new MutationObserver(()=>{ if(!ov||!ov.isConnected){ mo.disconnect(); res(null); } });
+  mo.observe(document.body,{childList:true}); });
 
 /* ═══ TÂCHES (PROJECTTASK / PROJECTTASKNOTE) — module TÂCHES (TaskFrame : Urgent / En traitement / Réglé) et domaine « Tâches » de l'affaire ═══ */
 const PT_STATE={0:'Brouillon',1:'En traitement',2:'Annulé',3:'Réglé'};

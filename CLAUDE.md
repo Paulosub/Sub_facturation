@@ -28,6 +28,30 @@ montants en CHF, TVA suisse.
 - **`serve.py` / `serve_facturation.py`** — petits serveurs HTTP pour servir
   la page localement si besoin.
 
+## DeltaSub — app séparée, reproduction de Deltaproject
+
+**Totalement indépendante de `Facturation.html`** (ne jamais fusionner les deux).
+
+- **`DeltaSub.html`** — l'app (fichier autonome). Modules : Adresses, Affaires (Gestion,
+  Controlling, Mes affaires, Toutes les affaires), Collaborateurs, Notes de frais, Heures,
+  Bâtiment (Devis, Contrôle des coûts, Planification), Management, Administrateur.
+- **`serveur_deltasub.py`** — base **partagée par tout le bureau** (SQLite sur le disque
+  local du Mac Studio : `~/Library/Application Support/DeltaSub/deltasub.sqlite`), port
+  7790, réseau local uniquement. Les postes ouvrent `http://<Mac-Studio>.local:7790/`.
+  Démarrage : `Lancer_DeltaSub.command`. Sauvegarde horaire dans « Sauvegarde DeltaSub »
+  (ignoré par git). Base de test : variable `DELTASUB_DB`.
+- **Modèle de données = celui de Deltaproject** : une collection par table Derby, en
+  minuscules (`project`, `contact`, `contactowner`, `staff`, `timelog`…), champs en
+  MAJUSCULES comme les colonnes. Côté page : `DS.all(t)`, `DS.get(t,id)`, `DS.by(t,champ,v)`,
+  `DS.save(t,rec)`, `DS.commit(ops)`. Détection des conflits entre postes (409).
+  ⚠ `TIMELOG.TIMEMONTH`, `DATEMONTH`, `TARGETHOURS0..11` : mois **0 à 11**.
+  `CONTACTOWNER` = entité (personne : NAME1 = nom, NAME2 = prénom), `CONTACT` = adresse.
+- **Reprise des données Deltaproject** (lecture seule, depuis la dernière sauvegarde
+  nocturne de `/Volumes/SUBSTANCES/Deltaproject/Backup/`) :
+  `outils_deltaproject/importer_dans_deltasub.sh` (REMPLACE les données DeltaSub).
+  Les outils utilisent le Java embarqué dans `/Applications/DELTAproject.app`.
+- Cahier des charges : `ANALYSE_DELTAPROJECT.md` + manuel `rsrc/help/manual_fr.pdf` de l'app.
+
 ## Fonctionnalités principales
 
 Onglets : contrats d'honoraires, factures (acomptes, factures finales),
@@ -36,7 +60,7 @@ export PDF fidèle aux documents papier du bureau (police Akkurat).
 
 ## Règles pour travailler sur ce projet
 
-1. **Un seul fichier à modifier** : `Facturation.html`. Avant toute
+1. **Un seul fichier à modifier** : `Facturation.html` (et `DeltaSub.html` pour DeltaSub). Avant toute
    modification importante, l'utilisateur (ou un script) crée des copies
    `Facturation_backup_AAAAMMJJ_HHMM.html` — elles sont ignorées par git.
 2. **Ne jamais committer de données clients** : les `facturation_data_*.json`,

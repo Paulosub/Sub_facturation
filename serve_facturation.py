@@ -25,10 +25,6 @@ try:
         print("Aperçu synchronisé depuis la source : %s" % SRC)
     else:
         print("ATTENTION : source introuvable : %s" % SRC)
-    # Lanceur de l'app Deltaproject (redirige vers Facturation.html?app=deltaproject)
-    _dp = os.path.join(HERE, "Deltaproject.html")
-    if os.path.exists(_dp):
-        shutil.copy2(_dp, os.path.join(ROOT, "Deltaproject.html"))
 except Exception as e:
     print("Avertissement (copie source -> aperçu) :", e)
 

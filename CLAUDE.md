@@ -9,13 +9,6 @@ montants en CHF, TVA suisse.
 - **`Facturation.html`** — TOUTE l'application : une seule page HTML autonome
   (~4 Mo) contenant le CSS, le JavaScript (~400 fonctions) et les gabarits.
   Elle s'ouvre directement dans le navigateur, sans build ni dépendance.
-- **`Deltaproject.html`** — lanceur de l'app séparée « Deltaproject » : il
-  ouvre `Facturation.html?app=deltaproject`, où l'accueil n'affiche que les
-  modules Deltaproject (Admin, Affaires : devis, contrôle du coût, adresses,
-  PV ; Collaborateurs : heures ; Import / Export). Contrats, Factures et
-  Cockpit y sont bloqués (`APP_DELTA` / `DP_BLOCKED` dans le code). Même code,
-  mêmes données `localStorage` ; seule la reprise de session est séparée
-  (`sa_ui_state_dp`). Ne rien coder dans le lanceur.
 - **Les données ne sont PAS dans le fichier HTML** : elles vivent dans le
   `localStorage` du navigateur, sous des clés préfixées `sa_`
   (`sa_contrats`, `sa_factures5`, `sa_affaires`, `sa_heures`,

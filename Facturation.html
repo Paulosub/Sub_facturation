@@ -3651,12 +3651,6 @@ function onOptChange() {
 /* ═══════════════════════════════════════════════════
    TABS
 ═══════════════════════════════════════════════════ */
-/* ═══ App « Deltaproject » (2026-09-29) : le même fichier, ouvert via Deltaproject.html
-   (= Facturation.html?app=deltaproject), devient une app séparée limitée aux modules
-   Deltaproject (Affaires, Devis, Contrôle du coût, Adresses, PV, Heures, Admin).
-   Données partagées (même localStorage) ; Contrats / Factures / Cockpit restent dans Facturation. ═══ */
-const APP_DELTA = /(?:^|[?&#])app=deltaproject(?:&|$)/i.test(location.search+location.hash);
-const DP_BLOCKED = new Set(['hub-contrats','contrats','calchono','hub-factures','factures','saisie','hub-cockpit','cockpit','cockpit2']);
 /* Arborescence de navigation : chaque vue « remonte » vers son parent (pour le bouton Retour). */
 const VIEW_PARENT = {
   'hub-admin':'home','hub-contrats':'home','hub-factures':'home','hub-cockpit':'home','backup':'home',
@@ -3680,7 +3674,6 @@ const VIEW_TITLE = {
 let currentView = 'home';
 function goTab(name, opts) {
   opts = opts || {};
-  if(APP_DELTA && DP_BLOCKED.has(name)){ toast('Module disponible dans l’app Facturation, pas dans Deltaproject.', true); return; }
   currentView = name;
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
   const panel = document.getElementById('panel-'+name);
@@ -3713,7 +3706,7 @@ function goTab(name, opts) {
 /* ═══ Reprise de session : après un rechargement (mise à jour de l'app, etc.), revenir là où on
    travaillait (onglet + contrat ouvert) et CONSERVER les saisies non enregistrées du formulaire
    « Calcul honoraires » (brouillon en localStorage, restauré si le même contrat est rouvert). ═══ */
-const UI_STATE_KEY=APP_DELTA?'sa_ui_state_dp':'sa_ui_state', UI_DRAFT_KEY='sa_calc_draft';   // chaque app reprend sa propre session
+const UI_STATE_KEY='sa_ui_state', UI_DRAFT_KEY='sa_calc_draft';
 function uiSaveState(){
   try{
     if(currentView && currentView!=='home')
@@ -3860,24 +3853,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(src && hl) hl.src = src;
   // Vue par défaut = accueil : l'en-tête noir (logo + Retour) est masqué sur l'accueil.
   const hdr = document.getElementById('hdr'); if(hdr) hdr.classList.add('home-hidden');
-  if(APP_DELTA) dpApplyBranding();
 });
-/* App Deltaproject : titre, icône d'onglet et accueil réduits aux modules Deltaproject. */
-function dpApplyBranding(){
-  document.title = 'Substances Architectes — Deltaproject';
-  document.documentElement.dataset.app = 'deltaproject';
-  const ico = document.createElement('link'); ico.rel = 'icon';
-  ico.href = 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#003346"/><path d="M16 7 25 25H7z" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg>');
-  document.head.appendChild(ico);
-  const home = document.getElementById('panel-home'); if(!home) return;
-  const t = home.querySelector('.home-title'); if(t) t.textContent = 'Deltaproject';
-  const s = home.querySelector('.home-sub'); if(s) s.textContent = 'Substances Architectes Sàrl — affaires, devis, contrôle du coût, adresses et heures';
-  home.querySelectorAll('.home-card').forEach(c=>{
-    if(/openHub\('(contrats|factures|cockpit)'\)/.test(c.getAttribute('onclick')||'')) c.style.display = 'none';
-  });
-  const f = home.querySelector('.home-foot');
-  if(f) f.textContent = 'Contrats, factures et cockpit se trouvent dans l’app Facturation (mêmes données, partagées entre les deux apps).';
-}
 
 /* ═══════════════════════════════════════════════════
    BUILD SIA TABLES

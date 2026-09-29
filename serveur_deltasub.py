@@ -37,6 +37,12 @@ VERSION = 1
 SKIP_TABLES = {"APPLICENCE", "APPACTIVATEDLICENCE", "DATALICENCE", "DATAACTIVATEDLICENCE",
                "KEY_GENERATOR", "SYSTEMPROPERTY", "DOCUMENTLOCK"}
 SKIP_COLUMNS = {"APPUSER": {"PASSWORD", "LOGINLOCALUSER", "LOGINLOCALHOST", "LOGINTIMESTAMP"}}
+# Collections saisies dans DeltaSub (honoraires, facturation, tâches, avancement) : un ré-import Deltaproject
+# (--force) ne les efface PAS ; il n'ajoute que les enregistrements Deltaproject absents de DeltaSub.
+PROTECTED = {"projectfee", "projectfeecalculation", "projectfeecalculationamount", "projectfeetimeitem",
+             "projectfeecostitem", "projectfeeadditionalitem", "projectcontract", "projectscheduledpayment",
+             "projectpayment", "projectinvoice", "projectinvoicepos", "qrbill", "qrbillaccount",
+             "projectimplementation", "projecttask", "projecttasknote"}
 
 _wlock = threading.Lock()
 
@@ -182,9 +188,14 @@ def import_deltaproject(c, folder, force=False):
         sys.exit("La base DeltaSub contient déjà des données — ajoutez --force pour les REMPLACER par cette extraction.")
     with _wlock:   # anciennes lignes → « supprimées » (et non effacées) : les postes ouverts le voient via /api/changes
         seq = cur_seq(c) + 1
-        c.execute("UPDATE rec SET val=NULL, seq=?, who='import Deltaproject' WHERE val IS NOT NULL", (seq,))
+        prot = sorted(PROTECTED)
+        c.execute("UPDATE rec SET val=NULL, seq=?, who='import Deltaproject' WHERE val IS NOT NULL AND t NOT IN (%s)"
+                  % ",".join("?" * len(prot)), (seq, *prot))
         c.execute("UPDATE meta SET value=? WHERE name='seq'", (str(seq),))
-        c.execute("DELETE FROM meta WHERE name LIKE 'next_id:%'"); c.commit()
+        c.execute("DELETE FROM meta WHERE name LIKE 'next_id:%%' AND name NOT IN (%s)" % ",".join("?" * len(prot)),
+                  tuple("next_id:" + t for t in prot)); c.commit()
+    kept = {(t, i) for t, i in c.execute("SELECT t, id FROM rec WHERE val IS NOT NULL AND t IN (%s)"
+                                         % ",".join("?" * len(PROTECTED)), tuple(sorted(PROTECTED)))}
     total, ntab = 0, 0
     for path in sorted(glob.glob(os.path.join(folder, "tables", "APP.*.csv"))):
         table = os.path.basename(path)[4:-4]
@@ -198,6 +209,8 @@ def import_deltaproject(c, folder, force=False):
                 rid = rec.get("ID")
                 if rid is None:   # tables de liaison sans ID : clé composée
                     rid = "-".join(str(rec[k]) for k in sorted(rec) if k.endswith("_ID"))
+                if (table.lower(), str(rid)) in kept:   # déjà saisi / modifié dans DeltaSub : conservé
+                    continue
                 ops.append({"t": table.lower(), "id": str(rid), "val": rec})
         commit(c, ops, "import Deltaproject", check=False)
         total += len(ops); ntab += 1

@@ -177,7 +177,7 @@ const DS={
     $('#boot-msg').textContent='Chargement des données du bureau…';
     const d=await (await fetch('/api/snapshot?x='+HEAVY.join(','),{cache:'no-store'})).json();
     this._ingest(d); Object.keys(d.tables).forEach(t=>this.loaded.add(t));
-    ['projecttask','projecttasknote','meetingitem','projectnote','task','taskgroup'].forEach(t=>this.loaded.add(t));   // collections éventuellement vides
+    ['projecttask','projecttasknote','meetingitem','projectnote','task','taskgroup',...HF_TABLES].forEach(t=>this.loaded.add(t));   // collections éventuellement vides
   },
   async need(tables){ const miss=tables.filter(t=>!this.loaded.has(t)); if(!miss.length) return;
     const d=await (await fetch('/api/snapshot?t='+miss.join(','),{cache:'no-store'})).json();
@@ -800,6 +800,9 @@ async function delOwner(e){
   if(DS.all('project').some(p=>[p.CONTACT1_ID,p.CONTACT2_ID,p.CONTACT3_ID,p.CONTACT4_ID].some(x=>cs.some(c=>c.ID===x)))) used.push('Adresse d’affaire');
   if(DS.by('contact','CONTACTRELATION_ID',e.ID).length) used.push('Entité liée à d’autres adresses');
   if(cs.some(c=>DS.by('projecttask','CONTACT_ID',c.ID).length)) used.push('Entité dans des tâches');
+  if(cs.some(c=>DS.by('projectinvoice','CONTACT_ID',c.ID).length)) used.push('Débiteur de factures');
+  if(cs.some(c=>DS.by('projectcontract','CONTACT_ID',c.ID).length||DS.by('projectcontract','SUPPLIERCONTACT_ID',c.ID).length)) used.push('Mandant ou mandataire de contrats');
+  if(cs.some(c=>DS.by('projectfee','CONTACT_ID',c.ID).length||DS.by('projectfee','SUPPLIERCONTACT_ID',c.ID).length)) used.push('Calcul des honoraires');
   if(used.length){ if(await confirmDlg('Cette entité est utilisée comme:\n• '+used.join('\n• ')+'\n\nElle ne peut pas être supprimée. Voulez-vous la masquer dans les listes ?','Masquer')) DS.save('contactowner',{...e,ISHIDDEN:1}); return; }
   if(!await confirmDlg(`Supprimer l’entité « ${ownerName(e,true)} » et ses ${cs.length} adresse(s) ?`,'Supprimer')) return;
   const ops=[{t:'contactowner',id:e.ID,val:null}];
@@ -807,7 +810,7 @@ async function delOwner(e){
   await DS.commit(ops); AE.go.sel=null; toast('Entité supprimée.');
 }
 async function delContact(c){
-  if(DS.by('projectmember','CONTACT_ID',c.ID).length||DS.by('projecttask','CONTACT_ID',c.ID).length||DS.all('staff').some(s=>[s.PERSON_ID,s.COMPANYCONTACT_ID,s.HOMECONTACT_ID].includes(c.ID))){
+  if(DS.by('projectmember','CONTACT_ID',c.ID).length||DS.by('projecttask','CONTACT_ID',c.ID).length||['projectinvoice','projectcontract','projectfee'].some(t=>DS.by(t,'CONTACT_ID',c.ID).length)||['projectcontract','projectfee'].some(t=>DS.by(t,'SUPPLIERCONTACT_ID',c.ID).length)||DS.all('staff').some(s=>[s.PERSON_ID,s.COMPANYCONTACT_ID,s.HOMECONTACT_ID].includes(c.ID))){
     if(await confirmDlg('Cette adresse est utilisée (intervenant d’affaire, collaborateur ou entité dans des tâches). Voulez-vous la masquer dans les listes ?','Masquer')) DS.save('contact',{...c,ISHIDDEN:1}); return; }
   if(!await confirmDlg('Voulez-vous vraiment supprimer l’adresse de la base de données ?','Supprimer')) return;
   await DS.commit([{t:'contact',id:c.ID,val:null},...DS.by('contact_property','CONTACT_ID',c.ID).map(l=>({t:'contact_property',id:c.ID+'-'+l.PROPERTIES_ID,val:null}))]); AE.ga.sel=null;
@@ -1178,7 +1181,14 @@ async function delProject(p){
     toast('Des documents, des heures ou des frais ont déjà été saisis dans cette affaire. Suppression impossible.',true); return; }
   if(!await confirmDlg('Voulez-vous vraiment supprimer cette affaire ?','Supprimer')) return;
   const ops=[{t:'project',id:p.ID,val:null}];
-  [['projectmember','PROJECT_ID'],['projectphase','PROJECT_ID'],['projectactivitygroup','PROJECT_ID'],['projectrategroup','PROJECT_ID'],['subproject','PROJECT_ID']].forEach(([t,f])=>DS.by(t,f,p.ID).forEach(r=>ops.push({t,id:r.ID,val:null})));
+  [['projectmember','PROJECT_ID'],['projectphase','PROJECT_ID'],['projectactivitygroup','PROJECT_ID'],['projectrategroup','PROJECT_ID'],['subproject','PROJECT_ID'],['projectimplementation','PROJECT_ID']].forEach(([t,f])=>DS.by(t,f,p.ID).forEach(r=>ops.push({t,id:r.ID,val:null})));
+  /* honoraires et facturation : suppression en cascade (Deltaproject ne bloque pas l'affaire) */
+  const del=(t,id)=>id!=null&&DS.get(t,id)&&ops.push({t,id,val:null}), delCalc=f=>{ del('projectfeecalculation',f.ID); del('projectfeecalculationamount',f.TIMECALCULATIONAMOUNT_ID); del('projectfeecalculationamount',f.COSTCALCULATIONAMOUNT_ID);
+    ['projectfeetimeitem','projectfeecostitem','projectfeeadditionalitem'].forEach(t=>DS.all(t).filter(x=>[x.PROJECTFEETIMECALC_ID,x.PROJECTFEECOSTCALC_ID,x.PROJECTFEEADDITIONALCALC_ID].includes(f.ID)).forEach(x=>del(t,x.ID))); };
+  DS.by('projectfee','PROJECT_ID',p.ID).forEach(fe=>{ del('projectfee',fe.ID); DS.by('projectfeecalculation','PROJECTFEE_ID',fe.ID).forEach(delCalc); });
+  DS.by('projectcontract','PROJECT_ID',p.ID).forEach(c=>{ del('projectcontract',c.ID); const f=DS.get('projectfeecalculation',c.PROJECTFEECALCULATION_ID); if(isBasicCalc(f)) delCalc(f);
+    ['projectscheduledpayment','projectpayment'].forEach(t=>DS.by(t,'PROJECTCONTRACT_ID',c.ID).forEach(x=>del(t,x.ID))); });
+  DS.by('projectinvoice','PROJECT_ID',p.ID).forEach(f=>{ del('projectinvoice',f.ID); invPos(f).forEach(x=>del('projectinvoicepos',x.ID)); del('qrbill',f.QRBILL_ID); del('projectpayment',f.PROJECTPAYMENT_ID); });
   await DS.commit(ops); AF.g.sel=null;
 }
 
@@ -1195,6 +1205,7 @@ function cfgPhases(p){
     dialog({title:sub?'Editer la phase partielle':'Editer la phase',body:formRows(rows),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['NUMBER','TIMEAMOUNTBUDGET','TIMEBUDGET','COSTBUDGET']); await DS.save(t,v); drawL(); }}]}); };
   const del=async(t,o)=>{ if(!o.sel) return; const f=t==='projectphase'?'PHASE_ID':'SUBPHASE_ID';
     if(DS.all('timelog').some(r=>r[f]===+o.sel)){ toast('Des heures sont déjà comptabilisées sur cette phase. Elle ne peut pas être effacée.',true); return; }
+    if(['projectscheduledpayment','projectfeetimeitem','projectfeeadditionalitem','projectfeecostitem'].some(c=>DS.by(c,f,+o.sel).length)){ toast('Cette inscription est déjà utilisée et ne peut pas être supprimée. (encaissements planifiés ou calcul des honoraires)',true); return; }
     if(await confirmDlg('Supprimer cette '+(t==='projectphase'?'phase':'phase partielle')+' ?','Supprimer')){ await DS.del(t,o.sel); drawL(); } };
   const std=async()=>{ if(DS.by('projectphase','PROJECT_ID',p.ID).length&&!await confirmDlg('Des phases existent déjà. Ajouter quand même les phases standards ?','Ajouter')) return;
     const ph=DS.all('phase'), ids=DS.newIds('projectphase',ph.length), ops=[]; const sp=DS.all('subphase'), sids=DS.newIds('projectsubphase',sp.length); let j=0;
@@ -1226,6 +1237,7 @@ function cfgActivities(p){
     dialog({title:act?(x?'Editer l’activité':'Nouvelle activité'):(x?'Editer le groupe d’activités':'Nouveau groupe d’activités'),body:formRows(rows),
       buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['TYPECODE','PROJECTRATEGROUP_ID','TIMEAMOUNTBUDGET','TIMEBUDGET']); await DS.save(t,v); drawA(); }}]}); };
   const del=async(t,o,f)=>{ if(!o.sel) return; if(DS.all('timelog').some(r=>r[f]===+o.sel)){ toast('Des heures sont déjà comptabilisées sur cette activité. Elle ne peut pas être effacée.',true); return; }
+    if(f==='ACTIVITY_ID'&&DS.by('projectfeetimeitem','ACTIVITY_ID',+o.sel).length){ toast('Cette activité est utilisée dans un calcul des honoraires. Elle ne peut pas être effacée.',true); return; }
     if(await confirmDlg('Supprimer ?','Supprimer')){ await DS.del(t,o.sel); drawA(); } };
   const addStaff=()=>{ if(!o2.sel) return; pickStaff(ss=>DS.commit(ss.map(s=>({t:'projectactivity_staff',id:o2.sel+'-'+s.ID,val:{PROJECTACTIVITY_ID:+o2.sel,STAFFS_ID:s.ID}}))).then(drawC)); };
   const allToStaff=()=>pickStaff(ss=>{ const ops=[]; DS.by('projectactivitygroup','PROJECT_ID',p.ID).forEach(g=>DS.by('projectactivity','PROJECTACTIVITYGROUP_ID',g.ID).forEach(a=>ss.forEach(s=>ops.push({t:'projectactivity_staff',id:a.ID+'-'+s.ID,val:{PROJECTACTIVITY_ID:a.ID,STAFFS_ID:s.ID}}))));
@@ -1326,7 +1338,7 @@ function cfgSubprojects(p){
       buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v,['TIMEAMOUNTBUDGET','TIMEBUDGET','COSTBUDGET']); await DS.save('subproject',v); draw(); }}]}); };
   draw();
   dialog({title:'Editer les ouvrages et localisations — '+projLabel(p),body:h('div',{},phead([{i:'plus',fn:()=>ed()},{i:'edit',fn:()=>o.sel&&ed(DS.get('subproject',o.sel))},
-    {i:'minus',fn:async()=>{ if(!o.sel) return; if(DS.all('timelog').some(r=>r.SUBPROJECT_ID===+o.sel)||DS.by('projecttask','SUBPROJECT_ID',+o.sel).length){ toast('Des documents, des heures ou des frais ont déjà été saisis dans cette subdivision. Suppression impossible.',true); return; }
+    {i:'minus',fn:async()=>{ if(!o.sel) return; if(DS.all('timelog').some(r=>r.SUBPROJECT_ID===+o.sel)||['projecttask','projectfee','projectcontract'].some(t=>DS.by(t,'SUBPROJECT_ID',+o.sel).length)){ toast('Des documents, des heures ou des frais ont déjà été saisis dans cette subdivision. Suppression impossible.',true); return; }
       if(await confirmDlg('Supprimer cet ouvrage ?','Supprimer')){ await DS.del('subproject',o.sel); draw(); } }}]),box),buttons:[{t:'Fermer',pri:true}]});
 }
 
@@ -1544,8 +1556,7 @@ function domainView(C,p,d){
   }
   if(d==='Devis général'){ C.append(h('div',{class:'ph'},h('h2',{},'Devis général'),'Les devis de l’affaire s’ouvrent dans ',h('a',{href:'#',onclick:e=>{ e.preventDefault(); go('devis',{project:p.ID}); }},'Bâtiment ▸ Devis'),'.')); return; }
   if(d==='Contrôle des coûts'){ C.append(h('div',{class:'ph'},h('h2',{},'Contrôle des coûts'),'Les contrôles des coûts de l’affaire s’ouvrent dans ',h('a',{href:'#',onclick:e=>{ e.preventDefault(); go('coco',{project:p.ID}); }},'Bâtiment ▸ Contrôle des coûts'),'.')); return; }
-  const why={'Calcul des honoraires':'Les honoraires sont calculés dans l’app Facturation (contrats SIA).','Contrats honoraires':'Les contrats d’honoraires sont gérés dans l’app Facturation.',
-    'Factures':'La facturation se fait dans l’app Facturation.','Avancement des prestations':'Suivi dans l’app Facturation (avancement par phase SIA).','Séances':'Les procès-verbaux de chantier sont rédigés dans le module PV existant.'};
+  const why={'Séances':'Les procès-verbaux de chantier sont rédigés dans le module PV existant.'};
   C.append(h('div',{class:'ph'},h('h2',{},d),why[d]||'Domaine non utilisé au bureau dans Deltaproject (aucune donnée). Il sera reproduit sur demande.'));
 }
 
@@ -3722,6 +3733,115 @@ function printProjectsHTML(rows){ const w=open('','_blank'); if(!w) return;
   w.document.write(`<html><head><meta charset="utf-8"><title>Liste des affaires</title><style>body{font:10pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}h1{font-size:13pt;font-weight:400}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:3px 6px;border-bottom:.5pt solid #ccc}th{font-weight:600}tr:nth-child(even) td{background:#f3f6fb}</style></head><body><h1>Liste des affaires — ${dfr(today())}</h1><table><tr><th>Numéro</th><th>Affaire</th><th>Maître d’ouvrage</th><th>Début</th><th>Fin</th><th>Statut</th></tr>`+
     rows.map(p=>`<tr><td>${esc(p.NUMBER)}</td><td>${esc(p.TITLE)}</td><td>${esc(projMO(p))}</td><td>${dfr(p.PROJECTSTARTDATE)}</td><td>${dfr(p.PROJECTENDDATE)}</td><td>${projState(p)}</td></tr>`).join('')+'</table></body></html>');
   w.document.close(); setTimeout(()=>w.print(),300); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HONORAIRES (DELTAhonorar) et FACTURATION (DELTAfaktura) — reproduction de Deltaproject.
+   Cahier des charges : outils_deltaproject/specs/spec_9_honoraires_facturation.md
+   Totalement indépendant de Facturation.html (aucun code ni aucune donnée partagés).
+═══════════════════════════════════════════════════════════════════════════ */
+const HF_TABLES=['projectfee','projectfeecalculation','projectfeecalculationamount','projectfeetimeitem','projectfeecostitem','projectfeeadditionalitem','projectcontract',
+  'projectscheduledpayment','projectpayment','projectinvoice','projectinvoicepos','qrbill','qrbillaccount','projectimplementation','invoiceposgroup','invoicepos','setting'];
+const PI_STATE={0:'Planifiée',1:'Envoyée',2:'Rappel envoyé',3:'Payée'};
+const CT_STATE={0:'En traitement',1:'Validé',2:'Refusé'};
+const POS_TYPE={0:'Groupe',1:'Position',2:'Sous-total',3:'% (Dernier montant)',4:'% TVA (Dernier montant)',5:'% TVA incl. (Dernier montant)',6:'Total',7:'Commentaire'};
+const HF_UNITS=['h','j','ms','se','gl','f','p','m','m2','m3','su','br','up','pa','ro','sa','hl','kJ','kg','l','t'];
+const BILLCAT={1:'Global',2:'Forfaitaire',3:'Coût de l’ouvrage',4:'Temps employé effectif',5:'Autre'};
+const HF_SERVICES=['Prestations de l’architecte','Prestations de l’ingénieur civil','Prestations de l’ingénieur forestier','Prestations de l’architecte paysagiste','Prestations du géologue',
+  'Prestations de l’ingénieur','Prestations de l’ingénieur électricien','Prestations de l’ingénieur acousticien','Prestations garantie des coûts'];
+/* arrondi symétrique de Deltaproject (Formatter.round) : au centime, ou au 5 ct ; ne pas confondre avec r05 du Bâtiment */
+const dpRound=(x,cinq)=>{ const f=cinq?20:100, s=x<0?-1:1; return (s*Math.round(Math.abs(+x||0)*f)/f)||0; };
+const hfSet=name=>(DS.all('setting').find(s=>s.SETTINGNAME===name)||{}).SETTINGVALUE;
+const vatDefault=()=>{ const v=parseFloat(hfSet('genVatRatePos')); return isFinite(v)?v:8.1; };     // Administrateur ▸ Taux de TVA (8.1 au bureau)
+const hfCur=p=>(p&&p.CURRENCY)||hfSet('mainCurrency')||'CHF';
+const hfNum=v=>{ const n=parseFloat(String(v??'').replace(/['’\s]/g,'').replace(',','.')); return isFinite(n)?n:null; };   // saisie : apostrophe acceptée
+const hfN=v=>v==null||v===''?'':num(rJ(+v));
+/* cascade des conditions : brut → rabais → escompte → arrondi → HT → TVA → TTC ; avec cible TTC : l'arrondi qui y mène */
+function feeCond(a,cible){ const m=!!a.ISMERCANTILEROUNDING, arr=x=>m?dpRound(x,true):x;
+  const t=(a.VATRATE==null||+a.VATRATE<0)?vatDefault():+a.VATRATE;
+  const A1=+a.AMOUNT1||0, rab=arr(A1*(+a.SALESDISCOUNT||0)/100), st1=arr(A1+rab), esc=arr(st1*(+a.CASHDISCOUNT||0)/100), st2=arr(st1+esc);
+  if(cible==null){ const rounding=+a.ROUNDING||0, st3=st2+rounding, tva=dpRound(st3*t/100,m); return {A1,rab,st1,esc,st2,rounding,st3,t,tva,ttc:st3+tva}; }
+  const tva=dpRound(cible-cible/(1+t/100),m), st3=cible-tva; return {A1,rab,st1,esc,st2,rounding:st3-st2,st3,t,tva,ttc:cible}; }
+const feeProposals=ttc=>{ const out=[]; for(let i=0;i<5;i++){ const f=10**i, v=Math.floor(ttc/f)*f; if(v>0&&!out.includes(v)) out.push(v); } return out; };
+const hfNewAmount=()=>({ID:null,AMOUNT1:0,SALESDISCOUNT:0,CASHDISCOUNT:0,ROUNDING:0,ISMERCANTILEROUNDING:0,VATRATE:-1,AMOUNT2:0});
+/* « Editer les conditions » (ProjectFeeCalculationAmountDialog) — o={brut, readOnly, title, onOk(a)} ; ne modifie pas `a`, renvoie une copie */
+function feeCondDialog(a0,o){ o=o||{}; const a={...hfNewAmount(),...a0}; if(o.brut!=null) a.AMOUNT1=o.brut; const ro=!!o.readOnly;
+  const inp=(v,w)=>h('input',{class:'inp',value:hfN(v),disabled:ro||null,style:{width:(w||90)+'px',textAlign:'right'}});
+  const fR=inp(a.SALESDISCOUNT,70), fE=inp(a.CASHDISCOUNT,70), fA=inp(a.ROUNDING,110), fT=inp((a.VATRATE==null||+a.VATRATE<0)?vatDefault():a.VATRATE,70);
+  const five=h('input',{type:'checkbox',checked:!!a.ISMERCANTILEROUNDING||null,disabled:ro||null});
+  const V={}; ['brut','rab','st1','esc','st2','st3','tva','ttc'].forEach(k=>V[k]=h('b',{style:{display:'inline-block',minWidth:'120px',textAlign:'right'}}));
+  let dirty=false, R=null;
+  const read=()=>({...a,SALESDISCOUNT:hfNum(fR.value)||0,CASHDISCOUNT:hfNum(fE.value)||0,ROUNDING:hfNum(fA.value)||0,VATRATE:hfNum(fT.value)??vatDefault(),ISMERCANTILEROUNDING:five.checked?1:0});
+  const show=(x)=>{ R=x; V.brut.textContent=hfN(x.A1); V.rab.textContent=hfN(x.rab); V.st1.textContent=hfN(x.st1); V.esc.textContent=hfN(x.esc); V.st2.textContent=hfN(x.st2);
+    V.st3.textContent=hfN(x.st3); V.tva.textContent=hfN(x.tva); V.ttc.textContent=hfN(x.ttc); V.ttc.style.background=dirty?'#ffd9a8':''; const b=ok(); if(b) b.disabled=dirty; };
+  const calc=()=>{ dirty=false; const x=feeCond(read()); fA.value=hfN(x.rounding); show(x); };
+  const target=c=>{ dirty=false; const x=feeCond(read(),c); fA.value=hfN(x.rounding); show(x); };
+  [fR,fE,fA,fT].forEach(f=>f.oninput=()=>{ dirty=true; show(R||feeCond(read())); }); five.onchange=()=>{ dirty=true; show(R||feeCond(read())); };
+  const calcBtn=ibtn({i:'analyse',t:'Calculer',dis:ro,menu:()=>[{t:'Calculer',fn:calc},{t:'Arrondir à 5 ct',chk:five.checked,fn:()=>{ five.checked=!five.checked; calc(); }},
+    {t:'Calculer l’arrondi',fn:()=>{ const x=feeCond({...read(),ROUNDING:0}); target(Math.floor(x.ttc)); }},{t:'Supprimer l’arrondi',fn:()=>{ fA.value='0.00'; calc(); }},'-',
+    ...feeProposals(feeCond({...read(),ROUNDING:0}).ttc).map(v=>({t:hfN(v),fn:()=>target(v)}))]});
+  const L=(l,...x)=>[l,h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},...x)];
+  const body=h('div',{style:{minWidth:'440px'}},formRows([L('Brut',V.brut),L('Rabais',fR,'%',V.rab),L('Sous-total',V.st1),L('Escompte',fE,'%',V.esc),L('Sous-total',V.st2),
+    L('Arrondi',fA),L('Sous-total HT',V.st3),L('TVA',fT,'%',V.tva),L(h('b',{},'Total TTC'),V.ttc,calcBtn),['',h('label',{},five,' Arrondir à 5 ct')]],420));
+  let okBtn=null; const ok=()=>okBtn;
+  const D=dialog({title:ro?'Conditions':(o.title||'Editer les conditions'),body,buttons:ro?[{t:'Fermer',pri:true}]:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(dirty) return false;
+    const x=feeCond(read()); o.onOk&&o.onOk({...read(),ROUNDING:x.rounding,AMOUNT1:x.A1,AMOUNT2:x.ttc}); }}]});
+  okBtn=ro?null:D.bd.parentNode.querySelector('.ft .btn.pri'); show(feeCond(a)); return D; }
+/* moteur des positions de facture (ProjectInvoice.calcProjectInvoicePositions) — pos triées par SORTORDER ; cinq = « Arrondir » */
+function invCalc(pos,cinq,check){ let prec=0, cour=0, tot=0, dirty=false; const out=[], vat=[];
+  for(const p of pos){ const q=+p.QUANTITY||0, pr=+p.PRICE||0; let a=0;
+    switch(+p.TYPECODE){
+      case 0: tot+=cour; cour=0; a=0; break;
+      case 1: a=q*pr; cour+=a; break;
+      case 2: a=cour; break;
+      case 3: a=pr*prec/100; cour+=a; break;
+      case 4: { const t=dpRound(pr*prec/100,cinq); vat.push([pr,t]); cour+=t; a=t; break; }
+      case 5: { a=dpRound(prec-prec/(1+pr/100),cinq); vat.push([pr,a]); break; }
+      case 6: a=tot+cour; break;
+      case 7: a=q*pr; break; }
+    a=dpRound(a,cinq);
+    if(check){ if(a!==(+p.AMOUNT||0)) dirty=true; } else out.push(a);
+    if(+p.TYPECODE!==7) prec=a; }
+  return {amounts:out,total:dpRound(tot+cour,cinq),vat,dirty}; }
+const invCheck=(pos,cinq)=>{ const r=invCalc(pos,cinq,true); return r.dirty?null:r.total; };
+const posDirty=pos=>pos.some(p=>{ const t=+p.TYPECODE, q=+p.QUANTITY||0, pr=+p.PRICE||0, a=+p.AMOUNT||0;
+  if(t===1) return a!==dpRound(q*pr,true)&&a!==dpRound(q*pr,false); if(t>=3&&t<=5) return pr!==0&&a===0; return false; });
+const invPos=f=>f&&f.ID!=null?DS.by('projectinvoicepos','PROJECTINVOICE_ID',f.ID).sort((a,b)=>(+a.SORTORDER||0)-(+b.SORTORDER||0)):[];
+const invVat=f=>invPos(f).filter(p=>+p.TYPECODE===4||+p.TYPECODE===5).reduce((s,p)=>s+(+p.AMOUNT||0),0);
+const invHT=f=>(+f.AMOUNT||0)-invVat(f);
+const prevInvoices=f=>DS.by('projectinvoice','PROJECT_ID',f.PROJECT_ID).filter(x=>x.ID!==f.ID&&(x.PROJECTCONTRACT_ID??null)===(f.PROJECTCONTRACT_ID??null)&&(x.INVOICEDATE||'')<(f.INVOICEDATE||''));
+const paidToDate=f=>DS.by('projectinvoice','PROJECT_ID',f.PROJECT_ID).filter(x=>x.ID!==f.ID&&f.PROJECTCONTRACT_ID!=null&&x.PROJECTCONTRACT_ID===f.PROJECTCONTRACT_ID&&+x.PROJECTINVOICESTATECODE===3&&
+  ((x.INVOICEDATE||'')<(f.INVOICEDATE||'')||((x.INVOICEDATE||'')===(f.INVOICEDATE||'')&&x.ID<f.ID))).reduce((s,x)=>s+(+x.AMOUNTPAID||0),0);
+const openContract=f=>{ const c=DS.get('projectcontract',f.PROJECTCONTRACT_ID); if(!c) return null; return (+c.CONTRACTAMOUNT||0)-prevInvoices(f).reduce((s,x)=>s+(+x.AMOUNT||0),0)-(+f.AMOUNT||0); };
+/* montants d'un contrat : lus dans les conditions de son calcul (vraie variante ou calcul de base) */
+const ctrCalc=c=>c&&DS.get('projectfeecalculation',c.PROJECTFEECALCULATION_ID);
+const ctrAmt=(c,k)=>{ const f=ctrCalc(c); return f&&DS.get('projectfeecalculationamount',k==='time'?f.TIMECALCULATIONAMOUNT_ID:f.COSTCALCULATIONAMOUNT_ID); };
+const ctrTime1=c=>{ const a=ctrAmt(c,'time'); return a?+a.AMOUNT1||0:+c.TIMEAMOUNT1||0; }, ctrTime2=c=>{ const a=ctrAmt(c,'time'); return a?+a.AMOUNT2||0:+c.TIMEAMOUNT2||0; };
+const ctrCost1=c=>{ const a=ctrAmt(c,'cost'); return a?+a.AMOUNT1||0:+c.COSTAMOUNT1||0; }, ctrCost2=c=>{ const a=ctrAmt(c,'cost'); return a?+a.AMOUNT2||0:+c.COSTAMOUNT2||0; };
+const ctrHour=c=>{ const f=ctrCalc(c); return f?+f.TIMEHOUR||0:+c.TIMEHOUR||0; };
+const ctrVat=c=>['time','cost'].reduce((s,k)=>{ const a=ctrAmt(c,k); return s+(a?feeCond(a).tva:0); },0), ctrHT=c=>(+c.CONTRACTAMOUNT||0)-ctrVat(c);
+const ctrLbl=c=>c?[c.NUMBER,c.NAME].filter(x=>x!=null&&x!=='').join(' '):'';
+const isBasicCalc=f=>!!f&&f.PROJECTFEE_ID==null;
+/* bouton ◀ « Choisir… / Supprimer » + ⓘ pour une adresse (mandant, mandataire, débiteur) */
+function hfContactField(get,set,title){ const L=h('span',{style:{minWidth:'240px',display:'inline-block'}});
+  const inf=ibtn({i:'info',t:'Fiche d’adresse',fn:()=>{ const c=DS.get('contact',get()); if(c) dialog({title:'Adresse',body:h('div',{style:{minWidth:'360px'}},contactCard(c,'Adresse')),buttons:[{t:'Fermer',pri:true}]}); }});
+  const show=()=>{ const c=DS.get('contact',get()); L.textContent=c?contactName(c):''; inf.disabled=!c; };
+  const btn=ibtn({i:'prev',t:title||'Choisir',menu:()=>[{t:'Choisir …',fn:()=>pickContact('Navigateur d’adresses',c=>{ set(c.ID); show(); })},{t:'Supprimer',dis:!get(),fn:()=>{ set(null); show(); }}]});
+  show(); const el=h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},L,btn,inf); el.refresh=show; return el; }
+/* bouton ◀ de suggestions de texte */
+const hfSuggest=(inp,list)=>ibtn({i:'prev',t:'Suggestions',menu:()=>(typeof list==='function'?list():list).map(x=>x==='-'?'-':({t:x,fn:()=>{ inp.value=x; inp.dispatchEvent(new Event('input')); }}))});
+/* ── Panneau de synthèse du contrat (ProjectContractInfoPanel), partagé par Contrats honoraires et Factures ── */
+function ctrInfoPanel(el,c,p){ el.innerHTML=''; el.style.display='flex'; el.style.gap='24px'; el.style.padding='10px 16px'; el.style.overflow='auto';
+  if(!c){ el.append(h('div',{class:'empty'},'Aucun contrat sélectionné.')); return; }
+  const cur=hfCur(p||DS.get('project',c.PROJECT_ID)), m=v=>hfN(v)+' '+cur;
+  const kv=(title,rows)=>h('div',{style:{minWidth:'260px'}},h('div',{style:{fontWeight:600,marginBottom:'6px'}},title),h('div',{class:'kv'},...rows.flatMap(([k,v])=>[h('b',{},k),typeof v==='string'?h('span',{},v):v])));
+  const condBtn=k=>ibtn({i:'info',t:'Conditions',fn:()=>{ const a=ctrAmt(c,k); if(a) feeCondDialog(a,{readOnly:true}); else toast('Aucune condition.',true); }});
+  const warn=Math.abs((+c.CONTRACTAMOUNT||0)-(ctrTime2(c)+ctrCost2(c)))>0.005;
+  el.append(kv('Contrat',[['Contrat',ctrLbl(c)],['Date du contrat',dfr(c.CONTRACTDATE)],['Entité',contactName(DS.get('contact',c.CONTACT_ID))],['Mandataire',contactName(DS.get('contact',c.SUPPLIERCONTACT_ID))],
+      ['Type de prestations',c.SUPPLIERDESC||''],['Ouvrage',(DS.get('subproject',c.SUBPROJECT_ID)||{}).CODE||'']]),
+    kv('Prestations convenues',[['Honoraires bruts/HT',m(ctrTime1(c))],['Honoraires nets/TTC',h('span',{},m(ctrTime2(c)),' ',condBtn('time'))],['Coûts supplémentaires bruts/HT',m(ctrCost1(c))],
+      ['Coûts supplémentaires nets/TTC',h('span',{},m(ctrCost2(c)),' ',condBtn('cost'))],['Montant du contrat TTC',h('span',{title:warn?'Le calcul a changé depuis la dernière édition du contrat':''},m(c.CONTRACTAMOUNT),warn?' ⚠':'')]]),
+    kv('Encaissements',[['Encaissements planifiés',m(DS.by('projectscheduledpayment','PROJECTCONTRACT_ID',c.ID).reduce((s,x)=>s+(+x.AMOUNT||0),0))],
+      ['Facturé',m(DS.by('projectinvoice','PROJECTCONTRACT_ID',c.ID).reduce((s,x)=>s+(+x.AMOUNT||0),0))],['Encaissements',m(DS.by('projectpayment','PROJECTCONTRACT_ID',c.ID).reduce((s,x)=>s+(+x.AMOUNT||0),0))]])); }
 
 /* ═══ TÂCHES (PROJECTTASK / PROJECTTASKNOTE) — module TÂCHES (TaskFrame : Urgent / En traitement / Réglé) et domaine « Tâches » de l'affaire ═══ */
 const PT_STATE={0:'Brouillon',1:'En traitement',2:'Annulé',3:'Réglé'};

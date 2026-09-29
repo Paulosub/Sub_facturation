@@ -157,7 +157,7 @@ function toast(msg,err){ const t=$('#toast'); t.textContent=msg; t.className='on
    Chaque enregistrement garde la séquence lue (S) : à l'écriture, le serveur refuse si un autre poste
    l'a modifié entre-temps (conflit) et renvoie la version à jour.
 ═══════════════════════════════════════════════════════════════════════════ */
-const HEAVY=['projectcatalogpos','catalogpos','doctemplate','formtemplate'];   // chargées à la demande
+const HEAVY=['projectcatalogpos','catalogpos','doctemplate','formtemplate','costestimate','costcontrol','costplanning'];   // chargées à la demande (DS.need)
 const DS={
   seq:0, T:{}, S:{}, _idx:{}, _ls:[], loaded:new Set(),
   who(){ try{ const u=DS.get('appuser',localStorage.getItem('ds_user')); return u?u.USERID:''; }catch(_){ return ''; } },
@@ -1698,6 +1698,7 @@ function dvNewParts(E){ const o=E.ouvrages||[]; return (o.length?o:[null]).map(x
 const DV={g:{},d:{},q:'',open:null};
 VIEWS['devis']={
   render(m,arg){
+    if(['costestimate'].some(x=>!DS.loaded.has(x))){ m.append(h('div',{class:'ph'},'Chargement des documents…')); DS.need(['costestimate']).then(()=>{ if(VIEW&&VIEW.v===this) go(VIEW.id,arg); }); return; }
     if(arg&&arg.project) DV.g.sel=String(arg.project);
     if(DV.open){ dvEditor(m,DV.open); return; }
     const cols=h('div',{class:'cols'}); m.append(cols);
@@ -2001,6 +2002,7 @@ const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationT
 const CCV={g:{},d:{},q:'',open:null,sec:'CONTRÔLE DU COÛT',pres:null,det:true,only3:false,sel:null,detSel:null};
 VIEWS['coco']={
   render(m,arg){
+    if(['costcontrol','costestimate'].some(x=>!DS.loaded.has(x))){ m.append(h('div',{class:'ph'},'Chargement des documents…')); DS.need(['costcontrol','costestimate']).then(()=>{ if(VIEW&&VIEW.v===this) go(VIEW.id,arg); }); return; }
     if(arg&&arg.project) CCV.g.sel=String(arg.project);
     if(CCV.open){ ccEditor(m,CCV.open); return; }
     const cols=h('div',{class:'cols'}); m.append(cols);
@@ -2393,6 +2395,7 @@ function cpCompute(P){
 const CPV={g:{},d:{},q:'',open:null,sec:'ELEMENTS',only:true};
 VIEWS['coplan']={
   render(m,arg){
+    if(['costplanning'].some(x=>!DS.loaded.has(x))){ m.append(h('div',{class:'ph'},'Chargement des documents…')); DS.need(['costplanning']).then(()=>{ if(VIEW&&VIEW.v===this) go(VIEW.id,arg); }); return; }
     if(arg&&arg.project) CPV.g.sel=String(arg.project);
     if(CPV.open){ cpEditor(m,CPV.open); return; }
     const cols=h('div',{class:'cols'}); m.append(cols);

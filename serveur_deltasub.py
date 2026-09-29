@@ -21,7 +21,7 @@ Base : SQLite sur le disque LOCAL du Mac Studio (jamais sur le NAS). Sauvegarde 
 modifiée) dans « Sauvegarde DeltaSub » (dossier de l'app, sur le NAS), 48 copies conservées.
 Bibliothèque standard de Python uniquement.
 """
-import argparse, csv, datetime, glob, ipaddress, json, os, re, sqlite3, sys, threading, time
+import argparse, csv, datetime, glob, gzip, ipaddress, json, os, re, sqlite3, sys, threading, time
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -258,7 +258,12 @@ class H(BaseHTTPRequestHandler):
 
     def _send(self, code, body, ctype="application/json; charset=utf-8"):
         b = body.encode("utf-8") if isinstance(body, str) else body
+        gz = len(b) > 2048 and "gzip" in (self.headers.get("Accept-Encoding") or "")
+        if gz:   # JSON compressé ~10× : chargement rapide des postes en Wi-Fi
+            b = gzip.compress(b, 5)
         self.send_response(code)
+        if gz:
+            self.send_header("Content-Encoding", "gzip")
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(b)))
         self.send_header("Cache-Control", "no-store")

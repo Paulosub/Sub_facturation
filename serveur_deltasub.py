@@ -201,6 +201,18 @@ def import_deltaproject(c, folder, force=False):
                 ops.append({"t": table.lower(), "id": str(rid), "val": rec})
         commit(c, ops, "import Deltaproject", check=False)
         total += len(ops); ntab += 1
+    # Documents Bâtiment convertis (devis, contrôles des coûts, planifications) :
+    # <dossier>/documents/*.json = {"<collection>": {"<id>": {...}}} (outils_deltaproject/convertir_*.py)
+    for path in sorted(glob.glob(os.path.join(folder, "documents", "*.json"))):
+        if path.endswith(".rapport.json"):
+            continue
+        data = json.load(open(path, encoding="utf-8"))
+        for coll, items in data.items():
+            if not re.fullmatch(r"[a-z0-9_]+", coll) or not isinstance(items, dict):
+                continue
+            ops = [{"t": coll, "id": str(k), "val": v} for k, v in items.items()]
+            commit(c, ops, "import Deltaproject", check=False)
+            total += len(ops); ntab += 1
     with _wlock:
         c.execute("INSERT INTO meta VALUES('import_deltaproject',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
                   (js({"dossier": folder, "le": datetime.datetime.now().isoformat(timespec="seconds"), "tables": ntab, "lignes": total}),))

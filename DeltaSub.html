@@ -2721,7 +2721,7 @@ function dvCsv(p,doc,E){ const {M}=dvCompute(E); const ouv=dvOuvCodes(E);
    Schéma = sortie de outils_deltaproject/convertir_couts.py (spec § 22). Moteur = portage fidèle de
    calculer_conditions / calculer_controle / cout_probable (vérifiés sur les contrôles réels du bureau).
 ═══════════════════════════════════════════════════════════════════════════ */
-const CC_STATE={0:'Créé',1:'Provisoire',2:'En cours',3:'Etat intermédiaire',4:'Terminée'};
+const CC_STATE={0:'Provisoire',1:'En cours',2:'Etat intermédiaire',3:'Terminé'};   // db.CostControlDocument$State : temporary, ongoing, onhold, terminated
 const CTR_ST={brouillon:'Brouillon',enTraitement:'En traitement',surDemande:'Sur demande',pourSignature:'Pour signature',definitif:'Définitif'};
 const MUT_ST={brouillon:'Brouillon',provisoire:'Provisoire',demandeTransmise:'Demande transmise',acceptee:'Acceptée',rejetee:'Rejetée'};
 const PAY_ST={receptionne:'réceptionné',libere:'libéré',transmis:'transmis',debite:'débité'};
@@ -2881,7 +2881,7 @@ function ccEditDoc(p,d){
       await DS.commit([{t:'costcontroldocument',id:v.ID,val:v},...(isNew?[{t:'costcontrol',id:v.ID,val:ccEmpty(v.ID,p.ID)}]:[])]); if(isNew) ccOpen(v.ID); }}]});
 }
 async function ccDuplicate(d){ if(!d) return; const C=DS.get('costcontrol',d.ID), id=DS.newIds('costcontroldocument')[0];
-  await DS.commit([{t:'costcontroldocument',id,val:{...d,ID:id,VERSION:(d.VERSION||'')+' (état intermédiaire)',VERSIONNUMBER:(d.VERSIONNUMBER||0)+1,STATECODE:3,CHANGEDDATE:today(),USERID:ME.id}},
+  await DS.commit([{t:'costcontroldocument',id,val:{...d,ID:id,VERSION:(d.VERSION||'')+' (état intermédiaire)',VERSIONNUMBER:(d.VERSIONNUMBER||0)+1,STATECODE:2,CHANGEDDATE:today(),USERID:ME.id}},
     ...(C?[{t:'costcontrol',id,val:{...JSON.parse(JSON.stringify(C)),id}}]:[])]); CCV.d.sel=String(id); toast('Contrôle des coûts dupliqué.'); }
 const ccEntName=(C,id)=>{ if(id==null) return 'Aucune entreprise'; const c=DS.get('contact',id); if(c) return contactName(c)+(c.LOCATION?', '+c.LOCATION:''); const e=(C.entreprises||[]).find(x=>x.contactId===id); return e?e.nomCourt:'#'+id; };
 const ccNextNum=(list,f)=>String(Math.max(0,...list.map(x=>parseInt(x[f],10)||0))+1);

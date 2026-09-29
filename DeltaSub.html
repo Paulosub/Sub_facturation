@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DeltaSub — Substances Architectes</title>
+<!--
+  DeltaSub — application de bureau de Substances Architectes, reproduction de DELTAproject.
+  Fichier autonome (CSS + JS), SANS lien avec Facturation.html.
+  Données : base PARTAGÉE du bureau, servie par serveur_deltasub.py (Mac Studio, port 7790).
+  Modèle de données = celui de Deltaproject : DS.all('project'), DS.get('contact', id)…
+  (collections = tables Deltaproject en minuscules, champs = colonnes en MAJUSCULES).
+  Cahier des charges : ANALYSE_DELTAPROJECT.md et le manuel DELTAproject (rsrc/help/manual_fr.pdf).
+-->
+<style>
+:root{
+  --bg:#ffffff; --chrome:#ececec; --chrome2:#dcdcdc; --line:#c8c8c8; --line2:#e2e2e2;
+  --side:#e9e9e9; --side-sel:#c6c6c6; --txt:#1d1d1d; --muted:#7a7a7a;
+  --zebra:#eef3fc; --sel:#3875d7; --sel-txt:#fff; --accent:#3875d7;
+  --ok:#2e7d46; --warn:#9a5b00; --err:#b3261e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+  font:13px/1.35 -apple-system,BlinkMacSystemFont,"Lucida Grande","Helvetica Neue",Arial,sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+#app{display:grid;grid-template-rows:64px 46px 1fr;height:100vh}
+/* ── En-tête : logo du bureau à gauche, marque à droite ── */
+#top{display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#fff}
+#top img{height:34px}
+#brand{font:900 30px/1 "Arial Narrow","Helvetica Neue",Arial,sans-serif;letter-spacing:-1px;font-stretch:condensed;user-select:none}
+#brand span{color:var(--accent)}
+/* ── Barre d'outils ── */
+#bar{display:flex;align-items:center;gap:6px;padding:0 14px;background:linear-gradient(#f3f3f3,#e4e4e4);border-top:1px solid var(--line2);border-bottom:1px solid var(--line)}
+#bar .tools{flex:1;display:flex;justify-content:center;gap:6px}
+#bar .grp{display:flex;gap:6px;margin:0 8px}
+.ib{height:30px;min-width:34px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;gap:2px;
+  background:linear-gradient(#fdfdfd,#ececec);border:1px solid #b9b9b9;border-radius:5px;cursor:pointer;color:#444}
+.ib:hover{background:linear-gradient(#fff,#f2f2f2)}
+.ib:active,.ib.on{background:linear-gradient(#dcdcdc,#e8e8e8)}
+.ib[disabled]{opacity:.4;pointer-events:none}
+.ib svg{width:16px;height:16px}
+.ib .dd{font-size:8px;margin-left:1px;opacity:.7}
+#search{width:240px;height:28px;border:1px solid #bdbdbd;border-radius:5px;padding:0 8px 0 26px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='6.5' cy='6.5' r='4.5' fill='none' stroke='%23777' stroke-width='1.6'/%3E%3Cpath d='M10 10l4 4' stroke='%23777' stroke-width='1.6'/%3E%3C/svg%3E") 7px 50%/13px no-repeat}
+/* ── Corps : arbre des modules + zone principale ── */
+#body{display:grid;grid-template-columns:230px 1fr;min-height:0}
+#side{background:var(--side);border-right:1px solid var(--line);overflow:auto;padding:8px 0;user-select:none}
+.sec{display:flex;align-items:center;gap:6px;padding:9px 12px 9px 10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;font-size:13.5px}
+.sec .tri{width:10px;font-size:9px;transition:transform .12s}
+.sec.open .tri{transform:rotate(90deg)}
+.sub{display:none}.sec.open+.sub{display:block}
+.item{padding:8px 12px 8px 44px;cursor:pointer;font-size:13.5px}
+.item:hover{background:#dfdfdf}
+.item.on{background:var(--side-sel);color:#fff}
+#main{position:relative;min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+/* ── Navigation en colonnes (comme Deltaproject) ── */
+.cols{display:flex;flex:1;min-height:0;gap:6px;padding:6px}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0;border:1px solid var(--line);background:#fff}
+.col.fill{flex:1}
+.pane{flex:1;min-height:0;overflow:auto}
+.split{display:flex;flex-direction:column;flex:1;min-height:0;gap:6px}
+/* ── Tableaux ── */
+table.g{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed}
+table.g th{position:sticky;top:0;z-index:1;background:#fff;font-weight:400;text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);border-right:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}
+table.g th.sort::after{content:" ▲";font-size:9px;color:#666}
+table.g th.sort.desc::after{content:" ▼"}
+table.g td{padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:1px solid transparent;height:24px}
+table.g tbody tr:nth-child(even) td{background:var(--zebra)}
+table.g tbody tr.on td{background:var(--sel);color:var(--sel-txt)}
+table.g td.r,table.g th.r{text-align:right;font-variant-numeric:tabular-nums}
+table.g td.c,table.g th.c{text-align:center}
+table.g tr.grp td{font-weight:600;background:#f4f4f4!important;color:#333}
+.empty{padding:18px;color:var(--muted)}
+/* ── Fiches (formulaires) ── */
+.card{padding:14px 18px}
+.card h3{margin:0 0 10px;font-size:13px;font-weight:600;color:#333}
+.form{display:grid;grid-template-columns:max-content 1fr max-content 1fr;gap:6px 12px;align-items:center}
+.form label{text-align:right;color:#444}
+.form .full{grid-column:2 / -1}
+.inp{height:24px;border:1px solid #bdbdbd;border-radius:4px;padding:0 6px;background:#fff;width:100%}
+textarea.inp{height:auto;min-height:60px;padding:4px 6px}
+.inp[readonly]{background:#f6f6f6;color:#555}
+/* ── Menus déroulants ── */
+.menu{position:fixed;z-index:1000;background:#fff;border:1px solid #b5b5b5;border-radius:7px;box-shadow:0 8px 26px rgba(0,0,0,.25);padding:4px 0;min-width:200px;font-size:13.5px}
+.menu div{padding:5px 22px 5px 26px;cursor:default;white-space:nowrap;position:relative}
+.menu div:hover{background:var(--sel);color:#fff}
+.menu div.chk::before{content:"✓";position:absolute;left:9px}
+.menu hr{border:0;border-top:1px solid var(--line2);margin:4px 0}
+.menu div.dis{color:#aaa;pointer-events:none}
+/* ── Fenêtres (dialogues) ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:900;display:flex;align-items:flex-start;justify-content:center;padding-top:8vh}
+.dlg{background:#ececec;border:1px solid #9d9d9d;border-radius:9px;box-shadow:0 18px 50px rgba(0,0,0,.35);min-width:420px;max-width:92vw;max-height:84vh;display:flex;flex-direction:column}
+.dlg .tt{padding:9px 14px;text-align:center;font-weight:600;border-bottom:1px solid var(--line)}
+.dlg .bd{padding:14px 18px;overflow:auto;background:#f6f6f6}
+.dlg .ft{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
+.btn{height:26px;padding:0 16px;border:1px solid #b0b0b0;border-radius:5px;background:linear-gradient(#fff,#ececec);cursor:pointer}
+.btn.pri{background:linear-gradient(#5b9cf5,#2f73de);color:#fff;border-color:#2a63bf}
+/* ── Divers ── */
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:6px;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:.95}#toast.err{background:var(--err)}
+#net{position:fixed;left:10px;bottom:8px;z-index:1500;font-size:11px;padding:3px 9px;border-radius:10px;background:#eef6ef;color:var(--ok);border:1px solid #cfe3d3;cursor:default}
+#net.err{background:#fdecea;color:var(--err);border-color:#f3c3be}
+#boot{position:fixed;inset:0;background:#fff;z-index:3000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#555}
+#boot b{font-size:15px;color:#222}
+.ph{margin:auto;text-align:center;color:var(--muted);max-width:520px;line-height:1.6}
+.ph h2{color:#333;font-weight:600;font-size:17px;margin:0 0 6px}
+</style>
+</head>
+<body>
+<div id="boot"><b>DeltaSub</b><span id="boot-msg">Connexion à la base du bureau…</span></div>
+<div id="app">
+  <div id="top"><img id="logo" alt="Substances Architectes" src="data:image/png;base64,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"><div id="brand">Delta<span>Sub</span></div></div>
+  <div id="bar"><div class="tools" id="tools"></div><input id="search" placeholder="" autocomplete="off"></div>
+  <div id="body"><nav id="side"></nav><main id="main"></main></div>
+</div>
+<div id="toast"></div>
+<div id="net"></div>
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   OUTILS
+═══════════════════════════════════════════════════════════════════════════ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function h(tag,attrs,...kids){ const e=document.createElement(tag);
+  for(const k in attrs||{}){ const v=attrs[k]; if(v==null||v===false) continue;
+    if(k.startsWith('on')) e.addEventListener(k.slice(2),v); else if(k==='html') e.innerHTML=v; else if(k==='style'&&typeof v==='object') Object.assign(e.style,v); else e.setAttribute(k,v===true?'':v); }
+  kids.flat().forEach(c=>{ if(c!=null&&c!==false) e.append(c.nodeType?c:document.createTextNode(c)); }); return e; }
+/* Nombres suisses : 1'234.50 */
+function num(v,d=2){ if(v==null||v==='') return ''; const n=+v; if(!isFinite(n)) return '';
+  const s=Math.abs(n).toFixed(d).split('.'); s[0]=s[0].replace(/\B(?=(\d{3})+(?!\d))/g,"'"); return (n<0?'-':'')+s.join('.'); }
+function hrs(v){ return v==null?'':(+v).toFixed(2); }
+/* Dates : stockées « AAAA-MM-JJ » (comme Derby), affichées « JJ.MM.AAAA » */
+function dfr(s){ if(!s) return ''; const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s); return m?`${m[3]}.${m[2]}.${m[1]}`:s; }
+function diso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function cmp(a,b){ if(a==null||a==='') return (b==null||b==='')?0:1; if(b==null||b==='') return -1;
+  return (typeof a==='number'&&typeof b==='number')?a-b:String(a).localeCompare(String(b),'fr',{numeric:true,sensitivity:'base'}); }
+let _tt=null;
+function toast(msg,err){ const t=$('#toast'); t.textContent=msg; t.className='on'+(err?' err':''); clearTimeout(_tt); _tt=setTimeout(()=>t.className='',err?5000:2600); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DONNÉES — base partagée (serveur_deltasub.py)
+   DS.all(t) / DS.get(t,id) / DS.by(t,champ,valeur) / DS.save(t,rec) / DS.del(t,id)
+   Chaque enregistrement garde la séquence lue (S) : à l'écriture, le serveur refuse si un autre poste
+   l'a modifié entre-temps (conflit) et renvoie la version à jour.
+═══════════════════════════════════════════════════════════════════════════ */
+const HEAVY=['projectcatalogpos','catalogpos','doctemplate','formtemplate'];   // chargées à la demande
+const DS={
+  seq:0, T:{}, S:{}, _idx:{}, _ls:[], loaded:new Set(),
+  who(){ try{ return localStorage.getItem('ds_poste')||''; }catch(_){ return ''; } },
+  all(t){ return Object.values(this.T[t]||{}); },
+  get(t,id){ return id==null?null:(this.T[t]||{})[String(id)]||null; },
+  /* index champ → [enregistrements], recalculé seulement quand la collection change */
+  by(t,f,v){ const k=t+'|'+f; let ix=this._idx[k];
+    if(!ix){ ix=this._idx[k]=new Map(); for(const r of this.all(t)){ const x=r[f]; if(!ix.has(x)) ix.set(x,[]); ix.get(x).push(r); } }
+    return ix.get(v)||[]; },
+  _put(t,id,s,v){ const T=this.T[t]||(this.T[t]={}), S=this.S[t]||(this.S[t]={});
+    if(v==null){ delete T[id]; } else T[id]=v; S[id]=s;
+    for(const k in this._idx) if(k.startsWith(t+'|')) delete this._idx[k]; },
+  _ingest(d){ for(const t in d.tables){ const e=d.tables[t]; for(const id in e) this._put(t,id,e[id].s,e[id].v); }
+    if(d.seq>this.seq) this.seq=d.seq; },
+  async boot(){
+    const p=await (await fetch('/api/ping',{cache:'no-store'})).json(); this.info=p;
+    $('#boot-msg').textContent='Chargement des données du bureau…';
+    const d=await (await fetch('/api/snapshot?x='+HEAVY.join(','),{cache:'no-store'})).json();
+    this._ingest(d); Object.keys(d.tables).forEach(t=>this.loaded.add(t));
+  },
+  async need(tables){ const miss=tables.filter(t=>!this.loaded.has(t)); if(!miss.length) return;
+    const d=await (await fetch('/api/snapshot?t='+miss.join(','),{cache:'no-store'})).json();
+    miss.forEach(t=>this.loaded.add(t)); this._ingest(d); },
+  newIds(t,n=1){ const x=new XMLHttpRequest(); x.open('GET','/api/ids?t='+t+'&n='+n,false); x.send(); return JSON.parse(x.responseText); },
+  async commit(ops){
+    const body={who:this.who(), ops:ops.map(o=>({t:o.t,id:String(o.id),val:o.val,bseq:(this.S[o.t]||{})[String(o.id)]||0}))};
+    let r;
+    try{ r=await fetch('/api/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+    catch(e){ NET.fail('serveur injoignable'); toast('✗ Enregistrement impossible : serveur injoignable.',true); throw e; }
+    const d=await r.json();
+    if(r.status===409){ d.conflicts.forEach(c=>this._put(c.t,c.id,c.seq,c.val)); this._emit(d.conflicts.map(c=>c.t));
+      toast('⚠ Modifié entre-temps sur un autre poste : la version à jour est affichée, reprenez votre saisie.',true);
+      const e=new Error('conflit'); e.conflict=true; throw e; }
+    if(!d.ok){ toast('✗ '+(d.error||'erreur serveur'),true); throw new Error(d.error); }
+    ops.forEach(o=>this._put(o.t,String(o.id),d.seq,o.val==null?null:o.val));
+    NET.ok(); this._emit([...new Set(ops.map(o=>o.t))]); return d.seq;
+  },
+  save(t,rec){ if(rec.ID==null) rec.ID=this.newIds(t)[0]; return this.commit([{t,id:rec.ID,val:rec}]); },
+  del(t,id){ return this.commit([{t,id,val:null}]); },
+  on(fn){ this._ls.push(fn); },
+  _emit(ts){ this._ls.forEach(f=>{ try{ f(ts); }catch(e){ console.error(e); } }); },
+  async poll(){
+    if(this._polling) return; this._polling=true;
+    try{ const d=await (await fetch('/api/changes?since='+this.seq,{cache:'no-store'})).json();
+      const ts=Object.keys(d.tables).filter(t=>this.loaded.has(t));
+      for(const t of Object.keys(d.tables)) if(!this.loaded.has(t)) delete d.tables[t];
+      const before=this.seq; this._ingest(d); NET.ok();
+      if(ts.length && d.seq>before) this._emit(ts);
+    }catch(e){ NET.fail('serveur injoignable'); }
+    finally{ this._polling=false; }
+  }
+};
+const NET={ ok(){ const n=$('#net'); n.className=''; n.textContent='● Base du bureau'+(DS.who()?' — '+DS.who():''); n.title='Données partagées (serveur DeltaSub). Double-clic : nommer ce poste.'; },
+  fail(m){ const n=$('#net'); n.className='err'; n.textContent='● Hors ligne'; n.title=m; } };
+
+/* Libellés des tables Deltaproject (colonnes NAMEFR / NAMEGE…) */
+const nm=r=>r?(r.NAMEFR||r.NAMEGE||r.NAMEEN||r.NAMEIT||r.NAME||''):'';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPOSANTS D'INTERFACE
+═══════════════════════════════════════════════════════════════════════════ */
+/* Icônes de la barre d'outils (dessins propres à DeltaSub, même signification que Deltaproject) */
+const ICO={
+  plus:'<path d="M8 3v10M3 8h10" stroke-width="2"/>',
+  edit:'<path d="M3 13l1-3 7-7 2 2-7 7z"/><path d="M10 4l2 2"/>',
+  minus:'<path d="M3 8h10" stroke-width="2"/>',
+  dup:'<rect x="5" y="5" width="8" height="8" rx="1"/><path d="M3 11V4a1 1 0 0 1 1-1h7"/>',
+  doc:'<path d="M4 2h5l3 3v9H4z"/><path d="M6 8h4M6 10.5h4"/>',
+  print:'<rect x="3" y="6" width="10" height="5" rx="1"/><path d="M5 6V3h6v3M5 9h6v4H5z"/>',
+  filter:'<path d="M2.5 3h11L9.5 8v4l-3 1.5V8z" fill="currentColor"/>',
+  wrench:'<path d="M10.5 2.5a3 3 0 0 0-3 4L3 11l2 2 4.5-4.5a3 3 0 0 0 4-3l-1.8 1.8-2-2z"/>',
+  person:'<circle cx="8" cy="5" r="2.6" fill="currentColor"/><path d="M3 14c0-3 2.2-4.6 5-4.6s5 1.6 5 4.6z" fill="currentColor"/>',
+  tree:'<rect x="6" y="2" width="4" height="3"/><rect x="1.5" y="11" width="4" height="3"/><rect x="6" y="11" width="4" height="3"/><rect x="10.5" y="11" width="4" height="3"/><path d="M8 5v3M3.5 11V8h9v3M8 8v3"/>',
+  gear:'<circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/>',
+  list:'<path d="M5 4h9M5 8h9M5 12h9"/><circle cx="2.5" cy="4" r=".8" fill="currentColor"/><circle cx="2.5" cy="8" r=".8" fill="currentColor"/><circle cx="2.5" cy="12" r=".8" fill="currentColor"/>',
+  info:'<circle cx="8" cy="3.5" r="1.1" fill="currentColor"/><path d="M6.5 6.5H8.5V13M6 13h5" stroke-width="1.6"/>',
+  analyse:'<path d="M2 12a6 6 0 0 1 12 0z"/><path d="M8 12l3-4"/>',
+  import:'<path d="M8 2v8M5 7l3 3 3-3"/><path d="M2.5 11v2.5h11V11"/>',
+  export:'<path d="M3 3h6v10H3z"/><path d="M8 8h6M11.5 5.5 14 8l-2.5 2.5"/>',
+  save:'<rect x="2" y="4" width="12" height="8" rx="2"/><path d="M2 9h12M11 10.5h1"/>',
+  share:'<path d="M3 12c1-4 4-6 8-6V3.5L14.5 7 11 10.5V8c-3 0-5.5 1.3-8 4z" fill="currentColor"/>',
+  pdf:'<path d="M4 2h5l3 3v9H4z"/><path d="M6 12c1-2 2-4 2-6s-1 0-.5 1c.6 1.4 2 3 3 3.5s-1.5-.3-4.5 1.5"/>',
+  moon:'<path d="M10.5 2.5a5.5 5.5 0 1 0 3 8 4.5 4.5 0 0 1-3-8z"/>',
+  prev:'<path d="M10 3 5 8l5 5"/>', next:'<path d="M6 3l5 5-5 5"/>',
+  first:'<path d="M8 3 3 8l5 5M13 3 8 8l5 5"/>', last:'<path d="M8 3l5 5-5 5M3 3l5 5-5 5"/>',
+  today:'<rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/>'
+};
+function icon(n){ return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICO[n]||''}</svg>`; }
+/* Bouton de barre d'outils : {i:'plus', t:'Nouveau', fn, menu:()=>[…], dis} */
+function ibtn(b){
+  const el=h('button',{class:'ib'+(b.on?' on':''),title:b.t||'',disabled:b.dis||null,html:(b.i?icon(b.i):'')+(b.label?`<span>${esc(b.label)}</span>`:'')+(b.menu?'<span class="dd">▼</span>':'')});
+  el.onclick=e=>{ if(b.menu) popMenu(el,b.menu()); else if(b.fn) b.fn(e); };
+  return el;
+}
+function setTools(groups){ const t=$('#tools'); t.innerHTML='';
+  (groups||[]).forEach(g=>{ const d=h('div',{class:'grp'}); g.forEach(b=>d.append(b.nodeType?b:ibtn(b))); t.append(d); }); }
+/* Menu déroulant : items = [{t, fn, chk, dis} | '-'] */
+function popMenu(anchor,items){
+  closeMenus(); const m=h('div',{class:'menu'});
+  items.forEach(it=>{ if(it==='-'){ m.append(h('hr')); return; }
+    const d=h('div',{class:(it.chk?'chk ':'')+(it.dis?'dis':'')},it.t); d.onclick=()=>{ closeMenus(); it.fn&&it.fn(); }; m.append(d); });
+  document.body.append(m);
+  const r=anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : {left:anchor.x,bottom:anchor.y};
+  m.style.left=Math.min(r.left, innerWidth-m.offsetWidth-8)+'px'; m.style.top=Math.min(r.bottom+2, innerHeight-m.offsetHeight-8)+'px';
+  setTimeout(()=>document.addEventListener('mousedown',_mclose),0);
+}
+function _mclose(e){ if(!e.target.closest('.menu')) closeMenus(); }
+function closeMenus(){ $$('.menu').forEach(m=>m.remove()); document.removeEventListener('mousedown',_mclose); }
+/* Fenêtre : dialog({title, body(node), buttons:[{t, pri, fn → false pour garder ouvert}]}) */
+function dialog(o){
+  const ov=h('div',{class:'ov'}), d=h('div',{class:'dlg',style:o.width?{width:o.width}:null});
+  const bd=h('div',{class:'bd'}); bd.append(o.body);
+  const ft=h('div',{class:'ft'});
+  const close=()=>ov.remove();
+  (o.buttons||[{t:'Fermer'}]).forEach(b=>{ const x=h('button',{class:'btn'+(b.pri?' pri':'')},b.t);
+    x.onclick=async()=>{ if(b.fn){ try{ if(await b.fn(bd)===false) return; }catch(e){ if(!e.conflict) console.error(e); return; } } close(); }; ft.append(x); });
+  d.append(h('div',{class:'tt'},o.title||''),bd,ft); ov.append(d); document.body.append(ov);
+  const f=bd.querySelector('input,select,textarea'); if(f) f.focus();
+  ov.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+  return {close,bd};
+}
+function confirmDlg(msg,yes='Confirmer'){ return new Promise(res=>dialog({title:'Confirmation',body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'460px'}},msg),
+  buttons:[{t:'Annuler',fn:()=>res(false)},{t:yes,pri:true,fn:()=>res(true)}]})); }
+
+/* Tableau triable à sélection : grid(el, {cols:[{k,t,w,cls,f:(r)=>html, v:(r)=>valeur de tri}], rows, key, sel, onSel, onDbl, sort}) */
+function grid(el,o){
+  const st=o.state||(o.state={}); if(st.sort==null&&o.sort) st.sort=o.sort;
+  const key=o.key||(r=>r.ID);
+  let rows=o.rows.slice();
+  if(st.sort){ const [k,dir]=st.sort; const c=o.cols.find(c=>c.k===k)||{}; const g=c.v||(r=>r[k]); rows.sort((a,b)=>cmp(g(a),g(b))*(dir<0?-1:1)); }
+  const t=h('table',{class:'g'}), cg=h('colgroup'), th=h('tr');
+  o.cols.forEach(c=>{ cg.append(h('col',{style:c.w?{width:c.w+'px'}:null}));
+    const x=h('th',{class:(c.cls||'')+(st.sort&&st.sort[0]===c.k?' sort'+(st.sort[1]<0?' desc':''):'')},c.t);
+    x.onclick=()=>{ st.sort=[c.k, st.sort&&st.sort[0]===c.k?-st.sort[1]:1]; grid(el,o); }; th.append(x); });
+  const tb=h('tbody');
+  rows.forEach(r=>{ const k=String(key(r)), tr=h('tr',{'data-k':k,class:String(o.sel)===k?'on':null});
+    if(r._grp){ tr.className='grp'; tr.append(h('td',{colspan:o.cols.length},r._grp)); tb.append(tr); return; }
+    o.cols.forEach(c=>tr.append(h('td',{class:c.cls||null,html:c.f?c.f(r):esc(r[c.k])})));
+    tr.onclick=()=>{ o.sel=k; $$('tr.on',tb).forEach(x=>x.classList.remove('on')); tr.classList.add('on'); o.onSel&&o.onSel(r); };
+    if(o.onDbl) tr.ondblclick=()=>o.onDbl(r);
+    tb.append(tr); });
+  t.append(cg,h('thead',{},th),tb); el.innerHTML=''; el.append(t);
+  if(!rows.length&&o.empty) el.append(h('div',{class:'empty'},o.empty));
+  const s=tb.querySelector('tr.on'); if(s&&o.scroll!==false) s.scrollIntoView({block:'nearest'});
+  return o;
+}
+/* Colonne de la navigation : col(titre?, largeur) → {el, pane} */
+function col(w,cls){ const c=h('div',{class:'col'+(cls?' '+cls:''),style:w?{width:w+'px',flex:'0 0 '+w+'px'}:null}); const p=h('div',{class:'pane'}); c.append(p); return {el:c,pane:p}; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAVIGATION — arbre des modules (à gauche), comme Deltaproject
+═══════════════════════════════════════════════════════════════════════════ */
+const NAV=[
+  {s:'Adresses',        items:[['adr-entites','Entités'],['adr-liste','Liste des adresses'],['adr-groupes','Groupes d’adresses']]},
+  {s:'Affaires',        items:[['aff-gestion','Gestion'],['aff-controlling','Controlling'],['aff-mes','Mes affaires'],['aff-toutes','Toutes les affaires']]},
+  {s:'Collaborateurs',  items:[['collab','Collaborateurs']]},
+  {s:'Notes de frais',  items:[['frais','Saisie']]},
+  {s:'Heures',          items:[['h-saisie','Saisie'],['h-rapport','Rapport']]},
+  {s:'Tâches',          items:[['taches','Tâches']]},
+  {s:'Bâtiment',        items:[['devis','Devis'],['coco','Contrôle des coûts'],['coplan','Planification des coûts']]},
+  {s:'Management',      items:[['mgmt','Statistiques']]},
+  {s:'Modèles',         items:[['modeles','Modèles'],['config','Configuration']]}
+];
+const VIEWS={};           // id → {tools(), render(main), refresh?(tables), search?}
+let VIEW=null;
+function buildNav(){
+  const side=$('#side'); side.innerHTML='';
+  let open={}; try{ open=JSON.parse(localStorage.getItem('ds_nav_open')||'{}'); }catch(_){}
+  NAV.forEach(sec=>{
+    const s=h('div',{class:'sec'+(open[sec.s]?' open':'')},h('span',{class:'tri'},'▶'),sec.s);
+    const sub=h('div',{class:'sub'});
+    sec.items.forEach(([id,label])=>{ const it=h('div',{class:'item','data-v':id},label); it.onclick=()=>go(id); sub.append(it); });
+    s.onclick=()=>{ s.classList.toggle('open'); open[sec.s]=s.classList.contains('open'); try{ localStorage.setItem('ds_nav_open',JSON.stringify(open)); }catch(_){} };
+    side.append(s,sub);
+  });
+}
+function go(id,arg){
+  const v=VIEWS[id]||VIEWS._todo; VIEW={id,v,arg};
+  $$('#side .item').forEach(x=>x.classList.toggle('on',x.dataset.v===id));
+  const it=$(`#side .item[data-v="${id}"]`); if(it){ const s=it.parentNode.previousSibling; if(s&&!s.classList.contains('open')) s.click(); }
+  const se=$('#search'); se.value=''; se.placeholder=v.search?'Rechercher':''; se.disabled=!v.search;
+  setTools(v.tools?v.tools(arg):[]);
+  const m=$('#main'); m.innerHTML=''; v.render(m,arg,id);
+  try{ localStorage.setItem('ds_view',id); }catch(_){}
+}
+$('#search').addEventListener('input',e=>{ if(VIEW&&VIEW.v.search) VIEW.v.search(e.target.value.trim().toLowerCase()); });
+/* Modifications reçues des autres postes : la vue courante se met à jour si elle en dépend */
+DS.on(ts=>{ if(VIEW&&VIEW.v.refresh&&!$('.ov')) VIEW.v.refresh(ts); });
+
+/* Vue provisoire des modules pas encore reproduits */
+VIEWS._todo={ render(m){ const n=NAV.flatMap(s=>s.items.map(i=>[i[0],s.s+' · '+i[1]])).find(x=>x[0]===VIEW.id);
+  m.append(h('div',{class:'ph'},h('h2',{},n?n[1]:'Module'),'Ce module de Deltaproject est en cours de reproduction dans DeltaSub.')); } };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODULES
+═══════════════════════════════════════════════════════════════════════════ */
+/* (les modules sont ajoutés ci-dessous, un bloc par module) */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DÉMARRAGE
+═══════════════════════════════════════════════════════════════════════════ */
+(async function(){
+  if(!/^https?:$/.test(location.protocol)){
+    $('#boot').innerHTML='<b>DeltaSub</b><span>Ouvrez DeltaSub par le serveur du bureau : <code>http://&lt;Mac-Studio&gt;.local:7790/</code><br>(les données sont partagées sur le Mac Studio de l’atelier, pas dans ce fichier).</span>';
+    return;
+  }
+  try{ await DS.boot(); }
+  catch(e){ $('#boot-msg').textContent='Serveur DeltaSub injoignable ('+e.message+'). Vérifiez qu’il tourne sur le Mac Studio.'; return; }
+  buildNav(); NET.ok();
+  $('#net').ondblclick=()=>{ const n=prompt('Nom de ce poste (visible dans l’historique des modifications) :',DS.who()); if(n!==null){ try{ localStorage.setItem('ds_poste',n.trim()); }catch(_){} NET.ok(); } };
+  let last='aff-gestion'; try{ last=localStorage.getItem('ds_view')||last; }catch(_){}
+  go(last);
+  $('#boot').remove();
+  setInterval(()=>DS.poll(),4000);
+})();
+</script>
+</body>
+</html>

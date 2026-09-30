@@ -52,6 +52,8 @@ PROTECTED = {"projectfee", "projectfeecalculation", "projectfeecalculationamount
              "planningsubproject", "planningrole", "planningroletemplate", "planningcostfactor", "planningmonth",
              "planningtime", "planningassignment", "planningstaff", "planningstafftime",
              "projecttenderer", "devisdocument", "soumission", "soumissiondoc", "soumissionhist"}
+PROTECTED |= {"hfdoc"}   # CH-11 : documents d'honoraires et de facturation (offre, contrat, facture) créés dans DeltaSub
+PROTECTED |= {"depotfichier"}   # CH-03 : métadonnées du dépôt de fichiers (jamais vidées au ré-import)
 PROTECTED |= {"costestimatehist"}   # CH-02 lot 4 : historique des devis
 
 # ── eCCC lot 0 (spec_12 § 2.12.3) ── Documents Bâtiment : un document MODIFIÉ ou CRÉÉ dans DeltaSub (dernier auteur ≠
@@ -1054,6 +1056,7 @@ def backup_loop():
                 olds = sorted(x for x in os.listdir(BACKUP_DIR) if x.startswith("deltasub_") and x.endswith(".sqlite"))
                 for x in olds[:-48]:
                     os.remove(os.path.join(BACKUP_DIR, x))
+                ch03_sauvegarde()   # CH-03 : copie incrémentale des fichiers du dépôt (n'échoue jamais)
                 last = seq
             c.close()
         except Exception as e:
@@ -1124,6 +1127,608 @@ def ch10_modeles_zip(h):
 # ── fin CH-10 lot 2 ──
 
 
+# ── CH-03 ── Dépôt de fichiers, génération et outils PDF (spec_17 § 3.1, § 4, § 5) ─────────────────────────────────────────
+# Contenus rangés par empreinte dans dirname(DB_PATH)/fichiers/objets/<2>/<sha256> (écriture atomique, déduplication) ; tmp/ =
+# fichiers de travail et aperçus, purgé après 24 h. L'arborescence visible est la collection « depotfichier », écrite par les
+# postes (DS.commit) et protégée au ré-import. PDF : Chrome déjà installé, sans fenêtre ; fusion et superposition : PDFKit et
+# Quartz de macOS (osascript -l JavaScript). Réseau local seulement (lan_ok) ; session : contrôle de CH-08 lot 4 placé en tête
+# de do_GET et de do_POST (spec_18 arbitrage 26, S8, S9), donc avant ces routes ; ce bloc ne l'appelle pas lui-même.
+import hashlib, pathlib, plistlib, secrets, shutil, signal, subprocess, unicodedata
+import html as _ch03_html
+from urllib.parse import quote as _ch03_quote
+
+CH03_FICHIERS = os.path.join(os.path.dirname(DB_PATH), "fichiers")
+CH03_OBJETS = os.path.join(CH03_FICHIERS, "objets")
+CH03_TMP = os.path.join(CH03_FICHIERS, "tmp")
+# copie incrémentale des contenus : au bureau à côté des copies horaires de la base ; base d'essai (DELTASUB_DB) : à côté
+# de la base, jamais dans la sauvegarde du bureau (BACKUP_DIR dérive du dossier du script, pas de la base)
+CH03_SAUV = (os.path.join(os.path.dirname(DB_PATH), "Sauvegarde DeltaSub", "fichiers") if os.environ.get("DELTASUB_DB")
+             else os.path.join(BACKUP_DIR, "fichiers"))
+CH03_MAX = 25 << 20          # 25 Mo par fichier
+CH03_HTML_MAX = 16 << 20     # 16 Mo de HTML pour /api/pdf
+CH03_LIBRE = 2 << 30         # 2 Go libres au minimum sur le disque du dépôt
+CH03_VIDANGE = 64 << 20      # corps refusé : lu et jeté jusqu'à 64 Mo, pour que le poste reçoive la réponse
+CH03_ATTENTE = 60            # secondes : attente de Chrome (un seul à la fois) puis 503, et délai de génération puis 504
+CH03_POST = {"/api/file", "/api/pdf", "/api/file/fusion", "/api/file/superposer"}
+_CH03_PK = lambda b: b.startswith(b"PK\x03\x04")
+# extension → (type MIME, affiché dans le navigateur, contrôle de la signature ou None) ; EC-2 lot 4 pourra allonger la liste
+CH03_TYPES = {
+    "pdf": ("application/pdf", True, lambda b: b"%PDF-" in b[:1024]),
+    "png": ("image/png", True, lambda b: b.startswith(b"\x89PNG")),
+    "jpg": ("image/jpeg", True, lambda b: b.startswith(b"\xff\xd8\xff")),
+    "jpeg": ("image/jpeg", True, lambda b: b.startswith(b"\xff\xd8\xff")),
+    "gif": ("image/gif", True, lambda b: b.startswith(b"GIF8")),
+    "dpdoc": ("application/zip", False, _CH03_PK),
+    "zip": ("application/zip", False, _CH03_PK),
+    "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", False, _CH03_PK),
+    "xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", False, _CH03_PK),
+    "csv": ("text/csv", False, None),
+    "txt": ("text/plain", False, None),
+    "doc": ("application/msword", False, None),
+    "xls": ("application/vnd.ms-excel", False, None),
+}
+CH03_MSG = {   # messages exacts (spec_17 § 3.1)
+    "sha": "Empreinte invalide.", "absent": "Fichier introuvable dans le dépôt.", "apercu": "Aperçu expiré.",
+    "nom": "Nom de fichier invalide.", "gros": "Fichier trop volumineux (25 Mo au plus).", "type": "Type de fichier refusé.",
+    "disque": "Espace disque insuffisant sur le Mac Studio.", "vide": "Document vide.",
+    "html": "Document trop volumineux (16 Mo au plus).",
+    "chrome": "Génération des PDF indisponible : Chrome introuvable sur le Mac Studio.",
+    "occupe": "Serveur occupé, réessayez.", "delai": "La génération du PDF a échoué (délai dépassé).",
+    "fusion": "Fusion impossible : un des fichiers est illisible ou protégé.", "outils": "Outils PDF de macOS indisponibles.",
+    "annexes": "Annexes externes non autorisées sur ce serveur (réglage DELTASUB_ANNEXES).",
+    "ref": "Le fichier {0} n'existe pas.",   # rsrc Strings|msgFileNotFound (^0 = chemin)
+}
+# navigateurs de type Chrome, dans l'ordre (DELTASUB_CHROME d'abord) ; relus à chaque démarrage (Chrome se met à jour seul)
+CH03_CHROMES = ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                os.path.expanduser("~/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+                "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+                "/Applications/Chromium.app/Contents/MacOS/Chromium"]
+CH03_OSASCRIPT = "/usr/bin/osascript"
+# politique de sécurité du HTML envoyé à Chrome : scripts, réseau, cadres et fichiers locaux coupés ; polices local() permises
+CH03_CSP = ('<meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; '
+            'img-src data:; style-src \'unsafe-inline\'; font-src data:">')
+_CH03_DOCTYPE = re.compile(r"(?i)^\ufeff?(?:[\t\n\f\r ]|<!--(?!-?>)[^>]*?-->)*<!doctype[^>]*>")
+_CH03_REFRESH = re.compile(r"""(?is)<meta\b[^>]*http-equiv\s*=\s*["']?\s*refresh[^>]*>""")
+_CH03_META = re.compile(r"""(?is)<meta\b(?:[^>"']|"[^"]*"|'[^']*')*>""")
+_CH03_REFRESH2 = re.compile(r"""(?is)http-equiv\s*=\s*["']?\s*refresh""")
+# toute autre balise <meta> du document devient un <link> inerte : le début d'une balise se reconnaît sans ambiguïté (« <meta »
+# suivi d'un blanc, « / » ou « > »), alors que sa fin dépend des guillemets (<meta a=b" http-equiv=&#114;efresh …> échappait
+# aux deux expressions ci-dessus et Chrome suivait le refresh : 504 au lieu d'un PDF)
+_CH03_METATAG = re.compile(r"(?i)<meta(?=[\t\n\f\r />])")
+_ch03_pdflock = threading.Lock()   # un seul Chrome à la fois
+_ch03_moteur = {}                   # cache de ch03_chrome()
+
+# Outils PDF de macOS : pages <f…> ; fusion <sortie> <f1> <f2>… ; superposer <sortie> <base> <calque> (page 1 du calque sur la
+# dernière page de la base). Superposition : seule la dernière page est redessinée par Quartz (base + calque, même MediaBox), puis
+# remise par PDFKit à sa place avec la rotation, la CropBox et les annotations d'origine ; les autres pages restent intactes
+# (comme PDFBox en mode APPEND dans l'original ; redessiner toutes les pages perdait /Rotate, liens et annotations).
+# Pièges mesurés (spec_17 § 5.5) : CGPDFDocumentGetNumberOfPages rend une chaîne ; la boîte se passe en données (4 doubles
+# little-endian en base64) sous la clé « MediaBox ».
+CH03_JXA = r"""ObjC.import('Quartz'); ObjC.import('CoreGraphics');
+function doc(p){ const d=$.PDFDocument.alloc.initWithURL($.NSURL.fileURLWithPath(p)); if(!d||d.isNil()) throw new Error('illisible'); if(d.isLocked) throw new Error('protégé'); return d; }
+function boite(r){ const b=new ArrayBuffer(32), v=new DataView(b); [r.origin.x,r.origin.y,r.size.width,r.size.height].forEach((x,i)=>v.setFloat64(i*8,+x,true));
+  const u=new Uint8Array(b), A='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; let s='';
+  for(let i=0;i<u.length;i+=3){ const n=(u[i]<<16)|((u[i+1]||0)<<8)|(u[i+2]||0); s+=A[n>>18&63]+A[n>>12&63]+(i+1<u.length?A[n>>6&63]:'=')+(i+2<u.length?A[n&63]:'='); }
+  return $.NSData.alloc.initWithBase64EncodedStringOptions($(s),0); }
+function run(argv){ const op=argv[0];
+  if(op==='pages') return argv.slice(1).map(p=>{ try{ return String(doc(p).pageCount); }catch(e){ return ''; } }).join('\n');
+  if(op==='fusion'){ const out=argv[1], ins=argv.slice(2), R=doc(ins[0]);
+    for(let i=1;i<ins.length;i++){ const d=doc(ins[i]); for(let k=0;k<d.pageCount;k++) R.insertPageAtIndex(d.pageAtIndex(k), R.pageCount); }
+    if(!R.writeToFile(out)) throw new Error('écriture impossible'); return String(R.pageCount); }
+  if(op==='superposer'){ const out=argv[1], base=argv[2], cal=argv[3], R=doc(base); doc(cal);
+    const B=$.CGPDFDocumentCreateWithURL($.NSURL.fileURLWithPath(base)), O=$.CGPDFDocumentCreateWithURL($.NSURL.fileURLWithPath(cal));
+    const n=+$.CGPDFDocumentGetNumberOfPages(B); if(!(n>0)||+R.pageCount!==n||!(+$.CGPDFDocumentGetNumberOfPages(O)>0)) throw new Error('illisible');
+    const der=out+'.der.pdf', pg=$.CGPDFDocumentGetPage(B,n), r=$.CGPDFPageGetBoxRect(pg,$.kCGPDFMediaBox);
+    const ctx=$.CGPDFContextCreateWithURL($.NSURL.fileURLWithPath(der), null, null);
+    $.CGPDFContextBeginPage(ctx, $.NSDictionary.dictionaryWithObjectForKey(boite(r), $('MediaBox')));
+    $.CGContextDrawPDFPage(ctx,pg); $.CGContextDrawPDFPage(ctx,$.CGPDFDocumentGetPage(O,1));
+    $.CGPDFContextEndPage(ctx); $.CGPDFContextClose(ctx);
+    const L=doc(der), np=L.pageAtIndex(0), vp=R.pageAtIndex(n-1), an=vp.annotations;
+    np.rotation=vp.rotation; np.setBoundsForBox(vp.boundsForBox($.kPDFDisplayBoxCropBox), $.kPDFDisplayBoxCropBox);
+    for(let i=+an.count-1;i>=0;i--){ const a=an.objectAtIndex(i); vp.removeAnnotation(a); np.addAnnotation(a); }
+    R.insertPageAtIndex(np, n); R.removePageAtIndex(n-1);
+    const ok=R.writeToFile(out); $.NSFileManager.defaultManager.removeItemAtPathError($(der), null);
+    if(!ok) throw new Error('écriture impossible'); return String(R.pageCount); }
+  throw new Error('opération inconnue'); }"""
+
+
+class CH03_Erreur(Exception):
+    """Refus d'une route de fichiers : code HTTP et message exact (spec_17 § 3.1)."""
+    def __init__(self, code, msg):
+        Exception.__init__(self, msg)
+        self.code = code
+
+
+def _ch03_dossiers():
+    os.makedirs(CH03_OBJETS, exist_ok=True)
+    os.makedirs(CH03_TMP, exist_ok=True)
+
+
+def _ch03_objet(sha):
+    return os.path.join(CH03_OBJETS, sha[:2], sha)
+
+
+def _ch03_sha(sha):
+    sha = (sha or "").lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", sha):
+        raise CH03_Erreur(400, CH03_MSG["sha"])
+    return sha
+
+
+def _ch03_existant(sha):
+    p = _ch03_objet(_ch03_sha(sha))
+    if not os.path.isfile(p):
+        raise CH03_Erreur(404, CH03_MSG["absent"])
+    return p
+
+
+def _ch03_libre():
+    _ch03_dossiers()
+    if shutil.disk_usage(CH03_FICHIERS).free < CH03_LIBRE:
+        raise CH03_Erreur(507, CH03_MSG["disque"])
+
+
+def ch03_nom(nom):
+    """Nom de fichier accepté par le serveur (§ 4.4, § 4.5) → (nom NFC, extension) ; 400 ou 415 sinon."""
+    nom = unicodedata.normalize("NFC", nom or "")
+    if (not nom or len(nom) > 128 or "/" in nom or "\\" in nom or nom.startswith(".")
+            or any(unicodedata.category(ch) == "Cc" for ch in nom)):
+        raise CH03_Erreur(400, CH03_MSG["nom"])
+    ext = nom.rsplit(".", 1)[1].lower() if "." in nom else ""
+    if ext not in CH03_TYPES:
+        raise CH03_Erreur(415, CH03_MSG["type"])
+    return nom, ext
+
+
+def _ch03_purger():
+    """tmp/ : fichiers et profils de plus de 24 h (aperçus expirés, restes d'un arrêt brutal)."""
+    lim = time.time() - 86400
+    try:
+        noms = os.listdir(CH03_TMP)
+    except OSError:
+        return
+    for n in noms:
+        p = os.path.join(CH03_TMP, n)
+        try:
+            if os.lstat(p).st_mtime < lim:
+                if os.path.isdir(p) and not os.path.islink(p):
+                    shutil.rmtree(p, ignore_errors=True)
+                else:
+                    os.remove(p)
+        except OSError:
+            pass
+
+
+def _ch03_empreinte(p):
+    h, n = hashlib.sha256(), 0
+    with open(p, "rb") as f:
+        for b in iter(lambda: f.read(1 << 20), b""):
+            h.update(b); n += len(b)
+    return h.hexdigest(), n
+
+
+def _ch03_ranger(tmp, sha):
+    """Fichier de travail → objets/<2>/<sha> : renommage atomique ; contenu déjà présent : rien n'est réécrit."""
+    dst = _ch03_objet(sha)
+    if os.path.isfile(dst):
+        os.remove(tmp)
+        return dst
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    os.replace(tmp, dst)
+    return dst
+
+
+def _ch03_resultat(tmp, pages):
+    sha, taille = _ch03_empreinte(tmp)
+    _ch03_ranger(tmp, sha)
+    return {"sha": sha, "taille": taille, "pages": pages}
+
+
+def ch03_outils_ok():
+    return sys.platform == "darwin" and os.path.isfile(CH03_OSASCRIPT)
+
+
+def ch03_outil(op, sortie, entrees):
+    """CH03_JXA par osascript → texte rendu ; 503 sans osascript, 422 si un fichier est illisible ou protégé."""
+    if not ch03_outils_ok():
+        raise CH03_Erreur(503, CH03_MSG["outils"])
+    args = [CH03_OSASCRIPT, "-l", "JavaScript", "-e", CH03_JXA, op] + ([sortie] if sortie else []) + list(entrees)
+    try:
+        r = subprocess.run(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+    except (OSError, subprocess.TimeoutExpired):
+        raise CH03_Erreur(422, CH03_MSG["fusion"])
+    if r.returncode != 0:
+        raise CH03_Erreur(422, CH03_MSG["fusion"])
+    return r.stdout.decode("utf-8", "replace").strip()
+
+
+def ch03_pages(p):
+    """Nombre de pages d'un PDF (PDFKit), None s'il est illisible ou si les outils manquent."""
+    try:
+        n = ch03_outil("pages", None, [p])
+    except CH03_Erreur:
+        return None
+    return int(n) if n.isdigit() else None
+
+
+def _ch03_version(chemin):
+    try:   # Info.plist de l'application : rien n'est lancé
+        with open(os.path.join(os.path.dirname(os.path.dirname(chemin)), "Info.plist"), "rb") as f:
+            v = plistlib.load(f).get("CFBundleShortVersionString")
+        if v:
+            return str(v)
+    except Exception:
+        pass
+    try:
+        r = subprocess.run([chemin, "--version"], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                           stderr=subprocess.DEVNULL, timeout=20)
+        m = re.search(r"\d+(?:\.\d+)+", r.stdout.decode("utf-8", "replace"))
+        return m.group(0) if m else "?"
+    except Exception:
+        return "?"
+
+
+def ch03_chrome():
+    """(chemin, version) du navigateur de type Chrome de ce Mac, cherché une fois ; (None, None) s'il manque."""
+    if "chrome" not in _ch03_moteur:
+        chemin = next((p for p in [os.environ.get("DELTASUB_CHROME")] + CH03_CHROMES
+                       if p and os.path.isfile(p) and os.access(p, os.X_OK)), None)
+        _ch03_moteur.update(chrome=chemin, version=_ch03_version(chemin) if chemin else None)
+    return _ch03_moteur["chrome"], _ch03_moteur["version"]
+
+
+def ch03_info():
+    """Ligne d'information au démarrage du serveur."""
+    chemin, version = ch03_chrome()
+    try:
+        _ch03_dossiers()
+    except OSError as e:
+        return "Fichiers : %s — dossier impossible à créer (%s)" % (CH03_FICHIERS, e)
+    return "Fichiers : %s — PDF : %s" % (CH03_FICHIERS, "Chrome " + version if chemin else "impression du navigateur")
+
+
+def ch03_nettoyer_html(html):
+    """Balises <meta http-equiv=refresh> retirées, toute autre <meta> rendue inerte ; politique CSP juste après le doctype de tête
+    (après BOM, blancs et commentaires), sinon tout au début — jamais après <head> : un iframe placé avant <head> y échappait
+    (spec_17 § 1 n° 22)."""
+    html = _CH03_REFRESH.sub("", html)
+    html = _CH03_META.sub(lambda m: "" if _CH03_REFRESH2.search(_ch03_html.unescape(m.group(0))) else m.group(0), html)
+    html = _CH03_METATAG.sub("<link", html)   # balises <meta> restantes (charset, viewport…) : inertes ; la politique reste la seule <meta>
+    m = _CH03_DOCTYPE.match(html)
+    k = m.end() if m else (1 if html.startswith("\ufeff") else 0)
+    return html[:k] + CH03_CSP + html[k:]
+
+
+def _ch03_complet(pdf):
+    try:
+        with open(pdf, "rb") as f:
+            f.seek(0, 2); n = f.tell()
+            if n < 16:
+                return False
+            f.seek(max(0, n - 1024))
+            return f.read().rstrip().endswith(b"%%EOF")
+    except OSError:
+        return False
+
+
+def _ch03_arreter(p):
+    """Chrome ne s'arrête pas seul après l'écriture : SIGTERM à tout son groupe de processus, SIGKILL à ce qui vit encore
+    après 3 s ; rend quand le groupe a disparu (au plus 5 s), pour que le profil jetable puisse être effacé."""
+    fin = time.time() + 3
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(p.pid, sig)
+        except OSError:
+            pass
+        while time.time() < fin:
+            p.poll()
+            try:
+                os.killpg(p.pid, 0)   # reste-t-il un processus du groupe ?
+            except OSError:
+                return
+            time.sleep(0.05)
+        fin = time.time() + 2
+    try:
+        p.wait(1)
+    except subprocess.TimeoutExpired:
+        pass
+
+
+def _ch03_imprimer(html, jeton, chrome, delai=None):
+    """HTML (déjà nettoyé) → tmp/<jeton>.pdf par Chrome sans fenêtre, profil jetable ; 504 si rien n'est écrit à temps."""
+    src, pdf = os.path.join(CH03_TMP, jeton + ".html"), os.path.join(CH03_TMP, jeton + ".pdf")
+    prof, p, ok = os.path.join(CH03_TMP, "chrome-" + jeton), None, False
+    with open(src, "w", encoding="utf-8") as f:
+        f.write(html)
+    try:
+        p = subprocess.Popen([chrome, "--headless", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                              "--disable-extensions", "--disable-background-networking", "--disable-sync",
+                              "--disable-component-update", "--use-mock-keychain", "--password-store=basic",
+                              "--no-pdf-header-footer", "--user-data-dir=" + prof, "--print-to-pdf=" + pdf,
+                              pathlib.Path(src).as_uri()],
+                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True)
+        fin = time.time() + (delai or CH03_ATTENTE)
+        while time.time() < fin:
+            if _ch03_complet(pdf):
+                ok = True; break
+            if p.poll() is not None:
+                ok = _ch03_complet(pdf); break
+            time.sleep(0.05)
+    except OSError:
+        ok = False
+    finally:
+        if p is not None:
+            _ch03_arreter(p)
+        for _ in range(10):   # profil jetable : un sous-processus peut encore y écrire en se terminant
+            shutil.rmtree(prof, ignore_errors=True)
+            if not os.path.exists(prof):
+                break
+            time.sleep(0.1)
+        for x in ((src,) if ok else (src, pdf)):
+            try:
+                os.remove(x)
+            except OSError:
+                pass
+    if not ok:
+        raise CH03_Erreur(504, CH03_MSG["delai"])
+    return pdf
+
+
+def ch03_pdf(html, apercu=False):
+    """HTML complet → PDF (spec_17 § 5.3) : {sha, taille, pages} rangé dans objets/, ou {apercu, taille, pages} laissé dans tmp/."""
+    if not isinstance(html, str) or not html.strip():
+        raise CH03_Erreur(400, CH03_MSG["vide"])
+    b = html.encode("utf-8", "replace")   # demi-paire UTF-16 isolée (texte coupé par slice au milieu d'un émoji) : « ? », pas un 500
+    if len(b) > CH03_HTML_MAX:
+        raise CH03_Erreur(413, CH03_MSG["html"])
+    html = b.decode("utf-8")
+    chrome, _ = ch03_chrome()
+    if not chrome:
+        raise CH03_Erreur(503, CH03_MSG["chrome"])
+    _ch03_libre(); _ch03_purger()
+    if not _ch03_pdflock.acquire(timeout=CH03_ATTENTE):
+        raise CH03_Erreur(503, CH03_MSG["occupe"])
+    try:
+        jeton = secrets.token_hex(16)
+        pdf = _ch03_imprimer(ch03_nettoyer_html(html), jeton, chrome)
+    finally:
+        _ch03_pdflock.release()
+    pages = ch03_pages(pdf)
+    if apercu:
+        return {"apercu": jeton, "taille": os.path.getsize(pdf), "pages": pages}
+    return _ch03_resultat(pdf, pages)
+
+
+def _ch03_assembler(op, chemins):
+    """Fusion ou superposition par CH03_JXA → {sha, taille, pages} ; 422 si le résultat manque."""
+    _ch03_libre()
+    sortie = os.path.join(CH03_TMP, secrets.token_hex(16) + ".pdf")
+    try:
+        n = ch03_outil(op, sortie, chemins)
+        if not _ch03_complet(sortie):
+            raise CH03_Erreur(422, CH03_MSG["fusion"])
+        return _ch03_resultat(sortie, int(n) if n.isdigit() else ch03_pages(sortie))
+    finally:
+        for x in (sortie, sortie + ".der.pdf"):   # .der.pdf : dernière page redessinée (superposition), normalement déjà effacée
+            if os.path.exists(x):
+                os.remove(x)
+
+
+def ch03_fusion(shas):
+    """Pages des PDF dans l'ordre donné (au moins deux empreintes)."""
+    if not isinstance(shas, list) or len(shas) < 2 or not all(isinstance(s, str) for s in shas):
+        raise CH03_Erreur(400, CH03_MSG["sha"])
+    return _ch03_assembler("fusion", [_ch03_existant(s) for s in shas])
+
+
+def ch03_superposer(base, calque):
+    """Page 1 du calque dessinée par-dessus la dernière page de la base (fond du calque transparent : rien n'est masqué)."""
+    if not isinstance(base, str) or not isinstance(calque, str):
+        raise CH03_Erreur(400, CH03_MSG["sha"])
+    return _ch03_assembler("superposer", [_ch03_existant(base), _ch03_existant(calque)])
+
+
+def ch03_sauvegarde():
+    """Copie des contenus absents de CH03_SAUV/objets (contenus immuables) et purge de tmp/ ; n'échoue jamais."""
+    try:
+        _ch03_purger()
+        if not os.path.isdir(CH03_OBJETS):
+            return 0
+        n = 0
+        for d in sorted(os.listdir(CH03_OBJETS)):
+            sd = os.path.join(CH03_OBJETS, d)
+            if len(d) != 2 or not os.path.isdir(sd):
+                continue
+            for s in os.listdir(sd):
+                dst = os.path.join(CH03_SAUV, "objets", d, s)
+                if not re.fullmatch(r"[0-9a-f]{64}", s) or os.path.exists(dst):
+                    continue
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copyfile(os.path.join(sd, s), dst + ".part")
+                os.replace(dst + ".part", dst)
+                n += 1
+        return n
+    except Exception as e:
+        print("Sauvegarde des fichiers impossible :", e, file=sys.stderr)
+        return -1
+
+
+def _ch03_envoyer(h, chemin, nom, dl, cache):
+    """Octets d'un fichier, lus par blocs, jamais compressés ; inline (pdf, images) ou attachment ; nom en filename*=UTF-8''."""
+    ext = nom.rsplit(".", 1)[1].lower() if "." in nom else ""
+    ctype, inline, _ = CH03_TYPES.get(ext, ("application/octet-stream", False, None))
+    try:
+        f = open(chemin, "rb")
+    except OSError:
+        raise CH03_Erreur(404, CH03_MSG["absent"])
+    with f:
+        h.send_response(200)
+        h.send_header("Content-Type", ctype)
+        h.send_header("Content-Length", str(os.fstat(f.fileno()).st_size))
+        h.send_header("Content-Disposition", "%s; filename*=UTF-8''%s"
+                      % ("inline" if inline and not dl else "attachment", _ch03_quote(nom, safe="")))
+        h.send_header("Cache-Control", cache)
+        h.send_header("X-Content-Type-Options", "nosniff")
+        h.end_headers()
+        try:
+            for b in iter(lambda: f.read(1 << 18), b""):
+                h.wfile.write(b)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+
+def _ch03_ref(h, ref, dl):
+    """R8 : annexe externe en lecture seule, seulement sous la racine DELTASUB_ANNEXES (chemin réel, sans « .. »)."""
+    racine = os.environ.get("DELTASUB_ANNEXES")
+    if not racine:
+        raise CH03_Erreur(403, CH03_MSG["annexes"])
+    if (not ref or "\x00" in ref or not os.path.isabs(ref)
+            or ".." in ref.replace("\\", "/").split("/")):
+        raise CH03_Erreur(403, CH03_MSG["annexes"])
+    rr, p = os.path.realpath(racine), os.path.realpath(ref)
+    if os.path.commonpath([rr, p]) != rr:
+        raise CH03_Erreur(403, CH03_MSG["annexes"])
+    if not os.path.isfile(p):
+        raise CH03_Erreur(404, CH03_MSG["ref"].format(ref))
+    return _ch03_envoyer(h, p, os.path.basename(p), dl, "no-store")
+
+
+def ch03_seq(i):
+    """R9 : {seq, supprime} de l'enregistrement « depotfichier » d'identifiant i, supprimé compris (seq 0 : jamais écrit).
+    Le snapshot du démarrage omet les enregistrements supprimés (val IS NOT NULL) : un poste chargé après la suppression d'un
+    fichier ne connaît pas sa séquence et recréerait le même nom (ID = <DOSSIER>/<NOM>) avec bseq 0, d'où un 409 parasite."""
+    c = db()
+    try:
+        r = c.execute("SELECT val IS NULL, seq FROM rec WHERE t='depotfichier' AND id=?", (str(i),)).fetchone()
+    finally:
+        c.close()
+    return {"seq": int(r[1]) if r else 0, "supprime": bool(r[0]) if r else False}
+
+
+def ch03_get(h, u, q):
+    """R1 (sha), R2 (apercu), R8 (ref), R9 (version) : GET /api/file ; R4 : GET /api/pdf (moteurs, cache du démarrage)."""
+    v = lambda k: (q.get(k) or [None])[0]
+    try:
+        if u.path == "/api/pdf":
+            chrome, version = ch03_chrome()
+            return h._send(200, js({"ok": True, "chrome": version if chrome else None, "outils": ch03_outils_ok()}))
+        if v("version") is not None:
+            return h._send(200, js(dict(ok=True, **ch03_seq(v("version")))))
+        dl = v("dl") == "1"
+        if v("ref") is not None:
+            return _ch03_ref(h, v("ref"), dl)
+        if v("apercu") is not None:
+            jeton = v("apercu") or ""
+            p = os.path.join(CH03_TMP, jeton + ".pdf")
+            if not re.fullmatch(r"[0-9a-f]{32}", jeton) or not os.path.isfile(p):
+                raise CH03_Erreur(404, CH03_MSG["apercu"])
+            return _ch03_envoyer(h, p, ch03_nom(v("nom"))[0], dl, "no-store")
+        sha = _ch03_sha(v("sha"))
+        nom = ch03_nom(v("nom"))[0]
+        return _ch03_envoyer(h, _ch03_existant(sha), nom, dl, "private, max-age=31536000, immutable")
+    except CH03_Erreur as e:
+        return h._send(e.code, js({"ok": False, "error": str(e)}))
+
+
+def _ch03_longueur(h):
+    try:
+        return max(0, int(h.headers.get("Content-Length") or 0))
+    except ValueError:
+        return 0
+
+
+def _ch03_lire(h, n):
+    b = h.rfile.read(n)
+    h._ch03_lu += len(b)
+    return b
+
+
+def _ch03_json(h, maxi, code, msg):
+    n = _ch03_longueur(h)
+    if n > maxi:
+        raise CH03_Erreur(code, msg)
+    try:
+        d = json.loads(_ch03_lire(h, n).decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        d = None
+    return d if isinstance(d, dict) else {}
+
+
+def _ch03_recevoir(h, q):
+    """R3 : octets bruts → objets/ (contrôle du nom, de la taille annoncée, de l'espace libre et de la signature)."""
+    nom, ext = ch03_nom((q.get("nom") or [None])[0])
+    n = _ch03_longueur(h)
+    if n > CH03_MAX:
+        raise CH03_Erreur(413, CH03_MSG["gros"])   # Content-Length lu avant le corps : rien n'est gardé
+    _ch03_libre()
+    tmp = os.path.join(CH03_TMP, secrets.token_hex(16) + ".part")
+    sha, tete, reste = hashlib.sha256(), b"", n
+    try:
+        with open(tmp, "wb") as f:
+            while reste > 0:
+                b = _ch03_lire(h, min(1 << 18, reste))
+                if not b:
+                    raise CH03_Erreur(400, CH03_MSG["vide"])
+                if len(tete) < 1024:
+                    tete += b[:1024 - len(tete)]
+                sha.update(b); f.write(b); reste -= len(b)
+            f.flush(); os.fsync(f.fileno())
+        controle = CH03_TYPES[ext][2]
+        if controle and not controle(tete):
+            raise CH03_Erreur(415, CH03_MSG["type"])
+        pages = ch03_pages(tmp) if ext == "pdf" else None
+        s = sha.hexdigest()
+        _ch03_ranger(tmp, s)
+        return {"sha": s, "taille": n, "pages": pages}
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def _ch03_vider(h):
+    """Corps refusé avant lecture : jeté par blocs (64 Mo au plus) après la réponse, pour que le poste la reçoive."""
+    reste = _ch03_longueur(h) - getattr(h, "_ch03_lu", 0)
+    if 0 < reste <= CH03_VIDANGE:
+        try:
+            h.connection.settimeout(10)
+            while reste > 0:
+                b = h.rfile.read(min(1 << 18, reste))
+                if not b:
+                    break
+                reste -= len(b)
+        except OSError:
+            pass
+    h.close_connection = True
+
+
+def ch03_post(h, chemin):
+    """R3, R5, R6, R7. Le contrôle de session de CH-08 lot 4 (ch08_gate(self, "POST"), première instruction de do_POST,
+    spec_18 arbitrage 26) a déjà eu lieu quand il est intégré : il n'est pas rappelé ici (l'appel ch08_gate(h, c, u) de la
+    première rédaction de spec_18 lèverait TypeError, donc 500 sur toutes ces routes)."""
+    h._ch03_lu = 0
+    try:
+        if chemin == "/api/file":
+            r = _ch03_recevoir(h, parse_qs(urlparse(h.path).query))
+        elif chemin == "/api/pdf":
+            d = _ch03_json(h, 2 * CH03_HTML_MAX + (1 << 16), 413, CH03_MSG["html"])
+            r = ch03_pdf(d.get("html"), bool(d.get("apercu")))
+        elif chemin == "/api/file/fusion":
+            r = ch03_fusion(_ch03_json(h, 1 << 20, 400, CH03_MSG["sha"]).get("shas"))
+        else:
+            d = _ch03_json(h, 1 << 20, 400, CH03_MSG["sha"])
+            r = ch03_superposer(d.get("base"), d.get("calque"))
+        h._send(200, js(dict(ok=True, **r)))
+    except CH03_Erreur as e:
+        h._send(e.code, js({"ok": False, "error": str(e)}))
+    except Exception as e:
+        h._send(500, js({"ok": False, "error": "Erreur du serveur : %s" % e}))
+    finally:
+        _ch03_vider(h)
+# ── fin CH-03 ──
+
+
 # ─────────── HTTP ───────────
 def lan_ok(ip):
     try:
@@ -1176,6 +1781,8 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, js(new_ids(c, (q.get("t") or [""])[0], int((q.get("n") or ["1"])[0]))))
             if u.path == "/aide/manual_fr.pdf":
                 return _ch08_manual(self)   # CH-08
+            if u.path in ("/api/file", "/api/pdf"):   # CH-03 : fichiers du dépôt, moteurs PDF
+                return ch03_get(self, u, q)
             f = STATIC.get(u.path)
             if f and os.path.exists(os.path.join(HERE, f)):
                 with open(os.path.join(HERE, f), "rb") as fh:
@@ -1191,6 +1798,8 @@ class H(BaseHTTPRequestHandler):
             return self._send(403, '{"error":"réseau du bureau uniquement"}')
         if urlparse(self.path).path == "/api/modeles/zip":
             return ch10_modeles_zip(self)   # CH-10 lot 2
+        if urlparse(self.path).path in CH03_POST:   # CH-03 : dépôt, génération, fusion, superposition
+            return ch03_post(self, urlparse(self.path).path)
         if urlparse(self.path).path != "/api/commit":
             return self._send(404, '{"error":"introuvable"}')
         c = db()
@@ -1229,6 +1838,7 @@ def main():
     threading.Thread(target=backup_loop, daemon=True).start()
     srv = ThreadingHTTPServer(("0.0.0.0", a.port), H)
     print("DeltaSub — http://%s.local:%d/   (base : %s)" % (os.uname().nodename.split(".")[0], a.port, DB_PATH))
+    print(ch03_info())   # CH-03
     srv.serve_forever()
 
 

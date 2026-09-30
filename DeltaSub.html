@@ -2506,7 +2506,7 @@ const r05=x=>Math.round(x*20)/20, r2=x=>Math.round(x*100)/100;
 /* Formule de quantités : + − × ÷ et parenthèses seulement */
 function evalQ(s){ s=String(s||'').replace(/,/g,'.').replace(/[x×]/g,'*').replace(/÷/g,'/').trim(); if(!s) return null;
   if(!/^[\d.+\-*/() ]+$/.test(s)||/[+\-*/]{2}/.test(s.replace(/\s/g,'').replace(/([*/])-/g,'$1'))) return NaN;
-  try{ const v=Function('"use strict";return ('+s+')')(); return isFinite(v)?v:NaN; }catch(_){ return NaN; } }
+  const v=ecqEval(s); return isFinite(v)?v:NaN; }   // eCCC lot 2 : évaluateur sûr (sans eval ni Function), arithmétique décimale de mXparser comme le devis de Deltaproject (spec_12 § 5.4)
 /* Parent CFC : 211.6 → 211 → 21 → 2 */
 const cfcParent=c=>{ c=String(c); if(c.includes('.')) return c.slice(0,c.lastIndexOf('.')); return c.length>1?c.slice(0,-1):null; };
 /* Tri CFC de Deltaproject : ordre alphabétique des numéros (1 < 10 < 101 < 101.1 < 11 < 2) */
@@ -3817,25 +3817,25 @@ function ecDomain(C,top,pane,p){
 async function ecDuplicate(d){ if(!d) return; await ecNeed(); return ecDocDialog(DS.get('project',d.PROJECT_ID),d,'dup'); }
 /* ═══ Fiche « Nouvelle estimation des coûts » / « Edition » (deltabauad.project.CostPlanningDocumentDialog, § 3.2) ═══
    mode : 'new' | 'edit' | 'dup' (Dupliquer : fiche en édition, options figées, contenu copié sous un nouvel ID) */
-async function ecDocDialog(p,d,mode){
+async function ecDocDialog(p,d,mode,imp){   // imp (eCCC lot 2, ecqImportFromProject) : {P, refA, sub, src} = calcul importé d'une autre affaire
   if(!p){ toast('Sélectionnez une affaire.',true); return; }
   if(mode!=='new'&&d&&!ecCanEdit(d)){ toast(EC_MSG_DROITS,true); return; }
   let cat=ecCatalog(p.ID);
   if(mode==='new'&&!cat){ cat=await ecOfferCatalogCopy(p); if(!cat) return; }
   const isNew=mode==='new', sp=ecSubprojects(p.ID);
   const hseq=d?((DS.S.costplanningdocument||{})[String(d.ID)]||0):0;   // version de l'en-tête lue à l'ouverture de la fiche (409 si modifiée ailleurs)
-  const v=isNew?{ID:null,PROJECT_ID:p.ID,VERSION:'',VERSIONNUMBER:1,STATECODE:0,CHANGEDDATE:today(),USERID:ME.id,NOTE:'',ISMARKEDASDELETED:0,ISAPPLYSUBPROJECTS:0,ISREFERENCEBASEA:1}
+  const v=isNew?{ID:null,PROJECT_ID:p.ID,VERSION:'',VERSIONNUMBER:1,STATECODE:0,CHANGEDDATE:today(),USERID:ME.id,NOTE:'',ISMARKEDASDELETED:0,ISAPPLYSUBPROJECTS:imp?(imp.sub?1:0):0,ISREFERENCEBASEA:imp?(imp.refA?1:0):1}
     :{...d,VERSION:mode==='dup'?((d.VERSION||'')+' Copie'):d.VERSION};
   const nom=h('input',{class:'inp',maxlength:64,value:v.VERSION||''}), nr=h('input',{class:'inp',type:'number',step:'1',value:v.VERSIONNUMBER??1,style:{width:'90px'}});
   const usr=h('input',{class:'inp',readonly:true,value:v.USERID||'',style:{width:'140px'}});
   const pickU=ibtn({label:'◂',t:'Utilisateurs',fn:()=>popMenu(pickU,DS.all('appuser').filter(u=>u.ISENABLED).sort((a,b)=>cmp(a.USERID,b.USERID)).map(u=>({t:u.USERID+(u.NAME?' — '+u.NAME:''),chk:u.USERID===usr.value,fn:()=>{ usr.value=u.USERID; }})))});
   const dt=h('input',{class:'inp',type:'date',value:v.CHANGEDDATE||'',style:{width:'160px'}});
   const st=h('select',{class:'inp',style:{width:'200px'}},...Object.entries(EC_ST).map(([k,t])=>h('option',{value:k,selected:+k===(+v.STATECODE||0)||null},t)));
-  const sub=h('input',{type:'checkbox',checked:!!v.ISAPPLYSUBPROJECTS||null,disabled:(!isNew||!sp.length)||null});
-  const rA=h('input',{type:'radio',name:'ec-ab',checked:v.ISREFERENCEBASEA!==0||null,disabled:(!isNew||!cat)||null}), rB=h('input',{type:'radio',name:'ec-ab',checked:v.ISREFERENCEBASEA===0||null,disabled:(!isNew||!cat)||null});
+  const sub=h('input',{type:'checkbox',checked:!!v.ISAPPLYSUBPROJECTS||null,disabled:(!isNew||!sp.length||!!imp)||null});
+  const rA=h('input',{type:'radio',name:'ec-ab',checked:v.ISREFERENCEBASEA!==0||null,disabled:(!isNew||!cat||!!imp)||null}), rB=h('input',{type:'radio',name:'ec-ab',checked:v.ISREFERENCEBASEA===0||null,disabled:(!isNew||!cat||!!imp)||null});
   const note=h('textarea',{class:'inp',rows:4,maxlength:1024},v.NOTE||'');
   const P0=!isNew?DS.get('costplanning',d.ID):null;
-  const sysTxt=cat?ecSystemLabel(isNew?{systeme:ecSystem(cat.CATALOGTYPECODE,true)}:(P0&&P0.systeme?P0:{systeme:(d.ISREFERENCEBASEA===0?'514':'511')}),cat):'Aucun catalogue d’éléments n’a encore été attribué au projet.';
+  const sysTxt=cat?ecSystemLabel(isNew?{systeme:ecSystem(cat.CATALOGTYPECODE,v.ISREFERENCEBASEA!==0)}:(P0&&P0.systeme?P0:{systeme:(d.ISREFERENCEBASEA===0?'514':'511')}),cat):'Aucun catalogue d’éléments n’a encore été attribué au projet.';
   const sysEl=h('span',{style:{color:'#555'}},sysTxt);
   if(isNew&&cat){ const upd=()=>{ sysEl.textContent=ecSystemLabel({systeme:ecSystem(cat.CATALOGTYPECODE,rA.checked)},cat); }; rA.onchange=upd; rB.onchange=upd; }
   const body=h('div',{style:{minWidth:'560px'}},
@@ -3847,8 +3847,8 @@ async function ecDocDialog(p,d,mode){
   const dlg=dialog({title:isNew?'Nouvelle estimation des coûts':'Edition',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
     const V=nom.value.trim(); if(!V) return false;
     const nv={...v,VERSION:V.slice(0,64),VERSIONNUMBER:parseInt(nr.value,10)||0,USERID:usr.value||ME.id,CHANGEDDATE:dt.value||today(),STATECODE:+st.value,NOTE:note.value.trim().slice(0,1024),ISMARKEDASDELETED:0};
-    if(isNew){ nv.ISAPPLYSUBPROJECTS=sub.checked&&sp.length?1:0; nv.ISREFERENCEBASEA=rB.checked?0:1; nv.ID=DS.newIds('costplanningdocument')[0];
-      const C=ecInitContent(p,nv,cat); const R=ecEngine(C); C.elements=R.P.elements; C.quantitesReferentielles=R.P.quantitesReferentielles;
+    if(isNew){ nv.ISAPPLYSUBPROJECTS=imp?(imp.sub?1:0):(sub.checked&&sp.length?1:0); nv.ISREFERENCEBASEA=rB.checked?0:1; nv.ID=DS.newIds('costplanningdocument')[0];
+      const C=imp&&typeof ecqImportedContent==='function'?ecqImportedContent(imp,p,nv):ecInitContent(p,nv,cat); const R=ecEngine(C); C.elements=R.P.elements; C.quantitesReferentielles=R.P.quantitesReferentielles;
       await DS.commit([{t:'costplanningdocument',id:nv.ID,val:nv},{t:'costplanning',id:nv.ID,val:C}]); ecOpen(nv.ID,VIEW&&VIEW.id!=='coplan'?{id:VIEW.id,arg:{project:p.ID}}:null); return; }
     if(mode==='dup'){ const id=DS.newIds('costplanningdocument')[0]; nv.ID=id;
       const C=P0?ecClone(P0):ecInitContent(p,nv,cat); C.id=id; C.entete=ecEntete(nv);
@@ -4361,7 +4361,8 @@ function ecEcoPanel(w,hint){
   const eg=ecNumIn(w.energieGrise,'120px'), u=ecNumIn(w.coefficientU,'120px'), g=ecNumIn(w.effetSerre,'120px'), c1=ecTxt(c.energieGrise,30,'220px'), c2=ecTxt(c.coefficientU,30,'220px'), c3=ecTxt(c.effetSerre,30,'220px');
   const read=()=>{ const a=ecReadNum(eg,'Energie grise'), b=ecReadNum(u,'Coefficient U'), d=ecReadNum(g,'Effet de serre'); if(a==null||b==null||d==null) return false;
     Object.assign(w,{energieGrise:a,coefficientU:b,effetSerre:d}); w.commentaires={energieGrise:c1.value.slice(0,30),coefficientU:c2.value.slice(0,30),effetSerre:c3.value.slice(0,30)}; return true; };
-  return {read,el:h('div',{},h('div',{class:'ec-hint'},hint||'Évaluation écologique'),formRows([['Energie grise',h('span',{},eg,' kWh/m2 a  ',c1)],['Coefficient U',h('span',{},u,' [W/m²K]  ',c2)],
+  return {read,set:v=>{ if(v.energieGrise!=null) eg.value=String(+v.energieGrise||0); if(v.coefficientU!=null) u.value=String(+v.coefficientU||0); if(v.effetSerre!=null) g.value=String(+v.effetSerre||0); },   // eCCC lot 3
+    el:h('div',{},h('div',{class:'ec-hint'},hint||'Évaluation écologique'),formRows([['Energie grise',h('span',{},eg,' kWh/m2 a  ',c1)],['Coefficient U',h('span',{},u,' [W/m²K]  ',c2)],
     ['Effet de serre (GWP 100a)',h('span',{},g,' [kg/p a]  ',c3)]],560))};
 }
 function ecOriginField(v){ const i=ecTxt(v,30,'240px'); const b=ibtn({label:'▾',t:'Origine du prix',fn:()=>popMenu(b,EC_ORIGINES.map(t=>({t,fn:()=>{ i.value=t; }})))});
@@ -4385,7 +4386,9 @@ function ecElementCalcDialog(ctx,so,cat0){
   const upd=()=>{ coutEl.textContent=num(costOf())+' CHF'; if(cfcP) cfcP.draw(); }; pr.oninput=upd; fx.oninput=upd;
   const df=ecChk(w.definitif,'Le calcul est définitif'), ev=ecChk(w.eventuelle,'Position éventuelle (ne pas inclure le montant)'), us=ecChk(w.utiliserPourCalcul,'Utiliser la position pour le calcul');
   const org=ecOriginField(w.origineprix);
-  const propose=ibtn({label:'▾',t:'Proposition',fn:()=>{ const a=ecExt('ecaPrevCalcValues'), b=ecExt('ecaDatabaseValues'); const apply=vals=>{ if(vals&&vals.prix!=null){ pr.value=String(vals.prix); } if(vals&&vals.origineprix!=null) org.i.value=vals.origineprix; upd(); };
+  const propose=ibtn({label:'▾',t:'Proposition',fn:()=>{ const a=ecExt('ecaPrevCalcValues'), b=ecExt('ecaDatabaseValues'); const apply=vals=>{ if(!vals) return; if(vals.prix!=null){ pr.value=String(vals.prix); } if(vals.origineprix!=null) org.i.value=vals.origineprix;   // eCCC lot 3 : valeurs référentielles (§ 6.5)
+      if(vals.description!=null) desc.value=vals.description; if(vals.noteInterne!=null) note.value=vals.noteInterne; if(vals.remarque!=null) rem.value=String(vals.remarque).slice(0,30); if(vals.execution!=null) exe.value=vals.execution;
+      if(eco.set) eco.set(vals); if(cfcP&&Array.isArray(vals.cfc)) w.cfc.splice(0,w.cfc.length,...vals.cfc.map(k=>({numero:String(k.numero),pourcent:+k.pourcent||0,montant:0}))); upd(); };
     popMenu(propose,[{t:'Valeurs référentielles des calculs précédents'+(a?'':' (lot 3)'),dis:!a,fn:a&&(()=>a(ctx,{e,d},apply))},{t:'Valeurs référentielles de la base de données'+(b?'':' (lot 3)'),dis:!b,fn:b&&(()=>b(ctx,{e,d},apply))},'-',
       ...(q!==0?[{t:'Insérer le coût…',fn:()=>{ const c=ecNumIn('','160px'); dialog({title:'Insérer le coût',body:formRows([['Coût',c]],320),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const v=ecReadNum(c,'Coût'); if(v==null) return false; pr.value=String((pct?100:1)*v/q); upd(); }}]}); }}]:[]),
       {t:'Fixer le coût',fn:()=>{ fxRow.style.display=''; fx.focus(); }}]); }});
@@ -4547,7 +4550,13 @@ function ecSeCalcDialog(ctx,so,cat0){
   const df=ecChk(w.definitif,'Le calcul est définitif'), ev=ecChk(w.eventuelle,'Position éventuelle (ne pas inclure le montant)'), org=ecOriginField(w.origineprix);
   const qBtn=ibtn({label:'▾',t:'Quantité référentielle',fn:()=>popMenu(qBtn,[{t:'Modifier la quantité référentielle',fn:()=>ecSeQtyDialog(ctx,{s:w},upd)},
     {t:'Insérer la quantité référentielle de l’élément',fn:()=>{ const o=so.d||e; w.grandeurRef=o.grandeurRef||e.grandeurRef; w.quantiteFixe=false; w.quantite=+o.quantite||0; upd(); }}])});
-  const propose=ibtn({label:'▾',t:'Proposition',fn:()=>{ const a=ecExt('ecaPrevCalcValues'), b=ecExt('ecaDatabaseValues'); const apply=vals=>{ if(vals&&vals.prix!=null) pr.value=String(vals.prix); upd(); };
+  const propose=ibtn({label:'▾',t:'Proposition',fn:()=>{ const a=ecExt('ecaPrevCalcValues'), b=ecExt('ecaDatabaseValues'); const apply=vals=>{ if(!vals) return; if(vals.prix!=null) pr.value=String(vals.prix);   // eCCC lot 3 : valeurs référentielles (§ 6.5)
+      if(vals.description!=null) desc.value=vals.description; if(vals.noteInterne!=null) note.value=vals.noteInterne; if(vals.remarque!=null) rem.value=String(vals.remarque).slice(0,30); if(vals.execution!=null) exe.value=vals.execution;
+      if(vals.dureeVie!=null&&vals.dureeVie!=='') dv.value=String(vals.dureeVie); if(vals.intervalleEntretien!=null&&vals.intervalleEntretien!=='') it.value=String(vals.intervalleEntretien); if(vals.coutEntretien!=null) ce.value=String(+vals.coutEntretien||0);
+      if(eco.set) eco.set(vals); if(Array.isArray(vals.cfc)) w.cfc.splice(0,w.cfc.length,...vals.cfc.map(k=>({numero:String(k.numero),pourcent:+k.pourcent||0,montant:0})));
+      if(Array.isArray(vals.cfcAjout)) vals.cfcAjout.forEach(k=>{ if(!w.cfc.some(x=>String(x.numero)===String(k.numero))&&!w.composants.some(c=>c.cfcNumero)&&!ecCfcBranchMsg(ctx.P,k.numero,null))
+        w.cfc.push({numero:String(k.numero),pourcent:Math.max(0,100-w.cfc.reduce((a,x)=>a+(+x.pourcent||0),0)),montant:0}); });   // CFC du SE du bureau : le reste jusqu'à 100 %
+      if(Array.isArray(vals.composants)){ w.composants.splice(0,w.composants.length,...ecClone(vals.composants)); mode=1; rM[1].checked=true; } upd(); };
     popMenu(propose,[{t:'Valeurs référentielles des calculs précédents'+(a?'':' (lot 3)'),dis:!a,fn:a&&(()=>a(ctx,{e,d:so.d,s},apply))},{t:'Valeurs référentielles de la base de données'+(b?'':' (lot 3)'),dis:!b,fn:b&&(()=>b(ctx,{e,d:so.d,s},apply))},'-',
       ...(q()!==0?[{t:'Insérer le coût…',fn:()=>{ const c=ecNumIn('','160px'); dialog({title:'Insérer le coût',body:formRows([['Coût',c]],320),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const v=ecReadNum(c,'Coût'); if(v==null) return false; pr.value=String((pct()?100:1)*v/q()); upd(); }}]}); }}]:[]),
       {t:'Fixer le coût',fn:()=>{ fxRow.style.display=''; fx.focus(); }}]); }});
@@ -4660,6 +4669,1763 @@ function ecOgDialog(ctx){
       if(first&&L.length&&!b.parOuvrage.length){ L[0].quantite=+b.quantite||0; L[0].calcul=b.calcul||[]; L[0].remarque=b.remarque||''; }
       b.parOuvrage.push(...L); b.calcul=[]; if(!ecIsCalculated(b)) b.quantite=b.parOuvrage.reduce((s,x)=>s+(+x.quantite||0),0); });   // sumRefQuantiesOgs
     await ctx.touch(doc.ISAPPLYSUBPROJECTS?null:{ISAPPLYSUBPROJECTS:1}); }}]});   // en-tête et contenu dans UN SEUL commit
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BÂTIMENT · MES ESTIMATIONS eCCC — LOT 2 : QUANTITES REFERENTIELLES, lignes de calcul, grandeurs personnalisées,
+   import CSV de quantités, CHIFFRES CLEFS (unités fonctionnelles, volumes, énergie grise), « Importer les
+   présentations » et « Importer un calcul des coûts d'une affaire » (spec_12 § 5, § 3.7, § 6.6, § 10 Lot 2).
+   Évaluateur de formules SÛR (sans eval ni Function) : ecqCompile / ecqEval, utilisé aussi par evalQ (devis).
+   Points d'extension du lot 1 remplis : ecqSectionQuantites, ecqSectionChiffresClefs, ecqRefUnitDialog,
+   ecqImportPresentations, ecqImportFromProject. Déclarations uniquement : rien ne s'exécute au chargement.
+   Préfixes : ecq… / ECQ_…. Licence CRB (§ 1.4) : aucune donnée ni table CRB ; les grandeurs, libellés et
+   unités viennent du document (données du bureau) ; la liste d'unités et les libellés sont ceux de l'application.
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Réglages et libellés (Strings.db : refcode.*, keyFigures.*, CostPlanningDialog.*, cad.*, plugins.*) ── */
+const ECQ_UNITES=['m','m2','m3','m3/h','h','d','se','ms','p','t','kg','kW'];               // RefcodeDialog (mode « Quantité référentielle »)
+const ECQ_GENRES={1:'Caractéristiques de quantité',2:'Unités fonctionnelles',3:'Paramètre de coût selon eCCC',4:'Paramètre de coût selon CFC'};   // KeyFiguresKind
+const ECQ_PRES=['Standard','Avec le calcul de prix','Avec des coûts'];                      // refQuantityDisplayMode 0/1/2
+const ECQ_FILTRES=[['avec','Positions avec quantités référentielles'],['sans','Positions sans quantité référentielle'],['perso','Grandeurs référentielles personnalisées']];
+const ECQ_VOL_LBL={VB:'Volume bâti',VN:'Volume net',VC:'Volume de construction',VU:'Volume utile',VUP:'Volume utile principal',VUS:'Volume utile secondaire',VD:'Volume de dégagement',VI:'Volume d’installation'};
+const ECQ_VOL_TAB=['VB','VN','VC','VU','VUP','VUS','VD','VI'];                            // KeyFigureFrame.setVolumeChartTable (m³)
+const ECQ_VOL_DLG=['VB','VN','VC','VU','VD','VI','VUP','VUS'];                            // VolumeDialog « Volumes [m3] »
+const ECQ_VOL_PCT=[[['VB','VB'],['VN','VB'],['VC','VB']],[['VN','VN'],['VU','VN'],['VD','VN'],['VI','VN']],[['VU','VU'],['VUP','VU'],['VUS','VU']]];
+const ECQ_VOL_CHART=[['VN','VB'],['VC','VB'],['VU','VN'],['VD','VN'],['VI','VN'],['VUP','VU'],['VUS','VU']];   // « Volumes [%] », formules correctes (§ 12 n° 13)
+const ECQ_MSG={
+  eq4:'L’équation de la ligne ^0 est incomplète, contient des erreurs\nou ne peut pas être calculée.',   // QuantityCalcDialog.msg4a/b
+  eq9:'La formule et le commentaire ne peuvent pas dépasser 90 caractères.',                              // msg9
+  eq3:'Deux opérateurs se suivent dans le calcul.',                                                        // msg3
+  trop:'Valeur trop élevée.',                                                                              // msg1
+  sel:'Veuillez sélectionner une ligne.',                                                                  // msg2
+  metre:'Voulez-vous vraiment supprimer ce métré ?',                                                       // msg7
+  kf1:'L’équation est incomplète, contient des erreurs\nou ne peut pas être calculée.',                   // CalcElements.msg1a/b
+  kf2:'Le résultat est 0.', kf3:'Attention, division par 0 dans l’équation.',                              // CalcElements.msg2 / msg3
+  efface:'Voulez-vous effacer cette inscription ?', utilise:'Cette inscription est déjà utilisée.',          // CostPlanningDialog.msg1 / msg4
+  toutes:'Voulez-vous supprimer ces entrées irrévocablement?', params:'Voulez-vous remplacer tous les paramètres?',   // msg3 / msg10
+  code:'Ce code est déjà utilisé.', lignes:'Voulez-vous vraiment supprimer toutes les lignes ?',            // RefcodeDialog.msg2 / msg1
+  cycle:'Le code dépend de lui-même.',                                                                     // element.Check.msg6
+  types:'Les types de catalogue ne correspondent pas.',                                                    // CostPlanningPlugin.msg1
+  versions:'Ce document et le document à importer sont de versions de catalogue différentes.\nVous voulez toujours importer ?',   // msg2a/b
+  ventile:'Grandeur ventilée par ouvrage : saisissez la quantité sur les lignes d’ouvrage.'};
+/* État de l'écran (commodité locale) : présentation, filtre, recherche, ligne choisie, catégorie des chiffres clefs */
+const ECQ_V={pres:null,filt:null,q:'',sel:null,top:0,left:0,kf:'surf',eg:null,pf:null};
+
+/* ═══ Évaluateur de formules SÛR (remplace mXparser et le Function de evalQ ; § 5.4) ═══
+   Sémantique de mXparser 4.4.0 (mathParser.jar de Deltaproject, comparé formule par formule : lot2rev/mx) :
+   expr := terme (('+'|'-') terme)* ; terme := signé (('*'|'/') signé)* ;
+   signé := [UN signe + ou −] pourcent — le signe est refusé juste après un + ou un − (« 2+-3 », « --3 », « 2*--3 » :
+            erreurs de syntaxe, comme mXparser) ; suivi d'un NOMBRE, il fait partie du nombre (−2^2 = 4, 3*−2^2 = 12,
+            2^−3^2 = 512), sauf en tête d'un argument après « , » / « ; » (min(1;−2^2) = −4) ; sinon il porte sur le
+            facteur suivant (−(2)^2 = −4, −pi^2 = −9.87) ; après ^, seul un nombre signé est permis (2^−(1) : mXparser 4.4
+            le calcule faux, 3/2^−(1) = 0.67 — refusé, écrire 2^(−(1))) ; après * ou /, un signe suivi d'autre chose qu'un
+            nombre suit l'arithmétique usuelle et l'ancien evalQ (1+3*−(2) = −5 ; mXparser 4.4 : −8, faux) ;
+   pourcent := puissance ['%' ['^' exposant]] (% postfixe = × 0,01 : 2^3% = 0.08, 10/5% = 200, 3%^2 = 0.0009) ;
+   puissance := primaire ['^' exposant] (associative à droite, 2^3^2 = 512) ; primaire := nombre | pi | e | fonction(args) | (expr).
+   Nombres : 12 · 12.5 · .5 · 1e3 · 1.5E-2 ; tolérés en plus (mXparser les refuse) : 12,5 (virgule décimale entre deux
+   chiffres, hors arguments de fonction), « 5. », × ÷ −. Fonctions (minuscules, comme mXparser) : sqrt abs floor ceil
+   round(x;n) (2 arguments, n tronqué, n < 0 → NaN, arrondi « demi vers le haut » symétrique sur l'écriture décimale :
+   round(1.005;2) = 1.01, round(−2.5;0) = −3) min max sin cos tan ln log10 ; arguments séparés par « ; » ou « , ».
+   Arithmétique « canonique » de mXparser (ci-dessous) ; division par 0 = NaN, qui se propage ; sin/cos/tan : Math (mXparser a en
+   plus une table de valeurs exactes pour les angles remarquables : écart ≤ 1e-15). Tout autre identifiant, fonction (exp, sgn, mod…) ou caractère (!, #…) est une
+   erreur de syntaxe. Aucun eval, aucun Function. */
+const ECQ_FN={sqrt:[1,1,Math.sqrt],abs:[1,1,Math.abs],floor:[1,1,Math.floor],ceil:[1,1,Math.ceil],
+  round:[2,2,(x,n)=>ecqRound(x,n)],min:[1,Infinity,Math.min],max:[1,Infinity,Math.max],
+  sin:[1,1,Math.sin],cos:[1,1,Math.cos],tan:[1,1,Math.tan],ln:[1,1,Math.log],log10:[1,1,Math.log10]};
+/* ── Arithmétique de mXparser 4.4 (réglages par défaut, que Deltaproject ne modifie pas : canonicalRounding et almostIntRounding
+   actifs, ulpRounding inactif ; Java 23 : Double.toString = écriture décimale la plus courte, comme String(x) en JavaScript) :
+   + − × sur BigDecimal.valueOf(a) et BigDecimal.valueOf(b), résultat → doubleValue (0.1+0.2 = 0.3 ; 126.6*96.58+31.207 =
+   12258.235, donc la ligne de métré vaut 12 258.24 et non 12 258.23) ; ÷ en MathContext.DECIMAL128 (34 chiffres, demi pair) ;
+   puissance à exposant (quasi) entier exacte ; résultat final ramené à l'entier le plus proche s'il en est à 1e-14 près.
+   Nombres exacts : [m (BigInt), e] avec x = m·10^e. ── */
+function ecqDec(x){ let s=String(x), e=0; const k=s.search(/e/i); if(k>=0){ e=+s.slice(k+1); s=s.slice(0,k); }
+  const d=s.indexOf('.'); if(d>=0){ e-=s.length-d-1; s=s.slice(0,d)+s.slice(d+1); } return [BigInt(s),e]; }
+function ecqNum(m,e){ return Number(m.toString()+'e'+e); }
+function ecqP10(n){ return BigInt(10)**BigInt(n); }
+function ecqAdd(a,b,sub){ if(isNaN(a)||isNaN(b)) return NaN; if(!isFinite(a)||!isFinite(b)) return sub?a-b:a+b;
+  const [m1,e1]=ecqDec(a), [m2,e2]=ecqDec(b), e=Math.min(e1,e2), n2=m2*ecqP10(e2-e);
+  return ecqNum(m1*ecqP10(e1-e)+(sub?-n2:n2),e); }
+function ecqMul(a,b){ if(isNaN(a)||isNaN(b)) return NaN; if(!isFinite(a)||!isFinite(b)) return a*b;
+  const [m1,e1]=ecqDec(a), [m2,e2]=ecqDec(b); return ecqNum(m1*m2,e1+e2); }
+/* quotient exact arrondi à 34 chiffres significatifs, demi pair (BigDecimal.divide(…, DECIMAL128)) → [m, e] */
+function ecqDivDec(m1,e1,m2,e2){ if(m1===BigInt(0)) return [m1,0];
+  const neg=(m1<0)!==(m2<0), A=m1<0?-m1:m1, B=m2<0?-m2:m2, dig=v=>v.toString().length;
+  const sc=Math.max(0,36+dig(B)-dig(A)), N=A*ecqP10(sc); let q=N/B; const r=N%B; let ex=e1-e2-sc; const extra=dig(q)-34;
+  if(extra>0){ const d=ecqP10(extra), q2=q/d, t=BigInt(2)*(q%d); q=q2+((t>d||(t===d&&(r!==BigInt(0)||q2%BigInt(2)===BigInt(1))))?BigInt(1):BigInt(0)); ex+=extra; }
+  return [neg?-q:q,ex]; }
+function ecqDiv(a,b){ if(b===0||isNaN(a)||isNaN(b)) return NaN; if(!isFinite(a)||!isFinite(b)) return a/b;   // division par 0 = NaN (mXparser)
+  const [m1,e1]=ecqDec(a), [m2,e2]=ecqDec(b), [m,e]=ecqDivDec(m1,e1,m2,e2); return ecqNum(m,e); }
+/* MathFunctions.powInt : 0^n = Math.pow ; x^0 = 1 ; x^1 = x ; sinon BigDecimal.pow(n) exact (n < 0 : (1 ÷ x)^−n, 1 ÷ x en DECIMAL128) */
+function ecqPowInt(a,n){ if(isNaN(a)) return NaN; if(!isFinite(a)||a===0) return Math.pow(a,n); if(n===0) return 1; if(n===1) return a;
+  if(Math.abs(n)>2000) return Math.pow(a,n);   // (dépassement de capacité ; mXparser lève une exception au-delà de 999 999 999)
+  let [m,e]=ecqDec(a); if(n<0){ [m,e]=ecqDivDec(BigInt(1),0,m,e); n=-n; } return ecqNum(m**BigInt(n),e*n); }
+/* MathFunctions.power : NaN → NaN ; exposant à 1e-14 d'un entier → powInt ; base ≥ 0 → Math.pow ; base < 0 : |b| ≥ 1 → Math.pow,
+   sinon racine impaire réelle si 1/|b| est (quasi) un entier impair ((−8)^(1/3) = −2), NaN sinon */
+function ecqPow(a,b){ if(isNaN(a)||isNaN(b)) return NaN;
+  const ab=Math.abs(b), r=Math.round(ab); if(Math.abs(ab-r)<=1e-14) return ecqPowInt(a,b>=0?r:-r);
+  if(a>=0||ab>=1) return Math.pow(a,b);
+  const inv=1/ab, k=Math.round(inv); if(Math.abs(inv-k)<=1e-14&&k%2===1) return b>0?-Math.pow(-a,1/inv):-Math.pow(-a,-1/inv);
+  return NaN; }
+/* round(x;n) de mXparser : new BigDecimal(Double.toString(x)).setScale(n, HALF_UP) — écriture décimale la plus courte arrondie,
+   demi « loin de zéro » (1.005 → 1.01 ; 2.675 → 2.68 ; −2.5 → −3) ; n tronqué ; n < 0 → NaN */
+function ecqRound(x,n){ n=Math.trunc(n); if(isNaN(x)||isNaN(n)||n<0) return NaN; if(!isFinite(x)) return x;
+  const [m,e]=ecqDec(x); if(e>=-n) return x; const d=ecqP10(-e-n), A=m<0?-m:m; let q=A/d; if(BigInt(2)*(A%d)>=d) q+=BigInt(1);
+  return ecqNum(m<0?-q:q,-n); }
+/* Résultat final (Expression.calculate, almostIntRounding) : ramené à l'entier s'il en est à 1e-14 près */
+function ecqValue(ast){ const v=ecqRun(ast), r=Math.round(v); return Math.abs(v-r)<=1e-14?r:v; }
+function ecqLex(src){
+  const s=String(src==null?'':src), T=[], ctx=[]; let i=0;
+  const E=m=>{ throw new Error(m); }, dig=c=>c>='0'&&c<='9';
+  while(i<s.length){ const c=s[i];
+    if(c===' '||c==='\t'||c==='\n'||c==='\r'||c===' '||c===' '){ i++; continue; }
+    if(dig(c)||c==='.'){ let j=i, t='';
+      while(j<s.length&&dig(s[j])) t+=s[j++];
+      const inF=ctx[ctx.length-1]==='f';
+      if(j<s.length&&(s[j]==='.'||(s[j]===','&&!inF&&t!==''&&dig(s[j+1]||'')))){ t+='.'; j++; while(j<s.length&&dig(s[j])) t+=s[j++]; }
+      if(!/[0-9]/.test(t)) E('nombre non valable');
+      if((s[j]==='e'||s[j]==='E')&&(dig(s[j+1]||'')||((s[j+1]==='+'||s[j+1]==='-')&&dig(s[j+2]||'')))){   // notation scientifique (mXparser)
+        let k=j+1; t+='e'; if(s[k]==='+'||s[k]==='-') t+=s[k++]; while(k<s.length&&dig(s[k])) t+=s[k++]; j=k; }
+      T.push({t:'n',v:parseFloat(t)}); i=j; continue; }
+    if(/[A-Za-z_]/.test(c)){ let j=i; while(j<s.length&&/[A-Za-z0-9_]/.test(s[j])) j++; T.push({t:'id',v:s.slice(i,j)}); i=j; continue; }
+    if(c==='('){ const p=T[T.length-1]; ctx.push(p&&p.t==='id'?'f':'p'); T.push({t:'('}); i++; continue; }
+    if(c===')'){ ctx.pop(); T.push({t:')'}); i++; continue; }
+    if(c===';'||(c===','&&ctx[ctx.length-1]==='f')){ T.push({t:','}); i++; continue; }
+    const op={'+':'+','-':'-','−':'-','*':'*','×':'*','/':'/','÷':'/','^':'^','%':'%'}[c];
+    if(op){ T.push({t:'o',v:op}); i++; continue; }
+    E('caractère « '+c+' » non autorisé'); }
+  return T;
+}
+function ecqParse(T){
+  let i=0; const E=m=>{ throw new Error(m); }, isO=v=>!!T[i]&&T[i].t==='o'&&T[i].v===v, isT=t=>!!T[i]&&T[i].t===t, isS=()=>isO('+')||isO('-');
+  /* lit : un signe suivi d'un nombre forme un nombre signé — sauf en tête d'un argument qui suit « , » ou « ; » (mXparser :
+     max(-2^2;0) = 4 mais min(1;-2^2) = −4) */
+  const expr=(lit=true)=>{ let a=term(true,lit); while(isS()){ const o=T[i++].v; a=[o,a,term(false,true)]; } return a; };
+  const term=(sg,lit)=>{ let a=signed(sg,lit); while(isO('*')||isO('/')){ const o=T[i++].v; a=[o,a,signed(true,true)]; } return a; };
+  /* un seul signe, refusé après + ou − ; suivi d'un nombre : nombre signé (lie plus fort que ^ et %) */
+  const sign=lit=>{ const neg=T[i++].v==='-'; if(isS()) E('deux opérateurs se suivent'); if(lit&&isT('n')) return {neg,lit:['n',neg?-T[i++].v:T[i++].v]}; return {neg,lit:null}; };
+  /* signe non suivi d'un nombre : il porte sur le facteur suivant (puissance, %) — −(2)^2*3 = −12, −pi^2 = −9.87 ; après * ou /,
+     comme l'ancien evalQ (2*-(3) = −6, 6/-(2)/3 = −1) : mXparser 4.4 y rattache à tort tout le membre de gauche (1+3*-(2) = −8) */
+  const signed=(sg,lit)=>{ if(!isS()) return pct(null); if(!sg) E('deux opérateurs se suivent');
+    const x=sign(lit); if(x.lit) return pct(x.lit); const a=pct(null); return x.neg?['neg',a]:a; };
+  const pct=base=>{ let a=power(base); if(isO('%')){ i++; a=['%',a]; if(isO('^')){ i++; a=['^',a,expo()]; } } return a; };
+  const power=base=>{ const a=base||prim(); if(isO('^')){ i++; return ['^',a,expo()]; } return a; };
+  /* exposant signé : nombre signé seulement (2^-3 = 0.125) ; « 2^-(1) », « 2^-e » refusés : mXparser 4.4 les calcule faux
+     (3/2^-(1) = 0.67, 4-2^-(2) = 0.25) — écrire 2^(-(1)) */
+  const expo=()=>{ if(!isS()) return power(null); const x=sign(true); if(x.lit) return power(x.lit); E('exposant signé : le mettre entre parenthèses'); };
+  const prim=()=>{ const t=T[i]; if(!t) E('équation incomplète');
+    if(t.t==='n'){ i++; return ['n',t.v]; }
+    if(t.t==='('){ i++; const a=expr(); if(!isT(')')) E('parenthèse fermante manquante'); i++; return a; }
+    if(t.t==='id'){ i++;
+      if(isT('(')){ const f=ECQ_FN[t.v]; if(!f) E('fonction inconnue « '+t.v+' »'); i++; const A=[expr()];
+        while(isT(',')){ i++; A.push(expr(false)); }
+        if(!isT(')')) E('parenthèse fermante manquante'); i++;
+        if(A.length<f[0]||A.length>f[1]) E('nombre d’arguments de « '+t.v+' »'); return ['f',t.v,A]; }
+      if(t.v==='pi') return ['n',Math.PI]; if(t.v==='e') return ['n',Math.E];
+      E('« '+t.v+' » inconnu'); }
+    E('syntaxe'); };
+  const a=expr(); if(i<T.length) E('syntaxe'); return a;
+}
+function ecqRun(a){
+  switch(a[0]){
+    case 'n': return a[1]; case 'neg': return -ecqRun(a[1]); case '%': return ecqRun(a[1])*0.01;   // % : × 0,01 simple (Expression.PERC)
+    case '+': return ecqAdd(ecqRun(a[1]),ecqRun(a[2]),false); case '-': return ecqAdd(ecqRun(a[1]),ecqRun(a[2]),true);
+    case '*': return ecqMul(ecqRun(a[1]),ecqRun(a[2])); case '/': return ecqDiv(ecqRun(a[1]),ecqRun(a[2]));
+    case '^': return ecqPow(ecqRun(a[1]),ecqRun(a[2]));
+    case 'f': return ECQ_FN[a[1]][2](...a[2].map(ecqRun));
+  }
+  return NaN;
+}
+/* {ok:true, ast} ou {ok:false, err} (syntaxe) */
+function ecqCompile(src){ try{ const T=ecqLex(src); if(!T.length) return {ok:false,err:'équation vide'}; return {ok:true,ast:ecqParse(T)}; }catch(e){ return {ok:false,err:e&&e.message||'syntaxe'}; } }
+/* Valeur ; NaN si la syntaxe est fausse ou si le résultat n'est pas fini (division par 0…) */
+function ecqEval(src){ const c=ecqCompile(src); if(!c.ok) return NaN; let v; try{ v=ecqValue(c.ast); }catch(_){ return NaN; } return isFinite(v)?v:NaN; }
+
+/* ═══ Lignes de calcul d'une quantité (CalcBaseQuantiy.calc, QuantityCalcDialog, § 5.4) ═══ */
+/* extractComment : le texte entre [ et ] (crochets compris) n'est pas calculé */
+function ecqStrip(f){ let o='', skip=false; for(const c of String(f==null?'':f)){ if(c==='['){ skip=true; continue; } if(c===']'){ skip=false; continue; } if(!skip) o+=c; } return o; }
+/* roundAusmass : Math.round(x × 100) / 100 (demi vers +∞, comme Java) */
+function ecqRa(x){ return Math.round(x*100)/100; }
+function ecqNewLine(){ return {genre:'',commentaire:'',formule:'',quantite:0,sousTotal:false}; }
+/* lignes [{genre '' | 'r' | 'r5', commentaire, formule, sousTotal (colonne M)}] → {rows:[{quantite (null = vide), st (sous-total affiché ou null), formule}], total}
+   '' : f = formule sans [..] ; v = valeur ; quantité = ra(v) ; total += v ; st += v
+   'r' : n = trunc(total) + 1 (53 → 54) ; 'r5' : n = trunc(total) + 1 puis +1 jusqu'à un multiple de 5 ; d = ra(n − total) ;
+         calcul = quantité = d ; total += d ; st += d.   M : sous-total = ra(st) ; st = 0. */
+function ecqCalcLines(lines){
+  let total=0, st=0; const rows=[];
+  (lines||[]).forEach(l=>{ const g=l.genre||'', r={quantite:null,st:null,formule:l.formule==null?'':String(l.formule)};
+    if(g===''){ const f=ecqStrip(l.formule).trim(); if(f){ const v=ecqEval(f); r.quantite=ecqRa(v); total+=v; st+=v; } }
+    else if(g==='r'||g==='r5'){ let n=(isFinite(total)?Math.trunc(total):0)+1; if(g==='r5'){ let k=0; while(n%5!==0&&k++<5) n++; }
+      const d=ecqRa(n-total); r.quantite=d; r.formule=num(d); total+=d; st+=d; }
+    if(l.sousTotal){ r.st=ecqRa(st); st=0; }
+    rows.push(r); });
+  return {rows,total};
+}
+/* Contrôles de OK (jOkButtonActionPerformed@0-564) : lignes de quantité 0 (ou vides) retirées sans message ; pour chaque
+   ligne standard : syntaxe fausse, résultat nul ou non fini → msg4 ; commentaire + formule > 90 caractères → msg9 ;
+   deux opérateurs consécutifs dans la formule → msg3 ; puis partie entière du total > 10 chiffres → « Valeur trop élevée. ».
+   Écart voulu : le numéro cité est celui de la ligne AFFICHÉE (l'original compte dans la liste déjà filtrée).
+   Retour : {ok, msgs, lignes (conservées, au format du document), total} */
+function ecqCheckLines(lines){
+  const C=ecqCalcLines(lines), msgs=[], kept=[];
+  (lines||[]).forEach((l,i)=>{ const r=C.rows[i], g=l.genre||'';
+    if(r.quantite==null||r.quantite===0) return;
+    kept.push({formule:g?r.formule:String(l.formule||''),commentaire:String(l.commentaire||''),quantite:r.quantite,sousTotal:!!l.sousTotal,genre:g});
+    if(g) return;
+    const c=ecqCompile(ecqStrip(l.formule)); let v=NaN; if(c.ok){ try{ v=ecqValue(c.ast); }catch(_){ v=NaN; } }
+    if(!c.ok||!isFinite(v)||v===0){ msgs.push(ECQ_MSG.eq4.replace('^0',String(i+1))); return; }
+    if(String(l.commentaire||'').length+String(l.formule||'').length>90) msgs.push(ECQ_MSG.eq9);
+    const f=String(l.formule||'').replace(/−/g,'-').replace(/×/g,'*').replace(/÷/g,'/');
+    for(let k=1;k<f.length;k++) if('+-*/'.includes(f[k])&&'+-*/'.includes(f[k-1])){ msgs.push(ECQ_MSG.eq3); break; } });
+  if(!msgs.length&&!ecDigitsOk(C.total)) msgs.push(ECQ_MSG.trop);
+  return {ok:!msgs.length,msgs,lignes:kept,total:C.total};
+}
+
+/* ═══ Données : Coûts/QR, lignes du tableau, grandeurs personnalisées, suppressions (§ 5.2, § 5.5 à 5.7) ═══ */
+/* Coûts / QR : R(real/Q), R(ouv/Q), R(inv/Q) avec l'arrondi du document ; null si Q = 0 (CPD.setRefQuantityTable@439-617) */
+function ecqCostPerQ(T,q,arr){ q=+q||0; if(!q||!T) return null; return {real:ecR((+T.real||0)/q,arr),ouv:ecR((+T.ouv||0)/q,arr),inv:ecR((+T.inv||0)/q,arr)}; }
+/* Totaux d'une ligne d'ouvrage (T.parOuvrage du moteur, clé = code d'ouvrage enregistré) */
+function ecqOuvT(res,x){ return (res&&res.T&&res.T.parOuvrage&&res.T.parOuvrage[x&&x.ouvrage||''])||{inv:0,real:0,ouv:0}; }
+/* Lignes du tableau (setRefQuantityTable@0-1987) : grandeur (code « null » masqué), lignes de calcul (présentation 1),
+   une ligne par ouvrage (même à 0) suivie de ses lignes de calcul. Filtres exclusifs ; recherche = expression régulière
+   insensible à la casse sur l'abréviation et la désignation (une expression invalide est ignorée). */
+function ecqQrRows(P,ouv,st){
+  const out=[], pres=+st.pres||0; let re=null;
+  if(st.q){ try{ re=new RegExp(st.q,'i'); }catch(_){ re=null; } }
+  ecL(P,'quantitesReferentielles').forEach(b=>{
+    if(!ecVisibleQ(b)) return;
+    if(st.filt==='avec'&&!(+b.quantite)) return; if(st.filt==='sans'&&+b.quantite) return; if(st.filt==='perso'&&b.standard!==false) return;
+    if(re&&!re.test(String(b.code))&&!re.test(String(b.libelle||''))) return;
+    const L=ouv?ecL(b,'parOuvrage'):[];
+    out.push({t:'Q',key:'Q|'+b.code,b,o:b,vent:L.length>0});
+    if(pres===1) ecL(b,'calcul').forEach((c,i)=>out.push({t:'C',key:'C|'+b.code+'|||'+i,b,c,i,parent:null}));
+    L.forEach(x=>{ const k=b.code+'|'+(x.ouvrage||'')+'|'+(x.localisation||''); out.push({t:'O',key:'O|'+k,b,o:x,x});
+      if(pres===1) ecL(x,'calcul').forEach((c,i)=>out.push({t:'C',key:'C|'+k+'|'+i,b,c,i,parent:x})); });
+  });
+  return out;
+}
+/* Grandeur utilisée par un élément, une ligne d'ouvrage ou un sous-élément */
+function ecqUsedBy(P,code){
+  for(const e of ecL(P,'elements')){ if(e.grandeurRef===code) return e.code;
+    for(const o of [e,...ecL(e,'parOuvrage')]){ if(o!==e&&o.grandeurRef===code) return e.code; if(ecL(o,'sousElements').some(s=>s.grandeurRef===code)) return e.code; } }
+  return null;
+}
+/* Contrôle circulaire (Check.refQunantityIsIndependent, transitif) : la grandeur « code » sommerait (liste L) un élément
+   dont la quantité dépend, directement ou par d'autres grandeurs calculées, de « code ». Retour : code de l'élément fautif ou null. */
+function ecqCycle(P,code,L){
+  const E=ecL(P,'elements'), Q=new Map(ecL(P,'quantitesReferentielles').map(b=>[b.code,b]));
+  const listOf=g=>g===code?L:(ecCalcCodes(Q.get(g))||null);
+  const under=list=>E.filter(e=>list.some(x=>e.code===x||String(e.code).startsWith(x)));
+  const seen=new Set(), stack=[code];
+  while(stack.length){ const g=stack.pop(); if(seen.has(g)) continue; seen.add(g); const list=listOf(g); if(!list) continue;
+    for(const e of under(list)){ const gs=[e.grandeurRef,...ecL(e,'parOuvrage').map(d=>d.grandeurRef)].filter(Boolean);
+      if(gs.includes(code)) return e.code; gs.forEach(x=>{ if(!seen.has(x)) stack.push(x); }); } }
+  return null;
+}
+/* Création ou modification d'une grandeur personnalisée (RefcodeDialog, § 5.5).
+   v = {code, libelle, mode:'q'|'m', unite, elements:[codes]} ; ouvL = ouvrages du document ventilé ([] sinon).
+   Retour : {ok:true, b} ou {ok:false, msg}. Écart voulu : codeCalcul = '' (le code d'une grandeur personnalisée n'est
+   jamais pris pour un code calculé de la table, § 4.4.4). */
+function ecqSaveCustom(P,b0,v,ouvL){
+  const code=String(v.code||'').trim().toUpperCase().slice(0,7), lib=String(v.libelle||'').trim().slice(0,60), Q=P.quantitesReferentielles;
+  if(!code||!lib) return {ok:false,msg:''};
+  if(!b0&&Q.some(b=>String(b.code).toUpperCase()===code)) return {ok:false,msg:ECQ_MSG.code};
+  const L=v.mode==='m'?[...new Set((v.elements||[]).map(String))]:[];
+  if(v.mode==='m'&&!L.length) return {ok:false,msg:'Choisissez au moins un élément.'};
+  if(v.mode==='m'){ const bad=ecqCycle(P,b0?b0.code:code,L); if(bad) return {ok:false,msg:ECQ_MSG.cycle+' ('+bad+')'}; }
+  const unite=v.mode==='m'?'CHF':ecUnit(v.unite||'');
+  if(!b0){ const nb=ecNewQty(code,lib,unite,'','',false); nb.estCalculee=v.mode==='m'; nb.elementsReference=L; nb.codeCalcul='';
+    nb.parOuvrage=(ouvL||[]).map(o=>ecNewQtyLine(nb,o));
+    const i=Q.findIndex(x=>String(x.code)>code); Q.splice(i<0?Q.length:i,0,nb); return {ok:true,b:nb}; }
+  Object.assign(b0,{libelle:lib,unite,estCalculee:v.mode==='m',elementsReference:L,codeCalcul:''});
+  if(v.mode==='m'){ b0.calcul=[]; ecL(b0,'parOuvrage').forEach(x=>{ x.calcul=[]; x.codeCalcul=''; }); }
+  ecL(P,'elements').forEach(e=>{ if(e.grandeurRef===b0.code){ e.unite=unite; ecL(e,'parOuvrage').forEach(d=>{ if(!d.grandeurRef||d.grandeurRef===b0.code) d.unite=unite; }); } });
+  return {ok:true,b:b0};
+}
+/* « Supprimer toutes les quantités référentielles… » (lambda$jRefQuantityDeleteQuantityActionPerformed$13) : chaque grandeur SAUF
+   les grandeurs personnalisées calculées (BaseQuantity.isCalculated = estCalculee) et ses ouvrages → quantité 0, lignes de calcul,
+   remarque et note vidées (« définitif » inchangé) ; les grandeurs standard calculées (PSBY…) sont vidées elles aussi, puis
+   recalculées par le moteur ; éléments générés et leurs ouvrages : prix et coût à 0. Retour : nombre de grandeurs vidées. */
+function ecqClearQuantities(P){
+  let n=0;
+  ecL(P,'quantitesReferentielles').forEach(b=>{ if(!ecVisibleQ(b)||b.estCalculee) return; n++;
+    [b,...ecL(b,'parOuvrage')].forEach(x=>{ x.quantite=0; x.calcul=[]; x.remarque=''; x.noteInterne=''; }); });
+  ecL(P,'elements').forEach(e=>{ if(e.genere&&!e.niveauFixe){ e.prix=0; e.cout=0; ecL(e,'parOuvrage').forEach(d=>{ d.prix=0; d.cout=0; }); } });
+  return n;
+}
+/* Saisie de « Quantité référentielle » (RefUnitDialog, OK) : sur une ligne d'ouvrage, la grandeur devient la somme des ouvrages.
+   vals = {quantite (ignorée si la grandeur est calculée), calcul, remarque, noteInterne, definitif} */
+function ecqApplyRefUnit(P,code,d,vals){
+  const b=ecL(P,'quantitesReferentielles').find(x=>x.code===code); if(!b) return false;
+  const line=d?ecL(b,'parOuvrage').find(x=>ecSameOuv(x,d)):null; if(d&&!line) return false;
+  const t=line||b, calc=ecIsCalculated(b);
+  if(!calc) t.quantite=+vals.quantite||0;
+  t.calcul=calc?[]:(vals.calcul||[]); t.remarque=String(vals.remarque||'').slice(0,30); t.noteInterne=String(vals.noteInterne||''); t.definitif=!!vals.definitif;
+  if(line&&!calc) b.quantite=b.parOuvrage.reduce((s,x)=>s+(+x.quantite||0),0);
+  return true;
+}
+
+/* ═══ Import CSV de quantités (« Import BIMeq… », cad.ImportFromArchiCadDialog, § 6.6) ═══ */
+/* Lecture CSV (guillemets, séparateur au choix) */
+function ecqCsvParse(text,sep){
+  const s=String(text||'').replace(/^﻿/,''), rows=[]; let row=[], f='', q=false, i=0;
+  while(i<s.length){ const c=s[i];
+    if(q){ if(c==='"'){ if(s[i+1]==='"'){ f+='"'; i+=2; continue; } q=false; i++; continue; } f+=c; i++; continue; }
+    if(c==='"'&&f===''){ q=true; i++; continue; }
+    if(c===sep){ row.push(f); f=''; i++; continue; }
+    if(c==='\r'){ i++; continue; }
+    if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=''; i++; continue; }
+    f+=c; i++; }
+  if(f!==''||row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+/* 1re ligne ignorée ; colonnes (0) classification · (1) quantité (virgule → point) · (2) unité · (3) code ; désignation reprise du document */
+function ecqCsvItems(P,text,sep){
+  const Q=new Map(ecL(P,'quantitesReferentielles').filter(ecVisibleQ).map(b=>[String(b.code),b]));
+  return ecqCsvParse(text,sep).slice(1).filter(r=>r.some(x=>String(x).trim()!=='')).map(r=>{
+    const code=String(r[3]==null?'':r[3]).trim(), raw=String(r[1]==null?'':r[1]).trim().replace(/[’'\s]/g,'').replace(/,/g,'.'), b=Q.get(code),
+      n=raw===''?0:(/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(raw)?Number(raw):NaN);   // Double.parseDouble, sans 0x…, Infinity
+    return {code,libelle:b?b.libelle||'':'',quantite:isFinite(n)?n:NaN,unite:String(r[2]==null?'':r[2]).trim(),known:!!b,calc:!!b&&ecIsCalculated(b)}; });
+}
+/* OK (setQuantities) : pour chaque code connu, la quantité de la grandeur (ou de la ligne de l'ouvrage choisi) est remplacée
+   et ses lignes de calcul sont effacées ; une grandeur calculée n'est pas modifiée. Retour : nombre de grandeurs modifiées. */
+function ecqCsvApply(P,items,og){
+  let n=0;
+  (items||[]).forEach(it=>{ if(!it.known||it.calc||!isFinite(it.quantite)) return;
+    const b=ecL(P,'quantitesReferentielles').find(x=>String(x.code)===it.code); if(!b) return;
+    if(og){ const x=ecL(b,'parOuvrage').find(y=>(y.ouvrage||'')===og.code&&(y.localisation||'')===(og.lg||'')); if(!x) return;
+      x.quantite=it.quantite; x.calcul=[]; b.quantite=b.parOuvrage.reduce((s,y)=>s+(+y.quantite||0),0); }
+    else { b.quantite=it.quantite; b.calcul=[]; }
+    n++; });
+  return n;
+}
+/* Décodage d'un fichier : UTF-8 (celui de l'original) ; UTF-16 reconnu par son BOM (export CSV de Deltaproject) */
+function ecqDecode(buf){
+  const u=new Uint8Array(buf||new ArrayBuffer(0));
+  const enc=u.length>1&&u[0]===0xFF&&u[1]===0xFE?'utf-16le':(u.length>1&&u[0]===0xFE&&u[1]===0xFF?'utf-16be':'utf-8');
+  return new TextDecoder(enc).decode(u).replace(/^﻿/,'');
+}
+
+/* ═══ CHIFFRES CLEFS (keyFigures.KeyFigureFrame, § 5.8) ═══ */
+/* Substitution PAR JETONS (délimiteurs : espace et + - * / ( ), et |…|) avec les nombres au format 0.000 ; le texte entre
+   [ ] est retiré. CFC_0-9 = Σ des groupes CFC TTC ; CFC_1-9 = sans le groupe 0 ; CFC_n = groupe n ; eBât = coût
+   d'investissement ; GV = volume bâti VB ; code d'une grandeur = sa quantité ; |X| = coût de l'élément X.
+   Écart voulu : l'original remplace des sous-chaînes (String.replace) ; un jeton inconnu est une erreur. */
+function ecqKfSubst(P,res,eq){
+  const s=ecqStrip(eq), Q=new Map(); ecL(P,'quantitesReferentielles').forEach(b=>{ if(ecVisibleQ(b)&&!Q.has(String(b.code))) Q.set(String(b.code),+b.quantite||0); });
+  const grp=d=>{ const g=((res&&res.cfc&&res.cfc.groupes)||[]).find(x=>String(x.numero)===d); return g?+g.montant||0:0; };
+  const tot=(res&&res.cfc&&+res.cfc.total)||0, fmt=v=>{ const t=(+v||0).toFixed(3); return (+v||0)<0?'('+t+')':t; };
+  let out='', i=0, err=null;
+  while(i<s.length){ const c=s[i];
+    if(/\s/.test(c)||'+-*/()'.includes(c)){ out+=c; i++; continue; }
+    const m=/^CFC_(0-9|1-9|\d)/.exec(s.slice(i));
+    if(m){ const k=m[1]; out+=fmt(k==='0-9'?tot:(k==='1-9'?tot-grp('0'):grp(k))); i+=m[0].length; continue; }
+    if(c==='|'){ const j=s.indexOf('|',i+1); if(j<0){ err=err||'« | » non fermé'; out+='?'; i++; continue; }
+      const code=s.slice(i+1,j).trim(), e=ecL(P,'elements').find(x=>x.code===code);
+      if(!e){ err=err||'élément « '+code+' » inconnu'; out+='?'; } else out+=fmt(ecGv(e)); i=j+1; continue; }
+    let j=i; while(j<s.length&&!/\s/.test(s[j])&&!'+-*/()|'.includes(s[j])) j++;
+    const tk=s.slice(i,j); i=j;
+    if(/^[0-9]+([.,][0-9]+)?$/.test(tk)){ out+=tk.replace(',','.'); continue; }
+    if(tk==='eBât') out+=fmt(res&&res.T?res.T.inv:0);
+    else if(tk==='GV') out+=fmt((P.volumes||{}).VB);
+    else if(Q.has(tk)) out+=fmt(Q.get(tk));
+    else { err=err||'« '+tk+' » inconnu'; out+='?'; } }
+  return {expr:out,err};
+}
+/* {ok (syntaxe), v (peut être NaN ou ±∞ : division par 0), err} */
+function ecqKfEval(P,res,eq){
+  const S=ecqKfSubst(P,res,eq); if(S.err) return {ok:false,v:NaN,err:S.err};
+  const c=ecqCompile(S.expr); if(!c.ok) return {ok:false,v:NaN,err:c.err};
+  let v; try{ v=ecqValue(c.ast); }catch(_){ v=NaN; } return {ok:true,v};
+}
+/* checkEquation : {block (message bloquant) | null, warn (avertissement) | null} */
+function ecqKfCheck(P,res,eq){
+  const r=ecqKfEval(P,res,eq);
+  if(!r.ok) return {block:ECQ_MSG.kf1,warn:null};
+  if(!isFinite(r.v)) return {block:null,warn:ECQ_MSG.kf3};
+  if(r.v===0) return {block:null,warn:ECQ_MSG.kf2};
+  return {block:null,warn:null};
+}
+/* Tableau « Surfaces et coûts » : genres 1 → 4, en-tête gras sur fond gris, ligne vide à la fin de chaque groupe, seules
+   les unités « afficher » ; valeur à 0,01 à l'écran (KeyFigureFrame.setKeyFiguresTable@53) */
+function ecqKfRows(P,res){
+  const U=ecL(P,'unitesFonctionnelles'), rows=[], gOf=u=>[1,2,3,4].includes(+u.genre)?+u.genre:1;
+  [1,2,3,4].forEach(g=>{ const L=U.filter(u=>gOf(u)===g&&u.afficher!==false); if(!L.length) return;
+    rows.push({t:'h',lib:ECQ_GENRES[g]});
+    L.forEach(u=>{ const r=ecqKfEval(P,res,u.equation); rows.push({t:'u',u,ok:r.ok,v:r.ok&&isFinite(r.v)?ecR(r.v,false):null}); });
+    rows.push({t:'b'}); });
+  return rows;
+}
+/* Tableau des volumes : m³, puis % en trois blocs (VB | VN | VU = 100, 0 si la base est nulle) */
+function ecqVolumeRows(V){
+  V=V||{}; const rows=ECQ_VOL_TAB.map(k=>({t:'m3',k,lib:ECQ_VOL_LBL[k],v:+V[k]||0,u:'m3'}));
+  const pc=(a,b)=>+V[b]?100*(+V[a]||0)/(+V[b]):0;
+  ECQ_VOL_PCT.forEach(bl=>{ rows.push({t:'b'}); bl.forEach(([a,b])=>rows.push({t:'%',k:a,lib:ECQ_VOL_LBL[a],v:pc(a,b),u:'%'})); });
+  return rows;
+}
+function ecqVolumeChart(V){ V=V||{}; return ECQ_VOL_CHART.map(([a,b])=>({x:a+'/'+b,v:+V[b]?ecR(100*(+V[a]||0)/(+V[b]),false):0})); }
+/* Énergie grise (CalcElements.calcGreyEnergy) : somme SIMPLE des kWh/m² a (non pondérée) — élément sans ouvrage : sa valeur,
+   ou celles de ses SE ; avec ouvrages : la valeur de chaque ouvrage, ou de ses SE — remontée au groupe (3 car.) et au
+   groupe principal ; codes de moins de 5 caractères ou à 1 point ; valeurs non nulles. Total = Σ des groupes principaux. */
+function ecqGreyEnergy(P){
+  const E=ecL(P,'elements'), items=[], by=new Map();
+  E.forEach(e=>{ const c=String(e.code); if(c.length<5||ecPoints(c)===1){ const it={code:c,libelle:e.libelle||'',v:0}; items.push(it); if(!by.has(c)) by.set(c,it); } });
+  const add=(e,v)=>{ const c=String(e.code), it=by.get(c); if(!it) return; it.v+=v;
+    if(c.length===3){ const m=by.get(c.slice(0,1)); if(m) m.v+=v; }
+    else if(c.length>3){ const m=by.get(c.slice(0,1)); if(m) m.v+=v; const g=by.get(c.slice(0,3)); if(g) g.v+=v; } };
+  const val=o=>+o.energieGrise||0;
+  E.forEach(e=>{ if(!ecL(e,'parOuvrage').length){ if(!ecL(e,'sousElements').length){ if(val(e)) add(e,val(e)); } else e.sousElements.forEach(s=>{ if(val(s)) add(e,val(s)); }); }
+    else e.parOuvrage.forEach(d=>{ if(!ecL(d,'sousElements').length){ if(val(d)) add(e,val(d)); } else d.sousElements.forEach(s=>{ if(val(s)) add(e,val(s)); }); }); });
+  const L=items.filter(x=>x.v!==0);
+  return {items:L,total:L.filter(x=>x.code.length===1).reduce((s,x)=>s+x.v,0)};
+}
+
+/* ═══ Importer les présentations / un calcul d'une autre affaire (§ 3.7) ═══ */
+/* jImportPrefMenuItemActionPerformed : unités fonctionnelles, Arrondir, Pourcentage, plages, page de garde, documents,
+   totaux imprimés (investissement, réalisation, ouvrage — pas « investissement CFC »), hauteur de ligne, polices, titre,
+   options d'impression (sauf images et arrondis spéciaux), tris, précision, état de planification, 10 cases de l'affichage
+   et « uniquement les articles avec un montant ». Le bug d'origine (composants ← descriptions des composants) n'est pas reproduit. */
+function ecqCopyPresentations(dst,src){
+  const C=o=>JSON.parse(JSON.stringify(o)), si=src.impression||{}, di=dst.impression||(dst.impression={});
+  dst.unitesFonctionnelles=C(ecL(src,'unitesFonctionnelles')); dst.arrondir=!!src.arrondir; dst.pourcentage=src.pourcentage||'totalGeneral';
+  dst.coutRealisation=C(src.coutRealisation||{de:'B',a:'W'}); dst.coutOuvrage=C(src.coutOuvrage||{de:'C',a:'G'});
+  ['pageDeGarde','hauteurLigne','triElements','triCFC'].forEach(k=>{ if(si[k]!==undefined) di[k]=C(si[k]); });
+  ['documents','polices'].forEach(k=>{ if(si[k]!==undefined) di[k]=C(si[k]); });
+  const st=si.totaux||{}, dt=di.totaux||(di.totaux={}); ['investissement','realisation','ouvrage'].forEach(k=>{ if(st[k]!==undefined) dt[k]=!!st[k]; });
+  // options d'impression copiées par l'original (@416-791) : toutes sauf printImages, doRound1/100/1000/special et displayComponentsDescription
+  const so=si.options||{}, dO=di.options||(di.options={}); Object.keys(so).forEach(k=>{ if(k!=='images'&&k!=='arrondi'&&k!=='descriptionsComposants') dO[k]=C(so[k]); });
+  dst.titre=src.titre||''; dst.precision=src.precision||''; dst.etatPlanification=src.etatPlanification||'';
+  const sa=src.affichage||{}, da=dst.affichage||(dst.affichage={});
+  EC_AFF_ITEMS.map(x=>x[0]).concat(['seulementAvecMontant']).forEach(k=>{ if(sa[k]!==undefined) da[k]=!!sa[k]; });
+  return dst;
+}
+/* matchEbkpPositions : libellés réalignés sur le catalogue de l'affaire (versions de catalogue différentes). Retour : nombre d'éléments. */
+function ecqRealign(P,positions){ const m=new Map((positions||[]).map(x=>[x.CODE,x])); let n=0;
+  ecL(P,'elements').forEach(e=>{ const x=m.get(e.code); if(x){ e.libelle=x.TEXT1||''; e.libelle2=x.TEXT2||''; n++; } }); return n; }
+/* Contenu du nouveau document créé par « Importer un calcul des coûts d'une affaire » (copyCostPlanningDocument : copie du
+   contenu) : nouvel id et nouvelle affaire ; lignes d'ouvrage conservées (codes enregistrés inchangés, donc coûts identiques)
+   et rattachées aux subdivisions de l'affaire : même subdivision si elle appartient à l'affaire, sinon par code (code actuel de
+   la subdivision source, puis code enregistré) ; id null si aucune. Résultats de postcalculation et annexes (propres au
+   document source) non repris. */
+function ecqImportedContent(imp,p,nv){
+  const C=ecClone(imp.P), sp=ecSubprojects(p.ID);
+  const idOf=(code,id)=>{ if(id!=null){ const s=DS.get('subproject',id); if(s&&s.PROJECT_ID===p.ID) return s.ID; const t=s?sp.find(x=>x.CODE===s.CODE):null; if(t) return t.ID; }
+    const t=sp.find(x=>x.CODE===code); return t?t.ID:null; };
+  const old=new Map(ecL(C,'ouvragesDetail').map(o=>[String(o.id),o]));
+  Object.assign(C,{schema:2,id:nv.ID,projetId:p.ID,entete:ecEntete(nv),source:{fichier:'',sauvegardes:[]},annexes:[],totaux:{coutInvestissement:0,coutRealisation:0,coutOuvrage:0}});
+  delete C.resultats;
+  C.ouvragesDetail=ecL(C,'ouvragesDetail').map(o=>({code:o.code,id:idOf(o.code,o.id),lg:o.lg||''}));
+  if(C.ouvragesDetail.length) C.ouvrages=C.ouvragesDetail.map(o=>o.code);
+  const fix=x=>{ x.ouvrageId=idOf(x.ouvrage,x.ouvrageId); };
+  ecL(C,'elements').forEach(e=>ecL(e,'parOuvrage').forEach(fix)); ecL(C,'quantitesReferentielles').forEach(b=>ecL(b,'parOuvrage').forEach(fix));
+  /* données de l'affaire par ouvrage (clé = ID de la subdivision, à défaut code de l'ouvrage — convertisseur) : ré-indexées sur la
+     subdivision de l'affaire cible, à défaut sur le code ; jamais perdues */
+  const DA=C.donneesAffaire; if(DA&&DA.parOuvrage&&typeof DA.parOuvrage==='object'){ const n={};
+    Object.keys(DA.parOuvrage).forEach(k=>{ const v=DA.parOuvrage[k], o=old.get(String(k)), code=(o&&o.code)||(v&&v.ouvrage)||String(k);
+      const id=idOf(code,o?o.id:(/^\d+$/.test(k)?+k:null)), nk=id!=null?String(id):String(code); n[nk]=n[nk]?Object.assign({},v,n[nk]):v; }); DA.parOuvrage=n; }
+  return C;
+}
+
+/* ═══ Interface ═══ */
+function ecqCss(){ if(typeof ecCss==='function') ecCss(); if(document.getElementById('ecq-css')) return;
+  document.head.append(h('style',{id:'ecq-css'},`
+table.g.ec-t tr.cl td{color:#666}
+table.g.ec-t tr.gh td{background:#e6e6e6;font-weight:700}
+table.g.ecq-calc{table-layout:fixed}
+table.g.ecq-calc td{padding:1px 3px;height:24px}
+table.g.ecq-calc input.inp{width:100%;height:22px;padding:1px 4px;box-sizing:border-box}
+table.g.ecq-calc tr.cur td{background:#dbe8fb}
+table.g.ecq-calc tr.rd input.inp{background:#f3f3f3}
+.ecq-box{border:1px solid var(--line);background:#fff;overflow:auto}
+.ecq-kf{display:flex;flex:1;min-height:0;gap:6px;padding:6px}
+.ecq-kf .ec-catl{flex:0 0 190px;border:1px solid var(--line);background:#fff;overflow:auto}
+.ecq-kf .ec-catl div{padding:6px 10px;cursor:pointer}.ecq-kf .ec-catl div.on{background:var(--sel);color:#fff}
+.ecq-kf .ec-catl .hd{font-weight:600;color:#555;cursor:default;border-bottom:1px solid var(--line)}
+`)); }
+function ecqInfo(msg){ return new Promise(r=>dialog({title:'Information',body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'480px'}},msg),buttons:[{t:'OK',pri:true,fn:()=>r()}]})); }
+
+/* ── QUANTITES REFERENTIELLES ▸ Editer (§ 5.2) : 16 colonnes, 3 présentations, 3 filtres exclusifs ── */
+const ECQ_COLS=[
+  ['code','Abrév.',70,(p,o)=>true],['txt','Désignation',300,(p,o)=>true],['ouv','OUV',80,(p,o)=>o],['loc','Localisation',80,(p,o)=>o],
+  ['un','Unité',70,(p,o)=>true],['qte','Quantité réf.',120,(p,o)=>true],['def','Définitif',80,(p,o)=>true],
+  ['rem','Remarque',180,(p,o)=>p!==2],['note','Note interne',180,(p,o)=>p!==2],
+  ['crem','Remarque de calcul',180,(p,o)=>p===1],['cf','Calcul',180,(p,o)=>p===1],['cres','Résultat',70,(p,o)=>p===1],
+  ['c1','Coût de réalisation/QR',150,(p,o)=>p===2],['c2','Coût de l’ouvrage/QR',150,(p,o)=>p===2],['c3','Coût d’investissement/QR',150,(p,o)=>p===2]];
+const ECQ_NUMCOLS=new Set(['qte','cres','c1','c2','c3']);
+function ecqQrCell(ctx,r,k){
+  const n=v=>num(+v||0), b=r.b;
+  if(r.t==='C'){ const c=r.c; if(k==='crem') return esc(c.commentaire||''); if(k==='cf') return esc(c.formule||''); if(k==='cres') return n(c.quantite); return ''; }
+  const o=r.o;
+  switch(k){
+    case 'code': return r.t==='Q'?esc(b.code):'';
+    case 'txt': if(r.t==='O'){ const sp=r.x.ouvrageId!=null?DS.get('subproject',r.x.ouvrageId):null; return esc(sp?sp.DESCRIPTION||'':''); } return esc(b.libelle||'');
+    case 'ouv': return r.t==='O'?esc(ecOgCode(r.x)):'';
+    case 'loc': return r.t==='O'?esc(r.x.localisation||''):'';
+    case 'un': return esc(b.unite||'');
+    case 'qte': return n(o.quantite);
+    case 'def': return o.definitif?'✔':'✕';
+    case 'rem': return esc(o.remarque||''); case 'note': return esc(o.noteInterne||'');
+    case 'c1': case 'c2': case 'c3': { const c=ecqCostPerQ(r.t==='O'?ecqOuvT(ctx.res,r.x):ctx.res.T,o.quantite,!!ctx.P.arrondir); if(!c) return ''; return n(k==='c1'?c.real:(k==='c2'?c.ouv:c.inv)); }
+  }
+  return '';
+}
+function ecqSectionQuantites(ctx){
+  ecqCss(); const st=ECQ_V;
+  if(st.pres==null){ let v=0; try{ v=+(localStorage.getItem('ds_ecq_pres')||0); }catch(_){ } st.pres=[0,1,2].includes(v)?v:0; }
+  const tools=ctx.tools, pane=ctx.pane, ouv=ctx.hasOuv();
+  const guard=fn=>()=>{ if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; } fn(); };
+  let rows=[], byKey=new Map();
+  const selRow=()=>byKey.get(st.sel)||null;
+  const cols=()=>ECQ_COLS.filter(c=>c[3](st.pres,ouv));
+  const G={cols:[],view:[]};
+  const lot4=ecExt('ec4PrintRefQuantities');
+  const setPres=i=>{ st.pres=i; try{ localStorage.setItem('ds_ecq_pres',String(i)); }catch(_){ } ctx.draw(); };
+  const flab=h('span',{style:{marginLeft:'10px',color:'#555'}},st.filt?(ECQ_FILTRES.find(f=>f[0]===st.filt)||[])[1]||'':'');
+  const srch=h('input',{class:'psearch',placeholder:'Rechercher',value:st.q||''}); srch.oninput=()=>{ st.q=srch.value.trim(); drawT(); };
+  tools.append(
+    ibtn({i:'plus',t:'Nouveau',menu:()=>[{t:'Grandeur référentielle…',fn:guard(()=>ecqRefcodeDialog(ctx,null))}]}),
+    ibtn({i:'import',t:'Import',menu:()=>ctx.canEdit()?[{t:'Import BIMeq…',fn:()=>ecqCsvDialog(ctx)}]:[{t:EC_MSG_DROITS,dis:true}]}),
+    ibtn({i:'edit',t:'Editer',menu:()=>{ const r=selRow(); return [{t:'Quantité référentielle…',dis:!r,fn:()=>ecqOpenRow(ctx,r)},
+      {t:'Grandeur référentielle…',dis:!r||r.b.standard!==false,fn:guard(()=>ecqRefcodeDialog(ctx,r.b))}]; }}),
+    ibtn({i:'minus',t:'Supprimer',menu:()=>{ const r=selRow(); return [{t:'Supprimer la grandeur référentielle…',dis:!r||r.b.standard!==false,fn:guard(()=>ecqDeleteCustom(ctx,r.b))},
+      {t:'Supprimer toutes les quantités référentielles…',fn:guard(()=>ecqClearAll(ctx))}]; }}),
+    ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV',fn:()=>csvTable(G,'Quantites_'+(((ctx.p||{}).NUMBER)||'')+'_'+ctx.id)}]}),
+    ibtn({i:'filter',t:'Filtre',on:!!st.filt,menu:()=>ECQ_FILTRES.map(([k,t])=>({t,chk:st.filt===k,fn:()=>{ st.filt=st.filt===k?null:k; ctx.draw(); }}))}),
+    ibtn({i:'list',t:'Présentation',menu:()=>ECQ_PRES.map((t,i)=>({t,chk:st.pres===i,fn:()=>setPres(i)}))}),
+    ibtn({i:'doc',t:'Documents',menu:()=>[{t:'Quantités référentielles… [Ancien document]'+(lot4?'':' (lot 4)'),dis:!lot4,fn:lot4&&(()=>lot4(ctx))}]}),
+    flab,h('div',{style:{flex:1}}),srch);
+  const wrap=h('div',{style:{display:'flex',flex:1,minHeight:0,padding:'6px'}});
+  const center=h('div',{class:'pane',tabindex:'0',style:{border:'1px solid var(--line)',background:'#fff',outline:'none'}});
+  const det=h('div',{class:'ec-det'}); wrap.append(center); pane.append(wrap,det);
+  const cls=r=>{ const c=[]; if(r.t==='Q'&&r.vent) c.push('b'); if(r.t==='C') c.push('cl'); if(r.key===st.sel) c.push('on'); return c.join(' '); };
+  const drawDet=()=>{ det.innerHTML=''; const r=selRow(); if(!r){ det.append(h('span',{class:'ec-small'},'Sélectionnez une ligne.')); return; }
+    const o=r.t==='C'?(r.parent||r.b):r.o, b=r.b, kv=(k,v)=>[h('b',{},k),h('span',{},v==null?'':String(v))];
+    const c=ecqCostPerQ(r.t==='O'||(r.t==='C'&&r.parent)?ecqOuvT(ctx.res,o):ctx.res.T,o.quantite,!!ctx.P.arrondir);
+    det.append(...kv('Code',b.code+((r.t!=='Q'&&(r.parent||r.x))?' / '+ecOgCode(r.parent||r.x):'')),...kv('Désignation',b.libelle||''),...kv('Quantité référentielle',num(o.quantite)+' '+(b.unite||'')),
+      ...kv('Calcul définitif:',o.definitif?'Oui':'Non'),...kv('Remarque',o.remarque||''),...kv('Note interne',o.noteInterne||''),
+      ...kv('Coût de réalisation / QR',c?num(c.real):''),...kv('Coût de l’ouvrage / QR',c?num(c.ouv):'')); };
+  const drawT=()=>{
+    rows=ecqQrRows(ctx.P,ouv,st); byKey=new Map(rows.map(r=>[r.key,r])); if(st.sel&&!byKey.has(st.sel)) st.sel=null;
+    const C=cols(), tdc=k=>ECQ_NUMCOLS.has(k)?'r':(k==='def'?'c':'');
+    G.cols=C.map(c=>({k:c[0],t:c[1],f:r=>{ const d=document.createElement('div'); d.innerHTML=ecqQrCell(ctx,r,c[0]); return esc(d.textContent); }})); G.view=rows;
+    let html='<table class="g ec-t"><colgroup>'+C.map(c=>`<col style="width:${c[2]}px">`).join('')+'</colgroup><thead><tr>'+C.map(c=>`<th class="${tdc(c[0])}" title="${esc(c[1])}">${esc(c[1])}</th>`).join('')+'</tr></thead><tbody>';
+    rows.forEach((r,i)=>{ html+=`<tr data-i="${i}" class="${cls(r)}">`+C.map(c=>`<td class="${tdc(c[0])}${r.t==='O'&&c[0]==='qte'?' ed':''}">${ecqQrCell(ctx,r,c[0])}</td>`).join('')+'</tr>'; });
+    center.innerHTML=html+'</tbody></table>';
+    if(!rows.length) center.append(h('div',{class:'empty'},st.filt||st.q?'Aucune grandeur ne correspond au filtre.':'Aucune grandeur référentielle.'));
+    drawDet(); };
+  const trs=()=>$$('tbody tr',center);
+  const select=(key,scroll)=>{ st.sel=key; trs().forEach(tr=>tr.classList.toggle('on',rows[+tr.dataset.i]&&rows[+tr.dataset.i].key===key));
+    if(scroll){ const tr=$('tr.on',center); if(tr) tr.scrollIntoView({block:'center'}); } drawDet(); };
+  const rowOf=ev=>{ const tr=ev.target.closest('tr[data-i]'); return tr?rows[+tr.dataset.i]:null; };
+  center.onclick=ev=>{ const r=rowOf(ev); if(r) select(r.key); };
+  center.ondblclick=ev=>{ const r=rowOf(ev); if(!r) return; select(r.key); ecqOpenRow(ctx,r); };
+  center.onkeydown=ev=>{ if(ev.metaKey||ev.ctrlKey||ev.altKey) return;
+    if(/^[a-z]$/i.test(ev.key)){ const L=ev.key.toUpperCase(), r=rows.find(x=>x.t==='Q'&&String(x.b.code).toUpperCase().startsWith(L)); if(r){ ev.preventDefault(); select(r.key,true); } return; }
+    if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){ ev.preventDefault(); let i=rows.findIndex(x=>x.key===st.sel); i+=ev.key==='ArrowDown'?1:-1; if(i>=0&&i<rows.length) select(rows[i].key,true); return; }
+    if(ev.key==='Enter'){ const r=selRow(); if(r) ecqOpenRow(ctx,r); } };
+  center.addEventListener('scroll',()=>{ st.top=center.scrollTop; st.left=center.scrollLeft; },{passive:true});
+  drawT(); center.scrollTop=st.top||0; center.scrollLeft=st.left||0;
+  setTimeout(()=>{ try{ center.focus({preventScroll:true}); }catch(_){ } },0);
+}
+/* Ligne du tableau → « Quantité référentielle » (la ligne principale d'une grandeur ventilée ne se saisit pas) */
+function ecqOpenRow(ctx,r){ if(!r) return; const d=r.t==='O'?r.x:(r.t==='C'?r.parent:null);
+  if(!d&&ecL(r.b,'parOuvrage').length&&ctx.hasOuv()){ toast(ECQ_MSG.ventile); return; }
+  ecqRefUnitDialog(ctx,r.b.code,d); }
+
+/* ── « Quantité référentielle » (RefUnitDialog, § 5.3) — point d'extension du lot 1 (ecRefUnit, ELEMENTS) ──
+   d : ligne d'ouvrage (de l'élément ou de la grandeur ; même ouvrage/localisation). Verrous : quantité non saisissable
+   s'il existe des lignes de calcul ou si la grandeur est calculée (calculatrice grisée). */
+function ecqRefUnitDialog(ctx,code,d){
+  if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; }
+  const P=ctx.P, b=ecL(P,'quantitesReferentielles').find(q=>q.code===code); if(!b) return;
+  if(!d&&ecL(b,'parOuvrage').length&&ctx.hasOuv()){ toast(ECQ_MSG.ventile); return; }
+  const line=d?ecL(b,'parOuvrage').find(q=>ecSameOuv(q,d)):null; if(d&&!line){ toast('Aucune ligne de cet ouvrage pour la grandeur '+b.code+'.',true); return; }
+  const t=line||b, calc=ecIsCalculated(b); let lines=ecClone(ecL(t,'calcul'));
+  const q=h('input',{class:'inp',value:String(+t.quantite||0),style:{width:'160px',textAlign:'right'}}); q.readOnly=calc||lines.length>0;
+  const rem=ecTxt(t.remarque,30), note=ecArea(t.noteInterne,4), df=ecChk(t.definitif,'Le calcul est définitif');
+  const info=h('span',{class:'ec-small'},calc?'Grandeur calculée : somme des coûts des éléments '+(ecCalcCodes(b)||[]).join(', ')+'.':'');
+  const calcB=ibtn({label:'Calcul…',t:'Calcul de quantité référentielle',dis:calc,fn:async()=>{
+    const r=await ecqCalcDialog({code:b.code,unite:b.unite,lignes:lines}); if(!r) return;
+    lines=r.lignes; if(r.total!==0){ q.value=String(ecR(r.total,false)); q.readOnly=true; } else { q.value='0'; q.readOnly=false; } chkOk(); }});   // formatDouble(getTotal()) : arrondi symétrique à 0,01
+  const dlg=dialog({title:'Quantité référentielle',width:'600px',body:h('div',{},h('div',{class:'ec-hint'},b.code+'  '+(b.libelle||'')+(line?'  —  '+ecOgCode(line):'')),
+    formRows([['Quantité référentielle',h('span',{style:{display:'inline-flex',gap:'6px',alignItems:'center'}},q,' '+(b.unite||''),calcB)],['',info],['Remarque',rem],['Note interne',note],['',df.el]],520)),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ let v=+t.quantite||0; if(!calc){ v=ecReadNum(q); if(v==null) return false; }
+      if(!ecqApplyRefUnit(ctx.P,code,line,{quantite:v,calcul:lines,remarque:rem.value,noteInterne:note.value,definitif:df.i.checked})) return false;
+      await ctx.touch(); }}]});
+  const ok=dlg.bd.parentNode.querySelector('.ft .btn.pri'); const chkOk=()=>{ ok.disabled=!String(q.value).trim(); }; q.oninput=chkOk; chkOk();
+}
+
+/* ── « Calcul de quantité référentielle ^0 » (QuantityCalcDialog, § 5.4) → Promise<{lignes,total}|null> ── */
+function ecqCalcDialog(o){
+  ecqCss();
+  const W=ecL(o,'lignes').map(l=>({genre:l.genre||'',commentaire:l.commentaire||'',formule:l.formule==null?'':String(l.formule),quantite:+l.quantite||0,sousTotal:!!l.sousTotal}));
+  if(!W.length) W.push(ecqNewLine());
+  let cur=0;
+  const tb=h('tbody'), tot=h('b',{style:{marginLeft:'auto',fontVariantNumeric:'tabular-nums'}});
+  const table=h('table',{class:'g ecq-calc'},h('colgroup',{},h('col',{style:{width:'34px'}}),h('col',{style:{width:'240px'}}),h('col',{style:{width:'250px'}}),h('col',{style:{width:'120px'}}),h('col',{style:{width:'120px'}}),h('col',{style:{width:'34px'}})),
+    h('thead',{},h('tr',{},h('th',{},''),h('th',{},'Remarque'),h('th',{},'Calcul'),h('th',{class:'r'},'Quantité'),h('th',{class:'r'},'Sous-total'),h('th',{class:'c'},'M'))),tb);
+  const recalc=()=>{ const C=ecqCalcLines(W);
+    W.forEach((l,i)=>{ const tr=tb.children[i], r=C.rows[i]; if(!tr) return; if(l.genre){ l.formule=r.formule; tr.cells[2].firstChild.value=r.formule; }
+      tr.cells[3].textContent=r.quantite==null?'':(isFinite(r.quantite)?num(r.quantite):'Erreur'); tr.cells[4].textContent=r.st==null?'':(isFinite(r.st)?num(r.st):''); });
+    tot.textContent='Total '+(isFinite(C.total)?num(ecqRa(C.total)):'—'); };
+  const selR=i=>{ cur=i; [...tb.children].forEach((tr,k)=>tr.classList.toggle('cur',k===i)); };
+  const draw=(focus)=>{ tb.innerHTML='';
+    W.forEach((l,i)=>{ const rd=!!l.genre;
+      const cm=h('input',{class:'inp',value:l.commentaire}), fm=h('input',{class:'inp',value:l.formule,readonly:rd||null}), mk=h('input',{type:'checkbox',checked:l.sousTotal||null});
+      cm.oninput=()=>{ l.commentaire=cm.value; }; fm.oninput=()=>{ l.formule=fm.value; recalc(); }; mk.onchange=()=>{ l.sousTotal=mk.checked; recalc(); };
+      fm.onkeydown=ev=>{ if(ev.key!=='Enter') return; ev.preventDefault(); ev.stopPropagation(); if(i===W.length-1) W.push(ecqNewLine()); draw(i+1); };
+      const tr=h('tr',{class:rd?'rd':null},h('td',{class:'c',title:l.genre==='r'?'Arrondir au prochain nombre entier':(l.genre==='r5'?'Arrondir au prochain multiple de cinq':'')},l.genre==='r'?'↑1':(l.genre==='r5'?'↑5':'')),
+        h('td',{},cm),h('td',{},fm),h('td',{class:'r'}),h('td',{class:'r'}),h('td',{class:'c'},mk));
+      tr.addEventListener('mousedown',()=>selR(i)); tr.addEventListener('focusin',()=>selR(i)); tb.append(tr); });
+    recalc(); selR(Math.min(cur,W.length-1));
+    if(focus!=null){ const tr=tb.children[focus]; if(tr){ selR(focus); const f=()=>{ const x=tr.cells[2].firstChild; x.focus(); if(x.select) x.select(); }; if(tb.isConnected) f(); else setTimeout(f,0); } } };
+  /* insertOneMeasureLine : après la ligne courante ; sur une ligne d'arrondi, après la dernière ligne standard qui la précède */
+  const addLine=()=>{ let k=Math.max(0,Math.min(cur,W.length-1)); if(W[k]&&W[k].genre){ for(let j=k;j>=0;j--) if(!W[j].genre){ k=j; break; } }
+    const at=Math.min(k+1,W.length); W.splice(at,0,ecqNewLine()); cur=at; draw(cur); };
+  const round=g=>{ const i=W.findIndex(l=>l.genre===g); if(i>=0){ selR(i); return; } W.push({genre:g,commentaire:'Arrondi',formule:'',quantite:0,sousTotal:false}); cur=W.length-1; draw(); };
+  const G={cols:[{k:'genre',t:''},{k:'commentaire',t:'Remarque'},{k:'formule',t:'Calcul'},{k:'q',t:'Quantité',f:r=>r._q},{k:'s',t:'Sous-total',f:r=>r._s},{k:'m',t:'M',f:r=>r.sousTotal?'✔':''}],view:[]};
+  const exp=fn=>{ const C=ecqCalcLines(W); G.view=W.map((l,i)=>Object.assign({},l,{_q:C.rows[i].quantite==null?'':num(C.rows[i].quantite),_s:C.rows[i].st==null?'':num(C.rows[i].st)})); fn(); };
+  const bar=h('div',{class:'ph2',style:{margin:'0 0 6px 0'}},
+    ibtn({i:'plus',t:'Insérer une ligne',fn:addLine}),
+    ibtn({i:'minus',t:'Supprimer',menu:()=>[{t:'Effacer la ligne de calcul',fn:()=>{ if(!W[cur]){ toast(ECQ_MSG.sel,true); return; } W.splice(cur,1); if(!W.length) W.push(ecqNewLine()); cur=Math.min(cur,W.length-1); draw(); }},
+      {t:'Effacer toutes les lignes de calcul',fn:async()=>{ if(!await confirmDlg(ECQ_MSG.metre,'Supprimer')) return; W.splice(0,W.length,ecqNewLine()); cur=0; draw(0); }}]}),
+    ibtn({label:'↑1',t:'Arrondir au prochain nombre entier',fn:()=>round('r')}),ibtn({label:'↑5',t:'Arrondir au prochain multiple de cinq',fn:()=>round('r5')}),
+    ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>exp(()=>copyTable(G))},{t:'Exporter le tableau dans un fichier CSV',fn:()=>exp(()=>csvTable(G,'Calcul_'+(o.code||'')))}]}),
+    tot);
+  const box=h('div',{class:'ecq-box',style:{height:'300px'}},table);
+  draw(0);
+  return new Promise(res=>{ dialog({title:'Calcul de quantité référentielle '+(o.code||''),width:'min(900px,96vw)',
+    body:h('div',{},h('div',{class:'ec-hint'},'Calcul de quantité référentielle'+(o.unite?' ['+o.unite+']':'')),bar,box,
+      h('div',{class:'ec-small',style:{marginTop:'6px'}},'Texte entre [ ] : commentaire non calculé. Opérateurs + − × ÷ * / ^, parenthèses ; fonctions sqrt, abs, round, min, max… (arguments séparés par « ; »). Entrée : ligne suivante.')),
+    buttons:[{t:'Annuler',fn:()=>res(null)},{t:'OK',pri:true,fn:async()=>{ const R=ecqCheckLines(W); if(!R.ok){ await ecqInfo(R.msgs.join('\n\n')); return false; } res({lignes:R.lignes,total:R.total}); }}]}); });
+}
+
+/* ── « Grandeur référentielle » (RefcodeDialog, § 5.5) : création (b0 null) ou modification d'une grandeur personnalisée ── */
+function ecqRefcodeDialog(ctx,b0){
+  if(b0&&b0.standard!==false) return;
+  const P=ctx.P, isNew=!b0;
+  const code=h('input',{class:'inp',maxlength:7,value:isNew?'':b0.code,style:{width:'110px',textTransform:'uppercase'}}); if(!isNew) code.readOnly=true;
+  code.oninput=()=>{ const p=code.selectionStart; code.value=code.value.toUpperCase(); try{ code.setSelectionRange(p,p); }catch(_){ } chk(); };
+  const lib=h('input',{class:'inp',maxlength:60,value:isNew?'':(b0.libelle||'')}); lib.oninput=()=>chk();
+  let mode=isNew?'m':(b0.estCalculee?'m':'q'); const list=isNew?[]:ecL(b0,'elementsReference').map(String);
+  const rQ=h('input',{type:'radio',name:'ecq-rc',checked:mode==='q'||null}), rM=h('input',{type:'radio',name:'ecq-rc',checked:mode==='m'||null});
+  /* unité actuelle hors de la liste (grandeur reprise de Deltaproject, autre langue…) : proposée telle quelle, jamais remplacée en silence */
+  const u0=!isNew&&mode==='q'?ecUnit(b0.unite):'', UL=u0&&!ECQ_UNITES.includes(u0)?[u0,...ECQ_UNITES]:ECQ_UNITES;
+  const un=h('select',{class:'inp',style:{width:'120px'}},...UL.map(u=>h('option',{value:u,selected:(!isNew&&ecUnit(b0.unite)===u)||null},u)));
+  const o={}, tbox=h('div',{class:'ecq-box',style:{height:'200px'}});
+  const drawL=()=>grid(tbox,Object.assign(o,{key:c=>c,cols:[{k:'c',t:'Code',w:90,f:c=>esc(c)},{k:'t',t:'Désignation',f:c=>esc((ecL(P,'elements').find(e=>e.code===c)||{}).libelle||'')}],rows:list.slice(),sort:null}));
+  const tHead=phead([ibtn({i:'plus',t:'Navigateur d’éléments',fn:()=>ecElementBrowser(P,{multi:true},L=>{ L.forEach(e=>{ if(!list.includes(e.code)) list.push(e.code); }); drawL(); chk(); })}),
+    ibtn({i:'minus',t:'Supprimer',menu:()=>[{t:'Supprimer la ligne',dis:o.sel==null,fn:()=>{ const i=list.indexOf(o.sel); if(i>=0) list.splice(i,1); o.sel=null; drawL(); chk(); }},
+      {t:'Supprimer toutes les lignes',dis:!list.length,fn:async()=>{ if(await confirmDlg(ECQ_MSG.lignes,'Supprimer')){ list.length=0; drawL(); chk(); } }}]})]);
+  const qPane=h('div',{},formRows([['Unité',un]],300)), mPane=h('div',{},h('div',{style:{margin:'4px 0'}},'Coûts des éléments suivants :'),tHead,tbox);
+  const show=()=>{ qPane.style.display=mode==='q'?'':'none'; mPane.style.display=mode==='m'?'':'none'; chk(); };
+  rQ.onchange=()=>{ mode='q'; show(); }; rM.onchange=()=>{ mode='m'; show(); };
+  const dlg=dialog({title:'Grandeur référentielle',width:'640px',body:h('div',{},
+    formRows([['Abréviation',code],['Désignation',lib],['Calcul',h('div',{style:{display:'flex',gap:'16px'}},h('label',{},rQ,' Quantité référentielle'),h('label',{},rM,' Montants référentiels (CHF)'))]],560),
+    h('div',{style:{marginTop:'8px'}},qPane,mPane)),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+      const r=ecqSaveCustom(ctx.P,isNew?null:ctx.P.quantitesReferentielles.find(x=>x.code===b0.code),{code:code.value,libelle:lib.value,mode,unite:un.value,elements:list},ctx.hasOuv()?ctx.ouvrages():[]);
+      if(!r.ok){ if(r.msg) toast(r.msg,true); return false; }
+      ECQ_V.sel='Q|'+r.b.code; await ctx.touch(); }}]});
+  const ok=dlg.bd.parentNode.querySelector('.ft .btn.pri');
+  const chk=()=>{ ok.disabled=!(code.value.trim()&&lib.value.trim()&&(mode==='q'||list.length)); };
+  drawL(); show();
+}
+/* ── Suppressions (§ 5.6) ── */
+async function ecqDeleteCustom(ctx,b){
+  if(!b||b.standard!==false) return;
+  if(ecqUsedBy(ctx.P,b.code)){ await ecqInfo(ECQ_MSG.utilise); return; }
+  if(!await confirmDlg(ECQ_MSG.efface,'Effacer')) return;
+  const L=ctx.P.quantitesReferentielles, i=L.findIndex(x=>x.code===b.code); if(i<0) return; L.splice(i,1); ECQ_V.sel=null; await ctx.touch();
+}
+async function ecqClearAll(ctx){
+  if(!await confirmDlg(ECQ_MSG.toutes,'Supprimer')) return;
+  ecqClearQuantities(ctx.P); await ctx.touch();
+}
+
+/* ── « Import de quantités référentielles » (Import BIMeq…, § 6.6) ── */
+function ecqCsvDialog(ctx){
+  const P=ctx.P, ouv=ctx.hasOuv(), O=ouv?ctx.ouvrages():[];
+  let text='', items=[];
+  const fi=h('input',{type:'file',accept:'.csv,.txt,text/csv,text/plain'}), fname=h('span',{class:'ec-small'},'');
+  const sep=h('select',{class:'inp',style:{width:'90px'}},h('option',{value:'\t'},'Tab'),h('option',{value:','},','),h('option',{value:';'},';'));
+  const og=h('select',{class:'inp',style:{width:'260px'},disabled:!ouv||null},...(ouv?O.map((o,i)=>h('option',{value:String(i)},ecOgCode({ouvrageId:o.id,ouvrage:o.code})+'  '+((DS.get('subproject',o.id)||{}).DESCRIPTION||''))):[h('option',{value:''},'—')]));
+  const only=ecChk(false,'Afficher uniquement les positions avec des quantités');
+  const box=h('div',{class:'ecq-box',style:{height:'280px'}}), sum=h('div',{class:'ec-small',style:{marginTop:'6px'}}), g={};
+  const shown=()=>items.filter(x=>!only.i.checked||(+x.quantite||0)!==0);
+  const draw=()=>{ items=text?ecqCsvItems(P,text,sep.value):[];
+    const L=shown();
+    grid(box,Object.assign(g,{key:x=>String(items.indexOf(x)),cols:[{k:'code',t:'Abréviation',w:90},{k:'libelle',t:'Désignation',f:x=>x.known?esc(x.libelle)+(x.calc?' <i style="color:#999">(calculée, ignorée)</i>':''):'<i style="color:#b00">La position '+esc(x.code)+' n’existe pas.</i>'},
+      {k:'quantite',t:'Quantité réf.',w:120,cls:'r',f:x=>isFinite(x.quantite)?num(x.quantite):'<i style="color:#b00">non valable</i>'},{k:'unite',t:'Unité',w:70}],rows:L,sort:null,empty:text?'Aucune position.':'Choisissez un fichier *.csv.'}));
+    const ok=L.filter(x=>x.known&&!x.calc&&isFinite(x.quantite)).length;
+    sum.textContent=text?(ok+' quantité(s) à importer · '+L.filter(x=>!x.known).length+' code(s) inconnu(s) · '+L.filter(x=>x.calc).length+' grandeur(s) calculée(s) ignorée(s)'):''; };
+  fi.onchange=()=>{ const f=fi.files&&fi.files[0]; if(!f) return; fname.textContent=f.name;
+    const rd=new FileReader(); rd.onload=()=>{ text=ecqDecode(rd.result); const l0=text.split('\n')[0]||''; sep.value=l0.includes('\t')?'\t':(l0.includes(';')?';':','); draw(); if(okB) okB.disabled=false; }; rd.readAsArrayBuffer(f); };
+  sep.onchange=draw; only.i.onchange=draw;
+  draw(); let okB=null;   // OK actif dès qu'un fichier est lu (ImportFromArchiCadDialog.checkGuards)
+  const dl=dialog({title:'Import de quantités référentielles',width:'min(760px,96vw)',body:h('div',{},h('div',{class:'ec-hint'},'Importer des quantités référentielles depuis fichier *.csv'),
+    formRows([['Nom du fichier',h('span',{style:{display:'inline-flex',gap:'8px',alignItems:'center'}},fi,fname)],['Séparateur',sep],['Ouvrage',og],['',only.el]],640),
+    h('div',{class:'ec-small',style:{margin:'4px 0'}},'Format : 1re ligne ignorée ; colonnes Classification | Quantité | Unité | Code (abréviation de la grandeur).'),box,sum),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+      const L=shown().filter(x=>x.known&&!x.calc&&isFinite(x.quantite)); if(!L.length){ toast('Aucune quantité à importer.',true); return false; }
+      const o=ouv?O[+og.value||0]:null;
+      if(!await confirmDlg('Les quantités de '+L.length+' grandeur(s) référentielle(s)'+(o?' (ouvrage '+o.code+')':'')+' seront remplacées et leurs lignes de calcul effacées.\n\nContinuer ?','Importer')) return false;
+      const n=ecqCsvApply(ctx.P,L,o); await ctx.touch(); toast(n+' quantité(s) importée(s).'); }}]});
+  okB=dl.bd.parentNode.querySelector('.ft .btn.pri'); okB.disabled=!text;
+}
+
+/* ── CHIFFRES CLEFS ▸ Editer (§ 5.8) : Volumes · Surfaces et coûts · Énergie grise ── */
+function ecqSectionChiffresClefs(ctx){
+  ecqCss(); const st=ECQ_V, tools=ctx.tools, pane=ctx.pane, P=ctx.P, res=ctx.res;
+  const guard=fn=>()=>{ if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; } fn(); };
+  const cats=[['vol','Volumes'],['surf','Surfaces et coûts'],['eg','Énergie grise']];
+  if(!cats.some(c=>c[0]===st.kf)) st.kf='surf';
+  const wrap=h('div',{class:'ecq-kf'}), left=h('div',{class:'ec-catl'}), right=h('div',{style:{flex:1,minWidth:0,display:'flex',flexDirection:'column',gap:'6px'}});
+  left.append(h('div',{class:'hd'},'Catégorie'),...cats.map(([k,t])=>{ const d=h('div',{class:k===st.kf?'on':null},t); d.onclick=()=>{ st.kf=k; ctx.draw(); }; return d; }));
+  wrap.append(left,right); pane.append(wrap);
+  const tbl=h('div',{class:'pane ecq-box',style:{flex:'1 1 55%',minHeight:'160px'}}), chart=h('div',{class:'ecq-box',style:{flex:'0 0 auto',padding:'6px',overflow:'hidden'}});
+  const G={cols:[],view:[]}, gear=name=>ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV',fn:()=>csvTable(G,name+'_'+(((ctx.p||{}).NUMBER)||'')+'_'+ctx.id)}]});
+  const table=(cols,rows,rc)=>{ G.cols=cols.map(c=>({k:c[0],t:c[1],f:c[3]})); G.view=rows.filter(r=>r.t!=='b');
+    let html='<table class="g ec-t"><colgroup>'+cols.map(c=>`<col style="width:${c[2]}px">`).join('')+'</colgroup><thead><tr>'+cols.map(c=>`<th class="${c[4]||''}">${esc(c[1])}</th>`).join('')+'</tr></thead><tbody>';
+    rows.forEach(r=>{ html+=`<tr class="${rc(r)}">`+(r.t==='b'?cols.map(()=>'<td></td>').join(''):cols.map(c=>`<td class="${c[4]||''}">${c[3](r)}</td>`).join(''))+'</tr>'; });
+    tbl.innerHTML=html+'</tbody></table>'; };
+  if(st.kf==='surf'){
+    tools.append(ibtn({i:'edit',t:'Editer',menu:()=>[{t:'Chiffres-cléfs',fn:guard(()=>ecqFunctionalUnitsDialog(ctx))}]}),gear('Chiffres_clefs'));
+    const rows=ecqKfRows(P,res);
+    table([['nom','Nom',260,r=>r.t==='h'?esc(r.lib):esc(r.u.nom||'')],['eq','Calcul',300,r=>r.t==='h'?'':esc(r.u.equation||'')],
+      ['v','Coûts',150,r=>r.t==='h'?'':(r.v==null?`<span title="${r.ok?'Division par 0':'Équation incomplète ou erronée'}" style="color:#b00">—</span>`:num(r.v)),'r'],['u','Unité',100,r=>r.t==='h'?'':esc(r.u.unite||'')]],
+      rows,r=>r.t==='h'?'gh':(r.t==='b'?'blank':''));
+    if(!rows.length) tbl.append(h('div',{class:'empty'},'Aucun chiffre clé affiché.'));
+    right.append(tbl); tbl.ondblclick=()=>guard(()=>ecqFunctionalUnitsDialog(ctx))(); return; }
+  if(st.kf==='vol'){
+    tools.append(ibtn({i:'edit',t:'Volumes [m3]…',fn:guard(()=>ecqVolumeDialog(ctx))}),gear('Volumes'));
+    const rows=ecqVolumeRows(P.volumes);
+    table([['lib','Description',260,r=>esc(r.lib)],['k','Code',90,r=>esc(r.k)],['v','Quantité',150,r=>num(r.v),'r'],['u','Unité',80,r=>esc(r.u)]],rows,r=>r.t==='b'?'blank':'');
+    right.append(tbl,chart); tbl.ondblclick=()=>guard(()=>ecqVolumeDialog(ctx))();
+    const C=ecqVolumeChart(P.volumes); setTimeout(()=>mgChart(chart,{mode:'Barres',xs:C.map(x=>x.x),series:[{name:'Volumes [%]',vals:C.map(x=>x.v)}],title:'Volumes [%]',yLabel:'%'}),0); return; }
+  /* énergie grise */
+  const E=ecqGreyEnergy(P), rows=E.items.map(x=>({t:'r',...x})).concat([{t:'b'},{t:'tot',code:'',libelle:'Total',v:E.total}]);
+  const sel=st.eg||{kind:'mg',code:''}, chartItems=()=>{ const c=sel.code;
+    if(sel.kind==='g') return E.items.filter(x=>x.code.length===3&&x.code.startsWith(c));
+    if(sel.kind==='e') return E.items.filter(x=>x.code.length>3&&x.code.startsWith(c));
+    return E.items.filter(x=>x.code.length===1); };
+  const lbl=()=>sel.kind==='mg'?'Groupes principaux eCCC':(sel.code+' '+((E.items.find(x=>x.code===sel.code)||{}).libelle||''));
+  tools.append(ibtn({i:'analyse',label:'Graphique',t:'Graphique',menu:()=>[{t:'Groupes principaux eCCC',chk:sel.kind==='mg',fn:()=>{ st.eg={kind:'mg',code:''}; ctx.draw(); }},'-',
+    ...E.items.filter(x=>x.code.length===1).map(x=>({t:x.code+' '+x.libelle+' — Groupes d’éléments',chk:sel.kind==='g'&&sel.code===x.code,fn:()=>{ st.eg={kind:'g',code:x.code}; ctx.draw(); }})),'-',
+    ...E.items.filter(x=>x.code.length===3).map(x=>({t:x.code+' '+x.libelle+' — Eléments',chk:sel.kind==='e'&&sel.code===x.code,fn:()=>{ st.eg={kind:'e',code:x.code}; ctx.draw(); }}))]}),gear('Energie_grise'));
+  table([['code','Code',70,r=>esc(r.code)],['lib','Désignation',350,r=>esc(r.libelle)],['v','Énergie grise',120,r=>num(r.v),'r'],['u','',90,r=>r.t==='b'?'':'kWh/m2 a']],rows,
+    r=>r.t==='b'?'blank':((r.t==='tot'||String(r.code).length===1)?'b':''));
+  if(!E.items.length) tbl.append(h('div',{class:'empty'},'Aucune énergie grise saisie (éléments, sous-éléments, ouvrages).'));
+  right.append(tbl,chart);
+  const CI=chartItems(); setTimeout(()=>mgChart(chart,{mode:'Barres',xs:CI.map(x=>x.code),series:[{name:'Énergie grise',vals:CI.map(x=>ecR(x.v,false))}],title:'Énergie grise — '+lbl(),yLabel:'kWh/m2 a'}),0);
+}
+/* « Volumes [m3] » (VolumeDialog) */
+function ecqVolumeDialog(ctx){
+  const V=Object.assign({VB:0,VN:0,VC:0,VU:0,VUP:0,VUS:0,VD:0,VI:0},ctx.P.volumes||{}), I={};
+  ECQ_VOL_DLG.forEach(k=>{ I[k]=ecNumIn(V[k],'150px'); });
+  dialog({title:'Volumes [m3]',body:formRows(ECQ_VOL_DLG.map(k=>[ECQ_VOL_LBL[k],h('span',{},I[k],'  '+k)]),440),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    const W={}; for(const k of ECQ_VOL_DLG){ const v=ecReadNum(I[k],ECQ_VOL_LBL[k]); if(v==null) return false; W[k]=v; }
+    ctx.P.volumes=Object.assign({},ctx.P.volumes||{},W); await ctx.touch(); }}]});
+}
+/* « Calculs » (FunctionalUnitsDialog, « Paramétrer les chiffres clés ») : Nom | Équation | Unité | Type | M ; + ✎ − et flèches */
+function ecqFunctionalUnitsDialog(ctx){
+  const W=ecClone(ecL(ctx.P,'unitesFonctionnelles')), o={}, box=h('div',{class:'ecq-box',style:{width:'100%',height:'300px'}});
+  const draw=()=>{ grid(box,Object.assign(o,{key:u=>String(W.indexOf(u)),cols:[{k:'nom',t:'Nom',w:170},{k:'equation',t:'Équation'},{k:'unite',t:'Unité',w:60},{k:'genre',t:'Type',w:200,f:u=>esc(ECQ_GENRES[+u.genre]||'')},
+      {k:'afficher',t:'M',w:30,cls:'c',f:u=>`<input type="checkbox" data-m="${W.indexOf(u)}"${u.afficher!==false?' checked':''}>`}],rows:W,sort:null,onDbl:u=>edit(u)}));
+    $$('input[data-m]',box).forEach(x=>{ x.onclick=ev=>ev.stopPropagation(); x.onchange=()=>{ W[+x.dataset.m].afficher=x.checked; }; }); };
+  const cur=()=>o.sel!=null?W[+o.sel]:null;
+  const edit=async u=>{ const r=await ecqEquationDialog(ctx,u); if(!r) return; if(u) Object.assign(u,r); else { W.push(r); o.sel=String(W.length-1); } draw(); };
+  const move=to=>{ const u=cur(); if(!u) return; const i=W.indexOf(u); W.splice(i,1); const j=to==='first'?0:(to==='last'?W.length:Math.max(0,Math.min(W.length,i+(to==='up'?-1:1)))); W.splice(j,0,u); o.sel=String(j); draw(); };
+  const bar=phead([ibtn({i:'plus',t:'Nouveau',fn:()=>edit(null)}),ibtn({i:'edit',t:'Editer',fn:()=>{ const u=cur(); if(u) edit(u); }}),
+    ibtn({i:'minus',t:'Supprimer',fn:()=>{ const u=cur(); if(!u) return; W.splice(W.indexOf(u),1); o.sel=null; draw(); }}),
+    ibtn({i:'first',t:'Début',fn:()=>move('first')}),ibtn({i:'prev',t:'Monter',fn:()=>move('up')}),ibtn({i:'next',t:'Descendre',fn:()=>move('down')}),ibtn({i:'last',t:'Fin',fn:()=>move('last')})]);
+  draw();
+  dialog({title:'Calculs',width:'min(820px,96vw)',body:h('div',{},h('div',{class:'ec-hint'},'Paramétrer les chiffres clés'),bar,box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ ctx.P.unitesFonctionnelles=W; await ctx.touch(); }}]});
+}
+/* « Définir le calcul » (EquationDefinitionDialog) : équation construite par le menu +▾ (non saisissable) → Promise<unité|null> */
+function ecqEquationDialog(ctx,u){
+  const P=ctx.P, res=ctx.res;
+  const nom=h('input',{class:'inp',value:u?u.nom||'':''}), eqI=h('input',{class:'inp',readonly:true,value:u?u.equation||'':''}), unI=h('input',{class:'inp',value:u?u.unite||'':'',style:{width:'140px'}});
+  const ty=h('select',{class:'inp',style:{width:'260px'}},...[1,2,3,4].map(k=>h('option',{value:String(k),selected:(u?(+u.genre||1):1)===k||null},ECQ_GENRES[k])));
+  const ap=ecChk(u?u.afficher!==false:true,'Afficher');
+  const endsOp=()=>{ const t=eqI.value.trim(); return !t||/[+\-*/(]$/.test(t); };
+  let chk=()=>{};   // activation de OK, liée à l'ouverture du dialogue
+  const add=x=>{ eqI.value+=x; chk(); };
+  /* getAddMenu : + * / et « ) » actifs si l'équation n'est ni vide ni terminée par un opérateur ou « ( » ; « − » actif si elle ne se
+     termine pas par un opérateur ou « ( » (permis sur une équation vide) ; « ( » actif si elle est vide ou se termine ainsi */
+  const endsOnly=()=>/[+\-*/(]$/.test(eqI.value.trim()), empty=()=>!eqI.value.trim();
+  const op=(t,s,dis)=>({t,dis,fn:()=>add(' '+s)});
+  const menu=()=>[op('Addition','+',endsOp()),op('Soustraction','-',endsOnly()),op('Multiplication','*',endsOp()),op('Division','/',endsOp()),'-',
+    {t:'Parenthèse ouvrante',dis:!(endsOnly()||empty()),fn:()=>add(empty()?'(':' (')},{t:'Parenthèse fermante',dis:endsOp(),fn:()=>add(')')},'-',
+    {t:'Groupe principal eCCC',fn:()=>ecElementBrowser(P,{mainOnly:true},L=>{ add('|'+L[0].code+'|'); })},{t:'Coût d’investissement',fn:()=>add('eBât')},
+    {t:'Quantité référentielle',fn:()=>ecqQtyBrowser(P,b=>add(b.code))},'-',
+    {t:'Coûts selon CFC (0 - 9)',fn:()=>add('CFC_0-9')},{t:'Coûts selon CFC (1 - 9)',fn:()=>add('CFC_1-9')},{t:'Coûts selon CFC (2)',fn:()=>add('CFC_2')},{t:'Coûts selon CFC (4)',fn:()=>add('CFC_4')},'-',
+    {t:'Volume',fn:()=>add('GV')},{t:'Valeur personnalisée',fn:()=>ecqConstantDialog((v,n)=>add(' '+String(v)+(n?' ['+n+']':'')))}];
+  const plus=ibtn({i:'plus',t:'Ajouter',menu}), clr=ibtn({i:'minus',t:'Effacer l’équation',fn:()=>{ eqI.value=''; chk(); }});
+  return new Promise(res0=>{ const dlg=dialog({title:'Définir le calcul',width:'640px',body:formRows([['Nom',nom],['Équation',h('div',{style:{display:'flex',gap:'4px'}},eqI,plus,clr)],['Unité',unI],['Type',ty],['',ap.el]],560),
+    buttons:[{t:'Annuler',fn:()=>res0(null)},{t:'OK',pri:true,fn:async()=>{ const eq=eqI.value.trim(); if(!nom.value.trim()||!eq||endsOp()) return false;
+      const c=ecqKfCheck(P,res,eq); if(c.block){ await ecqInfo(c.block); return false; } if(c.warn) await ecqInfo(c.warn);   // avertissement modal, puis OK
+      res0({nom:nom.value.trim(),equation:eq,unite:unI.value.trim(),genre:+ty.value,afficher:ap.i.checked}); }}]});
+    const ok=dlg.bd.parentNode.querySelector('.ft .btn.pri'); chk=()=>{ ok.disabled=!nom.value.trim()||endsOp(); }; nom.oninput=()=>chk(); chk(); });
+}
+/* « Navigateur » des grandeurs (RefQuantityBrowserDialog) : Abrév. | Désignation | Unité */
+function ecqQtyBrowser(P,fn){
+  const o={}; let q='', okB=null; const box=h('div',{class:'ecq-box',style:{width:'560px',height:'340px'}});
+  const cur=()=>ecL(P,'quantitesReferentielles').find(x=>ecVisibleQ(x)&&String(x.code)===String(o.sel)&&matchQ(q,x.code,x.libelle))||null;
+  const chk=()=>{ if(okB) okB.disabled=!cur(); };   // OK actif si une ligne est choisie (RefQuantityBrowserDialog.checkGuards)
+  const draw=()=>{ grid(box,Object.assign(o,{key:b=>String(b.code),cols:[{k:'code',t:'Abrév.',w:80},{k:'libelle',t:'Désignation'},{k:'unite',t:'Unité',w:60}],
+    rows:ecL(P,'quantitesReferentielles').filter(b=>ecVisibleQ(b)&&matchQ(q,b.code,b.libelle)),sort:null,onSel:chk,onDbl:()=>$('.ov:last-child .btn.pri').click()})); chk(); };
+  const s=h('input',{class:'inp',placeholder:'Rechercher'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); }; draw();
+  const dl=dialog({title:'Navigateur',body:h('div',{},s,h('div',{style:{height:'6px'}}),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const b=cur(); if(!b) return false; fn(b); }}]});
+  okB=dl.bd.parentNode.querySelector('.ft .btn.pri'); chk();
+}
+/* « Valeur personnalisée » (ConstantDialog) : Valeur, Nom → « valeur [nom] » */
+function ecqConstantDialog(fn){
+  const v=h('input',{class:'inp',style:{width:'150px',textAlign:'right'}}), n=h('input',{class:'inp'});
+  dialog({title:'Valeur personnalisée',body:formRows([['Valeur',v],['Nom',n]],380),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const x=ecParse(v.value); if(x==null||String(v.value).trim()===''){ toast('Valeur non valable.',true); return false; }
+    const t=/e/i.test(String(x))?x.toFixed(20).replace(/\.?0+$/,''):String(x);   // 1e-7 → 0.0000001 (jetons des chiffres clefs)
+    fn(t,n.value.replace(/[\[\]]/g,'').trim()); }}]});
+}
+
+/* ── « Choix du document » (PlanningBrowserDialog) : affaires (filtre « Editer le filtre » / « Appliquer le filtre »,
+   étiquette « Filtré ») à gauche, documents non supprimés de l'affaire à droite ; OK ou double-clic ── */
+function ecqPickDocument(opt){
+  opt=opt||{}; const F=ECQ_V.pf||(ECQ_V.pf=Object.assign(mgPF(),{on:false}));
+  const docs=()=>DS.all('costplanningdocument').filter(d=>!d.ISMARKEDASDELETED&&d.ID!==opt.exclude&&DS.get('project',d.PROJECT_ID));
+  let q='', okB=null; const oP={}, oD={};
+  const chk=()=>{ if(okB) okB.disabled=!(oD.sel!=null&&DS.get('costplanningdocument',oD.sel)); };   // PlanningBrowserDialog.checkGuard
+  const L=h('div',{class:'ecq-box',style:{height:'360px'}}), R=h('div',{class:'ecq-box',style:{height:'360px'}}), lab=h('span',{class:'ec-small',style:{marginLeft:'8px'}});
+  const drawD=()=>{ const rows=oP.sel!=null?docs().filter(d=>String(d.PROJECT_ID)===String(oP.sel)):[];
+    if(oD.sel!=null&&!rows.some(d=>String(d.ID)===String(oD.sel))) oD.sel=null;
+    grid(R,Object.assign(oD,{cols:[{k:'USERID',t:'Utilisateur',w:80},{k:'CHANGEDDATE',t:'Date',w:84,f:d=>dfr(d.CHANGEDDATE)},{k:'VERSION',t:'Version'},{k:'VERSIONNUMBER',t:'N° de version',w:70,cls:'r'},
+      {k:'STATECODE',t:'Statut',w:120,f:d=>esc(EC_ST[d.STATECODE]||'')},{k:'NOTE',t:'Notes',w:120}],rows,sort:['CHANGEDDATE',-1],onSel:chk,onDbl:()=>$('.ov:last-child .btn.pri').click(),
+      empty:oP.sel==null?'Choisissez une affaire.':'Aucun document.'})); chk(); };
+  const drawP=()=>{ const has=new Set(docs().map(d=>d.PROJECT_ID)), ok=F.on?new Set(mgPFlist(F).map(p=>p.ID)):null;
+    const rows=projects().filter(p=>has.has(p.ID)&&(!ok||ok.has(p.ID))&&matchQ(q,p.NUMBER,p.TITLE));
+    if(oP.sel!=null&&!rows.some(p=>String(p.ID)===String(oP.sel))) oP.sel=null;
+    lab.textContent=F.on?'Filtré'+(mgPFlabel(F)?' : '+mgPFlabel(F):''):'';
+    grid(L,Object.assign(oP,{cols:[{k:'NUMBER',t:'N° d’affaire',w:90},{k:'TITLE',t:'Affaire'}],rows,sort:null,onSel:()=>{ oD.sel=null; drawD(); },empty:'Aucune affaire avec un calcul des coûts.'}));
+    drawD(); };
+  const s=h('input',{class:'psearch',placeholder:'Rechercher'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); drawP(); };
+  const fb=ibtn({i:'filter',t:'Filtre',menu:()=>[{t:'Appliquer le filtre',chk:F.on,fn:()=>{ F.on=!F.on; drawP(); }},{t:'Editer le filtre …',fn:()=>mgPFdialog(F,drawP)}]});
+  if(opt.project!=null) oP.sel=String(opt.project);
+  drawP();
+  return new Promise(res=>{ const dl=dialog({title:opt.title||'Choix du document',width:'min(1040px,96vw)',body:h('div',{style:{display:'grid',gridTemplateColumns:'380px 1fr',gap:'8px'}},
+      h('div',{},h('div',{class:'ph2'},fb,lab,h('div',{style:{flex:1}}),s),L),h('div',{},h('div',{class:'ph2'},h('b',{},'Documents')),R)),
+    buttons:[{t:'Annuler',fn:()=>res(null)},{t:'OK',pri:true,fn:()=>{ const d=DS.get('costplanningdocument',oD.sel); if(!d) return false; res(d); }}]});
+    okB=dl.bd.parentNode.querySelector('.ft .btn.pri'); chk(); });
+}
+/* « Importer les présentations… » (menu Editer de la fenêtre ; droits contrôlés par le lot 1) */
+async function ecqImportPresentations(ctx){
+  const d=await ecqPickDocument({title:'Choix du document',exclude:ctx.id,project:ctx.doc&&ctx.doc.PROJECT_ID}); if(!d) return;
+  const raw=DS.get('costplanning',d.ID); if(!raw){ toast('Document introuvable.',true); return; }
+  if(!await confirmDlg(ECQ_MSG.params,'Remplacer')) return;
+  ecqCopyPresentations(ctx.P,ecNormalize(ecClone(raw),d)); await ctx.touch(); toast('Présentations importées de « '+(d.VERSION||'')+' ».');
+}
+/* « Importer un calcul des coûts d'une affaire… » (domaine « Calcul des coûts », CostPlanningPlugin$1) : choix du document,
+   contrôle des types puis des versions de catalogue, puis fiche « Nouvelle estimation des coûts » et copie du contenu. */
+async function ecqImportFromProject(p){
+  if(!p){ toast('Sélectionnez une affaire.',true); return; }
+  await ecNeed();
+  const d=await ecqPickDocument({title:'Choix du document'}); if(!d) return;
+  const raw=DS.get('costplanning',d.ID); if(!raw){ toast('Document introuvable.',true); return; }
+  const P=ecNormalize(ecClone(raw),d);
+  const I=typeof EC0_INFO!=='undefined'?EC0_INFO.get(String(d.ID)):null;
+  if(I&&I.ecarts&&I.ecarts.length&&!await confirmDlg((typeof EC0_MSG==='string'?EC0_MSG:'Document converti partiellement')+'.\n\nLe document choisi a des écarts de coût (conversion v1). Importer quand même ?','Importer')) return;
+  let cat=ecCatalog(p.ID); if(!cat){ cat=await ecOfferCatalogCopy(p); if(!cat) return; }
+  const scat=ecCatalog(d.PROJECT_ID), tS=scat?scat.CATALOGTYPECODE:((P.systeme==='512'||P.systeme==='513')?11:10);
+  if(tS!==cat.CATALOGTYPECODE){ await ecqInfo(ECQ_MSG.types); return; }
+  if(scat&&String(scat.VERSION)!==String(cat.VERSION)){ if(!await confirmDlg(ECQ_MSG.versions,'Importer')) return; ecqRealign(P,ecCatalogPositions(cat)); }
+  const refA=P.systeme==='511'||P.systeme==='512';
+  return ecDocDialog(p,null,'new',{P,refA,sub:!!d.ISAPPLYSUBPROJECTS&&ecL(P,'ouvragesDetail').length>0,src:d});
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BÂTIMENT · MES ESTIMATIONS eCCC — LOT 3 : APERCU, CFC agrégés, valeurs référentielles, calcul des résultats
+   (spec_12 § 6.1 à 6.5, § 10 Lot 3). Points d'extension du lot 1 (fonctions globales de nom fixe, appelées par
+   ecExt) : ecaSectionApercu, ecaSectionResultats, ecaStatisticalValues, ecaConstructionParts, ecaEbkpElements,
+   ecaImportStatValues, ecaImportProjectValues, ecaImportConstructionParts, ecaPrevCalcValues, ecaDatabaseValues,
+   ecaCfcProposals, ecaCfcLearn, ecaSubElementBrowser.
+   Déclarations uniquement : rien ne s'exécute au chargement. Préfixes eca… / ECA_….
+   Licence CRB (§ 1.4) : aucune table eCCC → CFC codée (propositions = collection « ebkptobkp » du bureau, alimentée
+   par l'apprentissage des choix, § 12 n° 5) ; aucune valeur référentielle dont la source est le CRB ; aucun texte
+   « hint », aucun niveau 4-5 ; indexation § 12 n° 4 (prix brut si l'indice ou l'indice de base vaut 0).
+═══════════════════════════════════════════════════════════════════════════ */
+const ECA_V={ap:{vue:0},rs:{cat:'rec',sel:null,vue:0,elem:null},q:{}};
+/* db.stats.StatisticalValue$Region : codes enregistrés dans STATISTICALVALUE.REGIONCODE (ordre d'affichage du cahier § 6.5.2) */
+const ECA_REGIONS=[[0,'Suisse'],[4,'Zurich'],[2,'Plateau suisse'],[3,'Suisse nord-occidentale'],[6,'Suisse centrale'],[5,'Suisse orientale'],[7,'Tessin'],[1,'Arc lémanique']];
+const ECA_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const ECA_CRB=/crb/i;                                   // « Donnée du CRB » : jamais listée ni proposée (§ 6.5.2)
+const ECA_REF_TABLES=['statisticalvalue','constructionpart','constructioncomponent','ebkpelement','ebkptobkp'];
+const ECA_VUES=['Groupes principaux eCCC','Coûts selon eCCC','Coûts selon CFC (0-9)','Coûts selon CFC (1-9)'];   // CostPlanningDialog.*Menu
+const ECA_MSG_IRREV='Voulez-vous supprimer ces données de manière irrévocable?';                                      // CalculationFrame.msg4
+
+/* ── Outils ── */
+function ecaP2(x){ return Math.round((+x||0)*100)/100; }                                   // ElemString.formatProcent (0,01)
+function ecaPctS(x){ return x===''||x==null?'':num(ecaP2(x)); }
+function ecaTxt(o){ return o?[o.libelle,o.libelle2!==o.libelle?o.libelle2:''].filter(Boolean).join(' '):''; }
+/* calcIndexValue (PriceDataInputDialog, PriceDataSubelemInputDialog) : indice × prix / indice de base de l'affaire ;
+   § 12 n° 4 : prix brut si l'indice OU la base vaut 0 (tout vaut 0 au bureau) */
+function ecaIndexed(price,index,base){ const p=+price||0, i=+index||0, b=+base||0; return (i&&b)?i*p/b:p; }
+/* SubElement.calcIndexValue (sous-élément inséré depuis la base, SubElementDatabaseBrowser) : l'original divise dans l'autre sens,
+   indice de base de l'affaire × prix / indice du SE du bureau ; même règle § 12 n° 4 si l'un des deux vaut 0 */
+function ecaIndexedSE(price,index,base){ const p=+price||0, i=+index||0, b=+base||0; return (i&&b)?b*p/i:p; }
+function ecaRegion(code){ const r=ECA_REGIONS.find(x=>x[0]===+code); return r?r[1]:''; }
+function ecaIndexDate(m,y){ return ((m!=null&&m!==''&&ECA_MOIS[+m])?ECA_MOIS[+m]+' ':'')+(y||''); }   // StatisticalValue.getPriceIndexDate (mois 0 à 11)
+function ecaIsCrb(r){ return ECA_CRB.test(String((r&&r.DATASOURCE)||'')); }
+function ecaNum3(n){ const s=String(n==null?'':n); return s.length===1?'00'+s:(s.length===2?'0'+s:s); }
+function ecaEbkp(code){ return DS.all('ebkpelement').find(x=>x.CODE===String(code))||null; }
+function ecaEbkpCode(id){ const x=DS.get('ebkpelement',id); return x?x.CODE:''; }
+function ecaStatFor(code){ const eb=ecaEbkp(code); return eb?DS.by('statisticalvalue','EBKPELEMENT_ID',eb.ID).filter(v=>!ecaIsCrb(v)).sort((a,b)=>cmp(a.NAME,b.NAME)):[]; }
+function ecaPartsFor(code){ const eb=ecaEbkp(code); return eb?DS.by('constructionpart','EBKPELEMENT_ID',eb.ID).filter(v=>!ecaIsCrb(v)).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)||cmp(a.NAME,b.NAME)):[]; }
+function ecaComps(pid){ return DS.by('constructioncomponent','CONSTRUCTIONPART_ID',pid).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)||cmp(a.NUMBER,b.NUMBER)); }
+async function ecaNeedRef(){ await DS.need(ECA_REF_TABLES); }
+function ecaBaseIndex(ctx){ const p=ctx&&ctx.p; return p?(+p.BASISINDEX||0):0; }
+function ecaCfcText1(ctx,n){ const x=ecCfcCatalog(ctx).find(y=>String(y.CODE)===String(n)); return x?(x.TEXT1||''):''; }
+/* Bouton OK d'un dialogue ouvert par dialog() ; guard(ok) = règle d'activation de l'original (checkGuards), rappelée à chaque sélection */
+function ecaOk(dlg){ return dlg&&dlg.bd&&dlg.bd.parentNode?dlg.bd.parentNode.querySelector('.ft .btn.pri'):null; }
+function ecaGuard(dlg,cond){ const ok=ecaOk(dlg); const f=()=>{ if(ok) ok.disabled=!cond(); }; f(); return f; }
+/* Version lue à l'ouverture d'une fiche des tables du bureau (bseq) : un enregistrement modifié entre-temps sur un autre poste
+   donne un conflit 409 (message de DS.commit, rien n'est écrasé) au lieu d'être remplacé sans le dire */
+function ecaSeq(t,id){ return id==null?0:((DS.S[t]||{})[String(id)]||0); }
+/* Ligne choisie dans ELEMENTS (clé ecKey) → {e, d, s, c} de la copie de travail (appels du lot 1 sans « so ») */
+function ecaSelObj(ctx){
+  const k=ctx&&ctx.sel; if(!k) return {}; const a=String(k).split('|'), t=a[0];
+  const og=(t==='E'||t==='B'||a[2]==='')?null:a[2];
+  return Object.assign({row:{t}},ecFind(ctx.P,{t,code:a[1],og,lg:og!=null?(a[3]||''):'',sn:a[4]!==''&&a[4]!=null?a[4]:null,ci:a[5]!==''&&a[5]!=null?+a[5]:null}));
+}
+/* CostPlanningDialog.positionIsFree@0-662 : aucune donnée déjà saisie sur la position (élément ou ligne d'ouvrage) : description,
+   remarque, exécution, documents, effet de serre (valeur et commentaire), images, CFC, coût fixé. La note interne n'y compte pas
+   (le test de l'original aboutit au même saut dans les deux cas, @334-345). */
+function ecaPositionFree(o){ return !!o&&!String(o.description||'')&&!String(o.remarque||'')&&!String(o.execution||'')&&!ecL(o,'documents').length&&!(+o.effetSerre)
+  &&!String(((o.commentaires||{}).effetSerre)||'')&&!ecL(o,'images').length&&!ecL(o,'cfc').length&&!(+o.coutFixe); }
+/* Documents de référence (§ 6.4, § 6.5.1) : autres documents, non supprimés, au statut 2 Validé ou 3 Affaire de référence */
+function ecaRefDocs(curId){ return DS.all('costplanningdocument').filter(d=>String(d.ID)!==String(curId)&&!d.ISMARKEDASDELETED&&(+d.STATECODE===2||+d.STATECODE===3))
+  .sort((a,b)=>cmp((DS.get('project',a.PROJECT_ID)||{}).NUMBER,(DS.get('project',b.PROJECT_ID)||{}).NUMBER)||cmp(a.VERSION,b.VERSION)); }
+/* Contenu recalculé d'un autre document (copie : le document source n'est jamais modifié) */
+function ecaDocContent(id){ const doc=DS.get('costplanningdocument',id), raw=DS.get('costplanning',id); if(!doc||!raw) return null;
+  const res=ecEngine(ecNormalize(ecClone(raw),doc)); return {doc,P:res.P,res}; }
+function ecaDocCols(){ return [{k:'pn',t:'N° d’affaire',w:90,f:d=>esc((DS.get('project',d.PROJECT_ID)||{}).NUMBER)},{k:'pt',t:'Nom d’affaire',w:220,f:d=>esc((DS.get('project',d.PROJECT_ID)||{}).TITLE)},
+  {k:'st',t:'Statut',w:130,f:d=>esc(EC_ST[d.STATECODE]||'')},{k:'USERID',t:'Utilisateur',w:80},{k:'VERSION',t:'Version',w:160},{k:'VERSIONNUMBER',t:'N° de version',w:80,cls:'r'},{k:'NOTE',t:'Note',w:200}]; }
+function ecaCss(){ if(document.getElementById('eca-css')) return;
+  document.head.append(h('style',{id:'eca-css'},`
+.eca-box{border:1px solid var(--line);background:#fff;overflow:auto}
+.eca-chart{flex:0 0 auto;border-top:1px solid var(--line);padding:6px 12px 4px;background:#fff;min-height:120px}
+.eca-warn{margin-left:10px;color:var(--warn);font-size:12px}
+.eca-det{flex:0 0 auto;border-top:1px solid var(--line);display:grid;grid-template-columns:max-content 1fr max-content 1fr;gap:3px 12px;padding:8px 14px;font-size:12.5px;background:#fafafa}
+.eca-det b{font-weight:400;color:#666;text-align:right}
+.eca-cats{flex:0 0 170px;border-right:1px solid var(--line);background:var(--side);overflow:auto}
+.eca-cats div{padding:7px 12px;cursor:pointer;font-size:12.5px}.eca-cats div.on{background:var(--sel);color:#fff}
+.eca-cats .hd{font-weight:600;color:#333;cursor:default;letter-spacing:.03em;font-size:12px}
+table.g.ec-t tr.pay td{background:rgb(243,243,243);font-weight:700}
+.eca-lbl{color:#555;font-size:12px}
+`)); }
+
+/* ═══ APERCU ▸ Editer (§ 6.1, CostPlanningDialog.setOverviewTable@103-2272, writeCostGroup, writeBKPCosts) ═══
+   Modèle PUR : ecaOverview(P recalculé, res = ecEngine, opt {cfcText(n), ogCode(ligne)}) →
+   {rows:[{t:'G'|'D'|'B'|'S'|'SO'|'CH'|'C'|'CT', code, txt, ouv, loc, abr, q, un, prix, pu, cout, p0..p3, b, hl}], gf, inv, real, ouv, t09, t19, tops, groupes, cfcIncomplete}
+   p0 = % investissement, p1 = % réalisation, p2 = % ouvrage, p3 = CHF/m² (grandeur FA, § 0 n° 7 ; repli SP puis GF) ; '' = cellule vide.
+   Écarts voulus (§ 6.1) : la ligne d'ouvrage porte son propre « Coût investis. % » (l'original l'écrit dans la ligne parente)
+   et son « Coût réalisation % » = ouvrage / réalisation de l'ouvrage (l'original affiche toujours 100). */
+function ecaOverview(P,res,opt){
+  opt=opt||{};
+  const E=P.elements||[], arr=!!P.arrondir, EX=!!res.exclue, cnt=o=>(EX&&o.eventuelle)?0:ecGv(o), og=d=>opt.ogCode?opt.ogCode(d):((d&&d.ouvrage)||'');
+  const lr=ecRange(P.coutRealisation,'B','W'), lo=ecRange(P.coutOuvrage,'C','G');
+  const Q=P.quantitesReferentielles||[], gfc=['FA','SP','GF'].find(c=>Q.some(b=>b.code===c))||'FA', gfb=Q.find(b=>b.code===gfc)||null, gf=gfb?(+gfb.quantite||0):0;
+  const gfOuv=d=>{ const x=gfb&&ecL(gfb,'parOuvrage').find(y=>ecSameOuv(y,d)); return x?(+x.quantite||0):0; };
+  const tops=E.filter(e=>String(e.code).length===1), inv=res.T.inv;
+  const sumTops=rg=>tops.filter(e=>rg.includes(e.code)).reduce((s,e)=>s+cnt(e),0);
+  const sumOuv=(rg,d)=>tops.filter(e=>rg.includes(e.code)).reduce((s,e)=>{ const x=ecL(e,'parOuvrage').find(y=>ecSameOuv(y,d)); return s+((x&&!(EX&&(e.eventuelle||x.eventuelle)))?ecGv(x):0); },0);
+  const cgR=sumTops(lr), cgO=sumTops(lo), pu=c=>['V','Y','Z'].includes(c)?'%':'CHF';
+  const rows=[];
+  tops.forEach(e=>{ const v=ecGv(e); if(v===0) return;
+    rows.push({t:'G',code:e.code,txt:ecaTxt(e),abr:e.grandeurRef||'',q:+e.quantite||0,un:e.unite||'',prix:+e.prix||0,pu:pu(e.code),cout:v,
+      p0:inv?100*v/inv:'',p1:(cgR&&lr.includes(e.code))?100*v/cgR:'',p2:(cgO&&lo.includes(e.code))?100*v/cgO:'',p3:gf?v/gf:'',hl:ecL(e,'parOuvrage').length>0});
+    ecL(e,'parOuvrage').forEach(d=>{ const w=ecGv(d), so1=sumOuv(lr,d), so2=sumOuv(lo,d), g=gfOuv(d);
+      rows.push({t:'D',code:'',txt:'',ouv:og(d),loc:d.localisation||'',abr:d.grandeurRef||e.grandeurRef||'',q:+d.quantite||0,un:d.unite||e.unite||'',prix:+d.prix||0,pu:pu(e.code),cout:w,
+        p0:inv?100*w/inv:'',p1:(so1&&lr.includes(e.code))?100*w/so1:'',p2:(so2&&lo.includes(e.code))?100*w/so2:'',p3:g?w/g:''}); }); });
+  /* synthèse (writeCostGroup) : une ligne vide, la ligne de plage en gras et surlignée, puis une ligne par ouvrage de FA */
+  const sum=(code,txt,rg)=>{ const cg=sumTops(rg); rows.push({t:'B'}); rows.push({t:'S',code,txt,cout:ecR(cg,arr),p3:gf?cg/gf:'',b:1,hl:1});
+    if(gfb) ecL(gfb,'parOuvrage').forEach(x=>{ const st=sumOuv(rg,x), q=+x.quantite||0; rows.push({t:'SO',code:'',txt:'',ouv:og(x),loc:x.localisation||'',cout:ecR(st,arr),p3:q?st/q:''}); }); };
+  const lab=(r,d0,a0)=>String((r&&r.de)||d0).slice(0,1)+' - '+String((r&&r.a)||a0).slice(0,1);   // createErstellungsElemRangeString
+  sum('A - Z','Coût de l’investissement','ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+  sum(lab(P.coutRealisation,'B','W'),'Coût de la réalisation',lr);
+  sum(lab(P.coutOuvrage,'C','G'),'Coût de l’ouvrage',lo);
+  /* coûts selon CFC (writeBKPCosts) : groupes du 1er chiffre, TTC (TVA sauf A et Z, calcBkpMainGroupList du moteur) */
+  const G=(res.cfc&&res.cfc.groupes)||[], t09=G.reduce((s,g)=>s+g.montant,0), t19=G.filter(g=>!String(g.numero).startsWith('0')).reduce((s,g)=>s+g.montant,0);
+  rows.push({t:'B'}); rows.push({t:'CH',code:'0 - 9',txt:'Coût de l’ouvrage selon CFC',b:1,hl:1});
+  G.forEach(g=>rows.push({t:'C',code:String(g.numero),txt:opt.cfcText?opt.cfcText(g.numero):'',cout:ecR(g.montant,arr),p0:t09?100*g.montant/t09:''}));
+  rows.push({t:'CT',code:'',txt:'Coût de l’ouvrage selon CFC (0-9)',cout:ecR(t09,arr),p0:100,b:1});
+  rows.push({t:'CT',code:'',txt:'Coût de l’ouvrage selon CFC (1-9)',cout:ecR(t19,arr),p0:t09?100*t19/t09:''});
+  return {rows,gf:gfc,gfq:gf,inv,real:res.T.real,ouv:res.T.ouv,t09,t19,groupes:G,cfcIncomplete:ecCfcIncomplete(res),
+    tops:tops.filter(e=>ecGv(e)!==0).map(e=>({code:e.code,txt:ecaTxt(e),v:ecGv(e)}))};
+}
+/* Graphique (element.ElementChart) : une série par barre, étiquettes de l'axe masquées, axe « CHF », titre « <vue> [CHF]» ;
+   vue 1 : séries nommées par ElementChart.costSumAZ / costSumBW / costSumCG (libellés propres au graphique) */
+function ecaOverviewChart(M,vue,txt1){
+  if(vue===1) return {title:ECA_VUES[1]+' [CHF]',S:[['Coût d’investissement',M.inv],['Coût de réalisation',M.real],['Coût de l’ouvrage',M.ouv]]};
+  if(vue===2||vue===3) return {title:ECA_VUES[vue]+' [CHF]',S:M.groupes.filter(g=>vue===2||String(g.numero)!=='0').map(g=>[g.numero+' '+(txt1?txt1(g.numero):''),g.montant])};
+  return {title:ECA_VUES[0]+' [CHF]',S:M.tops.map(t=>[t.code,t.v])};
+}
+function ecaChart(el,c,yLabel){
+  if(!c.S.length){ el.innerHTML='<div class="empty">Aucune donnée pour le graphique.</div>'; el._svg=null; return; }
+  mgChart(el,{series:c.S.map(([name,v])=>({name,vals:[+v||0]})),xs:[''],mode:'Barres',title:c.title,yLabel});
+}
+function ecaSectionApercu(ctx){
+  ecaCss();
+  const P=ctx.P, res=ctx.res, S=ECA_V.ap, ouv=ctx.hasOuv(), tools=ctx.tools, pane=ctx.pane;
+  const M=ecaOverview(P,res,{cfcText:n=>ecCfcText(ctx,n),ogCode:ecOgCode});
+  const cols=[['code','Code',70],['txt','Désignation',300],...(ouv?[['ouv','OUV',65],['loc','Localisation',65]]:[]),['abr','Abrév.',90],['q','Quantité',120],['un','',40],
+    ['prix','Param. coût',100],['pu','',40],['cout','Coût [CHF]',120],['p0','Coût investis. %',120],['p1','Coût réalisation %',120],['p2','Coût de l’ouvrage %',120],['p3','CHF/m² SP',120]];
+  const NUM=new Set(['q','prix','cout','p0','p1','p2','p3']);
+  const cell=(r,k)=>{ if(r.t==='B') return '';
+    if(k==='q'||k==='prix') return (r.t==='G'||r.t==='D')?num(r[k]):'';
+    if(k==='cout') return r.t==='CH'?'':num(r.cout);
+    if(/^p[0-3]$/.test(k)) return ecaPctS(r[k]);
+    return esc(r[k]==null?'':r[k]); };
+  const G={cols:cols.map(c=>({k:c[0],t:c[1],f:r=>cell(r,c[0])})),view:M.rows.filter(r=>r.t!=='B')};
+  const ch=h('div',{class:'eca-chart'});
+  const drawChart=()=>ecaChart(ch,ecaOverviewChart(M,S.vue,n=>ecaCfcText1(ctx,n)),'CHF');
+  const lst=ecExt('ec4PrintOld');
+  tools.append(ibtn({i:'list',t:'Liste',menu:()=>[{t:'Estimation des coûts… [Ancien document]'+(lst?'':' (lot 4)'),dis:!lst,fn:lst&&(()=>lst(ctx))}]}),
+    ibtn({i:'analyse',t:'Graphique',menu:()=>ECA_VUES.map((t,i)=>({t,chk:S.vue===i,fn:()=>{ S.vue=i; drawChart(); }}))}),
+    ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV',fn:()=>csvTable(G,'Apercu_'+(((ctx.p||{}).NUMBER)||'')+'_'+ctx.id)},
+      ...(typeof mgSaveChart==='function'?[{t:'Enregistrer le graphique (SVG)',fn:()=>mgSaveChart(ch,'Apercu_'+ctx.id)}]:[])]}),
+    h('span',{class:'eca-warn',title:'Σ des groupes CFC ≠ total A–Z (tolérance 50 CHF, contrôle msg11 de l’original).'},M.cfcIncomplete?'L’attribution CFC n’est pas terminée.':''),
+    h('div',{style:{flex:1}}),h('span',{class:'eca-lbl',title:'Grandeur de la colonne CHF/m² (§ 0 n° 7)'},'CHF/m² : '+M.gf+' '+num(M.gfq)),
+    h('b',{style:{margin:'0 6px 0 14px',fontVariantNumeric:'tabular-nums'}},'Total '+num(ecR(res.T.inv,!!P.arrondir))));
+  const box=h('div',{class:'pane',style:{border:'1px solid var(--line)',background:'#fff',margin:'6px 6px 0'}});
+  let html='<table class="g ec-t"><colgroup>'+cols.map(c=>`<col style="width:${c[2]}px">`).join('')+'</colgroup><thead><tr>'+
+    cols.map(c=>`<th class="${NUM.has(c[0])?'r':(c[0]==='un'||c[0]==='pu'?'c':'')}" title="${esc(c[1])}">${esc(c[1])}</th>`).join('')+'</tr></thead><tbody>';
+  M.rows.forEach(r=>{ const cl=[r.t==='B'?'blank':'',r.b?'b':'',r.hl?'mg':''].filter(Boolean).join(' ');
+    html+=`<tr class="${cl}">`+cols.map(c=>`<td class="${NUM.has(c[0])?'r':(c[0]==='un'||c[0]==='pu'?'c':'')}">${cell(r,c[0])}</td>`).join('')+'</tr>'; });
+  box.innerHTML=html+'</tbody></table>';
+  pane.append(box,ch);
+  drawChart();
+}
+
+/* ═══ Propositions CFC (§ 4.8.1 n° 5, § 12 n° 5) : collection « ebkptobkp » {ID, ebkp, standard, cfc:[{numero, proposition}]} ═══
+   Aucune table eCCC → CFC n'est codée dans DeltaSub. Les enregistrements viennent de l'apprentissage des choix
+   (ElementCalcDialog.updateEbkpToBkp) et, si le bureau le décide, d'un import de son fichier Costplanning/ebkpToBkp
+   (non livré, réserve de licence § 1.4). Écart voulu : l'apprentissage crée l'entrée du code si elle n'existe pas
+   (l'original n'enrichit qu'une entrée existante du fichier). */
+function ecaCfcRecs(){ if(!DS.loaded.has('ebkptobkp')) DS.need(['ebkptobkp']).catch(()=>{}); return DS.all('ebkptobkp'); }
+function ecaCfcProposals(ctx,eCode){ const out=[];
+  ecaCfcRecs().filter(r=>String(r.ebkp)===String(eCode)).forEach(r=>ecL(r,'cfc').forEach(c=>{ const n=String(c.numero||''); if(n&&!out.includes(n)) out.push(n); }));
+  return out; }
+async function ecaCfcLearn(ctx,eCode,numero){
+  try{ await DS.need(['ebkptobkp']); const code=String(eCode||''), n=String(numero||''); if(!code||!n) return;
+    const r=DS.all('ebkptobkp').find(x=>String(x.ebkp)===code);
+    if(r){ if(ecL(r,'cfc').some(c=>String(c.numero)===n)) return; await DS.commit([{t:'ebkptobkp',id:r.ID,val:Object.assign({},r,{cfc:[...ecL(r,'cfc'),{numero:n,proposition:true}]})}]); return; }
+    const id=DS.newIds('ebkptobkp')[0]; await DS.commit([{t:'ebkptobkp',id,val:{ID:id,ebkp:code,standard:false,cfc:[{numero:n,proposition:true}]}}]);
+  }catch(e){ console.warn('ecaCfcLearn',e); } }
+
+/* ═══ VALEURS RÉFÉRENTIELLES — base du bureau (§ 6.5.2) : statisticalvalue, constructionpart, constructioncomponent, ebkpelement ═══
+   Écrans de la liste (Valeurs référentielles ▾) : ecaStatisticalValues, ecaConstructionParts, ecaEbkpElements.
+   Données du bureau seulement ; « Importer le eCCC » (CRB) n'est pas reproduit ; toute ligne dont la source est le CRB est masquée. */
+function ecaNumIn(v,w){ return h('input',{class:'inp',value:v==null||v===''?'':String(+v||0),style:{width:w||'130px',textAlign:'right'}}); }
+function ecaMonthSel(m){ return h('select',{class:'inp',style:{width:'130px'}},...ECA_MOIS.map((t,i)=>h('option',{value:String(i),selected:+m===i||null},t))); }
+/* « Navigateur des éléments » (EBkpElementBrowserDialog) : structure du bureau (ebkpelement) */
+function ecaEbkpBrowser(cur,fn){
+  const o={sel:cur!=null?String(cur):null}; let q='', upd=()=>{};
+  const box=h('div',{class:'eca-box',style:{width:'560px',height:'360px'}});
+  const draw=()=>{ grid(box,Object.assign(o,{cols:[{k:'CODE',t:'Code',w:90},{k:'NAME',t:'Désignation'}],rows:DS.all('ebkpelement').filter(x=>matchQ(q,x.CODE,x.NAME)).sort((a,b)=>cmp(a.CODE,b.CODE)),sort:null,
+    onSel:()=>upd(),onDbl:()=>$('.ov:last-child .btn.pri').click(),empty:'Aucun élément dans la structure du bureau.'})); upd(); };
+  const s=h('input',{class:'inp',placeholder:'Rechercher'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); };
+  draw();
+  const dlg=dialog({title:'Navigateur des éléments',body:h('div',{},s,h('div',{style:{height:'6px'}}),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const x=DS.get('ebkpelement',o.sel); if(!x) return false; return fn(x); }}]});
+  upd=ecaGuard(dlg,()=>!!DS.get('ebkpelement',o.sel));
+}
+/* Sources proposées : « Donnée externe » et les sources déjà saisies (jamais « Donnée du CRB ») */
+function ecaSourceField(v,table){ const i=h('input',{class:'inp',value:v||'',maxlength:64,style:{width:'220px'}});
+  const b=ibtn({label:'▾',t:'Source',fn:()=>{ const L=['Donnée externe',...new Set(DS.all(table).map(x=>x.DATASOURCE).filter(x=>x&&!ECA_CRB.test(x)))];
+    popMenu(b,[...new Set(L)].map(t=>({t,fn:()=>{ i.value=t; }}))); }});
+  return {i,el:h('span',{style:{display:'inline-flex',gap:'4px'}},i,b)}; }
+function ecaReadNum(inp,lbl){ return ecReadNum(inp,lbl); }
+/* Montant = Quantité × Prix (StatisticalValue.getAmount) */
+function ecaAmount(r){ return (+r.QUANTITY||0)*(+r.UNITPRICE||0); }
+
+/* ── « Valeurs référentielles des éléments » (StatisticalValuesDialog) ── */
+async function ecaStatisticalValues(){
+  await ecaNeedRef();
+  const g={}, box=h('div',{class:'eca-box',style:{width:'1180px',height:'430px'}});
+  const cols=[{k:'c',t:'Code eCCC',w:80,f:v=>esc(ecaEbkpCode(v.EBKPELEMENT_ID)),v:v=>ecaEbkpCode(v.EBKPELEMENT_ID)},{k:'n',t:'Désignation eCCC',w:190,f:v=>esc((DS.get('ebkpelement',v.EBKPELEMENT_ID)||{}).NAME)},
+    {k:'NAME',t:'Désignation',w:170},{k:'DATASOURCE',t:'Source',w:90},{k:'r',t:'Région',w:110,f:v=>esc(ecaRegion(v.REGIONCODE))},{k:'UNIT',t:'Unité',w:50},
+    {k:'QUANTITY',t:'Quantité',w:80,cls:'r',f:v=>num(v.QUANTITY)},{k:'UNITPRICE',t:'Prix',w:90,cls:'r',f:v=>num(v.UNITPRICE)},{k:'a',t:'Montant',w:100,cls:'r',f:v=>num(ecaAmount(v)),v:ecaAmount},
+    {k:'d',t:'Date de l’indice ICC',w:120,f:v=>esc(ecaIndexDate(v.PRICEINDEXMONTH,v.PRICEINDEXYEAR))},{k:'PRICEINDEX',t:'Indice ICC',w:80,cls:'r',f:v=>num(v.PRICEINDEX)}];
+  const rows=()=>DS.all('statisticalvalue').filter(v=>!ecaIsCrb(v)).sort((a,b)=>cmp(ecaEbkpCode(a.EBKPELEMENT_ID),ecaEbkpCode(b.EBKPELEMENT_ID))||cmp(a.NAME,b.NAME));
+  const cur=()=>DS.get('statisticalvalue',g.sel);
+  const bE=ibtn({i:'edit',t:'Editer',fn:()=>{ const v=cur(); if(v) ecaStatValueDialog(v,null,draw); }}), bD=ibtn({i:'minus',t:'Supprimer',fn:async()=>{ const v=cur(); if(!v) return; const bs=ecaSeq('statisticalvalue',v.ID);
+    if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
+    try{ await DS.commit([{t:'statisticalvalue',id:v.ID,val:null,bseq:bs}]); }catch(e){ draw(); return; } g.sel=null; draw(); }});
+  const upd=()=>{ bE.disabled=bD.disabled=!cur(); };
+  const draw=()=>{ grid(box,Object.assign(g,{cols,rows:rows(),sort:null,onSel:upd,onDbl:v=>ecaStatValueDialog(v,null,draw),empty:'Aucune valeur référentielle des éléments.'})); upd(); };
+  const head=phead([{i:'plus',t:'Nouvelle valeur de l’élément',fn:()=>ecaEbkpBrowser(null,eb=>{ ecaStatValueDialog(null,eb,draw); })},bE,bD]);
+  draw();
+  dialog({title:'Valeurs référentielles des éléments',width:'1220px',body:h('div',{},head,box,h('div',{class:'ec-small',style:{marginTop:'6px'}},'Données du bureau (valeurs saisies). Les données du CRB ne sont pas reprises.')),buttons:[{t:'Fermer'}]});
+}
+/* « Nouvelle valeur de l'élément » / « Modifier la valeur de l'élément » (StatisticalValueDialog) */
+function ecaStatValueDialog(v,eb,after){
+  const isNew=!v; let ebk=isNew?eb:DS.get('ebkpelement',v.EBKPELEMENT_ID); const r=v||{}, bs=isNew?0:ecaSeq('statisticalvalue',r.ID);
+  const elL=h('span',{},ebk?ebk.CODE+' '+(ebk.NAME||''):''), elB=ibtn({label:'◂',t:'Navigateur des éléments',fn:()=>ecaEbkpBrowser(ebk&&ebk.ID,x=>{ ebk=x; elL.textContent=x.CODE+' '+(x.NAME||''); })});
+  const nm=h('input',{class:'inp',value:r.NAME||'',maxlength:128}), src=ecaSourceField(r.DATASOURCE,'statisticalvalue');
+  const rg=h('select',{class:'inp',style:{width:'220px'}},...ECA_REGIONS.map(([c,t])=>h('option',{value:String(c),selected:(+r.REGIONCODE||0)===c||null},t)));
+  const un=h('input',{class:'inp',value:r.UNIT||'',maxlength:20,style:{width:'90px'}}), qt=ecaNumIn(r.QUANTITY??1), pr=ecaNumIn(r.UNITPRICE), am=h('input',{class:'inp',readonly:true,style:{width:'130px',textAlign:'right'}});
+  const mo=ecaMonthSel(r.PRICEINDEXMONTH??new Date().getMonth()), yr=h('input',{class:'inp',type:'number',step:'1',value:r.PRICEINDEXYEAR??new Date().getFullYear(),style:{width:'90px'}}), ix=ecaNumIn(r.PRICEINDEX);
+  const ds=h('textarea',{class:'inp',rows:4,maxlength:1024},r.CONSTRUCTIONDESCRIPTION||''), rm=h('input',{class:'inp',value:r.REMARK||'',maxlength:256});
+  const upd=()=>{ am.value=num((ecParse(qt.value)||0)*(ecParse(pr.value)||0)); }; qt.oninput=upd; pr.oninput=upd; upd();
+  const dlg=dialog({title:isNew?'Nouvelle valeur de l’élément':'Modifier la valeur de l’élément',width:'640px',body:formRows([['Elément eCCC',h('span',{style:{display:'inline-flex',gap:'6px',alignItems:'center'}},elL,elB)],
+      ['Nom',nm],['Source',src.el],['Région',rg],['Unité',un],['Quantité',qt],['Prix',pr],['Montant',am],['Date de l’indice ICC',h('span',{style:{display:'inline-flex',gap:'6px'}},mo,yr)],['Indice ICC',ix],['Description',ds],['Remarque',rm]],560),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+      if(!nm.value.trim()){ toast('Le nom est obligatoire.',true); return false; } if(!ebk){ toast('Choisissez l’élément eCCC.',true); return false; }
+      if(ECA_CRB.test(src.i.value)){ toast('Les données du CRB ne sont pas reprises dans DeltaSub.',true); return false; }
+      const q=ecaReadNum(qt,'Quantité'), p=ecaReadNum(pr,'Prix'), i=ecaReadNum(ix,'Indice ICC'); if(q==null||p==null||i==null) return false;
+      const rec=Object.assign({},r,{NAME:nm.value.trim(),DATASOURCE:src.i.value.trim(),REGIONCODE:+rg.value,UNIT:un.value.trim(),QUANTITY:q,UNITPRICE:p,PRICEINDEX:i,PRICEINDEXMONTH:+mo.value,
+        PRICEINDEXYEAR:parseInt(yr.value,10)||null,CONSTRUCTIONDESCRIPTION:ds.value.trim()||null,REMARK:rm.value.trim()||null,EBKPELEMENT_ID:ebk.ID});
+      if(rec.ID==null) rec.ID=DS.newIds('statisticalvalue')[0];
+      await DS.commit([{t:'statisticalvalue',id:rec.ID,val:rec,bseq:bs}]); if(after) after(); }}]});
+  const ok=dlg.bd.parentNode.querySelector('.ft .btn.pri'); const chk=()=>{ ok.disabled=!nm.value.trim(); }; nm.oninput=chk; chk();
+}
+
+/* ── « Valeurs référentielles des sous-éléments » (ConstructionPartsDialog) : SE du bureau (en haut) et leurs composants (en bas) ── */
+async function ecaConstructionParts(){
+  await ecaNeedRef();
+  const g={}, gc={}, box=h('div',{class:'eca-box',style:{width:'1180px',height:'260px'}}), cbox=h('div',{class:'eca-box',style:{width:'1180px',height:'170px'}}), cl=h('div',{class:'ec-hint',style:{margin:'10px 0 4px'}});
+  const cols=[{k:'c',t:'Code eCCC',w:80,f:v=>esc(ecaEbkpCode(v.EBKPELEMENT_ID)),v:v=>ecaEbkpCode(v.EBKPELEMENT_ID)},{k:'n',t:'Désignation eCCC',w:170,f:v=>esc((DS.get('ebkpelement',v.EBKPELEMENT_ID)||{}).NAME)},
+    {k:'NUMBER',t:'Numéro',w:60,cls:'r'},{k:'NAME',t:'Désignation',w:160},{k:'DATASOURCE',t:'Source',w:80},{k:'UNIT',t:'Unité',w:50},{k:'QUANTITY',t:'Quantité',w:70,cls:'r',f:v=>num(v.QUANTITY)},
+    {k:'UNITPRICE',t:'Prix',w:80,cls:'r',f:v=>num(v.UNITPRICE)},{k:'a',t:'Montant',w:90,cls:'r',f:v=>num(ecaAmount(v)),v:ecaAmount},{k:'d',t:'Date de l’indice ICC',w:110,f:v=>esc(ecaIndexDate(v.PRICEINDEXMONTH,v.PRICEINDEXYEAR))},
+    {k:'PRICEINDEX',t:'Indice ICC',w:70,cls:'r',f:v=>num(v.PRICEINDEX)},{k:'BKP',t:'CFC',w:60}];
+  const ccols=[{k:'NUMBER',t:'Numéro',w:70,cls:'r'},{k:'NAME',t:'Nom',w:260},{k:'UNIT',t:'Unité',w:60},{k:'QUANTITY',t:'Quantité',w:90,cls:'r',f:v=>num(v.QUANTITY)},{k:'UNITPRICE',t:'Prix',w:100,cls:'r',f:v=>num(v.UNITPRICE)},
+    {k:'a',t:'Montant',w:110,cls:'r',f:v=>num(ecaAmount(v))},{k:'BKP',t:'CFC',w:70}];   // db.stats.ConstructionComponentTableModel
+  const cur=()=>DS.get('constructionpart',g.sel), ccur=()=>DS.get('constructioncomponent',gc.sel);
+  const bE=ibtn({i:'edit',t:'Editer',fn:()=>{ const v=cur(); if(v) ecaPartDialog(v,null,draw); }});
+  const bD=ibtn({i:'minus',t:'Supprimer',fn:async()=>{ const v=cur(); if(!v) return; const ops=[{t:'constructionpart',id:v.ID,val:null,bseq:ecaSeq('constructionpart',v.ID)},
+      ...ecaComps(v.ID).map(c=>({t:'constructioncomponent',id:c.ID,val:null,bseq:ecaSeq('constructioncomponent',c.ID)}))];   // le SE et ses composants : un seul enregistrement
+    if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
+    try{ await DS.commit(ops); }catch(e){ draw(); return; } g.sel=null; draw(); }});
+  const cA=ibtn({i:'plus',t:'Nouveau composant',fn:()=>{ const v=cur(); if(v) ecaCompDialog(v,null,draw); }}), cE=ibtn({i:'edit',t:'Modifier le composant',fn:()=>{ const c=ccur(); if(c) ecaCompDialog(cur(),c,draw); }});
+  const cD=ibtn({i:'minus',t:'Supprimer',fn:async()=>{ const c=ccur(); if(!c) return; const bs=ecaSeq('constructioncomponent',c.ID); if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
+    try{ await DS.commit([{t:'constructioncomponent',id:c.ID,val:null,bseq:bs}]); }catch(e){ draw(); return; } gc.sel=null; draw(); }});
+  /* flèches : ordre des composants (SORTORDER), un seul commit */
+  const move=async dir=>{ const v=cur(), c=ccur(); if(!v||!c) return; const L=ecaComps(v.ID), i=L.indexOf(c), j=dir==='first'?0:dir==='last'?L.length-1:i+(dir==='up'?-1:1);
+    if(j<0||j>=L.length||j===i) return; L.splice(i,1); L.splice(j,0,c);
+    await DS.commit(L.map((x,k)=>({t:'constructioncomponent',id:x.ID,val:Object.assign({},x,{SORTORDER:k+1})})).filter((o,k)=>+L[k].SORTORDER!==k+1)); draw(); };
+  const upd=()=>{ const v=cur(); bE.disabled=bD.disabled=cA.disabled=!v; cE.disabled=cD.disabled=!ccur(); };
+  const draw=()=>{ grid(box,Object.assign(g,{cols,rows:DS.all('constructionpart').filter(v=>!ecaIsCrb(v)).sort((a,b)=>cmp(ecaEbkpCode(a.EBKPELEMENT_ID),ecaEbkpCode(b.EBKPELEMENT_ID))||cmp(a.NUMBER,b.NUMBER)),
+      sort:null,onSel:()=>{ gc.sel=null; drawC(); upd(); },onDbl:v=>ecaPartDialog(v,null,draw),empty:'Aucun sous-élément dans la base du bureau.'})); drawC(); upd(); };
+  const drawC=()=>{ const v=cur(); cl.textContent=v?'Composants de '+(v.NAME||''):'Composants';
+    grid(cbox,Object.assign(gc,{cols:ccols,rows:v?ecaComps(v.ID):[],sort:null,onSel:upd,onDbl:c=>ecaCompDialog(cur(),c,draw),empty:v?'Aucun composant.':'Choisissez un sous-élément.'})); };
+  const head=phead([{i:'plus',t:'Nouveau sous-élément',fn:()=>ecaEbkpBrowser(null,eb=>{ ecaPartDialog(null,eb,draw); })},bE,bD]);
+  const chead=phead([cA,cE,cD,ibtn({i:'first',t:'Début',fn:()=>move('first')}),ibtn({i:'prev',t:'Monter',fn:()=>move('up')}),ibtn({i:'next',t:'Descendre',fn:()=>move('down')}),ibtn({i:'last',t:'Fin',fn:()=>move('last')})]);
+  draw();
+  dialog({title:'Valeurs référentielles des sous-éléments',width:'1220px',body:h('div',{},head,box,cl,chead,cbox),buttons:[{t:'Fermer'}]});
+}
+/* « Nouveau sous-élément » / « Modifier le sous-élément » (ConstructionPartDialog) */
+function ecaPartDialog(v,eb,after){
+  const isNew=!v, r=v||{}, bs=isNew?0:ecaSeq('constructionpart',r.ID); let ebk=isNew?eb:DS.get('ebkpelement',r.EBKPELEMENT_ID);
+  const elL=h('span',{},ebk?ebk.CODE+' '+(ebk.NAME||''):''), elB=ibtn({label:'◂',t:'Navigateur des éléments',fn:()=>ecaEbkpBrowser(ebk&&ebk.ID,x=>{ ebk=x; elL.textContent=x.CODE+' '+(x.NAME||''); })});
+  const nextNr=()=>1+Math.max(0,...DS.all('constructionpart').filter(x=>ebk&&x.EBKPELEMENT_ID===ebk.ID).map(x=>+x.NUMBER||0));
+  const nr=h('input',{class:'inp',type:'number',step:'1',value:isNew?nextNr():(r.NUMBER??''),style:{width:'90px'}}), nm=h('input',{class:'inp',value:r.NAME||'',maxlength:128}), src=ecaSourceField(r.DATASOURCE,'constructionpart');
+  const un=h('input',{class:'inp',value:r.UNIT||'',maxlength:20,style:{width:'90px'}}), qt=ecaNumIn(r.QUANTITY??1), pr=ecaNumIn(r.UNITPRICE), am=h('input',{class:'inp',readonly:true,style:{width:'130px',textAlign:'right'}});
+  const mo=ecaMonthSel(r.PRICEINDEXMONTH??new Date().getMonth()), yr=h('input',{class:'inp',type:'number',step:'1',value:r.PRICEINDEXYEAR??new Date().getFullYear(),style:{width:'90px'}}), ix=ecaNumIn(r.PRICEINDEX);
+  const bkp=h('input',{class:'inp',value:r.BKP||'',maxlength:20,style:{width:'110px'}});
+  const ds=h('textarea',{class:'inp',rows:3,maxlength:1024},r.DESCRIPTION||''), ex=h('textarea',{class:'inp',rows:3,maxlength:1024},r.CONSTRUCTIONDESCRIPTION||''), rm=h('input',{class:'inp',value:r.REMARK||'',maxlength:256});
+  const eg=ecaNumIn(r.EMBODIEDENERGY), uv=ecaNumIn(r.UVALUE), gw=ecaNumIn(r.GREENHOUSEEFFECT);
+  const upd=()=>{ am.value=num((ecParse(qt.value)||0)*(ecParse(pr.value)||0)); }; qt.oninput=upd; pr.oninput=upd; upd();
+  const dlg=dialog({title:isNew?'Nouveau sous-élément':'Modifier le sous-élément',width:'700px',body:formRows([['Elément eCCC',h('span',{style:{display:'inline-flex',gap:'6px',alignItems:'center'}},elL,elB)],
+      ['Numéro',nr],['Désignation',nm],['Source',src.el],['Unité',un],['Quantité',qt],['Prix',pr],['Montant',am],['Date de l’indice ICC',h('span',{style:{display:'inline-flex',gap:'6px'}},mo,yr)],['Indice ICC',ix],
+      ['CFC',bkp],['Description',ds],['Exécution',ex],['Remarque',rm],['Énergie grise',h('span',{},eg,' kWh/m2 a')],['Coefficient U',h('span',{},uv,' [W/m²K]')],['Effet de serre (GWP 100a)',h('span',{},gw,' [kg/p a]')]],620),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+      if(!nm.value.trim()){ toast('La désignation est obligatoire.',true); return false; } if(!ebk){ toast('Choisissez l’élément eCCC.',true); return false; }
+      if(ECA_CRB.test(src.i.value)){ toast('Les données du CRB ne sont pas reprises dans DeltaSub.',true); return false; }
+      const q=ecaReadNum(qt,'Quantité'), p=ecaReadNum(pr,'Prix'), i=ecaReadNum(ix,'Indice ICC'), e1=ecaReadNum(eg,'Énergie grise'), e2=ecaReadNum(uv,'Coefficient U'), e3=ecaReadNum(gw,'Effet de serre');
+      if([q,p,i,e1,e2,e3].some(x=>x==null)) return false;
+      const rec=Object.assign({},r,{NUMBER:parseInt(nr.value,10)||0,NAME:nm.value.trim(),DATASOURCE:src.i.value.trim(),UNIT:un.value.trim(),QUANTITY:q,UNITPRICE:p,PRICEINDEX:i,PRICEINDEXMONTH:+mo.value,
+        PRICEINDEXYEAR:parseInt(yr.value,10)||null,BKP:bkp.value.trim()||null,DESCRIPTION:ds.value.trim()||null,CONSTRUCTIONDESCRIPTION:ex.value.trim()||null,REMARK:rm.value.trim()||null,
+        EMBODIEDENERGY:e1||null,UVALUE:e2||null,GREENHOUSEEFFECT:e3||null,EBKPELEMENT_ID:ebk.ID});
+      if(rec.ID==null) rec.ID=DS.newIds('constructionpart')[0];
+      await DS.commit([{t:'constructionpart',id:rec.ID,val:rec,bseq:bs}]); if(after) after(); }}]});
+  const ok=dlg.bd.parentNode.querySelector('.ft .btn.pri'); const chk=()=>{ ok.disabled=!nm.value.trim(); }; nm.oninput=chk; chk();
+}
+/* « Nouveau composant » / « Modifier le composant » (ConstructionComponentDialog) */
+function ecaCompDialog(part,c,after){
+  if(!part) return; const isNew=!c, r=c||{}, L=ecaComps(part.ID), bs=isNew?0:ecaSeq('constructioncomponent',r.ID);
+  const nr=h('input',{class:'inp',type:'number',step:'1',value:isNew?1+Math.max(0,...L.map(x=>+x.NUMBER||0)):(r.NUMBER??''),style:{width:'90px'}}), nm=h('input',{class:'inp',value:r.NAME||'',maxlength:128});
+  const un=h('input',{class:'inp',value:r.UNIT||'',maxlength:20,style:{width:'90px'}}), qt=ecaNumIn(r.QUANTITY??1), pr=ecaNumIn(r.UNITPRICE), am=h('input',{class:'inp',readonly:true,style:{width:'130px',textAlign:'right'}});
+  const bkp=h('input',{class:'inp',value:r.BKP||'',maxlength:20,style:{width:'110px'}}), ds=h('textarea',{class:'inp',rows:3,maxlength:1024},r.DESCRIPTION||'');
+  const upd=()=>{ am.value=num((ecParse(qt.value)||0)*(ecParse(pr.value)||0)); }; qt.oninput=upd; pr.oninput=upd; upd();
+  const dlg=dialog({title:isNew?'Nouveau composant':'Modifier le composant',width:'560px',body:h('div',{},h('div',{class:'ec-hint'},part.NAME||''),formRows([['Numéro',nr],['Nom',nm],['Unité',un],['Quantité',qt],['Prix',pr],['Montant',am],['CFC',bkp],['Description',ds]],480)),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!nm.value.trim()){ toast('Le nom est obligatoire.',true); return false; }
+      const q=ecaReadNum(qt,'Quantité'), p=ecaReadNum(pr,'Prix'); if(q==null||p==null) return false;
+      const rec=Object.assign({},r,{NUMBER:parseInt(nr.value,10)||0,NAME:nm.value.trim(),UNIT:un.value.trim(),QUANTITY:q,UNITPRICE:p,BKP:bkp.value.trim()||null,DESCRIPTION:ds.value.trim()||null,
+        SORTORDER:isNew?L.length+1:r.SORTORDER,CONSTRUCTIONPART_ID:part.ID});
+      if(rec.ID==null) rec.ID=DS.newIds('constructioncomponent')[0];
+      await DS.commit([{t:'constructioncomponent',id:rec.ID,val:rec,bseq:bs}]); if(after) after(); }}]});
+  nm.oninput=ecaGuard(dlg,()=>!!nm.value.trim());   // ConstructionComponentDialog : OK actif avec un nom
+}
+/* ── « Structure des éléments pour les valeurs référentielles » (EBkpElementsDialog) ── */
+async function ecaEbkpElements(){
+  await ecaNeedRef();
+  const g={}; let q=''; const box=h('div',{class:'eca-box',style:{width:'720px',height:'420px'}});
+  const used=x=>DS.by('statisticalvalue','EBKPELEMENT_ID',x.ID).length+DS.by('constructionpart','EBKPELEMENT_ID',x.ID).length;
+  const cur=()=>DS.get('ebkpelement',g.sel);
+  const bE=ibtn({i:'edit',t:'Modifier l’élément',fn:()=>{ const x=cur(); if(x) ecaEbkpDialog(x,draw); }});
+  const bD=ibtn({i:'minus',t:'Supprimer',fn:async()=>{ const x=cur(); if(!x) return;
+    if(used(x)){ toast('Cette position ne peut été supprimée car elle contient des valeurs référentielles',true); return; }
+    const bs=ecaSeq('ebkpelement',x.ID); if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
+    if(used(x)){ toast('Cette position ne peut été supprimée car elle contient des valeurs référentielles',true); return; }   // saisie d'un autre poste pendant la confirmation
+    try{ await DS.commit([{t:'ebkpelement',id:x.ID,val:null,bseq:bs}]); }catch(e){ draw(); return; } g.sel=null; draw(); }});
+  const upd=()=>{ bE.disabled=bD.disabled=!cur(); };
+  const draw=()=>{ grid(box,Object.assign(g,{cols:[{k:'CODE',t:'Code',w:100},{k:'NAME',t:'Désignation'},{k:'nv',t:'Eléments',w:80,cls:'r',f:x=>String(DS.by('statisticalvalue','EBKPELEMENT_ID',x.ID).length||'')},
+      {k:'np',t:'Sous-éléments',w:100,cls:'r',f:x=>String(DS.by('constructionpart','EBKPELEMENT_ID',x.ID).length||'')}],
+    rows:DS.all('ebkpelement').filter(x=>matchQ(q,x.CODE,x.NAME)).sort((a,b)=>cmp(a.CODE,b.CODE)),sort:null,onSel:upd,onDbl:x=>ecaEbkpDialog(x,draw),empty:'Aucun élément.'})); upd(); };
+  const head=phead([{i:'plus',t:'Nouveau',menu:()=>[{t:'Nouvel élément…',fn:()=>ecaEbkpDialog(null,draw)}]},bE,bD],{search:x=>{ q=x; draw(); }});
+  draw();
+  dialog({title:'Structure des éléments pour les valeurs référentielles',width:'760px',body:h('div',{},head,box,h('div',{class:'ec-small',style:{marginTop:'6px'}},'« Importer le eCCC » (catalogue CRB) n’est pas repris : la structure est une donnée du bureau.')),buttons:[{t:'Fermer'}]});
+}
+function ecaEbkpDialog(x,after){
+  const isNew=!x, r=x||{}, bs=isNew?0:ecaSeq('ebkpelement',r.ID); const co=h('input',{class:'inp',value:r.CODE||'',maxlength:16,style:{width:'120px'}}), nm=h('input',{class:'inp',value:r.NAME||'',maxlength:128});
+  const dlg=dialog({title:isNew?'Nouvel élément':'Modifier l’élément',width:'520px',body:formRows([['Code',co],['Nom',nm]],440),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    const c=co.value.trim().toUpperCase(); if(!c||!nm.value.trim()) return false;
+    if(DS.all('ebkpelement').some(y=>y.CODE===c&&y.ID!==r.ID)){ toast('Cet élément est déjà utilisé.',true); return false; }
+    const rec=Object.assign({},r,{CODE:c,NAME:nm.value.trim()}); if(rec.ID==null) rec.ID=DS.newIds('ebkpelement')[0];
+    await DS.commit([{t:'ebkpelement',id:rec.ID,val:rec,bseq:bs}]); if(after) after(); }}]});
+  const ok=dlg.bd.parentNode.querySelector('.ft .btn.pri'); const chk=()=>{ ok.disabled=!(co.value.trim()&&nm.value.trim()); }; co.oninput=chk; nm.oninput=chk; chk();
+}
+
+/* ═══ « Base de données de valeurs référentielles » (PriceDataInputDialog, § 6.5.2) ═══
+   Colonnes Région | Quantité | Unité | Valeur | Montant | Indice ICC | Valeur indexée ; Valeur indexée = ecaIndexed (§ 12 n° 4).
+   mode 'nav' (ELEMENTS ▸ Import ▸ « Valeurs référentielles des éléments… » et clic droit) : navigation élément / ouvrage
+   (positions non générées ou fixées), OK reporte la valeur choisie sur la position affichée (setPrice : prix = valeur
+   indexée ; note interne et description reprises si elles sont renseignées) — écart : l'original n'applique rien depuis le
+   menu Import (consultation seule) et applique depuis le clic droit ; DeltaSub applique dans les deux cas, sur OK seulement.
+   mode 'dlg' (« Proposition ▾ » du dialogue d'élément) : élément fixé, fn(vals) reçoit {prix, description, noteInterne}. */
+function ecaPriceDialog(ctx,mode,so,fn){
+  const P=ctx.P, base=ecaBaseIndex(ctx);
+  const nav=P.elements.filter(e=>!e.genere||e.niveauFixe);
+  const S={code:(so&&so.e&&so.e.code)||'',og:(so&&so.d&&(so.d.ouvrage||''))||''};
+  if(mode==='nav'&&!nav.some(e=>e.code===S.code)){ S.code=nav.length?nav[0].code:''; S.og=''; }
+  const el=()=>P.elements.find(e=>e.code===S.code)||null;
+  const selE=h('select',{class:'inp',style:{width:'380px'}},...nav.map(e=>h('option',{value:e.code,selected:e.code===S.code||null},e.code+' '+ecaTxt(e))));
+  const selO=h('select',{class:'inp',style:{width:'120px'}});
+  const fillO=()=>{ const e=el(); selO.innerHTML=''; ecL(e,'parOuvrage').forEach(d=>selO.append(h('option',{value:d.ouvrage||'',selected:(d.ouvrage||'')===S.og||null},ecOgCode(d))));
+    if(e&&ecL(e,'parOuvrage').length&&!ecL(e,'parOuvrage').some(d=>(d.ouvrage||'')===S.og)) S.og=e.parOuvrage[0].ouvrage||''; selO.disabled=!ecL(e,'parOuvrage').length||mode!=='nav'; };
+  const g={}, box=h('div',{class:'eca-box',style:{width:'700px',height:'200px'}});
+  const fN=h('input',{class:'inp',readonly:true}), fS=h('input',{class:'inp',readonly:true}), fR=h('input',{class:'inp',readonly:true}), fD=h('textarea',{class:'inp',rows:4,readonly:true});
+  const cur=()=>DS.get('statisticalvalue',g.sel);
+  const setF=()=>{ const v=cur(); fN.value=v?v.NAME||'':''; fS.value=v?v.DATASOURCE||'':''; fR.value=v?v.REMARK||'':''; fD.value=v?v.CONSTRUCTIONDESCRIPTION||'':''; };
+  const idx=v=>+v.PRICEINDEX?ecaIndexed(v.UNITPRICE,v.PRICEINDEX,base):(+v.UNITPRICE||0);   // PriceDataInputDialog.jOkButton : indice ≠ 0 → valeur indexée, sinon prix
+  const draw=()=>{ selE.value=S.code; fillO(); const rows=ecaStatFor(S.code); if(!rows.some(v=>String(v.ID)===String(g.sel))) g.sel=null;
+    grid(box,Object.assign(g,{cols:[{k:'r',t:'Région',w:130,f:v=>esc(ecaRegion(v.REGIONCODE))},{k:'QUANTITY',t:'Quantité',w:80,cls:'r',f:v=>num(v.QUANTITY)},{k:'UNIT',t:'Unité',w:50},
+      {k:'UNITPRICE',t:'Valeur',w:90,cls:'r',f:v=>num(v.UNITPRICE)},{k:'a',t:'Montant',w:100,cls:'r',f:v=>num(ecaAmount(v))},{k:'PRICEINDEX',t:'Indice ICC',w:80,cls:'r',f:v=>num(v.PRICEINDEX)},
+      {k:'ix',t:'Valeur indexée',w:100,cls:'r',f:v=>num(idx(v))}],rows,sort:null,onSel:setF,onDbl:()=>{ if(mode==='dlg') $('.ov:last-child .btn.pri').click(); },
+      empty:'Aucune valeur référentielle pour l’élément '+S.code+' dans la base du bureau.'})); setF(); };
+  selE.onchange=()=>{ S.code=selE.value; S.og=''; draw(); }; selO.onchange=()=>{ S.og=selO.value; };
+  /* navigation (PosNavigator) : éléments non générés, et chacune de leurs lignes d'ouvrage */
+  const NL=[]; nav.forEach(e=>{ if(!ecL(e,'parOuvrage').length) NL.push([e.code,'']); else e.parOuvrage.forEach(d=>NL.push([e.code,d.ouvrage||''])); });
+  const go=k=>{ if(!NL.length) return; let i=NL.findIndex(x=>x[0]===S.code&&x[1]===(S.og||'')); if(i<0) i=0;
+    i=k==='first'?0:k==='last'?NL.length-1:k==='prev'?(i>0?i-1:NL.length-1):(i<NL.length-1?i+1:0); S.code=NL[i][0]; S.og=NL[i][1]; draw(); };
+  const navBar=mode==='nav'?h('span',{style:{display:'inline-flex',gap:'2px',marginLeft:'8px'}},...['first','prev','next','last'].map(k=>ibtn({i:k,t:{first:'Début',prev:'Précédent',next:'Suivant',last:'Fin'}[k],fn:()=>go(k)}))):null;
+  if(mode!=='nav'){ selE.disabled=true; }
+  draw();
+  const body=h('div',{},formRows([['Elément',h('span',{style:{display:'inline-flex',alignItems:'center'}},selE,navBar)],['Ouvrage',selO]],640),h('div',{style:{height:'8px'}}),box,
+    h('div',{style:{height:'8px'}}),formRows([['Nom',fN],['Source',fS],['Note interne',fR],['Description d’exécution',fD]],640));
+  dialog({title:'Base de données de valeurs référentielles',width:'760px',body,buttons:[{t:mode==='nav'?'Fermer':'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    const v=cur(); if(!v){ toast('Choisissez une valeur référentielle.',true); return false; }
+    const vals={prix:idx(v)}; if(String(v.REMARK||'')) vals.noteInterne=v.REMARK; if(String(v.CONSTRUCTIONDESCRIPTION||'')) vals.description=v.CONSTRUCTIONDESCRIPTION;
+    if(mode!=='nav'){ if(!vals.prix) delete vals.prix; return fn(vals); }
+    const e=(ctx.P.elements||[]).find(x=>x.code===S.code);   // copie de travail ACTUELLE (relue si un autre poste a enregistré entre-temps)
+    if(!e) return false; const d=ecL(e,'parOuvrage').length?e.parOuvrage.find(x=>(x.ouvrage||'')===(S.og||'')):null, o=d||e;
+    if((e.genere&&!e.niveauFixe)||ecL(o,'sousElements').length||(!d&&ecL(e,'parOuvrage').length)){ toast('La position '+e.code+' ne se saisit pas directement (groupe, sous-éléments ou lignes d’ouvrage).',true); return false; }
+    const blk=ecBlockedBy(ctx.P.elements,e); if(blk){ toast('L’élément '+blk.code+' est fixé.',true); return false; }
+    o.prix=vals.prix; if(vals.noteInterne!=null) o.noteInterne=vals.noteInterne; if(vals.description!=null) o.description=vals.description;
+    await ctx.touch(); toast('Valeur reprise pour '+e.code+(d?' / '+ecOgCode(d):'')+'.'); }}]});
+}
+/* ELEMENTS ▸ Import ▸ « Valeurs référentielles des éléments… » et clic droit (point d'extension du lot 1) */
+async function ecaImportStatValues(ctx){
+  if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; } await ecaNeedRef();
+  ecaPriceDialog(ctx,'nav',ecaSelObj(ctx),null);
+}
+/* « Valeurs référentielles de la base de données » (Proposition ▾ du dialogue d'élément / de sous-élément) */
+async function ecaDatabaseValues(ctx,so,apply){
+  await ecaNeedRef();
+  if(so&&so.s) return ecaSubPriceDialog(ctx,so,apply);
+  ecaPriceDialog(ctx,'dlg',so,vals=>{ apply(vals); });
+}
+/* « Base de données tarifaires » (PriceDataSubelemInputDialog) : SE du bureau de l'élément → prix, CFC, écologie, textes */
+function ecaSubPriceDialog(ctx,so,apply){
+  const e=so.e, base=ecaBaseIndex(ctx), g={}, box=h('div',{class:'eca-box',style:{width:'720px',height:'200px'}});
+  const f={}; ['nm','bkp','eg','gw','src','note'].forEach(k=>{ f[k]=h('input',{class:'inp',readonly:true}); }); f.ds=h('textarea',{class:'inp',rows:3,readonly:true}); f.ex=h('textarea',{class:'inp',rows:3,readonly:true});
+  const cur=()=>DS.get('constructionpart',g.sel), idx=v=>ecaIndexed(v.UNITPRICE,v.PRICEINDEX,base);
+  const setF=()=>{ const v=cur()||{}; f.nm.value=v.NAME||''; f.bkp.value=v.BKP||''; f.eg.value=v.EMBODIEDENERGY!=null?num(v.EMBODIEDENERGY):''; f.gw.value=v.GREENHOUSEEFFECT!=null?num(v.GREENHOUSEEFFECT):'';
+    f.src.value=v.DATASOURCE||''; f.note.value=v.REMARK||''; f.ds.value=v.DESCRIPTION||''; f.ex.value=v.CONSTRUCTIONDESCRIPTION||''; };
+  grid(box,Object.assign(g,{cols:[{k:'NUMBER',t:'Numéro',w:70,f:v=>esc(ecaNum3(v.NUMBER))},{k:'NAME',t:'Nom',w:200},{k:'QUANTITY',t:'Quantité',w:70,cls:'r',f:v=>num(v.QUANTITY)},{k:'UNIT',t:'Unité',w:50},
+    {k:'UNITPRICE',t:'Prix unitaire',w:90,cls:'r',f:v=>num(v.UNITPRICE)},{k:'a',t:'Montant',w:90,cls:'r',f:v=>num(ecaAmount(v))},{k:'PRICEINDEX',t:'Indice',w:60,cls:'r',f:v=>num(v.PRICEINDEX)},
+    {k:'ix',t:'Prix indexé',w:90,cls:'r',f:v=>num(idx(v))},{k:'nc',t:'Nombre de composants',w:80,cls:'r',f:v=>String(ecaComps(v.ID).length)}],rows:ecaPartsFor(e.code),sort:null,onSel:()=>{ setF(); okG(); },onDbl:()=>$('.ov:last-child .btn.pri').click(),
+    empty:'Aucun sous-élément du bureau pour l’élément '+e.code+'.'}));
+  setF(); let okG=()=>{};
+  const dlg=dialog({title:'Base de données tarifaires',width:'780px',body:h('div',{},h('div',{class:'ec-hint'},'Elément '+e.code+' '+ecaTxt(e)+' — Sous-éléments'),box,h('div',{style:{height:'8px'}}),
+    formRows([['Nom',f.nm],['CFC',f.bkp],['Énergie grise [kWh/m2 a]',f.eg],['Effet de serre [GWP 100a]',f.gw],['Description',f.ds],['Exécution',f.ex],['Note interne',f.note],['Source',f.src]],660)),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const v=cur(); if(!v){ toast('Choisissez un sous-élément.',true); return false; }
+      /* setImportedSubElement : CFC du SE du bureau ajouté (l'original l'ajoute à 0 % ; DeltaSub : le reste jusqu'à 100 %, voir R2), prix
+         indexé s'il est ≠ 0, écologie, description et exécution s'ils sont renseignés */
+      const vals={}; if(idx(v)) vals.prix=idx(v); if(v.BKP) vals.cfcAjout=[{numero:String(v.BKP)}]; if(v.EMBODIEDENERGY!=null&&v.EMBODIEDENERGY!=='') vals.energieGrise=+v.EMBODIEDENERGY;
+      if(v.GREENHOUSEEFFECT!=null&&v.GREENHOUSEEFFECT!=='') vals.effetSerre=+v.GREENHOUSEEFFECT; if(v.DESCRIPTION) vals.description=v.DESCRIPTION; if(v.CONSTRUCTIONDESCRIPTION) vals.execution=v.CONSTRUCTIONDESCRIPTION;
+      apply(vals); }}]});
+  okG=ecaGuard(dlg,()=>!!cur());   // PriceDataSubelemInputDialog.checkGuards : OK actif avec une ligne choisie
+}
+
+/* ═══ « Insérer les valeurs référentielles d'une autre affaire » (CostObjectsBrowserDialog.setData, § 6.4) ═══
+   Fonction PURE sur la copie de travail P (S = document source recalculé) ; o = {recalc, overwrite, kag, origine}.
+   Écarts voulus (§ 6.4) : « recalculées » = Σ des HT attribués / quantité de l'instantané (resultats du document source ;
+   l'original lit un champ transitoire et donne 0) ; prix de la ligne d'ouvrage source de même ouvrage quand elle existe ;
+   pas de doublon de CFC. Retour : nombre de positions reprises.
+   ecaRecalcPrice(S, code, d) : d = ligne d'ouvrage (Σ HT de ses attributions / sa quantité figée) ; sans d, prix de l'ÉLÉMENT =
+   Σ HT de TOUTES ses attributions (élément et ouvrages) / quantité figée de l'élément (= Σ des ouvrages). */
+function ecaRecalcPrice(S,code,d){
+  const R=S&&S.resultats; if(!R) return null; const sn=(R.instantane||[]).find(x=>x.code===code); if(!sn) return null;
+  const og=d?(d.ouvrage||''):'', lg=d?(d.localisation||''):'';
+  let q=+sn.quantite||0; if(d){ const sd=ecL(sn,'parOuvrage').find(x=>(x.ouvrage||'')===og&&(x.localisation||'')===lg); if(!sd) return null; q=+sd.quantite||0; }
+  if(!q) return null;
+  const t=(R.attributions||[]).filter(a=>a.code===code&&(!d||((a.ouvrage||'')===og&&(a.localisation||'')===lg))).reduce((s,a)=>s+(+a.ht||0),0);
+  return (sn.pct?100:1)*t/q;
+}
+function ecaApplyProjectValues(P,S,o){
+  const byCode=new Map((S.elements||[]).map(x=>[x.code,x])); let n=0; const org=String(o.origine||'').slice(0,30);
+  const addK=(dst,src)=>{ if(!Array.isArray(dst.cfc)) dst.cfc=[]; ecL(src,'cfc').forEach(k=>{ if(!dst.cfc.some(x=>String(x.numero)===String(k.numero))) dst.cfc.push({numero:String(k.numero),pourcent:+k.pourcent||0,montant:0}); }); };
+  (P.elements||[]).forEach(e=>{ const e0=byCode.get(e.code);
+    if(!ecL(e,'parOuvrage').length){ if(!o.overwrite&&+e.prix!==0) return; if(!e0) return;
+      if(!o.recalc) e.prix=+e0.prix||0; else { const r=ecaRecalcPrice(S,e0.code,null); if(r!=null) e.prix=r; }
+      e.cout=0; if(+e0.prix!==0) e.origineprix=org; if(o.kag) addK(e,e0); n++; return; }
+    e.parOuvrage.forEach(d=>{ if(!o.overwrite&&+d.prix!==0) return; if(!e0) return;
+      const d0=ecL(e0,'parOuvrage').find(x=>ecSameOuv(x,d)), src=d0||e0;
+      if(!o.recalc) d.prix=+src.prix||0; else { const r=ecaRecalcPrice(S,e0.code,d0?d:null); if(r!=null) d.prix=r; }
+      d.cout=0; if(+src.prix!==0) d.origineprix=org;
+      if(o.kag){ if(d0&&ecL(d0,'cfc').length) addK(d,d0); else if(ecL(e0,'cfc').length) addK(d,e0); else { const x=ecL(e0,'parOuvrage').find(y=>ecL(y,'cfc').length); if(x) addK(d,x); } }
+      n++; }); });
+  return n;
+}
+async function ecaImportProjectValues(ctx){
+  if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; } await DS.need(['costplanning']);
+  const docs=ecaRefDocs(ctx.id), g={}, box=h('div',{class:'eca-box',style:{width:'960px',height:'260px'}});
+  let okG=()=>{};
+  grid(box,Object.assign(g,{cols:ecaDocCols(),rows:docs,sort:null,onSel:()=>okG(),onDbl:()=>$('.ov:last-child .btn.pri').click(),empty:'Aucun document au statut « Validé » ou « Affaire de référence ».'}));
+  const rS=h('input',{type:'radio',name:'eca-ov',checked:true}), rR=h('input',{type:'radio',name:'eca-ov'}), ow=h('input',{type:'checkbox'}), kg=h('input',{type:'checkbox'});
+  const dlg=dialog({title:'Insérer les valeurs référentielles d’une autre affaire',width:'1000px',body:h('div',{},h('div',{class:'ec-hint'},'Documents avec le statut validé ou Affaire de réfférence :'),box,
+    h('div',{style:{margin:'10px 0 0'}},h('label',{style:{display:'block'}},rS,' Reprendre les valeurs référentielles (jusqu’au niveau 3)'),h('label',{style:{display:'block',marginTop:'4px'}},rR,' Reprendre les valeurs référentielles recalculées (jusqu’au niveau 3)'),
+      h('label',{style:{display:'block',marginTop:'10px'}},ow,' Remplacer les valeurs référentielles existantes'),h('label',{style:{display:'block',marginTop:'4px'}},kg,' Reprendre les CFC'))),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const d=DS.get('costplanningdocument',g.sel); if(!d) return false; const src=ecaDocContent(d.ID); if(!src){ toast('Document introuvable.',true); return false; }
+      const pr=DS.get('project',d.PROJECT_ID)||{};
+      const n=ecaApplyProjectValues(ctx.P,src.P,{recalc:rR.checked,overwrite:ow.checked,kag:kg.checked,origine:[pr.NUMBER,pr.TITLE].filter(Boolean).join(' ')});
+      if(!await ctx.touch()) return; toast(n+' position(s) reprise(s) de '+projLabel(pr)+' — '+(d.VERSION||'')+'.'); }}]});
+  okG=ecaGuard(dlg,()=>!!DS.get('costplanningdocument',g.sel));   // CostObjectsBrowserDialog.checkGuards : OK actif avec un document choisi
+}
+
+/* ═══ « Navigateur de déterminations des coûts » (CostDocumentsBrowserDialog, § 6.5.1) : valeurs d'un calcul précédent ═══
+   Document (statut 2 ou 3), ouvrage (« - » sans ouvrages), sous-élément (mode SE) ; tableau Texte | Valeur | Unité | M
+   (M coché si la valeur est ≠ 0 ou non vide ; « Prix unitaire recalculé » décoché) ; CFC et « Transférer l'affectation CFC ».
+   apply(vals) : {prix, energieGrise, coefficientU, effetSerre, remarque, noteInterne, description, execution, cfc,
+   dureeVie, intervalleEntretien, coutEntretien, composants, modeCalcul} (seules les valeurs cochées). */
+function ecaPrevRows(o,pr,unite,se,recalc){
+  const T=(k,t,v,u,m)=>({k,t,v,u,m:!!m});
+  const R=[T('prix','Prix unitaire',+o.prix||0,pr?'%':'CHF/'+(unite||''),+o.prix!==0)];
+  if(!se) R.push(T('prixRecalcule','Prix unitaire recalculé',recalc==null?0:recalc,'CHF/'+(unite||''),false));
+  R.push(T('energieGrise','Énergie grise',+o.energieGrise||0,'kWh/m2 a',+o.energieGrise),T('coefficientU','Coefficient U',+o.coefficientU||0,'W/m²K',+o.coefficientU),
+    T('effetSerre','Effet de serre (GWP 100a)',+o.effetSerre||0,'[kg/p a]',+o.effetSerre),T('remarque','Remarque',o.remarque||'','',String(o.remarque||'')),
+    T('noteInterne','Note interne',o.noteInterne||'','',String(o.noteInterne||'')),T('description','Description',o.description||'','',String(o.description||'')),T('execution','Exécution',o.execution||'','',String(o.execution||'')));
+  if(se){ R.push(T('dureeVie','Vie moyenne',o.dureeVie,'',o.dureeVie!==''&&o.dureeVie!=null),T('intervalleEntretien','Intervalle d’entretien',o.intervalleEntretien,'',o.intervalleEntretien!==''&&o.intervalleEntretien!=null),
+    T('coutEntretien','Coûts annuels de maintenance',+o.coutEntretien||0,'CHF',+o.coutEntretien),T('composants','Calcul selon composants',ecL(o,'composants').length?'Oui':'','',ecL(o,'composants').length>0)); }
+  return R;
+}
+async function ecaPrevCalcValues(ctx,so,apply){
+  await DS.need(['costplanning']);
+  const e=so.e, se=!!so.s, docs=ecaRefDocs(ctx.id), S={doc:null,ouv:null,sn:null,src:null};
+  const gd={}, go={}, gs={}, gv={}, gk={}, bD=h('div',{class:'eca-box',style:{height:'150px'}}), bO=h('div',{class:'eca-box',style:{height:'150px'}}), bS=h('div',{class:'eca-box',style:{height:'90px'}});
+  const bV=h('div',{class:'eca-box',style:{height:'230px'}}), bK=h('div',{class:'eca-box',style:{height:'90px'}}), tk=h('input',{type:'checkbox'}), info=h('div',{class:'ec-small',style:{margin:'4px 0'}});
+  let vals=[], okG=()=>{};
+  const src=()=>S.src&&S.src.P.elements.find(x=>x.code===e.code)||null;
+  const obj=()=>{ const e0=src(); if(!e0) return null; const d0=S.ouv!=null?ecL(e0,'parOuvrage').find(x=>(x.ouvrage||'')===S.ouv.og&&(x.localisation||'')===S.ouv.lg):null; const o=d0||e0;
+    return se?(ecL(o,'sousElements').find(x=>x.numero===S.sn)||null):o; };
+  const drawV=()=>{ const o=obj(), e0=src(); vals=[];
+    if(o&&e0){ const d0=S.ouv!=null?ecL(e0,'parOuvrage').find(x=>(x.ouvrage||'')===S.ouv.og&&(x.localisation||'')===S.ouv.lg):null;
+      vals=ecaPrevRows(o,se?!!o.prixEnPourcent:(ecPct(o)||ecPct(e0)),o.unite||e0.unite,se,se?null:ecaRecalcPrice(S.src.P,e0.code,d0));
+      info.textContent='Quantité référentielle '+num(o.quantite)+' '+(o.unite||e0.unite||'')+' · Prix unitaire '+num(o.prix)+' · Coût '+num(ecGv(o)); }
+    else info.textContent=S.doc?(se?'Choisissez un sous-élément.':'L’élément '+e.code+' n’existe pas dans ce document.'):'';
+    grid(bV,Object.assign(gv,{key:r=>r.k,cols:[{k:'t',t:'Texte',w:200},{k:'v',t:'Valeur',w:200,f:r=>typeof r.v==='number'?num(r.v):esc(r.v===''||r.v==null?'':r.k==='dureeVie'?(EC_DUREE[+r.v]||''):r.k==='intervalleEntretien'?(EC_ENTRETIEN[+r.v]||''):r.v)},
+      {k:'u',t:'Unité',w:80},{k:'m',t:'M',w:40,cls:'c',f:r=>`<input type="checkbox" data-k="${r.k}"${r.m?' checked':''}>`}],rows:vals,sort:null,empty:'—'}));
+    $$('input[data-k]',bV).forEach(i=>{ i.onclick=ev=>ev.stopPropagation(); i.onchange=()=>{ const r=vals.find(x=>x.k===i.dataset.k); if(r) r.m=i.checked; }; });
+    okG();
+    const K=o?ecL(o,'cfc'):[];
+    grid(bK,Object.assign(gk,{key:k=>String(K.indexOf(k)),cols:[{k:'numero',t:'N°',w:80},{k:'t',t:'Texte',f:k=>esc(ecCfcText(ctx,k.numero))},{k:'montant',t:'Montant',w:100,cls:'r',f:k=>num(k.montant)},{k:'pourcent',t:'[%]',w:60,cls:'r',f:k=>num(k.pourcent)}],rows:K,sort:null,empty:'—'}));
+    tk.disabled=!K.length; if(!K.length) tk.checked=false; okG(); };
+  tk.onchange=()=>okG();
+  const drawS=()=>{ const e0=src(); const d0=e0&&S.ouv!=null?ecL(e0,'parOuvrage').find(x=>(x.ouvrage||'')===S.ouv.og&&(x.localisation||'')===S.ouv.lg):null, o=d0||e0; const L=o?ecL(o,'sousElements'):[];
+    if(!L.some(x=>x.numero===S.sn)) S.sn=L.length?L[0].numero:null;
+    grid(bS,Object.assign(gs,{key:x=>x.numero,sel:S.sn,cols:[{k:'numero',t:'N°',w:60},{k:'libelle',t:'Nom'}],rows:L,sort:null,onSel:x=>{ S.sn=x.numero; drawV(); },empty:'Aucun sous-élément.'})); drawV(); };
+  const drawO=()=>{ const e0=src(); const L=e0&&ecL(e0,'parOuvrage').length?e0.parOuvrage.map(d=>({og:d.ouvrage||'',lg:d.localisation||''})):[{og:null,lg:''}];
+    if(!S.ouv||!L.some(x=>x.og===S.ouv.og&&x.lg===S.ouv.lg)){ const want=so.d?(so.d.ouvrage||''):null; S.ouv=L.find(x=>x.og===want)||L[0]; if(S.ouv.og==null) S.ouv=null; }
+    grid(bO,Object.assign(go,{key:x=>(x.og==null?'-':x.og)+'|'+x.lg,sel:S.ouv?S.ouv.og+'|'+S.ouv.lg:'-|',cols:[{k:'og',t:'OUV',w:90,f:x=>esc(x.og==null?'-':x.og)},{k:'lg',t:'LOC',w:90}],rows:L,sort:null,
+      onSel:x=>{ S.ouv=x.og==null?null:x; se?drawS():drawV(); }}));
+    se?drawS():drawV(); };
+  grid(bD,Object.assign(gd,{cols:ecaDocCols(),rows:docs,sort:null,onSel:d=>{ S.doc=d; S.src=ecaDocContent(d.ID); S.ouv=null; drawO(); },empty:'Aucun document au statut « Validé » ou « Affaire de référence ».'}));
+  drawO();
+  const left=h('div',{style:{flex:'1 1 55%',minWidth:0}},h('div',{class:'ec-hint'},'Document'),bD,h('div',{style:{height:'6px'}}),bO,...(se?[h('div',{class:'ec-small',style:{margin:'6px 0 2px'}},'Sous-éléments utilisés pour l’élément '+e.code+':'),bS]:[]));
+  const right=h('div',{style:{flex:'1 1 45%',minWidth:0}},h('div',{class:'ec-hint'},'Cette position a déjà été utilisé comme suit :'),info,bV,h('div',{style:{height:'6px'}}),bK,h('label',{style:{display:'block',marginTop:'6px'}},tk,' Transférer l’affectation CFC'));
+  const dlg=dialog({title:'Navigateur de déterminations des coûts',width:'1180px',body:h('div',{style:{display:'flex',gap:'14px',width:'1140px'}},left,right),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+    const o=obj(); if(!o){ toast('Choisissez un document'+(se?' et un sous-élément':'')+'.',true); return false; }
+    /* jOkButtonActionPerformed + ElementCalcDialog / SubElementCalcDialog : seules les valeurs cochées ET renseignées sont reportées
+       (nombre ≠ 0, texte non vide) ; le prix recalculé ≠ 0 remplace le prix unitaire ; CFC transférés s'ils sont cochés */
+    const out={}, has=v=>typeof v==='number'?v!==0:(v!=null&&String(v)!=='');
+    vals.filter(r=>r.m).forEach(r=>{ if(r.k==='composants'){ if(ecL(o,'composants').length){ out.composants=ecClone(ecL(o,'composants')); out.modeCalcul=1; } return; }
+      if(!has(r.v)) return; if(r.k==='prixRecalcule'||r.k==='prix'){ out.prix=r.v; return; } out[r.k]=r.v; });
+    if(tk.checked&&ecL(o,'cfc').length) out.cfc=ecL(o,'cfc').map(k=>({numero:String(k.numero),pourcent:+k.pourcent||0,montant:0}));
+    apply(out); }}]});
+  /* CostDocumentsBrowserDialog.checkGuards : OK actif s'il y a des valeurs, ou des CFC à transférer (case cochée) */
+  okG=ecaGuard(dlg,()=>vals.length>0||(tk.checked&&!tk.disabled));
+}
+
+/* ═══ Sous-éléments de la base du bureau (SubElementDatabaseBrowser, « Navigateur des sous-élements ») ═══
+   Fonction PURE ecaSeFromPart(o, e, part, comps, opt{numero, base, withComps, cfcOk(numero)}) → sous-élément v2 :
+   libellé, unité, grandeur de la position, description, exécution, écologie, prix = prix indexé (ecaIndexedSE, § 12 n° 4) ;
+   « Insérer les composants » : mode « Calcul selon composants » (1), composants (n° à 3 chiffres, prix et montant indexés,
+   CFC du composant) ; sans composant à CFC : CFC du SE à 100 %. Écarts : numéro ≥ 100 (règle DeltaSub, lot 1 ; l'original
+   reprend le numéro du bureau), la description n'est pas recopiée dans la note interne (doublon de l'original). */
+function ecaSeFromPart(o,e,part,comps,opt){
+  const s=ecNewSE(opt.numero,part.NAME||'',o.grandeurRef||e.grandeurRef||'',ecUnit(part.UNIT||''),false);
+  Object.assign(s,{description:part.DESCRIPTION||'',execution:part.CONSTRUCTIONDESCRIPTION||'',energieGrise:+part.EMBODIEDENERGY||0,coefficientU:+part.UVALUE||0,effetSerre:+part.GREENHOUSEEFFECT||0,
+    prix:ecaIndexedSE(part.UNITPRICE,part.PRICEINDEX,opt.base)});
+  let bkpUsed=false;
+  if(opt.withComps&&comps&&comps.length){ s.modeCalcul=1;
+    s.composants=comps.map(c=>{ const k=ecNewComp(ecaNum3(c.NUMBER)); Object.assign(k,{libelle:c.NAME||'',quantite:+c.QUANTITY||0,unite:c.UNIT||'',prix:ecaIndexedSE(c.UNITPRICE,part.PRICEINDEX,opt.base),
+      cout:ecaIndexedSE((+c.QUANTITY||0)*(+c.UNITPRICE||0),part.PRICEINDEX,opt.base),cfcNumero:c.BKP?String(c.BKP):''}); if(c.BKP) bkpUsed=true; return k; }); }
+  if(!bkpUsed&&part.BKP&&(!opt.cfcOk||opt.cfcOk(String(part.BKP)))) s.cfc=[{numero:String(part.BKP),pourcent:100,montant:0}];
+  return s;
+}
+function ecaSeDbDialog(ctx,so,all){
+  const e=so.e, o=so.d||so.e; if(!e) return;
+  if(!ecSeAllowed(ctx,so)){ toast('Un sous-élément ne peut être défini que sur un élément de niveau 3'+(ctx.hasOuv()?', ligne d’ouvrage':'')+'.',true); return; }
+  if(!ecaPositionFree(o)){ toast('Cet élément contient des informations déjà saisies.\nVous devez d’abord les supprimer.',true); return; }   // positionIsFree : toujours contrôlé (lambda$getImportPopupMenu$46)
+  const base=ecaBaseIndex(ctx), g={}; let only=!all||ecaPartsFor(e.code).length>0;
+  const box=h('div',{class:'eca-box',style:{width:'760px',height:'220px'}}), ic=h('input',{type:'checkbox'});
+  const f={}; ['bkp','src','eg','gw','rem','uv'].forEach(k=>{ f[k]=h('input',{class:'inp',readonly:true}); }); f.ds=h('textarea',{class:'inp',rows:3,readonly:true}); f.ex=h('textarea',{class:'inp',rows:3,readonly:true});
+  const cur=()=>DS.get('constructionpart',g.sel);
+  const bC=ibtn({label:'Composants…',fn:()=>{ const p=cur(); if(!p) return; const b=h('div',{class:'eca-box',style:{width:'620px',height:'220px'}});
+    grid(b,{cols:[{k:'NUMBER',t:'Numéro',w:60,f:c=>esc(ecaNum3(c.NUMBER))},{k:'NAME',t:'Nom'},{k:'QUANTITY',t:'Quantité',w:80,cls:'r',f:c=>num(c.QUANTITY)},{k:'UNIT',t:'Unité',w:50},{k:'UNITPRICE',t:'Prix',w:80,cls:'r',f:c=>num(c.UNITPRICE)},
+      {k:'a',t:'Montant',w:90,cls:'r',f:c=>num(ecaAmount(c))},{k:'BKP',t:'CFC',w:60}],rows:ecaComps(p.ID),sort:null,empty:'Aucun composant.'});
+    dialog({title:'Composants',body:h('div',{},h('div',{class:'ec-hint'},p.NAME||''),b)}); }});
+  const setF=()=>{ const p=cur()||{}, n=p.ID!=null?ecaComps(p.ID).length:0; f.bkp.value=p.BKP||''; f.src.value=p.DATASOURCE||''; f.eg.value=p.EMBODIEDENERGY!=null?num(p.EMBODIEDENERGY):''; f.gw.value=p.GREENHOUSEEFFECT!=null?num(p.GREENHOUSEEFFECT):'';
+    f.rem.value=p.REMARK||''; f.uv.value=p.UVALUE!=null?num(p.UVALUE):''; f.ds.value=p.DESCRIPTION||''; f.ex.value=p.CONSTRUCTIONDESCRIPTION||''; ic.disabled=!n; if(!n) ic.checked=false; bC.disabled=!n; };
+  const draw=()=>{ const rows=only?ecaPartsFor(e.code):DS.all('constructionpart').filter(v=>!ecaIsCrb(v)).sort((a,b)=>cmp(ecaEbkpCode(a.EBKPELEMENT_ID),ecaEbkpCode(b.EBKPELEMENT_ID))||cmp(a.NUMBER,b.NUMBER));
+    grid(box,Object.assign(g,{cols:[{k:'NUMBER',t:'Code',w:60,f:v=>esc(ecaNum3(v.NUMBER))},...(only?[]:[{k:'c',t:'Code eCCC',w:80,f:v=>esc(ecaEbkpCode(v.EBKPELEMENT_ID))}]),{k:'NAME',t:'Nom',w:220},
+      {k:'QUANTITY',t:'Quantité',w:70,cls:'r',f:v=>num(v.QUANTITY)},{k:'UNIT',t:'Unité',w:50},{k:'UNITPRICE',t:'Prix',w:80,cls:'r',f:v=>num(v.UNITPRICE)},{k:'a',t:'Montant',w:90,cls:'r',f:v=>num(ecaAmount(v))},
+      {k:'ix',t:'Montant indexé',w:100,cls:'r',f:v=>num(ecaIndexedSE(ecaAmount(v),v.PRICEINDEX,base))}],rows,sort:null,onSel:setF,onDbl:()=>$('.ov:last-child .btn.pri').click(),
+      empty:only?'Aucun sous-élément du bureau pour l’élément '+e.code+'.':'Aucun sous-élément dans la base du bureau.'})); setF(); };
+  const oc=h('label',{},h('input',{type:'checkbox',checked:only||null,onchange:ev=>{ only=ev.target.checked; g.sel=null; draw(); }}),' Afficher uniquement les sous-éléments de l’élément '+e.code);
+  draw();
+  dialog({title:'Navigateur des sous-élements',width:'820px',body:h('div',{},h('div',{class:'ec-hint'},'Elément '+e.code+' '+ecaTxt(e)+(so.d?' / '+ecOgCode(so.d):'')),oc,h('div',{style:{height:'6px'}}),box,h('div',{style:{height:'8px'}}),
+    formRows([['CFC',f.bkp],['Source',f.src],['Description',f.ds],['Exécution',f.ex],['Remarque',f.rem],['Énergie grise',f.eg],['Effet de serre (GWP 100a)',f.gw],['Coefficient U',f.uv]],720),
+    h('div',{style:{marginTop:'8px',display:'flex',gap:'14px',alignItems:'center'}},h('label',{},ic,' Insérer les composants'),bC),h('div',{class:'ec-small',style:{marginTop:'6px'}},'Base de valeurs référentielles du bureau (jamais le catalogue eCCC-gate du CRB).')),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const p=cur(); if(!p) return false;
+      const e2=(ctx.P.elements||[]).find(x=>x.code===e.code), d2=so.d&&e2?ecL(e2,'parOuvrage').find(x=>ecSameOuv(x,so.d)):null, o2=so.d?d2:e2;   // copie de travail actuelle
+      if(!o2){ toast('L’élément '+e.code+' n’existe plus dans le document.',true); return; }
+      const n=ecNextSeNum(o2); if(!n){ toast('Seuls les numéros 100 à 999 sont disponibles.',true); return false; }
+      const s=ecaSeFromPart(o2,e2,p,ecaComps(p.ID),{numero:n,base,withComps:ic.checked,cfcOk:x=>!ecCfcBranchMsg(ctx.P,x,null)});
+      const L=o2.sousElements||(o2.sousElements=[]), i=L.findIndex(y=>y.numero>n); L.splice(i<0?L.length:i,0,s);
+      ecElState().sel=ecKey({t:'S',code:e.code,og:so.d?(so.d.ouvrage||''):undefined,lg:so.d?(so.d.localisation||''):undefined,sn:n}); await ctx.touch(); }}]});
+}
+/* ELEMENTS ▸ Import ▸ « Valeurs référentielles des sous-éléments… » (newSubElementFromDBMenu) : ligne choisie */
+async function ecaImportConstructionParts(ctx){
+  if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; } await ecaNeedRef();
+  const so=ecaSelObj(ctx); if(!so.e){ toast('Sélectionnez un élément de niveau 3.',true); return; } ecaSeDbDialog(ctx,so,false);
+}
+/* ELEMENTS ▸ « Navigateur de sous-éléments… » (point d'extension du lot 1) : SE du bureau, tous ou ceux de l'élément */
+async function ecaSubElementBrowser(ctx,so){ await ecaNeedRef(); ecaSeDbDialog(ctx,so||ecaSelObj(ctx),true); }
+
+/* ═══ CALCUL DES RESULTATS (§ 6.2, aftercalc.CalculationFrame) — stocké dans costplanning.resultats (§ 2.9) ═══
+   resultats = {source:{ccId, date, version, importe}, paiements:[{refNum, id, lot, lotTexte, numero, datePaiement, facture,
+   dateFacture, entreprise, contactId, genre, description, net (TTC), tva, lignes:[{refNum, cfc, ouvrage, localisation, net, tva}]}],
+   instantane:[{code, libelle, unite, grandeurRef, quantite, genere, pct, eventuelle, parOuvrage:[{ouvrage, localisation, ouvrageId,
+   unite, grandeurRef, quantite, pct, eventuelle}]}], attributions:[{code, ouvrage, localisation, paiement, ligne, cfc, pourcent, ht, tva, remarque}]}
+   Clés : paiement = refNum du paiement (Pay.refNum), ligne = refNum de la ligne (BkpDetail.refNum, convertisseur lot 0) ;
+   paiement ou ligne saisis dans DeltaSub sans refNum : numéro de l'identifiant « p… » / rang de la ligne (1…). */
+function ecaPayRef(p,i){ if(p&&p.refNum!=null&&p.refNum!=='') return +p.refNum; const m=/(\d+)$/.exec(String((p&&p.id)||'')); return m?+m[1]:1000000+i; }
+function ecaLineRef(l,j){ return l&&l.refNum!=null&&l.refNum!==''?+l.refNum:j+1; }
+/* Import d'un contrôle des coûts TERMINÉ (CalculationFrame.extractPaymentList@0-1195) — fonction PURE :
+   paiements des contrats, puis de leurs avenants, puis hors contrat ; un paiement dont l'entreprise est absente de la liste
+   des entreprises du contrôle est ignoré ; sans ouvrages dans l'estimation, ouvrage et localisation des lignes sont vidés ;
+   tri insertPay (par lot, comparaison de texte ; à lot égal, le dernier inséré passe devant) ; instantané de la structure
+   (aucun prix ni montant n'y est copié). */
+function ecaImportCC(P,doc,C,ccHead){
+  const withOuv=!!(doc&&doc.ISAPPLYSUBPROJECTS), ents=new Map((C.entreprises||[]).map(x=>[x.contactId,x]));
+  const ctrs=C.contrats||[], isAv=c=>c.type==='avenant'||(c.contratParentId!=null&&c.contratParentId!==''), pays=C.paiements||[], used=new Set(), seq=[];
+  const take=id=>pays.forEach(p=>{ if(!used.has(p)&&p.contratId!=null&&p.contratId===id){ used.add(p); seq.push(p); } });
+  ctrs.filter(c=>!isAv(c)).forEach(c=>{ take(c.id); ctrs.filter(a=>isAv(a)&&a.contratParentId===c.id).forEach(a=>take(a.id)); });
+  ctrs.filter(isAv).forEach(a=>take(a.id));
+  pays.forEach(p=>{ if(!used.has(p)){ used.add(p); seq.push(p); } });
+  const refs=new Set(), L=[];
+  seq.forEach((p,i)=>{ const en=p.contactId!=null?ents.get(p.contactId):null; if(!en) return;
+    let rn=ecaPayRef(p,i); while(refs.has(rn)) rn++; refs.add(rn);
+    const lr=new Set(), lignes=(p.lignes||[]).map((l,j)=>{ let k=ecaLineRef(l,j); while(lr.has(k)) k++; lr.add(k);
+      return {refNum:k,cfc:String(l.cfc==null?'':l.cfc),ouvrage:withOuv?(l.ouvrage||''):'',localisation:withOuv?(l.localisation||''):'',net:+l.net||0,tva:+l.tva||0}; });
+    const x={refNum:rn,id:p.id||null,lot:String((p.lot||{}).numero==null?'':(p.lot||{}).numero),lotTexte:(p.lot||{}).texte||'',numero:String(p.numero==null?'':p.numero),
+      datePaiement:p.datePaiement||'',facture:p.numeroFacture||'',dateFacture:p.dateFacture||'',entreprise:en.nomCourt||'',contactId:p.contactId,genre:p.genreTexte||'',
+      description:p.description||'',net:lignes.reduce((s,l)=>s+l.net,0),tva:lignes.reduce((s,l)=>s+l.tva,0),lignes};
+    const k=L.findIndex(y=>y.lot>=x.lot); if(k<0) L.push(x); else L.splice(k,0,x); });
+  const instantane=(P.elements||[]).map(e=>({code:e.code,libelle:ecaTxt(e),unite:e.unite||'',grandeurRef:e.grandeurRef||'',quantite:+e.quantite||0,genere:!!(e.genere&&!e.niveauFixe),
+    pct:ecPct(e),eventuelle:!!e.eventuelle,parOuvrage:ecL(e,'parOuvrage').map(d=>({ouvrage:d.ouvrage||'',localisation:d.localisation||'',ouvrageId:d.ouvrageId??null,unite:d.unite||e.unite||'',
+      grandeurRef:d.grandeurRef||e.grandeurRef||'',quantite:+d.quantite||0,pct:ecPct(d)||ecPct(e),eventuelle:!!d.eventuelle}))}));
+  return {source:{ccId:ccHead?ccHead.ID:null,date:(ccHead&&ccHead.CHANGEDDATE)||'',version:(ccHead&&ccHead.VERSION)||'',importe:today()},paiements:L,instantane,attributions:[]};
+}
+/* Attributions d'une ligne de paiement (CalcDialog OK → removeAllCalcsOfThisPayment, insertElement, updateQuantity) — PURE :
+   remplace les attributions du couple (paiement, ligne) ; rangées dans l'élément (ligne sans ouvrage) ou dans l'ouvrage de même
+   og/lg de l'instantané ; la quantité de l'élément dans l'instantané devient sa quantité actuelle. Retour : codes refusés (élément
+   ou ouvrage absent de l'instantané — l'original les perd sans le dire). */
+function ecaSetAttributions(P,R,p,l,items){
+  const snap=new Map((R.instantane||[]).map(x=>[x.code,x])), og=l.ouvrage||'', lg=l.localisation||'', refused=[];
+  R.attributions=(R.attributions||[]).filter(a=>!(+a.paiement===+p.refNum&&+a.ligne===+l.refNum));
+  items.forEach(it=>{ const sn=snap.get(it.code);
+    if(!sn||((og||lg)&&!ecL(sn,'parOuvrage').some(y=>(y.ouvrage||'')===og&&(y.localisation||'')===lg))){ refused.push(it.code); return; }
+    R.attributions.push({code:it.code,ouvrage:og,localisation:lg,paiement:+p.refNum,ligne:+l.refNum,cfc:String(l.cfc||''),pourcent:+it.pourcent||0,ht:+it.ht||0,tva:+it.tva||0,remarque:it.remarque||''});
+    const e=(P.elements||[]).find(x=>x.code===it.code); if(e) sn.quantite=+e.quantite||0; });
+  return refused;
+}
+/* Tableau « Recalculer » (setAftercalcTable, setAfterCalc, calcElementTot) : a) paiement, b) ligne CFC (net ≠ 0), c) éléments attribués
+   (ordre de l'instantané, élément puis ouvrages) */
+function ecaRecalcRows(P,R){
+  const rows=[]; if(!R) return rows;
+  const I=R.instantane||[], ord=new Map(I.map((x,i)=>[x.code,i]));
+  const ordO=a=>{ if(!a.ouvrage&&!a.localisation) return -1; const sn=I[ord.get(a.code)]; return sn?ecL(sn,'parOuvrage').findIndex(y=>(y.ouvrage||'')===(a.ouvrage||'')&&(y.localisation||'')===(a.localisation||'')):0; };
+  (R.paiements||[]).forEach(p=>{ rows.push({t:'P',key:'P|'+p.refNum,p,lot:p.lot,adj:p.lotTexte,npmt:p.numero,ht:(+p.net||0)-(+p.tva||0),tva:+p.tva||0,ttc:+p.net||0});
+    (p.lignes||[]).forEach(l=>{ if(!(+l.net)) return;
+      const A=(R.attributions||[]).map((a,i)=>({a,i})).filter(x=>+x.a.paiement===+p.refNum&&+x.a.ligne===+l.refNum)
+        .sort((x,y)=>((ord.has(x.a.code)?ord.get(x.a.code):1e9)-(ord.has(y.a.code)?ord.get(y.a.code):1e9))||(ordO(x.a)-ordO(y.a))||(x.i-y.i));
+      rows.push({t:'L',key:'L|'+p.refNum+'|'+l.refNum,p,l,cfc:l.cfc,og:l.ouvrage,lg:l.localisation,ht:(+l.net||0)-(+l.tva||0),tva:+l.tva||0,ttc:+l.net||0,
+        eht:A.reduce((s,x)=>s+(+x.a.ht||0),0),ettc:A.reduce((s,x)=>s+(+x.a.ht||0)+(+x.a.tva||0),0),A:A.map(x=>x.a)});
+      A.forEach(({a,i})=>{ const sn=I[ord.get(a.code)]; rows.push({t:'A',key:'A|'+p.refNum+'|'+l.refNum+'|'+i,p,l,a,code:a.code,txt:sn?sn.libelle:'',eht:+a.ht||0,ettc:(+a.ht||0)+(+a.tva||0)}); }); }); });
+  return rows;
+}
+/* Liste des résultats (CalculationFrame.getResultList) — PURE. Éléments du document présents dans l'instantané :
+   déterminé = coût actuel (gv), recalculé = Σ HT attribués (Z : Σ des TVA de TOUTES les attributions ; par ouvrage : TVA de l'ouvrage) ;
+   groupes générés : Σ des éléments non générés dont le code CONTIENT celui du groupe, par ouvrage cumul par og/lg.
+   Écarts : l'anomalie getRecalcedVat (seule la 1re subdivision cumulée) n'est pas reproduite ; un élément à ouvrages garde sa quantité
+   et son prix (l'original affiche 0) ; une attribution SANS ouvrage sur un élément ventilé par ouvrage (ligne de paiement sans
+   ouvrage : 5 lignes du contrôle 3702 de l'affaire 2951, paiements saisis dans DeltaSub) compte dans le recalculé de l'élément et de
+   ses groupes (recSansOuv) — l'original la range dans l'élément puis ne la compte nulle part (getRecalcedValue par ouvrage). */
+function ecaResultList(P,R){
+  const I=new Map(((R&&R.instantane)||[]).map(x=>[x.code,x])), A=(R&&R.attributions)||[], L=[];
+  const so=(a,og,lg)=>(a.ouvrage||'')===og&&(a.localisation||'')===lg;
+  const vatAll=A.reduce((s,a)=>s+(+a.tva||0),0);
+  (P.elements||[]).forEach(e=>{ const sn=I.get(e.code); if(!sn) return; const isZ=String(e.code).startsWith('Z');
+    const base={code:e.code,libelle:ecaTxt(e),q:+e.quantite||0,unite:e.unite||'',prix:+e.prix||0,pct:ecPct(e),gen:!!(e.genere&&!e.niveauFixe)};
+    if(!ecL(sn,'parOuvrage').length){ L.push(Object.assign(base,{val:ecGv(e),rec:isZ?vatAll:A.filter(a=>a.code===e.code&&so(a,'','')).reduce((s,a)=>s+(+a.ht||0),0),parOuvrage:[]})); return; }
+    const D=[]; let ev=0, rv=0;
+    ecL(e,'parOuvrage').forEach(d=>{ const og=d.ouvrage||'', lg=d.localisation||''; if(!ecL(sn,'parOuvrage').some(x=>(x.ouvrage||'')===og&&(x.localisation||'')===lg)) return;
+      const dd=isZ?A.filter(a=>so(a,og,lg)).reduce((s,a)=>s+(+a.tva||0),0):A.filter(a=>a.code===e.code&&so(a,og,lg)).reduce((s,a)=>s+(+a.ht||0),0);
+      D.push({ouvrage:og,localisation:lg,ouvrageId:d.ouvrageId,q:+d.quantite||0,prix:+d.prix||0,val:ecGv(d),rec:dd}); ev+=ecGv(d); rv+=dd; });
+    const sans=isZ?A.filter(a=>so(a,'','')).reduce((s,a)=>s+(+a.tva||0),0):A.filter(a=>a.code===e.code&&so(a,'','')).reduce((s,a)=>s+(+a.ht||0),0);
+    L.push(Object.assign(base,{val:ev,rec:rv+sans,recSansOuv:sans,parOuvrage:D})); });
+  L.forEach(p=>{ if(!p.gen) return; p.rec=0; p.parOuvrage.forEach(d=>{ d.rec=0; }); let post=0, sans=0;
+    L.forEach(p0=>{ if(p0.gen||!String(p0.code).includes(p.code)) return;
+      p.parOuvrage.forEach(d=>{ const d0=p0.parOuvrage.find(x=>x.ouvrage===d.ouvrage&&x.localisation===d.localisation); if(d0) d.rec+=d0.rec; });
+      post+=p0.rec; sans+=p0.recSansOuv||0; });
+    p.rec=p.parOuvrage.length?p.parOuvrage.reduce((s,d)=>s+d.rec,0)+sans:post; });
+  return L;
+}
+/* Lignes du tableau « Résultats » (setResultTable) : affichées si déterminé ≠ 0 ou recalculé ≠ 0 ; ligne vide avant un retour à un
+   code plus court ; prix recalculé = recalculé / q (vide si q = 0 ou prix en %) ; différence ; [%] = 100 · recalculé / déterminé. */
+function ecaResultRows(L){
+  const rows=[]; let old='';
+  L.forEach(p=>{ if(p.val!==0||p.rec!==0){ if(old.length>String(p.code).length) rows.push({t:'B'});
+      rows.push({t:'E',p,code:p.code,txt:p.libelle,q:p.q,un:p.unite,prix:p.pct?'':p.prix,val:p.val,prec:(p.q!==0&&!p.pct)?p.rec/p.q:'',rec:p.rec,diff:p.val-p.rec,pc:p.val!==0?100*p.rec/p.val:0,
+        b:String(p.code).length<=3,hl:String(p.code).length===1});
+      p.parOuvrage.forEach(d=>rows.push({t:'D',p,d,og:d.ouvrage,lg:d.localisation,q:d.q,un:p.unite,prix:p.pct?'':d.prix,val:d.val,prec:(d.q!==0&&!p.pct)?d.rec/d.q:'',rec:d.rec,diff:d.val-d.rec,pc:d.val!==0?100*d.rec/d.val:0})); }
+    old=String(p.code); });
+  return rows;
+}
+/* Graphique des résultats (ResultChart) : vue 0 = « Répartition : Groupes principaux eCCC [%] » (une barre par groupe principal,
+   100 · recalculé / déterminé) ; vue 1 = répartition d'un groupe (groupe principal → groupes de niveau 2 ; groupe → éléments de niveau 3) */
+function ecaResultChart(L,vue,sel){
+  const nm=p=>p.code+' '+p.libelle, pc=p=>100*p.rec/p.val;
+  if(vue!==1||!sel) return {title:'Répartition : Groupes principaux eCCC [%]',S:L.filter(p=>String(p.code).length===1&&p.val!==0).map(p=>[nm(p),pc(p)])};
+  const s=L.find(p=>p.code===sel), pts=c=>(String(c).match(/\./g)||[]).length;
+  const S=L.filter(p=>p.val!==0&&String(p.code).startsWith(sel)&&(String(sel).length===1?(String(p.code).length>=3&&pts(p.code)===0):(String(p.code).length>3&&pts(p.code)===1))).map(p=>[nm(p),pc(p)]);
+  return {title:'Répartition : '+(s?nm(s):sel)+' [%]',S};   // titres ResultChart « \u0001 \u0001 [%] »
+}
+/* Éléments proposés à l'attribution (AfterCalcElemBrowserDialog.setElementTable, mode calcul des résultats) — PURE :
+   « Afficher uniquement les éléments proposés » : 1. éléments dont une attribution CFC (élément, SE, composant, ouvrage) est le CFC payé
+   (positions actives) ; 2. à défaut, table de propositions du bureau (ebkptobkp : codes dont un CFC proposé est un préfixe du CFC payé,
+   et leurs sous-positions ; non générés, actifs, montant ≠ 0). Sinon : « Afficher toutes les éléments » = tous les non générés ;
+   sinon non générés actifs de montant ≠ 0 (à défaut, tous les non générés actifs). */
+function ecaProposed(P,cfc,only,showAll,recs){
+  const E=P.elements||[], act=e=>ecIsActivePosition(E,e), gen=e=>!!(e.genere&&!e.niveauFixe), n=String(cfc||'');
+  /* 1er cas : isActivePosition est appelé sur une COPIE (new Element : « utiliser » vrai) → seuls les parents comptent */
+  const actParents=e=>ecIsActivePosition(E,Object.assign({},e,{utiliserPourCalcul:true}));
+  if(only){
+    const hasK=o=>ecL(o,'cfc').some(k=>String(k.numero)===n)||ecL(o,'sousElements').some(s=>ecL(s,'cfc').some(k=>String(k.numero)===n)||ecL(s,'composants').some(c=>c.cfcNumero&&String(c.cfcNumero)===n));
+    const L=E.filter(e=>ecL(e,'parOuvrage').length?e.parOuvrage.some(hasK):hasK(e));
+    if(L.length) return L.filter(actParents);
+    const codes=[]; (recs||[]).forEach(r=>{ if(ecL(r,'cfc').some(c=>c.numero&&n.startsWith(String(c.numero)))&&!codes.includes(String(r.ebkp))) codes.push(String(r.ebkp)); });
+    const all=[...codes]; codes.forEach(c=>E.forEach(e=>{ if(e.code.startsWith(c)&&e.code.length>c.length&&!all.includes(e.code)) all.push(e.code); }));
+    all.sort((a,b)=>a<b?-1:a>b?1:0);
+    return all.map(c=>E.find(e=>e.code===c)).filter(e=>e&&ecGv(e)!==0&&!gen(e)&&act(e));
+  }
+  if(showAll) return E.filter(e=>!gen(e));
+  const L=E.filter(e=>ecGv(e)!==0&&!gen(e)&&act(e)); return L.length?L:E.filter(e=>!gen(e)&&act(e));
+}
+
+/* ── Fenêtre : CALCUL DES RESULTATS ▸ Editer (catégories « Recalculer » et « Résultats ») ── */
+function ecaSectionResultats(ctx){
+  ecaCss();
+  const S=ECA_V.rs, pane=ctx.pane, tools=ctx.tools;
+  const cats=h('div',{class:'eca-cats'},h('div',{class:'hd'},'Catégorie'),...[['rec','Recalculer'],['res','Résultats']].map(([k,t])=>{ const d=h('div',{class:S.cat===k?'on':null},t); d.onclick=()=>{ S.cat=k; ctx.draw(); }; return d; }));
+  const main=h('div',{class:'col fill',style:{border:0,minHeight:0}});
+  pane.append(h('div',{style:{display:'flex',flex:1,minHeight:0}},cats,main));
+  if(S.cat==='res') ecaResultsView(ctx,main,tools); else ecaRecalcView(ctx,main,tools);
+}
+function ecaTable(cols,rows,cell,cls,num0){
+  let html='<table class="g ec-t"><colgroup>'+cols.map(c=>`<col style="width:${c[2]}px">`).join('')+'</colgroup><thead><tr>'+cols.map(c=>`<th class="${num0.has(c[0])?'r':''}" title="${esc(c[1])}">${esc(c[1])}</th>`).join('')+'</tr></thead><tbody>';
+  rows.forEach((r,i)=>{ html+=`<tr data-i="${i}" class="${cls(r)}">`+cols.map(c=>`<td class="${num0.has(c[0])?'r':''}">${cell(r,c[0])}</td>`).join('')+'</tr>'; });
+  return html+'</tbody></table>';
+}
+function ecaRecalcView(ctx,main,tools){
+  const S=ECA_V.rs, P=ctx.P, R=P.resultats||null, rows=ecaRecalcRows(P,R), ouv=ctx.hasOuv();
+  const cols=[['lot','Lot d’adj.',70],['adj','Adjudication',170],['npmt','N° pmt',50],['cfc','CFC',60],...(ouv?[['og','Ouvrage',70],['lg','Localisation',70]]:[]),['ht','Paiement HT',120],['tva','TVA',80],
+    ['ttc','Paiement TTC',120],['code','Code',55],['txt','Désignation',230],['eht','Valeur réf. HT',115],['ettc','Valeur réf. TTC',115]];
+  const NUM=new Set(['ht','tva','ttc','eht','ettc']);
+  const cell=(r,k)=>{ const v=r[k]; if(NUM.has(k)) return v==null?'':num(v); return esc(v==null?'':v); };
+  const G={cols:cols.map(c=>({k:c[0],t:c[1],f:r=>cell(r,c[0])})),view:rows};
+  const edit=r=>{ if(!r) return; if(r.t==='P'){ toast('Sélectionnez le détail du paiement.',true); return; } ecaAttrDialog(ctx,r.p,r.l); };
+  const importCC=async()=>{ if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; } if(rows.length) return;
+    await DS.need(['costcontrol','costcontroldocument']);
+    const L=DS.by('costcontroldocument','PROJECT_ID',ctx.doc.PROJECT_ID).filter(d=>+d.STATECODE===3&&!d.ISMARKEDASDELETED).sort((a,b)=>cmp(a.CHANGEDDATE,b.CHANGEDDATE));
+    if(!L.length){ toast('Il n’existe aucun contrôle du coûts dont le statut est terminé.',true); return; }
+    /* jamais par-dessus un calcul existant : après un conflit (409), la version relue peut déjà contenir l'import d'un autre poste */
+    const imp=async d=>{ const C=DS.get('costcontrol',d.ID); if(!C){ toast('Le contenu du contrôle des coûts « '+(d.VERSION||'')+' » est introuvable.',true); return false; }
+      if(ecaRecalcRows(ctx.P,ctx.P.resultats||null).length){ toast('Un contrôle des coûts est déjà importé (Supprimer ▾ « Supprimer les paiements et le calcul… » d’abord).',true); return; }
+      const Rn=ecaImportCC(ctx.P,ctx.doc,C,d), nIgn=(C.paiements||[]).length-Rn.paiements.length; ctx.P.resultats=Rn; if(!await ctx.touch()) return;
+      toast(Rn.paiements.length+' paiement(s) importé(s) du contrôle des coûts « '+(d.VERSION||'')+' »'+(nIgn>0?' ; '+nIgn+' ignoré(s) : entreprise absente de la liste des entreprises du contrôle.':'.'),nIgn>0); };
+    if(L.length===1){ await imp(L[0]); return; }
+    const g={}, box=h('div',{class:'eca-box',style:{width:'520px',height:'220px'}});
+    let okG=()=>{};
+    grid(box,Object.assign(g,{cols:[{k:'CHANGEDDATE',t:'Date',w:100,f:d=>dfr(d.CHANGEDDATE)},{k:'VERSIONNUMBER',t:'N° de version',w:100,cls:'r'},{k:'VERSION',t:'Version'}],rows:L,sort:null,onSel:()=>okG(),onDbl:()=>$('.ov:last-child .btn.pri').click()}));
+    const dlg=dialog({title:'Contrôles des coûts',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const d=DS.get('costcontroldocument',g.sel); if(!d) return false; return imp(d); }}]});
+    okG=ecaGuard(dlg,()=>!!DS.get('costcontroldocument',g.sel)); };   // CostcontrolSelectionDialog.checkGuards
+  const del=async all=>{ if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; } if(!R) return;
+    if(!await confirmDlg(ECA_MSG_IRREV,'Supprimer')) return;
+    if(!ctx.P.resultats) return;   // supprimé entre-temps (document relu)
+    if(all) delete ctx.P.resultats; else ctx.P.resultats.attributions=[];   // écart voulu : « Supprimer les attributions » garde l'instantané (l'original le vide et bloque l'import)
+    S.sel=null; await ctx.touch(); };
+  const sel=()=>rows.find(r=>r.key===S.sel)||null;
+  tools.append(ibtn({i:'import',t:'Import',menu:()=>[{t:'Importer un contrôle du coûts…',dis:rows.length>0||!ctx.canEdit(),fn:importCC}]}),
+    ibtn({i:'edit',t:'Editer',fn:()=>edit(sel())}),
+    ibtn({i:'minus',t:'Supprimer',menu:()=>[{t:'Supprimer les paiements et le calcul…',dis:!R,fn:()=>del(true)},{t:'Supprimer les attributions d’éléments…',dis:!R||!(R.attributions||[]).length,fn:()=>del(false)}]}),
+    ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV',fn:()=>csvTable(G,'Recalculer_'+ctx.id)}]}),
+    h('span',{class:'eca-lbl',style:{marginLeft:'10px'}},R&&R.source?'Contrôle des coûts « '+(R.source.version||'')+' » du '+dfr(R.source.date)+(R.source.importe?' — importé le '+dfr(R.source.importe):''):''));
+  const box=h('div',{class:'pane',tabindex:'0',style:{border:'1px solid var(--line)',background:'#fff',margin:'6px 6px 0',outline:'none'}}), det=h('div',{class:'eca-det'});
+  main.append(box,det);
+  box.innerHTML=ecaTable(cols,rows,cell,r=>r.t==='P'?'pay':'',NUM);
+  if(!rows.length) box.append(h('div',{class:'empty'},R?'Aucun paiement.':'Importez un contrôle des coûts terminé de l’affaire (Import ▾).'));
+  const trs=$$('tbody tr',box);
+  const drawDet=()=>{ det.innerHTML=''; const r=sel(); if(!r||r.t!=='L'){ det.append(h('span',{class:'ec-small'},r&&r.t==='P'?'Sélectionnez le détail du paiement.':'Sélectionnez une ligne CFC.')); return; }
+    const p=r.p, l=r.l, kv=(k,v)=>[h('b',{},k),h('span',{},v==null?'':String(v))];
+    const ec=(r.A||[]).map(a=>a.code+' '+num((+a.ht||0)+(+a.tva||0))).join('  |  ');   // setAftercalcInnerPanel « \u0001  |  \u0001 \u0001 »
+    det.append(...kv('CFC',l.cfc+' '+ecCfcText(ctx,l.cfc)),...kv('Numéro de paiement',p.numero),...kv('Date du paiement',dfr(p.datePaiement)),...kv('Numéro de facture',p.facture),
+      ...kv('Date de la facture',dfr(p.dateFacture)),...kv('Adjudicataire',p.entreprise||(p.contactId!=null?ccEntName({},p.contactId):'')),...kv('Paiements',p.genre),...kv('Remarque paiement',p.description),
+      ...(l.ouvrage?kv('Ouvrage',l.localisation?l.ouvrage+' | '+l.localisation:l.ouvrage):[]),...kv('Coûts selon CFC',num(l.net)),...kv('Coûts selon eCCC',ec),...kv('Différence',num((+l.net||0)-r.ettc))); };
+  const pick=(key,scroll)=>{ S.sel=key; trs.forEach(tr=>tr.classList.remove('on')); const i=rows.findIndex(r=>r.key===key); if(i>=0){ trs[i].classList.add('on'); if(scroll) trs[i].scrollIntoView({block:'nearest'}); } drawDet(); };
+  box.onclick=ev=>{ const tr=ev.target.closest('tr[data-i]'); if(tr) pick(rows[+tr.dataset.i].key); };
+  box.ondblclick=ev=>{ const tr=ev.target.closest('tr[data-i]'); if(!tr) return; const r=rows[+tr.dataset.i]; pick(r.key); edit(r.t==='A'?rows.find(x=>x.t==='L'&&x.p===r.p&&x.l===r.l):r); };
+  box.onkeydown=ev=>{ if(ev.key!=='ArrowDown'&&ev.key!=='ArrowUp') return; ev.preventDefault(); let i=rows.findIndex(r=>r.key===S.sel); i=Math.max(0,Math.min(rows.length-1,i+(ev.key==='ArrowDown'?1:-1))); if(rows[i]) pick(rows[i].key,true); };
+  if(S.sel&&rows.some(r=>r.key===S.sel)) pick(S.sel,true); else { S.sel=null; drawDet(); }
+}
+function ecaResultsView(ctx,main,tools){
+  const S=ECA_V.rs, P=ctx.P, R=P.resultats||null, L=ecaResultList(P,R||{}), rows=ecaResultRows(L), ouv=ctx.hasOuv();
+  const cols=[['code','Code',65],['txt','Désignation',240],...(ouv?[['og','OUV',70],['lg','Localisation',70]]:[]),['q','Quantité réf.',110],['un','',40],['prix','Prix déterminé',140],['val','Montant déterminé',140],
+    ['prec','Prix recalculé',140],['rec','Montant recalculé',140],['diff','Différence',140],['pc','[%]',70]];
+  const NUM=new Set(['q','prix','val','prec','rec','diff','pc']);
+  const cell=(r,k)=>{ if(r.t==='B') return ''; const v=r[k]; if(NUM.has(k)) return v===''||v==null?'':num(v); return esc(v==null?'':v); };
+  const G={cols:cols.map(c=>({k:c[0],t:c[1],f:r=>cell(r,c[0])})),view:rows.filter(r=>r.t!=='B')};
+  const ch=h('div',{class:'eca-chart'});
+  const drawChart=()=>{ const c=ecaResultChart(L,S.vue,S.elem); ecaChart(ch,c,'%'); };
+  /* menu du graphique (getResultChartPopupMenu) : groupes principaux (sauf Z), puis leurs groupes de niveau 2 s'ils ont plus d'un élément
+     de niveau 3. Écart : seules les positions affichées (déterminé ou recalculé ≠ 0) — l'original liste les 90 groupes du catalogue. */
+  /* 1re entrée : CalculationFrame.chartsDeviation « Groupes principaux eCCC » */
+  const menu=()=>{ const it=[{t:'Groupes principaux eCCC',chk:S.vue===0,fn:()=>{ S.vue=0; S.elem=null; drawChart(); }}], vis=p=>p.val!==0||p.rec!==0, tops=L.filter(p=>String(p.code).length===1&&!String(p.code).startsWith('Z')&&vis(p));
+    if(tops.length) it.push('-');
+    tops.forEach(p=>{ const nb=L.filter(g=>String(g.code).length>3&&String(g.code).startsWith(p.code)).length, f=c=>()=>{ S.vue=1; S.elem=c; drawChart(); };
+      it.push({t:p.code+' '+p.libelle,chk:S.vue===1&&S.elem===p.code,fn:f(p.code)});
+      if(nb!==1) L.filter(g=>String(g.code).length===3&&String(g.code).startsWith(p.code)&&vis(g)).forEach(g=>it.push({t:'      '+g.code+' '+g.libelle,chk:S.vue===1&&S.elem===g.code,fn:f(g.code)})); });
+    return it; };
+  tools.append(ibtn({i:'analyse',t:'Graphique',menu}),
+    ibtn({i:'gear',t:'Fonctions',dis:!rows.length,menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV',fn:()=>csvTable(G,'Resultats_'+ctx.id)},
+      ...(typeof mgSaveChart==='function'?[{t:'Enregistrer le graphique (SVG)',fn:()=>mgSaveChart(ch,'Resultats_'+ctx.id)}]:[])]}));
+  const box=h('div',{class:'pane',style:{border:'1px solid var(--line)',background:'#fff',margin:'6px 6px 0'}});
+  box.innerHTML=ecaTable(cols,rows,cell,r=>[r.t==='B'?'blank':'',r.b?'b':'',r.hl?'mg':''].filter(Boolean).join(' '),NUM);
+  if(!rows.length) box.append(h('div',{class:'empty'},R?'Aucun montant déterminé ni recalculé.':'Aucun calcul des résultats : importez un contrôle des coûts dans « Recalculer ».'));
+  main.append(box,ch); drawChart();
+}
+/* « Attribuer des élément » (CalcDialog) : attributions d'une ligne de paiement ; OK : Σ% > 100 bloquant, 0 < Σ% < 100 confirmé */
+function ecaAttrDialog(ctx,p,l){
+  if(!ctx.canEdit()){ toast(EC_MSG_DROITS,true); return; }
+  const P=ctx.P, R=P.resultats; if(!R) return;
+  const I=R.instantane||[], ord=new Map(I.map((x,i)=>[x.code,i]));
+  const W=(R.attributions||[]).filter(a=>+a.paiement===+p.refNum&&+a.ligne===+l.refNum).sort((x,y)=>(ord.get(x.code)??1e9)-(ord.get(y.code)??1e9))
+    .map(a=>({code:a.code,pourcent:+a.pourcent||0,ht:+a.ht||0,tva:+a.tva||0,remarque:a.remarque||''}));
+  const ex=(+l.net||0)-(+l.tva||0), txt=c=>{ const e=P.elements.find(x=>x.code===c); return e?ecaTxt(e):(((I[ord.get(c)])||{}).libelle||''); };
+  const o={}, box=h('div',{class:'eca-box',style:{width:'640px',height:'240px'}});
+  const used=code=>W.filter(x=>x.code!==code).reduce((s,x)=>s+(+x.pourcent||0),0);   // getBookedProc
+  const cur=()=>W[+o.sel];
+  const draw=()=>grid(box,Object.assign(o,{key:x=>String(W.indexOf(x)),cols:[{k:'code',t:'N°',w:70},{k:'t',t:'Texte',f:x=>esc(txt(x.code))},{k:'ht',t:'Montant HT',w:120,cls:'r',f:x=>num(x.ht)},
+    {k:'tva',t:'TVA',w:100,cls:'r',f:x=>num(x.tva)},{k:'pourcent',t:'[%]',w:60,cls:'r',f:x=>num(x.pourcent)}],rows:W,sort:null,onDbl:x=>edit(x),empty:'Aucun élément attribué.'}));
+  const add=()=>ecaElemBrowser(ctx,l.cfc,async code=>{ const e=P.elements.find(x=>x.code===code); if(!e) return false;
+    if(e.genere&&!e.niveauFixe){ toast('Les positions générées telles que '+code+' ne peuvent pas être attribuées.',true); return false; }
+    if(ecGv(e)===0&&!await confirmDlg('L’élément '+code+' n’a pas été utilisé dans le calcul.\nVoulez-vous l’utiliser quand même?','Utiliser')) return false;
+    ecaKagDialog(l,e,null,used(''),it=>{ const i=o.sel!=null&&cur()?(+o.sel)+1:0; W.splice(i,0,Object.assign({code},it)); o.sel=String(i); draw(); }); });   // insertRow(ligne choisie + 1)
+  const edit=x=>{ if(!x) return; ecaKagDialog(l,P.elements.find(y=>y.code===x.code)||{code:x.code,libelle:txt(x.code)},x,used(x.code),it=>{ Object.assign(x,it); draw(); }); };
+  const head=phead([{i:'plus',t:'Nouveau',fn:add},{i:'edit',t:'Editer',fn:()=>edit(cur())},{i:'minus',t:'Supprimer',menu:()=>[{t:'Supprimer la position',dis:!cur(),fn:()=>{ W.splice(+o.sel,1); o.sel=null; draw(); }},
+    {t:'Supprimer toutes les positions',dis:!W.length,fn:()=>{ W.length=0; o.sel=null; draw(); }}]}]);
+  draw();
+  const info=formRows([['CFC',h('span',{},l.cfc+' '+ecCfcText(ctx,l.cfc))],['Total TTC',h('span',{},num(l.net))],['TVA',h('span',{},num(l.tva))],['Total HT',h('span',{},num(ex))],
+    ...(l.ouvrage?[['Ouvrage',h('span',{},l.localisation?l.ouvrage+' | '+l.localisation:l.ouvrage)]]:[])],600);
+  dialog({title:'Attribuer des élément',width:'700px',body:h('div',{},h('div',{class:'ec-hint'},'Attribuer les paiements aux éléments'),info,h('div',{style:{height:'8px'}}),head,box),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const tot=W.reduce((s,x)=>s+(+x.pourcent||0),0);
+      if(tot>100+1e-9){ toast('Les pourcentages sont supérieurs à 100.',true); return false; }
+      if(tot>0&&tot<100-1e-9&&!await confirmDlg('Les pourcentages sont inférieurs à 100. Souhaitez-vous vraiment continuer ?','Continuer')) return false;
+      const Rc=ctx.P.resultats, pc=Rc&&(Rc.paiements||[]).find(x=>+x.refNum===+p.refNum);   // document relu entre-temps (autre poste) ?
+      if(!pc||!(pc.lignes||[]).some(x=>+x.refNum===+l.refNum)){ toast('Le calcul des résultats a été modifié sur un autre poste : la version à jour est affichée, reprenez la saisie.',true); ctx.draw(); return; }
+      const ref=ecaSetAttributions(ctx.P,Rc,p,l,W);
+      if(ref.length) toast('Attribution impossible (élément ou ouvrage absent de l’état figé à l’import du contrôle des coûts) : '+ref.join(', '),true);
+      await ctx.touch(); }}]});
+}
+/* « Coûts selon élément » (KagToElemDialog) : Montant HT = % × 0,01 × (net − TVA), TVA = % × 0,01 × TVA (arrondis à 0,01) ; « < » = 100 − Σ% des autres lignes */
+function ecaKagCalc(l,pct){ const ex=(+l.net||0)-(+l.tva||0), f=+pct||0; return ex===0?{ht:0,tva:0}:{ht:ecR(f*0.01*ex,false),tva:ecR(f*0.01*(+l.tva||0),false)}; }   // KagToElemDialog.calcValue
+function ecaKagDialog(l,e,it,usedPct,fn){
+  const ex=(+l.net||0)-(+l.tva||0);
+  const pc=ecaNumIn(it?it.pourcent:''), mt=h('input',{class:'inp',readonly:true,style:{width:'140px',textAlign:'right'}}), tv=h('input',{class:'inp',readonly:true,style:{width:'140px',textAlign:'right'}});
+  const rm=h('textarea',{class:'inp',rows:3,maxlength:1024},it?it.remarque||'':'');
+  const calc=()=>{ if(ex===0) return; const v=ecaKagCalc(l,ecParse(pc.value)||0); mt.value=num(v.ht); tv.value=num(v.tva); };
+  const prop=ibtn({label:'<',t:'Proposition',fn:()=>{ if(ex===0) return; pc.value=String(ecaP2(100-usedPct)); calc(); }});
+  pc.oninput=calc; if(it){ mt.value=num(it.ht); tv.value=num(it.tva); }
+  dialog({title:'Coûts selon élément',width:'520px',body:h('div',{},h('div',{class:'ec-hint'},'Elément '+e.code+' '+ecaTxt(e)),
+    formRows([['Pourcentages [%]',h('span',{style:{display:'inline-flex',gap:'4px',alignItems:'center'}},pc,' [%]',prop)],['Montant HT',mt],['TVA',tv],['Remarque',rm]],440)),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const f=ecReadNum(pc,'Pourcentages'); if(f==null) return false;
+      return fn(Object.assign({pourcent:f,remarque:rm.value},ecaKagCalc(l,f))); }}]});
+  setTimeout(()=>{ if(document.body.contains(pc)){ pc.focus(); pc.select(); } },0);
+}
+/* « Navigateur d'éléments » du calcul des résultats (AfterCalcElemBrowserDialog, sélection simple) */
+function ecaElemBrowser(ctx,cfc,fn){
+  let only=true, all=false, q=''; const o={}, box=h('div',{class:'eca-box',style:{width:'560px',height:'340px'}});
+  const cbA=h('input',{type:'checkbox',disabled:true,onchange:ev=>{ all=ev.target.checked; draw(); }});
+  const cbO=h('input',{type:'checkbox',checked:true,onchange:ev=>{ only=ev.target.checked; cbA.disabled=only; draw(); }});
+  let okG=()=>{}, rows=[];
+  /* la sélection ne porte que sur une ligne AFFICHÉE (filtre, cases) : l'original lit les lignes choisies du tableau visible */
+  const draw=()=>{ rows=ecaProposed(ctx.P,cfc,only,all,ecaCfcRecs()).filter(e=>matchQ(q,e.code,ecaTxt(e))); if(o.sel!=null&&!rows.some(e=>e.code===String(o.sel))) o.sel=null;
+    grid(box,Object.assign(o,{key:e=>e.code,cols:[{k:'code',t:'Code',w:80},{k:'t',t:'Désignation',f:e=>esc(ecaTxt(e))}],rows,sort:null,onSel:()=>okG(),onDbl:()=>$('.ov:last-child .btn.pri').click(),
+      empty:only?'Aucun élément proposé pour le CFC '+cfc+'.':'Aucun élément.'})); okG(); };
+  const s=h('input',{class:'inp',placeholder:'Rechercher'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); };
+  draw();
+  const dlg=dialog({title:'Navigateur d’éléments',body:h('div',{},s,h('div',{style:{height:'6px'}}),h('label',{style:{display:'block'}},cbO,' Afficher uniquement les éléments proposés'),
+    h('label',{style:{display:'block',margin:'4px 0 6px'}},cbA,' Afficher toutes les éléments'),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(o.sel==null||!rows.some(e=>e.code===String(o.sel))) return false; return fn(String(o.sel)); }}]});
+  okG=ecaGuard(dlg,()=>o.sel!=null&&rows.some(e=>e.code===String(o.sel)));   // AfterCalcElemBrowserDialog.chechGuards : lignes et sélection
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

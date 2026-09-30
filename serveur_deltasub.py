@@ -55,6 +55,26 @@ PROTECTED = {"projectfee", "projectfeecalculation", "projectfeecalculationamount
 IMPORT_WHO = "import Deltaproject"
 PROTECTED_IF_EDITED = {"costplanningdocument", "costplanning", "costestimatedocument", "costestimate",
                        "costcontroldocument", "costcontrol"}
+# ── eCCC lot 3 (spec_12 § 6.5, § 12 n° 5) ── Valeurs référentielles du bureau (aussi saisies dans DeltaSub : Mes estimations
+# eCCC ▸ Valeurs référentielles ▾) et propositions CFC apprises (« ebkptobkp », collection créée par DeltaSub) : un
+# enregistrement modifié ou créé dans DeltaSub est conservé au ré-import (--force), les autres sont remplacés par Deltaproject.
+PROTECTED_IF_EDITED |= {"statisticalvalue", "constructionpart", "constructioncomponent", "ebkpelement", "ebkptobkp"}
+REF_CLE = {"statisticalvalue": "EBKPELEMENT_ID", "constructionpart": "EBKPELEMENT_ID",
+           "constructioncomponent": "CONSTRUCTIONPART_ID", "ebkpelement": "CODE"}
+
+
+def _autre_ref(t, v, rec):
+    """Valeur référentielle conservée (modifiée ou créée dans DeltaSub) dont l'identifiant désigne, dans Deltaproject, un
+    enregistrement d'un AUTRE élément eCCC / sous-élément / code (identifiant attribué des deux côtés) → texte d'avertissement."""
+    k = REF_CLE.get(t)
+    if not k:
+        return None
+    try:
+        v = json.loads(v) if isinstance(v, str) else (v or {})
+    except ValueError:
+        return None
+    return None if str(v.get(k)) == str(rec.get(k)) else "%s DeltaSub %s, Deltaproject %s" % (k, v.get(k), rec.get(k))
+# ── fin eCCC lot 3 ──
 
 
 def _reprendre():
@@ -258,6 +278,9 @@ def import_deltaproject(c, folder, force=False):
                 if (table.lower(), str(rid)) in kept:   # déjà saisi / modifié dans DeltaSub : conservé
                     if (table.lower(), str(rid)) in kept2 and _projet(kept2[(table.lower(), str(rid))]) not in (None, rec.get("PROJECT_ID")):
                         conflits.append((table.lower(), str(rid), _projet(kept2[(table.lower(), str(rid))]), rec.get("PROJECT_ID")))
+                    m3 = (table.lower(), str(rid)) in kept2 and _autre_ref(table.lower(), kept2[(table.lower(), str(rid))], rec)   # eCCC lot 3
+                    if m3:
+                        print("⚠ %s %s NON repris : l'identifiant est déjà pris dans DeltaSub par une autre valeur référentielle (%s)." % (table.lower(), rid, m3))
                     continue
                 ops.append({"t": table.lower(), "id": str(rid), "val": rec})
         commit(c, ops, "import Deltaproject", check=False)

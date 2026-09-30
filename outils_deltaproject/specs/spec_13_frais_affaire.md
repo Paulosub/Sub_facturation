@@ -1,6 +1,6 @@
 # Cahier des charges — CH-17 « Configurer les frais de l'affaire » (groupes et genres de frais) dans DeltaSub
 
-Version du rédacteur critique, 30.09.2026. Ce cahier décrit comment reproduire dans `DeltaSub.html` la commande Affaires ▸ Gestion ▸ « Configurer les frais » de Deltaproject 16.05 (`ProjectCostCategoriesDialog`, `ProjectCostCategoryGroupDialog`, `ProjectCostCategoryDialog`) avec ses deux imports. Il confronte les deux recherches du chantier (`ch/CH-17/rech_orig.md` sur l'original, `ch/CH-17/rech_exist.md` sur DeltaSub), la fiche CH-17 et le § 16 de l'inventaire. Chaque point contesté a été revérifié à la source pour ce cahier.
+Version du rédacteur critique, 30.09.2026 ; **révision 2 du 30.09.2026, 13 h 40**, faite après l'intégration du chantier (voir « État » ci-dessous). Ce cahier décrit comment reproduire dans `DeltaSub.html` la commande Affaires ▸ Gestion ▸ « Configurer les frais » de Deltaproject 16.05 (`ProjectCostCategoriesDialog`, `ProjectCostCategoryGroupDialog`, `ProjectCostCategoryDialog`) avec ses deux imports. Il confronte les deux recherches du chantier (`ch/CH-17/rech_orig.md` sur l'original, `ch/CH-17/rech_exist.md` sur DeltaSub), la fiche CH-17 et le § 16 de l'inventaire. Chaque point contesté a été revérifié à la source pour ce cahier.
 
 **Conventions**
 - **[P] PROUVÉ** : bytecode `Classe.méthode@offset` (désassemblages dans `scratchpad/ch/CH-17/jp/`), libellé `Strings.db (classe|id)`, données de la base de test `dstest/deltasub.sqlite` (copie fidèle de la base du bureau : 202 groupes, 1 158 genres, 635 frais).
@@ -9,9 +9,20 @@ Version du rédacteur critique, 30.09.2026. Ce cahier décrit comment reproduire
 
 **Références DeltaSub.** `DeltaSub.html` du dépôt au 30.09.2026 10:08 : 14 324 lignes, md5 `866e3ea8b5cc940578c02640ace6a15d`, commit `7c8e543` plus des modifications non commitées d'autres chantiers. Le fichier change pendant le travail des chantiers parallèles : **seules les ancres textuelles du § 9 font foi**, les numéros de ligne sont indicatifs. Les lignes 1 à 1 700 sont identiques à `ece452b` (base des recherches).
 
+**État (révision 2).**
+- **Chantier livré et intégré.** Les deux lots du § 10 sont dans le dépôt : commit `9c9a3f9` (« DeltaSub : Gestion ▸ « Configurer les frais … » de l'affaire (CH-17) + avertissement dans la saisie des frais »). Il est précédé du correctif `b50edc6` (`readK`, § 8 n° 7).
+  - `DeltaSub.html` du HEAD : 14 522 lignes, md5 `b5db79206029ddfe413a4ec83bcd3858`, identique octet pour octet à `ch/CH-17/lot2/DeltaSub.html`. `lot1/ch17a.js` et `lot2/ch17b.js` y figurent à l'identique.
+  - La version 1 de ce cahier a été copiée dans `outils_deltaproject/specs/spec_13_frais_affaire.md` ; elle est conservée dans `ch/CH-17/work/spec_13_v1.md`. La révision 2 ne modifie **aucune règle fonctionnelle**. Remplacer la copie du dépôt est l'affaire de l'intégrateur ; rien n'a été modifié dans le dépôt.
+- **Contre-vérification à la source faite pour cette révision** :
+  - bytecode : menu `+` (`addNewPopupMenuItems@0-151`), ordre des contrôles des deux suppressions (`@43-183`, `@43-137`), calculatrice sans confirmation (`jCalcBudgetButtonActionPerformed@0-63`), prix à facturer masqué (`ProjectCostCategoryDialog.<init>@335-351`), estompage limité au statut « Configuration » (`FadingCellRenderer@102-125`), `Integrity` (frais **ou** ligne de calcul d'honoraires pour un genre) ;
+  - `Strings.db` : tous les libellés du § 4.12 (titres, champs, colonnes, menu, messages) et ceux du § 1 ;
+  - données : `work/verif_spec2.py` sur `dstest`, toutes les valeurs du § 6 retrouvées au centime.
+  - **Aucune erreur de fond** n'a été trouvée.
+- **Changements de la révision 2** : état et plan (§ 0, § 10) ; mesures de mise en page retenues par les relectures (§ 4.2, § 4.8, § 4.9, § 7 E15-E16) ; résultats des contrôles faits sur la version intégrée (§ 6.3) ; correctif `readK` (§ 8 n° 7) ; lignes des ancres dans le HEAD (§ 9) ; précisions sur les décisions n° 1 à 3 et sur ce qu'impliquerait chaque variante (§ 11) ; une précision au § 1 (n° 15).
+
 **Aucune donnée personnelle** : identifiants, compteurs, libellés d'interface et libellés génériques de frais seulement. **Aucun contenu CRB.**
 
-**Fichiers de vérification** : `ch/CH-17/jp/` (désassemblages), `ch/CH-17/stats.py`, `stats2.py`, `work/data_frais*.py`, `work/verif_spec.py` (contrôles de ce cahier), `work/DeltaSub_ref.html` (copie de référence du 30.09.2026 10:08).
+**Fichiers de vérification** : `ch/CH-17/jp/` (désassemblages), `ch/CH-17/stats.py`, `stats2.py`, `work/data_frais*.py`, `work/verif_spec.py` (contrôles de ce cahier), `work/DeltaSub_ref.html` (copie de référence du 30.09.2026 10:08). Révision 2 : `work/verif_spec2.py` (contre-vérification des données), `work/DeltaSub_HEAD.html` (copie du HEAD `9c9a3f9`), `specrev/` (essai navigateur de la version intégrée, § 6.3).
 
 ---
 
@@ -28,7 +39,7 @@ Version du rédacteur critique, 30.09.2026. Ce cahier décrit comment reproduire
 9. **D16 (arrêtée)** : pas de copie automatique à la création d'une affaire (fidèle) ; import manuel ; **avertissement DeltaSub** dans la saisie des frais quand l'affaire n'a aucun groupe (extension, l'original n'en a pas) (§ 4.11).
 10. **Cascade** : la suppression d'une affaire DeltaSub supprime aussi ses groupes et genres de frais (l'original le fait par cascade JPA ; `delProject` l'oublie) (§ 4.10).
 11. **Aucun document imprimé** dans ce chantier (§ 5).
-12. **Plan : 2 lots** (§ 10). Lot 1 `ch17a` : tout le dialogue, les imports et la cascade. Lot 2 `ch17b` : l'avertissement D16.
+12. **Plan : 2 lots** (§ 10), **livrés et intégrés** (commit `9c9a3f9`). Lot 1 `ch17a` : tout le dialogue, les imports et la cascade. Lot 2 `ch17b` : l'avertissement D16. **Aucun lot ne reste à construire** ; il reste les trois décisions du § 11, dont les choix par défaut sont déjà en service.
 
 ---
 
@@ -50,7 +61,7 @@ Version du rédacteur critique, 30.09.2026. Ce cahier décrit comment reproduire
 | 12 | Titre des refus | non établi (`rech_exist` question 7) | **« Information »**, icône d'information, bouton OK | [P] `jDelete…GroupButtonActionPerformed@95-134` (`Strings$Label.information`, `INFORMATION_MESSAGE`) |
 | 13 | Pratique du bureau | « 3 ou 4 groupes configurés à la main » (inventaire § 16.4) | **Importés** : 36 affaires ont exactement la configuration de l'affaire modèle 701 (dont 3454, 3551, 3601, 3651) ; 4 affaires (2501, 3251, 3351, 3352) ont exactement le standard actuel à 4 groupes. Aucune prévision, aucun prix à facturer, aucun nom hors standard ou modèle | [P] `work/verif_spec.py` (signatures identiques 701 = 3651 = 3454) ; `stats.py` |
 | 14 | Avertissement quand l'affaire n'a aucun groupe | à reproduire (fiche) | **Absent de l'original** : liste vide, OK grisé, aucun message. L'avertissement D16 est une **extension DeltaSub** | [P] `deltaproject.expenses.ProjectCostDialog` : seuls `msgProjectIsNotActive`, `msgProjectSubPhaseIsTerminated`, `msgDeleteEntry` |
-| 15 | « Choix de l'affaire » (import depuis une affaire) | filtre par statut ? affaire courante incluse (`pickProject`) ? | **Toutes les affaires (tous statuts) sauf la courante** ; colonnes Numéro \| Affaire ; les affaires au statut « Configuration » sont **estompées** | [P] `ProjectBrowserDialog.setProjectListTable@0-48` (`Project.getProjectList` = `Project.findAll`, `removeAll`) ; `FadingCellRenderer@102-127, @345-385` (`isInitializing` → alpha 125) |
+| 15 | « Choix de l'affaire » (import depuis une affaire) | filtre par statut ? affaire courante incluse (`pickProject`) ? | **Toutes les affaires (tous statuts) sauf la courante** ; colonnes Numéro \| Affaire ; les affaires au statut « Configuration » sont **estompées** | [P] `ProjectBrowserDialog.setProjectListTable@0-48` (`Project.getProjectList` = `Project.findAll`, `removeAll`) ; `FadingCellRenderer@102-127, @345-385` (`isInitializing` → alpha 125). Révision 2 : `rech_orig` § 10.2 écrit « affaires inactives estompées », ce qui est **inexact** : pour `ProjectTableModel`, seul `isInitializing` est testé (`@102-125`) |
 | 16 | Règle de l'ordre | « ±2 de `ctReorder` » ou « échange de voisins » | **Les deux coïncident** quand `SORTORDER` vaut 1..n : ±2 puis tri stable et renumérotation 1..n. DeltaSub réutilise `ctReorder` [C] (écart seulement sur des `SORTORDER` non normalisés, § 7 E7) | [P] `setProjectCostCategoryGroupSortOrder{Top,Backward,Forward,Bottom}@23-30` ; `db.ProjectCostCategoryGroupTableModel.sort@0-46` |
 | 17 | `SORTORDER` d'un nouvel élément | à partir de 0 (modèle `cfgActivities`) | **Nombre d'éléments du panneau + 1**, sans renumérotation | [P] `db.ProjectCostCategoryGroupTableModel.add@0-12`, `db.ProjectCostCategoryTableModel.add@0-12` |
 | 18 | Arrondi de la prévision calculée | `num()` de DeltaSub (`toFixed`) | **`Formatter.round`** : `signe × Math.round(|x| × 100) / 100`. Écart réel : 2.675 → « 2.68 » (Deltaproject) contre « 2.67 » (`toFixed`) ; 1.115 → « 1.12 » contre « 1.11 » | [P] `util.Formatter.round@0-67`, `formatDouble@0-17` ; calcul jsc et Python |
@@ -176,7 +187,7 @@ Remplacement exact au § 9 (A1) : `{t:'Configurer les frais …',fn:need(ch17aOp
 | Colonne | Contenu | Format |
 |---|---|---|
 | Groupe de frais | `nm(g)` | texte |
-| Prévision CHF | `BUDGET` | `ch17aN`, aligné à droite, largeur 100 |
+| Prévision CHF | `BUDGET` | `ch17aN`, aligné à droite, largeur **110** (révision 2 : à 100 px, l'en-tête devient « Prévision C… », il faut 101 px ; valeur retenue par la relecture du lot 1, § 7 E15) |
 
 « CHF » = monnaie de l'affaire : `hfCur(p)` (`CURRENCY`, sinon monnaie principale, sinon CHF), comme `Project.getCurrency` [P `db.Project.getCurrency@0-18`].
 
@@ -187,7 +198,7 @@ Remplacement exact au § 9 (A1) : `{t:'Configurer les frais …',fn:need(ch17aOp
 | Genre de frais | `nm(c)` | texte |
 | Unité | `UNIT` | texte, largeur 60 |
 | Prix | `UNITPRICE` | `ch17aN`, à droite, largeur 80 |
-| Prévision CHF | `BUDGET` | `ch17aN`, à droite, largeur 100 |
+| Prévision CHF | `BUDGET` | `ch17aN`, à droite, largeur **110** (même raison) |
 
 **Comportement** [P] :
 - sélection simple ; tri par en-tête désactivé (`ctNoSort`) ;
@@ -296,7 +307,7 @@ La décision est une fonction pure `ch17aDelCheck(kind, {nCats, nCosts, nFee, st
    - tableau des groupes standard triés par `SORTORDER` (puis `ID`) ; colonnes **Groupe de frais** (`nm`) | **Remarque** (`DESCRIPTION`, vide au bureau) [P `db.admin.CostCategoryGroupTableModel` type `small`] ;
    - **sélection multiple** : grille `multi` de DeltaSub (Maj = plage, Cmd/Ctrl = ajout ou retrait) [P `setSelectionMode(2)`] ;
    - boutons Annuler / OK ; **OK actif si au moins une ligne est sélectionnée** (`ivOkBtn(D).disabled`) ; double-clic = OK ;
-   - boîte de 420 × 300 px au moins.
+   - boîte de **420 px de large, fixe**, sur 300 px de haut (révision 2 : avec une largeur minimale seule, la fenêtre s'étirait à 92 % de l'écran ; § 7 E16).
 3. Copie (`ch17aStdOps`, un seul commit) [P `ProjectCostCategoryGroupDialog.importFromAdmin@0-305`], pour chaque groupe choisi dans l'ordre des lignes :
    - groupe : `PROJECT_ID` = affaire, `SORTORDER` = celui du standard, 4 noms, `BUDGET: 0` ;
    - pour chaque genre standard du groupe, par `SORTORDER` : `PROJECTCOSTCATEGORYGROUP_ID` = nouveau groupe, `SORTORDER`, 4 noms, `UNIT`, `UNITPRICE` du standard, `EXTERNALUNITPRICE: 0`, `BUDGET: 0`.
@@ -312,7 +323,8 @@ La décision est une fonction pure `ch17aDelCheck(kind, {nCats, nCosts, nFee, st
    - colonnes **Numéro** | **Affaire** [P `Strings.db (ProjectTableModel|colProjectNumber, colProjectDesc)`] ;
    - lignes : **toutes les affaires, tous statuts, sauf l'affaire courante**, dans l'ordre de `projects()` [C] ; tri par en-tête permis ;
    - affaires au statut 1 **estompées** (opacité 0,49 du texte) [P `FadingCellRenderer`] ;
-   - sélection simple ; OK actif si une ligne est sélectionnée ; double-clic = OK ; Annuler = rien.
+   - sélection simple ; OK actif si une ligne **visible** (après recherche) est sélectionnée ; double-clic = OK ; Annuler = rien ;
+   - boîte de 520 × 340 px (largeur fixe, comme « Frais »), colonne Numéro 90 px [C].
 4. Copie (`ch17aPrjOps`, un seul commit) [P `importFromProject@227-508`], pour chaque groupe de la source par `SORTORDER` : nouveau groupe (`SORTORDER`, 4 noms, **`BUDGET: 0`**) ; pour chaque genre par `SORTORDER` : `SORTORDER`, 4 noms, `UNIT`, `UNITPRICE`, **`EXTERNALUNITPRICE` copié**, **`BUDGET: 0`**.
 5. Source sans groupe : rien n'est écrit, aucun message [P].
 6. La branche « remplacer les groupes existants » (confirmation « Voulez-vous importer tous les frais ⏎ d'une affaire existante? ») est inatteignable dans l'original : **non reproduite** (§ 7 E8).
@@ -397,6 +409,31 @@ Le test charge `num`, `cmp` et `ctReorder` copiés à l'identique de `DeltaSub.h
 | B16 (lot 2) | Domaine Frais de 3701 ▸ `+` | la liste « Groupe de frais » affiche l'avertissement ; OK → toast « Affaire, groupe de frais et genre de frais sont obligatoires. » ; choisir une affaire qui a des groupes → avertissement remplacé par les groupes |
 | B17 (lot 2) | Affaire de B5 (importée) ▸ `+` ; saisie sans affaire (note de frais) | aucun avertissement ; aucun avertissement tant qu'aucune affaire n'est choisie |
 
+### 6.3 Résultats (révision 2)
+
+**Tests des lots** (détail dans `ch/CH-17/lot1_integration.md` et `lot2_integration.md`) :
+- `jsc lot1/test_ch17a.js` : 95 contrôles, T1 à T9 plus T10 (DS simulé : cascade, conflit 409 des dialogues d'édition, actions directes) ;
+- `jsc lot2/test_ch17b.js` : 41 contrôles, W1 à W5 ;
+- essais navigateur des relectures : `lot1rev/` pour B1 à B15, `lot2rev/` pour B16, B17 et la non-régression B12 (22.40 CHF) ;
+- la relecture du lot 2 a dû créer l'affaire d'essai par `DS.commit`, car OK de « Nouvelle affaire » échouait alors (§ 8 n° 7).
+
+**Contrôles sur la version intégrée** (HEAD `9c9a3f9`, copie `work/DeltaSub_HEAD.html`, révision 2) :
+
+| Contrôle | Résultat |
+|---|---|
+| `jsc lot1/test_ch17a.js -- work/DeltaSub_HEAD.html` | **95 réussis, 0 en échec** |
+| `jsc lot2/test_ch17b.js -- work/DeltaSub_HEAD.html` (y compris W5 : syntaxe du script complet, déclarations uniques, A3 précédée d'un `;`) | **41 réussis, 0 en échec** |
+| `python3 lot1/build.py work/DeltaSub_HEAD.html`, puis `lot2/build.py` | arrêt propre, code 1 : « le préfixe ch17a/CH17A existe déjà dans la source (lot déjà intégré ?) », idem ch17b ; aucun fichier réécrit (md5 inchangés) |
+| B2, **par l'interface** (Nouvelle affaire, OK) | affaire d'essai créée au statut 1 (ID 3702) ; « Configurer les frais … » en 4e entrée du menu Configuration ; seuls `+▾` des groupes et « Fermer » actifs ; en-têtes Groupe de frais \| Prévision CHF \| Genre de frais \| Unité \| Prix \| Prévision CHF |
+| B3 | « Frais » : 4 lignes, en-têtes Groupe de frais \| Remarque, OK grisé puis actif après sélection multiple ; résultat : groupes **1604 à 1607** (`SORTORDER` 1-4, `BUDGET` 0), genres **2268 à 2292** (5 / 9 / 3 / 8), **Σ prix 29.15**, prix à facturer et prévisions à 0 |
+| B4 | « Importer d’une affaire existante … » rendu inerte (`dis`) ; le clic n'ouvre rien |
+| B6 | double-clic sur le genre 2268 → « Editer le genre de frais », étiquette « CHF / km » ; Prévision 2.675 → colonne « 2.68 » ; « Modifier le groupe de frais » ▸ calculatrice : champ 0.00 → **2.68**, base inchangée avant OK, 2.68 après OK |
+| B9 | affaire 3454 : groupe 1501 → Information `notEmpty` ; genre 2152 → Information `booked` ; genre 2151 → Information `notInit` (textes exacts du § 4.12) |
+| B14 | suppression de l'affaire d'essai : l'affaire, ses 4 groupes et ses 25 genres sont supprimés dans la même écriture (`val` nul côté serveur pour les 30 enregistrements) |
+| Console | aucune erreur |
+
+L'essai a été fait sur une copie isolée : `specrev/`, port 7873, `ds_user = 2752`, onglet propre. À la fin, le serveur a été arrêté, l'onglet fermé et la taille d'affichage remise par défaut ; la base du bureau n'a pas été touchée.
+
 ---
 
 ## 7. Écarts assumés
@@ -417,6 +454,8 @@ Le test charge `num`, `cmp` et `ctReorder` copiés à l'identique de `DeltaSub.h
 | E12 | Contrôles de suppression faits sur le cache local (`DS`) ; le serveur n'impose pas l'intégrité référentielle | architecture DeltaSub ; fenêtre de risque de quelques secondes entre postes |
 | E13 | Avertissement D16 dans la saisie (lot 2) | extension demandée (D16) ; absent de l'original |
 | E14 | Menu : entrée après « Configurer les phases » (original : après « Attribuer les activités aux collaborateurs ») | l'ordre de DeltaSub diffère déjà ; insertion minimale |
+| E15 | Colonnes « Prévision CHF » larges de 110 px (révision 2) | à 100 px, l'en-tête était tronqué (mesure de la relecture du lot 1) |
+| E16 | « Frais » à 420 px et « Choix de l’affaire » à 520 px de large, fixes (original « Frais » : taille minimale 400 × 400, `rech_orig` § 9.2) | sans largeur fixe, les dialogues DeltaSub s'étirent à 92 % de l'écran |
 
 ---
 
@@ -428,6 +467,7 @@ Le test charge `num`, `cmp` et `ctReorder` copiés à l'identique de `DeltaSub.h
 4. **Imports d'activités, de tarifs et de phases** : aucun contrôle du statut « Configuration », que l'original impose. CH-05.
 5. **Administrateur ▸ Frais standard** : « Ajouter » crée un genre sans groupe, sans unité ni prix ; édition du seul `NAMEFR` ; tri par nom. CH-06. L'import de CH-17 ignore les genres sans groupe.
 6. **`cfgActivities`** numérote à partir de 0 et ne renumérote pas ; la suppression d'un groupe d'activités laisse ses activités. CH-05.
+7. **`readK`** (révision 2) : il lisait tous les `[data-k]` du dialogue, y compris les lignes `tr[data-k]` que `grid` pose dans l'onglet « Genres d’affaire ». Résultat : OK de « Nouvelle affaire » et d'« Editer l’affaire » échouait (`TypeError` sur `.value`) dès que `projectkind` n'est pas vide. Le défaut a été constaté par la relecture du lot 2, puis **corrigé** par le commit `b50edc6`, antérieur à l'intégration (lecture limitée à `input`, `select`, `textarea`, ici et dans le dialogue d'adresse). Depuis, B2 passe par l'interface (§ 6.3).
 
 ---
 
@@ -442,6 +482,14 @@ Unicité vérifiée par `grep -F -c` = 1 sur la version du 30.09.2026 10:08. Le 
 | A2 | 1 | `/* honoraires et facturation : suppression en cascade` | `ch17aDelOps(p,ops);   /* CH-17 : groupes et genres de frais de l'affaire */` + saut de ligne + deux espaces + l'ancien | l. 1188, `delProject` (la ligne précédente se termine par `;`) |
 | A3 | 2 | `listGrid('grp',[{k:'n',t:'Groupe de frais',f:nm}],gs,` | `(lists.grp||(lists.grp={})).empty=ch17bWarn(v.PROJECT_ID); listGrid('grp',[{k:'n',t:'Groupe de frais',f:nm}],gs,` | l. 1419, `editCost.fill` (la ligne précédente se termine par `;`) |
 
+**Après intégration (révision 2, HEAD `9c9a3f9`).**
+- Chaque « ancien » reste présent une seule fois, puisque chaque « nouveau » le contient :
+  - A1 l. 1 360 ;
+  - A2 l. 1 188 ;
+  - A3 l. 1 420 ;
+  - code du lot 1 l. 14 305-14 487, code du lot 2 l. 14 489-14 500, « DÉMARRAGE » l. 14 503.
+- Sur cette source, les deux `build.py` s'arrêtent proprement (« préfixe déjà présent », code 1, rien d'écrit) : un chantier parallèle qui les relancerait ne peut pas intégrer le code deux fois (vérifié, § 6.3).
+
 **Fonctions existantes réutilisées, sans modification** : `h`, `esc`, `num`, `cmp`, `nm`, `toast`, `ibtn`, `popMenu`, `dialog`, `phead`, `grid`, `lang4`, `formRows`, `readK`, `projects`, `projLabel`, `matchQ`, `hfCur`, `ctMsg`, `ivAsk`, `ivOkBtn`, `ctNoSort`, `ctReorder`, `ctMoveRec`, `ctMoveBtns`, `DS.all/get/by/commit/newIds`. Modèle de structure : `cfgActivities` (l. 1226) et `importStdActivities` (l. 1257) ; ne pas reprendre leurs écarts (§ 8, n° 6).
 
 **Aucune modification** de `serveur_deltasub.py`, des outils de reprise ni des autres cahiers.
@@ -450,9 +498,11 @@ Unicité vérifiée par `grep -F -c` = 1 sur la version du 30.09.2026 10:08. Le 
 
 ## 10. Plan en lots
 
-Taille totale : **S** (lot 1 ≈ 200 lignes, lot 2 ≈ 5 lignes). La fiche prévoyait un seul lot ; l'avertissement D16 est isolé dans un lot 2 parce qu'il s'agit d'une extension, que Paulo peut refuser sans toucher au lot 1, et qu'il modifie une autre fonction existante (`editCost`).
+**État (révision 2)** : les deux lots sont **livrés, relus et intégrés** (commit `9c9a3f9`, § 6.3). **Aucun lot supplémentaire n'est prévu.** Ce qui n'est pas livré figure dans le tableau ci-dessous : cela relève d'autres chantiers ou attend une décision de Paulo (§ 11). Le préfixe `ch17c` / `CH17C` est réservé à un éventuel correctif qui suivrait ces décisions.
 
-### Lot 1 — « Configurer les frais » : dialogue, groupes, genres, ordre, suppressions, imports, cascade (préfixe `ch17a` / `CH17A`)
+Taille totale : **S** (lot 1 : 183 lignes, lot 2 : 12 lignes, plus 3 remplacements d'une ligne). La fiche prévoyait un seul lot ; l'avertissement D16 est isolé dans un lot 2 parce qu'il s'agit d'une extension, que Paulo peut refuser sans toucher au lot 1, et qu'il modifie une autre fonction existante (`editCost`).
+
+### Lot 1 — « Configurer les frais » : dialogue, groupes, genres, ordre, suppressions, imports, cascade (préfixe `ch17a` / `CH17A`) — LIVRÉ, intégré (`9c9a3f9`)
 
 - **Fichiers** : `ch/CH-17/lot1/ch17a.js` (déclarations de haut niveau seulement, aucun accès au DOM au chargement), `build.py` (ancres A0, A1, A2), `test_ch17a.js` et `fixture_frais.json` (jsc), `DeltaSub.html` construit pour l'essai.
 - **Contenu** :
@@ -468,7 +518,7 @@ Taille totale : **S** (lot 1 ≈ 200 lignes, lot 2 ≈ 5 lignes). La fiche prév
 - **Tests** : T1 à T9 (§ 6.1) ; essai navigateur B1 à B15 (§ 6.2).
 - **Dépendances** : aucune.
 
-### Lot 2 — Avertissement D16 dans la saisie des frais (préfixe `ch17b` / `CH17B`)
+### Lot 2 — Avertissement D16 dans la saisie des frais (préfixe `ch17b` / `CH17B`) — LIVRÉ, intégré (`9c9a3f9`)
 
 - **Fichiers** : `ch/CH-17/lot2/ch17b.js`, `build.py` (ancres A0, A3), test jsc.
 - **Contenu** : `ch17bWarn(pid)` (§ 4.11) et l'ancre A3. Texte et infobulle selon la décision n° 1 du § 11.
@@ -489,6 +539,9 @@ Taille totale : **S** (lot 1 ≈ 200 lignes, lot 2 ≈ 5 lignes). La fiche prév
 
 ## 11. Décisions restantes pour Paulo
 
-1. **Texte de l'avertissement D16** (extension, l'original n'en a pas) : « ⚠ Aucun groupe de frais n’est configuré pour cette affaire. », infobulle « Gestion ▸ Configuration ▸ Configurer les frais … ». **Par défaut : ce texte.**
-2. **Statut « Configuration » exigé pour les imports** (fidèle). Conséquence au bureau : **17 affaires « En cours » n'ont aucun groupe** (dont 3701, 3502, 3501, 3453, 3301, 3201 parmi les plus récentes). Pour leur importer une configuration, il faudra repasser l'affaire au statut « Configuration », importer, puis la remettre « En cours » ; la création manuelle (« Nouveau … ») reste possible à tout statut. Variante possible : autoriser l'import à tout statut quand l'affaire n'a encore aucun groupe. **Par défaut : fidèle** (statut exigé).
+1. **Texte de l'avertissement D16** (extension, l'original n'en a pas) : « ⚠ Aucun groupe de frais n’est configuré pour cette affaire. », infobulle « Gestion ▸ Configuration ▸ Configurer les frais … ». **Par défaut : ce texte** (en service ; texte et infobulle sont les constantes `CH17B_TXT` et `CH17B_TIP`, à changer à un seul endroit ; pour supprimer l'avertissement, il suffit de retirer l'ancre A3).
+2. **Statut « Configuration » exigé pour les imports** (fidèle). Conséquence au bureau : **17 affaires « En cours » n'ont aucun groupe** (dont 3701, 3502, 3501, 3453, 3301, 3201 parmi les plus récentes). Pour leur importer une configuration, il faudra repasser l'affaire au statut « Configuration », importer, puis la remettre « En cours » ; la création manuelle (« Nouveau … ») reste possible à tout statut. Variante possible : autoriser l'import à tout statut quand l'affaire n'a encore aucun groupe. **Par défaut : fidèle** (statut exigé, en service).
+   - Révision 2 : le détour est possible sans aucun développement. La fiche affaire (`editProject`, liste « Statut de l’affaire ») propose librement les 5 statuts, retour à « Configuration » compris, et l'enregistrement de la fiche fonctionne depuis `b50edc6`. À noter : une affaire au statut « Configuration » n'apparaît plus aux collaborateurs pendant ce temps (manuel FR p. 24).
+   - Si Paulo choisit la variante : correctif `ch17c` limité au premier test de `ch17aImportStd` et de `ch17aImportPrj`, qui deviendrait « statut 1 **ou** aucun groupe ». Il faudrait adapter B11 et T6, rien d'autre.
 3. **Reprise Deltaproject** : une reprise `--force` efface les groupes et genres créés dans DeltaSub, comme les frais et les heures qui y sont saisis. Faut-il les protéger dès maintenant, ou traiter la question avec toutes les saisies lors de la bascule définitive ? **Par défaut : pas de changement dans CH-17.**
+   - Si Paulo veut les protéger : il faut ajouter les deux collections à `PROTECTED` dans `serveur_deltasub.py` (copie modifiée complète + diff). Il faut aussi que l'import Deltaproject n'ajoute que les enregistrements manquants, comme pour les honoraires. Point à trancher dans ce cas : sans `projectcost`, un frais repris de Deltaproject pourrait pointer vers un genre supprimé dans DeltaSub.

@@ -37,6 +37,7 @@ done
 
 echo "3/3  Conversion au format DeltaSub…"
 python3 $HERE/convertir_devis.py $TMP/raw_devis $OUT/documents/costestimate.json --entetes $OUT/tables/APP.COSTESTIMATEDOCUMENT.csv
+[ -f $HERE/convertir_docs_devis.py ] && python3 $HERE/convertir_docs_devis.py "$FILES" $OUT/documents/costestimatedpdoc.json --entetes $OUT/tables/APP.COSTESTIMATEDOCUMENT.csv   # CH-02 lot 3
 if [ -f $HERE/convertir_couts.py ]; then
   python3 $HERE/convertir_couts.py $TMP/raw_cc $OUT/documents/costcontrol.json --tables $OUT --racine "$FILES"
 fi

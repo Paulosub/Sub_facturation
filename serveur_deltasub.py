@@ -46,6 +46,7 @@ PROTECTED = {"projectfee", "projectfeecalculation", "projectfeecalculationamount
              "planningsubproject", "planningrole", "planningroletemplate", "planningcostfactor", "planningmonth",
              "planningtime", "planningassignment", "planningstaff", "planningstafftime",
              "projecttenderer", "devisdocument", "soumission", "soumissiondoc", "soumissionhist"}
+PROTECTED |= {"costestimatehist"}   # CH-02 lot 4 : historique des devis
 
 # ── eCCC lot 0 (spec_12 § 2.12.3) ── Documents Bâtiment : un document MODIFIÉ ou CRÉÉ dans DeltaSub (dernier auteur ≠
 # IMPORT_WHO) est conservé au ré-import (--force) ; un document encore tel qu'importé est remplacé par sa nouvelle
@@ -59,6 +60,8 @@ PROTECTED_IF_EDITED = {"costplanningdocument", "costplanning", "costestimatedocu
 # eCCC ▸ Valeurs référentielles ▾) et propositions CFC apprises (« ebkptobkp », collection créée par DeltaSub) : un
 # enregistrement modifié ou créé dans DeltaSub est conservé au ré-import (--force), les autres sont remplacés par Deltaproject.
 PROTECTED_IF_EDITED |= {"statisticalvalue", "constructionpart", "constructioncomponent", "ebkpelement", "ebkptobkp"}
+PROTECTED_IF_EDITED |= {"costestimatedpdoc"}   # CH-02 lot 3 : documents .dpdoc des devis
+PROTECTED_IF_EDITED |= {"cocodoc"}   # CH-01 : documents du contrôle des coûts créés ou modifiés dans DeltaSub (conservés au ré-import)
 REF_CLE = {"statisticalvalue": "EBKPELEMENT_ID", "constructionpart": "EBKPELEMENT_ID",
            "constructioncomponent": "CONSTRUCTIONPART_ID", "ebkpelement": "CODE"}
 

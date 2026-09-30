@@ -1185,6 +1185,7 @@ async function delProject(p){
   if(!await confirmDlg('Voulez-vous vraiment supprimer cette affaire ?','Supprimer')) return;
   const ops=[{t:'project',id:p.ID,val:null}];
   [['projectmember','PROJECT_ID'],['projectphase','PROJECT_ID'],['projectactivitygroup','PROJECT_ID'],['projectrategroup','PROJECT_ID'],['subproject','PROJECT_ID'],['projectimplementation','PROJECT_ID']].forEach(([t,f])=>DS.by(t,f,p.ID).forEach(r=>ops.push({t,id:r.ID,val:null})));
+  ch17aDelOps(p,ops);   /* CH-17 : groupes et genres de frais de l'affaire */
   /* honoraires et facturation : suppression en cascade (Deltaproject ne bloque pas l'affaire) */
   const del=(t,id)=>id!=null&&DS.get(t,id)&&ops.push({t,id,val:null}), delCalc=f=>{ del('projectfeecalculation',f.ID); del('projectfeecalculationamount',f.TIMECALCULATIONAMOUNT_ID); del('projectfeecalculationamount',f.COSTCALCULATIONAMOUNT_ID);
     ['projectfeetimeitem','projectfeecostitem','projectfeeadditionalitem'].forEach(t=>DS.all(t).filter(x=>[x.PROJECTFEETIMECALC_ID,x.PROJECTFEECOSTCALC_ID,x.PROJECTFEEADDITIONALCALC_ID].includes(f.ID)).forEach(x=>del(t,x.ID))); };
@@ -1356,7 +1357,7 @@ VIEWS['aff-gestion']={
     const head=phead([
       {i:'plus',t:'Nouvelle affaire',fn:()=>editProject()},{i:'edit',t:'Editer l’affaire',fn:need(editProject)},{i:'minus',t:'Supprimer l’affaire',fn:need(delProject)},
       {i:'person',t:'Intervenants',menu:()=>[{t:'Attribuer les intervenants',fn:need(cfgMembers)},{t:'Attribuer les activités aux collaborateurs',fn:need(cfgActivities)}]},
-      {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)}]},
+      {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)},{t:'Configurer les frais …',fn:need(ch17aOpen)}]},
       {i:'tree',t:'Subdivisions',menu:()=>[{t:'Configurer la subdivision par ouvrages et localisations',fn:need(cfgSubprojects)}]},
       {i:'save',t:'Modèles et documents externes',menu:()=>[{t:'Définir les modèles …',fn:need(p=>tplNeed().then(()=>defineTemplates(p)))},{t:'Dossier des documents externes …',fn:need(p=>editProject(p))}]},
       {i:'doc',t:'Documents',menu:()=>[{t:'Liste des affaires',fn:()=>printProjects(AF.g.view)}]},
@@ -1416,7 +1417,7 @@ function editCost(r,pre){
     listGrid('proj',[{k:'NUMBER',t:'Numéro',w:80},{k:'TITLE',t:'Affaire'}],plist,v.PROJECT_ID,x=>{ if(x.ID!==v.PROJECT_ID){ Object.assign(v,{PROJECT_ID:x.ID,COSTCATEGORYGROUP_ID:null,COSTCATEGORY_ID:null,SUBPROJECT_ID:null,PHASE_ID:null,SUBPHASE_ID:null}); fill(); } });
     const gs=DS.by('projectcostcategorygroup','PROJECT_ID',v.PROJECT_ID).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
     if(!gs.some(g=>g.ID===v.COSTCATEGORYGROUP_ID)) v.COSTCATEGORYGROUP_ID=gs.length===1?gs[0].ID:null;
-    listGrid('grp',[{k:'n',t:'Groupe de frais',f:nm}],gs,v.COSTCATEGORYGROUP_ID,x=>{ if(x.ID!==v.COSTCATEGORYGROUP_ID){ v.COSTCATEGORYGROUP_ID=x.ID; v.COSTCATEGORY_ID=null; fill(); } });
+    (lists.grp||(lists.grp={})).empty=ch17bWarn(v.PROJECT_ID); listGrid('grp',[{k:'n',t:'Groupe de frais',f:nm}],gs,v.COSTCATEGORYGROUP_ID,x=>{ if(x.ID!==v.COSTCATEGORYGROUP_ID){ v.COSTCATEGORYGROUP_ID=x.ID; v.COSTCATEGORY_ID=null; fill(); } });
     const cs=DS.by('projectcostcategory','PROJECTCOSTCATEGORYGROUP_ID',v.COSTCATEGORYGROUP_ID).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
     listGrid('cat',[{k:'n',t:'Genre de frais',f:nm}],cs,v.COSTCATEGORY_ID,x=>{ v.COSTCATEGORY_ID=x.ID; v.UNIT=x.UNIT; if(x.UNITPRICE!=null) pr.value=x.UNITPRICE; if(!+q.value) q.value=1; calc(); });
     listGrid('sub',[{k:'o',t:'Ouvrage',f:x=>esc([x.CODE,x.DESCRIPTION].filter(Boolean).join(' '))}],DS.by('subproject','PROJECT_ID',v.PROJECT_ID).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),v.SUBPROJECT_ID,x=>v.SUBPROJECT_ID=x.ID);
@@ -14300,6 +14301,203 @@ const SVC_NODE={priceComparisonEdit:X=>svcEdit(X),priceComparisonDocuments:X=>sv
   priceComparisonDocumentsDesc:X=>svcDescNode(X),tenderDocuments:X=>svcStepDocs(X,'B'),offerDocuments:X=>svcStepDocs(X,'C'),contractDocuments:X=>svcStepDocs(X,'D'),measureDocuments:X=>svcStepDocs(X,'I'),
   masterTenderDocuments:X=>svcStepDocs(X,'A'),estimatingDocuments:X=>svcStepDocs(X,'K'),offerOverviewDocTransfer:X=>svcDocTransfer(X)};
 function svcNode(k){ return SVC_NODE[k]||null; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CH-17 lot 1 — Gestion ▸ Configuration ▸ « Configurer les frais … » (spec_13)
+   ProjectCostCategoriesDialog (groupes | genres), ProjectCostCategoryGroupDialog, ProjectCostCategoryDialog,
+   « Importer du dossier standard … » (CostCategoryGroupBrowserDialog « Frais »), « Importer d’une affaire existante … »
+   (ProjectBrowserDialog « Choix de l’affaire »), suppression avec l'affaire (ch17aDelOps dans delProject).
+   PROJECTCOSTCATEGORYGROUP (PROJECT_ID, NAMEGE…EN, BUDGET, SORTORDER) ; PROJECTCOSTCATEGORY (PROJECTCOSTCATEGORYGROUP_ID,
+   NAMEGE…EN, UNIT, UNITPRICE, EXTERNALUNITPRICE = « Prix à facturer », masqué dans l'original, BUDGET, SORTORDER).
+═══════════════════════════════════════════════════════════════════════════ */
+const CH17A_G='projectcostcategorygroup';
+const CH17A_C='projectcostcategory';
+const CH17A_MSG={
+  notInit:'Cette fonction n’est disponible que\nsi le statut de l’affaire est «Configuration».',   // rsrc msgProjectIsNotInitializing0/1
+  notEmpty:'Ce groupe ne peut pas être supprimé, car il existe encore des entrées.',               // rsrc msgGroupNotEmpty
+  booked:'Le remplacement n’est pas possible,\ncar des frais ont déjà été comptabilisés.',          // ProjectCostCategoriesDialog msg1a/b (à la suppression)
+  del:'Voulez-vous vraiment supprimer cette inscription ?'};                                        // rsrc msgDeleteEntry
+/* bouton « calculatrice » du groupe (icône propre au lot, pas d'entrée dans ICO) */
+const CH17A_CALC='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="1.5" width="10" height="13" rx="1.5"/><rect x="5" y="3.5" width="6" height="2.5"/><path d="M5.5 8.6h.01M8 8.6h.01M10.5 8.6h.01M5.5 11.4h.01M8 11.4h.01M10.5 11.4h.01" stroke-width="1.9"/></svg>';
+
+/* ── Règles pures (test_ch17a.js) ── */
+/* Formatter.round : signe × round(|x| × 100) / 100 (2.675 → 2.68, là où toFixed donne 2.67) ; jamais −0 */
+function ch17aR(x){ const n=+x||0, r=Math.round(Math.abs(n)*100)/100; return n<0&&r!==0?-r:r; }
+const ch17aN=x=>num(ch17aR(x));                                                       // colonnes Prix / Prévision : « 1'234.75 »
+/* libellé après « Prix » (setUnitOfPrice, recette « ^0 / ^1 ») : « CHF / km », ou la monnaie seule sans unité */
+function ch17aUnitLbl(cur,unit){ const u=String(unit??'').trim(); return u?cur+' / '+u:cur; }
+function ch17aSort(list){ return list.slice().sort((a,b)=>(+a.SORTORDER||0)-(+b.SORTORDER||0)||(+a.ID||0)-(+b.ID||0)); }   // SORTORDER, puis ID (ex æquo)
+const ch17aNext=list=>list.length+1;                                                  // TableModel.add : nombre de lignes + 1, sans renumérotation
+/* TableModel.sort après édition ou suppression : tri stable puis 1..n → opérations des seules lignes changées */
+function ch17aRenum(t,list){ return ch17aSort(list).map((r,i)=>(+r.SORTORDER||0)!==i+1?{t,id:r.ID,val:{...r,SORTORDER:i+1}}:null).filter(Boolean); }
+/* contrôles de suppression, dans l'ordre de l'original → clé de CH17A_MSG ou null (kind : 'group' | 'cat') */
+function ch17aDelCheck(kind,o){ o=o||{};
+  if(kind==='group'&&o.nCats>0) return 'notEmpty';                                    // msgGroupNotEmpty, avant tout autre contrôle
+  if(o.nCosts>0||(kind!=='group'&&o.nFee>0)) return 'booked';                         // Integrity.isProjectCostCategory(Group)Deletable
+  return +o.state!==1?'notInit':null; }                                               // Project.isInitializing
+const ch17aNames=x=>({NAMEGE:x.NAMEGE??null,NAMEFR:x.NAMEFR??null,NAMEIT:x.NAMEIT??null,NAMEEN:x.NAMEEN??null});
+/* import du standard (ProjectCostCategoryGroupDialog.importFromAdmin) : SORTORDER du standard, noms, UNIT, UNITPRICE ; BUDGET et prix à facturer à 0.
+   Ajout pur : aucun dédoublonnage ni renumérotation. gIds : un ID par groupe choisi ; cIds : un ID par genre des groupes choisis. */
+function ch17aStdOps(pid,groupes,genres,gIds,cIds){ const ops=[]; let j=0;
+  ch17aSort(groupes).forEach((g,i)=>{ const gid=gIds[i];
+    ops.push({t:CH17A_G,id:gid,val:{ID:gid,PROJECT_ID:pid,...ch17aNames(g),BUDGET:0,SORTORDER:+g.SORTORDER||0}});
+    ch17aSort(genres.filter(c=>c.COSTCATEGORYGROUP_ID===g.ID)).forEach(c=>{ const id=cIds[j++];
+      ops.push({t:CH17A_C,id,val:{ID:id,PROJECTCOSTCATEGORYGROUP_ID:gid,...ch17aNames(c),UNIT:c.UNIT??null,UNITPRICE:+c.UNITPRICE||0,EXTERNALUNITPRICE:0,BUDGET:0,SORTORDER:+c.SORTORDER||0}}); }); });
+  return ops; }
+/* import d'une affaire (importFromProject) : SORTORDER, noms, UNIT, UNITPRICE et EXTERNALUNITPRICE de la source ; BUDGET jamais copié */
+function ch17aPrjOps(pid,groupes,genres,gIds,cIds){ const ops=[]; let j=0;
+  ch17aSort(groupes).forEach((g,i)=>{ const gid=gIds[i];
+    ops.push({t:CH17A_G,id:gid,val:{ID:gid,PROJECT_ID:pid,...ch17aNames(g),BUDGET:0,SORTORDER:+g.SORTORDER||0}});
+    ch17aSort(genres.filter(c=>c.PROJECTCOSTCATEGORYGROUP_ID===g.ID)).forEach(c=>{ const id=cIds[j++];
+      ops.push({t:CH17A_C,id,val:{ID:id,PROJECTCOSTCATEGORYGROUP_ID:gid,...ch17aNames(c),UNIT:c.UNIT??null,UNITPRICE:+c.UNITPRICE||0,EXTERNALUNITPRICE:+c.EXTERNALUNITPRICE||0,BUDGET:0,SORTORDER:+c.SORTORDER||0}}); }); });
+  return ops; }
+
+/* ── Petits outils ── */
+const ch17aState=p=>+((DS.get('project',p.ID)||p).PROJECTSTATECODE);                  // statut relu au moment de l'action
+const ch17aBseq=(t,id)=>(DS.S[t]||{})[String(id)]||0;                                 // version lue à l'ouverture (conflit 409)
+const ch17aBox=(w,hh)=>h('div',{style:{minWidth:w?w+'px':null,height:hh+'px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}});
+const ch17aNumInp=(v,k)=>h('input',{class:'inp',type:'number',step:'any',value:ch17aR(v[k]).toFixed(2),'data-k':k,style:{width:'120px',textAlign:'right'}});
+const ch17aLine=(...x)=>h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},...x);
+const ch17aLang=v=>{ const L=lang4(v); L.forEach(r=>r[1].setAttribute('maxlength','64')); return L; };   // LengthGuard(64)
+async function ch17aCommit(ops){ try{ await DS.commit(ops); return true; }catch(e){ if(!e.conflict) console.error(e); return false; } }   // actions directes : le toast de DS.commit suffit
+/* dialogues d'édition : 409 → panneaux redessinés avec la version à jour (after(null)), dialogue laissé ouvert (l'erreur remonte à dialog) */
+async function ch17aSave(ops,after){ try{ await DS.commit(ops); }catch(e){ if(e.conflict&&after) after(null); throw e; } }
+
+/* ── Dialogue « Configurer les frais » ── */
+function ch17aOpen(p){
+  const og={}, oc={}, cur=hfCur(p); let shown=null;
+  const GL=ch17aBox(0,300), CL=ch17aBox(0,300);
+  const gs=()=>ch17aSort(DS.by(CH17A_G,'PROJECT_ID',p.ID));
+  const selG=()=>og.sel==null?null:gs().find(g=>String(g.ID)===String(og.sel))||null;
+  const cs=()=>{ const g=selG(); return g?ch17aSort(DS.by(CH17A_C,'PROJECTCOSTCATEGORYGROUP_ID',g.ID)):[]; };
+  const selC=()=>oc.sel==null?null:cs().find(c=>String(c.ID)===String(oc.sel))||null;
+  /* checkGuards : recalculé après chaque sélection, écriture ou import */
+  const upd=()=>{ const G=gs(), ig=G.findIndex(g=>String(g.ID)===String(og.sel)), C=cs(), ic=C.findIndex(c=>String(c.ID)===String(oc.sel));
+    gEd.disabled=gDel.disabled=ig<0; GB.upd(ig,G.length); cAdd.disabled=ig<0; cEd.disabled=cDel.disabled=ic<0; CB.upd(ic,C.length); };
+  const drawC=()=>{ if(String(og.sel)!==String(shown)){ oc.sel=null; shown=og.sel; }   // autre groupe : genre désélectionné
+    grid(CL,Object.assign(oc,{cols:[{k:'n',t:'Genre de frais',f:c=>esc(nm(c))},{k:'UNIT',t:'Unité',w:60},{k:'UNITPRICE',t:'Prix',w:80,cls:'r',f:c=>ch17aN(c.UNITPRICE)},{k:'BUDGET',t:'Prévision '+cur,w:110,cls:'r',f:c=>ch17aN(c.BUDGET)}],
+      rows:cs(),sort:null,onSel:upd,onDbl:c=>editC(c)})); ctNoSort(CL); upd(); };
+  const drawG=()=>{ grid(GL,Object.assign(og,{cols:[{k:'n',t:'Groupe de frais',f:g=>esc(nm(g))},{k:'BUDGET',t:'Prévision '+cur,w:110,cls:'r',f:g=>ch17aN(g.BUDGET)}],
+      rows:gs(),sort:null,onSel:drawC,onDbl:g=>editG(g)})); ctNoSort(GL); drawC(); };
+  const reset=()=>{ og.sel=oc.sel=null; drawG(); };                                    // après suppression d'un groupe ou import
+  const aftG=id=>{ if(id!=null) og.sel=String(id); drawG(); }, aftC=id=>{ if(id!=null) oc.sel=String(id); drawC(); };   // id null : conflit 409, version à jour redessinée
+  const editG=g=>ch17aEditGroup(p,g,aftG), editC=c=>ch17aEditCat(p,null,c,aftC);
+  const mv=async(t,list,id,how,o,draw)=>{ if(id==null) return; await ch17aCommitMove(t,list,id,how); o.sel=String(id); draw(); };
+  const gAdd=ibtn({i:'plus',t:'Nouveau',menu:()=>[{t:'Nouveau …',fn:()=>editG(null)},{t:'Importer du dossier standard …',fn:()=>ch17aImportStd(p,reset)},
+    {t:'Importer d’une affaire existante …',dis:DS.by(CH17A_G,'PROJECT_ID',p.ID).length>0,fn:()=>ch17aImportPrj(p,reset)}]});
+  const gEd=ibtn({i:'edit',t:'Editer',fn:()=>{ const g=selG(); if(g) editG(g); }});
+  const gDel=ibtn({i:'minus',t:'Supprimer',fn:()=>ch17aDelGroup(p,selG(),reset)});
+  const GB=ctMoveBtns(k=>{ const g=selG(); if(g) mv(CH17A_G,gs(),g.ID,k,og,drawG); });
+  const cAdd=ibtn({i:'plus',t:'Nouveau',fn:()=>{ const g=selG(); if(g) ch17aEditCat(p,g,null,aftC); }});
+  const cEd=ibtn({i:'edit',t:'Editer',fn:()=>{ const c=selC(); if(c) editC(c); }});
+  const cDel=ibtn({i:'minus',t:'Supprimer',fn:()=>ch17aDelCat(p,selC(),()=>{ oc.sel=null; drawC(); })});
+  const CB=ctMoveBtns(k=>{ const c=selC(); if(c) mv(CH17A_C,cs(),c.ID,k,oc,drawC); });
+  drawG();
+  return dialog({title:'Configurer les frais — '+projLabel(p),body:h('div',{style:{display:'grid',gridTemplateColumns:'minmax(260px,1fr) minmax(420px,2fr)',gap:'10px',minWidth:'780px'}},
+    h('div',{},phead([gAdd,gEd,gDel,...GB.list]),GL),h('div',{},phead([cAdd,cEd,cDel,...CB.list]),CL)),buttons:[{t:'Fermer',pri:true}]});
+}
+/* ⤒ ↑ ↓ ⤓ : règle ±2 de ctReorder puis 1..n (identique à l'original quand SORTORDER vaut 1..n) ; aucun contrôle du statut */
+async function ch17aCommitMove(t,list,id,how){ try{ await ctMoveRec(t,list,id,how); }catch(e){ if(!e.conflict) console.error(e); } }
+
+/* ── « Nouveau groupe de frais » / « Modifier le groupe de frais » ── */
+function ch17aEditGroup(p,g,after){
+  const isNew=!g, v=g?{...g}:{ID:null,PROJECT_ID:p.ID,BUDGET:0}, bseq=g?ch17aBseq(CH17A_G,g.ID):0;
+  const L=ch17aLang(v), bud=ch17aNumInp(v,'BUDGET');
+  const calc=h('button',{class:'ib',type:'button',html:CH17A_CALC});                   // jCalcBudgetButton : Σ des prévisions des genres, sans confirmation
+  calc.onclick=()=>{ bud.value=ch17aR(g?DS.by(CH17A_C,'PROJECTCOSTCATEGORYGROUP_ID',g.ID).reduce((s,c)=>s+(+c.BUDGET||0),0):0).toFixed(2); chk(); };
+  const body=formRows([...L,[h('b',{},'Budget'),h('div',{},calc)],['Prévision',ch17aLine(bud,h('span',{},hfCur(p)))]]);
+  const fr=body.querySelector('[data-k="NAMEFR"]'); let D=null;
+  const chk=()=>{ if(D) ivOkBtn(D).disabled=!(fr.value.trim()&&bud.value!==''); };  // checkGuards : Français et Prévision (isDouble)
+  body.addEventListener('input',chk);
+  D=dialog({title:isNew?'Nouveau groupe de frais':'Modifier le groupe de frais',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{
+    readK(bd,v,['BUDGET']); v.BUDGET=v.BUDGET??0; let ops;
+    if(isNew){ if(v.ID==null) v.ID=DS.newIds(CH17A_G)[0]; v.SORTORDER=ch17aNext(DS.by(CH17A_G,'PROJECT_ID',p.ID)); ops=[{t:CH17A_G,id:v.ID,val:v}]; }
+    else { const rn=ch17aRenum(CH17A_G,DS.by(CH17A_G,'PROJECT_ID',p.ID).map(x=>x.ID===v.ID?v:x)), me=rn.find(o=>String(o.id)===String(v.ID));
+      if(me) v.SORTORDER=me.val.SORTORDER; ops=[{t:CH17A_G,id:v.ID,val:v,bseq},...rn.filter(o=>o!==me)]; }
+    await ch17aSave(ops,after); after&&after(v.ID); }}]});
+  chk(); return D;
+}
+/* ── « Nouveau genre de frais » / « Editer le genre de frais » (prix à facturer masqué : 0 à la création, conservé à l'édition) ── */
+function ch17aEditCat(p,g,c,after){
+  const isNew=!c; if(isNew&&!g) return null;
+  const v=c?{...c}:{ID:null,PROJECTCOSTCATEGORYGROUP_ID:g.ID,UNIT:null,UNITPRICE:0,EXTERNALUNITPRICE:0,BUDGET:0}, bseq=c?ch17aBseq(CH17A_C,c.ID):0, cur=hfCur(p);
+  const L=ch17aLang(v), unit=h('input',{class:'inp','data-k':'UNIT',value:v.UNIT??'',maxlength:'16',style:{width:'100px'}});
+  const price=ch17aNumInp(v,'UNITPRICE'), bud=ch17aNumInp(v,'BUDGET'), pu=h('span');
+  const lbl=()=>{ pu.textContent=ch17aUnitLbl(cur,unit.value); }; lbl(); unit.addEventListener('input',lbl);
+  const body=formRows([...L,['Unité',h('div',{},unit)],['Prix',ch17aLine(price,pu)],[h('b',{},'Budget'),h('span')],['Prévision',ch17aLine(bud,h('span',{},cur))]]);
+  const fr=body.querySelector('[data-k="NAMEFR"]'); let D=null;
+  const chk=()=>{ if(D) ivOkBtn(D).disabled=!(fr.value.trim()&&price.value!==''&&bud.value!==''); };
+  body.addEventListener('input',chk);
+  D=dialog({title:isNew?'Nouveau genre de frais':'Editer le genre de frais',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{
+    readK(bd,v,['UNITPRICE','BUDGET']); v.UNITPRICE=v.UNITPRICE??0; v.BUDGET=v.BUDGET??0; v.EXTERNALUNITPRICE=+v.EXTERNALUNITPRICE||0;
+    const sib=()=>DS.by(CH17A_C,'PROJECTCOSTCATEGORYGROUP_ID',v.PROJECTCOSTCATEGORYGROUP_ID); let ops;
+    if(isNew){ if(v.ID==null) v.ID=DS.newIds(CH17A_C)[0]; v.SORTORDER=ch17aNext(sib()); ops=[{t:CH17A_C,id:v.ID,val:v}]; }
+    else { const rn=ch17aRenum(CH17A_C,sib().map(x=>x.ID===v.ID?v:x)), me=rn.find(o=>String(o.id)===String(v.ID));
+      if(me) v.SORTORDER=me.val.SORTORDER; ops=[{t:CH17A_C,id:v.ID,val:v,bseq},...rn.filter(o=>o!==me)]; }
+    await ch17aSave(ops,after); after&&after(v.ID); }}]});
+  chk(); return D;
+}
+
+/* ── Suppressions (jDelete…ButtonActionPerformed) : refus « Information », sinon « Avertissement » Non / Oui ── */
+async function ch17aDelGroup(p,g,after){ if(!g) return;
+  const k=ch17aDelCheck('group',{nCats:DS.by(CH17A_C,'PROJECTCOSTCATEGORYGROUP_ID',g.ID).length,nCosts:DS.by('projectcost','COSTCATEGORYGROUP_ID',g.ID).length,state:ch17aState(p)});
+  if(k){ ctMsg('Information',CH17A_MSG[k]); return; }
+  const bseq=ch17aBseq(CH17A_G,g.ID); if(await ivAsk('Avertissement',CH17A_MSG.del)!==true) return;
+  await ch17aCommit([{t:CH17A_G,id:g.ID,val:null,bseq},...ch17aRenum(CH17A_G,DS.by(CH17A_G,'PROJECT_ID',p.ID).filter(x=>x.ID!==g.ID))]); after&&after(); }
+async function ch17aDelCat(p,c,after){ if(!c) return;
+  const k=ch17aDelCheck('cat',{nCosts:DS.by('projectcost','COSTCATEGORY_ID',c.ID).length,nFee:DS.by('projectfeecostitem','COSTCATEGORY_ID',c.ID).length,state:ch17aState(p)});
+  if(k){ ctMsg('Information',CH17A_MSG[k]); return; }
+  const bseq=ch17aBseq(CH17A_C,c.ID); if(await ivAsk('Avertissement',CH17A_MSG.del)!==true) return;
+  await ch17aCommit([{t:CH17A_C,id:c.ID,val:null,bseq},...ch17aRenum(CH17A_C,DS.by(CH17A_C,'PROJECTCOSTCATEGORYGROUP_ID',c.PROJECTCOSTCATEGORYGROUP_ID).filter(x=>x.ID!==c.ID))]); after&&after(); }
+
+/* ── « Importer du dossier standard … » ── */
+function ch17aImportStd(p,after){
+  if(ch17aState(p)!==1){ ctMsg('Information',CH17A_MSG.notInit); return; }
+  ch17aStdPick(async sel=>{ const cats=DS.all('costcategory'), ids=new Set(sel.map(g=>g.ID)), nC=cats.filter(c=>ids.has(c.COSTCATEGORYGROUP_ID)).length;   // genres sans groupe ignorés
+    await ch17aCommit(ch17aStdOps(p.ID,sel,cats,DS.newIds(CH17A_G,sel.length),nC?DS.newIds(CH17A_C,nC):[])); after&&after(); });
+}
+/* CostCategoryGroupBrowserDialog « Frais » : choix multiple (Maj / Cmd), OK actif si au moins une ligne, double-clic = OK */
+function ch17aStdPick(fn){ const o={multi:true}, box=ch17aBox(420,300), rows=ch17aSort(DS.all('costcategorygroup')); let D=null; box.style.width='420px';   // sinon la fenêtre s'étire à 92 % de l'écran
+  const chk=()=>{ if(D) ivOkBtn(D).disabled=!o.selSet.size; };
+  grid(box,Object.assign(o,{cols:[{k:'n',t:'Groupe de frais',f:g=>esc(nm(g)),v:nm},{k:'DESCRIPTION',t:'Remarque'}],rows,sort:null,onSel:chk,onDbl:()=>{ if(D&&o.selSet.size) ivOkBtn(D).click(); }}));
+  D=dialog({title:'Frais',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const s=rows.filter(g=>o.selSet.has(String(g.ID))); if(!s.length) return false; fn(s); }}]});
+  chk(); return D; }
+
+/* ── « Importer d’une affaire existante … » (entrée grisée dès que l'affaire a un groupe) ── */
+function ch17aImportPrj(p,after){
+  if(DS.by(CH17A_G,'PROJECT_ID',p.ID).length) return;
+  if(ch17aState(p)!==1){ ctMsg('Information',CH17A_MSG.notInit); return; }
+  ch17aPrjPick(p,async src=>{ const G=DS.by(CH17A_G,'PROJECT_ID',src.ID), C=G.flatMap(g=>DS.by(CH17A_C,'PROJECTCOSTCATEGORYGROUP_ID',g.ID));
+    if(G.length) await ch17aCommit(ch17aPrjOps(p.ID,G,C,DS.newIds(CH17A_G,G.length),C.length?DS.newIds(CH17A_C,C.length):[]));   // source vide : rien, aucun message
+    after&&after(); });
+}
+/* ProjectBrowserDialog « Choix de l’affaire » : toutes les affaires sauf la courante ; statut « Configuration » estompé (FadingCellRenderer, alpha 125) */
+function ch17aPrjPick(p,fn){ const o={}; let q='', D=null; const box=ch17aBox(520,340); box.style.width='520px';
+  const fade=(x,s)=>+x.PROJECTSTATECODE===1?'<span style="opacity:.49">'+s+'</span>':s;
+  const pick=()=>(o.view||[]).find(x=>String(x.ID)===String(o.sel))||null;             // seulement une ligne visible (recherche)
+  const chk=()=>{ if(D) ivOkBtn(D).disabled=!pick(); };
+  const draw=()=>{ grid(box,Object.assign(o,{cols:[{k:'NUMBER',t:'Numéro',w:90,f:x=>fade(x,esc(x.NUMBER))},{k:'TITLE',t:'Affaire',f:x=>fade(x,esc(x.TITLE))}],
+    rows:projects().filter(x=>x.ID!==p.ID&&matchQ(q,x.NUMBER,x.TITLE)),onSel:chk,onDbl:()=>{ if(D&&pick()) ivOkBtn(D).click(); }})); chk(); };
+  const s=h('input',{class:'inp',placeholder:'Rechercher'}); s.oninput=()=>{ q=s.value.trim().toLowerCase(); draw(); }; draw();
+  D=dialog({title:'Choix de l’affaire',body:h('div',{},s,h('div',{style:{height:'8px'}}),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const x=pick(); if(!x) return false; fn(x); }}]});
+  chk(); return D; }
+
+/* ── delProject : groupes et genres de frais supprimés avec l'affaire (cascade JPA de l'original) ── */
+function ch17aDelOps(p,ops){ DS.by(CH17A_G,'PROJECT_ID',p.ID).forEach(g=>{ ops.push({t:CH17A_G,id:g.ID,val:null});
+  DS.by(CH17A_C,'PROJECTCOSTCATEGORYGROUP_ID',g.ID).forEach(c=>ops.push({t:CH17A_C,id:c.ID,val:null})); }); return ops; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CH-17 lot 2 — Avertissement D16 dans la saisie des frais (extension DeltaSub, spec_13 § 4.11)
+   editCost (frais d'affaire et notes de frais) : quand l'affaire choisie n'a aucun groupe de frais, la liste
+   « Groupe de frais », vide, affiche ce texte par l'option empty de grid (ancre A3 dans editCost.fill).
+   Non bloquant : le toast « Affaire, groupe de frais et genre de frais sont obligatoires. » refuse toujours
+   l'enregistrement. L'original n'a aucun message (liste vide, OK grisé).
+═══════════════════════════════════════════════════════════════════════════ */
+const CH17B_TXT='⚠ Aucun groupe de frais n’est configuré pour cette affaire.';   // décision n° 1 de Paulo (§ 11) : texte par défaut
+const CH17B_TIP='Gestion ▸ Configuration ▸ Configurer les frais …';               // infobulle : entrée de menu du lot 1
+/* null sans affaire choisie ; sinon un nouveau span à chaque appel (fill redessine la liste à chaque changement d'affaire).
+   grid ne l'affiche que si la liste est vide, c'est-à-dire si l'affaire n'a aucun groupe. */
+function ch17bWarn(pid){ return pid==null?null:h('span',{style:{color:'#9a5b00'},title:CH17B_TIP},CH17B_TXT); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DÉMARRAGE

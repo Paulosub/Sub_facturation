@@ -536,7 +536,7 @@ function editContact(c,owner,rel,after){
     h('datalist',{id:'dl-sal'},...['Monsieur ^0,','Madame ^0,','Bonjour Monsieur ^0,','Bonjour Madame ^0,','Cher Monsieur ^0,','Chère Madame ^0,','Cher ^1,','Chère ^1,','Bonjour ^1,','Madame, Monsieur,'].map(x=>h('option',{value:x}))),
     left,h('div',{style:{borderLeft:'1px solid var(--line)',paddingLeft:'18px'}},right));
   dialog({title:isNew?'Nouvelle adresse':'Editer l’adresse',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{
-    $$('[data-k]',bd).forEach(e=>{ const k=e.dataset.k, x=e.value.trim(); v[k]=x===''?null:(['ADDRESSTYPECODE','LANGUAGECODE','CONTACTSTATE_ID'].includes(k)?+x:x); });
+    $$('input[data-k],select[data-k],textarea[data-k]',bd).forEach(e=>{ const k=e.dataset.k, x=e.value.trim(); v[k]=x===''?null:(['ADDRESSTYPECODE','LANGUAGECODE','CONTACTSTATE_ID'].includes(k)?+x:x); });
     if(v.EMAIL1&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.EMAIL1)){ toast('Cette adresse courriel est incomplète ou incorrecte.',true); return false; }
     v.ISHIDDEN=hid.checked?1:0; if(!isNew) v.UPDATED=today();
     await DS.save('contact',v); toast('Adresse enregistrée.'); if(after) after(v);
@@ -1132,7 +1132,7 @@ function staffProjects(staff){ if(!staff) return []; const pid=staff.PERSON_ID;
   return [...new Set(DS.all('projectmember').filter(m=>m.TEAMROLECODE===12&&m.RESPCONTACT_ID===pid).map(m=>m.PROJECT_ID))].map(id=>DS.get('project',id)).filter(Boolean); }
 const lang4=(v)=>[['NAMEGE','Deutsch'],['NAMEFR','Français'],['NAMEIT','Italiano'],['NAMEEN','English']].map(([k,t])=>[t,h('input',{class:'inp',value:v[k]||'','data-k':k})]);
 function formRows(rows,minW){ return h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:(minW||440)+'px'}},...rows.flatMap(([l,x])=>[h('label',{},l),x])); }
-function readK(bd,v,nums){ $$('[data-k]',bd).forEach(e=>{ const k=e.dataset.k; if(e.type==='checkbox'){ v[k]=e.checked?1:0; return; } const x=e.value.trim(); v[k]=x===''?null:((nums||[]).includes(k)?+x:x); }); return v; }
+function readK(bd,v,nums){ $$('input[data-k],select[data-k],textarea[data-k]',bd).forEach(e=>{ const k=e.dataset.k; if(e.type==='checkbox'){ v[k]=e.checked?1:0; return; } const x=e.value.trim(); v[k]=x===''?null:((nums||[]).includes(k)?+x:x); }); return v; }
 const nI=(v,k,w)=>h('input',{class:'inp',type:'number',step:'any',value:v[k]??'','data-k':k,style:{width:w||'120px'}});
 const tI=(v,k,w)=>h('input',{class:'inp',value:v[k]??'','data-k':k,style:w?{width:w}:null});
 

@@ -44,7 +44,43 @@ PROTECTED = {"projectfee", "projectfeecalculation", "projectfeecalculationamount
              "projectpayment", "projectinvoice", "projectinvoicepos", "qrbill", "qrbillaccount",
              "projectimplementation", "projecttask", "projecttasknote",
              "planningsubproject", "planningrole", "planningroletemplate", "planningcostfactor", "planningmonth",
-             "planningtime", "planningassignment", "planningstaff", "planningstafftime"}
+             "planningtime", "planningassignment", "planningstaff", "planningstafftime",
+             "projecttenderer", "devisdocument", "soumission", "soumissiondoc", "soumissionhist"}
+
+# ── eCCC lot 0 (spec_12 § 2.12.3) ── Documents Bâtiment : un document MODIFIÉ ou CRÉÉ dans DeltaSub (dernier auteur ≠
+# IMPORT_WHO) est conservé au ré-import (--force) ; un document encore tel qu'importé est remplacé par sa nouvelle
+# conversion (ex. planifications v1 → v2). S'applique à l'en-tête (…document) et au contenu, chacun pour son compte.
+# Reprise forcée (facultatif) : DELTASUB_REPRENDRE="costplanning:202 costcontrol:3601" remplace ces documents (en-tête
+# et contenu) par la version Deltaproject même s'ils ont été modifiés dans DeltaSub (ex. planification restée en v1).
+IMPORT_WHO = "import Deltaproject"
+PROTECTED_IF_EDITED = {"costplanningdocument", "costplanning", "costestimatedocument", "costestimate",
+                       "costcontroldocument", "costcontrol"}
+
+
+def _reprendre():
+    out = set()
+    for tok in re.split(r"[\s,;]+", os.environ.get("DELTASUB_REPRENDRE", "")):
+        m = re.fullmatch(r"(costplanning|costestimate|costcontrol)(?:document)?:(\d+)", tok.strip().lower())
+        if m:
+            out |= {(m.group(1), m.group(2)), (m.group(1) + "document", m.group(2))}
+    return out
+
+
+def _batiment_edites(c):
+    """{(t, id): val JSON} des documents Bâtiment vivants dont le dernier auteur n'est pas l'import (hors reprise forcée)."""
+    pie, rep = sorted(PROTECTED_IF_EDITED), _reprendre()
+    return {(t, i): v for t, i, w, v in c.execute("SELECT t, id, who, val FROM rec WHERE val IS NOT NULL AND t IN (%s)"
+                                                  % ",".join("?" * len(pie)), tuple(pie))
+            if (w or "") != IMPORT_WHO and (t, i) not in rep}
+
+
+def _projet(v):
+    try:
+        v = json.loads(v) if isinstance(v, str) else (v or {})
+        return v.get("PROJECT_ID", v.get("projetId"))
+    except (ValueError, AttributeError):
+        return None
+# ── fin eCCC lot 0 ──
 
 _wlock = threading.Lock()
 
@@ -191,18 +227,26 @@ def import_deltaproject(c, folder, force=False):
     with _wlock:   # anciennes lignes → « supprimées » (et non effacées) : les postes ouverts le voient via /api/changes
         seq = cur_seq(c) + 1
         prot = sorted(PROTECTED)
+        # eCCC lot 0 : kept2 calculé AVANT l'UPDATE, qui remplace « who » par IMPORT_WHO (spec_12 § 2.12.3)
+        pie = sorted(PROTECTED_IF_EDITED)
+        kept2 = _batiment_edites(c)
         c.execute("UPDATE rec SET val=NULL, seq=?, who='import Deltaproject' WHERE val IS NOT NULL AND t NOT IN (%s)"
-                  % ",".join("?" * len(prot)), (seq, *prot))
+                  " AND NOT (t IN (%s) AND COALESCE(who,'')<>?)" % (",".join("?" * len(prot)), ",".join("?" * len(pie))),
+                  (seq, *prot, *pie, IMPORT_WHO))
         c.execute("UPDATE meta SET value=? WHERE name='seq'", (str(seq),))
         c.execute("DELETE FROM meta WHERE name LIKE 'next_id:%%' AND name NOT IN (%s)" % ",".join("?" * len(prot)),
                   tuple("next_id:" + t for t in prot)); c.commit()
     kept = {(t, i) for t, i in c.execute("SELECT t, id FROM rec WHERE val IS NOT NULL AND t IN (%s)"
                                          % ",".join("?" * len(PROTECTED)), tuple(sorted(PROTECTED)))}
+    kept |= set(kept2)   # eCCC lot 0 : documents Bâtiment modifiés dans DeltaSub, ni l'en-tête CSV ni le contenu converti ne les remplacent
+    conflits = []        # eCCC lot 0 : (t, id, affaire DeltaSub, affaire Deltaproject) — même identifiant, autre document
     total, ntab = 0, 0
     for path in sorted(glob.glob(os.path.join(folder, "tables", "APP.*.csv"))):
         table = os.path.basename(path)[4:-4]
         if table in SKIP_TABLES:
             continue
+        if table.lower() in PROTECTED_IF_EDITED:   # eCCC lot 0 : enregistrements pendant la reprise (postes ouverts)
+            kept2.update(_batiment_edites(c)); kept |= set(kept2)
         types, skip = schema.get(table, {}), SKIP_COLUMNS.get(table, set())
         ops = []
         with open(path, encoding="utf-8", newline="") as f:
@@ -212,6 +256,8 @@ def import_deltaproject(c, folder, force=False):
                 if rid is None:   # tables de liaison sans ID : clé composée
                     rid = "-".join(str(rec[k]) for k in sorted(rec) if k.endswith("_ID"))
                 if (table.lower(), str(rid)) in kept:   # déjà saisi / modifié dans DeltaSub : conservé
+                    if (table.lower(), str(rid)) in kept2 and _projet(kept2[(table.lower(), str(rid))]) not in (None, rec.get("PROJECT_ID")):
+                        conflits.append((table.lower(), str(rid), _projet(kept2[(table.lower(), str(rid))]), rec.get("PROJECT_ID")))
                     continue
                 ops.append({"t": table.lower(), "id": str(rid), "val": rec})
         commit(c, ops, "import Deltaproject", check=False)
@@ -225,14 +271,27 @@ def import_deltaproject(c, folder, force=False):
         for coll, items in data.items():
             if not re.fullmatch(r"[a-z0-9_]+", coll) or not isinstance(items, dict):
                 continue
-            ops = [{"t": coll, "id": str(k), "val": v} for k, v in items.items()]
+            if coll in PROTECTED_IF_EDITED:   # eCCC lot 0 : enregistrements pendant la reprise (postes ouverts)
+                kept2.update(_batiment_edites(c)); kept |= set(kept2)
+                conflits += [(coll, str(k), _projet(kept2[(coll, str(k))]), _projet(v)) for k, v in items.items()
+                             if (coll, str(k)) in kept2 and _projet(kept2[(coll, str(k))]) not in (None, _projet(v))]
+            ops = [{"t": coll, "id": str(k), "val": v} for k, v in items.items() if (coll, str(k)) not in kept]
             commit(c, ops, "import Deltaproject", check=False)
             total += len(ops); ntab += 1
     with _wlock:
         c.execute("INSERT INTO meta VALUES('import_deltaproject',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
-                  (js({"dossier": folder, "le": datetime.datetime.now().isoformat(timespec="seconds"), "tables": ntab, "lignes": total}),))
+                  (js({"dossier": folder, "le": datetime.datetime.now().isoformat(timespec="seconds"), "tables": ntab, "lignes": total,
+                       "conserves": len(kept2), "conservesListe": sorted("%s %s" % x for x in kept2),
+                       "conflits": ["%s %s" % x[:2] for x in conflits]}),))
         c.commit()
     print("Reprise Deltaproject : %d tables, %d enregistrements." % (ntab, total))
+    if kept2:   # eCCC lot 0
+        print("Documents Bâtiment modifiés ou créés dans DeltaSub, conservés tels quels (%d en-têtes ou contenus) : %s%s"
+              % (len(kept2), ", ".join("%s %s" % x for x in sorted(kept2)[:20]), "…" if len(kept2) > 20 else ""))
+        print("  (pour reprendre un document depuis Deltaproject malgré tout : DELTASUB_REPRENDRE=\"costplanning:<ID> …\")")
+    for t, i, a, b in conflits:
+        print("⚠ %s %s NON repris : l'identifiant est déjà pris dans DeltaSub par un document de l'affaire %s "
+              "(Deltaproject : affaire %s)." % (t, i, a, b))
 
 
 # ─────────── Sauvegardes ───────────

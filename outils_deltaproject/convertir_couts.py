@@ -21,8 +21,19 @@ USAGE
                     Défaut : /Volumes/SUBSTANCES/Deltaproject/DELTAprojectFiles/Construction
                     (ignoré s'il n'est pas monté — les annexes sont alors vides).
 
-    Fonctions importables : convert_costcontrol(raw, header), convert_costplanning(raw, header),
-    calculer_controle(cc)  (moteur de calcul de référence, cf. spec_5 § 22), verifier_controle(raw, cc, ref).
+    Fonctions importables : convert_costcontrol(raw, header), convert_costplanning(raw, header, racine),
+    calculer_controle(cc)  (moteur de calcul de référence, cf. spec_5 § 22), verifier_controle(raw, cc, ref),
+    calculer_planification(cp)  (moteur eCCC de référence porté sur le JSON v2, cf. spec_12 § 4.4),
+    verifier_planification(cp).
+
+PLANIFICATIONS (eCCC) — FORMAT v2 (spec_12 § 2.2-2.7, § 2.12.2)
+    Toutes les clés v1 sont conservées avec le même sens ; le document porte « schema: 2 ». Ajouts : sous-éléments
+    et composants au niveau de l'élément, attributions CFC, % de quantité, grandeurs calculées (codeCalcul,
+    estCalculee, elementsReference), lignes de calcul au niveau de la grandeur, toutes les lignes d'ouvrage,
+    affichage / impression / volumes / données de l'affaire / annexes (docs/*).
+    Jamais lus : le fichier « gate » (catalogue eCCC-gate, licence CRB) ni les textes « hint » (textes CRB).
+    Vérification : chaque document est recalculé par calculer_planification ; 0 écart attendu, sinon le document
+    est signalé dans le rapport.
 
 CORRESPONDANCE DOSSIERS → IDENTIFIANTS  (vérifié : 84/84 dossiers conformes à APP.COSTCONTROLDOCUMENT.csv)
     Construction/Costcontrol/<PROJECT_ID>/<COSTCONTROLDOCUMENT.ID>/coco/costcontrol
@@ -54,9 +65,11 @@ ANNEXES (à LIER seulement, jamais copiées ; chemins relatifs à coco/) — ran
 
 DONNÉES CLIENTS : la sortie contient des données clients — ne jamais la committer (cf. .gitignore).
 """
+import copy
 import csv
 import glob
 import json
+import math
 import os
 import re
 import sys
@@ -65,7 +78,8 @@ from collections import OrderedDict, defaultdict
 RACINE_DEFAUT = "/Volumes/SUBSTANCES/Deltaproject/DELTAprojectFiles/Construction"
 
 # ───────────────────────────── Codes Deltaproject (lus dans les enums du logiciel) ─────────────────────────────
-STATUT_DOCUMENT = {0: "cree", 1: "provisoire", 2: "enCours", 3: "etatIntermediaire", 4: "terminee"}  # STATECODE (0-based) [déduit]
+STATUT_DOCUMENT = {0: "provisoire", 1: "enCours", 2: "etatIntermediaire", 3: "termine"}  # db.CostControlDocument$State (temporary, ongoing, onhold, terminated)
+STATUT_PLANIFICATION = {0: "brouillon", 1: "provisoire", 2: "valide", 3: "affaireReference"}  # db.CostPlanningDocument$State
 STATUT_CONTRAT = {1: "brouillon", 2: "enTraitement", 3: "surDemande", 4: "pourSignature", 5: "definitif"}
 STATUT_MUTATION = {1: "brouillon", 2: "provisoire", 3: "demandeTransmise", 4: "acceptee", 5: "rejetee"}
 STATUT_PAIEMENT = {1: "receptionne", 2: "libere", 3: "transmis", 4: "debite"}
@@ -248,6 +262,7 @@ def _ligne(d, idx, ligne_type="contrat"):
         ("cfc", txt(d, "kag")), ("ouvrage", txt(d, "to")), ("localisation", txt(d, "lg")),
         ("refCond", txt(d, "number")), ("brut", r2(d.get("bruttoTotal"))), ("net", r2(d.get("nettoTotal"))),
         ("tva", r2(d.get("vatTotal"))),
+        ("refNum", d.get("refNum")),    # BkpDetail.refNum : clé d'attribution du Calcul des résultats (spec_12 § 2.9)
     ])
     if ligne_type == "arrete":
         o["adjudicationBrut"] = r2(d.get("vergabeBruttoTotal"))
@@ -940,54 +955,251 @@ def verifier_controle(cc, ref=None, tol=0.05):
     return n, ecarts, remarques
 
 
-# ───────────────────────────── Planification des coûts (eBKP / eCCC) ─────────────────────────────
-def convert_costplanning(raw, header):
+# ───────────────────────────── Planification des coûts (eCCC) — format v2 (spec_12 § 2) ─────────────────────────────
+# Licence CRB (spec_12 § 1.4) : le fichier « gate » et les textes « hint » ne sont JAMAIS lus ni convertis.
+CP_SCHEMA = 2
+PCT_QUANTITE = {"ACC11", "ACC12", "ACC13", "ACC14", "PV11", "PV12", "PV13"}   # éléments en « % de quantité » (v1 : déduit)
+CODES_CALCULES = OrderedDict([   # Refquantity.calcRefQuantities — grandeurs standard calculées (spec_12 § 4.4.4)
+    ("PSBY", list("BCDEFGHIJKLMNOPQRSTUVWXY")), ("SSBW", list("BCDEFGHIJKLMNOPQRSTUVW")),
+    ("SSBT", list("BCDEFGHIJKLMNOPQRST")), ("SSBJ", list("BCDEFGHIJ")), ("SSBI", list("BCDEFGHI")),
+    ("SSA01", ["A01"]), ("SSD", ["D"]), ("SD110", ["D01", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10"]),
+])
+V_PROC = {"V 1.1", "V 1.2", "V 1.3", "V01.01", "V01.02", "V01.03", "V01.04"}
+_SANS = {"$c", "$id", "version", "maxVersion", "hint"}
+
+
+def _brut(o, idx, prof=0):
+    """Copie telle quelle d'une structure Java (déréférencée, sans $c/$id/version ; jamais « hint »)."""
+    o = deref(o, idx)
+    if prof > 8:
+        return None
+    if isinstance(o, dict):
+        return OrderedDict((k, _brut(v, idx, prof + 1)) for k, v in o.items() if k not in _SANS)
+    if isinstance(o, list):
+        return [_brut(v, idx, prof + 1) for v in o]
+    return o
+
+
+def _n(o, k):
+    v = o.get(k)
+    return v if isinstance(v, (int, float)) and not isinstance(v, bool) else 0.0
+
+
+def _docs(lst, idx):
+    """DocumentDesc / ImageDesc → [{nom, fichier}]."""
+    return [OrderedDict([("nom", txt(d, "docName")), ("fichier", txt(d, "fileName"))])
+            for d in (deref(x, idx) for x in lst or [])]
+
+
+def _cfc(lst, idx):
+    """KagItem → [{numero, pourcent, montant}] (le montant est recalculé par le moteur)."""
+    return [OrderedDict([("numero", txt(k, "number")), ("pourcent", _n(k, "proc")), ("montant", r2(k.get("value")))])
+            for k in (deref(x, idx) for x in lst or [])]
+
+
+def _calc(lst, idx):
+    """CalcItem → [{formule, commentaire, quantite, sousTotal, genre ('' | 'r' | 'r5')}]."""
+    return [OrderedDict([("formule", txt(x, "formula")), ("commentaire", txt(x, "comment")),
+                         ("quantite", x.get("quantity")), ("sousTotal", bool(x.get("betweenTotal"))),
+                         ("genre", txt(x, "id"))])
+            for x in (deref(y, idx) for y in lst or [])]
+
+
+def _eco(o):
+    return [("energieGrise", o.get("greyEnergy")), ("coefficientU", o.get("uValue")), ("effetSerre", o.get("greenHouseEffect")),
+            ("commentaires", OrderedDict([("energieGrise", txt(o, "greyEnergyComment")), ("coefficientU", txt(o, "uValueComment")),
+                                          ("effetSerre", txt(o, "greenHouseEffectComment"))]))]
+
+
+def _comp(c, idx):
+    """Component (spec_12 § 2.5)."""
+    c = deref(c, idx)
+    return OrderedDict([
+        ("numero", txt(c, "number")), ("libelle", txt(c, "text1") or txt(c, "text")), ("libelle2", txt(c, "text2")),
+        ("cfcNumero", txt(c, "bkpNr")), ("unite", txt(c, "measUnit")), ("quantite", _n(c, "quantity")),
+        ("prix", _n(c, "price")), ("cout", r2(c.get("costs"))), ("prixEnPourcent", bool(c.get("priceIsPourcent"))),
+        ("eventuelle", bool(c.get("isEventualPosition"))), ("montantSeul", bool(c.get("isCostPosition"))),
+        ("modeCalcul", c.get("calculationsKind") or 0), ("remarque", txt(c, "remark")), ("noteInterne", txt(c, "internalNote")),
+        ("description", txt(c, "description")), ("can", _brut(c.get("npkChapterList") or [], idx)),
+        ("documents", _docs(c.get("docDescList"), idx)), ("images", _docs(c.get("imageDescList"), idx)),
+    ])
+
+
+def _se(x, idx):
+    """SubElement (spec_12 § 2.5) — schéma complet ; les clés v1 (numero, libelle, unite, grandeurRef, quantite,
+    prix, cout, remarque) gardent leur sens."""
+    x = deref(x, idx)
+    return OrderedDict([
+        ("numero", txt(x, "number")), ("libelle", txt(x, "text1") or txt(x, "text")), ("libelle2", txt(x, "text2")),
+        ("unite", txt(x, "measUnit")), ("grandeurRef", txt(x, "refCode")), ("uniteLocaux", txt(x, "spaceMeasUnit")),
+        ("quantite", x.get("quantity")), ("quantiteFixe", bool(x.get("quantityIsFixValue"))), ("prix", x.get("price")),
+        ("prixEnPourcent", bool(x.get("priceIsPourcent"))), ("cout", r2(x.get("value"))), ("coutFixe", r2(x.get("fixedValue"))),
+        ("eventuelle", bool(x.get("isEventualPosition"))), ("definitif", bool(x.get("calculationIsDefinitiv"))),
+        ("modeCalcul", x.get("calculationsKind") or 0), ("origineprix", txt(x, "priceOrigin")),
+        ("remarque", txt(x, "remark")), ("noteInterne", txt(x, "internalNote")), ("description", txt(x, "description")),
+        # « Exécution » du dialogue = submissionsText (SubElementCalcDialog.initOneSubelement@96 / setOneSubelement@298,
+        # jSubmissionTextPane) ; awardingText est le titre du devis CAN lié (npkDocId…) : lien CAN, non repris (§ 1.4).
+        ("execution", txt(x, "submissionsText")),
+    ] + _eco(x) + [
+        ("dureeVie", x.get("lifeTime") if x.get("lifeTime") is not None else ""),
+        ("intervalleEntretien", x.get("maintenanceTime") if x.get("maintenanceTime") is not None else ""),
+        ("coutEntretien", x.get("maintenanceCosts") or 0.0),
+        ("locaux", _brut(x.get("spaceList") or [], idx)), ("can", _brut(x.get("npkChapterList") or [], idx)),
+        ("cfc", _cfc(x.get("kagList"), idx)), ("composants", [_comp(c, idx) for c in x.get("components") or []]),
+        ("documents", _docs(x.get("docDescList"), idx)), ("images", _docs(x.get("imageDescList"), idx)),
+    ])
+
+
+def _grandeurs_possibles(s):
+    """« m² FCA | m² FFMA » → [{unite:'m²', code:'FCA'}, {unite:'m²', code:'FFMA'}] (découpe au dernier espace)."""
+    out = []
+    for part in (s or "").split("|"):
+        part = part.strip()
+        if not part:
+            continue
+        u, _, c = part.rpartition(" ")
+        out.append(OrderedDict([("unite", u.strip()), ("code", c.strip())]))
+    return out
+
+
+def _systeme_entete(header):
+    """v1 / défaut : système déduit de ISREFERENCEBASEA (catalogues du bureau : eCCC-Bât) — 511 (A) ou 514 (B)."""
+    return "514" if header.get("ISREFERENCEBASEA") == 0 else "511"
+
+
+def _annexes_planification(racine, projet, doc):
+    """Costplanning/<P>/<ID>/docs/* → [{nom, fichier (relatif au dossier du document), taille}] ; copies manuelles
+    « costplanning_JJ.MM.AAAA HH.MM » → source.sauvegardes. Le dossier « gate » n'est jamais ouvert."""
+    base = os.path.join(racine or "", "Costplanning", str(projet), str(doc))
+    out, sauv = [], []
+    if not racine or not os.path.isdir(base):
+        return out, sauv
+    for f in sorted(os.listdir(base)):
+        if re.match(r"costplanning_\d", f):
+            sauv.append(f)
+    docs = os.path.join(base, "docs")
+    if os.path.isdir(docs):
+        for f in sorted(os.listdir(docs)):
+            p = os.path.join(docs, f)
+            if os.path.isfile(p) and not f.startswith("."):
+                out.append(OrderedDict([("nom", f), ("fichier", "docs/" + f), ("taille", os.path.getsize(p))]))
+    return out, sauv
+
+
+def _donnees_affaire(raw, idx, og_ids):
+    """Editer ▸ Données de l'affaire (ObjectDialog) — spec_12 § 2.8. parOuvrage indexé par l'ID de la subdivision
+    (SUBPROJECT.ID), à défaut par le code de l'ouvrage."""
+    pd, sd, ok = deref(raw.get("projectDesc"), idx) or {}, deref(raw.get("standortDesc"), idx) or {}, deref(raw.get("objectKindDiv"), idx) or {}
+
+    def membres(lst):
+        return [OrderedDict([("role", txt(m, "role")), ("adresse", txt(m, "addr")),
+                             ("contactId", m.get("addrId") if isinstance(m.get("addrId"), int) and m.get("addrId") > 0 else None)])
+                for m in (deref(x, idx) for x in lst or [])]
+
+    def delais(lst):
+        return [OrderedDict([("designation", txt(t, "terminName")), ("echeance", txt(t, "terminDate"))])
+                for t in (deref(x, idx) for x in lst or [])]
+
+    out = OrderedDict([
+        ("designation", txt(pd, "text")),
+        ("lieu", OrderedDict([("npa", txt(sd, "postalcode")), ("localite", txt(sd, "location")), ("lignes", txt(sd, "text"))])),
+        ("genre", OrderedDict([("numero", txt(ok, "oagNumber")), ("texte", txt(ok, "text"))])),
+        ("intervenants", membres(raw.get("projectMembers"))),
+        ("delais", delais(raw.get("terminDocumentList"))),
+        ("affectation", txt(deref(raw.get("utilityDescription"), idx) or {}, "text")),
+        ("descriptionAffaire", txt(deref(raw.get("projectDescription"), idx) or {}, "text")),
+        ("descriptionConstruction", txt(deref(raw.get("construcionDescription"), idx) or {}, "text")),
+        ("documents", _docs(raw.get("externalDocumentList"), idx)),
+        ("images", _docs(raw.get("imageList"), idx)),
+        ("parOuvrage", OrderedDict()),
+    ])
+    par = out["parOuvrage"]
+
+    def slot(og):
+        k = str(og_ids.get(og) or og or "")
+        if k not in par:
+            par[k] = OrderedDict([("ouvrage", og)])
+        return par[k]
+    for key, champ in (("projectNameSubprojects", "designation"), ("utilityDescriptionSubprojects", "affectation"),
+                       ("projectDescriptionSubprojects", "descriptionAffaire"), ("construcionDescriptionSubprojects", "descriptionConstruction")):
+        for s in (deref(x, idx) for x in raw.get(key) or []):
+            slot(txt(s, "ogCode"))[champ] = txt(s, "description")
+    for s in (deref(x, idx) for x in raw.get("standortNameSubprojects") or []):
+        slot(txt(s, "ogCode"))["lieu"] = OrderedDict([("npa", txt(s, "postalcode")), ("localite", txt(s, "location")),
+                                                       ("lignes", txt(s, "description"))])
+    for s in (deref(x, idx) for x in ok.get("ogList") or []):
+        slot(txt(s, "ogCode"))["genre"] = OrderedDict([("numero", txt(s, "oagNumber")), ("texte", txt(s, "text"))])
+    for s in (deref(x, idx) for x in raw.get("subProjectMembers") or []):
+        slot(txt(s, "ogCode"))["intervenants"] = membres(s.get("memberList"))
+    for s in (deref(x, idx) for x in raw.get("terminSubProjectDocumentList") or []):
+        slot(txt(s, "ogCode"))["delais"] = delais(s.get("terminList"))
+    for s in (deref(x, idx) for x in raw.get("externalSubProjectDocumentList") or []):
+        slot(txt(s, "ogCode"))["documents"] = _docs(s.get("documentList"), idx)
+    for s in (deref(x, idx) for x in raw.get("imageSubProjectList") or []):
+        slot(txt(s, "ogCode"))["images"] = _docs(s.get("imageList"), idx)
+    return out
+
+
+def convert_costplanning(raw, header, racine=None):
+    """raw = JSON brut Ser2Json de Costplanning/<P>/<ID>/costplanning ; header = ligne COSTPLANNINGDOCUMENT
+    (+ header['_subprojects'] = {CODE: ID} des subdivisions de l'affaire, facultatif).
+    Retour : contenu DeltaSub v2 (collection « costplanning », clé = header['ID'])."""
     header = header or {}
     idx = index_refs(raw)
+    doc_id = header.get("ID")
+    projet = header.get("PROJECT_ID")
+    if isinstance(raw.get("fileName"), str):
+        m = re.search(r"Costplanning/(\d+)/(\d+)/", raw["fileName"])
+        if m and projet is None:
+            projet, doc_id = int(m.group(1)), doc_id or int(m.group(2))
+    systeme_doc = None
 
-    def ouvrages(lst, champs):
-        out = []
-        for s in lst or []:
-            s = deref(s, idx)
-            if any(s.get(k) for k in ("quantity", "value", "price")) or s.get("calcList") or s.get("subElementList"):
-                o = OrderedDict([("ouvrage", txt(s, "og")), ("localisation", txt(s, "lg")), ("ouvrageId", s.get("id"))])
-                for k_src, k_dst in champs:
-                    o[k_dst] = s.get(k_src)
-                out.append(o)
-        return out
+    def ligne_ouvrage(s):
+        s = deref(s, idx)
+        return OrderedDict([
+            ("ouvrage", txt(s, "og")), ("localisation", txt(s, "lg")), ("ouvrageId", s.get("id")),
+            ("grandeurRef", txt(s, "refCode")), ("unite", txt(s, "measUnit")), ("uniteUNECE", txt(s, "unecode") or txt(s, "uneCode")),
+            ("quantite", s.get("quantity")), ("prix", s.get("price")), ("prixEnPourcent", bool(s.get("priceIsPourcent"))),
+            ("prixEnPourcentQuantite", bool(s.get("priceIsQuantityPourcent"))), ("cout", r2(s.get("value"))),
+            ("coutFixe", r2(s.get("fixedValue"))), ("eventuelle", bool(s.get("isEventualPosition"))),
+            ("definitif", bool(s.get("calculationIsDefinitiv"))), ("origineprix", txt(s, "priceOrigin")),
+            ("remarque", txt(s, "remark")), ("noteInterne", txt(s, "internalNote")),
+            ("sousElements", [_se(x, idx) for x in s.get("subElementList") or []]),
+            ("cfc", _cfc(s.get("kagList"), idx)),
+            ("utiliserPourCalcul", s.get("positonIsUsedForCalculation") is not False),
+            ("niveauFixe", bool(s.get("positenIsFixed"))), ("execution", txt(s, "submissionsText")),
+            ("description", txt(s, "description")),
+        ] + _eco(s) + [
+            ("documents", _docs(s.get("docDescList"), idx)), ("images", _docs(s.get("imageDescList"), idx)),
+        ])
 
     elements = []
     for e in raw.get("elemList") or []:
         e = deref(e, idx)
-        par_ouv = []
-        for s in e.get("divList") or []:
-            s = deref(s, idx)
-            if not (s.get("quantity") or s.get("value") or s.get("price") or s.get("subElementList")):
-                continue
-            par_ouv.append(OrderedDict([
-                ("ouvrage", txt(s, "og")), ("localisation", txt(s, "lg")), ("ouvrageId", s.get("id")),
-                ("grandeurRef", txt(s, "refCode")), ("unite", txt(s, "measUnit")), ("quantite", s.get("quantity")),
-                ("prix", s.get("price")), ("prixEnPourcent", bool(s.get("priceIsPourcent"))),
-                ("prixEnPourcentQuantite", bool(s.get("priceIsQuantityPourcent"))), ("cout", r2(s.get("value"))),
-                ("coutFixe", r2(s.get("fixedValue"))), ("eventuelle", bool(s.get("isEventualPosition"))),
-                ("definitif", bool(s.get("calculationIsDefinitiv"))), ("origineprix", txt(s, "priceOrigin")),
-                ("remarque", txt(s, "remark")), ("noteInterne", txt(s, "internalNote")),
-                ("sousElements", [OrderedDict([("numero", txt(x, "number")), ("libelle", txt(x, "text1") or txt(x, "text")),
-                                               ("unite", txt(x, "measUnit")), ("grandeurRef", txt(x, "refCode")),
-                                               ("quantite", x.get("quantity")), ("prix", x.get("price")),
-                                               ("cout", r2(x.get("value"))), ("remarque", txt(x, "remark"))])
-                                  for x in (deref(y, idx) for y in s.get("subElementList") or [])]),
-            ]))
+        code = txt(e, "number")
+        if systeme_doc is None and txt(e, "refQuantitySystemCode"):
+            systeme_doc = txt(e, "refQuantitySystemCode")
         elements.append(OrderedDict([
-            ("code", txt(e, "number")), ("libelle", txt(e, "text1") or txt(e, "text")),
-            ("niveau", 1 if len(txt(e, "number")) == 1 else (2 if len(txt(e, "number")) <= 3 else 3)),
-            ("unite", txt(e, "measUnit")), ("grandeurRef", txt(e, "refCode")), ("uniteUNECE", txt(e, "uneCode")),
+            ("code", code), ("libelle", txt(e, "text1") or txt(e, "text")), ("libelle2", txt(e, "text2")),
+            ("niveau", 1 if len(code) == 1 else (2 if len(code) <= 3 else 3)),
+            ("unite", txt(e, "measUnit")), ("grandeursPossibles", _grandeurs_possibles(txt(e, "measUnits"))),
+            ("grandeurRef", txt(e, "refCode")), ("uniteUNECE", txt(e, "uneCode")),
             ("quantite", e.get("quantity")), ("prix", e.get("price")), ("cout", r2(e.get("value"))),
-            ("prixEnPourcent", bool(e.get("priceIsPourcent"))), ("genere", bool(e.get("isGenerated"))),
+            ("coutFixe", r2(e.get("fixedValue"))),
+            ("prixEnPourcent", bool(e.get("priceIsPourcent"))), ("prixEnPourcentQuantite", bool(e.get("priceIsQuantityPourcent"))),
+            ("genere", bool(e.get("isGenerated"))),      # transient : ignoré à la lecture, recalculé (spec_12 § 4.4.2)
             ("standard", bool(e.get("isStandardPosition"))), ("eventuelle", bool(e.get("isEventualPosition"))),
+            ("definitif", bool(e.get("calculationIsDefinitiv"))), ("niveauFixe", bool(e.get("positenIsFixed"))),
+            ("utiliserPourCalcul", e.get("positonIsUsedForCalculation") is not False),
+            ("origineprix", txt(e, "priceOrigin")),
             ("remarque", txt(e, "remark")), ("noteInterne", txt(e, "internalNote")), ("description", txt(e, "description")),
-            ("energieGrise", e.get("greyEnergy")), ("coefficientU", e.get("uValue")), ("effetSerre", e.get("greenHouseEffect")),
-            ("parOuvrage", par_ouv),
+            ("execution", txt(e, "submissionsText")),
+        ] + _eco(e) + [
+            ("systeme", txt(e, "refQuantitySystemCode")),
+            ("cfc", _cfc(e.get("kagList"), idx)),
+            ("sousElements", [_se(x, idx) for x in e.get("subElementList") or []]),
+            ("documents", _docs(e.get("docDescList"), idx)), ("images", _docs(e.get("imageDescList"), idx)),
+            ("parOuvrage", [ligne_ouvrage(s) for s in e.get("divList") or []]),   # v2 : toutes les lignes, même à 0
         ]))
     quantites = []
     for b in raw.get("baseQuantityList") or []:
@@ -995,80 +1207,535 @@ def convert_costplanning(raw, header):
         po = []
         for s in b.get("subProjectList") or []:
             s = deref(s, idx)
-            if s.get("quantity") or s.get("calcList"):
-                po.append(OrderedDict([("ouvrage", txt(s, "og")), ("localisation", txt(s, "lg")), ("ouvrageId", s.get("id")),
-                                       ("quantite", s.get("quantity")), ("definitif", bool(s.get("calcIsDefinitiv"))),
-                                       ("noteInterne", txt(s, "internalRemark")),
-                                       ("calcul", [OrderedDict([("formule", txt(x, "formula")), ("commentaire", txt(x, "comment")),
-                                                                ("quantite", x.get("quantity")), ("sousTotal", bool(x.get("betweenTotal")))])
-                                                   for x in (deref(y, idx) for y in s.get("calcList") or [])])]))
-        quantites.append(OrderedDict([("code", txt(b, "refCode")), ("libelle", txt(b, "text")), ("unite", txt(b, "measUnit")),
-                                      ("uniteUNECE", txt(b, "uneCode")), ("quantite", b.get("quantity")),
-                                      ("standard", bool(b.get("isStandardPosition"))), ("parOuvrage", po)]))
-    doc_id = header.get("ID")
-    projet = header.get("PROJECT_ID")
-    if projet is None and isinstance(raw.get("fileName"), str):
-        m = re.search(r"Costplanning/(\d+)/(\d+)/", raw["fileName"])
-        if m:
-            projet, doc_id = int(m.group(1)), doc_id or int(m.group(2))
-    ogs = []
+            po.append(OrderedDict([("ouvrage", txt(s, "og")), ("localisation", txt(s, "lg")), ("ouvrageId", s.get("id")),
+                                   ("quantite", s.get("quantity")), ("definitif", bool(s.get("calcIsDefinitiv"))),
+                                   ("noteInterne", txt(s, "internalRemark")), ("calcul", _calc(s.get("calcList"), idx)),
+                                   ("remarque", txt(s, "remark")), ("codeCalcul", txt(s, "refCodeForCalculation"))]))
+        if systeme_doc is None and txt(b, "refQuantitySystemCode"):
+            systeme_doc = txt(b, "refQuantitySystemCode")
+        quantites.append(OrderedDict([
+            ("code", txt(b, "refCode")), ("libelle", txt(b, "text")), ("unite", txt(b, "measUnit")),
+            ("uniteUNECE", txt(b, "uneCode")), ("quantite", b.get("quantity")),
+            ("standard", bool(b.get("isStandardPosition"))), ("parOuvrage", po),
+            ("codeCalcul", txt(b, "refCodeForCalculation")), ("estCalculee", bool(b.get("isCalcualted"))),
+            ("elementsReference", [x for x in (b.get("refefenceElementList") or []) if isinstance(x, str)]),
+            ("remarque", txt(b, "remark")), ("noteInterne", txt(b, "internalRemark")),
+            ("definitif", bool(b.get("calcIsDefinitiv"))), ("calcul", _calc(b.get("calcList"), idx)),
+            ("systeme", txt(b, "refQuantitySystemCode")),
+        ]))
+    # ouvrages : codes (v1) et détail {code, id (SUBPROJECT.ID), lg} (v2), dans l'ordre d'apparition
+    ogs, detail, vus = [], [], set()
     for e in raw.get("elemList") or []:
-        for s in e.get("divList") or []:
-            s = deref(s, idx)
-            if txt(s, "og") and txt(s, "og") not in ogs:
-                ogs.append(txt(s, "og"))
-    return OrderedDict([
+        for s in (deref(x, idx) for x in deref(e, idx).get("divList") or []):
+            og = txt(s, "og")
+            if og and og not in ogs:
+                ogs.append(og)
+            if og and (og, txt(s, "lg")) not in vus:
+                vus.add((og, txt(s, "lg")))
+                detail.append(OrderedDict([("code", og), ("id", s.get("id")), ("lg", txt(s, "lg"))]))
+    for b in raw.get("baseQuantityList") or []:
+        for s in (deref(x, idx) for x in deref(b, idx).get("subProjectList") or []):
+            og = txt(s, "og")
+            if og and (og, txt(s, "lg")) not in vus:
+                vus.add((og, txt(s, "lg")))
+                detail.append(OrderedDict([("code", og), ("id", s.get("id")), ("lg", txt(s, "lg"))]))
+    og_ids = {d["code"]: d["id"] for d in detail if d.get("id") is not None}
+    for code, sid in (header.get("_subprojects") or {}).items():
+        og_ids.setdefault(code, sid)
+    annexes, sauvegardes = _annexes_planification(racine, projet, doc_id)
+    fonte = lambda n, t: OrderedDict([("nom", txt(raw, n)), ("taille", raw.get(t) if isinstance(raw.get(t), int) else 9)])
+    bo = lambda k, d=False: bool(raw.get(k)) if raw.get(k) is not None else d
+    stc = header.get("STATECODE")
+    cp = OrderedDict([
+        ("schema", CP_SCHEMA),
         ("id", doc_id), ("projetId", projet),
         ("entete", OrderedDict([("version", header.get("VERSION")), ("numeroVersion", header.get("VERSIONNUMBER")),
-                                ("statutCode", header.get("STATECODE")), ("note", header.get("NOTE")),
+                                ("statutCode", stc), ("statut", STATUT_PLANIFICATION.get(stc) if stc is not None else None),
+                                ("note", header.get("NOTE")),
                                 ("utilisateur", header.get("USERID")), ("dateModification", header.get("CHANGEDDATE")),
-                                ("supprime", bool(header.get("ISMARKEDASDELETED")))])),
-        ("source", OrderedDict([("fichier", "Costplanning/%s/%s/costplanning" % (projet, doc_id))])),
+                                ("supprime", bool(header.get("ISMARKEDASDELETED"))),
+                                ("appliquerSubdivisions", bool(header.get("ISAPPLYSUBPROJECTS"))),
+                                ("referenceA", header.get("ISREFERENCEBASEA") != 0)])),
+        ("source", OrderedDict([("fichier", "Costplanning/%s/%s/costplanning" % (projet, doc_id)), ("sauvegardes", sauvegardes)])),
         ("titre", txt(raw, "docTitle")), ("date", date_iso(raw.get("docDate"))), ("indice", raw.get("index")),
         ("arrondir", bool(raw.get("round"))),
-        ("pourcentage", "totalGeneral" if raw.get("devirationTotal") else "groupePrincipal"),
+        ("pourcentage", "totalGeneral" if raw.get("devirationTotal") else ("groupePrincipal" if raw.get("devirationSection") else "aucun")),
         ("coutRealisation", OrderedDict([("de", txt(raw, "erstellungsCostFrom")), ("a", txt(raw, "erstellungsCostTo"))])),
         ("coutOuvrage", OrderedDict([("de", txt(raw, "bauwerksCostFrom")), ("a", txt(raw, "bauwerksCostTo"))])),
         ("precision", txt(raw, "estimatePrecision")), ("etatProjet", txt(raw, "projectState")),
         ("etatPlanification", txt(raw, "planningState")),
         ("textesLibres", [txt(raw, "freeText%d" % i) for i in range(1, 6)]),
-        ("ouvrages", ogs),
+        ("ouvrages", ogs), ("ouvragesDetail", detail),
+        ("systeme", systeme_doc or _systeme_entete(header)),
         ("unitesFonctionnelles", [OrderedDict([("nom", txt(f, "name")), ("equation", txt(f, "equation")),
                                                ("unite", txt(f, "measUnit")), ("genre", f.get("keyFigureKind")),
                                                ("afficher", bool(f.get("display")))])
                                   for f in (deref(x, idx) for x in raw.get("functionalUnit") or [])]),
         ("elements", elements), ("quantitesReferentielles", quantites),
         ("totaux", totaux_planification(elements, raw)),
+        ("affichage", OrderedDict([
+            ("sousElements", bo("displaySubelementsInTable", True)), ("composants", bo("displayComponentsInTable", True)),
+            ("remarques", bo("displayRemarkInTable")), ("notesInternes", bo("displayInternalNoteInTable")),
+            ("cfc", bo("displayBKPInTable")), ("eco", bo("displayOekoInTable")), ("execution", bo("displayRealisationInTable")),
+            ("descriptions", bo("displayDescriptionInTable")), ("definitifs", bo("displayDefinitvInTable")),
+            ("eventuelles", bo("displayOptionsInTable")), ("seulementUtilises", bo("showOnlyUsedPositions")),
+            ("seulementAvecMontant", bo("showOnlyValuePositions"))])),
+        ("impression", OrderedDict([
+            ("pageDeGarde", bo("displayCover", True)),
+            ("documents", [OrderedDict([("genre", d.get("kind")), ("afficher", bool(d.get("display")))])
+                           for d in (deref(x, idx) for x in raw.get("documentList") or [])]),
+            ("totaux", OrderedDict([("investissement", bo("anlageCostDisplay", True)), ("realisation", bo("erstellungsCostDisplay")),
+                                    ("ouvrage", bo("bauwerkCostDisplay")), ("investissementCFC", bo("displayAnlageCostBKPDisplay", True))])),
+            ("hauteurLigne", raw.get("rowHeight") if isinstance(raw.get("rowHeight"), int) else 14),
+            ("polices", OrderedDict([("titre", fonte("titleFontName", "titleFontSize")),
+                                     ("standard", fonte("standardFontName", "standardFontSize")),
+                                     ("detail", fonte("detailFontName", "detailFontSize"))])),
+            ("modele", raw.get("templateId") or 0), ("triElements", bo("doElemSort", True)), ("triCFC", bo("doBkpSort")),
+            ("sautsDePage", [txt(deref(x, idx), "number") for x in raw.get("pageBreakList") or []]),
+            ("options", OrderedDict([
+                ("calculsQuantites", bo("displayQuantiyCalculation")), ("remarquesQuantites", bo("displayQuantiyComment")),
+                ("composants", bo("displayComponents")), ("descriptionsComposants", bo("displayComponentsDescription")),
+                ("sousElements", bo("displaySubElements")), ("descriptionsSousElements", bo("displaySubElementsDescription")),
+                ("soumissionSousElements", bo("displaySubElementsSubmission")), ("commentaireElement", bo("displayElementComment")),
+                ("deuxiemeStructure", bo("displaySecondKAG")), ("eco", bo("displayOeco")),
+                ("eventuelles", bo("displayEventualPosition")), ("ouvrages", bo("displayElemSubprojects", True)),
+                ("troisNiveaux", bo("displayOnlyThreeLevelPositions")), ("pourcent", bo("displayDeviration", True)),
+                ("seulementCouts", bo("displayOnlyCosts")), ("images", bo("printImages")),
+                ("notesInternes", bo("printInternalNotes")), ("realisation", bo("printRealisation")),
+                ("description", bo("printDescription")),
+                ("arrondi", OrderedDict([("a1", bo("doRound1")), ("a100", bo("doRound100")), ("a1000", bo("doRound1000")),
+                                         ("special", bo("doSpecialRound"))]))])),
+        ])),
+        # préférences du nouveau moteur d'impression (documents/archive/*.json : vides au bureau) → défauts
+        ("impressionDoc", OrderedDict([("subdivisions", True), ("sousElements", True), ("composants", False),
+                                       ("deuxiemeStructure", False), ("eventuelles", True), ("arrondi", 0), ("calculQR", False)])),
+        ("volumes", OrderedDict([(k, _n(raw, j)) for k, j in (
+            ("VB", "buildingVolume"), ("VN", "nettoBuildingVolume"), ("VC", "construcionVolume"), ("VU", "utilityVolume"),
+            ("VUP", "mainUtilityVolume"), ("VUS", "subUtilityVolume"), ("VD", "trafficVolume"), ("VI", "functionVolume"))])),
+        ("surfacesSIA416", OrderedDict([(k, _n(raw, j)) for k, j in (
+            ("SP", "floorArea"), ("SN", "floorAreaNet"), ("SU", "effectiveArea"), ("SUP", "mainEffectiveArea"),
+            ("SUS", "secundaryEffectiveAreat"), ("SD", "trafficArea"), ("SI", "functionArea"), ("SC", "constructionsArea"))])),
+        ("donneesAffaire", _donnees_affaire(raw, idx, og_ids)),
+        ("annexes", annexes),
     ])
+    return cp
 
 
 def totaux_planification(elements, raw):
+    """Cache informatif (jamais lu comme vérité) : investissement = Σ groupes principaux ; plages de lettres."""
     g = {e["code"]: e["cout"] for e in elements if e["niveau"] == 1}
 
     def plage(a, b):
-        return r2(sum(v for k, v in g.items() if a and b and a <= k <= b))
+        return r2(sum(v for k, v in g.items() if a and b and a[:1] <= k <= b[:1]))
     return OrderedDict([("coutInvestissement", r2(sum(g.values()))),
                         ("coutRealisation", plage(raw.get("erstellungsCostFrom"), raw.get("erstellungsCostTo"))),
                         ("coutOuvrage", plage(raw.get("bauwerksCostFrom"), raw.get("bauwerksCostTo")))])
 
 
-def verifier_planification(cp, tol=0.05):
-    """Σ des éléments feuilles = valeur des groupes ; valeur = quantité × prix (ou %) par ouvrage."""
-    ecarts = []
-    codes = [e["code"] for e in cp["elements"]]
-    val = {e["code"]: e["cout"] for e in cp["elements"]}
+# ───────────────────────────── Moteur eCCC de référence, porté sur le JSON v2 ─────────────────────────────
+# Portage ligne à ligne de research/cp_elements2/cp_calc.py (setGeneratedPositions, setRefCodes, CalcElements.calc,
+# calcBookedElements, Refquantity.calcRefQuantities), spec_12 § 4.4. Même moteur que cpEngine (DeltaSub, lot 1).
+# Écart voulu (spec_12 § 4.4.4) : la table des codes calculés ne sert qu'aux grandeurs STANDARD ; une grandeur
+# personnalisée n'est calculée que par estCalculee + elementsReference (l'original prend « PA » pour l'ancien code PA).
+def cp_round(x, arrondir):
+    """util.Formatter.round(Double, boolean) : 0,05 si « Arrondir », sinon 0,01 ; symétrique (signé)."""
+    a = abs(x or 0.0)
+    v = math.floor(a * 20 + 0.5) / 20.0 if arrondir else math.floor(a * 100 + 0.5) / 100.0
+    return -v if (x or 0) < 0 and v != 0 else v
+
+
+def cp_gv(o):
+    """getValue(true) : le coût fixé l'emporte sur le coût calculé."""
+    f = o.get("coutFixe") or 0.0
+    return f if f != 0 else (o.get("cout") or 0.0)
+
+
+def _L(o, k):
+    return o.get(k) or []
+
+
+def _meme_ouvrage(a, b):
+    return a.get("ouvrage") == b.get("ouvrage") and (a.get("localisation") or "") == (b.get("localisation") or "")
+
+
+def _cp_generes(E):
+    """setGeneratedPositions : un élément est « généré » (groupe) si le code suivant est plus long et commence par le
+    sien, sauf s'il est fixé (niveau de saisie) ; le 1er élément est forcé à généré sauf si les 2 premiers codes ont
+    la même longueur."""
+    if not E:
+        return
+    for e in E:
+        e["genere"] = False
+    old = E[-1]["code"]
+    for i in range(len(E) - 2, -1, -1):
+        k = E[i]
+        k["genere"] = bool(len(old) > len(k["code"]) and not k.get("niveauFixe") and old[:len(k["code"])] == k["code"])
+        old = k["code"]
+    if len(E) > 1:
+        E[0]["genere"] = True
+        if len(E) > 2 and len(E[0]["code"]) == len(E[1]["code"]):
+            E[0]["genere"] = False
+
+
+def _cp_refcodes(cp):
+    """setRefCodes : la quantité d'un élément (et de ses lignes d'ouvrage, de ses SE sans quantité fixe) est celle de sa grandeur."""
+    BQ = _L(cp, "quantitesReferentielles")
+    par = {}
+    for b in BQ:
+        par.setdefault(b.get("code"), b)
+    for p in cp["elements"]:
+        bq = par.get(p.get("grandeurRef"))
+        if not bq:
+            continue
+        p["quantite"] = bq.get("quantite") or 0.0
+
+        def se_q(s, q):
+            if bq.get("code") == s.get("grandeurRef"):
+                if not s.get("quantiteFixe"):
+                    s["quantite"] = q
+            elif s.get("grandeurRef"):
+                b2 = par.get(s.get("grandeurRef"))
+                if b2 and not s.get("quantiteFixe"):
+                    s["quantite"] = b2.get("quantite") or 0.0
+        for s in _L(p, "sousElements"):
+            se_q(s, p["quantite"])
+        for d in _L(p, "parOuvrage"):
+            sb = next((x for x in _L(bq, "parOuvrage") if _meme_ouvrage(x, d)), None)
+            if not sb:
+                continue
+            d["quantite"] = sb.get("quantite") or 0.0
+            for s in _L(d, "sousElements"):
+                se_q(s, sb.get("quantite") or 0.0)
+
+
+def _cp_booked(E, R):
+    """CalcElements.calcBookedElements : passe 1 (prix unitaires), passe 2 (prix en %), passe 3 (groupes, ouvrages)."""
+    rnd = lambda x: cp_round(x, R)
+    q = lambda o: o.get("quantite") or 0.0
+    pr = lambda o: o.get("prix") or 0.0
+    act = lambda p: (not p.get("genere")) or p.get("niveauFixe")
+    pct = lambda p: bool(p.get("prixEnPourcent") or p.get("prixEnPourcentQuantite"))
+
+    def setsubproc(p, d, s):
+        if p["code"] in V_PROC:
+            s["quantite"] = q(d or p)
+            s["prixEnPourcent"] = True
+            for c in _L(s, "composants"):
+                c["quantite"] = s["quantite"]
+                c["prixEnPourcent"] = True
+    # passe 1 : prix unitaires
+    for p in E:
+        if not act(p):
+            continue
+        if not _L(p, "parOuvrage"):
+            if not _L(p, "sousElements"):
+                if pct(p):
+                    continue
+                p["cout"] = rnd(q(p) * pr(p))
+                for k in _L(p, "cfc"):
+                    k["montant"] = rnd((k.get("pourcent") or 0) * 0.01 * cp_gv(p))
+                continue
+            val = 0.0
+            p["prix"] = 0.0
+            p["cout"] = 0.0
+            for s in p["sousElements"]:
+                setsubproc(p, None, s)
+                if s.get("eventuelle"):
+                    continue
+                if not s.get("prixEnPourcent"):
+                    s["cout"] = rnd(q(s) * pr(s))
+                    val += cp_gv(s)
+                if not s.get("prixEnPourcent") and not p.get("prixEnPourcentQuantite"):
+                    for k in _L(s, "cfc"):
+                        k["montant"] = rnd((k.get("pourcent") or 0) * 0.01 * cp_gv(s))
+            p["cout"] = val
+            if not pct(p) and q(p) != 0:
+                p["prix"] = rnd(cp_gv(p) / q(p))
+            continue
+        p["prix"] = 0.0
+        p["cout"] = 0.0
+        divtot = 0.0
+        for d in p["parOuvrage"]:
+            if not _L(d, "sousElements"):
+                if pct(p):
+                    continue
+                d["cout"] = rnd(q(d) * pr(d))
+                divtot += cp_gv(d)
+                for k in _L(d, "cfc"):
+                    k["montant"] = rnd((k.get("pourcent") or 0) * 0.01 * cp_gv(d))
+                continue
+            d["prix"] = 0.0
+            d["cout"] = 0.0
+            dv = 0.0
+            for s in d["sousElements"]:
+                setsubproc(p, d, s)
+                if s.get("eventuelle"):
+                    continue
+                if not s.get("prixEnPourcent"):
+                    s["cout"] = rnd(q(s) * pr(s))
+                    dv += cp_gv(s)
+                    divtot += cp_gv(d)   # (sic, CalcElements@1310) sans effet sur le résultat final
+            d["cout"] = dv
+            if not pct(p) and q(d) != 0:
+                p["prix"] = rnd(cp_gv(d) / q(d))
+        if not pct(p) and q(p) != 0:
+            p["cout"] = divtot
+            p["prix"] = rnd(cp_gv(p) / q(p))
+    # passe 2 : prix en %
+    for p in E:
+        if not act(p):
+            continue
+        if not _L(p, "parOuvrage"):
+            if not _L(p, "sousElements"):
+                if not pct(p):
+                    continue
+                p["cout"] = rnd(q(p) * 0.01 * pr(p))
+                continue
+            val = 0.0
+            for s in p["sousElements"]:
+                if s.get("eventuelle"):
+                    continue
+                if s.get("prixEnPourcent") or p.get("prixEnPourcentQuantite"):
+                    if not _L(s, "composants"):
+                        s["cout"] = rnd(q(s) * 0.01 * pr(s))
+                        val += cp_gv(s)
+                    else:
+                        sv = 0.0
+                        for c in s["composants"]:
+                            if c.get("eventuelle"):
+                                continue
+                            c["cout"] = rnd(q(c) * 0.01 * pr(c))
+                            sv += c["cout"]
+                        s["cout"] = rnd(sv)
+                        s["prix"] = (cp_gv(s) / q(s) * 100.0) if q(s) != 0 else 0.0
+                        val += cp_gv(s)
+                else:
+                    val += cp_gv(s)
+            if pct(p) and q(p) != 0:
+                p["cout"] = val
+                p["prix"] = rnd(100.0 * cp_gv(p) / q(p))
+            continue
+        divtot = 0.0
+        for d in p["parOuvrage"]:
+            if not _L(d, "sousElements"):
+                if not pct(p):
+                    continue
+                d["cout"] = rnd(q(d) * 0.01 * pr(d))
+                divtot += cp_gv(d)
+                continue
+            val = 0.0
+            for s in d["sousElements"]:
+                if s.get("eventuelle"):
+                    continue
+                if s.get("prixEnPourcent") or p.get("prixEnPourcentQuantite"):
+                    if not _L(s, "composants"):
+                        s["cout"] = rnd(q(s) * 0.01 * pr(s))
+                        val += cp_gv(s)
+                        divtot += cp_gv(d)
+                    else:
+                        sv = 0.0
+                        for c in s["composants"]:
+                            if c.get("eventuelle"):
+                                continue
+                            c["cout"] = rnd(q(c) * 0.01 * pr(c))
+                            sv += c["cout"]
+                        s["cout"] = rnd(sv)
+                        s["prix"] = (cp_gv(s) / q(s) * 100.0) if q(s) != 0 else 0.0
+                        val += cp_gv(s)
+                        divtot += cp_gv(s)
+                else:
+                    val += cp_gv(s)
+            if pct(p) and q(d) != 0:
+                d["cout"] = val
+                d["prix"] = rnd(100.0 * cp_gv(d) / q(d))
+        if pct(p):
+            p["cout"] = divtot
+            if q(p) != 0:
+                p["prix"] = rnd(100.0 * cp_gv(p) / q(p))
+    # passe 3 : positions générées (groupes) et éléments avec ouvrages
+    for p in E:
+        if p.get("genere") and not p.get("niveauFixe"):
+            p["cout"] = 0.0
+            p["prix"] = 0.0
+            for d in _L(p, "parOuvrage"):
+                d["prix"] = 0.0
+                d["cout"] = 0.0
+            post = 0.0
+            for p0 in E:
+                if not act(p0) or not p0["code"].startswith(p["code"]):
+                    continue
+                for d in _L(p, "parOuvrage"):
+                    d0 = next((x for x in _L(p0, "parOuvrage") if _meme_ouvrage(x, d)), None)
+                    if d0 is not None:
+                        d["cout"] = cp_gv(d) + cp_gv(d0)
+                post += cp_gv(p0)
+            p["cout"] = sum(cp_gv(d) for d in p["parOuvrage"]) if _L(p, "parOuvrage") else post
+            p["prix"] = rnd((100.0 if pct(p) else 1.0) * cp_gv(p) / q(p)) if q(p) != 0 else 0.0
+            for d in _L(p, "parOuvrage"):
+                pd = d.get("prixEnPourcent") or d.get("prixEnPourcentQuantite")
+                d["prix"] = rnd((100.0 if pd else 1.0) * cp_gv(d) / q(d)) if q(d) != 0 else 0.0
+        elif not p.get("genere") and _L(p, "parOuvrage"):
+            tot = 0.0
+            for d in p["parOuvrage"]:
+                if not _L(d, "sousElements"):
+                    tot += cp_gv(d)
+                    continue
+                st = 0.0
+                for s in d["sousElements"]:
+                    tot += cp_gv(s)
+                    st += cp_gv(s)
+                d["cout"] = st
+                d["prix"] = rnd((100.0 if pct(p) else 1.0) * cp_gv(d) / q(d)) if q(d) != 0 else 0.0
+            p["cout"] = tot
+            p["prix"] = rnd((100.0 if pct(p) else 1.0) * cp_gv(p) / q(p)) if q(p) != 0 else 0.0
+
+
+def _cp_quantites_calculees(cp):
+    """Refquantity.calcRefQuantities : grandeurs = Σ des coûts des éléments listés (code exactement égal)."""
+    E = cp["elements"]
+    par_code = {}
+    for e in E:
+        par_code.setdefault(e["code"], e)
+    for b in _L(cp, "quantitesReferentielles"):
+        if b.get("standard") and (b.get("codeCalcul") or "") in CODES_CALCULES:
+            codes = CODES_CALCULES[b["codeCalcul"]]
+        elif not b.get("standard") and b.get("estCalculee"):
+            codes = list(_L(b, "elementsReference"))
+        else:
+            continue
+        b["quantite"] = 0.0
+        for sb in _L(b, "parOuvrage"):
+            sb["quantite"] = 0.0
+        for c in codes:
+            p = par_code.get(c)
+            if p is None:
+                continue
+            b["quantite"] += cp_gv(p)
+            for sb in _L(b, "parOuvrage"):
+                d = next((x for x in _L(p, "parOuvrage") if _meme_ouvrage(x, sb)), None)
+                if d is not None:
+                    sb["quantite"] = (sb.get("quantite") or 0.0) + cp_gv(d)
+
+
+def _cp_passe(cp):
+    """CalcElements.calc : prépasse, calcBookedElements, calcRefQuantities, calcBookedElements."""
+    E = cp["elements"]
+    R = bool(cp.get("arrondir"))
+    par = {}
+    for b in _L(cp, "quantitesReferentielles"):
+        par.setdefault(b.get("code"), b)
+    for p in E:
+        chf = (p.get("unite") or "").lower() == "chf"
+        if not p.get("standard"):
+            p["prixEnPourcent"] = chf
+        for s in _L(p, "sousElements") + [s for d in _L(p, "parOuvrage") for s in _L(d, "sousElements")]:
+            if s.get("prixEnPourcent") and not s.get("quantiteFixe"):
+                b = par.get(s.get("grandeurRef"))
+                if b:
+                    s["quantite"] = b.get("quantite") or 0.0
+            for c in _L(s, "composants"):
+                c["prixEnPourcent"] = bool(p.get("prixEnPourcent"))
+                if s.get("prixEnPourcent"):
+                    c["quantite"] = s.get("quantite") or 0.0
+        for d in _L(p, "parOuvrage"):
+            if not p.get("standard"):
+                d["prixEnPourcent"] = chf
+    _cp_booked(E, R)
+    _cp_quantites_calculees(cp)
+    _cp_booked(E, R)
+
+
+def _cp_etat(cp):
+    out = []
     for e in cp["elements"]:
-        enfants = [c for c in codes if c != e["code"] and c.startswith(e["code"]) and
-                   parent_cfc(c, set(codes)) == e["code"]]
-        if enfants:
-            s = sum(val[c] for c in enfants)
-            if abs(s - e["cout"]) > tol:
-                ecarts.append("élément %s : %.2f ≠ Σ enfants %.2f" % (e["code"], e["cout"], s))
-        for o in e["parOuvrage"]:
-            if not o["prixEnPourcent"] and not o["prixEnPourcentQuantite"] and o["quantite"] and o["prix"] and not o["sousElements"]:
-                if abs(o["quantite"] * o["prix"] - o["cout"]) > max(tol, 0.01 * abs(o["cout"])) and not o["coutFixe"]:
-                    ecarts.append("élément %s/%s : q×p %.2f ≠ %.2f" % (e["code"], o["ouvrage"], o["quantite"] * o["prix"], o["cout"]))
-    return ecarts
+        out.append((e.get("cout"), e.get("prix"), e.get("quantite")))
+        for o in [e] + _L(e, "parOuvrage"):
+            for s in _L(o, "sousElements"):
+                out.append((s.get("cout"), s.get("prix"), s.get("quantite")))
+        for d in _L(e, "parOuvrage"):
+            out.append((d.get("cout"), d.get("prix"), d.get("quantite")))
+    for b in _L(cp, "quantitesReferentielles"):
+        out.append((b.get("quantite"),) + tuple(x.get("quantite") for x in _L(b, "parOuvrage")))
+    return out
+
+
+def calculer_planification(cp, max_passes=5):
+    """Recalcule une COPIE du document v2 (fonction pure). Répète setRefCodes + calc jusqu'à stabilité (≤ 5 passages).
+    Retour : (copie recalculée, totaux {inv, real, ouv, tva, parOuvrage}, nombre de passages)."""
+    P = copy.deepcopy(cp)
+    E = P.get("elements") or []
+    P["elements"] = E
+    passes, prev = 0, None
+    while passes < max_passes:
+        passes += 1
+        _cp_generes(E)
+        _cp_refcodes(P)
+        _cp_passe(P)
+        etat = _cp_etat(P)
+        if etat == prev:
+            break
+        prev = etat
+    tops = [e for e in E if len(e["code"]) == 1]
+
+    def plage(r, d0, a0):
+        de, a = ((r or {}).get("de") or d0)[:1], ((r or {}).get("a") or a0)[:1]
+        lettres = "".join(chr(c) for c in range(ord(de), ord(a) + 1)) if de and a else ""
+        return lettres
+    lr, lo = plage(P.get("coutRealisation"), "B", "W"), plage(P.get("coutOuvrage"), "C", "G")
+    T = OrderedDict([("inv", sum(cp_gv(e) for e in tops)), ("real", sum(cp_gv(e) for e in tops if e["code"] in lr)),
+                     ("ouv", sum(cp_gv(e) for e in tops if e["code"] in lo)),
+                     ("tva", next((cp_gv(e) for e in E if e["code"] == "Z"), 0.0)), ("parOuvrage", OrderedDict())])
+    for e in tops:
+        for d in _L(e, "parOuvrage"):
+            t = T["parOuvrage"].setdefault(d.get("ouvrage"), OrderedDict([("inv", 0.0), ("real", 0.0), ("ouv", 0.0)]))
+            t["inv"] += cp_gv(d)
+            if e["code"] in lr:
+                t["real"] += cp_gv(d)
+            if e["code"] in lo:
+                t["ouv"] += cp_gv(d)
+    return P, T, passes
+
+
+def verifier_planification(cp, tol=0.01):
+    """Vérification par le moteur de référence : recalcul complet puis comparaison, élément par élément, avec les
+    valeurs enregistrées par Deltaproject (coûts, prix, quantités des éléments, lignes d'ouvrage, sous-éléments,
+    composants, montants CFC, quantités calculées, totaux). Retour : (écarts, totaux, passages)."""
+    P, T, passes = calculer_planification(cp)
+    ec = []
+
+    def cmp(quoi, a, b, t):
+        if abs((a or 0.0) - (b or 0.0)) > t + 1e-6:
+            ec.append("%s : enregistré %.2f ≠ recalculé %.2f" % (quoi, a or 0.0, b or 0.0))
+
+    def obj(quoi, a, b, prix=True):
+        cmp(quoi + " coût", cp_gv(a), cp_gv(b), tol)
+        cmp(quoi + " quantité", a.get("quantite"), b.get("quantite"), 0.001)
+        if prix:
+            cmp(quoi + " prix", a.get("prix"), b.get("prix"), 0.011)
+        for i, (k0, k1) in enumerate(zip(_L(a, "cfc"), _L(b, "cfc"))):
+            cmp("%s CFC %s" % (quoi, k0.get("numero")), k0.get("montant"), k1.get("montant"), tol)
+
+    for e0, e1 in zip(cp["elements"], P["elements"]):
+        c = e0["code"]
+        obj("élément " + c, e0, e1)
+        for s0, s1 in zip(_L(e0, "sousElements"), _L(e1, "sousElements")):
+            obj("élément %s SE %s" % (c, s0.get("numero")), s0, s1)
+            for c0, c1 in zip(_L(s0, "composants"), _L(s1, "composants")):
+                cmp("élément %s SE %s composant %s coût" % (c, s0.get("numero"), c0.get("numero")), c0.get("cout"), c1.get("cout"), tol)
+        for d0, d1 in zip(_L(e0, "parOuvrage"), _L(e1, "parOuvrage")):
+            o = "élément %s/%s" % (c, d0.get("ouvrage"))
+            obj(o, d0, d1)
+            for s0, s1 in zip(_L(d0, "sousElements"), _L(d1, "sousElements")):
+                obj("%s SE %s" % (o, s0.get("numero")), s0, s1)
+    for b0, b1 in zip(_L(cp, "quantitesReferentielles"), _L(P, "quantitesReferentielles")):
+        cmp("grandeur " + (b0.get("code") or ""), b0.get("quantite"), b1.get("quantite"), 0.001)
+        for x0, x1 in zip(_L(b0, "parOuvrage"), _L(b1, "parOuvrage")):
+            cmp("grandeur %s/%s" % (b0.get("code"), x0.get("ouvrage")), x0.get("quantite"), x1.get("quantite"), 0.001)
+    tx = cp.get("totaux") or {}
+    cmp("total investissement", tx.get("coutInvestissement"), T["inv"], tol)
+    cmp("total réalisation", tx.get("coutRealisation"), T["real"], tol)
+    cmp("total ouvrage", tx.get("coutOuvrage"), T["ouv"], tol)
+    return ec, T, passes
 
 
 # ───────────────────────────── Programme principal ─────────────────────────────
@@ -1146,21 +1813,30 @@ def main(argv):
                           "" if ref else " [sans référence moteur Deltaproject]"))
         rapport += ["    " + e for e in ecarts[:40]] + (["    …"] if len(ecarts) > 40 else [])
         rapport += ["    (remarque) " + e for e in remarques[:10]] + (["    (remarques …)"] if len(remarques) > 10 else [])
-    for f in sorted(glob.glob(os.path.join(raw_dir, "costplanning_*.json"))):
+    cp_ok = cp_ec = 0
+    for f in sorted(glob.glob(os.path.join(raw_dir, "costplanning_*.json")),
+                    key=lambda f: int(re.sub(r"\D", "", os.path.basename(f)) or 0)):
         doc = re.search(r"costplanning_(\d+)\.json$", f).group(1)
         raw = json.load(open(f, encoding="utf-8"))
-        header = ent["COSTPLANNINGDOCUMENT"].get(doc) or {"ID": int(doc)}
-        cp = convert_costplanning(raw, header)
+        header = dict(ent["COSTPLANNINGDOCUMENT"].get(doc) or {"ID": int(doc)})
+        header["_subprojects"] = {str(s.get("CODE")): s.get("ID") for s in ent["SUBPROJECT"].values()
+                                  if s.get("PROJECT_ID") == header.get("PROJECT_ID") and s.get("CODE")}
+        cp = convert_costplanning(raw, header, racine)
         out["costplanning"][str(doc)] = cp
-        e = verifier_planification(cp)
-        rapport.append("CP %s (projet %s) : %d éléments, coût d'investissement %.2f — %s"
-                       % (doc, cp["projetId"], len(cp["elements"]), cp["totaux"]["coutInvestissement"],
-                          "OK" if not e else "%d écart(s)" % len(e)))
-        rapport += ["    " + x for x in e[:20]]
+        e, T, passes = verifier_planification(cp)
+        cp_ok += 1 if not e else 0
+        cp_ec += len(e)
+        rapport.append("CP %s (projet %s, v%d, système %s) : %d éléments, %d grandeurs ; investissement %.2f, réalisation %.2f, "
+                       "ouvrage %.2f, TVA %.2f — moteur de référence (%d passages) : %s"
+                       % (doc, cp["projetId"], cp["schema"], cp["systeme"], len(cp["elements"]), len(cp["quantitesReferentielles"]),
+                          T["inv"], T["real"], T["ouv"], T["tva"], passes,
+                          "0 écart" if not e else "%d écart(s) — DOCUMENT SIGNALÉ" % len(e)))
+        rapport += ["    " + x for x in e[:20]] + (["    …"] if len(e) > 20 else [])
     with open(sortie, "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(",", ":"))
-    rapport.insert(0, "Contrôles des coûts : %d convertis, %d sans écart, %d écart(s) au total. Planifications : %d."
-                   % (len(out["costcontrol"]), tot_ok, tot_ec, len(out["costplanning"])))
+    rapport.insert(0, "Contrôles des coûts : %d convertis, %d sans écart, %d écart(s) au total. Planifications (v%d) : %d converties, "
+                   "%d sans écart, %d écart(s) au total."
+                   % (len(out["costcontrol"]), tot_ok, tot_ec, CP_SCHEMA, len(out["costplanning"]), cp_ok, cp_ec))
     texte = "\n".join(rapport)
     if opts.get("--rapport"):
         open(opts["--rapport"], "w", encoding="utf-8").write(texte + "\n")

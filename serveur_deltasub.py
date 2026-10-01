@@ -123,6 +123,10 @@ def _ch08_manual(h):
         except (BrokenPipeError, ConnectionResetError):
             pass
 # ── fin CH-08 lot 1 ──
+CH08_PIT |= {"contactowner", "contact", "bankaccount", "contact_property", "contactnote", "contactgroup",
+             "contactgroup_contact", "contactquery", "projectmember", "projectactivity_staff"}   # CH-04 lot 1 : adresses et participations touchées dans DeltaSub
+CH08_CLE.update({"contactowner": "CREATED", "contact": "CONTACTOWNER_ID", "bankaccount": "CONTACTOWNER_ID",
+                 "contactnote": "CONTACT_ID", "contactgroup": "NAME", "contactquery": "NAME", "projectmember": "PROJECT_ID"})   # CH-04 : collisions d'identifiant
 PROTECTED_IF_EDITED |= {"modele", "modelegroupe", "formtemplate", "formtemplategroup"}   # CH-10 lot 2 : anciens modèles modifiés ou importés dans DeltaSub
 PROTECTED_IF_EDITED |= {"costestimatedpdoc"}   # CH-02 lot 3 : documents .dpdoc des devis
 PROTECTED_IF_EDITED |= {"cocodoc"}   # CH-01 : documents du contrôle des coûts créés ou modifiés dans DeltaSub (conservés au ré-import)

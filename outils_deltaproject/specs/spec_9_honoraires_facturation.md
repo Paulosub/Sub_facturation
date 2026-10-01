@@ -578,6 +578,10 @@ phase = Σ phases partielles (Part, Tm, Tp, H)   ;   Part affichée = P · q/100
 - **Phase partielle** « Modifier » :
   - « Facteur de groupe » (I) ; « Part (q = 100%) » (P) ; « Part (q <= 100%) » (P·q/100, lecture seule) ; « Tarif horaire par phase » ; « Facteur pour prestations spéciales » (S) ;
   - OK exige une Part.
+- **Ajout DeltaSub (absent de Deltaproject, demande de Paulo du 01.10.2026)** — bouton « Prestations SIA 102 » de la barre du tableau :
+  - liste à cocher des phases partielles 3x–5x : celles du calcul, puis celles de l'affaire, puis les phases standards (tables `phase` / `subphase`), avec la part SIA (q = 100 %) modifiable ; défauts 31 = 9, 32 = 21, 33 = 2,5, 41 = 18, 51 = 16, 52 = 29, 53 = 4,5 ;
+  - OK : q := Σ des parts cochées ; P d'une prestation retenue := part / q · 100 (ΣP = 100, donc pas d'avertissement « facteur q » à l'ouverture) ; les prestations non cochées sortent du tableau ; I, tarif et S déjà saisis sont gardés ; Tm puis « Calculer les phases » sont relancés ;
+  - le JSON `CALCULATIONDETAILS` garde le format d'origine ; le bouton est grisé en consultation.
 
 #### 4.6.3 Coût déterminant B par CFC (`ProjectFeeBkpAmountDialog`)
 

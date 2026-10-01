@@ -8094,8 +8094,11 @@ async function feSIA(W,done,ro){ const p=W.p, cur=hfCur(p);   // ro : consultati
   const bEd=ibtn({i:'edit',t:'Modifier',fn:()=>{ const r=selSp(); if(r) feSubPhase(r.sp,hfNum(fQ.value)||0,cur,()=>{ drawT(); setDirty(false,true); }); }});
   const drawT=()=>{ grid(tb,Object.assign(ot,{key:r=>r.key,cols:FE_PHCOLS,rows:rows(),sort:null,state:{},onSel:()=>{ bEd.disabled=!selSp(); },
     onDbl:r=>{ if(r.kind==='sp') feSubPhase(r.sp,hfNum(fQ.value)||0,cur,()=>{ drawT(); setDirty(false,true); }); }})); feBold(tb,ot,r=>r.kind!=='sp'); bEd.disabled=!selSp(); };
-  const bCalc=ibtn({i:'analyse',t:'Calculer les phases',menu:()=>[{t:'Calculer les phases',fn:()=>{ const hh=hfNum(fH.value)||0;
-    F.phases.forEach(ph=>ph.Sub.forEach(sp=>{ if(!+sp.Rate) sp.Rate=hh; })); tabTm=hfNum(fTm.value)||0; tabQ=hfNum(fQ.value)??0; drawT(); setDirty(false,true); }}]});
+  const calcPh=()=>{ const hh=hfNum(fH.value)||0;
+    F.phases.forEach(ph=>ph.Sub.forEach(sp=>{ if(!+sp.Rate) sp.Rate=hh; })); tabTm=hfNum(fTm.value)||0; tabQ=hfNum(fQ.value)??0; drawT(); setDirty(false,true); };
+  const bCalc=ibtn({i:'analyse',t:'Calculer les phases',menu:()=>[{t:'Calculer les phases',fn:calcPh}]});
+  const bSel=ibtn({i:'list',label:'Prestations SIA 102',t:'Choisir les prestations par phase SIA 102',dis:ro,fn:()=>feSiaSel(F,p,hfNum(fQ.value)||0,r=>{
+    F.phases=r.phases; fQ.value=num(r.q,2); calcTm(); calcPh(); })});
   const bG=ibtn(mgGear(ot,'Phases_3-5',ro?null:()=>[{t:'Transférer les heures et les coûts dans l’analyse de l’affaire',fn:()=>feBudgetPhases(p,rows(),true)},
     {t:'Ajouter les heures et les coûts au budget dans l’analyse de l’affaire',fn:()=>feBudgetPhases(p,rows(),false)}]));
   const tot=k=>{ const r=rows(); return dpRound(r[r.length-1][k]); };
@@ -8108,7 +8111,7 @@ async function feSIA(W,done,ro){ const p=W.p, cur=hfCur(p);   // ro : consultati
       formRows([['Part de prestations, en pourcent q',L(fQ,feUnit('%'))],['Facteur d’ajustement r',fR],['Degré de difficulté n',fN],['Majoration pour transformation u',fU],
         ['Temps moyen nécessaire, en heures',L(fTm,feUnit('h'))]],400)),
     h('div',{style:{display:'flex',alignItems:'flex-end',gap:'16px'}},h('div',{style:{flex:1}},feSec('Honoraires d’après les phases 3-5')),rec),
-    phead([bCalc,bEd,bG]),tb,
+    phead([bCalc,bEd,bSel,bG]),tb,
     h('div',{style:{display:'flex',gap:'30px',justifyContent:'flex-end',marginTop:'10px'}},L(h('span',{},'Honoraires'),fA,feUnit(cur),pick(fA,'H')),L(h('span',{},'Temps prévu'),fT,feUnit('h'),pick(fT,'Tp'))));
   D=dialog({title:'Honoraires d’après le coût de l’ouvrage',width:'1160px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
     if(hfNum(fA.value)==null||hfNum(fT.value)==null) return false;
@@ -8124,6 +8127,44 @@ function feSubPhase(sp,q,cur,done){ const I=v=>feAmt(v,false,110);
     ['Tarif horaire par phase',feLine(fR,feUnit(cur+'/h'))],['Facteur pour prestations spéciales',fS]],460),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
       const v=[fI,fP,fR,fS].map(x=>hfNum(x.value)); if(v.some(x=>x==null)) return false; [sp.I,sp.P,sp.Rate,sp.S]=v; }}]},done);
   const ok=feOk(D), g=()=>{ ok.disabled=[fI,fP,fR,fS].some(x=>hfNum(x.value)==null); }; fP.oninput=()=>{ setPq(); g(); }; fI.oninput=fR.oninput=fS.oninput=g; setPq(); g(); }
+
+/* ── Choix des prestations SIA 102 (ajout DeltaSub : Deltaproject ne propose que « Modifier » par phase partielle) ──
+   Liste : phases partielles du calcul, puis celles des phases 3-5 de l'affaire, puis les phases standards (tables phase / subphase).
+   OK : q = Σ des parts SIA cochées ; part P d'une prestation retenue = part SIA / q · 100 (ΣP = 100, comme l'attend l'original) ;
+   les prestations non cochées sortent du tableau. Le format CALCULATIONDETAILS ne change pas. */
+function feSiaList(F,p,q){ const L=new Map(), ph=new Map(), k=(a,b)=>a+'.'+b, qq=q>0?q:100;
+  const addPh=(n,na)=>{ if(!ph.has(n)) ph.set(n,na); }, add=(pn,sn,na,o)=>{ if(!L.has(k(pn,sn))) L.set(k(pn,sn),{Ph:pn,Nu:sn,Na:na,...o}); };
+  (F.phases||[]).forEach(x=>{ addPh(+x.Nu,x.Na); (x.Sub||[]).forEach(sp=>{ const on=(+sp.P||0)>0; add(+x.Nu,+sp.Nu,sp.Na,{on,part:on?(+sp.P)*qq/100:FE_PARTS[+sp.Nu]||0,sp}); }); });
+  DS.by('projectphase','PROJECT_ID',p.ID).filter(x=>+x.NUMBER>2&&+x.NUMBER<6).forEach(x=>{ addPh(+x.NUMBER,nm(x));
+    DS.by('projectsubphase','PROJECTPHASE_ID',x.ID).forEach(sp=>add(+x.NUMBER,+sp.NUMBER,nm(sp),{on:false,part:FE_PARTS[+sp.NUMBER]||0})); });
+  DS.all('phase').filter(x=>+x.NUMBER>2&&+x.NUMBER<6).forEach(x=>{ addPh(+x.NUMBER,nm(x));
+    DS.by('subphase','PHASE_ID',x.ID).forEach(sp=>add(+x.NUMBER,+sp.NUMBER,nm(sp),{on:false,part:FE_PARTS[+sp.NUMBER]||0})); });
+  return {ph,rows:[...L.values()].sort((a,b)=>a.Ph-b.Ph||a.Nu-b.Nu)}; }
+function feSiaSel(F,p,q,done){ const {ph,rows}=feSiaList(F,p,q), qL=h('b'), D0={};
+  const tot=()=>rows.filter(r=>r.on).reduce((s,r)=>s+(hfNum(r.inp.value)||0),0);
+  const upd=()=>{ const t=tot(); qL.textContent=num(t,2)+' %'; rows.forEach(r=>{ r.inp.disabled=!r.on; });
+    [...ph.keys()].forEach(n=>{ const c=D0[n], s=rows.filter(r=>r.Ph===n); if(c){ c.checked=s.length&&s.every(r=>r.on); c.indeterminate=!c.checked&&s.some(r=>r.on); } });
+    const b=D&&feOk(D); if(b) b.disabled=!(t>0)||rows.some(r=>r.on&&hfNum(r.inp.value)==null); };
+  const tb=h('tbody');
+  [...ph.keys()].sort((a,b)=>a-b).forEach(n=>{ const s=rows.filter(r=>r.Ph===n); if(!s.length) return;
+    const c=D0[n]=h('input',{type:'checkbox'}); c.onchange=()=>{ s.forEach(r=>{ r.on=c.checked; r.chk.checked=c.checked; }); upd(); };
+    tb.append(h('tr',{class:'grp'},h('td',{class:'c'},c),h('td',{},String(n)),h('td',{},ph.get(n)||''),h('td',{class:'r'})));
+    s.forEach(r=>{ r.chk=h('input',{type:'checkbox',checked:r.on||null}); r.chk.onchange=()=>{ r.on=r.chk.checked; upd(); };
+      r.inp=h('input',{class:'inp',value:num(r.part,2),style:{width:'80px',textAlign:'right'}}); r.inp.oninput=upd;
+      tb.append(h('tr',{},h('td',{class:'c'},r.chk),h('td',{},String(r.Nu)),h('td',{title:r.Na},r.Na),h('td',{class:'r'},feLine(r.inp,feUnit('%'))))); }); });
+  const all=v=>{ rows.forEach(r=>{ r.on=v; r.chk.checked=v; }); upd(); };
+  const tab=h('table',{class:'g'},h('colgroup',{},h('col',{style:{width:'40px'}}),h('col',{style:{width:'50px'}}),h('col',{}),h('col',{style:{width:'150px'}})),
+    h('thead',{},h('tr',{},h('th',{class:'c'},''),h('th',{},'N°'),h('th',{},'Prestations (phases partielles)'),h('th',{class:'r'},'Part SIA (q = 100%)'))),tb);
+  const body=h('div',{style:{width:'620px'}},
+    h('div',{style:{color:'#555',marginBottom:'8px'}},'Cochez les prestations comprises dans l’offre. La part de prestations q est la somme des parts cochées ; la répartition des phases est recalculée sur 100 %.'),
+    phead([{label:'Tout cocher',fn:()=>all(true)},{label:'Tout décocher',fn:()=>all(false)}]),
+    h('div',{style:{maxHeight:'380px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}},tab),
+    h('div',{style:{display:'flex',justifyContent:'flex-end',gap:'8px',marginTop:'10px'}},'Part de prestations, en pourcent q :',qL));
+  const D=dialog({title:'Prestations selon SIA 102',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const t=tot(); if(!(t>0)) return false;
+    const out=[]; rows.filter(r=>r.on).forEach(r=>{ let x=out.find(o=>o.Nu===r.Ph); if(!x){ x={Nu:r.Ph,Na:ph.get(r.Ph)||'',Sub:[]}; out.push(x); }
+      const o=r.sp||{I:1,Rate:0,S:1}; x.Sub.push({Nu:r.Nu,Na:r.Na,P:(hfNum(r.inp.value)||0)/t*100,I:+o.I,Rate:+o.Rate,S:+o.S}); });
+    done({q:t,phases:out}); }}]});
+  upd(); }
 
 /* ── Coût déterminant B par CFC (ProjectFeeBkpAmountDialog, §4.6.3) : OK → B = Σ des groupes principaux ── */
 function feBkp(F,cur,done){ const S=JSON.parse(JSON.stringify(F.bkp||[])), o={}, box=feBox(380,380); let sel=null;

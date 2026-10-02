@@ -1561,7 +1561,7 @@ function domainView(C,p,d){
   if(d==='Soumission'){ svDomain(C,top,pane,p); return; }
   if(d==='Devis général'&&typeof ch02dDomain==='function'){ ch02dDomain(C,top,pane,p); return; }   // CH-02 lot 4 : domaine « Devis général »
   if(d==='Devis général'){ C.append(h('div',{class:'ph'},h('h2',{},'Devis général'),'Les devis de l’affaire s’ouvrent dans ',h('a',{href:'#',onclick:e=>{ e.preventDefault(); go('devis',{project:p.ID}); }},'Bâtiment ▸ Devis'),'.')); return; }
-  if(d==='Contrôle des coûts'){ C.append(h('div',{class:'ph'},h('h2',{},'Contrôle des coûts'),'Les contrôles des coûts de l’affaire s’ouvrent dans ',h('a',{href:'#',onclick:e=>{ e.preventDefault(); go('coco',{project:p.ID}); }},'Bâtiment ▸ Contrôle des coûts'),'.')); return; }
+  if(d==='Contrôle des coûts'){ ccDomain(C,top,pane,p); return; }   // domaine « Contrôle des coûts » (project.CostControlFrame)
   const why={'Séances':'Les procès-verbaux de chantier sont rédigés dans le module PV existant.'};
   C.append(h('div',{class:'ph'},h('h2',{},d),why[d]||'Domaine non utilisé au bureau dans Deltaproject (aucune donnée). Il sera reproduit sur demande.'));
 }
@@ -2776,6 +2776,18 @@ VIEWS['coco']={
   },
   refresh(ts){ if(CCV.open){ if(hit(ts,'costcontrol')&&this.editorRefresh) this.editorRefresh(); else if(CCV.docs&&hit(ts,'cocodoc','depotfichier')&&this.editorRefresh) this.editorRefresh(); return; } if(hit(ts,'costcontroldocument','costcontrol','project')){ this.drawA(); this.drawB(); } }
 };
+/* Domaine d'affaire « Contrôle des coûts » (deltaproject.project.CostControlFrame) : Date, Statut, Variante, Numéro, Remarque ; Ouvrir → éditeur de Bâtiment */
+function ccDomain(C,top,pane,p){
+  if(['costcontrol','costcontroldocument'].some(x=>!DS.loaded.has(x))){ C.append(h('div',{class:'ph'},'Chargement des documents…')); DS.need(['costcontrol','costcontroldocument']).then(()=>{ if(!C.isConnected) return; C.innerHTML=''; ccDomain(C,top,pane,p); }); return; }
+  const o=CCV.dd||(CCV.dd={}), cur=()=>DS.get('costcontroldocument',o.sel);
+  const head=phead([{i:'plus',t:'Nouveau',fn:()=>ccEditDoc(p)},{i:'dup',t:'Dupliquer (état intermédiaire)',fn:()=>cur()&&ccDuplicate(cur())},
+    {i:'edit',t:'Editer',menu:()=>[{t:'Ouvrir',dis:!cur(),fn:()=>{ CCV.g.sel=String(p.ID); ccOpen(o.sel); }},{t:'Editer',dis:!cur(),fn:()=>ccEditDoc(p,cur())}]},
+    {i:'minus',t:'Supprimer',fn:async()=>{ const d=cur(); if(d&&await confirmDlg('Supprimer ce contrôle des coûts ?','Supprimer')) DS.save('costcontroldocument',{...d,ISMARKEDASDELETED:1}); }}],{count:1});
+  const draw=()=>{ const rows=DS.by('costcontroldocument','PROJECT_ID',p.ID).filter(d=>!d.ISMARKEDASDELETED);
+    grid(pane,Object.assign(o,{cols:[{k:'CHANGEDDATE',t:'Date',w:90,f:d=>dfr(d.CHANGEDDATE)},{k:'STATECODE',t:'Statut',w:130,f:d=>CC_STATE[d.STATECODE]||''},{k:'VERSION',t:'Variante',w:260},
+      {k:'VERSIONNUMBER',t:'Numéro',w:80,cls:'r'},{k:'NOTE',t:'Remarque'}],rows,sort:['CHANGEDDATE',-1],onDbl:d=>{ CCV.g.sel=String(p.ID); ccOpen(d.ID); },empty:'Aucun contrôle des coûts pour cette affaire.'}));
+    head.setCount(rows.length+' Contrôles des coûts'); };
+  top.append(head,pane); C.append(top); draw(); }   // rafraîchi par affNav.refresh (drawC)
 function ccOpen(id){ if(typeof ch10cGate==='function'&&ch10cGate('costcontroldocument',id,()=>ccOpen(id))) return; CCV.open=+id; CCV.sel=null; CCV.detSel=null; CCV.pres=null; go('coco'); }
 function ccEmpty(id,pid){ return {id,projetId:pid,entete:{},parametres:{centres:{},joursPaiementApresFacture:30,statutPaiementDefaut:'transmis',statutMutationDefaut:'acceptee',contratPrioritaireDefaut:true,texteCompte:'Voir bulletin de versement'},
   genresMutation:[['T1','Transfert','transfert'],['M2','Plus-value','variation'],['M3','Moins-value','variation'],['M4','Décision MO','variation'],['M5','Décision DT','variation'],['M6','Exigence autorités','variation'],['T7','Bénéfice d’adjudication','transfert'],['T8','Perte sur adjudication','transfert'],['C9','Renchérissement','rencherissement']].map(([code,texte,genre])=>({code,texte,genre,actif:true})),
@@ -8104,15 +8116,14 @@ async function feSIA(W,done,ro){ const p=W.p, cur=hfCur(p);   // ro : consultati
   const tot=k=>{ const r=rows(); return dpRound(r[r.length-1][k]); };
   const pick=(inp,k)=>ibtn({i:'prev',t:'Suggestions',menu:()=>feSuggest(tot(k)).flatMap((v,i)=>[...(i===1?['-']:[]),{t:hfN(v),fn:()=>{ inp.value=hfN(v); inp.style.background=''; guard(); }}])});
   const L=(...x)=>feLine(...x);
+  /* une colonne, dans l'ordre de la fenêtre d'origine (B, Z1, Z2, p, q, r, n, u, Tm, h), pied empilé à gauche */
   const body=h('div',{style:{minWidth:'1060px'}},feSec('Calcul d’honoraires'),
-    h('div',{style:{display:'grid',gridTemplateColumns:'max-content max-content',gap:'4px 40px'}},
-      formRows([['Coût d’ouvrage déterminant le temps nécessaire',L(fB,feUnit(cur),bB)],['Z-valeur Z1',L(fZ1,sugg(fZ1,FE_Z1))],['Z-valeur Z2',L(fZ2,sugg(fZ2,FE_Z2))],
-        ['Facteur de base pour le temps nécessaire p',fP],['Taux horaire(s) h',L(fH,feUnit(cur+'/h'),sugg(fH,FE_RATE))]],500),
-      formRows([['Part de prestations, en pourcent q',L(fQ,feUnit('%'))],['Facteur d’ajustement r',fR],['Degré de difficulté n',fN],['Majoration pour transformation u',fU],
-        ['Temps moyen nécessaire, en heures',L(fTm,feUnit('h'))]],400)),
+    formRows([['Coût d’ouvrage déterminant le temps nécessaire',L(fB,feUnit(cur),bB)],['Z-valeur Z1',L(fZ1,sugg(fZ1,FE_Z1))],['Z-valeur Z2',L(fZ2,sugg(fZ2,FE_Z2))],
+      ['Facteur de base pour le temps nécessaire p',fP],['Part de prestations, en pourcent q',L(fQ,feUnit('%'))],['Facteur d’ajustement r',fR],['Degré de difficulté n',fN],
+      ['Majoration pour transformation u',fU],['Temps moyen nécessaire, en heures',L(fTm,feUnit('h'))],['Taux horaire(s) h',L(fH,feUnit(cur+'/h'),sugg(fH,FE_RATE))]],560),
     h('div',{style:{display:'flex',alignItems:'flex-end',gap:'16px'}},h('div',{style:{flex:1}},feSec('Honoraires d’après les phases 3-5')),rec),
     phead([bCalc,bEd,bSel,bG]),tb,
-    h('div',{style:{display:'flex',gap:'30px',justifyContent:'flex-end',marginTop:'10px'}},L(h('span',{},'Honoraires'),fA,feUnit(cur),pick(fA,'H')),L(h('span',{},'Temps prévu'),fT,feUnit('h'),pick(fT,'Tp'))));
+    h('div',{style:{marginTop:'10px'}},formRows([['Honoraires',L(fA,feUnit(cur),pick(fA,'H'))],['Temps prévu',L(fT,feUnit('h'),pick(fT,'Tp'))]],110)));
   D=dialog({title:'Honoraires d’après le coût de l’ouvrage',width:'1160px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
     if(hfNum(fA.value)==null||hfNum(fT.value)==null) return false;
     Object.assign(F,{B:hfNum(fB.value)||0,Z1:hfNum(fZ1.value)||0,Z2:hfNum(fZ2.value)||0,P,Q:hfNum(fQ.value)||0,R:hfNum(fR.value)||0,N:hfNum(fN.value)||0,U:hfNum(fU.value)||0,

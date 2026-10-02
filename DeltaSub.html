@@ -1358,7 +1358,7 @@ VIEWS['aff-gestion']={
     const head=phead([
       {i:'plus',t:'Nouvelle affaire',fn:()=>editProject()},{i:'edit',t:'Editer l’affaire',fn:need(editProject)},{i:'minus',t:'Supprimer l’affaire',fn:need(delProject)},
       {i:'person',t:'Intervenants',menu:()=>[{t:'Attribuer les intervenants',fn:need(cfgMembers)},{t:'Attribuer les activités aux collaborateurs',fn:need(cfgActivities)}]},
-      {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)},{t:'Configurer les frais …',fn:need(ch17aOpen)}]},
+      {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)},{t:'Configurer les séances',fn:need(mtTypesDialog)},{t:'Configurer les frais …',fn:need(ch17aOpen)}]},
       {i:'tree',t:'Subdivisions',menu:()=>[{t:'Configurer la subdivision par ouvrages et localisations',fn:need(cfgSubprojects)}]},
       {i:'save',t:'Modèles et documents externes',menu:()=>[{t:'Définir les modèles …',fn:need(p=>tplNeed().then(()=>defineTemplates(p)))},{t:'Dossier des documents externes …',fn:need(p=>editProject(p))}]},
       {i:'doc',t:'Documents',menu:()=>[{t:'Liste des affaires',fn:()=>printProjects(AF.g.view)}]},
@@ -1562,9 +1562,289 @@ function domainView(C,p,d){
   if(d==='Devis général'&&typeof ch02dDomain==='function'){ ch02dDomain(C,top,pane,p); return; }   // CH-02 lot 4 : domaine « Devis général »
   if(d==='Devis général'){ C.append(h('div',{class:'ph'},h('h2',{},'Devis général'),'Les devis de l’affaire s’ouvrent dans ',h('a',{href:'#',onclick:e=>{ e.preventDefault(); go('devis',{project:p.ID}); }},'Bâtiment ▸ Devis'),'.')); return; }
   if(d==='Contrôle des coûts'){ ccDomain(C,top,pane,p); return; }   // domaine « Contrôle des coûts » (project.CostControlFrame)
-  const why={'Séances':'Les procès-verbaux de chantier sont rédigés dans le module PV existant.'};
+  if(d==='Séances'){ mtDomain(C,top,pane,p); return; }   // MeetingSequenceFrame
+  const why={};
   C.append(h('div',{class:'ph'},h('h2',{},d),why[d]||'Domaine non utilisé au bureau dans Deltaproject (aucune donnée). Il sera reproduit sur demande.'));
 }
+
+/* ═══ Domaine d'affaire « Séances » (deltaproject.project.MeetingSequenceFrame et dialogues) ═══
+   Tables Deltaproject : meetingsequence (série), meeting (procès-verbal / discussion), meetingparticipant, meetingitem,
+   projectmeetingtype (genres de l'affaire, copiés du dossier standard meetingtype).
+   Point : STRUCTURINGLEVEL 0-2 = Titre 1-3 (numérotés 1 / 1.1 / 1.1.1, MeetingItemRenumeration), 3 = Texte (sans numéro) ;
+   ITEMCATEGORYCODE 0 Aucun, 1 Information (I), 2 Décision (D), 3 Tâche (T), 4 Point ouvert (O). */
+const MT_CAT=[[0,'Aucun',''],[1,'Information','I'],[2,'Décision','D'],[3,'Tâche','T'],[4,'Point ouvert','O']];
+const MT_LEVEL=['Titre 1','Titre 2','Titre 3','Texte'];
+const MT_ABS=['Excusé','Non excusé','En vacances'];
+const MT={seq:{},mtg:{},type:null,clip:[]};
+const mtCatSym=c=>(MT_CAT.find(x=>x[0]===+c)||MT_CAT[0])[2], mtCatName=c=>(MT_CAT.find(x=>x[0]===+c)||MT_CAT[0])[1];
+const mtLegend=()=>MT_CAT.filter(x=>x[2]).map(x=>x[2]+' = '+x[1]).join(', ');
+const mtMeetings=s=>s?DS.by('meeting','MEETINGSEQUENCE_ID',s.ID).slice().sort((a,b)=>cmp(a.MEETINGDATE,b.MEETINGDATE)||cmp(+a.MEETINGNUMBER||0,+b.MEETINGNUMBER||0)||cmp(a.ID,b.ID)):[];
+const mtItems=m=>m?DS.by('meetingitem','MEETING_ID',m.ID).slice().sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)||cmp(a.ID,b.ID)):[];
+const mtParts=m=>m?DS.by('meetingparticipant','MEETING_ID',m.ID).slice().sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)||cmp(a.ID,b.ID)):[];
+const mtTime=t=>t?String(t).slice(0,5):'';
+const mtDesc=m=>m?[m.MEETINGNUMBER,m.SUBJECT].filter(Boolean).join(' ')+(m.MEETINGDATE?' — '+dfr(m.MEETINGDATE):''):'';
+const mtSeqLabel=s=>s?[s.NUMBER,s.SUBJECT].filter(Boolean).join(' '):'';
+const mtTypeName=id=>nm(DS.get('projectmeetingtype',id))||'';
+const mtPartContact=x=>DS.get('contact',x.CONTACT_ID);
+/* participant : personne (entité de type personne) et société (« Appartient à », sinon l'entité elle-même) */
+const mtOwner=c=>c&&DS.get('contactowner',c.CONTACTOWNER_ID);
+const mtPerson=c=>{ const o=mtOwner(c); return o&&o.TYPECODE===1?ownerName(o):contactName(c); }, mtCompany=c=>{ const o=mtOwner(c), r=relOf(c); return o&&o.TYPECODE===1?(r?ownerName(r,true):''):(o?ownerName(o):''); };
+const mtPartName=x=>mtPerson(mtPartContact(x));
+const mtLeader=m=>mtParts(m).filter(x=>+x.ISLEADER).map(x=>x.INITIALS||mtPartName(x)).join(', ');
+/* numérotation : renvoie les ops des points dont le numéro ou l'ordre change */
+function mtRenumber(items){ const L=[0,0,0], ops=[];
+  items.forEach((it,i)=>{ const lv=+it.STRUCTURINGLEVEL||0; let n=null;
+    if(lv>=0&&lv<3){ L[lv]++; for(let j=lv+1;j<3;j++) L[j]=0; n=L.slice(0,lv+1).join('.'); }
+    if((it.NUMBER??null)!==n||+it.SORTORDER!==i) ops.push({t:'meetingitem',id:it.ID,val:{...it,NUMBER:n,SORTORDER:i}}); });
+  return ops; }
+
+/* ── Vue du domaine ── */
+function mtDomain(C,top,pane,p){
+  const wrap=h('div',{class:'split',style:{gap:0,flex:1,minHeight:0,flexDirection:'row'}});
+  const L=h('div',{class:'col',style:{flex:'1 1 55%',border:0,borderRight:'1px solid var(--line)'}}), R=h('div',{class:'col',style:{flex:'1 1 45%',border:0}});
+  const pS=h('div',{class:'pane',style:{flex:'1 1 45%'}}), pM=h('div',{class:'pane',style:{flex:'1 1 55%'}});
+  const pP=h('div',{class:'pane',style:{flex:'1 1 40%',padding:'6px 10px'}}), pI=h('div',{class:'pane',style:{flex:'1 1 60%',padding:'6px 10px'}});
+  const seq=()=>DS.get('meetingsequence',MT.seq.sel), mtg=()=>{ const m=DS.get('meeting',MT.mtg.sel); return m&&seq()&&m.MEETINGSEQUENCE_ID===seq().ID?m:null; };
+  const hS=phead([{i:'plus',t:'Nouveau',fn:()=>mtSeqDialog(p)},{i:'edit',t:'Editer',fn:()=>seq()&&mtSeqDialog(p,seq())},
+    {i:'minus',t:'Supprimer',fn:()=>seq()&&mtSeqDelete(seq())},
+    {i:'filter',t:'Filtre',menu:()=>[{t:'Tous',chk:!MT.type,fn:()=>{ MT.type=null; draw(); }},...DS.by('projectmeetingtype','PROJECT_ID',p.ID).sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)).map(x=>({t:nm(x),chk:MT.type===x.ID,fn:()=>{ MT.type=x.ID; draw(); }}))]},
+    {i:'info',t:'Rechercher dans les points de la série de séances',fn:()=>seq()?mtSearch(seq()):toast('Sélectionnez une série de séances.',true)},
+    {i:'gear',t:'Configurer les séances',fn:()=>mtTypesDialog(p)}],{count:1});
+  const hM=phead([{i:'plus',t:'Ajouter un procès-verbal',menu:()=>[{t:'Ajouter un procès-verbal',dis:!seq(),fn:()=>mtMeetingDialog(seq())},{t:'Dupliquer un procès-verbal',dis:!mtg(),fn:()=>mtDuplicate(mtg())}]},
+    {i:'edit',t:'Editer le procès-verbal',menu:()=>mtEditMenu(mtg())},{i:'minus',t:'Supprimer le procès-verbal',fn:()=>mtg()&&mtMeetingDelete(mtg())},
+    {i:'doc',t:'Documents',menu:()=>mtDocMenu(p,seq(),mtg())}],{count:1});
+  const hP=phead([h('b',{style:{padding:'0 6px'}},'Participants'),{i:'edit',t:'Editer les participants',fn:()=>mtg()&&mtPartsDialog(mtg())},{i:'gear',t:'Participants',menu:()=>mtPartsMenu(mtg())}]);
+  const hI=phead([h('b',{style:{padding:'0 6px'}},'Points de l’ordre du jour'),{i:'edit',t:'Modifier tous les points',fn:()=>mtg()&&mtItemsDialog(mtg())}]);
+  L.append(hS,pS,h('div',{style:{borderTop:'1px solid var(--line)'}}),hM,pM); R.append(hP,pP,h('div',{style:{borderTop:'1px solid var(--line)'}}),hI,pI); wrap.append(L,R);
+  top.append(wrap); C.append(top);
+  const drawRight=()=>{ const m=mtg(); pP.innerHTML=''; pI.innerHTML='';
+    if(!m){ pP.append(h('div',{class:'empty'},'-')); pI.append(h('div',{class:'empty'},'-')); return; }
+    const ps=mtParts(m), ti=h('table',{class:'g',style:{tableLayout:'auto'}},h('tbody',{},...(ps.length?ps.map(x=>{ const c=mtPartContact(x);
+      return h('tr',{},h('td',{},mtPerson(c)),h('td',{},mtCompany(c)),h('td',{},x.INITIALS||''),h('td',{},x.PROJECTROLE||''),
+        h('td',{},+x.ISPRESENT?'présent':(x.ATTENDANCENOTE||'')),h('td',{},+x.ISRECIPIENT?'Distribution':'')); }):[h('tr',{},h('td',{},'-'))])));
+    pP.append(ti); pP.ondblclick=()=>mtPartsDialog(m);
+    const its=mtItems(m).filter(x=>(+x.STRUCTURINGLEVEL||0)<3);
+    pI.append(h('table',{class:'g',style:{tableLayout:'auto'}},h('tbody',{},...(its.length?its.map(x=>h('tr',{},h('td',{style:{width:'60px'}},x.NUMBER||''),h('td',{style:{fontWeight:+x.STRUCTURINGLEVEL===0?600:400}},x.TITLE||''))):[h('tr',{},h('td',{},'-'))]))));
+    pI.ondblclick=()=>mtItemsDialog(m); };
+  const drawM=()=>{ const s=seq(), rs=mtMeetings(s);
+    grid(pM,Object.assign(MT.mtg,{cols:[{k:'MEETINGNUMBER',t:'Numéro',w:70,v:x=>+x.MEETINGNUMBER||0},{k:'SUBJECT',t:'Titre',w:200},{k:'MEETINGDATE',t:'Date',w:86,f:x=>dfr(x.MEETINGDATE)},
+      {k:'TIMEFROM',t:'De',w:50,f:x=>mtTime(x.TIMEFROM)},{k:'TIMETO',t:'au',w:50,f:x=>mtTime(x.TIMETO)},{k:'LOCATION',t:'Lieu',w:120},
+      {k:'np',t:'Participants',w:80,cls:'r',v:x=>mtParts(x).length,f:x=>String(mtParts(x).length)},{k:'ld',t:'Animation',w:90,v:mtLeader,f:x=>esc(mtLeader(x))},
+      {k:'ISDRAFT',t:'Brouillon',w:70,cls:'c',f:x=>+x.ISDRAFT?'✓':''}],rows:rs,sort:['MEETINGDATE',1],onSel:drawRight,onDbl:x=>mtMeetingDialog(s,x),
+      empty:s?'Aucun procès-verbal.':'Sélectionnez une série de séances.'}));
+    hM.setCount(rs.length+' Procès-verbaux'); drawRight(); };
+  const draw=()=>{ const rs=DS.by('meetingsequence','PROJECT_ID',p.ID).filter(s=>!MT.type||s.PROJECTMEETINGTYPE_ID===MT.type);
+    grid(pS,Object.assign(MT.seq,{cols:[{k:'NUMBER',t:'Numéro',w:70},{k:'SUBJECT',t:'Sujet',w:220},{k:'g',t:'Genre',w:150,v:s=>mtTypeName(s.PROJECTMEETINGTYPE_ID),f:s=>esc(mtTypeName(s.PROJECTMEETINGTYPE_ID))},
+      {k:'n',t:'Discussions',w:80,cls:'r',v:s=>mtMeetings(s).length,f:s=>String(mtMeetings(s).length)},{k:'ld',t:'Animation',w:90,f:s=>esc(mtLeader(mtMeetings(s).slice(-1)[0]))},
+      {k:'ISCLOSED',t:'Terminée',w:70,cls:'c',f:s=>+s.ISCLOSED?'✓':''}],rows:rs,sort:['NUMBER',1],onSel:()=>{ MT.mtg.sel=null; drawM(); },onDbl:s=>mtSeqDialog(p,s),
+      empty:'Aucune série de séances.'}));
+    hS.setCount(rs.length+' Séries de séances'); drawM(); };
+  draw(); }
+function mtEditMenu(m){ return [{t:'Editer le procès-verbal',dis:!m,fn:()=>mtMeetingDialog(DS.get('meetingsequence',m.MEETINGSEQUENCE_ID),m)},
+  {t:'Editer les participants',dis:!m,fn:()=>mtPartsDialog(m)},{t:'Modifier tous les points',dis:!m,fn:()=>mtItemsDialog(m)}]; }
+function mtPartsMenu(m){ const has=!!(m&&mtParts(m).length);
+  return [{t:'Marquer tous comme "présent"',dis:!has,fn:()=>mtSetAll(m,'ISPRESENT')},{t:'Marquer tous comme "en distribution"',dis:!has,fn:()=>mtSetAll(m,'ISRECIPIENT')},'-',
+    {t:'Copier les courriels dans le presse-papier',dis:!has,fn:()=>mtEmails(m,()=>true)},{t:'Copier les courriels des présents dans le presse-papier',dis:!has,fn:()=>mtEmails(m,x=>+x.ISPRESENT)},
+    {t:'Copier les courriels de la distribution dans le presse-papier',dis:!has,fn:()=>mtEmails(m,x=>+x.ISRECIPIENT)},'-',{t:'Envoyer une invitation',dis:!has,fn:()=>mtInvite(m)}]; }
+function mtDocMenu(p,s,m){ return [{t:'Envoi courriel',dis:!m||!mtParts(m).length,fn:()=>mtInvite(m)},'-',{t:'Convocation',dis:!m,fn:()=>mtPrint(p,s,m,'agenda')},{t:'Procès-verbal',dis:!m,fn:()=>mtPrint(p,s,m,'minutes')}]; }
+async function mtSetAll(m,k){ const ops=mtParts(m).filter(x=>!+x[k]).map(x=>({t:'meetingparticipant',id:x.ID,val:{...x,[k]:1}})); if(ops.length) await DS.commit(ops); }
+function mtEmails(m,f){ const ls=mtParts(m).filter(f).map(mtPartContact).filter(c=>c&&c.EMAIL1).map(c=>c.EMAIL1); if(!ls.length){ toast('Aucune adresse électronique.',true); return; } ctCopy(ls.join('; '),ls.length+' adresse(s) copiée(s).'); }
+/* « Envoyer une invitation » : ouvre le logiciel de messagerie (rien n'est envoyé automatiquement) */
+function mtInvite(m){ const s=DS.get('meetingsequence',m.MEETINGSEQUENCE_ID), p=s&&DS.get('project',s.PROJECT_ID), nl='\n';
+  const to=mtParts(m).map(mtPartContact).filter(c=>c&&c.EMAIL1).map(c=>c.EMAIL1);
+  const body=[projLabel(p),mtDesc(m)+(m.TIMEFROM?' '+mtTime(m.TIMEFROM)+(m.TIMETO?'-'+mtTime(m.TIMETO):''):'')+(m.LOCATION?', '+m.LOCATION:''),'','Participants',
+    ...mtParts(m).map(x=>'- '+mtPartName(x)+(x.ATTENDANCENOTE?' ('+x.ATTENDANCENOTE+')':'')),'','Points de l’ordre du jour',
+    ...mtItems(m).filter(x=>(+x.STRUCTURINGLEVEL||0)<3).map(x=>(x.NUMBER||'')+' '+(x.TITLE||''))].join(nl);
+  location.href='mailto:'+to.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent('Invitation '+(m.SUBJECT||''))+'&body='+encodeURIComponent(body); }
+
+/* ── Série de séances (MeetingSequenceDialog) ── */
+function mtSeqDialog(p,s){ const v=s?{...s}:{ID:null,PROJECT_ID:p.ID,NUMBER:String(DS.by('meetingsequence','PROJECT_ID',p.ID).length+1),SUBJECT:'',ISCLOSED:0,NOTE:null,PROJECTMEETINGTYPE_ID:null,SUBPROJECT_ID:null,TEMPLATEPROPERTIES:null,DOCUMENTLOCK_ID:null};
+  const types=DS.by('projectmeetingtype','PROJECT_ID',p.ID).sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)), subs=DS.by('subproject','PROJECT_ID',p.ID).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER));
+  const sel=(list,cur,lab)=>h('select',{class:'inp'},h('option',{value:''},''),...list.map(x=>h('option',{value:x.ID,selected:x.ID===cur||null},lab(x))));
+  const fN=h('input',{class:'inp',value:v.NUMBER||'',style:{width:'120px'}}), fS=h('input',{class:'inp',value:v.SUBJECT||''}), fT=sel(types,v.PROJECTMEETINGTYPE_ID,nm),
+    fO=sel(subs,v.SUBPROJECT_ID,x=>[x.CODE,x.DESCRIPTION].filter(Boolean).join(' ')), fC=h('input',{type:'checkbox',checked:+v.ISCLOSED||null}), fR=h('textarea',{class:'inp',rows:3},v.NOTE||'');
+  dialog({title:s?'Editer':'Nouveau',body:h('div',{},formRows([['Numéro',fN],['Sujet',fS],['Genre',types.length?fT:h('div',{},fT,h('div',{style:{color:'#777',fontSize:'12px'}},'Aucun genre : Gestion ▸ Configuration ▸ Configurer les séances.'))],
+      ['Ouvrage',fO],['',h('label',{},fC,' Terminé')],['Remarque',fR]],520)),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!fS.value.trim()){ toast('Le sujet est obligatoire.',true); return false; }
+      Object.assign(v,{NUMBER:fN.value.trim()||null,SUBJECT:fS.value.trim(),PROJECTMEETINGTYPE_ID:fT.value?+fT.value:null,SUBPROJECT_ID:fO.value?+fO.value:null,ISCLOSED:fC.checked?1:0,NOTE:fR.value.trim()||null});
+      await DS.save('meetingsequence',v); MT.seq.sel=String(v.ID); }}]}); }
+async function mtSeqDelete(s){ if(mtMeetings(s).length){ feMsg('Suppression impossible. Vous devez supprimer préalablement tout son contenu.','Avertissement'); return; }
+  if(await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')){ await DS.del('meetingsequence',s.ID); MT.seq.sel=null; } }
+
+/* ── Procès-verbal (MeetingDialog) ; dup = {src, parts, items, pending} pour « Dupliquer un procès-verbal » ── */
+function mtMeetingDialog(s,m,dup){ if(!s) return; const ms=mtMeetings(s), last=ms[ms.length-1];
+  const v=m?{...m}:{ID:null,MEETINGSEQUENCE_ID:s.ID,MEETINGNUMBER:String(Math.max(0,...ms.map(x=>parseInt(x.MEETINGNUMBER,10)||0))+1),SUBJECT:dup?dup.src.SUBJECT:(last?last.SUBJECT:s.SUBJECT)||'',
+    GOAL:dup?dup.src.GOAL:null,MEETINGDATE:today(),TIMEFROM:dup?dup.src.TIMEFROM:null,TIMETO:dup?dup.src.TIMETO:null,LOCATION:dup?dup.src.LOCATION:(last?last.LOCATION:null),MINUTESDATE:null,ISDRAFT:1,NOTE:null,ATTACHEMENTFOLDER:null};
+  const I=(k,w,type)=>h('input',{class:'inp',type:type||'text',value:type==='time'?mtTime(v[k]):(v[k]??''),style:w?{width:w}:null});
+  const fN=I('MEETINGNUMBER','100px'), fS=I('SUBJECT'), fG=I('GOAL'), fD=I('MEETINGDATE','160px','date'), fF=I('TIMEFROM','110px','time'), fT=I('TIMETO','110px','time'), fL=I('LOCATION'),
+    fM=I('MINUTESDATE','160px','date'), fB=h('input',{type:'checkbox',checked:+v.ISDRAFT||null}), fR=h('textarea',{class:'inp',rows:3},v.NOTE||''), fA=I('ATTACHEMENTFOLDER');
+  const tm=x=>x.value?x.value+':00':null;
+  dialog({title:m?'Editer le procès-verbal':'Nouveau procès-verbal',body:formRows([['Numéro',fN],['Titre',fS],['Objectif',fG],['Date de la séance',fD],['Heure',feLine(fF,h('span',{},'au'),fT)],
+      ['Lieu',fL],['Date du procès-verbal',fM],['',h('label',{},fB,' Brouillon')],['Notes',fR],['Annexes',fA]],560),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+      Object.assign(v,{MEETINGNUMBER:fN.value.trim()||null,SUBJECT:fS.value.trim()||null,GOAL:fG.value.trim()||null,MEETINGDATE:fD.value||null,TIMEFROM:tm(fF),TIMETO:tm(fT),
+        LOCATION:fL.value.trim()||null,MINUTESDATE:fM.value||null,ISDRAFT:fB.checked?1:0,NOTE:fR.value.trim()||null,ATTACHEMENTFOLDER:fA.value.trim()||null});
+      const ops=[]; if(v.ID==null) v.ID=DS.newIds('meeting')[0]; ops.push({t:'meeting',id:v.ID,val:v});
+      if(dup){ const ps=dup.parts?mtParts(dup.src):[], pid=ps.length?DS.newIds('meetingparticipant',ps.length):[];
+        ps.forEach((x,i)=>ops.push({t:'meetingparticipant',id:pid[i],val:{...x,ID:pid[i],MEETING_ID:v.ID}}));
+        let its=dup.items?mtItems(dup.src):[]; if(dup.pending) its=its.filter(x=>!+x.ISDONE);
+        const iid=its.length?DS.newIds('meetingitem',its.length):[]; its.forEach((x,i)=>ops.push({t:'meetingitem',id:iid[i],val:{...x,ID:iid[i],MEETING_ID:v.ID,PROJECTTASK_ID:null,SORTORDER:i}})); }
+      await DS.commit(ops); MT.mtg.sel=String(v.ID); }}]}); }
+/* « Dupliquer la séance » (MeetingDuplicateDialog) */
+function mtDuplicate(m){ const s=DS.get('meetingsequence',m.MEETINGSEQUENCE_ID);
+  const cP=h('input',{type:'checkbox',checked:true}), cI=h('input',{type:'checkbox',checked:true}), rA=h('input',{type:'radio',name:'mtdup'}), rP=h('input',{type:'radio',name:'mtdup',checked:true});
+  cI.onchange=()=>{ rA.disabled=rP.disabled=!cI.checked; };
+  dialog({title:'Dupliquer la séance',body:h('div',{style:{display:'grid',gap:'8px',minWidth:'360px'}},h('div',{},mtDesc(m)),h('label',{},cP,' Intégrer les participants'),h('label',{},cI,' Intégrer les points de la séance'),
+      h('div',{style:{paddingLeft:'22px',display:'grid',gap:'4px'}},h('label',{},rA,' Tous'),h('label',{},rP,' Seulement les points non réglés'))),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ setTimeout(()=>mtMeetingDialog(s,null,{src:m,parts:cP.checked,items:cI.checked,pending:rP.checked}),30); }}]}); }
+async function mtMeetingDelete(m){ if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
+  await DS.commit([...mtItems(m).map(x=>({t:'meetingitem',id:x.ID,val:null})),...mtParts(m).map(x=>({t:'meetingparticipant',id:x.ID,val:null})),{t:'meeting',id:m.ID,val:null}]); MT.mtg.sel=null; }
+
+/* ── Participants (MeetingParticipantsDialog / MeetingParticipantDialog / MeetingParticipantBrowserDialog) ── */
+function mtPartsDialog(m){ const s=DS.get('meetingsequence',m.MEETINGSEQUENCE_ID), p=DS.get('project',s.PROJECT_ID), o={}, box=feBox(860,300);
+  const ck=v=>+v?'✓':'';
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'n',t:'Participant',w:170,v:mtPartName,f:x=>esc(mtPartName(x))},{k:'e',t:'Société',w:160,f:x=>esc(mtCompany(mtPartContact(x)))},
+    {k:'INITIALS',t:'Abréviation',w:80},{k:'PROJECTROLE',t:'Fonction',w:110},{k:'ISPRESENT',t:'Présent',w:60,cls:'c',f:x=>ck(x.ISPRESENT)},{k:'ATTENDANCENOTE',t:'Note',w:90},
+    {k:'ISRECIPIENT',t:'Distribution',w:80,cls:'c',f:x=>ck(x.ISRECIPIENT)},{k:'ISLEADER',t:'Animation',w:76,cls:'c',f:x=>ck(x.ISLEADER)},{k:'ISRECORDINGSECRETARY',t:'Auteur',w:60,cls:'c',f:x=>ck(x.ISRECORDINGSECRETARY)}],
+    rows:mtParts(m),sort:null,state:{},onDbl:x=>mtPartDialog(x,draw)}));
+  const cur=()=>DS.get('meetingparticipant',o.sel);
+  const move=async d=>{ const ps=mtParts(m), i=ps.findIndex(x=>String(x.ID)===String(o.sel)), j=i+d; if(i<0||j<0||j>=ps.length) return; [ps[i],ps[j]]=[ps[j],ps[i]];
+    await DS.commit(ps.map((x,k)=>+x.SORTORDER===k?null:{t:'meetingparticipant',id:x.ID,val:{...x,SORTORDER:k}}).filter(Boolean)); draw(); };
+  const head=phead([{i:'plus',t:'Ajouter un participant',fn:()=>mtPartBrowser(p,m,draw)},{i:'edit',t:'Editer le participant',fn:()=>cur()&&mtPartDialog(cur(),draw)},
+    {i:'minus',t:'Supprimer le participant',fn:async()=>{ if(cur()&&await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')){ await DS.del('meetingparticipant',o.sel); o.sel=null; draw(); } }},
+    {label:'▲',t:'Monter',fn:()=>move(-1)},{label:'▼',t:'Descendre',fn:()=>move(1)},
+    {i:'gear',t:'Participant',menu:()=>mtPartsMenu(m).map(x=>x==='-'||!x.fn?x:{...x,fn:async()=>{ await x.fn(); draw(); }})}]);
+  draw(); dialog({title:'Participant',body:h('div',{},h('div',{style:{marginBottom:'6px'}},mtDesc(m)),head,box),buttons:[{t:'Fermer',pri:true}]}); }
+function mtPartDialog(x,done){ const v={...x}, c=mtPartContact(x);
+  const I=k=>h('input',{class:'inp',value:v[k]??''}), C=k=>h('input',{type:'checkbox',checked:+v[k]||null});
+  const fI=I('INITIALS'), fF=I('PROJECTROLE'), fD=I('PROJECTDIVISION'), fB=I('BKP'), fP=C('ISPRESENT'), fA=I('ATTENDANCENOTE'), fL=C('ISLEADER'), fW=C('ISRECORDINGSECRETARY'), fR=C('ISRECIPIENT');
+  const dl=h('datalist',{id:'mtabs'},...MT_ABS.map(t=>h('option',{value:t}))); fA.setAttribute('list','mtabs');
+  fP.onchange=()=>{ fA.disabled=fP.checked; if(fP.checked) fA.value=''; }; fA.disabled=fP.checked;
+  dialog({title:'Editer le participant',body:h('div',{},dl,formRows([['Participant',h('b',{},contactName(c))],['Abréviation',fI],['Fonction',fF],['Domaine spécialisé',fD],['CFC',fB],
+      ['',h('label',{},fP,' Présent')],['Absent',fA],['',h('label',{},fL,' Animation')],['',h('label',{},fW,' Auteur')],['',h('label',{},fR,' Distribution')]],460)),
+    buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ Object.assign(v,{INITIALS:fI.value.trim()||null,PROJECTROLE:fF.value.trim()||null,PROJECTDIVISION:fD.value.trim()||null,BKP:fB.value.trim()||null,
+      ISPRESENT:fP.checked?1:0,ATTENDANCENOTE:fP.checked?null:(fA.value.trim()||null),ISLEADER:fL.checked?1:0,ISRECORDINGSECRETARY:fW.checked?1:0,ISRECIPIENT:fR.checked?1:0});
+      await DS.save('meetingparticipant',v); done&&done(); }}]}); }
+const mtInitials=c=>{ const o=mtOwner(c), n=o&&o.TYPECODE===1?[o.NAME2,o.NAME1]:String(contactName(c)).split(/\s+/).slice(0,2);
+  return n.filter(Boolean).map(x=>String(x).trim()[0]||'').join('').toUpperCase(); };
+/* « Choisir les participants » : intervenants de l'affaire (responsable, sinon entité) ; recherche dans toutes les adresses */
+function mtPartBrowser(p,m,done){ const have=new Set(mtParts(m).map(x=>x.CONTACT_ID)), o={multi:true}, box=feBox(720,320); let q='', all=false;
+  const rows=()=>{ const ms=DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>!x.ISHIDDEN).map(x=>({k:'m'+x.ID,c:DS.get('contact',x.RESPCONTACT_ID)||DS.get('contact',x.CONTACT_ID),m:x})).filter(r=>r.c);
+    const base=all?DS.all('contact').map(c=>({k:'c'+c.ID,c,m:ms.find(r=>r.c.ID===c.ID)?.m})):ms;
+    return base.filter(r=>!have.has(r.c.ID)&&matchQ(q,contactName(r.c),r.m&&r.m.PROJECTROLE,r.m&&r.m.BKP)).slice(0,500); };
+  const draw=()=>grid(box,Object.assign(o,{key:r=>r.k,cols:[{k:'n',t:'Participant',w:220,v:r=>contactName(r.c),f:r=>esc(contactName(r.c))},{k:'r',t:'Rôle',w:150,f:r=>esc(r.m?teamRole(r.m.TEAMROLECODE):'')},
+    {k:'f',t:'Fonction',w:140,f:r=>esc(r.m&&r.m.PROJECTROLE||'')},{k:'b',t:'CFC',w:70,f:r=>esc(r.m&&r.m.BKP||'')}],rows:rows(),sort:null,state:{},empty:'Aucun intervenant à ajouter.'}));
+  const qi=h('input',{class:'psearch',placeholder:'Rechercher'}); qi.oninput=()=>{ q=qi.value.trim().toLowerCase(); draw(); };
+  const ca=h('input',{type:'checkbox'}); ca.onchange=()=>{ all=ca.checked; draw(); };
+  draw();
+  dialog({title:'Choisir les participants',body:h('div',{},h('div',{class:'ph2'},qi,h('label',{style:{marginLeft:'10px'}},ca,' Toutes les adresses')),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
+    const pick=gridSel(o,k=>(o.view||[]).find(r=>r.k===k)); if(!pick.length) return false;
+    const ids=DS.newIds('meetingparticipant',pick.length), n0=mtParts(m).length;
+    await DS.commit(pick.map((r,i)=>({t:'meetingparticipant',id:ids[i],val:{ID:ids[i],MEETING_ID:m.ID,CONTACT_ID:r.c.ID,SORTORDER:n0+i,ISPRESENT:1,ISRECIPIENT:1,ISLEADER:0,ISRECORDINGSECRETARY:0,
+      INITIALS:mtInitials(r.c)||null,ATTENDANCENOTE:null,PROJECTDIVISION:r.m&&r.m.PROJECTDIVISION||null,PROJECTROLE:r.m&&r.m.PROJECTROLE||null,BKP:r.m&&r.m.BKP||null}})));
+    done&&done(); }}]}); }
+
+/* ── Points de l'ordre du jour (MeetingItemsDialog « Modifier tous les points », MeetingItemDialog) ── */
+function mtItemsDialog(m){ const o={multi:true}, box=feBox(980,380);
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'NUMBER',t:'N°',w:60,f:x=>esc(x.NUMBER||'')},{k:'c',t:'Cat.',w:40,cls:'c',f:x=>mtCatSym(x.ITEMCATEGORYCODE)},
+    {k:'t',t:'Titre/Text',f:x=>{ const lv=+x.STRUCTURINGLEVEL||0; return '<span style="padding-left:'+(Math.min(lv,3)*14)+'px;'+(lv<3?'font-weight:'+(lv===0?700:600):'')+'">'+esc(x.TITLE||'')+'</span>'+(x.TEXT?'<span style="color:#666"> '+esc(String(x.TEXT).slice(0,140))+'</span>':''); }},
+    {k:'ITEMID',t:'Catégorie libre',w:100},{k:'USERNAME',t:'Responsable',w:100},{k:'DEADLINE',t:'Echéance',w:86,f:x=>dfr(x.DEADLINE)},{k:'ISDONE',t:'Réglé',w:50,cls:'c',f:x=>+x.ISDONE?'✓':''}],
+    rows:mtItems(m),sort:null,state:{},onDbl:x=>mtItemDialog(m,x,draw)}));
+  const sel=()=>gridSel(o,id=>DS.get('meetingitem',id));
+  const save=async list=>{ const ops=mtRenumber(list); if(ops.length) await DS.commit(ops); draw(); };
+  const move=async d=>{ const its=mtItems(m), ids=new Set(sel().map(x=>x.ID)); if(!ids.size) return;
+    const idx=its.map((x,i)=>ids.has(x.ID)?i:-1).filter(i=>i>=0); if(d<0&&idx[0]===0||d>0&&idx[idx.length-1]===its.length-1) return;
+    (d<0?idx:idx.slice().reverse()).forEach(i=>{ [its[i],its[i+d]]=[its[i+d],its[i]]; }); await save(its); };
+  const level=async d=>{ const ids=new Set(sel().map(x=>x.ID)); if(!ids.size) return;
+    await save(mtItems(m).map(x=>ids.has(x.ID)?{...x,STRUCTURINGLEVEL:Math.max(0,Math.min(3,(+x.STRUCTURINGLEVEL||0)+d))}:x)); };
+  const paste=async()=>{ if(!MT.clip.length){ toast('Aucun point copié.',true); return; } const its=mtItems(m), after=sel().length?its.indexOf(its.find(x=>x.ID===sel().slice(-1)[0].ID))+1:its.length;
+    const ids=DS.newIds('meetingitem',MT.clip.length), add=MT.clip.map((x,i)=>({...x,ID:ids[i],MEETING_ID:m.ID,PROJECTTASK_ID:null}));
+    const list=[...its.slice(0,after),...add,...its.slice(after)]; await DS.commit(add.map(x=>({t:'meetingitem',id:x.ID,val:x}))); await save(list.map(x=>DS.get('meetingitem',x.ID)||x)); };
+  const head=phead([{i:'plus',t:'Nouveau point de l’ordre du jour',fn:()=>mtItemDialog(m,null,draw,sel().slice(-1)[0])},{i:'edit',t:'Editer le point de l’ordre du jour',fn:()=>sel()[0]&&mtItemDialog(m,sel()[0],draw)},
+    {i:'minus',t:'Supprimer le point de l’ordre du jour',fn:async()=>{ const xs=sel(); if(!xs.length||!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
+      const ids=new Set(xs.map(x=>x.ID)); await DS.commit(xs.map(x=>({t:'meetingitem',id:x.ID,val:null}))); o.selSet&&o.selSet.clear(); await save(mtItems(m).filter(x=>!ids.has(x.ID))); }},
+    {label:'▲',t:'Monter',fn:()=>move(-1)},{label:'▼',t:'Descendre',fn:()=>move(1)},{label:'◀',t:'Niveau supérieur',fn:()=>level(-1)},{label:'▶',t:'Niveau inférieur',fn:()=>level(1)},
+    {i:'gear',t:'Points',menu:()=>[{t:'Copier le point sélectionné',dis:!sel().length,fn:()=>{ MT.clip=sel().map(x=>({...x})); toast(MT.clip.length+' point(s) copié(s).'); }},
+      {t:'Copier tous les points',fn:()=>{ MT.clip=mtItems(m).map(x=>({...x})); toast(MT.clip.length+' point(s) copié(s).'); }},{t:'Coller le ou les points',dis:!MT.clip.length,fn:paste},'-',
+      {t:'Renuméroter',fn:()=>save(mtItems(m))}]}]);
+  draw(); dialog({title:'Modifier tous les points',width:'1040px',body:h('div',{},h('div',{style:{marginBottom:'6px'}},mtDesc(m)),head,box,h('div',{style:{color:'#666',fontSize:'12px',marginTop:'6px'}},'Légende : '+mtLegend())),buttons:[{t:'Fermer',pri:true}]}); }
+function mtItemDialog(m,x,done,after){ const its=mtItems(m), v=x?{...x}:{ID:null,MEETING_ID:m.ID,STRUCTURINGLEVEL:after?Math.max(+after.STRUCTURINGLEVEL||0,0):0,TITLE:'',TEXT:null,ITEMCATEGORYCODE:0,ITEMID:null,USERNAME:null,DEADLINE:null,ISDONE:0,
+    ISPAGEBREAKBEFORE:0,PAGEBREAKBEFORECODES:null,NUMBER:null,SORTORDER:its.length,PROJECTTASK_ID:null};
+  const fL=h('select',{class:'inp',style:{width:'160px'}},...MT_LEVEL.map((t,i)=>h('option',{value:i,selected:i===(+v.STRUCTURINGLEVEL||0)||null},t)));
+  const fT=h('input',{class:'inp',maxlength:128,value:v.TITLE||''}), fX=h('textarea',{class:'inp',rows:8,maxlength:4096},v.TEXT||'');
+  const fC=h('select',{class:'inp',style:{width:'160px'}},...MT_CAT.map(c=>h('option',{value:c[0],selected:c[0]===(+v.ITEMCATEGORYCODE||0)||null},c[1])));
+  const fI=h('input',{class:'inp',maxlength:32,value:v.ITEMID||'',style:{width:'160px'}}), fU=h('input',{class:'inp',maxlength:64,value:v.USERNAME||'',style:{width:'160px'},list:'mtusers'});
+  const users=[...new Set([...mtParts(m).map(p=>p.INITIALS).filter(Boolean),...DS.all('appuser').map(u=>u.USERID).filter(Boolean)])];
+  const fD=h('input',{class:'inp',type:'date',value:v.DEADLINE||'',style:{width:'160px'}}), fK=h('input',{type:'checkbox',checked:+v.ISDONE||null}), fP=h('input',{type:'checkbox',checked:+v.ISPAGEBREAKBEFORE||null});
+  const warn=h('div',{style:{color:'var(--warn)',fontSize:'12px',minHeight:'15px'}}); fX.oninput=()=>{ warn.textContent=fX.value.length>1500?'Il est recommandé de diviser des longs textes en sections.':''; }; fX.oninput();
+  const t0=fT.value, x0=fX.value;
+  dialog({title:x?'Editer le point de l’ordre du jour':'Nouveau point',width:'720px',body:h('div',{},h('datalist',{id:'mtusers'},...users.map(u=>h('option',{value:u}))),
+      formRows([['Niveau hiérarchique',fL],['Titre',fT],['Texte',h('div',{},fX,warn)],['Catégorie',fC],['Catégorie libre',fI],['Responsable',fU],['Délai',fD],['',h('label',{},fK,' Réglé')],['',h('label',{},fP,' Saut de page avant le point')]],620)),
+    buttons:[{t:'Annuler',fn:async()=>{ if((fT.value!==t0||fX.value!==x0)&&!await confirmDlg('Le titre et/ou le texte ont été modifiés. Voulez-vous annuler les modifications ?','Oui')) return false; }},
+      {t:'OK',pri:true,fn:async()=>{ Object.assign(v,{STRUCTURINGLEVEL:+fL.value,TITLE:fT.value.trim()||null,TEXT:fX.value.trim()||null,ITEMCATEGORYCODE:+fC.value,ITEMID:fI.value.trim()||null,USERNAME:fU.value.trim()||null,
+        DEADLINE:fD.value||null,ISDONE:fK.checked?1:0,ISPAGEBREAKBEFORE:fP.checked?1:0});
+        const isNew=v.ID==null; if(isNew) v.ID=DS.newIds('meetingitem')[0];
+        let list=its.filter(i=>i.ID!==v.ID); const at=isNew?(after?list.findIndex(i=>i.ID===after.ID)+1:list.length):its.findIndex(i=>i.ID===v.ID); list.splice(at<0?list.length:at,0,v);
+        const ops=mtRenumber(list); if(!ops.some(o=>o.id===v.ID)) ops.push({t:'meetingitem',id:v.ID,val:list.find(i=>i.ID===v.ID)});
+        await DS.commit(ops); done&&done(); }}]}); }
+
+/* ── « Rechercher dans les points de la série de séances » (MeetingItemsSearchDialog) ── */
+function mtSearch(s){ const ms=mtMeetings(s), all=ms.flatMap(m=>mtItems(m).map(x=>({...x,_m:m}))), o={multi:true}, box=feBox(1000,360), F={m:'',c:'',i:'',u:'',d:''};
+  const S=(k,opts)=>{ const e=h('select',{class:'inp',style:{width:'150px'}},h('option',{value:''},'Tous'),...opts.map(([v,t])=>h('option',{value:v},t))); e.onchange=()=>{ F[k]=e.value; draw(); }; return e; };
+  const uniq=a=>[...new Set(a.filter(Boolean))].sort();
+  const fM=S('m',ms.map(m=>[m.ID,mtDesc(m)])), fC=S('c',MT_CAT.slice(1).map(c=>[c[0],c[1]])), fI=S('i',uniq(all.map(x=>x.ITEMID)).map(v=>[v,v])), fU=S('u',uniq(all.map(x=>x.USERNAME)).map(v=>[v,v])), fD=S('d',[['1','Réglé'],['0','Non réglé']]);
+  const q=h('input',{class:'psearch',placeholder:'Rechercher'}); q.oninput=draw;
+  function draw(){ const t=q.value.trim().toLowerCase();
+    const rows=all.filter(x=>(!F.m||String(x._m.ID)===F.m)&&(!F.c||String(+x.ITEMCATEGORYCODE||0)===F.c)&&(!F.i||x.ITEMID===F.i)&&(!F.u||x.USERNAME===F.u)&&(!F.d||String(+x.ISDONE?1:0)===F.d)&&matchQ(t,x.TITLE,x.TEXT));
+    grid(box,Object.assign(o,{cols:[{k:'mn',t:'N° discussion',w:90,f:x=>esc(x._m.MEETINGNUMBER||'')},{k:'ms',t:'Titre de la discussion',w:160,f:x=>esc(x._m.SUBJECT||'')},{k:'NUMBER',t:'N°',w:56},
+      {k:'TITLE',t:'Titre',w:180},{k:'TEXT',t:'Texte'},{k:'c',t:'Catégorie',w:90,f:x=>esc(mtCatName(x.ITEMCATEGORYCODE))},{k:'USERNAME',t:'Responsable',w:90},{k:'DEADLINE',t:'Echéance',w:84,f:x=>dfr(x.DEADLINE)},
+      {k:'ISDONE',t:'Réglé',w:50,cls:'c',f:x=>+x.ISDONE?'✓':''}],rows,sort:null,state:{},empty:'Aucun point.'})); }
+  draw();
+  dialog({title:'Rechercher dans les points de la série de séances',width:'1060px',body:h('div',{},h('div',{style:{marginBottom:'6px'}},'Série de séances : ',h('b',{},mtSeqLabel(s))),
+      h('div',{style:{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center',marginBottom:'6px'}},'Séance',fM,'Catégorie',fC,'Catégorie libre',fI,'Participant',fU,'Réglé',fD,q),
+      phead([{i:'gear',t:'Points',menu:()=>[{t:'Copier le point sélectionné',dis:!o.selSet||!o.selSet.size,fn:()=>{ MT.clip=gridSel(o,k=>(o.view||[]).find(x=>String(x.ID)===k)).map(({_m,...x})=>x); toast(MT.clip.length+' point(s) copié(s).'); }},
+        {t:'Copier tous les points',fn:()=>{ MT.clip=(o.view||[]).map(({_m,...x})=>x); toast(MT.clip.length+' point(s) copié(s).'); }}]}]),box),buttons:[{t:'Fermer',pri:true}]}); }
+
+/* ── « Configurer les séances » : genres de procès-verbaux de l'affaire (ProjectMeetingTypesDialog) ── */
+function mtTypesDialog(p){ const o={}, box=feBox(440,300);
+  const rows=()=>DS.by('projectmeetingtype','PROJECT_ID',p.ID).sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)||cmp(nm(a),nm(b)));
+  const draw=()=>grid(box,Object.assign(o,{cols:[{k:'n',t:'Genre de discussion',v:nm,f:x=>esc(nm(x))}],rows:rows(),sort:null,state:{},onDbl:x=>ed(x)}));
+  const used=x=>DS.by('meetingsequence','PROJECTMEETINGTYPE_ID',x.ID).length>0;
+  const ed=x=>{ const v=x?{...x}:{ID:null,PROJECT_ID:p.ID,SORTORDER:rows().length,NAMEFR:'',NAMEGE:null,NAMEIT:null,NAMEEN:null};
+    dialog({title:x?'Editer le genre de discussion':'Nouveau genre de discussion',body:formRows(lang4(v),460),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v); await DS.save('projectmeetingtype',v); draw(); }}]}); };
+  const copy=async src=>{ const cur=rows();
+    if(cur.length){ if(cur.some(used)){ feMsg('Le remplacement n\'est pas possible,\ncar cette inscription a déjà été utilisé.','Avertissement'); return; }
+      if(!await confirmDlg('Voulez-vous remplacer les inscriptions existantes ?','Remplacer')) return; }
+    const ids=src.length?DS.newIds('projectmeetingtype',src.length):[];
+    await DS.commit([...cur.map(x=>({t:'projectmeetingtype',id:x.ID,val:null})),...src.map((x,i)=>({t:'projectmeetingtype',id:ids[i],val:{ID:ids[i],PROJECT_ID:p.ID,SORTORDER:x.SORTORDER??i,NAMEFR:x.NAMEFR,NAMEGE:x.NAMEGE,NAMEIT:x.NAMEIT,NAMEEN:x.NAMEEN}}))]); draw(); };
+  const head=phead([{i:'plus',t:'Nouveau genre de procès-verbaux',fn:()=>ed()},{i:'edit',t:'Editer le genre de procès-verbaux',fn:()=>o.sel&&ed(DS.get('projectmeetingtype',o.sel))},
+    {i:'minus',t:'Effacer le genre de procès-verbaux',fn:async()=>{ const x=DS.get('projectmeetingtype',o.sel); if(!x) return; if(used(x)){ feMsg('Cette inscription est déjà utilisée et ne peut pas être supprimée.','Avertissement'); return; }
+      if(await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')){ await DS.del('projectmeetingtype',x.ID); o.sel=null; draw(); } }},
+    {i:'import',t:'Insérer les genres de procès-verbaux standards',menu:()=>[{t:'Importer du dossier standard',fn:()=>copy(DS.all('meetingtype').sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)))},
+      {t:'Importer d\'une affaire existante',fn:()=>pickProject('Importer d\'une affaire existante',q=>{ if(q.ID!==p.ID) copy(DS.by('projectmeetingtype','PROJECT_ID',q.ID)); })}]}]);
+  draw(); dialog({title:'Configurer les genres de procès-verbaux — '+projLabel(p),body:h('div',{},head,box),buttons:[{t:'Fermer',pri:true}]}); }
+
+/* ── Documents : « Convocation » (ordre du jour) et « Procès-verbal » ; impression par le navigateur ── */
+function mtPrint(p,s,m,kind){ const w=open('','_blank'); if(!w) return; const e=v=>esc(v==null?'':String(v));
+  const ps=mtParts(m), its=mtItems(m), minutes=kind==='minutes', title=minutes?'Procès-verbal':'Convocation';
+  const head=`<h1>${e(title)} ${e(m.MEETINGNUMBER||'')} — ${e(m.SUBJECT||'')}</h1><table class="hd">
+    <tr><td>Affaire</td><td>${e(projLabel(p))}</td></tr><tr><td>Série de séances</td><td>${e(mtSeqLabel(s))}${s.PROJECTMEETINGTYPE_ID?' ('+e(mtTypeName(s.PROJECTMEETINGTYPE_ID))+')':''}</td></tr>
+    <tr><td>Date de la séance</td><td>${e(dfr(m.MEETINGDATE))}${m.TIMEFROM?' '+e(mtTime(m.TIMEFROM))+(m.TIMETO?' – '+e(mtTime(m.TIMETO)):''):''}</td></tr>
+    ${m.LOCATION?`<tr><td>Lieu</td><td>${e(m.LOCATION)}</td></tr>`:''}${m.GOAL?`<tr><td>Objectif</td><td>${e(m.GOAL)}</td></tr>`:''}
+    ${minutes&&m.MINUTESDATE?`<tr><td>Date du procès-verbal</td><td>${e(dfr(m.MINUTESDATE))}</td></tr>`:''}
+    ${minutes&&ps.some(x=>+x.ISRECORDINGSECRETARY)?`<tr><td>Rédaction</td><td>${ps.filter(x=>+x.ISRECORDINGSECRETARY).map(x=>e(mtPartName(x))).join(', ')}</td></tr>`:''}</table>`;
+  const part=`<h2>Liste des participants</h2><table class="g"><tr><th>Participant</th><th>Société</th><th>Abr.</th><th>Fonction</th>${minutes?'<th>Présent</th>':''}<th>Distribution</th></tr>`+
+    ps.map(x=>{ const c=mtPartContact(x); return `<tr><td>${e(mtPerson(c))}</td><td>${e(mtCompany(c))}</td><td>${e(x.INITIALS)}</td><td>${e(x.PROJECTROLE)}</td>`+
+      (minutes?`<td>${+x.ISPRESENT?'✓':e(x.ATTENDANCENOTE||'–')}</td>`:'')+`<td>${+x.ISRECIPIENT?'✓':''}</td></tr>`; }).join('')+'</table>';
+  const list=minutes?its:its.filter(x=>(+x.STRUCTURINGLEVEL||0)<3);
+  const items=`<h2>Points de l’ordre du jour</h2><table class="g it"><tr><th style="width:12mm">N°</th><th>Texte</th>${minutes?'<th style="width:20mm">Délai</th><th style="width:10mm">Cat.</th><th style="width:22mm">Responsable</th>':''}</tr>`+
+    list.map(x=>{ const lv=+x.STRUCTURINGLEVEL||0; return `<tr class="${+x.ISPAGEBREAKBEFORE?'pb ':''}l${lv}"><td>${e(x.NUMBER||'')}</td><td>${x.TITLE?`<div class="t">${e(x.TITLE)}</div>`:''}${minutes&&x.TEXT?`<div class="x">${e(x.TEXT)}</div>`:''}</td>`+
+      (minutes?`<td>${e(dfr(x.DEADLINE))}${+x.ISDONE?' ✓':''}</td><td>${e(mtCatSym(x.ITEMCATEGORYCODE))}</td><td>${e(x.USERNAME)}</td>`:'')+'</tr>'; }).join('')+'</table>'+(minutes?`<p class="lg">${e(mtLegend())}</p>`:'');
+  w.document.write(`<html><head><meta charset="utf-8"><title>${e(title)} ${e(m.MEETINGNUMBER||'')}</title><style>body{font:10pt Akkurat,Helvetica,Arial,sans-serif;margin:14mm}h1{font-size:13pt;font-weight:600}h2{font-size:11pt;font-weight:600;margin-top:16px}
+    table{border-collapse:collapse;width:100%}.hd td{padding:2px 6px 2px 0;vertical-align:top}.hd td:first-child{width:45mm;color:#555}.g td,.g th{text-align:left;padding:3px 6px;vertical-align:top;border-bottom:.5pt solid #ccc}.g th{font-weight:600}
+    .it .l0 .t{font-weight:700}.it .l1 .t,.it .l2 .t{font-weight:600}.x{white-space:pre-wrap}.pb{break-before:page}.lg{color:#555;font-size:9pt}${+m.ISDRAFT?'body:before{content:"Brouillon";position:fixed;top:4mm;right:14mm;color:#c00}':''}</style></head>
+    <body>${head}${part}${items}</body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300); }
 
 /* ═══ AFFAIRES · Controlling (p.32-33) — contrôle et analyse des heures et des frais ═══ */
 const CT={g:{},a:{},act:'Critères d’analyse des heures',q:''};

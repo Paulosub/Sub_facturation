@@ -39,9 +39,24 @@ subgestion/
 3. Choisir l'utilisateur, puis ⋯ ▸ **Sauvegarde Facturation** ▸ **Importer** → le `facturation_data_….json` (confirmer).
 4. Contrôler : nombre de projets, contrats, factures, heures ; 2 ou 3 PDF. Dès ce moment, ne plus saisir en double-clic.
 
-## Comptes et mots de passe (recommandé à plusieurs)
-Par défaut chaque poste choisit « Qui utilise ce poste ? ». Pour exiger un mot de passe : Réglages ▸ Paramètres système ▸
-Ouverture de session ▸ Mode ▸ « Avec nom d'utilisateur et mot de passe » (compte administrateur).
+## Accès protégé (mots de passe)
+Sans mot de passe, chaque poste choisit « Qui utilise ce poste ? » (réseau du bureau seulement). Avec mot de passe :
+- tant qu'on n'est pas connecté, le NAS ne sert qu'une **page de connexion** (ni l'app, ni aucune donnée) ;
+- toutes les routes de données, fichiers et sauvegardes exigent une session (cookie HttpOnly, SameSite=Strict) ;
+- **export et import de la base : administrateurs seulement** ; blocage après plusieurs mots de passe faux ;
+- mots de passe : 8 caractères au moins, empreinte PBKDF2 (600 000 itérations), jamais stockés en clair.
+Activation (compte administrateur) : ⋯ ▸ Paramètres système … ▸ Ouverture de session ▸ Mode ▸ « Avec nom d'utilisateur et mot
+de passe » ; laisser **décochée** « Première connexion : chaque utilisateur définit son mot de passe » (sinon le premier venu
+choisit le mot de passe d'un compte qui n'en a pas) ; définir le mot de passe de chacun : ⋯ ▸ Gestion des utilisateurs … ▸
+sélectionner ▸ Mot de passe ▸ Réinitialiser le mot de passe … ; désactiver le compte « admin » s'il ne sert pas.
+Secours (mot de passe administrateur perdu) : Container Manager ▸ Conteneur ▸ subgestion ▸ Terminal ▸
+`python3 /app/serveur_deltasub.py --desactiver-authentification` (retour au mode sans mot de passe).
+
+## Version servie nettoyée
+`nas/preparer.sh` copie une version **nettoyée** (`nas/nettoyer.py`) : données de départ de Facturation retirées (les données
+viennent du serveur après connexion), exemples du cockpit anonymisés, commentaires du code retirés, mentions du logiciel
+d'origine et des catalogues sous licence (CAN, CRB, eCCC) renommées ; le métier SIA et les numéros CFC sont gardés. Le script
+s'arrête si une mention ou un nom de client subsiste. `DeltaSub.html` n'est jamais copiée sur le NAS.
 
 ## Postes et iPad
 - Mac : Chrome ▸ ⋮ ▸ Caster, enregistrer et partager ▸ **Installer la page en tant qu'application**.

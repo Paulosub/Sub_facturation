@@ -58,6 +58,7 @@ async function sgSauver(manuel){
 const sgSauvAJour=()=>SAUV.etat.quand&&SAUV.etat.seq===DS.seq;
 function sgSauvPlanifier(){ clearTimeout(SAUV.t); SAUV.t=setTimeout(()=>{ if(!sgSauvAJour()) sgSauver(false); },120000); sgSauvAff(); }
 function sgSauvAff(enCours){ const f=document.querySelector('#nx-who .who span'); if(!f) return;
+  if(typeof dsEstBureau==='function'&&dsEstBureau()){ f.textContent='Base du bureau (NAS)'; f.className=''; f.title='Sauvegardes faites par le serveur du bureau (toutes les heures) et par Hyper Backup.'; return; }
   const e=SAUV.etat, vieux=!e.quand||Date.now()-e.quand>48*3600e3;
   f.textContent=enCours?'Sauvegarde…':(e.quand?(sgSauvAJour()?'Sauvegardée ':'Modifiée · sauvée ')+sgDepuis(e.quand):'Jamais sauvegardée');
   f.className=vieux||e.erreur&&!sgSauvAJour()?'alerte':''; f.title=e.quand?'Dernière sauvegarde : '+new Date(e.quand).toLocaleString('fr-CH')+(e.lieu?' — '+e.lieu:''):''; }
@@ -358,7 +359,7 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
 /* ═══ 5. À TRAITER AUJOURD'HUI (accueil + pastille du menu) ═════════════════════════════════════════════════ */
 let SG_AT={n:0,groupes:[]};
 async function sgATraiter(){ const G=[], td=today(), me=nxMe(), now=new Date();
-  const e=SAUV.etat; if(!e.quand||Date.now()-e.quand>48*3600e3) G.push({k:'sv',t:'Sauvegarde',ico:'db',go:'nx-data',items:[{t:e.quand?'Dernière sauvegarde '+sgDepuis(e.quand):'Base jamais sauvegardée',s:e.erreur||'Sauvegarder maintenant ou choisir un dossier'}]});
+  const e=SAUV.etat; if(!(typeof dsEstBureau==='function'&&dsEstBureau())&&(!e.quand||Date.now()-e.quand>48*3600e3)) G.push({k:'sv',t:'Sauvegarde',ico:'db',go:'nx-data',items:[{t:e.quand?'Dernière sauvegarde '+sgDepuis(e.quand):'Base jamais sauvegardée',s:e.erreur||'Sauvegarder maintenant ou choisir un dossier'}]});
   let D=null; try{ await fxEnsure(); D=fxData(); }catch(_){}
   if(D){ const ech=D.f.filter(f=>fxUnpaid(f)&&f.ech&&f.ech<td).sort((a,b)=>cmp(a.ech,b.ech));
     if(ech.length) G.push({k:'fe',t:'Factures échues à relancer',ico:'receipt',go:'fx-factures',items:ech.map(f=>({t:(f.num||'(sans numéro)')+' · '+nxCHF((+f._ttc||0)+(+f._fttc||0))+' CHF',s:[fxClient(D,f),'échue le '+dfr(f.ech)].filter(Boolean).join(' · '),go:'fx-saisie',arg:'f:'+f.id}))});

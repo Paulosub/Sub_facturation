@@ -39,7 +39,9 @@ BACKUP_DIR = os.environ.get("DELTASUB_SAUVEGARDES") or os.path.join(HERE, "Sauve
 # Base du bureau sur le NAS (07.10.2026) : DELTASUB_PAGE = page servie à « / » (SUBGestion3.html), DELTASUB_APP = dossier des pages
 PAGE = os.environ.get("DELTASUB_PAGE") or "DeltaSub.html"
 APP_DIR = os.environ.get("DELTASUB_APP") or HERE
-STATIC = {"/": PAGE, "/" + PAGE: PAGE, "/DeltaSub.html": "DeltaSub.html"}
+STATIC = {"/": PAGE, "/" + PAGE: PAGE}
+if PAGE == "DeltaSub.html" or not os.environ.get("DELTASUB_PAGE"):
+    STATIC["/DeltaSub.html"] = "DeltaSub.html"
 VERSION = 1
 
 # Tables Deltaproject NON reprises : licences, compteurs internes, propriétés système.
@@ -769,6 +771,16 @@ def ch08_gate(h, method):
             h.ch08_user = s
             return True
         if method == "GET" and path in STATIC:
+            if PAGE != "DeltaSub.html":   # base du bureau (NAS) : l'app n'est servie qu'après connexion
+                b = LOGIN_PAGE.encode("utf-8")
+                h.send_response(200)
+                h.send_header("Content-Type", "text/html; charset=utf-8")
+                h.send_header("Content-Length", str(len(b)))
+                h.send_header("Cache-Control", "no-store")
+                h.send_header("X-Frame-Options", "DENY")
+                h.end_headers()
+                h.wfile.write(b)
+                return False
             return True
         if method == "GET" and path == "/api/ping":
             return ch08_send(h, 200, {"ok": True, "auth": True})
@@ -1807,6 +1819,51 @@ def base_export(c):
     return head + body[1:]
 
 
+def nas_admin(h, c):
+    """Mode avec mot de passe : session d'un compte « gestion des utilisateurs » exigée ; mode sans mot de passe : réseau local."""
+    if not ch08_auth_on(c):
+        return True
+    s = getattr(h, "ch08_user", None)
+    return bool(s) and ch08_can(c, s["user"], "userAdmin")
+
+
+LOGIN_PAGE = """<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SUBGestion — Connexion</title><style>
+:root{--n:#1d1d1b;--b:#003346;--j:#FFF266;--g:#706F6F;--r:#BD1E42}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--b);
+font-family:Akkurat,"Akkurat Pro",Helvetica,Arial,sans-serif;color:var(--n)}
+form{background:#fff;width:min(380px,92vw);padding:32px 30px 26px;border-top:6px solid var(--j)}
+h1{margin:0 0 4px;font-size:22px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}p.s{margin:0 0 22px;color:var(--g);font-size:13px}
+label{display:block;font-size:12px;margin:14px 0 5px;color:var(--g)}input[type=text],input[type=password]{width:100%;padding:11px 10px;font:inherit;font-size:16px;
+border:2px solid var(--n);border-radius:0;outline:none}input:focus{border-color:var(--b)}
+.c{display:flex;gap:8px;align-items:center;margin-top:14px;font-size:13px}button{margin-top:20px;width:100%;padding:12px;font:inherit;font-size:15px;
+background:var(--b);color:#fff;border:0;cursor:pointer}button:disabled{opacity:.5}#m{min-height:18px;margin-top:12px;font-size:13px;color:var(--r)}
+.n{display:none}</style></head><body>
+<form id="f" autocomplete="on"><h1>Substances</h1><p class="s">Gestion du bureau — connexion</p>
+<label for="u">Nom d'utilisateur</label><input id="u" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+<label for="p">Mot de passe</label><input id="p" type="password" autocomplete="current-password" required>
+<div id="nv" class="n"><label for="p1">Nouveau mot de passe (8 caractères au moins)</label><input id="p1" type="password" autocomplete="new-password">
+<label for="p2">Confirmer le nouveau mot de passe</label><input id="p2" type="password" autocomplete="new-password"></div>
+<div class="c"><input id="r" type="checkbox"><label for="r" style="margin:0;color:var(--n)">Rester connecté sur cet appareil</label></div>
+<button id="b" type="submit">Se connecter</button><div id="m"></div></form>
+<script>
+const $=i=>document.getElementById(i), m=$("m"); let premier=false, reprise=false;
+async function post(u,o){ const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(o)}); let d={}; try{ d=await r.json(); }catch(e){} return [r.status,d]; }
+$("f").onsubmit=async e=>{ e.preventDefault(); m.textContent=""; $("b").disabled=true;
+  try{ const userid=$("u").value.trim(), remember=$("r").checked;
+    if(premier){ const n=$("p1").value, c=$("p2").value; if(n.length<8||n!==c){ m.textContent="Les deux mots de passe doivent être identiques et compter 8 caractères au moins."; return; }
+      const [s,d]=await post("/api/password/first",{userid,new:n,confirm:c,remember}); if(s===200&&d.ok){ location.reload(); return; } m.textContent=d.msg||"Mot de passe refusé."; return; }
+    const [s,d]=await post("/api/login",{userid,password:$("p").value,remember,override:reprise});
+    if(s===200&&d.first){ premier=true; $("nv").classList.remove("n"); $("p").closest("form").querySelector("label[for=p]").classList.add("n"); $("p").classList.add("n"); $("p").required=false;
+      m.style.color="#003346"; m.textContent="Première connexion : choisissez votre mot de passe."; $("p1").focus(); return; }
+    if(s===200&&d.ok){ location.reload(); return; }
+    if(s===409&&d.locked){ reprise=true; m.style.color="#D7860D"; m.textContent="Ce compte est déjà ouvert sur un autre appareil ("+(d.locked.user||"")+"). Cliquez à nouveau sur « Se connecter » pour reprendre la session ici."; return; }
+    m.style.color="#BD1E42"; m.textContent=d.msg||"Nom d'utilisateur ou mot de passe incorrect.";
+  }catch(err){ m.textContent="Serveur injoignable."; } finally{ $("b").disabled=false; } };
+$("u").focus();
+</script></body></html>"""
+
+
 def lan_ok(ip):
     try:
         a = ipaddress.ip_address(ip)
@@ -1816,7 +1873,8 @@ def lan_ok(ip):
 
 
 class H(BaseHTTPRequestHandler):
-    server_version = "DeltaSub/%d" % VERSION
+    server_version = "SUBGestion/%d" % VERSION
+    sys_version = ""
 
     def log_message(self, fmt, *args):
         if "/api/changes" not in (self.path or ""):
@@ -1846,8 +1904,11 @@ class H(BaseHTTPRequestHandler):
         try:
             if u.path == "/api/ping":
                 imp = c.execute("SELECT value FROM meta WHERE name='import_deltaproject'").fetchone()
+                imp = json.loads(imp[0]) if imp else None
+                if imp and PAGE != "DeltaSub.html":
+                    imp = {"le": imp.get("le")}   # NAS : pas de chemin de dossier
                 return self._send(200, js({"ok": True, "seq": cur_seq(c), "version": VERSION,
-                                           "import": json.loads(imp[0]) if imp else None, "aide": os.path.isfile(MANUEL_FR), "auth": ch08_auth_on(c),
+                                           "import": imp, "aide": os.path.isfile(MANUEL_FR), "auth": ch08_auth_on(c),
                                            "bureau": True, "page": PAGE}))
             if u.path == "/api/snapshot":
                 tabs = [x for x in (q.get("t") or [""])[0].split(",") if x]
@@ -1867,6 +1928,8 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/kv":   # données Facturation partagées (NAS)
                 return self._send(200, js(kv_since(c, int((q.get("since") or ["0"])[0]))))
             if u.path == "/api/export":   # sauvegarde complète téléchargée (.json.gz)
+                if not nas_admin(self, c):
+                    return self._send(403, js({"ok": False, "error": "Réservé aux administrateurs."}))
                 b = gzip.compress(base_export(c).encode("utf-8"), 6)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/gzip")
@@ -1928,6 +1991,8 @@ def _nas_post(self, u):
         if ch08_auth_on(c) and not s:
             return self._send(401, js({"ok": False, "error": "session"}))
         who = str(s["user"].get("USERID") or s["userid"]) if s else self.client_address[0]
+        if u.path == "/api/import" and not nas_admin(self, c):
+            return self._send(403, js({"ok": False, "error": "Réservé aux administrateurs."}))
         if u.path == "/api/kv":
             body = json.loads(raw.decode("utf-8"))
             v = body.get("v")

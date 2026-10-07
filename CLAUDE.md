@@ -59,6 +59,13 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   l'événement `storage` du cadre Facturation, relevé 5 s, fusion à trois par élément (`id`/`num`/`code`), bandeau
   « Actualiser » ; fichiers joints sur le serveur ; sauvegardes = celles du serveur. Installation : `nas/LISEZMOI.md`,
   `nas/preparer.sh`, `nas/docker-compose.yml` (Container Manager, réseau host, python:3.12-slim).
+  **Version servie nettoyée + accès protégé (07.10.2026)** : `nas/preparer.sh` passe la page par `nas/nettoyer.py` (données de
+  départ de Facturation retirées, cockpit anonymisé, commentaires retirés, mentions Deltaproject / DeltaSub / DELTA… / eCCC /
+  CRB / CAN renommées — SIA et CFC gardés ; arrêt si un reste ou un nom de client subsiste) ; ne jamais copier les sources
+  telles quelles sur le NAS. Serveur (`DELTASUB_PAGE` ≠ DeltaSub.html) : sans session et mode mot de passe actif → page de
+  connexion `LOGIN_PAGE` à la place de l'app ; `/api/export` et `/api/import` réservés à `userAdmin` (`nas_admin`) ; ping sans
+  chemin ; en-tête `Server: SUBGestion`. SUBGestion 3 en http:// : `sgSha` / `sgHacher` ont un repli JavaScript (pas de
+  crypto.subtle hors contexte sécurisé).
 - **Modèle de données = celui de Deltaproject** : une collection par table Derby, en
   minuscules (`project`, `contact`, `contactowner`, `staff`, `timelog`…), champs en
   MAJUSCULES comme les colonnes. Côté page : `DS.all(t)`, `DS.get(t,id)`, `DS.by(t,champ,v)`,

@@ -394,7 +394,24 @@ setInterval(()=>{ if(NX.booted) sgATraiter().catch(()=>{}); },10*60e3);
    ouverture dans une visionneuse intégrée (plus d'onglets bloqués). */
 const SG_APERCUS={};
 const sgMime=n=>({pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',svg:'image/svg+xml',txt:'text/plain',csv:'text/csv',html:'text/html',json:'application/json'})[ch03aExt(n)]||'application/octet-stream';
-async function sgSha(buf){ const d=await crypto.subtle.digest('SHA-256',buf); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+/* SHA-256 en JavaScript : repli quand crypto.subtle manque (page en http:// sur le NAS = contexte non sécurisé) */
+const SG_K256=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,
+  0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,
+  0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,
+  0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,
+  0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+function sgSha256Js(data){ data=data instanceof Uint8Array?data:new Uint8Array(data);
+  const H=new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]), l=data.length, nb=((l+72)>>6)<<6, m=new Uint8Array(nb);
+  m.set(data); m[l]=0x80; const dv=new DataView(m.buffer); dv.setUint32(nb-4,(l*8)>>>0); dv.setUint32(nb-8,Math.floor(l/0x20000000)); const W=new Uint32Array(64);
+  for(let o=0;o<nb;o+=64){ for(let i=0;i<16;i++) W[i]=dv.getUint32(o+i*4);
+    for(let i=16;i<64;i++){ const x=W[i-15], y=W[i-2]; W[i]=(W[i-16]+((x>>>7|x<<25)^(x>>>18|x<<14)^(x>>>3))+W[i-7]+((y>>>17|y<<15)^(y>>>19|y<<13)^(y>>>10)))|0; }
+    let a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(let i=0;i<64;i++){ const t1=(h+((e>>>6|e<<26)^(e>>>11|e<<21)^(e>>>25|e<<7))+((e&f)^(~e&g))+SG_K256[i]+W[i])|0, t2=(((a>>>2|a<<30)^(a>>>13|a<<19)^(a>>>22|a<<10))+((a&b)^(a&c)^(b&c)))|0;
+      h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0; }
+    H[0]+=a; H[1]+=b; H[2]+=c; H[3]+=d; H[4]+=e; H[5]+=f; H[6]+=g; H[7]+=h; }
+  const out=new Uint8Array(32), ov=new DataView(out.buffer); for(let i=0;i<8;i++) ov.setUint32(i*4,H[i]); return out; }
+const sgHex=u=>[...u].map(b=>b.toString(16).padStart(2,'0')).join('');
+async function sgSha(buf){ if(window.crypto&&crypto.subtle) return sgHex(new Uint8Array(await crypto.subtle.digest('SHA-256',buf))); return sgHex(sgSha256Js(buf)); }
 function sgPagesPdf(buf){ try{ const m=new TextDecoder('latin1').decode(buf).match(/\/Type\s*\/Page(?!s)/g); return m?m.length:null; }catch(_){ return null; } }
 /* pages d'un PDF : lecture directe, sinon pdf-lib (PDF à flux d'objets compressés) */
 async function sgCompterPages(buf){ const n=sgPagesPdf(buf); if(n) return n;
@@ -567,8 +584,15 @@ const SG_ACC_DEF={doms:['facturation','finances','reglages'],delai:15};
 const sgAcces=()=>Object.assign({},SG_ACC_DEF,nxLS.get('sg3_acces',{}));
 const sgAccesSet=o=>{ nxLS.set('sg3_acces',Object.assign(sgAcces(),o)); sgVerrouAff(); };
 const sgB64=u=>btoa(String.fromCharCode(...new Uint8Array(u))), sgDe64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
-async function sgHacher(code,sel){ const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(String(code).normalize('NFC')),'PBKDF2',false,['deriveBits']);
+async function sgHacher(code,sel){ const pw=new TextEncoder().encode(String(code).normalize('NFC'));
+  if(!(window.crypto&&crypto.subtle)) return sgB64(sgPbkdf2Js(pw,new Uint8Array(sel),150000));   // http:// sur le NAS : même résultat, calculé en JavaScript
+  const k=await crypto.subtle.importKey('raw',pw,'PBKDF2',false,['deriveBits']);
   return sgB64(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:sel,iterations:150000},k,256)); }
+/* PBKDF2-HMAC-SHA-256, un bloc de 32 octets (repli sans crypto.subtle) */
+function sgPbkdf2Js(pw,salt,n){ let key=pw.length>64?sgSha256Js(pw):pw; const k=new Uint8Array(64); k.set(key);
+  const ip=k.map(x=>x^0x36), op=k.map(x=>x^0x5c), cat=(a,b)=>{ const r=new Uint8Array(a.length+b.length); r.set(a); r.set(b,a.length); return r; };
+  const hmac=m=>sgSha256Js(cat(op,sgSha256Js(cat(ip,m))));
+  let u=hmac(cat(salt,new Uint8Array([0,0,0,1]))); const t=u.slice(); for(let i=1;i<n;i++){ u=hmac(u); for(let j=0;j<32;j++) t[j]^=u[j]; } return t; }
 async function sgCodeOk(code){ const a=sgAcces(); if(!a.hash) return true; return (await sgHacher(code,sgDe64(a.sel)))===a.hash; }
 async function sgCodeDefinir(code){ const sel=crypto.getRandomValues(new Uint8Array(16)); sgAccesSet({sel:sgB64(sel),hash:await sgHacher(code,sel),depuis:Date.now()}); sgOuvrir(); }
 const sgOuvertTs=()=>{ try{ return +sessionStorage.getItem('sg3_ouvert')||0; }catch(_){ return 0; } };

@@ -53,3 +53,6 @@ subgestion*/_backup_*/
 
 # PV et documents d'affaires (données clients)
 17DAV_*
+
+# Copie de l'app préparée pour le NAS (régénérée par nas/preparer.sh)
+nas/a_copier/

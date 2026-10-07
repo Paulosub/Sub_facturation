@@ -222,6 +222,53 @@ const DS={
   _emit(ts){ this._ls.forEach(f=>{ try{ f(ts); }catch(e){ console.error(e); } }); },
   async poll(){}   // un seul poste : rien à suivre
 };
+/* ── Base du BUREAU (07.10.2026) : servie par serveur_deltasub.py sur le NAS (/api/ping → {bureau:true}), la page lit et écrit la base
+   partagée (plusieurs postes, conflits détectés, changements des autres postes relevés toutes les 4 s). Ouverte en double-clic : base locale. ── */
+const DSB={
+  _ingest(d){ for(const t in d.tables){ const e=d.tables[t], S=this.S[t]||{}; for(const id in e){ if(S[id]!=null&&S[id]>e[id].s) continue; this._put(t,id,e[id].s,e[id].v); } }
+    if(d.seq>this.seq) this.seq=d.seq; },
+  async boot(){
+    const p=await (await fetch('/api/ping',{cache:'no-store'})).json(); this.info=p;
+    $('#boot-msg').textContent='Chargement des données du bureau…';
+    const r0=await fetch('/api/snapshot?x='+HEAVY.join(','),{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); throw new Error('session'); } const d=await r0.json();
+    if(!Object.keys(d.tables).length){ const e=new Error('base du bureau vide'); e.vide=true; throw e; }
+    this._ingest(d); Object.keys(d.tables).forEach(t=>{ this.loaded.add(t); this.tables.add(t); });
+    ['projecttask','projecttasknote','meetingitem','projectnote','task','taskgroup',...HF_TABLES,...PL_TABLES,...SV_TABLES].forEach(t=>this.loaded.add(t));
+  },
+  async need(tables){ const miss=tables.filter(t=>!this.loaded.has(t)); if(!miss.length) return;
+    const r0=await fetch('/api/snapshot?t='+miss.join(','),{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); throw new Error('session'); } const d=await r0.json();
+    miss.forEach(t=>this.loaded.add(t)); this._ingest(d); },
+  newIds(t,n=1){ const x=new XMLHttpRequest(); x.open('GET','/api/ids?t='+t+'&n='+n,false); x.send(); if(x.status===401){ ch08dExpired(x); throw new Error('session'); } return JSON.parse(x.responseText); },
+  async commit(ops){
+    const body={who:this.who(), ops:ops.map(o=>({t:o.t,id:String(o.id),val:o.val,bseq:o.bseq!=null?o.bseq:((this.S[o.t]||{})[String(o.id)]||0)}))};   // o.bseq : version lue à l'ouverture d'un dialogue
+    let r;
+    try{ r=await fetch('/api/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+    catch(e){ NET.fail('serveur injoignable'); toast('✗ Enregistrement impossible : serveur du bureau injoignable.',true); throw e; }
+    const d=await r.json();
+    if(r.status===401||r.status===403){ ch08dRefused(r.status,d); const e=new Error('session'); e.conflict=true; throw e; }
+    if(r.status===409){ d.conflicts.forEach(c=>this._put(c.t,c.id,c.seq,c.val)); this._emit(d.conflicts.map(c=>c.t));
+      toast('⚠ Modifié entre-temps sur un autre poste : la version à jour est affichée, reprenez votre saisie.',true);
+      const e=new Error('conflit'); e.conflict=true; throw e; }
+    if(!d.ok){ toast('✗ '+(d.error||'erreur serveur'),true); throw new Error(d.error); }
+    ops.forEach(o=>{ this._put(o.t,String(o.id),d.seq,o.val==null?null:o.val); if(o.val!=null) this.tables.add(o.t); });
+    NET.ok(); this._emit([...new Set(ops.map(o=>o.t))]); return d.seq;
+  },
+  async poll(){
+    if(this._polling) return; this._polling=true;
+    try{ const r0=await fetch('/api/changes?since='+this.seq,{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); return; } const d=await r0.json();
+      const ts=Object.keys(d.tables).filter(t=>this.loaded.has(t));
+      for(const t of Object.keys(d.tables)) if(!this.loaded.has(t)) delete d.tables[t];
+      const before=this.seq; this._ingest(d); NET.ok();
+      if(ts.length && d.seq>before) this._emit(ts);
+    }catch(e){ NET.fail('serveur du bureau injoignable'); }
+    finally{ this._polling=false; }
+  }
+};
+/* page servie par le serveur du bureau ? → méthodes serveur ; sinon (double-clic, aperçu sans serveur) : base locale */
+async function dsBureau(){ if(!/^https?:$/.test(location.protocol)) return false;
+  try{ const r=await fetch('/api/ping',{cache:'no-store'}); if(!r.ok) return false; const p=await r.json(); if(!p||!p.bureau) return false;
+    DS.info=p; Object.assign(DS,DSB); return true; }catch(_){ return false; } }
+const dsEstBureau=()=>!!(DS.info&&DS.info.bureau);
 /* Import d'une base (.json.gz de exporter_base_deltasub.py, ou sauvegarde « Exporter la base locale ») : REMPLACE la base locale */
 async function lbRead(file){ const gz=/\.gz$/i.test(file.name);
   const txt=gz?await new Response(file.stream().pipeThrough(new DecompressionStream('gzip'))).text():await file.text();
@@ -238,13 +285,20 @@ async function lbImport(file,onStep){ const d=await lbRead(file), ts=Object.keys
   return n; }
 function lbImportDlg(first){ const inp=h('input',{type:'file',accept:'.gz,.json,application/gzip,application/json'});
   inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; if(!f) return;
+    if(dsEstBureau()){ if(!first&&!await confirmDlg('Importer « '+f.name+' » dans la BASE DU BUREAU ?\n\nToutes les données de gestion partagées seront REMPLACÉES, pour tous les postes. Exportez-la d’abord (Fichier ▸ Exporter la base).','Remplacer')) return;
+      const msg=$('#boot-msg')||null; if(msg) msg.textContent='Envoi de la base au serveur du bureau…'; else toast('Envoi de la base au serveur du bureau…');
+      try{ const r=await fetch('/api/import'+(first?'':'?remplacer=1'),{method:'POST',body:f}), d=await r.json(); if(!d.ok) throw new Error(d.error||('erreur '+r.status));
+        toast(d.n+' enregistrements importés dans la base du bureau.'); setTimeout(()=>location.reload(),600); }
+      catch(e){ console.error(e); if(msg) msg.textContent='✗ Import impossible : '+e.message; else toast('✗ Import impossible : '+e.message,true); }
+      return; }
     if(!first&&!await confirmDlg('Importer « '+f.name+' » ?\n\nLa base locale actuelle sera REMPLACÉE. Exportez-la d’abord si vous voulez la garder.','Remplacer')) return;
     const msg=$('#boot-msg')||null; try{ const n=await lbImport(f,k=>{ if(msg) msg.textContent='Import… '+k+' enregistrements'; else toast('Import… '+k+' enregistrements'); });
       toast(n+' enregistrements importés.'); setTimeout(()=>location.reload(),600); }
     catch(e){ console.error(e); if(msg) msg.textContent='✗ Import impossible : '+e.message; else toast('✗ Import impossible : '+e.message,true); } };
   inp.click(); }
 /* Fichier ▸ Exporter la base locale : toutes les collections (y compris les catalogues lourds), .json.gz téléchargé */
-async function lbExport(){ try{ toast('Export de la base locale…'); const parts=['{"format":"deltasub-base","version":1,"source":"DeltaSub (base locale)","exported":'+JSON.stringify(new Date().toISOString().slice(0,19))+
+async function lbExport(){ if(dsEstBureau()){ const a=h('a',{href:'/api/export'}); document.body.append(a); a.click(); setTimeout(()=>a.remove(),1000); toast('Export de la base du bureau…'); return; }
+  try{ toast('Export de la base locale…'); const parts=['{"format":"deltasub-base","version":1,"source":"DeltaSub (base locale)","exported":'+JSON.stringify(new Date().toISOString().slice(0,19))+
     ',"seq":'+DS.seq+',"ids":'+JSON.stringify(DS.ids)+',"tables":{'];
   let first=true, n=0; for(const t of [...DS.tables].sort()){ const rows=await LDB.table(t); if(!rows.length) continue;
     parts.push((first?'':',')+JSON.stringify(t)+':{'+rows.map(r=>JSON.stringify(r.id)+':{"s":'+(r.s||0)+',"v":'+JSON.stringify(r.v)+'}').join(',')+'}'); first=false; n+=rows.length; }
@@ -254,7 +308,7 @@ async function lbExport(){ try{ toast('Export de la base locale…'); const part
   const a=h('a',{href:URL.createObjectURL(gz),download:name}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000);
   toast('Base exportée : '+n+' enregistrements ('+name+').'); }
   catch(e){ console.error(e); toast('✗ Export impossible : '+e.message,true); } }
-const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefined'&&ME.u; n.textContent='● Base locale'+(u?' — '+(staffName(ME.staff)||u.NAME):''); n.title='Données dans ce navigateur (sans serveur). Sauvegarde : Fichier ▸ Exporter la base locale.'; },
+const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefined'&&ME.u, bur=dsEstBureau(); n.textContent=(bur?'● Base du bureau':'● Base locale')+(u?' — '+(staffName(ME.staff)||u.NAME):''); if(bur){ n.title='Données partagées sur le serveur du bureau (NAS). Double-clic : changer d’utilisateur.'; return; } n.title='Données dans ce navigateur (sans serveur). Sauvegarde : Fichier ▸ Exporter la base locale.'; },
   fail(m){ const n=$('#net'); n.className='err'; n.textContent='● Hors ligne'; n.title=m; } };
 
 /* Libellés des tables Deltaproject (colonnes NAMEFR / NAMEGE…) */
@@ -22323,14 +22377,19 @@ function ch11dCtlCtx(p){ if(!p||typeof ch03bContexte!=='function'||typeof ch03bJ
 ═══════════════════════════════════════════════════════════════════════════ */
 (async function(){
   /* sans serveur : base locale du navigateur ; base vide → import d'une base (.json.gz) */
-  try{ await DS.boot(); }
+  const bureau=await dsBureau();   // servie par le serveur du bureau (NAS) : base partagée
+  try{ if(bureau) await ch08dLogin(); await DS.boot(); }
   catch(e){ const b=$('#boot');
+    if(e&&e.vide&&bureau){ b.innerHTML=''; b.append(h('b',{},'Base du bureau'),h('span',{style:{maxWidth:'520px',textAlign:'center',lineHeight:'1.5'}},
+        'La base du bureau est vide. Importez la base de gestion exportée depuis votre poste (Réglages ▸ Données ▸ Exporter, fichier .json.gz).'),
+        h('button',{class:'btn pri',style:{marginTop:'12px'},onclick:()=>lbImportDlg(true)},'Importer une base …'),h('span',{id:'boot-msg'},'')); return; }
+    if(bureau){ $('#boot-msg').textContent='Serveur du bureau injoignable ('+(e&&e.message||e)+').'; console.error(e); return; }
     if(e&&e.vide){ b.innerHTML=''; b.append(h('b',{},'DeltaSub'),h('span',{style:{maxWidth:'520px',textAlign:'center',lineHeight:'1.5'}},
         'La base locale est vide. Importez une base DeltaSub (.json.gz), créée à partir d’une sauvegarde par ',h('code',{},'python3 outils_deltaproject/exporter_base_deltasub.py'),
         ' ou par Fichier ▸ Exporter la base locale.'),h('button',{class:'btn pri',style:{marginTop:'12px'},onclick:()=>lbImportDlg(true)},'Importer une base …'),h('span',{id:'boot-msg'},'')); return; }
     $('#boot-msg').textContent='Base locale illisible ('+(e&&e.message||e)+').'; console.error(e); return; }
-  buildNav(); if(!ME.u){ const u=DS.all('appuser').find(x=>x.USERID==='Paulo'&&x.ISENABLED)||DS.all('appuser').find(x=>x.ISENABLED); if(u) try{ localStorage.setItem('ds_user',String(u.ID)); }catch(_){} }   // un seul utilisateur
-  NET.ok(); chooseUser();
+  buildNav(); if(!bureau&&!ME.u){ const u=DS.all('appuser').find(x=>x.USERID==='Paulo'&&x.ISENABLED)||DS.all('appuser').find(x=>x.ISENABLED); if(u) try{ localStorage.setItem('ds_user',String(u.ID)); }catch(_){} }   // un seul utilisateur (base locale)
+  NET.ok(); chooseUser(); if(bureau){ if(typeof ch08cStart==='function') ch08cStart(); setInterval(()=>DS.poll(),4000); }
   $('#net').ondblclick=()=>chooseUser(true);
   let last='aff-gestion'; try{ last=localStorage.getItem('ds_view')||last; }catch(_){}
   go(last);

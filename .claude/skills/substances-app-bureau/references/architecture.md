@@ -37,6 +37,10 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
 - Fenêtres métier : `editProject(p?)`, `cfgMembers(p)`, `cfgPhases(p)`, `cfgActivities(p)`, `cfgRates(p)`,
   `cfgSubprojects(p)`, `editOwner(o?, type)`, `editContact(c?, owner)`, `editCost(r?, pre)`.
 - Barre de menus d'origine (Fichier, Réglages, Aide) : `ch10aModel(ch10aCtx(false))` → éléments, `ch10aRun(action, arg)`.
+- **Base du bureau (NAS, 07.10.2026)** : si la page est servie par `serveur_deltasub.py` (`/api/ping` → `bureau:true`),
+  `dsBureau()` remplace les méthodes de `DS` par `DSB` (serveur partagé, conflits 409, `DS.poll` toutes les 4 s, comptes CH-08) ;
+  tester avec `dsEstBureau()`. SUBGestion 3 : `SGKV` (fin de `sg3_plus.js`) synchronise les données Facturation (`/api/kv`).
+  Installation et exploitation : `nas/LISEZMOI.md`. Test local : config `nas-test` (port 7796, base dans /tmp/nas_test).
 - Restes « serveur » : verrous `POST /api/commit` (CH-10c), dépôt de fichiers `/api/file`, PDF `/api/pdf`, modèles
   `/api/modeles/zip` — inactifs en mode local (erreurs 501 en aperçu http : préexistantes).
 

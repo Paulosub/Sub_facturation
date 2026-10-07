@@ -1,0 +1,22 @@
+# SUBGestion — base du bureau sur le NAS Synology (DS923+, Container Manager ▸ Projet).
+# Dossier partagé « subgestion » : app/ (ce fichier, la page et le serveur), donnees/ (base SQLite, fichiers joints),
+# sauvegardes/ (copie horaire de la base, 48 dernières). Réseau « host » : le serveur voit l'adresse réelle des postes
+# et n'accepte que le réseau local (192.168.x.x). Adresse des postes : http://192.168.1.100:7790
+services:
+  subgestion:
+    image: python:3.12-slim
+    container_name: subgestion
+    restart: unless-stopped
+    network_mode: host
+    working_dir: /app
+    command: ["python3", "-u", "/app/serveur_deltasub.py", "--port", "7790"]
+    environment:
+      DELTASUB_DB: /donnees/deltasub.sqlite
+      DELTASUB_PAGE: SUBGestion3.html
+      DELTASUB_APP: /app
+      DELTASUB_SAUVEGARDES: /sauvegardes
+    volumes:
+      - ./:/app:ro
+      - ../donnees:/donnees
+      - ../sauvegardes:/sauvegardes
+      - /etc/localtime:/etc/localtime:ro

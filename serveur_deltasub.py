@@ -27,7 +27,7 @@ Ouverture de session. Commandes locales (sur le Mac Studio, base DELTASUB_DB ou 
     python3 serveur_deltasub.py --desactiver-authentification     (secours : retour au mode « Qui utilise ce poste ? »)
     python3 serveur_deltasub.py --mot-de-passe <USERID>             (mot de passe demandé deux fois ; sessions du compte fermées)
 """
-import argparse, csv, datetime, glob, gzip, ipaddress, json, os, re, sqlite3, sys, threading, time
+import argparse, csv, datetime, glob, gzip, hashlib, ipaddress, json, os, re, sqlite3, sys, threading, time
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -35,8 +35,11 @@ PORT = 7790
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_DIR = os.path.expanduser("~/Library/Application Support/DeltaSub")
 DB_PATH = os.environ.get("DELTASUB_DB") or os.path.join(DB_DIR, "deltasub.sqlite")   # DELTASUB_DB = base de test
-BACKUP_DIR = os.path.join(HERE, "Sauvegarde DeltaSub")
-STATIC = {"/": "DeltaSub.html", "/DeltaSub.html": "DeltaSub.html"}
+BACKUP_DIR = os.environ.get("DELTASUB_SAUVEGARDES") or os.path.join(HERE, "Sauvegarde DeltaSub")
+# Base du bureau sur le NAS (07.10.2026) : DELTASUB_PAGE = page servie à « / » (SUBGestion3.html), DELTASUB_APP = dossier des pages
+PAGE = os.environ.get("DELTASUB_PAGE") or "DeltaSub.html"
+APP_DIR = os.environ.get("DELTASUB_APP") or HERE
+STATIC = {"/": PAGE, "/" + PAGE: PAGE, "/DeltaSub.html": "DeltaSub.html"}
 VERSION = 1
 
 # Tables Deltaproject NON reprises : licences, compteurs internes, propriétés système.
@@ -765,7 +768,7 @@ def ch08_gate(h, method):
         if s:
             h.ch08_user = s
             return True
-        if method == "GET" and path in ("/", "/DeltaSub.html"):
+        if method == "GET" and path in STATIC:
             return True
         if method == "GET" and path == "/api/ping":
             return ch08_send(h, 200, {"ok": True, "auth": True})
@@ -853,6 +856,8 @@ def init_db():
     CREATE TABLE IF NOT EXISTS auth_session(token_hash TEXT PRIMARY KEY, appuser_id TEXT NOT NULL, userid TEXT,
         ip TEXT, ua TEXT, created REAL, last REAL, remember INTEGER, revoked TEXT);
     CREATE TABLE IF NOT EXISTS auth_fail(userid TEXT, ts REAL);
+    CREATE TABLE IF NOT EXISTS kv(k TEXT PRIMARY KEY, v TEXT, ver INTEGER NOT NULL, who TEXT, ts TEXT);
+    CREATE INDEX IF NOT EXISTS kv_ver ON kv(ver);
     """)
     c.execute("INSERT OR IGNORE INTO meta VALUES('seq','0')")
     c.commit()
@@ -1146,8 +1151,8 @@ CH03_OBJETS = os.path.join(CH03_FICHIERS, "objets")
 CH03_TMP = os.path.join(CH03_FICHIERS, "tmp")
 # copie incrémentale des contenus : au bureau à côté des copies horaires de la base ; base d'essai (DELTASUB_DB) : à côté
 # de la base, jamais dans la sauvegarde du bureau (BACKUP_DIR dérive du dossier du script, pas de la base)
-CH03_SAUV = (os.path.join(os.path.dirname(DB_PATH), "Sauvegarde DeltaSub", "fichiers") if os.environ.get("DELTASUB_DB")
-             else os.path.join(BACKUP_DIR, "fichiers"))
+CH03_SAUV = (os.path.join(BACKUP_DIR, "fichiers") if os.environ.get("DELTASUB_SAUVEGARDES") or not os.environ.get("DELTASUB_DB")
+             else os.path.join(os.path.dirname(DB_PATH), "Sauvegarde DeltaSub", "fichiers"))   # NAS : dans le dossier de sauvegardes
 CH03_MAX = 25 << 20          # 25 Mo par fichier
 CH03_HTML_MAX = 16 << 20     # 16 Mo de HTML pour /api/pdf
 CH03_LIBRE = 2 << 30         # 2 Go libres au minimum sur le disque du dépôt
@@ -1734,6 +1739,74 @@ def ch03_post(h, chemin):
 
 
 # ─────────── HTTP ───────────
+# ─────────── Base du bureau sur le NAS (07.10.2026) : données Facturation partagées, import / export de la base ───────────
+KV_KEY = re.compile(r"(sa_|sg3_)[A-Za-z0-9_]{1,80}$")
+
+
+def kv_since(c, since):
+    """{"seq":n,"items":{clé:{"v":texte|null,"ver":n}}} : entrées modifiées après « since » (0 = toutes)."""
+    row = c.execute("SELECT value FROM meta WHERE name='kvseq'").fetchone()
+    items = {k: {"v": v, "ver": ver} for k, v, ver in c.execute("SELECT k, v, ver FROM kv WHERE ver>?", (since,))}
+    return {"seq": int(row[0]) if row else 0, "items": items}
+
+
+def kv_put(c, k, v, base, who):
+    """Écrit une entrée si personne ne l'a modifiée depuis la version « base » lue par le poste ; sinon Conflict."""
+    if not KV_KEY.match(k or ""):
+        raise ValueError("clé refusée")
+    with _wlock:
+        row = c.execute("SELECT v, ver FROM kv WHERE k=?", (k,)).fetchone()
+        if row and base is not None and int(base) != row[1]:
+            raise Conflict([{"k": k, "v": row[0], "ver": row[1]}])
+        r0 = c.execute("SELECT value FROM meta WHERE name='kvseq'").fetchone()
+        ver = (int(r0[0]) if r0 else 0) + 1
+        c.execute("INSERT INTO meta VALUES('kvseq',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", (str(ver),))
+        c.execute("INSERT INTO kv VALUES(?,?,?,?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v, ver=excluded.ver, who=excluded.who, ts=excluded.ts",
+                  (k, v, ver, who[:80], datetime.datetime.now().isoformat(timespec="seconds")))
+        c.commit()
+        return ver
+
+
+def base_import(c, d, remplacer):
+    """Base exportée par DeltaSub / SUBGestion (« deltasub-base ») → base du bureau. Refusé si la base contient déjà des données,
+    sauf « remplacer ». Tous les enregistrements reçoivent une nouvelle séquence : les postes ouverts rechargent."""
+    if not isinstance(d, dict) or not isinstance(d.get("tables"), dict):
+        raise ValueError("ce fichier n'est pas une base DeltaSub")
+    with _wlock:
+        n0 = c.execute("SELECT COUNT(*) FROM rec WHERE val IS NOT NULL").fetchone()[0]
+        if n0 and not remplacer:
+            raise ValueError("la base du bureau contient déjà %d enregistrements" % n0)
+        seq = cur_seq(c) + 1
+        now = datetime.datetime.now().isoformat(timespec="seconds")
+        c.execute("DELETE FROM rec")
+        c.execute("DELETE FROM meta WHERE name LIKE 'next_id:%'")
+        n = 0
+        for t, e in d["tables"].items():
+            if not re.fullmatch(r"[a-z0-9_]+", t or "") or not isinstance(e, dict):
+                continue
+            rows = [(t, str(i), js(x["v"]), seq, "import", now) for i, x in e.items() if isinstance(x, dict) and x.get("v") is not None]
+            c.executemany("INSERT INTO rec VALUES(?,?,?,?,?,?)", rows)
+            n += len(rows)
+        for t, nx in (d.get("ids") or {}).items():
+            if re.fullmatch(r"[a-z0-9_]+", t or "") and str(nx).isdigit():
+                c.execute("INSERT INTO meta VALUES(?,?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", ("next_id:" + t, str(nx)))
+        c.execute("UPDATE meta SET value=? WHERE name='seq'", (str(seq),))
+        c.execute("INSERT INTO meta VALUES('import_base',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
+                  (js({"source": str(d.get("source") or "")[:200], "le": now, "enregistrements": n}),))
+        c.commit()
+    return n
+
+
+def base_export(c):
+    """Même format que « Exporter la base locale » de DeltaSub, plus les données Facturation partagées (« kv »)."""
+    ids = {name[8:]: int(v) for name, v in c.execute("SELECT name, value FROM meta WHERE name LIKE 'next_id:%'") if str(v).isdigit()}
+    kv = {k: v for k, v in c.execute("SELECT k, v FROM kv WHERE v IS NOT NULL")}
+    body = dump_json(c)
+    head = '{"format":"deltasub-base","version":1,"source":"Base du bureau (NAS)","exported":%s,"ids":%s,"kv":%s,' % (
+        js(datetime.datetime.now().isoformat(timespec="seconds")), js(ids), js(kv))
+    return head + body[1:]
+
+
 def lan_ok(ip):
     try:
         a = ipaddress.ip_address(ip)
@@ -1774,7 +1847,8 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/ping":
                 imp = c.execute("SELECT value FROM meta WHERE name='import_deltaproject'").fetchone()
                 return self._send(200, js({"ok": True, "seq": cur_seq(c), "version": VERSION,
-                                           "import": json.loads(imp[0]) if imp else None, "aide": os.path.isfile(MANUEL_FR), "auth": ch08_auth_on(c)}))
+                                           "import": json.loads(imp[0]) if imp else None, "aide": os.path.isfile(MANUEL_FR), "auth": ch08_auth_on(c),
+                                           "bureau": True, "page": PAGE}))
             if u.path == "/api/snapshot":
                 tabs = [x for x in (q.get("t") or [""])[0].split(",") if x]
                 excl = [x for x in (q.get("x") or [""])[0].split(",") if x]
@@ -1783,13 +1857,31 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, dump_json(c, int((q.get("since") or ["0"])[0])))
             if u.path == "/api/ids":
                 return self._send(200, js(new_ids(c, (q.get("t") or [""])[0], int((q.get("n") or ["1"])[0]))))
+            if u.path == "/fichiers/lire":   # contenu d'un fichier joint de SUBGestion (même dépôt que CH-03)
+                sha = ((q.get("sha") or [""])[0]).lower()
+                f = os.path.join(CH03_OBJETS, sha[:2], sha) if re.fullmatch(r"[0-9a-f]{64}", sha) else None
+                if not f or not os.path.isfile(f):
+                    return self._send(404, '{"ok":false,"error":"Fichier absent du dépôt."}')
+                with open(f, "rb") as fh:
+                    return self._send(200, fh.read(), "application/octet-stream")
+            if u.path == "/api/kv":   # données Facturation partagées (NAS)
+                return self._send(200, js(kv_since(c, int((q.get("since") or ["0"])[0]))))
+            if u.path == "/api/export":   # sauvegarde complète téléchargée (.json.gz)
+                b = gzip.compress(base_export(c).encode("utf-8"), 6)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/gzip")
+                self.send_header("Content-Disposition", 'attachment; filename="base_bureau_%s.json.gz"' % datetime.datetime.now().strftime("%Y%m%d_%H%M"))
+                self.send_header("Content-Length", str(len(b)))
+                self.end_headers()
+                self.wfile.write(b)
+                return
             if u.path == "/aide/manual_fr.pdf":
                 return _ch08_manual(self)   # CH-08
             if u.path in ("/api/file", "/api/pdf"):   # CH-03 : fichiers du dépôt, moteurs PDF
                 return ch03_get(self, u, q)
             f = STATIC.get(u.path)
-            if f and os.path.exists(os.path.join(HERE, f)):
-                with open(os.path.join(HERE, f), "rb") as fh:
+            if f and os.path.exists(os.path.join(APP_DIR, f)):
+                with open(os.path.join(APP_DIR, f), "rb") as fh:
                     return self._send(200, fh.read(), "text/html; charset=utf-8")
             self._send(404, '{"error":"introuvable"}')
         finally:
@@ -1804,6 +1896,10 @@ class H(BaseHTTPRequestHandler):
             return ch10_modeles_zip(self)   # CH-10 lot 2
         if urlparse(self.path).path in CH03_POST:   # CH-03 : dépôt, génération, fusion, superposition
             return ch03_post(self, urlparse(self.path).path)
+        if urlparse(self.path).path == "/fichiers/ranger":
+            return self._nas_ranger(urlparse(self.path))
+        if urlparse(self.path).path in ("/api/kv", "/api/import"):
+            return self._nas_post(urlparse(self.path))
         if urlparse(self.path).path != "/api/commit":
             return self._send(404, '{"error":"introuvable"}')
         c = db()
@@ -1821,6 +1917,57 @@ class H(BaseHTTPRequestHandler):
             self._send(400, js({"ok": False, "error": str(e)}))
         finally:
             c.close()
+
+
+def _nas_post(self, u):
+    """POST /api/kv {k, v, base} → {ok, ver} | 409 {conflit} ; POST /api/import[?remplacer=1] (corps .json.gz ou .json) → {ok, n}."""
+    c = db()
+    try:
+        raw = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        s = getattr(self, "ch08_user", None)
+        if ch08_auth_on(c) and not s:
+            return self._send(401, js({"ok": False, "error": "session"}))
+        who = str(s["user"].get("USERID") or s["userid"]) if s else self.client_address[0]
+        if u.path == "/api/kv":
+            body = json.loads(raw.decode("utf-8"))
+            v = body.get("v")
+            ver = kv_put(c, str(body.get("k") or ""), None if v is None else str(v), body.get("base"), str(body.get("who") or who))
+            return self._send(200, js({"ok": True, "ver": ver}))
+        if raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        n = base_import(c, json.loads(raw.decode("utf-8")), (parse_qs(u.query).get("remplacer") or ["0"])[0] == "1")
+        print("Base importée : %d enregistrements (%s)" % (n, who), file=sys.stderr)
+        return self._send(200, js({"ok": True, "n": n}))
+    except Conflict as e:
+        return self._send(409, js({"ok": False, "conflit": e.items[0]}))
+    except Exception as e:
+        return self._send(400, js({"ok": False, "error": str(e)[:300]}))
+    finally:
+        c.close()
+
+
+H._nas_post = _nas_post
+
+
+def _nas_ranger(self, u):
+    """POST /fichiers/ranger?sha=… (corps = contenu) : rangé par empreinte dans le dépôt CH-03 (fichiers/objets/<2>/<sha>)."""
+    n = int(self.headers.get("Content-Length") or 0)
+    if n > CH03_MAX:
+        return self._send(413, js({"ok": False, "error": "Fichier trop volumineux (25 Mo au plus)."}))
+    data = self.rfile.read(n)
+    sha = hashlib.sha256(data).hexdigest()
+    if ((parse_qs(u.query).get("sha") or [sha])[0]).lower() != sha:
+        return self._send(400, js({"ok": False, "error": "Empreinte incorrecte."}))
+    d = os.path.join(CH03_OBJETS, sha[:2]); os.makedirs(d, exist_ok=True)
+    f = os.path.join(d, sha)
+    if not os.path.exists(f):
+        with open(f + ".tmp", "wb") as fh:
+            fh.write(data)
+        os.replace(f + ".tmp", f)
+    return self._send(200, js({"ok": True, "sha": sha, "taille": len(data)}))
+
+
+H._nas_ranger = _nas_ranger
 
 
 def main():

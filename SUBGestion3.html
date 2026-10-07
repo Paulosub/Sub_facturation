@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 07.10.2026 08:04 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 07.10.2026 16:26 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -521,6 +521,53 @@ const DS={
   _emit(ts){ this._ls.forEach(f=>{ try{ f(ts); }catch(e){ console.error(e); } }); },
   async poll(){}   // un seul poste : rien à suivre
 };
+/* ── Base du BUREAU (07.10.2026) : servie par serveur_deltasub.py sur le NAS (/api/ping → {bureau:true}), la page lit et écrit la base
+   partagée (plusieurs postes, conflits détectés, changements des autres postes relevés toutes les 4 s). Ouverte en double-clic : base locale. ── */
+const DSB={
+  _ingest(d){ for(const t in d.tables){ const e=d.tables[t], S=this.S[t]||{}; for(const id in e){ if(S[id]!=null&&S[id]>e[id].s) continue; this._put(t,id,e[id].s,e[id].v); } }
+    if(d.seq>this.seq) this.seq=d.seq; },
+  async boot(){
+    const p=await (await fetch('/api/ping',{cache:'no-store'})).json(); this.info=p;
+    $('#boot-msg').textContent='Chargement des données du bureau…';
+    const r0=await fetch('/api/snapshot?x='+HEAVY.join(','),{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); throw new Error('session'); } const d=await r0.json();
+    if(!Object.keys(d.tables).length){ const e=new Error('base du bureau vide'); e.vide=true; throw e; }
+    this._ingest(d); Object.keys(d.tables).forEach(t=>{ this.loaded.add(t); this.tables.add(t); });
+    ['projecttask','projecttasknote','meetingitem','projectnote','task','taskgroup',...HF_TABLES,...PL_TABLES,...SV_TABLES].forEach(t=>this.loaded.add(t));
+  },
+  async need(tables){ const miss=tables.filter(t=>!this.loaded.has(t)); if(!miss.length) return;
+    const r0=await fetch('/api/snapshot?t='+miss.join(','),{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); throw new Error('session'); } const d=await r0.json();
+    miss.forEach(t=>this.loaded.add(t)); this._ingest(d); },
+  newIds(t,n=1){ const x=new XMLHttpRequest(); x.open('GET','/api/ids?t='+t+'&n='+n,false); x.send(); if(x.status===401){ ch08dExpired(x); throw new Error('session'); } return JSON.parse(x.responseText); },
+  async commit(ops){
+    const body={who:this.who(), ops:ops.map(o=>({t:o.t,id:String(o.id),val:o.val,bseq:o.bseq!=null?o.bseq:((this.S[o.t]||{})[String(o.id)]||0)}))};   // o.bseq : version lue à l'ouverture d'un dialogue
+    let r;
+    try{ r=await fetch('/api/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+    catch(e){ NET.fail('serveur injoignable'); toast('✗ Enregistrement impossible : serveur du bureau injoignable.',true); throw e; }
+    const d=await r.json();
+    if(r.status===401||r.status===403){ ch08dRefused(r.status,d); const e=new Error('session'); e.conflict=true; throw e; }
+    if(r.status===409){ d.conflicts.forEach(c=>this._put(c.t,c.id,c.seq,c.val)); this._emit(d.conflicts.map(c=>c.t));
+      toast('⚠ Modifié entre-temps sur un autre poste : la version à jour est affichée, reprenez votre saisie.',true);
+      const e=new Error('conflit'); e.conflict=true; throw e; }
+    if(!d.ok){ toast('✗ '+(d.error||'erreur serveur'),true); throw new Error(d.error); }
+    ops.forEach(o=>{ this._put(o.t,String(o.id),d.seq,o.val==null?null:o.val); if(o.val!=null) this.tables.add(o.t); });
+    NET.ok(); this._emit([...new Set(ops.map(o=>o.t))]); return d.seq;
+  },
+  async poll(){
+    if(this._polling) return; this._polling=true;
+    try{ const r0=await fetch('/api/changes?since='+this.seq,{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); return; } const d=await r0.json();
+      const ts=Object.keys(d.tables).filter(t=>this.loaded.has(t));
+      for(const t of Object.keys(d.tables)) if(!this.loaded.has(t)) delete d.tables[t];
+      const before=this.seq; this._ingest(d); NET.ok();
+      if(ts.length && d.seq>before) this._emit(ts);
+    }catch(e){ NET.fail('serveur du bureau injoignable'); }
+    finally{ this._polling=false; }
+  }
+};
+/* page servie par le serveur du bureau ? → méthodes serveur ; sinon (double-clic, aperçu sans serveur) : base locale */
+async function dsBureau(){ if(!/^https?:$/.test(location.protocol)) return false;
+  try{ const r=await fetch('/api/ping',{cache:'no-store'}); if(!r.ok) return false; const p=await r.json(); if(!p||!p.bureau) return false;
+    DS.info=p; Object.assign(DS,DSB); return true; }catch(_){ return false; } }
+const dsEstBureau=()=>!!(DS.info&&DS.info.bureau);
 /* Import d'une base (.json.gz de exporter_base_deltasub.py, ou sauvegarde « Exporter la base locale ») : REMPLACE la base locale */
 async function lbRead(file){ const gz=/\.gz$/i.test(file.name);
   const txt=gz?await new Response(file.stream().pipeThrough(new DecompressionStream('gzip'))).text():await file.text();
@@ -537,13 +584,20 @@ async function lbImport(file,onStep){ const d=await lbRead(file), ts=Object.keys
   return n; }
 function lbImportDlg(first){ const inp=h('input',{type:'file',accept:'.gz,.json,application/gzip,application/json'});
   inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; if(!f) return;
+    if(dsEstBureau()){ if(!first&&!await confirmDlg('Importer « '+f.name+' » dans la BASE DU BUREAU ?\n\nToutes les données de gestion partagées seront REMPLACÉES, pour tous les postes. Exportez-la d’abord (Fichier ▸ Exporter la base).','Remplacer')) return;
+      const msg=$('#boot-msg')||null; if(msg) msg.textContent='Envoi de la base au serveur du bureau…'; else toast('Envoi de la base au serveur du bureau…');
+      try{ const r=await fetch('/api/import'+(first?'':'?remplacer=1'),{method:'POST',body:f}), d=await r.json(); if(!d.ok) throw new Error(d.error||('erreur '+r.status));
+        toast(d.n+' enregistrements importés dans la base du bureau.'); setTimeout(()=>location.reload(),600); }
+      catch(e){ console.error(e); if(msg) msg.textContent='✗ Import impossible : '+e.message; else toast('✗ Import impossible : '+e.message,true); }
+      return; }
     if(!first&&!await confirmDlg('Importer « '+f.name+' » ?\n\nLa base locale actuelle sera REMPLACÉE. Exportez-la d’abord si vous voulez la garder.','Remplacer')) return;
     const msg=$('#boot-msg')||null; try{ const n=await lbImport(f,k=>{ if(msg) msg.textContent='Import… '+k+' enregistrements'; else toast('Import… '+k+' enregistrements'); });
       toast(n+' enregistrements importés.'); setTimeout(()=>location.reload(),600); }
     catch(e){ console.error(e); if(msg) msg.textContent='✗ Import impossible : '+e.message; else toast('✗ Import impossible : '+e.message,true); } };
   inp.click(); }
 /* Fichier ▸ Exporter la base locale : toutes les collections (y compris les catalogues lourds), .json.gz téléchargé */
-async function lbExport(){ try{ toast('Export de la base locale…'); const parts=['{"format":"deltasub-base","version":1,"source":"DeltaSub (base locale)","exported":'+JSON.stringify(new Date().toISOString().slice(0,19))+
+async function lbExport(){ if(dsEstBureau()){ const a=h('a',{href:'/api/export'}); document.body.append(a); a.click(); setTimeout(()=>a.remove(),1000); toast('Export de la base du bureau…'); return; }
+  try{ toast('Export de la base locale…'); const parts=['{"format":"deltasub-base","version":1,"source":"DeltaSub (base locale)","exported":'+JSON.stringify(new Date().toISOString().slice(0,19))+
     ',"seq":'+DS.seq+',"ids":'+JSON.stringify(DS.ids)+',"tables":{'];
   let first=true, n=0; for(const t of [...DS.tables].sort()){ const rows=await LDB.table(t); if(!rows.length) continue;
     parts.push((first?'':',')+JSON.stringify(t)+':{'+rows.map(r=>JSON.stringify(r.id)+':{"s":'+(r.s||0)+',"v":'+JSON.stringify(r.v)+'}').join(',')+'}'); first=false; n+=rows.length; }
@@ -553,7 +607,7 @@ async function lbExport(){ try{ toast('Export de la base locale…'); const part
   const a=h('a',{href:URL.createObjectURL(gz),download:name}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000);
   toast('Base exportée : '+n+' enregistrements ('+name+').'); }
   catch(e){ console.error(e); toast('✗ Export impossible : '+e.message,true); } }
-const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefined'&&ME.u; n.textContent='● Base locale'+(u?' — '+(staffName(ME.staff)||u.NAME):''); n.title='Données dans ce navigateur (sans serveur). Sauvegarde : Fichier ▸ Exporter la base locale.'; },
+const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefined'&&ME.u, bur=dsEstBureau(); n.textContent=(bur?'● Base du bureau':'● Base locale')+(u?' — '+(staffName(ME.staff)||u.NAME):''); if(bur){ n.title='Données partagées sur le serveur du bureau (NAS). Double-clic : changer d’utilisateur.'; return; } n.title='Données dans ce navigateur (sans serveur). Sauvegarde : Fichier ▸ Exporter la base locale.'; },
   fail(m){ const n=$('#net'); n.className='err'; n.textContent='● Hors ligne'; n.title=m; } };
 
 /* Libellés des tables Deltaproject (colonnes NAMEFR / NAMEGE…) */
@@ -22622,14 +22676,19 @@ function ch11dCtlCtx(p){ if(!p||typeof ch03bContexte!=='function'||typeof ch03bJ
 ═══════════════════════════════════════════════════════════════════════════ */
 (async function(){
   /* sans serveur : base locale du navigateur ; base vide → import d'une base (.json.gz) */
-  try{ await DS.boot(); }
+  const bureau=await dsBureau();   // servie par le serveur du bureau (NAS) : base partagée
+  try{ if(bureau) await ch08dLogin(); await DS.boot(); }
   catch(e){ const b=$('#boot');
+    if(e&&e.vide&&bureau){ b.innerHTML=''; b.append(h('b',{},'Base du bureau'),h('span',{style:{maxWidth:'520px',textAlign:'center',lineHeight:'1.5'}},
+        'La base du bureau est vide. Importez la base de gestion exportée depuis votre poste (Réglages ▸ Données ▸ Exporter, fichier .json.gz).'),
+        h('button',{class:'btn pri',style:{marginTop:'12px'},onclick:()=>lbImportDlg(true)},'Importer une base …'),h('span',{id:'boot-msg'},'')); return; }
+    if(bureau){ $('#boot-msg').textContent='Serveur du bureau injoignable ('+(e&&e.message||e)+').'; console.error(e); return; }
     if(e&&e.vide){ b.innerHTML=''; b.append(h('b',{},'SUBGestion'),h('span',{style:{maxWidth:'520px',textAlign:'center',lineHeight:'1.5'}},
         'La base de ce navigateur est vide. Importez une sauvegarde (.json.gz), créée depuis Réglages ▸ Données & sauvegarde ou par ',h('code',{},'python3 outils_deltaproject/exporter_base_deltasub.py'),
         '.'),h('button',{class:'btn pri',style:{marginTop:'12px'},onclick:()=>lbImportDlg(true)},'Importer une base …'),h('span',{id:'boot-msg'},'')); return; }
     $('#boot-msg').textContent='Base locale illisible ('+(e&&e.message||e)+').'; console.error(e); return; }
-  buildNav(); if(!ME.u){ const u=DS.all('appuser').find(x=>x.USERID==='Paulo'&&x.ISENABLED)||DS.all('appuser').find(x=>x.ISENABLED); if(u) try{ localStorage.setItem('ds_user',String(u.ID)); }catch(_){} }   // un seul utilisateur
-  NET.ok(); chooseUser();
+  buildNav(); if(!bureau&&!ME.u){ const u=DS.all('appuser').find(x=>x.USERID==='Paulo'&&x.ISENABLED)||DS.all('appuser').find(x=>x.ISENABLED); if(u) try{ localStorage.setItem('ds_user',String(u.ID)); }catch(_){} }   // un seul utilisateur (base locale)
+  NET.ok(); chooseUser(); if(bureau){ if(typeof ch08cStart==='function') ch08cStart(); setInterval(()=>DS.poll(),4000); }
   $('#net').ondblclick=()=>chooseUser(true);
   let last='nx-home'; try{ last=localStorage.getItem('sg3_view')||last; }catch(_){}
   go(last);
@@ -23906,6 +23965,86 @@ function sgChantierBtn(){ const nw=document.getElementById('nx-new'); if(!nw) re
 { const f0=fxEnsure; fxEnsure=function(){ const p=f0.apply(this,arguments); Promise.resolve(p).then(w=>{ w=w||FX.w; if(w&&!w.__sgPv){ w.__sgPv=1; sgPvClasses();
       new w.MutationObserver(()=>{ if(sgPvVue()) sgChantierBtn(); }).observe(w.document.getElementById('pv_out')||w.document.body,{childList:true}); } },()=>{}); return p; }; }
 document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement&&SG_CHANTIER&&!sgPvVue()) sgModeChantier(false); });
+
+/* ═══ Base du bureau sur le NAS (07.10.2026) ═══
+   Page servie par serveur_deltasub.py (dsEstBureau()) : le moteur lit et écrit la base partagée (DeltaSub.html, DSB). Ici :
+   1. données Facturation (localStorage sa_* + sg3_liens / sg3_heures_reprises) synchronisées avec /api/kv : envoi après chaque
+      enregistrement (événement « storage » du cadre, setItem de la page), relevé toutes les 5 s ; deux postes qui modifient la même
+      clé → fusion par élément (id / num / code) quand ils n'ont pas touché au même contrat / à la même facture, sinon avertissement ;
+   2. fichiers joints rangés sur le serveur (/fichiers/ranger, /fichiers/lire) ; 3. sauvegardes : celles du serveur (pas de copie locale). */
+const SGKV={on:false,ver:{},base:{},fb:{},t:{},seq:0,applying:false,ready:null,bandeau:null,
+  local:new Set(['sa_fact_draft','sa_calc_draft','sa_fsa','sa_backup','sa_autobackup','sa_apercu_opt','sa_ag_mode','sa_fh_opts','sa_dv_share_dest'])};
+const sgKvCle=k=>typeof k==='string'&&((/^sa_/.test(k)&&!/^sa_ui_state/.test(k)&&!SGKV.local.has(k))||k==='sg3_liens'||k==='sg3_heures_reprises');
+const sgKvCadre=()=>!!(FX&&FX.ready&&document.getElementById('fx-frame'));
+function sgKvEcrire(k,v){ SGKV.applying=true; try{ if(v==null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){ console.error(e); } finally{ SGKV.applying=false; } }
+/* fusion à trois : base (ce que le cadre a lu), mine (ce qu'il enregistre), theirs (version du serveur) ; null = fusion impossible */
+function sgKvFusion(base,mine,theirs){ let B,M,T; try{ B=JSON.parse(base==null?'null':base); M=JSON.parse(mine==null?'null':mine); T=JSON.parse(theirs==null?'null':theirs); }catch(_){ return null; }
+  const s=x=>JSON.stringify(x===undefined?null:x), cle=o=>o&&typeof o==='object'?(o.id??o.num??o.code??o.ID):undefined;
+  if(Array.isArray(M)&&Array.isArray(T)&&(B==null||Array.isArray(B))){ const b=B||[]; if([b,M,T].some(a=>a.some(o=>cle(o)==null))) return null;
+    const mb=new Map(b.map(o=>[String(cle(o)),o])), mm=new Map(M.map(o=>[String(cle(o)),o])), mt=new Map(T.map(o=>[String(cle(o)),o]));
+    const ordre=[...new Set([...T.map(o=>String(cle(o))),...M.map(o=>String(cle(o)))])], out=[];
+    for(const k of ordre){ const vb=mb.get(k), vm=mm.get(k), vt=mt.get(k), chM=s(vm)!==s(vb), chT=s(vt)!==s(vb);
+      if(chM&&chT&&s(vm)!==s(vt)) return null; const v=chM?vm:vt; if(v!==undefined) out.push(v); }
+    return JSON.stringify(out); }
+  if(M&&T&&typeof M==='object'&&typeof T==='object'&&!Array.isArray(M)&&!Array.isArray(T)){ const b=B&&typeof B==='object'?B:{}, out={};
+    for(const k of new Set([...Object.keys(T),...Object.keys(M)])){ const chM=s(M[k])!==s(b[k]), chT=s(T[k])!==s(b[k]);
+      if(chM&&chT&&s(M[k])!==s(T[k])) return null; const v=chM?M[k]:T[k]; if(v!==undefined) out[k]=v; }
+    return JSON.stringify(out); }
+  return null; }
+function sgKvBandeau(msg,err){ let b=SGKV.bandeau; if(!b){ b=SGKV.bandeau=h('div',{style:{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'18px',zIndex:9000,background:'#003346',color:'#fff',
+      padding:'10px 14px',display:'flex',gap:'12px',alignItems:'center',fontSize:'13px',maxWidth:'720px'}}); document.body.append(b); }
+  b.style.background=err?'#BD1E42':'#003346'; b.innerHTML='';
+  b.append(h('span',{},msg),h('button',{class:'btn',style:{background:'#FFF266',color:'#1d1d1b',border:0},onclick:()=>{ b.remove(); SGKV.bandeau=null; sgFxReload(); }},'Actualiser'),
+    h('button',{class:'btn',style:{background:'transparent',color:'#fff',border:'1px solid #fff'},onclick:()=>{ b.remove(); SGKV.bandeau=null; }},'Plus tard')); }
+/* relevé : applique les valeurs du serveur ; first = relevé complet (au démarrage) */
+async function sgKvReleve(first){ const r=await fetch('/api/kv?since='+(first?0:SGKV.seq),{cache:'no-store'}); if(!r.ok) throw new Error('relevé '+r.status); const d=await r.json(), ch=[];
+  for(const k in d.items){ const it=d.items[k]; if(!sgKvCle(k)) continue; SGKV.ver[k]=it.ver; SGKV.base[k]=it.v;
+    if(SGKV.t[k]) continue;   // envoi en attente : il fusionnera
+    const cur=localStorage.getItem(k); if(cur!==it.v){ sgKvEcrire(k,it.v); ch.push(k); }
+    if(!sgKvCadre()||!/^sa_/.test(k)) SGKV.fb[k]=it.v; }
+  if(first) for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(sgKvCle(k)&&!(k in d.items)) sgKvPlan(k,0); }   // clés de ce poste absentes du serveur
+  SGKV.seq=Math.max(SGKV.seq,d.seq); return ch; }
+function sgKvPlan(k,delai){ clearTimeout(SGKV.t[k]); SGKV.t[k]=setTimeout(()=>sgKvEnvoi(k).catch(e=>console.error(e)),delai==null?700:delai); }
+async function sgKvEnvoi(k,essai){ SGKV.t[k]=null; let v=localStorage.getItem(k); const sv=SGKV.base[k];
+  if(v===sv){ SGKV.fb[k]=v; return; }
+  const fb=k in SGKV.fb?SGKV.fb[k]:sv; let fusion=false;
+  if(k in SGKV.ver&&fb!==sv){ const m=sgKvFusion(fb,v,sv);   // le cadre travaillait sur une version dépassée
+    if(m==null){ SGKV.fb[k]=v; sgKvEcrire(k,sv); sgKvBandeau('Conflit : « '+k.replace(/^sa_/,'')+' » a été modifié en même temps sur un autre poste. Votre dernière modification n’a pas été enregistrée : actualisez puis refaites-la.',true); return; }
+    fusion=m!==v; SGKV.fb[k]=v; v=m; }
+  const r=await fetch('/api/kv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k,v,base:k in SGKV.ver?SGKV.ver[k]:null,who:DS.who()})}), d=await r.json().catch(()=>({}));
+  if(r.ok&&d.ok){ SGKV.ver[k]=d.ver; SGKV.base[k]=v; if(!fusion) SGKV.fb[k]=localStorage.getItem(k)===v?v:SGKV.fb[k];
+    if(fusion){ sgKvEcrire(k,v); if(sgKvCadre()) sgKvBandeau('Facturation : les modifications d’un autre poste ont été réunies aux vôtres. Actualisez pour les voir.'); }
+    NET.ok(); return; }
+  if(r.status===409&&d.conflit&&!essai){ SGKV.ver[k]=d.conflit.ver; SGKV.base[k]=d.conflit.v; if(!fusion) SGKV.fb[k]=fb; return sgKvEnvoi(k,true); }
+  if(r.status===401){ ch08dExpired(d); return; }
+  NET.fail('données Facturation non enregistrées'); toast('✗ Facturation : enregistrement sur le serveur du bureau impossible ('+(d.error||r.status)+'). Nouvel essai dans 30 s.',true); sgKvPlan(k,30000); }
+/* état de départ du cadre Facturation : ce qu'il lit en mémoire */
+const sgKvFbTout=()=>{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(sgKvCle(k)) SGKV.fb[k]=localStorage.getItem(k); } };
+window.addEventListener('storage',e=>{ if(SGKV.on&&e.storageArea===localStorage&&sgKvCle(e.key)) sgKvPlan(e.key); });   // écritures du cadre Facturation
+{ const set0=Storage.prototype.setItem, rem0=Storage.prototype.removeItem;   // écritures de la page (sg3_liens…)
+  Storage.prototype.setItem=function(k,v){ set0.call(this,k,v); if(SGKV.on&&!SGKV.applying&&this===localStorage&&sgKvCle(k)) sgKvPlan(k); };
+  Storage.prototype.removeItem=function(k){ rem0.call(this,k); if(SGKV.on&&!SGKV.applying&&this===localStorage&&sgKvCle(k)) sgKvPlan(k); }; }
+{ const f0=fxEnsure; fxEnsure=function(){ if(FX.p||!dsEstBureau()) return f0.apply(this,arguments);
+    const p=(async()=>{ try{ await SGKV.ready; }catch(_){} sgKvFbTout(); FX.p=null; return f0(); })(); FX.p=p; p.catch(()=>{ FX.p=null; }); return p; }; }
+async function sgKvTic(){ if(!SGKV.on) return; try{ const ch=await sgKvReleve(false);
+    if(ch.some(k=>/^sa_/.test(k))&&FX.p){ if(VIEW&&/^fx-/.test(VIEW.id)) sgKvBandeau('Facturation : des modifications ont été faites sur un autre poste.'); else { FX.p=null; FX.ready=false; const f=document.getElementById('fx-frame'); if(f) f.remove(); } } }
+  catch(e){ NET.fail('serveur du bureau injoignable'); } }
+SGKV.ready=(async()=>{ for(let i=0;i<900&&!(typeof DS!=='undefined'&&DS.info);i++) await new Promise(r=>setTimeout(r,100));
+  if(!dsEstBureau()) return; SGKV.on=true; await sgKvReleve(true); setInterval(sgKvTic,5000); })();
+SGKV.ready.catch(e=>{ console.error(e); toast('✗ Données Facturation du bureau illisibles : '+(e.message||e),true); });
+/* fichiers joints : sur le serveur du bureau (copie gardée dans ce navigateur) */
+{ const r0=sgFichierRanger, l0=sgFichierLire;
+  sgFichierRanger=async function(blob,nom){ const res=await r0(blob,nom); if(dsEstBureau()){ const b=await SGDB.get('fichiers',res.sha).catch(()=>null);
+      const x=await fetch('/fichiers/ranger?sha='+res.sha,{method:'POST',body:b?b.blob:blob}); if(!x.ok){ let m=''; try{ m=(await x.json()).error; }catch(_){} const e=new Error(m||'Fichier non enregistré sur le serveur du bureau.'); e.status=x.status; throw e; } }
+    return res; };
+  sgFichierLire=async function(sha){ const b=await SGDB.get('fichiers',sha).catch(()=>null); if(b) return b.blob;
+    if(dsEstBureau()){ const x=await fetch('/fichiers/lire?sha='+encodeURIComponent(sha)).catch(()=>null); if(x&&x.ok){ const bl=await x.blob(); await SGDB.put('fichiers',{sha,blob:bl,taille:bl.size,ajoute:Date.now()}).catch(()=>{}); return bl; } }
+    return l0(sha); }; }
+/* sauvegardes : faites par le serveur du bureau (toutes les heures) et par Hyper Backup sur le NAS */
+{ const s0=sgSauver; sgSauver=async function(manuel){ if(!dsEstBureau()) return s0(manuel);
+    SAUV.etat=Object.assign({},SAUV.etat,{ou:'serveur du bureau',lieu:'NAS (sauvegarde horaire)',quand:Date.now(),seq:DS.seq,erreur:null}); nxLS.set('sg3_sauvegarde',SAUV.etat); sgSauvAff();
+    if(manuel) toast('Base du bureau : sauvegardée automatiquement sur le NAS. Pour une copie sur ce poste : Exporter la base de gestion.');
+    return true; }; }
 </script>
 </body>
 </html>

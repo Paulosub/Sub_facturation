@@ -48,8 +48,17 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   7788 (`/openpath`, `/revealpath`) ; import des modèles .zip → message clair (demande l'ancien serveur).
   Encore à rendre autonomes dans DeltaSub.html seul (déjà faits dans SUBGestion 3) : dépôt de fichiers et PDF (`/api/file`,
   `/api/pdf`) ; et partout : import des modèles (.zip), mots de passe / sessions (CH-08), manuel PDF. Aucun « lien CRB ».
-- **`serveur_deltasub.py`** — ancienne base partagée (SQLite, port 7790) : n'est plus nécessaire pour l'app ;
-  ne sert plus qu'à la reprise Deltaproject (`--importer-deltaproject`, puis export ci-dessus). Base de test : `DELTASUB_DB`.
+- **`serveur_deltasub.py`** — base partagée (SQLite, port 7790) : reprise Deltaproject (`--importer-deltaproject`) et
+  **base du bureau sur le NAS (07.10.2026)**. Base de test : `DELTASUB_DB` ; NAS : `DELTASUB_PAGE` (page servie à « / »,
+  `SUBGestion3.html`), `DELTASUB_APP` (dossier des pages), `DELTASUB_SAUVEGARDES`. Ajouts : `/api/ping` → `bureau:true`,
+  `/api/kv` (données Facturation partagées, version par clé, 409 si dépassée), `/api/import` (base vide, ou `?remplacer=1`),
+  `/api/export` (.json.gz + `kv`), `/fichiers/ranger|lire` (dépôt CH-03 par empreinte).
+- **Deux modes, choisis au démarrage** (`dsBureau()`, `dsEstBureau()`) : page servie par ce serveur → méthodes `DSB`
+  (snapshot, commit avec conflits 409, `DS.poll` 4 s, comptes CH-08) ; double-clic ou serveur statique → base locale `LDB`.
+  SUBGestion 3 (`sg3_plus.js`, fin) : `SGKV` synchronise les clés `sa_*` (+ `sg3_liens`, `sg3_heures_reprises`) — envoi sur
+  l'événement `storage` du cadre Facturation, relevé 5 s, fusion à trois par élément (`id`/`num`/`code`), bandeau
+  « Actualiser » ; fichiers joints sur le serveur ; sauvegardes = celles du serveur. Installation : `nas/LISEZMOI.md`,
+  `nas/preparer.sh`, `nas/docker-compose.yml` (Container Manager, réseau host, python:3.12-slim).
 - **Modèle de données = celui de Deltaproject** : une collection par table Derby, en
   minuscules (`project`, `contact`, `contactowner`, `staff`, `timelog`…), champs en
   MAJUSCULES comme les colonnes. Côté page : `DS.all(t)`, `DS.get(t,id)`, `DS.by(t,champ,v)`,

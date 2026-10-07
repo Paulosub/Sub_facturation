@@ -79,7 +79,7 @@ async function sgRestaurer(nom){ sgConfirm('Restaurer la sauvegarde « '+nom+' �
 
 /* ═══ 2. UN SEUL REGISTRE PAR DONNÉE ═════════════════════════════════════════════════════════════════════
    Adresses : l'Annuaire est la référence ; le carnet de Facturation (PV, calcul, devis) en est le reflet (+ ses fiches pas
-   encore reprises). Heures : la Feuille de temps est la référence ; « Réunir les registres » y reprend les heures saisies
+   encore reprises). Heures : la Feuille d’heures est la référence ; « Réunir les registres » y reprend les heures saisies
    dans Facturation. Contrats ↔ affaires : lien par le code d'affaire (exact, puis préfixe « 23KAU.CV » → 23KAU), sinon lien
    manuel (sg3_liens), sans jamais modifier le contrat (son code est imprimé sur les documents). */
 const SG_TYPES_ADR=['soc','pers','fam','com','ass'];
@@ -114,7 +114,7 @@ function sgAffairesListe(){ if(!FX.ready) return; const d=FX.w.document; let dl=
   const i=d.getElementById('ch_affaire'); if(i&&!i.dataset.sg){ i.dataset.sg=1; i.setAttribute('list','sg-projets');
     i.addEventListener('change',()=>{ const p=DS.all('project').find(x=>sgCle(x.NUMBER)===sgCle(i.value)); if(!p) return;
       const t=d.getElementById('ch_projet'); if(t&&!t.value.trim()){ t.value=p.TITLE||''; t.dispatchEvent(new Event('input',{bubbles:true})); } }); } }
-/* reprise des heures saisies dans Facturation (source « fh ») dans la Feuille de temps */
+/* reprise des heures saisies dans Facturation (source « fh ») dans la Feuille d’heures */
 function sgHeuresAReprendre(){ let hs=[]; try{ hs=JSON.parse(FX.w.localStorage.getItem('sa_heures')||'[]'); }catch(_){}
   let cs=[]; try{ cs=JSON.parse(FX.w.localStorage.getItem('sa_collaborateurs')||'[]'); }catch(_){}
   const faites=new Set(nxLS.get('sg3_heures_reprises',[]));
@@ -135,7 +135,7 @@ function sgHeuresAReprendre(){ let hs=[]; try{ hs=JSON.parse(FX.w.localStorage.g
       TIMEPERIOD:(e2-e1)/60,PROJECT_ID:p.ID,PHASE_ID:ph?ph.ID:null,SUBPHASE_ID:sp?sp.ID:null,ACTIVITYGROUP_ID:agID,ACTIVITY_ID:acID,SUBPROJECT_ID:null,DESCRIPTION:x.desc||null,
       ISCHARGEABLE:x.facturable===false?0:1,ISCHARGED:0,ISHOLIDAY:0,TIMELOGSTATECODE:0,CHARGEDDATE:null};
     if(+p.ISTIMEPHASEMANDATORY&&!v.PHASE_ID){ out.pb='phase « '+(x.phaseGroupe||'?')+' » introuvable (obligatoire)'; return out; }
-    if(typeof hsOverlap==='function'&&hsOverlap(v)){ out.pb='déjà dans la Feuille de temps (même créneau)'; out.doublon=true; return out; }
+    if(typeof hsOverlap==='function'&&hsOverlap(v)){ out.pb='déjà dans la Feuille d’heures (même créneau)'; out.doublon=true; return out; }
     out.ok=true; out.v=v; out.p=p; out.st=st; return out; }); }
 async function sgReunirAppliquer(){ await fxEnsure(); const ok=await sgSauver(false);
   const r=sgCarnetReste(sgCarnetOriginal()), ops=[], nO=DS.newIds('contactowner',Math.max(1,r.ent.length)), nC=DS.newIds('contact',Math.max(1,r.adr.length)), idO={};
@@ -158,7 +158,7 @@ VIEWS['nx-reunir']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Analys
     const r=sgCarnetReste(sgCarnetOriginal()), hs=sgHeuresAReprendre(), hOk=hs.filter(x=>x.ok), hKo=hs.filter(x=>!x.ok&&!x.doublon), dbl=hs.filter(x=>x.doublon);
     const cs=D.c.filter(c=>!c.annule), sans=cs.filter(c=>!sgProjetDuContrat(c)), avec=cs.length-sans.length, fait=nxLS.get('sg3_reunion',null);
     const projOpts=DS.all('project').sort((a,b)=>cmp(b.NUMBER,a.NUMBER)).map(p=>'<option value="'+p.ID+'">'+nxE(projLabel(p))+'</option>').join('');
-    const html='<div class="sg-split">'+sgIntro('Réglages','Réunir les registres','Une seule référence par donnée : l’<b>Annuaire</b> pour les adresses, la <b>Feuille de temps</b> pour les heures, et chaque contrat relié à son projet. Rien n’est effacé : les anciens registres restent consultables dans Réglages ▸ Archives.'
+    const html='<div class="sg-split">'+sgIntro('Réglages','Réunir les registres','Une seule référence par donnée : l’<b>Annuaire</b> pour les adresses, la <b>Feuille d’heures</b> pour les heures, et chaque contrat relié à son projet. Rien n’est effacé : les anciens registres restent consultables dans Réglages ▸ Archives.'
         ,'<div class="sg-figs"><div class="sg-fig"><div class="n">'+r.ent.length+'</div><div class="t">entités du carnet à reprendre</div></div><div class="sg-fig"><div class="n">'+hOk.length+'</div><div class="t">saisies de temps à reprendre</div></div><div class="sg-fig"><div class="n">'+avec+'/'+cs.length+'</div><div class="t">contrats reliés</div></div>'+(fait?'<div class="sg-fig"><div class="n" style="font-size:16px">'+nxE(new Date(fait.le).toLocaleDateString('fr-CH'))+'</div><div class="t">dernière réunion</div></div>':'')+'</div>')
       +'<div><div class="nx-grid">'
       +nxCard('c12','Reprendre maintenant','<div class="b"><p style="margin:0 0 12px;font-weight:300">La base est d’abord sauvegardée. Seuls les éléments absents de la référence sont ajoutés ; les doublons sont ignorés.</p><button class="nx-btn pri" data-fn="go"'+((r.ent.length||hOk.length)?'':' disabled')+'>'+nxSvg('group')+'Réunir : '+r.ent.length+' entités, '+r.adr.length+' adresses, '+hOk.length+' saisies</button></div>')
@@ -166,7 +166,7 @@ VIEWS['nx-reunir']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Analys
       +nxCard('c6','Heures saisies dans Facturation',(hs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Date</th><th>Projet</th><th class="r">Durée</th><th>État</th></tr>'+hs.slice(0,60).map(x=>'<tr><td>'+dfr(x.src.date)+'</td><td>'+nxE(x.src.affaire)+'</td><td class="r">'+nxH(x.src.heures)+' h</td><td>'+(x.ok?'<span class="nx-tag s2">à reprendre</span>':x.doublon?'<span class="nx-tag s4">déjà présente</span>':'<span class="nx-tag urg">'+nxE(x.pb)+'</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune heure de Facturation à reprendre.</div>'),'<span class="n">'+hOk.length+' à reprendre · '+dbl.length+' déjà présentes · '+hKo.length+' à vérifier</span>')
       +nxCard('c12','Contrats d’honoraires sans projet relié',sans.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Code</th><th>Projet / client</th><th>Date</th><th>Relier au projet</th></tr>'+sans.map(c=>'<tr><td><b>'+nxE(c.affaire||'—')+'</b></td><td>'+nxE([c.projet,c.nom].filter(Boolean).join(' — '))+'</td><td>'+(c.date?dfr(c.date):'')+'</td><td><select class="inp" data-lien="'+nxE(c.id)+'" style="max-width:340px"><option value="">— choisir —</option>'+projOpts+'</select></td></tr>').join('')+'</table></div>':'<div class="nx-empty">Tous les contrats sont reliés à un projet.</div>','<span class="n">'+sans.length+'</span>')
       +'</div></div></div>';
-    const pg=m.querySelector('.nx-page'); pg.querySelector('.nx-wrap').innerHTML=html; pg0._fn.go=()=>sgConfirm('Réunir les registres maintenant ?\n\n'+r.ent.length+' entités et '+r.adr.length+' adresses entrent dans l’Annuaire, '+hOk.length+' saisies de temps dans la Feuille de temps.',sgReunirAppliquer,{title:'Réunir les registres',yesText:'Réunir'});
+    const pg=m.querySelector('.nx-page'); pg.querySelector('.nx-wrap').innerHTML=html; pg0._fn.go=()=>sgConfirm('Réunir les registres maintenant ?\n\n'+r.ent.length+' entités et '+r.adr.length+' adresses entrent dans l’Annuaire, '+hOk.length+' saisies de temps dans la Feuille d’heures.',sgReunirAppliquer,{title:'Réunir les registres',yesText:'Réunir'});
     pg.querySelectorAll('[data-lien]').forEach(s=>s.onchange=()=>{ const l=sgLiens(); if(s.value) l[s.dataset.lien]=s.value; else delete l[s.dataset.lien]; nxLS.set('sg3_liens',l); toast('Contrat relié à '+projLabel(DS.get('project',s.value))+'.'); });
   }).catch(e=>toast('✗ '+(e.message||e),true)); } };
 
@@ -254,13 +254,13 @@ function sgOuvrirDomaine(p,dom){ try{ AM.dom=dom; localStorage.setItem('ds_am_do
 VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||''); nxRecent('p',p.ID);
-    const ong=nxLS.get('sg3_fiche_onglet','vue'), mo=projMO(p), pin=nxPinned('p',p.ID);
+    const ong0=nxLS.get('sg3_fiche_onglet','vue'), ong=sgOngletOk(ong0)?ong0:'vue', mo=projMO(p), pin=nxPinned('p',p.ID), modif=sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)));
     const html='<div class="nx-hero"><div class="ic">'+nxE(String(p.NUMBER||'').slice(0,5)||nxIni(p.TITLE))+'</div><div class="tx"><h2>'+nxE(p.TITLE||p.NUMBER)+'</h2><div class="meta"><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span>'+nxStateTag(p)
       +(mo?'<span>'+nxSvg('person')+nxE(mo)+'</span>':'')+(p.LOCATION?'<span>'+nxSvg('map')+nxE(p.LOCATION)+'</span>':'')+(p.PROJECTSTARTDATE?'<span>'+nxSvg('cal')+dfr(p.PROJECTSTARTDATE)+(p.PROJECTENDDATE?' → '+dfr(p.PROJECTENDDATE):'')+'</span>':'')
       +(+p.ISINTERNAL?'<span class="nx-tag">Interne</span>':'')+'<span id="sg-p-al"></span></div></div><div class="nx-acts">'
-      +'<button class="nx-btn pri" data-fn="temps">'+nxSvg('timer')+'Saisir du temps</button><button class="nx-btn" data-fn="facturer">'+nxSvg('receipt')+'Facturer</button><button class="nx-btn" data-fn="pv">'+nxSvg('pv')+'PV de chantier</button>'
-      +'<button class="nx-btn'+(pin?' on':'')+'" data-fn="pin" title="Favori">'+nxSvg('pin')+'</button><button class="nx-btn" data-fn="more" title="Plus">'+nxSvg('more')+'</button><button class="nx-btn" data-fn="edit">'+nxSvg('edit')+'Modifier</button></div></div>'
-      +'<div class="sg-onglets">'+SG_ONGLETS.map(([k,t])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+'</button>').join('')+'</div><div id="sg-onglet"><div class="nx-empty">…</div></div>';
+      +'<button class="nx-btn pri" data-fn="temps">'+nxSvg('timer')+'Saisir du temps</button>'+(sgDroit('factures','validation')?'<button class="nx-btn" data-fn="facturer">'+nxSvg('receipt')+'Facturer</button>':'')+(sgDroit('pv','lecture')?'<button class="nx-btn" data-fn="pv">'+nxSvg('pv')+'PV de chantier</button>':'')
+      +'<button class="nx-btn'+(pin?' on':'')+'" data-fn="pin" title="Favori">'+nxSvg('pin')+'</button><button class="nx-btn" data-fn="more" title="Plus">'+nxSvg('more')+'</button>'+(modif?'<button class="nx-btn" data-fn="edit">'+nxSvg('edit')+'Modifier</button>':'')+'</div></div>'
+      +'<div class="sg-onglets">'+SG_ONGLETS.filter(o=>sgOngletOk(o[0])).map(([k,t])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+'</button>').join('')+'</div><div id="sg-onglet"><div class="nx-empty">…</div></div>';
     const pg=nxPage(m,html);
     SG_ONGLETS.forEach(([k])=>pg._fn['o_'+k]=()=>{ nxLS.set('sg3_fiche_onglet',k); pg.querySelectorAll('.sg-onglets button').forEach(b=>b.classList.toggle('on',b.dataset.fn==='o_'+k)); sgOnglet(p,k,pg); });
     Object.assign(pg._fn,{edit:()=>editProject(p),temps:()=>sgSaisieRapide({projet:p.ID}),pin:b=>{ const on=nxTogglePin('p',p.ID); b.classList.toggle('on',on); },
@@ -291,13 +291,19 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
         +nxKpi('wallet','Marge',nxCHF(x.marge)+'<small>CHF</small>','facturé − coût du temps')); }); return; }
   if(k==='temps'){ const per=nxLS.get('sg3_fiche_per','12'), lim=per==='tout'?0:dayKey(new Date(now.getFullYear(),now.getMonth()-(+per),now.getDate()));
     const L=logs.filter(r=>tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1)), tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
-    set('<div style="display:flex;gap:8px;align-items:center;margin:0 0 14px;flex-wrap:wrap"><div class="seg">'+[['1','1 mois'],['3','3 mois'],['12','12 mois'],['tout','Tout']].map(([v,t])=>'<button data-per="'+v+'" class="'+(v===per?'on':'')+'">'+t+'</button>').join('')+'</div><span style="margin-left:auto;color:var(--s-gris)">'+L.length+' saisies · '+nxH(tot)+' h'+(sgFinVerrou()?'':' · coût '+nxCHF(L.reduce((s,r)=>s+(+r.TIMEPERIOD||0)*taux(r.STAFF_ID,tlDate(r)),0))+' CHF')+'</span><button class="nx-btn pri" data-fn="temps">'+nxSvg('timer')+'Saisir du temps</button><button class="nx-btn" data-go="h-saisie">Feuille de temps</button></div>'
-      +nxCard('c12','Saisies','<div class="b flush" style="max-height:60vh;overflow:auto"><table class="nx-tbl"><tr><th>Date</th><th>Membre</th><th>Activité</th><th>Phase</th><th class="r">Durée</th><th>Fact.</th><th>Statut</th></tr>'
+    set('<div style="display:flex;gap:8px;align-items:center;margin:0 0 14px;flex-wrap:wrap"><div class="seg">'+[['1','1 mois'],['3','3 mois'],['12','12 mois'],['tout','Tout']].map(([v,t])=>'<button data-per="'+v+'" class="'+(v===per?'on':'')+'">'+t+'</button>').join('')+'</div><span style="margin-left:auto;color:var(--s-gris)">'+L.length+' saisies · '+nxH(tot)+' h'+(sgTauxVisibles()?' · coût '+nxCHF(L.reduce((s,r)=>s+(+r.TIMEPERIOD||0)*taux(r.STAFF_ID,tlDate(r)),0))+' CHF':'')+'</span><button class="nx-btn pri" data-fn="temps">'+nxSvg('timer')+'Saisir du temps</button><button class="nx-btn" data-go="h-saisie">Feuille d’heures</button></div>'
+      +'<div style="display:flex;gap:8px;align-items:center;margin:0 0 14px;flex-wrap:wrap"><div class="seg">'+[['det','Détail'],['collab','Par collaborateur'],['phase','Par phase'],['mois','Par mois'],['activite','Par activité'],['croise','Collaborateur × phase']].map(([v,t])=>'<button data-grp="'+v+'" class="'+(v===nxLS.get('sg3_fiche_grp','det')?'on':'')+'">'+t+'</button>').join('')+'</div><span style="flex:1"></span><button class="nx-btn" data-fn="csvt">'+nxSvg('export')+'CSV</button><button class="nx-btn" data-fn="prnt">'+nxSvg('print')+'Imprimer</button></div>'
+      +(nxLS.get('sg3_fiche_grp','det')!=='det'?nxCard('c12','Situation','<div class="b flush" style="overflow:auto" id="sg-fiche-sit">'+(L.length?sgSituationHtml(L,nxLS.get('sg3_fiche_grp','det')):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'):'')
+      +(nxLS.get('sg3_fiche_grp','det')!=='det'?'':nxCard('c12','Saisies','<div class="b flush" style="max-height:60vh;overflow:auto" id="sg-fiche-sit"><table class="nx-tbl"><tr><th>Date</th><th>Membre</th><th>Activité</th><th>Phase</th><th class="r">Durée</th><th>Fact.</th><th>Statut</th></tr>'
         +L.slice(0,400).map(r=>{ const s=DS.get('staff',r.STAFF_ID), a=DS.get('projectactivity',r.ACTIVITY_ID)||DS.get('activity',r.ACTIVITY_ID), f=DS.get('projectphase',r.PHASE_ID);
-          return '<tr><td>'+dfr(diso(tlDate(r)))+'</td><td>'+nxE(s?s.INITIALS||staffName(s):'')+'</td><td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nxE([nm(a),r.DESCRIPTION].filter(Boolean).join(' — '))+'</td><td>'+nxE(nm(f))+'</td><td class="r">'+nxH(r.TIMEPERIOD)+' h</td><td>'+(+r.ISCHARGEABLE?'oui':'non')+'</td><td>'+nxE(TSTATE[r.TIMELOGSTATECODE||0]||'')+'</td></tr>'; }).join('')+'</table></div>'));
+          return '<tr><td>'+dfr(diso(tlDate(r)))+'</td><td>'+nxE(s?s.INITIALS||staffName(s):'')+'</td><td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nxE([nm(a),r.DESCRIPTION].filter(Boolean).join(' — '))+'</td><td>'+nxE(nm(f))+'</td><td class="r">'+nxH(r.TIMEPERIOD)+' h</td><td>'+(+r.ISCHARGEABLE?'oui':'non')+'</td><td>'+nxE(TSTATE[r.TIMELOGSTATECODE||0]||'')+'</td></tr>'; }).join('')+'</table></div>')));
+    box.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_grp',b.dataset.grp); sgOnglet(p,'temps',pg); });
+    pg._fn.csvt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(t) sgCsvTable(t,'heures_'+p.NUMBER+'_'+diso(now)+'.csv'); };
+    pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(t) sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+'</p>'+t.outerHTML); };
     box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); sgOnglet(p,'temps',pg); }); return; }
   if(k==='phases'){ const ph=DS.by('projectphase','PROJECT_ID',p.ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)), bySP={}, byPhC={}, byPh={};
     logs.forEach(r=>{ const v=+r.TIMEPERIOD||0; if(r.SUBPHASE_ID!=null) bySP[r.SUBPHASE_ID]=(bySP[r.SUBPHASE_ID]||0)+v; if(r.PHASE_ID!=null){ byPh[r.PHASE_ID]=(byPh[r.PHASE_ID]||0)+v; byPhC[r.PHASE_ID]=(byPhC[r.PHASE_ID]||0)+v*taux(r.STAFF_ID,tlDate(r)); } });
+    if(SG_COUTS&&!DS.all('staffrate').length) Object.assign(byPhC,(SG_COUTS[p.ID]||{}).phases||{});
     const sans=logs.filter(r=>r.PHASE_ID==null).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     set(ph.length?nxCard('c12','Phases et budget','<div class="b flush"><table class="nx-tbl"><tr><th>Phase</th><th class="r">Budget</th><th class="r">Réel</th><th class="r">Écart</th><th></th><th class="r">Coût du temps</th><th class="r">Budget CHF</th></tr>'
       +ph.map(f=>{ const v=byPh[f.ID]||0, b=+f.TIMEBUDGET||0, sp=DS.by('projectsubphase','PROJECTPHASE_ID',f.ID).sort((a,c)=>cmp(a.NUMBER,c.NUMBER));
@@ -359,28 +365,30 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
 /* ═══ 5. À TRAITER AUJOURD'HUI (accueil + pastille du menu) ═════════════════════════════════════════════════ */
 let SG_AT={n:0,groupes:[]};
 async function sgATraiter(){ const G=[], td=today(), me=nxMe(), now=new Date();
-  const e=SAUV.etat; if(!(typeof dsEstBureau==='function'&&dsEstBureau())&&(!e.quand||Date.now()-e.quand>48*3600e3)) G.push({k:'sv',t:'Sauvegarde',ico:'db',go:'nx-data',items:[{t:e.quand?'Dernière sauvegarde '+sgDepuis(e.quand):'Base jamais sauvegardée',s:e.erreur||'Sauvegarder maintenant ou choisir un dossier'}]});
+  const e=SAUV.etat; if(sgAdmin()&&!(typeof dsEstBureau==='function'&&dsEstBureau())&&(!e.quand||Date.now()-e.quand>48*3600e3)) G.push({k:'sv',t:'Sauvegarde',ico:'db',go:'nx-data',items:[{t:e.quand?'Dernière sauvegarde '+sgDepuis(e.quand):'Base jamais sauvegardée',s:e.erreur||'Sauvegarder maintenant ou choisir un dossier'}]});
   let D=null; try{ await fxEnsure(); D=fxData(); }catch(_){}
   if(D){ const ech=D.f.filter(f=>fxUnpaid(f)&&f.ech&&f.ech<td).sort((a,b)=>cmp(a.ech,b.ech));
-    if(ech.length) G.push({k:'fe',t:'Factures échues à relancer',ico:'receipt',go:'fx-factures',items:ech.map(f=>({t:(f.num||'(sans numéro)')+' · '+nxCHF((+f._ttc||0)+(+f._fttc||0))+' CHF',s:[fxClient(D,f),'échue le '+dfr(f.ech)].filter(Boolean).join(' · '),go:'fx-saisie',arg:'f:'+f.id}))});
+    if(ech.length&&sgDroit('factures','lecture')) G.push({k:'fe',t:'Factures échues à relancer',ico:'receipt',go:'fx-factures',items:ech.map(f=>({t:(f.num||'(sans numéro)')+' · '+nxCHF((+f._ttc||0)+(+f._fttc||0))+' CHF',s:[fxClient(D,f),'échue le '+dfr(f.ech)].filter(Boolean).join(' · '),go:'fx-saisie',arg:'f:'+f.id}))});
     const lim=diso(new Date(now.getFullYear(),now.getMonth(),now.getDate()-30)), ns=D.c.filter(c=>c.envoye&&!c.signe&&!c.annule&&!c.termine&&c.date&&c.date<lim);
-    if(ns.length) G.push({k:'cs',t:'Contrats envoyés, non signés depuis 30 jours',ico:'contrat',go:'fx-contrats',items:ns.map(c=>({t:(c.affaire||'')+' · '+(c.projet||c.nom||''),s:'envoyé le '+dfr(c.date),go:'fx-calchono',arg:'c:'+c.id}))}); }
+    if(ns.length&&sgDroit('contrats','lecture')) G.push({k:'cs',t:'Contrats envoyés, non signés depuis 30 jours',ico:'contrat',go:'fx-contrats',items:ns.map(c=>({t:(c.affaire||'')+' · '+(c.projet||c.nom||''),s:'envoyé le '+dfr(c.date),go:'fx-calchono',arg:'c:'+c.id}))}); }
   if(me){ const mine=DS.by('timelog','STAFF_ID',me.ID), parJour={}; mine.forEach(r=>{ const k=tlKey(r); parJour[k]=(parJour[k]||0)+(+r.TIMEPERIOD||0); });
     const manq=[]; for(let i=1,n=0;n<10&&i<30;i++){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i); if(!d.getDay()||d.getDay()===6) continue; n++; if(!(parJour[dayKey(d)]>0)) manq.push(d); }
-    if(manq.length&&mine.length) G.push({k:'hm',t:'Jours sans saisie de temps (10 derniers jours ouvrés)',ico:'timer',go:'h-saisie',n:manq.length+' j.',items:[{t:'Compléter ma feuille de temps',s:manq.map(d=>JOURS[d.getDay()]+' '+dfr(diso(d)).slice(0,5)).join(' · '),fn:'temps'}]}); }
-  const tr=DS.all('projecttask').filter(t=>!t.DONEDATE&&t.DEADLINE&&t.DEADLINE<td);
+    if(manq.length&&mine.length) G.push({k:'hm',t:'Jours sans heures saisies',ico:'timer',go:'h-saisie',max:10,items:manq.map(d=>({t:nxCap(JOURS_L[d.getDay()])+' '+dfr(diso(d)),s:'Aucune heure saisie — ouvrir ma feuille d’heures',go:'h-saisie',arg:'jour:'+diso(d)}))}); }
+  const tr=DS.all('projecttask').filter(t=>!t.DONEDATE&&t.DEADLINE&&t.DEADLINE<td&&(sgAdmin()||(me&&String(t.STAFF_ID)===String(me.ID))));
   if(tr.length) G.push({k:'tr',t:'Tâches en retard',ico:'task',go:'taches-encours',items:tr.map(t=>{ const p=DS.get('project',t.PROJECT_ID); return {t:t.SUBJECT||'(sans objet)',s:(p?p.NUMBER+' · ':'')+'échéance '+dfr(t.DEADLINE),ref:p?'p:'+p.ID:null}; })});
-  if(D){ const taux=sgTaux(), al=DS.all('project').filter(p=>+p.PROJECTSTATECODE===2&&!sgInterne(p)).map(p=>sgRenta(p,D,taux)).filter(x=>x.niv>=2).sort((a,b)=>b.niv-a.niv);
+  if(D&&sgDroit('finances','projets')){ const taux=sgTaux(), al=DS.all('project').filter(p=>+p.PROJECTSTATECODE===2&&!sgInterne(p)).map(p=>sgRenta(p,D,taux)).filter(x=>x.niv>=2).sort((a,b)=>b.niv-a.niv);
     if(al.length) G.push({k:'re',t:'Projets en alerte de rentabilité',ico:'coins',go:'nx-renta',items:al.map(x=>({t:x.p.NUMBER+' · '+(x.p.TITLE||''),s:x.al.map(a=>a[1]).join(' · '),ref:'p:'+x.p.ID}))});
-    const r=sgCarnetReste(sgCarnetOriginal()), hs=sgHeuresAReprendre().filter(x=>x.ok).length;
+  }
+  if(D&&sgAdmin()){ const r=sgCarnetReste(sgCarnetOriginal()), hs=sgHeuresAReprendre().filter(x=>x.ok).length;
     if(r.ent.length||hs) G.push({k:'rg',t:'Registres en double à réunir',ico:'group',go:'nx-reunir',items:[{t:r.ent.length+' adresse(s) du carnet, '+hs+' saisie(s) de temps de Facturation',s:'Réglages ▸ Réunir les registres'}]}); }
+  sgValidationsATraiter(G);
   if(sgFinVerrou()) for(let i=G.length-1;i>=0;i--) if(/^(fe|cs|re)$/.test(G[i].k)) G.splice(i,1);
-  SG_AT={n:G.reduce((s,g)=>s+(/^(fe|cs|tr)$/.test(g.k)?g.items.length:1),0),groupes:G}; sgSide(); return SG_AT; }
+  SG_AT={n:G.reduce((s,g)=>s+(/^(fe|cs|tr|hm|va|vr)$/.test(g.k)?g.items.length:1),0),groupes:G}; sgSide(); return SG_AT; }
 const sgSide0=sgSide; sgSide=function(){ sgSide0(); const a=document.querySelector('#nx-nav [data-go="nx-home"] .lb'); if(a&&SG_AT.n) a.insertAdjacentHTML('beforeend',' <i class="sg-badge">'+SG_AT.n+'</i>'); };
 function sgATraiterHtml(A){ if(!A.groupes.length) return nxCard('c12','À traiter aujourd’hui','<div class="nx-empty">Rien d’urgent : factures, contrats, heures, tâches, rentabilité et sauvegarde sont à jour.</div>');
   return nxCard('c12','À traiter aujourd’hui','<div class="b flush sg-at">'+A.groupes.map(g=>'<div class="sg-at-g"><div class="sg-at-t" data-go="'+g.go+'">'+nxSvg(g.ico)+'<b>'+nxE(g.t)+'</b><span class="nx-tag '+(g.k==='fe'||g.k==='re'||g.k==='sv'?'urg':'s3')+'">'+(g.n||g.items.length)+'</span></div>'
-    +g.items.slice(0,4).map(x=>'<div class="nx-row" '+(x.go?'data-go="'+x.go+'" data-arg="'+nxE(x.arg||'')+'"':x.ref?'data-ref="'+x.ref+'"':x.fn?'data-fn="'+x.fn+'"':'data-go="'+g.go+'"')+'><div class="t"><b>'+nxE(x.t)+'</b><span>'+nxE(x.s||'')+'</span></div></div>').join('')
-    +(g.items.length>4?'<div class="nx-row" data-go="'+g.go+'"><div class="t"><span>… et '+(g.items.length-4)+' autre(s)</span></div></div>':'')+'</div>').join('')+'</div>','<span class="n">'+A.n+'</span>'); }
+    +g.items.slice(0,g.max||4).map(x=>'<div class="nx-row" '+(x.go?'data-go="'+x.go+'" data-arg="'+nxE(x.arg||'')+'"':x.ref?'data-ref="'+x.ref+'"':x.fn?'data-fn="'+x.fn+'"':'data-go="'+g.go+'"')+'><div class="t"><b>'+nxE(x.t)+'</b><span>'+nxE(x.s||'')+'</span></div></div>').join('')
+    +(g.items.length>(g.max||4)?'<div class="nx-row" data-go="'+g.go+'"><div class="t"><span>… et '+(g.items.length-(g.max||4))+' autre(s)</span></div></div>':'')+'</div>').join('')+'</div>','<span class="n">'+A.n+'</span>'); }
 { const r0=VIEWS['nx-home'].render; VIEWS['nx-home'].render=function(m){ r0.call(this,m); const pg=m.querySelector('.nx-page'), right=pg&&pg.querySelector('.sg-split>div:last-child'); if(!right) return;
     const at=h('div',{class:'nx-grid',style:{marginBottom:'30px'},html:SG_AT.groupes.length?sgATraiterHtml(SG_AT):'<div class="nx-card c12"><h4>À traiter aujourd’hui</h4><div class="nx-empty">Vérification…</div></div>'}); right.prepend(at);
     pg._fn.temps=()=>sgSaisieRapide({});
@@ -478,7 +486,7 @@ async function sgRapatrier(){ await DS.need(['depotfichier']); const shas=[...ne
   toast(ok+' fichier(s) rapatrié(s)'+(ok<manq.length?', '+(manq.length-ok)+' introuvable(s)':'')+'.'); }
 
 /* ═══ 7. SAISIE DE TEMPS RAPIDE ET MINUTEUR ═══════════════════════════════════════════════════════════════
-   Mêmes règles que la Feuille de temps (champs obligatoires de l'affaire, périodes verrouillées, chevauchements). */
+   Mêmes règles que la Feuille d’heures (champs obligatoires de l'affaire, périodes verrouillées, chevauchements). */
 function sgDerniere(sid,pid){ return DS.by('timelog','STAFF_ID',sid).filter(r=>!+r.ISHOLIDAY&&(pid==null||String(r.PROJECT_ID)===String(pid))).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR2,a.TIMEHOUR2))[0]; }
 /* heure arrondie au quart d'heure (début : vers le bas, fin : vers le haut, au plus 23:59) */
 function sgQuart(d,haut){ let m=d.getHours()*60+d.getMinutes(); m=Math.min(1439,(haut?Math.ceil:Math.floor)(m/15)*15); return hm(Math.floor(m/60),m%60); }
@@ -540,7 +548,7 @@ setInterval(sgMinuteurAff,15000);
 nxNewMenu=function(el){ popMenu(el,[
   {t:'Saisie de temps',fn:()=>sgSaisieRapide({})},{t:'Démarrer le minuteur …',fn:()=>sgMinuteurMenu(el)},'-',
   {t:'Projet',fn:()=>editProject()},{t:'Contact — société',fn:()=>editOwner(null,0)},{t:'Contact — personne',fn:()=>editOwner(null,1)},'-',
-  {t:'Contrat d’honoraires',fn:()=>go('fx-calchono','new')},{t:'Facture ou acompte',fn:()=>go('fx-saisie','new')},{t:'Dépense',fn:()=>go('frais')}]); };
+  {t:'Contrat d’honoraires',fn:()=>go('fx-calchono','new')},{t:'Facture ou acompte',fn:()=>go('fx-saisie','new')},{t:'Note de frais',fn:()=>go('frais')}]); };
 { const i0=nxPalIndex; nxPalIndex=function(){ const it=i0(); [['Saisie de temps rapide','timer',()=>sgSaisieRapide({})],['Démarrer le minuteur','clock',()=>sgMinuteurMenu(document.getElementById('nx-new'))],
     ['Sauvegarder la base maintenant','save',()=>sgSauver(true)],['Rentabilité des projets','coins',()=>go('nx-renta')],['Réunir les registres','group',()=>go('nx-reunir')]]
     .forEach(([t,ico,run])=>it.push({g:'Commandes',t,ico,run,q:t,n:nxNorm(t)})); return it; }; }
@@ -602,7 +610,7 @@ function sgOuvrir(){ try{ sessionStorage.setItem('sg3_ouvert',String(Date.now())
 function sgVerrouiller(){ try{ sessionStorage.removeItem('sg3_ouvert'); }catch(_){} sgVerrouAff(); if(VIEW&&sgProtege(sgDomDe(VIEW.id))) go('nx-home'); else if(VIEW&&/^nx-(home|projet)$/.test(VIEW.id)) go(VIEW.id,VIEW.arg); }
 const sgDomDe=v=>{ const x=NX_VIEW[v]; return x&&x.d?(x.d.k||x.d):null; };   // NX_VIEW[v].d = objet du domaine
 const sgProtege=d=>!!d&&!!sgAcces().hash&&sgAcces().doms.includes(d);
-const sgFinVerrou=()=>!sgOuvert()&&(sgProtege('finances')||sgProtege('facturation'));
+const sgFinVerrou=()=>(!sgOuvert()&&(sgProtege('finances')||sgProtege('facturation')))||(typeof sgDroit==='function'&&!sgDroit('finances','projets')&&!sgDroit('factures','lecture'));
 let SG_ESSAIS={n:0,jusqua:0}, SG_DLG_ACC=null;
 function sgDeverrouiller(msg){ if(sgOuvert()) return Promise.resolve(true); if(SG_DLG_ACC) return SG_DLG_ACC;
   return SG_DLG_ACC=new Promise(res=>{ const I=h('input',{class:'inp',type:'password',autocomplete:'off',style:{width:'260px'}}), E=h('div',{style:{color:'var(--s-rouge)',minHeight:'18px',marginTop:'8px',fontSize:'12.5px'}});
@@ -724,16 +732,20 @@ async function sgKvReleve(first){ const r=await fetch('/api/kv?since='+(first?0:
     if(SGKV.t[k]) continue;   // envoi en attente : il fusionnera
     const cur=localStorage.getItem(k); if(cur!==it.v){ sgKvEcrire(k,it.v); ch.push(k); }
     if(!sgKvCadre()||!/^sa_/.test(k)) SGKV.fb[k]=it.v; }
-  if(first) for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(sgKvCle(k)&&!(k in d.items)) sgKvPlan(k,0); }   // clés de ce poste absentes du serveur
+  if(first) for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(sgKvCle(k)&&!(k in d.items)){ if(sgAdmin()) sgKvPlan(k,0); else sgKvEcrire(k,null); } }   // clés de ce poste absentes du serveur : envoyées (administrateur) ou retirées (hors du profil)
   SGKV.seq=Math.max(SGKV.seq,d.seq); return ch; }
 function sgKvPlan(k,delai){ clearTimeout(SGKV.t[k]); SGKV.t[k]=setTimeout(()=>sgKvEnvoi(k).catch(e=>console.error(e)),delai==null?700:delai); }
 async function sgKvEnvoi(k,essai){ SGKV.t[k]=null; let v=localStorage.getItem(k); const sv=SGKV.base[k];
+  if(SGKV.ro&&SGKV.ro.has(k)){ if(v!==sv) sgKvEcrire(k,sv===undefined?null:sv); return; }   // lecture seule pour ce profil : valeur du serveur rétablie
   if(v===sv){ SGKV.fb[k]=v; return; }
   const fb=k in SGKV.fb?SGKV.fb[k]:sv; let fusion=false;
   if(k in SGKV.ver&&fb!==sv){ const m=sgKvFusion(fb,v,sv);   // le cadre travaillait sur une version dépassée
     if(m==null){ SGKV.fb[k]=v; sgKvEcrire(k,sv); sgKvBandeau('Conflit : « '+k.replace(/^sa_/,'')+' » a été modifié en même temps sur un autre poste. Votre dernière modification n’a pas été enregistrée : actualisez puis refaites-la.',true); return; }
     fusion=m!==v; SGKV.fb[k]=v; v=m; }
   const r=await fetch('/api/kv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k,v,base:k in SGKV.ver?SGKV.ver[k]:null,who:DS.who()})}), d=await r.json().catch(()=>({}));
+  if(r.status===403&&d.lecture_seule){ SGKV.ro.add(k); sgKvEcrire(k,sv===undefined?null:sv); SGKV.fb[k]=sv;
+    if(!SG_KV_MUETTES.test(k)) toast('✗ '+(d.msg||'Modification non permise par votre profil.'),true); return; }
+  if(r.ok&&d.ok&&d.v!=null&&d.v!==v){ SGKV.ver[k]=d.ver; SGKV.base[k]=d.v; SGKV.fb[k]=d.v; sgKvEcrire(k,d.v); NET.ok(); return; }   // le serveur a fusionné / marqué « à valider »
   if(r.ok&&d.ok){ SGKV.ver[k]=d.ver; SGKV.base[k]=v; if(!fusion) SGKV.fb[k]=localStorage.getItem(k)===v?v:SGKV.fb[k];
     if(fusion){ sgKvEcrire(k,v); if(sgKvCadre()) sgKvBandeau('Facturation : les modifications d’un autre poste ont été réunies aux vôtres. Actualisez pour les voir.'); }
     NET.ok(); return; }
@@ -752,7 +764,7 @@ async function sgKvTic(){ if(!SGKV.on) return; try{ const ch=await sgKvReleve(fa
     if(ch.some(k=>/^sa_/.test(k))&&FX.p){ if(VIEW&&/^fx-/.test(VIEW.id)) sgKvBandeau('Facturation : des modifications ont été faites sur un autre poste.'); else { FX.p=null; FX.ready=false; const f=document.getElementById('fx-frame'); if(f) f.remove(); } } }
   catch(e){ NET.fail('serveur du bureau injoignable'); } }
 SGKV.ready=(async()=>{ for(let i=0;i<900&&!(typeof DS!=='undefined'&&DS.info);i++) await new Promise(r=>setTimeout(r,100));
-  if(!dsEstBureau()) return; SGKV.on=true; await sgKvReleve(true); setInterval(sgKvTic,5000); })();
+  if(!dsEstBureau()) return; await sgAccPret(); sgKvPoste(); SGKV.on=true; await sgKvReleve(true); setInterval(sgKvTic,5000); })();
 SGKV.ready.catch(e=>{ console.error(e); toast('✗ Données Facturation du bureau illisibles : '+(e.message||e),true); });
 /* fichiers joints : sur le serveur du bureau (copie gardée dans ce navigateur) */
 { const r0=sgFichierRanger, l0=sgFichierLire;
@@ -767,3 +779,218 @@ SGKV.ready.catch(e=>{ console.error(e); toast('✗ Données Facturation du burea
     SAUV.etat=Object.assign({},SAUV.etat,{ou:'serveur du bureau',lieu:'NAS (sauvegarde horaire)',quand:Date.now(),seq:DS.seq,erreur:null}); nxLS.set('sg3_sauvegarde',SAUV.etat); sgSauvAff();
     if(manuel) toast('Base du bureau : sauvegardée automatiquement sur le NAS. Pour une copie sur ce poste : Exporter la base de gestion.');
     return true; }; }
+
+/* ═══ 11. PROFILS D'ACCÈS ET DROITS (07.10.2026) ═════════════════════════════════════════════════════════════════
+   Administrateur (tout), chef de projet, collaborateur ; droits des deux derniers réglés par l'administrateur dans Réglages ▸
+   Profils et accès (collection « sgacces »). Sur le NAS avec ouverture de session, le SERVEUR applique ces droits aux données
+   (chaque poste ne reçoit que son périmètre, écritures refusées, contrats et factures « à valider ») ; ici l'interface suit :
+   menu, accueil, fiches, feuille d'heures, validations. Fichier ouvert par double-clic (sans serveur) : seul, administrateur.
+   ⚠ SG_DROITS et SG_DEFAUTS identiques à serveur_deltasub.py. */
+const SG_DROITS={projets_voir:['siens','tous'],projets_modifier:['aucun','siens','tous'],heures:['siennes','projets','toutes'],frais:['siens','projets','tous'],
+  chantier:['aucun','lecture','ecriture'],pv:['aucun','lecture','saisie','validation'],documents:['lecture','depot'],contacts:['lecture','ecriture'],equipe:['liste','taux'],
+  contrats:['aucun','lecture','validation','edition'],factures:['aucune','lecture','validation','edition'],finances:['aucune','projets','toutes'],bibliotheque:['lecture','ecriture'],reglages:['non','oui']};
+const SG_DEFAUTS={
+  cdp:{projets_voir:'siens',projets_modifier:'siens',heures:'projets',frais:'projets',chantier:'ecriture',pv:'validation',documents:'depot',contacts:'ecriture',equipe:'liste',contrats:'validation',factures:'validation',finances:'projets',bibliotheque:'lecture',reglages:'non'},
+  collab:{projets_voir:'siens',projets_modifier:'aucun',heures:'siennes',frais:'siens',chantier:'lecture',pv:'saisie',documents:'depot',contacts:'lecture',equipe:'liste',contrats:'aucun',factures:'aucune',finances:'aucune',bibliotheque:'lecture',reglages:'non'}};
+const SG_DROITS_LIB=[
+  ['projets_voir','Projets visibles','Les autres projets ne s’affichent pas.',{siens:'Ses projets (équipe du projet, heures saisies)',tous:'Tous les projets du bureau'}],
+  ['projets_modifier','Projets modifiables','Fiche, phases, équipe, notes et tâches.',{aucun:'Aucun (lecture)',siens:'Ses projets',tous:'Tous, et création de projets'}],
+  ['heures','Heures','Ce que la personne voit des heures saisies (elle ne saisit que les siennes).',{siennes:'Les siennes',projets:'Toutes celles de ses projets — situations par collaborateur, par phase',toutes:'Toutes les heures du bureau'}],
+  ['frais','Notes de frais','',{siens:'Les siennes',projets:'Celles de ses projets',tous:'Toutes'}],
+  ['chantier','Chantier','Estimations, descriptifs et devis, appels d’offres, contrôle des coûts.',{aucun:'Aucun accès',lecture:'Lecture',ecriture:'Lecture et modification'}],
+  ['pv','PV de chantier','',{aucun:'Aucun accès',lecture:'Lecture',saisie:'Saisie (ses ajouts sont à valider)',validation:'Saisie, validation et envoi'}],
+  ['documents','Documents','Fichiers joints des projets.',{lecture:'Lecture',depot:'Lecture et dépôt'}],
+  ['contacts','Contacts','',{lecture:'Lecture',ecriture:'Lecture et modification'}],
+  ['equipe','Équipe','',{liste:'Liste des membres',taux:'Avec taux internes et coûts de revient'}],
+  ['contrats','Contrats d’honoraires','Sur les projets visibles.',{aucun:'Aucun accès',lecture:'Lecture',validation:'Édition, à valider par l’administrateur',edition:'Édition libre (et validation)'}],
+  ['factures','Factures','Sur les projets visibles.',{aucune:'Aucun accès',lecture:'Lecture',validation:'Édition, à valider par l’administrateur',edition:'Édition libre (et validation)'}],
+  ['finances','Finances','Rentabilité, cockpits, controlling.',{aucune:'Aucun accès',projets:'Rentabilité de ses projets (sans les taux)',toutes:'Toutes les finances du bureau'}],
+  ['bibliotheque','Bibliothèque','Modèles, documents types.',{lecture:'Lecture',ecriture:'Lecture et modification'}],
+  ['reglages','Réglages','Comptes, sauvegardes, paramètres du bureau.',{non:'Aucun accès',oui:'Accès complet'}]];
+const SG_TOUT=Object.fromEntries(Object.entries(SG_DROITS).map(([k,v])=>[k,v[v.length-1]]));
+const SG_PROFILS={admin:'Administrateur',cdp:'Chef de projet',collab:'Collaborateur'};
+let SG_ACC={profil:'admin',droits:{...SG_TOUT},staffs:[],projets:null,auth:false};
+var SG_ACC_PRET=null, SG_COUTS=null;
+const sgAdmin=()=>SG_ACC.profil==='admin';
+function sgDroit(k,niv){ const L=SG_DROITS[k]; if(!L) return true; const a=L.indexOf(SG_ACC.droits[k]); return (a<0?L.length-1:a)>=L.indexOf(niv); }
+function sgAccPret(){ return SG_ACC_PRET||Promise.resolve(); }
+async function sgCoutsCharger(){ try{ const r=await fetch('/api/couts',{cache:'no-store'}), d=await r.json(); if(d&&d.ok) SG_COUTS=d.projets; }catch(_){} }
+SG_ACC_PRET=(async()=>{ for(let i=0;i<900&&!(typeof DS!=='undefined'&&DS.info);i++) await new Promise(r=>setTimeout(r,100));
+  if(!(typeof dsEstBureau==='function'&&dsEstBureau())) return;
+  try{ const r=await fetch('/api/session',{cache:'no-store'}), d=await r.json(); if(d&&d.auth&&d.acces) SG_ACC=Object.assign({auth:true,userid:d.user&&d.user.USERID},d.acces); }catch(_){}
+  if(!sgAdmin()&&sgDroit('finances','projets')){ await sgCoutsCharger(); setInterval(sgCoutsCharger,10*60e3); }
+  const t=setInterval(()=>{ if(NX.booted){ clearInterval(t); sgAccesAppliquer(); } },150); })();
+function sgAccesAppliquer(){ try{ document.body.dataset.profil=SG_ACC.profil; }catch(_){} sgSide(); sgNav();
+  if(VIEW&&!sgVueOk(VIEW.id)) go('nx-home'); else if(VIEW&&VIEW.id==='nx-home') go('nx-home');
+  if(!sgAdmin()) toast('Connecté·e : profil « '+SG_PROFILS[SG_ACC.profil]+' ».');
+  setTimeout(()=>sgATraiter().catch(()=>{}),2500); }
+/* écrans permis (menu, vues d'ensemble, palette ⌘K : nxCan) */
+const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion':()=>sgDroit('projets_modifier','tous'),'aff-controlling':()=>sgDroit('heures','projets'),
+  coplan:()=>sgDroit('chantier','lecture'),devis:()=>sgDroit('chantier','lecture'),soum:()=>sgDroit('chantier','lecture'),coco:()=>sgDroit('chantier','lecture'),
+  'fx-pv-chantier':()=>sgDroit('pv','lecture'),'adr-props':()=>sgDroit('contacts','ecriture'),'h-dispo':()=>sgDroit('heures','projets'),
+  'collab-tous':()=>sgDroit('equipe','taux'),'collab-anciens':()=>sgDroit('equipe','taux'),'mg-planning':()=>sgDroit('equipe','taux'),'mg-heures':()=>sgDroit('heures','projets'),'mg-collab':()=>sgDroit('equipe','taux'),
+  'fx-contrats':()=>sgDroit('contrats','lecture'),'fx-calchono':()=>sgDroit('contrats','validation'),'fx-factures':()=>sgDroit('factures','lecture'),'fx-saisie':()=>sgDroit('factures','validation'),
+  'nx-valider':()=>sgDroit('contrats','validation')||sgDroit('factures','validation'),'fx-cockpit':()=>sgDroit('finances','projets'),'fx-cockpit2':()=>sgDroit('finances','projets'),
+  'nx-renta':()=>sgDroit('finances','projets'),'nx-profils':()=>sgAdmin()};
+function sgVueOk(v){ if(!v||sgAdmin()) return true;
+  if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
+  if(SG_VUE_DROIT[v]) return !!SG_VUE_DROIT[v]();
+  const x=NX_VIEW[v], dk=x&&x.d&&x.d.k;
+  if(dk==='reglages') return sgDroit('reglages','oui');
+  if(dk==='finances'||dk==='facturation') return sgDroit('finances','toutes');
+  return true; }
+{ const g0=go; go=function(v,arg){
+    if(v==='h-saisie'&&typeof arg==='string'&&arg.startsWith('jour:')){ try{ HS.d=new Date(arg.slice(5)+'T00:00'); }catch(_){} arg=undefined; }   // « jour sans heures » de l'accueil
+    if(!sgVueOk(v)){ toast('Cet écran n’est pas accessible avec votre profil ('+SG_PROFILS[SG_ACC.profil]+').',true); return VIEW?undefined:g0.call(this,'nx-home'); }
+    return g0.call(this,v,arg); }; }
+/* projets sur lesquels la personne travaille (même règle que le serveur) : équipe du projet + heures saisies */
+function sgMesProjets(){ const st=ME.staff, set=new Set(); if(!st) return set; const pers=String(st.PERSON_ID);
+  DS.all('projectmember').forEach(m=>{ if(String(m.RESPCONTACT_ID)===pers||String(m.CONTACT_ID)===pers) set.add(String(m.PROJECT_ID)); });
+  DS.by('timelog','STAFF_ID',st.ID).forEach(r=>set.add(String(r.PROJECT_ID))); return set; }
+/* feuille d'heures, notes de frais : chef de projet et collaborateur → leur nom seulement ; administrateur → tous les collaborateurs actuels */
+{ const f0=ch08bMyStaffs; ch08bMyStaffs=function(u){ if(u!==undefined&&u!==ME.u) return f0.apply(this,arguments);
+    if(sgAdmin()) return staffList(); const s=ME.staff; return s?[s]:f0.apply(this,arguments).slice(0,1); }; }
+/* libellés : « Feuille d'heures », « Note de frais » (en plus d'« Affaire » → « Projet ») */
+SG_LIB.push([/Feuilles? de temps/g,m=>m[0]+'euille'+(m.includes('es ')?'s':'')+' d’heures'],[/feuilles? de temps/g,m=>'feuille'+(m.includes('es ')?'s':'')+' d’heures'],
+  [/Dépenses/g,'Notes de frais'],[/Dépense(?![a-zé])/g,'Note de frais'],[/dépenses/g,'notes de frais'],[/dépense(?![a-zé])/g,'note de frais']);
+sgLib=function(t){ if(typeof t!=='string'||!/ffaire|euilles? de temps|épense/.test(t)) return t; for(const [a,b] of SG_LIB) t=t.replace(a,b); return t; };
+/* rentabilité sans les taux (chef de projet) : coût du temps agrégé calculé par le serveur */
+{ const r0=sgRenta; sgRenta=function(p,D,taux){ const x=r0.apply(this,arguments); if(SG_COUTS&&!DS.all('staffrate').length){ const e=SG_COUTS[p.ID]||{}; x.cout=+e.cout||0;
+      x.marge=x.factHT-x.cout; x.conso=x.contratHT?x.cout/x.contratHT:null; x.al=x.al.filter(a=>!/^Coût /.test(a[1]));
+      if(x.contratHT&&x.cout>x.contratHT) x.al.unshift(['r','Coût au-delà des honoraires']); else if(x.contratHT&&x.conso>=0.8) x.al.unshift(['o','Coût à '+Math.round(x.conso*100)+' % des honoraires']);
+      x.niv=x.al.some(a=>a[0]==='r')?3:x.al.some(a=>a[0]==='o')?2:x.al.length?1:0; } return x; }; }
+const sgTauxVisibles=()=>DS.all('staffrate').length>0&&!sgFinVerrou();
+/* fiche projet : onglets selon les droits */
+const sgOngletOk=k=>k==='factu'?(sgDroit('contrats','lecture')||sgDroit('factures','lecture')):k==='chantier'?(sgDroit('chantier','lecture')||sgDroit('pv','lecture')):true;
+
+/* ── Données Facturation partagées : profil du poste (clés en lecture seule, poste changé de main) ── */
+SGKV.ro=new Set();
+const SG_KV_MUETTES=/^sa_(seed_ver|phases_pct_migrated|import_ok|last_tva|cfc_edits|cond_groupes|affaires|affaires_statut|rap_|dv_catoff|banques)/;
+function sgKvPoste(){ const u=String(SG_ACC.userid||(ME.u&&ME.u.USERID)||''); let avant=null; try{ avant=localStorage.getItem('sg3_kv_user'); }catch(_){}
+  if(avant!==u){ for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(sgKvCle(k)) sgKvEcrire(k,null); }   // données de l'utilisateur précédent effacées de ce poste
+    try{ localStorage.setItem('sg3_kv_user',u); }catch(_){} } }
+
+/* ── Validation des contrats et factures (Facturation ▸ À valider) ── */
+function sgListeKV(k){ try{ const v=JSON.parse(localStorage.getItem(k)||'[]'); return Array.isArray(v)?v:[]; }catch(_){ return []; } }
+const sgValideur=k=>sgAdmin()||sgDroit(k==='sa_contrats'?'contrats':'factures','edition');
+function sgEnAttente(){ const out=[]; [['sa_contrats','Contrat'],['sa_factures5','Facture']].forEach(([k,t])=>sgListeKV(k).forEach(o=>{ const v=o&&o._validation; if(v&&(v.etat==='a_valider'||v.etat==='refuse')) out.push({k,t,o,v}); })); return out; }
+const sgValLib=x=>x.k==='sa_contrats'?[(x.o.affaire||''),(x.o.projet||x.o.nom||'')].filter(Boolean).join(' · '):[(x.o.num||'(sans numéro)'),nxCHF((+x.o._ttc||0)+(+x.o._fttc||0))+' CHF'].join(' · ');
+function sgValidationsATraiter(G){ const L=sgEnAttente(); if(!L.length) return; const me=String(ME.id||'');
+  const av=L.filter(x=>x.v.etat==='a_valider'&&sgValideur(x.k));
+  if(av.length) G.unshift({k:'va',t:'Contrats et factures à valider',ico:'check',go:'nx-valider',items:av.map(x=>({t:x.t+' '+sgValLib(x),s:'préparé par '+(x.v.par||'?')+' le '+dfr(String(x.v.le||'').slice(0,10)),go:'nx-valider'}))});
+  const rf=L.filter(x=>x.v.etat==='refuse'&&x.v.par===me);
+  if(rf.length) G.unshift({k:'vr',t:'Refusés par l’administrateur',ico:'urgent',go:'nx-valider',items:rf.map(x=>({t:x.t+' '+sgValLib(x),s:'motif : '+(x.v.motif||'—'),go:'nx-valider'}))});
+  const at=L.filter(x=>x.v.etat==='a_valider'&&x.v.par===me&&!sgValideur(x.k));
+  if(at.length) G.push({k:'vp',t:'En attente de validation',ico:'clock',go:'nx-valider',items:at.map(x=>({t:x.t+' '+sgValLib(x),s:'envoyé le '+dfr(String(x.v.le||'').slice(0,10)),go:'nx-valider'}))}); }
+async function sgDecider(k,id,decision,motif){ const r=await fetch('/api/valider',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k,id,decision,motif})}); let d={}; try{ d=await r.json(); }catch(_){}
+  if(!r.ok||!d.ok){ toast('✗ '+(d.msg||d.error||('erreur '+r.status)),true); return false; }
+  await sgKvTic(); toast(decision==='valide'?'Validé.':'Refusé : la personne qui l’a préparé le verra à l’accueil.'); return true; }
+VIEWS['nx-valider']={ render(m){ const L=sgEnAttente().sort((a,b)=>cmp(a.v.etat,b.v.etat)||cmp(b.v.le,a.v.le)), bureau=typeof dsEstBureau==='function'&&dsEstBureau();
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Facturation','À valider','Les contrats d’honoraires et les factures préparés ou modifiés par un chef de projet restent « à valider » : le PDF définitif n’est disponible qu’une fois validés. Un refus revient à son auteur avec le motif.'
+        ,'<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.filter(x=>x.v.etat==='a_valider').length+'</div><div class="t">à valider</div></div><div class="sg-fig"><div class="n">'+L.filter(x=>x.v.etat==='refuse').length+'</div><div class="t">refusé(s)</div></div></div>')
+      +'<div>'+(!bureau?'<div class="nx-card c12"><div class="nx-empty">La validation s’applique sur le serveur du bureau (NAS), quand des chefs de projet préparent des contrats ou des factures. Sur ce poste, vous êtes seul : rien à valider.</div></div>':
+        nxCard('c12','Contrats et factures',L.length?'<div class="b flush" style="overflow:auto"><table class="nx-tbl"><tr><th>Type</th><th>Référence</th><th>Préparé par</th><th>Le</th><th>État</th><th></th></tr>'
+          +L.map((x,i)=>'<tr><td>'+x.t+(x.v.nouveau?' <span class="nx-tag s3">nouveau</span>':'')+'</td><td><b>'+nxE(sgValLib(x))+'</b>'+(x.k==='sa_factures5'&&x.o.cl_nom?'<br><span style="color:var(--s-gris)">'+nxE(x.o.cl_nom)+'</span>':'')+'</td><td>'+nxE(x.v.par||'')+'</td><td>'+dfr(String(x.v.le||'').slice(0,10))+'</td>'
+            +'<td>'+(x.v.etat==='refuse'?'<span class="nx-tag urg">Refusé</span><br><span style="font-size:12px">'+nxE(x.v.motif||'')+'</span>':'<span class="nx-tag s3">À valider</span>')+'</td>'
+            +'<td class="r" style="white-space:nowrap"><button class="nx-btn" data-fn="o'+i+'">Ouvrir</button>'+(sgValideur(x.k)&&x.v.etat==='a_valider'?' <button class="nx-btn pri" data-fn="v'+i+'">'+nxSvg('check')+'Valider</button> <button class="nx-btn danger" data-fn="r'+i+'">Refuser</button>':'')+'</td></tr>').join('')+'</table></div>'
+          :'<div class="nx-empty">Rien à valider.</div>'))+'</div></div>');
+    L.forEach((x,i)=>{ pg._fn['o'+i]=()=>go(x.k==='sa_contrats'?'fx-calchono':'fx-saisie',(x.k==='sa_contrats'?'c:':'f:')+x.o.id);
+      pg._fn['v'+i]=async()=>{ if(await sgDecider(x.k,x.o.id,'valide')) go('nx-valider'); };
+      pg._fn['r'+i]=()=>{ const T=h('textarea',{class:'inp',rows:4,style:{width:'420px'},placeholder:'Ce qui doit être corrigé'});
+        dialog({title:'Refuser — '+x.t+' '+sgValLib(x),body:h('div',{},h('p',{style:{margin:'0 0 8px',fontWeight:300}},'Motif (transmis à '+(x.v.par||'son auteur')+') :'),T),buttons:[{t:'Annuler'},{t:'Refuser',pri:true,fn:async()=>{ if(!T.value.trim()){ toast('Indiquez le motif.',true); return false; } if(await sgDecider(x.k,x.o.id,'refuse',T.value.trim())) go('nx-valider'); }}]}); }; }); } };
+/* dans le cadre Facturation : pas de PDF définitif tant que l'élément n'est pas validé (niveau « validation ») ; repères dans les listes */
+function sgEmissionOk(k,id){ const droit=k==='sa_contrats'?'contrats':'factures'; if(sgAdmin()||sgDroit(droit,'edition')) return true;
+  const o=sgListeKV(k).find(x=>String(x.id)===String(id)), v=o&&o._validation, quoi=k==='sa_contrats'?'Ce contrat':'Cette facture';
+  if(!o){ sgAlert(quoi+' n’est pas encore enregistré(e) : enregistrez-le, il sera transmis à l’administrateur pour validation ; le PDF définitif sera disponible une fois validé.'); return false; }
+  if(v&&v.etat!=='valide'){ sgAlert(v.etat==='refuse'?quoi+' a été refusé(e) par l’administrateur.\n\nMotif : '+(v.motif||'—')+'\n\nCorrigez puis enregistrez : il repassera à la validation.':quoi+' attend la validation de l’administrateur : le PDF définitif sera disponible une fois validé.'); return false; }
+  return true; }
+function sgFxValidation(w){ if(!w||w.__sgVal) return; w.__sgVal=1; const ev=x=>{ try{ return w.eval(x); }catch(_){ return null; } };
+  const g=w.generateInvoicePDF; if(typeof g==='function') w.generateInvoicePDF=function(rb){ if(!rb&&!sgEmissionOk('sa_factures5',ev('curFid'))) return Promise.resolve(null); return g.apply(this,arguments); };
+  const pr=w.printInvoiceFaithful; if(typeof pr==='function') w.printInvoiceFaithful=function(){ if(!sgEmissionOk('sa_factures5',ev('curFid'))) return; return pr.apply(this,arguments); };
+  const o=w.generateOffrePDF; if(typeof o==='function') w.generateOffrePDF=function(){ const t=w.document.getElementById('ch_target'); if(!sgEmissionOk('sa_contrats',(t&&t.value)||ev('curCid'))) return; return o.apply(this,arguments); };
+  const fl=w.chSetContratFlag; if(typeof fl==='function') w.chSetContratFlag=function(id,f,v){ if((f==='envoye'||f==='signe')&&v&&!sgEmissionOk('sa_contrats',id)) return; return fl.apply(this,arguments); };   // envoi / signature : contrat validé
+  const SEL={openContratPdf:'c',editContratCalc:'c',chSetContratFlag:'c',archiveContrat:'c',openFacturePdf:'f',editFactureSaisie:'f'};
+  let tm=null; const marquer=()=>{ tm=null; const etat={}; [['sa_contrats','c'],['sa_factures5','f']].forEach(([k,f])=>{ sgListeKV(k).forEach(x=>{ if(x&&x._validation&&x._validation.etat!=='valide') etat[f+':'+x.id]=x._validation.etat; }); });
+    const vus=new Set(); w.document.querySelectorAll(Object.keys(SEL).map(f=>'[onclick^="'+f+'("]').join(',')).forEach(b=>{ const m=/^(\w+)\('([^']+)'/.exec(b.getAttribute('onclick')||''); if(!m||!SEL[m[1]]) return;
+      const tr=b.closest('tr'); if(!tr||vus.has(tr)) return; vus.add(tr); const td=tr.querySelector('td'); let tag=td&&td.querySelector('.sg-val-tag'); const e=etat[SEL[m[1]]+':'+m[2]];
+      if(!e){ if(tag) tag.remove(); return; } if(!tag&&td){ tag=w.document.createElement('span'); tag.className='sg-val-tag'; td.append(tag); }
+      if(tag){ tag.textContent=e==='refuse'?'Refusé':'À valider'; tag.classList.toggle('refuse',e==='refuse'); } }); };
+  new w.MutationObserver(()=>{ if(!tm) tm=setTimeout(marquer,250); }).observe(w.document.body,{childList:true,subtree:true}); marquer(); }
+{ const f0=fxEnsure; fxEnsure=function(){ const p=f0.apply(this,arguments); Promise.resolve(p).then(w=>{ try{ sgFxValidation(w||FX.w); }catch(e){ console.error(e); } },()=>{}); return p; }; }
+
+/* ── Situation des heures (Temps) : par projet, collaborateur, phase, mois ou activité ; tableau croisé ; CSV, impression ── */
+function sgGrouper(L,g){ const m=new Map();
+  L.forEach(r=>{ let k,t; if(g==='collab'){ const s=DS.get('staff',r.STAFF_ID); k='s'+r.STAFF_ID; t=s?staffName(s):'(inconnu)'; }
+    else if(g==='phase'){ const f=DS.get('projectphase',r.PHASE_ID), sp=DS.get('projectsubphase',r.SUBPHASE_ID); k='f'+(r.PHASE_ID||'')+'-'+(r.SUBPHASE_ID||''); t=f?((f.NUMBER!=null?f.NUMBER+' · ':'')+nm(f)+(sp?' › '+nm(sp):'')):'(sans phase)'; }
+    else if(g==='mois'){ const d=tlDate(r); k=d.getFullYear()*100+d.getMonth(); t=nxCap(MOISL[d.getMonth()])+' '+d.getFullYear(); }
+    else if(g==='activite'){ const a=DS.get('projectactivity',r.ACTIVITY_ID)||DS.get('activity',r.ACTIVITY_ID); k='a'+(r.ACTIVITY_ID||''); t=a?nm(a):'(sans activité)'; }
+    else { const p=DS.get('project',r.PROJECT_ID); k='p'+r.PROJECT_ID; t=p?projLabel(p):'(projet non visible)'; }
+    const x=m.get(k)||{k,t,h:0,hf:0,n:0,st:new Set()}; x.h+=+r.TIMEPERIOD||0; if(+r.ISCHARGEABLE) x.hf+=+r.TIMEPERIOD||0; x.n++; x.st.add(String(r.STAFF_ID)); m.set(k,x); });
+  return [...m.values()].sort((a,b)=>g==='mois'?b.k-a.k:b.h-a.h); }
+const SG_GROUPES=[['projet','Par projet'],['collab','Par collaborateur'],['phase','Par phase'],['mois','Par mois'],['activite','Par activité'],['croise','Collaborateur × phase']];
+function sgSituationHtml(L,g){ const tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
+  if(g==='croise'){ const cs=sgGrouper(L,'collab'), fs=sgGrouper(L,'phase'), cell={}; L.forEach(r=>{ const a='s'+r.STAFF_ID, b='f'+(r.PHASE_ID||'')+'-'+(r.SUBPHASE_ID||''); cell[a+'|'+b]=(cell[a+'|'+b]||0)+(+r.TIMEPERIOD||0); });
+    return '<table class="nx-tbl sg-sit"><tr><th>Collaborateur</th>'+fs.map(f=>'<th class="r" title="'+nxE(f.t)+'">'+nxE(f.t.length>22?f.t.slice(0,21)+'…':f.t)+'</th>').join('')+'<th class="r">Total</th></tr>'
+      +cs.map(c=>'<tr><td><b>'+nxE(c.t)+'</b></td>'+fs.map(f=>'<td class="r">'+(cell[c.k+'|'+f.k]?nxH(cell[c.k+'|'+f.k]):'')+'</td>').join('')+'<td class="r"><b>'+nxH(c.h)+'</b></td></tr>').join('')
+      +'<tr class="tot"><td>Total</td>'+fs.map(f=>'<td class="r">'+nxH(f.h)+'</td>').join('')+'<td class="r">'+nxH(tot)+'</td></tr></table>'; }
+  const G=sgGrouper(L,g); return '<table class="nx-tbl sg-sit"><tr><th>'+({projet:'Projet',collab:'Collaborateur',phase:'Phase',mois:'Mois',activite:'Activité'}[g])+'</th><th class="r">Heures</th><th class="r">dont facturables</th><th>Part</th><th class="r">Collaborateurs</th><th class="r">Saisies</th></tr>'
+    +G.map(x=>'<tr><td><b>'+nxE(x.t)+'</b></td><td class="r">'+nxH(x.h)+'</td><td class="r">'+nxH(x.hf)+'</td><td style="width:120px">'+sgBarre(tot?x.h/tot:0)+' '+(tot?Math.round(x.h/tot*100):0)+' %</td><td class="r">'+x.st.size+'</td><td class="r">'+x.n+'</td></tr>').join('')
+    +'<tr class="tot"><td>Total</td><td class="r">'+nxH(tot)+'</td><td class="r">'+nxH(L.reduce((s,r)=>s+(+r.ISCHARGEABLE?+r.TIMEPERIOD||0:0),0))+'</td><td></td><td class="r">'+new Set(L.map(r=>String(r.STAFF_ID))).size+'</td><td class="r">'+L.length+'</td></tr></table>'; }
+function sgCsvTable(tbl,nom){ const q=v=>'"'+String(v).replace(/"/g,'""')+'"', rows=[...tbl.querySelectorAll('tr')].map(tr=>[...tr.children].map(c=>q(c.textContent.trim())).join(';'));
+  const a=h('a',{href:URL.createObjectURL(new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'})),download:nom}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000); }
+function sgImprimer(titre,html){ const f=h('iframe',{style:{position:'fixed',right:0,bottom:0,width:0,height:0,border:0}}); document.body.append(f);
+  const d=f.contentDocument; d.open(); d.write('<!doctype html><html><head><meta charset="utf-8"><title>'+nxE(titre)+'</title><style>body{font-family:"SUB Akkurat",Akkurat,Helvetica,Arial,sans-serif;font-size:10pt;margin:14mm}h1{font-size:14pt;margin:0 0 4mm}p{margin:0 0 5mm;color:#706f6f}table{border-collapse:collapse;width:100%}th,td{border-bottom:.25pt solid #999;padding:3px 5px;text-align:left}th{border-bottom:1pt solid #000}.r{text-align:right}tr.tot td{font-weight:700;border-top:1pt solid #000}</style></head><body><h1>'+nxE(titre)+'</h1>'+html+'</body></html>'); d.close();
+  setTimeout(()=>{ try{ f.contentWindow.print(); }catch(_){} setTimeout(()=>f.remove(),60000); },300); }
+VIEWS['nx-situation']={ render(m){ const st=nxLS.get('sg3_sit',{p:'',per:'12',g:'collab',de:'',a:''}), now=new Date();
+    const logs=DS.all('timelog'), pids=[...new Set(logs.map(r=>String(r.PROJECT_ID)))].map(id=>DS.get('project',id)).filter(Boolean).sort((a,b)=>cmp(a.NUMBER,b.NUMBER));
+    const lim={'1':new Date(now.getFullYear(),now.getMonth(),1),'3':new Date(now.getFullYear(),now.getMonth()-2,1),'12':new Date(now.getFullYear(),now.getMonth()-11,1),'an':new Date(now.getFullYear(),0,1),'tout':null}[st.per];
+    let L=logs.filter(r=>!st.p||String(r.PROJECT_ID)===String(st.p));
+    if(st.per==='perso'){ const a=st.de?dayKey(new Date(st.de+'T00:00')):0, b=st.a?dayKey(new Date(st.a+'T00:00')):Infinity; L=L.filter(r=>{ const k=tlKey(r); return k>=a&&k<=b; }); }
+    else if(lim) L=L.filter(r=>tlKey(r)>=dayKey(lim));
+    const pr=st.p&&DS.get('project',st.p), perLib={'1':'mois en cours','3':'3 derniers mois','12':'12 derniers mois','an':'année '+now.getFullYear(),'tout':'tout','perso':'du '+(st.de?dfr(st.de):'…')+' au '+(st.a?dfr(st.a):'…')}[st.per];
+    const portee=sgDroit('heures','toutes')?'toutes les heures du bureau':sgDroit('heures','projets')?'les heures de vos projets, tous collaborateurs':'vos heures';
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Temps','Situation des heures','Heures saisies par projet, par collaborateur, par phase, par mois ou par activité — '+portee+'. Export CSV et impression.',
+        '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxH(L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0))+'</div><div class="t">heures</div></div><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">saisies</div></div></div>')
+      +'<div><div class="nx-card c12"><div class="b sg-sit-f"><label>Projet <select class="inp" id="sit-p"><option value="">Tous '+(sgDroit('projets_voir','tous')?'les projets':'mes projets')+'</option>'+pids.map(p=>'<option value="'+p.ID+'"'+(String(p.ID)===String(st.p)?' selected':'')+'>'+nxE(projLabel(p))+'</option>').join('')+'</select></label>'
+        +'<label>Période <select class="inp" id="sit-per">'+[['1','Mois en cours'],['3','3 derniers mois'],['12','12 derniers mois'],['an','Année en cours'],['tout','Tout'],['perso','Dates…']].map(([v,t])=>'<option value="'+v+'"'+(v===st.per?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'
+        +(st.per==='perso'?'<label>Du <input class="inp" type="date" id="sit-de" value="'+nxE(st.de)+'"></label><label>au <input class="inp" type="date" id="sit-a" value="'+nxE(st.a)+'"></label>':'')
+        +'<div class="seg">'+SG_GROUPES.filter(([g])=>g!=='croise'||st.p).map(([g,t])=>'<button data-g="'+g+'" class="'+(g===st.g?'on':'')+'">'+t+'</button>').join('')+'</div>'
+        +'<span style="flex:1"></span><button class="nx-btn" data-fn="csv">'+nxSvg('export')+'CSV</button><button class="nx-btn" data-fn="prn">'+nxSvg('print')+'Imprimer</button></div></div>'
+      +nxCard('c12',(pr?projLabel(pr):'Tous les projets visibles')+' — '+perLib,'<div class="b flush" style="overflow:auto" id="sit-t">'+(L.length?sgSituationHtml(L,st.g==='croise'&&!st.p?'collab':st.g):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>')+'</div></div>');
+    const sv=o=>{ nxLS.set('sg3_sit',Object.assign(st,o)); go('nx-situation'); };
+    m.querySelector('#sit-p').onchange=e=>sv({p:e.target.value,g:(!e.target.value&&st.g==='croise')?'collab':st.g}); m.querySelector('#sit-per').onchange=e=>sv({per:e.target.value});
+    const de=m.querySelector('#sit-de'), a=m.querySelector('#sit-a'); if(de) de.onchange=()=>sv({de:de.value}); if(a) a.onchange=()=>sv({a:a.value});
+    m.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>sv({g:b.dataset.g}));
+    const titre='Situation des heures — '+(pr?projLabel(pr):'tous les projets')+' — '+(SG_GROUPES.find(x=>x[0]===st.g)||['',''])[1].toLowerCase()+' — '+perLib;
+    pg._fn.csv=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgCsvTable(t,'situation_heures_'+(pr?pr.NUMBER:'projets')+'_'+diso(now)+'.csv'); };
+    pg._fn.prn=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgImprimer(titre,'<p>'+nxE((ME.u?'Établi par '+(ME.u.USERID||'')+' — ':'')+dfr(diso(now)))+'</p>'+t.outerHTML); }; } };
+
+/* ── Réglages ▸ Profils et accès (administrateur) ── */
+const sgAccRec=id=>DS.get('sgacces',id);
+const sgDroitsRole=p=>Object.assign({},SG_DEFAUTS[p],((sgAccRec('role:'+p)||{}).DROITS)||{});
+function sgProfilDe(u){ const r=sgAccRec('user:'+u.ID); if(r&&SG_PROFILS[r.PROFIL]) return r.PROFIL;
+  try{ return (CH08A_INTERNAL.includes(u.USERID)||ch08aCan('superadmin',u)||ch08aCan('userAdmin',u))?'admin':'collab'; }catch(_){ return 'collab'; } }
+VIEWS['nx-profils']={ render(m){ const bureau=typeof dsEstBureau==='function'&&dsEstBureau(), auth=!!(DS.info&&DS.info.auth);
+    const users=DS.all('appuser').filter(u=>u.USERID!=='mayday').sort((a,b)=>cmp(a.USERID,b.USERID)), D={cdp:sgDroitsRole('cdp'),collab:sgDroitsRole('collab')};
+    const sel=(p,k)=>'<select class="inp" data-role="'+p+'" data-k="'+k+'">'+SG_DROITS[k].map(n=>'<option value="'+n+'"'+(D[p][k]===n?' selected':'')+'>'+nxE(SG_DROITS_LIB.find(x=>x[0]===k)[3][n])+'</option>').join('')+'</select>';
+    const staffsDe=u=>DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean);
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Profils et accès','Trois profils : <b>Administrateur</b> (tout), <b>Chef de projet</b> et <b>Collaborateur</b>, dont vous réglez ici chaque droit — pour limiter ou élargir l’accès aux informations. Puis le profil de chaque compte.',
+        '<div class="sg-figs"><div class="sg-fig"><div class="n">'+users.filter(u=>sgProfilDe(u)==='cdp').length+'</div><div class="t">chefs de projet</div></div><div class="sg-fig"><div class="n">'+users.filter(u=>sgProfilDe(u)==='collab').length+'</div><div class="t">collaborateurs</div></div></div>')
+      +'<div>'+(!bureau?'<div class="nx-card c12" style="margin-bottom:24px"><div class="b" style="font-weight:300">Sur ce poste (fichier ouvert par double-clic), vous êtes seul et administrateur : ces réglages s’appliqueront sur le <b>serveur du bureau (NAS)</b>, une fois la base importée.</div></div>'
+        :!auth?'<div class="nx-card c12" style="margin-bottom:24px"><div class="b" style="color:var(--s-rouge)">L’ouverture de session par mot de passe n’est pas active sur le serveur du bureau : personne n’est identifié, les profils ne s’appliquent pas encore (Réglages ▸ Administration ▸ Utilisateurs).</div></div>':'')
+      +nxCard('c12','Droits de chaque profil','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-droits"><tr><th>Droit</th><th>Administrateur</th><th>Chef de projet</th><th>Collaborateur</th></tr>'
+        +SG_DROITS_LIB.map(([k,t,aide,niv])=>'<tr><td><b>'+nxE(t)+'</b>'+(aide?'<br><span>'+nxE(aide)+'</span>':'')+'</td><td class="adm">'+nxE(niv[SG_TOUT[k]])+'</td><td>'+sel('cdp',k)+'</td><td>'+sel('collab',k)+'</td></tr>').join('')
+        +'</table></div>','<span class="a" data-fn="defaut">Rétablir les réglages proposés</span>')
+      +nxCard('c12','Profil de chaque compte','<div class="b flush"><table class="nx-tbl"><tr><th>Compte</th><th>Collaborateur lié</th><th>Profil</th></tr>'
+        +users.map(u=>{ const p=sgProfilDe(u), ss=staffsDe(u); return '<tr><td><b>'+nxE(u.USERID||'')+'</b>'+(u.NAME&&u.NAME!==u.USERID?' <span style="color:var(--s-gris)">'+nxE(u.NAME)+'</span>':'')+(+u.ISENABLED?'':' <span class="nx-tag">désactivé</span>')+'</td>'
+          +'<td>'+(ss.length?nxE(ss.length>2?ss.length+' collaborateurs':ss.map(staffName).join(', ')):'<span style="color:var(--s-rouge)">aucun — à lier (Administration ▸ Utilisateurs)</span>')+'</td>'
+          +'<td><select class="inp" data-user="'+u.ID+'"'+(CH08A_INTERNAL.includes(u.USERID)?' disabled title="Compte interne : administrateur"':'')+'>'+Object.entries(SG_PROFILS).map(([k,t])=>'<option value="'+k+'"'+(p===k?' selected':'')+'>'+t+'</option>').join('')+'</select></td></tr>'; }).join('')+'</table></div>')
+      +'</div></div>');
+    m.querySelectorAll('select[data-role]').forEach(s=>s.onchange=async()=>{ const p=s.dataset.role, d=sgDroitsRole(p); d[s.dataset.k]=s.value;
+      await DS.save('sgacces',{ID:'role:'+p,DROITS:d}); toast('Droits « '+SG_PROFILS[p]+' » enregistrés : appliqués à la prochaine ouverture de l’app sur chaque poste.'); });
+    m.querySelectorAll('select[data-user]').forEach(s=>s.onchange=async()=>{ const u=DS.get('appuser',s.dataset.user); if(!u) return;
+      if(String(u.ID)===String((ME.u||{}).ID)&&s.value!=='admin'&&!(await confirmDlg('Vous retirer le profil Administrateur ? Vous n’aurez plus accès à ces réglages.','Retirer'))){ s.value='admin'; return; }
+      await DS.save('sgacces',{ID:'user:'+u.ID,APPUSER_ID:u.ID,PROFIL:s.value}); toast(u.USERID+' : '+SG_PROFILS[s.value]+'.'); });
+    pg._fn.defaut=()=>sgConfirm('Rétablir les réglages proposés pour les profils Chef de projet et Collaborateur ?',async()=>{ await DS.commit(['cdp','collab'].map(p=>({t:'sgacces',id:'role:'+p,val:{ID:'role:'+p,DROITS:{...SG_DEFAUTS[p]}}}))); go('nx-profils'); }); } };
+/* profils actifs (NAS avec ouverture de session) : ils font foi pour les écrans, à la place des droits d'origine Deltaproject (fonctions) */
+{ const v0=ch08bViewOk; ch08bViewOk=function(id,u){ if(SG_ACC.auth&&(u===undefined||u===ME.u)) return sgVueOk(String(id??'')); return v0.apply(this,arguments); }; }

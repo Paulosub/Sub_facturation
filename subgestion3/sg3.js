@@ -89,11 +89,12 @@ const SG_DOM=[
     {v:'adr-chercher',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…).'},
     {v:'adr-props',t:'Catégories',ico:'tag',d:'Propriétés et catégories attribuées aux adresses.'}]},
   {k:'temps',t:'Temps',ico:'clock',d:'Saisie et suivi du temps de travail et des dépenses.',items:[
-    {v:'h-saisie',t:'Feuille de temps',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
+    {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
     {v:'h-rapport',t:'Rapports de temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
     {v:'h-dispo',t:'Disponibilités',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
-    {v:'frais',t:'Dépenses',ico:'receipt',d:'Notes de frais par membre et par projet.'},
-    {v:'frais-rapport',t:'Rapport des dépenses',ico:'analyse',d:'Rapport des notes de frais.'}]},
+    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
+    {v:'frais',t:'Notes de frais',ico:'receipt',d:'Notes de frais par membre et par projet.'},
+    {v:'frais-rapport',t:'Rapport des notes de frais',ico:'analyse',d:'Rapport des notes de frais.'}]},
   {k:'equipe',t:'Équipe',ico:'users',d:'Les membres du bureau, la planification et le suivi des ressources.',items:[
     {v:'collab-actuels',t:'Membres',ico:'users',hero:1,d:'L’équipe actuelle du bureau.'},
     {v:'collab-tous',t:'Tous les membres',ico:'group',d:'Membres actuels et anciens.'},
@@ -106,6 +107,7 @@ const SG_DOM=[
     {v:'fx-calchono',t:'Calcul d’honoraires',ico:'calc',d:'Calcul selon SIA 102, contrat et offre d’honoraires.'},
     {v:'fx-factures',t:'Factures',ico:'receipt',d:'Factures, acomptes, échéances et paiements.'},
     {v:'fx-saisie',t:'Saisie de facture',ico:'edit',d:'Établir une facture ou un acompte à partir d’un contrat.'},
+    {v:'nx-valider',t:'À valider',ico:'check',d:'Contrats et factures préparés par les chefs de projet : validation par l’administrateur.'},
     {v:'fx-cockpit',t:'Cockpit',ico:'gauge',d:'Tableau de bord des honoraires et de la facturation.'},
     {v:'fx-cockpit2',t:'Cockpit analytique',ico:'trend',d:'Analyses et tendances de la facturation.'}]},
   {k:'finances',t:'Finances',ico:'wallet',d:'Contrats et facturation des projets, rentabilité, clients et indicateurs du bureau.',items:[
@@ -122,7 +124,7 @@ const SG_DOM=[
     {v:'tpl-projectTemplates',t:'Projets types',ico:'folder',d:'Modèles pour créer des projets.'},
     {v:'tpl-staffTemplates',t:'Profils d’équipe',ico:'person',d:'Modèles de membres.'},
     {v:'tpl-timeTemplates',t:'Horaires types',ico:'clock',d:'Horaires et temps de travail.'},
-    {v:'tpl-expensesTemplates',t:'Dépenses types',ico:'receipt',d:'Types de frais.'},
+    {v:'tpl-expensesTemplates',t:'Notes de frais types',ico:'receipt',d:'Types de frais.'},
     {v:'tpl-managementTemplates',t:'Gestion types',ico:'gear',d:'Modèles de management.'},
     {v:'tpl-addressTemplates',t:'Formats d’adresse',ico:'contacts',d:'Mise en forme des adresses.'},
     {v:'tpl-labelTemplates',t:'Étiquettes',ico:'tag',d:'Planches d’étiquettes.'},
@@ -133,9 +135,10 @@ const SG_DOM=[
     {v:'fx-backup',t:'Sauvegarde Facturation',ico:'save',d:'Contrats, factures et registres Facturation : export, import, sauvegarde automatique.'},
     {v:'config',t:'Administration',ico:'settings',d:'Paramètres, propriétés, droits et listes.'},
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
+    {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
     {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances et Réglages.'},
     {v:'fx-carnet',t:'Archives · Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},
-    {v:'fx-feuille-heures',t:'Archives · Feuille d’heures',ico:'timer',reg:1,d:'Ancienne saisie d’heures de Facturation (remplacée par la Feuille de temps).'},
+    {v:'fx-feuille-heures',t:'Archives · Feuille d’heures',ico:'timer',reg:1,d:'Ancienne saisie d’heures de Facturation (remplacée par la Feuille d’heures).'},
     {v:'fx-rapport',t:'Archives · Rapport d’heures',ico:'analyse',reg:1,d:'Anciens rapports d’heures de Facturation.'},
     {v:'fx-devis',t:'Archives · Devis',ico:'doc',reg:1,d:'Anciens devis de Facturation (remplacés par Descriptifs & devis).'},
     {v:'fx-controle-cout',t:'Archives · Contrôle du coût',ico:'coins',reg:1,d:'Ancien contrôle du coût de Facturation (remplacé par Contrôle des coûts).'},
@@ -171,7 +174,7 @@ function nxFirstName(){ const s=nxMe(), c=s&&DS.get('contact',s.PERSON_ID), o=c&
 function nxWorkdays(y,m){ let n=0; const d=new Date(y,m,1); while(d.getMonth()===m){ const w=d.getDay(); if(w&&w<6) n++; d.setDate(d.getDate()+1); } return n; }
 function nxTarget(staffId,y,m){ const t=DS.by('stafftargettime','STAFF_ID',staffId).find(x=>+x.TARGETTIMEYEAR===y); const v=t?+t['TARGETHOURS'+m]:NaN; return isFinite(v)&&v>0?v:nxWorkdays(y,m)*8.5; }
 function nxRate(staffId,d){ const rs=DS.by('staffrate','STAFF_ID',staffId).filter(r=>r.VALIDFROM).sort((a,b)=>cmp(a.VALIDFROM,b.VALIDFROM)); const k=diso(d); let r=0; for(const x of rs){ if(x.VALIDFROM<=k) r=+x.RATE||0; } return r||(rs[0]?+rs[0].RATE||0:0); }
-const nxCan=v=>/^(fx-|nx-|dom-)/.test(v)||typeof ch08bViewOk!=='function'||ch08bViewOk(v);
+const nxCan=v=>(typeof sgVueOk!=='function'||sgVueOk(v))&&(/^(fx-|nx-|dom-)/.test(v)||typeof ch08bViewOk!=='function'||ch08bViewOk(v));   // sgVueOk : profil d'accès (sg3_plus.js)
 
 /* ═══ Logo officiel (charte : lettres « cryptées », parties grisées à 50 %) ═══ */
 const SG_LOGO=`__LOGO__`;
@@ -184,6 +187,7 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
   SG_DOM.forEach(d=>{
     if(d.k==='accueil'){ s+='<div class="nx-g'+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='nx-home'?' on':'')+'" data-go="nx-home" title="Accueil">'+nxSvg(d.ico)+'<span class="lb">Accueil</span></div></div>'; return; }
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
+    if(!its.length) return;   // domaine sans module permis pour ce profil
     s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
       +'<div class="nx-it vo'+(c.id==='dom-'+d.k?' on':'')+'" data-go="dom-'+d.k+'">Vue d’ensemble</div>'
       +its.map(it=>'<div class="nx-it'+(c.id===it.v?' on':'')+(it.reg?' reg':'')+'" data-go="'+it.v+'" title="'+nxE(it.t)+'">'+nxE(it.reg?it.t.replace(/\s*·\s*Facturation$/,''):it.t)+(it.reg?'<i>F</i>':'')+'</div>').join('')
@@ -227,7 +231,7 @@ function nxFoot(){ const f=document.getElementById('nx-who'); if(!f) return; con
 function nxNewMenu(el){ popMenu(el,[
   {t:'Projet',fn:()=>editProject()},{t:'Contact — société',fn:()=>editOwner(null,0)},{t:'Contact — personne',fn:()=>editOwner(null,1)},'-',
   {t:'Contrat d’honoraires',fn:()=>go('fx-calchono','new')},{t:'Facture ou acompte',fn:()=>go('fx-saisie','new')},'-',
-  {t:'Saisie de temps',fn:()=>go('h-saisie')},{t:'Dépense',fn:()=>go('frais')}]); }
+  {t:'Saisie de temps',fn:()=>go('h-saisie')},{t:'Note de frais',fn:()=>go('frais')}]); }
 function nxMenuCmds(){ try{ return ch10aModel(ch10aCtx(false)).filter(m=>m.k!=='Edit'&&m.k!=='menuView')
     .map(m=>({t:m.titre,items:m.items.filter(it=>it!=='-'&&!it.dis).map(it=>({t:String(it.t).replace(/\s*…$/,''),fn:()=>ch10aRun(it.act,it.arg)}))})).filter(m=>m.items.length); }
   catch(e){ console.error(e); return []; } }
@@ -331,47 +335,58 @@ const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro"><div class="sg-lbl
 
 /* ═══ Accueil ═══ */
 VIEWS['nx-home']={
+  /* accueil personnel (07.10.2026) : selon la personne et son profil d'accès (sg3_plus.js : sgDroit, sgMesProjets…) — ses projets en
+     cours, ses tâches à exécuter, son temps ; l'équipe, les factures et les montants seulement si son profil les permet */
   render(m){ const me=nxMe(), now=new Date(), y=now.getFullYear(), mo=now.getMonth(), mon=mondayOf(now), k0=dayKey(mon), kSun=dayKey(new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6));
+    const D_=(k,n)=>typeof sgDroit!=='function'||sgDroit(k,n), adm=typeof sgAdmin!=='function'||sgAdmin(), equipe=D_('heures','projets');
     const logs=DS.all('timelog'), mine=me?logs.filter(r=>String(r.STAFF_ID)===String(me.ID)):[];
     const sum=(a,f)=>a.reduce((s,r)=>s+(f(r)?+r.TIMEPERIOD||0:0),0);
     const wk=sum(mine,r=>tlKey(r)>=k0&&tlKey(r)<=kSun), mth=sum(mine,r=>+r.TIMEYEAR===y&&+r.TIMEMONTH===mo);
     const tMonth=me?nxTarget(me.ID,y,mo):0, tWeek=tMonth?tMonth/nxWorkdays(y,mo)*5:42.5;
     const teamM=logs.filter(r=>+r.TIMEYEAR===y&&+r.TIMEMONTH===mo), teamH=sum(teamM,()=>1), teamC=sum(teamM,r=>+r.ISCHARGEABLE);
-    const projs=DS.all('project'), act=projs.filter(p=>+p.PROJECTSTATECODE===2).length, wait=projs.filter(p=>+p.PROJECTSTATECODE===3).length;
-    const lim=dayKey(new Date(y,mo,now.getDate()-90)), lim30=dayKey(new Date(y,mo,now.getDate()-30)), per={};
-    const acc=a=>a.forEach(r=>{ const k=tlKey(r); if(k<lim) return; const x=per[r.PROJECT_ID]||(per[r.PROJECT_ID]={h30:0,last:0}); if(k>=lim30) x.h30+=+r.TIMEPERIOD||0; if(k>x.last){ x.last=k; x.d=tlDate(r); } });
-    acc(mine); const mineOnly=Object.keys(per).length>0; if(!mineOnly) acc(logs);
-    const myP=Object.entries(per).map(([id,x])=>({p:DS.get('project',id),...x})).filter(x=>x.p&&!+x.p.ISINTERNAL).sort((a,b)=>b.h30-a.h30||b.last-a.last).slice(0,7), maxP=Math.max(1,...myP.map(x=>x.h30));
+    const lim30=dayKey(new Date(y,mo,now.getDate()-30)), per={};
+    mine.forEach(r=>{ const k=tlKey(r), x=per[r.PROJECT_ID]||(per[r.PROJECT_ID]={h30:0,last:0}); if(k>=lim30) x.h30+=+r.TIMEPERIOD||0; if(k>x.last){ x.last=k; x.d=tlDate(r); } });
+    const mesP=typeof sgMesProjets==='function'?sgMesProjets():new Set(Object.keys(per));
+    let enCours=[...mesP].map(id=>DS.get('project',id)).filter(p=>p&&+p.PROJECTSTATECODE===2&&!(typeof sgInterne==='function'&&sgInterne(p)));
+    const titreP=enCours.length||!adm?'Mes projets en cours':'Projets en cours du bureau';
+    if(!enCours.length&&adm) enCours=DS.all('project').filter(p=>+p.PROJECTSTATECODE===2&&!(typeof sgInterne==='function'&&sgInterne(p)));
+    const myP=enCours.map(p=>({p,...(per[p.ID]||{h30:0,last:0})})).sort((a,b)=>b.h30-a.h30||b.last-a.last||cmp(a.p.NUMBER,b.p.NUMBER)), maxP=Math.max(1,...myP.map(x=>x.h30));
+    const mesStaffs=new Set(me?[String(me.ID)]:[]), tachesAll=DS.all('projecttask').filter(t=>!t.DONEDATE);
+    const taches=tachesAll.filter(t=>mesStaffs.has(String(t.STAFF_ID))).sort((a,b)=>(+b.ISURGENT-+a.ISURGENT)||cmp(a.DEADLINE||'9999',b.DEADLINE||'9999'));
     const weeks=[]; for(let i=11;i>=0;i--){ const d=new Date(mon); d.setDate(d.getDate()-7*i); weeks.push({d,k:dayKey(d),ke:dayKey(new Date(d.getFullYear(),d.getMonth(),d.getDate()+6)),a:0,b:0}); }
-    const wk0=weeks[0].k; logs.forEach(r=>{ const k=tlKey(r); if(k<wk0) return; const w=weeks.find(x=>k>=x.k&&k<=x.ke); if(!w) return; if(+r.ISCHARGEABLE) w.a+=+r.TIMEPERIOD||0; else w.b+=+r.TIMEPERIOD||0; });
+    const wk0=weeks[0].k; (equipe?logs:mine).forEach(r=>{ const k=tlKey(r); if(k<wk0) return; const w=weeks.find(x=>k>=x.k&&k<=x.ke); if(!w) return; if(+r.ISCHARGEABLE) w.a+=+r.TIMEPERIOD||0; else w.b+=+r.TIMEPERIOD||0; });
     weeks.forEach(w=>{ w.l='Semaine '+isoWeek(w.d)[1]; w.s=String(isoWeek(w.d)[1]); });
-    const team=staffList().map(s=>({s,h:sum(logs.filter(r=>String(r.STAFF_ID)===String(s.ID)),r=>tlKey(r)>=k0&&tlKey(r)<=kSun)})).sort((a,b)=>b.h-a.h);
-    const tasks=DS.all('projecttask').filter(t=>!t.DONEDATE).sort((a,b)=>cmp(a.DEADLINE,b.DEADLINE)).slice(0,6);
-    const pins=nxLS.get('nx_pins3',[]).map(nxRef).filter(Boolean);
+    const team=equipe?staffList().map(s=>({s,h:sum(logs.filter(r=>String(r.STAFF_ID)===String(s.ID)),r=>tlKey(r)>=k0&&tlKey(r)<=kSun)})).filter(x=>adm||x.h>0).sort((a,b)=>b.h-a.h):[];
+    const pins=nxLS.get('nx_pins3',[]).map(nxRef).filter(Boolean), argent=!(typeof sgFinVerrou==='function'&&sgFinVerrou());
     const greet=now.getHours()<12?'Bonjour':now.getHours()<18?'Bon après-midi':'Bonsoir', fn=nxFirstName();
-    const acts='<div class="acts"><button class="nx-btn pri" data-go="h-saisie">'+nxSvg('timer')+'Saisir mon temps</button><button class="nx-btn" data-fn="np">'+nxSvg('folder')+'Nouveau projet</button>'
-      +'<button class="nx-btn" data-go="fx-calchono" data-arg="new">'+nxSvg('contrat')+'Nouveau contrat</button><button class="nx-btn" data-go="fx-saisie" data-arg="new">'+nxSvg('receipt')+'Nouvelle facture</button>'
-      +'<button class="nx-btn" data-go="frais">'+nxSvg('coins')+'Dépense</button><button class="nx-btn" data-fn="pal">'+nxSvg('search')+'Rechercher <span class="nx-kbd" style="margin-left:auto">⌘K</span></button></div>';
+    const acts='<div class="acts"><button class="nx-btn pri" data-go="h-saisie">'+nxSvg('timer')+'Saisir mon temps</button><button class="nx-btn" data-go="h-saisie">'+nxSvg('cal')+'Ma feuille d’heures</button>'
+      +(D_('projets_modifier','tous')?'<button class="nx-btn" data-fn="np">'+nxSvg('folder')+'Nouveau projet</button>':'')
+      +(D_('contrats','validation')?'<button class="nx-btn" data-go="fx-calchono" data-arg="new">'+nxSvg('contrat')+'Nouveau contrat</button>':'')
+      +(D_('factures','validation')?'<button class="nx-btn" data-go="fx-saisie" data-arg="new">'+nxSvg('receipt')+'Nouvelle facture</button>':'')
+      +'<button class="nx-btn" data-go="frais">'+nxSvg('coins')+'Note de frais</button><button class="nx-btn" data-fn="pal">'+nxSvg('search')+'Rechercher <span class="nx-kbd" style="margin-left:auto">⌘K</span></button></div>';
+    const tache=t=>{ const p=DS.get('project',t.PROJECT_ID), late=t.DEADLINE&&t.DEADLINE<today();
+      return '<div class="nx-row" '+(p?'data-ref="p:'+p.ID+'"':'data-go="taches-encours"')+'>'+nxSvg('task')+'<div class="t"><b>'+nxE(t.SUBJECT||'(sans objet)')+'</b><span>'+nxE(p?projLabel(p):'')+'</span></div>'
+        +(+t.ISURGENT?'<span class="nx-tag urg">Urgent</span>':'')+'<span class="m"'+(late?' style="color:var(--s-rouge)"':'')+'>'+(t.DEADLINE?dfr(t.DEADLINE):'')+'</span></div>'; };
     const right='<div class="nx-kpis">'
       +nxKpi('timer','Mon temps cette semaine',nxH(wk)+'<small>/ '+nxH(tWeek)+' h</small>',me?Math.round(wk/tWeek*100)+' % de l’objectif':'',tWeek?wk/tWeek*100:0,'h-saisie',1)
       +nxKpi('cal','Mon temps ce mois',nxH(mth)+'<small>/ '+nxH(tMonth)+' h</small>',MOISL[mo]+' '+y,tMonth?mth/tMonth*100:0,'h-rapport')
-      +nxKpi('folder','Projets en cours',String(act),wait+' en attente · '+projs.length+' au total',null,'aff-toutes')
-      +nxKpi('users','Temps de l’équipe ce mois',nxH(teamH)+'<small>h</small>',(teamH?Math.round(teamC/teamH*100):0)+' % facturable',teamH?teamC/teamH*100:0,'mg-heures')
+      +nxKpi('folder',titreP,String(enCours.length),'en cours',null,'aff-mes')
+      +(equipe?nxKpi('users',adm?'Temps de l’équipe ce mois':'Temps sur mes projets ce mois',nxH(teamH)+'<small>h</small>',(teamH?Math.round(teamC/teamH*100):0)+' % facturable',teamH?teamC/teamH*100:0,'mg-heures')
+              :nxKpi('task','Mes tâches à exécuter',String(taches.length),taches.filter(t=>t.DEADLINE&&t.DEADLINE<today()).length+' en retard',null,'taches-encours'))
       +'</div><div class="nx-grid">'
-      +nxCard('c7',mineOnly?'Mes projets actifs':'Projets actifs du bureau',myP.length?'<div class="b flush">'+myP.map(x=>'<div class="nx-row" data-ref="p:'+x.p.ID+'"><span class="nx-tag num">'+nxE(x.p.NUMBER)+'</span><div class="t"><b>'+nxE(x.p.TITLE)+'</b><span>Dernière saisie '+nxRel(x.d)+'</span></div>'
-        +nxMiniBar(x.h30,maxP)+'<span class="m">'+nxH(x.h30)+' h</span></div>').join('')+'</div>':'<div class="nx-empty">Aucune saisie de temps ces 90 derniers jours.</div>','<span class="n">30 derniers jours</span><span class="a" data-go="aff-mes">Mes projets</span>')
-      +nxCard('c5','Factures à suivre','<div class="b flush" id="sg-home-fx"><div class="nx-empty">Chargement de la facturation…</div></div>','<span class="a" data-go="fx-factures">Factures</span>')
-      +nxCard('c7','Temps de l’équipe — 12 semaines','<div class="b">'+nxBars(weeks,{la:'facturable',lb:'non facturable'})+nxLegend()+'</div>','<span class="a" data-go="h-rapport">Rapports</span>')
-      +nxCard('c5','Équipe cette semaine','<div class="b flush">'+(team.length?team.map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+nxE(x.s.INITIALS||'')+'</span></div>'+nxMiniBar(x.h,tWeek)+'<span class="m" style="min-width:48px;text-align:right">'+nxH(x.h)+' h</span></div>').join(''):'<div class="nx-empty">Aucun membre actif.</div>')+'</div>','<span class="a" data-go="collab-actuels">Membres</span>')
-      +nxCard('c7','Tâches ouvertes',tasks.length?'<div class="b flush">'+tasks.map(t=>{ const p=DS.get('project',t.PROJECT_ID), late=t.DEADLINE&&t.DEADLINE<today();
-          return '<div class="nx-row" data-go="'+(+t.ISURGENT?'taches-urgent':'taches-encours')+'">'+nxSvg('task')+'<div class="t"><b>'+nxE(t.SUBJECT||'(sans objet)')+'</b><span>'+nxE(p?projLabel(p):'')+'</span></div>'
-            +(+t.ISURGENT?'<span class="nx-tag urg">Urgent</span>':'')+'<span class="m"'+(late?' style="color:var(--s-rouge)"':'')+'>'+(t.DEADLINE?dfr(t.DEADLINE):'')+'</span></div>'; }).join('')+'</div>':'<div class="nx-empty">Aucune tâche ouverte.</div>','<span class="a" data-go="taches-encours">Tâches</span>')
+      +nxCard('c7',titreP,myP.length?'<div class="b flush">'+myP.slice(0,8).map(x=>'<div class="nx-row" data-ref="p:'+x.p.ID+'"><span class="nx-tag num">'+nxE(x.p.NUMBER)+'</span><div class="t"><b>'+nxE(x.p.TITLE)+'</b><span>'+(x.d?'Ma dernière saisie '+nxRel(x.d):'Pas encore de saisie')+'</span></div>'
+        +nxMiniBar(x.h30,maxP)+'<span class="m">'+nxH(x.h30)+' h</span></div>').join('')+(myP.length>8?'<div class="nx-row" data-go="aff-mes"><div class="t"><span>… et '+(myP.length-8)+' autre(s)</span></div></div>':'')+'</div>'
+        :'<div class="nx-empty">Aucun projet en cours dans votre équipe.</div>','<span class="n">mes heures, 30 jours</span><span class="a" data-go="aff-mes">Mes projets</span>')
+      +nxCard('c5','Mes tâches à exécuter',taches.length?'<div class="b flush">'+taches.slice(0,8).map(tache).join('')+'</div>':'<div class="nx-empty">Aucune tâche qui vous est attribuée.</div>','<span class="a" data-go="taches-encours">Tâches</span>')
+      +(argent&&D_('factures','lecture')?nxCard('c5','Factures à suivre','<div class="b flush" id="sg-home-fx"><div class="nx-empty">Chargement de la facturation…</div></div>','<span class="a" data-go="fx-factures">Factures</span>'):'')
+      +nxCard('c7',equipe?(adm?'Temps de l’équipe — 12 semaines':'Temps sur mes projets — 12 semaines'):'Mon temps — 12 semaines','<div class="b">'+nxBars(weeks,{la:'facturable',lb:'non facturable'})+nxLegend()+'</div>','<span class="a" data-go="h-rapport">Rapports</span>')
+      +(equipe?nxCard('c5',adm?'Équipe cette semaine':'Sur mes projets cette semaine','<div class="b flush">'+(team.length?team.map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+nxE(x.s.INITIALS||'')+'</span></div>'+nxMiniBar(x.h,tWeek)+'<span class="m" style="min-width:48px;text-align:right">'+nxH(x.h)+' h</span></div>').join(''):'<div class="nx-empty">Aucune saisie cette semaine.</div>')+'</div>'):'')
       +nxCard('c5','Favoris',pins.length?'<div class="b flush">'+pins.map(r=>'<div class="nx-row" data-ref="'+r.k+':'+r.id+'">'+nxSvg(r.ico)+'<div class="t"><b>'+nxE(r.t)+'</b><span>'+nxE(r.tag||r.sub||'')+'</span></div></div>').join('')+'</div>':'<div class="nx-empty">Épinglez un projet, un contact ou un membre depuis sa fiche pour le retrouver ici.</div>')
       +'</div>';
     const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Substances Architectes — Gestion',nxE(greet)+(fn?' <br>'+nxE(fn):''),nxE(nxCap(nxDay(now)))+' · semaine '+isoWeek(now)[1],acts)+'<div>'+right+'</div></div>');
     pg._fn.np=()=>editProject(); pg._fn.pal=()=>nxPal();
     pg.querySelectorAll('.nx-kpi.lnk').forEach(k=>k.onclick=()=>go(k.dataset.go));
-    fxEnsure().then(()=>{ const box=document.getElementById('sg-home-fx'); if(!box) return; const D=fxData(); if(!D){ box.innerHTML='<div class="nx-empty">Facturation indisponible.</div>'; return; }
+    if(document.getElementById('sg-home-fx')) fxEnsure().then(()=>{ const box=document.getElementById('sg-home-fx'); if(!box) return; const D=fxData(); if(!D){ box.innerHTML='<div class="nx-empty">Facturation indisponible.</div>'; return; }
       const td=today(), lst=D.f.filter(fxUnpaid).sort((a,b)=>cmp(a.ech,b.ech)).slice(0,6);
       box.innerHTML=lst.length?lst.map(f=>{ const late=f.ech&&f.ech<td; return '<div class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'">'+nxSvg('receipt')+'<div class="t"><b>'+nxE(f.num||'(sans numéro)')+'</b><span>'+nxE(fxClient(D,f))+'</span></div><span class="m">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+' CHF</span>'
         +'<span class="nx-tag '+(late?'urg':'s3')+'">'+(late?'Échue':'Échéance')+' '+(f.ech?dfr(f.ech):'')+'</span></div>'; }).join(''):'<div class="nx-empty">Aucune facture ouverte.</div>'; }).catch(()=>{}); },
@@ -425,7 +440,7 @@ VIEWS['nx-projet']={
       +(+p.ISINTERNAL?'<span class="nx-tag">Interne</span>':'')+'</div></div><div class="nx-acts"><button class="nx-btn'+(pin?' on':'')+'" data-fn="pin">'+nxSvg('pin')+(pin?'Favori':'Favori')+'</button>'
       +'<button class="nx-btn" data-fn="mem">'+nxSvg('users')+'Intervenants</button><button class="nx-btn" data-fn="ph">'+nxSvg('list')+'Phases</button><button class="nx-btn" data-fn="more">'+nxSvg('more')+'</button><button class="nx-btn pri" data-fn="edit">'+nxSvg('edit')+'Modifier</button></div></div>'
       +'<div class="nx-kpis">'+nxKpi('clock','Temps total',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,null,1)+nxKpi('trend','Part facturable',(tot?Math.round(chg/tot*100):0)+'<small>%</small>',nxH(chg)+' h facturables',tot?chg/tot*100:0)
-      +nxKpi('coins','Coût du temps',nxCHF(cost)+'<small>CHF</small>','au taux de chaque membre')+nxKpi('receipt','Dépenses',nxCHF(costs)+'<small>CHF</small>','frais saisis sur le projet')
+      +nxKpi('coins','Coût du temps',nxCHF(cost)+'<small>CHF</small>','au taux de chaque membre')+nxKpi('receipt','Notes de frais',nxCHF(costs)+'<small>CHF</small>','frais saisis sur le projet')
       +nxKpi('wallet','Contrats',nxCHF(contr)+'<small>CHF</small>',contr&&cost?'temps consommé : '+Math.round(cost/contr*100)+' % du contrat':'montant des contrats',contr?cost/contr*100:null)+'</div>'
       +'<div class="nx-grid">'+nxCard('c8','Temps par mois','<div class="b">'+nxBars(months,{every:months.length>14?2:1})+'</div>')
       +nxCard('c4','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+Math.round(x.v/tot*100)+' % du temps</span></div><span class="m">'+nxH(x.v)+' h</span></div>').join(''):'<div class="nx-empty">Aucune saisie de temps.</div>')+'</div>')
@@ -501,7 +516,7 @@ VIEWS['nx-collab']={
       +'<span class="nx-tag '+(+s.ISACTIVE?'s2':'s5')+'">'+(+s.ISACTIVE?'Actif':'Ancien membre')+'</span>'+(s.JOININGDATE?'<span>'+nxSvg('cal')+'Depuis le '+dfr(s.JOININGDATE)+(s.QUITTINGDATE?' · jusqu’au '+dfr(s.QUITTINGDATE):'')+'</span>':'')
       +(c&&c.EMAIL1?'<span>'+nxSvg('mail')+'<a href="mailto:'+nxE(c.EMAIL1)+'" style="color:inherit">'+nxE(c.EMAIL1)+'</a></span>':'')+'</div></div>'
       +'<div class="nx-acts"><button class="nx-btn'+(pin?' on':'')+'" data-fn="pin">'+nxSvg('pin')+'Favori</button>'+(o?'<button class="nx-btn" data-ref="c:'+o.ID+'">'+nxSvg('contacts')+'Coordonnées</button>':'')
-      +'<button class="nx-btn" data-go="h-rapport">'+nxSvg('analyse')+'Rapports</button><button class="nx-btn pri" data-go="h-saisie">'+nxSvg('timer')+'Feuille de temps</button></div></div>'
+      +'<button class="nx-btn" data-go="h-rapport">'+nxSvg('analyse')+'Rapports</button><button class="nx-btn pri" data-go="h-saisie">'+nxSvg('timer')+'Feuille d’heures</button></div></div>'
       +'<div class="nx-kpis">'+nxKpi('clock','Temps ce mois',nxH(mth)+'<small>/ '+nxH(tM)+' h</small>',MOISL[mo],tM?mth/tM*100:0,null,1)+nxKpi('cal','Temps '+y,nxH(yr)+'<small>/ '+nxH(tY)+' h</small>','objectif à fin '+MOISL[mo].toLowerCase(),tY?yr/tY*100:0)
       +nxKpi('trend','Part facturable '+y,(yr?Math.round(yrC/yr*100):0)+'<small>%</small>',nxH(yrC)+' h facturables',yr?yrC/yr*100:0)
       +nxKpi('cal','Solde de vacances',nxH(s.HOLIDAYBALANCE)+'<small>h</small>',s.HOLIDAYBALANCECHANGEDDATE?'au '+dfr(s.HOLIDAYBALANCECHANGEDDATE):'')

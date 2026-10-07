@@ -150,3 +150,6 @@ html body.sg-tactile #panel-pv-chantier .pv-grid{grid-template-columns:repeat(au
 html body.sg-tactile #panel-pv-chantier .pv-sec .hd{min-height:48px}
 html body.sg-tactile #pv_out table.pv-xl{width:100%!important}
 html body.sg-tactile #pv_out table.pv-xl td>textarea,html body.sg-tactile #pv_out table.pv-xl td>.pv-ta{width:100%!important;box-sizing:border-box}
+/* contrats et factures « à valider » (sg3_plus.js ▸ 11) */
+html body .sg-val-tag{display:inline-block;margin-left:6px;padding:1px 6px;font-size:10.5px;font-weight:700;background:#FEF6B0;color:#003346;border:1px solid #003346;vertical-align:1px}
+html body .sg-val-tag.refuse{background:#BD1E42;color:#fff;border-color:#BD1E42}

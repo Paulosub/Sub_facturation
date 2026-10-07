@@ -388,3 +388,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 #sg-chantier-btn,#sg-apercu-btn{margin-right:8px;height:36px}
 @media (pointer:coarse){#sg-chantier-btn,#sg-apercu-btn{height:44px;padding:0 16px}}
 #app.sg-chantier,#app.sg-chantier.nx-mini{grid-template-columns:1fr}
+/* profils et accès, situation des heures */
+.sg-droits td{vertical-align:top}.sg-droits td span{font-size:12px;color:var(--s-gris);font-weight:300}.sg-droits td.adm{color:var(--s-gris)}
+.sg-droits select.inp,.sg-droits+select{min-width:230px}
+.sg-sit-f{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}.sg-sit-f label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--s-gris)}
+.sg-sit tr.tot td{font-weight:700;border-top:2px solid var(--s-noir)}
+.sg-droits{table-layout:fixed;width:100%}.sg-droits th:nth-child(1){width:30%}.sg-droits th:nth-child(2){width:16%}
+.sg-droits select.inp{width:100%;min-width:0}.sg-droits td{line-height:1.35}

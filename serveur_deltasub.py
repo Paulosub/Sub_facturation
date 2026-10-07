@@ -727,7 +727,9 @@ def ch08_route(h, c, method, path):
             if not s:
                 return ch08_send(h, 401, {"ok": False, "error": "session", "reason": h.ch08_reason})
             ck = ch08_cookie(ch08_token(h), True) if s["remember"] else None   # 30 jours glissants
-            return ch08_send(h, 200, {"ok": True, "auth": True, "user": {"ID": s["user"]["ID"], "USERID": s["user"].get("USERID")}}, ck)
+            h.ch08_user = s
+            return ch08_send(h, 200, {"ok": True, "auth": True, "user": {"ID": s["user"]["ID"], "USERID": s["user"].get("USERID")},
+                                      "acces": sg_session_info(h, c)}, ck)
         if path == "/api/auth":
             return ch08_auth_get(h, c)
         if path == "/api/sessions":
@@ -920,12 +922,14 @@ def commit(c, ops, who, check=True):
                       (t, i, val, seq, who, now))
         c.execute("UPDATE meta SET value=? WHERE name='seq'", (str(seq),))
         c.commit()
+        SG_IDX.maj(c, ops)   # profils d'accès : rattachement des enregistrements écrits
         return seq
 
 
-def dump_json(c, since=None, tables=None, exclude=None):
+def dump_json(c, since=None, tables=None, exclude=None, garder=None):
     """{"seq":n,"tables":{t:{id:{"s":seq,"v":{…}|null}}}} — valeurs insérées telles quelles (déjà du JSON).
-    tables = seulement celles-ci ; exclude = toutes sauf celles-ci (catalogues lourds chargés à la demande)."""
+    tables = seulement celles-ci ; exclude = toutes sauf celles-ci (catalogues lourds chargés à la demande) ;
+    garder(t, id) = filtre du profil d'accès (sg_filtre_dump) : enregistrement omis s'il rend False (suppressions toujours transmises)."""
     seq = cur_seq(c)
     q, args = "SELECT t, id, val, seq FROM rec WHERE ", []
     if since is None:
@@ -939,6 +943,8 @@ def dump_json(c, since=None, tables=None, exclude=None):
     q += " ORDER BY t"
     out, cur, first = [], None, True
     for t, i, val, s in c.execute(q, args):
+        if garder is not None and val is not None and not garder(t, i):
+            continue
         if t != cur:
             out.append(("}," if cur is not None else "") + js(t) + ":{")
             cur, first = t, True
@@ -1814,6 +1820,7 @@ def base_import(c, d, remplacer):
         c.execute("INSERT INTO meta VALUES('import_base',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
                   (js({"source": str(d.get("source") or "")[:200], "le": now, "enregistrements": n}),))
         c.commit()
+    SG_IDX.reset(); _sg_ctx_cache.clear()
     return n
 
 
@@ -1832,7 +1839,7 @@ def nas_admin(h, c):
     if not ch08_auth_on(c):
         return True
     s = getattr(h, "ch08_user", None)
-    return bool(s) and ch08_can(c, s["user"], "userAdmin")
+    return bool(s) and ch08_can(c, s["user"], "userAdmin") and sg_contexte(h, c) is None
 
 
 LOGIN_PAGE = """<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1870,6 +1877,668 @@ $("f").onsubmit=async e=>{ e.preventDefault(); m.textContent=""; $("b").disabled
   }catch(err){ m.textContent="Serveur injoignable."; } finally{ $("b").disabled=false; } };
 $("u").focus();
 </script></body></html>"""
+
+
+# ═══ Profils d'accès SUBGestion (07.10.2026) ═════════════════════════════════════════════════════════════════════════
+# Trois profils : administrateur (tout), chef de projet (« cdp »), collaborateur (« collab »). Les droits des deux derniers
+# se règlent dans SUBGestion ▸ Réglages ▸ Profils et accès, collection « sgacces » :
+#   « role:cdp » / « role:collab » {ID, DROITS:{droit: niveau}} ; « user:<APPUSER.ID> » {ID, APPUSER_ID, PROFIL}.
+# Appliqués ICI, seulement quand l'ouverture de session par mot de passe est active (sinon personne n'est identifié : tout
+# est servi, comme avant) : chaque poste ne reçoit que les données de son profil (/api/snapshot, /api/changes, /api/kv),
+# les écritures non permises sont refusées (403 « droits »), les contrats et factures Facturation modifiés au niveau
+# « validation » passent « à valider » (champ _validation, posé par le serveur seulement ; décision : /api/valider).
+# ⚠ Mêmes listes dans subgestion3/sg3_plus.js (SG_DROITS, SG_DEFAUTS) : les tenir identiques.
+import unicodedata as _sg_ud
+
+SG_DROITS = {   # niveaux, du plus faible au plus fort
+    "projets_voir": ("siens", "tous"),
+    "projets_modifier": ("aucun", "siens", "tous"),
+    "heures": ("siennes", "projets", "toutes"),
+    "frais": ("siens", "projets", "tous"),
+    "chantier": ("aucun", "lecture", "ecriture"),
+    "pv": ("aucun", "lecture", "saisie", "validation"),
+    "documents": ("lecture", "depot"),
+    "contacts": ("lecture", "ecriture"),
+    "equipe": ("liste", "taux"),
+    "contrats": ("aucun", "lecture", "validation", "edition"),
+    "factures": ("aucune", "lecture", "validation", "edition"),
+    "finances": ("aucune", "projets", "toutes"),
+    "bibliotheque": ("lecture", "ecriture"),
+    "reglages": ("non", "oui"),
+}
+SG_DEFAUTS = {
+    "cdp": {"projets_voir": "siens", "projets_modifier": "siens", "heures": "projets", "frais": "projets", "chantier": "ecriture",
+            "pv": "validation", "documents": "depot", "contacts": "ecriture", "equipe": "liste", "contrats": "validation",
+            "factures": "validation", "finances": "projets", "bibliotheque": "lecture", "reglages": "non"},
+    "collab": {"projets_voir": "siens", "projets_modifier": "aucun", "heures": "siennes", "frais": "siens", "chantier": "lecture",
+               "pv": "saisie", "documents": "depot", "contacts": "lecture", "equipe": "liste", "contrats": "aucun",
+               "factures": "aucune", "finances": "aucune", "bibliotheque": "lecture", "reglages": "non"},
+}
+SG_TOUT = {k: v[-1] for k, v in SG_DROITS.items()}
+
+# collections par famille (le reste : rattaché à un projet par PROJECT_ID / projetId ou par son parent, sinon donnée générale)
+SG_T_CONTRATS = {"projectfee", "projectfeecalculation", "projectfeecalculationamount", "projectfeetimeitem", "projectfeecostitem",
+                 "projectfeeadditionalitem", "projectcontract", "hfdoc"}
+SG_T_FACTURES = {"projectinvoice", "projectinvoicepos", "projectpayment", "projectscheduledpayment", "qrbill", "qrbillaccount"}
+SG_T_CHANTIER = {"costestimate", "costestimatedocument", "costestimatedpdoc", "costestimatehist", "costcontrol", "costcontroldocument",
+                 "costplanning", "costplanningdocument", "projectcatalog", "projectcatalogpos", "projecttenderer", "devisdocument",
+                 "soumission", "soumissiondoc", "soumissionhist"}
+SG_T_CONTACTS = {"contactowner", "contact", "contact_property", "contactnote", "contactgroup", "contactquery", "contactqueryclause",
+                 "bankaccount", "documentrecipient"}
+SG_T_BIBLIO = {"modele", "modeledocument", "modelegroupe", "doctemplate", "doctemplategroup", "formtemplate", "formtemplategroup",
+               "arriereplan", "image", "catalog", "catalogpos", "boilerplategroup", "boilerplateitem", "template", "templatefield",
+               "templategroup", "textstyleset", "rowstyleset"}
+SG_T_TAUX = {"staffrate"}                       # taux internes : droit « équipe : taux »
+SG_T_LIBRES = {"documentlock", "setting", "appusersignature"} | CH08_ADMIN_T   # règles propres (verrous, CH-08)
+# parents explicites (enfant → (champ, parent)) ; sinon CHAMP_ID → collection « champ » si elle est rattachée à un projet
+SG_PARENTS = {"projectsubphase": ("PROJECTPHASE_ID", "projectphase"), "projectactivity": ("PROJECTACTIVITYGROUP_ID", "projectactivitygroup"),
+              "projectactivity_staff": ("PROJECTACTIVITY_ID", "projectactivity"), "projectcatalogpos": ("PROJECTCATALOG_ID", "projectcatalog"),
+              "projectcostcategory": ("PROJECTCOSTCATEGORYGROUP_ID", "projectcostcategorygroup"),
+              "projectfeecalculation": ("PROJECTFEE_ID", "projectfee"), "projectrate": ("PROJECTRATEGROUP_ID", "projectrategroup"),
+              "projectplantype": ("PROJECTPLANGROUP_ID", "projectplangroup"), "projecttasknote": ("PROJECTTASK_ID", "projecttask"),
+              "documentrecipient": ("DOCUMENT_ID", "document"), "projectinvoicepos": ("PROJECTINVOICE_ID", "projectinvoice")}
+SG_FK_GLOBALES = {"CONTACT_ID", "RESPCONTACT_ID", "SUPPLIERCONTACT_ID", "STAFF_ID", "STAFFS_ID", "PHASE_ID", "SUBPHASE_ID",
+                  "ACTIVITY_ID", "ACTIVITYGROUP_ID", "COSTCATEGORY_ID", "COSTCATEGORYGROUP_ID", "DOCUMENTLOCK_ID", "APPUSER_ID",
+                  "PROJECTKINDS_ID", "TEMPLATEGROUP_ID", "CONTACTOWNER_ID", "PERSON_ID", "COMPANYCONTACT_ID", "HOMECONTACT_ID"}
+
+
+def _sg_s(x):
+    return None if x is None or x == "" else str(x)
+
+
+class _SgIndex:
+    """Rattachement de chaque enregistrement à un projet (et, pour les heures et les frais, à un collaborateur), construit à la
+    première demande puis tenu à jour à chaque écriture (commit) ; reconstruit après un import de base."""
+    def __init__(self):
+        self.lock = threading.RLock()
+        self.pret = False
+
+    def reset(self):
+        with self.lock:
+            self.pret = False
+
+    def _extraire(self, t, i, v):
+        if t == "project":
+            return str(i), None, ()
+        p = _sg_s(v.get("PROJECT_ID")) or _sg_s(v.get("projetId"))
+        parents = ()
+        if not p:
+            if t in SG_PARENTS:
+                f, pt = SG_PARENTS[t]
+                parents = ((pt, _sg_s(v.get(f))),)
+            else:
+                parents = tuple((k[:-3].lower(), _sg_s(x)) for k, x in v.items()
+                                if k.endswith("_ID") and k not in SG_FK_GLOBALES and _sg_s(x))
+        s = _sg_s(v.get("STAFF_ID")) if t in ("timelog", "projectcost") else None
+        return p, s, parents
+
+    def _poser(self, t, i, v):
+        k = (t, str(i))
+        self._oter(k)
+        if not isinstance(v, dict):
+            return
+        p, s, parents = self._extraire(t, i, v)
+        if not p:
+            for pt, pid in parents:
+                if pid and (pt, pid) in self.proj:
+                    p = self.proj[(pt, pid)]
+                    break
+        if p:
+            self.proj[k] = p
+        if s:
+            self.staff[k] = s
+            if t == "timelog" and p:
+                d = self.tl.setdefault(s, {})
+                d[p] = d.get(p, 0) + 1
+        if t == "projectmember":
+            self.membres[str(i)] = (p, _sg_s(v.get("RESPCONTACT_ID")), _sg_s(v.get("CONTACT_ID")))
+
+    def _oter(self, k):
+        p = self.proj.pop(k, None)
+        s = self.staff.pop(k, None)
+        if k[0] == "timelog" and s and p and s in self.tl and p in self.tl[s]:
+            self.tl[s][p] -= 1
+            if self.tl[s][p] <= 0:
+                del self.tl[s][p]
+        if k[0] == "projectmember":
+            self.membres.pop(k[1], None)
+
+    def construire(self, c):
+        with self.lock:
+            if self.pret:
+                return
+            self.proj, self.staff, self.tl, self.membres = {}, {}, {}, {}
+            rows = []
+            for t, i, val in c.execute("SELECT t, id, val FROM rec WHERE val IS NOT NULL"):
+                try:
+                    v = json.loads(val)
+                except ValueError:
+                    continue
+                if isinstance(v, dict):
+                    p, s, parents = self._extraire(t, i, v)
+                    rows.append((t, i, p, s, parents, (_sg_s(v.get("RESPCONTACT_ID")), _sg_s(v.get("CONTACT_ID"))) if t == "projectmember" else None))
+            attente = []
+            for t, i, p, s, parents, m in rows:   # 1er passage : rattachements directs
+                if p:
+                    self.proj[(t, str(i))] = p
+                else:
+                    attente.append((t, i, parents))
+            for _ in range(4):                     # parents en cascade (phase → phase partielle → …)
+                reste = []
+                for t, i, parents in attente:
+                    q = next((self.proj[(pt, pid)] for pt, pid in parents if pid and (pt, pid) in self.proj), None)
+                    if q:
+                        self.proj[(t, str(i))] = q
+                    else:
+                        reste.append((t, i, parents))
+                if len(reste) == len(attente):
+                    break
+                attente = reste
+            for t, i, p, s, parents, m in rows:
+                k = (t, str(i))
+                if s:
+                    self.staff[k] = s
+                    if t == "timelog" and k in self.proj:
+                        d = self.tl.setdefault(s, {})
+                        d[self.proj[k]] = d.get(self.proj[k], 0) + 1
+                if m is not None:
+                    self.membres[str(i)] = (self.proj.get(k), m[0], m[1])
+            self.pret = True
+
+    def maj(self, c, ops):
+        with self.lock:
+            if not self.pret:
+                return
+            for op in ops:
+                t = op.get("t")
+                if re.fullmatch(r"[a-z0-9_]+", t or ""):
+                    self._poser(t, str(op.get("id")), op.get("val"))
+
+    def projet(self, c, t, i):
+        self.construire(c)
+        return self.proj.get((t, str(i)))
+
+    def projet_de(self, c, t, i, v):
+        """projet d'un enregistrement (valeur à écrire) sans l'enregistrer"""
+        self.construire(c)
+        if not isinstance(v, dict):
+            return None
+        p, s, parents = self._extraire(t, i, v)
+        if p:
+            return p
+        for pt, pid in parents:
+            if pid and (pt, pid) in self.proj:
+                return self.proj[(pt, pid)]
+        return None
+
+
+SG_IDX = _SgIndex()
+_sg_ctx_cache = {}
+
+
+def _sg_lignes(c, t):
+    for i, val in c.execute("SELECT id, val FROM rec WHERE t=? AND val IS NOT NULL", (t,)):
+        try:
+            v = json.loads(val)
+        except ValueError:
+            continue
+        if isinstance(v, dict):
+            yield str(i), v
+
+
+def sg_droits_roles(c):
+    """{profil: droits} en vigueur (défauts + réglages enregistrés, niveaux inconnus ignorés)"""
+    out = {p: dict(d) for p, d in SG_DEFAUTS.items()}
+    for p in out:
+        r = ch08_rec(c, "sgacces", "role:" + p) or {}
+        for k, n in (r.get("DROITS") or {}).items():
+            if k in SG_DROITS and n in SG_DROITS[k]:
+                out[p][k] = n
+    return out
+
+
+def sg_contexte(h, c):
+    """Profil de la session : None = administrateur ou ouverture de session inactive (aucun filtrage) ; sinon dict
+    {profil, droits, user, staffs, personnes, voir (projets visibles), modif (projets modifiables ; None = tous)}."""
+    if not ch08_auth_on(c):
+        return None
+    s = getattr(h, "ch08_user", None)
+    if not s:
+        return None
+    u = s["user"]
+    uid = str(u.get("ID"))
+    seq = cur_seq(c)
+    hit = _sg_ctx_cache.get(uid)
+    if hit and hit[0] == seq:
+        return hit[1]
+    reg = ch08_rec(c, "sgacces", "user:" + uid) or {}
+    profil = reg.get("PROFIL")
+    if profil not in ("admin", "cdp", "collab"):
+        profil = "admin" if (u.get("USERID") in CH08_INTERNAL or ch08_can(c, u, "superadmin") or ch08_can(c, u, "userAdmin")) else "collab"
+    if profil == "admin":
+        _sg_ctx_cache[uid] = (seq, None)
+        return None
+    droits = sg_droits_roles(c)[profil]
+    staffs = {_sg_s(v.get("STAFFS_ID")) for _, v in _sg_lignes(c, "appuser_staff") if _sg_s(v.get("APPUSER_ID")) == uid} - {None}
+    personnes = set()
+    for sid in staffs:
+        st = ch08_rec(c, "staff", sid) or {}
+        personnes |= {x for x in (_sg_s(st.get("PERSON_ID")),) if x}
+    SG_IDX.construire(c)
+    with SG_IDX.lock:
+        siens = {p for p, resp, ct in SG_IDX.membres.values() if p and ((resp and resp in personnes) or (ct and ct in personnes))}
+        for sid in staffs:
+            siens |= set(SG_IDX.tl.get(sid, {}).keys())   # projets où il a saisi des heures
+    voir = None if droits["projets_voir"] == "tous" else siens
+    modif = None if droits["projets_modifier"] == "tous" else (siens if droits["projets_modifier"] == "siens" else set())
+    if modif is not None and voir is not None:
+        modif = modif & voir
+    ctx = {"profil": profil, "droits": droits, "user": u, "userid": str(u.get("USERID") or ""), "staffs": staffs,
+           "personnes": personnes, "voir": voir, "modif": modif}
+    _sg_ctx_cache[uid] = (seq, ctx)
+    return ctx
+
+
+def sg_niv(ctx, k, niveau):
+    """droit k au moins au niveau donné"""
+    n = SG_DROITS[k]
+    return n.index(ctx["droits"][k]) >= n.index(niveau)
+
+
+def sg_garder(ctx, c, t, i):
+    """l'enregistrement (t, i) est-il servi à ce profil ?"""
+    if t == "sgacces":
+        return str(i).startswith("role:")   # réglages des profils (lecture) ; affectations : administrateur seulement
+    if t in SG_T_TAUX and not sg_niv(ctx, "equipe", "taux"):
+        return False
+    if t in SG_T_CONTRATS and not sg_niv(ctx, "contrats", "lecture"):
+        return False
+    if t in SG_T_FACTURES and not sg_niv(ctx, "factures", "lecture"):
+        return False
+    if t in SG_T_CHANTIER and not sg_niv(ctx, "chantier", "lecture"):
+        return False
+    with SG_IDX.lock:
+        p = SG_IDX.proj.get((t, str(i)))
+        if t in ("timelog", "projectcost"):
+            s = SG_IDX.staff.get((t, str(i)))
+            if s and s in ctx["staffs"]:
+                return True   # ses heures, ses frais : toujours
+            d = ctx["droits"]["heures" if t == "timelog" else "frais"]
+            if d in ("toutes", "tous"):
+                return True
+            if d in ("siennes", "siens"):
+                return False
+    if p is None:
+        return True           # donnée générale (adresses, modèles, réglages…)
+    return ctx["voir"] is None or p in ctx["voir"]
+
+
+def sg_filtre_dump(ctx, c):
+    if ctx is None:
+        return None
+    SG_IDX.construire(c)
+    return lambda t, i: sg_garder(ctx, c, t, i)
+
+
+def sg_refus_ecriture(ctx, c, ops):
+    """Règles d'écriture du profil (après celles de CH-08) : None = permis, sinon message du premier refus."""
+    if ctx is None:
+        return None
+    SG_IDX.construire(c)
+    voir, modif = ctx["voir"], ctx["modif"]
+    dans = lambda ens, ps: ens is None or all(p in ens for p in ps)
+    for op in ops:
+        t, i, v = op.get("t"), str(op.get("id")), op.get("val")
+        if t in SG_T_LIBRES:
+            continue
+        if t == "sgacces":
+            return "Profils et accès : réservé à l'administrateur."
+        p0 = SG_IDX.projet(c, t, i)
+        p1 = SG_IDX.projet_de(c, t, i, v) if v is not None else None
+        ps = {p for p in (p0, p1) if p}
+        if t in ("timelog", "projectcost"):
+            with SG_IDX.lock:
+                s0 = SG_IDX.staff.get((t, i))
+            s1 = _sg_s(v.get("STAFF_ID")) if isinstance(v, dict) else None
+            perso = all(x in ctx["staffs"] for x in (s0, s1) if x)
+            d = ctx["droits"]["heures" if t == "timelog" else "frais"]
+            if d in ("toutes", "tous"):
+                continue
+            if perso and dans(voir, ps):
+                continue
+            if t == "projectcost" and d == "projets" and dans(modif, ps):
+                continue
+            return "Vous ne pouvez saisir que vos propres " + ("heures." if t == "timelog" else "frais.")
+        if t == "depotfichier":
+            if sg_niv(ctx, "documents", "depot") and ps and dans(voir, ps):
+                continue
+            return "Dépôt de documents non permis pour ce projet."
+        if t in SG_T_CHANTIER:
+            if sg_niv(ctx, "chantier", "ecriture") and dans(modif, ps):
+                continue
+            return "Chantier (descriptifs, devis, coûts) : lecture seule pour votre profil."
+        if t in SG_T_CONTRATS or t in SG_T_FACTURES:
+            k = "contrats" if t in SG_T_CONTRATS else "factures"
+            if sg_niv(ctx, k, "edition") and dans(modif, ps):
+                continue
+            return "Honoraires et facturation du moteur : réservés à l'administrateur (utilisez Facturation)."
+        if t == "project":
+            if p0 is None and v is not None:   # nouveau projet
+                if ctx["droits"]["projets_modifier"] == "tous":
+                    continue
+                return "Création de projets : réservée à l'administrateur."
+            if dans(modif, ps or {i}):
+                continue
+            return "Ce projet n'est pas modifiable avec votre profil."
+        if ps:
+            if dans(modif, ps):
+                continue
+            return "Ce projet n'est pas modifiable avec votre profil."
+        if t in SG_T_CONTACTS:
+            if sg_niv(ctx, "contacts", "ecriture"):
+                continue
+            return "Adresses : lecture seule pour votre profil."
+        if t in SG_T_BIBLIO:
+            if sg_niv(ctx, "bibliotheque", "ecriture"):
+                continue
+            return "Bibliothèque (modèles) : lecture seule pour votre profil."
+        if sg_niv(ctx, "reglages", "oui"):
+            continue
+        return "Paramètres du bureau (« %s ») : réservés à l'administrateur." % t
+    return None
+
+
+# ── Données Facturation partagées (kv) selon le profil ──
+SG_KV_FILTRES = {"sa_contrats": "contrats", "sa_factures5": "factures", "sa_pv_data": "pv"}
+SG_KV_LECTURE = {"sa_adr", "sa_affaires", "sa_affaires_statut", "sa_cfc_edits", "sa_cond_groupes", "sa_seed_ver", "sa_phases_pct_migrated",
+                 "sa_last_tva", "sa_import_ok", "sa_rap_vacinit", "sa_rap_hjour", "sa_dv_catoff"}
+SG_KV_FACTURATION = {"sa_banques", "sa_banques_ent", "sg3_liens"}   # lecture si contrats ou factures ≥ lecture ; écriture : admin
+
+
+def sg_cle(s):
+    s = _sg_ud.normalize("NFD", str(s if s is not None else ""))
+    s = "".join(ch for ch in s if not _sg_ud.combining(ch)).lower()
+    return re.sub(r"[^a-z0-9]+", " ", s).strip()
+
+
+def _sg_kv_json(c, k, defaut):
+    r = c.execute("SELECT v FROM kv WHERE k=?", (k,)).fetchone()
+    try:
+        return json.loads(r[0]) if r and r[0] else defaut
+    except ValueError:
+        return defaut
+
+
+class _SgAffaires:
+    """code d'affaire (contrat Facturation, PV) → projet : même règle que sgProjetDuContrat (lien manuel, code exact, préfixe)"""
+    def __init__(self, c):
+        self.projets = [(i, sg_cle(v.get("NUMBER")), len(str(v.get("NUMBER") or ""))) for i, v in _sg_lignes(c, "project") if v.get("NUMBER")]
+        self.exact = {k: i for i, k, _ in self.projets if k}
+        liens = _sg_kv_json(c, "sg3_liens", {})
+        self.liens = {str(a): str(b) for a, b in (liens.items() if isinstance(liens, dict) else []) if b}
+
+    def code(self, code):
+        k = sg_cle(code)
+        if not k:
+            return None
+        if k in self.exact:
+            return self.exact[k]
+        best = None
+        for i, pk, n in self.projets:
+            if pk and k.startswith(pk + " ") and (best is None or n > best[1]):
+                best = (i, n)
+        return best[0] if best else None
+
+    def contrat(self, ctr):
+        if not isinstance(ctr, dict):
+            return None
+        l = self.liens.get(str(ctr.get("id")))
+        return l or self.code(ctr.get("affaire"))
+
+
+def _sg_portee(ctx, c):
+    """fonctions « dans le périmètre » pour les contrats, factures et PV (projets visibles)"""
+    A = _SgAffaires(c)
+    voir = ctx["voir"]
+    vis = lambda p: p is not None and (voir is None or p in voir)
+    contrats = _sg_kv_json(c, "sa_contrats", [])
+    ctr_proj = {str(x.get("id")): A.contrat(x) for x in (contrats if isinstance(contrats, list) else []) if isinstance(x, dict)}
+    return {
+        "sa_contrats": lambda o: isinstance(o, dict) and vis(A.contrat(o)),
+        "sa_factures5": lambda o: isinstance(o, dict) and vis(ctr_proj.get(str(o.get("contrat_id")))),
+        "sa_pv_data": lambda code: vis(A.code(code)),
+        "_A": A, "_ctr_proj": ctr_proj,
+    }
+
+
+def sg_kv_lire(ctx, c, items):
+    """relevé /api/kv filtré : clés cachées retirées, listes et PV réduits aux projets visibles"""
+    if ctx is None:
+        return items
+    out, P = {}, None
+    for k, it in items.items():
+        if k in SG_KV_FILTRES:
+            if not sg_niv(ctx, SG_KV_FILTRES[k], "lecture"):
+                continue
+            if it.get("v") is None:
+                out[k] = it
+                continue
+            P = P or _sg_portee(ctx, c)
+            try:
+                v = json.loads(it["v"])
+            except ValueError:
+                continue
+            if k == "sa_pv_data" and isinstance(v, dict):
+                v = {a: x for a, x in v.items() if P[k](a)}
+            elif isinstance(v, list):
+                v = [o for o in v if P[k](o)]
+            else:
+                continue
+            out[k] = {"v": json.dumps(v, ensure_ascii=False, separators=(",", ":")), "ver": it["ver"]}
+        elif k in SG_KV_LECTURE:
+            out[k] = it
+        elif k in SG_KV_FACTURATION:
+            if sg_niv(ctx, "contrats", "lecture") or sg_niv(ctx, "factures", "lecture"):
+                out[k] = it
+        # autres clés (collaborateurs, coûts, heures et vacances de Facturation, archives…) : administrateur seulement
+    return out
+
+
+class SgRefus(Exception):
+    pass
+
+
+def _sg_sans_calc(o):
+    return json.dumps({a: b for a, b in o.items() if not str(a).startswith("_")}, sort_keys=True, ensure_ascii=False) if isinstance(o, dict) else json.dumps(o)
+
+
+def _sg_cle_obj(o):
+    return str(o.get("id", o.get("num", o.get("code")))) if isinstance(o, dict) else None
+
+
+def sg_kv_ecrire(ctx, c, k, v, who):
+    """valeur (texte) envoyée par un poste → valeur complète à enregistrer (fusion avec la partie hors périmètre, marque « à valider »).
+    ctx None : inchangée, sauf _validation qui reste celle du serveur. SgRefus = 403."""
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+    if k not in SG_KV_FILTRES:
+        if ctx is None:
+            return v
+        if k in SG_KV_LECTURE:
+            if k == "sa_adr" and not sg_niv(ctx, "contacts", "ecriture"):
+                raise SgRefus("Carnet d'adresses : lecture seule pour votre profil.")
+            if k != "sa_adr" and not (sg_niv(ctx, "contrats", "validation") or sg_niv(ctx, "factures", "validation")):
+                raise SgRefus("lecture seule")
+            return v
+        raise SgRefus("Données réservées à l'administrateur.")
+    try:
+        neuf = json.loads(v) if v is not None else None
+    except ValueError:
+        raise SgRefus("valeur illisible")
+    actuel = _sg_kv_json(c, k, {} if k == "sa_pv_data" else [])
+    droit = SG_KV_FILTRES[k]
+    if k == "sa_pv_data":
+        if ctx is None:
+            return v
+        if not sg_niv(ctx, "pv", "saisie"):
+            raise SgRefus("PV de chantier : lecture seule pour votre profil.")
+        P = _sg_portee(ctx, c)
+        neuf = neuf if isinstance(neuf, dict) else {}
+        actuel = actuel if isinstance(actuel, dict) else {}
+        for a in neuf:
+            if not P[k](a):
+                raise SgRefus("PV d'un projet hors de votre périmètre.")
+        for a, x in actuel.items():
+            if P[k](a) and a not in neuf and not sg_niv(ctx, "pv", "validation"):
+                raise SgRefus("Suppression de PV : réservée au validateur.")
+            if a in neuf and not sg_niv(ctx, "pv", "validation"):   # un PV ne devient définitif (envoyé) que par un validateur
+                avant = {str(p.get("id")): p.get("statut") for p in (x.get("pvs") or []) if isinstance(p, dict)}
+                for p in (neuf[a].get("pvs") or []) if isinstance(neuf[a], dict) else []:
+                    if isinstance(p, dict) and p.get("statut") == "definitif" and avant.get(str(p.get("id"))) != "definitif":
+                        raise SgRefus("L'envoi du PV (définitif) est réservé au chef de projet ou à l'administrateur.")
+        res = {a: x for a, x in actuel.items() if not P[k](a)}
+        res.update(neuf)
+        return json.dumps(res, ensure_ascii=False, separators=(",", ":"))
+    # contrats, factures : listes d'objets {id…}
+    neuf = neuf if isinstance(neuf, list) else []
+    actuel = actuel if isinstance(actuel, list) else []
+    par_cle = {_sg_cle_obj(o): o for o in actuel if isinstance(o, dict)}
+    if ctx is None:   # administrateur : _validation n'est changée que par /api/valider
+        out = []
+        for o in neuf:
+            if isinstance(o, dict):
+                o = dict(o)
+                old = par_cle.get(_sg_cle_obj(o))
+                if old is not None and "_validation" in old:
+                    o["_validation"] = old["_validation"]
+                else:
+                    o.pop("_validation", None)
+            out.append(o)
+        return json.dumps(out, ensure_ascii=False, separators=(",", ":"))
+    niv = ctx["droits"][droit]
+    if not sg_niv(ctx, droit, "validation"):
+        raise SgRefus(("Contrats d'honoraires" if droit == "contrats" else "Factures") + " : lecture seule pour votre profil.")
+    P = _sg_portee(ctx, c)
+    dans = P[k]
+    vis_old = {_sg_cle_obj(o): o for o in actuel if dans(o)}
+    vus, sortie_vis = set(), {}
+    for o in neuf:
+        if not isinstance(o, dict):
+            raise SgRefus("élément illisible")
+        kk = _sg_cle_obj(o)
+        old = vis_old.get(kk)
+        if kk in par_cle and old is None:
+            raise SgRefus("Cet élément appartient à un projet hors de votre périmètre.")
+        if not dans(o):
+            raise SgRefus("Projet hors de votre périmètre (vérifiez le code d'affaire).")
+        o = dict(o)
+        change = old is None or _sg_sans_calc(o) != _sg_sans_calc(old)
+        if change and niv == "validation":
+            o["_validation"] = {"etat": "a_valider", "par": who, "le": now, "nouveau": old is None or bool((old.get("_validation") or {}).get("nouveau"))}
+        elif old is not None and "_validation" in old:
+            o["_validation"] = old["_validation"]
+        else:
+            o.pop("_validation", None)
+        vus.add(kk)
+        sortie_vis[kk] = o
+    for kk, old in vis_old.items():
+        if kk not in vus and niv != "edition":
+            val = old.get("_validation") or {}
+            if not (val.get("nouveau") and val.get("etat") in ("a_valider", "refuse")):
+                raise SgRefus("Suppression d'un élément validé : réservée à l'administrateur.")
+    out = []
+    for o in actuel:   # ordre d'origine ; éléments visibles remplacés (ou supprimés), autres gardés
+        kk = _sg_cle_obj(o)
+        if dans(o):
+            if kk in sortie_vis:
+                out.append(sortie_vis.pop(kk))
+        else:
+            out.append(o)
+    out += [o for o in neuf if _sg_cle_obj(o) in sortie_vis]   # nouveaux, dans l'ordre du poste
+    return json.dumps(out, ensure_ascii=False, separators=(",", ":"))
+
+
+def sg_valider(ctx, c, k, ident, decision, motif, who):
+    """Décision sur un contrat / une facture « à valider » : administrateur, ou profil au niveau « édition » sur ce projet."""
+    if k not in ("sa_contrats", "sa_factures5") or decision not in ("valide", "refuse"):
+        raise ValueError("demande invalide")
+    if ctx is not None:
+        droit = "contrats" if k == "sa_contrats" else "factures"
+        if not sg_niv(ctx, droit, "edition"):
+            raise SgRefus("La validation est réservée à l'administrateur.")
+    with _wlock:
+        row = c.execute("SELECT v, ver FROM kv WHERE k=?", (k,)).fetchone()
+        liste = json.loads(row[0]) if row and row[0] else []
+        trouve = None
+        for o in liste:
+            if isinstance(o, dict) and _sg_cle_obj(o) == str(ident):
+                trouve = o
+        if trouve is None:
+            raise ValueError("élément introuvable")
+        if ctx is not None and not _sg_portee(ctx, c)[k](trouve):
+            raise SgRefus("Projet hors de votre périmètre.")
+        val = dict(trouve.get("_validation") or {})
+        val.update({"etat": decision, "decision_par": who, "decision_le": datetime.datetime.now().isoformat(timespec="seconds"),
+                    "motif": (motif or "")[:500] if decision == "refuse" else ""})
+        if decision == "valide":
+            val["nouveau"] = False
+        trouve["_validation"] = val
+        r0 = c.execute("SELECT value FROM meta WHERE name='kvseq'").fetchone()
+        ver = (int(r0[0]) if r0 else 0) + 1
+        c.execute("INSERT INTO meta VALUES('kvseq',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", (str(ver),))
+        c.execute("UPDATE kv SET v=?, ver=?, who=?, ts=? WHERE k=?", (json.dumps(liste, ensure_ascii=False, separators=(",", ":")), ver,
+                                                                    who[:80], datetime.datetime.now().isoformat(timespec="seconds"), k))
+        c.commit()
+    return ver
+
+
+def sg_couts(ctx, c):
+    """coût du temps par projet et par phase (taux internes appliqués ici : ils ne quittent pas le serveur) — profils « finances »"""
+    if ctx is not None and not sg_niv(ctx, "finances", "projets"):
+        raise SgRefus("Finances : non permis pour votre profil.")
+    taux = {}
+    for _, r in _sg_lignes(c, "staffrate"):
+        if r.get("VALIDFROM"):
+            taux.setdefault(str(r.get("STAFF_ID")), []).append((str(r["VALIDFROM"])[:10], float(r.get("RATE") or 0)))
+    for a in taux.values():
+        a.sort()
+    def tx(sid, d):
+        a = taux.get(sid)
+        if not a:
+            return 0.0
+        r = a[0][1]
+        for f, x in a:
+            if f <= d:
+                r = x
+            else:
+                break
+        return r
+    voir = None if ctx is None else ctx["voir"]
+    out = {}
+    for _, r in _sg_lignes(c, "timelog"):
+        p = _sg_s(r.get("PROJECT_ID"))
+        if not p or (voir is not None and p not in voir):
+            continue
+        try:
+            d = "%04d-%02d-%02d" % (int(r.get("TIMEYEAR")), int(r.get("TIMEMONTH")) + 1, int(r.get("TIMEDAY")))
+        except (TypeError, ValueError):
+            continue
+        h = float(r.get("TIMEPERIOD") or 0)
+        x = h * tx(str(r.get("STAFF_ID")), d)
+        e = out.setdefault(p, {"cout": 0.0, "phases": {}})
+        e["cout"] += x
+        ph = _sg_s(r.get("PHASE_ID"))
+        if ph:
+            e["phases"][ph] = e["phases"].get(ph, 0.0) + x
+    return out
+
+
+def sg_session_info(h, c):
+    """profil et droits de la session (pour SUBGestion)"""
+    ctx = sg_contexte(h, c)
+    if ctx is None:
+        return {"profil": "admin", "droits": SG_TOUT, "staffs": []}
+    return {"profil": ctx["profil"], "droits": ctx["droits"], "staffs": sorted(ctx["staffs"]),
+            "projets": None if ctx["voir"] is None else sorted(ctx["voir"])}
 
 
 VPN_NET = ipaddress.ip_network("100.64.0.0/10")
@@ -1943,9 +2612,14 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/snapshot":
                 tabs = [x for x in (q.get("t") or [""])[0].split(",") if x]
                 excl = [x for x in (q.get("x") or [""])[0].split(",") if x]
-                return self._send(200, dump_json(c, None, tabs or None, excl or None))
+                return self._send(200, dump_json(c, None, tabs or None, excl or None, sg_filtre_dump(sg_contexte(self, c), c)))
             if u.path == "/api/changes":
-                return self._send(200, dump_json(c, int((q.get("since") or ["0"])[0])))
+                return self._send(200, dump_json(c, int((q.get("since") or ["0"])[0]), garder=sg_filtre_dump(sg_contexte(self, c), c)))
+            if u.path == "/api/couts":   # profils d'accès : coût du temps agrégé (taux internes gardés sur le serveur)
+                try:
+                    return self._send(200, js({"ok": True, "projets": sg_couts(sg_contexte(self, c), c)}))
+                except SgRefus as e:
+                    return self._send(403, js({"ok": False, "error": "droits", "msg": str(e)}))
             if u.path == "/api/ids":
                 return self._send(200, js(new_ids(c, (q.get("t") or [""])[0], int((q.get("n") or ["1"])[0]))))
             if u.path == "/fichiers/lire":   # contenu d'un fichier joint de SUBGestion (même dépôt que CH-03)
@@ -1956,7 +2630,9 @@ class H(BaseHTTPRequestHandler):
                 with open(f, "rb") as fh:
                     return self._send(200, fh.read(), "application/octet-stream")
             if u.path == "/api/kv":   # données Facturation partagées (NAS)
-                return self._send(200, js(kv_since(c, int((q.get("since") or ["0"])[0]))))
+                d = kv_since(c, int((q.get("since") or ["0"])[0]))
+                d["items"] = sg_kv_lire(sg_contexte(self, c), c, d["items"])
+                return self._send(200, js(d))
             if u.path == "/api/export":   # sauvegarde complète téléchargée (.json.gz)
                 if not nas_admin(self, c):
                     return self._send(403, js({"ok": False, "error": "Réservé aux administrateurs."}))
@@ -1993,7 +2669,7 @@ class H(BaseHTTPRequestHandler):
             return ch03_post(self, urlparse(self.path).path)
         if urlparse(self.path).path == "/fichiers/ranger":
             return self._nas_ranger(urlparse(self.path))
-        if urlparse(self.path).path in ("/api/kv", "/api/import"):
+        if urlparse(self.path).path in ("/api/kv", "/api/import", "/api/valider"):
             return self._nas_post(urlparse(self.path))
         if urlparse(self.path).path != "/api/commit":
             return self._send(404, '{"error":"introuvable"}')
@@ -2003,6 +2679,9 @@ class H(BaseHTTPRequestHandler):
             who = ch08_who(self, c, body)   # CH-08 : session ou identité déclarée ; règles du § 4.20.3 ; None = 403 déjà envoyé
             if who is None:
                 return
+            m = sg_refus_ecriture(sg_contexte(self, c), c, body.get("ops") or [])   # profils d'accès
+            if m:
+                return self._send(403, js({"ok": False, "error": "droits", "msg": m}))
             seq = commit(c, body.get("ops") or [], who)
             ch08_after_commit(c, body.get("ops") or [])
             self._send(200, js({"ok": True, "seq": seq}))
@@ -2025,18 +2704,31 @@ def _nas_post(self, u):
         who = str(s["user"].get("USERID") or s["userid"]) if s else self.client_address[0]
         if u.path == "/api/import" and not nas_admin(self, c):
             return self._send(403, js({"ok": False, "error": "Réservé aux administrateurs."}))
+        ctx = sg_contexte(self, c)
+        if u.path == "/api/valider":   # contrats / factures « à valider » : décision de l'administrateur
+            body = json.loads(raw.decode("utf-8"))
+            ver = sg_valider(ctx, c, str(body.get("k") or ""), str(body.get("id") or ""), str(body.get("decision") or ""), body.get("motif"), who)
+            return self._send(200, js({"ok": True, "ver": ver}))
         if u.path == "/api/kv":
             body = json.loads(raw.decode("utf-8"))
-            v = body.get("v")
-            ver = kv_put(c, str(body.get("k") or ""), None if v is None else str(v), body.get("base"), str(body.get("who") or who))
-            return self._send(200, js({"ok": True, "ver": ver}))
+            k, v = str(body.get("k") or ""), body.get("v")
+            v = None if v is None else str(v)
+            v2 = sg_kv_ecrire(ctx, c, k, v, str(body.get("who") or who) if ctx is None else who)   # profils d'accès : fusion, « à valider »
+            ver = kv_put(c, k, v2, body.get("base"), str(body.get("who") or who))
+            vue = sg_kv_lire(ctx, c, {k: {"v": v2, "ver": ver}}).get(k, {}).get("v")
+            return self._send(200, js({"ok": True, "ver": ver, "v": vue} if vue != v else {"ok": True, "ver": ver}))
         if raw[:2] == b"\x1f\x8b":
             raw = gzip.decompress(raw)
         n = base_import(c, json.loads(raw.decode("utf-8")), (parse_qs(u.query).get("remplacer") or ["0"])[0] == "1")
         print("Base importée : %d enregistrements (%s)" % (n, who), file=sys.stderr)
         return self._send(200, js({"ok": True, "n": n}))
+    except SgRefus as e:
+        return self._send(403, js({"ok": False, "error": "droits", "msg": str(e), "lecture_seule": True}))
     except Conflict as e:
-        return self._send(409, js({"ok": False, "conflit": e.items[0]}))
+        it = e.items[0]
+        if "k" in it:   # version du serveur réduite au périmètre du poste
+            it = dict(it, v=sg_kv_lire(sg_contexte(self, c), c, {it["k"]: {"v": it["v"], "ver": it["ver"]}}).get(it["k"], {}).get("v"))
+        return self._send(409, js({"ok": False, "conflit": it}))
     except Exception as e:
         return self._send(400, js({"ok": False, "error": str(e)[:300]}))
     finally:

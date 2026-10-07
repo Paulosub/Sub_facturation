@@ -221,6 +221,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   revient), l'âge (naissance = contactowner de la personne) et la période d'engagement — créés d'office pour l'année en
   cours et la suivante ; Équipe ▸ Bouclement annuel (`nx-bouclement`, collection `sgbouclement`) : heures sup. et soldes de
   vacances, validation par collaborateur, transfert → `TARGETTIMEREDUCTION` (report) et `HOLIDAYBALANCE` de l'année suivante.
+- **Contrats de travail** (Équipe, `nx-contrats-travail`, bloc 14 de `sg3_plus.js`, collection `sgcontrattravail`, réservée
+  à l'administrateur sur le NAS) : « contrat » (engagement ; « Nouvel engagement » crée aussi la personne, ses adresses et le
+  collaborateur), « avenant » (nouvelles conditions dès une date d'effet), « fin » (résiliation : reçue le, fin légale CCT
+  art. 10 — essai 3 mois / 7 jours, puis 1 / 2 / 3 mois pour la fin d'un mois —, dernier jour de travail). Conditions en
+  vigueur (`sgCtrEnVigueur`) → coût de revient (salaire, mois, taux : lecture seule là-bas) et heures dues (taux par jour).
+  Décompte de sortie (`sgDecompteSortie`) : vacances au prorata, heures sup., jours ouvrés restants, dernier jour conseillé,
+  solde à payer (salaire horaire CCT art. 25 = annuel ÷ (h/sem. × 52,14)). Documents au texte du modèle du bureau
+  (« 19_Contrat employé », contrat 4 pages ; avenant ; confirmation de fin + décompte) ouverts dans la visionneuse (Imprimer →
+  PDF). Grille des salaires minimaux CCT 2026 (`SG_GRILLE`, avenant du 26.11.2025) : contrôle du salaire (annuel, au prorata
+  du taux). Contrat du bureau plus favorable que la CCT : 6 semaines de vacances dès le 1er janvier de l'année des 50 ans
+  (appliqué au calcul) ; heures sup. positives au 31.12 compensées en vacances (option du bouclement, par défaut).
+- **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
+  démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

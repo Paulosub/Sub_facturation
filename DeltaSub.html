@@ -11291,7 +11291,7 @@ function svCanEdit(d){ if(!d) return false; if(!d.USERID||d.USERID===ME.id) retu
 function svRight(code){ const u=ME.u; if(!u) return false;
   const roles=DS.by('appuser_appcompanyrole','APPUSER_ID',u.ID).flatMap(l=>DS.by('appcompanyrole_approle','APPCOMPANYROLE_ID',l.APPCOMPANYROLES_ID)).map(l=>DS.get('approle',l.APPROLES_ID)).filter(Boolean);
   return roles.some(r=>{ const R=';'+String(r.RIGHTS||''); return R.includes(';'+code+';')||R.includes(';0,0;'); }); }
-const svLockedByOther=d=>!!(d&&d.LOCKUSERID&&d.LOCKUSERID!==ME.id);
+const svLockedByOther=d=>!!(d&&d.LOCKUSERID&&d.LOCKUSERID!==ME.id)&&!(DS.info&&DS.info.local);   // base locale : un seul poste, pas d'autre utilisateur
 const svNowIso=()=>{ const d=new Date(); return diso(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); };
 const svFmtTs=s=>s?dfr(s)+(String(s).length>10?' '+String(s).slice(11,16):''):'';
 /* titre de la fenêtre : « <n° affaire> <CFC> <désignation> », sinon « <n° affaire> <numéro de l'ordre> » */
@@ -11712,7 +11712,7 @@ function svEditor(m,id){
     right.innerHTML=''; const el=h('div',{class:'col fill',style:{border:0}}); right.append(el); X.el=el;
     try{ fn(X); }catch(e){ console.error(e); el.append(h('div',{class:'ph'},'Erreur d’affichage : '+e.message)); } };
   const kd=e=>{ if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')&&!X.ro){ e.preventDefault(); svSaveAll(X); } };
-  const bye=()=>{ try{ const d=DS.get('devisdocument',id); if(!d||d.LOCKUSERID!==ME.id||X.ro) return;                        // onglet fermé : verrou levé
+  const bye=()=>{ try{ const d=DS.get('devisdocument',id); if(!d||d.LOCKUSERID!==ME.id||X.ro||(DS.info&&DS.info.local)) return;                        // onglet fermé : verrou levé
     navigator.sendBeacon('/api/commit',new Blob([JSON.stringify({who:DS.who(),ops:[{t:'devisdocument',id:String(id),val:{...d,LOCKUSERID:null,LOCKTIME:null},bseq:(DS.S.devisdocument||{})[String(id)]||0}]})],{type:'application/json'})); }catch(_){ } };
   document.addEventListener('keydown',kd); addEventListener('pagehide',bye);
   SV_UI.ed={X,id,updTitle,off:()=>{ document.removeEventListener('keydown',kd); removeEventListener('pagehide',bye); }};
@@ -18651,6 +18651,7 @@ function ch10bImportTemplates(){ const inp=h('input',{type:'file',accept:'.zip',
 /* archive lue par le serveur (convertir_modeles.page), fusion, un seul DS.commit ; message de fin même si rien n'est ajouté (msgTemplatesImported) */
 async function ch10bImportTemplatesFrom(blob){ await tplNeed(); await DS.need(['formtemplate','formtemplategroup']);
   if(blob&&blob.size>CH10B_ZIP_MAX) throw new Error('Import impossible : archive trop volumineuse (50 Mo au plus).');
+  if(DS.info&&DS.info.local) throw new Error('L’import des modèles depuis une archive .zip de Deltaproject demande l’ancien serveur DeltaSub (conversion des modèles) : il n’est pas disponible dans la version sans serveur. Les modèles déjà repris de Deltaproject restent utilisables.');
   let r; try{ r=await fetch('/api/modeles/zip',{method:'POST',headers:{'Content-Type':'application/zip'},body:blob}); }
   catch(e){ NET.fail('serveur injoignable'); throw new Error('Import impossible : serveur injoignable.'); }
   if(r.status===404) throw new Error('Import impossible : le serveur DeltaSub ne connaît pas encore l’import des modèles (serveur_deltasub.py à mettre à jour).');
@@ -18788,6 +18789,7 @@ const CH10C_OPEN={costestimatedocument:()=>DV.open,costcontroldocument:()=>CCV.o
 const ch10cKey=(t,id)=>t+':'+id;
 const ch10cSeq=k=>(DS.S.documentlock||{})[k]||0;                                   // version connue (0, ou celle de la ligne supprimée)
 const ch10cDocId=id=>/^-?\d+$/.test(String(id))?+id:id;
+const ch10cLocal=()=>!!(DS.info&&DS.info.local);
 function ch10cSession(){ return CH10C.session||(CH10C.session=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)); }
 /* verrou tenu par CET onglet (même utilisateur dans un autre onglet ou poste : non) */
 function ch10cHeld(t,id){ const k=ch10cKey(t,id), r=DS.get('documentlock',k); return CH10C_HELD.has(k)&&!!r&&!!CH10C.session&&r.SESSION===CH10C.session; }
@@ -18809,6 +18811,9 @@ function ch10cLockStep(s,ev){ s=s||{}; const r=(ev&&ev.row)||null, type=ev&&ev.t
 /* écriture d'un verrou (création ou suppression, bseq connu) : comme DS.commit, mais un 409 n'affiche rien (la version à jour est
    lue et renvoyée) : une ligne supprimée avant le chargement de l'onglet n'a pas de version connue, sa première pose répond toujours 409 */
 async function ch10cPost(ops){ let r;
+  /* base LOCALE (un seul poste, sans serveur) : verrous tenus en mémoire de l'onglet, jamais écrits dans la base (aucun verrou ne
+     reste après la fermeture) ; plus d'appel à /api/commit (la page HTML renvoyée à la place du JSON empêchait d'ouvrir les documents) */
+  if(ch10cLocal()){ ops.forEach(o=>DS._put(o.t,String(o.id),DS.seq,o.val==null?null:o.val)); DS._emit([...new Set(ops.map(o=>o.t))]); return {ok:true,seq:DS.seq}; }
   const body={who:DS.who(),ops:ops.map(o=>({t:o.t,id:String(o.id),val:o.val,bseq:o.bseq!=null?o.bseq:ch10cSeq(String(o.id))}))};
   try{ r=await fetch('/api/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
   catch(e){ NET.fail('serveur injoignable'); throw new Error('serveur injoignable'); }
@@ -18823,7 +18828,7 @@ function ch10cWire(){ if(CH10C.wired) return; CH10C.wired=true;
     if(lost) toast(CH10C_TXT.lost,true); });
   addEventListener('pagehide',ch10cBye); }
 /* fermeture de l'onglet : un beacon par verrou (un conflit n'annule que le sien) */
-function ch10cBye(){ CH10C_HELD.forEach((v,k)=>{ try{ navigator.sendBeacon('/api/commit',new Blob([JSON.stringify({who:DS.who(),ops:[{t:'documentlock',id:k,val:null,bseq:ch10cSeq(k)}]})],{type:'application/json'})); }catch(_){} });
+function ch10cBye(){ if(ch10cLocal()){ CH10C_HELD.clear(); return; } CH10C_HELD.forEach((v,k)=>{ try{ navigator.sendBeacon('/api/commit',new Blob([JSON.stringify({who:DS.who(),ops:[{t:'documentlock',id:k,val:null,bseq:ch10cSeq(k)}]})],{type:'application/json'})); }catch(_){} });
   CH10C_HELD.clear(); }
 /* pose (promesse → true si posé) : ligne relue (sondage), puis l'automate ; le dialogue s'affiche si le document est tenu ailleurs.
    Suppression : bseq = version du verrou AFFICHÉ (lue à l'ouverture du dialogue) ; un verrou repris par un tiers pendant le dialogue (vu par le
@@ -18831,6 +18836,7 @@ function ch10cBye(){ CH10C_HELD.forEach((v,k)=>{ try{ navigator.sendBeacon('/api
 async function ch10cAcquire(t,id){ const k=ch10cKey(t,id);
   await DS.need(['documentlock']);                                                      // EntityManager.refresh : un sondage déjà en cours (DS.poll
   try{ for(let j=0;DS._polling&&j<40;j++) await new Promise(r=>setTimeout(r,50)); await DS.poll(); }catch(_){}   // revient alors aussitôt) est attendu (≤ 2 s), puis relecture
+  if(ch10cLocal()){ const r0=DS.get('documentlock',k); if(r0&&r0.SESSION!==ch10cSession()) DS._put('documentlock',k,DS.seq,null); }   // verrou périmé (ancien serveur)
   ch10cWire(); let st={phase:'idle',session:ch10cSession(),n:0}, ev={type:'start',row:DS.get('documentlock',k)}, bs=0;
   for(let i=0;i<20;i++){ const x=ch10cLockStep(st,ev); st=x.s;
     if(x.act==='open'){ CH10C_HELD.set(k,{t,id:String(id),until:Date.now()+CH10C_GRACE}); return true; }
@@ -21273,13 +21279,25 @@ function ch03dAnnexeDlg(a,nouvelle){ return new Promise(ok=>{ let fini=false; co
 /* « Ouvrir l'annexe » : sans emplacement → msg9 (Erreur) ; sinon onglet ouvert dans le clic, route R8 sondée (en-têtes seulement) : 200 → l'onglet
    affiche le fichier ; refus du serveur (403 réglage absent ou hors racine, 404 fichier absent) → onglet fermé, message du serveur (Erreur) */
 async function ch03dAnnexeOuvrir(a){ const p=a?String(a.chemin==null?'':a.chemin).trim():''; if(!p){ ctMsg('Erreur',CH03D_MSG.sansEmpl); return false; }
+  if(DS.info&&DS.info.local) return ch03dAnnexeMac('openpath',p);
   const t=ch03aOnglet(), url=ch03aUrl({ref:p}), ac=typeof AbortController==='function'?new AbortController():null; let r=null;
   try{ r=await fetch(url,{cache:'no-store',signal:ac?ac.signal:undefined}); }catch(_){ t.fermer(); ctMsg('Erreur',CH03A_MSG.reseau); return false; }
   if(r.ok){ try{ if(ac) ac.abort(); }catch(_){} t.aller(url); return true; }
   let m=''; try{ const d=await r.json(); m=d&&d.error||''; }catch(_){}
   t.fermer(); ctMsg('Erreur',m||CH03D_MSG.sansEmpl); return false; }
 /* « Afficher l'annexe » : le navigateur ne peut pas montrer le dossier (platform.Files.openParentFolder) → chemin complet et « Copier » */
+/* base LOCALE (sans serveur DeltaSub) : le serveur de sauvegarde du Mac (fact_backup_server.py, port 7788 — celui de Facturation) ouvre le
+   fichier avec l'app par défaut (openpath) ou le montre dans le Finder (revealpath) ; serveur absent → message clair (et, pour « Afficher »,
+   l'emplacement à copier comme avant) */
+const CH03D_MAC='http://127.0.0.1:7788';
+async function ch03dAnnexeMac(route,p,repli){ let r=null, d={};
+  try{ r=await fetch(CH03D_MAC+'/'+route+'?path='+encodeURIComponent(p),{cache:'no-store'}); }catch(_){}
+  if(!r){ if(repli) return repli(); ctMsg('Erreur','Pour ouvrir une annexe, lancez le serveur de sauvegarde sur ce Mac (Serveur Sauvegarde Facturation).'); return false; }
+  try{ d=await r.json(); }catch(_){}
+  if(r.ok&&d&&d.ok) return true;
+  ctMsg('Erreur',(d&&d.error)||('Ouverture impossible (erreur '+r.status+').')); return false; }
 function ch03dAnnexeAfficher(a){ const p=a?String(a.chemin==null?'':a.chemin).trim():''; if(!p){ ctMsg('Erreur',CH03D_MSG.sansEmpl); return; }
+  if(DS.info&&DS.info.local&&!a.__repli){ ch03dAnnexeMac('revealpath',p,()=>ch03dAnnexeAfficher(Object.assign({},a,{__repli:1}))); return; }
   const inp=h('input',{class:'inp',readonly:true,value:p,style:{width:'100%'}});
   dialog({title:CH03D_MSG.emplTitre,width:'640px',body:inp,buttons:[{t:CH03D_MSG.copier,fn:()=>{ ctCopy(p,CH03D_MSG.copie); return false; }},{t:'Fermer',pri:true}]});
   try{ inp.select(); }catch(_){} }

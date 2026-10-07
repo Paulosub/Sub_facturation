@@ -41,8 +41,13 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   Base vide → écran « Importer une base … » ; sauvegarde : Fichier ▸ Exporter la base locale (`.json.gz`) ;
   restauration : Fichier ▸ Importer une base (REMPLACE la base locale).
   Reprise depuis l'ancienne base : `python3 outils_deltaproject/exporter_base_deltasub.py [<base.sqlite>]` → `.json.gz`.
-  Encore à rendre autonomes (lots suivants) : dépôt de fichiers et PDF (`/api/file`, `/api/pdf`), import des modèles
-  (.zip), mots de passe / sessions (CH-08), manuel PDF. Aucun « lien CRB » à reprendre (SIA 451, CAN, CRBonline).
+  **Verrous d'ouverture (07.10.2026)** : en base locale, les verrous des descriptifs, contrôles des coûts et planifications
+  (CH-10c, `documentlock`) sont tenus en mémoire de l'onglet (`ch10cLocal()`, plus aucun `POST /api/commit` : la page HTML
+  renvoyée à la place du JSON donnait « Ouverture impossible : Unexpected token '<' ») ; verrous hérités d'un autre poste
+  (`documentlock`, `devisdocument.LOCKUSERID`) ignorés. Annexes (« Ouvrir / Afficher l'annexe ») → serveur de sauvegarde
+  7788 (`/openpath`, `/revealpath`) ; import des modèles .zip → message clair (demande l'ancien serveur).
+  Encore à rendre autonomes dans DeltaSub.html seul (déjà faits dans SUBGestion 3) : dépôt de fichiers et PDF (`/api/file`,
+  `/api/pdf`) ; et partout : import des modèles (.zip), mots de passe / sessions (CH-08), manuel PDF. Aucun « lien CRB ».
 - **`serveur_deltasub.py`** — ancienne base partagée (SQLite, port 7790) : n'est plus nécessaire pour l'app ;
   ne sert plus qu'à la reprise Deltaproject (`--importer-deltaproject`, puis export ci-dessus). Base de test : `DELTASUB_DB`.
 - **Modèle de données = celui de Deltaproject** : une collection par table Derby, en

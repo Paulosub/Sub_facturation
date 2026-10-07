@@ -589,8 +589,8 @@ function sgEmoInstaller(w){ if(!w||w.__sgEmo||!w.document||!w.document.body) ret
    Code d'accès propre à ce poste : empreinte PBKDF2-SHA-256 salée (jamais le code lui-même) dans localStorage « sg3_acces ».
    Déverrouillage valable pour l'onglet du navigateur, reverrouillé après N minutes d'inactivité. C'est une protection de
    l'interface (collègue, visiteur) : les données du navigateur et les sauvegardes ne sont pas chiffrées. */
-const SG_ACC_DEF={doms:['facturation','finances','reglages'],delai:15};
-const sgAcces=()=>Object.assign({},SG_ACC_DEF,nxLS.get('sg3_acces',{}));
+const SG_ACC_DEF={doms:['facturation','finances','reglages','rh'],delai:15};
+const sgAcces=()=>{ const s=nxLS.get('sg3_acces',{}), a=Object.assign({},SG_ACC_DEF,s); if(s.doms&&!s.rhVu&&!a.doms.includes('rh')) a.doms=[...a.doms,'rh']; return a; };   // « rh » (07.10.2026) : protégé aussi avec des réglages antérieurs, jusqu'au premier choix
 const sgAccesSet=o=>{ nxLS.set('sg3_acces',Object.assign(sgAcces(),o)); sgVerrouAff(); };
 const sgB64=u=>btoa(String.fromCharCode(...new Uint8Array(u))), sgDe64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
 async function sgHacher(code,sel){ const pw=new TextEncoder().encode(String(code).normalize('NFC'));
@@ -663,7 +663,7 @@ VIEWS['nx-acces']={ render(m){ const a=sgAcces(), doms=SG_DOM.filter(d=>d.k!=='a
     del:async()=>{ if(!(await sgDeverrouiller('Confirmez avec le code d’accès pour retirer la protection.'))) return; const I=h('input',{class:'inp',type:'password',autocomplete:'off'});
       dialog({title:'Retirer la protection',body:h('div',{},h('p',{style:{margin:'0 0 10px',fontWeight:300}},'Code d’accès actuel :'),I),buttons:[{t:'Annuler'},{t:'Retirer',pri:true,fn:async()=>{ if(!(await sgCodeOk(I.value))){ toast('Code incorrect.',true); return false; }
         const x=sgAcces(); delete x.hash; delete x.sel; delete x.depuis; nxLS.set('sg3_acces',x); sgVerrouAff(); toast('Protection retirée.'); go('nx-acces'); }}]}); }});
-  m.querySelectorAll('[data-dom]').forEach(c=>c.onchange=async()=>{ if(!(await sgExigerOuvert())){ c.checked=!c.checked; return; } sgAccesSet({doms:[...m.querySelectorAll('[data-dom]:checked')].map(x=>x.dataset.dom)}); toast('Domaines protégés enregistrés.'); });
+  m.querySelectorAll('[data-dom]').forEach(c=>c.onchange=async()=>{ if(!(await sgExigerOuvert())){ c.checked=!c.checked; return; } sgAccesSet({doms:[...m.querySelectorAll('[data-dom]:checked')].map(x=>x.dataset.dom),rhVu:1}); toast('Domaines protégés enregistrés.'); });
   const S=m.querySelector('#sg-acc-delai'); S.onchange=async()=>{ if(!(await sgExigerOuvert())){ S.value=String(sgAcces().delai); return; } sgAccesSet({delai:+S.value}); toast('Délai enregistré.'); }; } };
 { const i0=nxPalIndex; nxPalIndex=function(){ const it=i0(); if(sgAcces().hash) it.push({g:'Commandes',t:'Verrouiller maintenant',ico:'lock',run:()=>sgVerrouiller(),q:'verrouiller code accès',n:nxNorm('Verrouiller maintenant')}); return it; }; }
 
@@ -996,7 +996,7 @@ VIEWS['nx-profils']={ render(m){ const bureau=typeof dsEstBureau==='function'&&d
 { const v0=ch08bViewOk; ch08bViewOk=function(id,u){ if(SG_ACC.auth&&(u===undefined||u===ME.u)) return sgVueOk(String(id??'')); return v0.apply(this,arguments); }; }
 
 /* ═══ 12. COÛT DE REVIENT DES COLLABORATEURS (07.10.2026) ═══════════════════════════════════════════════════════════
-   Équipe ▸ Coût de revient (administrateur : droits « équipe : taux » et « réglages ») — collection « sgcoutrevient » :
+   Ressources humaines ▸ Coût de revient (administrateur : droits « équipe : taux » et « réglages ») — collection « sgcoutrevient » :
    « param » = critères du bureau (charges sociales %, frais généraux annuels par poste, temps de travail, marge) ;
    « staff:<ID> » = salaire, mois, occupation, vacances, absences, part facturable, frais directs.
    Coût annuel = salaire + charges + frais directs + part des frais généraux (au prorata des heures de présence) ;
@@ -1036,7 +1036,7 @@ VIEWS['nx-coutrevient']={ render(m){ const T=sgCrTout(), P=T.P, f2=v=>num(v,2), 
         +['SALAIRE','MOIS','OCC','VAC','ABS','PROD','DIRECTS'].map(k=>'<td>'+nb('s="'+x.s.ID+'" data-k="'+k+'"',S[k],k==='SALAIRE'||k==='DIRECTS'?'50':k==='MOIS'?'1':'0.5',k==='SALAIRE'||k==='DIRECTS'?'96px':'64px')+'</td>').join('')
         +'<td class="r">'+f0(c.annuel)+'</td><td class="r">'+nxH(c.presence)+'</td><td class="r">'+nxH(c.factu)+'</td><td class="r"><b>'+f2(c.taux)+'</b></td><td class="r">'+f2(c.revient)+'</td><td class="r">'+f2(c.vente)+'</td>'
         +'<td class="r">'+(act!=null?f2(act):'—')+'</td><td><button class="nx-btn" data-fn="a'+i+'"'+(c.taux>0?'':' disabled')+'>Appliquer</button></td></tr>'; }).join('');
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Équipe','Coût de revient','Coût horaire de chaque collaborateur à partir de son salaire, des charges sociales, de sa part des frais généraux du bureau et de ses heures productives. Le taux interne obtenu sert au coût du temps (rentabilité des projets).',
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Coût de revient','Coût horaire de chaque collaborateur à partir de son salaire, des charges sociales, de sa part des frais généraux du bureau et de ses heures productives. Le taux interne obtenu sert au coût du temps (rentabilité des projets).',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+f0(T.fg)+'</div><div class="t">frais généraux / an</div></div><div class="sg-fig"><div class="n">'+num(Object.values(P.CHARGES).reduce((a,b)=>a+(+b||0),0),1)+' %</div><div class="t">charges sociales</div></div></div>'
         +'<div class="acts"><button class="nx-btn pri" data-fn="tous">'+nxSvg('check')+'Appliquer tous les taux</button></div>')
       +'<div><div class="nx-grid">'
@@ -1125,7 +1125,7 @@ async function sgCctAuto(){ if(!sgAdmin()) return; try{ await DS.need(['publicho
 VIEWS['nx-cct']={ render(m){ const y=nxLS.get('sg3_cct_an',new Date().getFullYear()), PH=pubHolidays(y), L=staffList().map(s=>({s,c:sgCctAnnee(s,y),t:DS.by('stafftargettime','STAFF_ID',s.ID).find(x=>+x.TARGETTIMEYEAR===y)}));
     const fer=[...PH.entries()].sort().map(([k,n])=>'<tr><td>'+dfr(k)+'</td><td>'+nxCap(JOURS_L[new Date(k+'T00:00').getDay()])+'</td><td>'+nxE(n)+'</td></tr>').join(''), manqFer=sgFeriesVdOps().length;
     const sumT=t=>t?[...Array(12)].reduce((a,_,i)=>a+(+t['TARGETHOURS'+i]||0),0):null;
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Équipe','Heures dues et vacances','Calcul automatique selon la '+SG_CCT.nom+' : 42,5 h par semaine, 9 jours fériés vaudois non travaillés, 5 semaines de vacances (6 dès 50 ans et avant 20 ans), au prorata du taux d’occupation et de la période d’engagement.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Heures dues et vacances','Calcul automatique selon la '+SG_CCT.nom+' : 42,5 h par semaine, 9 jours fériés vaudois non travaillés, 5 semaines de vacances (6 dès 50 ans et avant 20 ans), au prorata du taux d’occupation et de la période d’engagement.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+y+'</div><div class="t">année</div></div><div class="sg-fig"><div class="n">'+PH.size+'</div><div class="t">jours fériés</div></div></div>'
         +'<div class="acts"><button class="nx-btn" data-fn="prec">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="suiv">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn pri" data-fn="tous">'+nxSvg('check')+'Appliquer à tous ('+y+')</button></div>')
       +'<div><div class="nx-grid">'
@@ -1153,7 +1153,7 @@ function sgBoucler(s,y){ const a=new Date(y,0,1), b=new Date(y,11,31), M=hrMaps(
 VIEWS['nx-bouclement']={ async render(m){ await DS.need(['sgbouclement']); const y=nxLS.get('sg3_bcl_an',new Date().getFullYear()), enCours=y>=new Date().getFullYear();
     const L=staffList().map(s=>{ const b=sgBoucler(s,y), v=DS.get('sgbouclement',y+':'+s.ID); return {s,b,v,chg:v&&(Math.abs((+v.HS||0)-b.hs)>0.05||Math.abs((+v.VAC||0)-(b.vacSolde||0))>0.05)}; });
     const nV=L.filter(x=>x.v&&x.v.VALIDE).length, nT=L.filter(x=>x.v&&x.v.TRANSFERE).length;
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Équipe','Bouclement annuel','Chaque année : heures supplémentaires (solde de l’année + report) et solde des vacances par collaborateur. Vous validez les heures, puis elles sont transférées sur '+(y+1)+' (report des heures supplémentaires et droit aux vacances).',
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Bouclement annuel','Chaque année : heures supplémentaires (solde de l’année + report) et solde des vacances par collaborateur. Vous validez les heures, puis elles sont transférées sur '+(y+1)+' (report des heures supplémentaires et droit aux vacances).',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nV+'/'+L.length+'</div><div class="t">validés</div></div><div class="sg-fig"><div class="n">'+nT+'</div><div class="t">transférés sur '+(y+1)+'</div></div></div>'
         +'<div class="acts"><button class="nx-btn" data-fn="prec">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="suiv">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn" data-fn="vtous">'+nxSvg('check')+'Tout valider</button><button class="nx-btn pri" data-fn="transf"'+(nV?'':' disabled')+'>Transférer sur '+(y+1)+'</button><button class="nx-btn" data-fn="csv">'+nxSvg('export')+'CSV</button></div>')
       +'<div>'+(enCours?'<div class="nx-card c12" style="margin-bottom:22px"><div class="b" style="color:var(--s-orange)">Année '+y+' en cours : les soldes sont calculés au 31 décembre '+y+' avec les heures saisies à ce jour (heures dues de toute l’année). Validez-les en fin d’année, une fois les feuilles d’heures complètes.</div></div>':'')
@@ -1186,7 +1186,7 @@ VIEWS['nx-bouclement']={ async render(m){ await DS.need(['sgbouclement']); const
 Object.assign(SG_VUE_DROIT,{'nx-cct':()=>sgDroit('equipe','taux')&&sgDroit('reglages','oui'),'nx-bouclement':()=>sgDroit('equipe','taux')&&sgDroit('reglages','oui')});
 
 /* ═══ 14. CONTRATS DE TRAVAIL (07.10.2026) ═════════════════════════════════════════════════════════════════════════
-   Équipe ▸ Contrats de travail (administrateur) — collection « sgcontrattravail » (réservée sur le NAS) :
+   Ressources humaines ▸ Contrats de travail (administrateur) — collection « sgcontrattravail » (réservée sur le NAS) :
    « contrat » (engagement : fonction, catégorie CCT, début, durée, taux, salaire × mois, temps d'essai, clauses, coordonnées) ;
    « avenant » (nouvelles conditions dès une date d'effet) ; « fin » (résiliation : reçue le, par qui, fin légale, départ effectif).
    Conditions en vigueur à une date = contrat + avenants → taux d'occupation (heures dues CCT), salaire et mois (coût de revient).
@@ -1210,8 +1210,9 @@ function sgCtrEnVigueur(sid,d){ const k=typeof d==='string'?d:diso(d), L=sgCtrAl
   const r={...c}; L.filter(x=>x.TYPE==='avenant'&&x.EFFET&&x.EFFET<=k&&x.EFFET>=c.DEBUT).sort((a,b)=>cmp(a.EFFET,b.EFFET)).forEach(a=>{ ['OCC','SALAIRE','MOIS','FONCTION','CATEGORIE','NIVEAU'].forEach(f=>{ if(a[f]!=null&&a[f]!=='') r[f]=a[f]; }); r._avenant=a; });
   const f=L.find(x=>x.TYPE==='fin'); if(f&&f.FIN&&k>f.FIN) return null; r._fin=f||null; return r; }
 const sgCtrFin=sid=>sgCtrAll(sid).find(x=>x.TYPE==='fin')||null;
-/* taux d'occupation à une date : contrat en vigueur, sinon coût de revient */
-const sgOccAu=(s,d)=>{ const c=sgCtrEnVigueur(s.ID,d); return c?(+c.OCC||0)/100:sgOcc(s); };
+/* taux d'occupation à une date : contrat en vigueur ; avant le premier contrat enregistré, celui-ci (conditions connues les plus anciennes) ; sinon coût de revient */
+const sgOccAu=(s,d)=>{ const c=sgCtrEnVigueur(s.ID,d); if(c) return (+c.OCC||0)/100;
+  const k=typeof d==='string'?d:diso(d), p=sgCtrAll(s.ID).filter(x=>x.TYPE==='contrat'&&x.DEBUT&&x.DEBUT>k).sort((a,b)=>cmp(a.DEBUT,b.DEBUT))[0]; return p?(+p.OCC||0)/100:sgOcc(s); };
 /* contrat → coût de revient (salaire, mois, taux) */
 { const f0=sgCrStaff; sgCrStaff=function(s){ const r=f0.apply(this,arguments); const c=s&&sgCtrEnVigueur(s.ID,today()); if(c) Object.assign(r,{SALAIRE:+c.SALAIRE||0,MOIS:+c.MOIS||12,OCC:+c.OCC||0,_contrat:1}); return r; }; }
 /* heures dues : taux par jour (avenants en cours d'année) ; vacances : 6 semaines dès le 1er janvier de l'année des 50 ans (contrat du bureau, plus favorable que la CCT) et avant 20 ans révolus (CCT) */
@@ -1405,7 +1406,7 @@ VIEWS['nx-contrats-travail']={ async render(m){ await DS.need(['sgcontrattravail
         +'<td>'+docs.map((d,j)=>'<div style="white-space:nowrap;font-size:12px">'+({contrat:'Contrat',avenant:'Avenant',fin:'Fin'}[d.TYPE])+' '+dfr(d.EFFET||d.DEBUT||d.FIN||d.DATE)+' <a data-fn="p'+i+'_'+j+'" style="cursor:pointer;text-decoration:underline">document</a> · <a data-fn="e'+i+'_'+j+'" style="cursor:pointer;text-decoration:underline">modifier</a></div>').join('')+'</td>'
         +'<td style="white-space:nowrap">'+(c||!docs.length?'':'')+(!docs.some(d=>d.TYPE==='contrat')?'<button class="nx-btn pri" data-fn="c'+i+'">Contrat</button> ':'<button class="nx-btn" data-fn="a'+i+'">Avenant</button> ')
         +(docs.some(d=>d.TYPE==='contrat')&&!f?'<button class="nx-btn" data-fn="f'+i+'">Fin</button> ':'')+(f?'<button class="nx-btn" data-fn="d'+i+'">Décompte</button>':'')+'</td></tr>'; };
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Équipe','Contrats de travail','Engagements, avenants annuels et fins de contrat, au modèle du bureau et selon la CCT des bureaux d’architectes et ingénieurs vaudois. Le contrat en vigueur alimente le coût de revient et les heures dues.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Contrats de travail','Engagements, avenants annuels et fins de contrat, au modèle du bureau et selon la CCT des bureaux d’architectes et ingénieurs vaudois. Le contrat en vigueur alimente le coût de revient et les heures dues.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.filter(s=>sgCtrEnVigueur(s.ID,auj)).length+'</div><div class="t">sous contrat</div></div><div class="sg-fig"><div class="n">'+L.filter(s=>{ const f=sgCtrFin(s.ID); return f&&f.FIN>=auj; }).length+'</div><div class="t">en préavis</div></div></div>'
         +'<div class="acts"><button class="nx-btn pri" data-fn="nouveau">'+nxSvg('plus')+'Nouvel engagement</button><button class="nx-btn" data-fn="tous">'+nxSvg('filter')+(tous?'Collaborateurs actuels':'Inclure les anciens')+'</button><button class="nx-btn" data-fn="grille">'+nxSvg('analyse')+'Salaires minimaux CCT</button></div>')
       +'<div>'+nxCard('c12','Collaborateurs','<div class="b flush" style="overflow:auto"><table class="nx-tbl"><tr><th>Collaborateur</th><th>Fonction</th><th class="r">Taux</th><th class="r">Salaire</th><th>Statut</th><th>Documents</th><th></th></tr>'+L.map(ligne).join('')+'</table></div>')+'</div></div>');
@@ -1422,6 +1423,142 @@ SG_VUE_DROIT['nx-contrats-travail']=()=>sgDroit('equipe','taux')&&sgDroit('regla
 
 /* salaire, mois, taux : saisis dans le contrat de travail → lecture seule dans le coût de revient et les heures dues */
 { const r0=VIEWS['nx-coutrevient'].render; VIEWS['nx-coutrevient'].render=function(m){ r0.apply(this,arguments);
-    staffList().forEach(s=>{ if(!sgCtrEnVigueur(s.ID,today())) return; ['SALAIRE','MOIS','OCC'].forEach(k=>{ const e=m.querySelector('[data-s="'+s.ID+'"][data-k="'+k+'"]'); if(e){ e.disabled=true; e.title='Selon le contrat de travail (Équipe ▸ Contrats de travail)'; } }); }); }; }
+    staffList().forEach(s=>{ if(!sgCtrEnVigueur(s.ID,today())) return; ['SALAIRE','MOIS','OCC'].forEach(k=>{ const e=m.querySelector('[data-s="'+s.ID+'"][data-k="'+k+'"]'); if(e){ e.disabled=true; e.title='Selon le contrat de travail (Ressources humaines ▸ Contrats de travail)'; } }); }); }; }
 { const r0=VIEWS['nx-cct'].render; VIEWS['nx-cct'].render=function(m){ r0.apply(this,arguments);
     staffList().forEach(s=>{ if(!sgCtrEnVigueur(s.ID,today())) return; const e=m.querySelector('[data-occ="'+s.ID+'"]'); if(e){ e.disabled=true; e.title='Selon le contrat de travail (avenants compris)'; } }); }; }
+
+/* ═══ 15. RESSOURCES HUMAINES — OCCUPATION ET EFFECTIF (07.10.2026) ═════════════════════════════════════════════════
+   Domaine « Ressources humaines » (sg3.js, SG_DOM « rh ») : occupation et effectif, contrats de travail, heures dues et vacances,
+   bouclement annuel, coût de revient, planification RH (moteur), suivi RH. Réservé à l'administrateur (droits « équipe : taux » et
+   « réglages ») et protégé par le code d'accès (« rh » ajouté aux domaines protégés, aussi aux réglages existants).
+   Occupation et effectif : taux d'occupation de chacun mois par mois (contrat et avenants en vigueur au 15 du mois, borné aux dates
+   d'engagement ; fiche du coût de revient à défaut de contrat), effectif et équivalents plein temps (ETP) ; charge du mois : heures dues
+   (CCT), saisies, disponibles et attribuées (planification RH) ; échéances RH : fin du temps d'essai, fin d'un contrat à durée
+   déterminée, fin des rapports de travail et départ, année des 50 ans (6 semaines de vacances), sans contrat, avenant de l'année,
+   salaire sous le minimum CCT. */
+/* dates d'engagement : fiche (entrée / sortie), sinon contrats (premier début ; fin, ou fin prévue d'un contrat à durée déterminée) */
+function sgEngagement(s){ const L=sgCtrAll(s.ID), cs=L.filter(x=>x.TYPE==='contrat'&&x.DEBUT).sort((a,b)=>cmp(a.DEBUT,b.DEBUT)), f=L.find(x=>x.TYPE==='fin')||null, der=cs[cs.length-1]||null;
+  const deb=(s.JOININGDATE?String(s.JOININGDATE).slice(0,10):'')||(cs[0]&&cs[0].DEBUT)||null;
+  const fin=(s.QUITTINGDATE?String(s.QUITTINGDATE).slice(0,10):'')||(f&&f.FIN)||(der&&der.DUREE==='determinee'&&!f&&der.FIN_PREVUE)||null;
+  return {deb,fin,dernier:der,finRec:f}; }
+const sgEngageAu=(s,k)=>{ const g=sgEngagement(s); return (!g.deb||g.deb<=k)&&(g.fin?g.fin>=k:+s.ISACTIVE===1); };
+/* taux d'occupation (%) des 12 mois de l'année : null hors engagement ; ancien membre sans date de sortie : ignoré */
+function sgOccMois(s,y){ const g=sgEngagement(s), M=[];
+  for(let m=0;m<12;m++){ const a=diso(new Date(y,m,1)), b=diso(new Date(y,m+1,0));
+    if((g.deb&&g.deb>b)||(g.fin&&g.fin<a)||(!g.fin&&!+s.ISACTIVE)){ M.push(null); continue; }
+    let r=y+'-'+String(m+1).padStart(2,'0')+'-15'; if(g.deb&&r<g.deb) r=g.deb; if(g.fin&&r>g.fin) r=g.fin;
+    M.push(Math.round(sgOccAu(s,r)*1000)/10); }
+  return {g,M}; }
+/* échéances RH : 30 jours en arrière, 120 jours en avant (et les rappels de l'année) */
+function sgRhEcheances(){ const auj=today(), t0=new Date(auj+'T00:00'), y=t0.getFullYear(), E=[];
+  const dep=diso(new Date(y,t0.getMonth(),t0.getDate()-30)), lim=diso(new Date(y,t0.getMonth(),t0.getDate()+120)), dans=d=>d&&d>=dep&&d<=lim;
+  const add=(d,s,t,cl,v)=>E.push({d,s,t,cl:cl||'',v:v||'nx-contrats-travail'});
+  DS.all('staff').forEach(s=>{ const g=sgEngagement(s), actif=sgEngageAu(s,auj); if(!actif&&!dans(g.fin)) return;
+    const der=g.dernier, f=g.finRec;
+    if(der&&der.DEBUT){ const d0=new Date(der.DEBUT+'T00:00'), n=der.ESSAI==null||der.ESSAI===''?3:+der.ESSAI;
+      if(n>0){ const fe=diso(new Date(d0.getFullYear(),d0.getMonth()+n,d0.getDate()-1)); if(dans(fe)) add(fe,s,'Fin du temps d’essai ('+n+' mois) : évaluation du travail','s3'); } }
+    if(der&&der.DUREE==='determinee'&&der.FIN_PREVUE&&!f&&dans(der.FIN_PREVUE)) add(der.FIN_PREVUE,s,'Fin du contrat à durée déterminée : prolonger, engager ou laisser finir','urg');
+    if(f&&dans(f.FIN)) add(f.FIN,s,'Fin des rapports de travail'+(f.RECU?' (congé reçu le '+dfr(f.RECU)+')':'')+' : décompte de sortie','urg');
+    if(f&&f.DEPART&&f.DEPART!==f.FIN&&dans(f.DEPART)) add(f.DEPART,s,'Départ effectif : dernier jour de travail','s3');
+    if(!actif) return;
+    if(!sgCtrAll(s.ID).some(x=>x.TYPE==='contrat')) add(auj,s,'Aucun contrat de travail enregistré','urg');
+    else { const cv=sgCtrEnVigueur(s.ID,auj);
+      if(cv){ const eff=(cv._avenant&&cv._avenant.EFFET)||cv.DEBUT; if(eff<y+'-01-01'&&!f) add(y+'-01-01',s,'Avenant '+y+' à établir (conditions du '+dfr(eff)+')');
+        const mn=sgMinimum(cv.CATEGORIE,cv.NIVEAU); if(mn&&(+cv.SALAIRE*(+cv.MOIS||12))<mn*12*(+cv.OCC||100)/100) add(auj,s,'Salaire sous le minimum CCT '+SG_GRILLE.annee+' (CHF '+sgChf(mn)+' × 12 à 100 %)','urg'); } }
+    const nais=sgNaissance(s), a50=nais?+String(nais).slice(0,4)+50:0;
+    if(a50===y||a50===y+1) add(a50+'-01-01',s,'Année des 50 ans : 6 semaines de vacances dès le 1er janvier '+a50,'','nx-cct'); });
+  return E.sort((a,b)=>cmp(a.d,b.d)||cmp(staffName(a.s),staffName(b.s))); }
+/* chiffres de la vue d'ensemble « Ressources humaines » */
+async function sgRhChiffres(f){ await DS.need(['sgcontrattravail']); const auj=today(), A=DS.all('staff').filter(s=>sgEngageAu(s,auj));
+  return [f(A.length,'collaborateurs'),f(num(A.reduce((a,s)=>a+sgOccAu(s,auj),0),2),'équivalents plein temps'),f(A.filter(s=>sgCtrEnVigueur(s.ID,auj)).length,'sous contrat'),
+    f(sgRhEcheances().filter(e=>e.d>=auj).length,'échéances à venir')]; }
+VIEWS['nx-occupation']={ async render(m){ await DS.need(['sgcontrattravail','sgcoutrevient']);
+    const now=new Date(), auj=today(), y=+nxLS.get('sg3_occ_an',now.getFullYear()), mo=Math.max(0,Math.min(11,+nxLS.get('sg3_occ_mois',now.getMonth())));
+    const R=DS.all('staff').map(s=>({s,...sgOccMois(s,y)})).filter(r=>r.M.some(v=>v!=null)).sort((a,b)=>cmp(a.s.SORTORDER,b.s.SORTORDER)||cmp(staffName(a.s),staffName(b.s)));
+    const eff=Array(12).fill(0), etp=Array(12).fill(0); R.forEach(r=>r.M.forEach((v,i)=>{ if(v!=null){ eff[i]++; etp[i]+=v/100; } }));
+    const MC=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'], pc=v=>num(v,v%1?1:0);
+    const cel=(v,p)=>v==null?'<td class="r" style="color:var(--s-gris3)">—</td>':'<td class="r"'+(p!=null&&p!==v?' style="background:var(--s-jaune2)" title="Changement de taux"':'')+'>'+pc(v)+'</td>';
+    const moy=M=>{ const L=M.filter(v=>v!=null); return L.length?L.reduce((a,b)=>a+b,0)/L.length:null; };
+    const tabOcc='<table class="nx-tbl" id="sg-occ-t"><tr><th>Collaborateur</th><th>Entrée</th><th>Sortie</th>'+MC.map(x=>'<th class="r">'+x+'</th>').join('')+'<th class="r">Moyenne</th></tr>'
+      +R.map(r=>{ const mm=moy(r.M); return '<tr><td><b>'+nxE(staffName(r.s))+'</b></td><td style="white-space:nowrap">'+(r.g.deb?dfr(r.g.deb):'')+'</td><td style="white-space:nowrap">'+(r.g.fin?dfr(r.g.fin):'')+'</td>'
+        +r.M.map((v,i)=>cel(v,i?r.M[i-1]:null)).join('')+'<td class="r"><b>'+(mm==null?'':num(mm,1))+'</b></td></tr>'; }).join('')
+      +'<tr class="tot"><td>Effectif</td><td></td><td></td>'+eff.map(v=>'<td class="r">'+v+'</td>').join('')+'<td></td></tr>'
+      +'<tr class="tot"><td>Équivalents plein temps</td><td></td><td></td>'+etp.map(v=>'<td class="r">'+num(v,2)+'</td>').join('')+'<td class="r">'+num(etp.reduce((a,b)=>a+b,0)/12,2)+'</td></tr></table>';
+    const C=R.filter(r=>r.M[mo]!=null).map(r=>{ const s=r.s, du=(sgCctAnnee(s,y).mois||[])[mo]||0, sa=DS.by('timelog','STAFF_ID',s.ID).filter(t=>+t.TIMEYEAR===y&&+t.TIMEMONTH===mo).reduce((a,t)=>a+(+t.TIMEPERIOD||0),0);
+      const spt=typeof plSptOf==='function'?plSptOf(s.ID,y,mo):null, di=spt?plN(spt.TIMEBUDGET):null, at=spt?sptAttribue(spt):null; return {s,occ:r.M[mo],du,sa,di,at}; });
+    const sg=v=>(v>0.05?'+':'')+nxH(v), tot=k=>C.reduce((a,c)=>a+(+c[k]||0),0), encours=y===now.getFullYear()&&mo===now.getMonth();
+    const tabCh='<table class="nx-tbl"><tr><th>Collaborateur</th><th class="r">Taux</th><th class="r">Heures dues</th><th class="r">Saisies'+(encours?' à ce jour':'')+'</th><th class="r">Écart</th><th class="r">Disponibles (planif.)</th><th class="r">Attribuées</th><th>Charge planifiée</th></tr>'
+      +C.map(c=>{ const ec=c.sa-c.du, ch=c.di?c.at/c.di:null;
+        return '<tr><td><b>'+nxE(staffName(c.s))+'</b></td><td class="r">'+pc(c.occ)+' %</td><td class="r">'+nxH(c.du)+'</td><td class="r">'+nxH(c.sa)+'</td>'
+          +'<td class="r" style="color:'+(encours?'inherit':ec<-0.05?'var(--s-rouge)':ec>0.05?'var(--s-vert)':'inherit')+'">'+sg(ec)+'</td><td class="r">'+(c.di==null?'—':nxH(c.di))+'</td><td class="r">'+(c.at==null?'—':nxH(c.at))+'</td>'
+          +'<td style="width:160px;white-space:nowrap">'+(ch==null?'<span style="color:var(--s-gris)">non planifié</span>':sgBarre(Math.min(1,ch),ch>1?'var(--s-rouge)':ch>0.9?'var(--s-orange)':'var(--s-nuit)')+' '+Math.round(ch*100)+' %')+'</td></tr>'; }).join('')
+      +'<tr class="tot"><td>Total</td><td></td><td class="r">'+nxH(tot('du'))+'</td><td class="r">'+nxH(tot('sa'))+'</td><td class="r">'+sg(tot('sa')-tot('du'))+'</td><td class="r">'+nxH(tot('di'))+'</td><td class="r">'+nxH(tot('at'))+'</td><td></td></tr></table>';
+    const E=sgRhEcheances(), tabE=E.length?'<table class="nx-tbl"><tr><th>Date</th><th>Collaborateur</th><th>Échéance</th><th></th></tr>'
+      +E.map(e=>'<tr><td style="white-space:nowrap">'+dfr(e.d)+(e.d<auj?' <span class="nx-tag">passée</span>':'')+'</td><td><b>'+nxE(staffName(e.s))+'</b></td><td>'+(e.cl?'<span class="nx-tag '+e.cl+'">'+nxE(e.t)+'</span>':nxE(e.t))+'</td><td style="text-align:right"><button class="nx-btn" data-go="'+e.v+'">Ouvrir</button></td></tr>').join('')+'</table>'
+      :'<div class="nx-empty">Aucune échéance dans les 120 prochains jours.</div>';
+    const A=DS.all('staff').filter(s=>sgEngageAu(s,auj)), etpA=A.reduce((a,s)=>a+sgOccAu(s,auj),0), an=k=>DS.all('staff').filter(s=>{ const d=sgEngagement(s)[k]; return d&&d.slice(0,4)===String(y); }).length;
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Occupation et effectif','Taux d’occupation de chaque collaborateur mois par mois, selon le contrat de travail et ses avenants (au 15 du mois) ; effectif, équivalents plein temps, charge de travail du mois et échéances RH.',
+        '<div class="sg-figs"><div class="sg-fig"><div class="n">'+A.length+'</div><div class="t">collaborateurs aujourd’hui</div></div><div class="sg-fig"><div class="n">'+num(etpA,2)+'</div><div class="t">équivalents plein temps</div></div>'
+        +'<div class="sg-fig"><div class="n">'+an('deb')+' / '+an('fin')+'</div><div class="t">arrivées / départs '+y+'</div></div></div>'
+        +'<div class="acts"><button class="nx-btn" data-fn="prev">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="next">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn" data-fn="csv">'+nxSvg('export')+'Exporter (CSV)</button><button class="nx-btn" data-go="nx-contrats-travail">'+nxSvg('contrat')+'Contrats de travail</button></div>')
+      +'<div><div class="nx-grid">'+nxCard('c12','Taux d’occupation '+y+' (%)','<div class="b flush" style="overflow:auto">'+(R.length?tabOcc:'<div class="nx-empty">Aucun collaborateur engagé en '+y+'.</div>')+'</div>')
+      +nxCard('c12','Charge de travail — '+SG_MOIS_L[mo]+' '+y,'<div class="b flush" style="overflow:auto">'+(C.length?tabCh:'<div class="nx-empty">Personne n’est engagé ce mois-là.</div>')+'</div>',
+        '<select class="inp" data-mois style="margin-left:auto;font-size:12px;font-weight:400;width:auto">'+SG_MOIS_L.map((x,i)=>'<option value="'+i+'"'+(i===mo?' selected':'')+'>'+x+'</option>').join('')+'</select>')
+      +nxCard('c12','Échéances RH — 30 derniers jours et 120 prochains','<div class="b flush" style="overflow:auto">'+tabE+'</div>')+'</div></div></div>');
+    pg._fn.prev=()=>{ nxLS.set('sg3_occ_an',y-1); go('nx-occupation'); }; pg._fn.next=()=>{ nxLS.set('sg3_occ_an',y+1); go('nx-occupation'); };
+    pg._fn.csv=()=>{ const t=m.querySelector('#sg-occ-t'); if(t) sgCsvTable(t,'occupation_'+y+'.csv'); else toast('Rien à exporter.',true); };
+    const se=m.querySelector('[data-mois]'); if(se) se.onchange=()=>{ nxLS.set('sg3_occ_mois',+se.value); go('nx-occupation'); }; } };
+SG_VUE_DROIT['nx-occupation']=()=>sgDroit('equipe','taux')&&sgDroit('reglages','oui');
+
+/* ═══ 16. FRANÇAIS SEULEMENT (07.10.2026) ═══════════════════════════════════════════════════════════════════════════
+   La base ne garde que le français (moteur : frSeulOps / frSeul) : libellés allemands, italiens et anglais, modèles, documents types,
+   gabarits et catalogues étrangers ; un texte sans version française est traduit provisoirement. Proposé une fois à l'administrateur
+   au démarrage (« Plus tard » → reproposé à la session suivante) et dans Réglages ▸ Données & sauvegarde ; base sauvegardée juste
+   avant. Marque « sg_meta/francais » {DATE, N} : base déjà nettoyée. */
+const SG_FR={enCours:false};
+const SG_FR_LIB=[['libelles','libellé : allemand, italien et anglais retirés','libellés : allemand, italien et anglais retirés'],['modeles','modèle réduit au français','modèles réduits au français'],
+  ['documents','document type en langue étrangère supprimé','documents types en langue étrangère supprimés'],['gabarits','gabarit en langue étrangère supprimé','gabarits en langue étrangère supprimés'],
+  ['catalogues','catalogue en langue étrangère supprimé','catalogues en langue étrangère supprimés'],['positions','position de ces catalogues supprimée','positions de ces catalogues supprimées'],
+  ['catTraduits','catalogue sans version française traduit provisoirement (eBKP-T → eCCC-GC)','catalogues sans version française traduits provisoirement'],
+  ['posTraduites','position traduite provisoirement','positions traduites provisoirement'],['langues','compte ou adresse passé en français','comptes et adresses passés en français'],
+  ['textes','texte corrigé ou traduit','textes corrigés ou traduits']];
+/* comptes et fonctions : droit Deltaproject « gestion des utilisateurs » exigé par le serveur (CH08_ADMIN_T) ; sans lui, laissés tels quels */
+const SG_FR_ADM_T=['appuser','appuser_appcompanyrole','appuser_staff','appcompanyrole','appcompanyrole_approle','approle'];
+const sgFrPeutAdm=()=>!(typeof dsEstBureau==='function'&&dsEstBureau())||typeof ch08aCan!=='function'||ch08aCan('userAdmin');   // base locale : aucune règle du serveur
+/* reste-t-il des libellés étrangers (après une reprise Deltaproject, par ex.) ? tables déjà chargées seulement */
+const sgFrReste=()=>Object.entries(DS.T).some(([t,T])=>!HEAVY.includes(t)&&(sgFrPeutAdm()||!SG_FR_ADM_T.includes(t))&&Object.values(T).some(v=>v&&typeof v==='object'&&('NAMEGE' in v||'NAMEIT' in v||'NAMEEN' in v)))
+  ||DS.all('catalog').some(c=>c.LANGUAGECODE!=null&&+c.LANGUAGECODE!==2);
+const sgFrResume=n=>SG_FR_LIB.filter(([k])=>n&&n[k]).map(([k,t1,t2])=>'• '+num(n[k],0)+' '+(+n[k]===1?t1:t2)).join('\n');
+/* sauvegarde avant une opération de masse : base du bureau → copie immédiate sur le serveur (« avant_<motif>_<date>.sqlite ») ;
+   base locale → sauvegarde habituelle (serveur de sauvegarde du Mac, dossier choisi, sinon téléchargement) */
+async function sgSauverAvant(motif){ if(!(typeof dsEstBureau==='function'&&dsEstBureau())) return sgSauver(true);
+  try{ const r=await fetch('/api/sauvegarder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({motif})}), d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok){ toast('Base sauvegardée sur le serveur du bureau : '+d.nom+'.'); return true; }
+    sgAlert(r.status===404?'Le serveur du bureau doit d’abord être mis à jour (nas/preparer.sh, puis redémarrer le conteneur) : la sauvegarde immédiate n’existe pas encore.':'Sauvegarde refusée par le serveur : '+(d.error||d.msg||r.status)+'.'); return false; }
+  catch(e){ console.error(e); return false; } }
+async function sgFrSeul(mode){ if(!sgAdmin()||SG_FR.enCours) return; SG_FR.enCours=true; let R;
+  let saut=0;
+  try{ await DS.need(['sg_meta']); R=await frSeulOps(); if(!sgFrPeutAdm()){ const sk=R.ops.filter(o=>SG_FR_ADM_T.includes(o.t)); R.ops=R.ops.filter(o=>!SG_FR_ADM_T.includes(o.t)); saut=sk.length;
+      sk.forEach(o=>{ const k=o.t==='appuser'?'langues':'libelles'; if(R.n[k]) R.n[k]--; }); }   // bilan : seulement ce qui est modifié
+    else R.ops.sort((a,b)=>SG_FR_ADM_T.includes(a.t)-SG_FR_ADM_T.includes(b.t)); }   // comptes et fonctions en dernier
+  catch(e){ console.error(e); if(mode==='manuel') toast('✗ '+(e.message||e),true); SG_FR.enCours=false; return; }
+  SG_FR.enCours=false;
+  if(!R.ops.length){ if(!DS.get('sg_meta','francais')) await DS.commit([{t:'sg_meta',id:'francais',val:{ID:'francais',DATE:today(),N:{}}}]).catch(e=>console.error(e));
+    if(mode==='manuel'){ toast('La base ne contient que le français.'); go('nx-data'); } return; }
+  sgConfirm('Ne garder que le français dans la base de gestion ?\n\n'+sgFrResume(R.n)+(saut?'\n\n'+num(saut,0)+' enregistrement(s) des comptes et des fonctions (droits) restent tels quels : il faut le droit « gestion des utilisateurs ».':'')+'\n\nLa base est sauvegardée juste avant. Les textes qui n’existent qu’en allemand, en italien ou en anglais sont traduits provisoirement.',async()=>{
+    if(SG_FR.enCours) return; SG_FR.enCours=true;
+    try{ if(!(await sgSauverAvant('francais'))){ toast('✗ Sauvegarde impossible : rien n’a été modifié.',true); return; }
+      toast('Français seulement : mise à jour de '+num(R.ops.length,0)+' enregistrements…'); await frSeul(R.ops);
+      const N0=(DS.get('sg_meta','francais')||{}).N||{}, N={}; SG_FR_LIB.forEach(([k])=>{ N[k]=(+N0[k]||0)+(+R.n[k]||0); });   // bilan cumulé des passages
+      await DS.commit([{t:'sg_meta',id:'francais',val:{ID:'francais',DATE:today(),N}}]);
+      toast('La base ne contient plus que le français ('+num(R.ops.length,0)+' enregistrements mis à jour).'); if(VIEW&&VIEW.id==='nx-data') go('nx-data'); }
+    catch(e){ console.error(e); toast('✗ Nettoyage interrompu : '+(e.message||e),true); }
+    finally{ SG_FR.enCours=false; } },{title:'Français seulement',yesText:'Ne garder que le français',noText:mode==='auto'?'Plus tard':'Annuler'}); }
+{ const t=setInterval(()=>{ if(NX.booted&&DS.info){ clearInterval(t); sgAccPret().then(()=>setTimeout(async()=>{ if(!sgAdmin()) return;
+      try{ await DS.need(['sg_meta']); if(!DS.get('sg_meta','francais')||sgFrReste()) sgFrSeul('auto'); }catch(e){ console.error(e); } },9000)); } },1000); }
+/* Réglages ▸ Données & sauvegarde : état « français seulement » */
+{ const r0=VIEWS['nx-data'].render; VIEWS['nx-data'].render=function(m){ r0.apply(this,arguments); const g=m.querySelector('.nx-grid'); if(!g||!sgAdmin()) return;
+    const mk=DS.get('sg_meta','francais'), N=mk&&mk.N||{}, res=sgFrResume(N);
+    g.insertAdjacentHTML('beforeend',nxCard('c6','Français seulement','<div class="b"><p style="margin:0 0 14px;font-weight:300">'+(mk?'Base nettoyée (dernier passage le '+nxE(dfr(mk.DATE))+')'+(res?' :<br>'+nxE(res).replace(/\n/g,'<br>'):' (rien à retirer).'):'La base contient encore des libellés, modèles ou catalogues en allemand, en italien ou en anglais.')+'</p>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn'+(mk?'':' pri')+'" data-fr="1">'+nxSvg('search')+(mk?'Vérifier à nouveau':'Ne garder que le français')+'</button></div></div>'));
+    const b=g.querySelector('[data-fr]'); if(b) b.onclick=()=>sgFrSeul('manuel'); }; }

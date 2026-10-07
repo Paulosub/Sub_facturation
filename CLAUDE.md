@@ -208,20 +208,29 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   avant l'envoi (le PDF n'en garde rien). Envoi : `pvEnvoiMail` → serveur de sauvegarde du Mac (`/pdf?mode=pv` dans
   « PDF PV », `/mailpdf?dossier=pv&to=a,b` : brouillon Apple Mail avec le PDF et tous les destinataires « D ») ; sinon
   feuille de partage (iPad) ; sinon PDF téléchargé + mailto.
-- **Français seulement** (DeltaSub.html) : `nmFr` / `trFr` / `TRAD_FR` — libellé seulement en allemand / italien / anglais
-  traduit provisoirement à l'affichage et proposé en français à l'édition ; champs et langues réduits au français
-  (`lang4`, modèles, QR, langue des documents, fonctions) ; les autres langues restent enregistrées.
-- **Coût de revient** (Équipe, `nx-coutrevient`, collection `sgcoutrevient`) : charges sociales, frais généraux par poste,
+- **Français seulement** — affichage (DeltaSub.html) : `nmFr` / `trFr` / `TRAD_FR` ; saisie : NAMEFR seulement (nouveaux
+  enregistrements, formulaires, fonctions ; import de modèles : pages « fr » seulement ; `LANG_T` / `TPL_LANG` = français).
+  **Base (07.10.2026)** : `frSeulOps()` / `frSeul(ops)` (moteur) retirent NAMEGE / NAMEIT / NAMEEN (français manquant complété
+  par `trFr`), ne gardent que « fr » des modèles, suppriment documents types, gabarits et catalogues étrangers qui ont une
+  version française (catalogue : ≥ 80 % des codes), traduisent provisoirement les autres (eBKP-T → « eCCC-GC (traduction
+  provisoire) » : correspondances BKP→CFC / eBKP-H→eCCC-Bât de la base, puis `FR_CAT_DE`), mettent la langue des comptes,
+  adresses et documents à 2 et corrigent les Œ / œ mal décodés. SUBGestion 3 (bloc 16 de `sg3_plus.js`) : proposé à
+  l'administrateur au démarrage (« Plus tard » possible ; reproposé si des libellés étrangers reviennent, p. ex. après une
+  reprise Deltaproject) et dans Réglages ▸ Données & sauvegarde ; sauvegarde juste avant (NAS : `POST /api/sauvegarder` →
+  `avant_francais_<date>.sqlite` dans les sauvegardes, hors rotation ; local : sauvegarde habituelle) ; marque
+  `sg_meta/francais` {DATE, N cumulé}. Sur le NAS, comptes et fonctions (`CH08_ADMIN_T`) exigent le droit Deltaproject
+  « gestion des utilisateurs » : sans lui, ils sont laissés tels quels (signalé). Facturation : langue du carnet = Français.
+- **Coût de revient** (Ressources humaines, `nx-coutrevient`, collection `sgcoutrevient`) : charges sociales, frais généraux par poste,
   temps de travail, marge ; par collaborateur salaire, mois, occupation, vacances, absences, part facturable, frais directs ;
   taux interne = coût annuel ÷ heures de présence → « Appliquer » écrit `staffrate`.
 - **CCT vaudoise** (CCT des bureaux d'architectes et ingénieurs vaudois du 1.1.2023 : 42,5 h/sem., 9 fériés VD, 5 semaines de
   vacances, 6 dès 50 ans et avant 20 ans) : fériés vaudois appliqués automatiquement (`publicholiday`, « Lundi du Jeûne » =
-  TYPECODE 3 calculé dans `holidayDate`) ; Équipe ▸ Heures dues et vacances (`nx-cct`) : heures dues par mois
+  TYPECODE 3 calculé dans `holidayDate`) ; Ressources humaines ▸ Heures dues et vacances (`nx-cct`) : heures dues par mois
   (`stafftargettime`) et droit aux vacances (`staff.HOLIDAYS`, en heures) selon le taux d'occupation (celui du coût de
   revient), l'âge (naissance = contactowner de la personne) et la période d'engagement — créés d'office pour l'année en
-  cours et la suivante ; Équipe ▸ Bouclement annuel (`nx-bouclement`, collection `sgbouclement`) : heures sup. et soldes de
+  cours et la suivante ; Ressources humaines ▸ Bouclement annuel (`nx-bouclement`, collection `sgbouclement`) : heures sup. et soldes de
   vacances, validation par collaborateur, transfert → `TARGETTIMEREDUCTION` (report) et `HOLIDAYBALANCE` de l'année suivante.
-- **Contrats de travail** (Équipe, `nx-contrats-travail`, bloc 14 de `sg3_plus.js`, collection `sgcontrattravail`, réservée
+- **Contrats de travail** (Ressources humaines, `nx-contrats-travail`, bloc 14 de `sg3_plus.js`, collection `sgcontrattravail`, réservée
   à l'administrateur sur le NAS) : « contrat » (engagement ; « Nouvel engagement » crée aussi la personne, ses adresses et le
   collaborateur), « avenant » (nouvelles conditions dès une date d'effet), « fin » (résiliation : reçue le, fin légale CCT
   art. 10 — essai 3 mois / 7 jours, puis 1 / 2 / 3 mois pour la fin d'un mois —, dernier jour de travail). Conditions en
@@ -232,6 +241,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   PDF). Grille des salaires minimaux CCT 2026 (`SG_GRILLE`, avenant du 26.11.2025) : contrôle du salaire (annuel, au prorata
   du taux). Contrat du bureau plus favorable que la CCT : 6 semaines de vacances dès le 1er janvier de l'année des 50 ans
   (appliqué au calcul) ; heures sup. positives au 31.12 compensées en vacances (option du bouclement, par défaut).
+- **Ressources humaines (07.10.2026)** — domaine `rh` de `SG_DOM` (après Équipe), réservé à l'administrateur (droits
+  « équipe : taux » + « réglages ») et protégé par le code d'accès (« rh » dans `SG_ACC_DEF`, ajouté aussi aux réglages
+  existants jusqu'au premier choix : `rhVu`). Occupation et effectif (`nx-occupation`, bloc 15) : taux d'occupation mois par
+  mois (contrat + avenants en vigueur au 15 du mois ; avant le premier contrat enregistré, son taux ; sinon coût de revient),
+  effectif et ETP, arrivées / départs, charge du mois (heures dues CCT, saisies, disponibles / attribuées de la planification),
+  échéances RH (fin du temps d'essai, fin d'un CDD, fin des rapports de travail et départ, année des 50 ans, sans contrat,
+  avenant de l'année, salaire sous le minimum CCT), export CSV ; puis Contrats de travail, Heures dues et vacances, Bouclement
+  annuel, Coût de revient, Planification RH (`mg-planning` : disponibilité, occupation, attribution), Suivi RH (`mg-collab`).
+  Équipe garde Membres, Tous les membres, Anciens membres, Temps de l'équipe.
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad

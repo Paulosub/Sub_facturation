@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 07.10.2026 20:59 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 07.10.2026 21:48 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -536,9 +536,87 @@ const TRAD_FR={   // allemand / italien / anglais → français (provisoire, à 
   'Projekte':'Projets','Projekt':'Projet','Rechnung':'Facture','Rechnungen':'Factures','Offerte':'Offre','Vertrag':'Contrat','Brief':'Lettre',
   'Protokoll':'Procès-verbal','Notiz':'Note','Etiketten':'Étiquettes','Adressliste':'Liste d’adresses','Telefonliste':'Liste téléphonique',
   'Allgemein':'Général','Diverses':'Divers','Diverse':'Divers','Sitzung':'Séance','Bauleitung':'Direction des travaux','Planung':'Planification',
-  'Fatture':'Factures','Fattura':'Facture','Progetto':'Projet','Riunione':'Séance','Invoice':'Facture','Meeting':'Séance','Project':'Projet','Contract':'Contrat'};
+  'Fatture':'Factures','Fattura':'Facture','Progetto':'Projet','Riunione':'Séance','Invoice':'Facture','Meeting':'Séance','Project':'Projet','Contract':'Contrat',
+  'Gruppe-group-gruppo':'Groupe','Titel-titre-titolo':'Titre','Textvorlage - modèle - modello':'Modèle de texte','Dispendio fatturabile':'Prestations à facturer',
+  'Gewinnspanne':'Marge bénéficiaire','Nuovo modello':'Nouveau modèle','Jahresbericht':'Rapport annuel','Kontaktblatt':'Fiche de contact'};
 const trFr=s=>{ if(s==null) return s; const k=String(s).trim(); return TRAD_FR[k]||TRAD_FR[k.toLowerCase()]||k; };
 const nmFr=r=>r?(r.NAMEFR||trFr(r.NAMEGE||r.NAMEIT||r.NAMEEN||'')||''):'';
+/* Français seulement — suppression des autres langues dans la base (07.10.2026). Rend les opérations (un DS.commit) qui :
+   1. suppriment NAMEGE / NAMEIT / NAMEEN de tous les enregistrements (français manquant d'abord complété : traduction provisoire) ;
+   2. ne gardent que la langue « fr » des modèles (pages, libellé) ; 3. suppriment les documents types et gabarits allemands,
+   italiens et anglais (une version existe en français ; sinon la seule version est gardée et passée en français) ; 4. suppriment
+   les catalogues CRB non français et leurs positions ; 5. remplacent les textes de démonstration multilingues ; 6. mettent la
+   langue des comptes, adresses et documents en français (2). Rend {ops, n:{…}} ; frSeul(ops) les enregistre par paquets. */
+/* traduction provisoire des catalogues sans version française (eBKP-T, génie civil) ; le reste vient des catalogues CFC / eCCC-Bât de la base */
+const FR_CAT_NOM={'eBKP-T':'eCCC-GC (traduction provisoire)'};
+const FR_CAT_DE={'Abfindung, Servitut, Beitrag':'Indemnité, servitude, contribution','Hebe-, Verlade-, Transport-, Lagergerät':'Engins de levage, de chargement, de transport, de stockage',
+  'Erschliessung':'Équipement du terrain','Erschliessung durch Verkehrsanlagen':'Desserte par des installations de transport',
+  'Vorbereitung Baugrund, Bauwerk':'Préparation du terrain à bâtir, de l’ouvrage','Rückbau, Demontage von Bauwerken':'Déconstruction, démontage d’ouvrages','Bodenverbesserung':'Amélioration du sol',
+  'Provisorisches Gebäude':'Bâtiment provisoire','Hilfsbrücke':'Pont provisoire','Provisorische Leitung':'Conduite provisoire',
+  'Provisorische Markierung, Signalisierung':'Marquage, signalisation provisoires','Provisorische Verkehrssteuerungsanlage':'Installation provisoire de régulation du trafic',
+  'Ortsfestes Lehrgerüst':'Cintre fixe','Konstruktion Trassenbau':'Construction du tracé','Erdbau':'Terrassements','Erdbewegung':'Mouvements de terre','Aushub':'Fouilles',
+  'Materialaufbereitung':'Traitement des matériaux','Leitungsgraben':'Fouille en tranchée pour conduites','Pressvortrieb':'Fonçage','Einlauf, Schacht':'Grille d’écoulement, chambre',
+  'Spezialbauwerk':'Ouvrage spécial','Enwässerungsleitung':'Conduite d’évacuation des eaux','Entwässerungsleitung':'Conduite d’évacuation des eaux','Werkleitung':'Conduite de services',
+  'Schacht':'Chambre','Fahrbahnkonstruktion':'Construction de la chaussée','Schottergleis':'Voie sur ballast','Feste Fahrbahn':'Voie sans ballast','Lärmschutz':'Protection contre le bruit',
+  'Lärmschutzwand':'Paroi antibruit','Lärmschutzfenster, -tür':'Fenêtre, porte antibruit','Freileitungsbau':'Construction de lignes aériennes','Mast':'Mât','Seil':'Câble',
+  'Armatur, Isolator':'Armature, isolateur','Technik Infrastruktur':'Technique de l’infrastructure','Energieversorgung':'Alimentation en énergie','Energieverteilung':'Distribution d’énergie',
+  'Anschlussstelle':'Point de raccordement','Beleuchtung':'Éclairage','Tragsystem':'Système porteur','Leuchte':'Luminaire','Fahrleitung':'Ligne de contact','Tragwerk':'Structure porteuse',
+  'Längskettenwerk, Stromschiene':'Caténaire longitudinale, rail conducteur','Stromversorgung':'Alimentation électrique','Schaltanlage':'Installation de couplage',
+  'Stellwerk-Aussenanlage':'Installations extérieures d’enclenchement','Signal':'Signal','Zugsicherung':'Contrôle de la marche des trains','Weichenausrüstung':'Équipement des aiguillages',
+  'Barrierenanlage':'Installation de barrières','Verkehrsleitsystem, -regelungsanlage':'Système de guidage, installation de régulation du trafic',
+  'Anmeldemittel, Detektor':'Dispositif d’annonce, détecteur','Steuerung':'Commande','Anzeigemittel':'Dispositif d’affichage','Kommunikation':'Communication','Radio':'Radio','Telefon':'Téléphone',
+  'Mobilfunk':'Téléphonie mobile','Funk':'Radiocommunication','Messung':'Mesures','Verkehrsmessung, -überwachung':'Mesure, surveillance du trafic','Luftqualitätsmessung':'Mesure de la qualité de l’air',
+  'Lärmmessung':'Mesure du bruit','Witterungsmessung':'Mesures météorologiques','Ausrüstung Infrastruktur':'Équipement de l’infrastructure','Markierung':'Marquage',
+  'Linienmarkierung':'Marquage linéaire','Flächenmarkierung':'Marquage de surface','Text-, Symbolmarkierung':'Marquage de textes, de symboles','Beschilderung':'Signalisation',
+  'Wegweisung':'Signalisation directionnelle','Informationssystem':'Système d’information','Fahrzeug-Rückhaltesystem':'Dispositif de retenue de véhicules','Geländer':'Garde-corps',
+  'Ausrüstung':'Équipement','Kleinbaute':'Petite construction','Witterungsschutz':'Protection contre les intempéries','Entsorgungsausrüstung':'Équipement d’élimination des déchets',
+  'Sitzmöbel':'Bancs, sièges','Hydrant':'Borne hydrante','Landschaftsbau':'Aménagements paysagers','Gestaltete Fläche':'Surface aménagée','Kunstwerk':'Œuvre d’art','Objekt':'Objet',
+  'Ausführende':'Entreprises exécutantes','Planungskosten für die strategische Planung':'Frais d’études pour la définition des objectifs',
+  'Planungskosten für die Vorstudie':'Frais d’études pour les études préliminaires','Planungskosten für die Projektierung':'Frais d’études pour l’étude du projet',
+  'Planungskosten für die Ausschreibung':'Frais d’études pour l’appel d’offres','Planungskosten für die Realisierung':'Frais d’études pour la réalisation',
+  'Planungskosten für die Bewirtschaftung':'Frais d’études pour l’exploitation','Phasenübergreifende Planungskosten':'Frais d’études communs à plusieurs phases',
+  'Kapitalkosten bis Realisierung':'Coûts du capital jusqu’à la réalisation','Kapitalkosten ab Realisierung':'Coûts du capital dès la réalisation',
+  'Bewirtung, Entschädigung, Öffentlichkeitsarbeit':'Réceptions, indemnités, relations publiques','Entschädigung':'Indemnités',
+  'Inbetriebnahme der Technik':'Mise en service des installations techniques','Inbetriebnahme der nutzungsspezifischen Anlage':'Mise en service des installations spécifiques à l’utilisation',
+  'Inbetriebnahme der Anlage':'Mise en service de l’installation','Betriebsaufwand, Betriebsertrag':'Charges d’exploitation, produits d’exploitation'};
+const FR_SEUL_T=['modele','modeledocument','doctemplate','catalog','catalogpos','formtemplate','formtemplategroup','boilerplategroup','boilerplateitem'];
+async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libelles:0,modeles:0,documents:0,gabarits:0,catalogues:0,positions:0,catTraduits:0,posTraduites:0,langues:0,textes:0};
+  const cle=(t,id)=>t+'\u0001'+id, autres=['NAMEGE','NAMEIT','NAMEEN'], ent=t=>Object.entries(DS.T[t]||{}).filter(([,v])=>v&&typeof v==='object');
+  const mod=(t,id,fn)=>{ const k=cle(t,id), w=W.get(k)||{t,id,v:JSON.parse(JSON.stringify(DS.T[t][id]))}; if(w.v===null) return; if(fn(w.v)) W.set(k,w); };
+  const del=(t,id)=>W.set(cle(t,id),{t,id,v:null});
+  for(const t of Object.keys(DS.T)) ent(t).forEach(([id,r])=>{ if(!autres.some(k=>k in r)) return;
+    mod(t,id,v=>{ if(!String(v.NAMEFR||'').trim()){ const src=v.NAMEGE||v.NAMEIT||v.NAMEEN; if(src) v.NAMEFR=trFr(src); } autres.forEach(k=>delete v[k]); n.libelles++; return true; }); });
+  ent('modele').forEach(([id,m])=>mod('modele',id,v=>{ let chg=false;
+    if(v.langues&&typeof v.langues==='object'){ const ks=Object.keys(v.langues); if(ks.some(k=>k!=='fr')){ v.langues={fr:v.langues.fr||v.langues[ks[0]]}; chg=true; } }
+    if(v.libelle&&typeof v.libelle==='object'&&Object.keys(v.libelle).some(k=>k!=='fr')){ const L=v.libelle; v.libelle={fr:L.fr||trFr(L.de||L.it||L.en||'')||''}; chg=true; }
+    if(chg) n.modeles++; return chg; }));
+  const md=ent('modeledocument'), mdFr=new Set(md.filter(([,v])=>v.langue==='fr').map(([,v])=>v.jeu+'|'+v.type)), mdG=new Set();
+  md.forEach(([id,v])=>{ const k=v.jeu+'|'+v.type, d=trFr(v.description||'')||'';
+    if(v.langue&&v.langue!=='fr'){ if(mdFr.has(k)||mdG.has(k)){ del('modeledocument',id); n.documents++; } else { mdG.add(k); mod('modeledocument',id,x=>{ x.langue='fr'; x.description=d; return true; }); } }
+    else if(d!==(v.description||'')) mod('modeledocument',id,x=>{ x.description=d; return true; }); });
+  const dt=ent('doctemplate'), dtFr=new Set(dt.filter(([,v])=>v.LANGUAGEKEY==='fr').map(([,v])=>v.DOCUMENTTYPEKEY+'|'+v.TEMPLATEFOLDERID)), dtG=new Set();
+  dt.forEach(([id,v])=>{ const k=v.DOCUMENTTYPEKEY+'|'+v.TEMPLATEFOLDERID; if(!v.LANGUAGEKEY||v.LANGUAGEKEY==='fr') return;
+    if(dtFr.has(k)||dtG.has(k)){ del('doctemplate',id); n.gabarits++; } else { dtG.add(k); mod('doctemplate',id,x=>{ x.LANGUAGEKEY='fr'; x.DESCRIPTION=trFr(x.DESCRIPTION||''); return true; }); } });
+  /* catalogues : une version non française couverte par un catalogue français (≥ 80 % des codes) est supprimée et sert de dictionnaire
+     (même code → libellé français officiel) ; sans équivalent français (eBKP-T), elle est gardée et traduite provisoirement. */
+  const isFr=v=>v.LANGUAGECODE==null||+v.LANGUAGECODE===2, cats=ent('catalog'), posC=new Map();
+  ent('catalogpos').forEach(([id,v])=>{ const k=String(v.CATALOG_ID); if(!posC.has(k)) posC.set(k,[]); posC.get(k).push([id,v]); });
+  const frCodes=cats.filter(([,v])=>isFr(v)).map(([id,v])=>{ const m=new Map(); (posC.get(String(v.ID??id))||[]).forEach(([,x])=>{ if(x.CODE!=null) m.set(String(x.CODE),x); }); return m; });
+  const Dic=new Map(), aTrad=[];
+  cats.filter(([,v])=>!isFr(v)).forEach(([id,v])=>{ const P=posC.get(String(v.ID??id))||[]; let best=null, cov=0;
+    frCodes.forEach(m=>{ const c=P.length?P.filter(([,x])=>m.has(String(x.CODE))).length/P.length:0; if(c>cov){ cov=c; best=m; } });
+    if(P.length&&cov<0.8){ aTrad.push([id,P]); return; }
+    if(best) P.forEach(([,x])=>{ const f=best.get(String(x.CODE)); ['TEXT1','TEXT2'].forEach(k=>{ const a=String(x[k]||'').trim(), b=f?String(f[k]||'').trim().replace(/Ś/g,'Œ').replace(/ś/g,'œ'):''; if(a&&b&&!Dic.has(a)) Dic.set(a,b); }); });
+    del('catalog',id); n.catalogues++; P.forEach(([pid])=>{ del('catalogpos',pid); n.positions++; }); });
+  aTrad.forEach(([id,P])=>{ mod('catalog',id,x=>{ x.LANGUAGECODE=2; x.NAME=FR_CAT_NOM[x.NAME]||((x.NAME||'Catalogue')+' (traduction provisoire)'); return true; }); n.catTraduits++;
+    P.forEach(([pid])=>mod('catalogpos',pid,x=>{ ['TEXT1','TEXT2'].forEach(k=>{ const a=String(x[k]||'').trim(); if(a) x[k]=Dic.get(a)||FR_CAT_DE[a]||trFr(a); }); n.posTraduites++; return true; })); });
+  ent('catalogpos').forEach(([id,v])=>{ const w=W.get(cle('catalogpos',id)), x0=w?w.v:v; if(x0&&/[Śś]/.test((x0.TEXT1||'')+(x0.TEXT2||''))) mod('catalogpos',id,x=>{   // Œ / œ mal décodés (Windows-1250) dans le catalogue d’origine (aussi après traduction)
+    ['TEXT1','TEXT2'].forEach(k=>{ if(typeof x[k]==='string') x[k]=x[k].replace(/Ś/g,'Œ').replace(/ś/g,'œ'); }); n.textes++; return true; }); });
+  ['boilerplategroup','boilerplateitem'].forEach(t=>ent(t).forEach(([id,v])=>{ const a=trFr(v.NAME), b=v.TEXT==null?v.TEXT:trFr(v.TEXT);
+    if(a!==v.NAME||b!==v.TEXT) mod(t,id,x=>{ x.NAME=a; x.TEXT=b; n.textes++; return true; }); }));
+  ['appuser','contact','contactowner','document','projectcatalog'].forEach(t=>ent(t).forEach(([id,v])=>{ if(v.LANGUAGECODE!=null&&+v.LANGUAGECODE!==2) mod(t,id,x=>{ x.LANGUAGECODE=2; n.langues++; return true; }); }));
+  return {ops:[...W.values()].map(w=>({t:w.t,id:w.id,val:w.v})),n}; }
+async function frSeul(ops,etape){ for(let i=0;i<ops.length;i+=400){ await DS.commit(ops.slice(i,i+400)); if(etape) etape(Math.min(ops.length,i+400),ops.length); } return ops.length; }
 const nm=r=>r?(nmFr(r)||r.NAME||''):'';
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -749,7 +827,7 @@ function chooseUser(force){ if(ch08bChoose(force)) return;
 ═══════════════════════════════════════════════════════════════════════════ */
 const OWNER_T=['Société','Personne','Famille','Communauté','Association'];
 const ADR_T=['Adresse','Adresse postale','Adresse de livraison','Adresse de facturation','Autre adresse'];
-const LANG_T={1:'Allemand',2:'Français',3:'Italien',4:'Anglais'};
+const LANG_T={2:'Français'};   // français seulement (codes Deltaproject : 1 de, 2 fr, 3 it, 4 en)
 const TYI=['<path d="M3 14V3h7v11M10 7h3v7M5 5h1M7 5h1M5 8h1M7 8h1M5 11h1M7 11h1"/>',
   '<circle cx="8" cy="5" r="2.5"/><path d="M3.5 14c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5"/>',
   '<circle cx="5.5" cy="5.5" r="2"/><circle cx="11" cy="6" r="1.7"/><path d="M1.5 14c0-2.6 1.8-4 4-4s4 1.4 4 4M9.5 13.5c.2-2 1.3-3 3-3s2.5 1 2.5 3"/>',
@@ -2132,7 +2210,7 @@ function mtTypesDialog(p){ const o={}, box=feBox(440,300);
   const rows=()=>DS.by('projectmeetingtype','PROJECT_ID',p.ID).sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)||cmp(nm(a),nm(b)));
   const draw=()=>grid(box,Object.assign(o,{cols:[{k:'n',t:'Genre de discussion',v:nm,f:x=>esc(nm(x))}],rows:rows(),sort:null,state:{},onDbl:x=>ed(x)}));
   const used=x=>DS.by('meetingsequence','PROJECTMEETINGTYPE_ID',x.ID).length>0;
-  const ed=x=>{ const v=x?{...x}:{ID:null,PROJECT_ID:p.ID,SORTORDER:rows().length,NAMEFR:'',NAMEGE:null,NAMEIT:null,NAMEEN:null};
+  const ed=x=>{ const v=x?{...x}:{ID:null,PROJECT_ID:p.ID,SORTORDER:rows().length,NAMEFR:''};
     dialog({title:x?'Editer le genre de discussion':'Nouveau genre de discussion',body:formRows(lang4(v),460),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async bd=>{ readK(bd,v); await DS.save('projectmeetingtype',v); draw(); }}]}); };
   const copy=async src=>{ const cur=rows();
     if(cur.length){ if(cur.some(used)){ feMsg('Le remplacement n\'est pas possible,\ncar cette inscription a déjà été utilisé.','Avertissement'); return; }
@@ -6955,7 +7033,7 @@ function ecaElemBrowser(ctx,cfc,fn){
 const TPL_CATS=[['tpl-addressTemplates','addressTemplates','Modèles d’adresses'],['tpl-labelTemplates','labelTemplates','Modèles d’étiquettes'],['tpl-projectTemplates','projectTemplates','Modèles d’affaires'],
   ['tpl-staffTemplates','staffTemplates','Modèles de collaborateurs'],['tpl-expensesTemplates','expensesTemplates','Modèles de frais'],['tpl-timeTemplates','timeTemplates','Modèles de temps de travail'],['tpl-managementTemplates','managementTemplates','Modèles de management']];
 const TPL_PAGE_L={cover:'Page de garde',page1:'1ère page',pageN:'Page suivante',pageToc1:'Sommaire (1ère page)',pageTocN:'Sommaire (page suivante)',last:'Dernière page'};
-const TPL_LANG={fr:'Français',de:'Deutsch',it:'Italiano',en:'English'};
+const TPL_LANG={fr:'Français'};   // français seulement
 const TPL_TABLES=['modele','modelegroupe','arriereplan','image','modeledocument'];
 const tplNeed=()=>DS.need(TPL_TABLES);
 /* Catalogue des champs (Field$Type) avec leur libellé français, déduit des modèles DELTA (libellé d'aperçu le plus fréquent) */
@@ -7009,7 +7087,7 @@ function tplView(cat,title){ return {
       const k=Math.min(TP.zoom,(prev.clientWidth-40)/(pg.largeur||595)); const w=h('div',{html:tplPageHTML(pg,k>0?k:TP.zoom,{})}); w.ondblclick=()=>tplOpenEditor(); prev.append(w); };
     const drawC=()=>{ const md=DS.get('modele',TP.m.sel); const rows=md?Object.entries(md.langues).filter(([lg])=>lg==='fr'||!md.langues.fr).flatMap(([lg,L])=>Object.keys(L.pages).sort((a,b)=>cmp(Object.keys(TPL_PAGE_L).indexOf(a),Object.keys(TPL_PAGE_L).indexOf(b))).map(pn=>({k:lg+'|'+pn,lg,pn}))):[];
       if(!rows.some(r=>r.k===TP.p.sel)) TP.p.sel=(rows.find(r=>r.lg==='fr'&&r.pn==='page1')||rows[0]||{}).k;
-      grid(C.pane,Object.assign(TP.p,{key:r=>r.k,cols:[{k:'pn',t:'Modèle',f:r=>esc(TPL_PAGE_L[r.pn]||r.pn)},{k:'lg',t:'Langue',w:70,f:r=>TPL_LANG[r.lg]||r.lg}],rows,sort:null,onSel:drawD,onDbl:()=>tplOpenEditor()})); drawD(); };
+      grid(C.pane,Object.assign(TP.p,{key:r=>r.k,cols:[{k:'pn',t:'Modèle',f:r=>esc(TPL_PAGE_L[r.pn]||r.pn)}],rows,sort:null,onSel:drawD,onDbl:()=>tplOpenEditor()})); drawD(); };
     const drawB=()=>{ const g=DS.get('modelegroupe',TP.g.sel); const rows=g?tplModelesOf(cat).filter(x=>x.groupe===g.groupe):[];
       if(!rows.some(r=>tplKey(r)===TP.m.sel)) TP.m.sel=rows[0]&&tplKey(rows[0]);
       grid(B.pane,Object.assign(TP.m,{key:tplKey,cols:[{k:'l',t:'Type de modèle',f:x=>esc(tplLabel(x)),v:tplLabel},{k:'nom',t:'Nom',w:100,f:x=>esc(x.nom)}],rows,sort:['l',1],onSel:drawC,onDbl:()=>tplEditModel()})); drawC(); };
@@ -8270,12 +8348,12 @@ function admInvoicePos(R){ const og=IVA.og, op=IVA.op, bg=h('div',{class:'pane'}
   /* InvoicePosGroupDialog / InvoicePosDialog : un seul nom, celui de la langue de l'interface (Français) ; les autres langues sont conservées */
   const names=v=>{ const F={NAMEFR:h('input',{class:'inp',maxlength:255,value:v.NAMEFR||''})}; return {F,rows:[[h('b',{},'Français'),F.NAMEFR]]}; };
   const readN=(v,F)=>Object.keys(F).forEach(k=>v[k]=F[k].value.trim()||null);
-  const edG=g=>{ const v=g?{...g}:{ID:null,NAMEGE:null,NAMEFR:null,NAMEIT:null,NAMEEN:null,SORTORDER:Math.max(0,...groups().map(x=>+x.SORTORDER||0))+1}, bs=g?((DS.S.invoiceposgroup||{})[String(g.ID)]||0):0, N=names(v);
+  const edG=g=>{ const v=g?{...g}:{ID:null,NAMEFR:null,SORTORDER:Math.max(0,...groups().map(x=>+x.SORTORDER||0))+1}, bs=g?((DS.S.invoiceposgroup||{})[String(g.ID)]||0):0, N=names(v);
     const D=dialog({title:g?'Editer le groupe':'Nouveau groupe',body:formRows(N.rows,480),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!N.F.NAMEFR.value.trim()) return false;
       readN(v,N.F); if(v.ID==null) v.ID=DS.newIds('invoiceposgroup')[0]; await DS.commit([{t:'invoiceposgroup',id:v.ID,val:v,bseq:bs}]); og.sel=String(v.ID); op.sel=null; }}]});
     const b=ivOkBtn(D), gd=()=>{ b.disabled=!N.F.NAMEFR.value.trim(); }; N.F.NAMEFR.addEventListener('input',gd); gd(); };
   const edP=x=>{ if(og.sel==null&&!x) return;
-    const v=x?{...x}:{ID:null,INVOICEPOSGROUP_ID:+og.sel,SORTORDER:Math.max(0,...items().map(y=>+y.SORTORDER||0))+1,TYPECODE:1,NAMEGE:null,NAMEFR:null,NAMEIT:null,NAMEEN:null,QUANTITY:1,UNIT:null,PRICE:0,ISVISIBLE:1};
+    const v=x?{...x}:{ID:null,INVOICEPOSGROUP_ID:+og.sel,SORTORDER:Math.max(0,...items().map(y=>+y.SORTORDER||0))+1,TYPECODE:1,NAMEFR:null,QUANTITY:1,UNIT:null,PRICE:0,ISVISIBLE:1};
     const bs=x?((DS.S.invoicepos||{})[String(x.ID)]||0):0, N=names(v);
     const fT=h('select',{class:'inp',style:{width:'260px'}},...Object.entries(POS_TYPE).map(([k,t])=>h('option',{value:k,selected:+k===(+v.TYPECODE||0)||null},t)));
     const nI=val=>h('input',{class:'inp',value:ivNf(val),style:{width:'120px',textAlign:'right'}});
@@ -9800,11 +9878,11 @@ function admTasks(R){
   const groups=()=>DS.all('taskgroup').sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)), tasks=()=>og.sel?DS.all('task').filter(x=>x.TASKGROUP_ID===+og.sel).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)):[];
   const drawG=()=>grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(name(x))}],rows:groups(),sort:null,onSel:()=>{ ot.sel=null; drawT(); },onDbl:x=>edG(x)}));
   const drawT=()=>grid(bt,Object.assign(ot,{cols:[{k:'n',t:'Tâche',w:260,f:x=>esc(name(x))},{k:'DESCRIPTION',t:'Description',f:x=>esc(ptCrop(x.DESCRIPTION))}],rows:tasks(),sort:null,onDbl:x=>edT(x)}));
-  const form=(v,withDesc)=>{ const I=k=>h('input',{class:'inp',maxlength:64,value:v[k]||''}), F={NAMEGE:I('NAMEGE'),NAMEFR:I('NAMEFR'),NAMEIT:I('NAMEIT'),NAMEEN:I('NAMEEN')};
+  const form=(v,withDesc)=>{ const I=k=>h('input',{class:'inp',maxlength:64,value:v[k]||''}), F={NAMEFR:I('NAMEFR')};   // français seulement
     const d=withDesc?h('textarea',{class:'inp',rows:6,maxlength:1024,style:{width:'100%'}},v.DESCRIPTION||''):null;
     if(!F.NAMEFR.value) F.NAMEFR.value=nmFr(v);   // traduction provisoire proposée
     return {F,d,el:formRows([['Nom',F.NAMEFR],...(d?[['Description',d]]:[])],520)}; };   // français seulement
-  const read=(v,x)=>{ Object.keys(x.F).forEach(k=>v[k]=x.F[k].value.trim()||null); if(x.d) v.DESCRIPTION=x.d.value.trim()||null; };
+  const read=(v,x)=>{ Object.keys(x.F).forEach(k=>v[k]=x.F[k].value.trim()||null); ['NAMEGE','NAMEIT','NAMEEN'].forEach(k=>delete v[k]); if(x.d) v.DESCRIPTION=x.d.value.trim()||null; };
   const edG=g=>{ const v=g?{...g}:{ID:null,SORTORDER:(Math.max(0,...groups().map(x=>+x.SORTORDER||0)))+1}, x=form(v,false);
     dialog({title:g?'Editer le groupe de tâches':'Nouveau groupe de tâches',body:x.el,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!x.F.NAMEFR.value.trim()){ toast('Saisissez le nom en français.',true); return false; } read(v,x); await DS.save('taskgroup',v); og.sel=String(v.ID); drawG(); drawT(); }}]}); };
   const edT=t=>{ if(!og.sel&&!t) return; const v=t?{...t}:{ID:null,TASKGROUP_ID:+og.sel,SORTORDER:(Math.max(0,...tasks().map(x=>+x.SORTORDER||0)))+1}, x=form(v,true);
@@ -12955,9 +13033,9 @@ function svbAdmPane(R){ const CAT='Comparaison des offres';
   const Cs=()=>grp()?DS.by('bidcriterion','BIDCRITERIONGROUP_ID',grp().ID).slice().sort((a,b)=>(+a.SORTORDER||0)-(+b.SORTORDER||0)):[];
   const warn=h('div',{style:{color:'#9a5b00',padding:'4px 12px',minHeight:'18px'}});
   const edit=(t,x,extra)=>{ const isG=t==='bidcriteriongroup', v=x?{...x}:{ID:null,SORTORDER:(isG?G():Cs()).length+1,QUANTIFIER:0,...(extra||{})}, bs=x?ctBseq(t,x.ID):0;
-    const I=k=>h('input',{class:'inp',value:v[k]??''}), f={NAMEFR:I('NAMEFR'),NAMEGE:I('NAMEGE'),NAMEIT:I('NAMEIT'),NAMEEN:I('NAMEEN')}, q=h('input',{class:'inp',value:v.QUANTIFIER??0,style:{width:'100px',textAlign:'right'}});
+    const I=k=>h('input',{class:'inp',value:v[k]??''}), f={NAMEFR:h('input',{class:'inp',value:v.NAMEFR||nmFr(v)||''})}, q=h('input',{class:'inp',value:v.QUANTIFIER??0,style:{width:'100px',textAlign:'right'}});
     const D=dialog({title:isG?(x?'Modifier le groupe':'Nouveau groupe'):(x?'Modifier le critère':'Nouveau critère'),body:formRows([['Nom',f.NAMEFR],['Coefficient',h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},q,'%')]],480),
-      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!f.NAMEFR.value.trim()) return false; for(const k in f) v[k]=f[k].value.trim()||null; v.QUANTIFIER=+String(q.value).replace(',','.')||0;
+      buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!f.NAMEFR.value.trim()) return false; for(const k in f) v[k]=f[k].value.trim()||null; delete v.NAMEGE; delete v.NAMEIT; delete v.NAMEEN; v.QUANTIFIER=+String(q.value).replace(',','.')||0;
         if(v.ID==null) v.ID=DS.newIds(t)[0]; await DS.commit([{t,id:v.ID,val:v,bseq:bs}]); if(isG) SVB_ADM.g.sel=String(v.ID); else SVB_ADM.c.sel=String(v.ID); draw(); }}]});
     const ok=ctOk(D), g=()=>{ ok.disabled=!f.NAMEFR.value.trim(); }; f.NAMEFR.oninput=g; g(); };
   const del=async(t,x)=>{ if(!x) return; if(!await confirmDlg('Voulez-vous vraiment supprimer cette inscription ?','Supprimer')) return;
@@ -14959,7 +15037,7 @@ function ch17aDelCheck(kind,o){ o=o||{};
   if(kind==='group'&&o.nCats>0) return 'notEmpty';                                    // msgGroupNotEmpty, avant tout autre contrôle
   if(o.nCosts>0||(kind!=='group'&&o.nFee>0)) return 'booked';                         // Integrity.isProjectCostCategory(Group)Deletable
   return +o.state!==1?'notInit':null; }                                               // Project.isInitializing
-const ch17aNames=x=>({NAMEGE:x.NAMEGE??null,NAMEFR:x.NAMEFR??null,NAMEIT:x.NAMEIT??null,NAMEEN:x.NAMEEN??null});
+const ch17aNames=x=>({NAMEFR:x.NAMEFR||nmFr(x)||null});   // français seulement
 /* import du standard (ProjectCostCategoryGroupDialog.importFromAdmin) : SORTORDER du standard, noms, UNIT, UNITPRICE ; BUDGET et prix à facturer à 0.
    Ajout pur : aucun dédoublonnage ni renumérotation. gIds : un ID par groupe choisi ; cIds : un ID par genre des groupes choisis. */
 function ch17aStdOps(pid,groupes,genres,gIds,cIds){ const ops=[]; let j=0;
@@ -18918,9 +18996,10 @@ function ch10bImportMerge(pages,S){ const n={ajoutees:0,ignorees:0,groupes:0,mod
     if(!ftr){ const id=S.newId('formtemplate'); ftr={ID:id,TYPE:p.type,NAME:nom1,FORMTEMPLATEGROUP_ID:fg.ID}; ft.set(fk,ftr); ftOps.push({t:'formtemplate',id,val:ftr,bseq:0}); n.ft++; }
     let m=M[mk];
     if(!m){ const old=S.modeles[mk], L=k=>ch10bStr(ftr[k]);                                          // libellés du FormTemplate existant (vides s'il est créé ici)
-      m=M[mk]={val:old?JSON.parse(JSON.stringify(old)):{categorie:p.categorie,groupe:p.groupe,type:p.type,nom:p.nom,libelle:{fr:L('NAMEFR'),de:L('NAMEGE'),it:L('NAMEIT'),en:L('NAMEEN')},langues:{}},
+      m=M[mk]={val:old?JSON.parse(JSON.stringify(old)):{categorie:p.categorie,groupe:p.groupe,type:p.type,nom:p.nom,libelle:{fr:L('NAMEFR')||trFr(L('NAMEGE')||L('NAMEIT')||L('NAMEEN')||'')},langues:{}},   // français seulement
         bseq:old?((S.seq||{})[mk]||0):sq('modele',mk),chg:false};
       if(!old) n.modeles++; }
+    if(p.langue&&p.langue!=='fr'){ n.ignorees++; return; }   // français seulement : pages des autres langues non importées
     const Lg=m.val.langues||(m.val.langues={}), L=Lg[p.langue]||(Lg[p.langue]={pages:{}}), P=L.pages||(L.pages={});
     if(P[p.page]){ n.ignorees++; return; }                                                          // fichier existant : jamais réécrit
     P[p.page]=p.val; m.chg=true; n.ajoutees++; });
@@ -19847,7 +19926,7 @@ function ch08bUserCheck(u0,v,L){ const uid=String(v.USERID??'');
   return L&&L.roles&&L.roles.length?null:'noRole'; }
 function ch08bUserOps(u0,v,L,bseq){ const err=ch08bUserCheck(u0,v,L), uid=String(v.USERID??''); if(err) return {err};
   const id=u0?u0.ID:DS.newIds('appuser')[0], name=v.NAME==null||v.NAME===''?null:String(v.NAME), en=v.ISENABLED?1:0;
-  const rec=u0?{...u0,NAME:name,ISENABLED:en}:{ID:id,USERID:uid,NAME:name,ISENABLED:en,INITIALS:null,PHONE:null,EMAIL:null,JOBTITLE:null,JOBFUNCTION:null,LANGUAGECODE:1};
+  const rec=u0?{...u0,NAME:name,ISENABLED:en}:{ID:id,USERID:uid,NAME:name,ISENABLED:en,INITIALS:null,PHONE:null,EMAIL:null,JOBTITLE:null,JOBFUNCTION:null,LANGUAGECODE:2};
   return {id,ops:[{t:'appuser',id,val:rec,bseq:u0?(bseq??ch08bSeq('appuser',id)):0},
     ...ch08bLinkOps('appuser_appcompanyrole','APPUSER_ID',id,'APPCOMPANYROLES_ID',L.roles),
     ...ch08bLinkOps('appuser_staff','APPUSER_ID',id,'STAFFS_ID',L.staffs||[])]}; }
@@ -19920,7 +19999,7 @@ function ch08bBrowser(x,pick){ ch08bCss(); const o={}, box=h('div',{class:'ch08b
   draw();
   D=dialog({title:x.title,width:'420px',body:h('div',{},s,box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const r=x.rows.find(y=>String(x.key(y))===o.sel); if(!r) return false; pick(r); }}]});
   const b=ivOkBtn(D); D.check=()=>{ b.disabled=o.sel==null; }; D.check(); return D; }
-const ch08bByGe=(a,b)=>cmp(a.NAMEGE,b.NAMEGE)||cmp(a.ID,b.ID);      // AppRole / AppCompanyRole.findAll : ORDER BY nameGe
+const ch08bByGe=(a,b)=>cmp(nmFr(a),nmFr(b))||cmp(a.ID,b.ID);   // français seulement : tri par le nom français      // AppRole / AppCompanyRole.findAll : ORDER BY nameGe
 /* « Choisir les fonctions » : fonctions non attribuées (colonne dans la langue de dialogue : NAMEFR) */
 function ch08bPickFunction(excl,pick){ const ex=new Set((excl||[]).map(String));
   return ch08bBrowser({title:'Choisir les fonctions',col:'Fonction',rows:DS.all('appcompanyrole').filter(f=>!ex.has(String(f.ID))).sort(ch08bByGe),key:f=>f.ID,label:f=>f.NAMEFR},pick); }
@@ -19950,9 +20029,9 @@ function ch08bUserAdmin(){ if(!ch08aCan('userAdmin')){ toast('Vous n’avez pas 
   const T={'Utilisateurs':{g:G.u,t:'appuser',rows:()=>ch08bUserRows(ch08bFilter()),sort:['NAME',1],
       cols:[{k:'NAME',t:'Nom'},{k:'USERID',t:'Nom d’utilisateur',w:190},{k:'ISENABLED',t:'Actif',w:60,cls:'c',f:u=>u.ISENABLED?'✔':''}],
       add:()=>ch08bUserDlg(null,pick(G.u)),edit:u=>ch08bUserDlg(u,pick(G.u))},
-    'Fonctions':{g:G.f,t:'appcompanyrole',rows:()=>DS.all('appcompanyrole'),sort:['NAMEGE',1],cols:ch08bNameCols('appcompanyrole'),
+    'Fonctions':{g:G.f,t:'appcompanyrole',rows:()=>DS.all('appcompanyrole'),sort:['NAMEFR',1],cols:ch08bNameCols('appcompanyrole'),
       add:()=>ch08bFuncDlg(null,pick(G.f)),edit:f=>ch08bFuncDlg(f,pick(G.f))},
-    'Jeux de privilèges':{g:G.r,t:'approle',rows:()=>DS.all('approle'),sort:['NAMEGE',1],cols:ch08bNameCols('approle'),
+    'Jeux de privilèges':{g:G.r,t:'approle',rows:()=>DS.all('approle'),sort:['NAMEFR',1],cols:ch08bNameCols('approle'),
       add:()=>ch08bRoleDlg(null,pick(G.r)),edit:r=>ch08bRoleDlg(r,pick(G.r))}};
   const draw=()=>{ const X=T[tab], cur=()=>DS.get(X.t,X.g.sel);
     tabs.innerHTML=''; tabs.append(seg(Object.keys(T),tab,t=>{ tab=t; draw(); }));
@@ -20019,7 +20098,7 @@ function ch08bFuncDlg(f0,after){ ch08bCss(); const bs=f0?ch08bSeq('appcompanyrol
   return dialog({title:f0?'Editer la fonction':'Nouvelle fonction',width:'500px',body:h('div',{},formRows([[CH08B_FLBL.appcompanyrole[1],(I[1].value=I[1].value||nmFr(f0),I[1])]],420),
     h('div',{style:{marginTop:'12px'}},ch08bFrame([bA,bD],bx))),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
       const id=f0?f0.ID:DS.newIds('appcompanyrole')[0], val={...(f0||{ID:id})};
-      CH08B_NAMES.forEach((k,i)=>{ val[k]=I[i].value.trim()||null; });
+      val.NAMEFR=I[1].value.trim()||null; ['NAMEGE','NAMEIT','NAMEEN'].forEach(k=>delete val[k]);   // français seulement
       await ch08bCommit([{t:'appcompanyrole',id,val,bseq:bs},...ch08bLinkOps('appcompanyrole_approle','APPCOMPANYROLE_ID',id,'APPROLES_ID',ch08bIds('approle',J))]);
       if(after) after(id); }}]}); }
 
@@ -20035,7 +20114,7 @@ function ch08bRoleDlg(r0,after){ ch08bCss(); const bs=r0?ch08bSeq('approle',r0.I
   return dialog({title:r0?'Modifier le jeu de privilèges':'Nouveau jeu de privilèges',width:'560px',body:h('div',{},formRows([[CH08B_FLBL.approle[1],(I[1].value=I[1].value||nmFr(r0),I[1])]],480),
     h('div',{style:{marginTop:'12px'}},ch08bFrame([bA,bD],bx))),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
       const id=r0?r0.ID:DS.newIds('approle')[0], val={...(r0||{ID:id})};
-      CH08B_NAMES.forEach((k,i)=>{ val[k]=I[i].value.trim()||null; }); val.RIGHTS=ch08aRightsStr(set);
+      val.NAMEFR=I[1].value.trim()||null; ['NAMEGE','NAMEIT','NAMEEN'].forEach(k=>delete val[k]);   // français seulement val.RIGHTS=ch08aRightsStr(set);
       await ch08bCommit([{t:'approle',id,val,bseq:bs}]);
       if(after) after(id); }}]}); }
 
@@ -20496,7 +20575,7 @@ function ch08cPreferences(){ ecCss(); ch08cUiCss(); const P=ch08cPrefs(), u0=ME.
 /* ── Assistant « Configurer un collaborateur » (§ 4.14, intro.EmployeesDialog) ── */
 /* fonctions « Administrator » et « Standard » repérées par NAMEGE (equalsIgnoreCase ; la dernière de la liste l'emporte) */
 function ch08cRoles(){ let std=null, adm=null;
-  DS.all('appcompanyrole').slice().sort((a,b)=>cmp(a.ID,b.ID)).forEach(f=>{ const g=String(f.NAMEGE??'').toLowerCase(); if(g==='administrator') adm=f; else if(g==='standard') std=f; });
+  DS.all('appcompanyrole').slice().sort((a,b)=>cmp(a.ID,b.ID)).forEach(f=>{ const g=String(f.NAMEGE||f.NAMEFR||'').toLowerCase(); if(g==='administrator'||g==='administrateur') adm=f; else if(g==='standard') std=f; });
   return {std,adm}; }
 /* dialogue d'un collaborateur (EmployeeDialog.jOkButtonActionPerformed) : USERID déjà dans la liste ou en base → erreur ; mot de passe
    (lot 4) : 8 caractères au moins s'il est saisi (décision n° 3) */
@@ -20529,7 +20608,7 @@ function ch08cEmployeeOps(C,rows,roles,ids,day){ day=day||today(); rows=rows||[]
       {t:'contact',id:cid,val:adr(cid,oid,coId,coName,[o.NAME1,o.NAME2].filter(Boolean).join(' ')||null),bseq:0},
       {t:'staff',id:sid,val:{ID:sid,PERSON_ID:cid,COMPANYCONTACT_ID:ccId,HOMECONTACT_ID:null,INITIALS:nz(r.ini),JOININGDATE:day,QUITTINGDATE:null,
         ISACTIVE:1,ISINTERNAL:1,ISTIMELOGFROZEN:0,HOLIDAYS:0,HOLIDAYBALANCE:0,SORTORDER:so+i},bseq:0},     // Staff.<init> : actif, interne, vacances 0
-      {t:'appuser',id:uid,val:{ID:uid,USERID:userId,NAME:name,ISENABLED:1,INITIALS:nz(r.ini),PHONE:null,EMAIL:null,JOBTITLE:null,JOBFUNCTION:null,LANGUAGECODE:1},bseq:0});
+      {t:'appuser',id:uid,val:{ID:uid,USERID:userId,NAME:name,ISENABLED:1,INITIALS:nz(r.ini),PHONE:null,EMAIL:null,JOBTITLE:null,JOBFUNCTION:null,LANGUAGECODE:2},bseq:0});
     const ls={APPUSER_ID:uid,STAFFS_ID:sid}; ops.push({t:'appuser_staff',id:ch08bKey(ls),val:ls,bseq:0});
     if(role){ const lr={APPUSER_ID:uid,APPCOMPANYROLES_ID:role.ID}; ops.push({t:'appuser_appcompanyrole',id:ch08bKey(lr),val:lr,bseq:0}); }
     users.push({id:uid,uid:userId,pw:r.pw||'',label:(name??'')+' ('+userId+')'}); });

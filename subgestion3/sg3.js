@@ -26,6 +26,7 @@ const NXI={
   filter:'<path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/>',
   wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
   person:'<circle cx="12" cy="7.5" r="4"/><path d="M4.5 21c.7-4.2 3.6-6.5 7.5-6.5s6.8 2.3 7.5 6.5"/>',
+  rh:'<rect x="3" y="5" width="18" height="15"/><path d="M9 5V3h6v2"/><circle cx="9" cy="11" r="2.4"/><path d="M5.6 17c.5-1.8 1.8-2.8 3.4-2.8s2.9 1 3.4 2.8M14.5 10.5h3.5M14.5 14h3.5"/>',
   tree:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M6.5 10v6H14"/>',
   gear:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
   list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/>',
@@ -95,16 +96,19 @@ const SG_DOM=[
     {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
     {v:'frais',t:'Notes de frais',ico:'receipt',d:'Notes de frais par membre et par projet.'},
     {v:'frais-rapport',t:'Rapport des notes de frais',ico:'analyse',d:'Rapport des notes de frais.'}]},
-  {k:'equipe',t:'Équipe',ico:'users',d:'Les membres du bureau, la planification et le suivi des ressources.',items:[
+  {k:'equipe',t:'Équipe',ico:'users',d:'Les membres du bureau et le temps de l’équipe.',items:[
     {v:'collab-actuels',t:'Membres',ico:'users',hero:1,d:'L’équipe actuelle du bureau.'},
     {v:'collab-tous',t:'Tous les membres',ico:'group',d:'Membres actuels et anciens.'},
     {v:'collab-anciens',t:'Anciens membres',ico:'list',d:'Membres ayant quitté le bureau.'},
-    {v:'mg-planning',t:'Planification',ico:'cal',d:'Planification des ressources humaines.'},
-    {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'},
-    {v:'nx-contrats-travail',t:'Contrats de travail',ico:'contrat',d:'Engagements, avenants, fins de contrat et décomptes de sortie, selon la CCT vaudoise.'},
+    {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'}]},
+  /* Ressources humaines (07.10.2026) : gestion du personnel, réservée à l'administrateur (droits « équipe : taux » et « réglages ») */
+  {k:'rh',t:'Ressources humaines',ico:'rh',d:'Gestion du personnel : contrats de travail, occupation et effectif, heures dues et vacances, bouclement annuel, coût de revient et planification.',items:[
+    {v:'nx-occupation',t:'Occupation et effectif',ico:'gauge',hero:1,d:'Taux d’occupation de chacun mois par mois, effectif et ETP, charge de travail du mois et échéances RH (temps d’essai, préavis, fins de contrat).'},
+    {v:'nx-contrats-travail',t:'Contrats de travail',ico:'contrat',d:'Engagements, avenants annuels, fins de contrat et décomptes de sortie, selon la CCT vaudoise.'},
     {v:'nx-cct',t:'Heures dues et vacances',ico:'cal',d:'Heures dues et droit aux vacances selon la CCT vaudoise, jours fériés vaudois.'},
     {v:'nx-bouclement',t:'Bouclement annuel',ico:'check',d:'Heures supplémentaires et soldes de vacances : validation, report sur l’année suivante.'},
     {v:'nx-coutrevient',t:'Coût de revient',ico:'coins',d:'Coût horaire de chaque collaborateur : salaire, charges, frais généraux, heures productives ; taux internes.'},
+    {v:'mg-planning',t:'Planification RH',ico:'cal',d:'Disponibilité, occupation et attribution des collaborateurs aux projets ; marge et encaissements prévus.'},
     {v:'mg-collab',t:'Suivi RH',ico:'person',d:'Durées prévues, heures à effectuer, soldes.'}]},
   {k:'facturation',t:'Facturation',ico:'receipt',d:'Contrats d’honoraires SIA, factures et acomptes, documents PDF du bureau et cockpit.',items:[
     {v:'fx-contrats',t:'Contrats d’honoraires',ico:'contrat',hero:1,d:'Liste des contrats : versions, envoi, signature, offre PDF.'},
@@ -407,6 +411,7 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
     const ex=me?DS.by('projectcost','STAFF_ID',me.ID).filter(r=>+r.ISREFUNDABLE&&!+r.ISREFUNDED):[];
     return [f(nxH(wk)+' h','ma semaine'),f(nxH(mo)+' h','mon mois'),f(ex.length,'dépenses à rembourser'),f(nxCHF(ex.reduce((s,r)=>s+pcAmount(r),0)),'CHF à rembourser')]; }
   if(k==='equipe'){ const st=DS.all('staff'); return [f(st.filter(s=>+s.ISACTIVE).length,'membres actifs'),f(st.filter(s=>!+s.ISACTIVE).length,'anciens membres')]; }
+  if(k==='rh'&&typeof sgRhChiffres==='function') return sgRhChiffres(f);
   if(k==='facturation'){ await fxEnsure(); const D=fxData(); if(!D) return []; const y=String(new Date().getFullYear()), op=D.f.filter(fxUnpaid);
     return [f(D.c.filter(c=>!c.annule).length,'contrats'),f(D.c.filter(c=>c.signe).length,'signés'),f(D.f.filter(x=>String(x.date||'').startsWith(y)).length,'factures '+y),f(op.length,'factures ouvertes'),
       f(nxCHF(op.reduce((s,x)=>s+(+x._ttc||0)+(+x._fttc||0),0)),'CHF ouverts')]; }

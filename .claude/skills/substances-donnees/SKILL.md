@@ -47,6 +47,12 @@ se lit dans la version `s` de chaque enregistrement (plage de la reprise précé
 Limites actuelles : le contenu des fichiers joints et PDF du dépôt n'est pas dans la base locale (seule la liste) ;
 les verrous de documents ne sont jamais repris.
 
+Français seulement : une reprise ramène les libellés allemands, italiens et anglais de Deltaproject (NAMEGE…, modèles,
+documents types, catalogues). Au démarrage suivant, SUBGestion 3 repropose à l'administrateur « Ne garder que le
+français » (`sgFrReste()`), avec sauvegarde juste avant ; aussi dans Réglages ▸ Données & sauvegarde. Marque
+`sg_meta/francais` {DATE, N cumulé}. Sur le NAS, la sauvegarde d'avant est `avant_francais_<date>.sqlite` dans le dossier
+des sauvegardes du serveur (`POST /api/sauvegarder`, administrateur, hors rotation des 48).
+
 ## Lire les bases hors de l'app
 
 - Export `.json.gz` : `{"format":"deltasub-base","seq":…,"ids":{…},"tables":{t:{id:{"s":…,"v":{…}}}}}`.

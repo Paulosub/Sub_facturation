@@ -2685,7 +2685,7 @@ class H(BaseHTTPRequestHandler):
             return ch03_post(self, urlparse(self.path).path)
         if urlparse(self.path).path == "/fichiers/ranger":
             return self._nas_ranger(urlparse(self.path))
-        if urlparse(self.path).path in ("/api/kv", "/api/import", "/api/valider"):
+        if urlparse(self.path).path in ("/api/kv", "/api/import", "/api/valider", "/api/sauvegarder"):
             return self._nas_post(urlparse(self.path))
         if urlparse(self.path).path != "/api/commit":
             return self._send(404, '{"error":"introuvable"}')
@@ -2710,7 +2710,8 @@ class H(BaseHTTPRequestHandler):
 
 
 def _nas_post(self, u):
-    """POST /api/kv {k, v, base} → {ok, ver} | 409 {conflit} ; POST /api/import[?remplacer=1] (corps .json.gz ou .json) → {ok, n}."""
+    """POST /api/kv {k, v, base} → {ok, ver} | 409 {conflit} ; POST /api/import[?remplacer=1] (corps .json.gz ou .json) → {ok, n} ;
+    POST /api/sauvegarder {motif} → {ok, nom} (administrateur : copie de la base « avant_<motif>_<date>.sqlite » dans les sauvegardes)."""
     c = db()
     try:
         raw = self.rfile.read(int(self.headers.get("Content-Length") or 0))
@@ -2720,6 +2721,15 @@ def _nas_post(self, u):
         who = str(s["user"].get("USERID") or s["userid"]) if s else self.client_address[0]
         if u.path == "/api/import" and not nas_admin(self, c):
             return self._send(403, js({"ok": False, "error": "Réservé aux administrateurs."}))
+        if u.path == "/api/sauvegarder":   # copie immédiate de la base avant une opération de masse (07.10.2026) ; hors rotation des 48
+            if sg_contexte(self, c) is not None:   # profil administrateur (la copie reste sur le serveur : pas de droit « utilisateurs » requis)
+                return self._send(403, js({"ok": False, "error": "Réservé aux administrateurs."}))
+            motif = re.sub(r"[^a-z0-9]+", "_", str((json.loads(raw.decode("utf-8") or "{}") or {}).get("motif") or "manuelle").lower()).strip("_")[:30] or "manuelle"
+            os.makedirs(BACKUP_DIR, exist_ok=True)
+            nom = "avant_%s_%s.sqlite" % (motif, datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
+            dst = sqlite3.connect(os.path.join(BACKUP_DIR, nom)); c.backup(dst); dst.close()
+            print("Sauvegarde immédiate : %s (%s)" % (nom, who), file=sys.stderr)
+            return self._send(200, js({"ok": True, "nom": nom}))
         ctx = sg_contexte(self, c)
         if u.path == "/api/valider":   # contrats / factures « à valider » : décision de l'administrateur
             body = json.loads(raw.decode("utf-8"))

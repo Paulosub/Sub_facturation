@@ -928,7 +928,7 @@ select.ck-header-select:focus{outline:2px solid rgba(255,242,102,.4);outline-off
         <b>Remarque</b><textarea id="ae_rem" rows="5"></textarea>
         <b>Fonction</b><input id="ae_fonction">
         <b>Profession</b><input id="ae_prof">
-        <b>Langue</b><select id="ae_langue"><option>Français</option><option>Allemand</option><option>Italien</option><option>Anglais</option></select>
+        <b>Langue</b><select id="ae_langue"><option>Français</option></select>
         <b>Statut</b><select id="ae_statut"><option value="">–</option><option>Recommandé</option><option>Bonnes relations</option><option>A éviter</option><option>Entreprise liquidée</option><option>Arrêt de livraison</option></select>
         <b>Créée le</b><span id="ae_meta" style="font-size:12px;color:#555"></span>
       </div>
@@ -11772,7 +11772,7 @@ function adrEditOpen(){
   set('ae_tel',a.tel); set('ae_mob',a.mob); set('ae_fax',a.fax); set('ae_mail',a.mail); set('ae_skype',a.skype); set('ae_web',a.web);
   set('ae_typ',a.typ||'Adresse'); set('ae_desc',a.desc); set('ae_abrev',a.abrev); set('ae_cfc',a.cfc); set('ae_civ',a.civ);
   set('ae_masque',a.masque); set('ae_rem',a.rem); set('ae_fonction',a.fonction); set('ae_prof',a.prof);
-  set('ae_langue',a.langue||'Français'); set('ae_statut',a.statut||'');
+  set('ae_langue','Français');   /* français seulement */ set('ae_statut',a.statut||'');
   document.getElementById('ae_meta').textContent=(a.cree||'')+(a.mod?' (Modifiée le '+a.mod+')':'')+' — N° '+(a.num||'');
   document.getElementById('adr_ov').style.display='block';
 }
@@ -14332,6 +14332,7 @@ function loadPersist() {
   try { const d2=localStorage.getItem('sa_cout'); if(d2) ccData=JSON.parse(d2); } catch(e){}
   try { const d3=localStorage.getItem('sa_devis'); if(d3) dvData=JSON.parse(d3); } catch(e){}
   try { const d=localStorage.getItem('sa_adr'); if(d) adrData=JSON.parse(d); } catch(e){}
+  (adrData.adr||[]).forEach(a=>{ if(a&&a.langue&&a.langue!=='Français') a.langue='Français'; });   /* français seulement (07.10.2026) */
   try { const d=localStorage.getItem('sa_collab_annuel'); if(d) collabAnnuel=JSON.parse(d); } catch(e){}
   try { const d=localStorage.getItem('sa_collab_mensuel'); if(d) collabMensuel=JSON.parse(d); } catch(e){}
   migratePhasesPct();

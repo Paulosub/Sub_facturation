@@ -97,7 +97,7 @@ Chaque `construire.py` fait des remplacements exacts (`remplacer(s, old, new, n)
 d'ancrage a disparu (la source a changé), puis écrit le fichier généré à la racine. Après une modification de
 `DeltaSub.html`, lancer les trois ; après `Facturation.html`, v1 et v3.
 
-## 6. Profils d'accès, validation, CCT (07.10.2026)
+## 6. Profils d'accès, validation, CCT, contrats, RH, français seulement (07.10.2026)
 
 - `sg3_plus.js` bloc 11 : `SG_DROITS` / `SG_DEFAUTS` (⚠ identiques à `serveur_deltasub.py`), `SG_ACC` (profil de la session,
   `/api/session` → `acces`), `sgDroit(k, niveau)`, `sgAdmin()`, `sgVueOk(v)` (menu, palette, et remplace `ch08bViewOk`
@@ -109,6 +109,14 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   sans ouverture de session), `SG_IDX` (enregistrement → projet / collaborateur, tenu à jour dans `commit()`),
   `sg_garder` (filtre de `dump_json(…, garder=)`), `sg_refus_ecriture`, `sg_kv_lire` / `sg_kv_ecrire` (fusion hors
   périmètre, `_validation`), `sg_valider`, `sg_couts`. Collections réservées : `SG_T_TAUX`, `SG_T_SALAIRES`.
-- Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;
+- Bloc 14 : contrats de travail (`sgCtrAll`, `sgCtrEnVigueur`, `sgOccAu`, `sgPreavis`, `sgDecompteSortie`, documents).
+  Bloc 15 : domaine « Ressources humaines » (`SG_DOM` « rh », protégé par le code : « rh » dans `SG_ACC_DEF`, `rhVu`) —
+  `sgEngagement`, `sgEngageAu`, `sgOccMois`, `sgRhEcheances`, `sgRhChiffres` (vue d'ensemble), `nx-occupation`.
+  Bloc 16 : français seulement — `sgFrSeul(mode)` (« auto » au démarrage, « manuel » depuis Réglages ▸ Données),
+  `sgFrReste()`, `sgSauverAvant(motif)` (NAS : `POST /api/sauvegarder` ; local : `sgSauver(true)`), `SG_FR_ADM_T` (comptes et
+  fonctions sautés sans le droit « gestion des utilisateurs »), marque `sg_meta/francais`.
+- Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `frSeulOps()` → {ops, n} et `frSeul(ops)` (lots de 400) :
+  nettoyage de la base (libellés, modèles, documents types, gabarits, catalogues ; `FR_CAT_DE` / `FR_CAT_NOM` pour eBKP-T) ;
+  `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;
   `pubHolidays(y)`, `hrMaps`, `hrHoliday`, `targetFor` (soldes d'heures et de vacances, sémantique Deltaproject :
   `TARGETTIMEREDUCTION` = report d'heures sup., `HOLIDAYBALANCE` = droit de `HOLIDAYBALANCEYEAR`).

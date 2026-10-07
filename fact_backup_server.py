@@ -398,7 +398,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             to = (q.get("to", [""])[0]).strip()
             subject = (q.get("subject", [""])[0]).strip()
             body = (q.get("body", [""])[0])
-            fulls = [os.path.join(BASE_DIR, "PDF Devis", n) for n in names]
+            dossier = "PDF PV" if (q.get("dossier", [""])[0]).strip() == "pv" else "PDF Devis"   # PV de chantier : dossier propre
+            fulls = [os.path.join(BASE_DIR, dossier, n) for n in names]
             missing = [names[i] for i, f in enumerate(fulls) if not os.path.isfile(f)]
             if not names or missing:
                 self._json(404, {"ok": False, "error": "Fichier introuvable : %s" % (", ".join(missing) or "(aucun)")})
@@ -412,8 +413,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     # (dans l'autre ordre, les guillemets insérés sont échappés et apparaissent en clair dans le mail)
                     '  set m to make new outgoing message with properties {subject:"%s", content:"%s" & return & return, visible:true}' % (esc(subject), esc(body.replace("\r", "")).replace("\n", '" & return & "')),
                 ]
-                if to:
-                    lines.append('  tell m to make new to recipient at end of to recipients with properties {address:"%s"}' % esc(to))
+                for adr in [a.strip() for a in re.split(r"[,;]", to) if a.strip()]:   # plusieurs destinataires (PV : tous les « D »)
+                    lines.append('  tell m to make new to recipient at end of to recipients with properties {address:"%s"}' % esc(adr))
                 for full in fulls:
                     lines.append('  tell content of m to make new attachment with properties {file name:POSIX file "%s"} at after last paragraph' % esc(full))
                 lines.append('end tell')
@@ -490,6 +491,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             try:
                 if mode == "save":
                     target = os.path.join(BASE_DIR, "PDF Devis")
+                elif mode == "pv":   # PV de chantier envoyé (pièce jointe de l'e-mail)
+                    target = os.path.join(BASE_DIR, "PDF PV")
                 else:
                     target = os.path.join("/tmp", "fact_pdf")
                 os.makedirs(target, exist_ok=True)

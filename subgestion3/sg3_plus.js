@@ -994,3 +994,190 @@ VIEWS['nx-profils']={ render(m){ const bureau=typeof dsEstBureau==='function'&&d
     pg._fn.defaut=()=>sgConfirm('Rétablir les réglages proposés pour les profils Chef de projet et Collaborateur ?',async()=>{ await DS.commit(['cdp','collab'].map(p=>({t:'sgacces',id:'role:'+p,val:{ID:'role:'+p,DROITS:{...SG_DEFAUTS[p]}}}))); go('nx-profils'); }); } };
 /* profils actifs (NAS avec ouverture de session) : ils font foi pour les écrans, à la place des droits d'origine Deltaproject (fonctions) */
 { const v0=ch08bViewOk; ch08bViewOk=function(id,u){ if(SG_ACC.auth&&(u===undefined||u===ME.u)) return sgVueOk(String(id??'')); return v0.apply(this,arguments); }; }
+
+/* ═══ 12. COÛT DE REVIENT DES COLLABORATEURS (07.10.2026) ═══════════════════════════════════════════════════════════
+   Équipe ▸ Coût de revient (administrateur : droits « équipe : taux » et « réglages ») — collection « sgcoutrevient » :
+   « param » = critères du bureau (charges sociales %, frais généraux annuels par poste, temps de travail, marge) ;
+   « staff:<ID> » = salaire, mois, occupation, vacances, absences, part facturable, frais directs.
+   Coût annuel = salaire + charges + frais directs + part des frais généraux (au prorata des heures de présence) ;
+   taux interne = coût annuel ÷ heures de présence (appliqué aux heures saisies : rentabilité) ; coût de revient par heure
+   facturable = coût annuel ÷ heures facturables ; prix de vente conseillé = coût de revient × (1 + marge). « Appliquer »
+   enregistre le taux interne (staffrate, valable dès aujourd'hui). Sur le NAS, ces données ne quittent pas le serveur sans ces droits. */
+const SG_CR_CHARGES=[['avs','AVS / AI / APG (part employeur)',5.3],['ac','Assurance chômage (AC)',1.1],['lpp','Prévoyance professionnelle (LPP, part employeur)',7.0],
+  ['laa','Assurance accidents (LAA)',0.6],['ijm','Perte de gain maladie (IJM)',0.7],['caf','Allocations familiales (CAF)',2.0],['adm','Frais d’administration des caisses',0.3]];
+const SG_CR_FG=['Loyer et charges des locaux','Informatique, logiciels, licences','Assurances (RC professionnelle, choses)','Téléphone, internet, poste','Véhicules, déplacements',
+  'Formation continue','Fiduciaire, honoraires externes','Fournitures, imprimés, divers','Salaires non productifs (secrétariat, administration)'];
+function sgCrParam(){ const r=DS.get('sgcoutrevient','param')||{};
+  return {CHARGES:Object.assign(Object.fromEntries(SG_CR_CHARGES.map(([k,,v])=>[k,v])),r.CHARGES||{}),FG:Array.isArray(r.FG)?r.FG:SG_CR_FG.map(l=>({l,m:0})),
+    SEMAINES:r.SEMAINES??52,HSEM:r.HSEM??42.5,FERIES:r.FERIES??9,MARGE:r.MARGE??15}; }
+/* vacances de la fiche Deltaproject (HOLIDAYS) : en heures par an (212.5 = 5 semaines) ; petite valeur = jours */
+const sgCrVacances=s=>{ const v=+s.HOLIDAYS||0, hs=+sgCrParam().HSEM||42.5; return !v?5:Math.round((v>60?v/hs:v/5)*2)/2; };
+function sgCrStaff(s){ const r=DS.get('sgcoutrevient','staff:'+s.ID)||{};
+  return {SALAIRE:r.SALAIRE??0,MOIS:r.MOIS??13,OCC:r.OCC??100,VAC:r.VAC??sgCrVacances(s),ABS:r.ABS??5,PROD:r.PROD??75,DIRECTS:r.DIRECTS??0}; }
+function sgCrCalcul(P,S){ const occ=(+S.OCC||0)/100, hj=(+P.HSEM||0)/5, tch=Object.values(P.CHARGES).reduce((a,b)=>a+(+b||0),0);
+  const salaire=(+S.SALAIRE||0)*(+S.MOIS||0), charges=salaire*tch/100, contrat=(+P.SEMAINES||0)*(+P.HSEM||0)*occ;
+  const absences=((+S.VAC||0)*(+P.HSEM||0)+((+P.FERIES||0)+(+S.ABS||0))*hj)*occ, presence=Math.max(0,contrat-absences), factu=presence*(+S.PROD||0)/100;
+  return {salaire,charges,tch,contrat,absences,presence,factu,directs:+S.DIRECTS||0}; }
+function sgCrTout(){ const P=sgCrParam(), fg=P.FG.reduce((a,x)=>a+(+x.m||0),0), L=staffList().map(s=>({s,S:sgCrStaff(s)})).map(x=>({...x,c:sgCrCalcul(P,x.S)}));
+  const presTot=L.filter(x=>+x.S.SALAIRE>0).reduce((a,x)=>a+x.c.presence,0);
+  L.forEach(x=>{ const c=x.c; c.fg=presTot&&+x.S.SALAIRE>0?fg*c.presence/presTot:0; c.annuel=c.salaire+c.charges+c.directs+c.fg;
+    c.taux=c.presence?c.annuel/c.presence:0; c.revient=c.factu?c.annuel/c.factu:0; c.vente=c.revient*(1+(+P.MARGE||0)/100); });
+  return {P,fg,L}; }
+const sgTauxActuel=sid=>{ const a=DS.by('staffrate','STAFF_ID',sid).filter(r=>r.VALIDFROM&&r.VALIDFROM<=today()).sort((a,b)=>cmp(b.VALIDFROM,a.VALIDFROM)); return a[0]?+a[0].RATE:null; };
+async function sgCrAppliquer(xs){ const td=today(), ops=[];
+  for(const x of xs){ if(!(x.c.taux>0)) continue; const ex=DS.by('staffrate','STAFF_ID',x.s.ID).find(r=>r.VALIDFROM===td), id=ex?ex.ID:DS.newIds('staffrate')[0];
+    ops.push({t:'staffrate',id,val:{ID:id,STAFF_ID:x.s.ID,VALIDFROM:td,RATE:Math.round(x.c.taux*100)/100}}); }
+  if(!ops.length){ toast('Aucun taux à appliquer : saisissez d’abord les salaires.',true); return; }
+  await DS.commit(ops); toast(ops.length+' taux interne(s) enregistré(s), valables dès aujourd’hui.'); go('nx-coutrevient'); }
+VIEWS['nx-coutrevient']={ render(m){ const T=sgCrTout(), P=T.P, f2=v=>num(v,2), f0=v=>nxCHF(v);
+    const nb=(k,v,st,w)=>'<input class="inp" type="number" step="'+(st||'0.1')+'" data-'+k+' value="'+(v??'')+'" style="width:'+(w||'84px')+';text-align:right">';
+    const lignes=T.L.map((x,i)=>{ const S=x.S, c=x.c, act=sgTauxActuel(x.s.ID);
+      return '<tr data-i="'+i+'"><td><b class="sg-cr-nom" data-fn="d'+i+'" style="cursor:pointer">'+nxE(staffName(x.s))+'</b></td>'
+        +['SALAIRE','MOIS','OCC','VAC','ABS','PROD','DIRECTS'].map(k=>'<td>'+nb('s="'+x.s.ID+'" data-k="'+k+'"',S[k],k==='SALAIRE'||k==='DIRECTS'?'50':k==='MOIS'?'1':'0.5',k==='SALAIRE'||k==='DIRECTS'?'96px':'64px')+'</td>').join('')
+        +'<td class="r">'+f0(c.annuel)+'</td><td class="r">'+nxH(c.presence)+'</td><td class="r">'+nxH(c.factu)+'</td><td class="r"><b>'+f2(c.taux)+'</b></td><td class="r">'+f2(c.revient)+'</td><td class="r">'+f2(c.vente)+'</td>'
+        +'<td class="r">'+(act!=null?f2(act):'—')+'</td><td><button class="nx-btn" data-fn="a'+i+'"'+(c.taux>0?'':' disabled')+'>Appliquer</button></td></tr>'; }).join('');
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Équipe','Coût de revient','Coût horaire de chaque collaborateur à partir de son salaire, des charges sociales, de sa part des frais généraux du bureau et de ses heures productives. Le taux interne obtenu sert au coût du temps (rentabilité des projets).',
+        '<div class="sg-figs"><div class="sg-fig"><div class="n">'+f0(T.fg)+'</div><div class="t">frais généraux / an</div></div><div class="sg-fig"><div class="n">'+num(Object.values(P.CHARGES).reduce((a,b)=>a+(+b||0),0),1)+' %</div><div class="t">charges sociales</div></div></div>'
+        +'<div class="acts"><button class="nx-btn pri" data-fn="tous">'+nxSvg('check')+'Appliquer tous les taux</button></div>')
+      +'<div><div class="nx-grid">'
+      +nxCard('c6','Charges sociales (part employeur)','<div class="b"><table class="nx-tbl">'+SG_CR_CHARGES.map(([k,t])=>'<tr><td>'+nxE(t)+'</td><td class="r">'+nb('ch="'+k+'"',P.CHARGES[k],'0.05','74px')+' %</td></tr>').join('')+'</table></div>')
+      +nxCard('c6','Frais généraux du bureau (par an)','<div class="b"><table class="nx-tbl">'+P.FG.map((x,i)=>'<tr><td><input class="inp" data-fgl="'+i+'" value="'+nxE(x.l)+'" style="width:100%"></td><td class="r">'+nb('fg="'+i+'"',x.m,'100','110px')+' CHF</td></tr>').join('')
+        +'<tr><td><button class="nx-btn" data-fn="fgplus">'+nxSvg('plus')+'Ajouter un poste</button></td><td class="r"><b>'+f0(T.fg)+' CHF</b></td></tr></table></div>')
+      +nxCard('c12','Temps de travail et marge','<div class="b sg-sit-f"><label>Semaines par an '+nb('p="SEMAINES"',P.SEMAINES,'1')+'</label><label>Heures par semaine '+nb('p="HSEM"',P.HSEM,'0.25')+'</label><label>Jours fériés par an '+nb('p="FERIES"',P.FERIES,'0.5')+'</label><label>Marge sur le prix de vente '+nb('p="MARGE"',P.MARGE,'1')+' %</label></div>')
+      +nxCard('c12','Collaborateurs actuels','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-cr"><tr><th>Collaborateur</th><th>Salaire mensuel brut</th><th>Mois</th><th>Occupation %</th><th>Vacances (sem.)</th><th>Autres absences (j)</th><th>Part facturable %</th><th>Frais directs / an</th>'
+        +'<th class="r">Coût annuel</th><th class="r">Heures de présence</th><th class="r">Heures facturables</th><th class="r">Taux interne / h</th><th class="r">Coût de revient / h fact.</th><th class="r">Prix de vente conseillé</th><th class="r">Taux actuel</th><th></th></tr>'+lignes+'</table></div>'
+        +'<div class="b" style="font-size:12px;color:var(--s-gris);font-weight:300">Taux interne = coût annuel ÷ heures de présence (appliqué à toutes les heures saisies). Coût de revient = coût annuel ÷ heures facturables (base du prix de vente). Frais généraux répartis au prorata des heures de présence des collaborateurs dont le salaire est saisi. Cliquer sur un nom : détail du calcul.</div>')
+      +'</div></div></div>');
+    const sauverP=async o=>{ const r=Object.assign({ID:'param'},DS.get('sgcoutrevient','param')||{},o); await DS.save('sgcoutrevient',r); go('nx-coutrevient'); };
+    m.querySelectorAll('[data-ch]').forEach(e=>e.onchange=()=>sauverP({CHARGES:Object.assign({},P.CHARGES,{[e.dataset.ch]:+e.value||0})}));
+    m.querySelectorAll('[data-fg]').forEach(e=>e.onchange=()=>{ const FG=P.FG.map(x=>({...x})); FG[+e.dataset.fg].m=+e.value||0; sauverP({FG}); });
+    m.querySelectorAll('[data-fgl]').forEach(e=>e.onchange=()=>{ const FG=P.FG.map(x=>({...x})); FG[+e.dataset.fgl].l=e.value.trim(); sauverP({FG}); });
+    m.querySelectorAll('[data-p]').forEach(e=>e.onchange=()=>sauverP({[e.dataset.p]:+e.value||0}));
+    m.querySelectorAll('[data-s]').forEach(e=>e.onchange=async()=>{ const sid=e.dataset.s, r=Object.assign({ID:'staff:'+sid,STAFF_ID:+sid},DS.get('sgcoutrevient','staff:'+sid)||sgCrStaff(DS.get('staff',sid)));
+      r[e.dataset.k]=+e.value||0; await DS.save('sgcoutrevient',r); go('nx-coutrevient'); });
+    pg._fn.fgplus=()=>sauverP({FG:[...P.FG,{l:'Nouveau poste',m:0}]});
+    pg._fn.tous=()=>sgConfirm('Enregistrer le taux interne calculé de chaque collaborateur, valable dès aujourd’hui ?',()=>sgCrAppliquer(T.L));
+    T.L.forEach((x,i)=>{ pg._fn['a'+i]=()=>sgCrAppliquer([x]);
+      pg._fn['d'+i]=()=>{ const c=x.c, l=(t,v)=>'<tr><td>'+t+'</td><td class="r">'+v+'</td></tr>';
+        dialog({title:'Coût de revient — '+staffName(x.s),body:h('div',{style:{minWidth:'440px'},html:'<table class="nx-tbl">'
+          +l('Salaire annuel ('+num(x.S.MOIS,0)+' × '+f0(x.S.SALAIRE)+')',f0(c.salaire)+' CHF')+l('Charges sociales ('+num(c.tch,1)+' %)',f0(c.charges)+' CHF')+l('Frais directs',f0(c.directs)+' CHF')+l('Part des frais généraux',f0(c.fg)+' CHF')+l('<b>Coût annuel</b>','<b>'+f0(c.annuel)+' CHF</b>')
+          +l('Heures contractuelles ('+num(P.SEMAINES,0)+' sem. × '+num(P.HSEM,2)+' h × '+num(x.S.OCC,0)+' %)',nxH(c.contrat)+' h')+l('− vacances, jours fériés, absences',nxH(c.absences)+' h')+l('Heures de présence',nxH(c.presence)+' h')+l('Heures facturables ('+num(x.S.PROD,0)+' %)',nxH(c.factu)+' h')
+          +l('<b>Taux interne</b> (coût ÷ présence)','<b>'+f2(c.taux)+' CHF/h</b>')+l('<b>Coût de revient</b> (coût ÷ heures facturables)','<b>'+f2(c.revient)+' CHF/h</b>')+l('Prix de vente conseillé (+ '+num(P.MARGE,0)+' %)',f2(c.vente)+' CHF/h')+'</table>'})}); }; }); } };
+SG_VUE_DROIT['nx-coutrevient']=()=>sgDroit('equipe','taux')&&sgDroit('reglages','oui');
+
+/* ── PV de chantier : auteur et couleur de chaque collaborateur (suivi des modifications du module PV, Facturation.html) ── */
+const SG_PALETTE=['#4cbab5','#d7860d','#98c21f','#3f4193','#bd1e42','#8e5ea2','#2b9348','#c06c84','#636e7e','#e0a100'];
+function sgCouleur(uid){ const r=DS.get('sgacces','couleurs'), c=r&&r.C&&r.C[uid]; if(c) return c;
+  const us=DS.all('appuser').map(u=>String(u.USERID)).sort(), i=Math.max(0,us.indexOf(String(uid))); return SG_PALETTE[i%SG_PALETTE.length]; }
+function sgPvAuteur(){ const u=ME.u; if(!u) return null; return {u:String(u.USERID),n:ME.staff?staffName(ME.staff):String(u.USERID),valideur:sgAdmin()||sgDroit('pv','validation')}; }
+{ const r0=VIEWS['nx-profils'].render; VIEWS['nx-profils'].render=function(m){ r0.apply(this,arguments);
+    const tb=[...m.querySelectorAll('table.nx-tbl')].pop(); if(!tb) return; const hr=tb.querySelector('tr'); if(hr) hr.insertAdjacentHTML('beforeend','<th>Couleur PV</th>');
+    tb.querySelectorAll('select[data-user]').forEach(sel=>{ const u=DS.get('appuser',sel.dataset.user); if(!u) return;
+      const td=h('td',{}), inp=h('input',{type:'color',value:sgCouleur(u.USERID),title:'Couleur des ajouts de '+u.USERID+' dans les PV de chantier (avant validation)',style:{width:'46px',height:'30px',padding:0,border:'1px solid var(--s-filet)'}});
+      inp.onchange=async()=>{ const r=Object.assign({ID:'couleurs',C:{}},DS.get('sgacces','couleurs')||{}); r.C=Object.assign({},r.C,{[u.USERID]:inp.value}); await DS.save('sgacces',r); toast('Couleur de '+u.USERID+' enregistrée.'); };
+      td.append(inp); sel.closest('tr').append(td); }); }; }
+
+/* ═══ 13. HEURES DUES, VACANCES ET BOUCLEMENT ANNUEL — CCT VAUDOISE (07.10.2026) ═════════════════════════════════════
+   CCT des bureaux d'architectes et ingénieurs vaudois du 1er janvier 2023 (force obligatoire dès le 1.12.2023) :
+   art. 13 : 42,5 h effectives par semaine sur 5 jours (8,5 h/j) ; art. 17 : 9 jours fériés payés (VD) ; art. 24 : 5 semaines de
+   vacances (25 j), 6 semaines (30 j) dès 50 ans révolus et avant 20 ans révolus, prorata temporis ; férié pendant les vacances = pas
+   un jour de vacances. Heures dues (stafftargettime) = jours ouvrés (hors week-ends et fériés vaudois, période d'engagement) × 8,5 h ×
+   taux d'occupation ; droit aux vacances (staff.HOLIDAYS, en heures) = jours CCT au prorata × 8,5 h × taux. Le taux d'occupation est
+   celui du coût de revient (sgcoutrevient). Bouclement : heures supplémentaires (solde + report) → report de l'année suivante
+   (TARGETTIMEREDUCTION) ; solde de vacances → droit de l'année suivante (HOLIDAYBALANCE) ; validation obligatoire (sgbouclement). */
+const SG_CCT={nom:'CCT des bureaux d’architectes et ingénieurs vaudois (1er janvier 2023)',hsem:42.5,hj:8.5,vac:25,vac6:30};
+const SG_FERIES_VD=[['Nouvel an',0,{DATEDAY:1,DATEMONTH:0}],['2 janvier (Saint-Berchtold)',0,{DATEDAY:2,DATEMONTH:0}],['Vendredi saint',1,{NOFDAYSEASTERSUNDAY:-2}],
+  ['Lundi de Pâques',1,{NOFDAYSEASTERSUNDAY:1}],['Ascension',1,{NOFDAYSEASTERSUNDAY:39}],['Lundi de Pentecôte',1,{NOFDAYSEASTERSUNDAY:50}],
+  ['Fête nationale (1er août)',0,{DATEDAY:1,DATEMONTH:7}],['Lundi du Jeûne fédéral',3,{}],['Noël',0,{DATEDAY:25,DATEMONTH:11}]];
+const sgFerieCle=x=>x.TYPECODE===1?'p'+x.NOFDAYSEASTERSUNDAY:x.TYPECODE===3||/je[uû]ne/i.test(nm(x))?'jeune':x.TYPECODE===0?'f'+x.DATEDAY+'-'+x.DATEMONTH:'u'+x.ID;
+const sgFerieCleR=([,t,v])=>t===1?'p'+v.NOFDAYSEASTERSUNDAY:t===3?'jeune':'f'+v.DATEDAY+'-'+v.DATEMONTH;
+function sgFeriesVdOps(){ const L=DS.all('publicholiday'), vd=new Map(SG_FERIES_VD.map(r=>[sgFerieCleR(r),r])), ops=[], vus=new Set();
+  L.forEach(x=>{ const k=sgFerieCle(x), r=vd.get(k); vus.add(k);
+    const v=r?{...x,ISON:1,OFFTYPECODE:0,...(k==='jeune'?{TYPECODE:3,DATEDAY:null,DATEMONTH:null,NOFDAYSEASTERSUNDAY:-1}:{})}:{...x,ISON:0};
+    if(v.ISON!==x.ISON||v.TYPECODE!==x.TYPECODE||v.OFFTYPECODE!==x.OFFTYPECODE) ops.push({t:'publicholiday',id:x.ID,val:v}); });
+  const manq=SG_FERIES_VD.filter(r=>!vus.has(sgFerieCleR(r))), ids=manq.length?DS.newIds('publicholiday',manq.length):[];
+  manq.forEach(([n,t,v],i)=>ops.push({t:'publicholiday',id:ids[i],val:{ID:ids[i],NAMEFR:n,TYPECODE:t,DATEDAY:v.DATEDAY??-1,DATEMONTH:v.DATEMONTH??-1,NOFDAYSEASTERSUNDAY:v.NOFDAYSEASTERSUNDAY??-1,DATEYEAR:-1,ISON:1,OFFTYPECODE:0,SORTORDER:100+i}}));
+  return ops; }
+async function sgFeriesVd(silencieux){ const ops=sgFeriesVdOps(); if(!ops.length){ if(!silencieux) toast('Les jours fériés vaudois sont déjà en place.'); return 0; }
+  await DS.commit(ops); if(!silencieux) toast('Jours fériés du canton de Vaud appliqués (CCT, art. 17).'); return ops.length; }
+/* collaborateur : naissance (fiche personne), taux d'occupation (coût de revient) */
+function sgNaissance(s){ const c=DS.get('contact',s.PERSON_ID), o=c?DS.get('contactowner',c.CONTACTOWNER_ID):DS.get('contactowner',s.PERSON_ID); return o&&o.BIRTHDAY?String(o.BIRTHDAY).slice(0,10):null; }
+const sgOcc=s=>(+sgCrStaff(s).OCC||0)/100;
+const sgAge=(nais,d)=>{ if(!nais) return null; const b=new Date(nais+'T00:00'); let a=d.getFullYear()-b.getFullYear(); if(d.getMonth()<b.getMonth()||(d.getMonth()===b.getMonth()&&d.getDate()<b.getDate())) a--; return a; };
+function sgCctAnnee(s,y){ const occ=sgOcc(s), PH=pubHolidays(y), nais=sgNaissance(s), deb=s.JOININGDATE?String(s.JOININGDATE).slice(0,10):null, fin=s.QUITTINGDATE?String(s.QUITTINGDATE).slice(0,10):null;
+  const mois=Array(12).fill(0), nj=(y%4===0&&y%100!==0)||y%400===0?366:365; let vacJ=0, joursEng=0;
+  for(let d=new Date(y,0,1);d.getFullYear()===y;d.setDate(d.getDate()+1)){ const k=diso(d); if((deb&&k<deb)||(fin&&k>fin)) continue; joursEng++;
+    const a=sgAge(nais,d); vacJ+=((a!=null&&(a>=50||a<20))?SG_CCT.vac6:SG_CCT.vac)/nj;
+    if(d.getDay()%6&&!PH.has(k)) mois[d.getMonth()]+=SG_CCT.hj*occ; }
+  const vacJours=Math.round(vacJ*occ*2)/2;
+  return {occ,nais,age:sgAge(nais,new Date(y,11,31)),deb,fin,joursEng,mois:mois.map(v=>Math.round(v*100)/100),an:Math.round(mois.reduce((a,b)=>a+b,0)*100)/100,vacJours,vacHeures:Math.round(vacJours*SG_CCT.hj*100)/100}; }
+async function sgCctAppliquer(xs,y,silencieux){ const ops=[];
+  for(const {s,c} of xs){ const ex=DS.by('stafftargettime','STAFF_ID',s.ID).find(t=>+t.TARGETTIMEYEAR===y), id=ex?ex.ID:DS.newIds('stafftargettime')[0];
+    const v={...(ex||{ID:id,STAFF_ID:s.ID,TARGETTIMEYEAR:y,TARGETTIMEREDUCTION:0,REMARK:null,...Object.fromEntries([...Array(12)].map((_,i)=>['OVERTIME'+i,0]))}),ID:id};
+    c.mois.forEach((h,i)=>v['TARGETHOURS'+i]=h); ops.push({t:'stafftargettime',id,val:v});
+    if(y===new Date().getFullYear()&&+s.HOLIDAYS!==c.vacHeures) ops.push({t:'staff',id:s.ID,val:{...s,HOLIDAYS:c.vacHeures}}); }
+  if(ops.length) await DS.commit(ops); if(!silencieux) toast(xs.length+' collaborateur(s) : heures dues '+y+(y===new Date().getFullYear()?' et droit aux vacances':'')+' enregistrés.'); }
+/* automatique (administrateur) : fériés vaudois, heures dues de l'année en cours et de la suivante pour qui n'en a pas encore */
+async function sgCctAuto(){ if(!sgAdmin()) return; try{ await DS.need(['publicholiday','stafftargettime']); await sgFeriesVd(true);
+    const y=new Date().getFullYear(); for(const yy of [y,y+1]){ const xs=staffList().filter(s=>!DS.by('stafftargettime','STAFF_ID',s.ID).some(t=>+t.TARGETTIMEYEAR===yy)).map(s=>({s,c:sgCctAnnee(s,yy)}));
+      if(xs.length) await sgCctAppliquer(xs,yy,true); } }catch(e){ console.error(e); } }
+{ const t=setInterval(()=>{ if(NX.booted&&DS.info){ clearInterval(t); sgAccPret().then(()=>setTimeout(sgCctAuto,4000)); } },1000); }
+VIEWS['nx-cct']={ render(m){ const y=nxLS.get('sg3_cct_an',new Date().getFullYear()), PH=pubHolidays(y), L=staffList().map(s=>({s,c:sgCctAnnee(s,y),t:DS.by('stafftargettime','STAFF_ID',s.ID).find(x=>+x.TARGETTIMEYEAR===y)}));
+    const fer=[...PH.entries()].sort().map(([k,n])=>'<tr><td>'+dfr(k)+'</td><td>'+nxCap(JOURS_L[new Date(k+'T00:00').getDay()])+'</td><td>'+nxE(n)+'</td></tr>').join(''), manqFer=sgFeriesVdOps().length;
+    const sumT=t=>t?[...Array(12)].reduce((a,_,i)=>a+(+t['TARGETHOURS'+i]||0),0):null;
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Équipe','Heures dues et vacances','Calcul automatique selon la '+SG_CCT.nom+' : 42,5 h par semaine, 9 jours fériés vaudois non travaillés, 5 semaines de vacances (6 dès 50 ans et avant 20 ans), au prorata du taux d’occupation et de la période d’engagement.',
+        '<div class="sg-figs"><div class="sg-fig"><div class="n">'+y+'</div><div class="t">année</div></div><div class="sg-fig"><div class="n">'+PH.size+'</div><div class="t">jours fériés</div></div></div>'
+        +'<div class="acts"><button class="nx-btn" data-fn="prec">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="suiv">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn pri" data-fn="tous">'+nxSvg('check')+'Appliquer à tous ('+y+')</button></div>')
+      +'<div><div class="nx-grid">'
+      +nxCard('c12','Collaborateurs actuels — '+y,'<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-cr"><tr><th>Collaborateur</th><th>Occupation %</th><th>Naissance</th><th>Âge au 31.12</th><th>Engagement</th><th class="r">Heures dues '+y+'</th>'+MOIS.map(x=>'<th class="r">'+x+'</th>').join('')+'<th class="r">Vacances (jours)</th><th class="r">Vacances (heures)</th><th class="r">Enregistré</th><th></th></tr>'
+        +L.map((x,i)=>{ const c=x.c, enr=sumT(x.t), diff=enr==null||Math.abs(enr-c.an)>0.05;
+          return '<tr><td><b>'+nxE(staffName(x.s))+'</b></td><td><input class="inp" type="number" step="5" min="0" max="100" data-occ="'+x.s.ID+'" value="'+Math.round(c.occ*100)+'" style="width:70px;text-align:right"></td>'
+            +'<td><input class="inp" type="date" data-nais="'+x.s.ID+'" value="'+(c.nais||'')+'" style="width:140px"></td><td>'+(c.age??'—')+'</td><td>'+(c.deb?dfr(c.deb):'')+(c.fin?' → '+dfr(c.fin):'')+'</td>'
+            +'<td class="r"><b>'+nxH(c.an)+'</b></td>'+c.mois.map(v=>'<td class="r">'+nxH(v)+'</td>').join('')+'<td class="r">'+num(c.vacJours,1)+'</td><td class="r">'+nxH(c.vacHeures)+'</td>'
+            +'<td class="r"'+(diff?' style="color:var(--s-orange)" title="Différent du calcul CCT"':'')+'>'+(enr==null?'—':nxH(enr))+'</td><td><button class="nx-btn" data-fn="a'+i+'">Appliquer</button></td></tr>'; }).join('')+'</table></div>'
+        +'<div class="b" style="font-size:12px;color:var(--s-gris);font-weight:300">Le taux d’occupation est aussi celui du coût de revient. Date de naissance : nécessaire pour les 6 semaines de vacances (dès 50 ans, avant 20 ans). « Appliquer » enregistre les heures dues de '+y+(y===new Date().getFullYear()?' et le droit annuel aux vacances':'')+' ; les heures dues de l’année en cours et de la suivante sont créées automatiquement pour les nouveaux collaborateurs.</div>')
+      +nxCard('c6','Jours fériés '+y+' (canton de Vaud)','<div class="b flush"><table class="nx-tbl">'+fer+'</table></div>'+(manqFer?'<div class="b"><button class="nx-btn pri" data-fn="fer">Appliquer les jours fériés vaudois (CCT, art. 17)</button></div>':''))
+      +nxCard('c6','Rappel de la CCT','<div class="b" style="font-weight:300;font-size:13px">Art. 13 : 42,5 heures effectives par semaine, sur 5 jours.<br>Art. 17 : 1er et 2 janvier, Vendredi saint, Lundi de Pâques, Ascension, Lundi de Pentecôte, 1er août, Lundi du Jeûne fédéral, Noël.<br>Art. 24 : 5 semaines de vacances (25 jours), 6 semaines dès 50 ans révolus et pour les moins de 20 ans ; prorata temporis ; un jour férié pendant les vacances n’est pas un jour de vacances.<br>Un collaborateur peut saisir des heures un jour férié : elles s’ajoutent à son solde.</div>')
+      +'</div></div></div>');
+    const re=()=>go('nx-cct'); pg._fn.prec=()=>{ nxLS.set('sg3_cct_an',y-1); re(); }; pg._fn.suiv=()=>{ nxLS.set('sg3_cct_an',y+1); re(); };
+    pg._fn.tous=()=>sgConfirm('Enregistrer les heures dues '+y+(y===new Date().getFullYear()?' et le droit aux vacances':'')+' de tous les collaborateurs actuels, selon la CCT ?',async()=>{ await sgCctAppliquer(L,y); re(); });
+    pg._fn.fer=async()=>{ await sgFeriesVd(false); re(); };
+    L.forEach((x,i)=>{ pg._fn['a'+i]=async()=>{ await sgCctAppliquer([x],y); re(); }; });
+    m.querySelectorAll('[data-occ]').forEach(e=>e.onchange=async()=>{ const sid=e.dataset.occ, r=Object.assign({ID:'staff:'+sid,STAFF_ID:+sid},DS.get('sgcoutrevient','staff:'+sid)||sgCrStaff(DS.get('staff',sid))); r.OCC=Math.max(0,Math.min(100,+e.value||0)); await DS.save('sgcoutrevient',r); re(); });
+    m.querySelectorAll('[data-nais]').forEach(e=>e.onchange=async()=>{ const s=DS.get('staff',e.dataset.nais), c=s&&DS.get('contact',s.PERSON_ID), o=c?DS.get('contactowner',c.CONTACTOWNER_ID):s&&DS.get('contactowner',s.PERSON_ID);
+      if(!o){ toast('Fiche personne introuvable pour ce collaborateur.',true); return; } await DS.save('contactowner',{...o,BIRTHDAY:e.value||null}); re(); }); } };
+/* bouclement annuel : heures supplémentaires et vacances, validation puis report sur l'année suivante */
+function sgBoucler(s,y){ const a=new Date(y,0,1), b=new Date(y,11,31), M=hrMaps(s.ID,a,b).sum(a,b), tg=targetFor(s.ID,y), rep=tg&&tg.STAFF_ID?(+tg.TARGETTIMEREDUCTION||0):0;
+  const H=hrHoliday(s,a,b), solde=Math.round((M.E-M.P)*100)/100;
+  return {du:Math.round(M.P*100)/100,fait:Math.round(M.E*100)/100,solde,rep,hs:Math.round((solde+rep)*100)/100,vacDroit:H?Math.round(H.start*100)/100:null,vacPris:H?Math.round(H.spentY*100)/100:null,vacSolde:H?Math.round(H.saldo*100)/100:null}; }
+VIEWS['nx-bouclement']={ async render(m){ await DS.need(['sgbouclement']); const y=nxLS.get('sg3_bcl_an',new Date().getFullYear()), enCours=y>=new Date().getFullYear();
+    const L=staffList().map(s=>{ const b=sgBoucler(s,y), v=DS.get('sgbouclement',y+':'+s.ID); return {s,b,v,chg:v&&(Math.abs((+v.HS||0)-b.hs)>0.05||Math.abs((+v.VAC||0)-(b.vacSolde||0))>0.05)}; });
+    const nV=L.filter(x=>x.v&&x.v.VALIDE).length, nT=L.filter(x=>x.v&&x.v.TRANSFERE).length;
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Équipe','Bouclement annuel','Chaque année : heures supplémentaires (solde de l’année + report) et solde des vacances par collaborateur. Vous validez les heures, puis elles sont transférées sur '+(y+1)+' (report des heures supplémentaires et droit aux vacances).',
+        '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nV+'/'+L.length+'</div><div class="t">validés</div></div><div class="sg-fig"><div class="n">'+nT+'</div><div class="t">transférés sur '+(y+1)+'</div></div></div>'
+        +'<div class="acts"><button class="nx-btn" data-fn="prec">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="suiv">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn" data-fn="vtous">'+nxSvg('check')+'Tout valider</button><button class="nx-btn pri" data-fn="transf"'+(nV?'':' disabled')+'>Transférer sur '+(y+1)+'</button><button class="nx-btn" data-fn="csv">'+nxSvg('export')+'CSV</button></div>')
+      +'<div>'+(enCours?'<div class="nx-card c12" style="margin-bottom:22px"><div class="b" style="color:var(--s-orange)">Année '+y+' en cours : les soldes sont calculés au 31 décembre '+y+' avec les heures saisies à ce jour (heures dues de toute l’année). Validez-les en fin d’année, une fois les feuilles d’heures complètes.</div></div>':'')
+      +nxCard('c12','Heures supplémentaires et vacances — '+y,'<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-cr" id="bcl-t"><tr><th>Collaborateur</th><th class="r">Heures dues</th><th class="r">Heures saisies</th><th class="r">Solde '+y+'</th><th class="r">Report '+(y-1)+'</th><th class="r">Heures sup. à reporter</th><th class="r">Droit vacances '+y+' (h)</th><th class="r">Vacances prises (h)</th><th class="r">Solde vacances (h)</th><th class="r">(jours)</th><th>Validation</th><th>Transfert</th></tr>'
+        +L.map((x,i)=>{ const b={...x.b}, v=x.v||{}; if(b.vacSolde==null&&v.VAC!=null) b.vacSolde=+v.VAC;   // année déjà reportée : solde validé
+          return '<tr><td><b>'+nxE(staffName(x.s))+'</b></td><td class="r">'+nxH(b.du)+'</td><td class="r">'+nxH(b.fait)+'</td><td class="r"'+(b.solde<0?' style="color:var(--s-rouge)"':'')+'>'+nxH(b.solde)+'</td><td class="r">'+nxH(b.rep)+'</td>'
+            +'<td class="r"><b'+(b.hs<0?' style="color:var(--s-rouge)"':'')+'>'+nxH(b.hs)+'</b></td><td class="r">'+(b.vacDroit==null?'—':nxH(b.vacDroit))+'</td><td class="r">'+(b.vacPris==null?'—':nxH(b.vacPris))+'</td><td class="r"><b>'+(b.vacSolde==null?'—':nxH(b.vacSolde))+'</b></td><td class="r">'+(b.vacSolde==null?'':num(b.vacSolde/SG_CCT.hj,1))+'</td>'
+            +'<td>'+(v.VALIDE?'<span class="nx-tag s3">validé</span> <span style="font-size:11px;color:var(--s-gris)">'+nxE(v.PAR||'')+' '+dfr(String(v.LE||'').slice(0,10))+'</span>'+(x.chg?' <span class="nx-tag urg" title="Les heures ont changé depuis la validation">modifié</span>':'')+' <button class="nx-btn" style="height:26px" data-fn="d'+i+'">Annuler</button>'
+              :'<button class="nx-btn pri" style="height:28px" data-fn="v'+i+'">Valider</button>')+'</td>'
+            +'<td>'+(v.TRANSFERE?'<span class="nx-tag s3">transféré</span> <span style="font-size:11px;color:var(--s-gris)">'+dfr(String(v.TRANSFERE_LE||'').slice(0,10))+'</span>':'—')+'</td></tr>'; }).join('')+'</table></div>'
+        +'<div class="b" style="font-size:12px;color:var(--s-gris);font-weight:300">Transfert : le report d’heures supplémentaires de '+(y+1)+' reçoit les « heures sup. à reporter » ; le droit aux vacances de '+(y+1)+' = solde des vacances + droit annuel (CCT). Seules les lignes validées sont transférées ; un nouveau transfert remplace le précédent (pas de cumul).</div>')
+      +'</div></div>');
+    const re=()=>go('nx-bouclement'), qui=String((ME.u&&ME.u.USERID)||''), maint=()=>new Date().toISOString().slice(0,16);
+    const valider=x=>({t:'sgbouclement',id:y+':'+x.s.ID,val:{ID:y+':'+x.s.ID,ANNEE:y,STAFF_ID:x.s.ID,VALIDE:1,PAR:qui,LE:maint(),HS:x.b.hs,VAC:x.b.vacSolde,TRANSFERE:x.v&&x.v.TRANSFERE||0,TRANSFERE_LE:x.v&&x.v.TRANSFERE_LE||null}});
+    pg._fn.prec=()=>{ nxLS.set('sg3_bcl_an',y-1); re(); }; pg._fn.suiv=()=>{ nxLS.set('sg3_bcl_an',y+1); re(); };
+    L.forEach((x,i)=>{ pg._fn['v'+i]=async()=>{ await DS.commit([valider(x)]); re(); }; pg._fn['d'+i]=async()=>{ await DS.commit([{t:'sgbouclement',id:y+':'+x.s.ID,val:{...x.v,VALIDE:0}}]); re(); }; });
+    pg._fn.vtous=()=>sgConfirm('Valider les heures supplémentaires et les soldes de vacances '+y+' de tous les collaborateurs ?',async()=>{ await DS.commit(L.map(valider)); re(); });
+    pg._fn.transf=()=>{ const V=L.filter(x=>x.v&&x.v.VALIDE);
+      sgConfirm('Transférer sur '+(y+1)+' les heures supplémentaires et les soldes de vacances VALIDÉS ('+V.length+' collaborateur'+(V.length>1?'s':'')+') ?'+(V.some(x=>x.chg)?'\n\n⚠ Certaines heures ont changé depuis leur validation : ce sont les valeurs validées qui seront transférées.':''),async()=>{
+        const ops=[]; for(const x of V){ const y1=y+1, c1=sgCctAnnee(x.s,y1), ex=DS.by('stafftargettime','STAFF_ID',x.s.ID).find(t=>+t.TARGETTIMEYEAR===y1), id=ex?ex.ID:DS.newIds('stafftargettime')[0];
+          const tv=ex?{...ex}:{ID:id,STAFF_ID:x.s.ID,TARGETTIMEYEAR:y1,REMARK:null,...Object.fromEntries([...Array(12)].flatMap((_,i)=>[['TARGETHOURS'+i,c1.mois[i]],['OVERTIME'+i,0]]))};
+          tv.TARGETTIMEREDUCTION=+x.v.HS||0; ops.push({t:'stafftargettime',id,val:tv});
+          if(x.v.VAC!=null) ops.push({t:'staff',id:x.s.ID,val:{...DS.get('staff',x.s.ID),HOLIDAYS:c1.vacHeures,HOLIDAYBALANCE:Math.round(((+x.v.VAC||0)+c1.vacHeures)*100)/100,HOLIDAYBALANCEYEAR:y1,HOLIDAYBALANCECHANGEDDATE:today()}});
+          ops.push({t:'sgbouclement',id:y+':'+x.s.ID,val:{...x.v,TRANSFERE:1,TRANSFERE_LE:maint(),TRANSFERE_PAR:qui}}); }
+        await DS.commit(ops); toast(V.length+' collaborateur(s) transféré(s) sur '+(y+1)+'.'); re(); }); };
+    pg._fn.csv=()=>{ const t=m.querySelector('#bcl-t'); if(t) sgCsvTable(t,'bouclement_'+y+'.csv'); }; } };
+Object.assign(SG_VUE_DROIT,{'nx-cct':()=>sgDroit('equipe','taux')&&sgDroit('reglages','oui'),'nx-bouclement':()=>sgDroit('equipe','taux')&&sgDroit('reglages','oui')});

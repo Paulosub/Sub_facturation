@@ -186,6 +186,43 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
       sa propre base).
   `fact_backup_server.py` doit être relancé sur le Mac Studio pour offrir les nouvelles routes (`/gestion/*`, `/fichiers/*`,
   `/html2pdf`).
+- **Profils d'accès (07.10.2026)** — Administrateur (tout), Chef de projet, Collaborateur ; droits des deux derniers réglables
+  dans Réglages ▸ Profils et accès (`nx-profils`, collection `sgacces` : `role:cdp|collab` {DROITS}, `user:<APPUSER.ID>`
+  {PROFIL}, `couleurs` {C:{USERID:#hex}} pour les PV). 14 droits (projets visibles / modifiables, heures, notes de frais,
+  chantier, PV, documents, contacts, équipe/taux, contrats, factures, finances, bibliothèque, réglages) — listes `SG_DROITS` /
+  `SG_DEFAUTS` identiques dans `serveur_deltasub.py` et `sg3_plus.js` (bloc 11). « Ses projets » = équipe du projet
+  (projectmember RESPCONTACT/CONTACT = PERSON_ID du collaborateur) + projets où il a saisi des heures. Compte sans profil :
+  administrateur s'il a superadmin/userAdmin, sinon collaborateur. **Appliqués par le serveur du NAS seulement si
+  l'ouverture de session par mot de passe est active** : `/api/snapshot` et `/api/changes` filtrés (index `SG_IDX` :
+  enregistrement → projet / collaborateur), `/api/kv` filtré (contrats, factures, PV réduits au périmètre ; données RH de
+  Facturation cachées), écritures refusées (403 « droits »), `/api/couts` = coût du temps agrégé (les taux restent sur le
+  serveur). Côté app : menu (`sgVueOk`, qui remplace aussi les droits d'origine Deltaproject), accueil personnel, fiches,
+  feuille d'heures (son nom seulement ; admin : tous les collaborateurs actuels), poste changé de main → données
+  Facturation de l'utilisateur précédent effacées (`sg3_kv_user`). Fichier ouvert par double-clic : seul, administrateur.
+- **Validation des contrats et factures** : modifiés par un profil au niveau « validation » → `_validation` {etat a_valider |
+  valide | refuse, par, le, motif} posé par le SERVEUR (jamais par le poste) ; décision `/api/valider` (admin ou niveau
+  « édition ») ; Facturation ▸ À valider (`nx-valider`) ; PDF définitif, « envoyé », « signé » bloqués tant que non validé.
+- **PV de chantier** (`Facturation.html`) : ajouts / modifications / suppressions d'un collaborateur (droit PV « saisie »)
+  marqués à son nom et sa couleur (`ln._a`, `ln._sup`, `sec._a`, `pv._ent` ; `parent.sgPvAuteur()`, `parent.sgCouleur()`) ;
+  le validateur (« validation » : chef de projet, admin) valide ; « À envoyer » réservé au validateur, marques retirées
+  avant l'envoi (le PDF n'en garde rien). Envoi : `pvEnvoiMail` → serveur de sauvegarde du Mac (`/pdf?mode=pv` dans
+  « PDF PV », `/mailpdf?dossier=pv&to=a,b` : brouillon Apple Mail avec le PDF et tous les destinataires « D ») ; sinon
+  feuille de partage (iPad) ; sinon PDF téléchargé + mailto.
+- **Français seulement** (DeltaSub.html) : `nmFr` / `trFr` / `TRAD_FR` — libellé seulement en allemand / italien / anglais
+  traduit provisoirement à l'affichage et proposé en français à l'édition ; champs et langues réduits au français
+  (`lang4`, modèles, QR, langue des documents, fonctions) ; les autres langues restent enregistrées.
+- **Coût de revient** (Équipe, `nx-coutrevient`, collection `sgcoutrevient`) : charges sociales, frais généraux par poste,
+  temps de travail, marge ; par collaborateur salaire, mois, occupation, vacances, absences, part facturable, frais directs ;
+  taux interne = coût annuel ÷ heures de présence → « Appliquer » écrit `staffrate`.
+- **CCT vaudoise** (CCT des bureaux d'architectes et ingénieurs vaudois du 1.1.2023 : 42,5 h/sem., 9 fériés VD, 5 semaines de
+  vacances, 6 dès 50 ans et avant 20 ans) : fériés vaudois appliqués automatiquement (`publicholiday`, « Lundi du Jeûne » =
+  TYPECODE 3 calculé dans `holidayDate`) ; Équipe ▸ Heures dues et vacances (`nx-cct`) : heures dues par mois
+  (`stafftargettime`) et droit aux vacances (`staff.HOLIDAYS`, en heures) selon le taux d'occupation (celui du coût de
+  revient), l'âge (naissance = contactowner de la personne) et la période d'engagement — créés d'office pour l'année en
+  cours et la suivante ; Équipe ▸ Bouclement annuel (`nx-bouclement`, collection `sgbouclement`) : heures sup. et soldes de
+  vacances, validation par collaborateur, transfert → `TARGETTIMEREDUCTION` (report) et `HOLIDAYBALANCE` de l'année suivante.
+- Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
+  de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

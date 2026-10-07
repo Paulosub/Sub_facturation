@@ -1929,6 +1929,7 @@ SG_T_BIBLIO = {"modele", "modeledocument", "modelegroupe", "doctemplate", "docte
                "arriereplan", "image", "catalog", "catalogpos", "boilerplategroup", "boilerplateitem", "template", "templatefield",
                "templategroup", "textstyleset", "rowstyleset"}
 SG_T_TAUX = {"staffrate"}                       # taux internes : droit « équipe : taux »
+SG_T_SALAIRES = {"sgcoutrevient", "sgbouclement"}               # coût de revient (salaires) : droits « équipe : taux » et « réglages »
 SG_T_LIBRES = {"documentlock", "setting", "appusersignature"} | CH08_ADMIN_T   # règles propres (verrous, CH-08)
 # parents explicites (enfant → (champ, parent)) ; sinon CHAMP_ID → collection « champ » si elle est rattachée à un projet
 SG_PARENTS = {"projectsubphase": ("PROJECTPHASE_ID", "projectphase"), "projectactivity": ("PROJECTACTIVITYGROUP_ID", "projectactivitygroup"),
@@ -2148,7 +2149,9 @@ def sg_niv(ctx, k, niveau):
 def sg_garder(ctx, c, t, i):
     """l'enregistrement (t, i) est-il servi à ce profil ?"""
     if t == "sgacces":
-        return str(i).startswith("role:")   # réglages des profils (lecture) ; affectations : administrateur seulement
+        return str(i).startswith("role:") or str(i) == "couleurs"   # droits des profils, couleurs des PV (lecture) ; affectations : administrateur
+    if t in SG_T_SALAIRES and not (sg_niv(ctx, "equipe", "taux") and sg_niv(ctx, "reglages", "oui")):
+        return False
     if t in SG_T_TAUX and not sg_niv(ctx, "equipe", "taux"):
         return False
     if t in SG_T_CONTRATS and not sg_niv(ctx, "contrats", "lecture"):

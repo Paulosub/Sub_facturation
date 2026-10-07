@@ -101,6 +101,9 @@ const SG_DOM=[
     {v:'collab-anciens',t:'Anciens membres',ico:'list',d:'Membres ayant quitté le bureau.'},
     {v:'mg-planning',t:'Planification',ico:'cal',d:'Planification des ressources humaines.'},
     {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'},
+    {v:'nx-cct',t:'Heures dues et vacances',ico:'cal',d:'Heures dues et droit aux vacances selon la CCT vaudoise, jours fériés vaudois.'},
+    {v:'nx-bouclement',t:'Bouclement annuel',ico:'check',d:'Heures supplémentaires et soldes de vacances : validation, report sur l’année suivante.'},
+    {v:'nx-coutrevient',t:'Coût de revient',ico:'coins',d:'Coût horaire de chaque collaborateur : salaire, charges, frais généraux, heures productives ; taux internes.'},
     {v:'mg-collab',t:'Suivi RH',ico:'person',d:'Durées prévues, heures à effectuer, soldes.'}]},
   {k:'facturation',t:'Facturation',ico:'receipt',d:'Contrats d’honoraires SIA, factures et acomptes, documents PDF du bureau et cockpit.',items:[
     {v:'fx-contrats',t:'Contrats d’honoraires',ico:'contrat',hero:1,d:'Liste des contrats : versions, envoi, signature, offre PDF.'},

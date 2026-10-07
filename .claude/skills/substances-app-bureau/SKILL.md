@@ -70,3 +70,7 @@ Détails techniques (API du moteur, globales de Facturation, clés de session, i
   `const`/`let` de haut niveau sont visibles par nom depuis un autre script mais pas via `window`.
 - Mises en page : la zone de travail dépend du menu → requêtes de conteneur (`@container`), pas de `@media`.
 - Polices : Akkurat via `local()` (installée sur les Mac du bureau), jamais embarquée (licence desktop Lineto).
+- **Commentaire `//` inséré au milieu d'une ligne** du moteur (fonctions écrites sur une seule ligne) : il avale la suite
+  de la ligne et casse tout le script (l'app ne démarre plus). Utiliser `/* … */`, puis vérifier la syntaxe du plus grand
+  `<script>` de DeltaSub.html (JavaScriptCore : `osascript -l JavaScript`, `new Function(source)`).
+- Profils d'accès : listes `SG_DROITS` / `SG_DEFAUTS` en double (serveur et `sg3_plus.js`) — les modifier ensemble.

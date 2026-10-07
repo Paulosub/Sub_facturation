@@ -12303,6 +12303,26 @@ function pvDelaiInfo(t){
   return {p:null, r:t}; }
 function pvDpt(iso){ const pr=String(iso||'').split('-'); return pr.length===3? pr[2]+'.'+pr[1]+'.'+pr[0].slice(2) : ''; }
 function pvId(){ return 'x'+Math.random().toString(36).slice(2,9); }
+/* ── PV : suivi des modifications par auteur (07.10.2026, SUBGestion) ──
+   Dans SUBGestion (cadre), une personne sans le droit « validation » des PV (collaborateur) qui ajoute, modifie ou supprime un
+   élément le marque à son nom et à sa couleur (ln._a / ln._sup / sec._a / pv._ent) : cellule teintée dans l'app seulement. Le chef de
+   projet ou l'administrateur valide (« Valider les modifications ») ; l'envoi n'est possible qu'une fois tout validé, et les marques
+   (couleurs, auteurs) sont retirées avant l'envoi : le PDF n'en garde aucune trace. Facturation seule : aucun changement. */
+const pvMaintenant=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16); };   // heure locale
+function pvAuteur(){ try{ return (window.parent!==window&&window.parent.sgPvAuteur)?window.parent.sgPvAuteur():null; }catch(e){ return null; } }
+const pvValideur=()=>{ const a=pvAuteur(); return !a||!!a.valideur; };
+function pvMarque(o){ const a=pvAuteur(); if(!a||a.valideur||!o) return false; const neuf=!o._a; o._a={u:a.u,n:a.n,le:pvMaintenant()}; const pv=pvCurPv(); if(pv) pv._a=1; return neuf; }
+function pvCoul(m){ try{ return (window.parent.sgCouleur&&window.parent.sgCouleur(m.u))||'#4cbab5'; }catch(e){ return '#4cbab5'; } }
+function pvMk(o){ const m=o&&(o._sup||o._a); if(!m) return {st:'',ti:''}; const c=pvCoul(m);
+  return {st:';background:'+c+'26;box-shadow:inset 4px 0 0 '+c+(o._sup?';text-decoration:line-through;opacity:.75':''),
+    ti:' title="'+pvEscA((o._sup?'Suppression demandée par ':'Ajouté / modifié par ')+m.n+' le '+String(m.le||'').replace('T',' à ')+' — à valider')+'"'}; }
+function pvMarques(pv){ const L=[]; if(!pv) return L; if(pv._ent) L.push(pv._ent); (pv.secs||[]).forEach(s=>{ if(s._a) L.push(s._a); (s.lines||[]).forEach(l=>{ if(l._a) L.push(l._a); if(l._sup) L.push(l._sup); }); }); return L; }
+function pvSansMarques(pv){ (pv.secs||[]).forEach(s=>{ delete s._a; s.lines=(s.lines||[]).filter(l=>!l._sup); s.lines.forEach(l=>{ delete l._a; }); }); delete pv._a; delete pv._ent; }
+function pvValiderMods(){ const pv=pvCurPv(); if(!pv) return; if(!pvValideur()){ toast('La validation est réservée au chef de projet ou à l’administrateur.'); return; }
+  const n=pvMarques(pv).length; pvSansMarques(pv); pvPersist(); pvRender(); toast(n+' modification(s) validée(s).'); }
+function pvMarquesHTML(pv){ const L=pvMarques(pv); if(!L.length) return ''; const par={}; L.forEach(m=>{ (par[m.u]=par[m.u]||{m,n:0}).n++; });
+  return '<span class="pv-mods" style="display:inline-flex;gap:8px;align-items:center;font-size:12px;flex-wrap:wrap">À valider :'+Object.values(par).map(x=>'<span style="display:inline-flex;align-items:center;gap:4px"><i style="width:11px;height:11px;display:inline-block;background:'+pvCoul(x.m)+'"></i>'+pvEsc(x.m.n)+' ('+x.n+')</span>').join('')+
+    (pvValideur()?'<button class="btn btn-sm" style="font-weight:700" onclick="pvValiderMods()">Valider les modifications</button>':'')+'</span>'; }
 function pvPersist(){ try{ localStorage.setItem('sa_pv_data', JSON.stringify(pvData)); pvPrevSched(); return true; }
   catch(e){ toast('Stockage plein — modification NON enregistrée (réduisez les images du PV).'); return false; } }
 function pvAffName(code){ const f=(typeof affairesAll==='function')?affairesAll().find(x=>x.code===code):null;
@@ -12381,7 +12401,7 @@ function pvListHTML(out){
         '<td style="text-align:right;white-space:nowrap">'+
         '<button class="btn btn-sm pv-mini" onclick="pvOpen('+PV_Q+pv.id+PV_Q+')">Ouvrir</button> '+
         '<button class="btn btn-sm pv-mini" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'open'+PV_Q+')">Aperçu PDF</button> '+
-        (an?'<button class="btn btn-sm pv-mini" onclick="pvEnvoyer('+PV_Q+pv.id+PV_Q+')" style="color:#1e6b2d">À envoyer</button> ':'')+
+        (an&&pvValideur()?'<button class="btn btn-sm pv-mini" onclick="pvEnvoyer('+PV_Q+pv.id+PV_Q+')" style="color:#1e6b2d">À envoyer</button> ':'')+(an&&pvMarques(pv).length?'<span class="pv-badge an" title="Modifications à valider">à valider</span> ':'')+
         (an?'<button class="btn btn-sm pv-mini" onclick="pvDel('+PV_Q+pv.id+PV_Q+')" style="color:#b00">−</button>':'')+
         '</td></tr>';
     });
@@ -12503,7 +12523,7 @@ function pvEditHTML(out, pv){
     '<button class="btn btn-sm" onclick="_pvCur=null;pvRender()">← Liste</button>'+
     '<b style="font-size:14px">PVCH '+pvPad(pv.num,4)+'</b>'+
     '<span style="color:#777;font-size:12px">'+pvEsc(_pvAff)+' — '+pvEsc(pvAffName(_pvAff)).slice(0,40)+'</span>'+
-    '<span class="pv-badge '+(RO?'df':'an')+'">'+(RO?'Envoyé':'Annotation')+'</span>'+
+    '<span class="pv-badge '+(RO?'df':'an')+'">'+(RO?'Envoyé':'Annotation')+'</span>'+pvMarquesHTML(pv)+
     '<span class="pv-seg"><button class="'+(_pvTab==='gen'?'on':'')+'" onclick="_pvTab='+PV_Q+'gen'+PV_Q+';pvRender()">Général</button>'+
     '<button class="'+(_pvTab==='pv'?'on':'')+'" onclick="_pvTab='+PV_Q+'pv'+PV_Q+';pvRender()">PV</button></span>'+
     '<span style="margin-left:auto"></span>'+
@@ -12511,7 +12531,7 @@ function pvEditHTML(out, pv){
     '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'open'+PV_Q+')">PDF (onglet)</button>'+
     '<button class="btn btn-sm" onclick="pvPDF('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+','+PV_Q+'dl'+PV_Q+')">⬇ PDF</button>'+
     (RO?'<button class="btn btn-sm" onclick="pvMail('+PV_Q+pvEscA(_pvAff)+PV_Q+','+PV_Q+pv.id+PV_Q+')">✉ E-mail</button>'
-       :'<button class="btn btn-sm" style="color:#1e6b2d;font-weight:700" onclick="pvEnvoyer('+PV_Q+pv.id+PV_Q+')">À envoyer</button>')+
+       :(pvValideur()?'<button class="btn btn-sm" style="color:#1e6b2d;font-weight:700" onclick="pvEnvoyer('+PV_Q+pv.id+PV_Q+')">À envoyer</button>':''))+
     '</div>';
   if(_pvTab==='gen'){ pvEditWrap(out, h+pvCfgHTML()); return; }
   h+='<div class="pv-card"><h4>SÉANCE</h4><div class="pv-meta">'+
@@ -12614,7 +12634,7 @@ function pvSecHTML(pv,sec,si,RO){
   const titre = sec.cfc ? (sec.cfc+' '+pvCfcLabel(sec.cfc)+' — '+((A.cfg.ent[sec.cfc]||{}).soc||'')) : sec.t;
   let h='<div class="pv-sec"><div class="hd">'+
     (sec.cfc?'<b style="flex:1;font-size:12.5px">'+pvEsc(titre)+'</b>'
-            :'<input value="'+pvEscA(sec.t)+'" onchange="pvSecTitre('+si+',this.value)"'+dis+'>')+
+            :'<input value="'+pvEscA(sec.t)+'" style="'+pvMk(sec).st.slice(1)+'"'+pvMk(sec).ti+' onchange="pvSecTitre('+si+',this.value)"'+dis+'>')+
     (RO?'':((sec.cfc||sec.img2?'':'<button class="btn btn-sm pv-mini" onclick="pvLineAdd('+si+')">+ ligne</button>')+
       '<button class="btn btn-sm pv-mini" onclick="document.getElementById('+PV_Q+'pv_f_'+si+PV_Q+').click()">+ image'+(sec.img2?'s':'')+'</button>'+
       '<input type="file" accept="image/*" '+(sec.img2?'multiple ':'')+'style="display:none" id="pv_f_'+si+'" onchange="pvImgAdd('+si+',this)">'+
@@ -12657,7 +12677,7 @@ function pvSecHTML(pv,sec,si,RO){
           '" onclick="pvLineUrg('+si+','+li+')" style="font-weight:700;padding:1px 7px;color:'+(u?'#b00020':'#999')+'">'+(u===2?'!!':'!')+'</button>');
         const grip=RO?'':('<span draggable="true" ondragstart="pvDragS(event,'+si+','+li+')" title="Glisser pour déplacer" style="cursor:grab;color:#aaa;margin-right:3px;user-select:none">⠿</span>');
         h+='<tr ondragover="pvDragO(event)" ondrop="pvDropRow(event,'+si+','+li+','+PV_Q+ch[0]+PV_Q+')"><td class="rm" style="width:44px;white-space:nowrap">'+grip+ck+'</td>'+
-          '<td class="tx"><textarea rows="'+Math.min(12,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" style="min-height:46px'+ust+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
+          '<td class="tx"><textarea rows="'+Math.min(12,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" style="min-height:46px'+ust+pvMk(ln).st+'"'+pvMk(ln).ti+' data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
           '<td style="width:86px"><input value="'+pvEscA(ln.d||'')+'" placeholder="sem. 22" title="Texte libre (sem 40, 03.06.21…) — préfixes : D début (vert), F fin (rouge), Dqp / Sat (gris)" style="'+(function(){ const pdl=pvDelaiInfo(ln.d);
             return pdl.p==='F'?'color:#b00020':pdl.p==='D'?'color:#1d7a37':pdl.p?'color:#777':ust.slice(1); })()+'" onchange="pvLineDelai('+si+','+li+',this.value)"'+dis+'></td>'+
           '<td class="rm" style="width:26px">'+ubt+'</td>'+
@@ -12677,7 +12697,7 @@ function pvSecHTML(pv,sec,si,RO){
     h+='<table class="pv-xl">';
     sec.lines.forEach((ln,li)=>{
       if(ln.k==='pb'||ln.k==='img'){ h+=extra(ln,li,2); return; }
-      h+='<tr><td class="txw"><textarea rows="'+Math.min(14,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
+      h+='<tr><td class="txw"><textarea rows="'+Math.min(14,Math.max(2,String(ln.v||'').split(PV_NL).length+1))+'" style="'+pvMk(ln).st.slice(1)+'"'+pvMk(ln).ti+' data-psi="'+si+'" data-pli="'+li+'" onchange="pvLineSet('+si+','+li+',this.value)"'+dis+'>'+pvEsc(ln.v||'')+'</textarea></td>'+
         '<td class="rm" style="width:58px;white-space:nowrap">'+(RO?'':('<button class="btn btn-sm pv-mini" title="Copier la cellule" onclick="pvLineCopy('+si+','+li+')">⧉</button> '+
           '<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvLineDel('+si+','+li+')">−</button>'))+'</td></tr>';
     });
@@ -12688,21 +12708,22 @@ function pvSecHTML(pv,sec,si,RO){
 }
 /* mutations du PV */
 function pvSet(k,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
-  pv[k]=(k==='num')?(+v||pv.num):v; pvPersist(); if(k==='num'||k==='date'||k==='approbMode') pvRender(); }
+  pv[k]=(k==='num')?(+v||pv.num):v; { const a=pvAuteur(); if(a&&!a.valideur){ pv._ent={u:a.u,n:a.n,le:pvMaintenant()}; pv._a=1; } } pvPersist(); if(k==='num'||k==='date'||k==='approbMode') pvRender(); }
 function pvPresTog(key,x){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   const cur=pv.pres[key]||''; pv.pres[key]=cur.includes(x)?cur.split(x).join(''):cur+x;
+  { const a=pvAuteur(); if(a&&!a.valideur){ pv._ent={u:a.u,n:a.n,le:pvMaintenant()}; pv._a=1; } }
   pvPersist(); if(x==='C') pvRender(); }
-function pvSecTitre(si,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].t=v; pvPersist(); }
-function pvLineSet(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].v=v; pvPersist(); }
+function pvSecTitre(si,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].t=v; const nv=pvMarque(pv.secs[si]); pvPersist(); if(nv) pvRender(); }
+function pvLineSet(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].v=v; const nv=pvMarque(pv.secs[si].lines[li]); pvPersist(); if(nv) pvRender(); }
 function pvLineAdd(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
-  const sec=pv.secs[si]; sec.lines.push(sec.cfc?{k:'exec',v:'',d:''}:{k:'t',v:''}); pvPersist(); pvRender(); }
-function pvLineType(si,li,t){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].k=t; pvPersist(); pvRender(); }
+  const sec=pv.secs[si]; sec.lines.push(sec.cfc?{k:'exec',v:'',d:''}:{k:'t',v:''}); pvMarque(sec.lines[sec.lines.length-1]); pvPersist(); pvRender(); }
+function pvLineType(si,li,t){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].k=t; pvMarque(pv.secs[si].lines[li]); pvPersist(); pvRender(); }
 function pvLineAddK(si,k){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   const lines=pv.secs[si].lines;
   const tyOf=l=>(l.k==='fini'||l.k==='rem')?l.k:(l.k==='t'||l.k==='exec')?'exec':null;
   let idx=-1;
   lines.forEach((l,i2)=>{ if(tyOf(l)===k) idx=i2; });
-  const row={k, v:'', d:''};
+  const row={k, v:'', d:''}; pvMarque(row);
   if(idx>=0) lines.splice(idx+1,0,row);
   else {
     const order={exec:0,fini:1,rem:2}; let at=lines.length;
@@ -12711,10 +12732,10 @@ function pvLineAddK(si,k){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') 
     lines.splice(at,0,row);
   }
   pvPersist(); pvRender(); }
-function pvLineDelai(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].d=v; pvPersist(); }
+function pvLineDelai(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines[li].d=v; const nv=pvMarque(pv.secs[si].lines[li]); pvPersist(); if(nv) pvRender(); }
 function pvLineFini(si,li,ck){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
   const lines=pv.secs[si].lines; const ln=lines[li]; if(!ln) return;
-  lines.splice(li,1); ln.k=ck?'fini':'exec';
+  lines.splice(li,1); ln.k=ck?'fini':'exec'; pvMarque(ln);
   const tyOf=l=>(l.k==='fini'||l.k==='rem')?l.k:(l.k==='t'||l.k==='exec')?'exec':null;
   let idx=-1; lines.forEach((l,i2)=>{ if(tyOf(l)===ln.k) idx=i2; });
   if(idx>=0) lines.splice(idx+1,0,ln);
@@ -12728,7 +12749,7 @@ function pvLineCopy(si,li){ const pv=pvCurPv(); if(!pv) return;
   toast('Cellule copiée — bouton « ⧉ Coller » d’un chapitre, ou ⌘V dans une cellule.');
   pvRender(); }
 function pvPasteK(si,ch){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif'||!_pvCellBuf) return;
-  const copie=JSON.parse(JSON.stringify(_pvCellBuf));
+  const copie=JSON.parse(JSON.stringify(_pvCellBuf)); delete copie._a; delete copie._sup; pvMarque(copie);
   const typed=x=>x==='exec'||x==='fini'||x==='rem'||x==='t';
   if(typed(copie.k)) copie.k=ch;
   const lines=pv.secs[si].lines;
@@ -12740,7 +12761,7 @@ function pvPasteK(si,ch){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif'||!
     lines.splice(at,0,copie); }
   pvPersist(); pvRender(); }
 function pvLineUrg(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
-  const ln=pv.secs[si].lines[li]; ln.u=((+ln.u||0)+1)%3; pvPersist(); pvRender(); }
+  const ln=pv.secs[si].lines[li]; ln.u=((+ln.u||0)+1)%3; pvMarque(ln); pvPersist(); pvRender(); }
 let _pvDrag=null, _pvCellBuf=null;
 // ⌘C sans sélection de texte = copier la CELLULE ; ⌘V = la coller EN DESSOUS (2026-09-23).
 document.addEventListener('keydown', function(e){
@@ -12759,7 +12780,7 @@ document.addEventListener('keydown', function(e){
     if(!_pvCellBuf||pv.statut==='definitif') return;
     e.preventDefault();
     const lines=pv.secs[si].lines, cible=lines[li];
-    const copie=JSON.parse(JSON.stringify(_pvCellBuf));
+    const copie=JSON.parse(JSON.stringify(_pvCellBuf)); delete copie._a; delete copie._sup; pvMarque(copie);
     const typed=x=>x==='exec'||x==='fini'||x==='rem'||x==='t';
     if(cible&&typed(cible.k)&&typed(copie.k)) copie.k=(cible.k==='t')?'exec':cible.k;
     lines.splice(li+1,0,copie);
@@ -12774,7 +12795,7 @@ function pvDropRow(e,si,li,ch){ e.preventDefault(); e.stopPropagation();
   const pv=pvCurPv(); if(!pv||pv.statut==='definitif'){ _pvDrag=null; return; }
   const lines=pv.secs[si].lines, from=_pvDrag.li; _pvDrag=null;
   if(from===li) return;
-  const ln=lines.splice(from,1)[0];
+  const ln=lines.splice(from,1)[0]; pvMarque(ln);
   let at=li; if(from<li) at--;
   if(ch&&(ln.k==='exec'||ln.k==='fini'||ln.k==='rem'||ln.k==='t')) ln.k=ch;
   lines.splice(at,0,ln);
@@ -12793,7 +12814,10 @@ function pvDropHead(e,si,ch){ e.preventDefault(); e.stopPropagation();
   lines.splice(at,0,ln);
   pvPersist(); pvRender(); }
 function pvPresH(key,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.presH=pv.presH||{}; pv.presH[key]=v; pvPersist(); }
-function pvLineDel(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.splice(li,1); pvPersist(); pvRender(); }
+function pvLineDel(si,li){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
+  const ln=pv.secs[si].lines[li], a=pvAuteur();   // collaborateur : suppression demandée (barrée), sauf son propre ajout pas encore validé
+  if(ln&&a&&!a.valideur&&!(ln._a&&ln._a.u===a.u)){ ln._sup={u:a.u,n:a.n,le:pvMaintenant()}; pv._a=1; pvPersist(); pvRender(); return; }
+  pv.secs[si].lines.splice(li,1); pvPersist(); pvRender(); }
 function pvPbAdd(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs[si].lines.push({k:'pb'}); pvPersist(); pvRender(); }
 function pvSecAdd(){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return; pv.secs.push({t:'Nouvelle section',lines:[{k:'t',v:''}]}); pvPersist(); pvRender(); }
 function pvSecDel(si){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif') return;
@@ -12831,27 +12855,48 @@ function pvImgLeg(si,li,v){ const pv=pvCurPv(); if(!pv||pv.statut==='definitif')
 /* ── envoi : annotation → définitif + PDF + mail ── */
 function pvEnvoyer(id){
   const A=pvA(); const pv=A.pvs.find(x=>x.id===id); if(!pv||pv.statut==='definitif') return;
-  chConfirm('Le PV PVCH '+pvPad(pv.num,4)+' deviendra DÉFINITIF (verrouillé). Le PDF sera téléchargé et un e-mail préparé pour les destinataires « D ». Continuer ?', ()=>{
-    pv.statut='definitif'; pv.redac=fhISO(new Date()); pvPersist(); pvRender();
-    pvPDF(_pvAff, id, 'dl').then(()=>pvMail(_pvAff, id)).catch(e=>{ toast('Erreur PDF : '+e.message); });
+  if(!pvValideur()){ toast('L’envoi du PV est réservé au chef de projet ou à l’administrateur.'); return; }
+  const mods=pvMarques(pv), qui=[...new Set(mods.map(m=>m.n))].join(', ');
+  chConfirm((mods.length?'Les '+mods.length+' modification(s) de '+qui+' seront VALIDÉES (couleurs et auteurs retirés).\n\n':'')+'Le PV PVCH '+pvPad(pv.num,4)+' deviendra DÉFINITIF (verrouillé). Un e-mail sera préparé avec le PDF joint, pour les destinataires « D ». Continuer ?', ()=>{
+    pvSansMarques(pv); pv.statut='definitif'; pv.redac=fhISO(new Date()); pvPersist(); pvRender();
+    pvEnvoiMail(_pvAff, id).catch(e=>{ toast('Erreur PDF : '+e.message); });
   });
 }
-function pvMail(code, id){
-  const A=pvData[code]; const pv=A.pvs.find(x=>x.id===id); if(!pv) return;
+function pvMail(code, id){ return pvEnvoiMail(code, id).catch(e=>toast('Erreur PDF : '+e.message)); }
+/* destinataires « D » (intervenants et entreprises), objet, texte */
+function pvMailInfo(code, id){
+  const A=pvData[code]; const pv=A&&A.pvs.find(x=>x.id===id); if(!pv) return null;
   const dests=[], miss=[];
   A.cfg.interv.forEach(it=>{ if((pv.pres['i'+it.id]||'').includes('D')){
     if(it.email) dests.push(it.email); else miss.push(it.nom||it.soc||it.role); } });
   A.cfg.cfc.forEach(c=>{ const e=A.cfg.ent[c]||{}; if((pv.pres['c'+c]||'').includes('D')){
     if(e.email) dests.push(e.email); else miss.push(c+' — '+(e.soc||'?')); } });
-  if(miss.length) toast('Adresses e-mail manquantes : '+miss.join(', '));
-  if(!dests.length){ toast('Aucun destinataire « D » avec adresse e-mail.'); return; }
   const ref=code+'.PV.CH'+pvPad(pv.num,3);
   const subject='PV de chantier '+ref+' — '+(pvAffName(code)||code);
   const body=['Madame, Monsieur,','','Veuillez trouver en annexe le procès-verbal de la séance de chantier du '+pvDpt(pv.date)+' ('+ref+').',
     (pv.prochaine?'Prochaine séance : '+pv.prochaine:''),'',
     'Sans remarques écrites dans un délai de 5 jours suivant sa réception, le présent procès-verbal est considéré comme approuvé et contractuel.','',
     'Substances architectes sàrl','Rue de la Gare 12, 1096 Cully'].join(PV_NL);
-  location.href='mailto:'+dests.join(',')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  return {dests, miss, subject, body, nom:code+'_PV_CH'+pvPad(pv.num,3)+'.pdf'};
+}
+/* e-mail du PV : 1) Mac du bureau (serveur de sauvegarde) → brouillon Apple Mail avec le PDF joint et les destinataires « D » ;
+   2) iPad / navigateur qui partage des fichiers → feuille de partage avec le PDF (destinataires copiés) ; 3) sinon PDF téléchargé + e-mail préparé. */
+async function pvEnvoiMail(code, id){
+  const I=pvMailInfo(code, id); if(!I) return;
+  if(I.miss.length) toast('Adresses e-mail manquantes : '+I.miss.join(', '));
+  if(!I.dests.length) toast('Aucun destinataire « D » avec adresse e-mail : à compléter dans l’e-mail.');
+  const bytes=await pvPDF(code, id, 'bytes');
+  try{ const r=await fetch('http://127.0.0.1:7788/pdf?mode=pv&open=0&name='+encodeURIComponent(I.nom),{method:'POST',body:bytes}); const j=await r.json();
+    if(j&&j.ok){ const r2=await fetch('http://127.0.0.1:7788/mailpdf?dossier=pv&name='+encodeURIComponent(I.nom)+'&to='+encodeURIComponent(I.dests.join(','))+'&subject='+encodeURIComponent(I.subject)+'&body='+encodeURIComponent(I.body));
+      const j2=await r2.json(); if(j2&&j2.ok){ toast('E-mail préparé dans Mail : PV joint, '+I.dests.length+' destinataire(s) « D ».'); return; } } }catch(e){}
+  const file=new File([bytes], I.nom, {type:'application/pdf'});
+  if(navigator.canShare&&navigator.share&&navigator.canShare({files:[file]})){
+    try{ await navigator.clipboard.writeText(I.dests.join(', ')); }catch(e){}
+    try{ await navigator.share({files:[file], title:I.subject, text:I.body}); toast('Destinataires « D » copiés : collez-les dans le champ « À ».'); return; }
+    catch(e){ if(e&&e.name==='AbortError') return; } }
+  const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})), aa=document.createElement('a'); aa.href=url; aa.download=I.nom; document.body.appendChild(aa); aa.click(); aa.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
+  location.href='mailto:'+I.dests.join(',')+'?subject='+encodeURIComponent(I.subject)+'&body='+encodeURIComponent(I.body);
+  toast('PDF téléchargé : joignez-le à l’e-mail (le serveur de sauvegarde du Mac l’aurait joint automatiquement).');
 }
 /* ── PDF au graphisme des contrats/factures (Akkurat, traits 0.25, logo, pied dessiné) ── */
 async function pvLogoPng(idx){

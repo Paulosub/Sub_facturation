@@ -312,7 +312,20 @@ const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefi
   fail(m){ const n=$('#net'); n.className='err'; n.textContent='● Hors ligne'; n.title=m; } };
 
 /* Libellés des tables Deltaproject (colonnes NAMEFR / NAMEGE…) */
-const nm=r=>r?(r.NAMEFR||r.NAMEGE||r.NAMEEN||r.NAMEIT||r.NAME||''):'';
+/* Français seulement (07.10.2026) : un libellé n'existant qu'en allemand, italien ou anglais est traduit PROVISOIREMENT à l'affichage
+   (TRAD_FR, sinon texte d'origine) et proposé en français dans les fenêtres d'édition ; les textes des autres langues restent enregistrés,
+   un texte français existant n'est jamais remplacé. */
+const TRAD_FR={   // allemand / italien / anglais → français (provisoire, à l'affichage) — compléter au besoin
+  'Bankliste':'Liste bancaire','Honorarrechnung stellen':'Établir la facture d’honoraires','Nebenkosten verrechnen':'Facturer les frais annexes',
+  'Kopien verrechnen':'Facturer les copies','Administrator':'Administrateur','Standard':'Standard','Direktion':'Direction','Projektleiter':'Chef de projet',
+  'Mitarbeiter':'Collaborateur','Mitarbeiterin':'Collaboratrice','Stunden':'Heures','Spesen':'Frais','Aufgaben':'Tâches','Adressen':'Adresses',
+  'Projekte':'Projets','Projekt':'Projet','Rechnung':'Facture','Rechnungen':'Factures','Offerte':'Offre','Vertrag':'Contrat','Brief':'Lettre',
+  'Protokoll':'Procès-verbal','Notiz':'Note','Etiketten':'Étiquettes','Adressliste':'Liste d’adresses','Telefonliste':'Liste téléphonique',
+  'Allgemein':'Général','Diverses':'Divers','Diverse':'Divers','Sitzung':'Séance','Bauleitung':'Direction des travaux','Planung':'Planification',
+  'Fatture':'Factures','Fattura':'Facture','Progetto':'Projet','Riunione':'Séance','Invoice':'Facture','Meeting':'Séance','Project':'Projet','Contract':'Contrat'};
+const trFr=s=>{ if(s==null) return s; const k=String(s).trim(); return TRAD_FR[k]||TRAD_FR[k.toLowerCase()]||k; };
+const nmFr=r=>r?(r.NAMEFR||trFr(r.NAMEGE||r.NAMEIT||r.NAMEEN||'')||''):'';
+const nm=r=>r?(nmFr(r)||r.NAME||''):'';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    COMPOSANTS D'INTERFACE
@@ -618,7 +631,7 @@ function editContact(c,owner,rel,after){
     L('Fax'),tri('FAXCOUNTRY1','FAXAREA1','FAXNUMBER1'),
     L('Courriel',1),I('EMAIL1'), L('Skype'),I('SKYPE'), L('Site internet'),I('INTERNET'));
   const at=h('select',{class:'inp','data-k':'ADDRESSTYPECODE'},...ADR_T.map((t,i)=>h('option',{value:i,selected:i===v.ADDRESSTYPECODE||null},t)));
-  const lg=h('select',{class:'inp','data-k':'LANGUAGECODE'},...Object.entries(LANG_T).map(([k,t])=>h('option',{value:k,selected:+k===v.LANGUAGECODE||null},t)));
+  const lg=h('select',{class:'inp','data-k':'LANGUAGECODE'},h('option',{value:2,selected:true},'Français'));   // français seulement
   const stt=h('select',{class:'inp','data-k':'CONTACTSTATE_ID'},h('option',{value:''},''),...DS.all('contactstate').sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).map(x=>h('option',{value:x.ID,selected:x.ID===v.CONTACTSTATE_ID||null},nm(x))));
   const hid=h('input',{type:'checkbox',checked:!!v.ISHIDDEN||null});
   const sal=I('SALUTATION1'); sal.setAttribute('list','dl-sal');
@@ -1226,7 +1239,7 @@ const projActive=p=>p&&p.PROJECTSTATECODE!==5;
 /* Affaires où un collaborateur est intervenant « Collaborateurs » (rôle 12) : condition de saisie des heures */
 function staffProjects(staff){ if(!staff) return []; const pid=staff.PERSON_ID;
   return [...new Set(DS.all('projectmember').filter(m=>m.TEAMROLECODE===12&&m.RESPCONTACT_ID===pid).map(m=>m.PROJECT_ID))].map(id=>DS.get('project',id)).filter(Boolean); }
-const lang4=(v)=>[['NAMEGE','Deutsch'],['NAMEFR','Français'],['NAMEIT','Italiano'],['NAMEEN','English']].map(([k,t])=>[t,h('input',{class:'inp',value:v[k]||'','data-k':k})]);
+const lang4=(v)=>[['Nom',h('input',{class:'inp',value:nmFr(v),'data-k':'NAMEFR'})]];   // français seulement (les autres langues restent enregistrées)
 function formRows(rows,minW){ return h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:(minW||440)+'px'}},...rows.flatMap(([l,x])=>[h('label',{},l),x])); }
 function readK(bd,v,nums){ $$('input[data-k],select[data-k],textarea[data-k]',bd).forEach(e=>{ const k=e.dataset.k; if(e.type==='checkbox'){ v[k]=e.checked?1:0; return; } const x=e.value.trim(); v[k]=x===''?null:((nums||[]).includes(k)?+x:x); }); return v; }
 const nI=(v,k,w)=>h('input',{class:'inp',type:'number',step:'any',value:v[k]??'','data-k':k,style:{width:w||'120px'}});
@@ -2301,7 +2314,9 @@ VIEWS['h-dispo']={
 /* ═══ MODÈLES · Administrateur (p.10-11) — propriétés, statuts, heures prévues, jours fériés ═══ */
 const ADM={cat:'Heures prévues'};
 function easter(y){ const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h2=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h2-k)%7,m=Math.floor((a+11*h2+22*l)/451),mo=Math.floor((h2+l-7*m+114)/31),da=((h2+l-7*m+114)%31)+1; return new Date(y,mo-1,da); }
-function holidayDate(x,y){ if(x.TYPECODE===1){ const d=easter(y); d.setDate(d.getDate()+(x.NOFDAYSEASTERSUNDAY||0)); return d; } if(x.TYPECODE===2&&x.DATEYEAR!==y) return null; return new Date(y,x.DATEMONTH,x.DATEDAY); }
+function holidayDate(x,y){ if(x.TYPECODE===1){ const d=easter(y); d.setDate(d.getDate()+(x.NOFDAYSEASTERSUNDAY||0)); return d; }
+  /* Lundi du Jeûne fédéral (VD) : lundi après le 3e dimanche de septembre */ if(x.TYPECODE===3){ const d=new Date(y,8,1); return new Date(y,8,1+(7-d.getDay())%7+15); }
+  if(x.TYPECODE===2&&x.DATEYEAR!==y) return null; return new Date(y,x.DATEMONTH,x.DATEDAY); }
 VIEWS['config']={
   render(m){
     const cols=h('div',{class:'cols'}); m.append(cols);
@@ -2338,7 +2353,7 @@ function admPane(R,c){
   if(c==='Jours fériés'){ const y=new Date().getFullYear();
     simple('publicholiday',[{k:'n',t:'Le jour férié',f:x=>esc(nm(x))},{k:'d',t:'Date '+y,w:110,f:x=>{ const d=holidayDate(x,y); return d?dfr(diso(d)):''; },v:x=>{ const d=holidayDate(x,y); return d?d.getTime():0; }},{k:'ISON',t:'Visible',w:70,cls:'c',f:x=>x.ISON?'✔':''}],DS.all('publicholiday'),x=>{
       const v=x?{...x}:{ID:null,TYPECODE:0,DATEDAY:1,DATEMONTH:0,ISON:1,OFFTYPECODE:0,SORTORDER:DS.all('publicholiday').length};
-      const ty=h('select',{class:'inp','data-k':'TYPECODE'},...['Chaque année le (jour.mois)','Chaque année, jours après Pâques','Unique'].map((t2,i)=>h('option',{value:i,selected:i===v.TYPECODE||null},t2)));
+      const ty=h('select',{class:'inp','data-k':'TYPECODE'},...['Chaque année le (jour.mois)','Chaque année, jours après Pâques','Unique','Lundi du Jeûne fédéral (calculé)'].map((t2,i)=>h('option',{value:i,selected:i===v.TYPECODE||null},t2)));
       const dd=h('input',{class:'inp',type:'date',value:v.TYPECODE===1?'':diso(new Date(v.DATEYEAR||y,v.DATEMONTH||0,v.DATEDAY||1)),style:{width:'160px'}});
       dialog({title:x?'Editer le jour férié':'Nouveau jour férié',body:formRows([['Français',tI(v,'NAMEFR')],['Date',ty],['Jour / mois (ou date unique)',dd],['Jours après Pâques',nI(v,'NOFDAYSEASTERSUNDAY','80px')],
         ['Type',h('select',{class:'inp','data-k':'OFFTYPECODE'},...['Tout le jour','Matin','Après-midi'].map((t2,i)=>h('option',{value:i,selected:i===v.OFFTYPECODE||null},t2)))],['',h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':'ISON',checked:!!v.ISON||null}),' Visible')]]),
@@ -6778,7 +6793,7 @@ function tplView(cat,title){ return {
     const drawD=()=>{ prev.innerHTML=''; const md=DS.get('modele',TP.m.sel), [lg,pn]=String(TP.p.sel||'').split('|'); const pg=md&&md.langues[lg]&&md.langues[lg].pages[pn];
       if(!pg){ prev.append(h('div',{class:'ph'},'Choisissez une page.')); return; }
       const k=Math.min(TP.zoom,(prev.clientWidth-40)/(pg.largeur||595)); const w=h('div',{html:tplPageHTML(pg,k>0?k:TP.zoom,{})}); w.ondblclick=()=>tplOpenEditor(); prev.append(w); };
-    const drawC=()=>{ const md=DS.get('modele',TP.m.sel); const rows=md?Object.entries(md.langues).flatMap(([lg,L])=>Object.keys(L.pages).sort((a,b)=>cmp(Object.keys(TPL_PAGE_L).indexOf(a),Object.keys(TPL_PAGE_L).indexOf(b))).map(pn=>({k:lg+'|'+pn,lg,pn}))):[];
+    const drawC=()=>{ const md=DS.get('modele',TP.m.sel); const rows=md?Object.entries(md.langues).filter(([lg])=>lg==='fr'||!md.langues.fr).flatMap(([lg,L])=>Object.keys(L.pages).sort((a,b)=>cmp(Object.keys(TPL_PAGE_L).indexOf(a),Object.keys(TPL_PAGE_L).indexOf(b))).map(pn=>({k:lg+'|'+pn,lg,pn}))):[];
       if(!rows.some(r=>r.k===TP.p.sel)) TP.p.sel=(rows.find(r=>r.lg==='fr'&&r.pn==='page1')||rows[0]||{}).k;
       grid(C.pane,Object.assign(TP.p,{key:r=>r.k,cols:[{k:'pn',t:'Modèle',f:r=>esc(TPL_PAGE_L[r.pn]||r.pn)},{k:'lg',t:'Langue',w:70,f:r=>TPL_LANG[r.lg]||r.lg}],rows,sort:null,onSel:drawD,onDbl:()=>tplOpenEditor()})); drawD(); };
     const drawB=()=>{ const g=DS.get('modelegroupe',TP.g.sel); const rows=g?tplModelesOf(cat).filter(x=>x.groupe===g.groupe):[];
@@ -6812,9 +6827,9 @@ function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez u
     if(DS.get('modele',tplKey(c))&&!await confirmDlg('Un modèle de ce type et de ce nom existe déjà dans le groupe. Le remplacer ?','Remplacer')) return false;
     await DS.commit([{t:'modele',id:tplKey(c),val:c}]); TP.m.sel=tplKey(c); }}]}); }
 function tplEditModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
-  const f={}; Object.keys(TPL_LANG).forEach(l=>f[l]=h('input',{class:'inp',value:(m.libelle||{})[l]||''}));
-  dialog({title:'Editer le modèle',body:h('div',{},formRows([['Type de modèle',h('span',{},m.type)],['Nom',h('span',{},m.nom)],...Object.entries(TPL_LANG).map(([l,t])=>[t,f[l]])],480),g.verrouille?h('div',{style:{color:'#9a5b00',marginTop:'8px'}},'Groupe « DELTA Originaux » : lecture seule.'):null),
-    buttons:[{t:'Annuler'},...(g.verrouille?[]:[{t:'OK',pri:true,fn:()=>DS.commit([{t:'modele',id:tplKey(m),val:{...m,libelle:Object.fromEntries(Object.keys(TPL_LANG).map(l=>[l,f[l].value.trim()]))}}])}])]}); }
+  const L0=m.libelle||{}, f={fr:h('input',{class:'inp',value:L0.fr||trFr(L0.de||L0.it||L0.en||'')||''})};   // français seulement
+  dialog({title:'Editer le modèle',body:h('div',{},formRows([['Type de modèle',h('span',{},m.type)],['Nom',h('span',{},m.nom)],['Libellé',f.fr]],480),g.verrouille?h('div',{style:{color:'#9a5b00',marginTop:'8px'}},'Groupe « DELTA Originaux » : lecture seule.'):null),
+    buttons:[{t:'Annuler'},...(g.verrouille?[]:[{t:'OK',pri:true,fn:()=>DS.commit([{t:'modele',id:tplKey(m),val:{...m,libelle:{...(m.libelle||{}),fr:f.fr.value.trim()}}}])}])]}); }
 async function tplDelModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
   if(g.verrouille){ toast('Le groupe « DELTA Originaux » n’est pas modifiable.',true); return; }
   if(await confirmDlg('Supprimer le modèle « '+tplLabel(m)+' » ('+m.nom+') du groupe « '+(g.libelle||m.groupe)+' » ?','Supprimer')) DS.del('modele',tplKey(m)); }
@@ -9046,7 +9061,7 @@ const QR_TXT={de:{payment_part:'Zahlteil',account_payable_to:'Konto / Zahlbar an
   fr:{payment_part:'Section paiement',account_payable_to:'Compte / Payable à',reference:'Référence',additional_info:'Informations supplémentaires',currency:'Monnaie',amount:'Montant',receipt:'Récépissé',acceptance_point:'Point de dépôt',payable_by:'Payable par',payable_by_name_addr:'Payable par (nom/adresse)'},
   it:{payment_part:'Sezione pagamento',account_payable_to:'Conto / Pagabile a',reference:'Riferimento',additional_info:'Informazioni supplementari',currency:'Valuta',amount:'Importo',receipt:'Ricevuta',acceptance_point:'Punto di accettazione',payable_by:'Pagabile da',payable_by_name_addr:'Pagabile da (nome/indirizzo)'},
   en:{payment_part:'Payment part',account_payable_to:'Account / Payable to',reference:'Reference',additional_info:'Additional information',currency:'Currency',amount:'Amount',receipt:'Receipt',acceptance_point:'Acceptance point',payable_by:'Payable by',payable_by_name_addr:'Payable by (name/address)'}};
-const QR_LANGS=[['de','Deutsch'],['fr','Français'],['it','Italiano'],['en','English']];
+const QR_LANGS=[['fr','Français']];   // français seulement
 /* chasses Helvetica (CharWidthData, 1/1000 em) : 0x20-0x7E puis 0xA0-0xFF, normal et gras */
 const QR_CW=[[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584],
   [278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,549,333,333,333,576,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,549,611,556,556,556,556,500,556,500],
@@ -9567,13 +9582,14 @@ function ptPrintList(list,p,state){ const title='Liste des tâches de l’affair
 function admTasks(R){
   const T0=ADM.tk||(ADM.tk={og:{},ot:{}}), og=T0.og, ot=T0.ot, bg=h('div',{class:'pane'}), bt=h('div',{class:'pane'});
   if(og.sel!=null&&!DS.get('taskgroup',og.sel)) og.sel=null; { const x=ot.sel!=null&&DS.get('task',ot.sel); if(!x||!og.sel||x.TASKGROUP_ID!==+og.sel) ot.sel=null; }
-  const name=x=>x.NAMEFR||x.NAMEGE||'';
+  const name=x=>nmFr(x);
   const groups=()=>DS.all('taskgroup').sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)), tasks=()=>og.sel?DS.all('task').filter(x=>x.TASKGROUP_ID===+og.sel).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)):[];
   const drawG=()=>grid(bg,Object.assign(og,{cols:[{k:'n',t:'Groupe',f:x=>esc(name(x))}],rows:groups(),sort:null,onSel:()=>{ ot.sel=null; drawT(); },onDbl:x=>edG(x)}));
   const drawT=()=>grid(bt,Object.assign(ot,{cols:[{k:'n',t:'Tâche',w:260,f:x=>esc(name(x))},{k:'DESCRIPTION',t:'Description',f:x=>esc(ptCrop(x.DESCRIPTION))}],rows:tasks(),sort:null,onDbl:x=>edT(x)}));
   const form=(v,withDesc)=>{ const I=k=>h('input',{class:'inp',maxlength:64,value:v[k]||''}), F={NAMEGE:I('NAMEGE'),NAMEFR:I('NAMEFR'),NAMEIT:I('NAMEIT'),NAMEEN:I('NAMEEN')};
     const d=withDesc?h('textarea',{class:'inp',rows:6,maxlength:1024,style:{width:'100%'}},v.DESCRIPTION||''):null;
-    return {F,d,el:formRows([['Allemand',F.NAMEGE],['Français',F.NAMEFR],['Italien',F.NAMEIT],['Anglais',F.NAMEEN],...(d?[['Description',d]]:[])],520)}; };
+    if(!F.NAMEFR.value) F.NAMEFR.value=nmFr(v);   // traduction provisoire proposée
+    return {F,d,el:formRows([['Nom',F.NAMEFR],...(d?[['Description',d]]:[])],520)}; };   // français seulement
   const read=(v,x)=>{ Object.keys(x.F).forEach(k=>v[k]=x.F[k].value.trim()||null); if(x.d) v.DESCRIPTION=x.d.value.trim()||null; };
   const edG=g=>{ const v=g?{...g}:{ID:null,SORTORDER:(Math.max(0,...groups().map(x=>+x.SORTORDER||0)))+1}, x=form(v,false);
     dialog({title:g?'Editer le groupe de tâches':'Nouveau groupe de tâches',body:x.el,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!x.F.NAMEFR.value.trim()){ toast('Saisissez le nom en français.',true); return false; } read(v,x); await DS.save('taskgroup',v); og.sel=String(v.ID); drawG(); drawT(); }}]}); };
@@ -12726,7 +12742,7 @@ function svbAdmPane(R){ const CAT='Comparaison des offres';
   const warn=h('div',{style:{color:'#9a5b00',padding:'4px 12px',minHeight:'18px'}});
   const edit=(t,x,extra)=>{ const isG=t==='bidcriteriongroup', v=x?{...x}:{ID:null,SORTORDER:(isG?G():Cs()).length+1,QUANTIFIER:0,...(extra||{})}, bs=x?ctBseq(t,x.ID):0;
     const I=k=>h('input',{class:'inp',value:v[k]??''}), f={NAMEFR:I('NAMEFR'),NAMEGE:I('NAMEGE'),NAMEIT:I('NAMEIT'),NAMEEN:I('NAMEEN')}, q=h('input',{class:'inp',value:v.QUANTIFIER??0,style:{width:'100px',textAlign:'right'}});
-    const D=dialog({title:isG?(x?'Modifier le groupe':'Nouveau groupe'):(x?'Modifier le critère':'Nouveau critère'),body:formRows([['Français',f.NAMEFR],['Allemand',f.NAMEGE],['Italien',f.NAMEIT],['Anglais',f.NAMEEN],['Coefficient',h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},q,'%')]],480),
+    const D=dialog({title:isG?(x?'Modifier le groupe':'Nouveau groupe'):(x?'Modifier le critère':'Nouveau critère'),body:formRows([['Nom',f.NAMEFR],['Coefficient',h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},q,'%')]],480),
       buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!f.NAMEFR.value.trim()) return false; for(const k in f) v[k]=f[k].value.trim()||null; v.QUANTIFIER=+String(q.value).replace(',','.')||0;
         if(v.ID==null) v.ID=DS.newIds(t)[0]; await DS.commit([{t,id:v.ID,val:v,bseq:bs}]); if(isG) SVB_ADM.g.sel=String(v.ID); else SVB_ADM.c.sel=String(v.ID); draw(); }}]});
     const ok=ctOk(D), g=()=>{ ok.disabled=!f.NAMEFR.value.trim(); }; f.NAMEFR.oninput=g; g(); };
@@ -12740,7 +12756,7 @@ function svbAdmPane(R){ const CAT='Comparaison des offres';
   R.append(h('div',{style:{padding:'8px 12px',color:'#555'}},'Critères d’évaluation proposés par le bouton « importer » du dialogue « Evaluation » (COMPARATIF BREF). L’évaluation de tous les critères d’un groupe ou de tous les groupes doit toujours être 100 %.'),
     phead([h('b',{style:{margin:'0 8px'}},'Groupes'),ibtn({i:'plus',t:'Nouveau groupe',fn:()=>edit('bidcriteriongroup')}),bG.ed,bG.rm]),pG,
     phead([h('b',{style:{margin:'0 8px'}},'Critères du groupe'),bC.nw,bC.ed,bC.rm]),pC,warn);
-  const cols=first=>[{k:'NAMEFR',t:first,f:x=>esc(x.NAMEFR||'')},{k:'NAMEGE',t:'Allemand',w:150},{k:'NAMEIT',t:'Italien',w:150},{k:'NAMEEN',t:'Anglais',w:150},{k:'QUANTIFIER',t:'Coefficient',w:90,cls:'r',f:x=>num(x.QUANTIFIER,1)},{k:'p',t:'[%]',w:40,f:()=>'%'}];
+  const cols=first=>[{k:'NAMEFR',t:first,f:x=>esc(nmFr(x))},{k:'QUANTIFIER',t:'Coefficient',w:90,cls:'r',f:x=>num(x.QUANTIFIER,1)},{k:'p',t:'[%]',w:40,f:()=>'%'}];
   const upd=()=>{ const g=grp(), c=DS.get('bidcriterion',SVB_ADM.c.sel), cOk=!!(c&&g&&c.BIDCRITERIONGROUP_ID===g.ID); bG.ed.disabled=bG.rm.disabled=!g; bC.nw.disabled=!g; bC.ed.disabled=bC.rm.disabled=!cOk; };
   const draw=()=>{ const g=G(); if(!grp()&&g.length) SVB_ADM.g.sel=String(g[0].ID);
     grid(pG,Object.assign(SVB_ADM.g,{cols:cols('Groupe'),rows:g,sort:null,onSel:()=>{ SVB_ADM.c.sel=null; draw(); },onDbl:x=>edit('bidcriteriongroup',x),empty:'Aucun groupe de critères.'})); ctNoSort(pG);
@@ -19713,7 +19729,7 @@ const CH08B_NAMES=['NAMEGE','NAMEFR','NAMEIT','NAMEEN'];
 /* 4 colonnes, chacune titrée dans sa langue (displayAllColumns) ; champs des dialogues étiquetés dans leur langue */
 const CH08B_HEAD={appcompanyrole:['Geschäftsrolle','Fonction','Funzione','Roles'],approle:['Rolle','Jeux de privilèges','Ruolo','Roles']};
 const CH08B_FLBL={appcompanyrole:['Geschäftsrolle','Nom de la fonction','Nome della funzione','Role name'],approle:['Rollenname','Nom du jeu','Nome del ruolo','Role name']};
-const ch08bNameCols=t=>CH08B_NAMES.map((k,i)=>({k,t:CH08B_HEAD[t][i]}));
+const ch08bNameCols=t=>[{k:'NAMEFR',t:CH08B_HEAD[t][1],f:x=>esc(nmFr(x))}];   // français seulement
 function ch08bUserAdmin(){ if(!ch08aCan('userAdmin')){ toast('Vous n’avez pas les droits nécessaires.',true); return null; }
   ch08bCss(); let tab='Utilisateurs'; const G={u:{},f:{},r:{}}, tabs=h('div'), wrap=h('div'), box=h('div',{class:'ch08b-box',style:{height:'400px'}});
   const pick=g=>id=>{ if(id!=null) g.sel=String(id); draw(); };
@@ -19786,7 +19802,7 @@ function ch08bFuncDlg(f0,after){ ch08bCss(); const bs=f0?ch08bSeq('appcompanyrol
   const draw=()=>{ grid(bx,Object.assign(o,{cols:[{k:'NAMEFR',t:'Jeux de privilèges'}],rows:[...J].map(id=>DS.get('approle',id)).filter(Boolean).sort(ch08bByGe),sort:null,
     onSel:()=>{ bD.disabled=o.sel==null; }})); bD.disabled=o.sel==null; };
   draw();
-  return dialog({title:f0?'Editer la fonction':'Nouvelle fonction',width:'500px',body:h('div',{},formRows(CH08B_FLBL.appcompanyrole.map((l,i)=>[l,I[i]]),420),
+  return dialog({title:f0?'Editer la fonction':'Nouvelle fonction',width:'500px',body:h('div',{},formRows([[CH08B_FLBL.appcompanyrole[1],(I[1].value=I[1].value||nmFr(f0),I[1])]],420),
     h('div',{style:{marginTop:'12px'}},ch08bFrame([bA,bD],bx))),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
       const id=f0?f0.ID:DS.newIds('appcompanyrole')[0], val={...(f0||{ID:id})};
       CH08B_NAMES.forEach((k,i)=>{ val[k]=I[i].value.trim()||null; });
@@ -19802,7 +19818,7 @@ function ch08bRoleDlg(r0,after){ ch08bCss(); const bs=r0?ch08bSeq('approle',r0.I
   const draw=()=>{ grid(bx,Object.assign(o,{key:x=>x[1],cols:[{k:'l',t:'Privilèges',f:x=>esc(x[2])}],rows:CH08A_RIGHTS.filter(x=>set.has(x[1])),sort:null,
     onSel:()=>{ bD.disabled=o.sel==null; }})); bD.disabled=o.sel==null; };
   draw();
-  return dialog({title:r0?'Modifier le jeu de privilèges':'Nouveau jeu de privilèges',width:'560px',body:h('div',{},formRows(CH08B_FLBL.approle.map((l,i)=>[l,I[i]]),480),
+  return dialog({title:r0?'Modifier le jeu de privilèges':'Nouveau jeu de privilèges',width:'560px',body:h('div',{},formRows([[CH08B_FLBL.approle[1],(I[1].value=I[1].value||nmFr(r0),I[1])]],480),
     h('div',{style:{marginTop:'12px'}},ch08bFrame([bA,bD],bx))),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
       const id=r0?r0.ID:DS.newIds('approle')[0], val={...(r0||{ID:id})};
       CH08B_NAMES.forEach((k,i)=>{ val[k]=I[i].value.trim()||null; }); val.RIGHTS=ch08aRightsStr(set);
@@ -20102,7 +20118,7 @@ async function ch08dActiveUsers(redraw){ ch08dCss(); const o={}, box=h('div',{cl
 
 /* ── Préférences du poste (§ 3.7) : défauts = apparence actuelle de DeltaSub (13 px, lignes de 24 px, fond alterné, sans traits) ── */
 const CH08C_KEY='ds_ch08c_prefs';
-const CH08C_LANGS=[['de','Deutsch',1],['fr','Français',2],['it','Italiano',3],['en','English',4]];   // DocumentLanguages$Language ; LANGUAGECODE 1 à 4
+const CH08C_LANGS=[['fr','Français',2]];   // français seulement (Deltaproject : de 1, fr 2, it 3, en 4)   // DocumentLanguages$Language ; LANGUAGECODE 1 à 4
 /* le navigateur ne peut pas énumérer les polices du poste (GraphicsEnvironment.getAvailableFontFamilyNames) : liste fixe [C] */
 const CH08C_FONTS=[['','Système',''],['Helvetica Neue','Helvetica Neue','"Helvetica Neue",Helvetica,Arial,sans-serif'],['Arial','Arial','Arial,Helvetica,sans-serif'],
   ['Lucida Grande','Lucida Grande','"Lucida Grande","Lucida Sans Unicode",sans-serif'],['Verdana','Verdana','Verdana,Geneva,sans-serif']];

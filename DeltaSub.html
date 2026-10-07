@@ -7,7 +7,8 @@
 <!--
   DeltaSub — application de bureau de Substances Architectes, reproduction de DELTAproject.
   Fichier autonome (CSS + JS), SANS lien avec Facturation.html.
-  Données : base PARTAGÉE du bureau, servie par serveur_deltasub.py (Mac Studio, port 7790).
+  Données : base LOCALE du navigateur (IndexedDB), sans serveur, un seul utilisateur (décision du 06.10.2026).
+  Reprise : outils_deltaproject/exporter_base_deltasub.py → .json.gz → écran d'accueil ou Fichier ▸ Importer une base.
   Modèle de données = celui de Deltaproject : DS.all('project'), DS.get('contact', id)…
   (collections = tables Deltaproject en minuscules, champs = colonnes en MAJUSCULES).
   Cahier des charges : ANALYSE_DELTAPROJECT.md et le manuel DELTAproject (rsrc/help/manual_fr.pdf).
@@ -159,8 +160,28 @@ function toast(msg,err){ const t=$('#toast'); t.textContent=msg; t.className='on
    l'a modifié entre-temps (conflit) et renvoie la version à jour.
 ═══════════════════════════════════════════════════════════════════════════ */
 const HEAVY=['projectcatalogpos','catalogpos','doctemplate','formtemplate','costestimate','costcontrol','costplanning','modele','modelegroupe','arriereplan','image','modeledocument','soumission','soumissionhist'];   // chargées à la demande (DS.need)
+/* ── Base LOCALE (06.10.2026) : DeltaSub fonctionne SANS serveur, pour un seul utilisateur. Les données vivent dans le
+   navigateur (IndexedDB « DeltaSub » : magasin rec [t,id] → {t,id,s,v}, index t ; magasin meta : info, ids, tables).
+   Reprise : fichier .json.gz produit par outils_deltaproject/exporter_base_deltasub.py ; sauvegarde : Fichier ▸ Exporter la base locale. ── */
+const LDB={ db:null,
+  open(){ if(this.db) return Promise.resolve(this.db);
+    return new Promise((res,rej)=>{ let r; try{ r=indexedDB.open('DeltaSub',1); }catch(e){ rej(e); return; }
+      r.onupgradeneeded=()=>{ const d=r.result; d.createObjectStore('rec',{keyPath:['t','id']}).createIndex('t','t'); d.createObjectStore('meta'); };
+      r.onsuccess=()=>{ this.db=r.result; this.db.onversionchange=()=>{ this.db.close(); this.db=null; }; res(this.db); };
+      r.onerror=()=>rej(r.error||new Error('base locale illisible'));
+      r.onblocked=()=>rej(new Error('base locale bloquée : fermez les autres onglets DeltaSub')); }); },
+  req(r){ return new Promise((res,rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); },
+  async meta(k){ const d=await this.open(); return this.req(d.transaction('meta').objectStore('meta').get(k)); },
+  async table(t){ const d=await this.open(); return this.req(d.transaction('rec').objectStore('rec').index('t').getAll(t)); },
+  /* une transaction : enregistrements (v null = suppression) et métadonnées */
+  async write(recs,meta,clear){ const d=await this.open();
+    return new Promise((res,rej)=>{ const tx=d.transaction(['rec','meta'],'readwrite'), st=tx.objectStore('rec'), m=tx.objectStore('meta');
+      if(clear){ st.clear(); m.clear(); }
+      (recs||[]).forEach(x=>{ if(x.v==null) st.delete([x.t,x.id]); else st.put(x); }); for(const k in meta||{}) m.put(meta[k],k);
+      tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('écriture interrompue')); }); }
+};
 const DS={
-  seq:0, T:{}, S:{}, _idx:{}, _ls:[], loaded:new Set(),
+  seq:0, T:{}, S:{}, _idx:{}, _ls:[], loaded:new Set(), ids:{}, tables:new Set(), linfo:null,
   who(){ try{ const u=DS.get('appuser',localStorage.getItem('ds_user')); return u?u.USERID:''; }catch(_){ return ''; } },
   all(t){ return Object.values(this.T[t]||{}); },
   get(t,id){ return id==null?null:(this.T[t]||{})[String(id)]||null; },
@@ -171,49 +192,69 @@ const DS={
   _put(t,id,s,v){ const T=this.T[t]||(this.T[t]={}), S=this.S[t]||(this.S[t]={});
     if(v==null){ delete T[id]; } else T[id]=v; S[id]=s;
     for(const k in this._idx) if(k.startsWith(t+'|')) delete this._idx[k]; },
-  _ingest(d){ for(const t in d.tables){ const e=d.tables[t], S=this.S[t]||{}; for(const id in e){ if(S[id]!=null&&S[id]>e[id].s) continue; this._put(t,id,e[id].s,e[id].v); } }   // eCCC lot 1 : jamais une version plus ancienne que celle déjà lue ou enregistrée
-    if(d.seq>this.seq) this.seq=d.seq; },
+  _rows(t,rows){ rows.forEach(r=>this._put(t,String(r.id),r.s||0,r.v)); this.loaded.add(t); },
+  /* base vide → erreur {vide:true} : l'écran d'accueil propose l'import */
   async boot(){
-    const p=await (await fetch('/api/ping',{cache:'no-store'})).json(); this.info=p;
-    $('#boot-msg').textContent='Chargement des données du bureau…';
-    const d=await (await fetch('/api/snapshot?x='+HEAVY.join(','),{cache:'no-store'})).json();
-    this._ingest(d); Object.keys(d.tables).forEach(t=>this.loaded.add(t));
+    this.linfo=await LDB.meta('info'); if(!this.linfo){ const e=new Error('base locale vide'); e.vide=true; throw e; }
+    this.info={ok:true,local:true,auth:false,import:this.linfo}; this.seq=+this.linfo.seq||0;
+    this.ids=(await LDB.meta('ids'))||{}; this.tables=new Set((await LDB.meta('tables'))||[]);
+    $('#boot-msg').textContent='Chargement de la base locale…';
+    for(const t of this.tables) if(!HEAVY.includes(t)) this._rows(t,await LDB.table(t));
     ['projecttask','projecttasknote','meetingitem','projectnote','task','taskgroup',...HF_TABLES,...PL_TABLES,...SV_TABLES].forEach(t=>this.loaded.add(t));   // collections éventuellement vides
   },
-  async need(tables){ const miss=tables.filter(t=>!this.loaded.has(t)); if(!miss.length) return;
-    const r0=await fetch('/api/snapshot?t='+miss.join(','),{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); throw new Error('session'); } const d=await r0.json();
-    miss.forEach(t=>this.loaded.add(t)); this._ingest(d); },
-  newIds(t,n=1){ const x=new XMLHttpRequest(); x.open('GET','/api/ids?t='+t+'&n='+n,false); x.send(); if(x.status===401){ ch08dExpired(x); throw new Error('session'); } return JSON.parse(x.responseText); },
+  async need(tables){ const miss=tables.filter(t=>!this.loaded.has(t)); for(const t of miss) this._rows(t,this.tables.has(t)?await LDB.table(t):[]); },
+  /* identifiants entiers (comme Deltaproject) : prochain id par collection, gardé en meta « ids » */
+  newIds(t,n=1){ let nx=+this.ids[t]||0;
+    if(!nx){ let mx=0; for(const id in (this.T[t]||{})) if(/^\d+$/.test(id)) mx=Math.max(mx,+id); nx=mx+1; }
+    this.ids[t]=nx+n; LDB.write([],{ids:this.ids}).catch(e=>console.error(e));
+    return Array.from({length:n},(_,i)=>nx+i); },
   async commit(ops){
-    const body={who:this.who(), ops:ops.map(o=>({t:o.t,id:String(o.id),val:o.val,bseq:o.bseq!=null?o.bseq:((this.S[o.t]||{})[String(o.id)]||0)}))};   // o.bseq : version lue à l'ouverture d'un dialogue
-    let r;
-    try{ r=await fetch('/api/commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
-    catch(e){ NET.fail('serveur injoignable'); toast('✗ Enregistrement impossible : serveur injoignable.',true); throw e; }
-    const d=await r.json();
-    if(r.status===401||r.status===403){ ch08dRefused(r.status,d); const e=new Error('session'); e.conflict=true; throw e; }
-    if(r.status===409){ d.conflicts.forEach(c=>this._put(c.t,c.id,c.seq,c.val)); this._emit(d.conflicts.map(c=>c.t));
-      toast('⚠ Modifié entre-temps sur un autre poste : la version à jour est affichée, reprenez votre saisie.',true);
-      const e=new Error('conflit'); e.conflict=true; throw e; }
-    if(!d.ok){ toast('✗ '+(d.error||'erreur serveur'),true); throw new Error(d.error); }
-    ops.forEach(o=>this._put(o.t,String(o.id),d.seq,o.val==null?null:o.val));
-    NET.ok(); this._emit([...new Set(ops.map(o=>o.t))]); return d.seq;
+    const seq=this.seq+1, recs=ops.map(o=>({t:o.t,id:String(o.id),s:seq,v:o.val==null?null:o.val})), meta={info:{...this.linfo,seq},ids:this.ids};
+    if(recs.some(r=>r.v!=null&&!this.tables.has(r.t))){ recs.forEach(r=>{ if(r.v!=null) this.tables.add(r.t); }); meta.tables=[...this.tables]; }
+    try{ await LDB.write(recs,meta); }
+    catch(e){ toast('✗ Enregistrement impossible dans la base locale : '+(e&&e.message||e),true); throw e; }
+    this.seq=seq; this.linfo=meta.info; ops.forEach(o=>this._put(o.t,String(o.id),seq,o.val==null?null:o.val));
+    NET.ok(); this._emit([...new Set(ops.map(o=>o.t))]); return seq;
   },
   save(t,rec){ if(rec.ID==null) rec.ID=this.newIds(t)[0]; return this.commit([{t,id:rec.ID,val:rec}]); },
   del(t,id){ return this.commit([{t,id,val:null}]); },
   on(fn){ this._ls.push(fn); },
   _emit(ts){ this._ls.forEach(f=>{ try{ f(ts); }catch(e){ console.error(e); } }); },
-  async poll(){
-    if(this._polling) return; this._polling=true;
-    try{ const r0=await fetch('/api/changes?since='+this.seq,{cache:'no-store'}); if(r0.status===401){ ch08dExpired(r0); return; } const d=await r0.json();
-      const ts=Object.keys(d.tables).filter(t=>this.loaded.has(t));
-      for(const t of Object.keys(d.tables)) if(!this.loaded.has(t)) delete d.tables[t];
-      const before=this.seq; this._ingest(d); NET.ok();
-      if(ts.length && d.seq>before) this._emit(ts);
-    }catch(e){ NET.fail('serveur injoignable'); }
-    finally{ this._polling=false; }
-  }
+  async poll(){}   // un seul poste : rien à suivre
 };
-const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefined'&&ME.u; n.textContent='● Base du bureau'+(u?' — '+(staffName(ME.staff)||u.NAME):''); n.title='Données partagées (serveur DeltaSub). Double-clic : changer d’utilisateur.'; },
+/* Import d'une base (.json.gz de exporter_base_deltasub.py, ou sauvegarde « Exporter la base locale ») : REMPLACE la base locale */
+async function lbRead(file){ const gz=/\.gz$/i.test(file.name);
+  const txt=gz?await new Response(file.stream().pipeThrough(new DecompressionStream('gzip'))).text():await file.text();
+  const d=JSON.parse(txt); if(!d||typeof d.tables!=='object') throw new Error('ce fichier n’est pas une base DeltaSub'); return d; }
+async function lbImport(file,onStep){ const d=await lbRead(file), ts=Object.keys(d.tables), ids={...(d.ids||{})}, step=onStep||(()=>{});
+  let n=0, buf=[]; const flush=async(first)=>{ await LDB.write(buf,null,first); buf=[]; };
+  await LDB.write([],null,true);
+  for(const t of ts){ const e=d.tables[t]; let mx=0;
+    for(const id in e){ if(e[id].v==null) continue; buf.push({t,id:String(id),s:+e[id].s||0,v:e[id].v}); n++; if(/^\d+$/.test(id)) mx=Math.max(mx,+id);
+      if(buf.length>=4000){ await flush(); step(n); } }
+    ids[t]=Math.max(+ids[t]||0,mx+1); }
+  await flush();
+  await LDB.write([],{ids,tables:ts,info:{seq:+d.seq||0,source:d.source||file.name,imported:new Date().toISOString().slice(0,19)}});
+  return n; }
+function lbImportDlg(first){ const inp=h('input',{type:'file',accept:'.gz,.json,application/gzip,application/json'});
+  inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; if(!f) return;
+    if(!first&&!await confirmDlg('Importer « '+f.name+' » ?\n\nLa base locale actuelle sera REMPLACÉE. Exportez-la d’abord si vous voulez la garder.','Remplacer')) return;
+    const msg=$('#boot-msg')||null; try{ const n=await lbImport(f,k=>{ if(msg) msg.textContent='Import… '+k+' enregistrements'; else toast('Import… '+k+' enregistrements'); });
+      toast(n+' enregistrements importés.'); setTimeout(()=>location.reload(),600); }
+    catch(e){ console.error(e); if(msg) msg.textContent='✗ Import impossible : '+e.message; else toast('✗ Import impossible : '+e.message,true); } };
+  inp.click(); }
+/* Fichier ▸ Exporter la base locale : toutes les collections (y compris les catalogues lourds), .json.gz téléchargé */
+async function lbExport(){ try{ toast('Export de la base locale…'); const parts=['{"format":"deltasub-base","version":1,"source":"DeltaSub (base locale)","exported":'+JSON.stringify(new Date().toISOString().slice(0,19))+
+    ',"seq":'+DS.seq+',"ids":'+JSON.stringify(DS.ids)+',"tables":{'];
+  let first=true, n=0; for(const t of [...DS.tables].sort()){ const rows=await LDB.table(t); if(!rows.length) continue;
+    parts.push((first?'':',')+JSON.stringify(t)+':{'+rows.map(r=>JSON.stringify(r.id)+':{"s":'+(r.s||0)+',"v":'+JSON.stringify(r.v)+'}').join(',')+'}'); first=false; n+=rows.length; }
+  parts.push('}}');
+  const gz=await new Response(new Blob(parts,{type:'application/json'}).stream().pipeThrough(new CompressionStream('gzip'))).blob();
+  const d=new Date(), p2=x=>String(x).padStart(2,'0'), name='deltasub_base_'+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+'_'+p2(d.getHours())+p2(d.getMinutes())+'.json.gz';
+  const a=h('a',{href:URL.createObjectURL(gz),download:name}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000);
+  toast('Base exportée : '+n+' enregistrements ('+name+').'); }
+  catch(e){ console.error(e); toast('✗ Export impossible : '+e.message,true); } }
+const NET={ ok(){ const n=$('#net'); n.className=''; const u=typeof ME!=='undefined'&&ME.u; n.textContent='● Base locale'+(u?' — '+(staffName(ME.staff)||u.NAME):''); n.title='Données dans ce navigateur (sans serveur). Sauvegarde : Fichier ▸ Exporter la base locale.'; },
   fail(m){ const n=$('#net'); n.className='err'; n.textContent='● Hors ligne'; n.title=m; } };
 
 /* Libellés des tables Deltaproject (colonnes NAMEFR / NAMEGE…) */
@@ -8130,6 +8171,15 @@ const FE_Z1=['Architectes, SIA 102: 0.062','Génie civil, SIA 103: 0.075','Archi
 const FE_Z2=['Architectes, SIA 102: 10.58','Génie civil, SIA 103: 7.23','Architectes paysagistes, SIA 105: 10.58','Ingénieurs mécaniciens, électriciens et spécialistes en installations du bâtiment, SIA 108: 11.28'];
 const FE_RATE=['Taux horaire(s) h SIA: 100 CHF/h'];
 const FE_PARTS={31:9,32:21,33:2.5,41:18,51:16,52:29,53:4.5};           // parts SIA par défaut (q = 100 %)
+/* Prestations détaillées des phases partielles et catégories d'ouvrage (n) : méthode du bureau, reprise de Facturation.html (SIA, CH_CAT) */
+const FE_DET={31:[['431a','Recherche de partis et estimation sommaire des coûts',3],['431b','Avant-projet et estimation des coûts',6]],
+  32:[['432a','Projet de l’ouvrage',13],['432b','Études de détail',4],['432c','Devis',4]],33:[['433','Procédure de demande d’autorisation',2.5]],
+  41:[['441a','Plans d’appels d’offres',10],['441b','Appels d’offres et adjudications',8]],51:[['451a','Plans d’exécution',15],['451b','Contrats d’entreprises',1]],
+  52:[['452a','Direction architecturale',6],['452b','Direction des travaux et contrôle des coûts',23]],
+  53:[['453a','Mise en service',1],['453b','Documentation de l’ouvrage',1],['453c','Direction des travaux de garanties',1.5],['453d','Décompte final',1]]};
+const FE_CAT=[['I',0.7,'Logement de fortune, entrepôts'],['II',0.8,'Entrepôts sur plusieurs niveaux, serres'],['III',0.9,'Immeubles collectifs simples'],
+  ['IV',1.0,'Logements semblables (courant)'],['V',1.1,'Logements à plans d’étages non répétitifs'],['VI',1.2,'Haute école, institut de recherche, hôtels de ville'],
+  ['VII',1.3,'Cliniques universitaires, laboratoires']];
 const FE_IT={time:{t:'projectfeetimeitem',fk:'PROJECTFEETIMECALC_ID'},cost:{t:'projectfeecostitem',fk:'PROJECTFEECOSTCALC_ID'},additional:{t:'projectfeeadditionalitem',fk:'PROJECTFEEADDITIONALCALC_ID'}};
 
 /* ── Calculs purs (testés : lot2_test.js) ── */
@@ -8155,12 +8205,13 @@ function feSuggest(v){ const L=[v], add=x=>{ if(x>0&&!L.includes(x)) L.push(x); 
 function feBkpSuggest(sum,cur){ const L=[sum===0?cur:sum], add=x=>{ if(x>0&&!L.includes(x)) L.push(x); };
   [1000,100,10,5].forEach(f=>add(Math.trunc(sum/f)*f)); [5,10,100,1000].forEach(f=>add(Math.round(sum/f)*f)); return L; }
 /* CALCULATIONDETAILS (ProjectFeeCalculationFactors) : [ {V,B,Z1,Z2,P,Q,R,N,U,Tm,Rate}, [CFC], [phases] ] */
-const feFactorsNew=()=>({B:0,Z1:0,Z2:0,P:0,Q:100,R:1,N:1,U:1,Tm:0,Rate:0,bkp:[],phases:[]});
+const feFactorsNew=()=>({B:0,Z1:0,Z2:0,P:0,Q:100,R:1,N:1,U:1,Tm:0,Rate:0,bkp:[],phases:[],ext:{}});   // ext : compléments DeltaSub (4e élément du JSON)
 function feFactorsRead(s){ const F=feFactorsNew(); if(!s) return F;
   try{ const a=JSON.parse(s), h0=a[0]||{}, d=(v,z)=>v==null||!isFinite(+v)?z:+v;
     ['B','Z1','Z2','P','Q','R','N','U','Tm','Rate'].forEach(k=>{ F[k]=d(h0[k],F[k]); });
     F.bkp=(a[1]||[]).map(b=>({N:String(b.N??''),T:b.T||'',A:d(b.A,0),Bkp:(b.Bkp||[]).map(x=>({N:String(x.N??''),T:x.T||'',A:d(x.A,0)}))}));
     F.phases=(a[2]||[]).map(ph=>({Nu:d(ph.Nu,0),Na:ph.Na||'',Sub:(ph.Sub||[]).map(sp=>({Nu:d(sp.Nu,0),Na:sp.Na||'',P:d(sp.P,0),I:d(sp.I,1),Rate:d(sp.Rate,0),S:d(sp.S,1)}))}));
+    F.ext=a[3]&&typeof a[3]==='object'&&!Array.isArray(a[3])?a[3]:{};
   }catch(e){ console.error('CALCULATIONDETAILS illisible',e); }
   return F; }
 const feD=v=>{ v=+v||0; return Number.isInteger(v)?v.toFixed(1):String(v); };          // double Java : 100.0
@@ -8168,7 +8219,8 @@ function feFactorsWrite(F){ const q=JSON.stringify;
   const head='{"V":1'+['B','Z1','Z2','P','Q','R','N','U','Tm','Rate'].map(k=>','+q(k)+':'+feD(F[k])).join('')+'}';
   const bkp='['+(F.bkp||[]).map(b=>'{"N":'+q(String(b.N))+',"T":'+q(b.T||'')+',"A":'+feD(b.A)+',"Bkp":['+(b.Bkp||[]).map(x=>'{"N":'+q(String(x.N))+',"T":'+q(x.T||'')+',"A":'+feD(x.A)+'}').join(',')+']}').join(',')+']';
   const ph='['+(F.phases||[]).map(p=>'{"Nu":'+(Math.trunc(+p.Nu)||0)+',"Na":'+q(p.Na||'')+',"Sub":['+(p.Sub||[]).map(s=>'{"Nu":'+(Math.trunc(+s.Nu)||0)+',"Na":'+q(s.Na||'')+',"P":'+feD(s.P)+',"I":'+feD(s.I)+',"Rate":'+feD(s.Rate)+',"S":'+feD(s.S)+'}').join(',')+']}').join(',')+']';
-  return '['+head+','+bkp+','+ph+']'; }
+  const ext=F.ext&&Object.keys(F.ext).length?','+q(F.ext):'';   // 4e élément seulement s'il y a des compléments (sinon format d'origine)
+  return '['+head+','+bkp+','+ph+ext+']'; }
 /* initialisation unique (champ null) : CFC du catalogue standard FR (groupes à 1 caractère, positions à 2) + phases 3, 4, 5 de l'affaire (instantané) */
 function feFactorsInit(p){ const F=feFactorsNew();
   const cat=DS.all('catalog').find(c=>+c.ISSTANDARDCATALOG&&+c.LANGUAGECODE===2)||DS.get('catalog',101); let sec=null;
@@ -8378,6 +8430,8 @@ async function feSIA(W,done,ro){ const p=W.p, cur=hfCur(p);   // ro : consultati
   const sugg=(inp,list)=>ibtn({i:'prev',t:'Suggestions',menu:()=>list.map(s=>({t:s,fn:()=>{ const v=feSuggVal(s); if(v!=null){ inp.value=num(v,inp===fZ1?4:2); inp.dispatchEvent(new Event('input')); } }}))});
   /* coût déterminant B : ◀ Calculer… / Annuler le calcul / Import de DELTAdevis… */
   const bB=ibtn({i:'prev',t:'Coût d’ouvrage déterminant le temps nécessaire',menu:()=>[{t:'Calculer …',fn:()=>feBkp(F,cur,()=>{ fB.value=num(F.B,2); calcP(); })},
+    {t:'Déterminer B selon l’art. 4.3.1 (coût TTC − honoraires) …',fn:()=>feB431(F,cur,()=>({Z1:hfNum(fZ1.value)||0,Z2:hfNum(fZ2.value)||0,R:hfNum(fR.value)||0,N:hfNum(fN.value)||0,U:hfNum(fU.value)||0}),
+      B=>{ fB.value=num(B,2); calcP(); })},'-',
     {t:'Annuler le calcul',fn:()=>{ F.bkp.forEach(s=>{ s.A=0; s.Bkp.forEach(x=>{ x.A=0; }); }); F.B=0; fB.value=num(0,2); calcP(); }},
     {t:'Import de DELTAdevis …',dis:typeof dvCompute!=='function',fn:()=>feBkpImport(F,p,()=>{ fB.value=num(F.B,2); calcP(); })}]});
   /* tableau des phases 3-5 : dessiné avec le Tm et le q du dernier « Calculer les phases » */
@@ -8395,11 +8449,13 @@ async function feSIA(W,done,ro){ const p=W.p, cur=hfCur(p);   // ro : consultati
     {t:'Ajouter les heures et les coûts au budget dans l’analyse de l’affaire',fn:()=>feBudgetPhases(p,rows(),false)}]));
   const tot=k=>{ const r=rows(); return dpRound(r[r.length-1][k]); };
   const pick=(inp,k)=>ibtn({i:'prev',t:'Suggestions',menu:()=>feSuggest(tot(k)).flatMap((v,i)=>[...(i===1?['-']:[]),{t:hfN(v),fn:()=>{ inp.value=hfN(v); inp.style.background=''; guard(); }}])});
-  const L=(...x)=>feLine(...x);
+  const L=(...x)=>feLine(...x), catL=h('span',{style:{color:'#555'}},F.ext.cat?'catégorie '+F.ext.cat:'');
+  fN.addEventListener('input',()=>{ const c=FE_CAT.find(x=>x[0]===F.ext.cat); if(c&&!feEq(c[1],hfNum(fN.value)||0)){ delete F.ext.cat; catL.textContent=''; } });
   /* une colonne, dans l'ordre de la fenêtre d'origine (B, Z1, Z2, p, q, r, n, u, Tm, h), pied empilé à gauche */
   const body=h('div',{style:{minWidth:'1060px'}},feSec('Calcul d’honoraires'),
     formRows([['Coût d’ouvrage déterminant le temps nécessaire',L(fB,feUnit(cur),bB)],['Z-valeur Z1',L(fZ1,sugg(fZ1,FE_Z1))],['Z-valeur Z2',L(fZ2,sugg(fZ2,FE_Z2))],
-      ['Facteur de base pour le temps nécessaire p',fP],['Part de prestations, en pourcent q',L(fQ,feUnit('%'))],['Facteur d’ajustement r',fR],['Degré de difficulté n',fN],
+      ['Facteur de base pour le temps nécessaire p',fP],['Part de prestations, en pourcent q',L(fQ,feUnit('%'))],['Facteur d’ajustement r',fR],
+      ['Degré de difficulté n',L(fN,ibtn({i:'prev',t:'Catégorie de l’ouvrage',menu:()=>FE_CAT.map(([k,n,l])=>({t:k+' — n = '+num(n,1)+' — '+l,chk:F.ext.cat===k,fn:()=>{ F.ext.cat=k; fN.value=num(n,2); calcTm(); catL.textContent='catégorie '+k; }}))}),catL)],
       ['Majoration pour transformation u',fU],['Temps moyen nécessaire, en heures',L(fTm,feUnit('h'))],['Taux horaire(s) h',L(fH,feUnit(cur+'/h'),sugg(fH,FE_RATE))]],560),
     h('div',{style:{display:'flex',alignItems:'flex-end',gap:'16px'}},h('div',{style:{flex:1}},feSec('Honoraires d’après les phases 3-5')),rec),
     phead([bCalc,bEd,bSel,bG]),tb,
@@ -8431,32 +8487,79 @@ function feSiaList(F,p,q){ const L=new Map(), ph=new Map(), k=(a,b)=>a+'.'+b, qq
   DS.all('phase').filter(x=>+x.NUMBER>2&&+x.NUMBER<6).forEach(x=>{ addPh(+x.NUMBER,nm(x));
     DS.by('subphase','PHASE_ID',x.ID).forEach(sp=>add(+x.NUMBER,+sp.NUMBER,nm(sp),{on:false,part:FE_PARTS[+sp.NUMBER]||0})); });
   return {ph,rows:[...L.values()].sort((a,b)=>a.Ph-b.Ph||a.Nu-b.Nu)}; }
-function feSiaSel(F,p,q,done){ const {ph,rows}=feSiaList(F,p,q), qL=h('b'), D0={};
-  const tot=()=>rows.filter(r=>r.on).reduce((s,r)=>s+(hfNum(r.inp.value)||0),0);
-  const upd=()=>{ const t=tot(); qL.textContent=num(t,2)+' %'; rows.forEach(r=>{ r.inp.disabled=!r.on; });
-    [...ph.keys()].forEach(n=>{ const c=D0[n], s=rows.filter(r=>r.Ph===n); if(c){ c.checked=s.length&&s.every(r=>r.on); c.indeterminate=!c.checked&&s.some(r=>r.on); } });
+function feSiaSel(F,p,q,done){ const {ph,rows}=feSiaList(F,p,q), qL=h('b'), D0={}, saved=(F.ext&&F.ext.det)||null;
+  /* prestations détaillées (FE_DET) : la part d'une phase partielle = somme des prestations cochées ; sans détail, saisie directe */
+  rows.forEach(r=>{ const L=FE_DET[r.Nu]; if(!L) return; const sia=L.reduce((s2,x)=>s2+x[2],0), k=r.on&&!saved?(r.part/(sia||1)):1;
+    r.det=L.map(([key,l,pt])=>{ const sv=saved&&saved[key]; return {key,l,sia:pt,on:saved?(r.on&&sv>0):r.on,part:saved&&sv>0?sv:pt*k}; }); });
+  const tot=()=>rows.filter(r=>r.on).reduce((s2,r)=>s2+(hfNum(r.inp.value)||0),0);
+  const sync=r=>{ if(!r.det) return; r.det.forEach(d=>{ d.on=d.chk.checked; d.inp.disabled=!d.on; });
+    r.on=r.det.some(d=>d.on); r.chk.checked=r.on; r.chk.indeterminate=r.on&&!r.det.every(d=>d.on);
+    r.inp.value=num(r.det.filter(d=>d.on).reduce((s2,d)=>s2+(hfNum(d.inp.value)||0),0),2); };
+  const upd=()=>{ rows.forEach(sync); const t=tot(); qL.textContent=num(t,2)+' %'; rows.forEach(r=>{ r.inp.disabled=!r.on||!!r.det; });
+    [...ph.keys()].forEach(n=>{ const c=D0[n], s2=rows.filter(r=>r.Ph===n); if(c){ c.checked=s2.length&&s2.every(r=>r.on); c.indeterminate=!c.checked&&s2.some(r=>r.on); } });
     const b=D&&feOk(D); if(b) b.disabled=!(t>0)||rows.some(r=>r.on&&hfNum(r.inp.value)==null); };
+  const setRow=(r,v)=>{ r.on=v; r.chk.checked=v; (r.det||[]).forEach(d=>{ d.chk.checked=v; }); };
   const tb=h('tbody');
-  [...ph.keys()].sort((a,b)=>a-b).forEach(n=>{ const s=rows.filter(r=>r.Ph===n); if(!s.length) return;
-    const c=D0[n]=h('input',{type:'checkbox'}); c.onchange=()=>{ s.forEach(r=>{ r.on=c.checked; r.chk.checked=c.checked; }); upd(); };
+  [...ph.keys()].sort((a,b)=>a-b).forEach(n=>{ const s2=rows.filter(r=>r.Ph===n); if(!s2.length) return;
+    const c=D0[n]=h('input',{type:'checkbox'}); c.onchange=()=>{ s2.forEach(r=>setRow(r,c.checked)); upd(); };
     tb.append(h('tr',{class:'grp'},h('td',{class:'c'},c),h('td',{},String(n)),h('td',{},ph.get(n)||''),h('td',{class:'r'})));
-    s.forEach(r=>{ r.chk=h('input',{type:'checkbox',checked:r.on||null}); r.chk.onchange=()=>{ r.on=r.chk.checked; upd(); };
+    s2.forEach(r=>{ r.chk=h('input',{type:'checkbox',checked:r.on||null}); r.chk.onchange=()=>{ setRow(r,r.chk.checked); upd(); };
       r.inp=h('input',{class:'inp',value:num(r.part,2),style:{width:'80px',textAlign:'right'}}); r.inp.oninput=upd;
-      tb.append(h('tr',{},h('td',{class:'c'},r.chk),h('td',{},String(r.Nu)),h('td',{title:r.Na},r.Na),h('td',{class:'r'},feLine(r.inp,feUnit('%'))))); }); });
-  const all=v=>{ rows.forEach(r=>{ r.on=v; r.chk.checked=v; }); upd(); };
-  const tab=h('table',{class:'g'},h('colgroup',{},h('col',{style:{width:'40px'}}),h('col',{style:{width:'50px'}}),h('col',{}),h('col',{style:{width:'150px'}})),
-    h('thead',{},h('tr',{},h('th',{class:'c'},''),h('th',{},'N°'),h('th',{},'Prestations (phases partielles)'),h('th',{class:'r'},'Part SIA (q = 100%)'))),tb);
-  const body=h('div',{style:{width:'620px'}},
-    h('div',{style:{color:'#555',marginBottom:'8px'}},'Cochez les prestations comprises dans l’offre. La part de prestations q est la somme des parts cochées ; la répartition des phases est recalculée sur 100 %.'),
-    phead([{label:'Tout cocher',fn:()=>all(true)},{label:'Tout décocher',fn:()=>all(false)}]),
-    h('div',{style:{maxHeight:'380px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}},tab),
+      tb.append(h('tr',{},h('td',{class:'c'},r.chk),h('td',{},String(r.Nu)),h('td',{title:r.Na},r.det?h('b',{},r.Na):r.Na),h('td',{class:'r'},feLine(r.inp,feUnit('%')))));
+      (r.det||[]).forEach(d=>{ d.chk=h('input',{type:'checkbox',checked:d.on||null}); d.chk.onchange=upd;
+        d.inp=h('input',{class:'inp',value:num(d.part,2),title:'Part SIA : '+num(d.sia,2)+' %',style:{width:'80px',textAlign:'right'}}); d.inp.oninput=upd;
+        tb.append(h('tr',{},h('td',{class:'c'}),h('td',{style:{color:'#777'}},d.key),h('td',{style:{paddingLeft:'14px'},title:d.l},
+          h('label',{style:{display:'flex',gap:'6px',alignItems:'center'}},d.chk,d.l)),h('td',{class:'r'},feLine(d.inp,feUnit('%'))))); }); }); });
+  const all=v=>{ rows.forEach(r=>setRow(r,v)); upd(); };
+  const enq=()=>{ rows.forEach(r=>setRow(r,[31,32,33].includes(r.Nu))); upd(); };
+  const base=()=>{ rows.forEach(r=>{ (r.det||[]).forEach(d=>{ d.inp.value=num(d.sia,2); }); if(!r.det) r.inp.value=num(FE_PARTS[r.Nu]||0,2); }); upd(); };
+  const tab=h('table',{class:'g'},h('colgroup',{},h('col',{style:{width:'40px'}}),h('col',{style:{width:'56px'}}),h('col',{}),h('col',{style:{width:'150px'}})),
+    h('thead',{},h('tr',{},h('th',{class:'c'},''),h('th',{},'N°'),h('th',{},'Prestations (phases partielles et détail)'),h('th',{class:'r'},'Part SIA (q = 100%)'))),tb);
+  const body=h('div',{style:{width:'680px'}},
+    h('div',{style:{color:'#555',marginBottom:'8px'}},'Cochez les prestations comprises dans l’offre (détail selon la méthode du bureau). La part de prestations q est la somme des parts cochées ; la répartition des phases est recalculée sur 100 %.'),
+    phead([{label:'Tout cocher',fn:()=>all(true)},{label:'Tout décocher',fn:()=>all(false)},{label:'Jusqu’à l’autorisation (32,5 %)',fn:enq},{label:'Parts SIA',fn:base}]),
+    h('div',{style:{maxHeight:'420px',overflow:'auto',border:'1px solid var(--line)',background:'#fff'}},tab),
     h('div',{style:{display:'flex',justifyContent:'flex-end',gap:'8px',marginTop:'10px'}},'Part de prestations, en pourcent q :',qL));
-  const D=dialog({title:'Prestations selon SIA 102',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const t=tot(); if(!(t>0)) return false;
-    const out=[]; rows.filter(r=>r.on).forEach(r=>{ let x=out.find(o=>o.Nu===r.Ph); if(!x){ x={Nu:r.Ph,Na:ph.get(r.Ph)||'',Sub:[]}; out.push(x); }
+  const D=dialog({title:'Prestations selon SIA 102',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ upd(); const t=tot(); if(!(t>0)) return false;
+    const out=[], det={}; rows.filter(r=>r.on).forEach(r=>{ let x=out.find(o=>o.Nu===r.Ph); if(!x){ x={Nu:r.Ph,Na:ph.get(r.Ph)||'',Sub:[]}; out.push(x); }
+      (r.det||[]).forEach(d=>{ if(d.on) det[d.key]=hfNum(d.inp.value)||0; });
       const o=r.sp||{I:1,Rate:0,S:1}; x.Sub.push({Nu:r.Nu,Na:r.Na,P:(hfNum(r.inp.value)||0)/t*100,I:+o.I,Rate:+o.Rate,S:+o.S}); });
-    done({q:t,phases:out}); }}]});
+    F.ext=F.ext||{}; F.ext.det=det; done({q:t,phases:out}); }}]});
   upd(); }
 
+/* ── B selon l'art. 4.3.1 du contrat (méthode du bureau, comme Facturation.html) ──
+   B = (coût TTC des CFC 1, 2, 4, 5, 9 − honoraires des autres mandataires − honoraires d'architecte) / (1 + TVA), arrondi à la centaine inférieure.
+   Honoraires d'architecte = 100 % des prestations (même si q < 100) : B·p·n·r·u, moins le rabais, centaine inférieure, TVA comprise ;
+   ils dépendent de B → calcul itératif. Mandataires : % du coût de construction (CFC 1-9) ou montants. Saisies gardées dans F.ext.b. */
+const FE_B431_CFC=[['1','CFC 1 Travaux préparatoires'],['2','CFC 2 Bâtiment'],['4','CFC 4 Aménagements extérieurs'],['5','CFC 5 Frais secondaires'],['9','CFC 9 Ameublement et décoration']];
+function feB431Calc(b,f){ const tva=(+b.tva||0)/100, cfc=FE_B431_CFC.reduce((s2,[k])=>s2+(+b.cfc[k]||0),0), tot=cfc+(+b.ni||0);
+  const mand=(+b.ing||0)/100*tot+(+b.cvse||0)/100*tot+(+b.geom||0)/100*tot+(+b.autres||0);
+  const arch=B=>{ if(!b.arch||!(B>0)) return 0; const H=B*feP(B,f.Z1,f.Z2)*f.N*f.R*f.U, net=Math.floor(H*(1-(+b.rabais||0)/100)/100)*100; return net*(1+tva); };
+  let B=Math.max(0,Math.floor((cfc-mand)/(1+tva)/100)*100), a=0;
+  for(let i=0;i<60;i++){ a=arch(B); const nb=Math.max(0,Math.floor((cfc-mand-a)/(1+tva)/100)*100); if(nb===B) break; B=nb; }
+  return {cfc,tot,mand,arch:a,B}; }
+function feB431(F,cur,fac,done){ const b=JSON.parse(JSON.stringify(F.ext.b||{})), f0=fac();
+  b.cfc=b.cfc||{}; if(!F.ext.b) (F.bkp||[]).forEach(g=>{ if(FE_B431_CFC.some(([k])=>k===String(g.N))) b.cfc[g.N]=+g.A||0; });
+  if(b.tva==null) b.tva=vatDefault(); if(b.arch==null) b.arch=true; if(b.rabais==null) b.rabais=0;
+  const I=(v,d)=>feAmt(v,false,140,d), fc={}; FE_B431_CFC.forEach(([k])=>{ fc[k]=I(b.cfc[k]||0); });
+  const fNi=I(b.ni||0), fIng=I(b.ing||0), fCv=I(b.cvse||0), fGe=I(b.geom||0), fAu=I(b.autres||0), fRb=I(b.rabais), fTva=I(b.tva),
+    cA=h('input',{type:'checkbox',checked:b.arch?true:null}), out={};
+  ['cfc','tot','mand','arch','B'].forEach(k=>{ out[k]=feAmt(0,true,140); });
+  const read=()=>{ FE_B431_CFC.forEach(([k])=>{ b.cfc[k]=hfNum(fc[k].value)||0; }); Object.assign(b,{ni:hfNum(fNi.value)||0,ing:hfNum(fIng.value)||0,cvse:hfNum(fCv.value)||0,
+    geom:hfNum(fGe.value)||0,autres:hfNum(fAu.value)||0,rabais:hfNum(fRb.value)||0,tva:hfNum(fTva.value)||0,arch:cA.checked}); };
+  const upd=()=>{ read(); const r=feB431Calc(b,f0); ['cfc','tot','mand','arch','B'].forEach(k=>{ out[k].value=num(r[k],2); }); return r; };
+  [...Object.values(fc),fNi,fIng,fCv,fGe,fAu,fRb,fTva].forEach(x=>{ x.oninput=upd; }); cA.onchange=upd;
+  const P=(x,u)=>feLine(x,feUnit(u));
+  const body=h('div',{style:{width:'620px'}},
+    feSec('Coût de l’ouvrage TTC (colonne « inclus »)'),formRows([...FE_B431_CFC.map(([k,l])=>[l,P(fc[k],cur)]),['Total CFC 1, 2, 4, 5, 9',P(out.cfc,cur)],
+      ['Montants non inclus (pour les % des mandataires)',P(fNi,cur)],['Coût de construction (base des %)',P(out.tot,cur)]],300),
+    feSec('Honoraires des autres mandataires (TTC)'),formRows([['Ingénieur civil',P(fIng,'%')],['Ingénieurs CVSE',P(fCv,'%')],['Géomètre',P(fGe,'%')],['Autres mandataires (montant)',P(fAu,cur)],
+      ['Total des autres mandataires',P(out.mand,cur)]],300),
+    feSec('Honoraires d’architecte (100 % des prestations, TTC)'),formRows([['Déduire les honoraires d’architecte',cA],['Rabais',P(fRb,'%')],['Honoraires d’architecte déduits',P(out.arch,cur)]],300),
+    feSec('Montant admis donnant droit aux honoraires'),formRows([['TVA',P(fTva,'%')],['B',P(out.B,cur)]],300),
+    h('div',{style:{color:'#555',fontSize:'12px',marginTop:'8px'}},'B = (coût TTC − autres honoraires − honoraires d’architecte) / (1 + TVA), arrondi à la centaine inférieure — art. 4.3.1 du contrat. Les honoraires d’architecte (B·p·n·r·u, rabais, TVA) dépendent de B : calcul itératif avec les facteurs de la fenêtre.'));
+  upd();
+  dialog({title:'Coût déterminant B selon l’art. 4.3.1',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const r=upd(); F.ext.b=b; done(r.B); }}]}); }
 /* ── Coût déterminant B par CFC (ProjectFeeBkpAmountDialog, §4.6.3) : OK → B = Σ des groupes principaux ── */
 function feBkp(F,cur,done){ const S=JSON.parse(JSON.stringify(F.bkp||[])), o={}, box=feBox(380,380); let sel=null;
   const labs=[], flds=[]; for(let i=0;i<10;i++){ labs.push(h('span',{style:{display:'inline-block',width:'250px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}));
@@ -18110,7 +18213,8 @@ const CH10A_MENU=[
     {k:'importVCards',t:'Importer des vCards …',c:{r:'3,8'},f:['ch04ImportVCards'],ch:'CH-04'},                 // contactImport
     {k:'importContacts',t:'Importer des adresses …',c:{r:'3,8'},f:['ch04ImportContacts'],ch:'CH-04'},
     '-',
-    {k:'importTemplates',t:'Importer les modèles …',c:{s:'isModuleFormVisible',r:'9,0'},f:['ch10bImportTemplates'],ch:'CH-10 lot 2'}]},   // design ; Quitter : omis
+    {k:'importTemplates',t:'Importer les modèles …',c:{s:'isModuleFormVisible',r:'9,0'},f:['ch10bImportTemplates'],ch:'CH-10 lot 2'},   // design ; Quitter : omis
+    '-',{k:'lbExport',t:'Exporter la base locale …',a:'lbExport'},{k:'lbImport',t:'Importer une base …',a:'lbImportDlg'}]},   // base locale (sans serveur)
   {k:'Edit',t:'Edition',x:'edition',items:[                                                                      // form|form (extension)
     {k:'Undo',t:'Annuler',sc:'⌘Z',e:'field'},{k:'Redo',t:'Rétablir',sc:'⇧⌘Z',e:'field'},'-',
     {k:'Cut',t:'Couper',sc:'⌘X',e:'cut'},{k:'Copy',t:'Copier',sc:'⌘C',e:'copy'},{k:'Paste',t:'Coller',sc:'⌘V',e:'paste'},'-',
@@ -22200,18 +22304,19 @@ function ch11dCtlCtx(p){ if(!p||typeof ch03bContexte!=='function'||typeof ch03bJ
    DÉMARRAGE
 ═══════════════════════════════════════════════════════════════════════════ */
 (async function(){
-  if(!/^https?:$/.test(location.protocol)){
-    $('#boot').innerHTML='<b>DeltaSub</b><span>Ouvrez DeltaSub par le serveur du bureau : <code>http://&lt;Mac-Studio&gt;.local:7790/</code><br>(les données sont partagées sur le Mac Studio de l’atelier, pas dans ce fichier).</span>';
-    return;
-  }
-  try{ await ch08dLogin(); await DS.boot(); }
-  catch(e){ $('#boot-msg').textContent='Serveur DeltaSub injoignable ('+e.message+'). Vérifiez qu’il tourne sur le Mac Studio.'; return; }
-  buildNav(); NET.ok(); chooseUser(); if(typeof ch08cStart==='function') ch08cStart();
+  /* sans serveur : base locale du navigateur ; base vide → import d'une base (.json.gz) */
+  try{ await DS.boot(); }
+  catch(e){ const b=$('#boot');
+    if(e&&e.vide){ b.innerHTML=''; b.append(h('b',{},'DeltaSub'),h('span',{style:{maxWidth:'520px',textAlign:'center',lineHeight:'1.5'}},
+        'La base locale est vide. Importez une base DeltaSub (.json.gz), créée à partir d’une sauvegarde par ',h('code',{},'python3 outils_deltaproject/exporter_base_deltasub.py'),
+        ' ou par Fichier ▸ Exporter la base locale.'),h('button',{class:'btn pri',style:{marginTop:'12px'},onclick:()=>lbImportDlg(true)},'Importer une base …'),h('span',{id:'boot-msg'},'')); return; }
+    $('#boot-msg').textContent='Base locale illisible ('+(e&&e.message||e)+').'; console.error(e); return; }
+  buildNav(); if(!ME.u){ const u=DS.all('appuser').find(x=>x.USERID==='Paulo'&&x.ISENABLED)||DS.all('appuser').find(x=>x.ISENABLED); if(u) try{ localStorage.setItem('ds_user',String(u.ID)); }catch(_){} }   // un seul utilisateur
+  NET.ok(); chooseUser();
   $('#net').ondblclick=()=>chooseUser(true);
   let last='aff-gestion'; try{ last=localStorage.getItem('ds_view')||last; }catch(_){}
   go(last);
   $('#boot').remove(); if(typeof ch10aInit==='function') ch10aInit();
-  setInterval(()=>DS.poll(),4000);
   setTimeout(()=>tplNeed().catch(()=>{}),2500);   // modèles d'impression chargés en arrière-plan
 })();
 </script>

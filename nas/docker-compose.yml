@@ -1,7 +1,8 @@
 # SUBGestion — base du bureau sur le NAS Synology (DS923+, Container Manager ▸ Projet).
 # Dossier partagé « subgestion » : app/ (ce fichier, la page et le serveur), donnees/ (base SQLite, fichiers joints),
-# sauvegardes/ (copie horaire de la base, 48 dernières). Réseau « host » : le serveur voit l'adresse réelle des postes
-# et n'accepte que le réseau local (192.168.x.x). Adresse des postes : http://192.168.1.100:7790
+# sauvegardes/ (copie horaire de la base, 48 dernières), certificats/ (certificat HTTPS + jeton Infomaniak, privés).
+# Réseau « host » : le serveur voit l'adresse réelle des postes et n'accepte que le réseau local et le VPN.
+# Adresse des postes : https://gestion.substances.ch:7443 (http://192.168.1.100:7790 y renvoie dès que le certificat existe).
 services:
   subgestion:
     image: python:3.12-slim
@@ -15,8 +16,35 @@ services:
       DELTASUB_PAGE: SUBGestion3.html
       DELTASUB_APP: /app
       DELTASUB_SAUVEGARDES: /sauvegardes
+      DELTASUB_TLS_CERT: /certificats/gestion.substances.ch/fullchain.cer
+      DELTASUB_TLS_KEY: /certificats/gestion.substances.ch/gestion.substances.ch.key
+      DELTASUB_TLS_PORT: "7443"
+      DELTASUB_URL: https://gestion.substances.ch:7443
     volumes:
       - ./:/app:ro
       - ../donnees:/donnees
       - ../sauvegardes:/sauvegardes
+      - ../certificats:/certificats:ro
       - /etc/localtime:/etc/localtime:ro
+
+  # Certificat Let's Encrypt de gestion.substances.ch, validé par la zone DNS chez Infomaniak (aucun port ouvert vers
+  # Internet) et renouvelé automatiquement (tous les ~60 jours). Jeton API : ../certificats/infomaniak.env (jamais dans git).
+  certificat:
+    image: neilpang/acme.sh:latest
+    container_name: subgestion-certificat
+    restart: unless-stopped
+    network_mode: host
+    env_file: ../certificats/infomaniak.env
+    environment:
+      DOMAINE: gestion.substances.ch
+    volumes:
+      - ../certificats:/acme.sh
+      - /etc/localtime:/etc/localtime:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        acme.sh --set-default-ca --server letsencrypt
+        if [ -n "$$INFOMANIAK_API_TOKEN" ] && [ ! -s "/acme.sh/$$DOMAINE/fullchain.cer" ]; then
+          acme.sh --issue --dns dns_infomaniak -d "$$DOMAINE" --keylength 2048 || echo "Certificat non obtenu : vérifier le jeton et la zone DNS"
+        fi
+        exec /entry.sh daemon

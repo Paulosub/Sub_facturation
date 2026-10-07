@@ -66,6 +66,11 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   connexion `LOGIN_PAGE` à la place de l'app ; `/api/export` et `/api/import` réservés à `userAdmin` (`nas_admin`) ; ping sans
   chemin ; en-tête `Server: SUBGestion`. SUBGestion 3 en http:// : `sgSha` / `sgHacher` ont un repli JavaScript (pas de
   crypto.subtle hors contexte sécurisé).
+  **HTTPS (07.10.2026)** : `https://gestion.substances.ch:7443` — certificat Let's Encrypt RSA (DNS-01 Infomaniak, conteneur
+  `subgestion-certificat` = acme.sh, jeton dans `subgestion/certificats/infomaniak.env`, jamais dans git) ; serveur :
+  `DELTASUB_TLS_CERT|KEY|PORT`, `DELTASUB_URL` → HTTPS servi par `ServeurTLS` (négociation dans le fil de la requête,
+  certificat rechargé toutes les 6 h), HTTP → 308 vers l'adresse https, cookie Secure, HSTS ; `lan_ok` accepte aussi
+  100.64.0.0/10 (Tailscale). ⚠ Le Python du Mac (LibreSSL 2.8) ne gère pas les certificats EC : garder RSA.
 - **Modèle de données = celui de Deltaproject** : une collection par table Derby, en
   minuscules (`project`, `contact`, `contactowner`, `staff`, `timelog`…), champs en
   MAJUSCULES comme les colonnes. Côté page : `DS.all(t)`, `DS.get(t,id)`, `DS.by(t,champ,v)`,

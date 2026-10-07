@@ -1,7 +1,7 @@
 # SUBGestion sur le NAS — base du bureau partagée
 
 NAS : Synology DS923+ (DSM 7.4), adresse 192.168.1.100. Une fois installée, l'app s'ouvre sur chaque poste à
-**http://192.168.1.100:7790** : tout le bureau travaille sur les mêmes données (gestion + Facturation).
+**https://gestion.substances.ch:7443** (avant le certificat : http://192.168.1.100:7790) : tout le bureau travaille sur les mêmes données (gestion + Facturation).
 Ouverte en double-clic (`SUBGestion3.html`), l'app reste en « base locale » comme avant (secours, consultation).
 
 ## Ce qui est partagé
@@ -78,3 +78,22 @@ s'arrête si une mention ou un nom de client subsiste. `DeltaSub.html` n'est jam
 - Création de PDF à partir d'une page HTML (documents du moteur) : demande encore le serveur de sauvegarde du Mac
   (`fact_backup_server.py`, Chrome et polices Akkurat) ; les PDF de Facturation se font dans le navigateur, sans changement.
 - Pas de travail hors connexion en mode bureau : si le NAS est injoignable, l'indicateur passe à « Hors ligne ».
+
+## HTTPS : https://gestion.substances.ch:7443
+Certificat Let's Encrypt du sous-domaine `gestion.substances.ch`, obtenu par la zone DNS d'Infomaniak (aucun port ouvert vers
+Internet) et renouvelé automatiquement par le conteneur `subgestion-certificat` ; le serveur le recharge toutes les 6 h.
+Dès qu'il existe : `http://192.168.1.100:7790` renvoie vers l'adresse https, cookie de session « Secure », HSTS, TLS 1.2 au moins.
+1. **Infomaniak — zone DNS** : Manager ▸ Domaines ▸ substances.ch ▸ Zone DNS ▸ Ajouter une entrée ▸ type **A**, nom `gestion`,
+   valeur `192.168.1.100` (adresse interne : le nom ne mène nulle part hors du bureau / du VPN).
+2. **Infomaniak — jeton API** : Manager ▸ (profil) ▸ Développeur / Tokens API ▸ Créer un token, droits sur les **domaines**
+   (lecture et modification de la zone DNS). Copier le jeton (affiché une seule fois).
+3. **NAS** : ouvrir `subgestion/certificats/infomaniak.env` (créé par `nas/preparer.sh`) avec l'Éditeur de texte de DSM ou
+   TextEdit, compléter `INFOMANIAK_API_TOKEN=le_jeton`, enregistrer. Ce fichier ne quitte jamais le NAS.
+4. **Container Manager** ▸ Projet ▸ subgestion ▸ Action ▸ **Construire** (ou Arrêter puis Démarrer) : le projet compte
+   désormais deux conteneurs. Journal de `subgestion-certificat` : « Cert success » ; journal de `subgestion` : « HTTPS actif ».
+5. Sur chaque poste : ouvrir `https://gestion.substances.ch:7443` (cadenas) et réinstaller l'app depuis cette adresse
+   (Chrome : Installer la page en tant qu'application ; Safari : Fichier ▸ Ajouter au Dock ; iPad : Sur l'écran d'accueil).
+Contrôle du nom : Terminal du Mac ▸ `dscacheutil -q host -a name gestion.substances.ch` doit donner 192.168.1.100. Si le
+routeur bloque les noms publics qui mènent à une adresse interne (« protection contre le DNS rebinding »), y autoriser
+`gestion.substances.ch`. Hors du bureau : VPN Tailscale (plage 100.64.x.x acceptée par le serveur).
+

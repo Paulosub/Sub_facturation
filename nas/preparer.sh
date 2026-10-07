@@ -17,6 +17,12 @@ mkdir -p "$DEST"
 python3 "$ICI/nas/nettoyer.py" "$ICI/SUBGestion3.html" "$DEST/SUBGestion3.html"
 cp "$ICI/serveur_deltasub.py" "$ICI/nas/docker-compose.yml" "$DEST/"
 rm -f "$DEST/DeltaSub.html"   # jamais servie depuis le NAS (non nettoyée)
-mkdir -p "$DEST/../donnees" "$DEST/../sauvegardes" 2>/dev/null || true
+mkdir -p "$DEST/../donnees" "$DEST/../sauvegardes" "$DEST/../certificats" 2>/dev/null || true
+# jeton Infomaniak (HTTPS) : modèle créé une seule fois, jamais écrasé ; à compléter sur le NAS (voir nas/LISEZMOI.md)
+if [ ! -e "$DEST/../certificats/infomaniak.env" ]; then
+  printf '%s\n' "# Jeton API Infomaniak (droits sur les domaines) pour le certificat HTTPS de gestion.substances.ch." \
+    "# Remplacer la ligne ci-dessous par : INFOMANIAK_API_TOKEN=le_jeton   (sans espace ni guillemets)" \
+    "INFOMANIAK_API_TOKEN=" > "$DEST/../certificats/infomaniak.env"
+fi
 echo "✓ App copiée dans : $DEST"
 ls -la "$DEST"

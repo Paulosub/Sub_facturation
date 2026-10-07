@@ -27,7 +27,7 @@ Ouverture de session. Commandes locales (sur le Mac Studio, base DELTASUB_DB ou 
     python3 serveur_deltasub.py --desactiver-authentification     (secours : retour au mode « Qui utilise ce poste ? »)
     python3 serveur_deltasub.py --mot-de-passe <USERID>             (mot de passe demandé deux fois ; sessions du compte fermées)
 """
-import argparse, csv, datetime, glob, gzip, hashlib, ipaddress, json, os, re, sqlite3, sys, threading, time
+import argparse, csv, datetime, glob, gzip, hashlib, ipaddress, json, os, re, socket, sqlite3, ssl, sys, threading, time
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -39,6 +39,13 @@ BACKUP_DIR = os.environ.get("DELTASUB_SAUVEGARDES") or os.path.join(HERE, "Sauve
 # Base du bureau sur le NAS (07.10.2026) : DELTASUB_PAGE = page servie à « / » (SUBGestion3.html), DELTASUB_APP = dossier des pages
 PAGE = os.environ.get("DELTASUB_PAGE") or "DeltaSub.html"
 APP_DIR = os.environ.get("DELTASUB_APP") or HERE
+# HTTPS (NAS, 07.10.2026) : certificat Let's Encrypt du domaine (renouvelé par le conteneur « certificat ») ; port chiffré
+# DELTASUB_TLS_PORT ; le port HTTP renvoie alors vers DELTASUB_URL (adresse publique https://…)
+TLS_CERT = os.environ.get("DELTASUB_TLS_CERT")
+TLS_KEY = os.environ.get("DELTASUB_TLS_KEY")
+TLS_PORT = int(os.environ.get("DELTASUB_TLS_PORT") or 7443)
+PUBLIC_URL = (os.environ.get("DELTASUB_URL") or "").rstrip("/")
+TLS_ACTIF = threading.Event()
 STATIC = {"/": PAGE, "/" + PAGE: PAGE}
 if PAGE == "DeltaSub.html" or not os.environ.get("DELTASUB_PAGE"):
     STATIC["/DeltaSub.html"] = "DeltaSub.html"
@@ -388,7 +395,8 @@ def ch08_err(h, code, e):
 
 
 def ch08_cookie(tok, remember):
-    return "%s=%s; Path=/; HttpOnly; SameSite=Strict%s" % (CH08_COOKIE, tok, "; Max-Age=%d" % CH08_TTL_LONG if remember else "")
+    return "%s=%s; Path=/; HttpOnly; SameSite=Strict%s%s" % (CH08_COOKIE, tok, "; Max-Age=%d" % CH08_TTL_LONG if remember else "",
+                                                          "; Secure" if TLS_ACTIF.is_set() else "")
 
 
 def ch08_token(h):
@@ -1864,10 +1872,13 @@ $("u").focus();
 </script></body></html>"""
 
 
+VPN_NET = ipaddress.ip_network("100.64.0.0/10")
+
+
 def lan_ok(ip):
     try:
         a = ipaddress.ip_address(ip)
-        return a.is_private or a.is_loopback or a.is_link_local
+        return a.is_private or a.is_loopback or a.is_link_local or a in VPN_NET   # VPN_NET : Tailscale (iPad hors du bureau)
     except ValueError:
         return False
 
@@ -1894,7 +1905,26 @@ class H(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b)
 
+    def _vers_https(self):
+        """HTTPS actif : une requête reçue en clair est renvoyée vers l'adresse chiffrée (308 : méthode et corps conservés)."""
+        if not TLS_ACTIF.is_set() or getattr(self.server, "tls", False) or not PUBLIC_URL:
+            return False
+        self.send_response(308)
+        self.send_header("Location", PUBLIC_URL + (self.path or "/"))
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return True
+
+    def end_headers(self):
+        if getattr(self.server, "tls", False):
+            self.send_header("Strict-Transport-Security", "max-age=31536000")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "same-origin")
+        BaseHTTPRequestHandler.end_headers(self)
+
     def do_GET(self):
+        if self._vers_https():
+            return
         if not ch08_gate(self, "GET"):
             return   # CH-08 lot 4 : session exigée quand l'ouverture de session est active (première instruction, § 4.20.1)
         if not lan_ok(self.client_address[0]):
@@ -1951,6 +1981,8 @@ class H(BaseHTTPRequestHandler):
             c.close()
 
     def do_POST(self):
+        if self._vers_https():
+            return
         if not ch08_gate(self, "POST"):
             return   # CH-08 lot 4 : session exigée quand l'ouverture de session est active (première instruction, § 4.20.1)
         if not lan_ok(self.client_address[0]):
@@ -2035,6 +2067,47 @@ def _nas_ranger(self, u):
 H._nas_ranger = _nas_ranger
 
 
+class ServeurTLS(ThreadingHTTPServer):
+    """HTTPS : la négociation TLS se fait dans le fil de la requête (un poste lent ne bloque pas les autres)."""
+    tls = True
+
+    def __init__(self, adresse, handler, ctx):
+        self.ctx = ctx
+        ThreadingHTTPServer.__init__(self, adresse, handler)
+
+    def finish_request(self, request, client_address):
+        request.settimeout(30)
+        try:
+            request = self.ctx.wrap_socket(request, server_side=True)
+        except (ssl.SSLError, OSError):
+            return
+        request.settimeout(None)
+        ThreadingHTTPServer.finish_request(self, request, client_address)
+
+
+def tls_boucle():
+    """Attend le certificat (premier envoi par le conteneur « certificat »), démarre HTTPS, recharge le certificat toutes les 6 h."""
+    ctx, srv = None, None
+    while True:
+        try:
+            if os.path.isfile(TLS_CERT) and os.path.isfile(TLS_KEY):
+                if ctx is None:
+                    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+                ctx.load_cert_chain(TLS_CERT, TLS_KEY)   # les nouvelles connexions prennent le certificat renouvelé
+                if srv is None:
+                    srv = ServeurTLS(("0.0.0.0", TLS_PORT), H, ctx)
+                    threading.Thread(target=srv.serve_forever, daemon=True).start()
+                    TLS_ACTIF.set()
+                    print("HTTPS actif : %s (port %d)" % (PUBLIC_URL or "https://…", TLS_PORT), file=sys.stderr)
+                time.sleep(6 * 3600)
+                continue
+            print("HTTPS : certificat attendu (%s)" % TLS_CERT, file=sys.stderr)
+        except Exception as e:
+            print("HTTPS impossible :", e, file=sys.stderr)
+        time.sleep(60)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--importer-deltaproject", metavar="DOSSIER_EXTRACTION")
@@ -2052,6 +2125,8 @@ def main():
         return import_deltaproject(c, a.importer_deltaproject, a.force)
     c.close()
     threading.Thread(target=backup_loop, daemon=True).start()
+    if TLS_CERT and TLS_KEY:
+        threading.Thread(target=tls_boucle, daemon=True).start()   # HTTPS dès que le certificat est là ; d'ici là, HTTP normal
     srv = ThreadingHTTPServer(("0.0.0.0", a.port), H)
     print("DeltaSub — http://%s.local:%d/   (base : %s)" % (os.uname().nodename.split(".")[0], a.port, DB_PATH))
     print(ch03_info())   # CH-03

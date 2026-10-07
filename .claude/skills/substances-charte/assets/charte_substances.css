@@ -1,0 +1,40 @@
+/* Charte Substances Architectes — jetons CSS (d'après « sub-ide_Charte graphique_OFFICIELLE », p. 22-24).
+   Akkurat installée sur les postes du bureau : chargée par local(), jamais embarquée (licence desktop Lineto). */
+@font-face{font-family:'SUB Akkurat';font-weight:300;src:local('Akkurat-Light'),local('Akkurat Light'),local('AkkuratLLTT-Light')}
+@font-face{font-family:'SUB Akkurat';font-weight:400;src:local('Akkurat-Regular'),local('Akkurat Regular'),local('Akkurat'),local('AkkuratStd')}
+@font-face{font-family:'SUB Akkurat';font-weight:400;font-style:italic;src:local('Akkurat-Italic'),local('Akkurat Italic')}
+@font-face{font-family:'SUB Akkurat';font-weight:700;src:local('Akkurat-Bold'),local('Akkurat Bold'),local('AkkuratStd-Bold')}
+:root{
+  /* nuancier principal */
+  --s-noir:#1d1d1b;      /* noir du logo (impression : 0/0/0/100) */
+  --s-gris:#706f6f;      /* gris texte secondaire */
+  --s-gris2:#9d9d9c;     /* gris des parties « décryptées » du logo (opacité 50 %) */
+  --s-gris3:#c9c9c7; --s-filet:#e3e3e0; --s-fond:#f5f5f3;
+  --s-blanc:#ffffff;
+  --s-jaune:#fff266;     /* jaune — aplats, accent, élément actif sur bleu nuit */
+  --s-jaune2:#fef6b0;    /* jaune clair — sélection, étiquettes de numéro */
+  --s-jaune3:#fffbdc;    /* survol */
+  --s-nuit:#003346;      /* bleu nuit — aplats, boutons principaux, menus */
+  --s-nuit2:#636e7e;     /* bleu nuit clair — survol des boutons principaux */
+  /* nuancier secondaire : réservé aux ÉTATS (statuts, alertes, graphiques) */
+  --s-rouge:#bd1e42;  --s-rouge2:#be7c7f;
+  --s-orange:#d7860d; --s-orange2:#dbb476;
+  --s-vert:#98c21f;
+  --s-turq:#4cbab5;   --s-turq2:#b4d6d2;
+  --s-bleu:#3f4193;   --s-bleu2:#8783bb;
+  --s-font:'SUB Akkurat','Akkurat','Akkurat Pro',Arial,Helvetica,sans-serif;
+}
+html,body{font:400 13px/1.45 var(--s-font);color:var(--s-noir);background:#fff}
+/* titre « page de charte » : petit libellé, filet noir 2 px, titre Bold */
+.s-lbl{font-size:11px;font-weight:700;padding-bottom:7px;border-bottom:2px solid var(--s-noir)}
+.s-titre{font-size:32px;font-weight:700;line-height:1.08}
+.s-carte{border-top:2px solid var(--s-noir)}                      /* carte : filet en tête, angles droits, sans ombre */
+.s-aplat{background:var(--s-nuit);color:#fff}.s-aplat .s-chiffre{color:var(--s-jaune)}
+.s-chiffre{font-size:34px;font-weight:300;font-variant-numeric:tabular-nums}
+.s-btn{height:36px;padding:0 14px;border:2px solid var(--s-noir);background:#fff;font-weight:700;border-radius:0}
+.s-btn:hover{background:var(--s-jaune)}
+.s-btn.pri{background:var(--s-nuit);border-color:var(--s-nuit);color:#fff}
+.s-etiq{display:inline-flex;align-items:center;height:20px;padding:0 6px;font-size:11px;font-weight:700;background:var(--s-jaune2);color:var(--s-nuit)}
+/* logo SVG (assets/logo_substances.svg) : lettres .L, parties décryptées .g dans le groupe .G */
+.s-logo .L{fill:var(--s-noir)}.s-logo .g{fill:var(--s-gris2)}.s-logo .G{opacity:.5}
+.s-logo.neg .L{fill:#fff}

@@ -40,6 +40,14 @@ PREFIX = "facturation_data_"          # préfixe des fichiers de sauvegarde
 
 os.makedirs(BASE_DIR, exist_ok=True)
 
+# ── SUBGestion (06.10.2026) : sauvegardes de la base de gestion, fichiers du dépôt, PDF ──
+GESTION_DIR = os.environ.get("GESTION_BACKUP_DIR", os.path.join(_HERE, "Sauvegarde Gestion"))
+FICHIERS_DIR = os.path.join(GESTION_DIR, "fichiers")                     # contenus des fichiers joints, rangés par empreinte
+ANCIEN_DEPOT = os.path.join(_HERE, "Sauvegarde DeltaSub", "fichiers", "objets")   # dépôt de l'ancien serveur DeltaSub (lecture)
+GESTION_PREFIX = "deltasub_base_"
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+import hashlib, re, shutil, tempfile
+
 
 def _ts():
     return time.strftime("%Y%m%d_%H%M%S")
@@ -50,6 +58,41 @@ def _backups(folder):
     files = glob.glob(os.path.join(folder, PREFIX + "*.json"))
     files.sort(key=os.path.getmtime, reverse=True)
     return files
+
+
+def _origine_ok(h):
+    """Routes SUBGestion : seulement les pages locales (fichier ouvert par double-clic → Origin « null », ou localhost)."""
+    o = h.headers.get("Origin")
+    return o in (None, "null", "file://") or bool(re.match(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$", o or ""))
+
+
+def _rotation(dossier):
+    """Garde toutes les sauvegardes des 48 dernières heures, une par jour pendant 60 jours, une par mois au-delà."""
+    fs = sorted(glob.glob(os.path.join(dossier, GESTION_PREFIX + "*.json.gz")), key=os.path.getmtime, reverse=True)
+    now, vus, garder = time.time(), set(), set()
+    for f in fs:
+        age = now - os.path.getmtime(f)
+        t = time.localtime(os.path.getmtime(f))
+        if age < 48 * 3600:
+            garder.add(f); continue
+        cle = time.strftime("%Y%m%d", t) if age < 60 * 86400 else time.strftime("%Y%m", t)
+        if cle not in vus:
+            vus.add(cle); garder.add(f)
+    for f in fs:
+        if f not in garder:
+            try: os.remove(f)
+            except OSError: pass
+
+
+def _objet(sha):
+    """Chemin du contenu d'empreinte sha (dépôt SUBGestion, sinon ancien dépôt DeltaSub), ou None."""
+    if not re.fullmatch(r"[0-9a-f]{64}", sha or ""):
+        return None
+    for base in (FICHIERS_DIR, ANCIEN_DEPOT):
+        f = os.path.join(base, sha[:2], sha)
+        if os.path.isfile(f):
+            return f
+    return None
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -84,8 +127,41 @@ class Handler(http.server.BaseHTTPRequestHandler):
         u = urllib.parse.urlparse(self.path)
 
         if u.path == "/ping":
-            self._json(200, {"ok": True, "base": BASE_DIR, "port": PORT})
+            self._json(200, {"ok": True, "base": BASE_DIR, "port": PORT, "gestion": GESTION_DIR,
+                             "pdf": os.path.exists(CHROME)})
             return
+
+        if u.path.startswith("/gestion/") or u.path.startswith("/fichiers/"):
+            if not _origine_ok(self):
+                self._json(403, {"ok": False, "error": "Origine refusée."}); return
+            if u.path == "/gestion/liste":
+                os.makedirs(GESTION_DIR, exist_ok=True)
+                fs = sorted(glob.glob(os.path.join(GESTION_DIR, GESTION_PREFIX + "*.json.gz")), key=os.path.getmtime, reverse=True)
+                self._json(200, {"ok": True, "dossier": GESTION_DIR, "fichiers": [
+                    {"nom": os.path.basename(f), "taille": os.path.getsize(f), "mtime": int(os.path.getmtime(f))} for f in fs]})
+                return
+            if u.path == "/gestion/lire":   # une sauvegarde de la liste (restauration depuis SUBGestion)
+                nom = os.path.basename(urllib.parse.parse_qs(u.query).get("nom", [""])[0])
+                f = os.path.join(GESTION_DIR, nom)
+                if not re.fullmatch(GESTION_PREFIX + r"\d{8}_\d{4,6}\.json\.gz", nom) or not os.path.isfile(f):
+                    self._json(404, {"ok": False, "error": "Sauvegarde introuvable."}); return
+                with open(f, "rb") as fh:
+                    data = fh.read()
+                self.send_response(200); self._cors()
+                self.send_header("Content-Type", "application/gzip")
+                self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
+                return
+            if u.path == "/fichiers/lire":
+                f = _objet((urllib.parse.parse_qs(u.query).get("sha", [""])[0]).lower())
+                if not f:
+                    self._json(404, {"ok": False, "error": "Fichier absent du dépôt."}); return
+                with open(f, "rb") as fh:
+                    data = fh.read()
+                self.send_response(200); self._cors()
+                self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
+                return
+            self._json(404, {"ok": False, "error": "Ressource inconnue."}); return
 
         if u.path == "/list":
             files = _backups(BASE_DIR)
@@ -436,6 +512,79 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": str(e)})
             return
 
+        if u.path.startswith("/gestion/") or u.path.startswith("/fichiers/") or u.path == "/html2pdf":
+            if not _origine_ok(self):
+                self._json(403, {"ok": False, "error": "Origine refusée."}); return
+            q = urllib.parse.parse_qs(u.query)
+            length = int(self.headers.get("Content-Length", 0))
+            data = self.rfile.read(length)
+            try:
+                if u.path == "/gestion/sauver":   # base de gestion (.json.gz produit par SUBGestion)
+                    if data[:2] != b"\x1f\x8b":
+                        self._json(400, {"ok": False, "error": "Contenu non compressé (gzip attendu)."}); return
+                    os.makedirs(GESTION_DIR, exist_ok=True)
+                    nom = GESTION_PREFIX + time.strftime("%Y%m%d_%H%M%S") + ".json.gz"
+                    tmp = os.path.join(GESTION_DIR, "." + nom + ".tmp")
+                    with open(tmp, "wb") as fh:
+                        fh.write(data)
+                    os.replace(tmp, os.path.join(GESTION_DIR, nom))   # écriture atomique
+                    _rotation(GESTION_DIR)
+                    self._json(200, {"ok": True, "nom": nom, "dossier": GESTION_DIR, "taille": len(data)}); return
+                if u.path == "/fichiers/ranger":   # copie disque d'un fichier joint (dédupliquée par empreinte)
+                    sha = hashlib.sha256(data).hexdigest()
+                    if (q.get("sha", [sha])[0]).lower() != sha:
+                        self._json(400, {"ok": False, "error": "Empreinte incorrecte."}); return
+                    d = os.path.join(FICHIERS_DIR, sha[:2]); os.makedirs(d, exist_ok=True)
+                    f = os.path.join(d, sha)
+                    if not os.path.exists(f):
+                        with open(f + ".tmp", "wb") as fh:
+                            fh.write(data)
+                        os.replace(f + ".tmp", f)
+                    self._json(200, {"ok": True, "sha": sha, "taille": len(data)}); return
+                if u.path == "/html2pdf":   # HTML complet → PDF (Chrome sans fenêtre, polices Akkurat du Mac)
+                    if not os.path.exists(CHROME):
+                        self._json(501, {"ok": False, "error": "Google Chrome est introuvable sur ce Mac."}); return
+                    html = json.loads(data.decode("utf-8")).get("html", "")
+                    tmpd = tempfile.mkdtemp(prefix="sg_pdf_")
+                    try:
+                        src, out = os.path.join(tmpd, "doc.html"), os.path.join(tmpd, "doc.pdf")
+                        with open(src, "w", encoding="utf-8") as fh:
+                            fh.write(html)
+                        # Chrome écrit le PDF tout de suite mais ne se termine pas toujours : on attend un PDF complet (%%EOF) puis on l'arrête
+                        pr = subprocess.Popen([CHROME, "--headless=new", "--disable-gpu", "--no-first-run", "--no-pdf-header-footer",
+                                               "--user-data-dir=" + os.path.join(tmpd, "profil"), "--print-to-pdf=" + out, "file://" + src],
+                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                        fin = time.time() + 90
+                        try:
+                            while time.time() < fin and pr.poll() is None:
+                                time.sleep(0.25)
+                                if os.path.exists(out) and os.path.getsize(out) > 0:
+                                    with open(out, "rb") as fh:
+                                        fh.seek(max(0, os.path.getsize(out) - 64))
+                                        if b"%%EOF" in fh.read():
+                                            break
+                        finally:
+                            import signal   # tout le groupe : Chrome et ses processus auxiliaires
+                            try: os.killpg(pr.pid, signal.SIGTERM)
+                            except OSError: pass
+                            try: pr.wait(5)
+                            except subprocess.TimeoutExpired:
+                                try: os.killpg(pr.pid, signal.SIGKILL)
+                                except OSError: pass
+                        if not os.path.exists(out):
+                            self._json(500, {"ok": False, "error": "La création du PDF a échoué."}); return
+                        with open(out, "rb") as fh:
+                            pdf = fh.read()
+                    finally:
+                        shutil.rmtree(tmpd, ignore_errors=True)
+                    self.send_response(200); self._cors()
+                    self.send_header("Content-Type", "application/pdf")
+                    self.send_header("Content-Length", str(len(pdf))); self.end_headers(); self.wfile.write(pdf)
+                    return
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)}); return
+            self._json(404, {"ok": False, "error": "Ressource inconnue."}); return
+
         if u.path != "/save":
             self._json(404, {"ok": False, "error": "Ressource inconnue."})
             return
@@ -467,6 +616,7 @@ if __name__ == "__main__":
     print(" Serveur de sauvegarde — Substances Architectes / Facturation")
     print(" URL       : http://localhost:%d" % PORT)
     print(" Dossier   : %s" % BASE_DIR)
+    print(" Gestion   : %s" % GESTION_DIR)
     print(" (laissez cette fenêtre ouverte ; Ctrl+C pour arrêter)")
     print("─" * 64)
     with Server(("127.0.0.1", PORT), Handler) as httpd:

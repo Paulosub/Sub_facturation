@@ -1,0 +1,23 @@
+/* ══ SUBGestion — coquille (accueil par domaines, hubs, onglets d'en-tête, cadre DeltaSub) ══ */
+.sg-sec{margin:0 0 6px}
+.sg-sec-t{font-size:10.5px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#9a9ea0;margin:0 64px 14px;padding-bottom:9px;border-bottom:1px solid #ededed;max-width:1052px}
+.sg-sec .home-grid{padding-bottom:40px;max-width:1180px}
+.home-card .tag{position:absolute;top:30px;right:26px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a979c;font-weight:600}
+.home-card .cn{font-size:10.5px;color:#9a9ea0;letter-spacing:.04em;margin-top:12px}
+/* onglets du domaine courant dans l'en-tête noir (style des .tab-btn de Facturation) */
+#sg-tabs{display:none;align-items:stretch;height:44px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;flex:1 1 auto}
+#sg-tabs::-webkit-scrollbar{display:none}
+#sg-tabs.on{display:flex}
+#sg-tabs .tab-btn{white-space:nowrap;padding:0 13px;font-size:12px}
+#hdr{gap:16px}
+#hdr-title{flex:0 0 auto}
+#sg-app{font-size:10.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.45);white-space:nowrap;margin-left:auto;padding-left:10px}
+#hdr-right{margin-left:0;white-space:nowrap}
+@media (max-width:1180px){#sg-app{display:none}#hdr-right{margin-left:auto}}
+@media (max-width:980px){#sg-tabs.on~#hdr-right{display:none}}
+/* cadre des modules DeltaSub : toujours mis en page (hors écran si inactif) pour un démarrage en arrière-plan */
+#panel-ds{display:flex;position:fixed;left:0;right:0;top:44px;bottom:0;visibility:hidden;pointer-events:none;z-index:0}
+#panel-ds.on{visibility:visible;pointer-events:auto;z-index:5}
+#panel-ds iframe{flex:1;width:100%;height:100%;border:0;display:block;background:#f0efe8}
+#sg-ds-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#fff;color:#6c7174;font-size:12px}
+#sg-ds-wait b{font-size:14px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#1a1a1a}

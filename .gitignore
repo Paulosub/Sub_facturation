@@ -26,7 +26,8 @@ FA26.*
 
 # Fichiers de travail
 PROMPT_CLAUDE.md
-.claude/
+.claude/*
+!.claude/skills/
 
 # Système
 .DS_Store
@@ -35,3 +36,20 @@ Facturation_PROPOSITION_*.html
 # Extraction Deltaproject (données clients)
 extraction_deltaproject/
 Sauvegarde DeltaSub/
+
+# Copies de sécurité DeltaSub
+DeltaSub_backup_*.html
+serveur_deltasub_backup_*.py
+SUBGestion*_backup_*.html
+deltasub/
+extraction_deltaproject_*/
+Sauvegarde Gestion/
+
+# Copies de conflit du NAS (Synology) et copies de sécurité du code
+*_conflict_*
+*DownloadConflict*
+fact_backup_server_backup_*.py
+subgestion*/_backup_*/
+
+# PV et documents d'affaires (données clients)
+17DAV_*

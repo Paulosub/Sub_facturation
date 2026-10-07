@@ -1,0 +1,152 @@
+/* ══ SUBGestion 3 — Facturation au graphisme commun (charte Substances) ══════════════════════════════
+   Injecté à la fin du document Facturation embarqué (après toutes ses feuilles de style) par subgestion3/construire.py.
+   Même langage que le reste de l'app : Akkurat, fond blanc, cartes ouvertes par un filet noir de 2 px, angles droits,
+   sans ombres, tableaux à en-tête blanc souligné de noir, trois sortes de boutons (principal bleu nuit, secondaire
+   contour noir, suppression rouge), sélection jaune clair.
+   ⚠ Les documents PDF et leurs aperçus (.offre-page, aperçus « PDF fidèle ») ne sont PAS touchés : ils reproduisent
+   les documents papier du bureau. */
+@font-face{font-family:'SUB Akkurat';font-weight:300;src:local('Akkurat-Light'),local('Akkurat Light'),local('AkkuratLLTT-Light')}
+@font-face{font-family:'SUB Akkurat';font-weight:400;src:local('Akkurat-Regular'),local('Akkurat Regular'),local('Akkurat'),local('AkkuratStd')}
+@font-face{font-family:'SUB Akkurat';font-weight:700;src:local('Akkurat-Bold'),local('Akkurat Bold'),local('AkkuratStd-Bold')}
+:root{--s-noir:#1d1d1b;--s-gris:#706f6f;--s-gris2:#9d9d9c;--s-gris3:#c9c9c7;--s-filet:#e3e3e0;--s-fond:#f5f5f3;
+  --s-jaune:#fff266;--s-jaune2:#fef6b0;--s-jaune3:#fffbdc;--s-nuit:#003346;--s-nuit2:#636e7e;--s-rouge:#bd1e42;
+  --s-orange:#d7860d;--s-vert:#98c21f;--s-turq:#4cbab5;--s-bleu:#3f4193;
+  --s-font:'SUB Akkurat','Akkurat','Akkurat Pro',Arial,Helvetica,sans-serif}
+
+/* ── fond, typographie, titres en double (l'en-tête de SUBGestion porte déjà le titre) ── */
+html body{font-family:var(--s-font);background:#fff;color:var(--s-noir)}
+html body input,html body select,html body textarea,html body button{font-family:inherit}
+html body .panel,html body .home-wrap{background:#fff}
+html body .panel>.home-wrap>.home-title,html body .panel>.home-wrap>.home-sub{display:none}
+html body .panel>.home-wrap>.adm-wrap{padding-top:22px!important}
+
+/* ── angles droits, sans ombres (sauf feuilles des aperçus PDF) ── */
+html body [class]:not(.offre-page):not(.offre-page *):not(#offre-scroll *):not(.sw):not(.sw *){border-radius:0!important}
+html body [class]:not(.offre-page):not(.offre-page *):not(#offre-scroll *){box-shadow:none!important}
+
+/* ── cartes : filet noir en tête, titre Bold, plus de bandeau bleu nuit ── */
+html body .card{background:#fff;border-top:2px solid var(--s-noir);margin-bottom:22px;overflow:visible}
+html body .card-hd{background:#fff!important;color:var(--s-noir)!important;font-size:14px;font-weight:700;text-transform:none;letter-spacing:0;
+  padding:10px 2px 10px 0;border-bottom:1px solid var(--s-filet);flex-wrap:wrap;gap:8px 12px}
+html body .card-hd [style*="color:#fff" i],html body .card-hd [style*="color: #fff" i],html body .card-hd [style*="color:white" i],
+html body .card-hd label,html body .card-hd span:not(.badge):not(.b-ff){color:var(--s-noir)!important}
+html body .card-hd input:not([type=checkbox]):not([type=radio]),html body .card-hd select{background:#fff!important;color:var(--s-noir)!important;border:1px solid var(--s-gris3)!important}
+html body .lockchk{color:var(--s-gris)!important}
+html body .card-bd{padding:14px 0}
+
+/* ── boutons : trois sortes seulement ── */
+html body .btn{border:2px solid var(--s-noir);background:#fff;color:var(--s-noir);font-weight:700;font-size:12px;padding:6px 14px;opacity:1;line-height:1.3}
+html body .btn.btn-sm{padding:3px 10px;font-size:11.5px}
+html body .btn:hover{background:var(--s-jaune)!important;color:var(--s-noir)!important;opacity:1}
+/* principal : bleu nuit */
+html body .btn-blue,html body .btn-dark,html body .btn-green,
+html body .btn[style*="#0a6e84" i],html body .btn[style*="#0a4a5e" i],html body .btn[style*="#2e9e5b" i],html body .btn[style*="#27ae60" i],
+html body .btn[style*="#2f6fde" i],html body .btn[style*="#0a84ff" i],html body .btn[style*="#1a73e8" i],html body .btn[style*="#1a1a1a" i],
+html body .btn[style*="#003346" i]{background:var(--s-nuit)!important;border-color:var(--s-nuit)!important;color:#fff!important}
+html body .btn-blue:hover,html body .btn-dark:hover,html body .btn-green:hover,
+html body .btn[style*="#0a6e84" i]:hover,html body .btn[style*="#0a4a5e" i]:hover,html body .btn[style*="#2e9e5b" i]:hover,html body .btn[style*="#27ae60" i]:hover,
+html body .btn[style*="#2f6fde" i]:hover,html body .btn[style*="#0a84ff" i]:hover,html body .btn[style*="#1a73e8" i]:hover,html body .btn[style*="#1a1a1a" i]:hover,
+html body .btn[style*="#003346" i]:hover{background:var(--s-nuit2)!important;border-color:var(--s-nuit2)!important;color:#fff!important}
+/* secondaire : contour noir */
+html body .btn[style*="#f2f2f2" i],html body .btn[style*="#888" i],html body .btn[style*="#636e7e" i],html body .btn[style*="#e4f4e8" i],
+html body .btn[style*="#fcf0dc" i],html body .btn[style*="#8a6d1a" i],html body .btn[style*="#b08800" i],html body .btn[style*="background:#fff;" i]{
+  background:#fff!important;border-color:var(--s-noir)!important;color:var(--s-noir)!important}
+/* suppression : rouge */
+html body .btn-red,html body .btn[style*="#c0392b" i],html body .btn[style*="#b04a4a" i],html body .btn[style*="#b23b2b" i]{
+  background:#fff!important;border-color:var(--s-rouge)!important;color:var(--s-rouge)!important}
+html body .btn-red:hover,html body .btn[style*="#c0392b" i]:hover,html body .btn[style*="#b04a4a" i]:hover,html body .btn[style*="#b23b2b" i]:hover{background:#f7e1e6!important;color:var(--s-rouge)!important}
+html body .btn[disabled]{opacity:.4}
+
+/* ── tableaux : en-tête blanc souligné de noir, sélection jaune clair ── */
+html body .list-tbl th,html body .sia-tbl th,html body .xls-tbl th,html body .adr-tb th,html body .pv-tb th,html body .cc-tb th,
+html body .pv-xl th,html body .rap-tb th{background:#fff!important;color:var(--s-noir)!important;font-weight:700;font-size:11.5px;
+  border-bottom:1.5px solid var(--s-noir)!important;text-transform:none!important;letter-spacing:0!important}
+html body .list-tbl th.th-sort:hover{background:var(--s-jaune3)!important}
+html body .list-tbl th.th-sort span{color:var(--s-nuit)}
+html body .list-tbl td{border-bottom:1px solid var(--s-filet)}
+html body .list-tbl tr:hover td{background:var(--s-jaune3)}
+html body .list-tbl tr.sel td{background:var(--s-jaune2)}
+html body .list-tbl td.num{color:var(--s-nuit)}
+html body .xls-tbl td,html body .xls-tbl th{border-color:var(--s-filet)}
+html body .xls-tbl td.lbl,html body .xls-tbl td.sym{background:var(--s-fond);color:var(--s-noir)}
+html body .sia-tbl td.calc{background:var(--s-fond);color:var(--s-nuit)}
+html body .sia-tbl .ph-sub td{border-bottom-color:var(--s-filet)}
+
+/* ── champs ── */
+html body .field label{color:var(--s-gris);text-transform:none;letter-spacing:0;font-size:11.5px}
+html body .field input,html body .field select,html body .field textarea,html body .xls-tbl input,html body .xls-tbl select,html body .xls-tbl textarea,
+html body .adm-form input,html body .adm-form select{border:1px solid var(--s-gris3);background:#fff}
+html body input:focus,html body select:focus,html body textarea:focus{outline:none;border-color:var(--s-nuit)!important;background:var(--s-jaune3)}
+html body .xls-tbl input[readonly],html body .xls-tbl td.readout{background:var(--s-jaune3)}
+html body input[type=checkbox],html body input[type=radio]{accent-color:var(--s-nuit)}
+
+/* ── couleurs d'accent : sarcelle → bleu nuit ── */
+html body [style*="color:#0a6e84" i]:not(.btn){color:var(--s-nuit)!important}
+html body .home-card .ct::after{background:var(--s-noir)}
+
+/* ── tableaux de bord (Cockpit) : version claire ── */
+html body .ck-dash{background:#fff!important;color:var(--s-noir)!important;font-family:var(--s-font)!important}
+html body .ck-header{border-bottom:2px solid var(--s-noir)!important}
+html body .ck-header-title,html body .ck2-head h2{color:var(--s-noir)!important}
+html body .ck-header-sub,html body .ck2-head .sub{color:var(--s-gris)!important}
+html body .ck-kpi-card,html body .ck-card-inner,html body .ck-gauge,html body .ck-card,html body .ck2-kpi,html body [class*="ck2-card"]{
+  background:#fff!important;border:0!important;border-top:2px solid var(--s-noir)!important}
+html body .ck-kpi-card::after,html body .ck2-kpi::before{display:none!important}
+html body .ck-kpi-card .kpi-val,html body .ck-card .val,html body .ck-gauge .gp,html body .ck-kpibox .v{color:var(--s-noir)!important}
+html body .ck-kpi-card .kpi-lbl,html body .ck-kpi-card .kpi-foot,html body .ck-kpi-card .kpi-val small,html body .ck-card-inner h4,
+html body .ck-card .lbl,html body .ck-gauge .gm,html body .ck-kpibox .t,html body .ck-legend,html body .ck-grow-row{color:var(--s-gris)!important}
+html body .ck-sec-t{color:var(--s-noir)!important}
+html body .ck-sec-line{background:var(--s-filet)!important}
+html body .ck-kpibox{background:var(--s-fond)!important;border:0!important}
+html body .ck-grow-row{border-bottom-color:var(--s-filet)!important}
+html body .ck-svg text[fill="#fff" i],html body .ck-svg text[fill="#ffffff" i],html body .ck-svg text[fill="white" i]{fill:var(--s-noir)}
+html body .ck-svg [stroke^="rgba(255" i]{stroke:var(--s-filet)}
+html body .ck-svg [fill^="rgba(255" i]{fill:var(--s-fond)}
+/* séries des graphiques → nuancier Substances */
+html body [fill="#0a6e84" i],html body [fill="#1f8aa3" i]{fill:var(--s-nuit)}
+html body [fill="#1fa8e0" i]{fill:var(--s-turq)}
+html body [fill="#2e9e5b" i],html body [fill="#46a04b" i]{fill:var(--s-vert)}
+html body [fill="#e6ac00" i],html body [fill="#e6c200" i],html body [fill="#c99a2e" i]{fill:var(--s-orange)}
+html body [fill="#e5604d" i]{fill:var(--s-rouge)}
+html body .ck-legend span[style*="#0a6e84" i],html body .ck-legend span[style*="#1f8aa3" i]{background:var(--s-nuit)!important}
+html body .ck-legend span[style*="#1fa8e0" i]{background:var(--s-turq)!important}
+html body .ck-legend span[style*="#2e9e5b" i],html body .ck-legend span[style*="#46a04b" i]{background:var(--s-vert)!important}
+html body .ck-legend span[style*="#e6ac00" i],html body .ck-legend span[style*="#e6c200" i],html body .ck-legend span[style*="#c99a2e" i]{background:var(--s-orange)!important}
+html body .ck-legend span[style*="#e5604d" i]{background:var(--s-rouge)!important}
+
+/* ── barres d'outils des aperçus (le contenu PDF reste intact) ── */
+html body #prev-bar,html body .col-right-pdf .pv-bar,html body #offre-bar{background:var(--s-nuit)!important}
+html body .rt-toolbar button{background:#fff;border:1px solid var(--s-gris3)}
+html body .rt-toolbar button:hover{background:var(--s-jaune3)}
+html body .badge{font-weight:700}
+html body .card-hd input[type="checkbox"]:checked,html body .lockchk input[type="checkbox"]:checked{background:var(--s-nuit)!important}
+/* cockpit analytique : fond blanc, cartes ouvertes par un filet noir */
+html body .ck2{background:#fff!important}
+html body .ck2-kpi,html body .ck2-card{background:#fff!important;border-top:2px solid var(--s-noir)!important;padding:14px 4px 16px!important}
+html body .ck2-track>div{background:var(--s-nuit)!important}
+html body .ck2-rm-item{background:var(--s-fond)!important;border:1px solid var(--s-filet)!important}
+html body .ck2-rm-item .ic{background:var(--s-jaune2)!important;color:var(--s-nuit)!important}
+html body .ck2-head .yr,html body .ck2-yr-select,html body .ck-header-select{background-color:var(--s-jaune)!important;color:var(--s-nuit)!important}
+html body .ck2 [stroke="#0a6e84" i]{stroke:var(--s-nuit)}html body .ck2 [stroke="#2e9e5b" i]{stroke:var(--s-vert)}
+html body .ck2 [stroke="#e6ac00" i],html body .ck2 [stroke="#c99a2e" i]{stroke:var(--s-orange)}html body .ck2 [stroke="#e5604d" i]{stroke:var(--s-rouge)}
+/* icônes au trait à la place des émojis (sg3_plus.js ▸ 8) */
+html body .sg-emo{display:inline-flex;align-items:center;vertical-align:-3px;margin-right:6px;line-height:0}
+html body .sg-emo svg{width:15px;height:15px}
+html body button .sg-emo:only-child,html body .btn .sg-emo:only-child{margin-right:0}
+html body button:has(> .sg-emo),html body .btn:has(> .sg-emo){white-space:nowrap}
+/* ── PV de chantier sur tablette (sg3_plus.js ▸ 10) : formulaire pleine largeur, cibles tactiles ≥ 40 px,
+      champs en 16 px (pas de zoom automatique sur iPad), tableaux défilant horizontalement, aperçu PDF à la demande ── */
+html body.sg-tactile #pv_out .col-right-pdf{display:none!important}
+html body.sg-tactile.sg-apercu #pv_out .col-right-pdf{display:flex!important;position:fixed!important;inset:0!important;top:0!important;height:auto!important;width:auto!important;max-width:none!important;z-index:60;border-radius:0!important}
+html body.sg-tactile #pv_out>div>div:first-child{padding-right:0!important;flex-basis:100%!important}
+html body.sg-tactile #panel-pv-chantier input:not([type=checkbox]):not([type=radio]),html body.sg-tactile #panel-pv-chantier select,html body.sg-tactile #panel-pv-chantier textarea{font-size:16px!important;min-height:42px;padding:8px 10px!important}
+html body.sg-tactile #panel-pv-chantier textarea{min-height:88px;line-height:1.45!important}
+html body.sg-tactile #panel-pv-chantier .btn{min-height:42px;padding:8px 14px!important;font-size:14px!important}
+html body.sg-tactile #panel-pv-chantier .btn.btn-sm,html body.sg-tactile #panel-pv-chantier .pv-mini{min-height:38px!important;min-width:38px;font-size:13px!important}
+html body.sg-tactile #panel-pv-chantier input[type=checkbox],html body.sg-tactile #panel-pv-chantier input[type=radio]{width:24px!important;height:24px!important}
+html body.sg-tactile #panel-pv-chantier .pv-sec .bd,html body.sg-tactile #panel-pv-chantier .pv-card{overflow-x:auto;-webkit-overflow-scrolling:touch}
+html body.sg-tactile #panel-pv-chantier .pv-tb td,html body.sg-tactile #panel-pv-chantier .pv-tb th{padding:12px 10px!important}
+html body.sg-tactile #panel-pv-chantier .pv-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))!important}
+html body.sg-tactile #panel-pv-chantier .pv-sec .hd{min-height:48px}
+html body.sg-tactile #pv_out table.pv-xl{width:100%!important}
+html body.sg-tactile #pv_out table.pv-xl td>textarea,html body.sg-tactile #pv_out table.pv-xl td>.pv-ta{width:100%!important;box-sizing:border-box}

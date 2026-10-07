@@ -1,0 +1,84 @@
+/* ══ SUBGestion — habillage « Facturation » des modules DeltaSub ══════════════
+   Injecté dans le document DeltaSub embarqué (cadre #sg-ds-frame) par subgestion/construire.py.
+   Reprend la charte de Facturation.html : Akkurat, bleu nuit #003346, jaune #FFF266 / #FEF6B0,
+   fond #f0efe8, survol #FFFDE0. Les règles sont préfixées par « html » pour l'emporter sur les
+   styles ajoutés plus tard par DeltaSub (ch08c, ch10a…). */
+:root{
+  --bg:#ffffff; --chrome:#f0efe8; --chrome2:#e6e5de; --line:#d9d8d2; --line2:#ecebe6;
+  --side:#f7f6f1; --side-sel:#003346; --txt:#1a1a1a; --muted:#8a8f92;
+  --zebra:#faf9f5; --sel:#FEF6B0; --sel-txt:#003346; --accent:#003346;
+  --ok:#27AE60; --warn:#9a6b00; --err:#C0392B;
+}
+html,html body{font-family:'Akkurat','Akkurat Pro',Arial,Helvetica,sans-serif;font-size:13px;background:#f0efe8;color:#1a1a1a}
+html button,html input,html select,html textarea{font-family:inherit}
+
+/* ── Cadre : la coquille SUBGestion fournit l'en-tête noir (logo, Accueil, Retour, onglets) ── */
+html #app{grid-template-rows:46px 1fr}
+html #top{display:none}
+html #bar{background:#fff;border-top:0;border-bottom:1px solid #e4e4e4;padding:0 14px 0 10px;gap:8px}
+html #bar .tools{justify-content:flex-start}
+/* barre de menus Fichier / Edition / Affichage… déplacée dans la barre d'outils */
+html #bar #ch10a-mb{display:flex;align-items:center;gap:0;margin:0 6px 0 0;padding-right:10px;border-right:1px solid #e4e4e4;height:28px}
+html #ch10a-mb .ch10a-t{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#1a1a1a;padding:6px 9px;border-radius:3px;cursor:pointer}
+html #ch10a-mb .ch10a-t:hover,html #ch10a-mb .ch10a-t.on{background:#003346;color:#fff}
+/* l'arbre des modules est remplacé par les hubs et les onglets de l'en-tête */
+html #body{grid-template-columns:1fr!important}
+html #side{display:none!important}
+
+/* ── Boutons de la barre d'outils ── */
+html .ib{background:#fff;border:1px solid #d0cfc9;border-radius:4px;color:#1a1a1a;box-shadow:none}
+html .ib:hover{background:#FFFDE0;border-color:#003346}
+html .ib:active,html .ib.on{background:#003346;border-color:#003346;color:#fff}
+html #search{border:1px solid #ccc;border-radius:4px;background-color:#fafafa}
+html #search:focus,html .psearch:focus,html .inp:focus{outline:none;border-color:#636E7E;background-color:#FFFDE0}
+
+/* ── Colonnes et volets ── */
+html .cols{background:#f0efe8;gap:8px;padding:8px}
+html .col{border:1px solid #e4e4e4;background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+html .ph2{background:#fff;border-bottom:1px solid #e4e4e4}
+html .ph2 .cnt{color:#6c7174;font-size:12px}
+html .psearch{border:1px solid #ccc;border-radius:4px;background:#fafafa}
+
+/* ── Tableaux : en-têtes bleu nuit, sélection jaune (comme les listes de Facturation) ── */
+html table.g th{background:#003346;color:#fff;font-weight:bold;font-size:11px;letter-spacing:.2px;border-bottom:0;border-right:1px solid rgba(255,255,255,.12);padding:6px 8px}
+html table.g th.sort::after{color:#FFF266}
+html table.g tbody tr:nth-child(even) td{background:var(--zebra)}
+html table.g tbody tr:hover td{background:#FFFDE0}
+html table.g tbody tr.on td{background:#FEF6B0;color:#003346}
+html table.g tr.grp td{background:#eef3f5!important;color:#003346;font-weight:bold}
+html tr.on .ty{color:#003346}
+html .empty{color:#8a8f92}
+
+/* ── Onglets segmentés ── */
+html .seg{border:1px solid #003346;border-radius:4px}
+html .seg button{background:#fff;border-left:1px solid #c9d3d6;color:#003346;font-weight:600;font-size:12px}
+html .seg button.on{background:#003346;color:#fff}
+
+/* ── Fiches et formulaires ── */
+html .card h3{font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:.4px;color:#003346;padding-bottom:6px;border-bottom:2px solid #FFF266;display:inline-block}
+html .form label,html .kv b{color:#666}
+html .inp{border:1px solid #ccc;border-radius:3px;background:#fafafa}
+html .inp[readonly]{background:#f4f6f7;color:#555}
+
+/* ── Menus déroulants ── */
+html .menu{border:1px solid #d9d8d2;border-radius:4px;box-shadow:0 8px 26px rgba(0,0,0,.18)}
+html .menu div:hover{background:#003346;color:#fff}
+
+/* ── Fenêtres (dialogues) : bandeau bleu nuit comme les cartes de Facturation ── */
+html .ov{background:rgba(0,0,0,.45)}
+html .dlg{background:#fff;border:0;border-radius:6px;box-shadow:0 14px 44px rgba(0,0,0,.35);overflow:hidden}
+html .dlg .tt{background:#003346;color:#fff;text-align:left;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:.4px;padding:10px 16px;border-bottom:0}
+html .dlg .bd{background:#fff}
+html .dlg .ft{background:#f2f5f6;border-top:1px solid #e6eaeb}
+html .btn{height:28px;padding:0 16px;border:1px solid #c9c9c4;border-radius:4px;background:#fff;font-weight:bold;font-size:12px;color:#1a1a1a}
+html .btn:hover{background:#FFFDE0}
+html .btn.pri{background:#003346;border-color:#003346;color:#fff}
+html .btn.pri:hover{background:#00475f}
+
+/* ── Divers ── */
+html #toast{background:#1a1a1a;border-radius:7px;padding:11px 20px;letter-spacing:.02em;box-shadow:0 8px 30px rgba(0,0,0,.28)}
+html #toast.err{background:#8a2f22}
+html #net{background:#fff;color:#003346;border:1px solid #e4e4e4;letter-spacing:.03em}
+html #boot{background:#fff;color:#6c7174}
+html #boot b{font-size:14px;font-weight:600;color:#1a1a1a;letter-spacing:.3em;text-transform:uppercase}
+html .ph h2{font-size:14px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#1a1a1a;margin-bottom:12px}

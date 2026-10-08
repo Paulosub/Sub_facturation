@@ -1942,7 +1942,7 @@ SG_T_BIBLIO = {"modele", "modeledocument", "modelegroupe", "doctemplate", "docte
                "arriereplan", "image", "catalog", "catalogpos", "boilerplategroup", "boilerplateitem", "template", "templatefield",
                "templategroup", "textstyleset", "rowstyleset"}
 SG_T_TAUX = {"staffrate"}                       # taux internes : droit « équipe : taux »
-SG_T_SALAIRES = {"sgcoutrevient", "sgbouclement", "sgcontrattravail"}               # coût de revient (salaires) : droits « équipe : taux » et « réglages »
+SG_T_SALAIRES = {"sgcoutrevient", "sgbouclement", "sgcontrattravail", "sgapport"}               # coût de revient (salaires) : droits « équipe : taux » et « réglages »
 SG_T_LIBRES = {"documentlock", "setting", "appusersignature"} | CH08_ADMIN_T   # règles propres (verrous, CH-08)
 # parents explicites (enfant → (champ, parent)) ; sinon CHAMP_ID → collection « champ » si elle est rattachée à un projet
 SG_PARENTS = {"projectsubphase": ("PROJECTPHASE_ID", "projectphase"), "projectactivity": ("PROJECTACTIVITYGROUP_ID", "projectactivitygroup"),
@@ -2209,6 +2209,10 @@ def sg_refus_ecriture(ctx, c, ops):
             continue
         if t == "sgacces":
             return "Profils et accès : réservé à l'administrateur."
+        if t in SG_T_SALAIRES:   # contrats de travail, coût de revient, bouclement, commissions d'apport : administrateur
+            if sg_niv(ctx, "equipe", "taux") and sg_niv(ctx, "reglages", "oui"):
+                continue
+            return "Données du personnel (contrats, salaires, commissions) : réservées à l'administrateur."
         p0 = SG_IDX.projet(c, t, i)
         p1 = SG_IDX.projet_de(c, t, i, v) if v is not None else None
         ps = {p for p in (p0, p1) if p}

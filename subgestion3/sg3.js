@@ -120,6 +120,7 @@ const SG_DOM=[
     {v:'fx-cockpit2',t:'Cockpit analytique',ico:'trend',d:'Analyses et tendances de la facturation.'}]},
   {k:'finances',t:'Finances',ico:'wallet',d:'Contrats et facturation des projets, rentabilité, clients et indicateurs du bureau.',items:[
     {v:'nx-renta',t:'Rentabilité des projets',ico:'coins',hero:1,d:'Honoraires, coût du temps, facturé, encaissé et marge de chaque projet, avec alertes.'},
+    {v:'nx-apports',t:'Apports de projets',ico:'person',d:'Commission des collaborateurs sur les mandats qu’ils apportent : projets concernés, taux selon le contrat de travail, versements et évolution du solde à verser.'},
     {v:'mg-controlling',t:'Controlling',ico:'trend',d:'Controlling : membres, projets, marges.'},
     {v:'mg-contrats',t:'Contrats des projets',ico:'contrat',d:'Contrats, sous-traitants, échéancier et encaissements.'},
     {v:'mg-factures',t:'Facturation des projets',ico:'receipt',d:'Factures d’honoraires, encaissements et QR.'},

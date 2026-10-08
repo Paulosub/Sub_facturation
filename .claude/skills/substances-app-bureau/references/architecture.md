@@ -115,6 +115,10 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   Bloc 16 : français seulement — `sgFrSeul(mode)` (« auto » au démarrage, « manuel » depuis Réglages ▸ Données),
   `sgFrReste()`, `sgSauverAvant(motif)` (NAS : `POST /api/sauvegarder` ; local : `sgSauver(true)`), `SG_FR_ADM_T` (comptes et
   fonctions sautés sans le droit « gestion des utilisateurs »), marque `sg_meta/francais`.
+  Bloc 17 : apports de projets — `SG_COMM_DEF` / `sgCommDe` (paliers du contrat de travail, aussi `sgDocPc` / `sgDocMt` pour son
+  texte), `sgCommCond(sid, date)`, `sgCommTaux`, `sgTravauxTTC(contrats)`, `sgApportCalc(a, D, taux)` (sur `sgRenta`),
+  `sgApportsParStaff`, `sgApportSerie` + `sgCourbeCHF` (évolution), `nx-apports`, `sgApportDlg`, `sgVersementDlg` ;
+  `sgATraiter` enveloppé (« Commissions d'apport à verser ») ; collection `sgapport` dans `SG_T_SALAIRES` du serveur.
 - Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `frSeulOps()` → {ops, n} et `frSeul(ops)` (lots de 400) :
   nettoyage de la base (libellés, modèles, documents types, gabarits, catalogues ; `FR_CAT_DE` / `FR_CAT_NOM` pour eBKP-T) ;
   `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;

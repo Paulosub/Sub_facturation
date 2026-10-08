@@ -1298,7 +1298,7 @@ function sgDocContrat(c){ const E=c.EMPLOYE||{}, fem=E.civ==='Madame', ee=fem?'e
    +'<h2>COMMUNICATIONS PRIVÉES</h2><p>Les communications privées (téléphone, mails, sms,…) ainsi que l’utilisation d’internet à des fins privées se font exclusivement en dehors des heures de travail. Dans le cas contraire, les heures effectives seront déduites du décompte horaire journalier.</p>'
    +'<h2>TRAVAUX PRIVÉS</h2><p>L’employé(e) n’a pas le droit d’exécuter à son compte ou pour celui de tiers des travaux entrant dans le cadre de la profession, tels que concours, sans l’autorisation expresse de '+SG_BUREAU.nom+'.</p><p>Les travaux privés accordés par '+SG_BUREAU.nom+' seront effectués exclusivement en dehors des heures de travail.</p><p>L’employé(e) peut avec l’accord de '+SG_BUREAU.nom+' utiliser le matériel du bureau, les copies et impressions plotter seront facturées selon les tarifs du bureau.</p>'
    +'<h2>AUTRES DISPOSITIONS</h2><p>Pour toutes les dispositions n’étant pas mentionnées dans le présent contrat, le code des obligations fera foi ainsi que la convention collective de travail des bureaux d’architectes et ingénieurs vaudois en vigueur.</p>'
-   +(c.COMMISSION?'<h2>CONDITIONS PARTICULIÈRES</h2><p>Dans le cas où l’employé(e) apporte un mandat au bureau '+SG_BUREAU.nom+', les conditions suivantes sont définies:</p><p>Commission de 3% à 5% du montant hors taxe des honoraires facturés, versé au décompte final, une fois la totalité des honoraires encaissés. Les conditions restent valables au départ anticipé du collaborateur.</p><p>Base de calcul du pourcentage de commission :</p><ul><li>3% si montant des travaux &lt; 2 000 000.00 TTC</li><li>4% si montant des travaux &gt;= 2 000 000.00 TTC</li><li>5% si montant des travaux &gt; 8 000 000.00 TTC</li></ul><p>L’étude et la conception du projet sont réservées à l’employé(e), pour autant que son emploi du temps le lui permette. L’apport d’un mandat ne le libère pas des tâches qui lui ont été confiées.</p><p>Le contrat d’architecte sera établi au nom du bureau '+SG_BUREAU.nom+'.</p><p>En cas de rupture du présent contrat, les mandats amenés ne pourront en aucun cas être emportés. Toute violation de cette clause donne à l’employeur le droit d’exiger une indemnité équitable.</p>':'')
+   +(c.COMMISSION?'<h2>CONDITIONS PARTICULIÈRES</h2><p>Dans le cas où l’employé(e) apporte un mandat au bureau '+SG_BUREAU.nom+', les conditions suivantes sont définies:</p><p>Commission de '+sgDocPc(c,'COMM_T1')+'% à '+sgDocPc(c,'COMM_T3')+'% du montant hors taxe des honoraires facturés, versé au décompte final, une fois la totalité des honoraires encaissés. Les conditions restent valables au départ anticipé du collaborateur.</p><p>Base de calcul du pourcentage de commission :</p><ul><li>'+sgDocPc(c,'COMM_T1')+'% si montant des travaux &lt; '+sgDocMt(c,'COMM_S1')+' TTC</li><li>'+sgDocPc(c,'COMM_T2')+'% si montant des travaux &gt;= '+sgDocMt(c,'COMM_S1')+' TTC</li><li>'+sgDocPc(c,'COMM_T3')+'% si montant des travaux &gt; '+sgDocMt(c,'COMM_S2')+' TTC</li></ul><p>L’étude et la conception du projet sont réservées à l’employé(e), pour autant que son emploi du temps le lui permette. L’apport d’un mandat ne le libère pas des tâches qui lui ont été confiées.</p><p>Le contrat d’architecte sera établi au nom du bureau '+SG_BUREAU.nom+'.</p><p>En cas de rupture du présent contrat, les mandats amenés ne pourront en aucun cas être emportés. Toute violation de cette clause donne à l’employeur le droit d’exiger une indemnité équitable.</p>':'')
    +(c.CLAUSES?'<h2>'+(c.COMMISSION?'':'CONDITIONS PARTICULIÈRES')+'</h2><p>'+sgE(c.CLAUSES).replace(/\n/g,'<br>')+'</p>':'')
    +'</div><p style="margin-top:8mm">Fait en deux exemplaires à '+SG_BUREAU.ville+', le '+sgDateL(c.DATE)+'</p>'
    +'<div class="sign"><div>'+SG_BUREAU.nom+'<br>'+SG_BUREAU.signataire+'</div><div>'+sgE(E.prenom)+' '+sgE(E.nom)+'</div></div>';
@@ -1354,6 +1354,9 @@ function sgCtrDlg(type,s,x){ const old=x||{}, base=sgCtrAll(s?s.ID:null).find(y=
     L('Indemnité km CHF',I('KM',old.KM||'0.70',{style:{width:'80px'}}));
     L('',h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':'VOITURE',checked:!!old.VOITURE||null}),' Voiture de fonction'));
     L('',h('label',{style:{textAlign:'left'}},h('input',{type:'checkbox','data-k':'COMMISSION',checked:old.COMMISSION==null?true:!!old.COMMISSION||null}),' Commission sur mandats apportés (conditions particulières)'));
+    { const K=sgCommDe(Object.keys(SG_COMM_DEF).some(k=>old[k]!=null)?old:cur), N=(k,st,w)=>I(k,K[k],{type:'number',step:st,min:'0',style:{width:w}});   // paliers (Finances ▸ Apports de projets)
+      L('Paliers de commission',h('div',{style:{display:'flex',flexWrap:'wrap',gap:'6px',alignItems:'center',fontSize:'12.5px'}},N('COMM_T1','0.5','62px'),'% sous CHF',N('COMM_S1','100000','112px'),'·',
+        N('COMM_T2','0.5','62px'),'% jusqu’à CHF',N('COMM_S2','100000','112px'),'·',N('COMM_T3','0.5','62px'),'% au-delà (montant des travaux TTC)')); }
     L('Autres clauses',h('textarea',{class:'inp','data-k':'CLAUSES',rows:3},old.CLAUSES||'')); }
   if(type==='avenant'){ L('Avenant du',I('DATE',old.DATE||today(),{type:'date'})); L(h('b',{},'Prend effet le'),I('EFFET',old.EFFET||diso(new Date(new Date().getFullYear()+1,0,1)),{type:'date'}));
     L('Objet',I('OBJET',old.OBJET||'')); L('Salaire mensuel brut CHF',I('SALAIRE',old.SALAIRE??cur.SALAIRE??'',{type:'number',step:'50',style:{width:'120px'}})); L('Mensualités',S('MOIS',[[12,'12'],[13,'13']],old.MOIS??cur.MOIS??13));
@@ -1562,3 +1565,182 @@ async function sgFrSeul(mode){ if(!sgAdmin()||SG_FR.enCours) return; SG_FR.enCou
     g.insertAdjacentHTML('beforeend',nxCard('c6','Français seulement','<div class="b"><p style="margin:0 0 14px;font-weight:300">'+(mk?'Base nettoyée (dernier passage le '+nxE(dfr(mk.DATE))+')'+(res?' :<br>'+nxE(res).replace(/\n/g,'<br>'):' (rien à retirer).'):'La base contient encore des libellés, modèles ou catalogues en allemand, en italien ou en anglais.')+'</p>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn'+(mk?'':' pri')+'" data-fr="1">'+nxSvg('search')+(mk?'Vérifier à nouveau':'Ne garder que le français')+'</button></div></div>'));
     const b=g.querySelector('[data-fr]'); if(b) b.onclick=()=>sgFrSeul('manuel'); }; }
+
+
+/* ═══ 17. APPORTS DE PROJETS (08.10.2026) ══════════════════════════════════════════════════════════════════════════
+   Finances ▸ Apports de projets (administrateur ; collection « sgapport », réservée sur le NAS comme les salaires) :
+   « apport » {STAFF_ID, PROJECT_ID, DATE, TRAVAUX (montant des travaux TTC saisi ; vide = selon les contrats d'honoraires),
+   TAUX (taux convenu % ; vide = selon les paliers du contrat de travail), FINAL (décompte final établi le), REMARQUE} ;
+   « versement » {STAFF_ID, PROJECT_ID (facultatif : vide = acompte sur l'ensemble), DATE, MONTANT, REMARQUE}.
+   Clause du contrat de travail (conditions particulières) : commission de x % du montant HT des honoraires facturés, versée au
+   décompte final une fois tous les honoraires encaissés, valable aussi après le départ ; x selon le montant des travaux TTC
+   (paliers du contrat : COMM_T1 % sous COMM_S1, COMM_T2 % jusqu'à COMM_S2, COMM_T3 % au-delà ; modèle 3 / 4 / 5 %, 2 et 8 mio).
+   Honoraires facturés (HT, hors frais, acomptes déduits) et encaissés : contrats Facturation reliés au projet (sgRenta).
+   Montant des travaux : CFC 1, 2, 4, 5 et 9 du calcul d'honoraires (inclus + non inclus, TTC), par contrat et partie d'ouvrage.
+   Acquise = facturé HT × taux ; exigible au décompte final (date saisie) ou quand tout est facturé (ou l'affaire terminée) et
+   encaissé ; solde = acquise − versé. Évolution : cumuls mois par mois (factures datées, versements). */
+const SG_COMM_DEF={COMM_T1:3,COMM_S1:2000000,COMM_T2:4,COMM_S2:8000000,COMM_T3:5};
+const sgCommDe=c=>{ const r={}; Object.keys(SG_COMM_DEF).forEach(k=>{ r[k]=c&&c[k]!=null&&c[k]!==''?+c[k]:SG_COMM_DEF[k]; }); return r; };
+const sgNum=v=>{ const n=+String(v??'').replace(/[’'\s]/g,'').replace(',','.'); return isFinite(n)?n:0; };
+/* montant des travaux TTC de contrats Facturation : coût de construction complet du calcul d'honoraires */
+function sgTravauxTTC(cs){ const K=['ch_cfc1','ch_cfc2','ch_cfc4','ch_cfc5','ch_cfc9'], sd=d=>{ const i=(d&&d.inputs)||{}; return K.reduce((s,k)=>s+sgNum(i[k]),0); };
+  return (cs||[]).reduce((s,c)=>s+(Array.isArray(c.ouvrages)&&c.ouvrages.length?c.ouvrages.reduce((t,o)=>t+(sd(o.detail)||sgNum(o.cfcTot)),0):sd(c.detail)),0); }
+/* conditions de commission : contrat de travail en vigueur à la date de l'apport, sinon le plus récent ; sans contrat : le modèle */
+function sgCommCond(sid,d){ const L=sgCtrAll(sid).filter(x=>x.TYPE==='contrat'&&x.DEBUT).sort((a,b)=>cmp(b.DEBUT,a.DEBUT)), k=d||today(), c=L.find(x=>x.DEBUT<=k)||L[0]||null;
+  return Object.assign(sgCommDe(c),{actif:!c||c.COMMISSION==null||!!+c.COMMISSION,src:c?'contrat de travail du '+dfr(c.DATE||c.DEBUT):'modèle du contrat de travail — aucun contrat enregistré pour ce collaborateur'}); }
+const sgCommTaux=(C,trav)=>!C.actif?0:trav<C.COMM_S1?C.COMM_T1:trav<=C.COMM_S2?C.COMM_T2:C.COMM_T3;
+const sgPcT=v=>num(+v||0,(+v||0)%1?1:0);
+/* texte du contrat : « 3 », « 2 000 000.00 » (comme le modèle du bureau) */
+const sgDocPc=(c,k)=>String(sgCommDe(c)[k]), sgDocMt=(c,k)=>Math.round(sgCommDe(c)[k]).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')+'.00';
+const sgCommTexte=C=>C.actif?sgPcT(C.COMM_T1)+' % sous CHF '+nxCHF(C.COMM_S1)+' · '+sgPcT(C.COMM_T2)+' % jusqu’à CHF '+nxCHF(C.COMM_S2)+' · '+sgPcT(C.COMM_T3)+' % au-delà (montant des travaux TTC)':'aucune commission prévue au contrat de travail';
+const sgApports=()=>DS.all('sgapport').filter(x=>x.TYPE==='apport');
+const sgVersements=sid=>DS.all('sgapport').filter(x=>x.TYPE==='versement'&&(sid==null||String(x.STAFF_ID)===String(sid))).sort((a,b)=>cmp(a.DATE,b.DATE));
+function sgApportCalc(a,D,taux){ const p=DS.get('project',a.PROJECT_ID), R=p?sgRenta(p,D,taux):null, C=sgCommCond(a.STAFF_ID,a.DATE);
+  const travAuto=R?sgTravauxTTC(R.cs):0, travSaisi=a.TRAVAUX!=null&&a.TRAVAUX!=='', trav=travSaisi?+a.TRAVAUX:travAuto;
+  const tauxSaisi=a.TAUX!=null&&a.TAUX!=='', t=tauxSaisi?+a.TAUX:sgCommTaux(C,trav);
+  const fHT=R?R.factHT:0, contratHT=R?R.contratHT:0, acquise=fHT*t/100, prevue=Math.max(contratHT,fHT)*t/100;
+  const verse=sgVersements(a.STAFF_ID).filter(v=>String(v.PROJECT_ID)===String(a.PROJECT_ID)).reduce((s,v)=>s+(+v.MONTANT||0),0);
+  const ouvertes=R?R.fs.filter(fxUnpaid).length:0, toutFacture=contratHT>0&&fHT>=contratHT*0.995, termine=!!(R&&R.cs.length&&R.cs.every(c=>c.termine));
+  const exigible=!!a.FINAL||!!(R&&R.fs.length&&!ouvertes&&(toutFacture||termine)), solde=acquise-verse;
+  const statut=!exigible?['En cours','']:solde>0.5?['À verser','urg']:['Soldé','s2'];
+  return {a,p,R,C,trav,travAuto,travSaisi,t,tauxSaisi,fHT,contratHT,encTTC:R?R.encTTC:0,acquise,prevue,verse,solde,exigible,ouvertes,statut}; }
+/* par collaborateur : apports, versements (y compris ceux sans projet), soldes */
+function sgApportsParStaff(X){ const som=(L,f)=>L.reduce((t,x)=>t+(+f(x)||0),0), ids=[...new Set([...X.map(x=>String(x.a.STAFF_ID)),...sgVersements().map(v=>String(v.STAFF_ID))])];
+  return ids.map(id=>{ const s=DS.get('staff',id), xs=X.filter(x=>String(x.a.STAFF_ID)===id), vs=sgVersements(id), acq=som(xs,x=>x.acquise), ver=som(vs,v=>v.MONTANT);
+    return {id,s,xs,vs,acq,ver,solde:acq-ver,exi:Math.min(Math.max(0,acq-ver),som(xs.filter(x=>x.exigible),x=>Math.max(0,x.solde))),prev:som(xs,x=>x.prevue),fHT:som(xs,x=>x.fHT)}; })
+    .sort((a,b)=>cmp(staffName(a.s),staffName(b.s))); }
+/* cumuls mois par mois : commission acquise (factures datées × taux du projet) et versements */
+function sgApportSerie(X,vs){ const ev=[];
+  X.forEach(x=>{ if(!x.R) return; const tva=f=>(+((x.R.cs.find(c=>c.id===f.contrat_id)||{}).tva)||8.1)/100;
+    x.R.fs.forEach(f=>{ const d=String(f.date||'').slice(0,10); if(/^\d{4}-\d{2}/.test(d)) ev.push([d,((+f._ttc||+f.ttc||0)/(1+tva(f)))*x.t/100,0]); }); });
+  (vs||[]).forEach(v=>{ if(v.DATE) ev.push([String(v.DATE).slice(0,10),0,+v.MONTANT||0]); });
+  if(!ev.length) return [];
+  ev.sort((a,b)=>cmp(a[0],b[0])); const fin=today().slice(0,7), M=[]; let a=0,v=0,i=0,y=+ev[0][0].slice(0,4),mo=+ev[0][0].slice(5,7)-1;
+  while(M.length<600){ const k=y+'-'+String(mo+1).padStart(2,'0'); let da=0,dv=0;
+    while(i<ev.length&&ev[i][0].slice(0,7)<=k){ da+=ev[i][1]; dv+=ev[i][2]; i++; }
+    a+=da; v+=dv; M.push({k,a,v,da,dv}); if(k>=fin&&i>=ev.length) break; if(++mo>11){ mo=0; y++; } }
+  return M; }
+/* courbe en CHF : commission acquise et versements cumulés, solde à verser entre les deux */
+function sgCourbeCHF(M){ if(!M.length) return '<div class="nx-empty">Pas encore de facturation ni de versement.</div>';
+  const W=680,H=200,pl=70,pr=10,pb=24,pt=12,n=M.length, max=Math.max(1,...M.map(x=>Math.max(x.a,x.v)));
+  const st0=max/4, p10=Math.pow(10,Math.floor(Math.log10(st0))), step=[1,2,2.5,5,10].map(x=>x*p10).find(x=>x>=st0)||p10*10, nice=step*4;
+  const X=i=>pl+(n===1?(W-pl-pr)/2:i*(W-pl-pr)/(n-1)), Y=v=>pt+(H-pt-pb)*(1-v/nice), mm=k=>k.slice(5,7)+'.'+k.slice(2,4);
+  let s='<svg class="nx-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="height:'+H+'px">';
+  for(let i=0;i<=4;i++){ const v=nice*i/4, yy=Y(v); s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yy+'" y2="'+yy+'" stroke="'+(i?'#ececea':'#1d1d1b')+'" stroke-width="'+(i?1:1.5)+'"/><text x="'+(pl-6)+'" y="'+(yy+3.5)+'" text-anchor="end">'+sgChf(v)+'</text>'; }
+  const pa=M.map((x,i)=>X(i).toFixed(1)+','+Y(x.a).toFixed(1)), pv=M.map((x,i)=>X(i).toFixed(1)+','+Y(x.v).toFixed(1));
+  s+='<polygon points="'+pa.concat(pv.slice().reverse()).join(' ')+'" fill="#fef6b0" opacity=".9"/>';
+  s+='<polyline points="'+pv.join(' ')+'" fill="none" stroke="#98c21f" stroke-width="2"/><polyline points="'+pa.join(' ')+'" fill="none" stroke="#003346" stroke-width="2"/>';
+  const pas=Math.max(1,Math.ceil(n/9)); M.forEach((x,i)=>{ if(i===n-1||(i%pas===0&&n-1-i>=pas*0.7)) s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">'+mm(x.k)+'</text>'; });   // pas de chevauchement à droite
+  M.forEach((x,i)=>{ if(!x.da&&!x.dv&&i!==n-1) return; s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(x.a).toFixed(1)+'" r="2.4" fill="#003346"><title>'+nxE(mm(x.k)+' — acquise CHF '+sgChf(x.a)+' · versé CHF '+sgChf(x.v)+' · solde CHF '+sgChf(x.a-x.v))+'</title></circle>'; });
+  const pt_=(c,t,hh)=>'<span style="display:inline-flex;align-items:center;gap:6px"><i style="display:inline-block;width:16px;height:'+hh+'px;background:'+c+'"></i>'+t+'</span>';
+  return s+'</svg><div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-top:6px">'+pt_('#003346','Commission acquise (cumul)',3)+pt_('#98c21f','Versé (cumul)',3)+pt_('#fef6b0','Solde à verser',10)+'</div>'; }
+VIEWS['nx-apports']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcul des apports…</div>');
+  Promise.all([DS.need(['sgapport','sgcontrattravail']),fxEnsure().catch(()=>null)]).then(()=>{ if(!VIEW||VIEW.id!=='nx-apports') return;
+    const D=fxData(), taux=sgTaux(), X=sgApports().map(a=>sgApportCalc(a,D,taux)), S=sgApportsParStaff(X), sel=String(nxLS.get('sg3_apport_staff','')||'');
+    const cur=S.find(x=>x.id===sel)||null, XS=cur?cur.xs:X, VS=cur?cur.vs:sgVersements(), som=(L,f)=>L.reduce((t,x)=>t+(+f(x)||0),0);
+    const T={acq:som(S,x=>x.acq),ver:som(S,x=>x.ver),exi:som(S,x=>x.exi),prev:som(S,x=>x.prev),fHT:som(S,x=>x.fHT)}, M=sgApportSerie(XS,VS), ans={};
+    M.forEach(x=>{ const y=x.k.slice(0,4), r=ans[y]||(ans[y]={y,da:0,dv:0,sol:0}); r.da+=x.da; r.dv+=x.dv; r.sol=x.a-x.v; });
+    const nomS=sid=>staffName(DS.get('staff',sid))||'#'+sid, projet=p=>p?'<span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span> '+nxE((p.TITLE||'').slice(0,40)):'<i>projet supprimé</i>';
+    const tabS=S.length?'<table class="nx-tbl sg-apports"><tr><th>Collaborateur</th><th class="r">Projets</th><th class="r">Facturé HT</th><th class="r">Commission acquise</th><th class="r">Versé</th><th class="r">Solde</th><th class="r">dont exigible</th><th class="r">Prévue (contrats entiers)</th></tr>'
+      +S.map(x=>'<tr class="'+(x.id===sel?'sel':'')+'" data-fn="s_'+x.id+'" title="'+(x.id===sel?'Afficher tous les collaborateurs':'Afficher le détail')+'" style="cursor:pointer"><td><b>'+nxE(staffName(x.s)||'#'+x.id)+'</b>'+(x.s&&!+x.s.ISACTIVE?' <span class="nx-tag s4">ancien</span>':'')+'</td><td class="r">'+x.xs.length+'</td><td class="r">'+nxCHF(x.fHT)+'</td><td class="r">'+nxCHF(x.acq)+'</td><td class="r">'+nxCHF(x.ver)+'</td><td class="r"><b>'+nxCHF(x.solde)+'</b></td><td class="r">'+(x.exi>0.5?'<span class="nx-tag urg">'+nxCHF(x.exi)+'</span>':'—')+'</td><td class="r">'+nxCHF(x.prev)+'</td></tr>').join('')
+      +'<tr class="tot"><td>Total</td><td class="r">'+X.length+'</td><td class="r">'+nxCHF(T.fHT)+'</td><td class="r">'+nxCHF(T.acq)+'</td><td class="r">'+nxCHF(T.ver)+'</td><td class="r">'+nxCHF(T.acq-T.ver)+'</td><td class="r">'+nxCHF(T.exi)+'</td><td class="r">'+nxCHF(T.prev)+'</td></tr></table>'
+      :'<div class="nx-empty">Aucun apport enregistré. « Nouvel apport » : choisissez le collaborateur et le projet qu’il a apporté.</div>';
+    const tabA=XS.length?'<table class="nx-tbl"><tr><th>Projet</th>'+(cur?'':'<th>Collaborateur</th>')+'<th>Apporté le</th><th class="r">Travaux TTC</th><th class="r">Taux</th><th class="r">Honoraires HT</th><th>Facturé HT</th><th class="r">Encaissé TTC</th><th class="r">Acquise</th><th class="r">Versé</th><th class="r">Solde</th><th>Statut</th><th></th></tr>'
+      +XS.map(x=>{ const i=x.a.ID, f=x.contratHT?x.fHT/x.contratHT:null;
+        return '<tr><td'+(x.p?' data-ref="p:'+x.p.ID+'" style="cursor:pointer"':'')+'>'+projet(x.p)+'</td>'+(cur?'':'<td>'+nxE(nomS(x.a.STAFF_ID))+'</td>')
+          +'<td style="white-space:nowrap">'+(x.a.DATE?dfr(x.a.DATE):'—')+(x.a.FINAL?'<br><small>décompte final '+dfr(x.a.FINAL)+'</small>':'')+'</td>'
+          +'<td class="r" title="'+(x.travSaisi?'Montant saisi':'Selon les contrats d’honoraires (CFC 1, 2, 4, 5 et 9, TTC)')+'">'+(x.trav?nxCHF(x.trav):'<span style="color:var(--s-orange)">à saisir</span>')+(x.travSaisi?' <small>saisi</small>':'')+'</td>'
+          +'<td class="r" title="'+nxE(x.tauxSaisi?'Taux convenu pour ce projet':sgCommTexte(x.C)+' — selon le '+x.C.src)+'">'+sgPcT(x.t)+' %'+(x.tauxSaisi?' <small>convenu</small>':'')+'</td>'
+          +'<td class="r">'+(x.contratHT?nxCHF(x.contratHT):'—')+'</td>'
+          +'<td style="white-space:nowrap">'+nxCHF(x.fHT)+(f!=null?' '+sgBarre(Math.min(1,f))+' '+sgPct(f):'')+'</td>'
+          +'<td class="r">'+nxCHF(x.encTTC)+(x.ouvertes?'<br><small style="color:var(--s-orange)">'+x.ouvertes+' facture'+(x.ouvertes>1?'s':'')+' ouverte'+(x.ouvertes>1?'s':'')+'</small>':'')+'</td>'
+          +'<td class="r">'+nxCHF(x.acquise)+'</td><td class="r">'+nxCHF(x.verse)+'</td><td class="r"><b>'+nxCHF(x.solde)+'</b></td>'
+          +'<td><span class="nx-tag '+x.statut[1]+'">'+x.statut[0]+'</span></td>'
+          +'<td style="white-space:nowrap;text-align:right"><button class="nx-btn" data-fn="v_'+i+'">Versement</button> <button class="nx-btn" data-fn="e_'+i+'">Modifier</button></td></tr>'; }).join('')+'</table>'
+      :'<div class="nx-empty">Aucun projet apporté'+(cur?' par '+nxE(staffName(cur.s)):'')+'.</div>';
+    const tabV=VS.length?'<table class="nx-tbl"><tr><th>Versé le</th>'+(cur?'':'<th>Collaborateur</th>')+'<th>Projet</th><th class="r">Montant</th><th>Remarque</th><th></th></tr>'
+      +VS.slice().reverse().map(v=>{ const p=DS.get('project',v.PROJECT_ID); return '<tr><td style="white-space:nowrap">'+dfr(v.DATE)+'</td>'+(cur?'':'<td>'+nxE(nomS(v.STAFF_ID))+'</td>')
+        +'<td>'+(p?projet(p):'<span style="color:var(--s-gris)">acompte sur l’ensemble</span>')+'</td><td class="r">'+nxCHF(v.MONTANT)+'</td><td>'+nxE(v.REMARQUE||'')+'</td><td style="text-align:right"><button class="nx-btn" data-fn="w_'+v.ID+'">Modifier</button></td></tr>'; }).join('')
+      +'<tr class="tot"><td>Total</td>'+(cur?'':'<td></td>')+'<td></td><td class="r">'+nxCHF(som(VS,v=>v.MONTANT))+'</td><td></td><td></td></tr></table>'
+      :'<div class="nx-empty">Aucun versement enregistré.</div>';
+    const Y=Object.values(ans).sort((a,b)=>cmp(b.y,a.y)), tabY=Y.length?'<table class="nx-tbl"><tr><th>Année</th><th class="r">Commission acquise</th><th class="r">Versé</th><th class="r">Solde à verser en fin d’année</th></tr>'
+      +Y.map(r=>'<tr><td>'+r.y+'</td><td class="r">'+nxCHF(r.da)+'</td><td class="r">'+nxCHF(r.dv)+'</td><td class="r"><b>'+nxCHF(r.sol)+'</b></td></tr>').join('')+'</table>':'';
+    const titreSel=cur?staffName(cur.s):'tous les collaborateurs', C0=cur?sgCommCond(cur.id):null;
+    const html='<div class="sg-split">'+sgIntro('Finances','Apports de projets','Commission des collaborateurs sur les mandats qu’ils apportent au bureau (contrat de travail, conditions particulières) : un pourcentage des honoraires facturés HT, selon le montant des travaux, versé au décompte final une fois tous les honoraires encaissés.',
+        '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxCHF(T.acq)+'</div><div class="t">commission acquise (CHF)</div></div><div class="sg-fig"><div class="n">'+nxCHF(T.ver)+'</div><div class="t">versé (CHF)</div></div>'
+        +'<div class="sg-fig"><div class="n">'+nxCHF(T.acq-T.ver)+'</div><div class="t">solde à verser (CHF)</div></div><div class="sg-fig"><div class="n">'+nxCHF(T.exi)+'</div><div class="t">dont exigible (CHF)</div></div></div>'
+        +'<div class="acts"><button class="nx-btn pri" data-fn="nouveau">'+nxSvg('plus')+'Nouvel apport</button><button class="nx-btn" data-fn="versement">'+nxSvg('plus')+'Nouveau versement</button>'
+        +(cur?'<button class="nx-btn" data-fn="tous">'+nxSvg('users')+'Tous les collaborateurs</button>':'')+'<button class="nx-btn" data-fn="csv">'+nxSvg('export')+'Exporter (CSV)</button></div>')
+      +'<div><div class="nx-grid">'+nxCard('c12','Par collaborateur','<div class="b flush" style="overflow:auto">'+tabS+'</div>')
+      +(C0?nxCard('c12','Conditions — '+nxE(titreSel),'<div class="b"><p style="margin:0;font-size:13.5px">'+nxE(sgCommTexte(C0))+'</p><p style="margin:6px 0 0;font-size:12px;color:var(--s-gris);font-weight:300">Selon le '+nxE(C0.src)+' (Ressources humaines ▸ Contrats de travail). Le taux de chaque projet suit le montant des travaux TTC ; un taux convenu peut être saisi par projet. Commission versée au décompte final, une fois tous les honoraires encaissés ; due aussi après le départ du collaborateur.</p></div>'):'')
+      +nxCard('c12','Projets apportés — '+nxE(titreSel),'<div class="b flush" style="overflow:auto">'+tabA+'</div>')
+      +nxCard('c12','Évolution du montant à verser — '+nxE(titreSel),'<div class="b">'+sgCourbeCHF(M)+(tabY?'<div style="margin-top:14px;overflow:auto">'+tabY+'</div>':'')+'</div>')
+      +nxCard('c12','Versements — '+nxE(titreSel),'<div class="b flush" style="overflow:auto">'+tabV+'</div>')+'</div></div></div>';
+    pg0.querySelector('.nx-wrap').innerHTML=html;
+    Object.assign(pg0._fn,{nouveau:()=>sgApportDlg(null,cur?cur.id:null),versement:()=>sgVersementDlg(null,cur?cur.id:null,null,null),tous:()=>{ nxLS.set('sg3_apport_staff',''); go('nx-apports'); },
+      csv:()=>{ const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"', r0=n=>Math.round(+n||0), rows=[['Collaborateur','Projet','Titre','Apporté le','Décompte final','Travaux TTC','Taux %','Honoraires HT','Facturé HT','Encaissé TTC','Commission prévue','Commission acquise','Versé','Solde','Statut']]
+        .concat(XS.map(x=>[nomS(x.a.STAFF_ID),x.p?x.p.NUMBER:'',x.p?x.p.TITLE:'',x.a.DATE||'',x.a.FINAL||'',r0(x.trav),x.t,r0(x.contratHT),r0(x.fHT),r0(x.encTTC),r0(x.prevue),r0(x.acquise),r0(x.verse),r0(x.solde),x.statut[0]]),
+          [[]],[['Versements']],[['Versé le','Collaborateur','Projet','Montant','Remarque']],VS.map(v=>[v.DATE||'',nomS(v.STAFF_ID),(DS.get('project',v.PROJECT_ID)||{}).NUMBER||'',v.MONTANT,v.REMARQUE||'']));
+        const a=h('a',{href:URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(q).join(';')).join('\n')],{type:'text/csv'})),download:'apports_'+sgHorodatage()+'.csv'}); document.body.append(a); a.click(); setTimeout(()=>a.remove(),1000); }});
+    S.forEach(x=>{ pg0._fn['s_'+x.id]=()=>{ nxLS.set('sg3_apport_staff',x.id===sel?'':x.id); go('nx-apports'); }; });
+    XS.forEach(x=>{ pg0._fn['e_'+x.a.ID]=()=>sgApportDlg(x.a); pg0._fn['v_'+x.a.ID]=()=>sgVersementDlg(null,x.a.STAFF_ID,x.a.PROJECT_ID,x.exigible?x.solde:null); });
+    VS.forEach(v=>{ pg0._fn['w_'+v.ID]=()=>sgVersementDlg(v); });
+  }).catch(e=>{ console.error(e); const w=m.querySelector('.nx-wrap'); if(w) w.innerHTML='<div class="nx-empty">✗ '+nxE(e.message||e)+'</div>'; }); },
+  refresh(ts){ if(hit(ts,'sgapport','sgcontrattravail','project')) go('nx-apports'); } };
+SG_VUE_DROIT['nx-apports']=()=>sgDroit('equipe','taux')&&sgDroit('reglages','oui');
+/* liste des collaborateurs (actuels d'abord, anciens ensuite : la commission reste due après le départ) */
+function sgStaffSelect(k,v){ const e=h('select',{class:'inp','data-k':k}); e.append(h('option',{value:''},'— choisir —'));
+  DS.all('staff').slice().sort((a,b)=>(+b.ISACTIVE-+a.ISACTIVE)||cmp(staffName(a),staffName(b))).forEach(s=>e.append(h('option',{value:s.ID,selected:String(s.ID)===String(v??'')||null},staffName(s)+(+s.ISACTIVE?'':' (ancien)'))));
+  return e; }
+function sgApportDlg(a,sid){ const old=a||{}, I=(k,v,o)=>h('input',Object.assign({class:'inp',value:v??'','data-k':k},o||{}));
+  const pr=h('select',{class:'inp','data-k':'PROJECT_ID'}); pr.append(h('option',{value:''},'— choisir le projet —'));
+  DS.all('project').filter(p=>!sgInterne(p)).sort((x,y)=>cmp(y.NUMBER,x.NUMBER)).forEach(p=>pr.append(h('option',{value:p.ID,selected:String(p.ID)===String(old.PROJECT_ID??'')||null},(p.NUMBER||'')+' — '+(p.TITLE||''))));
+  const info=h('div',{style:{gridColumn:'1 / -1',fontSize:'12.5px',lineHeight:'1.5',minHeight:'54px',fontWeight:300}});
+  const body=h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'560px',maxWidth:'720px'}},
+    h('label',{},h('b',{},'Collaborateur')),sgStaffSelect('STAFF_ID',old.STAFF_ID??sid),h('label',{},h('b',{},'Projet apporté')),pr,
+    h('label',{},'Apporté le'),I('DATE',old.DATE||today(),{type:'date'}),
+    h('label',{},'Montant des travaux TTC'),I('TRAVAUX',old.TRAVAUX,{type:'number',step:'1000',min:'0',placeholder:'selon les contrats d’honoraires',style:{width:'220px'}}),
+    h('label',{},'Taux convenu %'),I('TAUX',old.TAUX,{type:'number',step:'0.5',min:'0',max:'20',placeholder:'selon le contrat',style:{width:'140px'}}),
+    h('label',{},'Décompte final établi le'),I('FINAL',old.FINAL,{type:'date'}),
+    h('label',{},'Remarque'),h('textarea',{class:'inp','data-k':'REMARQUE',rows:2},old.REMARQUE||''),info);
+  const get=k=>{ const e=body.querySelector('[data-k="'+k+'"]'); return e?e.value:''; };
+  const maj=()=>{ const s=get('STAFF_ID'), p=DS.get('project',get('PROJECT_ID')); if(!s){ info.textContent='Choisissez le collaborateur : ses conditions de commission viennent de son contrat de travail.'; return; }
+    const C=sgCommCond(s,get('DATE')), L=['Conditions : '+sgCommTexte(C)+' — selon le '+C.src+'.'].map(nxE);
+    if(p){ const R=sgRenta(p,fxData()), ta=sgTravauxTTC(R.cs), trav=get('TRAVAUX')!==''?+get('TRAVAUX'):ta, t=get('TAUX')!==''?+get('TAUX'):sgCommTaux(C,trav), dbl=sgApports().filter(x=>String(x.PROJECT_ID)===String(p.ID)&&String(x.ID)!==String(old.ID));
+      L.push(R.cs.length?nxE('Contrats d’honoraires reliés : '+R.cs.length+' · honoraires CHF '+sgChf(R.contratHT)+' HT · facturé CHF '+sgChf(R.factHT)+' HT'+(ta?' · travaux CHF '+sgChf(ta)+' TTC selon le calcul d’honoraires':' · montant des travaux absent du calcul d’honoraires : à saisir ci-dessus')+'.')
+        :'<span style="color:var(--s-orange)">Aucun contrat Facturation relié à ce projet : honoraires et facturé à zéro (Réglages ▸ Réunir les registres).</span>');
+      L.push('<b>Taux appliqué : '+sgPcT(t)+' %</b> — commission prévue CHF '+sgChf(Math.max(R.contratHT,R.factHT)*t/100)+', acquise à ce jour CHF '+sgChf(R.factHT*t/100)+'.');
+      if(dbl.length) L.push('<span style="color:var(--s-orange)">⚠ Projet déjà enregistré comme apport de '+nxE(dbl.map(x=>staffName(DS.get('staff',x.STAFF_ID))).join(', '))+'.</span>'); }
+    info.innerHTML=L.join('<br>'); };
+  body.addEventListener('change',maj); body.addEventListener('input',maj); setTimeout(maj,0);
+  const bt=[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:async()=>{
+    const v={...old,TYPE:'apport',STAFF_ID:+get('STAFF_ID')||null,PROJECT_ID:+get('PROJECT_ID')||null,DATE:get('DATE')||null,TRAVAUX:get('TRAVAUX')===''?null:+get('TRAVAUX'),
+      TAUX:get('TAUX')===''?null:+get('TAUX'),FINAL:get('FINAL')||null,REMARQUE:get('REMARQUE').trim()||null};
+    if(!v.STAFF_ID||!v.PROJECT_ID){ toast('Choisissez le collaborateur et le projet.',true); return false; }
+    if(sgApports().some(x=>String(x.ID)!==String(v.ID)&&String(x.STAFF_ID)===String(v.STAFF_ID)&&String(x.PROJECT_ID)===String(v.PROJECT_ID))){ toast('Ce projet est déjà enregistré pour ce collaborateur.',true); return false; }
+    if(v.ID==null) v.ID=DS.newIds('sgapport')[0];
+    nxLS.set('sg3_apport_staff',String(v.STAFF_ID)); await DS.commit([{t:'sgapport',id:v.ID,val:v}]); toast('Apport enregistré.'); }}];
+  if(a) bt.unshift({t:'Supprimer',fn:()=>{ sgConfirm('Supprimer l’apport de ce projet ?\n\nLes versements déjà enregistrés sont gardés.',async()=>{ await DS.commit([{t:'sgapport',id:a.ID,val:null}]); toast('Apport supprimé.'); }); }});
+  dialog({title:a?'Modifier l’apport — '+staffName(DS.get('staff',a.STAFF_ID)):'Nouvel apport de projet',body,buttons:bt}); }
+function sgVersementDlg(v,sid,pid,suggestion){ const old=v||{}, I=(k,val,o)=>h('input',Object.assign({class:'inp',value:val??'','data-k':k},o||{})), st=sgStaffSelect('STAFF_ID',old.STAFF_ID??sid);
+  const pr=h('select',{class:'inp','data-k':'PROJECT_ID'}), majP=()=>{ const c=pr.value||String(old.PROJECT_ID??pid??''); pr.innerHTML=''; pr.append(h('option',{value:''},'— acompte sur l’ensemble des apports —'));
+    sgApports().filter(a=>String(a.STAFF_ID)===String(st.value)).forEach(a=>{ const p=DS.get('project',a.PROJECT_ID); if(p) pr.append(h('option',{value:p.ID,selected:String(p.ID)===c||null},(p.NUMBER||'')+' — '+(p.TITLE||''))); }); };
+  st.addEventListener('change',majP); majP();
+  const body=h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'500px'}},
+    h('label',{},h('b',{},'Collaborateur')),st,h('label',{},'Projet'),pr,h('label',{},'Versé le'),I('DATE',old.DATE||today(),{type:'date'}),
+    h('label',{},h('b',{},'Montant CHF')),I('MONTANT',old.MONTANT??(suggestion>0.5?Math.round(suggestion*20)/20:''),{type:'number',step:'0.05',style:{width:'160px'}}),
+    h('label',{},'Remarque'),I('REMARQUE',old.REMARQUE||'',{placeholder:'p. ex. versé avec le salaire de décembre'}));
+  const get=k=>{ const e=body.querySelector('[data-k="'+k+'"]'); return e?e.value:''; };
+  const bt=[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:async()=>{
+    const r={...old,TYPE:'versement',STAFF_ID:+get('STAFF_ID')||null,PROJECT_ID:+get('PROJECT_ID')||null,DATE:get('DATE')||null,MONTANT:get('MONTANT')===''?null:Math.round(+get('MONTANT')*100)/100,REMARQUE:get('REMARQUE').trim()||null};
+    if(!r.STAFF_ID||!r.DATE||!r.MONTANT){ toast('Collaborateur, date et montant sont obligatoires.',true); return false; }
+    if(r.ID==null) r.ID=DS.newIds('sgapport')[0];
+    nxLS.set('sg3_apport_staff',String(r.STAFF_ID)); await DS.commit([{t:'sgapport',id:r.ID,val:r}]); toast('Versement de CHF '+sgChf(r.MONTANT)+' enregistré.'); }}];
+  if(v) bt.unshift({t:'Supprimer',fn:()=>{ sgConfirm('Supprimer ce versement de CHF '+sgChf(v.MONTANT)+' du '+dfr(v.DATE)+' ?',async()=>{ await DS.commit([{t:'sgapport',id:v.ID,val:null}]); toast('Versement supprimé.'); }); }});
+  dialog({title:v?'Modifier le versement':'Nouveau versement d’une commission d’apport',body,buttons:bt}); }
+/* Accueil ▸ À traiter : commissions d'apport exigibles (décompte final) non encore versées — administrateur */
+{ const a0=sgATraiter; sgATraiter=async function(){ const A=await a0.apply(this,arguments);
+    try{ if(A&&sgAdmin()&&!sgFinVerrou()&&DS.all('sgapport').length){ const D=fxData(); if(D){ const taux=sgTaux(), L=sgApports().map(a=>sgApportCalc(a,D,taux)).filter(x=>x.exigible&&x.solde>0.5);
+        if(L.length&&!A.groupes.some(g=>g.k==='ap')){ A.groupes.push({k:'ap',t:'Commissions d’apport à verser',ico:'coins',go:'nx-apports',items:L.map(x=>({t:staffName(DS.get('staff',x.a.STAFF_ID))+' · '+nxCHF(x.solde)+' CHF',s:(x.p?x.p.NUMBER+' · '+(x.p.TITLE||'')+' — ':'')+'décompte final',ref:x.p?'p:'+x.p.ID:null}))}); A.n+=1; sgSide(); } } } }
+    catch(e){ console.error(e); }
+    return A; }; }

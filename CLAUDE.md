@@ -241,6 +241,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   PDF). Grille des salaires minimaux CCT 2026 (`SG_GRILLE`, avenant du 26.11.2025) : contrôle du salaire (annuel, au prorata
   du taux). Contrat du bureau plus favorable que la CCT : 6 semaines de vacances dès le 1er janvier de l'année des 50 ans
   (appliqué au calcul) ; heures sup. positives au 31.12 compensées en vacances (option du bouclement, par défaut).
+  Clause de commission sur les mandats apportés : case « Commission » + paliers `COMM_*` (voir Apports de projets).
 - **Ressources humaines (07.10.2026)** — domaine `rh` de `SG_DOM` (après Équipe), réservé à l'administrateur (droits
   « équipe : taux » + « réglages ») et protégé par le code d'accès (« rh » dans `SG_ACC_DEF`, ajouté aussi aux réglages
   existants jusqu'au premier choix : `rhVu`). Occupation et effectif (`nx-occupation`, bloc 15) : taux d'occupation mois par
@@ -250,6 +251,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   avenant de l'année, salaire sous le minimum CCT), export CSV ; puis Contrats de travail, Heures dues et vacances, Bouclement
   annuel, Coût de revient, Planification RH (`mg-planning` : disponibilité, occupation, attribution), Suivi RH (`mg-collab`).
   Équipe garde Membres, Tous les membres, Anciens membres, Temps de l'équipe.
+- **Apports de projets (08.10.2026)** — Finances ▸ Apports de projets (`nx-apports`, bloc 17 de `sg3_plus.js`, collection
+  `sgapport`, réservée à l'administrateur sur le NAS : lecture et écriture, comme `SG_T_SALAIRES`). Clause du contrat de
+  travail (conditions particulières) : commission de x % des honoraires facturés HT (hors frais, acomptes déduits), versée au
+  décompte final une fois tous les honoraires encaissés, due aussi après le départ ; x selon le montant des travaux TTC —
+  paliers du contrat `COMM_T1` % sous `COMM_S1`, `COMM_T2` % jusqu'à `COMM_S2`, `COMM_T3` % au-delà (modèle 3 / 4 / 5 %, 2 et
+  8 mio ; saisis dans le dialogue du contrat, repris dans son texte ; sans contrat : le modèle). « apport » {STAFF_ID,
+  PROJECT_ID, DATE, TRAVAUX (vide = CFC 1, 2, 4, 5, 9 du calcul d'honoraires des contrats reliés), TAUX (vide = paliers),
+  FINAL, REMARQUE} ; « versement » {STAFF_ID, PROJECT_ID (vide = acompte sur l'ensemble), DATE, MONTANT, REMARQUE}.
+  Honoraires / facturé / encaissé = `sgRenta` (contrats Facturation reliés au projet). Acquise = facturé HT × taux ; exigible
+  si décompte final saisi, ou tout facturé (ou affaire terminée) et tout encaissé ; solde = acquise − versé. Écran : par
+  collaborateur (clic = détail), conditions, projets apportés, évolution (cumuls mois par mois, tableau annuel), versements,
+  CSV ; Accueil ▸ À traiter « Commissions d'apport à verser » quand une commission devient exigible.
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad

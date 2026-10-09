@@ -2598,6 +2598,8 @@ class H(BaseHTTPRequestHandler):
         """HTTPS actif : une requête reçue en clair est renvoyée vers l'adresse chiffrée (308 : méthode et corps conservés)."""
         if not TLS_ACTIF.is_set() or getattr(self.server, "tls", False) or not PUBLIC_URL:
             return False
+        if self.client_address[0] in ("127.0.0.1", "::1"):   # relais local déjà chiffré (Tailscale serve, proxy DSM) : pas de renvoi
+            return False
         self.send_response(308)
         self.send_header("Location", PUBLIC_URL + (self.path or "/"))
         self.send_header("Content-Length", "0")

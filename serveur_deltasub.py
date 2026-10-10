@@ -394,9 +394,10 @@ def ch08_err(h, code, e):
     return ch08_send(h, code, {"ok": False, "error": e, "msg": CH08_MSG.get(e, e)})
 
 
-def ch08_cookie(tok, remember):
+def ch08_cookie(tok, remember, h=None):
+    sur = TLS_ACTIF.is_set() or bool(h is not None and relais_https(h))   # HTTPS du serveur, ou relais local en HTTPS (Tailscale serve)
     return "%s=%s; Path=/; HttpOnly; SameSite=Strict%s%s" % (CH08_COOKIE, tok, "; Max-Age=%d" % CH08_TTL_LONG if remember else "",
-                                                          "; Secure" if TLS_ACTIF.is_set() else "")
+                                                          "; Secure" if sur else "")
 
 
 def ch08_token(h):
@@ -512,11 +513,11 @@ def ch08_open(h, c, u, remember):
         if old:
             c.execute("DELETE FROM auth_session WHERE token_hash=?", (ch08_th(old),))
         c.execute("INSERT INTO auth_session VALUES(?,?,?,?,?,?,?,?,NULL)",
-                  (ch08_th(tok), str(u["ID"]), u.get("USERID"), h.client_address[0], (h.headers.get("User-Agent") or "")[:300],
+                  (ch08_th(tok), str(u["ID"]), u.get("USERID"), ip_client(h), (h.headers.get("User-Agent") or "")[:300],
                    now, now, 1 if remember else 0))
         c.execute("DELETE FROM auth_fail WHERE userid=?", (u.get("USERID"),))
         c.commit()
-    return ch08_cookie(tok, remember)
+    return ch08_cookie(tok, remember, h)
 
 
 def ch08_body(h):
@@ -554,7 +555,7 @@ def ch08_login(h, c, b):
     if not ch08_verify(pw, hp):
         ch08_fail(c, uid)
         return ch08_err(h, 401, "login")
-    now, ip, ua = time.time(), h.client_address[0], (h.headers.get("User-Agent") or "")[:300]
+    now, ip, ua = time.time(), ip_client(h), (h.headers.get("User-Agent") or "")[:300]
     others = ch08_sessions_of(c, u["ID"], now)
     same = [r for r in others if r[3] == ip and r[4] == ua]            # même poste : reprise silencieuse
     other = [r for r in others if r not in same]
@@ -726,7 +727,7 @@ def ch08_route(h, c, method, path):
             s = ch08_session(h, c)
             if not s:
                 return ch08_send(h, 401, {"ok": False, "error": "session", "reason": h.ch08_reason})
-            ck = ch08_cookie(ch08_token(h), True) if s["remember"] else None   # 30 jours glissants
+            ck = ch08_cookie(ch08_token(h), True, h) if s["remember"] else None   # 30 jours glissants
             h.ch08_user = s
             return ch08_send(h, 200, {"ok": True, "auth": True, "user": {"ID": s["user"]["ID"], "USERID": s["user"].get("USERID")},
                                       "acces": sg_session_info(h, c)}, ck)
@@ -763,7 +764,7 @@ def ch08_gate(h, method):
     1. hors du réseau local : le code existant répond 403 ; 2. routes de CH-08 traitées ici ; 3. mode sans mot de passe : rien ne
     change ; 4. mode avec mot de passe : session valide exigée, sauf la page (/, /DeltaSub.html) et /api/ping réduit à {ok, auth}."""
     h.ch08_user, h.ch08_reason = None, "aucune"
-    if not lan_ok(h.client_address[0]):
+    if not acces_ok(h):
         return True
     path = urlparse(h.path).path
     c = db()
@@ -809,7 +810,7 @@ def ch08_who(h, c, body):
             return None
         u, who = s["user"], str(s["user"].get("USERID") or s["userid"])
     else:
-        who = str(body.get("who") or h.client_address[0])
+        who = str(body.get("who") or ip_client(h))
         u = ch08_user(c, str(body.get("who") or ""))
     t = ch08_refuse(c, ops, u)
     if t:
@@ -2572,6 +2573,32 @@ def lan_ok(ip):
         return False
 
 
+# ── Relais local (10.10.2026) : Tailscale serve (https://nas-substances.….ts.net) ou proxy inversé de DSM transmettent les
+#    requêtes depuis la machine elle-même (127.0.0.1). L'adresse réelle du poste est alors la DERNIÈRE de X-Forwarded-For
+#    (ajoutée par le relais ; celles placées avant ont pu être inventées par le client). L'internet public est toujours refusé,
+#    même par un relais : Tailscale Funnel (en-tête Tailscale-Funnel-Request) ou proxy ouvert sur internet (adresse publique).
+def relais_local(h):
+    return h.client_address[0] in ("127.0.0.1", "::1")
+
+
+def ip_client(h):
+    if relais_local(h):
+        xff = [x.strip() for x in (h.headers.get("X-Forwarded-For") or "").split(",") if x.strip()]
+        if xff:
+            return xff[-1]
+    return h.client_address[0]
+
+
+def relais_https(h):
+    return relais_local(h) and (h.headers.get("X-Forwarded-Proto", "").lower() == "https" or bool(h.headers.get("Tailscale-User-Login")))
+
+
+def acces_ok(h):
+    if h.headers.get("Tailscale-Funnel-Request"):
+        return False
+    return lan_ok(ip_client(h))
+
+
 class H(BaseHTTPRequestHandler):
     server_version = "SUBGestion/%d" % VERSION
     sys_version = ""
@@ -2598,7 +2625,7 @@ class H(BaseHTTPRequestHandler):
         """HTTPS actif : une requête reçue en clair est renvoyée vers l'adresse chiffrée (308 : méthode et corps conservés)."""
         if not TLS_ACTIF.is_set() or getattr(self.server, "tls", False) or not PUBLIC_URL:
             return False
-        if self.client_address[0] in ("127.0.0.1", "::1"):   # relais local déjà chiffré (Tailscale serve, proxy DSM) : pas de renvoi
+        if relais_local(self):   # relais local déjà chiffré (Tailscale serve, proxy DSM) : pas de renvoi
             return False
         self.send_response(308)
         self.send_header("Location", PUBLIC_URL + (self.path or "/"))
@@ -2618,7 +2645,7 @@ class H(BaseHTTPRequestHandler):
             return
         if not ch08_gate(self, "GET"):
             return   # CH-08 lot 4 : session exigée quand l'ouverture de session est active (première instruction, § 4.20.1)
-        if not lan_ok(self.client_address[0]):
+        if not acces_ok(self):
             return self._send(403, '{"error":"réseau du bureau uniquement"}')
         u = urlparse(self.path); q = parse_qs(u.query)
         c = db()
@@ -2683,7 +2710,7 @@ class H(BaseHTTPRequestHandler):
             return
         if not ch08_gate(self, "POST"):
             return   # CH-08 lot 4 : session exigée quand l'ouverture de session est active (première instruction, § 4.20.1)
-        if not lan_ok(self.client_address[0]):
+        if not acces_ok(self):
             return self._send(403, '{"error":"réseau du bureau uniquement"}')
         if urlparse(self.path).path == "/api/modeles/zip":
             return ch10_modeles_zip(self)   # CH-10 lot 2
@@ -2724,7 +2751,7 @@ def _nas_post(self, u):
         s = getattr(self, "ch08_user", None)
         if ch08_auth_on(c) and not s:
             return self._send(401, js({"ok": False, "error": "session"}))
-        who = str(s["user"].get("USERID") or s["userid"]) if s else self.client_address[0]
+        who = str(s["user"].get("USERID") or s["userid"]) if s else ip_client(self)
         if u.path == "/api/import" and not nas_admin(self, c):
             return self._send(403, js({"ok": False, "error": "Réservé aux administrateurs."}))
         if u.path == "/api/sauvegarder":   # copie immédiate de la base avant une opération de masse (07.10.2026) ; hors rotation des 48

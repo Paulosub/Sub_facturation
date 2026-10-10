@@ -62,7 +62,12 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   **Version servie nettoyée + accès protégé (07.10.2026)** : `nas/preparer.sh` passe la page par `nas/nettoyer.py` (données de
   départ de Facturation retirées, cockpit anonymisé, commentaires retirés, mentions Deltaproject / DeltaSub / DELTA… / eCCC /
   CRB / CAN renommées — SIA et CFC gardés ; arrêt si un reste ou un nom de client subsiste) ; ne jamais copier les sources
-  telles quelles sur le NAS. Serveur (`DELTASUB_PAGE` ≠ DeltaSub.html) : sans session et mode mot de passe actif → page de
+  telles quelles sur le NAS. **Traces et échanges (10.10.2026)** : `nettoyer.py` retire aussi de la version servie les entrées
+  SIA451 / `.deltakv` / `.dpdoc` / `manual_fr` (`RETRAITS`), renomme les noms internes du code (`RENOMMAGES` : ecaIsCrb, svCondNpk,
+  delta*, …), force `FR_CAT_SANS_FR='supprimer'` (catalogue étranger sans équivalent français supprimé par « Français
+  seulement »), puis contrôle (`controle_traces`) qu'il ne reste aucune trace hors `TRACES_ADMISES` (noms du schéma) et aucun
+  site externe hors `HOTES_ADMIS` (w3.org, 127.0.0.1, localhost, map.search.ch) ; les blocs `data-vendor` sont intacts.
+  Serveur (`DELTASUB_PAGE` ≠ DeltaSub.html) : sans session et mode mot de passe actif → page de
   connexion `LOGIN_PAGE` à la place de l'app ; `/api/export` et `/api/import` réservés à `userAdmin` (`nas_admin`) ; ping sans
   chemin ; en-tête `Server: SUBGestion`. SUBGestion 3 en http:// : `sgSha` / `sgHacher` ont un repli JavaScript (pas de
   crypto.subtle hors contexte sécurisé).
@@ -71,6 +76,9 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   `DELTASUB_TLS_CERT|KEY|PORT`, `DELTASUB_URL` → HTTPS servi par `ServeurTLS` (négociation dans le fil de la requête,
   certificat rechargé toutes les 6 h), HTTP → 308 vers l'adresse https, cookie Secure, HSTS ; `lan_ok` accepte aussi
   100.64.0.0/10 (Tailscale). ⚠ Le Python du Mac (LibreSSL 2.8) ne gère pas les certificats EC : garder RSA.
+  **Relais local (10.10.2026)** : requête reçue de 127.0.0.1 (`relais_local`) = Tailscale serve ou proxy DSM → adresse réelle =
+  DERNIÈRE de `X-Forwarded-For` (`ip_client`), refus de l'internet public et de Tailscale Funnel (`acces_ok`), cookie « Secure »
+  si le relais est en HTTPS (`relais_https`), pas de renvoi vers gestion.substances.ch (`_vers_https`).
   **Hors du bureau (10.10.2026)** : Tailscale (réseau « paulosub.github », `tail7f12b9.ts.net`, HTTPS activé) — NAS =
   machine `nas-substances` ; app **https://nas-substances.tail7f12b9.ts.net** (relais `tailscale serve --bg 7790`, tâche DSM
   « Tailscale serve SUBGestion » au démarrage) ; partage `smb://nas-substances.tail7f12b9.ts.net/subgestion` (déploiement
@@ -147,6 +155,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `subgestion3/_backup_20261006_2227_barre_haute/`. ⚠ Ne jamais utiliser la classe `ov` (= voile des fenêtres DeltaSub,
   cherché par `$$('.ov')`). Vue d'ensemble par domaine (`dom-<k>`), modules Facturation
   = vues `fx-<onglet>` (arg `new`, `c:<id>`, `f:<id>`, `sync`), le cadre signale ses onglets via `parent.sgFxOnTab`.
+  **Bibliothèques PDF intégrées (10.10.2026)** : `subgestion3/vendor/` (pdf-lib 1.17.1, fontkit 1.1.1, pdf.js 3.11.174 : copies du
+  registre npm, empreinte sha512 vérifiée au téléchargement) ; `construire.py` remplace les `<script src="https://unpkg…">` et le
+  chargement cdnjs de Facturation par des blocs `<script type="text/plain" data-vendor>` exécutés par la page ; pdf.js reçoit un
+  worker fourni (`GlobalWorkerOptions.workerPort`, blob : marche aussi en file://) ; arrêt si un site externe subsiste. SUBGestion 3
+  ne contacte plus aucun site (hors connexion possible) ; `Facturation.html` seule charge encore unpkg / cdnjs.
   `ibtn` enveloppé : icône + libellé (masqué si colonne < 560 px). Session `sg3_view`, favoris `nx_pins3`.
 - **Uniformisation (06.10.2026)** : `subgestion3/fx_theme.css` (injecté en fin de Facturation embarquée) donne aux modules
   Facturation le graphisme commun — cartes à filet noir, boutons réduits à 3 sortes (bleu nuit / contour noir / rouge,
@@ -225,6 +238,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `avant_francais_<date>.sqlite` dans les sauvegardes, hors rotation ; local : sauvegarde habituelle) ; marque
   `sg_meta/francais` {DATE, N cumulé}. Sur le NAS, comptes et fonctions (`CH08_ADMIN_T`) exigent le droit Deltaproject
   « gestion des utilisateurs » : sans lui, ils sont laissés tels quels (signalé). Facturation : langue du carnet = Français.
+  Traces de l'ancien logiciel dans la base (10.10.2026) : `FR_TRACES` + préfixe « DELTA … » (groupes de modèles `modelegroupe.libelle`,
+  `formtemplategroup.NAMEFR`, `defaultpath.NAMEFR` → « Modèles d'origine », « Fichiers », …), catalogues « eCCC-… » → « Éléments … »
+  (`FR_TRACE_CAT`, test `/^e[C]CC-/` qui survit au nettoyage) ; compteur `traces` ; `sgFrReste()` les détecte. `FR_CAT_SANS_FR` :
+  « traduire » (fichier local) / « supprimer » (NAS).
 - **Coût de revient** (Ressources humaines, `nx-coutrevient`, collection `sgcoutrevient`) : charges sociales, frais généraux par poste,
   temps de travail, marge ; par collaborateur salaire, mois, occupation, vacances, absences, part facturable, frais directs ;
   taux interne = coût annuel ÷ heures de présence → « Appliquer » écrit `staffrate`.
@@ -270,6 +287,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   CSV ; Accueil ▸ À traiter « Commissions d'apport à verser » quand une commission devient exigible.
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
+- **Déploiement NAS = règle (10.10.2026)** : toute modification de SUBGestion 3 est déposée sur le NAS dans la foulée
+  (`nas/preparer.sh`, partage `subgestion` monté — au bureau ou par Tailscale) ; si `serveur_deltasub.py` a changé, Paulo
+  redémarre le conteneur (DSM ▸ Container Manager ▸ Projet ▸ subgestion ▸ Action ▸ Redémarrer). Avant de copier : vérifier que
+  la version du NAS n'est pas plus récente (dépôt depuis un autre poste), et que `nettoyer.py` passe (traces, sites externes).
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

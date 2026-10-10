@@ -40,6 +40,7 @@ Sauvegarde DeltaSub/
 # Copies de sécurité DeltaSub
 DeltaSub_backup_*.html
 serveur_deltasub_backup_*.py
+nas/*_backup_*.py
 SUBGestion*_backup_*.html
 deltasub/
 extraction_deltaproject_*/

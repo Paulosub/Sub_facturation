@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 07.10.2026 21:48 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 10.10.2026 15:07 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -548,6 +548,7 @@ const nmFr=r=>r?(r.NAMEFR||trFr(r.NAMEGE||r.NAMEIT||r.NAMEEN||'')||''):'';
    les catalogues CRB non français et leurs positions ; 5. remplacent les textes de démonstration multilingues ; 6. mettent la
    langue des comptes, adresses et documents en français (2). Rend {ops, n:{…}} ; frSeul(ops) les enregistre par paquets. */
 /* traduction provisoire des catalogues sans version française (eBKP-T, génie civil) ; le reste vient des catalogues CFC / eCCC-Bât de la base */
+const FR_CAT_SANS_FR='traduire';   // catalogue étranger sans équivalent français : « traduire » (versions locales) ; « supprimer » (version servie par le NAS, nas/nettoyer.py)
 const FR_CAT_NOM={'eBKP-T':'eCCC-GC (traduction provisoire)'};
 const FR_CAT_DE={'Abfindung, Servitut, Beitrag':'Indemnité, servitude, contribution','Hebe-, Verlade-, Transport-, Lagergerät':'Engins de levage, de chargement, de transport, de stockage',
   'Erschliessung':'Équipement du terrain','Erschliessung durch Verkehrsanlagen':'Desserte par des installations de transport',
@@ -579,8 +580,10 @@ const FR_CAT_DE={'Abfindung, Servitut, Beitrag':'Indemnité, servitude, contribu
   'Bewirtung, Entschädigung, Öffentlichkeitsarbeit':'Réceptions, indemnités, relations publiques','Entschädigung':'Indemnités',
   'Inbetriebnahme der Technik':'Mise en service des installations techniques','Inbetriebnahme der nutzungsspezifischen Anlage':'Mise en service des installations spécifiques à l’utilisation',
   'Inbetriebnahme der Anlage':'Mise en service de l’installation','Betriebsaufwand, Betriebsertrag':'Charges d’exploitation, produits d’exploitation'};
-const FR_SEUL_T=['modele','modeledocument','doctemplate','catalog','catalogpos','formtemplate','formtemplategroup','boilerplategroup','boilerplateitem'];
-async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libelles:0,modeles:0,documents:0,gabarits:0,catalogues:0,positions:0,catTraduits:0,posTraduites:0,langues:0,textes:0};
+const FR_SEUL_T=['modele','modelegroupe','modeledocument','doctemplate','catalog','catalogpos','formtemplate','formtemplategroup','boilerplategroup','boilerplateitem','defaultpath','projectcatalog'];
+/* libellés de l'ancien logiciel et des catalogues sous licence enregistrés dans la base (10.10.2026) → libellés neutres */
+const FR_TRACES={'DELTA Originaux':'Modèles d’origine','DELTA Files':'Fichiers'}, FR_TRACE_CAT=v=>typeof v==='string'?v.replace(/^e[C]CC-/,'Éléments '):v;
+async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libelles:0,modeles:0,documents:0,gabarits:0,catalogues:0,positions:0,catTraduits:0,posTraduites:0,langues:0,textes:0,traces:0};
   const cle=(t,id)=>t+'\u0001'+id, autres=['NAMEGE','NAMEIT','NAMEEN'], ent=t=>Object.entries(DS.T[t]||{}).filter(([,v])=>v&&typeof v==='object');
   const mod=(t,id,fn)=>{ const k=cle(t,id), w=W.get(k)||{t,id,v:JSON.parse(JSON.stringify(DS.T[t][id]))}; if(w.v===null) return; if(fn(w.v)) W.set(k,w); };
   const del=(t,id)=>W.set(cle(t,id),{t,id,v:null});
@@ -605,7 +608,7 @@ async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libe
   const Dic=new Map(), aTrad=[];
   cats.filter(([,v])=>!isFr(v)).forEach(([id,v])=>{ const P=posC.get(String(v.ID??id))||[]; let best=null, cov=0;
     frCodes.forEach(m=>{ const c=P.length?P.filter(([,x])=>m.has(String(x.CODE))).length/P.length:0; if(c>cov){ cov=c; best=m; } });
-    if(P.length&&cov<0.8){ aTrad.push([id,P]); return; }
+    if(P.length&&cov<0.8&&FR_CAT_SANS_FR!=='supprimer'){ aTrad.push([id,P]); return; }
     if(best) P.forEach(([,x])=>{ const f=best.get(String(x.CODE)); ['TEXT1','TEXT2'].forEach(k=>{ const a=String(x[k]||'').trim(), b=f?String(f[k]||'').trim().replace(/Ś/g,'Œ').replace(/ś/g,'œ'):''; if(a&&b&&!Dic.has(a)) Dic.set(a,b); }); });
     del('catalog',id); n.catalogues++; P.forEach(([pid])=>{ del('catalogpos',pid); n.positions++; }); });
   aTrad.forEach(([id,P])=>{ mod('catalog',id,x=>{ x.LANGUAGECODE=2; x.NAME=FR_CAT_NOM[x.NAME]||((x.NAME||'Catalogue')+' (traduction provisoire)'); return true; }); n.catTraduits++;
@@ -615,6 +618,9 @@ async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libe
   ['boilerplategroup','boilerplateitem'].forEach(t=>ent(t).forEach(([id,v])=>{ const a=trFr(v.NAME), b=v.TEXT==null?v.TEXT:trFr(v.TEXT);
     if(a!==v.NAME||b!==v.TEXT) mod(t,id,x=>{ x.NAME=a; x.TEXT=b; n.textes++; return true; }); }));
   ['appuser','contact','contactowner','document','projectcatalog'].forEach(t=>ent(t).forEach(([id,v])=>{ if(v.LANGUAGECODE!=null&&+v.LANGUAGECODE!==2) mod(t,id,x=>{ x.LANGUAGECODE=2; n.langues++; return true; }); }));
+  [['modelegroupe','libelle'],['formtemplategroup','NAMEFR'],['defaultpath','NAMEFR']].forEach(([t,f])=>ent(t).forEach(([id,v])=>{ const v0=String(v[f]||'').trim(), r=FR_TRACES[v0]||(/^DELTA\s+\S/.test(v0)?v0.replace(/^DELTA\s+/,'').replace(/^./,c=>c.toUpperCase()):null);
+    if(r) mod(t,id,x=>{ x[f]=r; n.traces++; return true; }); }));
+  ['catalog','projectcatalog'].forEach(t=>ent(t).forEach(([id,v])=>{ if(/^e[C]CC-/.test(v.NAME||'')||/^e[C]CC-/.test(v.TITLE||'')) mod(t,id,x=>{ if(x===null) return false; x.NAME=FR_TRACE_CAT(x.NAME); x.TITLE=FR_TRACE_CAT(x.TITLE); n.traces++; return true; }); }));
   return {ops:[...W.values()].map(w=>({t:w.t,id:w.id,val:w.v})),n}; }
 async function frSeul(ops,etape){ for(let i=0;i<ops.length;i+=400){ await DS.commit(ops.slice(i,i+400)); if(etape) etape(Math.min(ops.length,i+400),ops.length); } return ops.length; }
 const nm=r=>r?(nmFr(r)||r.NAME||''):'';
@@ -7105,13 +7111,13 @@ async function tplNewGroup(cat){ const src=DS.all('modelegroupe').filter(g=>g.ca
     const ops=[{t:'modelegroupe',id:cat+'/'+nm2,val:{categorie:cat,groupe:nm2,libelle:nm2,ordre:9,verrouille:false}}];
     if(cp.value){ const from=DS.get('modelegroupe',cp.value); tplModelesOf(cat).filter(m=>m.groupe===from.groupe).forEach(m=>{ const c={...JSON.parse(JSON.stringify(m)),groupe:nm2}; ops.push({t:'modele',id:tplKey(c),val:c}); }); }
     await DS.commit(ops); TP.g.sel=cat+'/'+nm2; toast('Groupe créé.'); }}]}); }
-function tplRenameGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « DELTA Originaux » ne peut pas être modifié.',true); return; }
+function tplRenameGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « Modèles d’origine » ne peut pas être modifié.',true); return; }
   const n=h('input',{class:'inp',value:g.libelle||g.groupe});
   dialog({title:'Renommer le groupe',body:formRows([['Libellé',n]],420),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.save('modelegroupe',{...g,libelle:n.value.trim()||g.groupe})}]}); }
-async function tplDelGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « DELTA Originaux » ne peut pas être supprimé.',true); return; }
+async function tplDelGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « Modèles d’origine » ne peut pas être supprimé.',true); return; }
   const ms=tplModelesOf(cat).filter(m=>m.groupe===g.groupe); if(ms.length){ toast('Seuls les groupes de modèles vides peuvent être supprimés.',true); return; }
   if(await confirmDlg('Supprimer le groupe « '+(g.libelle||g.groupe)+' » ?','Supprimer')) DS.del('modelegroupe',tplGKey(g)); }
-function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez un groupe.',true); return; } if(g.verrouille){ toast('Le groupe « DELTA Originaux » n’est pas modifiable : créez un groupe.',true); return; }
+function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez un groupe.',true); return; } if(g.verrouille){ toast('Le groupe « Modèles d’origine » n’est pas modifiable : créez un groupe.',true); return; }
   const all=DS.all('modele').filter(m=>m.categorie===cat), src=h('select',{class:'inp'},...all.sort((a,b)=>cmp(tplLabel(a),tplLabel(b))).map(m=>h('option',{value:tplKey(m)},tplLabel(m)+' — '+(DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{}).libelle+' / '+m.nom)));
   const nom=h('input',{class:'inp',value:'project1'}), fr=h('input',{class:'inp'});
   dialog({title:'Nouveau modèle',body:formRows([['Copier les modèles depuis',src],['Nom',nom],['Français',fr]],560),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const s=DS.get('modele',src.value); if(!s) return false;
@@ -7120,10 +7126,10 @@ function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez u
     await DS.commit([{t:'modele',id:tplKey(c),val:c}]); TP.m.sel=tplKey(c); }}]}); }
 function tplEditModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
   const L0=m.libelle||{}, f={fr:h('input',{class:'inp',value:L0.fr||trFr(L0.de||L0.it||L0.en||'')||''})};   // français seulement
-  dialog({title:'Editer le modèle',body:h('div',{},formRows([['Type de modèle',h('span',{},m.type)],['Nom',h('span',{},m.nom)],['Libellé',f.fr]],480),g.verrouille?h('div',{style:{color:'#9a5b00',marginTop:'8px'}},'Groupe « DELTA Originaux » : lecture seule.'):null),
+  dialog({title:'Editer le modèle',body:h('div',{},formRows([['Type de modèle',h('span',{},m.type)],['Nom',h('span',{},m.nom)],['Libellé',f.fr]],480),g.verrouille?h('div',{style:{color:'#9a5b00',marginTop:'8px'}},'Groupe « Modèles d’origine » : lecture seule.'):null),
     buttons:[{t:'Annuler'},...(g.verrouille?[]:[{t:'OK',pri:true,fn:()=>DS.commit([{t:'modele',id:tplKey(m),val:{...m,libelle:{...(m.libelle||{}),fr:f.fr.value.trim()}}}])}])]}); }
 async function tplDelModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
-  if(g.verrouille){ toast('Le groupe « DELTA Originaux » n’est pas modifiable.',true); return; }
+  if(g.verrouille){ toast('Le groupe « Modèles d’origine » n’est pas modifiable.',true); return; }
   if(await confirmDlg('Supprimer le modèle « '+tplLabel(m)+' » ('+m.nom+') du groupe « '+(g.libelle||m.groupe)+' » ?','Supprimer')) DS.del('modele',tplKey(m)); }
 
 /* ── Éditeur de page (fenêtre « <Groupe> - <Type> - <Nom> - <Page> (<Langue>) ») ── */
@@ -7189,7 +7195,7 @@ function tplEditor(pg,title,locked,onSave){
     if(ev.key==='Backspace'||ev.key==='Delete'){ push(); pg.elements.splice(sel,1); sel=null; draw(); ev.preventDefault(); } });
   const zoomSel=h('select',{class:'inp',style:{width:'90px'}},...[.75,1,1.25,1.5,2].map(z=>h('option',{value:z,selected:z===k||null},Math.round(z*100)+' %'))); zoomSel.onchange=()=>{ k=+zoomSel.value; draw(); };
   const close=async()=>{ if(dirty&&!locked&&!await confirmDlg('Voulez-vous fermer sans enregistrer les modifications ?','Fermer')) return; ov.remove(); };
-  const tools=h('div',{class:'ph2',style:{gap:'6px'}},...(locked?[h('span',{style:{color:'#9a5b00'}},'Groupe « DELTA Originaux » : lecture seule — créez un groupe pour modifier.')]:[
+  const tools=h('div',{class:'ph2',style:{gap:'6px'}},...(locked?[h('span',{style:{color:'#9a5b00'}},'Groupe « Modèles d’origine » : lecture seule — créez un groupe pour modifier.')]:[
     ibtn({label:'T  Texte',fn:()=>add('texte')}),ibtn({label:'⟦ ⟧ Champ',fn:()=>add('champ')}),ibtn({label:'▦ Tableau',fn:()=>add('tableau')}),ibtn({label:'― Trait',fn:()=>add('traitH')}),ibtn({label:'| Trait',fn:()=>add('traitV')}),
     ibtn({label:'▭ Rectangle',fn:()=>add('rectangle')}),ibtn({label:'🖼 Image',fn:()=>add('image')}),ibtn({label:'↶ Annuler',t:'Cmd-Z',fn:()=>{ if(undo.length){ pg=JSON.parse(undo.pop()); sel=null; draw(); } }})]),
     h('div',{style:{flex:1}}),'Zoom ',zoomSel);
@@ -7203,7 +7209,7 @@ function tplDefaultGroup(cat){ const s=DS.all('setting').find(x=>x.SETTINGNAME==
   return gs.includes('Substances')?'Substances':gs.includes('Standard')?'Standard':'Default'; }
 async function tplSetDefaultGroup(cat,grp){ const s=DS.all('setting').find(x=>x.SETTINGNAME==='ds.tplGroup.'+cat)||{ID:null,SETTINGTYPE:0,SETTINGNAME:'ds.tplGroup.'+cat};
   await DS.save('setting',{...s,SETTINGVALUE:grp}); toast('Groupe par défaut : '+grp); }
-/* modèle à utiliser : groupe de l'affaire (TEMPLATEGROUPNAME), sinon groupe par défaut, puis Standard, puis DELTA Originaux */
+/* modèle à utiliser : groupe de l'affaire (TEMPLATEGROUPNAME), sinon groupe par défaut, puis Standard, puis Modèles d’origine */
 function tplFind(cat,type,project){ const want=[project&&project.TEMPLATEGROUPNAME,tplDefaultGroup(cat),'Standard','Default'].filter(Boolean);
   for(const g of want){ const ms=DS.all('modele').filter(m=>m.categorie===cat&&m.groupe===g&&m.type===type&&m.langues.fr);
     if(ms.length) return ms.find(m=>m.nom==='project1')||ms.sort((a,b)=>cmp(a.nom,b.nom))[0]; }
@@ -11770,7 +11776,7 @@ function svText(t,F,title){ if(!t||!t.ts) return ''; return t.ts.map(x=>{ if(x.c
 /* ═══ Moteur d'impression des documents .dpdoc (§10.1) — autonome : mgPrint (jeu 0) n'est pas modifié ═══
    svDpPrint(type, {project, jobs:[{F, tables}], title, fallback}) : un « job » = un exemplaire (une lettre par entreprise…).
    F = champs (svReportCtx), tables = {nomDuTableau:{rows:[{c:[valeur par id de colonne], st:'tr'|'th'|'tt'|'l1'…}], flex:[titres], setting:'nom'}}.
-   Jeu de modèles : PROJECT.DOCTEMPLATEGROUPNAME → DOCTEMPLATEGROUP.TEMPLATEFOLDERID, sinon 1 « DELTA Originaux » (§0-12).
+   Jeu de modèles : PROJECT.DOCTEMPLATEGROUPNAME → DOCTEMPLATEGROUP.TEMPLATEFOLDERID, sinon 1 « Modèles d’origine » (§0-12).
    Toutes les sections visibles, chacune avec SA page (portrait / paysage, @page nommée) ; en-têtes et pieds = cellules de page. */
 function svJeu(p){ const g=p&&p.DOCTEMPLATEGROUPNAME?DS.all('doctemplategroup').find(x=>x.GROUPNAME===p.DOCTEMPLATEGROUPNAME):null;
   return g&&g.TEMPLATEFOLDERID!=null&&String(g.TEMPLATEFOLDERID)!==''?String(g.TEMPLATEFOLDERID):'1'; }
@@ -18987,8 +18993,8 @@ function ch10bImportMerge(pages,S){ const n={ajoutees:0,ignorees:0,groupes:0,mod
   const sq=(t,id)=>S.seqOf?(S.seqOf(t,id)||0):0;                                                  // création sur une ligne supprimée : sa séquence (sinon 409)
   (pages||[]).forEach(p=>{ const gk=p.categorie+'/'+p.groupe, mk=gk+'/'+p.type+'/'+p.nom;
     let fg=ftg.get(gk);
-    if(!G[gk]){ const f0=fg||{}, so=parseInt(f0.SORTORDER,10);                  // règle du convertisseur : NAMEFR et SORTORDER du FormTemplateGroup existant, sinon nom (« DELTA Originaux ») et 9
-      const g={categorie:p.categorie,groupe:p.groupe,libelle:f0.NAMEFR||(p.groupe==='Default'?'DELTA Originaux':p.groupe),ordre:isNaN(so)?9:so,verrouille:p.groupe==='Default'};
+    if(!G[gk]){ const f0=fg||{}, so=parseInt(f0.SORTORDER,10);                  // règle du convertisseur : NAMEFR et SORTORDER du FormTemplateGroup existant, sinon nom (« Modèles d’origine ») et 9
+      const g={categorie:p.categorie,groupe:p.groupe,libelle:f0.NAMEFR||(p.groupe==='Default'?'Modèles d’origine':p.groupe),ordre:isNaN(so)?9:so,verrouille:p.groupe==='Default'};
       G[gk]=g; gOps.push({t:'modelegroupe',id:gk,val:g,bseq:sq('modelegroupe',gk)}); n.groupes++; }
     if(!fg){ const id=S.newId('formtemplategroup'); fg={ID:id,CATEGORY:p.categorie,NAME:p.groupe}; ftg.set(gk,fg); fgOps.push({t:'formtemplategroup',id,val:fg,bseq:0}); n.ftg++; }
     const nom1=p.ft!=null?String(p.ft):String(p.nom).split('/')[0], fk=fg.ID+'|'+p.type+'|'+nom1;   // TemplateImport : NAME = parts[3]
@@ -19037,7 +19043,7 @@ async function ch10bImportTemplatesFrom(blob){ await tplNeed(); await DS.need(['
   return Object.assign({erreurs:d.erreurs|0,horsModeles:d.ignores|0},R.n); }
 
 /* ── Anciens modèles ▸ roue ▾ ▸ police de tous les modèles du groupe (TemplatesFrame, ChangeFontDialog) ── */
-/* groupe de la roue ▾ (ancre E3) : active si un groupe est (ou sera, au dessin) sélectionné, même « DELTA Originaux » (checkGuards@123-128) */
+/* groupe de la roue ▾ (ancre E3) : active si un groupe est (ou sera, au dessin) sélectionné, même « Modèles d’origine » (checkGuards@123-128) */
 function ch10bTplTools(cat){ const any=()=>DS.all('modelegroupe').some(g=>g.categorie===cat);
   return [[{i:'gear',t:'Fonctions',dis:!(tplCurGroup(cat)||any()),menu:()=>[
     {t:'Modifier la police dans tous les modèles du groupe …',dis:!any(),fn:()=>ch10bFontDialog(cat)}]}]]; }

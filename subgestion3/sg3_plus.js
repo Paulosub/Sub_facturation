@@ -440,7 +440,7 @@ async function sgHtmlPdf(html){ if(!(await sgSrv(true))||!SAUV.srv.pdf){ const x
   return new Blob([await r.arrayBuffer()],{type:'application/pdf'}); }
 async function sgPdfLib(){ const w=await fxEnsure(); if(!w.PDFLib) throw new Error('Bibliothèque PDF indisponible (connexion internet nécessaire au premier chargement).'); return w; }
 async function sgPdfOctets(w,sha){ const b=await sgFichierLire(sha); if(!b){ const x=new Error('Fichier absent de ce navigateur.'); x.status=404; throw x; } return new w.Uint8Array(await b.arrayBuffer()); }
-ch03aApi=async function(url,o){ o=o||{}; const u=new URL(url,'http://local'), q=u.searchParams, meth=String(o.method||'GET').toUpperCase(), corps=()=>JSON.parse(String(o.body||'{}'));
+ch03aApi=async function(url,o){ o=o||{}; const u=new URL(url,'http://localhost'), q=u.searchParams, meth=String(o.method||'GET').toUpperCase(), corps=()=>JSON.parse(String(o.body||'{}'));
   if(u.pathname==='/api/file'&&meth==='POST'&&q.has('nom')){ const b=o.body instanceof Blob?o.body:new Blob([o.body]); return Object.assign({ok:true},await sgFichierRanger(b,q.get('nom'))); }
   if(u.pathname==='/api/file'&&q.has('version')) return {ok:true,supprime:false};
   if(u.pathname==='/api/pdf'&&meth==='GET'){ await sgSrv(); return {ok:true,chrome:SAUV.srv&&SAUV.srv.pdf?'Chrome (serveur de sauvegarde)':null,outils:true}; }
@@ -1522,15 +1522,16 @@ const SG_FR={enCours:false};
 const SG_FR_LIB=[['libelles','libellé : allemand, italien et anglais retirés','libellés : allemand, italien et anglais retirés'],['modeles','modèle réduit au français','modèles réduits au français'],
   ['documents','document type en langue étrangère supprimé','documents types en langue étrangère supprimés'],['gabarits','gabarit en langue étrangère supprimé','gabarits en langue étrangère supprimés'],
   ['catalogues','catalogue en langue étrangère supprimé','catalogues en langue étrangère supprimés'],['positions','position de ces catalogues supprimée','positions de ces catalogues supprimées'],
-  ['catTraduits','catalogue sans version française traduit provisoirement (eBKP-T → eCCC-GC)','catalogues sans version française traduits provisoirement'],
+  ['catTraduits','catalogue sans version française traduit provisoirement','catalogues sans version française traduits provisoirement'],
   ['posTraduites','position traduite provisoirement','positions traduites provisoirement'],['langues','compte ou adresse passé en français','comptes et adresses passés en français'],
-  ['textes','texte corrigé ou traduit','textes corrigés ou traduits']];
+  ['textes','texte corrigé ou traduit','textes corrigés ou traduits'],['traces','libellé d’origine renommé','libellés d’origine renommés']];
 /* comptes et fonctions : droit Deltaproject « gestion des utilisateurs » exigé par le serveur (CH08_ADMIN_T) ; sans lui, laissés tels quels */
 const SG_FR_ADM_T=['appuser','appuser_appcompanyrole','appuser_staff','appcompanyrole','appcompanyrole_approle','approle'];
 const sgFrPeutAdm=()=>!(typeof dsEstBureau==='function'&&dsEstBureau())||typeof ch08aCan!=='function'||ch08aCan('userAdmin');   // base locale : aucune règle du serveur
 /* reste-t-il des libellés étrangers (après une reprise Deltaproject, par ex.) ? tables déjà chargées seulement */
 const sgFrReste=()=>Object.entries(DS.T).some(([t,T])=>!HEAVY.includes(t)&&(sgFrPeutAdm()||!SG_FR_ADM_T.includes(t))&&Object.values(T).some(v=>v&&typeof v==='object'&&('NAMEGE' in v||'NAMEIT' in v||'NAMEEN' in v)))
-  ||DS.all('catalog').some(c=>c.LANGUAGECODE!=null&&+c.LANGUAGECODE!==2);
+  ||DS.all('catalog').some(c=>c.LANGUAGECODE!=null&&+c.LANGUAGECODE!==2)
+  ||['catalog','projectcatalog'].some(t=>DS.all(t).some(c=>/^e[C]CC-/.test(c.NAME||'')))||DS.all('defaultpath').some(x=>/^DELTA /.test(x.NAMEFR||''))||DS.all('formtemplategroup').some(x=>/^DELTA /.test(x.NAMEFR||''));
 const sgFrResume=n=>SG_FR_LIB.filter(([k])=>n&&n[k]).map(([k,t1,t2])=>'• '+num(n[k],0)+' '+(+n[k]===1?t1:t2)).join('\n');
 /* sauvegarde avant une opération de masse : base du bureau → copie immédiate sur le serveur (« avant_<motif>_<date>.sqlite ») ;
    base locale → sauvegarde habituelle (serveur de sauvegarde du Mac, dossier choisi, sinon téléchargement) */

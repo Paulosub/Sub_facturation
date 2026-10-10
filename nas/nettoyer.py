@@ -184,7 +184,86 @@ TOLERES = re.compile(r'"Canada","CAN"')
 INTERDITS = r"(?i:delta ?project|deltasub)|DELTA[a-z]\w*|eCCC|\bCRB\b|\bCAN\b|javap|bytecode"
 
 
-B64 = re.compile(r"data:[\w/+.-]+;base64,[A-Za-z0-9+/=]+|[A-Za-z0-9+/=]{160,}")   # données binaires : jamais touchées
+B64 = re.compile(r'<script type="text/plain" data-vendor="[^"]*"[^>]*>.*?</script>'
+                 r"|data:[\w/+.-]+;base64,[A-Za-z0-9+/=]+|[A-Za-z0-9+/=]{160,}", re.S)   # bibliothèques tierces intégrées et données binaires : jamais touchées
+
+# ── Traces de l'ancien logiciel et des catalogues sous licence, échanges externes (10.10.2026) ──
+# 1. fonctions et libellés retirés de la version servie (texte exact → remplacement ; chacun doit être trouvé)
+RETRAITS = [
+    (",'-',ext('ec4ImportSia451','Import SIA451…')", ""),             # import au format d'échange des catalogues sous licence
+    ("'-',ext('ec4ExportSia451','Export SIA451…'),", ""),             # export au même format
+    ("(format *.deltakv)", "(fichier d’échange)"),
+    ("Import externe (*.deltakv)", "Import externe"),
+    ("(« Estimation des coûts », modèle .dpdoc)", "(« Estimation des coûts »)"),
+    ("/aide/manual_fr.pdf", "/aide/manuel.pdf"),
+    ("const FR_CAT_SANS_FR='traduire';", "const FR_CAT_SANS_FR='supprimer';"),   # catalogue étranger sans équivalent français : supprimé
+    # entrées de menu désactivées, colonne et textes d'information citant le format d'échange des catalogues sous licence
+    ("'-',{t:'Export SIA451',dis:true},", ""),
+    ("'-',{t:'Supprimer le fichier SIA451',dis:true}", ""),
+    ("{t:'Exporter le fichier SIA451',dis:true},", ""),
+    ("{k:'s',t:'Document SIA451',w:110,cls:'c',f:()=>''},", ""),
+    ("(impression par le navigateur). SIA451 et PDF enregistrés : lot 4.", "(impression par le navigateur). PDF enregistrés : lot 4."),
+    ("(document .dpdoc « devisDocument », cahier, PDF enregistrés et SIA451 : lot 4)", "(cahier et PDF enregistrés : lot 4)"),
+]
+RETRAITS_RE = [(r"const FR_CAT_NOM=\{[^}]*\};", "const FR_CAT_NOM={};"),            # aucune liste de libellés de catalogue sous licence
+               (r"const FR_CAT_DE=\{.*?\};", "const FR_CAT_DE={};")]
+# 2. noms internes du code (fonctions, variables) : renommés partout, de façon cohérente ; aucun n'est une clé de données
+RENOMMAGES = [("ecaIsCrb", "ecaRefExterne"), ("ECA_CRB", "ECA_REF_EXT"), ("svCondNpk", "svCondCat"), ("svDpDocHTML", "svDocHTML"),
+              ("ecaEbkpElements", "ecaEltListe"), ("ecaEbkpBrowser", "ecaEltNavigateur"), ("ecaEbkpDialog", "ecaEltDialogue"),
+              ("ecaEbkpCode", "ecaEltCode"), ("ecaEbkp", "ecaElt"), ("feBkpImport", "feCfcImport"), ("feBkpSuggest", "feCfcSuggestion"),
+              ("feBkp", "feCfc"), ("ec4ImportSia451", "ec4ImportEchange"), ("ec4ExportSia451", "ec4ExportEchange"), ("idDelta", "idOrigine"),
+              ("deltaImport", "ihImport"), ("deltaParseCSV", "ihLireCSV"), ("deltaDecode", "ihDecoder"), ("deltaFileChosen", "ihFichierChoisi"),
+              ("deltaAffaireFromName", "ihAffaireDuNom"), ("deltaMatchCollab", "ihCollabCorrespondant"), ("deltaNormalize", "ihNormaliser"),
+              ("deltaRenderPreview", "ihApercu"), ("deltaDate", "ihDate"), ("_deltaFile", "_ihFichier"), ("_deltaParsed", "_ihLu"),
+              ("_deltaBatch", "_ihLot"), ("mapDeltaPhase", "ihPhase"), ("ccListDeltakv", "ccListEchange"), ("dvImpDeltakv", "dvImpEchange"),
+              ("dvListDeltakv", "dvListEchange"), ("deltakv", "echange")]
+# 3. contrôle final : plus aucune trace, sauf les noms liés aux données de la base (schéma d'origine, clés des modèles d'impression :
+#    invisibles, aucun échange) et, en nombre limité, les valeurs servant à ÉCARTER ou RENOMMER ces traces dans la base
+TRACES = re.compile(r"[A-Za-z0-9_$-]*(?:(?i:crb|npk|sia ?451|ebkp|dpdoc|deltakv|delta ?project|deltasub|manual_fr|javap|tablemodel)"   # BKP = CFC : gardé
+                    r"|\bDELTA\b)[A-Za-z0-9_$-]*")
+TRACES_ADMISES = {"BKP", "EBKPELEMENT_ID", "ebkpelement", "ebkptobkp", "ebkp", "costestimatedpdoc", "dpdoc", "devisNpkPositionTable",
+                  "projectFeeBkpCalculation"}
+TRACES_LIMITEES = {"crb": 1,     # filtre /crb/i : écarte des listes les valeurs de référence sous licence
+                   "DELTA": 6}   # anciens libellés de la base à renommer (« … Originaux », « … Files », préfixe « DELTA … »)
+# 4. adresses : aucune ressource ni échange avec un site externe (seuls l'espace de noms SVG, l'ordinateur lui-même et le lien
+#    « carte des environs », ouvert seulement sur un clic, sont admis)
+URL = re.compile(r"""https?://([^/\s'"`<>\\):]+)""")
+HOTES_ADMIS = {"www.w3.org", "127.0.0.1", "localhost", "map.search.ch"}
+
+
+def retirer(textes):
+    """Applique RETRAITS, RETRAITS_RE et RENOMMAGES (hors bibliothèques tierces et données binaires) ; arrêt si un retrait est introuvable."""
+    vus = {a: 0 for a, _ in RETRAITS}
+    for _, nv in RENOMMAGES:
+        if any(re.search(r"\b" + re.escape(nv) + r"\b", t) for t in textes):
+            raise SystemExit("✗ nom de remplacement déjà utilisé : " + nv)
+    def f(x):
+        for a, b in RETRAITS:
+            vus[a] += x.count(a); x = x.replace(a, b)
+        for a, b in RETRAITS_RE:
+            x = re.sub(a, b, x, flags=re.S)
+        for a, b in RENOMMAGES:
+            x = re.sub(r"\b" + re.escape(a) + r"\b", b, x)
+        return x
+    sortie = [hors_b64(t, f) for t in textes]
+    absents = [a for a, n in vus.items() if not n]
+    if absents:
+        raise SystemExit("✗ retraits introuvables (source modifiée ?) : %s" % absents)
+    return sortie
+
+
+def controle_traces(t):
+    """→ liste des traces non admises et des sites externes (hors bibliothèques tierces et données binaires)."""
+    vus, hotes = {}, set()
+    def f(x):
+        for m in TRACES.finditer(x):
+            vus[m.group(0)] = vus.get(m.group(0), 0) + 1
+        hotes.update(h.lower() for h in URL.findall(x))
+        return x
+    hors_b64(t, f)
+    mauvais = [k for k in vus if k not in TRACES_ADMISES and k not in TRACES_LIMITEES]
+    mauvais += ["%s ×%d (max %d)" % (k, vus[k], TRACES_LIMITEES[k]) for k in TRACES_LIMITEES if vus.get(k, 0) > TRACES_LIMITEES[k]]
+    return sorted(mauvais), sorted(hotes - HOTES_ADMIS)
 
 
 def hors_b64(t, fn):
@@ -237,7 +316,11 @@ def main():
     if os.environ.get("NETTOYER_LISTE"):
         contextes(page, "[page]"); contextes(fx, "[fx]"); return
     fx, page = libelles(fx), libelles(page)
+    fx, page = retirer([fx, page])
     # 4. contrôles
+    traces, externes = controle_traces(page + "\n" + fx)
+    if traces or externes:
+        raise SystemExit("✗ traces : %s ; sites externes : %s" % (traces[:30], externes))
     restes = []
     hors_b64(page + "\n" + fx, lambda x: restes.extend(re.findall(INTERDITS, TOLERES.sub("", x))) or x)
     restes = sorted(set(restes))

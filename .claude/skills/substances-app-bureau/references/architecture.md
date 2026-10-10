@@ -119,6 +119,10 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   texte), `sgCommCond(sid, date)`, `sgCommTaux`, `sgTravauxTTC(contrats)`, `sgApportCalc(a, D, taux)` (sur `sgRenta`),
   `sgApportsParStaff`, `sgApportSerie` + `sgCourbeCHF` (évolution), `nx-apports`, `sgApportDlg`, `sgVersementDlg` ;
   `sgATraiter` enveloppé (« Commissions d'apport à verser ») ; collection `sgapport` dans `SG_T_SALAIRES` du serveur.
+- Sécurité de la version servie (10.10.2026) : `subgestion3/vendor/` (bibliothèques PDF intégrées par `construire.py`, fonction
+  `vendor()`), `nas/nettoyer.py` (`RETRAITS`, `RENOMMAGES`, `controle_traces`, `HOTES_ADMIS`), serveur `ip_client` / `acces_ok` /
+  `relais_https`. Vérifier la page NETTOYÉE (et pas seulement la source) : sonde file:// + aperçu + balayage sur
+  `/tmp/subgestion_apercu/SUBGestion3_nas.html`.
 - Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `frSeulOps()` → {ops, n} et `frSeul(ops)` (lots de 400) :
   nettoyage de la base (libellés, modèles, documents types, gabarits, catalogues ; `FR_CAT_DE` / `FR_CAT_NOM` pour eBKP-T) ;
   `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;

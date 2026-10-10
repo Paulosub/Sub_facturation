@@ -96,11 +96,37 @@ def facturation_embarquee(fa):
     fa = remplacer(fa, "const YEAR_COLORS=['#0a6e84','#1a1a1a','#b7a06a','#2E9E5B','#c0392b','#8a6d1a','#6c7a89','#3b7dd8'];",
                    "const YEAR_COLORS=['#003346','#4cbab5','#d7860d','#98c21f','#3f4193','#bd1e42','#636e7e','#9d9d9c'];", quoi='palette YEAR_COLORS')
     fa = remplacer(fa, 'location.reload();', "(window.parent!==window&&window.parent.sgFxReload?window.parent.sgFxReload():location.reload());", quoi='rechargement Facturation')
+    # bibliothèques PDF intégrées (10.10.2026) : plus aucun appel à unpkg.com / cdnjs (scripts tiers non vérifiés, internet requis).
+    # Copies du registre npm à l'empreinte sha512 vérifiée, dans subgestion3/vendor/ ; blocs « data-vendor » jamais modifiés par nas/nettoyer.py.
+    fa = remplacer(fa, '<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>\n'
+                       '<script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.js"></script>',
+                   vendor('pdf-lib.min.js', 'vend-pdflib') + '\n' + vendor('fontkit.umd.min.js', 'vend-fontkit') + '\n'
+                   + '<script>["vend-pdflib","vend-fontkit"].forEach(function(i){ var s=document.createElement("script"); '
+                     's.textContent=document.getElementById(i).textContent; document.head.appendChild(s); });</script>', quoi='pdf-lib et fontkit')
+    fa = remplacer(fa, """    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); };
+    s.onerror=rej; document.head.appendChild(s); });""", """    s.textContent=document.getElementById('vend-pdfjs').textContent; document.head.appendChild(s);   // pdf.js intégré
+    if(!window.pdfjsLib){ rej(new Error('pdf.js indisponible')); return; }
+    const wu=URL.createObjectURL(new Blob([document.getElementById('vend-pdfjs-worker').textContent],{type:'text/javascript'}));
+    try{ window.pdfjsLib.GlobalWorkerOptions.workerPort=new Worker(wu); }   // worker fourni (partagé entre les documents) : marche aussi en file:// (origine « null »)
+    catch(_){ window.pdfjsLib.GlobalWorkerOptions.workerSrc=wu; }
+    res(); });""", quoi='pdf.js')
+    if 'unpkg.com' in fa or 'cdnjs.cloudflare.com' in fa:
+        sys.exit('✗ Facturation charge encore une bibliothèque depuis un site externe')
     if not fa.rstrip().endswith('</html>'):
         sys.exit('✗ Facturation.html ne se termine pas par </html>')
     k = fa.rfind('</body>')
     theme = '<style id="sg-fx-theme">\n' + lire(os.path.join(ICI, 'fx_theme.css')) + '</style>\n'   # graphisme commun, après toutes les feuilles de Facturation
-    return fa[:k] + theme + FX_PONT + fa[k:]
+    pdfjs = vendor('pdf.min.js', 'vend-pdfjs') + '\n' + vendor('pdf.worker.min.js', 'vend-pdfjs-worker') + '\n'   # chargés à la demande
+    return fa[:k] + theme + FX_PONT + pdfjs + fa[k:]
+
+
+def vendor(nom, ident):
+    """Bibliothèque tierce intégrée telle quelle : bloc de données lu puis exécuté par la page (jamais modifié par le nettoyage)."""
+    js = lire(os.path.join(ICI, 'vendor', nom))
+    if re.search(r'(?i)</script|<!--', js):
+        sys.exit('✗ ' + nom + ' contient une séquence qui fermerait la balise <script>')
+    return '<script type="text/plain" data-vendor="' + nom + '" id="' + ident + '">' + js + '</script>'
 
 
 def main():

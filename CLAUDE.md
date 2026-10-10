@@ -71,6 +71,10 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   `DELTASUB_TLS_CERT|KEY|PORT`, `DELTASUB_URL` → HTTPS servi par `ServeurTLS` (négociation dans le fil de la requête,
   certificat rechargé toutes les 6 h), HTTP → 308 vers l'adresse https, cookie Secure, HSTS ; `lan_ok` accepte aussi
   100.64.0.0/10 (Tailscale). ⚠ Le Python du Mac (LibreSSL 2.8) ne gère pas les certificats EC : garder RSA.
+  **Hors du bureau (10.10.2026)** : Tailscale (réseau « paulosub.github », `tail7f12b9.ts.net`, HTTPS activé) — NAS =
+  machine `nas-substances` ; app **https://nas-substances.tail7f12b9.ts.net** (relais `tailscale serve --bg 7790`, tâche DSM
+  « Tailscale serve SUBGestion » au démarrage) ; partage `smb://nas-substances.tail7f12b9.ts.net/subgestion` (déploiement
+  `nas/preparer.sh` depuis le MacBook) ; détails dans `nas/LISEZMOI.md`.
 - **Modèle de données = celui de Deltaproject** : une collection par table Derby, en
   minuscules (`project`, `contact`, `contactowner`, `staff`, `timelog`…), champs en
   MAJUSCULES comme les colonnes. Côté page : `DS.all(t)`, `DS.get(t,id)`, `DS.by(t,champ,v)`,

@@ -79,6 +79,24 @@ s'arrête si une mention ou un nom de client subsiste. `DeltaSub.html` n'est jam
   (`fact_backup_server.py`, Chrome et polices Akkurat) ; les PDF de Facturation se font dans le navigateur, sans changement.
 - Pas de travail hors connexion en mode bureau : si le NAS est injoignable, l'indicateur passe à « Hors ligne ».
 
+## Hors du bureau : Tailscale (10.10.2026)
+Réseau Tailscale « paulosub.github » (compte GitHub Paulosub), MagicDNS `tail7f12b9.ts.net`, certificats HTTPS activés
+(console ▸ DNS). Le NAS est la machine **`nas-substances`** (paquet Tailscale de DSM, expiration de la clé désactivée).
+- **App** (MacBook, iPad… avec Tailscale actif) : **https://nas-substances.tail7f12b9.ts.net** — relais `tailscale serve`
+  (certificat Let's Encrypt délivré par Tailscale) vers le serveur SUBGestion `127.0.0.1:7790` ; le serveur ne renvoie pas un
+  relais local vers `gestion.substances.ch` (`_vers_https`). Chrome ▸ ⋮ ▸ Caster, enregistrer et partager ▸ Installer la page
+  en tant qu'application.
+- **Partage** (déploiement avec `nas/preparer.sh` depuis un Mac hors du bureau) : `open smb://nas-substances.tail7f12b9.ts.net/subgestion`.
+- **DSM** : http://nas-substances.tail7f12b9.ts.net:5000 (le navigateur intégré de Claude ne l'affiche pas : utiliser Chrome / Safari).
+- Relais installé par **DSM ▸ Planificateur de tâches ▸ « Tailscale serve SUBGestion »** (tâche déclenchée au démarrage,
+  utilisateur root ; résultats dans `subgestion/Tailscale serve SUBGestion/`) ; à relancer (Exécuter) si le relais disparaît :
+  ```
+  D=$(ls -d /volume*/subgestion 2>/dev/null | head -1)
+  T=$(command -v tailscale || echo /var/packages/Tailscale/target/bin/tailscale)
+  { date; $T version; $T serve --bg 7790 || $T serve https / http://127.0.0.1:7790; $T serve status; } > "$D/tailscale_serve.txt" 2>&1
+  ```
+- Ne pas activer « subnet router » : les réseaux de la maison utilisent souvent aussi 192.168.1.x (conflit d'adresses).
+
 ## HTTPS : https://gestion.substances.ch:7443
 Certificat Let's Encrypt du sous-domaine `gestion.substances.ch`, obtenu par la zone DNS d'Infomaniak (aucun port ouvert vers
 Internet) et renouvelé automatiquement par le conteneur `subgestion-certificat` ; le serveur le recharge toutes les 6 h.

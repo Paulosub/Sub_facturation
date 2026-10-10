@@ -97,6 +97,15 @@ Réseau Tailscale « paulosub.github » (compte GitHub Paulosub), MagicDNS `tail
   ```
 - Ne pas activer « subnet router » : les réseaux de la maison utilisent souvent aussi 192.168.1.x (conflit d'adresses).
 
+## Icône SUBGestion dans DSM (10.10.2026)
+Paquet DSM « SUBGestion » (`nas/paquet_dsm/`, construit par `nas/paquet_dsm/construire.sh` → `nas/a_copier/SUBGestion.spk`) :
+une icône dans le menu principal de DSM (même dessin que l'onglet de l'app : « S » du logo sur bleu nuit) ; aucun service,
+aucun droit (`run-as: package`). Un clic ouvre l'app dans un nouvel onglet, sur la même machine que DSM : DSM ouvert par
+Tailscale (`…ts.net`) → https://nas-substances.tail7f12b9.ts.net ; au bureau → http://<adresse du NAS>:7790 (le serveur
+renvoie vers https://gestion.substances.ch:7443 quand le certificat du bureau est actif) ; QuickConnect → message (non pris en charge).
+Installation : DSM ▸ Centre de paquets ▸ **Installation manuelle** ▸ `SUBGestion.spk` ▸ Suivant ▸ confirmer l'éditeur tiers
+(paquet non signé par Synology) ▸ Terminé. Mise à jour : augmenter `version` dans `nas/paquet_dsm/INFO`, reconstruire, réinstaller.
+
 ## HTTPS : https://gestion.substances.ch:7443
 Certificat Let's Encrypt du sous-domaine `gestion.substances.ch`, obtenu par la zone DNS d'Infomaniak (aucun port ouvert vers
 Internet) et renouvelé automatiquement par le conteneur `subgestion-certificat` ; le serveur le recharge toutes les 6 h.

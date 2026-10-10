@@ -1,0 +1,14 @@
+{
+  ".url": {
+    "com.substances.subgestion": {
+      "type": "url",
+      "title": "SUBGestion",
+      "desc": "Gestion du bureau Substances Architectes",
+      "icon": "images/subgestion_{0}.png",
+      "url": "/webman/3rdparty/SUBGestion/index.html",
+      "allUsers": true,
+      "grantPrivilege": "all",
+      "advanceGrantPrivilege": true
+    }
+  }
+}

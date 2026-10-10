@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SUBGestion</title>
+<style>
+html,body{height:100%;margin:0}
+body{display:flex;align-items:center;justify-content:center;background:#1d1d1b;color:#fff;
+  font-family:"SUB Akkurat",Akkurat,"Akkurat Pro",-apple-system,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+p{max-width:520px;margin:0;padding:0 24px;font-size:15px;line-height:1.55;font-weight:300}
+a{color:#fff266}
+</style></head>
+<body><p id="m">Ouverture de SUBGestion…</p>
+<script>
+/* Icône SUBGestion de DSM : ouvre l'app sur la même machine que DSM.
+   DSM ouvert par Tailscale (…ts.net) → relais https (tailscale serve) ; au bureau → serveur SUBGestion, port 7790
+   (qui renvoie vers https://gestion.substances.ch:7443 quand le certificat du bureau est actif). */
+(function(){
+  var h = location.hostname, m = document.getElementById('m');
+  if (/\.ts\.net$/i.test(h)) { location.replace('https://' + h + '/'); return; }
+  if (/quickconnect|synology\.me$/i.test(h)) {
+    m.innerHTML = 'SUBGestion ne passe pas par QuickConnect. Hors du bureau, activez Tailscale et ouvrez ' +
+      '<a href="https://nas-substances.tail7f12b9.ts.net/">https://nas-substances.tail7f12b9.ts.net</a>.';
+    return;
+  }
+  location.replace('http://' + h + ':7790/');
+})();
+</script>
+</body></html>

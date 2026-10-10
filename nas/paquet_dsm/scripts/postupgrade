@@ -1,0 +1,3 @@
+#!/bin/sh
+# Paquet SUBGestion : icône DSM seulement, rien à installer ni à désinstaller.
+exit 0

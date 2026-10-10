@@ -74,7 +74,8 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   **Hors du bureau (10.10.2026)** : Tailscale (réseau « paulosub.github », `tail7f12b9.ts.net`, HTTPS activé) — NAS =
   machine `nas-substances` ; app **https://nas-substances.tail7f12b9.ts.net** (relais `tailscale serve --bg 7790`, tâche DSM
   « Tailscale serve SUBGestion » au démarrage) ; partage `smb://nas-substances.tail7f12b9.ts.net/subgestion` (déploiement
-  `nas/preparer.sh` depuis le MacBook) ; détails dans `nas/LISEZMOI.md`.
+  `nas/preparer.sh` depuis le MacBook) ; détails dans `nas/LISEZMOI.md`. Icône SUBGestion dans DSM : paquet `nas/paquet_dsm/`
+  (`construire.sh` → `nas/a_copier/SUBGestion.spk`, installation manuelle ; la page `ui/index.html` choisit l'adresse de l'app).
 - **Modèle de données = celui de Deltaproject** : une collection par table Derby, en
   minuscules (`project`, `contact`, `contactowner`, `staff`, `timelog`…), champs en
   MAJUSCULES comme les colonnes. Côté page : `DS.all(t)`, `DS.get(t,id)`, `DS.by(t,champ,v)`,

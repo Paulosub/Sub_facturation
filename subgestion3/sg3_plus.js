@@ -340,7 +340,7 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
     const L=DS.all('depotfichier').filter(f=>String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER).startsWith('ProjectDocuments/Documents/'+p.ID+'/')).sort((a,b)=>cmp(a.DOSSIER,b.DOSSIER)||cmp(a.NOM,b.NOM)), grp={};
     L.forEach(f=>(grp[f.DOSSIER]=grp[f.DOSSIER]||[]).push(f));
     set('<div style="display:flex;gap:8px;align-items:center;margin:0 0 14px"><span style="color:var(--s-gris)">'+L.length+' fichier'+(L.length>1?'s':'')+'</span><span style="flex:1"></span><button class="nx-btn pri" data-fn="ajout">'+nxSvg('plus')+'Ajouter des fichiers</button><button class="nx-btn" data-fn="dom" data-dom="Documents">'+nxSvg('folder')+'Domaine Documents</button></div>'
-      +(L.length?Object.entries(grp).map(([d,fs])=>nxCard('c12',nxE(d.replace(/^ProjectDocuments\/Documents\/\d+\/?/,'Documents / ').replace(/^Construction\//,'Chantier / ')),'<div class="b flush">'+fs.map(f=>'<div class="nx-row" data-sha="'+nxE(f.ID)+'">'+nxSvg(f.EXT==='pdf'?'pdf':'doc')+'<div class="t"><b>'+nxE(f.NOM)+'</b><span>'+nxE([(f.TAILLE?(f.TAILLE/1024).toFixed(0)+' Ko':''),f.PAGES?f.PAGES+' p.':'',f.MODIFIED?String(f.MODIFIED).slice(0,10).split('-').reverse().join('.'):''].filter(Boolean).join(' · '))+'</span></div></div>').join('')+'</div>')).join(''):'<div class="nx-empty">Aucun fichier joint à cette affaire.</div>'));
+      +(L.length?Object.entries(grp).map(([d,fs])=>nxCard('c12',nxE(sgDossierLib(d)),'<div class="b flush">'+fs.map(f=>'<div class="nx-row" data-sha="'+nxE(f.ID)+'">'+nxSvg(f.EXT==='pdf'?'pdf':'doc')+'<div class="t"><b>'+nxE(f.NOM)+'</b><span>'+nxE([(f.TAILLE?(f.TAILLE/1024).toFixed(0)+' Ko':''),f.PAGES?f.PAGES+' p.':'',f.MODIFIED?String(f.MODIFIED).slice(0,10).split('-').reverse().join('.'):''].filter(Boolean).join(' · '))+'</span></div></div>').join('')+'</div>')).join(''):'<div class="nx-empty">Aucun fichier joint à cette affaire.</div>'));
     box.querySelectorAll('[data-sha]').forEach(r=>r.onclick=()=>{ const f=DS.get('depotfichier',r.dataset.sha); if(f) ch03aOuvrir(f); });
     pg._fn.dom=b=>sgOuvrirDomaine(p,b.dataset.dom); pg._fn.ajout=()=>sgAjouterFichiers(p); }); return; }
   if(k==='notes'){ const notes=DS.by('projectnote','PROJECT_ID',p.ID).sort((a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE)), tasks=DS.by('projecttask','PROJECT_ID',p.ID).sort((a,b)=>cmp(!!a.DONEDATE,!!b.DONEDATE)||cmp(a.DEADLINE,b.DEADLINE));
@@ -438,11 +438,13 @@ async function sgHtmlPdf(html){ if(!(await sgSrv(true))||!SAUV.srv.pdf){ const x
   const r=await fetch(SG_SRV+'/html2pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html})});
   if(!r.ok){ let m=''; try{ m=(await r.json()).error; }catch(_){} const x=new Error(m||'Création du PDF impossible.'); x.status=r.status; throw x; }
   return new Blob([await r.arrayBuffer()],{type:'application/pdf'}); }
-async function sgPdfLib(){ const w=await fxEnsure(); if(!w.PDFLib) throw new Error('Bibliothèque PDF indisponible (connexion internet nécessaire au premier chargement).'); return w; }
+async function sgPdfLib(){ const w=await fxEnsure(); if(!w.PDFLib) throw new Error('Bibliothèque PDF non chargée dans le cadre Facturation : rechargez la page.'); return w; }
 async function sgPdfOctets(w,sha){ const b=await sgFichierLire(sha); if(!b){ const x=new Error('Fichier absent de ce navigateur.'); x.status=404; throw x; } return new w.Uint8Array(await b.arrayBuffer()); }
 ch03aApi=async function(url,o){ o=o||{}; const u=new URL(url,'http://localhost'), q=u.searchParams, meth=String(o.method||'GET').toUpperCase(), corps=()=>JSON.parse(String(o.body||'{}'));
   if(u.pathname==='/api/file'&&meth==='POST'&&q.has('nom')){ const b=o.body instanceof Blob?o.body:new Blob([o.body]); return Object.assign({ok:true},await sgFichierRanger(b,q.get('nom'))); }
-  if(u.pathname==='/api/file'&&q.has('version')) return {ok:true,supprime:false};
+  if(u.pathname==='/api/file'&&q.has('version')){   // R9 : version d'un nom supprimé — base du bureau : demandée au serveur (sinon 409 à la recréation du même nom)
+    if(dsEstBureau()) try{ const r=await fetch('/api/file?version='+encodeURIComponent(q.get('version')),{cache:'no-store'}), d=await r.json(); if(r.ok&&d&&d.ok!==false) return d; }catch(_){}
+    return {ok:true,supprime:false}; }
   if(u.pathname==='/api/pdf'&&meth==='GET'){ await sgSrv(); return {ok:true,chrome:SAUV.srv&&SAUV.srv.pdf?'Chrome (serveur de sauvegarde)':null,outils:true}; }
   if(u.pathname==='/api/pdf'&&meth==='POST'){ const {html,apercu}=corps(), pdf=await sgHtmlPdf(html), buf=await pdf.arrayBuffer();
     if(apercu){ const id='ap'+Date.now().toString(36); SG_APERCUS[id]=pdf; return {ok:true,apercu:id,taille:pdf.size,pages:await sgCompterPages(buf)}; }
@@ -454,6 +456,7 @@ ch03aApi=async function(url,o){ o=o||{}; const u=new URL(url,'http://localhost')
     const [pg]=await doc.embedPdf(await sgPdfOctets(w,calque),w.Array.of(0)), last=doc.getPage(doc.getPageCount()-1); last.drawPage(pg,{x:0,y:0,width:last.getWidth(),height:last.getHeight()});
     return Object.assign({ok:true},await sgFichierRanger(new Blob([await doc.save()],{type:'application/pdf'}),'document.pdf')); }
   const x=new Error('Fonction du dépôt indisponible dans SUBGestion ('+u.pathname+').'); x.status=501; throw x; };
+window.SG3_FICHIERS=true;   // dépôt de fichiers assuré ici (navigateur + serveur de sauvegarde), même sans serveur : chapitres DOCUMENTS du moteur actifs
 const sgUrl0=ch03aUrl;
 ch03aUrl=function(x,dl){ x=x||{}; if(x.ref!=null) return sgUrl0(x,dl); const e=encodeURIComponent, nom=e(String((x.NOM!=null?x.NOM:x.nom)||'').normalize('NFC'));
   return x.apercu!=null?'sgf:?apercu='+e(x.apercu)+'&nom='+nom+(dl?'&dl=1':''):'sgf:?sha='+e(x.SHA256||x.sha||'')+'&nom='+nom+(dl?'&dl=1':''); };
@@ -465,14 +468,27 @@ async function sgOuvrirUrl(url,telecharger){ const q=new URLSearchParams(String(
   if(!b.type||b.type==='application/octet-stream') b=new Blob([b],{type:sgMime(nom)});
   if(telecharger||q.get('dl')==='1'){ const a=h('a',{href:URL.createObjectURL(b),download:nom}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000); return; }
   sgVisionneuse(b,nom); }
-function sgVisionneuse(b,nom){ const u=URL.createObjectURL(b), ov=h('div',{class:'sg-visu'});
+/* aperçu d'un fichier : seulement des types sans script — PDF (lecteur du navigateur), images (<img>), texte brut ; HTML seulement pour les
+   documents faits par l'app (o.interne), dans un cadre sans scripts. Un fichier déposé (HTML, SVG, XML…) ne s'exécute jamais dans l'app. */
+function sgVisionneuse(b,nom,o){ o=o||{}; const t=String(b.type||'').toLowerCase().split(';')[0].trim();
+  const vue=t==='application/pdf'?'pdf':/^image\/(png|jpe?g|gif|webp|bmp|svg\+xml)$/.test(t)?'img':/^text\/(plain|csv|tab-separated-values)$/.test(t)?'txt':t==='text/html'&&o.interne?'html':null;
+  const u=URL.createObjectURL(vue==='txt'?new Blob([b],{type:'text/plain;charset=utf-8'}):b), ov=h('div',{class:'sg-visu'});
   const fermer=()=>{ ov.remove(); URL.revokeObjectURL(u); document.removeEventListener('keydown',esc,true); }, esc=e=>{ if(e.key==='Escape'){ e.stopPropagation(); fermer(); } };
-  const corps=/^image\//.test(b.type)?h('div',{class:'sg-visu-img'},h('img',{src:u,alt:nom})):/pdf|^text\/|html/.test(b.type)?h('iframe',{src:u,title:nom}):h('div',{class:'nx-empty'},'Aperçu impossible pour ce type de fichier : utilisez « Télécharger ».');
+  const corps=vue==='img'?h('div',{class:'sg-visu-img'},h('img',{src:u,alt:nom})):vue?h('iframe',Object.assign({src:u,title:nom},vue==='pdf'?{}:{sandbox:'allow-same-origin allow-modals'})):h('div',{class:'nx-empty'},'Aperçu impossible pour ce type de fichier : utilisez « Télécharger ».');
   ov.append(h('div',{class:'sg-visu-bar'},h('b',{},nom),h('span',{style:{flex:1}}),
     h('button',{class:'btn',onclick:()=>{ const a=h('a',{href:u,download:nom}); document.body.append(a); a.click(); a.remove(); }},'Télécharger'),
     corps.tagName==='IFRAME'?h('button',{class:'btn',onclick:()=>{ try{ corps.contentWindow.print(); }catch(_){ toast('Impression : utilisez Télécharger puis imprimez.',true); } }},'Imprimer'):'',
     h('button',{class:'btn pri',onclick:fermer},'Fermer')),corps);
   document.body.append(ov); document.addEventListener('keydown',esc,true); }
+/* titre lisible d'un dossier du dépôt (fiche projet ▸ Documents) : « Contrôle des coûts › <document> › Adjudications »… */
+function sgDossierLib(d){ const s=String(d||'').split('/'), doc=(t,id)=>{ const x=DS.get(t,id); return x?(x.NOTE||x.VERSION||'document '+id):'document '+id; }, reste=a=>a.filter(Boolean).join(' › ');
+  const coco=typeof CC_DOC_SOUS!=='undefined'?CC_DOC_SOUS:{'':'Général'};
+  if(s[0]==='ProjectDocuments'&&s[1]==='Documents') return reste([{Documents:'Documents',Meetings:'Séances',Invoices:'Factures',FeeCalculations:'Calculs d’honoraires',Contracts:'Contrats'}[s[3]]||s[3]].concat(s.slice(4)))||'Documents';
+  if(s[0]==='Construction'&&s[1]==='Costcontrol') return reste(['Contrôle des coûts',doc('costcontroldocument',s[3]),coco[s[5]||'']||s[5]].concat(s.slice(6)));
+  if(s[0]==='Construction'&&s[1]==='Costestimate') return reste(['Devis général',doc('costestimatedocument',s[3])].concat(s.slice(5)));
+  if(s[0]==='Construction'&&s[1]==='Costplanning') return reste(['Calcul des coûts',doc('costplanningdocument',s[3])].concat(s.slice(5)));
+  if(s[0]==='Construction'&&s[1]==='Devis') return reste(['Soumissions','n° '+(s[4]||'')].concat(s.slice(5)));
+  return reste(s); }
 async function sgAjouterFichiers(p){ const inp=h('input',{type:'file',multiple:true});
   inp.onchange=async()=>{ const fs=[...inp.files]; if(!fs.length) return; let n=0; const dos=ch03aDossier('document',p.ID,'Général');
     for(const f of fs){ try{ await ch03aDeposer(dos,f.name,f,{projet:p.ID,origine:'import'}); n++; }
@@ -1270,7 +1286,7 @@ const SG_DOC_CSS='@page{size:A4;margin:22mm 20mm 26mm}body{font-family:"SUB Akku
 const sgPiedDoc=()=>'<div class="pied"><span>'+SG_BUREAU.rue+' · '+SG_BUREAU.lieu+'</span><span>'+SG_BUREAU.tel+' · '+SG_BUREAU.mail+'</span><span>'+SG_BUREAU.ide+' · '+SG_BUREAU.rc+'</span></div>';
 const sgPolicesDoc=()=>[...document.styleSheets].flatMap(ss=>{ try{ return [...ss.cssRules]; }catch(_){ return []; } }).filter(r=>r.type===5&&/SUB Akkurat/.test(r.cssText)).map(r=>r.cssText).join('');   // @font-face Akkurat (local) de l'app
 function sgDocOuvrir(titre,corps,nom){ const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>'+nxE(titre)+'</title><style>'+sgPolicesDoc()+SG_DOC_CSS+'</style></head><body>'+sgPiedDoc()+corps+'</body></html>';
-  sgVisionneuse(new Blob([html],{type:'text/html'}),nom||(titre+'.html')); }
+  sgVisionneuse(new Blob([html],{type:'text/html'}),nom||(titre+'.html'),{interne:true}); }
 const sgE=s=>nxE(s==null?'':String(s));
 function sgDocContrat(c){ const E=c.EMPLOYE||{}, fem=E.civ==='Madame', ee=fem?'e':'', occ=+c.OCC||100, hs=Math.round(SG_CCT.hsem*occ)/100, annuel=(+c.SALAIRE||0)*(+c.MOIS||12);
   const corps='<h1>CONTRAT DE TRAVAIL</h1><div class="date">'+SG_BUREAU.ville.toUpperCase()+' – '+sgDateL(c.DATE).toUpperCase()+'</div><div class="sous">Confirmation<br>&amp; conditions d’engagement</div>'

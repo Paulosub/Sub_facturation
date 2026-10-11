@@ -155,11 +155,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `subgestion3/_backup_20261006_2227_barre_haute/`. ⚠ Ne jamais utiliser la classe `ov` (= voile des fenêtres DeltaSub,
   cherché par `$$('.ov')`). Vue d'ensemble par domaine (`dom-<k>`), modules Facturation
   = vues `fx-<onglet>` (arg `new`, `c:<id>`, `f:<id>`, `sync`), le cadre signale ses onglets via `parent.sgFxOnTab`.
-  **Bibliothèques PDF intégrées (10.10.2026)** : `subgestion3/vendor/` (pdf-lib 1.17.1, fontkit 1.1.1, pdf.js 3.11.174 : copies du
-  registre npm, empreinte sha512 vérifiée au téléchargement) ; `construire.py` remplace les `<script src="https://unpkg…">` et le
-  chargement cdnjs de Facturation par des blocs `<script type="text/plain" data-vendor>` exécutés par la page ; pdf.js reçoit un
-  worker fourni (`GlobalWorkerOptions.workerPort`, blob : marche aussi en file://) ; arrêt si un site externe subsiste. SUBGestion 3
-  ne contacte plus aucun site (hors connexion possible) ; `Facturation.html` seule charge encore unpkg / cdnjs.
+  **Bibliothèques PDF intégrées (10.10.2026)** : pdf-lib 1.17.1, fontkit 1.1.1 et pdf.js 3.11.174 (copies du registre npm, empreinte
+  sha512 vérifiée au téléchargement, gardées dans `subgestion3/vendor/`) sont intégrées DANS `Facturation.html` même : blocs
+  `<script type="text/plain" data-vendor="…" id="vend-…">` (pdf-lib et fontkit dans `<head>`, exécutés par un petit script chargeur ;
+  pdf.js et son worker avant `</body>`, exécutés à la demande par `offreLoadPdfJs`, worker fourni par `GlobalWorkerOptions.workerPort`
+  à partir d'un blob : marche aussi en file://). Plus aucun appel à unpkg / cdnjs, hors connexion possible, dans Facturation seule comme
+  dans SUBGestion v1 et v3. Les deux constructeurs (`subgestion/construire.py`, `subgestion3/construire.py`) vérifient l'empreinte
+  SHA-256 de chaque bloc (`VENDOR_SHA256`, identique dans les deux) et qu'aucun site externe ne subsiste (arrêt sinon) ;
+  `nas/nettoyer.py` laisse ces blocs intacts (regex `B64`). Mise à jour d'une bibliothèque : télécharger depuis npm (vérifier
+  l'empreinte), remplacer dans `vendor/` ET dans les blocs de Facturation.html, puis mettre à jour `VENDOR_SHA256` (deux fichiers).
+  **pdf.js (11.10.2026)** : `offreLoadPdfJs` remplace `window.pdfjsLib` par un objet qui hérite du module et dont `getDocument` ajoute
+  `isEvalSupported:false` (faille CVE-2024-4367) et un worker unique `PDFWorker.fromPort` ; chaque aperçu appelle `pdf.destroy()`
+  après le rendu (mémoire libérée, worker gardé : il n'appartient à aucun document). `pvLogoPng` charge pdf.js lui-même.
   `ibtn` enveloppé : icône + libellé (masqué si colonne < 560 px). Session `sg3_view`, favoris `nx_pins3`.
 - **Uniformisation (06.10.2026)** : `subgestion3/fx_theme.css` (injecté en fin de Facturation embarquée) donne aux modules
   Facturation le graphisme commun — cartes à filet noir, boutons réduits à 3 sortes (bleu nuit / contour noir / rouge,
@@ -187,7 +194,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   6. Fichiers joints et PDF sans serveur DeltaSub : `ch03aApi/ch03aUrl/ch03aOnglet/ch03aLien` remplacés — contenus en
      IndexedDB (SHA-256) + copie serveur `/fichiers/ranger` ; ancien dépôt lu via `/fichiers/lire` (« Rapatrier ») ;
      PDF HTML → Chrome du serveur `/html2pdf` ; fusion/superposition par pdf-lib du cadre (⚠ tableaux créés avec
-     `w.Array.of(…)` : pdf-lib vérifie `instanceof Array` de SON domaine) ; visionneuse intégrée `.sg-visu`.
+     `w.Array.of(…)` : pdf-lib vérifie `instanceof Array` de SON domaine) ; visionneuse intégrée `.sg-visu` (`sgVisionneuse(b,nom,o)`,
+     11.10.2026 : n'affiche que des types sans script — PDF (lecteur de Chrome), images par `<img>`, texte brut dans un cadre
+     `sandbox` ; HTML seulement pour les documents faits par l'app, `o.interne`, cadre `sandbox="allow-same-origin allow-modals"`
+     sans scripts — un fichier déposé HTML / XML ne s'exécute jamais) ; `window.SG3_FICHIERS` = dépôt assuré par SG3 ; version d'un
+     nom supprimé (R9, `/api/file?version=`) demandée au serveur du NAS en mode bureau (sinon 409 en recréant le même nom).
   7. Saisie de temps rapide (`sgSaisieRapide`, mêmes règles que la Feuille de temps) + minuteur (`sg3_minuteur`, pastille
      d'en-tête) ; Créer ▸ Saisie de temps, ⌘K.
   8. Libellés « Affaire » → « Projet » à l'affichage (enveloppes de `grid`, `ibtn`, `popMenu`, `dialog` ; les impressions et
@@ -285,6 +296,17 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   si décompte final saisi, ou tout facturé (ou affaire terminée) et tout encaissé ; solde = acquise − versé. Écran : par
   collaborateur (clic = détail), conditions, projets apportés, évolution (cumuls mois par mois, tableau annuel), versements,
   CSV ; Accueil ▸ À traiter « Commissions d'apport à verser » quand une commission devient exigible.
+- **Contrôle des coûts ▸ chapitre DOCUMENTS (10.10.2026, moteur `DeltaSub.html`)** — dernier chapitre de l'éditeur d'un contrôle des
+  coûts (`CC_SECS`, sans sous-nœud « Documents » de CH-01) : `ccDocsDraw` liste tous les `depotfichier` du dossier du document
+  (`Construction/Costcontrol/<P>/<D>/coco` et sous-dossiers, libellés `CC_DOC_SOUS`), dépôt de tout type de fichier (bouton ou
+  glisser-déposer) dans `…/coco/documents` via `ch03aDeposer` (PROJECT_ID de l'affaire → visible aussi dans la fiche projet ▸ Documents),
+  Ouvrir (`ch03aOuvrir` → visionneuse SG3 ; le premier fichier choisi ; Entrée), Télécharger, Supprimer (`ch03cSupprimerDlg` ; touche
+  Suppr), grille multi-sélection, redessin `ch03cSuivre`. `ccDocsDraw(pane,E,G)` remplit la grille `G` de l'éditeur (menu Fonctions :
+  copier, CSV, imprimer) ; tri et sélection gardés dans `CCV.docsSt` / `CCV.docsSel` (clés disparues purgées). Avant l'envoi : nom
+  (`ch03aNomValide`) et taille (`CH03A_MAX`) contrôlés, dossiers glissés ignorés (`webkitGetAsEntry`). Filet au-dessus de DOCUMENTS
+  dans le menu (distinct des sous-nœuds « Documents »). Lecture seule si `ch03dLecture(E)` ou profil sans droit « documents : dépôt ».
+  DeltaSub seul sans serveur (`ch10cLocal()` et pas `window.SG3_FICHIERS`) : chapitre en lecture seule avec message (pas de dépôt).
+  Fiche projet ▸ Documents : titres de groupe lisibles (`sgDossierLib` : « Contrôle des coûts › <document> › Adjudications »…).
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
 - **Déploiement NAS = règle (10.10.2026)** : toute modification de SUBGestion 3 est déposée sur le NAS dans la foulée

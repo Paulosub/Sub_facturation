@@ -15,7 +15,7 @@ Principe (les deux apps sources restent intactes et se modifient comme avant) :
     apps d'origine lorsqu'elles sont ouvertes dans le même navigateur.
 Après toute modification de Facturation.html, DeltaSub.html ou de ce dossier : relancer ce script.
 """
-import argparse, base64, datetime, gzip, os, sys
+import argparse, base64, datetime, gzip, hashlib, os, re, sys
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(ICI)
@@ -58,6 +58,26 @@ def deltasub_embarque(ds):
     return ds, n
 
 
+# Bibliothèques PDF intégrées à Facturation.html (blocs <script type="text/plain" data-vendor>, copies dans subgestion3/vendor/) :
+# empreintes SHA-256 des fichiers des paquets npm vérifiés le 10.10.2026 (pdf-lib 1.17.1, @pdf-lib/fontkit 1.1.1, pdfjs-dist 3.11.174).
+# Changer de version = télécharger, vérifier l'intégrité npm, puis mettre à jour ces empreintes (dans les deux constructeurs).
+VENDOR_SHA256 = {
+    ('pdf-lib.min.js', 'vend-pdflib'): '0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f',
+    ('fontkit.umd.min.js', 'vend-fontkit'): 'd8df561b9fba98e24f2e5130e40948809281bbbc55a20c412359f1a0a5eb35a6',
+    ('pdf.min.js', 'vend-pdfjs'): '5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946',
+    ('pdf.worker.min.js', 'vend-pdfjs-worker'): 'feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b',
+}
+
+
+def verifier_bibliotheques(fa):
+    for (nom, ident), sha in VENDOR_SHA256.items():
+        m = re.search(r'<script type="text/plain" data-vendor="' + re.escape(nom) + r'" id="' + ident + r'">(.*?)</script>', fa, re.S)
+        if not m or hashlib.sha256(m.group(1).encode('utf-8')).hexdigest() != sha:
+            sys.exit('✗ Facturation.html : bibliothèque ' + nom + ' absente ou modifiée (empreinte SHA-256 différente de la version contrôlée)')
+    if 'unpkg.com' in fa or 'cdnjs.cloudflare.com' in fa:
+        sys.exit('✗ Facturation charge encore une bibliothèque depuis un site externe')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('-o', '--sortie', default=os.path.join(RACINE, 'SUBGestion.html'))
@@ -66,6 +86,7 @@ def main():
     a = ap.parse_args()
 
     fa, ds = lire(a.facturation), lire(a.deltasub)
+    verifier_bibliotheques(fa)
     ds, n_reload = deltasub_embarque(ds)
     charge = base64.b64encode(gzip.compress(ds.encode('utf-8'), 9, mtime=0)).decode('ascii')
 

@@ -119,8 +119,16 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   texte), `sgCommCond(sid, date)`, `sgCommTaux`, `sgTravauxTTC(contrats)`, `sgApportCalc(a, D, taux)` (sur `sgRenta`),
   `sgApportsParStaff`, `sgApportSerie` + `sgCourbeCHF` (évolution), `nx-apports`, `sgApportDlg`, `sgVersementDlg` ;
   `sgATraiter` enveloppé (« Commissions d'apport à verser ») ; collection `sgapport` dans `SG_T_SALAIRES` du serveur.
-- Sécurité de la version servie (10.10.2026) : `subgestion3/vendor/` (bibliothèques PDF intégrées par `construire.py`, fonction
-  `vendor()`), `nas/nettoyer.py` (`RETRAITS`, `RENOMMAGES`, `controle_traces`, `HOTES_ADMIS`), serveur `ip_client` / `acces_ok` /
+- Contrôle des coûts (moteur) : éditeur `ccEditor` (sections `CC_SECS`, `draw()` par chapitre, état `CCV`), chapitre DOCUMENTS =
+  `ccDocsDraw(pane,E,G)` + `CC_DOC_SOUS` (dépôt CH-03 : `ch03aDossier/ch03dCocoDossier`, `ch03aFichiers`, `ch03aDeposer`, `ch03aOuvrir`,
+  `ch03aTelecharger`, `ch03cSupprimerDlg`, `ch03cSuivre`, lecture seule `ch03dLecture`) ; `G` = grille du menu Fonctions, tri/sélection
+  dans `CCV.docsSt` / `CCV.docsSel` ; sans dépôt possible (`ch10cLocal()` sans `window.SG3_FICHIERS`) : lecture seule.
+- Visionneuse SG3 `sgVisionneuse(blob, nom, {interne})` : liste blanche (PDF, images `<img>`, texte en cadre `sandbox`) ; HTML seulement
+  `interne` (documents de l'app, `sgDocOuvrir`) en cadre `sandbox="allow-same-origin allow-modals"`. Ne jamais afficher un fichier
+  déposé dans un cadre de même origine sans `sandbox` (il lirait la base et la session). `sgDossierLib(dossier)` = titre lisible.
+- Sécurité de la version servie (10.10.2026) : bibliothèques PDF intégrées dans `Facturation.html` (blocs `data-vendor`, copies de
+  référence dans `subgestion3/vendor/`, empreintes SHA-256 `VENDOR_SHA256` vérifiées par les deux `construire.py` ; pdf.js :
+  `isEvalSupported:false` + worker partagé + `pdf.destroy()` après chaque aperçu), `nas/nettoyer.py` (`RETRAITS`, `RENOMMAGES`, `controle_traces`, `HOTES_ADMIS`), serveur `ip_client` / `acces_ok` /
   `relais_https`. Vérifier la page NETTOYÉE (et pas seulement la source) : sonde file:// + aperçu + balayage sur
   `/tmp/subgestion_apercu/SUBGestion3_nas.html`.
 - Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `frSeulOps()` → {ops, n} et `frSeul(ops)` (lots de 400) :

@@ -3281,7 +3281,58 @@ const ccEntName=(C,id)=>{ if(id==null) return 'Aucune entreprise'; const c=DS.ge
 const ccNextNum=(list,f)=>String(Math.max(0,...list.map(x=>parseInt(x[f],10)||0))+1);
 
 /* ── Fenêtre « Contrôle des coûts <affaire> » ── */
-const CC_SECS=['CONTRÔLE DU COÛT','DEVIS GENERAL','MUTATIONS','ADJUDICATIONS','PAIEMENTS','ORDRES DE PAIEMENT','COMPTES D’ENTREPRISE','ARRÊTÉS DE COMPTE'];
+/* ── Chapitre DOCUMENTS du contrôle des coûts (10.10.2026) : tous les fichiers du dossier du document (Construction/Costcontrol/<P>/<D>/coco
+   et ses sous-dossiers : devis général, adjudications, paiements…) et un dossier « documents » où l'on dépose n'importe quel fichier
+   (PDF, image, tableur… ≤ 25 Mo) par le bouton ou par glisser-déposer. Ouvrir (visionneuse), télécharger, supprimer. Lecture seule si le
+   document n'est pas modifiable (ch03dLecture) ou sans droit de dépôt (profil « documents »). Les fichiers portent l'affaire (PROJECT_ID) :
+   ils paraissent aussi dans l'onglet Documents de la fiche projet. ── */
+const CC_DOC_SOUS={'':'Général',documents:'Documents',estimate:'Devis général',overview:'Contrôle du coût',award:'Adjudications',mutation:'Mutations',
+  entrepreneur:'Comptes d’entreprise',finalpayment:'Arrêtés de compte',payments:'Paiements',paymentorder:'Ordres de paiement',entrepreneurInvoices:'Factures d’entreprise'};
+function ccDocsDraw(pane,E,G){ const base=ch03dCocoDossier(E,null), gen=ch03dCocoDossier(E,'documents');
+  if(!base||!gen){ pane.append(h('div',{class:'empty'},'Dossier du document indisponible.')); return; }
+  const sansDepot=ch10cLocal()&&!window.SG3_FICHIERS;   // page ouverte seule, sans serveur : aucun dépôt où ranger ni lire les fichiers
+  const pid=E.p?E.p.ID:(E.doc&&E.doc.PROJECT_ID), ro=sansDepot||ch03dLecture(E)||(typeof sgDroit==='function'&&!sgDroit('documents','depot'));
+  const sousDe=r=>{ const d=String(r.DOSSIER||''); return d===base?'':d.startsWith(base+'/')?d.slice(base.length+1):null; };
+  const lib=sd=>{ if(sd==null) return ''; const [a,...rest]=sd.split('/'); return (CC_DOC_SOUS[a]||a)+(rest.length?' › '+rest.join(' › '):''); };
+  const taille=n=>n==null||n===''?'':+n<1024?n+' o':+n<1048576?Math.round(n/1024)+' Ko':(n/1048576).toFixed(1)+' Mo';
+  const rows=()=>DS.all(CH03A_T).filter(r=>sousDe(r)!=null&&String(r.NOM)[0]!=='.').sort((a,b)=>cmp(lib(sousDe(a)),lib(sousDe(b)))||ch03aOrdre(a,b));
+  // G = grille de l'éditeur (menu Fonctions : copier, CSV, imprimer) ; tri et sélection gardés d'un affichage à l'autre (CCV)
+  const g=Object.assign(G||{},{multi:true,key:r=>r.ID,state:CCV.docsSt||(CCV.docsSt={}),selSet:CCV.docsSel||(CCV.docsSel=new Set()),
+    cols:[{k:'d',t:'Dossier',w:140,f:r=>esc(lib(sousDe(r))),v:r=>lib(sousDe(r))},{k:'NOM',t:'Nom du fichier',f:r=>'<span title="'+esc(r.NOM)+'">'+esc(r.NOM)+'</span>'},{k:'EXT',t:'Type',w:52,f:r=>esc(String(r.EXT||'').toUpperCase())},
+      {k:'TAILLE',t:'Taille',w:66,cls:'r',f:r=>taille(r.TAILLE),v:r=>+r.TAILLE||0},{k:'PAGES',t:'Pages',w:50,cls:'r',f:r=>r.PAGES==null?'':esc(r.PAGES),v:r=>+r.PAGES||0},
+      {k:'MODIFIED',t:'Modifié le',w:112,f:r=>esc(dfr(String(r.MODIFIED||'').slice(0,10))+' '+String(r.MODIFIED||'').slice(11,16))},{k:'USERID',t:'Par',w:64,f:r=>esc(r.USERID||'')}],
+    rows:[],onDbl:r=>{ if(!sansDepot) ch03aOuvrir(r); },empty:'Aucun fichier pour ce contrôle des coûts.'+(ro?'':' Déposez des fichiers ici ou cliquez sur « Ajouter … ».')});
+  const sel=()=>gridSel(g,k=>DS.get(CH03A_T,k)), box=h('div',{tabindex:'0',style:{flex:1,overflow:'auto',minHeight:'120px',outline:'none'}});
+  const majCompte=()=>{ const n=g.rows.length; head.setCount(n+' fichier'+(n>1?'s':'')); };
+  const affiche=()=>{ g.rows=rows(); const ks=new Set(g.rows.map(r=>String(r.ID))); [...g.selSet].forEach(k=>{ if(!ks.has(k)) g.selSet.delete(k); }); grid(box,g); majCompte(); };
+  const redraw=()=>{ if(box.isConnected) affiche(); };
+  const deposer=async fs=>{ if(ro) return; const ok=[];
+    (fs||[]).filter(Boolean).forEach(f=>{ if(!ch03aNomValide(f.name)) toast('✗ « '+f.name+' » : nom de fichier invalide.',true); else if(f.size>CH03A_MAX) toast('✗ '+f.name+' : '+CH03A_MSG.gros,true); else ok.push(f); });
+    let n=0;
+    for(const f of ok){ try{ await ch03aDeposer(gen,f.name,f,{projet:pid,origine:'import'}); n++; }
+      catch(e){ if(e&&e.message==='existe'){ if(await confirmDlg('« '+f.name+' » existe déjà dans Documents. Le remplacer ?','Remplacer')){ try{ await ch03aDeposer(gen,f.name,f,{projet:pid,origine:'import',remplacer:true}); n++; }catch(e2){ toast('✗ '+f.name+' : '+(e2&&e2.message||e2),true); } } }
+        else toast('✗ '+f.name+' : '+(e&&e.message||e),true); } }
+    if(n) toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+' au contrôle des coûts.'); redraw(); };
+  const ajouter=()=>{ const inp=h('input',{type:'file',multiple:true}); inp.onchange=()=>deposer([...inp.files]); inp.click(); };
+  const choisir=()=>{ const s=sel(); if(!s.length) toast('Choisissez un fichier dans la liste.',true); return s; };
+  const ouvrir=()=>{ const s=choisir(); if(!s.length) return; if(s.length>1) toast('Plusieurs fichiers choisis : le premier est ouvert.'); ch03aOuvrir(s[0]); };
+  const supprimer=async()=>{ const s=choisir(); if(s.length&&await ch03cSupprimerDlg(s)) redraw(); };
+  const head=phead([ibtn({i:'plus',t:'Ajouter …',dis:ro,fn:ajouter}),ibtn({i:'doc',t:'Ouvrir',dis:sansDepot,fn:ouvrir}),
+    ibtn({i:'export',t:'Télécharger',dis:sansDepot,fn:()=>{ const s=choisir(); if(s.length) ch03aTelecharger(s); }}),
+    ibtn({i:'minus',t:'Supprimer',dis:ro,fn:supprimer})],{count:true});
+  const wrap=h('div',{style:{display:'flex',flexDirection:'column',height:'100%',minHeight:'0'}},head,
+    h('div',{style:{padding:'6px 12px',fontSize:'12px',opacity:.75}},sansDepot?'Fichiers joints indisponibles dans cette page ouverte seule, sans serveur : utilisez SUBGestion 3.'
+      :ro?'Lecture seule.':'Dossier « Documents » du contrôle des coûts : déposez ici les pièces de l’affaire (PDF, images, tableurs…) ; les fichiers des autres chapitres (adjudications, paiements…) sont listés avec eux.'),box);
+  box.onkeydown=e=>{ if(sansDepot) return; if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); ouvrir(); } else if((e.key==='Delete'||e.key==='Backspace')&&!ro){ e.preventDefault(); e.stopPropagation(); supprimer(); } };
+  if(!ro){ wrap.ondragover=e=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; };
+    wrap.ondrop=e=>{ e.preventDefault(); const dt=e.dataTransfer; if(!dt) return; let dossiers=0; const fs=[];
+      if(dt.items&&dt.items.length) [...dt.items].forEach(x=>{ if(x.kind!=='file') return; const en=typeof x.webkitGetAsEntry==='function'?x.webkitGetAsEntry():null;
+        if(en&&en.isDirectory){ dossiers++; return; } const f=x.getAsFile(); if(f) fs.push(f); });   // entrées lues pendant l'événement (vides ensuite)
+      else fs.push(...(dt.files||[]));
+      if(dossiers) toast('Dossier'+(dossiers>1?'s':'')+' ignoré'+(dossiers>1?'s':'')+' : déposez les fichiers eux-mêmes.',true);
+      deposer(fs); }; }
+  pane.append(wrap); affiche(); if(typeof ch03cSuivre==='function') ch03cSuivre({el:box,tables:[CH03A_T],redraw}); }
+const CC_SECS=['CONTRÔLE DU COÛT','DEVIS GENERAL','MUTATIONS','ADJUDICATIONS','PAIEMENTS','ORDRES DE PAIEMENT','COMPTES D’ENTREPRISE','ARRÊTÉS DE COMPTE','DOCUMENTS'];
 function ccEditor(m,id){
   const doc=DS.get('costcontroldocument',id), p=DS.get('project',doc&&doc.PROJECT_ID);
   let C=null; const load=()=>{ C=JSON.parse(JSON.stringify(DS.get('costcontrol',id)||ccEmpty(id,doc.PROJECT_ID)));
@@ -3292,7 +3343,7 @@ function ccEditor(m,id){
     return L.find(x=>x.nom===CCV.pres)||L.find(x=>x.favori)||L[0]; };
   const bar=h('div',{class:'ph2',style:{gap:'6px'}}), side=h('div',{class:'col',style:{flex:'0 0 210px',background:'var(--side)'}}), main=h('div',{class:'col fill'}), pane=h('div',{class:'pane'});
   const body=h('div',{class:'cols'}); body.append(side,main); main.append(pane); m.append(bar,body);
-  CC_SECS.forEach(s=>{ const it=h('div',{class:'item'+(s===CCV.sec?' on':''),style:{paddingLeft:'14px',fontWeight:600,letterSpacing:'.04em',fontSize:'12.5px'}},s); it.onclick=()=>{ CCV.docs=false; CCV.sec=s; CCV.detSel=null; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it); side.append(ch01aDocNode(s,side,()=>draw())); });
+  CC_SECS.forEach(s=>{ const it=h('div',{class:'item'+(s===CCV.sec?' on':''),style:Object.assign({paddingLeft:'14px',fontWeight:600,letterSpacing:'.04em',fontSize:'12.5px'},s==='DOCUMENTS'?{borderTop:'1px solid var(--line)',marginTop:'8px'}:null)},s); it.onclick=()=>{ CCV.docs=false; CCV.sec=s; CCV.detSel=null; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it); if(s!=='DOCUMENTS') side.append(ch01aDocNode(s,side,()=>draw())); });   // DOCUMENTS : chapitre propre, sans sous-nœud
   const cur=()=>CCV.sel?(()=>{ const [c,e]=CCV.sel.split('|'); return {cfc:c,ent:e==='-'||e===undefined||e==='null'?null:+e}; })():null;
   const ctrOf=s=>s?(C.contrats.find(c=>c.type==='contrat'&&c.contactId===s.ent&&(c.lignes||[]).some(l=>String(l.cfc)===s.cfc))||null):null;
   const addMenu=()=>{ const s=cur(), ctr=ctrOf(s); return [...ch01cAddItems(C,touch),
@@ -3310,6 +3361,7 @@ function ccEditor(m,id){
     ibtn({i:'save',t:'Enregistrer',fn:()=>save().then(()=>toast('Enregistré.'))}));
   const COLOR={mut:'#993300',ctr:'#FF6633',pay:'#003366',prov:'#555',cpp:'#555'};
   const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
+    if(sec==='DOCUMENTS'){ ccDocsDraw(pane,{C,p,doc,id,touch},G); return; }
     if(sec==='CONTRÔLE DU COÛT'||sec==='DEVIS GENERAL'){
       const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]);
       const detK=new Set(sec==='DEVIS GENERAL'?[]:pres().colonnes.filter(c=>c.details&&CC_COL[c.id]&&CC_COL[c.id].det).map(c=>CC_COL[c.id].det)); if(detK.has('prov')) detK.add('cpp');

@@ -15,7 +15,7 @@ Principe :
 Après toute modification de DeltaSub.html, Facturation.html ou de ce dossier : relancer ce script.
 Ne pas modifier SUBGestion3.html à la main. SUBGestion.html (v1) et SUBGestion2.html (v2) restent indépendantes.
 """
-import argparse, base64, datetime, gzip, os, re, sys
+import argparse, base64, datetime, gzip, hashlib, os, re, sys
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(ICI)
@@ -83,6 +83,26 @@ FX_PONT = '''<script id="sg-fx-pont">
 '''
 
 
+# Bibliothèques PDF intégrées à Facturation.html (blocs <script type="text/plain" data-vendor>, copies dans subgestion3/vendor/) :
+# empreintes SHA-256 des fichiers des paquets npm vérifiés le 10.10.2026 (pdf-lib 1.17.1, @pdf-lib/fontkit 1.1.1, pdfjs-dist 3.11.174).
+# Changer de version = télécharger, vérifier l'intégrité npm, puis mettre à jour ces empreintes (dans les deux constructeurs).
+VENDOR_SHA256 = {
+    ('pdf-lib.min.js', 'vend-pdflib'): '0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f',
+    ('fontkit.umd.min.js', 'vend-fontkit'): 'd8df561b9fba98e24f2e5130e40948809281bbbc55a20c412359f1a0a5eb35a6',
+    ('pdf.min.js', 'vend-pdfjs'): '5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946',
+    ('pdf.worker.min.js', 'vend-pdfjs-worker'): 'feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b',
+}
+
+
+def verifier_bibliotheques(fa):
+    for (nom, ident), sha in VENDOR_SHA256.items():
+        m = re.search(r'<script type="text/plain" data-vendor="' + re.escape(nom) + r'" id="' + ident + r'">(.*?)</script>', fa, re.S)
+        if not m or hashlib.sha256(m.group(1).encode('utf-8')).hexdigest() != sha:
+            sys.exit('✗ Facturation.html : bibliothèque ' + nom + ' absente ou modifiée (empreinte SHA-256 différente de la version contrôlée)')
+    if 'unpkg.com' in fa or 'cdnjs.cloudflare.com' in fa:
+        sys.exit('✗ Facturation charge encore une bibliothèque depuis un site externe')
+
+
 def facturation_embarquee(fa):
     i = fa.find('</head>')
     if not (0 < i < fa.find('<body')):
@@ -96,37 +116,14 @@ def facturation_embarquee(fa):
     fa = remplacer(fa, "const YEAR_COLORS=['#0a6e84','#1a1a1a','#b7a06a','#2E9E5B','#c0392b','#8a6d1a','#6c7a89','#3b7dd8'];",
                    "const YEAR_COLORS=['#003346','#4cbab5','#d7860d','#98c21f','#3f4193','#bd1e42','#636e7e','#9d9d9c'];", quoi='palette YEAR_COLORS')
     fa = remplacer(fa, 'location.reload();', "(window.parent!==window&&window.parent.sgFxReload?window.parent.sgFxReload():location.reload());", quoi='rechargement Facturation')
-    # bibliothèques PDF intégrées (10.10.2026) : plus aucun appel à unpkg.com / cdnjs (scripts tiers non vérifiés, internet requis).
-    # Copies du registre npm à l'empreinte sha512 vérifiée, dans subgestion3/vendor/ ; blocs « data-vendor » jamais modifiés par nas/nettoyer.py.
-    fa = remplacer(fa, '<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>\n'
-                       '<script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.js"></script>',
-                   vendor('pdf-lib.min.js', 'vend-pdflib') + '\n' + vendor('fontkit.umd.min.js', 'vend-fontkit') + '\n'
-                   + '<script>["vend-pdflib","vend-fontkit"].forEach(function(i){ var s=document.createElement("script"); '
-                     's.textContent=document.getElementById(i).textContent; document.head.appendChild(s); });</script>', quoi='pdf-lib et fontkit')
-    fa = remplacer(fa, """    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    s.onload=()=>{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); };
-    s.onerror=rej; document.head.appendChild(s); });""", """    s.textContent=document.getElementById('vend-pdfjs').textContent; document.head.appendChild(s);   // pdf.js intégré
-    if(!window.pdfjsLib){ rej(new Error('pdf.js indisponible')); return; }
-    const wu=URL.createObjectURL(new Blob([document.getElementById('vend-pdfjs-worker').textContent],{type:'text/javascript'}));
-    try{ window.pdfjsLib.GlobalWorkerOptions.workerPort=new Worker(wu); }   // worker fourni (partagé entre les documents) : marche aussi en file:// (origine « null »)
-    catch(_){ window.pdfjsLib.GlobalWorkerOptions.workerSrc=wu; }
-    res(); });""", quoi='pdf.js')
-    if 'unpkg.com' in fa or 'cdnjs.cloudflare.com' in fa:
-        sys.exit('✗ Facturation charge encore une bibliothèque depuis un site externe')
+    # bibliothèques PDF (10.10.2026) : intégrées dans Facturation.html même (blocs « data-vendor ») ; ici on vérifie qu'elles sont
+    # exactement les versions contrôlées (empreintes VENDOR_SHA256) et qu'aucun site externe n'est plus appelé.
+    verifier_bibliotheques(fa)
     if not fa.rstrip().endswith('</html>'):
         sys.exit('✗ Facturation.html ne se termine pas par </html>')
     k = fa.rfind('</body>')
     theme = '<style id="sg-fx-theme">\n' + lire(os.path.join(ICI, 'fx_theme.css')) + '</style>\n'   # graphisme commun, après toutes les feuilles de Facturation
-    pdfjs = vendor('pdf.min.js', 'vend-pdfjs') + '\n' + vendor('pdf.worker.min.js', 'vend-pdfjs-worker') + '\n'   # chargés à la demande
-    return fa[:k] + theme + FX_PONT + pdfjs + fa[k:]
-
-
-def vendor(nom, ident):
-    """Bibliothèque tierce intégrée telle quelle : bloc de données lu puis exécuté par la page (jamais modifié par le nettoyage)."""
-    js = lire(os.path.join(ICI, 'vendor', nom))
-    if re.search(r'(?i)</script|<!--', js):
-        sys.exit('✗ ' + nom + ' contient une séquence qui fermerait la balise <script>')
-    return '<script type="text/plain" data-vendor="' + nom + '" id="' + ident + '">' + js + '</script>'
+    return fa[:k] + theme + FX_PONT + fa[k:]
 
 
 def main():

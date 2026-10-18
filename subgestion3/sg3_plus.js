@@ -1533,7 +1533,7 @@ SG_VUE_DROIT['nx-occupation']=()=>sgDroit('equipe','taux')&&sgDroit('reglages','
 
 /* ═══ 16. FRANÇAIS SEULEMENT (07.10.2026) ═══════════════════════════════════════════════════════════════════════════
    La base ne garde que le français (moteur : frSeulOps / frSeul) : libellés allemands, italiens et anglais, modèles, documents types,
-   gabarits et catalogues étrangers ; un texte sans version française est traduit provisoirement. Proposé une fois à l'administrateur
+   gabarits et catalogues étrangers ; un texte sans version française est traduit (19.10.2026 : textes, noms et arrière-plans des modèles). Proposé une fois à l'administrateur
    au démarrage (« Plus tard » → reproposé à la session suivante) et dans Réglages ▸ Données & sauvegarde ; base sauvegardée juste
    avant. Marque « sg_meta/francais » {DATE, N} : base déjà nettoyée. */
 const SG_FR={enCours:false};
@@ -1542,14 +1542,18 @@ const SG_FR_LIB=[['libelles','libellé : allemand, italien et anglais retirés',
   ['catalogues','catalogue en langue étrangère supprimé','catalogues en langue étrangère supprimés'],['positions','position de ces catalogues supprimée','positions de ces catalogues supprimées'],
   ['catTraduits','catalogue sans version française traduit provisoirement','catalogues sans version française traduits provisoirement'],
   ['posTraduites','position traduite provisoirement','positions traduites provisoirement'],['langues','compte ou adresse passé en français','comptes et adresses passés en français'],
-  ['textes','texte corrigé ou traduit','textes corrigés ou traduits'],['traces','libellé d’origine renommé','libellés d’origine renommés']];
+  ['textes','texte corrigé ou traduit','textes corrigés ou traduits'],['traces','libellé d’origine renommé','libellés d’origine renommés'],
+  ['textesModeles','texte allemand des modèles traduit','textes allemands des modèles traduits'],['nomsModeles','modèle nommé en français','modèles nommés en français'],
+  ['fonds','arrière-plan allemand ou italien renommé ou supprimé','arrière-plans allemands ou italiens renommés ou supprimés']];   // 19.10.2026
 /* comptes et fonctions : droit Deltaproject « gestion des utilisateurs » exigé par le serveur (CH08_ADMIN_T) ; sans lui, laissés tels quels */
 const SG_FR_ADM_T=['appuser','appuser_appcompanyrole','appuser_staff','appcompanyrole','appcompanyrole_approle','approle'];
 const sgFrPeutAdm=()=>!(typeof dsEstBureau==='function'&&dsEstBureau())||typeof ch08aCan!=='function'||ch08aCan('userAdmin');   // base locale : aucune règle du serveur
 /* reste-t-il des libellés étrangers (après une reprise Deltaproject, par ex.) ? tables déjà chargées seulement */
 const sgFrReste=()=>Object.entries(DS.T).some(([t,T])=>!HEAVY.includes(t)&&(sgFrPeutAdm()||!SG_FR_ADM_T.includes(t))&&Object.values(T).some(v=>v&&typeof v==='object'&&('NAMEGE' in v||'NAMEIT' in v||'NAMEEN' in v)))
   ||DS.all('catalog').some(c=>c.LANGUAGECODE!=null&&+c.LANGUAGECODE!==2)
-  ||['catalog','projectcatalog'].some(t=>DS.all(t).some(c=>/^e[C]CC-/.test(c.NAME||'')))||DS.all('defaultpath').some(x=>/^DELTA /.test(x.NAMEFR||''))||DS.all('formtemplategroup').some(x=>/^DELTA /.test(x.NAMEFR||''));
+  ||['catalog','projectcatalog'].some(t=>DS.all(t).some(c=>/^e[C]CC-/.test(c.NAME||'')))||DS.all('defaultpath').some(x=>/^DELTA /.test(x.NAMEFR||''))||DS.all('formtemplategroup').some(x=>/^DELTA /.test(x.NAMEFR||''))
+  ||(typeof frFondEtranger==='function'&&Object.keys(DS.T.arriereplan||{}).some(k=>DS.T.arriereplan[k]&&frFondEtranger(k)))   // arrière-plans allemands ou italiens (19.10.2026)
+  ||(typeof frModeleLibelle==='function'&&DS.all('modele').some(m=>!(m.libelle&&String(m.libelle.fr||'').trim())&&frModeleLibelle(m)));   // modèles sans nom français
 const sgFrResume=n=>SG_FR_LIB.filter(([k])=>n&&n[k]).map(([k,t1,t2])=>'• '+num(n[k],0)+' '+(+n[k]===1?t1:t2)).join('\n');
 /* sauvegarde avant une opération de masse : base du bureau → copie immédiate sur le serveur (« avant_<motif>_<date>.sqlite ») ;
    base locale → sauvegarde habituelle (serveur de sauvegarde du Mac, dossier choisi, sinon téléchargement) */
@@ -1567,7 +1571,7 @@ async function sgFrSeul(mode){ if(!sgAdmin()||SG_FR.enCours) return; SG_FR.enCou
   SG_FR.enCours=false;
   if(!R.ops.length){ if(!DS.get('sg_meta','francais')) await DS.commit([{t:'sg_meta',id:'francais',val:{ID:'francais',DATE:today(),N:{}}}]).catch(e=>console.error(e));
     if(mode==='manuel'){ toast('La base ne contient que le français.'); go('nx-data'); } return; }
-  sgConfirm('Ne garder que le français dans la base de gestion ?\n\n'+sgFrResume(R.n)+(saut?'\n\n'+num(saut,0)+' enregistrement(s) des comptes et des fonctions (droits) restent tels quels : il faut le droit « gestion des utilisateurs ».':'')+'\n\nLa base est sauvegardée juste avant. Les textes qui n’existent qu’en allemand, en italien ou en anglais sont traduits provisoirement.',async()=>{
+  sgConfirm('Ne garder que le français dans la base de gestion ?\n\n'+sgFrResume(R.n)+(saut?'\n\n'+num(saut,0)+' enregistrement(s) des comptes et des fonctions (droits) restent tels quels : il faut le droit « gestion des utilisateurs ».':'')+'\n\nLa base est sauvegardée juste avant. Les textes qui n’existent qu’en allemand, en italien ou en anglais sont traduits en français.',async()=>{
     if(SG_FR.enCours) return; SG_FR.enCours=true;
     try{ if(!(await sgSauverAvant('francais'))){ toast('✗ Sauvegarde impossible : rien n’a été modifié.',true); return; }
       toast('Français seulement : mise à jour de '+num(R.ops.length,0)+' enregistrements…'); await frSeul(R.ops);

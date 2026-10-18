@@ -332,7 +332,9 @@ const nmFr=r=>r?(r.NAMEFR||trFr(r.NAMEGE||r.NAMEIT||r.NAMEEN||'')||''):'';
    2. ne gardent que la langue « fr » des modèles (pages, libellé) ; 3. suppriment les documents types et gabarits allemands,
    italiens et anglais (une version existe en français ; sinon la seule version est gardée et passée en français) ; 4. suppriment
    les catalogues CRB non français et leurs positions ; 5. remplacent les textes de démonstration multilingues ; 6. mettent la
-   langue des comptes, adresses et documents en français (2). Rend {ops, n:{…}} ; frSeul(ops) les enregistre par paquets. */
+   langue des comptes, adresses et documents en français (2) ; 7. traduisent les textes allemands restés dans les modèles d'impression et le
+   document type sans version française (FR_MODELE_TXT, FR_DOC_TXT), nomment en français les modèles sans libellé (FR_MODELE_NOM / _TYPE),
+   renomment ou suppriment les arrière-plans allemands et italiens (FR_FONDS) — 19.10.2026. Rend {ops, n:{…}} ; frSeul(ops) les enregistre par paquets. */
 /* traduction provisoire des catalogues sans version française (eBKP-T, génie civil) ; le reste vient des catalogues CFC / eCCC-Bât de la base */
 const FR_CAT_SANS_FR='traduire';   // catalogue étranger sans équivalent français : « traduire » (versions locales) ; « supprimer » (version servie par le NAS, nas/nettoyer.py)
 const FR_CAT_NOM={'eBKP-T':'eCCC-GC (traduction provisoire)'};
@@ -366,10 +368,82 @@ const FR_CAT_DE={'Abfindung, Servitut, Beitrag':'Indemnité, servitude, contribu
   'Bewirtung, Entschädigung, Öffentlichkeitsarbeit':'Réceptions, indemnités, relations publiques','Entschädigung':'Indemnités',
   'Inbetriebnahme der Technik':'Mise en service des installations techniques','Inbetriebnahme der nutzungsspezifischen Anlage':'Mise en service des installations spécifiques à l’utilisation',
   'Inbetriebnahme der Anlage':'Mise en service de l’installation','Betriebsaufwand, Betriebsertrag':'Charges d’exploitation, produits d’exploitation'};
-const FR_SEUL_T=['modele','modelegroupe','modeledocument','doctemplate','catalog','catalogpos','formtemplate','formtemplategroup','boilerplategroup','boilerplateitem','defaultpath','projectcatalog'];
+const FR_SEUL_T=['modele','modelegroupe','modeledocument','doctemplate','arriereplan','catalog','catalogpos','formtemplate','formtemplategroup','boilerplategroup','boilerplateitem','defaultpath','projectcatalog'];
 /* libellés de l'ancien logiciel et des catalogues sous licence enregistrés dans la base (10.10.2026) → libellés neutres */
 const FR_TRACES={'DELTA Originaux':'Substances Originaux','DELTA Files':'Fichiers'}, FR_TRACE_CAT=v=>typeof v==='string'?v.replace(/^e[C]CC-/,'Éléments '):v;
-async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libelles:0,modeles:0,documents:0,gabarits:0,catalogues:0,positions:0,catTraduits:0,posTraduites:0,langues:0,textes:0,traces:0};
+/* Français seulement — modèles d'impression, documents types et arrière-plans venus de l'ancien logiciel en allemand ou en italien
+   (19.10.2026). FR_MODELE_TXT : texte exact (élément texte, texte d'un champ, préfixe du format d'un champ, nom de bande) → français ;
+   un texte français n'est jamais touché. Termes des modèles français de la base (Maître d'ouvrage, Direction des travaux, Adresse
+   mono-ligne / double-ligne, Abréviation d'adresse, Adresse de société, Courriel société…). */
+const FR_MODELE_TXT={
+  'Architekt':'Architecte','Architekt:':'Architecte :','Bauherrschaft':'Maître d\'ouvrage','Bauherrschaft:':'Maître d\'ouvrage :','Bauleitung':'Direction des travaux',
+  'Bauleitung:':'Direction des travaux :','Datum':'Date','Projekt':'Affaire','Projektadresse':'Adresse de l\'affaire','Projektadresse:':'Adresse de l\'affaire :',
+  'Projektnummer':'Numéro d\'affaire','Projektnummer und -kurzform':'Numéro et désignation abrégée de l\'affaire','Projektnummer: Projektnummer':'N° d\'affaire : Numéro d\'affaire',
+  'Bauvorhaben':'Désignation de l\'affaire','Dokumenten-Titel':'Titre de document','Titel der Besprechung':'Titre de la discussion','Protokoll':'Procès-verbal',
+  'Planungsstand':'État de la planification','Inhaltsverzeichnis':'Sommaire','Kostengenauigkeit':'Marge d\'approximation','KV-Genauigkeit':'Marge d\'approximation du devis',
+  'MwSt':'TVA','Total exkl. MwSt':'Total hors TVA','Total ohne MwSt':'Total hors TVA','Total inkl. MwSt':'Total TTC','Filter':'Filtre','1Text':'1Texte',
+  'Seite 1/1':'Page 1/1','13. Dezember 2010':'13 décembre 2010','Nr. Numéro de l\'ordre de paiement':'N° Numéro de l\'ordre de paiement',
+  'Ort, Datum':'Lieu, date','Ort, Datum\n\nDer Architekt':'Lieu, date\n\nL\'architecte','Ort, Datum\n\nDie Bauherrschaft':'Lieu, date\n\nLe maître d\'ouvrage',
+  'Entreprise :\n\n\n\n\n\n\n\n\n\n\n\nSachbearbeiter:':'Entreprise :\n\n\n\n\n\n\n\n\n\n\n\nInterlocuteur :',
+  'Die Kosten wurden auf Grund von Erfahrungszahlen ermittelt.\n\nPositionen welche mittels Richtofferten, Unternehmerofferten oder Ausschreibungen ermittelt wurden, sind entsprechend vermerkt.\n\nFinanzierungskosten der Bank und Mietertragsausfallkosten sind im KV nicht enthalten.':
+    'Les coûts ont été déterminés sur la base de valeurs empiriques.\n\nLes positions établies au moyen d\'offres indicatives, d\'offres d\'entreprises ou d\'appels d\'offres sont signalées comme telles.\n\nLes frais de financement bancaire et les pertes de revenus locatifs ne sont pas compris dans le devis estimatif.',
+  'Adresse (Vorname und Name)':'Adresse (Prénom et nom)','Architecte entité (Anschrift)':'Architecte entité (Adresse)','Maître d\'ouvrage (Anschrift)':'Maître d\'ouvrage (Adresse)',
+  'Directeur de projet entité (Anschrift)':'Directeur de projet entité (Adresse)',
+  'Architekt (Adresse Einzeilig)':'Architecte (Adresse mono-ligne)','Architekt (Adresse Kurzform)':'Architecte (Abréviation d\'adresse)','Architekt (Adresse Zweizeilig)':'Architecte (Adresse double-ligne)',
+  'Architekt (E-Mail Firma)':'Architecte (Courriel société)','Architekt (E-Mail Sachbearbeiter)':'Architecte (Courriel du contact)','Architekt (Firmenadresse)':'Architecte (Adresse de société)',
+  'Architekt (Vorname und Name Sachbearbeiter)':'Architecte (Prénom et nom du contact)',
+  'Bauherr (Adresse Einzeilig)':'Maître d\'ouvrage (Adresse mono-ligne)','Bauherr (Adresse Kurzform)':'Maître d\'ouvrage (Abréviation d\'adresse)','Bauherr (Adresse Zweizeilig)':'Maître d\'ouvrage (Adresse double-ligne)',
+  'Bauherr (E-Mail Firma)':'Maître d\'ouvrage (Courriel société)','Bauherr (E-Mail Sachbearbeiter)':'Maître d\'ouvrage (Courriel du contact)','Bauherr (Firmenadresse)':'Maître d\'ouvrage (Adresse de société)',
+  'Bauherr (Vorname und Name Sachbearbeiter)':'Maître d\'ouvrage (Prénom et nom du contact)',
+  'Bauleitung (Adresse Einzeilig)':'Direction des travaux (Adresse mono-ligne)','Bauleitung (Adresse Zweizeilig)':'Direction des travaux (Adresse double-ligne)',
+  'Bauleitung (E-Mail Firma)':'Direction des travaux (Courriel société)','Bauleitung (E-Mail Sachbearbeiter)':'Direction des travaux (Courriel du contact)',
+  'Bauleitung (Firmenadresse)':'Direction des travaux (Adresse de société)','Bauleitung (Vorname und Name Sachbearbeiter)':'Direction des travaux (Prénom et nom du contact)',
+  'Dir Architekt (Telefon Sachbearbeiter)':'Direct Architecte (Téléphone du contact)','Dir Bauherr (Telefon Sachbearbeiter)':'Direct Maître d\'ouvrage (Téléphone du contact)',
+  'Dir Bauleitung (Telefon Sachbearbeiter)':'Direct Direction des travaux (Téléphone du contact)',
+  'Tel Architekt (Telefon Firma)':'Tél. Architecte (Téléphone société)','Tel Bauherr (Telefon Firma)':'Tél. Maître d\'ouvrage (Téléphone société)','Tel Bauleitung (Telefon Firma)':'Tél. Direction des travaux (Téléphone société)',
+  't Architekt (Telefon Firma)':'t Architecte (Téléphone société)','t Bauherr (Telefon Firma)':'t Maître d\'ouvrage (Téléphone société)','t Bauleitung (Telefon Firma)':'t Direction des travaux (Téléphone société)',
+  'f Architekt (Fax Firma)':'f Architecte (Fax société)','f Bauherr (Fax Firma)':'f Maître d\'ouvrage (Fax société)','f Bauleitung (Fax Firma)':'f Direction des travaux (Fax société)',
+  /* préfixes imprimés (format des champs) */
+  'Seite ':'Page ','Tel ':'Tél. ','Dir ':'Direct ','Projektnummer: ':'N° d\'affaire : ','Nr. ':'N° ',
+  /* noms de bandes */
+  'Überschrift':'Titre','Adressen':'Adresses','Adressliste':'Liste d\'adresses','Kostenvoranschlag':'Devis estimatif','Mutationsliste':'Liste de mutations',
+  'Stundenliste':'Liste d\'heures','Teilprojekt-Übersicht':'Récapitulatif des ouvrages'};
+/* libellé français d'un modèle qui n'en a pas (affiché à la place du type technique) : d'après son nom de fichier, sinon son type */
+const FR_MODELE_NOM={'Projektadressliste (A4H)':'Liste d\'adresses de l\'affaire (A4 portrait)','Kostenvoranschlag (A4 H)':'Devis estimatif (A4 portrait)',
+  'Mutationsliste (A4 H)':'Liste de mutations (A4 portrait)','Kostenermittlung':'Estimation des coûts','Projektbeteiligte (A4H)':'Intervenants (A4 portrait)',
+  'Baujournal':'Journal de chantier','Sitzungs-Einladung':'Convocation à la séance','Submittentenliste (A4H)':'Liste de soumissionnaires (A4 portrait)',
+  'Stundenübersicht (A4H)':'Récapitulatif des heures (A4 portrait)','Stundenjournal (A4H)':'Journal des heures (A4 portrait)','Eigene Vorlagen':'Modèles personnels',
+  'Herma':'Herma','Zweckform':'Zweckform','Décompte final':'Décompte final'};
+const FR_MODELE_TYPE={addressList:'Liste d\'adresses',managementProjectScheduledPaymentList:'Paiements prévus',projectContractOverview:'Récapitulatif des contrats',
+  projectCostJournal:'Journal de frais',projectCostcontrolBuildingDescription:'Description du bâtiment',projectCostcontrolEstimate:'Devis estimatif',
+  projectFeeOverview:'Récapitulatif des honoraires',projectCostcontrolOverview:'Décompte final'};
+/* arrière-plans aux noms allemands ou italiens → nom français (un arrière-plan français identique existe : il le remplace ; les A4 allemands,
+   vides, diffèrent des A4 français à en-tête Substances : « (vierge) ») ; sans modèle qui s'en sert, l'arrière-plan étranger est supprimé */
+const FR_FONDS={'A4 Deckblatt Hochformat':'A4 Page de garde portrait (vierge)','A4 Deckblatt Querformat':'A4 Page de garde paysage (vierge)',
+  'A4 Erste Seite Hochformat':'A4 Première page portrait (vierge)','A4 Erste Seite Querformat':'A4 Première page paysage (vierge)',
+  'A4 Folgeseiten Hochformat':'A4 Pages suivantes portrait (vierge)','A4 Folgeseiten Querformat':'A4 Pages suivantes paysage (vierge)',
+  'A3 Deckblatt Hochformat':'A3 Page de garde portrait','A3 Deckblatt Querformat':'A3 Page de garde paysage','A3 Erste Seite Hochformat':'A3 Première page portrait (vierge)',
+  'A3 Erste Seite Querformat':'A3 Première page paysage (vierge)','A3 Folgeseiten Hochformat':'A3 Pages suivantes portrait','A3 Folgeseiten Querformat':'A3 Pages suivantes paysage',
+  'Briefpapier1':'Papier lettre 1','Briefpapier2':'Papier lettre 2'};
+const frFondEtranger=k=>Object.prototype.hasOwnProperty.call(FR_FONDS,k)||/^I (A[34] |Carta da lettere)/.test(k);   // allemand (liste) ou italien (« I A4 Frontespizio… »)
+/* documents types (.dpdoc) sans version française : textes imprimés */
+const FR_DOC_TXT={'Jahresbericht':'Rapport annuel','Erstellt von ':'Établi par ','Seite ':'Page ','Abschnitt':'Section','Titel':'Titre','Datum':'Date','Mitarbeiter':'Collaborateur',
+  'Zeitraum':'Période','Jahr ':'Année ','Informationen Arbeitszeit':'Informations sur le temps de travail','Geleistete Arbeitszeit':'Temps de travail effectué',
+  'Sollarbeitszeit':'Temps de travail prévu','Stundensaldo':'Solde d\'heures','Abzubauende Überstunden':'Heures supplémentaires à compenser',
+  'Stundensaldo inkl. abzubauende Überstunden':'Solde d\'heures, heures supplémentaires à compenser comprises','Kumulierter Stundensaldo':'Solde d\'heures cumulé',
+  'Information Ferien':'Informations sur les vacances','Ferien pro Jahr':'Vacances par année','Ferienguthaben':'Solde de vacances','Neues Ferienguthaben':'Nouveau solde de vacances',
+  ' h (Aktualisiert am ':' h (mis à jour le ','Ferienbezug im ':'Vacances prises en ','Budget Toleranzstunden':'Heures de tolérance prévues','Toleranzstunden':'Heures de tolérance',
+  'Kumulierte Toleranzstunden':'Heures de tolérance cumulées','Tabelle':'Tableau'};
+/* remplace dans un contenu (modèle, document type) les textes connus du dictionnaire D : valeurs des clés `cles` et éléments des tableaux « format » */
+function frTradContenu(o,D,cles){ let n=0; const has=s=>typeof s==='string'&&Object.prototype.hasOwnProperty.call(D,s)&&D[s]!==s;
+  const walk=x=>{ if(Array.isArray(x)){ x.forEach(walk); return; } if(!x||typeof x!=='object') return;
+    for(const k of Object.keys(x)){ const v=x[k];
+      if(typeof v==='string'){ if(cles.includes(k)&&has(v)){ x[k]=D[v]; n++; } }
+      else if(k==='format'&&Array.isArray(v)) v.forEach((s,i)=>{ if(has(s)){ v[i]=D[s]; n++; } });
+      else walk(v); } };
+  walk(o); return n; }
+const frModeleLibelle=v=>FR_MODELE_NOM[v.nom]||FR_MODELE_TYPE[v.type]||'';
+async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libelles:0,modeles:0,documents:0,gabarits:0,catalogues:0,positions:0,catTraduits:0,posTraduites:0,langues:0,textes:0,traces:0,textesModeles:0,nomsModeles:0,fonds:0};
   const cle=(t,id)=>t+'\u0001'+id, autres=['NAMEGE','NAMEIT','NAMEEN'], ent=t=>Object.entries(DS.T[t]||{}).filter(([,v])=>v&&typeof v==='object');
   const mod=(t,id,fn)=>{ const k=cle(t,id), w=W.get(k)||{t,id,v:JSON.parse(JSON.stringify(DS.T[t][id]))}; if(w.v===null) return; if(fn(w.v)) W.set(k,w); };
   const del=(t,id)=>W.set(cle(t,id),{t,id,v:null});
@@ -378,10 +452,27 @@ async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libe
   ent('modele').forEach(([id,m])=>mod('modele',id,v=>{ let chg=false;
     if(v.langues&&typeof v.langues==='object'){ const ks=Object.keys(v.langues); if(ks.some(k=>k!=='fr')){ v.langues={fr:v.langues.fr||v.langues[ks[0]]}; chg=true; } }
     if(v.libelle&&typeof v.libelle==='object'&&Object.keys(v.libelle).some(k=>k!=='fr')){ const L=v.libelle; v.libelle={fr:L.fr||trFr(L.de||L.it||L.en||'')||''}; chg=true; }
-    if(chg) n.modeles++; return chg; }));
+    if(chg) n.modeles++;
+    /* textes allemands restés dans la version française, libellé français d'un modèle qui n'en a pas (19.10.2026) */
+    const tx=v.langues&&v.langues.fr?frTradContenu(v.langues.fr,FR_MODELE_TXT,['texte','nom']):0; if(tx){ n.textesModeles+=tx; chg=true; }
+    if(!(v.libelle&&typeof v.libelle==='object'&&String(v.libelle.fr||'').trim())){ const lf=frModeleLibelle(v); if(lf){ v.libelle={fr:lf}; n.nomsModeles++; chg=true; } }
+    return chg; }));
+  /* arrière-plans aux noms allemands ou italiens (19.10.2026) : remplacés par l'arrière-plan français identique ou par une copie au nom français,
+     références des modèles (« nom.xml ») mises à jour ; sans modèle qui s'en sert : supprimés */
+  const AP=DS.T.arriereplan||{}, apRen=new Map(), apUse=new Map(), modV=id=>{ const w=W.get(cle('modele',id)); return w?w.v:DS.T.modele[id]; };
+  const apWalk=(o,fn)=>{ if(Array.isArray(o)){ o.forEach(x=>apWalk(x,fn)); return; } if(!o||typeof o!=='object') return; if(typeof o.arrierePlan==='string') fn(o);
+    Object.values(o).forEach(x=>{ if(x&&typeof x==='object') apWalk(x,fn); }); };
+  const apNom=o=>o.arrierePlan.replace(/\.xml$/,'');
+  ent('modele').forEach(([id])=>{ const v=modV(id); if(v) apWalk(v.langues,o=>apUse.set(apNom(o),(apUse.get(apNom(o))||0)+1)); });
+  Object.keys(AP).filter(k=>AP[k]&&frFondEtranger(k)).forEach(k=>{ let T=FR_FONDS[k];
+    if(T&&apUse.get(k)){ if(AP[T]&&JSON.stringify(AP[T])!==JSON.stringify(AP[k])) T+=' (2)';
+      if(!AP[T]&&!W.has(cle('arriereplan',T))) W.set(cle('arriereplan',T),{t:'arriereplan',id:T,v:JSON.parse(JSON.stringify(AP[k]))}); apRen.set(k,T); }
+    del('arriereplan',k); n.fonds++; });
+  if(apRen.size) ent('modele').forEach(([id])=>{ const v=modV(id); let hit=false; if(v) apWalk(v.langues,o=>{ if(apRen.has(apNom(o))) hit=true; });
+    if(hit) mod('modele',id,x=>{ let c=0; apWalk(x.langues,o=>{ if(apRen.has(apNom(o))){ o.arrierePlan=apRen.get(apNom(o))+'.xml'; c++; } }); return c>0; }); });
   const md=ent('modeledocument'), mdFr=new Set(md.filter(([,v])=>v.langue==='fr').map(([,v])=>v.jeu+'|'+v.type)), mdG=new Set();
   md.forEach(([id,v])=>{ const k=v.jeu+'|'+v.type, d=trFr(v.description||'')||'';
-    if(v.langue&&v.langue!=='fr'){ if(mdFr.has(k)||mdG.has(k)){ del('modeledocument',id); n.documents++; } else { mdG.add(k); mod('modeledocument',id,x=>{ x.langue='fr'; x.description=d; return true; }); } }
+    if(v.langue&&v.langue!=='fr'){ if(mdFr.has(k)||mdG.has(k)){ del('modeledocument',id); n.documents++; } else { mdG.add(k); mod('modeledocument',id,x=>{ x.langue='fr'; x.description=d; n.textesModeles+=frTradContenu(x,FR_DOC_TXT,['text','title','name','reportTitle']); return true; }); } }
     else if(d!==(v.description||'')) mod('modeledocument',id,x=>{ x.description=d; return true; }); });
   const dt=ent('doctemplate'), dtFr=new Set(dt.filter(([,v])=>v.LANGUAGEKEY==='fr').map(([,v])=>v.DOCUMENTTYPEKEY+'|'+v.TEMPLATEFOLDERID)), dtG=new Set();
   dt.forEach(([id,v])=>{ const k=v.DOCUMENTTYPEKEY+'|'+v.TEMPLATEFOLDERID; if(!v.LANGUAGEKEY||v.LANGUAGEKEY==='fr') return;

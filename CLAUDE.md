@@ -361,6 +361,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   par chapitre / article, `svbInsert` : chapitre, titres, QP auto, un seul enregistrement) ; catalogue « Perso » = bibliothèque par
   défaut (`P.doc` null / 'biblio', « Retirer de la bibliothèque… » `svbRemove`). Serveur : `svbiblio` dans `PROTECTED` (ré-import) ;
   écriture si « chantier : écriture » ou « bibliothèque : écriture » (`sg_refus_ecriture`). Aucun texte d'origine livré avec l'app.
+- **Affaires ▸ Controlling = Deltaproject 16 (18.10.2026, moteur `DeltaSub.html`, bloc « AFFAIRES · Controlling »)** — reproduction de
+  `ProjectControllingFrame` (classes et libellés relevés dans `DELTAproject.jar` / `Strings.db`, en lecture seule) : barre « Analyse des heures ▾ »
+  (Contrôle des heures, Critères d'analyse, Récapitulatif, Récapitulatif des collaborateurs), « Analyse des frais ▾ », roue, filtre des états
+  (`CTL_ETATS`, « En cours » d'office, `ds_ct_etat`) ; liste des affaires | 4 tuiles (`CTL_TILES`, droits `projectTime` / `projectCosts`).
+  Chaque tuile ouvre SA fenêtre modale : Contrôle (`ctlTimeCheck` = TimeLogControllingDialog : collaborateurs de l'affaire `ctlStaffs` |
+  agenda de la semaine en revue, seules les heures de l'affaire — les autres en gris sur option —, clic droit Approuver / Refuser /
+  Réinitialiser / Tout sélectionner, réglages `ds_ctw_opts`) ; Contrôle des frais (`ctlCostCheck` = ProjectCostControllingDialog : mois en
+  revue) ; Critères d'analyse des heures / des frais (`ctlAnalyse(p,t)` : six listes avec prévisions et « ✕ Annuler la sélection », filtre
+  par date mois ou période, Facturable / Facturé, tableau aux colonnes de l'original, pied roue ▾ / documents ▾ / rapports ▾, « Total … »,
+  « N positions de M », Fermer). Rapports : Grouper (`ctlSummary`, regroupements `CTL_GROUPES`), Composer le rapport (`ctlReport` →
+  `ctlJournal` « Journal des heures », `ctlCostReport` « Rapport des frais »), document d'analyse des collaborateurs (`ctlStaffReport`),
+  impression `ctlDocHTML`. Fenêtre ouverte tenue à jour par `DS.on` (`CT.live`). Même écran pour Projets ▸ Suivi & écarts et
+  Facturation (ancien) ▸ heures. Sauvegarde d'avant : `DeltaSub_backup_20261018_2328_avant_controlling.html`.
 - **Affaires · Mes projets · page du projet (18.10.2026, bloc 20 de `sg3_plus.js`)** — Chapitre « Affaires » sous Accueil (`SG_DOM`
   `affaires`, icône `briefcase`) : le module Affaires de l'ancien logiciel tel quel (Gestion, Controlling, Mes affaires, Toutes les
   affaires), écrans du moteur repris par `Object.create` sous `affd-*` (droits : `SG_VUE_DROIT` recopiés, regex du moteur `CH08B_AFF`

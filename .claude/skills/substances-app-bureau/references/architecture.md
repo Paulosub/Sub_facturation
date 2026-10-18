@@ -128,6 +128,11 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   `nx-mesprojets` (liste) → `nx-pdom` (domaines en tuiles, puis domaine en pleine page via `domainView`) ; `sgCatProjet` (titre) pour
   les chiffres de la vue d'ensemble Projets (`VIEWS['dom-projets']` du bloc 20 : tuiles `SG_CATS`, ligne des tâches à carrés de couleur
   `.sg-pv-tch .k` / `.sg-patch` — vert ouvertes, rouge urgentes —, modules sans le groupe « Tâches »).
+- Controlling des affaires (moteur, 18.10.2026) : `VIEWS['aff-controlling']` (liste | tuiles `CTL_TILES`, barre `tools()`), fenêtres
+  `ctlTimeCheck` (agenda semaine en revue, `CTL_W`), `ctlCostCheck` (mois en revue, `CTL_F`), `ctlAnalyse(p,t)` (six listes, filtres, pied à
+  trois menus) ; rapports `ctlSummary` / `ctlGroupRows` / `ctlSumCols`, `ctlReport` → `ctlJournal` / `ctlCostReport`, `ctlStaffReport`,
+  `ctlDocHTML` ; statuts `ctlFlag`, commentaire `ctlComment(o,t)`, document d'analyse `ctlPrint` (modèle) ; `CT.live` + `DS.on` pour
+  redessiner la fenêtre ouverte. Préfixe `ctl` (le préfixe `ct` appartient aux contrats).
 - Appels d'offres (moteur, lot 3a `svd*`) : chapitres / articles libres (`svdChapterRuleLibre`, `svdResPos(ctx,{libre:true})`) et
   bibliothèque d'articles `svbiblio` (`SVB_T`, `svbUnit` = pseudo-unité, `svbMerge` / `svbSave` / `svbSaveSafe`, `svbFill`, `svbRemove`,
   `svbImportDlg` / `svbInsert`) ; catalogue « Perso » sur la bibliothèque par défaut. Menu « + » : Nouveau chapitre, Nouvel article,

@@ -269,6 +269,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   NAS renommés le même jour), « Fichiers », …), catalogues « eCCC-… » → « Éléments … »
   (`FR_TRACE_CAT`, test `/^e[C]CC-/` qui survit au nettoyage) ; compteur `traces` ; `sgFrReste()` les détecte. `FR_CAT_SANS_FR` :
   « traduire » (fichier local) / « supprimer » (NAS).
+  **Modèles venus de l'ancien logiciel en allemand (19.10.2026)** : `frSeulOps` traduit aussi les textes allemands restés dans la version
+  « fr » des modèles d'impression (texte des éléments et des champs, préfixes du `format` « Seite », « Tel », « Dir »…, noms de bandes ;
+  `FR_MODELE_TXT`, termes des modèles français de la base, apostrophe droite) et du document type sans version française (« Jahresbericht »,
+  `FR_DOC_TXT`) via `frTradContenu` ; donne un libellé français aux modèles qui n'en ont pas (`FR_MODELE_NOM` d'après le nom de fichier,
+  sinon `FR_MODELE_TYPE`) ; arrière-plans aux noms allemands ou italiens (`FR_FONDS`, `frFondEtranger`) : remplacés par l'arrière-plan
+  français identique ou copiés sous un nom français (« … (vierge) »), références des modèles (« nom.xml ») mises à jour, supprimés si aucun
+  modèle ne s'en sert. Compteurs `textesModeles`, `nomsModeles`, `fonds`. Base du NAS (essai à blanc du 19.10) : 1'443 textes, 55 noms,
+  28 arrière-plans. ⚠ L'opération exige la route `/api/sauvegarder` du serveur (sinon : arrêt, rien n'est modifié).
 - **Coût de revient** (Ressources humaines, `nx-coutrevient`, collection `sgcoutrevient`) : charges sociales, frais généraux par poste,
   temps de travail, marge ; par collaborateur salaire, mois, occupation, vacances, absences, part facturable, frais directs ;
   taux interne = coût annuel ÷ heures de présence → « Appliquer » écrit `staffrate`.

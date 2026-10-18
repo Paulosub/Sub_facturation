@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.10.2026 16:57 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 18.10.2026 22:44 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -582,7 +582,7 @@ const FR_CAT_DE={'Abfindung, Servitut, Beitrag':'Indemnité, servitude, contribu
   'Inbetriebnahme der Anlage':'Mise en service de l’installation','Betriebsaufwand, Betriebsertrag':'Charges d’exploitation, produits d’exploitation'};
 const FR_SEUL_T=['modele','modelegroupe','modeledocument','doctemplate','catalog','catalogpos','formtemplate','formtemplategroup','boilerplategroup','boilerplateitem','defaultpath','projectcatalog'];
 /* libellés de l'ancien logiciel et des catalogues sous licence enregistrés dans la base (10.10.2026) → libellés neutres */
-const FR_TRACES={'DELTA Originaux':'Modèles d’origine','DELTA Files':'Fichiers'}, FR_TRACE_CAT=v=>typeof v==='string'?v.replace(/^e[C]CC-/,'Éléments '):v;
+const FR_TRACES={'DELTA Originaux':'Substances Originaux','DELTA Files':'Fichiers'}, FR_TRACE_CAT=v=>typeof v==='string'?v.replace(/^e[C]CC-/,'Éléments '):v;
 async function frSeulOps(){ await DS.need(FR_SEUL_T); const W=new Map(), n={libelles:0,modeles:0,documents:0,gabarits:0,catalogues:0,positions:0,catTraduits:0,posTraduites:0,langues:0,textes:0,traces:0};
   const cle=(t,id)=>t+'\u0001'+id, autres=['NAMEGE','NAMEIT','NAMEEN'], ent=t=>Object.entries(DS.T[t]||{}).filter(([,v])=>v&&typeof v==='object');
   const mod=(t,id,fn)=>{ const k=cle(t,id), w=W.get(k)||{t,id,v:JSON.parse(JSON.stringify(DS.T[t][id]))}; if(w.v===null) return; if(fn(w.v)) W.set(k,w); };
@@ -3547,6 +3547,9 @@ function ccDocsDraw(pane,E,G){ const base=ch03dCocoDossier(E,null), gen=ch03dCoc
       deposer(fs); }; }
   pane.append(wrap); affiche(); if(typeof ch03cSuivre==='function') ch03cSuivre({el:box,tables:[CH03A_T],redraw}); }
 const CC_SECS=['CONTRÔLE DU COÛT','DEVIS GENERAL','MUTATIONS','ADJUDICATIONS','PAIEMENTS','ORDRES DE PAIEMENT','COMPTES D’ENTREPRISE','ARRÊTÉS DE COMPTE','DOCUMENTS'];
+/* libellés du menu léger de DOCUMENTS (documents imprimés de chaque section, 13.10.2026) */
+const CC_SEC_LIB={'CONTRÔLE DU COÛT':'Contrôle du coût','DEVIS GENERAL':'Devis général','MUTATIONS':'Mutations','ADJUDICATIONS':'Adjudications','PAIEMENTS':'Paiements',
+  'ORDRES DE PAIEMENT':'Ordres de paiement','COMPTES D’ENTREPRISE':'Comptes d’entreprise','ARRÊTÉS DE COMPTE':'Arrêtés de compte'};
 function ccEditor(m,id){
   const doc=DS.get('costcontroldocument',id), p=DS.get('project',doc&&doc.PROJECT_ID);
   let C=null; const load=()=>{ C=JSON.parse(JSON.stringify(DS.get('costcontrol',id)||ccEmpty(id,doc.PROJECT_ID)));
@@ -3557,7 +3560,8 @@ function ccEditor(m,id){
     return L.find(x=>x.nom===CCV.pres)||L.find(x=>x.favori)||L[0]; };
   const bar=h('div',{class:'ph2',style:{gap:'6px'}}), side=h('div',{class:'col',style:{flex:'0 0 210px',background:'var(--side)'}}), main=h('div',{class:'col fill'}), pane=h('div',{class:'pane'});
   const body=h('div',{class:'cols'}); body.append(side,main); main.append(pane); m.append(bar,body);
-  CC_SECS.forEach(s=>{ const it=h('div',{class:'item'+(s===CCV.sec?' on':''),style:Object.assign({paddingLeft:'14px',fontWeight:600,letterSpacing:'.04em',fontSize:'12.5px'},s==='DOCUMENTS'?{borderTop:'1px solid var(--line)',marginTop:'8px'}:null)},s); it.onclick=()=>{ CCV.docs=false; CCV.sec=s; CCV.detSel=null; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it); if(s!=='DOCUMENTS') side.append(ch01aDocNode(s,side,()=>draw())); });   // DOCUMENTS : chapitre propre, sans sous-nœud
+  CC_SECS.forEach(s=>{ const it=h('div',{class:'item'+(s===CCV.sec&&!CCV.docs?' on':''),style:Object.assign({paddingLeft:'14px',fontWeight:600,letterSpacing:'.04em',fontSize:'12.5px'},s==='DOCUMENTS'?{borderTop:'1px solid var(--line)',marginTop:'8px'}:null)},s); it.onclick=()=>{ CCV.docs=false; CCV.sec=s; CCV.detSel=null; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it);
+    if(s==='DOCUMENTS') CC_SECS.filter(x=>x!=='DOCUMENTS').forEach(x=>side.append(ch01aDocNode(x,side,()=>draw(),CC_SEC_LIB[x]||x))); });   /* 13.10.2026 : les « Documents » de chaque section sont regroupés sous DOCUMENTS (menu léger) */
   const cur=()=>CCV.sel?(()=>{ const [c,e]=CCV.sel.split('|'); return {cfc:c,ent:e==='-'||e===undefined||e==='null'?null:+e}; })():null;
   const ctrOf=s=>s?(C.contrats.find(c=>c.type==='contrat'&&c.contactId===s.ent&&(c.lignes||[]).some(l=>String(l.cfc)===s.cfc))||null):null;
   const addMenu=()=>{ const s=cur(), ctr=ctrOf(s); return [...ch01cAddItems(C,touch),
@@ -7163,13 +7167,13 @@ async function tplNewGroup(cat){ const src=DS.all('modelegroupe').filter(g=>g.ca
     const ops=[{t:'modelegroupe',id:cat+'/'+nm2,val:{categorie:cat,groupe:nm2,libelle:nm2,ordre:9,verrouille:false}}];
     if(cp.value){ const from=DS.get('modelegroupe',cp.value); tplModelesOf(cat).filter(m=>m.groupe===from.groupe).forEach(m=>{ const c={...JSON.parse(JSON.stringify(m)),groupe:nm2}; ops.push({t:'modele',id:tplKey(c),val:c}); }); }
     await DS.commit(ops); TP.g.sel=cat+'/'+nm2; toast('Groupe créé.'); }}]}); }
-function tplRenameGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « Modèles d’origine » ne peut pas être modifié.',true); return; }
+function tplRenameGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « '+(g.libelle||g.groupe)+' » ne peut pas être modifié.',true); return; }
   const n=h('input',{class:'inp',value:g.libelle||g.groupe});
   dialog({title:'Renommer le groupe',body:formRows([['Libellé',n]],420),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>DS.save('modelegroupe',{...g,libelle:n.value.trim()||g.groupe})}]}); }
-async function tplDelGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « Modèles d’origine » ne peut pas être supprimé.',true); return; }
+async function tplDelGroup(cat){ const g=tplCurGroup(cat); if(!g) return; if(g.verrouille){ toast('Le groupe « '+(g.libelle||g.groupe)+' » ne peut pas être supprimé.',true); return; }
   const ms=tplModelesOf(cat).filter(m=>m.groupe===g.groupe); if(ms.length){ toast('Seuls les groupes de modèles vides peuvent être supprimés.',true); return; }
   if(await confirmDlg('Supprimer le groupe « '+(g.libelle||g.groupe)+' » ?','Supprimer')) DS.del('modelegroupe',tplGKey(g)); }
-function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez un groupe.',true); return; } if(g.verrouille){ toast('Le groupe « Modèles d’origine » n’est pas modifiable : créez un groupe.',true); return; }
+function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez un groupe.',true); return; } if(g.verrouille){ toast('Le groupe « '+(g.libelle||g.groupe)+' » n’est pas modifiable : créez un groupe.',true); return; }
   const all=DS.all('modele').filter(m=>m.categorie===cat), src=h('select',{class:'inp'},...all.sort((a,b)=>cmp(tplLabel(a),tplLabel(b))).map(m=>h('option',{value:tplKey(m)},tplLabel(m)+' — '+(DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{}).libelle+' / '+m.nom)));
   const nom=h('input',{class:'inp',value:'project1'}), fr=h('input',{class:'inp'});
   dialog({title:'Nouveau modèle',body:formRows([['Copier les modèles depuis',src],['Nom',nom],['Français',fr]],560),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const s=DS.get('modele',src.value); if(!s) return false;
@@ -7178,10 +7182,10 @@ function tplNewModel(cat){ const g=tplCurGroup(cat); if(!g){ toast('Choisissez u
     await DS.commit([{t:'modele',id:tplKey(c),val:c}]); TP.m.sel=tplKey(c); }}]}); }
 function tplEditModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
   const L0=m.libelle||{}, f={fr:h('input',{class:'inp',value:L0.fr||trFr(L0.de||L0.it||L0.en||'')||''})};   // français seulement
-  dialog({title:'Editer le modèle',body:h('div',{},formRows([['Type de modèle',h('span',{},m.type)],['Nom',h('span',{},m.nom)],['Libellé',f.fr]],480),g.verrouille?h('div',{style:{color:'#9a5b00',marginTop:'8px'}},'Groupe « Modèles d’origine » : lecture seule.'):null),
+  dialog({title:'Editer le modèle',body:h('div',{},formRows([['Type de modèle',h('span',{},m.type)],['Nom',h('span',{},m.nom)],['Libellé',f.fr]],480),g.verrouille?h('div',{style:{color:'#9a5b00',marginTop:'8px'}},'Groupe « '+(g.libelle||g.groupe)+' » : lecture seule.'):null),
     buttons:[{t:'Annuler'},...(g.verrouille?[]:[{t:'OK',pri:true,fn:()=>DS.commit([{t:'modele',id:tplKey(m),val:{...m,libelle:{...(m.libelle||{}),fr:f.fr.value.trim()}}}])}])]}); }
 async function tplDelModel(){ const m=DS.get('modele',TP.m.sel); if(!m) return; const g=DS.get('modelegroupe',m.categorie+'/'+m.groupe)||{};
-  if(g.verrouille){ toast('Le groupe « Modèles d’origine » n’est pas modifiable.',true); return; }
+  if(g.verrouille){ toast('Le groupe « '+(g.libelle||g.groupe)+' » n’est pas modifiable.',true); return; }
   if(await confirmDlg('Supprimer le modèle « '+tplLabel(m)+' » ('+m.nom+') du groupe « '+(g.libelle||m.groupe)+' » ?','Supprimer')) DS.del('modele',tplKey(m)); }
 
 /* ── Éditeur de page (fenêtre « <Groupe> - <Type> - <Nom> - <Page> (<Langue>) ») ── */
@@ -7247,7 +7251,7 @@ function tplEditor(pg,title,locked,onSave){
     if(ev.key==='Backspace'||ev.key==='Delete'){ push(); pg.elements.splice(sel,1); sel=null; draw(); ev.preventDefault(); } });
   const zoomSel=h('select',{class:'inp',style:{width:'90px'}},...[.75,1,1.25,1.5,2].map(z=>h('option',{value:z,selected:z===k||null},Math.round(z*100)+' %'))); zoomSel.onchange=()=>{ k=+zoomSel.value; draw(); };
   const close=async()=>{ if(dirty&&!locked&&!await confirmDlg('Voulez-vous fermer sans enregistrer les modifications ?','Fermer')) return; ov.remove(); };
-  const tools=h('div',{class:'ph2',style:{gap:'6px'}},...(locked?[h('span',{style:{color:'#9a5b00'}},'Groupe « Modèles d’origine » : lecture seule — créez un groupe pour modifier.')]:[
+  const tools=h('div',{class:'ph2',style:{gap:'6px'}},...(locked?[h('span',{style:{color:'#9a5b00'}},'Groupe verrouillé : lecture seule — créez un groupe pour modifier.')]:[
     ibtn({label:'T  Texte',fn:()=>add('texte')}),ibtn({label:'⟦ ⟧ Champ',fn:()=>add('champ')}),ibtn({label:'▦ Tableau',fn:()=>add('tableau')}),ibtn({label:'― Trait',fn:()=>add('traitH')}),ibtn({label:'| Trait',fn:()=>add('traitV')}),
     ibtn({label:'▭ Rectangle',fn:()=>add('rectangle')}),ibtn({label:'🖼 Image',fn:()=>add('image')}),ibtn({label:'↶ Annuler',t:'Cmd-Z',fn:()=>{ if(undo.length){ pg=JSON.parse(undo.pop()); sel=null; draw(); } }})]),
     h('div',{style:{flex:1}}),'Zoom ',zoomSel);
@@ -7261,7 +7265,7 @@ function tplDefaultGroup(cat){ const s=DS.all('setting').find(x=>x.SETTINGNAME==
   return gs.includes('Substances')?'Substances':gs.includes('Standard')?'Standard':'Default'; }
 async function tplSetDefaultGroup(cat,grp){ const s=DS.all('setting').find(x=>x.SETTINGNAME==='ds.tplGroup.'+cat)||{ID:null,SETTINGTYPE:0,SETTINGNAME:'ds.tplGroup.'+cat};
   await DS.save('setting',{...s,SETTINGVALUE:grp}); toast('Groupe par défaut : '+grp); }
-/* modèle à utiliser : groupe de l'affaire (TEMPLATEGROUPNAME), sinon groupe par défaut, puis Standard, puis Modèles d’origine */
+/* modèle à utiliser : groupe de l'affaire (TEMPLATEGROUPNAME), sinon groupe par défaut, puis Standard, puis Substances Originaux */
 function tplFind(cat,type,project){ const want=[project&&project.TEMPLATEGROUPNAME,tplDefaultGroup(cat),'Standard','Default'].filter(Boolean);
   for(const g of want){ const ms=DS.all('modele').filter(m=>m.categorie===cat&&m.groupe===g&&m.type===type&&m.langues.fr);
     if(ms.length) return ms.find(m=>m.nom==='project1')||ms.sort((a,b)=>cmp(a.nom,b.nom))[0]; }
@@ -11655,11 +11659,10 @@ const svIsMine=d=>(d.USERID||'')===ME.id;
 /* liste : o={pid, mine, stade (code|null), del (afficher les supprimés), q} */
 function svRows(o){ const L=o.pid!=null?DS.by('devisdocument','PROJECT_ID',o.pid):DS.all('devisdocument');
   return L.filter(d=>(!o.mine||svIsMine(d))&&(o.del||!+d.ISMARKEDASDELETED)&&(o.stade==null||+d.DOCUMENTSTATECODE===o.stade)&&
-    matchQ(o.q,d.BKP,d.AWARDINGTEXT,d.ORDERNUMBER,d.USERID,d.VERSION,d.NOTE,SV_STATE[d.STATECODE],SV_STADE_L[d.DOCUMENTSTATECODE],dfr(d.CHANGEDDATE),(DS.get('project',d.PROJECT_ID)||{}).NUMBER)); }
-/* vues de la roue ▾ (DevisDocumentTableModel) : Adjudication masque le n° d'ordre, Commande masque CFC et adjudication */
-const SV_VUES=['Adjudication','Commande','Standard'];
-function svColKeys(mine,vue){ const k=['lk',...(mine?['pn']:[]),'BKP','AWARDINGTEXT','ORDERNUMBER','USERID','CHANGEDDATE','VERSION','VERSIONNUMBER','STATECODE','DOCUMENTSTATECODE','NOTE'];
-  const hide=vue==='Adjudication'?['ORDERNUMBER']:vue==='Commande'?['BKP','AWARDINGTEXT']:[]; return k.filter(x=>!hide.includes(x)); }
+    matchQ(o.q,d.BKP,d.AWARDINGTEXT,d.USERID,d.VERSION,d.NOTE,SV_STATE[d.STATECODE],SV_STADE_L[d.DOCUMENTSTATECODE],dfr(d.CHANGEDDATE),(DS.get('project',d.PROJECT_ID)||{}).NUMBER)); }
+/* colonnes de la liste. 18.10.2026 : numéro d'ordre retiré de l'affichage (ORDERNUMBER reste dans les données), et avec lui les vues
+   Adjudication / Commande / Standard de la roue ▾ (elles ne faisaient que l'échanger contre le lot CFC) */
+function svColKeys(mine){ return ['lk',...(mine?['pn']:[]),'BKP','AWARDINGTEXT','USERID','CHANGEDDATE','VERSION','VERSIONNUMBER','STATECODE','DOCUMENTSTATECODE','NOTE']; }
 /* noms et adresses exactement comme db.ContactOwner.getName / db.Contact.getContactDesc / getAddress / getContactOwnerAndAdress */
 const svNz=x=>x!=null&&String(x)!=='';
 const svOwnerDesc=o=>!o?'':(o.TYPECODE===1?[o.NAME2,o.NAME1]:[o.NAME1]).filter(svNz).join(' ');     // personne : prénom nom ; autres : NAME1 seul
@@ -11714,9 +11717,9 @@ function svRight(code){ const u=ME.u; if(!u) return false;
 const svLockedByOther=d=>!!(d&&d.LOCKUSERID&&d.LOCKUSERID!==ME.id)&&!(DS.info&&DS.info.local);   // base locale : un seul poste, pas d'autre utilisateur
 const svNowIso=()=>{ const d=new Date(); return diso(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); };
 const svFmtTs=s=>s?dfr(s)+(String(s).length>10?' '+String(s).slice(11,16):''):'';
-/* titre de la fenêtre : « <n° affaire> <CFC> <désignation> », sinon « <n° affaire> <numéro de l'ordre> » */
+/* titre de la fenêtre : « <n° affaire> <CFC> <désignation> », sinon « <n° affaire> <version> » (plus de numéro d'ordre, 18.10.2026) */
 function svTitle(d){ const p=DS.get('project',d&&d.PROJECT_ID), n=(p&&p.NUMBER)||''; if(!d) return n;
-  return (d.BKP?[n,d.BKP,d.AWARDINGTEXT]:[n,d.ORDERNUMBER]).filter(x=>x!=null&&String(x)!=='').join(' '); }
+  return (d.BKP?[n,d.BKP,d.AWARDINGTEXT]:[n,d.VERSION]).filter(x=>x!=null&&String(x)!=='').join(' '); }
 /* collaborateur d'un nom d'utilisateur (USERID) */
 function svStaffOfUser(uid){ const u=DS.all('appuser').find(x=>x.USERID===uid); if(!u) return null;
   const ss=DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean);
@@ -11828,7 +11831,7 @@ function svText(t,F,title){ if(!t||!t.ts) return ''; return t.ts.map(x=>{ if(x.c
 /* ═══ Moteur d'impression des documents .dpdoc (§10.1) — autonome : mgPrint (jeu 0) n'est pas modifié ═══
    svDpPrint(type, {project, jobs:[{F, tables}], title, fallback}) : un « job » = un exemplaire (une lettre par entreprise…).
    F = champs (svReportCtx), tables = {nomDuTableau:{rows:[{c:[valeur par id de colonne], st:'tr'|'th'|'tt'|'l1'…}], flex:[titres], setting:'nom'}}.
-   Jeu de modèles : PROJECT.DOCTEMPLATEGROUPNAME → DOCTEMPLATEGROUP.TEMPLATEFOLDERID, sinon 1 « Modèles d’origine » (§0-12).
+   Jeu de modèles : PROJECT.DOCTEMPLATEGROUPNAME → DOCTEMPLATEGROUP.TEMPLATEFOLDERID, sinon 1 « Substances Originaux » (§0-12).
    Toutes les sections visibles, chacune avec SA page (portrait / paysage, @page nommée) ; en-têtes et pieds = cellules de page. */
 function svJeu(p){ const g=p&&p.DOCTEMPLATEGROUPNAME?DS.all('doctemplategroup').find(x=>x.GROUPNAME===p.DOCTEMPLATEGROUPNAME):null;
   return g&&g.TEMPLATEFOLDERID!=null&&String(g.TEMPLATEFOLDERID)!==''?String(g.TEMPLATEFOLDERID):'1'; }
@@ -11945,8 +11948,6 @@ function svDpPrint(type,o){ o=o||{}; const w=open('','_blank'); if(!w){ toast('F
 
 /* ═══ Interface ═══ */
 const SV_UI={g:{},gA:{},dg:{},q:'',qA:'',stade:null,del:false,open:null,ro:false,roMsg:'',back:null,ed:null,node:null,shift:false,tg:{g:{}},dc:{g:{}},lt:{g:{}},td:{}};
-/* vue de la liste mémorisée par utilisateur (commodité locale) */
-function svVue(v){ const k='ds_sv_vue_'+ME.id; if(v){ try{ localStorage.setItem(k,v); }catch(_){} return v; } let x=null; try{ x=localStorage.getItem(k); }catch(_){} return SV_VUES.includes(x)?x:'Standard'; }
 const SV_ICO={lock:'<rect x="3.5" y="7" width="9" height="6.5" rx="1" fill="currentColor"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/>',
   brush:'<path d="M14 2 7.5 8.5 6 7l6.5-6.5z"/><path d="M5.6 7.9C3.4 7.9 2.5 9.4 2.5 11.4c0 1-.5 1.6-1 2.1 2.6.3 5.1-.8 5.1-3.6z" fill="currentColor"/>',
   eraser:'<path d="M9.5 2.5l4 4-6.5 6.5H4.2l-2.2-2.2z"/><path d="M5.8 6.2l4 4M7.5 13.5h6"/>'};
@@ -11966,7 +11967,7 @@ function svList(top,pane,mode,pidFn){ const mine=mode==='mine', st=mine?SV_UI.g:
   const pr=d=>DS.get('project',d.PROJECT_ID)||{};
   const ALL={lk:{k:'lk',t:'',w:38,cls:'c',f:d=>d.LOCKUSERID?`<span class="ty" title="${esc('Utilisé par '+d.LOCKUSERID+' le '+svFmtTs(d.LOCKTIME))}">${svIco('lock')}</span>`:'',v:d=>d.LOCKUSERID||''},
     pn:{k:'pn',t:'Numéro d\'affaire',w:110,f:d=>esc(pr(d).NUMBER||''),v:d=>pr(d).NUMBER},BKP:{k:'BKP',t:'CFC',w:70},AWARDINGTEXT:{k:'AWARDINGTEXT',t:'Adjudication',w:220},
-    ORDERNUMBER:{k:'ORDERNUMBER',t:'Numéro d\'ordre',w:120},USERID:{k:'USERID',t:'Utilisateur',w:90},CHANGEDDATE:{k:'CHANGEDDATE',t:'Date',w:90,f:d=>dfr(d.CHANGEDDATE)},
+    USERID:{k:'USERID',t:'Utilisateur',w:90},CHANGEDDATE:{k:'CHANGEDDATE',t:'Date',w:90,f:d=>dfr(d.CHANGEDDATE)},
     VERSION:{k:'VERSION',t:'Version',w:150},VERSIONNUMBER:{k:'VERSIONNUMBER',t:'N° de version',w:95,cls:'r'},
     STATECODE:{k:'STATECODE',t:'Statut',w:90,f:d=>esc(SV_STATE[d.STATECODE]??'')},
     DOCUMENTSTATECODE:{k:'DOCUMENTSTATECODE',t:'Stade actuel',w:180,f:d=>esc(SV_STADE_L[d.DOCUMENTSTATECODE]??''),v:d=>SV_STADE.findIndex(x=>x[0]===d.DOCUMENTSTATECODE)},NOTE:{k:'NOTE',t:'Note'}};
@@ -11974,7 +11975,7 @@ function svList(top,pane,mode,pidFn){ const mine=mode==='mine', st=mine?SV_UI.g:
   const head=phead([{i:'plus',t:'Nouveau document',dis:!mine&&pidFn()==null,fn:newDoc},{i:'dup',t:'Dupliquer',fn:()=>{ const d=cur(); if(d) svDuplicate(d); }},
     {i:'edit',t:'Editer',menu:()=>[{t:'Editer…',dis:!cur(),fn:()=>svEditDoc(null,cur())},{t:'Ouvrir le document…',dis:!cur(),fn:()=>svOpenDoc(cur().ID)}]},
     {i:'minus',t:'Supprimer',fn:()=>{ const d=cur(); if(d) svDelete(d); }},
-    {i:'gear',t:'Fonctions',menu:()=>[...SV_VUES.map(v=>({t:v,chk:svVue()===v,fn:()=>{ svVue(v); draw(); }})),'-',{t:'Afficher les documents supprimés',chk:SV_UI.del,fn:()=>{ SV_UI.del=!SV_UI.del; draw(); }},'-',
+    {i:'gear',t:'Fonctions',menu:()=>[{t:'Afficher les documents supprimés',chk:SV_UI.del,fn:()=>{ SV_UI.del=!SV_UI.del; draw(); }},'-',
       {t:'Copier le contenu du tableau dans le presse-papier',dis:!(st.view&&st.view.length),fn:()=>ctCopy(tableText(st,'\t'),'Tableau copié ('+st.view.length+' lignes).')},
       {t:'Exporter le tableau dans un fichier CSV …',dis:!(st.view&&st.view.length),fn:()=>csvTable(st,'Soumissions')}]},
     {i:'filter',t:'Filtre',menu:()=>[{t:'Afficher tout',chk:SV_UI.stade==null,fn:()=>{ SV_UI.stade=null; draw(); }},...SV_STADE.map(([c,t])=>({t,chk:SV_UI.stade===c,fn:()=>{ SV_UI.stade=c; draw(); }}))]},lbl],
@@ -11982,7 +11983,7 @@ function svList(top,pane,mode,pidFn){ const mine=mode==='mine', st=mine?SV_UI.g:
   if(head.sinput) head.sinput.value=SV_UI.q;
   pane.addEventListener('dblclick',e=>{ SV_UI.shift=e.shiftKey; },true);                               // Maj + double-clic = éditer
   const draw=()=>{ const rows=rowsNow();
-    grid(pane,Object.assign(st,{cols:svColKeys(mine,svVue()).map(k=>ALL[k]),rows,sort:['CHANGEDDATE',-1],onDbl:d=>SV_UI.shift?svEditDoc(null,d):svOpenDoc(d.ID),
+    grid(pane,Object.assign(st,{cols:svColKeys(mine).map(k=>ALL[k]),rows,sort:['CHANGEDDATE',-1],onDbl:d=>SV_UI.shift?svEditDoc(null,d):svOpenDoc(d.ID),
       empty:mine?'Aucune soumission.':'Aucune soumission dans cette affaire.'}));
     $$('tbody tr',pane).forEach(tr=>{ const d=DS.get('devisdocument',tr.dataset.k); if(d&&+d.ISMARKEDASDELETED) tr.style.opacity='.5'; });   // corbeille : grisées
     head.setCount(rows.length+' Soumissions'); lbl.textContent=SV_UI.stade!=null?SV_STADE_L[SV_UI.stade]:''; };
@@ -12025,24 +12026,23 @@ function svSetLock(d,on){ const x=DS.get('devisdocument',d.ID)||d; return DS.com
 async function svLockOp(d){ const r=await svLockAsk(d,false); if(r==='unlock'){ try{ await svSetLock(d,false); }catch(_){ return false; } } return r==='ok'||r==='unlock'; }
 
 /* ── Création, édition, duplication, corbeille (§3.1-3.3) ── */
-function svNew(p){ dialog({title:'Sélection des standards CRB',body:h('div',{style:{maxWidth:'460px',whiteSpace:'pre-line'}},'Document selon IFA 2018 — Catalogue CAN.\nCe choix ne peut pas être modifié ultérieurement.'),
-  buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ setTimeout(()=>svEditDoc(p,null),30); }}]}); }
+/* 18.10.2026 : plus de fenêtre de choix du standard (unique et fixe, enregistré d'office par svNewHeader : ISIFA2018, NORMPOSITIONCATALOGCODE) */
+function svNew(p){ svEditDoc(p,null); }
 /* « Nouveau document » / « Editer la soumission » (DevisDocumentDialog) ; o={isNew, from:document source d'une duplication} */
 async function svEditDoc(p,d,o){ o=o||{}; const isNew=!d||!!o.isNew; p=p||DS.get('project',d&&d.PROJECT_ID); if(!p) return;
   if(!isNew){ if(!await svLockOp(d)) return; d=DS.get('devisdocument',d.ID)||d; }
   if(o.from&&!await svLockOp(o.from)) return;
   const v=isNew?{...svNewHeader(p),...(d||{}),ID:null,PROJECT_ID:p.ID}:{...d}, bs=isNew?0:ctBseq('devisdocument',v.ID);
   const T=(k,max,w)=>h('input',{class:'inp',value:v[k]??'',maxlength:max,style:w?{width:w}:null});
-  const cfc=T('BKP',64,'90px'), aw=T('AWARDINGTEXT',128), on=T('ORDERNUMBER',64), ve=T('VERSION',64), vn=h('input',{class:'inp',value:isNew?1:(v.VERSIONNUMBER??''),style:{width:'90px'}});
+  const cfc=T('BKP',64,'90px'), aw=T('AWARDINGTEXT',128), ve=T('VERSION',64), vn=h('input',{class:'inp',value:isNew?1:(v.VERSIONNUMBER??''),style:{width:'90px'}});
   const stS=h('select',{class:'inp',style:{width:'200px'}},...Object.entries(SV_STATE).map(([k,t])=>h('option',{value:k,selected:+k===+v.STATECODE||null},t)));
   const stD=h('select',{class:'inp',style:{width:'260px'}},...SV_STADE.map(([k,t])=>h('option',{value:k,selected:k===+v.DOCUMENTSTATECODE||null},t)));
   const da=ctDateRO(v.CHANGEDDATE), usr=ctUserField(()=>v.USERID,x=>{ v.USERID=x; }), note=h('textarea',{class:'inp',rows:5,maxlength:1024},v.NOTE||'');
   const body=formRows([['Lot d\'adjudication',h('div',{style:{display:'flex',gap:'6px'}},cfc,aw,ibtn({label:'…',t:'Choix de la position',fn:()=>svPickCfc(p,(c,t)=>{ cfc.value=c; aw.value=t; })}))],
-    ['Numéro de l\'ordre',on],['Version',ve],['N° de version',vn],['Standard CRB',h('input',{class:'inp',readonly:true,value:'IFA 2018',style:{width:'200px'}})],
-    ['Catalogue',h('input',{class:'inp',readonly:true,value:'CAN',style:{width:'200px'}})],['Statut',stS],['Date',da],['Stade actuel',stD],['Utilisateur',usr],['Note',note]],640);
+    ['Version',ve],['N° de version',vn],['Statut',stS],['Date',da],['Stade actuel',stD],['Utilisateur',usr],['Note',note]],640);
   dialog({title:isNew?'Nouveau document':'Editer la soumission',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
     const n=String(vn.value).trim(); if(/^\d+$/.test(n)) v.VERSIONNUMBER=+n; else if(isNew) v.VERSIONNUMBER=v.VERSIONNUMBER??1;   // saisie invalide : valeur précédente
-    Object.assign(v,{BKP:cfc.value.trim(),AWARDINGTEXT:aw.value.trim(),ORDERNUMBER:on.value.trim(),VERSION:ve.value.trim(),STATECODE:+stS.value,DOCUMENTSTATECODE:+stD.value,
+    Object.assign(v,{BKP:cfc.value.trim(),AWARDINGTEXT:aw.value.trim(),VERSION:ve.value.trim(),STATECODE:+stS.value,DOCUMENTSTATECODE:+stD.value,
       CHANGEDDATE:da.value||v.CHANGEDDATE||null,NOTE:note.value.trim(),ISMARKEDASDELETED:0});                          // Editer : un document de la corbeille est restauré
     if(!isNew){ await DS.commit([{t:'devisdocument',id:v.ID,val:v,bseq:bs}]); toast('Soumission enregistrée.'); return; }
     v.ID=DS.newIds('devisdocument')[0]; const ops=[{t:'devisdocument',id:v.ID,val:v}];
@@ -13124,7 +13124,8 @@ function svbAdmPane(R){ const CAT='Comparaison des offres';
    subdivisions, variantes, numéro courant, TVA de ligne, code de calcul, RPA, tri, filtre, sauts de page,
    conditions (moteur svCondNpk + dialogue « Conditions » complet), contrôles §7.14, import interne et catalogue « Perso ».
    Préfixe svd / SVD_ (+ svCondNpk, nom fixé par le cahier §7.13). S'insère APRÈS le lot 1 (convention svdNode / svdCheck).
-   LICENCE CRB : aucun texte d'article CAN/NPK/CPN, aucun prix CRB, aucun catalogue — chapitres de réserve seulement (§1.2).
+   Aucun texte d'article d'origine, aucun prix, aucun catalogue livrés avec l'app (§1.2) : chapitres de réserve et, depuis le 18.10.2026,
+   chapitres et articles libres (numéros du catalogue des articles sans 9, textes écrits par le bureau, bibliothèque d'articles SVB_T).
 ═══════════════════════════════════════════════════════════════════════════ */
 /* nœuds « Editer » des étapes à descriptif pris en charge par ce lot (C1 = lot 3b, qui réutilise svdDesc) */
 const SVD_EDIT={tenderEdit:'B',offerEdit:'C',contractEdit:'D',measureEdit:'I',masterTenderEdit:'A',estimatingEdit:'K'};
@@ -13233,6 +13234,17 @@ function svdChapterRule(n,U,old){ n=String(n||'').trim();
     if(!svdHas0(old)&&svdHas0(n)) return {err:'Le numéro du nouveau chapitre ne peut pas contenir de 0'}; }
   // la question msg1a/b est posée aussi en modification (jOkButtonActionPerformed@326-393 ne teste pas editMode) ; « Ce chapitre existe déjà. » : création seulement
   // dans Deltaproject (chapterPlaceIsFree@398, !editMode) — contrôlé aussi en modification [C] (sinon deux chapitres de même numéro)
+  if(svdHas0(n)) return {ask:'Il est impossible d\'insérer un article de quantité dans un chapitre\ndont son numéro contient un 0. Êtes-vous sûr de vouloir créer un tel chapitre ?',dup};
+  return dup?{err:'Ce chapitre existe déjà.'}:{ok:true}; }
+/* « Nouveau chapitre » (libre, 18.10.2026) : 3 chiffres sans 9 (le 9 désigne la réserve), ni groupe x00 ; même règle du 0 que la réserve */
+const svdChapterOkLibre=(n,t1,ver)=>String(t1||'').trim()!==''&&/^\d{3}$/.test(String(n||'').trim())&&/^\d{4}$/.test(String(ver||'').trim());
+function svdChapterRuleLibre(n,U,old){ n=String(n||'').trim();
+  if(!/^\d{3}$/.test(n)) return {err:'Le numéro du chapitre doit avoir 3 chiffres.'};
+  if(n.includes('9')) return {err:'Un numéro avec un 9 désigne un chapitre de réserve : utilisez « Créer le chapitre de réserve ».'};
+  if(n.endsWith('00')) return {err:'Un groupe de chapitres (100, 200…) ne peut pas être un chapitre.'};
+  const dup=(U.chapitres||[]).some(c=>c.numero===n&&n!==old);
+  if(old!=null){ if(svdHas0(old)&&!svdHas0(n)) return {err:'Le numéro du nouveau chapitre doit contenir au moins un 0'};
+    if(!svdHas0(old)&&svdHas0(n)) return {err:'Le numéro du nouveau chapitre ne peut pas contenir de 0'}; }
   if(svdHas0(n)) return {ask:'Il est impossible d\'insérer un article de quantité dans un chapitre\ndont son numéro contient un 0. Êtes-vous sûr de vouloir créer un tel chapitre ?',dup};
   return dup?{err:'Ce chapitre existe déjà.'}:{ok:true}; }
 /* numéros libres proposés (ResPosDialog.setMainMenu2 / setMainMenu4 / setUMenu2-4) */
@@ -13482,7 +13494,7 @@ const SVD_CSS=`.svd-tb{border-collapse:separate;border-spacing:0;table-layout:fi
 function svdTableHtml(ctx){ const cols=ctx.cols=svdColumns(ctx), rows=ctx.rows=svdBuildRows(ctx), num_=new Set(['qt','pr','mt','nc','tva']), sel=SVD_UI.sel[ctx.et];
   return '<table class="svd-tb"><colgroup>'+cols.map(c=>'<col style="width:'+c.w+'px">').join('')+'</colgroup><thead><tr>'+cols.map(c=>'<th title="'+esc(c.t)+'">'+esc(c.t)+'</th>').join('')+'</tr></thead><tbody>'+
     rows.map((r,i)=>'<tr data-i="'+i+'" class="'+(r.cls||'')+(sel&&r.k===sel?' on':'')+'">'+cols.map(c=>'<td'+(num_.has(c.k)||c.r?' class="r"':'')+'>'+(ctx.o.cell&&c.custom?ctx.o.cell(ctx,c,r):(r.cells[c.k]??''))+'</td>').join('')+'</tr>').join('')+
-    '</tbody></table>'+(rows.length?'':'<div class="empty">Descriptif vide. « + » ▸ « Créer le chapitre de réserve », puis « Article de réserve » (chapitres et articles de réserve seulement : aucun texte CAN).</div>'); }
+    '</tbody></table>'+(rows.length?'':'<div class="empty">Descriptif vide. « + » ▸ « Nouveau chapitre », puis « Nouvel article » ; ou « Importer » ▸ « Bibliothèque d’articles… » (réserve : « Créer le chapitre de réserve », puis « Article de réserve »).</div>'); }
 /* menus : défauts de ce lot, puis crochets du lot 3b (o.menus, svcDescMenus) */
 function svdMenu(ctx,name,items){ if(ctx.o.menus) items=ctx.o.menus(ctx,name,items)||items; if(typeof svcDescMenus==='function'){ try{ items=svcDescMenus(ctx.X,ctx.et,name,items)||items; }catch(e){ console.error(e); } } return items; }
 /* sélection courante → {ch, a, v, q, qi} */
@@ -13498,9 +13510,10 @@ function svdDesc(X,et,o){ o=o||{}; const S=X.S, U=svdUnit(S,et), ro=!!(X.ro||o.r
   svdRecalc(S,et); const ctx={X,S,U,et,o,ro};
   const selA=()=>{ const s=svdSel(ctx); return s.a?s:null; }, selCh=()=>svdSel(ctx).ch||null;
   const one=f=>()=>{ if(!svdCan(ctx)) return; f(); };
-  const plus=()=>svdMenu(ctx,'plus',[{t:'Article de réserve',dis:ro||!selCh(),fn:one(()=>svdResPos(ctx))},{t:'Créer le chapitre de réserve',dis:ro,fn:one(()=>svdChapterDlg(ctx,null))},
+  const plus=()=>svdMenu(ctx,'plus',[{t:'Nouveau chapitre…',dis:ro,fn:one(()=>svdChapterDlg(ctx,null,{libre:true}))},{t:'Nouvel article…',dis:ro||!selCh(),fn:one(()=>svdResPos(ctx,{libre:true}))},'-',
+    {t:'Article de réserve',dis:ro||!selCh(),fn:one(()=>svdResPos(ctx))},{t:'Créer le chapitre de réserve',dis:ro,fn:one(()=>svdChapterDlg(ctx,null,{libre:false}))},'-',
     {t:'Dupliquer l\'article',dis:ro||!selA(),fn:one(()=>svdDuplicate(ctx))}]);
-  const imp=()=>svdMenu(ctx,'import',[{t:'Importer un descriptif',dis:ro,fn:one(()=>svdImportDesc(ctx))},{t:'Importer un paragraphe',dis:ro,fn:one(()=>svdImportSection(ctx))},
+  const imp=()=>svdMenu(ctx,'import',[{t:'Bibliothèque d’articles…',dis:ro,fn:one(()=>svbImportDlg(ctx))},'-',{t:'Importer un descriptif',dis:ro,fn:one(()=>svdImportDesc(ctx))},{t:'Importer un paragraphe',dis:ro,fn:one(()=>svdImportSection(ctx))},
     {t:'Importer le chapitre des conditions générales <10R>',dis:ro,fn:one(()=>svdImport10R(ctx))},'-',{t:'Catalogue « Perso »',chk:SVD_UI.perso.open,fn:()=>{ SVD_UI.perso.open=!SVD_UI.perso.open; X.redraw(); }}]);
   const edit=()=>{ const s=selA(), q=s&&(s.q||s.a.quantites[0]), qa=s&&svdIsQtyArticle(s.ch,s.a);
     return svdMenu(ctx,'edit',[{t:'Editer l\'article',dis:!s,fn:()=>svdEditArticle(ctx,s.ch,s.a,{v:s.v,qi:s.qi})},{t:'Editer les quantités',dis:ro,fn:one(()=>svdQtyInput(ctx))},
@@ -13508,7 +13521,7 @@ function svdDesc(X,et,o){ o=o||{}; const S=X.S, U=svdUnit(S,et), ro=!!(X.ro||o.r
       {t:'Editer les prix',dis:ro||et==='C1',fn:one(()=>svdPriceInput(ctx))},                                   // C1 : prix par entreprise (lot 3b, crochet svcDescMenus)
       ...(et==='B'?[{t:'Prix identique',dis:ro||!s||!qa,chk:!!(s&&s.a.prixIdentique),fn:one(()=>{ s.a.prixIdentique=!s.a.prixIdentique; svdTouch(ctx); })}]:[]),
       {t:'Editer les conditions',fn:()=>svdCondUnit(ctx)},'-',{t:'Configurer les subdivisions',fn:()=>svdSubdivDlg(ctx)},{t:'Configurer les variantes',fn:()=>svdVariantDlg(ctx)},
-      {t:'Editer le CFC',dis:!selCh(),fn:()=>svdCfcDlg(ctx,selCh())},{t:'Modifier le chapitre de réserve',dis:!selCh(),fn:()=>svdChapterDlg(ctx,selCh())},'-',
+      {t:'Editer le CFC',dis:!selCh(),fn:()=>svdCfcDlg(ctx,selCh())},{t:selCh()&&!svdIsReserve(selCh().numero,'','')?'Modifier le chapitre':'Modifier le chapitre de réserve',dis:!selCh(),fn:()=>svdChapterDlg(ctx,selCh())},'-',
       {t:'Insérer une subdivision',dis:ro||!s||!qa,fn:one(()=>svdInsertDiv(ctx,s.ch,s.a))},{t:'Insérer les subdivisions pour tous les articles',dis:ro,fn:one(()=>svdInsertDivAll(ctx))},
       {t:'Modifier les subdivisions',dis:ro,fn:one(()=>svdRedefDlg(ctx))},{t:'Attribuer un remarque préliminaire',dis:ro||!s||s.a.m[0]!=='0',fn:one(()=>svdPrelimDlg(ctx,s.ch,s.a))}]); };
   const minus=()=>{ const s=selA();
@@ -13562,9 +13575,11 @@ function svdDesc(X,et,o){ o=o||{}; const S=X.S, U=svdUnit(S,et), ro=!!(X.ro||o.r
   pane.addEventListener('contextmenu',e=>{ const r=pick(e); if(!r) return; e.preventDefault(); const s=svdLook(U,r.k);
     const pb=s.a&&(U.sautsPage||[]).some(p=>p.c===s.ch.numero&&p.m===s.a.m&&(p.u||'')===(s.a.u||''));
     popMenu({x:e.clientX,y:e.clientY},svdMenu(ctx,'context',s.a?[{t:'Editer l\'article',fn:()=>svdEditArticle(ctx,s.ch,s.a,{v:s.v,qi:s.qi})},{t:'Editer le métré',dis:!svdIsQtyArticle(s.ch,s.a)||!s.a.quantites.length,fn:()=>svdMetreOfQP(ctx,s.ch,s.a,s.q?s.qi:0)},'-',
-      {t:'Supprimer l\'article',dis:ro,fn:one(()=>svdDelArticle(ctx,s))},'-',{t:'Article de réserve',dis:ro,fn:one(()=>svdResPos(ctx))},{t:'Créer le chapitre de réserve',dis:ro,fn:one(()=>svdChapterDlg(ctx,null))},'-',
+      {t:'Supprimer l\'article',dis:ro,fn:one(()=>svdDelArticle(ctx,s))},'-',{t:'Nouvel article…',dis:ro,fn:one(()=>svdResPos(ctx,{libre:true}))},{t:'Nouveau chapitre…',dis:ro,fn:one(()=>svdChapterDlg(ctx,null,{libre:true}))},
+      {t:'Article de réserve',dis:ro,fn:one(()=>svdResPos(ctx))},{t:'Créer le chapitre de réserve',dis:ro,fn:one(()=>svdChapterDlg(ctx,null,{libre:false}))},'-',
       {t:'Attribuer un remarque préliminaire',dis:ro||s.a.m[0]!=='0',fn:one(()=>svdPrelimDlg(ctx,s.ch,s.a))},{t:'Saut de page avant cet article',chk:pb,dis:ro,fn:one(()=>svdTogglePB(ctx,s.ch,s.a))}]
-      :[{t:'Modifier le chapitre de réserve',fn:()=>svdChapterDlg(ctx,s.ch)},{t:'Supprimer le chapitre',dis:ro,fn:one(()=>svdDelChapter(ctx,s.ch))},'-',{t:'Article de réserve',dis:ro,fn:one(()=>svdResPos(ctx))}]));
+      :[{t:svdIsReserve(s.ch.numero,'','')?'Modifier le chapitre de réserve':'Modifier le chapitre',fn:()=>svdChapterDlg(ctx,s.ch)},{t:'Supprimer le chapitre',dis:ro,fn:one(()=>svdDelChapter(ctx,s.ch))},'-',
+        {t:'Nouvel article…',dis:ro,fn:one(()=>svdResPos(ctx,{libre:true}))},{t:'Article de réserve',dis:ro,fn:one(()=>svdResPos(ctx))}]));
   });
   const on=pane.querySelector('tr.on'); if(on&&!SVD_UI.scroll[sk]) on.scrollIntoView({block:'nearest'});
   return ctx; }
@@ -13592,13 +13607,16 @@ function svdClearUnit(U,et,S){ U.chapitres=[]; if(Array.isArray(U.conditions)) U
   if(et==='C1') ((S&&S.entreprises)||[]).forEach(e=>{ const d=e.detail; if(!d) return; ['offre','negociee'].forEach(k=>{ if(d[k]) d[k].conditions=[]; }); }); return U; }
 
 /* ═══ Chapitres de réserve (RChapterDialog) : « Créer le chapitre de réserve » / « Modifier le chapitre de réserve » ═══ */
-function svdChapterDlg(ctx,ch){ if(ctx.ro&&!ch) return; const U=ctx.U, isNew=!ch, ro=ctx.ro;
+function svdChapterDlg(ctx,ch,o){ if(ctx.ro&&!ch) return; const U=ctx.U, isNew=!ch, ro=ctx.ro;
+  const libre=o&&o.libre!=null?!!o.libre:!!(ch&&!svdIsReserve(ch.numero,'',''));                   // chapitre libre (sans 9, 18.10.2026) ou de réserve
+  if(libre) DS.need([SVB_T]).catch(()=>{});
   const nr=h('input',{class:'inp',value:ch?ch.numero:'',maxlength:3,style:{width:'70px'}}), t1=h('input',{class:'inp',value:ch?ch.texte1:'',maxlength:30}), t2=h('input',{class:'inp',value:ch?ch.texte2:'',maxlength:30});
   const ve=h('input',{class:'inp',value:ch?ch.version:String(new Date().getFullYear()),maxlength:4,style:{width:'70px'}});
-  const D=dialog({title:'Définir le chapitre de réserve',body:h('div',{},h('div',{style:{color:'#666',marginBottom:'8px'}},'Le numéro du chapitre de réserve doit contenir un 9'),
-      formRows([['Nº CAN',nr],['Texte 1ère ligne',t1],['Texte 2ème ligne',t2],['Version',h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},ve,h('span',{style:{color:'#777'}},'p.ex. '+new Date().getFullYear()))]],460)),
+  const D=dialog({title:libre?(isNew?'Nouveau chapitre':'Modifier le chapitre'):'Définir le chapitre de réserve',body:h('div',{},h('div',{style:{color:'#666',marginBottom:'8px',maxWidth:'460px'}},
+        libre?'Numéro à 3 chiffres, sans 9 (p. ex. 211) ; titre et version écrits par le bureau, repris de la bibliothèque d’articles si le chapitre y est.':'Le numéro du chapitre de réserve doit contenir un 9'),
+      formRows([[libre?'Nº du chapitre':'Nº CAN',nr],['Texte 1ère ligne',t1],['Texte 2ème ligne',t2],['Version',h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},ve,h('span',{style:{color:'#777'}},'p.ex. '+new Date().getFullYear()))]],460)),
     buttons:ro?[{t:'Fermer',pri:true}]:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!svdCan(ctx)) return false; const n=nr.value.trim();
-      const r=svdChapterRule(n,U,isNew?null:ch.numero);
+      const r=(libre?svdChapterRuleLibre:svdChapterRule)(n,U,isNew?null:ch.numero);
       if(r.err){ ctMsg('Erreur',r.err); return false; }
       if(r.ask){ if(!await svYesNo(r.ask)) return false; if(r.dup){ ctMsg('Erreur','Ce chapitre existe déjà.'); return false; } }
       if(isNew){ const c=svdNewChapter(n,t1.value.trim(),t2.value.trim(),ve.value.trim()); U.chapitres.push(c); SVD_UI.sel[ctx.et]=svdKa(c,c.articles[0]); }
@@ -13606,7 +13624,9 @@ function svdChapterDlg(ctx,ch){ if(ctx.ro&&!ch) return; const U=ctx.U, isNew=!ch
         (U.sautsPage||[]).forEach(p=>{ if(p.c===old) p.c=n; }); (U.conditions||[]).forEach(c=>{ if(c.chap===old) c.chap=n; });
         if(U.filtre&&Array.isArray(U.filtre.chap)) U.filtre.chap=U.filtre.chap.map(c=>c===old?n:c); SVD_UI.sel[ctx.et]='c|'+n; }
       svdSortUnit(U); svdTouch(ctx); }}]});
-  if(!ro){ const ok=ctOk(D), g=()=>{ ok.disabled=!svdChapterOkActive(nr.value,t1.value,ve.value); }; [nr,t1,ve].forEach(x=>x.oninput=g); g(); } }
+  if(!ro){ const ok=ctOk(D), g=()=>{ ok.disabled=!(libre?svdChapterOkLibre:svdChapterOkActive)(nr.value,t1.value,ve.value); }; [nr,t1,ve].forEach(x=>x.oninput=g);
+    if(libre&&isNew) nr.addEventListener('input',()=>{ const b=svbChapter(nr.value.trim()); if(b&&!t1.value.trim()){ t1.value=b.texte1||''; t2.value=b.texte2||''; if(/^\d{4}$/.test(b.version||'')) ve.value=b.version; g(); } });   // titre repris de la bibliothèque
+    g(); } }
 async function svdDelChapter(ctx,ch){ if(!ch) return; if(!await svYesNo(svdP('Souhaitez-vous supprimer le chapitre ^0 ? Attention, irréversible.',ch.numero))) return;
   const U=ctx.U; U.chapitres=U.chapitres.filter(c=>c!==ch); U.sautsPage=(U.sautsPage||[]).filter(p=>p.c!==ch.numero);
   if(U.filtre&&Array.isArray(U.filtre.chap)){ U.filtre.chap=U.filtre.chap.filter(c=>c!==ch.numero); if(!svdFilterHas(U.filtre)) U.filtre.actif=false; }
@@ -13622,47 +13642,71 @@ function svdCfcDlg(ctx,ch){ if(!ch) return; const c=ch.cfc||{}, ro=ctx.ro;
       ch.cfc={numero:n,texte1:t1.value.trim(),texte2:t2.value.trim()}; svdTouch(ctx); }}]}); }
 
 /* ═══ « Article de réserve » (ResPosDialog) : catégorie, numéros libres, unité obligatoire pour un article de quantité ═══ */
-function svdResPos(ctx){ const s=svdSel(ctx), ch=s.ch; if(!ch) return; const U=ctx.U;
+function svdResPos(ctx,o){ const s=svdSel(ctx), ch=s.ch; if(!ch) return; const U=ctx.U;
+  const libre=!!(o&&o.libre), sansR=libre&&!svdIsReserve(ch.numero,'','');                          // « Nouvel article » (18.10.2026) : pas de numéro de réserve dans un chapitre libre
+  if(libre) DS.need([SVB_T]).catch(()=>{});
   const cats=[['main','Articles principaux'],['grp','Groupe de sous-articles'],['art','Sous-article'],['var','Variable']];
   const baseM=s.a?s.a.m:null, baseA=s.a||null; let cat=baseA&&svdLevel(baseA)==='main'?'art':'main';
   const news=[];                                                                                        // nouvelles lignes (en rouge) : {m,u,v,unite}
   const csel=h('select',{class:'inp',style:{width:'220px'}},...cats.map(([k,t])=>h('option',{value:k,selected:k===cat||null},t)));
-  const box=ctBox(480,300), prop=ctBox(150,300), og={}, op={}; let D=null;
+  const box=ctBox(480,300), prop=ctBox(libre?270:150,300), og={}, op={}; let D=null;
   const mainOf=()=>{ const r=news.length?news[news.length-1]:null; return r&&!r.u&&!r.v?r.m:baseM; };
   const artOf=()=>{ const r=news.length?news[news.length-1]:null; if(r&&!r.v) return {m:r.m,u:r.u}; return baseA?{m:baseA.m,u:baseA.u||''}:null; };
   const present=(m,u,v)=>ch.articles.some(a=>a.m===m&&(a.u||'')===(u||'')&&(!v||a.variables.some(x=>x.v===v)))||news.some(r=>r.m===m&&(r.u||'')===(u||'')&&(r.v||'')===(v||''));
+  const nr=(m,u)=>!sansR||!svdIsReserve('',m,u);
   const proposals=()=>{ const k=csel.value;
-    if(k==='main') return svdFreeMain({numero:ch.numero,articles:[...ch.articles,...news.filter(r=>!r.u&&!r.v).map(r=>({m:r.m,u:''}))]});
-    if(k==='grp'||k==='art'){ const m=mainOf(); if(!m) return []; return svdFreeSub(ch,m,k).filter(u=>!present(m,u)); }
+    if(k==='main') return svdFreeMain({numero:ch.numero,articles:[...ch.articles,...news.filter(r=>!r.u&&!r.v).map(r=>({m:r.m,u:''}))]}).filter(m=>nr(m,''));
+    if(k==='grp'||k==='art'){ const m=mainOf(); if(!m) return []; return svdFreeSub(ch,m,k).filter(u=>!present(m,u)&&nr(m,u)); }
     const a=artOf(); if(!a) return []; const ex=(ch.articles.find(x=>x.m===a.m&&(x.u||'')===(a.u||''))||{variables:[]}); return svdFreeVar(ex).filter(v=>!present(a.m,a.u,v)); };
   const lbl=h('div',{style:{marginBottom:'6px'}});
   const draw=()=>{ const all=[...ch.articles.map(a=>({m:a.m,u:a.u||'',v:'',unite:a.unite,old:true,a})),...ch.articles.flatMap(a=>a.variables.map(v=>({m:a.m,u:a.u||'',v:v.v,old:true}))),...news]
       .sort((x,y)=>svdCmpArt(x,y)||(x.v<y.v?-1:x.v>y.v?1:0));
-    lbl.textContent=svdP('Article de réserve pour ^0',ch.numero+' '+[ch.texte1,ch.texte2].filter(Boolean).join(' '));
+    lbl.textContent=svdP(libre?'Nouvel article pour ^0':'Article de réserve pour ^0',ch.numero+' '+[ch.texte1,ch.texte2].filter(Boolean).join(' '));
     grid(box,Object.assign(og,{key:r=>r.m+'|'+r.u+'|'+r.v,cols:[{k:'c',t:'C',w:48,f:()=>esc(ch.numero)},{k:'m',t:'P',w:48},{k:'u',t:'S',w:48},{k:'v',t:'V',w:36},
       {k:'t',t:'Text',f:r=>{ if(!r.old) return '<span style="color:'+SVD_RED+'">nouveau</span>'; const art=r.a||ch.articles.find(a=>a.m===r.m&&(a.u||'')===r.u)||{variables:[]};
         const t=r.v?(art.variables.find(x=>x.v===r.v)||{}).texte:art.texte; return esc(svdFirstLine(t)); }},
       {k:'un',t:'U',w:50,f:r=>{ if(r.v||!svdQtyAllowed(ch.numero,r.m,r.u)) return ''; const x=r.old?(r.unite||''):(r.unite||'??'); return '<span style="color:'+(r.old?'':SVD_RED)+'">'+esc(x||(r.old?'':'??'))+'</span>'; }}],
       rows:all,sort:null,onSel:()=>{},onDbl:r=>{ if(!r.old&&!r.v&&svdQtyAllowed(ch.numero,r.m,r.u)) unitMenu(r); }})); ctNoSort(box);
     $$('tr',box).forEach(tr=>{ const r=all.find(x=>x.m+'|'+x.u+'|'+x.v===tr.dataset.k); if(r&&!r.old) $$('td',tr).forEach(td=>td.style.color=SVD_RED); });
-    const P=proposals(); grid(prop,Object.assign(op,{key:x=>x,cols:[{k:'n',t:'N°',f:x=>esc(x)}],rows:P,sort:null,onDbl:add})); ctNoSort(prop);
+    const P=proposals(), libOf=x=>{ const k=csel.value; if(k==='var') return null; const b=svbFind(ch.numero,k==='main'?x:mainOf(),k==='main'?'':x); return b&&svbHasText(b)?b:null; };
+    grid(prop,Object.assign(op,{key:x=>x,cols:[{k:'n',t:'N°',w:libre?60:null,f:x=>esc(x)},...(libre?[{k:'b',t:'Bibliothèque',f:x=>{ const b=libOf(x); return b?esc(svdKeyword(b)||svdFirstLine(b.texte)):''; }}]:[])],rows:P,sort:null,onDbl:add})); ctNoSort(prop);
     if(D) ctOk(D).disabled=!news.length||news.some(r=>!r.v&&svdQtyAllowed(ch.numero,r.m,r.u)&&!r.unite); };               // OK désactivé tant qu'une unité vaut « ?? »
   const unitMenu=r=>{ const tr=box.querySelector('tr[data-k="'+CSS.escape(r.m+'|'+r.u+'|'+r.v)+'"]');
     popMenu(tr||box,SVD_UNITS.map(u=>({t:u+'  '+SVD_UNIT_L[u],chk:r.unite===u,fn:()=>{ r.unite=u; draw(); }}))); };
   function add(x){ const k=csel.value; let r;
     if(k==='main') r={m:x,u:'',v:''}; else if(k==='grp'||k==='art') r={m:mainOf(),u:x,v:''}; else { const a=artOf(); r={m:a.m,u:a.u,v:x}; }
-    r.unite=''; news.push(r); if(!r.v&&svdQtyAllowed(ch.numero,r.m,r.u)) { draw(); unitMenu(r); } else draw(); }
+    pushNew(r); }
+  function pushNew(r){ r.unite=''; if(libre&&!r.v){ const b=svbFind(ch.numero,r.m,r.u); if(b&&b.unite) r.unite=b.unite; }      // unité de la bibliothèque
+    news.push(r); if(!r.v&&svdQtyAllowed(ch.numero,r.m,r.u)&&!r.unite) { draw(); unitMenu(r); } else draw(); }
+  /* saisie directe du numéro : 112 (article principal), 112.110 (groupe ou sous-article), 112.110.01 (variable) */
+  const nIn=h('input',{class:'inp',placeholder:'p. ex. 112 ou 112.110',style:{width:'150px'}});
+  const addNum=()=>{ const t=nIn.value.trim().replace(/\s+/g,''), mm=/^(\d{3})(?:\.(\d{3}))?(?:\.(\d{2}))?$/.exec(t);
+    if(!mm){ ctMsg('Information','Numéro attendu : article principal (112), sous-article ou groupe (112.110), variable (112.110.01).'); return; }
+    const m=mm[1], u=mm[2]||'', v=mm[3]||'';
+    if(u==='000'){ ctMsg('Information','Le sous-article 000 n\'existe pas.'); return; }
+    if(sansR&&svdIsReserve('',m,u)){ ctMsg('Information','Numéro de réserve (9 en 2e ou 3e position) : choisissez un autre numéro.'); return; }
+    if(u&&u.slice(1)!=='00'&&u[2]!=='0'&&(svdHas0(ch.numero)||svdHas0(m))){ ctMsg('Information','Sous-article impossible : le chapitre ou l\'article principal contient un 0.'); return; }
+    if(present(m,u,v)){ ctMsg('Information','Ce numéro existe déjà.'); return; }
+    if(v&&!present(m,u)){ ctMsg('Information','Créez d\'abord l\'article '+svdNum(ch.numero,m,u)+'.'); return; }
+    nIn.value=''; pushNew({m,u,v}); };
+  nIn.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); addNum(); } };
   csel.onchange=draw;
   const del=ibtn({i:'minus',t:'Supprimer',menu:()=>[{t:'Supprimer l\'article sélectionné',dis:!news.some(r=>r.m+'|'+r.u+'|'+r.v===og.sel),fn:()=>{ const i=news.findIndex(r=>r.m+'|'+r.u+'|'+r.v===og.sel); if(i>=0) news.splice(i,1); draw(); }},
     {t:'Supprimer tous les articles',dis:!news.length,fn:()=>{ news.length=0; draw(); }}]});
-  D=dialog({title:'Article de réserve',width:'760px',body:h('div',{},lbl,h('div',{style:{display:'flex',gap:'10px'}},h('div',{},box,h('div',{style:{marginTop:'6px'}},del)),
-      h('div',{},h('div',{style:{marginBottom:'4px'}},'Catégorie'),csel,h('div',{style:{height:'8px'}}),prop,h('div',{style:{color:'#777',fontSize:'11.5px',marginTop:'4px',maxWidth:'220px'}},'Double-clic sur un numéro libre : ajout. Double-clic sur une nouvelle ligne : unité.')))),
+  D=dialog({title:libre?'Nouvel article':'Article de réserve',width:libre?'880px':'760px',body:h('div',{},lbl,h('div',{style:{display:'flex',gap:'10px'}},h('div',{},box,h('div',{style:{marginTop:'6px'}},del)),
+      h('div',{},h('div',{style:{marginBottom:'4px'}},'Catégorie'),csel,h('div',{style:{height:'8px'}}),prop,
+        h('div',{style:{display:'flex',gap:'6px',alignItems:'center',marginTop:'6px'}},nIn,ibtn({label:'Ajouter',t:'Ajouter ce numéro',fn:addNum})),
+        h('div',{style:{color:'#777',fontSize:'11.5px',marginTop:'4px',maxWidth:libre?'270px':'220px'}},'Double-clic sur un numéro libre, ou numéro saisi : ajout. Double-clic sur une nouvelle ligne : unité.'+(libre?' Un article de la bibliothèque garde son texte.':''))))),
     buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ if(!svdCan(ctx)) return false; if(!news.length) return false;
       if(news.some(r=>!r.v&&svdQtyAllowed(ch.numero,r.m,r.u)&&!r.unite)) return false;
+      const avant=new Set(ch.articles);
       let last=null; const added=[]; news.forEach(r=>{ const a=svdEnsureArticle(ch,r.m,r.u,r.unite); if(!r.v&&r.unite) a.unite=r.unite;
         if(r.v&&!a.variables.some(x=>x.v===r.v)) a.variables.push(svdNewVar(r.v)); if(!r.v) added.push(a); last={a,v:r.v}; });
+      if(libre) svbFill(ch,ch.articles.filter(a=>!avant.has(a)));                                      // articles créés (titres compris) : texte de la bibliothèque
       added.forEach(a=>{ if(svdIsQtyArticle(ch,a)&&!a.quantites.length) svdAutoDivs(ctx,a,ch); });                   // après toutes les insertions : un principal devenu titre ne reçoit pas de QP
-      svdSortChapter(ch); if(last) SVD_UI.sel[ctx.et]=last.v?'v|'+ch.numero+'|'+last.a.m+'|'+(last.a.u||'')+'|'+last.v:svdKa(ch,last.a); svdTouch(ctx); }}]});
+      svdSortChapter(ch); if(last) SVD_UI.sel[ctx.et]=last.v?'v|'+ch.numero+'|'+last.a.m+'|'+(last.a.u||'')+'|'+last.v:svdKa(ch,last.a); const p=svdTouch(ctx);
+      const seul=libre&&added.length===1&&!news.some(r=>r.v)&&!svbHasText(added[0])?svdKa(ch,added[0]):null;   // un seul article, encore vide : « Editer l'article » pour l'écrire
+      if(seul) Promise.resolve(p).then(()=>{ const U2=ctx.X.S.unites[ctx.et], s2=svdLook(U2,seul); if(s2.a) svdEditArticle({...ctx,S:ctx.X.S,U:U2},s2.ch,s2.a,{tab:'desc'}); }); }}]});
   draw(); }
 /* insertion automatique des subdivisions (§7.9) : une QP par combinaison (restreinte au filtre si « Appliquer le filtre ») ; « gl » avec une seule combinaison → quantité 1 ; sinon une QP vide */
 function svdAutoDivs(ctx,a,ch){ const U=ctx.U, sd=U.subdivisions, f=U.filtre;
@@ -13698,6 +13742,7 @@ function svdEditArticle(ctx,ch,a,o){ o=o||{}; const U=ctx.U, S=ctx.S, et=ctx.et,
   const kw=h('input',{class:'inp',value:w.motCle||'',maxlength:30,style:{width:'260px'},disabled:ro||w.motCleAuto||null}), kwa=h('input',{type:'checkbox',checked:w.motCleAuto||null,disabled:ro||null});
   kwa.onchange=()=>{ saveTxt(); w.motCleAuto=kwa.checked; kw.disabled=ro||kwa.checked; if(kwa.checked) kw.value=svdFirstLine(w.texte); };
   kw.oninput=()=>{ w.motCle=kw.value; };
+  const bib=h('input',{type:'checkbox',checked:!svdIsReserve(ch.numero,a.m,a.u)||null,disabled:ro||null});   // cochée hors réserve (18.10.2026)
   const un=h('select',{class:'inp',style:{width:'150px'},disabled:ro||!qa||null},h('option',{value:''},'??'),...SVD_UNITS_PD.map(u=>h('option',{value:u,selected:w.unite===u||null},u+'  '+SVD_UNIT_L[u])));
   un.onchange=()=>{ w.unite=un.value; if(tab==='qp') drawTab(); };
   const tabs=h('div',{style:{display:'flex',flexDirection:'column',gap:'4px',width:'150px',flex:'0 0 150px'}});
@@ -13720,7 +13765,7 @@ function svdEditArticle(ctx,ch,a,o){ o=o||{}; const U=ctx.U, S=ctx.S, et=ctx.et,
     const lw=h('input',{type:'checkbox',checked:w.largeurForcee||null,disabled:ro||null}); lw.onchange=()=>{ w.largeurForcee=lw.checked; };
     upd(); return h('div',{},h('div',{style:{display:'flex',gap:'8px',alignItems:'center',marginBottom:'6px'}},vs,gear,cnt,piL),txt,
       h('div',{style:{marginTop:'6px'}},h('label',{},lw,' Forcer la largeur de texte par défaut pour cet article dans l\'impression')),
-      h('div',{style:{color:'#777',fontSize:'11.5px',marginTop:'4px'}},'Texte du bureau uniquement (article de réserve) : lignes de 30 caractères, 99 lignes au plus. Les suites de points (....) sont à compléter par l\'entreprise.')); };
+      h('div',{style:{color:'#777',fontSize:'11.5px',marginTop:'4px'}},'Texte du bureau : lignes de 30 caractères, 99 lignes au plus. Les suites de points (....) sont à compléter par l\'entreprise.')); };
   /* ── Quantité et prix ── */
   const gpList=SVD_GP_OF[et]||'AFR';
   const svdQPPanel=()=>{ if(!qa) return h('div',{},h('div',{class:'empty'},'Cet article ne porte pas de quantité : chapitre ou article principal avec un 0, titre (paragraphe, sous-paragraphe, groupe) ou article principal avec des sous-articles.'),
@@ -13788,7 +13833,7 @@ function svdEditArticle(ctx,ch,a,o){ o=o||{}; const U=ctx.U, S=ctx.S, et=ctx.et,
   const nav=ibtn({i:'info',t:'Navigateur des articles',fn:()=>{ saveTxt(); svdPosBrowser(ctx,ch,w,t=>{ const tg=curV?w.variables.find(x=>x.v===curV):w; tg.texte=t.slice(); drawTab(); }); }});
   drawTabs(); drawTab();
   D=dialog({title:'Editer l\'article',width:'1180px',body:h('div',{},h('div',{style:{display:'flex',gap:'10px',alignItems:'center',marginBottom:'10px',flexWrap:'wrap'}},
-      h('b',{},'Article '+svdNum(ch.numero,w.m,w.u)),h('span',{style:{marginLeft:'10px'}},'Mots-clés'),kw,h('label',{},kwa,' Utiliser la première ligne du texte comme mot-clé'),h('span',{},'U'),un,nav),
+      h('b',{},'Article '+svdNum(ch.numero,w.m,w.u)),h('span',{style:{marginLeft:'10px'}},'Mots-clés'),kw,h('label',{},kwa,' Utiliser la première ligne du texte comme mot-clé'),h('span',{},'U'),un,nav,h('label',{title:'Le texte de l’article (avec son unité, son mot-clé et ses variables) est gardé dans la bibliothèque d’articles du bureau, importable dans toute soumission.'},bib,' Enregistrer dans la bibliothèque d’articles')),
       h('div',{style:{display:'flex',gap:'12px'}},tabs,h('div',{style:{flex:1,minWidth:0}},host))),
     buttons:ro?[{t:'Fermer',pri:true}]:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!svdCan(ctx)) return false; saveTxt();
       // ordre de PositionDialog.jOkButtonActionPerformed : doubles subdivisions, quantité / prix trop élevés (et question « prix indicatif » en B), mot-clé, 99 lignes
@@ -13797,7 +13842,7 @@ function svdEditArticle(ctx,ch,a,o){ o=o||{}; const U=ctx.U, S=ctx.S, et=ctx.et,
       if(w.motCleAuto) w.motCle=svdFirstLine(w.texte); else w.motCle=kw.value.trim();
       if(!svdKeyword(w).trim()){ ctMsg('Information','Vous devez définir un mot-clé.'); return false; }
       if([w,...w.variables].some(x=>(x.texte||[]).length>SVD_MAXLINES)){ ctMsg('Information','Il n\'y a pas plus de 99 lignes autorisées.'); return false; }
-      Object.keys(a).forEach(k=>delete a[k]); Object.assign(a,w); svdTouch(ctx); }}]}); }
+      Object.keys(a).forEach(k=>delete a[k]); Object.assign(a,w); svdTouch(ctx); if(bib.checked) svbSaveSafe(ch,a); }}]}); }
 /* nombre saisi (séparateur ' et virgule tolérés) */
 function svdParseNum(s){ s=String(s||'').replace(/['’\s]/g,'').replace(',','.'); if(s==='') return 0; const v=+s; return isFinite(v)?v:null; }
 /* codes d'une QP tels que Div.getString les assemble (« | » entre les codes non vides : RNF, OUV, LOC, CFE, locaux, affectations, GV, Var, TE, Cal) */
@@ -14378,19 +14423,25 @@ async function svdImport10R(ctx){ await DS.need(['soumission']); const U=ctx.U, 
   svdSources({pid:ctx.X.p&&ctx.X.p.ID}).forEach(x=>svdSrcEts(x.S).forEach(e=>(x.S.unites[e].chapitres||[]).forEach(c=>{ if(svdIsReserve(c.numero,'','')&&svdHas0(c.numero)&&!L.some(y=>y.d.ID===x.d.ID&&y.c.numero===c.numero)) L.push({d:x.d,S:x.S,e,c}); })));
   const g={}, box=ctBox(900,300); let D=null;
   grid(box,Object.assign(g,{key:x=>x.d.ID+'|'+x.e+'|'+x.c.numero,cols:[{k:'n',t:'Numéro',w:70,f:x=>esc(x.c.numero)},{k:'t',t:'Texte',f:x=>esc([x.c.texte1,x.c.texte2].filter(Boolean).join(' '))},{k:'s',t:'Statut',w:80,f:x=>esc(SV_STATE[x.d.STATECODE]||'')},
-    {k:'vn',t:'N° de version',w:90,cls:'r',f:x=>esc(x.d.VERSIONNUMBER??'')},{k:'u',t:'Utilisateur',w:90,f:x=>esc(x.d.USERID||'')},{k:'no',t:'Note',w:120,f:x=>esc(x.d.NOTE||'')},{k:'o',t:'Numéro de l\'ordre',w:110,f:x=>esc(x.d.ORDERNUMBER||'')},{k:'v',t:'Version',w:100,f:x=>esc(x.d.VERSION||'')}],
+    {k:'vn',t:'N° de version',w:90,cls:'r',f:x=>esc(x.d.VERSIONNUMBER??'')},{k:'u',t:'Utilisateur',w:90,f:x=>esc(x.d.USERID||'')},{k:'no',t:'Note',w:120,f:x=>esc(x.d.NOTE||'')},{k:'v',t:'Version',w:100,f:x=>esc(x.d.VERSION||'')}],
     rows:L,sort:null,onSel:()=>{ if(D) ctOk(D).disabled=false; },onDbl:()=>ctOk(D).click(),empty:'Aucun chapitre de réserve contenant un 0 dans les soumissions de cette affaire.'})); ctNoSort(box);
   D=dialog({title:'Importer',width:'960px',body:h('div',{},h('div',{style:{marginBottom:'6px'}},'Chapitres avec des conditions générales'),box),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const x=L.find(y=>y.d.ID+'|'+y.e+'|'+y.c.numero===g.sel); if(!x) return false;
     if(U.chapitres.some(y=>y.numero===x.c.numero)){ ctMsg('Information','Ce chapitre existe déjà.'); return false; }
     U.chapitres.push({...JSON.parse(JSON.stringify(x.c)),articles:x.c.articles.map(svdCloneArt)}); svdMergeLists(U,svdNormUnit(JSON.parse(JSON.stringify(x.S.unites[x.e])),x.e)); svdSortUnit(U); svdTouch(ctx); }}]}); ctOk(D).disabled=true; }
 /* ── Catalogue « Perso » : un descriptif du bureau comme catalogue ; double-clic = transfert de l'article (Alt / Option : sans ouvrir la fenêtre de l'article) ── */
 function svdPersoPanel(ctx){ const P=SVD_UI.perso, col=h('div',{class:'col',style:{width:'360px',flex:'0 0 360px',borderRight:'1px solid var(--line)'}}), pane=h('div',{class:'pane'});
-  const src=()=>{ const d=P.doc!=null?DS.get('devisdocument',P.doc):null, S=d&&DS.get('soumission',d.ID); return S&&S.unites&&S.unites[P.et]?{d,S,U:svdNormUnit(JSON.parse(JSON.stringify(S.unites[P.et])),P.et)}:null; };
-  const x=src(), lbl=x?[(DS.get('project',x.d.PROJECT_ID)||{}).NUMBER,x.d.BKP,x.d.AWARDINGTEXT].filter(Boolean).join(' ')+' — '+svdEtLabel(P.et):'Aucun descriptif choisi';
+  const bib=P.doc==null||P.doc==='biblio';                                                           // 18.10.2026 : bibliothèque d'articles par défaut
+  if(bib&&!DS.loaded.has(SVB_T)) DS.need([SVB_T]).then(()=>{ if(col.isConnected) ctx.X.redraw(); }).catch(()=>{});
+  const src=()=>{ if(bib) return DS.loaded.has(SVB_T)?{d:null,S:null,U:svbUnit()}:null;
+    const d=P.doc!=null?DS.get('devisdocument',P.doc):null, S=d&&DS.get('soumission',d.ID); return S&&S.unites&&S.unites[P.et]?{d,S,U:svdNormUnit(JSON.parse(JSON.stringify(S.unites[P.et])),P.et)}:null; };
+  const x=src(), lbl=bib?'Bibliothèque d’articles du bureau':x?[(DS.get('project',x.d.PROJECT_ID)||{}).NUMBER,x.d.BKP,x.d.AWARDINGTEXT].filter(Boolean).join(' ')+' — '+svdEtLabel(P.et):'Aucun descriptif choisi';
   const s=h('input',{class:'psearch',placeholder:'Rechercher',value:P.q||''}); s.oninput=()=>{ P.q=s.value; draw(); };
-  const head=h('div',{class:'ph2'},ibtn({label:'Perso',t:'Choix du descriptif',menu:()=>[{t:'Choisir un descriptif…',fn:()=>svdPickDoc(ctx,(y,e)=>{ P.doc=y.d.ID; P.et=e; ctx.X.redraw(); })},
-    ...(x?[{t:'Choix du type de document…',fn:()=>svPickFrom('Choix du type de document',svdSrcEts(x.S),svdEtLabel,e=>{ P.et=e; ctx.X.redraw(); })}]:[]),'-',{t:'Fermer le catalogue',fn:()=>{ P.open=false; ctx.X.redraw(); }}]}),h('div',{style:{flex:1}}),s);
-  const draw=()=>{ if(!x){ pane.innerHTML='<div class="empty">« Perso » ▸ « Choisir un descriptif… » : les descriptifs du bureau servent de catalogue (textes du bureau uniquement).</div>'; return; }
+  const head=h('div',{class:'ph2'},ibtn({label:'Perso',t:'Choix du catalogue',menu:()=>[{t:'Bibliothèque d’articles',chk:bib,fn:()=>{ P.doc='biblio'; P.sel=null; ctx.X.redraw(); }},
+    {t:'Choisir un descriptif…',fn:()=>svdPickDoc(ctx,(y,e)=>{ P.doc=y.d.ID; P.et=e; P.sel=null; ctx.X.redraw(); })},
+    ...(x&&!bib?[{t:'Choix du type de document…',fn:()=>svPickFrom('Choix du type de document',svdSrcEts(x.S),svdEtLabel,e=>{ P.et=e; ctx.X.redraw(); })}]:[]),'-',
+    ...(bib?[{t:'Retirer de la bibliothèque…',dis:!P.sel,fn:()=>svbRemove(P.sel,()=>ctx.X.redraw())},'-']:[]),{t:'Fermer le catalogue',fn:()=>{ P.open=false; ctx.X.redraw(); }}]}),h('div',{style:{flex:1}}),s);
+  const draw=()=>{ if(!x){ pane.innerHTML='<div class="empty">'+(bib?'Chargement de la bibliothèque d’articles…':'« Perso » ▸ « Choisir un descriptif… » : les descriptifs du bureau servent de catalogue (textes du bureau uniquement).')+'</div>'; return; }
+    if(bib&&!x.U.chapitres.length){ pane.innerHTML='<div class="empty">Bibliothèque d’articles vide : chaque article écrit dans une soumission (« Editer l’article » ▸ OK) s’y ajoute.</div>'; return; }
     const q=(P.q||'').trim().toLowerCase(), rows=[];
     x.U.chapitres.forEach(ch=>{ rows.push({k:'c|'+ch.numero,html:'<b>'+esc(ch.numero+'  '+ch.texte1)+'</b>'});
       ch.articles.forEach(a=>{ const t=svdKeyword(a)||svdFirstLine(a.texte); if(q&&!(t.toLowerCase().includes(q)||(a.texte||[]).join(' ').toLowerCase().includes(q))) return;
@@ -14419,6 +14470,98 @@ async function svdPosBrowser(ctx,ch,a,onCopy){ await DS.need(['soumission']); co
     rows:L,sort:null,onSel:()=>{ if(D) ctOk(D).disabled=false; },empty:'Cet article n\'a jamais été utilisé.'})); ctNoSort(box);
   D=dialog({title:'Navigateur',width:'960px',body:h('div',{},h('div',{style:{marginBottom:'6px'}},'Cet article a déjà été utilisé comme suit.'),box),buttons:[{t:'Fermer'},...(onCopy&&!ctx.ro?[{t:'Copier le texte',pri:true,fn:()=>{ const y=L[+g.sel]; if(!y) return false; onCopy(y.b.texte||[]); }}]:[])]});
   if(onCopy&&!ctx.ro) ctOk(D).disabled=true; }
+
+/* ═══ Bibliothèque d'articles du bureau (18.10.2026) : chapitres et articles libres — numéros du catalogue des articles, textes écrits par le
+   bureau. Chaque article écrit (« Editer l'article » ▸ OK, case « Enregistrer dans la bibliothèque d'articles », cochée hors réserve) y est
+   ajouté ou mis à jour (titres parents ajoutés s'ils manquent) ; on l'importe dans toute soumission : Importer ▸ « Bibliothèque d'articles… »,
+   catalogue « Perso » (bibliothèque par défaut), ou « Nouvel article » au même numéro (texte repris). Collection SVB_T, un enregistrement par
+   chapitre {ID = numéro, numero, texte1, texte2, version, articles:[{m, u, unite, motCle, motCleAuto, texte, variables:[{v, texte}], modifie, par}]} :
+   ni quantité, ni prix, ni document joint. Base du bureau : droits « chantier : écriture » ou « bibliothèque : écriture » (serveur). ═══ */
+const SVB_T='svbiblio';
+const svbChapter=n=>DS.get(SVB_T,String(n||''))||null;
+const svbHasText=b=>svdHasText(b.texte)||(b.variables||[]).some(v=>svdHasText(v.texte));
+const svbFind=(c,m,u)=>{ const x=svbChapter(c); return x?(x.articles||[]).find(b=>b.m===m&&(b.u||'')===(u||''))||null:null; };
+/* pseudo-unité (forme d'une unité de soumission) : catalogue « Perso », svdLook, svdPersoTransfer, import */
+function svbUnit(){ return {chapitres:DS.all(SVB_T).filter(c=>c&&c.numero).sort((x,y)=>x.numero<y.numero?-1:x.numero>y.numero?1:0).map(c=>({numero:String(c.numero),texte1:c.texte1||'',
+    texte2:c.texte2||'',version:c.version||'',cfc:{numero:'',texte1:'',texte2:''},articles:(c.articles||[]).map(b=>Object.assign(svdNewArticle(b.m,b.u,b.unite),{motCle:b.motCle||'',
+      motCleAuto:!!b.motCleAuto,texte:(b.texte||[]).slice(),variables:(b.variables||[]).map(v=>Object.assign(svdNewVar(v.v),{texte:(v.texte||[]).slice()}))})).sort(svdCmpArt)})),
+  subdivisions:{listes:{}},variantes:[]}; }
+/* fiche de bibliothèque d'un article : texte, unité, mot-clé, variables écrites */
+const svbRec=b=>({m:b.m,u:b.u||'',unite:b.unite||'',motCle:b.motCle||'',motCleAuto:!!b.motCleAuto,texte:(b.texte||[]).slice(),
+  variables:(b.variables||[]).filter(v=>svdHasText(v.texte)).map(v=>({v:v.v,texte:v.texte.slice()})),modifie:svNowIso().slice(0,16).replace('T',' '),par:(typeof ME!=='undefined'&&ME.id)||''});
+/* chapitre de bibliothèque après l'ajout de l'article a (et de ses titres absents) → {id, val, n} ; null si rien ne change */
+function svbMerge(ch,a){ const id=String(ch.numero), old=svbChapter(id), c=old?JSON.parse(JSON.stringify(old)):{ID:id,numero:id,texte1:'',texte2:'',version:'',articles:[]};
+  c.articles=c.articles||[]; let n=0; const same=(x,y)=>JSON.stringify({...x,modifie:'',par:''})===JSON.stringify({...y,modifie:'',par:''});
+  svdParents(a.m,a.u||'').forEach(p=>{ const b=ch.articles.find(x=>x.m===p.m&&(x.u||'')===p.u);                // titres : ajoutés s'ils manquent, jamais remplacés
+    if(b&&svbHasText(b)&&!c.articles.some(x=>x.m===p.m&&(x.u||'')===p.u)){ c.articles.push(svbRec(b)); n++; } });
+  if(svbHasText(a)){ const r=svbRec(a), i=c.articles.findIndex(x=>x.m===r.m&&(x.u||'')===r.u); if(i<0){ c.articles.push(r); n++; } else if(!same(c.articles[i],r)){ c.articles[i]=r; n++; } }
+  const hd=!old||old.texte1!==(ch.texte1||'')||old.texte2!==(ch.texte2||'')||old.version!==(ch.version||'');
+  if(!n&&!(hd&&c.articles.length)) return null;
+  Object.assign(c,{texte1:ch.texte1||'',texte2:ch.texte2||'',version:ch.version||''}); c.articles.sort(svdCmpArt); return {id,val:c,n}; }
+/* enregistrement ; après un conflit (base du bureau), DS.commit a relu la version à jour : un second essai */
+async function svbSave(ch,a){ await DS.need([SVB_T]);
+  for(let i=0;i<2;i++){ const r=svbMerge(ch,a); if(!r) return 0;
+    try{ await DS.commit([{t:SVB_T,id:r.id,val:r.val}]); return r.n; }catch(e){ if(!(e&&e.conflict)||i) throw e; } }
+  return 0; }
+function svbSaveSafe(ch,a){ const k=svdNum(ch.numero,a.m,a.u);
+  svbSave(ch,a).then(n=>{ if(n) toast('Article '+k+' enregistré dans la bibliothèque d’articles.'); }).catch(e=>toast('Article '+k+' non enregistré dans la bibliothèque : '+(e&&e.message||e),true)); }
+/* articles créés par « Nouvel article » : texte, unité, mot-clé et variables de la bibliothèque (même chapitre et numéro) ; sinon mot-clé = 1re ligne */
+function svbFill(ch,arts){ let n=0;
+  arts.forEach(a=>{ const b=svbFind(ch.numero,a.m,a.u);
+    if(b&&svbHasText(b)&&!svbHasText(a)){ Object.assign(a,{texte:(b.texte||[]).slice(),motCle:b.motCle||'',motCleAuto:!!b.motCleAuto,unite:a.unite||b.unite||''});
+      (b.variables||[]).forEach(v=>{ const x=a.variables.find(y=>y.v===v.v); if(x){ if(!svdHasText(x.texte)) x.texte=(v.texte||[]).slice(); } else a.variables.push(Object.assign(svdNewVar(v.v),{texte:(v.texte||[]).slice()})); });
+      n++; }
+    else if(!svdKeyword(a).trim()) a.motCleAuto=true; });
+  if(n) toast(n+' texte'+(n>1?'s':'')+' repris de la bibliothèque d’articles.'); return n; }
+/* retirer un chapitre (c|n) ou un article (a|n|m|u) de la bibliothèque */
+async function svbRemove(k,done){ await DS.need([SVB_T]); const p=String(k||'').split('|'), c=svbChapter(p[1]); if(!c) return;
+  if(p[0]==='c'){ if(!await svYesNo(svdP('Retirer le chapitre ^0 et ses ^1 article(s) de la bibliothèque d’articles ?',c.numero,(c.articles||[]).length))) return;
+    await DS.commit([{t:SVB_T,id:String(c.numero),val:null}]); }
+  else if(p[0]==='a'){ const v=JSON.parse(JSON.stringify(c)), i=(v.articles||[]).findIndex(x=>x.m===p[2]&&(x.u||'')===(p[3]||'')); if(i<0) return;
+    if(!await svYesNo(svdP('Retirer l’article ^0 de la bibliothèque d’articles ?',svdNum(c.numero,p[2],p[3])))) return;
+    v.articles.splice(i,1); await DS.commit([{t:SVB_T,id:String(c.numero),val:v}]); }
+  else return;
+  toast('Retiré de la bibliothèque d’articles.'); if(done) done(); }
+/* Importer ▸ « Bibliothèque d'articles… » : cases à cocher (chapitre = tous ses articles), recherche ; articles déjà présents laissés tels quels */
+async function svbImportDlg(ctx){ await DS.need([SVB_T]); const B=svbUnit();
+  if(!B.chapitres.length){ ctMsg('Information','La bibliothèque d’articles est vide.\nChaque article écrit dans une soumission (« Editer l’article » ▸ OK, case « Enregistrer dans la bibliothèque d’articles ») s’y ajoute.'); return; }
+  const U=ctx.U, sel=new Set(), box=ctBox(820,380); let q='', D=null;
+  const inDoc=(c,a)=>{ const x=U.chapitres.find(y=>y.numero===c.numero); return !!(x&&x.articles.some(b=>b.m===a.m&&(b.u||'')===(a.u||''))); };
+  const arts=c=>c.articles.filter(a=>svbHasText(a));
+  const cnt=h('span',{style:{color:'#555',marginRight:'8px'}}), s=h('input',{class:'psearch',placeholder:'Rechercher'});
+  const draw=()=>{ const ql=q.trim().toLowerCase(), rows=[];
+    B.chapitres.forEach(c=>{ const cm=ql&&(c.numero+' '+c.texte1+' '+c.texte2).toLowerCase().includes(ql);
+      const L=arts(c).filter(a=>!ql||cm||(svdNum(c.numero,a.m,a.u)+' '+svdKeyword(a)+' '+(a.texte||[]).join(' ')).toLowerCase().includes(ql)); if(!L.length) return;
+      rows.push({k:'c|'+c.numero,c,L}); L.forEach(a=>rows.push({k:svdKa(c,a),c,a})); });
+    box.innerHTML='<table class="g" style="width:100%;table-layout:fixed"><tbody>'+rows.map(r=>{
+      if(!r.a){ const libres=r.L.filter(a=>!inDoc(r.c,a)), on=libres.length&&libres.every(a=>sel.has(svdKa(r.c,a)));
+        return '<tr data-k="'+esc(r.k)+'" class="svd-ch"><td style="width:28px"><input type="checkbox"'+(on?' checked':'')+(libres.length?'':' disabled')+'></td><td colspan="3"><b>'+esc(r.c.numero+'  '+[r.c.texte1,r.c.texte2].filter(Boolean).join(' '))+'</b>'+(r.c.version?' <span style="color:#777">('+esc(r.c.version)+')</span>':'')+'</td></tr>'; }
+      const d=inDoc(r.c,r.a);
+      return '<tr data-k="'+esc(r.k)+'"><td><input type="checkbox"'+(sel.has(r.k)?' checked':'')+(d?' disabled':'')+'></td><td style="width:90px;color:#555">'+esc(svdNum('',r.a.m,r.a.u))+'</td>'+
+        '<td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(svdKeyword(r.a)||svdFirstLine(r.a.texte))+(d?' <span style="color:#999">— déjà dans le descriptif</span>':'')+'</td><td style="width:44px">'+esc(r.a.unite||'')+'</td></tr>'; }).join('')+
+      '</tbody></table>'+(rows.length?'':'<div class="empty">Aucun article ne correspond à la recherche.</div>');
+    cnt.textContent=sel.size?sel.size+' article'+(sel.size>1?'s':'')+' choisi'+(sel.size>1?'s':''):''; if(D) ctOk(D).disabled=!sel.size; };
+  box.addEventListener('change',e=>{ const cb=e.target, tr=cb.closest('tr[data-k]'); if(!tr) return; const k=tr.dataset.k;
+    if(k.startsWith('c|')){ const c=B.chapitres.find(x=>'c|'+x.numero===k); arts(c).filter(a=>!inDoc(c,a)).forEach(a=>{ const ka=svdKa(c,a); if(cb.checked) sel.add(ka); else sel.delete(ka); }); }
+    else if(cb.checked) sel.add(k); else sel.delete(k);
+    draw(); });
+  s.oninput=()=>{ q=s.value; draw(); };
+  D=dialog({title:'Bibliothèque d’articles',width:'880px',body:h('div',{},h('div',{class:'ph2'},h('span',{},'Articles écrits par le bureau : cochez ceux à importer.'),h('div',{style:{flex:1}}),cnt,s),box),
+    buttons:[{t:'Annuler'},{t:'Importer',pri:true,fn:()=>{ if(!sel.size||!svdCan(ctx)) return false; svbInsert(ctx,B,[...sel]); }}]});
+  draw(); }
+/* insertion d'articles de la bibliothèque (clés a|c|m|u) dans l'unité de travail : chapitre et titres créés au besoin, un seul enregistrement */
+function svbInsert(ctx,B,keys){ const U=ctx.U, added=[]; let deja=0;
+  keys.forEach(k=>{ const s=svdLook(B,k); if(!s.a) return; const sch=s.ch, sa=s.a; let ch=U.chapitres.find(c=>c.numero===sch.numero);
+    if(!ch){ ch={numero:sch.numero,texte1:sch.texte1,texte2:sch.texte2,version:sch.version,cfc:{numero:'',texte1:'',texte2:''},articles:[]};
+      const z=sch.articles.find(b=>b.m==='000'&&!b.u); ch.articles.push(z?{...svdCloneArt(z),quantites:[]}:svdNewArticle('000','')); U.chapitres.push(ch); }   // article initial 000 du chapitre
+    svdParents(sa.m,sa.u).forEach(p=>{ if(!ch.articles.some(b=>b.m===p.m&&(b.u||'')===p.u)){ const t=sch.articles.find(b=>b.m===p.m&&(b.u||'')===p.u);
+      ch.articles.push(t?{...svdCloneArt(t),quantites:[]}:Object.assign(svdNewArticle(p.m,p.u),{motCleAuto:true})); } });
+    if(ch.articles.some(b=>b.m===sa.m&&(b.u||'')===(sa.u||''))){ deja++; return; }
+    const a={...svdCloneArt(sa),quantites:[],remarquesPrelim:[]}; ch.articles.push(a); added.push({ch,a}); });
+  added.forEach(({ch,a})=>{ svdSortChapter(ch); if(svdIsQtyArticle(ch,a)&&!a.quantites.length) svdAutoDivs(ctx,a,ch); });   // après toutes les insertions : un principal devenu titre ne reçoit pas de QP
+  svdSortUnit(U);
+  if(added.length){ const l=added[added.length-1]; SVD_UI.sel[ctx.et]=svdKa(l.ch,l.a); svdTouch(ctx); }
+  const n=added.length; toast(n?n+' article'+(n>1?'s':'')+' importé'+(n>1?'s':'')+(deja?' ; '+deja+' déjà présent'+(deja>1?'s':''):'')+'.':'Aucun article importé : déjà présents.',!n); }
 
 /* ═══ Impressions par le navigateur (§10 : les modèles .dpdoc du descriptif « devisDocument » et le serveur de fichiers sont au lot 4) ═══
    kind : 'desc' Descriptif · 'recap' Récapitulatif · 'chap' Récapitulatif par chapitres · 'par' par paragraphes · 'sub' par subdivisions */
@@ -15018,7 +15161,7 @@ async function svcToCost(X,et){ if(!X.can()) return; await DS.need(['costcontrol
   const o={}, box=ctBox(420,200); let D=null;
   grid(box,Object.assign(o,{cols:[{k:'CHANGEDDATE',t:'Date',w:100,f:d=>dfr(d.CHANGEDDATE)},{k:'NOTE',t:'Note'}],rows:docs,sort:null,onSel:()=>{ ctOk(D).disabled=false; },onDbl:()=>ctOk(D).click()}));
   D=dialog({title:'Contrôle des coûts',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const d=DS.get('costcontroldocument',o.sel); if(!d) return false; setTimeout(()=>svcDlgBook(X,et,d),30); }}]}); ctOk(D).disabled=true; }
-/* dialogue « Transférer vers contrôle des coûts » : RNF (lecture seule [C]) · Numéro de contrat (+ suivant) · Numéro d'ordre (affiché) · Commentaire ·
+/* dialogue « Transférer vers contrôle des coûts » : RNF (lecture seule [C]) · Numéro de contrat (+ suivant) · Commentaire ·
    ☑ Contrat prioritaire · ☐ Répartir par nature des coûts (> 1 chapitre sans 0) · ☐ Répartir par ouvrages · tableau RNF | Texte | Ouvrage/localisation | Total */
 function svcDlgBook(X,et,cd){ const S=X.S, doc=X.doc, src=svcCostSource(S,et); if(src.err){ ctMsg('Erreur',src.err); return; }
   if(!src.ent){ ctMsg('Information','Vous n\'avez pas encore choisi une entreprise.'); return; }
@@ -15041,7 +15184,7 @@ function svcDlgBook(X,et,cd){ const S=X.S, doc=X.doc, src=svcCostSource(S,et); i
   const bNext=ibtn({i:'next',t:'Trouve le n° de contrat ou d\'avenant suivant',fn:()=>{ const r=svbNextContractNum(ctrs()); if(r.err) ctMsg('Information',r.err); else nr.value=r.num; }});
   draw();
   dialog({title:'Transférer vers contrôle des coûts',width:'760px',body:h('div',{},formRows([['RNF',h('div',{style:{display:'flex',gap:'6px'}},h('input',{class:'inp',readonly:true,value:doc.BKP||'',style:{width:'90px'}}),ro(doc.AWARDINGTEXT))],
-      ['Numéro de contrat',h('div',{style:{display:'flex',gap:'6px'}},nr,bNext)],['Numéro d\'ordre',ro(doc.ORDERNUMBER)],['Commentaire',com],
+      ['Numéro de contrat',h('div',{style:{display:'flex',gap:'6px'}},nr,bNext)],['Commentaire',com],
       ['',h('label',{style:{textAlign:'left'}},prio,' Contrat prioritaire sur devis pour le coût probable')],['',h('label',{style:{textAlign:'left'}},kag,' Répartir par nature des coûts')],
       ['',h('label',{style:{textAlign:'left'}},to,' Répartir par ouvrages')]],700),tbl),
     buttons:[{t:'Annuler'},{t:'Comptabiliser',pri:true,fn:async()=>{ const n=nr.value.trim();
@@ -15383,10 +15526,10 @@ function ch01aCondRows(x,o){ o=o||{}; const cur=o.cur||'CHF', cond=!!o.cond, R=v
   rows.T={brut,tva,ht:tot-tva,net:tot}; return rows; }
 
 /* ── Nœud « Documents » et aiguillage ── */
-function ch01aDocNode(s,side,redraw){ const on=!!CCV.docs&&CCV.sec===s;
-  const it=h('div',{class:'item'+(on?' on':''),style:{padding:'5px 12px 5px 28px',fontSize:'12px'}},'Documents');
+function ch01aDocNode(s,side,redraw,lib){ const on=!!CCV.docs&&CCV.sec===s;   /* lib : libellé du menu léger de DOCUMENTS (13.10.2026), sinon « Documents » sous la section */
+  const it=h('div',{class:'item'+(on?' on':''),style:{padding:'5px 12px 5px 28px',fontSize:'12px'}},lib||'Documents');
   it.onclick=()=>{ CCV.sec=s; CCV.docs=true; CCV.detSel=null; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); redraw(); };
-  if(on) queueMicrotask(()=>{ const x=it.previousElementSibling; if(x) x.classList.remove('on'); });    // la section reste non surlignée
+  if(on&&!lib) queueMicrotask(()=>{ const x=it.previousElementSibling; if(x) x.classList.remove('on'); });    // la section reste non surlignée
   return it; }
 function ch01aDocsDraw(pane,E){
   if(CH01A_T.some(t=>!DS.loaded.has(t))){ pane.append(h('div',{class:'ph'},'Chargement des modèles…'));
@@ -15396,6 +15539,7 @@ function ch01aDocsDraw(pane,E){
     'MUTATIONS':[2,()=>typeof ch01bMutFrame==='function'?ch01bMutFrame:null],'ADJUDICATIONS':[2,()=>typeof ch01bAwardFrame==='function'?ch01bAwardFrame:null],
     'COMPTES D’ENTREPRISE':[2,()=>typeof ch01bEntFrame==='function'?ch01bEntFrame:null],'ARRÊTÉS DE COMPTE':[3,()=>typeof ch01cFinalFrame==='function'?ch01cFinalFrame:null],
     'PAIEMENTS':[4,()=>typeof ch01dPayFrame==='function'?ch01dPayFrame:null],'ORDRES DE PAIEMENT':[4,()=>typeof ch01dOrderFrame==='function'?ch01dOrderFrame:null]}[E.sec];
+  if(typeof CC_SEC_LIB!=='undefined'&&CC_SEC_LIB[E.sec]) pane.append(h('div',{style:{padding:'12px 18px 0',fontWeight:700,fontSize:'13px'}},'Documents · '+CC_SEC_LIB[E.sec]));   /* menu léger de DOCUMENTS */
   const fn=S&&S[1](); if(!fn){ pane.append(h('div',{class:'ph'},'Documents de cette section : CH-01, lot '+(S?S[0]:'?')+' (non intégré).')); return; }
   try{ fn(pane,E); }catch(e){ console.error(e); pane.append(h('div',{class:'ph'},'Documents indisponibles : '+e.message)); } }
 const ch01aFrame=(...els)=>h('div',{style:{padding:'14px 18px',display:'flex',flexDirection:'column',gap:'14px',maxWidth:'780px'}},...els);
@@ -19045,8 +19189,8 @@ function ch10bImportMerge(pages,S){ const n={ajoutees:0,ignorees:0,groupes:0,mod
   const sq=(t,id)=>S.seqOf?(S.seqOf(t,id)||0):0;                                                  // création sur une ligne supprimée : sa séquence (sinon 409)
   (pages||[]).forEach(p=>{ const gk=p.categorie+'/'+p.groupe, mk=gk+'/'+p.type+'/'+p.nom;
     let fg=ftg.get(gk);
-    if(!G[gk]){ const f0=fg||{}, so=parseInt(f0.SORTORDER,10);                  // règle du convertisseur : NAMEFR et SORTORDER du FormTemplateGroup existant, sinon nom (« Modèles d’origine ») et 9
-      const g={categorie:p.categorie,groupe:p.groupe,libelle:f0.NAMEFR||(p.groupe==='Default'?'Modèles d’origine':p.groupe),ordre:isNaN(so)?9:so,verrouille:p.groupe==='Default'};
+    if(!G[gk]){ const f0=fg||{}, so=parseInt(f0.SORTORDER,10);                  // règle du convertisseur : NAMEFR et SORTORDER du FormTemplateGroup existant, sinon nom (« Substances Originaux ») et 9
+      const g={categorie:p.categorie,groupe:p.groupe,libelle:f0.NAMEFR||(p.groupe==='Default'?'Substances Originaux':p.groupe),ordre:isNaN(so)?9:so,verrouille:p.groupe==='Default'};
       G[gk]=g; gOps.push({t:'modelegroupe',id:gk,val:g,bseq:sq('modelegroupe',gk)}); n.groupes++; }
     if(!fg){ const id=S.newId('formtemplategroup'); fg={ID:id,CATEGORY:p.categorie,NAME:p.groupe}; ftg.set(gk,fg); fgOps.push({t:'formtemplategroup',id,val:fg,bseq:0}); n.ftg++; }
     const nom1=p.ft!=null?String(p.ft):String(p.nom).split('/')[0], fk=fg.ID+'|'+p.type+'|'+nom1;   // TemplateImport : NAME = parts[3]
@@ -19095,7 +19239,7 @@ async function ch10bImportTemplatesFrom(blob){ await tplNeed(); await DS.need(['
   return Object.assign({erreurs:d.erreurs|0,horsModeles:d.ignores|0},R.n); }
 
 /* ── Anciens modèles ▸ roue ▾ ▸ police de tous les modèles du groupe (TemplatesFrame, ChangeFontDialog) ── */
-/* groupe de la roue ▾ (ancre E3) : active si un groupe est (ou sera, au dessin) sélectionné, même « Modèles d’origine » (checkGuards@123-128) */
+/* groupe de la roue ▾ (ancre E3) : active si un groupe est (ou sera, au dessin) sélectionné, même « Substances Originaux » (checkGuards@123-128) */
 function ch10bTplTools(cat){ const any=()=>DS.all('modelegroupe').some(g=>g.categorie===cat);
   return [[{i:'gear',t:'Fonctions',dis:!(tplCurGroup(cat)||any()),menu:()=>[
     {t:'Modifier la police dans tous les modèles du groupe …',dis:!any(),fn:()=>ch10bFontDialog(cat)}]}]]; }
@@ -19842,7 +19986,7 @@ function rgAbout(){ return ch08aAbout(); }
 ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Vues (§ 4.10.1) : droits requis par identifiant de vue (première règle qui s'applique), indépendants des libellés de NAV ── */
-const CH08B_VIEWS=[[/^config$/,['admin']],[/^aff-toutes$/,['project','projectEditAll']],[/^mg-collab$/,['management','staff']],   // Modules$Menu.getModules@41-55
+const CH08B_VIEWS=[[/^config$/,['admin']],[/^affd?-toutes$/,['project','projectEditAll']],[/^mg-collab$/,['management','staff']],   // Modules$Menu.getModules@41-55
   [/^adr-/,['contact']],[/^aff-/,['project']],[/^collab-/,['staff']],[/^frais/,['expenses']],[/^h-/,['time']],[/^taches/,['tasks']],
   [/^fact-/,['invoices']],[/^(coplan|devis|soum|coco)/,['construction']],[/^mg/,['management']],[/^tpl-/,['design']]];
 const CH08B_NONE_ID='ch08b-aucun';
@@ -19883,7 +20027,7 @@ function ch08bDomains(list,u){ u=ch08bU(u); const out=(list||[]).filter(d=>ch08b
    PropertiesFrame, SearchFrame), GroupFrame.setUserRights@0-42, EmployeeFrame.checkGuards@34-110, ProjectDefinitionFrame.checkGuards@1-162
    et addProjectSettingsPopupMenuItems / addProjectStructuringPopupMenuItems. « Ajouter des propriétés » et « Supprimer la propriété »
    ne sont gardés dans aucun de ces cadres (contactPropertyNew / contactPropertyDelete : ContactDialog.setUserRights, fiche non livrée) */
-const CH08B_ENT=/^adr-entites$/, CH08B_LST=/^adr-(liste|favoris|groupes|props|chercher)$/, CH08B_AFF=/^aff-gestion$/;
+const CH08B_ENT=/^adr-entites$/, CH08B_LST=/^adr-(liste|favoris|groupes|props|chercher)$/, CH08B_AFF=/^affd?-gestion$/;   // affd- : copies de SUBGestion 3 (chapitre Affaires, 18.10.2026)
 const CH08B_SET=['projectSubProjects','projectBkp','projectPhases','projectRates','projectActivities','projectCosts','projectMeetings','projectPlans'];   // hasRightProjectSettings
 const CH08B_GUARDS=[
   [CH08B_ENT,'Nouveau','contactNew','m'],[CH08B_ENT,'Nouvelle adresse','contactNew','m'],

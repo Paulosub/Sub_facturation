@@ -96,6 +96,16 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   collections `PROTECTED` de `serveur_deltasub.py` — honoraires, contrats, factures, encaissements,
   QR, avancement, tâches — saisies dans DeltaSub : elles sont gardées, seuls les enregistrements
   manquants sont ajoutés).
+  **Collections propres à SUBGestion (18.10.2026)** : `import_deltaproject` (`--importer-deltaproject … --force`, ce script,
+  `reprise_subgestion.py`) ne remplace QUE les collections qu'alimente l'extraction (`collections_extraction` : tables de
+  `schema.txt` en minuscules — vides et `SKIP_TABLES` comprises —, CSV, collections de `documents/*.json`). Toute autre
+  collection (`sgapport`, `sgcontrattravail`, `sgcoutrevient`, `sgbouclement`, `sgacces`, `sganalyse`, `sg_meta`, et toute
+  nouvelle collection de l'app) est gardée telle quelle, compteur `next_id:` compris, et listée en fin de reprise (meta
+  `import_deltaproject` ▸ `propres`). Tables du schéma : inchangé (une table vide dans Deltaproject vide la collection).
+  Documents convertis : `image` et `arriereplan` sont `PROTECTED_IF_EDITED` (logos ajoutés, arrière-plans dupliqués ou
+  modifiés dans l'app gardés) ; `modeledocument` reste remplacé (seul « Français seulement » le retouche).
+  ⚠ Une collection écrite par l'app sous le nom d'une table Deltaproject reste remplacée : l'ajouter à `PROTECTED` ou
+  `PROTECTED_IF_EDITED`. Test : base temporaire `DELTASUB_DB` + mini-extraction (schema.txt, tables/APP.*.csv, documents/).
   Les outils utilisent le Java embarqué dans `/Applications/DELTAproject.app`.
 - **Reprise de TOUTES les données Deltaproject dans SUBGestion (base locale du navigateur), sans perdre les saisies** :
   `python3 outils_deltaproject/reprise_subgestion.py` (06.10.2026). 1) SUBGestion ▸ Réglages ▸ Données & sauvegarde ▸
@@ -148,8 +158,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sur le poste, NON embarquées : licence desktop Lineto), nuancier principal noir #1d1d1b / gris #706F6F / jaune #FFF266
   #FEF6B0 / bleu nuit #003346 #636E7E, secondaire (rouge #BD1E42, orange #D7860D, vert #98C21F, turquoise #4CBAB5, bleu
   #3F4193) réservé aux états ; filets noirs 2 px, angles droits. Logo officiel : `subgestion3/logo_substances.svg`.
-- Navigation (`SG_DOM` dans `sg3.js`, décision du 06.10 soir : MENU À GAUCHE, organisation de la v2) : menu bleu nuit
-  (logo blanc, Rechercher ⌘K, domaines dépliables → « Vue d'ensemble » + modules, module actif en jaune, Favoris, pied
+- Navigation (`SG_DOM` dans `sg3.js`, décision du 06.10 soir : MENU À GAUCHE, organisation de la v2 ; ordre des domaines depuis le
+  18.10.2026 : Accueil, Affaires, Temps, Projets, Contacts, Chantier, Équipe, Ressources humaines, Facturation, Finances… ;
+  Projets = Mes projets, Suivi & écarts, Registre, sous-menu dépliable « Tâches » (Urgentes, En cours, Réglées : items `grp` / `st`,
+  `sgSideItems`, état `nx_sub3`) avec pastilles `sgPastille` (rouge = urgentes, verte = en cours, `sgTachesCompte` = ptModuleRows de
+  l'utilisateur) — « Tous les projets » retiré, `sgOuvrirDomaine` → `nx-pdom` ; catégorie « architecture » affichée « Projets ») : menu bleu nuit
+  (logo blanc, Rechercher ⌘K, domaines dépliables → modules — depuis le 18.10.2026 le NOM du chapitre ouvre sa vue d'ensemble et le
+  déplie, la flèche seule déplie / replie, plus d'entrée « Vue d'ensemble » —, module actif en jaune, Favoris, pied
   utilisateur, réduction ⌘\ / auto < 1000 px) + en-tête blanc (historique, rubrique, titre, Créer, ⋯) + barre contextuelle
   `#nx-sub`. Variante « barres en haut » sauvegardée : `SUBGestion3_backup_20261006_2227_barre_haute.html` et
   `subgestion3/_backup_20261006_2227_barre_haute/`. ⚠ Ne jamais utiliser la classe `ov` (= voile des fenêtres DeltaSub,
@@ -250,7 +265,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `sg_meta/francais` {DATE, N cumulé}. Sur le NAS, comptes et fonctions (`CH08_ADMIN_T`) exigent le droit Deltaproject
   « gestion des utilisateurs » : sans lui, ils sont laissés tels quels (signalé). Facturation : langue du carnet = Français.
   Traces de l'ancien logiciel dans la base (10.10.2026) : `FR_TRACES` + préfixe « DELTA … » (groupes de modèles `modelegroupe.libelle`,
-  `formtemplategroup.NAMEFR`, `defaultpath.NAMEFR` → « Modèles d'origine », « Fichiers », …), catalogues « eCCC-… » → « Éléments … »
+  `formtemplategroup.NAMEFR`, `defaultpath.NAMEFR` → « Substances Originaux » (choix de Paulo, 18.10.2026 ; les 14 groupes de la base du
+  NAS renommés le même jour), « Fichiers », …), catalogues « eCCC-… » → « Éléments … »
   (`FR_TRACE_CAT`, test `/^e[C]CC-/` qui survit au nettoyage) ; compteur `traces` ; `sgFrReste()` les détecte. `FR_CAT_SANS_FR` :
   « traduire » (fichier local) / « supprimer » (NAS).
 - **Coût de revient** (Ressources humaines, `nx-coutrevient`, collection `sgcoutrevient`) : charges sociales, frais généraux par poste,
@@ -304,9 +320,72 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Suppr), grille multi-sélection, redessin `ch03cSuivre`. `ccDocsDraw(pane,E,G)` remplit la grille `G` de l'éditeur (menu Fonctions :
   copier, CSV, imprimer) ; tri et sélection gardés dans `CCV.docsSt` / `CCV.docsSel` (clés disparues purgées). Avant l'envoi : nom
   (`ch03aNomValide`) et taille (`CH03A_MAX`) contrôlés, dossiers glissés ignorés (`webkitGetAsEntry`). Filet au-dessus de DOCUMENTS
-  dans le menu (distinct des sous-nœuds « Documents »). Lecture seule si `ch03dLecture(E)` ou profil sans droit « documents : dépôt ».
+  dans le menu. **Menu léger de DOCUMENTS (13.10.2026)** : les nœuds « Documents » des sections (documents imprimés et PDF de chaque
+  section, `ch01aDocsDraw`) ne sont plus sous chaque section mais regroupés sous DOCUMENTS, un par section, avec son nom (`CC_SEC_LIB` :
+  Contrôle du coût, Devis général, Mutations, Adjudications…) ; `ch01aDocNode(s, side, redraw, lib)`, intertitre « Documents · <section> ». Lecture seule si `ch03dLecture(E)` ou profil sans droit « documents : dépôt ».
   DeltaSub seul sans serveur (`ch10cLocal()` et pas `window.SG3_FICHIERS`) : chapitre en lecture seule avec message (pas de dépôt).
   Fiche projet ▸ Documents : titres de groupe lisibles (`sgDossierLib` : « Contrôle des coûts › <document> › Adjudications »…).
+- **Chapitres PROVISOIRES « Honoraires (ancien) » et « Facturation (ancien) » (13.10.2026)** — domaines `ancien` et `ancienf` de
+  `SG_DOM` (`prov:1` → étiquette « prov. » dans le menu), bloc 18 de `sg3_plus.js` : les deux modules de l'ancien logiciel tels que le
+  moteur les reproduit, pour les comparer avec le chapitre Facturation. Honoraires : `anc-offres|contrats|avancement` (`sgAncProjet(domaine)` :
+  liste des projets | `domainView`), `anc-mg-contrats`. Facturation : `anc-factures`, `anc-controle` (fact-controle), `anc-heures`
+  (aff-controlling : heures et frais facturés, transfert en facture), `anc-mg-factures`, `anc-reglages` (`admPane` : tarifs, gabarits,
+  comptes QR). Vues du moteur reprises par `Object.create` ; bandeau jaune en tête (`sgAncBandeau` : équivalent actuel, « Noter une
+  remarque » → page du bon chapitre). « Comparer et noter » par chapitre (`sgAncComparer('h'|'f')` → `anc-comparer`, `ancf-comparer`) :
+  thèmes `SG_ANC_THEMES` (6 honoraires, 10 facturation ; constat relevé dans le code le 13.10.2026), notes dans la collection `sganalyse`
+  {ID = thème | `synthese` | `synthese-fact`, TEXTE, MODIFIE, PAR} (base partagée du NAS ; « Copier toutes les notes »).
+  Droits : finances + contrats + factures ; protégés par le code d'accès comme Facturation / Finances (`SG_ACC_DEF`, `ancVu`).
+  Ne jamais écrire « Deltaproject » dans ces textes (la version servie le remplacerait) : « ancien logiciel ». Pour les retirer :
+  supprimer les domaines `ancien` et `ancienf` de `SG_DOM` et le bloc 18 (les notes restent dans la base).
+- **Clic droit dans les tableaux (13.10.2026)** — bloc 19 de `sg3_plus.js` : menu contextuel (`sgMenuAt`, `sgMenuPanneau`, sous-menus,
+  classe `menu sg-cmenu`, mêmes filtres de droits `ch08bGuardItems` et libellés `sgLib` que `popMenu`). Grille du moteur : la ligne est
+  sélectionnée, puis Ouvrir (double-clic), fiche (`sgLigneRef`), boutons de la barre du panneau (`sgCtxBarre` : `.ph2` le plus proche,
+  sinon `#tools` ; `ibtn` garde sa définition dans `el._sgB` → bouton à liste = sous-menu), copie de la ligne / des lignes / du tableau
+  (TSV) ; zone vide d'une liste : actions de sa barre. Écrans de la coquille : lignes `data-ref` (`sgCtxRef` : fiche, modifier, saisir du
+  temps) et `tr` / `.nx-row` (leurs boutons). Cadre Facturation (`sgCtxCadre`, branché par `fxEnsure`) : boutons et états de la ligne
+  (libellé = infobulle, `sgCtxLib`), destructifs en rouge à la fin. Priorité aux menus propres d'un écran (`event.defaultPrevented`) ;
+  menu du navigateur : ⌥ + clic droit, champs de saisie, texte sélectionné.
+- **Appels d'offres (18.10.2026, moteur)** : « Nouveau document » ouvre directement le formulaire (plus de fenêtre de choix du
+  standard : `svNew` → `svEditDoc`) ; formulaire sans « Numéro de l'ordre », « Standard » ni « Catalogue » (ISIFA2018 /
+  NORMPOSITIONCATALOGCODE toujours enregistrés d'office par `svNewHeader`) ; numéro d'ordre retiré aussi de la liste (et avec lui les
+  vues Adjudication / Commande / Standard de la roue), de la recherche, du titre (sans lot CFC : n° d'affaire + version), de
+  l'import des conditions générales et du transfert vers le contrôle des coûts. `ORDERNUMBER` reste dans les données (non affiché).
+  **Articles libres et bibliothèque d'articles (18.10.2026, moteur, bloc « Bibliothèque d'articles » après `svdPosBrowser`)** : « + » ▸
+  « Nouveau chapitre… » (`svdChapterDlg(ctx,null,{libre:true})`, règles `svdChapterRuleLibre` : 3 chiffres sans 9, pas de x00) et
+  « Nouvel article… » (`svdResPos(ctx,{libre:true})` : numéros sans 9 en 2e/3e position, saisie directe 112 / 112.110 / 112.110.01,
+  colonne « Bibliothèque », unité et texte repris de la bibliothèque, mot-clé = 1re ligne, « Editer l'article » ouvert si l'article est
+  vide) ; les chapitres et articles de réserve restent. « Editer l'article » : case « Enregistrer dans la bibliothèque d'articles »
+  (cochée hors réserve) → `svbSaveSafe` : collection `svbiblio` (`SVB_T`), un enregistrement par chapitre {ID = numéro, texte1/2,
+  version, articles [{m, u, unite, motCle, motCleAuto, texte, variables, modifie, par}]} — ni quantité, ni prix, ni document ; titres
+  parents ajoutés s'ils manquent ; conflit 409 → second essai. Import : Importer ▸ « Bibliothèque d'articles… » (`svbImportDlg`, cases
+  par chapitre / article, `svbInsert` : chapitre, titres, QP auto, un seul enregistrement) ; catalogue « Perso » = bibliothèque par
+  défaut (`P.doc` null / 'biblio', « Retirer de la bibliothèque… » `svbRemove`). Serveur : `svbiblio` dans `PROTECTED` (ré-import) ;
+  écriture si « chantier : écriture » ou « bibliothèque : écriture » (`sg_refus_ecriture`). Aucun texte d'origine livré avec l'app.
+- **Affaires · Mes projets · page du projet (18.10.2026, bloc 20 de `sg3_plus.js`)** — Chapitre « Affaires » sous Accueil (`SG_DOM`
+  `affaires`, icône `briefcase`) : le module Affaires de l'ancien logiciel tel quel (Gestion, Controlling, Mes affaires, Toutes les
+  affaires), écrans du moteur repris par `Object.create` sous `affd-*` (droits : `SG_VUE_DROIT` recopiés, regex du moteur `CH08B_AFF`
+  et `CH08B_VIEWS` élargies à `affd?-`). Projets ▸ Mes projets = `nx-mesprojets` : liste seule (« ses projets » = `sgMesProjets`, en
+  cours / tous, recherche, étiquette Expertise / Faisabilité, mes heures 30 j) ; un clic → `nx-pdom` (arg `ID` ou `ID|Domaine`) : page
+  du projet (intro, actions, heures) et domaines d'affaire en groupes REPLIABLES (tout replié à l'arrivée ; clic sur le titre du groupe =
+  ses tuiles avec compteurs ; au retour d'un domaine, arg `ID|#n`, son groupe reste ouvert ; `SG_PDOM_G`, `SG_PDOM_GI`, `SG_PDOM`, `sgPdomCompte`,
+  domaines permis `sgPdomListe` = `ch08bDomains` + domaines utilisés + profil) ; une tuile = le domaine en pleine page (`domainView`)
+  avec la barre des domaines ; « Documents » → fiche projet, onglet Documents. Vue d'ensemble Projets (`sgFigs('projets')`) : total,
+  architecture, expertises, faisabilités (avec le nombre en cours), puis les états — catégorie `sgCatProjet` d'après le TITRE (la base
+  n'a pas de genre expertise / faisabilité), projets internes (`sgInterne`) hors catégories.
+  **Accès (18.10.2026)** : « Mes projets » = projets ATTRIBUÉS (`sgProjetsAssignes` : la personne de l'utilisateur est dans l'équipe
+  du projet, sans les projets où il a seulement saisi des heures) ; collaborateur (profil collab, droit « ses projets ») : page du
+  projet, fiche projet et ⌘K limités aux projets attribués (`sgProjetPermis`, message `SG_NON_ATTRIBUE`) ; chapitre Affaires réservé à
+  l'administrateur et au chef de projet (`SG_VUE_DROIT['affd-*']`). Le serveur du NAS (ouverture de session active) filtre toujours
+  sur « équipe + heures » (`sg_contexte`). Vue d'ensemble Projets REFAITE (`VIEWS['dom-projets']`) : total en grand, tuiles par
+  catégorie (`SG_CATS` : architecture, expertises, faisabilités, internes ; jauge « en cours »), tâches ouvertes, modules (sans
+  « Tous les projets » ; les données par état ont été retirées à la demande, `SG_ETATS` sert aux filtres de la liste) ; chaque élément ouvre `nx-listeprojets`
+  (arg `tous`, `cat:…`, `etat:…` ; filtres, recherche ; projets visibles = `sgProjetsVisibles`).
+  Collaborateur (18.10.2026) : Projets = Mes projets + Tâches seulement (Registre et Suivi & écarts masqués même si ses droits le
+  permettent : `SG_VUE_DROIT['aff-gestion'|'aff-controlling']`) ; sa vue d'ensemble = ses projets attribués (« mes projets ») et SES
+  tâches (« tâches à faire »). Vue d'ensemble : modules sans le groupe « Tâches » (il reste au menu) ; ligne des tâches avec un carré
+  de couleur devant chaque nombre (`.sg-patch`) : vert = ouvertes (ni réglées ni annulées, projets visibles en cours ; collaborateur :
+  les siennes, `sgTachesCompte`), rouge = urgentes (contour seul s'il n'y en a pas) ; chaque partie ouvre sa liste (`taches-encours`,
+  `taches-urgent`).
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
 - **Déploiement NAS = règle (10.10.2026)** : toute modification de SUBGestion 3 est déposée sur le NAS dans la foulée

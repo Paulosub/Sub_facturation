@@ -119,10 +119,19 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   texte), `sgCommCond(sid, date)`, `sgCommTaux`, `sgTravauxTTC(contrats)`, `sgApportCalc(a, D, taux)` (sur `sgRenta`),
   `sgApportsParStaff`, `sgApportSerie` + `sgCourbeCHF` (évolution), `nx-apports`, `sgApportDlg`, `sgVersementDlg` ;
   `sgATraiter` enveloppé (« Commissions d'apport à verser ») ; collection `sgapport` dans `SG_T_SALAIRES` du serveur.
-- Contrôle des coûts (moteur) : éditeur `ccEditor` (sections `CC_SECS`, `draw()` par chapitre, état `CCV`), chapitre DOCUMENTS =
+- Contrôle des coûts (moteur) : éditeur `ccEditor` (sections `CC_SECS`, `draw()` par chapitre, état `CCV` ; `CCV.docs` = volet « Documents »
+  d'une section, ouvert depuis le menu léger sous DOCUMENTS : `ch01aDocNode(s, side, redraw, CC_SEC_LIB[s])`, 13.10.2026), chapitre DOCUMENTS =
   `ccDocsDraw(pane,E,G)` + `CC_DOC_SOUS` (dépôt CH-03 : `ch03aDossier/ch03dCocoDossier`, `ch03aFichiers`, `ch03aDeposer`, `ch03aOuvrir`,
   `ch03aTelecharger`, `ch03cSupprimerDlg`, `ch03cSuivre`, lecture seule `ch03dLecture`) ; `G` = grille du menu Fonctions, tri/sélection
   dans `CCV.docsSt` / `CCV.docsSel` ; sans dépôt possible (`ch10cLocal()` sans `window.SG3_FICHIERS`) : lecture seule.
+- Navigation SG3 (18.10.2026) : chapitre Affaires (`affd-*` = copies `Object.create` des écrans du moteur), Projets ▸ Mes projets =
+  `nx-mesprojets` (liste) → `nx-pdom` (domaines en tuiles, puis domaine en pleine page via `domainView`) ; `sgCatProjet` (titre) pour
+  les chiffres de la vue d'ensemble Projets (`VIEWS['dom-projets']` du bloc 20 : tuiles `SG_CATS`, ligne des tâches à carrés de couleur
+  `.sg-pv-tch .k` / `.sg-patch` — vert ouvertes, rouge urgentes —, modules sans le groupe « Tâches »).
+- Appels d'offres (moteur, lot 3a `svd*`) : chapitres / articles libres (`svdChapterRuleLibre`, `svdResPos(ctx,{libre:true})`) et
+  bibliothèque d'articles `svbiblio` (`SVB_T`, `svbUnit` = pseudo-unité, `svbMerge` / `svbSave` / `svbSaveSafe`, `svbFill`, `svbRemove`,
+  `svbImportDlg` / `svbInsert`) ; catalogue « Perso » sur la bibliothèque par défaut. Menu « + » : Nouveau chapitre, Nouvel article,
+  puis la réserve. Pas de numéro d'ordre ni de choix du standard (18.10.2026).
 - Visionneuse SG3 `sgVisionneuse(blob, nom, {interne})` : liste blanche (PDF, images `<img>`, texte en cadre `sandbox`) ; HTML seulement
   `interne` (documents de l'app, `sgDocOuvrir`) en cadre `sandbox="allow-same-origin allow-modals"`. Ne jamais afficher un fichier
   déposé dans un cadre de même origine sans `sandbox` (il lirait la base et la session). `sgDossierLib(dossier)` = titre lisible.
@@ -131,6 +140,12 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   `isEvalSupported:false` + worker partagé + `pdf.destroy()` après chaque aperçu), `nas/nettoyer.py` (`RETRAITS`, `RENOMMAGES`, `controle_traces`, `HOTES_ADMIS`), serveur `ip_client` / `acces_ok` /
   `relais_https`. Vérifier la page NETTOYÉE (et pas seulement la source) : sonde file:// + aperçu + balayage sur
   `/tmp/subgestion_apercu/SUBGestion3_nas.html`.
+- Bloc 18 (13.10.2026, provisoire) : chapitres « Honoraires (ancien) » (`ancien`) et « Facturation (ancien) » (`ancienf`) — `SG_ANC`,
+  `SG_ANC_CH`, `SG_ANC_THEMES` (champ `ch` : h / f), `SG_ANC_EQ`, `sgAncBandeau`, `sgAncChDe(vue)`, `sgAncProjet(domaine)` (liste des projets +
+  `domainView`), vues `anc-*` (alias des vues du moteur par `Object.create`), `sgAncComparer(ch)` → `anc-comparer` / `ancf-comparer`
+  (notes `sganalyse`). Bloc 19 : clic droit — `sgMenuAt(x, y, items, ligne)`, `sgMenuPanneau(items)` (items `{t, fn, dis, chk, danger,
+  sub}`), `sgCtxMenuDe(cible)`, `sgCtxBarre`, `sgCtxBoutons`, `sgCtxActionsLigne`, `sgCtxRef`, `sgCtxCopie`, `sgCtxCadre(w)` ; `ibtn`
+  enveloppé (`el._sgB` = définition du bouton) ; `closeMenus` enveloppé (retire le contour de la ligne).
 - Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `frSeulOps()` → {ops, n} et `frSeul(ops)` (lots de 400) :
   nettoyage de la base (libellés, modèles, documents types, gabarits, catalogues ; `FR_CAT_DE` / `FR_CAT_NOM` pour eBKP-T) ;
   `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;

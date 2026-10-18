@@ -6,7 +6,7 @@
    Facturation.html embarqué, compressé dans #fx-src), piloté par goTab ; données inchangées (localStorage sa_*, IndexedDB). */
 'use strict';
 const NXI={
-  home:'<path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2Z"/>',
+  home:'<path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2Z"/>',briefcase:'<rect x="3" y="7" width="18" height="13"/><path d="M9 7V4.5h6V7M3 12.5h18M11 12.5v2h2v-2"/>',
   folder:'<path d="M3 6.5V19a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8.5a1 1 0 0 0-1-1h-8l-2-3H4a1 1 0 0 0-1 1Z"/>',
   crane:'<path d="M2 21h20M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6M9 11h6"/>',
   contacts:'<rect x="4" y="3" width="16" height="18"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17.5c.7-2 2.4-3 4.5-3s3.8 1 4.5 3"/>',
@@ -68,27 +68,13 @@ ibtn=function(b){ const el=sgIbtn0(b);
 /* ── Domaines et modules (ordre de la barre principale) ── */
 const SG_DOM=[
   {k:'accueil',t:'Accueil',ico:'home',items:[{v:'nx-home',t:'Aujourd’hui'}]},
-  {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
-    {v:'aff-mes',t:'Mes projets',ico:'person',hero:1,d:'Vos projets et tous leurs domaines : intervenants, documents, séances, notes, tâches, contrats…'},
-    {v:'aff-toutes',t:'Tous les projets',ico:'folder',d:'Tous les projets du bureau, avec les mêmes domaines.'},
-    {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
-    {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs.'},
-    {v:'taches-urgent',t:'Tâches urgentes',ico:'urgent',d:'Les tâches à traiter en priorité.'},
-    {v:'taches-encours',t:'Tâches en cours',ico:'task',d:'Les tâches en traitement.'},
-    {v:'taches-regle',t:'Tâches réglées',ico:'check',d:'Les tâches terminées.'}]},
-  {k:'chantier',t:'Chantier',ico:'crane',d:'Du coût estimé au décompte final : estimations, devis, appels d’offres, contrôle des coûts et PV.',items:[
-    {v:'coplan',t:'Estimations',ico:'ruler',d:'Estimations du coût selon eCCC-Bât.'},
-    {v:'devis',t:'Descriptifs & devis',ico:'doc',hero:1,d:'Devis descriptifs par CFC : positions, quantités et prix.'},
-    {v:'soum',t:'Appels d’offres',ico:'mail',d:'Soumissions aux entreprises, offres et comparatifs.'},
-    {v:'coco',t:'Contrôle des coûts',ico:'coins',d:'Budget, adjudications, avenants, factures et coût final prévisible.'},
-    {v:'fx-pv-chantier',t:'PV de chantier',ico:'pv',d:'Procès-verbaux des séances de chantier : annotation, envoi, PDF.'}]},
-  {k:'contacts',t:'Contacts',ico:'contacts',d:'Entreprises, mandataires, maîtres d’ouvrage et personnes : coordonnées, catégories et listes.',items:[
-    {v:'adr-entites',t:'Annuaire',ico:'contacts',hero:1,d:'Sociétés, personnes, familles… et leurs adresses.'},
-    {v:'adr-liste',t:'Toutes les adresses',ico:'list',d:'Toutes les adresses, triables et filtrables.'},
-    {v:'adr-favoris',t:'Favoris',ico:'star',d:'Vos adresses favorites.'},
-    {v:'adr-groupes',t:'Listes de diffusion',ico:'group',d:'Groupes d’adresses pour les envois et les étiquettes.'},
-    {v:'adr-chercher',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…).'},
-    {v:'adr-props',t:'Catégories',ico:'tag',d:'Propriétés et catégories attribuées aux adresses.'}]},
+  /* Affaires (18.10.2026) : le module Affaires de l'ancien logiciel tel quel (liste | domaines d'affaire | contenu) ; écrans du moteur
+     repris sous affd-* (sg3_plus.js, bloc 20) pour que le menu reste distinct de Projets */
+  {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion, controlling, mes affaires et toutes les affaires — liste des affaires, domaines d’affaire et contenu.',items:[
+    {v:'affd-gestion',t:'Gestion',ico:'list',d:'Créer, modifier et configurer les affaires : phases, activités, tarifs.'},
+    {v:'affd-controlling',t:'Controlling',ico:'trend',d:'Contrôle des heures et des frais, critères d’affaires.'},
+    {v:'affd-mes',t:'Mes affaires',ico:'person',hero:1,d:'Vos affaires en cours : la liste, les domaines d’affaire et leur contenu, comme dans l’ancien logiciel.'},
+    {v:'affd-toutes',t:'Toutes les affaires',ico:'folder',d:'Toutes les affaires du bureau, avec les mêmes domaines.'}]},
   {k:'temps',t:'Temps',ico:'clock',d:'Saisie et suivi du temps de travail et des dépenses.',items:[
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
     {v:'h-rapport',t:'Rapports de temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
@@ -96,6 +82,27 @@ const SG_DOM=[
     {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
     {v:'frais',t:'Notes de frais',ico:'receipt',d:'Notes de frais par membre et par projet.'},
     {v:'frais-rapport',t:'Rapport des notes de frais',ico:'analyse',d:'Rapport des notes de frais.'}]},
+  {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
+    {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
+    {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
+    {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs.'},
+    /* grp : sous-menu dépliable « Tâches » (18.10.2026) ; st = libellé court dans le sous-menu */
+    {v:'taches-urgent',t:'Tâches urgentes',st:'Urgentes',grp:'Tâches',ico:'urgent',d:'Les tâches à traiter en priorité.'},
+    {v:'taches-encours',t:'Tâches en cours',st:'En cours',grp:'Tâches',ico:'task',d:'Les tâches en traitement.'},
+    {v:'taches-regle',t:'Tâches réglées',st:'Réglées',grp:'Tâches',ico:'check',d:'Les tâches terminées.'}]},
+  {k:'contacts',t:'Contacts',ico:'contacts',d:'Entreprises, mandataires, maîtres d’ouvrage et personnes : coordonnées, catégories et listes.',items:[
+    {v:'adr-entites',t:'Annuaire',ico:'contacts',hero:1,d:'Sociétés, personnes, familles… et leurs adresses.'},
+    {v:'adr-liste',t:'Toutes les adresses',ico:'list',d:'Toutes les adresses, triables et filtrables.'},
+    {v:'adr-favoris',t:'Favoris',ico:'star',d:'Vos adresses favorites.'},
+    {v:'adr-groupes',t:'Listes de diffusion',ico:'group',d:'Groupes d’adresses pour les envois et les étiquettes.'},
+    {v:'adr-chercher',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…).'},
+    {v:'adr-props',t:'Catégories',ico:'tag',d:'Propriétés et catégories attribuées aux adresses.'}]},
+  {k:'chantier',t:'Chantier',ico:'crane',d:'Du coût estimé au décompte final : estimations, devis, appels d’offres, contrôle des coûts et PV.',items:[
+    {v:'coplan',t:'Estimations',ico:'ruler',d:'Estimations du coût selon eCCC-Bât.'},
+    {v:'devis',t:'Descriptifs & devis',ico:'doc',hero:1,d:'Devis descriptifs par CFC : positions, quantités et prix.'},
+    {v:'soum',t:'Appels d’offres',ico:'mail',d:'Soumissions aux entreprises, offres et comparatifs.'},
+    {v:'coco',t:'Contrôle des coûts',ico:'coins',d:'Budget, adjudications, avenants, factures et coût final prévisible.'},
+    {v:'fx-pv-chantier',t:'PV de chantier',ico:'pv',d:'Procès-verbaux des séances de chantier : annotation, envoi, PDF.'}]},
   {k:'equipe',t:'Équipe',ico:'users',d:'Les membres du bureau et le temps de l’équipe.',items:[
     {v:'collab-actuels',t:'Membres',ico:'users',hero:1,d:'L’équipe actuelle du bureau.'},
     {v:'collab-tous',t:'Tous les membres',ico:'group',d:'Membres actuels et anciens.'},
@@ -128,6 +135,22 @@ const SG_DOM=[
     {v:'mg-mo',t:'Clients',ico:'building',d:'Suivi par maître d’ouvrage.'},
     {v:'mg-reporting',t:'Indicateurs',ico:'analyse',d:'Chiffres-clés, heures supplémentaires, comparaisons.'},
     {v:'mg-genres',t:'Types de projets',ico:'tag',d:'Genres de projets et leur paramétrage.'}]},
+  /* Chapitres PROVISOIRES (13.10.2026) : les deux modules de l'ancien logiciel du bureau tels que le moteur les reproduit — offres
+     d'honoraires et contrats (« Honoraires (ancien) »), facturation (« Facturation (ancien) ») —, pour les comparer avec le chapitre
+     Facturation et décider des améliorations — bloc 18 de sg3_plus.js. Pour les retirer : supprimer ces deux domaines et le bloc 18. */
+  {k:'ancien',t:'Honoraires (ancien)',ico:'calc',prov:1,d:'Chapitre provisoire : les offres d’honoraires, les contrats et l’avancement des prestations de l’ancien logiciel du bureau, tels qu’il les présentait, pour les comparer avec le chapitre Facturation et noter les améliorations à apporter.',items:[
+    {v:'anc-comparer',t:'Comparer et noter',ico:'analyse',hero:1,d:'Chaque fonction des honoraires de l’ancien logiciel face à son équivalent actuel, les écarts relevés et vos notes d’analyse (partagées avec le bureau).'},
+    {v:'anc-offres',t:'Offres d’honoraires',ico:'calc',d:'Calcul des honoraires par projet : en-têtes et variantes, coût de l’ouvrage ou temps effectif, conditions, frais, document d’offre.'},
+    {v:'anc-contrats',t:'Contrats honoraires',ico:'contrat',d:'Contrats d’honoraires du projet, sous-traitants, encaissements planifiés et reçus.'},
+    {v:'anc-avancement',t:'Avancement des prestations',ico:'gauge',d:'État d’avancement des prestations du projet, à une date donnée.'},
+    {v:'anc-mg-contrats',t:'Management · contrats',ico:'trend',d:'Contrats, sous-traitants, échéancier d’encaissements, encaissements planifiés et reçus, situation, avancement.'}]},
+  {k:'ancienf',t:'Facturation (ancien)',ico:'coins',prov:1,d:'Chapitre provisoire : les factures, leur contrôle, les heures et frais à facturer et les rapports de l’ancien logiciel du bureau, tels qu’il les présentait, pour les comparer avec le chapitre Facturation et noter les améliorations à apporter.',items:[
+    {v:'ancf-comparer',t:'Comparer et noter',ico:'analyse',hero:1,d:'Chaque fonction de la facturation de l’ancien logiciel face à son équivalent actuel, les écarts relevés et vos notes d’analyse (partagées avec le bureau).'},
+    {v:'anc-factures',t:'Factures',ico:'receipt',d:'Factures du projet par contrat : positions, TVA, factures antérieures, statuts, encaissements, QR-facture.'},
+    {v:'anc-controle',t:'Contrôle de factures',ico:'check',d:'Toutes les factures : planifiées, envoyées, rappel envoyé, payées ; transfert des heures et frais en facturation.'},
+    {v:'anc-heures',t:'Heures et frais à facturer',ico:'clock',d:'Controlling du projet : heures et frais facturables, marqués « facturés » et transférés dans une facture.'},
+    {v:'anc-mg-factures',t:'Management · factures',ico:'analyse',d:'Vue d’ensemble de l’année, factures selon statut et selon les dates, honoraires et frais.'},
+    {v:'anc-reglages',t:'Réglages de facturation',ico:'settings',d:'Tarifs de facturation, gabarits de positions, comptes pour QR-facture.'}]},
   {k:'biblio',t:'Bibliothèque',ico:'library',d:'Modèles de documents, de projets, d’adresses et ressources graphiques.',items:[
     {v:'tpl-documents',t:'Documents types',ico:'doc',hero:1,d:'Modèles de lettres, factures et documents.'},
     {v:'tpl-projectTemplates',t:'Projets types',ico:'folder',d:'Modèles pour créer des projets.'},
@@ -160,8 +183,8 @@ const SG_DOM=[
 ];
 const SG_D={}, NX_VIEW={};
 SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'Vue d’ensemble'}; d.items.forEach(it=>{ if(!NX_VIEW[it.v]) NX_VIEW[it.v]={d,t:it.t,it}; }); });
-NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
-const NX_KW={'aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
+NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-pdom']={d:SG_D.projets,t:'Projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
+const NX_KW={'nx-mesprojets':'mes projets liste affaires','affd-mes':'mes affaires ancien','affd-toutes':'affaires ancien','affd-gestion':'affaires gestion ancien','affd-controlling':'controlling affaires','aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
   'adr-entites':'adresses entités','h-saisie':'heures','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
   'mg-factures':'encaissements qr','mg-mo':'maître d’ouvrage','mg-reporting':'reporting','tpl-documents':'modèles','nx-data':'export import base','config':'administrateur paramètres',
   'fx-contrats':'contrats honoraires sia offre','fx-calchono':'nouveau contrat honoraires sia','fx-factures':'factures acomptes','fx-saisie':'nouvelle facture acompte','fx-backup':'export import facturation'};
@@ -197,18 +220,35 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
     if(d.k==='accueil'){ s+='<div class="nx-g'+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='nx-home'?' on':'')+'" data-go="nx-home" title="Accueil">'+nxSvg(d.ico)+'<span class="lb">Accueil</span></div></div>'; return; }
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
     if(!its.length) return;   // domaine sans module permis pour ce profil
-    s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
-      +'<div class="nx-it vo'+(c.id==='dom-'+d.k?' on':'')+'" data-go="dom-'+d.k+'">Vue d’ensemble</div>'
-      +its.map(it=>'<div class="nx-it'+(c.id===it.v?' on':'')+(it.reg?' reg':'')+'" data-go="'+it.v+'" title="'+nxE(it.t)+'">'+nxE(it.reg?it.t.replace(/\s*·\s*Facturation$/,''):it.t)+(it.reg?'<i>F</i>':'')+'</div>').join('')
+    s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='dom-'+d.k?' on':'')+'" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+(d.prov?'<i class="sg-prov" title="Chapitre provisoire">prov.</i>':'')+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
+      +sgSideItems(d,its,c)
       +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')+'</div></div>'; });
   const pins=nxLS.get('nx_pins3',[]).map(nxRef).filter(Boolean);
   if(pins.length) s+='<div class="nx-pins"><div class="nx-sep">Favoris</div>'+pins.map(r=>'<div class="nx-pin" data-ref="'+r.k+':'+r.id+'" title="'+nxE(r.t)+'">'+(r.tag?'<i>'+nxE(r.tag)+'</i>':nxSvg(r.ico))+'<span>'+nxE(r.t)+'</span></div>').join('')+'</div>';
   nav.innerHTML=s; const on=nav.querySelector('.nx-it.on'); if(on) on.scrollIntoView({block:'nearest'}); }
-function sgSideClick(e){ const g=e.target.closest('[data-go]'), tg=e.target.closest('[data-tg]'), pin=e.target.closest('[data-ref]');
+/* modules d'un domaine dans le menu ; les modules d'un même groupe (it.grp) forment un sous-menu dépliable (18.10.2026) */
+/* tâches de l'utilisateur (comme les listes du moteur : projets en cours, en traitement ; urgentes = marquées urgentes) */
+function sgTachesCompte(){ const me=ME.staff; if(!me||typeof ptModuleRows!=='function') return {u:0,p:0}; return {u:ptModuleRows('urgent',me.ID).length,p:ptModuleRows('pending',me.ID).length}; }
+/* pastille (18.10.2026) : rouge = tâches urgentes, verte = tâches en cours */
+const sgPastille=(n,cl,t)=>n?'<i class="sg-pt '+cl+'" title="'+nxE(t)+'">'+n+'</i>':'';
+function sgSideItems(d,its,c){ const sub=nxLS.get('nx_sub3',{}), tk=its.some(x=>x.grp==='Tâches')?sgTachesCompte():{u:0,p:0};
+  const pt=it=>it.v==='taches-urgent'?sgPastille(tk.u,'r',tk.u+' tâche(s) urgente(s)'):it.v==='taches-encours'?sgPastille(tk.p,'v',tk.p+' tâche(s) en cours'):'';
+  const one=(it,lb)=>'<div class="nx-it'+(c.id===it.v?' on':'')+(it.reg?' reg':'')+'" data-go="'+it.v+'" title="'+nxE(it.t)+'">'+nxE(lb)+pt(it)+(it.reg?'<i>F</i>':'')+'</div>';
+  let s=''; for(let i=0;i<its.length;i++){ const it=its[i];
+    if(!it.grp){ s+=one(it,it.reg?it.t.replace(/\s*·\s*Facturation$/,''):it.t); continue; }
+    const g=it.grp, L=[]; while(i<its.length&&its[i].grp===g) L.push(its[i++]); i--;
+    const k=d.k+':'+g, cur=L.some(x=>x.v===c.id), op=sub[k]!=null?sub[k]:cur;
+    const pg=g==='Tâches'?(tk.u?sgPastille(tk.u,'r',tk.u+' tâche(s) urgente(s)'):sgPastille(tk.p,'v',tk.p+' tâche(s) en cours')):'';
+    s+='<div class="nx-sg'+(op?' open':'')+(cur?' cur':'')+'"><div class="nx-it nx-sgt" data-sg="'+nxE(k)+'"><span>'+nxE(g)+pg+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-sgi">'+L.map(x=>one(x,x.st||x.t)).join('')+'</div></div>'; }
+  return s; }
+function sgSideClick(e){ const g=e.target.closest('[data-go]'), tg=e.target.closest('[data-tg]'), pin=e.target.closest('[data-ref]'), sg=e.target.closest('[data-sg]');
   if(g){ go(g.dataset.go); return; }
+  if(sg){ const el=sg.parentNode, o=nxLS.get('nx_sub3',{}); el.classList.toggle('open'); o[sg.dataset.sg]=el.classList.contains('open'); nxLS.set('nx_sub3',o); return; }
   if(pin){ nxOpenRef(pin.dataset.ref); return; }
   if(tg){ const k=tg.dataset.tg; if(document.getElementById('app').classList.contains('nx-mini')){ go('dom-'+k); return; }
-    const el=tg.parentNode, o=nxLS.get('nx_open3',{}); el.classList.toggle('open'); o[k]=el.classList.contains('open'); nxLS.set('nx_open3',o); } }
+    const el=tg.parentNode, o=nxLS.get('nx_open3',{});
+    if(e.target.closest('.ch')){ el.classList.toggle('open'); o[k]=el.classList.contains('open'); nxLS.set('nx_open3',o); return; }   // flèche : déplier / replier seulement
+    el.classList.add('open'); o[k]=true; nxLS.set('nx_open3',o); go('dom-'+k); } }                       // nom du chapitre : sa vue d'ensemble (18.10.2026 : plus d'entrée « Vue d'ensemble »)
 function nxMini(on){ const a=document.getElementById('app'); a.classList.toggle('nx-mini',on==null?!a.classList.contains('nx-mini'):on); nxLS.set('nx_mini3',a.classList.contains('nx-mini')); }
 function sgNav(){ const c=sgCur(), d=c.d||SG_D.accueil; sgSide();
   let title=c.m?c.m.t:'', crumbs=d.t;
@@ -379,13 +419,13 @@ VIEWS['nx-home']={
     const right='<div class="nx-kpis">'
       +nxKpi('timer','Mon temps cette semaine',nxH(wk)+'<small>/ '+nxH(tWeek)+' h</small>',me?Math.round(wk/tWeek*100)+' % de l’objectif':'',tWeek?wk/tWeek*100:0,'h-saisie',1)
       +nxKpi('cal','Mon temps ce mois',nxH(mth)+'<small>/ '+nxH(tMonth)+' h</small>',MOISL[mo]+' '+y,tMonth?mth/tMonth*100:0,'h-rapport')
-      +nxKpi('folder',titreP,String(enCours.length),'en cours',null,'aff-mes')
+      +nxKpi('folder',titreP,String(enCours.length),'en cours',null,'nx-mesprojets')
       +(equipe?nxKpi('users',adm?'Temps de l’équipe ce mois':'Temps sur mes projets ce mois',nxH(teamH)+'<small>h</small>',(teamH?Math.round(teamC/teamH*100):0)+' % facturable',teamH?teamC/teamH*100:0,'mg-heures')
               :nxKpi('task','Mes tâches à exécuter',String(taches.length),taches.filter(t=>t.DEADLINE&&t.DEADLINE<today()).length+' en retard',null,'taches-encours'))
       +'</div><div class="nx-grid">'
       +nxCard('c7',titreP,myP.length?'<div class="b flush">'+myP.slice(0,8).map(x=>'<div class="nx-row" data-ref="p:'+x.p.ID+'"><span class="nx-tag num">'+nxE(x.p.NUMBER)+'</span><div class="t"><b>'+nxE(x.p.TITLE)+'</b><span>'+(x.d?'Ma dernière saisie '+nxRel(x.d):'Pas encore de saisie')+'</span></div>'
-        +nxMiniBar(x.h30,maxP)+'<span class="m">'+nxH(x.h30)+' h</span></div>').join('')+(myP.length>8?'<div class="nx-row" data-go="aff-mes"><div class="t"><span>… et '+(myP.length-8)+' autre(s)</span></div></div>':'')+'</div>'
-        :'<div class="nx-empty">Aucun projet en cours dans votre équipe.</div>','<span class="n">mes heures, 30 jours</span><span class="a" data-go="aff-mes">Mes projets</span>')
+        +nxMiniBar(x.h30,maxP)+'<span class="m">'+nxH(x.h30)+' h</span></div>').join('')+(myP.length>8?'<div class="nx-row" data-go="nx-mesprojets"><div class="t"><span>… et '+(myP.length-8)+' autre(s)</span></div></div>':'')+'</div>'
+        :'<div class="nx-empty">Aucun projet en cours dans votre équipe.</div>','<span class="n">mes heures, 30 jours</span><span class="a" data-go="nx-mesprojets">Mes projets</span>')
       +nxCard('c5','Mes tâches à exécuter',taches.length?'<div class="b flush">'+taches.slice(0,8).map(tache).join('')+'</div>':'<div class="nx-empty">Aucune tâche qui vous est attribuée.</div>','<span class="a" data-go="taches-encours">Tâches</span>')
       +(argent&&D_('factures','lecture')?nxCard('c5','Factures à suivre','<div class="b flush" id="sg-home-fx"><div class="nx-empty">Chargement de la facturation…</div></div>','<span class="a" data-go="fx-factures">Factures</span>'):'')
       +nxCard('c7',equipe?(adm?'Temps de l’équipe — 12 semaines':'Temps sur mes projets — 12 semaines'):'Mon temps — 12 semaines','<div class="b">'+nxBars(weeks,{la:'facturable',lb:'non facturable'})+nxLegend()+'</div>','<span class="a" data-go="h-rapport">Rapports</span>')
@@ -403,8 +443,14 @@ VIEWS['nx-home']={
 };
 
 /* ═══ Vues d'ensemble des domaines ═══ */
+/* catégorie d'un projet d'après son titre (18.10.2026 : la base n'a pas de genre « expertise » ni « faisabilité ») */
+const sgCatProjet=p=>{ const t=String((p&&p.TITLE)||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); return /\bexpert/.test(t)?'expertise':/faisabilit/.test(t)?'faisabilite':'architecture'; };
+const SG_CAT_L={architecture:'Projet',expertise:'Expertise',faisabilite:'Faisabilité'};   // « architecture » affiché « Projets » (18.10.2026)
 async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
-  if(k==='projets'){ const ps=DS.all('project'), c=s=>ps.filter(p=>+p.PROJECTSTATECODE===s).length; return [f(c(2),'en cours'),f(c(3),'en attente'),f(c(4),'terminés'),f(DS.all('projecttask').filter(t=>!t.DONEDATE).length,'tâches ouvertes')]; }
+  if(k==='projets'){ const ps=DS.all('project'), c=s=>ps.filter(p=>+p.PROJECTSTATECODE===s).length, ext=ps.filter(p=>!(typeof sgInterne==='function'&&sgInterne(p)));
+    const cat=(k2,t)=>{ const L=ext.filter(p=>sgCatProjet(p)===k2); return f(L.length,t+' · '+L.filter(p=>+p.PROJECTSTATECODE===2).length+' en cours'); };   // 18.10.2026 : catégories séparées
+    return [f(ps.length,'projets au total'),cat('architecture','projets'),cat('expertise','expertises'),cat('faisabilite','faisabilités'),
+      f(c(2),'en cours'),f(c(3),'en attente'),f(c(4),'terminés'),(n=>f(n,n>1?'tâches ouvertes':'tâche ouverte'))(DS.all('projecttask').filter(t=>!t.DONEDATE).length)]; }
   if(k==='chantier'){ await DS.need(['costplanning','costestimate','costcontrol']); return [f(n('costplanning'),'estimations'),f(n('costestimate'),'devis'),f(n('devisdocument'),'appels d’offres'),f(n('costcontrol'),'contrôles des coûts')]; }
   if(k==='contacts') return [f(DS.all('contactowner').filter(o=>!+o.ISHIDDEN).length,'entités'),f(n('contact'),'adresses'),f(n('contactgroup'),'listes'),f(n('property'),'catégories')];
   if(k==='temps'){ const me=nxMe(), now=new Date(), mon=mondayOf(now), k0=dayKey(mon), mine=me?DS.by('timelog','STAFF_ID',me.ID):[];
@@ -467,7 +513,7 @@ VIEWS['nx-projet']={
     const pg=nxPage(m,html);
     Object.assign(pg._fn,{edit:()=>editProject(p),mem:()=>cfgMembers(p),ph:()=>cfgPhases(p),pin:b=>{ const on=nxTogglePin('p',p.ID); b.classList.toggle('on',on); },
       more:b=>popMenu(b,[{t:'Activités',fn:()=>cfgActivities(p)},{t:'Tarifs de facturation',fn:()=>cfgRates(p)},{t:'Subdivisions',fn:()=>cfgSubprojects(p)},'-',
-        {t:'Mes projets',fn:()=>go('aff-mes')},{t:'Suivi & écarts',fn:()=>go('aff-controlling')},{t:'Contrôle des coûts',fn:()=>go('coco')},{t:'Contrats des projets',fn:()=>go('mg-contrats')}])});
+        {t:'Mes projets',fn:()=>go('nx-mesprojets')},{t:'Suivi & écarts',fn:()=>go('aff-controlling')},{t:'Contrôle des coûts',fn:()=>go('coco')},{t:'Contrats des projets',fn:()=>go('mg-contrats')}])});
     /* contrats et factures de l'app Facturation : code d'affaire = numéro du projet */
     fxEnsure().then(()=>{ const box=document.getElementById('sg-p-fx'); if(!box) return; const D=fxData(); if(!D) return;
       const key=nxNorm(p.NUMBER), cs=D.c.filter(c=>nxNorm(c.affaire)===key||nxNorm(c.affaire).startsWith(key)), ids=new Set(cs.map(c=>c.id)), fs=D.f.filter(f=>ids.has(f.contrat_id)).sort((a,b)=>cmp(b.date,a.date));
@@ -562,7 +608,7 @@ function nxPalIndex(){ const it=[];
    ['Nouvelle dépense','coins',()=>go('frais')],['Exporter la base de gestion','export',()=>lbExport()],['Importer une base de gestion','import',()=>lbImportDlg(false)],['Réduire / déployer le menu','side',()=>nxMini()],['Raccourcis clavier','cmd',nxKeysHelp]]
     .forEach(([t,ico,run])=>it.push({g:'Commandes',t,ico,run,q:t}));
   nxMenuCmds().forEach(m=>m.items.forEach(x=>it.push({g:'Commandes',t:x.t,s:m.t,ico:'cmd',run:x.fn,q:x.t+' '+m.t})));
-  DS.all('project').forEach(p=>it.push({g:'Projets',t:p.TITLE||p.NUMBER,s:p.NUMBER,tag:projState(p),ico:'folder',run:()=>go('nx-projet',p.ID),q:(p.NUMBER||'')+' '+(p.TITLE||'')+' '+(p.LOCATION||''),w:+p.PROJECTSTATECODE===2?2:+p.PROJECTSTATECODE===5?0:1}));
+  DS.all('project').filter(p=>typeof sgProjetPermis!=='function'||sgProjetPermis(p.ID)).forEach(p=>it.push({g:'Projets',t:p.TITLE||p.NUMBER,s:p.NUMBER,tag:projState(p),ico:'folder',run:()=>go('nx-projet',p.ID),q:(p.NUMBER||'')+' '+(p.TITLE||'')+' '+(p.LOCATION||''),w:+p.PROJECTSTATECODE===2?2:+p.PROJECTSTATECODE===5?0:1}));
   DS.all('staff').forEach(s=>it.push({g:'Équipe',t:staffName(s),s:s.INITIALS,ico:'users',run:()=>go('nx-collab',s.ID),q:staffName(s)+' '+(s.INITIALS||''),w:+s.ISACTIVE?2:0}));
   const loc={}; DS.all('contact').forEach(c=>{ if(!loc[c.CONTACTOWNER_ID]) loc[c.CONTACTOWNER_ID]=[c.LOCATION,c.EMAIL1].filter(Boolean).join(' '); });
   DS.all('contactowner').filter(o=>!+o.ISHIDDEN).forEach(o=>{ const n=ownerName(o); it.push({g:'Contacts',t:n,s:(loc[o.ID]||'').split(' ')[0],ico:o.TYPECODE===1?'person':'building',run:()=>go('nx-contact',o.ID),q:n+' '+(loc[o.ID]||''),w:1}); });

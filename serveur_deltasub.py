@@ -57,6 +57,8 @@ SKIP_TABLES = {"APPLICENCE", "APPACTIVATEDLICENCE", "DATALICENCE", "DATAACTIVATE
 SKIP_COLUMNS = {"APPUSER": {"PASSWORD", "LOGINLOCALUSER", "LOGINLOCALHOST", "LOGINTIMESTAMP"}}
 # Collections saisies dans DeltaSub (honoraires, facturation, tâches, avancement) : un ré-import Deltaproject
 # (--force) ne les efface PAS ; il n'ajoute que les enregistrements Deltaproject absents de DeltaSub.
+# Collections ABSENTES de l'extraction (propres à DeltaSub / SUBGestion : commissions d'apport, contrats de travail, coût de revient,
+# bouclement, profils d'accès, notes, sg_meta…) : jamais touchées par la reprise, compteurs next_id compris (collections_extraction, 18.10.2026).
 PROTECTED = {"projectfee", "projectfeecalculation", "projectfeecalculationamount", "projectfeetimeitem",
              "projectfeecostitem", "projectfeeadditionalitem", "projectcontract", "projectscheduledpayment",
              "projectpayment", "projectinvoice", "projectinvoicepos", "qrbill", "qrbillaccount",
@@ -85,6 +87,7 @@ PROTECTED_IF_EDITED |= {"statisticalvalue", "constructionpart", "constructioncom
 # rafraîchis depuis Deltaproject. Les mots de passe de Deltaproject ne sont jamais repris (SKIP_COLUMNS inchangé).
 CH08_PIT = {"appuser", "appuser_staff", "appuser_appcompanyrole", "appcompanyrole", "appcompanyrole_approle", "approle", "setting"}
 PROTECTED |= {"appusersignature"}   # CH-08 : signatures PNG des comptes (collection propre à DeltaSub, lot 3)
+PROTECTED |= {"svbiblio"}   # bibliothèque d'articles des appels d'offres (18.10.2026), écrite dans SUBGestion : jamais vidée au ré-import
 CH08_CLE = {"appuser": "USERID", "setting": "SETTINGNAME"}   # même ID des deux côtés, mais autre compte / autre réglage
 MANUEL_FR = os.environ.get("DELTASUB_MANUEL") or "/Applications/DELTAproject.app/Contents/app/rsrc/help/manual_fr.pdf"   # Aide ▸ Aide
 
@@ -142,6 +145,7 @@ CH08_CLE.update({"contactowner": "CREATED", "contact": "CONTACTOWNER_ID", "banka
 PROTECTED_IF_EDITED |= {"modele", "modelegroupe", "formtemplate", "formtemplategroup"}   # CH-10 lot 2 : anciens modèles modifiés ou importés dans DeltaSub
 PROTECTED_IF_EDITED |= {"costestimatedpdoc"}   # CH-02 lot 3 : documents .dpdoc des devis
 PROTECTED_IF_EDITED |= {"cocodoc"}   # CH-01 : documents du contrôle des coûts créés ou modifiés dans DeltaSub (conservés au ré-import)
+PROTECTED_IF_EDITED |= {"image", "arriereplan"}   # modeles.json : images (logos) ajoutées et arrière-plans dupliqués ou modifiés dans l'app, conservés au ré-import (18.10.2026)
 REF_CLE = {"statisticalvalue": "EBKPELEMENT_ID", "constructionpart": "EBKPELEMENT_ID",
            "constructioncomponent": "CONSTRUCTIONPART_ID", "ebkpelement": "CODE"}
 
@@ -999,25 +1003,42 @@ def conv(v, ty):
     return v
 
 
+def collections_extraction(folder, schema):
+    """Collections qu'alimente une extraction Deltaproject (18.10.2026) : tables de schema.txt en minuscules (vides et SKIP_TABLES
+    comprises), tables des CSV et collections des documents convertis (documents/*.json, lus ici une première fois : un fichier
+    illisible arrête la reprise AVANT toute écriture). La reprise ne remplace que ces collections ; les autres sont propres à
+    DeltaSub / SUBGestion (sgapport, sgcontrattravail, sgcoutrevient, sgbouclement, sgacces, sganalyse, sg_meta…) et restent telles
+    quelles, comme PROTECTED : enregistrements et compteurs next_id."""
+    out = {t.lower() for t in schema}
+    out |= {os.path.basename(p)[4:-4].lower() for p in glob.glob(os.path.join(folder, "tables", "APP.*.csv"))}
+    for path in glob.glob(os.path.join(folder, "documents", "*.json")):
+        if path.endswith(".rapport.json"):
+            continue
+        with open(path, encoding="utf-8") as f:
+            out |= {k for k, v in json.load(f).items() if re.fullmatch(r"[a-z0-9_]+", k) and isinstance(v, dict)}
+    return out
+
+
 def import_deltaproject(c, folder, force=False):
     schema = parse_schema(os.path.join(folder, "schema.txt"))
     have = c.execute("SELECT COUNT(*) FROM rec").fetchone()[0]
     if have and not force:
         sys.exit("La base DeltaSub contient déjà des données — ajoutez --force pour les REMPLACER par cette extraction.")
+    alim = sorted(collections_extraction(folder, schema))   # seules collections remplacées ; les autres (propres à l'app) sont gardées
     with _wlock:   # anciennes lignes → « supprimées » (et non effacées) : les postes ouverts le voient via /api/changes
         seq = cur_seq(c) + 1
         prot = sorted(PROTECTED)
         # eCCC lot 0 : kept2 calculé AVANT l'UPDATE, qui remplace « who » par IMPORT_WHO (spec_12 § 2.12.3)
         pie = sorted(PROTECTED_IF_EDITED | CH08_PIT)   # CH-08 : utilisateurs, droits, réglages touchés dans DeltaSub
         kept2 = _batiment_edites(c)
-        c.execute("UPDATE rec SET val=NULL, seq=?, who='import Deltaproject' WHERE val IS NOT NULL AND t NOT IN (%s)"
-                  " AND NOT (t IN (%s) AND COALESCE(who,'')<>?)" % (",".join("?" * len(prot)), ",".join("?" * len(pie))),
-                  (seq, *prot, *pie, IMPORT_WHO))
+        c.execute("UPDATE rec SET val=NULL, seq=?, who='import Deltaproject' WHERE val IS NOT NULL AND t IN (%s) AND t NOT IN (%s)"
+                  " AND NOT (t IN (%s) AND COALESCE(who,'')<>?)" % (",".join("?" * len(alim)), ",".join("?" * len(prot)), ",".join("?" * len(pie))),
+                  (seq, *alim, *prot, *pie, IMPORT_WHO))
         c.execute("UPDATE meta SET value=? WHERE name='seq'", (str(seq),))
-        c.execute("DELETE FROM meta WHERE name LIKE 'next_id:%%' AND name NOT IN (%s)" % ",".join("?" * len(prot)),
-                  tuple("next_id:" + t for t in prot)); c.commit()
-    kept = {(t, i) for t, i in c.execute("SELECT t, id FROM rec WHERE val IS NOT NULL AND t IN (%s)"
-                                         % ",".join("?" * len(PROTECTED)), tuple(sorted(PROTECTED)))}
+        raz = [t for t in alim if t not in PROTECTED]   # compteurs recalculés par new_ids ; ceux des collections propres à l'app restent
+        c.execute("DELETE FROM meta WHERE name IN (%s)" % ",".join("?" * len(raz)), tuple("next_id:" + t for t in raz)); c.commit()
+    kept = {(t, i) for t, i in c.execute("SELECT t, id FROM rec WHERE val IS NOT NULL AND (t IN (%s) OR t NOT IN (%s))"
+                                         % (",".join("?" * len(prot)), ",".join("?" * len(alim))), (*prot, *alim))}
     kept |= set(kept2)   # eCCC lot 0 : documents Bâtiment modifiés dans DeltaSub, ni l'en-tête CSV ni le contenu converti ne les remplacent
     kept |= _ch08_touched(c)   # CH-08 : vivants ou supprimés, dernier auteur ≠ import
     conflits = []        # eCCC lot 0 : (t, id, affaire DeltaSub, affaire Deltaproject) — même identifiant, autre document
@@ -1063,13 +1084,18 @@ def import_deltaproject(c, folder, force=False):
             ops = [{"t": coll, "id": str(k), "val": v} for k, v in items.items() if (coll, str(k)) not in kept]
             commit(c, ops, "import Deltaproject", check=False)
             total += len(ops); ntab += 1
+    propres = c.execute("SELECT t, COUNT(*) FROM rec WHERE val IS NOT NULL AND t NOT IN (%s) GROUP BY t ORDER BY t"
+                        % ",".join("?" * len(alim)), alim).fetchall()   # collections propres à l'app, gardées (18.10.2026)
     with _wlock:
         c.execute("INSERT INTO meta VALUES('import_deltaproject',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
                   (js({"dossier": folder, "le": datetime.datetime.now().isoformat(timespec="seconds"), "tables": ntab, "lignes": total,
                        "conserves": len(kept2), "conservesListe": sorted("%s %s" % x for x in kept2),
-                       "conflits": ["%s %s" % x[:2] for x in conflits]}),))
+                       "conflits": ["%s %s" % x[:2] for x in conflits], "propres": dict(propres)}),))
         c.commit()
     print("Reprise Deltaproject : %d tables, %d enregistrements." % (ntab, total))
+    if propres:
+        print("Collections propres à DeltaSub / SUBGestion (absentes de l'extraction), gardées telles quelles : %s"
+              % ", ".join("%s %d" % x for x in propres))
     if kept2:   # eCCC lot 0
         print("Documents Bâtiment modifiés ou créés dans DeltaSub, conservés tels quels (%d en-têtes ou contenus) : %s%s"
               % (len(kept2), ", ".join("%s %s" % x for x in sorted(kept2)[:20]), "…" if len(kept2) > 20 else ""))
@@ -2214,6 +2240,10 @@ def sg_refus_ecriture(ctx, c, ops):
             if sg_niv(ctx, "equipe", "taux") and sg_niv(ctx, "reglages", "oui"):
                 continue
             return "Données du personnel (contrats, salaires, commissions) : réservées à l'administrateur."
+        if t == "svbiblio":   # bibliothèque d'articles des appels d'offres (18.10.2026) : alimentée en écrivant les soumissions
+            if sg_niv(ctx, "chantier", "ecriture") or sg_niv(ctx, "bibliotheque", "ecriture"):
+                continue
+            return "Bibliothèque d'articles des appels d'offres : lecture seule pour votre profil."
         p0 = SG_IDX.projet(c, t, i)
         p1 = SG_IDX.projet_de(c, t, i, v) if v is not None else None
         ps = {p for p in (p0, p1) if p}

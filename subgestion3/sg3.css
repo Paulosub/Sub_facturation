@@ -401,3 +401,139 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* Finances ▸ Apports de projets : collaborateur choisi (08.10.2026) */
 .nx-tbl tr.sel td{background:var(--s-jaune2)}
 .nx-tbl.sg-apports tr[data-fn]:hover td{background:var(--s-jaune3)}
+
+/* ═══ Menu contextuel du clic droit (13.10.2026, bloc 19 de sg3_plus.js) ═══ */
+.menu.sg-cmenu{max-height:calc(100vh - 16px);overflow-y:auto;max-width:420px}
+.menu.sg-cmenu div{overflow:hidden;text-overflow:ellipsis}
+.menu.sg-cmenu div.sub{padding-right:34px}
+.menu.sg-cmenu div.sub::after{content:"";position:absolute;right:13px;top:50%;width:6px;height:6px;margin-top:-4px;border-right:1.5px solid currentColor;border-top:1.5px solid currentColor;transform:rotate(45deg)}
+.menu.sg-cmenu div.open{background:var(--s-jaune2);color:var(--s-nuit)}
+.menu.sg-cmenu div.danger{color:var(--s-rouge)}
+.menu.sg-cmenu div.danger:hover{background:#f7e3e8;color:var(--s-rouge)}
+.menu.sg-cmenu div.dis{color:var(--s-gris3)}
+
+/* ═══ Chapitre provisoire « Honoraires (ancien) » (13.10.2026, bloc 18 de sg3_plus.js) ═══ */
+.nx-gt .sg-prov{font-style:normal;font-weight:700;font-size:8.5px;letter-spacing:.02em;background:var(--s-jaune);color:var(--s-noir);padding:0 2px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.sg-anc-bar{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:8px 20px;background:var(--s-jaune2);border-bottom:2px solid var(--s-noir);font-size:12.5px;color:var(--s-noir)}
+.sg-anc-bar b{font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px}
+.sg-anc-bar a{color:var(--s-nuit);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.sg-anc-bar a.r{margin-left:auto}
+.nx-tbl.sg-anc-t td{vertical-align:top}
+.nx-tbl.sg-anc-t td:nth-child(1){width:150px}
+.nx-tbl.sg-anc-t td:nth-child(2),.nx-tbl.sg-anc-t td:nth-child(3){width:150px}
+.nx-tbl.sg-anc-t td .nx-btn{display:flex;width:100%;height:auto;min-height:30px;margin:0 0 5px;padding:5px 8px;font-size:12px;justify-content:flex-start;text-align:left;white-space:normal;line-height:1.25}
+.nx-tbl.sg-anc-t td.c{font-weight:300;line-height:1.5;min-width:240px}
+.nx-tbl.sg-anc-t td:last-child{width:28%;min-width:220px}
+.nx-tbl.sg-anc-t textarea,.sg-anc-t+textarea,.nx-card textarea[data-note]{width:100%;box-sizing:border-box;resize:vertical;font:inherit;font-size:12.5px;line-height:1.45;min-height:64px}
+.sg-anc-m{font-size:11px;color:var(--s-gris);margin-top:3px;min-height:14px}
+.sg-anc-no{color:var(--s-gris);font-style:italic}
+
+/* ═══ Menus latéraux des écrans du moteur (contrôle des coûts, devis, réglages…) : survol et ligne choisie (13.10.2026 —
+   la feuille de style d'origine du moteur, remplacée par celle-ci, les dessinait ; aux couleurs de la charte) ═══ */
+#main .item,.dlg .item{padding:6px 12px;cursor:pointer;font-size:13px;line-height:1.35}
+#main .item:hover,.dlg .item:hover{background:var(--s-jaune3)}
+#main .item.on,.dlg .item.on{background:var(--s-jaune2);color:var(--s-nuit);box-shadow:inset 3px 0 0 var(--s-nuit)}
+/* 18.10.2026 : Projets ▸ Mes projets (liste) et page des domaines du projet (sg3_plus.js, bloc 20) */
+.sg-mesp-bar{display:flex;align-items:center;gap:12px;margin:0 0 16px;flex-wrap:wrap}
+.sg-mesp-bar .inp{width:280px}
+.sg-mesp-bar .n{color:var(--s-gris);font-size:12.5px}
+.nx-tbl.sg-mesp tr[data-go]{cursor:pointer}
+.nx-tbl.sg-mesp tr[data-go]:hover td{background:var(--s-jaune3)}
+.sg-tile .nb{margin-top:12px;min-height:30px;display:flex;align-items:baseline;gap:7px}
+.sg-tile .nb .v{font-size:30px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums}
+.sg-tile .nb small{font-size:12.5px;color:var(--s-gris)}
+.nx-tbl.sg-mesp td:nth-child(3){min-width:150px}.nx-tbl.sg-mesp th:last-child{white-space:nowrap}
+.sg-pdom-tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+.sg-pdom-bar{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:2px solid var(--s-noir);background:#fff;flex:0 0 auto;min-width:0}
+.sg-pdom-bar>b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32%;flex:0 1 auto}
+.sg-pdom-chips{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;padding-bottom:2px}
+.sg-pdom-chips button{flex:0 0 auto;border:1px solid var(--s-filet);background:#fff;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.sg-pdom-chips button:hover{background:var(--s-jaune3)}
+.sg-pdom-chips button.on{background:var(--s-nuit);color:#fff;border-color:var(--s-nuit)}
+/* 18.10.2026 : page du projet — groupes de domaines repliables (tout replié à l'arrivée) */
+.sg-pgrps{display:flex;flex-direction:column;gap:12px}
+.sg-pgrp{border-top:2px solid var(--s-noir)}
+.sg-pgrp-h{display:flex;align-items:center;gap:14px;width:100%;padding:14px 6px;background:none;border:0;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.sg-pgrp-h:hover{background:var(--s-jaune3)}
+.sg-pgrp-h>svg:first-child{width:22px;height:22px;color:var(--s-nuit);flex:0 0 22px}
+.sg-pgrp-h .t{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.sg-pgrp-h .t b{font-size:18px;font-weight:700;line-height:1.2}
+.sg-pgrp-h .t small{font-size:12.5px;color:var(--s-gris);font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-pgrp-h .c{font-size:12px;color:var(--s-gris);white-space:nowrap}
+.sg-pgrp-h .chev{width:18px;height:18px;flex:0 0 18px;transition:transform .15s}
+.sg-pgrp.on .sg-pgrp-h .chev{transform:rotate(90deg)}
+.sg-pgrp>.sg-tiles{display:none;padding:8px 0 20px}
+.sg-pgrp.on>.sg-tiles{display:grid}
+/* 18.10.2026 : vue d'ensemble Projets (chiffres, catégories, états) */
+.sg-pv-h{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap;border-top:2px solid var(--s-noir);padding-top:12px;margin:0 0 30px}
+.sg-pv-h h2{margin:2px 0 0;font-size:32px;font-weight:700;line-height:1.08}
+.sg-pv-h p{margin:8px 0 0;color:var(--s-gris);font-weight:300;font-size:14px;max-width:560px;line-height:1.5}
+.sg-pv-hero{display:flex;align-items:flex-end;gap:12px;cursor:pointer;padding:4px 6px}
+.sg-pv-hero:hover{background:var(--s-jaune3)}
+.sg-pv-hero b{font-size:72px;font-weight:300;line-height:.85;font-variant-numeric:tabular-nums}
+.sg-pv-hero span{font-size:13px;color:var(--s-gris);line-height:1.4}
+.sg-pv-hero em{font-style:normal;color:var(--s-noir);font-weight:700}
+.sg-pv-t{font-size:12px;font-weight:700;margin:0 0 10px}
+.sg-pv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 24px;margin:0 0 32px}
+.sg-pv-k{border-top:2px solid var(--s-noir);padding:12px 6px 14px;cursor:pointer}
+.sg-pv-k:hover{background:var(--s-jaune3)}
+.sg-pv-k .l{font-size:12.5px;font-weight:700;display:flex;gap:8px;align-items:center}
+.sg-pv-k .l svg{width:18px;height:18px;color:var(--s-nuit)}
+.sg-pv-k .v{font-size:48px;font-weight:300;line-height:1;margin:12px 0 4px;font-variant-numeric:tabular-nums}
+.sg-pv-k .s{font-size:12px;color:var(--s-gris);margin-top:7px}
+.sg-pv-k .s b{color:var(--s-noir)}
+.sg-pv-etat{border-top:2px solid var(--s-noir);padding-top:12px;margin:0 0 30px}
+.sg-pv-bar{display:flex;gap:2px;height:24px;margin:2px 0 12px;background:#fff}
+.sg-pv-bar i{display:block;min-width:6px;cursor:pointer}
+.sg-pv-bar i:hover{opacity:.82}
+.sg-pv-leg{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:12.5px}
+.sg-pv-leg span{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.sg-pv-leg span:hover{text-decoration:underline}
+.sg-pv-leg i{width:12px;height:12px;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sg-pv-leg b{font-variant-numeric:tabular-nums}
+.sg-pv-tch{display:flex;align-items:center;gap:9px;border-top:2px solid var(--s-noir);padding:12px 6px;margin:0 0 30px;cursor:pointer;font-size:13px}
+.sg-pv-tch:hover{background:var(--s-jaune3)}
+.sg-pv-tch svg{width:18px;height:18px;color:var(--s-nuit)}.sg-pv-tch b{font-size:20px;font-weight:300}.sg-pv-tch .go{margin-left:auto;width:16px;height:16px}
+/* tâches : carré de couleur devant le nombre (18.10.2026) — vert = ouvertes, rouge = urgentes, contour seul quand il n'y en a pas */
+.sg-pv-tch .k{display:inline-flex;align-items:center;gap:8px;margin-right:30px}
+.sg-pv-tch .k:hover{text-decoration:underline}
+.sg-pv-tch .k.zero{color:var(--s-gris)}
+.sg-patch{display:inline-block;width:12px;height:12px;flex:none;margin-right:2px}
+.sg-patch.v{background:#98C21F}
+.sg-patch.r{background:#BD1E42}
+.k.zero .sg-patch.r{background:none;box-shadow:inset 0 0 0 2px #BD1E42}
+.sg-mesp-bar .seg{flex-wrap:wrap}
+.sg-pv-etats{display:flex;flex-wrap:wrap;gap:0 34px}
+.sg-pv-etats span{display:flex;align-items:baseline;gap:8px;cursor:pointer;padding:4px 6px;font-size:12.5px;color:var(--s-gris)}
+.sg-pv-etats span:hover{background:var(--s-jaune3)}
+.sg-pv-etats b{font-size:26px;font-weight:300;color:var(--s-noir);font-variant-numeric:tabular-nums;line-height:1}
+/* 18.10.2026 : sous-menu dépliable dans le menu (Projets ▸ Tâches) et tuile de groupe dans la vue d'ensemble */
+.nx-sgt{justify-content:space-between}
+.nx-sgt .ch{width:12px;height:12px;flex:0 0 12px;opacity:.5;transition:transform .15s}
+.nx-sg.open>.nx-sgt .ch{transform:rotate(90deg)}
+.nx-sg.cur>.nx-sgt{color:#fff}
+.nx-sgi{display:none}
+.nx-sg.open>.nx-sgi{display:block}
+.nx-sgi .nx-it{padding-left:54px}
+.nx-sgi .nx-it.on::before{left:38px}
+.sg-tile-grp{cursor:default}
+.sg-tile-grp:hover{background:none}
+.sg-tl{display:flex;flex-direction:column;margin-top:10px}
+.sg-tl button{display:flex;align-items:center;gap:9px;background:none;border:0;border-top:1px solid var(--s-filet);padding:8px 4px;font:inherit;font-size:13px;text-align:left;cursor:pointer;color:inherit}
+.sg-tl button:hover{background:var(--s-jaune3)}
+.sg-tl button svg{width:16px;height:16px;color:var(--s-nuit);flex:0 0 16px}
+.sg-tl button .go{margin-left:auto;width:14px;height:14px}
+/* 18.10.2026 : pastilles des tâches (rouge = urgentes, verte = en cours) */
+.sg-pt{font-style:normal;font-size:10px;font-weight:700;line-height:16px;min-width:16px;padding:0 4px;margin-left:7px;display:inline-block;text-align:center;border-radius:8px;vertical-align:1px}
+.sg-pt.r{background:#BD1E42;color:#fff}
+.sg-pt.v{background:#98C21F;color:#1d1d1b}
+.nx-sgt>span{display:flex;align-items:center}
+/* 18.10.2026 : tuile « Tâches » de la vue d'ensemble = menu déroulant (replié au départ) */
+.sg-tgh{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.sg-tgh .ti{display:flex;align-items:center;gap:9px}
+.sg-tgh .chev{width:16px;height:16px;flex:0 0 16px;transition:transform .15s}
+.sg-tile-grp.on .sg-tgh .chev{transform:rotate(90deg)}
+.sg-tile-grp .sg-tl{display:none}
+.sg-tile-grp.on .sg-tl{display:flex}
+.sg-tile-grp.on>p{display:none}
+.sg-tile-grp .sg-tgh:hover h3{text-decoration:underline}

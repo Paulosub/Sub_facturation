@@ -401,7 +401,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   catégorie (`SG_CATS` : architecture, expertises, faisabilités, autres — projets internes, « Internes » renommé « Autres » le 19.10.2026 ; jauge « en cours »), tâches ouvertes, modules (sans
   « Tous les projets » ; les données par état ont été retirées à la demande, `SG_ETATS` sert aux filtres de la liste) ; chaque élément ouvre `nx-listeprojets`
   (arg `tous`, `cat:…`, `etat:…` ; filtres, recherche ; projets visibles = `sgProjetsVisibles`).
-  **Page du projet (19.10.2026)** : bouton « Modifier le projet » retiré (le tableau de bord du projet reste ouvert à tous, restriction
+  **Page du projet (19.10.2026)** : marge bénéficiaire retirée des données à la demande (elle reste au tableau de bord) ; bouton « Modifier le projet » retiré (le tableau de bord du projet reste ouvert à tous, restriction
   aux administrateurs et chefs de projet essayée puis annulée à la demande le même jour).
   **Tableau de bord du projet (19.10.2026)** : « Saisir du temps » (en-tête et onglet Temps) et « Feuille d'heures » retirés ; onglet Temps :
   colonne « Collaborateur » ; onglet « Phases & budget » renommé « Phases contrat » (colonnes Heures contrat = TIMEBUDGET, Heures saisies,

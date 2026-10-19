@@ -2218,13 +2218,11 @@ VIEWS['nx-pdom']={
         +'<button class="nx-btn" data-go="nx-mesprojets">'+nxSvg('back')+'Mes projets</button></div>'   /* « Modifier le projet » retiré de la page du projet (19.10.2026) */
         +'<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxH(tot)+'</div><div class="t">heures au total</div></div><div class="sg-fig"><div class="n">'+nxH(h30)+'</div><div class="t">heures, 30 derniers jours</div></div>'
           +((pa0=>'<div class="sg-fig" title="D’après les heures saisies dans la feuille d’heures"><div class="n">'+(pa0&&pa0.ph.NUMBER!=null?nxE(pa0.ph.NUMBER):'—')+'</div><div class="t">'+(pa0?'phase actuelle : '+nxE(nm(pa0.ph))+(pa0.sp?' — '+nxE(nm(pa0.sp)):'')+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'phase actuelle : aucune heure saisie par phase')+'</div></div>')(sgPhaseActuelle(p)))
-          +(sgMargeVisible()?'<div class="sg-fig" id="sg-pdom-marge"><div class="n">…</div><div class="t">marge bénéficiaire</div></div>':'')+'</div>')
+          +'</div>')   /* marge bénéficiaire retirée de la page du projet (19.10.2026, à la demande ; elle reste au tableau de bord) */
       +'<div class="sg-pgrps">'+(G.length?G.map(([g,L],i)=>'<section class="sg-pgrp'+(i===ouvert?' on':'')+'"><button class="sg-pgrp-h" data-fn="grp" aria-expanded="'+(i===ouvert)+'">'
           +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span><span class="c">'+L.length+' domaine'+(L.length>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button>'
           +'<div class="sg-tiles">'+L.map(tuile).join('')+'</div></section>').join(''):'<div class="nx-empty">Aucun domaine accessible avec votre profil.</div>')+'</div></div>';
     const pg=nxPage(m,html);
-    if(sgMargeVisible()) fxEnsure().catch(()=>null).then(()=>{ const e=pg.querySelector('#sg-pdom-marge'); if(!e) return; const x=sgRenta(p,fxData());   /* marge bénéficiaire (19.10.2026) */
-      e.innerHTML='<div class="n">'+nxCHF(x.marge)+'</div><div class="t">marge bénéficiaire (CHF) · '+nxE(sgMargePct(x))+'</div>'; e.title='Honoraires facturés HT '+nxCHF(x.factHT)+' − coût de revient '+nxCHF(x.cout)+' CHF'; });
     Object.assign(pg._fn,{grp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); },dom:b=>{ const d=b.dataset.dom; if(d==='Documents'){ nxLS.set('sg3_fiche_onglet','docs'); go('nx-projet',p.ID); return; } go('nx-pdom',p.ID+'|'+d); },
       fiche:()=>go('nx-projet',p.ID),temps:()=>sgSaisieRapide({projet:p.ID})});
     DS.need(SG_PDOM_T).catch(()=>{}).then(()=>{ if(!pg.isConnected) return; pg.querySelectorAll('[data-nb]').forEach(e=>{ const t=sgPdomCompte(p,e.dataset.nb)||'', x=/^(\d[\d']*)\s*(.*)$/.exec(t);

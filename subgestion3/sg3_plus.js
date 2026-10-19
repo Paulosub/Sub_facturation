@@ -389,7 +389,19 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
         +'<span><i class="ln g"></i>Gain par heure</span><span><i class="ln r"></i>Perte par heure</span>'+'</div>':'';   /* « Coût de revient moyen des collaborateurs du projet » retiré de la légende (19.10.2026) : infobulle de la comparaison */
       /* note sous le tableau retirée (19.10.2026) : seul l'avertissement « aucun contrat relié » reste ; légende tout en bas de la page */
       const note=fin&&!(C&&C.n)?'<div class="sg-ctr-note">Aucun contrat d’honoraires relié à ce projet dans Facturation : marge et honoraires / h calculés sans honoraires.</div>':'';
-      set(nxCard('c12','Phases contrat','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+leg+'</div>','<span class="a" data-fn="ph">Configurer</span>')); };
+      /* chiffres clés sous le titre (19.10.2026), des heures vers l'argent : écart des heures, phases hors budget (même règle que l'en-tête :
+         phase avec heures au contrat et plus d'heures saisies), marge bénéficiaire, coût de revient moyen, gain (ou perte) par heure */
+      const phL=L.filter(o=>!o.sub&&!o.gris), phB=phL.filter(o=>o.hp>0), hors=phB.filter(o=>o.hs>o.hp), dep=hors.reduce((a,o)=>a+(o.hs-o.hp),0);
+      const ecH=tot.hs-tot.hp, mT=marge(tot), tT=tx(tot), aC=!!(C&&C.n), gph=aC&&tT.o!=null&&tT.c!=null?tT.o-tT.c:null;
+      const kpi=(l,v,s2,cl,ti)=>'<div class="sg-phk"'+(ti?' title="'+nxE(ti)+'"':'')+'><div class="l">'+nxE(l)+'</div><div class="v'+(cl?' '+cl:'')+'">'+v+'</div>'+(s2?'<div class="s">'+s2+'</div>':'')+'</div>';
+      const kp='<div class="sg-phks">'
+        +kpi('Écart des heures',tot.hp?(ecH>0?'+':'')+nxH(ecH)+'<small>h</small>':'—',tot.hp?nxH(tot.hs)+' h saisies sur '+nxH(tot.hp)+' h au contrat ('+Math.round(tot.hs/tot.hp*100)+' %)':'aucune heure prévue au contrat',tot.hp&&ecH>0?'neg':'')
+        +kpi('Phases hors budget',hors.length+'<small>sur '+phB.length+'</small>',hors.length?'+'+nxH(dep)+' h au-delà : '+nxE(hors.map(o=>o.lib.replace(/^[^·]*· /,'')).join(', ')):'aucune phase au-delà des heures prévues',hors.length?'neg':(phB.length?'pos':''))
+        +(fin?kpi('Marge bénéficiaire',aC&&mT!=null?(mT>0?'+':'')+nxCHF(mT)+'<small>CHF</small>':'—',aC?(tot.ctr?Math.round(mT/tot.ctr*100)+' % du contrat HT ('+nxCHF(tot.ctr)+' CHF)':'')+(pa?' · provisoire, phase en cours':''):'aucun contrat d’honoraires relié',aC&&mT!=null?(mT<0?'neg':'pos'):'','Contrat HT − coût de revient')
+          +kpi('Coût de revient moyen',moy?num(moy,0)+'<small>CHF/h</small>':'—',tot.hs?'par heure saisie ('+nxH(tot.hs)+' h, '+nxCHF(tot.cout)+' CHF)':'','','Coût de revient ÷ heures saisies, collaborateurs du projet')
+          +kpi(gph!=null&&gph<0?'Perte par heure':'Gain par heure',gph==null?'—':(gph>=0?'+':'')+num(Math.round(tT.o)-Math.round(tT.c),0)+'<small>CHF/h</small>',gph==null?'':'honoraires '+num(tT.o,0)+' CHF/h − coût de revient '+num(tT.c,0)+' CHF/h',gph==null?'':gph<0?'neg':'pos','Honoraires / h − coût de revient / h')
+          :'')+'</div>';
+      set(nxCard('c12','Phases contrat',kp+'<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+leg+'</div>')); };   /* lien « Configurer » de l'en-tête retiré (19.10.2026) */
     if(!fin){ dessiner(null); return; }
     set('<div class="nx-empty">Calcul des marges…</div>');
     fxEnsure().catch(()=>null).then(()=>{ if(box.isConnected) dessiner(sgContratParPhase(p)); }); return; }

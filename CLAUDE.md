@@ -420,6 +420,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Légende (`.sg-db-leg`) tout en bas de la page, sous le tableau, sans le « coût de revient moyen » (retiré le 19.10.2026 : il reste dans
   l'infobulle de chaque comparaison, « trait gris ») ; note « Contrat : … CHF HT … réparti selon les % … Montants hors taxe … »
   retirée à la demande (19.10.2026) — seul l'avertissement « Aucun contrat d'honoraires relié » reste (`.sg-ctr-note`, sans contrat).
+  **Chiffres clés sous le titre « Phases contrat » (19.10.2026, `.sg-phks` / `.sg-phk`)**, des heures vers l'argent : Écart des heures (saisies −
+  contrat, % consommé), Phases hors budget (même règle que l'en-tête `sgRenta` : phases avec heures au contrat dépassées ; « n sur m »,
+  heures au-delà et noms), puis pour l'administrateur et le chef de projet : Marge bénéficiaire (% du contrat HT, « provisoire » si une
+  phase est en cours), Coût de revient moyen (CHF/h), Gain / Perte par heure (honoraires / h − coût de revient / h, valeurs arrondies) ;
+  collaborateur : les deux chiffres d'heures. Lien « Configurer » de l'en-tête de la carte retiré à la demande (le lien de la carte vide reste).
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
   projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne

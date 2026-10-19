@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 19.10.2026 23:31 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 19.10.2026 23:34 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -234,6 +234,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--s-nuit)}
 .sg-intro .foot{margin-top:26px;padding-top:7px;border-top:2px solid var(--s-noir);font-size:11px;font-weight:700}
 .sg-figs{display:grid;grid-template-columns:1fr 1fr;gap:18px 14px;margin-top:22px}
 .sg-fig .n{font-size:30px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums}
+.sg-fig .n.txt,.nx-kpi .v.txt{font-size:24px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* phase actuelle en toutes lettres (19.10.2026) */
 .sg-fig .t{font-size:11.5px;color:var(--s-gris);margin-top:4px}
 .nx-btn{height:36px;padding:0 14px;border:2px solid var(--s-noir);background:#fff;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;color:var(--s-noir);white-space:nowrap;text-decoration:none}
 .nx-btn:hover{background:var(--s-jaune)}
@@ -569,7 +570,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pt.g.zero{color:var(--s-gris)}
 
 /* ═══ Tableau de bord ▸ graphique des phases : heures prévues (contrat) et effectuées (19.10.2026) ═══ */
-.sg-pg-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);margin:14px 0 0}   /* sous le tableau (19.10.2026) */
+.sg-pg-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);margin:14px 0 0;padding-top:10px;border-top:1px solid var(--s-filet)}   /* sous le tableau, filet léger au-dessus (19.10.2026) */
 .sg-pg-leg span{display:inline-flex;align-items:center;gap:6px}
 .sg-pg-leg i{display:inline-block;width:14px;height:10px}
 .sg-pg-leg i.ef{background:var(--s-nuit)}.sg-pg-leg i.pr{background:var(--s-nuit3)}.sg-pg-leg i.dp{background:#BD1E42}.sg-pg-leg i.mk{width:2px;height:14px;background:var(--s-noir)}
@@ -607,7 +608,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-db .po,.sg-db .pc{top:3px;width:10px;height:10px;margin-left:-5px;border-radius:50%}
 .sg-db .po,.sg-db-leg .po{background:var(--s-nuit)}
 .sg-db .pc,.sg-db-leg .pc{background:#fff;box-shadow:inset 0 0 0 2px var(--s-nuit)}
-.sg-db-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);padding:12px 12px 10px}   /* sous le tableau, en bas de page (19.10.2026) */
+.sg-db-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);padding:12px 12px 10px;border-top:1px solid var(--s-filet)}   /* sous le tableau, en bas de page, filet léger au-dessus (19.10.2026) */
 .sg-db-leg span{display:inline-flex;align-items:center;gap:6px}
 .sg-db-leg i{display:inline-block}
 .sg-db-leg .po,.sg-db-leg .pc{width:10px;height:10px;border-radius:50%}
@@ -24495,7 +24496,7 @@ function sgContratParPhase(p){ const D=fxData(); if(!D) return null; const cs=sg
     Object.entries(P).forEach(([k,v])=>{ const m=/^4(\d)(\d)?/.exec(k); if(!m||!+v) return; const a=T*(+v)/S, b=H*(+v)/S;
       grp[m[1]]=(grp[m[1]]||0)+a; grpHT[m[1]]=(grpHT[m[1]]||0)+b; if(m[2]){ sous[m[1]+m[2]]=(sous[m[1]+m[2]]||0)+a; sousHT[m[1]+m[2]]=(sousHT[m[1]+m[2]]||0)+b; } }); });
   return {grp,sous,tot,grpHT,sousHT,totHT,n:cs.length}; }
-const sgPhaseLib=(pa,court)=>pa?(pa.ph.NUMBER!=null?pa.ph.NUMBER+' · ':'')+nm(pa.ph)+(!court&&pa.sp?' — '+nm(pa.sp):''):'';
+const sgPhaseLib=(pa,court)=>pa?nm(pa.ph)+(!court&&pa.sp?' — '+nm(pa.sp):''):'';   // sans le numéro de la phase (19.10.2026)
 /* marge bénéficiaire : administrateur et chef de projet (droit « finances »), pas quand les finances sont verrouillées */
 const sgMargeVisible=()=>SG_ACC.profil!=='collab'&&!sgFinVerrou()&&(sgAdmin()||sgDroit('finances','projets'));
 const sgMargePct=x=>x&&x.factHT>0?Math.round(x.marge/x.factHT*100)+' % du facturé HT':'aucune facture';
@@ -24574,7 +24575,7 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
     /* tuiles sans texte gris (retiré à la demande le 19.10.2026) : le détail est dans l'infobulle */
     const kpiT=(ico,l,v,det,bar,hero)=>nxKpi(ico,l,v,null,bar,null,hero).replace('<div class="nx-kpi','<div'+(det?' title="'+nxE(det)+'"':'')+' class="nx-kpi');
     const kpiFact=(v,s2)=>kpiT('trend','Part facturable',(tot?Math.round(v/tot*100):0)+'<small>%</small>',s2,tot?v/tot*100:0);
-    set('<div class="nx-kpis" id="sg-p-kpis">'+kpiT('clock','Heures saisies',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,1)+((hp,pc)=>kpiT('contrat','Heures prévues',hp?nxH(hp)+'<small>h</small>':'—',hp?'Heures au contrat des phases — '+(tot>hp?'+'+nxH(tot-hp)+' h au-delà ('+pc+' % du prévu)':nxH(hp-tot)+' h restantes ('+pc+' % consommé)'):'aucune heure prévue au contrat',hp?Math.min(100,tot/hp*100):null))(hPrev,hPrev?Math.round(tot/hPrev*100):0)+'<div id="sg-p-fact" style="display:contents">'+kpiFact(chg,nxH(chg)+' h facturables')+'</div>'+((pa0=>kpiT('gauge','Phase actuelle',pa0&&pa0.ph.NUMBER!=null?nxE(pa0.ph.NUMBER)+'<small>'+nxE(nm(pa0.ph))+'</small>':(pa0?nxE(nm(pa0.ph)):'—'),pa0?'D’après les heures saisies : '+sgPhaseLib(pa0)+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'Aucune heure saisie par phase'))(sgPhaseActuelle(p)))+'</div>'   /* coût de revient, facturé et marge bénéficiaire retirés de la vue d'ensemble (19.10.2026) */
+    set('<div class="nx-kpis" id="sg-p-kpis">'+kpiT('clock','Heures saisies',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,1)+((hp,pc)=>kpiT('contrat','Heures prévues',hp?nxH(hp)+'<small>h</small>':'—',hp?'Heures au contrat des phases — '+(tot>hp?'+'+nxH(tot-hp)+' h au-delà ('+pc+' % du prévu)':nxH(hp-tot)+' h restantes ('+pc+' % consommé)'):'aucune heure prévue au contrat',hp?Math.min(100,tot/hp*100):null))(hPrev,hPrev?Math.round(tot/hPrev*100):0)+'<div id="sg-p-fact" style="display:contents">'+kpiFact(chg,nxH(chg)+' h facturables')+'</div>'+((pa0=>kpiT('gauge','Phase actuelle',pa0?nxE(nm(pa0.ph)):'—',pa0?'D’après les heures saisies : '+sgPhaseLib(pa0)+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'Aucune heure saisie par phase'))(sgPhaseActuelle(p)).replace('<div class="v">','<div class="v txt">'))+'</div>'   /* coût de revient, facturé et marge bénéficiaire retirés de la vue d'ensemble (19.10.2026) */
       +'<div class="nx-grid"><div class="c8 sg-pcol">'   /* 19.10.2026 : à gauche les phases puis le temps par mois, à droite l'équipe */+nxCard('c12','Phases : heures prévues et effectuées','<div class="b">'+sgPhasesGraph(p)+'</div>')+nxCard('c12','Temps par mois','<div class="b">'+nxBars(months,{every:months.length>14?2:1})+'</div>')+'</div><div class="c4 sg-pcol">'
       +nxCard('c12','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+Math.round(x.v/tot*100)+' % du temps</span></div><span class="m">'+nxH(x.v)+' h</span></div>').join(''):'<div class="nx-empty">Aucune saisie de temps.</div>')+'</div>')+'</div></div>');
     fxEnsure().catch(()=>null).then(()=>{ const D=fxData(), E=document.getElementById('sg-p-fact'); if(!D||!E) return;
@@ -26468,7 +26469,7 @@ VIEWS['nx-pdom']={
         +'<div class="acts"><button class="nx-btn pri" data-fn="fiche">'+nxSvg('gauge')+'Tableau de bord du projet</button><button class="nx-btn" data-fn="temps">'+nxSvg('timer')+'Saisir du temps</button>'
         +'<button class="nx-btn" data-go="nx-mesprojets">'+nxSvg('back')+'Mes projets</button></div>'   /* « Modifier le projet » retiré de la page du projet (19.10.2026) */
         +'<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxH(tot)+'</div><div class="t">heures au total</div></div><div class="sg-fig"><div class="n">'+nxH(h30)+'</div><div class="t">heures, 30 derniers jours</div></div>'
-          +((pa0=>'<div class="sg-fig" title="D’après les heures saisies dans la feuille d’heures"><div class="n">'+(pa0&&pa0.ph.NUMBER!=null?nxE(pa0.ph.NUMBER):'—')+'</div><div class="t">'+(pa0?'phase actuelle : '+nxE(nm(pa0.ph))+(pa0.sp?' — '+nxE(nm(pa0.sp)):'')+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'phase actuelle : aucune heure saisie par phase')+'</div></div>')(sgPhaseActuelle(p)))
+          +((pa0=>'<div class="sg-fig" title="D’après les heures saisies dans la feuille d’heures"><div class="n txt">'+(pa0?nxE(nm(pa0.ph)):'—')+'</div><div class="t">'+(pa0?'phase actuelle'+(pa0.sp?' : '+nxE(nm(pa0.sp)):'')+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'phase actuelle : aucune heure saisie par phase')+'</div></div>')(sgPhaseActuelle(p)))
           +'</div>')   /* marge bénéficiaire retirée de la page du projet (19.10.2026, à la demande ; elle reste au tableau de bord) */
       +'<div class="sg-pgrps">'+(G.length?G.map(([g,L],i)=>'<section class="sg-pgrp'+(i===ouvert?' on':'')+'"><button class="sg-pgrp-h" data-fn="grp" aria-expanded="'+(i===ouvert)+'">'
           +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span><span class="c">'+L.length+' domaine'+(L.length>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button>'

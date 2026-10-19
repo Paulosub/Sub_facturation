@@ -439,6 +439,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-mesp-bar .n{color:var(--s-gris);font-size:12.5px}
 .nx-tbl.sg-mesp tr[data-go]{cursor:pointer}
 .nx-tbl.sg-mesp tr[data-go]:hover td{background:var(--s-jaune3)}
+.nx-tbl.sg-mesp .nx-tag.num{background:none;padding:0;color:var(--s-noir)}   /* Mes projets : numéro sans cadre jaune (19.10.2026) */
 .sg-tile .nb{margin-top:12px;min-height:30px;display:flex;align-items:baseline;gap:7px}
 .sg-tile .nb .v{font-size:30px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums}
 .sg-tile .nb small{font-size:12.5px;color:var(--s-gris)}
@@ -537,3 +538,71 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-tile-grp.on .sg-tl{display:flex}
 .sg-tile-grp.on>p{display:none}
 .sg-tile-grp .sg-tgh:hover h3{text-decoration:underline}
+
+/* ═══ Vue d'ensemble Projets ▸ Tâches : menu déroulant (19.10.2026) — fermé : intertitre « Tâches » (comme « Modules ») + pastilles verte
+   (en cours) et rouge (urgent) ; ouvert : les trois listes de l'ancien logiciel (En cours, Urgent, Réglé) en tuiles, comme les modules ═══ */
+.sg-pv-tk{margin:0 0 30px}
+.sg-pv-tkh{display:inline-flex;align-items:center;gap:7px;background:none;border:0;padding:3px 6px 3px 0;font:inherit;font-size:12px;font-weight:700;color:inherit;cursor:pointer;text-align:left;margin:0}
+.sg-pv-tkh:hover{text-decoration:underline}
+.sg-pv-tkh .chev{width:12px;height:12px;flex:0 0 12px;transition:transform .15s}
+.sg-pv-tk.on .sg-pv-tkh{margin-bottom:10px}
+.sg-pv-tk.on .sg-pv-tkh .chev{transform:rotate(90deg)}
+.sg-pv-tkh .pts{display:inline-flex;gap:5px;margin-left:4px}
+.sg-pv-tkh .sg-pt,.sg-pv-tkl .sg-pt{margin-left:0;font-size:11px;line-height:18px;min-width:18px;padding:0 6px;border-radius:9px}
+.sg-pv-tk.on .sg-pv-tkh .pts{display:none}
+.sg-pv-tkl{display:none}
+.sg-pv-tk.on .sg-pv-tkl{display:grid}
+.sg-pv-tkl .ti .sg-pt{margin-left:auto}
+.sg-pt.g{background:var(--s-filet);color:var(--s-noir)}
+.sg-pt.zero{background:none;box-shadow:inset 0 0 0 1.5px currentColor}
+.sg-pt.v.zero{color:#6f8f17}
+.sg-pt.r.zero{color:#BD1E42}
+.sg-pt.g.zero{color:var(--s-gris)}
+
+/* ═══ Tableau de bord ▸ graphique des phases : heures prévues (contrat) et effectuées (19.10.2026) ═══ */
+.sg-pg-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);margin:0 0 12px}
+.sg-pg-leg span{display:inline-flex;align-items:center;gap:6px}
+.sg-pg-leg i{display:inline-block;width:14px;height:10px}
+.sg-pg-leg i.ef{background:var(--s-nuit)}.sg-pg-leg i.pr{background:var(--s-nuit3)}.sg-pg-leg i.dp{background:#BD1E42}.sg-pg-leg i.mk{width:2px;height:14px;background:var(--s-noir)}
+.sg-pg-r{display:grid;grid-template-columns:minmax(150px,250px) 1fr 160px;gap:14px;align-items:center;padding:7px 6px;border-top:1px solid var(--s-filet)}
+.sg-pg-r:first-child{border-top:0}
+.sg-pg-r.cur{background:var(--s-jaune3)}
+.sg-pg-r .l{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-pg-cur{font-style:normal;font-size:9.5px;font-weight:700;background:var(--s-jaune);color:var(--s-noir);padding:1px 5px;margin-left:7px;vertical-align:1px}
+.sg-pg-r .g{position:relative;height:18px}
+.sg-pg-r .g i{position:absolute;top:0;bottom:0;left:0;display:block}
+.sg-pg-r .g .pr{background:var(--s-nuit3)}
+.sg-pg-r .g .ef{background:var(--s-nuit);top:4px;bottom:4px}
+.sg-pg-r .g .ef.np{background:var(--s-nuit2)}
+.sg-pg-r .g .dp{background:#BD1E42;top:4px;bottom:4px}
+.sg-pg-r .g .mk{width:2px;margin-left:-1px;background:var(--s-noir);top:-3px;bottom:-3px}
+.sg-pg-r .v{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sg-pg-r .v small{display:inline-block;min-width:44px;margin-left:8px;color:var(--s-gris)}
+.sg-pg-r .v small.dep{color:#BD1E42;font-weight:700}
+.sg-pg-tot{margin-top:10px;padding-top:8px;border-top:1.5px solid var(--s-noir);font-size:12.5px}
+
+/* ═══ Phases contrat : marge bénéficiaire, taux obtenu, coût horaire et comparaison (19.10.2026) ═══ */
+.nx-tbl.sg-phc{font-size:12px}
+.nx-tbl.sg-phc th{white-space:nowrap;vertical-align:bottom;line-height:1.25}
+.nx-tbl.sg-phc tr.sub td{color:var(--s-gris);padding-top:5px;padding-bottom:5px}
+.nx-tbl.sg-phc tr.sub td:first-child{padding-left:26px}
+.nx-tbl.sg-phc tr.cur td{background:var(--s-jaune3)}
+.nx-tbl.sg-phc tr.tot td{border-top:1.5px solid var(--s-noir);font-weight:700}
+.sg-db{position:relative;height:16px;min-width:260px}
+.nx-tbl.sg-phc td:first-child{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-db i{position:absolute;display:block}
+.sg-db .moy{top:0;bottom:0;width:1px;background:var(--s-gris2)}
+.sg-db .ln{top:7px;height:3px}
+.sg-db .ln.g,.sg-db-leg .ln.g{background:#98C21F}
+.sg-db .ln.r,.sg-db-leg .ln.r{background:#BD1E42}
+.sg-db .po,.sg-db .pc{top:3px;width:10px;height:10px;margin-left:-5px;border-radius:50%}
+.sg-db .po,.sg-db-leg .po{background:var(--s-nuit)}
+.sg-db .pc,.sg-db-leg .pc{background:#fff;box-shadow:inset 0 0 0 2px var(--s-nuit)}
+.sg-db-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);padding:10px 12px 4px}
+.sg-db-leg span{display:inline-flex;align-items:center;gap:6px}
+.sg-db-leg i{display:inline-block}
+.sg-db-leg .po,.sg-db-leg .pc{width:10px;height:10px;border-radius:50%}
+.sg-db-leg .ln{width:16px;height:3px}
+.sg-db-leg .moy{width:1px;height:14px;background:var(--s-gris2)}
+.sg-ctr-note{padding:8px 12px;font-size:12px;color:var(--s-gris);line-height:1.5}
+.sg-db .po.hors{margin-left:-10px;border-radius:0;clip-path:polygon(0 0,100% 50%,0 100%)}   /* au-delà de l'échelle : flèche au bord */

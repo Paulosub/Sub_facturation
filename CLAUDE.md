@@ -160,7 +160,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   #3F4193) réservé aux états ; filets noirs 2 px, angles droits. Logo officiel : `subgestion3/logo_substances.svg`.
 - Navigation (`SG_DOM` dans `sg3.js`, décision du 06.10 soir : MENU À GAUCHE, organisation de la v2 ; ordre des domaines depuis le
   18.10.2026 : Accueil, Affaires, Temps, Projets, Contacts, Chantier, Équipe, Ressources humaines, Facturation, Finances… ;
-  Projets = Mes projets, Suivi & écarts, Registre, sous-menu dépliable « Tâches » (Urgentes, En cours, Réglées : items `grp` / `st`,
+  Projets = Mes projets, Suivi & écarts, Registre, sous-menu dépliable « Tâches » (Urgent, En cours, Réglé — termes de l'ancien logiciel depuis le 19.10.2026, « En traitement » affiché « En cours » : items `grp` / `st`,
   `sgSideItems`, état `nx_sub3`) avec pastilles `sgPastille` (rouge = urgentes, verte = en cours, `sgTachesCompte` = ptModuleRows de
   l'utilisateur) — « Tous les projets » retiré, `sgOuvrirDomaine` → `nx-pdom` ; catégorie « architecture » affichée « Projets ») : menu bleu nuit
   (logo blanc, Rechercher ⌘K, domaines dépliables → modules — depuis le 18.10.2026 le NOM du chapitre ouvre sa vue d'ensemble et le
@@ -258,9 +258,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   par `trFr`), ne gardent que « fr » des modèles, suppriment documents types, gabarits et catalogues étrangers qui ont une
   version française (catalogue : ≥ 80 % des codes), traduisent provisoirement les autres (eBKP-T → « eCCC-GC (traduction
   provisoire) » : correspondances BKP→CFC / eBKP-H→eCCC-Bât de la base, puis `FR_CAT_DE`), mettent la langue des comptes,
-  adresses et documents à 2 et corrigent les Œ / œ mal décodés. SUBGestion 3 (bloc 16 de `sg3_plus.js`) : proposé à
-  l'administrateur au démarrage (« Plus tard » possible ; reproposé si des libellés étrangers reviennent, p. ex. après une
-  reprise Deltaproject) et dans Réglages ▸ Données & sauvegarde ; sauvegarde juste avant (NAS : `POST /api/sauvegarder` →
+  adresses et documents à 2 et corrigent les Œ / œ mal décodés. SUBGestion 3 (bloc 16 de `sg3_plus.js`) : **fait d'office,
+  sans fenêtre de confirmation (19.10.2026, demande de Paulo)**, pour l'administrateur au démarrage dès qu'une autre langue reste ou revient
+  (p. ex. après une reprise Deltaproject), et par le bouton de Réglages ▸ Données & sauvegarde ; bilan en message et dans Réglages ; sauvegarde juste avant (NAS : `POST /api/sauvegarder` →
   `avant_francais_<date>.sqlite` dans les sauvegardes, hors rotation ; local : sauvegarde habituelle) ; marque
   `sg_meta/francais` {DATE, N cumulé}. Sur le NAS, comptes et fonctions (`CH08_ADMIN_T`) exigent le droit Deltaproject
   « gestion des utilisateurs » : sans lui, ils sont laissés tels quels (signalé). Facturation : langue du carnet = Français.
@@ -398,15 +398,49 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   projet, fiche projet et ⌘K limités aux projets attribués (`sgProjetPermis`, message `SG_NON_ATTRIBUE`) ; chapitre Affaires réservé à
   l'administrateur et au chef de projet (`SG_VUE_DROIT['affd-*']`). Le serveur du NAS (ouverture de session active) filtre toujours
   sur « équipe + heures » (`sg_contexte`). Vue d'ensemble Projets REFAITE (`VIEWS['dom-projets']`) : total en grand, tuiles par
-  catégorie (`SG_CATS` : architecture, expertises, faisabilités, internes ; jauge « en cours »), tâches ouvertes, modules (sans
+  catégorie (`SG_CATS` : architecture, expertises, faisabilités, autres — projets internes, « Internes » renommé « Autres » le 19.10.2026 ; jauge « en cours »), tâches ouvertes, modules (sans
   « Tous les projets » ; les données par état ont été retirées à la demande, `SG_ETATS` sert aux filtres de la liste) ; chaque élément ouvre `nx-listeprojets`
   (arg `tous`, `cat:…`, `etat:…` ; filtres, recherche ; projets visibles = `sgProjetsVisibles`).
+  **Page du projet (19.10.2026)** : bouton « Modifier le projet » retiré (le tableau de bord du projet reste ouvert à tous, restriction
+  aux administrateurs et chefs de projet essayée puis annulée à la demande le même jour).
+  **Tableau de bord du projet (19.10.2026)** : « Saisir du temps » (en-tête et onglet Temps) et « Feuille d'heures » retirés ; onglet Temps :
+  colonne « Collaborateur » ; onglet « Phases & budget » renommé « Phases contrat » (colonnes Heures contrat = TIMEBUDGET, Heures saisies,
+  Écart ; Coût de revient = Σ heures × taux interne `staffrate` à la date, et **Contrat TTC** — remplace « Budget CHF » le 19.10.2026 —
+  = montant TTC des contrats Facturation reliés réparti selon les % des prestations SIA du contrat, par phase et sous-phase (`sgContratParPhase`,
+  `sgSiaGroupe` : phase reconnue par son nom SIA, sinon par son numéro 3, 4, 5), masqués au collaborateur).
+  (Une colonne « Facturé HT » servant de base à la marge et aux honoraires / h a été essayée puis retirée à la demande le 19.10.2026 ;
+  copie : `subgestion3/_backup_20261019_1627_avant_phases_marge/sg3_plus_avec_facture.js`.)
+  **Marge et taux horaires par phase (19.10.2026, même onglet, administrateur et chef de projet)** : tout en HT (la TVA n'est pas un revenu, le
+  coût de revient n'en contient pas ; TTC en infobulle) — Contrat HT, Coût de revient, Marge bénéficiaire (contrat HT − coût, vert / rouge),
+  Honoraires / h (contrat HT ÷ heures saisies), Coût de revient / h (coût ÷ heures saisies) — noms choisis par Paulo le 19.10.2026 — et
+  Comparaison (`.sg-db` : point plein = honoraires / h, rond = coût de revient / h, trait vert = gain / rouge = perte par heure, repère = coût de
+  revient moyen des collaborateurs du projet ; échelle plafonnée à 2,5 × le plus haut coût horaire, flèche au-delà ; une version « Gain / perte par
+  heure » en barre divergente a été essayée puis retirée à la demande le 19.10.2026, copie dans `subgestion3/_backup_20261019_1627_avant_phases_marge/`), par phase, sous-phase (heures contrat = TIMEBUDGET de la sous-phase) et ligne « Projet » ;
+  lignes entièrement vides masquées ; phase en cours surlignée (marge provisoire). Collaborateur : heures seulement.
+  **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
+  2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
+  projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne
+  de Mes projets. Marge bénéficiaire = facturé HT − coût de revient (`sgRenta`), % du facturé (`sgMargePct`) : données de la page du projet et
+  indicateur du tableau de bord (`sgMargeVisible` : pas pour le collaborateur ni finances verrouillées). Tableau de bord ▸ Vue d'ensemble :
+  carte « Phases : heures prévues et effectuées » (`sgPhasesGraph`, graphique en barres de type « bullet » : prévu = TIMEBUDGET en fond, effectué
+  en bleu nuit, repère de la limite, dépassement en rouge, phase actuelle surlignée, total). Démarrage : le dernier écran est rouvert avec
+  son paramètre (`sg3_vue_arg`, enveloppe de `go` dans `sg3.js` ; pas pour fx-* ni new / nf: / newaff:).
+  « Coût du temps » renommé « Coût de revient » partout dans l'app (fiche projet, Rentabilité des projets, CSV, textes), 19.10.2026.
+  **Tableau de bord du projet, collaborateur (19.10.2026)** : onglets `SG_ONGLETS_COLLAB` = Phases contrat, Intervenants, Contrats &
+  factures, Chantier, Documents, Notes & tâches (ni Vue d'ensemble ni Temps ; premier onglet permis ouvert d'office) ; les droits s'appliquent
+  en plus dans `sgOngletOk` (Contrats & factures : lecture des contrats ou factures — « aucun » par défaut pour le profil collaborateur).
+  **Collaborateur : projets « en cours » seulement (19.10.2026)** : `sgCollabSeul()` (profil collab sans droit « projets : tous ») → Mes
+  projets sans le choix « Tous mes projets » ni le lien vers la liste complète, toujours filtré sur `SG_ETATS_COLLAB` (configuration, en cours,
+  en attente = filtre « En cours ») ; `sgProjetsVisibles` limité aux mêmes états (vue d'ensemble, `nx-listeprojets` sans les filtres Terminés /
+  Archivés). Mes projets : numéros sans cadre jaune (`.nx-tbl.sg-mesp .nx-tag.num`).
   Collaborateur (18.10.2026) : Projets = Mes projets + Tâches seulement (Registre et Suivi & écarts masqués même si ses droits le
   permettent : `SG_VUE_DROIT['aff-gestion'|'aff-controlling']`) ; sa vue d'ensemble = ses projets attribués (« mes projets ») et SES
-  tâches (« tâches à faire »). Vue d'ensemble : modules sans le groupe « Tâches » (il reste au menu) ; ligne des tâches avec un carré
-  de couleur devant chaque nombre (`.sg-patch`) : vert = ouvertes (ni réglées ni annulées, projets visibles en cours ; collaborateur :
-  les siennes, `sgTachesCompte`), rouge = urgentes (contour seul s'il n'y en a pas) ; chaque partie ouvre sa liste (`taches-encours`,
-  `taches-urgent`).
+  tâches (« tâches à faire »). Vue d'ensemble : modules sans le groupe « Tâches » (il reste au menu) ; **menu déroulant « Tâches » (19.10.2026)** à la place de la
+  ligne des tâches (`.sg-pv-tk`, fermé à l'arrivée) : fermé = intertitre « Tâches » au style de « Modules » + pastilles verte (En cours)
+  et rouge (Urgent) — contour seul à zéro (`.sg-pt.zero`) ; ouvert = les trois listes de l'ancien logiciel en tuiles `.sg-tile`, en colonnes
+  comme les modules (pastille à droite du titre), mêmes termes et mêmes états que `ptModuleRows` : En cours
+  (« En traitement » de l'ancien logiciel, état 1), Urgent (état 1, marquée urgente), Réglé (état 3), chacune avec son nombre ; tâches des projets visibles en cours (collaborateur :
+  les siennes) ; un clic ouvre `taches-encours`, `taches-urgent`, `taches-regle`.
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
 - **Déploiement NAS = règle (10.10.2026)** : toute modification de SUBGestion 3 est déposée sur le NAS dans la foulée

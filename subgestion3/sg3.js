@@ -87,9 +87,9 @@ const SG_DOM=[
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
     {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs.'},
     /* grp : sous-menu dépliable « Tâches » (18.10.2026) ; st = libellé court dans le sous-menu */
-    {v:'taches-urgent',t:'Tâches urgentes',st:'Urgentes',grp:'Tâches',ico:'urgent',d:'Les tâches à traiter en priorité.'},
+    {v:'taches-urgent',t:'Tâches urgentes',st:'Urgent',grp:'Tâches',ico:'urgent',d:'Les tâches à traiter en priorité.'},
     {v:'taches-encours',t:'Tâches en cours',st:'En cours',grp:'Tâches',ico:'task',d:'Les tâches en traitement.'},
-    {v:'taches-regle',t:'Tâches réglées',st:'Réglées',grp:'Tâches',ico:'check',d:'Les tâches terminées.'}]},
+    {v:'taches-regle',t:'Tâches réglées',st:'Réglé',grp:'Tâches',ico:'check',d:'Les tâches terminées.'}]},
   {k:'contacts',t:'Contacts',ico:'contacts',d:'Entreprises, mandataires, maîtres d’ouvrage et personnes : coordonnées, catégories et listes.',items:[
     {v:'adr-entites',t:'Annuaire',ico:'contacts',hero:1,d:'Sociétés, personnes, familles… et leurs adresses.'},
     {v:'adr-liste',t:'Toutes les adresses',ico:'list',d:'Toutes les adresses, triables et filtrables.'},
@@ -126,7 +126,7 @@ const SG_DOM=[
     {v:'fx-cockpit',t:'Cockpit',ico:'gauge',d:'Tableau de bord des honoraires et de la facturation.'},
     {v:'fx-cockpit2',t:'Cockpit analytique',ico:'trend',d:'Analyses et tendances de la facturation.'}]},
   {k:'finances',t:'Finances',ico:'wallet',d:'Contrats et facturation des projets, rentabilité, clients et indicateurs du bureau.',items:[
-    {v:'nx-renta',t:'Rentabilité des projets',ico:'coins',hero:1,d:'Honoraires, coût du temps, facturé, encaissé et marge de chaque projet, avec alertes.'},
+    {v:'nx-renta',t:'Rentabilité des projets',ico:'coins',hero:1,d:'Honoraires, coût de revient, facturé, encaissé et marge de chaque projet, avec alertes.'},
     {v:'nx-apports',t:'Apports de projets',ico:'person',d:'Commission des collaborateurs sur les mandats qu’ils apportent : projets concernés, taux selon le contrat de travail, versements et évolution du solde à verser.'},
     {v:'mg-controlling',t:'Controlling',ico:'trend',d:'Controlling : membres, projets, marges.'},
     {v:'mg-contrats',t:'Contrats des projets',ico:'contrat',d:'Contrats, sous-traitants, échéancier et encaissements.'},
@@ -297,8 +297,10 @@ const nxGo0=go;
 go=function(id,arg){
   const fromHist=NX.nav; NX.nav=false; NX.fromHist=fromHist;
   if(arg==null&&/^nx-(projet|contact|collab)$/.test(id)){ const a=nxLS.get('nx_arg3',{}); arg=a[id]; }
+  if(arg==null&&!NX.booted){ const sv=nxLS.get('sg3_vue_arg',null); if(sv&&sv.id===id&&sv.arg!=null) arg=sv.arg; }   /* démarrage : le dernier écran rouvert avec son paramètre (19.10.2026) */
   nxGo0(id,arg); NX.fromHist=false;
   if(!VIEW||VIEW.id!==id) return;
+  if(!/^fx-/.test(id)&&!(typeof arg==='string'&&/^(sync|new|nf:|newaff:)/.test(arg))) nxLS.set('sg3_vue_arg',{id,arg:arg==null?null:arg});
   if(/^nx-(projet|contact|collab)$/.test(id)&&arg!=null){ const a=nxLS.get('nx_arg3',{}); a[id]=String(arg); nxLS.set('nx_arg3',a); }
   if(!fromHist){ const top=NX.hist[NX.pos]; if(!top||top.id!==id||(arg!=='sync'&&String(top.arg)!==String(arg))){ NX.hist=NX.hist.slice(0,NX.pos+1); NX.hist.push({id,arg:arg==='sync'?undefined:arg}); if(NX.hist.length>60) NX.hist.shift(); NX.pos=NX.hist.length-1; } }
   NX.booted=true; sgNav(); nxFoot(); sgCtxSync();
@@ -496,7 +498,7 @@ VIEWS['nx-projet']={
       +(+p.ISINTERNAL?'<span class="nx-tag">Interne</span>':'')+'</div></div><div class="nx-acts"><button class="nx-btn'+(pin?' on':'')+'" data-fn="pin">'+nxSvg('pin')+(pin?'Favori':'Favori')+'</button>'
       +'<button class="nx-btn" data-fn="mem">'+nxSvg('users')+'Intervenants</button><button class="nx-btn" data-fn="ph">'+nxSvg('list')+'Phases</button><button class="nx-btn" data-fn="more">'+nxSvg('more')+'</button><button class="nx-btn pri" data-fn="edit">'+nxSvg('edit')+'Modifier</button></div></div>'
       +'<div class="nx-kpis">'+nxKpi('clock','Temps total',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,null,1)+nxKpi('trend','Part facturable',(tot?Math.round(chg/tot*100):0)+'<small>%</small>',nxH(chg)+' h facturables',tot?chg/tot*100:0)
-      +nxKpi('coins','Coût du temps',nxCHF(cost)+'<small>CHF</small>','au taux de chaque membre')+nxKpi('receipt','Notes de frais',nxCHF(costs)+'<small>CHF</small>','frais saisis sur le projet')
+      +nxKpi('coins','Coût de revient',nxCHF(cost)+'<small>CHF</small>','au taux de chaque membre')+nxKpi('receipt','Notes de frais',nxCHF(costs)+'<small>CHF</small>','frais saisis sur le projet')
       +nxKpi('wallet','Contrats',nxCHF(contr)+'<small>CHF</small>',contr&&cost?'temps consommé : '+Math.round(cost/contr*100)+' % du contrat':'montant des contrats',contr?cost/contr*100:null)+'</div>'
       +'<div class="nx-grid">'+nxCard('c8','Temps par mois','<div class="b">'+nxBars(months,{every:months.length>14?2:1})+'</div>')
       +nxCard('c4','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+Math.round(x.v/tot*100)+' % du temps</span></div><span class="m">'+nxH(x.v)+' h</span></div>').join(''):'<div class="nx-empty">Aucune saisie de temps.</div>')+'</div>')

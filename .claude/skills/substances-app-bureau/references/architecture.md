@@ -151,6 +151,13 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   (notes `sganalyse`). Bloc 19 : clic droit — `sgMenuAt(x, y, items, ligne)`, `sgMenuPanneau(items)` (items `{t, fn, dis, chk, danger,
   sub}`), `sgCtxMenuDe(cible)`, `sgCtxBarre`, `sgCtxBoutons`, `sgCtxActionsLigne`, `sgCtxRef`, `sgCtxCopie`, `sgCtxCadre(w)` ; `ibtn`
   enveloppé (`el._sgB` = définition du bouton) ; `closeMenus` enveloppé (retire le contour de la ligne).
+- 19.10.2026 (`sg3_plus.js`) : vue d'ensemble Projets — menu déroulant « Tâches » (`.sg-pv-tk`, tuiles comme les modules, pastilles
+  `sg-pt` verte / rouge, listes En cours / Urgent / Réglé) ; collaborateur : `sgCollabSeul()`, `SG_ETATS_COLLAB` (projets en cours seulement),
+  `SG_ONGLETS_COLLAB` (onglets du tableau de bord) ; `sgPhaseActuelle(p)` / `sgPhaseLib` (phase d'après la feuille d'heures) ;
+  `sgPhasesGraph(p)` (Vue d'ensemble : heures prévues / effectuées) ; `sgContratParPhase(p)` (contrat HT / TTC par phase SIA, `sgSiaGroupe`) ;
+  onglet « Phases contrat » (`dessiner(C)` dans `sgOnglet`, marge, honoraires / h, coût de revient / h, comparaison `.sg-db`) ;
+  `sgMargeVisible`, `sgMargePct` ; « Français seulement » sans confirmation (`sgFrSeul`) ; `sg3.js` : dernier écran rouvert avec son
+  paramètre (`sg3_vue_arg`).
 - Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `frSeulOps()` → {ops, n} et `frSeul(ops)` (lots de 400) :
   nettoyage de la base (libellés, modèles, documents types, gabarits, catalogues ; `FR_CAT_DE` / `FR_CAT_NOM` pour eBKP-T) ;
   `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;

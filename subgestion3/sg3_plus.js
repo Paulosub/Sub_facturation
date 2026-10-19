@@ -106,6 +106,10 @@ function sgLiens(){ return nxLS.get('sg3_liens',{}); }
 function sgProjetDuContrat(c){ if(!c) return null; const l=sgLiens()[c.id]; if(l) return DS.get('project',l);
   const k=sgCle(c.affaire); if(!k) return null; const ps=DS.all('project');
   return ps.find(p=>sgCle(p.NUMBER)===k)||ps.filter(p=>p.NUMBER&&k.startsWith(sgCle(p.NUMBER)+' ')).sort((a,b)=>b.NUMBER.length-a.NUMBER.length)[0]||null; }
+/* type de rémunération d'un contrat Facturation (detail.inputs.ch_modecalc_type, comme chContratModeCalc) : 'relatif' (Forfait relatif, défaut),
+   'forfait', 'unitaire' ; '' si le contrat n'a jamais été enregistré avec le formulaire actuel (19.10.2026) */
+const sgRemuType=c=>{ const inp=(c&&c.detail&&c.detail.inputs)||(c&&c.ouvrages&&c.ouvrages[0]&&c.ouvrages[0].detail&&c.ouvrages[0].detail.inputs)||null;
+  return !inp?'':inp.ch_modecalc_type==='unitaire'?'unitaire':inp.ch_modecalc_type==='forfait'?'forfait':'relatif'; };
 function sgContratsDuProjet(p,D){ return D?D.c.filter(c=>{ const q=sgProjetDuContrat(c); return q&&String(q.ID)===String(p.ID); }):[]; }
 /* Facturation : propositions des affaires du moteur dans le champ « Affaire » du calcul d'honoraires */
 function sgAffairesListe(){ if(!FX.ready) return; const d=FX.w.document; let dl=d.getElementById('sg-projets');
@@ -320,13 +324,24 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
   const now=new Date(), taux=sgTaux(), logs=DS.by('timelog','PROJECT_ID',p.ID);
   if(k==='factu'&&sgFinVerrou()){ set('<div class="nx-empty">'+nxSvg('lock')+'<p>Contrats, factures et rentabilité sont protégés par le code d’accès.</p><button class="nx-btn pri" data-fn="deverr">Déverrouiller</button></div>'); pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); return; }
   if(k==='vue'){ const lim30=dayKey(new Date(now.getFullYear(),now.getMonth(),now.getDate()-30)); let tot=0,h30=0,chg=0; const bySt={}, byM={};
-    logs.forEach(r=>{ const v=+r.TIMEPERIOD||0, d=tlDate(r); tot+=v; if(tlKey(r)>=lim30) h30+=v; if(+r.ISCHARGEABLE) chg+=v; bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+v; const mk=d.getFullYear()*12+d.getMonth(); byM[mk]=(byM[mk]||0)+v; });
+    const byPhC={};   // heures facturables par phase ('' = sans phase)
+    logs.forEach(r=>{ const v=+r.TIMEPERIOD||0, d=tlDate(r); tot+=v; if(tlKey(r)>=lim30) h30+=v; if(+r.ISCHARGEABLE){ chg+=v; const kp=r.PHASE_ID==null?'':String(r.PHASE_ID); byPhC[kp]=(byPhC[kp]||0)+v; } bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+v; const mk=d.getFullYear()*12+d.getMonth(); byM[mk]=(byM[mk]||0)+v; });
     const mks=Object.keys(byM).map(Number), mEnd=now.getFullYear()*12+now.getMonth(), mStart=Math.max(mks.length?Math.min(...mks):mEnd-11,mEnd-23), months=[];
     for(let i=Math.min(mStart,mEnd-11);i<=mEnd;i++) months.push({l:MOISL[i%12]+' '+Math.floor(i/12),s:MOIS[i%12].replace('.',''),a:byM[i]||0});
     const team=Object.entries(bySt).map(([id,v])=>({s:DS.get('staff',id),v})).filter(x=>x.s).sort((a,b)=>b.v-a.v);
-    set('<div class="nx-kpis" id="sg-p-kpis">'+nxKpi('clock','Temps total',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,null,1)+nxKpi('trend','Part facturable',(tot?Math.round(chg/tot*100):0)+'<small>%</small>',nxH(chg)+' h facturables',tot?chg/tot*100:0)+'<div class="nx-kpi"><div class="l">Rentabilité</div><div class="v">…</div></div></div>'
+    /* part facturable (19.10.2026) : contrat(s) au forfait ou au forfait relatif → les heures facturables d'une phase sont plafonnées à ses heures au
+       contrat (TIMEBUDGET) : le dépassement d'une phase n'est pas facturable et fait baisser la part ; contrat unitaire, phase sans heures au
+       contrat et heures sans phase : inchangé */
+    const kpiFact=(v,s2)=>nxKpi('trend','Part facturable',(tot?Math.round(v/tot*100):0)+'<small>%</small>',s2,tot?v/tot*100:0);
+    set('<div class="nx-kpis" id="sg-p-kpis">'+nxKpi('clock','Temps total',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,null,1)+'<div id="sg-p-fact" style="display:contents">'+kpiFact(chg,nxH(chg)+' h facturables')+'</div>'+'<div class="nx-kpi"><div class="l">Rentabilité</div><div class="v">…</div></div></div>'
       +'<div class="nx-grid">'+nxCard('c12','Phases : heures prévues et effectuées','<div class="b">'+sgPhasesGraph(p)+'</div>')+nxCard('c8','Temps par mois','<div class="b">'+nxBars(months,{every:months.length>14?2:1})+'</div>')
       +nxCard('c4','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+Math.round(x.v/tot*100)+' % du temps</span></div><span class="m">'+nxH(x.v)+' h</span></div>').join(''):'<div class="nx-empty">Aucune saisie de temps.</div>')+'</div>')+'</div>');
+    fxEnsure().catch(()=>null).then(()=>{ const D=fxData(), E=document.getElementById('sg-p-fact'); if(!D||!E) return;
+      const ty=[...new Set(sgContratsDuProjet(p,D).filter(c=>!c.annule).map(sgRemuType).filter(t=>t&&t!=='unitaire'))]; if(!ty.length) return;
+      const bud={}; DS.by('projectphase','PROJECT_ID',p.ID).forEach(f=>{ if(+f.TIMEBUDGET>0) bud[f.ID]=+f.TIMEBUDGET; });
+      const fact=Object.entries(byPhC).reduce((a,[id,c])=>a+(bud[id]!=null?Math.min(c,bud[id]):c),0), dep=chg-fact; if(dep<0.05) return;
+      E.innerHTML=kpiFact(fact,nxH(fact)+' h facturables · '+nxH(dep)+' h au-delà du contrat ('+ty.map(t=>t==='relatif'?'forfait relatif':'forfait').join(', ')+')');
+      E.firstElementChild.title='Contrat au forfait : les heures d’une phase au-delà de ses heures au contrat ne sont pas facturables'; });
     if(sgFinVerrou()){ const K=document.getElementById('sg-p-kpis'); K.lastElementChild.outerHTML='<div class="nx-kpi" data-fn="deverr" style="cursor:pointer"><div class="l">'+nxSvg('lock')+'Finances</div><div class="v" style="font-size:15px">Verrouillées</div><div class="s">Cliquer pour saisir le code</div></div>'; pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); return; }
     fxEnsure().catch(()=>null).then(()=>{ const x=sgRenta(p,fxData(),taux), K=document.getElementById('sg-p-kpis'); if(!K) return;
       K.innerHTML=K.innerHTML.replace(/<div class="nx-kpi"><div class="l">Rentabilité<\/div><div class="v">…<\/div><\/div>/,

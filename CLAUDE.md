@@ -160,6 +160,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   #3F4193) réservé aux états ; filets noirs 2 px, angles droits. Logo officiel : `subgestion3/logo_substances.svg`.
 - Navigation (`SG_DOM` dans `sg3.js`, décision du 06.10 soir : MENU À GAUCHE, organisation de la v2 ; ordre des domaines depuis le
   18.10.2026 : Accueil, Affaires, Temps, Projets, Contacts, Chantier, Équipe, Ressources humaines, Facturation, Finances… ;
+  **Chantier retiré du menu de gauche (20.10.2026)** : domaine gardé dans `SG_DOM` avec `menu:0` (ignoré par `sgSide`) — ses modules
+  (Estimations, Descriptifs & devis, Appels d'offres, Contrôle des coûts, PV de chantier) s'ouvrent par la page du projet, le tableau de bord
+  du projet ▸ Chantier, la vue d'ensemble `dom-chantier` et ⌘K ; droits et code d'accès inchangés ;
   Projets = Mes projets, Suivi & écarts, Registre, sous-menu dépliable « Tâches » (Urgent, En cours, Réglé — termes de l'ancien logiciel depuis le 19.10.2026, « En traitement » affiché « En cours » : items `grp` / `st`,
   `sgSideItems`, état `nx_sub3`) avec pastilles `sgPastille` (rouge = urgentes, verte = en cours, `sgTachesCompte` = ptModuleRows de
   l'utilisateur) — « Tous les projets » retiré, `sgOuvrirDomaine` → `nx-pdom` ; catégorie « architecture » affichée « Projets ») : menu bleu nuit

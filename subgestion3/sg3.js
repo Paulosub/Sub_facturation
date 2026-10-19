@@ -97,7 +97,9 @@ const SG_DOM=[
     {v:'adr-groupes',t:'Listes de diffusion',ico:'group',d:'Groupes d’adresses pour les envois et les étiquettes.'},
     {v:'adr-chercher',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…).'},
     {v:'adr-props',t:'Catégories',ico:'tag',d:'Propriétés et catégories attribuées aux adresses.'}]},
-  {k:'chantier',t:'Chantier',ico:'crane',d:'Du coût estimé au décompte final : estimations, devis, appels d’offres, contrôle des coûts et PV.',items:[
+  /* Chantier : retiré du menu de gauche à la demande (20.10.2026, menu:0) ; ses modules restent ouverts par la page du projet,
+     le tableau de bord du projet (onglet Chantier), la vue d'ensemble « dom-chantier » et ⌘K */
+  {k:'chantier',t:'Chantier',ico:'crane',menu:0,d:'Du coût estimé au décompte final : estimations, devis, appels d’offres, contrôle des coûts et PV.',items:[
     {v:'coplan',t:'Estimations',ico:'ruler',d:'Estimations du coût selon eCCC-Bât.'},
     {v:'devis',t:'Descriptifs & devis',ico:'doc',hero:1,d:'Devis descriptifs par CFC : positions, quantités et prix.'},
     {v:'soum',t:'Appels d’offres',ico:'mail',d:'Soumissions aux entreprises, offres et comparatifs.'},
@@ -217,6 +219,7 @@ function sgCur(){ const id=VIEW&&VIEW.id, m=NX_VIEW[id]; return {id,m,d:m?m.d:(i
 function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return; const c=sgCur(), open=nxLS.get('nx_open3',{});
   let s='';
   SG_DOM.forEach(d=>{
+    if(d.menu===0) return;   // chapitre retiré du menu de gauche (reste joignable autrement)
     if(d.k==='accueil'){ s+='<div class="nx-g'+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='nx-home'?' on':'')+'" data-go="nx-home" title="Accueil">'+nxSvg(d.ico)+'<span class="lb">Accueil</span></div></div>'; return; }
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
     if(!its.length) return;   // domaine sans module permis pour ce profil

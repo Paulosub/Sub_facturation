@@ -598,7 +598,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-db .po,.sg-db .pc{top:3px;width:10px;height:10px;margin-left:-5px;border-radius:50%}
 .sg-db .po,.sg-db-leg .po{background:var(--s-nuit)}
 .sg-db .pc,.sg-db-leg .pc{background:#fff;box-shadow:inset 0 0 0 2px var(--s-nuit)}
-.sg-db-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);padding:10px 12px 4px}
+.sg-db-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);padding:12px 12px 10px}   /* sous le tableau, en bas de page (19.10.2026) */
 .sg-db-leg span{display:inline-flex;align-items:center;gap:6px}
 .sg-db-leg i{display:inline-block}
 .sg-db-leg .po,.sg-db-leg .pc{width:10px;height:10px;border-radius:50%}

@@ -417,6 +417,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   revient moyen des collaborateurs du projet ; échelle plafonnée à 2,5 × le plus haut coût horaire, flèche au-delà ; une version « Gain / perte par
   heure » en barre divergente a été essayée puis retirée à la demande le 19.10.2026, copie dans `subgestion3/_backup_20261019_1627_avant_phases_marge/`), par phase, sous-phase (heures contrat = TIMEBUDGET de la sous-phase) et ligne « Projet » ;
   lignes entièrement vides masquées ; phase en cours surlignée (marge provisoire). Collaborateur : heures seulement.
+  Légende (`.sg-db-leg`) tout en bas de la page, sous le tableau ; note « Contrat : … CHF HT … réparti selon les % … Montants hors taxe … »
+  retirée à la demande (19.10.2026) — seul l'avertissement « Aucun contrat d'honoraires relié » reste (`.sg-ctr-note`, sans contrat).
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
   projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne

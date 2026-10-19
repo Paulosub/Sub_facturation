@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 19.10.2026 17:28 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 19.10.2026 22:56 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -607,7 +607,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-db .po,.sg-db .pc{top:3px;width:10px;height:10px;margin-left:-5px;border-radius:50%}
 .sg-db .po,.sg-db-leg .po{background:var(--s-nuit)}
 .sg-db .pc,.sg-db-leg .pc{background:#fff;box-shadow:inset 0 0 0 2px var(--s-nuit)}
-.sg-db-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);padding:10px 12px 4px}
+.sg-db-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);padding:12px 12px 10px}   /* sous le tableau, en bas de page (19.10.2026) */
 .sg-db-leg span{display:inline-flex;align-items:center;gap:6px}
 .sg-db-leg i{display:inline-block}
 .sg-db-leg .po,.sg-db-leg .pc{width:10px;height:10px;border-radius:50%}
@@ -24620,9 +24620,9 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
           +'<th class="r" title="Coût de revient ÷ heures saisies : ce que chaque heure coûte au bureau (collaborateurs qui y ont travaillé)">Coût de revient<br>/ h</th><th style="min-width:260px">Comparaison</th>':'<th></th>')+'</tr>';
       const leg=fin?'<div class="sg-db-leg"><span><i class="po"></i>Honoraires / h (contrat HT ÷ heures saisies)</span><span><i class="pc"></i>Coût de revient / h (coût de revient ÷ heures saisies)</span>'
         +'<span><i class="ln g"></i>Gain par heure</span><span><i class="ln r"></i>Perte par heure</span>'+(moy?'<span><i class="moy"></i>Coût de revient moyen des collaborateurs du projet : '+num(moy,0)+' CHF/h</span>':'')+'</div>':'';
-      const note=fin?'<div class="sg-ctr-note">'+(C&&C.n?'Contrat : '+nxCHF(C.totHT)+' CHF HT ('+nxCHF(C.tot)+' TTC, '+C.n+' contrat'+(C.n>1?'s':'')+' d’honoraires Facturation), réparti selon les % des phases SIA du contrat.':'Aucun contrat d’honoraires relié à ce projet dans Facturation : marge et honoraires / h calculés sans honoraires.')
-        +' Montants hors taxe : la TVA encaissée n’est pas un revenu et le coût de revient n’en contient pas.'+(pa?' Phase en cours : marge provisoire.':'')+(!tauxOk?' Sous-phases : coût non détaillé (taux internes non transmis).':'')+'</div>':'';
-      set(nxCard('c12','Phases contrat',leg+'<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+'</div>','<span class="a" data-fn="ph">Configurer</span>')); };
+      /* note sous le tableau retirée (19.10.2026) : seul l'avertissement « aucun contrat relié » reste ; légende tout en bas de la page */
+      const note=fin&&!(C&&C.n)?'<div class="sg-ctr-note">Aucun contrat d’honoraires relié à ce projet dans Facturation : marge et honoraires / h calculés sans honoraires.</div>':'';
+      set(nxCard('c12','Phases contrat','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+leg+'</div>','<span class="a" data-fn="ph">Configurer</span>')); };
     if(!fin){ dessiner(null); return; }
     set('<div class="nx-empty">Calcul des marges…</div>');
     fxEnsure().catch(()=>null).then(()=>{ if(box.isConnected) dessiner(sgContratParPhase(p)); }); return; }

@@ -387,9 +387,9 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
           +'<th class="r" title="Coût de revient ÷ heures saisies : ce que chaque heure coûte au bureau (collaborateurs qui y ont travaillé)">Coût de revient<br>/ h</th><th style="min-width:260px">Comparaison</th>':'<th></th>')+'</tr>';
       const leg=fin?'<div class="sg-db-leg"><span><i class="po"></i>Honoraires / h (contrat HT ÷ heures saisies)</span><span><i class="pc"></i>Coût de revient / h (coût de revient ÷ heures saisies)</span>'
         +'<span><i class="ln g"></i>Gain par heure</span><span><i class="ln r"></i>Perte par heure</span>'+(moy?'<span><i class="moy"></i>Coût de revient moyen des collaborateurs du projet : '+num(moy,0)+' CHF/h</span>':'')+'</div>':'';
-      const note=fin?'<div class="sg-ctr-note">'+(C&&C.n?'Contrat : '+nxCHF(C.totHT)+' CHF HT ('+nxCHF(C.tot)+' TTC, '+C.n+' contrat'+(C.n>1?'s':'')+' d’honoraires Facturation), réparti selon les % des phases SIA du contrat.':'Aucun contrat d’honoraires relié à ce projet dans Facturation : marge et honoraires / h calculés sans honoraires.')
-        +' Montants hors taxe : la TVA encaissée n’est pas un revenu et le coût de revient n’en contient pas.'+(pa?' Phase en cours : marge provisoire.':'')+(!tauxOk?' Sous-phases : coût non détaillé (taux internes non transmis).':'')+'</div>':'';
-      set(nxCard('c12','Phases contrat',leg+'<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+'</div>','<span class="a" data-fn="ph">Configurer</span>')); };
+      /* note sous le tableau retirée (19.10.2026) : seul l'avertissement « aucun contrat relié » reste ; légende tout en bas de la page */
+      const note=fin&&!(C&&C.n)?'<div class="sg-ctr-note">Aucun contrat d’honoraires relié à ce projet dans Facturation : marge et honoraires / h calculés sans honoraires.</div>':'';
+      set(nxCard('c12','Phases contrat','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+leg+'</div>','<span class="a" data-fn="ph">Configurer</span>')); };
     if(!fin){ dessiner(null); return; }
     set('<div class="nx-empty">Calcul des marges…</div>');
     fxEnsure().catch(()=>null).then(()=>{ if(box.isConnected) dessiner(sgContratParPhase(p)); }); return; }

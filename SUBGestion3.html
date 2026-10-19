@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 19.10.2026 23:41 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 19.10.2026 23:42 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -24459,7 +24459,8 @@ function sgRenta(p,D,taux){ taux=taux||sgTaux(); const logs=DS.by('timelog','PRO
   logs.forEach(r=>{ const v=+r.TIMEPERIOD||0; h+=v; if(+r.ISCHARGEABLE) hc+=v; cout+=v*taux(r.STAFF_ID,tlDate(r)); if(r.PHASE_ID!=null) byPh[r.PHASE_ID]=(byPh[r.PHASE_ID]||0)+v; });
   const cs=D?sgContratsDuProjet(p,D).filter(c=>!c.annule):[], ids=new Set(cs.map(c=>c.id)), tva=c=>(+c.tva||8.1)/100;
   let contratHT=cs.reduce((s,c)=>s+(+c.hht||(+c.httc||0)/(1+tva(c))),0), src='Facturation';
-  if(!contratHT){ contratHT=DS.by('projectcontract','PROJECT_ID',p.ID).filter(c=>!+c.ISSUBCONTRACT).reduce((s,c)=>s+(+c.CONTRACTAMOUNT||0),0); src=contratHT?'moteur':''; }
+  let contratTTC=cs.reduce((s,c)=>s+(+c.httc||(+c.hht||0)*(1+tva(c))),0);   // TTC (19.10.2026, Contrats & factures)
+  if(!contratHT){ contratHT=DS.by('projectcontract','PROJECT_ID',p.ID).filter(c=>!+c.ISSUBCONTRACT).reduce((s,c)=>s+(+c.CONTRACTAMOUNT||0),0); src=contratHT?'moteur':''; contratTTC=contratHT*1.081; }
   const fs=D?D.f.filter(f=>ids.has(f.contrat_id)&&!/annul/i.test(f.statut||'')):[];
   const tvaF=f=>tva(cs.find(c=>c.id===f.contrat_id)||{}), ttc=f=>+f._ttc||+f.ttc||0;
   const factHT=fs.reduce((s,f)=>s+ttc(f)/(1+tvaF(f)),0), factTTC=fs.reduce((s,f)=>s+ttc(f),0), encTTC=fs.filter(f=>!fxUnpaid(f)).reduce((s,f)=>s+ttc(f),0);
@@ -24470,7 +24471,7 @@ function sgRenta(p,D,taux){ taux=taux||sgTaux(); const logs=DS.by('timelog','PRO
   if(contratHT&&conso-fact>0.25) al.push(['o','Facturation en retard ('+Math.round(fact*100)+' % facturé / '+Math.round(conso*100)+' % consommé)']);
   if(hors.length) al.push(['o',hors.length+' phase'+(hors.length>1?'s':'')+' hors budget']);
   if(!contratHT&&h>40&&+p.PROJECTSTATECODE===2&&!sgInterne(p)) al.push(['g','Pas de contrat relié ('+nxH(h)+' h saisies)']);
-  return {p,h,hc,cout,contratHT,src,factHT,factTTC,encTTC,marge:factHT-cout,reste:contratHT-cout,conso,fact,cs,fs,byPh,hors,al,niv:al.some(a=>a[0]==='r')?3:al.some(a=>a[0]==='o')?2:al.length?1:0}; }
+  return {p,h,hc,cout,contratHT,contratTTC,src,factHT,factTTC,encTTC,marge:factHT-cout,reste:contratHT-cout,conso,fact,cs,fs,byPh,hors,al,niv:al.some(a=>a[0]==='r')?3:al.some(a=>a[0]==='o')?2:al.length?1:0}; }
 const sgPct=v=>v==null?'—':Math.round(v*100)+' %';
 /* ═══ Phase actuelle, graphique des phases, marge bénéficiaire (19.10.2026) ═══
    Phase actuelle = phase (groupe 0 à 8 de la base : 1 Relevé, 2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui
@@ -24667,7 +24668,7 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
   if(k==='factu'){ set('<div class="nx-empty">Recherche dans la facturation…</div>');
     fxEnsure().catch(()=>null).then(()=>{ const D=fxData(), x=sgRenta(p,D,taux); if(!box.isConnected) return;
       const opts=DS.all('project').length?'':''; const libre=D?D.c.filter(c=>!c.annule&&!sgProjetDuContrat(c)):[];
-      set('<div class="nx-kpis">'+nxKpi('contrat','Honoraires (HT)',x.contratHT?nxCHF(x.contratHT)+'<small>CHF</small>':'—',x.src==='moteur'?'contrats des projets':x.cs.length+' contrat(s)',null,null,1)/* « Coût de revient » retiré de Contrats & factures (19.10.2026) */+nxKpi('receipt','Facturé (HT)',nxCHF(x.factHT)+'<small>CHF</small>',sgPct(x.fact)+' des honoraires',x.fact==null?null:x.fact*100)+nxKpi('wallet','Encaissé (TTC)',nxCHF(x.encTTC)+'<small>CHF</small>','marge '+nxCHF(x.marge)+' CHF')+'</div>'
+      set('<div class="nx-kpis">'+nxKpi('contrat','Honoraires (TTC)',x.contratTTC?nxCHF(x.contratTTC)+'<small>CHF</small>':'—',x.src==='moteur'?'contrats des projets':x.cs.length+' contrat(s)',null,null,1)/* « Coût de revient » retiré de Contrats & factures (19.10.2026) */+nxKpi('receipt','Facturé (TTC)',nxCHF(x.factTTC)+'<small>CHF</small>',(x.contratTTC?Math.round(x.factTTC/x.contratTTC*100)+' %':'—')+' des honoraires',x.contratTTC?x.factTTC/x.contratTTC*100:null)+nxKpi('wallet','Encaissé (TTC)',nxCHF(x.encTTC)+'<small>CHF</small>','marge '+nxCHF(x.marge)+' CHF')+'</div>'
         +(x.al.length?'<div style="margin:-14px 0 20px">'+x.al.map(sgAlerteTag).join(' ')+'</div>':'')
         +'<div class="nx-grid">'+nxCard('c12','Contrats d’honoraires',(x.cs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Contrat</th><th>Client</th><th>Date</th><th class="r">HT</th><th class="r">TTC</th><th>État</th><th></th></tr>'+x.cs.map(c=>'<tr><td><b>'+nxE(c.affaire||'')+'</b> '+nxE(c.projet||'')+'</td><td>'+nxE(c.nom||'')+'</td><td>'+(c.date?dfr(c.date):'')+'</td><td class="r">'+nxCHF(c.hht)+'</td><td class="r">'+nxCHF(c.httc)+'</td><td>'+(c.signe?'<span class="nx-tag s2">Signé</span>':c.envoye?'<span class="nx-tag s3">Envoyé</span>':'<span class="nx-tag">Brouillon</span>')+'</td><td class="r"><button class="nx-btn" style="height:28px" data-go="fx-calchono" data-arg="c:'+nxE(c.id)+'">Ouvrir</button> <button class="nx-btn" style="height:28px" data-go="fx-saisie" data-arg="nf:'+nxE(c.id)+'">Facturer</button></td></tr>').join('')+'</table></div>'
             :'<div class="b"><p style="margin:0 0 10px;font-weight:300">Aucun contrat de Facturation relié à ce projet.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-go="fx-calchono" data-arg="newaff:'+nxE(p.NUMBER)+'">'+nxSvg('contrat')+'Nouveau contrat</button>'+(libre.length?'<select class="inp" id="sg-lier" style="max-width:380px"><option value="">Relier un contrat existant…</option>'+libre.map(c=>'<option value="'+nxE(c.id)+'">'+nxE([c.affaire||'(sans code)',c.projet,c.nom].filter(Boolean).join(' — '))+'</option>').join('')+'</select>':'')+'</div></div>'),'<span class="a" data-go="fx-contrats">Tous les contrats</span>')

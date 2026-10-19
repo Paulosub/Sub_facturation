@@ -443,7 +443,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   tableaux (`.sg-pg-leg`, `.sg-db-leg`).
   Onglet « Contrats & factures » : tuile « Coût de revient » retirée à la demande (19.10.2026) ; tuiles en TTC : Honoraires (TTC) (`sgRenta` ▸
   `contratTTC` = httc des contrats, sinon hht × (1 + TVA) ; contrats du moteur : HT × 1,081), Facturé (TTC) (`factTTC`, % des honoraires TTC),
-  Encaissé (TTC). Sous les tuiles, l'indication « n phases hors budget » n'est plus affichée (elle reste dans l'en-tête) ; tableau des
+  Encaissé (TTC) (montant seul, sans la marge), **Solde à facturer (TTC)** = honoraires TTC − facturé TTC (% des honoraires). Sous les tuiles, l'indication « n phases hors budget » n'est plus affichée (elle reste dans l'en-tête) ; tableau des
   factures : colonne « Numéro de facture » (au lieu de « Facture »).
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du

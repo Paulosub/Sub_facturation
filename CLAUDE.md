@@ -425,6 +425,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   heures au-delà et noms), puis pour l'administrateur et le chef de projet : Marge bénéficiaire (% du contrat HT, « provisoire » si une
   phase est en cours), Coût de revient moyen (CHF/h), Gain / Perte par heure (honoraires / h − coût de revient / h, valeurs arrondies) ;
   collaborateur : les deux chiffres d'heures. Lien « Configurer » de l'en-tête de la carte retiré à la demande (le lien de la carte vide reste).
+  Texte gris sous les chiffres retiré à la demande (19.10.2026) : le détail (heures saisies / contrat, phases dépassées, % du contrat…) est en infobulle.
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
   projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne

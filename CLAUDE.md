@@ -441,6 +441,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Phase actuelle affichée SANS son numéro (`sgPhaseLib` : nom — sous-phase ; tuile du tableau de bord et chiffre de la page du projet en
   toutes lettres, classe `.txt`) ; la numérotation reste dans les listes de phases. Filet léger (`--s-filet`) au-dessus des légendes sous les
   tableaux (`.sg-pg-leg`, `.sg-db-leg`).
+  Onglet « Contrats & factures » : tuile « Coût de revient » retirée à la demande (19.10.2026) ; restent Honoraires (HT), Facturé (HT), Encaissé (TTC).
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
   projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne

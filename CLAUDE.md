@@ -433,7 +433,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Vue d'ensemble du tableau de bord (19.10.2026)** : tuiles Temps total, **Temps contractuel prévu** (Σ des heures au contrat des phases,
   heures restantes ou au-delà, % du prévu), Part facturable ; Coût de revient, Facturé (HT) et Marge bénéficiaire retirés à la demande (plus de
   tuile « Finances verrouillées » dans cet onglet) — la marge reste dans « Phases contrat », le facturé dans « Contrats & factures ».
-  Puis, le même soir : tuiles renommées « Heures saisies » et « Heures prévues » (à droite des heures saisies), tuile « Phase actuelle »
+  Puis, le même soir : tuiles renommées « Heures saisies » et « Heures prévues » (ordre final : Heures prévues, Heures saisies), tuile « Phase actuelle »
   (numéro en grand, nom en petit, sous-phase en infobulle) à droite de « Part facturable » ; aucun texte gris sous les tuiles (détail en
   infobulle, `kpiT`) ; disposition en deux colonnes (`.sg-pcol` : à gauche « Phases : heures prévues et effectuées » puis « Temps par mois »,
   à droite « Équipe » ; côte à côte jusqu'à 760 px) ; graphique des phases : légende sous le tableau, ligne « Total : … effectuées sur …

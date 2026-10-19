@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 19.10.2026 23:20 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 19.10.2026 23:23 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -24570,8 +24570,9 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
     /* part facturable (19.10.2026) : contrat(s) au forfait ou au forfait relatif → les heures facturables d'une phase sont plafonnées à ses heures au
        contrat (TIMEBUDGET) : le dépassement d'une phase n'est pas facturable et fait baisser la part ; contrat unitaire, phase sans heures au
        contrat et heures sans phase : inchangé */
+    const hPrev=DS.by('projectphase','PROJECT_ID',p.ID).reduce((a,f)=>a+(+f.TIMEBUDGET||0),0);   // temps contractuel prévu = Σ des heures au contrat des phases (19.10.2026)
     const kpiFact=(v,s2)=>nxKpi('trend','Part facturable',(tot?Math.round(v/tot*100):0)+'<small>%</small>',s2,tot?v/tot*100:0);
-    set('<div class="nx-kpis" id="sg-p-kpis">'+nxKpi('clock','Temps total',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,null,1)+'<div id="sg-p-fact" style="display:contents">'+kpiFact(chg,nxH(chg)+' h facturables')+'</div>'+'<div class="nx-kpi"><div class="l">Rentabilité</div><div class="v">…</div></div></div>'
+    set('<div class="nx-kpis" id="sg-p-kpis">'+nxKpi('clock','Temps total',nxH(tot)+'<small>h</small>',nxH(h30)+' h ces 30 derniers jours',null,null,1)+((hp,pc)=>nxKpi('contrat','Temps contractuel prévu',hp?nxH(hp)+'<small>h</small>':'—',hp?(tot>hp?'+'+nxH(tot-hp)+' h au-delà ('+pc+' % du prévu)':nxH(hp-tot)+' h restantes ('+pc+' % consommé)'):'aucune heure prévue au contrat',hp?Math.min(100,tot/hp*100):null))(hPrev,hPrev?Math.round(tot/hPrev*100):0)+'<div id="sg-p-fact" style="display:contents">'+kpiFact(chg,nxH(chg)+' h facturables')+'</div></div>'   /* coût de revient, facturé et marge bénéficiaire retirés de la vue d'ensemble (19.10.2026) */
       +'<div class="nx-grid">'+nxCard('c12','Phases : heures prévues et effectuées','<div class="b">'+sgPhasesGraph(p)+'</div>')+nxCard('c8','Temps par mois','<div class="b">'+nxBars(months,{every:months.length>14?2:1})+'</div>')
       +nxCard('c4','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+Math.round(x.v/tot*100)+' % du temps</span></div><span class="m">'+nxH(x.v)+' h</span></div>').join(''):'<div class="nx-empty">Aucune saisie de temps.</div>')+'</div>')+'</div>');
     fxEnsure().catch(()=>null).then(()=>{ const D=fxData(), E=document.getElementById('sg-p-fact'); if(!D||!E) return;
@@ -24580,12 +24581,7 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
       const fact=Object.entries(byPhC).reduce((a,[id,c])=>a+(bud[id]!=null?Math.min(c,bud[id]):c),0), dep=chg-fact; if(dep<0.05) return;
       E.innerHTML=kpiFact(fact,nxH(fact)+' h facturables · '+nxH(dep)+' h au-delà du contrat ('+ty.map(t=>t==='relatif'?'forfait relatif':'forfait').join(', ')+')');
       E.firstElementChild.title='Contrat au forfait : les heures d’une phase au-delà de ses heures au contrat ne sont pas facturables'; });
-    if(sgFinVerrou()){ const K=document.getElementById('sg-p-kpis'); K.lastElementChild.outerHTML='<div class="nx-kpi" data-fn="deverr" style="cursor:pointer"><div class="l">'+nxSvg('lock')+'Finances</div><div class="v" style="font-size:15px">Verrouillées</div><div class="s">Cliquer pour saisir le code</div></div>'; pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); return; }
-    fxEnsure().catch(()=>null).then(()=>{ const x=sgRenta(p,fxData(),taux), K=document.getElementById('sg-p-kpis'); if(!K) return;
-      K.innerHTML=K.innerHTML.replace(/<div class="nx-kpi"><div class="l">Rentabilité<\/div><div class="v">…<\/div><\/div>/,
-        nxKpi('coins','Coût de revient',nxCHF(x.cout)+'<small>CHF</small>',x.contratHT?Math.round(x.conso*100)+' % des honoraires ('+nxCHF(x.contratHT)+' HT)':'aucun contrat relié',x.conso==null?null:x.conso*100)
-        +nxKpi('receipt','Facturé (HT)',nxCHF(x.factHT)+'<small>CHF</small>',x.contratHT?Math.round(x.fact*100)+' % des honoraires · encaissé '+nxCHF(x.encTTC)+' TTC':'encaissé '+nxCHF(x.encTTC)+' TTC',x.fact==null?null:x.fact*100)
-        +nxKpi('wallet','Marge bénéficiaire',nxCHF(x.marge)+'<small>CHF</small>','facturé − coût de revient · '+sgMargePct(x))); }); return; }
+    return; }
   if(k==='temps'){ const per=nxLS.get('sg3_fiche_per','12'), lim=per==='tout'?0:dayKey(new Date(now.getFullYear(),now.getMonth()-(+per),now.getDate()));
     const L=logs.filter(r=>tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1)), tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     set('<div style="display:flex;gap:8px;align-items:center;margin:0 0 14px;flex-wrap:wrap"><div class="seg">'+[['1','1 mois'],['3','3 mois'],['12','12 mois'],['tout','Tout']].map(([v,t])=>'<button data-per="'+v+'" class="'+(v===per?'on':'')+'">'+t+'</button>').join('')+'</div><span style="margin-left:auto;color:var(--s-gris)">'+L.length+' saisies · '+nxH(tot)+' h'+(sgTauxVisibles()?' · coût '+nxCHF(L.reduce((s,r)=>s+(+r.TIMEPERIOD||0)*taux(r.STAFF_ID,tlDate(r)),0))+' CHF':'')+'</span></div>'

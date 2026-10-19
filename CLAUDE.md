@@ -430,6 +430,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `detail.inputs.ch_modecalc_type`, comme `chContratModeCalc`) → les heures facturables (ISCHARGEABLE) d'une phase sont plafonnées à ses heures
   au contrat (TIMEBUDGET) : le dépassement d'une phase (toutes les phases, phase en cours comprise) n'est pas facturable et fait baisser la part
   (« x h facturables · y h au-delà du contrat (forfait) ») ; contrat unitaire, phase sans heures au contrat, heures sans phase : inchangé.
+  **Vue d'ensemble du tableau de bord (19.10.2026)** : tuiles Temps total, **Temps contractuel prévu** (Σ des heures au contrat des phases,
+  heures restantes ou au-delà, % du prévu), Part facturable ; Coût de revient, Facturé (HT) et Marge bénéficiaire retirés à la demande (plus de
+  tuile « Finances verrouillées » dans cet onglet) — la marge reste dans « Phases contrat », le facturé dans « Contrats & factures ».
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
   projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne

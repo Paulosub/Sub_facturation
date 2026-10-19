@@ -318,6 +318,7 @@ VIEWS['nx-projet']={
     if(!sgFinVerrou()) fxEnsure().then(()=>{ const x=sgRenta(p,fxData()), b=document.getElementById('sg-p-al'); if(b&&x.al.length) b.innerHTML=x.al.map(sgAlerteTag).join(' '); }).catch(()=>{}); },
   refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog','projectcost','projectcontract','projectnote','projecttask','depotfichier')) go('nx-projet',VIEW.arg); }
 };
+const SG_CGRP={};   // Chantier : rubriques ouvertes par projet (le temps de la session de l'onglet)
 function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h0=>{ box.innerHTML=h0; };
   const now=new Date(), taux=sgTaux(), logs=DS.by('timelog','PROJECT_ID',p.ID);
   if(k==='factu'&&sgFinVerrou()){ set('<div class="nx-empty">'+nxSvg('lock')+'<p>Contrats, factures et rentabilité sont protégés par le code d’accès.</p><button class="nx-btn pri" data-fn="deverr">Déverrouiller</button></div>'); pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); return; }
@@ -435,13 +436,19 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
       const s=box.querySelector('#sg-lier'); if(s) s.onchange=()=>{ if(!s.value) return; const l=sgLiens(); l[s.value]=String(p.ID); nxLS.set('sg3_liens',l); toast('Contrat relié à '+p.NUMBER+'.'); sgOnglet(p,'factu',pg); }; }); return; }
   if(k==='chantier'){ set('<div class="nx-empty">Chargement des documents…</div>');
     DS.need(['costestimate','costcontrol','costplanning']).then(()=>fxEnsure().catch(()=>null)).then(()=>{ if(!box.isConnected) return;
-      const docs=(t,lbl,dom,go_)=>{ const L=DS.by(t,'PROJECT_ID',p.ID).filter(d=>!+d.ISMARKEDASDELETED).sort((a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE));
-        return nxCard('c6',lbl,L.length?'<div class="b flush">'+L.map(d=>'<div class="nx-row" data-fn="dom" data-dom="'+nxE(dom)+'">'+nxSvg('doc')+'<div class="t"><b>'+nxE(d.NOTE||d.VERSION||('Document '+d.ID))+'</b><span>'+nxE(['version '+(d.VERSIONNUMBER||d.VERSION||''),d.CHANGEDDATE?dfr(String(d.CHANGEDDATE).slice(0,10)):'',d.USERID].filter(Boolean).join(' · '))+'</span></div></div>').join('')+'</div>':'<div class="nx-empty">Aucun document.</div>','<span class="n">'+L.length+'</span><span class="a" data-fn="dom" data-dom="'+nxE(dom)+'">Ouvrir</span>'); };
+      // rubriques = titres dépliables (19.10.2026), toutes repliées à l'arrivée ; celles qu'on a ouvertes le restent au retour (SG_CGRP)
+      const ouv=SG_CGRP[p.ID]||(SG_CGRP[p.ID]=new Set());
+      const grp=(c,ico,lbl,nb,corps)=>'<section class="sg-pgrp'+(ouv.has(c)?' on':'')+'" data-c="'+c+'"><button class="sg-pgrp-h" data-fn="cgrp" aria-expanded="'+ouv.has(c)+'">'+nxSvg(ico)+'<span class="t"><b>'+nxE(lbl)+'</b></span><span class="c">'+nb+'</span>'+nxSvg('next','chev')+'</button><div class="sg-cgrp-b">'+corps+'</div></section>';
+      const docs=(c,t,lbl,dom,ico)=>{ const L=DS.by(t,'PROJECT_ID',p.ID).filter(d=>!+d.ISMARKEDASDELETED).sort((a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE));
+        return grp(c,ico,lbl,L.length+' document'+(L.length>1?'s':''),(L.length?L.map(d=>'<div class="nx-row" data-fn="dom" data-dom="'+nxE(dom)+'">'+nxSvg('doc')+'<div class="t"><b>'+nxE(d.NOTE||d.VERSION||('Document '+d.ID))+'</b><span>'+nxE(['version '+(d.VERSIONNUMBER||d.VERSION||''),d.CHANGEDDATE?dfr(String(d.CHANGEDDATE).slice(0,10)):'',d.USERID].filter(Boolean).join(' · '))+'</span></div></div>').join(''):'<div class="nx-empty">Aucun document.</div>')
+          +'<div class="sg-cgrp-a"><button class="nx-btn" data-fn="dom" data-dom="'+nxE(dom)+'">'+nxSvg('arrow')+'Ouvrir</button></div>'); };
       let pv={}; try{ pv=JSON.parse(FX.w.localStorage.getItem('sa_pv_data')||'{}'); }catch(_){}
       const pk=Object.keys(pv).find(c=>sgCle(c)===sgCle(p.NUMBER)), pvs=pk?(pv[pk].pvs||[]):[];
-      set('<div class="nx-grid">'+docs('costestimatedocument','Descriptifs & devis','Devis général')+docs('costcontroldocument','Contrôles des coûts','Contrôle des coûts')+docs('costplanningdocument','Estimations eCCC','Calcul des coûts')
-        +nxCard('c6','PV de chantier',pvs.length?'<div class="b flush">'+pvs.slice().sort((a,b)=>cmp(b.date,a.date)).map(x=>'<div class="nx-row" data-go="fx-pv-chantier" data-arg="pv:'+nxE(pk)+'">'+nxSvg('pv')+'<div class="t"><b>PV n° '+nxE(x.num)+'</b><span>'+nxE([x.date?dfr(x.date):'',x.statut].filter(Boolean).join(' · '))+'</span></div></div>').join('')+'</div>':'<div class="b"><p style="margin:0 0 10px;font-weight:300">Aucun PV pour ce projet.</p><button class="nx-btn" data-go="fx-pv-chantier" data-arg="pv:'+nxE(p.NUMBER)+'">'+nxSvg('pv')+'PV de chantier</button></div>','<span class="n">'+pvs.length+'</span>')+'</div>');
-      pg._fn.dom=b=>sgOuvrirDomaine(p,b.dataset.dom); }); return; }
+      set('<div class="sg-pgrps">'+docs('devis','costestimatedocument','Descriptifs & devis','Devis général','doc')+docs('coco','costcontroldocument','Contrôles des coûts','Contrôle des coûts','coins')+docs('estim','costplanningdocument','Estimations eCCC','Calcul des coûts','ruler')
+        +grp('pv','pv','PV de chantier',pvs.length+' PV',(pvs.length?pvs.slice().sort((a,b)=>cmp(b.date,a.date)).map(x=>'<div class="nx-row" data-go="fx-pv-chantier" data-arg="pv:'+nxE(pk)+'">'+nxSvg('pv')+'<div class="t"><b>PV n° '+nxE(x.num)+'</b><span>'+nxE([x.date?dfr(x.date):'',x.statut].filter(Boolean).join(' · '))+'</span></div></div>').join(''):'<div class="nx-empty">Aucun PV pour ce projet.</div>')
+          +'<div class="sg-cgrp-a"><button class="nx-btn" data-go="fx-pv-chantier" data-arg="pv:'+nxE(pk||p.NUMBER)+'">'+nxSvg('pv')+'PV de chantier</button></div>')+'</div>');
+      Object.assign(pg._fn,{dom:b=>sgOuvrirDomaine(p,b.dataset.dom),
+        cgrp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); ouv[on?'add':'delete'](x.dataset.c); }}); }); return; }
   if(k==='docs'){ DS.need(['depotfichier']).then(()=>{ if(!box.isConnected) return;
     const L=DS.all('depotfichier').filter(f=>String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER).startsWith('ProjectDocuments/Documents/'+p.ID+'/')).sort((a,b)=>cmp(a.DOSSIER,b.DOSSIER)||cmp(a.NOM,b.NOM)), grp={};
     L.forEach(f=>(grp[f.DOSSIER]=grp[f.DOSSIER]||[]).push(f));

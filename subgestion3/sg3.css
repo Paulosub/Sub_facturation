@@ -466,6 +466,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pgrp.on .sg-pgrp-h .chev{transform:rotate(90deg)}
 .sg-pgrp>.sg-tiles{display:none;padding:8px 0 20px}
 .sg-pgrp.on>.sg-tiles{display:grid}
+/* Projet ▸ Chantier : rubriques dépliables (19.10.2026) */
+.sg-pgrp>.sg-cgrp-b{display:none;padding:0 0 18px}
+.sg-pgrp.on>.sg-cgrp-b{display:block}
+.sg-cgrp-a{display:flex;gap:8px;padding-top:12px}
 /* 18.10.2026 : vue d'ensemble Projets (chiffres, catégories, états) */
 .sg-pv-h{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap;border-top:2px solid var(--s-noir);padding-top:12px;margin:0 0 30px}
 .sg-pv-h h2{margin:2px 0 0;font-size:32px;font-weight:700;line-height:1.08}

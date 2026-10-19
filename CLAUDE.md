@@ -446,6 +446,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `contratTTC` = httc des contrats, sinon hht × (1 + TVA) ; contrats du moteur : HT × 1,081), Facturé (TTC) (`factTTC`, % des honoraires TTC),
   Encaissé (TTC) (montant seul, sans la marge), **Solde à facturer (TTC)** = honoraires TTC − facturé TTC (% des honoraires). Sous les tuiles, l'indication « n phases hors budget » n'est plus affichée (elle reste dans l'en-tête) ; tableau des
   factures : colonne « Numéro de facture » (au lieu de « Facture »).
+  Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
+  (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
+  dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
   projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne

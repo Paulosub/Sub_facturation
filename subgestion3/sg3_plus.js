@@ -373,7 +373,7 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
       const marge=o=>(o.hs>0||o.ctr>0)&&o.cout!=null?(o.ctr||0)-o.cout:null;
       const chf=v=>v==null?'—':nxCHF(v), sig=v=>v==null?'—':'<span style="color:'+(v<0?'var(--s-rouge)':'#5d7a10')+';font-weight:700">'+(v>0?'+':'')+nxCHF(v)+'</span>';
       const comp=o=>{ const t=tx(o); if(t.o==null||t.c==null) return ''; const a=Math.min(t.o,t.c), b=Math.max(t.o,t.c), gain=t.o>=t.c;
-        return '<div class="sg-db" title="'+nxE((o.lib||'')+' — honoraires '+num(t.o,0)+' CHF/h, coût de revient '+num(t.c,0)+' CHF/h : '+(gain?'gain':'perte')+' de '+num(Math.abs(t.o-t.c),0)+' CHF par heure')+'">'
+        return '<div class="sg-db" title="'+nxE((o.lib||'')+' — honoraires '+num(t.o,0)+' CHF/h, coût de revient '+num(t.c,0)+' CHF/h : '+(gain?'gain':'perte')+' de '+num(Math.abs(t.o-t.c),0)+' CHF par heure'+(moy?' — trait gris : coût de revient moyen du projet, '+num(moy,0)+' CHF/h':''))+'">'
           +(moy?'<i class="moy" style="left:'+X(moy)+'"></i>':'')+'<i class="ln '+(gain?'g':'r')+'" style="left:'+X(a)+';width:calc('+X(b)+' - '+X(a)+')"></i><i class="pc" style="left:'+X(t.c)+'"></i><i class="po'+(t.o>maxR?' hors':'')+'" style="left:'+X(t.o)+'"></i></div>'; };
       const ligne=o=>{ const t=tx(o), m=marge(o);
         return '<tr class="'+(o.sub?'sub':'')+(o.cur?' cur':'')+(o.tot?' tot':'')+'"><td title="'+nxE(o.lib)+'">'+(o.sub||o.gris?'<span>':'<b>')+nxE(o.lib)+(o.sub||o.gris?'</span>':'</b>')+(o.cur?'<i class="sg-pg-cur">en cours</i>':'')+'</td>'
@@ -386,7 +386,7 @@ function sgOnglet(p,k,pg){ const box=pg.querySelector('#sg-onglet'); const set=h
           +'<th class="r" title="Contrat HT − coût de revient : gain (vert) ou perte (rouge)">Marge<br>bénéficiaire</th><th class="r" title="Contrat HT ÷ heures saisies : ce que le client paie pour chaque heure passée">Honoraires<br>/ h</th>'
           +'<th class="r" title="Coût de revient ÷ heures saisies : ce que chaque heure coûte au bureau (collaborateurs qui y ont travaillé)">Coût de revient<br>/ h</th><th style="min-width:260px">Comparaison</th>':'<th></th>')+'</tr>';
       const leg=fin?'<div class="sg-db-leg"><span><i class="po"></i>Honoraires / h (contrat HT ÷ heures saisies)</span><span><i class="pc"></i>Coût de revient / h (coût de revient ÷ heures saisies)</span>'
-        +'<span><i class="ln g"></i>Gain par heure</span><span><i class="ln r"></i>Perte par heure</span>'+(moy?'<span><i class="moy"></i>Coût de revient moyen des collaborateurs du projet : '+num(moy,0)+' CHF/h</span>':'')+'</div>':'';
+        +'<span><i class="ln g"></i>Gain par heure</span><span><i class="ln r"></i>Perte par heure</span>'+'</div>':'';   /* « Coût de revient moyen des collaborateurs du projet » retiré de la légende (19.10.2026) : infobulle de la comparaison */
       /* note sous le tableau retirée (19.10.2026) : seul l'avertissement « aucun contrat relié » reste ; légende tout en bas de la page */
       const note=fin&&!(C&&C.n)?'<div class="sg-ctr-note">Aucun contrat d’honoraires relié à ce projet dans Facturation : marge et honoraires / h calculés sans honoraires.</div>':'';
       set(nxCard('c12','Phases contrat','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+leg+'</div>','<span class="a" data-fn="ph">Configurer</span>')); };

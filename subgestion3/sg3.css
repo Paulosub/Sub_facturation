@@ -603,6 +603,5 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-db-leg i{display:inline-block}
 .sg-db-leg .po,.sg-db-leg .pc{width:10px;height:10px;border-radius:50%}
 .sg-db-leg .ln{width:16px;height:3px}
-.sg-db-leg .moy{width:1px;height:14px;background:var(--s-gris2)}
 .sg-ctr-note{padding:8px 12px;font-size:12px;color:var(--s-gris);line-height:1.5}
 .sg-db .po.hors{margin-left:-10px;border-radius:0;clip-path:polygon(0 0,100% 50%,0 100%)}   /* au-delà de l'échelle : flèche au bord */

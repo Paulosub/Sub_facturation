@@ -221,8 +221,8 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
     if(!its.length) return;   // domaine sans module permis pour ce profil
     s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='dom-'+d.k?' on':'')+'" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+(d.prov?'<i class="sg-prov" title="Chapitre provisoire">prov.</i>':'')+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
-      +sgSideItems(d,its,c)
-      +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')+'</div></div>'; });
+      +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')   // fiche ouverte juste sous le titre du chapitre (19.10.2026)
+      +sgSideItems(d,its,c)+'</div></div>'; });
   const pins=nxLS.get('nx_pins3',[]).map(nxRef).filter(Boolean);
   if(pins.length) s+='<div class="nx-pins"><div class="nx-sep">Favoris</div>'+pins.map(r=>'<div class="nx-pin" data-ref="'+r.k+':'+r.id+'" title="'+nxE(r.t)+'">'+(r.tag?'<i>'+nxE(r.tag)+'</i>':nxSvg(r.ico))+'<span>'+nxE(r.t)+'</span></div>').join('')+'</div>';
   nav.innerHTML=s; const on=nav.querySelector('.nx-it.on'); if(on) on.scrollIntoView({block:'nearest'}); }

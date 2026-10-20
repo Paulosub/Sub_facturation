@@ -504,6 +504,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Projets : « Temps » → « Heures », « Contrats » → « Contrat » (20.10.2026)** : onglets du tableau de bord (`SG_ONGLETS`, clés `temps` / `factu`
   inchangées), carte « Heures par mois », « Aucune heure saisie. », infobulle « % des heures du projet », bouton « Saisir des heures » de la page du
   projet et du clic droit sur un projet (la saisie elle-même garde son titre « Saisie de temps »).
+  **Onglet « Heures » au graphisme de la vue d'ensemble (20.10.2026)** : choix « Période » et « Affichage » en texte souligné (`.sg-hbar`,
+  `.sg-hsel`, plus de boutons encadrés `.seg`), tuiles sans texte gris (Heures saisies, Saisies, Collaborateurs, Dernière saisie ; Coût de revient
+  si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
+  détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période. Barres « Part » des tableaux
+  regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).
   Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
   (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
   dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).

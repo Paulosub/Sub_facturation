@@ -470,6 +470,23 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pgrp>.sg-cgrp-b{display:none;padding:0 0 18px}
 .sg-pgrp.on>.sg-cgrp-b{display:block}
 .sg-cgrp-a{display:flex;gap:8px;padding-top:12px}
+/* Projet ▸ Heures (20.10.2026) : graphisme de la vue d'ensemble — choix soulignés, tuiles, actions dans le titre de la carte */
+.sg-hbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 40px;margin:-8px 0 22px}
+.sg-hsel{display:flex;align-items:flex-end;flex-wrap:wrap;gap:0 18px}
+.sg-hsel>em{font-style:normal;font-size:11.5px;font-weight:700;padding:0 4px 8px 0;color:var(--s-noir)}
+.sg-hsel button{border:0;background:none;padding:6px 0 5px;font:inherit;font-size:13px;color:var(--s-gris);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.sg-hsel button:hover{color:var(--s-noir)}
+.sg-hsel button.on{color:var(--s-noir);font-weight:700;border-bottom-color:var(--s-nuit)}
+.nx-card>h4 .sg-ha{display:inline-flex;align-items:center;gap:5px;border-bottom:0;padding:1px 4px}
+.nx-card>h4 .sg-ha+.sg-ha{margin-left:12px}
+.nx-card>h4 .sg-ha svg{width:14px;height:14px}
+.sg-hscroll{max-height:62vh;overflow:auto}
+.sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}
+.sg-htbl td.sg-hact{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-htbl .sg-hno{color:var(--s-gris)}
+.sg-hplus{font-size:11.5px;color:var(--s-gris);padding:10px 0 0;border-top:1px solid var(--s-filet)}
+.nx-tbl td .nx-mini-bar{display:inline-block;vertical-align:middle;width:70px;margin-right:6px}   /* barre « Part » visible dans les tableaux (Heures, Situation des heures) */
+.sg-sit td:has(.nx-mini-bar){white-space:nowrap}
 /* 18.10.2026 : vue d'ensemble Projets (chiffres, catégories, états) */
 .sg-pv-h{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap;border-top:2px solid var(--s-noir);padding-top:12px;margin:0 0 30px}
 .sg-pv-h h2{margin:2px 0 0;font-size:32px;font-weight:700;line-height:1.08}

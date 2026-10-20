@@ -331,7 +331,7 @@ VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||''); nxRecent('p',p.ID);
     const ong0=(o0=>o0==='phases'?'factu':o0)(nxLS.get('sg3_fiche_onglet','vue')), ong=sgOngletOk(ong0)?ong0:(SG_ONGLETS.map(o=>o[0]).find(sgOngletOk)||'vue'), mo=projMO(p), pin=nxPinned('p',p.ID), modif=sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)));
-    const html='<div class="nx-hero"><div class="sg-cart"><small>N° projet</small><b>'+(p.NUMBER?nxE(p.NUMBER):'—')+'</b></div><div class="tx">'   /* numéro en cartouche, complet (20.10.2026, variante D choisie par Paulo ; avant : pavé bleu nuit tronqué à 5 caractères) */
+    const html='<div class="nx-hero"><div class="sg-pnum" title="Numéro du projet">'+(p.NUMBER?nxE(p.NUMBER):'—')+'</div><div class="tx">'   /* grand numéro complet et filet noir (20.10.2026, variante C choisie par Paulo ; avant : pavé bleu nuit tronqué à 5 caractères, puis cartouche D le même jour) */
       +'<h2>'+nxE(p.TITLE||p.NUMBER)+'</h2><div class="meta">'
       /* 20.10.2026 : numéro, état, date et phase actuelle retirés de l'en-tête ; le maître de l'ouvrage (intervenants au rôle 8) nommé comme tel */
       +((L=>'<span class="sg-mo">'+nxSvg('person')+'Maître de l’ouvrage'+(L.length>1?'s':'')+' : <b>'+(L.length?L.map(nxE).join(', '):'—')+'</b></span>')([...new Set(DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>x.TEAMROLECODE===8&&x.CONTACT_ID!=null).map(x=>contactName(DS.get('contact',x.CONTACT_ID))).filter(Boolean))]))

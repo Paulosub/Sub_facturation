@@ -509,9 +509,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
   détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).
-  **Numéro du projet en cartouche (20.10.2026, variante D choisie parmi 4 propositions)** : en-tête du tableau de bord, à la place du pavé
-  bleu nuit (numéro tronqué à 5 caractères) — cadre noir 2 px comme le cartouche d'un plan, « N° projet » en petit, numéro complet en gras
-  (`.nx-hero .sg-cart`) ; les autres fiches (contact, collaborateur) gardent leur pavé `.ic`.
+  **Numéro du projet : grand numéro et filet (20.10.2026, variante C choisie parmi 4 propositions ; la variante D « cartouche », appliquée
+  d'abord, a été remplacée le même jour)** : en-tête du tableau de bord, à la place du pavé bleu nuit (numéro tronqué à 5 caractères) — numéro
+  complet en grand (34 px, bleu nuit), filet noir vertical de 2 px, puis le titre (`.nx-hero .sg-pnum` ; empilés sous 560 px) ; les autres
+  fiches (contact, collaborateur) gardent leur pavé `.ic`.
   Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
   (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
   dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).

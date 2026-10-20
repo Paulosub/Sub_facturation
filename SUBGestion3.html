@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 15:44 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 15:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -650,10 +650,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-mg .sg-mg-xl span.cur{color:var(--s-noir);font-weight:700}
 /* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
 .nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
-/* Tableau de bord du projet : numéro en cartouche, comme le cartouche d'un plan (20.10.2026, variante D) */
-.nx-hero .sg-cart{border:2px solid var(--s-noir);padding:6px 12px 7px;display:flex;flex-direction:column;gap:2px;max-width:220px}
-.nx-hero .sg-cart small{font-size:11px;line-height:1.2;color:var(--s-gris);font-weight:400}
-.nx-hero .sg-cart b{font-size:19px;line-height:1.15;font-weight:700;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Tableau de bord du projet : grand numéro bleu nuit, filet noir, puis le titre (20.10.2026, variante C) */
+.nx-hero:has(>.sg-pnum){column-gap:16px}
+.nx-hero .sg-pnum{align-self:stretch;padding:3px 16px 0 0;border-right:2px solid var(--s-noir);font-size:34px;font-weight:400;line-height:1;letter-spacing:.01em;color:var(--s-nuit);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+@container (max-width:560px){.nx-hero:has(>.sg-pnum){grid-template-columns:1fr;row-gap:8px}.nx-hero .sg-pnum{border-right:0;padding:0;font-size:28px}}
 /* onglet Factures : tuiles sur deux lignes de quatre (20.10.2026) */
 .sg-fkpis{grid-template-columns:repeat(4,minmax(0,1fr))}
 @container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -24657,7 +24657,7 @@ VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||''); nxRecent('p',p.ID);
     const ong0=(o0=>o0==='phases'?'factu':o0)(nxLS.get('sg3_fiche_onglet','vue')), ong=sgOngletOk(ong0)?ong0:(SG_ONGLETS.map(o=>o[0]).find(sgOngletOk)||'vue'), mo=projMO(p), pin=nxPinned('p',p.ID), modif=sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)));
-    const html='<div class="nx-hero"><div class="sg-cart"><small>N° projet</small><b>'+(p.NUMBER?nxE(p.NUMBER):'—')+'</b></div><div class="tx">'   /* numéro en cartouche, complet (20.10.2026, variante D choisie par Paulo ; avant : pavé bleu nuit tronqué à 5 caractères) */
+    const html='<div class="nx-hero"><div class="sg-pnum" title="Numéro du projet">'+(p.NUMBER?nxE(p.NUMBER):'—')+'</div><div class="tx">'   /* grand numéro complet et filet noir (20.10.2026, variante C choisie par Paulo ; avant : pavé bleu nuit tronqué à 5 caractères, puis cartouche D le même jour) */
       +'<h2>'+nxE(p.TITLE||p.NUMBER)+'</h2><div class="meta">'
       /* 20.10.2026 : numéro, état, date et phase actuelle retirés de l'en-tête ; le maître de l'ouvrage (intervenants au rôle 8) nommé comme tel */
       +((L=>'<span class="sg-mo">'+nxSvg('person')+'Maître de l’ouvrage'+(L.length>1?'s':'')+' : <b>'+(L.length?L.map(nxE).join(', '):'—')+'</b></span>')([...new Set(DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>x.TEAMROLECODE===8&&x.CONTACT_ID!=null).map(x=>contactName(DS.get('contact',x.CONTACT_ID))).filter(Boolean))]))

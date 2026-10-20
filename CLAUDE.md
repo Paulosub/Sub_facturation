@@ -543,7 +543,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   SIA 102 (numéro de la phase, sinon `sgSiaGroupe`), phases partielles sur les lignes en dessous (`tr.sub`, numéro 31, 32…), « (sans phase
   partielle) » et « (sans phase) » à la fin ; pas de ligne en double quand l'unique phase partielle porte le nom de sa phase. Lignes des phases sur
   une trame bleu nuit pâle (`--s-nuit3`), phases partielles sur fond blanc (20.10.2026). « Par collaborateur » : du plus d'heures au moins d'heures
-  (`sgGrouper`, tri par heures décroissantes, déjà en place). Barres « Part » des tableaux
+  (`sgGrouper`, tri par heures décroissantes, déjà en place). « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :
+  chaque collaborateur (trame), du plus d'heures au moins d'heures, puis ses phases en lignes dessous dans l'ordre SIA 102 (`sgSiaCle`), « (sans
+  phase) » à la fin ; colonnes Heures, Part (des heures de la période), Saisies. Situation des heures (chapitre Temps) garde le tableau croisé. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).
   **Numéro du projet : grand numéro et filet (20.10.2026, variante C choisie parmi 4 propositions ; la variante D « cartouche », appliquée
   d'abord, a été remplacée le même jour)** : en-tête du tableau de bord, à la place du pavé bleu nuit (numéro tronqué à 5 caractères) — numéro

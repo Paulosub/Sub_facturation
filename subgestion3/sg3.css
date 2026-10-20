@@ -636,15 +636,6 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pg-r .sg-pg-q{text-align:right}
 .sg-pg-r .sg-pg-q span{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;background:var(--s-nuit3);color:var(--s-noir);font-variant-numeric:tabular-nums}
 .sg-pg-r .sg-pg-q span.dep{background:var(--s-rouge);color:#fff}
-/* ESSAI (20.10.2026) : phases partielles sous chaque phase, barres plus fines (SG_PG_PARTIELLES dans sg3_plus.js) */
-.sg-pg-r.sub{padding:4px 6px;border-top:0}
-.sg-pg-r.sub .sg-pg-n{font-weight:400;font-size:11px;color:var(--s-gris)}
-.sg-pg-r.sub .l{font-size:12px;color:var(--s-gris);padding-left:12px}
-.sg-pg-r.sub.cur .l{color:var(--s-noir)}
-.sg-pg-r.sub .g{height:12px}
-.sg-pg-r.sub .g .ef,.sg-pg-r.sub .g .dp{top:3px;bottom:3px}
-.sg-pg-r.sub .v{font-size:12px;color:var(--s-gris)}
-.sg-pg-r.sub .sg-pg-q span{font-size:10.5px}
 .sg-pg-ax{display:grid;grid-template-columns:18px minmax(110px,1.3fr) minmax(90px,2fr) 104px 50px;gap:12px;padding:0 6px;border-top:1px solid var(--s-noir)}
 .sg-pg-ax .g{grid-column:3;height:20px}
 .sg-pg-ax em{position:absolute;top:5px;transform:translateX(-50%);font-style:normal;font-size:10.5px;color:var(--s-gris);white-space:nowrap;font-variant-numeric:tabular-nums}

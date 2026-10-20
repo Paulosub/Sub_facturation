@@ -551,6 +551,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   introduite dans l'app (timelog du projet), petite frise bleu nuit (`.sg-frise`), mois de la dernière heure ; durée comptée du premier au dernier
   mois (« 1 an 11 mois », « 5 ans 2 mois ») centrée sous la frise (`.sg-frise em`) ; libellé « Mandat » retiré à la demande (20.10.2026) ; dates exactes et nombre de mois en infobulle ; un seul mois : sans frise ; rien
   sans heure. Remplace « Heures saisies : 04.2024 à 12.2026 », placé d'abord à droite du maître de l'ouvrage le même jour.
+  Onglet « Intervenants » (20.10.2026) : « Entreprises » (rôle 19) et « Directeur des travaux » (rôle 2) échangent leur place dans cet onglet
+  (`ordR`, l'ordre `ROLE_ORD` du moteur reste inchangé ailleurs) ; « Gérer les intervenants » et « Liste d'adresses » en tuiles à icône
+  (`.sg-htls.sg-iacts`, comme Heures et Contrat) au lieu de boutons encadrés.
   Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
   (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
   dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).

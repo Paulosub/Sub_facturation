@@ -575,9 +575,12 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     if(!fin){ dessiner(null); return; }
     set('<div class="nx-empty">Calcul des marges…</div>');
     fxEnsure().catch(()=>null).then(()=>{ if(box.isConnected) dessiner(sgContratParPhase(p)); }); return; }
-  if(k==='interv'){ const mem=DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>!+x.ISHIDDEN&&+x.TEAMROLECODE!==90).sort((a,b)=>(ROLE_ORD[a.TEAMROLECODE]??99)-(ROLE_ORD[b.TEAMROLECODE]??99)||cmp(a.SORTORDER,b.SORTORDER)), grp={};
+  /* Intervenants (20.10.2026) : « Entreprises » (rôle 19) et « Directeur des travaux » (rôle 2) échangent leur place dans cet onglet ; Gérer les
+     intervenants et Liste d'adresses en tuiles à icône, comme les onglets Heures et Contrat */
+  if(k==='interv'){ const ordR=c=>+c===2?(ROLE_ORD[19]??99):+c===19?(ROLE_ORD[2]??99):(ROLE_ORD[c]??99);
+    const mem=DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>!+x.ISHIDDEN&&+x.TEAMROLECODE!==90).sort((a,b)=>ordR(a.TEAMROLECODE)-ordR(b.TEAMROLECODE)||cmp(a.SORTORDER,b.SORTORDER)), grp={};
     mem.forEach(x=>(grp[teamRole(x.TEAMROLECODE)]=grp[teamRole(x.TEAMROLECODE)]||[]).push(x));
-    set('<div style="display:flex;justify-content:flex-end;gap:8px;margin:0 0 14px"><button class="nx-btn" data-fn="mem">'+nxSvg('users')+'Gérer les intervenants</button><button class="nx-btn" data-fn="dom" data-dom="Liste d’adresses">'+nxSvg('list')+'Liste d’adresses</button></div><div class="nx-grid">'
+    set('<div class="sg-htls sg-iacts"><button data-fn="mem" title="Ajouter, retirer ou modifier les intervenants du projet">'+nxSvg('users')+'<span>Gérer les intervenants</span></button><button data-fn="dom" data-dom="Liste d’adresses" title="Liste d’adresses du projet">'+nxSvg('list')+'<span>Liste d’adresses</span></button></div><div class="nx-grid">'
       +(Object.keys(grp).length?Object.entries(grp).map(([role,xs])=>nxCard('c6',nxE(role),'<div class="b flush">'+xs.map(x=>{ const c=DS.get('contact',x.CONTACT_ID), o=c&&DS.get('contactowner',c.CONTACTOWNER_ID), tel=c&&[c.PHONEAREA1,c.PHONENUMBER1].filter(Boolean).join(' ');
         return '<div class="nx-person"'+(o?' data-ref="c:'+o.ID+'"':'')+'><div class="nx-av ext">'+nxE(nxIni(contactName(c)))+'</div><div class="t"><b>'+nxE(contactName(c)||'—')+'</b><span>'+nxE([x.BKP?'CFC '+x.BKP:'',c&&c.EMAIL1,tel].filter(Boolean).join(' · '))+'</span></div></div>'; }).join('')+'</div>','<span class="n">'+xs.length+'</span>')).join(''):'<div class="nx-empty">Aucun intervenant.</div>')+'</div>');
     pg._fn.mem=()=>cfgMembers(p); pg._fn.dom=b=>sgOuvrirDomaine(p,b.dataset.dom); return; }

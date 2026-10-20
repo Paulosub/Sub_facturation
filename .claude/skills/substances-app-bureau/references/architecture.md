@@ -154,7 +154,7 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
 - 19.10.2026 (`sg3_plus.js`) : vue d'ensemble Projets — menu déroulant « Tâches » (`.sg-pv-tk`, tuiles comme les modules, pastilles
   `sg-pt` verte / rouge, listes En cours / Urgent / Réglé) ; collaborateur : `sgCollabSeul()`, `SG_ETATS_COLLAB` (projets en cours seulement),
   `SG_ONGLETS_COLLAB` (onglets du tableau de bord) ; `sgPhaseActuelle(p)` / `sgPhaseLib` (phase d'après la feuille d'heures) ;
-  `sgPhasesGraph(p)` (Vue d'ensemble : heures prévues / effectuées) ; `sgContratParPhase(p)` (contrat HT / TTC par phase SIA, `sgSiaGroupe`) ;
+  `sgPhasesGraph(p)` (Vue d'ensemble : heures prévues / effectuées, échelle `sgEchelle`, libellés `sgPhNom`) ; `sgMoisGraph(months)` (heures par mois en HTML, moyenne) ; `sgHr` (heures entières) ; `sgContratParPhase(p)` (contrat HT / TTC par phase SIA, `sgSiaGroupe`) ;
   onglet « Phases contrat » (`dessiner(C)` dans `sgOnglet`, marge, honoraires / h, coût de revient / h, comparaison `.sg-db`) ;
   `sgMargeVisible`, `sgMargePct` ; « Français seulement » sans confirmation (`sgFrSeul`) ; `sg3.js` : dernier écran rouvert avec son
   paramètre (`sg3_vue_arg`).

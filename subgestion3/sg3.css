@@ -568,22 +568,68 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pg-leg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--s-gris);margin:14px 0 0;padding-top:10px;border-top:1px solid var(--s-filet)}   /* sous le tableau, filet léger au-dessus (19.10.2026) */
 .sg-pg-leg span{display:inline-flex;align-items:center;gap:6px}
 .sg-pg-leg i{display:inline-block;width:14px;height:10px}
-.sg-pg-leg i.ef{background:var(--s-nuit)}.sg-pg-leg i.pr{background:var(--s-nuit3)}.sg-pg-leg i.dp{background:#BD1E42}.sg-pg-leg i.mk{width:2px;height:14px;background:var(--s-noir)}
-.sg-pg-r{display:grid;grid-template-columns:minmax(150px,250px) 1fr 160px;gap:14px;align-items:center;padding:7px 6px;border-top:1px solid var(--s-filet)}
+.sg-pg-leg i.ef{background:var(--s-nuit)}.sg-pg-leg i.pr{background:var(--s-nuit3)}.sg-pg-leg i.dp{background:var(--s-rouge)}.sg-pg-leg i.mk{width:2px;height:14px;background:var(--s-noir)}
+.sg-pg-r{display:grid;grid-template-columns:18px minmax(110px,1.3fr) minmax(90px,2fr) 104px 50px;gap:12px;align-items:center;padding:9px 6px;border-top:1px solid var(--s-filet)}   /* n° | phase | barre | heures | % (20.10.2026) */
 .sg-pg-r:first-child{border-top:0}
 .sg-pg-r.cur{background:var(--s-jaune3)}
-.sg-pg-r .l{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-pg-r .sg-pg-n{font-size:12.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.sg-pg-r .l{font-size:12.5px;font-weight:400;display:flex;align-items:center;min-width:0;white-space:nowrap}
+.sg-pg-r .l>span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sg-pg-r .l .sg-pg-cur{flex:none}
+.sg-pg-r.cur .l{font-weight:700}
 .sg-pg-cur{font-style:normal;font-size:9.5px;font-weight:700;background:var(--s-jaune);color:var(--s-noir);padding:1px 5px;margin-left:7px;vertical-align:1px}
-.sg-pg-r .g{position:relative;height:18px}
-.sg-pg-r .g i{position:absolute;top:0;bottom:0;left:0;display:block}
+.sg-pg-r .g,.sg-pg-ax .g{position:relative;height:18px}
+.sg-pg-r .g>i{position:absolute;top:0;bottom:0;left:0;display:block}
+.sg-pg-r .g .sg-gl b{position:absolute;top:-10px;bottom:-10px;width:1px;background:var(--s-filet)}
 .sg-pg-r .g .pr{background:var(--s-nuit3)}
 .sg-pg-r .g .ef{background:var(--s-nuit);top:4px;bottom:4px}
 .sg-pg-r .g .ef.np{background:var(--s-nuit2)}
-.sg-pg-r .g .dp{background:#BD1E42;top:4px;bottom:4px}
+.sg-pg-r .g .dp{background:var(--s-rouge);top:4px;bottom:4px}
 .sg-pg-r .g .mk{width:2px;margin-left:-1px;background:var(--s-noir);top:-3px;bottom:-3px}
 .sg-pg-r .v{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.sg-pg-r .v small{display:inline-block;min-width:44px;margin-left:8px;color:var(--s-gris)}
-.sg-pg-r .v small.dep{color:#BD1E42;font-weight:700}
+.sg-pg-r .v b{font-weight:700}
+.sg-pg-r .sg-pg-q{text-align:right}
+.sg-pg-r .sg-pg-q span{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;background:var(--s-nuit3);color:var(--s-noir);font-variant-numeric:tabular-nums}
+.sg-pg-r .sg-pg-q span.dep{background:var(--s-rouge);color:#fff}
+.sg-pg-ax{display:grid;grid-template-columns:18px minmax(110px,1.3fr) minmax(90px,2fr) 104px 50px;gap:12px;padding:0 6px;border-top:1px solid var(--s-noir)}
+.sg-pg-ax .g{grid-column:3;height:20px}
+.sg-pg-ax em{position:absolute;top:5px;transform:translateX(-50%);font-style:normal;font-size:10.5px;color:var(--s-gris);white-space:nowrap;font-variant-numeric:tabular-nums}
+.sg-pg-ax em:first-child{transform:none}
+/* tuiles de la vue d'ensemble du projet (20.10.2026) : jauge saisies / prévues et pastille du % */
+.sg-pkpis .nx-kpi .l{width:100%}
+.sg-pkpis .nx-bar{height:6px}
+.sg-kq{margin-left:auto;font-size:11px;font-weight:700;padding:1px 6px;background:var(--s-nuit3);color:var(--s-noir);font-variant-numeric:tabular-nums}
+.sg-kq.dep{background:var(--s-rouge);color:#fff}
+.sg-kg{position:relative;height:6px;background:var(--s-filet);margin-top:10px}
+.sg-kg i{position:absolute;top:0;bottom:0;left:0;display:block}
+.sg-kg .ef{background:var(--s-nuit)}.sg-kg .dp{background:var(--s-rouge)}
+.sg-kg .mk{width:2px;margin-left:-1px;top:-4px;bottom:-4px;background:var(--s-noir)}
+/* heures par mois (20.10.2026) */
+.sg-mg{display:grid;grid-template-columns:34px 1fr;grid-template-rows:160px auto;column-gap:8px;padding-top:8px}
+.sg-mg .sg-mg-ax{position:relative}
+.sg-mg .sg-mg-ax em{position:absolute;right:0;transform:translateY(50%);font-style:normal;font-size:10.5px;color:var(--s-gris);font-variant-numeric:tabular-nums}
+.sg-mg .sg-mg-pl{position:relative}
+.sg-mg .sg-mg-gl{position:absolute;left:0;right:0;height:1px;background:var(--s-filet)}
+.sg-mg .sg-mg-gl.z{background:var(--s-noir);height:1.5px}
+.sg-mg .sg-mg-cols{position:absolute;inset:0;display:flex;align-items:flex-end;gap:3px}
+.sg-mg .sg-mc{flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;min-width:0;cursor:default}
+.sg-mg .sg-mc i{display:block;width:72%;max-width:28px;background:var(--s-nuit)}
+.sg-mg .sg-mc:hover i{background:var(--s-nuit2)}
+.sg-mg .sg-mc.cur i{background:repeating-linear-gradient(135deg,var(--s-nuit) 0 3px,#4d7080 3px 5px)}
+.sg-mg .sg-mg-moy{position:absolute;left:0;right:0;height:0;border-top:1.5px dashed var(--s-noir);pointer-events:none}
+.sg-mg .sg-mg-moy span{position:absolute;right:0;bottom:3px;font-size:10.5px;font-weight:700;background:#fff;padding:0 4px;white-space:nowrap}
+.sg-mg .sg-mg-xl{grid-column:2;display:flex;gap:3px;padding-top:6px}
+.sg-mg .sg-mg-xl span{flex:1;min-width:0;text-align:center;font-size:10.5px;color:var(--s-gris);white-space:nowrap;line-height:1.3}
+.sg-mg .sg-mg-xl span b{display:block;color:var(--s-noir);font-weight:700}
+.sg-mg .sg-mg-xl span.cur{color:var(--s-noir);font-weight:700}
+/* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
+.nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
+/* équipe : part du temps en barre (20.10.2026) */
+.sg-eq .t .sg-eq-b{display:block;height:4px;background:var(--s-filet);margin-top:6px;overflow:hidden}
+.sg-eq .t .sg-eq-b i{display:block;height:100%;background:var(--s-nuit)}
+.sg-eq .m{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sg-eq .m b{font-weight:700;font-size:12.5px}
+.sg-eq .m small{font-size:11px;color:var(--s-gris)}
 .sg-pg-tot{margin-top:10px;padding-top:8px;border-top:1.5px solid var(--s-noir);font-size:12.5px}
 
 /* ═══ Phases contrat : marge bénéficiaire, taux obtenu, coût horaire et comparaison (19.10.2026) ═══ */

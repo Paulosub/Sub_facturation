@@ -445,16 +445,28 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Phase actuelle affichée SANS son numéro (`sgPhaseLib` : nom — sous-phase ; tuile du tableau de bord et chiffre de la page du projet en
   toutes lettres, classe `.txt`) ; la numérotation reste dans les listes de phases. Filet léger (`--s-filet`) au-dessus des légendes sous les
   tableaux (`.sg-pg-leg`, `.sg-db-leg`).
+  **Graphisme de la vue d'ensemble revu (20.10.2026)** : en-tête du tableau de bord réduit au titre + « Maître de l'ouvrage : <nom> » (intervenants
+  au rôle 8, `.sg-mo` ; lieu et « Interne » gardés s'il y en a) — numéro, état, date, phase actuelle et indications « Coût au-delà des
+  honoraires », « Facturation en retard », « n phases hors budget » retirés de l'en-tête à la demande (`#sg-p-al` supprimé ; ces alertes restent
+  dans Rentabilité des projets, l'accueil et l'onglet Contrats & factures). Tuiles (`.sg-pkpis`) toutes au même style (plus de tuile foncée),
+  heures entières (`sgHr` ; moins d'une heure au dixième) ; « Heures saisies » porte la jauge saisies / prévues (`.sg-kg` : bleu nuit jusqu'à la
+  limite, rouge au-delà, repère) et la pastille du % des heures prévues (`.sg-kq`, rouge au-delà de 100 %) ; plus de barre sous « Heures prévues ».
+  Graphique des phases : colonnes n° | phase (`sgPhNom` : soulignés retirés, MAJUSCULES → minuscules) | barre | heures | pastille %, échelle
+  graduée commune (`sgEchelle`) avec lignes de repère et axe en heures, colonnes proportionnelles (lisible dès ~1000 px). « Temps par mois » :
+  `sgMoisGraph` en HTML (l'ancien SVG `nxBars` étiré déformait les textes), échelle graduée, ligne « moyenne n h » des mois saisis, mois en cours
+  hachuré, année sous janvier et sous le premier mois. Équipe : part du temps en barre sous le nom, heures et % à droite (`.sg-eq`). Classes
+  préfixées (`sg-mg-*`, `sg-mc`, `sg-gl`, `sg-pg-n|q`) : `.cols`, `.c`… existent déjà dans le moteur. Copie d'avant :
+  `subgestion3/_backup_20261020_avant_vue_ensemble/`.
   Onglet « Contrats & factures » : tuile « Coût de revient » retirée à la demande (19.10.2026) ; tuiles en TTC : Honoraires (TTC) (`sgRenta` ▸
   `contratTTC` = httc des contrats, sinon hht × (1 + TVA) ; contrats du moteur : HT × 1,081), Facturé (TTC) (`factTTC`, % des honoraires TTC),
-  Encaissé (TTC) (montant seul, sans la marge), **Solde à facturer (TTC)** = honoraires TTC − facturé TTC (% des honoraires). Sous les tuiles, l'indication « n phases hors budget » n'est plus affichée (elle reste dans l'en-tête) ; tableau des
+  Encaissé (TTC) (montant seul, sans la marge), **Solde à facturer (TTC)** = honoraires TTC − facturé TTC (% des honoraires). Sous les tuiles, l'indication « n phases hors budget » n'est plus affichée (retirée aussi de l'en-tête le 20.10.2026) ; tableau des
   factures : colonne « Numéro de facture » (au lieu de « Facture »).
   Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
   (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
   dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).
   **Phase actuelle, marge bénéficiaire, graphique des phases (19.10.2026)** : `sgPhaseActuelle(p)` = phase (groupe 0 à 8 de la base : 1 Relevé,
   2 Faisabilité, 3 Étude du projet, 4 Appel d'offres, 5 Réalisation…) qui totalise le plus d'heures dans les 30 jours avant la dernière saisie du
-  projet, + sous-phase la plus saisie ; affichée dans l'en-tête du tableau de bord, les données de la page du projet (`nx-pdom`) et une colonne
+  projet, + sous-phase la plus saisie ; affichée dans la tuile du tableau de bord (plus dans son en-tête depuis le 20.10.2026), les données de la page du projet (`nx-pdom`) et une colonne
   de Mes projets. Marge bénéficiaire = facturé HT − coût de revient (`sgRenta`), % du facturé (`sgMargePct`) : données de la page du projet et
   indicateur du tableau de bord (`sgMargeVisible` : pas pour le collaborateur ni finances verrouillées). Tableau de bord ▸ Vue d'ensemble :
   carte « Phases : heures prévues et effectuées » (`sgPhasesGraph`, graphique en barres de type « bullet » : prévu = TIMEBUDGET en fond, effectué

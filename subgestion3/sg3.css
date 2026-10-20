@@ -624,6 +624,11 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-mg .sg-mg-xl span.cur{color:var(--s-noir);font-weight:700}
 /* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
 .nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
+/* onglet Factures : tuiles sur deux lignes de quatre (20.10.2026) */
+.sg-fkpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+@container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sg-neg{color:var(--s-rouge)}
+.sg-kg .mk.r{background:var(--s-rouge)}
 /* onglet Factures : « Facturation en retard » sous le tableau (20.10.2026) */
 .sg-fact-ret{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--s-filet)}
 /* Contrats & factures : « Phases contrat » entre les tuiles et les listes (20.10.2026) */

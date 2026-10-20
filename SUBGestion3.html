@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 11:54 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 11:57 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -633,6 +633,11 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-mg .sg-mg-xl span.cur{color:var(--s-noir);font-weight:700}
 /* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
 .nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
+/* onglet Factures : tuiles sur deux lignes de quatre (20.10.2026) */
+.sg-fkpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+@container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sg-neg{color:var(--s-rouge)}
+.sg-kg .mk.r{background:var(--s-rouge)}
 /* onglet Factures : « Facturation en retard » sous le tableau (20.10.2026) */
 .sg-fact-ret{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--s-filet)}
 /* Contrats & factures : « Phases contrat » entre les tuiles et les listes (20.10.2026) */
@@ -24659,6 +24664,27 @@ function sgContratInfo(c){ const V=Array.isArray(c.versions)&&c.versions.length?
     date:c.date||last.date||'', dTitre:!c.date&&last.date?'Date de la version '+n:'',
     etat:c.annule?'Annulé':c.termine?'Terminé':c.signe?'Signé'+(signeLe?' le '+dfr(signeLe):''):c.envoye?'Envoyé':'Brouillon',   // états de Facturation (20.10.2026)
     cl:c.annule?'':c.termine||c.signe?'s2':c.envoye?'s3':'', signeLe}; }
+/* onglet Factures ▸ tuiles (20.10.2026, choix de Paulo) : 1re ligne Facturé (TTC, % des honoraires TTC), Encaissé (TTC, factures payées, % du
+   facturé), Solde à facturer (TTC, honoraires − facturé ; ces trois tuiles viennent de l'onglet Contrats), Facturé / consommé (les chiffres de
+   « Facturation en retard » : facturé HT ÷ honoraires HT et coût de revient ÷ honoraires HT ; jauge : facturé en bleu nuit, repère = consommé) ;
+   2e ligne Ouvert (factures non payées), Échu (non payées, échéance passée, en rouge), Dernière facture (date, n°), Délai moyen de paiement
+   (date de facture → date de paiement, factures payées qui ont les deux dates) */
+function sgFactKpis(x){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=today();   // TTC comme sgRenta (sans frais) : ouvert + encaissé = facturé
+  const ouv=fs.filter(fxUnpaid), ech=ouv.filter(f=>f.ech&&f.ech<auj), pay=fs.filter(f=>!fxUnpaid(f)&&f.date&&f.date_paiement);
+  const der=fs.filter(f=>f.date).sort((a,b)=>cmp(b.date,a.date))[0], jours=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+  const delai=pay.length?pay.reduce((s0,f)=>s0+Math.max(0,jours(f.date,f.date_paiement)),0)/pay.length:null, T=x.contratTTC, sum=L=>L.reduce((s0,f)=>s0+ttc(f),0);
+  const pc=(a,b)=>b?Math.round(a/b*100)+' %':'—', retard=x.conso!=null&&x.fact!=null&&x.conso-x.fact>0.25;
+  const jauge=(()=>{ if(x.conso==null||x.fact==null) return ''; const m=Math.max(1,x.conso,x.fact); return '<div class="sg-kg"><i class="ef" style="width:'+(x.fact/m*100).toFixed(1)+'%"></i><i class="mk'+(retard?' r':'')+'" style="left:'+(x.conso/m*100).toFixed(1)+'%"></i></div>'; })();
+  return '<div class="nx-kpis sg-fkpis">'
+    +nxKpi('receipt','Facturé (TTC)',nxCHF(x.factTTC)+'<small>CHF</small>',pc(x.factTTC,T)+' des honoraires',T?x.factTTC/T*100:null,null,1)
+    +nxKpi('wallet','Encaissé (TTC)',nxCHF(x.encTTC)+'<small>CHF</small>',pc(x.encTTC,x.factTTC)+' du facturé',x.factTTC?x.encTTC/x.factTTC*100:null)
+    +nxKpi('coins','Solde à facturer (TTC)',T?nxCHF(T-x.factTTC)+'<small>CHF</small>':'—',T?pc(T-x.factTTC,T)+' des honoraires':'aucun contrat relié',T?Math.max(0,(T-x.factTTC)/T*100):null)
+    +nxKpi('trend','Facturé / consommé',x.fact!=null?Math.round(x.fact*100)+'<small>%</small> / '+Math.round(x.conso*100)+'<small>%</small>':'—',x.fact!=null?'consommé = coût de revient ÷ honoraires HT':'aucun contrat relié').replace(/<\/div>$/,jauge+'</div>')
+    +nxKpi('receipt','Ouvert (TTC)',nxCHF(sum(ouv))+'<small>CHF</small>',ouv.length?ouv.length+' facture'+(ouv.length>1?'s':'')+' non payée'+(ouv.length>1?'s':''):'tout est payé')
+    +nxKpi('clock','Échu (TTC)','<span'+(ech.length?' class="sg-neg"':'')+'>'+nxCHF(sum(ech))+'</span><small>CHF</small>',ech.length?ech.length+' facture'+(ech.length>1?'s':'')+' à échéance dépassée':'aucune échéance dépassée')
+    +nxKpi('cal','Dernière facture',der?dfr(der.date):'—',der?(der.num||'')+(der.type?' · '+der.type:''):'aucune facture').replace('<div class="v">','<div class="v txt">')
+    +nxKpi('clock','Délai moyen de paiement',delai!=null?Math.round(delai)+'<small>jours</small>':'—',pay.length?'sur '+pay.length+' facture'+(pay.length>1?'s':'')+' payée'+(pay.length>1?'s':''):'aucune date de paiement saisie')
+    +'</div>'; }
 /* « Ouvrir » un contrat depuis le projet (20.10.2026) : le contrat en PDF fidèle (lecture seule, openContratPdf du cadre), DERNIÈRE version
    seulement — le contrat signé ou, s'il y en a une après la signature, le dernier avenant — sans le choix des autres versions ; état de la version à
    la place du commentaire ; en fermant l'aperçu, retour à l'écran d'où l'on venait. Arg de fx-contrats : « cv:<id> ». */
@@ -24682,7 +24708,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     set('<div class="nx-empty">Recherche dans la facturation…</div>');
     fxEnsure().catch(()=>null).then(()=>{ const D=fxData(), x=sgRenta(p,D,taux); if(!box.isConnected) return;
       const ret=x.al.filter(a=>/^Facturation en retard/.test(a[1]));   // « Facturation en retard » sous le tableau (20.10.2026)
-      set('<div class="nx-grid">'+nxCard('c12','Factures',(x.fs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th><th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+x.fs.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td><td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>')+(ret.length?'<div class="sg-fact-ret">'+ret.map(sgAlerteTag).join(' ')+'</div>':''))+'</div>'); }); return; }   /* lien « Toutes les factures » retiré du titre (20.10.2026) */
+      set(sgFactKpis(x)+'<div class="nx-grid">'+nxCard('c12','Factures',(x.fs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th><th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+x.fs.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td><td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>')+(ret.length?'<div class="sg-fact-ret">'+ret.map(sgAlerteTag).join(' ')+'</div>':''))+'</div>'); }); return; }   /* lien « Toutes les factures » retiré du titre (20.10.2026) */
   if(k==='factu'&&sgFinVerrou()){ set('<div class="nx-empty">'+nxSvg('lock')+'<p>Contrats, factures et rentabilité sont protégés par le code d’accès.</p><button class="nx-btn pri" data-fn="deverr">Déverrouiller</button></div><div class="sg-oc-ph" id="sg-oc-ph"></div>'); pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); sgOnglet(p,'phases',pg,box.querySelector('#sg-oc-ph')); return; }
   if(k==='vue'){ const lim30=dayKey(new Date(now.getFullYear(),now.getMonth(),now.getDate()-30)); let tot=0,h30=0; const bySt={}, byM={};
     logs.forEach(r=>{ const v=+r.TIMEPERIOD||0, d=tlDate(r); tot+=v; if(tlKey(r)>=lim30) h30+=v; bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+v; const mk=d.getFullYear()*12+d.getMonth(); byM[mk]=(byM[mk]||0)+v; });
@@ -24782,7 +24808,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
   if(k==='factu'){ set('<div class="nx-empty">Recherche dans la facturation…</div>');
     fxEnsure().catch(()=>null).then(()=>{ const D=fxData(), x=sgRenta(p,D,taux), collab=SG_ACC.profil==='collab'; if(!box.isConnected) return;
       const opts=DS.all('project').length?'':''; const libre=D?D.c.filter(c=>!c.annule&&!sgProjetDuContrat(c)):[];
-      set('<div class="nx-kpis">'+nxKpi('contrat','Honoraires (TTC)',x.contratTTC?nxCHF(x.contratTTC)+'<small>CHF</small>':'—',x.src==='moteur'?'contrats des projets':x.cs.length+' contrat(s)',null,null,1)/* « Coût de revient » retiré de Contrats & factures (19.10.2026) */+(collab?'':nxKpi('receipt','Facturé (TTC)',nxCHF(x.factTTC)+'<small>CHF</small>',(x.contratTTC?Math.round(x.factTTC/x.contratTTC*100)+' %':'—')+' des honoraires',x.contratTTC?x.factTTC/x.contratTTC*100:null)+nxKpi('wallet','Encaissé (TTC)',nxCHF(x.encTTC)+'<small>CHF</small>')+(sf=>nxKpi('coins','Solde à facturer (TTC)',x.contratTTC?nxCHF(sf)+'<small>CHF</small>':'—',x.contratTTC?Math.round(sf/x.contratTTC*100)+' % des honoraires':'',x.contratTTC?Math.max(0,sf/x.contratTTC*100):null))(x.contratTTC-x.factTTC))   /* collaborateur : ni facturé, ni encaissé, ni solde (20.10.2026) */
+      set('<div class="nx-kpis">'+nxKpi('contrat','Honoraires (TTC)',x.contratTTC?nxCHF(x.contratTTC)+'<small>CHF</small>':'—',x.src==='moteur'?'contrats des projets':x.cs.length+' contrat(s)',null,null,1)/* « Coût de revient » retiré de Contrats & factures (19.10.2026) *//* Facturé, Encaissé et Solde à facturer déplacés dans l'onglet Factures (20.10.2026) */   /* collaborateur : ni facturé, ni encaissé, ni solde (20.10.2026) */
         +(pf=>nxKpi('trend','Part facturable',pf.pct!=null?Math.round(pf.pct)+'<small>%</small>':'—',pf.tot?sgHr(pf.fact)+' h sur '+sgHr(pf.tot)+' h saisies':'aucune heure saisie',pf.pct).replace('<div class="nx-kpi','<div title="'+nxE(pf.tot?nxH(pf.fact)+' h facturables'+(pf.dep?' · '+nxH(pf.dep)+' h au-delà du contrat ('+pf.ty.map(t=>t==='relatif'?'forfait relatif':'forfait').join(', ')+') — contrat au forfait : les heures d’une phase au-delà de ses heures au contrat ne sont pas facturables':''):'')+'" class="nx-kpi'))(sgPartFacturable(p,D))
         +'</div>'   /* solde à facturer = honoraires TTC − facturé TTC (19.10.2026) ; part facturable déplacée ici depuis la vue d'ensemble (20.10.2026) */
         +((alF=>alF.length?'<div style="margin:-14px 0 20px">'+alF.map(sgAlerteTag).join(' ')+'</div>':'')(collab?[]:x.al.filter(a=>!/hors budget|^Coût |^Facturation en retard/.test(a[1]))))   /* « Coût au-delà des honoraires » et « Coût à n % des honoraires » retirés de l'onglet (20.10.2026) */   /* « phases hors budget » retiré de l'onglet (19.10.2026) */

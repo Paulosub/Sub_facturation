@@ -364,6 +364,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   propre à une cellule : attribut `data-tri` (texte, ex. ordre SIA). Tri retenu pour la session par écran et jeu de colonnes (`SG_TRI`),
   réappliqué quand le tableau est redessiné (MutationObserver). Pas de tri : plusieurs lignes de titres, `colspan`, titre vide (`.sg-notri`)
   ou contenant un contrôle. Les listes du moteur (`grid`) ont leur propre tri.
+  **Pas de tri dans le tableau de bord d'un projet** (tableaux de `#sg-onglet` : onglets Heures, Contrat, Factures, Intervenants…), retiré à la
+  demande le 20.10.2026 : les tableaux y gardent leur ordre (détail des heures du plus récent au plus ancien, « Par phase » dans l'ordre SIA 102,
+  factures de la plus récente…) ; les clés `data-tri` / `sgSiaCle` y restent sans effet. Les autres écrans (Mes projets, Rentabilité, RH…) gardent le tri.
 - **Appels d'offres (18.10.2026, moteur)** : « Nouveau document » ouvre directement le formulaire (plus de fenêtre de choix du
   standard : `svNew` → `svEditDoc`) ; formulaire sans « Numéro de l'ordre », « Standard » ni « Catalogue » (ISIFA2018 /
   NORMPOSITIONCATALOGCODE toujours enregistrés d'office par `svNewHeader`) ; numéro d'ordre retiré aussi de la liste (et avec lui les
@@ -529,7 +532,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande. Colonnes ajustées
   au contenu (largeurs fixes essayées puis abandonnées le même jour : elles ne s'adaptaient pas) : Date, Collaborateur et Durée à leur largeur, Phase
   (min. 110 px), Phase partielle (min. 150 px) et Commentaire (min. 220 px) se partagent le reste au prorata de leur texte, texte à la ligne si nécessaire ; jusqu'à 5'000 saisies affichées. Tri par Phase / Phase partielle dans l'ordre SIA 102 (clé `data-tri` =
-  `sgSiaCle` : numéro de la phase, puis de la phase partielle) — regroupe les saisies par phase.
+  `sgSiaCle`) ajouté puis retiré le même jour avec le tri des tableaux du projet.
   Affichages regroupés de l'onglet (20.10.2026) : sans la colonne « dont facturables » (`sgSituationHtml(L,g,{hier:1,fact:false})` ; Situation
   des heures du chapitre Temps, appelée sans option, inchangée) ; « Par phase » en arbre (`sgPhasesHier`, `.sg-sit-h`) : phases dans l'ordre
   SIA 102 (numéro de la phase, sinon `sgSiaGroupe`), phases partielles sur les lignes en dessous (`tr.sub`, numéro 31, 32…), « (sans phase

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 17:33 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 17:37 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -26866,7 +26866,8 @@ function sgTriVal(td){ if(!td) return null; if(td.dataset&&td.dataset.tri!=null)
   const n=t.replace(/[’'   ]/g,'').replace(/[−–]/g,'-').replace(/(CHF|h|%|j|\/h)+$/i,'').replace(/^\+/,'');
   if(/^-?\d+(\.\d+)?$/.test(n)) return {k:'n',v:parseFloat(n)};
   return {k:'t',v:t}; }
-function sgTriTable(tb){ const rows=[...tb.rows], H=rows.filter(r=>r.querySelector('th')); if(H.length!==1) return null;
+function sgTriTable(tb){ if(tb.closest('#sg-onglet')) return null;   // tableau de bord d'un projet (onglets Heures, Contrat, Factures…) : pas de tri, à la demande (20.10.2026)
+  const rows=[...tb.rows], H=rows.filter(r=>r.querySelector('th')); if(H.length!==1) return null;
   const hr=H[0]; if([...hr.cells].some(c=>c.colSpan>1||c.querySelector('input,select,button,a'))) return null;
   const data=rows.slice(rows.indexOf(hr)+1); if(data.length<2||data.some(r=>[...r.cells].some(c=>c.colSpan>1))) return null;
   return {hr,data}; }

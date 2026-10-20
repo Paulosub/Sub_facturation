@@ -2496,7 +2496,8 @@ function sgTriVal(td){ if(!td) return null; if(td.dataset&&td.dataset.tri!=null)
   const n=t.replace(/[’'   ]/g,'').replace(/[−–]/g,'-').replace(/(CHF|h|%|j|\/h)+$/i,'').replace(/^\+/,'');
   if(/^-?\d+(\.\d+)?$/.test(n)) return {k:'n',v:parseFloat(n)};
   return {k:'t',v:t}; }
-function sgTriTable(tb){ const rows=[...tb.rows], H=rows.filter(r=>r.querySelector('th')); if(H.length!==1) return null;
+function sgTriTable(tb){ if(tb.closest('#sg-onglet')) return null;   // tableau de bord d'un projet (onglets Heures, Contrat, Factures…) : pas de tri, à la demande (20.10.2026)
+  const rows=[...tb.rows], H=rows.filter(r=>r.querySelector('th')); if(H.length!==1) return null;
   const hr=H[0]; if([...hr.cells].some(c=>c.colSpan>1||c.querySelector('input,select,button,a'))) return null;
   const data=rows.slice(rows.indexOf(hr)+1); if(data.length<2||data.some(r=>[...r.cells].some(c=>c.colSpan>1))) return null;
   return {hr,data}; }

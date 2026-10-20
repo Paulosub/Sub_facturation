@@ -514,8 +514,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `.sg-hrow` dans `.sg-hbar` (plus de boutons encadrés `.seg`) ; tuiles sans texte gris (Heures saisies, Saisies, Collaborateurs, Dernière saisie ; Coût de revient
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
   détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période ; colonnes du détail
-  (20.10.2026) : Date, Collaborateur (nom complet `staffName`, plus les initiales), Phase, Précision (sous-phase, `projectsubphase`
-  `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande. Barres « Part » des tableaux
+  (20.10.2026) : Date, Collaborateur (nom complet `staffName`, plus les initiales), Phase, Phase partielle (sous-phase, d'abord nommée « Précision », `projectsubphase`
+  `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande.
+  Affichages regroupés de l'onglet (20.10.2026) : sans la colonne « dont facturables » (`sgSituationHtml(L,g,{hier:1,fact:false})` ; Situation
+  des heures du chapitre Temps, appelée sans option, inchangée) ; « Par phase » en arbre (`sgPhasesHier`, `.sg-sit-h`) : phases dans l'ordre
+  SIA 102 (numéro de la phase, sinon `sgSiaGroupe`), phases partielles sur les lignes en dessous (`tr.sub`, numéro 31, 32…), « (sans phase
+  partielle) » et « (sans phase) » à la fin ; pas de ligne en double quand l'unique phase partielle porte le nom de sa phase. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).
   **Numéro du projet : grand numéro et filet (20.10.2026, variante C choisie parmi 4 propositions ; la variante D « cartouche », appliquée
   d'abord, a été remplacée le même jour)** : en-tête du tableau de bord, à la place du pavé bleu nuit (numéro tronqué à 5 caractères) — numéro

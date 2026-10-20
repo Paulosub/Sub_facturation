@@ -504,6 +504,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}
 .sg-htbl td.sg-hact{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sg-htbl .sg-hno{color:var(--s-gris)}
+.sg-htbl td.sg-hnom{white-space:nowrap}   /* nom complet du collaborateur (20.10.2026) */
 .sg-hplus{font-size:11.5px;color:var(--s-gris);padding:10px 0 0;border-top:1px solid var(--s-filet)}
 .nx-tbl td .nx-mini-bar{display:inline-block;vertical-align:middle;width:70px;margin-right:6px}   /* barre « Part » visible dans les tableaux (Heures, Situation des heures) */
 .sg-sit td:has(.nx-mini-bar){white-space:nowrap}

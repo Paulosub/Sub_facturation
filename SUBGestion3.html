@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 18:58 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 19:01 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -25710,9 +25710,10 @@ function sgSituationHtml(L,g,o){ o=o||{}; const tot=L.reduce((s,r)=>s+(+r.TIMEPE
     return '<table class="nx-tbl sg-sit"><tr><th>Collaborateur</th>'+fs.map(f=>'<th class="r" title="'+nxE(f.t)+'">'+nxE(f.t.length>22?f.t.slice(0,21)+'…':f.t)+'</th>').join('')+'<th class="r">Total</th></tr>'
       +cs.map(c=>'<tr><td><b>'+nxE(c.t)+'</b></td>'+fs.map(f=>'<td class="r">'+(cell[c.k+'|'+f.k]?nxH(cell[c.k+'|'+f.k]):'')+'</td>').join('')+'<td class="r"><b>'+nxH(c.h)+'</b></td></tr>').join('')
       +'<tr class="tot"><td>Total</td>'+fs.map(f=>'<td class="r">'+nxH(f.h)+'</td>').join('')+'<td class="r">'+nxH(tot)+'</td></tr></table>'; }
-  const G=sgGrouper(L,g); return '<table class="nx-tbl sg-sit"><tr><th>'+({projet:'Projet',collab:'Collaborateur',phase:'Phase',mois:'Mois',activite:'Activité'}[g])+'</th><th class="r">Heures</th>'+(fact?'<th class="r">dont facturables</th>':'')+'<th>Part</th><th class="r">Collaborateurs</th><th class="r">Saisies</th></tr>'
-    +G.map(x=>'<tr><td><b>'+nxE(x.t)+'</b></td><td class="r">'+nxH(x.h)+'</td>'+(fact?'<td class="r">'+nxH(x.hf)+'</td>':'')+'<td style="width:120px">'+sgBarre(tot?x.h/tot:0)+' '+pct(x)+'</td><td class="r">'+x.st.size+'</td><td class="r">'+x.n+'</td></tr>').join('')
-    +'<tr class="tot"><td>Total</td><td class="r">'+nxH(tot)+'</td>'+(fact?'<td class="r">'+nxH(L.reduce((s,r)=>s+(+r.ISCHARGEABLE?+r.TIMEPERIOD||0:0),0))+'</td>':'')+'<td></td><td class="r">'+new Set(L.map(r=>String(r.STAFF_ID))).size+'</td><td class="r">'+L.length+'</td></tr></table>'; }
+  const cs=!(o.hier&&g==='collab');   /* onglet Heures ▸ Collaborateur : sans les colonnes Collaborateurs et Saisies (20.10.2026) */
+  const G=sgGrouper(L,g); return '<table class="nx-tbl sg-sit"><tr><th>'+({projet:'Projet',collab:'Collaborateur',phase:'Phase',mois:'Mois',activite:'Activité'}[g])+'</th><th class="r">Heures</th>'+(fact?'<th class="r">dont facturables</th>':'')+'<th>Part</th>'+(cs?'<th class="r">Collaborateurs</th><th class="r">Saisies</th>':'')+'</tr>'
+    +G.map(x=>'<tr><td><b>'+nxE(x.t)+'</b></td><td class="r">'+nxH(x.h)+'</td>'+(fact?'<td class="r">'+nxH(x.hf)+'</td>':'')+'<td style="width:120px">'+sgBarre(tot?x.h/tot:0)+' '+pct(x)+'</td>'+(cs?'<td class="r">'+x.st.size+'</td><td class="r">'+x.n+'</td>':'')+'</tr>').join('')
+    +'<tr class="tot"><td>Total</td><td class="r">'+nxH(tot)+'</td>'+(fact?'<td class="r">'+nxH(L.reduce((s,r)=>s+(+r.ISCHARGEABLE?+r.TIMEPERIOD||0:0),0))+'</td>':'')+'<td></td>'+(cs?'<td class="r">'+new Set(L.map(r=>String(r.STAFF_ID))).size+'</td><td class="r">'+L.length+'</td>':'')+'</tr></table>'; }
 function sgCsvTable(tbl,nom){ const q=v=>'"'+String(v).replace(/"/g,'""')+'"', rows=[...tbl.querySelectorAll('tr')].map(tr=>[...tr.children].map(c=>q(c.textContent.trim())).join(';'));
   const a=h('a',{href:URL.createObjectURL(new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'})),download:nom}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000); }
 function sgImprimer(titre,html){ const f=h('iframe',{style:{position:'fixed',right:0,bottom:0,width:0,height:0,border:0}}); document.body.append(f);

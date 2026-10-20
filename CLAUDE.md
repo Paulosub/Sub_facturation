@@ -442,20 +442,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **« Phases contrat » regroupé dans « Contrats & factures » (20.10.2026)** : `SG_ONGLETS` sans « phases » (onglet à la 3e place ; choix
   mémorisé `phases` → `factu`) ; ordre : tuiles financières, indications, Contrats d'honoraires (remontés au-dessus des phases le
   20.10.2026), carte « Phases contrat » (`#sg-oc-ph`, dessinée par `sgOnglet(p,'phases',pg,cible)` — paramètre `cible` = partie d'un onglet
-  regroupé), puis Factures. Sans droit de
+  regroupé). Sans droit de
   lecture des contrats ni des factures (`sgFactuOk`, collaborateur par défaut) : les phases seules (heures). Finances verrouillées : message
   « Déverrouiller » puis les phases en heures seulement. `SG_ONGLETS_COLLAB` = factu, interv, chantier, docs, notes.
-  Cartes « Phases contrat » et « Factures » repliables (20.10.2026) : clic sur le titre, chevron à droite, ouvertes par défaut, état gardé par
-  carte (`sgRepl(clé)` dans la classe de `nxCard`, `sgReplChev()`, écouteur global, localStorage `sg3_cartes_repliees`).
+  **Le même jour, ensuite** : onglet `factu` renommé **« Contrats »** ; **onglet « Factures »** (`fact`, juste après) = carte Factures (factures des
+  contrats reliés, « Toutes les factures »), indication « Facturation en retard (x % facturé / y % consommé) » dans son titre ; jamais pour le
+  collaborateur (absent de `SG_ONGLETS_COLLAB`), droit « factures : lecture », code d'accès comme les finances. Cartes repliables essayées puis
+  retirées (« Phases contrat » ne se replie pas, à la demande ; Factures a son onglet).
   **« Ouvrir » un contrat d'honoraires depuis le projet (20.10.2026)** : le contrat en PDF fidèle, lecture seule (`openContratPdf` du cadre),
   DERNIÈRE version seulement — le contrat signé ou, après la signature, le dernier avenant (nouvelle version ; Facturation n'a pas d'avenant
   séparé) — sans le choix des versions ; état à la place du commentaire (Contrat signé / Avenant … non signé, la version n est signée / Envoyé,
   non signé / Non signé / annulé) ; « Fermer » ramène à l'écran d'où l'on venait (`nxHist(-1)`). Vue `fx-contrats`, arg `cv:<id>`
   (`sgVoirContrat(w,id)`, contrats lus par `fxData()` : `contrats` est un `let` du cadre, pas une propriété de window). L'édition reste dans
   Facturation ▸ Contrats (✏️) ; ⌘K garde `fx-calchono` `c:<id>`. NAS au 20.10.2026 : aucun contrat marqué signé, 1 seul avec 2 versions.
-  **Collaborateur (20.10.2026)** : jamais de factures dans Contrats & factures — ni carte Factures, ni tuiles Facturé / Encaissé / Solde à
-  facturer, ni indications, ni bouton « Facturer » ; restent Honoraires (TTC), Part facturable, Contrats d'honoraires (« Ouvrir ») et Phases
+  **Collaborateur (20.10.2026)** : jamais de factures — ni onglet Factures, ni tuiles Facturé / Encaissé / Solde à facturer dans Contrats,
+  ni indications, ni bouton « Facturer » ; restent Honoraires (TTC), Part facturable, Contrats d'honoraires (« Ouvrir ») et Phases
   contrat (s'il a le droit de lire les contrats ; sinon les phases seules).
+  Indications de coût (« Coût au-delà des honoraires », « Coût à n % des honoraires ») retirées de l'onglet Contrats (20.10.2026) ; sous ses
+  tuiles ne reste que « Pas de contrat relié » ; « Facturation en retard » est dans l'onglet Factures. Toutes restent dans Rentabilité des
+  projets et l'accueil (À traiter).
   **Vue d'ensemble du tableau de bord (19.10.2026)** : tuiles Temps total, **Temps contractuel prévu** (Σ des heures au contrat des phases,
   heures restantes ou au-delà, % du prévu), Part facturable ; Coût de revient, Facturé (HT) et Marge bénéficiaire retirés à la demande (plus de
   tuile « Finances verrouillées » dans cet onglet) — la marge reste dans « Phases contrat », le facturé dans « Contrats & factures ».

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 10:50 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 11:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -633,14 +633,6 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-mg .sg-mg-xl span.cur{color:var(--s-noir);font-weight:700}
 /* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
 .nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
-/* cartes repliables (20.10.2026) : titre cliquable, chevron à droite (vers le bas = ouverte) */
-.nx-card.sg-repl>h4{cursor:pointer;user-select:none;align-items:center}
-.nx-card.sg-repl>h4:hover{background:var(--s-jaune3)}
-.nx-card.sg-repl>h4 .sg-repl-chev{width:18px;height:18px;margin-left:auto;flex:0 0 18px;transform:rotate(90deg);transition:transform .15s}
-.nx-card.sg-repl>h4 .a+.sg-repl-chev{margin-left:12px}
-.nx-card.sg-repl.ferme>h4 .sg-repl-chev{transform:none}
-.nx-card.sg-repl.ferme>:not(h4){display:none}
-.nx-card.sg-repl.ferme>h4{border-bottom:0}
 /* Contrats & factures : « Phases contrat » entre les tuiles et les listes (20.10.2026) */
 .sg-oc-ph{margin:0 0 30px}.sg-oc-ph:empty{display:none}.sg-oc-g{margin-bottom:30px}
 /* équipe : part du temps en barre (20.10.2026) */
@@ -24630,7 +24622,7 @@ VIEWS['nx-renta']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcul 
 /* ═══ 3. FICHE PROJET = CENTRE DE PILOTAGE ═══════════════════════════════════════════════════════════════
    Onglets : vue d'ensemble · temps · phases & budget · intervenants · contrats & factures · chantier · documents · notes
    & tâches ; actions directes : saisir du temps, facturer, PV de chantier, ouvrir dans Projets. */
-const SG_ONGLETS=[['vue','Vue d’ensemble'],['temps','Temps'],['factu','Contrats & factures'],['interv','Intervenants'],['chantier','Chantier'],['docs','Documents'],['notes','Notes & tâches']];   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */
+const SG_ONGLETS=[['vue','Vue d’ensemble'],['temps','Temps'],['factu','Contrats'],['fact','Factures'],['interv','Intervenants'],['chantier','Chantier'],['docs','Documents'],['notes','Notes & tâches']];   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */
 function sgOuvrirDomaine(p,dom){ go('nx-pdom',p.ID+'|'+dom); }   // 18.10.2026 : page du projet (domaine en pleine page), « Tous les projets » retiré du menu
 VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }
@@ -24663,18 +24655,18 @@ function sgVoirContrat(w,id){ const c=((fxData()||{}).c||[]).find(x=>x.id===id);
   const cm=w.document.getElementById('offre-version-comment'); if(cm) cm.textContent=etat+(V.length>1?' · version '+n+(v.date?' du '+dfr(v.date):''):'');
   if(!w._sgCloseOffre){ w._sgCloseOffre=w.closeOffre; w.closeOffre=function(){ const r=w._sgCloseOffre.apply(this,arguments); if(w._sgRetour){ w._sgRetour=false; if(VIEW&&VIEW.id==='fx-contrats') nxHist(-1); } return r; }; }
   w._sgRetour=NX.pos>0; }
-/* cartes repliables (20.10.2026, Contrats & factures : « Phases contrat » et « Factures ») : clic sur le titre, chevron à droite ; état gardé
-   par carte dans localStorage (sg3_cartes_repliees) ; liens et boutons du titre (p. ex. « Tous les contrats ») gardent leur action */
-const sgRepl=k=>'sg-repl'+(nxLS.get('sg3_cartes_repliees',{})[k]?' ferme':'')+'" data-repl="'+k;   // à placer dans la classe de nxCard
-const sgReplChev=()=>nxSvg('next','sg-repl-chev');
-document.addEventListener('click',e=>{ const h=e.target.closest&&e.target.closest('.nx-card.sg-repl>h4'); if(!h||e.target.closest('.a,button,a,select,input')) return;
-  const c=h.parentElement, on=c.classList.toggle('ferme'), st=nxLS.get('sg3_cartes_repliees',{}); st[c.dataset.repl]=on; nxLS.set('sg3_cartes_repliees',st); });
 const SG_CGRP={};   // Chantier : rubriques ouvertes par projet (le temps de la session de l'onglet)
 function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet'); const set=h0=>{ box.innerHTML=h0; };   // cible : partie d'un onglet regroupé (20.10.2026)
   const now=new Date(), taux=sgTaux(), logs=DS.by('timelog','PROJECT_ID',p.ID);
   /* onglet « Contrats & factures » = tuiles financières, « Phases contrat », contrats d'honoraires et factures (regroupés le 20.10.2026) ;
      sans droit de lecture des contrats ni des factures (collaborateur par défaut) : les phases seules, comme l'ancien onglet « Phases contrat » */
   if(k==='factu'&&!cible&&!sgFactuOk()){ sgOnglet(p,'phases',pg); return; }
+  /* onglet « Factures » (20.10.2026) : factures du projet (contrats reliés), « Facturation en retard » dans le titre ; jamais pour le collaborateur
+     (SG_ONGLETS_COLLAB), droit « factures : lecture » ; protégé par le code d'accès comme les finances */
+  if(k==='fact'){ if(sgFinVerrou()){ set('<div class="nx-empty">'+nxSvg('lock')+'<p>Contrats, factures et rentabilité sont protégés par le code d’accès.</p><button class="nx-btn pri" data-fn="deverr">Déverrouiller</button></div>'); pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); return; }
+    set('<div class="nx-empty">Recherche dans la facturation…</div>');
+    fxEnsure().catch(()=>null).then(()=>{ const D=fxData(), x=sgRenta(p,D,taux); if(!box.isConnected) return;
+      set('<div class="nx-grid">'+nxCard('c12','Factures'+x.al.filter(a=>/^Facturation en retard/.test(a[1])).map(a=>' '+sgAlerteTag(a)).join(''),x.fs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th><th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+x.fs.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td><td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>','<span class="a" data-go="fx-factures">Toutes les factures</span>')+'</div>'); }); return; }
   if(k==='factu'&&sgFinVerrou()){ set('<div class="nx-empty">'+nxSvg('lock')+'<p>Contrats, factures et rentabilité sont protégés par le code d’accès.</p><button class="nx-btn pri" data-fn="deverr">Déverrouiller</button></div><div class="sg-oc-ph" id="sg-oc-ph"></div>'); pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); sgOnglet(p,'phases',pg,box.querySelector('#sg-oc-ph')); return; }
   if(k==='vue'){ const lim30=dayKey(new Date(now.getFullYear(),now.getMonth(),now.getDate()-30)); let tot=0,h30=0; const bySt={}, byM={};
     logs.forEach(r=>{ const v=+r.TIMEPERIOD||0, d=tlDate(r); tot+=v; if(tlKey(r)>=lim30) h30+=v; bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+v; const mk=d.getFullYear()*12+d.getMonth(); byM[mk]=(byM[mk]||0)+v; });
@@ -24761,7 +24753,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
           +kpi('Coût de revient moyen',moy?num(moy,0)+'<small>CHF/h</small>':'—',tot.hs?'par heure saisie ('+nxH(tot.hs)+' h, '+nxCHF(tot.cout)+' CHF)':'','','Coût de revient ÷ heures saisies, collaborateurs du projet')
           +kpi(gph!=null&&gph<0?'Perte par heure':'Gain par heure',gph==null?'—':(gph>=0?'+':'')+num(Math.round(tT.o)-Math.round(tT.c),0)+'<small>CHF/h</small>',gph==null?'':'honoraires '+num(tT.o,0)+' CHF/h − coût de revient '+num(tT.c,0)+' CHF/h',gph==null?'':gph<0?'neg':'pos','Honoraires / h − coût de revient / h')
           :'')+'</div>';
-      set(nxCard('c12 '+sgRepl('phases'),'Phases contrat'+sgReplChev(),kp+'<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+leg+'</div>')); };   /* lien « Configurer » de l'en-tête retiré (19.10.2026) */
+      set(nxCard('c12','Phases contrat',kp+'<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-phc">'+tete+L.map(ligne).join('')+(fin?ligne(tot):'')+'</table>'+note+leg+'</div>')); };   /* lien « Configurer » de l'en-tête retiré (19.10.2026) */
     if(!fin){ dessiner(null); return; }
     set('<div class="nx-empty">Calcul des marges…</div>');
     fxEnsure().catch(()=>null).then(()=>{ if(box.isConnected) dessiner(sgContratParPhase(p)); }); return; }
@@ -24777,12 +24769,10 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       set('<div class="nx-kpis">'+nxKpi('contrat','Honoraires (TTC)',x.contratTTC?nxCHF(x.contratTTC)+'<small>CHF</small>':'—',x.src==='moteur'?'contrats des projets':x.cs.length+' contrat(s)',null,null,1)/* « Coût de revient » retiré de Contrats & factures (19.10.2026) */+(collab?'':nxKpi('receipt','Facturé (TTC)',nxCHF(x.factTTC)+'<small>CHF</small>',(x.contratTTC?Math.round(x.factTTC/x.contratTTC*100)+' %':'—')+' des honoraires',x.contratTTC?x.factTTC/x.contratTTC*100:null)+nxKpi('wallet','Encaissé (TTC)',nxCHF(x.encTTC)+'<small>CHF</small>')+(sf=>nxKpi('coins','Solde à facturer (TTC)',x.contratTTC?nxCHF(sf)+'<small>CHF</small>':'—',x.contratTTC?Math.round(sf/x.contratTTC*100)+' % des honoraires':'',x.contratTTC?Math.max(0,sf/x.contratTTC*100):null))(x.contratTTC-x.factTTC))   /* collaborateur : ni facturé, ni encaissé, ni solde (20.10.2026) */
         +(pf=>nxKpi('trend','Part facturable',pf.pct!=null?Math.round(pf.pct)+'<small>%</small>':'—',pf.tot?sgHr(pf.fact)+' h sur '+sgHr(pf.tot)+' h saisies':'aucune heure saisie',pf.pct).replace('<div class="nx-kpi','<div title="'+nxE(pf.tot?nxH(pf.fact)+' h facturables'+(pf.dep?' · '+nxH(pf.dep)+' h au-delà du contrat ('+pf.ty.map(t=>t==='relatif'?'forfait relatif':'forfait').join(', ')+') — contrat au forfait : les heures d’une phase au-delà de ses heures au contrat ne sont pas facturables':''):'')+'" class="nx-kpi'))(sgPartFacturable(p,D))
         +'</div>'   /* solde à facturer = honoraires TTC − facturé TTC (19.10.2026) ; part facturable déplacée ici depuis la vue d'ensemble (20.10.2026) */
-        +((alF=>alF.length?'<div style="margin:-14px 0 20px">'+alF.map(sgAlerteTag).join(' ')+'</div>':'')(collab?[]:x.al.filter(a=>!/hors budget/.test(a[1]))))   /* « phases hors budget » retiré de l'onglet (19.10.2026) */
+        +((alF=>alF.length?'<div style="margin:-14px 0 20px">'+alF.map(sgAlerteTag).join(' ')+'</div>':'')(collab?[]:x.al.filter(a=>!/hors budget|^Coût |^Facturation en retard/.test(a[1]))))   /* « Coût au-delà des honoraires » et « Coût à n % des honoraires » retirés de l'onglet (20.10.2026) */   /* « phases hors budget » retiré de l'onglet (19.10.2026) */
         +'<div class="nx-grid sg-oc-g">'+nxCard('c12','Contrats d’honoraires',(x.cs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Contrat</th><th>Client</th><th>Date</th><th class="r">HT</th><th class="r">TTC</th><th>État</th><th></th></tr>'+x.cs.map(c=>'<tr><td><b>'+nxE(c.affaire||'')+'</b> '+nxE(c.projet||'')+'</td><td>'+nxE(c.nom||'')+'</td><td>'+(c.date?dfr(c.date):'')+'</td><td class="r">'+nxCHF(c.hht)+'</td><td class="r">'+nxCHF(c.httc)+'</td><td>'+(c.signe?'<span class="nx-tag s2">Signé</span>':c.envoye?'<span class="nx-tag s3">Envoyé</span>':'<span class="nx-tag">Brouillon</span>')+'</td><td class="r"><button class="nx-btn" style="height:28px" data-go="fx-contrats" data-arg="cv:'+nxE(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">Ouvrir</button>'+(collab?'':' <button class="nx-btn" style="height:28px" data-go="fx-saisie" data-arg="nf:'+nxE(c.id)+'">Facturer</button>')+'</td></tr>').join('')+'</table></div>'
             :'<div class="b"><p style="margin:0 0 10px;font-weight:300">Aucun contrat de Facturation relié à ce projet.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-go="fx-calchono" data-arg="newaff:'+nxE(p.NUMBER)+'">'+nxSvg('contrat')+'Nouveau contrat</button>'+(libre.length?'<select class="inp" id="sg-lier" style="max-width:380px"><option value="">Relier un contrat existant…</option>'+libre.map(c=>'<option value="'+nxE(c.id)+'">'+nxE([c.affaire||'(sans code)',c.projet,c.nom].filter(Boolean).join(' — '))+'</option>').join('')+'</select>':'')+'</div></div>'),'<span class="a" data-go="fx-contrats">Tous les contrats</span>')
-        +'</div><div class="sg-oc-ph" id="sg-oc-ph"></div><div class="nx-grid">'   /* ordre (20.10.2026) : contrats d'honoraires, Phases contrat, factures */
-        +(collab?'':nxCard('c12 '+sgRepl('factures'),'Factures'+sgReplChev(),x.fs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th><th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+x.fs.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td><td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>'))   /* factures : jamais pour le collaborateur (20.10.2026) */
-        +'</div>');
+        +'</div><div class="sg-oc-ph" id="sg-oc-ph"></div>');   /* ordre (20.10.2026) : contrats d'honoraires, Phases contrat ; factures dans leur onglet (20.10.2026) */
       sgOnglet(p,'phases',pg,box.querySelector('#sg-oc-ph'));
       const s=box.querySelector('#sg-lier'); if(s) s.onchange=()=>{ if(!s.value) return; const l=sgLiens(); l[s.value]=String(p.ID); nxLS.set('sg3_liens',l); toast('Contrat relié à '+p.NUMBER+'.'); sgOnglet(p,'factu',pg); }; }); return; }
   if(k==='chantier'){ set('<div class="nx-empty">Chargement des documents…</div>');
@@ -25347,7 +25337,7 @@ const sgTauxVisibles=()=>DS.all('staffrate').length>0&&!sgFinVerrou();
    s'appliquent en plus (Contrats & factures : lecture des contrats ou des factures ; Chantier : chantier ou PV) */
 const SG_ONGLETS_COLLAB=['factu','interv','chantier','docs','notes'];   // « factu » = Contrats & factures, phases comprises (20.10.2026)
 const sgFactuOk=()=>sgDroit('contrats','lecture')||sgDroit('factures','lecture');
-const sgOngletOk=k=>(SG_ACC.profil!=='collab'||SG_ONGLETS_COLLAB.includes(k))&&(k==='factu'?true:k==='chantier'?(sgDroit('chantier','lecture')||sgDroit('pv','lecture')):true);
+const sgOngletOk=k=>(SG_ACC.profil!=='collab'||SG_ONGLETS_COLLAB.includes(k))&&(k==='factu'?true:k==='fact'?sgDroit('factures','lecture'):k==='chantier'?(sgDroit('chantier','lecture')||sgDroit('pv','lecture')):true);
 
 /* ── Données Facturation partagées : profil du poste (clés en lecture seule, poste changé de main) ── */
 SGKV.ro=new Set();

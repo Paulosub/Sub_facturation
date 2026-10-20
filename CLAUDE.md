@@ -467,7 +467,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   détail en infobulle) : Facturé (TTC), Encaissé (TTC), Solde à
   facturer (TTC) — déplacées depuis l'onglet Contrats, qui garde Honoraires (TTC) et Part facturable —, Facturé / consommé (chiffres de « Facturation
   en retard » : facturé HT ÷ honoraires HT, coût de revient ÷ honoraires HT ; jauge, repère rouge si retard), Ouvert (non payées), Échu (échéance
-  passée, rouge), Dernière facture (date, n°, type), Délai moyen de paiement (date de facture → `date_paiement`) ; TTC sans frais comme `sgRenta` ; jamais pour le
+  passée, rouge), Dernière facture (date, n°, type), Délai moyen de paiement (date de facture → `date_paiement`) ; TTC sans frais comme `sgRenta` ; **Factures par année (20.10.2026)** : choix « Toutes · 2025 · 2024 … » dans le titre de la carte Factures (même présentation
+  que les années de l'onglet Heures, `.sg-an`, `data-fan`, mémorisé `sg3_fact_an` ; absent si toutes les factures sont de la même année) ;
+  une année choisie → tableau « Factures · 2025 » et tuiles des factures de l'année, année dans le libellé (Facturé, Encaissé, Ouvert, Échu,
+  Dernière facture, Délai moyen : `sgFactKpis(x,ah,an)`) ; Solde à facturer, À facturer selon les heures et Facturé / consommé restent sur
+  tout le projet ; tuiles alignées d'une tuile à l'autre (`subgrid`, libellé sur deux lignes possible) ; jamais pour le
   collaborateur (absent de `SG_ONGLETS_COLLAB`), droit « factures : lecture », code d'accès comme les finances. Cartes repliables essayées puis
   retirées (« Phases contrat » ne se replie pas, à la demande ; Factures a son onglet).
   **« Ouvrir » un contrat d'honoraires depuis le projet (20.10.2026)** : le contrat en PDF fidèle, lecture seule (`openContratPdf` du cadre),

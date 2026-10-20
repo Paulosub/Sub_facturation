@@ -693,6 +693,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-fkpis{grid-template-columns:repeat(5,minmax(0,1fr))}   /* 5 colonnes depuis « À facturer selon les heures » (20.10.2026) */
 @container (max-width:1000px){.sg-fkpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* tuiles de l'onglet Factures : libellé, chiffre, texte et jauge alignés d'une tuile à l'autre de la même rangée, même quand un libellé passe à la
+   ligne (« Délai moyen de paiement 2024 », année choisie) — grille partagée (subgrid), 4 lignes par tuile (20.10.2026) */
+.sg-fkpis>.nx-kpi{display:grid;grid-row:span 4;grid-template-rows:subgrid;align-content:start}
+.sg-fkpis>.nx-kpi>.l{align-self:end}   /* libellé d'une ligne posé juste au-dessus de son chiffre */
 .sg-pos{color:#4e6b0b}   /* facturé d'avance (vert de la charte, foncé pour la lecture) */
 .sg-neg{color:var(--s-rouge)}
 .sg-kg .mk.r{background:var(--s-rouge)}

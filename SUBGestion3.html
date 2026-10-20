@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 21:10 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 21:19 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -702,6 +702,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-fkpis{grid-template-columns:repeat(5,minmax(0,1fr))}   /* 5 colonnes depuis « À facturer selon les heures » (20.10.2026) */
 @container (max-width:1000px){.sg-fkpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* tuiles de l'onglet Factures : libellé, chiffre, texte et jauge alignés d'une tuile à l'autre de la même rangée, même quand un libellé passe à la
+   ligne (« Délai moyen de paiement 2024 », année choisie) — grille partagée (subgrid), 4 lignes par tuile (20.10.2026) */
+.sg-fkpis>.nx-kpi{display:grid;grid-row:span 4;grid-template-rows:subgrid;align-content:start}
+.sg-fkpis>.nx-kpi>.l{align-self:end}   /* libellé d'une ligne posé juste au-dessus de son chiffre */
 .sg-pos{color:#4e6b0b}   /* facturé d'avance (vert de la charte, foncé pour la lecture) */
 .sg-neg{color:var(--s-rouge)}
 .sg-kg .mk.r{background:var(--s-rouge)}
@@ -24820,15 +24824,20 @@ function sgAFacturerHeures(p,D,x){ const cs=(x.cs||[]).filter(c=>!c.annule);
   if(!h) return {h:0,sans,ht:0,ttc:0,diff:-(x.factTTC||0),tarifs:'',dep};
   const tarifs=[...T.keys()].map(o=>(T.size>1?o.c.id+' : ':'')+num(o.t.h,2)+' CHF/h'+(o.t.rab?' − '+num(o.t.rab,0)+' %':'')).join(' ; ');
   return {h,sans,ht,ttc,diff:ttc-(x.factTTC||0),tarifs,dep}; }
-function sgFactKpis(x,ah){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=today();   // TTC comme sgRenta (sans frais) : ouvert + encaissé = facturé
+function sgFactKpis(x,ah,an){ const ttc=f=>+f._ttc||+f.ttc||0, auj=today();   // TTC comme sgRenta (sans frais) : ouvert + encaissé = facturé
+  /* an (20.10.2026) : année choisie dans l'onglet Factures — tuiles des factures (facturé, encaissé, ouvert, échu, dernière facture, délai) sur les
+     factures datées de cette année, année ajoutée au libellé ; tuiles du contrat (solde à facturer, à facturer selon les heures, facturé / consommé)
+     toujours sur tout le projet */
+  const fs=(x.fs||[]).filter(f=>!an||String(f.date||'').slice(0,4)===an), A=an?' '+an:'';
+  const fT=an?fs.reduce((s0,f)=>s0+ttc(f),0):x.factTTC, eT=an?fs.filter(f=>!fxUnpaid(f)).reduce((s0,f)=>s0+ttc(f),0):x.encTTC;
   const ouv=fs.filter(fxUnpaid), ech=ouv.filter(f=>f.ech&&f.ech<auj), pay=fs.filter(f=>!fxUnpaid(f)&&f.date&&f.date_paiement);
   const der=fs.filter(f=>f.date).sort((a,b)=>cmp(b.date,a.date))[0], jours=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
   const delai=pay.length?pay.reduce((s0,f)=>s0+Math.max(0,jours(f.date,f.date_paiement)),0)/pay.length:null, T=x.contratTTC, sum=L=>L.reduce((s0,f)=>s0+ttc(f),0);
   const pc=(a,b)=>b?Math.round(a/b*100)+' %':'—', retard=x.conso!=null&&x.fact!=null&&x.conso-x.fact>0.25;
   const jauge=(()=>{ if(x.conso==null||x.fact==null) return ''; const m=Math.max(1,x.conso,x.fact); return '<div class="sg-kg"><i class="ef" style="width:'+(x.fact/m*100).toFixed(1)+'%"></i><i class="mk'+(retard?' r':'')+'" style="left:'+(x.conso/m*100).toFixed(1)+'%"></i></div>'; })();
   return '<div class="nx-kpis sg-fkpis">'
-    +nxKpi('receipt','Facturé (TTC)',nxCHF(x.factTTC)+'<small>CHF</small>',pc(x.factTTC,T)+' des honoraires',T?x.factTTC/T*100:null,null,1)
-    +nxKpi('wallet','Encaissé (TTC)',nxCHF(x.encTTC)+'<small>CHF</small>',pc(x.encTTC,x.factTTC)+' du facturé',x.factTTC?x.encTTC/x.factTTC*100:null)
+    +nxKpi('receipt','Facturé'+A+' (TTC)',nxCHF(fT)+'<small>CHF</small>',pc(fT,T)+' des honoraires',T?fT/T*100:null,null,1)
+    +nxKpi('wallet','Encaissé'+A+' (TTC)',nxCHF(eT)+'<small>CHF</small>',pc(eT,fT)+' du facturé',fT?eT/fT*100:null)
     +nxKpi('coins','Solde à facturer (TTC)',T?nxCHF(T-x.factTTC)+'<small>CHF</small>':'—',T?pc(T-x.factTTC,T)+' des honoraires':'aucun contrat relié',T?Math.max(0,(T-x.factTTC)/T*100):null)
     +(ah===undefined?'':nxKpi('timer','À facturer selon les heures',ah?'<span'+(ah.diff<0?' class="sg-pos"':'')+'>'+nxCHF(ah.diff)+'</span><small>CHF</small>':'—',
         ah?(ah.diff>=0?'valeur des heures − facturé':'facturé d’avance sur les heures'):'tarif horaire non enregistré')
@@ -24836,10 +24845,10 @@ function sgFactKpis(x,ah){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=tod
           +(ah.dep>0.05?' — '+nxH(ah.dep)+' h au-delà des heures du contrat (forfait) non comptées':'')+(ah.sans>0.05?' — '+nxH(ah.sans)+' h d’un contrat sans tarif horaire non comptées':'')
           :'Le contrat de Facturation relié n’a pas de tarif horaire enregistré (ancien formulaire) : montant impossible à calculer.')+'" class="nx-kpi'))
     +nxKpi('trend','Facturé / consommé',x.fact!=null?Math.round(x.fact*100)+'<small>%</small> / '+Math.round(x.conso*100)+'<small>%</small>':'—',x.fact!=null?'consommé = coût de revient ÷ honoraires HT':'aucun contrat relié').replace(/<\/div>$/,jauge+'</div>')
-    +nxKpi('receipt','Ouvert (TTC)',nxCHF(sum(ouv))+'<small>CHF</small>',ouv.length?ouv.length+' facture'+(ouv.length>1?'s':'')+' non payée'+(ouv.length>1?'s':''):'tout est payé')
-    +nxKpi('clock','Échu (TTC)','<span'+(ech.length?' class="sg-neg"':'')+'>'+nxCHF(sum(ech))+'</span><small>CHF</small>',ech.length?ech.length+' facture'+(ech.length>1?'s':'')+' à échéance dépassée':'aucune échéance dépassée')
-    +nxKpi('cal','Dernière facture',der?dfr(der.date):'—',der?(der.num||'')+(der.type?' · '+der.type:''):'aucune facture').replace('<div class="v">','<div class="v dt">')
-    +nxKpi('clock','Délai moyen de paiement',delai!=null?Math.round(delai)+'<small>jours</small>':'—',pay.length?'sur '+pay.length+' facture'+(pay.length>1?'s':'')+' payée'+(pay.length>1?'s':''):'aucune date de paiement saisie')
+    +nxKpi('receipt','Ouvert'+A+' (TTC)',nxCHF(sum(ouv))+'<small>CHF</small>',ouv.length?ouv.length+' facture'+(ouv.length>1?'s':'')+' non payée'+(ouv.length>1?'s':''):'tout est payé')
+    +nxKpi('clock','Échu'+A+' (TTC)','<span'+(ech.length?' class="sg-neg"':'')+'>'+nxCHF(sum(ech))+'</span><small>CHF</small>',ech.length?ech.length+' facture'+(ech.length>1?'s':'')+' à échéance dépassée':'aucune échéance dépassée')
+    +nxKpi('cal','Dernière facture'+A,der?dfr(der.date):'—',der?(der.num||'')+(der.type?' · '+der.type:''):'aucune facture').replace('<div class="v">','<div class="v dt">')
+    +nxKpi('clock','Délai moyen de paiement'+A,delai!=null?Math.round(delai)+'<small>jours</small>':'—',pay.length?'sur '+pay.length+' facture'+(pay.length>1?'s':'')+' payée'+(pay.length>1?'s':''):'aucune date de paiement saisie')
     +'</div>'; }
 /* « Ouvrir » un contrat depuis le projet (20.10.2026) : le contrat en PDF fidèle (lecture seule, openContratPdf du cadre), DERNIÈRE version
    seulement — le contrat signé ou, s'il y en a une après la signature, le dernier avenant — sans le choix des autres versions ; état de la version à
@@ -24871,8 +24880,16 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       const cIds=[...new Set(x.fs.map(f=>String(f.contrat_id||'')))].filter(Boolean), colC=cIds.length>1, cById=new Map(x.cs.map(c=>[String(c.id),c]));
       const libs=new Map(cIds.map(id=>{ const c=cById.get(id); return [id,(c&&sgContratPhLib(c))||id]; })), vus={}; [...libs.values()].forEach(l=>{ vus[l]=(vus[l]||0)+1; });
       cIds.forEach(id=>{ const c=cById.get(id), l=libs.get(id); if(vus[l]>1&&c&&c.date) libs.set(id,l+' · '+String(c.date).slice(0,4)); });
-      const libC=f=>{ const id=String(f.contrat_id||''), c=cById.get(id); return '<td title="'+nxE(c?'Contrat '+c.id+(c.date?' du '+dfr(c.date):'')+(c.projet?' — '+c.projet:''):'')+'">'+nxE(libs.get(id)||id)+'</td>'; };   // « Facturation en retard » sous le tableau (20.10.2026)
-      set(sgFactKpis(x,sgAFacturerHeures(p,D,x))+'<div class="nx-grid">'+nxCard('c12','Factures',(x.fs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th>'+(colC?'<th>Contrat</th>':'')+'<th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+x.fs.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td>'+(colC?libC(f):'')+'<td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>')+(ret.length?'<div class="sg-fact-ret">'+ret.map(sgAlerteTag).join(' ')+'</div>':''))+'</div>'); }); return; }   /* lien « Toutes les factures » retiré du titre (20.10.2026) */
+      const libC=f=>{ const id=String(f.contrat_id||''), c=cById.get(id); return '<td title="'+nxE(c?'Contrat '+c.id+(c.date?' du '+dfr(c.date):'')+(c.projet?' — '+c.projet:''):'')+'">'+nxE(libs.get(id)||id)+'</td>'; };
+      /* Factures par année (20.10.2026) : « Toutes » puis les années des factures, de la plus récente (même présentation que les années de l'onglet
+         Heures, .sg-an) ; une année choisie : tableau « Factures · 2025 » et tuiles des factures de cette année (voir sgFactKpis) ; choix gardé
+         (sg3_fact_an), « Toutes » si le projet n'a pas de facture cette année-là ; sans choix si toutes les factures sont de la même année */
+      const anF=f=>String(f.date||'').slice(0,4), ansF=[...new Set(x.fs.map(anF).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
+      const fanS=String(nxLS.get('sg3_fact_an','')||''), fan=ansF.length>1&&ansF.includes(fanS)?fanS:'', fsA=fan?x.fs.filter(f=>anF(f)===fan):x.fs;
+      const selAnF=ansF.length>1?'<span class="sg-an" role="group" aria-label="Année">'+[['','Toutes']].concat(ansF.map(y=>[y,y])).map(([v,t])=>{ const on=v===fan;
+        return '<button data-fan="'+v+'" class="'+(on?'on':'')+'" aria-pressed="'+on+'" title="'+(v?'Factures datées de '+v:'Toutes les factures du projet')+'">'+t+'</button>'; }).join('')+'</span>':'';   // « Facturation en retard » sous le tableau (20.10.2026)
+      set(sgFactKpis(x,sgAFacturerHeures(p,D,x),fan)+'<div class="nx-grid">'+nxCard('c12','Factures'+(fan?' · '+fan:''),(fsA.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th>'+(colC?'<th>Contrat</th>':'')+'<th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+fsA.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td>'+(colC?libC(f):'')+'<td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>')+(ret.length?'<div class="sg-fact-ret">'+ret.map(sgAlerteTag).join(' ')+'</div>':''),selAnF)+'</div>');
+      box.querySelectorAll('[data-fan]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fact_an',b.dataset.fan); sgOnglet(p,'fact',pg); }); }); return; }   /* lien « Toutes les factures » retiré du titre (20.10.2026) */
   if(k==='factu'&&sgFinVerrou()){ set('<div class="nx-empty">'+nxSvg('lock')+'<p>Contrats, factures et rentabilité sont protégés par le code d’accès.</p><button class="nx-btn pri" data-fn="deverr">Déverrouiller</button></div><div class="sg-oc-ph" id="sg-oc-ph"></div>'); pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); sgOnglet(p,'phases',pg,box.querySelector('#sg-oc-ph')); return; }
   if(k==='vue'){ const lim30=dayKey(new Date(now.getFullYear(),now.getMonth(),now.getDate()-30)); let tot=0,h30=0; const bySt={}, byM={};
     logs.forEach(r=>{ const v=+r.TIMEPERIOD||0, d=tlDate(r); tot+=v; if(tlKey(r)>=lim30) h30+=v; bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+v; const mk=d.getFullYear()*12+d.getMonth(); byM[mk]=(byM[mk]||0)+v; });

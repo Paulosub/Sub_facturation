@@ -537,6 +537,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   d'abord, a été remplacée le même jour)** : en-tête du tableau de bord, à la place du pavé bleu nuit (numéro tronqué à 5 caractères) — numéro
   complet en grand (34 px, bleu nuit), filet noir vertical de 2 px, puis le titre (`.nx-hero .sg-pnum` ; empilés sous 560 px) ; les autres
   fiches (contact, collaborateur) gardent leur pavé `.ic`.
+  Sous le titre, à droite du maître de l'ouvrage (20.10.2026) : « Heures saisies : 04.2024 à 12.2026 » = mois de la première et de la dernière
+  heure introduites dans l'app (timelog du projet ; un seul mois si elles tombent le même mois ; dates exactes en infobulle ; rien sans heure).
   Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
   (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
   dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).

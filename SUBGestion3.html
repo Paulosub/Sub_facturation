@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 19:08 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 19:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -511,9 +511,12 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-card>h4 .sg-ha{display:inline-flex;align-items:center;gap:5px;border-bottom:0;padding:1px 4px}
 .nx-card>h4 .sg-ha+.sg-ha{margin-left:12px}
 .nx-card>h4 .sg-ha svg{width:14px;height:14px}
-.nx-card>h4 .sg-an{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--s-noir)}   /* Par mois ▸ année (20.10.2026) */
-.nx-card>h4 .sg-an select{font:inherit;font-size:12px;font-weight:400;height:26px;padding:0 6px;border:1px solid var(--s-gris3);background:#fff;color:var(--s-noir);cursor:pointer}
-.nx-card>h4 .sg-an+.sg-ha{margin-left:16px}
+.nx-card>h4 .sg-an{margin-left:auto;display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:2px 12px}   /* Par mois ▸ années soulignées (variante B, 20.10.2026) */
+.nx-card>h4 .sg-an button{border:0;background:none;padding:2px 0 3px;font:inherit;font-size:12px;font-weight:400;color:var(--s-gris);cursor:pointer;white-space:nowrap}
+.nx-card>h4 .sg-an button:hover{color:var(--s-noir)}
+.nx-card>h4 .sg-an button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
+.nx-card>h4 .sg-an button:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
+.nx-card>h4 .sg-an+.sg-ha{margin-left:18px}
 .sg-hscroll{max-height:62vh;overflow:auto}
 .sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}
 /* détail des heures (20.10.2026) : colonnes ajustées au contenu — Date, Collaborateur et Durée à leur largeur, Phase, Phase partielle
@@ -24894,8 +24897,14 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     /* Par mois ▸ une année entière (liste des années où des heures ont été saisies, 20.10.2026) : tout l'onglet la suit (tuiles comprises), la règle
        « Période » n'a plus de repère actif ; un clic sur la règle revient à une période */
     const ans=[...new Set(logs.map(r=>+r.TIMEYEAR).filter(Boolean))].sort((a,b)=>b-a), anS=nxLS.get('sg3_fiche_an',''), an=grp==='mois'&&ans.includes(+anS)?+anS:null;
-    const L=logs.filter(r=>an?+r.TIMEYEAR===an:tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1)), tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
-    const perLib=an?'l’année '+an:{'1':'le dernier mois','3':'les 3 derniers mois','12':'les 12 derniers mois','tout':'toute la durée du projet'}[per]||'la période';
+    const L0=logs.filter(r=>an?+r.TIMEYEAR===an:tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1));
+    /* Détail ▸ choix du collaborateur (20.10.2026, même présentation que les années) : « Tous » puis les collaborateurs qui ont des heures sur la
+       période, du plus d'heures au moins d'heures ; un collaborateur choisi : le détail et les tuiles ne montrent que ses saisies */
+    const hC={}; L0.forEach(r=>{ const k0=String(r.STAFF_ID); hC[k0]=(hC[k0]||0)+(+r.TIMEPERIOD||0); });
+    const cols=Object.keys(hC).map(k0=>({k:k0,s:DS.get('staff',k0),h:hC[k0]})).filter(x=>x.s).sort((a,b)=>b.h-a.h);
+    const colS=nxLS.get('sg3_fiche_col',''), col=grp==='det'&&cols.some(x=>x.k===colS)?colS:'', colN=col?staffName(DS.get('staff',col)):'';
+    const L=col?L0.filter(r=>String(r.STAFF_ID)===col):L0, tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
+    const perLib=(an?'l’année '+an:{'1':'le dernier mois','3':'les 3 derniers mois','12':'les 12 derniers mois','tout':'toute la durée du projet'}[per]||'la période')+(col?' ('+colN+')':'');
     /* Période : règle graduée (repère carré par période, trait bleu nuit jusqu'au choix) ; Affichage : tuiles à icône (choix souligné en bleu nuit) */
     const PERS=[['1','1 mois'],['3','3 mois'],['12','12 mois'],['tout','Tout']], iP=an?-1:Math.max(0,PERS.findIndex(x=>x[0]===per));
     const regle='<div class="sg-hrow"><em>Période</em><div class="sg-hreg" role="group" aria-label="Période"><span class="l"></span><span class="f" style="width:calc((100% - var(--w)) * '+(Math.max(0,iP)/(PERS.length-1)).toFixed(4)+')"></span>'
@@ -24915,9 +24924,13 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const ent='<tr><th>Date</th><th>Collaborateur</th><th>Phase</th><th title="Sous-phase de la saisie">Phase partielle</th><th>Commentaire</th><th class="r">Durée</th></tr>';
     /* Par mois ▸ liste des années où des heures ont été saisies (20.10.2026) : « Période choisie » (la règle) ou une année entière, quelle que soit la période */
     const LT=L;
-    const titre={det:'Saisies',collab:'Heures par collaborateur',phase:'Heures par phase',mois:'Heures par mois'+(an?' · '+an:''),activite:'Heures par activité',croise:'Heures par collaborateur et par phase'}[grp]||'Saisies';
-    const selAn=grp==='mois'&&ans.length>1?'<label class="sg-an" title="Afficher une seule année : les tuiles et les mois suivent l’année choisie">Année <select data-k="an"><option value="">Période choisie</option>'+ans.map(y=>'<option value="'+y+'"'+(y===an?' selected':'')+'>'+y+'</option>').join('')+'</select></label>':'';
-    const acts=selAn+(LT.length?'<span class="a sg-ha" data-fn="csvt" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-fn="prnt" title="Imprimer le tableau">'+nxSvg('print')+'Imprimer</span>':'');
+    const titre={det:'Saisies'+(col?' · '+colN:''),collab:'Heures par collaborateur',phase:'Heures par phase',mois:'Heures par mois'+(an?' · '+an:''),activite:'Heures par activité',croise:'Heures par collaborateur et par phase'}[grp]||'Saisies';
+    /* années en texte souligné (variante B, 20.10.2026) : « Période » puis chaque année saisie, l'année choisie en gras soulignée bleu nuit */
+    const selAn=grp==='mois'&&ans.length>1?'<span class="sg-an" role="group" aria-label="Année">'+[['','Période']].concat(ans.map(y=>[String(y),String(y)])).map(([v,t])=>{ const on=v===''?!an:+v===an;
+      return '<button data-an="'+v+'" class="'+(on?'on':'')+'" aria-pressed="'+on+'" title="'+(v?'Toutes les heures de '+v+' (tuiles comprises)':'Période choisie sur la règle')+'">'+t+'</button>'; }).join('')+'</span>':'';
+    const selCol=grp==='det'&&cols.length>1?'<span class="sg-an" role="group" aria-label="Collaborateur">'+[['','Tous']].concat(cols.map(x=>[x.k,staffName(x.s)])).map(([v,t])=>{ const on=v===''?!col:v===col;
+      return '<button data-col="'+nxE(v)+'" class="'+(on?'on':'')+'" aria-pressed="'+on+'" title="'+nxE(v?'Saisies de '+t+' seulement (tuiles comprises)':'Les saisies de tous les collaborateurs')+'">'+nxE(t)+'</button>'; }).join('')+'</span>':'';
+    const acts=selAn+selCol+(LT.length?'<span class="a sg-ha" data-fn="csvt" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-fn="prnt" title="Imprimer le tableau">'+nxSvg('print')+'Imprimer</span>':'');
     set('<div class="sg-hbar">'+regle+tuiles+'</div>'
       +'<div class="nx-kpis sg-pkpis">'+kpiT('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies sur '+perLib+(hf?', dont '+nxH(hf)+' h facturables':''))
         +kpiT('list','Saisies',num(L.length,0),L.length+' saisie'+(L.length>1?'s':'')+' sur '+perLib)
@@ -24927,7 +24940,8 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(LT.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,5000).map(ligne).join('')+'</table>':sgSituationHtml(LT,grp,{hier:1,fact:false})):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
         +(grp==='det'&&L.length>5000?'<div class="sg-hplus">5\'000 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));
     box.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_grp',b.dataset.grp); sgOnglet(p,'temps',pg); });
-    box.querySelectorAll('select[data-k="an"]').forEach(x=>x.onchange=()=>{ nxLS.set('sg3_fiche_an',x.value); sgOnglet(p,'temps',pg); });
+    box.querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_col',b.dataset.col); sgOnglet(p,'temps',pg); });
+    box.querySelectorAll('[data-an]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_an',b.dataset.an); sgOnglet(p,'temps',pg); });
     box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); nxLS.set('sg3_fiche_an',''); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
       sgCsvTable(t,'heures_'+p.NUMBER+'_'+diso(now)+'.csv'); };

@@ -513,8 +513,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `cal`, `tag`, `grille` — `escalier` et `grille` ajoutées à `NXI` — ; choix souligné en bleu nuit, nom complet en infobulle), deux lignes
   `.sg-hrow` dans `.sg-hbar` (plus de boutons encadrés `.seg`) ; tuiles sans texte gris (Heures saisies, Saisies, Collaborateurs, Dernière saisie ; Coût de revient
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
-  détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période ; colonne Collaborateur
-  du détail = nom complet (`staffName`, plus les initiales, 20.10.2026). Barres « Part » des tableaux
+  détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période ; colonnes du détail
+  (20.10.2026) : Date, Collaborateur (nom complet `staffName`, plus les initiales), Phase, Précision (sous-phase, `projectsubphase`
+  `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).
   **Numéro du projet : grand numéro et filet (20.10.2026, variante C choisie parmi 4 propositions ; la variante D « cartouche », appliquée
   d'abord, a été remplacée le même jour)** : en-tête du tableau de bord, à la place du pavé bleu nuit (numéro tronqué à 5 caractères) — numéro

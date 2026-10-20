@@ -444,9 +444,9 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const eq=Object.entries(bySt).map(([id,v])=>({s:DS.get('staff',id),v})).filter(x=>x.s).sort((a,b)=>b.v-a.v);
     const hf=L.reduce((s,r)=>s+(+r.ISCHARGEABLE?+r.TIMEPERIOD||0:0),0), der=L[0], derS=der&&DS.get('staff',der.STAFF_ID);
     const cout=sgTauxVisibles()?L.reduce((s,r)=>s+(+r.TIMEPERIOD||0)*taux(r.STAFF_ID,tlDate(r)),0):null;
-    const ligne=r=>{ const s=DS.get('staff',r.STAFF_ID), a=DS.get('projectactivity',r.ACTIVITY_ID)||DS.get('activity',r.ACTIVITY_ID), f=DS.get('projectphase',r.PHASE_ID);
-      return '<tr><td>'+dfr(diso(tlDate(r)))+'</td><td class="sg-hnom"><b>'+nxE(s?staffName(s):'')+'</b></td><td class="sg-hact">'+nxE([nm(a),r.DESCRIPTION].filter(Boolean).join(' — '))+'</td><td>'+nxE(nm(f))+'</td><td class="r"><b>'+nxH(r.TIMEPERIOD)+' h</b></td><td>'+(+r.ISCHARGEABLE?'oui':'<span class="sg-hno">non</span>')+'</td><td>'+nxE(TSTATE[r.TIMELOGSTATECODE||0]||'')+'</td></tr>'; };
-    const ent='<tr><th>Date</th><th>Collaborateur</th><th>Activité</th><th>Phase</th><th class="r">Durée</th><th>Facturable</th><th>Statut</th></tr>';
+    const ligne=r=>{ const s=DS.get('staff',r.STAFF_ID), f=DS.get('projectphase',r.PHASE_ID), sp=nm(DS.get('projectsubphase',r.SUBPHASE_ID))||'', co=r.DESCRIPTION||'';   // + précision de la phase (sous-phase), 20.10.2026   // colonne « Commentaire » : le commentaire seul, sans l'activité (20.10.2026)
+      return '<tr><td>'+dfr(diso(tlDate(r)))+'</td><td class="sg-hnom"><b>'+nxE(s?staffName(s):'')+'</b></td><td>'+nxE(nm(f))+'</td><td class="sg-hsp"'+(sp?' title="'+nxE(sp)+'"':'')+'>'+nxE(sp)+'</td><td class="sg-hact"'+(co?' title="'+nxE(co)+'"':'')+'>'+nxE(co)+'</td><td class="r"><b>'+nxH(r.TIMEPERIOD)+' h</b></td></tr>'; };   /* colonnes Facturable et Statut retirées (20.10.2026) */
+    const ent='<tr><th>Date</th><th>Collaborateur</th><th>Phase</th><th title="Précision de la phase (sous-phase)">Précision</th><th>Commentaire</th><th class="r">Durée</th></tr>';
     const titre={det:'Saisies',collab:'Heures par collaborateur',phase:'Heures par phase',mois:'Heures par mois',activite:'Heures par activité',croise:'Heures par collaborateur et par phase'}[grp]||'Saisies';
     const acts=L.length?'<span class="a sg-ha" data-fn="csvt" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-fn="prnt" title="Imprimer le tableau">'+nxSvg('print')+'Imprimer</span>':'';
     set('<div class="sg-hbar">'+regle+tuiles+'</div>'

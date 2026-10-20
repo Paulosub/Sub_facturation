@@ -687,8 +687,13 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-frise em{position:absolute;top:9px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11.5px;color:var(--s-gris);white-space:nowrap}   /* durée centrée sous la frise */
 /* Tableau de bord du projet : grand numéro bleu nuit, filet noir, puis le titre (20.10.2026, variante C) */
 .nx-hero:has(>.sg-pnum){column-gap:16px}
-.nx-hero .sg-pnum{align-self:stretch;padding:3px 16px 0 0;border-right:2px solid var(--s-noir);font-size:34px;font-weight:400;line-height:1;letter-spacing:.01em;color:var(--s-nuit);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.nx-hero .sg-pnum{align-self:stretch;padding:3px 16px 0 0;border-right:2px solid var(--s-noir);font-size:34px;font-weight:700;line-height:1;letter-spacing:.01em;color:var(--s-nuit);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}   /* numéro d'affaire en gras (20.10.2026, demande de Paulo ; avant : léger) */
 @container (max-width:560px){.nx-hero:has(>.sg-pnum){grid-template-columns:1fr;row-gap:8px}.nx-hero .sg-pnum{border-right:0;padding:0;font-size:28px}}
+/* En-tête du tableau de bord du projet sur le fond jaune pâle de la charte, onglets sur fond blanc juste dessous : le titre est nettement séparé des
+   onglets (20.10.2026, variante F choisie par Paulo parmi 6 ; le filet noir de 2 px reste en tête). Les autres fiches gardent leur en-tête. */
+.nx-hero:has(>.sg-pnum){background:var(--s-jaune2);padding:16px 22px 16px;margin-bottom:8px}
+.nx-hero:has(>.sg-pnum) .sg-mandat{margin-bottom:14px}
+.nx-hero:has(>.sg-pnum)+.sg-onglets{margin-top:0}
 /* onglet Factures : tuiles sur deux lignes de quatre (20.10.2026) */
 .sg-fkpis{grid-template-columns:repeat(5,minmax(0,1fr))}   /* 5 colonnes depuis « À facturer selon les heures » (20.10.2026) */
 @container (max-width:1000px){.sg-fkpis{grid-template-columns:repeat(3,minmax(0,1fr))}}

@@ -572,7 +572,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Numéro du projet : grand numéro et filet (20.10.2026, variante C choisie parmi 4 propositions ; la variante D « cartouche », appliquée
   d'abord, a été remplacée le même jour)** : en-tête du tableau de bord, à la place du pavé bleu nuit (numéro tronqué à 5 caractères) — numéro
   complet en grand (34 px, bleu nuit), filet noir vertical de 2 px, puis le titre (`.nx-hero .sg-pnum` ; empilés sous 560 px) ; les autres
-  fiches (contact, collaborateur) gardent leur pavé `.ic`.
+  fiches (contact, collaborateur) gardent leur pavé `.ic`. Numéro en gras (20.10.2026, à la demande).
+  **En-tête du projet sur fond jaune pâle (20.10.2026, variante F choisie par Paulo parmi 6 pour mieux séparer le titre des onglets)** :
+  numéro, titre, maître de l'ouvrage et frise sur `--s-jaune2` (#FEF6B0), filet noir de 2 px gardé en tête, marges intérieures 16 / 22 px ;
+  onglets sur fond blanc 8 px dessous (`.nx-hero:has(>.sg-pnum)`, `+ .sg-onglets`) ; autres fiches inchangées. Copie d'avant :
+  `subgestion3/_backup_20261020_2141_avant_entete_jaune/`.
   **Frise du mandat (20.10.2026, proposition F choisie parmi 6)** : ligne sous le maître de l'ouvrage (`.sg-mandat`) — mois de la première heure
   introduite dans l'app (timelog du projet), petite frise bleu nuit (`.sg-frise`), mois de la dernière heure ; durée comptée du premier au dernier
   mois (« 1 an 11 mois », « 5 ans 2 mois ») centrée sous la frise (`.sg-frise em`) ; libellé « Mandat » retiré à la demande (20.10.2026) ; dates exactes et nombre de mois en infobulle ; un seul mois : sans frise ; rien

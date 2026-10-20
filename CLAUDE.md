@@ -555,7 +555,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (20.10.2026) : Heures saisies, Collaborateurs, Dernière saisie, Coût de revient. Tuiles d'affichage dans l'ordre Collaborateur, Détail, Phase, Mois,
   Activité, Collab. × phase (Collaborateur placé avant Détail, 20.10.2026). Clic sur un collaborateur (affichage Collaborateur ou ligne d'un
   collaborateur dans Collab. × phase, `tr[data-colgo]`) → Détail avec ce collaborateur choisi.
-  **Taille des données dans toute l'app (20.10.2026)** : valeurs des tuiles `.nx-kpi .v` et chiffres `.sg-fig .n` à 28 px (avant 34 et 30), textes
+  **Taille des données dans toute l'app (20.10.2026)** : valeurs des tuiles `.nx-kpi .v` et chiffres `.sg-fig .n` à 28 px **en gras** (avant 34 et
+  30 px légers ; gras demandé le même jour, aucune valeur ne déborde sur les 11 écrans contrôlés), textes
   `.txt` à 22 px, unités `small` à 12 px ; dates en tuile (`.v.dt` : Dernière saisie, Dernière facture) à la même taille que les chiffres — pour
   qu'une date tienne dans sa tuile. Gardés plus grands à dessein : total de la vue d'ensemble Projets (`.sg-pv-k .v` 48 px), numéro du projet
   dans le titre (`.sg-pnum` 34 px). « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :

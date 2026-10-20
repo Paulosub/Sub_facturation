@@ -646,6 +646,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `serveur_deltasub.py` a changé, Paulo redémarre le conteneur (DSM ▸ Container Manager ▸ Projet ▸ subgestion ▸ Action ▸ Redémarrer).
   Avant de copier : `git fetch` (l'autre poste pousse aussi), vérifier que la version du NAS n'est pas plus récente (dépôt depuis un autre
   poste), et que `nettoyer.py` passe (traces, sites externes).
+- **Refonte visuelle « atelier » et thèmes de couleur (20.10.2026, d'après 10 références transmises par Paulo ; « refonte complète de l'app », « revoir les
+  codes couleur, pas nécessaire en lien avec la charte »)** : `subgestion3/theme.css` = jetons sémantiques par thème (`--ink`, `--ink2`, `--ink3`, `--line`,
+  `--line2`, `--paper` (fond de page), `--panel` (cartes), `--soft`, `--rail*` (menu), `--acc`, `--acc2`, `--acc-ink`, `--acc-txt`, `--acc-pale`, `--hl` (survol),
+  `--hl2` (sélection), `--band` (en-tête du projet), `--bar`, `--track`, `--dot-off`, `--ok`, `--warn`, `--err`, `--veil`) pour **Graphite** (défaut : papier
+  gris chaud, menu graphite, accent orange #e8541e), **Ardoise** (bleu-gris, accent bleu acier), **Encre** (noir et blanc), **Sombre** (fond noir, accent
+  orange) ; puis les anciens noms de la charte (`--s-noir`, `--s-nuit`, `--s-jaune`, `--s-filet`, `--s-fond`, `--bg`, `--sel`…) qui POINTENT sur ces jetons :
+  tout le code existant suit le thème. `construire.py` injecte `theme.css` en tête de `sg3.css` ET de `fx_theme.css` (le cadre Facturation est un autre
+  document) et un petit script (`THEME_SCRIPT`) qui pose `data-theme` sur `<html>` avant le premier rendu ; bloc 21 de `sg3_plus.js` : `SG_THEMES`,
+  `sgThemeApply` (réglage `sg3_theme`, cadre Facturation via `fxEnsure` enveloppé), bouton `#sg-theme` au pied du menu (menu des 4 thèmes), ⌘K
+  « Apparence : … ». Graphisme : fond papier, menu graphite (module actif = barre de 3 px et couleur `--rail-acc`), libellés en capitales espacées
+  (10,5 px, `letter-spacing:.12em` : tuiles, en-têtes de tableaux, rubrique, actions de carte, Période / Affichage), tuiles `.nx-kpi`, cartes `.nx-card`,
+  tuiles de modules `.sg-tile` et panneaux du moteur = panneaux `--panel` à filet 1 px + filet 2 px en tête, boutons principaux noirs (`--ink`) et
+  secondaires à contour 1 px (plus de 2 px, plus de survol jaune), étiquettes `.nx-tag` en contour, avatars carrés, en-tête du projet sur la bande
+  `--band` (numéro 44 px, texte `--band-ink`), onglets soulignés en accent, icônes au trait 1,5 px, **heures par mois en matrice de points**
+  (`sgMoisGraph` : 1 point = `sgPas(max)` heures, ≤ 12 points par mois ; années précédentes `--dot-off`, année en cours `--bar`, mois en cours `--acc` ;
+  l'ancien graphique en barres `.sg-mg` n'est plus utilisé), états des projets `SG_ETATS` et couleurs des graphiques en `var(--…)`. Les documents PDF,
+  impressions et contrats de travail gardent la charte. Cockpit : séries `PAL` / `YEAR_COLORS` inchangées. Copies d'avant :
+  `subgestion3/_backup_20261020_2224_avant_refonte_visuelle/` et `SUBGestion3_backup_20261020_2224_avant_refonte_visuelle.html`. Maquettes : canevas
+  https://claude.ai/artifact/LHj8a8Kvd35QvzTG7VqpMD. Vérifié : 108 écrans balayés sans erreur, 4 thèmes, cadre Facturation en sombre.
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

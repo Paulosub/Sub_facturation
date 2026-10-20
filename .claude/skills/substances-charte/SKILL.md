@@ -29,6 +29,11 @@ Les documents PDF de Facturation utilisent leur propre police « AkkuratDoc » :
 | Accent, élément actif sur bleu nuit, survol | jaune `#FFF266` ; jaune clair `#FEF6B0` pour sélection et étiquettes |
 | États uniquement (statuts, alertes, séries de graphiques) | rouge `#BD1E42`, orange `#D7860D`, vert `#98C21F`, turquoise `#4CBAB5`, bleu `#3F4193` |
 
+**SUBGestion 3 depuis le 20.10.2026** : l'interface n'applique plus ce nuancier tel quel — à la demande de Paulo (« pas nécessaire en lien avec
+la charte »), elle suit des thèmes de couleur (`subgestion3/theme.css` : Graphite par défaut, Ardoise, Encre, Sombre ; jetons `--ink`, `--paper`,
+`--panel`, `--acc`…, les anciens noms `--s-nuit`, `--s-jaune`… pointant dessus). Le nuancier de la charte reste la référence des documents PDF,
+impressions, logo et papeterie.
+
 Le nuancier secondaire sert à **signaler** (urgent, échu, en attente, en cours), jamais à décorer : sinon l'interface
 perd la sobriété noir / bleu nuit / jaune qui fait l'identité du bureau.
 

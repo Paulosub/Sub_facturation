@@ -43,7 +43,8 @@ Détails techniques (API du moteur, globales de Facturation, clés de session, i
 7. **Identité visuelle et fonctionnement uniformes** : toute interface suit la charte Substances (skill `substances-charte`),
    Akkurat pour tous les textes ; tout module (moteur, Facturation, écrans propres) utilise les mêmes boutons (bleu nuit /
    contour noir / rouge), les mêmes fenêtres de confirmation (`sgConfirm`, `dialog`), les mêmes messages (`toast`) et les
-   mêmes raccourcis (⌘K, « / », ⌥←/→). Un nouveau module de Facturation se règle dans `subgestion3/fx_theme.css`.
+   mêmes raccourcis (⌘K, « / », ⌥←/→). Un nouveau module de Facturation se règle dans `subgestion3/fx_theme.css`. Couleurs : jamais en dur, toujours les jetons de `subgestion3/theme.css` (`var(--acc)`, `var(--ink)`,
+   `var(--panel)`… ou les anciens noms mappés `--s-nuit`, `--s-jaune`) : quatre thèmes (Graphite, Ardoise, Encre, Sombre) depuis le 20.10.2026.
 
 ## Déroulé d'une modification
 

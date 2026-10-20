@@ -57,7 +57,7 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
 
 ## 4. SUBGestion 3 (`subgestion3/`)
 
-- `construire.py` : DeltaSub.html → feuille de style remplacée par `sg3.css`, cadre remplacé par la coquille (menu
+- `construire.py` : DeltaSub.html → feuille de style remplacée par `theme.css` (jetons des 4 thèmes, 20.10.2026) + `sg3.css`, cadre remplacé par la coquille (menu
   `#nx-side`, en-tête `#nx-head`, barre contextuelle `#nx-sub` contenant `#bar/#tools/#search`, `#body` avec `#main` et
   `#fx-layer`), `#top` et `#side` conservés mais masqués (le moteur y écrit). Facturation embarquée gzip + base64
   (`#fx-src`) avec `SG_EMBED`, sans `#hdr`, pont `goTab → parent.sgFxOnTab`. Logo : `logo_substances.svg` (`__LOGO__`).

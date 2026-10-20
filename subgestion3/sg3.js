@@ -54,7 +54,7 @@ const NXI={
   image:'<rect x="3" y="4" width="18" height="16"/><circle cx="9" cy="10" r="2"/><path d="m3 18 6-5 4 3 3-2 5 4"/>', tag:'<path d="M3 3h9l9 9-9 9-9-9Z"/><circle cx="8" cy="8" r="1.5"/>',
   star:'<path d="m12 3 2.8 5.8 6.2.9-4.5 4.4 1 6.2L12 17.4l-5.5 2.9 1-6.2L3 9.7l6.2-.9z"/>', group:'<circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 20c.5-3 2.8-5 6-5s5.5 2 6 5M14 15.2c.6-.1 1.3-.2 2-.2 3.2 0 5.5 2 6 5"/>'
 };
-const nxSvg=(n,cls)=>'<svg'+(cls?' class="'+cls+'"':'')+' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter">'+(NXI[n]||NXI.list)+'</svg>';
+const nxSvg=(n,cls)=>'<svg'+(cls?' class="'+cls+'"':'')+' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">'+(NXI[n]||NXI.list)+'</svg>';
 icon=function(n){ return NXI[n]?nxSvg(n):`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICO[n]||''}</svg>`; };
 /* barres d'outils : icône + libellé (masqué dans les colonnes étroites) */
 const SG_LBL={plus:'Nouveau',edit:'Modifier',minus:'Supprimer',dup:'Dupliquer',doc:'Documents',print:'Imprimer',filter:'Filtre',wrench:'Configuration',person:'Intervenants',tree:'Subdivisions',
@@ -371,14 +371,14 @@ function nxBars(data,o){ o=o||{}; const W=o.w||640, H=o.h||170, pl=34, pb=22, pt
   const max=Math.max(o.min||1,...data.map(d=>(d.a||0)+(d.b||0)),...(data.map(d=>d.t||0)));
   const st0=max/4, p10=Math.pow(10,Math.floor(Math.log10(st0))), step=[1,2,2.5,5,10].map(x=>x*p10).find(x=>x>=st0)||p10*10, nice=step*4, y=v=>pt+(H-pt-pb)*(1-v/nice);
   let s='<svg class="nx-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="height:'+H+'px">';
-  for(let i=0;i<=4;i++){ const v=nice*i/4, yy=y(v); s+='<line x1="'+pl+'" x2="'+(W-4)+'" y1="'+yy+'" y2="'+yy+'" stroke="'+(i?'#ececea':'#1d1d1b')+'" stroke-width="'+(i?1:1.5)+'"/><text x="'+(pl-6)+'" y="'+(yy+3.5)+'" text-anchor="end">'+Math.round(v)+'</text>'; }
+  for(let i=0;i<=4;i++){ const v=nice*i/4, yy=y(v); s+='<line x1="'+pl+'" x2="'+(W-4)+'" y1="'+yy+'" y2="'+yy+'" style="stroke:var(--'+(i?'line2':'ink')+')" stroke-width="'+(i?1:1.5)+'"/><text x="'+(pl-6)+'" y="'+(yy+3.5)+'" text-anchor="end">'+Math.round(v)+'</text>'; }
   data.forEach((d,i)=>{ const x=pl+i*bw+bw*.2, w=bw*.6, a=d.a||0, b=d.b||0;
-    if(a) s+='<rect x="'+x+'" y="'+y(a)+'" width="'+w+'" height="'+(y(0)-y(a))+'" fill="#003346"><title>'+nxE(d.l+' — '+(o.la||'')+' '+nxH(a)+' h')+'</title></rect>';
-    if(b) s+='<rect x="'+x+'" y="'+y(a+b)+'" width="'+w+'" height="'+(y(a)-y(a+b))+'" fill="#b9c0c9"><title>'+nxE(d.l+' — '+(o.lb||'')+' '+nxH(b)+' h')+'</title></rect>';
-    if(d.t) s+='<line x1="'+(x-2)+'" x2="'+(x+w+2)+'" y1="'+y(d.t)+'" y2="'+y(d.t)+'" stroke="#1d1d1b" stroke-width="1.5" stroke-dasharray="3 2"/>';
+    if(a) s+='<rect x="'+x+'" y="'+y(a)+'" width="'+w+'" height="'+(y(0)-y(a))+'" style="fill:var(--acc)"><title>'+nxE(d.l+' — '+(o.la||'')+' '+nxH(a)+' h')+'</title></rect>';
+    if(b) s+='<rect x="'+x+'" y="'+y(a+b)+'" width="'+w+'" height="'+(y(a)-y(a+b))+'" style="fill:var(--track)"><title>'+nxE(d.l+' — '+(o.lb||'')+' '+nxH(b)+' h')+'</title></rect>';
+    if(d.t) s+='<line x1="'+(x-2)+'" x2="'+(x+w+2)+'" y1="'+y(d.t)+'" y2="'+y(d.t)+'" style="stroke:var(--ink)" stroke-width="1.5" stroke-dasharray="3 2"/>';
     if(!o.every||i%o.every===0) s+='<text x="'+(x+w/2)+'" y="'+(H-6)+'" text-anchor="middle">'+nxE(d.s||d.l)+'</text>'; });
   return s+'</svg>'; }
-const nxLegend=(t)=>'<div class="nx-legend"><span><i style="background:#003346"></i>Facturable</span><span><i style="background:#b9c0c9"></i>Non facturable</span>'+(t?'<span><i style="background:#1d1d1b;height:2px;vertical-align:3px"></i>Objectif</span>':'')+'</div>';
+const nxLegend=(t)=>'<div class="nx-legend"><span><i style="background:var(--acc)"></i>Facturable</span><span><i style="background:var(--track)"></i>Non facturable</span>'+(t?'<span><i style="background:var(--ink);height:2px;vertical-align:3px"></i>Objectif</span>':'')+'</div>';
 const nxMiniBar=(v,max)=>'<span class="nx-mini-bar"><i style="width:'+Math.max(2,Math.min(100,max?v/max*100:0))+'%"></i></span>';
 const nxCard=(cls,title,body,extra)=>'<div class="nx-card '+cls+'"><h4>'+title+(extra||'')+'</h4>'+body+'</div>';
 const nxKpi=(ico,l,v,s,bar,go_,hero)=>'<div class="nx-kpi'+(go_?' lnk':'')+(hero?' hero':'')+'"'+(go_?' data-go="'+go_+'"':'')+'><div class="l">'+nxSvg(ico)+nxE(l)+'</div><div class="v">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+(bar!=null?'<div class="nx-bar"><i style="width:'+Math.max(0,Math.min(100,bar))+'%"></i></div>':'')+'</div>';

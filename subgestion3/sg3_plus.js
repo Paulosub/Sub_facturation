@@ -291,12 +291,14 @@ function sgPhasesGraph(p){ const ph=DS.by('projectphase','PROJECT_ID',p.ID).sort
 /* heures par mois (tableau de bord ▸ Vue d'ensemble, 20.10.2026) : colonnes en HTML (le graphique SVG étiré déformait les textes), échelle graduée,
    ligne de la moyenne des mois saisis, mois en cours marqué, année sous janvier et sous le premier mois ; au-delà de 14 mois, un mois sur deux nommé */
 function sgMoisGraph(months){ if(!months.some(m=>m.a>0)) return '<div class="nx-empty">Aucune heure saisie.</div>';
-  const E=sgEchelle(Math.max(...months.map(m=>m.a))), pc=v=>(v/E.top*100).toFixed(2)+'%', nz=months.filter(m=>m.a>0), moy=nz.reduce((a,m)=>a+m.a,0)/nz.length, deux=months.length>14;
-  return '<div class="sg-mg"><div class="sg-mg-ax">'+E.t.map(v=>'<em style="bottom:'+pc(v)+'">'+sgHr(v)+'</em>').join('')+'</div>'
-    +'<div class="sg-mg-pl">'+E.t.map(v=>'<b class="sg-mg-gl'+(v?'':' z')+'" style="bottom:'+pc(v)+'"></b>').join('')
-    +'<div class="sg-mg-cols">'+months.map((m,i)=>'<div class="sg-mc'+(i===months.length-1?' cur':'')+'" title="'+nxE(m.l+' : '+nxH(m.a)+' h'+(i===months.length-1?' (mois en cours)':''))+'"><i style="height:'+pc(m.a)+'"></i></div>').join('')+'</div>'
-    +'<b class="sg-mg-moy" style="bottom:'+pc(moy)+'"><span>moyenne '+sgHr(moy)+' h</span></b></div>'
-    +'<div class="sg-mg-xl">'+months.map((m,i)=>'<span'+(i===months.length-1?' class="cur"':'')+'>'+(!deux||i===0||i===months.length-1||(m.m%2===0&&i!==1&&i!==months.length-2)?nxE(m.s):'')+(m.m===0||i===0?'<b>'+m.y+'</b>':'')+'</span>').join('')+'</div></div>'; }
+  /* refonte visuelle (20.10.2026) : matrice de points — 1 point = pas d'heures (sgPas, ≤ 12 points par mois) ; années précédentes en gris,
+     année en cours en encre, mois en cours en accent ; l'ancien graphique en barres (.sg-mg) n'est plus utilisé */
+  const pas=sgPas(Math.max(...months.map(m=>m.a))), nz=months.filter(m=>m.a>0), moy=nz.reduce((a,m)=>a+m.a,0)/nz.length, deux=months.length>14, yc=months[months.length-1].y, avant=months.some(m=>m.y<yc);
+  const pts=m=>{ const n=Math.round(m.a/pas); let h=''; for(let k=0;k<n;k++) h+='<i></i>'; return h; };
+  return '<div class="sg-md"><div class="sg-md-cols">'+months.map((m,i)=>'<div class="sg-mc'+(i===months.length-1?' cur':m.y<yc?' av':'')+'" title="'+nxE(m.l+' : '+nxH(m.a)+' h'+(i===months.length-1?' (mois en cours)':''))+'">'+pts(m)+'</div>').join('')+'</div>'
+    +'<div class="sg-md-xl">'+months.map((m,i)=>'<span'+(i===months.length-1?' class="cur"':'')+'>'+(!deux||i===0||i===months.length-1||(m.m%2===0&&i!==1&&i!==months.length-2)?nxE(m.s):'')+(m.m===0||i===0?'<b>'+m.y+'</b>':'')+'</span>').join('')+'</div>'
+    +'<div class="sg-md-leg"><span><i></i>'+yc+'</span>'+(avant?'<span><i class="av"></i>'+(yc-1)+(months.some(m=>m.y<yc-1)?' et avant':'')+'</span>':'')+'<span><i class="cur"></i>mois en cours</span><span class="r">1 point = '+sgHr(pas)+' h · moyenne '+sgHr(moy)+' h</span></div></div>'; }
+function sgPas(max){ const brut=Math.max(max,1)/12, p=Math.pow(10,Math.floor(Math.log10(brut))); for(const k of [1,2,2.5,5,10]){ if(k*p>=brut) return k*p; } return 10*p; }
 /* part facturable d'un projet (19.10.2026, fonction depuis le 20.10.2026 — tuile de l'onglet Contrats & factures) : heures cochées « Facturable »
    (ISCHARGEABLE) ÷ heures saisies ; contrat(s) Facturation au forfait ou au forfait relatif (contrat sans mode enregistré = forfait relatif, mode par
    défaut de Facturation) → les heures facturables d'une phase sont plafonnées à ses heures au contrat (TIMEBUDGET) : le dépassement n'est pas
@@ -591,7 +593,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
          au-delà, le point est posé au bord avec une flèche */
       const maxC=Math.max(1,moy||0,...[...L,tot].map(o=>tx(o).c||0)), maxR=Math.max(maxC*1.25,Math.min(maxC*2.5,Math.max(...[...L,tot].map(o=>tx(o).o||0)))), X=v=>Math.min(100,v/maxR*100).toFixed(1)+'%';
       const marge=o=>(o.hs>0||o.ctr>0)&&o.cout!=null?(o.ctr||0)-o.cout:null;
-      const chf=v=>v==null?'—':nxCHF(v), sig=v=>v==null?'—':'<span style="color:'+(v<0?'var(--s-rouge)':'#5d7a10')+';font-weight:700">'+(v>0?'+':'')+nxCHF(v)+'</span>';
+      const chf=v=>v==null?'—':nxCHF(v), sig=v=>v==null?'—':'<span style="color:'+(v<0?'var(--err)':'var(--ok-txt)')+';font-weight:700">'+(v>0?'+':'')+nxCHF(v)+'</span>';
       const comp=o=>{ const t=tx(o); if(t.o==null||t.c==null) return ''; const a=Math.min(t.o,t.c), b=Math.max(t.o,t.c), gain=t.o>=t.c;
         return '<div class="sg-db" title="'+nxE((o.lib||'')+' — honoraires '+num(t.o,0)+' CHF/h, coût de revient '+num(t.c,0)+' CHF/h : '+(gain?'gain':'perte')+' de '+num(Math.abs(t.o-t.c),0)+' CHF par heure'+(moy?' — trait gris : coût de revient moyen du projet, '+num(moy,0)+' CHF/h':''))+'">'
           +(moy?'<i class="moy" style="left:'+X(moy)+'"></i>':'')+'<i class="ln '+(gain?'g':'r')+'" style="left:'+X(a)+';width:calc('+X(b)+' - '+X(a)+')"></i><i class="pc" style="left:'+X(t.c)+'"></i><i class="po'+(t.o>maxR?' hors':'')+'" style="left:'+X(t.o)+'"></i></div>'; };
@@ -1108,7 +1110,7 @@ function sgKvFusion(base,mine,theirs){ let B,M,T; try{ B=JSON.parse(base==null?'
 function sgKvBandeau(msg,err){ let b=SGKV.bandeau; if(!b){ b=SGKV.bandeau=h('div',{style:{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'18px',zIndex:9000,background:'#003346',color:'#fff',
       padding:'10px 14px',display:'flex',gap:'12px',alignItems:'center',fontSize:'13px',maxWidth:'720px'}}); document.body.append(b); }
   b.style.background=err?'#BD1E42':'#003346'; b.innerHTML='';
-  b.append(h('span',{},msg),h('button',{class:'btn',style:{background:'#FFF266',color:'#1d1d1b',border:0},onclick:()=>{ b.remove(); SGKV.bandeau=null; sgFxReload(); }},'Actualiser'),
+  b.append(h('span',{},msg),h('button',{class:'btn',style:{background:'var(--acc)',color:'var(--acc-ink)',border:0},onclick:()=>{ b.remove(); SGKV.bandeau=null; sgFxReload(); }},'Actualiser'),
     h('button',{class:'btn',style:{background:'transparent',color:'#fff',border:'1px solid #fff'},onclick:()=>{ b.remove(); SGKV.bandeau=null; }},'Plus tard')); }
 /* relevé : applique les valeurs du serveur ; first = relevé complet (au démarrage) */
 async function sgKvReleve(first){ const r=await fetch('/api/kv?since='+(first?0:SGKV.seq),{cache:'no-store'}); if(!r.ok) throw new Error('relevé '+r.status); const d=await r.json(), ch=[];
@@ -2054,14 +2056,14 @@ function sgCourbeCHF(M){ if(!M.length) return '<div class="nx-empty">Pas encore 
   const st0=max/4, p10=Math.pow(10,Math.floor(Math.log10(st0))), step=[1,2,2.5,5,10].map(x=>x*p10).find(x=>x>=st0)||p10*10, nice=step*4;
   const X=i=>pl+(n===1?(W-pl-pr)/2:i*(W-pl-pr)/(n-1)), Y=v=>pt+(H-pt-pb)*(1-v/nice), mm=k=>k.slice(5,7)+'.'+k.slice(2,4);
   let s='<svg class="nx-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="height:'+H+'px">';
-  for(let i=0;i<=4;i++){ const v=nice*i/4, yy=Y(v); s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yy+'" y2="'+yy+'" stroke="'+(i?'#ececea':'#1d1d1b')+'" stroke-width="'+(i?1:1.5)+'"/><text x="'+(pl-6)+'" y="'+(yy+3.5)+'" text-anchor="end">'+sgChf(v)+'</text>'; }
+  for(let i=0;i<=4;i++){ const v=nice*i/4, yy=Y(v); s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yy+'" y2="'+yy+'" style="stroke:var(--'+(i?'line2':'ink')+')" stroke-width="'+(i?1:1.5)+'"/><text x="'+(pl-6)+'" y="'+(yy+3.5)+'" text-anchor="end">'+sgChf(v)+'</text>'; }
   const pa=M.map((x,i)=>X(i).toFixed(1)+','+Y(x.a).toFixed(1)), pv=M.map((x,i)=>X(i).toFixed(1)+','+Y(x.v).toFixed(1));
-  s+='<polygon points="'+pa.concat(pv.slice().reverse()).join(' ')+'" fill="#fef6b0" opacity=".9"/>';
-  s+='<polyline points="'+pv.join(' ')+'" fill="none" stroke="#98c21f" stroke-width="2"/><polyline points="'+pa.join(' ')+'" fill="none" stroke="#003346" stroke-width="2"/>';
+  s+='<polygon points="'+pa.concat(pv.slice().reverse()).join(' ')+'" style="fill:var(--acc-pale)" opacity=".9"/>';
+  s+='<polyline points="'+pv.join(' ')+'" fill="none" style="stroke:var(--ok)" stroke-width="2"/><polyline points="'+pa.join(' ')+'" fill="none" style="stroke:var(--acc)" stroke-width="2"/>';
   const pas=Math.max(1,Math.ceil(n/9)); M.forEach((x,i)=>{ if(i===n-1||(i%pas===0&&n-1-i>=pas*0.7)) s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">'+mm(x.k)+'</text>'; });   // pas de chevauchement à droite
-  M.forEach((x,i)=>{ if(!x.da&&!x.dv&&i!==n-1) return; s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(x.a).toFixed(1)+'" r="2.4" fill="#003346"><title>'+nxE(mm(x.k)+' — acquise CHF '+sgChf(x.a)+' · versé CHF '+sgChf(x.v)+' · solde CHF '+sgChf(x.a-x.v))+'</title></circle>'; });
+  M.forEach((x,i)=>{ if(!x.da&&!x.dv&&i!==n-1) return; s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(x.a).toFixed(1)+'" r="2.4" style="fill:var(--acc)"><title>'+nxE(mm(x.k)+' — acquise CHF '+sgChf(x.a)+' · versé CHF '+sgChf(x.v)+' · solde CHF '+sgChf(x.a-x.v))+'</title></circle>'; });
   const pt_=(c,t,hh)=>'<span style="display:inline-flex;align-items:center;gap:6px"><i style="display:inline-block;width:16px;height:'+hh+'px;background:'+c+'"></i>'+t+'</span>';
-  return s+'</svg><div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-top:6px">'+pt_('#003346','Commission acquise (cumul)',3)+pt_('#98c21f','Versé (cumul)',3)+pt_('#fef6b0','Solde à verser',10)+'</div>'; }
+  return s+'</svg><div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-top:6px">'+pt_('var(--acc)','Commission acquise (cumul)',3)+pt_('var(--ok)','Versé (cumul)',3)+pt_('var(--acc-pale)','Solde à verser',10)+'</div>'; }
 VIEWS['nx-apports']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcul des apports…</div>');
   Promise.all([DS.need(['sgapport','sgcontrattravail']),fxEnsure().catch(()=>null)]).then(()=>{ if(!VIEW||VIEW.id!=='nx-apports') return;
     const D=fxData(), taux=sgTaux(), X=sgApports().map(a=>sgApportCalc(a,D,taux)), S=sgApportsParStaff(X), sel=String(nxLS.get('sg3_apport_staff','')||'');
@@ -2301,7 +2303,7 @@ VIEWS['ancf-comparer']=sgAncComparer('f');
    Menu habituel du navigateur : ⌥ + clic droit, et toujours dans un champ de saisie ou sur un texte sélectionné. */
 { const i0=ibtn; ibtn=function(b){ const el=i0.apply(this,arguments); try{ if(el&&el.nodeType===1&&b&&typeof b==='object'&&!b.nodeType) el._sgB=b; }catch(_){} return el; }; }
 let SG_CTX_LIGNE=null;   /* ligne mise en évidence tant que le menu est ouvert */
-function sgCtxMarquer(el){ if(!el||!el.style) return; SG_CTX_LIGNE={el,o:el.style.outline,oo:el.style.outlineOffset}; el.style.outline='2px solid #003346'; el.style.outlineOffset='-2px'; }
+function sgCtxMarquer(el){ if(!el||!el.style) return; SG_CTX_LIGNE={el,o:el.style.outline,oo:el.style.outlineOffset}; el.style.outline='2px solid var(--acc)'; el.style.outlineOffset='-2px'; }
 { const c0=closeMenus; closeMenus=function(){ if(SG_CTX_LIGNE){ try{ SG_CTX_LIGNE.el.style.outline=SG_CTX_LIGNE.o; SG_CTX_LIGNE.el.style.outlineOffset=SG_CTX_LIGNE.oo; }catch(_){} SG_CTX_LIGNE=null; } return c0.apply(this,arguments); }; }
 function sgMenuNettoyer(L){ const o=[]; L.forEach(x=>{ if(x==='-'){ if(o.length&&o[o.length-1]!=='-') o.push(x); } else if(x&&typeof x==='object'&&String(x.t==null?'':x.t).trim()) o.push(x); });
   while(o.length&&o[o.length-1]==='-') o.pop(); return o; }
@@ -2558,7 +2560,7 @@ VIEWS['nx-pdom']={
    élément ouvre la liste filtrée nx-listeprojets ; tâches ouvertes (carré vert) et urgentes (carré rouge) ; puis les modules du domaine
    (données par état retirées à la demande).
    Projets comptés = projets visibles (administrateur ou droit « tous » : tous ; collaborateur : attribués ; chef de projet : les siens). */
-const SG_ETATS=[[1,'Configuration','#d9d9d5'],[2,'En cours','#003346'],[3,'En attente','#FFF266'],[4,'Terminés','#636E7E'],[5,'Archivés','#b4b7bb']];   // couleurs validées (écart daltonisme ≥ 24)
+const SG_ETATS=[[1,'Configuration','var(--line)'],[2,'En cours','var(--acc)'],[3,'En attente','var(--ink)'],[4,'Terminés','var(--ink3)'],[5,'Archivés','var(--line2)']];   // couleurs du thème (refonte visuelle du 20.10.2026 ; avant : nuancier de la charte)
 const SG_CATS=[['architecture','Projets','building'],   /* « Architecture » renommé « Projets » (18.10.2026) */['expertise','Expertises','search'],['faisabilite','Faisabilités','ruler'],['interne','Autres','home']   /* « Internes » renommé « Autres » (19.10.2026) */];
 const sgCatOuInterne=p=>sgInterne(p)?'interne':sgCatProjet(p);
 function sgProjetsVisibles(){ const ps=DS.all('project'); if(sgAdmin()||sgDroit('projets_voir','tous')) return ps;
@@ -2674,3 +2676,18 @@ document.addEventListener('click',e=>{ const th=e.target.closest&&e.target.close
       const cur=SG_TRI.get(sgTriSig(T.hr)); if(cur&&cur.i<T.hr.cells.length) sgTriAppliquer(tb,cur.i,cur.sens); }); };
   const go0=()=>{ new MutationObserver(()=>{ if(!f) f=requestAnimationFrame(scan); }).observe(document.body,{childList:true,subtree:true}); scan(); };
   if(document.body) go0(); else document.addEventListener('DOMContentLoaded',go0); }
+
+/* ═══ 21. Thèmes de couleur (refonte visuelle du 20.10.2026, d'après les références de Paulo) ═══════════════════════════════════════
+   Graphite (défaut), Ardoise, Encre, Sombre — jetons dans subgestion3/theme.css ; choix gardé dans localStorage (sg3_theme), posé en
+   attribut data-theme sur <html> de la coquille ET du cadre Facturation (autre document) ; bouton au pied du menu, ⌘K « Apparence : … ». */
+const SG_THEMES=[['graphite','Graphite','gris chaud, accent orange'],['ardoise','Ardoise','bleu-gris, accent bleu acier'],['encre','Encre','noir et blanc'],['sombre','Sombre','fond noir, accent orange']];
+NXI.theme='<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>';
+function sgTheme(){ const t=nxLS.get('sg3_theme','graphite'); return SG_THEMES.some(x=>x[0]===t)?t:'graphite'; }
+function sgThemeFrame(){ const f=document.getElementById('fx-frame'); try{ const d=f&&f.contentDocument; if(d&&d.documentElement) d.documentElement.setAttribute('data-theme',sgTheme()); }catch(_){} }
+function sgThemeApply(t){ if(!SG_THEMES.some(x=>x[0]===t)) t='graphite'; nxLS.set('sg3_theme',t); document.documentElement.setAttribute('data-theme',t); sgThemeFrame();
+  const b=document.getElementById('sg-theme'); if(b) b.title='Apparence : '+SG_THEMES.find(x=>x[0]===t)[1]+' — changer'; }
+function sgThemeMenu(el){ const t=sgTheme(); popMenu(el,SG_THEMES.map(([k,n,d])=>({t:n+' — '+d,chk:k===t,fn:()=>{ sgThemeApply(k); toast('Apparence : '+n+'.'); }}))); }
+{ const mb=document.getElementById('nx-minibtn'); if(mb&&!document.getElementById('sg-theme')){ const b=h('button',{class:'nx-ico-btn',id:'sg-theme',onclick:()=>sgThemeMenu(b)}); b.innerHTML=nxSvg('theme'); mb.before(b); }
+  sgThemeApply(sgTheme());
+  const fx0=fxEnsure; fxEnsure=function(){ const p=fx0.apply(this,arguments); p.then(()=>sgThemeFrame()).catch(()=>{}); return p; };
+  const pi0=nxPalIndex; nxPalIndex=function(){ const it=pi0.apply(this,arguments); SG_THEMES.forEach(([k,n,d])=>{ const x={g:'Commandes',t:'Apparence : '+n,s:d,ico:'theme',run:()=>{ sgThemeApply(k); toast('Apparence : '+n+'.'); },q:'apparence thème couleurs '+n+' '+d}; x.n=nxNorm(x.q); it.push(x); }); return it; }; }

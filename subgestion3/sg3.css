@@ -633,7 +633,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-card.sg-repl.ferme>:not(h4){display:none}
 .nx-card.sg-repl.ferme>h4{border-bottom:0}
 /* Contrats & factures : « Phases contrat » entre les tuiles et les listes (20.10.2026) */
-.sg-oc-ph{margin:0 0 30px}.sg-oc-ph:empty{display:none}
+.sg-oc-ph{margin:0 0 30px}.sg-oc-ph:empty{display:none}.sg-oc-g{margin-bottom:30px}
 /* équipe : part du temps en barre (20.10.2026) */
 .sg-eq .t .sg-eq-b{display:block;height:4px;background:var(--s-filet);margin-top:6px;overflow:hidden}
 .sg-eq .t .sg-eq-b i{display:block;height:100%;background:var(--s-nuit)}

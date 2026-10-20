@@ -440,8 +440,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `sgPartFacturable(p,D)` {tot, chg, fact, dep, ty, pct} ; texte « x h sur y h saisies », détail du dépassement en infobulle. La vue d'ensemble
   garde Heures prévues, Heures saisies et Phase actuelle.
   **« Phases contrat » regroupé dans « Contrats & factures » (20.10.2026)** : `SG_ONGLETS` sans « phases » (onglet à la 3e place ; choix
-  mémorisé `phases` → `factu`) ; ordre : tuiles financières, indications, carte « Phases contrat » (`#sg-oc-ph`, dessinée par
-  `sgOnglet(p,'phases',pg,cible)` — paramètre `cible` = partie d'un onglet regroupé), puis Contrats d'honoraires et Factures. Sans droit de
+  mémorisé `phases` → `factu`) ; ordre : tuiles financières, indications, Contrats d'honoraires (remontés au-dessus des phases le
+  20.10.2026), carte « Phases contrat » (`#sg-oc-ph`, dessinée par `sgOnglet(p,'phases',pg,cible)` — paramètre `cible` = partie d'un onglet
+  regroupé), puis Factures. Sans droit de
   lecture des contrats ni des factures (`sgFactuOk`, collaborateur par défaut) : les phases seules (heures). Finances verrouillées : message
   « Déverrouiller » puis les phases en heures seulement. `SG_ONGLETS_COLLAB` = factu, interv, chantier, docs, notes.
   Cartes « Phases contrat » et « Factures » repliables (20.10.2026) : clic sur le titre, chevron à droite, ouvertes par défaut, état gardé par

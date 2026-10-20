@@ -99,7 +99,7 @@ se fait uniquement en construisant `SUBGestion.html`, voir plus haut).
   **Collections propres à SUBGestion (18.10.2026)** : `import_deltaproject` (`--importer-deltaproject … --force`, ce script,
   `reprise_subgestion.py`) ne remplace QUE les collections qu'alimente l'extraction (`collections_extraction` : tables de
   `schema.txt` en minuscules — vides et `SKIP_TABLES` comprises —, CSV, collections de `documents/*.json`). Toute autre
-  collection (`sgapport`, `sgcontrattravail`, `sgcoutrevient`, `sgbouclement`, `sgacces`, `sganalyse`, `sg_meta`, et toute
+  collection (`sgapport`, `sgcontrattravail`, `sgcoutrevient`, `sgbouclement`, `sgacces`, `sganalyse`, `sgfaisa`, `sgfaisatexte`, `sg_meta`, et toute
   nouvelle collection de l'app) est gardée telle quelle, compteur `next_id:` compris, et listée en fin de reprise (meta
   `import_deltaproject` ▸ `propres`). Tables du schéma : inchangé (une table vide dans Deltaproject vide la collection).
   Documents convertis : `image` et `arriereplan` sont `PROTECTED_IF_EDITED` (logos ajoutés, arrière-plans dupliqués ou
@@ -637,6 +637,50 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   comme les modules (pastille à droite du titre), mêmes termes et mêmes états que `ptModuleRows` : En cours
   (« En traitement » de l'ancien logiciel, état 1), Urgent (état 1, marquée urgente), Réglé (état 3), chacune avec son nombre ; tâches des projets visibles en cours (collaborateur :
   les siennes) ; un clic ouvre `taches-encours`, `taches-urgent`, `taches-regle`.
+- **Modules Projet et Faisabilité de la page du projet, analyse réglementaire de la parcelle (20.10.2026, bloc 21 de `sg3_plus.js`)** —
+  demande de Paulo : « dans le projet, ajouter un module Projet, et Faisabilité lorsqu'il y a une phase de faisabilité ; créer un module qui
+  permet d'analyser les règlements applicables à la parcelle, avec une automatisation de recherche sur internet ; pour chaque faisabilité, les
+  contraintes et les réponses à donner ». Page du projet (`nx-pdom`) : deux groupes de TRAVAIL en tête — **Projet** (PV MO, Présentation client,
+  Estimations, Descriptifs & devis, Dossier d'enquête, Documents) et **Faisabilité** (seulement si `sgFaisaOk(p)` : phase de faisabilité avec
+  heures, documents déposés, ou analyse de parcelle existante ; projet uniquement de faisabilité : sans le groupe Projet) avec Parcelle &
+  règlements, Documents de base, Études, Variantes, Présentation au client, Fiche de faisabilité (`SG_PMOD`, `SG_PMOD_G`, compteurs
+  `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
+  `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
+  « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.
+  **Parcelle & règlements** (`nx-faisa`, arg = ID du projet, lecture `sgProjetPermis`, écriture droit « documents : dépôt ») : collection
+  **`sgfaisa`** (un enregistrement par projet, ID = ID du projet : PARCELLE {ADRESSE, COMMUNE, BFS, NUMERO, EGRID, IDENTDN, SURFACE, E, N (LV95),
+  ZONE, ZONE_FED, CANTON, RDPPF_ETAT, RDPPF_SERVICE}, SOURCES [{ID, TYPE geoadmin | rdppf | reglement | lien | manuel, TITRE, URL, DATE, RESUME,
+  FICHIER (ID `depotfichier`), PAGES, ARTICLES, TEXTE (booléen), DONNEES}], CONTRAINTES [{ID, THEME, TITRE, REGLE, SOURCE, ARTICLE, VALEUR, REPONSE,
+  STATUT a_traiter | a_verifier | conforme | non_conforme, NOTE, AUTO}], CONCLUSION, MODIFIE, PAR) + **`sgfaisatexte`** (texte extrait d'un
+  règlement, ID `<projet>:<source>`, 1,5 M caractères au plus, ajoutée à `HEAVY` : chargée à la demande) — collections propres à l'app, gardées par
+  les reprises. Écran : Parcelle (adresse → `SearchServer` de geo.admin.ch, puis identify `ch.kantone.cadastralwebmap-farbe` (n°, EGRID),
+  `swissboundaries3d` (commune, n° OFS), `ch.swisstopo-vd.stand-oerebkataster` (état du cadastre RDPPF et **adresse du service web cantonal**),
+  `ch.are.bauzonen` ; saisie manuelle de tout ; vignettes WMS `wms.geo.admin.ch` plan cadastral + orthophoto, repère rouge au centre ; lien
+  « Carte fédérale »), Recherche automatique (« Tout rechercher » = geo.admin.ch → extrait RDPPF → règlements → pré-remplissage ;
+  **geo.admin.ch** : identify au point sur `SG_FZ_COUCHES` — zones à bâtir, radon, classes de sols SIA 261, réservoirs aquifères, ISOS, IFP, UNESCO,
+  PBC, IVS, inventaires nature, sites pollués fédéraux (OFT, OFAC, DDPS), installations électriques > 36 kV, cours d'eau, RegBL (bâtiments de la
+  parcelle) — les couches raster (bruit, dangers, forêt) ne répondent pas à identify ; **extrait RDPPF** : service web OeREB 2.0 du canton
+  (`getegrid/xml/?EN=`, `extract/xml/?EGRID=` ; Vaud `https://www.rdppf.vd.ch/ws/RdppfSVC.svc`, autres cantons par l'adresse lue dans la couche
+  fédérale) → restrictions (thème, légende, statut, part, office, dispositions juridiques et bases légales avec liens), thèmes non concernés, zone
+  d'affectation ; **Télécharger les règlements** : dialogue à cases (règlements cochés d'office) → PDF téléchargés par le relais, déposés dans
+  `Faisabilité/Règlements` (dépôt du moteur), texte lu par pdf.js du cadre Facturation (`sgFzPdfTexte`, pas d'OCR), articles repérés
+  (`sgFzArticles` : « Art. 12 », table des matières écartée) ; pages web (lois) gardées comme liens ; « Règlement (fichier PDF) » et « Source (lien) »
+  à la main), Règlements (recherche d'un mot dans les textes → extraits par article, « + Contrainte »), Contraintes et réponses (tableau par thème
+  `SG_FZ_THEMES` — zone, indice, emprise, hauteur, distances, toiture, stationnement, espaces verts, dangers, bruit, sites pollués, patrimoine,
+  forêt, eaux, énergie, accès, autres — réponse et statut saisis en ligne, modification / suppression, filtre par statut ; **pré-remplissage**
+  `sgFzPreRemplir` : couches fédérales, restrictions RDPPF (`SG_FZ_RDPPF_TH`), repérage par mots-clés `SG_FZ_MOTS` dans les règlements —
+  `sgFzScanner` : chapitre de la zone de la parcelle d'abord (titre d'article contenant ses mots), score = titre 3 + phrases, 6 articles par thème
+  dans le chapitre, 2 ailleurs (titre seulement) ; sans IA ; rien en double), Conclusion + **Fiche de faisabilité** (`sgFaisaFiche` → `sgDocOuvrir`,
+  visionneuse, Imprimer → PDF : fiche de la parcelle et cartes, sources, règlements et restrictions avec extraits cités, contraintes / réponses par
+  thème, potentiel et variantes (fichiers déposés), état existant (RegBL) et polluants, conclusion). **Relais internet (CORS)** : `GET /proxy?url=`
+  dans `fact_backup_server.py` (origine locale) et `GET /api/proxy?url=` dans `serveur_deltasub.py` (session et réseau du bureau), code jumeau
+  `proxy_lire` : https seulement, aucune adresse locale / privée (127/8, 10/8, 172.16/12, 192.168/16, 100.64/10, .local), redirections https
+  seulement (6), 30 s, 30 Mo, Content-Type transmis ; l'app appelle geo.admin.ch en direct (CORS) et tout le reste par le relais
+  (`sgFzRelais` : `/api/proxy` si `dsEstBureau()`, sinon `http://127.0.0.1:7788/proxy`) ; relais injoignable → message et saisie manuelle.
+  `nas/nettoyer.py` : `api3.geo.admin.ch`, `wms.geo.admin.ch`, `map.geo.admin.ch`, `www.rdppf.vd.ch` admis. Serveur du NAS : écriture de
+  `sgfaisa` / `sgfaisatexte` = règle du dépôt de documents (`sg_refus_ecriture`). ⚠ `fact_backup_server.py` à relancer sur le Mac Studio
+  (route `/proxy`) ; conteneur du NAS à redémarrer un jour pour `/api/proxy` (sur demande). Limites : communes dont le règlement n'est pas lié
+  dans l'extrait RDPPF ou pas en ligne (ajouter le PDF à la main), PDF numérisés sans texte, hôtes sans https, pas d'IA (repérage par mots-clés).
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
 - **Déploiement NAS — sur demande seulement (20.10.2026, remplace la règle du 10.10.2026)** : Paulo : « ne pas changer dans le NAS,

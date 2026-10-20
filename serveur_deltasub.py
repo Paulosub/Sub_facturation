@@ -29,7 +29,8 @@ Ouverture de session. Commandes locales (sur le Mac Studio, base DELTASUB_DB ou 
 """
 import argparse, csv, datetime, glob, gzip, hashlib, ipaddress, json, os, re, socket, sqlite3, ssl, sys, threading, time
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urlsplit, urljoin
+import urllib.request, urllib.error
 
 PORT = 7790
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -2264,6 +2265,10 @@ def sg_refus_ecriture(ctx, c, ops):
             if sg_niv(ctx, "documents", "depot") and ps and dans(voir, ps):
                 continue
             return "Dépôt de documents non permis pour ce projet."
+        if t in ("sgfaisa", "sgfaisatexte"):   # Parcelle & règlements (faisabilité, 20.10.2026) : même règle que le dépôt de documents
+            if sg_niv(ctx, "documents", "depot") and ps and dans(voir, ps):
+                continue
+            return "Analyse de faisabilité (parcelle, règlements, contraintes) : écriture non permise pour ce projet avec votre profil."
         if t in SG_T_CHANTIER:
             if sg_niv(ctx, "chantier", "ecriture") and dans(modif, ps):
                 continue
@@ -2629,6 +2634,77 @@ def acces_ok(h):
     return lan_ok(ip_client(h))
 
 
+# ── Relais internet pour SUBGestion (20.10.2026) : GET /api/proxy?url=https://… → la ressource distante (Content-Type transmis).
+#    Sert au module « Parcelle & règlements » (cadastre RDPPF du canton, règlements communaux en PDF, lois) que le navigateur ne peut
+#    pas lire directement (pas de CORS). Session exigée quand l'ouverture de session est active (ch08_gate), réseau du bureau (acces_ok).
+#    Règles : GET et https seulement, aucune adresse locale ni privée (127/8, 10/8, 172.16/12, 192.168/16, 100.64/10, .local…),
+#    redirections suivies vers https seulement (6 au plus), 30 s, 30 Mo. Hôtes admis d'office : PROXY_HOTES ; tout autre hôte https
+#    public l'est aussi (liens trouvés dans un extrait RDPPF). ⚠ Même code dans fact_backup_server.py (/proxy) : modifier les deux ensemble.
+PROXY_MAX = 30 * 1024 * 1024
+PROXY_DELAI = 30
+PROXY_HOTES = ("api3.geo.admin.ch", "wms.geo.admin.ch", "data.geo.admin.ch", "www.rdppf.vd.ch", "rdppf.vd.ch", "prestations.vd.ch",
+               "www.geo.vd.ch", "www.fedlex.admin.ch")
+PROXY_UA = "SUBGestion/1.0 (relais du bureau ; +https://substances.ch)"
+
+
+class _SansRedirection(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None   # chaque redirection est contrôlée par proxy_lire (https, hôte public)
+
+
+def _hote_public(hote):
+    """False si l'hôte désigne la machine, le réseau local ou un réseau privé (ou ne se résout pas)."""
+    h = (hote or "").strip("[]").lower()
+    if not h or "." not in h or h.endswith((".local", ".localhost", ".internal", ".lan", ".home", ".arpa")):
+        return False
+    try:
+        infos = socket.getaddrinfo(h, 443, proto=socket.IPPROTO_TCP)
+    except OSError:
+        return False
+    for info in infos:
+        try:
+            a = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            return False
+        if (a.is_private or a.is_loopback or a.is_link_local or a.is_multicast or a.is_reserved or a.is_unspecified
+                or a in ipaddress.ip_network("100.64.0.0/10")):
+            return False
+    return bool(infos)
+
+
+def proxy_lire(url):
+    """→ (code, content_type, octets, url_finale). ValueError = refus (adresse), OSError / autres = réseau."""
+    ouvre = urllib.request.build_opener(_SansRedirection)
+    for _ in range(6):
+        u = urlsplit(url)
+        if u.scheme != "https" or not u.netloc:
+            raise ValueError("Seules les adresses https:// sont relayées.")
+        if u.username or u.password:
+            raise ValueError("Adresse avec identifiants refusée.")
+        if not _hote_public(u.hostname):
+            raise ValueError("Hôte refusé : %s (adresse locale, privée ou introuvable)." % u.hostname)
+        req = urllib.request.Request(url, headers={"User-Agent": PROXY_UA, "Accept": "*/*", "Accept-Language": "fr-CH,fr;q=0.9,de;q=0.5"})
+        try:
+            with ouvre.open(req, timeout=PROXY_DELAI) as r:
+                ctype = r.headers.get("Content-Type") or "application/octet-stream"
+                morceaux, total = [], 0
+                while True:
+                    bloc = r.read(1 << 18)
+                    if not bloc:
+                        break
+                    total += len(bloc)
+                    if total > PROXY_MAX:
+                        raise ValueError("Document trop volumineux (plus de %d Mo)." % (PROXY_MAX >> 20))
+                    morceaux.append(bloc)
+                return r.status, ctype, b"".join(morceaux), url
+        except urllib.error.HTTPError as e:
+            if e.code in (301, 302, 303, 307, 308) and e.headers.get("Location"):
+                url = urljoin(url, e.headers["Location"])
+                continue
+            return e.code, e.headers.get("Content-Type") or "text/plain", b"", url
+    raise ValueError("Trop de redirections.")
+
+
 class H(BaseHTTPRequestHandler):
     server_version = "SUBGestion/%d" % VERSION
     sys_version = ""
@@ -2688,6 +2764,24 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, js({"ok": True, "seq": cur_seq(c), "version": VERSION,
                                            "import": imp, "aide": os.path.isfile(MANUEL_FR), "auth": ch08_auth_on(c),
                                            "bureau": True, "page": PAGE}))
+            if u.path == "/api/proxy":   # relais internet (SUBGestion ▸ Parcelle & règlements, 20.10.2026) : voir proxy_lire
+                url = ((q.get("url") or [""])[0]).strip()
+                try:
+                    code, ctype, corps, fin = proxy_lire(url)
+                except ValueError as e:
+                    return self._send(400, js({"ok": False, "error": str(e)}))
+                except Exception as e:
+                    return self._send(502, js({"ok": False, "error": "Hôte injoignable : %s" % (str(e)[:160] or e.__class__.__name__)}))
+                if code >= 400:
+                    return self._send(502, js({"ok": False, "error": "Réponse %d de %s" % (code, urlsplit(fin).hostname or "l'hôte")}))
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(corps)))
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Relais-URL", fin)
+                self.end_headers()
+                self.wfile.write(corps)
+                return
             if u.path == "/api/snapshot":
                 tabs = [x for x in (q.get("t") or [""])[0].split(",") if x]
                 excl = [x for x in (q.get("x") or [""])[0].split(",") if x]

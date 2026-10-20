@@ -66,6 +66,78 @@ def _origine_ok(h):
     return o in (None, "null", "file://") or bool(re.match(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$", o or ""))
 
 
+# ── Relais internet pour SUBGestion (20.10.2026) : GET /proxy?url=https://… → la ressource distante (Content-Type transmis, CORS).
+#    Sert au module « Parcelle & règlements » (cadastre RDPPF du canton, règlements communaux en PDF, lois) que le navigateur ne peut
+#    pas lire directement (pas de CORS). Règles : GET et https seulement, aucune adresse locale ni privée (127/8, 10/8, 172.16/12,
+#    192.168/16, 100.64/10, .local…), redirections suivies vers https seulement (6 au plus), 30 s, 30 Mo. Hôtes admis d'office :
+#    PROXY_HOTES ; tout autre hôte https public l'est aussi (liens trouvés dans un extrait RDPPF : communes, cantons, Confédération).
+#    ⚠ Même code dans serveur_deltasub.py (/api/proxy, base du bureau) : modifier les deux ensemble.
+import ipaddress, socket, urllib.request, urllib.error
+PROXY_MAX = 30 * 1024 * 1024
+PROXY_DELAI = 30
+PROXY_HOTES = ("api3.geo.admin.ch", "wms.geo.admin.ch", "data.geo.admin.ch", "www.rdppf.vd.ch", "rdppf.vd.ch", "prestations.vd.ch",
+               "www.geo.vd.ch", "www.fedlex.admin.ch")
+PROXY_UA = "SUBGestion/1.0 (relais local du bureau ; +https://substances.ch)"
+
+
+class _SansRedirection(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None   # chaque redirection est contrôlée par proxy_lire (https, hôte public)
+
+
+def _hote_public(hote):
+    """False si l'hôte désigne la machine, le réseau local ou un réseau privé (ou ne se résout pas)."""
+    h = (hote or "").strip("[]").lower()
+    if not h or "." not in h or h.endswith((".local", ".localhost", ".internal", ".lan", ".home", ".arpa")):
+        return False
+    try:
+        infos = socket.getaddrinfo(h, 443, proto=socket.IPPROTO_TCP)
+    except OSError:
+        return False
+    for info in infos:
+        try:
+            a = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            return False
+        if (a.is_private or a.is_loopback or a.is_link_local or a.is_multicast or a.is_reserved or a.is_unspecified
+                or a in ipaddress.ip_network("100.64.0.0/10")):
+            return False
+    return bool(infos)
+
+
+def proxy_lire(url):
+    """→ (code, content_type, octets, url_finale). ValueError = refus (adresse), OSError / autres = réseau."""
+    ouvre = urllib.request.build_opener(_SansRedirection)
+    for _ in range(6):
+        u = urllib.parse.urlsplit(url)
+        if u.scheme != "https" or not u.netloc:
+            raise ValueError("Seules les adresses https:// sont relayées.")
+        if u.username or u.password:
+            raise ValueError("Adresse avec identifiants refusée.")
+        if not _hote_public(u.hostname):
+            raise ValueError("Hôte refusé : %s (adresse locale, privée ou introuvable)." % u.hostname)
+        req = urllib.request.Request(url, headers={"User-Agent": PROXY_UA, "Accept": "*/*", "Accept-Language": "fr-CH,fr;q=0.9,de;q=0.5"})
+        try:
+            with ouvre.open(req, timeout=PROXY_DELAI) as r:
+                ctype = r.headers.get("Content-Type") or "application/octet-stream"
+                morceaux, total = [], 0
+                while True:
+                    bloc = r.read(1 << 18)
+                    if not bloc:
+                        break
+                    total += len(bloc)
+                    if total > PROXY_MAX:
+                        raise ValueError("Document trop volumineux (plus de %d Mo)." % (PROXY_MAX >> 20))
+                    morceaux.append(bloc)
+                return r.status, ctype, b"".join(morceaux), url
+        except urllib.error.HTTPError as e:
+            if e.code in (301, 302, 303, 307, 308) and e.headers.get("Location"):
+                url = urllib.parse.urljoin(url, e.headers["Location"])
+                continue
+            return e.code, e.headers.get("Content-Type") or "text/plain", b"", url
+    raise ValueError("Trop de redirections.")
+
+
 def _rotation(dossier):
     """Garde toutes les sauvegardes des 48 dernières heures, une par jour pendant 60 jours, une par mois au-delà."""
     fs = sorted(glob.glob(os.path.join(dossier, GESTION_PREFIX + "*.json.gz")), key=os.path.getmtime, reverse=True)
@@ -128,7 +200,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         if u.path == "/ping":
             self._json(200, {"ok": True, "base": BASE_DIR, "port": PORT, "gestion": GESTION_DIR,
-                             "pdf": os.path.exists(CHROME)})
+                             "pdf": os.path.exists(CHROME), "relais": True})
             return
 
         if u.path.startswith("/gestion/") or u.path.startswith("/fichiers/"):
@@ -162,6 +234,29 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
                 return
             self._json(404, {"ok": False, "error": "Ressource inconnue."}); return
+
+        if u.path == "/proxy":   # relais internet (SUBGestion ▸ Parcelle & règlements) : voir proxy_lire
+            if not _origine_ok(self):
+                self._json(403, {"ok": False, "error": "Origine refusée."}); return
+            url = (urllib.parse.parse_qs(u.query).get("url", [""])[0]).strip()
+            try:
+                code, ctype, corps, fin = proxy_lire(url)
+            except ValueError as e:
+                self._json(400, {"ok": False, "error": str(e)}); return
+            except Exception as e:
+                self._json(502, {"ok": False, "error": "Hôte injoignable : %s" % (str(e)[:160] or e.__class__.__name__)}); return
+            if code >= 400:
+                self._json(502, {"ok": False, "error": "Réponse %d de %s" % (code, urllib.parse.urlsplit(fin).hostname or "l'hôte")}); return
+            self.send_response(200)
+            self._cors()
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(corps)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Relais-URL", fin)
+            self.send_header("Access-Control-Expose-Headers", "X-Relais-URL, Content-Type")
+            self.end_headers()
+            self.wfile.write(corps)
+            return
 
         if u.path == "/list":
             files = _backups(BASE_DIR)

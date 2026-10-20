@@ -47,7 +47,8 @@ se lit dans la version `s` de chaque enregistrement (plage de la reprise précé
 Collections propres à SUBGestion (règle du 18.10.2026, `collections_extraction` de `serveur_deltasub.py`) : la reprise ne
 remplace que les collections qu'alimente l'extraction (tables de `schema.txt`, CSV, `documents/*.json`). Les autres —
 commissions d'apport `sgapport`, contrats de travail `sgcontrattravail`, coût de revient `sgcoutrevient`, bouclement
-`sgbouclement`, profils d'accès `sgacces`, notes de comparaison `sganalyse`, `sg_meta`, et toute collection future de l'app —
+`sgbouclement`, profils d'accès `sgacces`, notes de comparaison `sganalyse`, analyse de parcelle `sgfaisa` et textes des
+règlements `sgfaisatexte` (faisabilité, 20.10.2026), `sg_meta`, et toute collection future de l'app —
 ne sont jamais touchées (compteurs `next_id:` compris) ; la fin de la reprise les liste (« Collections propres … gardées
 telles quelles »). Vaut aussi pour une reprise directe dans une base serveur (`serveur_deltasub.py --importer-deltaproject
 <extraction> --force`, `importer_dans_deltasub.sh`), qui n'a pas le filet de `reprise_subgestion.py`. Images (logos) et

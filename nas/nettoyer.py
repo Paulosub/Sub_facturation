@@ -226,9 +226,12 @@ TRACES_ADMISES = {"BKP", "EBKPELEMENT_ID", "ebkpelement", "ebkptobkp", "ebkp", "
 TRACES_LIMITEES = {"crb": 1,     # filtre /crb/i : écarte des listes les valeurs de référence sous licence
                    "DELTA": 6}   # anciens libellés de la base à renommer (« … Originaux », « … Files », préfixe « DELTA … »)
 # 4. adresses : aucune ressource ni échange avec un site externe (seuls l'espace de noms SVG, l'ordinateur lui-même et le lien
-#    « carte des environs », ouvert seulement sur un clic, sont admis)
+#    « carte des environs », ouvert seulement sur un clic, sont admis), sauf les géoservices publics du module « Parcelle & règlements »
+#    (20.10.2026) : geo.admin.ch (recherche d'adresse, identify, vignettes WMS, carte fédérale) et le service web RDPPF vaudois —
+#    appelés seulement à la demande (boutons de recherche), le reste passe par le relais du serveur (/api/proxy).
 URL = re.compile(r"""https?://([^/\s'"`<>\\):]+)""")
-HOTES_ADMIS = {"www.w3.org", "127.0.0.1", "localhost", "map.search.ch"}
+HOTES_ADMIS = {"www.w3.org", "127.0.0.1", "localhost", "map.search.ch",
+               "api3.geo.admin.ch", "wms.geo.admin.ch", "map.geo.admin.ch", "www.rdppf.vd.ch"}
 
 
 def retirer(textes):

@@ -158,6 +158,14 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   onglet « Phases contrat » (`dessiner(C)` dans `sgOnglet`, marge, honoraires / h, coût de revient / h, comparaison `.sg-db`) ;
   `sgMargeVisible`, `sgMargePct` ; « Français seulement » sans confirmation (`sgFrSeul`) ; `sg3.js` : dernier écran rouvert avec son
   paramètre (`sg3_vue_arg`).
+- Bloc 21 (20.10.2026) : page du projet ▸ modules **Projet** et **Faisabilité** (`SG_PMOD`, `SG_PMOD_G`, `sgPdomModules`, `sgPdomModuleCompte`,
+  `sgPdomModulePage` → `sgOnglet(p,'projet'|'faisa')`, arg `<id>|Projet|<rubrique>`) ; **Parcelle & règlements** `nx-faisa` (arg = ID projet) :
+  collections `sgfaisa` (ID = ID projet) et `sgfaisatexte` (`<projet>:<source>`, dans `HEAVY`), `sgFzRec` / `sgFzSave`, relais `sgFzRelais` /
+  `sgFzFetch` (direct pour *.geo.admin.ch), `sgFzChercherAdresse`, `sgFzIdentify`, `sgFzParcelle`, `sgFzGeoAdmin` (`SG_FZ_COUCHES`), `sgFzRdppf`
+  (XML OeREB 2.0 : `sgFzXe/Xc/Xt/Lt`), `sgFzDocsRdppf`, `sgFzTelecharger(Dlg)`, `sgFzTraiterPdf` (dépôt `Faisabilité/Règlements` + `sgFzPdfTexte`
+  par pdf.js du cadre), `sgFzArticles`, `sgFzScanner` / `sgFzPreRemplir` (`SG_FZ_MOTS`, `SG_FZ_RDPPF_TH`), `sgFzRechercher`, `sgFzContrainteDlg`,
+  `sgFzDessiner`, `sgFaisaFiche` (document `SG_FZ_DOC_CSS` → `sgDocOuvrir`). Serveurs : `proxy_lire` + `/proxy` (fact_backup_server.py) et
+  `/api/proxy` (serveur_deltasub.py), jumeaux ; `sg_refus_ecriture` : `sgfaisa` / `sgfaisatexte` = règle de `depotfichier`.
 - Moteur : `nmFr`, `trFr`, `TRAD_FR` (français seulement) ; `frSeulOps()` → {ops, n} et `frSeul(ops)` (lots de 400) :
   nettoyage de la base (libellés, modèles, documents types, gabarits, catalogues ; `FR_CAT_DE` / `FR_CAT_NOM` pour eBKP-T) ;
   `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;

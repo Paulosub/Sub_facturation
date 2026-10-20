@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 22:34 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 23:51 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -783,6 +783,62 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-docs-page{padding:16px 22px 30px;max-width:1100px}   /* page du projet ▸ Documents (20.10.2026) */
 .nx-kpi .v.dt{white-space:nowrap}   /* date d'une tuile (Dernière saisie, Dernière facture) : même taille que les autres chiffres (20.10.2026) */
 .sg-sit tr[data-colgo]{cursor:pointer}.sg-sit tr[data-colgo]:hover td{background:var(--s-jaune3)}   /* Heures : clic sur un collaborateur → Détail (20.10.2026) */
+/* ═══ 21. Page du projet ▸ modules Projet / Faisabilité · Parcelle & règlements (20.10.2026) ═══ */
+.sg-pdom-chips button.mod{border-color:var(--s-noir);font-weight:700}
+.sg-foc{outline:2px solid var(--s-jaune);outline-offset:3px;background:var(--s-jaune3)}
+.sg-fz-acts{justify-content:flex-start;margin:0 0 14px}
+.sg-fz{display:flex;flex-direction:column;gap:30px;max-width:1240px}
+.sg-fz .nx-card>.b{padding:14px 0 6px}
+.nx-card>h4 .a+.a{margin-left:18px}
+.nx-btn.sm{height:28px;padding:0 8px;font-size:11.5px;gap:5px;border-width:1px}.nx-btn.sm svg{width:13px;height:13px}
+.sg-fz-sp{flex:1}
+.sg-fz-adr{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
+.sg-fz-adr label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:700;color:var(--s-gris)}.sg-fz-adr .inp{width:420px;max-width:100%;font-weight:400;color:var(--s-noir)}
+.sg-fz-res{display:flex;flex-direction:column;gap:2px;margin:-6px 0 12px;font-size:12.5px;color:var(--s-gris)}
+.sg-fz-res button{text-align:left;border:1px solid var(--s-filet);background:#fff;padding:6px 10px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--s-noir)}.sg-fz-res button:hover{background:var(--s-jaune3)}
+.sg-fz-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 16px;align-items:end}
+.sg-fz-form label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--s-gris);font-weight:700}
+.sg-fz-form label .inp{font-weight:400;color:var(--s-noir)}
+.sg-fz-form .w2{grid-column:span 2}
+.sg-fz-maps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px}
+.sg-fz-map{position:relative;border:1px solid var(--s-filet);background:var(--s-fond);aspect-ratio:4/3;overflow:hidden}
+.sg-fz-map img{width:100%;height:100%;object-fit:cover;display:block}
+.sg-fz-map::before,.sg-fz-map::after{content:"";position:absolute;left:50%;top:50%;background:var(--s-rouge);pointer-events:none}
+.sg-fz-map::before{width:2px;height:24px;margin:-12px 0 0 -1px}.sg-fz-map::after{width:24px;height:2px;margin:-1px 0 0 -12px}
+.sg-fz-map small{position:absolute;left:0;bottom:0;background:rgba(255,255,255,.85);padding:2px 6px;font-size:10.5px;color:var(--s-gris)}
+.sg-fz-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sg-fz-prog{min-height:18px;font-size:12px;color:var(--s-nuit);margin-top:10px;font-weight:700}.sg-fz-prog:empty{display:none}
+.sg-fz-hint{font-size:12px;color:var(--s-gris);font-weight:300;margin:0 0 12px;line-height:1.5}
+.nx-tbl.sg-fz-src{margin-top:14px}.nx-tbl.sg-fz-src td{vertical-align:top}.nx-tbl.sg-fz-src td.r{white-space:nowrap}
+.nx-tbl.sg-fz-src td.sg-fz-sa{white-space:nowrap}.nx-tbl.sg-fz-src td.sg-fz-sa .nx-btn{margin-left:4px}
+.sg-fz-res-t{color:var(--s-gris);font-weight:300;font-size:12px;line-height:1.4}
+.sg-fz-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:0 5px;line-height:17px;background:var(--s-fond);color:var(--s-noir);white-space:nowrap}
+.sg-fz-tag.geoadmin{background:#e8e9f4;color:var(--s-bleu)}.sg-fz-tag.rdppf{background:var(--s-nuit3);color:var(--s-nuit)}.sg-fz-tag.reglement{background:var(--s-jaune2);color:var(--s-nuit)}
+.sg-fz-rech{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.sg-fz-rech .inp{width:420px;max-width:100%}.sg-fz-rech .n{font-size:12px;color:var(--s-gris)}
+.sg-fz-hit{padding:8px 4px;border-bottom:1px solid var(--line2);font-size:12.5px;display:flex;gap:12px;align-items:flex-start}
+.sg-fz-hit .t{flex:1;min-width:0;line-height:1.45;font-weight:300}.sg-fz-hit .t b{display:block;font-size:11.5px;color:var(--s-nuit);font-weight:700;margin-bottom:2px}.sg-fz-hit mark{background:var(--s-jaune);color:inherit}
+.sg-fz-hit button{flex:none}
+.sg-fz-kpis{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:0 0 12px}.sg-fz-kpis>span{font-size:12px;color:var(--s-gris)}.sg-fz-kpis>span b{color:var(--s-noir);font-size:14px}
+.sg-fz-kpis .sg-fz-filtre{margin-left:auto}.sg-fz-kpis .seg button{padding:2px 9px;font-size:11.5px}
+.sg-fz-st{display:inline-block;width:8px;height:8px;margin-right:6px;background:var(--s-gris3);vertical-align:middle}
+.sg-fz-st.a_traiter{background:var(--s-orange)}.sg-fz-st.a_verifier{background:var(--s-bleu)}.sg-fz-st.conforme{background:var(--s-vert)}.sg-fz-st.non_conforme{background:var(--s-rouge)}
+.nx-tbl.sg-fz-ct th,.nx-tbl.sg-fz-ct td{vertical-align:top;font-size:12px}
+.nx-tbl.sg-fz-ct tr.grp td{background:var(--s-nuit3);font-weight:700;color:var(--s-nuit);font-size:12px;padding:6px}
+.nx-tbl.sg-fz-ct td.c1{min-width:200px;border-left:3px solid transparent}.nx-tbl.sg-fz-ct tr.a_traiter td.c1{border-left-color:var(--s-orange)}.nx-tbl.sg-fz-ct tr.a_verifier td.c1{border-left-color:var(--s-bleu)}.nx-tbl.sg-fz-ct tr.conforme td.c1{border-left-color:var(--s-vert)}.nx-tbl.sg-fz-ct tr.non_conforme td.c1{border-left-color:var(--s-rouge)}
+.nx-tbl.sg-fz-ct td.c1 b{display:block}.nx-tbl.sg-fz-ct td.c1 span{color:var(--s-gris);font-weight:300;line-height:1.4;display:block;margin-top:3px}
+.nx-tbl.sg-fz-ct td.c2{width:17%;color:var(--s-gris);font-weight:300;line-height:1.4;font-size:11.5px}.nx-tbl.sg-fz-ct td.c2 b{color:var(--s-noir);font-weight:700}
+.nx-tbl.sg-fz-ct td.c3{width:10%;font-variant-numeric:tabular-nums}
+.nx-tbl.sg-fz-ct td.c4{width:27%}.nx-tbl.sg-fz-ct textarea{width:100%;box-sizing:border-box;min-height:56px;resize:vertical;font:inherit;font-size:12px;line-height:1.4;border:1px solid var(--s-gris3);padding:5px 7px;background:#fff}
+.nx-tbl.sg-fz-ct textarea:focus{outline:none;border-color:var(--s-nuit);background:var(--s-jaune3)}
+.sg-fz-rep{white-space:pre-line;line-height:1.45}.sg-fz-note{font-size:11px;color:var(--s-gris);margin-top:4px;font-style:italic}
+.nx-tbl.sg-fz-ct td.c5{width:118px}.nx-tbl.sg-fz-ct select{font:inherit;font-size:12px;height:28px;width:100%;border:1px solid var(--s-gris3);background:#fff}
+.nx-tbl.sg-fz-ct td.c6{width:56px;white-space:nowrap;text-align:right}.nx-tbl.sg-fz-ct td.c6 button{border:0;background:none;cursor:pointer;padding:4px;color:var(--s-gris)}.nx-tbl.sg-fz-ct td.c6 button:hover{color:var(--s-noir);background:var(--s-jaune)}.nx-tbl.sg-fz-ct td.c6 svg{width:15px;height:15px;display:block}
+.sg-fz-conc textarea{width:100%;box-sizing:border-box;min-height:120px;resize:vertical;font:inherit;font-size:13px;line-height:1.5;border:1px solid var(--s-gris3);padding:8px 10px;background:#fff}
+.sg-fz-conc textarea:focus{outline:none;border-color:var(--s-nuit);background:var(--s-jaune3)}
+.sg-fz-dl{max-height:52vh;overflow:auto;min-width:560px}
+.sg-fz-dl label{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:start;padding:7px 0;border-bottom:1px solid var(--s-filet);cursor:pointer;font-size:12.5px}.sg-fz-dl label small{grid-column:2;color:var(--s-gris);font-size:10.5px;word-break:break-all;font-weight:300}
+.sg-fz-dlg{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;align-items:start;min-width:580px}.sg-fz-dlg label{color:var(--s-gris);font-size:12px;padding-top:8px;text-align:right}
+.sg-fz-dlg textarea.inp{height:auto;min-height:62px;resize:vertical;padding:6px 9px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -26896,7 +26952,7 @@ function sgPdomCompte(p,d){ const by=t=>DS.by(t,'PROJECT_ID',p.ID), viv=L=>L.fil
     case 'Devis général': return pl(viv(by('costestimatedocument')).length,'devis','devis');
     case 'Soumission': return pl(viv(by('devisdocument')).length,'appel d’offres','appels d’offres');
     case 'Contrôle des coûts': return pl(viv(by('costcontroldocument')).length,'contrôle des coûts','contrôles des coûts');
-  } return ''; }
+  } return typeof sgPdomModuleCompte==='function'?sgPdomModuleCompte(p,d):''; }   /* tuiles des modules Projet / Faisabilité (bloc 21) */
 /* domaines permis : droits de l'ancien logiciel (ch08bDomains), domaines utilisés au bureau, puis profil (honoraires, factures, chantier) */
 function sgPdomListe(){ const ok=new Set(ch08bDomains(DOMAINS)), adm=sgAdmin();
   const hon=['Offres d’honoraires','Contrats honoraires','Avancement des prestations'], cha=['Calcul des coûts','Devis général','Soumission','Contrôle des coûts'];
@@ -26918,24 +26974,24 @@ function sgDocsModule(C,p){ DS.need(['depotfichier']).catch(()=>{}).then(()=>{ i
       if(n){ toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+' à '+p.NUMBER+'.'); sgDocsModule(C,p); } };
     inp.click(); }; }); }
 VIEWS['nx-pdom']={
-  render(m,arg){ const [pid,dom]=String(arg||'').split('|'), p=DS.get('project',pid); this.drawC=null;
+  render(m,arg){ const [pid,dom,foc]=String(arg||'').split('|'), p=DS.get('project',pid); this.drawC=null;   /* foc : rubrique du module à montrer (bloc 21) */
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
     if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
-    nxRecent('p',p.ID); const G=sgPdomListe(), doms=G.flatMap(([,L])=>L);
-    if(dom&&doms.includes(dom)){                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
+    nxRecent('p',p.ID); const G0=sgPdomListe(), M=sgPdomModules(p), mods=M.map(([g])=>g), G=[...M,...G0], doms=G0.flatMap(([,L])=>L);   /* M : modules Projet / Faisabilité en tête (bloc 21, 20.10.2026) */
+    if(dom&&(mods.includes(dom)||doms.includes(dom))){                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
       VIEW.nxTitle=dom+' · '+(p.NUMBER||p.TITLE||'');
-      const chips=h('div',{class:'sg-pdom-chips'},...doms.map(d=>h('button',{class:d===dom?'on':null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));
-      const bar=h('div',{class:'sg-pdom-bar'},h('button',{class:'nx-btn',html:nxSvg('back')+'Domaines',onclick:()=>go('nx-pdom',p.ID+'|#'+G.findIndex(([,L])=>L.includes(dom)))}),
+      const chips=h('div',{class:'sg-pdom-chips'},...[...mods,...doms].map(d=>h('button',{class:[d===dom?'on':'',mods.includes(d)?'mod':''].filter(Boolean).join(' ')||null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));
+      const bar=h('div',{class:'sg-pdom-bar'},h('button',{class:'nx-btn',html:nxSvg('back')+'Domaines',onclick:()=>go('nx-pdom',p.ID+'|#'+G.findIndex(([g,L])=>g===dom||L.includes(dom)))}),
         h('b',{},(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'')),chips);
       const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
       const on=chips.querySelector('.on'); if(on) setTimeout(()=>on.scrollIntoView({block:'nearest',inline:'center'}),0);
-      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(dom==='Documents') sgDocsModule(C,p2); else domainView(C,p2,dom); } }; this.drawC(); return; }
+      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else domainView(C,p2,dom); } }; this.drawC(); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'');                                        /* page du projet : groupes repliables de domaines */
     const ouvert=/^#\d+$/.test(dom||'')?+dom.slice(1):-1;                                            // 18.10.2026 : tout replié à l'arrivée ; au retour d'un domaine, son groupe ouvert
     const logs=DS.by('timelog','PROJECT_ID',p.ID), lim30=dayKey(new Date(Date.now()-30*864e5)), tot=logs.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0),
       h30=logs.filter(r=>tlKey(r)>=lim30).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=projMO(p), cat=sgCatProjet(p);
-    const tuile=d=>{ const x=SG_PDOM[d]||['doc',''];
-      return '<div class="sg-tile" data-fn="dom" data-dom="'+nxE(d)+'"><div class="ti">'+nxSvg(x[0])+'<h3>'+nxE(d)+'</h3></div><div class="nb" data-nb="'+nxE(d)+'">…</div><p>'+nxE(x[1])+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>'; };
+    const tuile=(d,g)=>{ const mod=mods.includes(g), x=(mod?SG_PMOD[d]:SG_PDOM[d])||['doc',''], fn=!mod?'dom':x[2]==='fz'?'fz':x[2]==='fiche'?'fzfiche':'mod';   /* tuiles des modules Projet / Faisabilité (bloc 21) */
+      return '<div class="sg-tile" data-fn="'+fn+'" data-dom="'+nxE(d)+'"'+(fn==='mod'?' data-mod="'+nxE(x[2])+'"':'')+'><div class="ti">'+nxSvg(x[0])+'<h3>'+nxE(d)+'</h3></div><div class="nb" data-nb="'+nxE(d)+'">…</div><p>'+nxE(x[1])+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>'; };
     const info=[mo,p.LOCATION,p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE)+(p.PROJECTENDDATE?' → '+dfr(p.PROJECTENDDATE):''):''].filter(Boolean).map(nxE).join(' · ');
     const html='<div class="sg-split">'+sgIntro('Projet '+(p.NUMBER||''),nxE(p.TITLE||p.NUMBER||''),info,
         '<div class="sg-pdom-tags">'+nxStateTag(p)+(cat!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[cat]+'</span>':'')+'</div>'
@@ -26945,11 +27001,12 @@ VIEWS['nx-pdom']={
           +((pa0=>'<div class="sg-fig" title="D’après les heures saisies dans la feuille d’heures"><div class="n txt">'+(pa0?nxE(nm(pa0.ph)):'—')+'</div><div class="t">'+(pa0?'phase actuelle'+(pa0.sp?' : '+nxE(nm(pa0.sp)):'')+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'phase actuelle : aucune heure saisie par phase')+'</div></div>')(sgPhaseActuelle(p)))
           +'</div>')   /* marge bénéficiaire retirée de la page du projet (19.10.2026, à la demande ; elle reste au tableau de bord) */
       +'<div class="sg-pgrps">'+(G.length?G.map(([g,L],i)=>'<section class="sg-pgrp'+(i===ouvert?' on':'')+'"><button class="sg-pgrp-h" data-fn="grp" aria-expanded="'+(i===ouvert)+'">'
-          +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span><span class="c">'+L.length+' domaine'+(L.length>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button>'
-          +'<div class="sg-tiles">'+L.map(tuile).join('')+'</div></section>').join(''):'<div class="nx-empty">Aucun domaine accessible avec votre profil.</div>')+'</div></div>';
+          +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span><span class="c">'+L.length+' '+(mods.includes(g)?'module':'domaine')+(L.length>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button>'
+          +'<div class="sg-tiles">'+L.map(d=>tuile(d,g)).join('')+'</div></section>').join(''):'<div class="nx-empty">Aucun domaine accessible avec votre profil.</div>')+'</div></div>';
     const pg=nxPage(m,html);
     Object.assign(pg._fn,{grp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); },dom:b=>{ const d=b.dataset.dom; /* Documents : page pleine (sgDocsModule) comme les autres domaines, depuis le retrait des onglets Documents et Projet (20.10.2026) */ go('nx-pdom',p.ID+'|'+d); },
-      fiche:()=>go('nx-projet',p.ID),temps:()=>sgSaisieRapide({projet:p.ID})});
+      fiche:()=>go('nx-projet',p.ID),temps:()=>sgSaisieRapide({projet:p.ID}),
+      mod:b=>go('nx-pdom',p.ID+'|'+b.dataset.mod+'|'+b.dataset.dom),fz:()=>go('nx-faisa',p.ID),fzfiche:()=>sgFaisaFiche(p)});   /* modules Projet / Faisabilité, Parcelle & règlements, fiche (bloc 21) */
     DS.need(SG_PDOM_T).catch(()=>{}).then(()=>{ if(!pg.isConnected) return; pg.querySelectorAll('[data-nb]').forEach(e=>{ const t=sgPdomCompte(p,e.dataset.nb)||'', x=/^(\d[\d']*)\s*(.*)$/.exec(t);
       e.innerHTML=x?'<span class="v">'+nxE(x[1])+'</span><small>'+nxE(x[2])+'</small>':nxE(t); }); }); },   // chiffre en grand, libellé en petit
   refresh(ts){ if(this.drawC){ this.drawC(); return; } if(hit(ts,'project','timelog',...SG_PDOM_T)) go('nx-pdom',VIEW.arg); } };
@@ -27079,6 +27136,409 @@ document.addEventListener('click',e=>{ const th=e.target.closest&&e.target.close
       const cur=SG_TRI.get(sgTriSig(T.hr)); if(cur&&cur.i<T.hr.cells.length) sgTriAppliquer(tb,cur.i,cur.sens); }); };
   const go0=()=>{ new MutationObserver(()=>{ if(!f) f=requestAnimationFrame(scan); }).observe(document.body,{childList:true,subtree:true}); scan(); };
   if(document.body) go0(); else document.addEventListener('DOMContentLoaded',go0); }
+
+/* ═══ 21. MODULES « PROJET » ET « FAISABILITÉ » DE LA PAGE DU PROJET · PARCELLE & RÈGLEMENTS (20.10.2026) ═══════════════════════════
+   Page du projet (nx-pdom) : deux groupes de TRAVAIL en tête — « Projet » (PV MO, Présentation client, Estimations, Descriptifs & devis,
+   Dossier d’enquête, Documents : le code de l'ancien onglet Projet, sgOnglet(p,'projet')) et « Faisabilité » (seulement si le projet a une
+   phase de faisabilité, sgFaisaOk : Parcelle & règlements, Documents de base, Études, Variantes, Présentation au client, Fiche de
+   faisabilité ; sgOnglet(p,'faisa')). Une tuile ouvre le module en pleine page (nx-pdom, arg « <id>|Projet|<rubrique> »), la rubrique visée
+   dépliée et mise en évidence (sgPdomModulePage). Le tableau de bord (nx-projet) reste un écran d'analyse : rien n'y est remis.
+   Parcelle & règlements (nx-faisa, arg = ID du projet) : collection sgfaisa (un enregistrement par projet : PARCELLE, SOURCES, CONTRAINTES,
+   CONCLUSION) + sgfaisatexte (texte extrait d'un règlement, un enregistrement par source, chargé à la demande) — collections propres à
+   l'app, gardées par les reprises. Recherche automatique : geo.admin.ch (recherche d'adresse, identify sur les couches fédérales
+   SG_FZ_COUCHES, vignettes WMS — appels directs, CORS), cadastre RDPPF du canton (service web OeREB 2.0 lu dans la couche
+   ch.swisstopo-vd.stand-oerebkataster, Vaud : www.rdppf.vd.ch — getegrid puis extract/xml), règlements (PDF des dispositions juridiques
+   de l'extrait, téléchargés par le relais, déposés dans Faisabilité ▸ Règlements, texte lu par pdf.js du cadre Facturation).
+   Relais internet (CORS) : /api/proxy du serveur du NAS en mode bureau, sinon http://127.0.0.1:7788/proxy du serveur de sauvegarde
+   (sgFzRelais) ; sans relais : message clair et saisie manuelle. Contraintes pré-remplies : couches fédérales, restrictions RDPPF, repérage
+   par mots-clés et articles dans les règlements (SG_FZ_MOTS — pas d'IA pour l'instant). Fiche de faisabilité : document HTML
+   (sgDocOuvrir → visionneuse, Imprimer → PDF). Droits : lecture pour qui voit le projet (sgProjetPermis), écriture « documents : dépôt »
+   (serveur du NAS : même règle pour sgfaisa / sgfaisatexte). */
+const SG_PMOD={'PV MO':['pv','Procès-verbaux des séances avec le maître de l’ouvrage, classés par phase (31 à 33).','Projet'],
+  'Présentation client':['pdf','Documents présentés au client, par phase.','Projet'],
+  'Estimations':['ruler','Calculs du coût, classés par phase.','Projet'],
+  'Descriptifs & devis':['doc','Devis descriptifs par CFC, classés par phase (32, 33).','Projet'],
+  'Dossier d’enquête':['list','Formulaire, questionnaires, plans et annexes de la demande d’autorisation (33).','Projet'],
+  'Documents':['folder','Tous les fichiers du projet, par dossier.','Projet'],
+  'Parcelle & règlements':['map','Parcelle, recherche automatique (geo.admin.ch, cadastre RDPPF), règlements, contraintes et réponses du projet.','fz'],
+  'Documents de base':['folder','Plans, extraits et photos : les pièces de départ de l’étude.','Faisabilité'],
+  'Études':['doc','Études et calculs de la faisabilité.','Faisabilité'],
+  'Variantes':['dup','Les variantes étudiées.','Faisabilité'],
+  'Présentation au client':['pdf','Les documents remis au client.','Faisabilité'],
+  'Fiche de faisabilité':['print','Le document de synthèse : parcelle, sources, règlements, contraintes et réponses, variantes, conclusion.','fiche']};
+const SG_PMOD_G=[['Projet',['PV MO','Présentation client','Estimations','Descriptifs & devis','Dossier d’enquête','Documents']],
+  ['Faisabilité',['Parcelle & règlements','Documents de base','Études','Variantes','Présentation au client','Fiche de faisabilité']]];
+Object.assign(SG_PDOM_GI,{'Projet':'building','Faisabilité':'ruler'});
+SG_PDOM_T.push('sgfaisa','sgdocphase');
+/* faisabilité aussi dès qu'une analyse de parcelle existe pour le projet */
+{ const f0=sgFaisaOk; sgFaisaOk=function(p){ return f0(p)||!!DS.get('sgfaisa',String(p.ID)); }; }
+/* groupes de modules de la page du projet : Projet (sauf projet uniquement de faisabilité), Faisabilité (phase de faisabilité) */
+function sgPdomModules(p){ const fS=sgCatProjet(p)==='faisabilite'; return SG_PMOD_G.filter(([g])=>g==='Faisabilité'?sgFaisaOk(p):!fS); }
+/* compteurs des tuiles des modules (appelés par sgPdomCompte quand le domaine n'est pas un domaine du moteur) */
+function sgPdomModuleCompte(p,d){ const pl=(n,s,s2)=>n+' '+(n>1?(s2||s+'s'):s), F=DS.all('depotfichier'), nfc=s=>String(s||'').normalize('NFC');
+  let base='', baseF=''; try{ base=ch03aDossier('document',p.ID,'Projet')+'/'; baseF=ch03aDossier('document',p.ID,'Faisabilité')+'/'; }catch(_){ return ''; }
+  const sousPhase=sous=>F.filter(f=>{ const s=nfc(f.DOSSIER); return s.startsWith(base)&&s.slice(base.length).split('/')[1]===nfc(sous); }).length;
+  const viv=t=>DS.by(t,'PROJECT_ID',p.ID).filter(x=>!+x.ISMARKEDASDELETED).length;
+  switch(d){
+    case 'PV MO': return pl(sousPhase('PV MO'),'PV','PV');
+    case 'Présentation client': return pl(sousPhase('Présentation client'),'fichier');
+    case 'Estimations': return pl(viv('costplanningdocument'),'estimation');
+    case 'Descriptifs & devis': return pl(viv('costestimatedocument'),'devis','devis');
+    case 'Dossier d’enquête': return pl(F.filter(f=>{ const s=nfc(f.DOSSIER); return s.startsWith(base)&&s.includes('/'+nfc('Dossier d’enquête')+'/'); }).length,'pièce');
+    case 'Documents de base': case 'Études': case 'Variantes': case 'Présentation au client': return pl(F.filter(f=>nfc(f.DOSSIER)===baseF+nfc(d)).length,'fichier');
+    case 'Parcelle & règlements': { const r=DS.get('sgfaisa',String(p.ID)); if(!r) return 'à commencer'; const n=(r.CONTRAINTES||[]).length, s=(r.SOURCES||[]).length;
+      return n?pl(n,'contrainte')+(s?' · '+pl(s,'source'):''):s?pl(s,'source'):(r.PARCELLE&&(r.PARCELLE.EGRID||r.PARCELLE.ADRESSE)?'parcelle saisie':'à commencer'); }
+    case 'Fiche de faisabilité': { const r=DS.get('sgfaisa',String(p.ID)); return r&&String(r.CONCLUSION||'').trim()?'conclusion rédigée':'conclusion à rédiger'; }
+  } return ''; }
+/* module en pleine page dans la page du projet : l'ancien code des onglets (sgOnglet 'projet' / 'faisa') ; foc = rubrique à montrer */
+function sgPdomFocusCodes(k,foc){ if(!foc) return []; if(k==='faisa'){ const r=SG_FAISA_RUB.find(x=>x[1]===foc); return r?[r[0]]:[]; }
+  if(foc==='Documents') return ['docs']; if(foc==='Dossier d’enquête') return ['p33']; return ['p31','p32','p33','acl']; }
+function sgPdomModulePage(C,p,dom,foc){ const k=dom==='Faisabilité'?'faisa':'projet', cle=k+':'+p.ID, ouv=SG_CGRP[cle]||(SG_CGRP[cle]=new Set());
+  sgPdomFocusCodes(k,foc).forEach(c=>ouv.add(c));
+  const pg=nxPage(C,(k==='faisa'?'<div class="sg-htls sg-iacts sg-fz-acts"><button data-fn="fz" title="Parcelle, recherche automatique, règlements, contraintes et réponses">'+nxSvg('map')+'<span>Parcelle & règlements</span></button>'
+    +'<button data-fn="fzfiche" title="Fiche de faisabilité : le document de synthèse">'+nxSvg('print')+'<span>Fiche de faisabilité</span></button></div>':'')+'<div id="sg-onglet"></div>');
+  pg._fn.fz=()=>go('nx-faisa',p.ID); pg._fn.fzfiche=()=>sgFaisaFiche(p);
+  sgOnglet(p,k,pg);
+  if(foc){ let n=0; const t=setInterval(()=>{ const b=[...pg.querySelectorAll('.sg-rub-h b, .sg-pgrp-h .t b')].find(x=>x.textContent.trim().startsWith(foc)); if(b||++n>40){ clearInterval(t); if(!b) return;
+      const el=b.closest('.sg-rub')||b.closest('.sg-pgrp'); if(!el) return; el.classList.add('sg-foc'); el.scrollIntoView({block:'center'}); setTimeout(()=>el.classList.remove('sg-foc'),2500); } },100); } }
+
+/* ── Parcelle & règlements (nx-faisa) ─────────────────────────────────────────────────────────────────────────────────────────── */
+const SG_FZ_T='sgfaisa', SG_FZ_TX='sgfaisatexte', SG_FZ={sauve:0,tx:{}};
+if(typeof HEAVY!=='undefined'&&Array.isArray(HEAVY)&&!HEAVY.includes(SG_FZ_TX)) HEAVY.push(SG_FZ_TX);   /* textes des règlements : chargés à la demande (DS.need) */
+const SG_FZ_THEMES=[['zone','Zone et affectation'],['indice','Indice d’utilisation (IUS, COS, CUS)'],['emprise','Emprise au sol'],['hauteur','Hauteur et niveaux'],
+  ['distances','Distances aux limites et entre bâtiments'],['toiture','Toiture et pente'],['stationnement','Stationnement et places de parc'],['verts','Espaces verts et plantations'],
+  ['dangers','Dangers naturels'],['bruit','Bruit (degré de sensibilité)'],['pollues','Sites pollués'],['patrimoine','Patrimoine (recensement architectural, ISOS)'],['foret','Forêt (lisière)'],
+  ['eaux','Eaux'],['energie','Énergie'],['acces','Accès'],['autres','Autres']], SG_FZ_TH_L=Object.fromEntries(SG_FZ_THEMES);
+const SG_FZ_STATUTS=[['a_traiter','À traiter'],['a_verifier','À vérifier'],['conforme','Conforme'],['non_conforme','Non conforme']], SG_FZ_ST_L=Object.fromEntries(SG_FZ_STATUTS);
+const SG_FZ_GEO={search:'https://api3.geo.admin.ch/rest/services/api/SearchServer',ident:'https://api3.geo.admin.ch/rest/services/all/MapServer/identify',
+  wms:'https://wms.geo.admin.ch/',carte:'https://map.geo.admin.ch/',rdppf:{VD:'https://www.rdppf.vd.ch/ws/RdppfSVC.svc'}};
+/* couches fédérales interrogées au point de la parcelle : [couche, libellé, thème, tolérance (px ; 0 = surfaces), fn(propriétés) → {t titre, v valeur, r règle}]
+   (identifiants vérifiés le 20.10.2026 ; les couches raster — bruit routier / ferroviaire, dangers, forêt swissTLM3D — ne répondent pas à identify :
+   le degré de sensibilité au bruit, les distances à la forêt, les eaux et les sites pollués cantonaux viennent de l'extrait RDPPF) */
+const SG_FZ_COUCHES=[
+  ['ch.are.bauzonen','Zones à bâtir harmonisées (ARE)','zone',0,P=>({t:'Zone à bâtir (statistique fédérale) : '+P.ch_bez_f,v:P.ch_bez_f,r:'Statistique suisse des zones à bâtir (ARE), commune de '+P.name+' : '+P.ch_bez_f+' (code '+P.ch_code_hn+'). La zone exacte et son règlement sont ceux du plan d’affectation communal (extrait RDPPF).'})],
+  ['ch.bag.radonkarte','Carte du radon (OFSP)','dangers',0,P=>({t:'Radon : probabilité de dépassement '+P.probability_prozent+' %',v:P.probability_prozent+' %',r:'Carte du radon de l’OFSP : '+P.probability_prozent+' % de probabilité qu’un bâtiment dépasse la valeur de référence de 300 Bq/m³. Prévoir les mesures de protection nécessaires (ORaP).'})],
+  ['ch.bafu.gefahren-baugrundklassen','Classes de sols de fondation (SIA 261)','dangers',0,P=>({t:'Sol de fondation : classe '+P.bgk,v:'classe '+P.bgk,r:'Classe de sol de fondation '+P.bgk+' ('+(P.referenz||'SIA 261')+') pour le dimensionnement parasismique.'})],
+  ['ch.swisstopo.geologie-hydrogeologische_karte-grundwasservorkommen','Réservoirs aquifères (carte hydrogéologique)','eaux',0,P=>({t:'Réservoir aquifère : '+(P.type_fr||P.label),v:P.type_fr||P.label,r:'Carte hydrogéologique de la Suisse 1:500 000 : '+(P.type_fr||P.label)+'. Les zones et périmètres de protection des eaux souterraines figurent dans l’extrait RDPPF.'})],
+  ['ch.bak.bundesinventar-schuetzenswerte-ortsbilder','ISOS — sites construits d’importance nationale','patrimoine',0,P=>({t:'ISOS : '+(P.label||''),v:'',r:'Site construit d’importance nationale (ISOS) : '+(P.label||'')+'. Vérifier l’objectif de sauvegarde du périmètre et les exigences cantonales et communales.'})],
+  ['ch.bafu.bundesinventare-bln','IFP — paysages, sites et monuments naturels','patrimoine',0,P=>({t:'IFP : '+(P.bln_name||P.label),v:P.bln_obj?'objet '+P.bln_obj:'',r:'Inventaire fédéral des paysages, sites et monuments naturels d’importance nationale : objet n° '+(P.bln_obj||'')+' « '+(P.bln_name||P.label)+' ». Objectifs de protection à respecter'+(P.linkurldescription?' (fiche : '+P.linkurldescription+')':'')+'.'})],
+  ['ch.bak.schutzgebiete-unesco_weltkulturerbe','Patrimoine mondial de l’UNESCO','patrimoine',0,P=>({t:'UNESCO : '+(P.name_fr||P.label),v:'',r:(P.type_fr||'Bien du patrimoine mondial')+' « '+(P.name_fr||P.label)+' » : exigences particulières d’intégration (plan de gestion, commission).'})],
+  ['ch.babs.kulturgueter','Inventaire PBC des biens culturels','patrimoine',10,P=>({t:'Bien culturel PBC : '+(P.label||''),v:'',r:'Objet de l’inventaire suisse des biens culturels d’importance nationale ou régionale (PBC) sur la parcelle ou à proximité : '+(P.label||'')+'.'})],
+  ['ch.astra.ivs-nat','IVS — voies de communication historiques (national)','patrimoine',10,P=>({t:'IVS national : '+(P.label||''),v:'',r:'Voie de communication historique d’importance nationale à proximité (IVS) : '+(P.label||'')+'. Substance à préserver.'})],
+  ['ch.astra.ivs-reg_loc','IVS — voies historiques (régional, local)','patrimoine',10,P=>({t:'IVS régional / local : '+(P.label||''),v:'',r:'Voie de communication historique régionale ou locale à proximité (IVS) : '+(P.label||'')+'.'})],
+  ['ch.bafu.bundesinventare-flachmoore','Bas-marais d’importance nationale','autres',0,P=>({t:'Inventaire fédéral — bas-marais : '+(P.label||''),v:'',r:'Objet de l’inventaire fédéral des bas-marais d’importance nationale : protection intégrale (LPN).'})],
+  ['ch.bafu.bundesinventare-hochmoore','Hauts-marais d’importance nationale','autres',0,P=>({t:'Inventaire fédéral — hauts-marais : '+(P.label||''),v:'',r:'Objet de l’inventaire fédéral des hauts-marais : protection intégrale (LPN).'})],
+  ['ch.bafu.bundesinventare-auen','Zones alluviales d’importance nationale','autres',0,P=>({t:'Inventaire fédéral — zone alluviale : '+(P.label||''),v:'',r:'Objet de l’inventaire fédéral des zones alluviales d’importance nationale.'})],
+  ['ch.bafu.bundesinventare-trockenwiesen_trockenweiden','Prairies et pâturages secs','autres',0,P=>({t:'Inventaire fédéral — prairie ou pâturage sec : '+(P.label||''),v:'',r:'Objet de l’inventaire fédéral des prairies et pâturages secs d’importance nationale.'})],
+  ['ch.bafu.bundesinventare-amphibien','Sites de reproduction de batraciens','autres',0,P=>({t:'Inventaire fédéral — site de reproduction de batraciens : '+(P.label||''),v:'',r:'Objet de l’inventaire fédéral des sites de reproduction de batraciens d’importance nationale.'})],
+  ['ch.bafu.bundesinventare-moorlandschaften','Sites marécageux','autres',0,P=>({t:'Inventaire fédéral — site marécageux : '+(P.label||''),v:'',r:'Site marécageux d’une beauté particulière et d’importance nationale (art. 78 al. 5 Cst.).'})],
+  ['ch.bav.kataster-belasteter-standorte-oev','Sites pollués — transports publics','pollues',0,P=>({t:'Site pollué (transports publics) : '+(P.label||''),v:'',r:'Inscrit au cadastre des sites pollués du domaine des transports publics (OFT) : '+(P.label||'')+'.'})],
+  ['ch.bazl.kataster-belasteter-standorte-zivilflugplaetze','Sites pollués — aérodromes civils','pollues',0,P=>({t:'Site pollué (aérodromes civils) : '+(P.label||''),v:'',r:'Inscrit au cadastre des sites pollués du domaine des aérodromes civils (OFAC).'})],
+  ['ch.vbs.kataster-belasteter-standorte-militaer','Sites pollués — domaine militaire','pollues',0,P=>({t:'Site pollué (domaine militaire) : '+(P.label||''),v:'',r:'Inscrit au cadastre des sites pollués du domaine militaire (DDPS).'})],
+  ['ch.bfe.elektrische-anlagen_ueber_36','Installations électriques > 36 kV','autres',10,P=>({t:'Installation électrique à haute tension à proximité : '+(P.label||''),v:'',r:'Ligne ou installation électrique de plus de 36 kV à moins de 25 m environ ('+(P.label||'')+') : vérifier les distances et le rayonnement non ionisant (ORNI).'})],
+  ['ch.swisstopo.swisstlm3d-gewaessernetz','Cours d’eau (swissTLM3D)','eaux',10,P=>({t:'Cours d’eau à proximité : '+(P.name||P.label||''),v:'',r:'Cours d’eau « '+(P.name||'')+' » (n° '+(P.gwl_nr||'')+') à moins de 25 m environ : vérifier l’espace réservé aux eaux et les distances (extrait RDPPF, thème « Espace réservé aux eaux »).'})],
+  ['ch.bfs.gebaeude_wohnungs_register','Registre des bâtiments et logements (RegBL)','existant',10,null]];
+const SG_FZ_GKLAS={1110:'Maison individuelle',1121:'Maison à deux logements',1122:'Immeuble à trois logements ou plus',1130:'Habitat communautaire',1211:'Hôtel',1212:'Autre hébergement',1220:'Bureaux',1230:'Commerce',1231:'Restaurant, bar',1241:'Gare, aérogare, transports',1242:'Garage',1251:'Industrie',1252:'Réservoir, silo',1261:'Culture, loisirs',1262:'Musée, bibliothèque',1263:'École, recherche',1264:'Hôpital, soins',1265:'Sport',1271:'Bâtiment agricole',1272:'Lieu de culte',1273:'Monument historique',1274:'Autre bâtiment'};
+const SG_FZ_GBAUP={8011:'avant 1919',8012:'1919–1945',8013:'1946–1960',8014:'1961–1970',8015:'1971–1980',8016:'1981–1985',8017:'1986–1990',8018:'1991–1995',8019:'1996–2000',8020:'2001–2005',8021:'2006–2010',8022:'2011–2015',8023:'après 2015'};
+/* thèmes du cadastre RDPPF → thèmes des contraintes */
+const SG_FZ_RDPPF_TH={'ch.Nutzungsplanung':'zone','ch.Laermempfindlichkeitsstufen':'bruit','ch.BelasteteStandorte':'pollues','ch.Grundwasserschutzzonen':'eaux','ch.Grundwasserschutzareale':'eaux','ch.Gewaesserraum':'eaux','ch.StatischeWaldgrenzen':'foret','ch.Waldabstandslinien':'foret','ch.Waldreservate':'foret','ch.Planungszonen':'zone','ch.Sicherheitszonenplan':'autres'};
+const sgFzRdppfTheme=code=>SG_FZ_RDPPF_TH[code]||(/Baulinien/.test(code)?'distances':/BelasteteStandorte/.test(code)?'pollues':/Projektierungszonen/.test(code)?'zone':/Wald/.test(code)?'foret':/Grundwasser|Gewaesser/.test(code)?'eaux':'autres');
+/* mots-clés par thème (repérage dans les règlements, sans IA) */
+const SG_FZ_MOTS={indice:/\b(indices?|coefficients?|ius|cus|cos|ibus|densit[ée])\b|d[’']?(utilisation|occupation) du sol/i,emprise:/\bemprises?\b|surface b[âa]tie|taux d[’']occupation/i,
+  hauteur:/\bhauteurs?\b|\bniveaux?\b|\b[ée]tages?\b|gabarits?|corniche|fa[îi]te|acrot[èe]re|attique/i,distances:/\bdistances?\b|limites? (de|des) propri[ée]t[ée]s?|mitoyen|alignements?|\breculs?\b|limites? des constructions|entre b[âa]timents/i,
+  toiture:/\btoitures?\b|\btoits?\b|\bpentes?\b|combles|lucarnes?|superstructures?/i,stationnement:/stationnement|places? de parc|parkings?|\bgarages?\b|\bv[ée]los?\b/i,
+  verts:/espaces? verts?|plantations?|\barbres?\b|arborisation|pleine terre|\bjardins?\b/i,dangers:/dangers? naturels?|inondations?|glissements?|\bcrues?\b|avalanches?|ruissellement|\bradon\b/i,
+  bruit:/\bbruits?\b|sensibilit[ée] au bruit|degr[ée]s? de sensibilit[ée]|\bOPB\b/i,pollues:/sites? pollu[ée]s?|amiante|polluants?|assainissement des sites/i,
+  patrimoine:/patrimoine|recensement architectural|monuments? historiques?|\bISOS\b|inventaire (f[ée]d[ée]ral|cantonal|des monuments)|\bnote \*?[1-4]\b|(b[âa]timents?|objets?|immeubles?) (prot[ée]g[ée]s?|class[ée]s?|recens[ée]s?)|int[ée]r[êe]t (national|r[ée]gional|local)|site construit/i,foret:/\bfor[êe]ts?\b|lisi[èe]res?|\bbois[ée]e?s\b|\bbois[ée]e?\b/i,
+  eaux:/cours d[’']eau|\brives?\b|\bnappe\b|protection des eaux|r[ée]tention|infiltration|eaux (claires|us[ée]es|pluviales)/i,energie:/[ée]nergie|solaire|photovolta[ïi]que|isolation thermique|chauffage|minergie|renouvelable/i,
+  acces:/\bacc[èe]s (pour|des|aux?|[àa] la) (v[ée]hicules|parcelles?|b[âa]timents?|garages?|places)|desserte|\bvoirie\b|(voie|chemin|rampe) d[’']acc[èe]s/i,zone:/\bzones?\b.*\b(destin[ée]e|affect[ée]e|r[ée]serv[ée]e)|affectation/i};
+/* relais internet : /api/proxy du serveur du NAS (mode bureau) ou /proxy du serveur de sauvegarde ; geo.admin.ch répond avec CORS : appel direct */
+function sgFzRelais(url){ return (typeof dsEstBureau==='function'&&dsEstBureau())?'/api/proxy?url='+encodeURIComponent(url):SG_SRV+'/proxy?url='+encodeURIComponent(url); }
+const sgFzDirect=url=>/^https:\/\/[a-z0-9.-]*\.geo\.admin\.ch\//i.test(url);
+const SG_FZ_SANS_RELAIS='Relais internet injoignable : lancez le serveur de sauvegarde (fact_backup_server.py) sur ce Mac, ou saisissez les données à la main.';
+async function sgFzFetch(url,o){ o=o||{}; const direct=sgFzDirect(url); let r, hote=''; try{ hote=new URL(url).host; }catch(_){}
+  try{ r=await fetch(direct?url:sgFzRelais(url),{cache:'no-store',signal:o.signal}); }
+  catch(e){ const x=new Error(direct?'Pas de connexion à '+hote+'.':SG_FZ_SANS_RELAIS); x.relais=!direct; throw x; }
+  if(!r.ok){ let m=''; try{ m=(await r.clone().json()).error||''; }catch(_){} const x=new Error(m||('Réponse '+r.status+' de '+(direct?hote:'l’hôte distant'))); x.status=r.status; throw x; }
+  return r; }
+const sgFzJson=async(url,o)=>(await sgFzFetch(url,o)).json(), sgFzTexte=async(url,o)=>(await sgFzFetch(url,o)).text();
+/* enregistrement du projet (copie de travail) et sauvegarde */
+function sgFzRec(p){ const r=DS.get(SG_FZ_T,String(p.ID)), x=r?JSON.parse(JSON.stringify(r)):{ID:String(p.ID),PROJECT_ID:p.ID};
+  x.PARCELLE=x.PARCELLE||{}; x.SOURCES=x.SOURCES||[]; x.CONTRAINTES=x.CONTRAINTES||[]; x.CONCLUSION=x.CONCLUSION||''; return x; }
+async function sgFzSave(rec){ rec.MODIFIE=new Date().toISOString().slice(0,19); const me=nxMe(); rec.PAR=(me&&staffName(me))||(ME.u&&ME.u.NAME)||null; SG_FZ.sauve=Date.now(); await DS.save(SG_FZ_T,rec); }
+const sgFzId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+async function sgFzTexteDe(rec,s){ const k=rec.ID+':'+s.ID; if(SG_FZ.tx[k]!=null) return SG_FZ.tx[k]; await DS.need([SG_FZ_TX]).catch(()=>{}); const r=DS.get(SG_FZ_TX,k); return (SG_FZ.tx[k]=r?String(r.TEXTE||''):''); }
+/* geo.admin.ch : adresse → coordonnées LV95 (x = nord, y = est dans cette API), identify, vignettes WMS */
+async function sgFzChercherAdresse(q){ const d=await sgFzJson(SG_FZ_GEO.search+'?searchText='+encodeURIComponent(q)+'&type=locations&origins=address,parcel,gg25&sr=2056&lang=fr&limit=8');
+  return (d.results||[]).map(r=>{ const a=r.attrs||{}, E=Math.max(+a.x||0,+a.y||0), N=Math.min(+a.x||0,+a.y||0);
+    return {label:String(a.label||'').replace(/<[^>]+>/g,''),E:Math.round(E*10)/10,N:Math.round(N*10)/10,origin:a.origin}; }).filter(x=>x.E>2000000&&x.N>1000000); }
+async function sgFzIdentify(E,N,layers,tol){ if(!layers.length) return [];
+  const u=SG_FZ_GEO.ident+'?geometry='+E+','+N+'&geometryType=esriGeometryPoint&geometryFormat=geojson&sr=2056&layers=all:'+layers.join(',')+'&tolerance='+(tol||0)
+    +(tol?'&mapExtent='+(E-250)+','+(N-250)+','+(E+250)+','+(N+250)+'&imageDisplay=200,200,96':'')+'&returnGeometry=false&lang=fr';
+  return (await sgFzJson(u)).results||[]; }
+/* vignettes WMS (swisstopo) : le plan cadastral (ch.kantone.cadastralwebmap-farbe, fond opaque) et l'orthophoto (ch.swisstopo.swissimage-product, jpeg) */
+const sgFzWms=(E,N,r,layers,w,hh,fmt)=>SG_FZ_GEO.wms+'?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS='+layers+'&STYLES='+layers.split(',').map(()=>'').join(',')+'&CRS=EPSG:2056&BBOX='+(E-r)+','+(N-r*hh/w)+','+(E+r)+','+(N+r*hh/w)+'&WIDTH='+w+'&HEIGHT='+hh+'&FORMAT=image/'+(fmt||'png');
+const SG_FZ_PLAN='ch.kantone.cadastralwebmap-farbe', SG_FZ_ORTHO='ch.swisstopo.swissimage-product';
+async function sgFzParcelle(E,N){ const R=await sgFzIdentify(E,N,['ch.kantone.cadastralwebmap-farbe','ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill','ch.swisstopo-vd.stand-oerebkataster','ch.are.bauzonen'],0), by=l=>R.filter(r=>r.layerBodId===l).map(r=>r.properties||{});
+  const par=by('ch.kantone.cadastralwebmap-farbe')[0]||{}, coms=by('ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill'), com=coms.find(c=>c.is_current_jahr)||coms[0]||{}, oers=by('ch.swisstopo-vd.stand-oerebkataster'), oer=oers.find(o=>o.oereb_webservice)||oers[0]||{}, bz=by('ch.are.bauzonen')[0]||{};
+  return {NUMERO:par.number||oer.number||'',EGRID:par.egris_egrid||oer.egris_egrid||'',IDENTDN:par.identnd||'',CANTON:par.ak||com.kanton||'',COMMUNE:com.gemname||oer.gemeindename||bz.name||'',BFS:String(com.gde_nr||oer.bfs_nr||bz.bfs_no||''),ZONE_FED:bz.ch_bez_f||'',RDPPF_ETAT:oer.oereb_status_fr||'',RDPPF_SERVICE:oer.oereb_webservice||''}; }
+function sgFzProps(pr){ return Object.entries(pr||{}).filter(([k,v])=>v!=null&&v!==''&&!/^(label|objectid|fid|id|geom.*|is_current_jahr|gde_hist_id)$/i.test(k)&&!/^(bgdi_|link|url)/i.test(k)&&(typeof v==='string'||typeof v==='number')&&String(v).length<80).slice(0,8).map(([k,v])=>k+' : '+v).join(' · '); }
+/* source « geo.admin.ch » : couches fédérales au point de la parcelle (+ bâtiments du RegBL sur la parcelle) */
+async function sgFzGeoAdmin(rec,p,prog){ const P=rec.PARCELLE; if(!(P.E&&P.N)) throw new Error('Indiquez d’abord la parcelle (adresse ou coordonnées).'); const E=+P.E, N=+P.N;
+  prog('Interrogation de geo.admin.ch (couches fédérales)…'); const R=[...await sgFzIdentify(E,N,SG_FZ_COUCHES.filter(c=>!c[3]).map(c=>c[0]),0),...await sgFzIdentify(E,N,SG_FZ_COUCHES.filter(c=>c[3]).map(c=>c[0]),10)];
+  const hits=[], bats=[], vus=new Set();
+  R.forEach(r=>{ const c=SG_FZ_COUCHES.find(x=>x[0]===r.layerBodId); if(!c) return; const pr=r.properties||{};
+    if(c[0]==='ch.bfs.gebaeude_wohnungs_register'){ if(P.EGRID&&pr.egrid&&pr.egrid!==P.EGRID) return; if(vus.has('b'+pr.egid)) return; vus.add('b'+pr.egid);
+      bats.push({egid:pr.egid,adresse:pr.strname_deinr,annee:pr.gbauj,periode:pr.gbaup,categorie:pr.gkat,classe:pr.gklas,surface:pr.garea,volume:pr.gvol,niveaux:pr.gastw,logements:pr.ganzwhg,statut:pr.gstat,parcelle:pr.lparz,egrid:pr.egrid}); return; }
+    const k=c[0]+'|'+(pr.label!=null?pr.label:r.featureId); if(vus.has(k)) return; vus.add(k); let f=null; try{ f=c[4]?c[4](pr):null; }catch(_){} hits.push({couche:c[0],lib:c[1],theme:c[2],props:sgFzProps(pr),f}); });
+  const src={ID:sgFzId(),TYPE:'geoadmin',TITRE:'geo.admin.ch — couches fédérales au point de la parcelle',URL:SG_FZ_GEO.carte+'?lang=fr&center='+Math.round(E)+','+Math.round(N)+'&z=11&layers=ch.kantone.cadastralwebmap-farbe',DATE:today(),
+    RESUME:(hits.length?hits.map(x=>x.lib).filter((v,i,a)=>a.indexOf(v)===i).join(' · '):'aucune couche fédérale concernée au point')+(bats.length?' · '+bats.length+' bâtiment'+(bats.length>1?'s':'')+' (RegBL)':''),DONNEES:{hits,bats,couches:SG_FZ_COUCHES.length}};
+  rec.SOURCES=rec.SOURCES.filter(s=>s.TYPE!=='geoadmin'); rec.SOURCES.push(src); return src; }
+/* cadastre RDPPF (service web OeREB 2.0 du canton) : getegrid puis extract/xml */
+const sgFzXml=s=>{ const d=new DOMParser().parseFromString(s,'application/xml'); if(d.getElementsByTagName('parsererror').length) throw new Error('Réponse XML illisible du service RDPPF.'); return d; };
+function sgFzXe(e,n){ return e?[...e.getElementsByTagNameNS('*',n)][0]||null:null; }
+function sgFzXc(e,n){ return e&&e.children?[...e.children].find(c=>c.localName===n)||null:null; }
+function sgFzXt(e){ return e?(e.textContent||'').trim():''; }
+function sgFzLt(e,n){ const x=n?sgFzXc(e,n):e; if(!x) return ''; const L=[...x.getElementsByTagNameNS('*','LocalisedText')]; if(!L.length) return sgFzXt(x);
+  const fr=L.find(l=>sgFzXt(sgFzXc(l,'Language'))==='fr')||L[0], t=sgFzXc(fr,'Text'); return sgFzXt(t||fr); }
+function sgFzRdppfService(rec){ const P=rec.PARCELLE, s=String(P.RDPPF_SERVICE||'').trim(); return (/^https:\/\//.test(s)?s:(SG_FZ_GEO.rdppf[String(P.CANTON||'VD').toUpperCase()]||'')).replace(/\/+$/,''); }
+async function sgFzRdppf(rec,p,prog){ const P=rec.PARCELLE, svc=sgFzRdppfService(rec); if(!svc) throw new Error('Service web RDPPF inconnu pour ce canton : indiquez son adresse dans « Service RDPPF (web) ».');
+  let egrid=String(P.EGRID||'').trim();
+  if(!egrid){ if(!(P.E&&P.N)) throw new Error('Indiquez la parcelle (adresse, coordonnées ou EGRID).'); prog('Recherche de l’EGRID (cadastre RDPPF)…'); const x=sgFzXml(await sgFzTexte(svc+'/getegrid/xml/?EN='+P.E+','+P.N));
+    egrid=sgFzXt(sgFzXe(x,'egrid')); if(!egrid) throw new Error('Aucune parcelle à ces coordonnées dans le cadastre RDPPF.'); P.EGRID=egrid; if(!P.NUMERO) P.NUMERO=sgFzXt(sgFzXe(x,'number')); }
+  prog('Extrait RDPPF de la parcelle '+egrid+'…'); const x=sgFzXml(await sgFzTexte(svc+'/extract/xml/?EGRID='+encodeURIComponent(egrid))), re=sgFzXe(x,'RealEstate'); if(!re) throw new Error('Extrait RDPPF sans bien-fonds (EGRID inconnu ?).');
+  const c=n=>sgFzXt(sgFzXc(re,n)); if(c('MunicipalityName')) P.COMMUNE=c('MunicipalityName'); if(c('MunicipalityCode')) P.BFS=c('MunicipalityCode'); if(c('Number')) P.NUMERO=c('Number'); if(c('IdentDN')) P.IDENTDN=c('IdentDN'); if(c('Canton')) P.CANTON=c('Canton'); if(+c('LandRegistryArea')) P.SURFACE=+c('LandRegistryArea');
+  const restrictions=[...re.children].filter(e=>e.localName==='RestrictionOnLandownership').map(r=>{ const th=sgFzXc(r,'Theme');
+    return {theme:sgFzLt(th),code:sgFzXt(sgFzXc(th,'Code')),sous:sgFzXt(sgFzXc(th,'SubCode')),legende:sgFzLt(r,'LegendText'),type:sgFzXt(sgFzXc(r,'TypeCode')),statut:sgFzLt(r,'Lawstatus'),surface:sgFzXt(sgFzXc(r,'AreaShare')),part:sgFzXt(sgFzXc(r,'PartInPercent')),longueur:sgFzXt(sgFzXc(r,'LengthShare')),points:sgFzXt(sgFzXc(r,'NrOfPoints')),office:sgFzLt(sgFzXc(r,'ResponsibleOffice'),'Name'),
+      docs:[...r.children].filter(e=>e.localName==='LegalProvisions').map(d=>({titre:sgFzLt(d,'Title'),url:sgFzLt(d,'TextAtWeb'),type:sgFzLt(d,'Type'),abr:sgFzLt(d,'Abbreviation'),art:sgFzXt(sgFzXc(d,'ArticleNumber')),num:sgFzXt(sgFzXc(d,'OfficialNumber'))}))}; });
+  const liste=n=>[...x.getElementsByTagNameNS('*',n)].map(e=>sgFzLt(e,'Text')).filter((v,i,a)=>v&&a.indexOf(v)===i), nonConcernes=liste('NotConcernedTheme'), sansDonnees=liste('ThemeWithoutData');
+  const zone=restrictions.find(r=>r.code==='ch.Nutzungsplanung'&&/zone/i.test(r.legende)&&!/p[ée]rim[èe]tre/i.test(r.legende)); if(zone) P.ZONE=zone.legende;
+  const themes=restrictions.map(r=>r.theme).filter((v,i,a)=>a.indexOf(v)===i);
+  const src={ID:sgFzId(),TYPE:'rdppf',TITRE:'Extrait du cadastre RDPPF — parcelle '+(P.NUMERO||'')+' ('+egrid+')',URL:svc+'/extract/pdf/?EGRID='+encodeURIComponent(egrid),DATE:today(),
+    RESUME:restrictions.length+' restriction'+(restrictions.length>1?'s':'')+(themes.length?' · '+themes.join(', '):'')+(nonConcernes.length?' · '+nonConcernes.length+' thème'+(nonConcernes.length>1?'s':'')+' non concerné'+(nonConcernes.length>1?'s':''):''),
+    DONNEES:{egrid,service:svc,restrictions,nonConcernes,sansDonnees,themes,date:sgFzXt(sgFzXe(x,'CreationDate'))}};
+  rec.SOURCES=rec.SOURCES.filter(s=>s.TYPE!=='rdppf'); rec.SOURCES.push(src); return src; }
+/* documents (dispositions juridiques) liés dans l'extrait RDPPF, dédoublonnés par adresse */
+function sgFzDocsRdppf(rec){ const s=rec.SOURCES.find(x=>x.TYPE==='rdppf'); if(!s||!s.DONNEES) return []; const m=new Map();
+  (s.DONNEES.restrictions||[]).forEach(r=>(r.docs||[]).forEach(d=>{ if(!d.url) return; if(!m.has(d.url)) m.set(d.url,Object.assign({themes:[]},d)); const x=m.get(d.url); if(!x.themes.includes(r.theme)) x.themes.push(r.theme); }));
+  return [...m.values()]; }
+/* texte d'un PDF par pdf.js du cadre Facturation (worker partagé, sans eval) : une chaîne par page */
+async function sgFzPdfTexte(blob,onProg){ const w=await fxEnsure(); if(typeof w.offreLoadPdfJs!=='function') throw new Error('pdf.js indisponible dans le cadre Facturation.'); await w.offreLoadPdfJs();
+  const pdf=await w.pdfjsLib.getDocument({data:new w.Uint8Array(await blob.arrayBuffer())}).promise, out=[];
+  try{ for(let i=1;i<=pdf.numPages;i++){ const pg=await pdf.getPage(i), tc=await pg.getTextContent(); let s='', y=null, fin=null;
+      tc.items.forEach(it=>{ if(it.str==null) return; const tr=it.transform||[], ty=tr[5], tx=tr[4];
+        if(y!==null&&ty!=null&&Math.abs(ty-y)>2.5) s+='\n'; else if(s&&!/\s$/.test(s)&&it.str&&!/^\s/.test(it.str)&&fin!=null&&tx!=null&&tx-fin>1.2) s+=' ';
+        s+=it.str; if(it.hasEOL) s+='\n'; y=ty; fin=tx!=null?tx+(+it.width||0):null; });
+      out.push(s); if(pg.cleanup) pg.cleanup(); if(onProg&&(i%4===0||i===pdf.numPages)) onProg(i,pdf.numPages); } }
+  finally{ try{ pdf.destroy(); }catch(_){} }
+  return out; }
+/* articles d'un règlement : « Art. 12 », « Article 12 bis », « ART. 3 » en début de ligne */
+function sgFzArticles(txt){ const t=String(txt||'').replace(/\r/g,''), re=/(?:^|\n)[ \t]*((?:Art(?:icle|\.)|ART(?:ICLE|\.))\s*(\d{1,4}\s*(?:[a-z]\b|bis|ter|quater)?)\.?)[ \t]*[-–—:.]?[ \t]*([^\n]{0,140})/g, A=[]; let m, last=null;
+  while((m=re.exec(t))){ if(last) last.texte=t.slice(last.fin,m.index).trim(); last={num:m[2].replace(/\s+/g,''),art:'Art. '+m[2].replace(/\s+/g,''),titre:m[3].trim(),pos:m.index,fin:m.index+m[0].length,texte:''}; A.push(last); }
+  if(last) last.texte=t.slice(last.fin).trim();
+  const parNum=new Map(); A.filter(a=>a.texte.length>60&&!/\bArt(?:icle|\.)\s*\d/i.test(a.titre)).forEach(a=>{ const x=parNum.get(a.num); if(!x||a.texte.length>x.texte.length) parNum.set(a.num,a); });   /* table des matières : entrées courtes ou doublons écartés */
+  return A.filter(a=>parNum.get(a.num)===a); }
+function sgFzValeurs(s){ const m=String(s||'').match(/\d+(?:[.,]\d+)?\s*(?:m[²2]|m(?:[èe]tres?)?\b|cm\b|%|niveaux?|[ée]tages?|places?)/gi)||[]; return m.map(x=>x.replace(/\s+/g,' ').trim()).filter((v,i,a)=>a.indexOf(v)===i).slice(0,4).join(' · '); }
+const sgFzNorm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function sgFzThemeDe(s){ for(const [th,re] of Object.entries(SG_FZ_MOTS)){ if(th!=='zone'&&re.test(String(s||''))) return th; } return 'autres'; }
+/* repérage par thème dans un règlement : d'abord le chapitre de la zone de la parcelle (titre d'article contenant ses mots), puis le reste */
+function sgFzScanner(txt,s,zone){ const A=sgFzArticles(txt); if(!A.length) return [];
+  const mots=sgFzNorm(zone).split(/[^a-z0-9]+/).filter(w=>w.length>3&&!/^(zone|zones|forte|faible|moyenne|avec|sans|pour|dans|selon|plans?|zones?)$/.test(w));
+  let cand=A; if(mots.length){ const i0=A.findIndex(a=>{ const t=sgFzNorm(a.titre+' '+a.texte.slice(0,160)); return mots.every(w=>t.includes(w)); });
+    if(i0>=0){ let i1=A.findIndex((a,i)=>i>i0&&/^zones?\b/i.test(a.titre)&&!mots.every(w=>sgFzNorm(a.titre).includes(w))); if(i1<0) i1=Math.min(A.length,i0+40); cand=A.slice(i0,i1); } }
+  const out=[], vus=new Set();
+  /* score d'un article pour un thème : 3 si son titre contient un mot du thème, + 1 par phrase qui en contient (3 au plus) ; dans le chapitre de la
+     zone tout score compte (6 articles par thème au plus), ailleurs seulement les articles dont le titre parle du thème (2 au plus) */
+  const scan=(liste,max,min)=>{ const parTheme={}, cands=[];
+    for(const a of liste){ const t=a.texte.normalize('NFC'), phrases=t.split(/(?<=[.;])\s+(?=[A-ZÀ-Ý0-9«])/);
+      for(const [th,re] of Object.entries(SG_FZ_MOTS)){ if(th==='zone') continue; const titre=re.test(a.titre||''), phr=phrases.filter(x=>re.test(x)); if(!titre&&!phr.length) continue;
+        const score=(titre?3:0)+Math.min(3,phr.length); if(score<min) continue; cands.push({th,a,score,phr}); } }
+    cands.sort((x,y)=>y.score-x.score||x.a.pos-y.a.pos).forEach(x=>{ const k=x.th+'|'+x.a.art; if(vus.has(k)||(parTheme[x.th]||0)>=max) return; vus.add(k); parTheme[x.th]=(parTheme[x.th]||0)+1;
+      const regle=(x.phr.length?x.phr.slice(0,2).join(' '):x.a.texte.slice(0,300)).replace(/\s+/g,' ').slice(0,360);
+      out.push({THEME:x.th,TITRE:(x.a.titre||SG_FZ_TH_L[x.th]).slice(0,80)+' — '+x.a.art,REGLE:regle,SOURCE:s.TITRE,ARTICLE:x.a.art,VALEUR:sgFzValeurs(regle)}); }); };
+  scan(cand,6,1); if(cand!==A) scan(A.filter(a=>!cand.includes(a)),2,3); return out; }
+/* pré-remplissage des contraintes depuis les sources (clé thème | titre | article | source : rien en double) */
+async function sgFzPreRemplir(rec,p){ const P=rec.PARCELLE, C=rec.CONTRAINTES, cle=c=>[c.THEME,c.TITRE,c.ARTICLE,c.SOURCE].map(x=>sgFzNorm(x).trim()).join('|'), vus=new Set(C.map(cle)); let n=0;
+  const add=c=>{ if(!c||!c.TITRE) return; if(vus.has(cle(c))) return; vus.add(cle(c)); C.push(Object.assign({ID:sgFzId(),STATUT:'a_traiter',REPONSE:'',NOTE:'',AUTO:1},c)); n++; };
+  const g=rec.SOURCES.find(s=>s.TYPE==='geoadmin'); if(g&&g.DONNEES) (g.DONNEES.hits||[]).forEach(x=>{ if(x.f) add({THEME:x.theme,TITRE:x.f.t,REGLE:x.f.r,SOURCE:'geo.admin.ch — '+x.lib,ARTICLE:'',VALEUR:x.f.v||''}); });
+  const r=rec.SOURCES.find(s=>s.TYPE==='rdppf'); if(r&&r.DONNEES) (r.DONNEES.restrictions||[]).forEach(x=>{ const th=sgFzRdppfTheme(x.code), dj=(x.docs||[]).find(d=>/disposition/i.test(d.type))||(x.docs||[])[0];
+    const bases=(x.docs||[]).filter(d=>d.abr).map(d=>d.abr+(d.art?' '+d.art:'')).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3).join(' ; '), part=x.part!==''&&+x.part<100?' — '+x.part+' % de la parcelle'+(x.surface?' ('+x.surface+' m²)':''):'';
+    add({THEME:th,TITRE:x.legende||x.theme,REGLE:x.theme+(x.legende?' : '+x.legende:'')+(x.statut?' ('+x.statut.toLowerCase()+')':'')+part+'.'+(x.office?' Office responsable : '+x.office+'.':''),SOURCE:dj?dj.titre:'Extrait RDPPF',ARTICLE:bases,VALEUR:(th==='bruit'||th==='zone')?x.legende:(x.part!==''&&+x.part<100?x.part+' %':'')}); });
+  for(const s of rec.SOURCES.filter(s=>s.TYPE==='reglement'&&s.TEXTE)){ const txt=await sgFzTexteDe(rec,s); if(txt) sgFzScanner(txt,s,P.ZONE||P.ZONE_FED||'').forEach(add); }
+  return n; }
+/* recherche d'un mot dans les textes des règlements : extraits avec l'article */
+async function sgFzRechercher(rec,mot){ mot=String(mot||'').trim(); if(mot.length<2) return []; const m=sgFzNorm(mot), hits=[];
+  for(const s of rec.SOURCES.filter(s=>s.TYPE==='reglement'&&s.TEXTE)){ const txt=await sgFzTexteDe(rec,s); if(!txt) continue; const A=sgFzArticles(txt), liste=A.length?A:[{art:'',titre:'',texte:txt}];
+    for(const a of liste){ const t=a.texte.normalize('NFC'), n=sgFzNorm(t); let i=n.indexOf(m), k=0;
+      while(i>=0&&k<3){ const d=Math.max(0,i-150), f=Math.min(t.length,i+m.length+200); hits.push({src:s,art:a.art,titre:a.titre,extrait:(d?'… ':'')+t.slice(d,f).replace(/\s+/g,' ')+(f<t.length?' …':''),mot}); k++; i=n.indexOf(m,i+m.length); if(hits.length>=80) return hits; } } }
+  return hits; }
+/* nom du fichier déposé pour un règlement téléchargé */
+function sgFzNomFichier(titre,url){ let f=''; try{ const u=new URL(url); f=u.searchParams.get('nom')||decodeURIComponent(u.pathname.split('/').pop()||''); }catch(_){}
+  let nom=(String(titre||'').replace(/[\/\\\u0000-\u001f\u007f-\u009f]/g,' ').replace(/\s+/g,' ').trim().slice(0,80)+(f?' — '+f.replace(/\.pdf$/i,'').slice(0,30):'')).trim().replace(/^\.+/,''); if(!nom) nom='reglement_'+sgFzId(); return nom+'.pdf'; }
+/* un PDF de règlement : dépôt dans Faisabilité ▸ Règlements, texte extrait → source « reglement » + enregistrement sgfaisatexte */
+async function sgFzTraiterPdf(p,rec,b,titre,url,prog,extra){ const nom=sgFzNomFichier(titre,url); let fid=null;
+  try{ const dos=ch03aDossier('document',p.ID,'Faisabilité','Règlements'), ex=ch03aTrouve(dos,nom), rF=ex||await ch03aDeposer(dos,nom,b,{projet:p.ID,origine:'faisabilite'}); fid=rF?rF.ID:null; }
+  catch(e){ toast('Dépôt du fichier impossible ('+(e.message||e)+') : texte extrait seulement.',true); }
+  prog('Lecture du texte : '+titre+'…'); let pages=[]; try{ pages=await sgFzPdfTexte(b,(i,m)=>prog('Lecture du texte : '+titre+' — page '+i+' / '+m)); }catch(e){ toast('Texte illisible pour « '+titre+' » : '+(e.message||e),true); }
+  const txt=pages.join('\n\f\n'), nA=sgFzArticles(txt).length, sid=sgFzId();
+  const anciens=rec.SOURCES.filter(s=>s.TYPE==='reglement'&&((url&&s.URL===url)||(!url&&s.TITRE===titre))); for(const a of anciens){ try{ await DS.del(SG_FZ_TX,rec.ID+':'+a.ID); }catch(_){} delete SG_FZ.tx[rec.ID+':'+a.ID]; }
+  rec.SOURCES=rec.SOURCES.filter(s=>!anciens.includes(s));
+  rec.SOURCES.push(Object.assign({ID:sid,TYPE:'reglement',TITRE:titre,URL:url||'',DATE:today(),FICHIER:fid,PAGES:pages.length,ARTICLES:nA,TEXTE:!!txt.trim(),
+    RESUME:[pages.length?pages.length+' page'+(pages.length>1?'s':''):'',nA?nA+' articles':'',txt.trim()?'':'aucun texte lisible (document numérisé ?)'].filter(Boolean).join(' · ')},extra||{}));
+  if(txt.trim()){ const T=txt.slice(0,1500000); await DS.save(SG_FZ_TX,{ID:rec.ID+':'+sid,PROJECT_ID:p.ID,SOURCE_ID:sid,TEXTE:T}); SG_FZ.tx[rec.ID+':'+sid]=T; }
+  return sid; }
+async function sgFzTelecharger(p,rec,docs,prog,redraw){ let n=0;
+  for(const d of docs){ try{ prog('Téléchargement : '+d.titre+'…'); const r=await sgFzFetch(d.url), ct=(r.headers.get('Content-Type')||'').toLowerCase(), b=await r.blob();
+      if(!/pdf/.test(ct)&&!/pdf/.test(b.type||'')){ rec.SOURCES=rec.SOURCES.filter(s=>!(s.TYPE==='lien'&&s.URL===d.url)); rec.SOURCES.push({ID:sgFzId(),TYPE:'lien',TITRE:d.titre,URL:d.url,DATE:today(),RESUME:'Page web (pas un PDF) : à consulter par le lien.'+(d.abr?' '+d.abr+(d.art?' '+d.art:''):'')}); }
+      else await sgFzTraiterPdf(p,rec,b,d.titre,d.url,prog,{THEMES:d.themes||[],ABR:d.abr||''});
+      await sgFzSave(rec); n++; }
+    catch(e){ toast('✗ '+d.titre+' : '+(e.message||e),true); if(e.relais) break; } }
+  prog(''); if(n) toast(n+' document'+(n>1?'s':'')+' traité'+(n>1?'s':'')+'.'); redraw(); return n; }
+function sgFzTelechargerDlg(p,rec,prog,redraw){ const docs=sgFzDocsRdppf(rec); if(!docs.length){ sgAlert('L’extrait RDPPF ne contient aucun document lié. Faites d’abord « Extrait RDPPF ».'); return; }
+  const deja=new Set(rec.SOURCES.filter(s=>s.TYPE==='reglement'||s.TYPE==='lien').map(s=>s.URL)), box=h('div',{class:'sg-fz-dl'});
+  docs.forEach((d,i)=>{ const pdf=/\.pdf(\?|$)|GetDocuments|Rechtsvorschriften/i.test(d.url), cb=h('input',{type:'checkbox',checked:(pdf&&/r[èe]glement/i.test(d.titre)&&!deja.has(d.url))||null}); d._cb=cb;
+    box.append(h('label',{},cb,h('span',{},(deja.has(d.url)?'✓ ':'')+d.titre+(d.type?' — '+d.type:'')+(d.abr?' ('+d.abr+(d.art?' '+d.art:'')+')':'')+(pdf?'':' · page web')),h('small',{},d.url))); });
+  dialog({title:'Télécharger les règlements et plans de l’extrait RDPPF',body:h('div',{},h('p',{class:'sg-fz-hint'},'Les documents cochés sont téléchargés par le relais internet et déposés dans Faisabilité ▸ Règlements ; le texte des PDF est lu pour la recherche par mot et le pré-remplissage des contraintes (PDF avec texte seulement, pas de reconnaissance de caractères). Les pages web (lois) sont gardées comme liens.'),box),
+    buttons:[{t:'Annuler'},{t:'Télécharger',pri:true,fn:()=>{ const sel=docs.filter(d=>d._cb.checked); if(!sel.length){ toast('Cochez au moins un document.',true); return false; } sgFzTelecharger(p,rec,sel,prog,redraw); }}]}); }
+/* fenêtre d'une contrainte (ajout ou modification) */
+function sgFzContrainteDlg(rec,c,onOk){ const n=!c; c=c||{ID:sgFzId(),THEME:'zone',TITRE:'',REGLE:'',SOURCE:'',ARTICLE:'',VALEUR:'',REPONSE:'',STATUT:'a_traiter',NOTE:''}; const f={};
+  const inp=(k,ph,ta)=>{ const e=ta?h('textarea',{class:'inp',placeholder:ph||''}):h('input',{class:'inp',placeholder:ph||''}); e.value=c[k]||''; f[k]=e; return e; };
+  f.THEME=h('select',{class:'inp'},...SG_FZ_THEMES.map(([k,l])=>h('option',{value:k,selected:k===(c.THEME||'autres')||null},l)));
+  f.STATUT=h('select',{class:'inp'},...SG_FZ_STATUTS.map(([k,l])=>h('option',{value:k,selected:k===(c.STATUT||'a_traiter')||null},l)));
+  const src=inp('SOURCE','Règlement, extrait RDPPF, couche geo.admin.ch…'); src.setAttribute('list','sg-fz-srcs');
+  const body=h('div',{class:'sg-fz-dlg'},h('label',{},'Thème'),f.THEME,h('label',{},'Contrainte'),inp('TITRE','Titre court de la contrainte'),h('label',{},'Règle'),inp('REGLE','Texte de la règle (article, extrait du règlement)',true),
+    h('label',{},'Source'),src,h('datalist',{id:'sg-fz-srcs'},...rec.SOURCES.map(s=>h('option',{value:s.TITRE}))),h('label',{},'Article'),inp('ARTICLE','Art. 12'),h('label',{},'Valeur'),inp('VALEUR','12 m · 3 niveaux · 0.5'),
+    h('label',{},'Réponse du projet'),inp('REPONSE','Ce que le projet prévoit pour répondre à la contrainte',true),h('label',{},'Statut'),f.STATUT,h('label',{},'Note'),inp('NOTE','Remarque interne (ne figure pas en évidence dans la fiche)',true));
+  dialog({title:n?'Nouvelle contrainte':'Modifier la contrainte',body,buttons:[{t:'Annuler'},{t:n?'Ajouter':'Enregistrer',pri:true,fn:()=>{ if(!f.TITRE.value.trim()){ toast('Indiquez le titre de la contrainte.',true); f.TITRE.focus(); return false; }
+    Object.keys(f).forEach(k=>c[k]=String(f[k].value||'').trim()); delete c.AUTO; onOk(c); }}]}); }
+function sgFzLienDlg(rec,onOk){ const t=h('input',{class:'inp',placeholder:'Titre (règlement communal, directive, décision…)'}), u=h('input',{class:'inp',placeholder:'adresse web (https) du document ou de la page'}), r=h('textarea',{class:'inp',placeholder:'Résumé, remarque'});
+  dialog({title:'Ajouter une source (lien)',body:h('div',{class:'sg-fz-dlg'},h('label',{},'Titre'),t,h('label',{},'Adresse'),u,h('label',{},'Résumé'),r),buttons:[{t:'Annuler'},{t:'Ajouter',pri:true,fn:()=>{ if(!t.value.trim()){ toast('Indiquez le titre.',true); return false; }
+    onOk({ID:sgFzId(),TYPE:'manuel',TITRE:t.value.trim(),URL:u.value.trim(),DATE:today(),RESUME:r.value.trim()}); }}]}); }
+/* écran */
+function sgFzDessiner(C,p,st){ const rec=st.rec=sgFzRec(p), P=rec.PARCELLE, ecrit=sgDroit('documents','depot'), E=nxE, v=k=>E(P[k]==null?'':P[k]);
+  const champ=(k,lib,ph,w)=>'<label'+(w?' class="w2"':'')+'>'+lib+'<input class="inp" data-p="'+k+'" value="'+v(k)+'" placeholder="'+E(ph||'')+'"'+(ecrit?'':' readonly')+'></label>';
+  const cartes=P.E&&P.N?'<div class="sg-fz-maps"><div class="sg-fz-map"><img src="'+sgFzWms(+P.E,+P.N,110,SG_FZ_PLAN,640,480)+'" alt="Plan cadastral"><small>Plan cadastral · swisstopo, cantons</small></div>'
+    +'<div class="sg-fz-map"><img src="'+sgFzWms(+P.E,+P.N,110,SG_FZ_ORTHO,640,480,'jpeg')+'" alt="Orthophoto"><small>Orthophoto · swisstopo</small></div></div>':'';
+  const tag=t=>'<span class="sg-fz-tag '+E(t)+'">'+({geoadmin:'geo.admin.ch',rdppf:'RDPPF',reglement:'Règlement',manuel:'Manuel',lien:'Lien'}[t]||E(t))+'</span>';
+  const srcRow=s=>'<tr><td class="r">'+E(s.DATE?dfr(s.DATE):'')+'</td><td>'+tag(s.TYPE)+'</td><td><b>'+E(s.TITRE)+'</b>'+(s.RESUME?'<br><span class="sg-fz-res-t">'+E(s.RESUME)+'</span>':'')+'</td>'
+    +'<td class="r sg-fz-sa">'+(s.URL?'<button class="nx-btn sm" data-fn="ouvrirUrl" data-url="'+E(s.URL)+'" title="Ouvrir le lien dans le navigateur">'+nxSvg('share')+'Lien</button>':'')+(s.FICHIER?'<button class="nx-btn sm" data-fn="ouvrirFichier" data-fid="'+E(s.FICHIER)+'" title="Ouvrir le PDF déposé">'+nxSvg('pdf')+'PDF</button>':'')
+    +(s.TEXTE?'<button class="nx-btn sm" data-fn="voirTexte" data-sid="'+E(s.ID)+'" title="Afficher le texte extrait du document">'+nxSvg('doc')+'Texte</button>':'')+(ecrit?'<button class="nx-btn sm" data-fn="supprSource" data-sid="'+E(s.ID)+'" title="Retirer cette source">'+nxSvg('minus')+'</button>':'')+'</td></tr>';
+  const ctRow=c=>{ const stt=c.STATUT||'a_traiter'; return '<tr class="'+E(stt)+'" data-cid="'+E(c.ID)+'"><td class="c1"><b>'+E(c.TITRE)+'</b>'+(c.REGLE?'<span>'+E(c.REGLE)+'</span>':'')+'</td><td class="c2">'+(c.SOURCE?'<b>'+E(c.SOURCE)+'</b><br>':'')+E(c.ARTICLE||'')+'</td><td class="c3">'+E(c.VALEUR||'')+'</td>'
+    +'<td class="c4">'+(ecrit?'<textarea data-cid="'+E(c.ID)+'" data-k="REPONSE" placeholder="Réponse du projet…">'+E(c.REPONSE||'')+'</textarea>':'<div class="sg-fz-rep">'+E(c.REPONSE||'—')+'</div>')+(c.NOTE?'<div class="sg-fz-note">'+E(c.NOTE)+'</div>':'')+'</td>'
+    +'<td class="c5">'+(ecrit?'<select data-cid="'+E(c.ID)+'" data-k="STATUT">'+SG_FZ_STATUTS.map(([k,l])=>'<option value="'+k+'"'+(k===stt?' selected':'')+'>'+l+'</option>').join('')+'</select>':'<i class="sg-fz-st '+E(stt)+'"></i>'+E(SG_FZ_ST_L[stt]||''))+'</td>'
+    +'<td class="c6">'+(ecrit?'<button data-fn="editCt" data-cid="'+E(c.ID)+'" title="Modifier la contrainte">'+nxSvg('edit')+'</button><button data-fn="supprCt" data-cid="'+E(c.ID)+'" title="Supprimer la contrainte">'+nxSvg('minus')+'</button>':'')+'</td></tr>'; };
+  const regl=rec.SOURCES.filter(s=>s.TYPE==='reglement'&&s.TEXTE), nSt=k=>rec.CONTRAINTES.filter(c=>(c.STATUT||'a_traiter')===k).length;
+  const L=rec.CONTRAINTES.filter(c=>!st.filtre||(c.STATUT||'a_traiter')===st.filtre), parTheme=SG_FZ_THEMES.map(([k,l])=>[k,l,L.filter(c=>(c.THEME||'autres')===k)]).filter(x=>x[2].length);
+  const html='<div class="sg-fz">'
+    +nxCard('c12','Parcelle','<div class="b">'+(ecrit?'<div class="sg-fz-adr"><label>Adresse ou lieu<input class="inp" id="sg-fz-q" placeholder="Rue et numéro, NPA localité — ou n° de parcelle et commune" value="'+v('ADRESSE')+'"></label><button class="nx-btn pri" data-fn="chercher">'+nxSvg('search')+'Rechercher la parcelle</button></div><div class="sg-fz-res" id="sg-fz-res"></div>':(P.ADRESSE?'<p class="sg-fz-hint">'+v('ADRESSE')+'</p>':''))
+      +'<div class="sg-fz-form">'+champ('COMMUNE','Commune')+champ('NUMERO','N° de parcelle')+champ('EGRID','EGRID','CH…')+champ('SURFACE','Surface (m²)')+champ('E','Coordonnée E (LV95)','2 5xx xxx')+champ('N','Coordonnée N (LV95)','1 1xx xxx')+champ('ZONE','Zone d’affectation',P.ZONE_FED?'statistique fédérale : '+P.ZONE_FED:'',true)+champ('CANTON','Canton','VD')+champ('RDPPF_SERVICE','Service RDPPF (web)','adresse du service web cantonal, trouvée automatiquement',true)+'</div>'
+      +cartes+'</div>',(P.E&&P.N?'<span class="a" data-fn="carte">Carte fédérale</span>':''))
+    +nxCard('c12','Recherche automatique','<div class="b"><p class="sg-fz-hint">geo.admin.ch (couches fédérales : zones à bâtir, radon, inventaires, patrimoine, eaux, sites pollués fédéraux…), cadastre RDPPF du canton (restrictions de droit public et dispositions juridiques), puis téléchargement des règlements liés. Chaque résultat devient une source datée ; les contraintes se pré-remplissent depuis ces sources.</p>'
+      +(ecrit?'<div class="sg-fz-btns"><button class="nx-btn pri" data-fn="tout">'+nxSvg('search')+'Tout rechercher</button><button class="nx-btn" data-fn="geo">geo.admin.ch</button><button class="nx-btn" data-fn="rdppf">Extrait RDPPF</button><button class="nx-btn" data-fn="dl">Télécharger les règlements</button><button class="nx-btn" data-fn="ajoutPdf">'+nxSvg('import')+'Règlement (fichier PDF)</button><button class="nx-btn" data-fn="ajoutLien">'+nxSvg('plus')+'Source (lien)</button></div>':'')
+      +'<div class="sg-fz-prog" id="sg-fz-prog"></div>'
+      +(rec.SOURCES.length?'<table class="nx-tbl sg-fz-src"><tr><th class="r">Date</th><th>Type</th><th>Source</th><th></th></tr>'+rec.SOURCES.slice().sort((a,b)=>cmp(b.DATE,a.DATE)).map(srcRow).join('')+'</table>':'<div class="nx-empty">Aucune source pour l’instant.</div>')+'</div>')
+    +nxCard('c12','Règlements','<div class="b">'+(regl.length?'<p class="sg-fz-hint">'+regl.map(s=>E(s.TITRE)+(s.PAGES?' ('+s.PAGES+' p.'+(s.ARTICLES?', '+s.ARTICLES+' articles':'')+')':'')).join(' · ')+'</p><div class="sg-fz-rech"><input class="inp" id="sg-fz-mot" placeholder="Mot à chercher dans les règlements : hauteur, niveaux, distance, stationnement…" value="'+E(st.mot||'')+'"><button class="nx-btn" data-fn="rech">'+nxSvg('search')+'Rechercher</button><span class="n" id="sg-fz-nb"></span></div><div id="sg-fz-hits"></div>'
+      :'<div class="nx-empty">Aucun règlement lu. Faites « Extrait RDPPF » puis « Télécharger les règlements », ou ajoutez un règlement (fichier PDF).</div>')+'</div>')
+    +nxCard('c12','Contraintes et réponses','<div class="b"><div class="sg-fz-kpis"><span><b>'+rec.CONTRAINTES.length+'</b> contrainte'+(rec.CONTRAINTES.length>1?'s':'')+'</span>'+SG_FZ_STATUTS.map(([k,l])=>'<span><i class="sg-fz-st '+k+'"></i><b>'+nSt(k)+'</b> '+l.toLowerCase()+'</span>').join('')
+      +'<span class="seg sg-fz-filtre"><button data-fn="filtre" data-st="" class="'+(st.filtre?'':'on')+'">Toutes</button>'+SG_FZ_STATUTS.map(([k,l])=>'<button data-fn="filtre" data-st="'+k+'" class="'+(st.filtre===k?'on':'')+'">'+l+'</button>').join('')+'</span></div>'
+      +(parTheme.length?'<table class="nx-tbl sg-fz-ct"><tr><th>Contrainte et règle</th><th>Source · article</th><th>Valeur</th><th>Réponse du projet</th><th>Statut</th><th></th></tr>'+parTheme.map(([k,l,cs])=>'<tr class="grp"><td colspan="6">'+E(l)+' <small>('+cs.length+')</small></td></tr>'+cs.map(ctRow).join('')).join('')+'</table>'
+        :'<div class="nx-empty">'+(rec.CONTRAINTES.length?'Aucune contrainte avec ce statut.':'Aucune contrainte. Lancez les recherches puis « Pré-remplir depuis les sources », ou ajoutez une contrainte à la main.')+'</div>')+'</div>',
+      ecrit?'<span class="a" data-fn="prefill">Pré-remplir depuis les sources</span><span class="a" data-fn="ajoutCt">Ajouter une contrainte</span>':'')
+    +nxCard('c12','Conclusion','<div class="b sg-fz-conc">'+(ecrit?'<textarea id="sg-fz-conc" placeholder="Conclusion de l’étude : faisabilité, potentiel constructible, risques et points à vérifier, suite à donner…">'+E(rec.CONCLUSION||'')+'</textarea>':'<div class="sg-fz-rep">'+E(rec.CONCLUSION||'—')+'</div>')
+      +'<div class="sg-fz-btns" style="margin-top:12px"><button class="nx-btn pri" data-fn="fiche">'+nxSvg('print')+'Fiche de faisabilité</button>'+(rec.MODIFIE?'<span class="sg-fz-hint" style="margin:0">Modifié le '+E(dfr(String(rec.MODIFIE).slice(0,10)))+(rec.PAR?' par '+E(rec.PAR):'')+'</span>':'')+'</div></div>')
+    +'</div>';
+  const pg=nxPage(C,html), prog=t=>{ const e=pg.querySelector('#sg-fz-prog'); if(e) e.textContent=t||''; };
+  const redraw=()=>{ if(!C.isConnected) return; const mi=pg.querySelector('#sg-fz-mot'); if(mi) st.mot=mi.value; C.innerHTML=''; sgFzDessiner(C,p,st); };
+  const save=async()=>{ try{ await sgFzSave(rec); return true; }catch(e){ toast('✗ Enregistrement : '+(e.message||e),true); return false; } };
+  pg.querySelectorAll('input[data-p]').forEach(i=>i.onchange=async()=>{ let val=i.value.trim(); if(/^(E|N|SURFACE)$/.test(i.dataset.p)){ val=val.replace(/[’'\s]/g,'').replace(',','.'); if(val!==''&&!isFinite(+val)){ toast('Nombre attendu.',true); return; } if(val!=='') val=+val; }
+    P[i.dataset.p]=val; await save(); if(/^(E|N)$/.test(i.dataset.p)) redraw(); });
+  pg.querySelectorAll('textarea[data-cid],select[data-cid]').forEach(x=>x.onchange=async()=>{ const c=rec.CONTRAINTES.find(c=>c.ID===x.dataset.cid); if(!c) return; c[x.dataset.k]=x.value; await save(); if(x.dataset.k==='STATUT') redraw(); });
+  const conc=pg.querySelector('#sg-fz-conc'); if(conc) conc.onchange=async()=>{ rec.CONCLUSION=conc.value; await save(); };
+  const choisir=async r=>{ P.ADRESSE=r.label; P.E=r.E; P.N=r.N; prog('Identification de la parcelle (geo.admin.ch)…');
+    try{ const x=await sgFzParcelle(r.E,r.N); ['NUMERO','EGRID','IDENTDN','CANTON','COMMUNE','BFS','RDPPF_ETAT','RDPPF_SERVICE','ZONE_FED'].forEach(k=>{ if(x[k]) P[k]=x[k]; }); }catch(e){ toast('Parcelle non identifiée : '+(e.message||e),true); }
+    prog(''); await save(); redraw(); };
+  const essayer=async(fn,lib)=>{ try{ const s=await fn(rec,p,prog); await save(); prog(''); toast(lib+' : '+s.RESUME); redraw(); }catch(e){ prog(''); toast('✗ '+lib+' : '+(e.message||e),true); } };
+  const montrerHits=hits=>{ const box=pg.querySelector('#sg-fz-hits'), nb=pg.querySelector('#sg-fz-nb'); if(!box) return; nb.textContent=hits.length?hits.length+' extrait'+(hits.length>1?'s':'')+(hits.length>=80?' (80 premiers)':''):'aucun extrait';
+    const re=new RegExp(st.mot.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig');
+    box.innerHTML=hits.map((x,i)=>'<div class="sg-fz-hit"><div class="t"><b>'+E(x.src.TITRE)+(x.art?' · '+E(x.art):'')+(x.titre?' — '+E(x.titre):'')+'</b>'+E(x.extrait).replace(re,m=>'<mark>'+m+'</mark>')+'</div>'+(ecrit?'<button class="nx-btn sm" data-fn="hitCt" data-i="'+i+'" title="Créer une contrainte à partir de cet extrait">'+nxSvg('plus')+'Contrainte</button>':'')+'</div>').join('');
+    st.hits=hits; };
+  const chercherMot=async()=>{ const mi=pg.querySelector('#sg-fz-mot'); if(!mi) return; st.mot=mi.value.trim(); if(st.mot.length<2){ toast('Indiquez au moins deux caractères.',true); return; } montrerHits(await sgFzRechercher(rec,st.mot)); };
+  const mi=pg.querySelector('#sg-fz-mot'); if(mi){ mi.onkeydown=e=>{ if(e.key==='Enter') chercherMot(); }; if(st.mot&&st.mot.length>=2) chercherMot(); }
+  const qi=pg.querySelector('#sg-fz-q'); if(qi) qi.onkeydown=e=>{ if(e.key==='Enter') pg._fn.chercher(); };
+  Object.assign(pg._fn,{
+    chercher:async()=>{ const q=(qi&&qi.value.trim())||''; if(!q){ toast('Indiquez une adresse ou un lieu.',true); return; } prog('Recherche de l’adresse (geo.admin.ch)…');
+      try{ const R=await sgFzChercherAdresse(q); prog(''); const box=pg.querySelector('#sg-fz-res'); box.innerHTML=''; if(!R.length){ box.textContent='Aucun résultat sur geo.admin.ch pour « '+q+' ».'; return; }
+        if(R.length===1){ choisir(R[0]); return; } R.forEach(r=>box.append(h('button',{onclick:()=>choisir(r)},r.label+'  —  E '+num(r.E,0)+' · N '+num(r.N,0)))); }
+      catch(e){ prog(''); toast('✗ '+(e.message||e),true); } },
+    carte:()=>{ try{ window.open(SG_FZ_GEO.carte+'?lang=fr&center='+Math.round(+P.E)+','+Math.round(+P.N)+'&z=11&layers=ch.kantone.cadastralwebmap-farbe','_blank'); }catch(_){} },
+    tout:async()=>{ if(!(P.E&&P.N)){ toast('Indiquez d’abord la parcelle (adresse ou coordonnées).',true); return; }
+      try{ await sgFzGeoAdmin(rec,p,prog); await save(); }catch(e){ toast('✗ geo.admin.ch : '+(e.message||e),true); }
+      let relais=true; try{ await sgFzRdppf(rec,p,prog); await save(); }catch(e){ toast('✗ RDPPF : '+(e.message||e),true); relais=!e.relais; }
+      if(relais){ const docs=sgFzDocsRdppf(rec).filter(d=>/r[èe]glement/i.test(d.titre)&&/\.pdf(\?|$)|GetDocuments|Rechtsvorschriften/i.test(d.url)&&!rec.SOURCES.some(s=>s.TYPE==='reglement'&&s.URL===d.url)); if(docs.length) await sgFzTelecharger(p,rec,docs,prog,()=>{}); }
+      const n=await sgFzPreRemplir(rec,p); await save(); prog(''); toast(n?n+' contrainte'+(n>1?'s':'')+' pré-remplie'+(n>1?'s':'')+'.':'Recherches terminées : aucune nouvelle contrainte.'); redraw(); },
+    geo:()=>essayer(sgFzGeoAdmin,'geo.admin.ch'), rdppf:()=>essayer(sgFzRdppf,'Extrait RDPPF'),
+    dl:()=>sgFzTelechargerDlg(p,rec,prog,redraw),
+    ajoutPdf:()=>{ const inp=h('input',{type:'file',accept:'application/pdf,.pdf',multiple:true}); inp.onchange=async()=>{ let n=0; for(const f of inp.files){ try{ await sgFzTraiterPdf(p,rec,f,f.name.replace(/\.pdf$/i,''),'',prog); n++; }catch(e){ toast('✗ '+f.name+' : '+(e.message||e),true); } }
+        prog(''); if(n){ await save(); toast(n+' règlement'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+'.'); redraw(); } }; inp.click(); },
+    ajoutLien:()=>sgFzLienDlg(rec,async s=>{ rec.SOURCES.push(s); await save(); redraw(); }),
+    ouvrirUrl:b=>{ try{ window.open(b.dataset.url,'_blank'); }catch(_){} },
+    ouvrirFichier:b=>{ const f=DS.get('depotfichier',b.dataset.fid); if(f) ch03aOuvrir(f); else toast('Fichier introuvable dans le dépôt du projet.',true); },
+    voirTexte:async b=>{ const s=rec.SOURCES.find(x=>x.ID===b.dataset.sid); if(!s) return; const t=await sgFzTexteDe(rec,s); if(!t){ toast('Aucun texte pour cette source.',true); return; } sgVisionneuse(new Blob([t],{type:'text/plain;charset=utf-8'}),s.TITRE+'.txt'); },
+    supprSource:b=>{ const s=rec.SOURCES.find(x=>x.ID===b.dataset.sid); if(!s) return; sgConfirm('Retirer la source « '+s.TITRE+' » ?\n\nLes contraintes déjà créées sont gardées ; le fichier déposé reste dans les documents du projet.',async()=>{ rec.SOURCES=rec.SOURCES.filter(x=>x!==s); if(s.TEXTE){ try{ await DS.del(SG_FZ_TX,rec.ID+':'+s.ID); }catch(_){} delete SG_FZ.tx[rec.ID+':'+s.ID]; } await save(); redraw(); }); },
+    rech:chercherMot,
+    hitCt:b=>{ const x=(st.hits||[])[+b.dataset.i]; if(!x) return; sgFzContrainteDlg(rec,{ID:sgFzId(),THEME:sgFzThemeDe(x.mot+' '+x.extrait),TITRE:(x.titre||SG_FZ_TH_L[sgFzThemeDe(x.mot)]||'').slice(0,80)+(x.art?' — '+x.art:''),REGLE:x.extrait.replace(/^… |\s…$/g,''),SOURCE:x.src.TITRE,ARTICLE:x.art,VALEUR:sgFzValeurs(x.extrait),REPONSE:'',STATUT:'a_traiter',NOTE:''},async c=>{ rec.CONTRAINTES.push(c); await save(); redraw(); }); },
+    filtre:b=>{ st.filtre=b.dataset.st||''; redraw(); },
+    prefill:async()=>{ prog('Pré-remplissage depuis les sources…'); const n=await sgFzPreRemplir(rec,p); await save(); prog(''); toast(n?n+' contrainte'+(n>1?'s':'')+' ajoutée'+(n>1?'s':'')+'.':'Rien de nouveau : les sources sont déjà reportées dans les contraintes.'); redraw(); },
+    ajoutCt:()=>sgFzContrainteDlg(rec,null,async c=>{ rec.CONTRAINTES.push(c); await save(); redraw(); }),
+    editCt:b=>{ const c=rec.CONTRAINTES.find(x=>x.ID===b.dataset.cid); if(c) sgFzContrainteDlg(rec,c,async()=>{ await save(); redraw(); }); },
+    supprCt:b=>{ const c=rec.CONTRAINTES.find(x=>x.ID===b.dataset.cid); if(!c) return; sgConfirm('Supprimer la contrainte « '+c.TITRE+' » ?',async()=>{ rec.CONTRAINTES=rec.CONTRAINTES.filter(x=>x!==c); await save(); redraw(); }); },
+    fiche:()=>sgFaisaFiche(p)}); }
+VIEWS['nx-faisa']={
+  render(m,arg){ const [pid,mode]=String(arg||'').split('|'), p=DS.get('project',pid); this.draw=null;
+    if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
+    if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
+    VIEW.nxTitle='Parcelle & règlements · '+(p.NUMBER||p.TITLE||''); nxRecent('p',p.ID);
+    const bar=h('div',{class:'sg-pdom-bar'},h('button',{class:'nx-btn',html:nxSvg('back')+'Projet',onclick:()=>go('nx-pdom',p.ID+'|Faisabilité')}),h('b',{},(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'')),h('span',{class:'sg-fz-sp'}),
+      h('button',{class:'nx-btn',html:nxSvg('gauge')+'Tableau de bord',onclick:()=>go('nx-projet',p.ID)}),h('button',{class:'nx-btn pri',html:nxSvg('print')+'Fiche de faisabilité',onclick:()=>sgFaisaFiche(p)}));
+    const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
+    const st=this.st=(this.st&&this.st.pid===pid)?this.st:{pid,filtre:'',mot:''};
+    this.draw=()=>{ if(!C.isConnected) return; C.innerHTML=''; sgFzDessiner(C,p,st); };
+    DS.need([SG_FZ_T,'depotfichier']).catch(()=>{}).then(()=>{ if(C.isConnected) this.draw(); });
+    if(mode==='fiche') setTimeout(()=>sgFaisaFiche(p),400); },
+  refresh(ts){ if(!this.draw||!hit(ts,SG_FZ_T,'depotfichier')) return; if(Date.now()-SG_FZ.sauve<1500) return;   /* sa propre sauvegarde : l'écran est déjà redessiné */
+    const a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest('.sg-fz')) return; this.draw(); } };
+NX_VIEW['nx-faisa']={d:SG_D.projets,t:'Parcelle & règlements',fiche:1};
+SG_VUE_DROIT['nx-faisa']=()=>true;
+/* fiche de faisabilité : document HTML (visionneuse → Imprimer / PDF), structure du dossier type du bureau */
+const SG_FZ_DOC_CSS='h3{font-size:9pt;margin:4mm 0 1.5mm;font-weight:700;break-after:avoid}table.fz-kv{width:auto;min-width:90mm}table.fz-kv th{width:38mm;color:#706f6f;font-weight:300;border-bottom:.25pt solid #9d9d9c}'
+  +'.fz-cartes{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin:3mm 0 4mm;break-inside:avoid}.fz-cartes figure{margin:0}.fz-cartes img{width:100%;display:block;border:.25pt solid #1d1d1b}.fz-cartes figcaption{font-size:7pt;color:#706f6f;margin-top:1mm}'
+  +'.fz-vide{color:#706f6f;font-style:italic}ul.fz-cit li{margin-bottom:1.5mm}table.fz-ct td{font-size:8.5pt}td.st-conforme{color:#4e6b0b;font-weight:700}td.st-non_conforme{color:#bd1e42;font-weight:700}td.st-a_verifier{color:#3f4193}td.st-a_traiter{color:#9a5d05}'
+  +'.fz-conc{white-space:pre-line}.fz-sign{margin-top:10mm;font-size:8pt;color:#706f6f}small{font-size:7.5pt;color:#706f6f}tr{break-inside:avoid}';
+async function sgFaisaFiche(p){ await DS.need([SG_FZ_T,'depotfichier']).catch(()=>{}); const rec=sgFzRec(p), P=rec.PARCELLE, E=nxE, mo=projMO(p);
+  const rub=titre=>{ try{ const d=ch03aDossier('document',p.ID,'Faisabilité',titre); return DS.all('depotfichier').filter(f=>String(f.DOSSIER).normalize('NFC')===d).sort((a,b)=>cmp(a.NOM,b.NOM)); }catch(_){ return []; } };
+  const fichiers=L=>L.length?'<ul>'+L.map(f=>'<li>'+E(f.NOM)+(f.MODIFIED?' <small>('+E(dfr(String(f.MODIFIED).slice(0,10)))+')</small>':'')+'</li>').join('')+'</ul>':'<p class="fz-vide">Aucun document déposé.</p>';
+  const g=rec.SOURCES.find(s=>s.TYPE==='geoadmin'), r=rec.SOURCES.find(s=>s.TYPE==='rdppf'), bats=(g&&g.DONNEES&&g.DONNEES.bats)||[], restr=(r&&r.DONNEES&&r.DONNEES.restrictions)||[], nonC=(r&&r.DONNEES&&r.DONNEES.nonConcernes)||[];
+  const C=rec.CONTRAINTES, parTheme=SG_FZ_THEMES.map(([k,l])=>[k,l,C.filter(c=>(c.THEME||'autres')===k)]).filter(x=>x[2].length);
+  const regl=rec.SOURCES.filter(s=>s.TYPE==='reglement'), cit=regl.map(s=>[s,C.filter(c=>c.SOURCE===s.TITRE&&c.REGLE)]).filter(x=>x[1].length);
+  const kv=[['Commune',P.COMMUNE],['N° de parcelle',P.NUMERO],['EGRID',P.EGRID],['Adresse',P.ADRESSE],['Surface',P.SURFACE?num(P.SURFACE,0)+' m²':''],['Coordonnées (LV95)',P.E&&P.N?'E '+num(P.E,0)+' · N '+num(P.N,0):''],['Zone d’affectation',P.ZONE||P.ZONE_FED],['Cadastre RDPPF',P.RDPPF_ETAT]].filter(x=>x[1]);
+  const pol=C.filter(c=>c.THEME==='pollues'), nonPol=nonC.some(t=>/sites pollu/i.test(t));
+  const corps='<style>'+SG_FZ_DOC_CSS+'</style><h1>ÉTUDE DE FAISABILITÉ</h1><div class="date">'+E(dfr(today()))+'</div><div class="sous">'+E((p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||''))+(mo?'<br>Maître de l’ouvrage : '+E(mo):'')+(P.ADRESSE?'<br>'+E(P.ADRESSE):'')+'</div>'
+    +'<h2>1. Fiche de la parcelle</h2>'+(kv.length?'<table class="fz-kv">'+kv.map(([k,v])=>'<tr><th>'+E(k)+'</th><td>'+E(v)+'</td></tr>').join('')+'</table>':'<p class="fz-vide">Parcelle non renseignée.</p>')
+    +(P.E&&P.N?'<div class="fz-cartes"><figure><img src="'+sgFzWms(+P.E,+P.N,110,SG_FZ_PLAN,800,600)+'" alt="Plan"><figcaption>Plan cadastral (mensuration officielle, geo.admin.ch)</figcaption></figure><figure><img src="'+sgFzWms(+P.E,+P.N,110,SG_FZ_ORTHO,800,600,'jpeg')+'" alt="Orthophoto"><figcaption>Orthophoto (swisstopo)</figcaption></figure></div>':'')
+    +'<h2>2. Sources consultées</h2>'+(rec.SOURCES.length?'<table><tr><th>Date</th><th>Source</th><th>Contenu</th></tr>'+rec.SOURCES.slice().sort((a,b)=>cmp(a.DATE,b.DATE)).map(s=>'<tr><td>'+E(s.DATE?dfr(s.DATE):'')+'</td><td><b>'+E(s.TITRE)+'</b>'+(s.URL?'<br><small>'+E(s.URL)+'</small>':'')+'</td><td>'+E(s.RESUME||'')+'</td></tr>').join('')+'</table>':'<p class="fz-vide">Aucune source consultée.</p>')
+    +'<h2>3. Règlements et restrictions de droit public</h2>'+(restr.length?'<table><tr><th>Thème (cadastre RDPPF)</th><th>Restriction</th><th class="r">Part</th><th>Dispositions juridiques</th></tr>'+restr.map(x=>'<tr><td>'+E(x.theme)+'</td><td>'+E(x.legende)+(x.statut?' <small>('+E(x.statut)+')</small>':'')+'</td><td class="r">'+(x.part!==''?E(x.part)+' %':'')+'</td><td>'+(x.docs||[]).filter(d=>/disposition/i.test(d.type)).map(d=>E(d.titre)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,4).join('<br>')+'</td></tr>').join('')+'</table>':'<p class="fz-vide">Extrait RDPPF non consulté.</p>')
+    +(nonC.length?'<p><b>Thèmes non concernés (cadastre RDPPF) :</b> '+E(nonC.join(', '))+'.</p>':'')
+    +(cit.length?'<h3>Extraits cités des règlements</h3>'+cit.map(([s,cs])=>'<p><b>'+E(s.TITRE)+'</b></p><ul class="fz-cit">'+cs.map(c=>'<li>'+(c.ARTICLE?'<b>'+E(c.ARTICLE)+'</b> — ':'')+E(c.REGLE)+'</li>').join('')+'</ul>').join(''):'')
+    +'<h2>4. Contraintes et réponses du projet</h2>'+(parTheme.length?parTheme.map(([k,l,cs])=>'<h3>'+E(l)+'</h3><table class="fz-ct"><tr><th style="width:34%">Contrainte · règle</th><th style="width:20%">Source · article · valeur</th><th>Réponse du projet</th><th style="width:12%">Statut</th></tr>'
+        +cs.map(c=>'<tr><td><b>'+E(c.TITRE)+'</b>'+(c.REGLE?'<br>'+E(c.REGLE):'')+'</td><td>'+E([c.SOURCE,c.ARTICLE].filter(Boolean).join(' · '))+(c.VALEUR?'<br><b>'+E(c.VALEUR)+'</b>':'')+'</td><td>'+E(c.REPONSE||'—')+(c.NOTE?'<br><small>'+E(c.NOTE)+'</small>':'')+'</td><td class="st-'+E(c.STATUT||'a_traiter')+'">'+E(SG_FZ_ST_L[c.STATUT||'a_traiter']||'')+'</td></tr>').join('')+'</table>').join(''):'<p class="fz-vide">Aucune contrainte relevée.</p>')
+    +'<h2>5. Potentiel constructible et variantes</h2><h3>Études</h3>'+fichiers(rub('Études'))+'<h3>Variantes</h3>'+fichiers(rub('Variantes'))+'<h3>Présentation au client</h3>'+fichiers(rub('Présentation au client'))
+    +'<h2>6. État existant et polluants</h2><h3>Bâtiments recensés (RegBL)</h3>'+(bats.length?'<table><tr><th>EGID</th><th>Adresse</th><th>Construction</th><th>Affectation</th><th class="r">Surface</th><th class="r">Niveaux</th><th class="r">Logements</th></tr>'
+        +bats.map(b=>'<tr><td>'+E(b.egid)+'</td><td>'+E(b.adresse||'')+'</td><td>'+E(b.annee||SG_FZ_GBAUP[b.periode]||'')+'</td><td>'+E(SG_FZ_GKLAS[b.classe]||b.classe||'')+'</td><td class="r">'+(b.surface?E(num(b.surface,0))+' m²':'')+'</td><td class="r">'+E(b.niveaux||'')+'</td><td class="r">'+E(b.logements||'')+'</td></tr>').join('')+'</table>':'<p class="fz-vide">Aucun bâtiment recensé sur la parcelle, ou recherche geo.admin.ch non faite.</p>')
+    +'<h3>Sites pollués</h3>'+(pol.length?'<ul>'+pol.map(c=>'<li><b>'+E(c.TITRE)+'</b>'+(c.REGLE?' — '+E(c.REGLE):'')+(c.REPONSE?'<br>Réponse : '+E(c.REPONSE):'')+'</li>').join('')+'</ul>':nonPol?'<p>La parcelle n’est pas inscrite au cadastre des sites pollués (cadastre RDPPF).</p>':'<p class="fz-vide">Non vérifié.</p>')
+    +'<h3>Documents de base</h3>'+fichiers(rub('Documents de base'))
+    +'<h2>7. Conclusion</h2>'+(String(rec.CONCLUSION||'').trim()?'<p class="fz-conc">'+E(rec.CONCLUSION)+'</p>':'<p class="fz-vide">Conclusion à rédiger.</p>')
+    +'<p class="fz-sign">'+E(SG_BUREAU.nom)+' · '+E(dfr(today()))+(rec.PAR?' · '+E(rec.PAR):'')+'</p>';
+  sgDocOuvrir('Fiche de faisabilité — '+(p.NUMBER||p.TITLE||''),corps,'Faisabilite_'+String(p.NUMBER||p.ID).replace(/[^\w.-]+/g,'_')+'.html'); }
 </script>
 </body>
 </html>

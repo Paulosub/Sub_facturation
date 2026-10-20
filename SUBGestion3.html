@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 19:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 19:28 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -24934,7 +24934,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     set('<div class="sg-hbar">'+regle+tuiles+'</div>'
       +'<div class="nx-kpis sg-pkpis">'+kpiT('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies sur '+perLib+(hf?', dont '+nxH(hf)+' h facturables':''))
         +kpiT('list','Saisies',num(L.length,0),L.length+' saisie'+(L.length>1?'s':'')+' sur '+perLib)
-        +kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib)
+        +(col?'':kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib))   /* un seul collaborateur choisi (Détail) : tuile sans intérêt, retirée (20.10.2026) */
         +kpiT('cal','Dernière saisie',der?dfr(diso(tlDate(der))):'—',der?'Le '+dfr(diso(tlDate(der)))+(derS?' par '+staffName(derS):'')+' ('+nxH(der.TIMEPERIOD)+' h)':'Aucune saisie sur '+perLib).replace('<div class="v">','<div class="v txt">')
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(LT.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,5000).map(ligne).join('')+'</table>':sgSituationHtml(LT,grp,{hier:1,fact:false})):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'

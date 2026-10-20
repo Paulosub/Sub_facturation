@@ -549,7 +549,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `sg3_fiche_an`) — une année choisie : tout l'onglet la suit (tuiles comprises, titre « Heures par mois · 2025 »), la règle « Période » n'a
   plus de repère actif ; un clic sur la règle revient à la période (année effacée) ; dans les autres affichages, la période s'applique. « Détail » :
   même présentation pour les collaborateurs (« Tous · Paulo Meireles · … », collaborateurs ayant des heures sur la période, du plus d'heures au
-  moins d'heures, `sg3_fiche_col`) — un collaborateur choisi : détail, tuiles et titre (« Saisies · <nom> ») ne montrent que ses saisies. « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :
+  moins d'heures, `sg3_fiche_col`) — un collaborateur choisi : détail, tuiles et titre (« Saisies · <nom> ») ne montrent que ses saisies. La tuile
+  « Collaborateurs » est alors retirée (sans intérêt pour un seul collaborateur, 20.10.2026). « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :
   chaque collaborateur (trame), du plus d'heures au moins d'heures, puis ses phases en lignes dessous dans l'ordre SIA 102 (`sgSiaCle`), « (sans
   phase) » à la fin ; colonnes Heures, Part (des heures de la période), Saisies. Situation des heures (chapitre Temps) garde le tableau croisé. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).

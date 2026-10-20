@@ -539,7 +539,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     set('<div class="sg-hbar">'+regle+tuiles+'</div>'
       +'<div class="nx-kpis sg-pkpis">'+kpiT('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies sur '+perLib+(hf?', dont '+nxH(hf)+' h facturables':''))
         +kpiT('list','Saisies',num(L.length,0),L.length+' saisie'+(L.length>1?'s':'')+' sur '+perLib)
-        +kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib)
+        +(col?'':kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib))   /* un seul collaborateur choisi (Détail) : tuile sans intérêt, retirée (20.10.2026) */
         +kpiT('cal','Dernière saisie',der?dfr(diso(tlDate(der))):'—',der?'Le '+dfr(diso(tlDate(der)))+(derS?' par '+staffName(derS):'')+' ('+nxH(der.TIMEPERIOD)+' h)':'Aucune saisie sur '+perLib).replace('<div class="v">','<div class="v txt">')
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(LT.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,5000).map(ligne).join('')+'</table>':sgSituationHtml(LT,grp,{hier:1,fact:false})):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'

@@ -455,6 +455,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   non signé / Non signé / annulé) ; « Fermer » ramène à l'écran d'où l'on venait (`nxHist(-1)`). Vue `fx-contrats`, arg `cv:<id>`
   (`sgVoirContrat(w,id)`, contrats lus par `fxData()` : `contrats` est un `let` du cadre, pas une propriété de window). L'édition reste dans
   Facturation ▸ Contrats (✏️) ; ⌘K garde `fx-calchono` `c:<id>`. NAS au 20.10.2026 : aucun contrat marqué signé, 1 seul avec 2 versions.
+  **Tableau des contrats d'honoraires (onglet Contrats, 20.10.2026)** : colonnes Contrat, **Nature** (Contrat / Avenant), **Rémunération**
+  (Forfait relatif / Forfait / Unitaire, chapitre « Mode de calcul » ; non enregistré = forfait relatif, le défaut de Facturation, signalé en
+  infobulle), **Date du contrat** (c.date, sinon date de la dernière version), HT, TTC, **État** (Signé le … / Envoyé, non signé / Non signé /
+  Annulé) ; colonne Client retirée. Fiche commune `sgContratInfo(c)` (aussi dans l'aperçu PDF « Ouvrir »). **Facturation.html** (même jour) :
+  « signé » coché → `signeLe` (date du jour) sur la dernière version (`chEnsureVersions`), retiré si on décoche ; nouvelle version créée après
+  une signature (contrat signé ou avenant déjà en cours, `signedV`) → version marquée `avenant:true`. Avenant = dernière version marquée, sinon
+  `signedV.v` < dernière version (avenants antérieurs au 20.10.2026 non signés).
   **Collaborateur (20.10.2026)** : jamais de factures — ni onglet Factures, ni tuiles Facturé / Encaissé / Solde à facturer dans Contrats,
   ni indications, ni bouton « Facturer » ; restent Honoraires (TTC), Part facturable, Contrats d'honoraires (« Ouvrir ») et Phases
   contrat (s'il a le droit de lire les contrats ; sinon les phases seules).

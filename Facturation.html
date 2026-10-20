@@ -8199,6 +8199,8 @@ function applyCalcHono(asNewVersion) {
         {title:'Contrat signé — verrouillé', yesText:'＋ Nouvelle version', yesColor:'#0a6e84'});
       return;
     }
+    // AVENANT (2026-10-20) : une nouvelle version créée après la signature (contrat signé, ou avenant déjà en cours : signedV) est un avenant
+    const estAvenant = !!(asNewVersion && (c.signe || c.signedV));
     if(asNewVersion && c.signe){
       // la DERNIÈRE VERSION SIGNÉE continue de faire foi (p.ex. pour les honoraires du DG)
       c.signedV={v:Math.max(...c.versions.map(x=>x.v||1)), httc:c.httc, hht:c.hht,
@@ -8208,7 +8210,7 @@ function applyCalcHono(asNewVersion) {
     if(asNewVersion){
       // nouvelle version : la précédente est conservée dans l'historique
       const nextV = Math.max(...c.versions.map(x=>x.v||1)) + 1;
-      c.versions.push({v:nextV, comment:vComment, date:today, data: JSON.parse(JSON.stringify(base))});
+      c.versions.push(Object.assign({v:nextV, comment:vComment, date:today, data: JSON.parse(JSON.stringify(base))}, estAvenant?{avenant:true}:{}));
       verMsg = ' (version ' + nextV + ')';
     } else {
       // mise à jour de la version courante (dernière) — pas de nouvelle entrée
@@ -8468,7 +8470,7 @@ function chSetContratFlag(id, flag, val){
   if(flag==='signe' && !val && c.signe){
     renderContratsTable();   // ré-affiche la case cochée tant que la levée du verrou n'est pas confirmée
     chConfirm('Retirer l\'état « signé » de ce contrat ?\n\nIl redeviendra modifiable sans passer par une nouvelle version.',
-      ()=>{ c.signe=false; c.signedV=null; persist(); renderContratsTable(); },
+      ()=>{ c.signe=false; c.signedV=null; const V=c.versions||[]; if(V.length) delete V[V.length-1].signeLe; persist(); renderContratsTable(); },
       {title:'Contrat signé', yesText:'Retirer « signé »', yesColor:'#b08800'});
     return;
   }
@@ -8481,6 +8483,8 @@ function chSetContratFlag(id, flag, val){
   }
   c[flag] = !!val;
   if(flag==='signe' && val){ if(!c.envoye) c.envoye = true; c.annule = false; c.signedV = null; }   // signé ⇒ envoyé, jamais annulé ; la version courante devient LA version signée
+  // date de signature (2026-10-20) : posée sur la version courante (dernière) quand on coche « signé », retirée quand on décoche
+  if(flag==='signe'){ const V=chEnsureVersions(c), last=V[V.length-1]; if(val) last.signeLe=(new Date()).toISOString().slice(0,10); else if(last) delete last.signeLe; }
   if(flag==='annule' && val && !c.envoye) c.envoye = true;                        // on n'annule qu'un contrat envoyé
   // TERMINÉ et ANNULÉ archivent automatiquement le contrat (demande 2026-09-20) ; retirer l'état le
   // désarchive, sauf si l'autre motif d'archivage automatique est encore actif.

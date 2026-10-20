@@ -331,12 +331,26 @@ VIEWS['nx-renta']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcul 
    Onglets : vue d'ensemble · temps · phases & budget · intervenants · contrats & factures · chantier · documents · notes
    & tâches ; actions directes : saisir du temps, facturer, PV de chantier, ouvrir dans Projets. */
 /* Projets : « Temps » → « Heures » et « Contrats » → « Contrat » (20.10.2026, à la demande ; clés inchangées) */
-const SG_ONGLETS=[['vue','Vue d’ensemble'],['temps','Heures'],['factu','Contrat'],['fact','Factures'],['interv','Intervenants'],['chantier','Chantier'],['docs','Documents'],['notes','Notes & tâches']];   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */
+/* 20.10.2026 : Vue d'ensemble, Contrat, Faisabilité (si une phase de faisabilité est utilisée), Projet, Chantier, Heures, Factures, Intervenants,
+   Documents, Notes & tâches */
+const SG_ONGLETS=[['vue','Vue d’ensemble'],['factu','Contrat'],['faisa','Faisabilité'],['projet','Projet'],['chantier','Chantier'],['temps','Heures'],['fact','Factures'],['interv','Intervenants'],['docs','Documents'],['notes','Notes & tâches']];
+/* phases partielles SIA 102 des études (onglet Projet), rubriques du dossier d'enquête (comme le dossier « Att_CO » des affaires) et de l'onglet
+   Faisabilité ; dossiers du dépôt : ProjectDocuments/Documents/<projet>/Documents/Projet/<n° nom>/<rubrique> et …/Faisabilité/<rubrique> */
+const SG_PROJ_PH=[[31,'Avant-projet'],[32,'Projet de l’ouvrage'],[33,'Procédure de demande d’autorisation'],[41,'Appel d’offres, comparaison des offres et propositions d’adjudication']];
+const SG_ENQUETE=[['Formulaire Att_CO','doc','Formulaire Att_CO'],['Questionnaire général','list','Questionnaire général'],['Questionnaire particulier','list','Questionnaire particulier'],['Plan de situation','map','Plan de situation'],['Plans (niveaux, façades, coupes)','ruler','Plans'],['Annexes','folder','Annexes']];
+const SG_FAISA_RUB=[['fb','Documents de base','folder'],['fe','Études','doc'],['fv','Variantes','dup'],['fp','Présentation au client','pdf']];
+/* onglet Faisabilité : projet classé « faisabilité », ou phase de faisabilité utilisée (phase n° 2 ou nommée « faisabilité », ou sa phase
+   partielle 21, avec des heures saisies ou des heures au contrat), ou documents déjà déposés dans Faisabilité */
+function sgFaisaOk(p){ if(typeof sgCatProjet==='function'&&sgCatProjet(p)==='faisabilite') return true;
+  const F=DS.by('projectphase','PROJECT_ID',p.ID).filter(f=>+f.NUMBER===2||/faisabilit/i.test(nm(f)||'')); if(!F.length) return false;
+  const ids=new Set(F.map(f=>String(f.ID))); if(F.some(f=>+f.TIMEBUDGET>0)) return true;
+  if(DS.by('timelog','PROJECT_ID',p.ID).some(r=>ids.has(String(r.PHASE_ID))&&+r.TIMEPERIOD>0)) return true;
+  try{ const d=ch03aDossier('document',p.ID,'Faisabilité'); return DS.all('depotfichier').some(f=>String(f.DOSSIER).startsWith(d)); }catch(_){ return false; } }   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */
 function sgOuvrirDomaine(p,dom){ go('nx-pdom',p.ID+'|'+dom); }   // 18.10.2026 : page du projet (domaine en pleine page), « Tous les projets » retiré du menu
 VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||''); nxRecent('p',p.ID);
-    const ong0=(o0=>o0==='phases'?'factu':o0)(nxLS.get('sg3_fiche_onglet','vue')), ong=sgOngletOk(ong0)?ong0:(SG_ONGLETS.map(o=>o[0]).find(sgOngletOk)||'vue'), mo=projMO(p), pin=nxPinned('p',p.ID), modif=sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)));
+    const okP=k=>sgOngletOk(k)&&(k!=='faisa'||sgFaisaOk(p)), ong0=(o0=>o0==='phases'?'factu':o0)(nxLS.get('sg3_fiche_onglet','vue')), ong=okP(ong0)?ong0:(SG_ONGLETS.map(o=>o[0]).find(okP)||'vue'), mo=projMO(p), pin=nxPinned('p',p.ID), modif=sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)));
     const html='<div class="nx-hero"><div class="sg-pnum" title="Numéro du projet">'+(p.NUMBER?nxE(p.NUMBER):'—')+'</div><div class="tx">'   /* grand numéro complet et filet noir (20.10.2026, variante C choisie par Paulo ; avant : pavé bleu nuit tronqué à 5 caractères, puis cartouche D le même jour) */
       +'<h2>'+nxE(p.TITLE||p.NUMBER)+'</h2><div class="meta">'
       /* 20.10.2026 : numéro, état, date et phase actuelle retirés de l'en-tête ; le maître de l'ouvrage (intervenants au rôle 8) nommé comme tel */
@@ -350,7 +364,7 @@ VIEWS['nx-projet']={
           return '<div class="sg-mandat" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b)))+' — '+n+' mois')+'"><b>'+d1+'</b>'   /* 20.10.2026 : sans le libellé « Mandat », durée centrée sous la frise */
             +(d1===d2?'<span class="d">'+duree+'</span>':'<span class="sg-frise"><em>'+duree+'</em></span><b>'+d2+'</b>')+'</div>'; })(DS.by('timelog','PROJECT_ID',p.ID)))
       +'</div></div>'   /* indications « Coût au-delà des honoraires », « Facturation en retard », « phases hors budget » retirées de l'en-tête (20.10.2026) */   /* 19.10.2026 : boutons Facturer, PV de chantier, épingle, « … » et Modifier retirés du tableau de bord */
-      +'<div class="sg-onglets">'+SG_ONGLETS.filter(o=>sgOngletOk(o[0])).map(([k,t])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+'</button>').join('')+'</div><div id="sg-onglet"><div class="nx-empty">…</div></div>';
+      +'<div class="sg-onglets">'+SG_ONGLETS.filter(o=>okP(o[0])).map(([k,t])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+'</button>').join('')+'</div><div id="sg-onglet"><div class="nx-empty">…</div></div>';
     const pg=nxPage(m,html);
     SG_ONGLETS.forEach(([k])=>pg._fn['o_'+k]=()=>{ nxLS.set('sg3_fiche_onglet',k); pg.querySelectorAll('.sg-onglets button').forEach(b=>b.classList.toggle('on',b.dataset.fn==='o_'+k)); sgOnglet(p,k,pg); });
     Object.assign(pg._fn,{edit:()=>editProject(p),temps:()=>sgSaisieRapide({projet:p.ID}),pin:b=>{ const on=nxTogglePin('p',p.ID); b.classList.toggle('on',on); },
@@ -598,6 +612,49 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +'</div><div class="sg-oc-ph" id="sg-oc-ph"></div>');   /* ordre (20.10.2026) : contrats d'honoraires, Phases contrat ; factures dans leur onglet (20.10.2026) */
       sgOnglet(p,'phases',pg,box.querySelector('#sg-oc-ph'));
       const s=box.querySelector('#sg-lier'); if(s) s.onchange=()=>{ if(!s.value) return; const l=sgLiens(); l[s.value]=String(p.ID); nxLS.set('sg3_liens',l); toast('Contrat relié à '+p.NUMBER+'.'); sgOnglet(p,'factu',pg); }; }); return; }
+  /* ═══ Onglets Projet et Faisabilité (20.10.2026) ═══ Projet : un groupe dépliable par phase partielle SIA des études (SG_PROJ_PH) ; dans chacun
+     PV MO (fichiers), Estimations (calcul des coûts du moteur) et Descriptifs & devis (devis du moteur) classés dans la phase choisie (collection
+     sgdocphase {ID « <table>:<id> », PROJECT_ID, PHASE}) ; phase 33 : dossier d'enquête (SG_ENQUETE). Estimations et devis sans phase : groupe
+     « Estimations et devis à classer ». Faisabilité : documents de base, études, variantes, présentation (SG_FAISA_RUB). Fichiers : dépôt du
+     moteur (ch03aDeposer, droit « documents : dépôt »), visibles aussi dans l'onglet Documents ; classement : droit « chantier : écriture ». */
+  if(k==='projet'||k==='faisa'){ set('<div class="nx-empty">Chargement des documents…</div>');
+    DS.need(['depotfichier','costestimate','costplanning','sgdocphase']).catch(()=>{}).then(()=>{ if(!box.isConnected) return;
+      const depot=sgDroit('documents','depot'), classer=sgDroit('chantier','ecriture'), ouv=SG_CGRP[k+':'+p.ID]||(SG_CGRP[k+':'+p.ID]=new Set());
+      const racine=k==='projet'?'Projet':'Faisabilité', dos=chemin=>ch03aDossier('document',p.ID,racine,chemin);
+      const fic=d=>DS.all('depotfichier').filter(f=>f.DOSSIER===d).sort((a,b)=>cmp(a.NOM,b.NOM));
+      const lf=f=>'<div class="nx-row" data-sha="'+nxE(f.ID)+'">'+nxSvg(f.EXT==='pdf'?'pdf':'doc')+'<div class="t"><b>'+nxE(f.NOM)+'</b><span>'+nxE([f.TAILLE?(f.TAILLE/1024).toFixed(0)+' Ko':'',f.PAGES?f.PAGES+' p.':'',f.MODIFIED?dfr(String(f.MODIFIED).slice(0,10)):''].filter(Boolean).join(' · '))+'</span></div></div>';
+      const ajout=chemin=>chemin!=null&&depot?'<span class="a" data-fn="pajout" data-dos="'+nxE(chemin)+'" title="Ajouter des fichiers">'+nxSvg('plus')+'Ajouter</span>':'';
+      const rub=(titre,ico,lignes,chemin)=>'<div class="sg-rub"><div class="sg-rub-h">'+(titre?nxSvg(ico)+'<b>'+nxE(titre)+'</b><span class="c">'+lignes.length+'</span>':'')+ajout(chemin)+'</div>'+(lignes.length?'<div class="sg-rub-l'+(titre?'':' nu')+'">'+lignes.join('')+'</div>':'')+'</div>';
+      const rubF=(titre,ico,chemin)=>{ const L=fic(dos(chemin)); return {n:L.length,h:rub(titre,ico,L.map(lf),chemin)}; };
+      const grp=(c,ico,lib,parts)=>{ const n=parts.reduce((a,x)=>a+x.n,0), on=ouv.has(c);
+        return '<section class="sg-pgrp'+(on?' on':'')+'" data-c="'+nxE(c)+'"><button class="sg-pgrp-h" data-fn="cgrp" aria-expanded="'+on+'">'+nxSvg(ico)+'<span class="t"><b>'+nxE(lib)+'</b></span><span class="c">'+n+' élément'+(n>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button><div class="sg-cgrp-b">'+parts.map(x=>x.h).join('')+'</div></section>'; };
+      let html='';
+      if(k==='projet'){
+        const spN=new Map(); DS.by('projectphase','PROJECT_ID',p.ID).forEach(f=>DS.by('projectsubphase','PROJECTPHASE_ID',f.ID).forEach(x=>{ const n=parseFloat(x.NUMBER); if(isFinite(n)&&nm(x)) spN.set(n,nm(x)); }));
+        const PH=SG_PROJ_PH.map(([n,lib])=>({n,lib:spN.get(n)||lib,dos:n+' '+lib}));
+        const docsM=[['costplanningdocument','Estimations','ruler','Calcul des coûts'],['costestimatedocument','Descriptifs & devis','doc','Devis général']]
+          .map(([t,titre,ico,dom])=>({t,titre,ico,dom,L:DS.by(t,'PROJECT_ID',p.ID).filter(d=>!+d.ISMARKEDASDELETED).sort((a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE))}));
+        const phaseDe=(t,d)=>{ const r=DS.get('sgdocphase',t+':'+d.ID); return r&&r.PHASE!=null?String(r.PHASE):''; };
+        const opts=v=>'<option value="">À classer</option>'+PH.map(x=>'<option value="'+x.n+'"'+(String(x.n)===v?' selected':'')+'>'+x.n+' '+nxE(x.lib)+'</option>').join('');
+        const ld=(m,d)=>'<div class="nx-row" data-edom="'+nxE(m.dom)+'">'+nxSvg(m.ico)+'<div class="t"><b>'+nxE(d.NOTE||d.VERSION||('Document '+d.ID))+'</b><span>'+nxE(['version '+(d.VERSIONNUMBER||d.VERSION||''),d.CHANGEDDATE?dfr(String(d.CHANGEDDATE).slice(0,10)):'',d.USERID].filter(Boolean).join(' · '))+'</span></div>'
+          +(classer?'<select class="sg-phsel" data-k="'+nxE(m.t+':'+d.ID)+'" title="Phase du document">'+opts(phaseDe(m.t,d))+'</select>':'')+'</div>';
+        const rubM=(m,ph)=>{ const L=m.L.filter(d=>phaseDe(m.t,d)===ph); return {n:L.length,h:rub(m.titre,m.ico,L.map(d=>ld(m,d)),null)}; };
+        const aCl=docsM.map(m=>rubM(m,'')).filter(x=>x.n); if(aCl.length) html+=grp('acl','task','Estimations et devis à classer',aCl);
+        PH.forEach(x=>{ const parts=[rubF('PV MO','pv',x.dos+'/PV MO'),...docsM.map(m=>rubM(m,String(x.n)))];
+          if(x.n===33) SG_ENQUETE.forEach(([titre,ico,sous])=>parts.push(rubF('Dossier d’enquête · '+titre,ico,x.dos+'/Dossier d’enquête/'+sous)));
+          html+=grp('p'+x.n,'folder',x.n+' · '+x.lib,parts); });
+      } else html=SG_FAISA_RUB.map(([c,titre,ico])=>grp(c,ico,titre,[rubF(null,ico,titre)])).join('');
+      set('<div class="sg-pgrps">'+html+'</div>');
+      box.querySelectorAll('[data-sha]').forEach(r=>r.onclick=()=>{ const f=DS.get('depotfichier',r.dataset.sha); if(f) ch03aOuvrir(f); });
+      box.querySelectorAll('[data-edom]').forEach(r=>r.onclick=e=>{ if(e.target.closest('select')) return; sgOuvrirDomaine(p,r.dataset.edom); });
+      box.querySelectorAll('select.sg-phsel').forEach(x=>x.onchange=async()=>{ try{ await DS.save('sgdocphase',{ID:x.dataset.k,PROJECT_ID:p.ID,PHASE:x.value||null});
+          if(x.value) ouv.add('p'+x.value); toast(x.value?'Document classé en phase '+x.value+'.':'Document remis « à classer ».'); sgOnglet(p,k,pg); }catch(e){ toast('✗ '+(e.message||e),true); } });
+      Object.assign(pg._fn,{cgrp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); ouv[on?'add':'delete'](x.dataset.c); },
+        pajout:b=>{ const d=dos(b.dataset.dos), g=b.closest('.sg-pgrp'), inp=h('input',{type:'file',multiple:true});
+          inp.onchange=async()=>{ let n=0; for(const f of inp.files){ try{ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import'}); n++; }
+              catch(e){ if(e.message==='existe'){ if(await confirmDlg('« '+f.name+' » existe déjà. Le remplacer ?','Remplacer')){ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import',remplacer:true}); n++; } } else toast('✗ '+f.name+' : '+e.message,true); } }
+            if(n){ toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+'.'); if(g) ouv.add(g.dataset.c); sgOnglet(p,k,pg); } };
+          inp.click(); }}); }); return; }
   if(k==='chantier'){ set('<div class="nx-empty">Chargement des documents…</div>');
     DS.need(['costestimate','costcontrol','costplanning']).then(()=>fxEnsure().catch(()=>null)).then(()=>{ if(!box.isConnected) return;
       // rubriques = titres dépliables (19.10.2026), toutes repliées à l'arrivée ; celles qu'on a ouvertes le restent au retour (SG_CGRP)
@@ -608,7 +665,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
           +'<div class="sg-cgrp-a"><button class="nx-btn" data-fn="dom" data-dom="'+nxE(dom)+'">'+nxSvg('arrow')+'Ouvrir</button></div>'); };
       let pv={}; try{ pv=JSON.parse(FX.w.localStorage.getItem('sa_pv_data')||'{}'); }catch(_){}
       const pk=Object.keys(pv).find(c=>sgCle(c)===sgCle(p.NUMBER)), pvs=pk?(pv[pk].pvs||[]):[];
-      set('<div class="sg-pgrps">'+docs('devis','costestimatedocument','Descriptifs & devis','Devis général','doc')+docs('coco','costcontroldocument','Contrôles des coûts','Contrôle des coûts','coins')+docs('estim','costplanningdocument','Estimations eCCC','Calcul des coûts','ruler')
+      set('<div class="sg-pgrps">'+docs('coco','costcontroldocument','Contrôles des coûts','Contrôle des coûts','coins')   /* Descriptifs & devis et Estimations déplacés dans l'onglet Projet (20.10.2026) */
         +grp('pv','pv','PV de chantier',pvs.length+' PV',(pvs.length?pvs.slice().sort((a,b)=>cmp(b.date,a.date)).map(x=>'<div class="nx-row" data-go="fx-pv-chantier" data-arg="pv:'+nxE(pk)+'">'+nxSvg('pv')+'<div class="t"><b>PV n° '+nxE(x.num)+'</b><span>'+nxE([x.date?dfr(x.date):'',x.statut].filter(Boolean).join(' · '))+'</span></div></div>').join(''):'<div class="nx-empty">Aucun PV pour ce projet.</div>')
           +'<div class="sg-cgrp-a"><button class="nx-btn" data-go="fx-pv-chantier" data-arg="pv:'+nxE(pk||p.NUMBER)+'">'+nxSvg('pv')+'PV de chantier</button></div>')+'</div>');
       Object.assign(pg._fn,{dom:b=>sgOuvrirDomaine(p,b.dataset.dom),
@@ -1158,9 +1215,9 @@ const sgTauxVisibles=()=>DS.all('staffrate').length>0&&!sgFinVerrou();
 /* fiche projet : onglets selon les droits */
 /* onglets du tableau de bord du projet visibles pour un collaborateur (19.10.2026) : ni Vue d'ensemble ni Temps ; les droits du profil
    s'appliquent en plus (Contrats & factures : lecture des contrats ou des factures ; Chantier : chantier ou PV) */
-const SG_ONGLETS_COLLAB=['factu','interv','chantier','docs','notes'];   // « factu » = Contrats & factures, phases comprises (20.10.2026)
+const SG_ONGLETS_COLLAB=['factu','faisa','projet','interv','chantier','docs','notes'];   // + Faisabilité et Projet (20.10.2026)   // « factu » = Contrats & factures, phases comprises (20.10.2026)
 const sgFactuOk=()=>sgDroit('contrats','lecture')||sgDroit('factures','lecture');
-const sgOngletOk=k=>(SG_ACC.profil!=='collab'||SG_ONGLETS_COLLAB.includes(k))&&(k==='factu'?true:k==='fact'?sgDroit('factures','lecture'):k==='chantier'?(sgDroit('chantier','lecture')||sgDroit('pv','lecture')):true);
+const sgOngletOk=k=>(SG_ACC.profil!=='collab'||SG_ONGLETS_COLLAB.includes(k))&&(k==='factu'?true:k==='fact'?sgDroit('factures','lecture'):k==='chantier'?(sgDroit('chantier','lecture')||sgDroit('pv','lecture')):k==='projet'||k==='faisa'?(sgDroit('documents','lecture')||sgDroit('chantier','lecture')):true);
 
 /* ── Données Facturation partagées : profil du poste (clés en lecture seule, poste changé de main) ── */
 SGKV.ro=new Set();

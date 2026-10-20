@@ -743,3 +743,16 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-tbl th.sg-tri.desc::after{border-top:5px solid var(--s-nuit);border-bottom-width:0}
 .nx-tbl tr.sg-triable th.sg-notri{cursor:default;background:none}
 .nx-tbl td.sg-ccom{min-width:160px}   /* Contrat : commentaire de la dernière version (20.10.2026) */
+/* Projet / Faisabilité (20.10.2026) : rubriques dans les groupes dépliables (PV MO, estimations, devis, dossier d'enquête, documents) */
+.sg-rub{padding:4px 0 8px;border-top:1px solid var(--s-filet)}
+.sg-rub:first-child{border-top:0}
+.sg-rub-h{display:flex;align-items:center;gap:8px;min-height:30px;font-size:12.5px}
+.sg-rub-h>svg{width:15px;height:15px;color:var(--s-nuit);flex:none}
+.sg-rub-h b{font-weight:700}
+.sg-rub-h .c{font-size:11.5px;color:var(--s-gris)}
+.sg-rub-h .a{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--s-nuit);cursor:pointer;padding:2px 6px}
+.sg-rub-h .a:hover{background:var(--s-jaune)}
+.sg-rub-h .a svg{width:13px;height:13px}
+.sg-rub-l{padding-left:23px}
+.sg-rub-l.nu{padding-left:0}
+.sg-rub-l .nx-row select.sg-phsel{margin-left:auto;max-width:240px;font:inherit;font-size:12px;height:28px}

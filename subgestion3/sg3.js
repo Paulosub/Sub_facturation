@@ -338,6 +338,7 @@ SG_DOM.forEach(d=>d.items.filter(it=>/^fx-/.test(it.v)).forEach(it=>{ const tab=
         const a=String(arg||'');
         if(a==='new'&&tab==='calchono') w.newContratCalc();
         else if(a==='new'&&tab==='saisie'){ w.goTab('saisie'); w.newFacture(); }
+        else if(a.startsWith('cv:')){ w.goTab(tab); sgVoirContrat(w,a.slice(3)); }   // contrat en PDF, dernière version (20.10.2026)
         else if(a.startsWith('c:')) w.editContratCalc(a.slice(2));
         else if(a.startsWith('f:')) w.editFactureSaisie(a.slice(2));
         else w.goTab(tab); }).catch(e=>toast('✗ Facturation : '+(e&&e.message||e),true)); },

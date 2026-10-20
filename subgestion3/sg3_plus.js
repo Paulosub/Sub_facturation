@@ -515,7 +515,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const regle='<div class="sg-hrow"><em>Période</em><div class="sg-hreg" role="group" aria-label="Période"><span class="l"></span><span class="f" style="width:calc((100% - var(--w)) * '+(Math.max(0,iP)/(PERS.length-1)).toFixed(4)+')"></span>'
       +PERS.map(([v,t],i)=>'<button data-per="'+v+'" class="'+(i===iP?'on':i<iP?'av':'')+'" aria-pressed="'+(i===iP)+'"><i></i>'+t+'</button>').join('')+'</div></div>';
     const tuiles='<div class="sg-hrow"><em>Affichage</em><div class="sg-htls" role="group" aria-label="Affichage">'
-      +[['det','Détail','list','Détail des saisies'],['collab','Collaborateur','users','Par collaborateur'],['phase','Phase','escalier','Par phase'],['mois','Mois','cal','Par mois'],['activite','Activité','tag','Par activité'],['croise','Collab. × phase','grille','Collaborateur × phase']]
+      +[['collab','Collaborateur','users','Par collaborateur'],['det','Détail','list','Détail des saisies'],['phase','Phase','escalier','Par phase'],['mois','Mois','cal','Par mois'],['activite','Activité','tag','Par activité'],['croise','Collab. × phase','grille','Collaborateur × phase']]
         .map(([v,t,ico,tt])=>'<button data-grp="'+v+'" class="'+(v===grp?'on':'')+'" aria-pressed="'+(v===grp)+'" title="'+tt+'">'+nxSvg(ico)+'<span>'+t+'</span></button>').join('')+'</div></div>';
     const kpiT=(ico,l,v,det)=>nxKpi(ico,l,v).replace('<div class="nx-kpi','<div'+(det?' title="'+nxE(det)+'"':'')+' class="nx-kpi');
     const bySt={}; L.forEach(r=>{ bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+(+r.TIMEPERIOD||0); });
@@ -546,6 +546,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +(grp==='det'&&L.length>5000?'<div class="sg-hplus">5\'000 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));
     box.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_grp',b.dataset.grp); sgOnglet(p,'temps',pg); });
     box.querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_col',b.dataset.col); sgOnglet(p,'temps',pg); });
+    box.querySelectorAll('tr[data-colgo]').forEach(tr=>tr.onclick=()=>{ nxLS.set('sg3_fiche_grp','det'); nxLS.set('sg3_fiche_col',tr.dataset.colgo); sgOnglet(p,'temps',pg); });   // Collaborateur / Collab. × phase → Détail du collaborateur (20.10.2026)
     box.querySelectorAll('[data-an]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_an',b.dataset.an); sgOnglet(p,'temps',pg); });
     box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); nxLS.set('sg3_fiche_an',''); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
@@ -1328,10 +1329,10 @@ function sgSituationHtml(L,g,o){ o=o||{}; const tot=L.reduce((s,r)=>s+(+r.TIMEPE
      lignes dessous (fond blanc) dans l'ordre SIA 102 (sgSiaCle), « (sans phase) » à la fin ; Part = part des heures de la période. Situation des
      heures (sans o.hier) garde le tableau croisé (phases en colonnes). */
   if(g==='croise'&&o.hier){ const S=new Map();
-    L.forEach(r=>{ const v=+r.TIMEPERIOD||0, ks=String(r.STAFF_ID); let x=S.get(ks); if(!x){ const st=DS.get('staff',r.STAFF_ID); x={t:st?staffName(st):'(inconnu)',h:0,n:0,P:new Map()}; S.set(ks,x); }
+    L.forEach(r=>{ const v=+r.TIMEPERIOD||0, ks=String(r.STAFF_ID); let x=S.get(ks); if(!x){ const st=DS.get('staff',r.STAFF_ID); x={k:ks,t:st?staffName(st):'(inconnu)',h:0,n:0,P:new Map()}; S.set(ks,x); }
       x.h+=v; x.n++; const f=r.PHASE_ID!=null?DS.get('projectphase',r.PHASE_ID):null, kf=f?String(f.ID):''; let y=x.P.get(kf);
       if(!y){ y={t:f?(f.NUMBER!=null?f.NUMBER+' · ':'')+nm(f):'(sans phase)',cle:f?sgSiaCle(f,1)+' '+nm(f):'',sans:!f,h:0,n:0}; x.P.set(kf,y); } y.h+=v; y.n++; });
-    const lig=(x,sub)=>'<tr'+(sub?' class="sub"':'')+'><td>'+(sub?nxE(x.t):'<b>'+nxE(x.t)+'</b>')+'</td><td class="r">'+nxH(x.h)+'</td><td style="width:120px">'+sgBarre(tot?x.h/tot:0,sub?'var(--s-nuit2)':null)+' '+pct(x)+'</td><td class="r">'+x.n+'</td></tr>';
+    const lig=(x,sub)=>'<tr'+(sub?' class="sub"':' data-colgo="'+nxE(x.k)+'" title="'+nxE('Voir le détail des saisies de '+x.t)+'"')+'><td>'+(sub?nxE(x.t):'<b>'+nxE(x.t)+'</b>')+'</td><td class="r">'+nxH(x.h)+'</td><td style="width:120px">'+sgBarre(tot?x.h/tot:0,sub?'var(--s-nuit2)':null)+' '+pct(x)+'</td><td class="r">'+x.n+'</td></tr>';   /* clic sur un collaborateur : Détail filtré (20.10.2026) */
     return '<table class="nx-tbl sg-sit sg-sit-h"><tr><th>Collaborateur · phase</th><th class="r">Heures</th><th>Part</th><th class="r">Saisies</th></tr>'
       +[...S.values()].sort((a,b)=>b.h-a.h||cmp(a.t,b.t)).map(x=>lig(x)+[...x.P.values()].sort((a,b)=>(a.sans?1:0)-(b.sans?1:0)||a.cle.localeCompare(b.cle,'fr',{numeric:true})).map(y=>lig(y,1)).join('')).join('')
       +'<tr class="tot"><td>Total</td><td class="r">'+nxH(tot)+'</td><td></td><td class="r">'+L.length+'</td></tr></table>'; }
@@ -1341,7 +1342,7 @@ function sgSituationHtml(L,g,o){ o=o||{}; const tot=L.reduce((s,r)=>s+(+r.TIMEPE
       +'<tr class="tot"><td>Total</td>'+fs.map(f=>'<td class="r">'+nxH(f.h)+'</td>').join('')+'<td class="r">'+nxH(tot)+'</td></tr></table>'; }
   const cs=!(o.hier&&g==='collab');   /* onglet Heures ▸ Collaborateur : sans les colonnes Collaborateurs et Saisies (20.10.2026) */
   const G=sgGrouper(L,g); return '<table class="nx-tbl sg-sit"><tr><th>'+({projet:'Projet',collab:'Collaborateur',phase:'Phase',mois:'Mois',activite:'Activité'}[g])+'</th><th class="r">Heures</th>'+(fact?'<th class="r">dont facturables</th>':'')+'<th>Part</th>'+(cs?'<th class="r">Collaborateurs</th><th class="r">Saisies</th>':'')+'</tr>'
-    +G.map(x=>'<tr><td><b>'+nxE(x.t)+'</b></td><td class="r">'+nxH(x.h)+'</td>'+(fact?'<td class="r">'+nxH(x.hf)+'</td>':'')+'<td style="width:120px">'+sgBarre(tot?x.h/tot:0)+' '+pct(x)+'</td>'+(cs?'<td class="r">'+x.st.size+'</td><td class="r">'+x.n+'</td>':'')+'</tr>').join('')
+    +G.map(x=>'<tr'+(o.hier&&g==='collab'?' data-colgo="'+nxE(String(x.k).replace(/^s/,''))+'" title="'+nxE('Voir le détail des saisies de '+x.t)+'"':'')+'><td><b>'+nxE(x.t)+'</b></td><td class="r">'+nxH(x.h)+'</td>'+(fact?'<td class="r">'+nxH(x.hf)+'</td>':'')+'<td style="width:120px">'+sgBarre(tot?x.h/tot:0)+' '+pct(x)+'</td>'+(cs?'<td class="r">'+x.st.size+'</td><td class="r">'+x.n+'</td>':'')+'</tr>').join('')
     +'<tr class="tot"><td>Total</td><td class="r">'+nxH(tot)+'</td>'+(fact?'<td class="r">'+nxH(L.reduce((s,r)=>s+(+r.ISCHARGEABLE?+r.TIMEPERIOD||0:0),0))+'</td>':'')+'<td></td>'+(cs?'<td class="r">'+new Set(L.map(r=>String(r.STAFF_ID))).size+'</td><td class="r">'+L.length+'</td>':'')+'</tr></table>'; }
 function sgCsvTable(tbl,nom){ const q=v=>'"'+String(v).replace(/"/g,'""')+'"', rows=[...tbl.querySelectorAll('tr')].map(tr=>[...tr.children].map(c=>q(c.textContent.trim())).join(';'));
   const a=h('a',{href:URL.createObjectURL(new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'})),download:nom}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000); }

@@ -552,7 +552,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   même présentation pour les collaborateurs (« Tous · Paulo Meireles · … », collaborateurs ayant des heures sur la période, du plus d'heures au
   moins d'heures, `sg3_fiche_col`) — un collaborateur choisi : détail, tuiles et titre (« Saisies · <nom> ») ne montrent que ses saisies. La tuile
   « Collaborateurs » est alors retirée (sans intérêt pour un seul collaborateur, 20.10.2026). Tuile « Saisies » (nombre de saisies) retirée de l'onglet
-  (20.10.2026) : Heures saisies, Collaborateurs, Dernière saisie, Coût de revient.
+  (20.10.2026) : Heures saisies, Collaborateurs, Dernière saisie, Coût de revient. Tuiles d'affichage dans l'ordre Collaborateur, Détail, Phase, Mois,
+  Activité, Collab. × phase (Collaborateur placé avant Détail, 20.10.2026). Clic sur un collaborateur (affichage Collaborateur ou ligne d'un
+  collaborateur dans Collab. × phase, `tr[data-colgo]`) → Détail avec ce collaborateur choisi.
   **Taille des données dans toute l'app (20.10.2026)** : valeurs des tuiles `.nx-kpi .v` et chiffres `.sg-fig .n` à 28 px (avant 34 et 30), textes
   `.txt` à 22 px, unités `small` à 12 px ; dates en tuile (`.v.dt` : Dernière saisie, Dernière facture) à la même taille que les chiffres — pour
   qu'une date tienne dans sa tuile. Gardés plus grands à dessein : total de la vue d'ensemble Projets (`.sg-pv-k .v` 48 px), numéro du projet

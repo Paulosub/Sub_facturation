@@ -765,3 +765,4 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-rub-l .nx-row select.sg-phsel{margin-left:auto;max-width:240px;font:inherit;font-size:12px;height:28px}
 .sg-docs-page{padding:16px 22px 30px;max-width:1100px}   /* page du projet ▸ Documents (20.10.2026) */
 .nx-kpi .v.dt{white-space:nowrap}   /* date d'une tuile (Dernière saisie, Dernière facture) : même taille que les autres chiffres (20.10.2026) */
+.sg-sit tr[data-colgo]{cursor:pointer}.sg-sit tr[data-colgo]:hover td{background:var(--s-jaune3)}   /* Heures : clic sur un collaborateur → Détail (20.10.2026) */

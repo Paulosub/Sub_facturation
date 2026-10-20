@@ -346,7 +346,8 @@ VIEWS['nx-projet']={
     },
   refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog','projectcost','projectcontract','projectnote','projecttask','depotfichier')) go('nx-projet',VIEW.arg); }
 };
-/* fiche d'un contrat d'honoraires Facturation (20.10.2026) : nature (Contrat / Avenant = dernière version créée après une signature — marque
+/* fiche d'un contrat d'honoraires Facturation (20.10.2026) : état (Annulé / Terminé / Signé le … / Envoyé / Brouillon, comme les cases de la
+   liste des contrats de Facturation), nature (Contrat / Avenant = dernière version créée après une signature — marque
    `avenant` de la version, posée par Facturation depuis le 20.10.2026, sinon signedV antérieur à la dernière version), rémunération (mode du
    chapitre « Mode de calcul » ; non enregistré = forfait relatif, le défaut de Facturation), date du contrat (c.date, sinon date de la dernière
    version), état (Annulé / Signé [le …] / Envoyé, non signé / Non signé) */
@@ -356,13 +357,14 @@ function sgContratInfo(c){ const V=Array.isArray(c.versions)&&c.versions.length?
   return {avenant:av, v:n, versions:V.length, nature:av?'Avenant':'Contrat', nTitre:V.length>1?'Version '+n+' sur '+V.length+(av?' — version créée après la signature':''):'',
     remu:R[t||'relatif'], rTitre:t?'':'Mode de rémunération non enregistré dans ce contrat : forfait relatif, le mode par défaut de Facturation',
     date:c.date||last.date||'', dTitre:!c.date&&last.date?'Date de la version '+n:'',
-    etat:c.annule?'Annulé':c.signe?'Signé'+(signeLe?' le '+dfr(signeLe):''):c.envoye?'Envoyé, non signé':'Non signé', cl:c.signe?'s2':c.envoye&&!c.annule?'s3':'', signeLe}; }
+    etat:c.annule?'Annulé':c.termine?'Terminé':c.signe?'Signé'+(signeLe?' le '+dfr(signeLe):''):c.envoye?'Envoyé':'Brouillon',   // états de Facturation (20.10.2026)
+    cl:c.annule?'':c.termine||c.signe?'s2':c.envoye?'s3':'', signeLe}; }
 /* « Ouvrir » un contrat depuis le projet (20.10.2026) : le contrat en PDF fidèle (lecture seule, openContratPdf du cadre), DERNIÈRE version
    seulement — le contrat signé ou, s'il y en a une après la signature, le dernier avenant — sans le choix des autres versions ; état de la version à
    la place du commentaire ; en fermant l'aperçu, retour à l'écran d'où l'on venait. Arg de fx-contrats : « cv:<id> ». */
 function sgVoirContrat(w,id){ const c=((fxData()||{}).c||[]).find(x=>x.id===id);   // « contrats » n'est pas une propriété du cadre (let) if(!c){ toast('Contrat introuvable.',true); return; }
   const V=w.chGetVersions(c), i=V.length-1, v=V[i]||{}, n=v.v||i+1, sv=c.signedV&&c.signedV.v;
-  const ci=sgContratInfo(c), etat=ci.nature+' — '+(c.annule?'annulé':c.signe?'signé'+(ci.signeLe?' le '+dfr(ci.signeLe):''):c.envoye?'envoyé, non signé':'non signé')+(sv&&n>sv?' ; la version '+sv+' est signée':'');
+  const ci=sgContratInfo(c), etat=ci.nature+' — '+ci.etat.toLowerCase()+(sv&&n>sv?' ; la version '+sv+' est signée':'');
   w.openContratPdf(id,i);
   const sel=w.document.getElementById('offre-version'); if(sel){ sel.style.display='none'; sel.innerHTML=''; }
   const cm=w.document.getElementById('offre-version-comment'); if(cm) cm.textContent=etat+(V.length>1?' · version '+n+(v.date?' du '+dfr(v.date):''):'');
@@ -483,7 +485,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +(pf=>nxKpi('trend','Part facturable',pf.pct!=null?Math.round(pf.pct)+'<small>%</small>':'—',pf.tot?sgHr(pf.fact)+' h sur '+sgHr(pf.tot)+' h saisies':'aucune heure saisie',pf.pct).replace('<div class="nx-kpi','<div title="'+nxE(pf.tot?nxH(pf.fact)+' h facturables'+(pf.dep?' · '+nxH(pf.dep)+' h au-delà du contrat ('+pf.ty.map(t=>t==='relatif'?'forfait relatif':'forfait').join(', ')+') — contrat au forfait : les heures d’une phase au-delà de ses heures au contrat ne sont pas facturables':''):'')+'" class="nx-kpi'))(sgPartFacturable(p,D))
         +'</div>'   /* solde à facturer = honoraires TTC − facturé TTC (19.10.2026) ; part facturable déplacée ici depuis la vue d'ensemble (20.10.2026) */
         +((alF=>alF.length?'<div style="margin:-14px 0 20px">'+alF.map(sgAlerteTag).join(' ')+'</div>':'')(collab?[]:x.al.filter(a=>!/hors budget|^Coût |^Facturation en retard/.test(a[1]))))   /* « Coût au-delà des honoraires » et « Coût à n % des honoraires » retirés de l'onglet (20.10.2026) */   /* « phases hors budget » retiré de l'onglet (19.10.2026) */
-        +'<div class="nx-grid sg-oc-g">'+nxCard('c12','Contrats d’honoraires',(x.cs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Contrat</th><th>Nature</th><th>Rémunération</th><th>Date du contrat</th><th class="r">HT</th><th class="r">TTC</th><th>État</th><th></th></tr>'+x.cs.map(c=>{ const ci=sgContratInfo(c); return '<tr><td><b>'+nxE(c.affaire||'')+'</b> '+nxE(c.projet||'')+'</td>'   /* colonne Client retirée ; Nature, Rémunération, Date du contrat, état signé (20.10.2026) */
+        +'<div class="nx-grid sg-oc-g">'+nxCard('c12','Contrats d’honoraires',(x.cs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Contrat</th><th>Nature</th><th>Type</th><th>Date du contrat</th><th class="r">HT</th><th class="r">TTC</th><th>État</th><th></th></tr>'+x.cs.map(c=>{ const ci=sgContratInfo(c); return '<tr><td><b>'+nxE(c.affaire||'')+'</b> '+nxE(c.projet||'')+'</td>'   /* colonne Client retirée ; Nature, Type (rémunération), Date du contrat, état signé (20.10.2026) */
           +'<td'+(ci.nTitre?' title="'+nxE(ci.nTitre)+'"':'')+'>'+nxE(ci.nature)+'</td><td'+(ci.rTitre?' title="'+nxE(ci.rTitre)+'"':'')+'>'+nxE(ci.remu)+'</td><td'+(ci.dTitre?' title="'+nxE(ci.dTitre)+'"':'')+'>'+(ci.date?dfr(ci.date):'—')+'</td>'
           +'<td class="r">'+nxCHF(c.hht)+'</td><td class="r">'+nxCHF(c.httc)+'</td><td><span class="nx-tag '+ci.cl+'">'+nxE(ci.etat)+'</span></td><td class="r"><button class="nx-btn" style="height:28px" data-go="fx-contrats" data-arg="cv:'+nxE(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">Ouvrir</button>'+(collab?'':' <button class="nx-btn" style="height:28px" data-go="fx-saisie" data-arg="nf:'+nxE(c.id)+'">Facturer</button>')+'</td></tr>'; }).join('')+'</table></div>'
             :'<div class="b"><p style="margin:0 0 10px;font-weight:300">Aucun contrat de Facturation relié à ce projet.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-go="fx-calchono" data-arg="newaff:'+nxE(p.NUMBER)+'">'+nxSvg('contrat')+'Nouveau contrat</button>'+(libre.length?'<select class="inp" id="sg-lier" style="max-width:380px"><option value="">Relier un contrat existant…</option>'+libre.map(c=>'<option value="'+nxE(c.id)+'">'+nxE([c.affaire||'(sans code)',c.projet,c.nom].filter(Boolean).join(' — '))+'</option>').join('')+'</select>':'')+'</div></div>'),'<span class="a" data-go="fx-contrats">Tous les contrats</span>')

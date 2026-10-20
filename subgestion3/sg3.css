@@ -237,9 +237,8 @@ input[type=checkbox],input[type=radio]{accent-color:var(--s-nuit)}
 .nx-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;margin:0 0 30px;border-top:2px solid var(--s-noir)}
 .nx-kpi{padding:14px 18px 16px 0;margin-right:18px;border-bottom:1px solid var(--s-filet);cursor:default;position:relative}
 .nx-kpi.lnk{cursor:pointer}.nx-kpi.lnk:hover .v{color:var(--s-nuit)}
-.nx-kpi.hero{background:var(--s-nuit);color:#fff;padding:14px 18px 16px;border-bottom:0}
-.nx-kpi.hero .l,.nx-kpi.hero .s{color:rgba(255,255,255,.75)}.nx-kpi.hero .l svg{color:var(--s-jaune)}.nx-kpi.hero .v{color:var(--s-jaune)}.nx-kpi.hero .v small{color:rgba(255,255,255,.7)}
-.nx-kpi.hero .nx-bar{background:rgba(255,255,255,.2)}.nx-kpi.hero .nx-bar i{background:var(--s-jaune)}
+/* tuiles « hero » (fond bleu nuit, valeur jaune) supprimées le 20.10.2026 à la demande : toutes les données sur fond blanc, même style
+   (la classe .hero reste posée par nxKpi(…, hero) mais n'a plus d'effet) */
 .nx-kpi .l{font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:7px}
 .nx-kpi .l svg{width:15px;height:15px;color:var(--s-nuit)}
 .nx-kpi .v{font-size:28px;font-weight:700;margin-top:8px;font-variant-numeric:tabular-nums;line-height:1}   /* données : 28 px, en gras, partout (20.10.2026, avant 34 px léger) */

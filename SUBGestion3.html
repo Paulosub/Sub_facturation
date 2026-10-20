@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 18:53 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 18:57 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -526,6 +526,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* onglet Heures ▸ Par phase (20.10.2026) : phases partielles sur les lignes sous leur phase */
 .sg-sit-h tr.sub td{color:var(--s-gris);padding-top:5px;padding-bottom:5px}
 .sg-sit-h tr.sub td:first-child{padding-left:26px}
+.sg-sit-h tr:not(.sub):not(.tot):not(:first-child) td{background:var(--s-nuit3)}   /* trame sur les lignes des phases, phases partielles sur fond blanc (20.10.2026) */
 /* 18.10.2026 : vue d'ensemble Projets (chiffres, catégories, états) */
 .sg-pv-h{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap;border-top:2px solid var(--s-noir);padding-top:12px;margin:0 0 30px}
 .sg-pv-h h2{margin:2px 0 0;font-size:32px;font-weight:700;line-height:1.08}

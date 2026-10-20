@@ -8,12 +8,15 @@
 @font-face{font-family:'SUB Akkurat';font-weight:300;src:local('Akkurat-Light'),local('Akkurat Light'),local('AkkuratLLTT-Light')}
 @font-face{font-family:'SUB Akkurat';font-weight:400;src:local('Akkurat-Regular'),local('Akkurat Regular'),local('Akkurat'),local('AkkuratStd')}
 @font-face{font-family:'SUB Akkurat';font-weight:700;src:local('Akkurat-Bold'),local('Akkurat Bold'),local('AkkuratStd-Bold')}
-/* jetons de couleur par thème : subgestion3/theme.css, injecté ici par construire.py (refonte visuelle du 20.10.2026) */
+:root{--s-noir:#1d1d1b;--s-gris:#706f6f;--s-gris2:#9d9d9c;--s-gris3:#c9c9c7;--s-filet:#e3e3e0;--s-fond:#f5f5f3;
+  --s-jaune:#fff266;--s-jaune2:#fef6b0;--s-jaune3:#fffbdc;--s-nuit:#003346;--s-nuit2:#636e7e;--s-rouge:#bd1e42;
+  --s-orange:#d7860d;--s-vert:#98c21f;--s-turq:#4cbab5;--s-bleu:#3f4193;
+  --s-font:'SUB Akkurat','Akkurat','Akkurat Pro',Arial,Helvetica,sans-serif}
 
 /* ── fond, typographie, titres en double (l'en-tête de SUBGestion porte déjà le titre) ── */
-html body{font-family:var(--s-font);background:var(--paper);color:var(--s-noir)}
+html body{font-family:var(--s-font);background:#fff;color:var(--s-noir)}
 html body input,html body select,html body textarea,html body button{font-family:inherit}
-html body .panel,html body .home-wrap{background:var(--paper)}
+html body .panel,html body .home-wrap{background:#fff}
 html body .panel>.home-wrap>.home-title,html body .panel>.home-wrap>.home-sub{display:none}
 html body .panel>.home-wrap>.adm-wrap{padding-top:22px!important}
 
@@ -22,48 +25,48 @@ html body [class]:not(.offre-page):not(.offre-page *):not(#offre-scroll *):not(.
 html body [class]:not(.offre-page):not(.offre-page *):not(#offre-scroll *){box-shadow:none!important}
 
 /* ── cartes : filet noir en tête, titre Bold, plus de bandeau bleu nuit ── */
-html body .card{background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--ink);padding:0 18px 6px;margin-bottom:20px;overflow:visible}
-html body .card-hd{background:var(--panel)!important;color:var(--ink)!important;font-size:14px;font-weight:700;text-transform:none;letter-spacing:0;
-  padding:12px 2px 10px 0;border-bottom:1px solid var(--s-filet);flex-wrap:wrap;gap:8px 12px}
+html body .card{background:#fff;border-top:2px solid var(--s-noir);margin-bottom:22px;overflow:visible}
+html body .card-hd{background:#fff!important;color:var(--s-noir)!important;font-size:14px;font-weight:700;text-transform:none;letter-spacing:0;
+  padding:10px 2px 10px 0;border-bottom:1px solid var(--s-filet);flex-wrap:wrap;gap:8px 12px}
 html body .card-hd [style*="color:#fff" i],html body .card-hd [style*="color: #fff" i],html body .card-hd [style*="color:white" i],
 html body .card-hd label,html body .card-hd span:not(.badge):not(.b-ff){color:var(--s-noir)!important}
-html body .card-hd input:not([type=checkbox]):not([type=radio]),html body .card-hd select{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important}
+html body .card-hd input:not([type=checkbox]):not([type=radio]),html body .card-hd select{background:#fff!important;color:var(--s-noir)!important;border:1px solid var(--s-gris3)!important}
 html body .lockchk{color:var(--s-gris)!important}
 html body .card-bd{padding:14px 0}
 
 /* ── boutons : trois sortes seulement ── */
-html body .btn{border:1px solid var(--ink);background:var(--panel);color:var(--ink);font-weight:700;font-size:12px;padding:6px 14px;opacity:1;line-height:1.3}
+html body .btn{border:2px solid var(--s-noir);background:#fff;color:var(--s-noir);font-weight:700;font-size:12px;padding:6px 14px;opacity:1;line-height:1.3}
 html body .btn.btn-sm{padding:3px 10px;font-size:11.5px}
-html body .btn:hover{background:var(--hl2)!important;color:var(--ink)!important;opacity:1}
+html body .btn:hover{background:var(--s-jaune)!important;color:var(--s-noir)!important;opacity:1}
 /* principal : bleu nuit */
 html body .btn-blue,html body .btn-dark,html body .btn-green,
 html body .btn[style*="#0a6e84" i],html body .btn[style*="#0a4a5e" i],html body .btn[style*="#2e9e5b" i],html body .btn[style*="#27ae60" i],
 html body .btn[style*="#2f6fde" i],html body .btn[style*="#0a84ff" i],html body .btn[style*="#1a73e8" i],html body .btn[style*="#1a1a1a" i],
-html body .btn[style*="#003346" i]{background:var(--ink)!important;border-color:var(--ink)!important;color:var(--panel)!important}
+html body .btn[style*="#003346" i]{background:var(--s-nuit)!important;border-color:var(--s-nuit)!important;color:#fff!important}
 html body .btn-blue:hover,html body .btn-dark:hover,html body .btn-green:hover,
 html body .btn[style*="#0a6e84" i]:hover,html body .btn[style*="#0a4a5e" i]:hover,html body .btn[style*="#2e9e5b" i]:hover,html body .btn[style*="#27ae60" i]:hover,
 html body .btn[style*="#2f6fde" i]:hover,html body .btn[style*="#0a84ff" i]:hover,html body .btn[style*="#1a73e8" i]:hover,html body .btn[style*="#1a1a1a" i]:hover,
-html body .btn[style*="#003346" i]:hover{background:var(--ink-h)!important;border-color:var(--ink-h)!important;color:var(--panel)!important}
+html body .btn[style*="#003346" i]:hover{background:var(--s-nuit2)!important;border-color:var(--s-nuit2)!important;color:#fff!important}
 /* secondaire : contour noir */
 html body .btn[style*="#f2f2f2" i],html body .btn[style*="#888" i],html body .btn[style*="#636e7e" i],html body .btn[style*="#e4f4e8" i],
 html body .btn[style*="#fcf0dc" i],html body .btn[style*="#8a6d1a" i],html body .btn[style*="#b08800" i],html body .btn[style*="background:#fff;" i]{
-  background:var(--panel)!important;border-color:var(--ink)!important;color:var(--ink)!important}
+  background:#fff!important;border-color:var(--s-noir)!important;color:var(--s-noir)!important}
 /* suppression : rouge */
 html body .btn-red,html body .btn[style*="#c0392b" i],html body .btn[style*="#b04a4a" i],html body .btn[style*="#b23b2b" i]{
-  background:var(--panel)!important;border-color:var(--err)!important;color:var(--err)!important}
-html body .btn-red:hover,html body .btn[style*="#c0392b" i]:hover,html body .btn[style*="#b04a4a" i]:hover,html body .btn[style*="#b23b2b" i]:hover{background:var(--err)!important;color:#fff!important}
+  background:#fff!important;border-color:var(--s-rouge)!important;color:var(--s-rouge)!important}
+html body .btn-red:hover,html body .btn[style*="#c0392b" i]:hover,html body .btn[style*="#b04a4a" i]:hover,html body .btn[style*="#b23b2b" i]:hover{background:#f7e1e6!important;color:var(--s-rouge)!important}
 html body .btn[disabled]{opacity:.4}
 
 /* ── tableaux : en-tête blanc souligné de noir, sélection jaune clair ── */
 html body .list-tbl th,html body .sia-tbl th,html body .xls-tbl th,html body .adr-tb th,html body .pv-tb th,html body .cc-tb th,
-html body .pv-xl th,html body .rap-tb th{background:var(--panel)!important;color:var(--ink2)!important;font-weight:400;font-size:10.5px;
-  border-bottom:1px solid var(--ink)!important;text-transform:uppercase!important;letter-spacing:.1em!important}
+html body .pv-xl th,html body .rap-tb th{background:#fff!important;color:var(--s-noir)!important;font-weight:700;font-size:11.5px;
+  border-bottom:1.5px solid var(--s-noir)!important;text-transform:none!important;letter-spacing:0!important}
 html body .list-tbl th.th-sort:hover{background:var(--s-jaune3)!important}
 html body .list-tbl th.th-sort span{color:var(--s-nuit)}
 html body .list-tbl td{border-bottom:1px solid var(--s-filet)}
 html body .list-tbl tr:hover td{background:var(--s-jaune3)}
 html body .list-tbl tr.sel td{background:var(--s-jaune2)}
-html body .list-tbl td.num{color:var(--acc-txt);font-weight:700}
+html body .list-tbl td.num{color:var(--s-nuit)}
 html body .xls-tbl td,html body .xls-tbl th{border-color:var(--s-filet)}
 html body .xls-tbl td.lbl,html body .xls-tbl td.sym{background:var(--s-fond);color:var(--s-noir)}
 html body .sia-tbl td.calc{background:var(--s-fond);color:var(--s-nuit)}
@@ -72,9 +75,9 @@ html body .sia-tbl .ph-sub td{border-bottom-color:var(--s-filet)}
 /* ── champs ── */
 html body .field label{color:var(--s-gris);text-transform:none;letter-spacing:0;font-size:11.5px}
 html body .field input,html body .field select,html body .field textarea,html body .xls-tbl input,html body .xls-tbl select,html body .xls-tbl textarea,
-html body .adm-form input,html body .adm-form select{border:1px solid var(--line);background:var(--panel)}
-html body input:focus,html body select:focus,html body textarea:focus{outline:none;border-color:var(--acc)!important;background:var(--panel)}
-html body .xls-tbl input[readonly],html body .xls-tbl td.readout{background:var(--soft)}
+html body .adm-form input,html body .adm-form select{border:1px solid var(--s-gris3);background:#fff}
+html body input:focus,html body select:focus,html body textarea:focus{outline:none;border-color:var(--s-nuit)!important;background:var(--s-jaune3)}
+html body .xls-tbl input[readonly],html body .xls-tbl td.readout{background:var(--s-jaune3)}
 html body input[type=checkbox],html body input[type=radio]{accent-color:var(--s-nuit)}
 
 /* ── couleurs d'accent : sarcelle → bleu nuit ── */
@@ -82,12 +85,12 @@ html body [style*="color:#0a6e84" i]:not(.btn){color:var(--s-nuit)!important}
 html body .home-card .ct::after{background:var(--s-noir)}
 
 /* ── tableaux de bord (Cockpit) : version claire ── */
-html body .ck-dash{background:var(--paper)!important;color:var(--s-noir)!important;font-family:var(--s-font)!important}
+html body .ck-dash{background:#fff!important;color:var(--s-noir)!important;font-family:var(--s-font)!important}
 html body .ck-header{border-bottom:2px solid var(--s-noir)!important}
 html body .ck-header-title,html body .ck2-head h2{color:var(--s-noir)!important}
 html body .ck-header-sub,html body .ck2-head .sub{color:var(--s-gris)!important}
 html body .ck-kpi-card,html body .ck-card-inner,html body .ck-gauge,html body .ck-card,html body .ck2-kpi,html body [class*="ck2-card"]{
-  background:var(--panel)!important;border:1px solid var(--line)!important;border-top:2px solid var(--ink)!important}
+  background:#fff!important;border:0!important;border-top:2px solid var(--s-noir)!important}
 html body .ck-kpi-card::after,html body .ck2-kpi::before{display:none!important}
 html body .ck-kpi-card .kpi-val,html body .ck-card .val,html body .ck-gauge .gp,html body .ck-kpibox .v{color:var(--s-noir)!important}
 html body .ck-kpi-card .kpi-lbl,html body .ck-kpi-card .kpi-foot,html body .ck-kpi-card .kpi-val small,html body .ck-card-inner h4,
@@ -112,18 +115,18 @@ html body .ck-legend span[style*="#e6ac00" i],html body .ck-legend span[style*="
 html body .ck-legend span[style*="#e5604d" i]{background:var(--s-rouge)!important}
 
 /* ── barres d'outils des aperçus (le contenu PDF reste intact) ── */
-html body #prev-bar,html body .col-right-pdf .pv-bar,html body #offre-bar{background:var(--ink)!important}
-html body .rt-toolbar button{background:var(--panel);border:1px solid var(--line)}
+html body #prev-bar,html body .col-right-pdf .pv-bar,html body #offre-bar{background:var(--s-nuit)!important}
+html body .rt-toolbar button{background:#fff;border:1px solid var(--s-gris3)}
 html body .rt-toolbar button:hover{background:var(--s-jaune3)}
 html body .badge{font-weight:700}
 html body .card-hd input[type="checkbox"]:checked,html body .lockchk input[type="checkbox"]:checked{background:var(--s-nuit)!important}
 /* cockpit analytique : fond blanc, cartes ouvertes par un filet noir */
-html body .ck2{background:var(--paper)!important}
-html body .ck2-kpi,html body .ck2-card{background:var(--panel)!important;border:1px solid var(--line)!important;border-top:2px solid var(--ink)!important;padding:14px 18px 16px!important}
+html body .ck2{background:#fff!important}
+html body .ck2-kpi,html body .ck2-card{background:#fff!important;border-top:2px solid var(--s-noir)!important;padding:14px 4px 16px!important}
 html body .ck2-track>div{background:var(--s-nuit)!important}
 html body .ck2-rm-item{background:var(--s-fond)!important;border:1px solid var(--s-filet)!important}
 html body .ck2-rm-item .ic{background:var(--s-jaune2)!important;color:var(--s-nuit)!important}
-html body .ck2-head .yr,html body .ck2-yr-select,html body .ck-header-select{background-color:var(--acc)!important;color:var(--acc-ink)!important}
+html body .ck2-head .yr,html body .ck2-yr-select,html body .ck-header-select{background-color:var(--s-jaune)!important;color:var(--s-nuit)!important}
 html body .ck2 [stroke="#0a6e84" i]{stroke:var(--s-nuit)}html body .ck2 [stroke="#2e9e5b" i]{stroke:var(--s-vert)}
 html body .ck2 [stroke="#e6ac00" i],html body .ck2 [stroke="#c99a2e" i]{stroke:var(--s-orange)}html body .ck2 [stroke="#e5604d" i]{stroke:var(--s-rouge)}
 /* icônes au trait à la place des émojis (sg3_plus.js ▸ 8) */
@@ -148,5 +151,5 @@ html body.sg-tactile #panel-pv-chantier .pv-sec .hd{min-height:48px}
 html body.sg-tactile #pv_out table.pv-xl{width:100%!important}
 html body.sg-tactile #pv_out table.pv-xl td>textarea,html body.sg-tactile #pv_out table.pv-xl td>.pv-ta{width:100%!important;box-sizing:border-box}
 /* contrats et factures « à valider » (sg3_plus.js ▸ 11) */
-html body .sg-val-tag{display:inline-block;margin-left:6px;padding:1px 6px;font-size:10.5px;font-weight:700;background:var(--hl2);color:var(--acc-txt);border:1px solid var(--acc);vertical-align:1px}
-html body .sg-val-tag.refuse{background:var(--err);color:#fff;border-color:var(--err)}
+html body .sg-val-tag{display:inline-block;margin-left:6px;padding:1px 6px;font-size:10.5px;font-weight:700;background:#FEF6B0;color:#003346;border:1px solid #003346;vertical-align:1px}
+html body .sg-val-tag.refuse{background:#BD1E42;color:#fff;border-color:#BD1E42}

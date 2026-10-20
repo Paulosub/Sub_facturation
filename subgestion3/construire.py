@@ -61,8 +61,6 @@ COQUILLE = '''<div id="boot"><div id="boot-logo"></div><span id="boot-msg">Ouver
 '''
 
 # Facturation dans le cadre : sans en-tête, sans reprise de session propre, navigation signalée à la coquille
-# thème choisi (refonte visuelle du 20.10.2026) : posé sur <html> avant le premier rendu, dans la coquille comme dans le cadre Facturation
-THEME_SCRIPT = "<script>try{var t=JSON.parse(localStorage.getItem('sg3_theme'));if(t&&/^[a-z]+$/.test(t))document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>"
 FX_HEAD = '''<script>window.SG_EMBED=1;</script>
 <style id="sg-fx">#hdr{display:none!important}body{background:#fff}</style>
 '''
@@ -109,7 +107,7 @@ def facturation_embarquee(fa):
     i = fa.find('</head>')
     if not (0 < i < fa.find('<body')):
         sys.exit('✗ Facturation.html : structure <head>/<body> inattendue')
-    fa = fa[:i] + FX_HEAD + THEME_SCRIPT + fa[i:]
+    fa = fa[:i] + FX_HEAD + fa[i:]
     fa = remplacer(fa, "'sa_ui_state', UI_DRAFT_KEY", "'sa_ui_state_sg3', UI_DRAFT_KEY", quoi='UI_STATE_KEY')
     fa = remplacer(fa, "if(!st || !st.tab || st.tab==='home') return;", "if(window.SG_EMBED || !st || !st.tab || st.tab==='home') return;", quoi='reprise de session Facturation')
     # graphiques du cockpit et du rapport : séries aux couleurs de la charte (nuit, turquoise, orange, vert, bleu, rouge, gris)
@@ -124,7 +122,7 @@ def facturation_embarquee(fa):
     if not fa.rstrip().endswith('</html>'):
         sys.exit('✗ Facturation.html ne se termine pas par </html>')
     k = fa.rfind('</body>')
-    theme = '<style id="sg-fx-theme">\n' + lire(os.path.join(ICI, 'theme.css')) + lire(os.path.join(ICI, 'fx_theme.css')) + '</style>\n'   # thèmes + graphisme commun, après toutes les feuilles de Facturation
+    theme = '<style id="sg-fx-theme">\n' + lire(os.path.join(ICI, 'fx_theme.css')) + '</style>\n'   # graphisme commun, après toutes les feuilles de Facturation
     return fa[:k] + theme + FX_PONT + fa[k:]
 
 
@@ -158,7 +156,7 @@ def main():
     i = s.find('<style>'); j = s.find('</style>', i)
     if not (0 < i < j < s.find('</head>')):
         sys.exit('✗ feuille de style principale de DeltaSub.html introuvable')
-    s = s[:i] + THEME_SCRIPT + '<style id="sg3-css">\n' + lire(os.path.join(ICI, 'theme.css')) + lire(os.path.join(ICI, 'sg3.css')) + '</style>' + s[j + len('</style>'):]
+    s = s[:i] + '<style id="sg3-css">\n' + lire(os.path.join(ICI, 'sg3.css')) + '</style>' + s[j + len('</style>'):]
 
     # cadre : la coquille remplace l'en-tête, la barre d'outils et l'arbre de DeltaSub (mêmes identifiants conservés)
     i = s.find('<div id="boot">'); j = s.find("<script>\n'use strict';", i)
@@ -175,11 +173,11 @@ def main():
     s = remplacer(s, "' ou par Fichier ▸ Exporter la base locale.'", "'.'", quoi='texte base vide (fin)')
     s = remplacer(s, 'fermez les autres onglets DeltaSub', 'fermez les autres onglets SUBGestion ou DeltaSub', quoi='message base bloquée')
     s = remplacer(s, "'Ce module de Deltaproject est en cours de reproduction dans DeltaSub.'", "'Cet écran n’est pas encore disponible.'", quoi='écran provisoire')
-    for a_, b_ in (("background:k==='Vacances'?'#e8a54a':'#3875d7'", "background:k==='Vacances'?'var(--warn)':'var(--acc)'"),
-                   ("height:'10px',background:'#3875d7'", "height:'10px',background:'var(--acc)'"),
-                   ("tr.svd-on td{background:#dce7fb!important", "tr.svd-on td{background:var(--hl2)!important")):
+    for a_, b_ in (("background:k==='Vacances'?'#e8a54a':'#3875d7'", "background:k==='Vacances'?'#d7860d':'#003346'"),
+                   ("height:'10px',background:'#3875d7'", "height:'10px',background:'#003346'"),
+                   ("tr.svd-on td{background:#dce7fb!important", "tr.svd-on td{background:#fef6b0!important")):
         s = remplacer(s, a_, b_, quoi='couleur d’interface du moteur')
-    s = s.replace('color:#1f5fbf', 'color:var(--acc-txt)')
+    s = s.replace('color:#1f5fbf', 'color:#003346')
     s = s.replace('<title>DeltaSub</title>', '<title>SUBGestion</title>').replace('reprises dans DeltaSub.', 'reprises dans SUBGestion.').replace('disponible dans DeltaSub.', 'disponible dans SUBGestion.')
 
     # Facturation embarquée + coquille

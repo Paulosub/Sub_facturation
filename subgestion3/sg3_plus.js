@@ -640,7 +640,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
           +(classer?'<select class="sg-phsel" data-k="'+nxE(m.t+':'+d.ID)+'" title="Phase du document">'+opts(phaseDe(m.t,d))+'</select>':'')+'</div>';
         const rubM=(m,ph)=>{ const L=m.L.filter(d=>phaseDe(m.t,d)===ph); return {n:L.length,h:rub(m.titre,m.ico,L.map(d=>ld(m,d)),null)}; };
         const aCl=docsM.map(m=>rubM(m,'')).filter(x=>x.n); if(aCl.length) html+=grp('acl','task','Estimations et devis à classer',aCl);
-        PH.forEach(x=>{ const parts=[rubF('PV MO','pv',x.dos+'/PV MO'),...docsM.map(m=>rubM(m,String(x.n)))];
+        PH.forEach(x=>{ const parts=[rubF('PV MO','pv',x.dos+'/PV MO'),rubF('Présentation client','pdf',x.dos+'/Présentation client'),...docsM.map(m=>rubM(m,String(x.n)))];   // + présentation client par phase (20.10.2026)
           if(x.n===33) SG_ENQUETE.forEach(([titre,ico,sous])=>parts.push(rubF('Dossier d’enquête · '+titre,ico,x.dos+'/Dossier d’enquête/'+sous)));
           html+=grp('p'+x.n,'folder',x.n+' · '+x.lib,parts); });
       } else html=SG_FAISA_RUB.map(([c,titre,ico])=>grp(c,ico,titre,[rubF(null,ico,titre)])).join('');

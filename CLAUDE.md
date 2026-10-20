@@ -554,7 +554,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Onglets Projet et Faisabilité, nouvel ordre (20.10.2026)** : `SG_ONGLETS` = Vue d'ensemble, Contrat, Faisabilité, Projet, Chantier, Heures,
   Factures, Intervenants, Documents, Notes & tâches. **Projet** : un groupe dépliable par phase partielle SIA des études (`SG_PROJ_PH` : 31
   Avant-projet, 32 Projet de l'ouvrage, 33 Procédure de demande d'autorisation, 41 Appel d'offres ; libellé de la phase partielle du projet s'il
-  existe) ; dans chacun : PV MO (fichiers), Estimations (calcul des coûts du moteur, déplacé de Chantier) et Descriptifs & devis (devis du moteur,
+  existe) ; dans chacun : PV MO (fichiers), Présentation client (fichiers, ajoutée le même jour), Estimations (calcul des coûts du moteur, déplacé de Chantier) et Descriptifs & devis (devis du moteur,
   déplacé de Chantier) classés par phase — collection **`sgdocphase`** {ID « <table>:<id> », PROJECT_ID, PHASE} (choix « Phase » sur chaque document,
   droit « chantier : écriture » ; sans phase → groupe « Estimations et devis à classer ») — et, pour 33, le **dossier d'enquête** (`SG_ENQUETE`, comme
   le dossier « Att_CO » des affaires : formulaire Att_CO, questionnaires général et particulier, plan de situation, plans, annexes). **Faisabilité**

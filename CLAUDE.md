@@ -446,7 +446,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   lecture des contrats ni des factures (`sgFactuOk`, collaborateur par défaut) : les phases seules (heures). Finances verrouillées : message
   « Déverrouiller » puis les phases en heures seulement. `SG_ONGLETS_COLLAB` = factu, interv, chantier, docs, notes.
   **Le même jour, ensuite** : onglet `factu` renommé **« Contrats »** ; **onglet « Factures »** (`fact`, juste après) = carte Factures (factures des
-  contrats reliés, « Toutes les factures »), indication « Facturation en retard (x % facturé / y % consommé) » dans son titre ; jamais pour le
+  contrats reliés ; lien « Toutes les factures » retiré le 20.10.2026), indication « Facturation en retard (x % facturé / y % consommé) » tout en bas, sous le tableau (`.sg-fact-ret`) ; jamais pour le
   collaborateur (absent de `SG_ONGLETS_COLLAB`), droit « factures : lecture », code d'accès comme les finances. Cartes repliables essayées puis
   retirées (« Phases contrat » ne se replie pas, à la demande ; Factures a son onglet).
   **« Ouvrir » un contrat d'honoraires depuis le projet (20.10.2026)** : le contrat en PDF fidèle, lecture seule (`openContratPdf` du cadre),

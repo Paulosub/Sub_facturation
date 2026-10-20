@@ -462,7 +462,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Tableau des contrats d'honoraires (onglet Contrats, 20.10.2026)** : colonnes Contrat, **Nature** (Contrat / Avenant), **Type** (rémunération ;
   Forfait relatif / Forfait / Unitaire, chapitre « Mode de calcul » ; non enregistré = forfait relatif, le défaut de Facturation, signalé en
   infobulle), **Date du contrat** (c.date, sinon date de la dernière version), HT, TTC, **État** (Brouillon / Envoyé / Signé le … / Terminé /
-  Annulé, les états de Facturation) ; colonne Client retirée. Fiche commune `sgContratInfo(c)` (aussi dans l'aperçu PDF « Ouvrir »). **Facturation.html** (même jour) :
+  Annulé, les états de Facturation) ; colonne Client retirée. « Ouvrir » et « Facturer » de chaque ligne = tuiles à icône comme l'onglet Heures
+  (icône `pdf` / `receipt` au-dessus du libellé, `.sg-htls.sg-cacts`, 20.10.2026) ; lien « Tous les contrats » retiré du titre de la carte (20.10.2026). Fiche commune `sgContratInfo(c)` (aussi dans l'aperçu PDF « Ouvrir »). **Facturation.html** (même jour) :
   « signé » coché → `signeLe` (date du jour) sur la dernière version (`chEnsureVersions`), retiré si on décoche ; nouvelle version créée après
   une signature (contrat signé ou avenant déjà en cours, `signedV`) → version marquée `avenant:true`. Avenant = dernière version marquée, sinon
   `signedV.v` < dernière version (avenants antérieurs au 20.10.2026 non signés).

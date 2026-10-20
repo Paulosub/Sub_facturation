@@ -453,7 +453,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   lecture des contrats ni des factures (`sgFactuOk`, collaborateur par défaut) : les phases seules (heures). Finances verrouillées : message
   « Déverrouiller » puis les phases en heures seulement. `SG_ONGLETS_COLLAB` = factu, interv, chantier, docs, notes.
   **Le même jour, ensuite** : onglet `factu` renommé **« Contrats »** ; **onglet « Factures »** (`fact`, juste après) = carte Factures (factures des
-  contrats reliés ; lien « Toutes les factures » retiré le 20.10.2026), indication « Facturation en retard (x % facturé / y % consommé) » tout en bas, sous le tableau (`.sg-fact-ret`) ;
+  contrats reliés ; lien « Toutes les factures » retiré le 20.10.2026 ; colonne **« Contrat »** après le numéro, seulement si les factures relèvent
+  de plusieurs contrats — libellé `sgContratPhLib(c)` d'après les phases SIA du contrat, « Étude du projet · 31–33 », « Appel d’offres, Réalisation ·
+  41, 51–53 » ; même libellé pour deux contrats → année ajoutée ; code, date et description en infobulle ; ex. 17QUE), indication « Facturation en retard (x % facturé / y % consommé) » tout en bas, sous le tableau (`.sg-fact-ret`) ;
   tuiles au-dessus du tableau (`sgFactKpis(x)`, `.sg-fkpis` deux lignes de quatre, choix de Paulo) : Facturé (TTC), Encaissé (TTC), Solde à
   facturer (TTC) — déplacées depuis l'onglet Contrats, qui garde Honoraires (TTC) et Part facturable —, Facturé / consommé (chiffres de « Facturation
   en retard » : facturé HT ÷ honoraires HT, coût de revient ÷ honoraires HT ; jauge, repère rouge si retard), Ouvert (non payées), Échu (échéance

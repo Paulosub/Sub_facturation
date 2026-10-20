@@ -462,6 +462,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « signé » coché → `signeLe` (date du jour) sur la dernière version (`chEnsureVersions`), retiré si on décoche ; nouvelle version créée après
   une signature (contrat signé ou avenant déjà en cours, `signedV`) → version marquée `avenant:true`. Avenant = dernière version marquée, sinon
   `signedV.v` < dernière version (avenants antérieurs au 20.10.2026 non signés).
+  Phases contrat : montants, Marge bénéficiaire, Coût de revient moyen et Gain / Perte par heure réservés à l'administrateur et au chef de
+  projet (`fin = sgAdmin() || profil cdp`, et finances non verrouillées), règle écrite explicitement le 20.10.2026 ; autres profils : heures.
   **Collaborateur (20.10.2026)** : jamais de factures — ni onglet Factures, ni tuiles Facturé / Encaissé / Solde à facturer dans Contrats,
   ni indications, ni bouton « Facturer » ; restent Honoraires (TTC), Part facturable, Contrats d'honoraires (« Ouvrir ») et Phases
   contrat (s'il a le droit de lire les contrats ; sinon les phases seules).

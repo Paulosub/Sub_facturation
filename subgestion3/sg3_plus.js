@@ -420,7 +420,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       if(r.PHASE_ID!=null){ byPh[r.PHASE_ID]=(byPh[r.PHASE_ID]||0)+v; byPhC[r.PHASE_ID]=(byPhC[r.PHASE_ID]||0)+c; } });
     const tauxOk=DS.all('staffrate').length>0; if(SG_COUTS&&!tauxOk) Object.assign(byPhC,(SG_COUTS[p.ID]||{}).phases||{});
     const sansL=logs.filter(r=>r.PHASE_ID==null), sans=sansL.reduce((s0,r)=>s0+(+r.TIMEPERIOD||0),0), sansC=sansL.reduce((s0,r)=>s0+(+r.TIMEPERIOD||0)*taux(r.STAFF_ID,tlDate(r)),0);
-    const fin=SG_ACC.profil!=='collab'&&!sgFinVerrou(), pa=sgPhaseActuelle(p); pg._fn.ph=()=>cfgPhases(p);   // finances verrouillées : heures seulement (20.10.2026)
+    const fin=(sgAdmin()||SG_ACC.profil==='cdp')&&!sgFinVerrou(), pa=sgPhaseActuelle(p); pg._fn.ph=()=>cfgPhases(p);   // montants, marge bénéficiaire, coût de revient moyen, gain / perte par heure : administrateur et chef de projet seulement (20.10.2026) ; finances verrouillées : heures seulement
     if(!ph.length){ set('<div class="nx-empty">Aucune phase configurée. <a href="#" data-fn="ph">Configurer les phases</a></div>'); return; }
     const hT=v=>v?nxH(v)+' h':'—', ec=(hp,hs)=>hp?'<span style="'+(hs>hp?'color:var(--s-rouge)':'')+'">'+(hs>hp?'+':'')+nxH(hs-hp)+' h</span>':'';
     const dessiner=C=>{

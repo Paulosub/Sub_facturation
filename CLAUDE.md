@@ -504,8 +504,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Projets : « Temps » → « Heures », « Contrats » → « Contrat » (20.10.2026)** : onglets du tableau de bord (`SG_ONGLETS`, clés `temps` / `factu`
   inchangées), carte « Heures par mois », « Aucune heure saisie. », infobulle « % des heures du projet », bouton « Saisir des heures » de la page du
   projet et du clic droit sur un projet (la saisie elle-même garde son titre « Saisie de temps »).
-  **Onglet « Heures » au graphisme de la vue d'ensemble (20.10.2026)** : choix « Période » et « Affichage » en texte souligné (`.sg-hbar`,
-  `.sg-hsel`, plus de boutons encadrés `.seg`), tuiles sans texte gris (Heures saisies, Saisies, Collaborateurs, Dernière saisie ; Coût de revient
+  **Onglet « Heures » au graphisme de la vue d'ensemble (20.10.2026)** : choix « Période » et « Affichage » en menus déroulants (`.sg-hbar`,
+  `.sg-hsel select` à cadre noir de 2 px et chevron — proposition D choisie par Paulo parmi 5, après un essai en texte souligné ; plus de
+  boutons encadrés `.seg`), tuiles sans texte gris (Heures saisies, Saisies, Collaborateurs, Dernière saisie ; Coût de revient
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
   détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).

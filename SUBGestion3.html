@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 15:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 15:50 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -480,12 +480,12 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pgrp.on>.sg-cgrp-b{display:block}
 .sg-cgrp-a{display:flex;gap:8px;padding-top:12px}
 /* Projet ▸ Heures (20.10.2026) : graphisme de la vue d'ensemble — choix soulignés, tuiles, actions dans le titre de la carte */
-.sg-hbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 40px;margin:-8px 0 22px}
-.sg-hsel{display:flex;align-items:flex-end;flex-wrap:wrap;gap:0 18px}
-.sg-hsel>em{font-style:normal;font-size:11.5px;font-weight:700;padding:0 4px 8px 0;color:var(--s-noir)}
-.sg-hsel button{border:0;background:none;padding:6px 0 5px;font:inherit;font-size:13px;color:var(--s-gris);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
-.sg-hsel button:hover{color:var(--s-noir)}
-.sg-hsel button.on{color:var(--s-noir);font-weight:700;border-bottom-color:var(--s-nuit)}
+.sg-hbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 32px;margin:-8px 0 22px}
+.sg-hsel{display:flex;align-items:center;gap:10px}
+.sg-hsel>em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--s-noir)}
+.sg-hsel select{-webkit-appearance:none;appearance:none;border:2px solid var(--s-noir);border-radius:0;height:34px;padding:0 34px 0 10px;min-width:130px;font:inherit;font-size:13px;font-weight:700;color:var(--s-noir);cursor:pointer;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center/16px}
+.sg-hsel select:hover{background-color:var(--s-jaune3)}
+.sg-hsel select:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
 .nx-card>h4 .sg-ha{display:inline-flex;align-items:center;gap:5px;border-bottom:0;padding:1px 4px}
 .nx-card>h4 .sg-ha+.sg-ha{margin-left:12px}
 .nx-card>h4 .sg-ha svg{width:14px;height:14px}
@@ -24755,7 +24755,8 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
   if(k==='temps'){ const per=nxLS.get('sg3_fiche_per','12'), grp=nxLS.get('sg3_fiche_grp','det'), lim=per==='tout'?0:dayKey(new Date(now.getFullYear(),now.getMonth()-(+per),now.getDate()));
     const L=logs.filter(r=>tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1)), tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     const perLib={'1':'le dernier mois','3':'les 3 derniers mois','12':'les 12 derniers mois','tout':'toute la durée du projet'}[per]||'la période';
-    const sel=(lb,k0,L0,v0)=>'<div class="sg-hsel"><em>'+lb+'</em>'+L0.map(([v,t])=>'<button data-'+k0+'="'+v+'" class="'+(v===v0?'on':'')+'">'+t+'</button>').join('')+'</div>';
+    /* Période et Affichage en menus déroulants (20.10.2026, proposition D choisie par Paulo ; avant : texte souligné) */
+    const sel=(lb,k0,L0,v0)=>'<label class="sg-hsel"><em>'+lb+'</em><select data-k="'+k0+'">'+L0.map(([v,t])=>'<option value="'+v+'"'+(v===v0?' selected':'')+'>'+t+'</option>').join('')+'</select></label>';
     const kpiT=(ico,l,v,det)=>nxKpi(ico,l,v).replace('<div class="nx-kpi','<div'+(det?' title="'+nxE(det)+'"':'')+' class="nx-kpi');
     const bySt={}; L.forEach(r=>{ bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+(+r.TIMEPERIOD||0); });
     const eq=Object.entries(bySt).map(([id,v])=>({s:DS.get('staff',id),v})).filter(x=>x.s).sort((a,b)=>b.v-a.v);
@@ -24775,8 +24776,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(L.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,400).map(ligne).join('')+'</table>':sgSituationHtml(L,grp)):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
         +(grp==='det'&&L.length>400?'<div class="sg-hplus">400 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));
-    box.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_grp',b.dataset.grp); sgOnglet(p,'temps',pg); });
-    box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); sgOnglet(p,'temps',pg); });
+    box.querySelectorAll('.sg-hsel select').forEach(x=>x.onchange=()=>{ nxLS.set(x.dataset.k==='per'?'sg3_fiche_per':'sg3_fiche_grp',x.value); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
       sgCsvTable(t,'heures_'+p.NUMBER+'_'+diso(now)+'.csv'); };
     pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(t) sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+' · '+nxE(titre)+' · '+nxE(perLib)+'</p>'+t.outerHTML); }; return; }

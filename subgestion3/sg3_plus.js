@@ -429,7 +429,8 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
   if(k==='temps'){ const per=nxLS.get('sg3_fiche_per','12'), grp=nxLS.get('sg3_fiche_grp','det'), lim=per==='tout'?0:dayKey(new Date(now.getFullYear(),now.getMonth()-(+per),now.getDate()));
     const L=logs.filter(r=>tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1)), tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     const perLib={'1':'le dernier mois','3':'les 3 derniers mois','12':'les 12 derniers mois','tout':'toute la durée du projet'}[per]||'la période';
-    const sel=(lb,k0,L0,v0)=>'<div class="sg-hsel"><em>'+lb+'</em>'+L0.map(([v,t])=>'<button data-'+k0+'="'+v+'" class="'+(v===v0?'on':'')+'">'+t+'</button>').join('')+'</div>';
+    /* Période et Affichage en menus déroulants (20.10.2026, proposition D choisie par Paulo ; avant : texte souligné) */
+    const sel=(lb,k0,L0,v0)=>'<label class="sg-hsel"><em>'+lb+'</em><select data-k="'+k0+'">'+L0.map(([v,t])=>'<option value="'+v+'"'+(v===v0?' selected':'')+'>'+t+'</option>').join('')+'</select></label>';
     const kpiT=(ico,l,v,det)=>nxKpi(ico,l,v).replace('<div class="nx-kpi','<div'+(det?' title="'+nxE(det)+'"':'')+' class="nx-kpi');
     const bySt={}; L.forEach(r=>{ bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+(+r.TIMEPERIOD||0); });
     const eq=Object.entries(bySt).map(([id,v])=>({s:DS.get('staff',id),v})).filter(x=>x.s).sort((a,b)=>b.v-a.v);
@@ -449,8 +450,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(L.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,400).map(ligne).join('')+'</table>':sgSituationHtml(L,grp)):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
         +(grp==='det'&&L.length>400?'<div class="sg-hplus">400 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));
-    box.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_grp',b.dataset.grp); sgOnglet(p,'temps',pg); });
-    box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); sgOnglet(p,'temps',pg); });
+    box.querySelectorAll('.sg-hsel select').forEach(x=>x.onchange=()=>{ nxLS.set(x.dataset.k==='per'?'sg3_fiche_per':'sg3_fiche_grp',x.value); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
       sgCsvTable(t,'heures_'+p.NUMBER+'_'+diso(now)+'.csv'); };
     pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(t) sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+' · '+nxE(titre)+' · '+nxE(perLib)+'</p>'+t.outerHTML); }; return; }

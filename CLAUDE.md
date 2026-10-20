@@ -544,7 +544,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   partielle) » et « (sans phase) » à la fin ; pas de ligne en double quand l'unique phase partielle porte le nom de sa phase. Lignes des phases sur
   une trame bleu nuit pâle (`--s-nuit3`), phases partielles sur fond blanc (20.10.2026). « Par collaborateur » : du plus d'heures au moins d'heures
   (`sgGrouper`, tri par heures décroissantes, déjà en place) ; colonnes Collaborateur, Heures, Part seulement (Collaborateurs et Saisies retirées le
-  20.10.2026, `cs` dans `sgSituationHtml`). « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :
+  20.10.2026, `cs` dans `sgSituationHtml`). « Mois » : liste « Année » dans le titre de la carte (`.sg-an`, années où des heures ont été
+  saisies, `sg3_fiche_an`) — une année choisie : tout l'onglet la suit (tuiles comprises, titre « Heures par mois · 2025 »), la règle « Période » n'a
+  plus de repère actif ; un clic sur la règle revient à la période (année effacée) ; dans les autres affichages, la période s'applique. « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :
   chaque collaborateur (trame), du plus d'heures au moins d'heures, puis ses phases en lignes dessous dans l'ordre SIA 102 (`sgSiaCle`), « (sans
   phase) » à la fin ; colonnes Heures, Part (des heures de la période), Saisies. Situation des heures (chapitre Temps) garde le tableau croisé. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).

@@ -357,6 +357,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   temps) et `tr` / `.nx-row` (leurs boutons). Cadre Facturation (`sgCtxCadre`, branché par `fxEnsure`) : boutons et états de la ligne
   (libellé = infobulle, `sgCtxLib`), destructifs en rouge à la fin. Priorité aux menus propres d'un écran (`event.defaultPrevented`) ;
   menu du navigateur : ⌥ + clic droit, champs de saisie, texte sélectionné.
+- **Tri des tableaux (20.10.2026, fin de `sg3_plus.js`)** : clic sur le titre d'une colonne de tout tableau `.nx-tbl` de la coquille → tri ;
+  2e clic → ordre inverse (flèche bleu nuit, `aria-sort`). Premier clic : texte A→Z, nombres et dates du plus grand / plus récent ; dates
+  jj.mm.aaaa et « Septembre 2026 » reconnues ; nombres avec ', h, %, CHF, CHF/h, signe − ; cellules vides, « — » et « (sans …) » toujours en bas ;
+  lignes « Total » (`tr.tot` ou « Total… ») gardées en tête / en pied ; sous-lignes `tr.sub` triées avec leur ligne parente ; clé de tri
+  propre à une cellule : attribut `data-tri` (texte, ex. ordre SIA). Tri retenu pour la session par écran et jeu de colonnes (`SG_TRI`),
+  réappliqué quand le tableau est redessiné (MutationObserver). Pas de tri : plusieurs lignes de titres, `colspan`, titre vide (`.sg-notri`)
+  ou contenant un contrôle. Les listes du moteur (`grid`) ont leur propre tri.
 - **Appels d'offres (18.10.2026, moteur)** : « Nouveau document » ouvre directement le formulaire (plus de fenêtre de choix du
   standard : `svNew` → `svEditDoc`) ; formulaire sans « Numéro de l'ordre », « Standard » ni « Catalogue » (ISIFA2018 /
   NORMPOSITIONCATALOGCODE toujours enregistrés d'office par `svNewHeader`) ; numéro d'ordre retiré aussi de la liste (et avec lui les
@@ -459,7 +466,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   non signé / Non signé / annulé) ; « Fermer » ramène à l'écran d'où l'on venait (`nxHist(-1)`). Vue `fx-contrats`, arg `cv:<id>`
   (`sgVoirContrat(w,id)`, contrats lus par `fxData()` : `contrats` est un `let` du cadre, pas une propriété de window). L'édition reste dans
   Facturation ▸ Contrats (✏️) ; ⌘K garde `fx-calchono` `c:<id>`. NAS au 20.10.2026 : aucun contrat marqué signé, 1 seul avec 2 versions.
-  **Tableau des contrats d'honoraires (onglet Contrats, 20.10.2026)** : colonnes Contrat, **Nature** (Contrat / Avenant), **Type** (rémunération ;
+  **Tableau des contrats d'honoraires (onglet Contrats, 20.10.2026)** — état final du 20.10.2026 : **Commentaire** (commentaire de la dernière
+  version, « Commentaire de version » de Facturation, `sgContratInfo(c).com` ; remplace la colonne Contrat = code + description), **Document**
+  (ex-« Nature »), **Rémunération** (ex-« Type »), Date du contrat, HT, TTC, État. Première version du même jour : colonnes Contrat, **Nature** (Contrat / Avenant), **Type** (rémunération ;
   Forfait relatif / Forfait / Unitaire, chapitre « Mode de calcul » ; non enregistré = forfait relatif, le défaut de Facturation, signalé en
   infobulle), **Date du contrat** (c.date, sinon date de la dernière version), HT, TTC, **État** (Brouillon / Envoyé / Signé le … / Terminé /
   Annulé, les états de Facturation) ; colonne Client retirée. « Ouvrir » et « Facturer » de chaque ligne = tuiles à icône comme l'onglet Heures
@@ -515,7 +524,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
   détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période ; colonnes du détail
   (20.10.2026) : Date, Collaborateur (nom complet `staffName`, plus les initiales), Phase, Phase partielle (sous-phase, d'abord nommée « Précision », `projectsubphase`
-  `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande.
+  `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande. Largeurs fixées
+  (`<colgroup>`, `table-layout:fixed` : Date 96 px, Collaborateur 16 %, Phase 14 %, Phase partielle 21 %, Commentaire le reste, Durée 76 px), texte
+  à la ligne au lieu d'être coupé ; jusqu'à 5'000 saisies affichées. Tri par Phase / Phase partielle dans l'ordre SIA 102 (clé `data-tri` =
+  `sgSiaCle` : numéro de la phase, puis de la phase partielle) — regroupe les saisies par phase.
   Affichages regroupés de l'onglet (20.10.2026) : sans la colonne « dont facturables » (`sgSituationHtml(L,g,{hier:1,fact:false})` ; Situation
   des heures du chapitre Temps, appelée sans option, inchangée) ; « Par phase » en arbre (`sgPhasesHier`, `.sg-sit-h`) : phases dans l'ordre
   SIA 102 (numéro de la phase, sinon `sgSiaGroupe`), phases partielles sur les lignes en dessous (`tr.sub`, numéro 31, 32…), « (sans phase

@@ -502,9 +502,9 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-card>h4 .sg-ha svg{width:14px;height:14px}
 .sg-hscroll{max-height:62vh;overflow:auto}
 .sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}
-.sg-htbl td.sg-hact{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sg-htbl td.sg-hnom{white-space:nowrap}
-.sg-htbl td.sg-hsp{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   /* précision de la phase (20.10.2026) */   /* nom complet du collaborateur (20.10.2026) */
+.sg-htbl{table-layout:fixed}   /* détail des heures : largeurs par <colgroup>, texte à la ligne si nécessaire (20.10.2026) */
+.sg-htbl td{vertical-align:top;overflow-wrap:anywhere}
+.sg-htbl td:first-child,.sg-htbl td:last-child{white-space:nowrap}
 .sg-hplus{font-size:11.5px;color:var(--s-gris);padding:10px 0 0;border-top:1px solid var(--s-filet)}
 .nx-tbl td .nx-mini-bar{display:inline-block;vertical-align:middle;width:70px;margin-right:6px}   /* barre « Part » visible dans les tableaux (Heures, Situation des heures) */
 .sg-sit td:has(.nx-mini-bar){white-space:nowrap}
@@ -719,3 +719,11 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-phk .v.neg{color:var(--s-rouge)}.sg-phk .v.pos{color:#5d7a10}
 .sg-ctr-note{padding:8px 12px;font-size:12px;color:var(--s-gris);line-height:1.5}
 .sg-db .po.hors{margin-left:-10px;border-radius:0;clip-path:polygon(0 0,100% 50%,0 100%)}   /* au-delà de l'échelle : flèche au bord */
+/* Tri des tableaux par clic sur le titre d'une colonne (20.10.2026) */
+.nx-tbl tr.sg-triable th{cursor:pointer;user-select:none}
+.nx-tbl tr.sg-triable th:hover{background:var(--s-jaune3)}
+.nx-tbl th.sg-tri::after{content:'';display:inline-block;margin-left:6px;vertical-align:middle;border:4px solid transparent}
+.nx-tbl th.sg-tri.asc::after{border-bottom:5px solid var(--s-nuit);border-top-width:0}
+.nx-tbl th.sg-tri.desc::after{border-top:5px solid var(--s-nuit);border-bottom-width:0}
+.nx-tbl tr.sg-triable th.sg-notri{cursor:default;background:none}
+.nx-tbl td.sg-ccom{min-width:160px}   /* Contrat : commentaire de la dernière version (20.10.2026) */

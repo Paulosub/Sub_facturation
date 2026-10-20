@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 16:31 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 16:37 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -511,9 +511,9 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-card>h4 .sg-ha svg{width:14px;height:14px}
 .sg-hscroll{max-height:62vh;overflow:auto}
 .sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}
-.sg-htbl td.sg-hact{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sg-htbl td.sg-hnom{white-space:nowrap}
-.sg-htbl td.sg-hsp{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   /* précision de la phase (20.10.2026) */   /* nom complet du collaborateur (20.10.2026) */
+.sg-htbl{table-layout:fixed}   /* détail des heures : largeurs par <colgroup>, texte à la ligne si nécessaire (20.10.2026) */
+.sg-htbl td{vertical-align:top;overflow-wrap:anywhere}
+.sg-htbl td:first-child,.sg-htbl td:last-child{white-space:nowrap}
 .sg-hplus{font-size:11.5px;color:var(--s-gris);padding:10px 0 0;border-top:1px solid var(--s-filet)}
 .nx-tbl td .nx-mini-bar{display:inline-block;vertical-align:middle;width:70px;margin-right:6px}   /* barre « Part » visible dans les tableaux (Heures, Situation des heures) */
 .sg-sit td:has(.nx-mini-bar){white-space:nowrap}
@@ -728,6 +728,14 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-phk .v.neg{color:var(--s-rouge)}.sg-phk .v.pos{color:#5d7a10}
 .sg-ctr-note{padding:8px 12px;font-size:12px;color:var(--s-gris);line-height:1.5}
 .sg-db .po.hors{margin-left:-10px;border-radius:0;clip-path:polygon(0 0,100% 50%,0 100%)}   /* au-delà de l'échelle : flèche au bord */
+/* Tri des tableaux par clic sur le titre d'une colonne (20.10.2026) */
+.nx-tbl tr.sg-triable th{cursor:pointer;user-select:none}
+.nx-tbl tr.sg-triable th:hover{background:var(--s-jaune3)}
+.nx-tbl th.sg-tri::after{content:'';display:inline-block;margin-left:6px;vertical-align:middle;border:4px solid transparent}
+.nx-tbl th.sg-tri.asc::after{border-bottom:5px solid var(--s-nuit);border-top-width:0}
+.nx-tbl th.sg-tri.desc::after{border-top:5px solid var(--s-nuit);border-bottom-width:0}
+.nx-tbl tr.sg-triable th.sg-notri{cursor:default;background:none}
+.nx-tbl td.sg-ccom{min-width:160px}   /* Contrat : commentaire de la dernière version (20.10.2026) */
 </style>
 </head>
 <body>
@@ -24710,7 +24718,7 @@ function sgContratInfo(c){ const V=Array.isArray(c.versions)&&c.versions.length?
     remu:R[t||'relatif'], rTitre:t?'':'Mode de rémunération non enregistré dans ce contrat : forfait relatif, le mode par défaut de Facturation',
     date:c.date||last.date||'', dTitre:!c.date&&last.date?'Date de la version '+n:'',
     etat:c.annule?'Annulé':c.termine?'Terminé':c.signe?'Signé'+(signeLe?' le '+dfr(signeLe):''):c.envoye?'Envoyé':'Brouillon',   // états de Facturation (20.10.2026)
-    cl:c.annule?'':c.termine||c.signe?'s2':c.envoye?'s3':'', signeLe}; }
+    cl:c.annule?'':c.termine||c.signe?'s2':c.envoye?'s3':'', signeLe, com:String(last.comment||'').trim()}; }   // com : commentaire de la dernière version (20.10.2026)
 /* onglet Factures ▸ tuiles (20.10.2026, choix de Paulo) : 1re ligne Facturé (TTC, % des honoraires TTC), Encaissé (TTC, factures payées, % du
    facturé), Solde à facturer (TTC, honoraires − facturé ; ces trois tuiles viennent de l'onglet Contrats), Facturé / consommé (les chiffres de
    « Facturation en retard » : facturé HT ÷ honoraires HT et coût de revient ÷ honoraires HT ; jauge : facturé en bleu nuit, repère = consommé) ;
@@ -24794,8 +24802,10 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const eq=Object.entries(bySt).map(([id,v])=>({s:DS.get('staff',id),v})).filter(x=>x.s).sort((a,b)=>b.v-a.v);
     const hf=L.reduce((s,r)=>s+(+r.ISCHARGEABLE?+r.TIMEPERIOD||0:0),0), der=L[0], derS=der&&DS.get('staff',der.STAFF_ID);
     const cout=sgTauxVisibles()?L.reduce((s,r)=>s+(+r.TIMEPERIOD||0)*taux(r.STAFF_ID,tlDate(r)),0):null;
-    const ligne=r=>{ const s=DS.get('staff',r.STAFF_ID), f=DS.get('projectphase',r.PHASE_ID), sp=nm(DS.get('projectsubphase',r.SUBPHASE_ID))||'', co=r.DESCRIPTION||'';   // + précision de la phase (sous-phase), 20.10.2026   // colonne « Commentaire » : le commentaire seul, sans l'activité (20.10.2026)
-      return '<tr><td>'+dfr(diso(tlDate(r)))+'</td><td class="sg-hnom"><b>'+nxE(s?staffName(s):'')+'</b></td><td>'+nxE(nm(f))+'</td><td class="sg-hsp"'+(sp?' title="'+nxE(sp)+'"':'')+'>'+nxE(sp)+'</td><td class="sg-hact"'+(co?' title="'+nxE(co)+'"':'')+'>'+nxE(co)+'</td><td class="r"><b>'+nxH(r.TIMEPERIOD)+' h</b></td></tr>'; };   /* colonnes Facturable et Statut retirées (20.10.2026) */
+    const ligne=r=>{ const s=DS.get('staff',r.STAFF_ID), f=DS.get('projectphase',r.PHASE_ID), spo=DS.get('projectsubphase',r.SUBPHASE_ID), sp=nm(spo)||'', co=r.DESCRIPTION||'';
+      /* tri par Phase / Phase partielle dans l'ordre SIA 102 (clé data-tri : numéro de la phase, puis de la phase partielle), 20.10.2026 */
+      const kP=f?sgSiaCle(f,1)+' '+nm(f):'', kS=f?sgSiaCle(f,1)+'.'+(spo?sgSiaCle(spo):'999999999')+' '+sp:'';   // + précision de la phase (sous-phase), 20.10.2026   // colonne « Commentaire » : le commentaire seul, sans l'activité (20.10.2026)
+      return '<tr><td>'+dfr(diso(tlDate(r)))+'</td><td class="sg-hnom"><b>'+nxE(s?staffName(s):'')+'</b></td><td data-tri="'+nxE(kP)+'">'+nxE(nm(f))+'</td><td class="sg-hsp" data-tri="'+nxE(kS)+'">'+nxE(sp)+'</td><td class="sg-hact">'+nxE(co)+'</td><td class="r"><b>'+nxH(r.TIMEPERIOD)+' h</b></td></tr>'; };   /* colonnes Facturable et Statut retirées (20.10.2026) */
     const ent='<tr><th>Date</th><th>Collaborateur</th><th>Phase</th><th title="Sous-phase de la saisie">Phase partielle</th><th>Commentaire</th><th class="r">Durée</th></tr>';
     const titre={det:'Saisies',collab:'Heures par collaborateur',phase:'Heures par phase',mois:'Heures par mois',activite:'Heures par activité',croise:'Heures par collaborateur et par phase'}[grp]||'Saisies';
     const acts=L.length?'<span class="a sg-ha" data-fn="csvt" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-fn="prnt" title="Imprimer le tableau">'+nxSvg('print')+'Imprimer</span>':'';
@@ -24805,8 +24815,8 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib)
         +kpiT('cal','Dernière saisie',der?dfr(diso(tlDate(der))):'—',der?'Le '+dfr(diso(tlDate(der)))+(derS?' par '+staffName(derS):'')+' ('+nxH(der.TIMEPERIOD)+' h)':'Aucune saisie sur '+perLib).replace('<div class="v">','<div class="v txt">')
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
-      +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(L.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,400).map(ligne).join('')+'</table>':sgSituationHtml(L,grp,{hier:1,fact:false})):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
-        +(grp==='det'&&L.length>400?'<div class="sg-hplus">400 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));
+      +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(L.length?(grp==='det'?'<table class="nx-tbl sg-htbl"><colgroup><col style="width:96px"><col style="width:16%"><col style="width:14%"><col style="width:21%"><col><col style="width:76px"></colgroup>'+ent+L.slice(0,5000).map(ligne).join('')+'</table>':sgSituationHtml(L,grp,{hier:1,fact:false})):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
+        +(grp==='det'&&L.length>5000?'<div class="sg-hplus">5\'000 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));
     box.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_grp',b.dataset.grp); sgOnglet(p,'temps',pg); });
     box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
@@ -24886,7 +24896,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +(pf=>nxKpi('trend','Part facturable',pf.pct!=null?Math.round(pf.pct)+'<small>%</small>':'—',pf.tot?sgHr(pf.fact)+' h sur '+sgHr(pf.tot)+' h saisies':'aucune heure saisie',pf.pct).replace('<div class="nx-kpi','<div title="'+nxE(pf.tot?nxH(pf.fact)+' h facturables'+(pf.dep?' · '+nxH(pf.dep)+' h au-delà du contrat ('+pf.ty.map(t=>t==='relatif'?'forfait relatif':'forfait').join(', ')+') — contrat au forfait : les heures d’une phase au-delà de ses heures au contrat ne sont pas facturables':''):'')+'" class="nx-kpi'))(sgPartFacturable(p,D))
         +'</div>'   /* solde à facturer = honoraires TTC − facturé TTC (19.10.2026) ; part facturable déplacée ici depuis la vue d'ensemble (20.10.2026) */
         +((alF=>alF.length?'<div style="margin:-14px 0 20px">'+alF.map(sgAlerteTag).join(' ')+'</div>':'')(collab?[]:x.al.filter(a=>!/hors budget|^Coût |^Facturation en retard/.test(a[1]))))   /* « Coût au-delà des honoraires » et « Coût à n % des honoraires » retirés de l'onglet (20.10.2026) */   /* « phases hors budget » retiré de l'onglet (19.10.2026) */
-        +'<div class="nx-grid sg-oc-g">'+nxCard('c12','Contrat(s) d’honoraires',(x.cs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Contrat</th><th>Nature</th><th>Type</th><th>Date du contrat</th><th class="r">HT</th><th class="r">TTC</th><th>État</th><th></th></tr>'+x.cs.map(c=>{ const ci=sgContratInfo(c); return '<tr><td><b>'+nxE(c.affaire||'')+'</b> '+nxE(c.projet||'')+'</td>'   /* colonne Client retirée ; Nature, Type (rémunération), Date du contrat, état signé (20.10.2026) */
+        +'<div class="nx-grid sg-oc-g">'+nxCard('c12','Contrat(s) d’honoraires',(x.cs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Commentaire</th><th>Document</th><th>Rémunération</th><th>Date du contrat</th><th class="r">HT</th><th class="r">TTC</th><th>État</th><th></th></tr>'+x.cs.map(c=>{ const ci=sgContratInfo(c); return '<tr><td class="sg-ccom">'+nxE(ci.com)+'</td>'   /* 20.10.2026 : colonne Contrat (code et description) remplacée par le commentaire de la dernière version ; « Nature » → « Document », « Type » → « Rémunération » */+''   /* colonne Client retirée ; Nature, Type (rémunération), Date du contrat, état signé (20.10.2026) */
           +'<td'+(ci.nTitre?' title="'+nxE(ci.nTitre)+'"':'')+'>'+nxE(ci.nature)+'</td><td'+(ci.rTitre?' title="'+nxE(ci.rTitre)+'"':'')+'>'+nxE(ci.remu)+'</td><td'+(ci.dTitre?' title="'+nxE(ci.dTitre)+'"':'')+'>'+(ci.date?dfr(ci.date):'—')+'</td>'
           +'<td class="r">'+nxCHF(c.hht)+'</td><td class="r">'+nxCHF(c.httc)+'</td><td><span class="nx-tag '+ci.cl+'">'+nxE(ci.etat)+'</span></td><td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-contrats" data-arg="cv:'+nxE(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'+(collab?'':c.termine?'<span class="sg-cvide" aria-hidden="true"></span>':'<button data-go="fx-saisie" data-arg="nf:'+nxE(c.id)+'" title="Établir une facture ou un acompte pour ce contrat">'+nxSvg('receipt')+'<span>Facturer</span></button>')+'</div></td></tr>'   /* Ouvrir / Facturer : tuiles à icône comme l'onglet Heures (20.10.2026) ; contrat terminé : plus de « Facturer » (case vide pour l'alignement, 20.10.2026) */; }).join('')+'</table></div>'
             :'<div class="b"><p style="margin:0 0 10px;font-weight:300">Aucun contrat de Facturation relié à ce projet.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-go="fx-calchono" data-arg="newaff:'+nxE(p.NUMBER)+'">'+nxSvg('contrat')+'Nouveau contrat</button>'+(libre.length?'<select class="inp" id="sg-lier" style="max-width:380px"><option value="">Relier un contrat existant…</option>'+libre.map(c=>'<option value="'+nxE(c.id)+'">'+nxE([c.affaire||'(sans code)',c.projet,c.nom].filter(Boolean).join(' — '))+'</option>').join('')+'</select>':'')+'</div></div>'))   /* lien « Tous les contrats » retiré du titre (20.10.2026) */
@@ -25525,6 +25535,8 @@ const SG_GROUPES=[['projet','Par projet'],['collab','Par collaborateur'],['phase
 /* o (onglet Heures du projet, 20.10.2026) : o.fact === false → sans la colonne « dont facturables » ; o.hier → « Par phase » en arbre :
    phases dans l'ordre SIA 102 (numéro de la phase, sinon groupe SIA), phases partielles sur les lignes en dessous (numéro 31, 32…),
    « (sans phase partielle) » et « (sans phase) » à la fin. Situation des heures (Temps) appelle sans o : inchangée. */
+/* clé de tri SIA 102 d'une phase ou phase partielle : numéro (sinon groupe SIA de la phase), sur 9 chiffres ; sans numéro → en dernier */
+const sgSiaCle=(x,sia)=>{ if(!x) return ''; const n=parseFloat(x.NUMBER), o=isFinite(n)?n:((sia&&sgSiaGroupe(x))||Infinity); return isFinite(o)?String(Math.round(o*100)).padStart(9,'0'):'999999999'; };
 function sgPhasesHier(L){ const P=new Map(), nb=(x,sia)=>{ const n=parseFloat(x&&x.NUMBER); return isFinite(n)?n:(sia&&sgSiaGroupe(x))||Infinity; };
   const neu=(k,t,ord)=>({k,t,ord,h:0,hf:0,n:0,st:new Set(),subs:new Map()}), add=(o,r)=>{ o.h+=+r.TIMEPERIOD||0; if(+r.ISCHARGEABLE) o.hf+=+r.TIMEPERIOD||0; o.n++; o.st.add(String(r.STAFF_ID)); };
   L.forEach(r=>{ const f=r.PHASE_ID!=null?DS.get('projectphase',r.PHASE_ID):null, kf=f?'f'+f.ID:'f-';
@@ -25536,7 +25548,8 @@ function sgPhasesHier(L){ const P=new Map(), nb=(x,sia)=>{ const n=parseFloat(x&
   return [...P.values()].sort(tri).map(x=>Object.assign(x,{subs:[...x.subs.values()].sort(tri)})); }
 function sgSituationHtml(L,g,o){ o=o||{}; const tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), fact=o.fact!==false;
   const pct=x=>(tot?Math.round(x.h/tot*100):0)+' %';
-  if(g==='phase'&&o.hier){ const G=sgPhasesHier(L), lig=(x,sub)=>'<tr'+(sub?' class="sub"':'')+'><td>'+(sub?nxE(x.t):'<b>'+nxE(x.t)+'</b>')+'</td><td class="r">'+nxH(x.h)+'</td>'+(fact?'<td class="r">'+nxH(x.hf)+'</td>':'')
+  if(g==='phase'&&o.hier){ const G=sgPhasesHier(L), pad=v=>isFinite(v)?String(Math.round(v*100)).padStart(9,'0'):'999999999', cle=x=>x.sans||x.k==='s-'?'':pad(x.ord)+' '+x.t,
+    lig=(x,sub)=>'<tr'+(sub?' class="sub"':'')+'><td data-tri="'+nxE(cle(x))+'">'+(sub?nxE(x.t):'<b>'+nxE(x.t)+'</b>')+'</td><td class="r">'+nxH(x.h)+'</td>'+(fact?'<td class="r">'+nxH(x.hf)+'</td>':'')
       +'<td style="width:120px">'+sgBarre(tot?x.h/tot:0,sub?'var(--s-nuit2)':null)+' '+pct(x)+'</td><td class="r">'+x.st.size+'</td><td class="r">'+x.n+'</td></tr>';
     return '<table class="nx-tbl sg-sit sg-sit-h"><tr><th>Phase</th><th class="r">Heures</th>'+(fact?'<th class="r">dont facturables</th>':'')+'<th>Part</th><th class="r">Collaborateurs</th><th class="r">Saisies</th></tr>'
       +G.map(x=>lig(x)+(x.subs.length&&!(x.subs.length===1&&(x.subs[0].k==='s-'||x.t.replace(/^[^·]*·\s*/,'')===x.subs[0].t))?x.subs.map(y=>lig(y,1)).join(''):'')).join('')   /* une seule phase partielle, sans nom ou du même nom que la phase : pas de ligne en double */
@@ -26803,6 +26816,52 @@ VIEWS['nx-listeprojets']={
 NX_VIEW['nx-listeprojets']={d:SG_D.projets,t:'Liste des projets',fiche:1};
 /* écrans du moteur hors du menu Projets (liens internes du moteur) : rattachés au chapitre Affaires pour l'en-tête et le menu */
 [['aff-toutes','Toutes les affaires'],['aff-mes','Mes affaires']].forEach(([v,t])=>{ if(!NX_VIEW[v]) NX_VIEW[v]={d:SG_D.affaires,t,fiche:1}; });
+
+/* ═══ Tri des tableaux (20.10.2026) : un clic sur le titre d'une colonne d'un tableau .nx-tbl de la coquille trie les lignes ; un
+   2e clic inverse. Premier clic : texte de A à Z, nombres du plus grand au plus petit, dates de la plus récente à la plus ancienne
+   (jj.mm.aaaa, « Septembre 2026 »). Cellules vides en bas ; lignes « Total » (tr.tot ou texte « Total… ») gardées à leur place
+   (en tête ou en pied) ; sous-lignes (tr.sub : phases partielles, sous-phases) triées avec leur ligne parente. Tri retenu pour la
+   session, par écran et par jeu de colonnes, et réappliqué quand l'écran se redessine (MutationObserver). Pas de tri : plusieurs
+   lignes de titres, cellules fusionnées (colspan) ou titre contenant un contrôle. Les listes du moteur (grid) ont leur propre tri. ═══ */
+const SG_TRI=new Map();
+const SG_MOIS_FR=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const SG_TRI_MOIS=new RegExp('^('+SG_MOIS_FR.join('|')+')\\s+(\\d{4})$','i');
+function sgTriVal(td){ if(!td) return null; if(td.dataset&&td.dataset.tri!=null) return td.dataset.tri?{k:'t',v:td.dataset.tri}:null;   // clé de tri fournie (ordre SIA)
+  const c=td.querySelector('input,select,textarea'); const t=(c?c.value:td.textContent).replace(/\s+/g,' ').trim();
+  if(!t||/^[—–-]$/.test(t)||/^\(.*\)$/.test(t)) return null;   // vide, tiret, « (sans phase) »… : toujours en bas
+  let m=/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(t); if(m) return {k:'d',v:+m[3]*10000+ +m[2]*100+ +m[1]};
+  m=SG_TRI_MOIS.exec(t); if(m) return {k:'d',v:+m[2]*100+SG_MOIS_FR.indexOf(m[1].toLowerCase())};
+  const n=t.replace(/[’'   ]/g,'').replace(/[−–]/g,'-').replace(/(CHF|h|%|j|\/h)+$/i,'').replace(/^\+/,'');
+  if(/^-?\d+(\.\d+)?$/.test(n)) return {k:'n',v:parseFloat(n)};
+  return {k:'t',v:t}; }
+function sgTriTable(tb){ const rows=[...tb.rows], H=rows.filter(r=>r.querySelector('th')); if(H.length!==1) return null;
+  const hr=H[0]; if([...hr.cells].some(c=>c.colSpan>1||c.querySelector('input,select,button,a'))) return null;
+  const data=rows.slice(rows.indexOf(hr)+1); if(data.length<2||data.some(r=>[...r.cells].some(c=>c.colSpan>1))) return null;
+  return {hr,data}; }
+const sgTriSig=hr=>((window.VIEW&&VIEW.id)||'')+'|'+[...hr.cells].map(c=>c.textContent.trim()).join('|');
+const sgTriNum=V=>{ const k=V.filter(Boolean).map(v=>v.k); return k.length>0&&k.filter(x=>x!=='t').length>=k.length*0.8; };
+function sgTriAppliquer(tb,i,sens){ const T=sgTriTable(tb); if(!T) return; const par=T.data[0].parentNode, L=T.data.filter(r=>r.parentNode===par);
+  const tot=r=>r.classList.contains('tot')||/^total\b/i.test(((r.cells[0]&&r.cells[0].textContent)||'').trim());
+  const tete=[], pied=[], blocs=[]; L.forEach(r=>{ if(tot(r)){ (blocs.length?pied:tete).push(r); return; }
+    if(r.classList.contains('sub')&&blocs.length) blocs[blocs.length-1].subs.push(r); else blocs.push({r,subs:[]}); });
+  const num=sgTriNum(blocs.map(b=>sgTriVal(b.r.cells[i]))), val=r=>{ const v=sgTriVal(r.cells[i]); return v&&num&&v.k==='t'?null:v; };
+  const cmpV=(a,b)=>{ if(!a&&!b) return 0; if(!a) return 1; if(!b) return -1;
+    const d=num?a.v-b.v:String(a.v).localeCompare(String(b.v),'fr',{numeric:true,sensitivity:'base'}); return sens==='asc'?d:-d; };
+  const trier=X=>X.map((r,j)=>({r,j,v:val(r)})).sort((a,b)=>cmpV(a.v,b.v)||a.j-b.j).map(x=>x.r);
+  const ordre=trier(blocs.map(b=>b.r)), sousDe=new Map(blocs.map(b=>[b.r,trier(b.subs)]));
+  [...tete,...ordre.flatMap(r=>[r,...sousDe.get(r)]),...pied].forEach(r=>par.appendChild(r));
+  [...T.hr.cells].forEach((c,j)=>{ c.classList.toggle('sg-tri',j===i); c.classList.toggle('asc',j===i&&sens==='asc'); c.classList.toggle('desc',j===i&&sens==='desc');
+    if(j===i) c.setAttribute('aria-sort',sens==='asc'?'ascending':'descending'); else c.removeAttribute('aria-sort'); }); }
+document.addEventListener('click',e=>{ const th=e.target.closest&&e.target.closest('table.nx-tbl th'); if(!th||e.defaultPrevented) return;
+  const tb=th.closest('table'), T=sgTriTable(tb); if(!T||th.parentNode!==T.hr||!th.textContent.trim()) return;
+  const i=[...T.hr.cells].indexOf(th), sig=sgTriSig(T.hr), cur=SG_TRI.get(sig);
+  const sens=cur&&cur.i===i?(cur.sens==='asc'?'desc':'asc'):(sgTriNum(T.data.map(r=>sgTriVal(r.cells[i])))?'desc':'asc');
+  SG_TRI.set(sig,{i,sens}); sgTriAppliquer(tb,i,sens); });
+{ let f=0; const scan=()=>{ f=0; document.querySelectorAll('table.nx-tbl:not([data-tri])').forEach(tb=>{ const T=sgTriTable(tb); tb.dataset.tri=T?'1':'0'; if(!T) return;
+      T.hr.classList.add('sg-triable'); [...T.hr.cells].forEach(c=>{ if(!c.textContent.trim()) c.classList.add('sg-notri'); else if(!c.title) c.title='Trier'; });
+      const cur=SG_TRI.get(sgTriSig(T.hr)); if(cur&&cur.i<T.hr.cells.length) sgTriAppliquer(tb,cur.i,cur.sens); }); };
+  const go0=()=>{ new MutationObserver(()=>{ if(!f) f=requestAnimationFrame(scan); }).observe(document.body,{childList:true,subtree:true}); scan(); };
+  if(document.body) go0(); else document.addEventListener('DOMContentLoaded',go0); }
 </script>
 </body>
 </html>

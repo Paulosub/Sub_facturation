@@ -496,6 +496,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* Contrat ▸ Ouvrir / Facturer : mêmes tuiles à icône que l'onglet Heures (20.10.2026) */
 .sg-cacts{justify-content:flex-end;flex-wrap:nowrap}
 .sg-cacts button{min-width:62px;padding:5px 6px 4px}
+.sg-cacts .sg-cvide{min-width:62px}   /* contrat terminé : place de « Facturer » gardée vide */
 .nx-card>h4 .sg-ha{display:inline-flex;align-items:center;gap:5px;border-bottom:0;padding:1px 4px}
 .nx-card>h4 .sg-ha+.sg-ha{margin-left:12px}
 .nx-card>h4 .sg-ha svg{width:14px;height:14px}

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 16:03 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 16:05 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -505,6 +505,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* Contrat ▸ Ouvrir / Facturer : mêmes tuiles à icône que l'onglet Heures (20.10.2026) */
 .sg-cacts{justify-content:flex-end;flex-wrap:nowrap}
 .sg-cacts button{min-width:62px;padding:5px 6px 4px}
+.sg-cacts .sg-cvide{min-width:62px}   /* contrat terminé : place de « Facturer » gardée vide */
 .nx-card>h4 .sg-ha{display:inline-flex;align-items:center;gap:5px;border-bottom:0;padding:1px 4px}
 .nx-card>h4 .sg-ha+.sg-ha{margin-left:12px}
 .nx-card>h4 .sg-ha svg{width:14px;height:14px}
@@ -24883,7 +24884,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +((alF=>alF.length?'<div style="margin:-14px 0 20px">'+alF.map(sgAlerteTag).join(' ')+'</div>':'')(collab?[]:x.al.filter(a=>!/hors budget|^Coût |^Facturation en retard/.test(a[1]))))   /* « Coût au-delà des honoraires » et « Coût à n % des honoraires » retirés de l'onglet (20.10.2026) */   /* « phases hors budget » retiré de l'onglet (19.10.2026) */
         +'<div class="nx-grid sg-oc-g">'+nxCard('c12','Contrat(s) d’honoraires',(x.cs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Contrat</th><th>Nature</th><th>Type</th><th>Date du contrat</th><th class="r">HT</th><th class="r">TTC</th><th>État</th><th></th></tr>'+x.cs.map(c=>{ const ci=sgContratInfo(c); return '<tr><td><b>'+nxE(c.affaire||'')+'</b> '+nxE(c.projet||'')+'</td>'   /* colonne Client retirée ; Nature, Type (rémunération), Date du contrat, état signé (20.10.2026) */
           +'<td'+(ci.nTitre?' title="'+nxE(ci.nTitre)+'"':'')+'>'+nxE(ci.nature)+'</td><td'+(ci.rTitre?' title="'+nxE(ci.rTitre)+'"':'')+'>'+nxE(ci.remu)+'</td><td'+(ci.dTitre?' title="'+nxE(ci.dTitre)+'"':'')+'>'+(ci.date?dfr(ci.date):'—')+'</td>'
-          +'<td class="r">'+nxCHF(c.hht)+'</td><td class="r">'+nxCHF(c.httc)+'</td><td><span class="nx-tag '+ci.cl+'">'+nxE(ci.etat)+'</span></td><td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-contrats" data-arg="cv:'+nxE(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'+(collab?'':'<button data-go="fx-saisie" data-arg="nf:'+nxE(c.id)+'" title="Établir une facture ou un acompte pour ce contrat">'+nxSvg('receipt')+'<span>Facturer</span></button>')+'</div></td></tr>'   /* Ouvrir / Facturer : tuiles à icône comme l'onglet Heures (20.10.2026) */; }).join('')+'</table></div>'
+          +'<td class="r">'+nxCHF(c.hht)+'</td><td class="r">'+nxCHF(c.httc)+'</td><td><span class="nx-tag '+ci.cl+'">'+nxE(ci.etat)+'</span></td><td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-contrats" data-arg="cv:'+nxE(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'+(collab?'':c.termine?'<span class="sg-cvide" aria-hidden="true"></span>':'<button data-go="fx-saisie" data-arg="nf:'+nxE(c.id)+'" title="Établir une facture ou un acompte pour ce contrat">'+nxSvg('receipt')+'<span>Facturer</span></button>')+'</div></td></tr>'   /* Ouvrir / Facturer : tuiles à icône comme l'onglet Heures (20.10.2026) ; contrat terminé : plus de « Facturer » (case vide pour l'alignement, 20.10.2026) */; }).join('')+'</table></div>'
             :'<div class="b"><p style="margin:0 0 10px;font-weight:300">Aucun contrat de Facturation relié à ce projet.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-go="fx-calchono" data-arg="newaff:'+nxE(p.NUMBER)+'">'+nxSvg('contrat')+'Nouveau contrat</button>'+(libre.length?'<select class="inp" id="sg-lier" style="max-width:380px"><option value="">Relier un contrat existant…</option>'+libre.map(c=>'<option value="'+nxE(c.id)+'">'+nxE([c.affaire||'(sans code)',c.projet,c.nom].filter(Boolean).join(' — '))+'</option>').join('')+'</select>':'')+'</div></div>'))   /* lien « Tous les contrats » retiré du titre (20.10.2026) */
         +'</div><div class="sg-oc-ph" id="sg-oc-ph"></div>');   /* ordre (20.10.2026) : contrats d'honoraires, Phases contrat ; factures dans leur onglet (20.10.2026) */
       sgOnglet(p,'phases',pg,box.querySelector('#sg-oc-ph'));

@@ -509,6 +509,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
   détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).
+  **Numéro du projet en cartouche (20.10.2026, variante D choisie parmi 4 propositions)** : en-tête du tableau de bord, à la place du pavé
+  bleu nuit (numéro tronqué à 5 caractères) — cadre noir 2 px comme le cartouche d'un plan, « N° projet » en petit, numéro complet en gras
+  (`.nx-hero .sg-cart`) ; les autres fiches (contact, collaborateur) gardent leur pavé `.ic`.
   Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
   (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
   dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).
@@ -538,10 +541,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   les siennes) ; un clic ouvre `taches-encours`, `taches-urgent`, `taches-regle`.
 - **Page de connexion du NAS** (`LOGIN_PAGE` de `serveur_deltasub.py`) : logo Substances blanc sur noir (comme le
   démarrage de l'app), deux champs groupés « Nom d'utilisateur » / « Mot de passe » et flèche, à la manière d'Apple.
-- **Déploiement NAS = règle (10.10.2026)** : toute modification de SUBGestion 3 est déposée sur le NAS dans la foulée
-  (`nas/preparer.sh`, partage `subgestion` monté — au bureau ou par Tailscale) ; si `serveur_deltasub.py` a changé, Paulo
-  redémarre le conteneur (DSM ▸ Container Manager ▸ Projet ▸ subgestion ▸ Action ▸ Redémarrer). Avant de copier : vérifier que
-  la version du NAS n'est pas plus récente (dépôt depuis un autre poste), et que `nettoyer.py` passe (traces, sites externes).
+- **Déploiement NAS — sur demande seulement (20.10.2026, remplace la règle du 10.10.2026)** : Paulo : « ne pas changer dans le NAS,
+  tant que je ne te demande pas de le faire, pour gagner du temps et économiser de l'énergie » — les modifications sont committées et
+  poussées sur GitHub et vérifiées dans l'aperçu local ; le dépôt sur le NAS (`nas/preparer.sh` ou `nas/nettoyer.py SUBGestion3.html
+  /Volumes/subgestion/app/SUBGestion3.html`, partage `subgestion` monté — au bureau ou par Tailscale) se fait quand il le demande. Si
+  `serveur_deltasub.py` a changé, Paulo redémarre le conteneur (DSM ▸ Container Manager ▸ Projet ▸ subgestion ▸ Action ▸ Redémarrer).
+  Avant de copier : `git fetch` (l'autre poste pousse aussi), vérifier que la version du NAS n'est pas plus récente (dépôt depuis un autre
+  poste), et que `nettoyer.py` passe (traces, sites externes).
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

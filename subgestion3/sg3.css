@@ -641,6 +641,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-mg .sg-mg-xl span.cur{color:var(--s-noir);font-weight:700}
 /* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
 .nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
+/* Tableau de bord du projet : numéro en cartouche, comme le cartouche d'un plan (20.10.2026, variante D) */
+.nx-hero .sg-cart{border:2px solid var(--s-noir);padding:6px 12px 7px;display:flex;flex-direction:column;gap:2px;max-width:220px}
+.nx-hero .sg-cart small{font-size:11px;line-height:1.2;color:var(--s-gris);font-weight:400}
+.nx-hero .sg-cart b{font-size:19px;line-height:1.15;font-weight:700;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* onglet Factures : tuiles sur deux lignes de quatre (20.10.2026) */
 .sg-fkpis{grid-template-columns:repeat(4,minmax(0,1fr))}
 @container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}

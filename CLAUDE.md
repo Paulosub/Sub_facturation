@@ -501,6 +501,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `contratTTC` = httc des contrats, sinon hht × (1 + TVA) ; contrats du moteur : HT × 1,081), Facturé (TTC) (`factTTC`, % des honoraires TTC),
   Encaissé (TTC) (montant seul, sans la marge), **Solde à facturer (TTC)** = honoraires TTC − facturé TTC (% des honoraires). Sous les tuiles, l'indication « n phases hors budget » n'est plus affichée (retirée aussi de l'en-tête le 20.10.2026) ; tableau des
   factures : colonne « Numéro de facture » (au lieu de « Facture »).
+  **Projets : « Temps » → « Heures », « Contrats » → « Contrat » (20.10.2026)** : onglets du tableau de bord (`SG_ONGLETS`, clés `temps` / `factu`
+  inchangées), carte « Heures par mois », « Aucune heure saisie. », infobulle « % des heures du projet », bouton « Saisir des heures » de la page du
+  projet et du clic droit sur un projet (la saisie elle-même garde son titre « Saisie de temps »).
   Onglet « Chantier » (20.10.2026) : rubriques Descriptifs & devis, Contrôles des coûts, Estimations, PV de chantier = titres dépliables
   (`.sg-pgrp` comme les groupes de la page du projet, corps `.sg-cgrp-b`, nombre d'éléments à droite, bouton « Ouvrir » / « PV de chantier »
   dans le corps), toutes repliées à l'arrivée ; celles qu'on ouvre restent ouvertes au retour sur l'onglet (`SG_CGRP`, par projet, jusqu'au rechargement).

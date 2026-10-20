@@ -284,7 +284,7 @@ function sgPhasesGraph(p){ const ph=DS.by('projectphase','PROJECT_ID',p.ID).sort
     +'<div class="sg-pg-leg"><span><i class="ef"></i>Heures effectuées</span><span><i class="pr"></i>Heures prévues (contrat)</span><span><i class="mk"></i>Limite prévue</span><span><i class="dp"></i>Dépassement</span></div>'; }   /* légende sous le tableau (19.10.2026) */   /* ligne « Total : … h effectuées sur … h prévues · phase actuelle … » retirée (19.10.2026) */
 /* heures par mois (tableau de bord ▸ Vue d'ensemble, 20.10.2026) : colonnes en HTML (le graphique SVG étiré déformait les textes), échelle graduée,
    ligne de la moyenne des mois saisis, mois en cours marqué, année sous janvier et sous le premier mois ; au-delà de 14 mois, un mois sur deux nommé */
-function sgMoisGraph(months){ if(!months.some(m=>m.a>0)) return '<div class="nx-empty">Aucune saisie de temps.</div>';
+function sgMoisGraph(months){ if(!months.some(m=>m.a>0)) return '<div class="nx-empty">Aucune heure saisie.</div>';
   const E=sgEchelle(Math.max(...months.map(m=>m.a))), pc=v=>(v/E.top*100).toFixed(2)+'%', nz=months.filter(m=>m.a>0), moy=nz.reduce((a,m)=>a+m.a,0)/nz.length, deux=months.length>14;
   return '<div class="sg-mg"><div class="sg-mg-ax">'+E.t.map(v=>'<em style="bottom:'+pc(v)+'">'+sgHr(v)+'</em>').join('')+'</div>'
     +'<div class="sg-mg-pl">'+E.t.map(v=>'<b class="sg-mg-gl'+(v?'':' z')+'" style="bottom:'+pc(v)+'"></b>').join('')
@@ -324,7 +324,8 @@ VIEWS['nx-renta']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcul 
 /* ═══ 3. FICHE PROJET = CENTRE DE PILOTAGE ═══════════════════════════════════════════════════════════════
    Onglets : vue d'ensemble · temps · phases & budget · intervenants · contrats & factures · chantier · documents · notes
    & tâches ; actions directes : saisir du temps, facturer, PV de chantier, ouvrir dans Projets. */
-const SG_ONGLETS=[['vue','Vue d’ensemble'],['temps','Temps'],['factu','Contrats'],['fact','Factures'],['interv','Intervenants'],['chantier','Chantier'],['docs','Documents'],['notes','Notes & tâches']];   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */
+/* Projets : « Temps » → « Heures » et « Contrats » → « Contrat » (20.10.2026, à la demande ; clés inchangées) */
+const SG_ONGLETS=[['vue','Vue d’ensemble'],['temps','Heures'],['factu','Contrat'],['fact','Factures'],['interv','Intervenants'],['chantier','Chantier'],['docs','Documents'],['notes','Notes & tâches']];   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */
 function sgOuvrirDomaine(p,dom){ go('nx-pdom',p.ID+'|'+dom); }   // 18.10.2026 : page du projet (domaine en pleine page), « Tous les projets » retiré du menu
 VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }
@@ -418,8 +419,8 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const kpiJauge=(hp,v)=>{ if(!hp) return ''; const m=Math.max(hp,v), a=Math.min(v,hp)/m*100, d=v>hp?(v-hp)/m*100:0; return '<div class="sg-kg"><i class="ef" style="width:'+a.toFixed(2)+'%"></i>'+(d?'<i class="dp" style="left:'+a.toFixed(2)+'%;width:'+d.toFixed(2)+'%"></i>':'')+'<i class="mk" style="left:'+(hp/m*100).toFixed(2)+'%"></i></div>'; };
     const kpiPct=(hp,v)=>hp?'<span class="sg-kq'+(v>hp?' dep':'')+'">'+Math.round(v/hp*100)+' %</span>':'';
     set('<div class="nx-kpis sg-pkpis" id="sg-p-kpis">'+((hp,pc)=>kpiT('contrat','Heures prévues',hp?sgHr(hp)+'<small>h</small>':'—',hp?'Heures au contrat des phases : '+nxH(hp)+' h':'aucune heure prévue au contrat'))(hPrev)+kpiT('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies, dont '+nxH(h30)+' h ces 30 derniers jours'+(hPrev?' — '+(tot>hPrev?'+'+nxH(tot-hPrev)+' h au-delà des heures prévues':nxH(hPrev-tot)+' h restantes')+' ('+Math.round(tot/hPrev*100)+' % des heures prévues)':'')).replace('</div><div class="v">',kpiPct(hPrev,tot)+'</div><div class="v">').replace(/<\/div>$/,kpiJauge(hPrev,tot)+'</div>')/* « Part facturable » déplacée dans l'onglet Contrats & factures (20.10.2026) */+((pa0=>kpiT('gauge','Phase actuelle',pa0?nxE(nm(pa0.ph)):'—',pa0?'D’après les heures saisies : '+sgPhaseLib(pa0)+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'Aucune heure saisie par phase'))(sgPhaseActuelle(p)).replace('<div class="v">','<div class="v txt">'))+'</div>'   /* coût de revient, facturé et marge bénéficiaire retirés de la vue d'ensemble (19.10.2026) */
-      +'<div class="nx-grid"><div class="c8 sg-pcol">'   /* 19.10.2026 : à gauche les phases puis le temps par mois, à droite l'équipe */+nxCard('c12','Phases : heures prévues et effectuées','<div class="b">'+sgPhasesGraph(p)+'</div>')+nxCard('c12','Temps par mois','<div class="b">'+sgMoisGraph(months)+'</div>')+'</div><div class="c4 sg-pcol">'
-      +nxCard('c12','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person sg-eq" data-ref="s:'+x.s.ID+'" title="'+nxE(staffName(x.s)+' : '+nxH(x.v)+' h, '+Math.round(x.v/tot*100)+' % du temps du projet')+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span class="sg-eq-b"><i style="width:'+Math.max(1,x.v/tot*100).toFixed(1)+'%"></i></span></div><span class="m"><b>'+sgHr(x.v)+' h</b><small>'+(x.v/tot<.005?'&lt; 1':Math.round(x.v/tot*100))+' %</small></span></div>').join(''):'<div class="nx-empty">Aucune saisie de temps.</div>')+'</div>')+'</div></div>');
+      +'<div class="nx-grid"><div class="c8 sg-pcol">'   /* 19.10.2026 : à gauche les phases puis le temps par mois, à droite l'équipe */+nxCard('c12','Phases : heures prévues et effectuées','<div class="b">'+sgPhasesGraph(p)+'</div>')+nxCard('c12','Heures par mois','<div class="b">'+sgMoisGraph(months)+'</div>')+'</div><div class="c4 sg-pcol">'
+      +nxCard('c12','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person sg-eq" data-ref="s:'+x.s.ID+'" title="'+nxE(staffName(x.s)+' : '+nxH(x.v)+' h, '+Math.round(x.v/tot*100)+' % des heures du projet')+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span class="sg-eq-b"><i style="width:'+Math.max(1,x.v/tot*100).toFixed(1)+'%"></i></span></div><span class="m"><b>'+sgHr(x.v)+' h</b><small>'+(x.v/tot<.005?'&lt; 1':Math.round(x.v/tot*100))+' %</small></span></div>').join(''):'<div class="nx-empty">Aucune heure saisie.</div>')+'</div>')+'</div></div>');
     return; }
   if(k==='temps'){ const per=nxLS.get('sg3_fiche_per','12'), lim=per==='tout'?0:dayKey(new Date(now.getFullYear(),now.getMonth()-(+per),now.getDate()));
     const L=logs.filter(r=>tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1)), tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
@@ -2164,7 +2165,7 @@ function sgCtxBoutons(barre){ const out=[], vus=new Set();
 function sgCtxRef(ref){ const [k,id]=String(ref).split(':'), L=[];
   if(k==='p'){ const p=DS.get('project',id); if(!p) return L; L.push({t:'Fiche projet',fn:()=>nxOpenRef(ref)});
     if(typeof sgAdmin!=='function'||sgAdmin()||sgVueOk('aff-gestion')) L.push({t:'Modifier le projet …',fn:()=>editProject(p)});
-    L.push({t:'Saisir du temps …',fn:()=>sgSaisieRapide({projet:p.ID})},{t:'Domaines du projet',fn:()=>go('nx-pdom',String(p.ID))}); }
+    L.push({t:'Saisir des heures …',fn:()=>sgSaisieRapide({projet:p.ID})},{t:'Domaines du projet',fn:()=>go('nx-pdom',String(p.ID))}); }
   else if(k==='c'){ const o=DS.get('contactowner',id); if(!o) return L; L.push({t:'Fiche contact',fn:()=>nxOpenRef(ref)},{t:'Modifier …',fn:()=>editOwner(o)}); }
   else if(k==='s'&&DS.get('staff',id)) L.push({t:'Fiche membre',fn:()=>nxOpenRef(ref)});
   return L; }
@@ -2313,7 +2314,7 @@ VIEWS['nx-pdom']={
     const info=[mo,p.LOCATION,p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE)+(p.PROJECTENDDATE?' → '+dfr(p.PROJECTENDDATE):''):''].filter(Boolean).map(nxE).join(' · ');
     const html='<div class="sg-split">'+sgIntro('Projet '+(p.NUMBER||''),nxE(p.TITLE||p.NUMBER||''),info,
         '<div class="sg-pdom-tags">'+nxStateTag(p)+(cat!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[cat]+'</span>':'')+'</div>'
-        +'<div class="acts"><button class="nx-btn pri" data-fn="fiche">'+nxSvg('gauge')+'Tableau de bord du projet</button><button class="nx-btn" data-fn="temps">'+nxSvg('timer')+'Saisir du temps</button>'
+        +'<div class="acts"><button class="nx-btn pri" data-fn="fiche">'+nxSvg('gauge')+'Tableau de bord du projet</button><button class="nx-btn" data-fn="temps">'+nxSvg('timer')+'Saisir des heures</button>'
         +'<button class="nx-btn" data-go="nx-mesprojets">'+nxSvg('back')+'Mes projets</button></div>'   /* « Modifier le projet » retiré de la page du projet (19.10.2026) */
         +'<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxH(tot)+'</div><div class="t">heures au total</div></div><div class="sg-fig"><div class="n">'+nxH(h30)+'</div><div class="t">heures, 30 derniers jours</div></div>'
           +((pa0=>'<div class="sg-fig" title="D’après les heures saisies dans la feuille d’heures"><div class="n txt">'+(pa0?nxE(nm(pa0.ph)):'—')+'</div><div class="t">'+(pa0?'phase actuelle'+(pa0.sp?' : '+nxE(nm(pa0.sp)):'')+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'phase actuelle : aucune heure saisie par phase')+'</div></div>')(sgPhaseActuelle(p)))

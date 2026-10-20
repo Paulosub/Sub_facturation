@@ -335,11 +335,15 @@ VIEWS['nx-projet']={
       +'<h2>'+nxE(p.TITLE||p.NUMBER)+'</h2><div class="meta">'
       /* 20.10.2026 : numéro, état, date et phase actuelle retirés de l'en-tête ; le maître de l'ouvrage (intervenants au rôle 8) nommé comme tel */
       +((L=>'<span class="sg-mo">'+nxSvg('person')+'Maître de l’ouvrage'+(L.length>1?'s':'')+' : <b>'+(L.length?L.map(nxE).join(', '):'—')+'</b></span>')([...new Set(DS.by('projectmember','PROJECT_ID',p.ID).filter(x=>x.TEAMROLECODE===8&&x.CONTACT_ID!=null).map(x=>contactName(DS.get('contact',x.CONTACT_ID))).filter(Boolean))]))
-      /* période des heures saisies (20.10.2026) : mois de la première et de la dernière heure introduites dans l'app, « 04.2024 à 12.2026 » */
+      +(p.LOCATION?'<span>'+nxSvg('map')+nxE(p.LOCATION)+'</span>':'')+(+p.ISINTERNAL?'<span class="nx-tag">Interne</span>':'')+'</div>'
+      /* frise du mandat sous le maître de l'ouvrage (20.10.2026, proposition F) : mois de la première et de la dernière heure introduites dans
+         l'app, petite frise, durée en mois comptés du premier au dernier mois (« 1 an 11 mois ») ; dates exactes en infobulle ; rien sans heure */
       +((T=>{ if(!T.length) return ''; let a=T[0], b=T[0]; T.forEach(r=>{ const k=tlKey(r); if(k<tlKey(a)) a=r; if(k>tlKey(b)) b=r; });
-          const mm=r=>String(+r.TIMEMONTH+1).padStart(2,'0')+'.'+r.TIMEYEAR, d1=mm(a), d2=mm(b);
-          return '<span class="sg-mo" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b))))+'">'+nxSvg('clock')+'Heures saisies : <b>'+(d1===d2?d1:d1+' à '+d2)+'</b></span>'; })(DS.by('timelog','PROJECT_ID',p.ID)))
-      +(p.LOCATION?'<span>'+nxSvg('map')+nxE(p.LOCATION)+'</span>':'')+(+p.ISINTERNAL?'<span class="nx-tag">Interne</span>':'')+'</div></div></div>'   /* indications « Coût au-delà des honoraires », « Facturation en retard », « phases hors budget » retirées de l'en-tête (20.10.2026) */   /* 19.10.2026 : boutons Facturer, PV de chantier, épingle, « … » et Modifier retirés du tableau de bord */
+          const mm=r=>String(+r.TIMEMONTH+1).padStart(2,'0')+'.'+r.TIMEYEAR, d1=mm(a), d2=mm(b), n=(+b.TIMEYEAR*12+ +b.TIMEMONTH)-(+a.TIMEYEAR*12+ +a.TIMEMONTH)+1;
+          const an=Math.floor(n/12), mo=n%12, duree=(an?an+' an'+(an>1?'s':''):'')+(an&&mo?' ':'')+(mo||!an?mo+' mois':'');
+          return '<div class="sg-mandat" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b)))+' — '+n+' mois')+'"><span>Mandat</span><b>'+d1+'</b>'
+            +(d1===d2?'':'<span class="sg-frise" aria-hidden="true"></span><b>'+d2+'</b>')+'<span class="d">'+duree+'</span></div>'; })(DS.by('timelog','PROJECT_ID',p.ID)))
+      +'</div></div>'   /* indications « Coût au-delà des honoraires », « Facturation en retard », « phases hors budget » retirées de l'en-tête (20.10.2026) */   /* 19.10.2026 : boutons Facturer, PV de chantier, épingle, « … » et Modifier retirés du tableau de bord */
       +'<div class="sg-onglets">'+SG_ONGLETS.filter(o=>sgOngletOk(o[0])).map(([k,t])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+'</button>').join('')+'</div><div id="sg-onglet"><div class="nx-empty">…</div></div>';
     const pg=nxPage(m,html);
     SG_ONGLETS.forEach(([k])=>pg._fn['o_'+k]=()=>{ nxLS.set('sg3_fiche_onglet',k); pg.querySelectorAll('.sg-onglets button').forEach(b=>b.classList.toggle('on',b.dataset.fn==='o_'+k)); sgOnglet(p,k,pg); });

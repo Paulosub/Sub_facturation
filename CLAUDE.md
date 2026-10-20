@@ -552,17 +552,22 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   mois (« 1 an 11 mois », « 5 ans 2 mois ») centrée sous la frise (`.sg-frise em`) ; libellé « Mandat » retiré à la demande (20.10.2026) ; dates exactes et nombre de mois en infobulle ; un seul mois : sans frise ; rien
   sans heure. Remplace « Heures saisies : 04.2024 à 12.2026 », placé d'abord à droite du maître de l'ouvrage le même jour.
   **Onglets Projet et Faisabilité, nouvel ordre (20.10.2026)** : `SG_ONGLETS` = Vue d'ensemble, Contrat, Faisabilité, Projet, Chantier, Heures,
-  Factures, Intervenants, Documents, Notes & tâches. **Projet** : un groupe dépliable par phase partielle SIA des études (`SG_PROJ_PH` : 31
-  Avant-projet, 32 Projet de l'ouvrage, 33 Procédure de demande d'autorisation, 41 Appel d'offres ; libellé de la phase partielle du projet s'il
-  existe) ; dans chacun : PV MO (fichiers), Présentation client (fichiers, ajoutée le même jour), Estimations (calcul des coûts du moteur, déplacé de Chantier) et Descriptifs & devis (devis du moteur,
-  déplacé de Chantier) classés par phase — collection **`sgdocphase`** {ID « <table>:<id> », PROJECT_ID, PHASE} (choix « Phase » sur chaque document,
-  droit « chantier : écriture » ; sans phase → groupe « Estimations et devis à classer ») — et, pour 33, le **dossier d'enquête** (`SG_ENQUETE`, comme
-  le dossier « Att_CO » des affaires : formulaire Att_CO, questionnaires général et particulier, plan de situation, plans, annexes). **Faisabilité**
-  (`sgFaisaOk(p)` : projet classé faisabilité, ou phase n° 2 / « faisabilité » avec heures ou heures au contrat, ou documents déjà déposés) :
-  documents de base, études, variantes, présentation au client (`SG_FAISA_RUB`). Fichiers : dépôt du moteur (`ch03aDeposer`, droit « documents :
-  dépôt ») sous `ProjectDocuments/Documents/<projet>/Documents/Projet/<n° phase>/<rubrique>` ou `…/Faisabilité/<rubrique>`, visibles aussi dans
-  Documents. Onglets permis au collaborateur ; droit d'affichage : documents ou chantier en lecture. Chantier ne garde que Contrôles des coûts et
-  PV de chantier. Module d'étude de faisabilité (PDF complet) : à concevoir avec Paulo (proposition du 20.10.2026).
+  Factures, Intervenants, Notes & tâches (**onglet Documents retiré** : module Documents à la fin de Projet ; onglet mémorisé « docs » → Projet).
+  **Projet** : un groupe dépliable par phase partielle SIA des études (`SG_PROJ_PH` 31 Avant-projet, 32 Projet de l'ouvrage, 33 Procédure de demande
+  d'autorisation ; libellé de la phase partielle du projet s'il existe) ; dans chacun : PV MO, Présentation client (fichiers), Estimations (calcul des
+  coûts du moteur) et Descriptifs & devis (devis du moteur ; pas en 31 Avant-projet : `sans`) classés par phase — collection **`sgdocphase`** {ID
+  « <table>:<id> », PROJECT_ID, PHASE} (choix « Phase » sur chaque document, droit « chantier : écriture » ; sans phase → groupe « Estimations et devis
+  à classer ») — et, pour 33, le **dossier d'enquête** (`SG_ENQUETE`, comme le dossier « Att_CO » des affaires : formulaire Att_CO, questionnaires
+  général et particulier, plan de situation, plans, annexes) ; puis le **module Documents** (tous les fichiers du projet par dossier, `sgDossierLib`,
+  tuiles « Ajouter des fichiers » → dossier Général, « Domaine Documents » ; la tuile Documents de la page du projet ouvre Projet, groupe déplié).
+  **Chantier** (même code que Projet) : phase **41 Appel d'offres** (déplacée de Projet, mêmes rubriques, fichiers toujours sous le dossier
+  « Projet »), Contrôles des coûts, PV de chantier (boutons en tuiles à icône). **Faisabilité** (`sgFaisaOk(p)` : projet classé faisabilité, ou
+  phase n° 2 / « faisabilité » avec heures ou heures au contrat, ou documents déjà déposés) : documents de base, études, variantes, présentation au
+  client (`SG_FAISA_RUB`). **Projet uniquement de faisabilité** (`sgCatProjet` = faisabilité, d'après le titre) : ni Projet ni Chantier ; le module
+  Documents est à la fin de Faisabilité. Fichiers : dépôt du moteur (`ch03aDeposer`, droit « documents : dépôt ») sous
+  `ProjectDocuments/Documents/<projet>/Documents/Projet/<n° phase>/<rubrique>` ou `…/Faisabilité/<rubrique>`. Onglets permis au collaborateur ;
+  droit d'affichage : documents ou chantier en lecture. Module d'étude de faisabilité (PDF complet) : à concevoir avec Paulo (proposition du
+  20.10.2026 : fiche parcelle, contraintes, règlement, potentiel et variantes, existant et polluants, conclusion, PDF A3 paysage).
   Onglet « Intervenants » (20.10.2026) : « Entreprises » (rôle 19) et « Directeur des travaux » (rôle 2) échangent leur place dans cet onglet
   (`ordR`, l'ordre `ROLE_ORD` du moteur reste inchangé ailleurs) ; « Gérer les intervenants » et « Liste d'adresses » en tuiles à icône
   (`.sg-htls.sg-iacts`, comme Heures et Contrat) au lieu de boutons encadrés.

@@ -670,12 +670,13 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
 .nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
 /* frise du mandat sous le maître de l'ouvrage (20.10.2026, proposition F) */
-.nx-hero .sg-mandat{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:7px;font-size:13px;color:var(--s-noir)}
+.nx-hero .sg-mandat{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:8px 0 14px;font-size:13px;color:var(--s-noir)}
 .nx-hero .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
 .nx-hero .sg-mandat .d{color:var(--s-gris)}
 .sg-frise{position:relative;display:inline-block;width:160px;height:4px;background:var(--s-nuit)}
 .sg-frise::before,.sg-frise::after{content:'';position:absolute;top:-4px;width:2px;height:12px;background:var(--s-nuit)}
 .sg-frise::before{left:-1px}.sg-frise::after{right:-1px}
+.sg-frise em{position:absolute;top:9px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11.5px;color:var(--s-gris);white-space:nowrap}   /* durée centrée sous la frise */
 /* Tableau de bord du projet : grand numéro bleu nuit, filet noir, puis le titre (20.10.2026, variante C) */
 .nx-hero:has(>.sg-pnum){column-gap:16px}
 .nx-hero .sg-pnum{align-self:stretch;padding:3px 16px 0 0;border-right:2px solid var(--s-noir);font-size:34px;font-weight:400;line-height:1;letter-spacing:.01em;color:var(--s-nuit);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}

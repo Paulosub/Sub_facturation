@@ -341,8 +341,8 @@ VIEWS['nx-projet']={
       +((T=>{ if(!T.length) return ''; let a=T[0], b=T[0]; T.forEach(r=>{ const k=tlKey(r); if(k<tlKey(a)) a=r; if(k>tlKey(b)) b=r; });
           const mm=r=>String(+r.TIMEMONTH+1).padStart(2,'0')+'.'+r.TIMEYEAR, d1=mm(a), d2=mm(b), n=(+b.TIMEYEAR*12+ +b.TIMEMONTH)-(+a.TIMEYEAR*12+ +a.TIMEMONTH)+1;
           const an=Math.floor(n/12), mo=n%12, duree=(an?an+' an'+(an>1?'s':''):'')+(an&&mo?' ':'')+(mo||!an?mo+' mois':'');
-          return '<div class="sg-mandat" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b)))+' — '+n+' mois')+'"><span>Mandat</span><b>'+d1+'</b>'
-            +(d1===d2?'':'<span class="sg-frise" aria-hidden="true"></span><b>'+d2+'</b>')+'<span class="d">'+duree+'</span></div>'; })(DS.by('timelog','PROJECT_ID',p.ID)))
+          return '<div class="sg-mandat" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b)))+' — '+n+' mois')+'"><b>'+d1+'</b>'   /* 20.10.2026 : sans le libellé « Mandat », durée centrée sous la frise */
+            +(d1===d2?'<span class="d">'+duree+'</span>':'<span class="sg-frise"><em>'+duree+'</em></span><b>'+d2+'</b>')+'</div>'; })(DS.by('timelog','PROJECT_ID',p.ID)))
       +'</div></div>'   /* indications « Coût au-delà des honoraires », « Facturation en retard », « phases hors budget » retirées de l'en-tête (20.10.2026) */   /* 19.10.2026 : boutons Facturer, PV de chantier, épingle, « … » et Modifier retirés du tableau de bord */
       +'<div class="sg-onglets">'+SG_ONGLETS.filter(o=>sgOngletOk(o[0])).map(([k,t])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+'</button>').join('')+'</div><div id="sg-onglet"><div class="nx-empty">…</div></div>';
     const pg=nxPage(m,html);

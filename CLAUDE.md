@@ -434,6 +434,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `detail.inputs.ch_modecalc_type`, comme `chContratModeCalc`) → les heures facturables (ISCHARGEABLE) d'une phase sont plafonnées à ses heures
   au contrat (TIMEBUDGET) : le dépassement d'une phase (toutes les phases, phase en cours comprise) n'est pas facturable et fait baisser la part
   (« x h facturables · y h au-delà du contrat (forfait) ») ; contrat unitaire, phase sans heures au contrat, heures sans phase : inchangé.
+  Contrat sans mode de rémunération enregistré (ancien formulaire : 113 des 140 contrats du NAS au 20.10.2026, dont 22SEG) = forfait relatif,
+  le mode par défaut de Facturation (`sgRemuType(c)||'relatif'`) : la règle s'applique aussi (20.10.2026 ; 22SEG : 100 % → 40 %). Projet sans contrat relié : inchangé.
   **Vue d'ensemble du tableau de bord (19.10.2026)** : tuiles Temps total, **Temps contractuel prévu** (Σ des heures au contrat des phases,
   heures restantes ou au-delà, % du prévu), Part facturable ; Coût de revient, Facturé (HT) et Marge bénéficiaire retirés à la demande (plus de
   tuile « Finances verrouillées » dans cet onglet) — la marge reste dans « Phases contrat », le facturé dans « Contrats & factures ».

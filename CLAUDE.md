@@ -439,6 +439,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Tuile « Part facturable » déplacée dans l'onglet Contrats & factures (20.10.2026)**, à droite de « Solde à facturer (TTC) » : calcul dans
   `sgPartFacturable(p,D)` {tot, chg, fact, dep, ty, pct} ; texte « x h sur y h saisies », détail du dépassement en infobulle. La vue d'ensemble
   garde Heures prévues, Heures saisies et Phase actuelle.
+  **« Phases contrat » regroupé dans « Contrats & factures » (20.10.2026)** : `SG_ONGLETS` sans « phases » (onglet à la 3e place ; choix
+  mémorisé `phases` → `factu`) ; ordre : tuiles financières, indications, carte « Phases contrat » (`#sg-oc-ph`, dessinée par
+  `sgOnglet(p,'phases',pg,cible)` — paramètre `cible` = partie d'un onglet regroupé), puis Contrats d'honoraires et Factures. Sans droit de
+  lecture des contrats ni des factures (`sgFactuOk`, collaborateur par défaut) : les phases seules (heures). Finances verrouillées : message
+  « Déverrouiller » puis les phases en heures seulement. `SG_ONGLETS_COLLAB` = factu, interv, chantier, docs, notes.
+  Cartes « Phases contrat » et « Factures » repliables (20.10.2026) : clic sur le titre, chevron à droite, ouvertes par défaut, état gardé par
+  carte (`sgRepl(clé)` dans la classe de `nxCard`, `sgReplChev()`, écouteur global, localStorage `sg3_cartes_repliees`).
   **Vue d'ensemble du tableau de bord (19.10.2026)** : tuiles Temps total, **Temps contractuel prévu** (Σ des heures au contrat des phases,
   heures restantes ou au-delà, % du prévu), Part facturable ; Coût de revient, Facturé (HT) et Marge bénéficiaire retirés à la demande (plus de
   tuile « Finances verrouillées » dans cet onglet) — la marge reste dans « Phases contrat », le facturé dans « Contrats & factures ».

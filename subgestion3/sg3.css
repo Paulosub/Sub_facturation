@@ -624,6 +624,16 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-mg .sg-mg-xl span.cur{color:var(--s-noir);font-weight:700}
 /* en-tête du tableau de bord : maître de l'ouvrage (20.10.2026) */
 .nx-hero .meta .sg-mo{font-size:13px;color:var(--s-noir)}.nx-hero .meta .sg-mo b{font-weight:700;margin-left:4px}
+/* cartes repliables (20.10.2026) : titre cliquable, chevron à droite (vers le bas = ouverte) */
+.nx-card.sg-repl>h4{cursor:pointer;user-select:none;align-items:center}
+.nx-card.sg-repl>h4:hover{background:var(--s-jaune3)}
+.nx-card.sg-repl>h4 .sg-repl-chev{width:18px;height:18px;margin-left:auto;flex:0 0 18px;transform:rotate(90deg);transition:transform .15s}
+.nx-card.sg-repl>h4 .a+.sg-repl-chev{margin-left:12px}
+.nx-card.sg-repl.ferme>h4 .sg-repl-chev{transform:none}
+.nx-card.sg-repl.ferme>:not(h4){display:none}
+.nx-card.sg-repl.ferme>h4{border-bottom:0}
+/* Contrats & factures : « Phases contrat » entre les tuiles et les listes (20.10.2026) */
+.sg-oc-ph{margin:0 0 30px}.sg-oc-ph:empty{display:none}
 /* équipe : part du temps en barre (20.10.2026) */
 .sg-eq .t .sg-eq-b{display:block;height:4px;background:var(--s-filet);margin-top:6px;overflow:hidden}
 .sg-eq .t .sg-eq-b i{display:block;height:100%;background:var(--s-nuit)}

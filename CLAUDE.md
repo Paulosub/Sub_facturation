@@ -504,9 +504,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Projets : « Temps » → « Heures », « Contrats » → « Contrat » (20.10.2026)** : onglets du tableau de bord (`SG_ONGLETS`, clés `temps` / `factu`
   inchangées), carte « Heures par mois », « Aucune heure saisie. », infobulle « % des heures du projet », bouton « Saisir des heures » de la page du
   projet et du clic droit sur un projet (la saisie elle-même garde son titre « Saisie de temps »).
-  **Onglet « Heures » au graphisme de la vue d'ensemble (20.10.2026)** : choix « Période » et « Affichage » en menus déroulants (`.sg-hbar`,
-  `.sg-hsel select` à cadre noir de 2 px et chevron — proposition D choisie par Paulo parmi 5, après un essai en texte souligné ; plus de
-  boutons encadrés `.seg`), tuiles sans texte gris (Heures saisies, Saisies, Collaborateurs, Dernière saisie ; Coût de revient
+  **Onglet « Heures » au graphisme de la vue d'ensemble (20.10.2026)** : choix « Période » et « Affichage » selon la **variante C6** choisie par
+  Paulo parmi 12 (après un essai en texte souligné puis un en menus déroulants, le même jour) — Période sur une règle graduée (`.sg-hreg` :
+  1 mois · 3 mois · 12 mois · Tout, repère carré par période, trait bleu nuit jusqu'au choix, repère plein et libellé gras pour le choix),
+  Affichage en tuiles à icône (`.sg-htls` : Détail, Collaborateur, Phase, Mois, Activité, Collab. × phase ; icônes `list`, `users`, `escalier`,
+  `cal`, `tag`, `grille` — `escalier` et `grille` ajoutées à `NXI` — ; choix souligné en bleu nuit, nom complet en infobulle), deux lignes
+  `.sg-hrow` dans `.sg-hbar` (plus de boutons encadrés `.seg`) ; tuiles sans texte gris (Heures saisies, Saisies, Collaborateurs, Dernière saisie ; Coût de revient
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
   détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).

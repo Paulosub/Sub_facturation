@@ -393,6 +393,8 @@ function sgVoirContrat(w,id){ const c=((fxData()||{}).c||[]).find(x=>x.id===id);
   const cm=w.document.getElementById('offre-version-comment'); if(cm) cm.textContent=etat+(V.length>1?' · version '+n+(v.date?' du '+dfr(v.date):''):'');
   if(!w._sgCloseOffre){ w._sgCloseOffre=w.closeOffre; w.closeOffre=function(){ const r=w._sgCloseOffre.apply(this,arguments); if(w._sgRetour){ w._sgRetour=false; if(VIEW&&VIEW.id==='fx-contrats') nxHist(-1); } return r; }; }
   w._sgRetour=NX.pos>0; }
+/* icônes de l'onglet Heures (20.10.2026) : phases = escalier, collaborateur × phase = grille */
+Object.assign(NXI,{escalier:'<path d="M3 20.5h5v-5h5v-5h5v-5h3"/>',grille:'<rect x="3" y="4" width="18" height="16"/><path d="M3 9.5h18M3 15h18M9 4v16"/>'});
 const SG_CGRP={};   // Chantier : rubriques ouvertes par projet (le temps de la session de l'onglet)
 function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet'); const set=h0=>{ box.innerHTML=h0; };   // cible : partie d'un onglet regroupé (20.10.2026)
   const now=new Date(), taux=sgTaux(), logs=DS.by('timelog','PROJECT_ID',p.ID);
@@ -423,14 +425,20 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       +'<div class="nx-grid"><div class="c8 sg-pcol">'   /* 19.10.2026 : à gauche les phases puis le temps par mois, à droite l'équipe */+nxCard('c12','Phases : heures prévues et effectuées','<div class="b">'+sgPhasesGraph(p)+'</div>')+nxCard('c12','Heures par mois','<div class="b">'+sgMoisGraph(months)+'</div>')+'</div><div class="c4 sg-pcol">'
       +nxCard('c12','Équipe','<div class="b flush">'+(team.length?team.slice(0,9).map(x=>'<div class="nx-person sg-eq" data-ref="s:'+x.s.ID+'" title="'+nxE(staffName(x.s)+' : '+nxH(x.v)+' h, '+Math.round(x.v/tot*100)+' % des heures du projet')+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span class="sg-eq-b"><i style="width:'+Math.max(1,x.v/tot*100).toFixed(1)+'%"></i></span></div><span class="m"><b>'+sgHr(x.v)+' h</b><small>'+(x.v/tot<.005?'&lt; 1':Math.round(x.v/tot*100))+' %</small></span></div>').join(''):'<div class="nx-empty">Aucune heure saisie.</div>')+'</div>')+'</div></div>');
     return; }
-  /* Heures (20.10.2026) : graphisme de la vue d'ensemble — période et affichage en choix soulignés (plus de boutons encadrés), tuiles
+  /* Heures (20.10.2026) : graphisme de la vue d'ensemble — période sur une règle graduée et affichage en tuiles à icône (variante C6
+     choisie par Paulo parmi 12 ; essais avant : texte souligné, puis menus déroulants), tuiles
      sans texte gris (détail en infobulle), CSV et Imprimer dans le titre de la carte, en-tête du tableau fixe ; détail limité à 400 lignes
      à l'écran (signalé), l'export CSV du détail contient toutes les saisies de la période */
   if(k==='temps'){ const per=nxLS.get('sg3_fiche_per','12'), grp=nxLS.get('sg3_fiche_grp','det'), lim=per==='tout'?0:dayKey(new Date(now.getFullYear(),now.getMonth()-(+per),now.getDate()));
     const L=logs.filter(r=>tlKey(r)>=lim).sort((a,b)=>tlKey(b)-tlKey(a)||cmp(b.TIMEHOUR1,a.TIMEHOUR1)), tot=L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     const perLib={'1':'le dernier mois','3':'les 3 derniers mois','12':'les 12 derniers mois','tout':'toute la durée du projet'}[per]||'la période';
-    /* Période et Affichage en menus déroulants (20.10.2026, proposition D choisie par Paulo ; avant : texte souligné) */
-    const sel=(lb,k0,L0,v0)=>'<label class="sg-hsel"><em>'+lb+'</em><select data-k="'+k0+'">'+L0.map(([v,t])=>'<option value="'+v+'"'+(v===v0?' selected':'')+'>'+t+'</option>').join('')+'</select></label>';
+    /* Période : règle graduée (repère carré par période, trait bleu nuit jusqu'au choix) ; Affichage : tuiles à icône (choix souligné en bleu nuit) */
+    const PERS=[['1','1 mois'],['3','3 mois'],['12','12 mois'],['tout','Tout']], iP=Math.max(0,PERS.findIndex(x=>x[0]===per));
+    const regle='<div class="sg-hrow"><em>Période</em><div class="sg-hreg" role="group" aria-label="Période"><span class="l"></span><span class="f" style="width:calc((100% - var(--w)) * '+(iP/(PERS.length-1)).toFixed(4)+')"></span>'
+      +PERS.map(([v,t],i)=>'<button data-per="'+v+'" class="'+(i===iP?'on':i<iP?'av':'')+'" aria-pressed="'+(i===iP)+'"><i></i>'+t+'</button>').join('')+'</div></div>';
+    const tuiles='<div class="sg-hrow"><em>Affichage</em><div class="sg-htls" role="group" aria-label="Affichage">'
+      +[['det','Détail','list','Détail des saisies'],['collab','Collaborateur','users','Par collaborateur'],['phase','Phase','escalier','Par phase'],['mois','Mois','cal','Par mois'],['activite','Activité','tag','Par activité'],['croise','Collab. × phase','grille','Collaborateur × phase']]
+        .map(([v,t,ico,tt])=>'<button data-grp="'+v+'" class="'+(v===grp?'on':'')+'" aria-pressed="'+(v===grp)+'" title="'+tt+'">'+nxSvg(ico)+'<span>'+t+'</span></button>').join('')+'</div></div>';
     const kpiT=(ico,l,v,det)=>nxKpi(ico,l,v).replace('<div class="nx-kpi','<div'+(det?' title="'+nxE(det)+'"':'')+' class="nx-kpi');
     const bySt={}; L.forEach(r=>{ bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+(+r.TIMEPERIOD||0); });
     const eq=Object.entries(bySt).map(([id,v])=>({s:DS.get('staff',id),v})).filter(x=>x.s).sort((a,b)=>b.v-a.v);
@@ -441,8 +449,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const ent='<tr><th>Date</th><th>Collaborateur</th><th>Activité</th><th>Phase</th><th class="r">Durée</th><th>Facturable</th><th>Statut</th></tr>';
     const titre={det:'Saisies',collab:'Heures par collaborateur',phase:'Heures par phase',mois:'Heures par mois',activite:'Heures par activité',croise:'Heures par collaborateur et par phase'}[grp]||'Saisies';
     const acts=L.length?'<span class="a sg-ha" data-fn="csvt" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-fn="prnt" title="Imprimer le tableau">'+nxSvg('print')+'Imprimer</span>':'';
-    set('<div class="sg-hbar">'+sel('Période','per',[['1','1 mois'],['3','3 mois'],['12','12 mois'],['tout','Tout']],per)
-        +sel('Affichage','grp',[['det','Détail'],['collab','Par collaborateur'],['phase','Par phase'],['mois','Par mois'],['activite','Par activité'],['croise','Collaborateur × phase']],grp)+'</div>'
+    set('<div class="sg-hbar">'+regle+tuiles+'</div>'
       +'<div class="nx-kpis sg-pkpis">'+kpiT('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies sur '+perLib+(hf?', dont '+nxH(hf)+' h facturables':''))
         +kpiT('list','Saisies',num(L.length,0),L.length+' saisie'+(L.length>1?'s':'')+' sur '+perLib)
         +kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib)
@@ -450,7 +457,8 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(L.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,400).map(ligne).join('')+'</table>':sgSituationHtml(L,grp)):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
         +(grp==='det'&&L.length>400?'<div class="sg-hplus">400 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));
-    box.querySelectorAll('.sg-hsel select').forEach(x=>x.onchange=()=>{ nxLS.set(x.dataset.k==='per'?'sg3_fiche_per':'sg3_fiche_grp',x.value); sgOnglet(p,'temps',pg); });
+    box.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_grp',b.dataset.grp); sgOnglet(p,'temps',pg); });
+    box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
       sgCsvTable(t,'heures_'+p.NUMBER+'_'+diso(now)+'.csv'); };
     pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(t) sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+' · '+nxE(titre)+' · '+nxE(perLib)+'</p>'+t.outerHTML); }; return; }

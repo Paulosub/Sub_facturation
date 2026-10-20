@@ -267,19 +267,28 @@ const sgEchelle=max=>{ const st0=Math.max(max,1)/4, p10=Math.pow(10,Math.floor(M
 /* graphique des phases (tableau de bord ▸ Vue d'ensemble) : par phase, bande « prévu » (heures contrat, TIMEBUDGET), barre « effectué » (heures
    saisies) jusqu'à la limite prévue, dépassement en rouge au-delà, repère de la limite ; même échelle graduée pour toutes les phases (axe en
    bas, lignes de repère) ; colonne du numéro, heures effectuées / prévues, pastille du % consommé (rouge au-delà de 100 %) ; phase actuelle surlignée */
-function sgPhasesGraph(p){ const ph=DS.by('projectphase','PROJECT_ID',p.ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)), by={}; let sans=0;
-  DS.by('timelog','PROJECT_ID',p.ID).forEach(r=>{ const v=+r.TIMEPERIOD||0; if(r.PHASE_ID==null) sans+=v; else by[r.PHASE_ID]=(by[r.PHASE_ID]||0)+v; });
+/* ESSAI du 20.10.2026 (à confirmer par Paulo) : phases partielles sous chaque phase (prévu = TIMEBUDGET de la phase partielle, effectué = heures
+   saisies sur elle ; « Sans phase partielle » s'il reste des heures de la phase sans phase partielle). false = graphique d'avant, phases seules. */
+const SG_PG_PARTIELLES=true;
+function sgPhasesGraph(p){ const ph=DS.by('projectphase','PROJECT_ID',p.ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)), by={}, bySp={}; let sans=0;
+  DS.by('timelog','PROJECT_ID',p.ID).forEach(r=>{ const v=+r.TIMEPERIOD||0; if(r.PHASE_ID==null) sans+=v; else { by[r.PHASE_ID]=(by[r.PHASE_ID]||0)+v; const k=r.PHASE_ID+'|'+(r.SUBPHASE_ID==null?'':r.SUBPHASE_ID); bySp[k]=(bySp[k]||0)+v; } });
   const pa=sgPhaseActuelle(p), L=ph.map(f=>({f,pr:+f.TIMEBUDGET||0,ef:by[f.ID]||0})).filter(x=>x.pr||x.ef);
   if(!L.length&&!sans) return '<div class="nx-empty">Aucune phase avec des heures prévues ou saisies.</div>';
-  const E=sgEchelle(Math.max(1,sans,...L.map(x=>Math.max(x.pr,x.ef)))), pc=v=>(v/E.top*100).toFixed(2)+'%';
+  const sousPh=f=>{ if(!SG_PG_PARTIELLES) return []; const S=DS.by('projectsubphase','PROJECTPHASE_ID',f.ID).sort((a,b)=>(parseFloat(a.NUMBER)||0)-(parseFloat(b.NUMBER)||0)||cmp(nm(a),nm(b)))
+      .map(s=>({s,pr:+s.TIMEBUDGET||0,ef:bySp[f.ID+'|'+s.ID]||0})).filter(x=>x.pr||x.ef);
+    const hors=bySp[f.ID+'|']||0; if(hors&&S.length) S.push({s:null,pr:0,ef:hors});
+    return S.length===1&&(!S[0].s||sgPhNom(S[0].s)===sgPhNom(f))?[]:S; };   // une seule phase partielle du même nom que la phase : pas de ligne en double
+  L.forEach(x=>{ x.S=sousPh(x.f); });
+  const E=sgEchelle(Math.max(1,sans,...L.flatMap(x=>[x.pr,x.ef,...x.S.flatMap(y=>[y.pr,y.ef])]))), pc=v=>(v/E.top*100).toFixed(2)+'%';
   const gl='<span class="sg-gl">'+E.t.slice(1).map(v=>'<b style="left:'+pc(v)+'"></b>').join('')+'</span>';
-  const row=(n,lib,pr,ef,cur)=>{ const dep=pr&&ef>pr, t=pr?(ef<=pr?'reste '+nxH(pr-ef)+' h':'dépassement de '+nxH(ef-pr)+' h'):'non prévu au contrat';
-    return '<div class="sg-pg-r'+(cur?' cur':'')+'" title="'+nxE(lib+' — prévu : '+(pr?nxH(pr)+' h':'—')+' · effectué : '+nxH(ef)+' h · '+t)+'"><span class="sg-pg-n">'+(n!=null?nxE(String(n)):'')+'</span>'
-      +'<div class="l"><span>'+nxE(lib)+'</span>'+(cur?'<i class="sg-pg-cur">actuelle</i>':'')+'</div>'
+  const row=(n,lib,pr,ef,cur,sub,tt)=>{ const dep=pr&&ef>pr, t=pr?(ef<=pr?'reste '+nxH(pr-ef)+' h':'dépassement de '+nxH(ef-pr)+' h'):'non prévu au contrat';
+    return '<div class="sg-pg-r'+(sub?' sub':'')+(cur?' cur':'')+'" title="'+nxE((tt||lib)+' — prévu : '+(pr?nxH(pr)+' h':'—')+' · effectué : '+nxH(ef)+' h · '+t)+'"><span class="sg-pg-n">'+(n!=null?nxE(String(n)):'')+'</span>'
+      +'<div class="l"><span>'+nxE(lib)+'</span>'+(cur&&!sub?'<i class="sg-pg-cur">actuelle</i>':'')+'</div>'
       +'<div class="g">'+gl+(pr?'<i class="pr" style="width:'+pc(pr)+'"></i>':'')+'<i class="ef'+(pr?'':' np')+'" style="width:'+pc(pr?Math.min(ef,pr):ef)+'"></i>'
       +(dep?'<i class="dp" style="left:'+pc(pr)+';width:'+pc(ef-pr)+'"></i>':'')+(pr?'<i class="mk" style="left:'+pc(pr)+'"></i>':'')+'</div>'
       +'<div class="v"><b>'+sgHr(ef)+'</b> / '+(pr?sgHr(pr):'—')+' h</div><div class="sg-pg-q">'+(pr?'<span'+(dep?' class="dep"':'')+'>'+Math.round(ef/pr*100)+' %</span>':'')+'</div></div>'; };
-  return '<div class="sg-pg">'+L.map(x=>row(x.f.NUMBER,sgPhNom(x.f),x.pr,x.ef,!!pa&&pa.ph.ID===x.f.ID)).join('')+(sans?row(null,'Sans phase',0,sans,false):'')
+  return '<div class="sg-pg">'+L.map(x=>row(x.f.NUMBER,sgPhNom(x.f),x.pr,x.ef,!!pa&&pa.ph.ID===x.f.ID)
+      +x.S.map(y=>row(y.s?y.s.NUMBER:null,y.s?sgPhNom(y.s):'Sans phase partielle',y.pr,y.ef,!!(pa&&pa.sp&&y.s&&pa.sp.ID===y.s.ID),1,sgPhNom(x.f)+' › '+(y.s?sgPhNom(y.s):'sans phase partielle'))).join('')).join('')+(sans?row(null,'Sans phase',0,sans,false):'')
     +'<div class="sg-pg-ax"><div class="g">'+E.t.map((v,i)=>'<em style="left:'+pc(v)+'">'+sgHr(v)+(i===E.t.length-1?' h':'')+'</em>').join('')+'</div></div></div>'
     +'<div class="sg-pg-leg"><span><i class="ef"></i>Heures effectuées</span><span><i class="pr"></i>Heures prévues (contrat)</span><span><i class="mk"></i>Limite prévue</span><span><i class="dp"></i>Dépassement</span></div>'; }   /* légende sous le tableau (19.10.2026) */   /* ligne « Total : … h effectuées sur … h prévues · phase actuelle … » retirée (19.10.2026) */
 /* heures par mois (tableau de bord ▸ Vue d'ensemble, 20.10.2026) : colonnes en HTML (le graphique SVG étiré déformait les textes), échelle graduée,

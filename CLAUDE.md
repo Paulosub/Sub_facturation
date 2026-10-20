@@ -546,7 +546,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   de Mes projets. Marge bénéficiaire = facturé HT − coût de revient (`sgRenta`), % du facturé (`sgMargePct`) : données de la page du projet et
   indicateur du tableau de bord (`sgMargeVisible` : pas pour le collaborateur ni finances verrouillées). Tableau de bord ▸ Vue d'ensemble :
   carte « Phases : heures prévues et effectuées » (`sgPhasesGraph`, graphique en barres de type « bullet » : prévu = TIMEBUDGET en fond, effectué
-  en bleu nuit, repère de la limite, dépassement en rouge, phase actuelle surlignée, total). Démarrage : le dernier écran est rouvert avec
+  en bleu nuit, repère de la limite, dépassement en rouge, phase actuelle surlignée, total). **ESSAI du 20.10.2026, à confirmer par Paulo** :
+  phases partielles sous chaque phase dans ce graphique (`SG_PG_PARTIELLES = true` dans `sg3_plus.js` ; prévu = TIMEBUDGET de la phase
+  partielle, effectué = heures saisies sur elle, « Sans phase partielle » pour le reste ; barres plus fines `.sg-pg-r.sub`, phase partielle
+  en cours surlignée ; une seule phase partielle du nom de la phase : pas de ligne). Pour revenir au graphique d'avant : `false` (ou copie
+  `subgestion3/_backup_20261020_1642_avant_essai_phases_partielles/`). Démarrage : le dernier écran est rouvert avec
   son paramètre (`sg3_vue_arg`, enveloppe de `go` dans `sg3.js` ; pas pour fx-* ni new / nf: / newaff:).
   « Coût du temps » renommé « Coût de revient » partout dans l'app (fiche projet, Rentabilité des projets, CSV, textes), 19.10.2026.
   **Tableau de bord du projet, collaborateur (19.10.2026)** : onglets `SG_ONGLETS_COLLAB` = Phases contrat, Intervenants, Contrats &

@@ -442,7 +442,7 @@ function sgFactKpis(x,ah){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=tod
     +nxKpi('trend','Facturé / consommé',x.fact!=null?Math.round(x.fact*100)+'<small>%</small> / '+Math.round(x.conso*100)+'<small>%</small>':'—',x.fact!=null?'consommé = coût de revient ÷ honoraires HT':'aucun contrat relié').replace(/<\/div>$/,jauge+'</div>')
     +nxKpi('receipt','Ouvert (TTC)',nxCHF(sum(ouv))+'<small>CHF</small>',ouv.length?ouv.length+' facture'+(ouv.length>1?'s':'')+' non payée'+(ouv.length>1?'s':''):'tout est payé')
     +nxKpi('clock','Échu (TTC)','<span'+(ech.length?' class="sg-neg"':'')+'>'+nxCHF(sum(ech))+'</span><small>CHF</small>',ech.length?ech.length+' facture'+(ech.length>1?'s':'')+' à échéance dépassée':'aucune échéance dépassée')
-    +nxKpi('cal','Dernière facture',der?dfr(der.date):'—',der?(der.num||'')+(der.type?' · '+der.type:''):'aucune facture').replace('<div class="v">','<div class="v txt">')
+    +nxKpi('cal','Dernière facture',der?dfr(der.date):'—',der?(der.num||'')+(der.type?' · '+der.type:''):'aucune facture').replace('<div class="v">','<div class="v dt">')
     +nxKpi('clock','Délai moyen de paiement',delai!=null?Math.round(delai)+'<small>jours</small>':'—',pay.length?'sur '+pay.length+' facture'+(pay.length>1?'s':'')+' payée'+(pay.length>1?'s':''):'aucune date de paiement saisie')
     +'</div>'; }
 /* « Ouvrir » un contrat depuis le projet (20.10.2026) : le contrat en PDF fidèle (lecture seule, openContratPdf du cadre), DERNIÈRE version
@@ -538,9 +538,9 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const acts=selAn+selCol+(LT.length?'<span class="a sg-ha" data-fn="csvt" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-fn="prnt" title="Imprimer le tableau">'+nxSvg('print')+'Imprimer</span>':'');
     set('<div class="sg-hbar">'+regle+tuiles+'</div>'
       +'<div class="nx-kpis sg-pkpis">'+kpiT('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies sur '+perLib+(hf?', dont '+nxH(hf)+' h facturables':''))
-        +kpiT('list','Saisies',num(L.length,0),L.length+' saisie'+(L.length>1?'s':'')+' sur '+perLib)
+        /* tuile « Saisies » (nombre de saisies) retirée à la demande (20.10.2026) */
         +(col?'':kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib))   /* un seul collaborateur choisi (Détail) : tuile sans intérêt, retirée (20.10.2026) */
-        +kpiT('cal','Dernière saisie',der?dfr(diso(tlDate(der))):'—',der?'Le '+dfr(diso(tlDate(der)))+(derS?' par '+staffName(derS):'')+' ('+nxH(der.TIMEPERIOD)+' h)':'Aucune saisie sur '+perLib).replace('<div class="v">','<div class="v txt">')
+        +kpiT('cal','Dernière saisie',der?dfr(diso(tlDate(der))):'—',der?'Le '+dfr(diso(tlDate(der)))+(derS?' par '+staffName(derS):'')+' ('+nxH(der.TIMEPERIOD)+' h)':'Aucune saisie sur '+perLib).replace('<div class="v">','<div class="v dt">')   /* date à la taille des autres chiffres (20.10.2026) */
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(LT.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,5000).map(ligne).join('')+'</table>':sgSituationHtml(LT,grp,{hier:1,fact:false})):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
         +(grp==='det'&&L.length>5000?'<div class="sg-hplus">5\'000 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));

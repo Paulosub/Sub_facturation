@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 19:28 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 19:33 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -233,8 +233,8 @@ input[type=checkbox],input[type=radio]{accent-color:var(--s-nuit)}
 .sg-intro .acts{display:flex;flex-direction:column;gap:8px;margin-top:22px}
 .sg-intro .foot{margin-top:26px;padding-top:7px;border-top:2px solid var(--s-noir);font-size:11px;font-weight:700}
 .sg-figs{display:grid;grid-template-columns:1fr 1fr;gap:18px 14px;margin-top:22px}
-.sg-fig .n{font-size:30px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums}
-.sg-fig .n.txt,.nx-kpi .v.txt{font-size:24px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* phase actuelle en toutes lettres (19.10.2026) */
+.sg-fig .n{font-size:28px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums}   /* données : 28 px partout (20.10.2026, avant 30 px) */
+.sg-fig .n.txt,.nx-kpi .v.txt{font-size:22px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* phase actuelle en toutes lettres (19.10.2026) */
 .sg-fig .t{font-size:11.5px;color:var(--s-gris);margin-top:4px}
 .nx-btn{height:36px;padding:0 14px;border:2px solid var(--s-noir);background:#fff;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;color:var(--s-noir);white-space:nowrap;text-decoration:none}
 .nx-btn:hover{background:var(--s-jaune)}
@@ -251,8 +251,8 @@ input[type=checkbox],input[type=radio]{accent-color:var(--s-nuit)}
 .nx-kpi.hero .nx-bar{background:rgba(255,255,255,.2)}.nx-kpi.hero .nx-bar i{background:var(--s-jaune)}
 .nx-kpi .l{font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:7px}
 .nx-kpi .l svg{width:15px;height:15px;color:var(--s-nuit)}
-.nx-kpi .v{font-size:34px;font-weight:300;margin-top:8px;font-variant-numeric:tabular-nums;line-height:1}
-.nx-kpi .v small{font-size:13px;font-weight:400;color:var(--s-gris);margin-left:4px}
+.nx-kpi .v{font-size:28px;font-weight:300;margin-top:8px;font-variant-numeric:tabular-nums;line-height:1}   /* données : 28 px partout, une date tient dans sa tuile (20.10.2026, avant 34 px) */
+.nx-kpi .v small{font-size:12px;font-weight:400;color:var(--s-gris);margin-left:4px}
 .nx-kpi .s{font-size:11.5px;color:var(--s-gris);margin-top:6px;font-weight:300}
 .nx-bar{height:4px;background:var(--s-filet);overflow:hidden;margin-top:10px}
 .nx-bar i{display:block;height:100%;background:var(--s-nuit)}
@@ -773,6 +773,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-rub-l.nu{padding-left:0}
 .sg-rub-l .nx-row select.sg-phsel{margin-left:auto;max-width:240px;font:inherit;font-size:12px;height:28px}
 .sg-docs-page{padding:16px 22px 30px;max-width:1100px}   /* page du projet ▸ Documents (20.10.2026) */
+.nx-kpi .v.dt{white-space:nowrap}   /* date d'une tuile (Dernière saisie, Dernière facture) : même taille que les autres chiffres (20.10.2026) */
 </style>
 </head>
 <body>
@@ -24837,7 +24838,7 @@ function sgFactKpis(x,ah){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=tod
     +nxKpi('trend','Facturé / consommé',x.fact!=null?Math.round(x.fact*100)+'<small>%</small> / '+Math.round(x.conso*100)+'<small>%</small>':'—',x.fact!=null?'consommé = coût de revient ÷ honoraires HT':'aucun contrat relié').replace(/<\/div>$/,jauge+'</div>')
     +nxKpi('receipt','Ouvert (TTC)',nxCHF(sum(ouv))+'<small>CHF</small>',ouv.length?ouv.length+' facture'+(ouv.length>1?'s':'')+' non payée'+(ouv.length>1?'s':''):'tout est payé')
     +nxKpi('clock','Échu (TTC)','<span'+(ech.length?' class="sg-neg"':'')+'>'+nxCHF(sum(ech))+'</span><small>CHF</small>',ech.length?ech.length+' facture'+(ech.length>1?'s':'')+' à échéance dépassée':'aucune échéance dépassée')
-    +nxKpi('cal','Dernière facture',der?dfr(der.date):'—',der?(der.num||'')+(der.type?' · '+der.type:''):'aucune facture').replace('<div class="v">','<div class="v txt">')
+    +nxKpi('cal','Dernière facture',der?dfr(der.date):'—',der?(der.num||'')+(der.type?' · '+der.type:''):'aucune facture').replace('<div class="v">','<div class="v dt">')
     +nxKpi('clock','Délai moyen de paiement',delai!=null?Math.round(delai)+'<small>jours</small>':'—',pay.length?'sur '+pay.length+' facture'+(pay.length>1?'s':'')+' payée'+(pay.length>1?'s':''):'aucune date de paiement saisie')
     +'</div>'; }
 /* « Ouvrir » un contrat depuis le projet (20.10.2026) : le contrat en PDF fidèle (lecture seule, openContratPdf du cadre), DERNIÈRE version
@@ -24933,9 +24934,9 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     const acts=selAn+selCol+(LT.length?'<span class="a sg-ha" data-fn="csvt" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-fn="prnt" title="Imprimer le tableau">'+nxSvg('print')+'Imprimer</span>':'');
     set('<div class="sg-hbar">'+regle+tuiles+'</div>'
       +'<div class="nx-kpis sg-pkpis">'+kpiT('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies sur '+perLib+(hf?', dont '+nxH(hf)+' h facturables':''))
-        +kpiT('list','Saisies',num(L.length,0),L.length+' saisie'+(L.length>1?'s':'')+' sur '+perLib)
+        /* tuile « Saisies » (nombre de saisies) retirée à la demande (20.10.2026) */
         +(col?'':kpiT('users','Collaborateurs',num(eq.length,0),eq.length?eq.map(x=>staffName(x.s)+' : '+nxH(x.v)+' h').join(' · '):'Aucun collaborateur sur '+perLib))   /* un seul collaborateur choisi (Détail) : tuile sans intérêt, retirée (20.10.2026) */
-        +kpiT('cal','Dernière saisie',der?dfr(diso(tlDate(der))):'—',der?'Le '+dfr(diso(tlDate(der)))+(derS?' par '+staffName(derS):'')+' ('+nxH(der.TIMEPERIOD)+' h)':'Aucune saisie sur '+perLib).replace('<div class="v">','<div class="v txt">')
+        +kpiT('cal','Dernière saisie',der?dfr(diso(tlDate(der))):'—',der?'Le '+dfr(diso(tlDate(der)))+(derS?' par '+staffName(derS):'')+' ('+nxH(der.TIMEPERIOD)+' h)':'Aucune saisie sur '+perLib).replace('<div class="v">','<div class="v dt">')   /* date à la taille des autres chiffres (20.10.2026) */
         +(cout!=null?kpiT('coins','Coût de revient',nxCHF(cout)+'<small>CHF</small>','Heures × taux interne de chaque collaborateur à la date de la saisie'):'')+'</div>'
       +nxCard('c12 sg-hcard',titre,'<div class="b flush sg-hscroll" id="sg-fiche-sit">'+(LT.length?(grp==='det'?'<table class="nx-tbl sg-htbl">'+ent+L.slice(0,5000).map(ligne).join('')+'</table>':sgSituationHtml(LT,grp,{hier:1,fact:false})):'<div class="nx-empty">Aucune heure sur cette période.</div>')+'</div>'
         +(grp==='det'&&L.length>5000?'<div class="sg-hplus">5\'000 saisies affichées sur '+num(L.length,0)+' — l’export CSV les contient toutes.</div>':''),acts));

@@ -550,7 +550,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   plus de repère actif ; un clic sur la règle revient à la période (année effacée) ; dans les autres affichages, la période s'applique. « Détail » :
   même présentation pour les collaborateurs (« Tous · Paulo Meireles · … », collaborateurs ayant des heures sur la période, du plus d'heures au
   moins d'heures, `sg3_fiche_col`) — un collaborateur choisi : détail, tuiles et titre (« Saisies · <nom> ») ne montrent que ses saisies. La tuile
-  « Collaborateurs » est alors retirée (sans intérêt pour un seul collaborateur, 20.10.2026). « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :
+  « Collaborateurs » est alors retirée (sans intérêt pour un seul collaborateur, 20.10.2026). Tuile « Saisies » (nombre de saisies) retirée de l'onglet
+  (20.10.2026) : Heures saisies, Collaborateurs, Dernière saisie, Coût de revient.
+  **Taille des données dans toute l'app (20.10.2026)** : valeurs des tuiles `.nx-kpi .v` et chiffres `.sg-fig .n` à 28 px (avant 34 et 30), textes
+  `.txt` à 22 px, unités `small` à 12 px ; dates en tuile (`.v.dt` : Dernière saisie, Dernière facture) à la même taille que les chiffres — pour
+  qu'une date tienne dans sa tuile. Gardés plus grands à dessein : total de la vue d'ensemble Projets (`.sg-pv-k .v` 48 px), numéro du projet
+  dans le titre (`.sg-pnum` 34 px). « Collab. × phase » en arbre (20.10.2026, `sgSituationHtml(…,'croise',{hier})`) :
   chaque collaborateur (trame), du plus d'heures au moins d'heures, puis ses phases en lignes dessous dans l'ordre SIA 102 (`sgSiaCle`), « (sans
   phase) » à la fin ; colonnes Heures, Part (des heures de la période), Saisies. Situation des heures (chapitre Temps) garde le tableau croisé. Barres « Part » des tableaux
   regroupés visibles (`.nx-tbl td .nx-mini-bar`, aussi dans Situation des heures).

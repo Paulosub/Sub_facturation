@@ -459,7 +459,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   contrats reliés ; lien « Toutes les factures » retiré le 20.10.2026 ; colonne **« Contrat »** après le numéro, seulement si les factures relèvent
   de plusieurs contrats — libellé `sgContratPhLib(c)` d'après les phases SIA du contrat, « Étude du projet · 31–33 », « Appel d’offres, Réalisation ·
   41, 51–53 » ; même libellé pour deux contrats → année ajoutée ; code, date et description en infobulle ; ex. 17QUE), indication « Facturation en retard (x % facturé / y % consommé) » tout en bas, sous le tableau (`.sg-fact-ret`) ;
-  tuiles au-dessus du tableau (`sgFactKpis(x)`, `.sg-fkpis` deux lignes de quatre, choix de Paulo) : Facturé (TTC), Encaissé (TTC), Solde à
+  tuiles au-dessus du tableau (`sgFactKpis(x,ah)`, `.sg-fkpis` deux lignes de quatre, choix de Paulo — cinq colonnes depuis l'ajout, le 20.10.2026,
+  de **« À facturer selon les heures »** après Solde à facturer : `sgAFacturerHeures(p,D,x)` = heures facturables (cochées « Facturable », plafonnées
+  par phase aux heures du contrat pour un forfait, comme la Part facturable) × tarif horaire du contrat (« Tarif horaire moyen » `ch_h` de Facturation
+  − rabais du contrat), TTC, − facturé TTC ; plusieurs contrats : chaque heure au contrat qui couvre sa phase partielle (sinon sa phase), à défaut
+  au dernier contrat qui a un tarif ; négatif = facturé d'avance (vert `.sg-pos`) ; contrats de l'ancien formulaire sans tarif (113 sur 140) → « — » ;
+  détail en infobulle) : Facturé (TTC), Encaissé (TTC), Solde à
   facturer (TTC) — déplacées depuis l'onglet Contrats, qui garde Honoraires (TTC) et Part facturable —, Facturé / consommé (chiffres de « Facturation
   en retard » : facturé HT ÷ honoraires HT, coût de revient ÷ honoraires HT ; jauge, repère rouge si retard), Ouvert (non payées), Échu (échéance
   passée, rouge), Dernière facture (date, n°, type), Délai moyen de paiement (date de facture → `date_paiement`) ; TTC sans frais comme `sgRenta` ; jamais pour le

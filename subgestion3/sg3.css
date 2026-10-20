@@ -682,8 +682,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-hero .sg-pnum{align-self:stretch;padding:3px 16px 0 0;border-right:2px solid var(--s-noir);font-size:34px;font-weight:400;line-height:1;letter-spacing:.01em;color:var(--s-nuit);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 @container (max-width:560px){.nx-hero:has(>.sg-pnum){grid-template-columns:1fr;row-gap:8px}.nx-hero .sg-pnum{border-right:0;padding:0;font-size:28px}}
 /* onglet Factures : tuiles sur deux lignes de quatre (20.10.2026) */
-.sg-fkpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sg-fkpis{grid-template-columns:repeat(5,minmax(0,1fr))}   /* 5 colonnes depuis « À facturer selon les heures » (20.10.2026) */
+@container (max-width:1000px){.sg-fkpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sg-pos{color:#4e6b0b}   /* facturé d'avance (vert de la charte, foncé pour la lecture) */
 .sg-neg{color:var(--s-rouge)}
 .sg-kg .mk.r{background:var(--s-rouge)}
 /* onglet Factures : « Facturation en retard » sous le tableau (20.10.2026) */

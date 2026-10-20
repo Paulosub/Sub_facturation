@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 17:37 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 17:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -691,8 +691,10 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-hero .sg-pnum{align-self:stretch;padding:3px 16px 0 0;border-right:2px solid var(--s-noir);font-size:34px;font-weight:400;line-height:1;letter-spacing:.01em;color:var(--s-nuit);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 @container (max-width:560px){.nx-hero:has(>.sg-pnum){grid-template-columns:1fr;row-gap:8px}.nx-hero .sg-pnum{border-right:0;padding:0;font-size:28px}}
 /* onglet Factures : tuiles sur deux lignes de quatre (20.10.2026) */
-.sg-fkpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sg-fkpis{grid-template-columns:repeat(5,minmax(0,1fr))}   /* 5 colonnes depuis « À facturer selon les heures » (20.10.2026) */
+@container (max-width:1000px){.sg-fkpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container (max-width:760px){.sg-fkpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sg-pos{color:#4e6b0b}   /* facturé d'avance (vert de la charte, foncé pour la lecture) */
 .sg-neg{color:var(--s-rouge)}
 .sg-kg .mk.r{background:var(--s-rouge)}
 /* onglet Factures : « Facturation en retard » sous le tableau (20.10.2026) */
@@ -24750,7 +24752,32 @@ function sgContratInfo(c){ const V=Array.isArray(c.versions)&&c.versions.length?
    « Facturation en retard » : facturé HT ÷ honoraires HT et coût de revient ÷ honoraires HT ; jauge : facturé en bleu nuit, repère = consommé) ;
    2e ligne Ouvert (factures non payées), Échu (non payées, échéance passée, en rouge), Dernière facture (date, n°), Délai moyen de paiement
    (date de facture → date de paiement, factures payées qui ont les deux dates) */
-function sgFactKpis(x){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=today();   // TTC comme sgRenta (sans frais) : ouvert + encaissé = facturé
+/* onglet Factures ▸ « À facturer selon les heures » (20.10.2026) : heures facturables (cochées « Facturable », plafonnées par phase aux heures du
+   contrat pour un forfait — même règle que la Part facturable) × tarif horaire du contrat (« Tarif horaire moyen » h de Facturation, moins le
+   rabais du contrat), TTC (TVA du contrat), moins le facturé TTC (sans frais, comme sgRenta). Plusieurs contrats : chaque heure va au contrat qui
+   couvre sa phase partielle (sinon sa phase), à défaut au dernier contrat qui a un tarif. Contrats de l'ancien formulaire : aucun tarif enregistré
+   → null (« — »). */
+function sgAFacturerHeures(p,D,x){ const cs=(x.cs||[]).filter(c=>!c.annule);
+  const tarif=c=>{ const i=(c.detail&&c.detail.inputs)||{}, h=parseFloat(i.ch_h)||parseFloat(i.ch_tarif_moyen)||0;
+    return h?{h,rab:+c.rabais||parseFloat(i.ch_rabais)||0,tva:c.tva!=null&&c.tva!==''&&isFinite(+c.tva)?+c.tva:8.1}:null; };
+  const C=cs.map(c=>{ const S=new Set(), G=new Set(); Object.entries(c.phases||{}).forEach(([k,v])=>{ const m=/^4(\d)(\d)?/.exec(k); if(!m||!(+v>0)) return; G.add(+m[1]); if(m[2]) S.add(+(m[1]+m[2])); }); return {c,t:tarif(c),S,G}; });
+  const avecT=C.filter(o=>o.t); if(!avecT.length) return null;
+  const parDef=avecT.slice().sort((a,b)=>cmp(String(b.c.date||''),String(a.c.date||'')))[0], raw={}, rawPh={};
+  DS.by('timelog','PROJECT_ID',p.ID).forEach(r=>{ if(!+r.ISCHARGEABLE) return; const v=+r.TIMEPERIOD||0;
+    const sp=r.SUBPHASE_ID!=null?DS.get('projectsubphase',r.SUBPHASE_ID):null, f=r.PHASE_ID!=null?DS.get('projectphase',r.PHASE_ID):null;
+    const ns=sp?parseFloat(sp.NUMBER):NaN, ng=f?(parseFloat(f.NUMBER)||sgSiaGroupe(f)):null;
+    const o=(isFinite(ns)&&C.find(o=>o.S.has(ns)))||(ng&&C.find(o=>o.G.has(+ng)))||parDef, kp=r.PHASE_ID==null?'':String(r.PHASE_ID);
+    const k=C.indexOf(o)+'|'+kp; raw[k]=(raw[k]||0)+v; rawPh[kp]=(rawPh[kp]||0)+v; });
+  const forfait=cs.some(c=>(sgRemuType(c)||'relatif')!=='unitaire'), bud={};
+  if(forfait) DS.by('projectphase','PROJECT_ID',p.ID).forEach(f=>{ if(+f.TIMEBUDGET>0) bud[f.ID]=+f.TIMEBUDGET; });
+  const ratio=kp=>forfait&&bud[kp]!=null&&rawPh[kp]>bud[kp]?bud[kp]/rawPh[kp]:1;
+  let h=0, sans=0, ht=0, ttc=0, dep=0; const T=new Map();
+  Object.entries(raw).forEach(([k,v])=>{ const [i,kp]=k.split('|'), o=C[+i], hh=v*ratio(kp); dep+=v-hh; if(!o||!o.t){ sans+=hh; return; }
+    const r=o.t.h*(1-o.t.rab/100); h+=hh; ht+=hh*r; ttc+=hh*r*(1+o.t.tva/100); T.set(o,(T.get(o)||0)+hh); });
+  if(!h) return {h:0,sans,ht:0,ttc:0,diff:-(x.factTTC||0),tarifs:'',dep};
+  const tarifs=[...T.keys()].map(o=>(T.size>1?o.c.id+' : ':'')+num(o.t.h,2)+' CHF/h'+(o.t.rab?' − '+num(o.t.rab,0)+' %':'')).join(' ; ');
+  return {h,sans,ht,ttc,diff:ttc-(x.factTTC||0),tarifs,dep}; }
+function sgFactKpis(x,ah){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=today();   // TTC comme sgRenta (sans frais) : ouvert + encaissé = facturé
   const ouv=fs.filter(fxUnpaid), ech=ouv.filter(f=>f.ech&&f.ech<auj), pay=fs.filter(f=>!fxUnpaid(f)&&f.date&&f.date_paiement);
   const der=fs.filter(f=>f.date).sort((a,b)=>cmp(b.date,a.date))[0], jours=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
   const delai=pay.length?pay.reduce((s0,f)=>s0+Math.max(0,jours(f.date,f.date_paiement)),0)/pay.length:null, T=x.contratTTC, sum=L=>L.reduce((s0,f)=>s0+ttc(f),0);
@@ -24760,6 +24787,11 @@ function sgFactKpis(x){ const ttc=f=>+f._ttc||+f.ttc||0, fs=x.fs||[], auj=today(
     +nxKpi('receipt','Facturé (TTC)',nxCHF(x.factTTC)+'<small>CHF</small>',pc(x.factTTC,T)+' des honoraires',T?x.factTTC/T*100:null,null,1)
     +nxKpi('wallet','Encaissé (TTC)',nxCHF(x.encTTC)+'<small>CHF</small>',pc(x.encTTC,x.factTTC)+' du facturé',x.factTTC?x.encTTC/x.factTTC*100:null)
     +nxKpi('coins','Solde à facturer (TTC)',T?nxCHF(T-x.factTTC)+'<small>CHF</small>':'—',T?pc(T-x.factTTC,T)+' des honoraires':'aucun contrat relié',T?Math.max(0,(T-x.factTTC)/T*100):null)
+    +(ah===undefined?'':nxKpi('timer','À facturer selon les heures',ah?'<span'+(ah.diff<0?' class="sg-pos"':'')+'>'+nxCHF(ah.diff)+'</span><small>CHF</small>':'—',
+        ah?(ah.diff>=0?'valeur des heures − facturé':'facturé d’avance sur les heures'):'tarif horaire non enregistré')
+      .replace('<div class="nx-kpi','<div title="'+nxE(ah?nxH(ah.h)+' h facturables au tarif du contrat ('+(ah.tarifs||'—')+') = '+nxCHF(ah.ht)+' CHF HT, '+nxCHF(ah.ttc)+' CHF TTC ; facturé '+nxCHF(x.factTTC||0)+' CHF TTC'
+          +(ah.dep>0.05?' — '+nxH(ah.dep)+' h au-delà des heures du contrat (forfait) non comptées':'')+(ah.sans>0.05?' — '+nxH(ah.sans)+' h d’un contrat sans tarif horaire non comptées':'')
+          :'Le contrat de Facturation relié n’a pas de tarif horaire enregistré (ancien formulaire) : montant impossible à calculer.')+'" class="nx-kpi'))
     +nxKpi('trend','Facturé / consommé',x.fact!=null?Math.round(x.fact*100)+'<small>%</small> / '+Math.round(x.conso*100)+'<small>%</small>':'—',x.fact!=null?'consommé = coût de revient ÷ honoraires HT':'aucun contrat relié').replace(/<\/div>$/,jauge+'</div>')
     +nxKpi('receipt','Ouvert (TTC)',nxCHF(sum(ouv))+'<small>CHF</small>',ouv.length?ouv.length+' facture'+(ouv.length>1?'s':'')+' non payée'+(ouv.length>1?'s':''):'tout est payé')
     +nxKpi('clock','Échu (TTC)','<span'+(ech.length?' class="sg-neg"':'')+'>'+nxCHF(sum(ech))+'</span><small>CHF</small>',ech.length?ech.length+' facture'+(ech.length>1?'s':'')+' à échéance dépassée':'aucune échéance dépassée')
@@ -24797,7 +24829,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       const libs=new Map(cIds.map(id=>{ const c=cById.get(id); return [id,(c&&sgContratPhLib(c))||id]; })), vus={}; [...libs.values()].forEach(l=>{ vus[l]=(vus[l]||0)+1; });
       cIds.forEach(id=>{ const c=cById.get(id), l=libs.get(id); if(vus[l]>1&&c&&c.date) libs.set(id,l+' · '+String(c.date).slice(0,4)); });
       const libC=f=>{ const id=String(f.contrat_id||''), c=cById.get(id); return '<td title="'+nxE(c?'Contrat '+c.id+(c.date?' du '+dfr(c.date):'')+(c.projet?' — '+c.projet:''):'')+'">'+nxE(libs.get(id)||id)+'</td>'; };   // « Facturation en retard » sous le tableau (20.10.2026)
-      set(sgFactKpis(x)+'<div class="nx-grid">'+nxCard('c12','Factures',(x.fs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th>'+(colC?'<th>Contrat</th>':'')+'<th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+x.fs.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td>'+(colC?libC(f):'')+'<td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>')+(ret.length?'<div class="sg-fact-ret">'+ret.map(sgAlerteTag).join(' ')+'</div>':''))+'</div>'); }); return; }   /* lien « Toutes les factures » retiré du titre (20.10.2026) */
+      set(sgFactKpis(x,sgAFacturerHeures(p,D,x))+'<div class="nx-grid">'+nxCard('c12','Factures',(x.fs.length?'<div class="b flush"><table class="nx-tbl"><tr><th>Numéro de facture</th>'+(colC?'<th>Contrat</th>':'')+'<th>Type</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th>Statut</th></tr>'+x.fs.sort((a,b)=>cmp(b.date,a.date)).map(f=>'<tr class="nx-row" data-go="fx-saisie" data-arg="f:'+nxE(f.id)+'" style="display:table-row"><td><b>'+nxE(f.num||'')+'</b></td>'+(colC?libC(f):'')+'<td>'+nxE(f.type||'')+'</td><td>'+(f.date?dfr(f.date):'')+'</td><td>'+(f.ech?dfr(f.ech):'')+'</td><td class="r">'+nxCHF((+f._ttc||0)+(+f._fttc||0))+'</td><td>'+(fxUnpaid(f)?'<span class="nx-tag '+(f.ech&&f.ech<today()?'urg':'s3')+'">'+nxE(f.statut||'Ouverte')+'</span>':'<span class="nx-tag s2">Payée</span>')+'</td></tr>').join('')+'</table></div>':'<div class="nx-empty">Aucune facture.</div>')+(ret.length?'<div class="sg-fact-ret">'+ret.map(sgAlerteTag).join(' ')+'</div>':''))+'</div>'); }); return; }   /* lien « Toutes les factures » retiré du titre (20.10.2026) */
   if(k==='factu'&&sgFinVerrou()){ set('<div class="nx-empty">'+nxSvg('lock')+'<p>Contrats, factures et rentabilité sont protégés par le code d’accès.</p><button class="nx-btn pri" data-fn="deverr">Déverrouiller</button></div><div class="sg-oc-ph" id="sg-oc-ph"></div>'); pg._fn.deverr=()=>sgDeverrouiller().then(ok=>{ if(ok) sgOnglet(p,k,pg); }); sgOnglet(p,'phases',pg,box.querySelector('#sg-oc-ph')); return; }
   if(k==='vue'){ const lim30=dayKey(new Date(now.getFullYear(),now.getMonth(),now.getDate()-30)); let tot=0,h30=0; const bySt={}, byM={};
     logs.forEach(r=>{ const v=+r.TIMEPERIOD||0, d=tlDate(r); tot+=v; if(tlKey(r)>=lim30) h30+=v; bySt[r.STAFF_ID]=(bySt[r.STAFF_ID]||0)+v; const mk=d.getFullYear()*12+d.getMonth(); byM[mk]=(byM[mk]||0)+v; });

@@ -466,9 +466,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   non signé / Non signé / annulé) ; « Fermer » ramène à l'écran d'où l'on venait (`nxHist(-1)`). Vue `fx-contrats`, arg `cv:<id>`
   (`sgVoirContrat(w,id)`, contrats lus par `fxData()` : `contrats` est un `let` du cadre, pas une propriété de window). L'édition reste dans
   Facturation ▸ Contrats (✏️) ; ⌘K garde `fx-calchono` `c:<id>`. NAS au 20.10.2026 : aucun contrat marqué signé, 1 seul avec 2 versions.
-  **Tableau des contrats d'honoraires (onglet Contrats, 20.10.2026)** — état final du 20.10.2026 : **Commentaire** (commentaire de la dernière
-  version, « Commentaire de version » de Facturation, `sgContratInfo(c).com` ; remplace la colonne Contrat = code + description), **Document**
-  (ex-« Nature »), **Rémunération** (ex-« Type »), Date du contrat, HT, TTC, État. Première version du même jour : colonnes Contrat, **Nature** (Contrat / Avenant), **Type** (rémunération ;
+  **Tableau des contrats d'honoraires (onglet Contrats, 20.10.2026)** — état final du 20.10.2026 : **Document** (ex-« Nature », placé avant le
+  commentaire), **Commentaire** (commentaire de la dernière version, « Commentaire de version » de Facturation, `sgContratInfo(c).com` ; remplace
+  la colonne Contrat = code + description), **Rémunération** (ex-« Type »), Date du contrat, HT, TTC, État. Première version du même jour : colonnes Contrat, **Nature** (Contrat / Avenant), **Type** (rémunération ;
   Forfait relatif / Forfait / Unitaire, chapitre « Mode de calcul » ; non enregistré = forfait relatif, le défaut de Facturation, signalé en
   infobulle), **Date du contrat** (c.date, sinon date de la dernière version), HT, TTC, **État** (Brouillon / Envoyé / Signé le … / Terminé /
   Annulé, les états de Facturation) ; colonne Client retirée. « Ouvrir » et « Facturer » de chaque ligne = tuiles à icône comme l'onglet Heures

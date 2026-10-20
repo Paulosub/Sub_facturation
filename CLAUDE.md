@@ -524,9 +524,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   si `sgTauxVisibles()`), carte titrée selon l'affichage avec CSV et Imprimer dans son titre (`.sg-ha`), en-tête du tableau fixe (`.sg-hscroll`) ;
   détail : 400 lignes à l'écran, signalé (`.sg-hplus`), l'export CSV contient toutes les saisies de la période ; colonnes du détail
   (20.10.2026) : Date, Collaborateur (nom complet `staffName`, plus les initiales), Phase, Phase partielle (sous-phase, d'abord nommée « Précision », `projectsubphase`
-  `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande. Largeurs fixées
-  (`<colgroup>`, `table-layout:fixed` : Date 96 px, Collaborateur 16 %, Phase 14 %, Phase partielle 21 %, Commentaire le reste, Durée 76 px), texte
-  à la ligne au lieu d'être coupé ; jusqu'à 5'000 saisies affichées. Tri par Phase / Phase partielle dans l'ordre SIA 102 (clé `data-tri` =
+  `SUBPHASE_ID`), Commentaire (`DESCRIPTION` seul, sans l'activité), Durée — colonnes Facturable et Statut retirées à la demande. Colonnes ajustées
+  au contenu (largeurs fixes essayées puis abandonnées le même jour : elles ne s'adaptaient pas) : Date, Collaborateur et Durée à leur largeur, Phase
+  (min. 110 px), Phase partielle (min. 150 px) et Commentaire (min. 220 px) se partagent le reste au prorata de leur texte, texte à la ligne si nécessaire ; jusqu'à 5'000 saisies affichées. Tri par Phase / Phase partielle dans l'ordre SIA 102 (clé `data-tri` =
   `sgSiaCle` : numéro de la phase, puis de la phase partielle) — regroupe les saisies par phase.
   Affichages regroupés de l'onglet (20.10.2026) : sans la colonne « dont facturables » (`sgSituationHtml(L,g,{hier:1,fact:false})` ; Situation
   des heures du chapitre Temps, appelée sans option, inchangée) ; « Par phase » en arbre (`sgPhasesHier`, `.sg-sit-h`) : phases dans l'ordre

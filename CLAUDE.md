@@ -551,6 +551,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   introduite dans l'app (timelog du projet), petite frise bleu nuit (`.sg-frise`), mois de la dernière heure ; durée comptée du premier au dernier
   mois (« 1 an 11 mois », « 5 ans 2 mois ») centrée sous la frise (`.sg-frise em`) ; libellé « Mandat » retiré à la demande (20.10.2026) ; dates exactes et nombre de mois en infobulle ; un seul mois : sans frise ; rien
   sans heure. Remplace « Heures saisies : 04.2024 à 12.2026 », placé d'abord à droite du maître de l'ouvrage le même jour.
+  **Tableau de bord = analyse seulement (20.10.2026, Paulo : « le tableau de bord sert à analyser le projet uniquement et pas à travailler »)** :
+  `SG_ONGLETS` = Vue d'ensemble, Contrat, Heures, Factures, pour tous les projets. Onglets Projet, Chantier, Faisabilité, Intervenants, Notes &
+  tâches et Documents retirés le même jour (leur code reste dans `sgOnglet`, clés projet / chantier / faisa / interv / notes : pour les rétablir,
+  les remettre dans `SG_ONGLETS` ; `okP` n'affiche jamais un onglet absent de `SG_ONGLETS`, même mémorisé). Ne plus mettre de module de travail
+  (dépôt de fichiers, saisie) dans le tableau de bord : le travail se fait dans la page du projet (`nx-pdom`) et ses domaines. Documents du projet :
+  page du projet ▸ Documents = `sgDocsModule(C,p)` (le moteur n'a pas de domaine Documents : « Domaine non utilisé… ») — tous les fichiers par
+  dossier, « Ajouter des fichiers » (dossier Général). Description ci-dessous des onglets retirés, gardée pour mémoire :
   **Onglets Projet et Faisabilité, nouvel ordre (20.10.2026)** : `SG_ONGLETS` = Vue d'ensemble, Contrat, Faisabilité, Projet, Chantier, Heures,
   Factures, Intervenants, Notes & tâches (**onglet Documents retiré** : module Documents à la fin de Projet ; onglet mémorisé « docs » → Projet).
   **Projet** : un groupe dépliable par phase partielle SIA des études (`SG_PROJ_PH` 31 Avant-projet, 32 Projet de l'ouvrage, 33 Procédure de demande

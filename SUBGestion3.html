@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 20.10.2026 18:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 20.10.2026 18:53 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -765,6 +765,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-rub-l{padding-left:23px}
 .sg-rub-l.nu{padding-left:0}
 .sg-rub-l .nx-row select.sg-phsel{margin-left:auto;max-width:240px;font:inherit;font-size:12px;height:28px}
+.sg-docs-page{padding:16px 22px 30px;max-width:1100px}   /* page du projet ▸ Documents (20.10.2026) */
 </style>
 </head>
 <body>
@@ -24720,7 +24721,11 @@ VIEWS['nx-renta']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcul 
 /* Projets : « Temps » → « Heures » et « Contrats » → « Contrat » (20.10.2026, à la demande ; clés inchangées) */
 /* 20.10.2026 : Vue d'ensemble, Contrat, Faisabilité (si une phase de faisabilité est utilisée), Projet, Chantier, Heures, Factures, Intervenants,
    Documents, Notes & tâches */
-const SG_ONGLETS=[['vue','Vue d’ensemble'],['factu','Contrat'],['faisa','Faisabilité'],['projet','Projet'],['chantier','Chantier'],['temps','Heures'],['fact','Factures'],['interv','Intervenants'],['notes','Notes & tâches']];   /* onglet Documents remplacé par le module Documents de l'onglet Projet (20.10.2026) */
+const SG_ONGLETS=[['vue','Vue d’ensemble'],['factu','Contrat'],['temps','Heures'],['fact','Factures']];
+/* 20.10.2026 (Paulo, pour tous les projets) : « le tableau de bord sert à analyser le projet uniquement, pas à travailler » — onglets Projet,
+   Chantier, Faisabilité, Intervenants et Notes & tâches retirés (Documents l'était déjà) ; leur code reste dans sgOnglet (clés projet, chantier,
+   faisa, interv, notes) — pour les rétablir, les remettre dans SG_ONGLETS. Documents du projet : page du projet ▸ Documents (sgDocsModule) ;
+   intervenants, notes, tâches : domaines de la page du projet. */
 /* phases partielles SIA 102 des études (onglet Projet), rubriques du dossier d'enquête (comme le dossier « Att_CO » des affaires) et de l'onglet
    Faisabilité ; dossiers du dépôt : ProjectDocuments/Documents/<projet>/Documents/Projet/<n° nom>/<rubrique> et …/Faisabilité/<rubrique> */
 const SG_PROJ_PH=[[31,'Avant-projet'],[32,'Projet de l’ouvrage'],[33,'Procédure de demande d’autorisation'],[41,'Appel d’offres, comparaison des offres et propositions d’adjudication']];
@@ -24738,7 +24743,7 @@ VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||''); nxRecent('p',p.ID);
     /* projet uniquement de faisabilité (catégorie « faisabilité », sgCatProjet d'après le titre) : ni Projet ni Chantier (20.10.2026) */
-    const fSeule=sgCatProjet(p)==='faisabilite', okP=k=>sgOngletOk(k)&&(k!=='faisa'||sgFaisaOk(p))&&!(fSeule&&(k==='projet'||k==='chantier')), ong0=(o0=>o0==='phases'?'factu':o0==='docs'?(fSeule?'faisa':'projet'):o0)(nxLS.get('sg3_fiche_onglet','vue')), ong=okP(ong0)?ong0:(SG_ONGLETS.map(o=>o[0]).find(okP)||'vue'), mo=projMO(p), pin=nxPinned('p',p.ID), modif=sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)));
+    const fSeule=sgCatProjet(p)==='faisabilite', okP=k=>SG_ONGLETS.some(o=>o[0]===k)&&sgOngletOk(k)&&(k!=='faisa'||sgFaisaOk(p))&&!(fSeule&&(k==='projet'||k==='chantier')),   /* onglet retiré de SG_ONGLETS : jamais affiché, même mémorisé */ ong0=(o0=>o0==='phases'?'factu':o0==='docs'?(fSeule?'faisa':'projet'):o0)(nxLS.get('sg3_fiche_onglet','vue')), ong=okP(ong0)?ong0:(SG_ONGLETS.map(o=>o[0]).find(okP)||'vue'), mo=projMO(p), pin=nxPinned('p',p.ID), modif=sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)));
     const html='<div class="nx-hero"><div class="sg-pnum" title="Numéro du projet">'+(p.NUMBER?nxE(p.NUMBER):'—')+'</div><div class="tx">'   /* grand numéro complet et filet noir (20.10.2026, variante C choisie par Paulo ; avant : pavé bleu nuit tronqué à 5 caractères, puis cartouche D le même jour) */
       +'<h2>'+nxE(p.TITLE||p.NUMBER)+'</h2><div class="meta">'
       /* 20.10.2026 : numéro, état, date et phase actuelle retirés de l'en-tête ; le maître de l'ouvrage (intervenants au rôle 8) nommé comme tel */
@@ -26836,19 +26841,34 @@ function sgPdomListe(){ const ok=new Set(ch08bDomains(DOMAINS)), adm=sgAdmin();
   const hon=['Offres d’honoraires','Contrats honoraires','Avancement des prestations'], cha=['Calcul des coûts','Devis général','Soumission','Contrôle des coûts'];
   const prof=d=>adm||(hon.includes(d)?sgDroit('contrats','lecture'):d==='Factures'?sgDroit('factures','lecture'):cha.includes(d)?sgDroit('chantier','lecture'):d==='Documents'?sgDroit('documents','lecture'):true);
   return SG_PDOM_G.map(([g,L])=>[g,L.filter(d=>(d==='Documents'||(ok.has(d)&&domainUsed(d)))&&prof(d))]).filter(([,L])=>L.length); }
+/* Documents d'un projet en pleine page (page du projet ▸ Documents, 20.10.2026) : le moteur n'a pas de domaine Documents ; tous les fichiers du
+   dépôt du projet par dossier (sgDossierLib), ajout de fichiers dans le dossier Général (droit « documents : dépôt ») */
+function sgDocsModule(C,p){ DS.need(['depotfichier']).catch(()=>{}).then(()=>{ if(!C.isConnected) return;
+  const L=DS.all('depotfichier').filter(f=>String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER).startsWith('ProjectDocuments/Documents/'+p.ID+'/')).sort((a,b)=>cmp(a.DOSSIER,b.DOSSIER)||cmp(a.NOM,b.NOM)), g={};
+  L.forEach(f=>(g[f.DOSSIER]=g[f.DOSSIER]||[]).push(f));
+  const lf=f=>'<div class="nx-row" data-sha="'+nxE(f.ID)+'">'+nxSvg(f.EXT==='pdf'?'pdf':'doc')+'<div class="t"><b>'+nxE(f.NOM)+'</b><span>'+nxE([f.TAILLE?(f.TAILLE/1024).toFixed(0)+' Ko':'',f.PAGES?f.PAGES+' p.':'',f.MODIFIED?dfr(String(f.MODIFIED).slice(0,10)):''].filter(Boolean).join(' · '))+'</span></div></div>';
+  C.innerHTML='<div class="sg-docs-page"><div class="sg-htls sg-iacts">'+(sgDroit('documents','depot')?'<button data-act="ajout" title="Ajouter des fichiers au projet (dossier Général)">'+nxSvg('plus')+'<span>Ajouter des fichiers</span></button>':'')+'</div>'
+    +(L.length?Object.entries(g).map(([d,fs])=>'<div class="sg-rub"><div class="sg-rub-h">'+nxSvg('folder')+'<b>'+nxE(sgDossierLib(d))+'</b><span class="c">'+fs.length+'</span></div><div class="sg-rub-l">'+fs.map(lf).join('')+'</div></div>').join('')
+      :'<div class="nx-empty">Aucun fichier joint à ce projet.</div>')+'</div>';
+  C.querySelectorAll('[data-sha]').forEach(r=>r.onclick=()=>{ const f=DS.get('depotfichier',r.dataset.sha); if(f) ch03aOuvrir(f); });
+  const b=C.querySelector('[data-act="ajout"]'); if(b) b.onclick=()=>{ const d=ch03aDossier('document',p.ID,'Général'), inp=h('input',{type:'file',multiple:true});
+    inp.onchange=async()=>{ let n=0; for(const f of inp.files){ try{ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import'}); n++; }
+        catch(e){ if(e.message==='existe'){ if(await confirmDlg('« '+f.name+' » existe déjà. Le remplacer ?','Remplacer')){ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import',remplacer:true}); n++; } } else toast('✗ '+f.name+' : '+e.message,true); } }
+      if(n){ toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+' à '+p.NUMBER+'.'); sgDocsModule(C,p); } };
+    inp.click(); }; }); }
 VIEWS['nx-pdom']={
   render(m,arg){ const [pid,dom]=String(arg||'').split('|'), p=DS.get('project',pid); this.drawC=null;
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
     if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
     nxRecent('p',p.ID); const G=sgPdomListe(), doms=G.flatMap(([,L])=>L);
-    if(dom&&dom!=='Documents'&&doms.includes(dom)){                                              /* un domaine en pleine page */
+    if(dom&&doms.includes(dom)){                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
       VIEW.nxTitle=dom+' · '+(p.NUMBER||p.TITLE||'');
       const chips=h('div',{class:'sg-pdom-chips'},...doms.map(d=>h('button',{class:d===dom?'on':null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));
       const bar=h('div',{class:'sg-pdom-bar'},h('button',{class:'nx-btn',html:nxSvg('back')+'Domaines',onclick:()=>go('nx-pdom',p.ID+'|#'+G.findIndex(([,L])=>L.includes(dom)))}),
         h('b',{},(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'')),chips);
       const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
       const on=chips.querySelector('.on'); if(on) setTimeout(()=>on.scrollIntoView({block:'nearest',inline:'center'}),0);
-      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2) domainView(C,p2,dom); }; this.drawC(); return; }
+      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(dom==='Documents') sgDocsModule(C,p2); else domainView(C,p2,dom); } }; this.drawC(); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'');                                        /* page du projet : groupes repliables de domaines */
     const ouvert=/^#\d+$/.test(dom||'')?+dom.slice(1):-1;                                            // 18.10.2026 : tout replié à l'arrivée ; au retour d'un domaine, son groupe ouvert
     const logs=DS.by('timelog','PROJECT_ID',p.ID), lim30=dayKey(new Date(Date.now()-30*864e5)), tot=logs.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0),
@@ -26867,7 +26887,7 @@ VIEWS['nx-pdom']={
           +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span><span class="c">'+L.length+' domaine'+(L.length>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button>'
           +'<div class="sg-tiles">'+L.map(tuile).join('')+'</div></section>').join(''):'<div class="nx-empty">Aucun domaine accessible avec votre profil.</div>')+'</div></div>';
     const pg=nxPage(m,html);
-    Object.assign(pg._fn,{grp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); },dom:b=>{ const d=b.dataset.dom; if(d==='Documents'){ const o=sgCatProjet(p)==='faisabilite'?'faisa':'projet'; nxLS.set('sg3_fiche_onglet',o); (SG_CGRP[o+':'+p.ID]||(SG_CGRP[o+':'+p.ID]=new Set())).add('docs'); go('nx-projet',p.ID); return; }   /* module Documents de l'onglet Projet (20.10.2026) */ go('nx-pdom',p.ID+'|'+d); },
+    Object.assign(pg._fn,{grp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); },dom:b=>{ const d=b.dataset.dom; /* Documents : page pleine (sgDocsModule) comme les autres domaines, depuis le retrait des onglets Documents et Projet (20.10.2026) */ go('nx-pdom',p.ID+'|'+d); },
       fiche:()=>go('nx-projet',p.ID),temps:()=>sgSaisieRapide({projet:p.ID})});
     DS.need(SG_PDOM_T).catch(()=>{}).then(()=>{ if(!pg.isConnected) return; pg.querySelectorAll('[data-nb]').forEach(e=>{ const t=sgPdomCompte(p,e.dataset.nb)||'', x=/^(\d[\d']*)\s*(.*)$/.exec(t);
       e.innerHTML=x?'<span class="v">'+nxE(x[1])+'</span><small>'+nxE(x[2])+'</small>':nxE(t); }); }); },   // chiffre en grand, libellé en petit

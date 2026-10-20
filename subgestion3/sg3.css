@@ -756,3 +756,4 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-rub-l{padding-left:23px}
 .sg-rub-l.nu{padding-left:0}
 .sg-rub-l .nx-row select.sg-phsel{margin-left:auto;max-width:240px;font:inherit;font-size:12px;height:28px}
+.sg-docs-page{padding:16px 22px 30px;max-width:1100px}   /* page du projet ▸ Documents (20.10.2026) */

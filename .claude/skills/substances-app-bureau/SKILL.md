@@ -44,9 +44,10 @@ Détails techniques (API du moteur, globales de Facturation, clés de session, i
    Akkurat pour tous les textes ; tout module (moteur, Facturation, écrans propres) utilise les mêmes boutons (bleu nuit /
    contour noir / rouge), les mêmes fenêtres de confirmation (`sgConfirm`, `dialog`), les mêmes messages (`toast`) et les
    mêmes raccourcis (⌘K, « / », ⌥←/→). Un nouveau module de Facturation se règle dans `subgestion3/fx_theme.css`.
-   Depuis le 21.10.2026, SUBGestion 3 propose À L'ESSAI un second visuel, « Papier et encre » (Réglages ▸ Visuel de l'app,
-   `subgestion3/visuel_papier.css`, `fx_visuel_papier.css`, `sg3_visuel.js`) : tant que Paulo n'a pas choisi le visuel
-   définitif, vérifier chaque retouche graphique dans les deux visuels (`sgVisuelAppliquer('papier'|'charte', true)`).
+   Depuis le 21.10.2026, SUBGestion 3 propose À L'ESSAI les quatre propositions de refonte comme visuels au choix (Papier et
+   encre, Brume, Signalétique, Studio nocturne ; Réglages ▸ Visuel de l'app ; `subgestion3/visuels_jetons.css`, `visuels.css`,
+   `visuels_variantes.css`, `fx_visuels.css`, `sg3_visuel.js`) : tant que Paulo n'a pas choisi le visuel définitif, vérifier
+   chaque retouche graphique dans tous les visuels (`sgVisuelAppliquer('<visuel>', true)`) — la charte reste le défaut.
 
 ## Déroulé d'une modification
 

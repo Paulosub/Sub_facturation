@@ -1,0 +1,97 @@
+/* ══ SUBGestion 3 — visuels de l'app À L'ESSAI dans le cadre Facturation : base commune (21.10.2026) ══════════════════════════════
+   Injecté après fx_theme.css, avec les jetons des visuels (visuels_jetons.css). Ne s'applique que si <html data-visuel="…"> (posé par
+   la coquille, voir sg3_visuel.js) : sans l'attribut, le graphisme commun de la charte reste identique. Les documents PDF et leurs
+   aperçus (.offre-page, aperçus « PDF fidèle ») ne sont pas touchés. Traits propres à chaque visuel : fin du fichier. */
+html:is([data-visuel="papier"],[data-visuel="brume"],[data-visuel="signaletique"],[data-visuel="nocturne"]){
+  --s-font:var(--p-font);
+  --s-noir:var(--p-bk); --s-gris:var(--p-g3); --s-gris2:var(--p-g5); --s-gris3:var(--p-g2); --s-filet:var(--p-g2); --s-fond:var(--p-g1);
+  --s-jaune:var(--p-g1); --s-jaune2:var(--p-g1); --s-jaune3:var(--p-hl);
+  --s-nuit:var(--p-bk); --s-nuit2:var(--p-hv); --s-rouge:var(--p-rd); --s-orange:var(--p-bk); --s-vert:var(--p-bk); --s-turq:var(--p-g3); --s-bleu:var(--p-bk);
+
+  & body{background:var(--p-wh);color:var(--p-bk);font-variant-numeric:tabular-nums}
+  & body .panel,& body .home-wrap{background:var(--p-wh)}
+  & ::selection{background:var(--p-g2)}
+  /* cartes : filet fin, titre en capitales en chasse fixe souligné de noir */
+  & body .card{border:1px solid var(--p-g2);border-top:1px solid var(--p-g2);padding:0 18px}
+  & body .card-hd{font-family:var(--p-lblf);font-size:11px;font-weight:500;letter-spacing:calc(.1em*var(--p-lsk));text-transform:var(--p-tt);border-bottom:1px solid var(--p-bk);padding:14px 0 11px}
+  & body .card-hd input:not([type=checkbox]):not([type=radio]),& body .card-hd select{border:1px solid var(--p-bk)!important;text-transform:none;letter-spacing:0;font-family:var(--p-font)}
+  /* boutons en pilule : noir (principal), contour noir (secondaire), rouge (suppression) */
+  & body .btn:not(#sg-p1):not(#sg-p2){border-radius:var(--p-pill)!important}
+  & body .btn{border:1px solid var(--p-bk);font-weight:500;font-size:12px;padding:6px 16px}
+  & body .btn:hover{background:var(--p-g1)!important;color:var(--p-bk)!important}
+  & body .btn-blue:hover,& body .btn-dark:hover,& body .btn-green:hover,& body .btn[style*="#003346" i]:hover,& body .btn[style*="#0a6e84" i]:hover{background:var(--p-hv)!important;color:var(--p-wh)!important}
+  & body .btn-red:hover,& body .btn[style*="#c0392b" i]:hover,& body .btn[style*="#b04a4a" i]:hover,& body .btn[style*="#b23b2b" i]:hover{background:var(--p-rd)!important;color:var(--p-wh)!important}
+  /* tableaux : en-tête en capitales et chasse fixe, filet noir dessous */
+  & body .list-tbl th,& body .sia-tbl th,& body .xls-tbl th,& body .adr-tb th,& body .pv-tb th,& body .cc-tb th,& body .pv-xl th,& body .rap-tb th{
+    font-family:var(--p-lblf)!important;font-size:10.5px!important;font-weight:500;letter-spacing:calc(.08em*var(--p-lsk))!important;text-transform:var(--p-tt)!important;
+    color:var(--p-g3)!important;border-bottom:1px solid var(--p-bk)!important}
+  & body .list-tbl td.num{color:var(--p-bk);font-family:var(--p-mono);font-weight:500}
+  & body .list-tbl td{border-bottom:1px solid var(--p-l2)}
+  & body .list-tbl tr:hover td{background:var(--p-g1)}
+  & body .list-tbl tr.sel td{background:var(--p-g1)}
+  /* champs */
+  & body .field label{font-family:var(--p-lblf);font-size:10.5px;letter-spacing:calc(.08em*var(--p-lsk));text-transform:var(--p-tt);color:var(--p-g3)}
+  & body .field input,& body .field select,& body .field textarea,& body .adm-form input,& body .adm-form select{border:1px solid var(--p-bk)}
+  & body input:focus,& body select:focus,& body textarea:focus{border-color:var(--p-bk)!important;background:var(--p-wh);box-shadow:inset 0 0 0 1px var(--p-bk)}
+  & body .xls-tbl input[readonly],& body .xls-tbl td.readout{background:var(--p-g1)}
+  & body input[type=checkbox],& body input[type=radio]{accent-color:var(--p-bk)}
+  /* barres d'outils des aperçus : noir (le contenu PDF reste intact) */
+  & body #prev-bar,& body .col-right-pdf .pv-bar,& body #offre-bar{background:var(--p-bk)!important}
+  /* cockpits : cartes blanches à filet fin */
+  & body .ck-kpi-card,& body .ck-card-inner,& body .ck-gauge,& body .ck-card,& body .ck2-kpi,& body [class*="ck2-card"]{border:1px solid var(--p-g2)!important;border-top:1px solid var(--p-g2)!important;padding-left:16px!important;padding-right:16px!important}
+  & body .ck-header{border-bottom:1px solid var(--p-bk)!important}
+  & body .ck-sec-t{font-family:var(--p-lblf)!important;letter-spacing:calc(.1em*var(--p-lsk))!important;text-transform:var(--p-tt)}
+  & body .ck2-head .yr,& body .ck2-yr-select,& body .ck-header-select{background-color:var(--p-bk)!important;color:var(--p-wh)!important}
+  & body .ck2-head .yr:not(#sg-p1):not(#sg-p2),& body .ck2-yr-select:not(#sg-p1):not(#sg-p2),& body .ck-header-select:not(#sg-p1):not(#sg-p2){border-radius:var(--p-pill)!important}
+  /* étiquettes « à valider » */
+  & body .sg-val-tag{background:var(--p-wh);color:var(--p-bk);border:1px solid var(--p-bk);font-family:var(--p-lblf);text-transform:var(--p-tt);letter-spacing:calc(.06em*var(--p-lsk))}
+  & body .sg-val-tag.refuse{background:var(--p-rd);color:var(--p-wh);border-color:var(--p-rd)}
+  /* fonds jaunes de Facturation (titres de phases, totaux, ligne choisie, badge « envoyé ») → gris clair ou contour */
+  & body .sia-tbl .ph-hd td,& body .sia-tbl .tot-row td,& body .xls-tbl td.sub,& body .recap .tot-r td,& body .list-tbl tr.sel td{background:var(--p-g1)}
+  & body .b-env{background:var(--p-wh);color:var(--p-bk);border:1px solid var(--p-bk)}
+  & body :not(.offre-page):not(.offre-page *)[style*="background:#FFFDE0" i],& body :not(.offre-page):not(.offre-page *)[style*="rgb(255, 253, 224)"]{background:var(--p-g1)!important}
+  & body :not(.offre-page):not(.offre-page *)[style*="color:#003346" i]{color:var(--p-bk)!important}
+  & body :not(.offre-page):not(.offre-page *)[style*="#b0c4e8" i]{border-color:var(--p-bk)!important}
+  & body :not(.offre-page):not(.offre-page *)[style*="color:#27ae60" i],& body :not(.offre-page):not(.offre-page *)[style*="color: rgb(39, 174, 96)"]{color:var(--p-okt)!important}
+  /* graphiques des cockpits en niveaux de gris (une seule teinte, plus claire ou plus foncée) */
+  & body .ck-dash svg,& body .ck2 svg,& body .ck-legend span,& body .ck2 .ck-legend span{filter:grayscale(1)}
+  /* encadrés jaunes écrits dans le code (informations du contrat, champs calculés) → gris clair */
+  & body :not(.offre-page):not(.offre-page *)[style*="background:#fffbe" i],& body :not(.offre-page):not(.offre-page *)[style*="background:#fef6b0" i],
+  & body :not(.offre-page):not(.offre-page *)[style*="background:#fff8e1" i],& body :not(.offre-page):not(.offre-page *)[style*="background:#fffde7" i],
+  & body :not(.offre-page):not(.offre-page *)[style*="background:#fdf6d8" i],& body :not(.offre-page):not(.offre-page *)[style*="background: rgb(255, 251, 2" i]{background:var(--p-g1)!important}
+}
+
+/* ═══ 1 · Brume dans Facturation — dégradé gris-bleu, cartes de verre arrondies ═══ */
+html[data-visuel="brume"]{
+  & body{background:var(--v-fond);background-attachment:fixed;font-variant-numeric:tabular-nums slashed-zero}
+  & body .panel,& body .home-wrap{background:transparent}
+  & body .card{background:var(--v-opaque);border:1px solid var(--v-bord);box-shadow:var(--v-ombre)}
+  & body .card:not(#sg-p1):not(#sg-p2),& body .ck-kpi-card:not(#sg-p1):not(#sg-p2),& body .ck-card:not(#sg-p1):not(#sg-p2),& body .ck2-kpi:not(#sg-p1):not(#sg-p2){border-radius:20px!important}
+  & body .card-hd{font-size:15px;font-weight:600;letter-spacing:-.01em;text-transform:none;color:var(--v-ink);border-bottom:1px solid var(--p-g2)}
+  & body .list-tbl th,& body .sia-tbl th,& body .xls-tbl th,& body .adr-tb th,& body .pv-tb th,& body .cc-tb th,& body .pv-xl th,& body .rap-tb th{
+    text-transform:none!important;letter-spacing:0!important;font-size:12px!important;border-bottom:1px solid var(--p-g2)!important}
+  & body .field label{text-transform:none;letter-spacing:0;font-size:12px}
+  & body .field input:not(#sg-p1):not(#sg-p2),& body .field select:not(#sg-p1):not(#sg-p2),& body .field textarea:not(#sg-p1):not(#sg-p2){border-radius:11px!important}
+  & body .field input,& body .field select,& body .field textarea,& body .adm-form input,& body .adm-form select{border:1px solid var(--v-prev);background-color:rgba(255,255,255,.92)}
+  & body .list-tbl tr.sel td,& body .list-tbl tr:hover td{background:var(--p-hl)}
+}
+/* ═══ 2 · Signalétique dans Facturation — crème, angles vifs, sélection saumon ═══ */
+html[data-visuel="signaletique"]{
+  & body,& body .panel,& body .home-wrap{background:var(--v-creme)}
+  & body .card{background:var(--p-wh)}
+  & body .list-tbl tr.sel td,& body .list-tbl tr:hover td{background:var(--v-sel)}
+  & body .card-hd{border-bottom:1px solid var(--p-bk)}
+  & body .ck-dash,& body .ck2{background:var(--v-creme)!important}
+}
+/* ═══ 4 · Studio nocturne dans Facturation — la coquille inverse toute la page (cadre compris) : documents, aperçus PDF et images
+   sont soustraits à l'inversion ; couleurs ci-dessous AVANT inversion (#ECECEC → cartes #242424, #F6F6F6 → champs #1C1C1C) ═══ */
+html[data-visuel="nocturne"]{
+  & body .offre-page,& body img:not(.offre-page img),& body canvas:not(.offre-page canvas),& body iframe,& body embed,& body object{filter:var(--v-contre)}
+  & body{font-weight:500}
+  & body .card{background:var(--v-carte);border-color:var(--v-carte)}
+  & body .card:not(#sg-p1):not(#sg-p2),& body .ck-kpi-card:not(#sg-p1):not(#sg-p2),& body .ck-card:not(#sg-p1):not(#sg-p2),& body .ck2-kpi:not(#sg-p1):not(#sg-p2){border-radius:16px!important}
+  & body .btn:not(#sg-p1):not(#sg-p2){border-radius:10px!important}
+  & body .card-hd{font-size:14px;font-weight:600;letter-spacing:0;border-bottom:1px solid var(--p-g2)}
+  & body .field input,& body .field select,& body .field textarea,& body .adm-form input,& body .adm-form select{background-color:var(--v-surf);border-color:var(--v-bord)}
+  & body .ck-kpi-card,& body .ck-card-inner,& body .ck-gauge,& body .ck-card,& body .ck2-kpi,& body [class*="ck2-card"]{background:var(--v-carte)!important;border-color:var(--v-carte)!important}
+}

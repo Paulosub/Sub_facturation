@@ -1,0 +1,55 @@
+/* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
+   Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
+   fx_visuels.css : --p-bk encre / surfaces foncées, --p-wh blanc, --p-g1…--p-g5 gris (fond clair, filet, texte secondaire, désactivé),
+   --p-rd signal (fond) et --p-rdt signal (texte), --p-okt « fait / 100 % » (texte), --p-sb texte clair sur foncé, --p-l2 filet léger, --p-hv survol foncé, --p-ov voile,
+   --p-sh1…3 ombres, --p-page fond des pages, --p-pill arrondi des boutons, --p-tt casse des libellés, --p-lsk facteur d'espacement des
+   capitales, --p-font / --p-mono / --p-lblf polices (texte, codes et chiffres, libellés). Jetons --v-* : couleurs propres à un visuel. */
+
+/* 3 · Papier et encre — noir et blanc, filets fins, chasse fixe, une carte noire pour le chiffre clé */
+html[data-visuel="papier"]{
+  --p-bk:#0B0B0B; --p-wh:#FFFFFF; --p-g1:#F3F2EE; --p-g2:#D9D7D0; --p-g3:#6E6C66; --p-g4:#B8B6AE; --p-g5:#8F8D86; --p-rd:#C8321E; --p-rdt:var(--p-rd);
+  --p-sb:#BDBBB4; --p-sep:#3B3A37; --p-hl:#F8F7F4; --p-l2:#ECEBE6; --p-hv:#3A3A37; --p-hv2:#262624; --p-zb:#FAFAF8;
+  --p-ov:rgba(11,11,11,.38); --p-sh1:0 12px 32px rgba(11,11,11,.14); --p-sh2:0 24px 60px rgba(11,11,11,.22); --p-sh3:0 30px 80px rgba(11,11,11,.25);
+  --p-page:var(--p-wh); --p-pill:999px; --p-tt:uppercase; --p-lsk:1; --p-okt:var(--p-bk);
+  --p-font:Geist,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --p-mono:'Geist Mono','SF Mono',Menlo,Consolas,monospace; --p-lblf:var(--p-mono);
+}
+
+/* 1 · Brume — fond gris-bleu en dégradé, verre blanc, menu graphite (seule surface sombre), une couleur de données : le vert d'eau */
+html[data-visuel="brume"]{
+  --p-bk:#15181D; --p-wh:#FFFFFF; --p-g1:#F2F5F7; --p-g2:#E3E8EC; --p-g3:#5B6775; --p-g4:#8A95A1; --p-g5:#8A95A1; --p-rd:#B8432F; --p-rdt:#B8432F;
+  --p-sb:rgba(255,255,255,.72); --p-sep:#2A2F36; --p-hl:#EEF1F4; --p-l2:#EDF1F4; --p-hv:#2A2F36; --p-hv2:#2A2F36; --p-zb:#F7F9FA;
+  --p-ov:rgba(20,26,34,.30); --p-sh1:0 12px 32px rgba(20,26,34,.12); --p-sh2:0 24px 60px rgba(20,26,34,.18); --p-sh3:0 30px 80px rgba(20,26,34,.22);
+  --p-page:transparent; --p-pill:999px; --p-tt:uppercase; --p-lsk:.45; --p-okt:#17755E;
+  --p-font:Inter,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  --p-mono:var(--p-font); --p-lblf:var(--p-font);
+  --v-ink:#141A22; --v-acc:#17755E; --v-acc-bg:#E4F3EC; --v-rd-bg:#FBECE8; --v-amb:#8A5A00; --v-amb-bg:#F6EAD0; --v-pill:#E6EBEF; --v-prev:#D9E0E6;
+  --v-verre:rgba(255,255,255,.55); --v-opaque:rgba(255,255,255,.86); --v-bord:rgba(255,255,255,.8);
+  --v-ombre:0 1px 2px rgba(20,26,34,.04),0 10px 30px rgba(20,26,34,.07);
+  --v-fond:radial-gradient(1100px 620px at 18% -5%,rgba(255,255,255,.30),rgba(255,255,255,0) 60%),radial-gradient(900px 560px at 100% 100%,rgba(21,24,29,.14),rgba(21,24,29,0) 60%),linear-gradient(160deg,#D6DEE5 0%,#C3CDD6 100%);
+}
+
+/* 2 · Signalétique — crème, bandeaux noir et orange, gris béton, chiffres géants, angles vifs ; jamais de rouge, vert, jaune ni bleu */
+html[data-visuel="signaletique"]{
+  --p-bk:#111111; --p-wh:#FFFFFF; --p-g1:#F3F1EA; --p-g2:#BFC4C4; --p-g3:#4A4A4A; --p-g4:#D5D9D9; --p-g5:#7A7F7F; --p-rd:#FF4D00; --p-rdt:#B83700;
+  --p-sb:#BFC4C4; --p-sep:#333333; --p-hl:#FFD9C7; --p-l2:#DDE0DF; --p-hv:#333333; --p-hv2:#2A2A2A; --p-zb:#F8F7F2;
+  --p-ov:rgba(17,17,17,.42); --p-sh1:0 10px 24px rgba(17,17,17,.16); --p-sh2:0 18px 40px rgba(17,17,17,.22); --p-sh3:0 24px 60px rgba(17,17,17,.25);
+  --p-page:#F3F1EA; --p-pill:2px; --p-tt:uppercase; --p-lsk:1.2; --p-okt:var(--p-bk);
+  --p-font:Archivo,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --p-mono:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; --p-lblf:var(--p-mono);
+  --v-or:#FF4D00; --v-beton:#D5D9D9; --v-creme:#F3F1EA; --v-sel:#FFD9C7;
+}
+
+/* 4 · Studio nocturne — graphite, une carte pastel par écran, texte clair. Toute la page est inversée par un filtre (visuels_variantes.css) :
+   les jetons ci-dessous sont donc les couleurs AVANT inversion (blanc → graphite #141414, noir → texte #EBEBEB, #ECECEC → cartes #242424). */
+html[data-visuel="nocturne"]{
+  --p-bk:#000000; --p-wh:#FFFFFF; --p-g1:#E3E3E3; --p-g2:#DADADA; --p-g3:#606060; --p-g4:#989898; --p-g5:#989898; --p-rd:#C8321E; --p-rdt:var(--p-rd);
+  --p-sb:#A8A8A8; --p-sep:#C4C4C4; --p-hl:#F6F6F6; --p-l2:#E5E5E5; --p-hv:#1F1F1F; --p-hv2:#1F1F1F; --p-zb:#F6F6F6;
+  --p-ov:rgba(255,255,255,.55); --p-sh1:0 12px 32px rgba(255,255,255,.6); --p-sh2:0 24px 60px rgba(255,255,255,.6); --p-sh3:0 30px 80px rgba(255,255,255,.6);
+  --p-page:#FFFFFF; --p-pill:10px; --p-tt:none; --p-lsk:0; --p-okt:#1A7A45;
+  --p-font:Inter,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  --p-mono:'IBM Plex Mono','SF Mono',Menlo,Consolas,monospace; --p-lblf:var(--p-font);
+  --v-carte:#ECECEC; --v-surf:#F6F6F6; --v-bord:#D2D2D2;
+  --v-rose:#F4C9D6; --v-menthe:#C6E6D3; --v-lavande:#CFCAF2; --v-ok:#9BD3B5; --v-warn:#F2B880; --v-bad:#F29A9A; --v-encre:#111111; --v-encre2:#3F3F3F;
+  --v-contre:hue-rotate(180deg) invert(1) contrast(1.1905);
+}

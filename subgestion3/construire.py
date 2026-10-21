@@ -60,8 +60,11 @@ COQUILLE = '''<div id="boot"><div id="boot-logo"></div><span id="boot-msg">Ouver
 </div></div>
 '''
 
-# visuel de l'app (21.10.2026) : « papier » → attribut data-visuel sur <html> avant le premier affichage (coquille et cadre Facturation)
-VISUEL_SCRIPT = "<script>try{if(JSON.parse(localStorage.getItem('sg3_visuel'))==='papier')document.documentElement.setAttribute('data-visuel','papier')}catch(e){}</script>"
+# visuels de l'app à l'essai (21.10.2026) : choix du poste → attribut data-visuel sur <html> avant le premier affichage (coquille et cadre
+# Facturation) ; « charte » (défaut) = pas d'attribut. Mêmes noms que SG_VISUELS (sg3_visuel.js).
+VISUELS = ('papier', 'brume', 'signaletique', 'nocturne')
+VISUEL_SCRIPT = ("<script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(" + '|'.join(VISUELS) + ")$/.test(v))"
+                 "document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script>")
 
 # Facturation dans le cadre : sans en-tête, sans reprise de session propre, navigation signalée à la coquille
 FX_HEAD = '''<script>window.SG_EMBED=1;</script>
@@ -125,9 +128,9 @@ def facturation_embarquee(fa):
     if not fa.rstrip().endswith('</html>'):
         sys.exit('✗ Facturation.html ne se termine pas par </html>')
     k = fa.rfind('</body>')
-    # graphisme commun, après toutes les feuilles de Facturation, puis le visuel « Papier et encre » (à l'essai)
+    # graphisme commun, après toutes les feuilles de Facturation, puis les visuels à l'essai (jetons + base + traits propres)
     theme = ('<style id="sg-fx-theme">\n' + lire(os.path.join(ICI, 'fx_theme.css')) + '</style>\n'
-             + '<style id="sg-fx-visuel">\n' + lire(os.path.join(ICI, 'fx_visuel_papier.css')) + '</style>\n')
+             + '<style id="sg-fx-visuel">\n' + lire(os.path.join(ICI, 'visuels_jetons.css')) + lire(os.path.join(ICI, 'fx_visuels.css')) + '</style>\n')
     return fa[:k] + theme + FX_PONT + fa[k:]
 
 
@@ -162,7 +165,8 @@ def main():
     if not (0 < i < j < s.find('</head>')):
         sys.exit('✗ feuille de style principale de DeltaSub.html introuvable')
     s = (s[:i] + VISUEL_SCRIPT + '<style id="sg3-css">\n' + lire(os.path.join(ICI, 'sg3.css')) + '</style>'
-         + '<style id="sg3-visuel">\n' + lire(os.path.join(ICI, 'visuel_papier.css')) + '</style>' + s[j + len('</style>'):])
+         + '<style id="sg3-visuel">\n' + lire(os.path.join(ICI, 'visuels_jetons.css')) + lire(os.path.join(ICI, 'visuels.css'))
+         + lire(os.path.join(ICI, 'visuels_variantes.css')) + '</style>' + s[j + len('</style>'):])
 
     # cadre : la coquille remplace l'en-tête, la barre d'outils et l'arbre de DeltaSub (mêmes identifiants conservés)
     i = s.find('<div id="boot">'); j = s.find("<script>\n'use strict';", i)

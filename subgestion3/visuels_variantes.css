@@ -1,0 +1,284 @@
+/* ══ SUBGestion 3 — traits propres à Brume, Signalétique et Studio nocturne (21.10.2026, à l'essai) ═════════════════════════════════
+   Après la base commune (visuels.css), même spécificité : ces règles l'emportent. Chaque bloc ne s'applique qu'à son visuel. */
+
+/* ═══ 1 · Brume — dégradé gris-bleu, verre blanc, menu graphite, vert d'eau ═══ */
+html[data-visuel="brume"]{
+  & body{font-variant-numeric:tabular-nums slashed-zero}
+  & svg[stroke-width="1.7"],& svg[stroke-width="1.8"]{stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  /* fond en dégradé ; en-tête et barre d'outils en verre */
+  & #nx-shell{background:var(--v-fond)}
+  & #body,& #main,& .nx-page,& .cols,& #fx-layer{background:transparent}
+  & #nx-head,& #nx-sub{background:var(--v-verre);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-bottom:1px solid var(--v-bord)}
+  & #nx-crumbs{text-transform:none;letter-spacing:0;font-size:12px;color:#46525F}
+  & #nx-title{font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--v-ink)}
+  & .nx-hb{border:0;background:rgba(255,255,255,.55);color:var(--v-ink)}
+  & .nx-hb:hover{background:rgba(255,255,255,.9)}
+  & .nx-new{border:0}
+  & .sg-ico,& .sg-chrono{border:1px solid var(--v-bord);background:rgba(255,255,255,.6)}
+  /* menu graphite : la seule surface sombre */
+  & #nx-side{background:var(--p-bk);color:#fff;border-right:0;border-radius:0 20px 20px 0;box-shadow:6px 0 24px rgba(20,26,34,.14)}
+  & .sg-brand{border-bottom:1px solid rgba(255,255,255,.1)}
+  & .sg-brand .L{fill:#fff}& .sg-brand .g{fill:rgba(255,255,255,.38)}& .sg-brand .sig path{fill:#fff}& .sg-brand .sig rect{fill:var(--v-acc)}
+  & .sg-qbtn{border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.85);background:rgba(255,255,255,.06)}
+  & .sg-qbtn:hover{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3)}
+  & .sg-qbtn .nx-kbd{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+  & .nx-gt{color:rgba(255,255,255,.92);border-radius:12px}
+  & .nx-gt:hover,& .nx-gt.on{background:rgba(255,255,255,.08)}
+  & .nx-g.cur>.nx-gt{color:#fff}
+  & .nx-it,& .nx-it.vo{color:rgba(255,255,255,.66);border-radius:12px}
+  & .nx-it:hover{color:#fff;background:rgba(255,255,255,.08)}
+  & .nx-it.on{color:#fff;background:rgba(255,255,255,.14);font-weight:600}
+  & .nx-it i,& .nx-pin i{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:999px}
+  & .nx-it.on i{background:#fff;color:var(--p-bk)}
+  & .nx-sep{color:rgba(255,255,255,.5);border-bottom-color:rgba(255,255,255,.1)}
+  & .nx-pin{color:rgba(255,255,255,.85)}& .nx-pin:hover{background:rgba(255,255,255,.08);color:#fff}
+  & .nx-gt .sg-prov{background:transparent;color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.3)}
+  & .nx-foot{border-top:1px solid rgba(255,255,255,.1)}
+  & .nx-foot .nx-av{background:rgba(255,255,255,.14);color:#fff;border:0}
+  & .nx-foot .who b{color:#fff}
+  & .nx-foot .who span{color:rgba(255,255,255,.62)}
+  & .nx-foot .who span.alerte{color:#F2B0A4}
+  & .nx-foot .who span.echec{background:var(--p-rd);color:#fff}
+  & #nx-side .nx-ico-btn{border:1px solid rgba(255,255,255,.2);color:#fff;background:transparent}
+  & #nx-side .nx-ico-btn:hover{background:rgba(255,255,255,.1)}
+  & #sg-lock.on{background:#fff;color:var(--p-bk)}
+  /* cartes, tuiles et panneaux : verre presque opaque, angles de 20 px, ombre douce */
+  & .nx-card,& .nx-kpi,& .sg-tile,& .sg-pv-k,& .col{background:var(--v-opaque);border:1px solid var(--v-bord);border-radius:20px;box-shadow:var(--v-ombre)}
+  & .col{overflow:hidden}
+  & .nx-card>h4{font-size:15px;font-weight:600;letter-spacing:-.01em;text-transform:none;color:var(--v-ink);border-bottom:1px solid var(--p-g2)}
+  & .nx-card>h4 .a{border-bottom:0;text-decoration:underline;text-decoration-color:rgba(20,26,34,.25);text-underline-offset:3px;text-transform:none;font-size:12px}
+  & .nx-kpi .l{font-size:11.5px;font-weight:500}
+  & .sg-tile:hover,& .nx-kpi.lnk:hover{background:rgba(255,255,255,.95)}
+  & .sg-tile.hero{background:var(--p-bk);border-color:var(--p-bk)}
+  & .sg-tile.hero:hover{background:var(--p-hv)}
+  /* chiffre clé : plus grand, sur verre (pas de carte noire) */
+  & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){background:var(--v-opaque);border-color:var(--v-bord);color:var(--v-ink)}
+  & .nx-kpi.hero .l,& .nx-kpi.hero .s,& .nx-kpi.hero .v small,& .sg-pkpis>.nx-kpi:has(.sg-kg) .l,& .sg-pkpis>.nx-kpi:has(.sg-kg) .v small{color:var(--p-g3)}
+  & .nx-kpi.hero .l svg,& .sg-pkpis>.nx-kpi:has(.sg-kg) .l svg{color:var(--p-g3)}
+  & .nx-kpi.hero .v,& .sg-pkpis>.nx-kpi:has(.sg-kg) .v{color:var(--v-ink);font-size:40px;font-weight:500;letter-spacing:-.02em;line-height:1.05}
+  & .nx-kpi.hero .nx-bar,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg{background:var(--v-prev)}
+  & .nx-kpi.hero .nx-bar i,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg .ef,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg .mk{background:var(--p-bk)}
+  & .sg-kq,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kq{background:var(--v-acc-bg);color:var(--v-acc);border:0;border-radius:999px}
+  & .sg-kq.dep,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kq.dep{background:var(--v-rd-bg);color:var(--p-rd)}
+  /* en-tête du projet et onglets en puces sur verre */
+  & .nx-hero:has(>.sg-pnum){background:var(--v-opaque);border:1px solid var(--v-bord);border-radius:20px;box-shadow:var(--v-ombre);padding:22px 26px 18px}
+  & .nx-hero .sg-pnum{font-size:30px;font-weight:600;letter-spacing:-.01em;color:var(--v-ink);border-right:1px solid var(--p-g2)}
+  & .nx-hero:has(>.sg-pnum)+.sg-onglets{margin:16px 0 24px}
+  & .sg-onglets{display:inline-flex;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.75);border-radius:999px;padding:3px;gap:2px;margin:16px 0 24px}
+  & .sg-onglets button{height:32px;padding:0 14px;border-radius:999px;border:0;color:var(--v-ink);font-size:13px;font-weight:500;letter-spacing:0;text-transform:none}
+  & .sg-onglets button:hover{background:rgba(255,255,255,.65);color:var(--v-ink)}
+  & .sg-onglets button.on{background:var(--p-bk);color:#fff;font-weight:600;border:0}
+  /* étiquettes en pastille teintée : vert d'eau en cours, brique échu, ambre en attente */
+  & .nx-tag{height:22px;padding:0 9px;border:0;border-radius:999px;background:var(--v-pill);color:var(--v-ink);text-transform:none;letter-spacing:0;font-size:11px;font-weight:600}
+  & .nx-tag.num{background:none;padding:0;font-size:12.5px}
+  & .nx-tag.s2{background:var(--v-acc-bg);color:var(--v-acc)}
+  & .nx-tag.s3{background:var(--v-pill);color:var(--v-ink)}
+  & .nx-tag.s4,& .nx-tag.s5{background:var(--v-amb-bg);color:var(--v-amb)}
+  & .nx-tag.urg{background:var(--v-rd-bg);color:var(--p-rd)}
+  & .nx-tag.fx{background:var(--p-bk);color:#fff}
+  & .sg-pt{border-radius:999px}& .sg-pt.v{background:var(--v-acc)}& .sg-badge{background:var(--v-acc);border-radius:999px}
+  & .sg-pos,& .sg-phk .v.pos{color:var(--v-acc)}
+  /* tableaux : en-têtes en minuscules, gris */
+  & .nx-tbl th,& table.g th{text-transform:none;letter-spacing:0;font-size:12px;font-weight:500;color:var(--p-g3);border-bottom:1px solid var(--p-g2)}
+  & .nx-tbl.sg-phc th{font-size:11px}
+  & table.g tbody tr.on td{background:var(--p-hl)}& table.g tbody tr.on td:first-child{box-shadow:inset 3px 0 0 var(--p-bk)}
+  & .sg-hscroll .nx-tbl th{box-shadow:inset 0 -1px 0 var(--p-g2)}
+  /* boutons secondaires en verre, champs arrondis */
+  & .nx-btn:not(.pri):not(.danger):not(.on),& .btn:not(.pri){background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(20,26,34,.06);color:var(--v-ink)}
+  & .nx-btn:not(.pri):not(.danger):not(.on):hover,& .btn:not(.pri):hover{background:rgba(255,255,255,.95)}
+  & .nx-btn.danger{background:var(--v-rd-bg);border-color:var(--v-rd-bg);color:var(--p-rd)}
+  & .nx-btn.danger:hover{background:var(--p-rd);border-color:var(--p-rd);color:#fff}
+  & .seg{border:0;background:rgba(255,255,255,.5);padding:2px;gap:2px}
+  & .seg button{border:0;border-radius:999px;text-transform:none;letter-spacing:0;font-size:12.5px}
+  & .seg button.on{background:var(--p-bk);color:#fff}
+  & .ib:hover{border-color:rgba(255,255,255,.9);background:rgba(255,255,255,.7)}
+  & .inp{border:1px solid var(--v-prev);border-radius:11px;background-color:rgba(255,255,255,.92)}
+  & #search,& .psearch{border:1px solid var(--v-bord);background-color:rgba(255,255,255,.75)}
+  & .inp:focus,& #search:focus,& .psearch:focus{border-color:var(--p-bk);box-shadow:0 0 0 2px rgba(21,24,29,.16)}
+  /* fenêtres, menus, palette, voile */
+  & .dlg{border:1px solid var(--v-bord);border-radius:20px;overflow:hidden}
+  & .dlg .ft{background:rgba(255,255,255,.7)}
+  & .menu{border:1px solid var(--v-bord);border-radius:14px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);padding:4px}
+  & .menu div{border-radius:9px}
+  & .nx-pbox{border:1px solid var(--v-bord);border-radius:20px;overflow:hidden}
+  & .ov,& #nx-pal{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+  & #toast{border-radius:999px}
+  /* graphiques : prévu gris-bleu, effectué graphite, mois en cours vert d'eau */
+  & .sg-pg-r .g .pr{background:var(--v-prev);border-radius:2px}
+  & .sg-pg-r .g .ef,& .sg-pg-r .g .dp{border-radius:1.5px}
+  & .sg-pg-r.cur,& .nx-tbl.sg-phc tr.cur td{background:var(--p-hl)}
+  & .sg-pg-cur{background:var(--v-acc);border-radius:999px;text-transform:none;font-size:10px}
+  & .sg-pg-r .sg-pg-q span{border:0;border-radius:999px;background:var(--v-pill)}
+  & .sg-pg-r .sg-pg-q span.dep{background:var(--v-rd-bg);color:var(--p-rd)}
+  & .sg-mg .sg-mc.cur i,& .sg-mg .sg-mc.cur i::after{background:var(--v-acc)}
+  & .sg-mg .sg-mc.cur i::after{border-color:var(--v-acc)}
+  & .nx-bar,& .nx-mini-bar,& .nx-bar i,& .nx-mini-bar i,& .sg-kg{border-radius:999px}
+  & .sg-sit-h tr:not(.sub):not(.tot):not(:first-child) td{background:rgba(242,245,247,.8)}
+}
+
+/* ═══ 2 · Signalétique — menu noir, bandeau orange, crème, béton, angles vifs ═══ */
+html[data-visuel="signaletique"]{
+  & svg[stroke-width="1.7"],& svg[stroke-width="1.8"]{stroke-width:1.25;stroke-linecap:butt;stroke-linejoin:miter}
+  /* menu noir, domaines en capitales espacées, module ouvert en orange */
+  & #nx-side{background:var(--p-bk);color:var(--v-creme);border-right:0}
+  & .sg-brand{border-bottom:1px solid #2A2A2A}
+  & .sg-brand .L{fill:var(--v-creme)}& .sg-brand .g{fill:#4A4A4A}& .sg-brand .sig path{fill:var(--v-creme)}& .sg-brand .sig rect{fill:var(--v-or)}
+  & .sg-qbtn{border:1px solid #4A4A4A;color:var(--v-creme);background:transparent}
+  & .sg-qbtn:hover{background:#222;color:#fff;border-color:var(--v-creme)}
+  & .sg-qbtn .nx-kbd{border-color:#4A4A4A;color:var(--p-sb)}
+  & .nx-gt{--s-font:var(--p-font);color:var(--v-creme);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+  & .nx-gt:hover,& .nx-gt.on{background:#222}
+  & .nx-g.cur>.nx-gt{color:var(--v-or)}
+  & .nx-it,& .nx-it.vo{color:var(--p-sb)}
+  & .nx-it:hover{color:#fff;background:#222}
+  & .nx-it.on{color:var(--p-bk);background:var(--v-or);font-weight:600}
+  & .nx-it i,& .nx-pin i{background:transparent;color:var(--v-creme);border:1px solid #4A4A4A}
+  & .nx-it.on i{color:var(--p-bk);border-color:var(--p-bk)}
+  & .nx-sep{color:#7A7F7F;border-bottom-color:#2A2A2A}
+  & .nx-pin{color:var(--v-creme)}& .nx-pin:hover{background:#222;color:#fff}
+  & .nx-gt .sg-prov{background:transparent;color:var(--v-creme);border-color:#4A4A4A}
+  & .nx-foot{border-top:1px solid #2A2A2A}
+  & .nx-foot .nx-av{background:var(--v-or);color:var(--p-bk);border:0;border-radius:0}
+  & .nx-foot .who b{color:var(--v-creme)}
+  & .nx-foot .who span{color:var(--p-sb)}
+  & .nx-foot .who span.alerte{color:var(--v-or)}
+  & .nx-foot .who span.echec{background:var(--v-or);color:var(--p-bk)}
+  & #nx-side .nx-ico-btn{border:1px solid #4A4A4A;color:var(--v-creme);background:transparent}
+  & #nx-side .nx-ico-btn:hover{background:#222}
+  & #sg-lock.on{background:var(--v-or);color:var(--p-bk)}
+  /* en-tête : bandeau orange, titre en grand */
+  & #nx-head{background:var(--v-or);border-bottom:0;height:80px}
+  & #nx-crumbs{color:var(--p-bk)}
+  & #nx-title{font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--p-bk)}
+  & .nx-hb{border-color:var(--p-bk);color:var(--p-bk);background:transparent}
+  & .nx-hb:hover{background:rgba(17,17,17,.1)}
+  & .nx-new{background:var(--p-bk);border-color:var(--p-bk);color:var(--v-creme)}
+  & .nx-new:hover{background:var(--p-hv);border-color:var(--p-hv)}
+  & #nx-head .sg-ico,& #nx-head .sg-chrono{background:transparent;border-color:var(--p-bk);color:var(--p-bk)}
+  & #nx-head .sg-ico:hover,& #nx-head .sg-chrono:hover{background:rgba(17,17,17,.1)}
+  & #nx-head .nx-kbd{border-color:rgba(17,17,17,.4);color:var(--p-bk)}
+  & #nx-sub{background:var(--v-creme);border-bottom:1px solid var(--p-bk)}
+  /* page crème, tuiles béton ; le chiffre clé reste sur fond noir, sa jauge en orange */
+  & .cols{background:var(--v-creme)}
+  & .nx-kpis{gap:2px}
+  & .nx-kpi{background:var(--v-beton);border:0;padding:18px 22px}
+  & .nx-kpi .v{font-weight:700;letter-spacing:-.02em}
+  & .nx-kpi .nx-bar{background:var(--p-g2);height:2px}& .nx-kpi .nx-bar i{background:var(--p-bk)}
+  & .nx-kpi.lnk:hover{background:#C9CECE}
+  & .nx-kpi.hero .v,& .sg-pkpis>.nx-kpi:has(.sg-kg) .v{color:var(--v-creme)}
+  & .nx-kpi.hero .nx-bar i,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg .ef{background:var(--v-or)}
+  & .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kq{border-color:var(--v-or);color:var(--v-or)}
+  & .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kq.dep{background:var(--v-or);color:var(--p-bk)}
+  & .nx-card{border:1px solid var(--p-g2)}
+  & .sg-tile{background:var(--p-wh);border:1px solid var(--p-g2)}
+  & .sg-tile:hover{background:var(--v-sel)}
+  & .sg-tile.hero{background:var(--p-bk);border-color:var(--p-bk)}
+  & .sg-tile.hero:hover{background:var(--p-hv2)}
+  & .sg-pv-k{background:var(--v-beton);border:0}
+  /* en-tête du projet : bande béton, numéro géant */
+  & .nx-hero:has(>.sg-pnum){background:var(--v-beton);border:0;border-top:2px solid var(--p-bk);padding:20px 28px 18px}
+  & .nx-hero .sg-pnum{--s-font:var(--p-font);font-size:56px;font-weight:400;letter-spacing:-.03em;line-height:1;border-right:2px solid var(--p-bk);padding:0 22px 0 0}
+  & .nx-hero h2{font-weight:700;letter-spacing:-.03em}
+  & .sg-frise::after{background:var(--v-or)}
+  /* onglets : barre crème filetée de noir, onglet ouvert en noir */
+  & .nx-hero:has(>.sg-pnum)+.sg-onglets{margin:0 0 28px}
+  & .sg-onglets{background:var(--v-creme);border-bottom:1px solid var(--p-bk);gap:0;padding:0;margin:0 0 28px}
+  & .sg-onglets button{height:40px;padding:0 18px;color:var(--p-bk);border-right:1px solid var(--p-g2);border-bottom:0}
+  & .sg-onglets button:hover{color:var(--p-bk);background:var(--v-sel)}
+  & .sg-onglets button.on{background:var(--p-bk);color:var(--v-creme);border-bottom:0}
+  /* étiquettes : orange = alerte (texte noir), noir plein = fait, béton = attente */
+  & .nx-tag.urg{background:var(--v-or);color:var(--p-bk);border-color:var(--v-or)}
+  & .nx-tag.s4,& .nx-tag.s5{background:var(--v-beton);border-color:var(--v-beton);color:var(--p-bk)}
+  & .sg-pt.r{background:var(--v-or);color:var(--p-bk)}
+  & .sg-pt.r.zero{background:none;color:var(--p-rdt);box-shadow:inset 0 0 0 1px var(--v-or)}
+  & .sg-kq.dep,& .sg-pg-r .sg-pg-q span.dep{background:var(--v-or);color:var(--p-bk);border-color:var(--v-or)}
+  /* sélection saumon + filet noir */
+  & table.g tbody tr.on td,& .nx-tbl tr.sel td{background:var(--v-sel)}
+  /* graphiques : sucettes orange, phase en cours en saumon */
+  & .sg-mg .sg-mc i{background:var(--v-or)}& .sg-mg .sg-mc i::after{border-color:var(--v-or)}& .sg-mg .sg-mc.cur i::after{background:var(--v-or)}
+  & .sg-pg-cur{background:var(--v-or);color:var(--p-bk)}
+  & .sg-pg-r.cur,& .nx-tbl.sg-phc tr.cur td{background:var(--v-sel)}
+  & .sg-sit-h tr:not(.sub):not(.tot):not(:first-child) td{background:var(--v-beton)}
+  /* suppressions et erreurs : noir sur orange */
+  & .nx-btn.danger{border-color:var(--p-bk);color:var(--p-bk);background:var(--v-or)}
+  & .nx-btn.danger:hover{background:var(--p-bk);color:var(--v-or)}
+  & .btn.pri.danger{background:var(--v-or);border-color:var(--v-or);color:var(--p-bk)}
+  & .menu.sg-cmenu div.danger,& .menu.sg-cmenu div.danger:hover{color:var(--p-rdt)}
+  & #toast.err{background:var(--v-or);color:var(--p-bk)}
+}
+
+/* ═══ 4 · Studio nocturne — graphite, texte clair, carte pastel ═══
+   Toute la page est inversée (blanc → #141414, noir → #EBEBEB) puis remise dans ses teintes : les règles de la base, écrites en noir sur
+   blanc, deviennent claires sur graphite. Images, aperçus de documents, cadres de lecture et cartes pastel sont soustraits à l'inversion
+   (--v-contre). Couleurs écrites ici : AVANT inversion (#F6F6F6 → #1C1C1C, #ECECEC → #242424, #E3E3E3 → #2C2C2C), sauf sous --v-contre. */
+html[data-visuel="nocturne"]{
+  filter:invert(.92) hue-rotate(180deg);
+  & img,& canvas,& video,& embed,& object,& iframe:not(#fx-frame),& #boot,& .sg-vis-apercu{filter:var(--v-contre)}
+  & .sg-vis-apercu img,& .sg-vis-apercu canvas{filter:none}
+  & svg[stroke-width="1.7"],& svg[stroke-width="1.8"]{stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  & body{font-weight:500}
+  /* surfaces : menu et en-tête #1C1C1C, cartes #242424 */
+  & #nx-side{background:var(--v-surf);border-right:1px solid var(--p-g2)}
+  & #nx-head,& #nx-sub{background:var(--v-surf);border-bottom:1px solid var(--p-g2)}
+  & .nx-gt,& .nx-it,& .nx-pin{border-radius:10px}
+  & .nx-card,& .nx-kpi,& .sg-tile,& .sg-pv-k,& .col{background:var(--v-carte);border:1px solid var(--v-carte);border-radius:16px}
+  & .col{overflow:hidden}
+  & .ph2{background:var(--v-carte)}
+  & .nx-card>h4{font-size:15px;font-weight:600;letter-spacing:0;border-bottom:1px solid var(--p-g2)}
+  & .nx-card>h4 .a{border-bottom:0;text-decoration:underline;text-underline-offset:3px;font-size:12px}
+  & .nx-kpi .l{font-size:12px;font-weight:500}
+  & .nx-kpi .v{font-weight:600}
+  & .sg-tile:hover,& .nx-kpi.lnk:hover{background:#E0E0E0}
+  & .sg-tile.hero{background:var(--p-bk);border-color:var(--p-bk)}
+  & .sg-tile.hero:hover{background:var(--p-hv)}
+  & .nx-hero:has(>.sg-pnum){background:var(--v-carte);border:0;border-radius:16px;padding:22px 24px 18px}
+  & .nx-hero .sg-pnum{font-weight:500;border-right:1px solid var(--v-bord)}
+  /* chiffre clé : carte pastel à encre noire, soustraite à l'inversion — rose (projets), menthe (temps, équipe, RH), lavande (facturation,
+     finances), sable (autres domaines) */
+  & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){filter:var(--v-contre);background:var(--v-rose);border-color:var(--v-rose);color:var(--v-encre)}
+  & .nx-kpi.hero .l,& .nx-kpi.hero .s,& .nx-kpi.hero .v small,& .sg-pkpis>.nx-kpi:has(.sg-kg) .l,& .sg-pkpis>.nx-kpi:has(.sg-kg) .v small{color:var(--v-encre2)}
+  & .nx-kpi.hero .l svg,& .sg-pkpis>.nx-kpi:has(.sg-kg) .l svg,& .nx-kpi.hero .v,& .sg-pkpis>.nx-kpi:has(.sg-kg) .v{color:var(--v-encre)}
+  & .nx-kpi.hero .nx-bar,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg{background:rgba(17,17,17,.18)}
+  & .nx-kpi.hero .nx-bar i,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg .ef,& .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg .mk{background:var(--v-encre)}
+  & .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kg .dp{background:#B4433A}
+  & .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kq{background:transparent;color:var(--v-encre);border:1px solid var(--v-encre)}
+  & .sg-pkpis>.nx-kpi:has(.sg-kg) .sg-kq.dep{background:var(--v-encre);color:var(--v-rose);border-color:var(--v-encre)}
+  &[data-vdom="temps"],&[data-vdom="equipe"],&[data-vdom="rh"]{
+    & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){background:var(--v-menthe);border-color:var(--v-menthe)} }
+  &[data-vdom="facturation"],&[data-vdom="finances"],&[data-vdom="ancien"],&[data-vdom="ancienf"]{
+    & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){background:var(--v-lavande);border-color:var(--v-lavande)} }
+  &[data-vdom="contacts"],&[data-vdom="biblio"],&[data-vdom="reglages"]{
+    & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){background:#EAD9B8;border-color:#EAD9B8} }
+  /* onglets du projet en puces */
+  & .nx-hero:has(>.sg-pnum)+.sg-onglets{margin:16px 0 24px}
+  & .sg-onglets{background:transparent;gap:6px;padding:0;margin:16px 0 24px}
+  & .sg-onglets button{height:30px;padding:0 13px;border-radius:999px;border:0;background:var(--p-g1);color:var(--p-bk);font-size:13px;font-weight:500}
+  & .sg-onglets button:hover{background:#D6D6D6;color:var(--p-bk)}
+  & .sg-onglets button.on{background:var(--p-bk);color:var(--p-wh);font-weight:600;border:0}
+  /* étiquettes : puces graphite ; échu en rouge pâle, payé / fait en vert pâle (encre noire, hors inversion) */
+  & .nx-tag{height:22px;border:0;border-radius:6px;background:var(--p-g1);color:var(--p-bk);font-size:11px;font-weight:600}
+  & .nx-tag.num{background:none;font-size:12.5px}
+  & .nx-tag.urg{filter:var(--v-contre);background:var(--v-bad);color:var(--v-encre)}
+  & .nx-tag.fx{filter:var(--v-contre);background:var(--v-ok);color:var(--v-encre)}
+  & .nx-foot .nx-av{filter:var(--v-contre);background:var(--v-lavande);color:var(--v-encre);border:0}
+  /* champs, boutons secondaires, fenêtres */
+  & .inp{background:var(--v-surf);border-color:var(--v-bord);border-radius:10px}
+  & .inp:focus{border-color:var(--p-bk)}
+  & #search,& .psearch{background-color:var(--p-wh);border-color:var(--v-bord)}
+  & .nx-btn:not(.pri):not(.danger):not(.on),& .btn:not(.pri),& .nx-hb,& .sg-ico,& .sg-chrono,& .sg-qbtn,& .nx-ico-btn{border-color:var(--v-bord);background:transparent}
+  & .nx-btn:not(.pri):not(.danger):not(.on):hover,& .btn:not(.pri):hover,& .nx-hb:hover,& .sg-ico:hover,& .sg-qbtn:hover,& .nx-ico-btn:hover{background:var(--p-g1)}
+  & .seg{border-color:var(--v-bord)}& .seg button{border-left-color:var(--v-bord)}
+  & .menu,& .dlg,& .nx-pbox{border:1px solid var(--v-bord);border-radius:14px;box-shadow:none}
+  & .dlg,& .nx-pbox{overflow:hidden}
+  & .menu div{border-radius:8px}
+  & .dlg .ft{background:var(--v-surf)}
+  & #toast{border-radius:10px}
+  /* tableaux : en-têtes sur #1C1C1C */
+  & table.g th{background:var(--v-surf)}
+  & .sg-hscroll .nx-tbl th{background:var(--v-carte)}
+  & table.g tbody tr.on td,& .nx-tbl tr.sel td{background:#DDDDDD}
+  /* graphiques : prévu gris moyen, phase en cours surlignée */
+  & .sg-pg-r .g .pr{background:#C8C8C8}
+  & .sg-pg-r.cur,& .nx-tbl.sg-phc tr.cur td{background:#E0E0E0}
+  & .sg-sit-h tr:not(.sub):not(.tot):not(:first-child) td{background:#E0E0E0}
+}

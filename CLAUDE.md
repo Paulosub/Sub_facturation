@@ -650,8 +650,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Faisabilité `c.fais`, ou contrat intitulé « … faisabilité … » ; contrats lus dans le cadre Facturation, page redessinée quand il est chargé,
   `sgFaisaPlusTard`), garde-fou : documents déjà déposés dans Faisabilité ; avant : phase de faisabilité, documents déposés, ou analyse de parcelle existante ; projet uniquement de faisabilité : sans le groupe Projet) avec Parcelle &
   règlements, Documents de base, Études, Variantes, Présentation au client, Fiche de faisabilité (`SG_PMOD`, `SG_PMOD_G`, compteurs
-  **Ordre des groupes de la page du projet (21.10.2026)** : Honoraires et facturation (tout en haut), Faisabilité, Projet, Chantier, puis Équipe
-  et adresses, Suivi du projet (`SG_PMOD_G` : Faisabilité avant Projet ; Honoraires et Chantier placés dans le rendu de `nx-pdom`). Groupe « Planification »
+  **Ordre des groupes de la page du projet (21.10.2026)** : Honoraires et facturation, Suivi du projet, Faisabilité, Projet, Chantier, puis
+  Équipe et adresses (`SG_PMOD_G` : Faisabilité avant Projet ; les groupes du moteur placés dans le rendu de `nx-pdom`). Groupe « Planification »
   (Planification RH, Analyse de planification RH) retiré de la page du projet le 21.10.2026 (`SG_PDOM_G`) : la planification RH reste dans
   Ressources humaines.
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,

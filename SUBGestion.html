@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<!-- SUBGestion — app unique Facturation + DeltaSub, générée le 21.10.2026 07:31 par subgestion/construire.py
+<!-- SUBGestion — app unique Facturation + DeltaSub, générée le 21.10.2026 08:46 par subgestion/construire.py
      à partir de Facturation.html et DeltaSub.html. NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -9952,72 +9952,124 @@ function updateDatePaiement(id, val) {
    COCKPIT
 ═══════════════════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════
-   COCKPIT — données d'exemple
-   TODO: brancher les vraies sources (contrats / factures /
-   historique Excel). Ces valeurs reproduisent le tableau
-   de bord Excel « COCKPIT » pour caler le visuel.
+   COCKPIT — chiffres calculés depuis les contrats et les factures (2026-10-21)
+   Avant : « const cockpitData », valeurs d'exemple recopiées du tableau Excel « COCKPIT » (graphique mensuel
+   synthétique compris). Désormais tout est calculé, avec les MÊMES définitions que le Cockpit analytique
+   (ck2Compute) et que SUBGestion (sgRenta) :
+   · facture comptée = non annulée ; montant = honoraires TTC facturés, sans les frais (_ttc) ; année et mois =
+     date de la facture ;
+   · encaissée (reçue) = statut « Payée » ou date de paiement saisie ; reçue à la date de paiement, à défaut à
+     la date de la facture ; ouverte = comptée et non encaissée ; « à envoyer » = statut « En attente » ;
+   · contrat compté = non annulé ; montant TTC = httc, à défaut hht × (1 + TVA) ;
+   · honoraires engagés = contrats comptés, chacun au plus élevé de son montant et de son facturé (anciens
+     contrats saisis sans montant, avenants facturés en plus), + factures sans contrat. Le marquage « signé »
+     n'existe que depuis le 20.10.2026 : les contrats signés sont donnés à part (« dont signés ») ;
+   · reste à facturer = contrats en cours (ni annulés, ni terminés, ni archivés) : montant − facturé, s'il est
+     positif.
+   « Charges & dépenses » : aucune source dans l'app → section sans chiffres, en attendant la décision de Paulo.
 ═══════════════════════════════════════════════════ */
 const CK_YC = {2020:'#8E44D6',2021:'#46A04B',2022:'#E6C200',2023:'#1FA8E0',2024:'#E84FB0',2025:'#F39B8B',2026:'#2E4B9E'};
-function ckSampleMonthly(){
-  // chart3 — honoraires reçus/facturés par mois et par année (2020→2026)
-  const out=[];
-  for(let m=0;m<12;m++){
-    const row={mois:MO[m],vals:[]};
-    for(let y=2020;y<=2026;y++){
-      const base=20000+((m*7+y)%9)*9000;
-      row.vals.push({y,t:'reçu', v: y>2026?0:base*(0.5+((m+y)%5)/8)});
-      row.vals.push({y,t:'facturé', v: y>2026?0:base*(0.4+((m+y*2)%6)/9)});
-    }
-    out.push(row);
-  }
-  return out;
+const CK_YC_PLUS = {2016:'#6C7A89',2017:'#B0A07A',2018:'#9AA0A6',2019:'#8D6E63',2027:'#00897B',2028:'#C2185B',2029:'#5C6BC0',2030:'#F57C00'};
+const ckYC = y => CK_YC[y] || CK_YC_PLUS[y] || '#9AA0A6';   // années sans couleur attitrée
+
+/* ── Définitions communes aux deux cockpits (Cockpit et Cockpit analytique) ── */
+const ckFactOk = f => !/annul/i.test(f.statut||'');                        // facture comptée : non annulée
+const ckTTC = f => +f._ttc || +f.ttc || 0;                                  // honoraires TTC facturés, sans les frais
+const ckPayee = f => f.statut === 'Payée' || !!f.date_paiement;             // encaissée
+const ckContratTTC = c => +c.httc || (+c.hht||0) * (1 + (+c.tva||8.1)/100);
+const ckEnCours = c => !c.annule && !c.termine && !c.archive;               // contrat en cours
+const ckYM = d => { const m = /^(\d{4})-(\d{2})/.exec(d||''); return m ? {y:+m[1], m:+m[2]-1} : null; };
+function ckBase(){ const F = factures.filter(ckFactOk), parC = {};
+  F.forEach(f => { parC[f.contrat_id] = (parC[f.contrat_id]||0) + ckTTC(f); });
+  return {F, parC}; }
+const ckEngage = (c, parC) => Math.max(ckContratTTC(c), parC[c.id]||0);   // un contrat vaut au moins ce qui a été facturé dessus
+function ckReste(parC){ return contrats.filter(ckEnCours)
+  .map(c => ({c, nom:c.projet||c.affaire||'—', base:ckContratTTC(c), reste:Math.max(0, ckContratTTC(c) - (parC[c.id]||0))}))
+  .filter(r => r.reste > 0.005).sort((a,b) => b.reste - a.reste); }
+/* échelle « ronde » d'un graphique : maximum et pas des graduations (1, 2, 2.5, 5 × 10^n) */
+function ckEchelle(v, n){ n = n||8; if(!(v > 0)) return {max:1, step:1};
+  const brut = v/n, p = Math.pow(10, Math.floor(Math.log10(brut))), pas = [1,2,2.5,5,10].find(x => x*p >= brut)*p;
+  return {max:Math.ceil(v/pas)*pas, step:pas}; }
+
+/* Tous les chiffres du Cockpit pour l'exercice Y (sections « depuis la création » : toutes années) */
+function ckCompute(Y){
+  const now = new Date(), cY = now.getFullYear(), cM = now.getMonth(), z2 = n => String(n).padStart(2,'0');
+  const jour = z2(cM+1) + '-' + z2(now.getDate());
+  Y = +Y || cY;
+  const {F, parC} = ckBase(), ids = new Set(contrats.map(c => c.id)), som = L => L.reduce((s,f) => s + ckTTC(f), 0);
+  // cumuls depuis la création
+  const facture = som(F), P = F.filter(ckPayee), recu = som(P), O = F.filter(f => !ckPayee(f)), ouvert = som(O);
+  const CS = contrats.filter(c => !c.annule), horsC = som(F.filter(f => !ids.has(f.contrat_id)));
+  const engage = CS.reduce((s,c) => s + ckEngage(c, parC), 0) + horsC;
+  const SG = CS.filter(c => c.signe), signe = SG.reduce((s,c) => s + ckContratTTC(c), 0);
+  const nSansMontant = CS.filter(c => !ckContratTTC(c)).length;
+  // factures ouvertes (par date) et reste à facturer
+  const R = ckReste(parC), reste = R.reduce((s,r) => s + r.reste, 0);
+  const cur = cY*12 + cM, rang = f => { const d = ckYM(f.date); return d ? d.y*12 + d.m : null; }, att = f => f.statut === 'En attente';
+  const oMois = som(O.filter(f => !att(f) && rang(f) === cur));
+  const oSuiv = som(O.filter(f => !att(f) && rang(f) !== null && rang(f) > cur));
+  const oEnv = som(O.filter(att));
+  const oAnt = som(O.filter(f => !att(f) && (rang(f) === null || rang(f) < cur)));
+  // années, semestres, mois (facturé : date de la facture ; reçu : date de paiement, à défaut date de la facture)
+  const A = {}, S1 = {}, S2 = {}, MF = {}, MR = {}, z12 = () => Array(12).fill(0), v = (o,y) => o[y] || 0;
+  F.forEach(f => { const d = ckYM(f.date); if(!d) return; const x = ckTTC(f), S = d.m < 6 ? S1 : S2;
+    A[d.y] = v(A,d.y) + x; S[d.y] = v(S,d.y) + x; (MF[d.y] = MF[d.y] || z12())[d.m] += x; });
+  P.forEach(f => { const d = ckYM(f.date_paiement) || ckYM(f.date); if(!d) return; (MR[d.y] = MR[d.y] || z12())[d.m] += ckTTC(f); });
+  const ans = Object.keys(A).map(Number), y0 = ans.length ? Math.min(...ans) : cY, y1 = Math.max(cY, ...ans);
+  const annees = []; for(let y = y1; y >= y0; y--) annees.push(y);
+  if(!annees.includes(Y)) Y = cY;
+  // croissance : exercice en cours comparé « à date » (du 1er janvier au même jour), années passées entières
+  const pct = (a,b) => b > 0 ? Math.round((a - b)/b*100) : null;
+  const aDate = y => Y === cY ? som(F.filter(f => (f.date||'').slice(0,4) === String(y) && (f.date||'').slice(5,10) <= jour)) : v(A,y);
+  const autresS1 = ans.filter(y => y !== Y), bestS1Y = autresS1.length ? autresS1.reduce((b,y) => v(S1,y) > v(S1,b) ? y : b) : null;
+  const kpis = {croissance:pct(aDate(Y), aDate(Y-1)), annuel:pct(v(A,Y), v(A,Y-1)), sem1:pct(v(S1,Y), v(S1,Y-1)),
+    sem1Meilleur:bestS1Y !== null ? pct(v(S1,Y), v(S1,bestS1Y)) : null, bestS1Y, aDate:Y === cY, jour, aDateY:aDate(Y), aDateY1:aDate(Y-1)};
+  // croissance annuelle moyenne (taux composé) jusqu'à la dernière année complète de l'exercice choisi
+  const prem = F.map(f => f.date||'').filter(Boolean).sort()[0] || '';
+  const debut = prem ? +prem.slice(0,4) + (prem.slice(5,7) === '01' ? 0 : 1) : null, fin = Y < cY ? Y : Y - 1;
+  const tcam = (a,b) => (v(A,a) > 0 && b > a) ? Math.round((Math.pow(v(A,b)/v(A,a), 1/(b-a)) - 1)*100) : null;
+  const croissanceMoy = [];
+  if(debut !== null && fin > debut) croissanceMoy.push({l:'Depuis la première année complète ('+debut+' → '+fin+')', v:tcam(debut,fin)});
+  [5,3].forEach(n => { if(debut !== null && fin - n > debut) croissanceMoy.push({l:'Sur '+n+' ans ('+(fin-n)+' → '+fin+')', v:tcam(fin-n,fin)}); });
+  // comparaison mensuelle : facturé moyen par mois (exercice en cours : mois écoulés)
+  const nMois = y => y < cY ? 12 : y === cY ? cM + 1 : 0;
+  const moisCompare = [Y, Y-1, Y-2].filter(y => nMois(y) > 0 && y >= y0).map(y => ({l:String(y), v:v(A,y)/nMois(y), c:ckYC(y),
+    t:'Facturé moyen par mois en '+y+' : '+CHF(v(A,y)/nMois(y))+' Fr.'+(y === cY ? ' ('+nMois(y)+' mois écoulés)' : '')})).sort((a,b) => b.v - a.v);
+  // anneaux : facturé du mois pour Y, Y-1, Y-2, à l'échelle du meilleur mois des trois années ; % = Y comparé à Y-1
+  const mf = y => MF[y] || z12(), maxM = Math.max(1, ...[Y, Y-1, Y-2].flatMap(mf));
+  const gauges = MO.map((m,i) => { const a = mf(Y)[i], b = mf(Y-1)[i], c = mf(Y-2)[i], futur = Y > cY || (Y === cY && i > cM);
+    return {m:m.charAt(0).toUpperCase() + m.slice(1), pct:futur ? null : pct(a,b), r:[futur ? 0 : a/maxM, b/maxM, c/maxM],
+      tip:m+' — '+Y+' : '+CHF(a)+' Fr. · '+(Y-1)+' : '+CHF(b)+' Fr. · '+(Y-2)+' : '+CHF(c)+' Fr.'}; });
+  // reçu / facturé par mois, 7 années jusqu'à l'exercice
+  const ansM = []; for(let y = Y-6; y <= Y; y++) ansM.push(y);
+  const monthly = MO.map((m,i) => ({mois:m, vals:ansM.flatMap(y => [{y, t:'reçu', v:(MR[y]||z12())[i]}, {y, t:'facturé', v:(MF[y]||z12())[i]}])}));
+  // meilleurs maîtres de l'ouvrage : facturé depuis la création (contrat ; facture sans contrat : client de la facture) ;
+  // contrats sans maître de l'ouvrage (anciens contrats saisis avec le projet seul) et factures orphelines : « non attribué », hors classement
+  const cMap = {}; contrats.forEach(c => { cMap[c.id] = c; });
+  const parMO = {}, naC = new Set(); let nonAttr = 0, naF = 0;
+  F.forEach(f => { const c = cMap[f.contrat_id], nom = String((c ? c.nom : f.cl_nom) || '').trim();
+    if(!nom || /^[-–—?.\s]+$/.test(nom)){ nonAttr += ckTTC(f); if(c) naC.add(c.id); else naF++; return; }   /* nom vide ou « - » */
+    const k = nom.toLowerCase(); (parMO[k] = parMO[k] || {l:nom, v:0}).v += ckTTC(f); });
+  const topMO = Object.values(parMO).sort((a,b) => b.v - a.v).slice(0, 10);
+  return {Y, cY, annees, ansM, engage, signe, nSigne:SG.length, nSansMontant, horsC, facture, nF:F.length, recu, ouvert, nO:O.length, reste, nR:R.length,
+    cumul:[{l:'Honoraires engagés depuis la création', v:engage, c:'#1FA8E0'},
+           {l:'Honoraires facturés depuis la création', v:facture, c:'#E03B3B'},
+           {l:'Honoraires reçus depuis la création', v:recu, c:'#7DAE5A'}],
+    ouvertes:{total:reste + oMois + oSuiv + oEnv + oAnt, ouvertes:ouvert, seg:[
+      {l:'Honoraires restant à facturer (contrats en cours)', v:reste, c:'#9CC97E'},
+      {l:'Factures ouvertes du mois en cours', v:oMois, c:'#E6C200'},
+      {l:'Factures datées du mois suivant ou plus tard', v:oSuiv, c:'#E0552B'},
+      {l:'Factures à envoyer (en attente)', v:oEnv, c:'#9aa0a6'},
+      {l:'Factures ouvertes des mois précédents', v:oAnt, c:'#5BA3D0'}]},
+    parAnnee:annees.map(y => ({y, v:v(A,y)})), sem1:annees.map(y => ({y, v:v(S1,y)})), sem2:annees.map(y => ({y, v:v(S2,y)})),
+    caLine:{years:annees.slice().reverse(), total:annees.slice().reverse().map(y => v(A,y))},
+    moisCompare, croissanceMoy, kpis, gauges, monthly, topMO, nonAttr, naC:naC.size, naF};
 }
-const cockpitData = {
-  cumul:[
-    {l:'Honoraires signé depuis la création',   v:5508079.30, c:'#1FA8E0'},
-    {l:'Honoraires facturé depuis la création', v:4965749.52, c:'#E03B3B'},
-    {l:'Honoraires reçu depuis la création',    v:4934049.52, c:'#7DAE5A'},
-  ],
-  charges:{ total:716194.94, seg:[
-    {l:'Charge personnel', v:529390.94, c:'#F0B400'},
-    {l:'Charges de locaux', v:30400, c:'#2E6FB0'},
-    {l:"Assurance d'exploitation", v:9800, c:'#E0552B'},
-    {l:'Charges de véhicules', v:49204, c:'#9aa0a6'},
-    {l:"Charges d'administration et d'informatique", v:35000, c:'#5BA3D0'},
-    {l:'Charges de publicité', v:7500, c:'#5AA84B'},
-    {l:'TVA', v:18900, c:'#274B8E'},
-  ]},
-  ouvertes:{ total:627811.22, ouvertes:31700, seg:[
-    {l:'Honoraires restant à facturer', v:586261.22, c:'#9CC97E'},
-    {l:'Montant facturé pour le mois en cours', v:27700, c:'#E6C200'},
-    {l:'Montant facturé pour le mois suivant', v:0, c:'#E0552B'},
-    {l:'Montant à envoyer', v:14150, c:'#9aa0a6'},
-  ]},
-  parAnnee:[ {y:2026,v:388035.10},{y:2025,v:664955.00},{y:2024,v:987793.62},{y:2023,v:857784.05},{y:2022,v:543212.50},{y:2021,v:338673.50},{y:2020,v:253737.35} ],
-  sem2:[ {y:2026,v:0},{y:2025,v:409643.25},{y:2024,v:548727.12},{y:2023,v:530374.13},{y:2022,v:329492.31},{y:2021,v:107613.52},{y:2020,v:135395.00} ],
-  sem1:[ {y:2026,v:388035.10},{y:2025,v:255911.55},{y:2024,v:441066.50},{y:2023,v:327913.55},{y:2022,v:213725.25},{y:2021,v:230662.00},{y:2020,v:128342.85} ],
-  caLine:{ years:[2017,2018,2019,2020,2021,2022,2023,2024,2025,2026],
-           total:[180000,260000,300000,253737,338673,543212,857784,987793,664955,388035] },
-  moisCompare:[ {l:'2024',v:120000,c:'#ffffff'},{l:'2026',v:90000,c:'#5AA84B'},{l:'2025',v:60000,c:'#E03B3B'} ],
-  croissanceMoy:[ {l:'Depuis le début de la société',v:'40%'},{l:'Après COVID',v:'25%'},{l:"Depuis l'arrivée des nouveaux collaborateurs",v:'25%'} ],
-  kpis:{ croissance2026:-42, annuel:-42, sem1:52, sem1Meilleur:-12 },
-  gauges:[
-    {m:'Janvier',pct:629,r:[1,0.95,0.7]},{m:'Février',pct:138,r:[1,0.8,0.55]},
-    {m:'Mars',pct:18,r:[0.55,0.7,0.6]},{m:'Avril',pct:-21,r:[0.4,0.65,0.5]},
-    {m:'Mai',pct:185,r:[1,0.9,0.6]},{m:'Juin',pct:-51,r:[0.3,0.6,0.55]},
-    {m:'Juillet',pct:null,r:[0,0.55,0.5]},{m:'Août',pct:null,r:[0,0.5,0.45]},
-    {m:'Septembre',pct:null,r:[0,0.6,0.5]},{m:'Octobre',pct:null,r:[0,0.55,0.5]},
-    {m:'Novembre',pct:null,r:[0,0.5,0.45]},{m:'Décembre',pct:null,r:[0,0.65,0.55]},
-  ],
-  topMO:[ {l:'Fondation de la Razavère',v:982550},{l:'Nicolas Queloz',v:532775},{l:'Claude Stucki',v:200000},
-          {l:'Antohet teet Benoît Guignet',v:170000},{l:'Realstone SA',v:167124},{l:'Ineorn',v:164000},
-          {l:'Marion Gallo',v:154544},{l:'Marlène & Julien Volet',v:154500},{l:'Yves Rüttimann',v:154000},
-          {l:"Mme &M. Oppliger",v:149350} ],
-  monthly: ckSampleMonthly(),
-};
 
 /* ═══ Helpers SVG ═══ */
 function ckEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+const ckAttr = s => ckEsc(s).replace(/"/g,'&quot;');
+const ckPct = v => v == null ? '—' : (v > 0 ? '+' : '') + v + '%';
 function ckGrid(x0,plotW,max,top,bottom,step){ // verticales + labels axe X
   let g=''; const n=Math.round(max/step);
   for(let i=0;i<=n;i++){ const v=i*step; const x=x0+(v/max)*plotW;
@@ -10027,6 +10079,7 @@ function ckGrid(x0,plotW,max,top,bottom,step){ // verticales + labels axe X
   return g;
 }
 function ckHBars(items, o={}){
+  if(!items.length) return '<div style="font-size:11px;color:#6a8a96;padding:6px 0">Aucune donnée</div>';
   const w=o.w||1500, rowH=o.rowH||22, gap=o.gap||8, padL=2, padR=o.padR||10, padT=6, padB=22;
   const n=items.length, plotW=w-padL-padR;
   const max=o.max||Math.max(...items.map(i=>i.v))*1.06||1;
@@ -10034,8 +10087,11 @@ function ckHBars(items, o={}){
   let s=`<svg viewBox="0 0 ${w} ${h}" class="ck-svg">`;
   s+=ckGrid(padL,plotW,max,padT,padT+n*rowH+(n-1)*gap,o.step||max/8);
   items.forEach((it,i)=>{ const y=padT+i*(rowH+gap); const bw=Math.max(0,(it.v/max)*plotW);
-    s+=`<rect x="${padL}" y="${y}" width="${bw}" height="${rowH}" fill="${it.c}"/>`;
-    if(it.v>0) s+=`<text x="${padL+bw-6}" y="${y+rowH/2}" fill="#fff" font-size="11" font-weight="bold" text-anchor="end" dominant-baseline="central">${CHF(it.v)}</text>`;
+    s+=`<rect x="${padL}" y="${y}" width="${bw}" height="${rowH}" fill="${it.c}"><title>${ckEsc(it.t||((it.l?it.l+' : ':'')+CHF(it.v)+' Fr.'))}</title></rect>`;
+    // montant dans la barre ; barre trop courte pour le contenir : juste après elle (2026-10-21)
+    if(it.v>0) s+= bw>=90
+      ? `<text x="${padL+bw-6}" y="${y+rowH/2}" fill="#fff" font-size="11" font-weight="bold" text-anchor="end" dominant-baseline="central">${CHF(it.v)}</text>`
+      : `<text x="${padL+bw+6}" y="${y+rowH/2}" fill="#6a8a96" font-size="11" font-weight="bold" text-anchor="start" dominant-baseline="central">${CHF(it.v)}</text>`;
   });
   return s+'</svg>';
 }
@@ -10045,7 +10101,7 @@ function ckStacked(seg,total,o={}){
   let s=`<svg viewBox="0 0 ${w} ${h}" class="ck-svg">`;
   s+=ckGrid(0,plotW,max,2,h-18,o.step||max/14);
   seg.forEach(g=>{ const bw=(g.v/max)*plotW; if(g.v>0){
-    s+=`<rect x="${x}" y="8" width="${bw}" height="${h-30}" fill="${g.c}"/>`;
+    s+=`<rect x="${x}" y="8" width="${bw}" height="${h-30}" fill="${g.c}"><title>${ckEsc(g.l+' : '+CHF(g.v)+' Fr.')}</title></rect>`;
     if(bw>46) s+=`<text x="${x+bw/2}" y="${(h-14)/2}" fill="#222" font-size="10" text-anchor="middle" dominant-baseline="central">${CHF(g.v,0)}</text>`;
     x+=bw; } });
   if(o.overlay) s+=`<text x="14" y="${(h-14)/2}" fill="#1a1a1a" font-size="20" font-weight="bold" dominant-baseline="central">${o.overlay}</text>`;
@@ -10053,12 +10109,13 @@ function ckStacked(seg,total,o={}){
   return s+'</svg>';
 }
 function ckYearBars(arr,o={}){ // barres horizontales par année (couleur = année)
-  return ckHBars(arr.map(d=>({l:String(d.y),v:d.v,c:CK_YC[d.y]})), o);
+  return ckHBars(arr.map(d=>({l:String(d.y),v:d.v,c:ckYC(d.y)})), o);
 }
 function ckLine(cfg,o={}){
+  if(!cfg.years || cfg.years.length<2) return '<div style="font-size:11px;color:#6a8a96;padding:6px 0">Historique insuffisant (une seule année)</div>';
   const w=o.w||560, h=o.h||230, padL=54,padR=14,padT=14,padB=26;
   const plotW=w-padL-padR, plotH=h-padT-padB;
-  const max=Math.max(...cfg.total)*1.15, min=0;
+  const max=(Math.max(...cfg.total)||1)*1.15, min=0;
   const X=i=>padL+(i/(cfg.years.length-1))*plotW;
   const Y=v=>padT+plotH-((v-min)/(max-min))*plotH;
   let s=`<svg viewBox="0 0 ${w} ${h}" class="ck-svg">`;
@@ -10087,8 +10144,8 @@ function ckVBars(rows,o={}){ // histogramme vertical groupé (chart3)
     s+=`<text x="${padL-5}" y="${y+3}" fill="#5a7a86" font-size="8" text-anchor="end">${CHF(v,0)}</text>`; }
   rows.forEach((r,gi)=>{ const gx=padL+gi*groupW; const bw=(groupW*0.82)/ns;
     r.vals.forEach((v,j)=>{ const x=gx+groupW*0.09+j*bw; const bh=(v.v/max)*plotH;
-      const col=CK_YC[v.y]; const op=v.t==='facturé'?0.5:1;
-      s+=`<rect x="${x}" y="${padT+plotH-bh}" width="${bw*0.92}" height="${bh}" fill="${col}" fill-opacity="${op}" rx="1"/>`; });
+      const col=ckYC(v.y); const op=v.t==='facturé'?0.5:1;
+      s+=`<rect x="${x}" y="${padT+plotH-bh}" width="${bw*0.92}" height="${bh}" fill="${col}" fill-opacity="${op}" rx="1"><title>${ckEsc(r.mois+' '+v.y+' — '+v.t+' : '+CHF(v.v)+' Fr.')}</title></rect>`; });
     s+=`<text x="${gx+groupW/2}" y="${h-26}" fill="#5a7a86" font-size="10" text-anchor="middle">${r.mois}</text>`; });
   return s+'</svg>';
 }
@@ -10112,83 +10169,78 @@ function ckGauge(g){
 }
 function ckLegend(items){ return '<div class="ck-legend">'+items.map(i=>`<div><span style="background:${i.c}"></span>${ckEsc(i.l)}</div>`).join('')+'</div>'; }
 
-let cockpitYear = 2026;
-function ckYearKpis(year){
-  const pa={}; cockpitData.parAnnee.forEach(d=>pa[d.y]=d.v);
-  const s1={}; cockpitData.sem1.forEach(d=>s1[d.y]=d.v);
-  const cur=pa[year]||0, prev=pa[year-1]||0;
-  const annuel = prev>0 ? Math.round((cur-prev)/prev*100) : 0;
-  const s1cur=s1[year]||0, s1prev=s1[year-1]||0;
-  const sem1 = s1prev>0 ? Math.round((s1cur-s1prev)/s1prev*100) : 0;
-  const otherYears=cockpitData.sem1.map(d=>d.y).filter(y=>y!==year);
-  const bestS1=Math.max(0,...otherYears.map(y=>s1[y]||0));
-  const sem1Meilleur = bestS1>0 ? Math.round((s1cur-bestS1)/bestS1*100) : 0;
-  return { croissance2026:annuel, annuel, sem1, sem1Meilleur };
-}
+let cockpitYear = new Date().getFullYear();
 function renderCockpit(){
-  const D=cockpitData;
-  const Y=cockpitYear, YK=ckYearKpis(Y);
-  const yearOpts=cockpitData.parAnnee.map(d=>d.y).sort((a,b)=>b-a);
-  const yearLegend=[2026,2025,2024,2023,2022,2021,2020].map(y=>({l:String(y),c:CK_YC[y]}));
-  const kbox=(t,v,cls)=>`<div class="ck-kpibox ${cls}"><div class="t">${ckEsc(t)}</div><div class="v">${v>0?'+':''}${v}%</div></div>`;
+  const host=document.getElementById('ck-dash'); if(!host) return;
+  const D=ckCompute(cockpitYear), Y=D.Y, YK=D.kpis; cockpitYear=Y;
+  const now=new Date(), auj=now.getDate()+' '+MO[now.getMonth()]+' '+now.getFullYear(), jj=YK.jour.split('-').reverse().join('.');
+  const pc=(a,b)=>b>0?Math.round(a/b*100)+'%':'—';
+  const head=`<div class="ck-header">
+      <div><div class="ck-header-title">Substances Architectes — Cockpit</div><div class="ck-header-sub">Calculé depuis les contrats et les factures · au ${auj}</div></div>
+      <select class="ck-header-select" onchange="cockpitYear=+this.value;renderCockpit()" title="Exercice : croissance, comparaison mensuelle, anneaux et graphique mensuel">
+        ${D.annees.map(y=>`<option value="${y}"${y===Y?' selected':''}>Exercice ${y}</option>`).join('')}
+      </select>
+    </div>`;
+  if(!D.nF && !contrats.length){ host.innerHTML=head+'<div class="ck-card-inner">Aucun contrat ni aucune facture pour le moment : le cockpit se remplit avec les contrats et les factures saisis.</div>'; return; }
+  const yearLegend=D.annees.map(y=>({l:String(y),c:ckYC(y)}));
+  const kbox=(t,v,tip)=>`<div class="ck-kpibox${v==null?'':v>=0?' greenb':' pink'}" title="${ckAttr(tip)}"><div class="t">${ckEsc(t)}</div><div class="v">${ckPct(v)}</div></div>`;
   const sec=(title,inner,legend)=>`<div class="ck-sec">
     <div class="ck-sec-hd"><div class="ck-sec-t">${title}</div><div class="ck-sec-line"></div></div>`+
     (legend?`<div class="ck-row" style="align-items:flex-start">${legend}<div style="flex:1">${inner}</div></div>`:inner)+`</div>`;
-
+  const tipEng='Contrats non annulés, chacun au montant TTC du contrat ou au montant déjà facturé s’il est plus élevé'
+    +(D.nSansMontant?' ('+D.nSansMontant+' contrats n’ont pas de montant enregistré : leur facturé est repris)':'')
+    +(D.horsC?', plus '+CHF(D.horsC,0)+' Fr. de factures sans contrat':'')
+    +'. Le marquage « signé » n’existe que depuis le 20.10.2026 : '+D.nSigne+' contrat'+(D.nSigne>1?'s':'')+' signé'+(D.nSigne>1?'s':'')+' pour '+CHF(D.signe,0)+' Fr.';
   // KPI totaux
   const kpiHtml=`<div class="ck-kpi-row">
-    <div class="ck-kpi-card c-teal"><div class="kpi-lbl">Signé depuis création</div><div class="kpi-val">${CHF(D.cumul[0].v,0)}<small>Fr.</small></div><div class="kpi-foot">Honoraires contractuels</div></div>
-    <div class="ck-kpi-card c-green"><div class="kpi-lbl">Facturé depuis création</div><div class="kpi-val">${CHF(D.cumul[1].v,0)}<small>Fr.</small></div><div class="kpi-foot">Total émis</div></div>
-    <div class="ck-kpi-card c-amber"><div class="kpi-lbl">Encaissé depuis création</div><div class="kpi-val">${CHF(D.cumul[2].v,0)}<small>Fr.</small></div><div class="kpi-foot">Paiements reçus</div></div>
-    <div class="ck-kpi-card c-red"><div class="kpi-lbl">Factures ouvertes</div><div class="kpi-val">${CHF(D.ouvertes.ouvertes,0)}<small>Fr.</small></div><div class="kpi-foot">En cours de recouvrement</div></div>
+    <div class="ck-kpi-card c-teal" title="${ckAttr(tipEng)}"><div class="kpi-lbl">Engagé depuis création</div><div class="kpi-val">${CHF(D.engage,0)}<small>Fr.</small></div><div class="kpi-foot">Contrats non annulés · dont signés ${CHF(D.signe,0)} Fr.</div></div>
+    <div class="ck-kpi-card c-green" title="Honoraires TTC facturés, sans les frais, toutes les factures non annulées"><div class="kpi-lbl">Facturé depuis création</div><div class="kpi-val">${CHF(D.facture,0)}<small>Fr.</small></div><div class="kpi-foot">${D.nF} facture${D.nF>1?'s':''} émise${D.nF>1?'s':''}</div></div>
+    <div class="ck-kpi-card c-amber" title="Factures au statut « Payée » ou avec une date de paiement"><div class="kpi-lbl">Encaissé depuis création</div><div class="kpi-val">${CHF(D.recu,0)}<small>Fr.</small></div><div class="kpi-foot">Paiements reçus · ${pc(D.recu,D.facture)} du facturé</div></div>
+    <div class="ck-kpi-card c-red" title="Factures non annulées et non payées, toutes années"><div class="kpi-lbl">Factures ouvertes</div><div class="kpi-val">${CHF(D.ouvert,0)}<small>Fr.</small></div><div class="kpi-foot">${D.nO} facture${D.nO>1?'s':''} non payée${D.nO>1?'s':''}</div></div>
   </div>`;
-
-  document.getElementById('ck-dash').innerHTML =
-    `<div class="ck-header">
-      <div><div class="ck-header-title">Substances Architectes — Cockpit</div><div class="ck-header-sub">Données financières · Vue d'ensemble</div></div>
-      <select class="ck-header-select" onchange="cockpitYear=+this.value;renderCockpit()">
-        ${yearOpts.map(y=>`<option value="${y}"${y===Y?' selected':''}>Exercice ${y}</option>`).join('')}
-      </select>
-    </div>`
+  const eC=ckEchelle(Math.max(...D.cumul.map(c=>c.v)),8), eA=ckEchelle(Math.max(0,...D.parAnnee.map(d=>d.v)),10);
+  const eS=ckEchelle(Math.max(0,...D.sem1.map(d=>d.v),...D.sem2.map(d=>d.v)),10), eM=ckEchelle(Math.max(0,...D.moisCompare.map(d=>d.v)),5);
+  const eT=ckEchelle(Math.max(0,...D.topMO.map(d=>d.v)),5);
+  const tipCr=YK.aDate?'Facturé du 1er janvier au '+jj+' : '+CHF(YK.aDateY,0)+' Fr. en '+Y+', '+CHF(YK.aDateY1,0)+' Fr. en '+(Y-1)+' (même période)'
+    :'Facturé de l’année entière, '+Y+' comparé à '+(Y-1);
+  host.innerHTML = head
   + kpiHtml
-  + sec('Honoraires cumulés depuis la création',
-        ckHBars(cockpitData.cumul,{rowH:28,max:8000000,step:1000000}),
-        ckLegend(cockpitData.cumul.map(c=>({l:c.l,c:c.c}))))
-  + sec('Charges & dépenses — total '+CHF(D.charges.total),
-        ckStacked(D.charges.seg,D.charges.total,{max:D.charges.total*1.05}),
-        ckLegend(D.charges.seg))
-  + sec('Factures ouvertes — total '+CHF(D.ouvertes.total),
-        ckStacked(D.ouvertes.seg,D.ouvertes.total,{max:D.ouvertes.total*1.05,overlay:'ouvert : '+CHF(D.ouvertes.ouvertes)}),
-        ckLegend(D.ouvertes.seg))
-  + sec('Honoraires par année',
-        ckYearBars(D.parAnnee,{rowH:22,max:1100000,step:100000}), ckLegend(yearLegend))
-  + `<div class="ck-sec"><div class="ck-sec-hd"><div class="ck-sec-t">Semestres</div><div class="ck-sec-line"></div></div>
+  + sec('Honoraires cumulés depuis la création', ckHBars(D.cumul,{rowH:28,max:eC.max,step:eC.step}), ckLegend(D.cumul.map(c=>({l:c.l,c:c.c}))))
+  + sec('Charges & dépenses', `<div class="ck-card-inner" style="font-size:12px;line-height:1.5">Aucune charge n’est enregistrée dans l’app : les montants d’exemple ont été retirés. Section en attente de décision (saisir les charges annuelles ou masquer la section).</div>`)
+  + sec('Factures ouvertes et honoraires restant à facturer — total '+CHF(D.ouvertes.total),
+        ckStacked(D.ouvertes.seg,D.ouvertes.total,{max:D.ouvertes.total*1.05||1,overlay:'ouvert : '+CHF(D.ouvertes.ouvertes)})
+        +ckLegend(D.ouvertes.seg))   /* légende sous la barre : à gauche, ses 5 libellés écrasaient le graphique */
+  + sec('Honoraires facturés par année', ckYearBars(D.parAnnee,{rowH:22,max:eA.max,step:eA.step}), ckLegend(yearLegend))
+  + `<div class="ck-sec"><div class="ck-sec-hd"><div class="ck-sec-t">Semestres — honoraires facturés</div><div class="ck-sec-line"></div></div>
       <div class="ck-row">
-        <div style="flex:1"><div style="font-size:10px;color:#6a8a96;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Janvier → Juin</div>${ckYearBars(D.sem1,{rowH:16,max:1100000,step:100000})}</div>
-        <div style="flex:1"><div style="font-size:10px;color:#6a8a96;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Juillet → Décembre</div>${ckYearBars(D.sem2,{rowH:16,max:1100000,step:100000})}</div>
+        <div style="flex:1"><div style="font-size:10px;color:#6a8a96;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Janvier → Juin</div>${ckYearBars(D.sem1,{rowH:16,max:eS.max,step:eS.step})}</div>
+        <div style="flex:1"><div style="font-size:10px;color:#6a8a96;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Juillet → Décembre</div>${ckYearBars(D.sem2,{rowH:16,max:eS.max,step:eS.step})}</div>
       </div>${ckLegend(yearLegend)}</div>`
   + `<div class="ck-sec"><div class="ck-sec-hd"><div class="ck-sec-t">Évolution & croissance</div><div class="ck-sec-line"></div></div>
       <div class="ck-row">
-        <div class="ck-card-inner" style="flex:2;min-width:320px"><h4>Évolution du chiffre d'affaires</h4>${ckLine(D.caLine)}</div>
-        <div class="ck-card-inner" style="flex:1;min-width:220px"><h4>Comparaison mensuelle</h4>${ckHBars(D.moisCompare,{w:600,rowH:26,padR:80})}</div>
-        ${kbox(`Croissance ${Y} / ${Y-1}`,YK.croissance2026,YK.croissance2026>=0?'greenb':'pink')}
-        <div class="ck-kpibox" style="background:#0e1c28;flex:1.2;border:1px solid rgba(255,255,255,.06)">
-          <div class="t">Croissance moyenne du CA</div>
-          ${D.croissanceMoy.map(r=>`<div class="ck-grow-row"><span>${ckEsc(r.l)}</span><b>${r.v}</b></div>`).join('')}
+        <div class="ck-card-inner" style="flex:2;min-width:320px"><h4>Évolution du chiffre d'affaires (facturé par année, ${D.cY} en cours)</h4>${ckLine(D.caLine)}</div>
+        <div class="ck-card-inner" style="flex:1;min-width:220px"><h4>Comparaison mensuelle — facturé moyen par mois</h4>${ckHBars(D.moisCompare,{w:600,rowH:26,padR:80,max:eM.max,step:eM.step})}${ckLegend(D.moisCompare.map(m=>({l:m.l,c:m.c})))}</div>
+        ${kbox(`Croissance ${Y} / ${Y-1}`+(YK.aDate?' à date':''),YK.croissance,tipCr)}
+        <div class="ck-kpibox" style="background:#0e1c28;flex:1.2;border:1px solid rgba(255,255,255,.06)" title="Croissance annuelle moyenne (taux composé) du facturé, jusqu’à la dernière année complète">
+          <div class="t">Croissance moyenne du CA (par an)</div>
+          ${(D.croissanceMoy.length?D.croissanceMoy:[{l:'Historique insuffisant',v:null}]).map(r=>`<div class="ck-grow-row"><span>${ckEsc(r.l)}</span><b>${ckPct(r.v)}</b></div>`).join('')}
         </div>
-        ${kbox(`CA annuel ${Y} / ${Y-1}`,YK.annuel,YK.annuel>=0?'greenb':'pink')}
-        ${kbox(`CA semestre 1 ${Y} / ${Y-1}`,YK.sem1,YK.sem1>=0?'greenb':'pink')}
-        ${kbox('S1 / meilleure année',YK.sem1Meilleur,YK.sem1Meilleur>=0?'greenb':'pink')}
+        ${kbox(`CA annuel ${Y} / ${Y-1}`+(Y===D.cY?' (année en cours)':''),YK.annuel,'Facturé de l’année '+Y+(Y===D.cY?' à ce jour':'')+' comparé à l’année '+(Y-1)+' entière')}
+        ${kbox(`CA semestre 1 ${Y} / ${Y-1}`,YK.sem1,'Facturé de janvier à juin, '+Y+' comparé à '+(Y-1))}
+        ${kbox('S1 / meilleure année',YK.sem1Meilleur,YK.bestS1Y!==null?'Premier semestre '+Y+' comparé au meilleur premier semestre des autres années ('+YK.bestS1Y+')':'Pas d’autre année à comparer')}
       </div></div>`
-  + `<div class="ck-sec"><div class="ck-sec-hd"><div class="ck-sec-t">Avancement mensuel — anneaux 2026 / 2025 / 2024</div><div class="ck-sec-line"></div></div>
-        <div class="ck-gauges">${D.gauges.map(g=>`<div class="ck-gauge"><div class="gm">${g.m.slice(0,3)}</div>${ckGauge(g)}<div class="gp">${g.pct!==null?g.pct+'%':'—'}</div></div>`).join('')}</div></div>`
-  + `<div class="ck-sec"><div class="ck-sec-hd"><div class="ck-sec-t">Honoraires reçus / facturés par mois et par année</div><div class="ck-sec-line"></div></div>
+  + `<div class="ck-sec"><div class="ck-sec-hd"><div class="ck-sec-t">Avancement mensuel — anneaux ${Y} / ${Y-1} / ${Y-2}</div><div class="ck-sec-line"></div></div>
+        <div class="ck-gauges">${D.gauges.map(g=>`<div class="ck-gauge" title="${ckAttr(g.tip)}"><div class="gm">${g.m.slice(0,3)}</div>${ckGauge(g)}<div class="gp">${g.pct!==null?g.pct+'%':'—'}</div></div>`).join('')}</div>
+        ${ckLegend([{l:Y+' (anneau extérieur ; % = '+Y+' comparé à '+(Y-1)+')',c:'#2E4B9E'},{l:String(Y-1),c:'#5AA84B'},{l:String(Y-2),c:'#9aa0a6'}])}</div>`
+  + `<div class="ck-sec"><div class="ck-sec-hd"><div class="ck-sec-t">Honoraires reçus / facturés par mois et par année (${D.ansM[0]} → ${Y})</div><div class="ck-sec-line"></div></div>
       <div class="ck-row">
-        <div class="ck-card-inner" style="flex:3;min-width:480px">${ckVBars(D.monthly)}</div>
-        <div class="ck-card-inner" style="flex:1;min-width:220px"><h4>Top 10 — Maîtres d'ouvrage</h4>${ckHBars(D.topMO.map(m=>({l:m.l,v:m.v,c:'#1FA8E0'})),{w:520,rowH:18,padR:70,max:1050000,step:250000})}
-          ${ckLegend(D.topMO.map(m=>({l:m.l,c:'#1FA8E0'})))}</div>
+        <div class="ck-card-inner" style="flex:3;min-width:480px">${ckVBars(D.monthly)}${ckLegend(D.ansM.map(y=>({l:String(y),c:ckYC(y)})))}<div class="ck-legend">Barre pleine : reçu (date de paiement) · barre claire : facturé (date de la facture)</div></div>
+        <div class="ck-card-inner" style="flex:1;min-width:220px"><h4>Top 10 — Maîtres d'ouvrage · facturé depuis la création</h4>${ckHBars(D.topMO.map(m=>({l:m.l,v:m.v,c:'#1FA8E0'})),{w:520,rowH:18,padR:70,max:eT.max,step:eT.step})}
+          ${ckLegend(D.topMO.map(m=>({l:m.l,c:'#1FA8E0'})))}
+          ${D.nonAttr>0.005?`<div class="ck-legend" title="Hors classement : facturé sur des contrats sans maître de l’ouvrage enregistré, ou factures dont le contrat n’existe plus">Non attribué : ${CHF(D.nonAttr,0)} Fr. (${[D.naC?D.naC+' contrat'+(D.naC>1?'s':'')+' sans maître de l’ouvrage':'',D.naF?D.naF+' facture'+(D.naF>1?'s':'')+' sans contrat':''].filter(Boolean).join(', ')})</div>`:''}</div>
       </div></div>`;
 }
+
 
 /* ═══════════════════════════════════════════════════
    COCKPIT PROPOSITION CLAUDE — design premium, données réelles
@@ -10201,30 +10253,33 @@ const CK2_STATUTS = [
 ];
 function ck2Compute(year){
   const Y = year || new Date().getFullYear();
-  const yearOf=f=>{ const d=f.date||''; const m=/^(\d{4})/.exec(d); return m?+m[1]:null; };
-  const monthOf=f=>{ const m=/^\d{4}-(\d{2})/.exec(f.date||''); return m?(+m[1]-1):null; };
-  const ttc=f=>f._ttc||f.ttc||0;
-  const totContractHt = contrats.reduce((s,c)=>s+(c.hht||0),0);
-  const totContractTtc= contrats.reduce((s,c)=>s+(c.httc||0),0);
-  const totFact   = factures.reduce((s,f)=>s+ttc(f),0);
-  const totFactY  = factures.filter(f=>yearOf(f)===Y).reduce((s,f)=>s+ttc(f),0);
-  const totFactYm1= factures.filter(f=>yearOf(f)===Y-1).reduce((s,f)=>s+ttc(f),0);
-  const facturesY = factures.filter(f=>yearOf(f)===Y);
+  // Définitions communes avec le Cockpit (2026-10-21, ckBase…) : factures annulées exclues, honoraires TTC sans les frais,
+  // encaissé = payée ou date de paiement, contrats annulés exclus, montant TTC du contrat, reste à facturer = contrats en cours.
+  const {F:FF, parC} = ckBase();
+  const yearOf=f=>{ const d=ckYM(f.date); return d?d.y:null; };
+  const monthOf=f=>{ const d=ckYM(f.date); return d?d.m:null; };
+  const ttc=ckTTC;
+  const CC = contrats.filter(c=>!c.annule);
+  const totContractHt = CC.reduce((s,c)=>s+(+c.hht||0),0);
+  const totContractTtc= CC.reduce((s,c)=>s+ckContratTTC(c),0);
+  const totFact   = FF.reduce((s,f)=>s+ttc(f),0);
+  const totFactY  = FF.filter(f=>yearOf(f)===Y).reduce((s,f)=>s+ttc(f),0);
+  const totFactYm1= FF.filter(f=>yearOf(f)===Y-1).reduce((s,f)=>s+ttc(f),0);
+  const facturesY = FF.filter(f=>yearOf(f)===Y);
   const activeIds = new Set(facturesY.map(f=>f.contrat_id));
-  const totContractActives = contrats.filter(c=>activeIds.has(c.id)).reduce((s,c)=>s+(c.httc||c.hht||0),0);
+  const totContractActives = CC.filter(c=>activeIds.has(c.id)).reduce((s,c)=>s+ckEngage(c,parC),0);
   const byStat = s=>facturesY.filter(f=>f.statut===s).reduce((a,f)=>a+ttc(f),0);
-  const paye=byStat('Payée'), env=byStat('Envoyée'), att=byStat('En attente'), imp=byStat('Impayée');
-  const ouvert = env+att+imp;
+  const paye=facturesY.filter(ckPayee).reduce((a,f)=>a+ttc(f),0), env=byStat('Envoyée'), att=byStat('En attente'), imp=byStat('Impayée');
+  const ouvert = facturesY.filter(f=>!ckPayee(f)).reduce((a,f)=>a+ttc(f),0);
   const recouv = totFactY>0 ? paye/totFactY*100 : 0;
   const avance = totContractActives>0 ? Math.min(100,totFactY/totContractActives*100) : 0;
   // totaux cumulés depuis la création (toutes années)
-  const byStatAll = s=>factures.filter(f=>f.statut===s).reduce((a,f)=>a+ttc(f),0);
-  const payeAll=byStatAll('Payée'), envAll=byStatAll('Envoyée'), attAll=byStatAll('En attente'), impAll=byStatAll('Impayée');
-  const ouvertAll = envAll+attAll+impAll;
+  const payeAll=FF.filter(ckPayee).reduce((a,f)=>a+ttc(f),0), impAll=FF.filter(f=>f.statut==='Impayée').reduce((a,f)=>a+ttc(f),0);
+  const ouvertAll = FF.filter(f=>!ckPayee(f)).reduce((a,f)=>a+ttc(f),0);
   const recouvAll = totFact>0 ? payeAll/totFact*100 : 0;
   // mensuel par année (carte année -> [12 mois])
   const byYM={};
-  factures.forEach(f=>{ const y=yearOf(f), m=monthOf(f); if(y===null||m===null) return;
+  FF.forEach(f=>{ const y=yearOf(f), m=monthOf(f); if(y===null||m===null) return;
     (byYM[y]=byYM[y]||Array(12).fill(0))[m]+=ttc(f); });
   const zeros=()=>Array(12).fill(0);
   const mois=byYM[Y]||zeros(), moisP=byYM[Y-1]||zeros();
@@ -10238,26 +10293,25 @@ function ck2Compute(year){
   const avgBest = bestYear!==null ? annualTot(bestYear)/12 : 0;
   // top projets par facturé
   const proj=contrats.map(c=>{ const fY=facturesY.filter(x=>x.contrat_id===c.id).reduce((a,x)=>a+ttc(x),0);
-    const fAll=factures.filter(x=>x.contrat_id===c.id).reduce((a,x)=>a+ttc(x),0); const base=c.httc||c.hht||0;
+    const fAll=parC[c.id]||0; const base=ckContratTTC(c);
     return {nom:c.projet||c.affaire||'—', fact:fY, factAll:fAll, ht:base,
             pct:base>0?Math.min(100,fAll/base*100):0}; })
     .filter(p=>p.fact>0).sort((a,b)=>b.fact-a.fact);
   // statut breakdown
   const stat=CK2_STATUTS.map(s=>({...s, v:byStat(s.k), n:facturesY.filter(f=>f.statut===s.k).length}));
-  // carnet de commandes : reste à facturer par projet
-  const backlogRows=contrats.map(c=>{ const f=factures.filter(x=>x.contrat_id===c.id).reduce((a,x)=>a+ttc(x),0);
-    const base=c.httc||c.hht||0; return {nom:c.projet||c.affaire||'—', reste:Math.max(0,base-f), base}; })
-    .filter(r=>r.reste>0).sort((a,b)=>b.reste-a.reste);
+  // carnet de commandes : reste à facturer des contrats en cours (même définition que le Cockpit)
+  const backlogRows=ckReste(parC).map(r=>({nom:r.nom, reste:r.reste, base:r.base}));
   const backlog=backlogRows.reduce((a,r)=>a+r.reste,0);
   // agrégation générique (par client / par responsable)
   const aggBy=key=>{ const m={}; contrats.forEach(c=>{ const k=(c[key]||'—').trim()||'—';
       const fY=facturesY.filter(x=>x.contrat_id===c.id).reduce((a,x)=>a+ttc(x),0);
-      const fAll=factures.filter(x=>x.contrat_id===c.id).reduce((a,x)=>a+ttc(x),0);
+      const fAll=parC[c.id]||0;
       if(fY>0||fAll>0){ if(!m[k]) m[k]={v:0,vAll:0}; m[k].v+=fY; m[k].vAll+=fAll; } });
     return Object.entries(m).map(([nom,o])=>({nom,v:o.v,vAll:o.vAll})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v); };
-  const byClient=aggBy('nom'), byResp=aggBy('resp');
-  // entonnoir : contractuel (signé) → facturé → encaissé
-  const funnel=[{l:'Signé (affaires actives)',v:totContractActives,c:'#0a6e84'},
+  // maîtres de l'ouvrage : contrats sans nom (« — ») hors classement, comme le Top 10 du Cockpit (2026-10-21)
+  const byClient=aggBy('nom').filter(r=>!/^[-–—?.\s]*$/.test(r.nom)), byResp=aggBy('resp');
+  // entonnoir : engagé → facturé → encaissé
+  const funnel=[{l:'Engagé (affaires actives)',v:totContractActives,c:'#0a6e84'},
                 {l:'Facturé '+Y,v:totFactY,c:'#1f8aa3'},
                 {l:'Encaissé '+Y,v:paye,c:'#2E9E5B'}];
   const allYears=Object.keys(byYM).map(Number).sort((a,b)=>b-a);
@@ -10386,7 +10440,7 @@ function renderCockpit2(){
 
   <div class="ck2-grid3">
     <div class="ck2-card">
-      <h3>Avancement ${D.Y}</h3><div class="h-sub">Facturé ${D.Y} / contractuel des affaires actives</div>
+      <h3>Avancement ${D.Y}</h3><div class="h-sub">Facturé ${D.Y} / engagé des affaires actives</div>
       <div style="display:flex;align-items:center;justify-content:center;padding:6px 0 2px">
         ${ck2Gauge2(D.avance)}
       </div>
@@ -10404,8 +10458,8 @@ function renderCockpit2(){
 
   <div class="ck2-grid3">
     <div class="ck2-card">
-      <h3>Carnet de commandes<span class="ck2-badge live">toutes affaires</span></h3>
-      <div class="h-sub">Honoraires restant à facturer (cumul) — <b style="color:#003346">${CHF(D.backlog,0)} Fr.</b></div>
+      <h3>Carnet de commandes<span class="ck2-badge live">contrats en cours</span></h3>
+      <div class="h-sub">Honoraires restant à facturer des contrats en cours — <b style="color:#003346">${CHF(D.backlog,0)} Fr.</b></div>
       ${ck2BarList(D.backlogRows.slice(0,6).map(r=>({nom:r.nom,v:r.reste})),'#E6AC00')}
     </div>
     <div class="ck2-card">
@@ -10422,7 +10476,7 @@ function renderCockpit2(){
 
   <div class="ck2-grid">
     <div class="ck2-card">
-      <h3>Entonnoir Signé → Facturé → Encaissé<span class="ck2-badge live">données réelles</span></h3>
+      <h3>Entonnoir Engagé → Facturé → Encaissé<span class="ck2-badge live">données réelles</span></h3>
       <div class="h-sub">Affaires facturées en ${D.Y} : du contractuel à l'encaissement</div>
       ${ck2BarList(D.funnel.map(f=>({nom:f.l,v:f.v,c:f.c})),'#0a6e84',D.funnel[0].v)}
     </div>

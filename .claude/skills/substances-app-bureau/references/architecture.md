@@ -57,6 +57,9 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
 - Numéro de facture (21.10.2026) : `updateInvNum` ne numérote que les NOUVELLES factures ; facture déjà enregistrée
   (`faFactureEnregistree()`) : numéro et description gardés, un type choisi dans la liste ne change que le code final.
   Confirmations de suppression : `chMsgSupprContrat(c)` (contrats), `deleteFacture` (une seule facture retirée).
+- Cockpits (21.10.2026) : plus de données écrites dans le code ; `ckCompute(Y)` (Cockpit) et `ck2Compute(Y)` (Cockpit analytique) partagent
+  `ckBase()` {F factures comptées, parC facturé par contrat}, `ckFactOk`, `ckTTC`, `ckPayee`, `ckContratTTC`, `ckEnCours`, `ckEngage`,
+  `ckReste`, `ckYM` — toute nouvelle carte doit passer par eux (mêmes chiffres partout). Couleurs d'années : `ckYC(y)`.
 
 ## 4. SUBGestion 3 (`subgestion3/`)
 

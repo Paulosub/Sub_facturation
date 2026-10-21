@@ -721,8 +721,26 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
      de l'accueil `#sg-at` et pastille rafraîchies dès que l'état change) ; Réglages ▸ Données : état selon la destination RÉELLE (serveur
      joignable, ou dossier choisi et autorisé) — plus de « prochaine automatiquement » sans destination ; `sgSauver` vérifie la destination avant
      de préparer la copie ; nouvel essai toutes les 5 min pendant l'échec et dès que Chrome rend l'accès au dossier.
-  5. **Cockpit** (`const cockpitData` de `Facturation.html` : chiffres écrits dans le code) : NON modifié, en attente de la décision de Paulo —
-     le calculer depuis les contrats et factures, ou afficher un bandeau « données de démonstration ».
+  5. **Cockpit calculé** (décision de Paulo le 21.10.2026 : « calculer le cockpit ») — `const cockpitData` (exemple recopié du tableau Excel,
+     graphique mensuel synthétique `ckSampleMonthly`) supprimé ; `ckCompute(Y)` calcule tout depuis les contrats et factures ; copie d'avant :
+     `Facturation_backup_20261021_0843_avant_cockpit.html`. **Définitions communes** aux deux cockpits (`ck2Compute` réécrit sur les mêmes
+     fonctions : `ckBase`, `ckFactOk`, `ckTTC`, `ckPayee`, `ckContratTTC`, `ckEngage`, `ckReste`, `ckYM`) et à `sgRenta` : facture comptée = non
+     annulée ; montant = honoraires TTC sans les frais (`_ttc`) ; année / mois = date de la facture ; encaissée = « Payée » ou date de paiement
+     (reçue à la date de paiement, sinon à celle de la facture) ; ouverte = non encaissée ; « à envoyer » = statut « En attente » ; contrat compté
+     = non annulé, montant TTC = httc sinon hht × (1 + TVA). **Honoraires engagés** (ex-« signé ») = chaque contrat non annulé au plus élevé de son
+     montant et de son facturé (70 anciens contrats sans maître de l'ouvrage, 90 sans montant dans les données de départ) + factures sans contrat,
+     « dont signés » à part (marquage depuis le 20.10.2026). **Reste à facturer** = contrats en cours (ni annulés, ni terminés, ni archivés),
+     montant − facturé si positif (aussi le « Carnet de commandes » du Cockpit analytique, avant : tous les contrats). Section « Factures ouvertes et
+     honoraires restant à facturer » : reste à facturer + factures ouvertes du mois / du mois suivant et plus tard / à envoyer / des mois précédents
+     (légende sous la barre). Exercice (sélecteur, défaut = année en cours) : croissance « à date » pour l'année en cours (1er janvier → même jour),
+     année entière sinon ; CA annuel, S1, S1 / meilleur S1 ; croissance annuelle moyenne (taux composé) depuis la première année complète, sur 5 et
+     3 ans, jusqu'à la dernière année complète (remplace « Après COVID », « Depuis l'arrivée des nouveaux collaborateurs », textes sans source) ;
+     comparaison mensuelle = facturé moyen par mois (Y, Y−1, Y−2 ; année en cours : mois écoulés) ; anneaux Y / Y−1 / Y−2 à l'échelle du meilleur
+     mois, % = Y comparé à Y−1 ; reçu / facturé par mois sur 7 ans. Top 10 maîtres de l'ouvrage = facturé depuis la création ; contrats sans nom
+     (vide ou « - ») et factures orphelines « non attribués », hors classement (idem « Top clients » du Cockpit analytique). Échelles calculées
+     (`ckEchelle`), infobulles de définition sur les cartes et les barres, couleurs d'années complétées (`ckYC`, `CK_YC_PLUS`). **Charges &
+     dépenses** : aucune source dans l'app (seul le coût de revient RH de SUBGestion 3 a des salaires et frais généraux, estimés) → section sans
+     chiffres, en attente de la décision de Paulo (masquer, ou saisir les charges annuelles dans un petit tableau).
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

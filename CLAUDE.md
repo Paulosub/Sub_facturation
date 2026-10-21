@@ -631,6 +631,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   projets sans le choix « Tous mes projets » ni le lien vers la liste complète, toujours filtré sur `SG_ETATS_COLLAB` (configuration, en cours,
   en attente = filtre « En cours ») ; `sgProjetsVisibles` limité aux mêmes états (vue d'ensemble, `nx-listeprojets` sans les filtres Terminés /
   Archivés). Mes projets : numéros sans cadre jaune (`.nx-tbl.sg-mesp .nx-tag.num`).
+  **Mes projets, administrateur (21.10.2026)** : tous les projets (« En cours » par défaut, bouton « Tous les projets »), pas seulement ceux de
+  son équipe ; chef de projet et collaborateur : projets attribués, comme avant.
   Collaborateur (18.10.2026) : Projets = Mes projets + Tâches seulement (Registre et Suivi & écarts masqués même si ses droits le
   permettent : `SG_VUE_DROIT['aff-gestion'|'aff-controlling']`) ; sa vue d'ensemble = ses projets attribués (« mes projets ») et SES
   tâches (« tâches à faire »). Vue d'ensemble : modules sans le groupe « Tâches » (il reste au menu) ; **menu déroulant « Tâches » (19.10.2026)** à la place de la

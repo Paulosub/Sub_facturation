@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 21.10.2026 12:11 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 21.10.2026 13:26 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -26944,7 +26944,7 @@ const sgProjetPermis=id=>sgAdmin()||SG_ACC.profil!=='collab'||sgDroit('projets_v
 const SG_ETATS_COLLAB=[1,2,3], sgCollabSeul=()=>SG_ACC.profil==='collab'&&!sgDroit('projets_voir','tous');
 const SG_NON_ATTRIBUE='<div class="nx-empty">Ce projet ne vous est pas attribué : seuls les projets dont vous faites partie de l’équipe sont accessibles. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>';
 VIEWS['nx-mesprojets']={
-  render(m){ VIEW.nxTitle='Mes projets'; const ids=sgProjetsAssignes(), collab=sgCollabSeul(), tous=!collab&&!!nxLS.get('sg3_mesp_tous',false), q=String(nxLS.get('sg3_mesp_q','')||'');
+  render(m){ VIEW.nxTitle='Mes projets'; const adm=sgAdmin(), ids=adm?new Set(DS.all('project').map(p=>String(p.ID))):sgProjetsAssignes(), collab=sgCollabSeul(),   /* administrateur : tous les projets (21.10.2026) */ tous=!collab&&!!nxLS.get('sg3_mesp_tous',false), q=String(nxLS.get('sg3_mesp_q','')||'');
     const rang=p=>{ const i=[2,3,1,4,5].indexOf(+p.PROJECTSTATECODE); return i<0?9:i; };                           // en cours, en attente, … ; projets internes à la fin
     const L=DS.all('project').filter(p=>ids.has(String(p.ID))&&(tous||SG_ETATS_COLLAB.includes(+p.PROJECTSTATECODE)))
       .sort((a,b)=>(+sgInterne(a)-+sgInterne(b))||(rang(a)-rang(b))||cmp(String(b.NUMBER||''),String(a.NUMBER||'')));
@@ -26954,7 +26954,7 @@ VIEWS['nx-mesprojets']={
       return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'
         +'<td><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b>'+(c!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[c]+'</span>':'')+'</td>'
         +'<td>'+nxE(mo)+'</td><td>'+nxE(p.LOCATION||'')+'</td><td>'+nxStateTag(p)+'</td><td>'+nxE(sgPhaseLib(sgPhaseActuelle(p),true))+'</td><td class="r">'+(h30[p.ID]?nxH(h30[p.ID])+' h':'')+'</td></tr>'; };
-    const html='<div class="sg-mesp-bar">'+(collab?'':'<div class="seg"><button data-fn="encours" class="'+(tous?'':'on')+'">En cours</button><button data-fn="tous" class="'+(tous?'on':'')+'">Tous mes projets</button></div>')
+    const html='<div class="sg-mesp-bar">'+(collab?'':'<div class="seg"><button data-fn="encours" class="'+(tous?'':'on')+'">En cours</button><button data-fn="tous" class="'+(tous?'on':'')+'">'+(adm?'Tous les projets':'Tous mes projets')+'</button></div>')
       +'<input class="inp" id="sg-mesp-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'"><span class="n"></span></div>'
       +(L.length?'<table class="nx-tbl sg-mesp"><tr><th>N°</th><th>Projet</th><th>Maître d’ouvrage</th><th>Lieu</th><th>État</th><th>Phase actuelle</th><th class="r">Mes heures (30 j)</th></tr>'+L.map(row).join('')+'</table>'
         :'<div class="nx-empty">'+(me?'Vous ne faites partie de l’équipe d’aucun projet'+(tous?'':' en cours')+' (Intervenants du projet).':'Votre compte n’est relié à aucun membre de l’équipe.')+(collab?'':' <a href="#" data-go="nx-listeprojets" data-arg="tous">Liste des projets</a>')+'</div>');

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 21.10.2026 14:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 21.10.2026 14:48 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -26966,7 +26966,7 @@ VIEWS['nx-mesprojets']={
   refresh(ts){ if(hit(ts,'project','projectmember')) go('nx-mesprojets'); } };
 /* domaines d'affaire en tuiles : groupes, icône, texte ; compteurs (tables chargées à la demande) */
 const SG_PDOM_G=[['Équipe et adresses',['Intervenants','Soumissionnaires','Liste d’adresses']],['Suivi du projet',['Documents','Séances','Notes','Tâches','Frais']],
-  ['Honoraires et facturation',['Offres d’honoraires','Contrats honoraires','Avancement des prestations','Factures']],['Planification',['Planification RH','Analyse de planification RH']],
+  ['Honoraires et facturation',['Offres d’honoraires','Contrats honoraires','Avancement des prestations','Factures']],   /* groupe « Planification » (Planification RH, Analyse de planification RH) retiré de la page du projet (21.10.2026) : Ressources humaines ▸ Planification RH */
   ['Chantier',['Calcul des coûts','Devis général','Soumission','Contrôle des coûts']]];
 const SG_PDOM_GI={'Équipe et adresses':'users','Suivi du projet':'task','Honoraires et facturation':'receipt','Planification':'cal','Chantier':'crane'};
 const SG_PDOM={'Intervenants':['users','Les intervenants du projet et leur rôle.'],'Soumissionnaires':['group','Les entreprises invitées aux appels d’offres.'],

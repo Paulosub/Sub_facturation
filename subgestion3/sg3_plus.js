@@ -2502,7 +2502,7 @@ VIEWS['nx-mesprojets']={
   refresh(ts){ if(hit(ts,'project','projectmember')) go('nx-mesprojets'); } };
 /* domaines d'affaire en tuiles : groupes, icône, texte ; compteurs (tables chargées à la demande) */
 const SG_PDOM_G=[['Équipe et adresses',['Intervenants','Soumissionnaires','Liste d’adresses']],['Suivi du projet',['Documents','Séances','Notes','Tâches','Frais']],
-  ['Honoraires et facturation',['Offres d’honoraires','Contrats honoraires','Avancement des prestations','Factures']],['Planification',['Planification RH','Analyse de planification RH']],
+  ['Honoraires et facturation',['Offres d’honoraires','Contrats honoraires','Avancement des prestations','Factures']],   /* groupe « Planification » (Planification RH, Analyse de planification RH) retiré de la page du projet (21.10.2026) : Ressources humaines ▸ Planification RH */
   ['Chantier',['Calcul des coûts','Devis général','Soumission','Contrôle des coûts']]];
 const SG_PDOM_GI={'Équipe et adresses':'users','Suivi du projet':'task','Honoraires et facturation':'receipt','Planification':'cal','Chantier':'crane'};
 const SG_PDOM={'Intervenants':['users','Les intervenants du projet et leur rôle.'],'Soumissionnaires':['group','Les entreprises invitées aux appels d’offres.'],

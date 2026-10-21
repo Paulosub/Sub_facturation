@@ -486,7 +486,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Type » le même jour, à la demande), Date du contrat, HT, TTC, État. Première version du même jour : colonnes Contrat, **Nature** (Contrat / Avenant), **Type** (rémunération ;
   Forfait relatif / Forfait / Unitaire, chapitre « Mode de calcul » ; non enregistré = forfait relatif, le défaut de Facturation, signalé en
   infobulle), **Date du contrat** (c.date, sinon date de la dernière version), HT, TTC, **État** (Brouillon / Envoyé / Signé le … / Terminé /
-  Annulé, les états de Facturation) ; colonne Client retirée. « Ouvrir » et « Facturer » de chaque ligne = tuiles à icône comme l'onglet Heures
+  Annulé, les états de Facturation) ; **Tarif horaire brut** (`ch_tarif_moyen` des données du calcul d'honoraires, tarif avec rabais en infobulle ; « — »
+  pour les contrats de l'ancien formulaire, 113 sur 140 au NAS) et **Rabais** (`c.rabais`, %) après « Type » (21.10.2026) ; colonne Client retirée. « Ouvrir » et « Facturer » de chaque ligne = tuiles à icône comme l'onglet Heures
   (icône `pdf` / `receipt` au-dessus du libellé, `.sg-htls.sg-cacts`, 20.10.2026) ; lien « Tous les contrats » retiré du titre de la carte (20.10.2026). Contrat terminé (`c.termine`, état « Terminé ») : plus de « Facturer », case vide
   (`.sg-cvide`) pour garder « Ouvrir » aligné (20.10.2026). Fiche commune `sgContratInfo(c)` (aussi dans l'aperçu PDF « Ouvrir »). **Facturation.html** (même jour) :
   « signé » coché → `signeLe` (date du jour) sur la dernière version (`chEnsureVersions`), retiré si on décoche ; nouvelle version créée après

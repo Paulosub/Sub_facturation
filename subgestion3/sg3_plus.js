@@ -2503,9 +2503,9 @@ VIEWS['nx-mesprojets']={
 /* domaines d'affaire en tuiles : groupes, icône, texte ; compteurs (tables chargées à la demande) */
 const SG_PDOM_G=[['Équipe et adresses',['Intervenants','Soumissionnaires','Liste d’adresses']],['Suivi du projet',['Documents','Séances','Notes','Tâches','Frais']],
   ['Honoraires et facturation',['Offres d’honoraires','Contrats honoraires','Avancement des prestations','Factures']],   /* groupe « Planification » (Planification RH, Analyse de planification RH) retiré de la page du projet (21.10.2026) : Ressources humaines ▸ Planification RH */
-  ['Chantier',['Calcul des coûts','Devis général','Soumission','Contrôle des coûts']]];
+  ['Chantier',['Calcul des coûts','Devis général','Soumission','Contrôle des coûts','Présentation du chantier','Documents du chantier']]];   /* Présentation et Documents ajoutés (21.10.2026) */
 const SG_PDOM_GI={'Équipe et adresses':'users','Suivi du projet':'task','Honoraires et facturation':'receipt','Planification':'cal','Chantier':'crane'};
-const SG_PDOM={'Intervenants':['users','Les intervenants du projet et leur rôle.'],'Soumissionnaires':['group','Les entreprises invitées aux appels d’offres.'],
+const SG_PDOM={'Présentation du chantier':['pdf','Les documents de présentation du chantier.'],'Documents du chantier':['folder','Les fichiers du chantier : contrôles des coûts, devis, soumissions, appels d’offres et réalisation.'],'Intervenants':['users','Les intervenants du projet et leur rôle.'],'Soumissionnaires':['group','Les entreprises invitées aux appels d’offres.'],
   'Liste d’adresses':['contacts','Les adresses des intervenants, à copier ou exporter.'],'Documents':['folder','Les fichiers joints du projet.'],
   'Séances':['cal','Séances, convocations et procès-verbaux.'],'Notes':['edit','Les notes du projet.'],'Tâches':['task','À faire, en cours, réglées.'],'Frais':['receipt','Frais et dépenses imputés au projet.'],
   'Offres d’honoraires':['calc','Calculs et offres d’honoraires.'],'Contrats honoraires':['contrat','Contrats, sous-traitants et échéancier.'],
@@ -2516,6 +2516,7 @@ const SG_PDOM={'Intervenants':['users','Les intervenants du projet et leur rôle
 const SG_PDOM_T=['projectmember','projecttenderer','depotfichier','meetingsequence','meeting','projectnote','projecttask','projectcost','projectfee','projectcontract','projectinvoice',
   'costplanningdocument','costestimatedocument','devisdocument','costcontroldocument'];
 function sgPdomCompte(p,d){ const by=t=>DS.by(t,'PROJECT_ID',p.ID), viv=L=>L.filter(x=>!+x.ISMARKEDASDELETED), pl=(n,s,s2)=>n+' '+(n>1?(s2||s+'s'):s);
+  if(SG_DOCS_PAGES[d]) return pl(sgDocsCompte(p,d),'fichier');   // Documents / Présentation de Faisabilité et Chantier (21.10.2026)
   switch(d){
     case 'Intervenants': case 'Liste d’adresses': return pl(by('projectmember').length,'intervenant');
     case 'Soumissionnaires': return pl(by('projecttenderer').length,'entreprise');
@@ -2535,8 +2536,8 @@ function sgPdomCompte(p,d){ const by=t=>DS.by(t,'PROJECT_ID',p.ID), viv=L=>L.fil
 /* domaines permis : droits de l'ancien logiciel (ch08bDomains), domaines utilisés au bureau, puis profil (honoraires, factures, chantier) */
 function sgPdomListe(){ const ok=new Set(ch08bDomains(DOMAINS)), adm=sgAdmin();
   const hon=['Offres d’honoraires','Contrats honoraires','Avancement des prestations'], cha=['Calcul des coûts','Devis général','Soumission','Contrôle des coûts'];
-  const prof=d=>adm||(hon.includes(d)?sgDroit('contrats','lecture'):d==='Factures'?sgDroit('factures','lecture'):cha.includes(d)?sgDroit('chantier','lecture'):d==='Documents'?sgDroit('documents','lecture'):true);
-  return SG_PDOM_G.map(([g,L])=>[g,L.filter(d=>(d==='Documents'||(ok.has(d)&&domainUsed(d)))&&prof(d))]).filter(([,L])=>L.length); }
+  const prof=d=>adm||(hon.includes(d)?sgDroit('contrats','lecture'):d==='Factures'?sgDroit('factures','lecture'):cha.includes(d)?sgDroit('chantier','lecture'):d==='Documents'||SG_DOCS_PAGES[d]?sgDroit('documents','lecture'):true);
+  return SG_PDOM_G.map(([g,L])=>[g,L.filter(d=>(d==='Documents'||SG_DOCS_PAGES[d]||(ok.has(d)&&domainUsed(d)))&&prof(d))]).filter(([,L])=>L.length); }
 /* Frais d'un projet en pleine page (page du projet ▸ Suivi du projet ▸ Frais, 21.10.2026) : TOUS les frais du projet (le domaine du moteur n'en
    montrait qu'un mois), choix de l'année comme les Factures et les Heures (« Toutes · 2026 · 2025… », .sg-an, choix gardé sg3_frais_an, « Toutes »
    si le projet n'a pas de frais cette année-là, sans choix s'ils sont tous de la même année) ; mêmes colonnes et mêmes actions que le domaine du
@@ -2552,40 +2553,52 @@ function sgFraisModule(C,p){ const top=h('div',{class:'col',style:{flex:1,border
     head.setCount((y?y+' · ':'Toutes les années · ')+rows.length+' frais · total '+num(rows.reduce((s0,r)=>s0+pcAmount(r),0))+' CHF'); };
   const head=phead([{i:'plus',fn:()=>editCost(null,{project:p.ID,date:new Date()})},{i:'edit',fn:()=>o.sel&&editCost(DS.get('projectcost',o.sel))},{i:'minus',fn:()=>o.sel&&delCost(DS.get('projectcost',o.sel))},sel],{count:1});
   top.append(head,pane); C.append(top); draw(); }
+/* Documents et Présentation de Faisabilité et de Chantier (21.10.2026, demande de Paulo) : pages pleines (sgDocsModule avec filtre de dossier) —
+   « Documents de la faisabilité » = tout le dossier Faisabilité (dépôt dans sa racine) ; « Documents du chantier » = contrôles des coûts, devis,
+   calculs des coûts, soumissions (dossiers Construction/…), dossier Chantier et phases 41 à 53 du dossier Projet (dépôt dans Chantier) ;
+   « Présentation du chantier » = dossier Chantier ▸ Présentation. Tuiles nommées « Documents » / « Présentation » dans leur groupe
+   (SG_TUILE_LIB), comme « Présentation au client » (Faisabilité) et « Présentation client » (Projet) : mêmes dossiers, nom affiché seul. */
+const SG_TUILE_LIB={'Documents de la faisabilité':'Documents','Documents du chantier':'Documents','Présentation du chantier':'Présentation','Présentation au client':'Présentation','Présentation client':'Présentation'};
+const sgDosNfc=(p,...a)=>{ try{ return ch03aDossier('document',p.ID,...a).normalize('NFC'); }catch(_){ return null; } };
+const SG_DOCS_PAGES={
+  'Documents de la faisabilité':p=>{ const b=sgDosNfc(p,'Faisabilité'); return {fil:d=>!!b&&(d===b||d.startsWith(b+'/')),dos:()=>ch03aDossier('document',p.ID,'Faisabilité'),vide:'Aucun fichier dans la faisabilité.',ajout:'Ajouter des fichiers à la faisabilité'}; },
+  'Documents du chantier':p=>{ const c=sgDosNfc(p,'Chantier'), pr=sgDosNfc(p,'Projet'); return {fil:d=>d.startsWith('Construction/')||(!!c&&(d===c||d.startsWith(c+'/')))||(!!pr&&/^\/[45]/.test(d.slice(pr.length))&&d.startsWith(pr+'/')),dos:()=>ch03aDossier('document',p.ID,'Chantier'),vide:'Aucun fichier du chantier.',ajout:'Ajouter des fichiers au chantier'}; },
+  'Présentation du chantier':p=>{ const c=sgDosNfc(p,'Chantier','Présentation'); return {fil:d=>!!c&&(d===c||d.startsWith(c+'/')),dos:()=>ch03aDossier('document',p.ID,'Chantier','Présentation'),vide:'Aucune présentation du chantier.',ajout:'Ajouter des documents de présentation du chantier'}; }};
+const sgDocsCompte=(p,d)=>{ const o=SG_DOCS_PAGES[d](p); return DS.all('depotfichier').filter(f=>(String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER).startsWith('ProjectDocuments/Documents/'+p.ID+'/'))&&o.fil(String(f.DOSSIER||'').normalize('NFC'))).length; };
 /* Documents d'un projet en pleine page (page du projet ▸ Documents, 20.10.2026) : le moteur n'a pas de domaine Documents ; tous les fichiers du
    dépôt du projet par dossier (sgDossierLib), ajout de fichiers dans le dossier Général (droit « documents : dépôt ») */
-function sgDocsModule(C,p){ DS.need(['depotfichier']).catch(()=>{}).then(()=>{ if(!C.isConnected) return;
-  const L=DS.all('depotfichier').filter(f=>String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER).startsWith('ProjectDocuments/Documents/'+p.ID+'/')).sort((a,b)=>cmp(a.DOSSIER,b.DOSSIER)||cmp(a.NOM,b.NOM)), g={};
+function sgDocsModule(C,p,o){ DS.need(['depotfichier']).catch(()=>{}).then(()=>{ if(!C.isConnected) return;   /* o (21.10.2026) : {fil(dossier), dos(), vide, ajout} — Documents de la faisabilité, du chantier, Présentation du chantier */
+  const L=DS.all('depotfichier').filter(f=>(String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER).startsWith('ProjectDocuments/Documents/'+p.ID+'/'))&&(!o||o.fil(String(f.DOSSIER||'').normalize('NFC')))).sort((a,b)=>cmp(a.DOSSIER,b.DOSSIER)||cmp(a.NOM,b.NOM)), g={};
   L.forEach(f=>(g[f.DOSSIER]=g[f.DOSSIER]||[]).push(f));
   const lf=f=>'<div class="nx-row" data-sha="'+nxE(f.ID)+'">'+nxSvg(f.EXT==='pdf'?'pdf':'doc')+'<div class="t"><b>'+nxE(f.NOM)+'</b><span>'+nxE([f.TAILLE?(f.TAILLE/1024).toFixed(0)+' Ko':'',f.PAGES?f.PAGES+' p.':'',f.MODIFIED?dfr(String(f.MODIFIED).slice(0,10)):''].filter(Boolean).join(' · '))+'</span></div></div>';
-  C.innerHTML='<div class="sg-docs-page"><div class="sg-htls sg-iacts">'+(sgDroit('documents','depot')?'<button data-act="ajout" title="Ajouter des fichiers au projet (dossier Général)">'+nxSvg('plus')+'<span>Ajouter des fichiers</span></button>':'')+'</div>'
+  C.innerHTML='<div class="sg-docs-page"><div class="sg-htls sg-iacts">'+(sgDroit('documents','depot')?'<button data-act="ajout" title="'+nxE(o&&o.ajout||'Ajouter des fichiers au projet (dossier Général)')+'">'+nxSvg('plus')+'<span>Ajouter des fichiers</span></button>':'')+'</div>'
     +(L.length?Object.entries(g).map(([d,fs])=>'<div class="sg-rub"><div class="sg-rub-h">'+nxSvg('folder')+'<b>'+nxE(sgDossierLib(d))+'</b><span class="c">'+fs.length+'</span></div><div class="sg-rub-l">'+fs.map(lf).join('')+'</div></div>').join('')
-      :'<div class="nx-empty">Aucun fichier joint à ce projet.</div>')+'</div>';
+      :'<div class="nx-empty">'+nxE(o&&o.vide||'Aucun fichier joint à ce projet.')+'</div>')+'</div>';
   C.querySelectorAll('[data-sha]').forEach(r=>r.onclick=()=>{ const f=DS.get('depotfichier',r.dataset.sha); if(f) ch03aOuvrir(f); });
-  const b=C.querySelector('[data-act="ajout"]'); if(b) b.onclick=()=>{ const d=ch03aDossier('document',p.ID,'Général'), inp=h('input',{type:'file',multiple:true});
+  const b=C.querySelector('[data-act="ajout"]'); if(b) b.onclick=()=>{ const d=o&&o.dos?o.dos():ch03aDossier('document',p.ID,'Général'), inp=h('input',{type:'file',multiple:true});
     inp.onchange=async()=>{ let n=0; for(const f of inp.files){ try{ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import'}); n++; }
         catch(e){ if(e.message==='existe'){ if(await confirmDlg('« '+f.name+' » existe déjà. Le remplacer ?','Remplacer')){ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import',remplacer:true}); n++; } } else toast('✗ '+f.name+' : '+e.message,true); } }
-      if(n){ toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+' à '+p.NUMBER+'.'); sgDocsModule(C,p); } };
+      if(n){ toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+' à '+p.NUMBER+'.'); sgDocsModule(C,p,o); } };
     inp.click(); }; }); }
 VIEWS['nx-pdom']={
   render(m,arg){ const [pid,dom,foc]=String(arg||'').split('|'), p=DS.get('project',pid); this.drawC=null;   /* foc : rubrique du module à montrer (bloc 21) */
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
     if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
     nxRecent('p',p.ID); const G0=sgPdomListe(), M=sgPdomModules(p), mods=M.map(([g])=>g), pick=n=>G0.filter(([g])=>g===n), G=[...pick('Honoraires et facturation'),...pick('Suivi du projet'),...M,...pick('Chantier'),...G0.filter(([g])=>!['Honoraires et facturation','Suivi du projet','Chantier'].includes(g))], doms=G0.flatMap(([,L])=>L);   /* ordre (21.10.2026) : Honoraires et facturation, Suivi du projet, Faisabilité, Projet, Chantier, puis les autres groupes */   /* M : modules Projet / Faisabilité en tête (bloc 21, 20.10.2026) */
-    if(dom&&(mods.includes(dom)||doms.includes(dom))){                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
+    if(dom&&(mods.includes(dom)||doms.includes(dom)||(dom==='Documents de la faisabilité'&&mods.includes('Faisabilité')))){   /* + Documents de la faisabilité (21.10.2026) */                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
       VIEW.nxTitle=dom+' · '+(p.NUMBER||p.TITLE||'');
       const chips=h('div',{class:'sg-pdom-chips'},...[...mods,...doms].map(d=>h('button',{class:[d===dom?'on':'',mods.includes(d)?'mod':''].filter(Boolean).join(' ')||null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));
       const bar=h('div',{class:'sg-pdom-bar'},h('button',{class:'nx-btn',html:nxSvg('back')+'Domaines',onclick:()=>go('nx-pdom',p.ID+'|#'+G.findIndex(([g,L])=>g===dom||L.includes(dom)))}),
         h('b',{},(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'')),chips);
       const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
       const on=chips.querySelector('.on'); if(on) setTimeout(()=>on.scrollIntoView({block:'nearest',inline:'center'}),0);
-      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Frais') sgFraisModule(C,p2); else domainView(C,p2,dom); } }; this.drawC(); return; }
+      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(SG_DOCS_PAGES[dom]) sgDocsModule(C,p2,SG_DOCS_PAGES[dom](p2)); else if(dom==='Frais') sgFraisModule(C,p2); else domainView(C,p2,dom); } }; this.drawC(); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'');                                        /* page du projet : groupes repliables de domaines */
     const ouvert=/^#\d+$/.test(dom||'')?+dom.slice(1):-1;                                            // 18.10.2026 : tout replié à l'arrivée ; au retour d'un domaine, son groupe ouvert
     const logs=DS.by('timelog','PROJECT_ID',p.ID), lim30=dayKey(new Date(Date.now()-30*864e5)), tot=logs.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0),
       h30=logs.filter(r=>tlKey(r)>=lim30).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=projMO(p), cat=sgCatProjet(p);
-    const tuile=(d,g)=>{ const mod=mods.includes(g), x=(mod?SG_PMOD[d]:SG_PDOM[d])||['doc',''], fn=!mod?'dom':x[2]==='fz'?'fz':x[2]==='fiche'?'fzfiche':'mod';   /* tuiles des modules Projet / Faisabilité (bloc 21) */
-      return '<div class="sg-tile" data-fn="'+fn+'" data-dom="'+nxE(d)+'"'+(fn==='mod'?' data-mod="'+nxE(x[2])+'"':'')+'><div class="ti">'+nxSvg(x[0])+'<h3>'+nxE(d)+'</h3></div><div class="nb" data-nb="'+nxE(d)+'">…</div><p>'+nxE(x[1])+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>'; };
+    const tuile=(d,g)=>{ const mod=mods.includes(g), x=(mod?SG_PMOD[d]:SG_PDOM[d])||['doc',''], fn=!mod||x[2]==='dom'?'dom':x[2]==='fz'?'fz':x[2]==='fiche'?'fzfiche':'mod';   /* tuiles des modules Projet / Faisabilité (bloc 21) */
+      return '<div class="sg-tile" data-fn="'+fn+'" data-dom="'+nxE(d)+'"'+(fn==='mod'?' data-mod="'+nxE(x[2])+'"':'')+'><div class="ti">'+nxSvg(x[0])+'<h3>'+nxE(SG_TUILE_LIB[d]||d)+'</h3></div><div class="nb" data-nb="'+nxE(d)+'">…</div><p>'+nxE(x[1])+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>'; };
     const info=[mo,p.LOCATION,p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE)+(p.PROJECTENDDATE?' → '+dfr(p.PROJECTENDDATE):''):''].filter(Boolean).map(nxE).join(' · ');
     const html='<div class="sg-split">'+sgIntro('Projet '+(p.NUMBER||''),nxE(p.TITLE||p.NUMBER||''),info,
         '<div class="sg-pdom-tags">'+nxStateTag(p)+(cat!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[cat]+'</span>':'')+'</div>'
@@ -2595,7 +2608,7 @@ VIEWS['nx-pdom']={
           +((pa0=>'<div class="sg-fig" title="D’après les heures saisies dans la feuille d’heures"><div class="n txt">'+(pa0?nxE(nm(pa0.ph)):'—')+'</div><div class="t">'+(pa0?'phase actuelle'+(pa0.sp?' : '+nxE(nm(pa0.sp)):'')+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'phase actuelle : aucune heure saisie par phase')+'</div></div>')(sgPhaseActuelle(p)))
           +'</div>')   /* marge bénéficiaire retirée de la page du projet (19.10.2026, à la demande ; elle reste au tableau de bord) */
       +'<div class="sg-pgrps">'+(G.length?G.map(([g,L],i)=>'<section class="sg-pgrp'+(i===ouvert?' on':'')+'"><button class="sg-pgrp-h" data-fn="grp" aria-expanded="'+(i===ouvert)+'">'
-          +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span>'   /* nombre de domaines / modules retiré du titre du groupe (21.10.2026) */+nxSvg('next','chev')+'</button>'
+          +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(d=>nxE(SG_TUILE_LIB[d]||d)).join(' · ')+'</small></span>'   /* nombre de domaines / modules retiré du titre du groupe (21.10.2026) */+nxSvg('next','chev')+'</button>'
           +'<div class="sg-tiles">'+L.map(d=>tuile(d,g)).join('')+'</div></section>').join(''):'<div class="nx-empty">Aucun domaine accessible avec votre profil.</div>')+'</div></div>';
     const pg=nxPage(m,html);
     Object.assign(pg._fn,{grp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); },dom:b=>{ const d=b.dataset.dom; /* Documents : page pleine (sgDocsModule) comme les autres domaines, depuis le retrait des onglets Documents et Projet (20.10.2026) */ go('nx-pdom',p.ID+'|'+d); },
@@ -2759,8 +2772,9 @@ const SG_PMOD={'PV MO':['pv','Procès-verbaux des séances avec le maître de l�
   'Études':['doc','Études et calculs de la faisabilité.','Faisabilité'],
   'Variantes':['dup','Les variantes étudiées.','Faisabilité'],
   'Présentation au client':['pdf','Les documents remis au client.','Faisabilité'],
+  'Documents de la faisabilité':['folder','Tous les fichiers de la faisabilité, par dossier.','dom'],
   'Fiche de faisabilité':['print','Le document de synthèse : parcelle, sources, règlements, contraintes et réponses, variantes, conclusion.','fiche']};
-const SG_PMOD_G=[['Faisabilité',['Parcelle & règlements','Documents de base','Études','Variantes','Présentation au client','Fiche de faisabilité']],   // Faisabilité avant Projet (21.10.2026)
+const SG_PMOD_G=[['Faisabilité',['Parcelle & règlements','Documents de base','Études','Variantes','Présentation au client','Fiche de faisabilité','Documents de la faisabilité']],   // Faisabilité avant Projet (21.10.2026)
   ['Projet',['PV MO','Présentation client','Estimations','Descriptifs & devis','Dossier d’enquête','Documents']]];
 Object.assign(SG_PDOM_GI,{'Projet':'building','Faisabilité':'ruler'});
 SG_PDOM_T.push('sgfaisa','sgdocphase');

@@ -658,6 +658,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   qu'un mois) : tous les frais, choix de l'année « Toutes · 2026 · 2025… » dans la barre (`.sg-fr-an`, comme Factures et Heures ; `sg3_frais_an`),
   mêmes colonnes et actions (editCost / delCost), tri par date décroissante, nombre et total. Le chapitre Affaires garde le domaine d'origine.
   Titres des groupes de la page du projet sans le nombre « n domaines / n modules » (21.10.2026).
+  **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
+  groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
+  (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,
+  soumissions —, dossier Chantier, phases 41 à 53 du dossier Projet ; dépôt dans Chantier) ; Projet garde « Documents » (tous les fichiers).
+  « Présentation au client » (Faisabilité) et « Présentation client » (Projet) affichés « Présentation » (mêmes dossiers). Pages pleines :
+  `SG_DOCS_PAGES` → `sgDocsModule(C,p,o)` (o : fil, dos, vide, ajout), compteurs `sgDocsCompte`, noms des tuiles `SG_TUILE_LIB`.
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

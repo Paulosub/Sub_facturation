@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 21.10.2026 17:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 21.10.2026 17:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -879,6 +879,14 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-fzv-dessin{border:1px solid var(--s-filet);background:#fff;min-height:200px;overflow:auto}
 .sg-fzv-svg{display:block;width:100%;height:auto;max-height:78vh}
 .sg-fzv-alerte{margin:0;padding:8px 12px;border-left:3px solid var(--s-rouge);background:#fbecef;font-size:12.5px}
+
+/* fenêtre « Ajouter des fichiers » avec phase et rubrique (21.10.2026) */
+.sg-dep{display:flex;flex-direction:column;gap:12px;min-width:min(500px,86vw)}
+.sg-dep-c{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--s-gris)}.sg-dep-c .inp{color:var(--s-noir)}
+.sg-dep-z{border:1.5px dashed var(--s-gris3);padding:22px 14px;text-align:center;font-size:13px;color:var(--s-gris)}
+.sg-dep-z.on{border-color:var(--s-nuit);background:var(--s-jaune3)}
+.sg-dep-l{font-size:12px;color:var(--s-noir);word-break:break-word}
+.nx-row .sg-fph{margin-left:auto;max-width:210px}
 </style>
 </head>
 <body>
@@ -24867,6 +24875,38 @@ const SG_ONGLETS=[['vue','Vue d’ensemble'],['factu','Contrat'],['temps','Heure
 /* phases partielles SIA 102 des études (onglet Projet), rubriques du dossier d'enquête (comme le dossier « Att_CO » des affaires) et de l'onglet
    Faisabilité ; dossiers du dépôt : ProjectDocuments/Documents/<projet>/Documents/Projet/<n° nom>/<rubrique> et …/Faisabilité/<rubrique> */
 const SG_PROJ_PH=[[31,'Avant-projet'],[32,'Projet de l’ouvrage'],[33,'Procédure de demande d’autorisation'],[41,'Appel d’offres, comparaison des offres et propositions d’adjudication']];
+/* phases SIA des fichiers du projet (21.10.2026) : dossiers « Projet/<n° nom>/<rubrique> » ; 41 à 53 = chantier (Chantier ▸ Documents / Présentation) */
+const SG_PH_FICH=[...SG_PROJ_PH,[51,'Projet d’exécution'],[52,'Exécution de l’ouvrage'],[53,'Mise en service, achèvement']];
+function sgPhasesFich(p,nums){ const spN=new Map(); DS.by('projectphase','PROJECT_ID',p.ID).forEach(f=>DS.by('projectsubphase','PROJECTPHASE_ID',f.ID).forEach(x=>{ const n=parseFloat(x.NUMBER); if(isFinite(n)&&nm(x)) spN.set(n,nm(x)); }));
+  return SG_PH_FICH.filter(([n])=>!nums||nums.includes(n)).map(([n,lib])=>({n,lib:spN.get(n)||lib,dos:n+' '+lib})); }
+/* fenêtre « Ajouter des fichiers » avec choix de la phase et de la rubrique (21.10.2026, demande de Paulo) — o : {titre, phases:[n…], phase,
+   rubriques:[[chemin, libellé]], rubrique, sansPhase:'libellé' (dépôt hors phase), sansDos:()=>dossier, apres()} ; phase 33 : rubriques du dossier d'enquête */
+function sgDeposerDlg(p,o){ const PH=sgPhasesFich(p,o.phases), E=nxE;
+  const selPh=h('select',{class:'inp'}), selRub=h('select',{class:'inp'}), rubW=h('label',{class:'sg-dep-c'},'Rubrique',selRub);
+  if(o.sansPhase) selPh.append(h('option',{value:''},o.sansPhase)); PH.forEach(x=>selPh.append(h('option',{value:String(x.n)},x.n+' · '+x.lib)));
+  selPh.value=o.phase!=null&&PH.some(x=>String(x.n)===String(o.phase))?String(o.phase):(o.sansPhase?'':String(PH[0]?PH[0].n:''));
+  const rubs=()=>{ const ph=selPh.value, L=(o.rubriques||[]).slice(); if(ph==='33'&&o.enquete!==false) SG_ENQUETE.forEach(([t,,sous])=>L.push(['Dossier d’enquête/'+sous,'Dossier d’enquête · '+t]));
+    const v=selRub.value||o.rubrique; selRub.replaceChildren(...L.map(([k,l])=>h('option',{value:k},l))); if(L.some(([k])=>k===v)) selRub.value=v; rubW.style.display=ph===''||L.length<2?'none':''; };
+  selPh.onchange=rubs; rubs();
+  const inp=h('input',{type:'file',multiple:true,style:'display:none'}), liste=h('div',{class:'sg-dep-l'}); let F=[];
+  const maj=()=>{ liste.textContent=F.length?F.length+' fichier'+(F.length>1?'s':'')+' : '+F.map(f=>f.name).join(' · '):'Aucun fichier choisi.'; };
+  const zone=h('div',{class:'sg-dep-z'},h('span',{},'Glissez les fichiers ici ou '),h('button',{class:'nx-btn sm',onclick:()=>inp.click()},'Choisir des fichiers…'),inp);
+  inp.onchange=()=>{ F=[...inp.files]; maj(); };
+  zone.ondragover=e=>{ e.preventDefault(); zone.classList.add('on'); }; zone.ondragleave=()=>zone.classList.remove('on');
+  zone.ondrop=e=>{ e.preventDefault(); zone.classList.remove('on'); F=[...e.dataTransfer.files].filter(f=>f.size||f.type); maj(); };
+  maj();
+  dialog({title:o.titre||'Ajouter des fichiers',width:'min(560px,94vw)',body:h('div',{class:'sg-dep'},h('label',{class:'sg-dep-c'},'Phase',selPh),rubW,zone,liste),
+    buttons:[{t:'Annuler'},{t:'Ajouter',pri:true,fn:async()=>{ if(!F.length){ toast('Choisissez au moins un fichier.',true); return false; }
+      const ph=selPh.value, x=PH.find(y=>String(y.n)===ph), rub=selRub.value||'';
+      let d; try{ d=ph===''?(o.sansDos?o.sansDos():ch03aDossier('document',p.ID,'Général')):ch03aDossier('document',p.ID,'Projet',x.dos+(rub?'/'+rub:'')); }catch(e){ toast('✗ '+(e.message||e),true); return false; }
+      let n=0; for(const f of F){ try{ if(!ch03aNomValide(f.name)) throw new Error('nom de fichier non valide'); await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import'}); n++; }
+        catch(e){ if(e.message==='existe'){ if(await confirmDlg('« '+f.name+' » existe déjà. Le remplacer ?','Remplacer')){ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import',remplacer:true}); n++; } } else toast('✗ '+f.name+' : '+e.message,true); } }
+      if(n) toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+(x?' en phase '+x.n+' · '+x.lib:'')+'.'); if(o.apres) o.apres(ph,rub); }}]}); }
+/* reclasser un fichier dans une autre phase (même rubrique) : nouvel enregistrement dans le dossier de la phase, ancien retiré — aucun octet copié */
+async function sgFichierPhase(p,f,ph,rub){ const x=sgPhasesFich(p).find(y=>String(y.n)===String(ph)); if(!x) return false;
+  const d=ch03aDossier('document',p.ID,'Projet',x.dos+(rub?'/'+rub:'')); if(d===f.DOSSIER) return false;
+  if(ch03aTrouve(d,f.NOM)){ toast('« '+f.NOM+' » existe déjà en phase '+x.n+'.',true); return false; }
+  await ch03aCopier(f,d,f.NOM,{projet:p.ID}); await ch03aSupprimer(f); toast('« '+f.NOM+' » classé en phase '+x.n+' · '+x.lib+'.'); return true; }
 const SG_ENQUETE=[['Formulaire Att_CO','doc','Formulaire Att_CO'],['Questionnaire général','list','Questionnaire général'],['Questionnaire particulier','list','Questionnaire particulier'],['Plan de situation','map','Plan de situation'],['Plans (niveaux, façades, coupes)','ruler','Plans'],['Annexes','folder','Annexes']];
 const SG_FAISA_RUB=[['fb','Documents de base','folder'],['fe','Études','doc'],['fv','Variantes','dup'],['fp','Présentation au client','pdf']];
 /* module Faisabilité (21.10.2026, demande de Paulo) : UNIQUEMENT pour un projet relié à un contrat d'honoraires de faisabilité (non annulé) —
@@ -25200,10 +25240,12 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       const depot=sgDroit('documents','depot'), classer=sgDroit('chantier','ecriture'), ouv=SG_CGRP[k+':'+p.ID]||(SG_CGRP[k+':'+p.ID]=new Set());
       const racine=k==='faisa'?'Faisabilité':'Projet', dos=chemin=>ch03aDossier('document',p.ID,racine,chemin);   // phases (Projet et Chantier) : dossier « Projet »
       const fic=d=>DS.all('depotfichier').filter(f=>f.DOSSIER===d).sort((a,b)=>cmp(a.NOM,b.NOM));
-      const lf=f=>'<div class="nx-row" data-sha="'+nxE(f.ID)+'">'+nxSvg(f.EXT==='pdf'?'pdf':'doc')+'<div class="t"><b>'+nxE(f.NOM)+'</b><span>'+nxE([f.TAILLE?(f.TAILLE/1024).toFixed(0)+' Ko':'',f.PAGES?f.PAGES+' p.':'',f.MODIFIED?dfr(String(f.MODIFIED).slice(0,10)):''].filter(Boolean).join(' · '))+'</span></div></div>';
+      const phSel=(f,chemin)=>{ const m=typeof chemin==='string'&&depot&&k==='projet'?/^(\d{2}) [^/]+\/(.+)$/.exec(chemin):null; if(!m) return '';   /* phase du fichier modifiable (21.10.2026) */
+        return '<select class="sg-phsel sg-fph" data-fid="'+nxE(f.ID)+'" data-rub="'+nxE(m[2])+'" title="Phase du fichier">'+sgPhasesFich(p,[31,32,33]).map(x=>'<option value="'+x.n+'"'+(String(x.n)===m[1]?' selected':'')+'>'+x.n+' '+nxE(x.lib)+'</option>').join('')+'</select>'; };
+      const lf=(f,chemin)=>'<div class="nx-row" data-sha="'+nxE(f.ID)+'">'+nxSvg(f.EXT==='pdf'?'pdf':'doc')+'<div class="t"><b>'+nxE(f.NOM)+'</b><span>'+nxE([f.TAILLE?(f.TAILLE/1024).toFixed(0)+' Ko':'',f.PAGES?f.PAGES+' p.':'',f.MODIFIED?dfr(String(f.MODIFIED).slice(0,10)):''].filter(Boolean).join(' · '))+'</span></div>'+phSel(f,chemin)+'</div>';
       const ajout=chemin=>chemin!=null&&depot?'<span class="a" data-fn="pajout" data-dos="'+nxE(chemin)+'" title="Ajouter des fichiers">'+nxSvg('plus')+'Ajouter</span>':'';
       const rub=(titre,ico,lignes,chemin)=>'<div class="sg-rub"><div class="sg-rub-h">'+(titre?nxSvg(ico)+'<b>'+nxE(titre)+'</b><span class="c">'+lignes.length+'</span>':'')+ajout(chemin)+'</div>'+(lignes.length?'<div class="sg-rub-l'+(titre?'':' nu')+'">'+lignes.join('')+'</div>':'')+'</div>';
-      const rubF=(titre,ico,chemin)=>{ const L=fic(dos(chemin)); return {n:L.length,h:rub(titre,ico,L.map(lf),chemin)}; };
+      const rubF=(titre,ico,chemin)=>{ const L=fic(dos(chemin)); return {n:L.length,h:rub(titre,ico,L.map(f=>lf(f,chemin)),chemin)}; };
       const grp=(c,ico,lib,parts)=>{ const n=parts.reduce((a,x)=>a+x.n,0), on=ouv.has(c);
         return '<section class="sg-pgrp'+(on?' on':'')+'" data-c="'+nxE(c)+'"><button class="sg-pgrp-h" data-fn="cgrp" aria-expanded="'+on+'">'+nxSvg(ico)+'<span class="t"><b>'+nxE(lib)+'</b></span><span class="c">'+n+' élément'+(n>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button><div class="sg-cgrp-b">'+parts.map(x=>x.h).join('')+'</div></section>'; };
       let html='';
@@ -25218,7 +25260,7 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
           +(classer?'<select class="sg-phsel" data-k="'+nxE(m.t+':'+d.ID)+'" title="Phase du document">'+opts(phaseDe(m.t,d),m)+'</select>':'')+'</div>';
         const rubM=(m,ph)=>{ const L=m.L.filter(d=>phaseDe(m.t,d)===ph); return {n:L.length,h:rub(m.titre,m.ico,L.map(d=>ld(m,d)),null)}; };
         const aCl=k==='projet'?docsM.map(m=>rubM(m,'')).filter(x=>x.n):[]; if(aCl.length) html+=grp('acl','task','Estimations et devis à classer',aCl);
-        PH.filter(x=>k==='projet'?x.n<40:x.n>=40).forEach(x=>{ /* Projet : 31 à 33 ; Chantier : 41 (20.10.2026) */ const parts=[rubF('PV MO','pv',x.dos+'/PV MO'),rubF('Présentation client','pdf',x.dos+'/Présentation client'),...docsM.filter(m=>!m.sans.includes(x.n)).map(m=>rubM(m,String(x.n)))];   // + présentation client par phase (20.10.2026)
+        PH.filter(x=>k==='projet'?x.n<40:x.n>=40).forEach(x=>{ /* Projet : 31 à 33 ; Chantier : 41 (20.10.2026) */ const parts=[rubF('PV MO','pv',x.dos+'/PV MO'),rubF('Présentation client','pdf',x.dos+'/Présentation client'),rubF('Documents','folder',x.dos+'/Documents'),...docsM.filter(m=>!m.sans.includes(x.n)).map(m=>rubM(m,String(x.n)))];   /* + Documents par phase (21.10.2026) */   // + présentation client par phase (20.10.2026)
           if(x.n===33) SG_ENQUETE.forEach(([titre,ico,sous])=>parts.push(rubF('Dossier d’enquête · '+titre,ico,x.dos+'/Dossier d’enquête/'+sous)));
           html+=grp('p'+x.n,'folder',x.n+' · '+x.lib,parts); });
       } else html=SG_FAISA_RUB.map(([c,titre,ico])=>grp(c,ico,titre,[rubF(null,ico,titre)])).join('');
@@ -25240,11 +25282,17 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
       set('<div class="sg-pgrps">'+html+'</div>');
       box.querySelectorAll('[data-sha]').forEach(r=>r.onclick=()=>{ const f=DS.get('depotfichier',r.dataset.sha); if(f) ch03aOuvrir(f); });
       box.querySelectorAll('[data-edom]').forEach(r=>r.onclick=e=>{ if(e.target.closest('select')) return; sgOuvrirDomaine(p,r.dataset.edom); });
-      box.querySelectorAll('select.sg-phsel').forEach(x=>x.onchange=async()=>{ try{ await DS.save('sgdocphase',{ID:x.dataset.k,PROJECT_ID:p.ID,PHASE:x.value||null});
+      box.querySelectorAll('select.sg-fph').forEach(x=>{ x.onclick=e=>e.stopPropagation(); x.onchange=async()=>{ const f=DS.get('depotfichier',x.dataset.fid); if(!f) return;   /* phase d'un fichier (21.10.2026) */
+        try{ if(await sgFichierPhase(p,f,x.value,x.dataset.rub)){ ouv.add('p'+x.value); sgOnglet(p,k,pg); } }catch(e){ toast('✗ '+(e.message||e),true); } }; });
+      box.querySelectorAll('select.sg-phsel:not(.sg-fph)').forEach(x=>x.onchange=async()=>{ try{ await DS.save('sgdocphase',{ID:x.dataset.k,PROJECT_ID:p.ID,PHASE:x.value||null});
           if(x.value) ouv.add('p'+x.value); toast(x.value?'Document classé en phase '+x.value+'.':'Document remis « à classer ».'); sgOnglet(p,k,pg); }catch(e){ toast('✗ '+(e.message||e),true); } });
       Object.assign(pg._fn,{cgrp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); ouv[on?'add':'delete'](x.dataset.c); },
         docdom:()=>sgOuvrirDomaine(p,'Documents'),
-        pajout:b=>{ const d=b.dataset.dos==='::general'?ch03aDossier('document',p.ID,'Général'):dos(b.dataset.dos), g=b.closest('.sg-pgrp'), inp=h('input',{type:'file',multiple:true});
+        pajout:b=>{ const g=b.closest('.sg-pgrp');
+          if(k!=='faisa'){ const m=/^(\d{2}) [^/]+\/(.+)$/.exec(b.dataset.dos||'');   /* Projet / Chantier : fenêtre avec choix de la phase et de la rubrique (21.10.2026) */
+            sgDeposerDlg(p,{titre:'Ajouter des fichiers au projet',phases:k==='chantier'?[41,51,52,53]:[31,32,33],phase:m?+m[1]:null,rubriques:[['PV MO','PV MO'],['Présentation client','Présentation client'],['Documents','Documents']],rubrique:m?m[2]:'Documents',
+              sansPhase:b.dataset.dos==='::general'||!m?'Sans phase (dossier Général)':null,apres:ph=>{ if(ph) ouv.add('p'+ph); else if(g) ouv.add(g.dataset.c); sgOnglet(p,k,pg); }}); return; }
+          const d=b.dataset.dos==='::general'?ch03aDossier('document',p.ID,'Général'):dos(b.dataset.dos), inp=h('input',{type:'file',multiple:true});
           inp.onchange=async()=>{ let n=0; for(const f of inp.files){ try{ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import'}); n++; }
               catch(e){ if(e.message==='existe'){ if(await confirmDlg('« '+f.name+' » existe déjà. Le remplacer ?','Remplacer')){ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import',remplacer:true}); n++; } } else toast('✗ '+f.name+' : '+e.message,true); } }
             if(n){ toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+'.'); if(g) ouv.add(g.dataset.c); sgOnglet(p,k,pg); } };
@@ -27063,8 +27111,10 @@ const SG_TUILE_LIB={'Documents de la faisabilité':'Documents','Documents du cha
 const sgDosNfc=(p,...a)=>{ try{ return ch03aDossier('document',p.ID,...a).normalize('NFC'); }catch(_){ return null; } };
 const SG_DOCS_PAGES={
   'Documents de la faisabilité':p=>{ const b=sgDosNfc(p,'Faisabilité'); return {fil:d=>!!b&&(d===b||d.startsWith(b+'/')),dos:()=>ch03aDossier('document',p.ID,'Faisabilité'),vide:'Aucun fichier dans la faisabilité.',ajout:'Ajouter des fichiers à la faisabilité'}; },
-  'Documents du chantier':p=>{ const c=sgDosNfc(p,'Chantier'), pr=sgDosNfc(p,'Projet'); return {fil:d=>d.startsWith('Construction/')||(!!c&&(d===c||d.startsWith(c+'/')))||(!!pr&&/^\/[45]/.test(d.slice(pr.length))&&d.startsWith(pr+'/')),dos:()=>ch03aDossier('document',p.ID,'Chantier'),vide:'Aucun fichier du chantier.',ajout:'Ajouter des fichiers au chantier'}; },
-  'Présentation du chantier':p=>{ const c=sgDosNfc(p,'Chantier','Présentation'); return {fil:d=>!!c&&(d===c||d.startsWith(c+'/')),dos:()=>ch03aDossier('document',p.ID,'Chantier','Présentation'),vide:'Aucune présentation du chantier.',ajout:'Ajouter des documents de présentation du chantier'}; }};
+  'Documents du chantier':p=>{ const c=sgDosNfc(p,'Chantier'), pr=sgDosNfc(p,'Projet'); return {fil:d=>d.startsWith('Construction/')||(!!c&&(d===c||d.startsWith(c+'/')))||(!!pr&&/^\/[45]/.test(d.slice(pr.length))&&d.startsWith(pr+'/')),dos:()=>ch03aDossier('document',p.ID,'Chantier'),vide:'Aucun fichier du chantier.',ajout:'Ajouter des fichiers au chantier',
+    phaseDlg:{titre:'Ajouter des fichiers au chantier',phases:[41,51,52,53],phase:41,rubriques:[['Documents','Documents'],['PV MO','PV MO'],['Présentation client','Présentation']],sansPhase:'Sans phase (dossier Chantier)',sansDos:()=>ch03aDossier('document',p.ID,'Chantier')}}; },
+  'Présentation du chantier':p=>{ const c=sgDosNfc(p,'Chantier','Présentation'), pr=sgDosNfc(p,'Projet'); return {fil:d=>(!!c&&(d===c||d.startsWith(c+'/')))||(!!pr&&d.startsWith(pr+'/')&&/^\/[45]\d [^/]+\/Présentation client(\/|$)/.test(d.slice(pr.length))),dos:()=>ch03aDossier('document',p.ID,'Chantier','Présentation'),vide:'Aucune présentation du chantier.',ajout:'Ajouter des documents de présentation du chantier',
+    phaseDlg:{titre:'Ajouter une présentation du chantier',phases:[41,51,52,53],phase:41,rubriques:[['Présentation client','Présentation']],rubrique:'Présentation client',sansPhase:'Sans phase (Chantier ▸ Présentation)',sansDos:()=>ch03aDossier('document',p.ID,'Chantier','Présentation')}}; }};   /* présentations par phase 41 à 53 (21.10.2026) */
 const sgDocsCompte=(p,d)=>{ const o=SG_DOCS_PAGES[d](p); return DS.all('depotfichier').filter(f=>(String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER).startsWith('ProjectDocuments/Documents/'+p.ID+'/'))&&o.fil(String(f.DOSSIER||'').normalize('NFC'))).length; };
 /* Documents d'un projet en pleine page (page du projet ▸ Documents, 20.10.2026) : le moteur n'a pas de domaine Documents ; tous les fichiers du
    dépôt du projet par dossier (sgDossierLib), ajout de fichiers dans le dossier Général (droit « documents : dépôt ») */
@@ -27076,7 +27126,8 @@ function sgDocsModule(C,p,o){ DS.need(['depotfichier']).catch(()=>{}).then(()=>{
     +(L.length?Object.entries(g).map(([d,fs])=>'<div class="sg-rub"><div class="sg-rub-h">'+nxSvg('folder')+'<b>'+nxE(sgDossierLib(d))+'</b><span class="c">'+fs.length+'</span></div><div class="sg-rub-l">'+fs.map(lf).join('')+'</div></div>').join('')
       :'<div class="nx-empty">'+nxE(o&&o.vide||'Aucun fichier joint à ce projet.')+'</div>')+'</div>';
   C.querySelectorAll('[data-sha]').forEach(r=>r.onclick=()=>{ const f=DS.get('depotfichier',r.dataset.sha); if(f) ch03aOuvrir(f); });
-  const b=C.querySelector('[data-act="ajout"]'); if(b) b.onclick=()=>{ const d=o&&o.dos?o.dos():ch03aDossier('document',p.ID,'Général'), inp=h('input',{type:'file',multiple:true});
+  const b=C.querySelector('[data-act="ajout"]'); if(b&&(!o||o.phaseDlg)){ b.onclick=()=>sgDeposerDlg(p,Object.assign({titre:'Ajouter des fichiers',phases:[31,32,33,41,51,52,53],rubriques:[['Documents','Documents'],['PV MO','PV MO'],['Présentation client','Présentation client']],rubrique:'Documents',sansPhase:'Sans phase (dossier Général)'},o&&o.phaseDlg||{},{apres:()=>sgDocsModule(C,p,o)})); }   /* choix de la phase (21.10.2026) */
+  else if(b) b.onclick=()=>{ const d=o&&o.dos?o.dos():ch03aDossier('document',p.ID,'Général'), inp=h('input',{type:'file',multiple:true});
     inp.onchange=async()=>{ let n=0; for(const f of inp.files){ try{ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import'}); n++; }
         catch(e){ if(e.message==='existe'){ if(await confirmDlg('« '+f.name+' » existe déjà. Le remplacer ?','Remplacer')){ await ch03aDeposer(d,f.name,f,{projet:p.ID,origine:'import',remplacer:true}); n++; } } else toast('✗ '+f.name+' : '+e.message,true); } }
       if(n){ toast(n+' fichier'+(n>1?'s':'')+' ajouté'+(n>1?'s':'')+' à '+p.NUMBER+'.'); sgDocsModule(C,p,o); } };

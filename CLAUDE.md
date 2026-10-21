@@ -685,6 +685,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   faisabilité, section 5 : tableau des règles et des résultats, plan, 3D et coupe. Indicatif, à vérifier sur le règlement.
   Erreurs de reconnaissance des PDF numérisés corrigées avant la détection (`sgFzOcr` : « 6 rn », « 8 ni », « 800 ni2 » → m / m²), constatées sur le
   règlement de Grandvaux du 19.06.1985 (Bourg-en-Lavaux, RDPPF 5613_66282_R01.pdf) le 21.10.2026.
+  **Phase des fichiers du projet (21.10.2026)** : fenêtre « Ajouter des fichiers » commune (`sgDeposerDlg`) — fichiers choisis ou glissés, **phase**
+  SIA (`SG_PH_FICH` : 31, 32, 33, 41, 51, 52, 53, noms des sous-phases du projet ; « sans phase » selon la page) et **rubrique** (PV MO, Présentation
+  client, Documents ; en phase 33 aussi les pièces du dossier d'enquête) → dossier « Projet/<n° nom>/<rubrique> ». Utilisée par le module Projet
+  (« Ajouter » d'une rubrique : phase et rubrique pré-choisies, modifiables ; chaque phase a maintenant aussi une rubrique « Documents »), par la
+  page Documents du projet (sans phase = Général), par Chantier ▸ Documents (41 à 53, sans phase = Chantier) et Chantier ▸ Présentation (41 à
+  53, rubrique Présentation client ; la page liste aussi les présentations des phases 41 à 53). Faisabilité : inchangé (pas de phases).
+  Phase d'un fichier déjà déposé modifiable dans le module Projet (menu de la ligne, `sgFichierPhase` : nouvel enregistrement dans le dossier de
+  la phase, ancien retiré, aucun octet copié).
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

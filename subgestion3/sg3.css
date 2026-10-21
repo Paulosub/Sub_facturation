@@ -870,3 +870,11 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-fzv-dessin{border:1px solid var(--s-filet);background:#fff;min-height:200px;overflow:auto}
 .sg-fzv-svg{display:block;width:100%;height:auto;max-height:78vh}
 .sg-fzv-alerte{margin:0;padding:8px 12px;border-left:3px solid var(--s-rouge);background:#fbecef;font-size:12.5px}
+
+/* fenêtre « Ajouter des fichiers » avec phase et rubrique (21.10.2026) */
+.sg-dep{display:flex;flex-direction:column;gap:12px;min-width:min(500px,86vw)}
+.sg-dep-c{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--s-gris)}.sg-dep-c .inp{color:var(--s-noir)}
+.sg-dep-z{border:1.5px dashed var(--s-gris3);padding:22px 14px;text-align:center;font-size:13px;color:var(--s-gris)}
+.sg-dep-z.on{border-color:var(--s-nuit);background:var(--s-jaune3)}
+.sg-dep-l{font-size:12px;color:var(--s-noir);word-break:break-word}
+.nx-row .sg-fph{margin-left:auto;max-width:210px}

@@ -231,7 +231,8 @@ TRACES_LIMITEES = {"crb": 1,     # filtre /crb/i : écarte des listes les valeur
 #    appelés seulement à la demande (boutons de recherche), le reste passe par le relais du serveur (/api/proxy).
 URL = re.compile(r"""https?://([^/\s'"`<>\\):]+)""")
 HOTES_ADMIS = {"www.w3.org", "127.0.0.1", "localhost", "map.search.ch",
-               "api3.geo.admin.ch", "wms.geo.admin.ch", "map.geo.admin.ch", "www.rdppf.vd.ch"}
+               "api3.geo.admin.ch", "wms.geo.admin.ch", "map.geo.admin.ch", "www.rdppf.vd.ch",
+               "www.geo.vd.ch"}   # Faisabilité ▸ « Voir sur geo.vd.ch » (21.10.2026)
 
 
 def retirer(textes):

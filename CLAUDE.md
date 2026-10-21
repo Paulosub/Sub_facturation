@@ -664,6 +664,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   soumissions —, dossier Chantier, phases 41 à 53 du dossier Projet ; dépôt dans Chantier) ; Projet garde « Documents » (tous les fichiers).
   « Présentation au client » (Faisabilité) et « Présentation client » (Projet) affichés « Présentation » (mêmes dossiers). Pages pleines :
   `SG_DOCS_PAGES` → `sgDocsModule(C,p,o)` (o : fil, dos, vide, ajout), compteurs `sgDocsCompte`, noms des tuiles `SG_TUILE_LIB`.
+  **Faisabilité ▸ Parcelle & règlements ▸ « Rechercher la parcelle » = fenêtre « Recherche de parcelle » (21.10.2026, `sgFzCarteDlg`)** : choix de
+  Paulo « carte intégrée » (un site externe comme geo.vd.ch ne peut pas renvoyer la parcelle cliquée à l'app) — recherche rue / adresse / n° de
+  parcelle (geo.admin.ch SearchServer), carte WMS swisstopo (plan cadastral `ch.kantone.cadastralwebmap-farbe` ou orthophoto), glisser / molette /
+  + −, clic → `sgFzParcelle` + géométrie (`sgFzParcelleGeom`, identify returnGeometry) surlignée, données à droite ; « Valider » (désactivé sans
+  parcelle) copie n°, EGRID, commune, canton, BFS, zone fédérale, service RDPPF, coordonnées du clic, adresse et surface calculée (`sgFzAire`, si
+  vide). « Voir sur geo.vd.ch » : `https://www.geo.vd.ch/?center=E,N&scale=…&wkid=2056` (hôte ajouté à `HOTES_ADMIS` de nas/nettoyer.py).
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

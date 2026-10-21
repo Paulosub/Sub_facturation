@@ -2890,6 +2890,59 @@ const SG_FZ_PLAN='ch.kantone.cadastralwebmap-farbe', SG_FZ_ORTHO='ch.swisstopo.s
 async function sgFzParcelle(E,N){ const R=await sgFzIdentify(E,N,['ch.kantone.cadastralwebmap-farbe','ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill','ch.swisstopo-vd.stand-oerebkataster','ch.are.bauzonen'],0), by=l=>R.filter(r=>r.layerBodId===l).map(r=>r.properties||{});
   const par=by('ch.kantone.cadastralwebmap-farbe')[0]||{}, coms=by('ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill'), com=coms.find(c=>c.is_current_jahr)||coms[0]||{}, oers=by('ch.swisstopo-vd.stand-oerebkataster'), oer=oers.find(o=>o.oereb_webservice)||oers[0]||{}, bz=by('ch.are.bauzonen')[0]||{};
   return {NUMERO:par.number||oer.number||'',EGRID:par.egris_egrid||oer.egris_egrid||'',IDENTDN:par.identnd||'',CANTON:par.ak||com.kanton||'',COMMUNE:com.gemname||oer.gemeindename||bz.name||'',BFS:String(com.gde_nr||oer.bfs_nr||bz.bfs_no||''),ZONE_FED:bz.ch_bez_f||'',RDPPF_ETAT:oer.oereb_status_fr||'',RDPPF_SERVICE:oer.oereb_webservice||''}; }
+/* fenêtre « Recherche de parcelle » (21.10.2026, demande de Paulo — choix « carte intégrée ») : recherche de rue / adresse / n° de parcelle
+   (geo.admin.ch), carte du plan cadastral officiel (WMS swisstopo ch.kantone.cadastralwebmap-farbe, le même plan que geo.vd.ch) ou orthophoto ;
+   glisser = déplacer, molette ou + / − = zoom ; clic = la parcelle est identifiée (sgFzParcelle) et surlignée (géométrie identify), ses données
+   affichées ; « Valider » (actif seulement avec une parcelle) copie n°, EGRID, commune, canton, zone fédérale, service RDPPF, coordonnées du clic,
+   adresse trouvée et surface calculée sur la géométrie (si la surface est vide). « Voir sur geo.vd.ch » ouvre le guichet cantonal au même endroit
+   (le site externe ne peut pas renvoyer la parcelle choisie à l'app). */
+async function sgFzParcelleGeom(E,N){ const u=SG_FZ_GEO.ident+'?geometry='+E+','+N+'&geometryType=esriGeometryPoint&geometryFormat=geojson&sr=2056&layers=all:'+SG_FZ_PLAN+'&tolerance=0&returnGeometry=true&lang=fr';
+  const r=((await sgFzJson(u)).results||[])[0]; return r&&r.geometry||null; }
+const sgFzAire=g=>{ if(!g) return 0; const P=g.type==='MultiPolygon'?g.coordinates:g.type==='Polygon'?[g.coordinates]:[], ring=R=>{ let a=0; for(let i=0,j=R.length-1;i<R.length;j=i++) a+=(R[j][0]+R[i][0])*(R[j][1]-R[i][1]); return Math.abs(a/2); };
+  return P.reduce((s0,pl)=>s0+(pl.length?ring(pl[0])-pl.slice(1).reduce((t,R)=>t+ring(R),0):0),0); };
+function sgFzCarteDlg(P,q0,onOk){ const st={E:+P.E||2545500,N:+P.N||1148500,res:P.E&&P.N?0.3:4,fond:'plan',sel:null,geom:null,lab:''};
+  const img=h('img',{class:'sg-fzm-img',alt:'',draggable:'false'}), svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('class','sg-fzm-svg');
+  const plan=h('button',{class:'on',onclick:()=>fond('plan')},'Plan cadastral'), ortho=h('button',{onclick:()=>fond('ortho')},'Orthophoto');
+  const map=h('div',{class:'sg-fzm-map',title:'Cliquez sur une parcelle · glisser pour déplacer · molette pour zoomer'},img,svg,
+    h('div',{class:'sg-fzm-zoom'},h('button',{title:'Zoom avant',onclick:e=>{ e.stopPropagation(); zoom(0.5); }},'+'),h('button',{title:'Zoom arrière',onclick:e=>{ e.stopPropagation(); zoom(2); }},'−')),
+    h('div',{class:'sg-fzm-fond'},plan,ortho));
+  const q=h('input',{class:'inp',placeholder:'Rue et numéro, localité — ou n° de parcelle et commune'}); q.value=q0||P.ADRESSE||'';
+  const res=h('div',{class:'sg-fzm-res'}), info=h('div',{class:'sg-fzm-info'}), msg=h('div',{class:'sg-fzm-msg'});
+  const body=h('div',{class:'sg-fzm'},h('div',{class:'sg-fzm-q'},q,h('button',{class:'nx-btn pri',html:nxSvg('search')+'Rechercher',onclick:()=>chercher()}),
+      h('button',{class:'nx-btn',title:'Ouvrir le guichet cartographique cantonal (geo.vd.ch) au même endroit',html:nxSvg('map')+'Voir sur geo.vd.ch',onclick:()=>{ try{ window.open('https://www.geo.vd.ch/?center='+Math.round(st.E)+','+Math.round(st.N)+'&scale='+Math.max(500,Math.round(st.res*3780))+'&wkid=2056','_blank'); }catch(_){} }})),
+    res,h('div',{class:'sg-fzm-corps'},map,h('div',{class:'sg-fzm-cote'},info,msg)));
+  const D=dialog({title:'Recherche de parcelle',width:'min(1180px,95vw)',body,buttons:[{t:'Annuler'},{t:'Valider',pri:true,fn:()=>{ if(!st.sel){ toast('Cliquez d’abord une parcelle sur la carte.',true); return false; } onOk(st.sel,st.lab,st.geom); }}]});
+  const bv=D.bd.parentElement.querySelector('.ft .btn.pri'); if(bv) bv.disabled=true;
+  const W=()=>map.clientWidth||900, Hh=()=>map.clientHeight||520, E=v=>nxE(String(v==null?'':v));
+  const px=(e,n)=>[(e-st.E)/st.res+W()/2,Hh()/2-(n-st.N)/st.res];
+  const dessinerSel=()=>{ svg.setAttribute('width',W()); svg.setAttribute('height',Hh()); svg.setAttribute('viewBox','0 0 '+W()+' '+Hh()); if(!st.geom){ svg.innerHTML=''; return; }
+    const pl=st.geom.type==='MultiPolygon'?st.geom.coordinates:st.geom.type==='Polygon'?[st.geom.coordinates]:[];
+    svg.innerHTML='<path d="'+pl.map(rs=>rs.map(R=>'M'+R.map(([e,n])=>px(e,n).map(v=>v.toFixed(1)).join(',')).join('L')+'Z').join('')).join('')+'" fill="rgba(255,242,102,.38)" stroke="#BD1E42" stroke-width="3" fill-rule="evenodd"/>'; };
+  const draw=()=>{ const w=W(), hh=Hh(), L=st.fond==='ortho'?SG_FZ_ORTHO:SG_FZ_PLAN; img.style.transform=''; svg.style.transform='';
+    img.src=SG_FZ_GEO.wms+'?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS='+L+'&STYLES=&CRS=EPSG:2056&BBOX='+[st.E-w/2*st.res,st.N-hh/2*st.res,st.E+w/2*st.res,st.N+hh/2*st.res].map(v=>v.toFixed(2)).join(',')+'&WIDTH='+w+'&HEIGHT='+hh+'&FORMAT=image/'+(st.fond==='ortho'?'jpeg':'png');
+    dessinerSel(); };
+  const montrer=()=>{ const x=st.sel; if(!x){ info.innerHTML='<p class="sg-fz-hint">Cliquez sur une parcelle de la carte pour la sélectionner.</p>'; return; }
+    info.innerHTML='<h4>Parcelle '+E(x.NUMERO||'—')+'</h4><dl>'+[['Commune',x.COMMUNE],['EGRID',x.EGRID],['Canton',x.CANTON],['Surface (calculée)',x.SURFACE_C?num(x.SURFACE_C,0)+' m²':''],['Zone (statistique fédérale)',x.ZONE_FED],['Cadastre RDPPF',x.RDPPF_ETAT],['Coordonnées',num(x.E,0)+' / '+num(x.N,0)],['Adresse',st.lab]].filter(([,v])=>v).map(([l,v])=>'<dt>'+E(l)+'</dt><dd>'+E(v)+'</dd>').join('')+'</dl>'; };
+  const choisirPoint=async(e0,n0)=>{ msg.textContent='Identification de la parcelle…'; try{ const [x,g]=await Promise.all([sgFzParcelle(e0,n0),sgFzParcelleGeom(e0,n0).catch(()=>null)]);
+      if(!x.NUMERO&&!x.EGRID){ msg.textContent='Aucune parcelle à cet endroit.'; return; }
+      st.sel=Object.assign({},x,{E:Math.round(e0*10)/10,N:Math.round(n0*10)/10,SURFACE_C:Math.round(sgFzAire(g))}); st.geom=g; msg.textContent=''; if(bv) bv.disabled=false; dessinerSel(); montrer(); }
+    catch(e){ msg.textContent='✗ '+(e.message||e); } };
+  const zoom=(f,mx,my)=>{ const nr=Math.min(20,Math.max(0.04,st.res*f)); if(mx!=null){ const ec=st.E+(mx-W()/2)*st.res, nc=st.N-(my-Hh()/2)*st.res; st.E=ec-(mx-W()/2)*nr; st.N=nc+(my-Hh()/2)*nr; } st.res=nr; draw(); };
+  const fond=f=>{ st.fond=f; plan.classList.toggle('on',f==='plan'); ortho.classList.toggle('on',f==='ortho'); draw(); };
+  const chercher=async()=>{ const t=q.value.trim(); if(!t){ toast('Indiquez une rue, une adresse ou un n° de parcelle.',true); return; } res.textContent='Recherche…';
+    try{ const R=await sgFzChercherAdresse(t); res.innerHTML=''; if(!R.length){ res.textContent='Aucun résultat pour « '+t+' ».'; return; }
+      const aller=r=>{ st.E=r.E; st.N=r.N; st.res=0.3; st.lab=r.label; draw(); choisirPoint(r.E,r.N); [...res.children].forEach(b=>b.classList.toggle('on',b._r===r)); };
+      R.forEach(r=>{ const b=h('button',{onclick:()=>aller(r)},r.label); b._r=r; res.append(b); }); if(R.length===1||!st.sel) aller(R[0]); }
+    catch(e){ res.textContent='✗ '+(e.message||e); } };
+  q.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); chercher(); } };
+  let dr=null; map.onmousedown=e=>{ if(e.button!==0||e.target.closest('button')) return; e.preventDefault(); dr={x:e.clientX,y:e.clientY,dx:0,dy:0}; };
+  const mv=e=>{ if(!dr) return; dr.dx=e.clientX-dr.x; dr.dy=e.clientY-dr.y; img.style.transform=svg.style.transform='translate('+dr.dx+'px,'+dr.dy+'px)'; };
+  const up=e=>{ if(!dr) return; const d0=dr; dr=null; if(Math.abs(d0.dx)+Math.abs(d0.dy)>4){ st.E-=d0.dx*st.res; st.N+=d0.dy*st.res; draw(); return; }
+    const b=map.getBoundingClientRect(), mx=e.clientX-b.left, my=e.clientY-b.top; choisirPoint(st.E+(mx-W()/2)*st.res,st.N-(my-Hh()/2)*st.res); };
+  window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+  const fin=new MutationObserver(()=>{ if(!document.body.contains(map)){ window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up); fin.disconnect(); } }); fin.observe(document.body,{childList:true});
+  map.addEventListener('wheel',e=>{ e.preventDefault(); const b=map.getBoundingClientRect(); zoom(e.deltaY>0?1.5:1/1.5,e.clientX-b.left,e.clientY-b.top); },{passive:false});
+  montrer(); setTimeout(()=>{ draw(); if(P.E&&P.N&&(P.EGRID||P.NUMERO)) choisirPoint(+P.E,+P.N); else if(q.value.trim()) chercher(); },0); }
 function sgFzProps(pr){ return Object.entries(pr||{}).filter(([k,v])=>v!=null&&v!==''&&!/^(label|objectid|fid|id|geom.*|is_current_jahr|gde_hist_id)$/i.test(k)&&!/^(bgdi_|link|url)/i.test(k)&&(typeof v==='string'||typeof v==='number')&&String(v).length<80).slice(0,8).map(([k,v])=>k+' : '+v).join(' · '); }
 /* source « geo.admin.ch » : couches fédérales au point de la parcelle (+ bâtiments du RegBL sur la parcelle) */
 async function sgFzGeoAdmin(rec,p,prog){ const P=rec.PARCELLE; if(!(P.E&&P.N)) throw new Error('Indiquez d’abord la parcelle (adresse ou coordonnées).'); const E=+P.E, N=+P.N;
@@ -3074,7 +3127,10 @@ function sgFzDessiner(C,p,st){ const rec=st.rec=sgFzRec(p), P=rec.PARCELLE, ecri
   const mi=pg.querySelector('#sg-fz-mot'); if(mi){ mi.onkeydown=e=>{ if(e.key==='Enter') chercherMot(); }; if(st.mot&&st.mot.length>=2) chercherMot(); }
   const qi=pg.querySelector('#sg-fz-q'); if(qi) qi.onkeydown=e=>{ if(e.key==='Enter') pg._fn.chercher(); };
   Object.assign(pg._fn,{
-    chercher:async()=>{ const q=(qi&&qi.value.trim())||''; if(!q){ toast('Indiquez une adresse ou un lieu.',true); return; } prog('Recherche de l’adresse (geo.admin.ch)…');
+    chercher:()=>sgFzCarteDlg(P,(qi&&qi.value.trim())||'',async(x,lab)=>{   /* fenêtre « Recherche de parcelle » (carte intégrée, 21.10.2026) */
+      if(lab) P.ADRESSE=lab; P.E=x.E; P.N=x.N; ['NUMERO','EGRID','IDENTDN','CANTON','COMMUNE','BFS','RDPPF_ETAT','RDPPF_SERVICE','ZONE_FED'].forEach(k=>{ if(x[k]) P[k]=x[k]; });
+      if(x.SURFACE_C&&!(+P.SURFACE>0)) P.SURFACE=x.SURFACE_C; await save(); toast('Parcelle '+(P.NUMERO||'')+(P.COMMUNE?' ('+P.COMMUNE+')':'')+' reprise.'); redraw(); }),
+    chercherListe:async()=>{   /* ancienne recherche en liste sous le champ (gardée, plus reliée au bouton) */ const q=(qi&&qi.value.trim())||''; if(!q){ toast('Indiquez une adresse ou un lieu.',true); return; } prog('Recherche de l’adresse (geo.admin.ch)…');
       try{ const R=await sgFzChercherAdresse(q); prog(''); const box=pg.querySelector('#sg-fz-res'); box.innerHTML=''; if(!R.length){ box.textContent='Aucun résultat sur geo.admin.ch pour « '+q+' ».'; return; }
         if(R.length===1){ choisir(R[0]); return; } R.forEach(r=>box.append(h('button',{onclick:()=>choisir(r)},r.label+'  —  E '+num(r.E,0)+' · N '+num(r.N,0)))); }
       catch(e){ prog(''); toast('✗ '+(e.message||e),true); } },

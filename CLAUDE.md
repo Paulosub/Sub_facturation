@@ -796,6 +796,27 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Paulo seulement) : garder la charte = supprimer les quatre feuilles, `sg3_visuel.js`, `VISUEL_SCRIPT` et les deux `<style>` de `construire.py` ;
   garder une proposition = la mettre par défaut (`sgVisuel`, `VISUEL_SCRIPT`), puis retirer les autres blocs et le choix (ou fondre ses règles dans
   sg3.css / fx_theme.css).
+- **Annuaire = fiche pleine page + liste escamotable (proposition D, choisie par Paulo le 21.10.2026 ; `subgestion3/sg3_annuaire.js`, bloc 23,
+  styles `.sga-*` en fin de `sg3.css`)** — Paulo : « fais-moi d'autres propositions d'organisation pour que l'utilisation soit simple et efficace »,
+  six options maquettées (A liste + fiche, B tableau → fiche, C tableau qui se replie, D fiche + liste escamotable, E recherche d'abord, F tableau +
+  aperçu ; maquette `proposition_annuaire.js` dans le scratchpad de la session), puis « applique la proposition D ». Contacts ▸ Annuaire
+  (`adr-entites`) ET Fiche contact (`nx-contact`, ⌘K, intervenants…) affichent le même écran (`sgaRendre`) : barre du haut (« Contacts » = liste,
+  touche /, ‹ › et ⌥↑ ⌥↓ = contact précédent / suivant de la liste filtrée, « n sur N · filtre », « Nouveau contact ▾ ») ; fiche au graphisme du
+  tableau de bord du projet — en-tête jaune pâle, grand monogramme (`sgaMono`), type, localité, société de rattachement, IDE, « dans l'annuaire
+  depuis », rôles d'intervenant, CFC, dernier projet ; actions en tuiles à icône (Appeler `tel:`, Courriel, Carte map.search.ch, Favori = épingle du
+  menu, Modifier, Plus) ; onglets Vue d'ensemble (tuiles, Coordonnées, Personnes, Notes, Projets), Adresses (une carte par adresse et ses actions),
+  Personnes (rattachées : CONTACTRELATION_ID = l'entité), Projets (intervenant par ses adresses ou par ses personnes, « par … »), Catégories (retirer,
+  ajouter), Notes (nouvelle, modifier, supprimer), Soumissions (`projecttenderer`) ; onglet mémorisé `sg3_annu_onglet`, onglets vides masqués.
+  Liste par-dessus la fiche (`sgaTiroir`, voile, Échap) : recherche (nom, localité, CFC, courriel, fonction, personnes rattachées), tuiles Tous /
+  Sociétés / Personnes / Autres avec nombres, rôle (Maître d'ouvrage, Entreprise, Architecte, Direction des travaux), regroupement par lettre, index
+  A–Z, ↑ ↓ Entrée ; clic droit = menu de l'entité. Menus `sgaMenu` (sections, icônes, rouge pour supprimer) : « Nouveau contact » (Société, Personne,
+  Famille, Communauté, Association), « Plus » (Coordonnées : nouvelle adresse, rattacher, coordonnées bancaires, copier l'adresse ; Classer : Mes
+  favoris, liste de diffusion, catégories ; Afficher : CFC, propriétés, projets — fenêtres `ownerInfo` ; Imprimer la fiche → visionneuse ; Masquer /
+  réafficher ; Supprimer), menu de la liste (entités masquées, export CSV `sgaCsv`, toutes les adresses, recherche avancée). Mêmes fonctions et
+  mêmes droits que l'écran d'origine (`ch08aCan` contactNew / contactEdit / contactDelete / contactExport + profil « contacts : écriture »).
+  Clavier sur `window` en capture (avant les raccourcis de document : « / » n'ouvre pas la palette ici). État `SGA` : contact `sg3_annu_id`, filtres
+  `sg3_annu_type` / `sg3_annu_role`. L'écran d'origine reste dans DeltaSub.html (seul) ; l'ancien `VIEWS['nx-contact']` de sg3.js est remplacé.
+  Copie d'avant : `subgestion3/_backup_20261021_2133_avant_annuaire_D/`, `SUBGestion3_backup_20261021_2133_avant_annuaire_D.html`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

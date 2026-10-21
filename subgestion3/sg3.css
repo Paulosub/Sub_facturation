@@ -878,3 +878,5 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-dep-z.on{border-color:var(--s-nuit);background:var(--s-jaune3)}
 .sg-dep-l{font-size:12px;color:var(--s-noir);word-break:break-word}
 .nx-row .sg-fph{margin-left:auto;max-width:210px}
+.nx-row .sg-fty{max-width:170px;margin-left:6px}
+.sg-ph-add{margin:2px 0 8px}

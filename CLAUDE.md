@@ -693,6 +693,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   53, rubrique Présentation client ; la page liste aussi les présentations des phases 41 à 53). Faisabilité : inchangé (pas de phases).
   Phase d'un fichier déjà déposé modifiable dans le module Projet (menu de la ligne, `sgFichierPhase` : nouvel enregistrement dans le dossier de
   la phase, ancien retiré, aucun octet copié).
+  **Types de documents (21.10.2026)** : `SG_TYPES_FICH` = Plans, PV (dossier « PV MO »), Présentation (« Présentation client »), Offres, Ingénieur
+  civil, Ingénieurs CVSE, Géomètre, Physique du bâtiment, Autorisations, Correspondance, Photos, Autres documents (« Documents ») — sous-dossier
+  de la phase. Module Projet : dans chaque phase, Plans, PV MO et Présentation client toujours affichés, les autres types dès qu'ils ont des
+  fichiers ; bouton « Ajouter des fichiers » de la phase (type au choix) ; chaque fichier : menus Phase et Type (reclassement). Fenêtre
+  d'ajout : champ « Type de document » (même liste ; phase 33 : + dossier d'enquête), aussi dans les pages Documents et Chantier ▸ Documents.
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

@@ -368,15 +368,19 @@ const SG_ONGLETS=[['vue','Vue d’ensemble'],['factu','Contrat'],['temps','Heure
 const SG_PROJ_PH=[[31,'Avant-projet'],[32,'Projet de l’ouvrage'],[33,'Procédure de demande d’autorisation'],[41,'Appel d’offres, comparaison des offres et propositions d’adjudication']];
 const SG_ENQUETE=[['Formulaire Att_CO','doc','Formulaire Att_CO'],['Questionnaire général','list','Questionnaire général'],['Questionnaire particulier','list','Questionnaire particulier'],['Plan de situation','map','Plan de situation'],['Plans (niveaux, façades, coupes)','ruler','Plans'],['Annexes','folder','Annexes']];
 const SG_FAISA_RUB=[['fb','Documents de base','folder'],['fe','Études','doc'],['fv','Variantes','dup'],['fp','Présentation au client','pdf']];
-/* module Faisabilité : projet classé « faisabilité », ou phase NOMMÉE « faisabilité » (« Faisabilité », « Étude de faisabilité »…), même sans heures
-   (21.10.2026, demande de Paulo), ou phase n° 2 d'un autre nom utilisée (heures saisies ou heures au contrat), ou documents déjà déposés dans
-   Faisabilité */
-function sgFaisaOk(p){ if(typeof sgCatProjet==='function'&&sgCatProjet(p)==='faisabilite') return true;
-  const F=DS.by('projectphase','PROJECT_ID',p.ID).filter(f=>+f.NUMBER===2||/faisabilit/i.test(nm(f)||'')); if(!F.length) return false;
-  if(F.some(f=>/faisabilit/i.test(nm(f)||''))) return true;
-  const ids=new Set(F.map(f=>String(f.ID))); if(F.some(f=>+f.TIMEBUDGET>0)) return true;
-  if(DS.by('timelog','PROJECT_ID',p.ID).some(r=>ids.has(String(r.PHASE_ID))&&+r.TIMEPERIOD>0)) return true;
-  try{ const d=ch03aDossier('document',p.ID,'Faisabilité'); return DS.all('depotfichier').some(f=>String(f.DOSSIER).startsWith(d)); }catch(_){ return false; } }   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */
+/* module Faisabilité (21.10.2026, demande de Paulo) : UNIQUEMENT pour un projet relié à un contrat d'honoraires de faisabilité (non annulé) —
+   type de prestation « Faisabilité » coché dans le calcul d'honoraires (checks.ch_chk_faisa), prestations 4.21 Faisabilité saisies (c.fais), ou
+   contrat intitulé « … faisabilité … » ; garde-fou : documents déjà déposés dans Faisabilité (ils restent accessibles). Les contrats vivent
+   dans le cadre Facturation : tant qu'il n'est pas chargé, on le charge et la page du projet est redessinée (sgFaisaPlusTard). Remplace les
+   règles « projet classé faisabilité » et « phase de faisabilité » du 20–21.10.2026. */
+const sgContratFaisa=c=>{ const ck=(c&&c.detail&&c.detail.checks)||(c&&c.ouvrages&&c.ouvrages[0]&&c.ouvrages[0].detail&&c.ouvrages[0].detail.checks)||{};
+  return !!ck.ch_chk_faisa||(Array.isArray(c.fais)&&c.fais.some(x=>x&&(+x.amt>0||String(x.lbl||'').trim())))||/faisabilit/i.test(c.projet||''); };
+let SG_FZ_ATT=false;
+function sgFaisaPlusTard(p){ if(SG_FZ_ATT) return; SG_FZ_ATT=true;
+  fxEnsure().then(()=>{ SG_FZ_ATT=false; if(fxData()&&VIEW&&VIEW.id==='nx-pdom'&&String(VIEW.arg||'').split('|')[0]===String(p.ID)) go('nx-pdom',VIEW.arg); }).catch(()=>{ SG_FZ_ATT=false; }); }
+function sgFaisaOk(p){ const D=fxData();
+  if(D){ if(sgContratsDuProjet(p,D).some(c=>!c.annule&&sgContratFaisa(c))) return true; } else sgFaisaPlusTard(p);
+  try{ const d=ch03aDossier('document',p.ID,'Faisabilité'); return DS.all('depotfichier').some(f=>String(f.DOSSIER).startsWith(d)); }catch(_){ return false; } }
 function sgOuvrirDomaine(p,dom){ go('nx-pdom',p.ID+'|'+dom); }   // 18.10.2026 : page du projet (domaine en pleine page), « Tous les projets » retiré du menu
 VIEWS['nx-projet']={
   render(m,arg){ const p=DS.get('project',arg); if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. Choisissez un projet avec ⌘K.</div>'); return; }

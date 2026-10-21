@@ -683,6 +683,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   hauteurs depuis le terrain naturel ; distances arrondies à la valeur réglementaire si l'écart vient de la grille). « Appliquer à la parcelle » :
   lit la forme, calcule, remplit la réponse des contraintes d'origine encore vides (statut « à vérifier »), garde `rec.VOLUMETRIE`. Fiche de
   faisabilité, section 5 : tableau des règles et des résultats, plan, 3D et coupe. Indicatif, à vérifier sur le règlement.
+  Erreurs de reconnaissance des PDF numérisés corrigées avant la détection (`sgFzOcr` : « 6 rn », « 8 ni », « 800 ni2 » → m / m²), constatées sur le
+  règlement de Grandvaux du 19.06.1985 (Bourg-en-Lavaux, RDPPF 5613_66282_R01.pdf) le 21.10.2026.
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

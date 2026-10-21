@@ -3185,10 +3185,12 @@ const SG_FZ_RE={
   IUS:[/\b(?:IUS|IBUS|CUS|IU)\b[^.;\d]{0,40}?(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)/,/(?:indice|coefficient) d['’]utilisation(?: du sol)?[^.;\d]{0,40}?(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)/i],
   IM:[/\b(?:IM|IBM)\b[^.;\d]{0,30}?(\d+(?:[.,]\d+)?)/,/indice de masse[^.;\d]{0,30}?(\d+(?:[.,]\d+)?)/i],
   VERTS:[/(\d+(?:[.,]\d+)?)\s*%[^.;]{0,100}?(?:espaces? verts?|pleine terre|surfaces? (?:vertes?|plant[ée]es?|engazonn[ée]es?|perm[ée]ables?))/i,/(?:espaces? verts?|pleine terre)[^.;]{0,90}?(\d+(?:[.,]\d+)?)\s*%/i]};
+/* erreurs de reconnaissance des PDF numérisés : « 6 rn », « 8 ni », « 800 ni2 » → m, m² (règlement de Grandvaux 1985, vérifié le 21.10.2026) */
+const sgFzOcr=t=>String(t||'').replace(/(\d)\s*(?:rn|ni|rri|rrn)(?=\s*[2²]|\b)/g,'$1 m');
 const sgFzNum=s=>{ s=String(s||'').replace(/\s+/g,''); const f=/^(\d+)\/(\d+)$/.exec(s); return f?(+f[2]?+f[1]/+f[2]:NaN):parseFloat(s.replace(',','.')); };
 /* règles détectées dans les contraintes : {k:{v, src, cid}} (première valeur plausible, dans l'ordre des contraintes) */
 function sgFzDetecter(rec){ const out={}, lim=Object.fromEntries(SG_FZ_PARAMS.map(x=>[x[0],x])); lim.H=['H','',' m',2,60];
-  for(const c of rec.CONTRAINTES||[]){ const t=[c.REGLE,c.VALEUR,c.TITRE].filter(Boolean).join(' . ').replace(/[  ]/g,' ');
+  for(const c of rec.CONTRAINTES||[]){ const t=sgFzOcr([c.REGLE,c.VALEUR,c.TITRE].filter(Boolean).join(' . ').replace(/[  ]/g,' '));
     for(const [k,L] of Object.entries(SG_FZ_RE)){ if(out[k]) continue;
       for(const re of L){ const m=re.exec(t); if(!m) continue; let v=sgFzNum(m[1]); if(m[2]==='%'||(k==='COS'&&v>1&&v<=100)) v=v/100; if(k==='NIV'&&/rez/i.test(m[0])) v=v+1;
         const [, , , a, b]=lim[k]; if(!(v>=a&&v<=b)) continue; out[k]={v,src:[c.ARTICLE,c.SOURCE].filter(Boolean).join(' — ')||c.TITRE||'contrainte',cid:c.ID}; break; } } }

@@ -698,6 +698,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   de la phase. Module Projet : dans chaque phase, Plans, PV MO et Présentation client toujours affichés, les autres types dès qu'ils ont des
   fichiers ; bouton « Ajouter des fichiers » de la phase (type au choix) ; chaque fichier : menus Phase et Type (reclassement). Fenêtre
   d'ajout : champ « Type de document » (même liste ; phase 33 : + dossier d'enquête), aussi dans les pages Documents et Chantier ▸ Documents.
+  **Reconnaissance du type et de la phase (21.10.2026)** : la fenêtre d'ajout (`sgDeposerDlg`) a une ligne par fichier (phase et type modifiables) ;
+  `sgAnalyserFichier` propose type et phase d'après le nom (poids 3), l'extension (images → Photos sauf « plan »/échelle dans le nom ; pptx/key →
+  Présentation ; dwg/dxf/ifc → Plans) et le texte des 3 premières pages d'un PDF (`sgPdfDebut`, pdf.js du cadre) : `SG_TYPE_MOTS` (PV, plans —
+  échelle, façades, coupes —, offres, ingénieur civil, CVSE, géomètre, physique du bâtiment, autorisations, correspondance, photos, présentation),
+  phase = numéro écrit (« phase 32 », « 4.33 »), sinon `SG_PHASE_MOTS` (enquête → 33, appel d'offres → 41, exécution → 51, séance de chantier → 52,
+  réception → 53…), sinon date du document (`sgDateDans`) comparée à la feuille d'heures (`sgPhaseALaDate` : sous-phase la plus saisie dans les 45
+  jours). Raison affichée sous chaque fichier ; phase hors de la page signalée. Sans phase : le type reste un sous-dossier (Général ▸ Plans,
+  Chantier ▸ Photos…) quand plusieurs types sont proposés.
+  **Chantier ▸ Documents (21.10.2026)** = module chantier (`sgPdomModulePage` k « chantier ») : phases 41, 51, 52, 53 avec types (comme Projet, menus
+  Phase / Type), Contrôles des coûts, PV de chantier, « Autres fichiers du chantier » (dossier Chantier et fichiers Construction/…, par dossier).
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

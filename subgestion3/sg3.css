@@ -880,3 +880,9 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-row .sg-fph{margin-left:auto;max-width:210px}
 .nx-row .sg-fty{max-width:170px;margin-left:6px}
 .sg-ph-add{margin:2px 0 8px}
+/* fenêtre d'ajout : une ligne par fichier, phase et type proposés (21.10.2026) */
+.sg-dep-v{font-size:12px;color:var(--s-gris)}
+.sg-dep-l{display:flex;flex-direction:column;gap:8px}
+.sg-dep-r{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:4px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--s-filet)}
+.sg-dep-r>b{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sg-dep-r .inp{width:100%;font-size:12px}
+.sg-dep-r small{grid-column:1/-1;color:var(--s-gris);font-size:11.5px}

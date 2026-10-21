@@ -509,6 +509,12 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-card>h4 .sg-an button:hover{color:var(--s-noir)}
 .nx-card>h4 .sg-an button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
 .nx-card>h4 .sg-an button:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
+/* page du projet ▸ Frais : années dans la barre du domaine (21.10.2026), même présentation que dans les titres de cartes */
+.sg-fr-an{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:2px 12px;margin-left:14px}
+.sg-fr-an button{border:0;background:none;padding:2px 0 3px;font:inherit;font-size:12px;font-weight:400;color:var(--s-gris);cursor:pointer;white-space:nowrap}
+.sg-fr-an button:hover{color:var(--s-noir)}
+.sg-fr-an button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
+.sg-fr-an button:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
 .nx-card>h4 .sg-an+.sg-ha{margin-left:18px}
 .sg-hscroll{max-height:62vh;overflow:auto}
 .sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}

@@ -654,6 +654,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Équipe et adresses (`SG_PMOD_G` : Faisabilité avant Projet ; les groupes du moteur placés dans le rendu de `nx-pdom`). Groupe « Planification »
   (Planification RH, Analyse de planification RH) retiré de la page du projet le 21.10.2026 (`SG_PDOM_G`) : la planification RH reste dans
   Ressources humaines.
+  **Frais du projet (21.10.2026)** : page du projet ▸ Suivi du projet ▸ Frais = `sgFraisModule(C,p)` (au lieu du domaine du moteur, qui n'affichait
+  qu'un mois) : tous les frais, choix de l'année « Toutes · 2026 · 2025… » dans la barre (`.sg-fr-an`, comme Factures et Heures ; `sg3_frais_an`),
+  mêmes colonnes et actions (editCost / delCost), tri par date décroissante, nombre et total. Le chapitre Affaires garde le domaine d'origine.
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

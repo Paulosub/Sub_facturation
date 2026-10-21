@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 21.10.2026 15:11 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 21.10.2026 15:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -518,6 +518,12 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .nx-card>h4 .sg-an button:hover{color:var(--s-noir)}
 .nx-card>h4 .sg-an button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
 .nx-card>h4 .sg-an button:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
+/* page du projet ▸ Frais : années dans la barre du domaine (21.10.2026), même présentation que dans les titres de cartes */
+.sg-fr-an{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:2px 12px;margin-left:14px}
+.sg-fr-an button{border:0;background:none;padding:2px 0 3px;font:inherit;font-size:12px;font-weight:400;color:var(--s-gris);cursor:pointer;white-space:nowrap}
+.sg-fr-an button:hover{color:var(--s-noir)}
+.sg-fr-an button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
+.sg-fr-an button:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
 .nx-card>h4 .sg-an+.sg-ha{margin-left:18px}
 .sg-hscroll{max-height:62vh;overflow:auto}
 .sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}
@@ -27001,6 +27007,21 @@ function sgPdomListe(){ const ok=new Set(ch08bDomains(DOMAINS)), adm=sgAdmin();
   const hon=['Offres d’honoraires','Contrats honoraires','Avancement des prestations'], cha=['Calcul des coûts','Devis général','Soumission','Contrôle des coûts'];
   const prof=d=>adm||(hon.includes(d)?sgDroit('contrats','lecture'):d==='Factures'?sgDroit('factures','lecture'):cha.includes(d)?sgDroit('chantier','lecture'):d==='Documents'?sgDroit('documents','lecture'):true);
   return SG_PDOM_G.map(([g,L])=>[g,L.filter(d=>(d==='Documents'||(ok.has(d)&&domainUsed(d)))&&prof(d))]).filter(([,L])=>L.length); }
+/* Frais d'un projet en pleine page (page du projet ▸ Suivi du projet ▸ Frais, 21.10.2026) : TOUS les frais du projet (le domaine du moteur n'en
+   montrait qu'un mois), choix de l'année comme les Factures et les Heures (« Toutes · 2026 · 2025… », .sg-an, choix gardé sg3_frais_an, « Toutes »
+   si le projet n'a pas de frais cette année-là, sans choix s'ils sont tous de la même année) ; mêmes colonnes et mêmes actions que le domaine du
+   moteur (ajouter, modifier, supprimer : editCost / delCost), tri par date, la plus récente en tête, total. Le chapitre Affaires garde le domaine
+   d'origine (mois par mois). */
+function sgFraisModule(C,p){ const top=h('div',{class:'col',style:{flex:1,border:0}}), pane=h('div',{class:'pane'}), o={};
+  const tous=()=>DS.by('projectcost','PROJECT_ID',p.ID), sel=h('span',{class:'sg-an sg-fr-an',role:'group','aria-label':'Année'});
+  const draw=()=>{ const A=[...new Set(tous().map(r=>String(r.DATEYEAR||'')).filter(y=>/^\d{4}$/.test(y)))].sort().reverse(), s0=String(nxLS.get('sg3_frais_an','')||''), y=A.length>1&&A.includes(s0)?s0:'';
+    const rows=tous().filter(r=>!y||String(r.DATEYEAR)===y);
+    sel.replaceChildren(...(A.length>1?[['','Toutes'],...A.map(a=>[a,a])]:[]).map(([v,t])=>h('button',{class:v===y?'on':'','aria-pressed':String(v===y),title:v?'Frais de '+v:'Tous les frais du projet',onclick:()=>{ nxLS.set('sg3_frais_an',v); draw(); }},t)));
+    grid(pane,Object.assign(o,{cols:[...COSTCOLS,{k:'col',t:'Collaborateur',w:140,f:r=>esc(staffName(DS.get('staff',r.STAFF_ID)))},{k:'ph',t:'Phase',w:140,f:r=>esc(nm(DS.get('projectphase',r.PHASE_ID)))}],
+      rows,sort:['d',-1],onDbl:r=>editCost(r),empty:y?'Aucun frais en '+y+'.':'Aucun frais pour ce projet.'}));
+    head.setCount((y?y+' · ':'Toutes les années · ')+rows.length+' frais · total '+num(rows.reduce((s0,r)=>s0+pcAmount(r),0))+' CHF'); };
+  const head=phead([{i:'plus',fn:()=>editCost(null,{project:p.ID,date:new Date()})},{i:'edit',fn:()=>o.sel&&editCost(DS.get('projectcost',o.sel))},{i:'minus',fn:()=>o.sel&&delCost(DS.get('projectcost',o.sel))},sel],{count:1});
+  top.append(head,pane); C.append(top); draw(); }
 /* Documents d'un projet en pleine page (page du projet ▸ Documents, 20.10.2026) : le moteur n'a pas de domaine Documents ; tous les fichiers du
    dépôt du projet par dossier (sgDossierLib), ajout de fichiers dans le dossier Général (droit « documents : dépôt ») */
 function sgDocsModule(C,p){ DS.need(['depotfichier']).catch(()=>{}).then(()=>{ if(!C.isConnected) return;
@@ -27028,7 +27049,7 @@ VIEWS['nx-pdom']={
         h('b',{},(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'')),chips);
       const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
       const on=chips.querySelector('.on'); if(on) setTimeout(()=>on.scrollIntoView({block:'nearest',inline:'center'}),0);
-      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else domainView(C,p2,dom); } }; this.drawC(); return; }
+      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Frais') sgFraisModule(C,p2); else domainView(C,p2,dom); } }; this.drawC(); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'');                                        /* page du projet : groupes repliables de domaines */
     const ouvert=/^#\d+$/.test(dom||'')?+dom.slice(1):-1;                                            // 18.10.2026 : tout replié à l'arrivée ; au retour d'un domaine, son groupe ouvert
     const logs=DS.by('timelog','PROJECT_ID',p.ID), lim30=dayKey(new Date(Date.now()-30*864e5)), tot=logs.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0),

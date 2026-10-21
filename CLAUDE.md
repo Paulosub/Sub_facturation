@@ -650,6 +650,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Faisabilité `c.fais`, ou contrat intitulé « … faisabilité … » ; contrats lus dans le cadre Facturation, page redessinée quand il est chargé,
   `sgFaisaPlusTard`), garde-fou : documents déjà déposés dans Faisabilité ; avant : phase de faisabilité, documents déposés, ou analyse de parcelle existante ; projet uniquement de faisabilité : sans le groupe Projet) avec Parcelle &
   règlements, Documents de base, Études, Variantes, Présentation au client, Fiche de faisabilité (`SG_PMOD`, `SG_PMOD_G`, compteurs
+  **Ordre des groupes de la page du projet (21.10.2026)** : Faisabilité, Projet, Chantier, puis Équipe et adresses, Suivi du projet, Honoraires et
+  facturation, Planification (`SG_PMOD_G` : Faisabilité avant Projet ; Chantier remonté juste après les modules dans le rendu de `nx-pdom`).
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

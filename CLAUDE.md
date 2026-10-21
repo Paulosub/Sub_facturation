@@ -657,6 +657,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Frais du projet (21.10.2026)** : page du projet ▸ Suivi du projet ▸ Frais = `sgFraisModule(C,p)` (au lieu du domaine du moteur, qui n'affichait
   qu'un mois) : tous les frais, choix de l'année « Toutes · 2026 · 2025… » dans la barre (`.sg-fr-an`, comme Factures et Heures ; `sg3_frais_an`),
   mêmes colonnes et actions (editCost / delCost), tri par date décroissante, nombre et total. Le chapitre Affaires garde le domaine d'origine.
+  Titres des groupes de la page du projet sans le nombre « n domaines / n modules » (21.10.2026).
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

@@ -2595,7 +2595,7 @@ VIEWS['nx-pdom']={
           +((pa0=>'<div class="sg-fig" title="D’après les heures saisies dans la feuille d’heures"><div class="n txt">'+(pa0?nxE(nm(pa0.ph)):'—')+'</div><div class="t">'+(pa0?'phase actuelle'+(pa0.sp?' : '+nxE(nm(pa0.sp)):'')+(pa0.recent?'':' (dernière saisie le '+dfr(diso(pa0.date))+')'):'phase actuelle : aucune heure saisie par phase')+'</div></div>')(sgPhaseActuelle(p)))
           +'</div>')   /* marge bénéficiaire retirée de la page du projet (19.10.2026, à la demande ; elle reste au tableau de bord) */
       +'<div class="sg-pgrps">'+(G.length?G.map(([g,L],i)=>'<section class="sg-pgrp'+(i===ouvert?' on':'')+'"><button class="sg-pgrp-h" data-fn="grp" aria-expanded="'+(i===ouvert)+'">'
-          +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span><span class="c">'+L.length+' '+(mods.includes(g)?'module':'domaine')+(L.length>1?'s':'')+'</span>'+nxSvg('next','chev')+'</button>'
+          +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(nxE).join(' · ')+'</small></span>'   /* nombre de domaines / modules retiré du titre du groupe (21.10.2026) */+nxSvg('next','chev')+'</button>'
           +'<div class="sg-tiles">'+L.map(d=>tuile(d,g)).join('')+'</div></section>').join(''):'<div class="nx-empty">Aucun domaine accessible avec votre profil.</div>')+'</div></div>';
     const pg=nxPage(m,html);
     Object.assign(pg._fn,{grp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); },dom:b=>{ const d=b.dataset.dom; /* Documents : page pleine (sgDocsModule) comme les autres domaines, depuis le retrait des onglets Documents et Projet (20.10.2026) */ go('nx-pdom',p.ID+'|'+d); },

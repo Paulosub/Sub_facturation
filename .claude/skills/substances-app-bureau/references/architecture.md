@@ -54,6 +54,9 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
   `editFactureSaisie(id)`, `chConfirm`, `toast`, `uiSaveState`. Facture : `num`, `type`, `date`, `ech`, `statut`
   (`Payée`/`Impayée`…), `date_paiement`, `contrat_id`, `cl_nom`, `_ttc`, `_fttc`. Contrat : `id`, `affaire` (code = numéro
   d'affaire), `nom`, `projet`, `httc`, `envoye`, `signe`, `annule`, `termine`.
+- Numéro de facture (21.10.2026) : `updateInvNum` ne numérote que les NOUVELLES factures ; facture déjà enregistrée
+  (`faFactureEnregistree()`) : numéro et description gardés, un type choisi dans la liste ne change que le code final.
+  Confirmations de suppression : `chMsgSupprContrat(c)` (contrats), `deleteFacture` (une seule facture retirée).
 
 ## 4. SUBGestion 3 (`subgestion3/`)
 
@@ -82,6 +85,8 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
   `nxPalIndex`, `nxNewMenu`, `VIEWS[…].render`) : garder ce principe, une enveloppe = un `{ const x0=x; x=function(){…} }`.
   - Données propres : IndexedDB « SUBGestion » (`SGDB.get/put/cles`, magasins `reglages`, `fichiers`) ; serveur de
     sauvegarde `SG_SRV` (`sgSrv()` → `SAUV.srv`), routes `/gestion/sauver|liste|lire`, `/fichiers/ranger|lire`, `/html2pdf`.
+  - Sauvegarde : `sgSauver(manuel)` (destination vérifiée d'abord), `sgSauvAJour()`, `sgSauvEchec()` (échec + modifications en attente →
+    étiquette rouge du pied du menu, point « Sauvegarde en échec » de `sgATraiter`, carte d'accueil `#sg-at`), `sgSauvAff()`.
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

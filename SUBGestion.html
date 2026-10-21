@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<!-- SUBGestion — app unique Facturation + DeltaSub, générée le 19.10.2026 17:31 par subgestion/construire.py
+<!-- SUBGestion — app unique Facturation + DeltaSub, générée le 21.10.2026 07:31 par subgestion/construire.py
      à partir de Facturation.html et DeltaSub.html. NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -3802,6 +3802,10 @@ function uiApplyFactDraft(d){
     if(d.smode && typeof saisieMode!=='undefined' && d.smode!==saisieMode){ saisieMode=d.smode; applySaisieModeUI(); }
     Object.entries(d.fields||{}).forEach(([id,v])=>{ const e=document.getElementById(id); if(e) e.value=v; });
     Object.entries(d.checks||{}).forEach(([id,v])=>{ const e=document.getElementById(id); if(e) e.checked=!!v; });
+    // Facture déjà enregistrée (2026-10-21) : un brouillon pris avant la correction de la numérotation peut porter un numéro
+    // recalculé (autre année ou n° d'ordre) ; sans la case « Manuel », c'est le numéro enregistré qui est repris.
+    { const inv = d.fid && factures.find(f => f.id === d.fid), base = n => (String(n||'').match(/^FA\d{2}\.\d+/) || [''])[0];
+      if(inv && inv.num && !(d.checks||{}).f_num_manuel && base(gv('f_num')) !== base(inv.num)) sv('f_num', inv.num); }
     if(Array.isArray(d.hl)){ HL=JSON.parse(JSON.stringify(d.hl)); buildHL(); }
     if(typeof faAdaptSaisie==='function') faAdaptSaisie();
     if(typeof upd_f==='function') upd_f();
@@ -7342,6 +7346,17 @@ function chDeleteMandat(){
     {title:'Supprimer le mandat forfaitaire', yesText:'Supprimer définitivement', yesColor:'#b04a4a'}
   );
 }
+/* Message de confirmation de la suppression d'un contrat (2026-10-21) : code d'affaire ET projet, factures reliées
+   (elles restent, mais sans contrat : client et projet manquent à leur PDF), caractère définitif. */
+function chMsgSupprContrat(c){
+  const nF = factures.filter(f => f.contrat_id === c.id).length, pl = nF > 1;
+  const fTxt = !nF ? '' : '\n\n' + (pl ? nF + ' factures de ce contrat restent enregistrées' : '1 facture de ce contrat reste enregistrée')
+    + ' mais ne ' + (pl ? 'seront' : 'sera') + ' plus reliée' + (pl ? 's' : '') + ' à aucun contrat (client et projet absents de '
+    + (pl ? 'leur' : 'son') + ' PDF).';
+  return 'Supprimer le contrat « ' + (c.affaire || c.num || c.id) + ' »' + (c.projet ? ' — ' + c.projet : '') + ' ?\n\n'
+    + 'Le contrat et TOUTES ses versions seront définitivement retirés de la liste.' + fTxt
+    + '\n\n⚠️ Cette action est IRRÉVERSIBLE : une fois supprimé, on ne peut pas revenir en arrière.';
+}
 /* Supprime le CONTRAT courant (celui édité dans Calcul honoraires) de la liste, avec confirmation IRRÉVERSIBLE. */
 function chDeleteContrat(){
   const tgt=document.getElementById('ch_target');
@@ -7350,7 +7365,7 @@ function chDeleteContrat(){
   if(!c){ if(typeof toast==='function') toast('Aucun contrat enregistré à supprimer — enregistrez-le d\'abord.', true); return; }
   const nom=(c.affaire||c.num||id);
   chConfirm(
-    'Supprimer le contrat « '+nom+' » de la liste ?\n\nLe contrat et TOUTES ses versions seront définitivement retirés.\n\n⚠️ Cette action est IRRÉVERSIBLE : une fois supprimé, on ne peut pas revenir en arrière.',
+    chMsgSupprContrat(c),
     function(){
       contrats = contrats.filter(x=>x.id!==id);
       persist();
@@ -7372,7 +7387,7 @@ function chDeleteContratRow(id){
   if(!c){ if(typeof toast==='function') toast('Contrat introuvable.', true); return; }
   const nom=(c.affaire||c.num||id);
   chConfirm(
-    'Supprimer le contrat « '+nom+' » de la liste ?\n\nLe contrat et TOUTES ses versions seront définitivement retirés.\n\n⚠️ Cette action est IRRÉVERSIBLE : une fois supprimé, on ne peut pas revenir en arrière.',
+    chMsgSupprContrat(c),
     function(){
       contrats = contrats.filter(x=>x.id!==id);
       persist();
@@ -8226,6 +8241,8 @@ function applyCalcHono(asNewVersion) {
         {title:'Contrat signé — verrouillé', yesText:'＋ Nouvelle version', yesColor:'#0a6e84'});
       return;
     }
+    // AVENANT (2026-10-20) : une nouvelle version créée après la signature (contrat signé, ou avenant déjà en cours : signedV) est un avenant
+    const estAvenant = !!(asNewVersion && (c.signe || c.signedV));
     if(asNewVersion && c.signe){
       // la DERNIÈRE VERSION SIGNÉE continue de faire foi (p.ex. pour les honoraires du DG)
       c.signedV={v:Math.max(...c.versions.map(x=>x.v||1)), httc:c.httc, hht:c.hht,
@@ -8235,7 +8252,7 @@ function applyCalcHono(asNewVersion) {
     if(asNewVersion){
       // nouvelle version : la précédente est conservée dans l'historique
       const nextV = Math.max(...c.versions.map(x=>x.v||1)) + 1;
-      c.versions.push({v:nextV, comment:vComment, date:today, data: JSON.parse(JSON.stringify(base))});
+      c.versions.push(Object.assign({v:nextV, comment:vComment, date:today, data: JSON.parse(JSON.stringify(base))}, estAvenant?{avenant:true}:{}));
       verMsg = ' (version ' + nextV + ')';
     } else {
       // mise à jour de la version courante (dernière) — pas de nouvelle entrée
@@ -8351,9 +8368,13 @@ function saveContrat() {
 }
 
 function deleteContrat() {
-  if(!curCid || !confirm('Supprimer ce contrat ?')) return;
-  contrats = contrats.filter(c => c.id !== curCid);
-  persist(); renderContratsTable(); updateContratSelect(); newContrat();
+  const c = curCid && contrats.find(x => x.id === curCid);
+  if(!c) return;
+  // modale intégrée qui nomme le contrat — jamais confirm() natif (2026-10-21)
+  chConfirm(chMsgSupprContrat(c), function(){
+    contrats = contrats.filter(x => x.id !== c.id);
+    persist(); renderContratsTable(); updateContratSelect(); newContrat();
+  }, {title:'Supprimer le contrat', yesText:'Supprimer définitivement', yesColor:'#b04a4a'});
 }
 
 function upd_c() {
@@ -8495,7 +8516,7 @@ function chSetContratFlag(id, flag, val){
   if(flag==='signe' && !val && c.signe){
     renderContratsTable();   // ré-affiche la case cochée tant que la levée du verrou n'est pas confirmée
     chConfirm('Retirer l\'état « signé » de ce contrat ?\n\nIl redeviendra modifiable sans passer par une nouvelle version.',
-      ()=>{ c.signe=false; c.signedV=null; persist(); renderContratsTable(); },
+      ()=>{ c.signe=false; c.signedV=null; const V=c.versions||[]; if(V.length) delete V[V.length-1].signeLe; persist(); renderContratsTable(); },
       {title:'Contrat signé', yesText:'Retirer « signé »', yesColor:'#b08800'});
     return;
   }
@@ -8508,6 +8529,8 @@ function chSetContratFlag(id, flag, val){
   }
   c[flag] = !!val;
   if(flag==='signe' && val){ if(!c.envoye) c.envoye = true; c.annule = false; c.signedV = null; }   // signé ⇒ envoyé, jamais annulé ; la version courante devient LA version signée
+  // date de signature (2026-10-20) : posée sur la version courante (dernière) quand on coche « signé », retirée quand on décoche
+  if(flag==='signe'){ const V=chEnsureVersions(c), last=V[V.length-1]; if(val) last.signeLe=(new Date()).toISOString().slice(0,10); else if(last) delete last.signeLe; }
   if(flag==='annule' && val && !c.envoye) c.envoye = true;                        // on n'annule qu'un contrat envoyé
   // TERMINÉ et ANNULÉ archivent automatiquement le contrat (demande 2026-09-20) ; retirer l'état le
   // désarchive, sauf si l'autre motif d'archivage automatique est encore actif.
@@ -8812,8 +8835,9 @@ function buildTypeDropdown(existingCode) {
   const nextCode = 'AC' + String(nextN).padStart(2, '0');
 
   const opts = [];
-  // Si on charge une facture existante avec un code AC différent du suivant → l'ajouter en premier
-  if(existingCode && existingCode.match(/^AC\d+$/) && existingCode !== nextCode) {
+  // Facture existante dont le code diffère du suivant → l'ajouter en premier. Tout code est gardé (2026-10-21) : avant,
+  // seuls les AC… l'étaient — NF01, NFF… manquaient à la liste (type vide, numéro tronqué à l'ouverture de la facture).
+  if(existingCode && ![nextCode, 'F', 'FF'].includes(existingCode)) {
     opts.push(existingCode);
   }
   opts.push(nextCode);
@@ -8843,10 +8867,29 @@ function toggleNumManuel() {
     inp.style.borderColor = numManuel ? '#E6AC00' : '#b0c4e8';
   }
   if(lbl) lbl.textContent = numManuel ? 'N° Facture (manuel)' : 'N° Facture (auto)';
-  if(!numManuel) updateInvNum();   // retour à la numérotation automatique
+  if(!numManuel) updateInvNum();   // retour à la numérotation automatique (facture déjà enregistrée : le numéro affiché est gardé)
 }
 
+/* La facture du formulaire de saisie est-elle déjà enregistrée ? (2026-10-21) */
+function faFactureEnregistree() { return !!curFid && factures.some(f => f.id === curFid); }
+
 function updateInvNum(existingCode) {
+  // FACTURE DÉJÀ ENREGISTRÉE (2026-10-21) : son numéro n'est JAMAIS recalculé ni vidé, sa description est gardée. Avant,
+  // l'ouvrir (Modifier ou Ouvrir le PDF) remplaçait le numéro par « FA<année en cours>.<n° suivant>_<affaire>.<type> » (ou le
+  // vidait sans code d'affaire) et « Mettre à jour » enregistrait ce faux numéro. Seule la liste des types est mise à jour ;
+  // choisir un autre type dans la liste (action explicite) ne change que le code final du numéro (…AC03 → …FF) et la
+  // description. Changer de contrat garde le numéro. Autre numéro : case « Manuel ».
+  if(faFactureEnregistree()) {
+    const num = gv('f_num'), code = parseInvType(num);
+    const typeCode = buildTypeDropdown(existingCode || code);
+    if(!code && !existingCode) { const t = document.getElementById('f_num_type'); if(t) t.selectedIndex = -1; }   // numéro sans code de type : aucun type affiché
+    if(existingCode && existingCode !== code) {
+      if(!numManuel && /^(AC\d+|F|FF)$/.test(code || '')) sv('f_num', num.slice(0, num.length - code.length) + typeCode);
+      sv('f_type', getTypeLabel(typeCode));
+    }
+    upd_f();
+    return;
+  }
   let affaire;
   if(saisieMode==='nonordinaire') affaire = (gv('f2_affaire')||'').trim();
   else { const c = contrats.find(x => x.id === gv('f_contrat')); affaire = c && c.affaire; }
@@ -9082,11 +9125,22 @@ function saveFacture() {
 
 function deleteFacture() {
   if(!curFid) return;
-  // Modale intégrée (confirm() natif peu fiable dans ce contexte — cf. chConfirm)
-  chConfirm('Supprimer cette facture ?\n\nCette action est définitive.', function(){
-    factures = factures.filter(x => x.id !== curFid);
+  // Modale intégrée (confirm() natif peu fiable dans ce contexte — cf. chConfirm). Depuis le 2026-10-21 : le message nomme
+  // la facture (numéro, description, affaire et projet) et UNE seule facture est retirée — des factures reprises peuvent
+  // partager le même identifiant, l'ancien filtre les supprimait toutes.
+  const inv = factures.find(x => x.id === curFid);
+  const c = inv && !inv.sansContrat ? contrats.find(x => x.id === inv.contrat_id) : null;
+  const aff = inv ? [inv.sansContrat ? inv.cl_affaire : (c && c.affaire), inv.sansContrat ? inv.cl_projet : (c && c.projet)].filter(Boolean).join(' — ') : '';
+  const msg = inv
+    ? 'Supprimer la facture « ' + (inv.num || 'sans numéro') + ' »' + (inv.type ? ' (' + inv.type + ')' : '') + ' ?'
+      + (aff ? '\nAffaire : ' + aff : '') + (inv.date ? '\nDate : ' + DL(inv.date) : '')
+      + '\n\n⚠️ Cette action est DÉFINITIVE : la facture ne pourra pas être récupérée.'
+    : 'Abandonner cette nouvelle facture ?\n\nElle n\'est pas encore enregistrée : la saisie sera effacée.';
+  chConfirm(msg, function(){
+    const i = factures.findIndex(x => x.id === curFid);
+    if(i >= 0) factures.splice(i, 1);
     persist(); if(typeof uiClearFactDraft==='function') uiClearFactDraft(); newFacture(); goTab('factures');
-  }, {title:'Supprimer la facture', yesText:'Supprimer'});
+  }, {title: inv ? 'Supprimer la facture' : 'Nouvelle facture', yesText: inv ? 'Supprimer définitivement' : 'Abandonner la saisie', yesColor:'#b04a4a'});
 }
 
 function loadFacture(id) {

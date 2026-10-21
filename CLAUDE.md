@@ -695,6 +695,34 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   faite d'après 10 références transmises par Paulo (commit 2a7c210, annulé par le commit suivant). Copie des sources de la refonte :
   `subgestion3/_backup_20261020_2234_refonte_visuelle_retiree/` ; maquettes : canevas https://claude.ai/artifact/LHj8a8Kvd35QvzTG7VqpMD.
   Le graphisme en vigueur reste celui de la charte (bleu nuit, jaune, fond blanc, filets noirs) : ne pas réappliquer la refonte sans demande.
+- **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
+  `subgestion3/_backup_20261021_0724_avant_urgences/`.
+  1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).
+     Bug présent depuis le premier commit : ouvrir une facture (Modifier, « Ouvrir » le PDF, dernière facture chargée au démarrage) passait par
+     `fillFacture` → `onSelectContrat` → `updateInvNum`, qui réécrivait « FA<année en cours>.<n° suivant>_<affaire du contrat>.<type> » (vidait le
+     numéro sans code d'affaire ; codes absents de la liste — NF01, NFF… — : numéro tronqué et description vidée) ; « Mettre à jour » l'enregistrait
+     et le PDF l'imprimait. Désormais : numéro ET description gardés ; seule la liste des types est refaite (`buildTypeDropdown` garde tout code
+     existant ; numéro sans code : aucun type affiché) ; choisir un autre type dans la liste (action explicite) ne remplace que le code final
+     (…AC03 → …FF, si ce code est AC.., F ou FF) et la description ; changer de contrat garde le numéro ; autre numéro : case « Manuel » (décochée,
+     le numéro affiché reste). Numérotation automatique (année en cours, n° suivant) pour une NOUVELLE facture seulement. Brouillon de reprise
+     (`uiApplyFactDraft`) : sans « Manuel », un numéro d'une autre année / d'un autre n° d'ordre est remplacé par le numéro enregistré.
+     Données de départ (363 factures, seed du 28.09.2026) : aucune renumérotée (identifiant = numéro d'origine partout) ; année du numéro ≠ année
+     de la date : FA24.45_24ORM.FF (03.02.2025) seulement ; sans date : FA20.06_20DRE.MCA.FF ; deux paires de factures DIFFÉRENTES ont le même
+     identifiant (FA24.14_22GUS.FF, FA18.11_18BHA.FF : la 2e de chaque paire ne peut pas être ouverte) et le n° FA20.14 sert deux fois.
+  2. `sgVoirContrat` (`sg3_plus.js`) : le test « Contrat introuvable » était avalé par le commentaire `//` de sa ligne (erreur technique avec un
+     contrat supprimé) ; plus aucun code après un `//` dans `sg3.js` / `sg3_plus.js` (contrôle par analyse des commentaires, 21.10.2026).
+  3. Suppressions : `chMsgSupprContrat(c)` — code d'affaire, projet, factures reliées (elles restent, mais sans client ni projet dans leur PDF),
+     IRRÉVERSIBLE — pour la corbeille de la liste des contrats (`chDeleteContratRow`), le bouton du calcul d'honoraires (`chDeleteContrat`) et
+     l'ancien formulaire masqué (`deleteContrat`, plus de `confirm()` natif). Facture (`deleteFacture`) : numéro, description, affaire, date ; UNE
+     seule facture retirée (`splice`), même si deux partagent l'identifiant ; facture pas encore enregistrée : « Abandonner la saisie ».
+  4. **Sauvegarde en échec** (bloc 1 de `sg3_plus.js`) : `sgSauvEchec()` = dernière tentative ratée (aucune destination, refus, erreur) +
+     modifications en attente, jamais pour la base du bureau → étiquette rouge « Sauvegarde en échec » au pied du menu (`.who span.echec`, clic →
+     Réglages ▸ Données ; menu réduit : filet rouge autour des initiales, `#nx-who.sg-echec`), point « Sauvegarde en échec » dans À traiter (carte
+     de l'accueil `#sg-at` et pastille rafraîchies dès que l'état change) ; Réglages ▸ Données : état selon la destination RÉELLE (serveur
+     joignable, ou dossier choisi et autorisé) — plus de « prochaine automatiquement » sans destination ; `sgSauver` vérifie la destination avant
+     de préparer la copie ; nouvel essai toutes les 5 min pendant l'échec et dès que Chrome rend l'accès au dossier.
+  5. **Cockpit** (`const cockpitData` de `Facturation.html` : chiffres écrits dans le code) : NON modifié, en attente de la décision de Paulo —
+     le calculer depuis les contrats et factures, ou afficher un bandeau « données de démonstration ».
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

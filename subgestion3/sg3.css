@@ -79,6 +79,9 @@ b,strong,th{font-weight:700}
 .nx-foot .who b{display:block;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nx-foot .who span{font-size:11px;color:rgba(255,255,255,.6);font-weight:300;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nx-foot .who span.alerte{color:#ffb3c0;font-weight:400}
+/* sauvegarde en échec (21.10.2026) : étiquette rouge au pied du menu ; menu réduit : filet rouge autour des initiales */
+.nx-foot .who span.echec{display:inline-block;max-width:100%;color:#fff;background:var(--s-rouge);font-weight:400;padding:1px 6px;margin-top:2px;cursor:pointer}
+#nx-who.sg-echec .nx-av{box-shadow:0 0 0 2px var(--s-rouge)}
 .nx-ico-btn{width:32px;height:32px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 32px}
 .nx-ico-btn:hover{border-color:#fff;background:rgba(255,255,255,.08)}
 .nx-ico-btn svg{width:16px;height:16px}

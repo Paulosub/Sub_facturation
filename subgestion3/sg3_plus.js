@@ -21,7 +21,10 @@ const sgDepuis=t=>{ if(!t) return 'jamais'; const m=Math.round((Date.now()-t)/60
 /* ═══ 1. SAUVEGARDE AUTOMATIQUE DE LA BASE DE GESTION ═══════════════════════════════════════════════════
    Après chaque modification (2 min sans nouvelle saisie), à l'ouverture si la dernière date de plus de 12 h, puis toutes les
    30 min s'il reste des modifications. Destination : serveur de sauvegarde (fact_backup_server.py, « Sauvegarde Gestion »,
-   rotation 48 h / 60 jours / mensuelle) ; sans serveur : dossier choisi une fois (Chrome) ; sinon rappel dans « À traiter ». */
+   rotation 48 h / 60 jours / mensuelle) ; sans serveur : dossier choisi une fois (Chrome) ; sinon rappel dans « À traiter ».
+   21.10.2026 : « Sauvegarde en échec » (dernière tentative ratée — aucune destination, refus, erreur — et modifications en attente,
+   sgSauvEchec) en rouge au pied du menu (clic : Réglages ▸ Données) et dans À traiter ; nouvel essai toutes les 5 min tant que
+   l'échec dure, et dès que Chrome rend l'accès au dossier choisi ; destination vérifiée avant de préparer la copie. */
 const SAUV={etat:nxLS.get('sg3_sauvegarde',{}), t:null, enCours:false, srv:null};
 async function sgSrv(force){ if(SAUV.srv&&!force&&Date.now()-SAUV.srv.t<60000) return SAUV.srv.ok;
   try{ const r=await fetch(SG_SRV+'/ping',{cache:'no-store'}); const d=await r.json(); SAUV.srv={ok:!!(d.ok&&d.gestion),pdf:!!d.pdf,t:Date.now(),d}; }
@@ -36,19 +39,21 @@ async function sgBaseBlob(){ const parts=['{"format":"deltasub-base","version":1
 async function sgDossierSauv(){ try{ return await SGDB.get('reglages','dossierSauvegarde'); }catch(_){ return null; } }
 async function sgSauver(manuel){
   if(SAUV.enCours) return false; SAUV.enCours=true; sgSauvAff('en cours');
-  try{ const {gz,n}=await sgBaseBlob(), nom='deltasub_base_'+sgHorodatage()+'.json.gz'; let etat=null;
-    if(await sgSrv(true)){ const r=await fetch(SG_SRV+'/gestion/sauver',{method:'POST',headers:{'Content-Type':'application/gzip'},body:gz}), d=await r.json();
+  try{ const nom='deltasub_base_'+sgHorodatage()+'.json.gz'; let etat=null;
+    /* destination cherchée AVANT de préparer la copie (21.10.2026) : sans destination, un essai automatique ne coûte qu'un appel */
+    const srv=await sgSrv(true), hd=srv?null:await sgDossierSauv(), dir=!!hd&&(await hd.queryPermission({mode:'readwrite'}))==='granted';
+    if(!srv&&!dir&&!manuel){ SAUV.etat=Object.assign({},SAUV.etat,{erreur:'Aucune destination : lancez le serveur de sauvegarde ou choisissez un dossier.',essai:Date.now()}); nxLS.set('sg3_sauvegarde',SAUV.etat); return false; }
+    const {gz,n}=await sgBaseBlob();
+    if(srv){ const r=await fetch(SG_SRV+'/gestion/sauver',{method:'POST',headers:{'Content-Type':'application/gzip'},body:gz}), d=await r.json();
       if(!d.ok) throw new Error(d.error||'refus du serveur');
       etat={ou:'serveur',lieu:d.dossier,nom:d.nom}; }
-    else{ const hd=await sgDossierSauv();
-      if(hd&&(await hd.queryPermission({mode:'readwrite'}))==='granted'){
-        const fh=await hd.getFileHandle(nom,{create:true}), w=await fh.createWritable(); await w.write(gz); await w.close();
-        const noms=[]; for await (const [k] of hd.entries()) if(/^deltasub_base_\d{8}_\d{4}\.json\.gz$/.test(k)) noms.push(k);
-        noms.sort().reverse().slice(40).forEach(k=>hd.removeEntry(k).catch(()=>{}));   // les 40 plus récentes
-        etat={ou:'dossier',lieu:hd.name,nom}; }
-      else if(manuel){ const a=h('a',{href:URL.createObjectURL(gz),download:nom}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000);
-        etat={ou:'téléchargement',lieu:'Téléchargements',nom}; }
-      else { SAUV.etat=Object.assign({},SAUV.etat,{erreur:'Aucune destination : lancez le serveur de sauvegarde ou choisissez un dossier.',essai:Date.now()}); nxLS.set('sg3_sauvegarde',SAUV.etat); return false; } }
+    else if(dir){
+      const fh=await hd.getFileHandle(nom,{create:true}), w=await fh.createWritable(); await w.write(gz); await w.close();
+      const noms=[]; for await (const [k] of hd.entries()) if(/^deltasub_base_\d{8}_\d{4}\.json\.gz$/.test(k)) noms.push(k);
+      noms.sort().reverse().slice(40).forEach(k=>hd.removeEntry(k).catch(()=>{}));   // les 40 plus récentes
+      etat={ou:'dossier',lieu:hd.name,nom}; }
+    else { const a=h('a',{href:URL.createObjectURL(gz),download:nom}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000);
+      etat={ou:'téléchargement',lieu:'Téléchargements',nom}; }
     SAUV.etat=Object.assign(etat,{quand:Date.now(),taille:gz.size,n,seq:DS.seq,erreur:null}); nxLS.set('sg3_sauvegarde',SAUV.etat);
     if(manuel) toast('Base sauvegardée ('+num(n,0)+' enregistrements) : '+(etat.ou==='serveur'?'Sauvegarde Gestion':etat.lieu)+'.');
     return true; }
@@ -56,20 +61,32 @@ async function sgSauver(manuel){
     if(manuel) toast('✗ Sauvegarde impossible : '+(e.message||e),true); return false; }
   finally{ SAUV.enCours=false; sgSauvAff(); } }
 const sgSauvAJour=()=>SAUV.etat.quand&&SAUV.etat.seq===DS.seq;
+/* échec : la dernière tentative a échoué et des modifications attendent (jamais pour la base du bureau, sauvegardée par le NAS) */
+const sgSauvEchec=()=>!(typeof dsEstBureau==='function'&&dsEstBureau())&&!!SAUV.etat.erreur&&!sgSauvAJour();
 function sgSauvPlanifier(){ clearTimeout(SAUV.t); SAUV.t=setTimeout(()=>{ if(!sgSauvAJour()) sgSauver(false); },120000); sgSauvAff(); }
 function sgSauvAff(enCours){ const f=document.querySelector('#nx-who .who span'); if(!f) return;
   if(typeof dsEstBureau==='function'&&dsEstBureau()){ f.textContent='Base du bureau (NAS)'; f.className=''; f.title='Sauvegardes faites par le serveur du bureau (toutes les heures) et par Hyper Backup.'; return; }
-  const e=SAUV.etat, vieux=!e.quand||Date.now()-e.quand>48*3600e3;
-  f.textContent=enCours?'Sauvegarde…':(e.quand?(sgSauvAJour()?'Sauvegardée ':'Modifiée · sauvée ')+sgDepuis(e.quand):'Jamais sauvegardée');
-  f.className=vieux||e.erreur&&!sgSauvAJour()?'alerte':''; f.title=e.quand?'Dernière sauvegarde : '+new Date(e.quand).toLocaleString('fr-CH')+(e.lieu?' — '+e.lieu:''):''; }
+  const e=SAUV.etat, vieux=!e.quand||Date.now()-e.quand>48*3600e3, ko=!enCours&&sgSauvEchec();
+  f.textContent=enCours?'Sauvegarde…':ko?'Sauvegarde en échec':(e.quand?(sgSauvAJour()?'Sauvegardée ':'Modifiée · sauvée ')+sgDepuis(e.quand):'Jamais sauvegardée');
+  f.className=ko?'echec':vieux?'alerte':'';
+  f.title=ko?'Sauvegarde automatique en échec : '+e.erreur+'\n'+(e.quand?'Dernière sauvegarde réussie : '+new Date(e.quand).toLocaleString('fr-CH')+(e.lieu?' — '+e.lieu:''):'Aucune sauvegarde réussie')+'\nCliquer : Réglages ▸ Données & sauvegarde'
+    :e.quand?'Dernière sauvegarde : '+new Date(e.quand).toLocaleString('fr-CH')+(e.lieu?' — '+e.lieu:''):'';
+  f.onclick=ko?()=>go('nx-data'):null;
+  const w=document.getElementById('nx-who'); if(w) w.classList.toggle('sg-echec',ko);
+  /* passage en échec ou retour à la normale : « À traiter » (pastille du menu, carte de l'accueil) mis à jour tout de suite */
+  if(!enCours&&ko!==!!SAUV.ko){ SAUV.ko=ko;
+    if(NX.booted) sgATraiter().then(A=>{ const at=document.getElementById('sg-at'); if(at) at.innerHTML=sgATraiterHtml(A); }).catch(()=>{}); } }
 async function sgChoisirDossier(){ if(!window.showDirectoryPicker){ sgAlert('Le choix d’un dossier demande Google Chrome (ou Edge, Brave, Arc).'); return; }
   try{ const hd=await showDirectoryPicker({id:'sg-sauvegarde',mode:'readwrite'}); await SGDB.put('reglages',hd,'dossierSauvegarde'); toast('Dossier de sauvegarde : '+hd.name+'.'); await sgSauver(true); if(VIEW&&VIEW.id==='nx-data') go('nx-data'); }
   catch(e){ if(e&&e.name!=='AbortError') toast('✗ '+(e.message||e),true); } }
 /* dossier choisi : Chrome redemande l'autorisation à chaque session → on la redemande au premier clic dans l'app */
 document.addEventListener('pointerdown',async function auto(){ document.removeEventListener('pointerdown',auto,true);
-  const hd=await sgDossierSauv(); if(hd&&(await hd.queryPermission({mode:'readwrite'}))==='prompt'){ try{ await hd.requestPermission({mode:'readwrite'}); }catch(_){} } },true);
+  const hd=await sgDossierSauv(); if(hd&&(await hd.queryPermission({mode:'readwrite'}))==='prompt'){ try{ await hd.requestPermission({mode:'readwrite'}); }catch(_){} }
+  /* essai raté faute d'accès au dossier (21.10.2026) : nouvel essai dès que l'accès est rendu */
+  try{ if(hd&&sgSauvEchec()&&(await hd.queryPermission({mode:'readwrite'}))==='granted') sgSauver(false); }catch(_){} },true);
 DS.on(ts=>{ if(ts.some(t=>t!=='sg_meta')) sgSauvPlanifier(); });
-setInterval(()=>{ if(NX.booted&&!sgSauvAJour()&&(!SAUV.etat.quand||Date.now()-SAUV.etat.quand>30*60e3)) sgSauver(false); },5*60e3);
+/* toutes les 5 min : sauvegarde si la dernière date de plus de 30 min — ou tout de suite en cas d'échec (21.10.2026) */
+setInterval(()=>{ if(NX.booted&&!sgSauvAJour()&&(!SAUV.etat.quand||Date.now()-SAUV.etat.quand>30*60e3||SAUV.etat.erreur)) sgSauver(false); },5*60e3);
 setInterval(()=>sgSauvAff(),60e3);
 function sgSauvDemarrage(){ if(!SAUV.etat.quand||Date.now()-SAUV.etat.quand>12*3600e3||!sgSauvAJour()) setTimeout(()=>sgSauver(false),20000); }
 async function sgRestaurer(nom){ sgConfirm('Restaurer la sauvegarde « '+nom+' » ?\n\nLa base de gestion de ce navigateur sera REMPLACÉE par cette sauvegarde (la base actuelle est d’abord sauvegardée).',async()=>{
@@ -189,8 +206,16 @@ VIEWS['nx-data']={ render(m){ const li=DS.linfo||{}, n=t=>DS.all(t).length, cmds
   Object.assign(pg._fn,{now:()=>sgSauver(true).then(()=>go('nx-data')),dir:()=>sgChoisirDossier(),exp:()=>lbExport(),imp:()=>lbImportDlg(false),rap:()=>sgRapatrier()});
   cmds.forEach((g,gi)=>g.items.forEach((x,i)=>{ pg._fn['c'+gi+'_'+i]=x.fn; }));
   (async()=>{ const srv=await sgSrv(true), hd=await sgDossierSauv(), et=document.getElementById('sg-sv-etat'), de=document.getElementById('sg-sv-dest'), li2=document.getElementById('sg-sv-liste'); if(!et) return;
-    et.textContent=sgSauvAJour()?'À jour':(e.quand?'Modifications depuis la dernière sauvegarde (prochaine automatiquement)':'Aucune sauvegarde');
-    de.textContent=srv?'Serveur de sauvegarde — '+SAUV.srv.d.gestion:hd?'Dossier « '+hd.name+' » (Chrome)':'Aucune : lancez le serveur de sauvegarde (Mac Studio) ou choisissez un dossier';
+    /* état selon la destination RÉELLE (21.10.2026) : serveur joignable, ou dossier choisi ET autorisé ; avant, « prochaine
+       automatiquement » s'affichait même sans aucune destination */
+    const perm=hd?await hd.queryPermission({mode:'readwrite'}).catch(()=>'denied'):null, dest=srv||perm==='granted', ko=sgSauvEchec(), aj=sgSauvAJour();
+    et.textContent=aj?'À jour'
+      :!dest?(e.quand?'Modifications NON sauvegardées : aucune destination disponible':'Aucune sauvegarde : aucune destination disponible')
+      :ko?'Échec de la dernière sauvegarde (voir « Dernier incident ») : nouvel essai automatique dans 5 minutes au plus'
+      :e.quand?'Modifications depuis la dernière sauvegarde (la prochaine se fera automatiquement)':'Aucune sauvegarde : la première se fera automatiquement';
+    if(!aj&&(!dest||ko)) et.style.color='var(--s-rouge)';
+    de.textContent=srv?'Serveur de sauvegarde — '+SAUV.srv.d.gestion:hd?'Dossier « '+hd.name+' » (Chrome)'+(perm==='granted'?'':' — accès à autoriser de nouveau : « Choisir un dossier »'):'Aucune : lancez le serveur de sauvegarde (Mac Studio) ou choisissez un dossier';
+    if(!dest) de.style.color='var(--s-rouge)';
     if(!srv){ li2.innerHTML='<div class="nx-empty">Serveur de sauvegarde injoignable : les sauvegardes du dossier choisi s’ouvrent depuis le Finder (Importer).</div>'; return; }
     try{ const d=await (await fetch(SG_SRV+'/gestion/liste')).json();
       li2.innerHTML=(d.fichiers||[]).length?'<table class="nx-tbl"><tr><th>Sauvegarde</th><th class="r">Taille</th><th></th></tr>'+d.fichiers.slice(0,15).map(f=>'<tr><td>'+nxE(new Date(f.mtime*1000).toLocaleString('fr-CH'))+'</td><td class="r">'+(f.taille/1e6).toFixed(1)+' Mo</td><td class="r"><button class="nx-btn" style="height:28px" data-nom="'+nxE(f.nom)+'">Restaurer</button></td></tr>').join('')+'</table>':'<div class="nx-empty">Aucune sauvegarde sur le serveur.</div>';
@@ -453,7 +478,8 @@ function sgFactKpis(x,ah,an){ const ttc=f=>+f._ttc||+f.ttc||0, auj=today();   //
 /* « Ouvrir » un contrat depuis le projet (20.10.2026) : le contrat en PDF fidèle (lecture seule, openContratPdf du cadre), DERNIÈRE version
    seulement — le contrat signé ou, s'il y en a une après la signature, le dernier avenant — sans le choix des autres versions ; état de la version à
    la place du commentaire ; en fermant l'aperçu, retour à l'écran d'où l'on venait. Arg de fx-contrats : « cv:<id> ». */
-function sgVoirContrat(w,id){ const c=((fxData()||{}).c||[]).find(x=>x.id===id);   // « contrats » n'est pas une propriété du cadre (let) if(!c){ toast('Contrat introuvable.',true); return; }
+function sgVoirContrat(w,id){ const c=((fxData()||{}).c||[]).find(x=>x.id===id);   /* « contrats » n'est pas une propriété du cadre (let) */
+  if(!c){ toast('Contrat introuvable.',true); return; }
   const V=w.chGetVersions(c), i=V.length-1, v=V[i]||{}, n=v.v||i+1, sv=c.signedV&&c.signedV.v;
   const ci=sgContratInfo(c), etat=ci.nature+' — '+ci.etat.toLowerCase()+(sv&&n>sv?' ; la version '+sv+' est signée':'');
   w.openContratPdf(id,i);
@@ -731,7 +757,8 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
 /* ═══ 5. À TRAITER AUJOURD'HUI (accueil + pastille du menu) ═════════════════════════════════════════════════ */
 let SG_AT={n:0,groupes:[]};
 async function sgATraiter(){ const G=[], td=today(), me=nxMe(), now=new Date();
-  const e=SAUV.etat; if(sgAdmin()&&!(typeof dsEstBureau==='function'&&dsEstBureau())&&(!e.quand||Date.now()-e.quand>48*3600e3)) G.push({k:'sv',t:'Sauvegarde',ico:'db',go:'nx-data',items:[{t:e.quand?'Dernière sauvegarde '+sgDepuis(e.quand):'Base jamais sauvegardée',s:e.erreur||'Sauvegarder maintenant ou choisir un dossier'}]});
+  const e=SAUV.etat; if(sgAdmin()&&sgSauvEchec()) G.push({k:'sv',t:'Sauvegarde en échec',ico:'db',go:'nx-data',items:[{t:e.quand?'Dernière sauvegarde réussie '+sgDepuis(e.quand):'Aucune sauvegarde réussie de la base',s:e.erreur}]});   /* 21.10.2026 */
+  else if(sgAdmin()&&!(typeof dsEstBureau==='function'&&dsEstBureau())&&(!e.quand||Date.now()-e.quand>48*3600e3)) G.push({k:'sv',t:'Sauvegarde',ico:'db',go:'nx-data',items:[{t:e.quand?'Dernière sauvegarde '+sgDepuis(e.quand):'Base jamais sauvegardée',s:e.erreur||'Sauvegarder maintenant ou choisir un dossier'}]});
   let D=null; try{ await fxEnsure(); D=fxData(); }catch(_){}
   if(D){ const ech=D.f.filter(f=>fxUnpaid(f)&&f.ech&&f.ech<td).sort((a,b)=>cmp(a.ech,b.ech));
     if(ech.length&&sgDroit('factures','lecture')) G.push({k:'fe',t:'Factures échues à relancer',ico:'receipt',go:'fx-factures',items:ech.map(f=>({t:(f.num||'(sans numéro)')+' · '+nxCHF((+f._ttc||0)+(+f._fttc||0))+' CHF',s:[fxClient(D,f),'échue le '+dfr(f.ech)].filter(Boolean).join(' · '),go:'fx-saisie',arg:'f:'+f.id}))});
@@ -756,7 +783,7 @@ function sgATraiterHtml(A){ if(!A.groupes.length) return nxCard('c12','À traite
     +g.items.slice(0,g.max||4).map(x=>'<div class="nx-row" '+(x.go?'data-go="'+x.go+'" data-arg="'+nxE(x.arg||'')+'"':x.ref?'data-ref="'+x.ref+'"':x.fn?'data-fn="'+x.fn+'"':'data-go="'+g.go+'"')+'><div class="t"><b>'+nxE(x.t)+'</b><span>'+nxE(x.s||'')+'</span></div></div>').join('')
     +(g.items.length>(g.max||4)?'<div class="nx-row" data-go="'+g.go+'"><div class="t"><span>… et '+(g.items.length-(g.max||4))+' autre(s)</span></div></div>':'')+'</div>').join('')+'</div>','<span class="n">'+A.n+'</span>'); }
 { const r0=VIEWS['nx-home'].render; VIEWS['nx-home'].render=function(m){ r0.call(this,m); const pg=m.querySelector('.nx-page'), right=pg&&pg.querySelector('.sg-split>div:last-child'); if(!right) return;
-    const at=h('div',{class:'nx-grid',style:{marginBottom:'30px'},html:SG_AT.groupes.length?sgATraiterHtml(SG_AT):'<div class="nx-card c12"><h4>À traiter aujourd’hui</h4><div class="nx-empty">Vérification…</div></div>'}); right.prepend(at);
+    const at=h('div',{id:'sg-at',class:'nx-grid',style:{marginBottom:'30px'},html:SG_AT.groupes.length?sgATraiterHtml(SG_AT):'<div class="nx-card c12"><h4>À traiter aujourd’hui</h4><div class="nx-empty">Vérification…</div></div>'}); right.prepend(at);
     pg._fn.temps=()=>sgSaisieRapide({});
     const b=pg.querySelector('.acts [data-go="h-saisie"]'); if(b){ b.removeAttribute('data-go'); b.dataset.fn='temps'; b.insertAdjacentHTML('afterend','<button class="nx-btn" data-fn="chrono">'+nxSvg('clock')+'Démarrer le minuteur</button>'); pg._fn.chrono=el=>sgMinuteurMenu(el); }
     sgATraiter().then(A=>{ if(at.isConnected) at.innerHTML=sgATraiterHtml(A); }).catch(e=>console.error(e)); }; }

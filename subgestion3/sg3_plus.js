@@ -2556,7 +2556,7 @@ VIEWS['nx-pdom']={
   render(m,arg){ const [pid,dom,foc]=String(arg||'').split('|'), p=DS.get('project',pid); this.drawC=null;   /* foc : rubrique du module à montrer (bloc 21) */
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
     if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
-    nxRecent('p',p.ID); const G0=sgPdomListe(), M=sgPdomModules(p), mods=M.map(([g])=>g), G=[...M,...G0.filter(([g])=>g==='Chantier'),...G0.filter(([g])=>g!=='Chantier')], doms=G0.flatMap(([,L])=>L);   /* ordre (21.10.2026) : Faisabilité, Projet, Chantier, puis les autres groupes */   /* M : modules Projet / Faisabilité en tête (bloc 21, 20.10.2026) */
+    nxRecent('p',p.ID); const G0=sgPdomListe(), M=sgPdomModules(p), mods=M.map(([g])=>g), G=[...G0.filter(([g])=>g==='Honoraires et facturation'),...M,...G0.filter(([g])=>g==='Chantier'),...G0.filter(([g])=>g!=='Chantier'&&g!=='Honoraires et facturation')], doms=G0.flatMap(([,L])=>L);   /* ordre (21.10.2026) : Honoraires et facturation, Faisabilité, Projet, Chantier, puis les autres groupes */   /* M : modules Projet / Faisabilité en tête (bloc 21, 20.10.2026) */
     if(dom&&(mods.includes(dom)||doms.includes(dom))){                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
       VIEW.nxTitle=dom+' · '+(p.NUMBER||p.TITLE||'');
       const chips=h('div',{class:'sg-pdom-chips'},...[...mods,...doms].map(d=>h('button',{class:[d===dom?'on':'',mods.includes(d)?'mod':''].filter(Boolean).join(' ')||null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));

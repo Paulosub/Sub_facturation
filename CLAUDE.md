@@ -759,6 +759,29 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   faite d'après 10 références transmises par Paulo (commit 2a7c210, annulé par le commit suivant). Copie des sources de la refonte :
   `subgestion3/_backup_20261020_2234_refonte_visuelle_retiree/` ; maquettes : canevas https://claude.ai/artifact/LHj8a8Kvd35QvzTG7VqpMD.
   Le graphisme en vigueur reste celui de la charte (bleu nuit, jaune, fond blanc, filets noirs) : ne pas réappliquer la refonte sans demande.
+- **Visuel de l'app : « Charte Substances » ou « Papier et encre », au choix (21.10.2026, À L'ESSAI)** — Paulo : « ajouter le visuel papier et
+  encre (la version 3), conserver la version actuelle et pouvoir passer de l'une à l'autre ; dès que j'aurai testé, je demanderai de passer
+  définitivement sur la version choisie ». Version 3 des quatre propositions de refonte (canevas https://claude.ai/artifact/DsFX5SWBRTNqVZBUqefc4u) :
+  noir #0B0B0B et blanc, gris #F3F2EE / #D9D7D0 / #6E6C66, un seul signal, le rouge #C8321E (échu, dépassement, suppression) ; filets d'un pixel ;
+  une carte noire pour le chiffre clé (`.nx-kpi.hero`, tuile « Heures saisies » de la vue d'ensemble du projet) ; boutons en pilule ; libellés,
+  codes, dates et onglets en chasse fixe et capitales espacées ; menu blanc, module ouvert en noir ; onglets du projet en barre noire ; heures par
+  mois en sucettes ; graphiques du cockpit en niveaux de gris ; icônes au trait de 1,5 px redessinées. Polices : Geist / Geist Mono si elles sont
+  installées sur le poste, sinon Helvetica Neue et Menlo (aucune police embarquée ; Geist est sous licence libre OFL, à embarquer seulement sur
+  demande). **Le visuel de la charte reste le défaut et n'a pas changé.**
+  Choix par poste (navigateur) : `localStorage` `sg3_visuel` = `charte` (défaut) | `papier` — Réglages ▸ **Visuel de l'app** (`nx-visuel`,
+  ouvert à tous les profils, aperçu des deux visuels), bouton du pied de menu (`#sg-visuel`, bascule), ⌘K « Visuel : … ». Mécanisme : attribut
+  `data-visuel="papier"` sur `<html>` de la coquille ET du cadre Facturation, posé avant le premier affichage par `VISUEL_SCRIPT`
+  (`subgestion3/construire.py`) ; toutes les règles dans `subgestion3/visuel_papier.css` (coquille et moteur, `<style id="sg3-visuel">`) et
+  `subgestion3/fx_visuel_papier.css` (cadre Facturation, `<style id="sg-fx-visuel">`, après fx_theme.css), imbriquées sous
+  `html[data-visuel="papier"]` — sans l'attribut, rien ne s'applique. Les variables de la charte (`--s-noir`, `--s-nuit`, `--s-jaune`…) y pointent
+  sur celles du visuel ; chasse fixe par la variable `--s-font` (sg3.css impose `--s-font` à tous les éléments avec !important) ; couleurs écrites
+  dans le code (#003346, #FFF266, #98C21F…) reprises par sélecteurs d'attribut `style` ; PDF, impressions et aperçus « PDF fidèle »
+  (`.offre-page`) jamais touchés. `subgestion3/sg3_visuel.js` (bloc 22, concaténé après sg3_plus.js) : `sgVisuel`, `sgVisuelAppliquer(v,
+  redessiner)`, `sgVisuelBascule`, `sgVisuelCadre` (enveloppe de `fxEnsure`), icônes `SG_NXI_PAPIER` ↔ `SG_NXI_CHARTE` (copie de `NXI`),
+  commandes de la palette (enveloppe de `nxPalIndex`). Copies d'avant : `subgestion3/_backup_20261021_1856_avant_visuel_papier/`,
+  `SUBGestion3_backup_20261021_1856_avant_visuel_papier.html`. **Passer définitivement** (sur demande de Paulo seulement) : garder la charte =
+  supprimer les trois fichiers, `VISUEL_SCRIPT` et les deux `<style>` de `construire.py` ; garder « Papier et encre » = défaut `papier` dans
+  `sgVisuel` et le script de démarrage (ou fondre les règles dans sg3.css / fx_theme.css), puis retirer le choix.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

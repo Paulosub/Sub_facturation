@@ -60,6 +60,9 @@ COQUILLE = '''<div id="boot"><div id="boot-logo"></div><span id="boot-msg">Ouver
 </div></div>
 '''
 
+# visuel de l'app (21.10.2026) : « papier » → attribut data-visuel sur <html> avant le premier affichage (coquille et cadre Facturation)
+VISUEL_SCRIPT = "<script>try{if(JSON.parse(localStorage.getItem('sg3_visuel'))==='papier')document.documentElement.setAttribute('data-visuel','papier')}catch(e){}</script>"
+
 # Facturation dans le cadre : sans en-tête, sans reprise de session propre, navigation signalée à la coquille
 FX_HEAD = '''<script>window.SG_EMBED=1;</script>
 <style id="sg-fx">#hdr{display:none!important}body{background:#fff}</style>
@@ -107,7 +110,7 @@ def facturation_embarquee(fa):
     i = fa.find('</head>')
     if not (0 < i < fa.find('<body')):
         sys.exit('✗ Facturation.html : structure <head>/<body> inattendue')
-    fa = fa[:i] + FX_HEAD + fa[i:]
+    fa = fa[:i] + FX_HEAD + VISUEL_SCRIPT + fa[i:]
     fa = remplacer(fa, "'sa_ui_state', UI_DRAFT_KEY", "'sa_ui_state_sg3', UI_DRAFT_KEY", quoi='UI_STATE_KEY')
     fa = remplacer(fa, "if(!st || !st.tab || st.tab==='home') return;", "if(window.SG_EMBED || !st || !st.tab || st.tab==='home') return;", quoi='reprise de session Facturation')
     # graphiques du cockpit et du rapport : séries aux couleurs de la charte (nuit, turquoise, orange, vert, bleu, rouge, gris)
@@ -122,7 +125,9 @@ def facturation_embarquee(fa):
     if not fa.rstrip().endswith('</html>'):
         sys.exit('✗ Facturation.html ne se termine pas par </html>')
     k = fa.rfind('</body>')
-    theme = '<style id="sg-fx-theme">\n' + lire(os.path.join(ICI, 'fx_theme.css')) + '</style>\n'   # graphisme commun, après toutes les feuilles de Facturation
+    # graphisme commun, après toutes les feuilles de Facturation, puis le visuel « Papier et encre » (à l'essai)
+    theme = ('<style id="sg-fx-theme">\n' + lire(os.path.join(ICI, 'fx_theme.css')) + '</style>\n'
+             + '<style id="sg-fx-visuel">\n' + lire(os.path.join(ICI, 'fx_visuel_papier.css')) + '</style>\n')
     return fa[:k] + theme + FX_PONT + fa[k:]
 
 
@@ -141,7 +146,7 @@ def main():
         sys.exit('✗ sigle « S » introuvable dans logo_substances.svg')
     sc = 48 / 454
     sigle = f'<path fill="#fff" transform="translate({10 - 646 * sc:.2f} {8 - 1708 * sc:.2f}) scale({sc:.5f})" d="{m.group(1)}"/>'
-    js = lire(os.path.join(ICI, 'sg3.js')) + '\n' + lire(os.path.join(ICI, 'sg3_plus.js'))   # coquille + améliorations (1 à 10)
+    js = lire(os.path.join(ICI, 'sg3.js')) + '\n' + lire(os.path.join(ICI, 'sg3_plus.js')) + '\n' + lire(os.path.join(ICI, 'sg3_visuel.js'))   # coquille + améliorations (1 à 10) + visuel de l'app
     js = remplacer(js, '`__LOGO__`', '`' + logo + '`', quoi='logo')
     js = remplacer(js, '`__SIGLE__`', '`' + sigle + '`', quoi='sigle')
 
@@ -156,7 +161,8 @@ def main():
     i = s.find('<style>'); j = s.find('</style>', i)
     if not (0 < i < j < s.find('</head>')):
         sys.exit('✗ feuille de style principale de DeltaSub.html introuvable')
-    s = s[:i] + '<style id="sg3-css">\n' + lire(os.path.join(ICI, 'sg3.css')) + '</style>' + s[j + len('</style>'):]
+    s = (s[:i] + VISUEL_SCRIPT + '<style id="sg3-css">\n' + lire(os.path.join(ICI, 'sg3.css')) + '</style>'
+         + '<style id="sg3-visuel">\n' + lire(os.path.join(ICI, 'visuel_papier.css')) + '</style>' + s[j + len('</style>'):])
 
     # cadre : la coquille remplace l'en-tête, la barre d'outils et l'arbre de DeltaSub (mêmes identifiants conservés)
     i = s.find('<div id="boot">'); j = s.find("<script>\n'use strict';", i)

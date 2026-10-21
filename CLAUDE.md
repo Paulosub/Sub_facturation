@@ -670,6 +670,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   + −, clic → `sgFzParcelle` + géométrie (`sgFzParcelleGeom`, identify returnGeometry) surlignée, données à droite ; « Valider » (désactivé sans
   parcelle) copie n°, EGRID, commune, canton, BFS, zone fédérale, service RDPPF, coordonnées du clic, adresse et surface calculée (`sgFzAire`, si
   vide). « Voir sur geo.vd.ch » : `https://www.geo.vd.ch/?center=E,N&scale=…&wkid=2056` (hôte ajouté à `HOTES_ADMIS` de nas/nettoyer.py).
+  **Faisabilité ▸ « Application des règles à la parcelle » (21.10.2026, bloc avant `VIEWS['nx-faisa']`)** : carte entre Contraintes et Conclusion
+  (`sgFzVolCarte`, `sgFzVolBrancher`). Règles lues dans le texte des contraintes (`SG_FZ_RE` : distance aux limites, entre bâtiments, hauteur à la
+  corniche / au faîte, niveaux, COS — fraction, décimal ou % —, IUS/CUS, IM, espaces verts %) ou saisies (`rec.REGLES`, prioritaires) ; forme de la
+  parcelle `rec.PARCELLE.GEOM` (anneau extérieur LV95, identify returnGeometry ; reprise aussi depuis la fenêtre « Recherche de parcelle »).
+  Calcul `sgFzVolumetrie` : aire d'implantation = cases d'une grille (≈ 260 sur le grand côté) à ≥ distance des limites, contour tracé, simplifié
+  (Douglas-Peucker 1,5 case) et lissé (`sgFzInset`, `sgFzLisser`) ; surface de la fiche si elle correspond au plan (± 10 %), sinon celle du plan
+  avec avertissement ; emprise max = min(COS × S, aire) ; SPd max = IUS × S ; volume enveloppe = aire × corniche (+ demi-tranche jusqu'au faîte) ;
+  espaces verts min. Dessins SVG : plan des contraintes (`sgFzPlanSvg` : bande non constructible hachurée, aire d'implantation, distances, côtés,
+  nord, échelle, légende), modèle 3D axonométrique orientable (`sgFzModeleSvg`, curseurs orientation / élévation, faîte en pointillé), coupe
+  longitudinale / transversale par le centre (`sgFzAxeCoupe`, axe principal ; terrain : profile.json geo.admin.ch swissALTI3D, `sgFzProfil` ;
+  hauteurs depuis le terrain naturel ; distances arrondies à la valeur réglementaire si l'écart vient de la grille). « Appliquer à la parcelle » :
+  lit la forme, calcule, remplit la réponse des contraintes d'origine encore vides (statut « à vérifier »), garde `rec.VOLUMETRIE`. Fiche de
+  faisabilité, section 5 : tableau des règles et des résultats, plan, 3D et coupe. Indicatif, à vérifier sur le règlement.
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /
   « Faisabilité » dans la barre des domaines. Le tableau de bord (`nx-projet`) reste un écran d'analyse (rien n'y est remis) ; `chantier` reste dormant.

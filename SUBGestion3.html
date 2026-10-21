@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 21.10.2026 16:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 21.10.2026 17:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -869,6 +869,16 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-fzm-msg{margin-top:10px;color:var(--s-gris)}
 .dlg .ft .btn:disabled{opacity:.4;cursor:not-allowed}
 @media (max-width:820px){.sg-fzm-corps{grid-template-columns:1fr}}
+
+/* Faisabilité ▸ application des règles à la parcelle, plan, modèle 3D, coupe (21.10.2026) */
+.sg-fzv{display:flex;flex-direction:column;gap:14px}
+.sg-fzv-par td{vertical-align:middle}.sg-fzv-in{white-space:nowrap}.sg-fzv-in .inp{width:90px;text-align:right;margin-right:6px}.sg-fzv-in span{color:var(--s-gris);font-size:12px}
+.sg-fzv-src{font-size:12px;color:var(--s-gris)}
+.sg-fzv-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.sg-fzv-sl{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--s-gris)}
+.sg-fzv-dessin{border:1px solid var(--s-filet);background:#fff;min-height:200px;overflow:auto}
+.sg-fzv-svg{display:block;width:100%;height:auto;max-height:78vh}
+.sg-fzv-alerte{margin:0;padding:8px 12px;border-left:3px solid var(--s-rouge);background:#fbecef;font-size:12.5px}
 </style>
 </head>
 <body>
@@ -27596,6 +27606,7 @@ function sgFzDessiner(C,p,st){ const rec=st.rec=sgFzRec(p), P=rec.PARCELLE, ecri
       +(parTheme.length?'<table class="nx-tbl sg-fz-ct"><tr><th>Contrainte et règle</th><th>Source · article</th><th>Valeur</th><th>Réponse du projet</th><th>Statut</th><th></th></tr>'+parTheme.map(([k,l,cs])=>'<tr class="grp"><td colspan="6">'+E(l)+' <small>('+cs.length+')</small></td></tr>'+cs.map(ctRow).join('')).join('')+'</table>'
         :'<div class="nx-empty">'+(rec.CONTRAINTES.length?'Aucune contrainte avec ce statut.':'Aucune contrainte. Lancez les recherches puis « Pré-remplir depuis les sources », ou ajoutez une contrainte à la main.')+'</div>')+'</div>',
       ecrit?'<span class="a" data-fn="prefill">Pré-remplir depuis les sources</span><span class="a" data-fn="ajoutCt">Ajouter une contrainte</span>':'')
+    +sgFzVolCarte(rec,st,ecrit)   /* application des règles, volumétrie, plan, 3D, coupe (21.10.2026) */
     +nxCard('c12','Conclusion','<div class="b sg-fz-conc">'+(ecrit?'<textarea id="sg-fz-conc" placeholder="Conclusion de l’étude : faisabilité, potentiel constructible, risques et points à vérifier, suite à donner…">'+E(rec.CONCLUSION||'')+'</textarea>':'<div class="sg-fz-rep">'+E(rec.CONCLUSION||'—')+'</div>')
       +'<div class="sg-fz-btns" style="margin-top:12px"><button class="nx-btn pri" data-fn="fiche">'+nxSvg('print')+'Fiche de faisabilité</button>'+(rec.MODIFIE?'<span class="sg-fz-hint" style="margin:0">Modifié le '+E(dfr(String(rec.MODIFIE).slice(0,10)))+(rec.PAR?' par '+E(rec.PAR):'')+'</span>':'')+'</div></div>')
     +'</div>';
@@ -27618,9 +27629,12 @@ function sgFzDessiner(C,p,st){ const rec=st.rec=sgFzRec(p), P=rec.PARCELLE, ecri
   const mi=pg.querySelector('#sg-fz-mot'); if(mi){ mi.onkeydown=e=>{ if(e.key==='Enter') chercherMot(); }; if(st.mot&&st.mot.length>=2) chercherMot(); }
   const qi=pg.querySelector('#sg-fz-q'); if(qi) qi.onkeydown=e=>{ if(e.key==='Enter') pg._fn.chercher(); };
   Object.assign(pg._fn,{
-    chercher:()=>sgFzCarteDlg(P,(qi&&qi.value.trim())||'',async(x,lab)=>{   /* fenêtre « Recherche de parcelle » (carte intégrée, 21.10.2026) */
+    chercher:()=>sgFzCarteDlg(P,(qi&&qi.value.trim())||'',async(x,lab,g)=>{
+      if(g){ const pl=g.type==='MultiPolygon'?g.coordinates:g.type==='Polygon'?[g.coordinates]:[], ext=pl.map(r=>r[0]).sort((a,b)=>sgFzAireRing(b)-sgFzAireRing(a))[0]; if(ext) P.GEOM=ext.map(q=>[Math.round(q[0]*100)/100,Math.round(q[1]*100)/100]); }   /* forme de la parcelle (volumétrie) */   /* fenêtre « Recherche de parcelle » (carte intégrée, 21.10.2026) */
+      const autre=!!(x.EGRID&&P.EGRID&&x.EGRID!==P.EGRID);   /* autre parcelle : surface, zone et forme de l'ancienne ne valent plus */
       if(lab) P.ADRESSE=lab; P.E=x.E; P.N=x.N; ['NUMERO','EGRID','IDENTDN','CANTON','COMMUNE','BFS','RDPPF_ETAT','RDPPF_SERVICE','ZONE_FED'].forEach(k=>{ if(x[k]) P[k]=x[k]; });
-      if(x.SURFACE_C&&!(+P.SURFACE>0)) P.SURFACE=x.SURFACE_C; await save(); toast('Parcelle '+(P.NUMERO||'')+(P.COMMUNE?' ('+P.COMMUNE+')':'')+' reprise.'); redraw(); }),
+      if(autre){ delete P.ZONE; if(!g) delete P.GEOM; }
+      if(x.SURFACE_C&&(autre||!(+P.SURFACE>0))) P.SURFACE=x.SURFACE_C; await save(); toast('Parcelle '+(P.NUMERO||'')+(P.COMMUNE?' ('+P.COMMUNE+')':'')+' reprise.'); redraw(); }),
     chercherListe:async()=>{   /* ancienne recherche en liste sous le champ (gardée, plus reliée au bouton) */ const q=(qi&&qi.value.trim())||''; if(!q){ toast('Indiquez une adresse ou un lieu.',true); return; } prog('Recherche de l’adresse (geo.admin.ch)…');
       try{ const R=await sgFzChercherAdresse(q); prog(''); const box=pg.querySelector('#sg-fz-res'); box.innerHTML=''; if(!R.length){ box.textContent='Aucun résultat sur geo.admin.ch pour « '+q+' ».'; return; }
         if(R.length===1){ choisir(R[0]); return; } R.forEach(r=>box.append(h('button',{onclick:()=>choisir(r)},r.label+'  —  E '+num(r.E,0)+' · N '+num(r.N,0)))); }
@@ -27647,7 +27661,220 @@ function sgFzDessiner(C,p,st){ const rec=st.rec=sgFzRec(p), P=rec.PARCELLE, ecri
     ajoutCt:()=>sgFzContrainteDlg(rec,null,async c=>{ rec.CONTRAINTES.push(c); await save(); redraw(); }),
     editCt:b=>{ const c=rec.CONTRAINTES.find(x=>x.ID===b.dataset.cid); if(c) sgFzContrainteDlg(rec,c,async()=>{ await save(); redraw(); }); },
     supprCt:b=>{ const c=rec.CONTRAINTES.find(x=>x.ID===b.dataset.cid); if(!c) return; sgConfirm('Supprimer la contrainte « '+c.TITRE+' » ?',async()=>{ rec.CONTRAINTES=rec.CONTRAINTES.filter(x=>x!==c); await save(); redraw(); }); },
-    fiche:()=>sgFaisaFiche(p)}); }
+    fiche:()=>sgFaisaFiche(p)}); sgFzVolBrancher(pg,rec,st,save,redraw,prog); }
+/* ═══ Faisabilité ▸ application des règles à la parcelle : volumétrie maximale, plan, modèle 3D, coupe (21.10.2026, demande de Paulo) ═══
+   Règles : lues dans les contraintes (texte des articles repris des règlements, extrait RDPPF…) par SG_FZ_RE, ou saisies à la main
+   (rec.REGLES, prioritaires) — distance aux limites, entre bâtiments, hauteurs à la corniche / au faîte, niveaux, COS, IUS, IM, espaces verts.
+   Parcelle : géométrie du plan cadastral (identify geo.admin.ch, rec.PARCELLE.GEOM, anneau extérieur en LV95). Aire d'implantation = points de
+   la parcelle à au moins la distance aux limites (grille fine, contour tracé puis simplifié) ; emprise max = COS × surface (bornée par l'aire
+   d'implantation) ; SPd max = IUS × surface ; volume enveloppe = aire d'implantation × hauteur à la corniche (+ moitié de la tranche jusqu'au
+   faîte) ; espaces verts min = % × surface. Dessins SVG : plan (parcelle, bande non constructible hachurée, aire d'implantation, distances,
+   contraintes en légende), modèle 3D axonométrique orientable (enveloppe maximale, faîte en pointillé), coupe longitudinale ou transversale
+   sur le profil du terrain (profile.json de geo.admin.ch, swissALTI3D), hauteurs mesurées depuis le terrain. Résultat indicatif : à vérifier
+   sur le règlement (mesure des hauteurs, dérogations, alignements, distances entre bâtiments, servitudes). */
+const SG_FZ_PARAMS=[['DIST','Distance aux limites de propriété','m',1,40],['DIST_BAT','Distance entre bâtiments','m',2,60],['H_CORN','Hauteur à la corniche','m',2,60],
+  ['H_FAITE','Hauteur au faîte','m',2,80],['NIV','Nombre de niveaux','',1,20],['COS','Coefficient d’occupation du sol (COS)','',0.03,1],['IUS','Indice d’utilisation du sol (IUS)','',0.03,6],
+  ['IM','Indice de masse (IM)','m³/m²',0.3,20],['VERTS','Espaces verts minimum','%',3,95]];
+const SG_FZ_RE={
+  DIST:[/distances?[^.;]{0,120}?(?:limites?|propri[ée]t[ée]s?|fonds voisins?|bien-fonds voisins?)[^.;]{0,90}?(\d+(?:[.,]\d+)?)\s*m(?![²2a-zà-ü])/i,/limites? (?:de|des) propri[ée]t[ée]s?[^.;]{0,90}?(\d+(?:[.,]\d+)?)\s*m(?![²2a-zà-ü])/i],
+  DIST_BAT:[/entre (?:deux |les )?(?:b[âa]timents|constructions)[^.;]{0,90}?(\d+(?:[.,]\d+)?)\s*m(?![²2a-zà-ü])/i],
+  H_CORN:[/corniche[^.;]{0,70}?(\d+(?:[.,]\d+)?)\s*m(?![²2a-zà-ü])/i],
+  H_FAITE:[/fa[îi]te[^.;]{0,70}?(\d+(?:[.,]\d+)?)\s*m(?![²2a-zà-ü])/i],
+  H:[/hauteur[^.;]{0,90}?(\d+(?:[.,]\d+)?)\s*m(?![²2a-zà-ü])/i],
+  NIV:[/rez(?:-de-chauss[ée]e)?\s*\+\s*(\d)\b/i,/(\d{1,2})\s*niveaux?\b/i],
+  COS:[/\b(?:COS|IOS)\b[^.;\d]{0,40}?(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)\s*(%)?/,/(?:coefficient|indice|taux) d['’]occupation(?: du sol)?[^.;\d]{0,40}?(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)\s*(%)?/i,/surface b[âa]tie[^.;]{0,80}?(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)\s*(%)?/i],
+  IUS:[/\b(?:IUS|IBUS|CUS|IU)\b[^.;\d]{0,40}?(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)/,/(?:indice|coefficient) d['’]utilisation(?: du sol)?[^.;\d]{0,40}?(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)/i],
+  IM:[/\b(?:IM|IBM)\b[^.;\d]{0,30}?(\d+(?:[.,]\d+)?)/,/indice de masse[^.;\d]{0,30}?(\d+(?:[.,]\d+)?)/i],
+  VERTS:[/(\d+(?:[.,]\d+)?)\s*%[^.;]{0,100}?(?:espaces? verts?|pleine terre|surfaces? (?:vertes?|plant[ée]es?|engazonn[ée]es?|perm[ée]ables?))/i,/(?:espaces? verts?|pleine terre)[^.;]{0,90}?(\d+(?:[.,]\d+)?)\s*%/i]};
+const sgFzNum=s=>{ s=String(s||'').replace(/\s+/g,''); const f=/^(\d+)\/(\d+)$/.exec(s); return f?(+f[2]?+f[1]/+f[2]:NaN):parseFloat(s.replace(',','.')); };
+/* règles détectées dans les contraintes : {k:{v, src, cid}} (première valeur plausible, dans l'ordre des contraintes) */
+function sgFzDetecter(rec){ const out={}, lim=Object.fromEntries(SG_FZ_PARAMS.map(x=>[x[0],x])); lim.H=['H','',' m',2,60];
+  for(const c of rec.CONTRAINTES||[]){ const t=[c.REGLE,c.VALEUR,c.TITRE].filter(Boolean).join(' . ').replace(/[  ]/g,' ');
+    for(const [k,L] of Object.entries(SG_FZ_RE)){ if(out[k]) continue;
+      for(const re of L){ const m=re.exec(t); if(!m) continue; let v=sgFzNum(m[1]); if(m[2]==='%'||(k==='COS'&&v>1&&v<=100)) v=v/100; if(k==='NIV'&&/rez/i.test(m[0])) v=v+1;
+        const [, , , a, b]=lim[k]; if(!(v>=a&&v<=b)) continue; out[k]={v,src:[c.ARTICLE,c.SOURCE].filter(Boolean).join(' — ')||c.TITRE||'contrainte',cid:c.ID}; break; } } }
+  if(!out.H_CORN&&out.H) out.H_CORN=out.H; delete out.H; return out; }
+/* valeurs retenues : saisie (rec.REGLES) sinon détection */
+function sgFzRegles(rec){ const det=sgFzDetecter(rec), man=rec.REGLES||{}, R={};
+  SG_FZ_PARAMS.forEach(([k])=>{ const m=man[k]; if(m!=null&&m!==''&&isFinite(+m)) R[k]={v:+m,src:'saisie',man:1}; else if(det[k]) R[k]=det[k]; }); return {R,det}; }
+/* anneau de la parcelle en coordonnées locales (mètres, origine au centre de la boîte) */
+function sgFzAnneau(P){ let g=P.GEOM; if(!Array.isArray(g)||g.length<3) return null; g=g.map(p=>[+p[0],+p[1]]).filter(p=>isFinite(p[0])&&isFinite(p[1]));
+  if(g.length>3&&g[0][0]===g[g.length-1][0]&&g[0][1]===g[g.length-1][1]) g=g.slice(0,-1); if(g.length<3) return null;
+  const xs=g.map(p=>p[0]), ys=g.map(p=>p[1]), E0=(Math.min(...xs)+Math.max(...xs))/2, N0=(Math.min(...ys)+Math.max(...ys))/2;
+  return {E0,N0,ring:g.map(([e,n])=>[e-E0,n-N0])}; }
+const sgFzAireRing=R=>{ let a=0; for(let i=0,j=R.length-1;i<R.length;j=i++) a+=(R[j][0]+R[i][0])*(R[j][1]-R[i][1]); return Math.abs(a/2); };
+/* aire d'implantation : grille (≈ 260 cases sur le grand côté), cases dont le centre est à ≥ d des limites, contour des cases puis simplification */
+function sgFzInset(ring,d){ const xs=ring.map(p=>p[0]), ys=ring.map(p=>p[1]), x0=Math.min(...xs), x1=Math.max(...xs), y0=Math.min(...ys), y1=Math.max(...ys);
+  const c=Math.max(0.12,Math.max(x1-x0,y1-y0)/260), nx=Math.ceil((x1-x0)/c)+1, ny=Math.ceil((y1-y0)/c)+1, M=new Uint8Array(nx*ny), n0=ring.length;
+  const dans=(x,y)=>{ let ins=false; for(let i=0,j=n0-1;i<n0;j=i++){ const a=ring[i], b=ring[j]; if(((a[1]>y)!==(b[1]>y))&&(x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])) ins=!ins; } return ins; };
+  const dseg=(x,y,a,b)=>{ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy; let t=L?((x-a[0])*dx+(y-a[1])*dy)/L:0; t=t<0?0:t>1?1:t; const px=a[0]+t*dx-x, py=a[1]+t*dy-y; return Math.sqrt(px*px+py*py); };
+  let n=0; for(let j=0;j<ny;j++) for(let i=0;i<nx;i++){ const x=x0+(i+0.5)*c, y=y0+(j+0.5)*c; if(!dans(x,y)) continue; let ok=true;
+    if(d>0) for(let k=0,l=n0-1;k<n0;l=k++){ if(dseg(x,y,ring[l],ring[k])<d){ ok=false; break; } } if(ok){ M[j*nx+i]=1; n++; } }
+  const on=(i,j)=>i>=0&&j>=0&&i<nx&&j<ny&&M[j*nx+i]===1, E=new Map(), add=(a,b)=>{ const k=a[0]+','+a[1]; (E.get(k)||E.set(k,[]).get(k)).push(b); };
+  for(let j=0;j<ny;j++) for(let i=0;i<nx;i++){ if(!on(i,j)) continue;
+    if(!on(i,j-1)) add([i,j],[i+1,j]); if(!on(i+1,j)) add([i+1,j],[i+1,j+1]); if(!on(i,j+1)) add([i+1,j+1],[i,j+1]); if(!on(i-1,j)) add([i,j+1],[i,j]); }
+  const polys=[]; for(const [k0,L0] of E){ while(L0.length){ const loop=[k0.split(',').map(Number)]; let cur=L0.pop(), garde=0;
+      while(cur&&garde++<200000){ const kk=cur[0]+','+cur[1]; if(kk===k0) break; loop.push(cur); const L=E.get(kk); cur=L&&L.length?L.pop():null; }
+      if(loop.length>=4) polys.push(sgFzLisser(sgFzSimplifier(loop.map(([i,j])=>[x0+i*c,y0+j*c]),c*1.5))); } }
+  return {polys:polys.filter(p=>p.length>=3),aire:n*c*c,cell:c}; }
+/* points presque alignés retirés (angle < 7°) : murs sans rayures dans le modèle 3D */
+function sgFzLisser(R){ let P=R.slice(), ch=true; while(ch&&P.length>4){ ch=false; for(let i=0;i<P.length;i++){ const a=P[(i+P.length-1)%P.length], b=P[i], c=P[(i+1)%P.length];
+      const u=Math.atan2(b[1]-a[1],b[0]-a[0]), v=Math.atan2(c[1]-b[1],c[0]-b[0]); let d=Math.abs(u-v); if(d>Math.PI) d=2*Math.PI-d; if(d<7*Math.PI/180){ P.splice(i,1); ch=true; break; } } } return P; }
+function sgFzSimplifier(R,tol){ if(R.length<5) return R; const dp=(pts)=>{ if(pts.length<3) return pts; const a=pts[0], b=pts[pts.length-1]; let im=0, dm=0;
+    for(let i=1;i<pts.length-1;i++){ const p=pts[i], dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1e-9, dd=Math.abs(dy*p[0]-dx*p[1]+b[0]*a[1]-b[1]*a[0])/L; if(dd>dm){ dm=dd; im=i; } }
+    return dm>tol?dp(pts.slice(0,im+1)).slice(0,-1).concat(dp(pts.slice(im))):[a,b]; };
+  let far=0, fd=0; R.forEach((p,i)=>{ const dd=Math.hypot(p[0]-R[0][0],p[1]-R[0][1]); if(dd>fd){ fd=dd; far=i; } });
+  return dp(R.slice(0,far+1)).slice(0,-1).concat(dp(R.slice(far).concat([R[0]])).slice(0,-1)); }
+/* calcul complet (synchrone) : null sans géométrie */
+function sgFzVolumetrie(rec){ const A=sgFzAnneau(rec.PARCELLE||{}); if(!A) return null; const {R}=sgFzRegles(rec), v=k=>R[k]?R[k].v:null;
+  const Sg=sgFzAireRing(A.ring), Sf=+rec.PARCELLE.SURFACE||0, Sok=Sf>0&&Math.abs(Sf-Sg)/Sg<=0.1, S=Sok?Sf:Sg, d=v('DIST')||0, I=sgFzInset(A.ring,d);   /* surface de la fiche si elle correspond au plan (±10 %), sinon celle du plan */
+  const hc=v('H_CORN'), hf=v('H_FAITE'), Hc=hc||(hf&&!hc?hf:null), cos=v('COS'), ius=v('IUS'), im=v('IM'), niv=v('NIV')||(Hc?Math.max(1,Math.floor(Hc/3)):null);
+  const emp=cos?Math.min(cos*S,I.aire):I.aire, spd=ius?ius*S:(niv?emp*niv:null), vol=Hc?I.aire*Hc+(hf&&hf>Hc?I.aire*(hf-Hc)/2:0):null;
+  return {A,R,S,Sg,Sdiff:Sf>0&&!Sok?Sf:null,d,I,Hc,Hf:hf&&Hc&&hf>Hc?hf:null,cos,ius,im,niv,emp,spd,vol,volIM:im?im*S:null,verts:v('VERTS')?v('VERTS')/100*S:null}; }
+/* ── dessins SVG ── */
+const sgFzM2=v=>num(Math.round(v),0)+' m²', sgFzM=v=>num(Math.round(v*100)/100,2)+' m';
+function sgFzPlanSvg(V,rec){ const ring=V.A.ring, xs=ring.map(p=>p[0]), ys=ring.map(p=>p[1]), mg=Math.max(6,V.d+4), x0=Math.min(...xs)-mg, x1=Math.max(...xs)+mg, y0=Math.min(...ys)-mg, y1=Math.max(...ys)+mg;
+  const W=600, k=W/(x1-x0), H=Math.max(260,(y1-y0)*k), X=x=>((x-x0)*k).toFixed(1), Y=y=>((y1-y)*k).toFixed(1), pts=R=>R.map(p=>X(p[0])+','+Y(p[1])).join(' ');
+  const pathR=Rs=>Rs.map(R=>'M'+R.map(p=>X(p[0])+','+Y(p[1])).join('L')+'Z').join('');
+  let s='<svg xmlns="http://www.w3.org/2000/svg" class="sg-fzv-svg" viewBox="0 0 '+(W+300)+' '+Math.round(H)+'" font-family="Akkurat, Helvetica, Arial, sans-serif">'
+    +'<defs><pattern id="sgfzh" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#BD1E42" stroke-width="1.2" opacity=".55"/></pattern></defs>'
+    +'<rect x="0" y="0" width="'+W+'" height="'+Math.round(H)+'" fill="#fff"/>'
+    +'<polygon points="'+pts(ring)+'" fill="url(#sgfzh)" stroke="none"/>'
+    +(V.I.polys.length?'<path d="'+pathR(V.I.polys)+'" fill="#FFF266" fill-opacity=".85" fill-rule="evenodd" stroke="#003346" stroke-width="1.4" stroke-dasharray="6 3"/>':'')
+    +'<polygon points="'+pts(ring)+'" fill="none" stroke="#1d1d1b" stroke-width="2.2"/>';
+  /* longueurs des côtés et distances aux limites (sur les 4 plus longs côtés) */
+  const cotes=ring.map((a,i)=>{ const b=ring[(i+1)%ring.length]; return {a,b,L:Math.hypot(b[0]-a[0],b[1]-a[1])}; });
+  const sens=sgFzAireSigne(ring)>0?1:-1;
+  cotes.forEach(c=>{ if(c.L*k<34) return; const mx=(c.a[0]+c.b[0])/2, my=(c.a[1]+c.b[1])/2, ang=Math.atan2(c.b[1]-c.a[1],c.b[0]-c.a[0]), nx=-Math.sin(ang)*sens, ny=Math.cos(ang)*sens;
+    const tx=mx-nx*2.2, ty=my-ny*2.2; let deg=-ang*180/Math.PI; if(deg>90) deg-=180; if(deg<-90) deg+=180;
+    s+='<text x="'+X(tx)+'" y="'+Y(ty)+'" font-size="10" fill="#706f6f" text-anchor="middle" dominant-baseline="middle" transform="rotate('+deg.toFixed(1)+' '+X(tx)+' '+Y(ty)+')">'+num(Math.round(c.L*10)/10,1)+' m</text>'; });
+  if(V.d>0) cotes.slice().sort((p,q)=>q.L-p.L).slice(0,4).forEach(c=>{ const mx=(c.a[0]+c.b[0])/2, my=(c.a[1]+c.b[1])/2, ang=Math.atan2(c.b[1]-c.a[1],c.b[0]-c.a[0]), nx=-Math.sin(ang)*sens, ny=Math.cos(ang)*sens, ex=mx+nx*V.d, ey=my+ny*V.d;
+    s+='<line x1="'+X(mx)+'" y1="'+Y(my)+'" x2="'+X(ex)+'" y2="'+Y(ey)+'" stroke="#BD1E42" stroke-width="1.3" marker-end="url(#sgfza)" marker-start="url(#sgfza)"/>'
+      +'<text x="'+X(ex+nx*1.2)+'" y="'+Y(ey+ny*1.2)+'" font-size="10.5" font-weight="700" fill="#BD1E42" text-anchor="middle" dominant-baseline="middle">'+num(V.d,V.d%1?2:0)+' m</text>'; });
+  s=s.replace('</defs>','<marker id="sgfza" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,1 L7,4 L0,7 z" fill="#BD1E42"/></marker></defs>');
+  /* étiquette de l'aire d'implantation (au plus grand contour) */
+  const P0=V.I.polys.slice().sort((p,q)=>sgFzAireRing(q)-sgFzAireRing(p))[0];
+  if(P0){ const cx=P0.reduce((a,p)=>a+p[0],0)/P0.length, cy=P0.reduce((a,p)=>a+p[1],0)/P0.length;
+    s+='<text x="'+X(cx)+'" y="'+Y(cy)+'" font-size="11.5" font-weight="700" fill="#003346" text-anchor="middle">Aire d’implantation</text><text x="'+X(cx)+'" y="'+(+Y(cy)+15)+'" font-size="11.5" fill="#003346" text-anchor="middle">'+sgFzM2(V.I.aire)+'</text>'; }
+  /* nord et échelle */
+  s+='<g transform="translate('+(W-28)+',30)"><path d="M0,-18 L7,6 L0,1 L-7,6 Z" fill="#1d1d1b"/><text x="0" y="20" font-size="11" font-weight="700" text-anchor="middle">N</text></g>';
+  const pas=[2,5,10,20,50,100].find(p=>p*k>=60)||100; s+='<g transform="translate(14,'+(Math.round(H)-16)+')"><rect x="0" y="-5" width="'+(pas*k).toFixed(1)+'" height="5" fill="#1d1d1b"/><rect x="'+(pas*k/2).toFixed(1)+'" y="-5" width="'+(pas*k/2).toFixed(1)+'" height="5" fill="#fff" stroke="#1d1d1b" stroke-width=".8"/><text x="0" y="10" font-size="9.5">0</text><text x="'+(pas*k).toFixed(1)+'" y="10" font-size="9.5" text-anchor="middle">'+pas+' m</text></g>';
+  /* légende et contraintes */
+  const P=rec.PARCELLE, L=[]; const li=(t,v,cl)=>L.push([t,v,cl]);
+  li('Parcelle',(P.NUMERO?'n° '+P.NUMERO:'')+(P.COMMUNE?' · '+P.COMMUNE:'')); li('Surface de la parcelle',sgFzM2(V.S)); if(P.ZONE||P.ZONE_FED) li('Zone',P.ZONE||P.ZONE_FED);
+  if(V.d) li('Distance aux limites',sgFzM(V.d),'r'); li('Aire d’implantation',sgFzM2(V.I.aire),'j');
+  if(V.cos) li('Emprise max (COS '+num(V.cos,2)+')',sgFzM2(V.emp)); if(V.ius) li('SPd max (IUS '+num(V.ius,2)+')',sgFzM2(V.spd));
+  if(V.Hc) li('Hauteur à la corniche',sgFzM(V.Hc)); if(V.Hf) li('Hauteur au faîte',sgFzM(V.Hf)); if(V.niv) li('Niveaux',String(V.niv)); if(V.verts) li('Espaces verts min',sgFzM2(V.verts));
+  const autres=(rec.CONTRAINTES||[]).filter(c=>/bruit|dangers|patrimoine|foret|eaux|pollues/.test(c.THEME||'')).map(c=>(SG_FZ_TH_L[c.THEME]||'')+' : '+(c.VALEUR||c.TITRE||'')).filter((x,i,a)=>a.indexOf(x)===i).slice(0,6);
+  let y=26; s+='<g font-size="11"><text x="'+(W+18)+'" y="'+y+'" font-size="13" font-weight="700">Plan des contraintes</text>';
+  s+='<rect x="'+(W+18)+'" y="'+(y+=12)+'" width="16" height="11" fill="url(#sgfzh)" stroke="#1d1d1b" stroke-width=".6"/><text x="'+(W+40)+'" y="'+(y+9)+'">Bande non constructible</text>';
+  s+='<rect x="'+(W+18)+'" y="'+(y+=18)+'" width="16" height="11" fill="#FFF266" stroke="#003346" stroke-dasharray="3 2"/><text x="'+(W+40)+'" y="'+(y+9)+'">Aire d’implantation</text>'; y+=16;
+  L.forEach(([t,v])=>{ y+=17; s+='<text x="'+(W+18)+'" y="'+y+'" fill="#706f6f">'+nxE(t)+'</text><text x="'+(W+290)+'" y="'+y+'" text-anchor="end" font-weight="700">'+nxE(String(v||'—').slice(0,30))+'</text>'; });
+  if(autres.length){ y+=24; s+='<text x="'+(W+18)+'" y="'+y+'" font-weight="700">Autres contraintes</text>'; autres.forEach(t=>{ y+=15; s+='<text x="'+(W+18)+'" y="'+y+'" font-size="10" fill="#1d1d1b">'+nxE(t.slice(0,48))+'</text>'; }); }
+  return s+'</g></svg>'; }
+const sgFzAireSigne=R=>{ let a=0; for(let i=0,j=R.length-1;i<R.length;j=i++) a+=(R[j][0]*R[i][1]-R[i][0]*R[j][1]); return a/2; };
+/* modèle 3D axonométrique : az = orientation (degrés, 0 = vu du sud), el = élévation (degrés) */
+function sgFzModeleSvg(V,az,el){ const a=az*Math.PI/180, e=el*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a), se=Math.sin(e), ce=Math.cos(e);
+  const pr=(x,y,z)=>{ const xr=x*ca-y*sa, yr=x*sa+y*ca; return [xr,-yr*se-z*ce,yr]; };
+  const Hc=V.Hc||0, faces=[], ring=V.A.ring;
+  faces.push({pts:ring.map(p=>pr(p[0],p[1],0)),fill:'#eef0ee',stroke:'#1d1d1b',sw:1.6,z:-1e9});
+  V.I.polys.forEach(R=>faces.push({pts:R.map(p=>pr(p[0],p[1],0)),fill:'#FFF266',op:.55,stroke:'#003346',sw:1,dash:'4 2',z:-1e9+1}));
+  if(Hc>0){ const lum=[0.4,-0.6,0.7]; V.I.polys.forEach(R=>{ const sg=sgFzAireSigne(R)>0?1:-1;
+      R.forEach((p,i)=>{ const q=R[(i+1)%R.length], nx=(q[1]-p[1])*sg, ny=-(q[0]-p[0])*sg, L=Math.hypot(nx,ny)||1, sh=Math.max(0,(nx*lum[0]+ny*lum[1])/L), g=Math.round(200+45*sh);
+        const P4=[pr(p[0],p[1],0),pr(q[0],q[1],0),pr(q[0],q[1],Hc),pr(p[0],p[1],Hc)]; faces.push({pts:P4,fill:'rgb('+g+','+g+','+(g+4)+')',stroke:'#003346',sw:.8,z:-(P4.reduce((s0,x)=>s0+x[2],0)/4)}); }); });
+    V.I.polys.forEach(R=>faces.push({pts:R.map(p=>pr(p[0],p[1],Hc)),fill:'#d9dde0',stroke:'#003346',sw:1.2,z:1e9}));
+    if(V.Hf) V.I.polys.forEach(R=>faces.push({pts:R.map(p=>pr(p[0],p[1],V.Hf)),fill:'none',stroke:'#BD1E42',sw:1,dash:'5 3',z:1e9+1})); }
+  faces.sort((p,q)=>p.z-q.z);
+  const all=faces.flatMap(f=>f.pts), xs=all.map(p=>p[0]), ys=all.map(p=>p[1]), mg=8, x0=Math.min(...xs)-mg, y0=Math.min(...ys)-mg, w=Math.max(...xs)-x0+mg, hh=Math.max(...ys)-y0+mg, k=640/w;
+  const P=p=>((p[0]-x0)*k).toFixed(1)+','+((p[1]-y0)*k).toFixed(1);
+  let s='<svg xmlns="http://www.w3.org/2000/svg" class="sg-fzv-svg" viewBox="0 0 640 '+Math.round(hh*k+30)+'" font-family="Akkurat, Helvetica, Arial, sans-serif"><rect width="640" height="'+Math.round(hh*k+30)+'" fill="#fff"/>';
+  faces.forEach(f=>{ s+='<polygon points="'+f.pts.map(P).join(' ')+'" fill="'+f.fill+'"'+(f.op?' fill-opacity="'+f.op+'"':'')+' stroke="'+f.stroke+'" stroke-width="'+f.sw+'"'+(f.dash?' stroke-dasharray="'+f.dash+'"':'')+' stroke-linejoin="round"/>'; });
+  if(Hc>0&&V.I.polys.length){ const R=V.I.polys[0], p=R.reduce((m,x)=>{ const a1=pr(x[0],x[1],0), a2=pr(m[0],m[1],0); return a1[0]<a2[0]?x:m; },R[0]), b=pr(p[0],p[1],0), t=pr(p[0],p[1],Hc);
+    s+='<line x1="'+((b[0]-x0)*k-10).toFixed(1)+'" y1="'+((b[1]-y0)*k).toFixed(1)+'" x2="'+((t[0]-x0)*k-10).toFixed(1)+'" y2="'+((t[1]-y0)*k).toFixed(1)+'" stroke="#1d1d1b" stroke-width="1"/><text x="'+((t[0]-x0)*k-14).toFixed(1)+'" y="'+(((b[1]+t[1])/2-y0)*k).toFixed(1)+'" font-size="11" font-weight="700" text-anchor="end">'+sgFzM(Hc)+'</text>'; }
+  s+='<text x="10" y="'+Math.round(hh*k+20)+'" font-size="8.5" fill="#706f6f">Enveloppe maximale : aire d’implantation × '+(Hc?sgFzM(Hc)+' (corniche)':'hauteur non définie')+(V.Hf?' · faîte '+sgFzM(V.Hf)+' en pointillé rouge':'')+' · terrain supposé plat dans cette vue</text>';
+  return s+'</svg>'; }
+/* coupe : axe principal de la parcelle (« long ») ou perpendiculaire (« trans ») passant par son centre ; prof = [{t, alt}] ou null (terrain plat) */
+function sgFzAxeCoupe(V,axe){ const R=V.A.ring, cx=R.reduce((a,p)=>a+p[0],0)/R.length, cy=R.reduce((a,p)=>a+p[1],0)/R.length; let sxx=0,syy=0,sxy=0;
+  R.forEach(p=>{ const dx=p[0]-cx, dy=p[1]-cy; sxx+=dx*dx; syy+=dy*dy; sxy+=dx*dy; }); let th=0.5*Math.atan2(2*sxy,sxx-syy); if(axe==='trans') th+=Math.PI/2;
+  const u=[Math.cos(th),Math.sin(th)], inter=Rs=>{ const T=[]; Rs.forEach(Q=>Q.forEach((a,i)=>{ const b=Q[(i+1)%Q.length], ex=b[0]-a[0], ey=b[1]-a[1], den=u[0]*ey-u[1]*ex; if(Math.abs(den)<1e-12) return;
+      const t=((a[0]-cx)*ey-(a[1]-cy)*ex)/den, s0=((a[0]-cx)*u[1]-(a[1]-cy)*u[0])/den; if(s0>=0&&s0<=1) T.push(t); })); return T.sort((p,q)=>p-q); };
+  const tp=inter([R]), ti=inter(V.I.polys), seg=[]; for(let i=0;i+1<ti.length;i+=2) if(ti[i+1]-ti[i]>0.05) seg.push([ti[i],ti[i+1]]);
+  return {cx,cy,u,t0:tp[0],t1:tp[tp.length-1],seg}; }
+async function sgFzProfil(V,ax){ const m=6, a=[V.A.E0+ax.cx+ax.u[0]*(ax.t0-m),V.A.N0+ax.cy+ax.u[1]*(ax.t0-m)], b=[V.A.E0+ax.cx+ax.u[0]*(ax.t1+m),V.A.N0+ax.cy+ax.u[1]*(ax.t1+m)];
+  const geom=JSON.stringify({type:'LineString',coordinates:[a.map(x=>Math.round(x*10)/10),b.map(x=>Math.round(x*10)/10)]});
+  const d=await sgFzJson('https://api3.geo.admin.ch/rest/services/profile.json?geom='+encodeURIComponent(geom)+'&sr=2056&nb_points=80&distinct_points=true');
+  return (Array.isArray(d)?d:[]).map(x=>({t:ax.t0-m+(+x.dist||0),alt:+((x.alts||{}).COMB||(x.alts||{}).DTM2||(x.alts||{}).DTM25)})).filter(x=>isFinite(x.alt)); }
+function sgFzCoupeSvg(V,ax,prof,axe){ if(!(ax.t1>ax.t0)) return '<div class="nx-empty">Coupe impossible : l’axe ne traverse pas la parcelle.</div>';
+  const plat=!prof||prof.length<2, alt=t=>{ if(plat) return 0; if(t<=prof[0].t) return prof[0].alt; for(let i=1;i<prof.length;i++) if(t<=prof[i].t){ const p=prof[i-1], q=prof[i]; return p.alt+(q.alt-p.alt)*(t-p.t)/((q.t-p.t)||1); } return prof[prof.length-1].alt; };
+  const m=6, ta=ax.t0-m, tb=ax.t1+m, Hmax=Math.max(V.Hf||0,V.Hc||0,3), as=[];
+  for(let t=ta;t<=tb+1e-6;t+=(tb-ta)/120) as.push(alt(t)); const zmin=Math.min(...as)-2, zmax=Math.max(...as)+Hmax+3, W=860, k=W/(tb-ta), H=Math.max(200,(zmax-zmin)*k+40);
+  const X=t=>((t-ta)*k).toFixed(1), Y=z=>(H-28-(z-zmin)*k).toFixed(1);
+  let s='<svg xmlns="http://www.w3.org/2000/svg" class="sg-fzv-svg" viewBox="0 0 '+W+' '+Math.round(H)+'" font-family="Akkurat, Helvetica, Arial, sans-serif"><rect width="'+W+'" height="'+Math.round(H)+'" fill="#fff"/>'
+    +'<defs><marker id="sgfzc" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,1 L7,4 L0,7 z" fill="#BD1E42"/></marker></defs>';
+  /* enveloppes (hauteur mesurée depuis le terrain) */
+  ax.seg.forEach(([a,b])=>{ const n=Math.max(2,Math.round((b-a)/((tb-ta)/120))), top=[], bas=[]; for(let i=0;i<=n;i++){ const t=a+(b-a)*i/n; bas.push(X(t)+','+Y(alt(t))); top.push(X(t)+','+Y(alt(t)+(V.Hc||0))); }
+    if(V.Hc) s+='<polygon points="'+bas.concat(top.reverse()).join(' ')+'" fill="#FFF266" fill-opacity=".8" stroke="#003346" stroke-width="1.4"/>';
+    if(V.Hf){ const f=[]; for(let i=0;i<=n;i++){ const t=a+(b-a)*i/n; f.push(X(t)+','+Y(alt(t)+V.Hf)); } s+='<polyline points="'+f.join(' ')+'" fill="none" stroke="#BD1E42" stroke-width="1.2" stroke-dasharray="6 3"/>'; }
+    if(V.Hc){ const tm=a+0.6; s+='<line x1="'+X(tm)+'" y1="'+Y(alt(tm))+'" x2="'+X(tm)+'" y2="'+Y(alt(tm)+V.Hc)+'" stroke="#003346" stroke-width="1" marker-start="url(#sgfzc)" marker-end="url(#sgfzc)"/><text x="'+(+X(tm)+5)+'" y="'+((+Y(alt(tm))+ +Y(alt(tm)+V.Hc))/2)+'" font-size="11" font-weight="700" fill="#003346">'+sgFzM(V.Hc)+'</text>'; } });
+  /* terrain */
+  const terr=[]; for(let i=0;i<=120;i++){ const t=ta+(tb-ta)*i/120; terr.push(X(t)+','+Y(alt(t))); }
+  s+='<polyline points="'+terr.join(' ')+'" fill="none" stroke="#1d1d1b" stroke-width="2"/>';
+  /* limites et distances */
+  [ax.t0,ax.t1].forEach((t,i)=>{ s+='<line x1="'+X(t)+'" y1="'+Y(alt(t)-1.5)+'" x2="'+X(t)+'" y2="'+Y(alt(t)+Hmax+1.5)+'" stroke="#1d1d1b" stroke-width="1.2" stroke-dasharray="8 3 2 3"/><text x="'+X(t)+'" y="'+(+Y(alt(t)+Hmax+1.5)-5)+'" font-size="10.5" text-anchor="middle">Limite</text>'
+    +(plat?'':'<text x="'+X(t)+'" y="'+(+Y(alt(t))+16)+'" font-size="9.5" fill="#706f6f" text-anchor="middle">'+num(alt(t),1)+'</text>'); });
+  const dl=v=>v<V.d&&V.d-v<2.5*V.I.cell?V.d:v;   /* écart de grille (≈ 2 cases) : valeur réglementaire */
+  if(ax.seg.length&&V.d>0){ const s0=ax.seg[0][0], s1=ax.seg[ax.seg.length-1][1], z0=alt(ax.t0)+0.8, z1=alt(ax.t1)+0.8;
+    s+='<line x1="'+X(ax.t0)+'" y1="'+Y(z0)+'" x2="'+X(s0)+'" y2="'+Y(z0)+'" stroke="#BD1E42" stroke-width="1.2" marker-start="url(#sgfzc)" marker-end="url(#sgfzc)"/><text x="'+((+X(ax.t0)+ +X(s0))/2)+'" y="'+(+Y(z0)-5)+'" font-size="10.5" font-weight="700" fill="#BD1E42" text-anchor="middle">'+sgFzM(dl(s0-ax.t0))+'</text>'
+      +'<line x1="'+X(s1)+'" y1="'+Y(z1)+'" x2="'+X(ax.t1)+'" y2="'+Y(z1)+'" stroke="#BD1E42" stroke-width="1.2" marker-start="url(#sgfzc)" marker-end="url(#sgfzc)"/><text x="'+((+X(s1)+ +X(ax.t1))/2)+'" y="'+(+Y(z1)-5)+'" font-size="10.5" font-weight="700" fill="#BD1E42" text-anchor="middle">'+sgFzM(dl(ax.t1-s1))+'</text>'; }
+  s+='<text x="10" y="'+(Math.round(H)-8)+'" font-size="10.5" fill="#706f6f">Coupe '+(axe==='trans'?'transversale':'longitudinale')+' par le centre de la parcelle'+(plat?' · terrain supposé plat (profil indisponible)':' · terrain : swissALTI3D (geo.admin.ch), altitudes en m s. m.')+(V.Hc?' · hauteurs mesurées depuis le terrain naturel':'')+(V.Hf?' · faîte en pointillé rouge':'')+'</text>';
+  return s+'</svg>'; }
+/* carte de la page « Parcelle & règlements » */
+function sgFzVolCarte(rec,st,ecrit){ const {R,det}=sgFzRegles(rec), V=sgFzVolumetrie(rec), E=nxE, man=rec.REGLES||{};
+  const ligne=([k,lib,u])=>{ const r=R[k], d=det[k];
+    return '<tr><td>'+E(lib)+'</td><td class="sg-fzv-in">'+(ecrit?'<input class="inp" data-regle="'+k+'" value="'+E(man[k]!=null?man[k]:'')+'" placeholder="'+E(d?num(d.v,d.v%1?2:0):'—')+'">':'<b>'+E(r?num(r.v,r.v%1?2:0):'—')+'</b>')+'<span>'+E(u)+'</span></td>'
+      +'<td class="sg-fzv-src">'+(r?(r.man?'saisie'+(d?' (détecté : '+num(d.v,d.v%1?2:0)+', '+E(d.src)+')':''):'détecté · '+E(r.src)):'<span class="sg-fz-hint" style="margin:0">non trouvé — saisissez la valeur</span>')+'</td></tr>'; };
+  const kp=(l,v,cl)=>'<div class="sg-phk"><div class="l">'+E(l)+'</div><div class="v'+(cl?' '+cl:'')+'">'+v+'</div></div>';
+  let h='<div class="sg-fzv"><table class="nx-tbl sg-fzv-par"><tr><th>Règle</th><th>Valeur retenue</th><th>Origine</th></tr>'+SG_FZ_PARAMS.map(ligne).join('')+'</table>';
+  if(V&&V.Sdiff) h+='<p class="sg-fzv-alerte">La surface de la fiche ('+num(Math.round(V.Sdiff),0)+' m²) ne correspond pas à la parcelle du plan cadastral ('+num(Math.round(V.Sg),0)+' m²) : le calcul prend celle du plan. Vérifiez la parcelle ou corrigez la surface.</p>';
+  if(V) h+='<div class="sg-phks">'+kp('Surface de la parcelle',num(Math.round(V.S),0)+'<small>m²</small>')+kp('Aire d’implantation',num(Math.round(V.I.aire),0)+'<small>m²</small>')
+      +kp('Emprise max',num(Math.round(V.emp),0)+'<small>m²</small>')+kp('SPd max',V.spd?num(Math.round(V.spd),0)+'<small>m²</small>':'—')
+      +kp('Volume enveloppe',V.vol?num(Math.round(V.vol),0)+'<small>m³</small>':'—')+kp('Espaces verts min',V.verts?num(Math.round(V.verts),0)+'<small>m²</small>':'—')+'</div>'
+      +'<div class="sg-fzv-bar"><span class="seg">'+[['plan','Plan'],['3d','Modèle 3D'],['coupe','Coupe']].map(([k,l])=>'<button data-fn="fzvVue" data-v="'+k+'" class="'+((st.fzv||'plan')===k?'on':'')+'">'+l+'</button>').join('')+'</span>'
+      +((st.fzv||'plan')==='3d'?'<label class="sg-fzv-sl">Orientation<input type="range" min="0" max="355" step="5" id="sg-fzv-az" value="'+(st.fzAz==null?30:st.fzAz)+'"></label><label class="sg-fzv-sl">Élévation<input type="range" min="10" max="80" step="5" id="sg-fzv-el" value="'+(st.fzEl==null?35:st.fzEl)+'"></label>':'')
+      +((st.fzv||'plan')==='coupe'?'<span class="seg">'+[['long','Longitudinale'],['trans','Transversale']].map(([k,l])=>'<button data-fn="fzvAxe" data-v="'+k+'" class="'+((st.fzAxe||'long')===k?'on':'')+'">'+l+'</button>').join('')+'</span>':'')
+      +'</div><div class="sg-fzv-dessin" id="sg-fzv-dessin"></div>';
+  else h+='<div class="nx-empty">'+(rec.PARCELLE.E&&rec.PARCELLE.N?'Forme de la parcelle pas encore lue : cliquez « Appliquer à la parcelle ».':'Indiquez d’abord la parcelle (Rechercher la parcelle).')+'</div>';
+  h+='<p class="sg-fz-hint">Valeurs lues dans les contraintes (articles des règlements, extrait RDPPF) ; une valeur saisie remplace la valeur détectée. Résultat indicatif, à vérifier sur le règlement : mesure des hauteurs, dérogations, alignements, distances entre bâtiments, servitudes.</p></div>';
+  return nxCard('c12','Application des règles à la parcelle',h,ecrit&&rec.PARCELLE.E&&rec.PARCELLE.N?'<span class="a" data-fn="fzvAppliquer">Appliquer à la parcelle</span>':''); }
+/* branchement (dans sgFzDessiner) : dessin courant, saisies, application */
+function sgFzVolBrancher(pg,rec,st,save,redraw,prog){ const box=pg.querySelector('#sg-fzv-dessin'), V=sgFzVolumetrie(rec);
+  const dessiner=async()=>{ if(!box||!V) return; const vue=st.fzv||'plan';
+    if(vue==='plan') box.innerHTML=sgFzPlanSvg(V,rec);
+    else if(vue==='3d') box.innerHTML=sgFzModeleSvg(V,st.fzAz==null?30:st.fzAz,st.fzEl==null?35:st.fzEl);
+    else { const axe=st.fzAxe||'long', ax=sgFzAxeCoupe(V,axe), cle=rec.PARCELLE.EGRID+'|'+axe+'|'+(rec.PARCELLE.GEOM||[]).length; box.innerHTML=sgFzCoupeSvg(V,ax,(st.fzProf||{})[cle]||null,axe);
+      if(!(st.fzProf||{})[cle]){ try{ const pr=await sgFzProfil(V,ax); st.fzProf=Object.assign(st.fzProf||{},{[cle]:pr}); if(box.isConnected&&(st.fzv||'plan')==='coupe') box.innerHTML=sgFzCoupeSvg(V,ax,pr,axe); }catch(e){ st.fzProf=Object.assign(st.fzProf||{},{[cle]:[]}); } } } };
+  dessiner();
+  const az=pg.querySelector('#sg-fzv-az'), el=pg.querySelector('#sg-fzv-el'); if(az) az.oninput=()=>{ st.fzAz=+az.value; dessiner(); }; if(el) el.oninput=()=>{ st.fzEl=+el.value; dessiner(); };
+  pg.querySelectorAll('input[data-regle]').forEach(i=>i.onchange=async()=>{ const k=i.dataset.regle, t=i.value.trim().replace(',','.'); rec.REGLES=rec.REGLES||{};
+    if(t===''){ delete rec.REGLES[k]; } else { const v=sgFzNum(t); if(!isFinite(v)){ toast('Nombre attendu (ex. 0.5, 1/3, 6).',true); return; } rec.REGLES[k]=v; } await save(); redraw(); });
+  Object.assign(pg._fn,{ fzvVue:b=>{ st.fzv=b.dataset.v; redraw(); }, fzvAxe:b=>{ st.fzAxe=b.dataset.v; redraw(); },
+    fzvAppliquer:async()=>{ const P=rec.PARCELLE; if(!(P.E&&P.N)){ toast('Indiquez d’abord la parcelle.',true); return; }
+      prog('Forme de la parcelle (plan cadastral, geo.admin.ch)…');
+      try{ const g=await sgFzParcelleGeom(+P.E,+P.N); const pl=g?(g.type==='MultiPolygon'?g.coordinates:g.type==='Polygon'?[g.coordinates]:[]):[];
+        const ext=pl.map(x=>x[0]).sort((p,q)=>sgFzAireRing(q)-sgFzAireRing(p))[0]; if(!ext) throw new Error('géométrie de la parcelle introuvable à ces coordonnées');
+        P.GEOM=ext.map(p=>[Math.round(p[0]*100)/100,Math.round(p[1]*100)/100]); if(!(+P.SURFACE>0)) P.SURFACE=Math.round(sgFzAireRing(ext)); }
+      catch(e){ prog(''); toast('✗ Parcelle : '+(e.message||e),true); return; }
+      const W=sgFzVolumetrie(rec); prog(''); if(!W){ toast('Calcul impossible.',true); return; } const {R}=sgFzRegles(rec); let n=0;
+      const rep=(k,t)=>{ const r=R[k]; if(!r||!r.cid) return; const c=rec.CONTRAINTES.find(x=>x.ID===r.cid); if(!c||String(c.REPONSE||'').trim()) return; c.REPONSE=t; if((c.STATUT||'a_traiter')==='a_traiter') c.STATUT='a_verifier'; n++; };
+      rep('DIST','Aire d’implantation possible : '+sgFzM2(W.I.aire)+' sur '+sgFzM2(W.S)+' (distance de '+sgFzM(W.d)+' aux limites).');
+      if(W.cos) rep('COS','Emprise au sol max : '+sgFzM2(W.emp)+' (COS '+num(W.cos,2)+' × '+sgFzM2(W.S)+(W.cos*W.S>W.I.aire?', limitée par l’aire d’implantation':'')+').');
+      if(W.ius) rep('IUS','SPd max : '+sgFzM2(W.spd)+' (IUS '+num(W.ius,2)+' × '+sgFzM2(W.S)+').');
+      if(W.Hc) rep('H_CORN','Enveloppe : '+sgFzM(W.Hc)+' à la corniche'+(W.Hf?', '+sgFzM(W.Hf)+' au faîte':'')+' — volume enveloppe '+num(Math.round(W.vol),0)+' m³.');
+      if(W.Hf) rep('H_FAITE','Faîte max à '+sgFzM(W.Hf)+' du terrain naturel.');
+      if(W.verts) rep('VERTS','Espaces verts min : '+sgFzM2(W.verts)+'.');
+      if(W.niv&&R.NIV) rep('NIV',W.niv+' niveaux'+(W.spd&&W.emp?' — SPd max / emprise max : '+num(W.spd/W.emp,1)+' niveaux pleins.':'.'));
+      rec.VOLUMETRIE={DATE:today(),S:Math.round(W.S),AIRE:Math.round(W.I.aire),EMPRISE:Math.round(W.emp),SPD:W.spd?Math.round(W.spd):null,VOLUME:W.vol?Math.round(W.vol):null,VERTS:W.verts?Math.round(W.verts):null,REGLES:Object.fromEntries(Object.entries(R).map(([k,r])=>[k,r.v]))};
+      await save(); toast('Règles appliquées à la parcelle'+(n?' : '+n+' réponse'+(n>1?'s':'')+' de contrainte remplie'+(n>1?'s':''):'')+'.'); redraw(); } }); }
 VIEWS['nx-faisa']={
   render(m,arg){ const [pid,mode]=String(arg||'').split('|'), p=DS.get('project',pid); this.draw=null;
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
@@ -27672,6 +27899,14 @@ const SG_FZ_DOC_CSS='h3{font-size:9pt;margin:4mm 0 1.5mm;font-weight:700;break-a
 async function sgFaisaFiche(p){ await DS.need([SG_FZ_T,'depotfichier']).catch(()=>{}); const rec=sgFzRec(p), P=rec.PARCELLE, E=nxE, mo=projMO(p);
   const rub=titre=>{ try{ const d=ch03aDossier('document',p.ID,'Faisabilité',titre); return DS.all('depotfichier').filter(f=>String(f.DOSSIER).normalize('NFC')===d).sort((a,b)=>cmp(a.NOM,b.NOM)); }catch(_){ return []; } };
   const fichiers=L=>L.length?'<ul>'+L.map(f=>'<li>'+E(f.NOM)+(f.MODIFIED?' <small>('+E(dfr(String(f.MODIFIED).slice(0,10)))+')</small>':'')+'</li>').join('')+'</ul>':'<p class="fz-vide">Aucun document déposé.</p>';
+  /* application des règles à la parcelle : tableau, plan des contraintes, modèle 3D, coupe sur le terrain (21.10.2026) */
+  let vol=''; const V=sgFzVolumetrie(rec);
+  if(V){ const {R}=sgFzRegles(rec), ax=sgFzAxeCoupe(V,'long'); let prof=null; try{ prof=await sgFzProfil(V,ax); }catch(_){}
+    const svg=x=>'<div style="margin:6px 0 14px;page-break-inside:avoid">'+String(x).replace('class="sg-fzv-svg"','style="width:100%;height:auto;display:block"')+'</div>', m2=v=>v?E(num(Math.round(v),0))+' m²':'—';
+    vol='<h3>Application des règles à la parcelle</h3><table><tr><th>Règle</th><th class="r">Valeur</th><th>Origine</th></tr>'+SG_FZ_PARAMS.filter(([k])=>R[k]).map(([k,l,u])=>'<tr><td>'+E(l)+'</td><td class="r">'+E(num(R[k].v,R[k].v%1?2:0)+(u?' '+u:''))+'</td><td>'+E(R[k].man?'saisie':R[k].src)+'</td></tr>').join('')+'</table>'
+      +'<table><tr><th>Surface de la parcelle</th><th>Aire d’implantation</th><th>Emprise max</th><th>SPd max</th><th>Volume enveloppe</th><th>Espaces verts min</th></tr><tr><td>'+m2(V.S)+'</td><td>'+m2(V.I.aire)+'</td><td>'+m2(V.emp)+'</td><td>'+m2(V.spd)+'</td><td>'+(V.vol?E(num(Math.round(V.vol),0))+' m³':'—')+'</td><td>'+m2(V.verts)+'</td></tr></table>'
+      +'<h3>Plan des contraintes</h3>'+svg(sgFzPlanSvg(V,rec))+'<h3>Modèle 3D de la volumétrie maximale</h3>'+svg(sgFzModeleSvg(V,30,35))+'<h3>Coupe longitudinale</h3>'+svg(sgFzCoupeSvg(V,ax,prof,'long'))
+      +'<p class="fz-vide">Résultat indicatif, à vérifier sur le règlement : mesure des hauteurs, dérogations, alignements, distances entre bâtiments, servitudes.</p>'; }
   const g=rec.SOURCES.find(s=>s.TYPE==='geoadmin'), r=rec.SOURCES.find(s=>s.TYPE==='rdppf'), bats=(g&&g.DONNEES&&g.DONNEES.bats)||[], restr=(r&&r.DONNEES&&r.DONNEES.restrictions)||[], nonC=(r&&r.DONNEES&&r.DONNEES.nonConcernes)||[];
   const C=rec.CONTRAINTES, parTheme=SG_FZ_THEMES.map(([k,l])=>[k,l,C.filter(c=>(c.THEME||'autres')===k)]).filter(x=>x[2].length);
   const regl=rec.SOURCES.filter(s=>s.TYPE==='reglement'), cit=regl.map(s=>[s,C.filter(c=>c.SOURCE===s.TITRE&&c.REGLE)]).filter(x=>x[1].length);
@@ -27686,7 +27921,7 @@ async function sgFaisaFiche(p){ await DS.need([SG_FZ_T,'depotfichier']).catch(()
     +(cit.length?'<h3>Extraits cités des règlements</h3>'+cit.map(([s,cs])=>'<p><b>'+E(s.TITRE)+'</b></p><ul class="fz-cit">'+cs.map(c=>'<li>'+(c.ARTICLE?'<b>'+E(c.ARTICLE)+'</b> — ':'')+E(c.REGLE)+'</li>').join('')+'</ul>').join(''):'')
     +'<h2>4. Contraintes et réponses du projet</h2>'+(parTheme.length?parTheme.map(([k,l,cs])=>'<h3>'+E(l)+'</h3><table class="fz-ct"><tr><th style="width:34%">Contrainte · règle</th><th style="width:20%">Source · article · valeur</th><th>Réponse du projet</th><th style="width:12%">Statut</th></tr>'
         +cs.map(c=>'<tr><td><b>'+E(c.TITRE)+'</b>'+(c.REGLE?'<br>'+E(c.REGLE):'')+'</td><td>'+E([c.SOURCE,c.ARTICLE].filter(Boolean).join(' · '))+(c.VALEUR?'<br><b>'+E(c.VALEUR)+'</b>':'')+'</td><td>'+E(c.REPONSE||'—')+(c.NOTE?'<br><small>'+E(c.NOTE)+'</small>':'')+'</td><td class="st-'+E(c.STATUT||'a_traiter')+'">'+E(SG_FZ_ST_L[c.STATUT||'a_traiter']||'')+'</td></tr>').join('')+'</table>').join(''):'<p class="fz-vide">Aucune contrainte relevée.</p>')
-    +'<h2>5. Potentiel constructible et variantes</h2><h3>Études</h3>'+fichiers(rub('Études'))+'<h3>Variantes</h3>'+fichiers(rub('Variantes'))+'<h3>Présentation au client</h3>'+fichiers(rub('Présentation au client'))
+    +'<h2>5. Potentiel constructible et variantes</h2>'+vol+'<h3>Études</h3>'+fichiers(rub('Études'))+'<h3>Variantes</h3>'+fichiers(rub('Variantes'))+'<h3>Présentation au client</h3>'+fichiers(rub('Présentation au client'))
     +'<h2>6. État existant et polluants</h2><h3>Bâtiments recensés (RegBL)</h3>'+(bats.length?'<table><tr><th>EGID</th><th>Adresse</th><th>Construction</th><th>Affectation</th><th class="r">Surface</th><th class="r">Niveaux</th><th class="r">Logements</th></tr>'
         +bats.map(b=>'<tr><td>'+E(b.egid)+'</td><td>'+E(b.adresse||'')+'</td><td>'+E(b.annee||SG_FZ_GBAUP[b.periode]||'')+'</td><td>'+E(SG_FZ_GKLAS[b.classe]||b.classe||'')+'</td><td class="r">'+(b.surface?E(num(b.surface,0))+' m²':'')+'</td><td class="r">'+E(b.niveaux||'')+'</td><td class="r">'+E(b.logements||'')+'</td></tr>').join('')+'</table>':'<p class="fz-vide">Aucun bâtiment recensé sur la parcelle, ou recherche geo.admin.ch non faite.</p>')
     +'<h3>Sites pollués</h3>'+(pol.length?'<ul>'+pol.map(c=>'<li><b>'+E(c.TITRE)+'</b>'+(c.REGLE?' — '+E(c.REGLE):'')+(c.REPONSE?'<br>Réponse : '+E(c.REPONSE):'')+'</li>').join('')+'</ul>':nonPol?'<p>La parcelle n’est pas inscrite au cadastre des sites pollués (cadastre RDPPF).</p>':'<p class="fz-vide">Non vérifié.</p>')

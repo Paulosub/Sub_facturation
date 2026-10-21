@@ -600,7 +600,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   tuiles « Ajouter des fichiers » → dossier Général, « Domaine Documents » ; la tuile Documents de la page du projet ouvre Projet, groupe déplié).
   **Chantier** (même code que Projet) : phase **41 Appel d'offres** (déplacée de Projet, mêmes rubriques, fichiers toujours sous le dossier
   « Projet »), Contrôles des coûts, PV de chantier (boutons en tuiles à icône). **Faisabilité** (`sgFaisaOk(p)` : projet classé faisabilité, ou
-  phase n° 2 / « faisabilité » avec heures ou heures au contrat, ou documents déjà déposés) : documents de base, études, variantes, présentation au
+  phase NOMMÉE « faisabilité » même sans heures — 21.10.2026 —, ou phase n° 2 d'un autre nom avec heures ou heures au contrat, ou documents déjà
+  déposés) : documents de base, études, variantes, présentation au
   client (`SG_FAISA_RUB`). **Projet uniquement de faisabilité** (`sgCatProjet` = faisabilité, d'après le titre) : ni Projet ni Chantier ; le module
   Documents est à la fin de Faisabilité. Fichiers : dépôt du moteur (`ch03aDeposer`, droit « documents : dépôt ») sous
   `ProjectDocuments/Documents/<projet>/Documents/Projet/<n° phase>/<rubrique>` ou `…/Faisabilité/<rubrique>`. Onglets permis au collaborateur ;
@@ -642,8 +643,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   demande de Paulo : « dans le projet, ajouter un module Projet, et Faisabilité lorsqu'il y a une phase de faisabilité ; créer un module qui
   permet d'analyser les règlements applicables à la parcelle, avec une automatisation de recherche sur internet ; pour chaque faisabilité, les
   contraintes et les réponses à donner ». Page du projet (`nx-pdom`) : deux groupes de TRAVAIL en tête — **Projet** (PV MO, Présentation client,
-  Estimations, Descriptifs & devis, Dossier d'enquête, Documents) et **Faisabilité** (seulement si `sgFaisaOk(p)` : phase de faisabilité avec
-  heures, documents déposés, ou analyse de parcelle existante ; projet uniquement de faisabilité : sans le groupe Projet) avec Parcelle &
+  Estimations, Descriptifs & devis, Dossier d'enquête, Documents) et **Faisabilité** (seulement si `sgFaisaOk(p)` : phase nommée « faisabilité »
+  — même sans heures depuis le 21.10.2026 —, phase n° 2 d'un autre nom avec heures, documents déposés, ou analyse de parcelle existante ; projet uniquement de faisabilité : sans le groupe Projet) avec Parcelle &
   règlements, Documents de base, Études, Variantes, Présentation au client, Fiche de faisabilité (`SG_PMOD`, `SG_PMOD_G`, compteurs
   `sgPdomModuleCompte`). Une tuile ouvre le module en pleine page (arg `<id>|Projet|<rubrique>` ou `<id>|Faisabilité|<rubrique>`,
   `sgPdomModulePage` → le code dormant `sgOnglet(p,'projet'|'faisa')`, rubrique visée dépliée et surlignée `.sg-foc`) ; chips « Projet » /

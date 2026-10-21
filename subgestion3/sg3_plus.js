@@ -368,10 +368,12 @@ const SG_ONGLETS=[['vue','Vue d’ensemble'],['factu','Contrat'],['temps','Heure
 const SG_PROJ_PH=[[31,'Avant-projet'],[32,'Projet de l’ouvrage'],[33,'Procédure de demande d’autorisation'],[41,'Appel d’offres, comparaison des offres et propositions d’adjudication']];
 const SG_ENQUETE=[['Formulaire Att_CO','doc','Formulaire Att_CO'],['Questionnaire général','list','Questionnaire général'],['Questionnaire particulier','list','Questionnaire particulier'],['Plan de situation','map','Plan de situation'],['Plans (niveaux, façades, coupes)','ruler','Plans'],['Annexes','folder','Annexes']];
 const SG_FAISA_RUB=[['fb','Documents de base','folder'],['fe','Études','doc'],['fv','Variantes','dup'],['fp','Présentation au client','pdf']];
-/* onglet Faisabilité : projet classé « faisabilité », ou phase de faisabilité utilisée (phase n° 2 ou nommée « faisabilité », ou sa phase
-   partielle 21, avec des heures saisies ou des heures au contrat), ou documents déjà déposés dans Faisabilité */
+/* module Faisabilité : projet classé « faisabilité », ou phase NOMMÉE « faisabilité » (« Faisabilité », « Étude de faisabilité »…), même sans heures
+   (21.10.2026, demande de Paulo), ou phase n° 2 d'un autre nom utilisée (heures saisies ou heures au contrat), ou documents déjà déposés dans
+   Faisabilité */
 function sgFaisaOk(p){ if(typeof sgCatProjet==='function'&&sgCatProjet(p)==='faisabilite') return true;
   const F=DS.by('projectphase','PROJECT_ID',p.ID).filter(f=>+f.NUMBER===2||/faisabilit/i.test(nm(f)||'')); if(!F.length) return false;
+  if(F.some(f=>/faisabilit/i.test(nm(f)||''))) return true;
   const ids=new Set(F.map(f=>String(f.ID))); if(F.some(f=>+f.TIMEBUDGET>0)) return true;
   if(DS.by('timelog','PROJECT_ID',p.ID).some(r=>ids.has(String(r.PHASE_ID))&&+r.TIMEPERIOD>0)) return true;
   try{ const d=ch03aDossier('document',p.ID,'Faisabilité'); return DS.all('depotfichier').some(f=>String(f.DOSSIER).startsWith(d)); }catch(_){ return false; } }   /* « Phases contrat » regroupé dans « Contrats & factures » (20.10.2026) */

@@ -2445,14 +2445,6 @@ VIEWS['ancf-comparer']=sgAncComparer('f');
 ['anc-comparer','ancf-comparer'].forEach(v=>{ SG_VUE_DROIT[v]=()=>sgDroit('finances','toutes'); });
 ['anc-offres','anc-contrats','anc-avancement','anc-factures','anc-controle','anc-heures','anc-mg-contrats','anc-mg-factures','anc-reglages'].forEach(v=>{ SG_VUE_DROIT[v]=()=>sgDroit('finances','toutes')&&sgDroit('contrats','lecture')&&sgDroit('factures','lecture'); });
 /* chiffres des vues d'ensemble des deux chapitres */
-/* Affaires ▸ vue d'ensemble : chiffres des affaires (22.10.2026, demande de Paulo), même présentation que les autres chapitres (sg-figs) —
-   total, en cours, en attente, terminées, archivées, actives (heures saisies ces 30 derniers jours), heures du mois et de l'année (tout le bureau) */
-{ const fA=sgFigs; sgFigs=async function(k){ if(k!=='affaires') return fA.apply(this,arguments);
-    const ps=DS.all('project'), c=s0=>ps.filter(p=>+p.PROJECTSTATECODE===s0).length, now=new Date(), y=now.getFullYear(), mo=now.getMonth(), lim=dayKey(new Date(y,mo,now.getDate()-30)), act=new Set(); let hM=0, hA=0;
-    DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0; if(tlKey(r)>=lim) act.add(String(r.PROJECT_ID)); if(+r.TIMEYEAR===y){ hA+=v; if(+r.TIMEMONTH===mo) hM+=v; } });
-    const pl=(n,s1,s2)=>({v:num(n,0),t:n>1?s2:s1});
-    return [pl(ps.length,'affaire au total','affaires au total'),pl(c(2),'en cours','en cours'),pl(c(3),'en attente','en attente'),pl(c(4),'terminée','terminées'),pl(c(5),'archivée','archivées'),
-      pl(ps.filter(p=>act.has(String(p.ID))).length,'active ces 30 jours','actives ces 30 jours'),{v:num(Math.round(hM),0)+' h',t:'saisies en '+MOISL[mo].toLowerCase()},{v:num(Math.round(hA),0)+' h',t:'saisies en '+y}]; }; }
 { const f0=sgFigs; sgFigs=async function(k){ if(k!=='ancien'&&k!=='ancienf') return f0.apply(this,arguments);
     const n=t=>DS.all(t).length, notes=ch=>{ const ks=new Set([SG_ANC_CH[ch].syn,...SG_ANC_THEMES.filter(x=>x.ch===ch).map(x=>x.k)]); return DS.all('sganalyse').filter(x=>ks.has(String(x.ID))&&String(x.TEXTE||'').trim()).length; };
     if(k==='ancien') return [{v:n('projectfee'),t:'offres d’honoraires'},{v:n('projectfeecalculation'),t:'variantes de calcul'},{v:n('projectcontract'),t:'contrats'},{v:notes('h'),t:'notes d’analyse'}];
@@ -2801,6 +2793,30 @@ VIEWS['dom-projets']={
     const pg=nxPage(m,html); pg._fn.tgrp=b=>{ const t=b.closest('.sg-tile-grp'), on=t.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); };
     pg._fn.taches=b=>{ const t=b.closest('.sg-pv-tk'), on=t.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); b.title=on?'Replier les listes de tâches':'Afficher les listes de tâches'; }; },
   refresh(ts){ if(hit(ts,'project','projecttask','projectmember')) go('dom-projets'); } };
+/* Affaires ▸ vue d'ensemble (22.10.2026, demande de Paulo) : même présentation que la vue d'ensemble Projets — en-tête et total en grand,
+   « Par état » (en cours, en attente, terminées, archivées : jauge = part du total, nombre d'affaires actives ces 30 jours), « Activité »
+   (affaires actives, heures du mois, de l'année, part facturable de l'année ; tout le bureau), puis les modules du chapitre */
+VIEWS['dom-affaires']={
+  render(m){ const d=SG_D.affaires, ps=sgProjetsVisibles(), tot=ps.length, now=new Date(), y=now.getFullYear(), mo=now.getMonth(), lim=dayKey(new Date(y,mo,now.getDate()-30)), act=new Set();
+    let hM=0, hA=0, hAF=0; DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0; if(tlKey(r)>=lim) act.add(String(r.PROJECT_ID)); if(+r.TIMEYEAR===y){ hA+=v; if(+r.ISCHARGEABLE) hAF+=v; if(+r.TIMEMONTH===mo) hM+=v; } });
+    const pl=(n,s1,s2)=>num(n,0)+' '+(n>1?s2:s1), actifs=L=>L.filter(p=>act.has(String(p.ID))).length, E=nxE;
+    const etat=([st,t,ico])=>{ const L=ps.filter(p=>+p.PROJECTSTATECODE===st), n=L.length, pc=tot?Math.round(n/tot*100):0, a=actifs(L);
+      return '<div class="sg-pv-k" data-go="nx-listeprojets" data-arg="etat:'+st+'" title="'+E(t)+' : '+pl(n,'affaire','affaires')+', '+a+' active'+(a>1?'s':'')+' ces 30 jours"><div class="l">'+nxSvg(ico)+E(t)+'</div>'
+        +'<div class="v">'+n+'</div><div class="nx-bar"><i style="width:'+pc+'%"></i></div><div class="s"><b>'+a+'</b> active'+(a>1?'s':'')+' ces 30 jours · '+pc+' %</div></div>'; };
+    const kpi=(t,ico,v,s2,bar,go,arg)=>'<div class="sg-pv-k"'+(go?' data-go="'+go+'"'+(arg?' data-arg="'+arg+'"':''):'')+'><div class="l">'+nxSvg(ico)+E(t)+'</div><div class="v">'+v+'</div>'+(bar!=null?'<div class="nx-bar"><i style="width:'+Math.max(0,Math.min(100,bar))+'%"></i></div>':'<div class="nx-bar vide"></div>')+'<div class="s">'+s2+'</div></div>';
+    const enc=ps.filter(p=>+p.PROJECTSTATECODE===2), aE=actifs(enc), moisL=MOISL[mo].toLowerCase();
+    const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), tuile=it=>'<div class="sg-tile'+(it.hero?' hero':'')+'" data-go="'+it.v+'"><div class="ti">'+nxSvg(it.ico)+'<h3>'+E(it.t)+'</h3></div><p>'+E(it.d||'')+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>';
+    const html='<div class="sg-pv"><div class="sg-pv-h"><div><div class="sg-lbl">Affaires</div><h2>Vue d’ensemble</h2><p>'+E(d.d||'')+'</p></div>'
+      +'<div class="sg-pv-hero" data-go="nx-listeprojets" data-arg="tous"><b>'+tot+'</b><span>'+(tot>1?'affaires au total':'affaire au total')+'<br><em>'+enc.length+' en cours</em></span></div></div>'
+      +'<div class="sg-pv-t">Par état</div><div class="sg-pv-kpis">'+[[2,'En cours','task'],[3,'En attente','clock'],[4,'Terminées','star'],[5,'Archivées','db']].map(etat).join('')+'</div>'
+      +'<div class="sg-pv-t">Activité</div><div class="sg-pv-kpis">'
+        +kpi('Affaires actives','trend',act.size?ps.filter(p=>act.has(String(p.ID))).length:0,'heures saisies ces 30 jours · <b>'+aE+'</b> sur '+enc.length+' en cours',enc.length?aE/enc.length*100:null,'affd-controlling')
+        +kpi('Heures du mois','clock',num(Math.round(hM),0)+'<small>h</small>','saisies en '+moisL+' · tout le bureau',null)
+        +kpi('Heures de l’année','cal',num(Math.round(hA),0)+'<small>h</small>','saisies en '+y+' · tout le bureau',null)
+        +kpi('Part facturable','receipt',(hA?Math.round(hAF/hA*100):0)+'<small>%</small>','<b>'+num(Math.round(hAF),0)+' h</b> facturables en '+y,hA?hAF/hA*100:null)+'</div>'
+      +'<div class="sg-pv-t">Modules</div><div class="sg-tiles">'+its.map(tuile).join('')+'</div></div>';
+    nxPage(m,html); },
+  refresh(ts){ if(hit(ts,'project','timelog')) go('dom-affaires'); } };
 /* liste des projets visibles, filtrée par catégorie (cat:…) ou par état (etat:…) ; un clic ouvre la page du projet */
 VIEWS['nx-listeprojets']={
   render(m,arg){ const a=String(arg||'tous'), [k,v]=a.split(':'), cat=k==='cat'?v:null, etat=k==='etat'?+v:null, q=String(nxLS.get('sg3_listep_q','')||'');

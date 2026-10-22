@@ -993,3 +993,5 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sga-pers{gap:11px}
 .sga-pers .t span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sga-pers .sga-ic{margin-left:auto}
+.sg-pv-k .nx-bar.vide{background:none}   /* tuile sans jauge (Affaires ▸ Activité, 22.10.2026) */
+.sg-pv-k .v small{font-size:15px;color:var(--s-gris);margin-left:4px;font-weight:400}

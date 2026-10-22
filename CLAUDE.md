@@ -661,8 +661,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Accueil : mention « Substances Architectes — Gestion » retirée au-dessus de « Bonjour … » (22.10.2026 ; libellé vide de `sgIntro` : la ligne épaisse reste, `.sg-lbl.vide`).
   **« Accueil » renommé « Cockpit » (22.10.2026)** : entrée du menu (`SG_DOM` k « accueil », vue `nx-home`), infobulle du logo, lien « Cockpit ▸ À traiter ».
   ⚠ Facturation a aussi un module « Cockpit » (`fx-cockpit`, tableau de bord des honoraires) : deux entrées du même nom.
-  **Affaires ▸ vue d'ensemble (22.10.2026)** : chiffres dans la colonne de gauche (`sgFigs('affaires')`, présentation `sg-figs` des autres chapitres) :
-  total, en cours, en attente, terminées, archivées, actives ces 30 jours (heures saisies), heures du mois et de l'année (tout le bureau).
+  **Affaires ▸ vue d'ensemble (22.10.2026)** = `VIEWS['dom-affaires']`, même présentation que la vue d'ensemble Projets (`.sg-pv`) : en-tête et total en
+  grand ; « Par état » (en cours, en attente, terminées, archivées — jauge = part du total, affaires actives ces 30 jours ; clic → liste filtrée) ;
+  « Activité » (affaires actives, heures du mois, de l'année, part facturable de l'année — tout le bureau) ; « Modules » en dessous.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
   (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,

@@ -2368,7 +2368,7 @@ const SG_ANC_THEMES=[
    c:'Ancien : encaissements partiels (montant, date), solde à encaisser par facture et par contrat. Actuel : une date de paiement, qui passe la facture en « Payée » pour son total.'},
   {ch:'f',k:'qr',t:'QR-facture',anc:['anc-factures','anc-reglages'],act:[],
    c:'Ancien : comptes QR, édition et validation de la QR-facture, génération et ajout au PDF. Actuel : seul l’IBAN est imprimé en texte.'},
-  {ch:'f',k:'suivi',t:'Suivi des factures et rappels',anc:['anc-controle'],act:[['fx-factures','Factures'],['nx-home','Accueil ▸ À traiter']],
+  {ch:'f',k:'suivi',t:'Suivi des factures et rappels',anc:['anc-controle'],act:[['fx-factures','Factures'],['nx-home','Cockpit ▸ À traiter']],
    c:'Ancien : Planifiée / Envoyée / Rappel envoyé / Payée, nombre de rappels saisi à la main, pas de document de rappel. Actuel : jours de retard, « Impayée » posé automatiquement après l’échéance, factures échues à relancer sur l’accueil ; pas de rappel non plus.'},
   {ch:'f',k:'heures',t:'Heures et frais facturés',anc:['anc-heures','anc-controle'],act:[['nx-situation','Situation des heures']],
    c:'Ancien : heures et frais marqués « facturés » dans le controlling et transférés en positions d’une facture planifiée ; tarifs horaires datés. Actuel : les heures servent à l’analyse et au coût de revient, pas à la facture.'},

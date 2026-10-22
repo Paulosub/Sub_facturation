@@ -67,7 +67,7 @@ ibtn=function(b){ const el=sgIbtn0(b);
 
 /* ── Domaines et modules (ordre de la barre principale) ── */
 const SG_DOM=[
-  {k:'accueil',t:'Accueil',ico:'home',items:[{v:'nx-home',t:'Aujourd’hui'}]},
+  {k:'accueil',t:'Cockpit',ico:'home',items:[{v:'nx-home',t:'Aujourd’hui'}]},
   /* Affaires (18.10.2026) : le module Affaires de l'ancien logiciel tel quel (liste | domaines d'affaire | contenu) ; écrans du moteur
      repris sous affd-* (sg3_plus.js, bloc 20) pour que le menu reste distinct de Projets */
   {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion, controlling, mes affaires et toutes les affaires — liste des affaires, domaines d’affaire et contenu.',items:[
@@ -220,7 +220,7 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
   let s='';
   SG_DOM.forEach(d=>{
     if(d.menu===0) return;   // chapitre retiré du menu de gauche (reste joignable autrement)
-    if(d.k==='accueil'){ s+='<div class="nx-g'+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='nx-home'?' on':'')+'" data-go="nx-home" title="Accueil">'+nxSvg(d.ico)+'<span class="lb">Accueil</span></div></div>'; return; }
+    if(d.k==='accueil'){ s+='<div class="nx-g'+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='nx-home'?' on':'')+'" data-go="nx-home" title="Cockpit">'+nxSvg(d.ico)+'<span class="lb">Cockpit</span></div></div>'; return; }
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
     if(!its.length) return;   // domaine sans module permis pour ce profil
     s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='dom-'+d.k?' on':'')+'" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+(d.prov?'<i class="sg-prov" title="Chapitre provisoire">prov.</i>':'')+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'

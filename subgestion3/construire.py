@@ -32,7 +32,7 @@ def remplacer(s, old, new, n=1, quoi=''):
 COQUILLE = '''<div id="boot"><div id="boot-logo"></div><span id="boot-msg">Ouverture…</span></div>
 <div id="app">
   <aside id="nx-side">
-    <div class="sg-brand" id="sg-logo" title="Accueil"></div>
+    <div class="sg-brand" id="sg-logo" title="Cockpit"></div>
     <button class="sg-qbtn" id="nx-qbtn" title="Rechercher partout (⌘K)"><span>Rechercher</span><span class="nx-kbd">⌘K</span></button>
     <nav id="nx-nav" aria-label="Menu"></nav>
     <div class="nx-foot"><div id="nx-who" style="display:contents"></div><button class="nx-ico-btn" id="nx-minibtn" title="Réduire le menu (⌘\\)"></button></div>

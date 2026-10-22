@@ -659,6 +659,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   mêmes colonnes et actions (editCost / delCost), tri par date décroissante, nombre et total. Le chapitre Affaires garde le domaine d'origine.
   Titres des groupes de la page du projet sans le nombre « n domaines / n modules » (21.10.2026).
   Accueil : mention « Substances Architectes — Gestion » retirée au-dessus de « Bonjour … » (22.10.2026 ; `sgIntro` sans libellé quand il est vide).
+  **« Accueil » renommé « Cockpit » (22.10.2026)** : entrée du menu (`SG_DOM` k « accueil », vue `nx-home`), infobulle du logo, lien « Cockpit ▸ À traiter ».
+  ⚠ Facturation a aussi un module « Cockpit » (`fx-cockpit`, tableau de bord des honoraires) : deux entrées du même nom.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
   (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,

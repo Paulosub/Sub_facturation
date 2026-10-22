@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 22.10.2026 11:29 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 22.10.2026 11:36 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1004,6 +1004,17 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sga-pers .sga-ic{margin-left:auto}
 .sg-pv-k .nx-bar.vide{background:none}   /* tuile sans jauge (Affaires ▸ Activité, 22.10.2026) */
 .sg-pv-k .v small{font-size:15px;color:var(--s-gris);margin-left:4px;font-weight:400}
+/* Affaires ▸ Gestion : colonnes utiles et fiche à droite (22.10.2026) */
+.sg-ag-corps{display:flex;flex:1;min-height:0;border-top:1px solid var(--s-filet)}
+.sg-ag-liste{flex:1;min-width:0;display:flex;flex-direction:column}.sg-ag-liste>.pane{flex:1;min-height:0}
+.sg-ag-fiche{flex:0 0 330px;border-left:1px solid var(--s-filet);overflow:auto;padding:16px 18px;background:#fff}
+.sg-ag-fh{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sg-ag-fiche h3{margin:10px 0 12px;font-size:18px;line-height:1.2;font-weight:700}
+.sg-ag-fiche dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;border-top:2px solid var(--s-noir);padding-top:10px}
+.sg-ag-fiche dt{color:var(--s-gris)}.sg-ag-fiche dd{margin:0}.sg-ag-fiche dd small{color:var(--s-gris)}
+.sg-ag-act{margin-top:16px}
+.sg-ag-pt{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--s-gris3)}.sg-ag-pt.on{background:#6f8f17;box-shadow:none}
+@media (max-width:1100px){.sg-ag-fiche{flex-basis:270px}}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -28078,6 +28089,55 @@ VIEWS['nx-pdom']={
   refresh(ts){ if(this.drawC){ this.drawC(); return; } if(hit(ts,'project','timelog',...SG_PDOM_T)) go('nx-pdom',VIEW.arg); } };
 /* chapitre Affaires : écrans du moteur sous d'autres identifiants (état propre à chaque écran : Object.create), mêmes droits */
 [['affd-gestion','aff-gestion'],['affd-controlling','aff-controlling'],['affd-mes','aff-mes'],['affd-toutes','aff-toutes']].forEach(([a,b])=>{ if(VIEWS[b]) VIEWS[a]=Object.create(VIEWS[b]); });
+/* Affaires ▸ Gestion amélioré (22.10.2026, choix de Paulo : « colonnes utiles » et « fiche à droite ») — mêmes outils que l'écran de l'ancien
+   logiciel (aff-gestion, barre reprise telle quelle : nouvelle affaire, éditer, intervenants, configuration, subdivisions, modèles, documents,
+   fonctions, filtre) ; colonnes Catégorie, Phase actuelle (feuille d'heures, sgPhaseActuelle), Dernière saisie, Heures 30 j et point d'activité
+   (heures saisies ces 30 jours, au lieu de « Actif ») ; fiche de l'affaire sélectionnée à droite (état, maître d'ouvrage, dates, phase, heures,
+   équipe, contrats reliés, actions). Projets ▸ Registre garde l'écran d'origine. */
+VIEWS['affd-gestion']={
+  render(m){ const cur=()=>DS.get('project',AF.g.sel), need=f=>()=>{ const p=cur(); if(!p){ toast('Sélectionnez une affaire.',true); return; } f(p); };
+    const R=h('div',{class:'col fill sg-ag',style:{margin:'6px'}}), pane=h('div',{class:'pane'}), fiche=h('aside',{class:'sg-ag-fiche'});
+    const head=phead([
+      {i:'plus',t:'Nouvelle affaire',fn:()=>editProject()},{i:'edit',t:'Editer l’affaire',fn:need(editProject)},{i:'minus',t:'Supprimer l’affaire',fn:need(delProject)},
+      {i:'person',t:'Intervenants',menu:()=>[{t:'Attribuer les intervenants',fn:need(cfgMembers)},{t:'Attribuer les activités aux collaborateurs',fn:need(cfgActivities)}]},
+      {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)},{t:'Configurer les séances',fn:need(mtTypesDialog)},{t:'Configurer les frais …',fn:need(ch17aOpen)}]},
+      {i:'tree',t:'Subdivisions',menu:()=>[{t:'Configurer la subdivision par ouvrages et localisations',fn:need(cfgSubprojects)}]},
+      {i:'save',t:'Modèles et documents externes',menu:()=>[{t:'Définir les modèles …',fn:need(p=>tplNeed().then(()=>defineTemplates(p)))},{t:'Dossier des documents externes …',fn:need(p=>editProject(p))}]},
+      {i:'doc',t:'Documents',menu:()=>[{t:'Liste des affaires',fn:()=>printProjects(AF.g.view)}]},
+      {i:'gear',t:'Fonctions',menu:()=>[{t:'Afficher les non archivées',chk:!AF.arch,fn:()=>{ AF.arch=!AF.arch; try{localStorage.setItem('ds_af_arch',AF.arch?'1':'0');}catch(_){} draw(); }},'-',
+        {t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(AF.g)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(AF.g,'Affaires')}]},
+      {i:'filter',t:'Filtre',menu:()=>[{t:'Tous les statuts',chk:!AF.filt.s,fn:()=>{ AF.filt.s=null; draw(); }},...Object.entries(PSTATE).map(([k,t])=>({t,chk:AF.filt.s==k,fn:()=>{ AF.filt.s=k; draw(); }})),'-',
+        {t:'Affaires internes',chk:AF.filt.i===1,fn:()=>{ AF.filt.i=AF.filt.i===1?null:1; draw(); }},{t:'Affaires externes',chk:AF.filt.i===0,fn:()=>{ AF.filt.i=AF.filt.i===0?null:0; draw(); }}]}
+    ],{count:1,search:q=>{ AF.q=q; draw(); }});
+    R.append(head,h('div',{class:'sg-ag-corps'},h('div',{class:'sg-ag-liste'},pane),fiche)); m.append(R);
+    let I={}, PA={}; const index=()=>{ const lim=dayKey(new Date(Date.now()-30*864e5)); I={}; PA={};
+      DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0, k=tlKey(r), x=I[r.PROJECT_ID]||(I[r.PROJECT_ID]={der:0,derD:null,h30:0,tot:0,st:{}}); x.tot+=v; x.st[r.STAFF_ID]=(x.st[r.STAFF_ID]||0)+v; if(k>x.der){ x.der=k; x.derD=tlDate(r); } if(k>=lim) x.h30+=v; }); };
+    const ix=p=>I[p.ID]||{der:0,derD:null,h30:0,tot:0,st:{}}, phase=p=>PA[p.ID]!==undefined?PA[p.ID]:(PA[p.ID]=sgPhaseActuelle(p)), phL=p=>sgPhaseLib(phase(p),true)||'';
+    const catL=p=>{ const c=sgCatOuInterne(p); return c==='interne'?'Autres':c==='architecture'?'':(SG_CAT_L[c]||''); }, E=nxE;
+    const dessinerFiche=()=>{ const p=cur(); if(!p){ fiche.innerHTML='<div class="nx-empty">Sélectionnez une affaire pour voir sa fiche.</div>'; return; }
+      const x=ix(p), pa=phase(p), eq=Object.entries(x.st).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([sid,v])=>{ const st=DS.get('staff',sid); return st?E(staffName(st))+' <small>'+nxH(v)+' h</small>':''; }).filter(Boolean);
+      const li=(l,v)=>v?'<dt>'+E(l)+'</dt><dd>'+v+'</dd>':'';
+      fiche.innerHTML='<div class="sg-ag-fh"><span class="nx-tag num">'+E(p.NUMBER||'')+'</span>'+nxStateTag(p)+(catL(p)?' <span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div><h3>'+E(p.TITLE||'')+'</h3>'
+        +'<dl>'+li('Maître d’ouvrage',E(projMO(p)))+li('Lieu',E(p.LOCATION||''))+li('Début',p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE):'')+li('Fin',p.PROJECTENDDATE?dfr(p.PROJECTENDDATE):'')
+        +li('Phase actuelle',pa?E(sgPhaseLib(pa))+(pa.recent?'':' <small>(dernière saisie le '+dfr(diso(pa.date))+')</small>'):'')
+        +li('Dernière saisie',x.derD?dfr(diso(x.derD)):'—')+li('Heures',x.tot?'<b>'+nxH(x.h30)+' h</b> ces 30 jours · '+nxH(x.tot)+' h au total':'aucune heure saisie')
+        +li('Équipe',eq.join('<br>'))+'<dt>Contrats</dt><dd id="sg-ag-ctr">…</dd></dl>'
+        +'<div class="sg-htls sg-iacts sg-ag-act"><button data-a="edit" title="Éditer l’affaire">'+nxSvg('edit')+'<span>Éditer</span></button><button data-a="interv" title="Attribuer les intervenants">'+nxSvg('users')+'<span>Intervenants</span></button>'
+        +'<button data-a="page" title="Page du projet">'+nxSvg('folder')+'<span>Page du projet</span></button><button data-a="tdb" title="Tableau de bord du projet">'+nxSvg('gauge')+'<span>Tableau de bord</span></button></div>';
+      fiche.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else go('nx-projet',p.ID); });
+      fxEnsure().catch(()=>null).then(()=>{ const c=fiche.querySelector('#sg-ag-ctr'); if(!c||cur()!==p) return; const D=fxData(), cs=D?sgContratsDuProjet(p,D).filter(k=>!k.annule):[];
+        c.innerHTML=cs.length?cs.length+' contrat'+(cs.length>1?'s':'')+' · <b>'+nxCHF(cs.reduce((s0,k)=>s0+(+k.httc||0),0))+' CHF</b> TTC':(D?'aucun contrat relié':'—'); }); };
+    const draw=()=>{ const rows=DS.all('project').filter(p=>(AF.arch||p.PROJECTSTATECODE!==5)&&(!AF.filt.s||p.PROJECTSTATECODE==AF.filt.s)&&(AF.filt.i==null||(+!!p.ISINTERNAL)===AF.filt.i)&&matchQ(AF.q,p.NUMBER,p.TITLE,p.DESCRIPTION));
+      grid(pane,Object.assign(AF.g,{cols:[{k:'NUMBER',t:'Numéro',w:92},{k:'TITLE',t:'Affaire',w:300},{k:'st',t:'Statut',w:96,f:projState,v:p=>p.PROJECTSTATECODE},
+        {k:'cat',t:'Catégorie',w:90,f:p=>E(catL(p)),v:catL},{k:'ph',t:'Phase actuelle',w:150,f:p=>E(phL(p)),v:phL},
+        {k:'der',t:'Dernière saisie',w:100,f:p=>ix(p).derD?dfr(diso(ix(p).derD)):'',v:p=>ix(p).der},{k:'h30',t:'Heures 30 j',w:84,cls:'r',f:p=>ix(p).h30?nxH(ix(p).h30):'',v:p=>ix(p).h30},
+        {k:'act',t:'Activité',w:62,cls:'c',f:p=>ix(p).h30?'<i class="sg-ag-pt on" title="Heures saisies ces 30 jours"></i>':'<i class="sg-ag-pt" title="Aucune heure saisie ces 30 jours"></i>',v:p=>ix(p).h30},
+        {k:'PROJECTSTARTDATE',t:'Début',w:90,f:p=>dfr(p.PROJECTSTARTDATE)},{k:'PROJECTENDDATE',t:'Fin',w:90,f:p=>dfr(p.PROJECTENDDATE)},{k:'mo',t:'Maître d’ouvrage',w:200,f:p=>E(projMO(p)),v:projMO}],
+        rows,sort:AF.g.sort||['NUMBER',-1],onDbl:p=>editProject(p),onSel:()=>dessinerFiche()}));
+      head.setCount(rows.length+' Affaires'); dessinerFiche(); };
+    this.draw=()=>{ index(); draw(); }; this.draw(); },
+  refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog')&&this.draw) this.draw(); } };
+
 /* chapitre Affaires : administrateur et chef de projet seulement (18.10.2026), avec les droits de l'écran d'origine */
 ['gestion','controlling','mes','toutes'].forEach(k=>{ const r=SG_VUE_DROIT['aff-'+k]; SG_VUE_DROIT['affd-'+k]=()=>(sgAdmin()||SG_ACC.profil==='cdp')&&(!r||!!r()); });
 /* fiche projet : même limite d'accès que la page du projet */

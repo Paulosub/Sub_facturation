@@ -2445,6 +2445,14 @@ VIEWS['ancf-comparer']=sgAncComparer('f');
 ['anc-comparer','ancf-comparer'].forEach(v=>{ SG_VUE_DROIT[v]=()=>sgDroit('finances','toutes'); });
 ['anc-offres','anc-contrats','anc-avancement','anc-factures','anc-controle','anc-heures','anc-mg-contrats','anc-mg-factures','anc-reglages'].forEach(v=>{ SG_VUE_DROIT[v]=()=>sgDroit('finances','toutes')&&sgDroit('contrats','lecture')&&sgDroit('factures','lecture'); });
 /* chiffres des vues d'ensemble des deux chapitres */
+/* Affaires ▸ vue d'ensemble : chiffres des affaires (22.10.2026, demande de Paulo), même présentation que les autres chapitres (sg-figs) —
+   total, en cours, en attente, terminées, archivées, actives (heures saisies ces 30 derniers jours), heures du mois et de l'année (tout le bureau) */
+{ const fA=sgFigs; sgFigs=async function(k){ if(k!=='affaires') return fA.apply(this,arguments);
+    const ps=DS.all('project'), c=s0=>ps.filter(p=>+p.PROJECTSTATECODE===s0).length, now=new Date(), y=now.getFullYear(), mo=now.getMonth(), lim=dayKey(new Date(y,mo,now.getDate()-30)), act=new Set(); let hM=0, hA=0;
+    DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0; if(tlKey(r)>=lim) act.add(String(r.PROJECT_ID)); if(+r.TIMEYEAR===y){ hA+=v; if(+r.TIMEMONTH===mo) hM+=v; } });
+    const pl=(n,s1,s2)=>({v:num(n,0),t:n>1?s2:s1});
+    return [pl(ps.length,'affaire au total','affaires au total'),pl(c(2),'en cours','en cours'),pl(c(3),'en attente','en attente'),pl(c(4),'terminée','terminées'),pl(c(5),'archivée','archivées'),
+      pl(ps.filter(p=>act.has(String(p.ID))).length,'active ces 30 jours','actives ces 30 jours'),{v:num(Math.round(hM),0)+' h',t:'saisies en '+MOISL[mo].toLowerCase()},{v:num(Math.round(hA),0)+' h',t:'saisies en '+y}]; }; }
 { const f0=sgFigs; sgFigs=async function(k){ if(k!=='ancien'&&k!=='ancienf') return f0.apply(this,arguments);
     const n=t=>DS.all(t).length, notes=ch=>{ const ks=new Set([SG_ANC_CH[ch].syn,...SG_ANC_THEMES.filter(x=>x.ch===ch).map(x=>x.k)]); return DS.all('sganalyse').filter(x=>ks.has(String(x.ID))&&String(x.TEXTE||'').trim()).length; };
     if(k==='ancien') return [{v:n('projectfee'),t:'offres d’honoraires'},{v:n('projectfeecalculation'),t:'variantes de calcul'},{v:n('projectcontract'),t:'contrats'},{v:notes('h'),t:'notes d’analyse'}];

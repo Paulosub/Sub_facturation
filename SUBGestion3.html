@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 22.10.2026 10:59 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 22.10.2026 11:06 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -231,6 +231,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--s-nuit)}
 
 .sg-intro{position:sticky;top:0}
 .sg-lbl{font-size:11px;font-weight:700;color:var(--s-noir);padding-bottom:7px;border-bottom:2px solid var(--s-noir);margin:0 0 12px}
+.sg-lbl.vide{padding-bottom:0}   /* libellé retiré : seule la ligne épaisse reste (22.10.2026) */
 .sg-intro h2{margin:0;font-size:32px;line-height:1.08;font-weight:700;letter-spacing:-.01em}
 .sg-intro p{margin:12px 0 0;color:var(--s-gris);font-weight:300;font-size:14px;line-height:1.5}
 .sg-intro .acts{display:flex;flex-direction:column;gap:8px;margin-top:22px}
@@ -25042,7 +25043,7 @@ function nxPage(m,html){ const p=h('div',{class:'nx-page'}); p.innerHTML='<div c
   p.addEventListener('click',e=>{ const t=e.target.closest('[data-go],[data-ref],[data-fn]'); if(!t||!p.contains(t)) return;
     if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); else if(t.dataset.fn&&p._fn&&p._fn[t.dataset.fn]) p._fn[t.dataset.fn](t); });
   p._fn={}; return p; }
-const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro">'+(lbl?'<div class="sg-lbl">'+nxE(lbl)+'</div>':'')+'<h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
+const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro"><div class="sg-lbl'+(lbl?'':' vide')+'">'+nxE(lbl||'')+'</div><h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
 
 /* ═══ Accueil ═══ */
 VIEWS['nx-home']={

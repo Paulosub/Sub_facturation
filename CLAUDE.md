@@ -658,7 +658,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   qu'un mois) : tous les frais, choix de l'année « Toutes · 2026 · 2025… » dans la barre (`.sg-fr-an`, comme Factures et Heures ; `sg3_frais_an`),
   mêmes colonnes et actions (editCost / delCost), tri par date décroissante, nombre et total. Le chapitre Affaires garde le domaine d'origine.
   Titres des groupes de la page du projet sans le nombre « n domaines / n modules » (21.10.2026).
-  Accueil : mention « Substances Architectes — Gestion » retirée au-dessus de « Bonjour … » (22.10.2026 ; `sgIntro` sans libellé quand il est vide).
+  Accueil : mention « Substances Architectes — Gestion » retirée au-dessus de « Bonjour … » (22.10.2026 ; libellé vide de `sgIntro` : la ligne épaisse reste, `.sg-lbl.vide`).
   **« Accueil » renommé « Cockpit » (22.10.2026)** : entrée du menu (`SG_DOM` k « accueil », vue `nx-home`), infobulle du logo, lien « Cockpit ▸ À traiter ».
   ⚠ Facturation a aussi un module « Cockpit » (`fx-cockpit`, tableau de bord des honoraires) : deux entrées du même nom.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois

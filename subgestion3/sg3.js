@@ -386,7 +386,7 @@ function nxPage(m,html){ const p=h('div',{class:'nx-page'}); p.innerHTML='<div c
   p.addEventListener('click',e=>{ const t=e.target.closest('[data-go],[data-ref],[data-fn]'); if(!t||!p.contains(t)) return;
     if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); else if(t.dataset.fn&&p._fn&&p._fn[t.dataset.fn]) p._fn[t.dataset.fn](t); });
   p._fn={}; return p; }
-const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro">'+(lbl?'<div class="sg-lbl">'+nxE(lbl)+'</div>':'')+'<h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
+const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro"><div class="sg-lbl'+(lbl?'':' vide')+'">'+nxE(lbl||'')+'</div><h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
 
 /* ═══ Accueil ═══ */
 VIEWS['nx-home']={

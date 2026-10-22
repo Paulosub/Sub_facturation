@@ -222,6 +222,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--s-nuit)}
 
 .sg-intro{position:sticky;top:0}
 .sg-lbl{font-size:11px;font-weight:700;color:var(--s-noir);padding-bottom:7px;border-bottom:2px solid var(--s-noir);margin:0 0 12px}
+.sg-lbl.vide{padding-bottom:0}   /* libellé retiré : seule la ligne épaisse reste (22.10.2026) */
 .sg-intro h2{margin:0;font-size:32px;line-height:1.08;font-weight:700;letter-spacing:-.01em}
 .sg-intro p{margin:12px 0 0;color:var(--s-gris);font-weight:300;font-size:14px;line-height:1.5}
 .sg-intro .acts{display:flex;flex-direction:column;gap:8px;margin-top:22px}

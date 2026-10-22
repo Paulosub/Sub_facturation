@@ -386,7 +386,7 @@ function nxPage(m,html){ const p=h('div',{class:'nx-page'}); p.innerHTML='<div c
   p.addEventListener('click',e=>{ const t=e.target.closest('[data-go],[data-ref],[data-fn]'); if(!t||!p.contains(t)) return;
     if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); else if(t.dataset.fn&&p._fn&&p._fn[t.dataset.fn]) p._fn[t.dataset.fn](t); });
   p._fn={}; return p; }
-const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro"><div class="sg-lbl">'+nxE(lbl)+'</div><h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
+const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro">'+(lbl?'<div class="sg-lbl">'+nxE(lbl)+'</div>':'')+'<h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
 
 /* ═══ Accueil ═══ */
 VIEWS['nx-home']={
@@ -438,7 +438,7 @@ VIEWS['nx-home']={
       +(equipe?nxCard('c5',adm?'Équipe cette semaine':'Sur mes projets cette semaine','<div class="b flush">'+(team.length?team.map(x=>'<div class="nx-person" data-ref="s:'+x.s.ID+'"><div class="nx-av">'+nxE(nxIni(staffName(x.s)))+'</div><div class="t"><b>'+nxE(staffName(x.s))+'</b><span>'+nxE(x.s.INITIALS||'')+'</span></div>'+nxMiniBar(x.h,tWeek)+'<span class="m" style="min-width:48px;text-align:right">'+nxH(x.h)+' h</span></div>').join(''):'<div class="nx-empty">Aucune saisie cette semaine.</div>')+'</div>'):'')
       +nxCard('c5','Favoris',pins.length?'<div class="b flush">'+pins.map(r=>'<div class="nx-row" data-ref="'+r.k+':'+r.id+'">'+nxSvg(r.ico)+'<div class="t"><b>'+nxE(r.t)+'</b><span>'+nxE(r.tag||r.sub||'')+'</span></div></div>').join('')+'</div>':'<div class="nx-empty">Épinglez un projet, un contact ou un membre depuis sa fiche pour le retrouver ici.</div>')
       +'</div>';
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Substances Architectes — Gestion',nxE(greet)+(fn?' <br>'+nxE(fn):''),nxE(nxCap(nxDay(now)))+' · semaine '+isoWeek(now)[1],acts)+'<div>'+right+'</div></div>');
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('',nxE(greet)+(fn?' <br>'+nxE(fn):''),nxE(nxCap(nxDay(now)))+' · semaine '+isoWeek(now)[1],acts)+'<div>'+right+'</div></div>');
     pg._fn.np=()=>editProject(); pg._fn.pal=()=>nxPal();
     pg.querySelectorAll('.nx-kpi.lnk').forEach(k=>k.onclick=()=>go(k.dataset.go));
     if(document.getElementById('sg-home-fx')) fxEnsure().then(()=>{ const box=document.getElementById('sg-home-fx'); if(!box) return; const D=fxData(); if(!D){ box.innerHTML='<div class="nx-empty">Facturation indisponible.</div>'; return; }

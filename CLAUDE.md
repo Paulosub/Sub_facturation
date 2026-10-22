@@ -658,6 +658,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   qu'un mois) : tous les frais, choix de l'année « Toutes · 2026 · 2025… » dans la barre (`.sg-fr-an`, comme Factures et Heures ; `sg3_frais_an`),
   mêmes colonnes et actions (editCost / delCost), tri par date décroissante, nombre et total. Le chapitre Affaires garde le domaine d'origine.
   Titres des groupes de la page du projet sans le nombre « n domaines / n modules » (21.10.2026).
+  Accueil : mention « Substances Architectes — Gestion » retirée au-dessus de « Bonjour … » (22.10.2026 ; `sgIntro` sans libellé quand il est vide).
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
   (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,

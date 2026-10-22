@@ -2745,6 +2745,23 @@ VIEWS['nx-pdom']={
    fonctions, filtre) ; colonnes Catégorie, Phase actuelle (feuille d'heures, sgPhaseActuelle), Dernière saisie, Heures 30 j et point d'activité
    (heures saisies ces 30 jours, au lieu de « Actif ») ; fiche de l'affaire sélectionnée à droite (état, maître d'ouvrage, dates, phase, heures,
    équipe, contrats reliés, actions). Projets ▸ Registre garde l'écran d'origine. */
+/* « Fiche projet » de l'en-tête dans Affaires ▸ Gestion : ouvre la fenêtre à droite au lieu de quitter la liste (22.10.2026) */
+const SG_AG={ouvrir:null};
+setTimeout(()=>{ const cx=document.getElementById('sg-ctx'); if(cx) cx.addEventListener('click',e=>{ if(!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.ouvrir) return; const b=e.target.closest('[data-ref^="p:"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); SG_AG.ouvrir(); },true); },0);
+/* fiche complète d'une affaire en lecture (22.10.2026, demande de Paulo) : rubriques de la fenêtre « Éditer l'affaire » de l'ancien logiciel —
+   Affaire, Genres d'affaire, Délais, Adresses, Références, Paramètres de saisie ; champs vides omis ; modification par « Éditer » */
+function sgFicheAffaire(p){ const E=nxE, d=v=>v?dfr(v):'', t=v=>v==null?'':String(v).trim(), sec=(titre,L)=>{ const R=L.filter(([,v])=>t(v)!==''); return '<section class="sg-ag-sec"><h4>'+E(titre)+'</h4>'+(R.length?'<dl>'+R.map(([l,v,html])=>'<dt>'+E(l)+'</dt><dd>'+(html?v:E(v))+'</dd>').join('')+'</dl>':'<p class="sg-ag-vide">—</p>')+'</section>'; };
+  const ph=p.CURRENTPROJECTPHASE_ID?DS.get('projectphase',p.CURRENTPROJECTPHASE_ID):null, kinds=DS.by('project_projectkind','PROJECT_ID',p.ID).map(l=>DS.get('projectkind',l.PROJECTKINDS_ID)).filter(Boolean);
+  const adr=id=>{ const c=id?DS.get('contact',id):null; return c&&typeof adrLines==='function'?adrLines(c).map(E).join('<br>'):''; }, oui=v=>+v?'oui':'non';
+  return '<div class="sg-ag-fiche2"><div class="sg-ag-ft">Fiche de l’affaire</div>'
+    +sec('Affaire',[['Numéro d’affaire',p.NUMBER],['Désignation',p.TITLE],['Complément',p.DESCRIPTION],['Type d’affaire',+p.ISINTERNAL?'Interne':'Externe'],['Statut',(typeof PSTATE!=='undefined'&&PSTATE[p.PROJECTSTATECODE])||''],
+      ['Phase en cours (affaire)',ph?(ph.NUMBER!=null?ph.NUMBER+' ':'')+nm(ph):''],['Tri',p.SORTLABEL],['Indice ICC',+p.BASISINDEX?num(+p.BASISINDEX,1):''],['Volume construit',+p.VOLUME?num(+p.VOLUME,0)+' m³':''],['Surface de plancher',+p.AREA?num(+p.AREA,0)+' m²':'']])
+    +sec('Genres d’affaire',[['Genres',kinds.map(k=>E(nm(k))).join('<br>'),1]])
+    +sec('Délais',[['Début du projet',d(p.PROJECTSTARTDATE)],['Fin du projet',d(p.PROJECTENDDATE)],['Début de planification',p.STARTOFPLANNING],['Fin de planification',p.ENDOFPLANNING],['Début des travaux',p.STARTOFCONSTRUCTION],['Fin des travaux',p.ENDOFCONSTRUCTION],['Remise des clés',p.MOVEINDEADLINE]])
+    +sec('Adresses',[['Adresse d’affaire',adr(p.CONTACT1_ID),1],['Adresse de facturation',adr(p.CONTACT2_ID),1],['Adresse de livraison',adr(p.CONTACT3_ID),1],['Lieu de dépôt des offres',adr(p.CONTACT4_ID),1]])
+    +sec('Références',[['N° d’affaire externe',p.EXTERNALNUMBER],['District',p.LOCATION],['Zone / quartier',p.PLOT],['N° registre foncier',p.LANDREGISTERNR],['Service comptabilité',p.ACCOUNTINGAREA],['Dossier d’affaire',p.PROJECTFOLDER]])
+    +sec('Paramètres de saisie',[['Monnaie',p.CURRENCY],['Temps : phase obligatoire',oui(p.ISTIMEPHASEMANDATORY)],['Temps : subdivision obligatoire',oui(p.ISTIMESUBPROJECTMANDATORY)],['Temps : description obligatoire',oui(p.ISTIMEDESCMANDATORY)],['Frais : phase obligatoire',oui(p.ISEXPENSESPHASEMANDATORY)],['Frais : description obligatoire',oui(p.ISEXPENSESDESCMANDATORY)]])
+    +'</div>'; }
 VIEWS['affd-gestion']={
   render(m){ const cur=()=>DS.get('project',AF.g.sel), need=f=>()=>{ const p=cur(); if(!p){ toast('Sélectionnez une affaire.',true); return; } f(p); };
     const R=h('div',{class:'col fill sg-ag',style:{margin:'6px'}}), pane=h('div',{class:'pane'}), fiche=h('aside',{class:'sg-ag-fiche'});
@@ -2765,17 +2782,19 @@ VIEWS['affd-gestion']={
       DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0, k=tlKey(r), x=I[r.PROJECT_ID]||(I[r.PROJECT_ID]={der:0,derD:null,h30:0,tot:0,st:{}}); x.tot+=v; x.st[r.STAFF_ID]=(x.st[r.STAFF_ID]||0)+v; if(k>x.der){ x.der=k; x.derD=tlDate(r); } if(k>=lim) x.h30+=v; }); };
     const ix=p=>I[p.ID]||{der:0,derD:null,h30:0,tot:0,st:{}}, phase=p=>PA[p.ID]!==undefined?PA[p.ID]:(PA[p.ID]=sgPhaseActuelle(p)), phL=p=>sgPhaseLib(phase(p),true)||'';
     const catL=p=>{ const c=sgCatOuInterne(p); return c==='interne'?'Autres':c==='architecture'?'':(SG_CAT_L[c]||''); }, E=nxE;
-    const dessinerFiche=()=>{ const p=cur(); if(!p){ fiche.innerHTML='<div class="nx-empty">Sélectionnez une affaire pour voir sa fiche.</div>'; return; }
+    let ferme=false; SG_AG.ouvrir=()=>{ ferme=false; dessinerFiche(); };   /* fiche projet = fenêtre à droite, fermable (22.10.2026) */
+    const dessinerFiche=()=>{ const p=cur(); R.classList.toggle('fiche-on',!!p&&!ferme); if(!p||ferme){ fiche.innerHTML=''; return; }
       const x=ix(p), pa=phase(p), eq=Object.entries(x.st).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([sid,v])=>{ const st=DS.get('staff',sid); return st?E(staffName(st))+' <small>'+nxH(v)+' h</small>':''; }).filter(Boolean);
       const li=(l,v)=>v?'<dt>'+E(l)+'</dt><dd>'+v+'</dd>':'';
-      fiche.innerHTML='<div class="sg-ag-fh"><span class="nx-tag num">'+E(p.NUMBER||'')+'</span>'+nxStateTag(p)+(catL(p)?' <span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div><h3>'+E(p.TITLE||'')+'</h3>'
+      fiche.innerHTML='<div class="sg-ag-wh"><b>Fiche projet</b><span>'+E(p.NUMBER||'')+'</span><button class="sg-ag-x" data-a="fermer" title="Fermer la fiche">×</button></div><div class="sg-ag-wc"><div class="sg-ag-fh"><span class="nx-tag num">'+E(p.NUMBER||'')+'</span>'+nxStateTag(p)+(catL(p)?' <span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div><h3>'+E(p.TITLE||'')+'</h3>'
         +'<dl>'+li('Maître d’ouvrage',E(projMO(p)))+li('Lieu',E(p.LOCATION||''))+li('Début',p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE):'')+li('Fin',p.PROJECTENDDATE?dfr(p.PROJECTENDDATE):'')
         +li('Phase actuelle',pa?E(sgPhaseLib(pa))+(pa.recent?'':' <small>(dernière saisie le '+dfr(diso(pa.date))+')</small>'):'')
         +li('Dernière saisie',x.derD?dfr(diso(x.derD)):'—')+li('Heures',x.tot?'<b>'+nxH(x.h30)+' h</b> ces 30 jours · '+nxH(x.tot)+' h au total':'aucune heure saisie')
         +li('Équipe',eq.join('<br>'))+'<dt>Contrats</dt><dd id="sg-ag-ctr">…</dd></dl>'
         +'<div class="sg-htls sg-iacts sg-ag-act"><button data-a="edit" title="Éditer l’affaire">'+nxSvg('edit')+'<span>Éditer</span></button><button data-a="interv" title="Attribuer les intervenants">'+nxSvg('users')+'<span>Intervenants</span></button>'
-        +'<button data-a="page" title="Page du projet">'+nxSvg('folder')+'<span>Page du projet</span></button><button data-a="tdb" title="Tableau de bord du projet">'+nxSvg('gauge')+'<span>Tableau de bord</span></button></div>';
-      fiche.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else go('nx-projet',p.ID); });
+        +'<button data-a="page" title="Page du projet">'+nxSvg('folder')+'<span>Page du projet</span></button><button data-a="tdb" title="Tableau de bord du projet">'+nxSvg('gauge')+'<span>Tableau de bord</span></button></div>'
+        +sgFicheAffaire(p)+'</div>';   /* fiche complète de l'affaire (rubriques de l'ancien logiciel), 22.10.2026 */
+      fiche.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); return; } if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else go('nx-projet',p.ID); });
       fxEnsure().catch(()=>null).then(()=>{ const c=fiche.querySelector('#sg-ag-ctr'); if(!c||cur()!==p) return; const D=fxData(), cs=D?sgContratsDuProjet(p,D).filter(k=>!k.annule):[];
         c.innerHTML=cs.length?cs.length+' contrat'+(cs.length>1?'s':'')+' · <b>'+nxCHF(cs.reduce((s0,k)=>s0+(+k.httc||0),0))+' CHF</b> TTC':(D?'aucun contrat relié':'—'); }); };
     const draw=()=>{ const rows=DS.all('project').filter(p=>(AF.arch||p.PROJECTSTATECODE!==5)&&(!AF.filt.s||p.PROJECTSTATECODE==AF.filt.s)&&(AF.filt.i==null||(+!!p.ISINTERNAL)===AF.filt.i)&&matchQ(AF.q,p.NUMBER,p.TITLE,p.DESCRIPTION));
@@ -2784,7 +2803,7 @@ VIEWS['affd-gestion']={
         {k:'der',t:'Dernière saisie',w:100,f:p=>ix(p).derD?dfr(diso(ix(p).derD)):'',v:p=>ix(p).der},{k:'h30',t:'Heures 30 j',w:84,cls:'r',f:p=>ix(p).h30?nxH(ix(p).h30):'',v:p=>ix(p).h30},
         {k:'act',t:'Activité',w:62,cls:'c',f:p=>ix(p).h30?'<i class="sg-ag-pt on" title="Heures saisies ces 30 jours"></i>':'<i class="sg-ag-pt" title="Aucune heure saisie ces 30 jours"></i>',v:p=>ix(p).h30},
         {k:'PROJECTSTARTDATE',t:'Début',w:90,f:p=>dfr(p.PROJECTSTARTDATE)},{k:'PROJECTENDDATE',t:'Fin',w:90,f:p=>dfr(p.PROJECTENDDATE)},{k:'mo',t:'Maître d’ouvrage',w:200,f:p=>E(projMO(p)),v:projMO}],
-        rows,sort:AF.g.sort||['NUMBER',-1],onDbl:p=>editProject(p),onSel:()=>dessinerFiche()}));
+        rows,sort:AF.g.sort||['NUMBER',-1],onDbl:p=>editProject(p),onSel:()=>{ ferme=false; dessinerFiche(); }}));
       head.setCount(rows.length+' Affaires'); dessinerFiche(); };
     this.draw=()=>{ index(); draw(); }; this.draw(); },
   refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog')&&this.draw) this.draw(); } };

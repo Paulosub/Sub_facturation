@@ -998,7 +998,8 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* Affaires ▸ Gestion : colonnes utiles et fiche à droite (22.10.2026) */
 .sg-ag-corps{display:flex;flex:1;min-height:0;border-top:1px solid var(--s-filet)}
 .sg-ag-liste{flex:1;min-width:0;display:flex;flex-direction:column}.sg-ag-liste>.pane{flex:1;min-height:0}
-.sg-ag-fiche{flex:0 0 330px;border-left:1px solid var(--s-filet);overflow:auto;padding:16px 18px;background:#fff}
+.sg-ag-fiche{flex:0 0 400px;border-left:2px solid var(--s-noir);overflow:auto;padding:0;background:#fff;display:none;box-shadow:-8px 0 18px rgba(0,0,0,.06)}
+.sg-ag.fiche-on .sg-ag-fiche{display:block}
 .sg-ag-fh{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .sg-ag-fiche h3{margin:10px 0 12px;font-size:18px;line-height:1.2;font-weight:700}
 .sg-ag-fiche dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;border-top:2px solid var(--s-noir);padding-top:10px}
@@ -1006,3 +1007,15 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-act{margin-top:16px}
 .sg-ag-pt{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--s-gris3)}.sg-ag-pt.on{background:#6f8f17;box-shadow:none}
 @media (max-width:1100px){.sg-ag-fiche{flex-basis:270px}}
+/* Affaires ▸ Gestion : fiche complète de l'affaire (22.10.2026) */
+.sg-ag-fiche2{margin-top:22px}
+.sg-ag-ft{font-size:11px;font-weight:700;padding-bottom:7px;border-bottom:2px solid var(--s-noir);margin-bottom:4px}
+.sg-ag-sec{padding:10px 0;border-bottom:1px solid var(--s-filet)}
+.sg-ag-sec h4{margin:0 0 6px;font-size:12.5px;font-weight:700}
+.sg-ag-sec dl{border:0!important;padding:0!important}
+.sg-ag-vide{margin:0;color:var(--s-gris);font-size:12px}
+/* Affaires ▸ Gestion : fiche projet en fenêtre à droite (22.10.2026) */
+.sg-ag-wh{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:10px 12px 10px 18px;background:var(--s-nuit);color:#fff}
+.sg-ag-wh b{font-size:12.5px}.sg-ag-wh span{font-size:12px;color:var(--s-jaune);font-weight:700}
+.sg-ag-x{margin-left:auto;border:0;background:none;color:#fff;font-size:20px;line-height:1;width:28px;height:28px;cursor:pointer}.sg-ag-x:hover{background:rgba(255,255,255,.15)}
+.sg-ag-wc{padding:14px 18px 20px}

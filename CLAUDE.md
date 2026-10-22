@@ -667,7 +667,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Affaires ▸ Gestion amélioré (22.10.2026, choix de Paulo)** = `VIEWS['affd-gestion']` : barre d'outils de l'ancien écran reprise telle quelle,
   colonnes Catégorie, Phase actuelle (feuille d'heures), Dernière saisie, Heures 30 j, point d'activité (au lieu de « Actif ») ; fiche de l'affaire
   sélectionnée à droite (état, MO, dates, phase, heures, équipe, contrats reliés ; Éditer, Intervenants, Page du projet, Tableau de bord).
-  Projets ▸ Registre (aff-gestion) inchangé.
+  Sous le résumé : fiche complète de l'affaire en lecture (`sgFicheAffaire` : Affaire, Genres d'affaire, Délais, Adresses, Références, Paramètres de
+  saisie — rubriques de « Éditer l'affaire », champs vides omis ; 22.10.2026). Fiche projet = fenêtre à droite (en-tête bleu nuit, × pour fermer), ouverte en
+  choisissant une affaire ou par le bouton « Fiche projet » de l'en-tête, qui dans cet écran ne quitte plus la liste (`SG_AG.ouvrir`).   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
   (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,

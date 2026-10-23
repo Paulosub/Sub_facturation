@@ -694,7 +694,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   intervenants dont la personne est un collaborateur, comme Mes projets —, même sans heure, + « hors équipe » pour ceux qui ont saisi des heures
   sans être attribués ; fonction de l'intervenant ; « a quitté le bureau »); **clic sur une personne = « Rapport des heures »** de ce collaborateur sur l'affaire, en fenêtre (`sgRapportHeuresCollab(p,sid)`,
   même jour) : tuiles heures saisies, dont facturables, ces 30 jours, première et dernière saisie ; affichage Par phase (SIA 102, phases partielles
-  dessous) · Par mois · Détail (`sg3_rap_vue`), années « Toutes · 2026… », CSV, Imprimer, bouton « Fiche du collaborateur »). Copie d'avant : `subgestion3/_backup_20261023_avant_fiche_affaire/`.   Projets ▸ Registre (aff-gestion) inchangé.
+  dessous) · Par mois · Détail (`sg3_rap_vue`), années « Toutes · 2026… », CSV, Imprimer, bouton « Fiche du collaborateur »). Copie d'avant : `subgestion3/_backup_20261023_avant_fiche_affaire/`.   **Éditer l'affaire refait pour SUBGestion 3 (23.10.2026, « optimiser pour clarifier »)** : `sgEditAffaire(p)` remplace `editProject` du moteur
+  (`editProject=sgEditAffaire`, fin du bloc 20 ; DeltaSub.html seul garde l'original) — mêmes champs, valeurs par défaut, contrôles (numéro
+  obligatoire et unique, signalé dans le champ) et enregistrement (project + project_projectkind, vérifié : enregistrer sans rien changer ne modifie
+  rien) ; un seul formulaire avec sommaire à gauche (rubrique visible surlignée) au lieu de 6 onglets, en-tête jaune pâle (numéro et désignation
+  en direct), libellés au-dessus des champs : Identification, Statut et phase (type Externe / Interne en choix ; phase actuelle d'après les heures
+  rappelée sous « Phase en cours »), Adresses (cartes Choisir… / Retirer), Genres d'affaire (cochés en étiquettes « groupe · genre », recherche,
+  liste par groupe sur deux colonnes), Délais, Caractéristiques (volume, surface, ICC), Références, Saisie des heures et des frais (petit tableau
+  des champs obligatoires, monnaie), Autres réglages (tri, plan-ID, dossier, messagerie ; repliée). Styles `.sg-ep-*` (sg3.css). Copie d'avant :
+  `subgestion3/_backup_20261023_avant_editer_affaire/`.
+  Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
   (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,

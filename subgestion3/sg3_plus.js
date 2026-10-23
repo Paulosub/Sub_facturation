@@ -2956,6 +2956,95 @@ VIEWS['affd-gestion']={
     this.draw=()=>{ index(); draw(); }; this.draw(); },
   refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog')&&this.draw) this.draw(); } };
 
+/* ═══ Éditer l'affaire, version SUBGestion 3 (23.10.2026, demande de Paulo « modifier le panneau Éditer projet dans Affaires, optimiser pour
+   clarifier ») — remplace editProject du moteur dans SUBGestion 3 seulement (DeltaSub.html seul garde la fenêtre d'origine). Mêmes champs, mêmes
+   valeurs par défaut, mêmes contrôles et même enregistrement (project + project_projectkind) ; présentation : un seul formulaire avec un sommaire
+   à gauche (au lieu de 6 onglets), libellés au-dessus des champs, rubriques Identification, Statut et phase, Adresses, Genres d'affaire, Délais,
+   Caractéristiques, Références, Saisie des heures et des frais, Autres réglages (repliée) ; type Interne / Externe en choix ; phase actuelle
+   calculée d'après les heures rappelée à côté de « Phase en cours » ; adresses en cartes (Choisir / Retirer) ; genres d'affaire : cochés en
+   étiquettes + recherche + liste par groupe ; obligations de saisie en petit tableau ; numéro obligatoire signalé dans le champ ═══ */
+function sgEditAffaire(p){ const E=nxE, isNew=!p;
+  const v=p?{...p}:{ID:null,PROJECTSTATECODE:1,CURRENCY:'CHF',ISINTERNAL:0,ISTIMEPHASEMANDATORY:1,ISTIMEDESCMANDATORY:1,ISEXPENSESDESCMANDATORY:1,ISTIMESUBPROJECTMANDATORY:0,ISEXPENSESPHASEMANDATORY:0,NEXTUNIQUEPLANID:1,ISPATHTOPROJECTDOCUMENTSRELATIVE:1};
+  const phs=v.ID?DS.by('projectphase','PROJECT_ID',v.ID).sort((a,b)=>cmp(a.NUMBER,b.NUMBER)):[];
+  const kinds=new Set(v.ID?DS.by('project_projectkind','PROJECT_ID',v.ID).map(l=>l.PROJECTKINDS_ID):[]);
+  const adr={}; ['CONTACT1_ID','CONTACT2_ID','CONTACT3_ID','CONTACT4_ID'].forEach(k=>adr[k]=v[k]);
+  const val=k=>v[k]==null?'':String(v[k]);
+  const champ=(l,html,o)=>{ const g=o&&o.div?'div':'label'; return '<'+g+' class="sg-ep-c'+(o&&o.large?' large':'')+'"><span>'+E(l)+(o&&o.req?' <i class="req" title="Obligatoire">*</i>':'')+'</span>'+html+(o&&o.aide?'<small>'+o.aide+'</small>':'')+'</'+g+'>'; };
+  const txt=(k,o)=>'<input class="inp" data-k="'+k+'" value="'+E(val(k))+'"'+(o&&o.ph?' placeholder="'+E(o.ph)+'"':'')+(o&&o.w?' style="max-width:'+o.w+'"':'')+'>';
+  const nbr=(k,w)=>'<input class="inp" type="number" step="any" data-k="'+k+'" value="'+E(val(k))+'" style="max-width:'+(w||'140px')+'">';
+  const dat=k=>'<input class="inp" type="date" data-k="'+k+'" value="'+E(val(k))+'" style="max-width:170px">';
+  const ck=(k,ti)=>'<input type="checkbox" data-k="'+k+'"'+(+v[k]?' checked':'')+' title="'+E(ti)+'">';
+  const pa=p?(sgTermine(p)?'Terminé':sgPhaseLib(sgPhaseActuelle(p))):'';
+  const SECS=[['ident','Identification'],['statut','Statut et phase'],['adr','Adresses'],['genres','Genres d’affaire'],['delais','Délais'],['carac','Caractéristiques'],['refs','Références'],['saisie','Saisie des heures et des frais'],['autres','Autres réglages']];
+  const sec=(k,t,html,o)=>'<section class="sg-ep-s'+(o&&o.repli?' repli':'')+'" data-sec="'+k+'"><h4'+(o&&o.repli?' data-repli="1" role="button" tabindex="0" title="Afficher / masquer"':'')+'>'+(o&&o.repli?nxSvg('next','chev'):'')+E(t)+'</h4><div class="sg-ep-g">'+html+'</div></section>';
+  const ADR=[['CONTACT1_ID','Adresse d’affaire'],['CONTACT2_ID','Adresse de facturation'],['CONTACT3_ID','Adresse de livraison'],['CONTACT4_ID','Lieu de dépôt des offres']];
+  const corps=h('div',{class:'sg-ep'}); let liens=[], fige=0;   /* fige : rubrique choisie dans le sommaire, gardée surlignée pendant le saut */
+  corps.innerHTML='<nav class="sg-ep-nav">'+SECS.map(([k,t],i)=>'<a data-go-sec="'+k+'" class="'+(i?'':'on')+'">'+E(t)+'</a>').join('')+'</nav><div class="sg-ep-f">'
+    +'<div class="sg-ep-tete"><b data-tete="n">'+E(val('NUMBER')||'Nouvelle affaire')+'</b><span data-tete="t">'+E(val('TITLE'))+'</span></div>'
+    +sec('ident','Identification',champ('Numéro d’affaire',txt('NUMBER',{w:'200px',ph:'ex. 26ABC'}),{req:1})+champ('Désignation de l’affaire',txt('TITLE',{ph:'ex. Transformation d’une maison familiale'}),{large:1})
+      +champ('Complément',' <textarea class="inp" rows="3" data-k="DESCRIPTION" placeholder="Adresse du chantier, précisions…">'+E(val('DESCRIPTION'))+'</textarea>',{large:1}))
+    +sec('statut','Statut et phase',champ('Statut de l’affaire','<select class="inp" data-k="PROJECTSTATECODE" style="max-width:220px">'+Object.entries(PSTATE).map(([k,t])=>'<option value="'+k+'"'+(+k===+v.PROJECTSTATECODE?' selected':'')+'>'+E(t)+'</option>').join('')+'</select>')
+      +champ('Type d’affaire','<span class="sg-ep-radio"><label><input type="radio" name="sg-ep-int" value="0"'+(+v.ISINTERNAL?'':' checked')+'> Externe (mandat)</label><label><input type="radio" name="sg-ep-int" value="1"'+(+v.ISINTERNAL?' checked':'')+'> Interne (bureau)</label></span>',{div:1})
+      +champ('Phase en cours (indiquée dans l’affaire)','<select class="inp" data-k="CURRENTPROJECTPHASE_ID" style="max-width:360px"><option value="">—</option>'+phs.map(x=>'<option value="'+x.ID+'"'+(x.ID===v.CURRENTPROJECTPHASE_ID?' selected':'')+'>'+E((x.NUMBER??'')+' '+nm(x))+'</option>').join('')+'</select>',
+        {large:1,aide:isNew?'Les phases se configurent après la création (Configuration ▸ Configurer les phases).':pa?'D’après les heures saisies, la phase actuelle est : <b>'+E(pa)+'</b>.':'Aucune heure saisie par phase pour l’instant.'}))
+    +sec('adr','Adresses','<div class="sg-ep-adrs">'+ADR.map(([k,l])=>'<div class="sg-ep-adr" data-adr="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"><button type="button" class="btn" data-adr-choisir="'+k+'">Choisir…</button><button type="button" class="btn" data-adr-retirer="'+k+'">Retirer</button></div></div>').join('')+'</div>')
+    +sec('genres','Genres d’affaire','<div class="sg-ep-genres"><div class="sg-ep-chips"></div><input class="inp sg-ep-q" type="search" placeholder="Rechercher un genre d’affaire…"><div class="sg-ep-liste"></div></div>')
+    +sec('delais','Délais',champ('Début du projet',dat('PROJECTSTARTDATE'))+champ('Fin du projet',dat('PROJECTENDDATE'))+champ('Début de planification',txt('STARTOFPLANNING'))+champ('Fin de planification',txt('ENDOFPLANNING'))
+      +champ('Début des travaux',txt('STARTOFCONSTRUCTION'))+champ('Fin des travaux',txt('ENDOFCONSTRUCTION'))+champ('Remise des clés',txt('MOVEINDEADLINE')))
+    +sec('carac','Caractéristiques',champ('Volume construit (m³)',nbr('VOLUME'))+champ('Surface de plancher (m²)',nbr('AREA'))+champ('Indice ICC',nbr('BASISINDEX')))
+    +sec('refs','Références',champ('Numéro d’affaire externe',txt('EXTERNALNUMBER'))+champ('District',txt('LOCATION'))+champ('Zone / quartier',txt('PLOT'))+champ('Numéro registre foncier',txt('LANDREGISTERNR'))+champ('Service comptabilité',txt('ACCOUNTINGAREA')))
+    +sec('saisie','Saisie des heures et des frais','<div class="sg-ep-c large"><span>Champs obligatoires lors de la saisie</span><table class="sg-ep-par"><tr><th></th><th>Phase</th><th>Subdivision</th><th>Commentaire / description</th></tr>'
+      +'<tr><td>Heures</td><td>'+ck('ISTIMEPHASEMANDATORY','Phase obligatoire')+'</td><td>'+ck('ISTIMESUBPROJECTMANDATORY','Subdivision obligatoire')+'</td><td>'+ck('ISTIMEDESCMANDATORY','Commentaire obligatoire')+'</td></tr>'
+      +'<tr><td>Frais</td><td>'+ck('ISEXPENSESPHASEMANDATORY','Phase obligatoire')+'</td><td></td><td>'+ck('ISEXPENSESDESCMANDATORY','Description obligatoire')+'</td></tr></table></div>'+champ('Monnaie',txt('CURRENCY',{w:'90px'})))
+    +sec('autres','Autres réglages',champ('Tri',txt('SORTLABEL',{w:'220px'}))+champ('Prochain plan-ID',nbr('NEXTUNIQUEPLANID','110px'))+'<label class="sg-ep-c sg-ep-ck">'+ck('ISUNIQUEPLANIDLOCKED','Créer automatiquement')+' Créer automatiquement les plan-ID</label>'
+      +champ('Emplacement du dossier d’affaire',txt('PROJECTFOLDER'),{large:1})+champ('URL de la messagerie',txt('MAILBOXURL'),{large:1}),{repli:1})
+    +'</div>';
+  /* adresses */
+  const majAdr=k=>{ const c=adr[k]?DS.get('contact',adr[k]):null, L=c?adrLines(c):[], box=corps.querySelector('[data-adr="'+k+'"]');
+    box.querySelector('.a').innerHTML=L.length?L.map(E).join('<br>'):'<span class="vide">Aucune adresse</span>'; box.classList.toggle('vide',!L.length); box.querySelector('[data-adr-retirer]').hidden=!L.length; };
+  ADR.forEach(([k])=>majAdr(k));
+  corps.querySelectorAll('[data-adr-choisir]').forEach(b=>b.onclick=()=>{ const k=b.dataset.adrChoisir, l=(ADR.find(x=>x[0]===k)||[])[1]; pickContact(l,c=>{ adr[k]=c.ID; majAdr(k); }); });
+  corps.querySelectorAll('[data-adr-retirer]').forEach(b=>b.onclick=()=>{ adr[b.dataset.adrRetirer]=null; majAdr(b.dataset.adrRetirer); });
+  /* genres d'affaire */
+  const GR=DS.all('projectkind').sort((a,b)=>cmp((DS.get('projectgroup',a.PROJECTGROUP_ID)||{}).SORTORDER,(DS.get('projectgroup',b.PROJECTGROUP_ID)||{}).SORTORDER)||cmp(a.SORTORDER,b.SORTORDER));
+  const chips=corps.querySelector('.sg-ep-chips'), liste=corps.querySelector('.sg-ep-liste'), q=corps.querySelector('.sg-ep-q'); let qq='';
+  const majGenres=()=>{ const sel=GR.filter(k=>kinds.has(k.ID));
+    chips.innerHTML=sel.length?sel.map(k=>'<span class="nx-tag sg-ep-chip">'+E((g=>g?g+' · ':'')(nm(DS.get('projectgroup',k.PROJECTGROUP_ID)))+nm(k))+'<button type="button" data-kind-x="'+k.ID+'" title="Retirer">×</button></span>').join(''):'<span class="vide">Aucun genre d’affaire coché</span>';
+    let g0=null, html=''; GR.filter(k=>!qq||matchQ(qq,nm(k),nm(DS.get('projectgroup',k.PROJECTGROUP_ID)))).forEach(k=>{ const g=k.PROJECTGROUP_ID; if(g!==g0){ g0=g; html+='<div class="gr">'+E(nm(DS.get('projectgroup',g))||'Sans groupe')+'</div>'; }
+      html+='<label><input type="checkbox" data-kind="'+k.ID+'"'+(kinds.has(k.ID)?' checked':'')+'> '+E(nm(k))+'</label>'; });
+    liste.innerHTML=html||'<span class="vide">Aucun genre ne correspond.</span>'; };
+  majGenres();
+  q.oninput=()=>{ qq=q.value.trim().toLowerCase(); majGenres(); };   /* matchQ attend un texte en minuscules */
+  corps.addEventListener('change',e=>{ const id=e.target.dataset&&e.target.dataset.kind; if(id!=null){ const n=+id; if(e.target.checked) kinds.add(n); else kinds.delete(n); majGenres(); } });
+  corps.addEventListener('click',e=>{ const x=e.target.closest('[data-kind-x]'); if(x){ kinds.delete(+x.dataset.kindX); majGenres(); return; }
+    const a=e.target.closest('[data-go-sec]'); if(a){ const s0=corps.querySelector('[data-sec="'+a.dataset.goSec+'"]'); if(s0){ s0.classList.remove('repli'); fige=Date.now(); s0.scrollIntoView({block:'start'}); liens.forEach(l=>l.classList.toggle('on',l===a)); } return; }
+    const r=e.target.closest('[data-repli]'); if(r) r.parentElement.classList.toggle('repli'); });
+  corps.addEventListener('keydown',e=>{ const r=e.target.closest&&e.target.closest('[data-repli]'); if(r&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); r.click(); } });
+  /* en-tête : numéro et désignation en direct */
+  corps.querySelector('[data-k="NUMBER"]').addEventListener('input',e=>{ corps.querySelector('[data-tete="n"]').textContent=e.target.value||'Nouvelle affaire'; e.target.classList.remove('err'); });
+  corps.querySelector('[data-k="TITLE"]').addEventListener('input',e=>{ corps.querySelector('[data-tete="t"]').textContent=e.target.value; });
+  const D=dialog({title:isNew?'Nouvelle affaire':'Éditer l’affaire',width:'min(980px,95vw)',body:corps,buttons:[{t:'Annuler'},{t:isNew?'Créer l’affaire':'Enregistrer',pri:true,fn:async bd=>{
+    readK(bd,v,['PROJECTSTATECODE','CURRENTPROJECTPHASE_ID','BASISINDEX','VOLUME','AREA','NEXTUNIQUEPLANID']); Object.assign(v,adr);
+    const ri=bd.querySelector('input[name="sg-ep-int"]:checked'); v.ISINTERNAL=ri&&ri.value==='1'?1:0;
+    const num=bd.querySelector('[data-k="NUMBER"]');
+    if(!v.NUMBER){ toast('Le numéro d’affaire est obligatoire.',true); num.classList.add('err'); num.scrollIntoView({block:'center'}); num.focus(); return false; }
+    if(DS.all('project').some(x=>x.NUMBER===v.NUMBER&&x.ID!==v.ID)){ toast('Ce numéro d’affaire existe déjà.',true); num.classList.add('err'); num.scrollIntoView({block:'center'}); num.focus(); return false; }
+    if(v.ID==null) v.ID=DS.newIds('project')[0];
+    const ops=[{t:'project',id:v.ID,val:v}], old=new Set(DS.by('project_projectkind','PROJECT_ID',v.ID).map(l=>l.PROJECTKINDS_ID));
+    kinds.forEach(k=>{ if(!old.has(k)) ops.push({t:'project_projectkind',id:k+'-'+v.ID,val:{PROJECT_ID:v.ID,PROJECTKINDS_ID:k}}); });
+    old.forEach(k=>{ if(!kinds.has(k)) ops.push({t:'project_projectkind',id:k+'-'+v.ID,val:null}); });
+    await DS.commit(ops); AF.g.sel=String(v.ID); toast('Affaire enregistrée.'); }}]});
+  /* sommaire : rubrique visible surlignée */
+  const bd=D.bd; liens=[...corps.querySelectorAll('[data-go-sec]')];
+  bd.addEventListener('scroll',()=>{ if(Date.now()-fige<500) return; const r=bd.getBoundingClientRect(), S=[...corps.querySelectorAll('[data-sec]')];
+    let cur=S[0].dataset.sec; S.forEach(x=>{ if(x.getBoundingClientRect().top<=r.top+40) cur=x.dataset.sec; });
+    /* tout en bas : les dernières rubriques ne peuvent pas monter en haut — la rubrique surlignée le reste si elle est visible, sinon la dernière visible */
+    if(bd.scrollTop+bd.clientHeight>=bd.scrollHeight-4){ const on=liens.find(a=>a.classList.contains('on')), vis=S.filter(x=>{ const b=x.getBoundingClientRect(); return b.bottom>r.top+10&&b.top<r.bottom-10; }).map(x=>x.dataset.sec);
+      if(on&&vis.includes(on.dataset.goSec)) return; cur=vis[vis.length-1]||cur; }
+    liens.forEach(a=>a.classList.toggle('on',a.dataset.goSec===cur)); });
+  setTimeout(()=>{ const n=corps.querySelector(isNew?'[data-k="NUMBER"]':'[data-k="TITLE"]'); if(n) n.focus(); },0);
+  return D; }
+editProject=sgEditAffaire;
 /* chapitre Affaires : administrateur et chef de projet seulement (18.10.2026), avec les droits de l'écran d'origine */
 ['gestion','controlling','mes','toutes'].forEach(k=>{ const r=SG_VUE_DROIT['aff-'+k]; SG_VUE_DROIT['affd-'+k]=()=>(sgAdmin()||SG_ACC.profil==='cdp')&&(!r||!!r()); });
 /* fiche projet : même limite d'accès que la page du projet */

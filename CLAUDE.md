@@ -695,11 +695,17 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sans être attribués ; fonction de l'intervenant ; « a quitté le bureau »); **clic sur une personne = « Rapport des heures »** de ce collaborateur sur l'affaire, en fenêtre (`sgRapportHeuresCollab(p,sid)`,
   même jour) : tuiles heures saisies, dont facturables, ces 30 jours, première et dernière saisie ; affichage Par phase (SIA 102, phases partielles
   dessous) · Par mois · Détail (`sg3_rap_vue`), années « Toutes · 2026… », CSV, Imprimer, bouton « Fiche du collaborateur »). Copie d'avant : `subgestion3/_backup_20261023_avant_fiche_affaire/`.   **Éditer l'affaire refait pour SUBGestion 3 (23.10.2026, « optimiser pour clarifier »)** : `sgEditAffaire(p)` remplace `editProject` du moteur
-  (`editProject=sgEditAffaire`, fin du bloc 20 ; DeltaSub.html seul garde l'original) — mêmes champs, valeurs par défaut, contrôles (numéro
+  (`editProject=sgEditAffaire`, fin du bloc 20 ; DeltaSub.html seul garde l'original) — mêmes valeurs par défaut, contrôles (numéro
   obligatoire et unique, signalé dans le champ) et enregistrement (project + project_projectkind, vérifié : enregistrer sans rien changer ne modifie
   rien) ; un seul formulaire avec sommaire à gauche (rubrique visible surlignée) au lieu de 6 onglets, en-tête jaune pâle (numéro et désignation
   en direct), libellés au-dessus des champs : Identification, Statut (statut seul : type Externe / Interne et « Phase en cours » retirés à la demande le même jour — ISINTERNAL
-  et CURRENTPROJECTPHASE_ID inchangés ; la phase actuelle est dans la fiche projet), Adresses (**même jour, demande de Paulo** : `sgAdressesAffaire(p,D,o)` — adresse d'affaire et **maître de l'ouvrage** (nouvelle carte)
+  et CURRENTPROJECTPHASE_ID inchangés ; la phase actuelle est dans la fiche projet), **Collaborateurs** (même jour, demande de Paulo « attribuer
+  les collaborateurs à l'affaire » ; « les autres intervenants du projet seront intégrés plus tard dans le projet » : collaborateurs du bureau
+  seulement) — collaborateurs actuels à cocher (initiales, nom, heures déjà saisies sur l'affaire), anciens collaborateurs seulement s'ils sont
+  attribués ; coché = intervenant « Collaborateurs » (rôle 12 : RESPCONTACT_ID = `staff.PERSON_ID`, CONTACT_ID = `staff.COMPANYCONTACT_ID` =
+  Substances Architectes), le lien que lisent Mes projets, l'équipe de la fiche affaire, le Controlling (`ctlStaffs`) et le serveur du NAS ;
+  décoché = ses enregistrements rôle 12 de l'affaire supprimés ; lié par un autre rôle : coché et grisé (à modifier dans les intervenants) ;
+  styles `.sg-ep-col*`), Adresses (**même jour, demande de Paulo** : `sgAdressesAffaire(p,D,o)` — adresse d'affaire et **maître de l'ouvrage** (nouvelle carte)
   repris du contrat ou de l'offre Facturation le plus récent qui les donne (`padr`/`ploc`, client `nom`/`adr`/`loc`), sinon à choisir (adresse d'affaire
   = CONTACT1_ID ; MO = intervenant « Maître d'ouvrage » rôle 8, créé ou mis à jour à l'enregistrement) ; **adresse de facturation automatique** =
   nom du MO + « p.a. Substances Architectes Sàrl » + adresse du bureau (`sgBureauAdresse`, annuaire) ; **adresse de livraison retirée** (= adresse
@@ -710,9 +716,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   lieu du navigateur d'adresses du moteur : recherche immédiate nom / société / rue / localité, filtre Tous / Sociétés / Personnes, suggestions sans
   recherche — adresses déjà utilisées dans l'affaire, intervenants avec leur rôle —, adresse complète sur chaque ligne, aperçu à droite, ↑ ↓ /
   Entrée / double-clic ; styles `.sg-ca-*`), Genres d'affaire (en deux temps comme dans l'ancien logiciel, même jour : 1. groupe d'affaire — nombre de genres
-  cochés —, 2. genre du groupe à cocher ; étiquettes « groupe · genre » au-dessus, × pour retirer ; la recherche a été retirée), Délais, Caractéristiques (volume, surface, ICC), Références, Saisie des heures et des frais (petit tableau
-  des champs obligatoires, monnaie), Autres réglages (tri, plan-ID, dossier, messagerie ; repliée). Styles `.sg-ep-*` (sg3.css). Copie d'avant :
+  cochés —, 2. genre du groupe à cocher ; étiquettes « groupe · genre » au-dessus, × pour retirer ; la recherche a été retirée), Saisie des heures et
+  des frais (petit tableau des champs obligatoires, monnaie). Styles `.sg-ep-*` (sg3.css). Copie d'avant :
   `subgestion3/_backup_20261023_avant_editer_affaire/`.
+  **Rubriques Délais, Caractéristiques, Références et Autres réglages retirées (23.10.2026, demande de Paulo : « pas nécessaire à la création de
+  l'affaire », éléments peut-être traités plus tard dans l'affaire ; Délais : on affichera plus tard à la place les éléments du planning du projet,
+  avec un planning intentionnel par phase)** : champs gardés dans la base (affaire existante : valeurs inchangées, `readK` ne lit que les champs
+  affichés ; nouvelle affaire : vides comme avant), liste `SG_EP_RETIRES` (clé, libellé) gardée pour les réutiliser ailleurs dans l'app. Encore
+  affichés sans être modifiables : District (`LOCATION` = lieu de l'affaire : Mes projets, page du projet, en-tête du tableau de bord), début / fin
+  du projet, Tri, Caractéristiques et Références de la fiche de l'affaire. Copie d'avant : `subgestion3/_backup_20261023_2101_avant_editer_affaire_collaborateurs/`.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

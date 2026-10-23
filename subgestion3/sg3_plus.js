@@ -3022,24 +3022,36 @@ function sgChoisirAdresse(titre,cb,o){ o=o||{}; const E=nxE; let q='', ty='', se
   dessiner();
   D=dialog({title:titre||'Choisir une adresse',width:'min(860px,95vw)',body:corps,buttons:[{t:'Annuler'},{t:'Choisir cette adresse',pri:true,fn:()=>valider()?undefined:false}]});
   setTimeout(()=>qi.focus(),0); return D; }
+/* rubriques retirées de « Éditer l'affaire » à la demande de Paulo (23.10.2026 : « pas nécessaire à la création de l'affaire, peut-être des
+   éléments traités plus tard dans l'affaire ») — leurs champs restent dans la base tels quels : une affaire existante les garde (readK ne lit
+   que les champs affichés), une nouvelle affaire les reçoit vides, comme avant. Liste gardée pour les réutiliser ailleurs dans l'app ; Délais :
+   à remplacer un jour par les éléments du planning du projet (planning intentionnel par phase). Encore affichés (non modifiables) : District
+   (LOCATION = lieu de l'affaire : Mes projets, page du projet, en-tête du tableau de bord), début / fin du projet, Tri, Caractéristiques et
+   Références dans la fiche de l'affaire (sgFicheAffaire) */
+const SG_EP_RETIRES={
+  'Délais':[['PROJECTSTARTDATE','Début du projet'],['PROJECTENDDATE','Fin du projet'],['STARTOFPLANNING','Début de planification'],['ENDOFPLANNING','Fin de planification'],
+    ['STARTOFCONSTRUCTION','Début des travaux'],['ENDOFCONSTRUCTION','Fin des travaux'],['MOVEINDEADLINE','Remise des clés']],
+  'Caractéristiques':[['VOLUME','Volume construit (m³)'],['AREA','Surface de plancher (m²)'],['BASISINDEX','Indice ICC']],
+  'Références':[['EXTERNALNUMBER','Numéro d’affaire externe'],['LOCATION','District'],['PLOT','Zone / quartier'],['LANDREGISTERNR','Numéro registre foncier'],['ACCOUNTINGAREA','Service comptabilité']],
+  'Autres réglages':[['SORTLABEL','Tri'],['NEXTUNIQUEPLANID','Prochain plan-ID'],['ISUNIQUEPLANIDLOCKED','Créer automatiquement les plan-ID'],['PROJECTFOLDER','Emplacement du dossier d’affaire'],['MAILBOXURL','URL de la messagerie']]};
 /* ═══ Éditer l'affaire, version SUBGestion 3 (23.10.2026, demande de Paulo « modifier le panneau Éditer projet dans Affaires, optimiser pour
-   clarifier ») — remplace editProject du moteur dans SUBGestion 3 seulement (DeltaSub.html seul garde la fenêtre d'origine). Mêmes champs, mêmes
-   valeurs par défaut, mêmes contrôles et même enregistrement (project + project_projectkind) ; présentation : un seul formulaire avec un sommaire
-   à gauche (au lieu de 6 onglets), libellés au-dessus des champs, rubriques Identification, Statut et phase, Adresses, Genres d'affaire, Délais,
-   Caractéristiques, Références, Saisie des heures et des frais, Autres réglages (repliée) ; type Interne / Externe en choix ; phase actuelle
-   calculée d'après les heures rappelée à côté de « Phase en cours » ; adresses en cartes (Choisir / Retirer) ; genres d'affaire : cochés en
-   étiquettes + recherche + liste par groupe ; obligations de saisie en petit tableau ; numéro obligatoire signalé dans le champ ═══ */
+   clarifier ») — remplace editProject du moteur dans SUBGestion 3 seulement (DeltaSub.html seul garde la fenêtre d'origine). Mêmes valeurs par
+   défaut, mêmes contrôles et même enregistrement (project + project_projectkind) ; présentation : un seul formulaire avec un sommaire à gauche
+   (au lieu de 6 onglets), libellés au-dessus des champs, rubriques Identification, Statut, Collaborateurs, Adresses, Genres d'affaire, Saisie des
+   heures et des frais ; collaborateurs du bureau à cocher (intervenants « Collaborateurs ») ; adresses en cartes (Choisir / Retirer) ; genres
+   d'affaire en deux temps (groupe, puis genre) ; obligations de saisie en petit tableau ; numéro obligatoire signalé dans le champ. Retirés à la
+   demande le même jour : type Interne / Externe, phase en cours, puis les rubriques Délais, Caractéristiques, Références et Autres réglages
+   (SG_EP_RETIRES) ═══ */
 function sgEditAffaire(p){ const E=nxE, isNew=!p;
   const v=p?{...p}:{ID:null,PROJECTSTATECODE:1,CURRENCY:'CHF',ISINTERNAL:0,ISTIMEPHASEMANDATORY:1,ISTIMEDESCMANDATORY:1,ISEXPENSESDESCMANDATORY:1,ISTIMESUBPROJECTMANDATORY:0,ISEXPENSESPHASEMANDATORY:0,NEXTUNIQUEPLANID:1,ISPATHTOPROJECTDOCUMENTSRELATIVE:1};
+  if(isNew) Object.values(SG_EP_RETIRES).flat().forEach(([k])=>{ if(!(k in v)) v[k]=k==='ISUNIQUEPLANIDLOCKED'?0:null; });   /* champs des rubriques retirées : vides, comme avant */
   const kinds=new Set(v.ID?DS.by('project_projectkind','PROJECT_ID',v.ID).map(l=>l.PROJECTKINDS_ID):[]);
   const adr={}; ['CONTACT1_ID','CONTACT2_ID','CONTACT3_ID','CONTACT4_ID'].forEach(k=>adr[k]=v[k]);
   const val=k=>v[k]==null?'':String(v[k]);
   const champ=(l,html,o)=>{ const g=o&&o.div?'div':'label'; return '<'+g+' class="sg-ep-c'+(o&&o.large?' large':'')+'"><span>'+E(l)+(o&&o.req?' <i class="req" title="Obligatoire">*</i>':'')+'</span>'+html+(o&&o.aide?'<small>'+o.aide+'</small>':'')+'</'+g+'>'; };
   const txt=(k,o)=>'<input class="inp" data-k="'+k+'" value="'+E(val(k))+'"'+(o&&o.ph?' placeholder="'+E(o.ph)+'"':'')+(o&&o.w?' style="max-width:'+o.w+'"':'')+'>';
-  const nbr=(k,w)=>'<input class="inp" type="number" step="any" data-k="'+k+'" value="'+E(val(k))+'" style="max-width:'+(w||'140px')+'">';
-  const dat=k=>'<input class="inp" type="date" data-k="'+k+'" value="'+E(val(k))+'" style="max-width:170px">';
   const ck=(k,ti)=>'<input type="checkbox" data-k="'+k+'"'+(+v[k]?' checked':'')+' title="'+E(ti)+'">';
-  const SECS=[['ident','Identification'],['statut','Statut'],['adr','Adresses'],['genres','Genres d’affaire'],['delais','Délais'],['carac','Caractéristiques'],['refs','Références'],['saisie','Saisie des heures et des frais'],['autres','Autres réglages']];
+  const SECS=[['ident','Identification'],['statut','Statut'],['collab','Collaborateurs'],['adr','Adresses'],['genres','Genres d’affaire'],['saisie','Saisie des heures et des frais']];
   const sec=(k,t,html,o)=>'<section class="sg-ep-s'+(o&&o.repli?' repli':'')+'" data-sec="'+k+'"><h4'+(o&&o.repli?' data-repli="1" role="button" tabindex="0" title="Afficher / masquer"':'')+'>'+(o&&o.repli?nxSvg('next','chev'):'')+E(t)+'</h4><div class="sg-ep-g">'+html+'</div></section>';
   const CARTES=[['affaire','Adresse d’affaire'],['mo','Maître de l’ouvrage'],['fact','Adresse de facturation'],['depot','Adresse retour des offres']];   /* adresse de livraison retirée (23.10.2026) */
   let moChoisi=null;   /* maître de l'ouvrage choisi (sans contrat) : enregistré comme intervenant « Maître d'ouvrage » (rôle 8) */
@@ -3051,17 +3063,13 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     +sec('statut','Statut',champ('Statut de l’affaire','<select class="inp" data-k="PROJECTSTATECODE" style="max-width:220px">'+Object.entries(PSTATE).map(([k,t])=>'<option value="'+k+'"'+(+k===+v.PROJECTSTATECODE?' selected':'')+'>'+E(t)+'</option>').join('')+'</select>')
       /* « Type d'affaire » (Externe / Interne) retiré à la demande (23.10.2026) : ISINTERNAL gardé tel quel (nouvelle affaire : externe) */
       /* « Phase en cours » retirée à la demande (23.10.2026) : la phase actuelle est dans la fiche projet ; CURRENTPROJECTPHASE_ID gardé tel quel */)
+    +sec('collab','Collaborateurs','<div class="sg-ep-col"><p class="aide">Les collaborateurs attribués voient l’affaire dans « Mes projets ». Les autres intervenants (ingénieurs, entreprises…) s’ajouteront plus tard, dans le projet.</p><div class="sg-ep-coln"></div><div class="sg-ep-cols"></div></div>')
     +sec('adr','Adresses','<div class="sg-ep-adrs">'+CARTES.map(([k,l])=>'<div class="sg-ep-adr" data-adrk="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"></div><small class="n"></small></div>').join('')+'</div>')
     +sec('genres','Genres d’affaire','<div class="sg-ep-genres"><div class="sg-ep-chips"></div><div class="sg-ep-gg"><div class="sg-ep-c"><span>1. Groupe d’affaire</span><div class="sg-ep-grp" role="listbox" aria-label="Groupe d’affaire"></div></div><div class="sg-ep-c"><span class="sg-ep-gt">2. Genre</span><div class="sg-ep-gen"></div></div></div></div>')
-    +sec('delais','Délais',champ('Début du projet',dat('PROJECTSTARTDATE'))+champ('Fin du projet',dat('PROJECTENDDATE'))+champ('Début de planification',txt('STARTOFPLANNING'))+champ('Fin de planification',txt('ENDOFPLANNING'))
-      +champ('Début des travaux',txt('STARTOFCONSTRUCTION'))+champ('Fin des travaux',txt('ENDOFCONSTRUCTION'))+champ('Remise des clés',txt('MOVEINDEADLINE')))
-    +sec('carac','Caractéristiques',champ('Volume construit (m³)',nbr('VOLUME'))+champ('Surface de plancher (m²)',nbr('AREA'))+champ('Indice ICC',nbr('BASISINDEX')))
-    +sec('refs','Références',champ('Numéro d’affaire externe',txt('EXTERNALNUMBER'))+champ('District',txt('LOCATION'))+champ('Zone / quartier',txt('PLOT'))+champ('Numéro registre foncier',txt('LANDREGISTERNR'))+champ('Service comptabilité',txt('ACCOUNTINGAREA')))
+    /* rubriques « Délais », « Caractéristiques », « Références » et « Autres réglages » retirées à la demande (23.10.2026) : SG_EP_RETIRES */
     +sec('saisie','Saisie des heures et des frais','<div class="sg-ep-c large"><span>Champs obligatoires lors de la saisie</span><table class="sg-ep-par"><tr><th></th><th>Phase</th><th>Subdivision</th><th>Commentaire / description</th></tr>'
       +'<tr><td>Heures</td><td>'+ck('ISTIMEPHASEMANDATORY','Phase obligatoire')+'</td><td>'+ck('ISTIMESUBPROJECTMANDATORY','Subdivision obligatoire')+'</td><td>'+ck('ISTIMEDESCMANDATORY','Commentaire obligatoire')+'</td></tr>'
       +'<tr><td>Frais</td><td>'+ck('ISEXPENSESPHASEMANDATORY','Phase obligatoire')+'</td><td></td><td>'+ck('ISEXPENSESDESCMANDATORY','Description obligatoire')+'</td></tr></table></div>'+champ('Monnaie',txt('CURRENCY',{w:'90px'})))
-    +sec('autres','Autres réglages',champ('Tri',txt('SORTLABEL',{w:'220px'}))+champ('Prochain plan-ID',nbr('NEXTUNIQUEPLANID','110px'))+'<label class="sg-ep-c sg-ep-ck">'+ck('ISUNIQUEPLANIDLOCKED','Créer automatiquement')+' Créer automatiquement les plan-ID</label>'
-      +champ('Emplacement du dossier d’affaire',txt('PROJECTFOLDER'),{large:1})+champ('URL de la messagerie',txt('MAILBOXURL'),{large:1}),{repli:1})
     +'</div>';
   /* adresses (23.10.2026) : adresse d'affaire et maître de l'ouvrage repris du contrat (ou de l'offre) quand il les donne — sinon à choisir ;
      adresse de facturation automatique (MO p.a. Substances Architectes) ; lieu de dépôt des offres à choisir ; règles : sgAdressesAffaire */
@@ -3080,6 +3088,29 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
       const cur=k==='mo'?(moChoisi!=null?moChoisi:(m=>m&&m.CONTACT_ID)(p?svMember(p,8):null)):adr[cle];
       sgChoisirAdresse(l,c=>{ if(k==='mo') moChoisi=c.ID; else adr[cle]=c.ID; majAdrs(); },{courant:cur,p,deja:[['Adresse d’affaire',adr.CONTACT1_ID]].filter(x=>x[1]&&k!=='affaire')}); }
     if(rt){ const k=rt.dataset.adrRetirer; adr[k==='affaire'?'CONTACT1_ID':'CONTACT4_ID']=null; majAdrs(); } });
+  /* collaborateurs du bureau attribués à l'affaire (23.10.2026, demande de Paulo « attribuer les collaborateurs à l'affaire ») = intervenants
+     « Collaborateurs » (rôle 12 : RESPCONTACT_ID = personne du collaborateur, CONTACT_ID = Substances Architectes), ce que lisent Mes projets,
+     l'équipe de la fiche affaire, le Controlling et le serveur du NAS ; collaborateurs actuels à cocher (heures déjà saisies sur l'affaire à
+     droite), anciens collaborateurs seulement s'ils sont attribués ; lié par un autre rôle (Directeur d'affaire…) : coché, à modifier dans les
+     intervenants du projet. Les autres intervenants s'ajoutent plus tard, dans le projet (demande de Paulo, même jour) */
+  const auj=new Date().toISOString().slice(0,10), MBR=v.ID?DS.by('projectmember','PROJECT_ID',v.ID):[], HRS={};
+  const estDe=(x,s)=>String(x.RESPCONTACT_ID)===String(s.PERSON_ID)||String(x.CONTACT_ID)===String(s.PERSON_ID);
+  if(v.ID) DS.by('timelog','PROJECT_ID',v.ID).forEach(r=>{ HRS[r.STAFF_ID]=(HRS[r.STAFF_ID]||0)+(+r.TIMEPERIOD||0); });
+  const COL=DS.all('staff').filter(s=>s.PERSON_ID!=null).map(s=>{ const L=MBR.filter(x=>estDe(x,s)), aut=[...new Set(L.filter(x=>+x.TEAMROLECODE!==12).map(x=>ROLE[x.TEAMROLECODE]||'rôle '+x.TEAMROLECODE))];
+      return {s,a12:L.some(x=>+x.TEAMROLECODE===12),aut,parti:+s.ISACTIVE===0||(!!s.QUITTINGDATE&&String(s.QUITTINGDATE).slice(0,10)<auj),h:HRS[s.ID]||0}; })
+    .filter(c=>!c.parti||c.a12||c.aut.length).sort((a,b)=>a.parti-b.parti||cmp(staffName(a.s),staffName(b.s)));
+  const att=new Set(COL.filter(c=>c.a12).map(c=>String(c.s.ID)));   /* cochés : intervenant « Collaborateurs » */
+  const colBox=corps.querySelector('.sg-ep-cols'), colN=corps.querySelector('.sg-ep-coln');
+  const majColN=()=>{ const n=COL.filter(c=>att.has(String(c.s.ID))||c.aut.length).length; colN.textContent=n?n+' collaborateur'+(n>1?'s':'')+' attribué'+(n>1?'s':''):'Aucun collaborateur attribué'; };
+  const ligCol=c=>{ const id=String(c.s.ID), seul=c.aut.length>0&&!c.a12, ok=seul||att.has(id);
+    const ti=c.aut.length?'Attribué'+(c.a12?' aussi':'')+' comme intervenant « '+c.aut.join(' », « ')+' » : à modifier dans les intervenants du projet':'';
+    return '<label class="'+(ok||c.aut.length?'on':'')+(seul?' dis':'')+'"'+(ti?' title="'+E(ti)+'"':'')+'><input type="checkbox" data-collab="'+E(id)+'"'+(ok?' checked':'')+(seul?' disabled':'')+'>'
+      +'<span class="ini">'+E(c.s.INITIALS||'')+'</span><span class="nm">'+E(staffName(c.s))+'</span>'+(c.h?'<span class="h" title="Heures déjà saisies sur l’affaire">'+nxH(c.h)+' h</span>':'')+'</label>'; };
+  colBox.innerHTML=COL.filter(c=>!c.parti).map(ligCol).join('')+(COL.some(c=>c.parti)?'<div class="gr">Anciens collaborateurs</div>'+COL.filter(c=>c.parti).map(ligCol).join(''):'')
+    ||'<span class="vide">Aucun collaborateur dans l’équipe du bureau.</span>';
+  majColN();
+  colBox.addEventListener('change',e=>{ const id=e.target.dataset.collab; if(id==null) return; if(e.target.checked) att.add(id); else att.delete(id);
+    const c=COL.find(x=>String(x.s.ID)===id); e.target.closest('label').classList.toggle('on',e.target.checked||!!(c&&c.aut.length)); majColN(); });
   /* genres d'affaire, en deux temps comme dans l'ancien logiciel (23.10.2026, demande de Paulo) : 1) choisir le groupe d'affaire (Habitat individuel,
      Habitat collectif…, avec le nombre de genres cochés), 2) cocher le genre (Nouvelle construction, Transformation…) ; genres cochés en étiquettes
      « groupe · genre » au-dessus (× pour retirer, clic = ouvre son groupe) ; plusieurs genres possibles, comme avant (project_projectkind) */
@@ -3105,7 +3136,7 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
   corps.querySelector('[data-k="NUMBER"]').addEventListener('input',e=>{ corps.querySelector('[data-tete="n"]').textContent=e.target.value||'Nouvelle affaire'; e.target.classList.remove('err'); });
   corps.querySelector('[data-k="TITLE"]').addEventListener('input',e=>{ corps.querySelector('[data-tete="t"]').textContent=e.target.value; });
   const D=dialog({title:isNew?'Nouvelle affaire':'Éditer l’affaire',width:'min(980px,95vw)',body:corps,buttons:[{t:'Annuler'},{t:isNew?'Créer l’affaire':'Enregistrer',pri:true,fn:async bd=>{
-    readK(bd,v,['PROJECTSTATECODE','CURRENTPROJECTPHASE_ID','BASISINDEX','VOLUME','AREA','NEXTUNIQUEPLANID']); Object.assign(v,adr);
+    readK(bd,v,['PROJECTSTATECODE']); Object.assign(v,adr);
     const num=bd.querySelector('[data-k="NUMBER"]');
     if(!v.NUMBER){ toast('Le numéro d’affaire est obligatoire.',true); num.classList.add('err'); num.scrollIntoView({block:'center'}); num.focus(); return false; }
     if(DS.all('project').some(x=>x.NUMBER===v.NUMBER&&x.ID!==v.ID)){ toast('Ce numéro d’affaire existe déjà.',true); num.classList.add('err'); num.scrollIntoView({block:'center'}); num.focus(); return false; }
@@ -3113,10 +3144,17 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     const ops=[{t:'project',id:v.ID,val:v}], old=new Set(DS.by('project_projectkind','PROJECT_ID',v.ID).map(l=>l.PROJECTKINDS_ID));
     kinds.forEach(k=>{ if(!old.has(k)) ops.push({t:'project_projectkind',id:k+'-'+v.ID,val:{PROJECT_ID:v.ID,PROJECTKINDS_ID:k}}); });
     old.forEach(k=>{ if(!kinds.has(k)) ops.push({t:'project_projectkind',id:k+'-'+v.ID,val:null}); });
+    let so=DS.by('projectmember','PROJECT_ID',v.ID).reduce((a,x)=>Math.max(a,+x.SORTORDER||0),0);   /* nouveaux intervenants : à la suite */
     if(moChoisi!=null){ const m8=svMember(v,8);   /* maître de l'ouvrage choisi : intervenant « Maître d'ouvrage » (rôle 8) mis à jour ou créé */
       if(m8){ if(String(m8.CONTACT_ID)!==String(moChoisi)) ops.push({t:'projectmember',id:m8.ID,val:{...m8,CONTACT_ID:moChoisi}}); }
-      else { const id=DS.newIds('projectmember')[0], so=DS.by('projectmember','PROJECT_ID',v.ID).reduce((a,x)=>Math.max(a,+x.SORTORDER||0),0);
-        ops.push({t:'projectmember',id,val:{ID:id,PROJECTDIVISION:null,PROJECTROLE:null,TEAMROLECODE:8,PROJECT_ID:v.ID,CONTACT_ID:moChoisi,BKP:null,NOTE:null,ISHIDDEN:0,RESPCONTACT_ID:null,SORTORDER:so+1}}); } }
+      else { const id=DS.newIds('projectmember')[0];
+        ops.push({t:'projectmember',id,val:{ID:id,PROJECTDIVISION:null,PROJECTROLE:null,TEAMROLECODE:8,PROJECT_ID:v.ID,CONTACT_ID:moChoisi,BKP:null,NOTE:null,ISHIDDEN:0,RESPCONTACT_ID:null,SORTORDER:++so}}); } }
+    /* collaborateurs : intervenant « Collaborateurs » (rôle 12) créé pour chaque collaborateur coché, retiré pour chaque collaborateur décoché
+       (ses seuls enregistrements rôle 12 sur l'affaire) ; CONTACT_ID = société du collaborateur, sinon celle des autres collaborateurs */
+    const ajouts=COL.filter(c=>att.has(String(c.s.ID))&&!c.a12), retraits=COL.filter(c=>c.a12&&!att.has(String(c.s.ID)));
+    if(ajouts.length){ const ids=DS.newIds('projectmember',ajouts.length), soc=(DS.all('staff').find(s=>s.COMPANYCONTACT_ID!=null)||{}).COMPANYCONTACT_ID??null;
+      ajouts.forEach((c,i)=>ops.push({t:'projectmember',id:ids[i],val:{ID:ids[i],PROJECTDIVISION:null,PROJECTROLE:null,TEAMROLECODE:12,PROJECT_ID:v.ID,CONTACT_ID:c.s.COMPANYCONTACT_ID??soc,BKP:null,NOTE:null,ISHIDDEN:0,RESPCONTACT_ID:c.s.PERSON_ID,SORTORDER:++so}})); }
+    retraits.forEach(c=>MBR.filter(x=>+x.TEAMROLECODE===12&&estDe(x,c.s)).forEach(x=>ops.push({t:'projectmember',id:x.ID,val:null})));
     await DS.commit(ops); AF.g.sel=String(v.ID); toast('Affaire enregistrée.'); }}]});
   /* sommaire : rubrique visible surlignée */
   const bd=D.bd; liens=[...corps.querySelectorAll('[data-go-sec]')];

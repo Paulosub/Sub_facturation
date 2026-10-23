@@ -623,6 +623,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Paulo (retour au graphique d'origine, phases seules) : phases partielles sous chaque phase (copie dans
   `subgestion3/_backup_20261020_1642_avant_essai_phases_partielles/` = avant l'essai). Démarrage : le dernier écran est rouvert avec
   son paramètre (`sg3_vue_arg`, enveloppe de `go` dans `sg3.js` ; pas pour fx-* ni new / nf: / newaff:).
+  **Projet terminé ou archivé (23.10.2026)** : « Terminé » à la place de la phase actuelle (`sgTermine(p)` = états 4 et 5) — tuile du tableau de bord,
+  page du projet, Mes projets, Affaires ▸ Gestion (colonne et fiche) — et plus de phase « en cours » surlignée (graphique des phases, Phases contrat).
   « Coût du temps » renommé « Coût de revient » partout dans l'app (fiche projet, Rentabilité des projets, CSV, textes), 19.10.2026.
   **Tableau de bord du projet, collaborateur (19.10.2026)** : onglets `SG_ONGLETS_COLLAB` = Phases contrat, Intervenants, Contrats &
   factures, Chantier, Documents, Notes & tâches (ni Vue d'ensemble ni Temps ; premier onglet permis ouvert d'office) ; les droits s'appliquent
@@ -676,7 +678,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `sgFriseHeures(T)`, fonction commune avec le tableau de bord) ; puis, dans l'ordre demandé par Paulo : **fiche de l'affaire juste sous le
   titre** (`sgFicheAffaire` : sans numéro, désignation, statut ni type d'affaire, sans la rubrique Délais — retirés à la demande le même jour —, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
   petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — **étendue à la place de « Contrat »** (`sgContratEtendue`, `SG_ETENDUE`, même jour — d'abord « Enquête · Contrat », puis le mot « Contrat »
-  retiré à la demande ; « · Avenant » gardé pour un avenant ; sans étendue : « Contrat » / « Avenant » — : dernière
+  retiré à la demande ; « · Avenant » gardé pour un avenant ; sans étendue : « Contrat » / « Avenant » — : d'abord le **« Statut du contrat »
+  de Facturation** (`c.statutContrat` : Faisabilité, Expertise, Avant-projet, Projet, Enquête, Appels d'offre, Exécution, DA = direction
+  architecturale, Mandat complet), sinon **« Mandat complet » si les prestations SIA font 100 %** (somme des % ≥ 99,5 ; demande du même jour), sinon dernière
   phase partielle du contrat — 31 Avant-projet, 32 Projet, 33 Enquête, 41 Appel d'offres, 51–53 Exécution ; sans phase : Faisabilité si contrat de
   faisabilité, sinon mots de l'intitulé ou du code — `SG_ETENDUE_MOTS` : expertise, demande d'autorisation / enquête, appel d'offres, concours,
   avant-projet, direction des travaux / « .DT » —, signalé en infobulle ; liste des phases en infobulle, ligne « Phases » retirée), Contrat / Avenant, état Brouillon / Envoyé / Signé le … / Terminé /

@@ -2853,7 +2853,8 @@ function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
     /* réduit : résumé type · honoraires TTC, sans la date (23.10.2026, demande de Paulo) ; devant « Contrat » / « Avenant » : l'étendue du contrat */
     const red=SG_AG.reduits().has(String(c.id)), res=[ci.remu,fin&&tt?nxCHF(tt)+' TTC':''].filter(Boolean).join(' · '), et=sgContratEtendue(c);
     return '<div class="sg-ag-ct'+(c.annule?' ann':'')+(red?' red':'')+'" data-ct="'+E(c.id)+'"><div class="h" data-ctr="'+E(c.id)+'" role="button" tabindex="0" aria-expanded="'+!red+'" title="'+(red?'Déplier':'Réduire')+' ce contrat">'+nxSvg('next','chev')
-      +(et.lib?'<b class="et" title="'+E(et.titre)+'">'+E(et.lib)+'</b><span class="nat"'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</span>':'<b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b>')
+      /* étendue seule (« Enquête », « Exécution »…) : le mot « Contrat » après l'étendue est retiré (23.10.2026, demande de Paulo) ; « Avenant » reste affiché */
+      +(et.lib?'<b class="et" title="'+E(et.titre)+'">'+E(et.lib)+'</b>'+(ci.avenant?'<span class="nat"'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>Avenant</span>':''):'<b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b>')
       +'<span class="nx-tag '+ci.cl+'">'+E(ci.etat)+'</span><span class="res">'+E(res)+'</span>'
       +'<button class="sg-ag-ouv" data-go="fx-contrats" data-arg="cv:'+E(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button></div>'
       +(ci.com?'<div class="com">'+E(ci.com)+'</div>':'')

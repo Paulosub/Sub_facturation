@@ -675,7 +675,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   en-tête jaune pâle comme le tableau de bord du projet (grand numéro et filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures —
   `sgFriseHeures(T)`, fonction commune avec le tableau de bord) ; puis, dans l'ordre demandé par Paulo : **fiche de l'affaire juste sous le
   titre** (`sgFicheAffaire` : sans numéro, désignation, statut ni type d'affaire, sans la rubrique Délais — retirés à la demande le même jour —, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
-  petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — **étendue devant « Contrat »** (`sgContratEtendue`, `SG_ETENDUE`, même jour : dernière
+  petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — **étendue à la place de « Contrat »** (`sgContratEtendue`, `SG_ETENDUE`, même jour — d'abord « Enquête · Contrat », puis le mot « Contrat »
+  retiré à la demande ; « · Avenant » gardé pour un avenant ; sans étendue : « Contrat » / « Avenant » — : dernière
   phase partielle du contrat — 31 Avant-projet, 32 Projet, 33 Enquête, 41 Appel d'offres, 51–53 Exécution ; sans phase : Faisabilité si contrat de
   faisabilité, sinon mots de l'intitulé ou du code — `SG_ETENDUE_MOTS` : expertise, demande d'autorisation / enquête, appel d'offres, concours,
   avant-projet, direction des travaux / « .DT » —, signalé en infobulle ; liste des phases en infobulle, ligne « Phases » retirée), Contrat / Avenant, état Brouillon / Envoyé / Signé le … / Terminé /

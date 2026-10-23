@@ -2829,7 +2829,7 @@ VIEWS['affd-gestion']={
     fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
       if(t.dataset.a){ const a=t.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); } else if(a==='prec'||a==='suiv') aller(a==='prec'?-1:1); else if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else if(a==='tdb') go('nx-projet',p.ID); }
       else if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); });
-    /* fiche refaite le 23.10.2026 (demande de Paulo « améliorer la fiche affaire ») : barre bleu nuit (position dans la liste, affaire précédente /
+    /* fiche refaite le 23.10.2026 (demande de Paulo « améliorer la fiche affaire ») : barre bleu nuit (affaire précédente /
        suivante, Éditer, Intervenants, Page du projet, Tableau de bord, fermer) ; en-tête jaune pâle comme le tableau de bord du projet (grand numéro,
        filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures) ; puis, dans l'ordre : fiche de l'affaire (juste sous le titre),
        contrats d'honoraires détaillés, heures (tuiles), équipe (tous les collaborateurs attribués, même sans heure) */
@@ -2841,7 +2841,7 @@ VIEWS['affd-gestion']={
       const kt=(ico,l,v,ti,cls)=>nxKpi(ico,l,v).replace('<div class="nx-kpi"','<div class="nx-kpi" title="'+E(ti||'')+'"').replace('<div class="v">','<div class="v'+(cls?' '+cls:'')+'">');
       const jauge=hp?(()=>{ const m0=Math.max(hp,x.tot), a0=Math.min(x.tot,hp)/m0*100, d0=x.tot>hp?(x.tot-hp)/m0*100:0; return '<div class="sg-kg"><i class="ef" style="width:'+a0.toFixed(2)+'%"></i>'+(d0?'<i class="dp" style="left:'+a0.toFixed(2)+'%;width:'+d0.toFixed(2)+'%"></i>':'')+'<i class="mk" style="left:'+(hp/m0*100).toFixed(2)+'%"></i></div>'; })():'';
       const eq=sgEquipeAffaire(p,x.st), tot=x.tot||1;
-      fiche.innerHTML='<div class="sg-ag-wh"><b>Fiche projet</b>'+(i>=0?'<span class="pos">'+(i+1)+' / '+V.length+'</span>':'')+'<span class="sg-ag-wb">'
+      fiche.innerHTML='<div class="sg-ag-wh"><b>Fiche projet</b><span class="sg-ag-wb">'   /* sans numérotation « 84 / 87 » (23.10.2026, demande de Paulo) */
           +bt('prec','Affaire précédente (⌥↑)','‹',i<=0)+bt('suiv','Affaire suivante (⌥↓)','›',i<0||i>=V.length-1)+'<i class="sep"></i>'
           +bt('edit','Éditer l’affaire',nxSvg('edit'))+bt('interv','Attribuer les intervenants',nxSvg('users'))+bt('page','Page du projet',nxSvg('folder'))+bt('tdb','Tableau de bord du projet',nxSvg('gauge'))
           +'<button class="sg-ag-x" data-a="fermer" title="Fermer la fiche">×</button></span></div>'

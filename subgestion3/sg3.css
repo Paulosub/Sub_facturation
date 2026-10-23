@@ -1006,7 +1006,6 @@ html body *,html body svg text{font-family:var(--s-font)!important}
    tableau de bord du projet, fiche de l'affaire sous le titre, contrats détaillés, heures, équipe complète */
 .sg-ag-wh{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 18px;background:var(--s-nuit);color:#fff}
 .sg-ag-wh b{font-size:12.5px;white-space:nowrap}
-.sg-ag-wh .pos{font-size:11.5px;color:var(--s-jaune);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sg-ag-wb{margin-left:auto;display:flex;align-items:center;gap:1px}
 .sg-ag-wb button{border:0;background:none;color:#fff;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:inherit;font-size:19px;line-height:1;padding:0}
 .sg-ag-wb button svg{width:16px;height:16px}

@@ -998,24 +998,66 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* Affaires ▸ Gestion : colonnes utiles et fiche à droite (22.10.2026) */
 .sg-ag-corps{display:flex;flex:1;min-height:0;border-top:1px solid var(--s-filet)}
 .sg-ag-liste{flex:1;min-width:0;display:flex;flex-direction:column}.sg-ag-liste>.pane{flex:1;min-height:0}
-.sg-ag-fiche{flex:0 0 400px;border-left:2px solid var(--s-noir);overflow:auto;padding:0;background:#fff;display:none;box-shadow:-8px 0 18px rgba(0,0,0,.06)}
+.sg-ag-fiche{flex:0 0 420px;border-left:2px solid var(--s-noir);overflow:auto;padding:0;background:#fff;display:none;box-shadow:-8px 0 18px rgba(0,0,0,.06)}
 .sg-ag.fiche-on .sg-ag-fiche{display:block}
-.sg-ag-fh{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.sg-ag-fiche h3{margin:10px 0 12px;font-size:18px;line-height:1.2;font-weight:700}
-.sg-ag-fiche dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;border-top:2px solid var(--s-noir);padding-top:10px}
-.sg-ag-fiche dt{color:var(--s-gris)}.sg-ag-fiche dd{margin:0}.sg-ag-fiche dd small{color:var(--s-gris)}
-.sg-ag-act{margin-top:16px}
 .sg-ag-pt{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--s-gris3)}.sg-ag-pt.on{background:#6f8f17;box-shadow:none}
-@media (max-width:1100px){.sg-ag-fiche{flex-basis:270px}}
-/* Affaires ▸ Gestion : fiche complète de l'affaire (22.10.2026) */
-.sg-ag-fiche2{margin-top:22px}
-.sg-ag-ft{font-size:11px;font-weight:700;padding-bottom:7px;border-bottom:2px solid var(--s-noir);margin-bottom:4px}
+@media (max-width:1100px){.sg-ag-fiche{flex-basis:340px}}
+/* Affaires ▸ Gestion : fiche projet en fenêtre à droite (22.10.2026), refaite le 23.10.2026 — barre bleu nuit, en-tête jaune pâle comme le
+   tableau de bord du projet, fiche de l'affaire sous le titre, contrats détaillés, heures, équipe complète */
+.sg-ag-wh{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 18px;background:var(--s-nuit);color:#fff}
+.sg-ag-wh b{font-size:12.5px;white-space:nowrap}
+.sg-ag-wh .pos{font-size:11.5px;color:var(--s-jaune);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sg-ag-wb{margin-left:auto;display:flex;align-items:center;gap:1px}
+.sg-ag-wb button{border:0;background:none;color:#fff;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:inherit;font-size:19px;line-height:1;padding:0}
+.sg-ag-wb button svg{width:16px;height:16px}
+.sg-ag-wb button:hover:not(:disabled){background:rgba(255,255,255,.15)}
+.sg-ag-wb button:disabled{opacity:.35;cursor:default}
+.sg-ag-wb button:focus-visible{outline:2px solid var(--s-jaune);outline-offset:-2px}
+.sg-ag-wb .sep{width:1px;height:18px;background:rgba(255,255,255,.3);margin:0 5px}
+.sg-ag-wb .sg-ag-x{font-size:21px;margin-left:4px}
+.sg-ag-id{background:var(--s-jaune2);padding:16px 18px 4px;border-bottom:2px solid var(--s-noir)}
+.sg-ag-idt{display:flex;align-items:stretch;gap:14px}
+.sg-ag-num{flex:0 0 auto;max-width:150px;padding:2px 14px 0 0;border-right:2px solid var(--s-noir);font-size:26px;font-weight:700;line-height:1;color:var(--s-nuit);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sg-ag-id h3{margin:0;font-size:16px;line-height:1.25;font-weight:700}
+.sg-ag-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sg-ag-mo{display:flex;align-items:center;gap:7px;margin:12px 0 10px;font-size:12.5px}
+.sg-ag-mo svg{width:15px;height:15px;flex:0 0 15px}
+.sg-ag-id .sg-mandat{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:4px 0 22px;font-size:12.5px}
+.sg-ag-id .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
+.sg-ag-id .sg-mandat .d{color:var(--s-gris)}
+.sg-ag-id .sg-frise{width:120px}
+.sg-ag-wc{padding:2px 18px 24px}
+.sg-ag-bloc{margin-top:22px}
+.sg-ag-bloc>h4{margin:0;padding-bottom:7px;border-bottom:2px solid var(--s-noir);font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.sg-ag-bloc>h4 .n{font-size:11px;font-weight:700;padding:1px 6px;background:var(--s-nuit3);font-variant-numeric:tabular-nums}
+.sg-ag-bloc>h4 .n:empty{display:none}
 .sg-ag-sec{padding:10px 0;border-bottom:1px solid var(--s-filet)}
-.sg-ag-sec h4{margin:0 0 6px;font-size:12.5px;font-weight:700}
-.sg-ag-sec dl{border:0!important;padding:0!important}
-.sg-ag-vide{margin:0;color:var(--s-gris);font-size:12px}
-/* Affaires ▸ Gestion : fiche projet en fenêtre à droite (22.10.2026) */
-.sg-ag-wh{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:10px 12px 10px 18px;background:var(--s-nuit);color:#fff}
-.sg-ag-wh b{font-size:12.5px}.sg-ag-wh span{font-size:12px;color:var(--s-jaune);font-weight:700}
-.sg-ag-x{margin-left:auto;border:0;background:none;color:#fff;font-size:20px;line-height:1;width:28px;height:28px;cursor:pointer}.sg-ag-x:hover{background:rgba(255,255,255,.15)}
-.sg-ag-wc{padding:14px 18px 20px}
+.sg-ag-sec:last-child{border-bottom:0}
+.sg-ag-sec h5{margin:0 0 7px;font-size:11.5px;font-weight:700;color:var(--s-nuit)}
+.sg-ag-fiche dl{margin:0;display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:5px 12px;font-size:12.5px}
+.sg-ag-fiche dt{color:var(--s-gris)}.sg-ag-fiche dd{margin:0;overflow-wrap:anywhere}
+.sg-ag-moins{color:var(--s-gris)}
+.sg-ag-chips{display:flex;flex-wrap:wrap;gap:5px}
+.sg-ag-par{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.sg-ag-par th{font-weight:400;color:var(--s-gris);text-align:center;padding:3px 4px;font-size:11.5px}.sg-ag-par th:first-child{text-align:left}
+.sg-ag-par td{text-align:center;padding:4px;border-top:1px solid var(--s-filet)}.sg-ag-par td:first-child{text-align:left}
+.sg-ag-oui svg{width:14px;height:14px;color:var(--s-nuit);vertical-align:-2px}.sg-ag-non{color:var(--s-gris3)}
+.sg-ag-vide{margin:10px 0 0;color:var(--s-gris);font-size:12px}
+.sg-ag-ct{padding:12px 0;border-bottom:1px solid var(--s-filet)}
+.sg-ag-ct:last-child{border-bottom:0}
+.sg-ag-ct .h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sg-ag-ct .h b{font-size:13px}
+.sg-ag-ct .com{font-size:12.5px;margin:0 0 8px}
+.sg-ag-ct.ann{opacity:.6}
+.sg-ag-ouv{margin-left:auto;display:flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-size:11.5px;color:var(--s-gris);cursor:pointer;padding:4px 6px}
+.sg-ag-ouv svg{width:16px;height:16px}.sg-ag-ouv:hover{color:var(--s-noir);background:var(--s-jaune3)}
+.sg-ag-kpis{grid-template-columns:1fr 1fr;margin:0;border-top:0}
+.sg-ag-kpis .nx-kpi{margin-right:14px;padding:12px 0}
+.sg-ag-kpis .nx-kpi .l{width:100%}
+.sg-ag-kpis .nx-kpi .v{font-size:24px}
+.sg-ag-kpis .nx-kpi .v.txt{font-size:17px;line-height:1.2;white-space:normal}
+.sg-ag-eq .nx-person{padding:7px 0}
+.sg-ag-eq .t .nl{display:flex;align-items:center;flex-wrap:wrap;gap:3px 7px}
+.sg-ag-eq .t small{font-size:11px;color:var(--s-gris)}
+.sg-ag-eq .t .nx-tag{font-size:10.5px;padding:0 5px}
+.sg-ag-eq .zero .nx-av{background:var(--s-filet);color:var(--s-gris)}

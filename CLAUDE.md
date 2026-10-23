@@ -669,7 +669,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sélectionnée à droite (état, MO, dates, phase, heures, équipe, contrats reliés ; Éditer, Intervenants, Page du projet, Tableau de bord).
   Sous le résumé : fiche complète de l'affaire en lecture (`sgFicheAffaire` : Affaire, Genres d'affaire, Délais, Adresses, Références, Paramètres de
   saisie — rubriques de « Éditer l'affaire », champs vides omis ; 22.10.2026). Fiche projet = fenêtre à droite (en-tête bleu nuit, × pour fermer), ouverte en
-  choisissant une affaire ou par le bouton « Fiche projet » de l'en-tête, qui dans cet écran ne quitte plus la liste (`SG_AG.ouvrir`).   Projets ▸ Registre (aff-gestion) inchangé.
+  choisissant une affaire ou par le bouton « Fiche projet » de l'en-tête, qui dans cet écran ne quitte plus la liste (`SG_AG.ouvrir`).
+  **Fiche refaite le 23.10.2026 (« améliorer la fiche affaire »)** : barre bleu nuit = position dans la liste (« 84 / 87 »), affaire précédente /
+  suivante (‹ › ou ⌥↑ ⌥↓, `SG_AG.aller`, ordre affiché de la liste `AF.g.view`), Éditer, Intervenants, Page du projet, Tableau de bord (icônes), × ;
+  en-tête jaune pâle comme le tableau de bord du projet (grand numéro et filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures —
+  `sgFriseHeures(T)`, fonction commune avec le tableau de bord) ; puis, dans l'ordre demandé par Paulo : **fiche de l'affaire juste sous le
+  titre** (`sgFicheAffaire` : sans numéro, désignation ni statut, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
+  petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — Contrat / Avenant, état Brouillon / Envoyé / Signé le … / Terminé /
+  Annulé, date du contrat, « Signé le », type de rémunération, phases SIA, honoraires HT / TTC, tarif horaire brut, rabais, facturé TTC et %,
+  versions, « Ouvrir » le PDF ; montants masqués si finances verrouillées ; annulés à la fin), Heures (tuiles : heures saisies avec jauge et % des
+  heures prévues, ces 30 jours, phase actuelle, dernière saisie), **Équipe** (`sgEquipeAffaire` : TOUS les collaborateurs attribués à l'affaire —
+  intervenants dont la personne est un collaborateur, comme Mes projets —, même sans heure, + « hors équipe » pour ceux qui ont saisi des heures
+  sans être attribués ; fonction de l'intervenant ; « a quitté le bureau »). Copie d'avant : `subgestion3/_backup_20261023_avant_fiche_affaire/`.   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
   (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,

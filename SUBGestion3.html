@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 22.10.2026 18:10 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 23.10.2026 09:14 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1007,27 +1007,69 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 /* Affaires ▸ Gestion : colonnes utiles et fiche à droite (22.10.2026) */
 .sg-ag-corps{display:flex;flex:1;min-height:0;border-top:1px solid var(--s-filet)}
 .sg-ag-liste{flex:1;min-width:0;display:flex;flex-direction:column}.sg-ag-liste>.pane{flex:1;min-height:0}
-.sg-ag-fiche{flex:0 0 400px;border-left:2px solid var(--s-noir);overflow:auto;padding:0;background:#fff;display:none;box-shadow:-8px 0 18px rgba(0,0,0,.06)}
+.sg-ag-fiche{flex:0 0 420px;border-left:2px solid var(--s-noir);overflow:auto;padding:0;background:#fff;display:none;box-shadow:-8px 0 18px rgba(0,0,0,.06)}
 .sg-ag.fiche-on .sg-ag-fiche{display:block}
-.sg-ag-fh{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.sg-ag-fiche h3{margin:10px 0 12px;font-size:18px;line-height:1.2;font-weight:700}
-.sg-ag-fiche dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;border-top:2px solid var(--s-noir);padding-top:10px}
-.sg-ag-fiche dt{color:var(--s-gris)}.sg-ag-fiche dd{margin:0}.sg-ag-fiche dd small{color:var(--s-gris)}
-.sg-ag-act{margin-top:16px}
 .sg-ag-pt{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--s-gris3)}.sg-ag-pt.on{background:#6f8f17;box-shadow:none}
-@media (max-width:1100px){.sg-ag-fiche{flex-basis:270px}}
-/* Affaires ▸ Gestion : fiche complète de l'affaire (22.10.2026) */
-.sg-ag-fiche2{margin-top:22px}
-.sg-ag-ft{font-size:11px;font-weight:700;padding-bottom:7px;border-bottom:2px solid var(--s-noir);margin-bottom:4px}
+@media (max-width:1100px){.sg-ag-fiche{flex-basis:340px}}
+/* Affaires ▸ Gestion : fiche projet en fenêtre à droite (22.10.2026), refaite le 23.10.2026 — barre bleu nuit, en-tête jaune pâle comme le
+   tableau de bord du projet, fiche de l'affaire sous le titre, contrats détaillés, heures, équipe complète */
+.sg-ag-wh{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 18px;background:var(--s-nuit);color:#fff}
+.sg-ag-wh b{font-size:12.5px;white-space:nowrap}
+.sg-ag-wh .pos{font-size:11.5px;color:var(--s-jaune);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sg-ag-wb{margin-left:auto;display:flex;align-items:center;gap:1px}
+.sg-ag-wb button{border:0;background:none;color:#fff;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:inherit;font-size:19px;line-height:1;padding:0}
+.sg-ag-wb button svg{width:16px;height:16px}
+.sg-ag-wb button:hover:not(:disabled){background:rgba(255,255,255,.15)}
+.sg-ag-wb button:disabled{opacity:.35;cursor:default}
+.sg-ag-wb button:focus-visible{outline:2px solid var(--s-jaune);outline-offset:-2px}
+.sg-ag-wb .sep{width:1px;height:18px;background:rgba(255,255,255,.3);margin:0 5px}
+.sg-ag-wb .sg-ag-x{font-size:21px;margin-left:4px}
+.sg-ag-id{background:var(--s-jaune2);padding:16px 18px 4px;border-bottom:2px solid var(--s-noir)}
+.sg-ag-idt{display:flex;align-items:stretch;gap:14px}
+.sg-ag-num{flex:0 0 auto;max-width:150px;padding:2px 14px 0 0;border-right:2px solid var(--s-noir);font-size:26px;font-weight:700;line-height:1;color:var(--s-nuit);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sg-ag-id h3{margin:0;font-size:16px;line-height:1.25;font-weight:700}
+.sg-ag-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sg-ag-mo{display:flex;align-items:center;gap:7px;margin:12px 0 10px;font-size:12.5px}
+.sg-ag-mo svg{width:15px;height:15px;flex:0 0 15px}
+.sg-ag-id .sg-mandat{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:4px 0 22px;font-size:12.5px}
+.sg-ag-id .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
+.sg-ag-id .sg-mandat .d{color:var(--s-gris)}
+.sg-ag-id .sg-frise{width:120px}
+.sg-ag-wc{padding:2px 18px 24px}
+.sg-ag-bloc{margin-top:22px}
+.sg-ag-bloc>h4{margin:0;padding-bottom:7px;border-bottom:2px solid var(--s-noir);font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.sg-ag-bloc>h4 .n{font-size:11px;font-weight:700;padding:1px 6px;background:var(--s-nuit3);font-variant-numeric:tabular-nums}
+.sg-ag-bloc>h4 .n:empty{display:none}
 .sg-ag-sec{padding:10px 0;border-bottom:1px solid var(--s-filet)}
-.sg-ag-sec h4{margin:0 0 6px;font-size:12.5px;font-weight:700}
-.sg-ag-sec dl{border:0!important;padding:0!important}
-.sg-ag-vide{margin:0;color:var(--s-gris);font-size:12px}
-/* Affaires ▸ Gestion : fiche projet en fenêtre à droite (22.10.2026) */
-.sg-ag-wh{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:10px 12px 10px 18px;background:var(--s-nuit);color:#fff}
-.sg-ag-wh b{font-size:12.5px}.sg-ag-wh span{font-size:12px;color:var(--s-jaune);font-weight:700}
-.sg-ag-x{margin-left:auto;border:0;background:none;color:#fff;font-size:20px;line-height:1;width:28px;height:28px;cursor:pointer}.sg-ag-x:hover{background:rgba(255,255,255,.15)}
-.sg-ag-wc{padding:14px 18px 20px}
+.sg-ag-sec:last-child{border-bottom:0}
+.sg-ag-sec h5{margin:0 0 7px;font-size:11.5px;font-weight:700;color:var(--s-nuit)}
+.sg-ag-fiche dl{margin:0;display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:5px 12px;font-size:12.5px}
+.sg-ag-fiche dt{color:var(--s-gris)}.sg-ag-fiche dd{margin:0;overflow-wrap:anywhere}
+.sg-ag-moins{color:var(--s-gris)}
+.sg-ag-chips{display:flex;flex-wrap:wrap;gap:5px}
+.sg-ag-par{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.sg-ag-par th{font-weight:400;color:var(--s-gris);text-align:center;padding:3px 4px;font-size:11.5px}.sg-ag-par th:first-child{text-align:left}
+.sg-ag-par td{text-align:center;padding:4px;border-top:1px solid var(--s-filet)}.sg-ag-par td:first-child{text-align:left}
+.sg-ag-oui svg{width:14px;height:14px;color:var(--s-nuit);vertical-align:-2px}.sg-ag-non{color:var(--s-gris3)}
+.sg-ag-vide{margin:10px 0 0;color:var(--s-gris);font-size:12px}
+.sg-ag-ct{padding:12px 0;border-bottom:1px solid var(--s-filet)}
+.sg-ag-ct:last-child{border-bottom:0}
+.sg-ag-ct .h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sg-ag-ct .h b{font-size:13px}
+.sg-ag-ct .com{font-size:12.5px;margin:0 0 8px}
+.sg-ag-ct.ann{opacity:.6}
+.sg-ag-ouv{margin-left:auto;display:flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-size:11.5px;color:var(--s-gris);cursor:pointer;padding:4px 6px}
+.sg-ag-ouv svg{width:16px;height:16px}.sg-ag-ouv:hover{color:var(--s-noir);background:var(--s-jaune3)}
+.sg-ag-kpis{grid-template-columns:1fr 1fr;margin:0;border-top:0}
+.sg-ag-kpis .nx-kpi{margin-right:14px;padding:12px 0}
+.sg-ag-kpis .nx-kpi .l{width:100%}
+.sg-ag-kpis .nx-kpi .v{font-size:24px}
+.sg-ag-kpis .nx-kpi .v.txt{font-size:17px;line-height:1.2;white-space:normal}
+.sg-ag-eq .nx-person{padding:7px 0}
+.sg-ag-eq .t .nl{display:flex;align-items:center;flex-wrap:wrap;gap:3px 7px}
+.sg-ag-eq .t small{font-size:11px;color:var(--s-gris)}
+.sg-ag-eq .t .nx-tag{font-size:10.5px;padding:0 5px}
+.sg-ag-eq .zero .nx-av{background:var(--s-filet);color:var(--s-gris)}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -25853,11 +25895,7 @@ VIEWS['nx-projet']={
       +(p.LOCATION?'<span>'+nxSvg('map')+nxE(p.LOCATION)+'</span>':'')+(+p.ISINTERNAL?'<span class="nx-tag">Interne</span>':'')+'</div>'
       /* frise du mandat sous le maître de l'ouvrage (20.10.2026, proposition F) : mois de la première et de la dernière heure introduites dans
          l'app, petite frise, durée en mois comptés du premier au dernier mois (« 1 an 11 mois ») ; dates exactes en infobulle ; rien sans heure */
-      +((T=>{ if(!T.length) return ''; let a=T[0], b=T[0]; T.forEach(r=>{ const k=tlKey(r); if(k<tlKey(a)) a=r; if(k>tlKey(b)) b=r; });
-          const mm=r=>String(+r.TIMEMONTH+1).padStart(2,'0')+'.'+r.TIMEYEAR, d1=mm(a), d2=mm(b), n=(+b.TIMEYEAR*12+ +b.TIMEMONTH)-(+a.TIMEYEAR*12+ +a.TIMEMONTH)+1;
-          const an=Math.floor(n/12), mo=n%12, duree=(an?an+' an'+(an>1?'s':''):'')+(an&&mo?' ':'')+(mo||!an?mo+' mois':'');
-          return '<div class="sg-mandat" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b)))+' — '+n+' mois')+'"><b>'+d1+'</b>'   /* 20.10.2026 : sans le libellé « Mandat », durée centrée sous la frise */
-            +(d1===d2?'<span class="d">'+duree+'</span>':'<span class="sg-frise"><em>'+duree+'</em></span><b>'+d2+'</b>')+'</div>'; })(DS.by('timelog','PROJECT_ID',p.ID)))
+      +sgFriseHeures(DS.by('timelog','PROJECT_ID',p.ID))
       +'</div></div>'   /* indications « Coût au-delà des honoraires », « Facturation en retard », « phases hors budget » retirées de l'en-tête (20.10.2026) */   /* 19.10.2026 : boutons Facturer, PV de chantier, épingle, « … » et Modifier retirés du tableau de bord */
       +'<div class="sg-onglets">'+SG_ONGLETS.filter(o=>okP(o[0])).map(([k,t])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+'</button>').join('')+'</div><div id="sg-onglet"><div class="nx-empty">…</div></div>';
     const pg=nxPage(m,html);
@@ -28108,22 +28146,67 @@ VIEWS['nx-pdom']={
    (heures saisies ces 30 jours, au lieu de « Actif ») ; fiche de l'affaire sélectionnée à droite (état, maître d'ouvrage, dates, phase, heures,
    équipe, contrats reliés, actions). Projets ▸ Registre garde l'écran d'origine. */
 /* « Fiche projet » de l'en-tête dans Affaires ▸ Gestion : ouvre la fenêtre à droite au lieu de quitter la liste (22.10.2026) */
-const SG_AG={ouvrir:null};
-setTimeout(()=>{ const cx=document.getElementById('sg-ctx'); if(cx) cx.addEventListener('click',e=>{ if(!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.ouvrir) return; const b=e.target.closest('[data-ref^="p:"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); SG_AG.ouvrir(); },true); },0);
+/* frise des heures (20.10.2026, proposition F) : mois de la première et de la dernière heure introduites dans l'app, petite frise, durée
+   comptée du premier au dernier mois (« 1 an 11 mois ») ; dates exactes en infobulle ; rien sans heure — tableau de bord du projet et fiche
+   de l'affaire (Affaires ▸ Gestion, 23.10.2026) */
+function sgFriseHeures(T){ if(!T.length) return ''; let a=T[0], b=T[0]; T.forEach(r=>{ const k=tlKey(r); if(k<tlKey(a)) a=r; if(k>tlKey(b)) b=r; });
+          const mm=r=>String(+r.TIMEMONTH+1).padStart(2,'0')+'.'+r.TIMEYEAR, d1=mm(a), d2=mm(b), n=(+b.TIMEYEAR*12+ +b.TIMEMONTH)-(+a.TIMEYEAR*12+ +a.TIMEMONTH)+1;
+          const an=Math.floor(n/12), mo=n%12, duree=(an?an+' an'+(an>1?'s':''):'')+(an&&mo?' ':'')+(mo||!an?mo+' mois':'');
+          return '<div class="sg-mandat" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b)))+' — '+n+' mois')+'"><b>'+d1+'</b>'   /* 20.10.2026 : sans le libellé « Mandat », durée centrée sous la frise */
+            +(d1===d2?'<span class="d">'+duree+'</span>':'<span class="sg-frise"><em>'+duree+'</em></span><b>'+d2+'</b>')+'</div>'; }
 /* fiche complète d'une affaire en lecture (22.10.2026, demande de Paulo) : rubriques de la fenêtre « Éditer l'affaire » de l'ancien logiciel —
-   Affaire, Genres d'affaire, Délais, Adresses, Références, Paramètres de saisie ; champs vides omis ; modification par « Éditer » */
-function sgFicheAffaire(p){ const E=nxE, d=v=>v?dfr(v):'', t=v=>v==null?'':String(v).trim(), sec=(titre,L)=>{ const R=L.filter(([,v])=>t(v)!==''); return '<section class="sg-ag-sec"><h4>'+E(titre)+'</h4>'+(R.length?'<dl>'+R.map(([l,v,html])=>'<dt>'+E(l)+'</dt><dd>'+(html?v:E(v))+'</dd>').join('')+'</dl>':'<p class="sg-ag-vide">—</p>')+'</section>'; };
+   Affaire, Genres d'affaire, Délais, Adresses, Références, Paramètres de saisie. 23.10.2026 : placée juste sous le titre de l'affaire ; numéro,
+   désignation et statut retirés (ils sont dans l'en-tête) ; rubriques vides omises ; adresse identique à l'adresse d'affaire signalée comme
+   telle ; paramètres de saisie en petit tableau (heures / frais × phase, subdivision, description) ; modification par « Éditer » */
+function sgFicheAffaire(p){ const E=nxE, d=v=>v?dfr(v):'', t=v=>v==null?'':String(v).trim();
+  const sec=(titre,L)=>{ const R=L.filter(([,v])=>t(v)!==''); return R.length?'<div class="sg-ag-sec"><h5>'+E(titre)+'</h5><dl>'+R.map(([l,v,html])=>'<dt>'+E(l)+'</dt><dd>'+(html?v:E(v))+'</dd>').join('')+'</dl></div>':''; };
   const ph=p.CURRENTPROJECTPHASE_ID?DS.get('projectphase',p.CURRENTPROJECTPHASE_ID):null, kinds=DS.by('project_projectkind','PROJECT_ID',p.ID).map(l=>DS.get('projectkind',l.PROJECTKINDS_ID)).filter(Boolean);
-  const adr=id=>{ const c=id?DS.get('contact',id):null; return c&&typeof adrLines==='function'?adrLines(c).map(E).join('<br>'):''; }, oui=v=>+v?'oui':'non';
-  return '<div class="sg-ag-fiche2"><div class="sg-ag-ft">Fiche de l’affaire</div>'
-    +sec('Affaire',[['Numéro d’affaire',p.NUMBER],['Désignation',p.TITLE],['Complément',p.DESCRIPTION],['Type d’affaire',+p.ISINTERNAL?'Interne':'Externe'],['Statut',(typeof PSTATE!=='undefined'&&PSTATE[p.PROJECTSTATECODE])||''],
-      ['Phase en cours (affaire)',ph?(ph.NUMBER!=null?ph.NUMBER+' ':'')+nm(ph):''],['Tri',p.SORTLABEL],['Indice ICC',+p.BASISINDEX?num(+p.BASISINDEX,1):''],['Volume construit',+p.VOLUME?num(+p.VOLUME,0)+' m³':''],['Surface de plancher',+p.AREA?num(+p.AREA,0)+' m²':'']])
-    +sec('Genres d’affaire',[['Genres',kinds.map(k=>E(nm(k))).join('<br>'),1]])
+  const lignes=id=>{ const c=id?DS.get('contact',id):null; return c&&typeof adrLines==='function'?adrLines(c).filter(Boolean):[]; }, A1=lignes(p.CONTACT1_ID).join('\n');
+  const adr=(id,prem)=>{ const L=lignes(id); if(!L.length) return ''; if(!prem&&A1&&L.join('\n')===A1) return '<span class="sg-ag-moins">identique à l’adresse d’affaire</span>'; return L.map(E).join('<br>'); };
+  const ok=v=>+v?'<span class="sg-ag-oui" title="Obligatoire">'+nxSvg('check')+'</span>':'<span class="sg-ag-non" title="Facultatif">–</span>';
+  return '<section class="sg-ag-bloc"><h4>Fiche de l’affaire</h4>'
+    +sec('Affaire',[['Complément',p.DESCRIPTION],['Type d’affaire',+p.ISINTERNAL?'Interne':'Externe'],['Phase en cours (affaire)',ph?(ph.NUMBER!=null?ph.NUMBER+' ':'')+nm(ph):''],['Tri',p.SORTLABEL],
+      ['Indice ICC',+p.BASISINDEX?num(+p.BASISINDEX,1):''],['Volume construit',+p.VOLUME?num(+p.VOLUME,0)+' m³':''],['Surface de plancher',+p.AREA?num(+p.AREA,0)+' m²':'']])
+    +(kinds.length?'<div class="sg-ag-sec"><h5>Genres d’affaire</h5><div class="sg-ag-chips">'+kinds.map(k=>'<span class="nx-tag">'+E(nm(k))+'</span>').join('')+'</div></div>':'')
     +sec('Délais',[['Début du projet',d(p.PROJECTSTARTDATE)],['Fin du projet',d(p.PROJECTENDDATE)],['Début de planification',p.STARTOFPLANNING],['Fin de planification',p.ENDOFPLANNING],['Début des travaux',p.STARTOFCONSTRUCTION],['Fin des travaux',p.ENDOFCONSTRUCTION],['Remise des clés',p.MOVEINDEADLINE]])
-    +sec('Adresses',[['Adresse d’affaire',adr(p.CONTACT1_ID),1],['Adresse de facturation',adr(p.CONTACT2_ID),1],['Adresse de livraison',adr(p.CONTACT3_ID),1],['Lieu de dépôt des offres',adr(p.CONTACT4_ID),1]])
+    +sec('Adresses',[['Adresse d’affaire',adr(p.CONTACT1_ID,1),1],['Adresse de facturation',adr(p.CONTACT2_ID),1],['Adresse de livraison',adr(p.CONTACT3_ID),1],['Lieu de dépôt des offres',adr(p.CONTACT4_ID),1]])
     +sec('Références',[['N° d’affaire externe',p.EXTERNALNUMBER],['District',p.LOCATION],['Zone / quartier',p.PLOT],['N° registre foncier',p.LANDREGISTERNR],['Service comptabilité',p.ACCOUNTINGAREA],['Dossier d’affaire',p.PROJECTFOLDER]])
-    +sec('Paramètres de saisie',[['Monnaie',p.CURRENCY],['Temps : phase obligatoire',oui(p.ISTIMEPHASEMANDATORY)],['Temps : subdivision obligatoire',oui(p.ISTIMESUBPROJECTMANDATORY)],['Temps : description obligatoire',oui(p.ISTIMEDESCMANDATORY)],['Frais : phase obligatoire',oui(p.ISEXPENSESPHASEMANDATORY)],['Frais : description obligatoire',oui(p.ISEXPENSESDESCMANDATORY)]])
-    +'</div>'; }
+    +'<div class="sg-ag-sec"><h5>Paramètres de saisie</h5>'+(t(p.CURRENCY)?'<dl><dt>Monnaie</dt><dd>'+E(p.CURRENCY)+'</dd></dl>':'')
+    +'<table class="sg-ag-par"><tr><th>Obligatoire</th><th>Phase</th><th>Subdivision</th><th>Description</th></tr><tr><td>Heures</td><td>'+ok(p.ISTIMEPHASEMANDATORY)+'</td><td>'+ok(p.ISTIMESUBPROJECTMANDATORY)+'</td><td>'+ok(p.ISTIMEDESCMANDATORY)+'</td></tr>'
+    +'<tr><td>Frais</td><td>'+ok(p.ISEXPENSESPHASEMANDATORY)+'</td><td></td><td>'+ok(p.ISEXPENSESDESCMANDATORY)+'</td></tr></table></div></section>'; }
+/* équipe d'une affaire (23.10.2026, demande de Paulo) : TOUS les collaborateurs attribués à l'affaire (intervenants dont la personne de contact
+   est un collaborateur du bureau, comme « Mes projets »), même sans heure saisie, + ceux qui ont saisi des heures sans être attribués (« hors
+   équipe ») ; fonction de l'intervenant (PROJECTROLE) ; collaborateur parti signalé ; du plus d'heures au moins d'heures, puis par nom */
+function sgEquipeAffaire(p,st){ st=st||{}; const parP={}, M=new Map(), auj=new Date().toISOString().slice(0,10);
+  DS.all('staff').forEach(s=>{ if(s.PERSON_ID!=null) parP[String(s.PERSON_ID)]=s; });
+  DS.by('projectmember','PROJECT_ID',p.ID).forEach(x=>{ const s=parP[String(x.RESPCONTACT_ID)]||parP[String(x.CONTACT_ID)]; if(!s) return; const e=M.get(String(s.ID))||{s,att:true,fn:''}; if(!e.fn&&x.PROJECTROLE) e.fn=String(x.PROJECTROLE).trim(); M.set(String(s.ID),e); });
+  Object.keys(st).forEach(id=>{ if(!M.has(String(id))){ const s=DS.get('staff',id); if(s) M.set(String(id),{s,att:false,fn:''}); } });
+  return [...M.values()].map(e=>Object.assign(e,{h:+st[e.s.ID]||+st[String(e.s.ID)]||0,parti:+e.s.ISACTIVE===0||(!!e.s.QUITTINGDATE&&String(e.s.QUITTINGDATE).slice(0,10)<auj)}))
+    .sort((a,b)=>b.h-a.h||cmp(staffName(a.s),staffName(b.s))); }
+/* contrats d'honoraires d'une affaire pour sa fiche (23.10.2026, demande de Paulo) : par contrat — document (contrat / avenant), état
+   (Brouillon / Envoyé / Signé le … / Terminé / Annulé), date du contrat, date de signature, type de rémunération (forfait relatif / forfait /
+   unitaire), phases SIA, honoraires HT et TTC, tarif horaire brut, rabais, facturé (TTC sans frais, % du contrat), versions ; « Ouvrir » = PDF
+   de la dernière version (comme l'onglet Contrat du projet) ; montants masqués si les finances sont verrouillées ; annulés à la fin */
+function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
+  if(!D) return '<p class="sg-ag-vide">Contrats indisponibles : la Facturation n’est pas chargée.</p>';
+  const cs=sgContratsDuProjet(p,D).map(c=>({c,ci:sgContratInfo(c)})).sort((a,b)=>(!!a.c.annule-!!b.c.annule)||cmp(String(b.ci.date||''),String(a.ci.date||'')));
+  if(!cs.length) return '<p class="sg-ag-vide">Aucun contrat d’honoraires relié à cette affaire.</p>';
+  const tva=c=>(+c.tva||8.1)/100, ttcF=f=>+f._ttc||+f.ttc||0, li=(l,v,ti)=>v?'<dt>'+E(l)+'</dt><dd'+(ti?' title="'+E(ti)+'"':'')+'>'+v+'</dd>':'';
+  return cs.map(({c,ci})=>{ const ht=+c.hht||(+c.httc||0)/(1+tva(c)), tt=+c.httc||(+c.hht||0)*(1+tva(c)), fs=D.f.filter(f=>f.contrat_id===c.id&&!/annul/i.test(f.statut||'')), fa=fs.reduce((s0,f)=>s0+ttcF(f),0);
+    return '<div class="sg-ag-ct'+(c.annule?' ann':'')+'"><div class="h"><b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b><span class="nx-tag '+ci.cl+'">'+E(ci.etat)+'</span>'
+      +'<button class="sg-ag-ouv" data-go="fx-contrats" data-arg="cv:'+E(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button></div>'
+      +(ci.com?'<div class="com">'+E(ci.com)+'</div>':'')
+      +'<dl>'+li('Date du contrat',ci.date?dfr(ci.date):'—',ci.dTitre)+li('Signé le',ci.signeLe?dfr(ci.signeLe):c.signe?'signé, date non enregistrée':'non signé')
+      +li('Type',E(ci.remu),ci.rTitre)+li('Phases',E(sgContratPhLib(c)||''))
+      +(fin?li('Honoraires',ht||tt?nxCHF(ht)+' HT · <b>'+nxCHF(tt)+'</b> TTC':'—')+li('Tarif horaire brut',ci.tarif!=null?'Fr. '+num(ci.tarif,2)+' / h':'—',ci.tTitre)+li('Rabais',ci.rabais!=null?num(ci.rabais,ci.rabais%1?1:0)+' %':'—')
+        +li('Facturé',fs.length?'<b>'+nxCHF(fa)+'</b> TTC'+(tt?' · '+Math.round(fa/tt*100)+' %':'')+' · '+fs.length+' facture'+(fs.length>1?'s':''):'aucune facture'):'')
+      +li('Versions',ci.versions>1?E(ci.nTitre):'')+'</dl></div>'; }).join('')
+    +(fin?'':'<p class="sg-ag-vide">Montants masqués : finances verrouillées.</p>'); }
+const SG_AG={ouvrir:null,aller:null};
+setTimeout(()=>{ const cx=document.getElementById('sg-ctx'); if(cx) cx.addEventListener('click',e=>{ if(!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.ouvrir) return; const b=e.target.closest('[data-ref^="p:"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); SG_AG.ouvrir(); },true); },0);
+/* ⌥↑ / ⌥↓ : affaire précédente / suivante de la liste, fiche ouverte (23.10.2026) */
+window.addEventListener('keydown',e=>{ if(!e.altKey||(e.key!=='ArrowUp'&&e.key!=='ArrowDown')||!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.aller||document.querySelector('.ov')) return;
+  if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; e.preventDefault(); SG_AG.aller(e.key==='ArrowUp'?-1:1); });
 VIEWS['affd-gestion']={
   render(m){ const cur=()=>DS.get('project',AF.g.sel), need=f=>()=>{ const p=cur(); if(!p){ toast('Sélectionnez une affaire.',true); return; } f(p); };
     const R=h('div',{class:'col fill sg-ag',style:{margin:'6px'}}), pane=h('div',{class:'pane'}), fiche=h('aside',{class:'sg-ag-fiche'});
@@ -28144,21 +28227,45 @@ VIEWS['affd-gestion']={
       DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0, k=tlKey(r), x=I[r.PROJECT_ID]||(I[r.PROJECT_ID]={der:0,derD:null,h30:0,tot:0,st:{}}); x.tot+=v; x.st[r.STAFF_ID]=(x.st[r.STAFF_ID]||0)+v; if(k>x.der){ x.der=k; x.derD=tlDate(r); } if(k>=lim) x.h30+=v; }); };
     const ix=p=>I[p.ID]||{der:0,derD:null,h30:0,tot:0,st:{}}, phase=p=>PA[p.ID]!==undefined?PA[p.ID]:(PA[p.ID]=sgPhaseActuelle(p)), phL=p=>sgPhaseLib(phase(p),true)||'';
     const catL=p=>{ const c=sgCatOuInterne(p); return c==='interne'?'Autres':c==='architecture'?'':(SG_CAT_L[c]||''); }, E=nxE;
-    let ferme=false; SG_AG.ouvrir=()=>{ ferme=false; dessinerFiche(); };   /* fiche projet = fenêtre à droite, fermable (22.10.2026) */
-    const dessinerFiche=()=>{ const p=cur(); R.classList.toggle('fiche-on',!!p&&!ferme); if(!p||ferme){ fiche.innerHTML=''; return; }
-      const x=ix(p), pa=phase(p), eq=Object.entries(x.st).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([sid,v])=>{ const st=DS.get('staff',sid); return st?E(staffName(st))+' <small>'+nxH(v)+' h</small>':''; }).filter(Boolean);
-      const li=(l,v)=>v?'<dt>'+E(l)+'</dt><dd>'+v+'</dd>':'';
-      fiche.innerHTML='<div class="sg-ag-wh"><b>Fiche projet</b><span>'+E(p.NUMBER||'')+'</span><button class="sg-ag-x" data-a="fermer" title="Fermer la fiche">×</button></div><div class="sg-ag-wc"><div class="sg-ag-fh"><span class="nx-tag num">'+E(p.NUMBER||'')+'</span>'+nxStateTag(p)+(catL(p)?' <span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div><h3>'+E(p.TITLE||'')+'</h3>'
-        +'<dl>'+li('Maître d’ouvrage',E(projMO(p)))+li('Lieu',E(p.LOCATION||''))+li('Début',p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE):'')+li('Fin',p.PROJECTENDDATE?dfr(p.PROJECTENDDATE):'')
-        +li('Phase actuelle',pa?E(sgPhaseLib(pa))+(pa.recent?'':' <small>(dernière saisie le '+dfr(diso(pa.date))+')</small>'):'')
-        +li('Dernière saisie',x.derD?dfr(diso(x.derD)):'—')+li('Heures',x.tot?'<b>'+nxH(x.h30)+' h</b> ces 30 jours · '+nxH(x.tot)+' h au total':'aucune heure saisie')
-        +li('Équipe',eq.join('<br>'))+'<dt>Contrats</dt><dd id="sg-ag-ctr">…</dd></dl>'
-        +'<div class="sg-htls sg-iacts sg-ag-act"><button data-a="edit" title="Éditer l’affaire">'+nxSvg('edit')+'<span>Éditer</span></button><button data-a="interv" title="Attribuer les intervenants">'+nxSvg('users')+'<span>Intervenants</span></button>'
-        +'<button data-a="page" title="Page du projet">'+nxSvg('folder')+'<span>Page du projet</span></button><button data-a="tdb" title="Tableau de bord du projet">'+nxSvg('gauge')+'<span>Tableau de bord</span></button></div>'
-        +sgFicheAffaire(p)+'</div>';   /* fiche complète de l'affaire (rubriques de l'ancien logiciel), 22.10.2026 */
-      fiche.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); return; } if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else go('nx-projet',p.ID); });
-      fxEnsure().catch(()=>null).then(()=>{ const c=fiche.querySelector('#sg-ag-ctr'); if(!c||cur()!==p) return; const D=fxData(), cs=D?sgContratsDuProjet(p,D).filter(k=>!k.annule):[];
-        c.innerHTML=cs.length?cs.length+' contrat'+(cs.length>1?'s':'')+' · <b>'+nxCHF(cs.reduce((s0,k)=>s0+(+k.httc||0),0))+' CHF</b> TTC':(D?'aucun contrat relié':'—'); }); };
+    let ferme=false, dernier=null; SG_AG.ouvrir=()=>{ ferme=false; dessinerFiche(); };   /* fiche projet = fenêtre à droite, fermable (22.10.2026) */
+    const aller=d=>{ const V=AF.g.view||[], i=V.findIndex(r=>String(r.ID)===String(AF.g.sel)), r=V[i+d]; if(i<0||!r) return; const tr=pane.querySelector('tr[data-k="'+CSS.escape(String(r.ID))+'"]'); if(tr){ tr.click(); tr.scrollIntoView({block:'nearest'}); } };
+    SG_AG.aller=aller;
+    fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
+      if(t.dataset.a){ const a=t.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); } else if(a==='prec'||a==='suiv') aller(a==='prec'?-1:1); else if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else if(a==='tdb') go('nx-projet',p.ID); }
+      else if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); });
+    /* fiche refaite le 23.10.2026 (demande de Paulo « améliorer la fiche affaire ») : barre bleu nuit (position dans la liste, affaire précédente /
+       suivante, Éditer, Intervenants, Page du projet, Tableau de bord, fermer) ; en-tête jaune pâle comme le tableau de bord du projet (grand numéro,
+       filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures) ; puis, dans l'ordre : fiche de l'affaire (juste sous le titre),
+       contrats d'honoraires détaillés, heures (tuiles), équipe (tous les collaborateurs attribués, même sans heure) */
+    const dessinerFiche=()=>{ const p=cur(); R.classList.toggle('fiche-on',!!p&&!ferme); if(!p||ferme){ fiche.innerHTML=''; dernier=null; return; }
+      const x=ix(p), pa=phase(p), V=AF.g.view||[], i=V.findIndex(r=>String(r.ID)===String(p.ID));
+      const hp=DS.by('projectphase','PROJECT_ID',p.ID).reduce((a,f)=>a+(+f.TIMEBUDGET||0),0);
+      const bt=(a,ti,c,dis)=>'<button data-a="'+a+'" title="'+E(ti)+'"'+(dis?' disabled':'')+'>'+c+'</button>';
+      const mo=[...new Set(DS.by('projectmember','PROJECT_ID',p.ID).filter(m0=>m0.TEAMROLECODE===8&&m0.CONTACT_ID!=null).map(m0=>contactName(DS.get('contact',m0.CONTACT_ID))).filter(Boolean))], moL=mo.length?mo:(projMO(p)?[projMO(p)]:[]);
+      const kt=(ico,l,v,ti,cls)=>nxKpi(ico,l,v).replace('<div class="nx-kpi"','<div class="nx-kpi" title="'+E(ti||'')+'"').replace('<div class="v">','<div class="v'+(cls?' '+cls:'')+'">');
+      const jauge=hp?(()=>{ const m0=Math.max(hp,x.tot), a0=Math.min(x.tot,hp)/m0*100, d0=x.tot>hp?(x.tot-hp)/m0*100:0; return '<div class="sg-kg"><i class="ef" style="width:'+a0.toFixed(2)+'%"></i>'+(d0?'<i class="dp" style="left:'+a0.toFixed(2)+'%;width:'+d0.toFixed(2)+'%"></i>':'')+'<i class="mk" style="left:'+(hp/m0*100).toFixed(2)+'%"></i></div>'; })():'';
+      const eq=sgEquipeAffaire(p,x.st), tot=x.tot||1;
+      fiche.innerHTML='<div class="sg-ag-wh"><b>Fiche projet</b>'+(i>=0?'<span class="pos">'+(i+1)+' / '+V.length+'</span>':'')+'<span class="sg-ag-wb">'
+          +bt('prec','Affaire précédente (⌥↑)','‹',i<=0)+bt('suiv','Affaire suivante (⌥↓)','›',i<0||i>=V.length-1)+'<i class="sep"></i>'
+          +bt('edit','Éditer l’affaire',nxSvg('edit'))+bt('interv','Attribuer les intervenants',nxSvg('users'))+bt('page','Page du projet',nxSvg('folder'))+bt('tdb','Tableau de bord du projet',nxSvg('gauge'))
+          +'<button class="sg-ag-x" data-a="fermer" title="Fermer la fiche">×</button></span></div>'
+        +'<div class="sg-ag-id"><div class="sg-ag-idt"><div class="sg-ag-num" title="'+E(p.NUMBER||'')+'">'+E(p.NUMBER||'')+'</div><div><h3>'+E(p.TITLE||p.NUMBER||'')+'</h3><div class="sg-ag-tags">'+nxStateTag(p)+(catL(p)?'<span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div></div></div>'
+        +'<div class="sg-ag-mo">'+nxSvg('person')+'<span>Maître de l’ouvrage'+(moL.length>1?'s':'')+' : <b>'+(moL.length?moL.map(E).join(', '):'—')+'</b></span></div>'
+        +sgFriseHeures(DS.by('timelog','PROJECT_ID',p.ID))+'</div>'
+        +'<div class="sg-ag-wc">'+sgFicheAffaire(p)
+        +'<section class="sg-ag-bloc"><h4>Contrats d’honoraires<span class="n" id="sg-ag-ctn"></span></h4><div id="sg-ag-ctr"><p class="sg-ag-vide">…</p></div></section>'
+        +'<section class="sg-ag-bloc"><h4>Heures</h4><div class="nx-kpis sg-ag-kpis">'
+          +kt('clock','Heures saisies',sgHr(x.tot)+'<small>h</small>',nxH(x.tot)+' h saisies'+(hp?' — '+nxH(hp)+' h prévues au contrat des phases, '+(x.tot>hp?'+'+nxH(x.tot-hp)+' h au-delà':nxH(hp-x.tot)+' h restantes'):' — aucune heure prévue au contrat des phases')).replace('</div><div class="v">',(hp?'<span class="sg-kq'+(x.tot>hp?' dep':'')+'">'+Math.round(x.tot/hp*100)+' %</span>':'')+'</div><div class="v">').replace(/<\/div>$/,jauge+'</div>')
+          +kt('cal','Ces 30 jours',sgHr(x.h30)+'<small>h</small>',x.h30?'Heures saisies ces 30 derniers jours':'Aucune heure saisie ces 30 derniers jours')
+          +kt('gauge','Phase actuelle',pa?E(nm(pa.ph)):'—',pa?'D’après les heures saisies : '+sgPhaseLib(pa)+(pa.recent?'':' (dernière saisie le '+dfr(diso(pa.date))+')'):'Aucune heure saisie par phase','txt')
+          +kt('clock','Dernière saisie',x.derD?dfr(diso(x.derD)):'—','','dt')+'</div></section>'
+        +'<section class="sg-ag-bloc sg-ag-eq"><h4>Équipe<span class="n">'+eq.length+'</span></h4>'+(eq.length?eq.map(q=>'<div class="nx-person sg-eq'+(q.h?'':' zero')+'" data-ref="s:'+E(q.s.ID)+'" title="'+E(staffName(q.s)+(q.att?' — attribué à l’affaire':' — a saisi des heures sans être dans l’équipe de l’affaire')+' : '+nxH(q.h)+' h'+(q.parti?' — a quitté le bureau':''))+'">'
+          +'<div class="nx-av">'+E(nxIni(staffName(q.s)))+'</div><div class="t"><div class="nl"><b>'+E(staffName(q.s))+'</b>'+(q.fn?'<small>'+E(q.fn)+'</small>':'')+(q.att?'':'<span class="nx-tag">hors équipe</span>')+(q.parti?'<span class="nx-tag">a quitté le bureau</span>':'')+'</div>'
+          +'<span class="sg-eq-b"><i style="width:'+(q.h?Math.max(1,q.h/tot*100).toFixed(1):0)+'%"></i></span></div><span class="m"><b>'+sgHr(q.h)+' h</b><small>'+(q.h?(q.h/tot<.005?'&lt; 1':Math.round(q.h/tot*100))+' %':'aucune heure')+'</small></span></div>').join('')
+          :'<p class="sg-ag-vide">Aucun collaborateur attribué ni aucune heure saisie.</p>')+'</section></div>';
+      if(dernier!==p.ID){ fiche.scrollTop=0; dernier=p.ID; }
+      fxEnsure().catch(()=>null).then(()=>{ const c=fiche.querySelector('#sg-ag-ctr'); if(!c||cur()!==p) return; const D=fxData(), n=D?sgContratsDuProjet(p,D).length:0;
+        c.innerHTML=sgAgContrats(p,D); const cn=fiche.querySelector('#sg-ag-ctn'); if(cn) cn.textContent=n?String(n):''; }); };
     const draw=()=>{ const rows=DS.all('project').filter(p=>(AF.arch||p.PROJECTSTATECODE!==5)&&(!AF.filt.s||p.PROJECTSTATECODE==AF.filt.s)&&(AF.filt.i==null||(+!!p.ISINTERNAL)===AF.filt.i)&&matchQ(AF.q,p.NUMBER,p.TITLE,p.DESCRIPTION));
       grid(pane,Object.assign(AF.g,{cols:[{k:'NUMBER',t:'Numéro',w:92},{k:'TITLE',t:'Affaire',w:300},{k:'st',t:'Statut',w:96,f:projState,v:p=>p.PROJECTSTATECODE},
         {k:'cat',t:'Catégorie',w:90,f:p=>E(catL(p)),v:catL},{k:'ph',t:'Phase actuelle',w:150,f:p=>E(phL(p)),v:phL},

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 23.10.2026 22:05 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 23.10.2026 22:11 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -114,6 +114,9 @@ b,strong,th{font-weight:700}
 .nx-new{height:36px;padding:0 14px 0 11px;border:2px solid var(--s-nuit);background:var(--s-nuit);color:#fff;font-weight:700;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap}
 .nx-new:hover{background:var(--s-nuit2);border-color:var(--s-nuit2)}
 .nx-new svg{width:16px;height:16px}
+/* boutons « Créer » et « ⋯ » de l'en-tête retirés à la demande (23.10.2026) : leurs commandes restent dans ⌘K (« Nouveau projet »…, « Commandes »)
+   et dans Réglages ▸ Données & sauvegarde ; éléments gardés (minuteur et mode chantier s'y accrochent) */
+#nx-new,#nx-more{display:none!important}
 .sg-ico{width:36px;height:36px;border:2px solid var(--s-noir);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--s-noir)}
 .sg-ico:hover{background:var(--s-jaune)}
 .sg-ico svg{width:17px;height:17px}

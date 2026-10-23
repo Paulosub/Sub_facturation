@@ -169,7 +169,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (logo blanc, Rechercher ⌘K, domaines dépliables → modules — depuis le 18.10.2026 le NOM du chapitre ouvre sa vue d'ensemble et le
   déplie, la flèche seule déplie / replie, plus d'entrée « Vue d'ensemble » —, module actif en jaune, fiche ouverte (projet, contact…) juste sous le
   titre de son chapitre (19.10.2026), Favoris, pied
-  utilisateur, réduction ⌘\ / auto < 1000 px) + en-tête blanc (historique, rubrique, titre, Créer, ⋯) + barre contextuelle
+  utilisateur, réduction ⌘\ / auto < 1000 px) + en-tête blanc (historique, rubrique, titre ; boutons « Créer » et « ⋯ » masqués à la demande le 23.10.2026 — `#nx-new` / `#nx-more` gardés pour le
+  minuteur et le mode chantier, leurs commandes restent dans ⌘K et Réglages ▸ Données & sauvegarde) + barre contextuelle
   `#nx-sub`. Variante « barres en haut » sauvegardée : `SUBGestion3_backup_20261006_2227_barre_haute.html` et
   `subgestion3/_backup_20261006_2227_barre_haute/`. ⚠ Ne jamais utiliser la classe `ov` (= voile des fenêtres DeltaSub,
   cherché par `$$('.ov')`). Vue d'ensemble par domaine (`dom-<k>`), modules Facturation

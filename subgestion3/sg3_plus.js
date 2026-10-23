@@ -2829,7 +2829,9 @@ function sgRapportHeuresCollab(p,sid){ const s=DS.get('staff',sid); if(!p||!s) r
    de la dernière version (comme l'onglet Contrat du projet) ; montants masqués si les finances sont verrouillées ; annulés à la fin */
 function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
   if(!D) return '<p class="sg-ag-vide">Contrats indisponibles : la Facturation n’est pas chargée.</p>';
-  const cs=sgContratsDuProjet(p,D).map(c=>({c,ci:sgContratInfo(c)})).sort((a,b)=>(!!a.c.annule-!!b.c.annule)||cmp(String(b.ci.date||''),String(a.ci.date||'')));
+  /* ordre chronologique : premier contrat, puis le 2e, etc. (date du contrat, annulés compris ; 23.10.2026, demande de Paulo — avant : du plus récent
+     au plus ancien, annulés à la fin) ; sans date : à la fin, puis par code */
+  const cs=sgContratsDuProjet(p,D).map(c=>({c,ci:sgContratInfo(c)})).sort((a,b)=>(!a.ci.date-!b.ci.date)||cmp(String(a.ci.date||''),String(b.ci.date||''))||cmp(String(a.c.id),String(b.c.id)));
   if(!cs.length) return '<p class="sg-ag-vide">Aucun contrat d’honoraires relié à cette affaire.</p>';
   const tva=c=>(+c.tva||8.1)/100, ttcF=f=>+f._ttc||+f.ttc||0, fraisF=f=>'_fttc' in f?+f._fttc||0:+f.fttc||0, li=(l,v,ti)=>v?'<dt>'+E(l)+'</dt><dd'+(ti?' title="'+E(ti)+'"':'')+'>'+v+'</dd>':'';
   return cs.map(({c,ci})=>{ const ht=+c.hht||(+c.httc||0)/(1+tva(c)), tt=+c.httc||(+c.hht||0)*(1+tva(c)), fs=D.f.filter(f=>f.contrat_id===c.id&&!/annul/i.test(f.statut||'')), fa=fs.reduce((s0,f)=>s0+ttcF(f),0), fr=fs.reduce((s0,f)=>s0+fraisF(f),0);

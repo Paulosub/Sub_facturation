@@ -2984,7 +2984,7 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     +sec('ident','Identification',champ('Numéro d’affaire',txt('NUMBER',{w:'200px',ph:'ex. 26ABC'}),{req:1})+champ('Désignation de l’affaire',txt('TITLE',{ph:'ex. Transformation d’une maison familiale'}),{large:1})
       +champ('Complément',' <textarea class="inp" rows="3" data-k="DESCRIPTION" placeholder="Adresse du chantier, précisions…">'+E(val('DESCRIPTION'))+'</textarea>',{large:1}))
     +sec('statut','Statut et phase',champ('Statut de l’affaire','<select class="inp" data-k="PROJECTSTATECODE" style="max-width:220px">'+Object.entries(PSTATE).map(([k,t])=>'<option value="'+k+'"'+(+k===+v.PROJECTSTATECODE?' selected':'')+'>'+E(t)+'</option>').join('')+'</select>')
-      +champ('Type d’affaire','<span class="sg-ep-radio"><label><input type="radio" name="sg-ep-int" value="0"'+(+v.ISINTERNAL?'':' checked')+'> Externe (mandat)</label><label><input type="radio" name="sg-ep-int" value="1"'+(+v.ISINTERNAL?' checked':'')+'> Interne (bureau)</label></span>',{div:1})
+      /* « Type d'affaire » (Externe / Interne) retiré à la demande (23.10.2026) : ISINTERNAL gardé tel quel (nouvelle affaire : externe) */
       +champ('Phase en cours (indiquée dans l’affaire)','<select class="inp" data-k="CURRENTPROJECTPHASE_ID" style="max-width:360px"><option value="">—</option>'+phs.map(x=>'<option value="'+x.ID+'"'+(x.ID===v.CURRENTPROJECTPHASE_ID?' selected':'')+'>'+E((x.NUMBER??'')+' '+nm(x))+'</option>').join('')+'</select>',
         {large:1,aide:isNew?'Les phases se configurent après la création (Configuration ▸ Configurer les phases).':pa?'D’après les heures saisies, la phase actuelle est : <b>'+E(pa)+'</b>.':'Aucune heure saisie par phase pour l’instant.'}))
     +sec('adr','Adresses','<div class="sg-ep-adrs">'+ADR.map(([k,l])=>'<div class="sg-ep-adr" data-adr="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"><button type="button" class="btn" data-adr-choisir="'+k+'">Choisir…</button><button type="button" class="btn" data-adr-retirer="'+k+'">Retirer</button></div></div>').join('')+'</div>')
@@ -3025,7 +3025,6 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
   corps.querySelector('[data-k="TITLE"]').addEventListener('input',e=>{ corps.querySelector('[data-tete="t"]').textContent=e.target.value; });
   const D=dialog({title:isNew?'Nouvelle affaire':'Éditer l’affaire',width:'min(980px,95vw)',body:corps,buttons:[{t:'Annuler'},{t:isNew?'Créer l’affaire':'Enregistrer',pri:true,fn:async bd=>{
     readK(bd,v,['PROJECTSTATECODE','CURRENTPROJECTPHASE_ID','BASISINDEX','VOLUME','AREA','NEXTUNIQUEPLANID']); Object.assign(v,adr);
-    const ri=bd.querySelector('input[name="sg-ep-int"]:checked'); v.ISINTERNAL=ri&&ri.value==='1'?1:0;
     const num=bd.querySelector('[data-k="NUMBER"]');
     if(!v.NUMBER){ toast('Le numéro d’affaire est obligatoire.',true); num.classList.add('err'); num.scrollIntoView({block:'center'}); num.focus(); return false; }
     if(DS.all('project').some(x=>x.NUMBER===v.NUMBER&&x.ID!==v.ID)){ toast('Ce numéro d’affaire existe déjà.',true); num.classList.add('err'); num.scrollIntoView({block:'center'}); num.focus(); return false; }

@@ -2823,6 +2823,19 @@ function sgRapportHeuresCollab(p,sid){ const s=DS.get('staff',sid); if(!p||!s) r
     if(pr) pr.onclick=()=>{ const t=tb(); if(t) sgImprimer('Heures de '+nom+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p>'+E(titre)+' · '+nxH(tot)+' h, dont '+nxH(hf)+' h facturables'+(L.length?' · du '+d1+' au '+d2:'')+'</p>'+t.outerHTML); }; };
   dessiner();
   dialog({title:'Rapport des heures',width:'min(940px,95vw)',body,buttons:[{t:'Fiche du collaborateur',fn:()=>{ nxOpenRef('s:'+s.ID); }},{t:'Fermer',pri:true}]}); }
+/* étendue d'un contrat d'honoraires (23.10.2026, demande de Paulo : « devant Contrat, indiquer enquête, exécution, faisabilité… ; pas besoin de toutes
+   les phases : signé jusqu'au projet → Projet, jusqu'à l'enquête → Enquête ») = DERNIÈRE phase partielle SIA 102 du contrat (prestations > 0 %) ;
+   sans phase : Faisabilité si c'est un contrat de faisabilité (sgContratFaisa), sinon rien ; liste des phases en infobulle */
+const SG_ETENDUE={11:'Besoins',21:'Faisabilité',22:'Concours',31:'Avant-projet',32:'Projet',33:'Enquête',41:'Appel d’offres',51:'Exécution',52:'Exécution',53:'Exécution'};
+function sgContratEtendue(c){ let mx=0; Object.entries((c&&c.phases)||{}).forEach(([k,v])=>{ const m=/^4(\d)(\d)/.exec(k); if(m&&+v>0) mx=Math.max(mx,+(m[1]+m[2])); });
+  const ph=sgContratPhLib(c);
+  if(mx) return {lib:SG_ETENDUE[mx]||SG_SIA_NOM[Math.floor(mx/10)]||'Phase '+mx, titre:'Contrat jusqu’à la phase '+mx+' — '+ph};
+  if(sgContratFaisa(c)) return {lib:'Faisabilité',titre:'Contrat de faisabilité'};
+  /* contrats de l'ancien formulaire (aucune phase enregistrée) : mots de l'intitulé ou du code, signalé en infobulle (23.10.2026) */
+  const t=String(c.projet||'')+' '+String(c.id||''), r=SG_ETENDUE_MOTS.find(([re])=>re.test(t));
+  return r?{lib:r[1],titre:'D’après l’intitulé du contrat (aucune phase enregistrée)'}:{lib:'',titre:''}; }
+const SG_ETENDUE_MOTS=[[/expertise/i,'Expertise'],[/demande d.autorisation|mise à l.enqu[eê]te|\benqu[eê]te\b/i,'Enquête'],[/appel d.offres|soumission/i,'Appel d’offres'],
+  [/concours/i,'Concours'],[/avant[- ]projet/i,'Avant-projet'],[/direction des travaux|\.DT\b/i,'Exécution']];
 /* contrats d'honoraires d'une affaire pour sa fiche (23.10.2026, demande de Paulo) : par contrat — document (contrat / avenant), état
    (Brouillon / Envoyé / Signé le … / Terminé / Annulé), date du contrat, date de signature, type de rémunération (forfait relatif / forfait /
    unitaire), phases SIA, honoraires HT et TTC, tarif horaire brut, rabais, facturé (TTC sans frais, % du contrat), versions ; « Ouvrir » = PDF
@@ -2837,12 +2850,15 @@ function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
   return cs.map(({c,ci})=>{ const ht=+c.hht||(+c.httc||0)/(1+tva(c)), tt=+c.httc||(+c.hht||0)*(1+tva(c)), fs=D.f.filter(f=>f.contrat_id===c.id&&!/annul/i.test(f.statut||'')), fa=fs.reduce((s0,f)=>s0+ttcF(f),0), fr=fs.reduce((s0,f)=>s0+fraisF(f),0);
     /* contrat repliable (23.10.2026, demande de Paulo « permettre de réduire les contrats ») : clic sur l'en-tête ; réduit = une ligne de résumé
        (date, type, honoraires TTC) ; contrats réduits mémorisés (sg3_ag_ctr_red, identifiants des contrats) */
-    const red=SG_AG.reduits().has(String(c.id)), res=[ci.date?dfr(ci.date):'',ci.remu,fin&&tt?nxCHF(tt)+' TTC':''].filter(Boolean).join(' · ');
-    return '<div class="sg-ag-ct'+(c.annule?' ann':'')+(red?' red':'')+'" data-ct="'+E(c.id)+'"><div class="h" data-ctr="'+E(c.id)+'" role="button" tabindex="0" aria-expanded="'+!red+'" title="'+(red?'Déplier':'Réduire')+' ce contrat">'+nxSvg('next','chev')+'<b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b><span class="nx-tag '+ci.cl+'">'+E(ci.etat)+'</span><span class="res">'+E(res)+'</span>'
+    /* réduit : résumé type · honoraires TTC, sans la date (23.10.2026, demande de Paulo) ; devant « Contrat » / « Avenant » : l'étendue du contrat */
+    const red=SG_AG.reduits().has(String(c.id)), res=[ci.remu,fin&&tt?nxCHF(tt)+' TTC':''].filter(Boolean).join(' · '), et=sgContratEtendue(c);
+    return '<div class="sg-ag-ct'+(c.annule?' ann':'')+(red?' red':'')+'" data-ct="'+E(c.id)+'"><div class="h" data-ctr="'+E(c.id)+'" role="button" tabindex="0" aria-expanded="'+!red+'" title="'+(red?'Déplier':'Réduire')+' ce contrat">'+nxSvg('next','chev')
+      +(et.lib?'<b class="et" title="'+E(et.titre)+'">'+E(et.lib)+'</b><span class="nat"'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</span>':'<b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b>')
+      +'<span class="nx-tag '+ci.cl+'">'+E(ci.etat)+'</span><span class="res">'+E(res)+'</span>'
       +'<button class="sg-ag-ouv" data-go="fx-contrats" data-arg="cv:'+E(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button></div>'
       +(ci.com?'<div class="com">'+E(ci.com)+'</div>':'')
       +'<dl>'+li('Date du contrat',ci.date?dfr(ci.date):'—',ci.dTitre)+li('Signé le',ci.signeLe?dfr(ci.signeLe):c.signe?'signé, date non enregistrée':'non signé')
-      +li('Type',E(ci.remu),ci.rTitre)+li('Phases',E(sgContratPhLib(c)||''))
+      +li('Type',E(ci.remu),ci.rTitre)   /* ligne « Phases » retirée (23.10.2026) : l'étendue est devant « Contrat », la liste des phases en infobulle */
       +(fin?li('Honoraires',ht||tt?nxCHF(ht)+' HT · <b>'+nxCHF(tt)+'</b> TTC':'—')+li('Tarif horaire brut',ci.tarif!=null?'Fr. '+num(ci.tarif,2)+' / h':'—',ci.tTitre)+li('Rabais',ci.rabais!=null?num(ci.rabais,ci.rabais%1?1:0)+' %':'—')
         /* facturé : honoraires et frais séparés (23.10.2026, demande de Paulo) — honoraires = _ttc (comme le cockpit et sgRenta), frais = _fttc
            (montant net de la facture), sinon fttc ; % = honoraires facturés / honoraires TTC du contrat */

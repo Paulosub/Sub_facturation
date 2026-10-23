@@ -1056,6 +1056,9 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-tout{margin-left:auto;border:0;background:none;font:inherit;font-size:11.5px;font-weight:400;color:var(--s-gris);cursor:pointer;padding:2px 4px}
 .sg-ag-tout:hover{color:var(--s-noir);background:var(--s-jaune3)}
 .sg-ag-ct .h b{font-size:13px}
+.sg-ag-ct .h b.et{color:var(--s-nuit)}
+.sg-ag-ct .h .nat{font-size:13px;margin-left:-3px}
+.sg-ag-ct .h .nat::before{content:'· ';color:var(--s-gris)}
 .sg-ag-ct .com{font-size:12.5px;margin:0 0 8px}
 .sg-ag-ct.ann{opacity:.6}
 .sg-ag-ouv{margin-left:auto;display:flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-size:11.5px;color:var(--s-gris);cursor:pointer;padding:4px 6px}

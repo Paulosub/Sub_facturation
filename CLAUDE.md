@@ -675,11 +675,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   en-tête jaune pâle comme le tableau de bord du projet (grand numéro et filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures —
   `sgFriseHeures(T)`, fonction commune avec le tableau de bord) ; puis, dans l'ordre demandé par Paulo : **fiche de l'affaire juste sous le
   titre** (`sgFicheAffaire` : sans numéro, désignation, statut ni type d'affaire, sans la rubrique Délais — retirés à la demande le même jour —, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
-  petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — Contrat / Avenant, état Brouillon / Envoyé / Signé le … / Terminé /
+  petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — **étendue devant « Contrat »** (`sgContratEtendue`, `SG_ETENDUE`, même jour : dernière
+  phase partielle du contrat — 31 Avant-projet, 32 Projet, 33 Enquête, 41 Appel d'offres, 51–53 Exécution ; sans phase : Faisabilité si contrat de
+  faisabilité, sinon mots de l'intitulé ou du code — `SG_ETENDUE_MOTS` : expertise, demande d'autorisation / enquête, appel d'offres, concours,
+  avant-projet, direction des travaux / « .DT » —, signalé en infobulle ; liste des phases en infobulle, ligne « Phases » retirée), Contrat / Avenant, état Brouillon / Envoyé / Signé le … / Terminé /
   Annulé, date du contrat, « Signé le », type de rémunération, phases SIA, honoraires HT / TTC, tarif horaire brut, rabais, honoraires facturés TTC et % (`_ttc`) et frais facturés TTC (`_fttc`, sinon `fttc`) séparés — demande du même jour —, nombre de factures,
   versions, « Ouvrir » le PDF ; montants masqués si finances verrouillées ; contrats dans l'ordre chronologique — premier contrat, puis le 2e… (date du contrat,
   annulés compris, sans date à la fin ; demande du même jour) ; **chaque contrat se réduit** d'un clic sur son
-  en-tête — une ligne de résumé date · type · TTC —, « Tout réduire / Tout déplier » dans le titre dès deux contrats, contrats réduits mémorisés
+  en-tête — une ligne de résumé type · TTC, sans la date (retirée à la demande) —, « Tout réduire / Tout déplier » dans le titre dès deux contrats, contrats réduits mémorisés
   `sg3_ag_ctr_red`, même jour), Heures (tuiles : heures saisies avec jauge et % des
   heures prévues, ces 30 jours, phase actuelle, dernière saisie), **Équipe** (`sgEquipeAffaire` : TOUS les collaborateurs attribués à l'affaire —
   intervenants dont la personne est un collaborateur, comme Mes projets —, même sans heure, + « hors équipe » pour ceux qui ont saisi des heures

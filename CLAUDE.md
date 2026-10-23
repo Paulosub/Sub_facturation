@@ -703,7 +703,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   repris du contrat ou de l'offre Facturation le plus récent qui les donne (`padr`/`ploc`, client `nom`/`adr`/`loc`), sinon à choisir (adresse d'affaire
   = CONTACT1_ID ; MO = intervenant « Maître d'ouvrage » rôle 8, créé ou mis à jour à l'enregistrement) ; **adresse de facturation automatique** =
   nom du MO + « p.a. Substances Architectes Sàrl » + adresse du bureau (`sgBureauAdresse`, annuaire) ; **adresse de livraison retirée** (= adresse
-  d'affaire, CONTACT3_ID inchangé) ; lieu de dépôt des offres à choisir ; mêmes règles dans la fiche de l'affaire, `sgFicheAdresses` ; les modèles
+  d'affaire, CONTACT3_ID inchangé) ; **lieu de dépôt des offres = Substances Architectes, identique à l'adresse de facturation** (automatique,
+  sans MO : adresse du bureau ; CONTACT4_ID plus utilisé ; même jour) ; cartes d'Éditer l'affaire sans étiquette de provenance (retirée
+  à la demande ; la note sous l'adresse l'indique) ; mêmes règles dans la fiche de l'affaire, `sgFicheAdresses` ; les modèles
   d'impression gardent les adresses enregistrées `projectContact1..4` ; cartes Choisir… / Retirer ; « Choisir… » = fenêtre `sgChoisirAdresse` du même jour au
   lieu du navigateur d'adresses du moteur : recherche immédiate nom / société / rue / localité, filtre Tous / Sociétés / Personnes, suggestions sans
   recherche — adresses déjà utilisées dans l'affaire, intervenants avec leur rôle —, adresse complète sur chaque ligne, aperçu à droite, ↑ ↓ /

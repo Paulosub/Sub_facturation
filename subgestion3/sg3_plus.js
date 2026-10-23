@@ -2761,7 +2761,7 @@ function sgFicheAffaire(p){ const E=nxE, d=v=>v?dfr(v):'', t=v=>v==null?'':Strin
   const adr=(id,prem)=>{ const L=lignes(id); if(!L.length) return ''; if(!prem&&A1&&L.join('\n')===A1) return '<span class="sg-ag-moins">identique à l’adresse d’affaire</span>'; return L.map(E).join('<br>'); };
   const ok=v=>+v?'<span class="sg-ag-oui" title="Obligatoire">'+nxSvg('check')+'</span>':'<span class="sg-ag-non" title="Facultatif">–</span>';
   return '<section class="sg-ag-bloc"><h4>Fiche de l’affaire</h4>'
-    +sec('Affaire',[['Complément',p.DESCRIPTION],['Type d’affaire',+p.ISINTERNAL?'Interne':'Externe'],['Phase en cours (affaire)',ph?(ph.NUMBER!=null?ph.NUMBER+' ':'')+nm(ph):''],['Tri',p.SORTLABEL],
+    +sec('Affaire',[['Complément',p.DESCRIPTION],/* « Type d'affaire » (interne / externe) retiré à la demande (23.10.2026) */['Phase en cours (affaire)',ph?(ph.NUMBER!=null?ph.NUMBER+' ':'')+nm(ph):''],['Tri',p.SORTLABEL],
       ['Indice ICC',+p.BASISINDEX?num(+p.BASISINDEX,1):''],['Volume construit',+p.VOLUME?num(+p.VOLUME,0)+' m³':''],['Surface de plancher',+p.AREA?num(+p.AREA,0)+' m²':'']])
     +(kinds.length?'<div class="sg-ag-sec"><h5>Genres d’affaire</h5><div class="sg-ag-chips">'+kinds.map(k=>'<span class="nx-tag">'+E(nm(k))+'</span>').join('')+'</div></div>':'')
     +sec('Délais',[['Début du projet',d(p.PROJECTSTARTDATE)],['Fin du projet',d(p.PROJECTENDDATE)],['Début de planification',p.STARTOFPLANNING],['Fin de planification',p.ENDOFPLANNING],['Début des travaux',p.STARTOFCONSTRUCTION],['Fin des travaux',p.ENDOFCONSTRUCTION],['Remise des clés',p.MOVEINDEADLINE]])
@@ -2787,15 +2787,18 @@ function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
   if(!D) return '<p class="sg-ag-vide">Contrats indisponibles : la Facturation n’est pas chargée.</p>';
   const cs=sgContratsDuProjet(p,D).map(c=>({c,ci:sgContratInfo(c)})).sort((a,b)=>(!!a.c.annule-!!b.c.annule)||cmp(String(b.ci.date||''),String(a.ci.date||'')));
   if(!cs.length) return '<p class="sg-ag-vide">Aucun contrat d’honoraires relié à cette affaire.</p>';
-  const tva=c=>(+c.tva||8.1)/100, ttcF=f=>+f._ttc||+f.ttc||0, li=(l,v,ti)=>v?'<dt>'+E(l)+'</dt><dd'+(ti?' title="'+E(ti)+'"':'')+'>'+v+'</dd>':'';
-  return cs.map(({c,ci})=>{ const ht=+c.hht||(+c.httc||0)/(1+tva(c)), tt=+c.httc||(+c.hht||0)*(1+tva(c)), fs=D.f.filter(f=>f.contrat_id===c.id&&!/annul/i.test(f.statut||'')), fa=fs.reduce((s0,f)=>s0+ttcF(f),0);
+  const tva=c=>(+c.tva||8.1)/100, ttcF=f=>+f._ttc||+f.ttc||0, fraisF=f=>'_fttc' in f?+f._fttc||0:+f.fttc||0, li=(l,v,ti)=>v?'<dt>'+E(l)+'</dt><dd'+(ti?' title="'+E(ti)+'"':'')+'>'+v+'</dd>':'';
+  return cs.map(({c,ci})=>{ const ht=+c.hht||(+c.httc||0)/(1+tva(c)), tt=+c.httc||(+c.hht||0)*(1+tva(c)), fs=D.f.filter(f=>f.contrat_id===c.id&&!/annul/i.test(f.statut||'')), fa=fs.reduce((s0,f)=>s0+ttcF(f),0), fr=fs.reduce((s0,f)=>s0+fraisF(f),0);
     return '<div class="sg-ag-ct'+(c.annule?' ann':'')+'"><div class="h"><b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b><span class="nx-tag '+ci.cl+'">'+E(ci.etat)+'</span>'
       +'<button class="sg-ag-ouv" data-go="fx-contrats" data-arg="cv:'+E(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button></div>'
       +(ci.com?'<div class="com">'+E(ci.com)+'</div>':'')
       +'<dl>'+li('Date du contrat',ci.date?dfr(ci.date):'—',ci.dTitre)+li('Signé le',ci.signeLe?dfr(ci.signeLe):c.signe?'signé, date non enregistrée':'non signé')
       +li('Type',E(ci.remu),ci.rTitre)+li('Phases',E(sgContratPhLib(c)||''))
       +(fin?li('Honoraires',ht||tt?nxCHF(ht)+' HT · <b>'+nxCHF(tt)+'</b> TTC':'—')+li('Tarif horaire brut',ci.tarif!=null?'Fr. '+num(ci.tarif,2)+' / h':'—',ci.tTitre)+li('Rabais',ci.rabais!=null?num(ci.rabais,ci.rabais%1?1:0)+' %':'—')
-        +li('Facturé',fs.length?'<b>'+nxCHF(fa)+'</b> TTC'+(tt?' · '+Math.round(fa/tt*100)+' %':'')+' · '+fs.length+' facture'+(fs.length>1?'s':''):'aucune facture'):'')
+        /* facturé : honoraires et frais séparés (23.10.2026, demande de Paulo) — honoraires = _ttc (comme le cockpit et sgRenta), frais = _fttc
+           (montant net de la facture), sinon fttc ; % = honoraires facturés / honoraires TTC du contrat */
+        +(fs.length?li('Honoraires facturés','<b>'+nxCHF(fa)+'</b> TTC'+(tt?' · '+Math.round(fa/tt*100)+' %':''),tt?'Honoraires facturés (sans les frais) : '+Math.round(fa/tt*100)+' % des honoraires TTC du contrat':'')
+          +li('Frais facturés',fr?'<b>'+nxCHF(fr)+'</b> TTC':'aucun frais')+li('Factures',fs.length+' facture'+(fs.length>1?'s':''),'Total facturé : '+nxCHF(fa+fr)+' TTC (honoraires et frais)'):li('Facturé','aucune facture')):'')
       +li('Versions',ci.versions>1?E(ci.nTitre):'')+'</dl></div>'; }).join('')
     +(fin?'':'<p class="sg-ag-vide">Montants masqués : finances verrouillées.</p>'); }
 const SG_AG={ouvrir:null,aller:null};

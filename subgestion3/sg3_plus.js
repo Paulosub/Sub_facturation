@@ -1543,6 +1543,37 @@ VIEWS['nx-situation']={ render(m){ const st=nxLS.get('sg3_sit',{p:'',per:'12',g:
     pg._fn.csv=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgCsvTable(t,'situation_heures_'+(pr?pr.NUMBER:'projets')+'_'+diso(now)+'.csv'); };
     pg._fn.prn=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgImprimer(titre,'<p>'+nxE((ME.u?'Établi par '+(ME.u.USERID||'')+' — ':'')+dfr(diso(now)))+'</p>'+t.outerHTML); }; } };
 
+/* ── Fenêtres du moteur dans le menu de gauche (23.10.2026, demandes de Paulo) : Équipe ▸ Gestion des utilisateurs (ch08bUserAdmin, droit
+   « gestion des utilisateurs »), Réglages ▸ Paramètres système (ch08aSysPrefs, droit « administrateur ») et Réglages ▸ Préférences
+   (ch08cPreferences, tous). Chaque écran dit à quoi sert la fenêtre et l'ouvre — d'office quand on vient du menu, pas à la reprise de
+   session au démarrage (sgFenPret) ── */
+let sgFenPret=false; setTimeout(()=>{ sgFenPret=true; },4000);
+function sgVueFenetre(o){ const ok=()=>!o.droit||ch08aCan(o.droit);
+  const dessin=m=>{ if(!ok()){ nxPage(m,'<div class="nx-empty">Droit « '+nxE(o.droitLib)+' » requis.</div>'); return; }
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro(o.lbl,o.t,o.txt,o.figs?o.figs():'')+'<div>'
+      +nxCard('c12',o.t,'<div class="b">'+o.aide+'<p style="margin:14px 0 0"><button class="nx-btn pri" data-fen="1">'+nxSvg(o.ico)+nxE(o.bouton)+'</button></p></div>')+(o.corps?o.corps():'')+'</div></div>');
+    pg.querySelector('[data-fen]').onclick=()=>o.ouvrir(); };
+  return {render(m){ this._m=m; dessin(m); if(sgFenPret&&ok()) setTimeout(()=>o.ouvrir(),0); },
+    refresh(ts){ if(o.tables&&this._m&&hit(ts,...o.tables)) dessin(this._m); }}; }
+const sgComptes=()=>DS.all('appuser').filter(u=>u.USERID!=='mayday').sort((a,b)=>cmp(a.NAME||a.USERID||'',b.NAME||b.USERID||''));
+VIEWS['nx-utilisateurs']=sgVueFenetre({droit:'userAdmin',droitLib:'gestion des utilisateurs',lbl:'Équipe',t:'Gestion des utilisateurs',ico:'users',bouton:'Gérer les comptes…',
+  tables:['appuser','appuser_staff','sgacces'],
+  txt:'Comptes de l’app : identifiant, mot de passe, fonctions et droits. Le profil SUBGestion de chaque compte (administrateur, chef de projet, collaborateur) se règle dans Réglages ▸ Profils et accès.',
+  aide:'Créer ou modifier un compte, l’activer ou le désactiver, changer son mot de passe, lui attribuer des fonctions : dans la fenêtre de gestion des utilisateurs.',
+  figs:()=>{ const U=sgComptes(), n=U.filter(u=>+u.ISENABLED).length;
+    return '<div class="sg-figs"><div class="sg-fig"><div class="n">'+n+'</div><div class="t">comptes activés</div></div><div class="sg-fig"><div class="n">'+(U.length-n)+'</div><div class="t">désactivés</div></div></div>'; },
+  corps:()=>{ const st=u=>DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean).map(staffName).join(', ');
+    return nxCard('c12','Comptes','<div class="b flush"><table class="nx-tbl"><tr><th>Nom</th><th>Identifiant</th><th>Collaborateur</th><th>Profil</th><th>État</th></tr>'
+      +sgComptes().map(u=>'<tr><td><b>'+nxE(u.NAME||'')+'</b></td><td>'+nxE(u.USERID||'')+'</td><td>'+nxE(st(u))+'</td><td>'+nxE(SG_PROFILS[sgProfilDe(u)]||'')+'</td><td>'
+        +(+u.ISENABLED?'Activé':'<span style="color:var(--s-gris)">Désactivé</span>')+'</td></tr>').join('')+'</table></div>'); },
+  ouvrir:()=>ch08bUserAdmin()});
+VIEWS['nx-parametres']=sgVueFenetre({droit:'admin',droitLib:'administrateur',lbl:'Réglages',t:'Paramètres système',ico:'settings',bouton:'Ouvrir les paramètres système…',
+  txt:'Réglages généraux de l’app, communs à tous les postes : pays, monnaie standard et taux de TVA, présentation des adresses (nom et prénom, téléphone), protection des documents.',
+  aide:'Les paramètres système s’ouvrent dans une fenêtre.',ouvrir:()=>ch08aSysPrefs()});
+VIEWS['nx-preferences']=sgVueFenetre({lbl:'Réglages',t:'Préférences',ico:'person',bouton:'Ouvrir les préférences…',
+  txt:'Réglages personnels de l’utilisateur de ce poste : langue des documents et choix des modèles, initiales, signature (image).',
+  aide:'Les préférences s’ouvrent dans une fenêtre.',ouvrir:()=>ch08cPreferences()});
+SG_VUE_DROIT['nx-utilisateurs']=()=>ch08aCan('userAdmin'); SG_VUE_DROIT['nx-parametres']=()=>ch08aCan('admin');
 /* ── Réglages ▸ Profils et accès (administrateur) ── */
 const sgAccRec=id=>DS.get('sgacces',id);
 const sgDroitsRole=p=>Object.assign({},SG_DEFAUTS[p],((sgAccRec('role:'+p)||{}).DROITS)||{});
@@ -2903,7 +2934,9 @@ function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
       +li('Versions',ci.versions>1?E(ci.nTitre):'')+'</dl></div>'; }).join('')
     +(fin?'':'<p class="sg-ag-vide">Montants masqués : finances verrouillées.</p>'); }
 const SG_AG={ouvrir:null,aller:null,reduits:()=>new Set((nxLS.get('sg3_ag_ctr_red',[])||[]).map(String))};
-setTimeout(()=>{ const cx=document.getElementById('sg-ctx'); if(cx) cx.addEventListener('click',e=>{ if(!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.ouvrir) return; const b=e.target.closest('[data-ref^="p:"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); SG_AG.ouvrir(); },true); },0);
+/* bouton « Fiche projet … » de l'en-tête retiré de la liste des affaires (23.10.2026, demande de Paulo) : la fiche s'ouvre en choisissant une affaire,
+   et un clic sur l'affaire déjà choisie la rouvre si elle a été fermée */
+{ const s0=sgCtxSync; sgCtxSync=function(){ s0.apply(this,arguments); const b=document.getElementById('sg-ctx'); if(b&&b.innerHTML&&VIEW&&VIEW.id==='affd-gestion'){ b.innerHTML=''; nxSubSync(); } }; }
 /* ⌥↑ / ⌥↓ : affaire précédente / suivante de la liste, fiche ouverte (23.10.2026) */
 window.addEventListener('keydown',e=>{ if(!e.altKey||(e.key!=='ArrowUp'&&e.key!=='ArrowDown')||!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.aller||document.querySelector('.ov')) return;
   if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; e.preventDefault(); SG_AG.aller(e.key==='ArrowUp'?-1:1); });
@@ -2912,13 +2945,8 @@ VIEWS['affd-gestion']={
     const R=h('div',{class:'col fill sg-ag',style:{margin:'6px'}}), pane=h('div',{class:'pane'}), fiche=h('aside',{class:'sg-ag-fiche'});
     const head=phead([
       {i:'plus',t:'Nouvelle affaire',fn:()=>editProject()},{i:'edit',t:'Editer l’affaire',fn:need(editProject)},{i:'minus',t:'Supprimer l’affaire',fn:need(delProject)},
-      {i:'person',t:'Intervenants',menu:()=>[{t:'Attribuer les intervenants',fn:need(cfgMembers)},{t:'Attribuer les activités aux collaborateurs',fn:need(cfgActivities)}]},
-      {i:'wrench',t:'Configuration',menu:()=>[{t:'Configurer les activités',fn:need(cfgActivities)},{t:'Configurer les tarifs de facturation',fn:need(cfgRates)},{t:'Configurer les phases',fn:need(cfgPhases)},{t:'Configurer les séances',fn:need(mtTypesDialog)},{t:'Configurer les frais …',fn:need(ch17aOpen)}]},
-      {i:'tree',t:'Subdivisions',menu:()=>[{t:'Configurer la subdivision par ouvrages et localisations',fn:need(cfgSubprojects)}]},
-      {i:'save',t:'Modèles et documents externes',menu:()=>[{t:'Définir les modèles …',fn:need(p=>tplNeed().then(()=>defineTemplates(p)))},{t:'Dossier des documents externes …',fn:need(p=>editProject(p))}]},
-      {i:'doc',t:'Documents',menu:()=>[{t:'Liste des affaires',fn:()=>printProjects(AF.g.view)}]},
-      {i:'gear',t:'Fonctions',menu:()=>[{t:'Afficher les non archivées',chk:!AF.arch,fn:()=>{ AF.arch=!AF.arch; try{localStorage.setItem('ds_af_arch',AF.arch?'1':'0');}catch(_){} draw(); }},'-',
-        {t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(AF.g)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(AF.g,'Affaires')}]},
+      /* Intervenants, Configuration, Subdivisions, Modèles, Documents et Fonctions retirés de la barre (23.10.2026, demande de Paulo) : les fenêtres
+         du moteur restent (cfgMembers, cfgActivities, cfgRates, cfgPhases, cfgSubprojects, defineTemplates, printProjects, copyTable, csvTable…) */
       {i:'filter',t:'Filtre',menu:()=>[{t:'Tous les statuts',chk:!AF.filt.s,fn:()=>{ AF.filt.s=null; draw(); }},...Object.entries(PSTATE).map(([k,t])=>({t,chk:AF.filt.s==k,fn:()=>{ AF.filt.s=k; draw(); }})),'-',
         {t:'Affaires internes',chk:AF.filt.i===1,fn:()=>{ AF.filt.i=AF.filt.i===1?null:1; draw(); }},{t:'Affaires externes',chk:AF.filt.i===0,fn:()=>{ AF.filt.i=AF.filt.i===0?null:0; draw(); }}]}
     ],{count:1,search:q=>{ AF.q=q; draw(); }});
@@ -2937,14 +2965,14 @@ VIEWS['affd-gestion']={
     fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref],[data-rap],[data-ctr]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
       if(t.dataset.rap){ sgRapportHeuresCollab(p,t.dataset.rap); return; }   /* clic sur une personne de l'équipe : son rapport des heures sur l'affaire (23.10.2026) */
       if(t.dataset.ctr!=null){ const k=t.closest('.sg-ag-ct'); if(k) reduire([k],!k.classList.contains('red')); return; }   /* contrat replié / déplié (23.10.2026) */
-      if(t.dataset.a){ const a=t.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); } else if(a==='ctrtout'){ const K=[...fiche.querySelectorAll('.sg-ag-ct')]; reduire(K,!K.every(k=>k.classList.contains('red'))); } else if(a==='prec'||a==='suiv') aller(a==='prec'?-1:1); else if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else if(a==='tdb') go('nx-projet',p.ID); }
+      if(t.dataset.a){ const a=t.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); } else if(a==='ctrtout'){ const K=[...fiche.querySelectorAll('.sg-ag-ct')]; reduire(K,!K.every(k=>k.classList.contains('red'))); } else if(a==='prec'||a==='suiv') aller(a==='prec'?-1:1); else if(a==='edit') editProject(p); else if(a==='page') go('nx-pdom',p.ID); else if(a==='tdb') go('nx-projet',p.ID); }
       else if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); });
     /* fiche refaite le 23.10.2026 (demande de Paulo « améliorer la fiche affaire ») : barre bleu nuit (affaire précédente /
        suivante, Éditer, Intervenants, Page du projet, Tableau de bord, fermer) ; en-tête jaune pâle comme le tableau de bord du projet (grand numéro,
        filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures) ; puis, dans l'ordre : fiche de l'affaire (juste sous le titre),
        contrats d'honoraires détaillés, heures (tuiles), équipe (tous les collaborateurs attribués, même sans heure) */
     const dessinerFiche=()=>{ const p=cur(); R.classList.toggle('fiche-on',!!p&&!ferme); if(!p||ferme){ fiche.innerHTML=''; dernier=null; return; }
-      const x=ix(p), pa=phase(p), V=AF.g.view||[], i=V.findIndex(r=>String(r.ID)===String(p.ID));
+      const x=ix(p), pa=phase(p);
       const hp=DS.by('projectphase','PROJECT_ID',p.ID).reduce((a,f)=>a+(+f.TIMEBUDGET||0),0);
       const bt=(a,ti,c,dis)=>'<button data-a="'+a+'" title="'+E(ti)+'"'+(dis?' disabled':'')+'>'+c+'</button>';
       const mo=[...new Set(DS.by('projectmember','PROJECT_ID',p.ID).filter(m0=>m0.TEAMROLECODE===8&&m0.CONTACT_ID!=null).map(m0=>contactName(DS.get('contact',m0.CONTACT_ID))).filter(Boolean))], moL=mo.length?mo:(projMO(p)?[projMO(p)]:[]);
@@ -2952,8 +2980,8 @@ VIEWS['affd-gestion']={
       const jauge=hp?(()=>{ const m0=Math.max(hp,x.tot), a0=Math.min(x.tot,hp)/m0*100, d0=x.tot>hp?(x.tot-hp)/m0*100:0; return '<div class="sg-kg"><i class="ef" style="width:'+a0.toFixed(2)+'%"></i>'+(d0?'<i class="dp" style="left:'+a0.toFixed(2)+'%;width:'+d0.toFixed(2)+'%"></i>':'')+'<i class="mk" style="left:'+(hp/m0*100).toFixed(2)+'%"></i></div>'; })():'';
       const eq=sgEquipeAffaire(p,x.st), tot=x.tot||1;
       fiche.innerHTML='<div class="sg-ag-wh"><b>Fiche projet</b><span class="sg-ag-wb">'   /* sans numérotation « 84 / 87 » (23.10.2026, demande de Paulo) */
-          +bt('prec','Affaire précédente (⌥↑)','‹',i<=0)+bt('suiv','Affaire suivante (⌥↓)','›',i<0||i>=V.length-1)+'<i class="sep"></i>'
-          +bt('edit','Éditer l’affaire',nxSvg('edit'))+bt('interv','Attribuer les intervenants',nxSvg('users'))+bt('page','Page du projet',nxSvg('folder'))+bt('tdb','Tableau de bord du projet',nxSvg('gauge'))
+          /* flèches ‹ › (affaire précédente / suivante) retirées à la demande (23.10.2026) : ⌥↑ ⌥↓ restent au clavier */
+          +bt('edit','Éditer l’affaire',nxSvg('edit'))/* bouton « Attribuer les intervenants » retiré à la demande (23.10.2026) : barre de la liste ▸ Intervenants */+bt('page','Page du projet',nxSvg('folder'))+bt('tdb','Tableau de bord du projet',nxSvg('gauge'))
           +'<button class="sg-ag-x" data-a="fermer" title="Fermer la fiche">×</button></span></div>'
         +'<div class="sg-ag-id"><div class="sg-ag-idt sg-ag-lien" data-a="page" role="link" tabindex="0" title="Ouvrir le projet (Mes projets ▸ page du projet)"><div class="sg-ag-num">'+E(p.NUMBER||'')+'</div><div><h3>'+E(p.TITLE||p.NUMBER||'')+'</h3><div class="sg-ag-tags">'+nxStateTag(p)+(catL(p)?'<span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div></div></div>'
         +'<div class="sg-ag-mo">'+nxSvg('person')+'<span>Maître de l’ouvrage'+(moL.length>1?'s':'')+' : <b>'+(moL.length?moL.map(E).join(', '):'—')+'</b></span></div>'
@@ -2979,6 +3007,7 @@ VIEWS['affd-gestion']={
         {k:'act',t:'Activité',w:62,cls:'c',f:p=>ix(p).h30?'<i class="sg-ag-pt on" title="Heures saisies ces 30 jours"></i>':'<i class="sg-ag-pt" title="Aucune heure saisie ces 30 jours"></i>',v:p=>ix(p).h30},
         {k:'PROJECTSTARTDATE',t:'Début',w:90,f:p=>dfr(p.PROJECTSTARTDATE)},{k:'PROJECTENDDATE',t:'Fin',w:90,f:p=>dfr(p.PROJECTENDDATE)},{k:'mo',t:'Maître d’ouvrage',w:200,f:p=>E(projMO(p)),v:projMO}],
         rows,sort:AF.g.sort||['NUMBER',-1],onDbl:p=>editProject(p),onSel:()=>{ ferme=false; dessinerFiche(); }}));
+      if(!pane._sgRouvre){ pane._sgRouvre=1; pane.addEventListener('click',e=>{ const tr=e.target.closest('tr[data-k]'); if(tr&&ferme&&tr.dataset.k===String(AF.g.sel)){ ferme=false; dessinerFiche(); } }); }
       head.setCount(rows.length+' Affaires'); dessinerFiche(); };
     this.draw=()=>{ index(); draw(); }; this.draw(); },
   refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog')&&this.draw) this.draw(); } };
@@ -3041,7 +3070,8 @@ const SG_EP_RETIRES={
    heures et des frais ; collaborateurs du bureau à cocher (intervenants « Collaborateurs ») ; adresses en cartes (Choisir / Retirer) ; genres
    d'affaire en deux temps (groupe, puis genre) ; obligations de saisie en petit tableau ; numéro obligatoire signalé dans le champ. Retirés à la
    demande le même jour : type Interne / Externe, phase en cours, puis les rubriques Délais, Caractéristiques, Références et Autres réglages
-   (SG_EP_RETIRES) ═══ */
+   (SG_EP_RETIRES). Rubriques Phases, Activités et Tarifs ajoutées puis retirées le même jour (« ces éléments seront traités dans d'autres
+   chapitres ») : module gardé pour être réutilisé, sgEpOrga (bloc 24, sg3_affaire.js) ═══ */
 function sgEditAffaire(p){ const E=nxE, isNew=!p;
   const v=p?{...p}:{ID:null,PROJECTSTATECODE:1,CURRENCY:'CHF',ISINTERNAL:0,ISTIMEPHASEMANDATORY:1,ISTIMEDESCMANDATORY:1,ISEXPENSESDESCMANDATORY:1,ISTIMESUBPROJECTMANDATORY:0,ISEXPENSESPHASEMANDATORY:0,NEXTUNIQUEPLANID:1,ISPATHTOPROJECTDOCUMENTSRELATIVE:1};
   if(isNew) Object.values(SG_EP_RETIRES).flat().forEach(([k])=>{ if(!(k in v)) v[k]=k==='ISUNIQUEPLANIDLOCKED'?0:null; });   /* champs des rubriques retirées : vides, comme avant */
@@ -3066,7 +3096,8 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     +sec('collab','Collaborateurs','<div class="sg-ep-col"><p class="aide">Les collaborateurs attribués voient l’affaire dans « Mes projets ». Les autres intervenants (ingénieurs, entreprises…) s’ajouteront plus tard, dans le projet.</p><div class="sg-ep-coln"></div><div class="sg-ep-cols"></div></div>')
     +sec('adr','Adresses','<div class="sg-ep-adrs">'+CARTES.map(([k,l])=>'<div class="sg-ep-adr" data-adrk="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"></div><small class="n"></small></div>').join('')+'</div>')
     +sec('genres','Genres d’affaire','<div class="sg-ep-genres"><div class="sg-ep-chips"></div><div class="sg-ep-gg"><div class="sg-ep-c"><span>1. Groupe d’affaire</span><div class="sg-ep-grp" role="listbox" aria-label="Groupe d’affaire"></div></div><div class="sg-ep-c"><span class="sg-ep-gt">2. Genre</span><div class="sg-ep-gen"></div></div></div></div>')
-    /* rubriques « Délais », « Caractéristiques », « Références » et « Autres réglages » retirées à la demande (23.10.2026) : SG_EP_RETIRES */
+    /* rubriques « Délais », « Caractéristiques », « Références » et « Autres réglages » retirées à la demande (23.10.2026) : SG_EP_RETIRES ;
+       « Phases », « Activités », « Tarifs » retirées le même jour (traitées dans d'autres chapitres) : module sgEpOrga gardé (bloc 24) */
     +sec('saisie','Saisie des heures et des frais','<div class="sg-ep-c large"><span>Champs obligatoires lors de la saisie</span><table class="sg-ep-par"><tr><th></th><th>Phase</th><th>Subdivision</th><th>Commentaire / description</th></tr>'
       +'<tr><td>Heures</td><td>'+ck('ISTIMEPHASEMANDATORY','Phase obligatoire')+'</td><td>'+ck('ISTIMESUBPROJECTMANDATORY','Subdivision obligatoire')+'</td><td>'+ck('ISTIMEDESCMANDATORY','Commentaire obligatoire')+'</td></tr>'
       +'<tr><td>Frais</td><td>'+ck('ISEXPENSESPHASEMANDATORY','Phase obligatoire')+'</td><td></td><td>'+ck('ISEXPENSESDESCMANDATORY','Description obligatoire')+'</td></tr></table></div>'+champ('Monnaie',txt('CURRENCY',{w:'90px'})))
@@ -3090,24 +3121,25 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     if(rt){ const k=rt.dataset.adrRetirer; adr[k==='affaire'?'CONTACT1_ID':'CONTACT4_ID']=null; majAdrs(); } });
   /* collaborateurs du bureau attribués à l'affaire (23.10.2026, demande de Paulo « attribuer les collaborateurs à l'affaire ») = intervenants
      « Collaborateurs » (rôle 12 : RESPCONTACT_ID = personne du collaborateur, CONTACT_ID = Substances Architectes), ce que lisent Mes projets,
-     l'équipe de la fiche affaire, le Controlling et le serveur du NAS ; collaborateurs actuels à cocher (heures déjà saisies sur l'affaire à
-     droite), anciens collaborateurs seulement s'ils sont attribués ; lié par un autre rôle (Directeur d'affaire…) : coché, à modifier dans les
+     l'équipe de la fiche affaire, le Controlling et le serveur du NAS ; collaborateurs à cocher (heures déjà saisies sur l'affaire à droite) :
+     affaire existante = tous, actuels et anciens, en une seule liste par nom (ancien : « A quitté le bureau » en infobulle) ; nouvelle affaire =
+     collaborateurs actuels seulement (demande de Paulo, même jour) ; lié par un autre rôle (Directeur d'affaire…) : coché, à modifier dans les
      intervenants du projet. Les autres intervenants s'ajoutent plus tard, dans le projet (demande de Paulo, même jour) */
   const auj=new Date().toISOString().slice(0,10), MBR=v.ID?DS.by('projectmember','PROJECT_ID',v.ID):[], HRS={};
   const estDe=(x,s)=>String(x.RESPCONTACT_ID)===String(s.PERSON_ID)||String(x.CONTACT_ID)===String(s.PERSON_ID);
   if(v.ID) DS.by('timelog','PROJECT_ID',v.ID).forEach(r=>{ HRS[r.STAFF_ID]=(HRS[r.STAFF_ID]||0)+(+r.TIMEPERIOD||0); });
   const COL=DS.all('staff').filter(s=>s.PERSON_ID!=null).map(s=>{ const L=MBR.filter(x=>estDe(x,s)), aut=[...new Set(L.filter(x=>+x.TEAMROLECODE!==12).map(x=>ROLE[x.TEAMROLECODE]||'rôle '+x.TEAMROLECODE))];
       return {s,a12:L.some(x=>+x.TEAMROLECODE===12),aut,parti:+s.ISACTIVE===0||(!!s.QUITTINGDATE&&String(s.QUITTINGDATE).slice(0,10)<auj),h:HRS[s.ID]||0}; })
-    .filter(c=>!c.parti||c.a12||c.aut.length).sort((a,b)=>a.parti-b.parti||cmp(staffName(a.s),staffName(b.s)));
+    .filter(c=>!isNew||!c.parti).sort((a,b)=>cmp(staffName(a.s),staffName(b.s)));
   const att=new Set(COL.filter(c=>c.a12).map(c=>String(c.s.ID)));   /* cochés : intervenant « Collaborateurs » */
   const colBox=corps.querySelector('.sg-ep-cols'), colN=corps.querySelector('.sg-ep-coln');
   const majColN=()=>{ const n=COL.filter(c=>att.has(String(c.s.ID))||c.aut.length).length; colN.textContent=n?n+' collaborateur'+(n>1?'s':'')+' attribué'+(n>1?'s':''):'Aucun collaborateur attribué'; };
   const ligCol=c=>{ const id=String(c.s.ID), seul=c.aut.length>0&&!c.a12, ok=seul||att.has(id);
-    const ti=c.aut.length?'Attribué'+(c.a12?' aussi':'')+' comme intervenant « '+c.aut.join(' », « ')+' » : à modifier dans les intervenants du projet':'';
+    const ti=[c.parti?'A quitté le bureau'+(c.s.QUITTINGDATE?' le '+dfr(String(c.s.QUITTINGDATE).slice(0,10)):''):'',
+      c.aut.length?'Attribué'+(c.a12?' aussi':'')+' comme intervenant « '+c.aut.join(' », « ')+' » : à modifier dans les intervenants du projet':''].filter(Boolean).join(' · ');
     return '<label class="'+(ok||c.aut.length?'on':'')+(seul?' dis':'')+'"'+(ti?' title="'+E(ti)+'"':'')+'><input type="checkbox" data-collab="'+E(id)+'"'+(ok?' checked':'')+(seul?' disabled':'')+'>'
       +'<span class="ini">'+E(c.s.INITIALS||'')+'</span><span class="nm">'+E(staffName(c.s))+'</span>'+(c.h?'<span class="h" title="Heures déjà saisies sur l’affaire">'+nxH(c.h)+' h</span>':'')+'</label>'; };
-  colBox.innerHTML=COL.filter(c=>!c.parti).map(ligCol).join('')+(COL.some(c=>c.parti)?'<div class="gr">Anciens collaborateurs</div>'+COL.filter(c=>c.parti).map(ligCol).join(''):'')
-    ||'<span class="vide">Aucun collaborateur dans l’équipe du bureau.</span>';
+  colBox.innerHTML=COL.map(ligCol).join('')||'<span class="vide">Aucun collaborateur dans l’équipe du bureau.</span>';
   majColN();
   colBox.addEventListener('change',e=>{ const id=e.target.dataset.collab; if(id==null) return; if(e.target.checked) att.add(id); else att.delete(id);
     const c=COL.find(x=>String(x.s.ID)===id); e.target.closest('label').classList.toggle('on',e.target.checked||!!(c&&c.aut.length)); majColN(); });
@@ -3233,11 +3265,11 @@ VIEWS['dom-affaires']={
     const kpi=(t,ico,v,s2,bar,go,arg)=>'<div class="sg-pv-k"'+(go?' data-go="'+go+'"'+(arg?' data-arg="'+arg+'"':''):'')+'><div class="l">'+nxSvg(ico)+E(t)+'</div><div class="v">'+v+'</div>'+(bar!=null?'<div class="nx-bar"><i style="width:'+Math.max(0,Math.min(100,bar))+'%"></i></div>':'<div class="nx-bar vide"></div>')+'<div class="s">'+s2+'</div></div>';
     const enc=ps.filter(p=>+p.PROJECTSTATECODE===2), aE=actifs(enc), moisL=MOISL[mo].toLowerCase();
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), tuile=it=>'<div class="sg-tile'+(it.hero?' hero':'')+'" data-go="'+it.v+'"><div class="ti">'+nxSvg(it.ico)+'<h3>'+E(it.t)+'</h3></div><p>'+E(it.d||'')+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>';
-    const html='<div class="sg-pv"><div class="sg-pv-h"><div><div class="sg-lbl">Affaires</div><h2>Vue d’ensemble</h2><p>'+E(d.d||'')+'</p></div>'
+    const html='<div class="sg-pv"><div class="sg-pv-h"><div><h2>Vue d’ensemble</h2><p>'+E(d.d||'')+'</p></div>'   /* libellé « Affaires » et son filet retirés (23.10.2026, demande de Paulo) */
       +'<div class="sg-pv-hero" data-go="nx-listeprojets" data-arg="tous"><b>'+tot+'</b><span>'+(tot>1?'affaires au total':'affaire au total')+'<br><em>'+enc.length+' en cours</em></span></div></div>'
       +'<div class="sg-pv-t">Par état</div><div class="sg-pv-kpis">'+[[2,'En cours','task'],[3,'En attente','clock'],[4,'Terminées','star'],[5,'Archivées','db']].map(etat).join('')+'</div>'
       +'<div class="sg-pv-t">Activité</div><div class="sg-pv-kpis">'
-        +kpi('Affaires actives','trend',act.size?ps.filter(p=>act.has(String(p.ID))).length:0,'heures saisies ces 30 jours · <b>'+aE+'</b> sur '+enc.length+' en cours',enc.length?aE/enc.length*100:null,'affd-controlling')
+        +kpi('Affaires actives','trend',act.size?ps.filter(p=>act.has(String(p.ID))).length:0,'heures saisies ces 30 jours · <b>'+aE+'</b> sur '+enc.length+' en cours',enc.length?aE/enc.length*100:null,'affd-gestion')   /* Controlling archivé dans Réglages (23.10.2026) : la tuile ouvre Gestion */
         +kpi('Heures du mois','clock',num(Math.round(hM),0)+'<small>h</small>','saisies en '+moisL+' · tout le bureau',null)
         +kpi('Heures de l’année','cal',num(Math.round(hA),0)+'<small>h</small>','saisies en '+y+' · tout le bureau',null)
         +kpi('Part facturable','receipt',(hA?Math.round(hAF/hA*100):0)+'<small>%</small>','<b>'+num(Math.round(hAF),0)+' h</b> facturables en '+y,hA?hAF/hA*100:null)+'</div>'

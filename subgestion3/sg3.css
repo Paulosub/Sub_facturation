@@ -1198,3 +1198,59 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ep-cols .vide{grid-column:1/-1;padding:8px 0}
 @container (max-width:700px){.sg-ep-cols{grid-template-columns:1fr}}
 @media (max-width:760px){.sg-ep-cols{grid-template-columns:1fr}}
+/* Éditer l'affaire ▸ Phases, Activités, Tarifs (bloc 24, 23.10.2026, proposition A) : tableaux modifiables sur place */
+.sg-epo{grid-column:1/-1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.sg-epo .aide{margin:0;font-size:12px;color:var(--s-gris);line-height:1.45}
+.sg-epo-cta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:9px 12px;background:var(--s-jaune2);border-left:3px solid var(--s-nuit);font-size:12.5px;line-height:1.4}
+.sg-epo-cta>svg{width:18px;height:18px;flex:none;color:var(--s-nuit)}
+.sg-epo-cta .sp{flex:1}
+.sg-epo-cta.fait{background:var(--s-fond)}
+.sg-epo-cta .sg-epo-in.n{width:70px;margin:0 2px}
+.sg-epo-cta .btn{white-space:nowrap}
+.sg-epo-lien{border:0;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:700;color:var(--s-nuit);cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.sg-epo-lien svg{width:14px;height:14px}
+.sg-epo-lien:hover{text-decoration:underline}
+.sg-epo-sug{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:12px}
+.sg-epo-sug>span{color:var(--s-gris);margin-left:6px}
+.sg-epo-chip{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:1px dashed #9d9d9c;background:#fff;font:inherit;font-size:12px;cursor:pointer;color:var(--s-nuit);white-space:nowrap}
+.sg-epo-chip:hover{background:var(--s-jaune3)}
+.sg-epo-chip small{font-size:11px;opacity:.8}
+.sg-epo-chip svg{width:12px;height:12px}
+.sg-epo-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.sg-epo-t th{font-size:11px;font-weight:700;color:var(--s-gris);text-align:left;padding:5px 6px;border-bottom:2px solid var(--s-noir);white-space:nowrap}
+.sg-epo-t th svg{width:13px;height:13px;vertical-align:-2px}
+.sg-epo-t th.r,.sg-epo-t td.r{text-align:right}
+.sg-epo-t td{padding:3px 6px;border-bottom:1px solid var(--s-filet);vertical-align:middle}
+.sg-epo-t tr.g td{background:var(--s-nuit3);font-weight:700}
+.sg-epo-t tr.add td{border-bottom:0;padding:6px 6px 12px}
+.sg-epo-t tr.ss td{background:var(--s-fond)}
+.sg-epo-t tr.tot td{border-top:2px solid var(--s-noir);border-bottom:0;font-weight:700;padding-top:6px}
+.sg-epo-t td.no{width:38px;color:var(--s-nuit);font-weight:700;white-space:nowrap}
+.sg-epo-t td.act{width:1%;white-space:nowrap}
+.sg-epo-t .sg-epo-vide{color:var(--s-gris);padding:10px 6px}
+.sg-epo-in{height:26px;border:1px solid #b9b9b6;border-radius:0;padding:0 6px;font:inherit;font-size:12.5px;background:#fff;color:var(--s-noir);box-sizing:border-box;width:100%;min-width:0}
+.sg-epo-in.n{text-align:right;width:88px}
+.sg-epo-in.no{width:44px;text-align:right}
+.sg-epo-in.d{width:138px}
+.sg-epo-in:focus{outline:0;border-color:var(--s-nuit);box-shadow:inset 0 0 0 1px var(--s-nuit)}
+.sg-epo-in.txt{border-color:transparent;background:transparent;padding:0 4px}
+.sg-epo-in.txt:hover{border-color:#b9b9b6;background:#fff}
+.sg-epo-in.txt:focus{background:#fff;border-color:var(--s-nuit)}
+.sg-epo-in.b{font-weight:700}
+.sg-epo-in::placeholder{color:#a9a9a6;font-weight:400}
+.sg-epo-in:disabled{background:transparent;border-color:transparent;color:inherit;opacity:1}
+select.sg-epo-in{padding:0 3px;width:auto;max-width:170px}
+.sg-epo-t .sg-epo-in.txt{min-width:170px}
+.sg-epo-in.flash{animation:sgEpoFlash 1.8s ease-out}
+@keyframes sgEpoFlash{0%,35%{background:var(--s-jaune)}}
+.sg-epo-ic{border:0;background:none;padding:2px;cursor:pointer;color:#9d9d9c;display:inline-grid;place-items:center;vertical-align:middle}
+.sg-epo-ic svg{width:15px;height:15px}
+.sg-epo-ic:hover{color:var(--s-noir)}
+.sg-epo-ic.on{color:var(--s-nuit)}
+.sg-epo-pills{display:inline-flex;gap:3px;flex-wrap:wrap;vertical-align:middle}
+.sg-epo-pill{min-width:34px;height:20px;padding:0 3px;border:1px dashed #b9b9b6;background:#fff;color:#9d9d9c;font:inherit;font-size:10px;font-weight:700;cursor:pointer;display:inline-grid;place-items:center}
+.sg-epo-pill.on{border:1px solid var(--s-nuit);background:var(--s-nuit);color:#fff}
+.sg-epo-pill:disabled{cursor:default}
+.sg-epo-eq{font-size:11px;color:var(--s-gris);margin-left:6px;white-space:nowrap}
+.sg-epo-fl{font-size:11.5px;color:var(--s-nuit);padding-left:4px;white-space:nowrap}
+.sg-epo-fl.passe{color:var(--s-gris)}

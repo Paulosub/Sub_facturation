@@ -70,11 +70,11 @@ const SG_DOM=[
   {k:'accueil',t:'Cockpit',ico:'home',items:[{v:'nx-home',t:'Aujourd’hui'}]},
   /* Affaires (18.10.2026) : le module Affaires de l'ancien logiciel tel quel (liste | domaines d'affaire | contenu) ; écrans du moteur
      repris sous affd-* (sg3_plus.js, bloc 20) pour que le menu reste distinct de Projets */
-  {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion, controlling et toutes les affaires — liste des affaires, domaines d’affaire et contenu.',items:[
-    {v:'affd-gestion',t:'Gestion',ico:'list',d:'Créer, modifier et configurer les affaires : phases, activités, tarifs.'},
-    {v:'affd-controlling',t:'Controlling',ico:'trend',d:'Contrôle des heures et des frais, critères d’affaires.'},
+  {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion des affaires — liste des affaires, domaines d’affaire et contenu.',items:[
+    {v:'affd-gestion',t:'Liste des affaires',ico:'list',d:'Créer, modifier et configurer les affaires : phases, activités, tarifs.'},   /* « Gestion » renommé « Liste des affaires » (23.10.2026, demande de Paulo) */
+    /* « Controlling » (affd-controlling) déplacé dans Réglages ▸ Archives le 23.10.2026, à la demande de Paulo (gardé pour un usage ultérieur) */
     /* « Mes affaires » (affd-mes) retiré du chapitre le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */
-    {v:'affd-toutes',t:'Toutes les affaires',ico:'folder',d:'Toutes les affaires du bureau, avec les mêmes domaines.'}]},
+    /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
   {k:'temps',t:'Temps',ico:'clock',d:'Saisie et suivi du temps de travail et des dépenses.',items:[
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
     {v:'h-rapport',t:'Rapports de temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
@@ -109,7 +109,8 @@ const SG_DOM=[
     {v:'collab-actuels',t:'Membres',ico:'users',hero:1,d:'L’équipe actuelle du bureau.'},
     {v:'collab-tous',t:'Tous les membres',ico:'group',d:'Membres actuels et anciens.'},
     {v:'collab-anciens',t:'Anciens membres',ico:'list',d:'Membres ayant quitté le bureau.'},
-    {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'}]},
+    {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'},
+    {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'}]},   /* ajouté le 23.10.2026 (demande de Paulo) */
   /* Ressources humaines (07.10.2026) : gestion du personnel, réservée à l'administrateur (droits « équipe : taux » et « réglages ») */
   {k:'rh',t:'Ressources humaines',ico:'rh',d:'Gestion du personnel : contrats de travail, occupation et effectif, heures dues et vacances, bouclement annuel, coût de revient et planification.',items:[
     {v:'nx-occupation',t:'Occupation et effectif',ico:'gauge',hero:1,d:'Taux d’occupation de chacun mois par mois, effectif et ETP, charge de travail du mois et échéances RH (temps d’essai, préavis, fins de contrat).'},
@@ -168,6 +169,8 @@ const SG_DOM=[
     {v:'nx-data',t:'Données & sauvegarde',ico:'db',hero:1,d:'Export et import de la base de gestion.'},
     {v:'fx-backup',t:'Sauvegarde Facturation',ico:'save',d:'Contrats, factures et registres Facturation : export, import, sauvegarde automatique.'},
     {v:'config',t:'Administration',ico:'settings',d:'Paramètres, propriétés, droits et listes.'},
+    {v:'nx-parametres',t:'Paramètres système',ico:'settings',d:'Pays, monnaie et TVA, présentation des adresses, protection des documents.'},   /* ajouté le 23.10.2026 (demande de Paulo) */
+    {v:'nx-preferences',t:'Préférences',ico:'person',d:'Langue des documents, initiales et signature de l’utilisateur du poste.'},   /* ajouté le 23.10.2026 (demande de Paulo) */
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
     {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
     {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances et Réglages.'},
@@ -176,6 +179,7 @@ const SG_DOM=[
     {v:'fx-rapport',t:'Archives · Rapport d’heures',ico:'analyse',reg:1,d:'Anciens rapports d’heures de Facturation.'},
     {v:'fx-devis',t:'Archives · Devis',ico:'doc',reg:1,d:'Anciens devis de Facturation (remplacés par Descriptifs & devis).'},
     {v:'fx-controle-cout',t:'Archives · Contrôle du coût',ico:'coins',reg:1,d:'Ancien contrôle du coût de Facturation (remplacé par Contrôle des coûts).'},
+    {v:'affd-controlling',t:'Archives · Controlling',ico:'trend',d:'Ancien Controlling du chapitre Affaires : contrôle des heures et des frais, critères d’analyse (gardé pour un usage ultérieur).'},
     {v:'fx-affaires',t:'Projets · Facturation',ico:'folder',reg:1,d:'Registre des projets de l’app Facturation.'},
     {v:'fx-collaborateurs',t:'Collaborateurs · Facturation',ico:'users',reg:1,d:'Registre des collaborateurs (taux, objectifs).'},
     {v:'fx-heures',t:'Heures · Facturation',ico:'clock',reg:1,d:'Registre des heures importées.'},

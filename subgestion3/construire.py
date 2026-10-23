@@ -149,7 +149,7 @@ def main():
         sys.exit('✗ sigle « S » introuvable dans logo_substances.svg')
     sc = 48 / 454
     sigle = f'<path fill="#fff" transform="translate({10 - 646 * sc:.2f} {8 - 1708 * sc:.2f}) scale({sc:.5f})" d="{m.group(1)}"/>'
-    js = lire(os.path.join(ICI, 'sg3.js')) + '\n' + lire(os.path.join(ICI, 'sg3_plus.js')) + '\n' + lire(os.path.join(ICI, 'sg3_visuel.js')) + '\n' + lire(os.path.join(ICI, 'sg3_annuaire.js'))   # coquille + améliorations (1 à 10) + visuel de l'app + annuaire
+    js = lire(os.path.join(ICI, 'sg3.js')) + '\n' + lire(os.path.join(ICI, 'sg3_plus.js')) + '\n' + lire(os.path.join(ICI, 'sg3_visuel.js')) + '\n' + lire(os.path.join(ICI, 'sg3_annuaire.js')) + '\n' + lire(os.path.join(ICI, 'sg3_affaire.js'))   # coquille + améliorations (1 à 10) + visuel de l'app + annuaire + phases / activités / tarifs de l'affaire
     js = remplacer(js, '`__LOGO__`', '`' + logo + '`', quoi='logo')
     js = remplacer(js, '`__SIGLE__`', '`' + sigle + '`', quoi='sigle')
 

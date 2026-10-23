@@ -397,8 +397,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   impression `ctlDocHTML`. Fenêtre ouverte tenue à jour par `DS.on` (`CT.live`). Même écran pour Projets ▸ Suivi & écarts et
   Facturation (ancien) ▸ heures. Sauvegarde d'avant : `DeltaSub_backup_20261018_2328_avant_controlling.html`.
 - **Affaires · Mes projets · page du projet (18.10.2026, bloc 20 de `sg3_plus.js`)** — Chapitre « Affaires » sous Accueil (`SG_DOM`
-  `affaires`, icône `briefcase`) : le module Affaires de l'ancien logiciel tel quel (Gestion, Controlling, Toutes les affaires ;
-  « Mes affaires » retiré du menu le 23.10.2026, à la demande — l'écran `affd-mes` reste défini), écrans du moteur repris par `Object.create` sous `affd-*` (droits : `SG_VUE_DROIT` recopiés, regex du moteur `CH08B_AFF`
+  `affaires`, icône `briefcase`) : le module Affaires de l'ancien logiciel tel quel (**Liste des affaires**, ex-« Gestion »,
+  renommée le 23.10.2026 ; « Mes affaires » et « Toutes les affaires » retirés du menu le 23.10.2026, à la demande — écrans `affd-mes` / `affd-toutes`
+  gardés, hors menu ; **« Controlling » déplacé le même jour dans Réglages ▸ Archives** (« Archives · Controlling », `affd-controlling`, gardé pour un
+  usage ultérieur)), écrans du moteur repris par `Object.create` sous `affd-*` (droits : `SG_VUE_DROIT` recopiés, regex du moteur `CH08B_AFF`
   et `CH08B_VIEWS` élargies à `affd?-`). Projets ▸ Mes projets = `nx-mesprojets` : liste seule (« ses projets » = `sgMesProjets`, en
   cours / tous, recherche, étiquette Expertise / Faisabilité, mes heures 30 j) ; un clic → `nx-pdom` (arg `ID` ou `ID|Domaine`) : page
   du projet (intro, actions, heures) et domaines d'affaire en groupes REPLIABLES (tout replié à l'arrivée ; clic sur le titre du groupe =
@@ -665,15 +667,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   ⚠ Facturation a aussi un module « Cockpit » (`fx-cockpit`, tableau de bord des honoraires) : deux entrées du même nom.
   **Affaires ▸ vue d'ensemble (22.10.2026)** = `VIEWS['dom-affaires']`, même présentation que la vue d'ensemble Projets (`.sg-pv`) : en-tête et total en
   grand ; « Par état » (en cours, en attente, terminées, archivées — jauge = part du total, affaires actives ces 30 jours ; clic → liste filtrée) ;
-  « Activité » (affaires actives, heures du mois, de l'année, part facturable de l'année — tout le bureau) ; « Modules » en dessous.
-  **Affaires ▸ Gestion amélioré (22.10.2026, choix de Paulo)** = `VIEWS['affd-gestion']` : barre d'outils de l'ancien écran reprise telle quelle,
+  « Activité » (affaires actives, heures du mois, de l'année, part facturable de l'année — tout le bureau) ; « Modules » en dessous. Le 23.10.2026 :
+  libellé « Affaires » (et son filet) au-dessus du titre retiré à la demande ; la tuile « Affaires actives » ouvre la Liste des affaires (Controlling archivé).
+  **Affaires ▸ Gestion amélioré (22.10.2026, choix de Paulo)** = `VIEWS['affd-gestion']` (menu « Liste des affaires » depuis le 23.10.2026) : barre d'outils de l'ancien écran reprise telle quelle — réduite le 23.10.2026 à
+  la demande à Nouveau projet, Éditer, Supprimer, Filtre et recherche (Intervenants, Configuration, Subdivisions, Modèles, Documents, Fonctions retirés ; fenêtres du moteur gardées) —,
   colonnes Catégorie, Phase actuelle (feuille d'heures), Dernière saisie, Heures 30 j, point d'activité (au lieu de « Actif ») ; fiche de l'affaire
   sélectionnée à droite (état, MO, dates, phase, heures, équipe, contrats reliés ; Éditer, Intervenants, Page du projet, Tableau de bord).
   Sous le résumé : fiche complète de l'affaire en lecture (`sgFicheAffaire` : Affaire, Genres d'affaire, Délais, Adresses, Références, Paramètres de
   saisie — rubriques de « Éditer l'affaire », champs vides omis ; 22.10.2026). Fiche projet = fenêtre à droite (en-tête bleu nuit, × pour fermer), ouverte en
   choisissant une affaire ou par le bouton « Fiche projet » de l'en-tête, qui dans cet écran ne quitte plus la liste (`SG_AG.ouvrir`).
-  **Fiche refaite le 23.10.2026 (« améliorer la fiche affaire »)** : barre bleu nuit (sans numérotation « 84 / 87 », retirée à la demande le même jour) = affaire précédente /
-  suivante (‹ › ou ⌥↑ ⌥↓, `SG_AG.aller`, ordre affiché de la liste `AF.g.view`), Éditer, Intervenants, Page du projet, Tableau de bord (icônes), × ;
+  **Fiche refaite le 23.10.2026 (« améliorer la fiche affaire »)** : barre bleu nuit (sans numérotation « 84 / 87 », retirée à la demande le même jour) = Éditer,
+  Page du projet, Tableau de bord (icônes), × — flèches ‹ › (affaire précédente / suivante) et bouton « Attribuer les intervenants » retirés de la barre à la demande
+  le même jour (les intervenants restent dans la barre de la liste ▸ Intervenants ; ⌥↑ ⌥↓ change toujours d'affaire, `SG_AG.aller`, ordre affiché de la liste `AF.g.view`) ;
   en-tête jaune pâle comme le tableau de bord du projet (grand numéro et filet, titre — un clic sur le numéro ou le titre ouvre le projet comme Mes
   projets, page du projet `nx-pdom`, même jour —, statut, catégorie, maître de l'ouvrage, frise des heures —
   `sgFriseHeures(T)`, fonction commune avec le tableau de bord) ; puis, dans l'ordre demandé par Paulo : **fiche de l'affaire juste sous le
@@ -701,8 +706,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   en direct), libellés au-dessus des champs : Identification, Statut (statut seul : type Externe / Interne et « Phase en cours » retirés à la demande le même jour — ISINTERNAL
   et CURRENTPROJECTPHASE_ID inchangés ; la phase actuelle est dans la fiche projet), **Collaborateurs** (même jour, demande de Paulo « attribuer
   les collaborateurs à l'affaire » ; « les autres intervenants du projet seront intégrés plus tard dans le projet » : collaborateurs du bureau
-  seulement) — collaborateurs actuels à cocher (initiales, nom, heures déjà saisies sur l'affaire), anciens collaborateurs seulement s'ils sont
-  attribués ; coché = intervenant « Collaborateurs » (rôle 12 : RESPCONTACT_ID = `staff.PERSON_ID`, CONTACT_ID = `staff.COMPANYCONTACT_ID` =
+  seulement) — collaborateurs à cocher (initiales, nom, heures déjà saisies sur l'affaire) : **affaire existante = tous les collaborateurs, actuels et
+  anciens, en une seule liste par nom** (ancien : « A quitté le bureau » en infobulle) ; **nouvelle affaire = collaborateurs actuels seulement** (demande de
+  Paulo, même jour) ; coché = intervenant « Collaborateurs » (rôle 12 : RESPCONTACT_ID = `staff.PERSON_ID`, CONTACT_ID = `staff.COMPANYCONTACT_ID` =
   Substances Architectes), le lien que lisent Mes projets, l'équipe de la fiche affaire, le Controlling (`ctlStaffs`) et le serveur du NAS ;
   décoché = ses enregistrements rôle 12 de l'affaire supprimés ; lié par un autre rôle : coché et grisé (à modifier dans les intervenants) ;
   styles `.sg-ep-col*`), Adresses (**même jour, demande de Paulo** : `sgAdressesAffaire(p,D,o)` — adresse d'affaire et **maître de l'ouvrage** (nouvelle carte)
@@ -725,6 +731,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   affichés ; nouvelle affaire : vides comme avant), liste `SG_EP_RETIRES` (clé, libellé) gardée pour les réutiliser ailleurs dans l'app. Encore
   affichés sans être modifiables : District (`LOCATION` = lieu de l'affaire : Mes projets, page du projet, en-tête du tableau de bord), début / fin
   du projet, Tri, Caractéristiques et Références de la fiche de l'affaire. Copie d'avant : `subgestion3/_backup_20261023_2101_avant_editer_affaire_collaborateurs/`.
+  **Phases, activités et tarifs de l'affaire — module gardé, NON branché (23.10.2026, bloc 24, `subgestion3/sg3_affaire.js`)** : demande de Paulo
+  « intègre l'organisation des activités dans la fenêtre d'édition de l'affaire, également les tarifs et la configuration des phases » ; proposition A
+  (« tableaux sur place ») choisie sur maquette parmi 3 (A tableaux, B frise SIA + matrice activités × collaborateurs + échelle des tarifs, C modèle du
+  bureau), réalisée et testée, puis retirée de « Éditer l'affaire » le même jour à la demande (« ces éléments seront traités dans d'autres chapitres ;
+  conserve-les pour pouvoir les réutiliser plus tard »). `sgEpOrga(p,{numero,equipe})` → {brancher(corps,D), valider(), ops(idProjet), majEquipe(),
+  majNumero()} : brouillon des tables du moteur (projectphase / projectsubphase, projectactivitygroup / projectactivity / projectactivity_staff,
+  projectrategroup / projectrate), rien n'est écrit avant l'enregistrement de la fenêtre qui l'accueille et rien si rien n'a changé ; budget d'une phase
+  = somme de ses phases partielles dès qu'on en modifie une ; « Reprendre les budgets du contrat » (honoraires HT répartis selon les % SIA, heures =
+  honoraires ÷ tarif net modifiable) ; activités du dossier standard ; autorisations selon la règle de la feuille d'heures (coché sur au moins une
+  activité d'un groupe = ne voit que celles-là, sur aucune = les voit toutes) ; taux datés ; suppressions refusées comme le moteur ; nouvelle affaire
+  pré-remplie du dossier standard (sans phase ni activité, aucune heure ne peut être saisie). Styles `.sg-epo-*` dans sg3.css. Mode d'emploi en tête du
+  fichier. Concaténé par `construire.py` après `sg3_annuaire.js`. Copie d'avant : `subgestion3/_backup_20261023_2131_avant_phases_activites_tarifs/`.
+  **Fenêtres du moteur dans le menu de gauche (23.10.2026, demandes de Paulo)** : Équipe ▸ **Gestion des utilisateurs** (`nx-utilisateurs` :
+  comptes activés / désactivés, tableau Nom, Identifiant, Collaborateur, Profil SUBGestion, État ; bouton « Gérer les comptes… » = `ch08bUserAdmin`,
+  droit « gestion des utilisateurs » `userAdmin`), Réglages ▸ **Paramètres système** (`nx-parametres` → `ch08aSysPrefs`, droit `admin`) et Réglages ▸
+  **Préférences** (`nx-preferences` → `ch08cPreferences`, tous). Fabrique commune `sgVueFenetre(o)` (sg3_plus.js, avant Profils et accès) : écran qui
+  dit à quoi sert la fenêtre et l'ouvre — d'office quand on vient du menu, pas à la reprise de session au démarrage (`sgFenPret`, 4 s) ; droits du
+  menu par `SG_VUE_DROIT`. Liste des affaires : bouton « Fiche projet … » de l'en-tête retiré (enveloppe de `sgCtxSync` pour `affd-gestion` ; un clic
+  sur l'affaire déjà choisie rouvre la fiche fermée). Chapitre « Administration » demandé puis remplacé par ces ajouts (Paulo, même soir).
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

@@ -1257,3 +1257,43 @@ select.sg-epo-in{padding:0 3px;width:auto;max-width:170px}
 .sg-epo-eq{font-size:11px;color:var(--s-gris);margin-left:6px;white-space:nowrap}
 .sg-epo-fl{font-size:11.5px;color:var(--s-nuit);padding-left:4px;white-space:nowrap}
 .sg-epo-fl.passe{color:var(--s-gris)}
+/* ═══ Chapitre Temps : visuel « épuré » (bloc 25, sg3_temps.js, 23.10.2026, proposition A choisie par Paulo) — limité à html[data-vdom="temps"] ═══ */
+/* barre d'outils en texte : choix souligné en bleu nuit ; plus de chevauchement dans Notes de frais */
+html[data-vdom="temps"] #nx-sub{background:#fff}
+html[data-vdom="temps"] #tools .grp{gap:0;padding:0 8px;border-left:1px solid var(--s-filet)}
+html[data-vdom="temps"] #tools .grp:first-child{border-left:0;padding-left:0}
+html[data-vdom="temps"] #tools .ib,html[data-vdom="temps"] #main .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
+html[data-vdom="temps"] #tools .ib:hover,html[data-vdom="temps"] #main .ph2 .ib:hover{background:var(--s-jaune3)!important}
+html[data-vdom="temps"] #tools .ib.on,html[data-vdom="temps"] #main .ph2 .ib.on{color:var(--s-nuit)!important;border-bottom-color:var(--s-nuit)!important}
+html[data-vdom="temps"] #tools .ib:disabled,html[data-vdom="temps"] #main .ph2 .ib:disabled{color:#b9b9b6}
+html[data-vdom="temps"] #main .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:4px 0 6px;border:0;border-bottom:1px solid var(--s-filet);background:transparent}
+html[data-vdom="temps"] #main .ph2 .cnt,html[data-vdom="temps"] #main .ph2>span{font-size:12px;color:var(--s-gris)}
+/* colonnes et tableaux */
+html[data-vdom="temps"] #main .cols{gap:24px}
+html[data-vdom="temps"] #main .cols .pane{border:0!important;background:#fff!important;box-shadow:none!important}
+html[data-vdom="temps"] #main .cols>.col:first-child .pane,html[data-vdom="temps"] #main .col.fill>.pane{border-top:2px solid var(--s-noir)!important}
+html[data-vdom="temps"] #main table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important}
+html[data-vdom="temps"] #main table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;height:34px;padding:0 8px!important;font-size:12.5px;font-variant-numeric:tabular-nums}
+html[data-vdom="temps"] #main table.g tbody tr:hover td{background:var(--s-jaune3)!important}
+html[data-vdom="temps"] #main table.g tbody tr.on td{background:var(--s-jaune2)!important;color:var(--s-noir)!important}
+html[data-vdom="temps"] #main tr.sgt-tot td{background:var(--s-nuit3)!important;font-weight:700}
+/* colonne des collaborateurs : initiales, nom, heures de l'année et dernière saisie (frais : notes et montant) ; ancien collaborateur en gris */
+html[data-vdom="temps"] #main .cols>.col:first-child{flex:0 0 300px!important;width:300px!important;max-width:300px}
+html[data-vdom="temps"] #main .cols>.col:first-child table.g tbody td{height:52px;padding:0 12px!important}
+html[data-vdom="temps"] #main .cols>.col:first-child table.g tbody tr.on td{box-shadow:inset 3px 0 0 var(--s-nuit)}
+.sgt-row{display:flex;align-items:center;gap:12px;min-width:0}
+.sgt-ini{flex:none;display:inline-grid;place-items:center;min-width:36px;height:24px;padding:0 4px;box-sizing:border-box;background:var(--s-nuit);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.02em}
+.sgt-nm{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.sgt-nm b{font-size:13px;font-weight:700;color:var(--s-noir);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgt-nm small{font-size:11px;color:var(--s-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr.sgt-parti .sgt-ini{background:transparent;color:var(--s-gris);box-shadow:inset 0 0 0 1px var(--s-gris)}
+tr.sgt-parti .sgt-nm b{color:var(--s-gris);font-weight:400}
+/* résumé du rapport de temps : tuiles (libellé, valeur en grand) */
+html[data-vdom="temps"] #main .col.fill>div:last-child:has(.kv){border-top:0!important;padding:16px 0 0!important;max-height:none!important;background:transparent}
+html[data-vdom="temps"] #main .kv{display:grid!important;grid-template-rows:auto auto;grid-auto-flow:column;grid-auto-columns:minmax(140px,1fr);column-gap:18px;max-width:none!important}
+html[data-vdom="temps"] #main .kv b{font-size:11.5px;font-weight:700;color:var(--s-gris);border-top:2px solid var(--s-noir);padding-top:8px;text-align:left!important;align-self:start;line-height:1.3}
+html[data-vdom="temps"] #main .kv span{font-size:22px;font-weight:700;color:var(--s-noir);padding:4px 0 10px;text-align:left!important;font-variant-numeric:tabular-nums}
+/* totaux des notes de frais (pied du panneau) */
+html[data-vdom="temps"] #main .col.fill>.ph2:last-child{border:0;border-top:2px solid var(--s-noir);justify-content:flex-end;gap:26px;padding-top:10px}
+html[data-vdom="temps"] #main .col.fill>.ph2:last-child span{font-size:12px;color:var(--s-gris)}
+html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:var(--s-noir)}

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 23.10.2026 22:11 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 23.10.2026 22:27 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1266,6 +1266,46 @@ select.sg-epo-in{padding:0 3px;width:auto;max-width:170px}
 .sg-epo-eq{font-size:11px;color:var(--s-gris);margin-left:6px;white-space:nowrap}
 .sg-epo-fl{font-size:11.5px;color:var(--s-nuit);padding-left:4px;white-space:nowrap}
 .sg-epo-fl.passe{color:var(--s-gris)}
+/* ═══ Chapitre Temps : visuel « épuré » (bloc 25, sg3_temps.js, 23.10.2026, proposition A choisie par Paulo) — limité à html[data-vdom="temps"] ═══ */
+/* barre d'outils en texte : choix souligné en bleu nuit ; plus de chevauchement dans Notes de frais */
+html[data-vdom="temps"] #nx-sub{background:#fff}
+html[data-vdom="temps"] #tools .grp{gap:0;padding:0 8px;border-left:1px solid var(--s-filet)}
+html[data-vdom="temps"] #tools .grp:first-child{border-left:0;padding-left:0}
+html[data-vdom="temps"] #tools .ib,html[data-vdom="temps"] #main .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
+html[data-vdom="temps"] #tools .ib:hover,html[data-vdom="temps"] #main .ph2 .ib:hover{background:var(--s-jaune3)!important}
+html[data-vdom="temps"] #tools .ib.on,html[data-vdom="temps"] #main .ph2 .ib.on{color:var(--s-nuit)!important;border-bottom-color:var(--s-nuit)!important}
+html[data-vdom="temps"] #tools .ib:disabled,html[data-vdom="temps"] #main .ph2 .ib:disabled{color:#b9b9b6}
+html[data-vdom="temps"] #main .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:4px 0 6px;border:0;border-bottom:1px solid var(--s-filet);background:transparent}
+html[data-vdom="temps"] #main .ph2 .cnt,html[data-vdom="temps"] #main .ph2>span{font-size:12px;color:var(--s-gris)}
+/* colonnes et tableaux */
+html[data-vdom="temps"] #main .cols{gap:24px}
+html[data-vdom="temps"] #main .cols .pane{border:0!important;background:#fff!important;box-shadow:none!important}
+html[data-vdom="temps"] #main .cols>.col:first-child .pane,html[data-vdom="temps"] #main .col.fill>.pane{border-top:2px solid var(--s-noir)!important}
+html[data-vdom="temps"] #main table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important}
+html[data-vdom="temps"] #main table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;height:34px;padding:0 8px!important;font-size:12.5px;font-variant-numeric:tabular-nums}
+html[data-vdom="temps"] #main table.g tbody tr:hover td{background:var(--s-jaune3)!important}
+html[data-vdom="temps"] #main table.g tbody tr.on td{background:var(--s-jaune2)!important;color:var(--s-noir)!important}
+html[data-vdom="temps"] #main tr.sgt-tot td{background:var(--s-nuit3)!important;font-weight:700}
+/* colonne des collaborateurs : initiales, nom, heures de l'année et dernière saisie (frais : notes et montant) ; ancien collaborateur en gris */
+html[data-vdom="temps"] #main .cols>.col:first-child{flex:0 0 300px!important;width:300px!important;max-width:300px}
+html[data-vdom="temps"] #main .cols>.col:first-child table.g tbody td{height:52px;padding:0 12px!important}
+html[data-vdom="temps"] #main .cols>.col:first-child table.g tbody tr.on td{box-shadow:inset 3px 0 0 var(--s-nuit)}
+.sgt-row{display:flex;align-items:center;gap:12px;min-width:0}
+.sgt-ini{flex:none;display:inline-grid;place-items:center;min-width:36px;height:24px;padding:0 4px;box-sizing:border-box;background:var(--s-nuit);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.02em}
+.sgt-nm{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.sgt-nm b{font-size:13px;font-weight:700;color:var(--s-noir);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgt-nm small{font-size:11px;color:var(--s-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr.sgt-parti .sgt-ini{background:transparent;color:var(--s-gris);box-shadow:inset 0 0 0 1px var(--s-gris)}
+tr.sgt-parti .sgt-nm b{color:var(--s-gris);font-weight:400}
+/* résumé du rapport de temps : tuiles (libellé, valeur en grand) */
+html[data-vdom="temps"] #main .col.fill>div:last-child:has(.kv){border-top:0!important;padding:16px 0 0!important;max-height:none!important;background:transparent}
+html[data-vdom="temps"] #main .kv{display:grid!important;grid-template-rows:auto auto;grid-auto-flow:column;grid-auto-columns:minmax(140px,1fr);column-gap:18px;max-width:none!important}
+html[data-vdom="temps"] #main .kv b{font-size:11.5px;font-weight:700;color:var(--s-gris);border-top:2px solid var(--s-noir);padding-top:8px;text-align:left!important;align-self:start;line-height:1.3}
+html[data-vdom="temps"] #main .kv span{font-size:22px;font-weight:700;color:var(--s-noir);padding:4px 0 10px;text-align:left!important;font-variant-numeric:tabular-nums}
+/* totaux des notes de frais (pied du panneau) */
+html[data-vdom="temps"] #main .col.fill>.ph2:last-child{border:0;border-top:2px solid var(--s-noir);justify-content:flex-end;gap:26px;padding-top:10px}
+html[data-vdom="temps"] #main .col.fill>.ph2:last-child span{font-size:12px;color:var(--s-gris)}
+html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:var(--s-noir)}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -30411,6 +30451,43 @@ function sgEpOrga(p,o){ const E=nxE, pid=p?p.ID:null, AUJ=today(), S=x=>String(x
       O[k].forEach((_,i)=>{ if(!B[k].some(x=>S(x.ID)===i)) R.push({t,id:isNaN(+i)?i:+i,val:null}); }); });
     return R; }
   return {brancher,rendre,valider,ops,majEquipe:()=>rendre('activites'),majNumero:()=>{ if(!pid) rendre('phases'); }}; }
+
+/* ═══ 25. Chapitre Temps : visuel « épuré » (23.10.2026) ════════════════════════════════════════════════════════════════════════════════
+   Demande de Paulo : « dans le menu Temps revoir le visuel de toutes les pages » ; proposition A (« épuré ») choisie sur maquette parmi 3
+   (A épuré, B fiche du collaborateur, C pleine largeur), avec « améliore la colonne collaborateur ». Pages : Feuille d'heures, Rapports de
+   temps, Disponibilités, Notes de frais, Rapport des notes de frais (écrans du moteur) et Situation des heures. Styles dans sg3.css, limités au
+   chapitre (html[data-vdom="temps"], classes .sgt-*) : barre d'outils en texte (choix souligné en bleu nuit, plus de chevauchement dans Notes
+   de frais), tableaux à filet noir, trimestres et totaux sur trame bleu nuit pâle (.sgt-tot), résumé du rapport en tuiles.
+   Ici, la colonne des collaborateurs : initiales en pastille, nom, et sur une 2e ligne les heures de l'année et la dernière saisie (pages de
+   frais : nombre de notes et montant de l'année) ; ancien collaborateur en gris (« a quitté le bureau le … »). Le contenu des cellules est refait
+   après chaque dessin du moteur (MutationObserver sur #main) ; la sélection, le tri et les données ne changent pas. L'agenda de la feuille
+   d'heures n'est pas touché. ═══ */
+const SGT_FRAIS=['frais','frais-rapport'];
+let sgtCache={t:0,m:new Map()};
+function sgtStats(s){ const v=(VIEW&&VIEW.id)||'', k=s.ID+'|'+(SGT_FRAIS.includes(v)?'f':'h'), y=new Date().getFullYear();
+  if(Date.now()-sgtCache.t>5000) sgtCache={t:Date.now(),m:new Map()};
+  if(sgtCache.m.has(k)) return sgtCache.m.get(k); let r;
+  if(SGT_FRAIS.includes(v)){ const C=DS.by('projectcost','STAFF_ID',s.ID).filter(x=>+x.DATEYEAR===y), mt=C.reduce((a,x)=>a+(+x.QUANTITY||0)*(+x.UNITPRICE||0)*(+x.EXTERNALRATE||1),0);
+    r=C.length?C.length+' note'+(C.length>1?'s':'')+' · '+num(mt,2)+' CHF en '+y:'aucune note en '+y; }
+  else { let h=0, der=null; DS.by('timelog','STAFF_ID',s.ID).forEach(x=>{ const d=tlDate(x); if(d.getFullYear()===y) h+=+x.TIMEPERIOD||0; if(!der||d>der) der=d; });
+    r=(h?num(Math.round(h),0)+' h en '+y:'aucune heure en '+y)+(der?' · dernière '+dfr(diso(der)).replace(/\.\d{2}(\d{2})$/,'.$1'):''); }   /* heures arrondies, date courte : la ligne tient dans la colonne */
+  sgtCache.m.set(k,r); return r; }
+/* initiales du collaborateur ; vides dans la base : celles du bureau (1re lettre du prénom + 2 premières du nom, ex. GVE) */
+const sgtIni=s=>{ if(s.INITIALS) return s.INITIALS; const m=String(staffName(s)||'').trim().split(/\s+/), pr=m[0]||'', no=m.length>1?m[m.length-1]:''; return (pr.charAt(0)+no.slice(0,2)).toUpperCase(); };
+function sgtDecorer(){ if(document.documentElement.dataset.vdom!=='temps') return;
+  const left=document.querySelector('#main .cols>.col:first-child');
+  if(left){ const parNom=new Map(DS.all('staff').map(s=>[staffName(s),s])), auj=today();
+    left.querySelectorAll('table.g tbody tr').forEach(tr=>{ const td=tr.querySelector('td'); if(!td||td.dataset.sgt) return; const nom=td.textContent.trim(), s=parNom.get(nom); if(!s) return;
+      const parti=+s.ISACTIVE===0||(!!s.QUITTINGDATE&&String(s.QUITTINGDATE).slice(0,10)<auj);
+      const info=parti?'a quitté le bureau'+(s.QUITTINGDATE?' le '+dfr(String(s.QUITTINGDATE).slice(0,10)):''):sgtStats(s);
+      td.dataset.sgt='1'; td.dataset.nm=nom; tr.classList.toggle('sgt-parti',parti); td.title=nom+' — '+info;
+      td.innerHTML='<div class="sgt-row"><span class="sgt-ini">'+nxE(sgtIni(s))+'</span><span class="sgt-nm"><b>'+nxE(nom)+'</b><small>'
+        +nxE(info)+'</small></span></div>'; }); }
+  document.querySelectorAll('#main .col.fill table.g tbody tr').forEach(tr=>{ const t=((tr.firstElementChild||{}).textContent||'').trim(), tot=/trimestre|semestre|^total|^disponibilit|^solde du temps/i.test(t);
+    if(tr.classList.contains('sgt-tot')!==tot) tr.classList.toggle('sgt-tot',tot); }); }
+{ let tm=null; const lance=()=>{ const m=document.getElementById('main'); if(!m) return void setTimeout(lance,500);
+    new MutationObserver(()=>{ if(document.documentElement.dataset.vdom!=='temps') return; clearTimeout(tm); tm=setTimeout(sgtDecorer,30); }).observe(m,{childList:true,subtree:true}); };
+  lance(); }
 </script>
 </body>
 </html>

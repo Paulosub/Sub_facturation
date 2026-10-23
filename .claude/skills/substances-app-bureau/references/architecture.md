@@ -95,9 +95,11 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
 - `sg3_annuaire.js` (bloc 23) : Contacts ▸ Annuaire (`adr-entites`) ET Fiche contact (`nx-contact`) = même écran — fiche
   pleine page + liste escamotable (`SGA`, `sgaRendre`, `sgaFiche`, `sgaTiroir`, `sgaMenu`, `sgaSections`) ; styles `.sga-*` en fin de
   `sg3.css`. Les fonctions du moteur (editOwner, editContact, delOwner…) restent celles de DeltaSub.html.
-- `sg3_affaire.js` (bloc 24, en dernier) : `sgEpOrga(p,{numero,equipe})` — phases, activités et tarifs d'une affaire en tableaux modifiables
+- `sg3_affaire.js` (bloc 24) : `sgEpOrga(p,{numero,equipe})` — phases, activités et tarifs d'une affaire en tableaux modifiables
   sur place, sur brouillon (`brancher`, `valider`, `ops`, `majEquipe`, `majNumero`) ; styles `.sg-epo-*`. **Non branché** depuis le
   23.10.2026 (retiré de « Éditer l'affaire » à la demande) : gardé et testé pour d'autres chapitres, mode d'emploi en tête du fichier.
+- `sg3_temps.js` (bloc 25, en dernier) : chapitre Temps, visuel « épuré » — colonne des collaborateurs refaite (`sgtDecorer`, `sgtStats`,
+  `sgtIni`, MutationObserver sur `#main`), lignes de total `.sgt-tot` ; styles `html[data-vdom="temps"]` et `.sgt-*` en fin de `sg3.css`.
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

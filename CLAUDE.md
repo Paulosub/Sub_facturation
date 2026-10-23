@@ -752,6 +752,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   dit à quoi sert la fenêtre et l'ouvre — d'office quand on vient du menu, pas à la reprise de session au démarrage (`sgFenPret`, 4 s) ; droits du
   menu par `SG_VUE_DROIT`. Liste des affaires : bouton « Fiche projet … » de l'en-tête retiré (enveloppe de `sgCtxSync` pour `affd-gestion` ; un clic
   sur l'affaire déjà choisie rouvre la fiche fermée). Chapitre « Administration » demandé puis remplacé par ces ajouts (Paulo, même soir).
+  **Chapitre Temps : visuel « épuré » (23.10.2026, bloc 25, `subgestion3/sg3_temps.js` + fin de `sg3.css`)** — demande de Paulo « dans le menu Temps
+  revoir le visuel de toutes les pages » ; proposition A choisie sur maquette parmi 3 (A épuré, B fiche du collaborateur, C pleine largeur), « mais
+  améliore la colonne collaborateur ». Styles limités à `html[data-vdom="temps"]` (Feuille d'heures, Rapports de temps, Disponibilités, Notes de frais,
+  Rapport des notes de frais ; Situation des heures garde son écran) : barre d'outils en texte (choix `.ib.on` souligné en bleu nuit, `.ph2` qui passe à
+  la ligne — plus de chevauchement dans Notes de frais), tableaux `table.g` à filet noir, trimestres / semestres / totaux sur trame bleu nuit pâle
+  (`.sgt-tot`), résumé du rapport (`.kv`) en tuiles, totaux des frais en pied. Colonne des collaborateurs (300 px) : initiales en pastille (`sgtIni` :
+  INITIALS, sinon 1re lettre du prénom + 2 premières du nom), nom, 2e ligne = heures de l'année arrondies et dernière saisie (pages de frais : notes et
+  montant de l'année ; `sgtStats`, cache 5 s) ; ancien collaborateur grisé « a quitté le bureau le … ». Contenu des cellules refait après chaque dessin
+  du moteur (MutationObserver sur `#main`, `td[data-sgt]`) ; sélection, tri et données inchangés ; l'agenda de la Feuille d'heures n'est pas retouché.
+  Vérifié dans la charte, Papier et encre et Studio nocturne. Copie d'avant : `subgestion3/_backup_20261023_2225_avant_temps_epure/`.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

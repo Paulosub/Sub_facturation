@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 23.10.2026 17:56 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 23.10.2026 18:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1179,6 +1179,18 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ep-adr .n{font-size:11px;color:var(--s-gris)}.sg-ep-adr .n:empty{display:none}
 .sg-ep-adr .b:empty{display:none}
 .sg-ag-fiche dt small{display:block;font-size:10.5px;color:var(--s-gris)}
+/* genres d'affaire en deux temps : groupe puis genre (23.10.2026) */
+.sg-ep-gg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+.sg-ep-grp{display:flex;flex-direction:column;max-height:300px;overflow:auto;border-top:1px solid var(--s-filet)}
+.sg-ep-grp button{display:flex;align-items:center;gap:8px;text-align:left;border:0;border-bottom:1px solid var(--s-filet);background:none;font:inherit;font-size:12.5px;padding:7px 8px;cursor:pointer;color:var(--s-noir)}
+.sg-ep-grp button:hover{background:var(--s-jaune3)}
+.sg-ep-grp button.on{background:var(--s-jaune2);font-weight:700;box-shadow:inset 3px 0 0 var(--s-nuit)}
+.sg-ep-grp .n{margin-left:auto;font-size:10.5px;font-weight:700;padding:0 6px;background:var(--s-nuit);color:#fff}
+.sg-ep-gen{display:flex;flex-direction:column;border-top:1px solid var(--s-filet)}
+.sg-ep-gen label{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 4px;border-bottom:1px solid var(--s-filet);cursor:pointer}
+.sg-ep-gen label:hover{background:var(--s-jaune3)}
+.sg-ep-chip{cursor:pointer}
+@media (max-width:760px){.sg-ep-gg{grid-template-columns:1fr}}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -28565,7 +28577,7 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
       /* « Type d'affaire » (Externe / Interne) retiré à la demande (23.10.2026) : ISINTERNAL gardé tel quel (nouvelle affaire : externe) */
       /* « Phase en cours » retirée à la demande (23.10.2026) : la phase actuelle est dans la fiche projet ; CURRENTPROJECTPHASE_ID gardé tel quel */)
     +sec('adr','Adresses','<div class="sg-ep-adrs">'+CARTES.map(([k,l])=>'<div class="sg-ep-adr" data-adrk="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"></div><small class="n"></small></div>').join('')+'</div>')
-    +sec('genres','Genres d’affaire','<div class="sg-ep-genres"><div class="sg-ep-chips"></div><input class="inp sg-ep-q" type="search" placeholder="Rechercher un genre d’affaire…"><div class="sg-ep-liste"></div></div>')
+    +sec('genres','Genres d’affaire','<div class="sg-ep-genres"><div class="sg-ep-chips"></div><div class="sg-ep-gg"><div class="sg-ep-c"><span>1. Groupe d’affaire</span><div class="sg-ep-grp" role="listbox" aria-label="Groupe d’affaire"></div></div><div class="sg-ep-c"><span class="sg-ep-gt">2. Genre</span><div class="sg-ep-gen"></div></div></div></div>')
     +sec('delais','Délais',champ('Début du projet',dat('PROJECTSTARTDATE'))+champ('Fin du projet',dat('PROJECTENDDATE'))+champ('Début de planification',txt('STARTOFPLANNING'))+champ('Fin de planification',txt('ENDOFPLANNING'))
       +champ('Début des travaux',txt('STARTOFCONSTRUCTION'))+champ('Fin des travaux',txt('ENDOFCONSTRUCTION'))+champ('Remise des clés',txt('MOVEINDEADLINE')))
     +sec('carac','Caractéristiques',champ('Volume construit (m³)',nbr('VOLUME'))+champ('Surface de plancher (m²)',nbr('AREA'))+champ('Indice ICC',nbr('BASISINDEX')))
@@ -28593,16 +28605,22 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
       const cur=k==='mo'?(moChoisi!=null?moChoisi:(m=>m&&m.CONTACT_ID)(p?svMember(p,8):null)):adr[cle];
       sgChoisirAdresse(l,c=>{ if(k==='mo') moChoisi=c.ID; else adr[cle]=c.ID; majAdrs(); },{courant:cur,p,deja:[['Adresse d’affaire',adr.CONTACT1_ID]].filter(x=>x[1]&&k!=='affaire')}); }
     if(rt){ const k=rt.dataset.adrRetirer; adr[k==='affaire'?'CONTACT1_ID':'CONTACT4_ID']=null; majAdrs(); } });
-  /* genres d'affaire */
+  /* genres d'affaire, en deux temps comme dans l'ancien logiciel (23.10.2026, demande de Paulo) : 1) choisir le groupe d'affaire (Habitat individuel,
+     Habitat collectif…, avec le nombre de genres cochés), 2) cocher le genre (Nouvelle construction, Transformation…) ; genres cochés en étiquettes
+     « groupe · genre » au-dessus (× pour retirer, clic = ouvre son groupe) ; plusieurs genres possibles, comme avant (project_projectkind) */
   const GR=DS.all('projectkind').sort((a,b)=>cmp((DS.get('projectgroup',a.PROJECTGROUP_ID)||{}).SORTORDER,(DS.get('projectgroup',b.PROJECTGROUP_ID)||{}).SORTORDER)||cmp(a.SORTORDER,b.SORTORDER));
-  const chips=corps.querySelector('.sg-ep-chips'), liste=corps.querySelector('.sg-ep-liste'), q=corps.querySelector('.sg-ep-q'); let qq='';
+  const GRP=[...new Set(GR.map(k=>k.PROJECTGROUP_ID))], grpNom=g=>nm(DS.get('projectgroup',g))||'Sans groupe';
+  const chips=corps.querySelector('.sg-ep-chips'), lGrp=corps.querySelector('.sg-ep-grp'), lGen=corps.querySelector('.sg-ep-gen');
+  let gSel=(GR.find(k=>kinds.has(k.ID))||GR[0]||{}).PROJECTGROUP_ID;
   const majGenres=()=>{ const sel=GR.filter(k=>kinds.has(k.ID));
-    chips.innerHTML=sel.length?sel.map(k=>'<span class="nx-tag sg-ep-chip">'+E((g=>g?g+' · ':'')(nm(DS.get('projectgroup',k.PROJECTGROUP_ID)))+nm(k))+'<button type="button" data-kind-x="'+k.ID+'" title="Retirer">×</button></span>').join(''):'<span class="vide">Aucun genre d’affaire coché</span>';
-    let g0=null, html=''; GR.filter(k=>!qq||matchQ(qq,nm(k),nm(DS.get('projectgroup',k.PROJECTGROUP_ID)))).forEach(k=>{ const g=k.PROJECTGROUP_ID; if(g!==g0){ g0=g; html+='<div class="gr">'+E(nm(DS.get('projectgroup',g))||'Sans groupe')+'</div>'; }
-      html+='<label><input type="checkbox" data-kind="'+k.ID+'"'+(kinds.has(k.ID)?' checked':'')+'> '+E(nm(k))+'</label>'; });
-    liste.innerHTML=html||'<span class="vide">Aucun genre ne correspond.</span>'; };
+    chips.innerHTML=sel.length?sel.map(k=>'<span class="nx-tag sg-ep-chip" data-chip-grp="'+E(k.PROJECTGROUP_ID)+'" title="Ouvrir le groupe">'+E(grpNom(k.PROJECTGROUP_ID)+' · '+nm(k))+'<button type="button" data-kind-x="'+k.ID+'" title="Retirer">×</button></span>').join(''):'<span class="vide">Aucun genre d’affaire choisi</span>';
+    lGrp.innerHTML=GRP.map(g=>{ const n=GR.filter(k=>k.PROJECTGROUP_ID===g&&kinds.has(k.ID)).length;
+      return '<button type="button" role="option" data-grp="'+E(g)+'" class="'+(g===gSel?'on':'')+'" aria-selected="'+(g===gSel)+'">'+E(grpNom(g))+(n?'<span class="n">'+n+'</span>':'')+'</button>'; }).join('');
+    corps.querySelector('.sg-ep-gt').textContent='2. Genre — '+grpNom(gSel);
+    lGen.innerHTML=GR.filter(k=>k.PROJECTGROUP_ID===gSel).map(k=>'<label><input type="checkbox" data-kind="'+k.ID+'"'+(kinds.has(k.ID)?' checked':'')+'> '+E(nm(k))+'</label>').join('')||'<span class="vide">Aucun genre dans ce groupe.</span>'; };
   majGenres();
-  q.oninput=()=>{ qq=q.value.trim().toLowerCase(); majGenres(); };   /* matchQ attend un texte en minuscules */
+  lGrp.addEventListener('click',e=>{ const b=e.target.closest('[data-grp]'); if(!b) return; gSel=GRP.find(g=>String(g)===b.dataset.grp); majGenres(); });
+  chips.addEventListener('click',e=>{ if(e.target.closest('[data-kind-x]')) return; const c=e.target.closest('[data-chip-grp]'); if(c){ gSel=GRP.find(g=>String(g)===c.dataset.chipGrp); majGenres(); } });
   corps.addEventListener('change',e=>{ const id=e.target.dataset&&e.target.dataset.kind; if(id!=null){ const n=+id; if(e.target.checked) kinds.add(n); else kinds.delete(n); majGenres(); } });
   corps.addEventListener('click',e=>{ const x=e.target.closest('[data-kind-x]'); if(x){ kinds.delete(+x.dataset.kindX); majGenres(); return; }
     const a=e.target.closest('[data-go-sec]'); if(a){ const s0=corps.querySelector('[data-sec="'+a.dataset.goSec+'"]'); if(s0){ s0.classList.remove('repli'); fige=Date.now(); s0.scrollIntoView({block:'start'}); liens.forEach(l=>l.classList.toggle('on',l===a)); } return; }

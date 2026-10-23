@@ -709,8 +709,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   d'impression gardent les adresses enregistrées `projectContact1..4` ; cartes Choisir… / Retirer ; « Choisir… » = fenêtre `sgChoisirAdresse` du même jour au
   lieu du navigateur d'adresses du moteur : recherche immédiate nom / société / rue / localité, filtre Tous / Sociétés / Personnes, suggestions sans
   recherche — adresses déjà utilisées dans l'affaire, intervenants avec leur rôle —, adresse complète sur chaque ligne, aperçu à droite, ↑ ↓ /
-  Entrée / double-clic ; styles `.sg-ca-*`), Genres d'affaire (cochés en étiquettes « groupe · genre », recherche,
-  liste par groupe sur deux colonnes), Délais, Caractéristiques (volume, surface, ICC), Références, Saisie des heures et des frais (petit tableau
+  Entrée / double-clic ; styles `.sg-ca-*`), Genres d'affaire (en deux temps comme dans l'ancien logiciel, même jour : 1. groupe d'affaire — nombre de genres
+  cochés —, 2. genre du groupe à cocher ; étiquettes « groupe · genre » au-dessus, × pour retirer ; la recherche a été retirée), Délais, Caractéristiques (volume, surface, ICC), Références, Saisie des heures et des frais (petit tableau
   des champs obligatoires, monnaie), Autres réglages (tri, plan-ID, dossier, messagerie ; repliée). Styles `.sg-ep-*` (sg3.css). Copie d'avant :
   `subgestion3/_backup_20261023_avant_editer_affaire/`.
   Projets ▸ Registre (aff-gestion) inchangé.

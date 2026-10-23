@@ -2833,7 +2833,10 @@ function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
   if(!cs.length) return '<p class="sg-ag-vide">Aucun contrat d’honoraires relié à cette affaire.</p>';
   const tva=c=>(+c.tva||8.1)/100, ttcF=f=>+f._ttc||+f.ttc||0, fraisF=f=>'_fttc' in f?+f._fttc||0:+f.fttc||0, li=(l,v,ti)=>v?'<dt>'+E(l)+'</dt><dd'+(ti?' title="'+E(ti)+'"':'')+'>'+v+'</dd>':'';
   return cs.map(({c,ci})=>{ const ht=+c.hht||(+c.httc||0)/(1+tva(c)), tt=+c.httc||(+c.hht||0)*(1+tva(c)), fs=D.f.filter(f=>f.contrat_id===c.id&&!/annul/i.test(f.statut||'')), fa=fs.reduce((s0,f)=>s0+ttcF(f),0), fr=fs.reduce((s0,f)=>s0+fraisF(f),0);
-    return '<div class="sg-ag-ct'+(c.annule?' ann':'')+'"><div class="h"><b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b><span class="nx-tag '+ci.cl+'">'+E(ci.etat)+'</span>'
+    /* contrat repliable (23.10.2026, demande de Paulo « permettre de réduire les contrats ») : clic sur l'en-tête ; réduit = une ligne de résumé
+       (date, type, honoraires TTC) ; contrats réduits mémorisés (sg3_ag_ctr_red, identifiants des contrats) */
+    const red=SG_AG.reduits().has(String(c.id)), res=[ci.date?dfr(ci.date):'',ci.remu,fin&&tt?nxCHF(tt)+' TTC':''].filter(Boolean).join(' · ');
+    return '<div class="sg-ag-ct'+(c.annule?' ann':'')+(red?' red':'')+'" data-ct="'+E(c.id)+'"><div class="h" data-ctr="'+E(c.id)+'" role="button" tabindex="0" aria-expanded="'+!red+'" title="'+(red?'Déplier':'Réduire')+' ce contrat">'+nxSvg('next','chev')+'<b'+(ci.nTitre?' title="'+E(ci.nTitre)+'"':'')+'>'+E(ci.nature)+'</b><span class="nx-tag '+ci.cl+'">'+E(ci.etat)+'</span><span class="res">'+E(res)+'</span>'
       +'<button class="sg-ag-ouv" data-go="fx-contrats" data-arg="cv:'+E(c.id)+'" title="Afficher le contrat en PDF : dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button></div>'
       +(ci.com?'<div class="com">'+E(ci.com)+'</div>':'')
       +'<dl>'+li('Date du contrat',ci.date?dfr(ci.date):'—',ci.dTitre)+li('Signé le',ci.signeLe?dfr(ci.signeLe):c.signe?'signé, date non enregistrée':'non signé')
@@ -2845,7 +2848,7 @@ function sgAgContrats(p,D){ const E=nxE, fin=!sgFinVerrou();
           +li('Frais facturés',fr?'<b>'+nxCHF(fr)+'</b> TTC':'aucun frais')+li('Factures',fs.length+' facture'+(fs.length>1?'s':''),'Total facturé : '+nxCHF(fa+fr)+' TTC (honoraires et frais)'):li('Facturé','aucune facture')):'')
       +li('Versions',ci.versions>1?E(ci.nTitre):'')+'</dl></div>'; }).join('')
     +(fin?'':'<p class="sg-ag-vide">Montants masqués : finances verrouillées.</p>'); }
-const SG_AG={ouvrir:null,aller:null};
+const SG_AG={ouvrir:null,aller:null,reduits:()=>new Set((nxLS.get('sg3_ag_ctr_red',[])||[]).map(String))};
 setTimeout(()=>{ const cx=document.getElementById('sg-ctx'); if(cx) cx.addEventListener('click',e=>{ if(!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.ouvrir) return; const b=e.target.closest('[data-ref^="p:"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); SG_AG.ouvrir(); },true); },0);
 /* ⌥↑ / ⌥↓ : affaire précédente / suivante de la liste, fiche ouverte (23.10.2026) */
 window.addEventListener('keydown',e=>{ if(!e.altKey||(e.key!=='ArrowUp'&&e.key!=='ArrowDown')||!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.aller||document.querySelector('.ov')) return;
@@ -2873,9 +2876,14 @@ VIEWS['affd-gestion']={
     let ferme=false, dernier=null; SG_AG.ouvrir=()=>{ ferme=false; dessinerFiche(); };   /* fiche projet = fenêtre à droite, fermable (22.10.2026) */
     const aller=d=>{ const V=AF.g.view||[], i=V.findIndex(r=>String(r.ID)===String(AF.g.sel)), r=V[i+d]; if(i<0||!r) return; const tr=pane.querySelector('tr[data-k="'+CSS.escape(String(r.ID))+'"]'); if(tr){ tr.click(); tr.scrollIntoView({block:'nearest'}); } };
     SG_AG.aller=aller;
-    fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref],[data-rap]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
+    const majTout=()=>{ const b=fiche.querySelector('#sg-ag-ctt'), K=[...fiche.querySelectorAll('.sg-ag-ct')]; if(!b) return; b.hidden=K.length<2; b.textContent=K.length&&K.every(k=>k.classList.contains('red'))?'Tout déplier':'Tout réduire'; };
+    const reduire=(K,red)=>{ const S=SG_AG.reduits(); K.forEach(k=>{ k.classList.toggle('red',red); const hd=k.querySelector('[data-ctr]'); if(hd){ hd.setAttribute('aria-expanded',String(!red)); hd.title=(red?'Déplier':'Réduire')+' ce contrat'; } red?S.add(k.dataset.ct):S.delete(k.dataset.ct); });
+      nxLS.set('sg3_ag_ctr_red',[...S].slice(-500)); majTout(); };
+    fiche.addEventListener('keydown',e=>{ const t=e.target.closest&&e.target.closest('[data-ctr]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } });
+    fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref],[data-rap],[data-ctr]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
       if(t.dataset.rap){ sgRapportHeuresCollab(p,t.dataset.rap); return; }   /* clic sur une personne de l'équipe : son rapport des heures sur l'affaire (23.10.2026) */
-      if(t.dataset.a){ const a=t.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); } else if(a==='prec'||a==='suiv') aller(a==='prec'?-1:1); else if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else if(a==='tdb') go('nx-projet',p.ID); }
+      if(t.dataset.ctr!=null){ const k=t.closest('.sg-ag-ct'); if(k) reduire([k],!k.classList.contains('red')); return; }   /* contrat replié / déplié (23.10.2026) */
+      if(t.dataset.a){ const a=t.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); } else if(a==='ctrtout'){ const K=[...fiche.querySelectorAll('.sg-ag-ct')]; reduire(K,!K.every(k=>k.classList.contains('red'))); } else if(a==='prec'||a==='suiv') aller(a==='prec'?-1:1); else if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else if(a==='tdb') go('nx-projet',p.ID); }
       else if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); });
     /* fiche refaite le 23.10.2026 (demande de Paulo « améliorer la fiche affaire ») : barre bleu nuit (affaire précédente /
        suivante, Éditer, Intervenants, Page du projet, Tableau de bord, fermer) ; en-tête jaune pâle comme le tableau de bord du projet (grand numéro,
@@ -2897,7 +2905,7 @@ VIEWS['affd-gestion']={
         +'<div class="sg-ag-mo">'+nxSvg('person')+'<span>Maître de l’ouvrage'+(moL.length>1?'s':'')+' : <b>'+(moL.length?moL.map(E).join(', '):'—')+'</b></span></div>'
         +sgFriseHeures(DS.by('timelog','PROJECT_ID',p.ID))+'</div>'
         +'<div class="sg-ag-wc">'+sgFicheAffaire(p)
-        +'<section class="sg-ag-bloc"><h4>Contrats d’honoraires<span class="n" id="sg-ag-ctn"></span></h4><div id="sg-ag-ctr"><p class="sg-ag-vide">…</p></div></section>'
+        +'<section class="sg-ag-bloc"><h4>Contrats d’honoraires<span class="n" id="sg-ag-ctn"></span><button class="sg-ag-tout" id="sg-ag-ctt" data-a="ctrtout" hidden></button></h4><div id="sg-ag-ctr"><p class="sg-ag-vide">…</p></div></section>'
         +'<section class="sg-ag-bloc"><h4>Heures</h4><div class="nx-kpis sg-ag-kpis">'
           +kt('clock','Heures saisies',sgHr(x.tot)+'<small>h</small>',nxH(x.tot)+' h saisies'+(hp?' — '+nxH(hp)+' h prévues au contrat des phases, '+(x.tot>hp?'+'+nxH(x.tot-hp)+' h au-delà':nxH(hp-x.tot)+' h restantes'):' — aucune heure prévue au contrat des phases')).replace('</div><div class="v">',(hp?'<span class="sg-kq'+(x.tot>hp?' dep':'')+'">'+Math.round(x.tot/hp*100)+' %</span>':'')+'</div><div class="v">').replace(/<\/div>$/,jauge+'</div>')
           +kt('cal','Ces 30 jours',sgHr(x.h30)+'<small>h</small>',x.h30?'Heures saisies ces 30 derniers jours':'Aucune heure saisie ces 30 derniers jours')
@@ -2909,7 +2917,7 @@ VIEWS['affd-gestion']={
           :'<p class="sg-ag-vide">Aucun collaborateur attribué ni aucune heure saisie.</p>')+'</section></div>';
       if(dernier!==p.ID){ fiche.scrollTop=0; dernier=p.ID; }
       fxEnsure().catch(()=>null).then(()=>{ const c=fiche.querySelector('#sg-ag-ctr'); if(!c||cur()!==p) return; const D=fxData(), n=D?sgContratsDuProjet(p,D).length:0;
-        c.innerHTML=sgAgContrats(p,D); const cn=fiche.querySelector('#sg-ag-ctn'); if(cn) cn.textContent=n?String(n):''; }); };
+        c.innerHTML=sgAgContrats(p,D); const cn=fiche.querySelector('#sg-ag-ctn'); if(cn) cn.textContent=n?String(n):''; majTout(); }); };
     const draw=()=>{ const rows=DS.all('project').filter(p=>(AF.arch||p.PROJECTSTATECODE!==5)&&(!AF.filt.s||p.PROJECTSTATECODE==AF.filt.s)&&(AF.filt.i==null||(+!!p.ISINTERNAL)===AF.filt.i)&&matchQ(AF.q,p.NUMBER,p.TITLE,p.DESCRIPTION));
       grid(pane,Object.assign(AF.g,{cols:[{k:'NUMBER',t:'Numéro',w:92},{k:'TITLE',t:'Affaire',w:300},{k:'st',t:'Statut',w:96,f:projState,v:p=>p.PROJECTSTATECODE},
         {k:'cat',t:'Catégorie',w:90,f:p=>E(catL(p)),v:catL},{k:'ph',t:'Phase actuelle',w:150,f:p=>E(phL(p)),v:phL},

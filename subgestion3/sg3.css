@@ -1044,7 +1044,17 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-vide{margin:10px 0 0;color:var(--s-gris);font-size:12px}
 .sg-ag-ct{padding:12px 0;border-bottom:1px solid var(--s-filet)}
 .sg-ag-ct:last-child{border-bottom:0}
-.sg-ag-ct .h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sg-ag-ct .h{display:flex;align-items:center;gap:8px;margin:-4px -6px 4px;padding:4px 6px;cursor:pointer;min-width:0}
+.sg-ag-ct .h:hover{background:var(--s-jaune3)}
+.sg-ag-ct .h:focus-visible{outline:2px solid var(--s-nuit);outline-offset:1px}
+.sg-ag-ct .h .chev{width:14px;height:14px;flex:0 0 14px;color:var(--s-nuit);transform:rotate(90deg);transition:transform .15s}
+.sg-ag-ct .h .res{display:none;flex:1;min-width:0;font-size:12px;color:var(--s-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-ag-ct.red .h{margin-bottom:-4px}
+.sg-ag-ct.red .h .chev{transform:none}
+.sg-ag-ct.red .h .res{display:block}
+.sg-ag-ct.red .com,.sg-ag-ct.red dl{display:none}
+.sg-ag-tout{margin-left:auto;border:0;background:none;font:inherit;font-size:11.5px;font-weight:400;color:var(--s-gris);cursor:pointer;padding:2px 4px}
+.sg-ag-tout:hover{color:var(--s-noir);background:var(--s-jaune3)}
 .sg-ag-ct .h b{font-size:13px}
 .sg-ag-ct .com{font-size:12.5px;margin:0 0 8px}
 .sg-ag-ct.ann{opacity:.6}

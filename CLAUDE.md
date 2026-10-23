@@ -677,7 +677,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   titre** (`sgFicheAffaire` : sans numéro, désignation, statut ni type d'affaire, sans la rubrique Délais — retirés à la demande le même jour —, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
   petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — Contrat / Avenant, état Brouillon / Envoyé / Signé le … / Terminé /
   Annulé, date du contrat, « Signé le », type de rémunération, phases SIA, honoraires HT / TTC, tarif horaire brut, rabais, honoraires facturés TTC et % (`_ttc`) et frais facturés TTC (`_fttc`, sinon `fttc`) séparés — demande du même jour —, nombre de factures,
-  versions, « Ouvrir » le PDF ; montants masqués si finances verrouillées ; annulés à la fin), Heures (tuiles : heures saisies avec jauge et % des
+  versions, « Ouvrir » le PDF ; montants masqués si finances verrouillées ; annulés à la fin ; **chaque contrat se réduit** d'un clic sur son
+  en-tête — une ligne de résumé date · type · TTC —, « Tout réduire / Tout déplier » dans le titre dès deux contrats, contrats réduits mémorisés
+  `sg3_ag_ctr_red`, même jour), Heures (tuiles : heures saisies avec jauge et % des
   heures prévues, ces 30 jours, phase actuelle, dernière saisie), **Équipe** (`sgEquipeAffaire` : TOUS les collaborateurs attribués à l'affaire —
   intervenants dont la personne est un collaborateur, comme Mes projets —, même sans heure, + « hors équipe » pour ceux qui ont saisi des heures
   sans être attribués ; fonction de l'intervenant ; « a quitté le bureau »); **clic sur une personne = « Rapport des heures »** de ce collaborateur sur l'affaire, en fenêtre (`sgRapportHeuresCollab(p,sid)`,

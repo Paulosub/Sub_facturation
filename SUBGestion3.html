@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 23.10.2026 13:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 23.10.2026 16:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -24819,10 +24819,10 @@ const SG_DOM=[
   {k:'accueil',t:'Cockpit',ico:'home',items:[{v:'nx-home',t:'Aujourd’hui'}]},
   /* Affaires (18.10.2026) : le module Affaires de l'ancien logiciel tel quel (liste | domaines d'affaire | contenu) ; écrans du moteur
      repris sous affd-* (sg3_plus.js, bloc 20) pour que le menu reste distinct de Projets */
-  {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion, controlling, mes affaires et toutes les affaires — liste des affaires, domaines d’affaire et contenu.',items:[
+  {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion, controlling et toutes les affaires — liste des affaires, domaines d’affaire et contenu.',items:[
     {v:'affd-gestion',t:'Gestion',ico:'list',d:'Créer, modifier et configurer les affaires : phases, activités, tarifs.'},
     {v:'affd-controlling',t:'Controlling',ico:'trend',d:'Contrôle des heures et des frais, critères d’affaires.'},
-    {v:'affd-mes',t:'Mes affaires',ico:'person',hero:1,d:'Vos affaires en cours : la liste, les domaines d’affaire et leur contenu, comme dans l’ancien logiciel.'},
+    /* « Mes affaires » (affd-mes) retiré du chapitre le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */
     {v:'affd-toutes',t:'Toutes les affaires',ico:'folder',d:'Toutes les affaires du bureau, avec les mêmes domaines.'}]},
   {k:'temps',t:'Temps',ico:'clock',d:'Saisie et suivi du temps de travail et des dépenses.',items:[
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},

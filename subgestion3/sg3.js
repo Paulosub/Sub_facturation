@@ -70,10 +70,10 @@ const SG_DOM=[
   {k:'accueil',t:'Cockpit',ico:'home',items:[{v:'nx-home',t:'Aujourd’hui'}]},
   /* Affaires (18.10.2026) : le module Affaires de l'ancien logiciel tel quel (liste | domaines d'affaire | contenu) ; écrans du moteur
      repris sous affd-* (sg3_plus.js, bloc 20) pour que le menu reste distinct de Projets */
-  {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion, controlling, mes affaires et toutes les affaires — liste des affaires, domaines d’affaire et contenu.',items:[
+  {k:'affaires',t:'Affaires',ico:'briefcase',d:'Le module Affaires de l’ancien logiciel : gestion, controlling et toutes les affaires — liste des affaires, domaines d’affaire et contenu.',items:[
     {v:'affd-gestion',t:'Gestion',ico:'list',d:'Créer, modifier et configurer les affaires : phases, activités, tarifs.'},
     {v:'affd-controlling',t:'Controlling',ico:'trend',d:'Contrôle des heures et des frais, critères d’affaires.'},
-    {v:'affd-mes',t:'Mes affaires',ico:'person',hero:1,d:'Vos affaires en cours : la liste, les domaines d’affaire et leur contenu, comme dans l’ancien logiciel.'},
+    /* « Mes affaires » (affd-mes) retiré du chapitre le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */
     {v:'affd-toutes',t:'Toutes les affaires',ico:'folder',d:'Toutes les affaires du bureau, avec les mêmes domaines.'}]},
   {k:'temps',t:'Temps',ico:'clock',d:'Saisie et suivi du temps de travail et des dépenses.',items:[
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},

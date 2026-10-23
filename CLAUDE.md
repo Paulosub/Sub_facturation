@@ -397,8 +397,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   impression `ctlDocHTML`. Fenêtre ouverte tenue à jour par `DS.on` (`CT.live`). Même écran pour Projets ▸ Suivi & écarts et
   Facturation (ancien) ▸ heures. Sauvegarde d'avant : `DeltaSub_backup_20261018_2328_avant_controlling.html`.
 - **Affaires · Mes projets · page du projet (18.10.2026, bloc 20 de `sg3_plus.js`)** — Chapitre « Affaires » sous Accueil (`SG_DOM`
-  `affaires`, icône `briefcase`) : le module Affaires de l'ancien logiciel tel quel (Gestion, Controlling, Mes affaires, Toutes les
-  affaires), écrans du moteur repris par `Object.create` sous `affd-*` (droits : `SG_VUE_DROIT` recopiés, regex du moteur `CH08B_AFF`
+  `affaires`, icône `briefcase`) : le module Affaires de l'ancien logiciel tel quel (Gestion, Controlling, Toutes les affaires ;
+  « Mes affaires » retiré du menu le 23.10.2026, à la demande — l'écran `affd-mes` reste défini), écrans du moteur repris par `Object.create` sous `affd-*` (droits : `SG_VUE_DROIT` recopiés, regex du moteur `CH08B_AFF`
   et `CH08B_VIEWS` élargies à `affd?-`). Projets ▸ Mes projets = `nx-mesprojets` : liste seule (« ses projets » = `sgMesProjets`, en
   cours / tous, recherche, étiquette Expertise / Faisabilité, mes heures 30 j) ; un clic → `nx-pdom` (arg `ID` ou `ID|Domaine`) : page
   du projet (intro, actions, heures) et domaines d'affaire en groupes REPLIABLES (tout replié à l'arrivée ; clic sur le titre du groupe =

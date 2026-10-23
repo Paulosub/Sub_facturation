@@ -2956,6 +2956,45 @@ VIEWS['affd-gestion']={
     this.draw=()=>{ index(); draw(); }; this.draw(); },
   refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog')&&this.draw) this.draw(); } };
 
+/* ═══ Choix d'une adresse pour une affaire (23.10.2026, demande de Paulo « améliorer la fenêtre adresse de projet dans Éditer le projet ») — remplace,
+   dans Éditer l'affaire, le navigateur d'adresses du moteur (pickContact) : recherche immédiate (nom, société, rue, localité), filtre Tous /
+   Sociétés / Personnes, suggestions sans recherche (adresses déjà utilisées dans l'affaire, intervenants de l'affaire avec leur rôle), une ligne
+   par adresse avec l'adresse complète, aperçu à droite, ↑ ↓ / Entrée / double-clic ; o = {courant, p, deja:[[libellé, ID contact]…]} ═══ */
+function sgChoisirAdresse(titre,cb,o){ o=o||{}; const E=nxE; let q='', ty='', sel=o.courant!=null?String(o.courant):null, vue=[];
+  const ROLE_L=Object.fromEntries((typeof ROLES!=='undefined'?ROLES:[]).map(r=>[r[0],r[1]]));
+  const ligne1=c=>ownerName(ownerOf(c),true)||[c.NAME1,c.NAME2].filter(Boolean).join(' ')||'(sans nom)';
+  const adrTxt=c=>{ const L=adrLines(c); return L.filter(x=>x!==c.NAME1&&x!==c.NAME2&&x!==c.NAME3).join(' · '); };
+  const tous=DS.all('contact').filter(c=>!c.ISHIDDEN), cle=new Map(tous.map(c=>[c.ID,(ligne1(c)+' '+ownerName(relOf(c),true)+' '+adrLines(c).join(' ')).toLowerCase()]));
+  /* suggestions : adresses déjà choisies dans l'affaire, puis intervenants (maître d'ouvrage d'abord) */
+  const sugg=[], vus=new Set(); (o.deja||[]).forEach(([l,id])=>{ const c=id!=null&&DS.get('contact',id); if(c&&!vus.has(c.ID)){ vus.add(c.ID); sugg.push({c,tag:l}); } });
+  if(o.p) DS.by('projectmember','PROJECT_ID',o.p.ID).filter(m=>m.CONTACT_ID!=null).sort((a,b)=>cmp(ROLE_ORD[a.TEAMROLECODE]??99,ROLE_ORD[b.TEAMROLECODE]??99)).forEach(m=>{ const c=DS.get('contact',m.CONTACT_ID); if(c&&!c.ISHIDDEN&&!vus.has(c.ID)){ vus.add(c.ID); sugg.push({c,tag:ROLE_L[m.TEAMROLECODE]||'Intervenant'}); } });
+  const corps=h('div',{class:'sg-ca'});
+  corps.innerHTML='<div class="sg-ca-haut"><input class="inp sg-ca-q" type="search" placeholder="Rechercher : nom, société, rue, localité…" autocomplete="off"><span class="sg-an sg-ca-ty" role="group" aria-label="Type">'
+    +[['','Tous'],['s','Sociétés'],['p','Personnes']].map(([k,t])=>'<button type="button" data-ty="'+k+'" class="'+(k===ty?'on':'')+'">'+t+'</button>').join('')+'</span></div>'
+    +'<div class="sg-ca-corps"><div class="sg-ca-liste" role="listbox" tabindex="-1"></div><aside class="sg-ca-ap"><span class="l">Adresse choisie</span><div class="a"></div></aside></div>';
+  const liste=corps.querySelector('.sg-ca-liste'), ap=corps.querySelector('.sg-ca-ap .a'), qi=corps.querySelector('.sg-ca-q');
+  const rang=x=>'<div class="sg-ca-r'+(String(x.c.ID)===sel?' on':'')+'" data-id="'+E(x.c.ID)+'" role="option" aria-selected="'+(String(x.c.ID)===sel)+'">'+tyIcon((ownerOf(x.c)||{}).TYPECODE||0)
+    +'<div class="t"><b>'+E(ligne1(x.c))+'</b>'+(relOf(x.c)?'<small>'+E(ownerName(relOf(x.c),true))+'</small>':'')+'<span class="a">'+E(adrTxt(x.c)||'—')+'</span></div>'+(x.tag?'<span class="nx-tag">'+E(x.tag)+'</span>':'')+'</div>';
+  const okTy=c=>{ const t=(ownerOf(c)||{}).TYPECODE; return !ty||(ty==='p'?t===1:t!==1); };
+  const dessiner=()=>{ let html='';
+    if(!q){ const S=sugg.filter(x=>okTy(x.c)); vue=S.map(x=>x.c);
+      html=(S.length?'<div class="gr">Suggestions pour cette affaire</div>'+S.map(rang).join(''):'')+'<div class="sg-ca-aide">Tapez un nom, une société, une rue ou une localité pour chercher parmi les '+num(tous.length,0)+' adresses de l’annuaire.</div>'; }
+    else { const R=tous.filter(c=>okTy(c)&&cle.get(c.ID).includes(q)).sort((a,b)=>cmp(ligne1(a).toLowerCase(),ligne1(b).toLowerCase())), N=R.length, L=R.slice(0,200); vue=L;
+      if(L.length&&!L.some(c=>String(c.ID)===sel)) sel=String(L[0].ID);   /* recherche : le premier résultat est surligné (aperçu cohérent avec la liste) */
+      html='<div class="gr">'+num(N,0)+' adresse'+(N>1?'s':'')+(N>200?' — 200 premières affichées, précisez la recherche':'')+'</div>'+(L.length?L.map(c=>rang({c,tag:(sugg.find(x=>x.c.ID===c.ID)||{}).tag})).join(''):'<div class="sg-ca-aide">Aucune adresse ne correspond.</div>'); }
+    liste.innerHTML=html; apercu(); const r=liste.querySelector('.sg-ca-r.on'); if(r) r.scrollIntoView({block:'nearest'}); };
+  const apercu=()=>{ const c=sel!=null?DS.get('contact',sel):null; ap.innerHTML=c?adrLines(c).map(E).join('<br>')+(relOf(c)?'<small>Rattachée à '+E(ownerName(relOf(c),true))+'</small>':''):'<span class="vide">Aucune adresse choisie</span>'; };
+  const choisir=id=>{ sel=String(id); liste.querySelectorAll('.sg-ca-r').forEach(r=>{ const on=r.dataset.id===sel; r.classList.toggle('on',on); r.setAttribute('aria-selected',String(on)); }); apercu(); const r=liste.querySelector('.sg-ca-r.on'); if(r) r.scrollIntoView({block:'nearest'}); };
+  let D=null; const valider=()=>{ const c=sel!=null?DS.get('contact',sel):null; if(!c){ toast('Choisissez une adresse dans la liste.',true); return false; } cb(c); return true; };
+  liste.addEventListener('click',e=>{ const r=e.target.closest('.sg-ca-r'); if(r) choisir(r.dataset.id); });
+  liste.addEventListener('dblclick',e=>{ const r=e.target.closest('.sg-ca-r'); if(r){ choisir(r.dataset.id); if(valider()&&D) D.close(); } });
+  corps.querySelectorAll('[data-ty]').forEach(b=>b.onclick=()=>{ ty=b.dataset.ty; corps.querySelectorAll('[data-ty]').forEach(x=>x.classList.toggle('on',x===b)); dessiner(); qi.focus(); });
+  qi.oninput=()=>{ q=qi.value.trim().toLowerCase(); dessiner(); };
+  qi.addEventListener('keydown',e=>{ if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); if(!vue.length) return; const i=vue.findIndex(c=>String(c.ID)===sel), n=e.key==='ArrowDown'?Math.min(vue.length-1,i+1):Math.max(0,i<0?0:i-1); choisir(vue[n].ID); }
+    else if(e.key==='Enter'){ e.preventDefault(); if(vue.length&&!vue.some(c=>String(c.ID)===sel)) choisir(vue[0].ID); if(valider()&&D) D.close(); } });   /* Entrée : l'adresse surlignée, sinon la première de la liste affichée */
+  dessiner();
+  D=dialog({title:titre||'Choisir une adresse',width:'min(860px,95vw)',body:corps,buttons:[{t:'Annuler'},{t:'Choisir cette adresse',pri:true,fn:()=>valider()?undefined:false}]});
+  setTimeout(()=>qi.focus(),0); return D; }
 /* ═══ Éditer l'affaire, version SUBGestion 3 (23.10.2026, demande de Paulo « modifier le panneau Éditer projet dans Affaires, optimiser pour
    clarifier ») — remplace editProject du moteur dans SUBGestion 3 seulement (DeltaSub.html seul garde la fenêtre d'origine). Mêmes champs, mêmes
    valeurs par défaut, mêmes contrôles et même enregistrement (project + project_projectkind) ; présentation : un seul formulaire avec un sommaire
@@ -2984,7 +3023,7 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     +sec('statut','Statut',champ('Statut de l’affaire','<select class="inp" data-k="PROJECTSTATECODE" style="max-width:220px">'+Object.entries(PSTATE).map(([k,t])=>'<option value="'+k+'"'+(+k===+v.PROJECTSTATECODE?' selected':'')+'>'+E(t)+'</option>').join('')+'</select>')
       /* « Type d'affaire » (Externe / Interne) retiré à la demande (23.10.2026) : ISINTERNAL gardé tel quel (nouvelle affaire : externe) */
       /* « Phase en cours » retirée à la demande (23.10.2026) : la phase actuelle est dans la fiche projet ; CURRENTPROJECTPHASE_ID gardé tel quel */)
-    +sec('adr','Adresses','<div class="sg-ep-adrs">'+ADR.map(([k,l])=>'<div class="sg-ep-adr" data-adr="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"><button type="button" class="btn" data-adr-choisir="'+k+'">Choisir…</button><button type="button" class="btn" data-adr-retirer="'+k+'">Retirer</button></div></div>').join('')+'</div>')
+    +sec('adr','Adresses','<div class="sg-ep-adrs">'+ADR.map(([k,l])=>'<div class="sg-ep-adr" data-adr="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"><button type="button" class="btn" data-adr-choisir="'+k+'">Choisir…</button>'+(k==='CONTACT1_ID'?'':'<button type="button" class="btn" data-adr-copier="'+k+'" title="Reprendre l’adresse d’affaire">Comme l’adresse d’affaire</button>')+'<button type="button" class="btn" data-adr-retirer="'+k+'">Retirer</button></div></div>').join('')+'</div>')
     +sec('genres','Genres d’affaire','<div class="sg-ep-genres"><div class="sg-ep-chips"></div><input class="inp sg-ep-q" type="search" placeholder="Rechercher un genre d’affaire…"><div class="sg-ep-liste"></div></div>')
     +sec('delais','Délais',champ('Début du projet',dat('PROJECTSTARTDATE'))+champ('Fin du projet',dat('PROJECTENDDATE'))+champ('Début de planification',txt('STARTOFPLANNING'))+champ('Fin de planification',txt('ENDOFPLANNING'))
       +champ('Début des travaux',txt('STARTOFCONSTRUCTION'))+champ('Fin des travaux',txt('ENDOFCONSTRUCTION'))+champ('Remise des clés',txt('MOVEINDEADLINE')))
@@ -2998,10 +3037,14 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     +'</div>';
   /* adresses */
   const majAdr=k=>{ const c=adr[k]?DS.get('contact',adr[k]):null, L=c?adrLines(c):[], box=corps.querySelector('[data-adr="'+k+'"]');
-    box.querySelector('.a').innerHTML=L.length?L.map(E).join('<br>'):'<span class="vide">Aucune adresse</span>'; box.classList.toggle('vide',!L.length); box.querySelector('[data-adr-retirer]').hidden=!L.length; };
-  ADR.forEach(([k])=>majAdr(k));
-  corps.querySelectorAll('[data-adr-choisir]').forEach(b=>b.onclick=()=>{ const k=b.dataset.adrChoisir, l=(ADR.find(x=>x[0]===k)||[])[1]; pickContact(l,c=>{ adr[k]=c.ID; majAdr(k); }); });
-  corps.querySelectorAll('[data-adr-retirer]').forEach(b=>b.onclick=()=>{ adr[b.dataset.adrRetirer]=null; majAdr(b.dataset.adrRetirer); });
+    box.querySelector('.a').innerHTML=L.length?L.map(E).join('<br>'):'<span class="vide">Aucune adresse</span>'; box.classList.toggle('vide',!L.length); box.querySelector('[data-adr-retirer]').hidden=!L.length;
+    const cp=box.querySelector('[data-adr-copier]'); if(cp) cp.hidden=!adr.CONTACT1_ID||String(adr.CONTACT1_ID)===String(adr[k]); };
+  const majAdrs=()=>ADR.forEach(([k])=>majAdr(k)); majAdrs();
+  /* choix d'une adresse : fenêtre sgChoisirAdresse (suggestions de l'affaire, recherche, aperçu) au lieu du navigateur d'adresses du moteur (23.10.2026) */
+  corps.querySelectorAll('[data-adr-choisir]').forEach(b=>b.onclick=()=>{ const k=b.dataset.adrChoisir, l=(ADR.find(x=>x[0]===k)||[])[1];
+    sgChoisirAdresse(l,c=>{ adr[k]=c.ID; majAdrs(); },{courant:adr[k],p,deja:ADR.filter(([k2])=>k2!==k&&adr[k2]).map(([k2,l2])=>[l2,adr[k2]])}); });
+  corps.querySelectorAll('[data-adr-copier]').forEach(b=>b.onclick=()=>{ adr[b.dataset.adrCopier]=adr.CONTACT1_ID; majAdrs(); });
+  corps.querySelectorAll('[data-adr-retirer]').forEach(b=>b.onclick=()=>{ adr[b.dataset.adrRetirer]=null; majAdrs(); });
   /* genres d'affaire */
   const GR=DS.all('projectkind').sort((a,b)=>cmp((DS.get('projectgroup',a.PROJECTGROUP_ID)||{}).SORTORDER,(DS.get('projectgroup',b.PROJECTGROUP_ID)||{}).SORTORDER)||cmp(a.SORTORDER,b.SORTORDER));
   const chips=corps.querySelector('.sg-ep-chips'), liste=corps.querySelector('.sg-ep-liste'), q=corps.querySelector('.sg-ep-q'); let qq='';

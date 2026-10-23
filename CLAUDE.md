@@ -699,7 +699,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   obligatoire et unique, signalé dans le champ) et enregistrement (project + project_projectkind, vérifié : enregistrer sans rien changer ne modifie
   rien) ; un seul formulaire avec sommaire à gauche (rubrique visible surlignée) au lieu de 6 onglets, en-tête jaune pâle (numéro et désignation
   en direct), libellés au-dessus des champs : Identification, Statut (statut seul : type Externe / Interne et « Phase en cours » retirés à la demande le même jour — ISINTERNAL
-  et CURRENTPROJECTPHASE_ID inchangés ; la phase actuelle est dans la fiche projet), Adresses (cartes Choisir… / Retirer), Genres d'affaire (cochés en étiquettes « groupe · genre », recherche,
+  et CURRENTPROJECTPHASE_ID inchangés ; la phase actuelle est dans la fiche projet), Adresses (cartes Choisir… / Comme l'adresse d'affaire / Retirer ; « Choisir… » = fenêtre `sgChoisirAdresse` du même jour au
+  lieu du navigateur d'adresses du moteur : recherche immédiate nom / société / rue / localité, filtre Tous / Sociétés / Personnes, suggestions sans
+  recherche — adresses déjà utilisées dans l'affaire, intervenants avec leur rôle —, adresse complète sur chaque ligne, aperçu à droite, ↑ ↓ /
+  Entrée / double-clic ; styles `.sg-ca-*`), Genres d'affaire (cochés en étiquettes « groupe · genre », recherche,
   liste par groupe sur deux colonnes), Délais, Caractéristiques (volume, surface, ICC), Références, Saisie des heures et des frais (petit tableau
   des champs obligatoires, monnaie), Autres réglages (tri, plan-ID, dossier, messagerie ; repliée). Styles `.sg-ep-*` (sg3.css). Copie d'avant :
   `subgestion3/_backup_20261023_avant_editer_affaire/`.

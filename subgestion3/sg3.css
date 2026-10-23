@@ -1018,6 +1018,8 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-idt{display:flex;align-items:stretch;gap:14px}
 .sg-ag-num{flex:0 0 auto;max-width:150px;padding:2px 14px 0 0;border-right:2px solid var(--s-noir);font-size:26px;font-weight:700;line-height:1;color:var(--s-nuit);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .sg-ag-id h3{margin:0;font-size:16px;line-height:1.25;font-weight:700}
+.sg-ag-lien{cursor:pointer}.sg-ag-lien:hover h3{text-decoration:underline;text-underline-offset:3px}
+.sg-ag-lien:focus-visible{outline:2px solid var(--s-nuit);outline-offset:3px}
 .sg-ag-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .sg-ag-mo{display:flex;align-items:center;gap:7px;margin:12px 0 10px;font-size:12.5px}
 .sg-ag-mo svg{width:15px;height:15px;flex:0 0 15px}

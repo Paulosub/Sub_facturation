@@ -674,7 +674,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   choisissant une affaire ou par le bouton « Fiche projet » de l'en-tête, qui dans cet écran ne quitte plus la liste (`SG_AG.ouvrir`).
   **Fiche refaite le 23.10.2026 (« améliorer la fiche affaire »)** : barre bleu nuit (sans numérotation « 84 / 87 », retirée à la demande le même jour) = affaire précédente /
   suivante (‹ › ou ⌥↑ ⌥↓, `SG_AG.aller`, ordre affiché de la liste `AF.g.view`), Éditer, Intervenants, Page du projet, Tableau de bord (icônes), × ;
-  en-tête jaune pâle comme le tableau de bord du projet (grand numéro et filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures —
+  en-tête jaune pâle comme le tableau de bord du projet (grand numéro et filet, titre — un clic sur le numéro ou le titre ouvre le projet comme Mes
+  projets, page du projet `nx-pdom`, même jour —, statut, catégorie, maître de l'ouvrage, frise des heures —
   `sgFriseHeures(T)`, fonction commune avec le tableau de bord) ; puis, dans l'ordre demandé par Paulo : **fiche de l'affaire juste sous le
   titre** (`sgFicheAffaire` : sans numéro, désignation, statut ni type d'affaire, sans la rubrique Délais — retirés à la demande le même jour —, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
   petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — **étendue à la place de « Contrat »** (`sgContratEtendue`, `SG_ETENDUE`, même jour — d'abord « Enquête · Contrat », puis le mot « Contrat »

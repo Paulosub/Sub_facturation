@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 23.10.2026 16:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 23.10.2026 16:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1027,6 +1027,8 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-idt{display:flex;align-items:stretch;gap:14px}
 .sg-ag-num{flex:0 0 auto;max-width:150px;padding:2px 14px 0 0;border-right:2px solid var(--s-noir);font-size:26px;font-weight:700;line-height:1;color:var(--s-nuit);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .sg-ag-id h3{margin:0;font-size:16px;line-height:1.25;font-weight:700}
+.sg-ag-lien{cursor:pointer}.sg-ag-lien:hover h3{text-decoration:underline;text-underline-offset:3px}
+.sg-ag-lien:focus-visible{outline:2px solid var(--s-nuit);outline-offset:3px}
 .sg-ag-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .sg-ag-mo{display:flex;align-items:center;gap:7px;margin:12px 0 10px;font-size:12.5px}
 .sg-ag-mo svg{width:15px;height:15px;flex:0 0 15px}
@@ -28334,7 +28336,7 @@ VIEWS['affd-gestion']={
     const majTout=()=>{ const b=fiche.querySelector('#sg-ag-ctt'), K=[...fiche.querySelectorAll('.sg-ag-ct')]; if(!b) return; b.hidden=K.length<2; b.textContent=K.length&&K.every(k=>k.classList.contains('red'))?'Tout déplier':'Tout réduire'; };
     const reduire=(K,red)=>{ const S=SG_AG.reduits(); K.forEach(k=>{ k.classList.toggle('red',red); const hd=k.querySelector('[data-ctr]'); if(hd){ hd.setAttribute('aria-expanded',String(!red)); hd.title=(red?'Déplier':'Réduire')+' ce contrat'; } red?S.add(k.dataset.ct):S.delete(k.dataset.ct); });
       nxLS.set('sg3_ag_ctr_red',[...S].slice(-500)); majTout(); };
-    fiche.addEventListener('keydown',e=>{ const t=e.target.closest&&e.target.closest('[data-ctr]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } });
+    fiche.addEventListener('keydown',e=>{ const t=e.target.closest&&e.target.closest('[data-ctr],.sg-ag-lien'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } });
     fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref],[data-rap],[data-ctr]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
       if(t.dataset.rap){ sgRapportHeuresCollab(p,t.dataset.rap); return; }   /* clic sur une personne de l'équipe : son rapport des heures sur l'affaire (23.10.2026) */
       if(t.dataset.ctr!=null){ const k=t.closest('.sg-ag-ct'); if(k) reduire([k],!k.classList.contains('red')); return; }   /* contrat replié / déplié (23.10.2026) */
@@ -28356,7 +28358,7 @@ VIEWS['affd-gestion']={
           +bt('prec','Affaire précédente (⌥↑)','‹',i<=0)+bt('suiv','Affaire suivante (⌥↓)','›',i<0||i>=V.length-1)+'<i class="sep"></i>'
           +bt('edit','Éditer l’affaire',nxSvg('edit'))+bt('interv','Attribuer les intervenants',nxSvg('users'))+bt('page','Page du projet',nxSvg('folder'))+bt('tdb','Tableau de bord du projet',nxSvg('gauge'))
           +'<button class="sg-ag-x" data-a="fermer" title="Fermer la fiche">×</button></span></div>'
-        +'<div class="sg-ag-id"><div class="sg-ag-idt"><div class="sg-ag-num" title="'+E(p.NUMBER||'')+'">'+E(p.NUMBER||'')+'</div><div><h3>'+E(p.TITLE||p.NUMBER||'')+'</h3><div class="sg-ag-tags">'+nxStateTag(p)+(catL(p)?'<span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div></div></div>'
+        +'<div class="sg-ag-id"><div class="sg-ag-idt sg-ag-lien" data-a="page" role="link" tabindex="0" title="Ouvrir le projet (Mes projets ▸ page du projet)"><div class="sg-ag-num">'+E(p.NUMBER||'')+'</div><div><h3>'+E(p.TITLE||p.NUMBER||'')+'</h3><div class="sg-ag-tags">'+nxStateTag(p)+(catL(p)?'<span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div></div></div>'
         +'<div class="sg-ag-mo">'+nxSvg('person')+'<span>Maître de l’ouvrage'+(moL.length>1?'s':'')+' : <b>'+(moL.length?moL.map(E).join(', '):'—')+'</b></span></div>'
         +sgFriseHeures(DS.by('timelog','PROJECT_ID',p.ID))+'</div>'
         +'<div class="sg-ag-wc">'+sgFicheAffaire(p)

@@ -2906,7 +2906,7 @@ VIEWS['affd-gestion']={
     const majTout=()=>{ const b=fiche.querySelector('#sg-ag-ctt'), K=[...fiche.querySelectorAll('.sg-ag-ct')]; if(!b) return; b.hidden=K.length<2; b.textContent=K.length&&K.every(k=>k.classList.contains('red'))?'Tout déplier':'Tout réduire'; };
     const reduire=(K,red)=>{ const S=SG_AG.reduits(); K.forEach(k=>{ k.classList.toggle('red',red); const hd=k.querySelector('[data-ctr]'); if(hd){ hd.setAttribute('aria-expanded',String(!red)); hd.title=(red?'Déplier':'Réduire')+' ce contrat'; } red?S.add(k.dataset.ct):S.delete(k.dataset.ct); });
       nxLS.set('sg3_ag_ctr_red',[...S].slice(-500)); majTout(); };
-    fiche.addEventListener('keydown',e=>{ const t=e.target.closest&&e.target.closest('[data-ctr]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } });
+    fiche.addEventListener('keydown',e=>{ const t=e.target.closest&&e.target.closest('[data-ctr],.sg-ag-lien'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } });
     fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref],[data-rap],[data-ctr]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
       if(t.dataset.rap){ sgRapportHeuresCollab(p,t.dataset.rap); return; }   /* clic sur une personne de l'équipe : son rapport des heures sur l'affaire (23.10.2026) */
       if(t.dataset.ctr!=null){ const k=t.closest('.sg-ag-ct'); if(k) reduire([k],!k.classList.contains('red')); return; }   /* contrat replié / déplié (23.10.2026) */
@@ -2928,7 +2928,7 @@ VIEWS['affd-gestion']={
           +bt('prec','Affaire précédente (⌥↑)','‹',i<=0)+bt('suiv','Affaire suivante (⌥↓)','›',i<0||i>=V.length-1)+'<i class="sep"></i>'
           +bt('edit','Éditer l’affaire',nxSvg('edit'))+bt('interv','Attribuer les intervenants',nxSvg('users'))+bt('page','Page du projet',nxSvg('folder'))+bt('tdb','Tableau de bord du projet',nxSvg('gauge'))
           +'<button class="sg-ag-x" data-a="fermer" title="Fermer la fiche">×</button></span></div>'
-        +'<div class="sg-ag-id"><div class="sg-ag-idt"><div class="sg-ag-num" title="'+E(p.NUMBER||'')+'">'+E(p.NUMBER||'')+'</div><div><h3>'+E(p.TITLE||p.NUMBER||'')+'</h3><div class="sg-ag-tags">'+nxStateTag(p)+(catL(p)?'<span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div></div></div>'
+        +'<div class="sg-ag-id"><div class="sg-ag-idt sg-ag-lien" data-a="page" role="link" tabindex="0" title="Ouvrir le projet (Mes projets ▸ page du projet)"><div class="sg-ag-num">'+E(p.NUMBER||'')+'</div><div><h3>'+E(p.TITLE||p.NUMBER||'')+'</h3><div class="sg-ag-tags">'+nxStateTag(p)+(catL(p)?'<span class="nx-tag">'+E(catL(p))+'</span>':'')+'</div></div></div>'
         +'<div class="sg-ag-mo">'+nxSvg('person')+'<span>Maître de l’ouvrage'+(moL.length>1?'s':'')+' : <b>'+(moL.length?moL.map(E).join(', '):'—')+'</b></span></div>'
         +sgFriseHeures(DS.by('timelog','PROJECT_ID',p.ID))+'</div>'
         +'<div class="sg-ag-wc">'+sgFicheAffaire(p)

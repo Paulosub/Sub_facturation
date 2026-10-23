@@ -62,7 +62,7 @@ COQUILLE = '''<div id="boot"><div id="boot-logo"></div><span id="boot-msg">Ouver
 
 # visuels de l'app à l'essai (21.10.2026) : choix du poste → attribut data-visuel sur <html> avant le premier affichage (coquille et cadre
 # Facturation) ; « charte » (défaut) = pas d'attribut. Mêmes noms que SG_VISUELS (sg3_visuel.js).
-VISUELS = ('papier', 'brume', 'signaletique', 'nocturne')
+VISUELS = ('papier', 'brume', 'signaletique', 'nocturne', 'mac')
 VISUEL_SCRIPT = ("<script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(" + '|'.join(VISUELS) + ")$/.test(v))"
                  "document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script>")
 

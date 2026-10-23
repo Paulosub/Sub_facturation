@@ -1,10 +1,10 @@
 /* ══ SUBGestion 3 — visuels de l'app À L'ESSAI : base commune (21.10.2026) ═══════════════════════════════════════════════════════════
-   Les quatre propositions de refonte, choisies poste par poste (Réglages ▸ Visuel de l'app, pied du menu, ⌘K) : « Papier et encre »,
-   « Brume », « Signalétique », « Studio nocturne ». Rien ne s'applique sans l'attribut data-visuel sur <html> : le visuel de la charte
+   Les cinq propositions de refonte, choisies poste par poste (Réglages ▸ Visuel de l'app, pied du menu, ⌘K) : « Papier et encre »,
+   « Brume », « Signalétique », « Studio nocturne », « Mac » (23.10.2026). Rien ne s'applique sans l'attribut data-visuel sur <html> : le visuel de la charte
    (sg3.css) reste exactement le même. Cette base dessine la structure commune (menu, en-tête, cartes, tuiles, tableaux, étiquettes,
-   graphiques) avec les jetons --p-* de chaque visuel (visuels_jetons.css) ; les traits propres à Brume, Signalétique et Studio nocturne
+   graphiques) avec les jetons --p-* de chaque visuel (visuels_jetons.css) ; les traits propres à Brume, Signalétique, Studio nocturne et Mac
    sont dans visuels_variantes.css. Les documents PDF et les impressions ne changent pas. */
-html:is([data-visuel="papier"],[data-visuel="brume"],[data-visuel="signaletique"],[data-visuel="nocturne"]){
+html:is([data-visuel="papier"],[data-visuel="brume"],[data-visuel="signaletique"],[data-visuel="nocturne"],[data-visuel="mac"]){
   /* les variables de la charte pointent sur celles du visuel : tout ce qui les emploie suit */
   --s-font:var(--p-font);
   --s-noir:var(--p-bk); --s-gris:var(--p-g3); --s-gris2:var(--p-g5); --s-gris3:var(--p-g2); --s-filet:var(--p-g2); --s-fond:var(--p-g1);

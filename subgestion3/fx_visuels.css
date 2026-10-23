@@ -2,7 +2,7 @@
    Injecté après fx_theme.css, avec les jetons des visuels (visuels_jetons.css). Ne s'applique que si <html data-visuel="…"> (posé par
    la coquille, voir sg3_visuel.js) : sans l'attribut, le graphisme commun de la charte reste identique. Les documents PDF et leurs
    aperçus (.offre-page, aperçus « PDF fidèle ») ne sont pas touchés. Traits propres à chaque visuel : fin du fichier. */
-html:is([data-visuel="papier"],[data-visuel="brume"],[data-visuel="signaletique"],[data-visuel="nocturne"]){
+html:is([data-visuel="papier"],[data-visuel="brume"],[data-visuel="signaletique"],[data-visuel="nocturne"],[data-visuel="mac"]){
   --s-font:var(--p-font);
   --s-noir:var(--p-bk); --s-gris:var(--p-g3); --s-gris2:var(--p-g5); --s-gris3:var(--p-g2); --s-filet:var(--p-g2); --s-fond:var(--p-g1);
   --s-jaune:var(--p-g1); --s-jaune2:var(--p-g1); --s-jaune3:var(--p-hl);
@@ -94,4 +94,42 @@ html[data-visuel="nocturne"]{
   & body .card-hd{font-size:14px;font-weight:600;letter-spacing:0;border-bottom:1px solid var(--p-g2)}
   & body .field input,& body .field select,& body .field textarea,& body .adm-form input,& body .adm-form select{background-color:var(--v-surf);border-color:var(--v-bord)}
   & body .ck-kpi-card,& body .ck-card-inner,& body .ck-gauge,& body .ck-card,& body .ck2-kpi,& body [class*="ck2-card"]{background:var(--v-carte)!important;border-color:var(--v-carte)!important}
+}
+/* ═══ 5 · Mac dans Facturation — gris clair, cartes blanches arrondies, boutons du Mac (bleu système), champs à anneau bleu ═══ */
+html[data-visuel="mac"]{
+  --s-nuit:var(--v-acc); --s-nuit2:var(--v-acc2); --s-bleu:var(--v-acc); --s-vert:var(--v-vert); --s-orange:var(--v-org); --s-turq:var(--v-sarcelle);
+  & body{background:var(--v-fond);font-variant-numeric:tabular-nums;letter-spacing:-.003em}
+  & body .panel,& body .home-wrap{background:transparent}
+  & ::selection{background:#B3D7FF}
+  & body .card{background:#fff;border:0;box-shadow:var(--v-ombre)}
+  & body .card:not(#sg-p1):not(#sg-p2),& body .ck-kpi-card:not(#sg-p1):not(#sg-p2),& body .ck-card:not(#sg-p1):not(#sg-p2),& body .ck2-kpi:not(#sg-p1):not(#sg-p2){border-radius:12px!important}
+  & body .card-hd{font-size:15px;font-weight:600;letter-spacing:-.012em;text-transform:none;color:var(--p-bk);border-bottom:1px solid var(--v-sep2)}
+  & body .card-hd input:not([type=checkbox]):not([type=radio]),& body .card-hd select{border:1px solid var(--v-sep)!important}
+  & body .btn:not(#sg-p1):not(#sg-p2){border-radius:7px!important}
+  & body .btn{border:0;box-shadow:var(--v-btn);font-weight:500}
+  & body .btn:hover{background:#F7F7F9!important;color:var(--p-bk)!important}
+  & body .btn-blue:hover,& body .btn-dark:hover,& body .btn-green:hover,& body .btn[style*="#003346" i]:hover,& body .btn[style*="#0a6e84" i]:hover{background:#0A70F0!important;color:#fff!important}
+  & body .btn-red,& body .btn[style*="#c0392b" i],& body .btn[style*="#b04a4a" i],& body .btn[style*="#b23b2b" i]{color:var(--p-rdt)!important;background:#fff!important}
+  & body .btn-red:hover,& body .btn[style*="#c0392b" i]:hover,& body .btn[style*="#b04a4a" i]:hover,& body .btn[style*="#b23b2b" i]:hover{background:var(--p-rd)!important;color:#fff!important}
+  & body .list-tbl th,& body .sia-tbl th,& body .xls-tbl th,& body .adr-tb th,& body .pv-tb th,& body .cc-tb th,& body .pv-xl th,& body .rap-tb th{
+    text-transform:none!important;letter-spacing:0!important;font-size:11.5px!important;font-weight:500;border-bottom:1px solid var(--v-sep2)!important}
+  & body .list-tbl td.num{color:var(--p-bk);font-weight:600}
+  & body .list-tbl tr:nth-child(even) td{background:var(--p-zb)}
+  & body .list-tbl tr:hover td{background:#EEF0F4}
+  & body .list-tbl tr.sel td{background:var(--p-hl)}
+  & body .field label{text-transform:none;letter-spacing:0;font-size:12px;font-weight:500}
+  & body .field input,& body .field select,& body .field textarea,& body .adm-form input,& body .adm-form select{border:1px solid var(--v-sep);background-color:#fff}
+  & body .field input:not(#sg-p1):not(#sg-p2),& body .field select:not(#sg-p1):not(#sg-p2),& body .field textarea:not(#sg-p1):not(#sg-p2){border-radius:6px!important}
+  & body input:focus,& body select:focus,& body textarea:focus{border-color:var(--v-acc)!important;background:#fff;box-shadow:var(--v-anneau)}
+  & body input[type=checkbox],& body input[type=radio]{accent-color:var(--v-acc)}
+  & body .ck-kpi-card,& body .ck-card-inner,& body .ck-gauge,& body .ck-card,& body .ck2-kpi,& body [class*="ck2-card"]{border:0!important;background:#fff!important;box-shadow:var(--v-ombre)}
+  & body .ck-header{border-bottom:1px solid var(--v-sep2)!important}
+  & body .ck-sec-t{letter-spacing:0!important;text-transform:none;font-weight:600}
+  & body .ck2-head .yr,& body .ck2-yr-select,& body .ck-header-select{background-color:var(--v-acc)!important}
+  /* graphiques des cockpits : couleurs gardées (pas de niveaux de gris) */
+  & body .ck-dash svg,& body .ck2 svg,& body .ck-legend span,& body .ck2 .ck-legend span{filter:none}
+  & body .sg-val-tag{border:0;border-radius:999px;background:var(--v-org-bg);color:var(--v-org-t);text-transform:none;letter-spacing:0;font-weight:600}
+  & body .sg-val-tag.refuse{background:var(--p-rd);color:#fff}
+  & body .b-env{background:var(--v-acc-bg);color:var(--v-acc-t);border:0;border-radius:999px}
+  & body :not(.offre-page):not(.offre-page *)[style*="color:#27ae60" i],& body :not(.offre-page):not(.offre-page *)[style*="color: rgb(39, 174, 96)"]{color:var(--v-vert-t)!important}
 }

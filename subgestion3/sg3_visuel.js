@@ -1,11 +1,11 @@
 
 /* ═══ 22. Visuel de l'app (21.10.2026, demande de Paulo) ════════════════════════════════════════════════════════════════════════
-   Cinq visuels, choisis poste par poste : « Charte Substances » (le visuel actuel, par défaut, inchangé) et les quatre propositions de
-   refonte À L'ESSAI — « Papier et encre » (3), « Brume » (1), « Signalétique » (2), « Studio nocturne » (4) ; Paulo choisira ensuite le
-   visuel définitif. Choix gardé dans localStorage `sg3_visuel` ; attribut data-visuel="<visuel>" sur <html> de la coquille ET du cadre
+   Six visuels, choisis poste par poste : « Charte Substances » (le visuel actuel, par défaut, inchangé) et les cinq propositions de
+   refonte À L'ESSAI — « Papier et encre » (3), « Brume » (1), « Signalétique » (2), « Studio nocturne » (4), « Mac » (5, inspirée de macOS,
+   23.10.2026) ; Paulo choisira ensuite le visuel définitif. Choix gardé dans localStorage `sg3_visuel` ; attribut data-visuel="<visuel>" sur <html> de la coquille ET du cadre
    Facturation (posé avant le premier affichage par VISUEL_SCRIPT de construire.py, puis tenu à jour ici) ; feuilles visuels_jetons.css,
    visuels.css, visuels_variantes.css (coquille, moteur) et fx_visuels.css (Facturation), dont toutes les règles sont limitées à cet
-   attribut ; data-vdom = domaine de l'écran ouvert (carte pastel de Studio nocturne). Icônes de chaque proposition (mêmes noms que NXI)
+   attribut ; data-vdom = domaine de l'écran ouvert (carte pastel de Studio nocturne, couleur du domaine du visuel Mac). Icônes de chaque proposition (mêmes noms que NXI)
    à la place de celles de la charte. Réglages ▸ Visuel de l'app (nx-visuel), bouton du pied du menu (liste des visuels), ⌘K « Visuel ».
    Concaténé après sg3_plus.js par construire.py. */
 NXI.visuel='<path d="M3 3H21V21H3Z"/><path d="M12 3V21"/><path d="M12 3H21V21H12Z" fill="currentColor" stroke="none"/>';
@@ -13,7 +13,8 @@ const SG_VISUELS=[['charte','Charte Substances','Le visuel actuel : menu bleu nu
   ['papier','Papier et encre','Proposition 3 : noir et blanc, filets fins, libellés en chasse fixe, une carte noire pour le chiffre clé, boutons en pilule, icônes au trait.'],
   ['brume','Brume','Proposition 1 : fond gris-bleu en dégradé, cartes de verre blanc arrondies, menu graphite, une seule couleur de données (vert d’eau), boutons en pilule.'],
   ['signaletique','Signalétique','Proposition 2 : crème, bandeaux noir et orange, gris béton, grands chiffres, angles vifs, données en chasse fixe ; aucun rouge, vert, jaune ni bleu.'],
-  ['nocturne','Studio nocturne','Proposition 4 : thème sombre graphite, texte clair, une carte pastel pour le chiffre clé (rose, menthe, lavande selon le domaine), angles arrondis.']];
+  ['nocturne','Studio nocturne','Proposition 4 : thème sombre graphite, texte clair, une carte pastel pour le chiffre clé (rose, menthe, lavande selon le domaine), angles arrondis.'],
+  ['mac','Mac','Proposition 5 : inspirée de macOS — police du Mac (San Francisco), menu flottant clair aux icônes de couleur comme les Réglages Système, bleu système, cartes blanches arrondies, contrôles segmentés, logo en icône d’app.']];
 const SG_NXI_CHARTE=Object.assign({},NXI);
 /* icônes de la proposition 3 : grille de 24, cercle de construction de 20, trait de 1,5, angles droits ou à 45° (planche « Système ») ;
    aussi celles de Signalétique, dessinées en bouts carrés et trait de 1,25 par visuels_variantes.css */
@@ -135,7 +136,50 @@ const SG_NXI_NOCTURNE=(()=>{ const ic={
     fwd:ic.droite, next:ic.droite, more:ic.plus3, arrow:ic.fleche, pdf:ic.facture, doc:ic.facture, mail:ic.courriel, export:ic.envoyer,
     import:ic.recevoir, filter:ic.filtre, cal:ic.cal, trash:ic.corbeille, edit:ic.modifier, star:ic.signet, pin:ic.epingle,
     print:ic.imprimer, phone:ic.telephone, list:ic.liste, briefcase:ic.mallette }; })();
-const SG_NXI_JEUX={papier:SG_NXI_PAPIER, signaletique:SG_NXI_PAPIER, brume:SG_NXI_BRUME, nocturne:SG_NXI_NOCTURNE};
+/* icônes du visuel Mac (23.10.2026) : formes des symboles du Mac (maison, dossier, horloge, roue dentée des Réglages, carré à flèche du
+   partage…), grille de 24, bouts et joints ronds ; dans le menu, en blanc sur le carré arrondi de couleur du domaine */
+const SG_NXI_MAC=(()=>{ const ic={
+    maison:'<path d="M3.5 11 12 3.8l8.5 7.2"/><path d="M5.5 9.6V19a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9.6"/><path d="M10 20.5V15h4v5.5"/>',
+    dossier:'<path d="M3 7.5a2 2 0 0 1 2-2h4.2a1.5 1.5 0 0 1 1.1.5l1.4 1.5H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 10.5h18"/>',
+    horloge:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+    minuteur:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M10 2.5h4M12 2.5V5"/>',
+    contact:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.3 18.3c1.2-1.9 3.3-3 5.7-3s4.5 1.1 5.7 3"/>',
+    equipe:'<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c0-3.2 2.4-5.4 5.5-5.4s5.5 2.2 5.5 5.4"/><path d="M15.8 5.6a3 3 0 0 1 0 5.8M17.2 14.2c2.2.5 3.6 2.4 3.6 5.3"/>',
+    immeuble:'<path d="M4 20.5V7.5l6.5-3.5v16.5"/><path d="M10.5 9.5H18a2 2 0 0 1 2 2v9"/><path d="M2.5 20.5h19"/><path d="M6.8 10h1M6.8 13.5h1M6.8 17h1M14 13h1M17 13h1M14 16.5h1M17 16.5h1"/>',
+    document:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M8.5 12.5h7M8.5 16h7"/>',
+    courbe:'<path d="M3.5 3.5v15a2 2 0 0 0 2 2h15"/><path d="M7.5 15l4-4.5 3 3L20 7.5"/>',
+    fiche:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5.3 16.2c.6-1.4 1.8-2.2 3.2-2.2s2.6.8 3.2 2.2M14.5 10h4M14.5 13.5h3"/>',
+    roue:'<path d="M9.99 4.98 10.58 2.51 13.42 2.51 14.01 4.98 15.54 5.62 17.71 4.28 19.72 6.29 18.38 8.46 19.02 9.99 21.49 10.58 21.49 13.42 19.02 14.01 18.38 15.54 19.72 17.71 17.71 19.72 15.54 18.38 14.01 19.02 13.42 21.49 10.58 21.49 9.99 19.02 8.46 18.38 6.29 19.72 4.28 17.71 5.62 15.54 4.98 14.01 2.51 13.42 2.51 10.58 4.98 9.99 5.62 8.46 4.28 6.29 6.29 4.28 8.46 5.62Z"/><circle cx="12" cy="12" r="3.2"/>',
+    loupe:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.3 15.3 5.2 5.2"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    presse:'<path d="M8.5 4.5H7a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6.5a2 2 0 0 0-2-2h-1.5"/><rect x="8.5" y="3" width="7" height="3.5" rx="1.2"/><path d="M9 11.5h6M9 15h6"/>',
+    documents:'<path d="M8 7V5a2 2 0 0 1 2-2h5l4 4v9a2 2 0 0 1-2 2h-2"/><path d="M4.5 9a2 2 0 0 1 2-2h5l3.5 3.5V19a2 2 0 0 1-2 2H6.5a2 2 0 0 1-2-2Z"/>',
+    tache:'<circle cx="12" cy="12" r="9"/><path d="m8 12.3 2.8 2.8L16 9.5"/>',
+    coche:'<path d="M5 12.5 9.5 17 19 7"/>',
+    gauche:'<path d="M14.5 5.5 8 12l6.5 6.5"/>', droite:'<path d="M9.5 5.5 16 12l-6.5 6.5"/>',
+    plus3:'<circle cx="12" cy="12" r="9"/><circle cx="8" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+    fleche:'<path d="M4.5 12h15M13.5 6l6 6-6 6"/>',
+    page:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/>',
+    enveloppe:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6.5L20.5 7"/>',
+    partager:'<path d="M8.5 9H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1.5"/><path d="M12 14.5V3M8.5 6.5 12 3l3.5 3.5"/>',
+    recevoir:'<path d="M8.5 9H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1.5"/><path d="M12 3v11.5M8.5 11l3.5 3.5 3.5-3.5"/>',
+    filtre:'<path d="M4 7h16M7 12h10M10 17h4"/>',
+    calendrier:'<rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 3v3M16 3v3"/>',
+    corbeille:'<path d="M4 6.5h16M9.5 6.5v-2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6 6.5l.9 12.6A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 6.5M10 10.5V17M14 10.5V17"/>',
+    crayon:'<path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/><path d="m13.5 6.5 3 3"/>',
+    etoile:'<path d="m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z"/>',
+    punaise:'<path d="M9 3.5h6l-1 5 3 3.5H7l3-3.5Z"/><path d="M12 12v8.5"/>',
+    imprimante:'<path d="M7 9V4.5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1V9"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14.5h10V20a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1Z"/>',
+    telephone:'<path d="M6.6 3.5h2.6l1.6 4.2-2 1.4a11 11 0 0 0 6.1 6.1l1.4-2 4.2 1.6v2.6a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2Z"/>',
+    liste:'<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="17.5" r="1.2" fill="currentColor" stroke="none"/>',
+    mallette:'<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M3 12.5h18"/>' };
+  return { home:ic.maison, folder:ic.dossier, clock:ic.horloge, timer:ic.minuteur, contacts:ic.contact, person:ic.contact, users:ic.equipe,
+    group:ic.equipe, crane:ic.immeuble, receipt:ic.document, wallet:ic.courbe, trend:ic.courbe, rh:ic.fiche, settings:ic.roue, gear:ic.roue,
+    search:ic.loupe, plus:ic.plus, pv:ic.presse, library:ic.documents, task:ic.tache, check:ic.coche, back:ic.gauche, prev:ic.gauche,
+    fwd:ic.droite, next:ic.droite, more:ic.plus3, arrow:ic.fleche, pdf:ic.page, doc:ic.page, mail:ic.enveloppe, export:ic.partager,
+    import:ic.recevoir, filter:ic.filtre, cal:ic.calendrier, trash:ic.corbeille, edit:ic.crayon, star:ic.etoile, pin:ic.punaise,
+    print:ic.imprimante, phone:ic.telephone, list:ic.liste, briefcase:ic.mallette }; })();
+const SG_NXI_JEUX={papier:SG_NXI_PAPIER, signaletique:SG_NXI_PAPIER, brume:SG_NXI_BRUME, nocturne:SG_NXI_NOCTURNE, mac:SG_NXI_MAC};
 function sgVisuel(){ const v=nxLS.get('sg3_visuel','charte'); return SG_VISUELS.some(x=>x[0]===v)?v:'charte'; }
 function sgVisuelNom(v){ const x=SG_VISUELS.find(y=>y[0]===v); return x?x[1]:v; }
 /* attribut data-visuel d'un document (coquille ou cadre Facturation) : absent pour la charte */
@@ -151,7 +195,7 @@ function sgVisuelIcones(){ const j=SG_NXI_JEUX[sgVisuel()]||{};
   try{ if(typeof sgVerrouAff==='function') sgVerrouAff(); }catch(_){} }
 function sgVisuelBouton(){ const b=document.getElementById('sg-visuel'); if(!b) return;
   b.title='Visuel de l’app : '+sgVisuelNom(sgVisuel())+' — changer'; b.setAttribute('aria-label',b.title); }
-/* domaine de l'écran ouvert (data-vdom) : la carte pastel de Studio nocturne en dépend */
+/* domaine de l'écran ouvert (data-vdom) : la carte pastel de Studio nocturne et la couleur du domaine du visuel Mac en dépendent */
 function sgVisuelDomaine(v){ try{ const x=NX_VIEW[v]; document.documentElement.setAttribute('data-vdom',(x&&x.d&&x.d.k)||''); }catch(_){} }
 function sgVisuelAppliquer(v,redessiner){ if(!SG_VISUELS.some(x=>x[0]===v)) v='charte'; nxLS.set('sg3_visuel',v);
   sgVisuelAttr(document.documentElement,v); sgVisuelCadre(); sgVisuelIcones(); sgVisuelBouton();
@@ -188,6 +232,16 @@ function sgVisuelApercu(k){
     +'<div style="flex:1;min-width:0;padding:11px 14px"><div style="font-size:9px;color: #9a9a9a">Projets · Fiche projet</div><div style="font-size:14px;font-weight:600;color: #ececec;margin:2px 0 8px">24ABC · Grange</div>'
     +'<div style="display:flex;gap:4px;font-size:8px"><span style="background: #ececec;color: #111111;border-radius:999px;padding:2px 7px;font-weight:600">Vue d’ensemble</span><span style="background: #2c2c2c;color: #ececec;border-radius:999px;padding:2px 7px">Contrat</span><span style="background: #2c2c2c;color: #ececec;border-radius:999px;padding:2px 7px">Heures</span></div>'
     +'<div style="display:flex;gap:8px;margin-top:8px"><div style="flex:1;background: #f4c9d6;border-radius:12px;padding:6px 9px"><div style="font-size:7.5px;color: #3f3f3f">Heures saisies</div><div style="font-size:18px;font-weight:600;color: #111111">1’842 h</div></div><div style="flex:1;background: #242424;border-radius:12px;padding:6px 9px"><div style="font-size:7.5px;color: #9a9a9a">Phase actuelle</div><div style="font-size:12px;font-weight:600;color: #ececec;margin-top:3px">Réalisation</div></div></div></div></div>'; }
+  if(k==='mac'){ const f='-apple-system,BlinkMacSystemFont,\'Helvetica Neue\',Arial,sans-serif', ico=c=>'<i style="display:block;width:10px;height:10px;border-radius:3px;background: '+c+';flex:none"></i>';
+    const ln=(c,w,on)=>'<div style="display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:4px'+(on?';background: #007aff':'')+'">'+ico(c)+'<i style="display:block;height:4px;width:'+w+'px;border-radius:2px;background: '+(on?'rgba(255,255,255,.85)':'#c7c7cc')+'"></i></div>';
+    return '<div class="sg-vis-apercu" aria-hidden="true" style="--s-font:'+f+';display:flex;gap:8px;height:150px;padding:6px;border:1px solid #e5e5ea;background: #f5f5f7;overflow:hidden;border-radius:12px">'
+    +'<div style="width:76px;background: rgba(255,255,255,.85);border-radius:9px;box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);padding:8px 5px;display:flex;flex-direction:column;gap:3px">'
+    +'<div style="display:flex;align-items:center;gap:5px;margin:0 0 6px 2px"><i style="display:block;width:13px;height:13px;border-radius:4px;background: linear-gradient(170deg,#4a4a4e,#1c1c1e)"></i><i style="display:block;height:5px;width:34px;border-radius:2px;background: #1d1d1f"></i></div>'
+    +ln('#007aff',30)+ln('#ff9500',26,true)+ln('#32ade6',34)+ln('#34c759',28)+ln('#af52de',24)+'</div>'
+    +'<div style="flex:1;min-width:0;padding:5px 4px"><div style="font-size:9px;font-weight:500;color: #6e6e73">Projets · Fiche projet</div><div style="font-size:14px;font-weight:700;letter-spacing:-.02em;color: #1d1d1f;margin:1px 0 7px">24ABC · Grange</div>'
+    +'<div style="display:inline-flex;padding:2px;border-radius:7px;background: rgba(118,118,128,.12);font-size:8px;font-weight:500;color: #1d1d1f"><span style="background: #ffffff;border-radius:5px;padding:2px 7px;box-shadow:0 1px 2px rgba(0,0,0,.14)">Vue d’ensemble</span><span style="padding:2px 7px">Contrat</span><span style="padding:2px 7px">Heures</span></div>'
+    +'<div style="display:flex;gap:7px;margin-top:8px"><div style="flex:1;background: #ffffff;border-radius:9px;box-shadow:0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06);padding:6px 8px"><div style="font-size:7.5px;font-weight:600;color: #6e6e73">Heures saisies</div><div style="font-size:17px;font-weight:700;letter-spacing:-.02em;color: #1d1d1f">1’842 h</div><i style="display:block;height:3px;border-radius:2px;margin-top:3px;background: linear-gradient(90deg,#007aff 62%,#e5e5ea 62%)"></i></div>'
+    +'<div style="flex:1;background: #ffffff;border-radius:9px;box-shadow:0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06);padding:6px 8px"><div style="font-size:7.5px;font-weight:600;color: #6e6e73">Phase actuelle</div><div style="font-size:12px;font-weight:600;color: #1d1d1f;margin-top:3px">Réalisation</div></div></div></div></div>'; }
   const gm=mono('\'Geist Mono\',Menlo,monospace');
   return '<div class="sg-vis-apercu" aria-hidden="true" style="--s-font:Geist,\'Helvetica Neue\',Arial,sans-serif;display:flex;height:150px;border:1px solid #D9D7D0;background: #ffffff;overflow:hidden">'
     +'<div style="width:78px;border-right:1px solid #D9D7D0;padding:12px 9px;display:flex;flex-direction:column;gap:8px"><i style="display:block;height:7px;width:46px;background: #0B0B0B"></i><i style="display:block;height:5px;width:40px;background: #D9D7D0;margin-top:6px"></i><i style="display:block;height:5px;width:50px;background: #D9D7D0"></i><i style="display:block;height:12px;width:60px;background: #0B0B0B"></i><i style="display:block;height:5px;width:44px;background: #D9D7D0"></i></div>'
@@ -195,14 +249,14 @@ function sgVisuelApercu(k){
     +'<div style="height:20px;background: #0B0B0B;display:flex;align-items:center;gap:12px;padding:0 8px;'+gm+'font-size:7.5px;letter-spacing:.1em;color: #BDBBB4"><span style="color: #ffffff;border-bottom:1px solid #ffffff">VUE D’ENSEMBLE</span><span>CONTRAT</span><span>HEURES</span></div>'
     +'<div style="display:flex;gap:8px;margin-top:10px"><div style="flex:1;background: #0B0B0B;padding:6px 8px"><div style="'+gm+'font-size:7px;letter-spacing:.1em;color: #BDBBB4">HEURES SAISIES</div><div style="font-size:16px;font-weight:600;color: #ffffff">1’842 h</div></div><div style="flex:1;border:1px solid #D9D7D0;padding:6px 8px"><div style="'+gm+'font-size:7px;letter-spacing:.1em;color: #6E6C66">PHASE ACTUELLE</div><div style="font-size:12px;font-weight:600;color: #0B0B0B;margin-top:2px">Réalisation</div></div></div></div></div>'; }
 /* Réglages ▸ Visuel de l'app : ouvert à tous les profils (c'est un réglage de ce poste) */
-{ const R=SG_D.reglages; if(R&&!R.items.some(x=>x.v==='nx-visuel')){ const it={v:'nx-visuel',t:'Visuel de l’app',ico:'visuel',d:'Apparence de l’app sur ce poste : charte Substances ou l’une des quatre propositions de refonte (à l’essai).'};
+{ const R=SG_D.reglages; if(R&&!R.items.some(x=>x.v==='nx-visuel')){ const it={v:'nx-visuel',t:'Visuel de l’app',ico:'visuel',d:'Apparence de l’app sur ce poste : charte Substances ou l’une des cinq propositions de refonte (à l’essai).'};
     R.items.splice(1,0,it); NX_VIEW['nx-visuel']={d:R,t:it.t,it}; }
   SG_VUE_DROIT['nx-visuel']=()=>true; }
 VIEWS['nx-visuel']={ render(m){ const v=sgVisuel();
   const carte=([k,n,d])=>nxCard('c4',nxE(n)+(k===v?' <span class="nx-tag s2" style="margin-left:8px">sur ce poste</span>':''),'<div class="b">'+sgVisuelApercu(k)
     +'<p style="margin:14px 0 16px;line-height:1.5">'+nxE(d)+'</p>'+(k===v?'<button class="nx-btn" disabled>Visuel utilisé</button>':'<button class="nx-btn pri" data-vis="'+k+'">'+nxSvg('visuel')+'Utiliser ce visuel</button>')+'</div>');
   nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Visuel de l’app','Choisissez l’apparence de SUBGestion sur ce poste. Seul l’affichage change : données, documents PDF et impressions restent les mêmes. Le choix vaut pour ce navigateur ; chaque poste choisit le sien.')
-    +'<div><div class="nx-grid">'+SG_VISUELS.map(carte).join('')+'</div><p class="nx-empty" style="padding-top:20px">Les quatre propositions de refonte sont à l’essai. Pour passer d’un visuel à l’autre : bouton '
+    +'<div><div class="nx-grid">'+SG_VISUELS.map(carte).join('')+'</div><p class="nx-empty" style="padding-top:20px">Les cinq propositions de refonte sont à l’essai. Pour passer d’un visuel à l’autre : bouton '
     +'<span style="display:inline-flex;vertical-align:-3px;width:16px;height:16px">'+nxSvg('visuel')+'</span> du pied du menu, ou ⌘K « Visuel ».</p></div></div>');
   m.querySelectorAll('[data-vis]').forEach(b=>b.onclick=()=>{ sgVisuelAppliquer(b.dataset.vis,true); toast('Visuel : '+sgVisuelNom(b.dataset.vis)+'.'); }); } };
 /* bouton du pied du menu, ⌘K, cadre Facturation, domaine de l'écran, application au démarrage */

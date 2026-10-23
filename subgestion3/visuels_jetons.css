@@ -53,3 +53,26 @@ html[data-visuel="nocturne"]{
   --v-rose:#F4C9D6; --v-menthe:#C6E6D3; --v-lavande:#CFCAF2; --v-ok:#9BD3B5; --v-warn:#F2B880; --v-bad:#F29A9A; --v-encre:#111111; --v-encre2:#3F3F3F;
   --v-contre:hue-rotate(180deg) invert(1) contrast(1.1905);
 }
+
+/* 5 · Mac — inspiré de macOS (23.10.2026) : police du système (San Francisco), fond gris clair #F5F5F7, menu flottant clair aux icônes de
+   couleur (Réglages Système), bleu système #007AFF pour la sélection, les boutons principaux et les données, cartes blanches arrondies,
+   contrôles segmentés, couleurs du système pour les états (vert, orange, rouge). Aucune police embarquée : celle du Mac. */
+html[data-visuel="mac"]{
+  --p-bk:#1D1D1F; --p-wh:#FFFFFF; --p-g1:#F5F5F7; --p-g2:#E5E5EA; --p-g3:#6E6E73; --p-g4:#C7C7CC; --p-g5:#8E8E93; --p-rd:#FF3B30; --p-rdt:#D70015;
+  --p-sb:rgba(255,255,255,.8); --p-sep:#3A3A3C; --p-hl:#EAF2FF; --p-l2:#EFEFF2; --p-hv:#0066D6; --p-hv2:#0066D6; --p-zb:#F7F7F9;
+  --p-ov:rgba(0,0,0,.2); --p-sh1:0 10px 30px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.14); --p-sh2:0 22px 60px rgba(0,0,0,.26),0 0 0 .5px rgba(0,0,0,.14);
+  --p-sh3:0 30px 90px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.12);
+  --p-page:#F5F5F7; --p-pill:7px; --p-tt:none; --p-lsk:0; --p-okt:#248A3D;
+  --p-font:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --p-mono:var(--p-font); --p-lblf:var(--p-font);
+  --v-acc:#007AFF; --v-acc2:#0066D6; --v-acc-bg:#E8F1FF; --v-acc-t:#0060C7; --v-acc-pale:#7DB9FF;
+  --v-fond:#F5F5F7; --v-sep:#D2D2D7; --v-sep2:#E8E8ED; --v-fill:rgba(118,118,128,.12); --v-fill2:rgba(118,118,128,.2);
+  --v-side:rgba(255,255,255,.72); --v-verre:rgba(255,255,255,.86);
+  --v-ombre:0 0 0 .5px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.04);
+  --v-ombre2:0 0 0 .5px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.07),0 10px 28px rgba(0,0,0,.07);
+  --v-btn:0 0 0 .5px rgba(0,0,0,.16),0 1px 1.5px rgba(0,0,0,.12);
+  --v-anneau:0 0 0 3.5px rgba(0,122,255,.3);
+  --v-vert:#34C759; --v-vert-t:#248A3D; --v-vert-bg:#E4F6E9; --v-org:#FF9500; --v-org-t:#C45A00; --v-org-bg:#FFF1DE; --v-rd-bg:#FFE9E7;
+  --v-jaune:#FFCC00; --v-indigo:#5856D6; --v-violet:#AF52DE; --v-cyan:#32ADE6; --v-sarcelle:#30B0C7; --v-menthe:#00C7BE; --v-brun:#A2845E; --v-gris:#8E8E93;
+  --v-dom:var(--v-acc);
+}

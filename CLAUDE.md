@@ -864,7 +864,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   faite d'après 10 références transmises par Paulo (commit 2a7c210, annulé par le commit suivant). Copie des sources de la refonte :
   `subgestion3/_backup_20261020_2234_refonte_visuelle_retiree/` ; maquettes : canevas https://claude.ai/artifact/LHj8a8Kvd35QvzTG7VqpMD.
   Le graphisme en vigueur reste celui de la charte (bleu nuit, jaune, fond blanc, filets noirs) : ne pas réappliquer la refonte sans demande.
-- **Visuel de l'app : la charte ou l'une des quatre propositions de refonte, au choix (21.10.2026, À L'ESSAI)** — Paulo : « ajouter le visuel
+- **Visuel de l'app : la charte ou l'une des cinq propositions de refonte, au choix (21.10.2026, À L'ESSAI ; « Mac » ajouté le 23.10.2026)** — Paulo : « ajouter le visuel
   papier et encre (la version 3), conserver la version actuelle et pouvoir passer de l'une à l'autre ; dès que j'aurai testé, je demanderai de
   passer définitivement sur la version choisie », puis le même soir « ajoute les autres versions que tu as produites ». Les quatre directions du
   canevas https://claude.ai/artifact/DsFX5SWBRTNqVZBUqefc4u : **Papier et encre** (3 : noir #0B0B0B et blanc, filets d'un pixel, libellés en
@@ -875,10 +875,20 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   grand, tuiles béton #D5D9D9, en-tête du projet en bande béton au numéro géant, onglets en barre crème, sélection saumon #FFD9C7, angles de 2 px,
   icônes à bouts carrés et trait de 1,25 ; jamais de rouge, vert, jaune ni bleu : le signal est l'orange, texte #B83700), **Studio nocturne** (4 :
   graphite #141414 / #1C1C1C / #242424, texte #EBEBEB, carte pastel à encre noire pour le chiffre clé — rose projets, menthe temps / équipe / RH,
-  lavande facturation / finances, sable autres —, onglets en puces, angles de 16 / 10 px). Polices (non installées, aucune embarquée) : Geist /
+  lavande facturation / finances, sable autres —, onglets en puces, angles de 16 / 10 px), et depuis le 23.10.2026 **Mac** (5, Paulo : « propose-moi
+  une interface inspirée du design Mac, texte, logo, typo… ajoute le visuel aux autres visuels » : police du système San Francisco (`-apple-system`,
+  rien d'embarqué), fenêtre gris clair #F5F5F7, menu FLOTTANT en verre clair (marge 8 px, angles de 14 px) aux domaines à icône blanche sur carré
+  arrondi de couleur comme les Réglages Système — Cockpit bleu, Affaires brun, Temps orange, Projets cyan, Contacts gris, Équipe indigo, RH sarcelle,
+  Facturation vert, Finances violet, Bibliothèque rose, Réglages gris (`--v-dk` par `data-tg`, `--v-dom` par `data-vdom` pour les tuiles et les
+  chiffres) —, module ouvert en bleu système #007AFF, logo = sigle en icône d'app (carré arrondi graphite, carré jaune) + nom, historique dans une
+  capsule, titres en gras, cartes blanches arrondies à 12 px à ombre fine, onglets du projet et `.seg` en contrôle segmenté, listes du moteur à
+  lignes alternées et sélection bleue, menus en verre à survol bleu, palette ⌘K façon Spotlight, boutons du Mac (blanc à ombre fine / bleu /
+  texte rouge), champs à anneau bleu, étiquettes en capsules teintées (vert en cours, orange en attente, gris terminé, rouge urgent), couleurs du
+  système pour les états (`--s-vert`, `--s-orange` retrouvent leur sens), heures par mois en barres arrondies, initiales en pastilles grises comme
+  Contacts ; icônes `SG_NXI_MAC` d'après les symboles du Mac — roue dentée des Réglages, carré à flèche du partage…). Polices (non installées, aucune embarquée) : Geist /
   Geist Mono, Inter, Archivo / JetBrains Mono, Inter / IBM Plex Mono si elles sont sur le poste, sinon Helvetica Neue, la police du système et
   Menlo. **Le visuel de la charte reste le défaut et n'a pas changé** (styles calculés comparés avec la copie d'avant : identiques).
-  Choix par poste (navigateur) : `localStorage` `sg3_visuel` = `charte` (défaut) | `papier` | `brume` | `signaletique` | `nocturne` — Réglages ▸
+  Choix par poste (navigateur) : `localStorage` `sg3_visuel` = `charte` (défaut) | `papier` | `brume` | `signaletique` | `nocturne` | `mac` — Réglages ▸
   **Visuel de l'app** (`nx-visuel`, ouvert à tous les profils, aperçu de chaque visuel), bouton du pied de menu (`#sg-visuel` → liste des visuels,
   `sgVisuelMenu`), ⌘K « Visuel : … ». Mécanisme : attribut `data-visuel="<visuel>"` sur `<html>` de la coquille ET du cadre Facturation, posé avant
   le premier affichage par `VISUEL_SCRIPT` (`subgestion3/construire.py`, liste `VISUELS`) ; `data-vdom` = domaine de l'écran (`NX_VIEW[v].d.k`,
@@ -886,7 +896,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   signal, voile, ombres, `--p-page`, `--p-pill`, `--p-tt` casse des libellés, `--p-lsk` facteur d'espacement des capitales, `--p-font` / `--p-mono` /
   `--p-lblf` polices du texte, des codes et des libellés, `--p-okt` ; `--v-*` couleurs propres ; injectée dans la coquille ET le cadre),
   `subgestion3/visuels.css` (base commune de la coquille et du moteur, ex-visuel_papier.css), `subgestion3/visuels_variantes.css` (traits de
-  Brume, Signalétique, Studio nocturne), `subgestion3/fx_visuels.css` (cadre Facturation : base + traits propres). Les variables de la charte
+  Brume, Signalétique, Studio nocturne, Mac), `subgestion3/fx_visuels.css` (cadre Facturation : base + traits propres). Les variables de la charte
   (`--s-noir`, `--s-nuit`, `--s-jaune`…) y pointent sur les jetons ; chasse fixe par `--s-font` (sg3.css impose `--s-font` à tous les éléments avec
   !important) ; couleurs écrites dans le code (#003346, #FFF266, #98C21F, #27AE60…) reprises par sélecteurs d'attribut `style`. **Studio nocturne
   = page inversée** : `filter:invert(.92) hue-rotate(180deg)` sur `<html>` de la coquille (cadre Facturation compris) — blanc → #141414, noir →
@@ -894,10 +904,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Réglages (`.sg-vis-apercu`), étiquettes « échu / payé » et carte pastel soustraits à l'inversion (`--v-contre` = `hue-rotate(180deg) invert(1)
   contrast(1.1905)`, à peine plus sombre que l'original). PDF et impressions jamais touchés. `subgestion3/sg3_visuel.js` (bloc 22, concaténé après
   sg3_plus.js) : `SG_VISUELS`, `sgVisuel`, `sgVisuelAppliquer(v,redessiner)`, `sgVisuelMenu`, `sgVisuelCadre` (enveloppe de `fxEnsure`),
-  `sgVisuelDomaine`, icônes `SG_NXI_PAPIER` (aussi pour Signalétique), `SG_NXI_BRUME`, `SG_NXI_NOCTURNE` ↔ `SG_NXI_CHARTE` (copie de `NXI`),
+  `sgVisuelDomaine`, icônes `SG_NXI_PAPIER` (aussi pour Signalétique), `SG_NXI_BRUME`, `SG_NXI_NOCTURNE`, `SG_NXI_MAC` ↔ `SG_NXI_CHARTE` (copie de `NXI`),
   commandes de la palette (enveloppe de `nxPalIndex`), aperçus `sgVisuelApercu(k)`. Contrôles faits : balayage des 109 écrans dans chaque visuel
   (sans erreur), contraste texte / fond mesuré sur 16 écrans. Copies d'avant : `subgestion3/_backup_20261021_1856_avant_visuel_papier/`,
-  `subgestion3/_backup_20261021_2000_avant_quatre_visuels/` (+ `SUBGestion3_backup_…` des mêmes heures). **Passer définitivement** (sur demande de
+  `subgestion3/_backup_20261021_2000_avant_quatre_visuels/`, `subgestion3/_backup_20261023_2300_avant_visuel_mac/` (+ `SUBGestion3_backup_…` des mêmes heures). **Passer définitivement** (sur demande de
   Paulo seulement) : garder la charte = supprimer les quatre feuilles, `sg3_visuel.js`, `VISUEL_SCRIPT` et les deux `<style>` de `construire.py` ;
   garder une proposition = la mettre par défaut (`sgVisuel`, `VISUEL_SCRIPT`), puis retirer les autres blocs et le choix (ou fondre ses règles dans
   sg3.css / fx_theme.css).

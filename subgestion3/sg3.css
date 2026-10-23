@@ -1172,7 +1172,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-fiche dt small{display:block;font-size:10.5px;color:var(--s-gris)}
 /* genres d'affaire en deux temps : groupe puis genre (23.10.2026) */
 .sg-ep-gg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
-.sg-ep-grp{display:flex;flex-direction:column;max-height:300px;overflow:auto;border-top:1px solid var(--s-filet)}
+.sg-ep-grp{display:flex;flex-direction:column;border-top:1px solid var(--s-filet)}   /* liste complète, sans barre de défilement (23.10.2026, demande de Paulo) */
 .sg-ep-grp button{display:flex;align-items:center;gap:8px;text-align:left;border:0;border-bottom:1px solid var(--s-filet);background:none;font:inherit;font-size:12.5px;padding:7px 8px;cursor:pointer;color:var(--s-noir)}
 .sg-ep-grp button:hover{background:var(--s-jaune3)}
 .sg-ep-grp button.on{background:var(--s-jaune2);font-weight:700;box-shadow:inset 3px 0 0 var(--s-nuit)}

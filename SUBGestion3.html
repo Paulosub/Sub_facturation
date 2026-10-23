@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 23.10.2026 22:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 23.10.2026 22:05 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1181,7 +1181,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-fiche dt small{display:block;font-size:10.5px;color:var(--s-gris)}
 /* genres d'affaire en deux temps : groupe puis genre (23.10.2026) */
 .sg-ep-gg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
-.sg-ep-grp{display:flex;flex-direction:column;max-height:300px;overflow:auto;border-top:1px solid var(--s-filet)}
+.sg-ep-grp{display:flex;flex-direction:column;border-top:1px solid var(--s-filet)}   /* liste complète, sans barre de défilement (23.10.2026, demande de Paulo) */
 .sg-ep-grp button{display:flex;align-items:center;gap:8px;text-align:left;border:0;border-bottom:1px solid var(--s-filet);background:none;font:inherit;font-size:12.5px;padding:7px 8px;cursor:pointer;color:var(--s-noir)}
 .sg-ep-grp button:hover{background:var(--s-jaune3)}
 .sg-ep-grp button.on{background:var(--s-jaune2);font-weight:700;box-shadow:inset 3px 0 0 var(--s-nuit)}

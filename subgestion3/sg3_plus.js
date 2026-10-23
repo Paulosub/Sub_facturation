@@ -3062,7 +3062,8 @@ const SG_EP_RETIRES={
     ['STARTOFCONSTRUCTION','Début des travaux'],['ENDOFCONSTRUCTION','Fin des travaux'],['MOVEINDEADLINE','Remise des clés']],
   'Caractéristiques':[['VOLUME','Volume construit (m³)'],['AREA','Surface de plancher (m²)'],['BASISINDEX','Indice ICC']],
   'Références':[['EXTERNALNUMBER','Numéro d’affaire externe'],['LOCATION','District'],['PLOT','Zone / quartier'],['LANDREGISTERNR','Numéro registre foncier'],['ACCOUNTINGAREA','Service comptabilité']],
-  'Autres réglages':[['SORTLABEL','Tri'],['NEXTUNIQUEPLANID','Prochain plan-ID'],['ISUNIQUEPLANIDLOCKED','Créer automatiquement les plan-ID'],['PROJECTFOLDER','Emplacement du dossier d’affaire'],['MAILBOXURL','URL de la messagerie']]};
+  'Autres réglages':[['SORTLABEL','Tri'],['NEXTUNIQUEPLANID','Prochain plan-ID'],['ISUNIQUEPLANIDLOCKED','Créer automatiquement les plan-ID'],['PROJECTFOLDER','Emplacement du dossier d’affaire'],['MAILBOXURL','URL de la messagerie']],
+  'Saisie des heures et des frais':[['CURRENCY','Monnaie']]};   /* monnaie retirée de la fenêtre le même jour (nouvelle affaire : CHF par défaut) */
 /* ═══ Éditer l'affaire, version SUBGestion 3 (23.10.2026, demande de Paulo « modifier le panneau Éditer projet dans Affaires, optimiser pour
    clarifier ») — remplace editProject du moteur dans SUBGestion 3 seulement (DeltaSub.html seul garde la fenêtre d'origine). Mêmes valeurs par
    défaut, mêmes contrôles et même enregistrement (project + project_projectkind) ; présentation : un seul formulaire avec un sommaire à gauche
@@ -3100,7 +3101,7 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
        « Phases », « Activités », « Tarifs » retirées le même jour (traitées dans d'autres chapitres) : module sgEpOrga gardé (bloc 24) */
     +sec('saisie','Saisie des heures et des frais','<div class="sg-ep-c large"><span>Champs obligatoires lors de la saisie</span><table class="sg-ep-par"><tr><th></th><th>Phase</th><th>Subdivision</th><th>Commentaire / description</th></tr>'
       +'<tr><td>Heures</td><td>'+ck('ISTIMEPHASEMANDATORY','Phase obligatoire')+'</td><td>'+ck('ISTIMESUBPROJECTMANDATORY','Subdivision obligatoire')+'</td><td>'+ck('ISTIMEDESCMANDATORY','Commentaire obligatoire')+'</td></tr>'
-      +'<tr><td>Frais</td><td>'+ck('ISEXPENSESPHASEMANDATORY','Phase obligatoire')+'</td><td></td><td>'+ck('ISEXPENSESDESCMANDATORY','Description obligatoire')+'</td></tr></table></div>'+champ('Monnaie',txt('CURRENCY',{w:'90px'})))
+      +'<tr><td>Frais</td><td>'+ck('ISEXPENSESPHASEMANDATORY','Phase obligatoire')+'</td><td></td><td>'+ck('ISEXPENSESDESCMANDATORY','Description obligatoire')+'</td></tr></table></div>')   /* champ « Monnaie » retiré à la demande (23.10.2026) : CURRENCY gardé (nouvelle affaire : CHF), SG_EP_RETIRES */
     +'</div>';
   /* adresses (23.10.2026) : adresse d'affaire et maître de l'ouvrage repris du contrat (ou de l'offre) quand il les donne — sinon à choisir ;
      adresse de facturation automatique (MO p.a. Substances Architectes) ; lieu de dépôt des offres à choisir ; règles : sgAdressesAffaire */

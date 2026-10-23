@@ -2764,7 +2764,7 @@ function sgFicheAffaire(p){ const E=nxE, d=v=>v?dfr(v):'', t=v=>v==null?'':Strin
     +sec('Affaire',[['Complément',p.DESCRIPTION],/* « Type d'affaire » (interne / externe) retiré à la demande (23.10.2026) */['Phase en cours (affaire)',ph?(ph.NUMBER!=null?ph.NUMBER+' ':'')+nm(ph):''],['Tri',p.SORTLABEL],
       ['Indice ICC',+p.BASISINDEX?num(+p.BASISINDEX,1):''],['Volume construit',+p.VOLUME?num(+p.VOLUME,0)+' m³':''],['Surface de plancher',+p.AREA?num(+p.AREA,0)+' m²':'']])
     +(kinds.length?'<div class="sg-ag-sec"><h5>Genres d’affaire</h5><div class="sg-ag-chips">'+kinds.map(k=>'<span class="nx-tag">'+E(nm(k))+'</span>').join('')+'</div></div>':'')
-    +sec('Délais',[['Début du projet',d(p.PROJECTSTARTDATE)],['Fin du projet',d(p.PROJECTENDDATE)],['Début de planification',p.STARTOFPLANNING],['Fin de planification',p.ENDOFPLANNING],['Début des travaux',p.STARTOFCONSTRUCTION],['Fin des travaux',p.ENDOFCONSTRUCTION],['Remise des clés',p.MOVEINDEADLINE]])
+    /* rubrique « Délais » retirée à la demande (23.10.2026) */
     +sec('Adresses',[['Adresse d’affaire',adr(p.CONTACT1_ID,1),1],['Adresse de facturation',adr(p.CONTACT2_ID),1],['Adresse de livraison',adr(p.CONTACT3_ID),1],['Lieu de dépôt des offres',adr(p.CONTACT4_ID),1]])
     +sec('Références',[['N° d’affaire externe',p.EXTERNALNUMBER],['District',p.LOCATION],['Zone / quartier',p.PLOT],['N° registre foncier',p.LANDREGISTERNR],['Service comptabilité',p.ACCOUNTINGAREA],['Dossier d’affaire',p.PROJECTFOLDER]])
     +'<div class="sg-ag-sec"><h5>Paramètres de saisie</h5>'+(t(p.CURRENCY)?'<dl><dt>Monnaie</dt><dd>'+E(p.CURRENCY)+'</dd></dl>':'')

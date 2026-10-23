@@ -674,7 +674,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   suivante (‹ › ou ⌥↑ ⌥↓, `SG_AG.aller`, ordre affiché de la liste `AF.g.view`), Éditer, Intervenants, Page du projet, Tableau de bord (icônes), × ;
   en-tête jaune pâle comme le tableau de bord du projet (grand numéro et filet, titre, statut, catégorie, maître de l'ouvrage, frise des heures —
   `sgFriseHeures(T)`, fonction commune avec le tableau de bord) ; puis, dans l'ordre demandé par Paulo : **fiche de l'affaire juste sous le
-  titre** (`sgFicheAffaire` : sans numéro, désignation, statut ni type d'affaire — retiré à la demande le même jour —, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
+  titre** (`sgFicheAffaire` : sans numéro, désignation, statut ni type d'affaire, sans la rubrique Délais — retirés à la demande le même jour —, rubriques vides omises, « identique à l'adresse d'affaire », paramètres de saisie en
   petit tableau), **Contrats d'honoraires** (`sgAgContrats` : par contrat — Contrat / Avenant, état Brouillon / Envoyé / Signé le … / Terminé /
   Annulé, date du contrat, « Signé le », type de rémunération, phases SIA, honoraires HT / TTC, tarif horaire brut, rabais, honoraires facturés TTC et % (`_ttc`) et frais facturés TTC (`_fttc`, sinon `fttc`) séparés — demande du même jour —, nombre de factures,
   versions, « Ouvrir » le PDF ; montants masqués si finances verrouillées ; annulés à la fin), Heures (tuiles : heures saisies avec jauge et % des

@@ -1060,3 +1060,15 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-eq .t small{font-size:11px;color:var(--s-gris)}
 .sg-ag-eq .t .nx-tag{font-size:10.5px;padding:0 5px}
 .sg-ag-eq .zero .nx-av{background:var(--s-filet);color:var(--s-gris)}
+.sg-ag-eq .nx-person:hover{background:var(--s-jaune3)}
+/* rapport des heures d'un collaborateur sur une affaire (fenêtre, 23.10.2026) */
+.sg-rap{min-width:0}
+.sg-rap-h{display:flex;align-items:center;gap:12px;margin:0 0 16px}
+.sg-rap-h div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.sg-rap-h b{font-size:16px;font-weight:700}
+.sg-rap-h div span{font-size:12.5px;color:var(--s-gris)}
+.sg-rap-k{grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:14px}
+.sg-rap-k .nx-kpi .v{font-size:24px}
+.sg-rap-v{margin:0 0 8px}
+.sg-rap .nx-card{margin:0}
+.sg-rap .sg-hscroll{max-height:44vh}

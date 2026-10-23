@@ -680,7 +680,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   versions, « Ouvrir » le PDF ; montants masqués si finances verrouillées ; annulés à la fin), Heures (tuiles : heures saisies avec jauge et % des
   heures prévues, ces 30 jours, phase actuelle, dernière saisie), **Équipe** (`sgEquipeAffaire` : TOUS les collaborateurs attribués à l'affaire —
   intervenants dont la personne est un collaborateur, comme Mes projets —, même sans heure, + « hors équipe » pour ceux qui ont saisi des heures
-  sans être attribués ; fonction de l'intervenant ; « a quitté le bureau »). Copie d'avant : `subgestion3/_backup_20261023_avant_fiche_affaire/`.   Projets ▸ Registre (aff-gestion) inchangé.
+  sans être attribués ; fonction de l'intervenant ; « a quitté le bureau »); **clic sur une personne = « Rapport des heures »** de ce collaborateur sur l'affaire, en fenêtre (`sgRapportHeuresCollab(p,sid)`,
+  même jour) : tuiles heures saisies, dont facturables, ces 30 jours, première et dernière saisie ; affichage Par phase (SIA 102, phases partielles
+  dessous) · Par mois · Détail (`sg3_rap_vue`), années « Toutes · 2026… », CSV, Imprimer, bouton « Fiche du collaborateur »). Copie d'avant : `subgestion3/_backup_20261023_avant_fiche_affaire/`.   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »
   (dossier Chantier ▸ Présentation) et « Documents du chantier » (dossiers Construction/… — contrôles des coûts, devis, calculs des coûts,

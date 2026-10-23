@@ -2779,6 +2779,50 @@ function sgEquipeAffaire(p,st){ st=st||{}; const parP={}, M=new Map(), auj=new D
   Object.keys(st).forEach(id=>{ if(!M.has(String(id))){ const s=DS.get('staff',id); if(s) M.set(String(id),{s,att:false,fn:''}); } });
   return [...M.values()].map(e=>Object.assign(e,{h:+st[e.s.ID]||+st[String(e.s.ID)]||0,parti:+e.s.ISACTIVE===0||(!!e.s.QUITTINGDATE&&String(e.s.QUITTINGDATE).slice(0,10)<auj)}))
     .sort((a,b)=>b.h-a.h||cmp(staffName(a.s),staffName(b.s))); }
+/* rapport des heures d'un collaborateur sur une affaire (23.10.2026, demande de Paulo : clic sur une personne de l'équipe de la fiche affaire) :
+   fenêtre au graphisme de l'onglet Heures du projet — tuiles (heures saisies, dont facturables, ces 30 jours, première et dernière saisie),
+   affichage Par phase (ordre SIA 102, phases partielles dessous) · Par mois · Détail des saisies (choix mémorisé sg3_rap_vue), années
+   « Toutes · 2026 · 2025… » (tuiles comprises) ; CSV et Imprimer du tableau affiché ; « Fiche du collaborateur » */
+function sgRapportHeuresCollab(p,sid){ const s=DS.get('staff',sid); if(!p||!s) return; const E=nxE, nom=staffName(s);
+  const T=DS.by('timelog','PROJECT_ID',p.ID).filter(r=>String(r.STAFF_ID)===String(s.ID)).sort((a,b)=>cmp(tlKey(b),tlKey(a)));
+  const ans=[...new Set(T.map(r=>tlDate(r).getFullYear()))].sort((a,b)=>b-a);
+  let an='', vue=nxLS.get('sg3_rap_vue','phase'); if(!['phase','mois','det'].includes(vue)) vue='phase';
+  const VUES=[['phase','Phase','escalier','Par phase'],['mois','Mois','cal','Par mois'],['det','Détail','list','Détail des saisies']];
+  const kt=(ico,l,v,ti,cls)=>nxKpi(ico,l,v).replace('<div class="nx-kpi"','<div class="nx-kpi" title="'+E(ti||'')+'"').replace('<div class="v">','<div class="v'+(cls?' '+cls:'')+'">');
+  const body=h('div',{class:'sg-rap'});
+  const dessiner=()=>{ const L=an?T.filter(r=>tlDate(r).getFullYear()===+an):T, H=r=>+r.TIMEPERIOD||0, tot=L.reduce((a,r)=>a+H(r),0), hf=L.reduce((a,r)=>a+(+r.ISCHARGEABLE?H(r):0),0);
+    const lim=dayKey(new Date(Date.now()-30*864e5)), h30=L.filter(r=>tlKey(r)>=lim).reduce((a,r)=>a+H(r),0), pct=v=>tot?(v>0&&v/tot<.005?'&lt; 1':Math.round(v/tot*100))+' %':'';
+    const d1=L.length?dfr(diso(tlDate(L[L.length-1]))):'', d2=L.length?dfr(diso(tlDate(L[0]))):'';
+    let tab;
+    if(!L.length) tab='<div class="nx-empty">Aucune heure saisie'+(an?' en '+an:'')+' sur cette affaire.</div>';
+    else if(vue==='phase'){ const G=sgPhasesHier(L), lig=(x,sub)=>'<tr'+(sub?' class="sub"':'')+'><td>'+(sub?E(x.t):'<b>'+E(x.t)+'</b>')+'</td><td class="r">'+nxH(x.h)+'</td><td class="r">'+nxH(x.hf)+'</td><td style="width:130px">'+sgBarre(tot?x.h/tot:0,sub?'var(--s-nuit2)':null)+' '+pct(x.h)+'</td><td class="r">'+x.n+'</td></tr>';
+      tab='<table class="nx-tbl sg-sit sg-sit-h"><tr><th>Phase</th><th class="r">Heures</th><th class="r">dont facturables</th><th>Part</th><th class="r">Saisies</th></tr>'
+        +G.map(x=>lig(x)+(x.subs.length&&!(x.subs.length===1&&(x.subs[0].k==='s-'||x.t.replace(/^[^·]*·\s*/,'')===x.subs[0].t))?x.subs.map(y=>lig(y,1)).join(''):'')).join('')
+        +'<tr class="tot"><td>Total</td><td class="r">'+nxH(tot)+'</td><td class="r">'+nxH(hf)+'</td><td></td><td class="r">'+L.length+'</td></tr></table>'; }
+    else if(vue==='mois') tab='<table class="nx-tbl sg-sit"><tr><th>Mois</th><th class="r">Heures</th><th class="r">dont facturables</th><th>Part</th><th class="r">Saisies</th></tr>'
+        +sgGrouper(L,'mois').map(x=>'<tr><td><b>'+E(x.t)+'</b></td><td class="r">'+nxH(x.h)+'</td><td class="r">'+nxH(x.hf)+'</td><td style="width:130px">'+sgBarre(tot?x.h/tot:0)+' '+pct(x.h)+'</td><td class="r">'+x.n+'</td></tr>').join('')
+        +'<tr class="tot"><td>Total</td><td class="r">'+nxH(tot)+'</td><td class="r">'+nxH(hf)+'</td><td></td><td class="r">'+L.length+'</td></tr></table>';
+    else tab='<table class="nx-tbl sg-htbl"><tr><th>Date</th><th>Phase</th><th>Phase partielle</th><th>Commentaire</th><th class="r">Durée</th></tr>'
+        +L.map(r=>{ const f=r.PHASE_ID!=null?DS.get('projectphase',r.PHASE_ID):null, sp=r.SUBPHASE_ID!=null?DS.get('projectsubphase',r.SUBPHASE_ID):null;
+          return '<tr><td>'+dfr(diso(tlDate(r)))+'</td><td>'+E(f?nm(f):'')+'</td><td class="sg-hsp">'+E(sp?nm(sp):'')+'</td><td class="sg-hact">'+E(String(r.DESCRIPTION||'').trim())+'</td><td class="r"><b>'+nxH(r.TIMEPERIOD)+' h</b></td></tr>'; }).join('')
+        +'<tr class="tot"><td>Total</td><td></td><td></td><td></td><td class="r">'+nxH(tot)+' h</td></tr></table>';
+    const titre={phase:'Heures par phase',mois:'Heures par mois',det:'Saisies'}[vue]+(an?' · '+an:'');
+    const selAn=ans.length>1?'<span class="sg-an" role="group" aria-label="Année">'+[['','Toutes']].concat(ans.map(y=>[String(y),String(y)])).map(([v,t])=>{ const on=v===an; return '<button data-an="'+v+'" class="'+(on?'on':'')+'" aria-pressed="'+on+'" title="'+(v?'Heures de '+v+' (tuiles comprises)':'Toutes les heures')+'">'+t+'</button>'; }).join('')+'</span>':'';
+    const acts=selAn+(L.length?'<span class="a sg-ha" data-rf="csv" title="Exporter le tableau en CSV">'+nxSvg('export')+'CSV</span><span class="a sg-ha" data-rf="prn" title="Imprimer le rapport">'+nxSvg('print')+'Imprimer</span>':'');
+    body.innerHTML='<div class="sg-rap-h"><span class="nx-av">'+E(nxIni(nom))+'</span><div><b>'+E(nom)+'</b><span>'+E(p.NUMBER||'')+' · '+E(p.TITLE||'')+'</span></div></div>'
+      +'<div class="nx-kpis sg-pkpis sg-rap-k">'+kt('clock','Heures saisies',sgHr(tot)+'<small>h</small>',nxH(tot)+' h saisies'+(an?' en '+an:''))
+        +kt('contrat','Dont facturables',sgHr(hf)+'<small>h</small>',tot?Math.round(hf/tot*100)+' % des heures saisies':'')
+        +kt('cal','Ces 30 jours',sgHr(h30)+'<small>h</small>','Heures saisies ces 30 derniers jours')
+        +kt('clock','Première saisie',d1||'—','','dt')+kt('clock','Dernière saisie',d2||'—','','dt')+'</div>'
+      +'<div class="sg-htls sg-rap-v">'+VUES.map(([k,t,ic,ti])=>'<button data-vue="'+k+'" class="'+(k===vue?'on':'')+'" title="'+E(ti)+'">'+nxSvg(ic)+'<span>'+t+'</span></button>').join('')+'</div>'
+      +nxCard('c12 sg-hcard',E(titre),'<div class="b flush sg-hscroll">'+tab+'</div>',acts);
+    body.querySelectorAll('[data-an]').forEach(b=>b.onclick=()=>{ an=b.dataset.an; dessiner(); });
+    body.querySelectorAll('[data-vue]').forEach(b=>b.onclick=()=>{ vue=b.dataset.vue; nxLS.set('sg3_rap_vue',vue); dessiner(); });
+    const tb=()=>body.querySelector('.sg-hscroll table'), c=body.querySelector('[data-rf="csv"]'), pr=body.querySelector('[data-rf="prn"]');
+    if(c) c.onclick=()=>{ const t=tb(); if(t) sgCsvTable(t,'Heures_'+(p.NUMBER||'')+'_'+nom.replace(/\s+/g,'_')+(an?'_'+an:'')+'.csv'); };
+    if(pr) pr.onclick=()=>{ const t=tb(); if(t) sgImprimer('Heures de '+nom+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p>'+E(titre)+' · '+nxH(tot)+' h, dont '+nxH(hf)+' h facturables'+(L.length?' · du '+d1+' au '+d2:'')+'</p>'+t.outerHTML); }; };
+  dessiner();
+  dialog({title:'Rapport des heures',width:'min(940px,95vw)',body,buttons:[{t:'Fiche du collaborateur',fn:()=>{ nxOpenRef('s:'+s.ID); }},{t:'Fermer',pri:true}]}); }
 /* contrats d'honoraires d'une affaire pour sa fiche (23.10.2026, demande de Paulo) : par contrat — document (contrat / avenant), état
    (Brouillon / Envoyé / Signé le … / Terminé / Annulé), date du contrat, date de signature, type de rémunération (forfait relatif / forfait /
    unitaire), phases SIA, honoraires HT et TTC, tarif horaire brut, rabais, facturé (TTC sans frais, % du contrat), versions ; « Ouvrir » = PDF
@@ -2829,7 +2873,8 @@ VIEWS['affd-gestion']={
     let ferme=false, dernier=null; SG_AG.ouvrir=()=>{ ferme=false; dessinerFiche(); };   /* fiche projet = fenêtre à droite, fermable (22.10.2026) */
     const aller=d=>{ const V=AF.g.view||[], i=V.findIndex(r=>String(r.ID)===String(AF.g.sel)), r=V[i+d]; if(i<0||!r) return; const tr=pane.querySelector('tr[data-k="'+CSS.escape(String(r.ID))+'"]'); if(tr){ tr.click(); tr.scrollIntoView({block:'nearest'}); } };
     SG_AG.aller=aller;
-    fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
+    fiche.addEventListener('click',e=>{ const t=e.target.closest('[data-a],[data-go],[data-ref],[data-rap]'); if(!t||!fiche.contains(t)) return; const p=cur(); if(!p) return;
+      if(t.dataset.rap){ sgRapportHeuresCollab(p,t.dataset.rap); return; }   /* clic sur une personne de l'équipe : son rapport des heures sur l'affaire (23.10.2026) */
       if(t.dataset.a){ const a=t.dataset.a; if(a==='fermer'){ ferme=true; dessinerFiche(); } else if(a==='prec'||a==='suiv') aller(a==='prec'?-1:1); else if(a==='edit') editProject(p); else if(a==='interv') cfgMembers(p); else if(a==='page') go('nx-pdom',p.ID); else if(a==='tdb') go('nx-projet',p.ID); }
       else if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); });
     /* fiche refaite le 23.10.2026 (demande de Paulo « améliorer la fiche affaire ») : barre bleu nuit (affaire précédente /
@@ -2858,7 +2903,7 @@ VIEWS['affd-gestion']={
           +kt('cal','Ces 30 jours',sgHr(x.h30)+'<small>h</small>',x.h30?'Heures saisies ces 30 derniers jours':'Aucune heure saisie ces 30 derniers jours')
           +kt('gauge','Phase actuelle',pa?E(nm(pa.ph)):'—',pa?'D’après les heures saisies : '+sgPhaseLib(pa)+(pa.recent?'':' (dernière saisie le '+dfr(diso(pa.date))+')'):'Aucune heure saisie par phase','txt')
           +kt('clock','Dernière saisie',x.derD?dfr(diso(x.derD)):'—','','dt')+'</div></section>'
-        +'<section class="sg-ag-bloc sg-ag-eq"><h4>Équipe<span class="n">'+eq.length+'</span></h4>'+(eq.length?eq.map(q=>'<div class="nx-person sg-eq'+(q.h?'':' zero')+'" data-ref="s:'+E(q.s.ID)+'" title="'+E(staffName(q.s)+(q.att?' — attribué à l’affaire':' — a saisi des heures sans être dans l’équipe de l’affaire')+' : '+nxH(q.h)+' h'+(q.parti?' — a quitté le bureau':''))+'">'
+        +'<section class="sg-ag-bloc sg-ag-eq"><h4>Équipe<span class="n">'+eq.length+'</span></h4>'+(eq.length?eq.map(q=>'<div class="nx-person sg-eq'+(q.h?'':' zero')+'" data-rap="'+E(q.s.ID)+'" title="'+E('Rapport des heures — '+staffName(q.s)+(q.att?' — attribué à l’affaire':' — a saisi des heures sans être dans l’équipe de l’affaire')+' : '+nxH(q.h)+' h'+(q.parti?' — a quitté le bureau':''))+'">'
           +'<div class="nx-av">'+E(nxIni(staffName(q.s)))+'</div><div class="t"><div class="nl"><b>'+E(staffName(q.s))+'</b>'+(q.fn?'<small>'+E(q.fn)+'</small>':'')+(q.att?'':'<span class="nx-tag">hors équipe</span>')+(q.parti?'<span class="nx-tag">a quitté le bureau</span>':'')+'</div>'
           +'<span class="sg-eq-b"><i style="width:'+(q.h?Math.max(1,q.h/tot*100).toFixed(1):0)+'%"></i></span></div><span class="m"><b>'+sgHr(q.h)+' h</b><small>'+(q.h?(q.h/tot<.005?'&lt; 1':Math.round(q.h/tot*100))+' %':'aucune heure')+'</small></span></div>').join('')
           :'<p class="sg-ag-vide">Aucun collaborateur attribué ni aucune heure saisie.</p>')+'</section></div>';

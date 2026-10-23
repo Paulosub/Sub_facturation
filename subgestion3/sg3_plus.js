@@ -2753,6 +2753,33 @@ function sgFriseHeures(T){ if(!T.length) return ''; let a=T[0], b=T[0]; T.forEac
           const an=Math.floor(n/12), mo=n%12, duree=(an?an+' an'+(an>1?'s':''):'')+(an&&mo?' ':'')+(mo||!an?mo+' mois':'');
           return '<div class="sg-mandat" title="'+nxE('Première heure saisie le '+dfr(diso(tlDate(a)))+', dernière le '+dfr(diso(tlDate(b)))+' — '+n+' mois')+'"><b>'+d1+'</b>'   /* 20.10.2026 : sans le libellé « Mandat », durée centrée sous la frise */
             +(d1===d2?'<span class="d">'+duree+'</span>':'<span class="sg-frise"><em>'+duree+'</em></span><b>'+d2+'</b>')+'</div>'; }
+/* adresses d'une affaire (23.10.2026, demande de Paulo) — d'abord le contrat (ou l'offre) d'honoraires Facturation le plus récent qui les donne :
+   adresse d'affaire = adresse du projet (padr, ploc), maître de l'ouvrage = client (nom, adr, loc) ; sans contrat : adresse d'affaire choisie
+   (CONTACT1_ID) et maître de l'ouvrage = intervenant « Maître d'ouvrage » (rôle 8, o.moId = choix en cours) ; adresse de facturation AUTOMATIQUE =
+   nom du maître de l'ouvrage + « p.a. Substances Architectes Sàrl » + adresse du bureau (sans maître de l'ouvrage : adresse enregistrée
+   CONTACT2_ID) ; lieu de dépôt des offres = CONTACT4_ID ; l'adresse de livraison (CONTACT3_ID) n'est plus affichée : c'est l'adresse d'affaire */
+function sgBureauAdresse(){ const c=DS.all('contact').filter(x=>/^substances architectes/i.test(contactName(x))).sort((a,b)=>(!b.STREET)-(!a.STREET))[0];
+  if(!c) return {nom:'Substances Architectes Sàrl',lignes:['Rue de la Gare 12','1096 Cully']};
+  return {nom:contactName(c),lignes:adrLines(c).filter(x=>x!==c.NAME1&&x!==c.NAME2&&x!==c.NAME3)}; }
+/* nom d'une adresse tel qu'il y est écrit (« Famille Queloz », « Marianne Converset »), sans les formules de politesse seules sur leur ligne */
+const SG_SALUT=/^(madame|monsieur|mesdames|messieurs|madame,? monsieur|madame et monsieur|monsieur et madame|mme|m\.|mm\.)$/i;
+const sgNomAdresse=c=>c?([c.NAME1,c.NAME2,c.NAME3].map(x=>String(x||'').trim()).filter(x=>x&&!SG_SALUT.test(x)).join(' ')||contactName(c)):'';
+const sgLocMaj=v=>String(v||'').trim().replace(/^(\d{4}\s+)(\p{Ll})/u,(m,a,b)=>a+b.toUpperCase());
+function sgAdressesAffaire(p,D,o){ o=o||{}; const t=v=>String(v||'').trim(), ctc=id=>id!=null?DS.get('contact',id):null, R={};
+  const cs=D&&p?sgContratsDuProjet(p,D).filter(c=>!c.annule).map(c=>({c,d:String(sgContratInfo(c).date||'')})).sort((a,b)=>cmp(b.d,a.d)).map(x=>x.c):[];
+  const ca=cs.find(c=>t(c.padr)||t(c.ploc)), c1=ctc(p&&p.CONTACT1_ID);
+  R.affaire=ca?{lignes:[t(ca.padr),sgLocMaj(ca.ploc)].filter(Boolean),src:'contrat',ctr:ca.id}:c1?{lignes:adrLines(c1),src:'choisie',id:c1.ID}:{lignes:[],src:''};
+  const cm=cs.find(c=>t(c.nom)), m8=p&&p.ID!=null?svMember(p,8):null, c8=ctc(o.moId!=null?o.moId:m8&&m8.CONTACT_ID);
+  R.mo=cm?{nom:t(cm.nom),lignes:[t(cm.nom),t(cm.adr),sgLocMaj(cm.loc)].filter(Boolean),src:'contrat',ctr:cm.id}
+    :c8?{nom:sgNomAdresse(c8),lignes:adrLines(c8),src:o.moId!=null?'choisie':'intervenant',id:c8.ID}:{nom:'',lignes:[],src:''};
+  const b=sgBureauAdresse(), c2=ctc(p&&p.CONTACT2_ID);
+  R.fact=R.mo.nom?{lignes:[R.mo.nom,'p.a. '+b.nom,...b.lignes],src:'auto'}:c2?{lignes:adrLines(c2),src:'choisie',id:c2.ID}:{lignes:[],src:''};
+  const c4=ctc(p&&p.CONTACT4_ID); R.depot=c4?{lignes:adrLines(c4),src:'choisie',id:c4.ID}:{lignes:[],src:''};
+  R.contrats=cs.length; return R; }
+const SG_ADR_SRC=x=>x.src==='contrat'?'contrat '+x.ctr:x.src==='auto'?'automatique':x.src==='intervenant'?'intervenant de l’affaire':'';
+/* fiche de l'affaire ▸ Adresses (lecture) : mêmes règles ; redessinée quand la Facturation est chargée (#sg-ag-adr) */
+function sgFicheAdresses(p,D){ const E=nxE, A=sgAdressesAffaire(p,D), L=[['Adresse d’affaire',A.affaire],['Maître de l’ouvrage',A.mo],['Adresse de facturation',A.fact],['Lieu de dépôt des offres',A.depot]].filter(([,x])=>x.lignes.length);
+  return '<div class="sg-ag-sec" id="sg-ag-adr"><h5>Adresses</h5>'+(L.length?'<dl>'+L.map(([l,x])=>'<dt>'+E(l)+(SG_ADR_SRC(x)?'<small>'+E(SG_ADR_SRC(x))+'</small>':'')+'</dt><dd>'+x.lignes.map(E).join('<br>')+'</dd>').join('')+'</dl>':'<p class="sg-ag-vide">Aucune adresse.</p>')+'</div>'; }
 /* fiche complète d'une affaire en lecture (22.10.2026, demande de Paulo) : rubriques de la fenêtre « Éditer l'affaire » de l'ancien logiciel —
    Affaire, Genres d'affaire, Délais, Adresses, Références, Paramètres de saisie. 23.10.2026 : placée juste sous le titre de l'affaire ; numéro,
    désignation et statut retirés (ils sont dans l'en-tête) ; rubriques vides omises ; adresse identique à l'adresse d'affaire signalée comme
@@ -2760,15 +2787,13 @@ function sgFriseHeures(T){ if(!T.length) return ''; let a=T[0], b=T[0]; T.forEac
 function sgFicheAffaire(p){ const E=nxE, d=v=>v?dfr(v):'', t=v=>v==null?'':String(v).trim();
   const sec=(titre,L)=>{ const R=L.filter(([,v])=>t(v)!==''); return R.length?'<div class="sg-ag-sec"><h5>'+E(titre)+'</h5><dl>'+R.map(([l,v,html])=>'<dt>'+E(l)+'</dt><dd>'+(html?v:E(v))+'</dd>').join('')+'</dl></div>':''; };
   const ph=p.CURRENTPROJECTPHASE_ID?DS.get('projectphase',p.CURRENTPROJECTPHASE_ID):null, kinds=DS.by('project_projectkind','PROJECT_ID',p.ID).map(l=>DS.get('projectkind',l.PROJECTKINDS_ID)).filter(Boolean);
-  const lignes=id=>{ const c=id?DS.get('contact',id):null; return c&&typeof adrLines==='function'?adrLines(c).filter(Boolean):[]; }, A1=lignes(p.CONTACT1_ID).join('\n');
-  const adr=(id,prem)=>{ const L=lignes(id); if(!L.length) return ''; if(!prem&&A1&&L.join('\n')===A1) return '<span class="sg-ag-moins">identique à l’adresse d’affaire</span>'; return L.map(E).join('<br>'); };
   const ok=v=>+v?'<span class="sg-ag-oui" title="Obligatoire">'+nxSvg('check')+'</span>':'<span class="sg-ag-non" title="Facultatif">–</span>';
   return '<section class="sg-ag-bloc"><h4>Fiche de l’affaire</h4>'
     +sec('Affaire',[['Complément',p.DESCRIPTION],/* « Type d'affaire » (interne / externe) retiré à la demande (23.10.2026) */['Phase en cours (affaire)',ph?(ph.NUMBER!=null?ph.NUMBER+' ':'')+nm(ph):''],['Tri',p.SORTLABEL],
       ['Indice ICC',+p.BASISINDEX?num(+p.BASISINDEX,1):''],['Volume construit',+p.VOLUME?num(+p.VOLUME,0)+' m³':''],['Surface de plancher',+p.AREA?num(+p.AREA,0)+' m²':'']])
     +(kinds.length?'<div class="sg-ag-sec"><h5>Genres d’affaire</h5><div class="sg-ag-chips">'+kinds.map(k=>'<span class="nx-tag">'+E(nm(k))+'</span>').join('')+'</div></div>':'')
     /* rubrique « Délais » retirée à la demande (23.10.2026) */
-    +sec('Adresses',[['Adresse d’affaire',adr(p.CONTACT1_ID,1),1],['Adresse de facturation',adr(p.CONTACT2_ID),1],['Adresse de livraison',adr(p.CONTACT3_ID),1],['Lieu de dépôt des offres',adr(p.CONTACT4_ID),1]])
+    +sgFicheAdresses(p,typeof fxData==='function'?fxData():null)   /* adresses d'après le contrat, MO, facturation automatique (23.10.2026) */
     +sec('Références',[['N° d’affaire externe',p.EXTERNALNUMBER],['District',p.LOCATION],['Zone / quartier',p.PLOT],['N° registre foncier',p.LANDREGISTERNR],['Service comptabilité',p.ACCOUNTINGAREA],['Dossier d’affaire',p.PROJECTFOLDER]])
     +'<div class="sg-ag-sec"><h5>Paramètres de saisie</h5>'+(t(p.CURRENCY)?'<dl><dt>Monnaie</dt><dd>'+E(p.CURRENCY)+'</dd></dl>':'')
     +'<table class="sg-ag-par"><tr><th>Obligatoire</th><th>Phase</th><th>Subdivision</th><th>Description</th></tr><tr><td>Heures</td><td>'+ok(p.ISTIMEPHASEMANDATORY)+'</td><td>'+ok(p.ISTIMESUBPROJECTMANDATORY)+'</td><td>'+ok(p.ISTIMEDESCMANDATORY)+'</td></tr>'
@@ -2944,7 +2969,7 @@ VIEWS['affd-gestion']={
           :'<p class="sg-ag-vide">Aucun collaborateur attribué ni aucune heure saisie.</p>')+'</section></div>';
       if(dernier!==p.ID){ fiche.scrollTop=0; dernier=p.ID; }
       fxEnsure().catch(()=>null).then(()=>{ const c=fiche.querySelector('#sg-ag-ctr'); if(!c||cur()!==p) return; const D=fxData(), n=D?sgContratsDuProjet(p,D).length:0;
-        c.innerHTML=sgAgContrats(p,D); const cn=fiche.querySelector('#sg-ag-ctn'); if(cn) cn.textContent=n?String(n):''; majTout(); }); };
+        c.innerHTML=sgAgContrats(p,D); const ad=fiche.querySelector('#sg-ag-adr'); if(ad) ad.outerHTML=sgFicheAdresses(p,D); const cn=fiche.querySelector('#sg-ag-ctn'); if(cn) cn.textContent=n?String(n):''; majTout(); }); };
     const draw=()=>{ const rows=DS.all('project').filter(p=>(AF.arch||p.PROJECTSTATECODE!==5)&&(!AF.filt.s||p.PROJECTSTATECODE==AF.filt.s)&&(AF.filt.i==null||(+!!p.ISINTERNAL)===AF.filt.i)&&matchQ(AF.q,p.NUMBER,p.TITLE,p.DESCRIPTION));
       grid(pane,Object.assign(AF.g,{cols:[{k:'NUMBER',t:'Numéro',w:92},{k:'TITLE',t:'Affaire',w:300},{k:'st',t:'Statut',w:96,f:projState,v:p=>p.PROJECTSTATECODE},
         {k:'cat',t:'Catégorie',w:90,f:p=>E(catL(p)),v:catL},{k:'ph',t:'Phase actuelle',w:150,f:p=>E(phL(p)),v:phL},
@@ -3014,7 +3039,8 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
   const ck=(k,ti)=>'<input type="checkbox" data-k="'+k+'"'+(+v[k]?' checked':'')+' title="'+E(ti)+'">';
   const SECS=[['ident','Identification'],['statut','Statut'],['adr','Adresses'],['genres','Genres d’affaire'],['delais','Délais'],['carac','Caractéristiques'],['refs','Références'],['saisie','Saisie des heures et des frais'],['autres','Autres réglages']];
   const sec=(k,t,html,o)=>'<section class="sg-ep-s'+(o&&o.repli?' repli':'')+'" data-sec="'+k+'"><h4'+(o&&o.repli?' data-repli="1" role="button" tabindex="0" title="Afficher / masquer"':'')+'>'+(o&&o.repli?nxSvg('next','chev'):'')+E(t)+'</h4><div class="sg-ep-g">'+html+'</div></section>';
-  const ADR=[['CONTACT1_ID','Adresse d’affaire'],['CONTACT2_ID','Adresse de facturation'],['CONTACT3_ID','Adresse de livraison'],['CONTACT4_ID','Lieu de dépôt des offres']];
+  const CARTES=[['affaire','Adresse d’affaire'],['mo','Maître de l’ouvrage'],['fact','Adresse de facturation'],['depot','Lieu de dépôt des offres']];   /* adresse de livraison retirée (23.10.2026) */
+  let moChoisi=null;   /* maître de l'ouvrage choisi (sans contrat) : enregistré comme intervenant « Maître d'ouvrage » (rôle 8) */
   const corps=h('div',{class:'sg-ep'}); let liens=[], fige=0;   /* fige : rubrique choisie dans le sommaire, gardée surlignée pendant le saut */
   corps.innerHTML='<nav class="sg-ep-nav">'+SECS.map(([k,t],i)=>'<a data-go-sec="'+k+'" class="'+(i?'':'on')+'">'+E(t)+'</a>').join('')+'</nav><div class="sg-ep-f">'
     +'<div class="sg-ep-tete"><b data-tete="n">'+E(val('NUMBER')||'Nouvelle affaire')+'</b><span data-tete="t">'+E(val('TITLE'))+'</span></div>'
@@ -3023,7 +3049,7 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     +sec('statut','Statut',champ('Statut de l’affaire','<select class="inp" data-k="PROJECTSTATECODE" style="max-width:220px">'+Object.entries(PSTATE).map(([k,t])=>'<option value="'+k+'"'+(+k===+v.PROJECTSTATECODE?' selected':'')+'>'+E(t)+'</option>').join('')+'</select>')
       /* « Type d'affaire » (Externe / Interne) retiré à la demande (23.10.2026) : ISINTERNAL gardé tel quel (nouvelle affaire : externe) */
       /* « Phase en cours » retirée à la demande (23.10.2026) : la phase actuelle est dans la fiche projet ; CURRENTPROJECTPHASE_ID gardé tel quel */)
-    +sec('adr','Adresses','<div class="sg-ep-adrs">'+ADR.map(([k,l])=>'<div class="sg-ep-adr" data-adr="'+k+'"><span class="l">'+E(l)+'</span><div class="a"></div><div class="b"><button type="button" class="btn" data-adr-choisir="'+k+'">Choisir…</button>'+(k==='CONTACT1_ID'?'':'<button type="button" class="btn" data-adr-copier="'+k+'" title="Reprendre l’adresse d’affaire">Comme l’adresse d’affaire</button>')+'<button type="button" class="btn" data-adr-retirer="'+k+'">Retirer</button></div></div>').join('')+'</div>')
+    +sec('adr','Adresses','<div class="sg-ep-adrs">'+CARTES.map(([k,l])=>'<div class="sg-ep-adr" data-adrk="'+k+'"><span class="l">'+E(l)+'<em class="src"></em></span><div class="a"></div><div class="b"></div><small class="n"></small></div>').join('')+'</div>')
     +sec('genres','Genres d’affaire','<div class="sg-ep-genres"><div class="sg-ep-chips"></div><input class="inp sg-ep-q" type="search" placeholder="Rechercher un genre d’affaire…"><div class="sg-ep-liste"></div></div>')
     +sec('delais','Délais',champ('Début du projet',dat('PROJECTSTARTDATE'))+champ('Fin du projet',dat('PROJECTENDDATE'))+champ('Début de planification',txt('STARTOFPLANNING'))+champ('Fin de planification',txt('ENDOFPLANNING'))
       +champ('Début des travaux',txt('STARTOFCONSTRUCTION'))+champ('Fin des travaux',txt('ENDOFCONSTRUCTION'))+champ('Remise des clés',txt('MOVEINDEADLINE')))
@@ -3035,16 +3061,22 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     +sec('autres','Autres réglages',champ('Tri',txt('SORTLABEL',{w:'220px'}))+champ('Prochain plan-ID',nbr('NEXTUNIQUEPLANID','110px'))+'<label class="sg-ep-c sg-ep-ck">'+ck('ISUNIQUEPLANIDLOCKED','Créer automatiquement')+' Créer automatiquement les plan-ID</label>'
       +champ('Emplacement du dossier d’affaire',txt('PROJECTFOLDER'),{large:1})+champ('URL de la messagerie',txt('MAILBOXURL'),{large:1}),{repli:1})
     +'</div>';
-  /* adresses */
-  const majAdr=k=>{ const c=adr[k]?DS.get('contact',adr[k]):null, L=c?adrLines(c):[], box=corps.querySelector('[data-adr="'+k+'"]');
-    box.querySelector('.a').innerHTML=L.length?L.map(E).join('<br>'):'<span class="vide">Aucune adresse</span>'; box.classList.toggle('vide',!L.length); box.querySelector('[data-adr-retirer]').hidden=!L.length;
-    const cp=box.querySelector('[data-adr-copier]'); if(cp) cp.hidden=!adr.CONTACT1_ID||String(adr.CONTACT1_ID)===String(adr[k]); };
-  const majAdrs=()=>ADR.forEach(([k])=>majAdr(k)); majAdrs();
-  /* choix d'une adresse : fenêtre sgChoisirAdresse (suggestions de l'affaire, recherche, aperçu) au lieu du navigateur d'adresses du moteur (23.10.2026) */
-  corps.querySelectorAll('[data-adr-choisir]').forEach(b=>b.onclick=()=>{ const k=b.dataset.adrChoisir, l=(ADR.find(x=>x[0]===k)||[])[1];
-    sgChoisirAdresse(l,c=>{ adr[k]=c.ID; majAdrs(); },{courant:adr[k],p,deja:ADR.filter(([k2])=>k2!==k&&adr[k2]).map(([k2,l2])=>[l2,adr[k2]])}); });
-  corps.querySelectorAll('[data-adr-copier]').forEach(b=>b.onclick=()=>{ adr[b.dataset.adrCopier]=adr.CONTACT1_ID; majAdrs(); });
-  corps.querySelectorAll('[data-adr-retirer]').forEach(b=>b.onclick=()=>{ adr[b.dataset.adrRetirer]=null; majAdrs(); });
+  /* adresses (23.10.2026) : adresse d'affaire et maître de l'ouvrage repris du contrat (ou de l'offre) quand il les donne — sinon à choisir ;
+     adresse de facturation automatique (MO p.a. Substances Architectes) ; lieu de dépôt des offres à choisir ; règles : sgAdressesAffaire */
+  const majAdrs=()=>{ const pv=p?Object.assign({},p,{CONTACT1_ID:adr.CONTACT1_ID,CONTACT2_ID:adr.CONTACT2_ID,CONTACT4_ID:adr.CONTACT4_ID}):{ID:null,CONTACT1_ID:adr.CONTACT1_ID,CONTACT4_ID:adr.CONTACT4_ID};
+    const A=sgAdressesAffaire(pv,typeof fxData==='function'?fxData():null,{moId:moChoisi});
+    CARTES.forEach(([k])=>{ const x=A[k], box=corps.querySelector('[data-adrk="'+k+'"]'), auto=x.src==='contrat'||x.src==='auto';
+      box.querySelector('.a').innerHTML=x.lignes.length?x.lignes.map(E).join('<br>'):'<span class="vide">'+(k==='fact'?'Indiquez d’abord le maître de l’ouvrage.':'Aucune adresse')+'</span>';
+      box.querySelector('.src').textContent=SG_ADR_SRC(x); box.classList.toggle('auto',auto); box.classList.toggle('vide',!x.lignes.length);
+      box.querySelector('.b').innerHTML=auto||k==='fact'?'':'<button type="button" class="btn" data-adr-choisir="'+k+'">Choisir…</button>'+(k!=='mo'&&x.lignes.length?'<button type="button" class="btn" data-adr-retirer="'+k+'">Retirer</button>':'');
+      box.querySelector('.n').innerHTML=x.src==='contrat'?'Reprise du contrat d’honoraires '+E(x.ctr)+' : à modifier dans le contrat.':x.src==='auto'?'Nom du maître de l’ouvrage, p.a. Substances Architectes et adresse du bureau.'
+        :k==='mo'?(x.src==='choisie'?'Sera enregistré comme intervenant « Maître d’ouvrage ».':'Pas de contrat : choisissez dans l’annuaire (intervenant « Maître d’ouvrage »).'):k==='affaire'?'Pas d’adresse dans un contrat : choisissez dans l’annuaire.':''; }); };
+  majAdrs(); if(typeof fxEnsure==='function') fxEnsure().then(majAdrs).catch(()=>null);
+  corps.querySelector('.sg-ep-adrs').addEventListener('click',e=>{ const ch=e.target.closest('[data-adr-choisir]'), rt=e.target.closest('[data-adr-retirer]');
+    if(ch){ const k=ch.dataset.adrChoisir, l=(CARTES.find(x=>x[0]===k)||[])[1], cle=k==='affaire'?'CONTACT1_ID':k==='depot'?'CONTACT4_ID':null;
+      const cur=k==='mo'?(moChoisi!=null?moChoisi:(m=>m&&m.CONTACT_ID)(p?svMember(p,8):null)):adr[cle];
+      sgChoisirAdresse(l,c=>{ if(k==='mo') moChoisi=c.ID; else adr[cle]=c.ID; majAdrs(); },{courant:cur,p,deja:[['Adresse d’affaire',adr.CONTACT1_ID]].filter(x=>x[1]&&k!=='affaire')}); }
+    if(rt){ const k=rt.dataset.adrRetirer; adr[k==='affaire'?'CONTACT1_ID':'CONTACT4_ID']=null; majAdrs(); } });
   /* genres d'affaire */
   const GR=DS.all('projectkind').sort((a,b)=>cmp((DS.get('projectgroup',a.PROJECTGROUP_ID)||{}).SORTORDER,(DS.get('projectgroup',b.PROJECTGROUP_ID)||{}).SORTORDER)||cmp(a.SORTORDER,b.SORTORDER));
   const chips=corps.querySelector('.sg-ep-chips'), liste=corps.querySelector('.sg-ep-liste'), q=corps.querySelector('.sg-ep-q'); let qq='';
@@ -3072,6 +3104,10 @@ function sgEditAffaire(p){ const E=nxE, isNew=!p;
     const ops=[{t:'project',id:v.ID,val:v}], old=new Set(DS.by('project_projectkind','PROJECT_ID',v.ID).map(l=>l.PROJECTKINDS_ID));
     kinds.forEach(k=>{ if(!old.has(k)) ops.push({t:'project_projectkind',id:k+'-'+v.ID,val:{PROJECT_ID:v.ID,PROJECTKINDS_ID:k}}); });
     old.forEach(k=>{ if(!kinds.has(k)) ops.push({t:'project_projectkind',id:k+'-'+v.ID,val:null}); });
+    if(moChoisi!=null){ const m8=svMember(v,8);   /* maître de l'ouvrage choisi : intervenant « Maître d'ouvrage » (rôle 8) mis à jour ou créé */
+      if(m8){ if(String(m8.CONTACT_ID)!==String(moChoisi)) ops.push({t:'projectmember',id:m8.ID,val:{...m8,CONTACT_ID:moChoisi}}); }
+      else { const id=DS.newIds('projectmember')[0], so=DS.by('projectmember','PROJECT_ID',v.ID).reduce((a,x)=>Math.max(a,+x.SORTORDER||0),0);
+        ops.push({t:'projectmember',id,val:{ID:id,PROJECTDIVISION:null,PROJECTROLE:null,TEAMROLECODE:8,PROJECT_ID:v.ID,CONTACT_ID:moChoisi,BKP:null,NOTE:null,ISHIDDEN:0,RESPCONTACT_ID:null,SORTORDER:so+1}}); } }
     await DS.commit(ops); AF.g.sel=String(v.ID); toast('Affaire enregistrée.'); }}]});
   /* sommaire : rubrique visible surlignée */
   const bd=D.bd; liens=[...corps.querySelectorAll('[data-go-sec]')];

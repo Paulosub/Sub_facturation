@@ -699,7 +699,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   obligatoire et unique, signalé dans le champ) et enregistrement (project + project_projectkind, vérifié : enregistrer sans rien changer ne modifie
   rien) ; un seul formulaire avec sommaire à gauche (rubrique visible surlignée) au lieu de 6 onglets, en-tête jaune pâle (numéro et désignation
   en direct), libellés au-dessus des champs : Identification, Statut (statut seul : type Externe / Interne et « Phase en cours » retirés à la demande le même jour — ISINTERNAL
-  et CURRENTPROJECTPHASE_ID inchangés ; la phase actuelle est dans la fiche projet), Adresses (cartes Choisir… / Comme l'adresse d'affaire / Retirer ; « Choisir… » = fenêtre `sgChoisirAdresse` du même jour au
+  et CURRENTPROJECTPHASE_ID inchangés ; la phase actuelle est dans la fiche projet), Adresses (**même jour, demande de Paulo** : `sgAdressesAffaire(p,D,o)` — adresse d'affaire et **maître de l'ouvrage** (nouvelle carte)
+  repris du contrat ou de l'offre Facturation le plus récent qui les donne (`padr`/`ploc`, client `nom`/`adr`/`loc`), sinon à choisir (adresse d'affaire
+  = CONTACT1_ID ; MO = intervenant « Maître d'ouvrage » rôle 8, créé ou mis à jour à l'enregistrement) ; **adresse de facturation automatique** =
+  nom du MO + « p.a. Substances Architectes Sàrl » + adresse du bureau (`sgBureauAdresse`, annuaire) ; **adresse de livraison retirée** (= adresse
+  d'affaire, CONTACT3_ID inchangé) ; lieu de dépôt des offres à choisir ; mêmes règles dans la fiche de l'affaire, `sgFicheAdresses` ; les modèles
+  d'impression gardent les adresses enregistrées `projectContact1..4` ; cartes Choisir… / Retirer ; « Choisir… » = fenêtre `sgChoisirAdresse` du même jour au
   lieu du navigateur d'adresses du moteur : recherche immédiate nom / société / rue / localité, filtre Tous / Sociétés / Personnes, suggestions sans
   recherche — adresses déjà utilisées dans l'affaire, intervenants avec leur rôle —, adresse complète sur chaque ligne, aperçu à droite, ↑ ↓ /
   Entrée / double-clic ; styles `.sg-ca-*`), Genres d'affaire (cochés en étiquettes « groupe · genre », recherche,

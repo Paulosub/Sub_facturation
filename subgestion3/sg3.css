@@ -1162,3 +1162,11 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ca-ap .a small{display:block;margin-top:8px;font-size:11.5px;color:var(--s-gris)}
 .sg-ca .vide{color:var(--s-gris);font-size:12px}
 @media (max-width:760px){.sg-ca-corps{grid-template-columns:1fr}.sg-ca-ap{display:none}}
+/* adresses d'après le contrat (23.10.2026) */
+.sg-ep-adr .l{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sg-ep-adr .src{font-style:normal;font-weight:400;font-size:10.5px;color:var(--s-nuit);background:var(--s-nuit3);padding:0 5px}
+.sg-ep-adr .src:empty{display:none}
+.sg-ep-adr.auto{background:var(--s-fond)}
+.sg-ep-adr .n{font-size:11px;color:var(--s-gris)}.sg-ep-adr .n:empty{display:none}
+.sg-ep-adr .b:empty{display:none}
+.sg-ag-fiche dt small{display:block;font-size:10.5px;color:var(--s-gris)}

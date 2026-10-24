@@ -109,8 +109,8 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
 - `sg3_feuille.js` (bloc 27, en dernier) : Temps ▸ Feuille d'heures, nouvelle présentation — `VIEWS['h-saisie'].render` / `draw` remplacés
   (outils et `refresh` du moteur gardés) : semaine = `hsWeek` du moteur habillé par `sgfhHabiller` / `sgfhBloc` (gestes intacts : `.tlb`, `.tlrs`,
   glisser, ⌥ copie, `hsOverlap`), mois = `hsMonth`, Journal = `sgfhJournal` (`sg3_fh_vue`) ; en-tête `sgfhTete` (▾ `ch08bMyStaffs`), chiffres
-  `sgfhKpis`, couleurs `sgfhCouleurs` (`SGFH_PAL`, `SGFH_COL`), couloirs `sgfhCouloirs`. Archive `h-saisie-archive` (Réglages) = rendu d'origine
-  (`FH0`), enveloppes de `go` (drapeau `SGFH.redir`), `hsMark` et clavier. Styles `.sgfh-*` en fin de `sg3.css`.
+  `sgfhKpis`, couleurs `sgfhCouleurs` (`SGFH_PAL`, `SGFH_COL`), couloirs `sgfhCouloirs`. L'archive `h-saisie-archive` a été supprimée le
+  24.10.2026 (l'enveloppe de `go` la ramène vers `h-saisie`). Styles `.sgfh-*` en fin de `sg3.css`.
 - `sg3_inscription.js` (bloc 28, en dernier) : fenêtre de saisie d'une inscription d'heures redessinée — enveloppe de `hsEdit` (moteur) puis
   `sgieHabiller(dlg)` : éléments du moteur déplacés tels quels (listes `grid`, champs, boutons radio cachés), sections 1 Quand, 2 Projet et
   activité, 3 Phase, 4 Détails, résumé tenu à jour (`maj`), choix en cours et « obligatoire » au-dessus des listes. Styles `.sgie-*` en fin de `sg3.css`.

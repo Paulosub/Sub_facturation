@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 18:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 19:10 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -31462,13 +31462,14 @@ VIEWS['nx-controle']={
      gris), état en pastille (✓ approuvée, ! refusée, ↺ corrigée), vacances hachurées ; saisies qui se chevauchent (anciennes données) côte à côte,
      jamais l'une sur l'autre ; répartition par projet à droite. Contenu d'une saisie dans un ordre fixe (même jour, demande de Paulo) : l'affaire
      en tête et en entier, puis les heures, la phase et les remarques (sgfhLignes) ; les réglages « Afficher les activités / phases /
-     commentaires » et « Titre : … » ne s'appliquent plus et sont retirés du menu Fonctions (l'archive les garde).
+     commentaires » et « Titre : … » ne s'appliquent plus et sont retirés du menu Fonctions.
    - Journal (semaine, bouton de l'en-tête) : une carte par jour avec ses saisies, pour l'information du collaborateur ; un clic ouvre la fenêtre de
      saisie habituelle (hsEdit). Choix gardé : sg3_fh_vue.
-   - L'ancienne feuille d'heures reste dans Réglages ▸ Archives · Ancienne feuille d'heures (h-saisie-archive : le rendu d'origine du moteur ; ses
-     boutons et menus restent dans l'archive). « Archives · Feuille d'heures » marqué F = l'ancien registre de Facturation, autre chose. ═══ */
+   - L'ancienne feuille d'heures (Réglages ▸ Archives · Ancienne feuille d'heures, h-saisie-archive) a été supprimée définitivement le même soir
+     (demande de Paulo) ; une session restée dessus rouvre la feuille d'heures. « Archives · Feuille d'heures » marqué F = l'ancien registre de
+     Facturation, autre chose (gardé). ═══ */
 const SGFH_PAL=['#003346','#4CBAB5','#3F4193','#98C21F','#D7860D','#636E7E','#8C6D4F','#B5446E'], SGFH_COL=new Map();
-const SGFH={vue:nxLS.get('sg3_fh_vue','agenda'),redir:false};
+const SGFH={vue:nxLS.get('sg3_fh_vue','agenda')};
 const sgfhEtat=r=>{ const v=+r.TIMELOGSTATECODE||0; return v===3?'ok':v===1?'ref':v===2?'cor':''; };
 const sgfhBadge=r=>{ const e=sgfhEtat(r); return e==='ok'?'<span class="sgfh-st ok" title="Approuvée">'+nxSvg('check')+'</span>':e==='ref'?'<span class="sgfh-st ref" title="Refusée : à corriger">!</span>'
   :e==='cor'?'<span class="sgfh-st cor" title="Corrigée, à contrôler">↺</span>':''; };
@@ -31586,10 +31587,9 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
 function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=document.getElementById('bar'); document.documentElement.classList.remove('sgfh-on');
   if(tl&&bar&&tl.parentNode!==bar) bar.insertBefore(tl,bar.firstChild); }
 /* la feuille d'heures : même vue du moteur (outils, rafraîchissement), nouveau rendu */
-{ const V=VIEWS['h-saisie'], FH0={render:V.render,draw:V.draw,refresh:V.refresh,tools:V.tools};
+{ const V=VIEWS['h-saisie'], FH0={tools:V.tools};
   /* barre d'outils (24.10.2026, demande de Paulo) : sans Nouvelle saisie, Modifier, Supprimer, Approuver, Refuser, Réinitialiser — restent les gestes
-     (glisser, double-clic, clic droit, Suppr) ; Fonctions tout à droite (CSS), sans les réglages d'affichage qui ne s'appliquent plus (sgfhMenuSans) ;
-     l'archive garde la barre d'origine */
+     (glisser, double-clic, clic droit, Suppr) ; Fonctions tout à droite (CSS), sans les réglages d'affichage qui ne s'appliquent plus (sgfhMenuSans) */
   V.tools=function(){ const G=FH0.tools.call(this)||[], obj=x=>x&&typeof x==='object'&&!(x instanceof Node);
     return G.filter(g=>!(Array.isArray(g)&&g.some(x=>obj(x)&&(x.i==='plus'||x.label==='Approuver'))))
       .map(g=>Array.isArray(g)?g.map(x=>obj(x)&&x.i==='gear'&&typeof x.menu==='function'?{...x,menu:()=>sgfhMenuSans(x.menu())}:x):g); };
@@ -31601,7 +31601,7 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
       else if(f==='ed'){ const r=DS.get('timelog',t.dataset.id); if(r) hsEdit(r); }
       else if(f==='new') hsEdit(null,{date:new Date(t.dataset.d+'T00:00')}); });
     this.draw(); };
-  V.draw=function(){ const w=this._w; if(!w||!w.isConnected){ if(VIEW&&VIEW.id==='h-saisie-archive') VIEWS['h-saisie-archive'].draw(); return; }
+  V.draw=function(){ const w=this._w; if(!w||!w.isConnected) return;
     const D=sgfhDonnees(), jr=HS.mode==='sem'&&SGFH.vue==='journal', cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
     const tl=document.getElementById('tools'), ou=h('div',{class:'sgfh-outils'});
     haut.innerHTML=sgfhTete(D)+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
@@ -31609,18 +31609,9 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
     if(tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
     if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D); } else hsMonth(cal);
     side.innerHTML=jr?sgfhResume(D):sgfhRepartition(D,D.mois?'Répartition du mois':'Répartition de la semaine')+sgfhLegende(D.mois?'':SGFH_GESTES); };
-  /* Réglages ▸ Archives · Ancienne feuille d'heures : telle quelle (rendu d'origine du moteur) */
-  VIEWS['h-saisie-archive']={tools(){ return FH0.tools.call(this); },render(m){ return FH0.render.call(this,m); },draw(){ return FH0.draw.call(this); },refresh(ts){ return FH0.refresh.call(this,ts); }};
-  const R=SG_D.reglages; if(R&&!R.items.some(x=>x.v==='h-saisie-archive')){ const it={v:'h-saisie-archive',t:'Archives · Ancienne feuille d’heures',ico:'clock',d:'L’ancienne feuille d’heures (colonne des collaborateurs, agenda de 24 h, couleurs selon l’état), gardée pour un usage ultérieur.'};
-    const i=R.items.findIndex(x=>x.v==='affd-controlling'); R.items.splice(i<0?R.items.length:i+1,0,it); NX_VIEW['h-saisie-archive']={d:R,t:it.t,it}; }
-  /* dans l'archive, les boutons et menus du moteur qui rouvrent « h-saisie » restent dans l'archive ; sélection et clavier comme à l'origine */
-  const g0=go; go=function(v,...a){ sgfhOutilsRendre(); return g0.call(this,SGFH.redir&&v==='h-saisie'&&VIEW&&VIEW.id==='h-saisie-archive'?'h-saisie-archive':v,...a); };
-  document.addEventListener('click',e=>{ if(VIEW&&VIEW.id==='h-saisie-archive'&&e.target.closest('#tools,.menu')){ SGFH.redir=true; setTimeout(()=>{ SGFH.redir=false; },0); } },true);
-  const hm0=hsMark; hsMark=function(){ hm0.apply(this,arguments); if(VIEW&&VIEW.id==='h-saisie-archive') setTools(VIEWS['h-saisie-archive'].tools()); };
-  document.addEventListener('keydown',e=>{ if(!VIEW||VIEW.id!=='h-saisie-archive'||$('.ov')||e.target.closest('input,textarea,select')) return;
-    if(e.key==='Delete'||e.key==='Backspace'){ if(HS.selSet.size){ e.preventDefault(); hsDelete(); } }
-    else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='a'){ e.preventDefault(); const [a,b]=hsRange(); hsSelect(hsEntries(a,b).map(r=>r.ID)); }
-    else if(e.key==='Escape') hsSelect([]); }); }
+  /* avant tout changement d'écran, la barre d'outils revient à sa place ; l'ancienne feuille d'heures (h-saisie-archive), supprimée le 24.10.2026,
+     rouvre la feuille d'heures (session, récents) */
+  const g0=go; go=function(v,...a){ sgfhOutilsRendre(); return g0.call(this,v==='h-saisie-archive'?'h-saisie':v,...a); }; }
 
 /* ═══ 28. Temps ▸ fenêtre « Éditer l'inscription » redessinée (24.10.2026) ════════════════════════════════════════════════════════════════
    Demande de Paulo : « revoir le graphisme de Éditer inscription, améliorer et rendre plus intuitif ». C'est la fenêtre du moteur (hsEdit) :

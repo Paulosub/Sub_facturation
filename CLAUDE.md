@@ -831,10 +831,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `subgestion3/_backup_20261024_1652_avant_ordre_saisies/`. Saisie verrouillée atténuée ; saisies qui se chevauchent (anciennes données) côte à côte
   (`sgfhCouloirs`, quart d'heure minimal compris), jamais l'une sur l'autre ; ligne de l'heure actuelle ; répartition par projet à droite + rappel des
   gestes. **Journal** (semaine) : une carte par jour (anneau saisies / prévues, saisies lisibles, + = nouvelle saisie ce jour, clic = `hsEdit`), résumé à
-  droite. **L'ancienne feuille d'heures** : Réglages ▸ Archives · **Ancienne feuille d'heures** (`h-saisie-archive` = rendu d'origine du moteur ;
-  `go('h-saisie')` lancé par ses boutons ou menus — clic capturé dans `#tools` / `.menu`, `SGFH.redir` — reste dans l'archive ; `hsMark` et clavier
-  repris pour elle). Ne pas confondre avec « Archives · Feuille d'heures » marqué F (ancien registre de Facturation). Copie d'avant : la même que le
-  Contrôle des heures (`subgestion3/_backup_20261024_0949_avant_controle_heures/`).
+  droite. **L'ancienne feuille d'heures** (Réglages ▸ Archives · Ancienne feuille d'heures, `h-saisie-archive`, rendu d'origine du moteur) :
+  **supprimée définitivement le 24.10.2026 au soir (demande de Paulo)** — vue, entrée du menu, drapeau `SGFH.redir`, enveloppe de `hsMark` et
+  clavier retirés ; l'enveloppe de `go` de sg3_feuille.js ramène encore `h-saisie-archive` (session, récents) vers `h-saisie`. Aucune donnée
+  propre (mêmes heures). « Archives · Feuille d'heures » marqué F (ancien registre de Facturation) est autre chose et reste. Copie du code d'avant :
+  `subgestion3/_backup_20261024_1910_avant_suppression_ancienne_feuille/`.
   **Temps ▸ fenêtre « Éditer l'inscription » / « Nouvelle saisie » redessinée (24.10.2026, bloc 28, `subgestion3/sg3_inscription.js` + styles
   `.sgie-*` en fin de `sg3.css`)** — demande de Paulo « revoir le graphisme de Éditer inscription, améliorer et rendre plus intuitif ». Toujours la
   fenêtre du moteur `hsEdit` (enveloppée : `sgieHabiller(dlg)` après son ouverture) : mêmes champs, mêmes six listes, mêmes règles (affaire, groupe et

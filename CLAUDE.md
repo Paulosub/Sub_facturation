@@ -782,6 +782,28 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   modifier). Base de test : 190 inscriptions approuvées sur 37'622 (la validation était peu utilisée). Visuel Mac : filet fin du total, états en capsules
   (`visuels_variantes.css`). Copies d'avant : `subgestion3/_backup_20261024_0949_avant_controle_heures/`,
   `DeltaSub_backup_20261024_0949_avant_controle_heures.html`, `SUBGestion3_backup_20261024_0949_avant_controle_heures.html`.
+  **Temps ▸ Feuille d'heures, nouvelle présentation (24.10.2026, bloc 27, `subgestion3/sg3_feuille.js` + styles `.sgfh-*` en fin de `sg3.css`)** —
+  demande de Paulo « améliore la feuille d'heures, plus graphique ; la colonne collaborateur n'est pas nécessaire ; le nom du collaborateur en haut puis
+  la feuille d'heures ; avant de modifier, fais une copie dans Réglages » ; cinq variantes maquettées, charte seulement (A Agenda, B Grille projets × jours,
+  C Frise horaire, D Calendrier du mois, E Journal ; maquette `subgestion3/_backup_20261024_maquette_feuille_heures/proposition_fh.js`, page
+  `proposition_fh.html` de l'aperçu) ; choix : **A**, « pouvoir glisser les heures, qu'elles ne se superposent surtout pas, les mêmes fonctions que la
+  version actuelle (option-clic pour copier…), pas de nouvelle fonctionnalité », et **garder le Journal** « pour information au collaborateur ».
+  `VIEWS['h-saisie']` garde ses outils (`tools`), son `refresh` et toutes les fonctions du moteur : la semaine est dessinée par **`hsWeek` du moteur**
+  puis seulement habillée (`sgfhHabiller`, `sgfhBloc`) — glisser sur une plage libre = nouvelle saisie, ⌥ + glisser = copie de la saisie choisie,
+  glisser une saisie = la déplacer, bord inférieur (`.tlrs`) = sa fin, Cmd / Maj = sélection, double-clic, clic droit, Suppr, Cmd-A, Échap,
+  chevauchements refusés (`hsOverlap`), réglages personnels (titre affaire / durée, activités, phases, commentaires, week-end, agrandir…) ; Mois = `hsMonth`.
+  Nouveau rendu (`render` / `draw`) : en-tête jaune pâle au nom du collaborateur (initiales en grand, **trait vertical sur toute la hauteur, de
+  « Feuille d'heures » à la ligne d'informations**, demande du même jour ; ▾ = changer de collaborateur, liste `ch08bMyStaffs`, à la place de la colonne ;
+  au bureau depuis, heures complètes jusqu'au, saisie bloquée jusqu'au), période, boutons Agenda | Journal (semaine ; `sg3_fh_vue`) ; chiffres de la période
+  (heures saisies + jauge, prévues `hrMaps`, écart à ce jour, vacances restantes `hrHoliday`, projets) ; jours (nom, date, total / prévues, jauge, férié,
+  coche si tagué) ; saisies colorées par projet (`SGFH_PAL`, couleur gardée d'une semaine à l'autre, projet interne en gris, vacances hachurées), état en
+  pastille (✓ approuvée, ! refusée, ↺ corrigée), saisie verrouillée atténuée ; saisies qui se chevauchent (anciennes données) côte à côte
+  (`sgfhCouloirs`, quart d'heure minimal compris), jamais l'une sur l'autre ; ligne de l'heure actuelle ; répartition par projet à droite + rappel des
+  gestes. **Journal** (semaine) : une carte par jour (anneau saisies / prévues, saisies lisibles, + = nouvelle saisie ce jour, clic = `hsEdit`), résumé à
+  droite. **L'ancienne feuille d'heures** : Réglages ▸ Archives · **Ancienne feuille d'heures** (`h-saisie-archive` = rendu d'origine du moteur ;
+  `go('h-saisie')` lancé par ses boutons ou menus — clic capturé dans `#tools` / `.menu`, `SGFH.redir` — reste dans l'archive ; `hsMark` et clavier
+  repris pour elle). Ne pas confondre avec « Archives · Feuille d'heures » marqué F (ancien registre de Facturation). Copie d'avant : la même que le
+  Contrôle des heures (`subgestion3/_backup_20261024_0949_avant_controle_heures/`).
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

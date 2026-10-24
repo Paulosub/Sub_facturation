@@ -106,6 +106,11 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
   approbation en bloc (`DS.commit` TIMELOGSTATECODE 3 après `sgConfirm`), redessin `dessiner()` / `refresh(ts)` ; fenêtre du moteur
   `ctlTimeCheck(p,o)` (DeltaSub.html) : sans affaire avec `o.staffs`, `o.peut(r)`, `o.staff`, `o.date`, `o.titre`, `o.boutons` ; sans
   options = fenêtre d'origine du Controlling. Réglages `sg3_controle` {mode, d, vue} ; styles `.sgc-*` en fin de `sg3.css`.
+- `sg3_feuille.js` (bloc 27, en dernier) : Temps ▸ Feuille d'heures, nouvelle présentation — `VIEWS['h-saisie'].render` / `draw` remplacés
+  (outils et `refresh` du moteur gardés) : semaine = `hsWeek` du moteur habillé par `sgfhHabiller` / `sgfhBloc` (gestes intacts : `.tlb`, `.tlrs`,
+  glisser, ⌥ copie, `hsOverlap`), mois = `hsMonth`, Journal = `sgfhJournal` (`sg3_fh_vue`) ; en-tête `sgfhTete` (▾ `ch08bMyStaffs`), chiffres
+  `sgfhKpis`, couleurs `sgfhCouleurs` (`SGFH_PAL`, `SGFH_COL`), couloirs `sgfhCouloirs`. Archive `h-saisie-archive` (Réglages) = rendu d'origine
+  (`FH0`), enveloppes de `go` (drapeau `SGFH.redir`), `hsMark` et clavier. Styles `.sgfh-*` en fin de `sg3.css`.
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

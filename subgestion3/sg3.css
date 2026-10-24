@@ -1335,3 +1335,98 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgc-leg .sgc-man{color:var(--err);margin-right:6px}
 /* zone de travail étroite : boutons réduits à leur icône (libellé en infobulle), colonne des noms resserrée */
 @container (max-width:1100px){.sgc-act .nx-btn span{display:none}.sgc-act .nx-btn{padding:0 7px}.sgc-t td.sgc-n{min-width:170px}.sgc-nav b{min-width:200px}}
+
+/* ═══ Temps ▸ Feuille d'heures : nouvelle présentation (bloc 27, sg3_feuille.js, 24.10.2026 — variante A « Agenda » choisie par Paulo, charte
+   seulement) : en-tête au nom du collaborateur, chiffres, jours, saisies colorées par projet ; la semaine reste dessinée par le moteur ═══ */
+.sgfh{display:flex;flex-direction:column;height:100%;min-height:0;padding:16px 24px 0;box-sizing:border-box;overflow:hidden}
+.sgfh-haut{flex:none}
+.sgfh-tete{background:var(--s-jaune2);border-top:2px solid var(--s-noir);padding:14px 22px;display:flex;align-items:center;gap:12px 26px;flex-wrap:wrap}
+.sgfh-id{display:flex;align-items:stretch;gap:16px;flex:1 1 360px;min-width:0}
+/* trait vertical sur toute la hauteur du nom : de « Feuille d'heures » à la ligne d'informations (demande de Paulo) */
+.sgfh-ini{display:flex;align-items:center;font-size:34px;font-weight:700;color:var(--s-nuit);padding:0 18px 0 0;border-right:2px solid var(--s-noir);line-height:1;letter-spacing:.01em}
+.sgfh-nm{min-width:0}
+.sgfh-nm .lb{font-size:11px;font-weight:700;color:var(--s-gris);margin-bottom:2px}
+.sgfh-nm h2{margin:0;font-size:26px;line-height:1.1;font-weight:700;display:flex;align-items:center;gap:8px}
+.sgfh-chg{width:26px;height:26px;border:0;background:none;cursor:pointer;color:var(--s-noir);display:inline-grid;place-items:center;padding:0}
+.sgfh-chg svg{width:16px;height:16px;transform:rotate(90deg)}.sgfh-chg:hover{background:var(--s-jaune)}
+.sgfh-meta{font-size:12px;color:var(--s-gris);margin-top:5px}
+.sgfh-per{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.sgfh-per .lbl{font-weight:700;font-size:15px}
+.sgfh-kp{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0 18px;margin:12px 0 14px}
+.sgfh-kp .nx-kpi{margin-right:0}
+.sgfh-g{height:6px;background:var(--s-nuit3);margin-top:9px;position:relative}
+.sgfh-g i{position:absolute;left:0;top:0;bottom:0;background:var(--s-nuit)}.sgfh-g i.dp{background:var(--s-rouge)}
+.sgfh-neg{color:var(--s-rouge)}.sgfh-pos{color:#5d7a10}
+.sgfh-corps{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:22px;padding-bottom:14px}
+.sgfh-cal{display:flex;flex-direction:column;min-height:0;overflow:hidden;border-top:2px solid var(--s-noir)}
+.sgfh-cal.jr{overflow-y:auto;border-top:0}
+.sgfh-side{overflow-y:auto;min-height:0}
+/* jours de la semaine */
+.sgfh-jours{display:grid;border-bottom:1px solid var(--s-noir);flex:none}
+.sgfh-jours>div{padding:7px 6px 8px;border-left:1px solid var(--s-filet);min-width:0}
+.sgfh-jours>div:first-child{border-left:0}
+.sgfh-sem{display:flex;flex-direction:column;justify-content:flex-end;font-size:11px;color:var(--s-gris)}.sgfh-sem b{color:var(--s-noir);font-size:12px}
+.sgfh-jours .j{font-size:11px;font-weight:700;color:var(--s-gris);display:flex;align-items:center;gap:4px}
+.sgfh-jours .n{font-size:22px;font-weight:700;line-height:1.05}
+.sgfh-jours .auj{background:var(--s-jaune3)}.sgfh-jours .auj .n{color:var(--s-nuit)}
+.sgfh-jours .off{background:var(--s-fond)}
+.sgfh-jours .h{font-size:11.5px;display:flex;justify-content:space-between;gap:4px;margin-top:2px;white-space:nowrap}
+.sgfh-jours .fer{font-size:10.5px;color:var(--s-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+.sgfh-tag{display:inline-grid;place-items:center;width:13px;height:13px;border-radius:50%;background:#5d7a10;color:#fff}
+.sgfh-tag svg{width:9px;height:9px;stroke-width:3}
+/* saisies : couleur du projet, état en pastille ; les gestes restent ceux du moteur (.tlb, .tlrs) */
+.tlb.sgfh-b{border-left:4px solid;padding:3px 5px 3px 6px;box-sizing:border-box;font-size:11.5px;line-height:1.25}
+.tlb.sgfh-b:hover{box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:4!important}
+.sgfh-bc .t1{display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden}
+.sgfh-bc .t1 b{overflow:hidden;text-overflow:ellipsis}
+.sgfh-bc .t1 .d{margin-left:auto;flex:none}
+.sgfh-bc .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4a4a48}
+.tlb.sgfh-b.mini{padding:0 5px 0 6px;font-size:10px;line-height:1}
+.tlb.sgfh-b.mini .sgfh-bc,.tlb.sgfh-b.mini .t1{height:100%}.tlb.sgfh-b.mini .tx{display:none}
+.tlb.sgfh-b.mini .sgfh-st{width:10px;height:10px;font-size:7px}.tlb.sgfh-b.mini .sgfh-st svg{width:7px;height:7px}
+.tlb.sgfh-b.verr{opacity:.78}
+.sgfh-vac{background:repeating-linear-gradient(135deg,#fef6b0 0 6px,#fffbdc 6px 12px)!important}
+.sgfh-dot.sgfh-vac{box-shadow:inset 0 0 0 1px #e6c66c}
+.sgfh-st{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;font-size:10px;font-weight:700;color:#fff;flex:none;line-height:1}
+.sgfh-st.ok{background:#5d7a10}.sgfh-st.ref{background:var(--s-rouge)}.sgfh-st.cor{background:var(--s-orange)}
+.sgfh-st svg{width:10px;height:10px;stroke-width:3}
+.sgfh-now{position:absolute;left:0;right:0;border-top:2px solid var(--s-rouge);z-index:5;pointer-events:none}
+.sgfh-now::before{content:"";position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:var(--s-rouge)}
+/* répartition par projet, légende */
+.sgfh-h4{font-size:11.5px;font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--s-noir);margin:0 0 10px}
+.sgfh-proj{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.sgfh-proj .r{display:grid;grid-template-columns:10px 1fr auto;gap:4px 8px;align-items:center;font-size:12px}
+.sgfh-proj .r .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgfh-proj .r .bar{grid-column:2/4;height:5px;background:var(--s-fond)}.sgfh-proj .r .bar i{display:block;height:100%}
+.sgfh-dot{display:inline-block;width:10px;height:10px;flex:none}
+.sgfh-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--s-gris);padding-top:8px;border-top:1px solid var(--s-filet)}
+.sgfh-leg>span{display:inline-flex;align-items:center;gap:6px}
+.sgfh-leg .g{display:block;line-height:1.5;margin-top:4px}
+/* Journal (pour l'information du collaborateur) */
+.sgfh-jr{display:flex;flex-direction:column;gap:14px;padding-bottom:10px}
+.sgfh-jc{border-top:2px solid var(--s-noir);background:#fff}
+.sgfh-jc.auj{border-top-color:var(--s-nuit)}
+.sgfh-jh{display:flex;align-items:center;gap:12px;padding:10px 0 8px}
+.sgfh-jh h3{margin:0;font-size:15px;font-weight:700}
+.sgfh-jh .s{font-size:12px;color:var(--s-gris)}
+.sgfh-jh .r{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px}
+.sgfh-jh .r b{font-size:15px}
+.sgfh-jc.off{opacity:.8}.sgfh-jc.off .sgfh-jh{padding:7px 0}
+.sgfh-man{font-size:12px;color:var(--s-rouge);padding:2px 0 10px;font-weight:700}
+.sgfh-ent{display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:2px 10px;padding:9px 0;border-bottom:1px solid var(--s-filet);cursor:pointer;align-items:start}
+.sgfh-ent:hover{background:#fafaf8}
+.sgfh-ent .k{grid-row:1/4;align-self:stretch}
+.sgfh-ent .a{font-size:12.5px;font-weight:700;display:flex;gap:6px;align-items:center;min-width:0}
+.sgfh-ent .a span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400}
+.sgfh-ent .b{font-size:11.5px;color:var(--s-gris)}
+.sgfh-ent .c{font-size:11.5px;color:#555;grid-column:2/4}
+.sgfh-ent .du{font-weight:700;font-size:13px;text-align:right;white-space:nowrap}
+.sgfh-ent .du small{display:block;font-weight:400;font-size:11px;color:var(--s-gris)}
+.sgfh-big{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.sgfh-big .v{font-size:28px;font-weight:700;line-height:1}.sgfh-big .v small{font-size:12px;font-weight:400;color:var(--s-gris)}
+.sgfh-big .t{font-size:12px;color:var(--s-gris);margin-top:4px}
+.sgfh-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:70px;margin-bottom:18px}
+.sgfh-wk div{display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;font-size:10px;color:var(--s-gris)}
+.sgfh-wk div i{display:block;width:70%;background:var(--s-nuit)}.sgfh-wk div i.v{background:#e6c66c}
+/* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */
+@container (max-width:1050px){.sgfh-kp{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}}

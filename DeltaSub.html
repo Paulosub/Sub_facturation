@@ -2188,7 +2188,8 @@ function ctlWin(title,body,extra){ const D=dialog({title,body,buttons:[...(extra
    affaires en gris sur option, WeekToolBarPanel.showReviewHiddenItems) ; clic droit : Approuver, Refuser, Réinitialiser, Tout sélectionner.
    Options o (SUBGestion 3 ▸ Temps ▸ Contrôle des heures, 24.10.2026) : sans affaire (p null), toutes les heures des collaborateurs o.staffs —
    o.peut(r) dit lesquelles se contrôlent, les autres sont en gris comme les autres affaires —, o.staff et o.date = collaborateur et semaine
-   ouverts, o.titre, o.boutons = Approuver / Refuser / Réinitialiser aussi dans la barre. Sans options : la fenêtre d'origine, inchangée. ── */
+   ouverts, o.titre, o.boutons = Approuver / Refuser / Réinitialiser aussi dans la barre, o.bloc(r,el,autre) = contenu d'une inscription refait par
+   l'appelant, o.reglages(liste) = menu des réglages filtré. Sans options : la fenêtre d'origine, inchangée. ── */
 const CTL_W={d:new Date(),staff:null,sel:new Set(),o:{act:1,ph:0,com:1,brk:0,projFirst:0,sat:1,sun:1,pub:1,zoom:0,autres:0}};
 try{ Object.assign(CTL_W.o,JSON.parse(localStorage.getItem('ds_ctw_opts')||'{}')); }catch(_){}
 function ctlTimeCheck(p,o){ o=o||{}; if(!p&&!o.staffs) return; const W=CTL_W, sl=p?ctlStaffs(p,'timelog'):o.staffs, own=r=>p?r.PROJECT_ID===p.ID:(!o.peut||o.peut(r)); W.sel.clear();
@@ -2212,11 +2213,11 @@ function ctlTimeCheck(p,o){ o=o||{}; if(!p&&!o.staffs) return; const W=CTL_W, sl
       ibtn({i:'next',fn:()=>{ W.d=new Date(W.d.getFullYear()+1,W.d.getMonth(),W.d.getDate()); draw(); }}),h('div',{style:{width:'10px'}}),
       ...(o.boutons?[ibtn({label:'Approuver',t:'Approuver les inscriptions choisies',fn:()=>setState(3)}),ibtn({label:'Refuser',t:'Refuser les inscriptions choisies',fn:()=>setState(1)}),
         ibtn({label:'Réinitialiser',t:'Remettre les inscriptions choisies à « Saisi »',fn:()=>setState(0)}),ibtn({label:'Tout sélectionner',fn:()=>sel(E)}),h('div',{style:{width:'10px'}})]:[]),
-      ibtn({i:'gear',t:'Réglages',menu:()=>[{t:'Afficher les activités',chk:O.act,fn:()=>setO('act',O.act?0:1)},{t:'Afficher les phases',chk:O.ph,fn:()=>setO('ph',O.ph?0:1)},
+      ibtn({i:'gear',t:'Réglages',menu:()=>(o.reglages||(M=>M))([{t:'Afficher les activités',chk:O.act,fn:()=>setO('act',O.act?0:1)},{t:'Afficher les phases',chk:O.ph,fn:()=>setO('ph',O.ph?0:1)},
         {t:'Afficher les commentaires',chk:O.com,fn:()=>setO('com',O.com?0:1)},{t:'Afficher les arrêts de travail',chk:O.brk,fn:()=>setO('brk',O.brk?0:1)},'-',
         {t:'Titre : afficher l’affaire',chk:O.projFirst,fn:()=>setO('projFirst',1)},{t:'Titre : afficher la durée',chk:!O.projFirst,fn:()=>setO('projFirst',0)},'-',
         {t:'Taguer les samedis',chk:O.sat,fn:()=>setO('sat',O.sat?0:1)},{t:'Taguer les dimanches',chk:O.sun,fn:()=>setO('sun',O.sun?0:1)},{t:'Taguer les jours fériés',chk:O.pub,fn:()=>setO('pub',O.pub?0:1)},
-        {t:'Agrandir',chk:O.zoom,fn:()=>setO('zoom',O.zoom?0:1)},'-',{t:'Afficher les saisies d’heure des autres affaires',chk:O.autres,fn:()=>setO('autres',O.autres?0:1)}]})); };
+        {t:'Agrandir',chk:O.zoom,fn:()=>setO('zoom',O.zoom?0:1)},'-',{t:'Afficher les saisies d’heure des autres affaires',chk:O.autres,fn:()=>setO('autres',O.autres?0:1)}])})); };
   const drawCal=()=>{ cal.innerHTML=''; if(!W.staff){ cal.append(h('div',{class:'ph'},sl.length?'Sélectionnez un collaborateur.':p?'Aucun collaborateur dans cette affaire.':'Aucun collaborateur.')); return; }
     const O=W.o, mon=mondayOf(W.d), days=[...Array(7)].map((_,i)=>{ const d=new Date(mon); d.setDate(d.getDate()+i); return d; }), ka=dayKey(days[0]), kb=dayKey(days[6]);
     const all=DS.by('timelog','STAFF_ID',W.staff).filter(r=>{ const k=tlKey(r); return k>=ka&&k<=kb; });
@@ -2241,6 +2242,7 @@ function ctlTimeCheck(p,o){ o=o||{}; if(!p&&!o.staffs) return; const W=CTL_W, sl
         O.act&&!r.ISHOLIDAY?line(nm(DS.get('projectactivity',r.ACTIVITY_ID))):null,
         O.ph&&!r.ISHOLIDAY?line([nm(DS.get('projectphase',r.PHASE_ID)),nm(DS.get('projectsubphase',r.SUBPHASE_ID))].filter(Boolean).join(' · ')):null,O.com&&r.DESCRIPTION?line(r.DESCRIPTION):null);
       el.title=[time,what,nm(DS.get('projectactivity',r.ACTIVITY_ID)),nm(DS.get('projectphase',r.PHASE_ID)),r.DESCRIPTION,TSTATE[r.TIMELOGSTATECODE||0]].filter(Boolean).join('\n');
+      if(o.bloc) o.bloc(r,el,other);
       if(other) return el;
       el.onmousedown=e=>{ if(e.button) return; e.preventDefault(); const k=String(r.ID); if(e.metaKey||e.ctrlKey||e.shiftKey){ W.sel.has(k)?W.sel.delete(k):W.sel.add(k); } else { W.sel.clear(); W.sel.add(k); } mark(); };
       el.oncontextmenu=e=>{ e.preventDefault(); e.stopPropagation(); if(!W.sel.has(String(r.ID))){ W.sel.clear(); W.sel.add(String(r.ID)); mark(); }

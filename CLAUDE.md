@@ -790,6 +790,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Exporter en CSV ; `#tools` déplacé comme dans la Feuille d'heures, rendu par `sgfhOutilsRendre`), tableau sous un filet noir (`.sgc-tab`, défile dans
   `.sgc-corps`), jours en tête comme l'agenda (nom, date en grand), pastilles ✓ / ! / ↺ dans les cellules et l'état, légende `sgfh-leg`. Copie d'avant :
   `subgestion3/_backup_20261024_avant_controle_graphisme/`.
+  **Fenêtre « Contrôler » dans l'ordre de la feuille d'heures (même jour)** : chaque inscription = bandeau à la couleur d'état du moteur avec l'affaire en
+  entier, puis heures, phase, remarques (`sgcBloc`) ; menu Réglages sans « Afficher les activités / phases / commentaires » ni « Titre : … ». Moteur :
+  `ctlTimeCheck` accepte `o.bloc(r,el,autre)` (contenu d'une inscription refait par l'appelant) et `o.reglages(liste)` (menu filtré) ; sans ces
+  options, fenêtre d'origine (Archives · Controlling, DeltaSub seul).
   **Temps ▸ Feuille d'heures, nouvelle présentation (24.10.2026, bloc 27, `subgestion3/sg3_feuille.js` + styles `.sgfh-*` en fin de `sg3.css`)** —
   demande de Paulo « améliore la feuille d'heures, plus graphique ; la colonne collaborateur n'est pas nécessaire ; le nom du collaborateur en haut puis
   la feuille d'heures ; avant de modifier, fais une copie dans Réglages » ; cinq variantes maquettées, charte seulement (A Agenda, B Grille projets × jours,
@@ -811,7 +815,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   coche si tagué) ; saisies colorées par projet (`SGFH_PAL`, couleur gardée d'une semaine à l'autre, projet interne en gris, vacances hachurées), état en
   pastille (✓ approuvée, ! refusée, ↺ corrigée) **à gauche du nom de l'affaire**, **nom de l'affaire toujours en entier** (numéro + désignation, à la
   ligne si besoin — `.nom .nt` ; seules les saisies de moins d'un quart d'heure gardent une ligne coupée ; même jour, demande de Paulo ; idem dans le
-  Journal et la répartition), saisie verrouillée atténuée ; saisies qui se chevauchent (anciennes données) côte à côte
+  Journal et la répartition), **contenu d'une saisie dans un ordre fixe** (même jour, Paulo : « le nom de l'affaire doit être indiqué tout en haut et
+  ensuite les heures, puis la phase et ensuite les remarques » ; `sgfhLignes`, commune avec la fenêtre « Contrôler ») : affaire, heures (de – à, durée
+  à droite, à la ligne si la colonne est étroite), phase · phase partielle, remarques ; ce qui dépasse est coupé, l'infobulle donne tout (avec l'activité
+  et l'état) ; réglages « Afficher les activités / phases / commentaires » et « Titre : … » retirés du menu Fonctions (`sgfhMenuSans`, l'archive les
+  garde) ; `sgfhPhase` passe l'enregistrement à `sgPhNom` (avec un simple nom, la phase s'affichait « Phase », Journal compris). Copie d'avant :
+  `subgestion3/_backup_20261024_1652_avant_ordre_saisies/`. Saisie verrouillée atténuée ; saisies qui se chevauchent (anciennes données) côte à côte
   (`sgfhCouloirs`, quart d'heure minimal compris), jamais l'une sur l'autre ; ligne de l'heure actuelle ; répartition par projet à droite + rappel des
   gestes. **Journal** (semaine) : une carte par jour (anneau saisies / prévues, saisies lisibles, + = nouvelle saisie ce jour, clic = `hsEdit`), résumé à
   droite. **L'ancienne feuille d'heures** : Réglages ▸ Archives · **Ancienne feuille d'heures** (`h-saisie-archive` = rendu d'origine du moteur ;

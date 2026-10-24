@@ -14,7 +14,9 @@
      au bureau, heures taguées, saisie bloquée), période ; chiffres de la période (heures saisies et jauge, prévues, écart à ce jour, vacances
      restantes, projets) ; jours (nom, date, total / prévues, jauge, férié) ; une couleur par projet, gardée d'une semaine à l'autre (bureau en
      gris), état en pastille (✓ approuvée, ! refusée, ↺ corrigée), vacances hachurées ; saisies qui se chevauchent (anciennes données) côte à côte,
-     jamais l'une sur l'autre ; répartition par projet à droite.
+     jamais l'une sur l'autre ; répartition par projet à droite. Contenu d'une saisie dans un ordre fixe (même jour, demande de Paulo) : l'affaire
+     en tête et en entier, puis les heures, la phase et les remarques (sgfhLignes) ; les réglages « Afficher les activités / phases /
+     commentaires » et « Titre : … » ne s'appliquent plus et sont retirés du menu Fonctions (l'archive les garde).
    - Journal (semaine, bouton de l'en-tête) : une carte par jour avec ses saisies, pour l'information du collaborateur ; un clic ouvre la fenêtre de
      saisie habituelle (hsEdit). Choix gardé : sg3_fh_vue.
    - L'ancienne feuille d'heures reste dans Réglages ▸ Archives · Ancienne feuille d'heures (h-saisie-archive : le rendu d'origine du moteur ; ses
@@ -25,11 +27,20 @@ const sgfhEtat=r=>{ const v=+r.TIMELOGSTATECODE||0; return v===3?'ok':v===1?'ref
 const sgfhBadge=r=>{ const e=sgfhEtat(r); return e==='ok'?'<span class="sgfh-st ok" title="Approuvée">'+nxSvg('check')+'</span>':e==='ref'?'<span class="sgfh-st ref" title="Refusée : à corriger">!</span>'
   :e==='cor'?'<span class="sgfh-st cor" title="Corrigée, à contrôler">↺</span>':''; };
 const sgfhTxt=x=>String(x||'').replace(/\s+/g,' ').trim();
-const sgfhPhase=r=>{ const f=x=>sgfhTxt(x&&typeof sgPhNom==='function'?sgPhNom(x):x), a=f(nm(DS.get('projectphase',r.PHASE_ID))), b=f(nm(DS.get('projectsubphase',r.SUBPHASE_ID))); return [a,b&&b!==a?b:''].filter(Boolean).join(' · '); };
+/* phase · phase partielle ; sgPhNom reçoit l'enregistrement (avec un simple nom, il rendait « Phase ») */
+const sgfhPhase=r=>{ const f=o=>o?sgfhTxt(typeof sgPhNom==='function'?sgPhNom(o):nm(o)):'', a=f(DS.get('projectphase',r.PHASE_ID)), b=f(DS.get('projectsubphase',r.SUBPHASE_ID)); return [a,b&&b!==a?b:''].filter(Boolean).join(' · '); };
 const sgfhAct=r=>sgfhTxt(nm(DS.get('projectactivity',r.ACTIVITY_ID)));
 const sgfhPhAct=r=>{ const p=sgfhPhase(r), a=sgfhAct(r); return [p,a&&a!==p?a:''].filter(Boolean).join(' · '); };
 const sgfhHeures=r=>hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)+' – '+hm(Math.floor(tlT2(r)/60),tlT2(r)%60);
 const sgfhNum=id=>{ const p=DS.get('project',id); return p?sgfhTxt(p.NUMBER):''; }, sgfhTit=id=>{ const p=DS.get('project',id); return p?sgfhTxt(p.TITLE):''; };
+/* contenu d'une saisie, toujours dans cet ordre (demande de Paulo, 24.10.2026) : l'affaire en tête, les heures (de – à, durée), la phase, les
+   remarques ; l'activité et l'état restent dans l'infobulle. Sert à la feuille d'heures et à la fenêtre « Contrôler » (sg3_controle.js). */
+const sgfhLignes=r=>{ const hol=!!r.ISHOLIDAY, num=hol?'Vacances':sgfhNum(r.PROJECT_ID), tit=hol?'':sgfhTit(r.PROJECT_ID), tps=sgfhHeures(r), du=nxH(r.TIMEPERIOD)+' h',
+    ph=hol?'':sgfhPhase(r), rq=sgfhTxt(r.DESCRIPTION);
+  return {num,tit,tps,du,ph,rq,titre:[[num,tit].filter(Boolean).join(' '),tps+' · '+du,ph,hol?'':sgfhAct(r),rq,TSTATE[r.TIMELOGSTATECODE||0]].filter(Boolean).join('\n')}; };
+/* réglages d'affichage qui ne s'appliquent plus (ordre fixe ci-dessus), retirés des menus Fonctions et Réglages ; séparateurs en double retirés */
+const SGFH_SANS=/^(Afficher les (activités|phases|commentaires)|Titre\s*:)/;
+const sgfhMenuSans=L=>L.filter(x=>!(x&&typeof x==='object'&&SGFH_SANS.test(x.t||''))).filter((x,i,a)=>x!=='-'||(i>0&&i<a.length-1&&a[i-1]!=='-'));
 const sgfhTeinte=(c,p)=>'color-mix(in srgb,'+c+' '+(p||20)+'%,#fff)';
 const sgfhSomme=L=>L.reduce((t,r)=>t+(+r.TIMEPERIOD||0),0);
 /* une couleur par projet, gardée d'une période à l'autre (une autre si elle est déjà prise dans la période) ; bureau (projet interne) en gris */
@@ -96,18 +107,16 @@ function sgfhHabiller(cal,D){ const head=cal.firstElementChild, sc=head&&head.ne
     if(k===auj){ const n=new Date(); c.append(h('div',{class:'sgfh-now',style:{top:((n.getHours()*60+n.getMinutes())*PX/60)+'px'}})); }
     const bl=[...c.children].filter(x=>x.classList.contains('tlb')), recs=bl.map(b=>byId.get(String(b.dataset.id))).filter(Boolean).sort((x,y)=>tlT1(x)-tlT1(y)), K=sgfhCouloirs(recs);
     bl.forEach(b=>{ const r=byId.get(String(b.dataset.id)); if(r) sgfhBloc(b,r,D,K.get(r.ID)||[0,1]); }); }); }
-function sgfhBloc(b,r,D,[i,n]){ const O=HS.o, hol=!!r.ISHOLIDAY, c=hol?'#d7a13a':D.co.c(r.PROJECT_ID), ht=parseFloat(b.style.height)||0;
+function sgfhBloc(b,r,D,[i,n]){ const hol=!!r.ISHOLIDAY, c=hol?'#d7a13a':D.co.c(r.PROJECT_ID), ht=parseFloat(b.style.height)||0;
   b.classList.add('sgfh-b'); b.classList.toggle('sgfh-vac',hol); b.classList.toggle('verr',tlLocked(r)); b.classList.toggle('mini',ht<22);
   b.style.background=hol?'':sgfhTeinte(c); b.style.borderLeftColor=c;
   if(n>1){ b.style.left='calc('+(i/n*100)+'% + 1px)'; b.style.right='auto'; b.style.width='calc('+(100/n)+'% - 2px)'; }
   const rs=b.querySelector('.tlrs'); [...b.children].forEach(x=>{ if(x!==rs) x.remove(); });
-  /* nom de l'affaire toujours en entier (à la ligne si besoin), pastille d'état à sa gauche ; titre : l'affaire ou l'horaire (réglage « Titre ») */
-  const num=hol?'Vacances':sgfhNum(r.PROJECT_ID), tit=hol?'':sgfhTit(r.PROJECT_ID), tps=sgfhHeures(r), du='<span class="d">'+nxH(r.TIMEPERIOD)+' h</span>';
-  const nom='<div class="nom">'+sgfhBadge(r)+'<span class="nt"><b>'+nxE(num)+'</b>'+(tit?' '+nxE(tit):'')+'</span></div>';
-  const l3=hol?'':[O.ph?sgfhPhase(r):'',O.act?sgfhAct(r):''].filter(Boolean).join(' · '), l4=O.com&&r.DESCRIPTION?sgfhTxt(r.DESCRIPTION):'';
-  const box=h('div',{class:'sgfh-bc'}); box.innerHTML=(O.projFirst?'<div class="t1">'+nom+du+'</div><div class="tx">'+nxE(tps)+'</div>':'<div class="t1"><b>'+nxE(tps)+'</b>'+du+'</div>'+nom)
-    +[l3,l4].filter(Boolean).map(x=>'<div class="tx">'+nxE(x)+'</div>').join('');
-  b.insertBefore(box,rs||null); }
+  /* l'affaire en tête et en entier (à la ligne si besoin, pastille d'état à sa gauche), puis les heures, la phase, les remarques */
+  const L=sgfhLignes(r), box=h('div',{class:'sgfh-bc'});
+  box.innerHTML='<div class="nom">'+sgfhBadge(r)+'<span class="nt"><b>'+nxE(L.num)+'</b>'+(L.tit?' '+nxE(L.tit):'')+'</span></div>'
+    +'<div class="t1"><span>'+nxE(L.tps)+'</span><span class="d">'+nxE(L.du)+'</span></div>'+[L.ph,L.rq].filter(Boolean).map(x=>'<div class="tx">'+nxE(x)+'</div>').join('');
+  b.title=L.titre; b.insertBefore(box,rs||null); }
 /* Journal : une carte par jour, pour l'information du collaborateur */
 function sgfhEntree(D,r){ const c=r.ISHOLIDAY?'#d7a13a':D.co.c(r.PROJECT_ID);
   return '<div class="sgfh-ent" data-fh="ed" data-id="'+r.ID+'" title="Modifier la saisie"><i class="k'+(r.ISHOLIDAY?' sgfh-vac':'')+'" style="background:'+c+'"></i><div class="a">'+sgfhBadge(r)+'<span class="nt">'+(r.ISHOLIDAY?'<b>Vacances</b>':'<b>'+nxE(sgfhNum(r.PROJECT_ID))+'</b> '+nxE(sgfhTit(r.PROJECT_ID)))+'</span></div>'
@@ -128,9 +137,11 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
 /* la feuille d'heures : même vue du moteur (outils, rafraîchissement), nouveau rendu */
 { const V=VIEWS['h-saisie'], FH0={render:V.render,draw:V.draw,refresh:V.refresh,tools:V.tools};
   /* barre d'outils (24.10.2026, demande de Paulo) : sans Nouvelle saisie, Modifier, Supprimer, Approuver, Refuser, Réinitialiser — restent les gestes
-     (glisser, double-clic, clic droit, Suppr) ; Fonctions tout à droite (CSS) ; l'archive garde la barre d'origine */
+     (glisser, double-clic, clic droit, Suppr) ; Fonctions tout à droite (CSS), sans les réglages d'affichage qui ne s'appliquent plus (sgfhMenuSans) ;
+     l'archive garde la barre d'origine */
   V.tools=function(){ const G=FH0.tools.call(this)||[], obj=x=>x&&typeof x==='object'&&!(x instanceof Node);
-    return G.filter(g=>!(Array.isArray(g)&&g.some(x=>obj(x)&&(x.i==='plus'||x.label==='Approuver')))); };
+    return G.filter(g=>!(Array.isArray(g)&&g.some(x=>obj(x)&&(x.i==='plus'||x.label==='Approuver'))))
+      .map(g=>Array.isArray(g)?g.map(x=>obj(x)&&x.i==='gear'&&typeof x.menu==='function'?{...x,menu:()=>sgfhMenuSans(x.menu())}:x):g); };
   V.render=function(m){ const sl=ch08bMyStaffs(); if(!ch08bIn(sl,HS.staff)) HS.staff=null; if(!HS.staff||!DS.get('staff',HS.staff)) HS.staff=(ME.staff||sl[0]||{}).ID;
     const w=h('div',{class:'sgfh'}); m.append(w); this._w=w;
     w.addEventListener('click',e=>{ const t=e.target.closest('[data-fh]'); if(!t||!w.contains(t)) return; const f=t.dataset.fh;

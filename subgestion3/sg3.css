@@ -1342,6 +1342,13 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgc-t th.auj .n{color:var(--s-nuit)}
 .sgc-leg2{margin-top:10px}.sgc-leg2 .sgc-man{color:var(--err);margin-right:2px;font-weight:700}
 .sgc-leg2 .sgc-pt{margin-right:0}
+/* fenêtre « Contrôler » : inscriptions dans l'ordre de la feuille d'heures (affaire en entier, heures, phase, remarques), bandeau à la couleur d'état */
+.ctlb.sgc-b{line-height:1.25}
+.ctlb.sgc-b .sgc-bn{color:#fff;padding:1px 4px;overflow-wrap:anywhere}
+.ctlb.sgc-b .sgc-bh{display:flex;flex-wrap:wrap;column-gap:6px;padding:0 4px;white-space:nowrap;overflow:hidden}
+.ctlb.sgc-b .sgc-bh span+span{margin-left:auto;flex:none}
+.ctlb.sgc-b .sgc-bt{padding:0 4px;overflow-wrap:anywhere;color:#4a4a48}
+.ctlb.sgc-b.autre .sgc-bt{color:inherit}
 /* zone de travail étroite : boutons réduits à leur icône (libellé en infobulle), colonne des noms resserrée */
 @container (max-width:1100px){.sgc-act .nx-btn span{display:none}.sgc-act .nx-btn{padding:0 7px}.sgc-t td.sgc-n{min-width:170px}.sgc-nav b{min-width:200px}}
 
@@ -1386,18 +1393,17 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 /* saisies : couleur du projet, état en pastille ; les gestes restent ceux du moteur (.tlb, .tlrs) */
 .tlb.sgfh-b{border-left:4px solid;padding:3px 5px 3px 6px;box-sizing:border-box;font-size:11.5px;line-height:1.25}
 .tlb.sgfh-b:hover{box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:4!important}
-.sgfh-bc .t1{display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden}
-.sgfh-bc .t1 b{overflow:hidden;text-overflow:ellipsis}
-.sgfh-bc .t1 .d{margin-left:auto;flex:none}
-.sgfh-bc .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4a4a48}
-/* nom de l'affaire en entier (sur plusieurs lignes), pastille d'état à sa gauche (demande de Paulo, 24.10.2026) */
-.sgfh-bc .nom{display:flex;align-items:flex-start;gap:4px;min-width:0;flex:1}
+/* contenu dans cet ordre (demandes de Paulo, 24.10.2026) : l'affaire en tête et en entier (sur plusieurs lignes, pastille d'état à sa gauche),
+   les heures (de – à, durée à droite), la phase, les remarques ; ce qui dépasse de la saisie est coupé, l'infobulle donne tout */
+.sgfh-bc .nom{display:flex;align-items:flex-start;gap:4px;min-width:0}
 .sgfh-bc .nom .nt{flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere}
 .sgfh-bc .nom .sgfh-st{margin-top:1px}
-.sgfh-bc .t1:has(.nom){align-items:flex-start;white-space:normal}
+.sgfh-bc .t1{display:flex;flex-wrap:wrap;column-gap:5px;white-space:nowrap;overflow:hidden}
+.sgfh-bc .t1 .d{margin-left:auto;flex:none}
+.sgfh-bc .tx{overflow-wrap:anywhere;color:#4a4a48}
 .tlb.sgfh-b.mini .nom .nt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tlb.sgfh-b.mini{padding:0 5px 0 6px;font-size:10px;line-height:1}
-.tlb.sgfh-b.mini .sgfh-bc,.tlb.sgfh-b.mini .t1{height:100%}.tlb.sgfh-b.mini .tx{display:none}
+.tlb.sgfh-b.mini .sgfh-bc,.tlb.sgfh-b.mini .nom{height:100%;align-items:center}.tlb.sgfh-b.mini .t1,.tlb.sgfh-b.mini .tx{display:none}
 .tlb.sgfh-b.mini .sgfh-st{width:10px;height:10px;font-size:7px}.tlb.sgfh-b.mini .sgfh-st svg{width:7px;height:7px}
 .tlb.sgfh-b.verr{opacity:.78}
 .sgfh-vac{background:repeating-linear-gradient(135deg,#fef6b0 0 6px,#fffbdc 6px 12px)!important}

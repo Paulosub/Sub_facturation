@@ -15,7 +15,10 @@
    graphiquement ») : bandeau jaune (semaine ou mois en grand, « Tout le bureau », période, Par collaborateur | Par projet), chiffres de la
    période (heures saisies et jauge, prévues, écart à ce jour, à contrôler, refusées), barre d'outils du moteur sous les chiffres (#tools
    déplacé comme dans la Feuille d'heures, sgfhOutilsRendre ; Semaine | Mois, Aujourd'hui, ‹ période ›, Fonctions à droite : Tout approuver,
-   CSV), jours en tête comme l'agenda (nom, date en grand), états en pastilles (✓ approuvée, ! refusée, ↺ corrigée), légende commune. ═══ */
+   CSV), jours en tête comme l'agenda (nom, date en grand), états en pastilles (✓ approuvée, ! refusée, ↺ corrigée), légende commune.
+   Fenêtre « Contrôler » (même jour, demande de Paulo) : chaque inscription dans l'ordre de la feuille d'heures — l'affaire en tête et en entier,
+   puis les heures, la phase, les remarques (sgcBloc, option bloc de ctlTimeCheck) ; couleurs d'état du moteur gardées ; réglages d'affichage
+   qui ne s'appliquent plus retirés de son menu (option reglages = sgfhMenuSans). ═══ */
 const SGC_ETAT=r=>{ const v=+r.TIMELOGSTATECODE||0; return v===3?'ok':v===1?'ref':'ctl'; };
 function sgcPeriode(st){ const d=st.d?new Date(st.d+'T00:00'):new Date(); d.setHours(0,0,0,0);
   if(st.mode==='mois'){ const a=new Date(d.getFullYear(),d.getMonth(),1), b=new Date(d.getFullYear(),d.getMonth()+1,0); return {a,b,lib:MOISL[a.getMonth()]+' '+a.getFullYear()}; }
@@ -34,6 +37,12 @@ function sgcEtatHtml(c){ if(!c.n) return '<span class="sgc-e vide">—</span>';
   if(c.ref) p.push('<span class="sgc-e ref" title="Refusées : à corriger par le collaborateur">'+SGC_REF+c.ref+' refusée'+(c.ref>1?'s':'')+'</span>');
   if(!c.ctl&&!c.ref) p.push('<span class="sgc-e ok">'+SGC_OK+'Approuvé</span>');
   return p.join(' '); }
+/* inscription de la fenêtre « Contrôler » : bandeau à la couleur d'état du moteur avec l'affaire, puis heures, phase, remarques (sgfhLignes) */
+function sgcBloc(r,el,autre){ const L=sgfhLignes(r), c1=autre?'#9b9b9b':tlColors(r)[0];
+  el.classList.add('sgc-b'); el.classList.toggle('autre',!!autre);
+  el.innerHTML='<div class="sgc-bn" style="background:'+c1+'"><b>'+nxE(L.num)+'</b>'+(L.tit?' '+nxE(L.tit):'')+'</div>'
+    +'<div class="sgc-bh"><span>'+nxE(L.tps)+'</span><span>'+nxE(L.du)+'</span></div>'+[L.ph,L.rq].filter(Boolean).map(x=>'<div class="sgc-bt">'+nxE(x)+'</div>').join('');
+  el.title=L.titre; }
 /* cellule d'un jour (ou d'une semaine du mois) : heures, état ; jour ouvré passé sans saisie = tiret rouge */
 function sgcCellule(L,o){ const c=sgcCompte(L), cls=['sgc-j']; if(o.off) cls.push('off'); if(o.auj) cls.push('auj');
   if(!c.n){ if(o.man){ cls.push('man'); return '<td class="'+cls.join(' ')+'" title="'+nxE(o.manT||'Aucune saisie')+'"'+(o.go||'')+'>–</td>'; }
@@ -127,8 +136,8 @@ VIEWS['nx-controle']={
         async()=>{ await DS.commit(rs.map(r=>({t:'timelog',id:r.ID,val:{...r,TIMELOGSTATECODE:3}}))); toast(rs.length+' inscription(s) approuvée(s).'); },{title:'Approuver les heures',yesText:'Approuver'}); };
     const f=this._fn={};
     f.vue=b=>this.sv({vue:b.dataset.k});
-    f.ctl=b=>ctlTimeCheck(null,{staffs:S,staff:+b.dataset.s,date:b.dataset.d,titre:'Contrôle des heures',boutons:1,peut:V?peut:null});
-    f.ctlp=b=>{ const p=DS.get('project',+b.dataset.p); if(p) ctlTimeCheck(p,{date:diso(P.a),boutons:1}); };
+    f.ctl=b=>ctlTimeCheck(null,{staffs:S,staff:+b.dataset.s,date:b.dataset.d,titre:'Contrôle des heures',boutons:1,peut:V?peut:null,bloc:sgcBloc,reglages:sgfhMenuSans});
+    f.ctlp=b=>{ const p=DS.get('project',+b.dataset.p); if(p) ctlTimeCheck(p,{date:diso(P.a),boutons:1,bloc:sgcBloc,reglages:sgfhMenuSans}); };
     f.app=b=>{ const s=DS.get('staff',+b.dataset.s); approuver((parS.get(+b.dataset.s)||[]).filter(r=>SGC_ETAT(r)==='ctl'),s?staffName(s):'collaborateur'); };
     f.tout=()=>approuver(L.filter(r=>SGC_ETAT(r)==='ctl'),'tous les collaborateurs');
     f.csv=()=>{ const t=w.querySelector('#sgc-t'); if(!t) return; const c=t.cloneNode(true);

@@ -173,7 +173,7 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
   V.draw=function(){ const w=this._w; if(!w||!w.isConnected) return; if(this.journal) HS.mode='sem';   /* le Journal est hebdomadaire */
     const D=sgfhDonnees(), jr=!!this.journal, cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
     const tl=document.getElementById('tools'), ou=h('div',{class:'sgfh-outils'});
-    haut.innerHTML=sgfhTete(D,jr?'Journal':'Feuille d’heures')+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
+    haut.innerHTML=sgfhTete(D,jr?'Journal des heures':'Feuille d’heures')+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
     /* barre d'outils du moteur sous les chiffres (demande de Paulo) : l'élément #tools lui-même, rendu à la barre du haut en quittant l'écran */
     if(tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
     if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D);

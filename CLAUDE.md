@@ -837,7 +837,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   rafraîchissement et clic droit ; en-tête « Journal » ; barre sans Semaine | Mois, `HS.mode` mis à « sem ») ; le choix Agenda | Journal de l'en-tête
   et `sg3_fh_vue` supprimés (la feuille = agenda ou mois) ; les boutons de la barre et les menus du moteur qui rouvrent `go('h-saisie')` restent dans
   le Journal (clic capturé dans `#tools` / `.menu`, drapeau `SGFH.j`, enveloppe de `go`) ; icônes des cinq chiffres (`sgfhKpis`) retirées.
-  Copie d'avant : `subgestion3/_backup_20261024_2059_avant_journal_menu/`.
+  Copie d'avant : `subgestion3/_backup_20261024_2059_avant_journal_menu/`. Puis (même soir) : entrée et en-tête renommés **« Journal des heures »**.
+  **Chapitre « Archives » (24.10.2026, Paulo : « créer un menu archive, laisse-le vide pour le moment »)** : domaine `archives` en bas du menu (après
+  Configuration), icône `archive` (ajoutée à `NXI`), `vide:1` = affiché à l'administrateur même sans module (`sgSide`) ; vue d'ensemble « Aucun module
+  pour le moment » ; masqué aux autres profils (aucun écran permis). Pas encore dans les domaines protégés par code (à décider quand il aura des
+  modules). Visuel Mac #8E8E93, Studio nocturne : carte sable. Les « Archives · … » restent pour l'instant dans Configuration.
   **« Fonctions » retiré de la barre et passé au clic droit (24.10.2026 au soir, Paulo : « supprimer les Fonctions et les ajouter au clic droit »)** :
   barre = Semaine | Mois, Aujourd'hui, semaines, année ; `sgfhFonctions()` = menu ⚙ du moteur filtré (`sgfhMenuSans`) — clic droit sur une saisie
   de l'agenda : menu du moteur (son `popMenu` remplacé le temps de l'appel par `sgMenuAt`) + sous-menu « Fonctions » ; ligne du Mois : Approuver,

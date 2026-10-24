@@ -25,6 +25,7 @@ const NXI={
   print:'<path d="M6 9V2h12v7"/><path d="M6 18H2V9h20v9h-4"/><path d="M6 14h12v8H6z"/>',
   filter:'<path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/>',
   wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+  archive:'<rect x="3.5" y="4.5" width="17" height="4.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 13h4"/>',
   person:'<circle cx="12" cy="7.5" r="4"/><path d="M4.5 21c.7-4.2 3.6-6.5 7.5-6.5s6.8 2.3 7.5 6.5"/>',
   rh:'<rect x="3" y="5" width="18" height="15"/><path d="M9 5V3h6v2"/><circle cx="9" cy="11" r="2.4"/><path d="M5.6 17c.5-1.8 1.8-2.8 3.4-2.8s2.9 1 3.4 2.8M14.5 10.5h3.5M14.5 14h3.5"/>',
   tree:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M6.5 10v6H14"/>',
@@ -77,7 +78,7 @@ const SG_DOM=[
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
   {k:'temps',t:'Heures',ico:'clock',d:'Saisie et contrôle des heures de travail.',items:[   /* chapitre « Temps » renommé « Heures » le 24.10.2026 (demande de Paulo) ; clé temps inchangée */
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
-    {v:'h-journal',t:'Journal',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'}]},   /* 24.10.2026 (demande de Paulo) */
+    {v:'h-journal',t:'Journal des heures',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'}]},   /* 24.10.2026 (demande de Paulo) */
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
@@ -196,7 +197,10 @@ const SG_DOM=[
     {v:'fx-heures',t:'Heures · Facturation',ico:'clock',reg:1,d:'Registre des heures importées.'},
     {v:'fx-import-delta',t:'Import Deltaproject',ico:'import',reg:1,d:'Import des exports CSV de Deltaproject.'},
     {v:'fx-analyse-globale',t:'Analyse globale',ico:'analyse',reg:1,d:'Analyse globale des projets et des heures.'},
-    {v:'fx-affaire-detail',t:'Analyse de projet',hide:1},{v:'fx-collab-detail',t:'Fiche collaborateur · Facturation',hide:1}]}
+    {v:'fx-affaire-detail',t:'Analyse de projet',hide:1},{v:'fx-collab-detail',t:'Fiche collaborateur · Facturation',hide:1}]},
+  /* chapitre « Archives » (24.10.2026, demande de Paulo : « créer un menu archive, laisse-le vide pour le moment ») ; vide:1 = affiché à
+     l'administrateur même sans module (sgSide) */
+  {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[]}
 ];
 const SG_D={}, NX_VIEW={};
 SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'Vue d’ensemble'}; d.items.forEach(it=>{ if(!NX_VIEW[it.v]) NX_VIEW[it.v]={d,t:it.t,it}; }); });
@@ -239,7 +243,7 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
     if(d.menu===0) return;   // chapitre retiré du menu de gauche (reste joignable autrement)
     if(d.k==='accueil'){ s+='<div class="nx-g'+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='nx-home'?' on':'')+'" data-go="nx-home" title="Cockpit">'+nxSvg(d.ico)+'<span class="lb">Cockpit</span></div></div>'; return; }
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
-    if(!its.length) return;   // domaine sans module permis pour ce profil
+    if(!its.length&&!(d.vide&&typeof sgAdmin==='function'&&sgAdmin())) return;   // domaine sans module permis pour ce profil (chapitre vide:1 : administrateur)
     s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='dom-'+d.k?' on':'')+'" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+(d.prov?'<i class="sg-prov" title="Chapitre provisoire">prov.</i>':'')+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
       +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')   // fiche ouverte juste sous le titre du chapitre (19.10.2026)
       +sgSideItems(d,its,c)+'</div></div>'; });
@@ -498,7 +502,7 @@ SG_DOM.filter(d=>d.k!=='accueil').forEach(d=>{ VIEWS['dom-'+d.k]={ render(m){
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), main=its.filter(it=>!it.reg), reg=its.filter(it=>it.reg);
     const tile=it=>'<div class="sg-tile'+(it.hero?' hero':'')+'" data-go="'+it.v+'"><div class="ti">'+nxSvg(it.ico)+'<h3>'+nxE(it.t)+'</h3></div><p>'+nxE(it.d||'')+'</p><div class="ft">'+(it.reg?'<span class="nx-tag fx">Registre Facturation</span>':'')+nxSvg('arrow','go')+'</div></div>';
     const html='<div class="sg-split">'+sgIntro(d.t,nxE(d.t),nxE(d.d||''),'<div class="sg-figs" id="sg-figs"></div>')
-      +'<div class="sg-tiles">'+main.map(tile).join('')+(reg.length?'<div class="sg-gt">Registres et archives de l’app Facturation</div>'+reg.map(tile).join(''):'')+'</div></div>';
+      +(its.length?'':'<div class="nx-empty">Aucun module pour le moment.</div>')+'<div class="sg-tiles">'+main.map(tile).join('')+(reg.length?'<div class="sg-gt">Registres et archives de l’app Facturation</div>'+reg.map(tile).join(''):'')+'</div></div>';
     nxPage(m,html);
     sgFigs(d.k).then(fs=>{ const b=document.getElementById('sg-figs'); if(b&&VIEW&&VIEW.id==='dom-'+d.k) b.innerHTML=fs.map(x=>'<div class="sg-fig"><div class="n">'+nxE(x.v)+'</div><div class="t">'+nxE(x.t)+'</div></div>').join(''); }).catch(e=>console.error(e)); } }; });
 

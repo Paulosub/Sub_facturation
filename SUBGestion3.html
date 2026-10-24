@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 20:59 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 21:09 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -2242,7 +2242,7 @@ html[data-visuel="nocturne"]{
     & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){background:var(--v-menthe);border-color:var(--v-menthe)} }
   &[data-vdom="facturation"],&[data-vdom="finances"],&[data-vdom="ancien"],&[data-vdom="ancienf"]{
     & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){background:var(--v-lavande);border-color:var(--v-lavande)} }
-  &[data-vdom="contacts"],&[data-vdom="biblio"],&[data-vdom="admin"],&[data-vdom="reglages"]{
+  &[data-vdom="contacts"],&[data-vdom="biblio"],&[data-vdom="admin"],&[data-vdom="reglages"],&[data-vdom="archives"]{
     & .nx-kpi.hero,& .sg-pkpis>.nx-kpi:has(.sg-kg){background:#EAD9B8;border-color:#EAD9B8} }
   /* onglets du projet en puces */
   & .nx-hero:has(>.sg-pnum)+.sg-onglets{margin:16px 0 24px}
@@ -2290,7 +2290,7 @@ html[data-visuel="mac"]{
   &[data-vdom="affaires"]{--v-dom:var(--v-brun)} &[data-vdom="temps"]{--v-dom:var(--v-org)} &[data-vdom="projets"]{--v-dom:var(--v-cyan)}
   &[data-vdom="contacts"]{--v-dom:var(--v-gris)} &[data-vdom="chantier"]{--v-dom:#F5A300} &[data-vdom="equipe"]{--v-dom:var(--v-indigo)}
   &[data-vdom="rh"]{--v-dom:var(--v-sarcelle)} &[data-vdom="facturation"]{--v-dom:var(--v-vert)} &[data-vdom="finances"]{--v-dom:var(--v-violet)}
-  &[data-vdom="ancien"],&[data-vdom="ancienf"]{--v-dom:#AEAEB2} &[data-vdom="biblio"]{--v-dom:#FF2D55} &[data-vdom="administration"]{--v-dom:#7D7AFF} &[data-vdom="admin"]{--v-dom:#48484A} &[data-vdom="reglages"]{--v-dom:var(--v-gris)}
+  &[data-vdom="ancien"],&[data-vdom="ancienf"]{--v-dom:#AEAEB2} &[data-vdom="biblio"]{--v-dom:#FF2D55} &[data-vdom="administration"]{--v-dom:#7D7AFF} &[data-vdom="admin"]{--v-dom:#48484A} &[data-vdom="reglages"]{--v-dom:var(--v-gris)} &[data-vdom="archives"]{--v-dom:#8E8E93}
   & body{background:var(--v-fond);font-variant-numeric:tabular-nums;letter-spacing:-.003em}
   & ::selection{background:#B3D7FF}
   & svg[stroke-width="1.7"],& svg[stroke-width="1.8"]{stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -2320,7 +2320,7 @@ html[data-visuel="mac"]{
   & .nx-gt[data-tg="projets"]{--v-dk:var(--v-cyan)} & .nx-gt[data-tg="contacts"]{--v-dk:var(--v-gris)} & .nx-gt[data-tg="chantier"]{--v-dk:#F5A300}
   & .nx-gt[data-tg="equipe"]{--v-dk:var(--v-indigo)} & .nx-gt[data-tg="rh"]{--v-dk:var(--v-sarcelle)} & .nx-gt[data-tg="facturation"]{--v-dk:var(--v-vert)}
   & .nx-gt[data-tg="finances"]{--v-dk:var(--v-violet)} & .nx-gt[data-tg="ancien"],& .nx-gt[data-tg="ancienf"]{--v-dk:#AEAEB2}
-  & .nx-gt[data-tg="biblio"]{--v-dk:#FF2D55} & .nx-gt[data-tg="administration"]{--v-dk:#7D7AFF} & .nx-gt[data-tg="admin"]{--v-dk:#48484A} & .nx-gt[data-tg="reglages"]{--v-dk:var(--v-gris)}
+  & .nx-gt[data-tg="biblio"]{--v-dk:#FF2D55} & .nx-gt[data-tg="administration"]{--v-dk:#7D7AFF} & .nx-gt[data-tg="admin"]{--v-dk:#48484A} & .nx-gt[data-tg="reglages"]{--v-dk:var(--v-gris)} & .nx-gt[data-tg="archives"]{--v-dk:#8E8E93}
   & #nx-nav{padding:2px 8px 12px;scrollbar-color:rgba(0,0,0,.18) transparent}
   & .nx-g{margin:0 0 1px}
   & .nx-gt{height:30px;gap:9px;padding:0 6px;border-radius:7px;color:var(--p-bk);font-weight:500;font-size:13px;letter-spacing:-.01em}
@@ -25648,6 +25648,7 @@ const NXI={
   print:'<path d="M6 9V2h12v7"/><path d="M6 18H2V9h20v9h-4"/><path d="M6 14h12v8H6z"/>',
   filter:'<path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/>',
   wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+  archive:'<rect x="3.5" y="4.5" width="17" height="4.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 13h4"/>',
   person:'<circle cx="12" cy="7.5" r="4"/><path d="M4.5 21c.7-4.2 3.6-6.5 7.5-6.5s6.8 2.3 7.5 6.5"/>',
   rh:'<rect x="3" y="5" width="18" height="15"/><path d="M9 5V3h6v2"/><circle cx="9" cy="11" r="2.4"/><path d="M5.6 17c.5-1.8 1.8-2.8 3.4-2.8s2.9 1 3.4 2.8M14.5 10.5h3.5M14.5 14h3.5"/>',
   tree:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M6.5 10v6H14"/>',
@@ -25700,7 +25701,7 @@ const SG_DOM=[
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
   {k:'temps',t:'Heures',ico:'clock',d:'Saisie et contrôle des heures de travail.',items:[   /* chapitre « Temps » renommé « Heures » le 24.10.2026 (demande de Paulo) ; clé temps inchangée */
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
-    {v:'h-journal',t:'Journal',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'}]},   /* 24.10.2026 (demande de Paulo) */
+    {v:'h-journal',t:'Journal des heures',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'}]},   /* 24.10.2026 (demande de Paulo) */
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
@@ -25819,7 +25820,10 @@ const SG_DOM=[
     {v:'fx-heures',t:'Heures · Facturation',ico:'clock',reg:1,d:'Registre des heures importées.'},
     {v:'fx-import-delta',t:'Import Deltaproject',ico:'import',reg:1,d:'Import des exports CSV de Deltaproject.'},
     {v:'fx-analyse-globale',t:'Analyse globale',ico:'analyse',reg:1,d:'Analyse globale des projets et des heures.'},
-    {v:'fx-affaire-detail',t:'Analyse de projet',hide:1},{v:'fx-collab-detail',t:'Fiche collaborateur · Facturation',hide:1}]}
+    {v:'fx-affaire-detail',t:'Analyse de projet',hide:1},{v:'fx-collab-detail',t:'Fiche collaborateur · Facturation',hide:1}]},
+  /* chapitre « Archives » (24.10.2026, demande de Paulo : « créer un menu archive, laisse-le vide pour le moment ») ; vide:1 = affiché à
+     l'administrateur même sans module (sgSide) */
+  {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[]}
 ];
 const SG_D={}, NX_VIEW={};
 SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'Vue d’ensemble'}; d.items.forEach(it=>{ if(!NX_VIEW[it.v]) NX_VIEW[it.v]={d,t:it.t,it}; }); });
@@ -25862,7 +25866,7 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
     if(d.menu===0) return;   // chapitre retiré du menu de gauche (reste joignable autrement)
     if(d.k==='accueil'){ s+='<div class="nx-g'+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='nx-home'?' on':'')+'" data-go="nx-home" title="Cockpit">'+nxSvg(d.ico)+'<span class="lb">Cockpit</span></div></div>'; return; }
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
-    if(!its.length) return;   // domaine sans module permis pour ce profil
+    if(!its.length&&!(d.vide&&typeof sgAdmin==='function'&&sgAdmin())) return;   // domaine sans module permis pour ce profil (chapitre vide:1 : administrateur)
     s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='dom-'+d.k?' on':'')+'" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+(d.prov?'<i class="sg-prov" title="Chapitre provisoire">prov.</i>':'')+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
       +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')   // fiche ouverte juste sous le titre du chapitre (19.10.2026)
       +sgSideItems(d,its,c)+'</div></div>'; });
@@ -26121,7 +26125,7 @@ SG_DOM.filter(d=>d.k!=='accueil').forEach(d=>{ VIEWS['dom-'+d.k]={ render(m){
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), main=its.filter(it=>!it.reg), reg=its.filter(it=>it.reg);
     const tile=it=>'<div class="sg-tile'+(it.hero?' hero':'')+'" data-go="'+it.v+'"><div class="ti">'+nxSvg(it.ico)+'<h3>'+nxE(it.t)+'</h3></div><p>'+nxE(it.d||'')+'</p><div class="ft">'+(it.reg?'<span class="nx-tag fx">Registre Facturation</span>':'')+nxSvg('arrow','go')+'</div></div>';
     const html='<div class="sg-split">'+sgIntro(d.t,nxE(d.t),nxE(d.d||''),'<div class="sg-figs" id="sg-figs"></div>')
-      +'<div class="sg-tiles">'+main.map(tile).join('')+(reg.length?'<div class="sg-gt">Registres et archives de l’app Facturation</div>'+reg.map(tile).join(''):'')+'</div></div>';
+      +(its.length?'':'<div class="nx-empty">Aucun module pour le moment.</div>')+'<div class="sg-tiles">'+main.map(tile).join('')+(reg.length?'<div class="sg-gt">Registres et archives de l’app Facturation</div>'+reg.map(tile).join(''):'')+'</div></div>';
     nxPage(m,html);
     sgFigs(d.k).then(fs=>{ const b=document.getElementById('sg-figs'); if(b&&VIEW&&VIEW.id==='dom-'+d.k) b.innerHTML=fs.map(x=>'<div class="sg-fig"><div class="n">'+nxE(x.v)+'</div><div class="t">'+nxE(x.t)+'</div></div>').join(''); }).catch(e=>console.error(e)); } }; });
 
@@ -31638,7 +31642,7 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
   V.draw=function(){ const w=this._w; if(!w||!w.isConnected) return; if(this.journal) HS.mode='sem';   /* le Journal est hebdomadaire */
     const D=sgfhDonnees(), jr=!!this.journal, cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
     const tl=document.getElementById('tools'), ou=h('div',{class:'sgfh-outils'});
-    haut.innerHTML=sgfhTete(D,jr?'Journal':'Feuille d’heures')+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
+    haut.innerHTML=sgfhTete(D,jr?'Journal des heures':'Feuille d’heures')+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
     /* barre d'outils du moteur sous les chiffres (demande de Paulo) : l'élément #tools lui-même, rendu à la barre du haut en quittant l'écran */
     if(tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
     if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D);

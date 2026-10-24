@@ -75,13 +75,8 @@ const SG_DOM=[
     /* « Controlling » (affd-controlling) déplacé dans Réglages ▸ Archives le 23.10.2026, à la demande de Paulo (gardé pour un usage ultérieur) */
     /* « Mes affaires » (affd-mes) retiré du chapitre le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
-  {k:'temps',t:'Temps',ico:'clock',d:'Saisie et suivi du temps de travail et des dépenses.',items:[
-    {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
-    {v:'h-rapport',t:'Rapports de temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
-    {v:'h-dispo',t:'Disponibilités',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
-    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
-    {v:'frais',t:'Notes de frais',ico:'receipt',d:'Notes de frais par membre et par projet.'},
-    {v:'frais-rapport',t:'Rapport des notes de frais',ico:'analyse',d:'Rapport des notes de frais.'}]},
+  {k:'temps',t:'Temps',ico:'clock',d:'Saisie et contrôle du temps de travail.',items:[
+    {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
@@ -174,6 +169,13 @@ const SG_DOM=[
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
     {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
     {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances et Réglages.'},
+    /* sous-menu « Temps » (24.10.2026, demande de Paulo : ces modules quittent le chapitre Temps pour le menu Réglages) ; dom = domaine d'origine,
+       qui garde leurs droits, leur code d'accès et leur visuel (nxDomVue) : les collaborateurs y ont toujours accès */
+    {v:'h-rapport',t:'Rapports de temps',grp:'Temps',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
+    {v:'h-dispo',t:'Disponibilités',grp:'Temps',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
+    {v:'nx-situation',t:'Situation des heures',grp:'Temps',dom:'temps',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
+    {v:'frais',t:'Notes de frais',grp:'Temps',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
+    {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Temps',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
     {v:'fx-carnet',t:'Archives · Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},
     {v:'fx-feuille-heures',t:'Archives · Feuille d’heures',ico:'timer',reg:1,d:'Ancienne saisie d’heures de Facturation (remplacée par la Feuille d’heures).'},
     {v:'fx-rapport',t:'Archives · Rapport d’heures',ico:'analyse',reg:1,d:'Anciens rapports d’heures de Facturation.'},
@@ -189,6 +191,8 @@ const SG_DOM=[
 ];
 const SG_D={}, NX_VIEW={};
 SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'Vue d’ensemble'}; d.items.forEach(it=>{ if(!NX_VIEW[it.v]) NX_VIEW[it.v]={d,t:it.t,it}; }); });
+/* domaine d'un écran pour les droits, le code d'accès et le visuel : celui de son chapitre, sauf écran rangé ailleurs dans le menu (it.dom) */
+const nxDomVue=v=>{ const x=NX_VIEW[v]; return x?(x.it&&x.it.dom)||(x.d&&(x.d.k||x.d))||'':''; };
 NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-pdom']={d:SG_D.projets,t:'Projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
 const NX_KW={'nx-mesprojets':'mes projets liste affaires','affd-mes':'mes affaires ancien','affd-toutes':'affaires ancien','affd-gestion':'affaires gestion ancien','affd-controlling':'controlling affaires','aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
   'adr-entites':'adresses entités','h-saisie':'heures','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',

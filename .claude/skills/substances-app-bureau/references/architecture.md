@@ -119,7 +119,8 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,
     `sgSaisieRapide({projet, staff, debut, fin})`, `sgAjouterFichiers(p)`, `sgVisionneuse(blob, nom)`, `sgDeverrouiller()`,
     `sgFinVerrou()` (montants à masquer), `sgLib(texte)` (Affaire → Projet), `sgDomDe(vue)` (clé du domaine :
-    `NX_VIEW[v].d` est l'OBJET domaine).
+    `NX_VIEW[v].d` est l'OBJET domaine ; `nxDomVue(vue)` de sg3.js tient compte de `it.dom`, domaine d'origine d'un écran rangé dans
+    le menu d'un autre chapitre — ex. les modules Temps du sous-menu Réglages ▸ Temps : droits, code d'accès et `data-vdom` d'origine).
   - pdf-lib vit dans le cadre Facturation (`FX.w.PDFLib`) : lui passer des tableaux du cadre (`w.Array.of(…)`,
     `new w.Uint8Array(…)`), sinon « must be of type Array ».
 

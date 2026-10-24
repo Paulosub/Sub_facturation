@@ -196,7 +196,7 @@ function sgVisuelIcones(){ const j=SG_NXI_JEUX[sgVisuel()]||{};
 function sgVisuelBouton(){ const b=document.getElementById('sg-visuel'); if(!b) return;
   b.title='Visuel de l’app : '+sgVisuelNom(sgVisuel())+' — changer'; b.setAttribute('aria-label',b.title); }
 /* domaine de l'écran ouvert (data-vdom) : la carte pastel de Studio nocturne et la couleur du domaine du visuel Mac en dépendent */
-function sgVisuelDomaine(v){ try{ const x=NX_VIEW[v]; document.documentElement.setAttribute('data-vdom',(x&&x.d&&x.d.k)||''); }catch(_){} }
+function sgVisuelDomaine(v){ try{ document.documentElement.setAttribute('data-vdom',nxDomVue(v)); }catch(_){} }
 function sgVisuelAppliquer(v,redessiner){ if(!SG_VISUELS.some(x=>x[0]===v)) v='charte'; nxLS.set('sg3_visuel',v);
   sgVisuelAttr(document.documentElement,v); sgVisuelCadre(); sgVisuelIcones(); sgVisuelBouton();
   if(redessiner){ try{ sgSide(); }catch(_){} if(VIEW&&!/^fx-/.test(VIEW.id)) go(VIEW.id,VIEW.arg); } }

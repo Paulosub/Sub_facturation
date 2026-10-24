@@ -851,6 +851,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « à choisir » en rouge et « obligatoire » selon l'affaire choisie ; en-têtes des listes masqués ; Vacances : sections 2 et 3 grisées ; inscription
   verrouillée : lecture seule. ⚠ Ne pas employer les classes du moteur (`.ph`, `.pa`…) : sections `.sgie-qd|pa|ph|dt`. DeltaSub.html seul garde la
   fenêtre d'origine.
+  **Menu Temps réduit (24.10.2026, demande de Paulo « déplacer dans le menu Réglages »)** : Temps = Feuille d'heures et Contrôle des heures ;
+  Rapports de temps, Disponibilités, Situation des heures, Notes de frais et Rapport des notes de frais rangés dans Réglages, sous-menu dépliable
+  « Temps » (avant les Archives ; items `grp:'Temps'`, `dom:'temps'`). `nxDomVue(v)` (sg3.js) = domaine d'origine d'un écran rangé ailleurs dans le
+  menu (`it.dom`) : il sert aux droits (`sgVueOk` — sinon Réglages exigerait le droit « réglages » et les collaborateurs perdraient leurs notes de
+  frais), au code d'accès (`sgDomDe`) et au visuel (`data-vdom` : visuel épuré du chapitre Temps gardé) ; le fil d'Ariane et le menu suivent
+  Réglages. Copie d'avant : `subgestion3/_backup_20261024_1835_avant_menu_temps/`.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

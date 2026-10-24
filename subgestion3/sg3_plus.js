@@ -1149,7 +1149,7 @@ const sgOuvertTs=()=>{ try{ return +sessionStorage.getItem('sg3_ouvert')||0; }ca
 function sgOuvert(){ const a=sgAcces(); if(!a.hash) return true; const t=sgOuvertTs(); return !!t&&(!+a.delai||Date.now()-t<a.delai*60e3); }
 function sgOuvrir(){ try{ sessionStorage.setItem('sg3_ouvert',String(Date.now())); }catch(_){} sgVerrouAff(); }
 function sgVerrouiller(){ try{ sessionStorage.removeItem('sg3_ouvert'); }catch(_){} sgVerrouAff(); if(VIEW&&sgProtege(sgDomDe(VIEW.id))) go('nx-home'); else if(VIEW&&/^nx-(home|projet)$/.test(VIEW.id)) go(VIEW.id,VIEW.arg); }
-const sgDomDe=v=>{ const x=NX_VIEW[v]; return x&&x.d?(x.d.k||x.d):null; };   // NX_VIEW[v].d = objet du domaine
+const sgDomDe=v=>nxDomVue(v)||null;   // domaine de l'écran (nxDomVue : celui d'origine pour un écran rangé ailleurs dans le menu)
 const sgProtege=d=>!!d&&!!sgAcces().hash&&sgAcces().doms.includes(d);
 const sgFinVerrou=()=>(!sgOuvert()&&(sgProtege('finances')||sgProtege('facturation')))||(typeof sgDroit==='function'&&!sgDroit('finances','projets')&&!sgDroit('factures','lecture'));
 let SG_ESSAIS={n:0,jusqua:0}, SG_DLG_ACC=null;
@@ -1376,7 +1376,7 @@ const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion
 function sgVueOk(v){ if(!v||sgAdmin()) return true;
   if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
   if(SG_VUE_DROIT[v]) return !!SG_VUE_DROIT[v]();
-  const x=NX_VIEW[v], dk=x&&x.d&&x.d.k;
+  const dk=nxDomVue(v);
   if(dk==='reglages') return sgDroit('reglages','oui');
   if(dk==='finances'||dk==='facturation') return sgDroit('finances','toutes');
   return true; }

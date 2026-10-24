@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 18:31 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 18:36 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -25697,13 +25697,8 @@ const SG_DOM=[
     /* « Controlling » (affd-controlling) déplacé dans Réglages ▸ Archives le 23.10.2026, à la demande de Paulo (gardé pour un usage ultérieur) */
     /* « Mes affaires » (affd-mes) retiré du chapitre le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
-  {k:'temps',t:'Temps',ico:'clock',d:'Saisie et suivi du temps de travail et des dépenses.',items:[
-    {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
-    {v:'h-rapport',t:'Rapports de temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
-    {v:'h-dispo',t:'Disponibilités',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
-    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
-    {v:'frais',t:'Notes de frais',ico:'receipt',d:'Notes de frais par membre et par projet.'},
-    {v:'frais-rapport',t:'Rapport des notes de frais',ico:'analyse',d:'Rapport des notes de frais.'}]},
+  {k:'temps',t:'Temps',ico:'clock',d:'Saisie et contrôle du temps de travail.',items:[
+    {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
@@ -25796,6 +25791,13 @@ const SG_DOM=[
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
     {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
     {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances et Réglages.'},
+    /* sous-menu « Temps » (24.10.2026, demande de Paulo : ces modules quittent le chapitre Temps pour le menu Réglages) ; dom = domaine d'origine,
+       qui garde leurs droits, leur code d'accès et leur visuel (nxDomVue) : les collaborateurs y ont toujours accès */
+    {v:'h-rapport',t:'Rapports de temps',grp:'Temps',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
+    {v:'h-dispo',t:'Disponibilités',grp:'Temps',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
+    {v:'nx-situation',t:'Situation des heures',grp:'Temps',dom:'temps',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
+    {v:'frais',t:'Notes de frais',grp:'Temps',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
+    {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Temps',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
     {v:'fx-carnet',t:'Archives · Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},
     {v:'fx-feuille-heures',t:'Archives · Feuille d’heures',ico:'timer',reg:1,d:'Ancienne saisie d’heures de Facturation (remplacée par la Feuille d’heures).'},
     {v:'fx-rapport',t:'Archives · Rapport d’heures',ico:'analyse',reg:1,d:'Anciens rapports d’heures de Facturation.'},
@@ -25811,6 +25813,8 @@ const SG_DOM=[
 ];
 const SG_D={}, NX_VIEW={};
 SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'Vue d’ensemble'}; d.items.forEach(it=>{ if(!NX_VIEW[it.v]) NX_VIEW[it.v]={d,t:it.t,it}; }); });
+/* domaine d'un écran pour les droits, le code d'accès et le visuel : celui de son chapitre, sauf écran rangé ailleurs dans le menu (it.dom) */
+const nxDomVue=v=>{ const x=NX_VIEW[v]; return x?(x.it&&x.it.dom)||(x.d&&(x.d.k||x.d))||'':''; };
 NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-pdom']={d:SG_D.projets,t:'Projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
 const NX_KW={'nx-mesprojets':'mes projets liste affaires','affd-mes':'mes affaires ancien','affd-toutes':'affaires ancien','affd-gestion':'affaires gestion ancien','affd-controlling':'controlling affaires','aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
   'adr-entites':'adresses entités','h-saisie':'heures','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
@@ -27454,7 +27458,7 @@ const sgOuvertTs=()=>{ try{ return +sessionStorage.getItem('sg3_ouvert')||0; }ca
 function sgOuvert(){ const a=sgAcces(); if(!a.hash) return true; const t=sgOuvertTs(); return !!t&&(!+a.delai||Date.now()-t<a.delai*60e3); }
 function sgOuvrir(){ try{ sessionStorage.setItem('sg3_ouvert',String(Date.now())); }catch(_){} sgVerrouAff(); }
 function sgVerrouiller(){ try{ sessionStorage.removeItem('sg3_ouvert'); }catch(_){} sgVerrouAff(); if(VIEW&&sgProtege(sgDomDe(VIEW.id))) go('nx-home'); else if(VIEW&&/^nx-(home|projet)$/.test(VIEW.id)) go(VIEW.id,VIEW.arg); }
-const sgDomDe=v=>{ const x=NX_VIEW[v]; return x&&x.d?(x.d.k||x.d):null; };   // NX_VIEW[v].d = objet du domaine
+const sgDomDe=v=>nxDomVue(v)||null;   // domaine de l'écran (nxDomVue : celui d'origine pour un écran rangé ailleurs dans le menu)
 const sgProtege=d=>!!d&&!!sgAcces().hash&&sgAcces().doms.includes(d);
 const sgFinVerrou=()=>(!sgOuvert()&&(sgProtege('finances')||sgProtege('facturation')))||(typeof sgDroit==='function'&&!sgDroit('finances','projets')&&!sgDroit('factures','lecture'));
 let SG_ESSAIS={n:0,jusqua:0}, SG_DLG_ACC=null;
@@ -27681,7 +27685,7 @@ const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion
 function sgVueOk(v){ if(!v||sgAdmin()) return true;
   if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
   if(SG_VUE_DROIT[v]) return !!SG_VUE_DROIT[v]();
-  const x=NX_VIEW[v], dk=x&&x.d&&x.d.k;
+  const dk=nxDomVue(v);
   if(dk==='reglages') return sgDroit('reglages','oui');
   if(dk==='finances'||dk==='facturation') return sgDroit('finances','toutes');
   return true; }
@@ -30539,7 +30543,7 @@ function sgVisuelIcones(){ const j=SG_NXI_JEUX[sgVisuel()]||{};
 function sgVisuelBouton(){ const b=document.getElementById('sg-visuel'); if(!b) return;
   b.title='Visuel de l’app : '+sgVisuelNom(sgVisuel())+' — changer'; b.setAttribute('aria-label',b.title); }
 /* domaine de l'écran ouvert (data-vdom) : la carte pastel de Studio nocturne et la couleur du domaine du visuel Mac en dépendent */
-function sgVisuelDomaine(v){ try{ const x=NX_VIEW[v]; document.documentElement.setAttribute('data-vdom',(x&&x.d&&x.d.k)||''); }catch(_){} }
+function sgVisuelDomaine(v){ try{ document.documentElement.setAttribute('data-vdom',nxDomVue(v)); }catch(_){} }
 function sgVisuelAppliquer(v,redessiner){ if(!SG_VISUELS.some(x=>x[0]===v)) v='charte'; nxLS.set('sg3_visuel',v);
   sgVisuelAttr(document.documentElement,v); sgVisuelCadre(); sgVisuelIcones(); sgVisuelBouton();
   if(redessiner){ try{ sgSide(); }catch(_){} if(VIEW&&!/^fx-/.test(VIEW.id)) go(VIEW.id,VIEW.arg); } }

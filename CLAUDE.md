@@ -782,6 +782,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   modifier). Base de test : 190 inscriptions approuvées sur 37'622 (la validation était peu utilisée). Visuel Mac : filet fin du total, états en capsules
   (`visuels_variantes.css`). Copies d'avant : `subgestion3/_backup_20261024_0949_avant_controle_heures/`,
   `DeltaSub_backup_20261024_0949_avant_controle_heures.html`, `SUBGestion3_backup_20261024_0949_avant_controle_heures.html`.
+  **Graphisme de la Feuille d'heures (même jour, demande de Paulo « corriger contrôle des heures pour correspondre à la feuille d'heures
+  graphiquement »)** : plus d'introduction ni de cartes ; bandeau jaune (`sgfh-tete` : semaine « S43 » ou mois « Oct » en grand, « Contrôle des heures »,
+  « Tout le bureau » / « Heures de mes projets », nombre de collaborateurs et d'inscriptions à contrôler ; à droite la période et Par collaborateur |
+  Par projet), chiffres `sgfh-kp` (heures saisies + jauge sur les prévues, heures prévues, écart à ce jour, à contrôler, refusées), barre d'outils du
+  moteur sous les chiffres (`VIEWS['nx-controle'].tools()` : Semaine | Mois, Aujourd'hui, ‹ période ›, **Fonctions** à droite = Tout approuver…,
+  Exporter en CSV ; `#tools` déplacé comme dans la Feuille d'heures, rendu par `sgfhOutilsRendre`), tableau sous un filet noir (`.sgc-tab`, défile dans
+  `.sgc-corps`), jours en tête comme l'agenda (nom, date en grand), pastilles ✓ / ! / ↺ dans les cellules et l'état, légende `sgfh-leg`. Copie d'avant :
+  `subgestion3/_backup_20261024_avant_controle_graphisme/`.
   **Temps ▸ Feuille d'heures, nouvelle présentation (24.10.2026, bloc 27, `subgestion3/sg3_feuille.js` + styles `.sgfh-*` en fin de `sg3.css`)** —
   demande de Paulo « améliore la feuille d'heures, plus graphique ; la colonne collaborateur n'est pas nécessaire ; le nom du collaborateur en haut puis
   la feuille d'heures ; avant de modifier, fais une copie dans Réglages » ; cinq variantes maquettées, charte seulement (A Agenda, B Grille projets × jours,
@@ -801,7 +809,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   au bureau depuis, heures complètes jusqu'au, saisie bloquée jusqu'au), période, boutons Agenda | Journal (semaine ; `sg3_fh_vue`) ; chiffres de la période
   (heures saisies + jauge, prévues `hrMaps`, écart à ce jour, vacances restantes `hrHoliday`, projets) ; jours (nom, date, total / prévues, jauge, férié,
   coche si tagué) ; saisies colorées par projet (`SGFH_PAL`, couleur gardée d'une semaine à l'autre, projet interne en gris, vacances hachurées), état en
-  pastille (✓ approuvée, ! refusée, ↺ corrigée), saisie verrouillée atténuée ; saisies qui se chevauchent (anciennes données) côte à côte
+  pastille (✓ approuvée, ! refusée, ↺ corrigée) **à gauche du nom de l'affaire**, **nom de l'affaire toujours en entier** (numéro + désignation, à la
+  ligne si besoin — `.nom .nt` ; seules les saisies de moins d'un quart d'heure gardent une ligne coupée ; même jour, demande de Paulo ; idem dans le
+  Journal et la répartition), saisie verrouillée atténuée ; saisies qui se chevauchent (anciennes données) côte à côte
   (`sgfhCouloirs`, quart d'heure minimal compris), jamais l'une sur l'autre ; ligne de l'heure actuelle ; répartition par projet à droite + rappel des
   gestes. **Journal** (semaine) : une carte par jour (anneau saisies / prévues, saisies lisibles, + = nouvelle saisie ce jour, clic = `hsEdit`), résumé à
   droite. **L'ancienne feuille d'heures** : Réglages ▸ Archives · **Ancienne feuille d'heures** (`h-saisie-archive` = rendu d'origine du moteur ;

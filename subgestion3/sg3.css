@@ -1308,9 +1308,8 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgc-t th.auj,.sgc-t td.auj{background:var(--s-jaune3)}
 .sgc-t td.sgc-j[data-fn]{cursor:pointer}
 .sgc-t td.sgc-j[data-fn]:hover{box-shadow:inset 0 0 0 2px var(--s-nuit)}
-.sgc-t td.ref{color:var(--err);font-weight:700}
-.sgc-t td.ok{color:var(--ok)}
-.sgc-ok svg{width:11px;height:11px;vertical-align:-1px;margin-left:2px}
+.sgc-t td.sgc-j .sgfh-st{width:13px;height:13px;font-size:8.5px;margin-left:4px;vertical-align:-2px;display:inline-grid}
+.sgc-t td.sgc-j .sgfh-st svg{width:8px;height:8px}
 .sgc-t td.man{color:var(--err);font-weight:700}
 .sgc-t td.man2{box-shadow:inset 0 -2px 0 var(--err)}
 .sgc-t td.vac{color:var(--s-gris);font-style:italic}.sgc-t td.vac small{font-size:10px}
@@ -1319,9 +1318,9 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgc-et{white-space:nowrap}
 .sgc-e{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 6px;margin:1px 0;line-height:1.5}
 .sgc-e.ctl{color:var(--s-nuit);background:var(--s-nuit3)}
-.sgc-e.ref{color:#fff;background:var(--err)}
+.sgc-e.ref{color:var(--s-rouge);background:none;padding-left:0}
 .sgc-e.ok{color:var(--ok);padding-left:0}
-.sgc-e.ok svg{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
+.sgc-e .sgfh-st{display:inline-grid;width:14px;height:14px;font-size:9px;margin-right:5px;vertical-align:-3px}.sgc-e .sgfh-st svg{width:9px;height:9px}
 .sgc-e.vide{color:var(--s-gris2);font-weight:400}
 .sgc-act{white-space:nowrap;text-align:right}
 .sgc-act .nx-btn+.nx-btn{margin-left:6px}
@@ -1333,6 +1332,16 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgc-pt{display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--s-noir)}
 .sgc-pt.ref{background:var(--err)}.sgc-pt.ok{background:var(--ok)}.sgc-pt.off{background:var(--s-fond);box-shadow:inset 0 0 0 1px var(--s-gris3)}
 .sgc-leg .sgc-man{color:var(--err);margin-right:6px}
+/* présentation de la Feuille d'heures (même jour) : page en colonne (bandeau, chiffres, barre d'outils), tableau défilant sous un filet noir,
+   jours en tête comme l'agenda (nom, date en grand), légende commune */
+.sgc .sgc-corps{flex:1;min-height:0;overflow:auto;padding-bottom:14px}
+.sgc-tab{border-top:2px solid var(--s-noir);overflow-x:auto}
+.sgc-t th.sgc-j .j{display:block;font-size:11px;font-weight:700;color:var(--s-gris)}
+.sgc-t th.sgc-j .n{display:block;font-size:20px;font-weight:700;line-height:1.05;color:var(--s-noir)}
+.sgc-t th.sgc-j .n.s{font-size:15px}
+.sgc-t th.auj .n{color:var(--s-nuit)}
+.sgc-leg2{margin-top:10px}.sgc-leg2 .sgc-man{color:var(--err);margin-right:2px;font-weight:700}
+.sgc-leg2 .sgc-pt{margin-right:0}
 /* zone de travail étroite : boutons réduits à leur icône (libellé en infobulle), colonne des noms resserrée */
 @container (max-width:1100px){.sgc-act .nx-btn span{display:none}.sgc-act .nx-btn{padding:0 7px}.sgc-t td.sgc-n{min-width:170px}.sgc-nav b{min-width:200px}}
 
@@ -1381,6 +1390,12 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-bc .t1 b{overflow:hidden;text-overflow:ellipsis}
 .sgfh-bc .t1 .d{margin-left:auto;flex:none}
 .sgfh-bc .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4a4a48}
+/* nom de l'affaire en entier (sur plusieurs lignes), pastille d'état à sa gauche (demande de Paulo, 24.10.2026) */
+.sgfh-bc .nom{display:flex;align-items:flex-start;gap:4px;min-width:0;flex:1}
+.sgfh-bc .nom .nt{flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.sgfh-bc .nom .sgfh-st{margin-top:1px}
+.sgfh-bc .t1:has(.nom){align-items:flex-start;white-space:normal}
+.tlb.sgfh-b.mini .nom .nt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tlb.sgfh-b.mini{padding:0 5px 0 6px;font-size:10px;line-height:1}
 .tlb.sgfh-b.mini .sgfh-bc,.tlb.sgfh-b.mini .t1{height:100%}.tlb.sgfh-b.mini .tx{display:none}
 .tlb.sgfh-b.mini .sgfh-st{width:10px;height:10px;font-size:7px}.tlb.sgfh-b.mini .sgfh-st svg{width:7px;height:7px}
@@ -1396,7 +1411,7 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-h4{font-size:11.5px;font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--s-noir);margin:0 0 10px}
 .sgfh-proj{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
 .sgfh-proj .r{display:grid;grid-template-columns:10px 1fr auto;gap:4px 8px;align-items:center;font-size:12px}
-.sgfh-proj .r .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgfh-proj .r .t{white-space:normal;overflow-wrap:anywhere}
 .sgfh-proj .r .bar{grid-column:2/4;height:5px;background:var(--s-fond)}.sgfh-proj .r .bar i{display:block;height:100%}
 .sgfh-dot{display:inline-block;width:10px;height:10px;flex:none}
 .sgfh-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--s-gris);padding-top:8px;border-top:1px solid var(--s-filet)}
@@ -1417,7 +1432,7 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-ent:hover{background:#fafaf8}
 .sgfh-ent .k{grid-row:1/4;align-self:stretch}
 .sgfh-ent .a{font-size:12.5px;font-weight:700;display:flex;gap:6px;align-items:center;min-width:0}
-.sgfh-ent .a span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400}
+.sgfh-ent .a{align-items:flex-start}.sgfh-ent .a .nt{white-space:normal;overflow-wrap:anywhere;font-weight:400}.sgfh-ent .a .nt b{font-weight:700}.sgfh-ent .a .sgfh-st{margin-top:1px}
 .sgfh-ent .b{font-size:11.5px;color:var(--s-gris)}
 .sgfh-ent .c{font-size:11.5px;color:#555;grid-column:2/4}
 .sgfh-ent .du{font-weight:700;font-size:13px;text-align:right;white-space:nowrap}

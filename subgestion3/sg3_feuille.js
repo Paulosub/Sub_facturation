@@ -101,13 +101,16 @@ function sgfhBloc(b,r,D,[i,n]){ const O=HS.o, hol=!!r.ISHOLIDAY, c=hol?'#d7a13a'
   b.style.background=hol?'':sgfhTeinte(c); b.style.borderLeftColor=c;
   if(n>1){ b.style.left='calc('+(i/n*100)+'% + 1px)'; b.style.right='auto'; b.style.width='calc('+(100/n)+'% - 2px)'; }
   const rs=b.querySelector('.tlrs'); [...b.children].forEach(x=>{ if(x!==rs) x.remove(); });
-  const num=hol?'Vacances':sgfhNum(r.PROJECT_ID), tit=hol?'':sgfhTit(r.PROJECT_ID), tps=sgfhHeures(r);
-  const l1=O.projFirst?num:tps, l2=O.projFirst?tps:(hol?'':num+(tit?' '+tit:'')), l3=hol?'':[O.ph?sgfhPhase(r):'',O.act?sgfhAct(r):''].filter(Boolean).join(' · '), l4=O.com&&r.DESCRIPTION?sgfhTxt(r.DESCRIPTION):'';
-  const box=h('div',{class:'sgfh-bc'}); box.innerHTML='<div class="t1"><b>'+nxE(l1)+'</b>'+sgfhBadge(r)+'<span class="d">'+nxH(r.TIMEPERIOD)+' h</span></div>'+[l2,l3,l4].filter(Boolean).map(x=>'<div class="tx">'+nxE(x)+'</div>').join('');
+  /* nom de l'affaire toujours en entier (à la ligne si besoin), pastille d'état à sa gauche ; titre : l'affaire ou l'horaire (réglage « Titre ») */
+  const num=hol?'Vacances':sgfhNum(r.PROJECT_ID), tit=hol?'':sgfhTit(r.PROJECT_ID), tps=sgfhHeures(r), du='<span class="d">'+nxH(r.TIMEPERIOD)+' h</span>';
+  const nom='<div class="nom">'+sgfhBadge(r)+'<span class="nt"><b>'+nxE(num)+'</b>'+(tit?' '+nxE(tit):'')+'</span></div>';
+  const l3=hol?'':[O.ph?sgfhPhase(r):'',O.act?sgfhAct(r):''].filter(Boolean).join(' · '), l4=O.com&&r.DESCRIPTION?sgfhTxt(r.DESCRIPTION):'';
+  const box=h('div',{class:'sgfh-bc'}); box.innerHTML=(O.projFirst?'<div class="t1">'+nom+du+'</div><div class="tx">'+nxE(tps)+'</div>':'<div class="t1"><b>'+nxE(tps)+'</b>'+du+'</div>'+nom)
+    +[l3,l4].filter(Boolean).map(x=>'<div class="tx">'+nxE(x)+'</div>').join('');
   b.insertBefore(box,rs||null); }
 /* Journal : une carte par jour, pour l'information du collaborateur */
 function sgfhEntree(D,r){ const c=r.ISHOLIDAY?'#d7a13a':D.co.c(r.PROJECT_ID);
-  return '<div class="sgfh-ent" data-fh="ed" data-id="'+r.ID+'" title="Modifier la saisie"><i class="k'+(r.ISHOLIDAY?' sgfh-vac':'')+'" style="background:'+c+'"></i><div class="a">'+(r.ISHOLIDAY?'Vacances':nxE(sgfhNum(r.PROJECT_ID))+'<span>'+nxE(sgfhTit(r.PROJECT_ID))+'</span>')+sgfhBadge(r)+'</div>'
+  return '<div class="sgfh-ent" data-fh="ed" data-id="'+r.ID+'" title="Modifier la saisie"><i class="k'+(r.ISHOLIDAY?' sgfh-vac':'')+'" style="background:'+c+'"></i><div class="a">'+sgfhBadge(r)+'<span class="nt">'+(r.ISHOLIDAY?'<b>Vacances</b>':'<b>'+nxE(sgfhNum(r.PROJECT_ID))+'</b> '+nxE(sgfhTit(r.PROJECT_ID)))+'</span></div>'
     +'<div class="du">'+nxH(r.TIMEPERIOD)+' h<small>'+sgfhHeures(r)+'</small></div><div class="b">'+nxE(sgfhPhAct(r))+'</div>'+(r.DESCRIPTION?'<div class="c">'+nxE(r.DESCRIPTION)+'</div>':'')+'</div>'; }
 function sgfhJournal(D){ const nomJ=d=>JOURS_L[d.getDay()].replace(/^./,x=>x.toUpperCase())+' '+d.getDate()+' '+MOISL[d.getMonth()].toLowerCase();
   return '<div class="sgfh-jr">'+D.J.filter(j=>HS.wk||j.ouvre||j.L.length).map(j=>{ const vide=!j.ouvre&&!j.L.length, m=sgfhManque(D,j);

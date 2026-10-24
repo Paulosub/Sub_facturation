@@ -75,7 +75,7 @@ const SG_DOM=[
     /* « Controlling » (affd-controlling) déplacé dans Réglages ▸ Archives le 23.10.2026, à la demande de Paulo (gardé pour un usage ultérieur) */
     /* « Mes affaires » (affd-mes) retiré du chapitre le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
-  {k:'temps',t:'Temps',ico:'clock',d:'Saisie et contrôle du temps de travail.',items:[
+  {k:'temps',t:'Heures',ico:'clock',d:'Saisie et contrôle des heures de travail.',items:[   /* chapitre « Temps » renommé « Heures » le 24.10.2026 (demande de Paulo) ; clé temps inchangée */
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
@@ -169,13 +169,13 @@ const SG_DOM=[
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
     {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
     {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances et Réglages.'},
-    /* sous-menu « Temps » (24.10.2026, demande de Paulo : ces modules quittent le chapitre Temps pour le menu Réglages) ; dom = domaine d'origine,
+    /* sous-menu « Heures » (24.10.2026, demande de Paulo : ces modules quittent le chapitre Heures, ex-Temps, pour le menu Réglages) ; dom = domaine d'origine,
        qui garde leurs droits, leur code d'accès et leur visuel (nxDomVue) : les collaborateurs y ont toujours accès */
-    {v:'h-rapport',t:'Rapports de temps',grp:'Temps',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
-    {v:'h-dispo',t:'Disponibilités',grp:'Temps',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
-    {v:'nx-situation',t:'Situation des heures',grp:'Temps',dom:'temps',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
-    {v:'frais',t:'Notes de frais',grp:'Temps',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
-    {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Temps',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
+    {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
+    {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
+    {v:'nx-situation',t:'Situation des heures',grp:'Heures',dom:'temps',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
+    {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
+    {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
     {v:'fx-carnet',t:'Archives · Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},
     {v:'fx-feuille-heures',t:'Archives · Feuille d’heures',ico:'timer',reg:1,d:'Ancienne saisie d’heures de Facturation (remplacée par la Feuille d’heures).'},
     {v:'fx-rapport',t:'Archives · Rapport d’heures',ico:'analyse',reg:1,d:'Anciens rapports d’heures de Facturation.'},

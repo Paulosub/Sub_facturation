@@ -857,6 +857,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   menu (`it.dom`) : il sert aux droits (`sgVueOk` — sinon Réglages exigerait le droit « réglages » et les collaborateurs perdraient leurs notes de
   frais), au code d'accès (`sgDomDe`) et au visuel (`data-vdom` : visuel épuré du chapitre Temps gardé) ; le fil d'Ariane et le menu suivent
   Réglages. Copie d'avant : `subgestion3/_backup_20261024_1835_avant_menu_temps/`.
+  **Chapitre « Temps » renommé « Heures » (24.10.2026, demande de Paulo)** : libellé du menu, de la vue d'ensemble, du fil d'Ariane, du sous-menu
+  de Réglages et de l'en-tête de Situation des heures ; clé `temps` inchangée (`SG_DOM`, `data-vdom="temps"`, styles, droits, code d'accès).
+  Libellés « Temps de l'équipe », « Temps ce mois », « Temps par mois »… (Équipe, Cockpit, fiches) gardés.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

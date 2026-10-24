@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 22:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 22:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -25762,19 +25762,8 @@ const SG_DOM=[
   /* Chapitres PROVISOIRES (13.10.2026) : les deux modules de l'ancien logiciel du bureau tels que le moteur les reproduit — offres
      d'honoraires et contrats (« Honoraires (ancien) »), facturation (« Facturation (ancien) ») —, pour les comparer avec le chapitre
      Facturation et décider des améliorations — bloc 18 de sg3_plus.js. Pour les retirer : supprimer ces deux domaines et le bloc 18. */
-  {k:'ancien',t:'Honoraires (ancien)',ico:'calc',prov:1,d:'Chapitre provisoire : les offres d’honoraires, les contrats et l’avancement des prestations de l’ancien logiciel du bureau, tels qu’il les présentait, pour les comparer avec le chapitre Facturation et noter les améliorations à apporter.',items:[
-    {v:'anc-comparer',t:'Comparer et noter',ico:'analyse',hero:1,d:'Chaque fonction des honoraires de l’ancien logiciel face à son équivalent actuel, les écarts relevés et vos notes d’analyse (partagées avec le bureau).'},
-    {v:'anc-offres',t:'Offres d’honoraires',ico:'calc',d:'Calcul des honoraires par projet : en-têtes et variantes, coût de l’ouvrage ou temps effectif, conditions, frais, document d’offre.'},
-    {v:'anc-contrats',t:'Contrats honoraires',ico:'contrat',d:'Contrats d’honoraires du projet, sous-traitants, encaissements planifiés et reçus.'},
-    {v:'anc-avancement',t:'Avancement des prestations',ico:'gauge',d:'État d’avancement des prestations du projet, à une date donnée.'},
-    {v:'anc-mg-contrats',t:'Management · contrats',ico:'trend',d:'Contrats, sous-traitants, échéancier d’encaissements, encaissements planifiés et reçus, situation, avancement.'}]},
-  {k:'ancienf',t:'Facturation (ancien)',ico:'coins',prov:1,d:'Chapitre provisoire : les factures, leur contrôle, les heures et frais à facturer et les rapports de l’ancien logiciel du bureau, tels qu’il les présentait, pour les comparer avec le chapitre Facturation et noter les améliorations à apporter.',items:[
-    {v:'ancf-comparer',t:'Comparer et noter',ico:'analyse',hero:1,d:'Chaque fonction de la facturation de l’ancien logiciel face à son équivalent actuel, les écarts relevés et vos notes d’analyse (partagées avec le bureau).'},
-    {v:'anc-factures',t:'Factures',ico:'receipt',d:'Factures du projet par contrat : positions, TVA, factures antérieures, statuts, encaissements, QR-facture.'},
-    {v:'anc-controle',t:'Contrôle de factures',ico:'check',d:'Toutes les factures : planifiées, envoyées, rappel envoyé, payées ; transfert des heures et frais en facturation.'},
-    {v:'anc-heures',t:'Heures et frais à facturer',ico:'clock',d:'Controlling du projet : heures et frais facturables, marqués « facturés » et transférés dans une facture.'},
-    {v:'anc-mg-factures',t:'Management · factures',ico:'analyse',d:'Vue d’ensemble de l’année, factures selon statut et selon les dates, honoraires et frais.'},
-    {v:'anc-reglages',t:'Réglages de facturation',ico:'settings',d:'Tarifs de facturation, gabarits de positions, comptes pour QR-facture.'}]},
+  {k:'ancien',t:'Honoraires (ancien)',ico:'calc',prov:1,menu:0,d:'Chapitre provisoire : les offres d’honoraires, les contrats et l’avancement des prestations de l’ancien logiciel du bureau, tels qu’il les présentait, pour les comparer avec le chapitre Facturation et noter les améliorations à apporter.',items:[]},   /* retiré du menu le 24.10.2026 : ses écrans sont dans Archives (sous-menu, dom:'ancien') */
+  {k:'ancienf',t:'Facturation (ancien)',ico:'coins',prov:1,menu:0,d:'Chapitre provisoire : les factures, leur contrôle, les heures et frais à facturer et les rapports de l’ancien logiciel du bureau, tels qu’il les présentait, pour les comparer avec le chapitre Facturation et noter les améliorations à apporter.',items:[]},   /* retiré du menu le 24.10.2026 : ses écrans sont dans Archives (sous-menu, dom:'ancienf') */
   {k:'biblio',t:'Bibliothèque',ico:'library',d:'Modèles de documents, de projets, d’adresses et ressources graphiques.',items:[
     {v:'tpl-documents',t:'Documents types',ico:'doc',hero:1,d:'Modèles de lettres, factures et documents.'},
     {v:'tpl-projectTemplates',t:'Projets types',ico:'folder',d:'Modèles pour créer des projets.'},
@@ -25822,6 +25811,19 @@ const SG_DOM=[
     {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
     {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
     {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
+    /* chapitres provisoires « Honoraires (ancien) » et « Facturation (ancien) » (Archives le 24.10.2026, demande de Paulo) : sous-menus ; dom garde
+       leurs droits (SG_VUE_DROIT), leur code d'accès (« ancien », « ancienf »), leur bandeau et « Comparer et noter » (sgAncChDe) */
+    {v:'anc-comparer',grp:'Honoraires (ancien)',dom:'ancien',t:'Comparer et noter',ico:'analyse',d:'Chaque fonction des honoraires de l’ancien logiciel face à son équivalent actuel, les écarts relevés et vos notes d’analyse (partagées avec le bureau).'},
+    {v:'anc-offres',grp:'Honoraires (ancien)',dom:'ancien',t:'Offres d’honoraires',ico:'calc',d:'Calcul des honoraires par projet : en-têtes et variantes, coût de l’ouvrage ou temps effectif, conditions, frais, document d’offre.'},
+    {v:'anc-contrats',grp:'Honoraires (ancien)',dom:'ancien',t:'Contrats honoraires',ico:'contrat',d:'Contrats d’honoraires du projet, sous-traitants, encaissements planifiés et reçus.'},
+    {v:'anc-avancement',grp:'Honoraires (ancien)',dom:'ancien',t:'Avancement des prestations',ico:'gauge',d:'État d’avancement des prestations du projet, à une date donnée.'},
+    {v:'anc-mg-contrats',grp:'Honoraires (ancien)',dom:'ancien',t:'Management · contrats',ico:'trend',d:'Contrats, sous-traitants, échéancier d’encaissements, encaissements planifiés et reçus, situation, avancement.'},
+    {v:'ancf-comparer',grp:'Facturation (ancien)',dom:'ancienf',t:'Comparer et noter',ico:'analyse',d:'Chaque fonction de la facturation de l’ancien logiciel face à son équivalent actuel, les écarts relevés et vos notes d’analyse (partagées avec le bureau).'},
+    {v:'anc-factures',grp:'Facturation (ancien)',dom:'ancienf',t:'Factures',ico:'receipt',d:'Factures du projet par contrat : positions, TVA, factures antérieures, statuts, encaissements, QR-facture.'},
+    {v:'anc-controle',grp:'Facturation (ancien)',dom:'ancienf',t:'Contrôle de factures',ico:'check',d:'Toutes les factures : planifiées, envoyées, rappel envoyé, payées ; transfert des heures et frais en facturation.'},
+    {v:'anc-heures',grp:'Facturation (ancien)',dom:'ancienf',t:'Heures et frais à facturer',ico:'clock',d:'Controlling du projet : heures et frais facturables, marqués « facturés » et transférés dans une facture.'},
+    {v:'anc-mg-factures',grp:'Facturation (ancien)',dom:'ancienf',t:'Management · factures',ico:'analyse',d:'Vue d’ensemble de l’année, factures selon statut et selon les dates, honoraires et frais.'},
+    {v:'anc-reglages',grp:'Facturation (ancien)',dom:'ancienf',t:'Réglages de facturation',ico:'settings',d:'Tarifs de facturation, gabarits de positions, comptes pour QR-facture.'},
     /* venus de Configuration le 24.10.2026 (demande de Paulo) : dom:'reglages' garde leurs droits (droit « Configuration »), leur code d'accès et
        leur visuel ; « Archives · » retiré des libellés */
     {v:'fx-carnet',dom:'reglages',t:'Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},

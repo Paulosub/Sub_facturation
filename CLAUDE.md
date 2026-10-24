@@ -842,6 +842,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Configuration), icône `archive` (ajoutée à `NXI`), `vide:1` = affiché à l'administrateur même sans module (`sgSide`) ; vue d'ensemble « Aucun module
   pour le moment » ; masqué aux autres profils (aucun écran permis). Pas encore dans les domaines protégés par code (à décider quand il aura des
   modules). Visuel Mac #8E8E93, Studio nocturne : carte sable. Les « Archives · … » restent pour l'instant dans Configuration.
+  Même soir : **Projets ▸ Suivi & écarts (`aff-controlling`) déplacé dans Archives** (demande de Paulo) ; Projets = Mes projets, Registre, Tâches ;
+  droits inchangés (`SG_VUE_DROIT['aff-controlling']` : chef de projet oui, collaborateur non — le chef de projet voit donc le chapitre Archives) ;
+  le menu d'actions du projet qui l'ouvre (`go('aff-controlling')`) marche toujours.
   **« Fonctions » retiré de la barre et passé au clic droit (24.10.2026 au soir, Paulo : « supprimer les Fonctions et les ajouter au clic droit »)** :
   barre = Semaine | Mois, Aujourd'hui, semaines, année ; `sgfhFonctions()` = menu ⚙ du moteur filtré (`sgfhMenuSans`) — clic droit sur une saisie
   de l'agenda : menu du moteur (son `popMenu` remplacé le temps de l'appel par `sgMenuAt`) + sous-menu « Fonctions » ; ligne du Mois : Approuver,

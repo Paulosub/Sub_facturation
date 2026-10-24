@@ -81,7 +81,6 @@ const SG_DOM=[
     {v:'h-journal',t:'Journal des heures',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'}]},   /* 24.10.2026 (demande de Paulo) */
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
-    {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports.'},
     {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs.'},
     /* grp : sous-menu dépliable « Tâches » (18.10.2026) ; st = libellé court dans le sous-menu */
     {v:'taches-urgent',t:'Tâches urgentes',st:'Urgent',grp:'Tâches',ico:'urgent',d:'Les tâches à traiter en priorité.'},
@@ -200,7 +199,8 @@ const SG_DOM=[
     {v:'fx-affaire-detail',t:'Analyse de projet',hide:1},{v:'fx-collab-detail',t:'Fiche collaborateur · Facturation',hide:1}]},
   /* chapitre « Archives » (24.10.2026, demande de Paulo : « créer un menu archive, laisse-le vide pour le moment ») ; vide:1 = affiché à
      l'administrateur même sans module (sgSide) */
-  {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[]}
+  {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[
+    {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports (ancien Controlling, venu du chapitre Projets le 24.10.2026).'}]}
 ];
 const SG_D={}, NX_VIEW={};
 SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'Vue d’ensemble'}; d.items.forEach(it=>{ if(!NX_VIEW[it.v]) NX_VIEW[it.v]={d,t:it.t,it}; }); });

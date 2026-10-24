@@ -1297,3 +1297,41 @@ html[data-vdom="temps"] #main .kv span{font-size:22px;font-weight:700;color:var(
 html[data-vdom="temps"] #main .col.fill>.ph2:last-child{border:0;border-top:2px solid var(--s-noir);justify-content:flex-end;gap:26px;padding-top:10px}
 html[data-vdom="temps"] #main .col.fill>.ph2:last-child span{font-size:12px;color:var(--s-gris)}
 html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:var(--s-noir)}
+/* ═══ Temps ▸ Contrôle des heures (bloc 26, sg3_controle.js, 24.10.2026) : semaine ou mois par collaborateur / par projet ═══ */
+.sgc-f{align-items:center}
+.sgc-nav{display:flex;align-items:center;gap:8px}
+.sgc-nav b{min-width:240px;text-align:center;font-size:14px;white-space:nowrap}
+.sgc-sc{overflow-x:auto}
+.sgc-t th.sgc-j,.sgc-t td.sgc-j{text-align:center;min-width:46px;width:52px;padding-left:4px;padding-right:4px;white-space:nowrap}
+.sgc-t th small{display:block;font-weight:400;color:var(--s-gris);font-size:10.5px;margin-top:1px}
+.sgc-t .off{background:var(--s-fond)}
+.sgc-t th.auj,.sgc-t td.auj{background:var(--s-jaune3)}
+.sgc-t td.sgc-j[data-fn]{cursor:pointer}
+.sgc-t td.sgc-j[data-fn]:hover{box-shadow:inset 0 0 0 2px var(--s-nuit)}
+.sgc-t td.ref{color:var(--err);font-weight:700}
+.sgc-t td.ok{color:var(--ok)}
+.sgc-ok svg{width:11px;height:11px;vertical-align:-1px;margin-left:2px}
+.sgc-t td.man{color:var(--err);font-weight:700}
+.sgc-t td.man2{box-shadow:inset 0 -2px 0 var(--err)}
+.sgc-t td.vac{color:var(--s-gris);font-style:italic}.sgc-t td.vac small{font-size:10px}
+.sgc-t td.sgc-n{min-width:210px}
+.sgc-t tr.tot td{border-top:1.5px solid var(--s-noir);font-weight:700}
+.sgc-et{white-space:nowrap}
+.sgc-e{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 6px;margin:1px 0;line-height:1.5}
+.sgc-e.ctl{color:var(--s-nuit);background:var(--s-nuit3)}
+.sgc-e.ref{color:#fff;background:var(--err)}
+.sgc-e.ok{color:var(--ok);padding-left:0}
+.sgc-e.ok svg{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
+.sgc-e.vide{color:var(--s-gris2);font-weight:400}
+.sgc-act{white-space:nowrap;text-align:right}
+.sgc-act .nx-btn+.nx-btn{margin-left:6px}
+.sgc-act .nx-btn.sm,.sgc-nav .nx-btn.sm{padding:0 8px}   /* plus spécifique que les boutons des visuels à l'essai (marge de 18 px) : le tableau tient dans la carte */
+.sgc-act .nx-btn[disabled]{opacity:.35;cursor:default;background:transparent}
+.sgc-ss{white-space:nowrap}
+.sgc-ss .sgt-ini{min-width:30px;height:20px;font-size:9.5px;margin-right:3px}
+.sgc-leg{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding:10px 0 2px;margin-top:4px;border-top:1px solid var(--s-filet);font-size:11.5px;color:var(--s-gris)}
+.sgc-pt{display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--s-noir)}
+.sgc-pt.ref{background:var(--err)}.sgc-pt.ok{background:var(--ok)}.sgc-pt.off{background:var(--s-fond);box-shadow:inset 0 0 0 1px var(--s-gris3)}
+.sgc-leg .sgc-man{color:var(--err);margin-right:6px}
+/* zone de travail étroite : boutons réduits à leur icône (libellé en infobulle), colonne des noms resserrée */
+@container (max-width:1100px){.sgc-act .nx-btn span{display:none}.sgc-act .nx-btn{padding:0 7px}.sgc-t td.sgc-n{min-width:170px}.sgc-nav b{min-width:200px}}

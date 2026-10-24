@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 19.10.2026 00:07 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 24.10.2026 10:03 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2399,10 +2399,14 @@ VIEWS['aff-controlling']={
 function ctlWin(title,body,extra){ const D=dialog({title,body,buttons:[...(extra||[]),{t:'Fermer',pri:true}]}); D.bd.style.padding='6px'; return D; }
 
 /* ── Contrôle des heures d'affaires (TimeLogControllingDialog) : collaborateurs | semaine ; seules les heures de l'affaire (celles des autres
-   affaires en gris sur option, WeekToolBarPanel.showReviewHiddenItems) ; clic droit : Approuver, Refuser, Réinitialiser, Tout sélectionner ── */
+   affaires en gris sur option, WeekToolBarPanel.showReviewHiddenItems) ; clic droit : Approuver, Refuser, Réinitialiser, Tout sélectionner.
+   Options o (SUBGestion 3 ▸ Temps ▸ Contrôle des heures, 24.10.2026) : sans affaire (p null), toutes les heures des collaborateurs o.staffs —
+   o.peut(r) dit lesquelles se contrôlent, les autres sont en gris comme les autres affaires —, o.staff et o.date = collaborateur et semaine
+   ouverts, o.titre, o.boutons = Approuver / Refuser / Réinitialiser aussi dans la barre. Sans options : la fenêtre d'origine, inchangée. ── */
 const CTL_W={d:new Date(),staff:null,sel:new Set(),o:{act:1,ph:0,com:1,brk:0,projFirst:0,sat:1,sun:1,pub:1,zoom:0,autres:0}};
 try{ Object.assign(CTL_W.o,JSON.parse(localStorage.getItem('ds_ctw_opts')||'{}')); }catch(_){}
-function ctlTimeCheck(p){ if(!p) return; const W=CTL_W, sl=ctlStaffs(p,'timelog'); W.sel.clear();
+function ctlTimeCheck(p,o){ o=o||{}; if(!p&&!o.staffs) return; const W=CTL_W, sl=p?ctlStaffs(p,'timelog'):o.staffs, own=r=>p?r.PROJECT_ID===p.ID:(!o.peut||o.peut(r)); W.sel.clear();
+  if(o.staff!=null) W.staff=o.staff; if(o.date) W.d=new Date(o.date);
   if(!sl.some(s=>s.ID===W.staff)) W.staff=((ME.staff&&sl.find(s=>s.ID===ME.staff.ID))||sl[0]||{}).ID??null;
   const L=h('div',{class:'pane'}), bar=h('div',{class:'ph2',style:{gap:'4px',flexWrap:'wrap'}}), cal=h('div',{style:{flex:1,minHeight:0,display:'flex',flexDirection:'column',overflow:'hidden',background:'#fff'}});
   const body=h('div',{style:{display:'flex',gap:'6px',width:'min(1240px,calc(92vw - 16px))',height:'min(700px,calc(84vh - 130px))'}},h('div',{class:'col',style:{width:'220px',flex:'0 0 220px'}},L),
@@ -2412,7 +2416,7 @@ function ctlTimeCheck(p){ if(!p) return; const W=CTL_W, sl=ctlStaffs(p,'timelog'
   let E=[];
   const mark=()=>$$('.ctlb',cal).forEach(x=>{ const on=W.sel.has(x.dataset.id); x.style.outline=on?'2px solid #111':'none'; x.style.zIndex=on?3:1; });
   const sel=L2=>{ W.sel.clear(); L2.forEach(r=>W.sel.add(String(r.ID))); mark(); };
-  const setState=async v=>{ const rs=[...W.sel].map(id=>DS.get('timelog',id)).filter(r=>r&&r.PROJECT_ID===p.ID); if(!rs.length){ toast('Sélectionnez des inscriptions (Cmd-clic, Maj-clic).',true); return; }
+  const setState=async v=>{ const rs=[...W.sel].map(id=>DS.get('timelog',id)).filter(r=>r&&own(r)); if(!rs.length){ toast('Sélectionnez des inscriptions (Cmd-clic, Maj-clic).',true); return; }
     await DS.commit(rs.map(r=>({t:'timelog',id:r.ID,val:{...r,TIMELOGSTATECODE:v}}))); toast(rs.length+' inscription(s) : '+TSTATE[v]+'.'); draw(); };
   const drawBar=()=>{ const [,w]=isoWeek(W.d), O=W.o;
     bar.replaceChildren(ibtn({i:'today',label:'Aujourd’hui',t:'Aujourd’hui',fn:()=>{ W.d=new Date(); draw(); }}),
@@ -2420,15 +2424,17 @@ function ctlTimeCheck(p){ if(!p) return; const W=CTL_W, sl=ctlStaffs(p,'timelog'
       ibtn({i:'next',fn:()=>shift(1)}),ibtn({i:'last',t:'Avancer de 4 semaines',fn:()=>shift(4)}),h('div',{style:{width:'10px'}}),
       ibtn({i:'prev',fn:()=>{ W.d=new Date(W.d.getFullYear()-1,W.d.getMonth(),W.d.getDate()); draw(); }}),h('span',{style:{alignSelf:'center'}},String(W.d.getFullYear())),
       ibtn({i:'next',fn:()=>{ W.d=new Date(W.d.getFullYear()+1,W.d.getMonth(),W.d.getDate()); draw(); }}),h('div',{style:{width:'10px'}}),
+      ...(o.boutons?[ibtn({label:'Approuver',t:'Approuver les inscriptions choisies',fn:()=>setState(3)}),ibtn({label:'Refuser',t:'Refuser les inscriptions choisies',fn:()=>setState(1)}),
+        ibtn({label:'Réinitialiser',t:'Remettre les inscriptions choisies à « Saisi »',fn:()=>setState(0)}),ibtn({label:'Tout sélectionner',fn:()=>sel(E)}),h('div',{style:{width:'10px'}})]:[]),
       ibtn({i:'gear',t:'Réglages',menu:()=>[{t:'Afficher les activités',chk:O.act,fn:()=>setO('act',O.act?0:1)},{t:'Afficher les phases',chk:O.ph,fn:()=>setO('ph',O.ph?0:1)},
         {t:'Afficher les commentaires',chk:O.com,fn:()=>setO('com',O.com?0:1)},{t:'Afficher les arrêts de travail',chk:O.brk,fn:()=>setO('brk',O.brk?0:1)},'-',
         {t:'Titre : afficher l’affaire',chk:O.projFirst,fn:()=>setO('projFirst',1)},{t:'Titre : afficher la durée',chk:!O.projFirst,fn:()=>setO('projFirst',0)},'-',
         {t:'Taguer les samedis',chk:O.sat,fn:()=>setO('sat',O.sat?0:1)},{t:'Taguer les dimanches',chk:O.sun,fn:()=>setO('sun',O.sun?0:1)},{t:'Taguer les jours fériés',chk:O.pub,fn:()=>setO('pub',O.pub?0:1)},
         {t:'Agrandir',chk:O.zoom,fn:()=>setO('zoom',O.zoom?0:1)},'-',{t:'Afficher les saisies d’heure des autres affaires',chk:O.autres,fn:()=>setO('autres',O.autres?0:1)}]})); };
-  const drawCal=()=>{ cal.innerHTML=''; if(!W.staff){ cal.append(h('div',{class:'ph'},sl.length?'Sélectionnez un collaborateur.':'Aucun collaborateur dans cette affaire.')); return; }
+  const drawCal=()=>{ cal.innerHTML=''; if(!W.staff){ cal.append(h('div',{class:'ph'},sl.length?'Sélectionnez un collaborateur.':p?'Aucun collaborateur dans cette affaire.':'Aucun collaborateur.')); return; }
     const O=W.o, mon=mondayOf(W.d), days=[...Array(7)].map((_,i)=>{ const d=new Date(mon); d.setDate(d.getDate()+i); return d; }), ka=dayKey(days[0]), kb=dayKey(days[6]);
     const all=DS.by('timelog','STAFF_ID',W.staff).filter(r=>{ const k=tlKey(r); return k>=ka&&k<=kb; });
-    E=all.filter(r=>r.PROJECT_ID===p.ID); const X=O.autres?all.filter(r=>r.PROJECT_ID!==p.ID):[];
+    E=all.filter(own); const X=O.autres?all.filter(r=>!own(r)):[];
     [...W.sel].forEach(id=>{ if(!E.some(r=>String(r.ID)===id)) W.sel.delete(id); });
     const byDay={}; [...X,...E].forEach(r=>(byDay[tlKey(r)]=byDay[tlKey(r)]||[]).push(r));
     const tot=d=>E.filter(r=>tlKey(r)===dayKey(d)).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
@@ -2440,7 +2446,7 @@ function ctlTimeCheck(p){ if(!p) return; const W=CTL_W, sl=ctlStaffs(p,'timelog'
       h('div',{style:{fontWeight:400,color:'#555'}},hrs(tot(d))+' h'))));
     const sc=h('div',{style:{flex:1,minHeight:0,overflow:'auto',position:'relative'}}), bodyG=h('div',{style:{display:'grid',gridTemplateColumns:`${gut}px repeat(7,1fr)`,position:'relative',height:(24*PX)+'px'}});
     const gutter=h('div',{style:{position:'relative'}}); for(let i=1;i<24;i++) gutter.append(h('div',{style:{position:'absolute',top:(i*PX-8)+'px',right:'8px',color:'#555'}},i+':00')); bodyG.append(gutter);
-    const blk=r=>{ const other=r.PROJECT_ID!==p.ID, t1=tlT1(r), t2=tlT2(r), [c1,c2]=other?['#9b9b9b','#e8e8e8']:tlColors(r), on=W.sel.has(String(r.ID)), pj=DS.get('project',r.PROJECT_ID);
+    const blk=r=>{ const other=!own(r), t1=tlT1(r), t2=tlT2(r), [c1,c2]=other?['#9b9b9b','#e8e8e8']:tlColors(r), on=W.sel.has(String(r.ID)), pj=DS.get('project',r.PROJECT_ID);
       const time=`${hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)} – ${hm(Math.floor(t2/60),t2%60)}, ${(+r.TIMEPERIOD||0).toFixed(2).replace(/0$/,'')} h`, what=r.ISHOLIDAY?'Vacances':projLabel(pj);
       const line=(t,b)=>t?h('div',{style:{padding:'0 4px',fontWeight:b?600:400,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}},t):null;
       const el=h('div',{class:'ctlb','data-id':r.ID,style:{position:'absolute',left:'1px',right:'1px',top:(t1*PX/60)+'px',height:Math.max(PX/4,(t2-t1)*PX/60-1)+'px',background:c2,overflow:'hidden',
@@ -2460,14 +2466,14 @@ function ctlTimeCheck(p){ if(!p) return; const W=CTL_W, sl=ctlStaffs(p,'timelog'
       c.onmousedown=e=>{ if(e.target===c&&!e.button&&!(e.metaKey||e.ctrlKey||e.shiftKey)){ W.sel.clear(); mark(); } };
       c.oncontextmenu=e=>{ if(e.target!==c) return; e.preventDefault(); popMenu({x:e.clientX,y:e.clientY},[{t:'Tout sélectionner',dis:!E.length,fn:()=>sel(E)}]); };
       const Ld=(byDay[dayKey(d)]||[]).sort((a,b)=>tlT1(a)-tlT1(b));
-      if(O.brk){ const Lp=Ld.filter(r=>r.PROJECT_ID===p.ID); Lp.forEach((r,i)=>{ if(!i) return; const e0=tlT2(Lp[i-1]), s1=tlT1(r); if(s1>e0) c.append(h('div',{title:'Arrêt de travail '+hrs((s1-e0)/60)+' h',
+      if(O.brk){ const Lp=Ld.filter(own); Lp.forEach((r,i)=>{ if(!i) return; const e0=tlT2(Lp[i-1]), s1=tlT1(r); if(s1>e0) c.append(h('div',{title:'Arrêt de travail '+hrs((s1-e0)/60)+' h',
         style:{position:'absolute',left:'6px',right:'6px',top:(e0*PX/60)+'px',height:((s1-e0)*PX/60)+'px',background:'repeating-linear-gradient(45deg,#ddd 0,#ddd 3px,transparent 3px,transparent 7px)',color:'#666',fontSize:'11px',textAlign:'center',overflow:'hidden'}},'Arrêt '+hrs((s1-e0)/60)+' h')); }); }
       Ld.forEach(r=>c.append(blk(r))); bodyG.append(c); });
     sc.append(bodyG); cal.append(head,sc);
     const first=E.length?Math.min(...E.map(tlT1))/60:7.5, y0=Math.max(0,Math.min(first,7.5)-.5)*PX; sc.scrollTop=y0; requestAnimationFrame(()=>{ sc.scrollTop=y0; }); };   // 1re ouverture : fenêtre pas encore affichée
   const draw=()=>{ grid(L,Object.assign(og,{cols:[{k:'n',t:'Collaborateur',f:s=>esc(staffName(s))}],rows:sl,sel:W.staff,sort:null,empty:'Aucun collaborateur.',onSel:s=>{ W.staff=s.ID; W.sel.clear(); drawCal(); }}));
     drawBar(); drawCal(); };
-  draw(); const D=ctlWin('Contrôle — '+projLabel(p),body); ctlLive(body,['timelog','staff','publicholiday'],draw);
+  draw(); const D=ctlWin(p?'Contrôle — '+projLabel(p):o.titre||'Contrôle des heures',body); ctlLive(body,['timelog','staff','publicholiday'],draw);
   D.bd.closest('.ov').addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='a'&&!e.target.closest('input,textarea,select')){ e.preventDefault(); sel(E); } });
   D.bd.closest('.ov').tabIndex=-1; D.bd.closest('.ov').focus(); }
 

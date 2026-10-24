@@ -762,6 +762,26 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   montant de l'année ; `sgtStats`, cache 5 s) ; ancien collaborateur grisé « a quitté le bureau le … ». Contenu des cellules refait après chaque dessin
   du moteur (MutationObserver sur `#main`, `td[data-sgt]`) ; sélection, tri et données inchangés ; l'agenda de la Feuille d'heures n'est pas retouché.
   Vérifié dans la charte, Papier et encre et Studio nocturne. Copie d'avant : `subgestion3/_backup_20261023_2225_avant_temps_epure/`.
+  **Temps ▸ Contrôle des heures (24.10.2026, bloc 26, `subgestion3/sg3_controle.js` + styles `.sgc-*` en fin de `sg3.css`)** — demande de Paulo
+  « dans temps, ajoute le contrôle des heures » (l'ancien logiciel contrôlait les heures affaire par affaire, dans le Controlling archivé le 23.10.2026).
+  Écran `nx-controle`, menu Temps juste après la Feuille d'heures ; droits du Controlling (profil autre que collaborateur et heures « de ses projets » au
+  moins, `SG_VUE_DROIT['nx-controle']`). Période Semaine | Mois (‹ ›, Cette semaine / Ce mois), affichage Par collaborateur | Par projet, réglages
+  `sg3_controle` {mode, d, vue}. **Par collaborateur** : heures par jour (mois : par semaine ISO, jours du mois seulement) ; cellule rouge = inscription(s)
+  refusée(s), verte avec coche = tout approuvé, « vac. » = vacances seules ; jour ouvré passé sans saisie = tiret rouge (entre JOININGDATE et
+  QUITTINGDATE, `sgcEngage` ; seulement avec le droit « toutes les heures ») ; mois : semaine soulignée de rouge s'il y manque un jour ; week-ends et fériés
+  sur fond gris, aujourd'hui en jaune pâle ; Total, Prévues (jusqu'à hier, `hrMaps` comme les Rapports de temps), Écart (saisies jusqu'à hier − prévues),
+  État (n à contrôler = Saisi + Corrigé, n refusée(s), Approuvé) ; sous le nom : « complètes jusqu'au » (TIMELOGCOMPLETEDDATE) et « bloquées jusqu'au »
+  (TIMELOGFREEZINGDATE) quand la date touche la période ; boutons **Contrôler** (fenêtre de l'ancien logiciel sur la semaine du collaborateur, toutes
+  affaires : clic, Cmd-clic, Maj-clic, puis Approuver / Refuser / Réinitialiser / Tout sélectionner, double-clic = modifier) et **Approuver** (ses
+  inscriptions à contrôler de la période, après `sgConfirm`) ; « Tout approuver » dans le titre de la carte ; un clic sur un jour ouvre sa semaine.
+  **Par projet** : projets ayant des heures dans la période (collaborateurs, heures, état, dernière saisie) ; « Contrôler » = la fenêtre d'origine, par
+  affaire. CSV sans la colonne des boutons, noms en toutes lettres. Zone de travail < 1100 px : boutons réduits à leur icône. Moteur (`DeltaSub.html`,
+  reconstruire aussi v1 et v2) : `ctlTimeCheck(p,o)` — sans affaire (`p` null) avec `o.staffs`, `o.peut(r)` (inscriptions contrôlables, les autres en gris),
+  `o.staff`, `o.date`, `o.titre`, `o.boutons` (Approuver / Refuser / Réinitialiser / Tout sélectionner dans la barre) ; sans options : fenêtre d'origine
+  inchangée (Réglages ▸ Archives · Controlling). États TIMELOGSTATECODE : 0 Saisi, 1 Refusé, 2 Corrigé, 3 Approuvé (le collaborateur ne peut plus la
+  modifier). Base de test : 190 inscriptions approuvées sur 37'622 (la validation était peu utilisée). Visuel Mac : filet fin du total, états en capsules
+  (`visuels_variantes.css`). Copies d'avant : `subgestion3/_backup_20261024_0949_avant_controle_heures/`,
+  `DeltaSub_backup_20261024_0949_avant_controle_heures.html`, `SUBGestion3_backup_20261024_0949_avant_controle_heures.html`.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

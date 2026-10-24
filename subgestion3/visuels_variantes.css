@@ -657,6 +657,12 @@ html[data-visuel="mac"]{
   & .sg-ep-cols .ini{border-radius:999px;background:linear-gradient(180deg,#B8B8BD,#8E8E93);color:#fff}
   & .sg-ep-grp .n{border-radius:999px;background:var(--v-acc)}
 
+  /* ── Temps ▸ Contrôle des heures (bloc 26) : filet fin au-dessus du total, sans filet sous la légende ── */
+  & .sgc-t tr.tot td{border-top:1px solid var(--v-sep)}
+  & .sgc-leg{border-top:1px solid var(--v-sep2)}
+  & .sgc-e{border-radius:999px;font-weight:600;padding:1px 8px}
+  & .sgc-e.ok{padding-left:0}
+
   /* ── chapitre Temps (visuel « épuré », bloc 25) : filets fins, sélection en bleu, initiales en pastille grise comme les Contacts ── */
   &[data-vdom="temps"] #nx-sub{background:var(--v-fond)}
   &[data-vdom="temps"] #main .cols>.col:first-child .pane,&[data-vdom="temps"] #main .col.fill>.pane{border-top:0!important}

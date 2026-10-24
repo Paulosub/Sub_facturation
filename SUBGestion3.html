@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 19:10 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 19:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1498,7 +1498,7 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 html.sgfh-on #nx-sub{display:none!important}
 .sgfh-outils{margin:0 0 12px}
 .sgfh-outils #tools{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
-.sgfh-outils #tools>.grp:last-child{margin-left:auto}
+.sgfh.sgc .sgfh-outils #tools>.grp:last-child{margin-left:auto}   /* Contrôle des heures : Fonctions à droite (la feuille d'heures n'en a plus : clic droit) */
 /* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */
 @container (max-width:1050px){.sgfh-kp{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}}
 
@@ -31543,7 +31543,7 @@ function sgfhRepartition(D,titre){ const ids=D.co.ids, mx=Math.max(1,...ids.map(
     +(vac?'<div class="r"><i class="sgfh-dot sgfh-vac"></i><span class="t">Vacances</span><b>'+nxH(vac)+' h</b></div>':''):'<div class="nx-empty">Aucune saisie.</div>')+'</div>'; }
 const sgfhLegende=extra=>'<div class="sgfh-leg"><span><span class="sgfh-st ok">'+nxSvg('check')+'</span>approuvée</span><span><span class="sgfh-st ref">!</span>refusée</span><span><span class="sgfh-st cor">↺</span>corrigée</span>'
   +'<span><i class="sgfh-dot sgfh-vac"></i>vacances</span>'+(extra||'')+'</div>';
-const SGFH_GESTES='<span class="g">Glisser sur une plage libre : nouvelle saisie · ⌥ + glisser : copier la saisie choisie · glisser une saisie : la déplacer · bord inférieur : sa fin · double-clic : modifier · clic droit : menu</span>';
+const SGFH_GESTES='<span class="g">Glisser sur une plage libre : nouvelle saisie · ⌥ + glisser : copier la saisie choisie · glisser une saisie : la déplacer · bord inférieur : sa fin · double-clic : modifier · clic droit : menu et fonctions</span>';
 /* habillage de la semaine dessinée par hsWeek : en-tête des jours, fonds, ligne de l'heure, saisies (couleurs, texte, couloirs) */
 function sgfhHabiller(cal,D){ const head=cal.firstElementChild, sc=head&&head.nextElementSibling, grid=sc&&sc.firstElementChild; if(!grid) return;
   const cols=[...grid.children].filter(c=>c._d), byId=new Map(D.L.map(r=>[String(r.ID),r])), O=D.O||HS.o, PX=O.zoom?84:48, done=D.s&&D.s.TIMELOGCOMPLETEDDATE, auj=dayKey(new Date());
@@ -31588,11 +31588,15 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
   if(tl&&bar&&tl.parentNode!==bar) bar.insertBefore(tl,bar.firstChild); }
 /* la feuille d'heures : même vue du moteur (outils, rafraîchissement), nouveau rendu */
 { const V=VIEWS['h-saisie'], FH0={tools:V.tools};
-  /* barre d'outils (24.10.2026, demande de Paulo) : sans Nouvelle saisie, Modifier, Supprimer, Approuver, Refuser, Réinitialiser — restent les gestes
-     (glisser, double-clic, clic droit, Suppr) ; Fonctions tout à droite (CSS), sans les réglages d'affichage qui ne s'appliquent plus (sgfhMenuSans) */
-  V.tools=function(){ const G=FH0.tools.call(this)||[], obj=x=>x&&typeof x==='object'&&!(x instanceof Node);
-    return G.filter(g=>!(Array.isArray(g)&&g.some(x=>obj(x)&&(x.i==='plus'||x.label==='Approuver'))))
-      .map(g=>Array.isArray(g)?g.map(x=>obj(x)&&x.i==='gear'&&typeof x.menu==='function'?{...x,menu:()=>sgfhMenuSans(x.menu())}:x):g); };
+  /* barre d'outils (24.10.2026, demandes de Paulo) : sans Nouvelle saisie, Modifier, Supprimer, Approuver, Refuser, Réinitialiser — restent les
+     gestes (glisser, double-clic, clic droit, Suppr) — ni Fonctions, passé au clic droit (sgfhFonctions) */
+  const obj=x=>x&&typeof x==='object'&&!(x instanceof Node);
+  V.tools=function(){ const G=FH0.tools.call(this)||[];
+    return G.filter(g=>!(Array.isArray(g)&&g.some(x=>obj(x)&&(x.i==='plus'||x.label==='Approuver'||x.i==='gear')))); };
+  /* clic droit (même soir, Paulo : « supprimer les Fonctions et les ajouter au clic droit ») : les réglages du menu Fonctions du moteur, sans ceux qui
+     ne s'appliquent plus (sgfhMenuSans) — en sous-menu « Fonctions » sur une saisie, tels quels ailleurs dans la feuille */
+  const sgfhFonctions=()=>{ const g=(FH0.tools.call(V)||[]).flat().find(x=>obj(x)&&x.i==='gear'&&typeof x.menu==='function'); return g?sgfhMenuSans(g.menu()):[]; };
+  const sousMenu={t:'Fonctions',sub:sgfhFonctions};
   V.render=function(m){ const sl=ch08bMyStaffs(); if(!ch08bIn(sl,HS.staff)) HS.staff=null; if(!HS.staff||!DS.get('staff',HS.staff)) HS.staff=(ME.staff||sl[0]||{}).ID;
     const w=h('div',{class:'sgfh'}); m.append(w); this._w=w;
     w.addEventListener('click',e=>{ const t=e.target.closest('[data-fh]'); if(!t||!w.contains(t)) return; const f=t.dataset.fh;
@@ -31600,6 +31604,17 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
       else if(f==='vue'){ SGFH.vue=t.dataset.k; nxLS.set('sg3_fh_vue',SGFH.vue); this.draw(); }
       else if(f==='ed'){ const r=DS.get('timelog',t.dataset.id); if(r) hsEdit(r); }
       else if(f==='new') hsEdit(null,{date:new Date(t.dataset.d+'T00:00')}); });
+    /* clic droit hors d'une saisie de l'agenda (celles-ci : menu du moteur, voir draw) : ligne du mois = mêmes actions qu'une saisie ; carte du
+       Journal = modifier ; ailleurs = les fonctions */
+    w.addEventListener('contextmenu',e=>{ const t=e.target; if(e.defaultPrevented||e.altKey||!t||t.nodeType!==1||t.closest('input,textarea,select,.tlb')) return;
+      const tr=t.closest('table.g tbody tr[data-k]'), en=t.closest('.sgfh-ent[data-id]'); let L, ligne=null;
+      if(tr){ if(!tr.classList.contains('on')) tr.click(); const r=DS.get('timelog',tr.dataset.k); ligne=tr.isConnected?tr:null;
+        L=r?[{t:'Approuver',fn:()=>hsSetState(3)},{t:'Refuser',fn:()=>hsSetState(1)},{t:'Réinitialiser',fn:()=>hsSetState(0)},'-',
+          {t:tlLocked(r)?'Afficher l’inscription':'Editer l’inscription',fn:()=>hsEdit(r)},{t:'Supprimer',fn:()=>hsDelete()},'-',sousMenu]:sgfhFonctions();
+        if(ligne) L=[...L,'-',...sgCtxCopie(ligne)]; }
+      else if(en){ const r=DS.get('timelog',en.dataset.id); ligne=en; L=r?[{t:tlLocked(r)?'Afficher l’inscription':'Editer l’inscription',fn:()=>hsEdit(r)},'-',sousMenu]:sgfhFonctions(); }
+      else L=sgfhFonctions();
+      e.preventDefault(); sgMenuAt(e.clientX,e.clientY,L,ligne); });
     this.draw(); };
   V.draw=function(){ const w=this._w; if(!w||!w.isConnected) return;
     const D=sgfhDonnees(), jr=HS.mode==='sem'&&SGFH.vue==='journal', cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
@@ -31607,7 +31622,11 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
     haut.innerHTML=sgfhTete(D)+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
     /* barre d'outils du moteur sous les chiffres (demande de Paulo) : l'élément #tools lui-même, rendu à la barre du haut en quittant l'écran */
     if(tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
-    if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D); } else hsMonth(cal);
+    if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D);
+      /* clic droit sur une saisie : le menu du moteur (sélection, Approuver, Refuser, Réinitialiser, Editer, Supprimer) + « Fonctions » */
+      cal.querySelectorAll('.tlb').forEach(b=>{ const c0=b.oncontextmenu; if(typeof c0!=='function') return;
+        b.oncontextmenu=e=>{ const p0=popMenu; popMenu=(a,items)=>sgMenuAt(a.x,a.y,[...items,'-',sousMenu]); try{ return c0.call(b,e); } finally{ popMenu=p0; } }; }); }
+    else hsMonth(cal);
     side.innerHTML=jr?sgfhResume(D):sgfhRepartition(D,D.mois?'Répartition du mois':'Répartition de la semaine')+sgfhLegende(D.mois?'':SGFH_GESTES); };
   /* avant tout changement d'écran, la barre d'outils revient à sa place ; l'ancienne feuille d'heures (h-saisie-archive), supprimée le 24.10.2026,
      rouvre la feuille d'heures (session, récents) */

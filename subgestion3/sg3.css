@@ -1489,7 +1489,7 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 html.sgfh-on #nx-sub{display:none!important}
 .sgfh-outils{margin:0 0 12px}
 .sgfh-outils #tools{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
-.sgfh-outils #tools>.grp:last-child{margin-left:auto}
+.sgfh.sgc .sgfh-outils #tools>.grp:last-child{margin-left:auto}   /* Contrôle des heures : Fonctions à droite (la feuille d'heures n'en a plus : clic droit) */
 /* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */
 @container (max-width:1050px){.sgfh-kp{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}}
 

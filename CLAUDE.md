@@ -831,7 +831,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `subgestion3/_backup_20261024_1652_avant_ordre_saisies/`. Saisie verrouillée atténuée ; saisies qui se chevauchent (anciennes données) côte à côte
   (`sgfhCouloirs`, quart d'heure minimal compris), jamais l'une sur l'autre ; ligne de l'heure actuelle ; répartition par projet à droite + rappel des
   gestes. **Journal** (semaine) : une carte par jour (anneau saisies / prévues, saisies lisibles, + = nouvelle saisie ce jour, clic = `hsEdit`), résumé à
-  droite. **L'ancienne feuille d'heures** (Réglages ▸ Archives · Ancienne feuille d'heures, `h-saisie-archive`, rendu d'origine du moteur) :
+  droite.
+  **« Fonctions » retiré de la barre et passé au clic droit (24.10.2026 au soir, Paulo : « supprimer les Fonctions et les ajouter au clic droit »)** :
+  barre = Semaine | Mois, Aujourd'hui, semaines, année ; `sgfhFonctions()` = menu ⚙ du moteur filtré (`sgfhMenuSans`) — clic droit sur une saisie
+  de l'agenda : menu du moteur (son `popMenu` remplacé le temps de l'appel par `sgMenuAt`) + sous-menu « Fonctions » ; ligne du Mois : Approuver,
+  Refuser, Réinitialiser, Editer, Supprimer, « Fonctions », copie ; carte du Journal : Editer + « Fonctions » ; ailleurs dans la feuille : les
+  fonctions elles-mêmes. Le Contrôle des heures garde son bouton Fonctions à droite (règle CSS limitée à `.sgfh.sgc`).
+  **L'ancienne feuille d'heures** (Réglages ▸ Archives · Ancienne feuille d'heures, `h-saisie-archive`, rendu d'origine du moteur) :
   **supprimée définitivement le 24.10.2026 au soir (demande de Paulo)** — vue, entrée du menu, drapeau `SGFH.redir`, enveloppe de `hsMark` et
   clavier retirés ; l'enveloppe de `go` de sg3_feuille.js ramène encore `h-saisie-archive` (session, récents) vers `h-saisie`. Aucune donnée
   propre (mêmes heures). « Archives · Feuille d'heures » marqué F (ancien registre de Facturation) est autre chose et reste. Copie du code d'avant :

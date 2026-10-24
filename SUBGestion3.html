@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 22:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 22:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -25806,33 +25806,35 @@ const SG_DOM=[
     {v:'nx-parametres',t:'Paramètres système',ico:'settings',d:'Pays, monnaie et TVA, présentation des adresses, protection des documents.'},
     {v:'nx-preferences',t:'Préférences',ico:'person',d:'Langue des documents, initiales et signature de l’utilisateur du poste.'}]},
   /* chapitre « Réglages » renommé « Configuration » le 24.10.2026 (demande de Paulo) ; clé reglages inchangée */
-  {k:'reglages',t:'Configuration',ico:'settings',nav:0,d:'Données, sauvegardes, visuel de l’app, modules Heures et registres de l’app Facturation.',items:[
+  {k:'reglages',t:'Configuration',ico:'settings',nav:0,d:'Données, sauvegardes et visuel de l’app.',items:[
     {v:'nx-data',t:'Données & sauvegarde',ico:'db',hero:1,d:'Export et import de la base de gestion.'},
     {v:'fx-backup',t:'Sauvegarde Facturation',ico:'save',d:'Contrats, factures et registres Facturation : export, import, sauvegarde automatique.'},
-    {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
-    /* sous-menu « Heures » (24.10.2026, demande de Paulo : ces modules quittent le chapitre Heures, ex-Temps, pour le menu Réglages) ; dom = domaine d'origine,
-       qui garde leurs droits, leur code d'accès et leur visuel (nxDomVue) : les collaborateurs y ont toujours accès */
-    {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
-    {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
-    {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
-    {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
-    {v:'fx-carnet',t:'Archives · Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},
-    {v:'fx-feuille-heures',t:'Archives · Feuille d’heures',ico:'timer',reg:1,d:'Ancienne saisie d’heures de Facturation (remplacée par la Feuille d’heures).'},
-    {v:'fx-rapport',t:'Archives · Rapport d’heures',ico:'analyse',reg:1,d:'Anciens rapports d’heures de Facturation.'},
-    {v:'fx-devis',t:'Archives · Devis',ico:'doc',reg:1,d:'Anciens devis de Facturation (remplacés par Descriptifs & devis).'},
-    {v:'fx-controle-cout',t:'Archives · Contrôle du coût',ico:'coins',reg:1,d:'Ancien contrôle du coût de Facturation (remplacé par Contrôle des coûts).'},
-    {v:'affd-controlling',t:'Archives · Controlling',ico:'trend',d:'Ancien Controlling du chapitre Affaires : contrôle des heures et des frais, critères d’analyse (gardé pour un usage ultérieur).'},
-    {v:'fx-affaires',t:'Projets · Facturation',ico:'folder',reg:1,d:'Registre des projets de l’app Facturation.'},
-    {v:'fx-collaborateurs',t:'Collaborateurs · Facturation',ico:'users',reg:1,d:'Registre des collaborateurs (taux, objectifs).'},
-    {v:'fx-heures',t:'Heures · Facturation',ico:'clock',reg:1,d:'Registre des heures importées.'},
-    {v:'fx-import-delta',t:'Import Deltaproject',ico:'import',reg:1,d:'Import des exports CSV de Deltaproject.'},
-    {v:'fx-analyse-globale',t:'Analyse globale',ico:'analyse',reg:1,d:'Analyse globale des projets et des heures.'},
-    {v:'fx-affaire-detail',t:'Analyse de projet',hide:1},{v:'fx-collab-detail',t:'Fiche collaborateur · Facturation',hide:1}]},
+    {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'}]},
   /* chapitre « Archives » (24.10.2026, demande de Paulo : « créer un menu archive, laisse-le vide pour le moment ») ; vide:1 = affiché à
      l'administrateur même sans module (sgSide) */
   {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports (ancien Controlling, venu du chapitre Projets le 24.10.2026).'},
-    {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs, intervenants, subdivisions, modèles (venu du chapitre Projets le 24.10.2026).'}]}
+    {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs, intervenants, subdivisions, modèles (venu du chapitre Projets le 24.10.2026).'},
+    {v:'affd-controlling',dom:'reglages',t:'Controlling',ico:'trend',d:'Ancien Controlling du chapitre Affaires : contrôle des heures et des frais, critères d’analyse (gardé pour un usage ultérieur).'},
+    /* sous-menu « Heures » (Configuration → Archives le 24.10.2026, demande de Paulo) : dom:'temps' garde leurs droits, leur code d'accès et leur
+       visuel — les collaborateurs ont toujours accès à leurs notes de frais et rapports de temps */
+    {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
+    {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
+    {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
+    {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
+    /* venus de Configuration le 24.10.2026 (demande de Paulo) : dom:'reglages' garde leurs droits (droit « Configuration »), leur code d'accès et
+       leur visuel ; « Archives · » retiré des libellés */
+    {v:'fx-carnet',dom:'reglages',t:'Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},
+    {v:'fx-feuille-heures',dom:'reglages',t:'Feuille d’heures',ico:'timer',reg:1,d:'Ancienne saisie d’heures de Facturation (remplacée par la Feuille d’heures).'},
+    {v:'fx-rapport',dom:'reglages',t:'Rapport d’heures',ico:'analyse',reg:1,d:'Anciens rapports d’heures de Facturation.'},
+    {v:'fx-devis',dom:'reglages',t:'Devis',ico:'doc',reg:1,d:'Anciens devis de Facturation (remplacés par Descriptifs & devis).'},
+    {v:'fx-controle-cout',dom:'reglages',t:'Contrôle du coût',ico:'coins',reg:1,d:'Ancien contrôle du coût de Facturation (remplacé par Contrôle des coûts).'},
+    {v:'fx-affaires',dom:'reglages',t:'Projets · Facturation',ico:'folder',reg:1,d:'Registre des projets de l’app Facturation.'},
+    {v:'fx-collaborateurs',dom:'reglages',t:'Collaborateurs · Facturation',ico:'users',reg:1,d:'Registre des collaborateurs (taux, objectifs).'},
+    {v:'fx-heures',dom:'reglages',t:'Heures · Facturation',ico:'clock',reg:1,d:'Registre des heures importées.'},
+    {v:'fx-import-delta',dom:'reglages',t:'Import Deltaproject',ico:'import',reg:1,d:'Import des exports CSV de Deltaproject.'},
+    {v:'fx-analyse-globale',dom:'reglages',t:'Analyse globale',ico:'analyse',reg:1,d:'Analyse globale des projets et des heures.'},
+    {v:'fx-affaire-detail',dom:'reglages',t:'Analyse de projet',hide:1},{v:'fx-collab-detail',dom:'reglages',t:'Fiche collaborateur · Facturation',hide:1}]}
 ];
 const SG_D={}, NX_VIEW={};
 SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'Vue d’ensemble'}; d.items.forEach(it=>{ if(!NX_VIEW[it.v]) NX_VIEW[it.v]={d,t:it.t,it}; }); });

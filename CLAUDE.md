@@ -850,6 +850,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   séances, frais), les intervenants, les subdivisions et les modèles (barre complète dans la page) ; droits inchangés (`SG_VUE_DROIT['aff-gestion']`).
   **Contacts ▸ « Toutes les adresses » renommé « Liste des adresses »** (même soir, demande de Paulo ; `adr-liste`, menu, lien du menu de la liste de
   l'Annuaire et son infobulle) ; les autres « toutes les adresses » (CFC / propriétés d'un contact, choix des participants, navigateur du moteur) gardés.
+  **Configuration allégée, tout le reste dans Archives (même soir, demandes de Paulo « déplacer dans archives »)** : Configuration = Données &
+  sauvegarde, Visuel de l'app, Sauvegarde Facturation, Réunir les registres. Archives = Suivi & écarts, Registre, Controlling (ex-« Archives ·
+  Controlling »), sous-menu Heures (Rapports de temps, Disponibilités, Notes de frais, Rapport des notes de frais — `dom:'temps'` : collaborateurs
+  toujours servis, le chapitre Archives leur est donc visible), puis les registres F de Facturation (Carnet des PV, Feuille d'heures, Rapport
+  d'heures, Devis, Contrôle du coût, Projets, Collaborateurs, Heures, Import Deltaproject, Analyse globale ; `dom:'reglages'` : droit
+  « Configuration » et code d'accès inchangés ; préfixe « Archives · » retiré des libellés). Copies d'avant :
+  `subgestion3/_backup_20261024_2220_avant_archives_registres/`.
   **Les quatre tuiles du Controlling recopiées dans Administration (même soir, Paulo : « déplacer dans Administration : Contrôle des heures
   d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais — copier ces éléments comme éléments cliquables dans le
   menu de gauche »)** : entrées `adm-ctl-heures`, `adm-ana-heures`, `adm-ctl-frais`, `adm-ana-frais` (ordre : Contrôle des heures, Contrôle des heures

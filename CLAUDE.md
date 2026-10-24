@@ -848,6 +848,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Puis **Projets ▸ Registre (`aff-gestion`) déplacé dans Archives « pour le moment »** (demande de Paulo) : Projets = Mes projets + Tâches ; Archives
   = Suivi & écarts, Registre. Le Registre reste le seul écran du menu qui donne la configuration d'une affaire (phases, activités, tarifs,
   séances, frais), les intervenants, les subdivisions et les modèles (barre complète dans la page) ; droits inchangés (`SG_VUE_DROIT['aff-gestion']`).
+  **Contacts ▸ « Toutes les adresses » renommé « Liste des adresses »** (même soir, demande de Paulo ; `adr-liste`, menu, lien du menu de la liste de
+  l'Annuaire et son infobulle) ; les autres « toutes les adresses » (CFC / propriétés d'un contact, choix des participants, navigateur du moteur) gardés.
   **Les quatre tuiles du Controlling recopiées dans Administration (même soir, Paulo : « déplacer dans Administration : Contrôle des heures
   d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais — copier ces éléments comme éléments cliquables dans le
   menu de gauche »)** : entrées `adm-ctl-heures`, `adm-ana-heures`, `adm-ctl-frais`, `adm-ana-frais` (ordre : Contrôle des heures, Contrôle des heures

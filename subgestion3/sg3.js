@@ -87,7 +87,7 @@ const SG_DOM=[
     {v:'taches-regle',t:'Tâches réglées',st:'Réglé',grp:'Tâches',ico:'check',d:'Les tâches terminées.'}]},
   {k:'contacts',t:'Contacts',ico:'contacts',d:'Entreprises, mandataires, maîtres d’ouvrage et personnes : coordonnées, catégories et listes.',items:[
     {v:'adr-entites',t:'Annuaire',ico:'contacts',hero:1,d:'Sociétés, personnes, familles… et leurs adresses.'},
-    {v:'adr-liste',t:'Toutes les adresses',ico:'list',d:'Toutes les adresses, triables et filtrables.'},
+    {v:'adr-liste',t:'Liste des adresses',ico:'list',d:'Toutes les adresses, triables et filtrables.'},   /* « Toutes les adresses » renommé le 24.10.2026 (demande de Paulo) */
     {v:'adr-favoris',t:'Favoris',ico:'star',d:'Vos adresses favorites.'},
     {v:'adr-groupes',t:'Listes de diffusion',ico:'group',d:'Groupes d’adresses pour les envois et les étiquettes.'},
     {v:'adr-chercher',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…).'},

@@ -163,7 +163,7 @@ function sgaSections(o,ix,ouvrir){ const cs=sgaAdrs(ix,o), c0=cs[0]||null, nw=sg
       del&&{ico:'trash',t:'Supprimer l’entité…',danger:1,fn:()=>delOwner(o)}]}]; }
 const sgaNouveau=anc=>sgaMenu(anc,[{s:'Nouveau contact',items:OWNER_T.map((t,i)=>({ico:SGA_ICO_T[i]||'plus',t,fn:()=>editOwner(null,i,(e,isNew)=>{ SGA.id=String(e.ID); if(isNew) editContact(null,e,null); sgaOuvrir(e.ID); })}))}]);
 function sgaMenuListe(anc){ sgaMenu(anc,[{s:'Liste',items:[{ico:'eyeoff',t:SGA.hid?'Ne plus montrer les entités masquées':'Montrer les entités masquées',fn:()=>{ SGA.hid=!SGA.hid; sgaMajListe(); }},
-  sgaPeut('contactExport')&&{ico:'export',t:'Exporter la liste (CSV)',fn:()=>sgaCsv()},{ico:'list',t:'Toutes les adresses',fn:()=>go('adr-liste')},{ico:'search',t:'Recherche avancée…',fn:()=>go('adr-chercher')}]}]); }
+  sgaPeut('contactExport')&&{ico:'export',t:'Exporter la liste (CSV)',fn:()=>sgaCsv()},{ico:'list',t:'Liste des adresses',fn:()=>go('adr-liste')},{ico:'search',t:'Recherche avancée…',fn:()=>go('adr-chercher')}]}]); }
 /* actions de la fiche */
 function sgaRattacher(o){ pickOwner(ownerName(o,true)+' : rattacher une personne ou une entité',e=>editContact(null,e,o)); }
 function sgaChoisirAdr(cs,titre,fn){ if(cs.length<2){ if(cs[0]) fn(cs[0]); return; } const s=h('select',{class:'inp'},...cs.map((c,i)=>h('option',{value:i},sgaAdrLib(c)+(adrLines(c)[1]?' — '+adrLines(c)[1]:''))));
@@ -191,7 +191,7 @@ function sgaTiroir(w,ouvrir){ w=w||document.querySelector('.sga-vue'); if(!w) re
   if(!ouvrir){ if(ex){ const lb=ex.querySelector('.sga-lbody'); SGA.scroll=lb?lb.scrollTop:0; ex.remove(); } const v=w.querySelector('.sga-voile'); if(v) v.remove(); SGA.tiroir=false; return; }
   SGA.tiroir=true; if(!ex){ const ix=sgaIndex();
     w.insertAdjacentHTML('beforeend','<div class="sga-voile"></div><aside class="sga-tiroir" role="dialog" aria-label="Contacts"><div class="sga-th"><div class="sga-tt"><b>Contacts<span class="sga-nb"></span></b>'
-      +(sgaPeut('contactNew')?'<button class="nx-btn pri" data-t="nouveau">'+nxSvg('plus')+'Nouveau</button>':'')+'<button class="nx-hb" data-t="liste" title="Liste : masqués, export, toutes les adresses">'+nxSvg('more')+'</button>'
+      +(sgaPeut('contactNew')?'<button class="nx-btn pri" data-t="nouveau">'+nxSvg('plus')+'Nouveau</button>':'')+'<button class="nx-hb" data-t="liste" title="Liste : masqués, export, liste des adresses">'+nxSvg('more')+'</button>'
       +'<button class="nx-hb" data-t="fermer" title="Fermer la liste (Échap)">'+nxSvg('stop')+'</button></div>'
       +'<label class="sga-q">'+nxSvg('search')+'<input type="search" placeholder="Nom, localité, CFC, personne…" aria-label="Rechercher un contact"></label>'
       +'<div class="sga-types"><div class="sg-htls" role="group" aria-label="Type"></div></div><div class="sga-roles" role="group" aria-label="Rôle"></div></div>'

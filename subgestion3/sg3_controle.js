@@ -234,3 +234,54 @@ VIEWS['nx-controle']={
 { const T=SG_D.administration; if(T&&!T.items.some(x=>x.v==='nx-controle')){ const it={v:'nx-controle',t:'Contrôle des heures',ico:'check',hero:1,d:'Vérifier et valider les heures saisies : semaine par semaine, par collaborateur ou par projet.'};
     T.items.unshift(it); NX_VIEW['nx-controle']={d:T,t:it.t,it}; }
   SG_VUE_DROIT['nx-controle']=()=>sgAdmin(); }
+/* ═══ Administration ▸ contrôles et analyses par affaire (24.10.2026) ═══
+   Demande de Paulo : « déplacer dans Administration : Contrôle des heures d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères
+   d'analyse des frais — copier ces éléments comme éléments cliquables dans le menu de gauche ». Les quatre tuiles du Controlling (Archives ▸ Suivi &
+   écarts, qui les garde) deviennent des entrées du menu Administration (administrateur seulement, comme le chapitre). Chaque écran = la liste des
+   affaires (état — En cours d'office —, recherche, heures ou frais, à contrôler, refusées, dernière saisie, de la plus récente activité à la plus
+   ancienne) ; un clic sur une affaire ouvre sa fenêtre : contrôle des heures = sgcFenetre(p) sur la semaine de sa dernière saisie (graphisme de la
+   feuille d'heures), critères d'analyse = ctlAnalyse(p,'timelog'|'projectcost'), contrôle des frais = ctlCostCheck(p) (fenêtres du moteur).
+   Choix de l'écran : sg3_adm_ctl {etat, q}, communs aux quatre. */
+const sgAdmCle=k=>k?new Date(Math.floor(k/10000),Math.floor(k/100)%100,k%100):null;
+const SG_ADM_CTL=[
+  {v:'adm-ctl-heures',f:'heures',b:'Contrôler',fen:'la fenêtre de contrôle sur la semaine et le collaborateur de sa dernière saisie',ouvrir:(p,x)=>sgcFenetre(p,x&&x.der?{date:diso(sgAdmCle(x.der)),staff:x.st}:{})},
+  {v:'adm-ana-heures',f:'heures',b:'Analyser',fen:'les critères d’analyse de ses heures',ouvrir:p=>ctlAnalyse(p,'timelog')},
+  {v:'adm-ctl-frais',f:'frais',b:'Contrôler',fen:'la fenêtre de contrôle de ses frais sur le mois et le collaborateur de la dernière note',
+    ouvrir:(p,x)=>{ if(x&&x.der){ CTL_F.y=Math.floor(x.der/10000); CTL_F.m=Math.floor(x.der/100)%100; if(x.st!=null) CTL_F.staff=x.st; } ctlCostCheck(p); }},
+  {v:'adm-ana-frais',f:'frais',b:'Analyser',fen:'les critères d’analyse de ses frais',ouvrir:p=>ctlAnalyse(p,'projectcost')}];
+SG_ADM_CTL.forEach(c=>{ const tl=c.f==='heures', T=tl?'timelog':'projectcost', it=(NX_VIEW[c.v]||{}).it||{t:c.v,d:''};
+  VIEWS[c.v]={ render(m){ this._m=m; const st=Object.assign({etat:2,q:''},nxLS.get('sg3_adm_ctl',{})), P=new Map();
+      DS.all(T).forEach(r=>{ if(r.PROJECT_ID==null||(tl&&+r.ISHOLIDAY)) return; let x=P.get(r.PROJECT_ID); if(!x) P.set(r.PROJECT_ID,x={n:0,v:0,ctl:0,ref:0,der:0,st:null});
+        x.n++; x.v+=tl?(+r.TIMEPERIOD||0):pcAmount(r); const e=+(tl?r.TIMELOGSTATECODE:r.PROJECTCOSTSTATECODE)||0; if(e===0||e===2) x.ctl++; else if(e===1) x.ref++;
+        const k=tl?tlKey(r):(+r.DATEYEAR)*10000+(+r.DATEMONTH)*100+(+r.DATEDAY); if(k>x.der){ x.der=k; x.st=r.STAFF_ID; } });   /* st : auteur de la dernière saisie */
+      const vide={n:0,v:0,ctl:0,ref:0,der:0}, lib=st.etat?((CTL_ETATS.find(e=>e[0]===st.etat)||[])[1]||''):'Toutes';
+      const L=DS.all('project').filter(p=>!st.etat||+p.PROJECTSTATECODE===st.etat).map(p=>({p,x:P.get(p.ID)||vide}))
+        .sort((a,b)=>b.x.der-a.x.der||cmp(String(b.p.NUMBER||''),String(a.p.NUMBER||'')));
+      const nCtl=L.reduce((s,o)=>s+o.x.ctl,0), quoi=tl?'inscription':'frais';
+      const chip=(e,t)=>'<button data-fn="etat" data-e="'+e+'" class="'+(st.etat===e?'on':'')+'">'+nxE(t)+'</button>';
+      const val=x=>x.n?(tl?nxH(x.v)+' h':nxCHF(x.v)+' CHF'):'—';
+      const row=({p,x})=>'<tr class="nx-row" data-fn="o" data-id="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row" title="'+nxE(c.b+' : '+[p.NUMBER,p.TITLE].filter(Boolean).join(' '))+'">'
+        +'<td><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b></td><td class="r">'+val(x)+'</td>'
+        +'<td class="r">'+(x.ctl?'<b>'+x.ctl+'</b>':x.n?'<span class="sg-admctl-ok" title="Tout est contrôlé">'+nxSvg('check')+'</span>':'—')+'</td>'
+        +'<td class="r">'+(x.ref?'<span class="sgfh-st ref sg-admctl-ref" title="Refusées"></span> '+x.ref:'')+'</td>'   /* « ! » par CSS : la cellule ne contient que le nombre (tri) */
+        +'<td>'+(x.der?dfr(diso(sgAdmCle(x.der))):'—')+'</td><td class="r"><span class="nx-btn sm">'+nxE(c.b)+'</span></td></tr>';
+      const figs='<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">affaires · '+nxE(lib.toLowerCase())+'</div></div>'
+        +'<div class="sg-fig"><div class="n">'+nCtl+'</div><div class="t">'+quoi+(nCtl>1&&tl?'s':'')+' à contrôler</div></div></div>';
+      const html='<div class="sg-split">'+sgIntro('Administration',nxE(it.t),nxE(it.d)+' Un clic sur une affaire ouvre '+nxE(c.fen)+'.',figs)
+        +'<div><div class="sg-mesp-bar"><div class="seg">'+chip(0,'Toutes')+CTL_ETATS.map(([e,t])=>chip(e,t)).join('')+'</div>'
+        +'<input class="inp" id="sg-admctl-q" placeholder="Rechercher une affaire…" value="'+nxE(st.q)+'"><span class="n"></span></div>'
+        +(L.length?'<table class="nx-tbl sg-mesp sg-admctl"><tr><th>N°</th><th>Affaire</th><th class="r">'+(tl?'Heures':'Frais')+'</th><th class="r">À contrôler</th><th class="r">Refusées</th><th>Dernière saisie</th><th class="sg-notri"></th></tr>'
+          +L.map(row).join('')+'</table>':'<div class="nx-empty">Aucune affaire « '+nxE(lib)+' ».</div>')+'</div></div>';
+      const pg=nxPage(m,html), inp=pg.querySelector('#sg-admctl-q'), nb=pg.querySelector('.sg-mesp-bar .n');
+      const filt=()=>{ const s=inp.value.trim().toLowerCase(); let n=0; pg.querySelectorAll('tr[data-q]').forEach(tr=>{ const ok=!s||tr.dataset.q.includes(s); tr.style.display=ok?'table-row':'none'; if(ok) n++; });
+        nb.textContent=n+' affaire'+(n>1?'s':''); };
+      inp.oninput=()=>{ st.q=inp.value; nxLS.set('sg3_adm_ctl',st); filt(); }; filt();
+      Object.assign(pg._fn,{etat:b=>{ st.etat=+b.dataset.e; nxLS.set('sg3_adm_ctl',st); this.redessiner(); },
+        o:tr=>{ const p=DS.get('project',+tr.dataset.id); if(p) c.ouvrir(p,P.get(p.ID)); }}); },
+    /* redessin sur place (pas de go : ni entrée d'historique ni retour en haut à chaque saisie reçue du bureau) */
+    redessiner(){ const m=this._m; if(!m||!m.isConnected) return; const sc=[m,...m.querySelectorAll('.nx-page')].map(x=>x.scrollTop);
+      const q=m.querySelector('#sg-admctl-q'), foc=q&&document.activeElement===q, a=foc?q.selectionStart:0, b=foc?q.selectionEnd:0;   /* recherche en cours de frappe gardée */
+      m.innerHTML=''; this.render(m); [m,...m.querySelectorAll('.nx-page')].forEach((x,i)=>{ if(sc[i]) x.scrollTop=sc[i]; });
+      const q2=m.querySelector('#sg-admctl-q'); if(foc&&q2){ q2.focus({preventScroll:true}); try{ q2.setSelectionRange(a,b); }catch(_){} } },
+    refresh(ts){ if(hit(ts,'project',T)) this.redessiner(); } }; });
+

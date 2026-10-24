@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 21:12 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 21:29 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1542,6 +1542,10 @@ html.sgfh-on #nx-sub{display:none!important}
 .sgie-statut{font-size:12.5px}
 .dlg.sgie-dlg .ft .btn.sgie-sup{margin-right:auto;border-color:var(--s-rouge);color:var(--s-rouge)}
 .dlg.sgie-dlg .ft .btn.sgie-sup:hover{background:var(--s-rouge)!important;color:#fff!important}
+/* Administration ▸ contrôles et analyses par affaire (24.10.2026) : liste des affaires, coche verte = tout contrôlé */
+.sg-admctl .sg-admctl-ok svg{width:15px;height:15px;stroke:#5d7a10;stroke-width:2.6;vertical-align:-3px}
+.sg-admctl td .sgfh-st{width:14px;height:14px;font-size:9px;vertical-align:-2px;display:inline-grid}
+.sg-admctl .sg-admctl-ref::before{content:"!"}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -25788,7 +25792,12 @@ const SG_DOM=[
   /* chapitre « Administration » (24.10.2026, demande de Paulo « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle
      des heures ; les collaborateurs n'auront pas accès à ces informations ») : administrateur seulement (sgVueOk), protégé par le code d'accès */
   {k:'administration',t:'Administration',ico:'gauge',nav:0,d:'Contrôle et analyse des heures du bureau — réservé à l’administrateur.',items:[
-    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'}]},
+    /* les quatre tuiles du Controlling (Archives ▸ Suivi & écarts) recopiées en entrées du menu (24.10.2026, demande de Paulo) : sg3_controle.js */
+    {v:'adm-ctl-heures',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et valider les saisies d’heures d’une affaire.'},
+    {v:'adm-ana-heures',t:'Critères d’analyse des heures',ico:'analyse',d:'Analyser les heures d’une affaire par collaborateur, activité et phase ; rapports horaires et pièces jointes à la facture.'},
+    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
+    {v:'adm-ctl-frais',t:'Contrôle des frais',ico:'coins',d:'Vérifier et valider les frais d’une affaire.'},
+    {v:'adm-ana-frais',t:'Critères d’analyse des frais',ico:'analyse',d:'Analyser les frais d’une affaire par collaborateur, groupe de frais et frais ; rapports et pièces jointes à la facture.'}]},
   /* « Admin » renommé « Réglages » le 24.10.2026 (demande de Paulo) ; clé admin inchangée */
   {k:'admin',t:'Réglages',ico:'wrench',nav:0,d:'Comptes et droits des utilisateurs, accès protégé, administration, paramètres et préférences de l’app.',items:[
     {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',hero:1,d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'},
@@ -25831,7 +25840,7 @@ SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'V
 const nxDomVue=v=>{ const x=NX_VIEW[v]; return x?(x.it&&x.it.dom)||(x.d&&(x.d.k||x.d))||'':''; };
 NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-pdom']={d:SG_D.projets,t:'Projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
 const NX_KW={'nx-mesprojets':'mes projets liste affaires','affd-mes':'mes affaires ancien','affd-toutes':'affaires ancien','affd-gestion':'affaires gestion ancien','affd-controlling':'controlling affaires','aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
-  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
+  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','adm-ctl-heures':'controlling contrôle heures affaire','adm-ana-heures':'controlling analyse heures affaire','adm-ctl-frais':'controlling contrôle frais affaire','adm-ana-frais':'controlling analyse frais affaire','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
   'mg-factures':'encaissements qr','mg-mo':'maître d’ouvrage','mg-reporting':'reporting','tpl-documents':'modèles','nx-data':'export import base','config':'administrateur paramètres',
   'fx-contrats':'contrats honoraires sia offre','fx-calchono':'nouveau contrat honoraires sia','fx-factures':'factures acomptes','fx-saisie':'nouvelle facture acompte','fx-backup':'export import facturation'};
 
@@ -31466,6 +31475,57 @@ VIEWS['nx-controle']={
 { const T=SG_D.administration; if(T&&!T.items.some(x=>x.v==='nx-controle')){ const it={v:'nx-controle',t:'Contrôle des heures',ico:'check',hero:1,d:'Vérifier et valider les heures saisies : semaine par semaine, par collaborateur ou par projet.'};
     T.items.unshift(it); NX_VIEW['nx-controle']={d:T,t:it.t,it}; }
   SG_VUE_DROIT['nx-controle']=()=>sgAdmin(); }
+/* ═══ Administration ▸ contrôles et analyses par affaire (24.10.2026) ═══
+   Demande de Paulo : « déplacer dans Administration : Contrôle des heures d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères
+   d'analyse des frais — copier ces éléments comme éléments cliquables dans le menu de gauche ». Les quatre tuiles du Controlling (Archives ▸ Suivi &
+   écarts, qui les garde) deviennent des entrées du menu Administration (administrateur seulement, comme le chapitre). Chaque écran = la liste des
+   affaires (état — En cours d'office —, recherche, heures ou frais, à contrôler, refusées, dernière saisie, de la plus récente activité à la plus
+   ancienne) ; un clic sur une affaire ouvre sa fenêtre : contrôle des heures = sgcFenetre(p) sur la semaine de sa dernière saisie (graphisme de la
+   feuille d'heures), critères d'analyse = ctlAnalyse(p,'timelog'|'projectcost'), contrôle des frais = ctlCostCheck(p) (fenêtres du moteur).
+   Choix de l'écran : sg3_adm_ctl {etat, q}, communs aux quatre. */
+const sgAdmCle=k=>k?new Date(Math.floor(k/10000),Math.floor(k/100)%100,k%100):null;
+const SG_ADM_CTL=[
+  {v:'adm-ctl-heures',f:'heures',b:'Contrôler',fen:'la fenêtre de contrôle sur la semaine et le collaborateur de sa dernière saisie',ouvrir:(p,x)=>sgcFenetre(p,x&&x.der?{date:diso(sgAdmCle(x.der)),staff:x.st}:{})},
+  {v:'adm-ana-heures',f:'heures',b:'Analyser',fen:'les critères d’analyse de ses heures',ouvrir:p=>ctlAnalyse(p,'timelog')},
+  {v:'adm-ctl-frais',f:'frais',b:'Contrôler',fen:'la fenêtre de contrôle de ses frais sur le mois et le collaborateur de la dernière note',
+    ouvrir:(p,x)=>{ if(x&&x.der){ CTL_F.y=Math.floor(x.der/10000); CTL_F.m=Math.floor(x.der/100)%100; if(x.st!=null) CTL_F.staff=x.st; } ctlCostCheck(p); }},
+  {v:'adm-ana-frais',f:'frais',b:'Analyser',fen:'les critères d’analyse de ses frais',ouvrir:p=>ctlAnalyse(p,'projectcost')}];
+SG_ADM_CTL.forEach(c=>{ const tl=c.f==='heures', T=tl?'timelog':'projectcost', it=(NX_VIEW[c.v]||{}).it||{t:c.v,d:''};
+  VIEWS[c.v]={ render(m){ this._m=m; const st=Object.assign({etat:2,q:''},nxLS.get('sg3_adm_ctl',{})), P=new Map();
+      DS.all(T).forEach(r=>{ if(r.PROJECT_ID==null||(tl&&+r.ISHOLIDAY)) return; let x=P.get(r.PROJECT_ID); if(!x) P.set(r.PROJECT_ID,x={n:0,v:0,ctl:0,ref:0,der:0,st:null});
+        x.n++; x.v+=tl?(+r.TIMEPERIOD||0):pcAmount(r); const e=+(tl?r.TIMELOGSTATECODE:r.PROJECTCOSTSTATECODE)||0; if(e===0||e===2) x.ctl++; else if(e===1) x.ref++;
+        const k=tl?tlKey(r):(+r.DATEYEAR)*10000+(+r.DATEMONTH)*100+(+r.DATEDAY); if(k>x.der){ x.der=k; x.st=r.STAFF_ID; } });   /* st : auteur de la dernière saisie */
+      const vide={n:0,v:0,ctl:0,ref:0,der:0}, lib=st.etat?((CTL_ETATS.find(e=>e[0]===st.etat)||[])[1]||''):'Toutes';
+      const L=DS.all('project').filter(p=>!st.etat||+p.PROJECTSTATECODE===st.etat).map(p=>({p,x:P.get(p.ID)||vide}))
+        .sort((a,b)=>b.x.der-a.x.der||cmp(String(b.p.NUMBER||''),String(a.p.NUMBER||'')));
+      const nCtl=L.reduce((s,o)=>s+o.x.ctl,0), quoi=tl?'inscription':'frais';
+      const chip=(e,t)=>'<button data-fn="etat" data-e="'+e+'" class="'+(st.etat===e?'on':'')+'">'+nxE(t)+'</button>';
+      const val=x=>x.n?(tl?nxH(x.v)+' h':nxCHF(x.v)+' CHF'):'—';
+      const row=({p,x})=>'<tr class="nx-row" data-fn="o" data-id="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row" title="'+nxE(c.b+' : '+[p.NUMBER,p.TITLE].filter(Boolean).join(' '))+'">'
+        +'<td><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b></td><td class="r">'+val(x)+'</td>'
+        +'<td class="r">'+(x.ctl?'<b>'+x.ctl+'</b>':x.n?'<span class="sg-admctl-ok" title="Tout est contrôlé">'+nxSvg('check')+'</span>':'—')+'</td>'
+        +'<td class="r">'+(x.ref?'<span class="sgfh-st ref sg-admctl-ref" title="Refusées"></span> '+x.ref:'')+'</td>'   /* « ! » par CSS : la cellule ne contient que le nombre (tri) */
+        +'<td>'+(x.der?dfr(diso(sgAdmCle(x.der))):'—')+'</td><td class="r"><span class="nx-btn sm">'+nxE(c.b)+'</span></td></tr>';
+      const figs='<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">affaires · '+nxE(lib.toLowerCase())+'</div></div>'
+        +'<div class="sg-fig"><div class="n">'+nCtl+'</div><div class="t">'+quoi+(nCtl>1&&tl?'s':'')+' à contrôler</div></div></div>';
+      const html='<div class="sg-split">'+sgIntro('Administration',nxE(it.t),nxE(it.d)+' Un clic sur une affaire ouvre '+nxE(c.fen)+'.',figs)
+        +'<div><div class="sg-mesp-bar"><div class="seg">'+chip(0,'Toutes')+CTL_ETATS.map(([e,t])=>chip(e,t)).join('')+'</div>'
+        +'<input class="inp" id="sg-admctl-q" placeholder="Rechercher une affaire…" value="'+nxE(st.q)+'"><span class="n"></span></div>'
+        +(L.length?'<table class="nx-tbl sg-mesp sg-admctl"><tr><th>N°</th><th>Affaire</th><th class="r">'+(tl?'Heures':'Frais')+'</th><th class="r">À contrôler</th><th class="r">Refusées</th><th>Dernière saisie</th><th class="sg-notri"></th></tr>'
+          +L.map(row).join('')+'</table>':'<div class="nx-empty">Aucune affaire « '+nxE(lib)+' ».</div>')+'</div></div>';
+      const pg=nxPage(m,html), inp=pg.querySelector('#sg-admctl-q'), nb=pg.querySelector('.sg-mesp-bar .n');
+      const filt=()=>{ const s=inp.value.trim().toLowerCase(); let n=0; pg.querySelectorAll('tr[data-q]').forEach(tr=>{ const ok=!s||tr.dataset.q.includes(s); tr.style.display=ok?'table-row':'none'; if(ok) n++; });
+        nb.textContent=n+' affaire'+(n>1?'s':''); };
+      inp.oninput=()=>{ st.q=inp.value; nxLS.set('sg3_adm_ctl',st); filt(); }; filt();
+      Object.assign(pg._fn,{etat:b=>{ st.etat=+b.dataset.e; nxLS.set('sg3_adm_ctl',st); this.redessiner(); },
+        o:tr=>{ const p=DS.get('project',+tr.dataset.id); if(p) c.ouvrir(p,P.get(p.ID)); }}); },
+    /* redessin sur place (pas de go : ni entrée d'historique ni retour en haut à chaque saisie reçue du bureau) */
+    redessiner(){ const m=this._m; if(!m||!m.isConnected) return; const sc=[m,...m.querySelectorAll('.nx-page')].map(x=>x.scrollTop);
+      const q=m.querySelector('#sg-admctl-q'), foc=q&&document.activeElement===q, a=foc?q.selectionStart:0, b=foc?q.selectionEnd:0;   /* recherche en cours de frappe gardée */
+      m.innerHTML=''; this.render(m); [m,...m.querySelectorAll('.nx-page')].forEach((x,i)=>{ if(sc[i]) x.scrollTop=sc[i]; });
+      const q2=m.querySelector('#sg-admctl-q'); if(foc&&q2){ q2.focus({preventScroll:true}); try{ q2.setSelectionRange(a,b); }catch(_){} } },
+    refresh(ts){ if(hit(ts,'project',T)) this.redessiner(); } }; });
+
 
 /* ═══ 27. Temps ▸ Feuille d'heures : nouvelle présentation (24.10.2026) ═══════════════════════════════════════════════════════════════════
    Demande de Paulo : « améliore la feuille d'heures, plus graphique ; la colonne collaborateur n'est pas nécessaire ; le nom du collaborateur en

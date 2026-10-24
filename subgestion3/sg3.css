@@ -1533,3 +1533,7 @@ html.sgfh-on #nx-sub{display:none!important}
 .sgie-statut{font-size:12.5px}
 .dlg.sgie-dlg .ft .btn.sgie-sup{margin-right:auto;border-color:var(--s-rouge);color:var(--s-rouge)}
 .dlg.sgie-dlg .ft .btn.sgie-sup:hover{background:var(--s-rouge)!important;color:#fff!important}
+/* Administration ▸ contrôles et analyses par affaire (24.10.2026) : liste des affaires, coche verte = tout contrôlé */
+.sg-admctl .sg-admctl-ok svg{width:15px;height:15px;stroke:#5d7a10;stroke-width:2.6;vertical-align:-3px}
+.sg-admctl td .sgfh-st{width:14px;height:14px;font-size:9px;vertical-align:-2px;display:inline-grid}
+.sg-admctl .sg-admctl-ref::before{content:"!"}

@@ -165,7 +165,12 @@ const SG_DOM=[
   /* chapitre « Administration » (24.10.2026, demande de Paulo « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle
      des heures ; les collaborateurs n'auront pas accès à ces informations ») : administrateur seulement (sgVueOk), protégé par le code d'accès */
   {k:'administration',t:'Administration',ico:'gauge',nav:0,d:'Contrôle et analyse des heures du bureau — réservé à l’administrateur.',items:[
-    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'}]},
+    /* les quatre tuiles du Controlling (Archives ▸ Suivi & écarts) recopiées en entrées du menu (24.10.2026, demande de Paulo) : sg3_controle.js */
+    {v:'adm-ctl-heures',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et valider les saisies d’heures d’une affaire.'},
+    {v:'adm-ana-heures',t:'Critères d’analyse des heures',ico:'analyse',d:'Analyser les heures d’une affaire par collaborateur, activité et phase ; rapports horaires et pièces jointes à la facture.'},
+    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
+    {v:'adm-ctl-frais',t:'Contrôle des frais',ico:'coins',d:'Vérifier et valider les frais d’une affaire.'},
+    {v:'adm-ana-frais',t:'Critères d’analyse des frais',ico:'analyse',d:'Analyser les frais d’une affaire par collaborateur, groupe de frais et frais ; rapports et pièces jointes à la facture.'}]},
   /* « Admin » renommé « Réglages » le 24.10.2026 (demande de Paulo) ; clé admin inchangée */
   {k:'admin',t:'Réglages',ico:'wrench',nav:0,d:'Comptes et droits des utilisateurs, accès protégé, administration, paramètres et préférences de l’app.',items:[
     {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',hero:1,d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'},
@@ -208,7 +213,7 @@ SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'V
 const nxDomVue=v=>{ const x=NX_VIEW[v]; return x?(x.it&&x.it.dom)||(x.d&&(x.d.k||x.d))||'':''; };
 NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-pdom']={d:SG_D.projets,t:'Projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
 const NX_KW={'nx-mesprojets':'mes projets liste affaires','affd-mes':'mes affaires ancien','affd-toutes':'affaires ancien','affd-gestion':'affaires gestion ancien','affd-controlling':'controlling affaires','aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
-  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
+  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','adm-ctl-heures':'controlling contrôle heures affaire','adm-ana-heures':'controlling analyse heures affaire','adm-ctl-frais':'controlling contrôle frais affaire','adm-ana-frais':'controlling analyse frais affaire','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
   'mg-factures':'encaissements qr','mg-mo':'maître d’ouvrage','mg-reporting':'reporting','tpl-documents':'modèles','nx-data':'export import base','config':'administrateur paramètres',
   'fx-contrats':'contrats honoraires sia offre','fx-calchono':'nouveau contrat honoraires sia','fx-factures':'factures acomptes','fx-saisie':'nouvelle facture acompte','fx-backup':'export import facturation'};
 

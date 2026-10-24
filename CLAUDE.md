@@ -845,6 +845,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Même soir : **Projets ▸ Suivi & écarts (`aff-controlling`) déplacé dans Archives** (demande de Paulo) ; Projets = Mes projets, Registre, Tâches ;
   droits inchangés (`SG_VUE_DROIT['aff-controlling']` : chef de projet oui, collaborateur non — le chef de projet voit donc le chapitre Archives) ;
   le menu d'actions du projet qui l'ouvre (`go('aff-controlling')`) marche toujours.
+  **Les quatre tuiles du Controlling recopiées dans Administration (même soir, Paulo : « déplacer dans Administration : Contrôle des heures
+  d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais — copier ces éléments comme éléments cliquables dans le
+  menu de gauche »)** : entrées `adm-ctl-heures`, `adm-ana-heures`, `adm-ctl-frais`, `adm-ana-frais` (ordre : Contrôle des heures, Contrôle des heures
+  d'affaires, Critères d'analyse des heures, Situation des heures, Contrôle des frais, Critères d'analyse des frais) ; fin de sg3_controle.js
+  (`SG_ADM_CTL`) : chaque écran = liste des affaires (état, En cours d'office, recherche ; heures ou frais, à contrôler, refusées, dernière saisie ;
+  de la plus récente activité à la plus ancienne ; réglages `sg3_adm_ctl`) ; clic sur une affaire → `sgcFenetre(p,{date: semaine de sa dernière
+  saisie} et son auteur — staff)`, `ctlAnalyse(p,'timelog'|'projectcost')`, `ctlCostCheck(p)` (après `CTL_F.y/m/staff` = mois et auteur de la dernière
+  note de frais). Relecture du code par 2 relecteurs + vérification adverse (workflow) : 4 défauts corrigés (collaborateur et mois d'ouverture,
+  focus de la recherche gardé au redessin, colonne « Refusées » triée comme nombre — « ! » par CSS `.sg-admctl-ref`). Redessin sur place (`redessiner`, sans `go` : ni historique ni retour en
+  haut quand une saisie arrive du bureau). Les tuiles d'origine restent dans Archives ▸ Suivi & écarts. Administrateur seulement (chapitre).
   **« Fonctions » retiré de la barre et passé au clic droit (24.10.2026 au soir, Paulo : « supprimer les Fonctions et les ajouter au clic droit »)** :
   barre = Semaine | Mois, Aujourd'hui, semaines, année ; `sgfhFonctions()` = menu ⚙ du moteur filtré (`sgfhMenuSans`) — clic droit sur une saisie
   de l'agenda : menu du moteur (son `popMenu` remplacé le temps de l'appel par `sgMenuAt`) + sous-menu « Fonctions » ; ligne du Mois : Approuver,

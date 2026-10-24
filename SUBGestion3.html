@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 10:23 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 13:52 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1437,6 +1437,11 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:70px;margin-bottom:18px}
 .sgfh-wk div{display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;font-size:10px;color:var(--s-gris)}
 .sgfh-wk div i{display:block;width:70%;background:var(--s-nuit)}.sgfh-wk div i.v{background:#e6c66c}
+/* barre d'outils de la feuille d'heures sous les chiffres (#tools déplacé dans la page) ; barre du haut masquée sur cet écran */
+html.sgfh-on #nx-sub{display:none!important}
+.sgfh-outils{margin:0 0 12px}
+.sgfh-outils #tools{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
+.sgfh-outils #tools>.grp:last-child{margin-left:auto}
 /* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */
 @container (max-width:1050px){.sgfh-kp{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}}
 
@@ -27275,7 +27280,7 @@ function sgQuart(d,haut){ let m=d.getHours()*60+d.getMinutes(); m=Math.min(1439,
 function sgSaisieRapide(pre){ pre=pre||{}; const me=nxMe(); if(!me){ toast('Aucun membre de l’équipe n’est lié à cet utilisateur.',true); return; }
   const staffs=staffList(), sel=(opts,v)=>opts.map(([k,t])=>'<option value="'+nxE(k)+'"'+(String(k)===String(v)?' selected':'')+'>'+nxE(t)+'</option>').join('');
   const S=h('select',{class:'inp'}), P=h('select',{class:'inp'}), A=h('select',{class:'inp'}), F=h('select',{class:'inp'}), Dt=h('input',{class:'inp',type:'date'}), T1=h('input',{class:'inp',type:'time',step:900}),
-    Du=h('input',{class:'inp',type:'number',step:'0.25',min:'0.25',placeholder:'h'}), T2=h('input',{class:'inp',type:'time',step:900}), De=h('input',{class:'inp',placeholder:'Ce qui a été fait (facultatif sauf exigence du projet)'}), Fa=h('input',{type:'checkbox',checked:true});
+    Du=h('input',{class:'inp',type:'number',step:'0.25',min:'0.25',placeholder:'h'}), T2=h('input',{class:'inp',type:'time',step:900}), De=h('input',{class:'inp',placeholder:'Ce qui a été fait (facultatif sauf exigence du projet)'});
   S.innerHTML=sel(staffs.map(s=>[s.ID,staffName(s)]),pre.staff||me.ID);
   const now=new Date(), d0=pre.debut?new Date(pre.debut):now; Dt.value=diso(d0);
   const mins=x=>{ if(!x.value) return null; const [a,b]=x.value.split(':').map(Number); return a*60+b; };
@@ -27299,7 +27304,7 @@ function sgSaisieRapide(pre){ pre=pre||{}; const me=nxMe(); if(!me){ toast('Aucu
   remplirP(); if(pre.fin){ T2.value=sgQuart(new Date(pre.fin),true); fromT(); }
   const L=(t,el)=>[h('label',{},t),el];
   const body=h('div',{class:'form',style:{gridTemplateColumns:'max-content 1fr',minWidth:'520px'}},...L('Membre',S),...L('Projet',P),...L('Activité',A),...L('Phase',F),...L('Jour',Dt),
-    ...L('Heure',h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},T1,'–',T2,h('span',{style:{color:'var(--s-gris)'}},'soit'),Du,'h')),...L('Commentaire',De),...L('',h('label',{style:{textAlign:'left'}},Fa,' Facturable')));
+    ...L('Heure',h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},T1,'–',T2,h('span',{style:{color:'var(--s-gris)'}},'soit'),Du,'h')),...L('Commentaire',De));
   const save=async encore=>{ const sid=+S.value, pid=+P.value, [ag,ac]=A.value.split('|'), [ph,sp]=F.value.split('|'), a=mins(T1), b=mins(T2), dt=new Date(Dt.value+'T00:00'), pj=DS.get('project',pid)||{};
     if(!pid||!ag||!ac){ toast('Projet et activité sont obligatoires.',true); return false; }
     if(a==null||b==null||b<=a){ toast('Indiquez une heure de début et une durée (ou une heure de fin).',true); return false; }
@@ -27307,7 +27312,7 @@ function sgSaisieRapide(pre){ pre=pre||{}; const me=nxMe(); if(!me){ toast('Aucu
     if(+pj.ISTIMEDESCMANDATORY&&!De.value.trim()){ toast('Le commentaire est obligatoire pour ce projet.',true); return false; }
     if(typeof hsFrozen==='function'&&hsFrozen(dt,sid)){ toast('Saisie des heures verrouillée pour cette période.',true); return false; }
     const v={ID:null,STAFF_ID:sid,TIMEYEAR:dt.getFullYear(),TIMEMONTH:dt.getMonth(),TIMEDAY:dt.getDate(),TIMEHOUR1:Math.floor(a/60),TIMEMINUTE1:a%60,TIMEHOUR2:Math.floor(b/60),TIMEMINUTE2:b%60,TIMEPERIOD:(b-a)/60,
-      PROJECT_ID:pid,ACTIVITYGROUP_ID:+ag,ACTIVITY_ID:+ac,PHASE_ID:ph?+ph:null,SUBPHASE_ID:sp?+sp:null,SUBPROJECT_ID:null,DESCRIPTION:De.value.trim()||null,ISCHARGEABLE:Fa.checked?1:0,ISCHARGED:0,ISHOLIDAY:0,TIMELOGSTATECODE:0,CHARGEDDATE:null};
+      PROJECT_ID:pid,ACTIVITYGROUP_ID:+ag,ACTIVITY_ID:+ac,PHASE_ID:ph?+ph:null,SUBPHASE_ID:sp?+sp:null,SUBPROJECT_ID:null,DESCRIPTION:De.value.trim()||null,ISCHARGEABLE:1,ISCHARGED:0,ISHOLIDAY:0,TIMELOGSTATECODE:0,CHARGEDDATE:null};   /* facturable d'office : le collaborateur ne le choisit plus (24.10.2026, demande de Paulo) */
     if(typeof hsOverlap==='function'&&hsOverlap(v)){ toast('Ce créneau chevauche une autre saisie.',true); return false; }
     await DS.save('timelog',v); toast(nxH(v.TIMEPERIOD)+' h enregistrées sur '+(pj.NUMBER||'')+'.'); if(encore) setTimeout(()=>sgSaisieRapide({projet:pid,staff:sid}),60); };
   const D=dialog({title:'Saisie de temps',body,buttons:[{t:'Feuille complète',fn:()=>{ go('h-saisie'); }},{t:'Annuler'},{t:'Enregistrer et nouvelle',fn:()=>save(true)},{t:'Enregistrer',pri:true,fn:()=>save(false)}]});
@@ -31269,7 +31274,9 @@ VIEWS['nx-controle']={
    - Mêmes fonctions : la semaine est dessinée par hsWeek du moteur, puis seulement habillée ici (glisser sur une plage libre = nouvelle saisie,
      ⌥ + glisser = copie de la saisie choisie, glisser une saisie = la déplacer d'un jour ou d'une heure à l'autre, bord inférieur = sa fin,
      Cmd / Maj = sélection multiple, double-clic = modifier, clic droit = menu, Suppr, Cmd-A, Échap, contrôle des chevauchements hsOverlap,
-     réglages personnels) ; Mois = hsMonth ; barre d'outils inchangée (VIEWS['h-saisie'].tools du moteur).
+     réglages personnels) ; Mois = hsMonth ; barre d'outils inchangée (VIEWS['h-saisie'].tools du moteur), placée sous les chiffres (même jour,
+     demande de Paulo : l'élément #tools est déplacé dans la page, la barre du haut est masquée — html.sgfh-on — et #tools revient à sa place
+     avant tout changement d'écran, sgfhOutilsRendre dans l'enveloppe de go).
    - Présentation : en-tête au nom du collaborateur (initiales, nom, ▾ pour changer de collaborateur à la place de la colonne, depuis quand il est
      au bureau, heures taguées, saisie bloquée), période ; chiffres de la période (heures saisies et jauge, prévues, écart à ce jour, vacances
      restantes, projets) ; jours (nom, date, total / prévues, jauge, férié) ; une couleur par projet, gardée d'une semaine à l'autre (bureau en
@@ -31379,8 +31386,15 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
     +'<div class="sgfh-h4">La semaine</div><div class="sgfh-wk">'+D.J.map(j=>{ const v=sgfhSomme(j.L.filter(r=>r.ISHOLIDAY));
         return '<div title="'+nxE(dfr(j.iso)+' : '+nxH(j.h)+' h')+'"><i style="height:'+((j.h-v)/mx*52)+'px"></i>'+(v?'<i class="v" style="height:'+(v/mx*52)+'px"></i>':'')+JOURS[j.d.getDay()]+'</div>'; }).join('')+'</div>'
     +sgfhRepartition(D,'Répartition de la semaine')+sgfhLegende(); }
+/* la barre d'outils (#tools) revient à sa place, dans la barre du haut, avant tout changement d'écran */
+function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=document.getElementById('bar'); document.documentElement.classList.remove('sgfh-on');
+  if(tl&&bar&&tl.parentNode!==bar) bar.insertBefore(tl,bar.firstChild); }
 /* la feuille d'heures : même vue du moteur (outils, rafraîchissement), nouveau rendu */
 { const V=VIEWS['h-saisie'], FH0={render:V.render,draw:V.draw,refresh:V.refresh,tools:V.tools};
+  /* barre d'outils (24.10.2026, demande de Paulo) : sans Nouvelle saisie, Modifier, Supprimer, Approuver, Refuser, Réinitialiser — restent les gestes
+     (glisser, double-clic, clic droit, Suppr) ; Fonctions tout à droite (CSS) ; l'archive garde la barre d'origine */
+  V.tools=function(){ const G=FH0.tools.call(this)||[], obj=x=>x&&typeof x==='object'&&!(x instanceof Node);
+    return G.filter(g=>!(Array.isArray(g)&&g.some(x=>obj(x)&&(x.i==='plus'||x.label==='Approuver')))); };
   V.render=function(m){ const sl=ch08bMyStaffs(); if(!ch08bIn(sl,HS.staff)) HS.staff=null; if(!HS.staff||!DS.get('staff',HS.staff)) HS.staff=(ME.staff||sl[0]||{}).ID;
     const w=h('div',{class:'sgfh'}); m.append(w); this._w=w;
     w.addEventListener('click',e=>{ const t=e.target.closest('[data-fh]'); if(!t||!w.contains(t)) return; const f=t.dataset.fh;
@@ -31391,7 +31405,10 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
     this.draw(); };
   V.draw=function(){ const w=this._w; if(!w||!w.isConnected){ if(VIEW&&VIEW.id==='h-saisie-archive') VIEWS['h-saisie-archive'].draw(); return; }
     const D=sgfhDonnees(), jr=HS.mode==='sem'&&SGFH.vue==='journal', cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
-    haut.innerHTML=sgfhTete(D)+sgfhKpis(D); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
+    const tl=document.getElementById('tools'), ou=h('div',{class:'sgfh-outils'});
+    haut.innerHTML=sgfhTete(D)+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
+    /* barre d'outils du moteur sous les chiffres (demande de Paulo) : l'élément #tools lui-même, rendu à la barre du haut en quittant l'écran */
+    if(tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
     if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D); } else hsMonth(cal);
     side.innerHTML=jr?sgfhResume(D):sgfhRepartition(D,D.mois?'Répartition du mois':'Répartition de la semaine')+sgfhLegende(D.mois?'':SGFH_GESTES); };
   /* Réglages ▸ Archives · Ancienne feuille d'heures : telle quelle (rendu d'origine du moteur) */
@@ -31399,7 +31416,7 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
   const R=SG_D.reglages; if(R&&!R.items.some(x=>x.v==='h-saisie-archive')){ const it={v:'h-saisie-archive',t:'Archives · Ancienne feuille d’heures',ico:'clock',d:'L’ancienne feuille d’heures (colonne des collaborateurs, agenda de 24 h, couleurs selon l’état), gardée pour un usage ultérieur.'};
     const i=R.items.findIndex(x=>x.v==='affd-controlling'); R.items.splice(i<0?R.items.length:i+1,0,it); NX_VIEW['h-saisie-archive']={d:R,t:it.t,it}; }
   /* dans l'archive, les boutons et menus du moteur qui rouvrent « h-saisie » restent dans l'archive ; sélection et clavier comme à l'origine */
-  const g0=go; go=function(v,...a){ return g0.call(this,SGFH.redir&&v==='h-saisie'&&VIEW&&VIEW.id==='h-saisie-archive'?'h-saisie-archive':v,...a); };
+  const g0=go; go=function(v,...a){ sgfhOutilsRendre(); return g0.call(this,SGFH.redir&&v==='h-saisie'&&VIEW&&VIEW.id==='h-saisie-archive'?'h-saisie-archive':v,...a); };
   document.addEventListener('click',e=>{ if(VIEW&&VIEW.id==='h-saisie-archive'&&e.target.closest('#tools,.menu')){ SGFH.redir=true; setTimeout(()=>{ SGFH.redir=false; },0); } },true);
   const hm0=hsMark; hsMark=function(){ hm0.apply(this,arguments); if(VIEW&&VIEW.id==='h-saisie-archive') setTools(VIEWS['h-saisie-archive'].tools()); };
   document.addEventListener('keydown',e=>{ if(!VIEW||VIEW.id!=='h-saisie-archive'||$('.ov')||e.target.closest('input,textarea,select')) return;
@@ -31415,7 +31432,10 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
    à, durée), 2 Projet et activité, 3 Phase (phase, phase partielle, ouvrage), 4 Détails (commentaire, facturable, statut). En tête : le
    collaborateur, Temps de travail | Vacances en boutons, et le résumé de la saisie, tenu à jour (jour, heures, durée, projet, activité, phase).
    Au-dessus de chaque liste : le choix en cours (ou « à choisir ») et « obligatoire » selon l'affaire choisie. Les éléments du moteur sont
-   déplacés tels quels (leurs gestionnaires restent) ; DeltaSub.html seul garde la fenêtre d'origine. ═══ */
+   déplacés tels quels (leurs gestionnaires restent) ; DeltaSub.html seul garde la fenêtre d'origine.
+   Même jour, demandes de Paulo : « Facturable » retiré (« le collaborateur ne doit pas indiquer lui-même si elle est facturable ») — la case du
+   moteur reste cachée : une saisie existante garde sa valeur, une nouvelle est facturable (défaut du moteur) ; le contrôle la change dans
+   Critères d'analyse ▸ « Modifier le statut Facturable » — ; boutons « OK & continuer » et « OK & jour suivant » retirés. ═══ */
 function sgieHabiller(dlg){ const bd=dlg.querySelector('.bd'), body=bd&&bd.firstElementChild; if(!body||body.children.length<6||body.querySelector('.sgie')) return;
   const [rowK,top,,form,,bottom]=body.children, radios=[...rowK.querySelectorAll('input[type=radio]')], work=radios[0], hol=radios[1];
   const g3=top.firstElementChild, b3=bottom.children[0], c3=bottom.children[1]; if(!work||!hol||!g3||!b3||!c3||!form.classList.contains('form')) return;
@@ -31437,13 +31457,14 @@ function sgieHabiller(dlg){ const bd=dlg.querySelector('.bd'), body=bd&&bd.first
   const sec=(n,t,cls,...k)=>h('section',{class:'sgie-s '+cls},h('div',{class:'sgie-h'},h('span',{class:'no'},n),h('b',{},t)),...k);
   const row=(...k)=>h('div',{class:'sgie-l'},...k), lab=t=>h('label',{},t);
   jour.classList.add('sgie-jour'); fact.classList.add('sgie-fact'); statut.classList.add('sgie-statut');
-  const nb=h('div',{class:'sgie'},ent,h('span',{style:{display:'none'}},...radios.map(x=>x.closest('label')||x)),
+  const nb=h('div',{class:'sgie'},ent,h('span',{style:{display:'none'}},...radios.map(x=>x.closest('label')||x),fact),
     sec('1','Quand','sgie-qd',row(lab('Jour'),jour),row(lab('De'),t1,lab('à'),t2,h('span',{class:'sep'}),lab('Durée'),per,h('span',{class:'u'},'h'))),
     sec('2','Projet et activité','sgie-pa',h('div',{class:'sgie-g3'},lst('Projet',Lproj,'proj'),lst('Groupe d’activités',Lag,'ag'),lst('Activité',Lact,'act'))),
     sec('3','Phase','sgie-ph',h('div',{class:'sgie-g3'},lst('Phase',Lph,'ph',cPh),lst('Phase partielle',Lsp,'sp',cSp),lst('Ouvrage',Lsub,'sub',cSub))),
-    sec('4','Détails','sgie-dt',row(lab('Commentaire'),desc),row(fact,h('span',{class:'sep'}),lab('Statut'),statut)));
+    sec('4','Détails','sgie-dt',row(lab('Commentaire'),desc),row(lab('Statut'),statut)));
   body.replaceChildren(nb); body.style.minWidth='0';
   const sup=[...dlg.querySelectorAll('.ft .btn')].find(b=>b.textContent.trim()==='Supprimer'); if(sup) sup.classList.add('sgie-sup');
+  dlg.querySelectorAll('.ft .btn').forEach(b=>{ if(/^OK & /.test(b.textContent.trim())) b.remove(); });   /* « OK & continuer », « OK & jour suivant » retirés */
   /* choix en cours d'une liste (ligne sélectionnée) */
   const choix=box=>{ const tr=box.querySelector('tbody tr.on'); return tr?[...tr.children].map(td=>td.textContent.trim()).filter(Boolean).join(' · '):''; };
   const maj=()=>{ const vac=hol.checked; nb.classList.toggle('vac',vac); bT.classList.toggle('on',!vac); bV.classList.toggle('on',vac);

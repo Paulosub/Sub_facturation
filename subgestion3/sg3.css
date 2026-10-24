@@ -1428,6 +1428,11 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:70px;margin-bottom:18px}
 .sgfh-wk div{display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;font-size:10px;color:var(--s-gris)}
 .sgfh-wk div i{display:block;width:70%;background:var(--s-nuit)}.sgfh-wk div i.v{background:#e6c66c}
+/* barre d'outils de la feuille d'heures sous les chiffres (#tools déplacé dans la page) ; barre du haut masquée sur cet écran */
+html.sgfh-on #nx-sub{display:none!important}
+.sgfh-outils{margin:0 0 12px}
+.sgfh-outils #tools{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
+.sgfh-outils #tools>.grp:last-child{margin-left:auto}
 /* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */
 @container (max-width:1050px){.sgfh-kp{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}}
 

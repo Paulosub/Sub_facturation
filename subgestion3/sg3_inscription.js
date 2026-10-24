@@ -6,7 +6,10 @@
    à, durée), 2 Projet et activité, 3 Phase (phase, phase partielle, ouvrage), 4 Détails (commentaire, facturable, statut). En tête : le
    collaborateur, Temps de travail | Vacances en boutons, et le résumé de la saisie, tenu à jour (jour, heures, durée, projet, activité, phase).
    Au-dessus de chaque liste : le choix en cours (ou « à choisir ») et « obligatoire » selon l'affaire choisie. Les éléments du moteur sont
-   déplacés tels quels (leurs gestionnaires restent) ; DeltaSub.html seul garde la fenêtre d'origine. ═══ */
+   déplacés tels quels (leurs gestionnaires restent) ; DeltaSub.html seul garde la fenêtre d'origine.
+   Même jour, demandes de Paulo : « Facturable » retiré (« le collaborateur ne doit pas indiquer lui-même si elle est facturable ») — la case du
+   moteur reste cachée : une saisie existante garde sa valeur, une nouvelle est facturable (défaut du moteur) ; le contrôle la change dans
+   Critères d'analyse ▸ « Modifier le statut Facturable » — ; boutons « OK & continuer » et « OK & jour suivant » retirés. ═══ */
 function sgieHabiller(dlg){ const bd=dlg.querySelector('.bd'), body=bd&&bd.firstElementChild; if(!body||body.children.length<6||body.querySelector('.sgie')) return;
   const [rowK,top,,form,,bottom]=body.children, radios=[...rowK.querySelectorAll('input[type=radio]')], work=radios[0], hol=radios[1];
   const g3=top.firstElementChild, b3=bottom.children[0], c3=bottom.children[1]; if(!work||!hol||!g3||!b3||!c3||!form.classList.contains('form')) return;
@@ -28,13 +31,14 @@ function sgieHabiller(dlg){ const bd=dlg.querySelector('.bd'), body=bd&&bd.first
   const sec=(n,t,cls,...k)=>h('section',{class:'sgie-s '+cls},h('div',{class:'sgie-h'},h('span',{class:'no'},n),h('b',{},t)),...k);
   const row=(...k)=>h('div',{class:'sgie-l'},...k), lab=t=>h('label',{},t);
   jour.classList.add('sgie-jour'); fact.classList.add('sgie-fact'); statut.classList.add('sgie-statut');
-  const nb=h('div',{class:'sgie'},ent,h('span',{style:{display:'none'}},...radios.map(x=>x.closest('label')||x)),
+  const nb=h('div',{class:'sgie'},ent,h('span',{style:{display:'none'}},...radios.map(x=>x.closest('label')||x),fact),
     sec('1','Quand','sgie-qd',row(lab('Jour'),jour),row(lab('De'),t1,lab('à'),t2,h('span',{class:'sep'}),lab('Durée'),per,h('span',{class:'u'},'h'))),
     sec('2','Projet et activité','sgie-pa',h('div',{class:'sgie-g3'},lst('Projet',Lproj,'proj'),lst('Groupe d’activités',Lag,'ag'),lst('Activité',Lact,'act'))),
     sec('3','Phase','sgie-ph',h('div',{class:'sgie-g3'},lst('Phase',Lph,'ph',cPh),lst('Phase partielle',Lsp,'sp',cSp),lst('Ouvrage',Lsub,'sub',cSub))),
-    sec('4','Détails','sgie-dt',row(lab('Commentaire'),desc),row(fact,h('span',{class:'sep'}),lab('Statut'),statut)));
+    sec('4','Détails','sgie-dt',row(lab('Commentaire'),desc),row(lab('Statut'),statut)));
   body.replaceChildren(nb); body.style.minWidth='0';
   const sup=[...dlg.querySelectorAll('.ft .btn')].find(b=>b.textContent.trim()==='Supprimer'); if(sup) sup.classList.add('sgie-sup');
+  dlg.querySelectorAll('.ft .btn').forEach(b=>{ if(/^OK & /.test(b.textContent.trim())) b.remove(); });   /* « OK & continuer », « OK & jour suivant » retirés */
   /* choix en cours d'une liste (ligne sélectionnée) */
   const choix=box=>{ const tr=box.querySelector('tbody tr.on'); return tr?[...tr.children].map(td=>td.textContent.trim()).filter(Boolean).join(' · '):''; };
   const maj=()=>{ const vac=hol.checked; nb.classList.toggle('vac',vac); bT.classList.toggle('on',!vac); bV.classList.toggle('on',vac);

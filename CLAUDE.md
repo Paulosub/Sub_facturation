@@ -788,7 +788,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   C Frise horaire, D Calendrier du mois, E Journal ; maquette `subgestion3/_backup_20261024_maquette_feuille_heures/proposition_fh.js`, page
   `proposition_fh.html` de l'aperçu) ; choix : **A**, « pouvoir glisser les heures, qu'elles ne se superposent surtout pas, les mêmes fonctions que la
   version actuelle (option-clic pour copier…), pas de nouvelle fonctionnalité », et **garder le Journal** « pour information au collaborateur ».
-  `VIEWS['h-saisie']` garde ses outils (`tools`), son `refresh` et toutes les fonctions du moteur : la semaine est dessinée par **`hsWeek` du moteur**
+  **Barre d'outils (même jour, demandes de Paulo)** : placée **sous les chiffres** (l'élément `#tools` est déplacé dans la page, `.sgfh-outils` ; la barre
+  du haut `#nx-sub` est masquée par `html.sgfh-on` ; `sgfhOutilsRendre()` remet `#tools` dans `#bar` avant tout changement d'écran, dans l'enveloppe de
+  `go`) et **réduite** à Semaine | Mois, Aujourd'hui, semaines, année et **Fonctions tout à droite** (`V.tools` filtre les groupes Nouvelle saisie /
+  Modifier / Supprimer et Approuver / Refuser / Réinitialiser — restent glisser, double-clic, clic droit, Suppr ; l'archive garde la barre complète).
+  `VIEWS['h-saisie']` garde son `refresh` et toutes les fonctions du moteur : la semaine est dessinée par **`hsWeek` du moteur**
   puis seulement habillée (`sgfhHabiller`, `sgfhBloc`) — glisser sur une plage libre = nouvelle saisie, ⌥ + glisser = copie de la saisie choisie,
   glisser une saisie = la déplacer, bord inférieur (`.tlrs`) = sa fin, Cmd / Maj = sélection, double-clic, clic droit, Suppr, Cmd-A, Échap,
   chevauchements refusés (`hsOverlap`), réglages personnels (titre affaire / durée, activités, phases, commentaires, week-end, agrandir…) ; Mois = `hsMonth`.
@@ -808,11 +812,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `.sgie-*` en fin de `sg3.css`)** — demande de Paulo « revoir le graphisme de Éditer inscription, améliorer et rendre plus intuitif ». Toujours la
   fenêtre du moteur `hsEdit` (enveloppée : `sgieHabiller(dlg)` après son ouverture) : mêmes champs, mêmes six listes, mêmes règles (affaire, groupe et
   activité obligatoires ; phase / ouvrage / commentaire selon l'affaire ; chevauchements ; période verrouillée ; phase partielle terminée ; dernière
-  affaire reprise), mêmes boutons (Supprimer — à gauche, en rouge —, Annuler, OK & continuer, OK & jour suivant, OK). Les éléments du moteur sont
+  affaire reprise), mêmes boutons (Supprimer — à gauche, en rouge —, Annuler, OK ; « OK & continuer » et « OK & jour suivant » retirés le même jour
+  à la demande). Les éléments du moteur sont
   déplacés tels quels (gestionnaires gardés) dans l'ordre de la saisie : en-tête jaune pâle (initiales, trait vertical, collaborateur, **résumé tenu à
   jour** : jour · heures · durée, puis projet › groupe › activité › phase ; « Temps de travail | Vacances » en boutons qui cochent les boutons radio
   d'origine), **1 Quand** (jour ‹ › et date, De – à, Durée), **2 Projet et activité**, **3 Phase** (phase, phase partielle, ouvrage, « Effacer »),
-  **4 Détails** (commentaire — indication « obligatoire pour ce projet » —, facturable, statut) ; au-dessus de chaque liste, le choix en cours ou
+  **4 Détails** (commentaire — indication « obligatoire pour ce projet » —, statut) ; **« Facturable » retiré le même jour** (Paulo : « le
+  collaborateur ne doit pas indiquer lui-même si elle est facturable ») : case du moteur cachée — saisie existante inchangée, nouvelle saisie facturable
+  (défaut du moteur) ; à changer par le contrôle (Critères d'analyse des heures ▸ « Modifier le statut Facturable ») ; idem dans la Saisie de temps
+  rapide (`sgSaisieRapide`, facturable d'office) ; au-dessus de chaque liste, le choix en cours ou
   « à choisir » en rouge et « obligatoire » selon l'affaire choisie ; en-têtes des listes masqués ; Vacances : sections 2 et 3 grisées ; inscription
   verrouillée : lecture seule. ⚠ Ne pas employer les classes du moteur (`.ph`, `.pa`…) : sections `.sgie-qd|pa|ph|dt`. DeltaSub.html seul garde la
   fenêtre d'origine.

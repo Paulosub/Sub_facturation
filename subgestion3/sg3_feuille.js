@@ -7,7 +7,9 @@
    - Mêmes fonctions : la semaine est dessinée par hsWeek du moteur, puis seulement habillée ici (glisser sur une plage libre = nouvelle saisie,
      ⌥ + glisser = copie de la saisie choisie, glisser une saisie = la déplacer d'un jour ou d'une heure à l'autre, bord inférieur = sa fin,
      Cmd / Maj = sélection multiple, double-clic = modifier, clic droit = menu, Suppr, Cmd-A, Échap, contrôle des chevauchements hsOverlap,
-     réglages personnels) ; Mois = hsMonth ; barre d'outils inchangée (VIEWS['h-saisie'].tools du moteur).
+     réglages personnels) ; Mois = hsMonth ; barre d'outils inchangée (VIEWS['h-saisie'].tools du moteur), placée sous les chiffres (même jour,
+     demande de Paulo : l'élément #tools est déplacé dans la page, la barre du haut est masquée — html.sgfh-on — et #tools revient à sa place
+     avant tout changement d'écran, sgfhOutilsRendre dans l'enveloppe de go).
    - Présentation : en-tête au nom du collaborateur (initiales, nom, ▾ pour changer de collaborateur à la place de la colonne, depuis quand il est
      au bureau, heures taguées, saisie bloquée), période ; chiffres de la période (heures saisies et jauge, prévues, écart à ce jour, vacances
      restantes, projets) ; jours (nom, date, total / prévues, jauge, férié) ; une couleur par projet, gardée d'une semaine à l'autre (bureau en
@@ -117,8 +119,15 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
     +'<div class="sgfh-h4">La semaine</div><div class="sgfh-wk">'+D.J.map(j=>{ const v=sgfhSomme(j.L.filter(r=>r.ISHOLIDAY));
         return '<div title="'+nxE(dfr(j.iso)+' : '+nxH(j.h)+' h')+'"><i style="height:'+((j.h-v)/mx*52)+'px"></i>'+(v?'<i class="v" style="height:'+(v/mx*52)+'px"></i>':'')+JOURS[j.d.getDay()]+'</div>'; }).join('')+'</div>'
     +sgfhRepartition(D,'Répartition de la semaine')+sgfhLegende(); }
+/* la barre d'outils (#tools) revient à sa place, dans la barre du haut, avant tout changement d'écran */
+function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=document.getElementById('bar'); document.documentElement.classList.remove('sgfh-on');
+  if(tl&&bar&&tl.parentNode!==bar) bar.insertBefore(tl,bar.firstChild); }
 /* la feuille d'heures : même vue du moteur (outils, rafraîchissement), nouveau rendu */
 { const V=VIEWS['h-saisie'], FH0={render:V.render,draw:V.draw,refresh:V.refresh,tools:V.tools};
+  /* barre d'outils (24.10.2026, demande de Paulo) : sans Nouvelle saisie, Modifier, Supprimer, Approuver, Refuser, Réinitialiser — restent les gestes
+     (glisser, double-clic, clic droit, Suppr) ; Fonctions tout à droite (CSS) ; l'archive garde la barre d'origine */
+  V.tools=function(){ const G=FH0.tools.call(this)||[], obj=x=>x&&typeof x==='object'&&!(x instanceof Node);
+    return G.filter(g=>!(Array.isArray(g)&&g.some(x=>obj(x)&&(x.i==='plus'||x.label==='Approuver')))); };
   V.render=function(m){ const sl=ch08bMyStaffs(); if(!ch08bIn(sl,HS.staff)) HS.staff=null; if(!HS.staff||!DS.get('staff',HS.staff)) HS.staff=(ME.staff||sl[0]||{}).ID;
     const w=h('div',{class:'sgfh'}); m.append(w); this._w=w;
     w.addEventListener('click',e=>{ const t=e.target.closest('[data-fh]'); if(!t||!w.contains(t)) return; const f=t.dataset.fh;
@@ -129,7 +138,10 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
     this.draw(); };
   V.draw=function(){ const w=this._w; if(!w||!w.isConnected){ if(VIEW&&VIEW.id==='h-saisie-archive') VIEWS['h-saisie-archive'].draw(); return; }
     const D=sgfhDonnees(), jr=HS.mode==='sem'&&SGFH.vue==='journal', cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
-    haut.innerHTML=sgfhTete(D)+sgfhKpis(D); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
+    const tl=document.getElementById('tools'), ou=h('div',{class:'sgfh-outils'});
+    haut.innerHTML=sgfhTete(D)+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
+    /* barre d'outils du moteur sous les chiffres (demande de Paulo) : l'élément #tools lui-même, rendu à la barre du haut en quittant l'écran */
+    if(tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
     if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D); } else hsMonth(cal);
     side.innerHTML=jr?sgfhResume(D):sgfhRepartition(D,D.mois?'Répartition du mois':'Répartition de la semaine')+sgfhLegende(D.mois?'':SGFH_GESTES); };
   /* Réglages ▸ Archives · Ancienne feuille d'heures : telle quelle (rendu d'origine du moteur) */
@@ -137,7 +149,7 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
   const R=SG_D.reglages; if(R&&!R.items.some(x=>x.v==='h-saisie-archive')){ const it={v:'h-saisie-archive',t:'Archives · Ancienne feuille d’heures',ico:'clock',d:'L’ancienne feuille d’heures (colonne des collaborateurs, agenda de 24 h, couleurs selon l’état), gardée pour un usage ultérieur.'};
     const i=R.items.findIndex(x=>x.v==='affd-controlling'); R.items.splice(i<0?R.items.length:i+1,0,it); NX_VIEW['h-saisie-archive']={d:R,t:it.t,it}; }
   /* dans l'archive, les boutons et menus du moteur qui rouvrent « h-saisie » restent dans l'archive ; sélection et clavier comme à l'origine */
-  const g0=go; go=function(v,...a){ return g0.call(this,SGFH.redir&&v==='h-saisie'&&VIEW&&VIEW.id==='h-saisie-archive'?'h-saisie-archive':v,...a); };
+  const g0=go; go=function(v,...a){ sgfhOutilsRendre(); return g0.call(this,SGFH.redir&&v==='h-saisie'&&VIEW&&VIEW.id==='h-saisie-archive'?'h-saisie-archive':v,...a); };
   document.addEventListener('click',e=>{ if(VIEW&&VIEW.id==='h-saisie-archive'&&e.target.closest('#tools,.menu')){ SGFH.redir=true; setTimeout(()=>{ SGFH.redir=false; },0); } },true);
   const hm0=hsMark; hsMark=function(){ hm0.apply(this,arguments); if(VIEW&&VIEW.id==='h-saisie-archive') setTools(VIEWS['h-saisie-archive'].tools()); };
   document.addEventListener('keydown',e=>{ if(!VIEW||VIEW.id!=='h-saisie-archive'||$('.ov')||e.target.closest('input,textarea,select')) return;

@@ -229,7 +229,8 @@ VIEWS['nx-controle']={
   dessiner(){ const m=this._m; if(!m||!m.isConnected) return; const sc=m.querySelector('.sgc-corps'), y=sc?sc.scrollTop:0;
     if(typeof sgfhOutilsRendre==='function') sgfhOutilsRendre(); setTools(this.tools()); m.innerHTML=''; this.render(m); const s2=m.querySelector('.sgc-corps'); if(s2) s2.scrollTop=y; },
   refresh(ts){ if(hit(ts,'timelog','staff','stafftargettime','targettime','publicholiday','project')) this.dessiner(); } };
-/* menu Temps (juste après la Feuille d'heures) et droits : ceux du Controlling */
-{ const T=SG_D.temps; if(T&&!T.items.some(x=>x.v==='nx-controle')){ const it={v:'nx-controle',t:'Contrôle des heures',ico:'check',d:'Vérifier et valider les heures saisies : semaine par semaine, par collaborateur ou par projet.'};
-    const i=T.items.findIndex(x=>x.v==='h-saisie'); T.items.splice(i<0?0:i+1,0,it); NX_VIEW['nx-controle']={d:T,t:it.t,it}; }
-  SG_VUE_DROIT['nx-controle']=()=>SG_ACC.profil!=='collab'&&sgDroit('heures','projets'); }
+/* menu : chapitre Administration, en tête (24.10.2026, demande de Paulo ; avant : Heures, après la Feuille d'heures) ; administrateur seulement
+   (sgVueOk : chapitre Administration) */
+{ const T=SG_D.administration; if(T&&!T.items.some(x=>x.v==='nx-controle')){ const it={v:'nx-controle',t:'Contrôle des heures',ico:'check',hero:1,d:'Vérifier et valider les heures saisies : semaine par semaine, par collaborateur ou par projet.'};
+    T.items.unshift(it); NX_VIEW['nx-controle']={d:T,t:it.t,it}; }
+  SG_VUE_DROIT['nx-controle']=()=>sgAdmin(); }

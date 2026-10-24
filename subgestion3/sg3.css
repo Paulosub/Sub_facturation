@@ -1259,13 +1259,14 @@ select.sg-epo-in{padding:0 3px;width:auto;max-width:170px}
 .sg-epo-fl.passe{color:var(--s-gris)}
 /* ═══ Chapitre Temps : visuel « épuré » (bloc 25, sg3_temps.js, 23.10.2026, proposition A choisie par Paulo) — limité à html[data-vdom="temps"] ═══ */
 /* barre d'outils en texte : choix souligné en bleu nuit ; plus de chevauchement dans Notes de frais */
-html[data-vdom="temps"] #nx-sub{background:#fff}
-html[data-vdom="temps"] #tools .grp{gap:0;padding:0 8px;border-left:1px solid var(--s-filet)}
-html[data-vdom="temps"] #tools .grp:first-child{border-left:0;padding-left:0}
-html[data-vdom="temps"] #tools .ib,html[data-vdom="temps"] #main .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
-html[data-vdom="temps"] #tools .ib:hover,html[data-vdom="temps"] #main .ph2 .ib:hover{background:var(--s-jaune3)!important}
-html[data-vdom="temps"] #tools .ib.on,html[data-vdom="temps"] #main .ph2 .ib.on{color:var(--s-nuit)!important;border-bottom-color:var(--s-nuit)!important}
-html[data-vdom="temps"] #tools .ib:disabled,html[data-vdom="temps"] #main .ph2 .ib:disabled{color:#b9b9b6}
+/* barre d'outils en texte : aussi pour le chapitre Administration (Contrôle des heures, Situation des heures ; 24.10.2026) */
+html:is([data-vdom="temps"],[data-vdom="administration"]) #nx-sub{background:#fff}
+html:is([data-vdom="temps"],[data-vdom="administration"]) #tools .grp{gap:0;padding:0 8px;border-left:1px solid var(--s-filet)}
+html:is([data-vdom="temps"],[data-vdom="administration"]) #tools .grp:first-child{border-left:0;padding-left:0}
+html:is([data-vdom="temps"],[data-vdom="administration"]) #tools .ib,html[data-vdom="temps"] #main .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
+html:is([data-vdom="temps"],[data-vdom="administration"]) #tools .ib:hover,html[data-vdom="temps"] #main .ph2 .ib:hover{background:var(--s-jaune3)!important}
+html:is([data-vdom="temps"],[data-vdom="administration"]) #tools .ib.on,html[data-vdom="temps"] #main .ph2 .ib.on{color:var(--s-nuit)!important;border-bottom-color:var(--s-nuit)!important}
+html:is([data-vdom="temps"],[data-vdom="administration"]) #tools .ib:disabled,html[data-vdom="temps"] #main .ph2 .ib:disabled{color:#b9b9b6}
 html[data-vdom="temps"] #main .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:4px 0 6px;border:0;border-bottom:1px solid var(--s-filet);background:transparent}
 html[data-vdom="temps"] #main .ph2 .cnt,html[data-vdom="temps"] #main .ph2>span{font-size:12px;color:var(--s-gris)}
 /* colonnes et tableaux */

@@ -881,6 +881,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Admin ; la liste du serveur n'a que les clés). Clé `reglages` inchangée (`SG_DOM`, `dom-reglages`, `data-vdom`, droits, code d'accès). Gardés :
   « Réglages de facturation » (Facturation (ancien)), bouton « Réglages » de la fenêtre Contrôler, mentions du menu « Réglages » du moteur
   DeltaSub. Dans ce fichier, « Réglages ▸ … » écrit avant cette date désigne désormais « Configuration ▸ … » (sauf les écrans passés dans Admin).
+  **Puis (même soir, demande de Paulo) : « Admin » renommé « Réglages »** (clé `admin` inchangée ; libellés des écrans, Profils et accès, Accès
+  protégé) — donc aujourd'hui : **Réglages** = Gestion des utilisateurs, Profils et accès, Accès protégé, Administration, Paramètres système,
+  Préférences ; **Configuration** = données, sauvegardes, visuel, sous-menu Heures (Rapports de temps, Disponibilités, Notes de frais, Rapport des
+  notes de frais), archives, registres F. **Nouveau chapitre « Administration »** (clé `administration`, icône `gauge`, avant Réglages ; Paulo :
+  « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle des heures ; les collaborateurs n'auront pas accès à ces
+  informations » ; choix : Contrôle des heures + Situation des heures, administrateur seulement) = Contrôle des heures (`nx-controle`, retiré du
+  chapitre Heures — qui ne garde que la Feuille d'heures —, ajouté en tête par sg3_controle.js) et Situation des heures (`nx-situation`, retirée
+  de Configuration ▸ Heures). Droits : `sgVueOk` refuse tout écran du domaine `administration` à qui n'est pas administrateur (avant les
+  `SG_VUE_DROIT` ; `SG_VUE_DROIT['nx-controle']=sgAdmin`) — vérifié pour les profils Chef de projet et Collaborateur. Code d'accès :
+  `administration` dans `SG_ACC_DEF.doms` et ajouté aux réglages déjà enregistrés jusqu'au premier choix (`administrationVu`). Barre en texte
+  des écrans Heures étendue au domaine (`html:is([data-vdom="temps"],[data-vdom="administration"]) #tools …`). Vue d'ensemble : heures du
+  bureau, inscriptions à contrôler et refusées du mois. Visuel Mac #7D7AFF, Studio nocturne : carte menthe. Copie d'avant :
+  `subgestion3/_backup_20261024_2031_avant_menu_administration/`.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

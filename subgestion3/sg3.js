@@ -161,10 +161,15 @@ const SG_DOM=[
     {v:'tpl-backgrounds',t:'Fonds de page',ico:'image',d:'Arrière-plans des documents imprimés.'}]},
   /* chapitre « Admin » (24.10.2026, demande de Paulo) : l'administration de l'app, retirée d'Équipe (Gestion des utilisateurs) et de Réglages ;
      mêmes droits que Réglages (sgVueOk : droit « réglages ») et protégé par le code d'accès comme lui (SG_ACC_DEF, sgAcces) */
-  {k:'admin',t:'Admin',ico:'wrench',nav:0,d:'Comptes et droits des utilisateurs, accès protégé, administration, paramètres et préférences de l’app.',items:[
+  /* chapitre « Administration » (24.10.2026, demande de Paulo « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle
+     des heures ; les collaborateurs n'auront pas accès à ces informations ») : administrateur seulement (sgVueOk), protégé par le code d'accès */
+  {k:'administration',t:'Administration',ico:'gauge',nav:0,d:'Contrôle et analyse des heures du bureau — réservé à l’administrateur.',items:[
+    {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'}]},
+  /* « Admin » renommé « Réglages » le 24.10.2026 (demande de Paulo) ; clé admin inchangée */
+  {k:'admin',t:'Réglages',ico:'wrench',nav:0,d:'Comptes et droits des utilisateurs, accès protégé, administration, paramètres et préférences de l’app.',items:[
     {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',hero:1,d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'},
     {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
-    {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances, Admin et Configuration.'},
+    {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances, Administration, Réglages et Configuration.'},
     {v:'config',t:'Administration',ico:'settings',d:'Paramètres, propriétés, droits et listes.'},
     {v:'nx-parametres',t:'Paramètres système',ico:'settings',d:'Pays, monnaie et TVA, présentation des adresses, protection des documents.'},
     {v:'nx-preferences',t:'Préférences',ico:'person',d:'Langue des documents, initiales et signature de l’utilisateur du poste.'}]},
@@ -177,7 +182,6 @@ const SG_DOM=[
        qui garde leurs droits, leur code d'accès et leur visuel (nxDomVue) : les collaborateurs y ont toujours accès */
     {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
     {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
-    {v:'nx-situation',t:'Situation des heures',grp:'Heures',dom:'temps',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
     {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
     {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
     {v:'fx-carnet',t:'Archives · Carnet des PV',ico:'pv',reg:1,d:'Ancien carnet d’adresses de Facturation (remplacé par l’Annuaire).'},
@@ -475,6 +479,9 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
     const wk=mine.filter(r=>tlKey(r)>=k0).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=mine.filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     const ex=me?DS.by('projectcost','STAFF_ID',me.ID).filter(r=>+r.ISREFUNDABLE&&!+r.ISREFUNDED):[];
     return [f(nxH(wk)+' h','ma semaine'),f(nxH(mo)+' h','mon mois'),f(ex.length,'dépenses à rembourser'),f(nxCHF(ex.reduce((s,r)=>s+pcAmount(r),0)),'CHF à rembourser')]; }
+  if(k==='administration'){ const now=new Date(), L=DS.all('timelog').filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()&&!+r.ISHOLIDAY);
+    const c=s=>L.filter(r=>(+r.TIMELOGSTATECODE||0)===s).length;
+    return [f(nxH(L.reduce((t,r)=>t+(+r.TIMEPERIOD||0),0))+' h','heures du bureau ce mois'),f(c(0)+c(2),'inscriptions à contrôler ce mois'),f(c(1),'refusées ce mois')]; }
   if(k==='admin'){ const U=typeof sgComptes==='function'?sgComptes():[], on=U.filter(u=>+u.ISENABLED), a=typeof sgAcces==='function'?sgAcces():{};
     return [f(on.length,'comptes activés'),f(typeof sgProfilDe==='function'?on.filter(u=>sgProfilDe(u)==='admin').length:'—','administrateurs'),f(a.hash?'Défini':'Aucun','code d’accès sur ce poste')]; }
   if(k==='equipe'){ const st=DS.all('staff'); return [f(st.filter(s=>+s.ISACTIVE).length,'membres actifs'),f(st.filter(s=>!+s.ISACTIVE).length,'anciens membres')]; }

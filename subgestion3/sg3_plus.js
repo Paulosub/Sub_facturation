@@ -1128,10 +1128,11 @@ function sgEmoInstaller(w){ if(!w||w.__sgEmo||!w.document||!w.document.body) ret
    Code d'accès propre à ce poste : empreinte PBKDF2-SHA-256 salée (jamais le code lui-même) dans localStorage « sg3_acces ».
    Déverrouillage valable pour l'onglet du navigateur, reverrouillé après N minutes d'inactivité. C'est une protection de
    l'interface (collègue, visiteur) : les données du navigateur et les sauvegardes ne sont pas chiffrées. */
-const SG_ACC_DEF={doms:['facturation','finances','reglages','admin','rh','ancien','ancienf'],delai:15};
+const SG_ACC_DEF={doms:['facturation','finances','administration','reglages','admin','rh','ancien','ancienf'],delai:15};
 const sgAcces=()=>{ const s=nxLS.get('sg3_acces',{}), a=Object.assign({},SG_ACC_DEF,s); if(s.doms&&!s.rhVu&&!a.doms.includes('rh')) a.doms=[...a.doms,'rh'];   // « rh » (07.10.2026) : protégé aussi avec des réglages antérieurs, jusqu'au premier choix
   if(s.doms&&!s.ancVu&&(a.doms.includes('facturation')||a.doms.includes('finances'))) ['ancien','ancienf'].forEach(k=>{ if(!a.doms.includes(k)) a.doms=[...a.doms,k]; });
-  if(s.doms&&!s.adminVu&&a.doms.includes('reglages')&&!a.doms.includes('admin')) a.doms=[...a.doms,'admin'];   /* chapitre Admin (24.10.2026) : ses écrans viennent de Réglages, protégé comme lui jusqu'au premier choix */   // chapitres provisoires « Honoraires (ancien) » et « Facturation (ancien) » (13.10.2026) : comme Facturation / Finances
+  if(s.doms&&!s.adminVu&&a.doms.includes('reglages')&&!a.doms.includes('admin')) a.doms=[...a.doms,'admin'];
+  if(s.doms&&!s.administrationVu&&!a.doms.includes('administration')) a.doms=[...a.doms,'administration'];   /* chapitre Administration (24.10.2026), comme rh */   /* chapitre Admin (24.10.2026) : ses écrans viennent de Réglages, protégé comme lui jusqu'au premier choix */   // chapitres provisoires « Honoraires (ancien) » et « Facturation (ancien) » (13.10.2026) : comme Facturation / Finances
   return a; };
 const sgAccesSet=o=>{ nxLS.set('sg3_acces',Object.assign(sgAcces(),o)); sgVerrouAff(); };
 const sgB64=u=>btoa(String.fromCharCode(...new Uint8Array(u))), sgDe64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
@@ -1180,7 +1181,7 @@ function sgVerrouAff(){ const mb=document.getElementById('nx-minibtn'); if(!mb) 
   const o=sgOuvert(); b.innerHTML=nxSvg(o?'unlock':'lock'); b.title=o?'Verrouiller maintenant':'Déverrouiller (code d’accès)'; b.classList.toggle('on',!o); }
 { const t=setInterval(()=>{ if(NX.booted){ clearInterval(t); sgVerrouAff(); SG_ETAT_ACC=sgOuvert(); } },1000); }
 { const r0=VIEWS['nx-home'].render; VIEWS['nx-home'].render=function(m){ r0.apply(this,arguments); if(sgFinVerrou()){ const c=m.querySelector('#sg-home-fx'); if(c) c.closest('.nx-card').remove(); } }; }
-/* écran Admin ▸ Accès protégé (Réglages jusqu'au 24.10.2026) */
+/* écran Réglages ▸ Accès protégé (chapitre « Admin », ex-Réglages, renommé Réglages le 24.10.2026) */
 async function sgExigerOuvert(){ return sgOuvert()||sgDeverrouiller('Confirmez avec le code d’accès actuel.'); }
 function sgCodeDlg(changer){ const I1=h('input',{class:'inp',type:'password',autocomplete:'new-password'}), I2=h('input',{class:'inp',type:'password',autocomplete:'new-password'}), I0=h('input',{class:'inp',type:'password',autocomplete:'off'});
   const body=h('div',{class:'form',style:{gridTemplateColumns:'max-content 240px'}},...(changer?[h('label',{},'Code actuel'),I0]:[]),h('label',{},'Nouveau code'),I1,h('label',{},'Confirmer'),I2,
@@ -1191,7 +1192,7 @@ function sgCodeDlg(changer){ const I1=h('input',{class:'inp',type:'password',aut
     if(I1.value!==I2.value){ toast('Les deux saisies ne correspondent pas.',true); return false; }
     await sgCodeDefinir(I1.value); toast(changer?'Code d’accès changé.':'Code d’accès défini : '+sgAcces().doms.length+' domaine(s) protégé(s).'); go('nx-acces'); }}]}); }
 VIEWS['nx-acces']={ render(m){ const a=sgAcces(), doms=SG_DOM.filter(d=>d.k!=='accueil');
-  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Admin','Accès protégé','Un code d’accès à ce poste pour les parties sensibles : honoraires, factures, rentabilité, administration, configuration. Reverrouillage automatique après une période sans activité.',
+  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Accès protégé','Un code d’accès à ce poste pour les parties sensibles : honoraires, factures, rentabilité, contrôle des heures, réglages, configuration. Reverrouillage automatique après une période sans activité.',
       '<div class="sg-figs"><div class="sg-fig"><div class="n">'+(a.hash?(sgOuvert()?'Ouvert':'Verrouillé'):'—')+'</div><div class="t">'+(a.hash?'code défini le '+dfr(diso(new Date(a.depuis||Date.now()))):'aucun code')+'</div></div></div>')
     +'<div><div class="nx-grid">'
     +nxCard('c6','Code d’accès','<div class="b"><p style="margin:0 0 14px;font-weight:300">'+(a.hash?'Un code protège les domaines cochés ci-contre.':'Aucun code : toute l’app est accessible sur ce poste.')+'</p><div style="display:flex;gap:8px;flex-wrap:wrap">'
@@ -1205,7 +1206,7 @@ VIEWS['nx-acces']={ render(m){ const a=sgAcces(), doms=SG_DOM.filter(d=>d.k!=='a
     del:async()=>{ if(!(await sgDeverrouiller('Confirmez avec le code d’accès pour retirer la protection.'))) return; const I=h('input',{class:'inp',type:'password',autocomplete:'off'});
       dialog({title:'Retirer la protection',body:h('div',{},h('p',{style:{margin:'0 0 10px',fontWeight:300}},'Code d’accès actuel :'),I),buttons:[{t:'Annuler'},{t:'Retirer',pri:true,fn:async()=>{ if(!(await sgCodeOk(I.value))){ toast('Code incorrect.',true); return false; }
         const x=sgAcces(); delete x.hash; delete x.sel; delete x.depuis; nxLS.set('sg3_acces',x); sgVerrouAff(); toast('Protection retirée.'); go('nx-acces'); }}]}); }});
-  m.querySelectorAll('[data-dom]').forEach(c=>c.onchange=async()=>{ if(!(await sgExigerOuvert())){ c.checked=!c.checked; return; } sgAccesSet({doms:[...m.querySelectorAll('[data-dom]:checked')].map(x=>x.dataset.dom),rhVu:1,ancVu:1,adminVu:1}); toast('Domaines protégés enregistrés.'); });
+  m.querySelectorAll('[data-dom]').forEach(c=>c.onchange=async()=>{ if(!(await sgExigerOuvert())){ c.checked=!c.checked; return; } sgAccesSet({doms:[...m.querySelectorAll('[data-dom]:checked')].map(x=>x.dataset.dom),rhVu:1,ancVu:1,adminVu:1,administrationVu:1}); toast('Domaines protégés enregistrés.'); });
   const S=m.querySelector('#sg-acc-delai'); S.onchange=async()=>{ if(!(await sgExigerOuvert())){ S.value=String(sgAcces().delai); return; } sgAccesSet({delai:+S.value}); toast('Délai enregistré.'); }; } };
 { const i0=nxPalIndex; nxPalIndex=function(){ const it=i0(); if(sgAcces().hash) it.push({g:'Commandes',t:'Verrouiller maintenant',ico:'lock',run:()=>sgVerrouiller(),q:'verrouiller code accès',n:nxNorm('Verrouiller maintenant')}); return it; }; }
 
@@ -1348,7 +1349,7 @@ const SG_DROITS_LIB=[
   ['factures','Factures','Sur les projets visibles.',{aucune:'Aucun accès',lecture:'Lecture',validation:'Édition, à valider par l’administrateur',edition:'Édition libre (et validation)'}],
   ['finances','Finances','Rentabilité, cockpits, controlling.',{aucune:'Aucun accès',projets:'Rentabilité de ses projets (sans les taux)',toutes:'Toutes les finances du bureau'}],
   ['bibliotheque','Bibliothèque','Modèles, documents types.',{lecture:'Lecture',ecriture:'Lecture et modification'}],
-  ['reglages','Configuration','Chapitres Configuration et Admin : comptes, sauvegardes, paramètres du bureau.',{non:'Aucun accès',oui:'Accès complet'}]];
+  ['reglages','Configuration','Chapitres Configuration et Réglages : comptes, sauvegardes, paramètres du bureau.',{non:'Aucun accès',oui:'Accès complet'}]];
 const SG_TOUT=Object.fromEntries(Object.entries(SG_DROITS).map(([k,v])=>[k,v[v.length-1]]));
 const SG_PROFILS={admin:'Administrateur',cdp:'Chef de projet',collab:'Collaborateur'};
 let SG_ACC={profil:'admin',droits:{...SG_TOUT},staffs:[],projets:null,auth:false};
@@ -1375,6 +1376,7 @@ const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion
   'nx-valider':()=>sgDroit('contrats','validation')||sgDroit('factures','validation'),'fx-cockpit':()=>sgDroit('finances','projets'),'fx-cockpit2':()=>sgDroit('finances','projets'),
   'nx-renta':()=>sgDroit('finances','projets'),'nx-profils':()=>sgAdmin()};
 function sgVueOk(v){ if(!v||sgAdmin()) return true;
+  if(nxDomVue(v)==='administration') return false;   /* chapitre Administration (24.10.2026) : administrateur seulement */
   if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
   if(SG_VUE_DROIT[v]) return !!SG_VUE_DROIT[v]();
   const dk=nxDomVue(v);
@@ -1528,7 +1530,7 @@ VIEWS['nx-situation']={ render(m){ const st=nxLS.get('sg3_sit',{p:'',per:'12',g:
     else if(lim) L=L.filter(r=>tlKey(r)>=dayKey(lim));
     const pr=st.p&&DS.get('project',st.p), perLib={'1':'mois en cours','3':'3 derniers mois','12':'12 derniers mois','an':'année '+now.getFullYear(),'tout':'tout','perso':'du '+(st.de?dfr(st.de):'…')+' au '+(st.a?dfr(st.a):'…')}[st.per];
     const portee=sgDroit('heures','toutes')?'toutes les heures du bureau':sgDroit('heures','projets')?'les heures de vos projets, tous collaborateurs':'vos heures';
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Heures','Situation des heures','Heures saisies par projet, par collaborateur, par phase, par mois ou par activité — '+portee+'. Export CSV et impression.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Administration','Situation des heures','Heures saisies par projet, par collaborateur, par phase, par mois ou par activité — '+portee+'. Export CSV et impression.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxH(L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0))+'</div><div class="t">heures</div></div><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">saisies</div></div></div>')
       +'<div><div class="nx-card c12"><div class="b sg-sit-f"><label>Projet <select class="inp" id="sit-p"><option value="">Tous '+(sgDroit('projets_voir','tous')?'les projets':'mes projets')+'</option>'+pids.map(p=>'<option value="'+p.ID+'"'+(String(p.ID)===String(st.p)?' selected':'')+'>'+nxE(projLabel(p))+'</option>').join('')+'</select></label>'
         +'<label>Période <select class="inp" id="sit-per">'+[['1','Mois en cours'],['3','3 derniers mois'],['12','12 derniers mois'],['an','Année en cours'],['tout','Tout'],['perso','Dates…']].map(([v,t])=>'<option value="'+v+'"'+(v===st.per?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'
@@ -1557,9 +1559,9 @@ function sgVueFenetre(o){ const ok=()=>!o.droit||ch08aCan(o.droit);
   return {render(m){ this._m=m; dessin(m); if(sgFenPret&&ok()) setTimeout(()=>o.ouvrir(),0); },
     refresh(ts){ if(o.tables&&this._m&&hit(ts,...o.tables)) dessin(this._m); }}; }
 const sgComptes=()=>DS.all('appuser').filter(u=>u.USERID!=='mayday').sort((a,b)=>cmp(a.NAME||a.USERID||'',b.NAME||b.USERID||''));
-VIEWS['nx-utilisateurs']=sgVueFenetre({droit:'userAdmin',droitLib:'gestion des utilisateurs',lbl:'Admin',t:'Gestion des utilisateurs',ico:'users',bouton:'Gérer les comptes…',
+VIEWS['nx-utilisateurs']=sgVueFenetre({droit:'userAdmin',droitLib:'gestion des utilisateurs',lbl:'Réglages',t:'Gestion des utilisateurs',ico:'users',bouton:'Gérer les comptes…',
   tables:['appuser','appuser_staff','sgacces'],
-  txt:'Comptes de l’app : identifiant, mot de passe, fonctions et droits. Le profil SUBGestion de chaque compte (administrateur, chef de projet, collaborateur) se règle dans Admin ▸ Profils et accès.',
+  txt:'Comptes de l’app : identifiant, mot de passe, fonctions et droits. Le profil SUBGestion de chaque compte (administrateur, chef de projet, collaborateur) se règle dans Réglages ▸ Profils et accès.',
   aide:'Créer ou modifier un compte, l’activer ou le désactiver, changer son mot de passe, lui attribuer des fonctions : dans la fenêtre de gestion des utilisateurs.',
   figs:()=>{ const U=sgComptes(), n=U.filter(u=>+u.ISENABLED).length;
     return '<div class="sg-figs"><div class="sg-fig"><div class="n">'+n+'</div><div class="t">comptes activés</div></div><div class="sg-fig"><div class="n">'+(U.length-n)+'</div><div class="t">désactivés</div></div></div>'; },
@@ -1568,14 +1570,14 @@ VIEWS['nx-utilisateurs']=sgVueFenetre({droit:'userAdmin',droitLib:'gestion des u
       +sgComptes().map(u=>'<tr><td><b>'+nxE(u.NAME||'')+'</b></td><td>'+nxE(u.USERID||'')+'</td><td>'+nxE(st(u))+'</td><td>'+nxE(SG_PROFILS[sgProfilDe(u)]||'')+'</td><td>'
         +(+u.ISENABLED?'Activé':'<span style="color:var(--s-gris)">Désactivé</span>')+'</td></tr>').join('')+'</table></div>'); },
   ouvrir:()=>ch08bUserAdmin()});
-VIEWS['nx-parametres']=sgVueFenetre({droit:'admin',droitLib:'administrateur',lbl:'Admin',t:'Paramètres système',ico:'settings',bouton:'Ouvrir les paramètres système…',
+VIEWS['nx-parametres']=sgVueFenetre({droit:'admin',droitLib:'administrateur',lbl:'Réglages',t:'Paramètres système',ico:'settings',bouton:'Ouvrir les paramètres système…',
   txt:'Réglages généraux de l’app, communs à tous les postes : pays, monnaie standard et taux de TVA, présentation des adresses (nom et prénom, téléphone), protection des documents.',
   aide:'Les paramètres système s’ouvrent dans une fenêtre.',ouvrir:()=>ch08aSysPrefs()});
-VIEWS['nx-preferences']=sgVueFenetre({lbl:'Admin',t:'Préférences',ico:'person',bouton:'Ouvrir les préférences…',
+VIEWS['nx-preferences']=sgVueFenetre({lbl:'Réglages',t:'Préférences',ico:'person',bouton:'Ouvrir les préférences…',
   txt:'Réglages personnels de l’utilisateur de ce poste : langue des documents et choix des modèles, initiales, signature (image).',
   aide:'Les préférences s’ouvrent dans une fenêtre.',ouvrir:()=>ch08cPreferences()});
 SG_VUE_DROIT['nx-utilisateurs']=()=>ch08aCan('userAdmin'); SG_VUE_DROIT['nx-parametres']=()=>ch08aCan('admin');
-/* ── Admin ▸ Profils et accès (administrateur ; Réglages jusqu'au 24.10.2026) ── */
+/* ── Réglages ▸ Profils et accès (administrateur ; chapitre « Admin » renommé Réglages le 24.10.2026) ── */
 const sgAccRec=id=>DS.get('sgacces',id);
 const sgDroitsRole=p=>Object.assign({},SG_DEFAUTS[p],((sgAccRec('role:'+p)||{}).DROITS)||{});
 function sgProfilDe(u){ const r=sgAccRec('user:'+u.ID); if(r&&SG_PROFILS[r.PROFIL]) return r.PROFIL;
@@ -1584,10 +1586,10 @@ VIEWS['nx-profils']={ render(m){ const bureau=typeof dsEstBureau==='function'&&d
     const users=DS.all('appuser').filter(u=>u.USERID!=='mayday').sort((a,b)=>cmp(a.USERID,b.USERID)), D={cdp:sgDroitsRole('cdp'),collab:sgDroitsRole('collab')};
     const sel=(p,k)=>'<select class="inp" data-role="'+p+'" data-k="'+k+'">'+SG_DROITS[k].map(n=>'<option value="'+n+'"'+(D[p][k]===n?' selected':'')+'>'+nxE(SG_DROITS_LIB.find(x=>x[0]===k)[3][n])+'</option>').join('')+'</select>';
     const staffsDe=u=>DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean);
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Admin','Profils et accès','Trois profils : <b>Administrateur</b> (tout), <b>Chef de projet</b> et <b>Collaborateur</b>, dont vous réglez ici chaque droit — pour limiter ou élargir l’accès aux informations. Puis le profil de chaque compte.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Profils et accès','Trois profils : <b>Administrateur</b> (tout), <b>Chef de projet</b> et <b>Collaborateur</b>, dont vous réglez ici chaque droit — pour limiter ou élargir l’accès aux informations. Puis le profil de chaque compte.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+users.filter(u=>sgProfilDe(u)==='cdp').length+'</div><div class="t">chefs de projet</div></div><div class="sg-fig"><div class="n">'+users.filter(u=>sgProfilDe(u)==='collab').length+'</div><div class="t">collaborateurs</div></div></div>')
       +'<div>'+(!bureau?'<div class="nx-card c12" style="margin-bottom:24px"><div class="b" style="font-weight:300">Sur ce poste (fichier ouvert par double-clic), vous êtes seul et administrateur : ces réglages s’appliqueront sur le <b>serveur du bureau (NAS)</b>, une fois la base importée.</div></div>'
-        :!auth?'<div class="nx-card c12" style="margin-bottom:24px"><div class="b" style="color:var(--s-rouge)">L’ouverture de session par mot de passe n’est pas active sur le serveur du bureau : personne n’est identifié, les profils ne s’appliquent pas encore (Admin ▸ Administration ▸ Utilisateurs).</div></div>':'')
+        :!auth?'<div class="nx-card c12" style="margin-bottom:24px"><div class="b" style="color:var(--s-rouge)">L’ouverture de session par mot de passe n’est pas active sur le serveur du bureau : personne n’est identifié, les profils ne s’appliquent pas encore (Réglages ▸ Administration ▸ Utilisateurs).</div></div>':'')
       +nxCard('c12','Droits de chaque profil','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-droits"><tr><th>Droit</th><th>Administrateur</th><th>Chef de projet</th><th>Collaborateur</th></tr>'
         +SG_DROITS_LIB.map(([k,t,aide,niv])=>'<tr><td><b>'+nxE(t)+'</b>'+(aide?'<br><span>'+nxE(aide)+'</span>':'')+'</td><td class="adm">'+nxE(niv[SG_TOUT[k]])+'</td><td>'+sel('cdp',k)+'</td><td>'+sel('collab',k)+'</td></tr>').join('')
         +'</table></div>','<span class="a" data-fn="defaut">Rétablir les réglages proposés</span>')

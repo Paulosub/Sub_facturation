@@ -34,11 +34,11 @@ const sgfhPhAct=r=>{ const p=sgfhPhase(r), a=sgfhAct(r); return [p,a&&a!==p?a:''
 const sgfhHeures=r=>hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)+' – '+hm(Math.floor(tlT2(r)/60),tlT2(r)%60);
 const sgfhNum=id=>{ const p=DS.get('project',id); return p?sgfhTxt(p.NUMBER):''; }, sgfhTit=id=>{ const p=DS.get('project',id); return p?sgfhTxt(p.TITLE):''; };
 /* contenu d'une saisie, toujours dans cet ordre (demande de Paulo, 24.10.2026) : l'affaire en tête, les heures (de – à, durée), la phase, les
-   remarques ; l'activité et l'état restent dans l'infobulle. Sert à la feuille d'heures et à la fenêtre « Contrôler » (sg3_controle.js). */
+   remarques ; l'activité et l'état restent dans l'infobulle. Sert aussi à la fenêtre « Contrôler » (sg3_controle.js), par sgfhBloc. */
 const sgfhLignes=r=>{ const hol=!!r.ISHOLIDAY, num=hol?'Vacances':sgfhNum(r.PROJECT_ID), tit=hol?'':sgfhTit(r.PROJECT_ID), tps=sgfhHeures(r), du=nxH(r.TIMEPERIOD)+' h',
     ph=hol?'':sgfhPhase(r), rq=sgfhTxt(r.DESCRIPTION);
   return {num,tit,tps,du,ph,rq,titre:[[num,tit].filter(Boolean).join(' '),tps+' · '+du,ph,hol?'':sgfhAct(r),rq,TSTATE[r.TIMELOGSTATECODE||0]].filter(Boolean).join('\n')}; };
-/* réglages d'affichage qui ne s'appliquent plus (ordre fixe ci-dessus), retirés des menus Fonctions et Réglages ; séparateurs en double retirés */
+/* réglages d'affichage qui ne s'appliquent plus (ordre fixe ci-dessus), retirés du menu Fonctions ; séparateurs en double retirés */
 const SGFH_SANS=/^(Afficher les (activités|phases|commentaires)|Titre\s*:)/;
 const sgfhMenuSans=L=>L.filter(x=>!(x&&typeof x==='object'&&SGFH_SANS.test(x.t||''))).filter((x,i,a)=>x!=='-'||(i>0&&i<a.length-1&&a[i-1]!=='-'));
 const sgfhTeinte=(c,p)=>'color-mix(in srgb,'+c+' '+(p||20)+'%,#fff)';
@@ -61,16 +61,21 @@ function sgfhAnneau(v,du,t){ const r=17, c=2*Math.PI*r, p=du?Math.min(1,v/du):(v
   return '<svg width="'+(t||44)+'" height="'+(t||44)+'" viewBox="0 0 44 44" style="flex:none"><title>'+nxE(nxH(v)+' h'+(du?' sur '+nxH(du)+' h prévues':''))+'</title><circle cx="22" cy="22" r="'+r+'" fill="none" stroke="var(--s-nuit3)" stroke-width="5"/>'
     +(p?'<circle cx="22" cy="22" r="'+r+'" fill="none" stroke="var(--s-nuit)" stroke-width="5" stroke-dasharray="'+(c*p)+' '+c+'" transform="rotate(-90 22 22)"/>':'')
     +(o?'<circle cx="22" cy="22" r="'+r+'" fill="none" stroke="var(--s-rouge)" stroke-width="5" stroke-dasharray="'+(c*o)+' '+c+'" transform="rotate(-90 22 22)"/>':'')+'</svg>'; }
-/* période affichée (hsRange du moteur : semaine ou mois), jours, heures prévues (comme les Rapports de temps), écart jusqu'à hier, vacances */
-function sgfhDonnees(){ const s=DS.get('staff',HS.staff), [a,b]=hsRange(), mois=HS.mode!=='sem', L=s?hsEntries(a,b):[];
+/* saisies d'un collaborateur entre deux dates incluses (hsEntries du moteur, pour un autre collaborateur que celui de la feuille) */
+const sgfhEntrees=(sid,a,b)=>{ const ka=dayKey(a), kb=dayKey(b); return DS.by('timelog','STAFF_ID',sid).filter(r=>{ const k=tlKey(r); return k>=ka&&k<=kb; }); };
+/* période affichée (hsRange du moteur : semaine ou mois), jours, heures prévues (comme les Rapports de temps), écart jusqu'à hier, vacances ;
+   o = fenêtre « Contrôler » (sg3_controle.js) : {staff, a, b, filtre (inscriptions retenues), O (réglages), prevues:false (ni heures prévues
+   ni jours sans saisie signalés)} */
+function sgfhDonnees(o){ o=o||{}; const s=DS.get('staff',o.a?o.staff:HS.staff), [a,b]=o.a?[o.a,o.b]:hsRange(), mois=!o.a&&HS.mode!=='sem';
+  const L=!s?[]:o.a?sgfhEntrees(s.ID,a,b).filter(o.filtre||Boolean):hsEntries(a,b);
   const [,w]=isoWeek(a), lib=mois?MOISL[a.getMonth()]+' '+a.getFullYear():'Semaine '+w+' · '+a.getDate()+(a.getMonth()!==b.getMonth()?' '+MOIS[a.getMonth()]:'')+' – '+b.getDate()+' '+MOIS[b.getMonth()]+' '+b.getFullYear();
-  const PH=new Map([...pubHolidays(a.getFullYear()),...pubHolidays(b.getFullYear())]), auj=dayKey(new Date()), M=s?hrMaps(s.ID,a,b):null, J=[];
+  const PH=new Map([...pubHolidays(a.getFullYear()),...pubHolidays(b.getFullYear())]), auj=dayKey(new Date()), M=s&&o.prevues!==false?hrMaps(s.ID,a,b):null, J=[];
   for(let x=new Date(a);x<=b;x.setDate(x.getDate()+1)){ const d=new Date(x), k=dayKey(d), Lj=L.filter(r=>tlKey(r)===k).sort((p,q)=>tlT1(p)-tlT1(q));
     J.push({d,k,iso:diso(d),L:Lj,h:sgfhSomme(Lj),du:M?M.sum(d,d).P:0,ouvre:isWorkDay(d,PH),fer:PH.get(diso(d))||'',passe:k<auj,auj:k===auj}); }
   const lim=new Date(); lim.setHours(0,0,0,0); const fin=b<lim?b:new Date(lim.getTime()-864e5);
   return {s,a,b,mois,lib,L,J,PH,tot:sgfhSomme(L),du:M&&fin>=a?M.sum(a,fin).P:0,duP:M?M.sum(a,b).P:0,hfin:J.filter(j=>j.d<=fin).reduce((t,j)=>t+j.h,0),
-    vac:s&&typeof hrHoliday==='function'?hrHoliday(s,new Date(b.getFullYear(),0,1),b):null,co:sgfhCouleurs(L)}; }
-const sgfhManque=(D,j)=>j.ouvre&&j.passe&&!j.L.length&&D.s&&(!D.s.JOININGDATE||String(D.s.JOININGDATE).slice(0,10)<=j.iso)&&!(D.s.QUITTINGDATE&&String(D.s.QUITTINGDATE).slice(0,10)<j.iso);
+    vac:s&&typeof hrHoliday==='function'?hrHoliday(s,new Date(b.getFullYear(),0,1),b):null,co:sgfhCouleurs(L),O:o.O||HS.o,sansManque:o.prevues===false}; }
+const sgfhManque=(D,j)=>!D.sansManque&&j.ouvre&&j.passe&&!j.L.length&&D.s&&(!D.s.JOININGDATE||String(D.s.JOININGDATE).slice(0,10)<=j.iso)&&!(D.s.QUITTINGDATE&&String(D.s.QUITTINGDATE).slice(0,10)<j.iso);
 /* en-tête : le nom du collaborateur, puis la période ; chiffres de la période */
 function sgfhTete(D){ const s=D.s, sl=ch08bMyStaffs(), dt=x=>dfr(String(x).slice(0,10));
   const meta=[s&&s.JOININGDATE?'Au bureau depuis le '+dt(s.JOININGDATE):'',s&&s.TIMELOGCOMPLETEDDATE?'heures complètes jusqu’au '+dt(s.TIMELOGCOMPLETEDDATE):'heures pas encore taguées',
@@ -94,7 +99,7 @@ const sgfhLegende=extra=>'<div class="sgfh-leg"><span><span class="sgfh-st ok">'
 const SGFH_GESTES='<span class="g">Glisser sur une plage libre : nouvelle saisie · ⌥ + glisser : copier la saisie choisie · glisser une saisie : la déplacer · bord inférieur : sa fin · double-clic : modifier · clic droit : menu</span>';
 /* habillage de la semaine dessinée par hsWeek : en-tête des jours, fonds, ligne de l'heure, saisies (couleurs, texte, couloirs) */
 function sgfhHabiller(cal,D){ const head=cal.firstElementChild, sc=head&&head.nextElementSibling, grid=sc&&sc.firstElementChild; if(!grid) return;
-  const cols=[...grid.children].filter(c=>c._d), byId=new Map(D.L.map(r=>[String(r.ID),r])), O=HS.o, PX=O.zoom?84:48, done=D.s&&D.s.TIMELOGCOMPLETEDDATE, auj=dayKey(new Date());
+  const cols=[...grid.children].filter(c=>c._d), byId=new Map(D.L.map(r=>[String(r.ID),r])), O=D.O||HS.o, PX=O.zoom?84:48, done=D.s&&D.s.TIMELOGCOMPLETEDDATE, auj=dayKey(new Date());
   const off=d=>(O.pub&&D.PH.has(diso(d)))||(O.sat&&d.getDay()===6)||(O.sun&&d.getDay()===0);
   const nh=h('div',{class:'sgfh-jours',style:{gridTemplateColumns:head.style.gridTemplateColumns}});
   nh.innerHTML='<div class="sgfh-sem"><b>S'+isoWeek(D.a)[1]+'</b><span>'+nxH(D.tot)+' h</span></div>'+cols.map(c=>{ const d=c._d, j=D.J.find(x=>x.k===dayKey(d))||{h:0,du:0,L:[]}, tag=done&&diso(d)<=String(done).slice(0,10), m=sgfhManque(D,j);

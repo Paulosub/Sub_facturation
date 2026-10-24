@@ -1342,13 +1342,48 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgc-t th.auj .n{color:var(--s-nuit)}
 .sgc-leg2{margin-top:10px}.sgc-leg2 .sgc-man{color:var(--err);margin-right:2px;font-weight:700}
 .sgc-leg2 .sgc-pt{margin-right:0}
-/* fenêtre « Contrôler » : inscriptions dans l'ordre de la feuille d'heures (affaire en entier, heures, phase, remarques), bandeau à la couleur d'état */
-.ctlb.sgc-b{line-height:1.25}
-.ctlb.sgc-b .sgc-bn{color:#fff;padding:1px 4px;overflow-wrap:anywhere}
-.ctlb.sgc-b .sgc-bh{display:flex;flex-wrap:wrap;column-gap:6px;padding:0 4px;white-space:nowrap;overflow:hidden}
-.ctlb.sgc-b .sgc-bh span+span{margin-left:auto;flex:none}
-.ctlb.sgc-b .sgc-bt{padding:0 4px;overflow-wrap:anywhere;color:#4a4a48}
-.ctlb.sgc-b.autre .sgc-bt{color:inherit}
+/* fenêtre « Contrôler » au graphisme de la feuille d'heures (sgcFenetre, 24.10.2026) : collaborateurs à gauche, en-tête jaune, barre en texte,
+   semaine habillée comme l'agenda (classes .sgfh-*) ; titre de la fenêtre remplacé par l'en-tête jaune */
+.ov:has(>.dlg.sgc-dlg){padding-top:3vh}
+.dlg.sgc-dlg{width:min(1400px,calc(96vw - 16px));max-width:96vw;max-height:94vh}
+.dlg.sgc-dlg>.tt{display:none}
+.dlg.sgc-dlg>.bd{padding:0;overflow:hidden;display:flex}
+.sgc-fen{display:flex;width:100%;height:min(840px,calc(94vh - 60px));outline:none}
+.sgc-fcols{flex:0 0 clamp(190px,17vw,236px);overflow-y:auto;border-right:1px solid var(--s-filet);padding:18px 0 12px}
+.sgc-fch{font-size:11px;font-weight:700;color:var(--s-gris);padding:0 16px 8px;border-bottom:2px solid var(--s-noir);margin-bottom:4px}
+.sgc-fcol{display:flex;align-items:center;gap:10px;width:100%;border:0;border-left:3px solid transparent;background:none;padding:7px 12px 7px 13px;text-align:left;cursor:pointer;font:inherit;color:var(--s-noir)}
+.sgc-fcol:hover{background:var(--s-jaune3)}
+.sgc-fcol.on{background:var(--s-jaune2);border-left-color:var(--s-nuit)}
+.sgc-fcol.ancien{color:var(--s-gris)}
+.sgc-fcol .ini{flex:none;width:34px;height:34px;display:grid;place-items:center;border:1.5px solid var(--s-nuit);border-radius:50%;font-size:11px;font-weight:700;color:var(--s-nuit)}
+.sgc-fcol .nm{min-width:0;display:flex;flex-direction:column;gap:1px}
+.sgc-fcol .nm b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgc-fcol .nm small{font-size:11px;color:var(--s-gris)}.sgc-fcol .nm small.ctl{color:var(--s-noir)}
+.sgc-fdr{flex:1;min-width:0;display:flex;flex-direction:column;padding:18px 22px 0}
+.sgc-ftete{padding:10px 18px;flex:none}
+.sgc-ftete .sgfh-ini{font-size:26px;padding-right:14px}.sgc-ftete .sgfh-nm h2{font-size:21px}.sgc-ftete .sgfh-meta{margin-top:3px}
+.sgc-ftete .sgfh-id{flex-basis:300px}
+.sgc-fper{flex-direction:column;align-items:flex-end;gap:3px;text-align:right;margin-left:auto}.sgc-fper .st{font-size:12px;color:var(--s-gris)}
+.sgc-fbarre{display:flex;align-items:center;flex-wrap:wrap;row-gap:2px;margin:12px 0 10px;flex:none}
+.sgc-fbarre .grp{display:flex;align-items:center;gap:0;padding:0 8px;border-left:1px solid var(--s-filet)}
+.sgc-fbarre .grp:first-child{border-left:0;padding-left:0}
+.sgc-fbarre .grp.act{margin-left:auto}
+.sgc-fbarre .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
+.sgc-fbarre .ib:hover{background:var(--s-jaune3)!important}
+.sgc-fbarre .ib:disabled{color:#b9b9b6;background:transparent!important}
+.sgc-fbarre .lbl{min-width:92px;text-align:center;font-size:12.5px}.sgc-fbarre .lbl.an{min-width:44px}
+.sgc-fbarre .nb{font-size:12px;color:var(--s-gris);padding:0 6px 0 0;white-space:nowrap}
+.sgc-fcal{flex:1;min-height:0}
+.sgc-fcal .tlb{cursor:pointer}
+.tlb.sgc-on{outline:2px solid var(--s-noir);outline-offset:0;z-index:3!important}
+.tlb.sgc-autre{background:#f3f3f1!important;border-left-color:#c9c9c6!important;color:#8a8a87;cursor:default}
+.tlb.sgc-autre .tx{color:inherit}
+.sgc-brk{position:absolute;left:6px;right:6px;background:repeating-linear-gradient(45deg,#e1e1df 0,#e1e1df 3px,transparent 3px,transparent 7px);color:var(--s-gris);font-size:11px;text-align:center;overflow:hidden;pointer-events:none}
+.sgc-fpied{margin-right:auto;min-width:0}
+.sgc-fpied .sgfh-leg{border:0;padding:0;align-items:center}
+.sgc-fpied .sgfh-leg .g{display:inline;margin:0}
+.sgfh-st.sgc-st0{background:#fff;box-shadow:inset 0 0 0 1.5px var(--s-gris)}
+.sgfh-dot.sgc-dot-autre{background:#f3f3f1;box-shadow:inset 0 0 0 1px #c9c9c6}
 /* zone de travail étroite : boutons réduits à leur icône (libellé en infobulle), colonne des noms resserrée */
 @container (max-width:1100px){.sgc-act .nx-btn span{display:none}.sgc-act .nx-btn{padding:0 7px}.sgc-t td.sgc-n{min-width:170px}.sgc-nav b{min-width:200px}}
 
@@ -1394,13 +1429,14 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .tlb.sgfh-b{border-left:4px solid;padding:3px 5px 3px 6px;box-sizing:border-box;font-size:11.5px;line-height:1.25}
 .tlb.sgfh-b:hover{box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:4!important}
 /* contenu dans cet ordre (demandes de Paulo, 24.10.2026) : l'affaire en tête et en entier (sur plusieurs lignes, pastille d'état à sa gauche),
-   les heures (de – à, durée à droite), la phase, les remarques ; ce qui dépasse de la saisie est coupé, l'infobulle donne tout */
+   les heures (de – à, durée à droite), la phase, les remarques ; ce qui dépasse de la saisie est coupé, l'infobulle donne tout ; mots longs
+   coupés avec un trait d'union (césure française, page en lang="fr") plutôt qu'au milieu d'une lettre */
 .sgfh-bc .nom{display:flex;align-items:flex-start;gap:4px;min-width:0}
-.sgfh-bc .nom .nt{flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.sgfh-bc .nom .nt{flex:1;min-width:0;white-space:normal;overflow-wrap:break-word;hyphens:auto;hyphenate-limit-chars:6 3 3}
 .sgfh-bc .nom .sgfh-st{margin-top:1px}
 .sgfh-bc .t1{display:flex;flex-wrap:wrap;column-gap:5px;white-space:nowrap;overflow:hidden}
 .sgfh-bc .t1 .d{margin-left:auto;flex:none}
-.sgfh-bc .tx{overflow-wrap:anywhere;color:#4a4a48}
+.sgfh-bc .tx{overflow-wrap:break-word;hyphens:auto;hyphenate-limit-chars:6 3 3;color:#4a4a48}
 .tlb.sgfh-b.mini .nom .nt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tlb.sgfh-b.mini{padding:0 5px 0 6px;font-size:10px;line-height:1}
 .tlb.sgfh-b.mini .sgfh-bc,.tlb.sgfh-b.mini .nom{height:100%;align-items:center}.tlb.sgfh-b.mini .t1,.tlb.sgfh-b.mini .tx{display:none}
@@ -1417,7 +1453,7 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-h4{font-size:11.5px;font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--s-noir);margin:0 0 10px}
 .sgfh-proj{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
 .sgfh-proj .r{display:grid;grid-template-columns:10px 1fr auto;gap:4px 8px;align-items:center;font-size:12px}
-.sgfh-proj .r .t{white-space:normal;overflow-wrap:anywhere}
+.sgfh-proj .r .t{white-space:normal;overflow-wrap:break-word;hyphens:auto;hyphenate-limit-chars:6 3 3}
 .sgfh-proj .r .bar{grid-column:2/4;height:5px;background:var(--s-fond)}.sgfh-proj .r .bar i{display:block;height:100%}
 .sgfh-dot{display:inline-block;width:10px;height:10px;flex:none}
 .sgfh-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--s-gris);padding-top:8px;border-top:1px solid var(--s-filet)}
@@ -1438,7 +1474,7 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-ent:hover{background:#fafaf8}
 .sgfh-ent .k{grid-row:1/4;align-self:stretch}
 .sgfh-ent .a{font-size:12.5px;font-weight:700;display:flex;gap:6px;align-items:center;min-width:0}
-.sgfh-ent .a{align-items:flex-start}.sgfh-ent .a .nt{white-space:normal;overflow-wrap:anywhere;font-weight:400}.sgfh-ent .a .nt b{font-weight:700}.sgfh-ent .a .sgfh-st{margin-top:1px}
+.sgfh-ent .a{align-items:flex-start}.sgfh-ent .a .nt{white-space:normal;overflow-wrap:break-word;hyphens:auto;hyphenate-limit-chars:6 3 3;font-weight:400}.sgfh-ent .a .nt b{font-weight:700}.sgfh-ent .a .sgfh-st{margin-top:1px}
 .sgfh-ent .b{font-size:11.5px;color:var(--s-gris)}
 .sgfh-ent .c{font-size:11.5px;color:#555;grid-column:2/4}
 .sgfh-ent .du{font-weight:700;font-size:13px;text-align:right;white-space:nowrap}

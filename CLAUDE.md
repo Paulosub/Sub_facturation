@@ -790,10 +790,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Exporter en CSV ; `#tools` déplacé comme dans la Feuille d'heures, rendu par `sgfhOutilsRendre`), tableau sous un filet noir (`.sgc-tab`, défile dans
   `.sgc-corps`), jours en tête comme l'agenda (nom, date en grand), pastilles ✓ / ! / ↺ dans les cellules et l'état, légende `sgfh-leg`. Copie d'avant :
   `subgestion3/_backup_20261024_avant_controle_graphisme/`.
-  **Fenêtre « Contrôler » dans l'ordre de la feuille d'heures (même jour)** : chaque inscription = bandeau à la couleur d'état du moteur avec l'affaire en
-  entier, puis heures, phase, remarques (`sgcBloc`) ; menu Réglages sans « Afficher les activités / phases / commentaires » ni « Titre : … ». Moteur :
-  `ctlTimeCheck` accepte `o.bloc(r,el,autre)` (contenu d'une inscription refait par l'appelant) et `o.reglages(liste)` (menu filtré) ; sans ces
-  options, fenêtre d'origine (Archives · Controlling, DeltaSub seul).
+  **Fenêtre « Contrôler » au graphisme et à l'organisation de la feuille d'heures (même jour, Paulo : « reproduire le graphisme et l'organisation de
+  la feuille d'heures, améliorer si nécessaire »)** : `sgcFenetre(p,o)` (sg3_controle.js) remplace la fenêtre du moteur pour « Contrôler » (par
+  collaborateur et par projet ; `ctlTimeCheck` reste tel quel pour Archives · Controlling, ses options SG3 du matin — staffs, peut, staff, date,
+  titre, boutons — ne servent plus). À gauche les collaborateurs (initiales, heures de la semaine, à contrôler, refusées ; ⌥↑ ⌥↓) ; à droite en-tête
+  jaune (collaborateur, semaine, heures saisies / prévues, à contrôler), barre en texte (Aujourd'hui, « ‹ Semaine › », ‹ année › ; nombre choisi,
+  Approuver, Refuser, Réinitialiser, Tout sélectionner ; Réglages), semaine construite comme `hsWeek` puis habillée par `sgfhHabiller` (couleurs par
+  projet, pastilles, affaire en entier, heures, phase, remarques) ; légende et gestes dans le pied. Gestes d'origine : clic, Cmd / Maj-clic, clic
+  droit (Approuver, Refuser, Réinitialiser, Tout sélectionner, Modifier), double-clic = `hsEdit`, Cmd-A ; pas de glisser. Inscriptions non
+  contrôlables en gris (option). Réglages = `CTL_W.o` (`ds_ctw_opts`). Par projet : sans heures prévues ni jours « aucune » (`sgfhDonnees(o)` :
+  staff, a, b, filtre, O, prevues). Tenue à jour par `DS.on` (`SGC_F`). Classes `.sgc-f*`, `.dlg.sgc-dlg` (titre de fenêtre masqué, voile à 3vh).
+  Mots longs des saisies coupés avec trait d'union (`hyphens:auto`, page `lang="fr"`) au lieu de `overflow-wrap:anywhere` (« Créatio-n »).
+  Copie d'avant : `subgestion3/_backup_20261024_1826_avant_fenetre_controle/`.
   **Temps ▸ Feuille d'heures, nouvelle présentation (24.10.2026, bloc 27, `subgestion3/sg3_feuille.js` + styles `.sgfh-*` en fin de `sg3.css`)** —
   demande de Paulo « améliore la feuille d'heures, plus graphique ; la colonne collaborateur n'est pas nécessaire ; le nom du collaborateur en haut puis
   la feuille d'heures ; avant de modifier, fais une copie dans Réglages » ; cinq variantes maquettées, charte seulement (A Agenda, B Grille projets × jours,

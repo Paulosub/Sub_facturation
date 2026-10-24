@@ -804,6 +804,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `go('h-saisie')` lancé par ses boutons ou menus — clic capturé dans `#tools` / `.menu`, `SGFH.redir` — reste dans l'archive ; `hsMark` et clavier
   repris pour elle). Ne pas confondre avec « Archives · Feuille d'heures » marqué F (ancien registre de Facturation). Copie d'avant : la même que le
   Contrôle des heures (`subgestion3/_backup_20261024_0949_avant_controle_heures/`).
+  **Temps ▸ fenêtre « Éditer l'inscription » / « Nouvelle saisie » redessinée (24.10.2026, bloc 28, `subgestion3/sg3_inscription.js` + styles
+  `.sgie-*` en fin de `sg3.css`)** — demande de Paulo « revoir le graphisme de Éditer inscription, améliorer et rendre plus intuitif ». Toujours la
+  fenêtre du moteur `hsEdit` (enveloppée : `sgieHabiller(dlg)` après son ouverture) : mêmes champs, mêmes six listes, mêmes règles (affaire, groupe et
+  activité obligatoires ; phase / ouvrage / commentaire selon l'affaire ; chevauchements ; période verrouillée ; phase partielle terminée ; dernière
+  affaire reprise), mêmes boutons (Supprimer — à gauche, en rouge —, Annuler, OK & continuer, OK & jour suivant, OK). Les éléments du moteur sont
+  déplacés tels quels (gestionnaires gardés) dans l'ordre de la saisie : en-tête jaune pâle (initiales, trait vertical, collaborateur, **résumé tenu à
+  jour** : jour · heures · durée, puis projet › groupe › activité › phase ; « Temps de travail | Vacances » en boutons qui cochent les boutons radio
+  d'origine), **1 Quand** (jour ‹ › et date, De – à, Durée), **2 Projet et activité**, **3 Phase** (phase, phase partielle, ouvrage, « Effacer »),
+  **4 Détails** (commentaire — indication « obligatoire pour ce projet » —, facturable, statut) ; au-dessus de chaque liste, le choix en cours ou
+  « à choisir » en rouge et « obligatoire » selon l'affaire choisie ; en-têtes des listes masqués ; Vacances : sections 2 et 3 grisées ; inscription
+  verrouillée : lecture seule. ⚠ Ne pas employer les classes du moteur (`.ph`, `.pa`…) : sections `.sgie-qd|pa|ph|dt`. DeltaSub.html seul garde la
+  fenêtre d'origine.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

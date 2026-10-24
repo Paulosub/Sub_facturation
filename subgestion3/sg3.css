@@ -1430,3 +1430,43 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-wk div i{display:block;width:70%;background:var(--s-nuit)}.sgfh-wk div i.v{background:#e6c66c}
 /* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */
 @container (max-width:1050px){.sgfh-kp{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}}
+
+/* ═══ Temps ▸ fenêtre « Éditer l'inscription » (bloc 28, sg3_inscription.js, 24.10.2026) : en-tête et résumé, puis Quand, Projet et activité,
+   Phase, Détails ; mêmes champs, listes et boutons que la fenêtre du moteur ═══ */
+.dlg.sgie-dlg{width:min(980px,94vw);max-height:94vh}
+.dlg.sgie-dlg .bd{padding-top:6px;padding-bottom:12px}
+.sgie{display:flex;flex-direction:column;gap:9px}
+.sgie-ent{display:flex;align-items:center;gap:16px;background:var(--s-jaune2);border-top:2px solid var(--s-noir);padding:10px 16px}
+.sgie-ini{align-self:stretch;display:flex;align-items:center;font-size:26px;font-weight:700;color:var(--s-nuit);padding-right:16px;border-right:2px solid var(--s-noir);line-height:1}
+.sgie-qui{flex:1;min-width:0}
+.sgie-qui>b{font-size:16px}
+.sgie-res{font-size:13px;font-weight:700;margin-top:3px}
+.sgie-res2{font-size:12px;color:var(--s-gris);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgie-type{flex:none}
+.sgie-s{border-top:1px solid var(--s-filet);padding-top:8px}
+.sgie-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sgie-h .no{display:inline-grid;place-items:center;width:20px;height:20px;background:var(--s-nuit);color:#fff;font-size:11px;font-weight:700;flex:none}
+.sgie-h b{font-size:13px}
+.sgie-l{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 4px 28px}
+.sgie-l>label{font-size:12px;color:var(--s-gris)}
+.sgie-l>label:first-child{min-width:78px}
+.sgie-l .sep{width:14px}
+.sgie-l .u{font-size:12px;color:var(--s-gris)}
+.sgie-l input[type=time]{width:112px}.sgie-l input[type=number]{width:84px}
+.sgie-l>input.inp:not([type]){flex:1;min-width:280px}
+.sgie-jour{display:flex;align-items:center;gap:6px}
+.sgie-jour>span{min-width:240px!important;font-weight:700}
+.sgie-g3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:12px;margin-left:28px}
+.sgie-li{min-width:0;display:flex;flex-direction:column}
+.sgie-lh{display:flex;align-items:baseline;gap:8px;font-size:11.5px;font-weight:700;color:var(--s-gris)}
+.sgie-lh .ob{font-weight:400;color:var(--s-rouge);font-size:11px}
+.sgie-lh .sgie-clr{margin-left:auto;font-size:11px;font-weight:400}
+.sgie-v{font-size:12.5px;font-weight:700;padding:2px 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:21px;border-bottom:2px solid var(--s-noir);margin-bottom:4px}
+.sgie-v.manque{color:var(--s-rouge);font-weight:400;border-bottom-color:var(--s-rouge)}
+.sgie.vac .sgie-pa,.sgie.vac .sgie-ph{opacity:.35;pointer-events:none}
+.sgie-box table.g thead{display:none}
+.sgie-lh .sgie-clr{color:var(--s-gris);text-decoration:underline;text-underline-offset:2px}.sgie-lh .sgie-clr:hover{color:var(--s-noir)}
+.sgie-fact{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--s-noir)!important;min-width:0!important}
+.sgie-statut{font-size:12.5px}
+.dlg.sgie-dlg .ft .btn.sgie-sup{margin-right:auto;border-color:var(--s-rouge);color:var(--s-rouge)}
+.dlg.sgie-dlg .ft .btn.sgie-sup:hover{background:var(--s-rouge)!important;color:#fff!important}

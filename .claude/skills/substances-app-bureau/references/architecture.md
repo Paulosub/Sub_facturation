@@ -111,6 +111,9 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
   glisser, ⌥ copie, `hsOverlap`), mois = `hsMonth`, Journal = `sgfhJournal` (`sg3_fh_vue`) ; en-tête `sgfhTete` (▾ `ch08bMyStaffs`), chiffres
   `sgfhKpis`, couleurs `sgfhCouleurs` (`SGFH_PAL`, `SGFH_COL`), couloirs `sgfhCouloirs`. Archive `h-saisie-archive` (Réglages) = rendu d'origine
   (`FH0`), enveloppes de `go` (drapeau `SGFH.redir`), `hsMark` et clavier. Styles `.sgfh-*` en fin de `sg3.css`.
+- `sg3_inscription.js` (bloc 28, en dernier) : fenêtre de saisie d'une inscription d'heures redessinée — enveloppe de `hsEdit` (moteur) puis
+  `sgieHabiller(dlg)` : éléments du moteur déplacés tels quels (listes `grid`, champs, boutons radio cachés), sections 1 Quand, 2 Projet et
+  activité, 3 Phase, 4 Détails, résumé tenu à jour (`maj`), choix en cours et « obligatoire » au-dessus des listes. Styles `.sgie-*` en fin de `sg3.css`.
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

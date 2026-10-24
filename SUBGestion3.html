@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 24.10.2026 10:16 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.10.2026 10:23 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1439,6 +1439,46 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 .sgfh-wk div i{display:block;width:70%;background:var(--s-nuit)}.sgfh-wk div i.v{background:#e6c66c}
 /* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */
 @container (max-width:1050px){.sgfh-kp{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}}
+
+/* ═══ Temps ▸ fenêtre « Éditer l'inscription » (bloc 28, sg3_inscription.js, 24.10.2026) : en-tête et résumé, puis Quand, Projet et activité,
+   Phase, Détails ; mêmes champs, listes et boutons que la fenêtre du moteur ═══ */
+.dlg.sgie-dlg{width:min(980px,94vw);max-height:94vh}
+.dlg.sgie-dlg .bd{padding-top:6px;padding-bottom:12px}
+.sgie{display:flex;flex-direction:column;gap:9px}
+.sgie-ent{display:flex;align-items:center;gap:16px;background:var(--s-jaune2);border-top:2px solid var(--s-noir);padding:10px 16px}
+.sgie-ini{align-self:stretch;display:flex;align-items:center;font-size:26px;font-weight:700;color:var(--s-nuit);padding-right:16px;border-right:2px solid var(--s-noir);line-height:1}
+.sgie-qui{flex:1;min-width:0}
+.sgie-qui>b{font-size:16px}
+.sgie-res{font-size:13px;font-weight:700;margin-top:3px}
+.sgie-res2{font-size:12px;color:var(--s-gris);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgie-type{flex:none}
+.sgie-s{border-top:1px solid var(--s-filet);padding-top:8px}
+.sgie-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sgie-h .no{display:inline-grid;place-items:center;width:20px;height:20px;background:var(--s-nuit);color:#fff;font-size:11px;font-weight:700;flex:none}
+.sgie-h b{font-size:13px}
+.sgie-l{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 4px 28px}
+.sgie-l>label{font-size:12px;color:var(--s-gris)}
+.sgie-l>label:first-child{min-width:78px}
+.sgie-l .sep{width:14px}
+.sgie-l .u{font-size:12px;color:var(--s-gris)}
+.sgie-l input[type=time]{width:112px}.sgie-l input[type=number]{width:84px}
+.sgie-l>input.inp:not([type]){flex:1;min-width:280px}
+.sgie-jour{display:flex;align-items:center;gap:6px}
+.sgie-jour>span{min-width:240px!important;font-weight:700}
+.sgie-g3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:12px;margin-left:28px}
+.sgie-li{min-width:0;display:flex;flex-direction:column}
+.sgie-lh{display:flex;align-items:baseline;gap:8px;font-size:11.5px;font-weight:700;color:var(--s-gris)}
+.sgie-lh .ob{font-weight:400;color:var(--s-rouge);font-size:11px}
+.sgie-lh .sgie-clr{margin-left:auto;font-size:11px;font-weight:400}
+.sgie-v{font-size:12.5px;font-weight:700;padding:2px 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:21px;border-bottom:2px solid var(--s-noir);margin-bottom:4px}
+.sgie-v.manque{color:var(--s-rouge);font-weight:400;border-bottom-color:var(--s-rouge)}
+.sgie.vac .sgie-pa,.sgie.vac .sgie-ph{opacity:.35;pointer-events:none}
+.sgie-box table.g thead{display:none}
+.sgie-lh .sgie-clr{color:var(--s-gris);text-decoration:underline;text-underline-offset:2px}.sgie-lh .sgie-clr:hover{color:var(--s-noir)}
+.sgie-fact{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--s-noir)!important;min-width:0!important}
+.sgie-statut{font-size:12.5px}
+.dlg.sgie-dlg .ft .btn.sgie-sup{margin-right:auto;border-color:var(--s-rouge);color:var(--s-rouge)}
+.dlg.sgie-dlg .ft .btn.sgie-sup:hover{background:var(--s-rouge)!important;color:#fff!important}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -31366,6 +31406,64 @@ function sgfhResume(D){ const mx=Math.max(8.5,...D.J.map(j=>Math.max(j.h,j.du)))
     if(e.key==='Delete'||e.key==='Backspace'){ if(HS.selSet.size){ e.preventDefault(); hsDelete(); } }
     else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='a'){ e.preventDefault(); const [a,b]=hsRange(); hsSelect(hsEntries(a,b).map(r=>r.ID)); }
     else if(e.key==='Escape') hsSelect([]); }); }
+
+/* ═══ 28. Temps ▸ fenêtre « Éditer l'inscription » redessinée (24.10.2026) ════════════════════════════════════════════════════════════════
+   Demande de Paulo : « revoir le graphisme de Éditer inscription, améliorer et rendre plus intuitif ». C'est la fenêtre du moteur (hsEdit) :
+   mêmes champs, mêmes listes, mêmes règles (affaire, groupe d'activités et activité obligatoires ; phase, ouvrage, commentaire selon l'affaire ;
+   chevauchements refusés ; période verrouillée ; phase partielle terminée ; dernière affaire reprise pour une nouvelle saisie), mêmes boutons
+   (Supprimer, Annuler, OK & continuer, OK & jour suivant, OK). Elle est seulement réorganisée dans l'ordre de la saisie : 1 Quand (jour ‹ ›, de –
+   à, durée), 2 Projet et activité, 3 Phase (phase, phase partielle, ouvrage), 4 Détails (commentaire, facturable, statut). En tête : le
+   collaborateur, Temps de travail | Vacances en boutons, et le résumé de la saisie, tenu à jour (jour, heures, durée, projet, activité, phase).
+   Au-dessus de chaque liste : le choix en cours (ou « à choisir ») et « obligatoire » selon l'affaire choisie. Les éléments du moteur sont
+   déplacés tels quels (leurs gestionnaires restent) ; DeltaSub.html seul garde la fenêtre d'origine. ═══ */
+function sgieHabiller(dlg){ const bd=dlg.querySelector('.bd'), body=bd&&bd.firstElementChild; if(!body||body.children.length<6||body.querySelector('.sgie')) return;
+  const [rowK,top,,form,,bottom]=body.children, radios=[...rowK.querySelectorAll('input[type=radio]')], work=radios[0], hol=radios[1];
+  const g3=top.firstElementChild, b3=bottom.children[0], c3=bottom.children[1]; if(!work||!hol||!g3||!b3||!c3||!form.classList.contains('form')) return;
+  const [Lproj,Lag,Lact]=[...g3.children], [Lsub,Lph,Lsp]=[...b3.children], [cSub,cPh,cSp]=[...c3.children], fc=[...form.children];
+  const ctl=t=>{ const i=fc.findIndex(x=>x.tagName==='LABEL'&&x.textContent.trim()===t); return i>=0?fc[i+1]:null; };
+  const jour=ctl('Jour'), heure=ctl('Heure'), periode=ctl('Période'), desc=ctl('Commentaire'), fact=ctl(''), statut=ctl('Statut');
+  if(!jour||!heure||!periode||!desc||!fact||!statut) return;
+  const [t1,t2]=[...heure.querySelectorAll('input')], per=periode.querySelector('input'), dLbl=jour.querySelector('span'), ro=!!work.disabled;
+  const sid=(()=>{ const n=(rowK.querySelector('span')||{}).textContent||''; const s=DS.all('staff').find(x=>staffName(x)===n.trim()); return s?s.ID:HS.staff; })(), s=DS.get('staff',sid);
+  dlg.classList.add('sgie-dlg');
+  /* en-tête : collaborateur, type de temps, résumé */
+  const bT=h('button',{type:'button'},'Temps de travail'), bV=h('button',{type:'button'},'Vacances'), res=h('div',{class:'sgie-res'}), res2=h('div',{class:'sgie-res2'});
+  const pick=x=>{ if(ro) return; x.checked=true; x.dispatchEvent(new Event('change',{bubbles:true})); maj(); };
+  bT.onclick=()=>pick(work); bV.onclick=()=>pick(hol); if(ro){ bT.disabled=bV.disabled=true; }
+  const ent=h('div',{class:'sgie-ent'},h('span',{class:'sgie-ini'},s?sgtIni(s):'—'),h('div',{class:'sgie-qui'},h('b',{},s?staffName(s):''),res,res2),h('div',{class:'seg sgie-type'},bT,bV));
+  /* listes : titre, choix en cours, « obligatoire », bouton pour effacer */
+  const lst=(t,box,k,clr)=>{ box.classList.add('sgie-box'); box.style.height='108px'; if(clr){ clr.textContent='Effacer'; clr.classList.add('sgie-clr'); }
+    return h('div',{class:'sgie-li','data-k':k},h('div',{class:'sgie-lh'},h('span',{class:'t'},t),h('span',{class:'ob'}),clr||''),h('div',{class:'sgie-v'}),box); };
+  const sec=(n,t,cls,...k)=>h('section',{class:'sgie-s '+cls},h('div',{class:'sgie-h'},h('span',{class:'no'},n),h('b',{},t)),...k);
+  const row=(...k)=>h('div',{class:'sgie-l'},...k), lab=t=>h('label',{},t);
+  jour.classList.add('sgie-jour'); fact.classList.add('sgie-fact'); statut.classList.add('sgie-statut');
+  const nb=h('div',{class:'sgie'},ent,h('span',{style:{display:'none'}},...radios.map(x=>x.closest('label')||x)),
+    sec('1','Quand','sgie-qd',row(lab('Jour'),jour),row(lab('De'),t1,lab('à'),t2,h('span',{class:'sep'}),lab('Durée'),per,h('span',{class:'u'},'h'))),
+    sec('2','Projet et activité','sgie-pa',h('div',{class:'sgie-g3'},lst('Projet',Lproj,'proj'),lst('Groupe d’activités',Lag,'ag'),lst('Activité',Lact,'act'))),
+    sec('3','Phase','sgie-ph',h('div',{class:'sgie-g3'},lst('Phase',Lph,'ph',cPh),lst('Phase partielle',Lsp,'sp',cSp),lst('Ouvrage',Lsub,'sub',cSub))),
+    sec('4','Détails','sgie-dt',row(lab('Commentaire'),desc),row(fact,h('span',{class:'sep'}),lab('Statut'),statut)));
+  body.replaceChildren(nb); body.style.minWidth='0';
+  const sup=[...dlg.querySelectorAll('.ft .btn')].find(b=>b.textContent.trim()==='Supprimer'); if(sup) sup.classList.add('sgie-sup');
+  /* choix en cours d'une liste (ligne sélectionnée) */
+  const choix=box=>{ const tr=box.querySelector('tbody tr.on'); return tr?[...tr.children].map(td=>td.textContent.trim()).filter(Boolean).join(' · '):''; };
+  const maj=()=>{ const vac=hol.checked; nb.classList.toggle('vac',vac); bT.classList.toggle('on',!vac); bV.classList.toggle('on',vac);
+    const pr=choix(Lproj), num=pr.split(' · ')[0], pj=num?DS.all('project').find(p=>String(p.NUMBER)===num):null;
+    const ob={proj:!vac,ag:!vac,act:!vac,ph:!vac&&!!(pj&&pj.ISTIMEPHASEMANDATORY),sp:!vac&&!!(pj&&pj.ISTIMEPHASEMANDATORY)&&Lsp.querySelectorAll('tbody tr').length>0,sub:!vac&&!!(pj&&pj.ISTIMESUBPROJECTMANDATORY)};
+    const boxes={proj:Lproj,ag:Lag,act:Lact,ph:Lph,sp:Lsp,sub:Lsub};
+    nb.querySelectorAll('.sgie-li').forEach(li=>{ const k=li.dataset.k, v=choix(boxes[k]); li.querySelector('.ob').textContent=ob[k]?'obligatoire':'';
+      const e=li.querySelector('.sgie-v'); e.textContent=v||(ob[k]?'à choisir':'—'); e.classList.toggle('manque',!v&&ob[k]); e.title=v; });
+    desc.placeholder=!vac&&pj&&pj.ISTIMEDESCMANDATORY?'Commentaire obligatoire pour ce projet':'Ce qui a été fait (facultatif)';
+    const tps=t1.value&&t2.value?t1.value+' – '+(t2.value==='23:59'?'24:00':t2.value):'', du=per.value?String(+(+per.value).toFixed(2))+' h':'';
+    res.textContent=[(dLbl?dLbl.textContent:'').replace(/\s*\(Semaine \d+\)/,''),tps,du].filter(Boolean).join(' · ');
+    res2.textContent=vac?'Vacances':[pr,choix(Lag),choix(Lact),[choix(Lph),choix(Lsp)].filter(Boolean).join(' · ')].filter(Boolean).join(' › ')||'Projet et activité à choisir'; };
+  nb.addEventListener('click',()=>setTimeout(maj,0)); nb.addEventListener('keyup',()=>setTimeout(maj,0)); nb.addEventListener('input',maj); nb.addEventListener('change',maj);
+  /* chaque liste montre son choix (défilement dans la liste seulement) ; la fenêtre s'ouvre en haut */
+  const voir=()=>{ [Lproj,Lag,Lact,Lph,Lsp,Lsub].forEach(b=>{ const tr=b.querySelector('tbody tr.on'); if(tr) b.scrollTop=Math.max(0,tr.offsetTop-b.clientHeight/2+tr.offsetHeight/2); }); bd.scrollTop=0; };
+  maj(); voir(); setTimeout(voir,0); }
+{ const hsEdit0=hsEdit;
+  hsEdit=function(){ const n0=document.querySelectorAll('.dlg').length, res=hsEdit0.apply(this,arguments), L=document.querySelectorAll('.dlg');
+    if(L.length>n0) try{ sgieHabiller(L[L.length-1]); }catch(e){ console.error(e); }
+    return res; }; }
 </script>
 </body>
 </html>

@@ -845,6 +845,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Même soir : **Projets ▸ Suivi & écarts (`aff-controlling`) déplacé dans Archives** (demande de Paulo) ; Projets = Mes projets, Registre, Tâches ;
   droits inchangés (`SG_VUE_DROIT['aff-controlling']` : chef de projet oui, collaborateur non — le chef de projet voit donc le chapitre Archives) ;
   le menu d'actions du projet qui l'ouvre (`go('aff-controlling')`) marche toujours.
+  Puis **Projets ▸ Registre (`aff-gestion`) déplacé dans Archives « pour le moment »** (demande de Paulo) : Projets = Mes projets + Tâches ; Archives
+  = Suivi & écarts, Registre. Le Registre reste le seul écran du menu qui donne la configuration d'une affaire (phases, activités, tarifs,
+  séances, frais), les intervenants, les subdivisions et les modèles (barre complète dans la page) ; droits inchangés (`SG_VUE_DROIT['aff-gestion']`).
   **Les quatre tuiles du Controlling recopiées dans Administration (même soir, Paulo : « déplacer dans Administration : Contrôle des heures
   d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais — copier ces éléments comme éléments cliquables dans le
   menu de gauche »)** : entrées `adm-ctl-heures`, `adm-ana-heures`, `adm-ctl-frais`, `adm-ana-frais` (ordre : Contrôle des heures, Contrôle des heures

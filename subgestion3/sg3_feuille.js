@@ -17,13 +17,14 @@
      jamais l'une sur l'autre ; répartition par projet à droite. Contenu d'une saisie dans un ordre fixe (même jour, demande de Paulo) : l'affaire
      en tête et en entier, puis les heures, la phase et les remarques (sgfhLignes) ; les réglages « Afficher les activités / phases /
      commentaires » et « Titre : … » ne s'appliquent plus et sont retirés du menu Fonctions.
-   - Journal (semaine, bouton de l'en-tête) : une carte par jour avec ses saisies, pour l'information du collaborateur ; un clic ouvre la fenêtre de
-     saisie habituelle (hsEdit). Choix gardé : sg3_fh_vue.
+   - Journal (semaine) : une carte par jour avec ses saisies, pour l'information du collaborateur ; un clic ouvre la fenêtre de saisie habituelle
+     (hsEdit). Depuis le 24.10.2026 au soir (demande de Paulo « déplace le journal dans le menu de gauche ») : entrée Heures ▸ Journal, vue propre
+     h-journal (la feuille d'heures n'a plus le choix Agenda | Journal) ; icônes des chiffres retirées (« supprime les logos de la feuille d'heures »).
    - L'ancienne feuille d'heures (Réglages ▸ Archives · Ancienne feuille d'heures, h-saisie-archive) a été supprimée définitivement le même soir
      (demande de Paulo) ; une session restée dessus rouvre la feuille d'heures. « Archives · Feuille d'heures » marqué F = l'ancien registre de
      Facturation, autre chose (gardé). ═══ */
 const SGFH_PAL=['#003346','#4CBAB5','#3F4193','#98C21F','#D7860D','#636E7E','#8C6D4F','#B5446E'], SGFH_COL=new Map();
-const SGFH={vue:nxLS.get('sg3_fh_vue','agenda')};
+const SGFH={j:false};   /* j : clic dans la barre ou un menu du Journal — ses go('h-saisie') restent dans le Journal */
 const sgfhEtat=r=>{ const v=+r.TIMELOGSTATECODE||0; return v===3?'ok':v===1?'ref':v===2?'cor':''; };
 const sgfhBadge=r=>{ const e=sgfhEtat(r); return e==='ok'?'<span class="sgfh-st ok" title="Approuvée">'+nxSvg('check')+'</span>':e==='ref'?'<span class="sgfh-st ref" title="Refusée : à corriger">!</span>'
   :e==='cor'?'<span class="sgfh-st cor" title="Corrigée, à contrôler">↺</span>':''; };
@@ -78,19 +79,19 @@ function sgfhDonnees(o){ o=o||{}; const s=DS.get('staff',o.a?o.staff:HS.staff), 
     vac:s&&typeof hrHoliday==='function'?hrHoliday(s,new Date(b.getFullYear(),0,1),b):null,co:sgfhCouleurs(L),O:o.O||HS.o,sansManque:o.prevues===false}; }
 const sgfhManque=(D,j)=>!D.sansManque&&j.ouvre&&j.passe&&!j.L.length&&D.s&&(!D.s.JOININGDATE||String(D.s.JOININGDATE).slice(0,10)<=j.iso)&&!(D.s.QUITTINGDATE&&String(D.s.QUITTINGDATE).slice(0,10)<j.iso);
 /* en-tête : le nom du collaborateur, puis la période ; chiffres de la période */
-function sgfhTete(D){ const s=D.s, sl=ch08bMyStaffs(), dt=x=>dfr(String(x).slice(0,10));
+function sgfhTete(D,lb){ const s=D.s, sl=ch08bMyStaffs(), dt=x=>dfr(String(x).slice(0,10));
   const meta=[s&&s.JOININGDATE?'Au bureau depuis le '+dt(s.JOININGDATE):'',s&&s.TIMELOGCOMPLETEDDATE?'heures complètes jusqu’au '+dt(s.TIMELOGCOMPLETEDDATE):'heures pas encore taguées',
     s&&s.ISTIMELOGFROZEN&&s.TIMELOGFREEZINGDATE?'saisie bloquée jusqu’au '+dt(s.TIMELOGFREEZINGDATE):''].filter(Boolean).join(' · ');
-  return '<div class="sgfh-tete"><div class="sgfh-id"><span class="sgfh-ini">'+nxE(s?sgtIni(s):'—')+'</span><div class="sgfh-nm"><div class="lb">Feuille d’heures</div><h2>'+nxE(s?staffName(s):'Aucun collaborateur')
+  return '<div class="sgfh-tete"><div class="sgfh-id"><span class="sgfh-ini">'+nxE(s?sgtIni(s):'—')+'</span><div class="sgfh-nm"><div class="lb">'+nxE(lb||'Feuille d’heures')+'</div><h2>'+nxE(s?staffName(s):'Aucun collaborateur')
       +(sl.length>1?'<button class="sgfh-chg" data-fh="chg" title="Changer de collaborateur">'+nxSvg('fwd')+'</button>':'')+'</h2><div class="sgfh-meta">'+nxE(meta)+'</div></div></div>'
-    +'<div class="sgfh-per"><span class="lbl">'+nxE(D.lib)+'</span>'+(D.mois?'':'<div class="seg sgfh-vues">'+[['agenda','Agenda'],['journal','Journal']].map(([k,t])=>'<button data-fh="vue" data-k="'+k+'" class="'+(SGFH.vue===k?'on':'')+'">'+t+'</button>').join('')+'</div>')+'</div></div>'; }
+    +'<div class="sgfh-per"><span class="lbl">'+nxE(D.lib)+'</span></div></div>'; }
 function sgfhKpis(D){ const ec=D.hfin-D.du, vac=D.vac?D.vac.saldo:null, per=D.mois?'du mois':'de la semaine';
   return '<div class="nx-kpis sgfh-kp">'
-    +'<div class="nx-kpi" title="'+nxE('Heures saisies '+per+' : '+nxH(D.tot)+' h sur '+nxH(D.duP)+' h prévues')+'"><div class="l">'+nxSvg('clock')+'Heures saisies</div><div class="v">'+nxH(D.tot)+'<small>h</small></div>'+sgfhJauge(D.tot,D.duP)+'</div>'
-    +'<div class="nx-kpi" title="Heures prévues de la période : heures prévues du mois réparties sur ses jours ouvrés"><div class="l">'+nxSvg('cal')+'Heures prévues</div><div class="v">'+nxH(D.duP)+'<small>h</small></div></div>'
-    +'<div class="nx-kpi" title="Heures saisies jusqu’à hier − heures prévues jusqu’à hier"><div class="l">'+nxSvg('trend')+'Écart à ce jour</div><div class="v '+(ec<-.25?'sgfh-neg':ec>.25?'sgfh-pos':'')+'">'+(D.du?(ec>0?'+':'')+nxH(ec)+'<small>h</small>':'—')+'</div></div>'
-    +'<div class="nx-kpi" title="Solde de vacances de l’année (droit, report, vacances saisies)"><div class="l">'+nxSvg('cal')+'Vacances restantes</div><div class="v">'+(vac!=null?nxH(vac)+'<small>h</small>':'—')+'</div></div>'
-    +'<div class="nx-kpi" title="Projets sur lesquels des heures sont saisies dans la période"><div class="l">'+nxSvg('folder')+'Projets</div><div class="v">'+D.co.ids.length+'</div></div></div>'; }
+    +'<div class="nx-kpi" title="'+nxE('Heures saisies '+per+' : '+nxH(D.tot)+' h sur '+nxH(D.duP)+' h prévues')+'"><div class="l">Heures saisies</div><div class="v">'+nxH(D.tot)+'<small>h</small></div>'+sgfhJauge(D.tot,D.duP)+'</div>'
+    +'<div class="nx-kpi" title="Heures prévues de la période : heures prévues du mois réparties sur ses jours ouvrés"><div class="l">Heures prévues</div><div class="v">'+nxH(D.duP)+'<small>h</small></div></div>'
+    +'<div class="nx-kpi" title="Heures saisies jusqu’à hier − heures prévues jusqu’à hier"><div class="l">Écart à ce jour</div><div class="v '+(ec<-.25?'sgfh-neg':ec>.25?'sgfh-pos':'')+'">'+(D.du?(ec>0?'+':'')+nxH(ec)+'<small>h</small>':'—')+'</div></div>'
+    +'<div class="nx-kpi" title="Solde de vacances de l’année (droit, report, vacances saisies)"><div class="l">Vacances restantes</div><div class="v">'+(vac!=null?nxH(vac)+'<small>h</small>':'—')+'</div></div>'
+    +'<div class="nx-kpi" title="Projets sur lesquels des heures sont saisies dans la période"><div class="l">Projets</div><div class="v">'+D.co.ids.length+'</div></div></div>'; }
 function sgfhRepartition(D,titre){ const ids=D.co.ids, mx=Math.max(1,...ids.map(id=>D.co.h.get(id))), vac=sgfhSomme(D.L.filter(r=>r.ISHOLIDAY));
   return '<div class="sgfh-h4">'+nxE(titre)+'</div><div class="sgfh-proj">'+(ids.length||vac?ids.map(id=>{ const c=D.co.c(id), hh=D.co.h.get(id);
       return '<div class="r" title="'+nxE(sgfhNum(id)+' '+sgfhTit(id))+'"><i class="sgfh-dot" style="background:'+c+'"></i><span class="t"><b>'+nxE(sgfhNum(id))+'</b> '+nxE(sgfhTit(id))+'</span><b>'+nxH(hh)+' h</b><div class="bar"><i style="width:'+(hh/mx*100)+'%;background:'+c+'"></i></div></div>'; }).join('')
@@ -155,7 +156,6 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
     const w=h('div',{class:'sgfh'}); m.append(w); this._w=w;
     w.addEventListener('click',e=>{ const t=e.target.closest('[data-fh]'); if(!t||!w.contains(t)) return; const f=t.dataset.fh;
       if(f==='chg') popMenu(t,ch08bMyStaffs().map(s=>({t:staffName(s),chk:s.ID===HS.staff,fn:()=>{ HS.staff=s.ID; HS.sel=null; HS.selSet.clear(); try{ localStorage.setItem('ds_h_staff',s.ID); }catch(_){} setTools(this.tools()); this.draw(); }})));
-      else if(f==='vue'){ SGFH.vue=t.dataset.k; nxLS.set('sg3_fh_vue',SGFH.vue); this.draw(); }
       else if(f==='ed'){ const r=DS.get('timelog',t.dataset.id); if(r) hsEdit(r); }
       else if(f==='new') hsEdit(null,{date:new Date(t.dataset.d+'T00:00')}); });
     /* clic droit hors d'une saisie de l'agenda (celles-ci : menu du moteur, voir draw) : ligne du mois = mêmes actions qu'une saisie ; carte du
@@ -170,10 +170,10 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
       else L=sgfhFonctions();
       e.preventDefault(); sgMenuAt(e.clientX,e.clientY,L,ligne); });
     this.draw(); };
-  V.draw=function(){ const w=this._w; if(!w||!w.isConnected) return;
-    const D=sgfhDonnees(), jr=HS.mode==='sem'&&SGFH.vue==='journal', cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
+  V.draw=function(){ const w=this._w; if(!w||!w.isConnected) return; if(this.journal) HS.mode='sem';   /* le Journal est hebdomadaire */
+    const D=sgfhDonnees(), jr=!!this.journal, cal=h('div',{class:'sgfh-cal'+(jr?' jr':'')}), side=h('aside',{class:'sgfh-side'}), haut=h('div',{class:'sgfh-haut'});
     const tl=document.getElementById('tools'), ou=h('div',{class:'sgfh-outils'});
-    haut.innerHTML=sgfhTete(D)+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
+    haut.innerHTML=sgfhTete(D,jr?'Journal':'Feuille d’heures')+sgfhKpis(D); haut.append(ou); w.replaceChildren(haut,h('div',{class:'sgfh-corps'},cal,side));
     /* barre d'outils du moteur sous les chiffres (demande de Paulo) : l'élément #tools lui-même, rendu à la barre du haut en quittant l'écran */
     if(tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
     if(jr) cal.innerHTML=sgfhJournal(D); else if(HS.mode==='sem'){ hsWeek(cal); sgfhHabiller(cal,D);
@@ -182,6 +182,13 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
         b.oncontextmenu=e=>{ const p0=popMenu; popMenu=(a,items)=>sgMenuAt(a.x,a.y,[...items,'-',sousMenu]); try{ return c0.call(b,e); } finally{ popMenu=p0; } }; }); }
     else hsMonth(cal);
     side.innerHTML=jr?sgfhResume(D):sgfhRepartition(D,D.mois?'Répartition du mois':'Répartition de la semaine')+sgfhLegende(D.mois?'':SGFH_GESTES); };
+  /* Heures ▸ Journal (24.10.2026 au soir, demande de Paulo « déplace le journal dans le menu de gauche ») : même vue que la feuille (rendu, gestes,
+     rafraîchissement du moteur, clic droit), en cartes par jour ; barre sans Semaine | Mois (le Journal est hebdomadaire) */
+  const J=VIEWS['h-journal']=Object.create(V); J.journal=true;
+  J.tools=function(){ return V.tools.call(this).filter(g=>!(Array.isArray(g)&&g.length===1&&g[0]&&g[0].nodeType===1&&/Semaine/.test(g[0].textContent)&&/Mois/.test(g[0].textContent))); };
+  J.render=function(m){ HS.mode='sem'; return V.render.call(this,m); };
+  /* les boutons de la barre et les menus du moteur rouvrent « h-saisie » (go) : dans le Journal, ils y restent */
+  document.addEventListener('click',e=>{ if(VIEW&&VIEW.id==='h-journal'&&e.target.closest('#tools,.menu')){ SGFH.j=true; setTimeout(()=>{ SGFH.j=false; },0); } },true);
   /* avant tout changement d'écran, la barre d'outils revient à sa place ; l'ancienne feuille d'heures (h-saisie-archive), supprimée le 24.10.2026,
      rouvre la feuille d'heures (session, récents) */
-  const g0=go; go=function(v,...a){ sgfhOutilsRendre(); return g0.call(this,v==='h-saisie-archive'?'h-saisie':v,...a); }; }
+  const g0=go; go=function(v,...a){ sgfhOutilsRendre(); return g0.call(this,v==='h-saisie-archive'?'h-saisie':v==='h-saisie'&&SGFH.j&&VIEW&&VIEW.id==='h-journal'?'h-journal':v,...a); }; }

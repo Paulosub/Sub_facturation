@@ -832,6 +832,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`sgfhCouloirs`, quart d'heure minimal compris), jamais l'une sur l'autre ; ligne de l'heure actuelle ; répartition par projet à droite + rappel des
   gestes. **Journal** (semaine) : une carte par jour (anneau saisies / prévues, saisies lisibles, + = nouvelle saisie ce jour, clic = `hsEdit`), résumé à
   droite.
+  **Journal dans le menu de gauche, icônes retirées (24.10.2026 au soir, Paulo : « déplace le journal dans le menu de gauche et supprime les logos de
+  la feuille d'heures »)** : Heures = Feuille d'heures + **Journal** (`h-journal` = `Object.create(VIEWS['h-saisie'])`, `journal:true` : même rendu,
+  rafraîchissement et clic droit ; en-tête « Journal » ; barre sans Semaine | Mois, `HS.mode` mis à « sem ») ; le choix Agenda | Journal de l'en-tête
+  et `sg3_fh_vue` supprimés (la feuille = agenda ou mois) ; les boutons de la barre et les menus du moteur qui rouvrent `go('h-saisie')` restent dans
+  le Journal (clic capturé dans `#tools` / `.menu`, drapeau `SGFH.j`, enveloppe de `go`) ; icônes des cinq chiffres (`sgfhKpis`) retirées.
+  Copie d'avant : `subgestion3/_backup_20261024_2059_avant_journal_menu/`.
   **« Fonctions » retiré de la barre et passé au clic droit (24.10.2026 au soir, Paulo : « supprimer les Fonctions et les ajouter au clic droit »)** :
   barre = Semaine | Mois, Aujourd'hui, semaines, année ; `sgfhFonctions()` = menu ⚙ du moteur filtré (`sgfhMenuSans`) — clic droit sur une saisie
   de l'agenda : menu du moteur (son `popMenu` remplacé le temps de l'appel par `sgMenuAt`) + sous-menu « Fonctions » ; ligne du Mois : Approuver,
@@ -1110,6 +1116,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
      (`ckEchelle`), infobulles de définition sur les cartes et les barres, couleurs d'années complétées (`ckYC`, `CK_YC_PLUS`). **Charges &
      dépenses** : aucune source dans l'app (seul le coût de revient RH de SUBGestion 3 a des salaires et frais généraux, estimés) → section sans
      chiffres, en attente de la décision de Paulo (masquer, ou saisir les charges annuelles dans un petit tableau).
+- **Dossier de l'aperçu `/tmp/subgestion_apercu` (port 7797) nettoyé le 24.10.2026 (demande de Paulo)** : seulement `SUBGestion3.html` et
+  `base_test.json.gz` ; les maquettes (`proposition_*.html`, copies complètes de l'app) et l'ancienne copie NAS supprimées, leurs scripts gardés dans
+  `subgestion3/_backup_20261024_maquettes_apercu/` (ignoré par git) — pour remontrer une maquette, recopier SUBGestion3.html sous un autre nom et y
+  injecter le script. Le stockage du navigateur intégré peut être vidé (fermeture de l'app) : recharger la base de test (skill de vérification).
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

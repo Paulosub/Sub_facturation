@@ -69,7 +69,7 @@ function sgSauvAff(enCours){ const f=document.querySelector('#nx-who .who span')
   const e=SAUV.etat, vieux=!e.quand||Date.now()-e.quand>48*3600e3, ko=!enCours&&sgSauvEchec();
   f.textContent=enCours?'Sauvegarde…':ko?'Sauvegarde en échec':(e.quand?(sgSauvAJour()?'Sauvegardée ':'Modifiée · sauvée ')+sgDepuis(e.quand):'Jamais sauvegardée');
   f.className=ko?'echec':vieux?'alerte':'';
-  f.title=ko?'Sauvegarde automatique en échec : '+e.erreur+'\n'+(e.quand?'Dernière sauvegarde réussie : '+new Date(e.quand).toLocaleString('fr-CH')+(e.lieu?' — '+e.lieu:''):'Aucune sauvegarde réussie')+'\nCliquer : Réglages ▸ Données & sauvegarde'
+  f.title=ko?'Sauvegarde automatique en échec : '+e.erreur+'\n'+(e.quand?'Dernière sauvegarde réussie : '+new Date(e.quand).toLocaleString('fr-CH')+(e.lieu?' — '+e.lieu:''):'Aucune sauvegarde réussie')+'\nCliquer : Configuration ▸ Données & sauvegarde'
     :e.quand?'Dernière sauvegarde : '+new Date(e.quand).toLocaleString('fr-CH')+(e.lieu?' — '+e.lieu:''):'';
   f.onclick=ko?()=>go('nx-data'):null;
   const w=document.getElementById('nx-who'); if(w) w.classList.toggle('sg-echec',ko);
@@ -179,7 +179,7 @@ VIEWS['nx-reunir']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Analys
     const r=sgCarnetReste(sgCarnetOriginal()), hs=sgHeuresAReprendre(), hOk=hs.filter(x=>x.ok), hKo=hs.filter(x=>!x.ok&&!x.doublon), dbl=hs.filter(x=>x.doublon);
     const cs=D.c.filter(c=>!c.annule), sans=cs.filter(c=>!sgProjetDuContrat(c)), avec=cs.length-sans.length, fait=nxLS.get('sg3_reunion',null);
     const projOpts=DS.all('project').sort((a,b)=>cmp(b.NUMBER,a.NUMBER)).map(p=>'<option value="'+p.ID+'">'+nxE(projLabel(p))+'</option>').join('');
-    const html='<div class="sg-split">'+sgIntro('Réglages','Réunir les registres','Une seule référence par donnée : l’<b>Annuaire</b> pour les adresses, la <b>Feuille d’heures</b> pour les heures, et chaque contrat relié à son projet. Rien n’est effacé : les anciens registres restent consultables dans Réglages ▸ Archives.'
+    const html='<div class="sg-split">'+sgIntro('Configuration','Réunir les registres','Une seule référence par donnée : l’<b>Annuaire</b> pour les adresses, la <b>Feuille d’heures</b> pour les heures, et chaque contrat relié à son projet. Rien n’est effacé : les anciens registres restent consultables dans Configuration ▸ Archives.'
         ,'<div class="sg-figs"><div class="sg-fig"><div class="n">'+r.ent.length+'</div><div class="t">entités du carnet à reprendre</div></div><div class="sg-fig"><div class="n">'+hOk.length+'</div><div class="t">saisies de temps à reprendre</div></div><div class="sg-fig"><div class="n">'+avec+'/'+cs.length+'</div><div class="t">contrats reliés</div></div>'+(fait?'<div class="sg-fig"><div class="n" style="font-size:16px">'+nxE(new Date(fait.le).toLocaleDateString('fr-CH'))+'</div><div class="t">dernière réunion</div></div>':'')+'</div>')
       +'<div><div class="nx-grid">'
       +nxCard('c12','Reprendre maintenant','<div class="b"><p style="margin:0 0 12px;font-weight:300">La base est d’abord sauvegardée. Seuls les éléments absents de la référence sont ajoutés ; les doublons sont ignorés.</p><button class="nx-btn pri" data-fn="go"'+((r.ent.length||hOk.length)?'':' disabled')+'>'+nxSvg('group')+'Réunir : '+r.ent.length+' entités, '+r.adr.length+' adresses, '+hOk.length+' saisies</button></div>')
@@ -193,7 +193,7 @@ VIEWS['nx-reunir']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Analys
 
 /* ── Données & sauvegarde (remplace l'écran de sg3.js) : sauvegarde automatique, restauration, export, outils ── */
 VIEWS['nx-data']={ render(m){ const li=DS.linfo||{}, n=t=>DS.all(t).length, cmds=nxMenuCmds(), e=SAUV.etat;
-  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur. La base de gestion est sauvegardée automatiquement après chaque modification ; Facturation a sa propre sauvegarde.')
+  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur. La base de gestion est sauvegardée automatiquement après chaque modification ; Facturation a sa propre sauvegarde.')
     +'<div><div class="nx-kpis">'+nxKpi('db','Dernière sauvegarde',e.quand?sgDepuis(e.quand):'jamais',e.quand?(e.ou==='serveur'?'Serveur · Sauvegarde Gestion':e.lieu||''):'à faire',null,null,1)+nxKpi('folder','Projets',String(n('project')))+nxKpi('contacts','Contacts',String(n('contactowner')))+nxKpi('clock','Saisies de temps',num(n('timelog'),0))+'</div>'
     +'<div class="nx-grid">'+nxCard('c6','Sauvegarde automatique','<div class="b"><dl class="nx-dl"><dt>État</dt><dd id="sg-sv-etat">…</dd><dt>Destination</dt><dd id="sg-sv-dest">…</dd>'+(e.erreur?'<dt>Dernier incident</dt><dd style="color:var(--s-rouge)">'+nxE(e.erreur)+'</dd>':'')+'</dl>'
         +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="nx-btn pri" data-fn="now">'+nxSvg('save')+'Sauvegarder maintenant</button><button class="nx-btn" data-fn="dir">'+nxSvg('folder')+'Choisir un dossier</button></div></div>')
@@ -903,7 +903,7 @@ async function sgATraiter(){ const G=[], td=today(), me=nxMe(), now=new Date();
     if(al.length) G.push({k:'re',t:'Projets en alerte de rentabilité',ico:'coins',go:'nx-renta',items:al.map(x=>({t:x.p.NUMBER+' · '+(x.p.TITLE||''),s:x.al.map(a=>a[1]).join(' · '),ref:'p:'+x.p.ID}))});
   }
   if(D&&sgAdmin()){ const r=sgCarnetReste(sgCarnetOriginal()), hs=sgHeuresAReprendre().filter(x=>x.ok).length;
-    if(r.ent.length||hs) G.push({k:'rg',t:'Registres en double à réunir',ico:'group',go:'nx-reunir',items:[{t:r.ent.length+' adresse(s) du carnet, '+hs+' saisie(s) de temps de Facturation',s:'Réglages ▸ Réunir les registres'}]}); }
+    if(r.ent.length||hs) G.push({k:'rg',t:'Registres en double à réunir',ico:'group',go:'nx-reunir',items:[{t:r.ent.length+' adresse(s) du carnet, '+hs+' saisie(s) de temps de Facturation',s:'Configuration ▸ Réunir les registres'}]}); }
   sgValidationsATraiter(G);
   if(sgFinVerrou()) for(let i=G.length-1;i>=0;i--) if(/^(fe|cs|re)$/.test(G[i].k)) G.splice(i,1);
   SG_AT={n:G.reduce((s,g)=>s+(/^(fe|cs|tr|hm|va|vr)$/.test(g.k)?g.items.length:1),0),groupes:G}; sgSide(); return SG_AT; }
@@ -1191,7 +1191,7 @@ function sgCodeDlg(changer){ const I1=h('input',{class:'inp',type:'password',aut
     if(I1.value!==I2.value){ toast('Les deux saisies ne correspondent pas.',true); return false; }
     await sgCodeDefinir(I1.value); toast(changer?'Code d’accès changé.':'Code d’accès défini : '+sgAcces().doms.length+' domaine(s) protégé(s).'); go('nx-acces'); }}]}); }
 VIEWS['nx-acces']={ render(m){ const a=sgAcces(), doms=SG_DOM.filter(d=>d.k!=='accueil');
-  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Admin','Accès protégé','Un code d’accès à ce poste pour les parties sensibles : honoraires, factures, rentabilité, réglages. Reverrouillage automatique après une période sans activité.',
+  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Admin','Accès protégé','Un code d’accès à ce poste pour les parties sensibles : honoraires, factures, rentabilité, administration, configuration. Reverrouillage automatique après une période sans activité.',
       '<div class="sg-figs"><div class="sg-fig"><div class="n">'+(a.hash?(sgOuvert()?'Ouvert':'Verrouillé'):'—')+'</div><div class="t">'+(a.hash?'code défini le '+dfr(diso(new Date(a.depuis||Date.now()))):'aucun code')+'</div></div></div>')
     +'<div><div class="nx-grid">'
     +nxCard('c6','Code d’accès','<div class="b"><p style="margin:0 0 14px;font-weight:300">'+(a.hash?'Un code protège les domaines cochés ci-contre.':'Aucun code : toute l’app est accessible sur ce poste.')+'</p><div style="display:flex;gap:8px;flex-wrap:wrap">'
@@ -1348,7 +1348,7 @@ const SG_DROITS_LIB=[
   ['factures','Factures','Sur les projets visibles.',{aucune:'Aucun accès',lecture:'Lecture',validation:'Édition, à valider par l’administrateur',edition:'Édition libre (et validation)'}],
   ['finances','Finances','Rentabilité, cockpits, controlling.',{aucune:'Aucun accès',projets:'Rentabilité de ses projets (sans les taux)',toutes:'Toutes les finances du bureau'}],
   ['bibliotheque','Bibliothèque','Modèles, documents types.',{lecture:'Lecture',ecriture:'Lecture et modification'}],
-  ['reglages','Réglages','Comptes, sauvegardes, paramètres du bureau.',{non:'Aucun accès',oui:'Accès complet'}]];
+  ['reglages','Configuration','Chapitres Configuration et Admin : comptes, sauvegardes, paramètres du bureau.',{non:'Aucun accès',oui:'Accès complet'}]];
 const SG_TOUT=Object.fromEntries(Object.entries(SG_DROITS).map(([k,v])=>[k,v[v.length-1]]));
 const SG_PROFILS={admin:'Administrateur',cdp:'Chef de projet',collab:'Collaborateur'};
 let SG_ACC={profil:'admin',droits:{...SG_TOUT},staffs:[],projets:null,auth:false};
@@ -2325,7 +2325,7 @@ function sgApportDlg(a,sid){ const old=a||{}, I=(k,v,o)=>h('input',Object.assign
     const C=sgCommCond(s,get('DATE')), L=['Conditions : '+sgCommTexte(C)+' — selon le '+C.src+'.'].map(nxE);
     if(p){ const R=sgRenta(p,fxData()), ta=sgTravauxTTC(R.cs), trav=get('TRAVAUX')!==''?+get('TRAVAUX'):ta, t=get('TAUX')!==''?+get('TAUX'):sgCommTaux(C,trav), dbl=sgApports().filter(x=>String(x.PROJECT_ID)===String(p.ID)&&String(x.ID)!==String(old.ID));
       L.push(R.cs.length?nxE('Contrats d’honoraires reliés : '+R.cs.length+' · honoraires CHF '+sgChf(R.contratHT)+' HT · facturé CHF '+sgChf(R.factHT)+' HT'+(ta?' · travaux CHF '+sgChf(ta)+' TTC selon le calcul d’honoraires':' · montant des travaux absent du calcul d’honoraires : à saisir ci-dessus')+'.')
-        :'<span style="color:var(--s-orange)">Aucun contrat Facturation relié à ce projet : honoraires et facturé à zéro (Réglages ▸ Réunir les registres).</span>');
+        :'<span style="color:var(--s-orange)">Aucun contrat Facturation relié à ce projet : honoraires et facturé à zéro (Configuration ▸ Réunir les registres).</span>');
       L.push('<b>Taux appliqué : '+sgPcT(t)+' %</b> — commission prévue CHF '+sgChf(Math.max(R.contratHT,R.factHT)*t/100)+', acquise à ce jour CHF '+sgChf(R.factHT*t/100)+'.');
       if(dbl.length) L.push('<span style="color:var(--s-orange)">⚠ Projet déjà enregistré comme apport de '+nxE(dbl.map(x=>staffName(DS.get('staff',x.STAFF_ID))).join(', '))+'.</span>'); }
     info.innerHTML=L.join('<br>'); };

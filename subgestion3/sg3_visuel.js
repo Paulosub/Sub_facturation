@@ -255,7 +255,7 @@ function sgVisuelApercu(k){
 VIEWS['nx-visuel']={ render(m){ const v=sgVisuel();
   const carte=([k,n,d])=>nxCard('c4',nxE(n)+(k===v?' <span class="nx-tag s2" style="margin-left:8px">sur ce poste</span>':''),'<div class="b">'+sgVisuelApercu(k)
     +'<p style="margin:14px 0 16px;line-height:1.5">'+nxE(d)+'</p>'+(k===v?'<button class="nx-btn" disabled>Visuel utilisé</button>':'<button class="nx-btn pri" data-vis="'+k+'">'+nxSvg('visuel')+'Utiliser ce visuel</button>')+'</div>');
-  nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Visuel de l’app','Choisissez l’apparence de SUBGestion sur ce poste. Seul l’affichage change : données, documents PDF et impressions restent les mêmes. Le choix vaut pour ce navigateur ; chaque poste choisit le sien.')
+  nxPage(m,'<div class="sg-split">'+sgIntro('Configuration','Visuel de l’app','Choisissez l’apparence de SUBGestion sur ce poste. Seul l’affichage change : données, documents PDF et impressions restent les mêmes. Le choix vaut pour ce navigateur ; chaque poste choisit le sien.')
     +'<div><div class="nx-grid">'+SG_VISUELS.map(carte).join('')+'</div><p class="nx-empty" style="padding-top:20px">Les cinq propositions de refonte sont à l’essai. Pour passer d’un visuel à l’autre : bouton '
     +'<span style="display:inline-flex;vertical-align:-3px;width:16px;height:16px">'+nxSvg('visuel')+'</span> du pied du menu, ou ⌘K « Visuel ».</p></div></div>');
   m.querySelectorAll('[data-vis]').forEach(b=>b.onclick=()=>{ sgVisuelAppliquer(b.dataset.vis,true); toast('Visuel : '+sgVisuelNom(b.dataset.vis)+'.'); }); } };

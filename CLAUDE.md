@@ -875,6 +875,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   administrateurs, code d'accès sur ce poste (`sgFigs('admin')`). Libellés des écrans « Admin » (`lbl`, `sgIntro`) ; visuel Mac : gris foncé
   #48484A ; Studio nocturne : carte sable. Réglages garde Données & sauvegarde, Visuel de l'app, Sauvegarde Facturation, Réunir les registres, le
   sous-menu Heures, les archives et les registres Facturation. Copie d'avant : `subgestion3/_backup_20261024_1927_avant_chapitre_admin/`.
+  **Chapitre « Réglages » renommé « Configuration » (24.10.2026, demande de Paulo)** : menu, vue d'ensemble, fil d'Ariane, en-têtes des écrans
+  (Données & sauvegarde, Visuel de l'app, Réunir les registres), menu « ⋯ », messages « Configuration ▸ … » (sauvegarde, À traiter, contrats non
+  reliés, écran « base vide » de `construire.py`), libellé du droit `reglages` dans Profils et accès (« Configuration » : chapitres Configuration et
+  Admin ; la liste du serveur n'a que les clés). Clé `reglages` inchangée (`SG_DOM`, `dom-reglages`, `data-vdom`, droits, code d'accès). Gardés :
+  « Réglages de facturation » (Facturation (ancien)), bouton « Réglages » de la fenêtre Contrôler, mentions du menu « Réglages » du moteur
+  DeltaSub. Dans ce fichier, « Réglages ▸ … » écrit avant cette date désigne désormais « Configuration ▸ … » (sauf les écrans passés dans Admin).
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

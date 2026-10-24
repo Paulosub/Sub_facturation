@@ -179,7 +179,7 @@ def main():
     s = remplacer(s, "let last='aff-gestion';", "let last='nx-home';", quoi='vue de départ')
     s = remplacer(s, "b.append(h('b',{},'DeltaSub'),", "b.append(h('b',{},'SUBGestion'),", quoi='écran « base vide »')
     s = remplacer(s, "'La base locale est vide. Importez une base DeltaSub (.json.gz), créée à partir d’une sauvegarde par '",
-                  "'La base de ce navigateur est vide. Importez une sauvegarde (.json.gz), créée depuis Réglages ▸ Données & sauvegarde ou par '", quoi='texte base vide')
+                  "'La base de ce navigateur est vide. Importez une sauvegarde (.json.gz), créée depuis Configuration ▸ Données & sauvegarde ou par '", quoi='texte base vide')
     s = remplacer(s, "' ou par Fichier ▸ Exporter la base locale.'", "'.'", quoi='texte base vide (fin)')
     s = remplacer(s, 'fermez les autres onglets DeltaSub', 'fermez les autres onglets SUBGestion ou DeltaSub', quoi='message base bloquée')
     s = remplacer(s, "'Ce module de Deltaproject est en cours de reproduction dans DeltaSub.'", "'Cet écran n’est pas encore disponible.'", quoi='écran provisoire')

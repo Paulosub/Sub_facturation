@@ -164,11 +164,12 @@ const SG_DOM=[
   {k:'admin',t:'Admin',ico:'wrench',nav:0,d:'Comptes et droits des utilisateurs, accès protégé, administration, paramètres et préférences de l’app.',items:[
     {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',hero:1,d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'},
     {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
-    {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances, Admin et Réglages.'},
+    {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances, Admin et Configuration.'},
     {v:'config',t:'Administration',ico:'settings',d:'Paramètres, propriétés, droits et listes.'},
     {v:'nx-parametres',t:'Paramètres système',ico:'settings',d:'Pays, monnaie et TVA, présentation des adresses, protection des documents.'},
     {v:'nx-preferences',t:'Préférences',ico:'person',d:'Langue des documents, initiales et signature de l’utilisateur du poste.'}]},
-  {k:'reglages',t:'Réglages',ico:'settings',nav:0,d:'Données, sauvegardes, visuel de l’app, modules Heures et registres de l’app Facturation.',items:[
+  /* chapitre « Réglages » renommé « Configuration » le 24.10.2026 (demande de Paulo) ; clé reglages inchangée */
+  {k:'reglages',t:'Configuration',ico:'settings',nav:0,d:'Données, sauvegardes, visuel de l’app, modules Heures et registres de l’app Facturation.',items:[
     {v:'nx-data',t:'Données & sauvegarde',ico:'db',hero:1,d:'Export et import de la base de gestion.'},
     {v:'fx-backup',t:'Sauvegarde Facturation',ico:'save',d:'Contrats, factures et registres Facturation : export, import, sauvegarde automatique.'},
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
@@ -298,7 +299,7 @@ function nxNewMenu(el){ popMenu(el,[
 function nxMenuCmds(){ try{ return ch10aModel(ch10aCtx(false)).filter(m=>m.k!=='Edit'&&m.k!=='menuView')
     .map(m=>({t:m.titre,items:m.items.filter(it=>it!=='-'&&!it.dis).map(it=>({t:String(it.t).replace(/\s*…$/,''),fn:()=>ch10aRun(it.act,it.arg)}))})).filter(m=>m.items.length); }
   catch(e){ console.error(e); return []; } }
-function nxMoreMenu(el){ const its=[{t:'Réglages',fn:()=>go('dom-reglages')},{t:'Données & sauvegarde',fn:()=>go('nx-data')},{t:'Sauvegarde Facturation',fn:()=>go('fx-backup')},'-',
+function nxMoreMenu(el){ const its=[{t:'Configuration',fn:()=>go('dom-reglages')},{t:'Données & sauvegarde',fn:()=>go('nx-data')},{t:'Sauvegarde Facturation',fn:()=>go('fx-backup')},'-',
     {t:'Exporter la base de gestion',fn:()=>lbExport()},{t:'Importer une base de gestion',fn:()=>lbImportDlg(false)}];
   nxMenuCmds().forEach(m=>{ its.push('-'); m.items.forEach(x=>its.push({t:x.t,fn:x.fn})); });
   its.push('-',{t:'Raccourcis clavier',fn:nxKeysHelp}); popMenu(el,its); }
@@ -606,7 +607,7 @@ VIEWS['nx-collab']={
 /* ═══ Données & sauvegarde ═══ */
 VIEWS['nx-data']={
   render(m){ const li=DS.linfo||{}, n=t=>DS.all(t).length, cmds=nxMenuCmds();
-    const html='<div class="sg-split">'+sgIntro('Réglages','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur (sans serveur). Exportez-les régulièrement : base de gestion ci-contre, facturation dans « Sauvegarde Facturation ».')
+    const html='<div class="sg-split">'+sgIntro('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur (sans serveur). Exportez-les régulièrement : base de gestion ci-contre, facturation dans « Sauvegarde Facturation ».')
       +'<div><div class="nx-kpis">'+nxKpi('folder','Projets',String(n('project')),null,null,null,1)+nxKpi('contacts','Contacts',String(n('contactowner')),n('contact')+' adresses')+nxKpi('clock','Saisies de temps',num(n('timelog'),0))+nxKpi('users','Membres',String(n('staff')))+'</div>'
       +'<div class="nx-grid">'+nxCard('c6','Base de gestion','<div class="b"><p style="margin:0 0 14px;font-weight:300">L’export télécharge toute la base (projets, contacts, temps, chantier, finances, bibliothèque) dans un fichier <b>.json.gz</b>. L’import <b>remplace</b> la base de ce navigateur.</p>'
         +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-fn="exp">'+nxSvg('export')+'Exporter</button><button class="nx-btn" data-fn="imp">'+nxSvg('import')+'Importer</button></div></div>')

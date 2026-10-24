@@ -751,7 +751,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Préférences** (`nx-preferences` → `ch08cPreferences`, tous). Fabrique commune `sgVueFenetre(o)` (sg3_plus.js, avant Profils et accès) : écran qui
   dit à quoi sert la fenêtre et l'ouvre — d'office quand on vient du menu, pas à la reprise de session au démarrage (`sgFenPret`, 4 s) ; droits du
   menu par `SG_VUE_DROIT`. Liste des affaires : bouton « Fiche projet … » de l'en-tête retiré (enveloppe de `sgCtxSync` pour `affd-gestion` ; un clic
-  sur l'affaire déjà choisie rouvre la fiche fermée). Chapitre « Administration » demandé puis remplacé par ces ajouts (Paulo, même soir).
+  sur l'affaire déjà choisie rouvre la fiche fermée). Chapitre « Administration » demandé puis remplacé par ces ajouts (Paulo, même soir) ; créé finalement le 24.10.2026 (« Admin », voir plus bas).
   **Chapitre Temps : visuel « épuré » (23.10.2026, bloc 25, `subgestion3/sg3_temps.js` + fin de `sg3.css`)** — demande de Paulo « dans le menu Temps
   revoir le visuel de toutes les pages » ; proposition A choisie sur maquette parmi 3 (A épuré, B fiche du collaborateur, C pleine largeur), « mais
   améliore la colonne collaborateur ». Styles limités à `html[data-vdom="temps"]` (Feuille d'heures, Rapports de temps, Disponibilités, Notes de frais,
@@ -867,6 +867,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Chapitre « Temps » renommé « Heures » (24.10.2026, demande de Paulo)** : libellé du menu, de la vue d'ensemble, du fil d'Ariane, du sous-menu
   de Réglages et de l'en-tête de Situation des heures ; clé `temps` inchangée (`SG_DOM`, `data-vdom="temps"`, styles, droits, code d'accès).
   Libellés « Temps de l'équipe », « Temps ce mois », « Temps par mois »… (Équipe, Cockpit, fiches) gardés.
+  **Chapitre « Admin » (24.10.2026, demande de Paulo « créer un nouveau chapitre admin dans le menu de gauche » ; contenu choisi : administration de
+  l'app)** : domaine `admin` de `SG_DOM` juste avant Réglages (icône `wrench`) = Gestion des utilisateurs (ex-Équipe), Profils et accès, Accès
+  protégé, Administration (`config`), Paramètres système, Préférences (ex-Réglages). Droits : ceux de Réglages (`sgVueOk` : `dk==='admin'` → droit
+  « réglages », en plus des `SG_VUE_DROIT` propres — userAdmin, admin, sgAdmin). Code d'accès : `admin` dans `SG_ACC_DEF.doms` ; réglages déjà
+  enregistrés : Admin protégé si Réglages l'est, jusqu'au premier choix (`adminVu`, comme `rhVu`). Vue d'ensemble : comptes activés,
+  administrateurs, code d'accès sur ce poste (`sgFigs('admin')`). Libellés des écrans « Admin » (`lbl`, `sgIntro`) ; visuel Mac : gris foncé
+  #48484A ; Studio nocturne : carte sable. Réglages garde Données & sauvegarde, Visuel de l'app, Sauvegarde Facturation, Réunir les registres, le
+  sous-menu Heures, les archives et les registres Facturation. Copie d'avant : `subgestion3/_backup_20261024_1927_avant_chapitre_admin/`.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

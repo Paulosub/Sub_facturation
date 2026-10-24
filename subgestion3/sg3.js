@@ -104,8 +104,7 @@ const SG_DOM=[
     {v:'collab-actuels',t:'Membres',ico:'users',hero:1,d:'L’équipe actuelle du bureau.'},
     {v:'collab-tous',t:'Tous les membres',ico:'group',d:'Membres actuels et anciens.'},
     {v:'collab-anciens',t:'Anciens membres',ico:'list',d:'Membres ayant quitté le bureau.'},
-    {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'},
-    {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'}]},   /* ajouté le 23.10.2026 (demande de Paulo) */
+    {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'}]},   /* Gestion des utilisateurs : chapitre Admin depuis le 24.10.2026 */
   /* Ressources humaines (07.10.2026) : gestion du personnel, réservée à l'administrateur (droits « équipe : taux » et « réglages ») */
   {k:'rh',t:'Ressources humaines',ico:'rh',d:'Gestion du personnel : contrats de travail, occupation et effectif, heures dues et vacances, bouclement annuel, coût de revient et planification.',items:[
     {v:'nx-occupation',t:'Occupation et effectif',ico:'gauge',hero:1,d:'Taux d’occupation de chacun mois par mois, effectif et ETP, charge de travail du mois et échéances RH (temps d’essai, préavis, fins de contrat).'},
@@ -160,15 +159,19 @@ const SG_DOM=[
     {v:'tpl-labelTemplates',t:'Étiquettes',ico:'tag',d:'Planches d’étiquettes.'},
     {v:'tpl-images',t:'Images',ico:'image',d:'Images utilisées dans les documents.'},
     {v:'tpl-backgrounds',t:'Fonds de page',ico:'image',d:'Arrière-plans des documents imprimés.'}]},
-  {k:'reglages',t:'Réglages',ico:'settings',nav:0,d:'Données, sauvegardes, administration et registres de l’app Facturation.',items:[
+  /* chapitre « Admin » (24.10.2026, demande de Paulo) : l'administration de l'app, retirée d'Équipe (Gestion des utilisateurs) et de Réglages ;
+     mêmes droits que Réglages (sgVueOk : droit « réglages ») et protégé par le code d'accès comme lui (SG_ACC_DEF, sgAcces) */
+  {k:'admin',t:'Admin',ico:'wrench',nav:0,d:'Comptes et droits des utilisateurs, accès protégé, administration, paramètres et préférences de l’app.',items:[
+    {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',hero:1,d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'},
+    {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
+    {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances, Admin et Réglages.'},
+    {v:'config',t:'Administration',ico:'settings',d:'Paramètres, propriétés, droits et listes.'},
+    {v:'nx-parametres',t:'Paramètres système',ico:'settings',d:'Pays, monnaie et TVA, présentation des adresses, protection des documents.'},
+    {v:'nx-preferences',t:'Préférences',ico:'person',d:'Langue des documents, initiales et signature de l’utilisateur du poste.'}]},
+  {k:'reglages',t:'Réglages',ico:'settings',nav:0,d:'Données, sauvegardes, visuel de l’app, modules Heures et registres de l’app Facturation.',items:[
     {v:'nx-data',t:'Données & sauvegarde',ico:'db',hero:1,d:'Export et import de la base de gestion.'},
     {v:'fx-backup',t:'Sauvegarde Facturation',ico:'save',d:'Contrats, factures et registres Facturation : export, import, sauvegarde automatique.'},
-    {v:'config',t:'Administration',ico:'settings',d:'Paramètres, propriétés, droits et listes.'},
-    {v:'nx-parametres',t:'Paramètres système',ico:'settings',d:'Pays, monnaie et TVA, présentation des adresses, protection des documents.'},   /* ajouté le 23.10.2026 (demande de Paulo) */
-    {v:'nx-preferences',t:'Préférences',ico:'person',d:'Langue des documents, initiales et signature de l’utilisateur du poste.'},   /* ajouté le 23.10.2026 (demande de Paulo) */
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'},
-    {v:'nx-profils',t:'Profils et accès',ico:'users',d:'Droits des chefs de projet et des collaborateurs ; profil de chaque compte.'},
-    {v:'nx-acces',t:'Accès protégé',ico:'pin',d:'Code d’accès pour Facturation, Finances et Réglages.'},
     /* sous-menu « Heures » (24.10.2026, demande de Paulo : ces modules quittent le chapitre Heures, ex-Temps, pour le menu Réglages) ; dom = domaine d'origine,
        qui garde leurs droits, leur code d'accès et leur visuel (nxDomVue) : les collaborateurs y ont toujours accès */
     {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
@@ -471,6 +474,8 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
     const wk=mine.filter(r=>tlKey(r)>=k0).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=mine.filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     const ex=me?DS.by('projectcost','STAFF_ID',me.ID).filter(r=>+r.ISREFUNDABLE&&!+r.ISREFUNDED):[];
     return [f(nxH(wk)+' h','ma semaine'),f(nxH(mo)+' h','mon mois'),f(ex.length,'dépenses à rembourser'),f(nxCHF(ex.reduce((s,r)=>s+pcAmount(r),0)),'CHF à rembourser')]; }
+  if(k==='admin'){ const U=typeof sgComptes==='function'?sgComptes():[], on=U.filter(u=>+u.ISENABLED), a=typeof sgAcces==='function'?sgAcces():{};
+    return [f(on.length,'comptes activés'),f(typeof sgProfilDe==='function'?on.filter(u=>sgProfilDe(u)==='admin').length:'—','administrateurs'),f(a.hash?'Défini':'Aucun','code d’accès sur ce poste')]; }
   if(k==='equipe'){ const st=DS.all('staff'); return [f(st.filter(s=>+s.ISACTIVE).length,'membres actifs'),f(st.filter(s=>!+s.ISACTIVE).length,'anciens membres')]; }
   if(k==='rh'&&typeof sgRhChiffres==='function') return sgRhChiffres(f);
   if(k==='facturation'){ await fxEnsure(); const D=fxData(); if(!D) return []; const y=String(new Date().getFullYear()), op=D.f.filter(fxUnpaid);

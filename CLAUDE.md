@@ -1116,6 +1116,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Clavier sur `window` en capture (avant les raccourcis de document : « / » n'ouvre pas la palette ici). État `SGA` : contact `sg3_annu_id`, filtres
   `sg3_annu_type` / `sg3_annu_role`. L'écran d'origine reste dans DeltaSub.html (seul) ; l'ancien `VIEWS['nx-contact']` de sg3.js est remplacé.
   Copie d'avant : `subgestion3/_backup_20261021_2133_avant_annuaire_D/`, `SUBGestion3_backup_20261021_2133_avant_annuaire_D.html`.
+- **Contacts ▸ Listes de diffusion et Catégories au graphisme de l'app (25.10.2026, bloc 29, `subgestion3/sg3_contacts.js` + styles `.sgd-*` en
+  fin de `sg3.css`)** — demandes de Paulo « améliorer la liste de diffusion pour avoir le même graphisme que le reste de l'app », « modifier catégorie
+  pour avoir le même graphisme que le reste de l'app ». `VIEWS['adr-groupes']` et `VIEWS['adr-props']` remplacés (page commune `sgdPage`) :
+  colonne épurée de 300 px comme les pages Heures (pastille d'initiales, nom, nombre d'adresses ; listes rangées « Toutes les adresses », « Listes
+  intelligentes », « Listes statiques » — « Mes favoris » a son écran, Archives ▸ Favoris — ; catégories rangées par groupe de propriétés), bandeau
+  jaune pâle de la Feuille d'heures (`sgfh-tete` : monogramme, filet, type ou groupe, nom en grand ; critères d'une liste intelligente en clair,
+  `sgdCriteres` ; boutons Nouvelle liste ▾, Modifier la liste, Supprimer la liste), chiffres sans icônes (Adresses, Sociétés, Personnes, Avec
+  courriel + jauge, Sans courriel), puis la liste d'adresses du moteur `adrList` inchangée (Modifier, Prévisualisation, Fonctions, recherche,
+  sélection multiple, détail de l'adresse) habillée : barre en texte, tableau à filet noir, onglets du détail soulignés. Barre `#nx-sub` masquée
+  sur ces pages (`html:has(#main .sgd)`). Choix gardé : `sg3_dif_sel`, `sg3_cat_sel`. Fonctions et données inchangées (création, modification,
+  suppression d'une liste comme le moteur ; les adresses ne sont jamais supprimées) ; le bouton « Retirer la propriété des adresses sélectionnées »
+  des Catégories du moteur, qui ne faisait rien, n'est pas repris (retrait : détail de l'adresse ▸ Propriétés). DeltaSub.html seul garde les
+  écrans d'origine. Copie d'avant : `subgestion3/_backup_20261025_1504_avant_admin_regroupe/` (sg3.css, construire.py).
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

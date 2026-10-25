@@ -1537,3 +1537,47 @@ html.sgfh-on #nx-sub{display:none!important}
 .sg-admctl .sg-admctl-ok svg{width:15px;height:15px;stroke:#5d7a10;stroke-width:2.6;vertical-align:-3px}
 .sg-admctl td .sgfh-st{width:14px;height:14px;font-size:9px;vertical-align:-2px;display:inline-grid}
 .sg-admctl .sg-admctl-ref::before{content:"!"}
+
+/* ═══ Contacts ▸ Listes de diffusion et Catégories : le graphisme de l'app (bloc 29, sg3_contacts.js, 25.10.2026) — colonne épurée,
+   bandeau jaune pâle, chiffres, barre d'outils en texte, tableau à filet noir, détail de l'adresse en onglets soulignés ═══ */
+html:has(#main .sgd) #nx-sub{display:none!important}
+.sgd{display:flex;gap:24px;height:100%;min-height:0;padding:16px 24px 14px;box-sizing:border-box;overflow:hidden;container-type:inline-size}
+.sgd-col{flex:0 0 300px;width:300px;display:flex;flex-direction:column;min-height:0;border-top:2px solid var(--s-noir)}
+.sgd-ct{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:11px 12px 9px;border-bottom:2px solid var(--s-noir)}
+.sgd-ct b{font-size:13px;font-weight:700}.sgd-ct span{font-size:11px;color:var(--s-gris)}
+.sgd-l{flex:1;min-height:0;overflow-y:auto}
+.sgd-gt{font-size:11px;font-weight:700;color:var(--s-gris);padding:16px 12px 6px;border-bottom:1px solid var(--s-filet)}
+.sgd-it{display:flex;align-items:center;gap:12px;width:100%;min-width:0;height:52px;padding:0 12px;border:0;border-bottom:1px solid var(--s-filet);background:#fff;font:inherit;text-align:left;cursor:pointer;color:inherit}
+.sgd-it:hover{background:var(--s-jaune3)}
+.sgd-it.on{background:var(--s-jaune2);box-shadow:inset 3px 0 0 var(--s-nuit)}
+.sgd-it .sgt-ini{min-width:36px}
+.sgd-m{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.sgd-haut{flex:none}
+.sgd-haut .sgfh-meta{max-width:760px;line-height:1.45}
+.sgd-btns{gap:6px}
+.sgd-tab{flex:1;min-height:0;display:flex;flex-direction:column;container-type:inline-size}
+/* tableau du moteur (adrList) */
+.sgd-tab .split{gap:0}
+.sgd-tab .col{border:0!important;background:#fff!important;box-shadow:none!important}
+.sgd-tab .pane{border:0!important;border-top:2px solid var(--s-noir)!important;background:#fff!important;box-shadow:none!important}
+.sgd-tab .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:0 0 6px;border:0!important;background:transparent!important}
+.sgd-tab .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
+.sgd-tab .ph2 .ib:first-child{padding-left:0}
+.sgd-tab .ph2 .ib:hover{background:var(--s-jaune3)!important}
+.sgd-tab .ph2 .ib:disabled{color:#b9b9b6}
+.sgd-tab .ph2 .cnt{font-size:12px;color:var(--s-gris);margin-right:10px}
+.sgd-tab table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important}
+.sgd-tab table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;height:34px;padding:0 8px!important;font-size:12.5px}
+.sgd-tab table.g tbody tr:hover td{background:var(--s-jaune3)!important}
+.sgd-tab table.g tbody tr.on td{background:var(--s-jaune2)!important;color:var(--s-noir)!important}
+/* détail de l'adresse : onglets soulignés (comme le tableau de bord du projet), fond blanc, filet noir */
+.sgd-tab .split>.col:last-child{border-top:2px solid var(--s-noir)!important;margin-top:14px}
+.sgd-tab .split>.col:last-child>div:first-child{padding:0!important;border-bottom:1px solid var(--s-filet)!important;text-align:left!important}
+.sgd-tab .split>.col:last-child .seg{border:0;gap:24px;background:transparent}
+.sgd-tab .split>.col:last-child .seg button{border:0;background:none;padding:10px 0 9px;font-weight:400;font-size:13px;color:var(--s-gris);border-bottom:3px solid transparent}
+.sgd-tab .split>.col:last-child .seg button:hover{color:var(--s-noir);background:none}
+.sgd-tab .split>.col:last-child .seg button.on{color:var(--s-noir);font-weight:700;border-bottom-color:var(--s-nuit);background:none}
+.sgd-tab .det{padding:12px 0!important}
+.sgd-tab .det .kv b{color:var(--s-gris);font-weight:700;font-size:11.5px}
+.sgd-tab .det .empty{color:var(--s-gris);padding:18px 0;text-align:left}
+@container (max-width:1050px){.sgd-col{flex-basis:240px;width:240px}}

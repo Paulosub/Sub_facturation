@@ -1376,8 +1376,9 @@ const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion
   'nx-valider':()=>sgDroit('contrats','validation')||sgDroit('factures','validation'),'fx-cockpit':()=>sgDroit('finances','projets'),'fx-cockpit2':()=>sgDroit('finances','projets'),
   'nx-renta':()=>sgDroit('finances','projets'),'nx-profils':()=>sgAdmin()};
 function sgVueOk(v){ if(!v||sgAdmin()) return true;
-  if(nxDomVue(v)==='administration') return false;   /* chapitre Administration (24.10.2026) : administrateur seulement */
   if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
+  if(nxDomVue(v)==='administration') return false;   /* écrans propres au chapitre Administration (contrôle et analyse des heures, 24.10.2026) : administrateur seulement ;
+     ses sous-menus Équipe, Ressources humaines, Facturation et Finances (25.10.2026) gardent les droits de leur chapitre d'origine (dom) */
   if(SG_VUE_DROIT[v]) return !!SG_VUE_DROIT[v]();
   const dk=nxDomVue(v);
   if(dk==='reglages'||dk==='admin') return sgDroit('reglages','oui');   /* Admin (24.10.2026) : ses écrans viennent de Réglages et gardent son droit */

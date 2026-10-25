@@ -98,38 +98,11 @@ const SG_DOM=[
     {v:'soum',t:'Appels d’offres',ico:'mail',d:'Soumissions aux entreprises, offres et comparatifs.'},
     {v:'coco',t:'Contrôle des coûts',ico:'coins',d:'Budget, adjudications, avenants, factures et coût final prévisible.'},
     {v:'fx-pv-chantier',t:'PV de chantier',ico:'pv',d:'Procès-verbaux des séances de chantier : annotation, envoi, PDF.'}]},
-  {k:'equipe',t:'Équipe',ico:'users',d:'Les membres du bureau et le temps de l’équipe.',items:[
-    {v:'collab-actuels',t:'Membres',ico:'users',hero:1,d:'L’équipe actuelle du bureau.'},
-    {v:'collab-tous',t:'Tous les membres',ico:'group',d:'Membres actuels et anciens.'},
-    {v:'collab-anciens',t:'Anciens membres',ico:'list',d:'Membres ayant quitté le bureau.'},
-    {v:'mg-heures',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'}]},   /* Gestion des utilisateurs : chapitre Admin depuis le 24.10.2026 */
+  {k:'equipe',t:'Équipe',menu:0,ico:'users',d:'Les membres du bureau et le temps de l’équipe.',items:[]},   /* retiré du menu le 25.10.2026 : ses écrans sont dans Administration (sous-menu, dom:'equipe') */
   /* Ressources humaines (07.10.2026) : gestion du personnel, réservée à l'administrateur (droits « équipe : taux » et « réglages ») */
-  {k:'rh',t:'Ressources humaines',ico:'rh',d:'Gestion du personnel : contrats de travail, occupation et effectif, heures dues et vacances, bouclement annuel, coût de revient et planification.',items:[
-    {v:'nx-occupation',t:'Occupation et effectif',ico:'gauge',hero:1,d:'Taux d’occupation de chacun mois par mois, effectif et ETP, charge de travail du mois et échéances RH (temps d’essai, préavis, fins de contrat).'},
-    {v:'nx-contrats-travail',t:'Contrats de travail',ico:'contrat',d:'Engagements, avenants annuels, fins de contrat et décomptes de sortie, selon la CCT vaudoise.'},
-    {v:'nx-cct',t:'Heures dues et vacances',ico:'cal',d:'Heures dues et droit aux vacances selon la CCT vaudoise, jours fériés vaudois.'},
-    {v:'nx-bouclement',t:'Bouclement annuel',ico:'check',d:'Heures supplémentaires et soldes de vacances : validation, report sur l’année suivante.'},
-    {v:'nx-coutrevient',t:'Coût de revient',ico:'coins',d:'Coût horaire de chaque collaborateur : salaire, charges, frais généraux, heures productives ; taux internes.'},
-    {v:'mg-planning',t:'Planification RH',ico:'cal',d:'Disponibilité, occupation et attribution des collaborateurs aux projets ; marge et encaissements prévus.'},
-    {v:'mg-collab',t:'Suivi RH',ico:'person',d:'Durées prévues, heures à effectuer, soldes.'}]},
-  {k:'facturation',t:'Facturation',ico:'receipt',d:'Contrats d’honoraires SIA, factures et acomptes, documents PDF du bureau et cockpit.',items:[
-    {v:'fx-contrats',t:'Contrats d’honoraires',ico:'contrat',hero:1,d:'Liste des contrats : versions, envoi, signature, offre PDF.'},
-    {v:'fx-calchono',t:'Calcul d’honoraires',ico:'calc',d:'Calcul selon SIA 102, contrat et offre d’honoraires.'},
-    {v:'fx-factures',t:'Factures',ico:'receipt',d:'Factures, acomptes, échéances et paiements.'},
-    {v:'fx-saisie',t:'Saisie de facture',ico:'edit',d:'Établir une facture ou un acompte à partir d’un contrat.'},
-    {v:'nx-valider',t:'À valider',ico:'check',d:'Contrats et factures préparés par les chefs de projet : validation par l’administrateur.'},
-    {v:'fx-cockpit',t:'Cockpit',ico:'gauge',d:'Tableau de bord des honoraires et de la facturation.'},
-    {v:'fx-cockpit2',t:'Cockpit analytique',ico:'trend',d:'Analyses et tendances de la facturation.'}]},
-  {k:'finances',t:'Finances',ico:'wallet',d:'Contrats et facturation des projets, rentabilité, clients et indicateurs du bureau.',items:[
-    {v:'nx-renta',t:'Rentabilité des projets',ico:'coins',hero:1,d:'Honoraires, coût de revient, facturé, encaissé et marge de chaque projet, avec alertes.'},
-    {v:'nx-apports',t:'Apports de projets',ico:'person',d:'Commission des collaborateurs sur les mandats qu’ils apportent : projets concernés, taux selon le contrat de travail, versements et évolution du solde à verser.'},
-    {v:'mg-controlling',t:'Controlling',ico:'trend',d:'Controlling : membres, projets, marges.'},
-    {v:'mg-contrats',t:'Contrats des projets',ico:'contrat',d:'Contrats, sous-traitants, échéancier et encaissements.'},
-    {v:'mg-factures',t:'Facturation des projets',ico:'receipt',d:'Factures d’honoraires, encaissements et QR.'},
-    {v:'fact-controle',t:'Suivi des factures',ico:'check',d:'Factures planifiées, envoyées, rappels, payées.'},
-    {v:'mg-mo',t:'Clients',ico:'building',d:'Suivi par maître d’ouvrage.'},
-    {v:'mg-reporting',t:'Indicateurs',ico:'analyse',d:'Chiffres-clés, heures supplémentaires, comparaisons.'},
-    {v:'mg-genres',t:'Types de projets',ico:'tag',d:'Genres de projets et leur paramétrage.'}]},
+  {k:'rh',t:'Ressources humaines',menu:0,ico:'rh',d:'Gestion du personnel : contrats de travail, occupation et effectif, heures dues et vacances, bouclement annuel, coût de revient et planification.',items:[]},   /* retiré du menu le 25.10.2026 : ses écrans sont dans Administration (sous-menu, dom:'rh') */
+  {k:'facturation',t:'Facturation',menu:0,ico:'receipt',d:'Contrats d’honoraires SIA, factures et acomptes, documents PDF du bureau et cockpit.',items:[]},   /* retiré du menu le 25.10.2026 : ses écrans sont dans Administration (sous-menu, dom:'facturation') */
+  {k:'finances',t:'Finances',menu:0,ico:'wallet',d:'Contrats et facturation des projets, rentabilité, clients et indicateurs du bureau.',items:[]},   /* retiré du menu le 25.10.2026 : ses écrans sont dans Administration (sous-menu, dom:'finances') */
   /* Chapitres PROVISOIRES (13.10.2026) : les deux modules de l'ancien logiciel du bureau tels que le moteur les reproduit — offres
      d'honoraires et contrats (« Honoraires (ancien) »), facturation (« Facturation (ancien) ») —, pour les comparer avec le chapitre
      Facturation et décider des améliorations — bloc 18 de sg3_plus.js. Pour les retirer : supprimer ces deux domaines et le bloc 18. */
@@ -150,13 +123,42 @@ const SG_DOM=[
      mêmes droits que Réglages (sgVueOk : droit « réglages ») et protégé par le code d'accès comme lui (SG_ACC_DEF, sgAcces) */
   /* chapitre « Administration » (24.10.2026, demande de Paulo « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle
      des heures ; les collaborateurs n'auront pas accès à ces informations ») : administrateur seulement (sgVueOk), protégé par le code d'accès */
-  {k:'administration',t:'Administration',ico:'gauge',nav:0,d:'Contrôle et analyse des heures du bureau — réservé à l’administrateur.',items:[
+  {k:'administration',t:'Administration',ico:'gauge',nav:0,d:'Contrôle et analyse des heures, équipe, ressources humaines, facturation et finances du bureau.',items:[
     /* les quatre tuiles du Controlling (Archives ▸ Suivi & écarts) recopiées en entrées du menu (24.10.2026, demande de Paulo) : sg3_controle.js */
     {v:'adm-ctl-heures',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et valider les saisies d’heures d’une affaire.'},
     {v:'adm-ana-heures',t:'Critères d’analyse des heures',ico:'analyse',d:'Analyser les heures d’une affaire par collaborateur, activité et phase ; rapports horaires et pièces jointes à la facture.'},
     {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
     {v:'adm-ctl-frais',t:'Contrôle des frais',ico:'coins',d:'Vérifier et valider les frais d’une affaire.'},
-    {v:'adm-ana-frais',t:'Critères d’analyse des frais',ico:'analyse',d:'Analyser les frais d’une affaire par collaborateur, groupe de frais et frais ; rapports et pièces jointes à la facture.'}]},
+    {v:'adm-ana-frais',t:'Critères d’analyse des frais',ico:'analyse',d:'Analyser les frais d’une affaire par collaborateur, groupe de frais et frais ; rapports et pièces jointes à la facture.'},
+    /* Équipe, Ressources humaines, Facturation et Finances regroupés ici en sous-menus (25.10.2026, demandes de Paulo « glisser … dans admin ») :
+       dom = chapitre d'origine (droits, code d'accès, visuel) ; les chapitres d'origine restent dans SG_DOM, hors menu (menu:0, items vides) */
+    {v:'collab-actuels',grp:'Équipe',dom:'equipe',t:'Membres',ico:'users',d:'L’équipe actuelle du bureau.'},
+    {v:'collab-tous',grp:'Équipe',dom:'equipe',t:'Tous les membres',ico:'group',d:'Membres actuels et anciens.'},
+    {v:'collab-anciens',grp:'Équipe',dom:'equipe',t:'Anciens membres',ico:'list',d:'Membres ayant quitté le bureau.'},
+    {v:'mg-heures',grp:'Équipe',dom:'equipe',t:'Temps de l’équipe',ico:'clock',d:'Heures de tous les membres par projet.'},
+    {v:'nx-occupation',grp:'Ressources humaines',dom:'rh',t:'Occupation et effectif',ico:'gauge',d:'Taux d’occupation de chacun mois par mois, effectif et ETP, charge de travail du mois et échéances RH (temps d’essai, préavis, fins de contrat).'},
+    {v:'nx-contrats-travail',grp:'Ressources humaines',dom:'rh',t:'Contrats de travail',ico:'contrat',d:'Engagements, avenants annuels, fins de contrat et décomptes de sortie, selon la CCT vaudoise.'},
+    {v:'nx-cct',grp:'Ressources humaines',dom:'rh',t:'Heures dues et vacances',ico:'cal',d:'Heures dues et droit aux vacances selon la CCT vaudoise, jours fériés vaudois.'},
+    {v:'nx-bouclement',grp:'Ressources humaines',dom:'rh',t:'Bouclement annuel',ico:'check',d:'Heures supplémentaires et soldes de vacances : validation, report sur l’année suivante.'},
+    {v:'nx-coutrevient',grp:'Ressources humaines',dom:'rh',t:'Coût de revient',ico:'coins',d:'Coût horaire de chaque collaborateur : salaire, charges, frais généraux, heures productives ; taux internes.'},
+    {v:'mg-planning',grp:'Ressources humaines',dom:'rh',t:'Planification RH',ico:'cal',d:'Disponibilité, occupation et attribution des collaborateurs aux projets ; marge et encaissements prévus.'},
+    {v:'mg-collab',grp:'Ressources humaines',dom:'rh',t:'Suivi RH',ico:'person',d:'Durées prévues, heures à effectuer, soldes.'},
+    {v:'fx-contrats',grp:'Facturation',dom:'facturation',t:'Contrats d’honoraires',ico:'contrat',d:'Liste des contrats : versions, envoi, signature, offre PDF.'},
+    {v:'fx-calchono',grp:'Facturation',dom:'facturation',t:'Calcul d’honoraires',ico:'calc',d:'Calcul selon SIA 102, contrat et offre d’honoraires.'},
+    {v:'fx-factures',grp:'Facturation',dom:'facturation',t:'Factures',ico:'receipt',d:'Factures, acomptes, échéances et paiements.'},
+    {v:'fx-saisie',grp:'Facturation',dom:'facturation',t:'Saisie de facture',ico:'edit',d:'Établir une facture ou un acompte à partir d’un contrat.'},
+    {v:'nx-valider',grp:'Facturation',dom:'facturation',t:'À valider',ico:'check',d:'Contrats et factures préparés par les chefs de projet : validation par l’administrateur.'},
+    {v:'fx-cockpit',grp:'Facturation',dom:'facturation',t:'Cockpit',ico:'gauge',d:'Tableau de bord des honoraires et de la facturation.'},
+    {v:'fx-cockpit2',grp:'Facturation',dom:'facturation',t:'Cockpit analytique',ico:'trend',d:'Analyses et tendances de la facturation.'},
+    {v:'nx-renta',grp:'Finances',dom:'finances',t:'Rentabilité des projets',ico:'coins',d:'Honoraires, coût de revient, facturé, encaissé et marge de chaque projet, avec alertes.'},
+    {v:'nx-apports',grp:'Finances',dom:'finances',t:'Apports de projets',ico:'person',d:'Commission des collaborateurs sur les mandats qu’ils apportent : projets concernés, taux selon le contrat de travail, versements et évolution du solde à verser.'},
+    {v:'mg-controlling',grp:'Finances',dom:'finances',t:'Controlling',ico:'trend',d:'Controlling : membres, projets, marges.'},
+    {v:'mg-contrats',grp:'Finances',dom:'finances',t:'Contrats des projets',ico:'contrat',d:'Contrats, sous-traitants, échéancier et encaissements.'},
+    {v:'mg-factures',grp:'Finances',dom:'finances',t:'Facturation des projets',ico:'receipt',d:'Factures d’honoraires, encaissements et QR.'},
+    {v:'fact-controle',grp:'Finances',dom:'finances',t:'Suivi des factures',ico:'check',d:'Factures planifiées, envoyées, rappels, payées.'},
+    {v:'mg-mo',grp:'Finances',dom:'finances',t:'Clients',ico:'building',d:'Suivi par maître d’ouvrage.'},
+    {v:'mg-reporting',grp:'Finances',dom:'finances',t:'Indicateurs',ico:'analyse',d:'Chiffres-clés, heures supplémentaires, comparaisons.'},
+    {v:'mg-genres',grp:'Finances',dom:'finances',t:'Types de projets',ico:'tag',d:'Genres de projets et leur paramétrage.'}]},
   /* « Admin » renommé « Réglages » le 24.10.2026 (demande de Paulo) ; clé admin inchangée */
   {k:'admin',t:'Réglages',ico:'wrench',nav:0,d:'Comptes et droits des utilisateurs, accès protégé, administration, paramètres et préférences de l’app.',items:[
     {v:'nx-utilisateurs',t:'Gestion des utilisateurs',ico:'person',hero:1,d:'Comptes de l’app : identifiants, mots de passe, fonctions et droits.'},
@@ -360,7 +362,7 @@ const fxClient=(D,f)=>{ const c=D.c.find(x=>x.id===f.contrat_id); return f.cl_no
 const fxUnpaid=f=>f.statut!=='Payée'&&!f.date_paiement&&!/annul/i.test(f.statut||'');
 /* appelé par le cadre quand Facturation change d'onglet (ouverture d'un contrat depuis la liste, etc.) */
 function sgFxOnTab(tab){ const v='fx-'+tab; if(!VIEW||!/^fx-/.test(VIEW.id)||VIEW.id===v||!NX_VIEW[v]) return; go(v,'sync'); }
-function sgFxHome(name){ if(!VIEW||!/^fx-/.test(VIEW.id)) return; const m={'hub-affaires':'dom-chantier','hub-collabs':'dom-temps','hub-heures':'dom-temps','hub-admin':'dom-reglages'}; go(m[name]||'dom-facturation'); }
+function sgFxHome(name){ if(!VIEW||!/^fx-/.test(VIEW.id)) return; const m={'hub-affaires':'dom-chantier','hub-collabs':'dom-temps','hub-heures':'dom-temps','hub-admin':'dom-reglages'}; go(m[name]||'dom-administration'); }   /* Facturation : dans Administration depuis le 25.10.2026 */
 SG_DOM.forEach(d=>d.items.filter(it=>/^fx-/.test(it.v)).forEach(it=>{ const tab=it.v.slice(3);
   VIEWS[it.v]={ render(m,arg){ document.getElementById('fx-layer').classList.add('on');
       const sync=arg==='sync'&&!NX.fromHist;
@@ -493,7 +495,8 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
     const wk=mine.filter(r=>tlKey(r)>=k0).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=mine.filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
     const ex=me?DS.by('projectcost','STAFF_ID',me.ID).filter(r=>+r.ISREFUNDABLE&&!+r.ISREFUNDED):[];
     return [f(nxH(wk)+' h','ma semaine'),f(nxH(mo)+' h','mon mois'),f(ex.length,'dépenses à rembourser'),f(nxCHF(ex.reduce((s,r)=>s+pcAmount(r),0)),'CHF à rembourser')]; }
-  if(k==='administration'){ const now=new Date(), L=DS.all('timelog').filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()&&!+r.ISHOLIDAY);
+  if(k==='administration'){ if(typeof sgAdmin==='function'&&!sgAdmin()) return [];   /* chiffres du contrôle des heures : administrateur seulement */
+    const now=new Date(), L=DS.all('timelog').filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()&&!+r.ISHOLIDAY);
     const c=s=>L.filter(r=>(+r.TIMELOGSTATECODE||0)===s).length;
     return [f(nxH(L.reduce((t,r)=>t+(+r.TIMEPERIOD||0),0))+' h','heures du bureau ce mois'),f(c(0)+c(2),'inscriptions à contrôler ce mois'),f(c(1),'refusées ce mois')]; }
   if(k==='admin'){ const U=typeof sgComptes==='function'?sgComptes():[], on=U.filter(u=>+u.ISENABLED), a=typeof sgAcces==='function'?sgAcces():{};
@@ -509,9 +512,10 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
   return []; }
 SG_DOM.filter(d=>d.k!=='accueil').forEach(d=>{ VIEWS['dom-'+d.k]={ render(m){
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), main=its.filter(it=>!it.reg), reg=its.filter(it=>it.reg);
+    const libres=main.filter(it=>!it.grp), grps=[...new Set(main.filter(it=>it.grp).map(it=>it.grp))];   /* sous-menus : une rubrique chacun (25.10.2026) */
     const tile=it=>'<div class="sg-tile'+(it.hero?' hero':'')+'" data-go="'+it.v+'"><div class="ti">'+nxSvg(it.ico)+'<h3>'+nxE(it.t)+'</h3></div><p>'+nxE(it.d||'')+'</p><div class="ft">'+(it.reg?'<span class="nx-tag fx">Registre Facturation</span>':'')+nxSvg('arrow','go')+'</div></div>';
     const html='<div class="sg-split">'+sgIntro(d.t,nxE(d.t),nxE(d.d||''),'<div class="sg-figs" id="sg-figs"></div>')
-      +(its.length?'':'<div class="nx-empty">Aucun module pour le moment.</div>')+'<div class="sg-tiles">'+main.map(tile).join('')+(reg.length?'<div class="sg-gt">Registres et archives de l’app Facturation</div>'+reg.map(tile).join(''):'')+'</div></div>';
+      +(its.length?'':'<div class="nx-empty">Aucun module pour le moment.</div>')+'<div class="sg-tiles">'+libres.map(tile).join('')+grps.map(g=>'<div class="sg-gt">'+nxE(g)+'</div>'+main.filter(it=>it.grp===g).map(tile).join('')).join('')+(reg.length?'<div class="sg-gt">Registres et archives de l’app Facturation</div>'+reg.map(tile).join(''):'')+'</div></div>';
     nxPage(m,html);
     sgFigs(d.k).then(fs=>{ const b=document.getElementById('sg-figs'); if(b&&VIEW&&VIEW.id==='dom-'+d.k) b.innerHTML=fs.map(x=>'<div class="sg-fig"><div class="n">'+nxE(x.v)+'</div><div class="t">'+nxE(x.t)+'</div></div>').join(''); }).catch(e=>console.error(e)); } }; });
 
@@ -642,7 +646,7 @@ VIEWS['nx-data']={
 /* ═══ Palette de recherche (⌘K) ═══ */
 const PAL={on:false,items:[],sel:0,all:[]};
 function nxPalIndex(){ const it=[];
-  SG_DOM.forEach(d=>{ if(d.k!=='accueil') it.push({g:'Écrans',t:d.t,s:'Vue d’ensemble',ico:d.ico,run:()=>go('dom-'+d.k),q:d.t+' '+(d.d||'')});
+  SG_DOM.forEach(d=>{ if(d.k!=='accueil'&&!(d.menu===0&&!d.items.length)) it.push({g:'Écrans',t:d.t,s:'Vue d’ensemble',ico:d.ico,run:()=>go('dom-'+d.k),q:d.t+' '+(d.d||'')});
     d.items.filter(x=>!x.hide&&nxCan(x.v)).forEach(x=>it.push({g:'Écrans',t:x.t,s:d.t,ico:x.ico||d.ico,run:()=>go(x.v),q:x.t+' '+d.t+' '+(NX_KW[x.v]||'')})); });
   [['Nouveau projet','plus',()=>editProject()],['Nouveau contact — société','plus',()=>editOwner(null,0)],['Nouveau contact — personne','plus',()=>editOwner(null,1)],
    ['Nouveau contrat d’honoraires','contrat',()=>go('fx-calchono','new')],['Nouvelle facture ou acompte','receipt',()=>go('fx-saisie','new')],['Saisir mon temps','timer',()=>go('h-saisie')],

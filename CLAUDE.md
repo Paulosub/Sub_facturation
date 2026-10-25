@@ -937,6 +937,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   des écrans Heures étendue au domaine (`html:is([data-vdom="temps"],[data-vdom="administration"]) #tools …`). Vue d'ensemble : heures du
   bureau, inscriptions à contrôler et refusées du mois. Visuel Mac #7D7AFF, Studio nocturne : carte menthe. Copie d'avant :
   `subgestion3/_backup_20261024_2031_avant_menu_administration/`.
+  **Équipe, Ressources humaines, Facturation et Finances glissés dans Administration (25.10.2026, demandes de Paulo « glisser équipe / ressources
+  humaines / facturation dans admin », « également pour finances »)** : quatre sous-menus dépliables (`grp`) après le contrôle des heures ; chaque
+  écran garde `dom:'equipe'|'rh'|'facturation'|'finances'` (droits `sgVueOk`, code d'accès `sgDomDe`, couleurs du visuel `data-vdom`) ; les quatre
+  chapitres restent dans `SG_DOM` hors menu (`menu:0`, `items:[]`) pour leurs chiffres (`sgFigs`) et le code d'accès. Les droits d'origine sont
+  gardés : le chef de projet voit dans Administration Équipe (Membres, Temps de l'équipe), Facturation et Finances selon ses droits, le collaborateur
+  Équipe ▸ Membres ; les écrans propres au chapitre (contrôle et analyse des heures, Situation des heures) et ses chiffres restent réservés à
+  l'administrateur (`sgVueOk` : `dom-…` jugé sur ses écrans avant la règle `administration`). Vue d'ensemble générique (`VIEWS['dom-'+k]`) :
+  tuiles rangées par sous-menu sous un intertitre (vaut aussi pour Archives). Retour à l'accueil de Facturation (`sgFxHome`) → `dom-administration` ;
+  palette ⌘K sans les chapitres hors menu et vides. Copie d'avant : `subgestion3/_backup_20261025_1504_avant_admin_regroupe/`.
   Projets ▸ Registre (aff-gestion) inchangé.
   **Documents et Présentation dans Faisabilité, Projet et Chantier (21.10.2026)** : tuiles « Documents » et « Présentation » dans chacun des trois
   groupes. Faisabilité : « Documents de la faisabilité » (tout le dossier Faisabilité, dépôt à sa racine) ; Chantier : « Présentation du chantier »

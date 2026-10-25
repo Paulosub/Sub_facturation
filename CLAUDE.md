@@ -863,7 +863,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   bandeau `sgAncBandeau` et « Comparer et noter » (`sgAncChDe` = `sgDomDe`) inchangés. Pour les retirer définitivement : supprimer les deux
   sous-menus d'Archives, les deux domaines et le bloc 18. Copie d'avant : `subgestion3/_backup_20261024_2230_avant_anciens_archives/`.
   **Contacts ▸ Favoris (`adr-favoris`) déplacé dans Archives (25.10.2026, demande de Paulo)**, `dom:'contacts'` (droits et visuel de Contacts) ;
-  Contacts = Annuaire, Liste des adresses, Listes de diffusion, Recherche avancée, Catégories.
+  Contacts = Annuaire, Liste des adresses, Listes de diffusion, Catégories ; **Recherche avancée (`adr-chercher`) aussi dans Archives** (même jour,
+  `dom:'contacts'`) — le lien « Recherche avancée… » du menu de la liste de l'Annuaire l'ouvre toujours.
   **Les quatre tuiles du Controlling recopiées dans Administration (même soir, Paulo : « déplacer dans Administration : Contrôle des heures
   d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais — copier ces éléments comme éléments cliquables dans le
   menu de gauche »)** : entrées `adm-ctl-heures`, `adm-ana-heures`, `adm-ctl-frais`, `adm-ana-frais` (ordre : Contrôle des heures, Contrôle des heures

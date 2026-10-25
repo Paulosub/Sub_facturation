@@ -1581,3 +1581,17 @@ html:has(#main .sgd) #nx-sub{display:none!important}
 .sgd-tab .det .kv b{color:var(--s-gris);font-weight:700;font-size:11.5px}
 .sgd-tab .det .empty{color:var(--s-gris);padding:18px 0;text-align:left}
 @container (max-width:1050px){.sgd-col{flex-basis:240px;width:240px}}
+/* Contacts ▸ Liste des adresses : présentation de Mes projets (25.10.2026, sg3_contacts.js) */
+.nx-tbl.sgl-t tr[data-c]{cursor:pointer}
+.nx-tbl.sgl-t tr[data-c]:hover td{background:var(--s-jaune3)}
+.nx-tbl.sgl-t .nx-tag{font-weight:400}
+.nx-tbl.sgl-t td:nth-child(3){min-width:0}
+.nx-tbl.sgl-t td:first-child{min-width:180px}
+.nx-tbl.sgl-t td:nth-child(4){min-width:140px}
+.nx-tbl.sgl-t td:nth-child(5){min-width:120px}
+.nx-tbl.sgl-t td:nth-child(7){min-width:190px;max-width:240px;overflow-wrap:anywhere}
+.sgl-at{font-size:11px;color:var(--s-gris);white-space:nowrap}
+.sgl-nw{white-space:nowrap}
+.nx-tbl.sgl-t tr.sgl-der td{background:var(--s-jaune2)}
+.sgd-tab.sgd-lecture .split>.col:last-child .ph2{display:none}
+.sg-mesp-bar .sgl-act{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}

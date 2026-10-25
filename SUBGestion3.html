@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 25.10.2026 15:14 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 25.10.2026 17:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1590,6 +1590,20 @@ html:has(#main .sgd) #nx-sub{display:none!important}
 .sgd-tab .det .kv b{color:var(--s-gris);font-weight:700;font-size:11.5px}
 .sgd-tab .det .empty{color:var(--s-gris);padding:18px 0;text-align:left}
 @container (max-width:1050px){.sgd-col{flex-basis:240px;width:240px}}
+/* Contacts ▸ Liste des adresses : présentation de Mes projets (25.10.2026, sg3_contacts.js) */
+.nx-tbl.sgl-t tr[data-c]{cursor:pointer}
+.nx-tbl.sgl-t tr[data-c]:hover td{background:var(--s-jaune3)}
+.nx-tbl.sgl-t .nx-tag{font-weight:400}
+.nx-tbl.sgl-t td:nth-child(3){min-width:0}
+.nx-tbl.sgl-t td:first-child{min-width:180px}
+.nx-tbl.sgl-t td:nth-child(4){min-width:140px}
+.nx-tbl.sgl-t td:nth-child(5){min-width:120px}
+.nx-tbl.sgl-t td:nth-child(7){min-width:190px;max-width:240px;overflow-wrap:anywhere}
+.sgl-at{font-size:11px;color:var(--s-gris);white-space:nowrap}
+.sgl-nw{white-space:nowrap}
+.nx-tbl.sgl-t tr.sgl-der td{background:var(--s-jaune2)}
+.sgd-tab.sgd-lecture .split>.col:last-child .ph2{display:none}
+.sg-mesp-bar .sgl-act{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -29720,7 +29734,8 @@ function sgTriTable(tb){ if(tb.closest('#sg-onglet')) return null;   // tableau 
 const sgTriSig=hr=>((window.VIEW&&VIEW.id)||'')+'|'+[...hr.cells].map(c=>c.textContent.trim()).join('|');
 const sgTriNum=V=>{ const k=V.filter(Boolean).map(v=>v.k); return k.length>0&&k.filter(x=>x!=='t').length>=k.length*0.8; };
 function sgTriAppliquer(tb,i,sens){ const T=sgTriTable(tb); if(!T) return; const par=T.data[0].parentNode, L=T.data.filter(r=>r.parentNode===par);
-  const tot=r=>r.classList.contains('tot')||/^total\b/i.test(((r.cells[0]&&r.cells[0].textContent)||'').trim());
+  const sansTot=!!(tb.closest&&tb.closest('table.sg-sanstot'));   /* liste de noms (ex. Liste des adresses, 25.10.2026) : « Total … » n'est pas une ligne de total */
+  const tot=r=>r.classList.contains('tot')||(!sansTot&&/^total\b/i.test(((r.cells[0]&&r.cells[0].textContent)||'').trim()));
   const tete=[], pied=[], blocs=[]; L.forEach(r=>{ if(tot(r)){ (blocs.length?pied:tete).push(r); return; }
     if(r.classList.contains('sub')&&blocs.length) blocs[blocs.length-1].subs.push(r); else blocs.push({r,subs:[]}); });
   const num=sgTriNum(blocs.map(b=>sgTriVal(b.r.cells[i]))), val=r=>{ const v=sgTriVal(r.cells[i]); return v&&num&&v.k==='t'?null:v; };
@@ -31876,6 +31891,10 @@ function sgdPage(V,m,o){ const w=h('div',{class:'sgd'}); m.append(w);
   V.peindre=()=>{ const y=(col.querySelector('.sgd-l')||{}).scrollTop||0; col.innerHTML=o.col(); const l=col.querySelector('.sgd-l'); if(l) l.scrollTop=y;
     haut.innerHTML=o.tete()+sgdKpis(sgdChiffres(o.rows())); };
   V.tableau=()=>{ tab.innerHTML=''; V.l=adrList(tab,()=>o.rows(),o.opt()); };
+  /* sans le droit « Modifier l'adresse » (contactEdit, ou profil sans « contacts : écriture ») : le double-clic de la liste du moteur — et « Ouvrir »
+     du clic droit, qui l'envoie — n'ouvre pas la fenêtre de modification ; boutons d'écriture du détail (catégories, notes) masqués */
+  if(!sgaPeut('contactEdit')){ tab.classList.add('sgd-lecture');
+    tab.addEventListener('dblclick',e=>{ if(e.target.closest('table.g')){ e.stopPropagation(); e.preventDefault(); } },true); }
   V.peindre(); V.tableau();
   const on=col.querySelector('.sgd-it.on'); if(on) on.scrollIntoView({block:'nearest'});
   w.addEventListener('click',e=>{ const it=e.target.closest('[data-sgd]'); if(it&&col.contains(it)){ o.choisir(it.dataset.sgd); V.peindre(); V.tableau(); return; }
@@ -31907,8 +31926,10 @@ VIEWS['adr-groupes']={
           {t:'',items:[{id:0,nom:'Toutes les adresses',ini:'TA',sous:sgdAdr(DS.all('contact').filter(c=>!c.ISHIDDEN).length),titre:'Toutes les adresses de l’annuaire : pour les ajouter à une liste statique (Fonctions)'}]},
           {t:'Listes intelligentes',items:Ls.filter(g=>+g.ISSMART).map(it)},{t:'Listes statiques',items:Ls.filter(g=>!+g.ISSMART).map(it)}],SGD.dif||'0'); },
       tete:()=>{ const g=cur();
-        const btns=sgdBtn('nouv','plus','Nouvelle liste',null,'Nouvelle liste intelligente (adresses choisies par critères) ou statique (adresses ajoutées une à une)')
-          +(g?sgdBtn('mod','edit','Modifier la liste')+sgdBtn('sup','minus','Supprimer la liste','danger','Supprimer la liste (les adresses ne sont pas supprimées)'):'');
+        /* mêmes droits que les boutons du moteur (CH08B_GUARDS : Nouveau / Modifier le groupe = contactGroupNew, Supprimer le groupe = contactGroupDelete) */
+        const nw=sgaPeut('contactGroupNew'), del=sgaPeut('contactGroupDelete');
+        const btns=(nw?sgdBtn('nouv','plus','Nouvelle liste',null,'Nouvelle liste intelligente (adresses choisies par critères) ou statique (adresses ajoutées une à une)'):'')
+          +(g&&nw?sgdBtn('mod','edit','Modifier la liste'):'')+(g&&del?sgdBtn('sup','minus','Supprimer la liste','danger','Supprimer la liste (les adresses ne sont pas supprimées)'):'');
         if(!g) return sgdTete('TA','Listes de diffusion','Toutes les adresses','Toutes les adresses de l’annuaire · sélectionnez des adresses puis Fonctions ▸ « Ajouter à un groupe d’adresses » pour remplir une liste statique',btns);
         return sgdTete(sgdIni(g.NAME),+g.ISSMART?'Liste intelligente':'Liste statique',g.NAME,
           [+g.ISSMART?'Adresses qui remplissent les critères : '+sgdCriteres(g):'Adresses ajoutées une à une (Fonctions ▸ « Ajouter à un groupe d’adresses », « Retirer du groupe »)',g.SORTDATE?'créée le '+dfr(g.SORTDATE):''].filter(Boolean).join(' · '),btns); },
@@ -31916,9 +31937,9 @@ VIEWS['adr-groupes']={
       opt:()=>({group:cur()||SGD_TOUTES}),
       choisir:id=>sgdGarder('dif',id),
       fn:{
-        nouv:b=>popMenu(b,[{t:'Nouvelle liste intelligente (par critères) …',fn:()=>editSmartGroup()},{t:'Nouvelle liste statique …',fn:()=>editStaticGroup()}]),
-        mod:()=>{ const g=cur(); if(g) +g.ISSMART?editSmartGroup(g):editStaticGroup(g); },
-        sup:async()=>{ const g=cur(); if(!g||!await confirmDlg(`Supprimer la liste « ${g.NAME||''} » ? (les adresses ne sont pas supprimées)`,'Supprimer')) return;
+        nouv:b=>sgaPeut('contactGroupNew')&&popMenu(b,[{t:'Nouvelle liste intelligente (par critères) …',fn:()=>editSmartGroup()},{t:'Nouvelle liste statique …',fn:()=>editStaticGroup()}]),
+        mod:()=>{ const g=cur(); if(g&&sgaPeut('contactGroupNew')) +g.ISSMART?editSmartGroup(g):editStaticGroup(g); },
+        sup:async()=>{ const g=cur(); if(!g||!sgaPeut('contactGroupDelete')||!await confirmDlg(`Supprimer la liste « ${g.NAME||''} » ? (les adresses ne sont pas supprimées)`,'Supprimer')) return;
           const ops=[{t:'contactgroup',id:g.ID,val:null}];
           if(+g.ISSMART){ ops.push({t:'contactquery',id:g.CONTACTQUERY_ID,val:null}); DS.by('contactqueryclause','CONTACTQUERY_ID',g.CONTACTQUERY_ID).forEach(x=>ops.push({t:'contactqueryclause',id:x.ID,val:null})); }
           else DS.by('contactgroup_contact','CONTACTGROUPS_ID',g.ID).forEach(l=>ops.push({t:'contactgroup_contact',id:g.ID+'-'+l.CONTACTS_ID,val:null}));
@@ -31947,6 +31968,81 @@ VIEWS['adr-props']={
       fn:{} }); },
   refresh(ts){ if(hit(ts,'property','propertygroup')){ this.peindre&&this.peindre(); this.tableau&&this.tableau(); }
     else if(hit(ts,'contact_property','contact','contactowner')){ this.peindre&&this.peindre(); this.l&&this.l.draw(); } } };
+
+/* ── Liste des adresses : la présentation de Projets ▸ Mes projets (25.10.2026) ──
+   Demande de Paulo : « modifier la liste des adresses pour correspondre au graphisme de Mes projets ». Barre de Mes projets (filtre Toutes ·
+   Sociétés · Personnes · Autres, recherche, nombre) puis tableau .nx-tbl (titres de colonne cliquables pour trier, tri commun de l'app) :
+   une ligne = une adresse, un clic ouvre la fiche du contact (Annuaire). Les fonctions de l'écran d'origine (adrList) sont gardées : à droite
+   de la barre Imprimer ▾ (liste d'adresses, par CFC), Courriel …, Exporter CSV — sur les adresses affichées — ; clic droit sur une adresse :
+   fiche, Modifier l'adresse, favoris, liste de diffusion, catégories, courriel, copie. Mêmes droits que l'écran d'origine (« Modifier
+   l'adresse » = contactEdit, « Fonctions » = contactNew ou contactExport, écritures = profil « contacts : écriture »). La liste du moteur
+   (sélection multiple, présentation des colonnes, détail) reste dans Listes de diffusion ▸ Toutes les adresses. */
+const SGL_TYPES=[['tous','Toutes',()=>true],['societe','Sociétés',t=>t===0],['personne','Personnes',t=>t===1],['autres','Autres',t=>t>1]];
+const sglFonc=()=>{ try{ return typeof ch08aCan!=='function'||ch08aCan('contactNew')||ch08aCan('contactExport'); }catch(_){ return true; } };
+const sglEcrit=()=>sglFonc()&&(typeof sgDroit!=='function'||sgDroit('contacts','ecriture'));
+function sglMenu(c){ const o=ownerOf(c), F=sglFonc(), E=sglEcrit(), L=[];
+  if(o) L.push({t:'Fiche du contact',fn:()=>go('nx-contact',String(o.ID))});
+  if(sgaPeut('contactEdit')) L.push({t:'Modifier l’adresse …',fn:()=>editContact(c)});
+  if(E) L.push('-',{t:'Ajouter aux favoris',fn:()=>addToGroup(favGroup(true),[c])},{t:'Ajouter à une liste de diffusion …',fn:()=>pickGroup(g=>addToGroup(g,[c]))},
+    {t:'Ajouter des catégories …',fn:()=>pickProps(ps=>addProps([c],ps))});
+  if(F) L.push('-',{t:'Courriel …',fn:()=>mailList([c])});
+  L.push({t:'Copier l’adresse',fn:()=>ctCopy(adrLines(c).join('\n'),'Adresse copiée.')});
+  if(c.EMAIL1) L.push({t:'Copier le courriel',fn:()=>ctCopy(c.EMAIL1,'Courriel copié.')});
+  const tel=phone(c,1)||phone(c,2); if(tel) L.push({t:'Copier le téléphone',fn:()=>ctCopy(tel,'Téléphone copié.')});
+  return L; }
+/* position de la liste gardée pour le retour depuis une fiche (session de l'onglet) : défilement et dernière adresse ouverte */
+const SGL={y:0,der:null};
+VIEWS['adr-liste']={
+  render(m){ VIEW.nxTitle='Liste des adresses'; const V=this, ty0=String(nxLS.get('sg3_adrl_type','tous')||'tous'), q0=String(nxLS.get('sg3_adrl_q','')||'');
+    const lc=s=>String(s||'').toLowerCase(), L=DS.all('contact').filter(c=>c&&!c.ISHIDDEN).map(c=>{ const o=ownerOf(c);
+      return {c,o,nom:(o?ownerName(o,true):'')||[c.NAME1,c.NAME2].filter(Boolean).join(' ')||c.SHORTLABEL||'',rel:ownerName(relOf(c),true),t:o?+o.TYPECODE:0}; })
+      .sort((a,b)=>a.nom.localeCompare(b.nom,'fr',{sensitivity:'base'}));
+    const row=x=>{ const c=x.c, cats=contactProps(c).map(nm).filter(Boolean), at=+c.ADDRESSTYPECODE?ADR_T[+c.ADDRESSTYPECODE]||'':'', tel=phone(c,1)||phone(c,2);
+      const q=lc([x.nom,x.rel,c.NAME1,c.NAME2,c.NAME3,c.STREET,c.POBOX,locality(c),c.EMAIL1,c.BKP,c.SHORTLABEL,phone(c,1),phone(c,2),cats.join(' ')].filter(Boolean).join(' '));
+      return '<tr class="nx-row'+(String(c.ID)===String(SGL.der)?' sgl-der':'')+'"'+(x.o?' data-o="'+x.o.ID+'"':'')+' data-c="'+c.ID+'" data-t="'+x.t+'" data-q="'+nxE(q)+'" title="Clic : fiche du contact · clic droit : modifier l’adresse, listes, catégories, courriel">'
+        +'<td><b>'+nxE(x.nom)+'</b>'+cats.slice(0,2).map(t=>' <span class="nx-tag">'+nxE(t)+'</span>').join('')+(cats.length>2?' <span class="nx-tag" title="'+nxE(cats.slice(2).join(', '))+'">+'+(cats.length-2)+'</span>':'')+'</td>'
+        +'<td>'+nxE(OWNER_T[x.t]||'')+'</td><td>'+nxE(x.rel)+'</td><td>'+nxE([c.STREET,c.POBOX].filter(Boolean).join(', '))+(at?' <span class="sgl-at">'+nxE(at)+'</span>':'')+'</td>'
+        +'<td>'+nxE(locality(c))+'</td><td class="sgl-nw">'+nxE(tel)+'</td><td>'+nxE(c.EMAIL1||'')+'</td><td>'+nxE(c.BKP||'')+'</td></tr>'; };
+    const F=sglFonc(), html='<div class="sg-mesp-bar"><div class="seg">'+SGL_TYPES.map(([k,t])=>'<button data-fn="type" data-k="'+k+'" class="'+(k===ty0?'on':'')+'">'+t+'</button>').join('')+'</div>'
+      +'<input class="inp" id="sgl-q" placeholder="Rechercher une adresse…" value="'+nxE(q0)+'"><span class="n"></span>'
+      +'<span class="sgl-act"><button class="nx-btn sm" data-fn="impr" title="Imprimer les adresses affichées">'+nxSvg('print')+'<span>Imprimer</span></button>'
+      +(F?'<button class="nx-btn sm" data-fn="mail" title="Courriels des adresses affichées, à copier">'+nxSvg('mail')+'<span>Courriel …</span></button><button class="nx-btn sm" data-fn="csv" title="Exporter les adresses affichées (CSV)">'+nxSvg('export')+'<span>Exporter CSV</span></button>':'')+'</span></div>'
+      +(L.length?'<table class="nx-tbl sg-mesp sgl-t sg-sanstot"><tr><th>Nom</th><th>Type</th><th>Appartient à</th><th>Adresse</th><th>Localité</th><th>Téléphone</th><th>Courriel</th><th>CFC</th></tr>'+L.map(row).join('')+'</table>'
+        :'<div class="nx-empty">Aucune adresse dans l’annuaire.</div>');
+    const pg=nxPage(m,html), inp=pg.querySelector('#sgl-q'), nb=pg.querySelector('.sg-mesp-bar .n');
+    let ty=ty0; const visibles=()=>[...pg.querySelectorAll('tr[data-c]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('contact',tr.dataset.c)).filter(Boolean);
+    const filt=()=>{ const v=inp.value.trim().toLowerCase(), f=(SGL_TYPES.find(x=>x[0]===ty)||SGL_TYPES[0])[2]; nxLS.set('sg3_adrl_q',inp.value); let n=0;
+      pg.querySelectorAll('tr[data-c]').forEach(tr=>{ const ok=f(+tr.dataset.t)&&(!v||tr.dataset.q.includes(v)); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=sgdAdr(n); };
+    pg._fn.type=b=>{ ty=b.dataset.k; nxLS.set('sg3_adrl_type',ty); pg.querySelectorAll('.seg [data-fn="type"]').forEach(x=>x.classList.toggle('on',x===b)); filt(); };
+    pg._fn.impr=b=>popMenu(b,[{t:'Liste d’adresses',fn:()=>printAdr(visibles(),'Liste d’adresses')},{t:'Liste d’adresses par CFC',fn:()=>printAdr(visibles().sort((a,b2)=>cmp(a.BKP,b2.BKP)),'Liste d’adresses par CFC')}]);
+    pg._fn.mail=()=>{ const cs=visibles(); if(cs.length) mailList(cs); };
+    /* export : les colonnes de la présentation « Tous » de la liste du moteur (ACOL, PRES), le type de contact et les catégories */
+    pg._fn.csv=()=>{ const cs=visibles(), t=h('table'), tr=a=>{ const r=h('tr'); a.forEach(v=>r.append(h('td',{},v==null?'':String(v)))); t.append(r); };
+      const cols=PRES['Tous'].filter(k=>k!=='ty').map(k=>ACOL[k]).filter(Boolean), d=document.createElement('div'), txt=(col,c)=>{ if(col.f){ d.innerHTML=col.f(c); return (d.textContent||'').trim(); } return c[col.k]==null?'':String(c[col.k]); };
+      tr(['Type',...cols.map(col=>col.t),'Catégories']);
+      cs.forEach(c=>{ const o=ownerOf(c); tr([o?OWNER_T[+o.TYPECODE]||'':'',...cols.map(col=>txt(col,c)),contactProps(c).map(nm).join(', ')]); });
+      sgCsvTable(t,'adresses_'+diso(new Date())+'.csv'); };
+    pg.addEventListener('contextmenu',e=>{ if(e.altKey||(typeof sgCtxSelection==='function'&&sgCtxSelection(e.target,document))) return;
+      const tr=e.target.closest('tr'); if(!tr||!pg.contains(tr)||!tr.closest('table.sgl-t')) return;
+      if(!tr.dataset.c){ if(!F) e.stopPropagation(); return; }   /* ligne de titres : copie du tableau (menu de l'app) seulement avec le droit « Fonctions » */
+      const c=DS.get('contact',tr.dataset.c); if(!c) return;
+      const it=sglMenu(c); if(F&&typeof sgCtxCopie==='function') it.push('-',...sgCtxCopie(tr)); e.preventDefault(); sgMenuAt(e.clientX,e.clientY,it,tr); });
+    /* clic sur une adresse = sa fiche (Annuaire) ; pas si l'on sélectionne du texte (glisser, double-clic sur un courriel ou un numéro) ;
+       adresse sans contact : Modifier l'adresse (avec le droit). Position de la liste gardée pour le retour. */
+    const ouvrir=tr=>{ const c=DS.get('contact',tr.dataset.c); if(!c) return; SGL.y=pg.scrollTop; SGL.der=String(c.ID);
+      if(tr.dataset.o) go('nx-contact',tr.dataset.o); else if(sgaPeut('contactEdit')) editContact(c); };
+    pg.addEventListener('click',e=>{ const tr=e.target.closest('tr[data-c]'); if(!tr||!pg.contains(tr)) return; clearTimeout(V._t); if(e.detail>1) return;
+      V._t=setTimeout(()=>{ const s=getSelection(); if(s&&!s.isCollapsed&&String(s).trim()) return; if(tr.isConnected) ouvrir(tr); },250); });
+    pg.addEventListener('dblclick',()=>clearTimeout(V._t));
+    inp.oninput=filt; filt(); V._pg=pg;
+    if(!V._maj&&(SGL.der||SGL.y)){ pg.scrollTop=SGL.y;   /* retour depuis une fiche : même position ; la dernière adresse ouverte reste visible (après le tri) */
+      setTimeout(()=>{ if(!pg.isConnected) return; const r=SGL.der&&pg.querySelector('tr[data-c="'+CSS.escape(SGL.der)+'"]');
+        if(r&&r.style.display!=='none'){ const a=r.getBoundingClientRect(), b=pg.getBoundingClientRect(); if(a.top<b.top||a.bottom>b.bottom) r.scrollIntoView({block:'center'}); } },60); } },
+  refresh(ts){ if(!hit(ts,'contact','contactowner','contact_property','property')) return; const m=this._pg&&this._pg.parentElement; if(!m||!m.isConnected) return;
+    const sc=[m.scrollTop,this._pg.scrollTop], a=document.activeElement, foc=!!(a&&a.id==='sgl-q'&&this._pg.contains(a)), s0=foc?a.selectionStart:0, s1=foc?a.selectionEnd:0;
+    clearTimeout(this._t); m.innerHTML=''; this._maj=true; try{ this.render(m); } finally{ this._maj=false; }
+    m.scrollTop=sc[0]; if(this._pg) this._pg.scrollTop=sc[1];
+    const q2=foc&&this._pg&&this._pg.querySelector('#sgl-q'); if(q2){ q2.focus({preventScroll:true}); try{ q2.setSelectionRange(s0,s1); }catch(_){} } } };
 </script>
 </body>
 </html>

@@ -1964,7 +1964,7 @@ SG_T_FACTURES = {"projectinvoice", "projectinvoicepos", "projectpayment", "proje
 SG_T_CHANTIER = {"costestimate", "costestimatedocument", "costestimatedpdoc", "costestimatehist", "costcontrol", "costcontroldocument",
                  "costplanning", "costplanningdocument", "projectcatalog", "projectcatalogpos", "projecttenderer", "devisdocument",
                  "soumission", "soumissiondoc", "soumissionhist"}
-SG_T_CONTACTS = {"contactowner", "contact", "contact_property", "contactnote", "contactgroup", "contactquery", "contactqueryclause",
+SG_T_CONTACTS = {"contactowner", "contact", "contact_property", "contactnote", "contactgroup", "contactgroup_contact", "contactquery", "contactqueryclause",
                  "bankaccount", "documentrecipient"}
 SG_T_BIBLIO = {"modele", "modeledocument", "modelegroupe", "doctemplate", "doctemplategroup", "formtemplate", "formtemplategroup",
                "arriereplan", "image", "catalog", "catalogpos", "boilerplategroup", "boilerplateitem", "template", "templatefield",

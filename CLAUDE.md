@@ -1129,6 +1129,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   suppression d'une liste comme le moteur ; les adresses ne sont jamais supprimées) ; le bouton « Retirer la propriété des adresses sélectionnées »
   des Catégories du moteur, qui ne faisait rien, n'est pas repris (retrait : détail de l'adresse ▸ Propriétés). DeltaSub.html seul garde les
   écrans d'origine. Copie d'avant : `subgestion3/_backup_20261025_1504_avant_admin_regroupe/` (sg3.css, construire.py).
+  **Droits des boutons des listes (même soir, relecture)** : Nouvelle / Modifier la liste = `contactGroupNew`, Supprimer la liste = `contactGroupDelete`
+  (gardes CH08B du moteur, via `sgaPeut` : + profil « contacts : écriture ») ; sans « Modifier l'adresse » (`contactEdit`), le double-clic de la liste du
+  moteur (et « Ouvrir » du clic droit) est bloqué et les boutons d'écriture du détail masqués (`.sgd-lecture`).
+- **Contacts ▸ Liste des adresses = présentation de Projets ▸ Mes projets (25.10.2026, Paulo : « modifier la liste des adresses pour correspondre au
+  graphisme de Mes projets » ; fin de `sg3_contacts.js`, styles `.sgl-*`)** : `VIEWS['adr-liste']` remplacé — barre de Mes projets (`.sg-mesp-bar` :
+  Toutes · Sociétés · Personnes · Autres, recherche nom / adresse / localité / courriel / téléphone / CFC / catégories, nombre ; `sg3_adrl_type`,
+  `sg3_adrl_q`), tableau `.nx-tbl.sg-mesp.sgl-t` (Nom + catégories en étiquettes, Type, Appartient à, Adresse + type d'adresse, Localité, Téléphone,
+  Courriel, CFC ; tri commun des tableaux ; adresses masquées exclues) ; un clic = fiche du contact (`nx-contact`, après 250 ms et pas si du texte est
+  sélectionné : on peut sélectionner un courriel ou un numéro ; adresse sans contact : Modifier l'adresse) ; retour depuis la fiche à la même position,
+  dernière adresse ouverte surlignée (`SGL`). Fonctions de l'écran d'origine : Imprimer ▾ (liste, par CFC), Courriel …, Exporter CSV (colonnes de la
+  présentation « Tous » du moteur + type et catégories) — sur les adresses affichées, dans l'ordre affiché — ; clic droit sur une adresse : fiche,
+  Modifier l'adresse, favoris, liste de diffusion, catégories, courriel, copier l'adresse / le courriel / le téléphone, copie de la ligne et du tableau.
+  Mêmes droits (`contactEdit` ; « Fonctions » = `contactNew` ou `contactExport` ; écritures = profil « contacts : écriture » ; sans « Fonctions » : ni
+  courriel, ni CSV, ni copie du tableau). Redessin (autre poste) : défilement, focus et curseur de la recherche gardés. Tri des tableaux : un tableau
+  `.sg-sanstot` ne reconnaît les totaux que par `tr.tot` (une adresse « Total … » restait en fin de liste). La liste du moteur (sélection multiple,
+  présentations, détail) reste dans Listes de diffusion ▸ Toutes les adresses. **Serveur du NAS** (`serveur_deltasub.py`) : `contactgroup_contact`
+  ajouté à `SG_T_CONTACTS` (un chef de projet ne pouvait pas ajouter une adresse aux favoris ou à une liste : 403) — à redéployer sur demande
+  (redémarrer le conteneur). Relecture par 2 relecteurs + vérification adverse (workflow) : 8 défauts confirmés, tous corrigés. Copie d'avant :
+  `subgestion3/_backup_20261025_1724_avant_liste_adresses/`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

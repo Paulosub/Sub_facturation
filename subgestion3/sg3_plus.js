@@ -3331,7 +3331,8 @@ function sgTriTable(tb){ if(tb.closest('#sg-onglet')) return null;   // tableau 
 const sgTriSig=hr=>((window.VIEW&&VIEW.id)||'')+'|'+[...hr.cells].map(c=>c.textContent.trim()).join('|');
 const sgTriNum=V=>{ const k=V.filter(Boolean).map(v=>v.k); return k.length>0&&k.filter(x=>x!=='t').length>=k.length*0.8; };
 function sgTriAppliquer(tb,i,sens){ const T=sgTriTable(tb); if(!T) return; const par=T.data[0].parentNode, L=T.data.filter(r=>r.parentNode===par);
-  const tot=r=>r.classList.contains('tot')||/^total\b/i.test(((r.cells[0]&&r.cells[0].textContent)||'').trim());
+  const sansTot=!!(tb.closest&&tb.closest('table.sg-sanstot'));   /* liste de noms (ex. Liste des adresses, 25.10.2026) : « Total … » n'est pas une ligne de total */
+  const tot=r=>r.classList.contains('tot')||(!sansTot&&/^total\b/i.test(((r.cells[0]&&r.cells[0].textContent)||'').trim()));
   const tete=[], pied=[], blocs=[]; L.forEach(r=>{ if(tot(r)){ (blocs.length?pied:tete).push(r); return; }
     if(r.classList.contains('sub')&&blocs.length) blocs[blocs.length-1].subs.push(r); else blocs.push({r,subs:[]}); });
   const num=sgTriNum(blocs.map(b=>sgTriVal(b.r.cells[i]))), val=r=>{ const v=sgTriVal(r.cells[i]); return v&&num&&v.k==='t'?null:v; };

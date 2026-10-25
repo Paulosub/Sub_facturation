@@ -88,7 +88,6 @@ const SG_DOM=[
   {k:'contacts',t:'Contacts',ico:'contacts',d:'Entreprises, mandataires, maîtres d’ouvrage et personnes : coordonnées, catégories et listes.',items:[
     {v:'adr-entites',t:'Annuaire',ico:'contacts',hero:1,d:'Sociétés, personnes, familles… et leurs adresses.'},
     {v:'adr-liste',t:'Liste des adresses',ico:'list',d:'Toutes les adresses, triables et filtrables.'},   /* « Toutes les adresses » renommé le 24.10.2026 (demande de Paulo) */
-    {v:'adr-favoris',t:'Favoris',ico:'star',d:'Vos adresses favorites.'},
     {v:'adr-groupes',t:'Listes de diffusion',ico:'group',d:'Groupes d’adresses pour les envois et les étiquettes.'},
     {v:'adr-chercher',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…).'},
     {v:'adr-props',t:'Catégories',ico:'tag',d:'Propriétés et catégories attribuées aux adresses.'}]},
@@ -177,6 +176,7 @@ const SG_DOM=[
   {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports (ancien Controlling, venu du chapitre Projets le 24.10.2026).'},
     {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs, intervenants, subdivisions, modèles (venu du chapitre Projets le 24.10.2026).'},
+    {v:'adr-favoris',t:'Favoris',dom:'contacts',ico:'star',d:'Vos adresses favorites (venu du chapitre Contacts le 25.10.2026 ; dom : droits et visuel de Contacts).'},
     {v:'affd-controlling',dom:'reglages',t:'Controlling',ico:'trend',d:'Ancien Controlling du chapitre Affaires : contrôle des heures et des frais, critères d’analyse (gardé pour un usage ultérieur).'},
     /* sous-menu « Heures » (Configuration → Archives le 24.10.2026, demande de Paulo) : dom:'temps' garde leurs droits, leur code d'accès et leur
        visuel — les collaborateurs ont toujours accès à leurs notes de frais et rapports de temps */

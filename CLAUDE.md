@@ -1218,6 +1218,31 @@ Onglets : contrats d'honoraires, factures (acomptes, factures finales),
 affaires/projets, heures des collaborateurs, récapitulatifs par phases SIA,
 export PDF fidèle aux documents papier du bureau (police Akkurat).
 
+**Texte caché des gabarits retiré des PDF (25.10.2026)** — contrats (`offrePDFBytes`) et factures (`generateInvoicePDF`) sont dessinés
+sur des PDF réels : `OFFRE_TMPL` = contrat 24PRC, `FA_TMPL` = facture FA26.08_22SEG.AC09, `PG1_TMPL` = facture
+FA26.09_24SLC.AC03 ; les zones variables sont blanchies puis réécrites et le logo des contrats est une page de `FA_TMPL` découpée
+(`embedPage`). Jusqu'ici le texte d'origine (client, adresse, projet, montants de ces affaires) restait extractible (copier-coller,
+pdf.js : 1'810 fragments dans un contrat, la facture 22SEG entière dans le logo de chaque page, les annexes retirées par `removePage`
+restaient aussi dans le fichier). Désormais les deux
+fonctions enregistrent par `pdfPropre(doc[, 'fr-FR'])` (Facturation.html, avant `generateInvoicePDF`) : `pdfSansTexteCache` lit les flux
+(opérateurs, état graphique, formes imbriquées), retire du flux chaque glyphe dont l'encre (boîte du glyphe dans la police intégrée,
+fontkit, contrôlée par la chasse du PDF) est sous un aplat opaque dessiné ensuite (tolérance `BORD` 0.5 pt) ou hors de la zone de
+découpe du logo (marge `MARGE` 0.75 pt) ; les glyphes visibles d'un même TJ gardent leur position (chasse → nombre) ; ActualText vidés ;
+puis les pages sont copiées dans un document neuf (plus d'objets inaccessibles, /PieceInfo d'InDesign retiré). ⚠ pdf-lib ne met pas à
+jour `getPages()` après `removePage` : `pdfPages(doc)` invalide son cache. PV de chantier (logo en image) et devis : non concernés.
+**Décision de Paulo (25.10.2026) : tout retirer.** Des glyphes du gabarit touchaient ou dépassaient les aplats (liserés visibles) ; leur
+retrait change quelques pixels de bord d'aplat, rien d'autre (typographie, espacements identiques), mesuré à l'échelle 1.6 sur
+62 documents (35 contrats, 27 factures) : 3 px par page de contrat (≤ 15 niveaux sur 255) ; page « Prestations ordinaires » ≈ 285 px
+(liseré rose du haut des pourcentages rouges de 24PRC, ≤ 98) ; annexe 2 ≈ 294 px (≤ 14) ; annexe 3 ≈ 9 px ; factures 7 px (≤ 17) ;
+non ordinaire 14 px (le « 1 » de l'ancienne facture collé au numéro de page, ≤ 135). Plus aucune donnée du gabarit extractible
+(reste une « ) » isolée de l'annexe 2, qui dépasse de plus de 0.5 pt). Copie d'avant : `Facturation_backup_20261025_2012_avant_texte_cache.html`.
+**Comparer des PDF au pixel avec pdf.js dans Chrome** : (1) panneau masqué → `requestAnimationFrame` suspendu, pdf.js n'achève pas le
+rendu (le remplacer par `setTimeout`) ; (2) avec les polices du navigateur, le 1er rendu diffère des suivants ; (3) le canevas de
+Chrome regroupe ses opérations : une opération peinte de plus ou de moins (même recouverte) change le lissage de filets ailleurs →
+rendu fiable = `disableFontFace:true` + `getImageData(0,0,1,1)` après chaque opération peinte ; (4) générer deux fois le même contrat
+dans le même onglet ne donne pas toujours le même PDF (24SLC, 26TEC, 24ECS, 17QUE.2 : état de l'app, préexistant, non corrigé) →
+comparer des séquences identiques dans des onglets neufs.
+
 ## Règles pour travailler sur ce projet
 
 1. **Un seul fichier à modifier** : `Facturation.html` (et `DeltaSub.html` pour DeltaSub). Avant toute

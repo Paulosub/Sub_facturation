@@ -1148,6 +1148,46 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   ajouté à `SG_T_CONTACTS` (un chef de projet ne pouvait pas ajouter une adresse aux favoris ou à une liste : 403) — à redéployer sur demande
   (redémarrer le conteneur). Relecture par 2 relecteurs + vérification adverse (workflow) : 8 défauts confirmés, tous corrigés. Copie d'avant :
   `subgestion3/_backup_20261025_1724_avant_liste_adresses/`.
+- **Bibliothèque ▸ Documents Substances (25.10.2026, bloc 30, `subgestion3/sg3_docsub.js`, concaténé en dernier par `construire.py` ; banc
+  d'essai `subgestion3/docsub_banc/`)** — demande de Paulo : « tous les documents de la bibliothèque, reproduire tous les documents types avec la
+  mise en forme de contrat et facture que j'ai créée moi-même avec l'entête, le pied de page etc. […] avec le texte identique pour le moment »,
+  « dans un seul endroit qu'il faut nommer Documents Substances ». Fait par une chaîne de 6 agents (mise en page de base, graphiste, relecture et
+  application précise, contrôle complet, déploiement, vérification que rien n'a changé), épreuves validées par Paulo à chaque étape.
+  **Moteur** `async sgDsPdf(R, rep, o)` → octets d'un vrai PDF (pdf-lib, comme `offrePDFBytes` / `generateInvoicePDF`) : fonction PURE, aucune
+  variable extérieure (recréée par `toString()` dans le domaine du cadre Facturation, sinon pdf-lib refuse les tableaux d'un autre domaine) ;
+  `R` = {PDFLib, fontkit, polices {light, regular, bold, lightItalic}, gabarits {offre, facture}, styles}, `rep` = `report` d'un document type
+  (`modeledocument`), `o` = {titre, date, jeu, type, description}. **Partie A, papier** (identique au pixel à une page courante de contrat) :
+  en-tête TITRE (Bold 7,5 pt capitales, x 28.4, base 805.6), trait 0,25 (y 802.1), « CULLY - 25 OCTOBRE 2026 » (Light 7,5 gris 0.4, base 791.6) ;
+  pied du contrat (3 colonnes, bases 42.0 / 28.0) ; « n | total » (pw − 87.6 / pw − 82.2, trait vertical pw − 84.6) ; logo vertical de `FA_TMPL`
+  (`LOGO_BB` 541 / 83.5 → 568.5 / 236) NOIR en 1re page, GRIS ensuite ; paysage calé sur la page 10 du contrat (annexe 2). Gabarits nettoyés en
+  mémoire avant `embedPage` (seules les formes du logo et du pied) : aucun texte caché d'un autre document. Signes absents des polices Light / Bold
+  (« | _ @ " ² º · ») pris en Akkurat Regular (décision de Paulo, 25.10.2026), espace insécable → espace. **Partie B, contenu** (système graphique
+  du graphiste : module vertical de 5 mm, titres « n° | TITRE » des contrats, tableaux 7,5 pt en portrait / 7 pt en paysage avec 3 lignes vides et
+  cadres de total, bloc destinataire de la facture à x 368.6, pagination sans débordement ni titre orphelin, en-tête de colonnes répété) : toutes
+  les bandes (GridBand, TableBand, WrappingTextBand, TextBand, LineBand, PageBreakBand), sections dans leur format. Champs = repères
+  « ‹ libellé › » en italique gris (dictionnaire `SG_DS_CHAMPS`, 350 couples nom / format) ; remplis : titre, date du jour, numéros de page.
+  **Texte identique** = exactement les textes fixes que l'impression actuelle du moteur (`svDpHTML`) montrerait : titre de colonne personnalisé vide →
+  nom de la colonne (« Monnaie ») ; cellules en surnombre des grilles selon la place que le moteur leur laisse ; repère trop long → libellé abrégé
+  (« ‹ Mon. › »), jamais un texte qui ressemble à une donnée ; sections masquées non imprimées ; textes non français des modèles gardés tels quels
+  (« Gewinnspanne », « Dispendio fatturabile », « inkl. MWST », « Text »…). Écarts voulus (décisions du 25.10.2026) : rangées « Total… » gardées
+  (le moteur ne les imprime pas à vide) ; devis général du jeu 2 (gabarit « A4 Landscape 2 » absent du modèle) en paysage comme au jeu 1.
+  **Écran** `nx-docsub` « Documents Substances » : première entrée et tuile principale (« hero ») de Bibliothèque (choix confirmé par Paulo ;
+  « Documents types » reste, inchangé), ⌘K, droits = ceux de `tpl-documents` (`nxCan`) ; documents types (`modeledocument`, langue fr ou vide,
+  comme `tpl-documents`) par famille (`SGDS_REGLES`, début du type : 15 familles), recherche, jeux 0 Général / 1 Affaires / 2 SUBSTANCES, bandeau,
+  chiffres (pages, format, champs, tableaux, taille), aperçu des pages, Ouvrir (`sgVisionneuse`), Télécharger, Imprimer ; ↑ ↓ Entrée / ; réglages
+  `sg3_docsub_sel` / `sg3_docsub_jeu` ; styles `<style id="sg-docsub-css">`, classes `sgds-*`. Ressources du cadre (`fxEnsure` : `w.PDFLib`,
+  `w.fontkit`, `AKKU_*`, `OFFRE_TMPL`, `FA_TMPL`), cache mémoire par jour. Aperçu par pdf.js du cadre : `getDocument({…, ownerDocument:document})`
+  (sinon polices chargées dans le cadre → carrés) et `render({…, intent:'print'})` (sinon `requestAnimationFrame` du cadre masqué → ~10 s par page),
+  puis `pdf.destroy()`. Aucune écriture de données. **Vérifié le 25.10.2026** : 163 documents types de la base de test (164 dans l'app : un modèle
+  allemand converti par « Français seulement »), 282 pages, 0 erreur ; texte identique au moteur 163/163 ; papier juste sur toutes les pages ;
+  aucun chevauchement ni texte hors zone ; tous les filets à 0,25 pt ; seules les polices Akkurat ; aucun texte caché ni métadonnée indiscrète ;
+  PDF de l'app identiques à l'octet à ceux du banc (horloge figée), aussi après `nas/nettoyer.py` ; ancienne et nouvelle version comparées : seuls
+  ajouts `sgDsPdf`, `SGDS`, la vue `nx-docsub` et la tuile de Bibliothèque ; PDF des contrats et factures identiques à l'octet ; aucun enregistrement
+  de la base modifié. **Banc** : `python3 -I subgestion3/docsub_banc/preparer.py <atelier hors du dépôt> <export_base.json.gz>` puis
+  `<atelier>/harness/rendre.sh tous <sortie> --texte` (Chrome sans fenêtre, ~50 s pour tout ; mode d'emploi `harness/LISEZMOI.md`). ⚠ Si
+  `OFFRE_TMPL` ou `FA_TMPL` changent dans Facturation.html, revérifier le papier (logo et pied repris des gabarits). Non traités (question posée
+  à Paulo) : les ~350 formulaires d'impression des autres rubriques de Bibliothèque (collection `modele`). Copie d'avant :
+  `subgestion3/_backup_20261025_1745_avant_documents_substances/`, `SUBGestion3_backup_20261025_1745_avant_documents_substances.html`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

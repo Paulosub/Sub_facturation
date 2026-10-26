@@ -114,6 +114,12 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
 - `sg3_inscription.js` (bloc 28, en dernier) : fenêtre de saisie d'une inscription d'heures redessinée — enveloppe de `hsEdit` (moteur) puis
   `sgieHabiller(dlg)` : éléments du moteur déplacés tels quels (listes `grid`, champs, boutons radio cachés), sections 1 Quand, 2 Projet et
   activité, 3 Phase, 4 Détails, résumé tenu à jour (`maj`), choix en cours et « obligatoire » au-dessus des listes. Styles `.sgie-*` en fin de `sg3.css`.
+- `sg3_docsub.js` (bloc 30, concaténé en dernier, après `sg3_contacts.js`) : Bibliothèque ▸ Documents Substances. `sgDsPdf(R, rep, o)` =
+  moteur PDF autonome (pdf-lib ; aucune variable extérieure, recréé dans le cadre Facturation par `w.Function('return ('+sgDsPdf.toString()+')')()`) :
+  partie A papier (en-tête, pied, logo noir / gris, numérotation, constantes `PAP`, `ctx.nouvellePage`), partie B contenu (toutes les bandes .dpdoc,
+  `SG_DS_CHAMPS`) ; partie app sous garde `typeof SG_DOM!=='undefined'` : vue `nx-docsub`, `SGDS`, `SGDS_REGLES` (familles), styles
+  `#sg-docsub-css` / `.sgds-*`. Chargé seul (banc), le fichier n'ajoute que `sgDsPdf`. Banc : `subgestion3/docsub_banc/` (`preparer.py`, puis
+  `harness/rendre.sh`). Les impressions du moteur (`svDpPrint`, `mgPrint`…) et la vue `tpl-documents` ne sont pas touchées.
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

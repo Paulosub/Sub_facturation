@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Banc d'essai — Documents Substances</title>
+<!-- Banc autonome : pdf-lib, fontkit et pdf.js de l'atelier (copies de subgestion3/vendor), puis le fichier du projet
+     subgestion3/sg3_docsub.js tel quel. Lancé par rendre.sh dans Chrome sans fenêtre ; paramètres dans l'adresse :
+     sel=<sélection> (epreuve, reference, tous, 12, 3-9, id, type, fichier ; liste séparée par des virgules),
+     date=AAAA-MM-JJ (défaut 2026-10-25), cadre=0 (exécution dans la page au lieu d'un cadre séparé), texte=1 (texte extrait
+     de chaque PDF par pdf.js → <nom>.txt), zones=1 (zone utile tracée sur chaque page). -->
+<script src="/res/pdf-lib.min.js"></script>
+<script src="/res/fontkit.umd.min.js"></script>
+<script src="/res/pdf.min.js"></script>
+<script src="/harness/banc.js"></script>
+<script src="/projet/subgestion3/sg3_docsub.js" onerror="sgBancJournal('erreur','Chargement impossible : /projet/subgestion3/sg3_docsub.js')"></script>
+<script src="/harness/reference_contrat.js"></script>
+</head>
+<body>
+<pre id="etat">Banc d'essai en cours…</pre>
+<script>sgBancLancer();</script>
+</body>
+</html>

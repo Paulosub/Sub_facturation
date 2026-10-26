@@ -54,3 +54,15 @@ texte source plutôt que de forcer.
 
 La structure vient de `SG_DOM` + `sgSide()` (menu) + `sgNav()` (en-tête). Une variante « barres en haut » existe dans
 `subgestion3/_backup_20261006_2227_barre_haute/` (préférence de Paulo au 06.10.2026 : **menu à gauche**).
+
+## Produire un PDF ou dessiner un PDF dans la coquille (SUBGestion 3)
+
+- PDF au graphisme des contrats et factures (en-tête, pied, logo noir / gris) : réutiliser `sgDsPdf` (bloc 30, `sg3_docsub.js`) ou sa partie A ;
+  l'exécuter DANS le cadre Facturation (`const w=await fxEnsure()`, `w.Function('return ('+f.toString()+')')()`) avec `w.PDFLib`, `w.fontkit` et les
+  chaînes `w.eval('AKKU_LIGHT')`, `w.eval('FA_TMPL')`… : pdf-lib refuse les tableaux d'un autre domaine.
+- Aperçu sur un canevas de la coquille avec pdf.js du cadre : `getDocument({data, ownerDocument:document})` (sinon les polices sont chargées dans
+  le cadre et le texte sort en carrés) et `page.render({canvasContext, viewport, intent:'print'})` (sinon pdf.js attend `requestAnimationFrame` du
+  cadre masqué : ~10 s par page), puis `pdf.destroy()`.
+- Jamais `embedPage` d'une page entière d'un gabarit qui contient du texte d'un client : nettoyer la copie en mémoire d'abord (voir la partie A
+  de `sgDsPdf`) — sinon ce texte reste extractible dans le PDF.
+

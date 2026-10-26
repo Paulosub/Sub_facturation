@@ -42,6 +42,17 @@ de fenêtre resté ouvert. Ne pas lancer deux balayages à la fois, ni recharger
   connues et préexistantes (serveur de sauvegarde 7788 absent, `POST /api/commit` 501 des verrous du moteur).
 - Naviguer vers un `.pdf` déclenche un téléchargement : afficher les PDF avec une page pdf.js.
 
+## 3 bis. Documents Substances (PDF des documents types)
+
+Après toute retouche de `subgestion3/sg3_docsub.js` (ou des gabarits `OFFRE_TMPL` / `FA_TMPL` de Facturation.html) : rendre les documents types
+hors de l'app, dans Chrome sans fenêtre, et comparer.
+```bash
+python3 -I subgestion3/docsub_banc/preparer.py <atelier hors du dépôt> <export_base.json.gz>
+```
+puis `<atelier>/harness/rendre.sh tous <atelier>/sorties/x --texte` (bilan : 0 erreur ; PDF, PNG et textes par document), et
+`python3 <atelier>/harness/comparer_base.py <dossier>` après `rendre.sh epreuve,reference <dossier>` pour mesurer en-tête, pied, logo et
+numérotation contre une page réelle de contrat (écart attendu : 0 pixel). Mode d'emploi : `subgestion3/docsub_banc/harness/LISEZMOI.md`.
+
 ## 4. Test du mode réel (double-clic, `file://`)
 
 ```bash

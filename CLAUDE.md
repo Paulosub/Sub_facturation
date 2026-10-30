@@ -1205,9 +1205,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   serveur de sauvegarde) ; `svDpPrint` / `svbDpPrint` ouvrent la visionneuse ; `mgPrint` (rapports Management et Planification RH, 1re section,
   jeu 0) remplacé : mêmes valeurs, rangées mgSt → styles du papier. Couvre contrôle des coûts (14 types), devis général, appels d'offres, honoraires
   et facturation du moteur, rapports Management. Vérifié : 164 documents types identiques à l'octet (Documents Substances inchangés). Inventaire
-  de toutes les impressions (familles A à E, ~150 documents) : atelier de la session, `inventaire_impressions.md`. **Étapes suivantes** : 2 =
-  impressions HTML écrites à la main (famille B : rapports de temps, notes de frais, listes d'adresses, tâches… ; toutes passent par la
-  visionneuse CH-03), 3 = formulaires `tplPrint` (collection `modele`, fonds de page retirés), 4 = coquille (`sgImprimer`, `sgDocOuvrir`).
+  de toutes les impressions (familles A à E, ~150 documents) : atelier de la session, `inventaire_impressions.md`.
+  **Étape 2 (faite, épreuves 22GUS validées le 30.10.2026)** : impressions HTML écrites à la main (famille B : séances, rapports d'heures et de
+  frais d'affaire du Controlling, disponibilités, descriptifs d'appel d'offres, listes de secours…), qui arrivent toutes dans `ch03bView` par la
+  fausse fenêtre `ch03bWin`. `sgImpVueHtml` affiche le HTML comme avant, le LIT au chargement tel que le navigateur l'a mis en page (styles
+  calculés : `sgImpLire`) puis le redessine par `sgDsPdf` (`sgImpSynthese` : modèle .dpdoc synthétique + exemplaire) : h1/h2 → titres de
+  chapitre, tableau sans rangée de titres (≤ 3 colonnes) et `display:grid` → grille libellé / valeur, tableaux → tableaux de données (rangée en
+  gras + filet haut, ou classe « tot » → total encadré ; largeurs d'après le contenu ; 9 colonnes ou plus de 110 signes → paysage), rangées
+  `flex` → grille (≥ 11 pt : titre), paragraphes ; valeurs en champs (montants en rouge). `SGIMP.parHtml` : le HTML d'origine reste la source
+  du bouton PDF. Pas convertis : `tplpage` (étape 3), SVG / canevas (QR-facture, graphiques), documents sans titre ni tableau. Heures jamais en
+  rouge (`SGIMP_HEURES` : colonnes Durée, Heures, Temps, Quantité ; nombre suivi de « h »). `sgDsPdf` (exemplaires) : chaque colonne reçoit au
+  moins la largeur de son plus long mot, prise sur les colonnes qui ont de la place. **Étapes suivantes** : 3 = formulaires `tplPrint`
+  (collection `modele`, fonds de page retirés), 4 = coquille (`sgImprimer`, `sgDocOuvrir`).
   Copie d'avant : `subgestion3/_backup_20261030_2026_avant_impressions/`, `SUBGestion3_backup_20261030_2026_avant_impressions.html`.
 - **Bibliothèque sans « Images » ni « Fonds de page » (30.10.2026, demande de Paulo « supprimer fonds de pages et images »)** : entrées
   `tpl-images` et `tpl-backgrounds` retirées du menu (et leurs chiffres de la vue d'ensemble) ; `go` les ramène à `dom-biblio` (reprise de session,

@@ -677,11 +677,13 @@ async function sgDsPdf(R, rep, o){
         return;
       }
       const t = st.maj ? m.t.toUpperCase() : m.t;
-      t.split(/(\n| +)/).forEach(p => {
+      const P = t.split(/(\n| +)/);
+      P.forEach((p, i) => {
         if(!p) return;
         if(p === '\n'){ out.push({ nl: true }); return; }
-        /* montant d'un champ rempli (B7) : rouge des contrats, Akkurat Regular (prestations exécutées du récapitulatif) */
-        if(m.val && montant(p)){ out.push({ t: p, f: F.regular, sz: st.sz, c: C.R, w: largeur(p, F.regular, st.sz) }); return; }
+        /* montant d'un champ rempli (B7) : rouge des contrats, Akkurat Regular (prestations exécutées du récapitulatif) ; un nombre
+           suivi de « h » (heures) n'est pas un montant */
+        if(m.val && montant(p) && !/^(h|heures?)$/i.test(P.slice(i + 1).find(x => x && !/^ +$/.test(x)) || '')){ out.push({ t: p, f: F.regular, sz: st.sz, c: C.R, w: largeur(p, F.regular, st.sz) }); return; }
         out.push({ t: p, f: st.f, sz: st.sz, c: st.c || C.N, w: largeur(p, st.f, st.sz), esp: /^ +$/.test(p) });
       });
     });
@@ -905,7 +907,20 @@ async function sgDsPdf(R, rep, o){
     const cols = D ? tab(D.cols) : tab(set.columns).filter(c => c && !c.isH).slice().sort(so); if(!cols.length) return;
     const T = SYS.tab[G.ori];
     const ml = retraitDe(b.ml), x0 = G.Z.x0 + ml, W = G.Z.x1 - x0;
-    const ws = largeurs(cols, W), xs = cumul(x0, ws), Wt = ws.reduce((a, x) => a + x, 0), n = cols.length;
+    let ws = largeurs(cols, W);
+    /* exemplaire avec données (B7) : chaque colonne reçoit au moins la largeur de son plus long mot (titre compris), prise sur les colonnes
+       qui ont de la place — aucune donnée ne déborde sur sa voisine ; sans manque, les largeurs du modèle restent telles quelles */
+    if(D){
+      const nC = cols.length, bords = j => (j > 0 ? SYS.gout : SYS.pad) + (j < nC - 1 ? SYS.gout : SYS.pad);
+      const mot = (t, f, sz) => String(t == null ? '' : t).split(/\s+/).reduce((m, x) => x ? Math.max(m, largeur(prep(x), f, sz)) : m, 0);
+      const min = cols.map((c, j) => Math.max(mot(c.titre, F.light, T.tete),
+        tab(D.rows).reduce((m, r) => r && !r.fuse ? Math.max(m, mot(tab(r.c)[j], F.regular, T.taille)) : m, 0)) + bords(j));
+      const manque = ws.reduce((a, w, j) => a + Math.max(0, min[j] - w), 0);
+      const marge = ws.reduce((a, w, j) => a + Math.max(0, w - min[j]), 0);
+      if(manque > 0.01 && marge > 0.01){ const k = Math.min(1, manque / marge), q = Math.min(1, marge / manque);
+        ws = ws.map((w, j) => w < min[j] ? w + (min[j] - w) * q : w - (w - min[j]) * k); }
+    }
+    const xs = cumul(x0, ws), Wt = ws.reduce((a, x) => a + x, 0), n = cols.length;
     const stT = { f: F.light, sz: T.tete, lh: T.tete * 1.25 };
     const bornes = (j) => [xs[j] + (j > 0 ? SYS.gout : SYS.pad), xs[j] + ws[j] - (j < n - 1 ? SYS.gout : SYS.pad)];
     let tete = null;

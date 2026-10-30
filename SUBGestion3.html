@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 30.10.2026 20:45 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 30.10.2026 20:54 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -32096,6 +32096,8 @@ VIEWS['adr-liste']={
        la date passe alors en 3e ligne, comme les pages courantes des contrats), epreuve (liste d'orientations
        ['portrait','paysage',…] : pages d'essai avec la zone utile tracée), zones (true : trace la zone utile sur chaque page),
        subset (false : polices non sous-ensemblées), journal (tableau : reçoit les alertes) }.
+     · o.jobs (bloc 31, impressions au papier des contrats) : exemplaires avec DONNÉES, préparés par l'app (sg3_impressions.js,
+       sgImpPreparer) — valeurs des champs, tableaux et signatures déjà mises en texte ; détail en B7. Sans o.jobs : repères (inchangé).
    - AUCUNE variable extérieure : tout (constantes comprises) est DANS la fonction, pour qu'elle puisse être recréée dans le domaine
      du cadre Facturation : `w.Function('return ('+sgDsPdf.toString()+')')()` (sinon pdf-lib refuse les tableaux d'un autre domaine).
      Pas de DOM, pas de `DS`, aucune écriture de données.
@@ -32349,10 +32351,11 @@ async function sgDsPdf(R, rep, o){
   };
 
   /* ── A6. Papier d'une page ── */
-  const titreBrut = nettoyer(o.titre != null && o.titre !== '' ? o.titre : (rep && rep.reportTitle) || 'Document');
-  const titreDoc = maj(titreBrut);
-  const sousTitre = o.sousTitre ? maj(o.sousTitre) : '';
-  const ligneDate = maj(o.lieu || PAP.lieu) + ' - ' + dateFR(o.date);
+  /* titre, sous-titre et date de l'en-tête : ceux du document, ou ceux de l'exemplaire en cours (o.jobs, voir B7) */
+  let titreBrut = nettoyer(o.titre != null && o.titre !== '' ? o.titre : (rep && rep.reportTitle) || 'Document');
+  let titreDoc = maj(titreBrut);
+  let sousTitre = o.sousTitre ? maj(o.sousTitre) : '';
+  let ligneDate = maj(o.lieu || PAP.lieu) + ' - ' + dateFR(o.date);
   /* titre de l'en-tête, sur une ligne : plus large que la page (même marge des deux côtés), il est tronqué (« ... » : la police
      Bold n'a pas « … ») et signalé ; le titre complet reste dans les métadonnées du PDF. Aucun des 163 documents types n'est
      concerné (67 caractères au plus) — correction de robustesse de l'agent 3 */
@@ -32429,11 +32432,12 @@ async function sgDsPdf(R, rep, o){
       ori = ori === 'paysage' ? 'paysage' : 'portrait';
       const fm = PAP.format[ori];
       const pg = doc.addPage([fm.w, fm.h]);
-      const premiere = ctx.pages.length === 0;
+      /* logo noir : première page du document, ou de chaque exemplaire (o.jobs : une lettre par entreprise…) */
+      const premiere = ctx.pages.length === (ctx.debutJob || 0);
       entete(pg, ori); pied(pg, ori); logo(pg, ori, premiere);
       const Z = zoneDe(ori);
       if(o.zones || o.epreuve) tracerZone(pg, ori);
-      ctx.pages.push({ page:pg, orientation:ori, Z });
+      ctx.pages.push({ page:pg, orientation:ori, Z, job:ctx.job || 0 });
       ctx.page = pg; ctx.orientation = ori; ctx.Z = Z; ctx.y = Z.haut;
       return pg;
     },
@@ -32711,11 +32715,14 @@ async function sgDsPdf(R, rep, o){
       if(x.class === 'TextString'){ const s = prep(x.text); if(s) out.push({ t: s }); return; }
       if(x.class !== 'TextField') return;
       const f = String(x.f || ''), n = f.slice(f.lastIndexOf('|') + 1), s = x.s || 'standard';
-      if(n === 'reportTitle'){ out.push({ t: titreBrut }); return; }
-      if(n === 'date' || n === 'reportDate'){ out.push({ t: dateTexte(s) }); return; }
+      const J = env && env.job;
+      if(n === 'reportTitle'){ out.push({ t: J && J.titreChamp != null ? prep(J.titreChamp) : titreBrut }); return; }
+      if(n === 'date' || n === 'reportDate'){ const v = J && J.V ? J.V[f + '\u0001' + s] : null; out.push({ t: v != null && v !== '' ? prep(v) : dateTexte(s) }); return; }
       if(n === 'sectionTitle' && env && env.section && env.section.title){ out.push({ t: prep(env.section.title) }); return; }
       if(n === 'pageNumber'){ out.push({ t: '', page: 'n' }); return; }
       if(n === 'nofPages'){ out.push({ t: '', page: 't' }); return; }
+      /* exemplaire avec données (B7) : valeur du champ mise en forme par le moteur (svFmtVal), rien si elle est vide */
+      if(J){ const v = J.V ? J.V[f + '\u0001' + s] : null; if(v != null && v !== '') out.push({ t: prep(v), val: true }); return; }
       out.push({ t: '‹ ' + libelleChamp(n, s) + ' ›', rep: true, court: SG_DS_CHAMPS.courts[n + '|' + s] || null });
     });
     /* fin du texte : espaces et sauts de ligne de fin retirés (invisibles) */
@@ -32725,6 +32732,8 @@ async function sgDsPdf(R, rep, o){
     return out;
   };
   const estVide = (ms) => !ms.some(m => m.rep || m.page || /\S/.test(m.t));
+  /* montant (B7) : nombre à deux décimales tel que le moteur l'écrit (num : « 1'234.50 », « -12.00 », « (0.05) »), non nul */
+  const montant = (p) => /^\(?[-−]?\d+(?:['’]\d{3})*\.\d{2}\)?$/.test(p) && /[1-9]/.test(p);
   /* découpe en paragraphes aux sauts de ligne (pour l'écart des WrappingTextBand) */
   const paragraphes = (ms) => {
     const P = [[]];
@@ -32754,6 +32763,8 @@ async function sgDsPdf(R, rep, o){
       t.split(/(\n| +)/).forEach(p => {
         if(!p) return;
         if(p === '\n'){ out.push({ nl: true }); return; }
+        /* montant d'un champ rempli (B7) : rouge des contrats, Akkurat Regular (prestations exécutées du récapitulatif) */
+        if(m.val && montant(p)){ out.push({ t: p, f: F.regular, sz: st.sz, c: C.R, w: largeur(p, F.regular, st.sz) }); return; }
         out.push({ t: p, f: st.f, sz: st.sz, c: st.c || C.N, w: largeur(p, st.f, st.sz), esp: /^ +$/.test(p) });
       });
     });
@@ -32971,18 +32982,21 @@ async function sgDsPdf(R, rep, o){
   /* TableBand : colonnes visibles triées, titres (customH si isHC et non vide, sinon le nom de la colonne, comme svDpTable du
      moteur : « Monnaie », « Type », « % »), lignes vides à filets, lignes de total des propriétés */
   const bandeTableau = (b, G) => {
+    /* exemplaire avec données (B7) : colonnes et lignes préparées par l'app (svDpCols du moteur : colonnes variables comprises) */
+    const J = G.env.job, D = J && J.T ? J.T[b._sgk] : null;
     const set = tab(b.tableSettings)[0]; if(!set) return;
-    const cols = tab(set.columns).filter(c => c && !c.isH).slice().sort(so); if(!cols.length) return;
+    const cols = D ? tab(D.cols) : tab(set.columns).filter(c => c && !c.isH).slice().sort(so); if(!cols.length) return;
     const T = SYS.tab[G.ori];
     const ml = retraitDe(b.ml), x0 = G.Z.x0 + ml, W = G.Z.x1 - x0;
     const ws = largeurs(cols, W), xs = cumul(x0, ws), Wt = ws.reduce((a, x) => a + x, 0), n = cols.length;
     const stT = { f: F.light, sz: T.tete, lh: T.tete * 1.25 };
     const bornes = (j) => [xs[j] + (j > 0 ? SYS.gout : SYS.pad), xs[j] + ws[j] - (j < n - 1 ? SYS.gout : SYS.pad)];
     let tete = null;
-    if(set.isHV !== false){
+    if(D ? D.tete : set.isHV !== false){
       const cells = cols.map((c, j) => {
         let ms;
-        if(c.type === 'flexColumn'){ const nm = String(c.name || ''); ms = [{ t: '‹ ' + (SG_DS_CHAMPS.colonnes[nm] || nm || 'Colonnes variables') + ' ›', rep: true }]; }
+        if(D) ms = morceauxTexte({ ts: [{ class: 'TextString', text: c.titre }] });
+        else if(c.type === 'flexColumn'){ const nm = String(c.name || ''); ms = [{ t: '‹ ' + (SG_DS_CHAMPS.colonnes[nm] || nm || 'Colonnes variables') + ' ›', rep: true }]; }
         else ms = morceauxTexte({ ts: [{ class: 'TextString', text: c.isHC && c.customH != null && c.customH !== '' ? c.customH : c.name }] });
         const [a, z] = bornes(j), ha = c.ha || 'left';
         if(estVide(ms)) return { lignes: [], a, z, ha };
@@ -33021,6 +33035,43 @@ async function sgDsPdf(R, rep, o){
           filet(pg, x0, bas, x0 + Wt);
         } };
       G.out.push(tete);
+    }
+    /* exemplaire avec données (B7) : une ligne par rangée du moteur, au pas du tableau (5 mm portrait, 4 mm paysage), filet 0,25 sous
+       chaque ligne ; emphase (Regular) selon le style de rangée du modèle (rowstyleset) ; total (« tt ») dans un cadre 0,25 comme les
+       totaux des contrats ; montants non nuls des colonnes de nombres en rouge Regular ; « space » = demi-ligne vide ; « fuse » = une
+       cellule sur toute la largeur. Ni lignes vides ni rangées « Total… » des propriétés : le moteur donne ses propres totaux */
+    if(J){
+      const L = D ? tab(D.rows).filter(Boolean) : [];
+      const stL = { f: F.light, sz: T.taille, lh: T.taille * 1.25 }, stR = Object.assign({}, stL, { f: F.regular });
+      L.forEach((r, ri) => {
+        const avant = (!tete && ri === 0) ? mmPt(b.mt) : 0;
+        if(r.st === 'space'){ G.out.push({ h: T.pas / 2, avant, tete, espace: true, dessiner: () => {} }); return; }
+        const st = r.gras ? stR : stL, total = r.st === 'tt', V = tab(r.c);
+        /* un mot n'est jamais coupé à la lettre (« 38 », « FF10'584.24 » dans une colonne étroite) : corps réduit jusqu'à 6,5 pt dans sa
+           colonne, puis les gouttières de la colonne, et en dernier recours il dépasse de sa colonne du côté de son alignement */
+        const cellule = (t, a, z, A, Z, num) => {
+          const ms = [{ t, val: num }], tient = (L, w) => L.every(l => l.w <= w + 0.01), op = { coupe: false, silence: true };
+          let lg = composer(ms, st, z - a, op);
+          if(tient(lg, z - a)) return { lignes: lg, a, z };
+          lg = composerAjuste(ms, st, z - a, 6.5, op).lignes;
+          if(tient(lg, z - a)) return { lignes: lg, a, z };
+          lg = composer(ms, st, Z - A, op);
+          if(tient(lg, Z - A)) return { lignes: lg, a: A, z: Z };
+          return { lignes: composerAjuste(ms, st, Z - A, 6.5, op).lignes, a: A, z: Z };
+        };
+        const cs = (r.fuse ? [{ t: V[0], a: x0 + SYS.pad, z: x0 + Wt - SYS.pad, A: x0 + SYS.pad, Z: x0 + Wt - SYS.pad, ha: 'left', num: false }]
+          : cols.map((c, j) => { const [a, z] = bornes(j); return { t: V[j], a, z, A: xs[j] + (j > 0 ? 0.75 : SYS.pad), Z: xs[j] + ws[j] - (j < n - 1 ? 0.75 : SYS.pad), ha: c.ha || 'left', num: !!c.num }; }))
+          .map(c => { const t = prep(c.t == null ? '' : c.t); if(/\S/.test(t)) Object.assign(c, cellule(t, c.a, c.z, c.A, c.Z, c.num)); else c.lignes = []; return c; });
+        const nl = cs.reduce((m, c) => Math.max(m, c.lignes.length), 1), h = T.pas + (nl - 1) * st.lh;
+        const suiv = L[ri + 1], garder = /^(th|ch|l[1-4])$/.test(r.st || '') || !!(suiv && suiv.st === 'tt');
+        G.out.push({ h, avant, tete, garder,
+          dessiner: (pg, y, info) => {
+            const bas = y - h, b0 = y - (T.pas - T.base);
+            cs.forEach(c => c.lignes.forEach((ln, i) => poser(pg, ln, c.a, c.z, b0 - i * st.lh, c.ha, info)));
+            if(total) rect(pg, x0, bas, Wt, h, { bord: C.N }); else filet(pg, x0, bas, x0 + Wt);
+          } });
+      });
+      return;
     }
     for(let i = 0; i < SYS.lignesVides; i++){
       G.out.push({ h: T.pas, avant: (!tete && i === 0) ? mmPt(b.mt) : 0, tete,
@@ -33121,6 +33172,17 @@ async function sgDsPdf(R, rep, o){
     const c = b.c || {}, f = String(c.f || ''), n = f.slice(f.lastIndexOf('|') + 1) || 'appUserSignature';
     const col = b.col || {}, st = styleDe(col.textFont);
     const ml = retraitDe(b.ml), x0 = G.Z.x0 + ml, x1 = G.Z.x1;
+    /* exemplaire avec données (B7) : signature enregistrée dessinée dans sa place de 10 mm, sinon place laissée libre (signature à
+       la main) ; images fixes des anciens modèles (logos, fonds : c.n) jamais imprimées */
+    if(G.env.job){
+      const im = !c.n && G.env.job.img ? G.env.job.img[n] : null;
+      G.out.push({ h: SYS.signature, avant: mmPt(b.mt),
+        dessiner: (pg, y) => { if(!im) return;
+          const k = Math.min(SYS.signature / im.height, (x1 - x0) / im.width), w = im.width * k, hh = im.height * k;
+          const x = col.ha === 'right' ? x1 - w : (col.ha === 'center' ? (x0 + x1 - w) / 2 : x0);
+          pg.drawImage(im, { x, y: y - hh, width: w, height: hh }); } });
+      return;
+    }
     const ln = composer([{ t: '‹ ' + libelleChamp(n, 'standard') + ' ›', rep: true }], st, x1 - x0)[0];
     G.out.push({ h: SYS.signature, avant: mmPt(b.mt),
       dessiner: (pg, y, info) => poser(pg, ln, x0, x1, y - SYS.signature / 2 - st.sz * 0.35, col.ha || 'left', info) });
@@ -33141,8 +33203,8 @@ async function sgDsPdf(R, rep, o){
     const pg = (t && t.page) || { w: 210, l: 25, r: 15 };
     return (+pg.w || 210) - (+pg.l || 0) - (+pg.r || 0);
   };
-  const blocsSection = (s, ori) => {
-    const G = { Z: zoneDe(ori), ori, env: { section: s }, out: [], Wmod: largeurModele(s) };
+  const blocsSection = (s, ori, J) => {
+    const G = { Z: zoneDe(ori), ori, env: J ? { section: s, job: J } : { section: s }, out: [], Wmod: largeurModele(s) };
     tab(s.bands).filter(b => b && !b.isH).slice().sort(so).forEach(b => {
       try{
         if(b.class === 'GridBand') bandeGrille(b, G);
@@ -33241,25 +33303,50 @@ async function sgDsPdf(R, rep, o){
     }
     /* sections visibles, triées (svDpHTML) ; aucune visible : document vide d'une page */
     const secs = tab(rep && rep.sections).filter(s => s && s.isVisible !== false).slice().sort(so);
-    const sections = secs.map(s => { const ori = orienter(s); return { ori, blocs: blocsSection(s, ori) }; });
-    if(!sections.length) sections.push({ ori: 'portrait', blocs: [] });
-    const pages = paginer(sections);
-    pages.forEach((p, i) => {
-      cx.nouvellePage(p.ori);
-      const info = { n: i + 1, tot: pages.length };
-      p.items.forEach(it => { try{ it.b.dessiner(cx.page, it.y, info); }catch(e){ alerte('Dessin : ' + (e && e.message || e)); } });
+    /* B7. exemplaires avec données (o.jobs, préparés par l'app : sg3_impressions.js) : chacun sur ses pages, avec son titre, son
+       sous-titre (affaire) et sa date dans l'en-tête, logo noir sur sa première page, numérotation propre « n | total » */
+    tab(jobs).forEach((J, ji) => {
+      if(J){
+        titreBrut = nettoyer(J.titre != null && J.titre !== '' ? J.titre : titreDocument);
+        titreDoc = maj(titreBrut); sousTitre = J.sousTitre ? maj(J.sousTitre) : (o.sousTitre ? maj(o.sousTitre) : '');
+        ligneDate = maj(o.lieu || PAP.lieu) + ' - ' + dateFR(J.date || o.date);
+        cx.job = ji; cx.debutJob = cx.pages.length;
+      }
+      const sections = secs.map(s => { const ori = orienter(s); return { ori, blocs: blocsSection(s, ori, J) }; });
+      if(!sections.length) sections.push({ ori: 'portrait', blocs: [] });
+      const pages = paginer(sections);
+      pages.forEach((p, i) => {
+        cx.nouvellePage(p.ori);
+        const info = { n: i + 1, tot: pages.length };
+        p.items.forEach(it => { try{ it.b.dessiner(cx.page, it.y, info); }catch(e){ alerte('Dessin : ' + (e && e.message || e)); } });
+      });
     });
   };
 
+  /* exemplaires : o.jobs = [{ titre, titreChamp, sousTitre, date, V:{ « f\u0001s » : texte }, T:{ clé _sgk du tableau : { tete, cols, rows } },
+     I:{ nom : image « data:image/png|jpeg;base64,… » } }] ; sans o.jobs : un seul passage, champs en repères (Documents Substances) */
+  const titreDocument = titreBrut;
+  const jobs = Array.isArray(o.jobs) && o.jobs.length ? o.jobs : [null];
+  for(const J of jobs){
+    if(!J || !J.I) continue;
+    J.img = {};
+    for(const k of Object.keys(J.I)){
+      const s = String(J.I[k] || '');
+      try{ J.img[k] = /^data:image\/png/i.test(s) ? await doc.embedPng(octets(s)) : (/^data:image\/jpe?g/i.test(s) ? await doc.embedJpg(octets(s)) : null); }
+      catch(e){ alerte('Image « ' + k + ' » illisible : ' + (e && e.message || e)); }
+    }
+  }
   contenu(ctx);
   if(!ctx.pages.length) ctx.nouvellePage('portrait');
 
   /* ── Fin : numérotation « n | total » (le total n'est connu qu'ici), métadonnées, octets ── */
-  const tot = ctx.pages.length;
-  ctx.pages.forEach((p, i) => numeroter(p.page, i + 1, tot));
-  doc.setTitle(titreBrut);
+  /* par exemplaire (B7) : chaque lettre a sa propre numérotation ; sans o.jobs, un seul exemplaire (job 0) */
+  const tot = {}, rang = {};
+  ctx.pages.forEach(p => { tot[p.job] = (tot[p.job] || 0) + 1; });
+  ctx.pages.forEach(p => { rang[p.job] = (rang[p.job] || 0) + 1; numeroter(p.page, rang[p.job], tot[p.job]); });
+  doc.setTitle(titreDocument);
   doc.setAuthor('Substances Architectes');
-  doc.setCreator('SUBGestion — Documents Substances');
+  doc.setCreator(o.jobs ? 'SUBGestion' : 'SUBGestion — Documents Substances');
   doc.setProducer('SUBGestion');
   doc.setSubject(nettoyer(o.description || ''));
   return await doc.save();
@@ -33340,6 +33427,7 @@ if(typeof SG_DOM!=='undefined'&&typeof VIEWS==='object'&&VIEWS){
       styles:{ textstyleset:copie(DS.T&&DS.T.textstyleset), rowstyleset:copie(DS.T&&DS.T.rowstyleset) } };
     const fn=w.Function('return ('+sgDsPdf.toString()+')')();
     SGDS.w=w; return { w, R, fn }; })().catch(e=>{ SGDS.res=null; throw e; }));
+  SGDS.ressources=sgdsRessources;   /* aussi pour les impressions avec données (bloc 31, sg3_impressions.js) */
   const sgdsCle=d=>String(d.id)+'|'+diso(new Date());
   const sgdsProduire=async d=>{ const k=sgdsCle(d); if(SGDS.cache.has(k)) return SGDS.cache.get(k);
     const { w, R, fn }=await sgdsRessources(), auj=new Date(), journal=new w.Array(), t0=performance.now();
@@ -33509,6 +33597,162 @@ if(typeof SG_DOM!=='undefined'&&typeof VIEWS==='object'&&VIEWS){
     '.sgds-msg b{display:block;color:var(--s-noir);font-size:14px;font-weight:700;margin-bottom:6px}',
     '.sgds-msg.err b{color:var(--s-rouge)}',
     '@container (max-width:1050px){.sgds-col{flex-basis:240px;width:240px}}'].join('\n'); document.head.append(st); }
+}
+
+/* ═══ 31. Impressions au papier des contrats (sg3_impressions.js, 30.10.2026) ═══
+   Demande de Paulo (suite des Documents Substances) : « lors de l'impression du document conserver les couleurs des contrats, etc., de
+   l'ensemble des écritures » ; choix : « Papier des contrats partout » — tout document imprimé depuis l'app sort avec les données réelles,
+   au graphisme des contrats (en-tête, pied, logo noir puis gris, noir des contrats, gris de l'en-tête, rouge pour les montants) ; les
+   anciens fonds de page et images des modèles ne sont plus imprimés. Fait par étapes, avec épreuves.
+
+   ÉTAPE 1 — documents faits d'un modèle (.dpdoc, collection modeledocument : contrôle des coûts, devis, appels d'offres, lettres…).
+   Ils passent tous par svDpHTML(rep, jobs, o) du moteur. Ici :
+   - svDpHTML est enveloppé : le résultat garde son HTML (aperçu d'origine, inchangé) et reçoit un repère « sgimp:<id> » dans sa feuille
+     de style ; (rep, jobs, o) sont gardés en mémoire (SGIMP.memo, 40 derniers) ;
+   - le PDF est fait par sgDsPdf (bloc 30) avec les données : sgImpPreparer() met en forme dans l'app toutes les valeurs (svFmtVal, cellules
+     comme svDpCell, colonnes svDpCols) et ne passe à sgDsPdf que du texte ; rien n'est écrit dans la base ;
+   - la visionneuse du moteur (ch03bView) montre ce PDF à la place du HTML (mêmes boutons : Imprimer, PDF, Partager, Modifier les textes…) ;
+   - « PDF » (aperçu, Sauvegarder et ouvrir, Enregistrer sous forme de fichier PDF, Partager, Joindre) : ch03aApi('/api/pdf') reconnaît le
+     repère et rend ce PDF au lieu de faire imprimer le HTML par le Chrome du serveur de sauvegarde ;
+   - svDpPrint / svbDpPrint (impressions directes : lettres et listes des appels d'offres…) ouvrent la même visionneuse au lieu d'une
+     fenêtre d'impression du navigateur.
+   DeltaSub.html seul garde ses impressions d'origine. */
+if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='function'){
+  const SGIMP={ memo:new Map(), n:0 };
+  window.SGIMP=SGIMP;
+  const sgImpTxt=v=>v==null?'':String(v);
+  const sgImpIdDe=html=>{ const m=/\/\*sgimp:([a-z0-9]+)\*\//.exec(String(html||'')); return m?m[1]:null; };
+
+  /* ── repère dans le résultat de svDpHTML (le HTML et l'aperçu d'origine ne changent pas) ── */
+  const svDpHTML0=svDpHTML;
+  svDpHTML=function(rep,jobs,o){ const R=svDpHTML0(rep,jobs,o), id=(++SGIMP.n).toString(36)+'x'+Date.now().toString(36);
+    SGIMP.memo.set(id,{rep,jobs,o:o||{},titre:R.title}); while(SGIMP.memo.size>40) SGIMP.memo.delete(SGIMP.memo.keys().next().value);
+    R.css=(R.css||'')+'\n/*sgimp:'+id+'*/'; return R; };
+
+  /* ── cellule d'un tableau en texte : mêmes règles que svDpCell du moteur (vrai / faux, nombres, dates), sans HTML ── */
+  const sgImpCellule=(c,r,set)=>{ const v=c.flexIndex!=null?((r.f||[])[c.flexIndex]):(r.c||[])[c.id];
+    if(typeof v==='boolean'||(c.type==='booleanColumn'&&(v===1||v===0))) return sgImpTxt(v?(set.tText??'x'):(set.fText??''));
+    if(c.type==='doubleColumn'||c.type==='flexColumn') return typeof v==='number'?num(rJ(v)):sgImpTxt(v);
+    if(c.type==='dateColumn') return /^\d{4}-\d{2}-\d{2}/.test(v||'')?dfr(v):sgImpTxt(v);
+    return sgImpTxt(v); };
+  const sgImpProjet=F=>{ const p=F&&F.project&&F.project.t==='project'?F.project.p:null; return p?[p.NUMBER,p.TITLE].filter(x=>x!=null&&String(x).trim()).join(' - '):''; };
+  const sgImpDate=F=>{ for(const k of ['docDate','reportDate','date']){ const v=F&&F[k]; if(v&&v.t==='date'&&/^\d{4}-\d{2}-\d{2}/.test(v.v||'')) return v.v.slice(0,10); } return today(); };
+
+  /* ── préparation : copie du modèle (tableaux repérés par _sgk), valeurs des champs et des tableaux de chaque exemplaire ── */
+  const sgImpPreparer=E=>{ const rep=JSON.parse(JSON.stringify(E.rep||{})), o=E.o||{};
+    const secs=(rep.sections||[]).filter(s=>s&&s.isVisible!==false), tabs=[], champs=new Map(), images=new Set();
+    secs.forEach(s=>(s.bands||[]).forEach(b=>{ if(!b||b.isH) return;
+      if(b.class==='TableBand'){ b._sgk='t'+tabs.length; tabs.push(b); }
+      if(b.class==='TextBand'&&b.c&&b.c.class==='Image'&&!b.c.n) images.add(String(b.c.f||'').split('|').pop()); }));
+    const voir=x=>{ if(Array.isArray(x)){ x.forEach(voir); return; } if(!x||typeof x!=='object') return;
+      if(x.class==='TextField') champs.set(String(x.f||'')+'\u0001'+(x.s||'standard'),x); for(const k in x) voir(x[k]); };
+    secs.forEach(s=>voir(s.bands));
+    const RS=svRowStyles(rep), gras=st=>/regular|medium|bold|black|heavy/i.test(String(((RS[st]||RS.tr)||{}).font||''));
+    const titreDef=rep.reportTitle||o.title||'';
+    const jobs=(E.jobs&&E.jobs.length?E.jobs:[{F:{}}]).map(job=>{ const F=job.F||{}, tb=job.tables||{}, V={}, T={}, I={};
+      champs.forEach((x,k)=>{ const n=String(x.f||'').split('|').pop(); if(/^(reportTitle|pageNumber|nofPages|sectionTitle)$/.test(n)) return;
+        try{ V[k]=sgImpTxt(svFmtVal(svField(F,x.f),x.s)); }catch(_){ V[k]=''; } });
+      tabs.forEach(b=>{ const nom=String(b.f||'').split('|').pop(), data=tb[nom]||tb.table||{rows:[]};
+        const set=(b.tableSettings||[]).find(s=>data.setting&&s.name===data.setting)||(b.tableSettings||[])[0]; if(!set) return;
+        const cols=svDpCols(set,data);
+        T[b._sgk]={tete:set.isHV!==false,
+          cols:cols.map(c=>({id:c.id,titre:sgImpTxt(c.isHC&&c.customH!=null&&c.customH!==''?c.customH:c.name),pw:+c.pw||0,isAE:!!c.isAE,
+            ha:c.ha||(c.type==='doubleColumn'||c.type==='flexColumn'?'right':'left'),   /* nombres sans alignement donné : à droite, comme les montants des contrats */
+            num:c.type==='doubleColumn'||c.type==='flexColumn'||c.ha==='right'})),   /* colonne de nombres (le moteur écrit souvent les montants en texte, alignés à droite) */
+          rows:(data.rows||[]).map(r=>{ const st=r.st||'tr';
+            return {st,gras:gras(st),fuse:!!r.fuse,c:r.fuse?[sgImpTxt((r.c||[])[cols[0]&&cols[0].id])]:cols.map(c=>sgImpCellule(c,r,set))}; })}; });
+      images.forEach(n=>{ let im=(job.images||{})[n]; if(!im&&typeof ch08cSigFor==='function') try{ im=ch08cSigFor(n,F); }catch(_){ im=null; }
+        if(im&&/^data:image\/(png|jpe?g)/i.test(String(im.data||''))) I[n]=im.data; });
+      return {titre:job.title||o.title||E.titre||titreDef,titreChamp:job.title||titreDef,sousTitre:sgImpProjet(F),date:sgImpDate(F),V,T,I}; });
+    return {rep,jobs}; };
+
+  /* ── PDF d'un document repéré (gardé avec lui : même document, même PDF) ── */
+  const sgImpPdf=async id=>{ const E=SGIMP.memo.get(id);
+    if(!E) throw new Error('Document trop ancien : fermez-le puis rouvrez-le.');
+    if(E.pdf) return E.pdf;
+    const P=E.prep||sgImpPreparer(E), {w,R,fn}=await SGDS.ressources(), journal=new w.Array();
+    const opt=w.JSON.parse(JSON.stringify({titre:P.jobs[0].titre,date:P.jobs[0].date,jobs:P.jobs,type:E.o.type||'',jeu:E.o.jeu||''}));
+    opt.journal=journal;
+    const oct=await fn(R,w.JSON.parse(JSON.stringify(P.rep)),opt);
+    if(journal.length) console.info('Impression « '+P.jobs[0].titre+' » :',Array.from(journal));
+    E.pdf=new Blob([oct],{type:'application/pdf'}); return E.pdf; };
+  SGIMP.pdf=sgImpPdf; SGIMP.preparer=id=>sgImpPreparer(SGIMP.memo.get(id));
+
+  /* ── « PDF » des visionneuses du moteur : document repéré → ce PDF (sans le Chrome du serveur de sauvegarde) ── */
+  const ch03aApi1=ch03aApi;
+  ch03aApi=async function(url,o){ o=o||{}; const meth=String(o.method||'GET').toUpperCase();
+    /* moteur PDF toujours présent : les documents repérés n'ont plus besoin du Chrome du serveur de sauvegarde (les autres HTML, si le
+       serveur manque, reçoivent le message habituel « lancez le serveur de sauvegarde ») */
+    if(/^\/api\/pdf(\?|$)/.test(String(url))&&meth==='GET'){ const r=await ch03aApi1(url,o); return Object.assign({},r,{chrome:r&&r.chrome||'SUBGestion (papier des contrats)'}); }
+    if(/^\/api\/pdf(\?|$)/.test(String(url))&&meth==='POST'){ let c={}; try{ c=JSON.parse(String(o.body||'{}')); }catch(_){ c={}; }
+      const id=sgImpIdDe(c.html);
+      if(id){ const pdf=await sgImpPdf(id), buf=await pdf.arrayBuffer();
+        if(c.apercu){ const a='ap'+Date.now().toString(36); SG_APERCUS[a]=pdf; return {ok:true,apercu:a,taille:pdf.size,pages:await sgCompterPages(buf)}; }
+        return Object.assign({ok:true},await sgFichierRanger(pdf,'document.pdf')); } }
+    return ch03aApi1(url,o); };
+
+  /* ── visionneuse du moteur : le cadre montre le PDF du document repéré (le zoom, propre au HTML, est masqué) ── */
+  const SRCDOC=Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype,'srcdoc');
+  const sgImpMontrer=(ifr,html)=>{ const id=sgImpIdDe(html); if(!id||ifr._sgimp===id) return; ifr._sgimp=id;
+    SRCDOC.set.call(ifr,'<!doctype html><meta charset="utf-8"><body style="font:13px Akkurat,Helvetica,Arial,sans-serif;color:#555;padding:20px">Préparation du document…</body>');
+    sgImpPdf(id).then(pdf=>{ if(ifr._sgimp!==id) return; if(ifr._sgurl) URL.revokeObjectURL(ifr._sgurl);
+      ifr._sgurl=URL.createObjectURL(pdf); ifr.removeAttribute('sandbox'); ifr.removeAttribute('srcdoc'); ifr.src=ifr._sgurl; },
+    e=>{ console.error(e); if(ifr._sgimp!==id) return; ifr._sgimp=null;
+      SRCDOC.set.call(ifr,'<!doctype html><meta charset="utf-8"><body style="font:13px Akkurat,Helvetica,Arial,sans-serif;color:#b00;padding:20px">'+esc('PDF impossible : '+(e&&e.message||e))+'</body>'); }); };
+  const ch03bView0=ch03bView;
+  ch03bView=function(titre,src,o){ const html=typeof src==='string'?src:(src&&src.css!=null?String(src.css):'');
+    if(!sgImpIdDe(html)) return ch03bView0(titre,src,o);
+    let ifr=null;
+    Object.defineProperty(HTMLIFrameElement.prototype,'srcdoc',{configurable:true,enumerable:SRCDOC.enumerable,get:SRCDOC.get,
+      set(v){ if(!ifr&&sgImpIdDe(v)){ ifr=this;
+        Object.defineProperty(this,'srcdoc',{configurable:true,get:()=>'',set:x=>{ if(sgImpIdDe(x)) sgImpMontrer(this,x); else SRCDOC.set.call(this,x); }});
+        sgImpMontrer(this,v); return; }
+        SRCDOC.set.call(this,v); }});
+    let V; try{ V=ch03bView0(titre,src,o); } finally { Object.defineProperty(HTMLIFrameElement.prototype,'srcdoc',SRCDOC); }
+    try{ const z=V&&V.bd&&V.bd.parentNode&&V.bd.parentNode.querySelector('select[title="Zoom"]'); if(z) z.style.display='none'; }catch(_){}
+    if(ifr){ const fermer=V.close; V.close=function(){ if(ifr._sgurl) URL.revokeObjectURL(ifr._sgurl); return fermer.apply(this,arguments); }; }
+    return V; };
+
+  /* ── rapports Management et Planification RH (mgPrint : moteur .dpdoc à part, 1re section du modèle, jeu 0) : mêmes valeurs que
+     mgPrint (champs par nom, date du jour en toutes lettres, utilisateur ; nombres num(rJ) sauf rangée « txt » ; colonne FlexColumn = une
+     colonne par titre de tables._flex), rangées mgSt → styles du papier, PDF dans la visionneuse ── */
+  const SGIMP_MG={space:'space',tableLevel1:'l1',tableLevel2:'l2',tableLevel1Total:'tt',tableLevel2Total:'l2t',tableHeader:'th',tableRow:'tr'};
+  const sgImpMg=(title,fields,tables,rep0)=>{ const rep=JSON.parse(JSON.stringify(rep0)), so=(a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0);
+    rep.sections=(rep.sections||[]).slice(0,1).map(x=>Object.assign(x,{isVisible:true}));
+    const user=ch08cUserStr(ME.u,'userName')||(ME.staff?staffName(ME.staff):ME.id), titre=rep.reportTitle||title||'', V={}, T={}, F=fields||{}, TB=tables||{};
+    const voir=x=>{ if(Array.isArray(x)){ x.forEach(voir); return; } if(!x||typeof x!=='object') return;
+      if(x.class==='TextField'){ const n=String(x.f||'').split('|')[1]; V[String(x.f||'')+'\u0001'+(x.s||'standard')]=n==='date'?dLong(today()):n==='appUser'?sgImpTxt(user):sgImpTxt(F[n]); }
+      for(const k in x) voir(x[k]); };
+    (rep.sections||[]).forEach(x=>voir(x.bands));
+    let k=0; (rep.sections||[]).forEach(x=>(x.bands||[]).forEach(b=>{ if(!b||b.isH||b.class!=='TableBand'||!b.tableSettings||!b.tableSettings[0]) return;
+      const set=b.tableSettings[0], rows=TB[String(b.f||'').split('|')[1]]||TB.table||[];
+      let cols=(set.columns||[]).filter(c=>!c.isH).sort(so); const fx=cols.find(c=>c.name==='FlexColumn');
+      if(fx) cols=cols.flatMap(c=>c===fx?(TB._flex||[]).map((f,i)=>({...c,name:f,isHC:false,id:c.id+i,ha:'right'})):[c]);
+      const nombre=c=>c.type==='doubleColumn'||c.type==='flexColumn'||c.ha==='right'||rows.some(r=>r&&r.c&&typeof r.c[c.id]==='number');
+      b._sgk='t'+(k++);
+      T[b._sgk]={tete:set.isHV!==false,
+        cols:cols.map(c=>({id:c.id,titre:sgImpTxt(c.isHC&&c.customH!=null?c.customH:c.name),pw:+c.pw||0,isAE:!!c.isAE,ha:c.ha||(nombre(c)?'right':'left'),num:nombre(c)})),
+        rows:rows.map(r=>{ const st=mgSt(r), q=SGIMP_MG[st]||'tt';
+          if(st==='tableLevel1'&&r.fuse) return {st:'l1',gras:true,fuse:true,c:[sgImpTxt(r.c&&r.c[0])]};
+          return {st:q,gras:/^(l1|tt|l2t|th)$/.test(q),fuse:false,c:cols.map(c=>{ let v=r.c&&r.c[c.id]; if(typeof v==='number'&&!r.txt) v=num(rJ(v)); return sgImpTxt(v); })}; })}; }));
+    const id=(++SGIMP.n).toString(36)+'m'+Date.now().toString(36);
+    SGIMP.memo.set(id,{prep:{rep,jobs:[{titre,titreChamp:titre,sousTitre:'',date:today(),V,T,I:{}}]},o:{},titre});
+    while(SGIMP.memo.size>40) SGIMP.memo.delete(SGIMP.memo.keys().next().value);
+    return {id,titre}; };
+  if(typeof mgPrint==='function') mgPrint=function(type,title,fields,tables,M){ const fb=()=>mgPrintHTML(title,fields,M);
+    tplOr(()=>{ const x=plModelDoc(type), rep=x&&x.report; if(!rep||!rep.sections||!rep.pageTemplates) return fb();
+      const r=sgImpMg(title,fields,tables,rep); ch03bView(r.titre,{title:r.titre,css:'/*sgimp:'+r.id+'*/',html:''},{}); },fb); };
+
+  /* ── impressions directes par modèle : visionneuse (PDF) au lieu d'une fenêtre d'impression du navigateur ── */
+  const sgImpModeles=run=>{ if(['modeledocument','image'].every(t=>DS.loaded.has(t))) run(); else DS.need(['modeledocument','image']).then(run,()=>toast('Modèles indisponibles : serveur injoignable.',true)); };
+  svDpPrint=function(type,o){ o=o||{};
+    sgImpModeles(()=>{ const x=svDpFind(type,o.project);
+      if(!x){ if(o.fallback){ o.fallback(); return; } toast('Aucun modèle « '+type+' » disponible (Modèles ▸ Modèles de documents).',true); return; }
+      const R=svDpHTML(x.rep,o.jobs,{jeu:x.jeu,title:o.title,type}); ch03bView(o.title||R.title,R,{}); }); };
+  svbDpPrint=function(type,o){ o=o||{};
+    sgImpModeles(()=>{ const x=svDpFind(type,o.project); if(!x){ toast('Aucun modèle « '+type+' » disponible (Modèles ▸ Modèles de documents).',true); return; }
+      const rep=o.transform?o.transform(JSON.parse(JSON.stringify(x.rep))):x.rep, jobs=o.jobs(rep);
+      const R=svDpHTML(rep,jobs,{jeu:x.jeu,title:o.title,type}); if(o.css) R.css+='\n'+o.css(rep); ch03bView(o.title||R.title,R,{}); }); };
 }
 </script>
 </body>

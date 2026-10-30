@@ -13,6 +13,8 @@
        la date passe alors en 3e ligne, comme les pages courantes des contrats), epreuve (liste d'orientations
        ['portrait','paysage',…] : pages d'essai avec la zone utile tracée), zones (true : trace la zone utile sur chaque page),
        subset (false : polices non sous-ensemblées), journal (tableau : reçoit les alertes) }.
+     · o.jobs (bloc 31, impressions au papier des contrats) : exemplaires avec DONNÉES, préparés par l'app (sg3_impressions.js,
+       sgImpPreparer) — valeurs des champs, tableaux et signatures déjà mises en texte ; détail en B7. Sans o.jobs : repères (inchangé).
    - AUCUNE variable extérieure : tout (constantes comprises) est DANS la fonction, pour qu'elle puisse être recréée dans le domaine
      du cadre Facturation : `w.Function('return ('+sgDsPdf.toString()+')')()` (sinon pdf-lib refuse les tableaux d'un autre domaine).
      Pas de DOM, pas de `DS`, aucune écriture de données.
@@ -266,10 +268,11 @@ async function sgDsPdf(R, rep, o){
   };
 
   /* ── A6. Papier d'une page ── */
-  const titreBrut = nettoyer(o.titre != null && o.titre !== '' ? o.titre : (rep && rep.reportTitle) || 'Document');
-  const titreDoc = maj(titreBrut);
-  const sousTitre = o.sousTitre ? maj(o.sousTitre) : '';
-  const ligneDate = maj(o.lieu || PAP.lieu) + ' - ' + dateFR(o.date);
+  /* titre, sous-titre et date de l'en-tête : ceux du document, ou ceux de l'exemplaire en cours (o.jobs, voir B7) */
+  let titreBrut = nettoyer(o.titre != null && o.titre !== '' ? o.titre : (rep && rep.reportTitle) || 'Document');
+  let titreDoc = maj(titreBrut);
+  let sousTitre = o.sousTitre ? maj(o.sousTitre) : '';
+  let ligneDate = maj(o.lieu || PAP.lieu) + ' - ' + dateFR(o.date);
   /* titre de l'en-tête, sur une ligne : plus large que la page (même marge des deux côtés), il est tronqué (« ... » : la police
      Bold n'a pas « … ») et signalé ; le titre complet reste dans les métadonnées du PDF. Aucun des 163 documents types n'est
      concerné (67 caractères au plus) — correction de robustesse de l'agent 3 */
@@ -346,11 +349,12 @@ async function sgDsPdf(R, rep, o){
       ori = ori === 'paysage' ? 'paysage' : 'portrait';
       const fm = PAP.format[ori];
       const pg = doc.addPage([fm.w, fm.h]);
-      const premiere = ctx.pages.length === 0;
+      /* logo noir : première page du document, ou de chaque exemplaire (o.jobs : une lettre par entreprise…) */
+      const premiere = ctx.pages.length === (ctx.debutJob || 0);
       entete(pg, ori); pied(pg, ori); logo(pg, ori, premiere);
       const Z = zoneDe(ori);
       if(o.zones || o.epreuve) tracerZone(pg, ori);
-      ctx.pages.push({ page:pg, orientation:ori, Z });
+      ctx.pages.push({ page:pg, orientation:ori, Z, job:ctx.job || 0 });
       ctx.page = pg; ctx.orientation = ori; ctx.Z = Z; ctx.y = Z.haut;
       return pg;
     },
@@ -628,11 +632,14 @@ async function sgDsPdf(R, rep, o){
       if(x.class === 'TextString'){ const s = prep(x.text); if(s) out.push({ t: s }); return; }
       if(x.class !== 'TextField') return;
       const f = String(x.f || ''), n = f.slice(f.lastIndexOf('|') + 1), s = x.s || 'standard';
-      if(n === 'reportTitle'){ out.push({ t: titreBrut }); return; }
-      if(n === 'date' || n === 'reportDate'){ out.push({ t: dateTexte(s) }); return; }
+      const J = env && env.job;
+      if(n === 'reportTitle'){ out.push({ t: J && J.titreChamp != null ? prep(J.titreChamp) : titreBrut }); return; }
+      if(n === 'date' || n === 'reportDate'){ const v = J && J.V ? J.V[f + '\u0001' + s] : null; out.push({ t: v != null && v !== '' ? prep(v) : dateTexte(s) }); return; }
       if(n === 'sectionTitle' && env && env.section && env.section.title){ out.push({ t: prep(env.section.title) }); return; }
       if(n === 'pageNumber'){ out.push({ t: '', page: 'n' }); return; }
       if(n === 'nofPages'){ out.push({ t: '', page: 't' }); return; }
+      /* exemplaire avec données (B7) : valeur du champ mise en forme par le moteur (svFmtVal), rien si elle est vide */
+      if(J){ const v = J.V ? J.V[f + '\u0001' + s] : null; if(v != null && v !== '') out.push({ t: prep(v), val: true }); return; }
       out.push({ t: '‹ ' + libelleChamp(n, s) + ' ›', rep: true, court: SG_DS_CHAMPS.courts[n + '|' + s] || null });
     });
     /* fin du texte : espaces et sauts de ligne de fin retirés (invisibles) */
@@ -642,6 +649,8 @@ async function sgDsPdf(R, rep, o){
     return out;
   };
   const estVide = (ms) => !ms.some(m => m.rep || m.page || /\S/.test(m.t));
+  /* montant (B7) : nombre à deux décimales tel que le moteur l'écrit (num : « 1'234.50 », « -12.00 », « (0.05) »), non nul */
+  const montant = (p) => /^\(?[-−]?\d+(?:['’]\d{3})*\.\d{2}\)?$/.test(p) && /[1-9]/.test(p);
   /* découpe en paragraphes aux sauts de ligne (pour l'écart des WrappingTextBand) */
   const paragraphes = (ms) => {
     const P = [[]];
@@ -671,6 +680,8 @@ async function sgDsPdf(R, rep, o){
       t.split(/(\n| +)/).forEach(p => {
         if(!p) return;
         if(p === '\n'){ out.push({ nl: true }); return; }
+        /* montant d'un champ rempli (B7) : rouge des contrats, Akkurat Regular (prestations exécutées du récapitulatif) */
+        if(m.val && montant(p)){ out.push({ t: p, f: F.regular, sz: st.sz, c: C.R, w: largeur(p, F.regular, st.sz) }); return; }
         out.push({ t: p, f: st.f, sz: st.sz, c: st.c || C.N, w: largeur(p, st.f, st.sz), esp: /^ +$/.test(p) });
       });
     });
@@ -888,18 +899,21 @@ async function sgDsPdf(R, rep, o){
   /* TableBand : colonnes visibles triées, titres (customH si isHC et non vide, sinon le nom de la colonne, comme svDpTable du
      moteur : « Monnaie », « Type », « % »), lignes vides à filets, lignes de total des propriétés */
   const bandeTableau = (b, G) => {
+    /* exemplaire avec données (B7) : colonnes et lignes préparées par l'app (svDpCols du moteur : colonnes variables comprises) */
+    const J = G.env.job, D = J && J.T ? J.T[b._sgk] : null;
     const set = tab(b.tableSettings)[0]; if(!set) return;
-    const cols = tab(set.columns).filter(c => c && !c.isH).slice().sort(so); if(!cols.length) return;
+    const cols = D ? tab(D.cols) : tab(set.columns).filter(c => c && !c.isH).slice().sort(so); if(!cols.length) return;
     const T = SYS.tab[G.ori];
     const ml = retraitDe(b.ml), x0 = G.Z.x0 + ml, W = G.Z.x1 - x0;
     const ws = largeurs(cols, W), xs = cumul(x0, ws), Wt = ws.reduce((a, x) => a + x, 0), n = cols.length;
     const stT = { f: F.light, sz: T.tete, lh: T.tete * 1.25 };
     const bornes = (j) => [xs[j] + (j > 0 ? SYS.gout : SYS.pad), xs[j] + ws[j] - (j < n - 1 ? SYS.gout : SYS.pad)];
     let tete = null;
-    if(set.isHV !== false){
+    if(D ? D.tete : set.isHV !== false){
       const cells = cols.map((c, j) => {
         let ms;
-        if(c.type === 'flexColumn'){ const nm = String(c.name || ''); ms = [{ t: '‹ ' + (SG_DS_CHAMPS.colonnes[nm] || nm || 'Colonnes variables') + ' ›', rep: true }]; }
+        if(D) ms = morceauxTexte({ ts: [{ class: 'TextString', text: c.titre }] });
+        else if(c.type === 'flexColumn'){ const nm = String(c.name || ''); ms = [{ t: '‹ ' + (SG_DS_CHAMPS.colonnes[nm] || nm || 'Colonnes variables') + ' ›', rep: true }]; }
         else ms = morceauxTexte({ ts: [{ class: 'TextString', text: c.isHC && c.customH != null && c.customH !== '' ? c.customH : c.name }] });
         const [a, z] = bornes(j), ha = c.ha || 'left';
         if(estVide(ms)) return { lignes: [], a, z, ha };
@@ -938,6 +952,43 @@ async function sgDsPdf(R, rep, o){
           filet(pg, x0, bas, x0 + Wt);
         } };
       G.out.push(tete);
+    }
+    /* exemplaire avec données (B7) : une ligne par rangée du moteur, au pas du tableau (5 mm portrait, 4 mm paysage), filet 0,25 sous
+       chaque ligne ; emphase (Regular) selon le style de rangée du modèle (rowstyleset) ; total (« tt ») dans un cadre 0,25 comme les
+       totaux des contrats ; montants non nuls des colonnes de nombres en rouge Regular ; « space » = demi-ligne vide ; « fuse » = une
+       cellule sur toute la largeur. Ni lignes vides ni rangées « Total… » des propriétés : le moteur donne ses propres totaux */
+    if(J){
+      const L = D ? tab(D.rows).filter(Boolean) : [];
+      const stL = { f: F.light, sz: T.taille, lh: T.taille * 1.25 }, stR = Object.assign({}, stL, { f: F.regular });
+      L.forEach((r, ri) => {
+        const avant = (!tete && ri === 0) ? mmPt(b.mt) : 0;
+        if(r.st === 'space'){ G.out.push({ h: T.pas / 2, avant, tete, espace: true, dessiner: () => {} }); return; }
+        const st = r.gras ? stR : stL, total = r.st === 'tt', V = tab(r.c);
+        /* un mot n'est jamais coupé à la lettre (« 38 », « FF10'584.24 » dans une colonne étroite) : corps réduit jusqu'à 6,5 pt dans sa
+           colonne, puis les gouttières de la colonne, et en dernier recours il dépasse de sa colonne du côté de son alignement */
+        const cellule = (t, a, z, A, Z, num) => {
+          const ms = [{ t, val: num }], tient = (L, w) => L.every(l => l.w <= w + 0.01), op = { coupe: false, silence: true };
+          let lg = composer(ms, st, z - a, op);
+          if(tient(lg, z - a)) return { lignes: lg, a, z };
+          lg = composerAjuste(ms, st, z - a, 6.5, op).lignes;
+          if(tient(lg, z - a)) return { lignes: lg, a, z };
+          lg = composer(ms, st, Z - A, op);
+          if(tient(lg, Z - A)) return { lignes: lg, a: A, z: Z };
+          return { lignes: composerAjuste(ms, st, Z - A, 6.5, op).lignes, a: A, z: Z };
+        };
+        const cs = (r.fuse ? [{ t: V[0], a: x0 + SYS.pad, z: x0 + Wt - SYS.pad, A: x0 + SYS.pad, Z: x0 + Wt - SYS.pad, ha: 'left', num: false }]
+          : cols.map((c, j) => { const [a, z] = bornes(j); return { t: V[j], a, z, A: xs[j] + (j > 0 ? 0.75 : SYS.pad), Z: xs[j] + ws[j] - (j < n - 1 ? 0.75 : SYS.pad), ha: c.ha || 'left', num: !!c.num }; }))
+          .map(c => { const t = prep(c.t == null ? '' : c.t); if(/\S/.test(t)) Object.assign(c, cellule(t, c.a, c.z, c.A, c.Z, c.num)); else c.lignes = []; return c; });
+        const nl = cs.reduce((m, c) => Math.max(m, c.lignes.length), 1), h = T.pas + (nl - 1) * st.lh;
+        const suiv = L[ri + 1], garder = /^(th|ch|l[1-4])$/.test(r.st || '') || !!(suiv && suiv.st === 'tt');
+        G.out.push({ h, avant, tete, garder,
+          dessiner: (pg, y, info) => {
+            const bas = y - h, b0 = y - (T.pas - T.base);
+            cs.forEach(c => c.lignes.forEach((ln, i) => poser(pg, ln, c.a, c.z, b0 - i * st.lh, c.ha, info)));
+            if(total) rect(pg, x0, bas, Wt, h, { bord: C.N }); else filet(pg, x0, bas, x0 + Wt);
+          } });
+      });
+      return;
     }
     for(let i = 0; i < SYS.lignesVides; i++){
       G.out.push({ h: T.pas, avant: (!tete && i === 0) ? mmPt(b.mt) : 0, tete,
@@ -1038,6 +1089,17 @@ async function sgDsPdf(R, rep, o){
     const c = b.c || {}, f = String(c.f || ''), n = f.slice(f.lastIndexOf('|') + 1) || 'appUserSignature';
     const col = b.col || {}, st = styleDe(col.textFont);
     const ml = retraitDe(b.ml), x0 = G.Z.x0 + ml, x1 = G.Z.x1;
+    /* exemplaire avec données (B7) : signature enregistrée dessinée dans sa place de 10 mm, sinon place laissée libre (signature à
+       la main) ; images fixes des anciens modèles (logos, fonds : c.n) jamais imprimées */
+    if(G.env.job){
+      const im = !c.n && G.env.job.img ? G.env.job.img[n] : null;
+      G.out.push({ h: SYS.signature, avant: mmPt(b.mt),
+        dessiner: (pg, y) => { if(!im) return;
+          const k = Math.min(SYS.signature / im.height, (x1 - x0) / im.width), w = im.width * k, hh = im.height * k;
+          const x = col.ha === 'right' ? x1 - w : (col.ha === 'center' ? (x0 + x1 - w) / 2 : x0);
+          pg.drawImage(im, { x, y: y - hh, width: w, height: hh }); } });
+      return;
+    }
     const ln = composer([{ t: '‹ ' + libelleChamp(n, 'standard') + ' ›', rep: true }], st, x1 - x0)[0];
     G.out.push({ h: SYS.signature, avant: mmPt(b.mt),
       dessiner: (pg, y, info) => poser(pg, ln, x0, x1, y - SYS.signature / 2 - st.sz * 0.35, col.ha || 'left', info) });
@@ -1058,8 +1120,8 @@ async function sgDsPdf(R, rep, o){
     const pg = (t && t.page) || { w: 210, l: 25, r: 15 };
     return (+pg.w || 210) - (+pg.l || 0) - (+pg.r || 0);
   };
-  const blocsSection = (s, ori) => {
-    const G = { Z: zoneDe(ori), ori, env: { section: s }, out: [], Wmod: largeurModele(s) };
+  const blocsSection = (s, ori, J) => {
+    const G = { Z: zoneDe(ori), ori, env: J ? { section: s, job: J } : { section: s }, out: [], Wmod: largeurModele(s) };
     tab(s.bands).filter(b => b && !b.isH).slice().sort(so).forEach(b => {
       try{
         if(b.class === 'GridBand') bandeGrille(b, G);
@@ -1158,25 +1220,50 @@ async function sgDsPdf(R, rep, o){
     }
     /* sections visibles, triées (svDpHTML) ; aucune visible : document vide d'une page */
     const secs = tab(rep && rep.sections).filter(s => s && s.isVisible !== false).slice().sort(so);
-    const sections = secs.map(s => { const ori = orienter(s); return { ori, blocs: blocsSection(s, ori) }; });
-    if(!sections.length) sections.push({ ori: 'portrait', blocs: [] });
-    const pages = paginer(sections);
-    pages.forEach((p, i) => {
-      cx.nouvellePage(p.ori);
-      const info = { n: i + 1, tot: pages.length };
-      p.items.forEach(it => { try{ it.b.dessiner(cx.page, it.y, info); }catch(e){ alerte('Dessin : ' + (e && e.message || e)); } });
+    /* B7. exemplaires avec données (o.jobs, préparés par l'app : sg3_impressions.js) : chacun sur ses pages, avec son titre, son
+       sous-titre (affaire) et sa date dans l'en-tête, logo noir sur sa première page, numérotation propre « n | total » */
+    tab(jobs).forEach((J, ji) => {
+      if(J){
+        titreBrut = nettoyer(J.titre != null && J.titre !== '' ? J.titre : titreDocument);
+        titreDoc = maj(titreBrut); sousTitre = J.sousTitre ? maj(J.sousTitre) : (o.sousTitre ? maj(o.sousTitre) : '');
+        ligneDate = maj(o.lieu || PAP.lieu) + ' - ' + dateFR(J.date || o.date);
+        cx.job = ji; cx.debutJob = cx.pages.length;
+      }
+      const sections = secs.map(s => { const ori = orienter(s); return { ori, blocs: blocsSection(s, ori, J) }; });
+      if(!sections.length) sections.push({ ori: 'portrait', blocs: [] });
+      const pages = paginer(sections);
+      pages.forEach((p, i) => {
+        cx.nouvellePage(p.ori);
+        const info = { n: i + 1, tot: pages.length };
+        p.items.forEach(it => { try{ it.b.dessiner(cx.page, it.y, info); }catch(e){ alerte('Dessin : ' + (e && e.message || e)); } });
+      });
     });
   };
 
+  /* exemplaires : o.jobs = [{ titre, titreChamp, sousTitre, date, V:{ « f\u0001s » : texte }, T:{ clé _sgk du tableau : { tete, cols, rows } },
+     I:{ nom : image « data:image/png|jpeg;base64,… » } }] ; sans o.jobs : un seul passage, champs en repères (Documents Substances) */
+  const titreDocument = titreBrut;
+  const jobs = Array.isArray(o.jobs) && o.jobs.length ? o.jobs : [null];
+  for(const J of jobs){
+    if(!J || !J.I) continue;
+    J.img = {};
+    for(const k of Object.keys(J.I)){
+      const s = String(J.I[k] || '');
+      try{ J.img[k] = /^data:image\/png/i.test(s) ? await doc.embedPng(octets(s)) : (/^data:image\/jpe?g/i.test(s) ? await doc.embedJpg(octets(s)) : null); }
+      catch(e){ alerte('Image « ' + k + ' » illisible : ' + (e && e.message || e)); }
+    }
+  }
   contenu(ctx);
   if(!ctx.pages.length) ctx.nouvellePage('portrait');
 
   /* ── Fin : numérotation « n | total » (le total n'est connu qu'ici), métadonnées, octets ── */
-  const tot = ctx.pages.length;
-  ctx.pages.forEach((p, i) => numeroter(p.page, i + 1, tot));
-  doc.setTitle(titreBrut);
+  /* par exemplaire (B7) : chaque lettre a sa propre numérotation ; sans o.jobs, un seul exemplaire (job 0) */
+  const tot = {}, rang = {};
+  ctx.pages.forEach(p => { tot[p.job] = (tot[p.job] || 0) + 1; });
+  ctx.pages.forEach(p => { rang[p.job] = (rang[p.job] || 0) + 1; numeroter(p.page, rang[p.job], tot[p.job]); });
+  doc.setTitle(titreDocument);
   doc.setAuthor('Substances Architectes');
-  doc.setCreator('SUBGestion — Documents Substances');
+  doc.setCreator(o.jobs ? 'SUBGestion' : 'SUBGestion — Documents Substances');
   doc.setProducer('SUBGestion');
   doc.setSubject(nettoyer(o.description || ''));
   return await doc.save();
@@ -1257,6 +1344,7 @@ if(typeof SG_DOM!=='undefined'&&typeof VIEWS==='object'&&VIEWS){
       styles:{ textstyleset:copie(DS.T&&DS.T.textstyleset), rowstyleset:copie(DS.T&&DS.T.rowstyleset) } };
     const fn=w.Function('return ('+sgDsPdf.toString()+')')();
     SGDS.w=w; return { w, R, fn }; })().catch(e=>{ SGDS.res=null; throw e; }));
+  SGDS.ressources=sgdsRessources;   /* aussi pour les impressions avec données (bloc 31, sg3_impressions.js) */
   const sgdsCle=d=>String(d.id)+'|'+diso(new Date());
   const sgdsProduire=async d=>{ const k=sgdsCle(d); if(SGDS.cache.has(k)) return SGDS.cache.get(k);
     const { w, R, fn }=await sgdsRessources(), auj=new Date(), journal=new w.Array(), t0=performance.now();

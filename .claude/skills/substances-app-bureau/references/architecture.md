@@ -119,7 +119,10 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
   partie A papier (en-tête, pied, logo noir / gris, numérotation, constantes `PAP`, `ctx.nouvellePage`), partie B contenu (toutes les bandes .dpdoc,
   `SG_DS_CHAMPS`) ; partie app sous garde `typeof SG_DOM!=='undefined'` : vue `nx-docsub`, `SGDS`, `SGDS_REGLES` (familles), styles
   `#sg-docsub-css` / `.sgds-*`. Chargé seul (banc), le fichier n'ajoute que `sgDsPdf`. Banc : `subgestion3/docsub_banc/` (`preparer.py`, puis
-  `harness/rendre.sh`). Les impressions du moteur (`svDpPrint`, `mgPrint`…) et la vue `tpl-documents` ne sont pas touchées.
+  `harness/rendre.sh`). Option `o.jobs` (bloc 31) : exemplaires avec données (champs, tableaux, montants en rouge, numérotation par exemplaire).
+- `sg3_impressions.js` (bloc 31, après `sg3_docsub.js`) : impressions au papier des contrats. Enveloppe `svDpHTML` (repère `/*sgimp:<id>*/`,
+  `SGIMP.memo`), `ch03bView` (PDF dans le cadre), `ch03aApi('/api/pdf')` (PDF du document repéré), `svDpPrint`, `svbDpPrint`, `mgPrint` ;
+  `sgImpPreparer` met les valeurs en texte dans l'app, `sgDsPdf` dessine. La vue `tpl-documents` n'est pas touchée.
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

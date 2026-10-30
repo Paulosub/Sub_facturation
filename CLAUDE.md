@@ -1188,6 +1188,27 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `OFFRE_TMPL` ou `FA_TMPL` changent dans Facturation.html, revérifier le papier (logo et pied repris des gabarits). Non traités (question posée
   à Paulo) : les ~350 formulaires d'impression des autres rubriques de Bibliothèque (collection `modele`). Copie d'avant :
   `subgestion3/_backup_20261025_1745_avant_documents_substances/`, `SUBGestion3_backup_20261025_1745_avant_documents_substances.html`.
+- **Impressions au papier des contrats (30.10.2026, bloc 31, `subgestion3/sg3_impressions.js`, concaténé après `sg3_docsub.js`)** — demande de
+  Paulo : « lors de l'impression du document conserver les couleurs des contrats, etc., de l'ensemble des écritures » ; choix « Papier des contrats
+  partout » : tout document imprimé depuis l'app sort avec les données réelles, au graphisme des contrats (en-tête, pied, logo noir puis gris, noir des
+  contrats, gris de l'en-tête, rouge pour les montants), sans les anciens fonds de page ni images des modèles ; fait par étapes, avec épreuves.
+  **Étape 1 (faite, épreuves 17QUE validées par Paulo le 30.10.2026, « Tous les montants » en rouge)** : documents faits d'un modèle .dpdoc.
+  `svDpHTML` enveloppé (repère `/*sgimp:<id>*/` dans la feuille de style ; rep, jobs, o gardés dans `SGIMP.memo`, 40 derniers) ; `sgImpPreparer`
+  met en forme dans l'app toutes les valeurs (svFmtVal, cellules comme svDpCell, colonnes svDpCols, styles de rangée du modèle) et `sgDsPdf`
+  (bloc 30, option `o.jobs`) dessine le PDF : champs remplis (vides = rien), tableaux de données au pas 5 mm / 4 mm (filet sous chaque ligne,
+  « tt » encadré, Regular selon le style de rangée, nombres sans alignement donné à droite, un mot jamais coupé à la lettre : corps réduit à 6,5 pt
+  puis gouttières), montants non nuls (deux décimales, colonnes de nombres ou alignées à droite, valeurs des champs) en rouge #E2001A Regular ;
+  en-tête TITRE / « <n°> - <affaire> » / « CULLY - date » ; un exemplaire par job (lettres) : logo noir sur sa 1re page, numérotation propre ;
+  signature enregistrée dessinée, images fixes des modèles jamais. `ch03bView` montre ce PDF (cadre sans `sandbox`, zoom masqué ; Imprimer,
+  PDF, Partager, « Modifier les textes… » inchangés) ; `ch03aApi('/api/pdf')` rend ce PDF pour tout HTML repéré (Sauvegarder et ouvrir,
+  Enregistrer sous forme de fichier PDF, aperçu, Partager, Joindre) et annonce toujours un moteur PDF (les autres HTML demandent encore le
+  serveur de sauvegarde) ; `svDpPrint` / `svbDpPrint` ouvrent la visionneuse ; `mgPrint` (rapports Management et Planification RH, 1re section,
+  jeu 0) remplacé : mêmes valeurs, rangées mgSt → styles du papier. Couvre contrôle des coûts (14 types), devis général, appels d'offres, honoraires
+  et facturation du moteur, rapports Management. Vérifié : 164 documents types identiques à l'octet (Documents Substances inchangés). Inventaire
+  de toutes les impressions (familles A à E, ~150 documents) : atelier de la session, `inventaire_impressions.md`. **Étapes suivantes** : 2 =
+  impressions HTML écrites à la main (famille B : rapports de temps, notes de frais, listes d'adresses, tâches… ; toutes passent par la
+  visionneuse CH-03), 3 = formulaires `tplPrint` (collection `modele`, fonds de page retirés), 4 = coquille (`sgImprimer`, `sgDocOuvrir`).
+  Copie d'avant : `subgestion3/_backup_20261030_2026_avant_impressions/`, `SUBGestion3_backup_20261030_2026_avant_impressions.html`.
 - **Bibliothèque sans « Images » ni « Fonds de page » (30.10.2026, demande de Paulo « supprimer fonds de pages et images »)** : entrées
   `tpl-images` et `tpl-backgrounds` retirées du menu (et leurs chiffres de la vue d'ensemble) ; `go` les ramène à `dom-biblio` (reprise de session,
   récents, favoris). Écrans du moteur gardés dans DeltaSub.html ; données gardées (collections `image` et `arriereplan` : les modèles d'impression

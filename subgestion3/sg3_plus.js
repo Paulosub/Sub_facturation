@@ -1385,6 +1385,7 @@ function sgVueOk(v){ if(!v||sgAdmin()) return true;
   if(dk==='finances'||dk==='facturation') return sgDroit('finances','toutes');
   return true; }
 { const g0=go; go=function(v,arg){
+    if(v==='tpl-images'||v==='tpl-backgrounds'){ v='dom-biblio'; arg=undefined; }   /* retirés du menu le 30.10.2026 : reprise de session, récents, favoris → Bibliothèque */
     if(v==='h-saisie'&&typeof arg==='string'&&arg.startsWith('jour:')){ try{ HS.d=new Date(arg.slice(5)+'T00:00'); }catch(_){} arg=undefined; }   // « jour sans heures » de l'accueil
     if(!sgVueOk(v)){ toast('Cet écran n’est pas accessible avec votre profil ('+SG_PROFILS[SG_ACC.profil]+').',true); return VIEW?undefined:g0.call(this,'nx-home'); }
     return g0.call(this,v,arg); }; }

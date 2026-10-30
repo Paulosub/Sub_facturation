@@ -1188,6 +1188,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `OFFRE_TMPL` ou `FA_TMPL` changent dans Facturation.html, revérifier le papier (logo et pied repris des gabarits). Non traités (question posée
   à Paulo) : les ~350 formulaires d'impression des autres rubriques de Bibliothèque (collection `modele`). Copie d'avant :
   `subgestion3/_backup_20261025_1745_avant_documents_substances/`, `SUBGestion3_backup_20261025_1745_avant_documents_substances.html`.
+- **Bibliothèque sans « Images » ni « Fonds de page » (30.10.2026, demande de Paulo « supprimer fonds de pages et images »)** : entrées
+  `tpl-images` et `tpl-backgrounds` retirées du menu (et leurs chiffres de la vue d'ensemble) ; `go` les ramène à `dom-biblio` (reprise de session,
+  récents, favoris). Écrans du moteur gardés dans DeltaSub.html ; données gardées (collections `image` et `arriereplan` : les modèles d'impression
+  du moteur et « Français seulement » s'en servent). Copie d'avant : `subgestion3/_backup_20261030_1957_avant_biblio_sans_images/`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

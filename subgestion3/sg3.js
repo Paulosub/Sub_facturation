@@ -116,9 +116,9 @@ const SG_DOM=[
     {v:'tpl-expensesTemplates',t:'Notes de frais types',ico:'receipt',d:'Types de frais.'},
     {v:'tpl-managementTemplates',t:'Gestion types',ico:'gear',d:'Modèles de management.'},
     {v:'tpl-addressTemplates',t:'Formats d’adresse',ico:'contacts',d:'Mise en forme des adresses.'},
-    {v:'tpl-labelTemplates',t:'Étiquettes',ico:'tag',d:'Planches d’étiquettes.'},
-    {v:'tpl-images',t:'Images',ico:'image',d:'Images utilisées dans les documents.'},
-    {v:'tpl-backgrounds',t:'Fonds de page',ico:'image',d:'Arrière-plans des documents imprimés.'}]},
+    {v:'tpl-labelTemplates',t:'Étiquettes',ico:'tag',d:'Planches d’étiquettes.'}]},
+  /* « Images » (tpl-images) et « Fonds de page » (tpl-backgrounds) retirés du menu le 30.10.2026 (demande de Paulo) : écrans du moteur gardés
+     (DeltaSub.html seul), données gardées (collections image et arriereplan : les modèles d'impression du moteur s'en servent) */
   /* chapitre « Admin » (24.10.2026, demande de Paulo) : l'administration de l'app, retirée d'Équipe (Gestion des utilisateurs) et de Réglages ;
      mêmes droits que Réglages (sgVueOk : droit « réglages ») et protégé par le code d'accès comme lui (SG_ACC_DEF, sgAcces) */
   /* chapitre « Administration » (24.10.2026, demande de Paulo « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle
@@ -507,7 +507,7 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
     return [f(D.c.filter(c=>!c.annule).length,'contrats'),f(D.c.filter(c=>c.signe).length,'signés'),f(D.f.filter(x=>String(x.date||'').startsWith(y)).length,'factures '+y),f(op.length,'factures ouvertes'),
       f(nxCHF(op.reduce((s,x)=>s+(+x._ttc||0)+(+x._fttc||0),0)),'CHF ouverts')]; }
   if(k==='finances'){ const pc=DS.all('projectcontract').filter(c=>!+c.ISSUBCONTRACT); return [f(pc.length,'contrats des projets'),f(nxCHF(pc.reduce((s,c)=>s+(+c.CONTRACTAMOUNT||0),0)),'CHF sous contrat')]; }
-  if(k==='biblio'){ await DS.need(['modele','modeledocument','image','arriereplan']); return [f(n('modele'),'modèles'),f(n('modeledocument'),'documents types'),f(n('image'),'images'),f(n('arriereplan'),'fonds de page')]; }
+  if(k==='biblio'){ await DS.need(['modele','modeledocument']); return [f(n('modele'),'modèles'),f(n('modeledocument'),'documents types')]; }
   if(k==='reglages') return [f(num(DS.all('timelog').length,0),'saisies de temps'),f(n('project'),'projets'),f(n('contactowner'),'contacts'),f(DS.seq,'version de la base')];
   return []; }
 SG_DOM.filter(d=>d.k!=='accueil').forEach(d=>{ VIEWS['dom-'+d.k]={ render(m){

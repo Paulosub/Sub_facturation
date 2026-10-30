@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 26.10.2026 08:16 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 30.10.2026 19:57 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -25801,9 +25801,9 @@ const SG_DOM=[
     {v:'tpl-expensesTemplates',t:'Notes de frais types',ico:'receipt',d:'Types de frais.'},
     {v:'tpl-managementTemplates',t:'Gestion types',ico:'gear',d:'Modèles de management.'},
     {v:'tpl-addressTemplates',t:'Formats d’adresse',ico:'contacts',d:'Mise en forme des adresses.'},
-    {v:'tpl-labelTemplates',t:'Étiquettes',ico:'tag',d:'Planches d’étiquettes.'},
-    {v:'tpl-images',t:'Images',ico:'image',d:'Images utilisées dans les documents.'},
-    {v:'tpl-backgrounds',t:'Fonds de page',ico:'image',d:'Arrière-plans des documents imprimés.'}]},
+    {v:'tpl-labelTemplates',t:'Étiquettes',ico:'tag',d:'Planches d’étiquettes.'}]},
+  /* « Images » (tpl-images) et « Fonds de page » (tpl-backgrounds) retirés du menu le 30.10.2026 (demande de Paulo) : écrans du moteur gardés
+     (DeltaSub.html seul), données gardées (collections image et arriereplan : les modèles d'impression du moteur s'en servent) */
   /* chapitre « Admin » (24.10.2026, demande de Paulo) : l'administration de l'app, retirée d'Équipe (Gestion des utilisateurs) et de Réglages ;
      mêmes droits que Réglages (sgVueOk : droit « réglages ») et protégé par le code d'accès comme lui (SG_ACC_DEF, sgAcces) */
   /* chapitre « Administration » (24.10.2026, demande de Paulo « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle
@@ -26192,7 +26192,7 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
     return [f(D.c.filter(c=>!c.annule).length,'contrats'),f(D.c.filter(c=>c.signe).length,'signés'),f(D.f.filter(x=>String(x.date||'').startsWith(y)).length,'factures '+y),f(op.length,'factures ouvertes'),
       f(nxCHF(op.reduce((s,x)=>s+(+x._ttc||0)+(+x._fttc||0),0)),'CHF ouverts')]; }
   if(k==='finances'){ const pc=DS.all('projectcontract').filter(c=>!+c.ISSUBCONTRACT); return [f(pc.length,'contrats des projets'),f(nxCHF(pc.reduce((s,c)=>s+(+c.CONTRACTAMOUNT||0),0)),'CHF sous contrat')]; }
-  if(k==='biblio'){ await DS.need(['modele','modeledocument','image','arriereplan']); return [f(n('modele'),'modèles'),f(n('modeledocument'),'documents types'),f(n('image'),'images'),f(n('arriereplan'),'fonds de page')]; }
+  if(k==='biblio'){ await DS.need(['modele','modeledocument']); return [f(n('modele'),'modèles'),f(n('modeledocument'),'documents types')]; }
   if(k==='reglages') return [f(num(DS.all('timelog').length,0),'saisies de temps'),f(n('project'),'projets'),f(n('contactowner'),'contacts'),f(DS.seq,'version de la base')];
   return []; }
 SG_DOM.filter(d=>d.k!=='accueil').forEach(d=>{ VIEWS['dom-'+d.k]={ render(m){
@@ -27788,6 +27788,7 @@ function sgVueOk(v){ if(!v||sgAdmin()) return true;
   if(dk==='finances'||dk==='facturation') return sgDroit('finances','toutes');
   return true; }
 { const g0=go; go=function(v,arg){
+    if(v==='tpl-images'||v==='tpl-backgrounds'){ v='dom-biblio'; arg=undefined; }   /* retirés du menu le 30.10.2026 : reprise de session, récents, favoris → Bibliothèque */
     if(v==='h-saisie'&&typeof arg==='string'&&arg.startsWith('jour:')){ try{ HS.d=new Date(arg.slice(5)+'T00:00'); }catch(_){} arg=undefined; }   // « jour sans heures » de l'accueil
     if(!sgVueOk(v)){ toast('Cet écran n’est pas accessible avec votre profil ('+SG_PROFILS[SG_ACC.profil]+').',true); return VIEW?undefined:g0.call(this,'nx-home'); }
     return g0.call(this,v,arg); }; }

@@ -7944,7 +7944,9 @@ function ctEdit(c0,p,opts){ opts=opts||{}; const isNew=!c0, c=isNew?null:DS.get(
     tN.value=hfN(+T().AMOUNT2||0); kN.value=hfN(+K().AMOUNT2||0); tot.value=hfN(r.total);
     tN.style.background=dT?CT_ORANGE:''; kN.style.background=dK?CT_ORANGE:'';
     warn.textContent=r.warn?'⚠':''; warn.title=!r.warn?'':'Le calcul a changé depuis la dernière édition du contrat'+(link?' : montant enregistré '+hfN(old)+' '+cur+', mis à jour au OK':''); };
-  const load=hdr=>{ const ro=!!link; dT=dK=false; calcL.value=link?[link.NUMBER,link.NAME].filter(x=>x!=null&&x!=='').join(' '):'-';
+  /* sans calcul relié : où inscrire les phases et leurs pourcentages (30.10.2026, demande de Paulo) */
+  const aideCalc=h('div',{style:{color:'#555',fontSize:'12px',lineHeight:1.35,maxWidth:'520px'}},'Montants saisis directement, sans phases ni pourcentages. Pour inscrire les phases SIA 102 et leurs pourcentages : Offres d’honoraires ▸ Nouveau (mode « Coût de l’ouvrage ») ▸ Nouveau calcul ▸ Calculer, puis Contrats honoraires ▸ Nouveau ▸ « Nouveau contrat basé sur un calcul … ».');
+  const load=hdr=>{ const ro=!!link; dT=dK=false; aideCalc.style.display=link?'none':''; calcL.value=link?[link.NUMBER,link.NAME].filter(x=>x!=null&&x!=='').join(' '):'-';
     tB.value=hfN(+T().AMOUNT1||0); kB.value=hfN(+K().AMOUNT1||0); tH.value=hfN(link?+link.TIMEHOUR||0:+B.calc.TIMEHOUR||0); [tB,tH,kB].forEach(x=>x.readOnly=ro);
     if(hdr){ fDesc.value=v.SUPPLIERDESC||''; fMand.refresh(); fSupp.refresh(); kMO.checked=!+v.ISSUBCONTRACT; kST.checked=!!+v.ISSUBCONTRACT; fSub.value=v.SUBPROJECT_ID!=null?String(v.SUBPROJECT_ID):''; }   // recopie de l'en-tête
     nets(); guard(); };
@@ -7957,7 +7959,7 @@ function ctEdit(c0,p,opts){ opts=opts||{}; const isNew=!c0, c=isNew?null:DS.get(
   const body=h('div',{style:{minWidth:'660px'}},formRows([['Numéro',fNum],['Désignation',fName],['Type de prestations',ctLine(fDesc,hfSuggest(fDesc,HF_SERVICES))],['Date',fDate],
     ['Mandant',fMand],['Mandataire',fSupp],['Contrat avec',ctLine(h('label',{},kMO,' '+CT_KIND[0]),h('label',{style:{marginLeft:'14px'}},kST,' '+CT_KIND[1]))],['Ouvrage',fSub],
     ['Utilisateur',fUser],['Statut',fState],['Remarque',fRem],['Emplacement du dossier d’affaire',ctLine(fFold,bFold)],
-    sec('Rémunération'),['Calcul des honoraires',ctLine(calcL,bCalc)],['Honoraires bruts/HT',ctLine(tB,cu())],['Honoraires nets/TTC',ctLine(tN,cu(),condBtn('t'))],
+    sec('Rémunération'),['Calcul des honoraires',ctLine(calcL,bCalc)],['',aideCalc],['Honoraires bruts/HT',ctLine(tB,cu())],['Honoraires nets/TTC',ctLine(tN,cu(),condBtn('t'))],
     ['Temps prévu',ctLine(tH,h('span',{style:{color:'#555'}},'h'))],['Coûts supplémentaires bruts/HT',ctLine(kB,cu())],['Coûts supplémentaires nets/TTC',ctLine(kN,cu(),condBtn('k'))],
     ['Total contrat honoraires net/TTC',ctLine(tot,cu(),warn)],['Facturation',h('label',{style:{textAlign:'left'}},acc,' Contrat accessible')]],660));
   D=dialog({title:isNew?'Nouveau contrat':'Editer le contrat',body,width:'760px',buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ if(!valid()) return false;
@@ -8801,8 +8803,9 @@ function feDialog(o,onClose){ let done=false; const fin=()=>{ if(!done){ done=tr
   const D=dialog({...o,buttons:(o.buttons||[{t:'Fermer',pri:true}]).map(b=>({...b,fn:async bd=>{ const r=b.fn?await b.fn(bd):undefined; if(r!==false) fin(); return r; }}))});
   D.bd.closest('.ov').addEventListener('keydown',e=>{ if(e.key==='Escape') fin(); }); return D; }
 /* question Oui / Non ; Échap = Non (la promesse est toujours résolue) */
-const feAsk=(msg,title)=>new Promise(res=>feDialog({title:title||'Confirmation',body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'480px'}},msg),
-  buttons:[{t:'Non',fn:()=>res(false)},{t:'Oui',pri:true,fn:()=>res(true)}]},()=>res(false)));
+const feAsk=(msg,title)=>new Promise(res=>{ const D=feDialog({title:title||'Confirmation',body:h('div',{style:{whiteSpace:'pre-line',maxWidth:'480px'}},msg),
+  buttons:[{t:'Non',fn:()=>res(false)},{t:'Oui',pri:true,fn:()=>res(true)}]},()=>res(false));
+  const box=D.bd.parentNode; if(box){ box.tabIndex=-1; box.focus(); } });   /* focus sur la question (30.10.2026) : le clavier n'agit plus sur la fenêtre de derrière */
 const feRO=(v,w)=>h('input',{class:'inp',readonly:true,value:v??'',style:{width:w||'100%'}});
 const feAmt=(v,ro,w,d)=>h('input',{class:'inp',readonly:ro||null,value:v==null?'':num(v,d==null?2:d),style:{width:(w||140)+'px',textAlign:'right'}});
 const feLine=(...x)=>h('div',{style:{display:'flex',gap:'6px',alignItems:'center'}},...x);
@@ -8842,9 +8845,20 @@ function feDomain(C,top,pane,p){ const S=FE;
   const ch11cDP=typeof ch11cMount==='function'?ch11cMount('FeeCalculations',calc):null; top.append(h('div',{class:'cols',style:{padding:0,flex:1}},L,R)); C.append(top); drawF(); drawC(); }
 
 /* ── Étape 1 : « Choix du mode de calcul des honoraires » ── */
-function feNewFee(p){ const cat=h('select',{class:'inp'},...[1,2,3,4,5].map(k=>h('option',{value:k,selected:k===1||null},BILLCAT[k])));
+/* mode de calcul (30.10.2026, demande de Paulo : impossible d'inscrire les pourcentages des phases) : seuls « Coût de l'ouvrage » et « Temps
+   employé effectif » ont un calcul (boutons « Calculer » / « Honoraires selon les activités » de la variante) ; « Coût de l'ouvrage » par défaut
+   (SIA 102 : phases et pourcentages), texte d'aide sous le choix, mode modifiable ensuite dans « Editer le calcul des honoraires » (l'original le
+   figeait à la création) tant que l'en-tête n'a pas de calcul en mode 3 ou 4 : les phases, facteurs et lignes d'un calcul fait resteraient
+   imprimés (ch11cFeeJob, fePrint) et importables en facture (fePosFrom) dans un autre mode ; les modes 1, 2, 5 n'en ont pas */
+const FE_MODE_AIDE={1:'Montant global saisi directement : pas de phases ni de pourcentages.',2:'Montant forfaitaire saisi directement : pas de phases ni de pourcentages.',
+  3:'Honoraires selon la SIA 102 : coût de l’ouvrage, phases et pourcentages des prestations comprises (bouton « Calculer » du calcul).',
+  4:'Honoraires d’après le temps employé, par activités (bouton « Honoraires selon les activités » du calcul).',5:'Montant saisi directement : pas de phases ni de pourcentages.'};
+const feModeChoix=v=>{ const cat=h('select',{class:'inp'},...[1,2,3,4,5].map(k=>h('option',{value:k,selected:k===+v||null},BILLCAT[k]))),
+    aide=h('div',{style:{color:'#555',fontSize:'12px',lineHeight:1.35,marginTop:'4px',maxWidth:'480px'}});
+  const maj=()=>{ aide.textContent=FE_MODE_AIDE[+cat.value]||''; }; cat.addEventListener('change',maj); maj(); return {cat,el:h('div',{},cat,aide)}; };
+function feNewFee(p){ const M=feModeChoix(3), cat=M.cat;
   const bo=h('select',{class:'inp'},...FE_BASEDON.map(([k,t])=>h('option',{value:k,selected:k===11||null},t)));
-  dialog({title:'Choix du mode de calcul des honoraires',body:formRows([['Mode de calcul',cat],['Contrat selon',bo]],600),
+  dialog({title:'Choix du mode de calcul des honoraires',body:formRows([['Mode de calcul',M.el],['Contrat selon',bo]],600),
     buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const pre={cat:+cat.value,based:+bo.value}; setTimeout(()=>feEditFee(null,p,pre),50); }}]}); }
 
 /* ── Étape 2 : en-tête (« Nouveau contrat d'honoraires » / « Editer le calcul des honoraires ») ── */
@@ -8862,13 +8876,21 @@ function feEditFee(f0,p,pre){ const isNew=!f0, f=isNew?null:DS.get('projectfee',
   const setU=x=>{ v.USERID=x||null; us.value=x||''; };
   const uB=ibtn({i:'prev',t:'Utilisateur',menu:()=>[{t:ME.id,fn:()=>setU(ME.id)},'-',...DS.all('appuser').filter(u=>u.ISENABLED&&u.USERID).sort((a,b)=>cmp(a.USERID,b.USERID)).map(u=>({t:u.USERID,chk:u.USERID===v.USERID,fn:()=>setU(u.USERID)}))]});
   const uF=typeof ctUserField==='function'?ctUserField(()=>v.USERID,x=>{ v.USERID=x||null; }):feLine(us,uB);
-  const body=h('div',{style:{minWidth:'640px'}},formRows([['Numéro',nu],['Désignation',feLine(na,hfSuggest(na,FE_NAMES))],['Mode de calcul',feRO(BILLCAT[v.BILLINGCATEGORYCODE])],
+  const mode0=+v.BILLINGCATEGORYCODE||1, nc=isNew?0:DS.by('projectfeecalculation','PROJECTFEE_ID',f.ID).length, fige=nc>0&&[3,4].includes(mode0);
+  const MC=fige?{cat:null,el:h('div',{},feRO(BILLCAT[mode0]),h('div',{style:{color:'#555',fontSize:'12px',lineHeight:1.35,marginTop:'4px',maxWidth:'480px'}},
+    'Mode figé : '+(nc>1?'les calculs de cet en-tête sont faits':'le calcul de cet en-tête est fait')+' en « '+BILLCAT[mode0]+' ».'))}:feModeChoix(mode0);
+  const body=h('div',{style:{minWidth:'640px'}},formRows([['Numéro',nu],['Désignation',feLine(na,hfSuggest(na,FE_NAMES))],['Mode de calcul',MC.el],
     ['Contrat selon',feRO(feBasedOn(v.BASEDONCODE))],['Type de prestations',feLine(sd,hfSuggest(sd,HF_SERVICES))],['Mandant',cF],['Mandataire',sF],
     ['Contrat avec',feLine(h('label',{},rC,' Maître d’ouvrage'),h('label',{style:{marginLeft:'14px'}},rS,' Sous-traitant'))],['Ouvrage',sub],['Utilisateur',uF],['Date',dt],
     ['Statut',feLine(ve,hfSuggest(ve,FE_FEE_VERSIONS))],['Remarque',rm]],640));
   const D=dialog({title:isNew?'Nouveau contrat d’honoraires':'Editer le calcul des honoraires',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{
     if(!nu.value.trim()||!na.value.trim()) return false;
-    Object.assign(v,{NUMBER:nu.value.trim(),NAME:na.value.trim(),SUPPLIERDESC:sd.value.trim()||null,ISSUBCONTRACT:rS.checked?1:0,SUBPROJECT_ID:+sub.value||null,
+    const mode=MC.cat?(+MC.cat.value||1):mode0;
+    if(mode!==mode0&&nc){ ok.disabled=true; let oui=false;
+      try{ oui=await feAsk('Le mode de calcul passe de « '+BILLCAT[mode0]+' » à « '+BILLCAT[mode]+' ». Les montants déjà inscrits dans '+(nc>1?'les '+nc+' calculs':'le calcul')+' sont gardés'
+        +(mode===3?' ; « Calculer » les recalcule d’après le coût de l’ouvrage et les phases':mode===4?' ; « Honoraires selon les activités » les recalcule d’après les activités':' et se saisissent directement')+'. Continuer ?','Mode de calcul'); }
+      finally{ guard(); } if(!oui) return false; }
+    Object.assign(v,{NUMBER:nu.value.trim(),NAME:na.value.trim(),BILLINGCATEGORYCODE:mode,SUPPLIERDESC:sd.value.trim()||null,ISSUBCONTRACT:rS.checked?1:0,SUBPROJECT_ID:+sub.value||null,
       CHANGEDDATE:dt.value||null,VERSION:ve.value.trim()||null,REMARK:rm.value.trim()||null});
     if(v.ID==null) v.ID=DS.newIds('projectfee')[0];
     await DS.commit([{t:'projectfee',id:v.ID,val:v,bseq:bs}]); FE.gf.sel=String(v.ID); if(isNew) FE.gc.sel=null; }}]});
@@ -8925,6 +8947,7 @@ function feEditCalc(c0,fee,p){ if(!fee) return; const c=c0?DS.get('projectfeecal
   const body=h('div',{style:{minWidth:'660px'}},feForm([['Numéro',nu],['Type de document',feLine(ti,hfSuggest(ti,FE_TITLES))],['Désignation',na],['Date',dt],
     ['Statut',feLine(ve,hfSuggest(ve,FE_CALC_VERSIONS))],['Remarque',rm],['Mode de calcul',feRO(BILLCAT[cat],'240px')],
     lk?h('div',{style:{gridColumn:'1 / -1',color:'var(--warn)'}},'Calcul utilisé par le contrat « '+ctrLbl(lk)+' ».'):null,
+    calcMode?null:h('div',{style:{gridColumn:'1 / -1',color:'#555',fontSize:'12px'}},'Mode « '+(BILLCAT[cat]||'')+' » : montants saisis directement, sans phases ni pourcentages. Pour inscrire les phases et les prestations comprises, choisissez le mode « Coût de l’ouvrage » dans « Editer le calcul des honoraires ».'),
     feSec('Rémunération'),['Honoraires brut/HT',feLine(t1,feUnit(cur),bT)],['Honoraires net/TTC',feLine(t2,feUnit(cur),bTC)],['Temps prévu',feLine(hr,feUnit('h'))],
     feSec('Frais'),['Coûts supplémentaires brut HT',feLine(c1,feUnit(cur),bC)],['Coûts supplémentaires net TTC',feLine(c2,feUnit(cur),bCC)],
     h('div',{style:{gridColumn:'1 / -1',height:'4px'}}),[h('b',{},'Total contrat honoraires net TTC'),feLine(to,feUnit(cur))]],660));

@@ -1199,6 +1199,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   SIA 102 seulement (`FE_Z1`, `FE_Z2`) ; « Contrat selon » de « Choix du mode de calcul des honoraires » (`feNewFee`, enveloppé) sans SIA 1003,
   1004, 1005, 1006, 1008 (`FE_BASEDON` filtré le temps de construire la liste : `feBasedOn` affiche toujours le contrat d'origine des calculs
   existants). Le « Nouveau contrat » de Facturation n'avait que des prestations d'architecte. DeltaSub.html seul : listes d'origine.
+- **Contrat d'honoraires du moteur : mode de calcul (30.10.2026, demande de Paulo « impossible lors de la création de contrat basé sur delta
+  d'inscrire les prestations qui sont comprises comme les pourcentages des phases »)** — `DeltaSub.html` : seuls les modes 3 « Coût de l'ouvrage »
+  et 4 « Temps employé effectif » ont le bouton « Calculer » de la variante (`calcMode`, puis `feTimeParts` → `feSIA` → « Prestations SIA 102 »
+  `feSiaSel` : phases et pourcentages) ; le mode était « Global » par défaut et figé à la création (le contrat de test 17QUE était bloqué).
+  Désormais : « Choix du mode de calcul » (`feNewFee`) = « Coût de l'ouvrage » par défaut, avec une phrase d'aide par mode (`feModeChoix`,
+  `FE_MODE_AIDE`) ; « Editer le calcul des honoraires » (`feEditFee`) : mode modifiable, confirmation (`feAsk`, OK bloqué pendant la question)
+  si des calculs existent (montants gardés) — SAUF en-tête qui a des calculs en mode 3 ou 4 (« Mode figé ») : relecture du 30.10.2026, leurs
+  phases, facteurs et lignes resteraient imprimés (`ch11cFeeJob`, `fePrint`) et importables en facture (`fePosFrom`, `ivFeeCalc`) dans un autre
+  mode ; les modes 1, 2, 5 n'en ont pas. Calcul en mode 1, 2 ou 5 (`feEditCalc`) : indication « pas de phases, choisir Coût de l'ouvrage ».
+  « Nouveau contrat » sans calcul relié (`ctEdit`, `aideCalc`) : où inscrire les phases (Offres d'honoraires ▸ calcul, puis « Nouveau contrat
+  basé sur un calcul … »). `feAsk` donne le focus à la question (Échap n'atteint plus la fenêtre de derrière). Copie d'avant :
+  `DeltaSub_backup_20261030_2031_avant_mode_calcul.html`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

@@ -1108,9 +1108,11 @@ async function sgDsPdf(R, rep, o){
        la main) ; images fixes des anciens modèles (logos, fonds : c.n) jamais imprimées */
     if(G.env.job){
       const im = !c.n && G.env.job.img ? G.env.job.img[n] : null;
-      G.out.push({ h: SYS.signature, avant: mmPt(b.mt),
+      /* image d'un document de l'app (bloc 31 : cartes, plans) : hauteur donnée par la bande (b.h, mm) ; signature : 10 mm */
+      const hB = +b.h > 0 ? Math.min(mmPt(b.h), G.Z.haut - G.Z.bas) : SYS.signature;
+      G.out.push({ h: hB, avant: mmPt(b.mt),
         dessiner: (pg, y) => { if(!im) return;
-          const k = Math.min(SYS.signature / im.height, (x1 - x0) / im.width), w = im.width * k, hh = im.height * k;
+          const k = Math.min(hB / im.height, (x1 - x0) / im.width), w = im.width * k, hh = im.height * k;
           const x = col.ha === 'right' ? x1 - w : (col.ha === 'center' ? (x0 + x1 - w) / 2 : x0);
           pg.drawImage(im, { x, y: y - hh, width: w, height: hh }); } });
       return;

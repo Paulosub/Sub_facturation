@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 30.10.2026 21:51 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 30.10.2026 22:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33191,9 +33191,11 @@ async function sgDsPdf(R, rep, o){
        la main) ; images fixes des anciens modèles (logos, fonds : c.n) jamais imprimées */
     if(G.env.job){
       const im = !c.n && G.env.job.img ? G.env.job.img[n] : null;
-      G.out.push({ h: SYS.signature, avant: mmPt(b.mt),
+      /* image d'un document de l'app (bloc 31 : cartes, plans) : hauteur donnée par la bande (b.h, mm) ; signature : 10 mm */
+      const hB = +b.h > 0 ? Math.min(mmPt(b.h), G.Z.haut - G.Z.bas) : SYS.signature;
+      G.out.push({ h: hB, avant: mmPt(b.mt),
         dessiner: (pg, y) => { if(!im) return;
-          const k = Math.min(SYS.signature / im.height, (x1 - x0) / im.width), w = im.width * k, hh = im.height * k;
+          const k = Math.min(hB / im.height, (x1 - x0) / im.width), w = im.width * k, hh = im.height * k;
           const x = col.ha === 'right' ? x1 - w : (col.ha === 'center' ? (x0 + x1 - w) / 2 : x0);
           pg.drawImage(im, { x, y: y - hh, width: w, height: hh }); } });
       return;
@@ -33770,7 +33772,10 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
     const visiter=el=>{ for(const n of el.childNodes){
         if(n.nodeType===3){ const t=String(n.textContent||'').replace(/\s+/g,' ').trim(); if(t) B.push({k:'texte',t,gras:gras(cs(el)),ha:ha(cs(el))}); continue; }
         if(n.nodeType!==1) continue; const tg=String(n.tagName).toUpperCase();
-        if(/^(SCRIPT|STYLE|TITLE|META|LINK|IMG|SVG|CANVAS|IFRAME|OBJECT|BR)$/.test(tg)||cache(n)) continue;
+        if(/^(SCRIPT|STYLE|TITLE|META|LINK|IFRAME|OBJECT|BR)$/.test(tg)||cache(n)) continue;
+        /* image, dessin SVG, canevas : gardés avec leur taille affichée (repris seulement pour les documents de l'app, étape 4) */
+        if(/^(IMG|SVG|CANVAS)$/.test(tg)){ const r=n.getBoundingClientRect(); if(r.width>4&&r.height>4) B.push({k:'image',el:n,W:r.width,H:r.height}); continue; }
+        if(n.querySelector('img,svg,canvas')){ visiter(n); continue; }
         const st=cs(n); if(/^(page|always|left|right)$/.test(st.breakBefore)) B.push({k:'saut'});
         if(/^H[1-6]$/.test(tg)){ const t=txt(n); if(t) B.push({k:'titre',t,niv:tg==='H1'?1:2}); continue; }
         if(tg==='TABLE'){ sgImpTableau(n,B,L); continue; }
@@ -33796,9 +33801,9 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
     visiter(body);
     const h1=B.find(b=>b.k==='titre'), titre=String(doc.title||'').trim()||(h1?h1.t:'')||'Document';
     let sous=''; B.some(b=>b.k==='grille'&&b.rows.some(r=>/^affaire$/i.test(r[0]||'')&&(sous=r[1]||'')));
-    return {titre,sous,paysage,B}; };
+    return {titre,sous,paysage,B,largeur:Math.max(1,body.clientWidth||doc.documentElement.clientWidth||794)}; };
   /* modèle lu → modèle .dpdoc synthétique + exemplaire (valeurs en champs : montants en rouge comme les champs des modèles) */
-  const sgImpSynthese=M=>{ const V={}, T={}, bands=[], NOIR=-16777216; let nv=0, nt=0, so=0;
+  const sgImpSynthese=M=>{ const V={}, T={}, I={}, bands=[], NOIR=-16777216; let nv=0, nt=0, so=0;
     /* document d'heures (rapports de temps, disponibilités, vacances) : aucun montant, donc aucun rouge */
     const sansRouge=!!M.sansRouge||(!M.fixe&&SGIMP_DOC_HEURES.test(M.titre||''));
     const str=t=>({class:'TextString',text:t}), champ=t=>{ if(sansRouge) return str(t); const f='sgimp|v'+(nv++); V[f+'\u0001standard']=t; return {class:'TextField',f,s:'standard'}; };
@@ -33808,10 +33813,13 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
       /* lignes d'un formulaire (étape 3) consécutives et de même forme → une grille */
       if(b.k==='grille'&&b.fusion&&p&&p.k==='grille'&&p.fusion&&p.cols.length===b.cols.length&&!!p.rangees===!!b.rangees){ b.rows.forEach(r=>p.rows.push(r)); return; }
       B.push(b.k==='grille'&&b.fusion?Object.assign({},b,{rows:b.rows.slice()}):b); });
+    const large=!M.fixe&&B.some(b=>b.k==='tableau'&&(b.cols.length>=9||b.cols.reduce((a,c)=>a+c.pw,0)>110));
     B.forEach((b,i)=>{ const z={sortOrder:so++,name:'b'+i};
       if(b.k==='titre') bands.push(Object.assign(z,{class:'TextBand',c:{class:'Text',ts:[str(b.t)]},col:{textFont:b.niv===1?'title':'subTitle'},rs:{b:'b',bc:NOIR},mt:i?5:0}));
       else if(b.k==='texte') bands.push(Object.assign(z,{class:'WrappingTextBand',text:{ts:[champ(b.t)]},col:{textFont:b.gras?'textBold':'text',ha:b.ha},mt:b.colle?0:2,rowSpace:1}));
       else if(b.k==='filet') bands.push(Object.assign(z,{class:'LineBand',mt:2}));
+      else if(b.k==='image'&&b.d){ const k='i'+i, Zw=M.paysage||large?250:150, w=Math.min(Zw,b.W/(M.largeur||794)*Zw);
+        I[k]=b.d; bands.push(Object.assign(z,{class:'TextBand',c:{class:'Image',f:'sgimp|'+k},h:Math.min(180,w*b.H/b.W),mt:2,col:{ha:'left'}})); }
       else if(b.k==='saut') bands.push(Object.assign(z,{class:'PageBreakBand'}));
       else if(b.k==='grille'&&b.sig){ const ent=a=>a.flatMap((x,j)=>j?[null,x]:[x]);   /* une colonne vide de 12 mm entre deux signatures */
         bands.push(Object.assign(z,{class:'GridBand',mt:14,cols:ent(b.cols).map(c=>c?Object.assign({},c,{textFont:'text'}):{pw:12,isAE:false,textFont:'text'}),
@@ -33821,10 +33829,9 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
       else if(b.k==='tableau'&&(b.rows.length||b.tete)){ const k='t'+(nt++); T[k]={tete:b.tete,cols:sansRouge?b.cols.map(c=>Object.assign({},c,{num:false})):b.cols,rows:b.rows};
         bands.push(Object.assign(z,{class:'TableBand',f:'sgimp|'+k,_sgk:k,mt:3,tableSettings:[{columns:[]}]})); } });
     /* paysage : demandé par le document (@page), ou tableau trop large pour une page portrait (9 colonnes ou plus, ou plus de 110 signes) */
-    const large=!M.fixe&&B.some(b=>b.k==='tableau'&&(b.cols.length>=9||b.cols.reduce((a,c)=>a+c.pw,0)>110));
     const page=M.paysage||large?{w:297,h:210,t:20,r:15,b:20,l:15}:{w:210,h:297,t:25,r:15,b:20,l:25};
     return {rep:{reportTitle:M.titre,pageTemplates:[{id:'SG',page}],sections:[{isVisible:true,pageTemplateId:'SG',bands}]},
-      jobs:[{titre:M.titre,titreChamp:M.titre,sousTitre:M.sous,date:M.date||today(),V,T,I:{}}]}; };
+      jobs:[{titre:M.titre,titreChamp:M.titre,sousTitre:M.sous,date:M.date||today(),V,T,I}]}; };
   /* visionneuse d'un HTML non repéré : affiché d'abord (comme avant), lu au chargement, puis remplacé par son PDF */
   const sgImpVueHtml=(titre,src,o)=>{ const V=ch03bView0(titre,src,o), ifr=V&&V.iframe; if(!ifr||typeof src!=='string') return V;
     let tour=0;
@@ -33918,7 +33925,7 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
       ln.filter(z=>z.flow).forEach(()=>String(o.flow.text||'').split('\n').forEach(l=>{ const g=l[0]==='£', t=(g?l.slice(1):l).trim(); if(t) B.push({k:'texte',t,gras:g,ha:'left'}); }));
       ln.filter(z=>z.tab).forEach(z=>{ const T=z.princ?{cols:o.cols||[],rows:o.rows||[]}:(o.tables||{})[z.tab.champ]; if(!T||!(T.cols||[]).length) return;
         const cols=T.cols.map((c,j)=>{ const t=sgImpTxt(c.t); return {id:j,titre:t,ha:c.r?'right':c.c?'center':'left',pw:+c.w||1,isAE:true,num:!!c.r&&!SGIMP_HEURES.test(t)}; });
-        B.push({k:'tableau',tete:!(z.princ&&o.noHeader),cols,rows:(T.rows||[]).map(r=>{ const st=r._bold&&r._line?'tt':r._bold?'l1':'tr';
+        B.push({k:'tableau',tete:!(z.princ&&o.noHeader),cols,rows:(T.rows||[]).map(r=>{ const st=cols.every((c,j)=>!sgImpTxt(r[j]).trim())?'space':r._bold&&r._line?'tt':r._bold?'l1':'tr';   /* ligne vide : espace sans filet */
           return {st,gras:!!r._bold,fuse:false,c:cols.map((c,j)=>sgImpTxt(r[j]))}; })}); }); } };
   if(typeof tplPrint==='function'){ const tplPrint0=tplPrint;
     tplPrint=function(o){ o=o||{}; if(o.extra) return tplPrint0(o);
@@ -33942,11 +33949,28 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
      sgDocOuvrir : contrat de travail, avenant, fin des rapports de travail, décompte de sortie, fiche contact) ═══
      Le HTML est mis en page dans un cadre caché (largeur A4), lu comme à l'étape 2 (sgImpLire), puis redessiné par sgDsPdf ; le PDF s'ouvre
      dans la visionneuse de l'app (Télécharger, Imprimer). Le pied de page « maison » des documents SG3 (sgPiedDoc) n'est plus mis : c'est
-     celui du papier. Grille à filet en haut (signatures) → filet au-dessus de chaque case. En cas d'échec, l'ancien rendu. Pas encore
-     converties : documents avec images ou plans (fiche de faisabilité). */
+     celui du papier. Grille à filet en haut (signatures) → filet au-dessus de chaque case. En cas d'échec, l'ancien rendu. Images, dessins SVG et
+     canevas (cartes, plans, coupes de la fiche de faisabilité) repris dans le PDF à leur taille affichée. */
+  /* images d'un document (étape 4) : PNG / JPEG tels quels, sinon relus (fetch, CORS) ou rastérisés au double de leur taille affichée sur
+     fond blanc (dessins SVG : sérialisés avec leur taille) ; image illisible : laissée de côté, sa légende reste */
+  const sgImpDataUrl=b=>new Promise((ok,ko)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=()=>ko(r.error); r.readAsDataURL(b); });
+  const sgImpRaster=(u,W,H)=>new Promise((ok,ko)=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(W*2)); c.height=Math.max(1,Math.round(H*2));
+      const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(im,0,0,c.width,c.height); ok(c.toDataURL('image/png')); }catch(e){ ko(e); } };
+    im.onerror=()=>ko(new Error('image illisible')); im.src=u; });
+  const sgImpImage=async(el,W,H)=>{ const tg=String(el.tagName).toUpperCase();
+    if(tg==='CANVAS') return el.toDataURL('image/png');
+    if(tg==='SVG'){ const c=el.cloneNode(true), cf=el.ownerDocument.defaultView.getComputedStyle(el);
+      c.setAttribute('xmlns','http://www.w3.org/2000/svg'); c.setAttribute('width',String(W)); c.setAttribute('height',String(H));
+      c.style.fontFamily=cf.fontFamily; c.style.fontWeight=cf.fontWeight;   /* police héritée du document (sinon police à empattements de l'image) */
+      const u=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(c)],{type:'image/svg+xml'})); try{ return await sgImpRaster(u,W,H); } finally { URL.revokeObjectURL(u); } }
+    const src=el.currentSrc||el.src||''; if(/^data:image\/(png|jpe?g)/i.test(src)) return src;
+    const r=await fetch(src,{mode:'cors'}); if(!r.ok) throw new Error('image '+r.status); const b=await r.blob();
+    if(/^image\/(png|jpe?g)$/i.test(b.type)) return sgImpDataUrl(b);
+    const u=URL.createObjectURL(b); try{ return await sgImpRaster(u,W,H); } finally { URL.revokeObjectURL(u); } };
+  const sgImpImages=async M=>{ for(const b of M.B) if(b.k==='image'&&b.el){ try{ b.d=await sgImpImage(b.el,b.W,b.H); }catch(e){ console.warn('Image non reprise :',e&&e.message||e); } b.el=null; } };
   const sgImpCadre=html=>new Promise((ok,ko)=>{ const f=h('iframe',{sandbox:'allow-same-origin',title:'sgimp',style:{position:'fixed',left:'-10000px',top:'0',width:'794px',height:'1123px',border:'0'}});
     const fin=()=>{ try{ f.remove(); }catch(_){} };
-    f.addEventListener('load',()=>{ try{ const M=sgImpLire(f.contentDocument); fin(); if(!M||!M.B.some(b=>b.k!=='saut')) return ko(new Error('document vide')); ok(M); }catch(e){ fin(); ko(e); } },{once:true});
+    f.addEventListener('load',async()=>{ try{ const M=sgImpLire(f.contentDocument); if(M) await sgImpImages(M); fin(); if(!M||!M.B.some(b=>b.k!=='saut')) return ko(new Error('document vide')); ok(M); }catch(e){ fin(); ko(e); } },{once:true});
     SRCDOC.set.call(f,html); document.body.append(f); setTimeout(()=>{ if(f.isConnected){ fin(); ko(new Error('délai dépassé')); } },15000); });
   const sgImpOuvrirHtml=async(html,nom,titre)=>{ const M=await sgImpCadre(html); if(titre) M.titre=titre;
     const id=(++SGIMP.n).toString(36)+'d'+Date.now().toString(36);
@@ -33956,9 +33980,34 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
     sgImprimer=function(titre,html){ const doc='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>'+nxE(titre)+'</title><style>'+css.replace(/margin:14mm/,'margin:0')+'</style></head><body><h1>'+nxE(titre)+'</h1>'+html+'</body></html>';
       sgImpOuvrirHtml(doc,titre,titre).catch(e=>{ console.error(e); sgImprimer0(titre,html); }); }; }
   if(typeof sgDocOuvrir==='function'){ const sgDocOuvrir0=sgDocOuvrir;
-    sgDocOuvrir=function(titre,corps,nom){ if(/<(img|svg|canvas)[\s>]/i.test(String(corps||''))) return sgDocOuvrir0(titre,corps,nom);
+    sgDocOuvrir=function(titre,corps,nom){
       const doc='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>'+nxE(titre)+'</title><style>'+sgPolicesDoc()+SG_DOC_CSS.replace(/@page\{[^}]*\}/,'')+'</style></head><body>'+corps+'</body></html>';
       sgImpOuvrirHtml(doc,nom||titre,titre).catch(e=>{ console.error(e); sgDocOuvrir0(titre,corps,nom); }); }; }
+
+  /* ═══ Ancien livret du devis général (ch02b : « Document ‹présentation› … », « Honoraires … », « Feuille de position … » de la fenêtre du
+     devis ; choix de Paulo : refait aussi) ═══
+     L'aperçu interactif (sauts de page, pinceau) reste tel quel ; « Imprimer » (ch02bPrint) produit le PDF au papier des contrats à partir du
+     livret calculé R : page de garde (champs du formulaire) puis saut de page, champs de la 1re page, UN tableau qui suit toutes les pages du
+     livret (colonnes ch02bCols / ch02bHonCols ; rangées « T » → total encadré, « O », « W », « G » → gras, détails « D », « X » normaux ; montants
+     en rouge), pages d'information (sommaire) en tableau à part. Visionneuse de l'app (Télécharger, Imprimer) ; en cas d'échec, l'ancien rendu. */
+  if(typeof ch02bPrint==='function'){ const ch02bPrint0=ch02bPrint;
+    ch02bPrint=function(R,title){ try{ const P=R.pages||{}, B=[], titre=String(title||(typeof CH02B_L!=='undefined'&&CH02B_L.title)||'Devis général');
+        const tplDe=pg=>pg.type===0?P.cover:pg.type===1?P.page1:pg.type===2?P.pageN:pg.type===3?P.pageTocN:P.pageToc1;
+        const lignes=(pg,info)=>(pg.rows||[]).map(r=>{ const c=(r.c||[]).slice(), s=String(r.s||''); if(!info){ if(s==='T'){ c._bold=1; c._line=1; } else if(/^[OWG]$/.test(s)) c._bold=1; } return c; });
+        let tab=null, vu1=false;
+        R.B.pages.forEach(pg=>{ const tpl=tplDe(pg)||{}, ctx={project:R.p,fields:ch02bFields(R,pg)}, el=(tpl.elements||[]).find(e=>e.champ==='constructionEstimateTable'), W=Math.floor(+(el&&el.l)||500), info=pg.type===3||pg.type===4;
+          const C=info?{cols:[{t:(R.o||{}).infoNameColTitle||CH02B_COL.infoName,w:15,r:false},{t:(R.o||{}).infoDescColTitle||CH02B_COL.infoDesc,w:85,r:false}]}
+            :R.kind==='hon'?ch02bHonCols(R.H,R.B.hs,R.B.loc,W):ch02bCols(R.o,R.B.loc,W), cols=(C.cols||[]).filter(c=>+c.w>0);
+          const rows=lignes(pg,info).map(r=>{ const x=(C.cols||[]).map((c,j)=>r[j]).filter((_,j)=>+(C.cols[j]||{}).w>0); x._bold=r._bold; x._line=r._line; return x; });
+          if(pg.type===0){ sgImpTplBlocs(tpl,{},ctx,B,false); B.push({k:'saut'}); return; }
+          if(!info&&tab&&tab.cols.length===cols.length){ rows.forEach(r=>tab.rows.push({st:cols.every((c,j)=>!sgImpTxt(r[j]).trim())?'space':r._bold&&r._line?'tt':r._bold?'l1':'tr',gras:!!r._bold,fuse:false,c:cols.map((c,j)=>sgImpTxt(r[j]))})); return; }   /* page suivante : lignes ajoutées au même tableau */
+          if(!vu1){ B.push({k:'titre',t:titre,niv:1}); vu1=true; }
+          const n=B.length; sgImpTplBlocs(tpl,{cols,rows},ctx,B,true); const t1=B.slice(n).find(b=>b.k==='tableau'); if(t1&&!info) tab=t1; });
+        const pr=R.p, id=(++SGIMP.n).toString(36)+'l'+Date.now().toString(36), p1=P.page1||P.pageN||{};
+        const prep=sgImpSynthese({titre,sous:pr?[pr.NUMBER,pr.TITLE].filter(x=>x!=null&&String(x).trim()).join(' - '):'',paysage:p1.orientation==='paysage'||(+p1.largeur||0)>(+p1.hauteur||0),fixe:true,B});
+        SGIMP.memo.set(id,{prep,o:{},titre}); while(SGIMP.memo.size>40) SGIMP.memo.delete(SGIMP.memo.keys().next().value);
+        sgImpPdf(id).then(pdf=>sgVisionneuse(pdf,titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'),e=>{ console.error(e); ch02bPrint0(R,title); }); }
+      catch(e){ console.error(e); return ch02bPrint0(R,title); } }; }
 
   /* ── impressions directes par modèle : visionneuse (PDF) au lieu d'une fenêtre d'impression du navigateur ── */
   const sgImpModeles=run=>{ if(['modeledocument','image'].every(t=>DS.loaded.has(t))) run(); else DS.need(['modeledocument','image']).then(run,()=>toast('Modèles indisponibles : serveur injoignable.',true)); };

@@ -1230,9 +1230,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   HTML mis en page dans un cadre caché (`sgImpCadre`, largeur A4, contenu posé AVANT l'insertion du cadre), lu par `sgImpLire`, PDF ouvert dans
   `sgVisionneuse` ; pied « maison » `sgPiedDoc` plus mis ; grille à filet en haut → signatures (filet au-dessus de chaque case, 12 mm entre
   elles, 14 mm avant) ; paragraphe « <b>Libellé</b><br>… » → libellé gras + suite collée ; montants « 6'500.- » aussi en rouge. Repli : ancien
-  rendu. Pas encore : documents avec images (fiche de faisabilité).
-  **Reste** : fiche de faisabilité (cartes, plans, coupes) ; puis, choix de Paulo, l'ancien livret du devis général (`ch02bPreview` /
-  `ch02bPrint`, Documents ▾ de la fenêtre du devis) ; `ctPrintOverview` (récapitulatif de contrat, ancien document).
+  rendu.
+  **Étape 4, 2e partie (faite le 30.10.2026)** : fiche de faisabilité — images (`sgImpImages` : PNG / JPEG tels quels, sinon relus par fetch
+  CORS — cartes WMS de geo.admin.ch — ou rastérisés au double de leur taille affichée ; dessins SVG sérialisés avec la police du document)
+  reprises dans le PDF à leur taille affichée (bande Image, hauteur `b.h` mm, 180 mm au plus ; `sgDsPdf` exemplaires : hauteur de la bande) ;
+  image illisible laissée de côté. Ancien livret du devis général (choix de Paulo « Oui, à la fin ») : l'aperçu interactif (`ch02bPreview` :
+  sauts de page, pinceau) reste ; `ch02bPrint` (« Imprimer ») remplacé — page de garde, champs de la 1re page, un seul tableau sur toutes les
+  pages du livret (rangées « T » encadrées, « O » / « W » / « G » en gras, lignes vides sans filet), sommaire à part ; PDF dans `sgVisionneuse`.
+  **Pas convertis** (ancien rendu) : QR-facture et facture DeltaSub avec page QR (norme suisse), `ctPrintOverview` (récapitulatif de contrat,
+  ancien document), impressions de Facturation.html (contrats, factures, PV : ce sont les références du papier).
   Copie d'avant : `subgestion3/_backup_20261030_2026_avant_impressions/`, `SUBGestion3_backup_20261030_2026_avant_impressions.html`.
 - **Bibliothèque sans « Images » ni « Fonds de page » (30.10.2026, demande de Paulo « supprimer fonds de pages et images »)** : entrées
   `tpl-images` et `tpl-backgrounds` retirées du menu (et leurs chiffres de la vue d'ensemble) ; `go` les ramène à `dom-biblio` (reprise de session,

@@ -1225,7 +1225,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   de page, titre et date du formulaire laissés au papier ; fonds, traits, images jamais ; orientation de la 1re page du formulaire. Les
   rapports de temps (catégorie `timeTemplates`) n'ont aucun rouge. Ancien rendu gardé : page QR jointe (`o.extra`), formulaire introuvable.
   Sortie : petit HTML repéré écrit dans la fenêtre (`o.win` ou fausse fenêtre) → visionneuse avec le PDF.
-  **Reste** : 4 = coquille (`sgImprimer`, `sgDocOuvrir`) ; puis, choix de Paulo, l'ancien livret du devis général (`ch02bPreview` /
+  **Étape 4, 1re partie (faite, validée le 30.10.2026)** : documents de la coquille. `sgImprimer` (heures du projet, situation des heures, rapport
+  d'un collaborateur) et `sgDocOuvrir` (contrat de travail, avenant, fin des rapports de travail, décompte de sortie, fiche contact) remplacés :
+  HTML mis en page dans un cadre caché (`sgImpCadre`, largeur A4, contenu posé AVANT l'insertion du cadre), lu par `sgImpLire`, PDF ouvert dans
+  `sgVisionneuse` ; pied « maison » `sgPiedDoc` plus mis ; grille à filet en haut → signatures (filet au-dessus de chaque case, 12 mm entre
+  elles, 14 mm avant) ; paragraphe « <b>Libellé</b><br>… » → libellé gras + suite collée ; montants « 6'500.- » aussi en rouge. Repli : ancien
+  rendu. Pas encore : documents avec images (fiche de faisabilité).
+  **Reste** : fiche de faisabilité (cartes, plans, coupes) ; puis, choix de Paulo, l'ancien livret du devis général (`ch02bPreview` /
   `ch02bPrint`, Documents ▾ de la fenêtre du devis) ; `ctPrintOverview` (récapitulatif de contrat, ancien document).
   Copie d'avant : `subgestion3/_backup_20261030_2026_avant_impressions/`, `SUBGestion3_backup_20261030_2026_avant_impressions.html`.
 - **Bibliothèque sans « Images » ni « Fonds de page » (30.10.2026, demande de Paulo « supprimer fonds de pages et images »)** : entrées

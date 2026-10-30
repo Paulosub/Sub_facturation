@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 30.10.2026 21:40 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 30.10.2026 21:51 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -32733,7 +32733,7 @@ async function sgDsPdf(R, rep, o){
   };
   const estVide = (ms) => !ms.some(m => m.rep || m.page || /\S/.test(m.t));
   /* montant (B7) : nombre à deux décimales tel que le moteur l'écrit (num : « 1'234.50 », « -12.00 », « (0.05) »), non nul */
-  const montant = (p) => /^\(?[-−]?\d+(?:['’]\d{3})*\.\d{2}\)?$/.test(p) && /[1-9]/.test(p);
+  const montant = (p) => /^\(?[-−]?\d+(?:['’]\d{3})*(?:\.\d{2}|\.[-–])\)?$/.test(p) && /[1-9]/.test(p);   /* « 6'500.- » des contrats de travail aussi */
   /* découpe en paragraphes aux sauts de ligne (pour l'écart des WrappingTextBand) */
   const paragraphes = (ms) => {
     const P = [[]];
@@ -33779,6 +33779,8 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
         /* grille CSS (display:grid, n colonnes) : enfants rangés n par n → grille libellé / valeur */
         if(/grid/.test(st.display)){ const k=String(st.gridTemplateColumns||'').trim().split(/\s+/).filter(Boolean).length, ch=[...n.children].filter(c=>!cache(c));
           if(k>=2&&ch.length>=k&&simples(ch)){ const rows=[]; for(let i=0;i<ch.length;i+=k) rows.push(ch.slice(i,i+k).map(c=>txt(c)));
+            /* cases à filet en haut (signatures des documents RH) : filet au-dessus de chaque case, place réservée avant */
+            if(ch.every(c=>{ const z=cs(c); return z.borderTopStyle!=='none'&&parseFloat(z.borderTopWidth)>0; })){ B.push({k:'grille',sig:true,cols:Array.from({length:k},()=>({pw:1,isAE:true,ha:'left'})),rows}); continue; }
             const lab=Math.min(60,Math.max(30,ch[0].getBoundingClientRect().width*25.4/96));
             B.push({k:'grille',cols:Array.from({length:k},(_,j)=>j===0?{pw:lab,isAE:false,ha:'left'}:{pw:1,isAE:true,ha:ha(cs(ch[j]))}),rows}); continue; } }
         if(/flex/.test(st.display)&&n.children.length>=2&&simples([...n.children])){ const ch=[...n.children].filter(c=>!cache(c));
@@ -33786,7 +33788,11 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
           if((parseFloat(st.fontSize)||0)>=14.5){ const t=ch.map(c=>txt(c)).filter(Boolean).join(' — '); if(t) B.push({k:'titre',t,niv:1}); continue; }
           B.push({k:'rangee',c:ch.map(c=>({t:txt(c),ha:ha(cs(c))})),gras:gras(st)}); continue; }
         if(n.querySelector('table,h1,h2,h3,h4,h5,h6,p,div,ul,ol,li,hr,section,article')){ visiter(n); continue; }
-        const t=txt(n); if(t) B.push({k:'texte',t:tg==='LI'?'– '+t:t,gras:gras(st),ha:ha(st)}); } };
+        const t=txt(n); if(!t) continue;
+        /* paragraphe qui commence par un libellé en gras suivi d'un retour à la ligne (« <b>Adresse</b><br>… ») : libellé gras, suite collée */
+        const f0=n.firstElementChild, tf=f0&&/^(B|STRONG)$/.test(f0.tagName)&&f0.nextSibling&&f0.nextSibling.nodeName==='BR'?txt(f0):'';
+        if(tf&&t.startsWith(tf)){ B.push({k:'texte',t:tf,gras:true,ha:ha(st)}); const r=t.slice(tf.length).replace(/^\n/,''); if(r) B.push({k:'texte',t:r,gras:gras(st),ha:ha(st),colle:true}); continue; }
+        B.push({k:'texte',t:tg==='LI'?'– '+t:t,gras:gras(st),ha:ha(st)}); } };
     visiter(body);
     const h1=B.find(b=>b.k==='titre'), titre=String(doc.title||'').trim()||(h1?h1.t:'')||'Document';
     let sous=''; B.some(b=>b.k==='grille'&&b.rows.some(r=>/^affaire$/i.test(r[0]||'')&&(sous=r[1]||'')));
@@ -33804,9 +33810,12 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
       B.push(b.k==='grille'&&b.fusion?Object.assign({},b,{rows:b.rows.slice()}):b); });
     B.forEach((b,i)=>{ const z={sortOrder:so++,name:'b'+i};
       if(b.k==='titre') bands.push(Object.assign(z,{class:'TextBand',c:{class:'Text',ts:[str(b.t)]},col:{textFont:b.niv===1?'title':'subTitle'},rs:{b:'b',bc:NOIR},mt:i?5:0}));
-      else if(b.k==='texte') bands.push(Object.assign(z,{class:'WrappingTextBand',text:{ts:[champ(b.t)]},col:{textFont:b.gras?'textBold':'text',ha:b.ha},mt:2,rowSpace:1}));
+      else if(b.k==='texte') bands.push(Object.assign(z,{class:'WrappingTextBand',text:{ts:[champ(b.t)]},col:{textFont:b.gras?'textBold':'text',ha:b.ha},mt:b.colle?0:2,rowSpace:1}));
       else if(b.k==='filet') bands.push(Object.assign(z,{class:'LineBand',mt:2}));
       else if(b.k==='saut') bands.push(Object.assign(z,{class:'PageBreakBand'}));
+      else if(b.k==='grille'&&b.sig){ const ent=a=>a.flatMap((x,j)=>j?[null,x]:[x]);   /* une colonne vide de 12 mm entre deux signatures */
+        bands.push(Object.assign(z,{class:'GridBand',mt:14,cols:ent(b.cols).map(c=>c?Object.assign({},c,{textFont:'text'}):{pw:12,isAE:false,textFont:'text'}),
+          rows:b.rows.map((r,k)=>({sortOrder:k,data:ent(r).map(t=>t==null?{class:'Text',ts:[]}:{class:'Text',rS:{b:'t',bc:NOIR},ts:t?[str(t)]:[]})}))})); }
       else if(b.k==='grille'&&b.rows.length) bands.push(Object.assign(z,{class:'GridBand',mt:3,cols:b.cols.map((c,j)=>Object.assign({},c,{textFont:j===0&&!b.rangees&&b.cols.length>1?'textBold':'text'})),
         rows:b.rows.map((r,k)=>({sortOrder:k,data:r.map((t,j)=>({class:'Text',ts:t?[j===0&&!b.rangees?str(t):champ(t)]:[]}))}))}));
       else if(b.k==='tableau'&&(b.rows.length||b.tete)){ const k='t'+(nt++); T[k]={tete:b.tete,cols:sansRouge?b.cols.map(c=>Object.assign({},c,{num:false})):b.cols,rows:b.rows};
@@ -33928,6 +33937,28 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
       const w=o.win||open('','_blank'); if(!w) return;
       w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titre)+'</title><style>/*sgimp:'+id+'*/</style></head><body><p>'+esc(titre)+'</p></body></html>');
       w.document.close(); }; }
+
+  /* ═══ ÉTAPE 4 — documents de SUBGestion 3 (sgImprimer : heures du projet, situation des heures, rapport d'un collaborateur ;
+     sgDocOuvrir : contrat de travail, avenant, fin des rapports de travail, décompte de sortie, fiche contact) ═══
+     Le HTML est mis en page dans un cadre caché (largeur A4), lu comme à l'étape 2 (sgImpLire), puis redessiné par sgDsPdf ; le PDF s'ouvre
+     dans la visionneuse de l'app (Télécharger, Imprimer). Le pied de page « maison » des documents SG3 (sgPiedDoc) n'est plus mis : c'est
+     celui du papier. Grille à filet en haut (signatures) → filet au-dessus de chaque case. En cas d'échec, l'ancien rendu. Pas encore
+     converties : documents avec images ou plans (fiche de faisabilité). */
+  const sgImpCadre=html=>new Promise((ok,ko)=>{ const f=h('iframe',{sandbox:'allow-same-origin',title:'sgimp',style:{position:'fixed',left:'-10000px',top:'0',width:'794px',height:'1123px',border:'0'}});
+    const fin=()=>{ try{ f.remove(); }catch(_){} };
+    f.addEventListener('load',()=>{ try{ const M=sgImpLire(f.contentDocument); fin(); if(!M||!M.B.some(b=>b.k!=='saut')) return ko(new Error('document vide')); ok(M); }catch(e){ fin(); ko(e); } },{once:true});
+    SRCDOC.set.call(f,html); document.body.append(f); setTimeout(()=>{ if(f.isConnected){ fin(); ko(new Error('délai dépassé')); } },15000); });
+  const sgImpOuvrirHtml=async(html,nom,titre)=>{ const M=await sgImpCadre(html); if(titre) M.titre=titre;
+    const id=(++SGIMP.n).toString(36)+'d'+Date.now().toString(36);
+    SGIMP.memo.set(id,{prep:sgImpSynthese(M),o:{},titre:M.titre}); while(SGIMP.memo.size>40) SGIMP.memo.delete(SGIMP.memo.keys().next().value);
+    const pdf=await sgImpPdf(id); sgVisionneuse(pdf,String(nom||M.titre||'Document').replace(/\.html?$/i,'')+'.pdf'); return id; };
+  if(typeof sgImprimer==='function'){ const sgImprimer0=sgImprimer, css=(/<style>([\s\S]*?)<\/style>/.exec(sgImprimer0.toString())||[])[1]||'';
+    sgImprimer=function(titre,html){ const doc='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>'+nxE(titre)+'</title><style>'+css.replace(/margin:14mm/,'margin:0')+'</style></head><body><h1>'+nxE(titre)+'</h1>'+html+'</body></html>';
+      sgImpOuvrirHtml(doc,titre,titre).catch(e=>{ console.error(e); sgImprimer0(titre,html); }); }; }
+  if(typeof sgDocOuvrir==='function'){ const sgDocOuvrir0=sgDocOuvrir;
+    sgDocOuvrir=function(titre,corps,nom){ if(/<(img|svg|canvas)[\s>]/i.test(String(corps||''))) return sgDocOuvrir0(titre,corps,nom);
+      const doc='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>'+nxE(titre)+'</title><style>'+sgPolicesDoc()+SG_DOC_CSS.replace(/@page\{[^}]*\}/,'')+'</style></head><body>'+corps+'</body></html>';
+      sgImpOuvrirHtml(doc,nom||titre,titre).catch(e=>{ console.error(e); sgDocOuvrir0(titre,corps,nom); }); }; }
 
   /* ── impressions directes par modèle : visionneuse (PDF) au lieu d'une fenêtre d'impression du navigateur ── */
   const sgImpModeles=run=>{ if(['modeledocument','image'].every(t=>DS.loaded.has(t))) run(); else DS.need(['modeledocument','image']).then(run,()=>toast('Modèles indisponibles : serveur injoignable.',true)); };

@@ -650,7 +650,7 @@ async function sgDsPdf(R, rep, o){
   };
   const estVide = (ms) => !ms.some(m => m.rep || m.page || /\S/.test(m.t));
   /* montant (B7) : nombre à deux décimales tel que le moteur l'écrit (num : « 1'234.50 », « -12.00 », « (0.05) »), non nul */
-  const montant = (p) => /^\(?[-−]?\d+(?:['’]\d{3})*\.\d{2}\)?$/.test(p) && /[1-9]/.test(p);
+  const montant = (p) => /^\(?[-−]?\d+(?:['’]\d{3})*(?:\.\d{2}|\.[-–])\)?$/.test(p) && /[1-9]/.test(p);   /* « 6'500.- » des contrats de travail aussi */
   /* découpe en paragraphes aux sauts de ligne (pour l'écart des WrappingTextBand) */
   const paragraphes = (ms) => {
     const P = [[]];

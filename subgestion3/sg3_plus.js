@@ -2485,6 +2485,19 @@ VIEWS['ancf-comparer']=sgAncComparer('f');
     if(k==='ancien') return [{v:n('projectfee'),t:'offres d’honoraires'},{v:n('projectfeecalculation'),t:'variantes de calcul'},{v:n('projectcontract'),t:'contrats'},{v:notes('h'),t:'notes d’analyse'}];
     const F=DS.all('projectinvoice'); return [{v:F.length,t:'factures'},{v:F.filter(x=>+x.PROJECTINVOICESTATECODE===3).length,t:'payées'},{v:n('projectpayment'),t:'encaissements'},{v:notes('f'),t:'notes d’analyse'}]; }; }
 
+/* Nouveau contrat : prestations de l'architecte seulement (30.10.2026, demande de Paulo « dans nouveau contrat supprimer les types de
+   prestations qui ne sont pas celles de l'architecte, comme ingénieurs, etc. ») — « Nouveau contrat » / « Editer le contrat » (ctEdit) et
+   « Nouveau contrat d'honoraires » (feEditFee) : liste « Type de prestations » réduite à l'architecte ; calcul des honoraires : valeurs Z1 / Z2
+   de la SIA 102 seulement ; « Choix du mode de calcul des honoraires » (feNewFee) : « Contrat selon » sans les contrats SIA 1003 à 1008
+   (ingénieur civil, ingénieur forestier, architecte paysagiste, géologue, ingénieur). Les contrats déjà saisis gardent leur texte et leur
+   contrat d'origine (feBasedOn lit toujours la liste complète). DeltaSub.html seul garde les listes d'origine. */
+{ const archi=['Prestations de l’architecte'], horsArchi=new Set([30,40,50,60,80]);
+  HF_SERVICES.splice(0,HF_SERVICES.length,...HF_SERVICES.filter(t=>archi.includes(t)));
+  [FE_Z1,FE_Z2].forEach(L=>L.splice(0,L.length,...L.filter(t=>/^Architectes, SIA 102/.test(t))));
+  const f0=feNewFee; feNewFee=function(){ const tout=FE_BASEDON.slice();
+    FE_BASEDON.splice(0,FE_BASEDON.length,...tout.filter(b=>!horsArchi.has(b[0])));   /* liste du choix, construite dès l'ouverture de la fenêtre */
+    try{ return f0.apply(this,arguments); } finally{ FE_BASEDON.splice(0,FE_BASEDON.length,...tout); } }; }
+
 /* ═══ 19. CLIC DROIT : MENU CONTEXTUEL DANS LES TABLEAUX (13.10.2026) ═════════════════════════════════════
    Comme dans l'ancien logiciel : un clic droit sur une ligne de tableau la sélectionne et ouvre, à l'endroit du clic, le menu de ses
    actions — Ouvrir, fiche (projet, contact, membre), boutons de la barre du tableau (Nouveau, Modifier, Supprimer… ; un bouton à liste

@@ -1192,6 +1192,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `tpl-images` et `tpl-backgrounds` retirées du menu (et leurs chiffres de la vue d'ensemble) ; `go` les ramène à `dom-biblio` (reprise de session,
   récents, favoris). Écrans du moteur gardés dans DeltaSub.html ; données gardées (collections `image` et `arriereplan` : les modèles d'impression
   du moteur et « Français seulement » s'en servent). Copie d'avant : `subgestion3/_backup_20261030_1957_avant_biblio_sans_images/`.
+- **Nouveau contrat : prestations de l'architecte seulement (30.10.2026, demande de Paulo « dans nouveau contrat supprimer les types de
+  prestations qui ne sont pas celles de l'architecte, comme ingénieurs, etc. »)** — fin du bloc 18 de `sg3_plus.js` : « Type de prestations »
+  de « Nouveau contrat » (`ctEdit`) et de « Nouveau contrat d'honoraires » (`feEditFee`) = « Prestations de l'architecte » seulement
+  (`HF_SERVICES` réduit ; « garantie des coûts » retirée avec les ingénieurs, le géologue et le paysagiste) ; valeurs Z1 / Z2 du calcul =
+  SIA 102 seulement (`FE_Z1`, `FE_Z2`) ; « Contrat selon » de « Choix du mode de calcul des honoraires » (`feNewFee`, enveloppé) sans SIA 1003,
+  1004, 1005, 1006, 1008 (`FE_BASEDON` filtré le temps de construire la liste : `feBasedOn` affiche toujours le contrat d'origine des calculs
+  existants). Le « Nouveau contrat » de Facturation n'avait que des prestations d'architecte. DeltaSub.html seul : listes d'origine.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

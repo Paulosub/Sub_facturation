@@ -1215,8 +1215,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `flex` → grille (≥ 11 pt : titre), paragraphes ; valeurs en champs (montants en rouge). `SGIMP.parHtml` : le HTML d'origine reste la source
   du bouton PDF. Pas convertis : `tplpage` (étape 3), SVG / canevas (QR-facture, graphiques), documents sans titre ni tableau. Heures jamais en
   rouge (`SGIMP_HEURES` : colonnes Durée, Heures, Temps, Quantité ; nombre suivi de « h »). `sgDsPdf` (exemplaires) : chaque colonne reçoit au
-  moins la largeur de son plus long mot, prise sur les colonnes qui ont de la place. **Étapes suivantes** : 3 = formulaires `tplPrint`
-  (collection `modele`, fonds de page retirés), 4 = coquille (`sgImprimer`, `sgDocOuvrir`).
+  moins la largeur de son plus long mot, prise sur les colonnes qui ont de la place.
+  **Étape 3 (faite, épreuves validées le 30.10.2026)** : formulaires de la Bibliothèque (`tplPrint`, collection `modele` : rapports de temps,
+  notes de frais, listes d'adresses, intervenants, tâches, anciens documents…). `tplPrint` remplacé : document refait à partir de ses données
+  et du formulaire choisi (`tplFind` inchangé) — titre → en-tête et titre de chapitre, date du document → en-tête, textes fixes et champs
+  (`tplFieldValue`) dans l'ordre de lecture, seulement les lignes qui tiennent dans la hauteur de leur case (« Solde\n\n\nd » → « Solde »),
+  ceux d'une même ligne en grille aux largeurs des cases ; tableau principal `o.cols` / `o.rows` (_bold → gras, _bold + _line → total
+  encadré) et tableaux secondaires à leur place ; texte coulant (`o.flow`) ; page de garde (`o.cover`) en tête puis saut de page ; numéro
+  de page, titre et date du formulaire laissés au papier ; fonds, traits, images jamais ; orientation de la 1re page du formulaire. Les
+  rapports de temps (catégorie `timeTemplates`) n'ont aucun rouge. Ancien rendu gardé : page QR jointe (`o.extra`), formulaire introuvable.
+  Sortie : petit HTML repéré écrit dans la fenêtre (`o.win` ou fausse fenêtre) → visionneuse avec le PDF.
+  **Reste** : 4 = coquille (`sgImprimer`, `sgDocOuvrir`) ; puis, choix de Paulo, l'ancien livret du devis général (`ch02bPreview` /
+  `ch02bPrint`, Documents ▾ de la fenêtre du devis) ; `ctPrintOverview` (récapitulatif de contrat, ancien document).
   Copie d'avant : `subgestion3/_backup_20261030_2026_avant_impressions/`, `SUBGestion3_backup_20261030_2026_avant_impressions.html`.
 - **Bibliothèque sans « Images » ni « Fonds de page » (30.10.2026, demande de Paulo « supprimer fonds de pages et images »)** : entrées
   `tpl-images` et `tpl-backgrounds` retirées du menu (et leurs chiffres de la vue d'ensemble) ; `go` les ramène à `dom-biblio` (reprise de session,

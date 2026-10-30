@@ -1263,6 +1263,26 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Nouveau contrat » sans calcul relié (`ctEdit`, `aideCalc`) : où inscrire les phases (Offres d'honoraires ▸ calcul, puis « Nouveau contrat
   basé sur un calcul … »). `feAsk` donne le focus à la question (Échap n'atteint plus la fenêtre de derrière). Copie d'avant :
   `DeltaSub_backup_20261030_2031_avant_mode_calcul.html`.
+- **Avancement des prestations = proposition D « Proposé par les heures » (30.10.2026, bloc 31, `subgestion3/sg3_avancement.js`, concaténé
+  en dernier ; demande de Paulo « modifier la manière de sélectionner l'avancement des prestations, modifier la représentation », puis
+  « applique la proposition D » parmi 4 maquettes — `subgestion3/_backup_20261030_maquette_avancement/`)** : `imDomain` du moteur enveloppé
+  (page du projet ▸ Avancement des prestations, Archives ▸ Registre…) ; Archives ▸ Honoraires (ancien) ▸ Avancement (`anc-avancement`) garde
+  l'écran d'origine. Bandeau jaune (projet, contrats, parts SIA comprises, honoraires HT si `sgAdmin()` ou chef de projet et finances non
+  verrouillées), date de l'état ; chiffres (effectif, prévu, écart, proposé par les heures, heures saisies / contrat) ; tableau des phases
+  partielles 31–53 : heures consommées (rouge au-delà du contrat), avancement PROPOSÉ = heures saisies ÷ heures du contrat par crans de 5 %, au
+  plus 95 % (heures épuisées → « à juger »), avancement RETENU au curseur (glisser, clic, flèches, − / +, P / « Reprendre », « Reprendre toutes les
+  propositions »), prévu par − / + ; alertes (risque de dépassement, heures dépassées) ; courbe heures / effectif / prévu ; journal des états
+  (consultation, « Rouvrir pour modifier », « Supprimer l'état »). Enregistrement en UN `DS.commit` : collection propre **`sgavancement`** {ID,
+  PROJECT_ID, DATE, NOM, REMARQUE, EFF, PREV, PROP (par phase partielle), GLOBAL_EFF, GLOBAL_PREV (pondérés par les parts SIA, 1 décimale), IMPL_ID,
+  PAR, MODIFIE} + la ligne **`projectimplementation`** de la même date (SCHEDULEDVALUE / CURRENTVALUE = % globaux entiers, lus par le Management) ;
+  une seule ligne par (projet, date) : même date → « Remplacer l'état du … ? » (doublons et autres lignes de la date supprimés) ; un seul
+  enregistrement à la fois (`u.enCours`). Parts SIA des contrats reliés, sinon parts SIA 102 standard (sans contrat, ou contrats sans parts 31–53 :
+  expertises, anciens contrats — l'en-tête le dit) ; contrats pas encore lus → « Enregistrer » désactivé jusqu'au redessin. Droits : modifier =
+  administrateur, « projets modifiables : tous », ou « ses projets » pour un projet attribué ; sinon lecture seule (ni curseurs ni boutons).
+  Redessin sur place quand la base change (défilement, saisie et focus gardés ; attend la fin d'un glisser). Serveur du NAS : rien à changer
+  (`sgavancement` rattachée au projet par PROJECT_ID, collection propre gardée par les reprises ; `projectimplementation` protégée). Relu et vérifié
+  par workflow (8 défauts confirmés, corrigés) ; essayé dans l'aperçu sur 17QUE (enregistrer, remplacer, supprimer, lecture seule, écran d'origine).
+  Débogage : `window.SGAV`. Styles `#sgav-css`, classes `sgav-*`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

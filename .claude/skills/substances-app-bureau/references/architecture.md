@@ -123,6 +123,12 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
 - `sg3_impressions.js` (bloc 31, après `sg3_docsub.js`) : impressions au papier des contrats. Enveloppe `svDpHTML` (repère `/*sgimp:<id>*/`,
   `SGIMP.memo`), `ch03bView` (PDF dans le cadre), `ch03aApi('/api/pdf')` (PDF du document repéré), `svDpPrint`, `svbDpPrint`, `mgPrint` ;
   `sgImpPreparer` met les valeurs en texte dans l'app, `sgDsPdf` dessine. La vue `tpl-documents` n'est pas touchée.
+- `sg3_avancement.js` (Avancement des prestations, `imDomain` enveloppé ; `anc-avancement` garde l'original) puis `sg3_offres.js` (bloc 32,
+  concaténé en dernier) : page du projet ▸ Offres d'honoraires (toutes les offres de Facturation de l'affaire), Contrats honoraires (signés
+  seulement), Factures (factures de l'affaire, chiffres, situation par rapport aux heures → « Préparer la facture » `fx-saisie nfp:<contrat>`,
+  `ff_<k>` reportés ; PDF d'une facture `fx-factures fv:<id>`). `feDomain`, `ctDomain`, `ivDomain` enveloppés ; `anc-offres`, `anc-contrats`,
+  `anc-factures` gardent les écrans du moteur. Créer un contrat = `fx-calchono newaff:<n°>` (jamais `ctEdit`). `window.SGOF`.
+  ⚠ `c.hht` d'un contrat de Facturation est NET (rabais et arrondi compris) ; `calcF` (saisie de facture) applique encore `c.rabais`.
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

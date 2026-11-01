@@ -1283,6 +1283,48 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`sgavancement` rattachée au projet par PROJECT_ID, collection propre gardée par les reprises ; `projectimplementation` protégée). Relu et vérifié
   par workflow (8 défauts confirmés, corrigés) ; essayé dans l'aperçu sur 17QUE (enregistrer, remplacer, supprimer, lecture seule, écran d'origine).
   Débogage : `window.SGAV`. Styles `#sgav-css`, classes `sgav-*`.
+- **Offres d'honoraires, Contrats honoraires et Factures de l'affaire = calcul d'honoraires et factures du bureau (01.11.2026, bloc 32,
+  `subgestion3/sg3_offres.js`, concaténé en dernier ; demandes de Paulo : « dans projets, offre d'honoraires : créer une liste des offres de
+  l'affaire, designer selon le reste de l'app ; mettre la version actuelle dans archives, ne pas effacer ; lorsque je crée un contrat, la version
+  que j'avais développée et pas la version de Delta », « toutes les offres dans Offres (retenues, annulées…) ; dans Contrats honoraires uniquement
+  les contrats signés ; les versions signées restent aussi dans Offres ; sous le titre, le nombre d'offres et d'offres annulées ou refusées »,
+  « dans Factures, le module de l'ancienne version que j'avais développée, la version Delta dans archives ; uniquement les factures de l'affaire ;
+  en haut des stats : factures ouvertes, contrat, hors contrat, reste à facturer, situation par rapport aux heures — définir les pourcentages en
+  analysant les heures depuis la dernière facturation, pour déterminer les honoraires de la prochaine facture »)** : `feDomain`, `ctDomain` et
+  `ivDomain` du moteur enveloppés (page du projet, Archives ▸ Registre…) ; Archives ▸ Honoraires (ancien) ▸ Offres d'honoraires / Contrats
+  honoraires et Facturation (ancien) ▸ Factures (`anc-offres`, `anc-contrats`, `anc-factures`) gardent les écrans d'origine — rien n'est effacé
+  (`projectfee`, `projectcontract`, `projectinvoice` restent dans la base) ; lien « Ancienne version » en pied de chaque page.
+  Données = Facturation reliée à l'affaire (`sgContratsDuProjet` : code d'affaire, sinon `sg3_liens`). Même présentation que l'Avancement :
+  bandeau jaune (numéro, désignation, maître de l'ouvrage, nombres), chiffres sans icônes (un clic = filtre), tableau `nx-tbl`.
+  **Offres d'honoraires** : toutes les offres, dans l'ordre chronologique — en cours (brouillon, envoyée), retenues (signées ou terminées),
+  annulées ou refusées (Facturation n'a que « annulé » pour une offre non retenue) ; colonnes étendue (`sgContratEtendue`) + Avenant, date,
+  commentaire de la dernière version, type, version, HT, TTC, état ; Ouvrir (PDF, `fx-contrats cv:`), Modifier (`fx-calchono c:`) ;
+  « Nouvelle offre d'honoraires » = calcul d'honoraires de Facturation pour l'affaire (`fx-calchono newaff:<n°>`) ; « Relier une offre… »
+  (offre sans affaire). **Contrats honoraires** : contrats SIGNÉS seulement (signé ou terminé, jamais annulé ; au NAS le 20.10.2026 aucun contrat
+  n'était marqué signé : la page sera vide tant que les offres ne sont pas marquées « signé » dans Facturation ▸ Contrats) ; Ouvrir, Modifier
+  (contrat signé = verrouillé : nouvelle version / avenant), Facturer (`fx-saisie nf:`) ; « Nouveau contrat d'honoraires » = calcul de Facturation.
+  Tuiles de la page du projet : « n offres · x annulées ou refusées », « n contrats signés », « n factures · x ouvertes » (`sgPdomCompte`
+  enveloppé, Facturation lue à la demande).
+  **Factures** : factures de Facturation de l'affaire seulement (contrats reliés + factures sans contrat au code de l'affaire, `cl_affaire` ou
+  « _<code>. » du numéro) ; chiffres : Factures ouvertes (TTC, échues en rouge), Contrat (TTC, facturé et %), Hors contrat (factures sans
+  contrat), Reste à facturer (contrat − facturé sur contrat ; négatif = facturé au-delà), Selon les heures (prochaine facture) ; **Situation par
+  rapport aux heures** par contrat (ni annulé ni terminé, avec prestations SIA et montant ; choix du contrat s'il y en a plusieurs) : par phase
+  partielle 31–53, part du contrat, facturé à ce jour (pourcentages cumulés de la dernière facture du contrat), heures depuis la dernière facture,
+  heures saisies / heures du contrat (TIMEBUDGET de la phase partielle du projet), avancement proposé (heures ÷ heures du contrat, crans de 5 %,
+  au plus 95 %, comme l'Avancement ; sans heures au contrat : dernier état `sgavancement` ; jamais sous le facturé), avancement à facturer
+  modifiable (− / +, saisie ; gardé le temps de la session), cumul, honoraires HT de la phase ; pied : honoraires HT et TTC cumulés, déjà facturé
+  (factures précédentes du contrat, comme les acomptes de la saisie), honoraires à facturer (ou « facturé d'avance »), frais (% du contrat),
+  total. **Base de calcul = honoraires HT du contrat (rabais et arrondi déjà compris : TTC du contrat = HT × TVA)** × Σ % ÷ Σ % du contrat,
+  arrondi à 5 ct, TVA. « Préparer la facture » : nouvelle facture de Facturation pour le contrat (`fx-saisie nfp:<id>`), pourcentages cumulés
+  reportés prestation par prestation (`ff_<k>`, remplis dans l'ordre SIA à partir de la facture précédente) ; rien n'est enregistré.
+  ⚠ **La saisie de facture de Facturation (`calcF`) applique encore le rabais du contrat (`f_rabais` = `c.rabais`) à `c.hht`, qui le comprend
+  déjà** (`applyCalcHono` : `hht = htFinal`, après rabais et arrondi) : « Préparer la facture » le signale (montant de la situation et montant de
+  la saisie) sans rien corriger — question posée à Paulo le 01.11.2026. Tableau des factures (années, contrat ou « Hors contrat », honoraires,
+  frais, total, échéance, état ; Ouvrir = PDF de la facture, `fx-factures fv:<id>`, retour à la page en fermant ; Modifier = `fx-saisie f:<id>`).
+  Droits : tuiles selon `sgPdomListe` (contrats / factures : lecture) ; créer, modifier, relier = `SG_VUE_DROIT['fx-calchono']` ; Facturer,
+  Préparer = `fx-saisie`, jamais pour le profil collaborateur ; montants masqués si `sgFinVerrou()` (« Déverrouiller » si code d'accès).
+  Débogage : `window.SGOF`. Styles `#sgof-css`, classes `sgof-*`. Copie d'avant : `subgestion3/_backup_20261101_1801_avant_offres_honoraires/`,
+  `SUBGestion3_backup_20261101_1801_avant_offres_honoraires.html`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

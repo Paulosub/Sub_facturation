@@ -1324,6 +1324,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   frais, total, échéance, état ; Ouvrir = PDF de la facture, `fx-factures fv:<id>`, retour à la page en fermant ; Modifier = `fx-saisie f:<id>`).
   Droits : tuiles selon `sgPdomListe` (contrats / factures : lecture) ; créer, modifier, relier = `SG_VUE_DROIT['fx-calchono']` ; Facturer,
   Préparer = `fx-saisie`, jamais pour le profil collaborateur ; montants masqués si `sgFinVerrou()` (« Déverrouiller » si code d'accès).
+  **Honoraires et frais séparés partout (01.11.2026, demande de Paulo « séparer les honoraires contractuels des frais, idem pour les factures ;
+  voir le montant des honoraires TTC sans les frais »)** : montants en grand = honoraires TTC SANS les frais, frais sur la ligne du dessous
+  (`frl`) — Factures : « Factures ouvertes · honoraires TTC », « Total reçu · honoraires TTC », « Contrat · honoraires TTC » (frais contractuels
+  et %), « Hors contrat », « Reste à facturer » (frais restants = frais contractuels − frais facturés), « Selon les heures » ; tableau des
+  factures : Honoraires TTC (gras), Frais TTC, Total TTC. Offres et Contrats : colonnes Honoraires HT, Honoraires TTC, **Frais TTC** (% de frais
+  du contrat `c.frais` × honoraires TTC, comme Facturation ; « facturés … » dessous), Honoraires facturés TTC ; chiffres avec frais contractuels,
+  frais facturés, frais restants. **Notes de frais** (type « Note de frais… », numéro …NF01 / …NFF : montant enregistré dans `_ttc`) comptées en
+  FRAIS (`estNF`, `ttcF` / `fraisF`), aussi dans le « déjà facturé » de la situation (honoraires seuls ; dernière facture d'honoraires = la
+  dernière qui n'est pas une note de frais ; factures annulées exclues). Vérifié sur 17DAV : 150'000 d'honoraires facturés = contrat, note de
+  frais finale 4'500 = frais contractuels (3 %).
   Débogage : `window.SGOF`. Styles `#sgof-css`, classes `sgof-*`. Copie d'avant : `subgestion3/_backup_20261101_1801_avant_offres_honoraires/`,
   `SUBGestion3_backup_20261101_1801_avant_offres_honoraires.html`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,

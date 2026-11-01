@@ -1306,7 +1306,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Tuiles de la page du projet : « n offres · x annulées ou refusées », « n contrats signés », « n factures · x ouvertes » (`sgPdomCompte`
   enveloppé, Facturation lue à la demande).
   **Factures** : factures de Facturation de l'affaire seulement (contrats reliés + factures sans contrat au code de l'affaire, `cl_affaire` ou
-  « _<code>. » du numéro) ; chiffres : Factures ouvertes (TTC, échues en rouge), Contrat (TTC, facturé et %), Hors contrat (factures sans
+  « _<code>. » du numéro) ; chiffres (deux rangées de trois) : Factures ouvertes (TTC, échues en rouge), **Total reçu (TTC)** (factures payées,
+  honoraires et frais, nombre et % du facturé ; ajouté le 01.11.2026 à la demande), Contrat (TTC, facturé et %), Hors contrat (factures sans
   contrat), Reste à facturer (contrat − facturé sur contrat ; négatif = facturé au-delà), Selon les heures (prochaine facture) ; **Situation par
   rapport aux heures** par contrat (ni annulé ni terminé, avec prestations SIA et montant ; choix du contrat s'il y en a plusieurs) : par phase
   partielle 31–53, part du contrat, facturé à ce jour (pourcentages cumulés de la dernière facture du contrat), heures depuis la dernière facture,

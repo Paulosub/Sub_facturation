@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 01.11.2026 18:18 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 01.11.2026 18:33 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -34998,6 +34998,8 @@ const CSS=`
 .sgof-hact .inp{max-width:300px;height:36px}
 .sgof-kp{margin:14px 0 26px;grid-template-columns:repeat(5,minmax(0,1fr))}
 @container sgof (max-width:860px){.sgof-kp{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.sgof-kp.sgof-kp6{grid-template-columns:repeat(6,minmax(0,1fr))}
+@container sgof (max-width:1100px){.sgof-kp.sgof-kp6{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .sgof-kp .nx-kpi.on{box-shadow:inset 0 -3px 0 var(--s-nuit)}
 .sgof-neg{color:var(--s-rouge)}
 .sgof-verr{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px;padding:8px 12px;border-left:3px solid var(--s-noir);background:var(--s-jaune3);font-size:12.5px}
@@ -35148,7 +35150,7 @@ function dessiner(box,p,mode){ const M=MODES[mode], D=fxData();
    – factures de Facturation de l'affaire seulement : celles des contrats reliés à l'affaire, et les factures sans contrat (non ordinaires) dont
      le code d'affaire (cl_affaire, sinon « _<code>. » du numéro) est celui de l'affaire ;
    – chiffres : factures ouvertes (TTC, échues), contrat (honoraires TTC des contrats non annulés, facturé, %), hors contrat (factures sans
-     contrat), reste à facturer (contrat − facturé sur contrat), selon les heures (prochaine facture : somme de la situation ci-dessous) ;
+     contrat), total reçu (factures payées, honoraires et frais), reste à facturer (contrat − facturé sur contrat), selon les heures (prochaine facture : somme de la situation ci-dessous) ;
    – « Situation par rapport aux heures — prochaine facture », par contrat (ni annulé ni terminé, avec des prestations SIA) : par phase partielle,
      part du contrat, facturé à ce jour (pourcentages cumulés de la dernière facture du contrat), heures depuis la dernière facture, heures saisies
      / heures du contrat (TIMEBUDGET de la phase partielle du projet), avancement PROPOSÉ (heures ÷ heures du contrat, crans de 5 %, au plus 95 %,
@@ -35233,8 +35235,10 @@ function dessinerF(box,p){ const D=fxData();
     +'<div class="sgof-hact">'+(prep&&S.length?'<button class="nx-btn pri" data-a="nf" title="Nouvelle facture ou demande d’acompte dans Facturation">'+nxSvg('plus')+'Nouvelle facture</button>':'')+'</div></div>';
   const kpi=(l,v,s,ti,a)=>'<div class="nx-kpi'+(a?' lnk':'')+'"'+(a?' data-a="'+a+'" role="button" tabindex="0"':'')+(ti?' title="'+E(ti)+'"':'')+'><div class="l">'+E(l)+'</div><div class="v">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>';
   const chf=v=>(v<-0.5?'− '+nxCHF(-v):nxCHF(v))+'<small>CHF</small>';   /* négatif : facturé au-delà du contrat (dit en dessous) */
-  html+='<div class="nx-kpis sgof-kp">'
+  const pay=fs.filter(f=>!fxUnpaid(f)), tot=sum(fs), recu=sum(pay);   /* total reçu (01.11.2026, demande de Paulo) : factures payées, honoraires et frais */
+  html+='<div class="nx-kpis sgof-kp sgof-kp6">'
     +kpi('Factures ouvertes (TTC)','<span'+(ech.length?' class="sgof-neg"':'')+'>'+nxCHF(sum(ouv))+'</span><small>CHF</small>',ouv.length?pl(ouv.length,'facture')+' non payée'+(ouv.length>1?'s':'')+(ech.length?' · <span class="sgof-neg">'+ech.length+' échue'+(ech.length>1?'s':'')+'</span>':''):'tout est payé','Honoraires et frais TTC des factures non payées ; échue = échéance dépassée')
+    +kpi('Total reçu (TTC)',nxCHF(recu)+'<small>CHF</small>',fs.length?pl(pay.length,'facture')+' payée'+(pay.length>1?'s':'')+(tot?' · '+Math.round(recu/tot*100)+' % du facturé':''):'aucune facture','Honoraires et frais TTC des factures payées (statut « Payée » ou date de paiement), sur '+nxCHF(tot)+' CHF TTC facturés à l’affaire')
     +kpi('Contrat (TTC)',contrat?nxCHF(contrat)+'<small>CHF</small>':'—',contrat?'facturé '+nxCHF(factC)+' · '+Math.round(factC/contrat*100)+' %':'aucun contrat relié','Honoraires TTC des contrats non annulés de l’affaire ; facturé = honoraires TTC des factures de ces contrats (sans les frais)')
     +kpi('Hors contrat (TTC)',nxCHF(factH)+'<small>CHF</small>',fsH.length?pl(fsH.length,'facture'):'aucune facture','Honoraires TTC des factures sans contrat (non ordinaires) au code de l’affaire')
     +kpi('Reste à facturer (TTC)',contrat?chf(contrat-factC):'—',contrat?(contrat-factC<-0.5?'facturé au-delà du contrat':Math.round(Math.max(0,contrat-factC)/contrat*100)+' % du contrat'):'','Contrat TTC − honoraires facturés sur contrat')

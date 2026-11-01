@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 01.11.2026 18:37 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 01.11.2026 18:39 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -35255,7 +35255,25 @@ function dessinerF(box,p){ const D=fxData();
     +kpi('Hors contrat · honoraires TTC',nxCHF(factH)+'<small>CHF</small>',frl('Frais',fra(fsH))+'<br>'+(fsH.length?pl(fsH.length,'facture'):'aucune facture'),'Factures sans contrat (non ordinaires) au code de l’affaire : honoraires TTC sans les frais ; frais TTC à part')
     +kpi('Reste à facturer · honoraires TTC',contrat?chf(contrat-factC):'—',contrat?frl('Frais restants',contratFr-fra(fsC))+'<br>'+(contrat-factC<-0.5?'facturé au-delà du contrat':Math.round(Math.max(0,contrat-factC)/contrat*100)+' % du contrat'):'','Honoraires TTC du contrat − honoraires facturés sur contrat ; frais restants = frais contractuels − frais facturés sur contrat')
     +kpi('Selon les heures · honoraires TTC',S.length?nxCHF(aHeures)+'<small>CHF</small>':'—',S.length?frl('Frais',aFrais)+'<br>à la prochaine facture':'aucun contrat à facturer par phases','Honoraires TTC à facturer à la prochaine facture d’après la situation par rapport aux heures (ci-dessous), sans les frais ; frais TTC à part'+(S.length>1?' ; tous contrats':''),S.length?'sit':'')+'</div>';
-  /* situation par rapport aux heures */
+  /* tableau des factures */
+  const anF=f=>String(f.date||'').slice(0,4), ans=[...new Set(F.map(anF).filter(y=>/^\d{4}$/.test(y)))].sort().reverse(), an=ans.length>1&&ans.includes(u.an)?u.an:'';
+  const V=F.filter(f=>!an||anF(f)===an).sort((a,b)=>cmp(String(b.date||''),String(a.date||''))||cmp(String(b.num||''),String(a.num||''))), colC=cs.length>1||fsH.length>0;
+  html+='<section class="sgof-sec"><div class="sgof-sech"><h3>Factures'+(an?' · '+an:'')+'</h3><span class="n">'+V.length+'</span>'
+    +(ans.length>1?'<span class="sgof-fil" role="group" aria-label="Année">'+[['','Toutes'],...ans.map(y=>[y,y])].map(([v,t])=>'<button data-an="'+v+'" class="'+(v===an?'on':'')+'" aria-pressed="'+(v===an)+'">'+t+'</button>').join('')+'</span>':'')+'</div>';
+  if(!V.length) html+='<p class="sgof-vide">Aucune facture pour cette affaire.</p>';
+  else html+='<div style="overflow:auto"><table class="nx-tbl sgof-t"><tr><th>Numéro</th><th>Date</th><th>Type</th>'+(colC?'<th>Contrat</th>':'')+'<th class="r">Honoraires<br>TTC</th><th class="r">Frais<br>TTC</th><th class="r">Total<br>TTC</th><th>Échéance</th><th>État</th><th class="sg-notri"></th></tr>'
+    +V.map(f=>{ const ann=fxAnnulee(f), o=!ann&&fxUnpaid(f), e=o&&f.ech&&f.ech<auj, c=cs.find(k=>String(k.id)===String(f.contrat_id));
+      return '<tr'+(ann?' class="ann"':'')+'><td class="of"><b>'+E(f.num||f.id)+'</b></td><td>'+(f.date?dfr(f.date):'—')+'</td><td>'+E(f.type||'')+'</td>'
+        +(colC?'<td'+(c?' title="'+E('Contrat '+c.id+(c.projet?' — '+c.projet:''))+'"':'')+'>'+(horsC(f)?'Hors contrat':E(libC.get(String(f.contrat_id))||f.contrat_id||''))+'</td>':'')
+        +'<td class="r"'+(estNF(f)?' title="Note de frais : montant compté en frais"':'')+'><b>'+(ttcF(f)?nxCHF(ttcF(f)):'—')+'</b></td><td class="r">'+(fraisF(f)?nxCHF(fraisF(f)):'—')+'</td><td class="r">'+nxCHF(ttcF(f)+fraisF(f))+'</td>'
+        +'<td'+(e?' class="sgof-neg"':'')+'>'+(f.ech?dfr(f.ech):'—')+'</td>'
+        +'<td><span class="nx-tag '+(ann?'':o?(e?'urg':'s3'):'s2')+'">'+(ann?'Annulée':o?(e?'Échue':'Ouverte'):'Payée'+(f.date_paiement?' le '+dfr(f.date_paiement):''))+'</span></td>'
+        +'<td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-factures" data-arg="fv:'+E(f.id)+'" title="Afficher la facture en PDF">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'
+        +(prep?'<button data-go="fx-saisie" data-arg="f:'+E(f.id)+'" title="Modifier la facture dans la saisie de Facturation">'+nxSvg('edit')+'<span>Modifier</span></button>':'')+'</div></td></tr>'; }).join('')
+    +(V.length>1?'<tr class="tot"><td>Total</td><td></td><td></td>'+(colC?'<td></td>':'')+'<td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+ttcF(f),0))+'</td><td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+fraisF(f),0))+'</td><td class="r">'+nxCHF(sum(V.filter(f=>!fxAnnulee(f))))+'</td><td></td><td></td><td></td></tr>':'')
+    +'</table></div>';
+  html+='</section>';
+  /* situation par rapport aux heures — après le tableau des factures (01.11.2026, demande de Paulo « situations après les factures ») */
   if(sit){ const x=sit, c=x.c;
     html+='<section class="sgof-sec" id="sgof-sit"><div class="sgof-sech"><h3>Situation par rapport aux heures</h3><span class="n">prochaine facture</span>'
       +(S.length>1?'<span class="sgof-fil" role="group" aria-label="Contrat">'+S.map(k=>'<button data-cid="'+E(k.id)+'" class="'+(String(k.id)===String(u.cid)?'on':'')+'" title="'+E('Contrat '+k.id+(k.projet?' — '+k.projet:''))+'">'+E(etiq(k))+'</button>').join('')+'</span>':'')+'</div>'
@@ -35279,24 +35297,6 @@ function dessinerF(box,p){ const D=fxData();
         +'<div class="sgof-resb">'+(x.L.some(r=>r.choisi)?'<button class="nx-btn" data-a="reprendre" title="Revenir aux avancements proposés par les heures">Reprendre les propositions</button>':'')
         +(prep?'<button class="nx-btn pri" data-a="prep" title="Nouvelle facture de Facturation pour ce contrat, pourcentages reportés : à vérifier puis enregistrer">'+nxSvg('receipt')+'Préparer la facture</button>':'')+'</div></div></section>'; }
   else if(cs.length) html+='<section class="sgof-sec"><div class="sgof-sech"><h3>Situation par rapport aux heures</h3></div><p class="sgof-vide">Aucun contrat en cours avec des prestations SIA à facturer par phases (contrat terminé, annulé, sans phases ou sans montant).</p></section>';
-  /* tableau des factures */
-  const anF=f=>String(f.date||'').slice(0,4), ans=[...new Set(F.map(anF).filter(y=>/^\d{4}$/.test(y)))].sort().reverse(), an=ans.length>1&&ans.includes(u.an)?u.an:'';
-  const V=F.filter(f=>!an||anF(f)===an).sort((a,b)=>cmp(String(b.date||''),String(a.date||''))||cmp(String(b.num||''),String(a.num||''))), colC=cs.length>1||fsH.length>0;
-  html+='<section class="sgof-sec"><div class="sgof-sech"><h3>Factures'+(an?' · '+an:'')+'</h3><span class="n">'+V.length+'</span>'
-    +(ans.length>1?'<span class="sgof-fil" role="group" aria-label="Année">'+[['','Toutes'],...ans.map(y=>[y,y])].map(([v,t])=>'<button data-an="'+v+'" class="'+(v===an?'on':'')+'" aria-pressed="'+(v===an)+'">'+t+'</button>').join('')+'</span>':'')+'</div>';
-  if(!V.length) html+='<p class="sgof-vide">Aucune facture pour cette affaire.</p>';
-  else html+='<div style="overflow:auto"><table class="nx-tbl sgof-t"><tr><th>Numéro</th><th>Date</th><th>Type</th>'+(colC?'<th>Contrat</th>':'')+'<th class="r">Honoraires<br>TTC</th><th class="r">Frais<br>TTC</th><th class="r">Total<br>TTC</th><th>Échéance</th><th>État</th><th class="sg-notri"></th></tr>'
-    +V.map(f=>{ const ann=fxAnnulee(f), o=!ann&&fxUnpaid(f), e=o&&f.ech&&f.ech<auj, c=cs.find(k=>String(k.id)===String(f.contrat_id));
-      return '<tr'+(ann?' class="ann"':'')+'><td class="of"><b>'+E(f.num||f.id)+'</b></td><td>'+(f.date?dfr(f.date):'—')+'</td><td>'+E(f.type||'')+'</td>'
-        +(colC?'<td'+(c?' title="'+E('Contrat '+c.id+(c.projet?' — '+c.projet:''))+'"':'')+'>'+(horsC(f)?'Hors contrat':E(libC.get(String(f.contrat_id))||f.contrat_id||''))+'</td>':'')
-        +'<td class="r"'+(estNF(f)?' title="Note de frais : montant compté en frais"':'')+'><b>'+(ttcF(f)?nxCHF(ttcF(f)):'—')+'</b></td><td class="r">'+(fraisF(f)?nxCHF(fraisF(f)):'—')+'</td><td class="r">'+nxCHF(ttcF(f)+fraisF(f))+'</td>'
-        +'<td'+(e?' class="sgof-neg"':'')+'>'+(f.ech?dfr(f.ech):'—')+'</td>'
-        +'<td><span class="nx-tag '+(ann?'':o?(e?'urg':'s3'):'s2')+'">'+(ann?'Annulée':o?(e?'Échue':'Ouverte'):'Payée'+(f.date_paiement?' le '+dfr(f.date_paiement):''))+'</span></td>'
-        +'<td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-factures" data-arg="fv:'+E(f.id)+'" title="Afficher la facture en PDF">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'
-        +(prep?'<button data-go="fx-saisie" data-arg="f:'+E(f.id)+'" title="Modifier la facture dans la saisie de Facturation">'+nxSvg('edit')+'<span>Modifier</span></button>':'')+'</div></td></tr>'; }).join('')
-    +(V.length>1?'<tr class="tot"><td>Total</td><td></td><td></td>'+(colC?'<td></td>':'')+'<td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+ttcF(f),0))+'</td><td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+fraisF(f),0))+'</td><td class="r">'+nxCHF(sum(V.filter(f=>!fxAnnulee(f))))+'</td><td></td><td></td><td></td></tr>':'')
-    +'</table></div>';
-  html+='</section>';
   if(vueOk('anc-factures')) html+='<div class="sgof-pied">Ancienne version (factures de l’ancien logiciel) : <a data-a="ancien" tabindex="0">Archives ▸ Facturation (ancien) ▸ Factures</a></div>';
   const foc=document.activeElement&&box.contains(document.activeElement)&&document.activeElement.matches('input[data-n]')?document.activeElement.dataset.n:null;
   box.innerHTML=html+'</div>';

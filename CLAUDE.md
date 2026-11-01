@@ -1309,7 +1309,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « _<code>. » du numéro) ; chiffres (deux rangées de trois) : Factures ouvertes (TTC, échues en rouge), **Total reçu (TTC)** (factures payées,
   honoraires et frais, nombre et % du facturé ; ajouté le 01.11.2026 à la demande), Contrat (TTC, facturé et %), Hors contrat (factures sans
   contrat), Reste à facturer (contrat − facturé sur contrat ; négatif = facturé au-delà), Selon les heures (prochaine facture) ; **Situation par
-  rapport aux heures** par contrat (ni annulé ni terminé, avec prestations SIA et montant ; choix du contrat s'il y en a plusieurs) : par phase
+  rapport aux heures** — sous le tableau des factures depuis le 01.11.2026 (« situations après les factures ») — par contrat (ni annulé ni terminé, avec prestations SIA et montant ; choix du contrat s'il y en a plusieurs) : par phase
   partielle 31–53, part du contrat, facturé à ce jour (pourcentages cumulés de la dernière facture du contrat), heures depuis la dernière facture,
   heures saisies / heures du contrat (TIMEBUDGET de la phase partielle du projet), avancement proposé (heures ÷ heures du contrat, crans de 5 %,
   au plus 95 %, comme l'Avancement ; sans heures au contrat : dernier état `sgavancement` ; jamais sous le facturé), avancement à facturer

@@ -1365,6 +1365,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   liste » ; barre : « n offres · x annulées ou refusées », « Relier une offre… ». Classes du cadre : `sgof-liste` (« Afficher archivés » masqué) et
   `sgof-signes` (Contrats honoraires : « Nouveau contrat » masqué). L'ancienne liste de la coquille (`dessiner`, bouton d'état → `chSetContratFlag`)
   ne sert plus que sans droit `fx-contrats` ou finances verrouillées. Copie d'avant : `subgestion3/_backup_20261101_2128_avant_offres_liste_app/`.
+  **Liste des offres sans recherche ni filtres (même soir, Paulo : « pas nécessaire dans la liste des offres »)** : Rechercher, Type, Rémunération
+  et « À définir uniquement » masqués (`html.sgof-offres` du cadre) ; leurs valeurs (celles de Administration ▸ Facturation ▸ Contrats d'honoraires)
+  sont vidées le temps de la page (`EMB.filtres`) et rétablies en la quittant (`fermer`). Contrats honoraires garde la recherche et les filtres.
+  Copie d'avant : `subgestion3/_backup_20261101_2134_avant_offres_sans_filtres/`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

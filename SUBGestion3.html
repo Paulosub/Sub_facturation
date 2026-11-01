@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 01.11.2026 21:29 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 01.11.2026 21:34 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -35448,7 +35448,8 @@ function majBar(){ const x=EMB; if(!x||!x.bar) return; const p=x.p, k=x.act.k, t
 function fermer(redess){ const x=EMB; if(!x) return; x.retour=false; if(x.ro) x.ro.disconnect();
   const w=FX.ready&&FX.w;   /* cadre remis en état AVANT de libérer EMB : ni retour du PDF, ni redessin de la liste en double */
   if(w){ try{ const ov=w.document.getElementById('offre-overlay'); if(ov&&ov.classList.contains('on')) w.closeOffre(); }catch(_){}
-    try{ w.SG_CONTRATS_FILTRE=null; w.document.documentElement.classList.remove('sgof-liste','sgof-signes'); w.renderContratsTable(); }catch(_){} }
+    try{ const d=w.document; Object.entries(x.filtres||{}).forEach(([id,[k,v]])=>{ const e=d.getElementById(id); if(e) e[k]=v; });   /* filtres de la liste de Facturation rétablis */
+      w.SG_CONTRATS_FILTRE=null; d.documentElement.classList.remove('sgof-liste','sgof-signes','sgof-offres'); w.renderContratsTable(); }catch(_){} }
   EMB=null;
   const L=document.getElementById('fx-layer');
   if(L){ L.classList.remove('sgof-dans'); ['top','left','width','height','right','bottom'].forEach(k=>L.style.removeProperty(k)); if(!/^fx-/.test(vueId())) L.classList.remove('on'); }
@@ -35456,7 +35457,8 @@ function fermer(redess){ const x=EMB; if(!x) return; x.retour=false; if(x.ro) x.
 /* enveloppes installées une fois dans le cadre : code d'affaire d'une nouvelle offre, retour après le PDF, liste des offres tenue à jour */
 function brancher(w){ if(w._sgofDans) return; w._sgofDans=1;
   const d=w.document, st=d.createElement('style'); st.id='sgof-dans-css';
-  st.textContent='html.sgof-signes #panel-contrats .card-hd button[onclick*="newContratCalc"],html.sgof-liste #panel-contrats .card-hd label:has(#show-archived){display:none!important}';
+  st.textContent='html.sgof-signes #panel-contrats .card-hd button[onclick*="newContratCalc"],html.sgof-liste #panel-contrats .card-hd label:has(#show-archived)'
+    +',html.sgof-offres #panel-contrats .card-hd #filter-search,html.sgof-offres #panel-contrats .card-hd label:has(#filter-type,#filter-modecalc,#filter-statut-adef){display:none!important}';
   d.head.append(st);
   const n0=w.newContratCalc; if(typeof n0==='function') w.newContratCalc=function(){ const r=n0.apply(this,arguments); if(EMB&&EMB.p&&EMB.p.NUMBER) affaireCalc(w,EMB.p.NUMBER); return r; };
   const c0=w.closeOffre; if(typeof c0==='function') w.closeOffre=function(){ const r=c0.apply(this,arguments); if(EMB&&EMB.retour){ EMB.retour=false; setTimeout(()=>fermer(true),0); } return r; };
@@ -35467,7 +35469,12 @@ function affaireCalc(w,num){ const i=w.document.getElementById('ch_affaire'); if
 /* liste « Contrats d'honoraires » de Facturation limitée à l'affaire : toutes ses offres (Offres d'honoraires, archivées comprises) ou ses
    contrats signés (Contrats honoraires, sans « Nouveau contrat ») ; « Afficher archivés » masqué (le filtre les comprend) */
 function cadre(w){ const x=EMB, sig=x.mode==='contrats', liste=sig||x.mode==='offres', pid=String(x.p.ID), h=w.document.documentElement;
-  h.classList.toggle('sgof-liste',liste); h.classList.toggle('sgof-signes',sig);
+  h.classList.toggle('sgof-liste',liste); h.classList.toggle('sgof-signes',sig); h.classList.toggle('sgof-offres',x.mode==='offres');
+  /* liste des offres sans recherche ni filtres (demande de Paulo, 01.11.2026 : « pas nécessaire dans la liste des offres ») : les filtres de la
+     liste de Facturation sont vidés le temps de la page, puis rétablis par fermer (ils restent ceux de Administration ▸ Facturation) */
+  if(x.mode==='offres'&&!x.filtres){ x.filtres={};
+    [['filter-search','value',''],['filter-type','value',''],['filter-modecalc','value',''],['filter-statut-adef','checked',false]].forEach(([id,k,v])=>{
+      const e=w.document.getElementById(id); if(e){ x.filtres[id]=[k,e[k]]; e[k]=v; } }); }
   const aff=c=>{ const q=sgProjetDuContrat(c); return !!q&&String(q.ID)===pid; };
   w.SG_CONTRATS_FILTRE=!liste?null:sig?{f:c=>signe(c)&&aff(c),vide:'Aucun contrat signé pour cette affaire. Une offre devient un contrat quand elle est marquée « signé » dans la liste des offres d’honoraires.'}
     :{f:aff,vide:'Aucune offre d’honoraires pour cette affaire. « + Nouveau contrat » crée une offre pour cette affaire.'}; }

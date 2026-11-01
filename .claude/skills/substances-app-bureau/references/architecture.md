@@ -129,6 +129,12 @@ Sommaire : 1. Données et stockage · 2. Moteur DeltaSub · 3. Facturation · 4.
   `ff_<k>` reportés ; PDF d'une facture `fx-factures fv:<id>`). `feDomain`, `ctDomain`, `ivDomain` enveloppés ; `anc-offres`, `anc-contrats`,
   `anc-factures` gardent les écrans du moteur. Créer un contrat = `fx-calchono newaff:<n°>` (jamais `ctEdit`). `window.SGOF`.
   ⚠ `c.hht` d'un contrat de Facturation est NET (rabais et arrondi compris) ; `calcF` (saisie de facture) applique encore `c.rabais`.
+  Depuis le 01.11.2026 au soir, ces actions posent le cadre Facturation SUR la page du projet (`allerFx` → `dans` : `#fx-layer.sgof-dans`
+  placé sous une barre `.sgof-emb-bar`, état `EMB`) au lieu d'ouvrir les écrans fx-* ; `go`, `sgFxOnTab`, `sgFxHome`, `sgVerrouiller` enveloppés
+  (le cadre est retiré à toute navigation). Offres d'honoraires (toutes les offres de l'affaire) et Contrats honoraires (signés) = liste de
+  Facturation filtrée par `window.SG_CONTRATS_FILTRE` {f, vide}
+  (respecté par `renderContratsTable` de Facturation.html, remplace le filtre des archivés). Dans le cadre : `newContratCalc`, `closeOffre`,
+  `renderContratsTable` enveloppés une fois (`w._sgofDans`).
   - Clés : `sg3_sauvegarde`, `sg3_liens`, `sg3_heures_reprises`, `sg3_reunion`, `sg3_renta_tous`, `sg3_fiche_onglet`,
     `sg3_fiche_per`, `sg3_minuteur`, `sg3_acces` (+ `sessionStorage` `sg3_ouvert`).
   - Utiles : `sgRenta(p, fxData(), sgTaux())`, `sgContratsDuProjet(p, D)`, `sgProjetDuContrat(c)`, `sgInterne(p)`,

@@ -8904,7 +8904,10 @@ function renderContratsTable() {
   const _terms = _norm(document.getElementById('filter-search')?.value||'').split(/\s+/).filter(Boolean);
   const _hay = c => _norm([c.affaire, c.projet, c.nom, c.resp, c.loc, c.ploc, c.adr, c.padr, c.date, c.date?DL(c.date):'',
                            chContratPrestTypes(c).join(' '), chContratModeCalc(c)].join(' | '));
-  const liste = contrats.filter(c => (showArchived ? !!c.archive : !c.archive)   // cochée → UNIQUEMENT les archivés
+  // SUBGestion 3 (01.11.2026) : liste des contrats d'UNE affaire dans la page du projet — le filtre {f, vide} posé par la coquille
+  // remplace celui des archivés (contrats terminés compris) ; absent partout ailleurs (Facturation seule, SUBGestion v1).
+  const _sgF = (window.SG_CONTRATS_FILTRE && typeof window.SG_CONTRATS_FILTRE.f === 'function') ? window.SG_CONTRATS_FILTRE : null;
+  const liste = contrats.filter(c => (_sgF ? _sgF.f(c) : (showArchived ? !!c.archive : !c.archive))   // cochée → UNIQUEMENT les archivés
     && (!onlyAdef || !(c.statutContrat && String(c.statutContrat).trim()))
     && (!typeFilter || chContratPrestTypes(c).includes(typeFilter))
     && (!mcFilter || chContratModeCalc(c) === mcFilter)
@@ -8920,7 +8923,7 @@ function renderContratsTable() {
     });
   }
   if(!liste.length) {
-    tb.innerHTML = `<tr><td colspan="16" style="text-align:center;color:#aaa;padding:20px">${onlyAdef ? 'Aucun contrat « à définir » — tous les statuts sont renseignés.' : (showArchived ? 'Aucun contrat' : 'Aucun contrat actif')}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="16" style="text-align:center;color:#aaa;padding:20px">${onlyAdef ? 'Aucun contrat « à définir » — tous les statuts sont renseignés.' : _sgF && _sgF.vide ? _sgF.vide : (showArchived ? 'Aucun contrat' : 'Aucun contrat actif')}</td></tr>`;
     return;
   }
   liste.forEach(c => {

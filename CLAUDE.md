@@ -1336,6 +1336,35 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   frais finale 4'500 = frais contractuels (3 %).
   Débogage : `window.SGOF`. Styles `#sgof-css`, classes `sgof-*`. Copie d'avant : `subgestion3/_backup_20261101_1801_avant_offres_honoraires/`,
   `SUBGestion3_backup_20261101_1801_avant_offres_honoraires.html`.
+  **Facturation DANS la page du projet (01.11.2026 au soir, Paulo : « ce n'est pas la bonne version pour la création des offres ; charge la méthode
+  de calcul d'honoraires de l'app actuelle, puis crée la liste des contrats de l'affaire comme Contrats d'honoraires de l'app ; charge tout ça dans
+  projet » — choix : liste des offres gardée + calcul dans le projet ; Contrats = liste de l'app, contrats signés ; Archives inchangées)** : avant,
+  « Nouvelle offre », « Modifier », « Ouvrir », « Facturer » ouvraient les écrans fx-* (menu basculé sur Administration ▸ Facturation). Désormais le
+  cadre Facturation (`#fx-layer`, classe `sgof-dans`, position recalculée par ResizeObserver) est posé SUR la page du projet, sous la barre des
+  domaines et une barre jaune pâle (`.sgof-emb-bar` : numéro, rubrique, « Fermer » / « Retour à la liste » / « Offres d'honoraires ») ; menu, en-tête
+  et barre des domaines restent sur le projet (`allerFx`, `dans`, `poser`, `fermer`, état `EMB`). **Offres** : nouvelle offre (`newContratCalc`
+  enveloppé dans le cadre : code d'affaire repris), Modifier (`editContratCalc`), Ouvrir (`sgVoirContrat`) ; retour à la liste des offres, redessinée,
+  par « Fermer », à l'enregistrement ou la suppression du contrat (Facturation passe à sa liste des contrats) et à la fermeture du PDF. **État d'une
+  offre** changé depuis la liste (bouton de la colonne État → `chSetContratFlag` de Facturation : envoyée, signée — elle devient un contrat —,
+  annulée ou refusée, terminée ; mêmes confirmations, verrou et validation qu'ailleurs ; liste redessinée par l'enveloppe de `renderContratsTable`).
+  **Contrats honoraires** = la liste « Contrats d'honoraires » de Facturation elle-même (colonnes, cases, Ouvrir, Modifier, Archiver, Supprimer),
+  limitée aux contrats SIGNÉS de l'affaire (terminés compris) : `renderContratsTable` de **Facturation.html** respecte un filtre facultatif
+  `window.SG_CONTRATS_FILTRE` {f, vide} qui remplace celui des archivés (sans effet ailleurs : Facturation seule, SUBGestion v1) ; « Afficher
+  archivés » et « Nouveau contrat » masqués (`html.sgof-liste` du cadre) ; Modifier → calcul dans le projet, « Retour à la liste ». Sans droit
+  `fx-contrats` ou finances verrouillées : la liste en lecture d'avant (`dessiner`). **Factures** : Ouvrir (PDF), Modifier, Nouvelle facture,
+  Préparer la facture (`remplirNfp`, commun avec `fx-saisie nfp:`) dans le projet ; retour aux factures de l'affaire par « Fermer », à
+  l'enregistrement ou la suppression (Facturation passe à sa liste des factures) et à la fermeture du PDF. Domaine protégé par code : déverrouillage
+  demandé comme par `go` ; `sgVerrouiller` retire le cadre. Toute navigation (`go` enveloppé) retire le cadre ; un écran fx-* le rouvre en plein,
+  sans filtre. Onglet de Facturation inattendu ou accueil (`sgFxOnTab`, `sgFxHome` enveloppés) → retour à la page de l'affaire. Vérifié : aucune
+  donnée modifiée par l'ouverture / la fermeture (contrat 22SEG, 363 factures). Copies d'avant : `Facturation_backup_20261101_2114_avant_contrats_dans_projet.html`,
+  `subgestion3/_backup_20261101_2114_avant_facturation_dans_projet/`, `SUBGestion3_backup_20261101_2114_avant_facturation_dans_projet.html`.
+  **Offres d'honoraires = la liste de l'app aussi (même soir, précision de Paulo : « une liste identique à Contrats d'honoraires, uniquement les
+  offres en lien avec l'affaire, la même mise en page avec les icônes »)** : la page Offres d'honoraires pose elle aussi la liste « Contrats
+  d'honoraires » de Facturation, limitée à TOUTES les offres de l'affaire (archivées comprises — annulées et terminées le sont d'office —, grisées
+  comme dans l'app) ; « + Nouveau contrat » (et l'assistant) = nouvelle offre pour l'affaire ; Modifier → calcul dans le projet, « Retour à la
+  liste » ; barre : « n offres · x annulées ou refusées », « Relier une offre… ». Classes du cadre : `sgof-liste` (« Afficher archivés » masqué) et
+  `sgof-signes` (Contrats honoraires : « Nouveau contrat » masqué). L'ancienne liste de la coquille (`dessiner`, bouton d'état → `chSetContratFlag`)
+  ne sert plus que sans droit `fx-contrats` ou finances verrouillées. Copie d'avant : `subgestion3/_backup_20261101_2128_avant_offres_liste_app/`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

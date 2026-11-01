@@ -11,7 +11,10 @@
      Modifier (calcul d'honoraires) ; « Nouvelle offre d'honoraires » ; « Relier une offre… » (offre sans affaire) ;
    – « Contrats honoraires » : les contrats SIGNÉS seulement (signé ou terminé, jamais annulé) ; Ouvrir, Facturer, Modifier (un contrat
      signé est verrouillé : Facturation crée une nouvelle version, l'avenant) ; « Nouveau contrat d'honoraires ».
-   Créer une offre ou un contrat = calcul d'honoraires de Facturation pour l'affaire (fx-calchono « newaff:<n°> »), jamais le contrat du moteur.
+   Créer une offre ou un contrat = calcul d'honoraires de Facturation pour l'affaire, jamais le contrat du moteur ; depuis le 01.11.2026 le calcul,
+   les PDF et la saisie des factures s'ouvrent DANS la page du projet, et « Offres d'honoraires » / « Contrats honoraires » montrent la liste
+   « Contrats d'honoraires » de Facturation elle-même, limitée aux offres / aux contrats signés de l'affaire (voir « FACTURATION DANS LA PAGE
+   DU PROJET » plus bas).
    Tuiles de la page du projet : « n offres · x annulées ou refusées », « n contrats signés » (sgPdomCompte enveloppé ; Facturation lue à la
    demande, chiffres mis à jour quand elle est chargée).
    Archives ▸ Honoraires (ancien) ▸ Offres d'honoraires et Contrats honoraires (anc-offres, anc-contrats) gardent les écrans d'origine ; rien
@@ -118,15 +121,33 @@ const CSS=`
 .sgof-sec+.sgof-sec{margin-top:8px}
 .sgof-pied{margin-top:22px;font-size:12px;color:var(--s-gris)}
 .sgof-pied a{color:var(--s-nuit);font-weight:700;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.sgof-etat{cursor:pointer;font-family:inherit;line-height:inherit;white-space:nowrap}
+.sgof-etat i{font-style:normal;font-size:9px;margin-left:5px}
+.sgof-box.emb{overflow:hidden;display:flex;flex-direction:column}
+.sgof-emb{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.sgof-emb-bar{flex:none;display:flex;align-items:center;gap:14px;min-height:54px;box-sizing:border-box;padding:8px 16px 8px 24px;background:var(--s-jaune2);border-top:2px solid var(--s-noir);border-bottom:1px solid var(--s-noir)}
+.sgof-emb-bar .no{font-size:20px;font-weight:700;line-height:1.2;color:var(--s-nuit);white-space:nowrap;padding-right:14px;border-right:2px solid var(--s-noir)}
+.sgof-emb-bar .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+.sgof-emb-bar .lb{font-size:11.5px;color:var(--s-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgof-emb-bar .ti{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgof-emb-bar .ac{margin-left:auto;display:flex;gap:8px;flex:none}
+.sgof-emb-bar .ac select.inp{max-width:300px;height:36px}
+.sgof-emb-zone{flex:1 1 auto;min-height:0}
 `;
 function css(){ if(document.getElementById('sgof-css')) return; const s=document.createElement('style'); s.id='sgof-css'; s.textContent=CSS; document.head.append(s); }
 
 const ETAT={};   /* par affaire et par page : défilement gardé quand la page est redessinée (base modifiée) */
 function ouvrir(C,p,mode){ css(); const M=MODES[mode], key=mode+':'+p.ID, u=ETAT[key]||(ETAT[key]={sy:0});
   const box=document.createElement('div'); box.className='sgof-box'; C.append(box);
-  box.addEventListener('scroll',()=>{ if(box.isConnected) u.sy=box.scrollTop; },{passive:true});
-  const faire=()=>{ if(!box.isConnected) return; try{ const q=DS.get('project',p.ID)||p; if(mode==='factures') dessinerF(box,q); else dessiner(box,q,mode); if(u.sy) box.scrollTop=u.sy; }
+  box.addEventListener('scroll',()=>{ if(box.isConnected&&!box.classList.contains('emb')) u.sy=box.scrollTop; },{passive:true});
+  const faire=()=>{ if(!box.isConnected) return; try{ const q=DS.get('project',p.ID)||p;
+      if((mode==='offres'||mode==='contrats')&&listeDansProjet()){ dans(box,q,mode,{k:'liste'}); return; }   /* liste « Contrats d'honoraires » de l'app (01.11.2026) */
+      if(mode==='factures') dessinerF(box,q); else dessiner(box,q,mode); if(u.sy) box.scrollTop=u.sy; }
     catch(e){ console.error(e); box.innerHTML='<p class="sgof-err">'+E(M.lb)+' : erreur — '+E(e&&e.message||e)+'</p>'; } };
+  box._sgofFaire=faire;
+  /* Facturation déjà posée sur cette page (page redessinée : base modifiée) : on la repose dans la nouvelle page */
+  if(EMB&&String(EMB.p.ID)===String(p.ID)&&EMB.page===mode){ poser(box); return; }
+  if(EMB) fermer(false);
   const avc=mode!=='factures'||!DS.need?null:Promise.resolve().then(()=>DS.need(['sgavancement'])).catch(()=>null);   /* dernier état de l'avancement des prestations (situation des factures) */
   if(typeof fxData==='function'&&fxData()&&!avc){ faire(); return; }
   box.innerHTML='<div class="sgof-charge">Lecture des '+(mode==='offres'?'offres d’honoraires':mode==='factures'?'factures':'contrats d’honoraires')+'…</div>';
@@ -134,7 +155,7 @@ function ouvrir(C,p,mode){ css(); const M=MODES[mode], key=mode+':'+p.ID, u=ETAT
 
 function dessiner(box,p,mode){ const M=MODES[mode], D=fxData();
   if(!D){ box.innerHTML='<p class="sgof-err">La Facturation n’est pas chargée.</p>'; return; }
-  const fin=!sgFinVerrou(), col=collab(), creer=vueOk('fx-calchono'), fact=!col&&vueOk('fx-saisie'), offres=mode==='offres';
+  const fin=!sgFinVerrou(), col=collab(), creer=vueOk('fx-calchono'), fact=!col&&vueOk('fx-saisie'), offres=mode==='offres', etats=offres&&creer&&vueOk('fx-contrats');
   const T=lignes(p,D), L=T.filter(x=>M.garde(x.c)), nb=f=>f?L.filter(x=>M.fil(x,f)).length:L.length;
   let f=String(nxLS.get(M.ls,'')||''); if(f&&!nb(f)) f='';
   const V=L.filter(x=>!f||M.fil(x,f)), mo=typeof projMO==='function'?projMO(p):'';
@@ -186,7 +207,8 @@ function dessiner(box,p,mode){ const M=MODES[mode], D=fxData();
           +(mt?'<td class="r">'+(x.ht?nxCHF(x.ht):'—')+'</td><td class="r"><b>'+(x.tt?nxCHF(x.tt):'—')+'</b></td>'
             +'<td class="r" title="'+E(x.fp?'Frais du contrat : '+num(x.fp,2)+' % des honoraires':'Aucun frais au contrat')+'">'+(x.fr?nxCHF(x.fr)+'<span class="pc">'+num(x.fp,x.fp%1?2:0)+' %'+(fa&&x.ffa?' · facturés '+nxCHF(x.ffa):'')+'</span>':'—')+'</td>':'')
           +(fa?'<td class="r">'+(x.fs.length?nxCHF(x.fa)+(x.tt?'<span class="pc">'+Math.round(x.fa/x.tt*100)+' %</span>':''):'—')+'</td>':'')
-          +'<td><span class="nx-tag '+(offres&&x.k==='ann'?'':ci.cl)+'">'+E(etat)+'</span></td>'
+          +'<td>'+(etats?'<button class="nx-tag sgof-etat '+(offres&&x.k==='ann'?'':ci.cl)+'" data-etat="'+E(c.id)+'" title="Changer l’état : envoyée, signée (elle devient un contrat), annulée ou refusée, terminée">'+E(etat)+'<i aria-hidden="true">▾</i></button>'
+            :'<span class="nx-tag '+(offres&&x.k==='ann'?'':ci.cl)+'">'+E(etat)+'</span>')+'</td>'
           +'<td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-contrats" data-arg="cv:'+E(c.id)+'" title="Afficher en PDF la dernière version (contrat signé ou dernier avenant)">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'
           +(creer?'<button data-go="fx-calchono" data-arg="c:'+E(c.id)+'" title="'+E(signe(c)?'Modifier le calcul d’honoraires : un contrat signé est verrouillé, la modification crée une nouvelle version (avenant)':'Modifier l’offre dans le calcul d’honoraires')+'">'+nxSvg('edit')+'<span>Modifier</span></button>':'')
           +(!offres&&fact?(c.termine?'<span class="sg-cvide" aria-hidden="true"></span>':'<button data-go="fx-saisie" data-arg="nf:'+E(c.id)+'" title="Établir une facture ou un acompte pour ce contrat">'+nxSvg('receipt')+'<span>Facturer</span></button>'):'')
@@ -197,15 +219,16 @@ function dessiner(box,p,mode){ const M=MODES[mode], D=fxData();
   html+='</section>';
   const anc=ANCIEN[M.dom];
   if(anc&&vueOk(anc)) html+='<div class="sgof-pied">Ancienne version ('+(offres?'calculs':'contrats')+' de l’ancien logiciel) : <a data-a="ancien" tabindex="0">Archives ▸ Honoraires (ancien) ▸ '+E(M.dom)+'</a></div>';
-  box.innerHTML=html+'</div>';
+  box.innerHTML=html+'</div>'; LISTE=box;
   /* actions */
   const filtrer=k=>{ nxLS.set(M.ls,k===f?'':k); dessiner(box,p,mode); };
-  box.onclick=e=>{ const t=e.target.closest('[data-go],[data-a],[data-f]'); if(!t||!box.contains(t)) return;
-    if(t.dataset.go){ go(t.dataset.go,t.dataset.arg); return; }
+  box.onclick=e=>{ const t=e.target.closest('[data-go],[data-a],[data-f],[data-etat]'); if(!t||!box.contains(t)) return;
+    if(t.dataset.go){ allerFx(box,p,mode,t.dataset.go,t.dataset.arg); return; }
+    if(t.dataset.etat){ menuEtat(t,t.dataset.etat); return; }
     if(t.dataset.f!=null){ filtrer(t.dataset.f); return; }
     const a=t.dataset.a;
-    if(a==='nouv') go('fx-calchono','newaff:'+(p.NUMBER||''));
-    else if(a==='deverr') sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) dessiner(box,DS.get('project',p.ID)||p,mode); });
+    if(a==='nouv') allerFx(box,p,mode,'fx-calchono','newaff:'+(p.NUMBER||''));
+    else if(a==='deverr') sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) (box._sgofFaire||(()=>dessiner(box,DS.get('project',p.ID)||p,mode)))(); });
     else if(a==='ancien'){ try{ SG_ANC.sel=String(p.ID); nxLS.set('sg3_anc_projet',SG_ANC.sel); }catch(_){} go(anc); } };
   box.onkeydown=e=>{ const t=e.target.closest&&e.target.closest('[data-f][role=button],[data-a="ancien"]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } };
   const s=box.querySelector('select[data-a="lier"]');
@@ -370,7 +393,7 @@ function dessinerF(box,p){ const D=fxData();
   const redess=()=>dessinerF(box,DS.get('project',p.ID)||p), chx=()=>(u.ch[u.cid]||(u.ch[u.cid]={}));
   const regler=(n,v)=>{ const r=sit&&sit.L.find(r=>String(r.n)===String(n)); if(!r) return; v=Math.max(r.avF,Math.min(100,+v)); if(!isFinite(v)) return; chx()[n]=v; redess(); };
   box.onclick=e=>{ const t=e.target.closest('[data-go],[data-a],[data-cid],[data-an]'); if(!t||!box.contains(t)||t.disabled) return;
-    if(t.dataset.go){ go(t.dataset.go,t.dataset.arg); return; }
+    if(t.dataset.go){ allerFx(box,p,'factures',t.dataset.go,t.dataset.arg); return; }
     if(t.dataset.cid!=null){ u.cid=t.dataset.cid; redess(); return; }
     if(t.dataset.an!=null){ u.an=t.dataset.an; redess(); return; }
     const a=t.dataset.a, r=sit&&t.dataset.n&&sit.L.find(r=>String(r.n)===t.dataset.n);
@@ -378,8 +401,8 @@ function dessinerF(box,p){ const D=fxData();
     else if(a==='plus'&&r) regler(r.n,Math.floor(r.av/5)*5+5);
     else if(a==='reprendre'){ delete u.ch[u.cid]; redess(); }
     else if(a==='sit'){ const s=box.querySelector('#sgof-sit'); if(s) s.scrollIntoView({behavior:'smooth',block:'start'}); }
-    else if(a==='prep'&&sit) preparer(sit);
-    else if(a==='nf'){ if(S.length===1){ go('fx-saisie','nf:'+S[0].id); return; } popMenu(t,S.map(c=>({t:etiq(c)+(c.projet?' — '+c.projet:''),fn:()=>go('fx-saisie','nf:'+c.id)}))); }
+    else if(a==='prep'&&sit) preparer(sit,box,p);
+    else if(a==='nf'){ const nf=c=>allerFx(box,p,'factures','fx-saisie','nf:'+c.id); if(S.length===1){ nf(S[0]); return; } popMenu(t,S.map(c=>({t:etiq(c)+(c.projet?' — '+c.projet:''),fn:()=>nf(c)}))); }
     else if(a==='deverr') sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) redess(); });
     else if(a==='ancien'){ try{ SG_ANC.sel=String(p.ID); nxLS.set('sg3_anc_projet',SG_ANC.sel); }catch(_){} go('anc-factures'); } };
   box.onkeydown=e=>{ const i=e.target.closest&&e.target.closest('input[data-n]');
@@ -388,22 +411,24 @@ function dessinerF(box,p){ const D=fxData();
   box.onchange=e=>{ const i=e.target.closest&&e.target.closest('input[data-n]'); if(i) regler(i.dataset.n,i.value); }; }
 /* « Préparer la facture » : nouvelle facture de Facturation pour le contrat, pourcentages cumulés reportés (ff_<k>) */
 const PREP={};
-function preparer(x){ const c=x.c;
+function preparer(x,box,p){ const c=x.c;
   if(x.aF<0.5&&x.aFr<0.5){ toast('Rien à facturer : l’avancement choisi ne dépasse pas ce qui est déjà facturé.',true); return; }
-  PREP[c.id]={ff:Object.assign({},x.ff),aF:x.aF}; go('fx-saisie','nfp:'+c.id); }
+  PREP[c.id]={ff:Object.assign({},x.ff),aF:x.aF}; if(box) allerFx(box,p,'factures','fx-saisie','nfp:'+c.id); else go('fx-saisie','nfp:'+c.id); }
+/* nouvelle facture du contrat, pourcentages de la situation reportés (écran fx-saisie « nfp: » ou Facturation posée dans le projet) */
+function remplirNfp(w,id){ const P=PREP[id];
+  w.goTab('saisie'); w.newFacture(); try{ w.updateContratSelect(id); }catch(_){}
+  const s=w.document.getElementById('f_contrat'); if(!s) return; s.value=id; w.onSelectContrat();
+  if(s.value!==id){ toast('✗ Contrat '+id+' introuvable dans la saisie des factures.',true); return; }
+  if(P){ Object.entries(P.ff).forEach(([k,val])=>{ const e=w.document.getElementById('ff_'+k); if(e) e.value=(+val||0).toFixed(2); }); w.upd_f(); delete PREP[id];
+    /* Facturation applique le rabais du contrat aux honoraires du contrat, qui le comprennent déjà : écart signalé, rien n'est corrigé ici */
+    let r=null; try{ r=w.calcF(); }catch(_){}
+    const ecart=r&&isFinite(r.sol)&&Math.abs(r.sol-P.aF)>1;
+    if(ecart) sgAlert('Pourcentages reportés d’après la situation par rapport aux heures.\n\nMontant de la situation : '+nxCHF(P.aF)+' CHF TTC.\nMontant calculé par la saisie de Facturation : '+nxCHF(r.sol)+' CHF TTC'+(r.rp?' — la saisie applique encore le rabais du contrat ('+num(r.rp,r.rp%1?2:0)+' %), déjà compris dans ses honoraires.':'.')+'\n\nVérifiez le rabais et le montant avant d’enregistrer.');
+    else toast('Facture préparée d’après les heures : vérifiez les pourcentages et les montants, puis enregistrez.'); } }
 if(VIEWS['fx-saisie']){ const v=VIEWS['fx-saisie'], r0=v.render;
   v.render=function(m,arg){ const a=String(arg||''); if(!a.startsWith('nfp:')) return r0.apply(this,arguments);
-    const id=a.slice(4), P=PREP[id]; document.getElementById('fx-layer').classList.add('on');
-    fxEnsure().then(w=>{ if(!VIEW||VIEW.id!=='fx-saisie') return;
-      w.goTab('saisie'); w.newFacture(); try{ w.updateContratSelect(id); }catch(_){}
-      const s=w.document.getElementById('f_contrat'); if(!s) return; s.value=id; w.onSelectContrat();
-      if(s.value!==id){ toast('✗ Contrat '+id+' introuvable dans la saisie des factures.',true); return; }
-      if(P){ Object.entries(P.ff).forEach(([k,val])=>{ const e=w.document.getElementById('ff_'+k); if(e) e.value=(+val||0).toFixed(2); }); w.upd_f(); delete PREP[id];
-        /* Facturation applique le rabais du contrat aux honoraires du contrat, qui le comprennent déjà : écart signalé, rien n'est corrigé ici */
-        let r=null; try{ r=w.calcF(); }catch(_){}
-        const ecart=r&&isFinite(r.sol)&&Math.abs(r.sol-P.aF)>1;
-        if(ecart) sgAlert('Pourcentages reportés d’après la situation par rapport aux heures.\n\nMontant de la situation : '+nxCHF(P.aF)+' CHF TTC.\nMontant calculé par la saisie de Facturation : '+nxCHF(r.sol)+' CHF TTC'+(r.rp?' — la saisie applique encore le rabais du contrat ('+num(r.rp,r.rp%1?2:0)+' %), déjà compris dans ses honoraires.':'.')+'\n\nVérifiez le rabais et le montant avant d’enregistrer.');
-        else toast('Facture préparée d’après les heures : vérifiez les pourcentages et les montants, puis enregistrez.'); } })
+    const id=a.slice(4); document.getElementById('fx-layer').classList.add('on');
+    fxEnsure().then(w=>{ if(!VIEW||VIEW.id!=='fx-saisie') return; remplirNfp(w,id); })
       .catch(e=>toast('✗ '+(e&&e.message||e),true)); }; }
 /* « Ouvrir » une facture : PDF de Facturation ; en fermant l'aperçu, retour à l'écran d'où l'on venait */
 if(VIEWS['fx-factures']){ const v=VIEWS['fx-factures'], r0=v.render;
@@ -412,6 +437,127 @@ if(VIEWS['fx-factures']){ const v=VIEWS['fx-factures'], r0=v.render;
     fxEnsure().then(w=>{ if(!VIEW||VIEW.id!=='fx-factures') return; w.goTab('factures'); w.openFacturePdf(a.slice(3));
       if(!w._sgofClose){ w._sgofClose=w.closeOffre; w.closeOffre=function(){ const r=w._sgofClose.apply(this,arguments); if(w._sgofRetour){ w._sgofRetour=false; if(VIEW&&VIEW.id==='fx-factures') nxHist(-1); } return r; }; }
       w._sgofRetour=NX.pos>0; }).catch(e=>toast('✗ '+(e&&e.message||e),true)); }; }
+
+/* ═══ FACTURATION DANS LA PAGE DU PROJET (01.11.2026, demande de Paulo : « ce n'est pas la bonne version pour la création des offres ; charge
+   la méthode de calcul d'honoraires de l'app actuelle, puis crée la liste des contrats de l'affaire comme Contrats d'honoraires de l'app ;
+   charge tout ça dans projet » — choix : la liste des offres reste et le calcul s'ouvre dans le projet ; Contrats honoraires = la liste de
+   l'app, contrats signés de l'affaire ; Archives ▸ Honoraires (ancien) inchangé) ═══
+   Le cadre Facturation (#fx-layer) est posé SUR la page du projet, sous la barre des domaines et une barre de titre (sgof-emb-bar : numéro,
+   rubrique, « Fermer » / « Retour à la liste »), au lieu d'ouvrir le module Facturation du chapitre Administration : menu, en-tête et barre des
+   domaines restent sur le projet. Position recalculée à chaque changement de taille (ResizeObserver).
+   – Offres d'honoraires (précision de Paulo, même soir : « une liste identique à Contrats d'honoraires, uniquement les offres en lien avec
+     l'affaire, la même mise en page avec les icônes ») : la liste « Contrats d'honoraires » de Facturation elle-même, limitée à TOUTES les
+     offres de l'affaire (archivées comprises : annulées et terminées le sont d'office) ; « + Nouveau contrat » = nouvelle offre pour l'affaire
+     (newContratCalc enveloppé : code d'affaire repris) ; cases Envoyé / Signé / Annulé / Terminé, Ouvrir, Modifier (calcul dans le projet,
+     « Retour à la liste »), Archiver, Supprimer ; barre : nombre d'offres et d'offres annulées ou refusées, « Relier une offre… ».
+     Sans droit ou finances verrouillées : l'ancienne liste en lecture (dessiner, avec le bouton d'état → chSetContratFlag).
+   – Contrats honoraires : la liste « Contrats d'honoraires » de Facturation elle-même (mêmes colonnes, cases, Ouvrir, Modifier, Archiver,
+     Supprimer), limitée aux contrats SIGNÉS de l'affaire (terminés compris) par le filtre window.SG_CONTRATS_FILTRE {f, vide} que
+     renderContratsTable de Facturation.html respecte (il remplace le filtre des archivés) ; « Afficher archivés » et « Nouveau contrat » masqués
+     (html.sgof-liste du cadre ; les offres se créent dans Offres d'honoraires). « Modifier » ouvre le calcul dans le projet (« Retour à la
+     liste »). Sans droit sur fx-contrats ou finances verrouillées : la liste en lecture (dessiner).
+   – Factures : Ouvrir (PDF), Modifier, Facturer, Préparer la facture = Facturation dans le projet ; retour aux factures de l'affaire, redessinées :
+     « Fermer », facture enregistrée ou supprimée (Facturation passe à sa liste des factures), PDF fermé.
+   Domaine protégé par le code d'accès : déverrouillage demandé comme par go ; verrouillage (sgVerrouiller) → le cadre est retiré.
+   Toute navigation (go) retire le cadre posé ; un écran fx-* le rouvre ensuite en plein, sans filtre. */
+let EMB=null, LISTE=null;
+const TABS_OK={offres:['contrats','calchono'],contrats:['contrats','calchono'],factures:['saisie']};
+const ACT={'fx-contrats:cv':'voir','fx-calchono:c':'modif','fx-calchono:newaff':'nouv','fx-saisie:nf':'nf','fx-saisie:nfp':'nfp','fx-saisie:f':'fmod','fx-factures:fv':'fvoir'};
+const listeDansProjet=()=>vueOk('fx-contrats')&&!sgFinVerrou();
+const proteger=v=>{ const d=typeof sgDomDe==='function'?sgDomDe(v):''; return typeof sgProtege==='function'&&typeof sgOuvert==='function'&&sgProtege(d)&&!sgOuvert(); };
+/* une action d'une page de l'affaire vers Facturation : posée dans le projet si elle s'y prête, sinon l'écran fx-* habituel */
+function allerFx(box,p,mode,vue,arg){ const a=String(arg||''), m=/^([a-z]+):(.*)$/.exec(a), k=m&&ACT[vue+':'+m[1]];
+  if(!k||!box||!box.isConnected||!vueOk(vue)){ go(vue,arg); return; }
+  /* page des contrats en lecture (droits, finances verrouillées) : ses actions se comportent comme celles des offres ou des factures */
+  const act={k,id:m[2],page:mode}, md=mode==='contrats'?(/^(nf|nfp|fmod|fvoir)$/.test(k)?'factures':'offres'):mode;
+  if(proteger(vue)){ sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) dans(box,DS.get('project',p.ID)||p,md,act); }); return; }
+  dans(box,p,md,act); }
+function dans(box,p,mode,act){ css(); if(EMB) fermer(false);
+  EMB={p,mode,page:act.page||mode,act,tab:null,retour:false,silence:0,box:null,zone:null,bar:null,ro:null};
+  poser(box);
+  const L=document.getElementById('fx-layer'); if(L) L.classList.add('on','sgof-dans'); placer();
+  const x=EMB;
+  Promise.resolve().then(()=>fxEnsure()).then(w=>{ if(EMB!==x||!box.isConnected) return; brancher(w); cadre(w); executer(w,x); majBar(); })
+    .catch(e=>{ console.error(e); if(EMB!==x) return; fermer(false); if(box.isConnected) box.innerHTML='<p class="sgof-err">La Facturation n’a pas pu être chargée : '+E(e&&e.message||e)+'</p>'; }); }
+/* barre de titre et zone sous laquelle le cadre est posé (aussi quand la page du projet est redessinée) */
+function poser(box){ const x=EMB; if(!x) return; x.box=box; box.classList.add('emb');
+  box.innerHTML='<div class="sgof-emb"><div class="sgof-emb-bar"></div><div class="sgof-emb-zone"></div></div>';
+  x.bar=box.querySelector('.sgof-emb-bar'); x.zone=box.querySelector('.sgof-emb-zone');
+  if(x.ro) x.ro.disconnect(); if(typeof ResizeObserver==='function'){ x.ro=new ResizeObserver(placer); x.ro.observe(x.zone); }
+  x.bar.onclick=e=>{ const t=e.target.closest('[data-a]'); if(!t||EMB!==x) return; const a=t.dataset.a;
+    if(a==='fermer') fermer(true);
+    else if(a==='liste'){ const w=FX.ready&&FX.w; if(w){ w.goTab('contrats'); w.renderContratsTable(); } }
+    else if(a==='offres') go('nx-pdom',x.p.ID+'|Offres d’honoraires'); };
+  /* « Relier une offre… » : offre de Facturation reliée à aucune affaire → reliée à celle-ci (liens manuels sg3_liens) */
+  x.bar.onchange=e=>{ const s=e.target.closest('select[data-a="lier"]'), D=fxData(); if(!s||EMB!==x||!D) return; const c=D.c.find(y=>y.id===s.value); if(!c) return;
+    const l=sgLiens(); l[c.id]=String(x.p.ID); nxLS.set('sg3_liens',l); toast('Offre '+(c.affaire||c.id)+' reliée à '+(x.p.NUMBER||'l’affaire')+'.');
+    const w=FX.ready&&FX.w; if(w) w.renderContratsTable(); majBar(); };
+  majBar(); placer(); }
+function placer(){ const x=EMB, L=document.getElementById('fx-layer'), B=document.getElementById('body'); if(!x||!L||!B||!x.zone||!x.zone.isConnected) return;
+  const r=x.zone.getBoundingClientRect(), b=B.getBoundingClientRect();
+  Object.assign(L.style,{top:(r.top-b.top)+'px',left:(r.left-b.left)+'px',width:r.width+'px',height:r.height+'px',right:'auto',bottom:'auto'}); }
+function majBar(){ const x=EMB; if(!x||!x.bar) return; const p=x.p, k=x.act.k, t=x.tab;
+  const R={offres:'Offres d’honoraires',contrats:'Contrats d’honoraires',factures:'Factures'}[x.page];
+  const D=fxData(), k0=D&&x.mode==='offres'?compte(p,D):null;   /* sous le titre : nombre d'offres et d'offres annulées ou refusées */
+  const sous=k==='voir'?'Contrat en PDF':k==='fvoir'?'Facture en PDF':t==='calchono'?(k==='nouv'?'Nouvelle offre · calcul d’honoraires':'Calcul d’honoraires')
+    :t==='saisie'?(k==='fmod'?'Modifier la facture':'Nouvelle facture')
+    :t==='contrats'?(x.mode==='offres'?(k0?pl(k0.n,'offre')+' · '+pl(k0.ann,'annulée ou refusée','annulées ou refusées'):'Offres de l’affaire'):'Contrats signés de l’affaire'):'';
+  let btn;
+  if((x.mode==='contrats'||x.mode==='offres')&&t&&t!=='contrats') btn='<button class="nx-btn" data-a="liste" title="Revenir à la liste '+(x.mode==='offres'?'des offres':'des contrats signés')+' de l’affaire">'+nxSvg('back')+'Retour à la liste</button>';
+  else if(x.mode==='contrats') btn='<button class="nx-btn" data-a="offres" title="Toutes les offres de l’affaire : en cours, retenues, annulées ou refusées">'+nxSvg('calc')+'Offres d’honoraires</button>';
+  else if(x.mode==='offres'){ const libre=D&&vueOk('fx-calchono')?D.c.filter(c=>!c.annule&&!sgProjetDuContrat(c)):[];
+    btn=libre.length?'<select class="inp" data-a="lier" title="Relier à cette affaire une offre de Facturation qui n’est reliée à aucune affaire"><option value="">Relier une offre…</option>'
+      +libre.map(c=>'<option value="'+E(c.id)+'">'+E([c.affaire||'(sans code)',c.projet,c.nom].filter(Boolean).join(' — '))+'</option>').join('')+'</select>':''; }
+  else btn='<button class="nx-btn" data-a="fermer" title="Revenir '+({offres:'à la liste des offres',contrats:'à la liste des contrats',factures:'aux factures de l’affaire'})[x.page]+'">'+nxSvg('back')+'Fermer</button>';
+  x.bar.innerHTML='<b class="no">'+E(p.NUMBER||'')+'</b><div class="tx"><span class="lb">'+E(R+(sous?' · '+sous:''))+'</span><span class="ti">'+E(p.TITLE||'')+'</span></div><div class="ac">'+btn+'</div>'; }
+function fermer(redess){ const x=EMB; if(!x) return; x.retour=false; if(x.ro) x.ro.disconnect();
+  const w=FX.ready&&FX.w;   /* cadre remis en état AVANT de libérer EMB : ni retour du PDF, ni redessin de la liste en double */
+  if(w){ try{ const ov=w.document.getElementById('offre-overlay'); if(ov&&ov.classList.contains('on')) w.closeOffre(); }catch(_){}
+    try{ w.SG_CONTRATS_FILTRE=null; w.document.documentElement.classList.remove('sgof-liste','sgof-signes'); w.renderContratsTable(); }catch(_){} }
+  EMB=null;
+  const L=document.getElementById('fx-layer');
+  if(L){ L.classList.remove('sgof-dans'); ['top','left','width','height','right','bottom'].forEach(k=>L.style.removeProperty(k)); if(!/^fx-/.test(vueId())) L.classList.remove('on'); }
+  if(x.box){ x.box.classList.remove('emb'); if(redess&&x.box.isConnected&&x.box._sgofFaire) x.box._sgofFaire(); } }
+/* enveloppes installées une fois dans le cadre : code d'affaire d'une nouvelle offre, retour après le PDF, liste des offres tenue à jour */
+function brancher(w){ if(w._sgofDans) return; w._sgofDans=1;
+  const d=w.document, st=d.createElement('style'); st.id='sgof-dans-css';
+  st.textContent='html.sgof-signes #panel-contrats .card-hd button[onclick*="newContratCalc"],html.sgof-liste #panel-contrats .card-hd label:has(#show-archived){display:none!important}';
+  d.head.append(st);
+  const n0=w.newContratCalc; if(typeof n0==='function') w.newContratCalc=function(){ const r=n0.apply(this,arguments); if(EMB&&EMB.p&&EMB.p.NUMBER) affaireCalc(w,EMB.p.NUMBER); return r; };
+  const c0=w.closeOffre; if(typeof c0==='function') w.closeOffre=function(){ const r=c0.apply(this,arguments); if(EMB&&EMB.retour){ EMB.retour=false; setTimeout(()=>fermer(true),0); } return r; };
+  const r0=w.renderContratsTable; if(typeof r0==='function') w.renderContratsTable=function(){ const r=r0.apply(this,arguments);
+    if(!EMB&&LISTE&&LISTE.isConnected&&!LISTE._sgofAttente){ const b=LISTE; b._sgofAttente=1; setTimeout(()=>{ b._sgofAttente=0; if(!EMB&&b.isConnected&&b._sgofFaire) b._sgofFaire(); },0); }
+    return r; }; }
+function affaireCalc(w,num){ const i=w.document.getElementById('ch_affaire'); if(!i) return; i.value=num; i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); }
+/* liste « Contrats d'honoraires » de Facturation limitée à l'affaire : toutes ses offres (Offres d'honoraires, archivées comprises) ou ses
+   contrats signés (Contrats honoraires, sans « Nouveau contrat ») ; « Afficher archivés » masqué (le filtre les comprend) */
+function cadre(w){ const x=EMB, sig=x.mode==='contrats', liste=sig||x.mode==='offres', pid=String(x.p.ID), h=w.document.documentElement;
+  h.classList.toggle('sgof-liste',liste); h.classList.toggle('sgof-signes',sig);
+  const aff=c=>{ const q=sgProjetDuContrat(c); return !!q&&String(q.ID)===pid; };
+  w.SG_CONTRATS_FILTRE=!liste?null:sig?{f:c=>signe(c)&&aff(c),vide:'Aucun contrat signé pour cette affaire. Une offre devient un contrat quand elle est marquée « signé » dans la liste des offres d’honoraires.'}
+    :{f:aff,vide:'Aucune offre d’honoraires pour cette affaire. « + Nouveau contrat » crée une offre pour cette affaire.'}; }
+function executer(w,x){ const a=x.act, id=a.id;
+  if(a.k==='liste'){ x.silence++; try{ w.goTab('contrats'); }finally{ x.silence--; } x.tab='contrats'; w.renderContratsTable(); }
+  else if(a.k==='nouv') w.newContratCalc();
+  else if(a.k==='modif') w.editContratCalc(id);
+  else if(a.k==='voir'){ sgVoirContrat(w,id); w._sgRetour=false; x.retour=true; }
+  else if(a.k==='nf'){ w.goTab('saisie'); w.newFacture(); try{ w.updateContratSelect(id); }catch(_){} const s=w.document.getElementById('f_contrat'); if(s){ s.value=id; w.onSelectContrat(); } }
+  else if(a.k==='nfp') remplirNfp(w,id);
+  else if(a.k==='fmod') w.editFactureSaisie(id);
+  else if(a.k==='fvoir'){ x.retour=true; Promise.resolve(w.openFacturePdf(id)).catch(e=>toast('✗ '+(e&&e.message||e),true)); } }
+/* Facturation change d'onglet : barre de titre mise à jour, ou retour à la page de l'affaire (enregistrement, suppression, accueil) */
+function surTab(tab){ const x=EMB; if(!x||x.silence) return; x.tab=tab; if(TABS_OK[x.mode].includes(tab)) majBar(); else setTimeout(()=>{ if(EMB===x) fermer(true); },0); }
+/* état d'une offre depuis sa liste (mêmes règles que les cases de Facturation ▸ Contrats d'honoraires) */
+function menuEtat(t,id){ const w=FX.ready&&FX.w, c=((fxData()||{}).c||[]).find(x=>x.id===id); if(!w||!c) return; brancher(w);
+  const f=(k,v)=>()=>{ try{ w.chSetContratFlag(id,k,v); }catch(e){ toast('✗ '+(e&&e.message||e),true); } };
+  popMenu(t,[{t:'Envoyée au maître de l’ouvrage',chk:!!c.envoye,fn:f('envoye',!c.envoye)},
+    {t:'Signée — devient un contrat (verrouillée)',chk:!!c.signe,fn:f('signe',!c.signe)},
+    {t:'Annulée ou refusée',chk:!!c.annule,fn:f('annule',!c.annule)},
+    {t:'Terminée — plus de nouvelle facture',chk:!!c.termine,fn:f('termine',!c.termine)}]); }
+if(typeof go==='function'){ const go0=go; go=function(){ if(EMB) fermer(false); return go0.apply(this,arguments); }; }
+if(typeof sgFxOnTab==='function'){ const t0=sgFxOnTab; sgFxOnTab=function(tab){ if(EMB){ surTab(tab); return; } return t0.apply(this,arguments); }; }
+if(typeof sgFxHome==='function'){ const h0=sgFxHome; sgFxHome=function(){ if(EMB){ setTimeout(()=>{ if(EMB) fermer(true); },0); return; } return h0.apply(this,arguments); }; }
+if(typeof sgVerrouiller==='function'){ const v0=sgVerrouiller; sgVerrouiller=function(){ const r=v0.apply(this,arguments); if(EMB&&sgFinVerrou()) fermer(true); return r; }; }
 
 /* remplacement des trois domaines du moteur ; Archives ▸ Honoraires (ancien) et Facturation (ancien) gardent les écrans d'origine */
 const fe0=feDomain, ct0=ctDomain, iv0=ivDomain;
@@ -441,5 +587,5 @@ if(typeof sgPdomCompte==='function'){ const cpt0=sgPdomCompte;
     if(!attente&&typeof fxEnsure==='function') attente=Promise.resolve().then(()=>fxEnsure()).catch(()=>null).then(()=>{ attente=null; const q=DS.get('project',String(VIEW&&VIEW.arg||'').split('|')[0]); if(q&&vueId()==='nx-pdom') majTuiles(q); });
     return '…'; }; }
 
-window.SGOF={version:'01.11.2026',lignes,compte,MODES,fe0,ct0,iv0,dessiner,dessinerF,facturesDe,situation,PREP};
+window.SGOF={version:'01.11.2026',lignes,compte,MODES,fe0,ct0,iv0,dessiner,dessinerF,facturesDe,situation,PREP,allerFx,fermer,etat:()=>EMB};
 })();

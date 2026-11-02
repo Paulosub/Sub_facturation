@@ -1595,3 +1595,6 @@ html:has(#main .sgd) #nx-sub{display:none!important}
 .nx-tbl.sgl-t tr.sgl-der td{background:var(--s-jaune2)}
 .sgd-tab.sgd-lecture .split>.col:last-child .ph2{display:none}
 .sg-mesp-bar .sgl-act{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+
+/* page du projet : tuile qui commence une nouvelle ligne dans son groupe (SG_TUILE_BR, 02.11.2026) */
+.sg-tiles>.sg-tile.br{grid-column-start:1}

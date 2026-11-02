@@ -1373,6 +1373,32 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   et « À définir uniquement » masqués (`html.sgof-offres` du cadre) ; leurs valeurs (celles de Administration ▸ Facturation ▸ Contrats d'honoraires)
   sont vidées le temps de la page (`EMB.filtres`) et rétablies en la quittant (`fermer`). Contrats honoraires garde la recherche et les filtres.
   Copie d'avant : `subgestion3/_backup_20261101_2134_avant_offres_sans_filtres/`.
+- **Planning du projet et du chantier (02.11.2026, bloc 33, `subgestion3/sg3_planning.js`, concaténé en dernier ; demandes de Paulo « dans mes
+  projets, projet ajoute planning », « dans chantier aussi »)** : page du projet ▸ Projet ▸ **Planning** (« Planning du projet ») et Chantier ▸
+  **Planning** (« Planning du chantier », en tête du groupe) ; `SG_PLAN_PAGES` (sg3_plus.js) → `sgPlanningModule(C,p,'projet'|'chantier')`, compteur
+  `sgPlanningCompte` (« n étapes · fin mm.aaaa », « à créer »). Le moteur n'avait que la planification RH ; les contrats de Facturation n'ont qu'un
+  planning d'intention (chapitre 4 : `detail.planDelais` en texte, `detail.planGantt` en mois). Collection propre **`sgplanning`** (gardée par les
+  reprises ; serveur du NAS : règle « projet modifiable » par PROJECT_ID, rien à changer) : {ID `<projet>:projet|chantier`, PROJECT_ID, TYPE,
+  LIGNES [{id, t tache | jalon | titre, lib, d, f (ISO ; jalon : d), pp (phase partielle SIA liée), ent (entreprise / intervenant), rouge, rem}],
+  MODIFIE, PAR}. Écran : bandeau jaune, chiffres (Début, Fin prévue, Durée, En cours, Prochaine échéance), barre (Échelle **Tout** — ajustée à la
+  largeur, d'office — · Semaines · Mois · Trimestres, Aujourd'hui, Heures réelles ; Tâche, Jalon, Titre, Créer ▾), diagramme (étapes à gauche,
+  barres bleu nuit, jalons en losange, échéance importante en rouge, titre = accolade sur ses étapes, ligne pointillée d'aujourd'hui, barre fine
+  grise = heures saisies sur la phase partielle liée — période principale, de 5 % à 95 % des heures, pour écarter les heures isolées). Glisser une
+  barre = la déplacer, ses bords = début / fin (par semaines à petite échelle) ; clic = « Modifier l'étape » (sorte, libellé, phase partielle,
+  début / durée en semaines / fin, entreprise avec la liste des intervenants, échéance importante, remarque ; Supprimer) ; clic droit = Modifier,
+  Insérer tâche / jalon / titre, Monter, Descendre, Dupliquer, Supprimer. **Créer** : phases SIA (celles des contrats reliés, sinon 31–33 /
+  41–53) — phases déjà travaillées aux dates de la feuille d'heures (période principale ; fin réelle si la phase est finie, sinon au moins la durée
+  type), les autres à la suite (durées types `DUREE`), jalons « Dépôt de la demande de permis de construire » (début de 33), « Permis de construire »
+  (rouge), « Début des travaux », « Réception de l'ouvrage » (rouge) ; chantier sans étape : à la suite du planning du projet ; planning d'intention
+  graphique du contrat (`planGantt` → titres et tâches datées) ; entreprises du projet (intervenants rôle 19, sous un titre « Travaux par
+  entreprise », aux dates de l'exécution) ; Effacer tout. Délais du contrat (`planDelais`) rappelés en bas (droit « contrats : lecture »).
+  **Imprimer** : tableau des étapes + diagramme SVG → `sgImprimer` (papier des contrats, visionneuse). Droits : lecture = qui voit le projet ;
+  écriture = projet modifiable (`sgAdmin`, « projets modifiables : tous », ou « ses projets » attribués). Débogage `window.SGPL`, styles `#sgpl-css`.
+  **Page du projet, même jour** : groupe **Enquête** entre Projet et Chantier (Paulo : « entre chantier et projet ajouter enquête » ; `SG_PMOD_G`,
+  icône `tampon`) = Dossier d'enquête (retiré du groupe Projet ; ouvre toujours le module Projet sur sa rubrique, « Domaines » revient au groupe
+  Enquête ; chip « Enquête » → même rubrique) ; groupe Projet = PV MO, Présentation, Planning, Documents, puis **à la ligne** Estimations et
+  Descriptifs & devis (Paulo : « estimations, descriptif & devis mettre à la ligne » ; `SG_TUILE_BR` → classe `.sg-tile.br`, `grid-column-start:1`).
+  Copie d'avant : `subgestion3/_backup_20261102_avant_planning/`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

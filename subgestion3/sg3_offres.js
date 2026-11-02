@@ -102,22 +102,12 @@ const CSS=`
 .sgof-info{margin:0 0 10px;font-size:12.5px;line-height:1.5}
 .sgof-sit td{vertical-align:middle}
 .sgof-sit .pp{color:var(--s-nuit);margin-right:4px}
-.sgof-sit tr.ch td{background:var(--s-jaune3)}
 .sgof-g{position:relative;height:6px;background:var(--s-nuit3);min-width:90px;margin:2px 0 4px}
 .sgof-g>i{position:absolute;left:0;top:0;bottom:0;background:var(--s-nuit)}
 .sgof-g.dp>i{background:var(--s-rouge)}
-.sgof-av{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
-.sgof-av input{width:58px;height:30px;box-sizing:border-box;border:1.5px solid var(--s-noir);border-radius:0;background:#fff;padding:0 6px;font:inherit;font-size:13px;font-weight:700;text-align:right}
-.sgof-av input:disabled{border-color:var(--s-gris3);background:transparent}
-.sgof-av button{width:26px;height:30px;border:1.5px solid var(--s-noir);background:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer;padding:0;color:var(--s-noir)}
-.sgof-av button:hover{background:var(--s-jaune)}
-.sgof-av button:disabled{opacity:.3;cursor:default;background:#fff}
-.sgof-res{display:flex;justify-content:space-between;align-items:flex-end;gap:16px 30px;flex-wrap:wrap;margin:14px 0 30px;padding:14px 0 0;border-top:1px solid var(--s-filet)}
-.sgof-res dl{display:grid;grid-template-columns:auto auto;gap:4px 28px;margin:0;font-size:13px;font-variant-numeric:tabular-nums}
-.sgof-res dt{color:var(--s-gris)}
-.sgof-res dd{margin:0;text-align:right}
-.sgof-res .t{font-weight:700;color:var(--s-noir);border-top:1.5px solid var(--s-noir);padding-top:5px}
-.sgof-resb{display:flex;gap:8px;flex-wrap:wrap}
+.sgof-g>b{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--s-noir)}
+.sgof-sit td.ah b{font-weight:700}
+.sgof-leg{margin:10px 0 30px;padding-top:8px;border-top:1px solid var(--s-filet);font-size:11.5px;line-height:1.5;color:var(--s-gris);max-width:900px}
 .sgof-sec+.sgof-sec{margin-top:8px}
 .sgof-pied{margin-top:22px;font-size:12px;color:var(--s-gris)}
 .sgof-pied a{color:var(--s-nuit);font-weight:700;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
@@ -243,20 +233,20 @@ function dessiner(box,p,mode){ const M=MODES[mode], D=fxData();
    – factures de Facturation de l'affaire seulement : celles des contrats reliés à l'affaire, et les factures sans contrat (non ordinaires) dont
      le code d'affaire (cl_affaire, sinon « _<code>. » du numéro) est celui de l'affaire ;
    – chiffres : factures ouvertes (TTC, échues), contrat (honoraires TTC des contrats non annulés, facturé, %), hors contrat (factures sans
-     contrat), total reçu (factures payées, honoraires et frais), reste à facturer (contrat − facturé sur contrat), selon les heures (prochaine facture : somme de la situation ci-dessous) ;
-   – « Situation par rapport aux heures — prochaine facture », par contrat (ni annulé ni terminé, avec des prestations SIA) : par phase partielle,
-     part du contrat, facturé à ce jour (pourcentages cumulés de la dernière facture du contrat), heures depuis la dernière facture, heures saisies
-     / heures du contrat (TIMEBUDGET de la phase partielle du projet), avancement PROPOSÉ (heures ÷ heures du contrat, crans de 5 %, au plus 95 %,
-     comme l'Avancement des prestations ; sans heures au contrat : dernier état de l'avancement des prestations ; jamais en dessous du facturé),
-     avancement À FACTURER modifiable (− / +, saisie, « Reprendre les propositions »), cumul et honoraires de la phase ; pied : honoraires HT
-     cumulés, rabais, TTC, moins le déjà facturé = honoraires à facturer, frais, total — même calcul que la saisie de facture de Facturation
-     (calcF : hht × Σ % ÷ Σ % du contrat, rabais, arrondi à 5 ct, TVA ; acomptes = factures précédentes du contrat) ;
-     « Préparer la facture » = nouvelle facture de Facturation pour ce contrat (fx-saisie « nfp:<contrat> »), pourcentages cumulés reportés
-     prestation par prestation (ff_<k>, répartis dans l'ordre SIA à partir de la facture précédente) : à vérifier puis enregistrer dans Facturation ;
+     contrat), total reçu (factures payées, honoraires et frais), reste à facturer (contrat − facturé sur contrat), heures à facturer (total de la
+     situation ci-dessous, honoraires TTC correspondants) ;
+   – « Situation par rapport aux heures », par contrat (ni annulé ni terminé, avec des prestations SIA) : LECTURE SEULE depuis le 02.11.2026
+     (Paulo : « ne doit pas être modifiable, mais uniquement une vue des heures actuelles en rapport aux heures facturées et facturables ;
+     supprimer avancement à facturer, etc. » — avancement proposé / à facturer, réglage −/+, « Préparer la facture » et décompte de la prochaine
+     facture retirés) : par phase partielle, part du contrat, heures au contrat (TIMEBUDGET des phases partielles du projet), heures saisies
+     (jauge ; trait noir = facturé à ce jour), heures FACTURABLES (cochées « Facturable », plafonnées aux heures du contrat de la phase pour un
+     forfait, comme la Part facturable), heures FACTURÉES (part facturée de la phase — pourcentages cumulés de la dernière facture d'honoraires
+     du contrat — × heures du contrat), À FACTURER (facturables − facturées ; négatif = facturé d'avance), facturé à ce jour (% de la phase) ;
+     ligne de total ; ancienne facture sans pourcentages : facturées et à facturer inconnues ;
    – tableau des factures (années, n°, date, type, contrat ou « hors contrat », honoraires, frais, total TTC, échéance, état ; Ouvrir = PDF de la
      facture, fx-factures « fv:<id> » ; Modifier = saisie, « f:<id> »).
-   Droits : la tuile suit sgPdomListe (factures : lecture) ; finances verrouillées → « Déverrouiller » ; Préparer la facture = fx-saisie, jamais
-   pour le profil collaborateur. Pourcentages choisis gardés le temps de la session (par contrat). */
+   Droits : la tuile suit sgPdomListe (factures : lecture) ; finances verrouillées → « Déverrouiller » ; Nouvelle facture, Modifier = fx-saisie,
+   jamais pour le profil collaborateur. */
 const PP_NOM={31:'Avant-projet',32:'Projet de l’ouvrage',33:'Procédure de demande d’autorisation',41:'Appels d’offres',51:'Projet d’exécution',52:'Exécution de l’ouvrage',53:'Mise en service, achèvement'};
 const ppDe=k=>{ const m=/^4(\d)(\d)/.exec(String(k)); return m?+(m[1]+m[2]):null; };
 const cran5=v=>Math.max(0,Math.min(100,Math.round((+v||0)/5)*5));
@@ -275,45 +265,37 @@ function facturesDe(p,D){ const cs=sgContratsDuProjet(p,D), ids=new Set(cs.map(c
 const horsC=f=>!!f.sansContrat||!f.contrat_id;
 /* dernier état de l'avancement des prestations (sgavancement : EFF par phase partielle) */
 function avEff(p){ try{ const R=DS.by('sgavancement','PROJECT_ID',p.ID).filter(r=>r&&r.EFF).sort((a,b)=>cmp(String(b.DATE||''),String(a.DATE||''))); return R[0]?{date:R[0].DATE,eff:R[0].EFF}:null; }catch(_){ return null; } }
-/* situation d'un contrat : proposition d'après les heures, avancement choisi (ch[n]), pourcentages cumulés par prestation et montants */
-function situation(p,D,c,fsC,ch){ ch=ch||{};
-  const auj=isoJ(new Date()), K=c.phases||{}, totC=Object.values(K).reduce((s0,v)=>s0+(+v||0),0);
+/* situation d'un contrat par rapport aux heures (lecture seule) : par phase partielle, heures au contrat, saisies, facturables, facturées
+   (part facturée de la phase × heures du contrat) et à facturer (facturables − facturées) */
+function situation(p,D,c,fsC){
+  const auj=isoJ(new Date()), K=c.phases||{}, totC=Object.values(K).reduce((s0,v)=>s0+(+v||0),0), forfait=(sgRemuType(c)||'relatif')!=='unitaire';
   const prevs=fsC.filter(f=>String(f.contrat_id)===String(c.id)&&f.phases&&!fxAnnulee(f)&&String(f.date||'')<=auj)
     .sort((a,b)=>cmp(String(b.date||''),String(a.date||''))||cmp(String(b.num||''),String(a.num||'')));
   /* dernière facture d'honoraires (une note de frais ne porte pas l'avancement) ; déjà facturé = honoraires seuls, frais à part */
   const der=prevs.find(f=>!estNF(f))||null, acc=prevs.reduce((s0,f)=>s0+ttcF(f),0), facc=prevs.reduce((s0,f)=>s0+fraisF(f),0), prevK=(der&&der.phases)||{};
   const sansPct=!!der&&acc>0&&!Object.values(prevK).some(v=>+v>0), dl=der&&der.date||'';
   const sub={}, num={}; DS.by('projectphase','PROJECT_ID',p.ID).forEach(ph=>DS.by('projectsubphase','PROJECTPHASE_ID',ph.ID).forEach(s=>{ const n=+s.NUMBER; if(!n) return;
-    const x=sub[n]||(sub[n]={rec:s,b:0,h:0,hd:0}); x.b+=+s.TIMEBUDGET||0; num[String(s.ID)]=n; }));
-  let hdTot=0; DS.by('timelog','PROJECT_ID',p.ID).forEach(r=>{ const n=num[String(r.SUBPHASE_ID)], h=+r.TIMEPERIOD||0; const ap=!dl||isoJ(tlDate(r))>dl; if(ap) hdTot+=h; if(n==null) return; sub[n].h+=h; if(ap) sub[n].hd+=h; });
-  const ae=avEff(p), DET=typeof FE_DET==='object'&&FE_DET?FE_DET:{};
-  const ff={}; Object.keys(K).forEach(k=>{ ff[k]=Math.min(+prevK[k]||0,+K[k]||0); });
+    const x=sub[n]||(sub[n]={rec:s,b:0,h:0,hf:0}); x.b+=+s.TIMEBUDGET||0; num[String(s.ID)]=n; }));
+  let hdTot=0; DS.by('timelog','PROJECT_ID',p.ID).forEach(r=>{ const n=num[String(r.SUBPHASE_ID)], h=+r.TIMEPERIOD||0; if(!dl||isoJ(tlDate(r))>dl) hdTot+=h; if(n==null) return;
+    sub[n].h+=h; if(+r.ISCHARGEABLE) sub[n].hf+=h; });
+  const DET=typeof FE_DET==='object'&&FE_DET?FE_DET:{};
   const L=[...new Set(Object.keys(K).filter(k=>+K[k]>0).map(ppDe).filter(Boolean))].sort((a,b)=>a-b).map(n=>{
     const det=(DET[n]||[]).map(x=>x[0]).filter(k=>+K[k]>0), keys=det.length?det:Object.keys(K).filter(k=>ppDe(k)===n&&+K[k]>0).sort();
-    const cP=keys.reduce((s0,k)=>s0+(+K[k]||0),0), fP=keys.reduce((s0,k)=>s0+ff[k],0), avF=cP?Math.min(100,fP/cP*100):0, s=sub[n]||{b:0,h:0,hd:0};
-    const conso=s.b?s.h/s.b*100:null; let prop=null, src='';
-    if(conso!=null){ prop=Math.min(95,cran5(conso)); src='heures'; }
-    else if(ae&&ae.eff&&ae.eff[n]!=null){ prop=cran5(ae.eff[n]); src='avancement'; }
-    const propA=Math.max(avF,prop==null?avF:prop), choisi=ch[n]!=null, av=Math.max(avF,Math.min(100,choisi?+ch[n]:propA));
-    let reste=cP*av/100-fP; keys.forEach(k=>{ if(reste<=1e-9) return; const a=Math.min(reste,(+K[k]||0)-ff[k]); if(a>0){ ff[k]+=a; reste-=a; } });
-    const cum=keys.reduce((s0,k)=>s0+ff[k],0);
-    return {n,nom:(s.rec&&typeof nm==='function'&&nm(s.rec))||PP_NOM[n]||('Phase '+n),keys,cP,fP,avF,h:s.h,hd:s.hd,b:s.b,conso,prop,src,propA,av,choisi,cum,
-      dHT:totC?base(c)*(cum-fP)/totC:0}; });
-  Object.keys(ff).forEach(k=>{ ff[k]=Math.round(ff[k]*100)/100; });
-  /* montants : honoraires HT du contrat (rabais et arrondi déjà compris : TTC du contrat = HT × TVA) × Σ % ÷ Σ % du contrat, arrondi à 5 ct, TVA ;
-     frais = % du contrat sur les honoraires HT ; à facturer = cumul − factures précédentes du contrat (comme les acomptes de la saisie) */
-  const sf=Object.values(ff).reduce((s0,v)=>s0+v,0), ht=totC?base(c)*sf/totC:0, htra=Math.round(ht*20)/20;
-  const tp=tauxTva(c), ttc=htra*(1+tp/100), fp=+c.frais||0, fht=ht*fp/100, fttc=Math.round(fht*20)/20*(1+tp/100);
-  return {c,L,ff,totC,sf,der,dl,acc,facc,sansPct,hdTot,ae,ht,htra,tp,ttc,aF:ttc-acc,fttc,aFr:fttc-facc,
+    const cP=keys.reduce((s0,k)=>s0+(+K[k]||0),0), fP=keys.reduce((s0,k)=>s0+Math.min(+prevK[k]||0,+K[k]||0),0), avF=cP?Math.min(100,fP/cP*100):0, s=sub[n]||{b:0,h:0,hf:0};
+    const fac=forfait&&s.b?Math.min(s.hf,s.b):s.hf, hFa=s.b&&!sansPct?s.b*avF/100:null, aH=hFa==null?null:fac-hFa, hon=totC?base(c)*cP/totC:0;
+    return {n,nom:(s.rec&&typeof nm==='function'&&nm(s.rec))||PP_NOM[n]||('Phase '+n),cP,fP,avF,h:s.h,b:s.b,hf:s.hf,fac,dep:s.hf-fac,hFa,aH,
+      conso:s.b?s.h/s.b*100:null,aHT:aH>0&&s.b?hon*aH/s.b:0}; });
+  const tp=tauxTva(c);
+  return {c,L,totC,der,dl,acc,facc,sansPct,hdTot,forfait,tp,
     pctF:totC?prevs.length&&!sansPct?L.reduce((s0,x)=>s0+x.fP,0)/totC*100:null:null}; }
 const tauxTva=c=>c.tva!=null&&c.tva!==''&&isFinite(+c.tva)?+c.tva:8.1;
 const base=c=>+c.hht||(+c.httc||0)/(1+tauxTva(c)/100);   /* honoraires HT du contrat (rabais compris) */
 const situables=(cs)=>cs.filter(c=>!c.annule&&!c.termine&&Object.values(c.phases||{}).some(v=>+v>0)&&base(c)>0);
 
-const ETAT_F={};   /* par affaire : contrat choisi, avancements choisis par contrat, année */
+const ETAT_F={};   /* par affaire : contrat choisi, année */
 function dessinerF(box,p){ const D=fxData();
   if(!D){ box.innerHTML='<p class="sgof-err">La Facturation n’est pas chargée.</p>'; return; }
-  const u=ETAT_F[p.ID]||(ETAT_F[p.ID]={cid:null,ch:{},an:''}), mo=typeof projMO==='function'?projMO(p):'';
+  const u=ETAT_F[p.ID]||(ETAT_F[p.ID]={cid:null,an:''}), mo=typeof projMO==='function'?projMO(p):'';
   if(sgFinVerrou()){ box.innerHTML='<div class="sgof"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+E(p.NUMBER||'')+'</div><div class="sgfh-nm"><div class="lb">Factures</div><h2>'+E(p.TITLE||p.NUMBER||'')+'</h2></div></div></div>'
       +'<div class="sgof-verr" style="margin-top:18px">'+nxSvg('lock')+'<span>Factures, contrats et montants sont protégés.</span>'+(verrouCode()?'<button class="nx-btn" data-a="deverr">Déverrouiller</button>':'')+'</div></div>';
     box.onclick=e=>{ if(e.target.closest('[data-a="deverr"]')) sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) dessinerF(box,DS.get('project',p.ID)||p); }); }; return; }
@@ -322,8 +304,15 @@ function dessinerF(box,p){ const D=fxData();
   const contrat=csV.reduce((s0,c)=>s0+cTT(c),0), fsC=fs.filter(f=>!horsC(f)), fsH=fs.filter(horsC);
   const factC=fsC.reduce((s0,f)=>s0+ttcF(f),0), factH=fsH.reduce((s0,f)=>s0+ttcF(f),0), ouv=fs.filter(fxUnpaid), ech=ouv.filter(f=>f.ech&&f.ech<auj);
   const sum=L=>L.reduce((s0,f)=>s0+ttcF(f)+fraisF(f),0);
-  const S=situables(cs), sits=S.map(c=>situation(p,D,c,F,u.ch[c.id])), aHeures=sits.reduce((s0,x)=>s0+Math.max(0,x.aF),0);
-  if(!S.some(c=>String(c.id)===String(u.cid))) u.cid=S.length?S[S.length-1].id:null;
+  const S=situables(cs), sits=S.map(c=>situation(p,D,c,F));
+  /* contrats du plus actuel au plus ancien : dernière facture du contrat, puis date du contrat — le premier est affiché d'office */
+  const derF=c=>fs.filter(f=>String(f.contrat_id)===String(c.id)).map(f=>String(f.date||'')).sort().pop()||'';
+  const dsc=(a,b)=>a<b?1:a>b?-1:0;   /* chaîne vide (sans facture, sans date) en dernier */
+  const pref=sits.slice().sort((a,b)=>dsc(derF(a.c),derF(b.c))||dsc(String(a.c.date||''),String(b.c.date||'')));
+  /* heures à facturer, tous contrats : une phase partielle comptée une seule fois (contrat le plus actuel qui la couvre) */
+  const vus=new Set(), HT={fac:0,fa:0,a:0,ttc:0}; pref.forEach(x=>x.L.forEach(r=>{ if(vus.has(r.n)) return; vus.add(r.n);
+    HT.fac+=r.fac; if(r.hFa!=null) HT.fa+=r.hFa; if(r.aH>0){ HT.a+=r.aH; HT.ttc+=r.aHT*(1+x.tp/100); } }));
+  if(!S.some(c=>String(c.id)===String(u.cid))) u.cid=pref.length?pref[0].c.id:null;
   const sit=sits.find(x=>String(x.c.id)===String(u.cid))||null;
   const etiq=c=>{ const et=sgContratEtendue(c); return (et.lib||'Contrat')+(c.date?' · '+String(c.date).slice(0,4):''); };
   const libC=new Map(cs.map(c=>[String(c.id),etiq(c)]));
@@ -335,14 +324,14 @@ function dessinerF(box,p){ const D=fxData();
   /* honoraires TTC sans les frais en grand, frais à part (01.11.2026, demande de Paulo « séparer les honoraires contractuels des frais, idem pour
      les factures ; voir le montant des honoraires TTC sans les frais ») ; total reçu = factures payées (même jour) */
   const hon=L=>L.reduce((s0,f)=>s0+ttcF(f),0), fra=L=>L.reduce((s0,f)=>s0+fraisF(f),0), pay=fs.filter(f=>!fxUnpaid(f));
-  const contratFr=csV.reduce((s0,c)=>s0+cTT(c)*(+c.frais||0)/100,0), fpC=[...new Set(csV.map(c=>+c.frais||0))], aFrais=sits.reduce((s0,x)=>s0+Math.max(0,x.aFr),0);
+  const contratFr=csV.reduce((s0,c)=>s0+cTT(c)*(+c.frais||0)/100,0), fpC=[...new Set(csV.map(c=>+c.frais||0))];
   html+='<div class="nx-kpis sgof-kp sgof-kp6">'
     +kpi('Factures ouvertes · honoraires TTC','<span'+(ech.length?' class="sgof-neg"':'')+'>'+nxCHF(hon(ouv))+'</span><small>CHF</small>',frl('Frais',fra(ouv))+'<br>'+(ouv.length?pl(ouv.length,'facture')+' non payée'+(ouv.length>1?'s':'')+(ech.length?' · <span class="sgof-neg">'+ech.length+' échue'+(ech.length>1?'s':'')+'</span>':''):'tout est payé'),'Factures non payées : honoraires TTC sans les frais ; frais TTC à part ; échue = échéance dépassée')
     +kpi('Total reçu · honoraires TTC',nxCHF(hon(pay))+'<small>CHF</small>',frl('Frais',fra(pay))+'<br>'+(fs.length?pl(pay.length,'facture')+' payée'+(pay.length>1?'s':'')+(hon(fs)?' · '+Math.round(hon(pay)/hon(fs)*100)+' % des honoraires facturés':''):'aucune facture'),'Factures payées (statut « Payée » ou date de paiement) : honoraires TTC sans les frais, sur '+nxCHF(hon(fs))+' CHF d’honoraires TTC facturés ; frais TTC à part')
     +kpi('Contrat · honoraires TTC',contrat?nxCHF(contrat)+'<small>CHF</small>':'—',contrat?frl('Frais contractuels',contratFr)+(fpC.length===1&&fpC[0]?' ('+num(fpC[0],fpC[0]%1?2:0)+' %)':'')+'<br>facturé '+nxCHF(factC)+' · '+Math.round(factC/contrat*100)+' %':'aucun contrat relié','Honoraires TTC des contrats non annulés de l’affaire, sans les frais ; frais contractuels = % de frais du contrat sur ses honoraires ; facturé = honoraires TTC des factures de ces contrats')
     +kpi('Hors contrat · honoraires TTC',nxCHF(factH)+'<small>CHF</small>',frl('Frais',fra(fsH))+'<br>'+(fsH.length?pl(fsH.length,'facture'):'aucune facture'),'Factures sans contrat (non ordinaires) au code de l’affaire : honoraires TTC sans les frais ; frais TTC à part')
     +kpi('Reste à facturer · honoraires TTC',contrat?chf(contrat-factC):'—',contrat?frl('Frais restants',contratFr-fra(fsC))+'<br>'+(contrat-factC<-0.5?'facturé au-delà du contrat':Math.round(Math.max(0,contrat-factC)/contrat*100)+' % du contrat'):'','Honoraires TTC du contrat − honoraires facturés sur contrat ; frais restants = frais contractuels − frais facturés sur contrat')
-    +kpi('Selon les heures · honoraires TTC',S.length?nxCHF(aHeures)+'<small>CHF</small>':'—',S.length?frl('Frais',aFrais)+'<br>à la prochaine facture':'aucun contrat à facturer par phases','Honoraires TTC à facturer à la prochaine facture d’après la situation par rapport aux heures (ci-dessous), sans les frais ; frais TTC à part'+(S.length>1?' ; tous contrats':''),S.length?'sit':'')+'</div>';
+    +kpi('Heures à facturer',S.length?nxH(HT.a)+'<small>h</small>':'—',S.length?(HT.ttc>0.5?'env. '+nxCHF(HT.ttc)+' CHF d’honoraires TTC<br>':'')+nxH(HT.fa)+' h facturées sur '+nxH(HT.fac)+' h facturables':'aucun contrat à facturer par phases','Heures facturables pas encore facturées, d’après la situation par rapport aux heures (ci-dessous) ; honoraires TTC correspondants = honoraires de chaque phase ÷ ses heures au contrat'+(S.length>1?' ; tous contrats':''),S.length?'sit':'')+'</div>';
   /* tableau des factures */
   const anF=f=>String(f.date||'').slice(0,4), ans=[...new Set(F.map(anF).filter(y=>/^\d{4}$/.test(y)))].sort().reverse(), an=ans.length>1&&ans.includes(u.an)?u.an:'';
   const V=F.filter(f=>!an||anF(f)===an).sort((a,b)=>cmp(String(b.date||''),String(a.date||''))||cmp(String(b.num||''),String(a.num||''))), colC=cs.length>1||fsH.length>0;
@@ -361,75 +350,46 @@ function dessinerF(box,p){ const D=fxData();
     +(V.length>1?'<tr class="tot"><td>Total</td><td></td><td></td>'+(colC?'<td></td>':'')+'<td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+ttcF(f),0))+'</td><td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+fraisF(f),0))+'</td><td class="r">'+nxCHF(sum(V.filter(f=>!fxAnnulee(f))))+'</td><td></td><td></td><td></td></tr>':'')
     +'</table></div>';
   html+='</section>';
-  /* situation par rapport aux heures — après le tableau des factures (01.11.2026, demande de Paulo « situations après les factures ») */
-  if(sit){ const x=sit, c=x.c;
-    html+='<section class="sgof-sec" id="sgof-sit"><div class="sgof-sech"><h3>Situation par rapport aux heures</h3><span class="n">prochaine facture</span>'
+  /* situation par rapport aux heures — après le tableau des factures (01.11.2026, demande de Paulo « situations après les factures ») ;
+     lecture seule (02.11.2026) : heures au contrat, saisies, facturables, facturées, à facturer */
+  if(sit){ const x=sit, hh=v=>nxH(v)+'\u00a0h', T={b:0,h:0,fac:0,fa:0,a:0};
+    x.L.forEach(r=>{ T.b+=r.b; T.h+=r.h; T.fac+=r.fac; if(r.hFa!=null) T.fa+=r.hFa; if(r.aH>0) T.a+=r.aH; });
+    const aCell=r=>r.aH==null?'<span class="pc">'+(x.sansPct?'inconnu':'pas d’heures au contrat')+'</span>'
+      :r.aH>0.05?'<b>'+hh(r.aH)+'</b>':r.aH<-0.05?'<span class="sgof-pos">'+hh(-r.aH)+'</span><span class="pc">facturé d’avance</span>':'—';
+    html+='<section class="sgof-sec" id="sgof-sit"><div class="sgof-sech"><h3>Situation par rapport aux heures</h3><span class="n">au '+dfr(auj)+'</span>'
       +(S.length>1?'<span class="sgof-fil" role="group" aria-label="Contrat">'+S.map(k=>'<button data-cid="'+E(k.id)+'" class="'+(String(k.id)===String(u.cid)?'on':'')+'" title="'+E('Contrat '+k.id+(k.projet?' — '+k.projet:''))+'">'+E(etiq(k))+'</button>').join('')+'</span>':'')+'</div>'
       +'<p class="sgof-info">'+(x.der?'Dernière facture : <b>'+E(x.der.num||x.der.id)+'</b>'+(x.der.date?' du '+dfr(x.der.date):'')+' · facturé à ce jour '+nxCHF(x.acc)+' CHF TTC'+(x.pctF!=null?' ('+num(x.pctF,0)+' % du mandat)':''):'Aucune facture pour ce contrat')
-        +' · <b>'+nxH(x.hdTot)+' h</b> saisies '+(x.der?'depuis cette facture':'sur l’affaire')+'.'+(x.sansPct?' <span class="sgof-neg">La dernière facture n’a pas de pourcentages (ancienne facture) : le facturé par phase est inconnu, les montants tiennent compte du déjà facturé.</span>':'')+'</p>'
-      +'<div style="overflow:auto"><table class="nx-tbl sgof-t sgof-sit"><tr><th>Phase partielle</th><th class="r">Part du<br>contrat</th><th class="r">Facturé<br>à ce jour</th><th class="r">Heures depuis la<br>dernière facture</th><th>Heures saisies / contrat</th><th class="r">Proposé<br>par les heures</th><th class="sg-notri">Avancement<br>à facturer</th><th class="r">Cumul<br>% du mandat</th><th class="r">Honoraires HT<br>de la phase</th></tr>'
-      +x.L.map(r=>{ const g=r.b?Math.min(100,r.h/r.b*100):0, dp=r.b&&r.h>r.b;
-        return '<tr'+(r.choisi?' class="ch"':'')+'><td><b class="pp">'+r.n+'</b> '+E(r.nom)+'</td><td class="r">'+num(r.cP,r.cP%1?1:0)+' %</td>'
-          +'<td class="r">'+num(r.avF,0)+' %<span class="pc">'+num(r.fP,r.fP%1?2:0)+' % du mandat</span></td>'
-          +'<td class="r">'+(r.hd?nxH(r.hd)+' h':'—')+'</td>'
-          +'<td>'+(r.b?'<div class="sgof-g'+(dp?' dp':'')+'" title="'+E(nxH(r.h)+' h saisies pour '+nxH(r.b)+' h au contrat')+'"><i style="width:'+g.toFixed(1)+'%"></i></div><span class="pc'+(dp?' sgof-neg':'')+'">'+nxH(r.h)+' h / '+nxH(r.b)+' h'+(r.conso!=null?' · '+Math.round(r.conso)+' %':'')+'</span>':'<span class="pc">'+(r.h?nxH(r.h)+' h · ':'')+'pas d’heures au contrat</span>')+'</td>'
-          +'<td class="r" title="'+E(r.src==='heures'?'Heures saisies ÷ heures du contrat, par crans de 5 %, au plus 95 %':r.src==='avancement'?'Dernier état de l’avancement des prestations'+(x.ae&&x.ae.date?' ('+dfr(x.ae.date)+')':''):'Ni heures au contrat ni état d’avancement : à définir')+'">'+(r.prop!=null?num(r.prop,0)+' %'+(r.src==='avancement'?'<span class="pc">avancement</span>':''):'<span class="pc">à définir</span>')+'</td>'
-          +'<td><div class="sgof-av"><button data-a="moins" data-n="'+r.n+'" title="− 5 %"'+(r.av<=r.avF?' disabled':'')+'>−</button><input type="number" min="'+num(r.avF,0).replace(/'/g,'')+'" max="100" step="5" value="'+Math.round(r.av*100)/100+'" data-n="'+r.n+'" aria-label="Avancement à facturer, '+E(r.nom)+'"'+(prep?'':' disabled')+'><span>%</span><button data-a="plus" data-n="'+r.n+'" title="+ 5 %"'+(r.av>=100?' disabled':'')+'>+</button></div></td>'
-          +'<td class="r">'+num(r.cum,r.cum%1?2:0)+' %</td><td class="r">'+(r.dHT>0.5?nxCHF(r.dHT):'—')+'</td></tr>'; }).join('')
+        +' · <b>'+hh(x.hdTot)+'</b> saisies '+(x.der?'depuis cette facture':'sur l’affaire')+'.'+(x.sansPct?' <span class="sgof-neg">La dernière facture n’a pas de pourcentages (ancienne facture) : les heures facturées par phase sont inconnues.</span>':'')+'</p>'
+      +'<div style="overflow:auto"><table class="nx-tbl sgof-t sgof-sit"><tr><th>Phase partielle</th><th class="r">Part du<br>contrat</th><th class="r">Heures<br>au contrat</th><th>Heures saisies</th><th class="r">Heures<br>facturables</th><th class="r">Heures<br>facturées</th><th class="r">Heures<br>à facturer</th><th class="r">Facturé<br>à ce jour</th></tr>'
+      +x.L.map(r=>{ const g=r.b?Math.min(100,r.h/r.b*100):0, dp=r.b&&r.h>r.b, nf=r.h-r.hf;
+        return '<tr><td><b class="pp">'+r.n+'</b> '+E(r.nom)+'</td><td class="r">'+num(r.cP,r.cP%1?1:0)+' %</td>'
+          +'<td class="r">'+(r.b?hh(r.b):'—')+'</td>'
+          +'<td>'+(r.b?'<div class="sgof-g'+(dp?' dp':'')+'" title="'+E(hh(r.h)+' saisies pour '+hh(r.b)+' au contrat'+(r.hFa!=null?' ; trait noir : facturé à ce jour ('+num(r.avF,0)+' %)':''))+'"><i style="width:'+g.toFixed(1)+'%"></i>'+(r.hFa!=null&&r.avF>0?'<b style="left:'+Math.min(100,r.avF).toFixed(1)+'%"></b>':'')+'</div><span class="pc'+(dp?' sgof-neg':'')+'">'+hh(r.h)+(r.conso!=null?' · '+Math.round(r.conso)+' %':'')+'</span>':'<span class="pc">'+(r.h?hh(r.h):'—')+'</span>')+'</td>'
+          +'<td class="r">'+(r.fac?hh(r.fac):'—')+(nf>0.05?'<span class="pc">'+hh(nf)+' non facturables</span>':'')+(r.dep>0.05?'<span class="pc sgof-neg">'+hh(r.dep)+' au-delà du contrat</span>':'')+'</td>'
+          +'<td class="r">'+(r.hFa==null?'<span class="pc">'+(x.sansPct?'inconnu':'—')+'</span>':r.hFa>0.05?hh(r.hFa):'—')+'</td>'
+          +'<td class="r ah">'+aCell(r)+'</td>'
+          +'<td class="r">'+num(r.avF,0)+' %<span class="pc">'+num(r.fP,r.fP%1?2:0)+' % du mandat</span></td></tr>'; }).join('')
+      +(x.L.length>1?'<tr class="tot"><td>Total</td><td class="r">'+num(x.totC,x.totC%1?1:0)+' %</td><td class="r">'+(T.b?hh(T.b):'—')+'</td><td>'+hh(T.h)+'</td><td class="r">'+hh(T.fac)+'</td><td class="r">'+(x.sansPct?'—':hh(T.fa))+'</td><td class="r">'+(x.sansPct?'—':hh(T.a))+'</td>'
+        +'<td class="r">'+(x.pctF!=null?num(x.pctF,0)+' %':'—')+'<span class="pc">du mandat</span></td></tr>':'')
       +'</table></div>'
-      +'<div class="sgof-res"><dl>'
-        +'<dt title="Honoraires HT du contrat (rabais compris) × cumul ÷ prestations du contrat ('+num(x.totC,x.totC%1?2:0)+' %)">Honoraires HT cumulés · '+num(x.sf,x.sf%1?2:0)+' % du mandat</dt><dd>'+nxCHF(x.ht)+'</dd>'
-        +'<dt>Honoraires TTC cumulés (TVA '+num(x.tp,1)+' %)</dt><dd>'+nxCHF(x.ttc)+'</dd><dt>Déjà facturé (TTC)</dt><dd>− '+nxCHF(x.acc)+'</dd>'
-        +(x.aF<-0.5?'<dt class="t" title="Les factures du contrat dépassent les honoraires correspondant à l’avancement choisi">Facturé d’avance (TTC)</dt><dd class="t">'+nxCHF(-x.aF)+'</dd>':'<dt class="t">Honoraires à facturer (TTC)</dt><dd class="t">'+nxCHF(x.aF)+'</dd>')
-        +(x.fttc||x.facc?'<dt>Frais à facturer (TTC, '+num(+x.c.frais||0,2)+' %)</dt><dd>'+nxCHF(x.aFr)+'</dd><dt class="t">Total de la prochaine facture (TTC)</dt><dd class="t">'+nxCHF(Math.max(0,x.aF)+x.aFr)+'</dd>':'')+'</dl>'
-        +'<div class="sgof-resb">'+(x.L.some(r=>r.choisi)?'<button class="nx-btn" data-a="reprendre" title="Revenir aux avancements proposés par les heures">Reprendre les propositions</button>':'')
-        +(prep?'<button class="nx-btn pri" data-a="prep" title="Nouvelle facture de Facturation pour ce contrat, pourcentages reportés : à vérifier puis enregistrer">'+nxSvg('receipt')+'Préparer la facture</button>':'')+'</div></div></section>'; }
+      +'<p class="sgof-leg">Heures facturables : heures saisies cochées « Facturable »'+(x.forfait?', plafonnées aux heures du contrat de la phase (forfait)':'')+'. Heures facturées : part facturée de la phase (pourcentages de la dernière facture) × heures du contrat. À facturer : facturables − facturées. Barre : heures saisies sur les heures du contrat (rouge au-delà), trait noir : facturé à ce jour.'
+        +(T.a>0.05?' Les '+hh(T.a)+' à facturer correspondent à environ '+nxCHF(x.L.reduce((s0,r)=>s0+r.aHT,0)*(1+x.tp/100))+' CHF d’honoraires TTC (honoraires de chaque phase ÷ ses heures au contrat).':'')+'</p></section>'; }
   else if(cs.length) html+='<section class="sgof-sec"><div class="sgof-sech"><h3>Situation par rapport aux heures</h3></div><p class="sgof-vide">Aucun contrat en cours avec des prestations SIA à facturer par phases (contrat terminé, annulé, sans phases ou sans montant).</p></section>';
   if(vueOk('anc-factures')) html+='<div class="sgof-pied">Ancienne version (factures de l’ancien logiciel) : <a data-a="ancien" tabindex="0">Archives ▸ Facturation (ancien) ▸ Factures</a></div>';
-  const foc=document.activeElement&&box.contains(document.activeElement)&&document.activeElement.matches('input[data-n]')?document.activeElement.dataset.n:null;
   box.innerHTML=html+'</div>';
-  if(foc){ const i=box.querySelector('input[data-n="'+foc+'"]'); if(i){ i.focus(); try{ i.select(); }catch(_){} } }
   /* actions */
-  const redess=()=>dessinerF(box,DS.get('project',p.ID)||p), chx=()=>(u.ch[u.cid]||(u.ch[u.cid]={}));
-  const regler=(n,v)=>{ const r=sit&&sit.L.find(r=>String(r.n)===String(n)); if(!r) return; v=Math.max(r.avF,Math.min(100,+v)); if(!isFinite(v)) return; chx()[n]=v; redess(); };
+  const redess=()=>dessinerF(box,DS.get('project',p.ID)||p);
   box.onclick=e=>{ const t=e.target.closest('[data-go],[data-a],[data-cid],[data-an]'); if(!t||!box.contains(t)||t.disabled) return;
     if(t.dataset.go){ allerFx(box,p,'factures',t.dataset.go,t.dataset.arg); return; }
     if(t.dataset.cid!=null){ u.cid=t.dataset.cid; redess(); return; }
     if(t.dataset.an!=null){ u.an=t.dataset.an; redess(); return; }
-    const a=t.dataset.a, r=sit&&t.dataset.n&&sit.L.find(r=>String(r.n)===t.dataset.n);
-    if(a==='moins'&&r) regler(r.n,Math.ceil(r.av/5)*5-5<r.avF?r.avF:Math.ceil(r.av/5)*5-5);
-    else if(a==='plus'&&r) regler(r.n,Math.floor(r.av/5)*5+5);
-    else if(a==='reprendre'){ delete u.ch[u.cid]; redess(); }
-    else if(a==='sit'){ const s=box.querySelector('#sgof-sit'); if(s) s.scrollIntoView({behavior:'smooth',block:'start'}); }
-    else if(a==='prep'&&sit) preparer(sit,box,p);
+    const a=t.dataset.a;
+    if(a==='sit'){ const s=box.querySelector('#sgof-sit'); if(s) s.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(a==='nf'){ const nf=c=>allerFx(box,p,'factures','fx-saisie','nf:'+c.id); if(S.length===1){ nf(S[0]); return; } popMenu(t,S.map(c=>({t:etiq(c)+(c.projet?' — '+c.projet:''),fn:()=>nf(c)}))); }
     else if(a==='deverr') sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) redess(); });
     else if(a==='ancien'){ try{ SG_ANC.sel=String(p.ID); nxLS.set('sg3_anc_projet',SG_ANC.sel); }catch(_){} go('anc-factures'); } };
-  box.onkeydown=e=>{ const i=e.target.closest&&e.target.closest('input[data-n]');
-    if(i&&e.key==='Enter'){ e.preventDefault(); regler(i.dataset.n,i.value); return; }
-    const t=e.target.closest&&e.target.closest('[data-a][role=button],[data-a="ancien"]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } };
-  box.onchange=e=>{ const i=e.target.closest&&e.target.closest('input[data-n]'); if(i) regler(i.dataset.n,i.value); }; }
-/* « Préparer la facture » : nouvelle facture de Facturation pour le contrat, pourcentages cumulés reportés (ff_<k>) */
-const PREP={};
-function preparer(x,box,p){ const c=x.c;
-  if(x.aF<0.5&&x.aFr<0.5){ toast('Rien à facturer : l’avancement choisi ne dépasse pas ce qui est déjà facturé.',true); return; }
-  PREP[c.id]={ff:Object.assign({},x.ff),aF:x.aF}; if(box) allerFx(box,p,'factures','fx-saisie','nfp:'+c.id); else go('fx-saisie','nfp:'+c.id); }
-/* nouvelle facture du contrat, pourcentages de la situation reportés (écran fx-saisie « nfp: » ou Facturation posée dans le projet) */
-function remplirNfp(w,id){ const P=PREP[id];
-  w.goTab('saisie'); w.newFacture(); try{ w.updateContratSelect(id); }catch(_){}
-  const s=w.document.getElementById('f_contrat'); if(!s) return; s.value=id; w.onSelectContrat();
-  if(s.value!==id){ toast('✗ Contrat '+id+' introuvable dans la saisie des factures.',true); return; }
-  if(P){ Object.entries(P.ff).forEach(([k,val])=>{ const e=w.document.getElementById('ff_'+k); if(e) e.value=(+val||0).toFixed(2); }); w.upd_f(); delete PREP[id];
-    /* Facturation applique le rabais du contrat aux honoraires du contrat, qui le comprennent déjà : écart signalé, rien n'est corrigé ici */
-    let r=null; try{ r=w.calcF(); }catch(_){}
-    const ecart=r&&isFinite(r.sol)&&Math.abs(r.sol-P.aF)>1;
-    if(ecart) sgAlert('Pourcentages reportés d’après la situation par rapport aux heures.\n\nMontant de la situation : '+nxCHF(P.aF)+' CHF TTC.\nMontant calculé par la saisie de Facturation : '+nxCHF(r.sol)+' CHF TTC'+(r.rp?' — la saisie applique encore le rabais du contrat ('+num(r.rp,r.rp%1?2:0)+' %), déjà compris dans ses honoraires.':'.')+'\n\nVérifiez le rabais et le montant avant d’enregistrer.');
-    else toast('Facture préparée d’après les heures : vérifiez les pourcentages et les montants, puis enregistrez.'); } }
-if(VIEWS['fx-saisie']){ const v=VIEWS['fx-saisie'], r0=v.render;
-  v.render=function(m,arg){ const a=String(arg||''); if(!a.startsWith('nfp:')) return r0.apply(this,arguments);
-    const id=a.slice(4); document.getElementById('fx-layer').classList.add('on');
-    fxEnsure().then(w=>{ if(!VIEW||VIEW.id!=='fx-saisie') return; remplirNfp(w,id); })
-      .catch(e=>toast('✗ '+(e&&e.message||e),true)); }; }
+  box.onkeydown=e=>{ const t=e.target.closest&&e.target.closest('[data-a][role=button],[data-a="ancien"]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } };
+  box.onchange=null; }
 /* « Ouvrir » une facture : PDF de Facturation ; en fermant l'aperçu, retour à l'écran d'où l'on venait */
 if(VIEWS['fx-factures']){ const v=VIEWS['fx-factures'], r0=v.render;
   v.render=function(m,arg){ const a=String(arg||''); if(!a.startsWith('fv:')) return r0.apply(this,arguments);
@@ -456,20 +416,20 @@ if(VIEWS['fx-factures']){ const v=VIEWS['fx-factures'], r0=v.render;
      renderContratsTable de Facturation.html respecte (il remplace le filtre des archivés) ; « Afficher archivés » et « Nouveau contrat » masqués
      (html.sgof-liste du cadre ; les offres se créent dans Offres d'honoraires). « Modifier » ouvre le calcul dans le projet (« Retour à la
      liste »). Sans droit sur fx-contrats ou finances verrouillées : la liste en lecture (dessiner).
-   – Factures : Ouvrir (PDF), Modifier, Facturer, Préparer la facture = Facturation dans le projet ; retour aux factures de l'affaire, redessinées :
+   – Factures : Ouvrir (PDF), Modifier, Facturer = Facturation dans le projet ; retour aux factures de l'affaire, redessinées :
      « Fermer », facture enregistrée ou supprimée (Facturation passe à sa liste des factures), PDF fermé.
    Domaine protégé par le code d'accès : déverrouillage demandé comme par go ; verrouillage (sgVerrouiller) → le cadre est retiré.
    Toute navigation (go) retire le cadre posé ; un écran fx-* le rouvre ensuite en plein, sans filtre. */
 let EMB=null, LISTE=null;
 const TABS_OK={offres:['contrats','calchono'],contrats:['contrats','calchono'],factures:['saisie']};
-const ACT={'fx-contrats:cv':'voir','fx-calchono:c':'modif','fx-calchono:newaff':'nouv','fx-saisie:nf':'nf','fx-saisie:nfp':'nfp','fx-saisie:f':'fmod','fx-factures:fv':'fvoir'};
+const ACT={'fx-contrats:cv':'voir','fx-calchono:c':'modif','fx-calchono:newaff':'nouv','fx-saisie:nf':'nf','fx-saisie:f':'fmod','fx-factures:fv':'fvoir'};
 const listeDansProjet=()=>vueOk('fx-contrats')&&!sgFinVerrou();
 const proteger=v=>{ const d=typeof sgDomDe==='function'?sgDomDe(v):''; return typeof sgProtege==='function'&&typeof sgOuvert==='function'&&sgProtege(d)&&!sgOuvert(); };
 /* une action d'une page de l'affaire vers Facturation : posée dans le projet si elle s'y prête, sinon l'écran fx-* habituel */
 function allerFx(box,p,mode,vue,arg){ const a=String(arg||''), m=/^([a-z]+):(.*)$/.exec(a), k=m&&ACT[vue+':'+m[1]];
   if(!k||!box||!box.isConnected||!vueOk(vue)){ go(vue,arg); return; }
   /* page des contrats en lecture (droits, finances verrouillées) : ses actions se comportent comme celles des offres ou des factures */
-  const act={k,id:m[2],page:mode}, md=mode==='contrats'?(/^(nf|nfp|fmod|fvoir)$/.test(k)?'factures':'offres'):mode;
+  const act={k,id:m[2],page:mode}, md=mode==='contrats'?(/^(nf|fmod|fvoir)$/.test(k)?'factures':'offres'):mode;
   if(proteger(vue)){ sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) dans(box,DS.get('project',p.ID)||p,md,act); }); return; }
   dans(box,p,md,act); }
 function dans(box,p,mode,act){ css(); if(EMB) fermer(false);
@@ -549,7 +509,6 @@ function executer(w,x){ const a=x.act, id=a.id;
   else if(a.k==='modif') w.editContratCalc(id);
   else if(a.k==='voir'){ sgVoirContrat(w,id); w._sgRetour=false; x.retour=true; }
   else if(a.k==='nf'){ w.goTab('saisie'); w.newFacture(); try{ w.updateContratSelect(id); }catch(_){} const s=w.document.getElementById('f_contrat'); if(s){ s.value=id; w.onSelectContrat(); } }
-  else if(a.k==='nfp') remplirNfp(w,id);
   else if(a.k==='fmod') w.editFactureSaisie(id);
   else if(a.k==='fvoir'){ x.retour=true; Promise.resolve(w.openFacturePdf(id)).catch(e=>toast('✗ '+(e&&e.message||e),true)); } }
 /* Facturation change d'onglet : barre de titre mise à jour, ou retour à la page de l'affaire (enregistrement, suppression, accueil) */
@@ -580,7 +539,7 @@ ivDomain=remplacer(iv0,'factures');
 if(typeof SG_PDOM==='object'&&SG_PDOM){
   if(SG_PDOM['Offres d’honoraires']) SG_PDOM['Offres d’honoraires']=['calc','Toutes les offres de l’affaire : en cours, retenues, annulées ou refusées.'];
   if(SG_PDOM['Contrats honoraires']) SG_PDOM['Contrats honoraires']=['contrat','Les contrats d’honoraires signés.'];
-  if(SG_PDOM['Factures']) SG_PDOM['Factures']=['receipt','Les factures de l’affaire, le reste à facturer et la prochaine facture selon les heures.']; }
+  if(SG_PDOM['Factures']) SG_PDOM['Factures']=['receipt','Les factures de l’affaire, le reste à facturer et la situation par rapport aux heures.']; }
 let attente=null;
 const tuileTxt=(p,d,D)=>{ if(d==='Factures'){ const fs=facturesDe(p,D).fs.filter(f=>!fxAnnulee(f)), o=fs.filter(fxUnpaid).length; return pl(fs.length,'facture')+' · '+pl(o,'ouverte'); }
   const k=compte(p,D);
@@ -594,5 +553,5 @@ if(typeof sgPdomCompte==='function'){ const cpt0=sgPdomCompte;
     if(!attente&&typeof fxEnsure==='function') attente=Promise.resolve().then(()=>fxEnsure()).catch(()=>null).then(()=>{ attente=null; const q=DS.get('project',String(VIEW&&VIEW.arg||'').split('|')[0]); if(q&&vueId()==='nx-pdom') majTuiles(q); });
     return '…'; }; }
 
-window.SGOF={version:'01.11.2026',lignes,compte,MODES,fe0,ct0,iv0,dessiner,dessinerF,facturesDe,situation,PREP,allerFx,fermer,etat:()=>EMB};
+window.SGOF={version:'01.11.2026',lignes,compte,MODES,fe0,ct0,iv0,dessiner,dessinerF,facturesDe,situation,allerFx,fermer,etat:()=>EMB};
 })();

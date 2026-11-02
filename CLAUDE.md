@@ -1308,26 +1308,30 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Factures** : factures de Facturation de l'affaire seulement (contrats reliés + factures sans contrat au code de l'affaire, `cl_affaire` ou
   « _<code>. » du numéro) ; chiffres (deux rangées de trois) : Factures ouvertes (TTC, échues en rouge), **Total reçu (TTC)** (factures payées,
   honoraires et frais, nombre et % du facturé ; ajouté le 01.11.2026 à la demande), Contrat (TTC, facturé et %), Hors contrat (factures sans
-  contrat), Reste à facturer (contrat − facturé sur contrat ; négatif = facturé au-delà), Selon les heures (prochaine facture) ; **Situation par
-  rapport aux heures** — sous le tableau des factures depuis le 01.11.2026 (« situations après les factures ») — par contrat (ni annulé ni terminé, avec prestations SIA et montant ; choix du contrat s'il y en a plusieurs) : par phase
-  partielle 31–53, part du contrat, facturé à ce jour (pourcentages cumulés de la dernière facture du contrat), heures depuis la dernière facture,
-  heures saisies / heures du contrat (TIMEBUDGET de la phase partielle du projet), avancement proposé (heures ÷ heures du contrat, crans de 5 %,
-  au plus 95 %, comme l'Avancement ; sans heures au contrat : dernier état `sgavancement` ; jamais sous le facturé), avancement à facturer
-  modifiable (− / +, saisie ; gardé le temps de la session), cumul, honoraires HT de la phase ; pied : honoraires HT et TTC cumulés, déjà facturé
-  (factures précédentes du contrat, comme les acomptes de la saisie), honoraires à facturer (ou « facturé d'avance »), frais (% du contrat),
-  total. **Base de calcul = honoraires HT du contrat (rabais et arrondi déjà compris : TTC du contrat = HT × TVA)** × Σ % ÷ Σ % du contrat,
-  arrondi à 5 ct, TVA. « Préparer la facture » : nouvelle facture de Facturation pour le contrat (`fx-saisie nfp:<id>`), pourcentages cumulés
-  reportés prestation par prestation (`ff_<k>`, remplis dans l'ordre SIA à partir de la facture précédente) ; rien n'est enregistré.
+  contrat), Reste à facturer (contrat − facturé sur contrat ; négatif = facturé au-delà), **Heures à facturer** (total de la situation, honoraires
+  TTC correspondants ; une phase partielle comptée une fois, au contrat le plus actuel qui la couvre) ; **Situation par rapport aux heures** — sous le
+  tableau des factures (01.11.2026) — par contrat (ni annulé ni terminé, avec prestations SIA et montant ; plusieurs contrats : choix, celui de la
+  dernière facture d'office). **Lecture seule depuis le 02.11.2026** (Paulo : « ne doit pas être modifiable, mais uniquement une vue des heures
+  actuelles en rapport aux heures facturées et facturables ; supprimer avancement à facturer, etc. ») : par phase partielle 31–53, part du contrat,
+  heures au contrat (TIMEBUDGET des phases partielles du projet), heures saisies (jauge sur les heures du contrat, rouge au-delà ; trait noir =
+  facturé à ce jour), heures **facturables** (cochées « Facturable », plafonnées aux heures du contrat de la phase pour un forfait — non
+  facturables et dépassement signalés), heures **facturées** (part facturée de la phase — pourcentages cumulés de la dernière facture
+  d'honoraires du contrat — × heures du contrat), **à facturer** (facturables − facturées ; négatif = « facturé d'avance », en vert), facturé à ce
+  jour (% de la phase, % du mandat) ; ligne Total ; légende, avec les honoraires TTC correspondant aux heures à facturer (honoraires de chaque
+  phase ÷ ses heures au contrat). Ancienne facture sans pourcentages : facturées / à facturer « inconnu ». Retirés : avancement proposé et à
+  facturer (− / +, saisie), « Reprendre les propositions », décompte de la prochaine facture, « Préparer la facture » (`preparer`, `remplirNfp`,
+  route `fx-saisie nfp:`) ; « Nouvelle facture » (en-tête) et « Modifier » restent. Copie d'avant : `subgestion3/_backup_20261102_avant_situation_heures/`.
+  (Version du 01.11.2026, retirée : avancement proposé par les heures, crans de 5 %, au plus 95 %, avancement à facturer modifiable, pied
+  honoraires cumulés / déjà facturé / à facturer / frais, « Préparer la facture » qui reportait les pourcentages dans la saisie de Facturation.)
   ⚠ **La saisie de facture de Facturation (`calcF`) applique encore le rabais du contrat (`f_rabais` = `c.rabais`) à `c.hht`, qui le comprend
-  déjà** (`applyCalcHono` : `hht = htFinal`, après rabais et arrondi) : « Préparer la facture » le signale (montant de la situation et montant de
-  la saisie) sans rien corriger — question posée à Paulo le 01.11.2026. Tableau des factures (années, contrat ou « Hors contrat », honoraires,
+  déjà** (`applyCalcHono` : `hht = htFinal`, après rabais et arrondi) — relevé avec « Préparer la facture », la saisie) sans rien corriger — question posée à Paulo le 01.11.2026. Tableau des factures (années, contrat ou « Hors contrat », honoraires,
   frais, total, échéance, état ; Ouvrir = PDF de la facture, `fx-factures fv:<id>`, retour à la page en fermant ; Modifier = `fx-saisie f:<id>`).
   Droits : tuiles selon `sgPdomListe` (contrats / factures : lecture) ; créer, modifier, relier = `SG_VUE_DROIT['fx-calchono']` ; Facturer,
   Préparer = `fx-saisie`, jamais pour le profil collaborateur ; montants masqués si `sgFinVerrou()` (« Déverrouiller » si code d'accès).
   **Honoraires et frais séparés partout (01.11.2026, demande de Paulo « séparer les honoraires contractuels des frais, idem pour les factures ;
   voir le montant des honoraires TTC sans les frais »)** : montants en grand = honoraires TTC SANS les frais, frais sur la ligne du dessous
   (`frl`) — Factures : « Factures ouvertes · honoraires TTC », « Total reçu · honoraires TTC », « Contrat · honoraires TTC » (frais contractuels
-  et %), « Hors contrat », « Reste à facturer » (frais restants = frais contractuels − frais facturés), « Selon les heures » ; tableau des
+  et %), « Hors contrat », « Reste à facturer » (frais restants = frais contractuels − frais facturés), « Heures à facturer » ; tableau des
   factures : Honoraires TTC (gras), Frais TTC, Total TTC. Offres et Contrats : colonnes Honoraires HT, Honoraires TTC, **Frais TTC** (% de frais
   du contrat `c.frais` × honoraires TTC, comme Facturation ; « facturés … » dessous), Honoraires facturés TTC ; chiffres avec frais contractuels,
   frais facturés, frais restants. **Notes de frais** (type « Note de frais… », numéro …NF01 / …NFF : montant enregistré dans `_ttc`) comptées en
@@ -1352,7 +1356,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `window.SG_CONTRATS_FILTRE` {f, vide} qui remplace celui des archivés (sans effet ailleurs : Facturation seule, SUBGestion v1) ; « Afficher
   archivés » et « Nouveau contrat » masqués (`html.sgof-liste` du cadre) ; Modifier → calcul dans le projet, « Retour à la liste ». Sans droit
   `fx-contrats` ou finances verrouillées : la liste en lecture d'avant (`dessiner`). **Factures** : Ouvrir (PDF), Modifier, Nouvelle facture,
-  Préparer la facture (`remplirNfp`, commun avec `fx-saisie nfp:`) dans le projet ; retour aux factures de l'affaire par « Fermer », à
+  dans le projet ; retour aux factures de l'affaire par « Fermer », à
   l'enregistrement ou la suppression (Facturation passe à sa liste des factures) et à la fermeture du PDF. Domaine protégé par code : déverrouillage
   demandé comme par `go` ; `sgVerrouiller` retire le cadre. Toute navigation (`go` enveloppé) retire le cadre ; un écran fx-* le rouvre en plein,
   sans filtre. Onglet de Facturation inattendu ou accueil (`sgFxOnTab`, `sgFxHome` enveloppés) → retour à la page de l'affaire. Vérifié : aucune

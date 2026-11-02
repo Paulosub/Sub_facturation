@@ -2304,6 +2304,24 @@ def sg_refus_ecriture(ctx, c, ops):
     return None
 
 
+def sg_refus_fige(c, ops):
+    """Indices émis du planning (sgplanningarch, SORTE « indice », 02.11.2026) : figés, ni modifiés ni supprimés, par personne
+    (administrateur compris, avec ou sans ouverture de session) ; None = permis."""
+    for op in ops:
+        if op.get("t") != "sgplanningarch":
+            continue
+        row = c.execute("SELECT val FROM rec WHERE t=? AND id=?", ("sgplanningarch", str(op.get("id")))).fetchone()
+        if not row or not row[0]:
+            continue
+        try:
+            v = json.loads(row[0])
+        except ValueError:
+            v = {}
+        if isinstance(v, dict) and v.get("SORTE") == "indice":
+            return "Planning : un indice émis est archivé, il ne peut être ni modifié ni supprimé."
+    return None
+
+
 # ── Données Facturation partagées (kv) selon le profil ──
 SG_KV_FILTRES = {"sa_contrats": "contrats", "sa_factures5": "factures", "sa_pv_data": "pv"}
 SG_KV_LECTURE = {"sa_adr", "sa_affaires", "sa_affaires_statut", "sa_cfc_edits", "sa_cond_groupes", "sa_seed_ver", "sa_phases_pct_migrated",
@@ -2852,7 +2870,7 @@ class H(BaseHTTPRequestHandler):
             who = ch08_who(self, c, body)   # CH-08 : session ou identité déclarée ; règles du § 4.20.3 ; None = 403 déjà envoyé
             if who is None:
                 return
-            m = sg_refus_ecriture(sg_contexte(self, c), c, body.get("ops") or [])   # profils d'accès
+            m = sg_refus_ecriture(sg_contexte(self, c), c, body.get("ops") or []) or sg_refus_fige(c, body.get("ops") or [])   # profils d'accès ; indices émis
             if m:
                 return self._send(403, js({"ok": False, "error": "droits", "msg": m}))
             seq = commit(c, body.get("ops") or [], who)

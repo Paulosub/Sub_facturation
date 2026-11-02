@@ -1399,6 +1399,26 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Enquête ; chip « Enquête » → même rubrique) ; groupe Projet = PV MO, Présentation, Planning, Documents, puis **à la ligne** Estimations et
   Descriptifs & devis (Paulo : « estimations, descriptif & devis mettre à la ligne » ; `SG_TUILE_BR` → classe `.sg-tile.br`, `grid-column-start:1`).
   Copie d'avant : `subgestion3/_backup_20261102_avant_planning/`.
+  **Indices et archives du planning (02.11.2026, même bloc ; Paulo : « la mise à jour des plannings fait partie de notre travail, mais il est
+  important de conserver une archive des plannings précédents » ; choix : indices en NOMBRES, copies automatiques gardées 3 mois, un indice émis
+  ne peut être supprimé par PERSONNE, liste limitée au planning du projet et de la phase ouverts — pas de liste des plannings du bureau)** :
+  collection propre **`sgplanningarch`** — indice émis {ID `<projet>:<sorte>:i<n>`, SORTE `indice`, INDICE, DATE, MOTIF (obligatoire),
+  DEST, REM, LIGNES, EMIS, PAR} ; copie automatique {ID `<projet>:<sorte>:a<MODIFIE en chiffres>`, SORTE `auto`, DATE = jour de l'état, MODIFIE,
+  LIGNES, CREE}. Copie automatique dans le même `DS.commit` que la modification : à la première modification d'une journée (état de la veille ou
+  plus ancien), et toujours avant « Effacer tout » et « Repartir de cette version » ; pas de copie si l'état est déjà le dernier indice ou la
+  dernière copie ; copies de plus de 92 jours (`AUTO_JOURS`) retirées au prochain enregistrement. Bandeau : liste déroulante des versions
+  (`menuVersions` : « Indice n · en cours », Indices émis, Copies automatiques, « Émettre l'indice n… »), bouton « Émettre l'indice n » (date,
+  motif — « Planning initial » proposé pour l'indice 1 —, destinataire, remarque ; `enregistrerIndice`, création seule `bseq:0`). Archive ouverte
+  = lecture seule, bandeau « Archive · Indice n du … » (motif, destinataire, émis le), « Revenir à la version en cours », « Repartir de cette
+  version… » (`repartir`). Barre : « Comparer avec » (version en cours depuis une archive, indices, copies ; d'office le dernier indice s'il diffère
+  de la version en cours) → barres de l'autre version en pointillé (`.sgpl-gh`), glissement à droite du nom de chaque étape (fin, sinon
+  « début … » ; rouge = repoussée, vert = avancée, « nouvelle »), Fin prévue comparée, étapes retirées sous le diagramme (`apparier` : même
+  identifiant, sinon même sorte, libellé et phase). Imprimer : version dans le PDF (« Indice 2 du … · motif », « État du … (copie automatique) »,
+  « Version de travail du … (indice n non émis) ») ; version en cours non émise → « Imprimer sans émettre » ou « Émettre l'indice n… » puis
+  imprimer. Tuile : « … · indice n ». **Serveur du NAS** : `sg_refus_fige` (`serveur_deltasub.py`, appelé avec `sg_refus_ecriture`, avec ou sans
+  ouverture de session) refuse toute modification ou suppression d'un enregistrement `sgplanningarch` de SORTE `indice` (403) ; actif après
+  redémarrage du conteneur. En fichier local (sans serveur), seule l'app protège les indices (aucune action de suppression). Copie d'avant :
+  `subgestion3/_backup_20261102_avant_indices_planning/`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

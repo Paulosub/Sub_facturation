@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 02.11.2026 14:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 02.11.2026 16:14 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -35521,11 +35521,25 @@ window.SGOF={version:'01.11.2026',lignes,compte,MODES,fe0,ct0,iv0,dessiner,dessi
    en bas. Imprimer : tableau des étapes + diagramme SVG (sgImprimer → papier des contrats).
    Droits : lecture = qui voit le projet ; écriture = projet modifiable (administrateur, « projets modifiables : tous », ou « ses projets »
    pour un projet attribué — serveur du NAS : règle « projet modifiable » des collections rattachées par PROJECT_ID, rien à changer).
+   Indices et archives (02.11.2026, Paulo : « la mise à jour des plannings fait partie de notre travail, mais il est important de conserver une
+   archive des plannings précédents » ; choix : indices en nombres, copies automatiques gardées 3 mois, un indice émis ne peut être supprimé par
+   personne, liste limitée au planning du projet et de la phase ouverts) : collection propre « sgplanningarch » —
+     indice émis {ID '<projet>:<sorte>:i<n>', PROJECT_ID, TYPE, SORTE 'indice', INDICE n, DATE, MOTIF, DEST, REM, LIGNES, EMIS, PAR} : figé, jamais
+       modifié ni supprimé (pas d'action dans l'app ; serveur du NAS : sg_refus_fige) ;
+     copie automatique {ID '<projet>:<sorte>:a<MODIFIE en chiffres>', SORTE 'auto', DATE (jour de l'état), MODIFIE, PAR, LIGNES, CREE} : à la première
+       modification d'une journée, l'état de la veille (ou plus ancien) est copié dans le même enregistrement ; aussi avant « Effacer tout » et
+       « Repartir de cet indice » ; pas de copie si l'état est déjà un indice ou la dernière copie ; copies de plus de 3 mois (AUTO_JOURS) retirées
+       au prochain enregistrement du planning.
+   Liste déroulante des versions (bandeau) : version en cours (indice n + 1), indices émis, copies ; une archive s'affiche en lecture seule
+   (bandeau « Archive », Revenir à la version en cours, Repartir de cet indice). « Émettre l'indice n » : date, motif, destinataire, remarque.
+   Comparer avec (barre) : barres de l'autre version en pointillé, glissement par étape (fin, sinon début), fin prévue comparée, étapes
+   retirées ; d'office le dernier indice émis s'il diffère de la version en cours. Imprimer : version dans le titre ; la version en cours non
+   émise propose d'émettre l'indice d'abord.
    Débogage : window.SGPL. Styles <style id="sgpl-css">, classes sgpl-*. */
 (function(){
 if(typeof VIEWS!=='object'||!VIEWS['nx-pdom']) return;
 
-const T='sgplanning';
+const T='sgplanning', TA='sgplanningarch', AUTO_JOURS=92;   /* planning en cours ; indices émis et copies automatiques (gardées 3 mois) */
 const PP={21:'Définition du projet, étude de faisabilité',22:'Procédure de choix de mandataires',31:'Avant-projet',32:'Projet de l’ouvrage',
   33:'Procédure de demande d’autorisation',41:'Appels d’offres, comparaison des offres, adjudication',51:'Projet d’exécution',52:'Exécution de l’ouvrage',
   53:'Mise en service, achèvement'};
@@ -35569,7 +35583,10 @@ const CSS=`
 .sgpl-r{height:${H_LIG}px;box-sizing:border-box;border-bottom:1px solid #ececec;padding:4px 10px;display:flex;flex-direction:column;justify-content:center;min-width:0;cursor:default}
 .sgpl-r.ed{cursor:pointer}
 .sgpl-r.ed:hover,.sgpl-r.hov{background:var(--s-jaune3)}
-.sgpl-r .l{font-size:12.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgpl-r .l{font-size:12.5px;line-height:1.2;white-space:nowrap;display:flex;align-items:baseline;gap:8px;min-width:0}
+.sgpl-r .l .tx{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sgpl-r .gs{flex:none;font-size:10.5px;font-weight:700}
+.sgpl .gs.p{color:var(--s-rouge)}.sgpl .gs.m{color:#4f7d10}.sgpl .gs.n{color:var(--s-nuit)}
 .sgpl-r .l .pp{color:var(--s-nuit);font-weight:700;margin-right:5px}
 .sgpl-r .l .jl{display:inline-block;width:7px;height:7px;background:var(--s-nuit);transform:rotate(45deg);margin:0 7px 1px 1px}
 .sgpl-r.rouge .l .jl{background:var(--s-rouge)}
@@ -35591,6 +35608,26 @@ const CSS=`
 .sgpl-b.t::before,.sgpl-b.t::after{content:'';position:absolute;top:0;width:0;height:0;border-top:6px solid var(--s-noir)}
 .sgpl-b.t::before{left:0;border-right:5px solid transparent}.sgpl-b.t::after{right:0;border-left:5px solid transparent}
 .sgpl-re{position:absolute;bottom:5px;height:4px;background:var(--s-gris);pointer-events:none}
+.sgpl-gh{position:absolute;top:7px;height:22px;border:1px dashed var(--s-gris);box-sizing:border-box;pointer-events:none;z-index:0}
+.sgpl-gh.j{width:13px;height:13px;top:12px;transform:rotate(45deg)}
+.sgpl-hact{align-items:center}
+.sgpl-vb{min-width:0}
+.sgpl-vm{position:fixed;z-index:9000;background:#fff;border:2px solid var(--s-noir);width:360px;max-width:calc(100vw - 24px);max-height:min(70vh,560px);overflow:auto;padding:4px 0;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.sgpl-vm button{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 14px;font:inherit;cursor:pointer;color:var(--s-noir)}
+.sgpl-vm button b{display:block;font-size:12.5px}
+.sgpl-vm button span{display:block;font-size:11px;color:var(--s-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgpl-vm button:hover,.sgpl-vm button:focus-visible{background:var(--s-jaune3);outline:none}
+.sgpl-vm button.on{box-shadow:inset 3px 0 0 var(--s-nuit);background:var(--s-nuit3)}
+.sgpl-vm .sec{font-size:10.5px;font-weight:700;color:var(--s-gris);padding:10px 14px 3px;border-top:1px solid #e3e3e3;margin-top:4px}
+.sgpl-vm p{margin:0;padding:3px 14px 8px;font-size:11.5px;color:var(--s-gris)}
+.sgpl-vm .pied{border-top:1px solid #e3e3e3;margin-top:4px;padding-top:2px}
+.sgpl-vm .pied button{color:var(--s-nuit);font-weight:700;font-size:12.5px}
+.sgpl-arch{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;margin:12px 0 0;padding:10px 14px;border:2px solid var(--s-nuit);background:var(--s-nuit3);font-size:12.5px;line-height:1.45}
+.sgpl-arch .tx{flex:1 1 320px;min-width:0}
+.sgpl-arch .dr{display:flex;gap:8px;flex-wrap:wrap}
+.sgpl-cmp{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--s-gris)}
+.sgpl-cmp select{height:26px;border:1.5px solid var(--s-noir);border-radius:0;background:#fff;font:inherit;font-size:12px;font-weight:400;color:var(--s-noir);max-width:280px}
+.sgpl-ret{font-size:11.5px;color:var(--s-gris);margin:8px 0 0}
 .sgpl-bl{position:absolute;top:10px;font-size:10.5px;color:var(--s-gris);white-space:nowrap;pointer-events:none}
 .sgpl-tip{position:fixed;z-index:9999;background:var(--s-noir);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;pointer-events:none;white-space:nowrap}
 .sgpl-leg{margin:10px 0 24px;font-size:11.5px;line-height:1.5;color:var(--s-gris);display:flex;gap:6px 18px;flex-wrap:wrap;align-items:center}
@@ -35598,6 +35635,7 @@ const CSS=`
 .sgpl-leg .b1{width:22px;height:9px;background:var(--s-nuit)}.sgpl-leg .b2{width:9px;height:9px;background:var(--s-nuit);transform:rotate(45deg)}
 .sgpl-leg .b3{width:22px;height:9px;background:var(--s-rouge)}.sgpl-leg .b4{width:22px;height:4px;background:var(--s-gris)}
 .sgpl-leg .b5{width:0;height:12px;border-left:1px dashed var(--s-noir)}
+.sgpl-leg .b6{width:22px;height:12px;border:1px dashed var(--s-gris);box-sizing:border-box}
 .sgpl-vide{padding:22px 0 8px;font-size:13px;line-height:1.55;max-width:760px}
 .sgpl-vide .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .sgpl-sec{border-top:2px solid var(--s-noir);margin-top:8px}
@@ -35642,7 +35680,18 @@ const fx=()=>{ try{ return typeof fxData==='function'?fxData():null; }catch(_){ 
 const contratsOk=()=>typeof sgAdmin==='function'&&(sgAdmin()||(typeof sgDroit==='function'&&sgDroit('contrats','lecture')));
 const peut=p=>{ try{ return !!(sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)))); }catch(_){ return false; } };
 const recDe=(pid,type)=>DS.get(T,pid+':'+type)||null;
-const etiq=c=>{ let et=''; try{ et=typeof sgContratEtendue==='function'?(sgContratEtendue(c).lib||''):''; }catch(_){} return (et||'Contrat')+(c.date?' · '+String(c.date).slice(0,4):''); };
+/* versions archivées (indices émis, copies automatiques) du planning d'un projet et d'une sorte */
+const verA=id=>{ try{ return ((DS.S&&DS.S[TA])||{})[String(id)]||0; }catch(_){ return 0; } };
+const archives=(pid,type)=>DS.all(TA).filter(r=>r&&String(r.PROJECT_ID)===String(pid)&&r.TYPE===type);
+const indices=(pid,type)=>archives(pid,type).filter(r=>r.SORTE==='indice').sort((a,b)=>(+a.INDICE||0)-(+b.INDICE||0));
+const copies=(pid,type)=>archives(pid,type).filter(r=>r.SORTE==='auto').sort((a,b)=>String(b.MODIFIE||b.DATE||'').localeCompare(String(a.MODIFIE||a.DATE||'')));
+const prochain=I=>I.reduce((m,r)=>Math.max(m,+r.INDICE||0),0)+1;
+const memes=(A,B)=>JSON.stringify((A||[]).map(propre))===JSON.stringify((B||[]).map(propre));
+const libV=r=>!r?'':r.SORTE==='indice'?'Indice '+r.INDICE+' du '+dfr(r.DATE):'État du '+dfr(r.DATE);
+const jourLoc=iso=>{ try{ return iso?diso(new Date(iso)):''; }catch(_){ return ''; } };
+/* écart de dates lisible, signé : +3 j, −2 sem., +4 mois */
+const ecart=n=>{ const a=Math.abs(n), s=n>0?'+':'−'; return s+(a<14?a+' j':a<=120?(Math.round(a/7*2)/2).toLocaleString('fr-CH')+' sem.':Math.round(a/30.44)+' mois'); };
+const etiq=c=>{ let et='';try{ et=typeof sgContratEtendue==='function'?(sgContratEtendue(c).lib||''):''; }catch(_){} return (et||'Contrat')+(c.date?' · '+String(c.date).slice(0,4):''); };
 
 /* heures réelles par phase partielle (feuille d'heures du projet) : période principale a → b (de 5 % à 95 % des heures, pour écarter les
    heures isolées, p. ex. une séance un an après la phase), première et dernière heure a0 / b0, total h */
@@ -35673,6 +35722,7 @@ function geo(u){ const L=u.L, auj=AUJ(), dates=[];
   if(!dates.length) return null;
   const pa=Math.min(...dates), pb=Math.max(...dates); let a=pa, b=pb;   /* pa / pb : dates du planning ; a / b : étendue affichée (heures réelles, aujourd'hui) */
   if(u.reel) L.forEach(x=>{ const r=x.pp&&u.R[x.pp]; if(r){ a=Math.min(a,r.a); b=Math.max(b,r.b); } });
+  if(u.cmpL) u.cmpL.forEach(x=>{ const d=J(x.d); if(d==null) return; a=Math.min(a,d); b=Math.max(b,x.t==='tache'?(J(x.f)??d):d); });   /* version comparée */
   if(auj>=a-120&&auj<=b+120){ a=Math.min(a,auj); b=Math.max(b,auj); }
   const span=b-a+1, ech=ECH[u.ech]?u.ech:'tout', larg=Math.max(320,(u.box&&u.box.clientWidth||1000)-48-302);
   /* Tout : jours par pixel calculés pour la largeur disponible, en-tête en semaines, mois ou trimestres selon la place */
@@ -35701,10 +35751,10 @@ function entete(G){ const A=[], B=[], V=[], x=n=>Math.round((n-G.a)*G.ppd);
 
 /* ── écran ── */
 const ETAT={};   /* par projet et sorte : échelle, heures réelles, défilement */
-function ouvrir(C,p,type){ css(); const k=p.ID+':'+type, u=ETAT[k]||(ETAT[k]={ech:'',reel:true,sx:null});
+function ouvrir(C,p,type){ css(); const k=p.ID+':'+type, u=ETAT[k]||(ETAT[k]={ech:'',reel:true,sx:null,vue:null,cmp:undefined});
   u.pid=String(p.ID); u.type=type; u.p=p;
   const box=document.createElement('div'); box.className='sgpl-box'; box.innerHTML='<div class="sgpl" style="color:var(--s-gris)">Chargement du planning…</div>'; C.append(box); u.box=box;
-  const besoin=[T,'timelog','projectphase','projectsubphase','projectmember'];
+  const besoin=[T,TA,'timelog','projectphase','projectsubphase','projectmember'];
   Promise.resolve().then(()=>DS.need?DS.need(besoin):null).catch(()=>null).then(()=>{ if(u.box!==box||!box.isConnected) return; dessiner(u);
     if(contratsOk()&&!fx()&&typeof fxEnsure==='function'&&!u.fxAttente){ u.fxAttente=true;
       fxEnsure().catch(()=>null).then(()=>{ u.fxAttente=false; if(u.box&&u.box.isConnected) dessiner(u); }); } }); }
@@ -35713,28 +35763,81 @@ function dessiner(u){ const box=u.box; if(!box||!box.isConnected) return;
   catch(e){ console.error(e); box.innerHTML='<p class="sgpl-err">Planning : erreur — '+E(e&&e.message||e)+'</p>'; } }
 function dessiner0(u){ const box=u.box, p=DS.get('project',u.pid)||u.p, S=SORTES[u.type], rec=recDe(u.pid,u.type);
   const gr0=box.querySelector('.sgpl-gr'); if(gr0) u.sx=gr0.scrollLeft;
-  u.p=p; u.rec=rec; u.L=((rec&&rec.LIGNES)||[]).map(x=>Object.assign({},x)); u.peut=peut(p); u.R=reel(p);
-  const L=u.L, auj=AUJ(), mo=typeof projMO==='function'?projMO(p):'', G=geo(u);
+  fermerVm();
+  u.p=p; u.rec=rec; u.peutBase=peut(p); u.R=reel(p);
+  /* versions : indices émis, copies automatiques ; une archive ouverte s'affiche en lecture seule */
+  u.idx=indices(u.pid,u.type); u.cop=copies(u.pid,u.type); u.n=prochain(u.idx);
+  u.arch=u.vue?DS.get(TA,u.vue):null; if(!u.arch) u.vue=null;
+  u.L=((u.arch?u.arch.LIGNES:rec&&rec.LIGNES)||[]).map(x=>Object.assign({},x)); u.peut=u.peutBase&&!u.arch;
+  /* version comparée : choix de la barre, sinon (version en cours) le dernier indice émis s'il diffère */
+  const der=u.idx[u.idx.length-1]||null, courant=rec&&(rec.LIGNES||[]).length?rec:null;
+  let cmp=null;
+  if(u.cmp===undefined){ if(!u.arch&&der&&u.L.length&&!memes(u.L,der.LIGNES)) cmp=der; }
+  else if(u.cmp==='#cours') cmp=u.arch&&courant?{SORTE:'cours',LIGNES:courant.LIGNES}:null;
+  else if(u.cmp) cmp=DS.get(TA,u.cmp)||null;
+  if(cmp&&u.arch&&cmp.ID===u.arch.ID) cmp=null;
+  u.cmpR=cmp; u.cmpL=cmp?(cmp.LIGNES||[]):null;
+  u.libCmp=!cmp?'':cmp.SORTE==='cours'?'la version en cours':cmp.SORTE==='indice'?'l’indice '+cmp.INDICE:'l’état du '+dfr(cmp.DATE);
+  const ap=apparier(u.L,u.cmpL); u.M=ap.M; u.ret=ap.ret;
+  const L=u.L, mo=typeof projMO==='function'?projMO(p):'', G=geo(u), a=u.arch;
   const aPP=L.some(x=>x.pp&&u.R[x.pp]);
-  let html='<div class="sgpl"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+E(p.NUMBER||'')+'</div><div class="sgfh-nm"><div class="lb">'+E(S.lib)+'</div><h2>'+E(p.TITLE||p.NUMBER||'')+'</h2>'
-    +'<div class="sgfh-meta">'+E([mo?'Maître de l’ouvrage : '+mo:'',G?'du '+dmy(G.debut)+' au '+dmy(G.fin):'',rec&&rec.MODIFIE?'modifié le '+dfr(String(rec.MODIFIE).slice(0,10)):''].filter(Boolean).join(' · '))+'</div></div></div>'
-    +'<div class="sgpl-hact">'+(L.length?'<button class="nx-btn" data-a="imprimer" title="Imprimer le planning (tableau des étapes et diagramme)">'+nxSvg('print')+'Imprimer</button>':'')+'</div></div>';
-  if(!L.length){ html+=vide(u)+delais(u)+'</div>'; box.innerHTML=html; brancher(u,null); return; }
+  const vlib=a?(a.SORTE==='indice'?'indice '+a.INDICE+' (archive)':'copie automatique (archive)'):'indice '+u.n+' en cours';
+  const meta=[mo?'Maître de l’ouvrage : '+mo:'',G?'du '+dmy(G.debut)+' au '+dmy(G.fin):'',
+    a?(a.SORTE==='indice'?'émis le '+dfr(a.DATE):'état du '+dfr(a.DATE)):rec&&rec.MODIFIE?'modifié le '+dfr(jourLoc(rec.MODIFIE)):'',
+    !a&&der?'dernier indice émis : '+der.INDICE+' du '+dfr(der.DATE):''];
+  const avecV=L.length||u.idx.length||u.cop.length;
+  let html='<div class="sgpl"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+E(p.NUMBER||'')+'</div><div class="sgfh-nm"><div class="lb">'+E(S.lib+' · '+vlib)+'</div><h2>'+E(p.TITLE||p.NUMBER||'')+'</h2>'
+    +'<div class="sgfh-meta">'+E(meta.filter(Boolean).join(' · '))+'</div></div></div>'
+    +'<div class="sgpl-hact">'
+      +(avecV?'<button class="nx-btn sgpl-vb" data-a="versions" aria-haspopup="menu" title="Version en cours, indices émis et copies automatiques du planning">'+nxSvg('archive')+E(a?libV(a):'Indice '+u.n+' · en cours')+' ▾</button>':'')
+      +(u.peut&&L.length?'<button class="nx-btn" data-a="emettre" title="Figer et archiver la version en cours sous l’indice '+u.n+' (avant de l’envoyer, à une étape importante…)">'+nxSvg('lock')+'Émettre l’indice '+u.n+'</button>':'')
+      +(L.length?'<button class="nx-btn" data-a="imprimer" title="Imprimer le planning (tableau des étapes et diagramme)">'+nxSvg('print')+'Imprimer</button>':'')+'</div></div>';
+  if(a){ const det=a.SORTE==='indice'?[a.MOTIF?'Motif : '+a.MOTIF:'',a.DEST?'Destinataire : '+a.DEST:'',a.REM||'',a.EMIS?'émis le '+dfr(jourLoc(a.EMIS)):''].filter(Boolean).join(' · ')
+      :'Copie faite d’elle-même le '+dfr(jourLoc(a.CREE))+', avant une modification ; gardée 3 mois.';
+    html+='<div class="sgpl-arch"><div class="tx"><b>Archive · '+E(a.SORTE==='indice'?'Indice '+a.INDICE+' du '+dfr(a.DATE):'État du '+dfr(a.DATE))+'</b> — lecture seule.'+(det?'<br>'+E(det):'')+'</div>'
+      +'<div class="dr"><button class="nx-btn pri" data-a="cours">Revenir à la version en cours</button>'+(u.peutBase?'<button class="nx-btn" data-a="repartir" title="La version en cours est d’abord gardée dans les copies automatiques">Repartir de cette version…</button>':'')+'</div></div>'; }
+  if(!L.length){ html+=(a?'<div class="sgpl-vide">Cette version ne contient aucune étape.</div>':vide(u))+delais(u)+'</div>'; box.innerHTML=html; brancher(u,null); return; }
   html+=chiffres(u,G);
   const libE=k=>ECH[k].lib;
+  /* comparer avec : version en cours (depuis une archive), indices émis, copies */
+  const oI=u.idx.slice().reverse().filter(r=>!a||r.ID!==a.ID), oC=u.cop.filter(r=>!a||r.ID!==a.ID), vsel=cmp?(cmp.SORTE==='cours'?'#cours':cmp.ID):'';
+  const opt=(v,t)=>'<option value="'+E(v)+'"'+(v===vsel?' selected':'')+'>'+E(t)+'</option>';
+  const cmpH=(a&&courant)||oI.length||oC.length?'<label class="sgpl-cmp">Comparer avec<select data-a="cmp"><option value="">aucune version</option>'
+      +(a&&courant?opt('#cours','Version en cours (indice '+u.n+')'):'')
+      +(oI.length?'<optgroup label="Indices émis">'+oI.map(r=>opt(r.ID,'Indice '+r.INDICE+' du '+dfr(r.DATE))).join('')+'</optgroup>':'')
+      +(oC.length?'<optgroup label="Copies automatiques">'+oC.map(r=>opt(r.ID,'État du '+dfr(r.DATE))).join('')+'</optgroup>':'')+'</select></label>':'';
   html+='<div class="sgpl-bar"><span class="sgpl-fil" role="group" aria-label="Échelle"><span class="lb">Échelle</span>'
       +Object.keys(ECH).map(k=>'<button data-ech="'+k+'" class="'+(k===G.ech?'on':'')+'" aria-pressed="'+(k===G.ech)+'">'+libE(k)+'</button>').join('')+'</span>'
     +'<span class="sgpl-fil"><button data-a="auj" title="Faire défiler jusqu’à aujourd’hui">Aujourd’hui</button>'
       +(aPP?'<button data-a="reel" class="'+(u.reel?'on':'')+'" aria-pressed="'+!!u.reel+'" title="Barre fine grise : période principale des heures saisies sur la phase partielle liée (de 5 % à 95 % des heures)">Heures réelles</button>':'')+'</span>'
+    +cmpH
     +(u.peut?'<span class="dr"><button class="nx-btn" data-a="add" data-t="tache" title="Ajouter une tâche (une période)">'+nxSvg('plus')+'Tâche</button><button class="nx-btn" data-a="add" data-t="jalon" title="Ajouter un jalon (une date)">'+nxSvg('plus')+'Jalon</button>'
       +'<button class="nx-btn" data-a="add" data-t="titre" title="Ajouter un titre qui regroupe les étapes suivantes">'+nxSvg('plus')+'Titre</button><button class="nx-btn" data-a="creer" title="Ajouter les phases SIA, le planning d’intention du contrat'+(u.type==='chantier'?', les entreprises':'')+'…">Créer ▾</button></span>':'')
     +'</div>';
   html+=diagramme(u,G);
+  if(cmp&&u.ret.length) html+='<p class="sgpl-ret">Retirée'+(u.ret.length>1?'s':'')+' depuis '+E(u.libCmp)+' : '+E(u.ret.map(x=>x.lib||'(sans nom)').join(' · '))+'</p>';
   html+='<div class="sgpl-leg"><span><i class="b1"></i>tâche</span><span><i class="b2"></i>jalon</span><span><i class="b3"></i>échéance importante</span>'
     +(u.reel&&aPP?'<span><i class="b4"></i>heures saisies sur la phase partielle (période principale, de 5 % à 95 % des heures)</span>':'')
+    +(cmp?'<span><i class="b6"></i>en pointillé : '+E(u.libCmp)+' ; glissement de chaque étape à droite de son nom (fin, sinon début)</span>':'')
     +'<span><i class="b5"></i>aujourd’hui</span>'+(u.peut?'<span>Glisser une barre pour la déplacer, ses bords pour changer le début ou la fin ; clic pour modifier ; clic droit pour le menu.</span>':'')+'</div>';
   html+=delais(u)+'</div>';
   box.innerHTML=html; brancher(u,G); }
+/* étapes de la version comparée, ligne par ligne (même identifiant, sinon même sorte, libellé et phase) ; ret = étapes retirées */
+function apparier(L,R){ const M=new Array(L.length).fill(null); if(!R) return {M,ret:[]};
+  const pris=new Set(), parId={}, cle=x=>(x.t==='titre'?'t':'e')+'|'+String(x.lib||'').trim().toLowerCase()+'|'+(+x.pp||'');
+  R.forEach((r,k)=>{ if(r&&r.id!=null&&parId[r.id]==null) parId[r.id]=k; });
+  L.forEach((l,i)=>{ const k=l.id!=null?parId[l.id]:undefined; if(k!=null&&!pris.has(k)&&(R[k].t==='titre')===(l.t==='titre')){ M[i]=R[k]; pris.add(k); } });
+  L.forEach((l,i)=>{ if(M[i]) return; const k=R.findIndex((r,kk)=>!pris.has(kk)&&cle(r)===cle(l)); if(k>=0){ M[i]=R[k]; pris.add(k); } });
+  return {M,ret:R.filter((r,k)=>!pris.has(k)&&r.t!=='titre')}; }
+const finDe=x=>{ const d=J(x.d); return d==null?null:x.t==='tache'?(J(x.f)??d):d; };
+/* glissement d'une étape par rapport à la version comparée */
+function glissement(u,i){ if(!u.cmpR) return ''; const l=u.L[i]; if(l.t==='titre') return ''; const r=u.M[i];
+  if(!r) return '<span class="gs n" title="'+E('Étape ajoutée depuis '+u.libCmp)+'">nouvelle</span>';
+  const d=J(l.d), f=finDe(l), rd=J(r.d), rf=finDe(r); if(d==null||rd==null) return '';
+  const ti=(rd===d&&rf===f)?'':'Avant : '+(r.t==='tache'?dmy(rd)+' – '+dmy(rf):dmy(rd))+'\nMaintenant : '+(l.t==='tache'?dmy(d)+' – '+dmy(f):dmy(d));
+  if(f!==rf) return '<span class="gs '+(f>rf?'p':'m')+'" title="'+E('Fin '+(f>rf?'repoussée':'avancée')+' depuis '+u.libCmp+'\n'+ti)+'">'+ecart(f-rf)+'</span>';
+  if(d!==rd) return '<span class="gs '+(d>rd?'p':'m')+'" title="'+E('Début '+(d>rd?'repoussé':'avancé')+' depuis '+u.libCmp+' (fin inchangée)\n'+ti)+'">début '+ecart(d-rd)+'</span>';
+  return ''; }
 function vide(u){ const S=SORTES[u.type], gc=ganttContrat(u.p);
   return '<div class="sgpl-vide"><b>Aucun planning pour ce projet.</b><br>'+(u.peut
       ?(u.type==='projet'?'Commencez par les phases d’étude du contrat (avant-projet, projet, demande d’autorisation) : les phases déjà travaillées reprennent les dates de la feuille d’heures, les autres suivent avec des durées types, à ajuster.'
@@ -35750,7 +35853,9 @@ function chiffres(u,G){ const L=u.L, auj=G.auj, kpi=(l,v,s,ti)=>'<div class="nx-
   const dans=n=>{ const d=n-auj; return d===0?'aujourd’hui':d<14?'dans '+d+' j':d<=120?'dans '+Math.round(d/7)+' sem.':'dans '+Math.round(d/30.44)+' mois'; };
   return '<div class="nx-kpis sgpl-kp">'
     +kpi('Début',dmy(G.debut),G.debut>auj?dans(G.debut):'','Date de la première étape du planning')
-    +kpi('Fin prévue',dmy(G.fin),G.fin>=auj?dans(G.fin):'terminé','Date de la dernière étape du planning')
+    +kpi('Fin prévue',dmy(G.fin),[G.fin>=auj?dans(G.fin):'terminé',(()=>{ if(!u.cmpL) return ''; let fr=null; u.cmpL.forEach(x=>{ if(x.t==='titre') return; const f=finDe(x); if(f!=null) fr=fr==null?f:Math.max(fr,f); });
+        if(fr==null) return ''; const df=G.fin-fr; return df?'<span class="gs '+(df>0?'p':'m')+'">'+ecart(df)+'</span> depuis '+E(u.libCmp):'inchangée depuis '+E(u.libCmp); })()].filter(Boolean).join(' · '),
+      'Date de la dernière étape du planning'+(u.cmpL?' ; comparée à '+u.libCmp:''))
     +kpi('Durée',(n=>n<14?n+'<small>j</small>':n<=120?Math.round(n/7)+'<small>sem.</small>':Math.round(n/30.44)+'<small>mois</small>')(G.fin-G.debut+1),
       E(duree(G.fin-G.debut+1))+' · '+nT+' tâche'+(nT>1?'s':'')+' · '+nJ+' jalon'+(nJ>1?'s':''),'Du début à la fin du planning')
     +kpi('En cours',enC.length?String(enC.length):'—',enC.length?E(enC.slice(0,3).map(x=>x.lib).join(' · '))+(enC.length>3?' …':''):'aucune tâche aujourd’hui','Tâches dont la période comprend aujourd’hui')
@@ -35760,14 +35865,17 @@ function diagramme(u,G){ const L=u.L, x=n=>Math.round((n-G.a)*G.ppd), en=entete(
   const gauche=L.map((l,i)=>{ const d=J(l.d), f=l.t==='tache'?(J(l.f)??d):d, sp=G.span2[i];
     const dt=l.t==='titre'?'':l.t==='jalon'?dmy(d):(dmy(d)+' – '+dmy(f)+(d!=null&&f!=null?' · '+duree(f-d+1):''));
     const ti=[l.lib,l.pp?'Phase '+l.pp+' — '+(PP[l.pp]||''):'',l.t==='titre'&&sp?dmy(sp.a)+' – '+dmy(sp.b):dt,l.ent?'Intervenant : '+l.ent:'',l.rem||'',l.pp&&u.R[l.pp]?'Heures saisies : '+nxH(u.R[l.pp].h)+' h, surtout du '+dmy(u.R[l.pp].a)+' au '+dmy(u.R[l.pp].b)+' (première heure le '+dmy(u.R[l.pp].a0)+', dernière le '+dmy(u.R[l.pp].b0)+')':''].filter(Boolean).join('\n');
-    return '<div class="sgpl-r t-'+l.t+(l.rouge?' rouge':'')+(u.peut?' ed':'')+'" data-i="'+i+'" title="'+E(ti)+'"><div class="l">'+(l.t==='jalon'?'<i class="jl"></i>':'')+(l.pp?'<span class="pp">'+l.pp+'</span>':'')+E(l.lib||'(sans nom)')+'</div>'
+    return '<div class="sgpl-r t-'+l.t+(l.rouge?' rouge':'')+(u.peut?' ed':'')+'" data-i="'+i+'" title="'+E(ti)+'"><div class="l"><span class="tx">'+(l.t==='jalon'?'<i class="jl"></i>':'')+(l.pp?'<span class="pp">'+l.pp+'</span>':'')+E(l.lib||'(sans nom)')+'</span>'+glissement(u,i)+'</div>'
       +(l.t!=='titre'?'<div class="dt" data-dt="'+i+'">'+E([dt,l.ent!==l.lib?l.ent:''].filter(Boolean).join(' · '))+'</div>':'')+'</div>'; }).join('');
   const droite=L.map((l,i)=>{ const d=J(l.d); let b='';
-    if(l.t==='titre'){ const sp=G.span2[i]; if(sp) b='<div class="sgpl-b t" style="left:'+x(sp.a)+'px;width:'+Math.max(6,x(sp.b+1)-x(sp.a))+'px"></div>'; }
-    else if(d!=null&&l.t==='jalon') b='<div class="sgpl-b j'+(l.rouge?' rouge':'')+(u.peut?' ed':'')+'" data-i="'+i+'" style="left:'+(Math.round((d-G.a+.5)*G.ppd)-7)+'px"></div>'
+    const r0=u.cmpR&&l.t!=='titre'?u.M[i]:null, rd=r0?J(r0.d):null;   /* version comparée : barre en pointillé derrière */
+    if(rd!=null) b+=r0.t==='jalon'?'<div class="sgpl-gh j" style="left:'+(Math.round((rd-G.a+.5)*G.ppd)-7)+'px"></div>'
+      :'<div class="sgpl-gh" style="left:'+x(rd)+'px;width:'+Math.max(3,x(finDe(r0)+1)-x(rd))+'px"></div>';
+    if(l.t==='titre'){ const sp=G.span2[i]; if(sp) b+='<div class="sgpl-b t" style="left:'+x(sp.a)+'px;width:'+Math.max(6,x(sp.b+1)-x(sp.a))+'px"></div>'; }
+    else if(d!=null&&l.t==='jalon') b+='<div class="sgpl-b j'+(l.rouge?' rouge':'')+(u.peut?' ed':'')+'" data-i="'+i+'" style="left:'+(Math.round((d-G.a+.5)*G.ppd)-7)+'px"></div>'
       +'<span class="sgpl-bl" style="left:'+(Math.round((d-G.a+.5)*G.ppd)+11)+'px">'+E(dmy(d).slice(0,5))+'</span>';
     else if(d!=null){ const f=J(l.f)??d, w=Math.max(3,x(f+1)-x(d));
-      b='<div class="sgpl-b'+(l.rouge?' rouge':'')+(u.peut?' ed':'')+'" data-i="'+i+'" style="left:'+x(d)+'px;width:'+w+'px">'+(u.peut?'<i class="g"></i><i class="dr"></i>':'')+'</div>'; }
+      b+='<div class="sgpl-b'+(l.rouge?' rouge':'')+(u.peut?' ed':'')+'" data-i="'+i+'" style="left:'+x(d)+'px;width:'+w+'px">'+(u.peut?'<i class="g"></i><i class="dr"></i>':'')+'</div>'; }
     const r=u.reel&&l.pp&&u.R[l.pp];
     if(r&&l.t!=='titre') b+='<div class="sgpl-re" style="left:'+x(r.a)+'px;width:'+Math.max(3,x(r.b+1)-x(r.a))+'px"></div>';
     return '<div class="sgpl-rr t-'+l.t+'" data-i="'+i+'">'+b+'</div>'; }).join('');
@@ -35791,7 +35899,12 @@ function brancher(u,G){ const box=u.box;
     else if(a==='phases') creerPhases(u);
     else if(a==='intention') reprendreIntention(u);
     else if(a==='creer'){ const r=t.getBoundingClientRect(); menuCreer(u,r.left,r.bottom+2); }
-    else if(a==='imprimer') imprimer(u,G); };
+    else if(a==='versions') menuVersions(u,t);
+    else if(a==='emettre') emettre(u);
+    else if(a==='cours'){ u.vue=null; u.cmp=undefined; u.sx=null; dessiner(u); }
+    else if(a==='repartir') repartir(u);
+    else if(a==='imprimer') imprimerDemande(u,G); };
+  box.onchange=e=>{ const s=e.target.closest('select[data-a="cmp"]'); if(!s||!box.contains(s)) return; u.cmp=s.value; dessiner(u); };
   if(!G) return;
   const gl=box.querySelector('.sgpl-gl'), gr=box.querySelector('.sgpl-gr');
   if(u.sx!=null) gr.scrollLeft=u.sx; else allerAuj(u,G,false);
@@ -35829,12 +35942,23 @@ const propre=x=>{ const o={id:x.id||nouvId(),t:['tache','jalon','titre'].include
   if(o.t!=='titre'){ if(J(x.d)!=null) o.d=ISO(J(x.d)); if(o.t==='tache'&&J(x.f)!=null) o.f=ISO(Math.max(J(x.f),J(x.d)??J(x.f))); }
   if(+x.pp&&PP[+x.pp]) o.pp=+x.pp; if(String(x.ent||'').trim()) o.ent=String(x.ent).trim().slice(0,160);
   if(x.rouge&&o.t!=='titre') o.rouge=true; if(String(x.rem||'').trim()) o.rem=String(x.rem).trim().slice(0,1000); return o; };
-async function sauver(u,L,msg){ if(!u.peut){ dire('Lecture seule : votre profil ne permet pas de modifier le planning de ce projet.',true); return false; }
+async function sauver(u,L,msg,o){ if(!u.peut){ dire('Lecture seule : votre profil ne permet pas de modifier le planning de ce projet.',true); return false; }
   if(u.enCours) return false;
-  const id=u.pid+':'+u.type, r0=DS.get(T,id);
-  const val=Object.assign(r0?Object.assign({},r0):{ID:id,PROJECT_ID:u.p.ID,TYPE:u.type},{LIGNES:L.map(propre),MODIFIE:new Date().toISOString(),PAR:moi()||null});
+  const id=u.pid+':'+u.type, r0=DS.get(T,id), now=new Date().toISOString();
+  const val=Object.assign(r0?Object.assign({},r0):{ID:id,PROJECT_ID:u.p.ID,TYPE:u.type},{LIGNES:L.map(propre),MODIFIE:now,PAR:moi()||null});
+  const ops=[{t:T,id,val,bseq:r0?ver(id):0}];
+  /* copie automatique de l'état précédent : à la première modification d'une journée, et avant d'effacer ou de repartir d'une archive ;
+     pas de copie si cet état est déjà le dernier indice émis ou la dernière copie */
+  const L0=(r0&&r0.LIGNES)||[], j0=r0?jourLoc(r0.MODIFIE):'';
+  if(L0.length&&((o&&o.copie)||!j0||j0<diso(new Date()))){
+    const I=indices(u.pid,u.type), dI=I[I.length-1], dC=copies(u.pid,u.type)[0];
+    if(!(dI&&memes(L0,dI.LIGNES))&&!(dC&&memes(L0,dC.LIGNES))){
+      const aid=id+':a'+(String(r0.MODIFIE||'').replace(/\D/g,'').slice(0,14)||'0');
+      if(!DS.get(TA,aid)) ops.push({t:TA,id:aid,val:{ID:aid,PROJECT_ID:u.p.ID,TYPE:u.type,SORTE:'auto',DATE:j0||diso(new Date()),MODIFIE:r0.MODIFIE||null,PAR:r0.PAR||null,LIGNES:L0,CREE:now},bseq:0}); } }
+  /* copies automatiques de plus de 3 mois retirées (les indices émis restent toujours) */
+  const lim=ISO(AUJ()-AUTO_JOURS); copies(u.pid,u.type).filter(r=>String(r.DATE||'')<lim).forEach(r=>ops.push({t:TA,id:r.ID,val:null,bseq:verA(r.ID)}));
   u.enCours=true; let ok=false;
-  try{ await DS.commit([{t:T,id,val,bseq:r0?ver(id):0}]); ok=true; }
+  try{ await DS.commit(ops); ok=true; }
   catch(e){ if(!e||!e.conflict) console.error(e); }   /* message déjà affiché par la base (conflit, droits, serveur) */
   finally{ u.enCours=false; }
   if(ok&&msg) dire(msg);
@@ -35846,7 +35970,7 @@ function ajouter(u,t,i){ let ref=null; for(let k=Math.min(i,u.L.length-1);k>=0;k
   editer(u,i+1,l); }
 /* fenêtre « Modifier l'étape » / « Nouvelle étape » ; neuf = ligne à insérer à l'index i */
 function editer(u,i,neuf){ if(!u.peut) return; const l0=neuf||u.L[i]; if(!l0) return; const l=Object.assign({},l0);
-  const membres=[...new Set(DS.by('projectmember','PROJECT_ID',u.p.ID).filter(m=>!m.ISHIDDEN).map(m=>{ try{ return contactName(DS.get('contact',m.CONTACT_ID)); }catch(_){ return ''; } }).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+  const membres=membresProjet(u.p);
   const dl='sgpl-ent-'+nouvId(), body=document.createElement('div'); body.className='sgpl-dlg';
   body.innerHTML='<div class="seg" role="group" aria-label="Sorte">'+[['tache','Tâche'],['jalon','Jalon'],['titre','Titre']].map(([k,t])=>'<button type="button" data-t="'+k+'">'+t+'</button>').join('')+'</div>'
     +'<label class="w">Libellé<input data-k="lib" maxlength="160" value="'+E(l.lib||'')+'" placeholder="Ex. Projet de l’ouvrage, Gros œuvre, Réception de l’ouvrage"></label>'
@@ -35891,7 +36015,72 @@ function menuLigne(u,i,x,y){ const L=u.L, l=L[i], dep=(k)=>{ const M=L.map(z=>Ob
 function menuCreer(u,x,y){ const gc=ganttContrat(u.p), ent=u.type==='chantier'?entreprises(u.p):[];
   sgMenuAt(x,y,[{t:'Ajouter les phases SIA',fn:()=>creerPhases(u)},{t:'Reprendre le planning d’intention du contrat',dis:!gc,fn:()=>reprendreIntention(u)},
     ...(u.type==='chantier'?[{t:'Ajouter les entreprises du projet ('+ent.length+')',dis:!ent.length,fn:()=>ajouterEntreprises(u)}]:[]),'-',
-    {t:'Effacer tout le planning…',danger:true,dis:!u.L.length,fn:()=>confirmer('Effacer tout le '+SORTES[u.type].lib.toLowerCase()+' de '+(u.p.NUMBER||'ce projet')+' ?\n\n'+u.L.length+' étape'+(u.L.length>1?'s':'')+' supprimée'+(u.L.length>1?'s':'')+'.',()=>sauver(u,[],'Planning effacé.'),{title:'Effacer le planning',yesText:'Effacer'})}]); }
+    {t:'Effacer tout le planning…',danger:true,dis:!u.L.length,fn:()=>confirmer('Effacer tout le '+SORTES[u.type].lib.toLowerCase()+' de '+(u.p.NUMBER||'ce projet')+' ?\n\n'+u.L.length+' étape'+(u.L.length>1?'s':'')+' supprimée'+(u.L.length>1?'s':'')+'.',()=>sauver(u,[],'Planning effacé (l’état d’avant est gardé dans les copies automatiques).',{copie:true}),{title:'Effacer le planning',yesText:'Effacer'})}]); }
+
+/* ── versions : liste déroulante, émettre un indice, repartir d'une archive ── */
+let VM=null;
+function fermerVm(){ if(!VM) return; VM.el.remove(); document.removeEventListener('mousedown',VM.dn,true); document.removeEventListener('keydown',VM.kd,true); window.removeEventListener('resize',fermerVm); VM=null; }
+function menuVersions(u,btn){ if(VM&&VM.btn===btn){ fermerVm(); return; } fermerVm();
+  const el=document.createElement('div'); el.className='sgpl-vm'; el.setAttribute('role','menu');
+  const it=(v,on,b,s)=>'<button type="button" role="menuitemradio" aria-checked="'+on+'" data-v="'+E(v)+'" class="'+(on?'on':'')+'"><b>'+E(b)+'</b>'+(s?'<span>'+E(s)+'</span>':'')+'</button>';
+  const rec=u.rec, I=u.idx.slice().reverse(), Cp=u.cop, nE=r=>{ const n=(r.LIGNES||[]).filter(x=>x.t!=='titre').length; return n+' étape'+(n>1?'s':''); };
+  let h=it('#cours',!u.arch,'Indice '+u.n+' · en cours','version de travail, modifiable'+(rec&&rec.MODIFIE?' · modifiée le '+dfr(jourLoc(rec.MODIFIE)):''));
+  h+='<div class="sec">Indices émis · archivés, lecture seule</div>'+(I.length?I.map(r=>it(r.ID,u.vue===r.ID,'Indice '+r.INDICE+' · '+dfr(r.DATE),[r.MOTIF,r.DEST?'à '+r.DEST:'',nE(r)].filter(Boolean).join(' · '))).join('')
+    :'<p>Aucun indice émis pour le moment.</p>');
+  h+='<div class="sec">Copies automatiques · gardées 3 mois</div>'+(Cp.length?Cp.map(r=>it(r.ID,u.vue===r.ID,'État du '+dfr(r.DATE),nE(r)+' · copie faite le '+dfr(jourLoc(r.CREE)))).join('')
+    :'<p>Aucune copie : elle se fait d’elle-même à la première modification d’une journée.</p>');
+  if(u.peutBase&&!u.arch&&u.L.length) h+='<div class="pied"><button type="button" data-v="#emettre"><b>Émettre l’indice '+u.n+'…</b><span>figer et archiver la version en cours</span></button></div>';
+  el.innerHTML=h; document.body.append(el);
+  const r=btn.getBoundingClientRect(), w=el.offsetWidth;
+  el.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.right-w))+'px'; el.style.top=Math.max(8,Math.min(r.bottom+4,window.innerHeight-el.offsetHeight-8))+'px';
+  el.onclick=e=>{ const b=e.target.closest('[data-v]'); if(!b) return; const v=b.dataset.v; fermerVm();
+    if(v==='#emettre'){ emettre(u); return; } u.vue=v==='#cours'?null:v; u.cmp=undefined; u.sx=null; dessiner(u); };
+  const dn=e=>{ if(!el.contains(e.target)&&!btn.contains(e.target)) fermerVm(); };
+  const kd=e=>{ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); fermerVm(); btn.focus(); return; }
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const B=[...el.querySelectorAll('button')], k=B.indexOf(document.activeElement); e.preventDefault(); e.stopPropagation();
+      const n=B[(k<0?0:k+(e.key==='ArrowDown'?1:-1)+B.length)%B.length]; if(n) n.focus(); } };
+  VM={el,btn,dn,kd}; document.addEventListener('mousedown',dn,true); document.addEventListener('keydown',kd,true); window.addEventListener('resize',fermerVm);
+  const on=el.querySelector('button.on')||el.querySelector('button'); if(on) on.focus(); }
+function membresProjet(p){ return [...new Set(DS.by('projectmember','PROJECT_ID',p.ID).filter(m=>!m.ISHIDDEN).map(m=>{ try{ return contactName(DS.get('contact',m.CONTACT_ID)); }catch(_){ return ''; } }).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr')); }
+/* « Émettre l'indice n » : la version en cours est figée et archivée (jamais modifiée ni supprimée) ; o.imprimer : imprimer ensuite */
+function emettre(u,o){ if(!u.peut||!u.L.length) return; const n=u.n, S=SORTES[u.type], der=u.idx[u.idx.length-1], meme=der&&memes(u.L,der.LIGNES);
+  const k1='sgpl-m-'+nouvId(), k2='sgpl-d-'+nouvId(), body=document.createElement('div'); body.className='sgpl-dlg';
+  const motifs=['Planning initial','Mise à jour','Demande du maître de l’ouvrage','Retard du permis de construire','Adjudication des travaux','Avancement du chantier','Retard d’une entreprise'];
+  body.innerHTML='<p class="w" style="grid-column:1/-1;margin:0;font-size:12.5px;line-height:1.5;color:var(--s-noir)">Le '+E(S.lib.toLowerCase())+' actuel est figé sous l’<b>indice '+n+'</b> et archivé : il ne pourra plus être modifié ni supprimé. Vous continuez ensuite à travailler sur l’indice '+(n+1)+'.'
+      +(meme?'<br><b>Le planning n’a pas changé depuis l’indice '+der.INDICE+' du '+E(dfr(der.DATE))+'.</b>':'')+'</p>'
+    +'<label>Date de l’indice<input type="date" data-k="date" value="'+E(diso(new Date()))+'"></label>'
+    +'<label style="grid-column:span 2">Motif<input data-k="motif" list="'+k1+'" maxlength="160" value="'+E(n===1?'Planning initial':'')+'" placeholder="Ex. Retard du permis de construire"><datalist id="'+k1+'">'+motifs.map(m=>'<option value="'+E(m)+'">').join('')+'</datalist></label>'
+    +'<label class="w">Destinataire (facultatif)<input data-k="dest" list="'+k2+'" maxlength="160" placeholder="Ex. maître de l’ouvrage, entreprises"><datalist id="'+k2+'">'+membresProjet(u.p).map(m=>'<option value="'+E(m)+'">').join('')+'</datalist></label>'
+    +'<label class="w">Remarque (facultatif)<textarea data-k="rem" maxlength="1000"></textarea></label>';
+  const q=k=>body.querySelector('[data-k="'+k+'"]');
+  dialog({title:'Émettre l’indice '+n,width:'560px',body,buttons:[{t:'Annuler'},{t:'Émettre l’indice '+n+(o&&o.imprimer?' et imprimer':''),pri:true,fn:()=>{
+    const date=q('date').value, motif=q('motif').value.trim();
+    if(J(date)==null){ dire('Indiquez la date de l’indice.',true); q('date').focus(); return false; }
+    if(!motif){ dire('Indiquez le motif de l’indice (ex. Planning initial, Retard du permis de construire).',true); q('motif').focus(); return false; }
+    enregistrerIndice(u,n,{date,motif,dest:q('dest').value.trim(),rem:q('rem').value.trim()},o); }}]});
+  setTimeout(()=>{ const f=q('motif'); if(f){ f.focus(); f.select(); } },0); }
+async function enregistrerIndice(u,n,f,o){ if(u.enCours) return; const aid=u.pid+':'+u.type+':i'+n;
+  if(DS.get(TA,aid)){ dire('L’indice '+n+' existe déjà (émis depuis un autre poste ?) : vérifiez la liste des versions.',true); dessiner(u); return; }
+  const val={ID:aid,PROJECT_ID:u.p.ID,TYPE:u.type,SORTE:'indice',INDICE:n,DATE:ISO(J(f.date)),MOTIF:f.motif.slice(0,160),DEST:(f.dest||'').slice(0,160),REM:(f.rem||'').slice(0,1000),
+    LIGNES:u.L.map(propre),EMIS:new Date().toISOString(),PAR:moi()||null};
+  u.enCours=true; let ok=false;
+  try{ await DS.commit([{t:TA,id:aid,val,bseq:0}]); ok=true; }
+  catch(e){ if(!e||!e.conflict) console.error(e); }
+  finally{ u.enCours=false; }
+  if(ok){ u.vue=null; u.cmp=undefined; dire('Indice '+n+' émis et archivé. Vous travaillez maintenant sur l’indice '+(n+1)+'.'); }
+  dessiner(u);
+  if(ok&&o&&o.imprimer){ const G=geo(u); if(G) imprimer(u,G); } }
+/* reprendre une archive comme version en cours (la version en cours est d'abord copiée) */
+function repartir(u){ const a=u.arch; if(!a||!u.peutBase) return; const lib=a.SORTE==='indice'?'l’indice '+a.INDICE:'l’état du '+dfr(a.DATE);
+  confirmer('Reprendre '+lib+' comme version en cours ?\n\nLa version en cours actuelle est d’abord gardée dans les copies automatiques ; '+lib+' reste archivé tel quel.',()=>{
+    const L=(a.LIGNES||[]).map(x=>Object.assign({},x)); u.vue=null; u.peut=u.peutBase; u.cmp=undefined;
+    sauver(u,L,lib.charAt(0).toUpperCase()+lib.slice(1)+' repris comme version en cours.',{copie:true}); },{title:'Repartir de cette version',yesText:'Reprendre'}); }
+/* imprimer la version en cours non émise : proposer d'émettre l'indice d'abord */
+function imprimerDemande(u,G){ if(!G) return; const der=u.idx[u.idx.length-1];
+  if(u.arch||!u.peut||(der&&memes(u.L,der.LIGNES))){ imprimer(u,G); return; }
+  const body=document.createElement('div'); body.style.cssText='max-width:480px;font-size:13px;line-height:1.55';
+  body.textContent=(der?'Le planning a changé depuis l’indice '+der.INDICE+' du '+dfr(der.DATE)+'.':'Le planning n’a pas encore d’indice.')+' Pour garder une trace de la version envoyée, émettez l’indice '+u.n+' avant d’imprimer.';
+  dialog({title:'Imprimer le planning',width:'540px',body,buttons:[{t:'Annuler'},{t:'Imprimer sans émettre',fn:()=>{ imprimer(u,G); }},{t:'Émettre l’indice '+u.n+'…',pri:true,fn:()=>{ setTimeout(()=>emettre(u,{imprimer:true}),0); }}]}); }
 
 /* ── création ── */
 /* phases SIA de la sorte (celles des contrats de l'affaire, sinon les phases types) : phases déjà travaillées aux dates de la feuille d'heures,
@@ -35960,18 +36149,22 @@ function imprimer(u,G){ if(!G||typeof sgImprimer!=='function') return; const p=u
   const ent=L.some(l=>l.ent&&l.ent!==l.lib), rows=L.map(l=>{ const d=J(l.d), f=l.t==='tache'?(J(l.f)??d):d;
     return l.t==='titre'?'<tr><td colspan="'+(ent?5:4)+'"><b>'+t(l.lib)+'</b></td></tr>'
       :'<tr><td>'+t((l.pp?l.pp+' ':'')+(l.lib||''))+(l.t==='jalon'?' (jalon)':'')+'</td><td>'+dmy(d)+'</td><td>'+(l.t==='tache'?dmy(f):'')+'</td><td>'+(l.t==='tache'&&d!=null?t(duree(f-d+1)):'')+'</td>'+(ent?'<td>'+t(l.ent!==l.lib?l.ent||'':'')+'</td>':'')+'</tr>'; }).join('');
-  sgImprimer(S.lib+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p>'+t('Du '+dmy(G.debut)+' au '+dmy(G.fin)+' · '+duree(G.fin-G.debut+1)+' · état au '+dmy(G.auj))+'</p>'+s
+  /* version imprimée : archive ouverte, dernier indice émis s'il n'a pas changé, sinon version de travail */
+  const ar=u.arch, der=u.idx&&u.idx[u.idx.length-1], vi=r=>'Indice '+r.INDICE+' du '+dfr(r.DATE)+(r.MOTIF?' · '+r.MOTIF:'');
+  const v=ar?(ar.SORTE==='indice'?vi(ar):'État du '+dfr(ar.DATE)+' (copie automatique)'):der&&memes(L,der.LIGNES)?vi(der):'Version de travail du '+dmy(G.auj)+' (indice '+u.n+' non émis)';
+  sgImprimer(S.lib+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p><b>'+t(v)+'</b><br>'+t('Du '+dmy(G.debut)+' au '+dmy(G.fin)+' · '+duree(G.fin-G.debut+1)+' · imprimé le '+dmy(G.auj))+'</p>'+s
     +'<table><tr><th>Étape</th><th>Début</th><th>Fin</th><th>Durée</th>'+(ent?'<th>Entreprise / intervenant</th>':'')+'</tr>'+rows+'</table>'); }
 
 /* compteur de la tuile de la page du projet */
 function compte(p,type){ const r=recDe(p.ID,type), L=(r&&r.LIGNES)||[], n=L.filter(x=>x.t!=='titre').length; if(!n) return 'à créer';
   let fin=null; L.forEach(x=>{ const d=J(x.d); if(d==null) return; const f=x.t==='tache'?(J(x.f)??d):d; fin=fin==null?f:Math.max(fin,f); });
-  return n+' étape'+(n>1?'s':'')+(fin!=null?' · fin '+dfr(ISO(fin)).slice(3):''); }
+  const I=indices(p.ID,type);
+  return n+' étape'+(n>1?'s':'')+(fin!=null?' · fin '+dfr(ISO(fin)).slice(3):'')+(I.length?' · indice '+I[I.length-1].INDICE:''); }
 
 window.sgPlanningModule=function(C,p,type){ try{ ouvrir(C,p,SORTES[type]?type:'projet'); }
   catch(e){ console.error(e); const d=document.createElement('p'); d.className='sgpl-err'; d.textContent='Planning : erreur — '+String(e&&e.message||e); C.append(d); } };
 window.sgPlanningCompte=(p,type)=>{ try{ return compte(p,type); }catch(_){ return ''; } };
-window.SGPL={version:'02.11.2026',ETAT,PP,DUREE,reel,geo,creerPhases,ganttContrat,delaisContrats};
+window.SGPL={version:'02.11.2026',ETAT,PP,DUREE,AUTO_JOURS,reel,geo,creerPhases,ganttContrat,delaisContrats,indices,copies,apparier,emettre,fermerVm};
 })();
 </script>
 </body>

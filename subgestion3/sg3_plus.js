@@ -594,7 +594,7 @@ function sgVoirContrat(w,id){ const c=((fxData()||{}).c||[]).find(x=>x.id===id);
   if(!w._sgCloseOffre){ w._sgCloseOffre=w.closeOffre; w.closeOffre=function(){ const r=w._sgCloseOffre.apply(this,arguments); if(w._sgRetour){ w._sgRetour=false; if(VIEW&&VIEW.id==='fx-contrats') nxHist(-1); } return r; }; }
   w._sgRetour=NX.pos>0; }
 /* icônes de l'onglet Heures (20.10.2026) : phases = escalier, collaborateur × phase = grille */
-Object.assign(NXI,{gantt:'<path d="M3 4v16h18"/><path d="M6 7.5h7M9 11.5h8M12 15.5h6"/>',tampon:'<path d="M9.5 3.5h5v5.5l2.5 3H7l2.5-3zM5 12h14v4H5zM5 20h14"/>',   /* Planning, Enquête (02.11.2026) */
+Object.assign(NXI,{permis:'<path d="M13 3H6v18h6"/><path d="M13 3l5 5v4"/><path d="M13 3v5h5"/><path d="M8.5 12h5M8.5 15.5h3"/><circle cx="17" cy="17.5" r="3.5"/><path d="M15.5 17.5l1 1 2-2"/>',gantt:'<path d="M3 4v16h18"/><path d="M6 7.5h7M9 11.5h8M12 15.5h6"/>',tampon:'<path d="M9.5 3.5h5v5.5l2.5 3H7l2.5-3zM5 12h14v4H5zM5 20h14"/>',   /* Planning, Enquête (02.11.2026) */
   escalier:'<path d="M3 20.5h5v-5h5v-5h5v-5h3"/>',grille:'<rect x="3" y="4" width="18" height="16"/><path d="M3 9.5h18M3 15h18M9 4v16"/>'});
 const SG_CGRP={};   // Chantier : rubriques ouvertes par projet (le temps de la session de l'onglet)
 function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet'); const set=h0=>{ box.innerHTML=h0; };   // cible : partie d'un onglet regroupé (20.10.2026)
@@ -2760,14 +2760,14 @@ VIEWS['nx-pdom']={
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
     if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
     nxRecent('p',p.ID); const G0=sgPdomListe(), M=sgPdomModules(p), mods=M.map(([g])=>g), pick=n=>G0.filter(([g])=>g===n), G=[...pick('Honoraires et facturation'),...pick('Suivi du projet'),...M,...pick('Chantier'),...G0.filter(([g])=>!['Honoraires et facturation','Suivi du projet','Chantier'].includes(g))], doms=G0.flatMap(([,L])=>L);   /* ordre (21.10.2026) : Honoraires et facturation, Suivi du projet, Faisabilité, Projet, Chantier, puis les autres groupes */   /* M : modules Projet / Faisabilité en tête (bloc 21, 20.10.2026) */
-    if(dom&&(mods.includes(dom)||doms.includes(dom)||(dom==='Documents de la faisabilité'&&mods.includes('Faisabilité'))||(dom==='Planning du projet'&&mods.includes('Projet')))){   /* + Documents de la faisabilité (21.10.2026) */                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
+    if(dom&&(mods.includes(dom)||doms.includes(dom)||(dom==='Documents de la faisabilité'&&mods.includes('Faisabilité'))||(dom==='Planning du projet'&&mods.includes('Projet'))||(dom==='Permis de construire'&&mods.includes('Enquête')))){   /* + Documents de la faisabilité (21.10.2026) */                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
       VIEW.nxTitle=dom+' · '+(p.NUMBER||p.TITLE||'');
       const chips=h('div',{class:'sg-pdom-chips'},...[...mods,...doms].map(d=>h('button',{class:[d===dom?'on':'',mods.includes(d)?'mod':''].filter(Boolean).join(' ')||null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));
       const bar=h('div',{class:'sg-pdom-bar'},h('button',{class:'nx-btn',html:nxSvg('back')+'Domaines',onclick:()=>{ const gf=G.findIndex(([,L])=>!!foc&&L.includes(foc)); go('nx-pdom',p.ID+'|#'+(gf>=0?gf:G.findIndex(([g,L])=>g===dom||L.includes(dom)))); }}),   /* rubrique d'un autre groupe (Dossier d'enquête ▸ Enquête, 02.11.2026) */
         h('b',{},(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'')),chips);
       const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
       const on=chips.querySelector('.on'); if(on) setTimeout(()=>on.scrollIntoView({block:'nearest',inline:'center'}),0);
-      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Documents du chantier') sgPdomModulePage(C,p2,dom,foc); else if(SG_DOCS_PAGES[dom]) sgDocsModule(C,p2,SG_DOCS_PAGES[dom](p2));   /* Documents du chantier : phases 41 à 53 et types (21.10.2026) */ else if(dom==='Frais') sgFraisModule(C,p2); else if(SG_PLAN_PAGES[dom]){ if(typeof sgPlanningModule==='function') sgPlanningModule(C,p2,SG_PLAN_PAGES[dom]); } else domainView(C,p2,dom); } }; this.drawC(); return; }
+      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Documents du chantier') sgPdomModulePage(C,p2,dom,foc); else if(SG_DOCS_PAGES[dom]) sgDocsModule(C,p2,SG_DOCS_PAGES[dom](p2));   /* Documents du chantier : phases 41 à 53 et types (21.10.2026) */ else if(dom==='Frais') sgFraisModule(C,p2); else if(SG_PLAN_PAGES[dom]){ if(typeof sgPlanningModule==='function') sgPlanningModule(C,p2,SG_PLAN_PAGES[dom]); } else if(dom==='Permis de construire'){ if(typeof sgPermisModule==='function') sgPermisModule(C,p2); } else domainView(C,p2,dom); } }; this.drawC(); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'');                                        /* page du projet : groupes repliables de domaines */
     const ouvert=/^#\d+$/.test(dom||'')?+dom.slice(1):-1;                                            // 18.10.2026 : tout replié à l'arrivée ; au retour d'un domaine, son groupe ouvert
     const logs=DS.by('timelog','PROJECT_ID',p.ID), lim30=dayKey(new Date(Date.now()-30*864e5)), tot=logs.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0),
@@ -3398,6 +3398,7 @@ const SG_PMOD={'PV MO':['pv','Procès-verbaux des séances avec le maître de l�
   'Dossier d’enquête':['list','Formulaire, questionnaires, plans et annexes de la demande d’autorisation (33).','Projet'],
   'Documents':['folder','Tous les fichiers du projet, par dossier.','Projet'],
   'Planning du projet':['gantt','Les dates des phases d’étude : avant-projet, projet, demande d’autorisation.','dom'],
+  'Permis de construire':['permis','Demande, enquête publique, oppositions, décision, conditions du permis, délais et documents.','dom'],   /* sg3_permis.js (02.11.2026) */
   'Parcelle & règlements':['map','Parcelle, recherche automatique (geo.admin.ch, cadastre RDPPF), règlements, contraintes et réponses du projet.','fz'],
   'Documents de base':['folder','Plans, extraits et photos : les pièces de départ de l’étude.','Faisabilité'],
   'Études':['doc','Études et calculs de la faisabilité.','Faisabilité'],
@@ -3407,15 +3408,16 @@ const SG_PMOD={'PV MO':['pv','Procès-verbaux des séances avec le maître de l�
   'Fiche de faisabilité':['print','Le document de synthèse : parcelle, sources, règlements, contraintes et réponses, variantes, conclusion.','fiche']};
 const SG_PMOD_G=[['Faisabilité',['Parcelle & règlements','Documents de base','Études','Variantes','Présentation au client','Fiche de faisabilité','Documents de la faisabilité']],   // Faisabilité avant Projet (21.10.2026)
   ['Projet',['PV MO','Présentation client','Planning du projet','Documents','Estimations','Descriptifs & devis']],   /* Planning ; Estimations et Descriptifs & devis à la ligne (02.11.2026) */
-  ['Enquête',['Dossier d’enquête']]];   /* groupe entre Projet et Chantier (02.11.2026, Paulo : « entre chantier et projet ajouter enquête ») */
+  ['Enquête',['Dossier d’enquête','Permis de construire']]];   /* groupe entre Projet et Chantier (02.11.2026, Paulo : « entre chantier et projet ajouter enquête ») */
 Object.assign(SG_PDOM_GI,{'Projet':'building','Faisabilité':'ruler'});
-SG_PDOM_T.push('sgfaisa','sgdocphase','sgplanning');
+SG_PDOM_T.push('sgfaisa','sgdocphase','sgplanning','sgpermis');
 /* faisabilité aussi dès qu'une analyse de parcelle existe pour le projet */
 { const f0=sgFaisaOk; sgFaisaOk=function(p){ return f0(p)||!!DS.get('sgfaisa',String(p.ID)); }; }
 /* groupes de modules de la page du projet : Projet (sauf projet uniquement de faisabilité), Faisabilité (phase de faisabilité) */
 function sgPdomModules(p){ const fS=sgCatProjet(p)==='faisabilite'; return SG_PMOD_G.filter(([g])=>g==='Faisabilité'?sgFaisaOk(p):!fS); }
 /* compteurs des tuiles des modules (appelés par sgPdomCompte quand le domaine n'est pas un domaine du moteur) */
-function sgPdomModuleCompte(p,d){ const pl=(n,s,s2)=>n+' '+(n>1?(s2||s+'s'):s), F=DS.all('depotfichier'), nfc=s=>String(s||'').normalize('NFC');
+function sgPdomModuleCompte(p,d){ if(d==='Permis de construire') return typeof sgPermisCompte==='function'?sgPermisCompte(p):'';   /* sg3_permis.js (02.11.2026) */
+  const pl=(n,s,s2)=>n+' '+(n>1?(s2||s+'s'):s), F=DS.all('depotfichier'), nfc=s=>String(s||'').normalize('NFC');
   let base='', baseF=''; try{ base=ch03aDossier('document',p.ID,'Projet')+'/'; baseF=ch03aDossier('document',p.ID,'Faisabilité')+'/'; }catch(_){ return ''; }
   const sousPhase=sous=>F.filter(f=>{ const s=nfc(f.DOSSIER); return s.startsWith(base)&&s.slice(base.length).split('/')[1]===nfc(sous); }).length;
   const viv=t=>DS.by(t,'PROJECT_ID',p.ID).filter(x=>!+x.ISMARKEDASDELETED).length;

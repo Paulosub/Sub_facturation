@@ -1419,6 +1419,44 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   ouverture de session) refuse toute modification ou suppression d'un enregistrement `sgplanningarch` de SORTE `indice` (403) ; actif après
   redémarrage du conteneur. En fichier local (sans serveur), seule l'app protège les indices (aucune action de suppression). Copie d'avant :
   `subgestion3/_backup_20261102_avant_indices_planning/`.
+- **Permis de construire (02.11.2026, bloc 34, `subgestion3/sg3_permis.js`, concaténé en dernier ; demande de Paulo « dans enquête ajouter un module
+  permis de construire »)** : page du projet ▸ groupe Enquête ▸ tuile « Permis de construire » après « Dossier d'enquête » (`SG_PMOD` 'dom', `SG_PMOD_G`,
+  compteur `sgPermisCompte` dans `sgPdomModuleCompte`, page `sgPermisModule` dans `drawC` de `nx-pdom`, icône `NXI.permis`). Collection propre
+  **`sgpermis`** (gardée par les reprises ; serveur du NAS : règle « projet modifiable » par PROJECT_ID, rien à changer), une DEMANDE par
+  enregistrement {ID `<projet>:<identifiant aléatoire>` (jamais réutilisé : la base du NAS garde la trace d'un identifiant supprimé et
+  refuserait sa recréation par un 409), PROJECT_ID, N (numéro d'ordre), LIB, PROC `enquete` | `dispense` | `autre`, AUTORITE (d'office « Municipalité de <commune> » :
+  commune de Parcelle & règlements, sinon lieu de l'affaire), NUM_COMMUNE, NUM_CANTON (n° CAMAC), PARCELLES, FAO, OBJET, REM, DATES {depot, enq_d,
+  enq_f, synthese, decision, notif, recours, debut, habiter, peremption}, DECISION `delivre` | `refuse`, RECOURS {etat depose | retire | rejete |
+  admis, date, fin, rem}, VALIDITE (ans, 2), PROLONG (mois), OPPOSITIONS [{id, date, sorte opposition | observation, auteur, motifs, suite suspens |
+  reponse | levee | retiree | maintenue, rem}], CONDITIONS [{id, num, source, texte, quand avant | pendant | habiter | autre, resp, etat regler | cours
+  | reglee, le, rem}], MODIFIE, PAR}. Écran : bandeau jaune, choix de la demande (+ Nouvelle demande : demande complémentaire, reprend autorité,
+  numéros, parcelle), chiffres (État, Enquête publique, Oppositions, Conditions à régler, Validité du permis — rouge à moins de 90 jours), frise
+  de la procédure (dépôt → enquête → synthèse CAMAC → décision → notification → fin du délai de recours → début des travaux → permis d'habiter ;
+  carré plein = fait, jaune = en cours ; un clic = « Dates et décision »), fiche de la demande, oppositions et observations, conditions et charges
+  (filtre À régler / Toutes ; « Coller une liste… » avec aperçu : une condition par élément numéroté — 1. / 1.1 / a) / tiret, sous-éléments 1a,
+  1b…, titres « … : » ou « 1. Généralités » placés devant leurs sous-éléments, introduction « … : » retirée — sinon par paragraphe ; numéros
+  jamais en double), documents du permis = dossier
+  « Projet/33 …/Autorisations » du dépôt (`sgDocsModule` + `sgDeposerDlg` phase 33, type Autorisations : les mêmes fichiers que le module Projet).
+  Dates PROPOSÉES si non saisies (gris italique, « reprendre » dans la fenêtre, recalculées pendant la saisie) : fin de l'enquête = début + 29 j
+  (30 jours) ; fin du délai de recours = 30 jours dès la notification (sinon la décision), aussi après un refus, féries non comptées (Pâques
+  ± 7 j, 15.07–15.08, 18.12–02.01, LPA-VD) et report au premier jour ouvrable (samedi, dimanche, fériés vaudois : table `publicholiday` du
+  bureau, sinon liste vaudoise ; `finDelai`) ; péremption = décision (après un recours rejeté / retiré : décision sur recours) + validité +
+  prolongation − 1 j, aucune pendant un recours ni après un recours admis — indicatives, à vérifier sur l'avis d'enquête et le permis. Une fin
+  de délai de recours seulement proposée et passée → « Délai de recours échu ? (à vérifier) » : la saisir (« reprendre ») pour « Permis en
+  force ». Changer de procédure ne supprime aucune date (fusion des seules dates de la fenêtre) ; dates PRÉVUES = jalons du planning du projet / du chantier (dépôt, permis, début des travaux,
+  permis d'habiter). État (`etat`) : En préparation, Demande déposée, Enquête annoncée / en cours, En attente de la décision, Délai de recours,
+  Délai de recours échu ?, Recours en cours, Permis en force, Permis périmé ?, Travaux commencés (début des travaux passé, pas prévu),
+  Permis d'habiter délivré, Permis refusé (· délai de recours), Recours contre le refus en cours, Refus annulé par le recours, Recours admis :
+  permis annulé, Permis en force ? (date de la décision sur recours à saisir). Un recours ne vise que la décision antérieure à sa décision sur
+  recours (sinon à son dépôt) : une nouvelle décision après un recours admis est suivie normalement (`recEff`), le recours reste dans la fiche
+  (« contre la décision précédente »). Frise : étape passée sans date saisie = carré gris. Les fenêtres renvoient la promesse de
+  l'enregistrement : elles restent ouvertes s'il échoue (saisie gardée), et n'écrivent que les champs changés depuis leur ouverture (`modifs`)
+  sur la version la plus récente : la saisie d'un autre poste n'est pas écrasée, même après un 409 ; une opposition ou une condition supprimée
+  ailleurs n'est pas recréée. « Coller une liste » : un numéro n'est reconnu que s'il suit la numérotation (« 2.5 m », « 15.07 » en début de
+  ligne repliée restent dans le texte). Défilement gardé au redessin (rétabli après la liste des documents). Tuile : état de
+  la dernière demande (nommée s'il y en a plusieurs), conditions à régler. Imprimer : `sgImprimer` (papier des contrats). Droits : lecture = qui
+  voit le projet ; écriture = projet modifiable (comme le planning) ; documents = droit du dépôt. Débogage `window.SGPC`, styles `#sgpc-css`,
+  classes `sgpc-*`. Copie d'avant : `subgestion3/_backup_20261102_2159_avant_permis/`, `SUBGestion3_backup_20261102_2159_avant_permis.html`.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

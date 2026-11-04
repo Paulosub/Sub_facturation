@@ -421,7 +421,7 @@ if(VIEWS['fx-factures']){ const v=VIEWS['fx-factures'], r0=v.render;
    Domaine protégé par le code d'accès : déverrouillage demandé comme par go ; verrouillage (sgVerrouiller) → le cadre est retiré.
    Toute navigation (go) retire le cadre posé ; un écran fx-* le rouvre ensuite en plein, sans filtre. */
 let EMB=null, LISTE=null;
-const TABS_OK={offres:['contrats','calchono'],contrats:['contrats','calchono'],factures:['saisie']};
+const TABS_OK={offres:['contrats','calchono'],contrats:['contrats','calchono'],factures:['saisie'],pv:['pv-chantier']};
 const ACT={'fx-contrats:cv':'voir','fx-calchono:c':'modif','fx-calchono:newaff':'nouv','fx-saisie:nf':'nf','fx-saisie:f':'fmod','fx-factures:fv':'fvoir'};
 const listeDansProjet=()=>vueOk('fx-contrats')&&!sgFinVerrou();
 const proteger=v=>{ const d=typeof sgDomDe==='function'?sgDomDe(v):''; return typeof sgProtege==='function'&&typeof sgOuvert==='function'&&sgProtege(d)&&!sgOuvert(); };
@@ -457,13 +457,14 @@ function placer(){ const x=EMB, L=document.getElementById('fx-layer'), B=documen
   const r=x.zone.getBoundingClientRect(), b=B.getBoundingClientRect();
   Object.assign(L.style,{top:(r.top-b.top)+'px',left:(r.left-b.left)+'px',width:r.width+'px',height:r.height+'px',right:'auto',bottom:'auto'}); }
 function majBar(){ const x=EMB; if(!x||!x.bar) return; const p=x.p, k=x.act.k, t=x.tab;
-  const R={offres:'Offres d’honoraires',contrats:'Contrats d’honoraires',factures:'Factures'}[x.page];
+  const R={offres:'Offres d’honoraires',contrats:'Contrats d’honoraires',factures:'Factures',pv:'PV de chantier'}[x.page];
   const D=fxData(), k0=D&&x.mode==='offres'?compte(p,D):null;   /* sous le titre : nombre d'offres et d'offres annulées ou refusées */
   const sous=k==='voir'?'Contrat en PDF':k==='fvoir'?'Facture en PDF':t==='calchono'?(k==='nouv'?'Nouvelle offre · calcul d’honoraires':'Calcul d’honoraires')
     :t==='saisie'?(k==='fmod'?'Modifier la facture':'Nouvelle facture')
     :t==='contrats'?(x.mode==='offres'?(k0?pl(k0.n,'offre')+' · '+pl(k0.ann,'annulée ou refusée','annulées ou refusées'):'Offres de l’affaire'):'Contrats signés de l’affaire'):'';
   let btn;
-  if((x.mode==='contrats'||x.mode==='offres')&&t&&t!=='contrats') btn='<button class="nx-btn" data-a="liste" title="Revenir à la liste '+(x.mode==='offres'?'des offres':'des contrats signés')+' de l’affaire">'+nxSvg('back')+'Retour à la liste</button>';
+  if(x.mode==='pv') btn='';
+  else if((x.mode==='contrats'||x.mode==='offres')&&t&&t!=='contrats') btn='<button class="nx-btn" data-a="liste" title="Revenir à la liste '+(x.mode==='offres'?'des offres':'des contrats signés')+' de l’affaire">'+nxSvg('back')+'Retour à la liste</button>';
   else if(x.mode==='contrats') btn='<button class="nx-btn" data-a="offres" title="Toutes les offres de l’affaire : en cours, retenues, annulées ou refusées">'+nxSvg('calc')+'Offres d’honoraires</button>';
   else if(x.mode==='offres'){ const libre=D&&vueOk('fx-calchono')?D.c.filter(c=>!c.annule&&!sgProjetDuContrat(c)):[];
     btn=libre.length?'<select class="inp" data-a="lier" title="Relier à cette affaire une offre de Facturation qui n’est reliée à aucune affaire"><option value="">Relier une offre…</option>'
@@ -474,7 +475,7 @@ function fermer(redess){ const x=EMB; if(!x) return; x.retour=false; if(x.ro) x.
   const w=FX.ready&&FX.w;   /* cadre remis en état AVANT de libérer EMB : ni retour du PDF, ni redessin de la liste en double */
   if(w){ try{ const ov=w.document.getElementById('offre-overlay'); if(ov&&ov.classList.contains('on')) w.closeOffre(); }catch(_){}
     try{ const d=w.document; Object.entries(x.filtres||{}).forEach(([id,[k,v]])=>{ const e=d.getElementById(id); if(e) e[k]=v; });   /* filtres de la liste de Facturation rétablis */
-      w.SG_CONTRATS_FILTRE=null; d.documentElement.classList.remove('sgof-liste','sgof-signes','sgof-offres'); w.renderContratsTable(); }catch(_){} }
+      w.SG_CONTRATS_FILTRE=null; d.documentElement.classList.remove('sgof-liste','sgof-signes','sgof-offres','sgof-pv'); w.renderContratsTable(); }catch(_){} }
   EMB=null;
   const L=document.getElementById('fx-layer');
   if(L){ L.classList.remove('sgof-dans'); ['top','left','width','height','right','bottom'].forEach(k=>L.style.removeProperty(k)); if(!/^fx-/.test(vueId())) L.classList.remove('on'); }
@@ -483,7 +484,8 @@ function fermer(redess){ const x=EMB; if(!x) return; x.retour=false; if(x.ro) x.
 function brancher(w){ if(w._sgofDans) return; w._sgofDans=1;
   const d=w.document, st=d.createElement('style'); st.id='sgof-dans-css';
   st.textContent='html.sgof-signes #panel-contrats .card-hd button[onclick*="newContratCalc"],html.sgof-liste #panel-contrats .card-hd label:has(#show-archived)'
-    +',html.sgof-offres #panel-contrats .card-hd #filter-search,html.sgof-offres #panel-contrats .card-hd label:has(#filter-type,#filter-modecalc,#filter-statut-adef){display:none!important}';
+    +',html.sgof-offres #panel-contrats .card-hd #filter-search,html.sgof-offres #panel-contrats .card-hd label:has(#filter-type,#filter-modecalc,#filter-statut-adef)'
+    +',html.sgof-pv #pv_addaff,html.sgof-pv #pv_out button[onclick^="pvSelAff"]{display:none!important}';
   d.head.append(st);
   const n0=w.newContratCalc; if(typeof n0==='function') w.newContratCalc=function(){ const r=n0.apply(this,arguments); if(EMB&&EMB.p&&EMB.p.NUMBER) affaireCalc(w,EMB.p.NUMBER); return r; };
   const c0=w.closeOffre; if(typeof c0==='function') w.closeOffre=function(){ const r=c0.apply(this,arguments); if(EMB&&EMB.retour){ EMB.retour=false; setTimeout(()=>fermer(true),0); } return r; };
@@ -494,7 +496,7 @@ function affaireCalc(w,num){ const i=w.document.getElementById('ch_affaire'); if
 /* liste « Contrats d'honoraires » de Facturation limitée à l'affaire : toutes ses offres (Offres d'honoraires, archivées comprises) ou ses
    contrats signés (Contrats honoraires, sans « Nouveau contrat ») ; « Afficher archivés » masqué (le filtre les comprend) */
 function cadre(w){ const x=EMB, sig=x.mode==='contrats', liste=sig||x.mode==='offres', pid=String(x.p.ID), h=w.document.documentElement;
-  h.classList.toggle('sgof-liste',liste); h.classList.toggle('sgof-signes',sig); h.classList.toggle('sgof-offres',x.mode==='offres');
+  h.classList.toggle('sgof-liste',liste); h.classList.toggle('sgof-signes',sig); h.classList.toggle('sgof-offres',x.mode==='offres'); h.classList.toggle('sgof-pv',x.mode==='pv');
   /* liste des offres sans recherche ni filtres (demande de Paulo, 01.11.2026 : « pas nécessaire dans la liste des offres ») : les filtres de la
      liste de Facturation sont vidés le temps de la page, puis rétablis par fermer (ils restent ceux de Administration ▸ Facturation) */
   if(x.mode==='offres'&&!x.filtres){ x.filtres={};
@@ -504,7 +506,8 @@ function cadre(w){ const x=EMB, sig=x.mode==='contrats', liste=sig||x.mode==='of
   w.SG_CONTRATS_FILTRE=!liste?null:sig?{f:c=>signe(c)&&aff(c),vide:'Aucun contrat signé pour cette affaire. Une offre devient un contrat quand elle est marquée « signé » dans la liste des offres d’honoraires.'}
     :{f:aff,vide:'Aucune offre d’honoraires pour cette affaire. « + Nouveau contrat » crée une offre pour cette affaire.'}; }
 function executer(w,x){ const a=x.act, id=a.id;
-  if(a.k==='liste'){ x.silence++; try{ w.goTab('contrats'); }finally{ x.silence--; } x.tab='contrats'; w.renderContratsTable(); }
+  if(a.k==='pv'){ x.silence++; try{ w.goTab('pv-chantier'); }finally{ x.silence--; } x.tab='pv-chantier'; if(a.cree) w.pvAddAff(a.code); else w.pvSelAff(a.code); if(typeof sgPvClasses==='function') sgPvClasses(); }
+  else if(a.k==='liste'){ x.silence++; try{ w.goTab('contrats'); }finally{ x.silence--; } x.tab='contrats'; w.renderContratsTable(); }
   else if(a.k==='nouv') w.newContratCalc();
   else if(a.k==='modif') w.editContratCalc(id);
   else if(a.k==='voir'){ sgVoirContrat(w,id); w._sgRetour=false; x.retour=true; }
@@ -524,6 +527,28 @@ if(typeof go==='function'){ const go0=go; go=function(){ if(EMB) fermer(false); 
 if(typeof sgFxOnTab==='function'){ const t0=sgFxOnTab; sgFxOnTab=function(tab){ if(EMB){ surTab(tab); return; } return t0.apply(this,arguments); }; }
 if(typeof sgFxHome==='function'){ const h0=sgFxHome; sgFxHome=function(){ if(EMB){ setTimeout(()=>{ if(EMB) fermer(true); },0); return; } return h0.apply(this,arguments); }; }
 if(typeof sgVerrouiller==='function'){ const v0=sgVerrouiller; sgVerrouiller=function(){ const r=v0.apply(this,arguments); if(EMB&&sgFinVerrou()) fermer(true); return r; }; }
+
+/* Page du projet ▸ Chantier ▸ PV de chantier (04.11.2026, Paulo : « dans chantier il manque pv de chantier basé sur l'app de pv actuel ») : l'app de
+   PV de Facturation posée dans le projet, limitée à l'affaire (« ← Affaires » et « ✚ » masqués : html.sgof-pv) ; mêmes données (sa_pv_data), mêmes
+   fonctions, mêmes droits (fx-pv-chantier). Clé de l'affaire : celle de sa_pv_data reconnue par sgCle ; sans PV : page d'accueil, l'affaire n'est
+   créée dans sa_pv_data qu'à la demande. */
+const pvCle=(w,p)=>{ let d={}; try{ d=JSON.parse(w.localStorage.getItem('sa_pv_data')||'{}')||{}; }catch(_){} const k=Object.keys(d).find(c=>sgCle(c)===sgCle(p.NUMBER)); return k?{k,n:(d[k].pvs||[]).length}:null; };
+window.sgPvChantierModule=function(C,p){ css(); const box=document.createElement('div'); box.className='sgof-box'; C.append(box);
+  const faire=()=>{ if(!box.isConnected) return; const q=DS.get('project',p.ID)||p;
+    if(!vueOk('fx-pv-chantier')){ box.innerHTML='<p class="sgof-err">PV de chantier : accès non permis par votre profil.</p>'; return; }
+    box.innerHTML='<p style="padding:20px 24px;color:var(--s-gris);font-size:13px">Chargement des PV de chantier…</p>';
+    fxEnsure().then(w=>{ if(!box.isConnected) return; const c=pvCle(w,q);
+      if(c){ dans(box,q,'pv',{k:'pv',page:'pv',code:c.k}); return; }
+      const peutS=typeof sgDroit!=='function'||sgDroit('pv','saisie');
+      box.innerHTML='<div class="sgof-pv-vide" style="padding:22px 24px;font-size:13px;line-height:1.55;max-width:640px"><b>Aucun PV de chantier pour ce projet.</b><br>'+(peutS?'Commencez par « Général » : CFC, entreprises et intervenants du chantier, puis créez le premier PV.':'Votre profil ne permet pas de les créer.')
+        +(peutS?'<div style="margin-top:14px"><button class="nx-btn pri" data-a="pvnew">'+nxSvg('plus')+'Commencer les PV de chantier</button></div>':'')+'</div>';
+      const b=box.querySelector('[data-a="pvnew"]'); if(b) b.onclick=()=>dans(box,q,'pv',{k:'pv',page:'pv',code:q.NUMBER,cree:true}); })
+      .catch(e=>{ console.error(e); box.innerHTML='<p class="sgof-err">La Facturation n’a pas pu être chargée : '+E(e&&e.message||e)+'</p>'; }); };
+  box._sgofFaire=faire;
+  if(EMB&&String(EMB.p.ID)===String(p.ID)&&EMB.page==='pv'){ poser(box); return; }
+  faire(); };
+window.sgPvChantierCompte=p=>{ try{ const w=FX.ready&&FX.w; if(!w) return ''; const c=pvCle(w,p); return c?c.n+' PV':'à commencer'; }catch(_){ return ''; } };
+window.sgofPvPose=()=>!!(EMB&&EMB.mode==='pv');
 
 /* remplacement des trois domaines du moteur ; Archives ▸ Honoraires (ancien) et Facturation (ancien) gardent les écrans d'origine */
 const fe0=feDomain, ct0=ctDomain, iv0=ivDomain;

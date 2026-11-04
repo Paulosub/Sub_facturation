@@ -1457,6 +1457,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   la dernière demande (nommée s'il y en a plusieurs), conditions à régler. Imprimer : `sgImprimer` (papier des contrats). Droits : lecture = qui
   voit le projet ; écriture = projet modifiable (comme le planning) ; documents = droit du dépôt. Débogage `window.SGPC`, styles `#sgpc-css`,
   classes `sgpc-*`. Copie d'avant : `subgestion3/_backup_20261102_2159_avant_permis/`, `SUBGestion3_backup_20261102_2159_avant_permis.html`.
+- **Suivi du projet : Séances, Notes, Tâches, Frais au graphisme de l'app (04.11.2026, bloc 35, `subgestion3/sg3_suivi.js`, concaténé après `sg3_permis.js` ; Paulo :
+  « proposer une autre mise en page des modules séances, plus proche du design du reste de l'app », « applique la version B », « adapte notes également à l'app »,
+  « idem pour tâches », « idem pour note frais »)** — maquette des variantes A Liste puis page, B Colonne + procès-verbal, C Fil de la série :
+  `subgestion3/_backup_20261104_maquette_seances/`. Mêmes données et mêmes fenêtres du moteur ; DeltaSub.html seul garde les écrans d'origine. Instance commune `monter(C,p,cle,besoin,M)`
+  (état `ETAT` par projet, défilement et focus de la recherche rétablis : la page du projet redessine à chaque changement de la base). **Séances** (`mtDomain` remplacé) :
+  colonne des séries et procès-verbaux (classes `.sgd-*` de Listes de diffusion ; sélection dans `MT.seq` / `MT.mtg`, ses fenêtres y posent ce qu'elles créent ; ↑ ↓ ; clic droit), à droite le
+  procès-verbal : bandeau jaune, chiffres (participants, points, décisions, ouverts, en retard), vues Procès-verbal · Points ouverts de la série · Présences (8 dernières séances).
+  État affiché : Diffusé (pas brouillon), Prévue (brouillon à venir), Brouillon. Point ouvert : non réglé, et Tâche, Point ouvert ou délai ; dans la série, la dernière occurrence d'un
+  point fait foi (points copiés sans lien : reconnus par titre, sinon texte). Carré = réglé (`ISDONE`, direct). **Notes** (branche « Notes » de `domainView` enveloppée) : colonne par
+  année + recherche, note à droite ; fenêtre `noteEd`. **Tâches** (`ptDomain` remplacé) : colonne par état (En traitement, Brouillons, Réglées, Annulées) + recherche, chiffres, fiche, description, notes de
+  la tâche ; fenêtres du moteur (`ptPickCatalog`, `ptEditFull`, `ptDelete`, `ptPrintTask`, `ptPrintList`, `ptExport`). **Frais** (`sgFraisModule`, défini ici ; sg3_plus.js n'a plus que sa déclaration) :
+  bandeau, chiffres (total, facturables, à facturer, facturés, à rembourser), années (`sg3_frais_an`), recherche, tableau `.nx-tbl` trié par le tri commun (pas de `colspan` dans le total : il désactiverait le
+  tri), clic = `editCost`, clic droit = supprimer. Droits : modifier = projet modifiable, comme le Planning ; Frais : règles de `editCost` / `delCost`. Styles `#sgsv-css`, classes `sgsv-*`, débogage `window.SGSV`.
+  La base de test n'a aucune séance et presque ni notes ni tâches : données d'essai dans la base de l'aperçu seulement (24BRC). Copie d'avant : `subgestion3/_backup_20261104_avant_suivi_projet/`,
+  `SUBGestion3_backup_20261104_avant_suivi_projet.html`.
+- **Chantier ▸ PV de chantier (04.11.2026, Paulo : « dans chantier il manque pv de chantier basé sur l'app de pv actuel »)** : l'app de PV de Facturation posée dans la page du projet, limitée à l'affaire (fin de
+  `sg3_offres.js`, `sgPvChantierModule`, mode `pv` du cadre posé `EMB` ; « ← Affaires » et « ✚ » masqués par `html.sgof-pv`), mêmes données (`sa_pv_data`, clé retrouvée par `sgCle`), mêmes fonctions, droit « PV : lecture ». Sans PV :
+  page d'accueil, l'affaire n'est créée dans `sa_pv_data` qu'à la demande. `sgPvVue` compte aussi ce cadre posé (présentation tactile). L'écran `fx-pv-chantier` reste.
+- **Calcul des coûts déplacé de Chantier dans Projet et Faisabilité (04.11.2026, demande de Paulo)** : tuile du module (`SG_PMOD` 'dom', `SG_PMOD_G`), mêmes droits qu'avant (`sgCalcOk`), page = domaine du moteur.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.
   1. **Le numéro d'une facture enregistrée n'est plus jamais recalculé** (`Facturation.html`, `faFactureEnregistree()` en tête de `updateInvNum`).

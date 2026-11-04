@@ -11,6 +11,9 @@
    en clair, texte à la largeur de la colonne (les retours à 30 signes restent dans « Editer l'article »), niveaux svd-n1 (X00) et svd-n2 (XY0). Barres en texte,
    tableaux à filet noir et totaux dans toutes les étapes (.sgsm-ed, .sgsm-tot) ; arbre en minuscules (SV_TREE). Appels d'offres (VIEWS.soum) : même page que la
    liste du projet, tous les projets (colonne Projet, Toutes · Mes soumissions).
+   Fenêtre « Editer l'article » (04.11.2026, même bloc ; Paulo : « améliorer la fenêtre, pour adapter le design au reste de l'app ») : svdEditArticle enveloppé,
+   mêmes champs, onglets, menus et contrôles, éléments du moteur déplacés tels quels (habArticle) : bandeau jaune (numéro, mot-clé tenu à jour, étape, chapitre),
+   Mot-clé et Unité, options, onglets soulignés (.sgsa-tabs), barre en texte ; colonnes Code calc., Rem. prix et N° courant masquées si vides (menu Fonctions).
    Exemple (sgSoumExemple) : vrai document du moteur, CFC 271 Plâtrerie, marqué EXEMPLE : descriptif (6 paragraphes, 9 articles de quantité), conditions
    (rabais, escompte, TVA), 3 entreprises fictives (entités masquées de l'annuaire), prix, critères et notes, comparatif créé par le transfert du moteur
    (svcTransferDoc B → C1), entreprise proposée. Rien n'est livré d'office : créé à la demande depuis la liste. Aucun texte d'origine de catalogue.
@@ -63,6 +66,44 @@ const CSS=`
 .sgsm-tot{background:#fff!important;border:0!important;border-top:2px solid var(--s-noir)!important;padding:10px 0 2px!important;font-size:12.5px;gap:6px 22px!important}
 .sgsm-tot b{font-size:15px;font-weight:700;margin-left:2px}
 .sgsm-tot .ib{border:0!important;background:transparent!important;box-shadow:none!important;font-weight:700;font-size:12.5px;color:var(--s-nuit);height:28px}
+.ov:has(>.dlg.sgsa-dlg){padding-top:4vh}
+.dlg.sgsa-dlg{width:min(1040px,94vw)!important;max-height:92vh}
+.dlg.sgsa-dlg>.tt{display:none}
+.dlg.sgsa-dlg>.bd{padding:0}
+.sgsa .sgfh-tete{margin:0;border-top:0;padding:14px 24px}
+.sgsa .sgfh-ini{font-size:26px;white-space:nowrap}
+.sgsa .sgfh-nm h2{font-size:20px}
+.sgsa-ch{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:8px 18px;align-items:end;padding:14px 24px 8px}
+.sgsa-ch label.f{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--s-gris);min-width:0}
+.sgsa-ch input.inp,.sgsa-ch select.inp{width:100%!important;height:34px;box-sizing:border-box;border:1.5px solid var(--s-noir)!important;border-radius:0!important;background:#fff;font-size:13px;font-weight:400;color:var(--s-noir)}
+.sgsa-ch input.inp:disabled{background:var(--s-nuit3);color:var(--s-gris)}
+.sgsa-ch .ib{height:34px;border:1.5px solid var(--s-noir)!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;font-size:12.5px;font-weight:700;color:var(--s-noir);padding:0 10px}
+.sgsa-ch .ib:hover{background:var(--s-jaune3)!important}
+.sgsa-op{grid-column:1/-1;display:flex;gap:4px 22px;flex-wrap:wrap;font-size:12.5px;color:var(--s-noir)}
+.sgsa-op label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.sgsa-main{display:block!important;padding:0 24px 16px}
+.sgsa-main>.sgsa-tabs{display:flex!important;flex-direction:row!important;flex:none!important;width:auto!important;gap:24px!important;border-bottom:1px solid var(--s-filet);margin-bottom:12px}
+.sgsa-tabs>div{display:none}
+.sgsa-tabs .btn{border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;padding:10px 0 9px!important;margin:0 0 -1px;font-size:13px;font-weight:400;color:var(--s-gris)!important;border-bottom:3px solid transparent!important;min-height:0;height:auto}
+.sgsa-tabs .btn:hover{color:var(--s-noir)!important}
+.sgsa-tabs .btn.pri{color:var(--s-noir)!important;font-weight:700;border-bottom-color:var(--s-nuit)!important}
+.sgsa-hote{min-height:300px!important}
+.sgsa-hote .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:32px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir)}
+.sgsa-hote .ib:first-child{padding-left:0}
+.sgsa-hote .ib:hover{background:var(--s-jaune3)!important}
+.sgsa-hote .ib:disabled{color:#b9b9b6}
+.sgsa-hote>div>div:first-child>b{font-size:15px}
+.sgsa-hote div[style*="max-height"]{border:0!important;border-top:0!important}
+.sgsa-hote table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important;white-space:nowrap}
+.sgsa-hote table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;padding:6px 8px!important;font-size:12.5px;height:auto;vertical-align:middle}
+.sgsa-hote table.g tbody tr.svd-on td{background:var(--s-jaune3)!important;color:var(--s-noir)}
+.sgsa-hote table.g tbody tr:hover td{background:var(--s-jaune3)!important}
+.sgsa-hote table.svd-in td[style*="cursor: pointer"]{color:var(--s-nuit)!important;font-weight:700}
+.sgsa-hote table.svd-in input.inp{height:30px!important;border:1.5px solid var(--s-noir)!important;border-radius:0!important;background:#fff!important;font-size:13px;font-variant-numeric:tabular-nums}
+.sgsa-hote table.svd-in input.inp:disabled{background:var(--s-nuit3)!important;border-color:var(--s-nuit3)!important;color:var(--s-noir)}
+.sgsa-hote textarea.inp{border:1.5px solid var(--s-noir)!important;border-radius:0!important}
+.sgsa-hote select.inp{height:32px;border:1.5px solid var(--s-noir)!important;border-radius:0!important;background:#fff}
+.sgsa-hote label{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;cursor:pointer}
 html .svd-tb{width:100%;border-collapse:collapse;font-size:12.5px}
 html .svd-tb th{background:#fff;font-size:11px;font-weight:700;color:var(--s-gris);padding:8px;border-bottom:2px solid var(--s-noir);z-index:2}
 html .svd-tb td{padding:6px 8px;border-bottom:1px solid var(--s-filet);line-height:1.35}
@@ -154,6 +195,25 @@ const br0=svdBuildRows; svdBuildRows=function(ctx){ const R0=br0(ctx), C1=ctx.et
   return R; };
 const co0=svdColumns; svdColumns=function(ctx){ const L=co0(ctx), R=svdBuildRows(ctx), plein=k=>R.some(r=>{ const v=(r.cells||{})[k]; return v!=null&&String(v)!==''; }), garde=new Set(['p','t']), seulA=k=>!R.some(r=>{ const v=(r.cells||{})[k]; return v&&v!=='A'; });
   return L.filter(c=>c.custom||garde.has(c.k)||(plein(c.k)&&!((c.k==='gq'||c.k==='gp')&&seulA(c.k)))).map(c=>c.k==='t'?{...c,t:TITRES_COL.t,w:''}:{...c,t:TITRES_COL[c.k]||c.t,w:LARG_COL[c.k]||c.w}); };
+/* fenêtre « Editer l'article » : éléments du moteur déplacés tels quels, ses gestionnaires restent */
+const TH_QP={Cal:['Code calc.','Code de calcul'],RPA:['Rem. prix','Remarque concernant le prix'],U:['Unité',''],GQ:['Genre Q.','Genre de quantité'],M:['Métré',''],'Numéro courant':['N° courant',''],GP:['Genre P.','Genre de prix'],Prix:['Prix unitaire','']};
+const TH_MASQ=['Cal','RPA','Numéro courant'];
+function tableQP(host){ const t=host.querySelector('table.svd-in'); if(!t||!t.tHead) return; const L=[...t.tBodies[0].rows];
+  [...t.tHead.rows[0].cells].forEach((th,i)=>{ const k=th.dataset.k||th.textContent.trim(), m=TH_QP[k]; th.dataset.k=k; if(m&&th.textContent!==m[0]) th.textContent=m[0]; if(m&&m[1]) th.title=m[1];
+    if(TH_MASQ.includes(k)){ const vide=L.every(r=>{ const c=r.cells[i], x=c&&c.querySelector('input'); return x?!x.value:!/[^·\s]/.test(c?c.textContent:''); }), v=vide?'none':''; if(th.style.display!==v) th.style.display=v; L.forEach(r=>{ if(r.cells[i]&&r.cells[i].style.display!==v) r.cells[i].style.display=v; }); }
+    if(k==='GQ'||k==='GP') L.forEach(r=>{ const c=r.cells[i], x=c&&c.textContent.trim(), tt=(k==='GQ'?SVD_GQ_L:SVD_GP_L)[x]||''; if(c&&c.title!==tt) c.title=tt; }); }); }
+function habArticle(dlg,ctx,ch,a){ const bd=dlg.querySelector('.bd'), body=bd&&bd.firstElementChild; if(!body||body.children.length<2) return; const [top,main]=body.children, K=[...top.children];
+  const kw=top.querySelector('input.inp'), kwaL=K.find(x=>x.tagName==='LABEL'&&/première ligne/.test(x.textContent)), bibL=K.find(x=>x.tagName==='LABEL'&&/bibliothèque/i.test(x.textContent)), un=top.querySelector('select'), nav=K.find(x=>x.classList&&x.classList.contains('ib')), [tabs,zone]=[...main.children], host=zone&&zone.firstElementChild;
+  if(!kw||!kwaL||!bibL||!un||!tabs||!host) return; cssM(); dlg.classList.add('sgsa-dlg'); dlg.style.width=''; const kwa=kwaL.querySelector('input');
+  const et=(SV_DOCTYPE[ctx.et]||{}).t||'', tete0=document.createElement('div'), lieu=[ch.numero,ch.texte1].filter(Boolean).join(' ');
+  tete0.className='sgfh-tete'; tete0.innerHTML='<div class="sgfh-id"><div class="sgfh-ini">'+E(svdNum(ch.numero,a.m,a.u))+'</div><div class="sgfh-nm"><div class="lb">'+E(['Article',et,lieu?'chapitre '+lieu:''].filter(Boolean).join(' · '))+'</div><h2></h2></div></div>';
+  const h2=tete0.querySelector('h2'), titre=()=>{ h2.textContent=kw.value.trim()||'Mot-clé à écrire'; };
+  const champ=(t,el)=>{ const l=document.createElement('label'); l.className='f'; l.append(t,el); return l; }, ch1=document.createElement('div'), op=document.createElement('div'); ch1.className='sgsa-ch'; op.className='sgsa-op';
+  ch1.append(champ('Mot-clé',kw),champ('Unité',un)); if(nav){ const lb=nav.querySelector('.lb'); if(lb) lb.textContent='Navigateur des articles'; ch1.append(nav); } kwaL.lastChild.textContent=' Utiliser la première ligne du texte'; op.append(kwaL,bibL); ch1.append(op);
+  const nb=document.createElement('div'); nb.className='sgsa'; main.classList.add('sgsa-main'); tabs.classList.add('sgsa-tabs'); host.classList.add('sgsa-hote'); nb.append(tete0,ch1,main); body.replaceChildren(nb);
+  kw.addEventListener('input',titre); kwa.addEventListener('change',()=>setTimeout(titre,0)); tabs.addEventListener('click',()=>setTimeout(titre,0)); titre();
+  new MutationObserver(()=>tableQP(host)).observe(host,{childList:true,subtree:true}); tableQP(host); }
+const ea0=svdEditArticle; svdEditArticle=function(){ const n0=document.querySelectorAll('.dlg').length, r=ea0.apply(this,arguments), L=document.querySelectorAll('.dlg'); if(L.length>n0) try{ habArticle(L[L.length-1],arguments[0],arguments[1],arguments[2]); }catch(e){ console.error(e); } return r; };
 const SV_LIB={tender:'Appel d’offres',tendering:'Soumissionnaires',offerOverview:'Comparatif bref',priceComparison:'Comparatif',offer:'Offre',contract:'Contrat',measure:'Métré',masterTender:'Descriptif type',costEstimating:'Estimatif'};
 SV_TREE.forEach(s=>{ s.t=SV_LIB[s.k]||s.t; s.subs.forEach(x=>{ if(x[1]==='Editer') x[1]='Éditer'; }); });
 

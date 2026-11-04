@@ -1493,6 +1493,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Appels d'offres (`VIEWS.soum` sans document ouvert) : même page que la liste du projet, tous les projets (`p.GLOBAL` : colonne Projet, Toutes · Mes soumissions, « Nouvelle soumission » choisit l'affaire ; remplace la colonne des affaires). Copie d'avant : `subgestion3/_backup_20261104_avant_visuel_appels_offres/`.
   **Exemple** (`sgSoumExemple(p)`, liste ▸ ⋯ ou page vide ; un seul par projet, version « EXEMPLE ») : CFC 271 Plâtrerie, chapitre libre, 9 articles de quantité, conditions rabais / escompte / TVA, critères et notes,
   trois entreprises fictives (`contactowner` masqués, `ISHIDDEN`, jamais de faux prix sur de vraies entreprises), prix, comparatif créé par le transfert du moteur (`svcTransferDoc`), entreprise proposée. Textes écrits pour l'exemple, aucun texte de catalogue.
+- **Fenêtre « Editer l'article » au graphisme de l'app (04.11.2026, `sg3_soumission.js`, `habArticle`, Paulo : « améliorer la fenêtre, pour adapter le design au reste de l'app »)** : `svdEditArticle`
+  enveloppé, DeltaSub.html inchangé ; éléments du moteur déplacés tels quels (gestionnaires, contrôles et enregistrement inchangés). Bandeau jaune `sgfh-tete` (numéro de l'article, étape, chapitre, mot-clé tenu à jour),
+  champs Mot-clé et Unité à libellé au-dessus, options, onglets soulignés (`.sgsa-tabs`), barre en texte, tableau des quantités à filet noir aux titres en clair (`TH_QP` : Code calc., Rem. prix, Genre Q., Genre P., N° courant,
+  Prix unitaire ; `MutationObserver` sur le contenu : le moteur redessine le tableau) ; colonnes Code calc., Rem. prix et N° courant masquées si vides, elles reviennent dès qu'une ligne a une valeur (menu Fonctions). Styles `.sgsa-*`.
+  Les autres fenêtres de la soumission (Prix, Conditions, Quantités, métré) gardent le graphisme du moteur. Copie d'avant : `subgestion3/_backup_20261104_avant_fenetre_article/`.
 - **Calcul des coûts déplacé de Chantier dans Projet et Faisabilité (04.11.2026, demande de Paulo)** : tuile du module (`SG_PMOD` 'dom', `SG_PMOD_G`), mêmes droits qu'avant (`sgCalcOk`), page = domaine du moteur.
 - **Urgences de l'audit du 20.10.2026 (corrigées le 21.10.2026, graphisme inchangé)** — copies d'avant : `Facturation_backup_20261021_0724.html`,
   `subgestion3/_backup_20261021_0724_avant_urgences/`.

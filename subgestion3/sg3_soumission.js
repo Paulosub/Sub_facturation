@@ -22,10 +22,11 @@ const CSS=`
 .sgsm-tb tr[data-a]{cursor:pointer}
 .sgsm-tb tr.supp td{opacity:.5}
 .sgsm-note{font-size:12px;color:var(--s-gris);margin-top:10px}
-.sgsm-ed{display:flex;flex-direction:column;min-height:0;height:100%}
-.sgsm-tete{flex:none;padding:12px 24px 0}
-.sgsm-tete .sgfh-tete{margin:0}
-.sgsm-tete .sgfh-ini{font-size:30px}.sgsm-tete .sgfh-nm h2{font-size:22px}
+.sgsm-ed{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden}
+.sgsm-tete{flex:none;padding:8px 24px 0}
+.sgsm-tete .sgfh-tete{margin:0;padding:10px 18px}
+.sgsm-tete .sgfh-ini{font-size:28px}.sgsm-tete .sgfh-nm h2{font-size:20px}
+@media (max-height:860px){.sgsm-tete .sgfh-meta,.sgsm-e span{display:none}.sgsm-tete .sgfh-tete{padding:6px 14px}.sgsm-tete .sgfh-ini{font-size:22px}.sgsm-tete .sgfh-nm h2{font-size:17px}.sgsm-tete .sgfh-nm .lb{margin:0}.sgsm-par{padding:6px 0 2px!important}.sgsm-par:before{top:13px!important}.sgsm-e i{margin:0 0 4px}}
 .sgsm-par{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:relative;padding:12px 0 8px}
 .sgsm-par:before{content:'';position:absolute;left:6px;right:6px;top:20px;border-top:2px solid #d6d6d6}
 .sgsm-e{position:relative;border:0;background:none;padding:0 8px 2px 0;font:inherit;text-align:left;cursor:pointer;min-width:0}
@@ -114,7 +115,8 @@ const SOUM={
   ctx(I,t,e){ if(t.dataset.a!=='open') return false; const d=DS.get('devisdocument',t.dataset.d), p=I.p; if(!d) return false;
     sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir la soumission',fn:()=>ouvrirDoc(d,p)},{t:'Modifier l’en-tête…',fn:()=>svEditDoc(null,d)},{t:'Dupliquer',fn:()=>svDuplicate(d)},'-',{t:'Supprimer…',danger:true,fn:()=>svDelete(d)}]); return true; } };
 /* ouvrir depuis la page du projet : « ‹ Liste » y revient */
-async function ouvrirDoc(d,p){ await svOpenDoc(d.ID); if(!p.GLOBAL&&SV_UI.open===+d.ID) SV_UI.back={view:'nx-pdom',arg:p.ID+'|Soumission'}; }
+const ouvrirDoc=d=>svOpenDoc(d.ID);
+const od0=svOpenDoc; svOpenDoc=async function(id){ const v=VIEW&&VIEW.id, a=VIEW&&VIEW.arg; await od0(id); if(v==='nx-pdom'&&SV_UI.open===+id) SV_UI.back={view:v,arg:a}; };
 svDomain=function(C,top,pane,p){ monter(C,p,'soumission',[...SV_NEED,'project'],SOUM); };
 /* Appels d'offres (vue soum, sans document ouvert) : même page, tous les projets */
 if(VIEWS.soum){ const r0=VIEWS.soum.render; VIEWS.soum.render=function(m,arg){ if(SV_NEED.some(t=>!DS.loaded.has(t))||(SV_UI.open!=null&&DS.get('devisdocument',SV_UI.open))) return r0.call(this,m,arg);
@@ -126,13 +128,15 @@ function parcours(X){ const S=X.S, nE=(S.entreprises||[]).filter(e=>+e.contactId
   const L=[['tenderEdit',"Appel d’offres",nA?pl(nA,'article'):'descriptif à écrire',nA>0],['tenderingEdit','Soumissionnaires',nE?pl(nE,'entreprise'):'entreprises à choisir',nE>0],['priceComparisonEdit','Comparatif',c1?(pr?'proposée : '+(pr.abreviation||''):'offres à saisir'):'à créer depuis l’appel d’offres',c1>0],['contractEdit','Contrat',ct?'créé':'après l’adjudication',ct>0],['measureEdit','Métré',me?'créé':'pendant les travaux',me>0]];
   const cour=SV_UI.node?((svStepOf(SV_UI.node)||{}).k):''; const k2={tender:0,tendering:1,offerOverview:2,priceComparison:2,offer:2,contract:3,measure:4}[cour];
   return L.map(([k,t,s,f],i)=>'<button class="sgsm-e'+(i===k2?' cour':f?' fait':'')+'" data-n="'+k+'"><i></i><b>'+E(t)+'</b><span title="'+E(s)+'">'+E(s)+'</span></button>').join(''); }
-function habiller(m,id){ const X=SV_UI.ed&&SV_UI.ed.X, d=DS.get('devisdocument',id); if(!X||!d) return; cssM(); const p=DS.get('project',d.PROJECT_ID)||{}, bar=m.querySelector(':scope>.ph2'); if(!bar) return; m.classList.add('sgsm-ed');
-  let hd=m.querySelector(':scope>.sgsm-tete'); if(!hd){ hd=document.createElement('div'); hd.className='sgsm-tete'; m.prepend(hd); hd.onclick=e=>{ const b=e.target.closest('[data-n]'); if(b&&SV_UI.ed) SV_UI.ed.X.go(b.dataset.n); }; }
+function habiller(m,id){ const X=SV_UI.ed&&SV_UI.ed.X, d=DS.get('devisdocument',id); if(!X||!d) return; cssM(); const p=DS.get('project',d.PROJECT_ID)||{}, bar=m.querySelector(':scope>.ph2'); if(!bar) return;
+  /* enveloppe : #main sert à tous les écrans, il ne porte jamais la classe ; m.innerHTML='' de go() retire tout */
+  const box=document.createElement('div'); box.className='sgsm-ed'; box.append(...m.childNodes); m.append(box);
+  const hd=document.createElement('div'); hd.className='sgsm-tete'; box.prepend(hd); hd.onclick=e=>{ const b=e.target.closest('[data-n]'); if(b&&SV_UI.ed) SV_UI.ed.X.go(b.dataset.n); };
   const maj=()=>{ const x=DS.get('devisdocument',id)||d; hd.innerHTML=tete(x.BKP||'—','Soumission · '+(SV_STADE_L[x.DOCUMENTSTATECODE]??'')+' · '+(SV_STATE[x.STATECODE]??''),x.AWARDINGTEXT||'(sans titre)',[[p.NUMBER,p.TITLE].filter(Boolean).join(' · '),x.VERSION?'version '+x.VERSION:'',X.S.appelOffres&&X.S.appelOffres.dateDepot?'dépôt des offres le '+dfr(X.S.appelOffres.dateDepot):''].filter(Boolean).join(' · '),X.ro?'<span class="sgsm-note" style="margin:0">Lecture seule</span>':'')+'<div class="sgsm-par">'+parcours(X)+'</div>'; };
-  maj(); SV_UI.ed.majTete=maj; }
+  maj(); SV_UI.ed.majTete=maj; if(typeof VIEW==='object'&&VIEW) VIEW.nxTitle='Soumission · '+[d.BKP,d.AWARDINGTEXT].filter(Boolean).join(' '); }
 const ed0=svEditor; svEditor=function(m,id){ ed0(m,id); habiller(m,id); };
 const n0=svNodeFn; svNodeFn=function(k){ const f=n0(k); if(typeof f!=='function') return f; return function(X){ const r=f.apply(this,arguments); setTimeout(()=>{ if(SV_UI.ed&&SV_UI.ed.majTete) SV_UI.ed.majTete(); },0);
-  if(X&&X.el) X.el.querySelectorAll(':scope>div').forEach(d=>{ if(/245, 245, 245|f5f5f5/.test(d.getAttribute('style')||'')) d.classList.add('sgsm-tot'); }); return r; }; };   /* parcours tenu à jour à chaque étape */
+  if(X&&X.el) X.el.querySelectorAll('div[style*="background"]').forEach(d=>{ if(/245, 245, 245|f5f5f5/.test(d.getAttribute('style')||'')) d.classList.add('sgsm-tot'); }); return r; }; };   /* parcours tenu à jour à chaque étape */
 
 /* ── descriptif : même données, présentation de l'app ── */
 const TITRES_COL={p:'Art.',u:'Sous-art.',v:'Var.',s:'R',t:'Description',d:'Pièces',un:'Unité',gq:'Genre Q.',me:'Métré',qt:'Quantité',nc:'N° courant',gp:'Genre P.',pr:'Prix unitaire',mt:'Montant',tva:'TVA',rpa:'RPA',cal:'Cal'};
@@ -144,7 +148,7 @@ const br0=svdBuildRows; svdBuildRows=function(ctx){ const R0=br0(ctx), C1=ctx.et
     if(/svd-a/.test(r.cls||'')){ const m=String(c.p||''), u=String(c.u||''); if(!u&&/^\d00$/.test(m)&&m!=='000') r.cls+=' svd-n1'; else if(!u&&/^\d\d0$/.test(m)&&m!=='000') r.cls+=' svd-n2';
       /* une seule ligne de quantité sans subdivision : sur la ligne de l'article */
       const q=R0[i+1], q2=R0[i+2], seul=q&&/(^| )svd-q( |$)/.test(q.cls||'')&&!/svd-sub/.test(q.cls||'')&&!(q2&&/(^| )svd-q( |$)/.test(q2.cls||'')&&String(q2.k).split('|').slice(0,4).join('|')===String(q.k).split('|').slice(0,4).join('|'));
-      if(seul){ const {un,...qc}=q.cells; Object.assign(c,qc,{un:un||c.un}); q._fondue=true; } }
+      if(seul){ const {un,...qc}=q.cells; Object.assign(c,qc,{un:un||c.un}); q._fondue=true; if(SVD_UI.sel[ctx.et]===q.k) SVD_UI.sel[ctx.et]=r.k; } }
     if(!C1||/svd-a/.test(r.cls||'')){ if(SANS_ZERO(c.pr)) c.pr=''; if(SANS_ZERO(c.mt)) c.mt=''; }
     if(!r._fondue&&!(/svd-t/.test(r.cls||'')&&!C1&&!c.mt)) R.push(r); });
   return R; };

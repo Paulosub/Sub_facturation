@@ -433,5 +433,5 @@ const FRAIS={
 sgFraisModule=function(C,p){ monter(C,p,'frais',['projectcost','projectcostcategory','projectcostcategorygroup','projectphase','staff'],FRAIS); };
 
 if(typeof SG_PDOM_T!=='undefined') SG_PDOM_T.push('meetingitem','meetingparticipant','projecttasknote');
-window.SGSV={version:'04.11.2026',ETAT,ouvertsSerie,etatPV,tachesDe,notesDe};
+window.SGSV={version:'04.11.2026',ETAT,ouvertsSerie,etatPV,tachesDe,notesDe,outils:{monter,tete,kpi,btn,lien,menuSous,E,IC,pl,trouve,moT,peut,css}};
 })();

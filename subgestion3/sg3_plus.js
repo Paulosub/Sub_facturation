@@ -2694,7 +2694,7 @@ function sgPdomCompte(p,d){ const by=t=>DS.by(t,'PROJECT_ID',p.ID), viv=L=>L.fil
     case 'Intervenants': case 'Liste d’adresses': return pl(by('projectmember').length,'intervenant');
     case 'Soumissionnaires': return pl(by('projecttenderer').length,'entreprise');
     case 'Documents': return pl(DS.all('depotfichier').filter(f=>String(f.PROJECT_ID)===String(p.ID)||String(f.DOSSIER||'').startsWith('ProjectDocuments/Documents/'+p.ID+'/')).length,'fichier');
-    case 'Séances': return pl(by('meetingsequence').reduce((s,x)=>s+DS.by('meeting','MEETINGSEQUENCE_ID',x.ID).length,0),'séance');
+    case 'Séances': return pl(by('meetingsequence').filter(x=>typeof sgEstSerieMO!=='function'||!sgEstSerieMO(x)).reduce((s,x)=>s+DS.by('meeting','MEETINGSEQUENCE_ID',x.ID).length,0),'séance');
     case 'Notes': return pl(by('projectnote').length,'note');
     case 'Tâches': { const L=by('projecttask'), o=L.filter(t=>!t.DONEDATE).length; return o+' ouverte'+(o>1?'s':'')+' sur '+L.length; }
     case 'Frais': return pl(by('projectcost').length,'dépense');
@@ -2752,14 +2752,14 @@ VIEWS['nx-pdom']={
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
     if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
     nxRecent('p',p.ID); const G0=sgPdomListe(), M=sgPdomModules(p), mods=M.map(([g])=>g), pick=n=>G0.filter(([g])=>g===n), G=[...pick('Honoraires et facturation'),...pick('Suivi du projet'),...M,...pick('Chantier'),...G0.filter(([g])=>!['Honoraires et facturation','Suivi du projet','Chantier'].includes(g))], doms=G0.flatMap(([,L])=>L);   /* ordre (21.10.2026) : Honoraires et facturation, Suivi du projet, Faisabilité, Projet, Chantier, puis les autres groupes */   /* M : modules Projet / Faisabilité en tête (bloc 21, 20.10.2026) */
-    if(dom&&(mods.includes(dom)||doms.includes(dom)||(dom==='Documents de la faisabilité'&&mods.includes('Faisabilité'))||(dom==='Planning du projet'&&mods.includes('Projet'))||(dom==='Permis de construire'&&mods.includes('Enquête'))||(dom==='Calcul des coûts'&&M.some(([,L])=>L.includes(dom))))){   /* + Documents de la faisabilité (21.10.2026) */                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
+    if(dom&&(mods.includes(dom)||doms.includes(dom)||(dom==='Documents de la faisabilité'&&mods.includes('Faisabilité'))||(dom==='Planning du projet'&&mods.includes('Projet'))||(dom==='Permis de construire'&&mods.includes('Enquête'))||(dom==='Calcul des coûts'&&M.some(([,L])=>L.includes(dom)))||(dom==='PV MO'&&mods.includes('Projet')))){   /* + Documents de la faisabilité (21.10.2026) */                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
       VIEW.nxTitle=dom+' · '+(p.NUMBER||p.TITLE||'');
-      const chips=h('div',{class:'sg-pdom-chips'},...[...mods,...doms,...(dom==='Calcul des coûts'?[dom]:[])].map(d=>h('button',{class:[d===dom?'on':'',mods.includes(d)?'mod':''].filter(Boolean).join(' ')||null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));
+      const chips=h('div',{class:'sg-pdom-chips'},...[...mods,...doms,...(dom==='Calcul des coûts'||dom==='PV MO'?[dom]:[])].map(d=>h('button',{class:[d===dom?'on':'',mods.includes(d)?'mod':''].filter(Boolean).join(' ')||null,title:SG_PDOM[d]?SG_PDOM[d][1]:d,onclick:()=>go('nx-pdom',p.ID+'|'+d)},d)));
       const bar=h('div',{class:'sg-pdom-bar'},h('button',{class:'nx-btn',html:nxSvg('back')+'Domaines',onclick:()=>{ const gf=G.findIndex(([,L])=>!!foc&&L.includes(foc)); go('nx-pdom',p.ID+'|#'+(gf>=0?gf:G.findIndex(([g,L])=>g===dom||L.includes(dom)))); }}),   /* rubrique d'un autre groupe (Dossier d'enquête ▸ Enquête, 02.11.2026) */
         h('b',{},(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'')),chips);
       const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
       const on=chips.querySelector('.on'); if(on) setTimeout(()=>on.scrollIntoView({block:'nearest',inline:'center'}),0);
-      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Documents du chantier') sgPdomModulePage(C,p2,dom,foc); else if(SG_DOCS_PAGES[dom]) sgDocsModule(C,p2,SG_DOCS_PAGES[dom](p2));   /* Documents du chantier : phases 41 à 53 et types (21.10.2026) */ else if(dom==='Frais') sgFraisModule(C,p2); else if(SG_PLAN_PAGES[dom]){ if(typeof sgPlanningModule==='function') sgPlanningModule(C,p2,SG_PLAN_PAGES[dom]); } else if(dom==='Permis de construire'){ if(typeof sgPermisModule==='function') sgPermisModule(C,p2); } else if(dom==='PV de chantier'){ if(typeof sgPvChantierModule==='function') sgPvChantierModule(C,p2); } else domainView(C,p2,dom); } }; this.drawC(); return; }
+      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Documents du chantier') sgPdomModulePage(C,p2,dom,foc); else if(SG_DOCS_PAGES[dom]) sgDocsModule(C,p2,SG_DOCS_PAGES[dom](p2));   /* Documents du chantier : phases 41 à 53 et types (21.10.2026) */ else if(dom==='Frais') sgFraisModule(C,p2); else if(SG_PLAN_PAGES[dom]){ if(typeof sgPlanningModule==='function') sgPlanningModule(C,p2,SG_PLAN_PAGES[dom]); } else if(dom==='Permis de construire'){ if(typeof sgPermisModule==='function') sgPermisModule(C,p2); } else if(dom==='PV de chantier'){ if(typeof sgPvChantierModule==='function') sgPvChantierModule(C,p2); } else if(dom==='PV MO'){ if(typeof sgPvMoModule==='function') sgPvMoModule(C,p2); } else domainView(C,p2,dom); } }; this.drawC(); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'');                                        /* page du projet : groupes repliables de domaines */
     const ouvert=/^#\d+$/.test(dom||'')?+dom.slice(1):-1;                                            // 18.10.2026 : tout replié à l'arrivée ; au retour d'un domaine, son groupe ouvert
     const logs=DS.by('timelog','PROJECT_ID',p.ID), lim30=dayKey(new Date(Date.now()-30*864e5)), tot=logs.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0),
@@ -3383,7 +3383,7 @@ document.addEventListener('click',e=>{ const th=e.target.closest&&e.target.close
    par mots-clés et articles dans les règlements (SG_FZ_MOTS — pas d'IA pour l'instant). Fiche de faisabilité : document HTML
    (sgDocOuvrir → visionneuse, Imprimer → PDF). Droits : lecture pour qui voit le projet (sgProjetPermis), écriture « documents : dépôt »
    (serveur du NAS : même règle pour sgfaisa / sgfaisatexte). */
-const SG_PMOD={'PV MO':['pv','Procès-verbaux des séances avec le maître de l’ouvrage, classés par phase (31 à 33).','Projet'],
+const SG_PMOD={'PV MO':['pv','Les séances avec le maître de l’ouvrage : questions et décisions, par phase.','dom'],   /* même présentation que Séances (04.11.2026, sg3_suivi.js) */
   'Présentation client':['pdf','Documents présentés au client, par phase.','Projet'],
   'Estimations':['ruler','Calculs du coût, classés par phase.','Projet'],
   'Descriptifs & devis':['doc','Devis descriptifs par CFC, classés par phase (32, 33).','Projet'],
@@ -3416,7 +3416,7 @@ function sgPdomModuleCompte(p,d){ if(d==='Permis de construire') return typeof s
   const sousPhase=sous=>F.filter(f=>{ const s=nfc(f.DOSSIER); return s.startsWith(base)&&s.slice(base.length).split('/')[1]===nfc(sous); }).length;
   const viv=t=>DS.by(t,'PROJECT_ID',p.ID).filter(x=>!+x.ISMARKEDASDELETED).length;
   switch(d){
-    case 'PV MO': return pl(sousPhase('PV MO'),'PV','PV');
+    case 'PV MO': return typeof sgPvMoCompte==='function'?sgPvMoCompte(p):pl(sousPhase('PV MO'),'PV','PV');
     case 'Présentation client': return pl(sousPhase('Présentation client'),'fichier');
     case 'Estimations': case 'Calcul des coûts': return pl(viv('costplanningdocument'),'estimation');
     case 'Descriptifs & devis': return pl(viv('costestimatedocument'),'devis','devis');

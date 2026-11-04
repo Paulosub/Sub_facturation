@@ -1472,6 +1472,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   tri), clic = `editCost`, clic droit = supprimer. Droits : modifier = projet modifiable, comme le Planning ; Frais : règles de `editCost` / `delCost`. Styles `#sgsv-css`, classes `sgsv-*`, débogage `window.SGSV`.
   La base de test n'a aucune séance et presque ni notes ni tâches : données d'essai dans la base de l'aperçu seulement (24BRC). Copie d'avant : `subgestion3/_backup_20261104_avant_suivi_projet/`,
   `SUBGestion3_backup_20261104_avant_suivi_projet.html`.
+- **Projet ▸ PV MO = Séances pour les questions du maître de l'ouvrage et les décisions (04.11.2026, `sg3_suivi.js`, Paulo : « reproduit séance dans pv MO, la structure de présentation mais pour des question de MO et
+  décision »)** : même page que Séances (`sgPvMoModule`, `SG_PMOD['PV MO']` 'dom'), mêmes tables du moteur. Séries du genre « PV MO » (`RX_MO` : aussi « Maître de l'ouvrage » ; `projectmeetingtype` créé à la première séance),
+  une série par phase SIA (`NUMBER` = 31, 32…, `SG_PH_FICH`), numérotation continue des séances ; ces séries n'apparaissent plus dans Séances (`seriesDe(p,mo)`). Point (`meetingitem`) : Question = catégorie 4 (`TITLE` = question,
+  `TEXT` = réponse, `ISDONE` = répondu, réglé), Décision = catégorie 2, le reste = Information ; numéros d'affichage Q1, D1, I1 ; fenêtre `pmPoint`. « Nouveau PV MO » (`pmNouveau`) : phase, date, lieu, reprise des
+  participants et des questions ouvertes du dernier procès-verbal. Vues Procès-verbal · Questions ouvertes (`questionsMO` : toutes phases, la dernière occurrence fait foi) · Décisions (registre du projet, imprimable) · Fichiers
+  (dossiers « PV MO » des phases déjà déposés : `sgDocsModule`, `docsMO`). Impression `pmImprimer` : papier des contrats (`sgImprimer`), pas `mtPrint`. Tuile : « n PV · x questions ouvertes ».
 - **Chantier ▸ PV de chantier (04.11.2026, Paulo : « dans chantier il manque pv de chantier basé sur l'app de pv actuel »)** : l'app de PV de Facturation posée dans la page du projet, limitée à l'affaire (fin de
   `sg3_offres.js`, `sgPvChantierModule`, mode `pv` du cadre posé `EMB` ; « ← Affaires » et « ✚ » masqués par `html.sgof-pv`), mêmes données (`sa_pv_data`, clé retrouvée par `sgCle`), mêmes fonctions, droit « PV : lecture ». Sans PV :
   page d'accueil, l'affaire n'est créée dans `sa_pv_data` qu'à la demande. `sgPvVue` compte aussi ce cadre posé (présentation tactile). L'écran `fx-pv-chantier` reste.

@@ -1545,7 +1545,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
      (`ckEchelle`), infobulles de définition sur les cartes et les barres, couleurs d'années complétées (`ckYC`, `CK_YC_PLUS`). **Charges &
      dépenses** : aucune source dans l'app (seul le coût de revient RH de SUBGestion 3 a des salaires et frais généraux, estimés) → section sans
      chiffres, en attente de la décision de Paulo (masquer, ou saisir les charges annuelles dans un petit tableau).
-- **Dossier de l'aperçu `/tmp/subgestion_apercu` (port 7797) nettoyé le 24.10.2026 (demande de Paulo)** : seulement `SUBGestion3.html` et
+- **Affaire de travail 99TST (05.11.2026, `subgestion3/affaire_travail/`)** — Paulo : « une affaire de toutes pièces […] cette affaire devient une affaire de travail pour développer l'app ».
+  Affaire ENTIÈREMENT fictive, **générée par script dans l'aperçu seulement** : le générateur n'est pas dans `SUBGestion3.html`, `construire.py` ne le lit pas, il ne va pas sur le NAS. **99TST · Immeuble Les Exemples**, Fondation
+  Exemple, Exempleville, 18 logements et parking, 3,5 mio HT, de la faisabilité (02.2023) au décompte final (11.2026). `ref.js` = référence unique (identité, calendrier, montants, lots, équipe, récit) ; `socle.js` = `AT.mod`, `AT.commit`,
+  dates, purge, `AT.generer()` ; `m10…m99` = un module par domaine (annuaire et 7 collaborateurs, affaire, contrats, estimations, 18 soumissions, contrôle des coûts, avenant, 3 937 h et 56 frais, 16 factures, tables Finances et RH, faisabilité,
+  plannings à 4 indices, permis, avancement, apports, 40 séances dont 15 PV MO, notes, tâches, 36 PV de chantier, 203 fichiers dont 46 courriers, contrôle `ctx.verif`) ; 5'847 enregistrements dans 77 tables. Facturation est remplie en
+  pilotant ses propres formulaires dans le cadre (`hht`, `httc` calculés par l'app). Rejouable : registre `sg_meta/affaire_travail` (`AT.purger`). `banc/banc.py` = essai dans Chrome sans fenêtre, sur une copie. Pendant la génération, `setTimeout(0)` passe
+  par une file de messages (`A.sansFrein`) : sinon, panneau masqué, pdf-lib attend à chaque enregistrement (296 s → 56 s). `construire_et_previsualiser.sh` réassemble le générateur dans l'aperçu ; régénération : skill de vérification, § 3 ter.
+  `ECARTS_APP.md` = 27 écarts de l'app relevés avec l'affaire, **non corrigés**, à présenter à Paulo.
+- **Dossier de l'aperçu `/tmp/subgestion_apercu` (port 7797) nettoyé le 24.10.2026 (demande de Paulo)** : seulement `SUBGestion3.html`, `affaire_travail.js` (05.11.2026, générateur de 99TST) et
   `base_test.json.gz` ; les maquettes (`proposition_*.html`, copies complètes de l'app) et l'ancienne copie NAS supprimées, leurs scripts gardés dans
   `subgestion3/_backup_20261024_maquettes_apercu/` (ignoré par git) — pour remontrer une maquette, recopier SUBGestion3.html sous un autre nom et y
   injecter le script. Le stockage du navigateur intégré peut être vidé (fermeture de l'app) : recharger la base de test (skill de vérification).

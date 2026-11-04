@@ -53,6 +53,19 @@ puis `<atelier>/harness/rendre.sh tous <atelier>/sorties/x --texte` (bilan : 0 e
 `python3 <atelier>/harness/comparer_base.py <dossier>` après `rendre.sh epreuve,reference <dossier>` pour mesurer en-tête, pied, logo et
 numérotation contre une page réelle de contrat (écart attendu : 0 pixel). Mode d'emploi : `subgestion3/docsub_banc/harness/LISEZMOI.md`.
 
+## 3 ter. Affaire de travail 99TST (données complètes, fictives)
+
+Pour vérifier un écran avec une affaire remplie de bout en bout, générer **99TST · Immeuble Les Exemples** dans l'aperçu
+(jamais dans `SUBGestion3.html`, jamais sur le NAS) : faisabilité, contrats et avenant, 16 factures, 3 937 h, séances, PV,
+contrôle des coûts, soumissions, permis, plannings, 203 fichiers dont 46 courriers.
+```js
+await new Promise((ok,ko)=>{ const s=document.createElement('script'); s.src='/affaire_travail.js?'+Date.now(); s.onload=ok; s.onerror=ko; document.head.append(s); });
+AT.generer().then(r=>window.__r=r);   /* ~1 min : ne pas attendre dans l'outil JavaScript, relire window.__r */
+```
+Attendu : `__r.err` nul et `AT.ctx.verif.n === 0`. Rejouable : l'affaire précédente est retirée d'abord, les identifiants changent.
+Panneau masqué (`document.hidden`) : captures en retard d'une étape, lire le texte avec `innerText` ou reprendre une capture.
+Détails : `subgestion3/affaire_travail/LISEZMOI.md` ; écarts de l'app déjà connus : `ECARTS_APP.md`.
+
 ## 4. Test du mode réel (double-clic, `file://`)
 
 ```bash

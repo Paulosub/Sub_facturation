@@ -16,6 +16,7 @@ mkdir -p $APERCU
 cp "$OUT" $APERCU/
 BASE=$(ls -t deltasub/*.json.gz 2>/dev/null | head -1)
 [ -n "$BASE" ] && cp "$BASE" $APERCU/base_test.json.gz && echo "Base de test : $BASE"
+[ -f subgestion3/affaire_travail/assembler.py ] && python3 -I subgestion3/affaire_travail/assembler.py "$APERCU/affaire_travail.js"   # générateur de l'affaire 99TST : aperçu seulement
 echo "Aperçu prêt : $APERCU/$OUT"
 grep -q '"subgestion-apercu"' .claude/launch.json 2>/dev/null || cat <<'MSG'
 ⚠ Ajouter à .claude/launch.json la configuration (puis preview_start {name:"subgestion-apercu"}) :

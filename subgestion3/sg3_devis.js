@@ -245,10 +245,12 @@ const u0=ch02aUpd; ch02aUpd=function(X){ u0(X); if(X.sgde&&X.bWh) X.bWh.disabled
 const t0=ch02aTotals; ch02aTotals=function(X){ t0(X); if(X.sgdeMaj) X.sgdeMaj(); };
 const dr0=ch02aDraw; ch02aDraw=function(X){ dr0(X); if(X.sgde) decoCat(X); };
 /* documents : une ligne par document, ses actions à côté ; les fichiers PDF du moteur suivent */
-const ETAT_DOC=(d,f,pdf)=>[d?'Document créé':'Pas encore créé',...(pdf?[f?'PDF créé':'sans PDF']:[])].join(' · ');
+const ETAT_DOC=(d,f,pdf)=>[d?'Document créé':'Pas encore créé',...(pdf?[f?'PDF créé : '+f.NOM:'sans PDF']:[])].join(' · ');
+/* PDF d'une ligne : le moteur ne connaît que le PDF officiel (documents/<genre>.pdf) ; « Créer le PDF » écrit dans documents/archive, sous le nom proposé. Sans ceci, la ligne restait « sans PDF » juste après sa création. Affichage seulement : les règles du moteur (ch02cPdfHas : effacer, avertir à l'ouverture) ne changent pas. Un PDF renommé reste dans la liste Fichiers PDF. */
+const pdfLigne=(X,r)=>{ try{ return ch03aTrouve(ch02cDos(X),r.g+'.pdf')||ch03aTrouve(ch02cDos(X,'archive'),ch03aNomPdf(r.pdf))||null; }catch(_){ return null; } };
 function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<2||!K[1].classList.contains('pane')) return; const pdf=ch02cPdfOn(), L=el('div','sgde-dl');
-  CH02C_ROWS.forEach((r,i)=>{ const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(ETAT_DOC(d,f,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');
-    a.append(ibtn({label:d?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!f,fn:()=>ch02cOpenPdf(X,i)})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})); L.append(c); });
+  CH02C_ROWS.forEach((r,i)=>{ const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');
+    a.append(ibtn({label:d?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})); L.append(c); });
   K[0].remove(); K[1].replaceWith(L); const bz=K[2]&&K[2].querySelector('.ib'); if(bz) lib(bz,'Fonctions'); }
 const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLignes(X); }catch(e){ console.error(e); } };
 

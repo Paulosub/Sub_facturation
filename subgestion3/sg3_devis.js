@@ -18,7 +18,6 @@ const CSS=`
 .sgde-lt td.note{max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sgde-tag{display:inline-block;margin-left:8px;font-size:11px;font-weight:400;color:var(--s-gris);white-space:nowrap}
 .sgde{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden;background:#fff}
-html:has(#main .sgde) #nx-sub{display:none!important}
 .sgde-tete{flex:none;padding:8px 24px 0}
 .sgde-tete .sgfh-tete{margin:0;padding:10px 18px}
 .sgde-tete .sgfh-ini{font-size:28px;white-space:nowrap}
@@ -209,7 +208,7 @@ function habiller(m,X){ cssD();
   const box=el('div','sgde'), hd=el('div','sgde-tete'), kp=el('div','nx-kpis sgde-kp'), ong=el('div','sgde-ong'), ongL=el('div','sg-onglets'), niv=el('div','sgde-niv'), bar=el('div','ph2 sgde-bar'), docs=el('div','sgde-docs');
   const mEd=bEd._sgB.menu, mPar=bPar._sgB.menu, mWh=X.bWh._sgB.menu, ec=ecrit();
   const fonctions=()=>{ const ed=mEd().slice(), dern=Object.assign(ch02aExt(X,'ch02dLastVersion',4,CH02A_L.last),{dis:ch02dLastDis(X)}), pr=mPar().filter(x=>x!=='-'&&x.t!==CH02A_L.prefs), vis=()=>Object.assign({},X.R2,{view:(X.R2.view||[]).filter(r=>!S.niv||cfcLevel((r.det?r.n:r).p.cfc)<=S.niv)}), wh=mWh().filter(x=>x==='-'||!String(x.t).startsWith(CH02A_L.docs)).map(x=>x==='-'?x:x.t===CH02A_L.copy?{t:x.t,fn:()=>{ const g=vis(); ctCopy(tableText(g,'\t'),'Tableau copié ('+g.view.length+' lignes).'); }}:x.t===CH02A_L.csv?{t:x.t,fn:()=>csvTable(vis(),'Devis_'+(X.p?X.p.NUMBER:''))}:x), rows=!!((X.R2||{}).view||[]).length;
-    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,'-',dern]},{t:CH02A_L.intro,fn:()=>X.dvIntro()},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),{t:'Exporter',dis:!rows,sub:()=>wh},...(typeof ch10dStart==='function'?['-',{t:'Veille : accès aux adresses et aux heures',fn:()=>ch10dStart()}]:[])]; };
+    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,'-',dern]},{t:CH02A_L.intro,fn:()=>X.dvIntro()},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),{t:'Exporter',dis:!rows,sub:()=>wh}]; };
   const sep=()=>el('span','sgde-sep'), fin=el('span','sgde-fin');
   const bAdd=lib(ibtn({i:'plus',t:'Ajouter une position',fn:()=>plan(!S.cfc)}),'Ajouter une position');
   X.bModif=ibtn({i:'edit',t:'Editer la position',fn:()=>X.dvCalc()});

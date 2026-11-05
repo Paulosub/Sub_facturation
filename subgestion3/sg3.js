@@ -297,6 +297,8 @@ function sgNav(){ const c=sgCur(), d=c.d||SG_D.accueil; sgSide();
   document.title=(title||'SUBGestion')+' — SUBGestion';
   const se=document.getElementById('search'); if(se&&!se.disabled) se.placeholder='Filtrer cette liste   /';
   nxSubSync(); }
+/* Veille retirée de l'app (05.11.2026, Paulo : « supprimer de toute l'app, icône pas nécessaire ») : plus de bouton dans les documents ouverts, ch10dStart sans effet ; DeltaSub.html seul la garde */
+if(typeof ch10dIsDoc==='function') ch10dIsDoc=()=>false;
 function nxSubSync(){ const tl=document.getElementById('tools'), se=document.getElementById('search'), sub=document.getElementById('nx-sub'), cx=document.getElementById('sg-ctx');
   if(sub) sub.classList.toggle('empty',!(tl&&tl.querySelector('button,input,select,.seg'))&&!(se&&!se.disabled)&&!(cx&&cx.firstChild)); }
 function sgDomGo(k){ const d=SG_D[k]; if(!d) return; go(k==='accueil'?'nx-home':'dom-'+k); }

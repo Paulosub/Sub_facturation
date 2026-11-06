@@ -229,7 +229,7 @@ async function effacerDoc(ctx){ const r=lire(ctx); if(!r) return; if(pdfDe(ctx))
   if((await ivAsk('Avertissement',CH02C_MSG.delFile))!==true) return; try{ await DS.commit([{t:T,id:r.ID,val:Object.assign({},r,{doc:null}),bseq}]); }catch(_){ } }
 
 /* ── ELEMENTS ▸ Documents ── */
-const reglages=ctx=>{ const o=optDe(ctx.P), ro=!ctx.canEdit(), pose=async x=>{ ctx.P.impressionDoc=Object.assign({},o,x); await ctx.touch(); };
+const reglages=ctx=>{ const o=optDe(ctx.P), ro=!ecrit(ctx), pose=async x=>{ ctx.P.impressionDoc=Object.assign({},o,x); await ctx.touch(); };
   return [...OPTS.map(([k,t])=>({t,chk:!!o[k],dis:ro,fn:()=>pose({[k]:!o[k]})})),'-',...[1,100,1000].map(N=>({t:'Arrondir à '+N,chk:+o.arrondi===N,dis:ro,fn:()=>pose({arrondi:+o.arrondi===N?0:N})})),'-',
     {t:'Afficher le calcul de quantité référentielle',chk:!!o.calculQR,dis:ro,fn:()=>pose({calculQR:!o.calculQR})}]; };
 const supprimer=ctx=>{ const f=pdfDe(ctx); return [{t:CH02C_L.delDoc,dis:!lire(ctx)||!ecrit(ctx),fn:()=>effacerDoc(ctx)},{t:CH02C_L.delPdf,dis:!f||!peutPdf(ctx),fn:()=>ch03cSupprimerDlg([f])}]; };

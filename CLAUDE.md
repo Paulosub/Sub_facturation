@@ -1564,7 +1564,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Exclure » non comptées), plusieurs taux listés (« TVA 7.7 · 8.1 % ») ; lignes à 0 % (taxes, émoluments, CFC 51…) hors du libellé, signalées dans l'infobulle ; devis vide : taux par défaut (`ch02aVat`).
   Montant soumis aux honoraires = hors taxe (% × montant HT, `dvCompute`) : chiffre « Montant soumis HT » (d'abord « Soumis aux honoraires HT »), colonne « Montant soumis HT » (07.11.2026, Paulo : « indiquer si HT ou TTC »).
   **Précision du devis (07.11.2026, Paulo : « ajoute le degré de précision du devis devant le total TTC »)** : premier chiffre, étroit (colonne de 86 px), « Précision ±10 % » = « Marge
-  d'approximation du DG » des Paramètres (`E.reglages.marge`, textes « [...] » ignorés) ; vide → « — » et lien « définir » (Paramètres, `ch02aSettings`). Texte d'aide sous la recherche du
+  d'approximation du DG » des Paramètres (`E.reglages.marge`, textes « [...] » ignorés), sans sous-ligne (« du devis » retiré à la demande) ; vide → « — » et lien « définir »
+  (Paramètres, `ch02aSettings`). Texte d'aide sous la recherche du
   plan CFC retiré (« supprimer », même jour). « figé » sous Honoraires HT, la raison en infobulle. Plus de « CHF » sous les chiffres du devis (« supprimer le CHF dans le devis général », même jour) : seules restent les
   indications utiles (montants exclus, filtre, contrat signé, liens). Chiffre « Soumis aux honoraires HT » renommé « Montant soumis HT » (une seule ligne, comme la colonne) ; « figé » retiré sous
   Honoraires HT (« supprimer », même jour), devis validé ou annulé signalé dans l'infobulle du chiffre.

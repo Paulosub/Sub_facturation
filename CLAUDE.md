@@ -1637,7 +1637,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   trois cellules ; **nom de l'affaire automatique** (Paulo, même jour : « ce texte est automatique car il s'agit du nom de l'affaire ») : « Devis général | <désignation de
   l'affaire, `project.TITLE`> » n'est plus saisi — `reglages.infoAffaire` (posé à la création, par le texte type d'un devis vide ou à la première modification d'un devis reconnu),
   ajouté à l'impression (`remImpr` : PDF du devis général, ancien livret par l'enveloppe de `ch02bBook`, documents Honoraires / Devis descriptif par celle de `ch02cRender`),
-  première ligne fixe en gras bleu nuit de la cellule « Devis général », texte modifiable dessous ; devis plus ancien dont la 1re remarque est « Devis général » suivie de la
+  première ligne fixe en gras bleu nuit de la cellule « Devis général », texte modifiable dessous ; **trait sous le titre** (même jour, « ajouter un trait sous le titre du
+  projet ») automatique aussi : filet noir sous le nom dans la page, ligne de tirets du modèle 24PRC (`TRAIT`) imprimée sous le nom ; une ligne de tirets saisie juste après le
+  nom est retirée du texte modifiable et du texte type (`sansTrait`) ; devis plus ancien dont la 1re remarque est « Devis général » suivie de la
   désignation ou de la description de l'affaire : reconnu (`remAuto`), imprimé et affiché de même, converti à la première modification —
   posé à la création d'un devis sans remarques (enveloppe de `ch02dCommit` ; une copie garde les remarques de l'original), bouton « Insérer le texte type » pour un devis
   existant (à la suite, confirmation s'il y a déjà des lignes) ; textes libres 1 à 5 et « Commentaire » retirés

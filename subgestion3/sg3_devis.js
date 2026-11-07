@@ -172,7 +172,7 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgde-rmo{color:var(--s-gris)}
 .sgde-rml{padding:7px 0;font-size:13px;color:var(--s-gris)}
 .sgde-rmc{display:flex;flex-direction:column;gap:4px;min-width:0}
-.sgde-rmf{padding:7px 7px 3px;font-size:13.5px;color:var(--s-nuit);font-weight:600}
+.sgde-rmf{padding:7px 7px 6px;font-size:13.5px;color:var(--s-nuit);font-weight:600;border-bottom:1px solid var(--s-noir);margin-bottom:4px}   /* trait sous le titre du projet */
 .sgde-rmo>span{padding:7px 0;font-size:13px}
 .sgde-rmp{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin:10px 0 0;font-size:12px;color:var(--s-gris)}
 .sgde-rmp .sgde-hreg{font-size:13px}
@@ -484,7 +484,7 @@ const PAR_AIDE={phase:'Phase SIA 102 du devis ; son nom est repris sur la page d
 /* texte type de la page Information (Paulo, 07.11.2026, choix « texte type des nouveaux devis ») : texte du bureau, une ligne par entrée comme dans l'ancien logiciel (une ligne
    sans libellé continue la précédente) ; {ouvrage} = description du projet (sinon son titre, comme « Ouvrage » de la page de garde), {tva} = taux de TVA par défaut,
    date des plans à compléter */
-const REM_TYPE=[['',['-----------------------------------------------------------','Ce devis est estimatif et reste sous réserve des points suivants:',
+const REM_TYPE=[['',['Ce devis est estimatif et reste sous réserve des points suivants:',
     '-évolution des prix des matières premières','-inflation','-exigences supplémentaires des autorités / MO','-imprévus durant la phase d\'exécution',
     '-estimation basées sur l\'expérience Substances','Ce DG correspond aux plans datés du [date à compléter]','(TVA {tva}%)'].join('\n')],
   ['Réserve','CFC 583 Réserve pour divers et imprévus (env. 10%)'],
@@ -498,13 +498,18 @@ function remType(pid){ let t=8.1; try{ const v=+ch02aVat(); if(isFinite(v)&&v>0)
    même (remAuto), converti à la première modification. */
 const nomAffaire=p=>String((p||{}).TITLE||(p||{}).DESCRIPTION||'').trim();
 const normTxt=v=>String(v||'').normalize('NFC').replace(/[’‘]/g,"'").replace(/\s+/g,' ').trim().toLowerCase();
+/* trait sous le titre du projet (Paulo, 07.11.2026 : « ajouter un trait sous le titre du projet ») : automatique comme le nom — filet dans la page, ligne de tirets dans le PDF
+   (celle du modèle 24PRC) ; une ligne de tirets saisie juste après le nom est retirée du texte modifiable */
+const TRAIT='-----------------------------------------------------------', RX_TRAIT=/^[\s\-–—_]*[-–—_]{3,}[\s\-–—_]*$/;
+const sansTrait=L=>{ const f=L[0]; if(!f||String(f.nom||'').trim()) return L; const lg=String(f.texte||'').split('\n'); if(!RX_TRAIT.test(lg[0]||'')) return L;
+  return lg.length>1?[{nom:'',texte:lg.slice(1).join('\n')},...L.slice(1)]:L.slice(1); };
 function remAuto(E,p){ const R=(E&&E.reglages)||{}, L=((E&&E.remarques)||[]).map(r=>({nom:String((r||{}).nom||''),texte:String((r||{}).texte||'')}));
-  if(R.infoAffaire) return {auto:true,rest:L};
+  if(R.infoAffaire) return {auto:true,rest:sansTrait(L)};
   const f=L[0]; if(f&&/^devis général$/i.test(f.nom.trim())){ const lg=f.texte.split('\n'); if(lg[0].trim()&&[p&&p.TITLE,p&&p.DESCRIPTION].some(v=>v&&normTxt(v)===normTxt(lg[0])))
-    return {auto:true,detecte:true,rest:[...(lg.length>1?[{nom:'',texte:lg.slice(1).join('\n')}]:[]),...L.slice(1)]}; }
+    return {auto:true,detecte:true,rest:sansTrait([...(lg.length>1?[{nom:'',texte:lg.slice(1).join('\n')}]:[]),...L.slice(1)])}; }
   return {auto:false,rest:L}; }
-/* remarques telles qu'imprimées : nom de l'affaire en tête si automatique (déclaré ou reconnu : même texte que la page Paramètres) */
-const remImpr=(E,p)=>{ const A=remAuto(E,p); return A.auto?[{nom:'Devis général',texte:nomAffaire(p)},...A.rest]:((E&&E.remarques)||[]); };
+/* remarques telles qu'imprimées : nom de l'affaire et trait en tête si automatique (déclaré ou reconnu : même texte que la page Paramètres) */
+const remImpr=(E,p)=>{ const A=remAuto(E,p); return A.auto?[{nom:'Devis général',texte:nomAffaire(p)+'\n'+TRAIT},...A.rest]:((E&&E.remarques)||[]); };
 { const b0=ch02bBook; ch02bBook=function(E,doc,p){ if(!E||!remAuto(E,p).auto) return b0.apply(this,arguments); const o=E.remarques; E.remarques=remImpr(E,p); try{ return b0.apply(this,arguments); } finally{ E.remarques=o; } }; }
 /* titres des documents (page de garde, devis à 1 et 2 chiffres, document principal) = nom de la version du devis, à la création (Paulo, 07.11.2026) : enregistrement qui crée
    un en-tête (bseq 0) et son contenu (bseq 0) — nouveau devis, Dupliquer, Dupliquer et modifier, import ; nom vide : titres inchangés (« Devis général » par défaut) */
@@ -557,7 +562,7 @@ function parPage(X,par,force){ if(!par) return; const act=document.activeElement
      puis les ouvrages ajoutés d'office par le PDF (lecture seule). Remplace le texte libre 1 (« Commentaire », valeurs des textes libres gardées dans le devis). */
   const RA=remAuto(X.E,X.p), G0=remGroupes(RA.rest), A0=RA.auto?(G0.length&&!G0[0][0].trim()?G0.shift()[1]:''):null, RM=G0, OV=(()=>{ try{ return dgOuvInfo(X); }catch(_){ return []; } })();
   /* nom de l'affaire : première ligne fixe de la cellule « Devis général », le texte qui le suit reste modifiable */
-  const lgAuto=A0==null?'':'<div class="sgde-rmr sgde-rmauto"><span class="sgde-rml">Devis général</span><div class="sgde-rmc"><div class="sgde-rmf" title="Nom de l’affaire, repris automatiquement">'+E(nomAffaire(X.p)||'(affaire sans nom)')+'</div>'
+  const lgAuto=A0==null?'':'<div class="sgde-rmr sgde-rmauto"><span class="sgde-rml">Devis général</span><div class="sgde-rmc"><div class="sgde-rmf" title="Nom de l’affaire et trait, repris automatiquement">'+E(nomAffaire(X.p)||'(affaire sans nom)')+'</div>'
     +'<textarea class="inp sgde-rmt" rows="1" data-k="rem.a.t" placeholder="Texte"'+dis+'>'+E(A0)+'</textarea></div><span></span></div>';
   const lgRm=(r,i)=>'<div class="sgde-rmr" data-i="'+i+'"><input class="inp sgde-rmn" data-k="rem.'+i+'.n" value="'+E(r[0])+'"'+dis+'><textarea class="inp sgde-rmt" rows="1" data-k="rem.'+i+'.t" placeholder="Texte"'+dis+'>'+E(r[1])+'</textarea>'
     +(peut?'<span class="sgde-rma"><button data-rm="haut" title="Monter">↑</button><button data-rm="bas" title="Descendre">↓</button><button data-rm="suppr" title="Supprimer la ligne">×</button></span>':'<span></span>')+'</div>';

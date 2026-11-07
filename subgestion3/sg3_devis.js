@@ -512,6 +512,11 @@ function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<
   K[0].remove(); K[1].replaceWith(L); dp.querySelectorAll(':scope>.sgde-dh').forEach(x=>x.remove()); L.before(el('div','ph2 sgde-dh','<b>Devis</b>'));   /* titre de la section, comme « Fichiers PDF » (Paulo, 07.11.2026 : « ajouter ici Devis ») */
   const bz=K[2]&&K[2].querySelector('.ib'); if(bz) lib(bz,'Fonctions'); }
 const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLignes(X); }catch(e){ console.error(e); } };
+/* fenêtre des documents du devis (Devis général, Honoraires, Devis descriptif) : sans « Modifier les textes… » (Paulo, 07.11.2026 : « supprimer ») ; les « Réglages » restent dans la barre.
+   Les autres visionneuses (contrôle des coûts, soumission…) gardent le bouton. */
+{ let sansTextes=false; const v0=ch02cView, a0=ch01aView;
+  ch02cView=function(){ sansTextes=true; try{ return v0.apply(this,arguments); } finally{ sansTextes=false; } };
+  ch01aView=function(t,R,o){ if(sansTextes&&o&&o.edit){ o=Object.assign({},o); delete o.edit; } return a0.call(this,t,R,o); }; }
 
 /* ── fenêtre « Calcul pour <CFC> » ── */
 const TH_CALC={'Calcul de quantités':['Calcul des quantités','Formule de calcul, par exemple 12.5*3'],Base:['Base','Base du prix'],Var:['Var.','Variante : la ligne n’est pas comptée dans le total']};

@@ -1579,6 +1579,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `o.outils(maj)` (boutons ajoutés après « Partager », reçoivent `maj(src)` pour redessiner), `ch01aView` le transmet, `ch02cView` y met « Réglages ▾ » (`ch02cPrefItems`, cases cochées
   « ✓ », enregistrées par `ch02cSetOpt`) puis recalcule le document (`ch02cRender`) : le PDF se redessine aussitôt, « PDF » enregistre la version à jour. Devis général, Honoraires,
   Devis descriptif ; v1 et v2 reconstruites. Onglet Documents : titre de section « Devis » au-dessus des trois documents, comme « Fichiers PDF » (`.sgde-dh`).
+  Bouton « Modifier les textes… » retiré de cette fenêtre (« supprimer », même jour ; `ch02cView` / `ch01aView` enveloppés dans sg3_devis.js, sans l'option `edit`) ; les autres
+  visionneuses le gardent, DeltaSub.html seul aussi.
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis
   général (PDF) » (première entrée ; les présentations de l'ancien livret restent dessous). `dgPdf` / `dgCreer` (sg3_devis.js) : livret du moteur `ch02bBook` avec des gabarits de
   pages synthétiques (tableau 728 × 388 pt, Information 402 pt, rangées 15 pt) et la présentation de la référence `DG_PRESET` (page de garde, Information si remarques

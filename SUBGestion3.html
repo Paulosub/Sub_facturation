@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 07.11.2026 23:12 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 07.11.2026 23:16 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38590,7 +38590,8 @@ function habiller(m,X){ cssD();
   const mEd=bEd._sgB.menu, mPar=bPar._sgB.menu, mWh=X.bWh._sgB.menu, ec=ecrit();
   const fonctions=()=>{ const ed=mEd().slice(), dern=Object.assign(ch02aExt(X,'ch02dLastVersion',4,CH02A_L.last),{dis:ch02dLastDis(X)}), pr=mPar().filter(x=>x!=='-'&&x.t!==CH02A_L.prefs), vis=()=>Object.assign({},X.R2,{view:(X.R2.view||[]).filter(r=>!S.niv||cfcLevel((r.det?r.n:r).p.cfc)<=S.niv)}), wh=mWh().filter(x=>x==='-'||!String(x.t).startsWith(CH02A_L.docs)).map(x=>x==='-'?x:x.t===CH02A_L.copy?{t:x.t,fn:()=>{ const g=vis(); ctCopy(tableText(g,'\t'),'Tableau copié ('+g.view.length+' lignes).'); }}:x.t===CH02A_L.csv?{t:x.t,fn:()=>csvTable(vis(),'Devis_'+(X.p?X.p.NUMBER:''))}:x), rows=!!((X.R2||{}).view||[]).length;
     const fil=dvOuvCodes(X.E).length?[{t:'Filtre des ouvrages',sub:()=>ch02aSps(X).length?ch02aFilterMenu(X):[{t:'Filtre…',fn:()=>ch02aFilterDialog(X)}]},'-']:[];   /* bouton « Filtre » retiré de la barre (Paulo, 07.11.2026) : ici, seulement si le devis a des ouvrages */
-    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,{t:'Soumis aux honoraires selon la règle du bureau …',fn:()=>regleHon(X)},'-',dern]},{t:CH02A_L.intro,fn:()=>{ S.ouvrirPar(); const r=par.querySelector('.sgde-rms'); if(r) r.scrollIntoView({block:'start'}); }},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),...fil,{t:'Exporter',dis:!rows,sub:()=>wh}]; };
+    /* « Informations pour le devis » retiré du menu (Paulo, 07.11.2026 : « supprimer ») : la page Information est dans l'onglet Paramètres */
+    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,{t:'Soumis aux honoraires selon la règle du bureau …',fn:()=>regleHon(X)},'-',dern]},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),...fil,{t:'Exporter',dis:!rows,sub:()=>wh}]; };
   const sep=()=>el('span','sgde-sep'), fin=el('span','sgde-fin');
   const bAdd=lib(ibtn({i:'grille',t:'Liste CFC',fn:()=>plan(!S.cfc)}),'Liste CFC'); bAdd.title='Liste CFC : double-cliquez sur un CFC pour l’ajouter au devis ou l’en retirer';   /* menu du clic droit : « Liste CFC » (_sgB.t) */   /* « Liste CFC » (Paulo, 07.11.2026) */
   X.bModif=ibtn({i:'edit',t:'Editer la position',fn:()=>X.dvCalc()});

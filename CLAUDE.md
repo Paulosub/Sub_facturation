@@ -1575,6 +1575,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Retour à la page des devis du projet (même jour, « retour à la page des devis du projet »)** : bouton « ‹ Devis du projet » du bandeau et toute fermeture du devis (`ch02aClose`
   enveloppé) → page du projet ▸ Devis général (`nx-pdom` « ID|Devis général »), d'où que le devis ait été ouvert (liste de tous les devis, reprise de session) ; projet non permis
   au profil (`sgProjetPermis`) ou sans projet : retour du moteur (`DV.back`, sinon liste des devis).
+  **Réglages dans la fenêtre du document (même jour, « ajouter ce menu pour configurer le devis dans la fenêtre d'affichage PDF »)** : DeltaSub.html — `ch03bView` accepte
+  `o.outils(maj)` (boutons ajoutés après « Partager », reçoivent `maj(src)` pour redessiner), `ch01aView` le transmet, `ch02cView` y met « Réglages ▾ » (`ch02cPrefItems`, cases cochées
+  « ✓ », enregistrées par `ch02cSetOpt`) puis recalcule le document (`ch02cRender`) : le PDF se redessine aussitôt, « PDF » enregistre la version à jour. Devis général, Honoraires,
+  Devis descriptif ; v1 et v2 reconstruites. Onglet Documents : titre de section « Devis » au-dessus des trois documents, comme « Fichiers PDF » (`.sgde-dh`).
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis
   général (PDF) » (première entrée ; les présentations de l'ancien livret restent dessous). `dgPdf` / `dgCreer` (sg3_devis.js) : livret du moteur `ch02bBook` avec des gabarits de
   pages synthétiques (tableau 728 × 388 pt, Information 402 pt, rangées 15 pt) et la présentation de la référence `DG_PRESET` (page de garde, Information si remarques

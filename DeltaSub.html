@@ -15757,7 +15757,7 @@ async function ch01aErase(o){ const id=ch01aId(o.E,o.dossier), r=DS.get('cocodoc
   try{ await DS.commit([{t:'cocodoc',id,val:{...r,doc:null},bseq}]); }catch(_){ } }
 
 /* ── Visionneuse : aperçu dans un iframe, impression par le navigateur (« Enregistrer au format PDF » compris) ── */
-function ch01aView(titre,R,o){ o=o||{}; if(typeof ch03bView==='function') return ch03bView(titre,R,{pdf:o.pdf,concerne:o.pdf&&o.pdf.concerne,contacts:o.pdf&&o.pdf.contacts,boutons:o.edit?[{t:'Modifier les textes…',fn:maj=>o.edit(maj)}]:[]}); const ifr=h('iframe',{style:{width:'100%',height:'72vh',border:'1px solid var(--line)',background:'#fff',display:'block'}}); ifr.srcdoc=svDpDocHTML(R);
+function ch01aView(titre,R,o){ o=o||{}; if(typeof ch03bView==='function') return ch03bView(titre,R,{pdf:o.pdf,concerne:o.pdf&&o.pdf.concerne,contacts:o.pdf&&o.pdf.contacts,boutons:o.edit?[{t:'Modifier les textes…',fn:maj=>o.edit(maj)}]:[],outils:o.outils}); const ifr=h('iframe',{style:{width:'100%',height:'72vh',border:'1px solid var(--line)',background:'#fff',display:'block'}}); ifr.srcdoc=svDpDocHTML(R);
   const D=dialog({title:titre,width:'920px',body:ifr,buttons:[...(o.edit?[{t:'Modifier les textes…',fn:()=>{ o.edit(R2=>{ ifr.srcdoc=svDpDocHTML(R2); }); return false; }}]:[]),
     {t:'Imprimer…',fn:()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ toast('Impression impossible : '+e.message,true); } return false; }},{t:'Fermer',pri:true}]});
   D.iframe=ifr; return D; }
@@ -18511,7 +18511,11 @@ async function ch02cOpen0(X,i){ const R0=CH02C_ROWS[i], id=ch02cId(X,i);
   return ch02cView(X,i,rec,R); }
 /* visionneuse : ch01aView (« Modifier les textes… » par ch01aTexts, enregistrement propre au devis) si le socle CH-01 est intégré, sinon aperçu dans un iframe */
 function ch02cView(X,i,rec,R){ const id=rec.ID;
-  if(typeof ch01aView==='function') return ch01aView(rec.doc.nom,R,typeof ch01aTexts!=='function'?{}:{edit:upd=>{ const cur=DS.get(CH02C_T,id); if(!cur||!cur.doc) return; const bseq=ctBseq(CH02C_T,id);
+  /* « Réglages » du document dans la visionneuse (07.11.2026, Paulo : « ajouter ce menu pour configurer le devis dans la fenêtre d'affichage PDF ») : les mêmes cases que la ligne
+     du document (ch02cPrefItems, enregistrées dans le devis par ch02cSetOpt), puis le document est recalculé et la visionneuse redessinée (maj) */
+  const outils=maj=>[ch03bBouton('gear',CH02C_L.prefs,b=>ch03bMenu(b,ch02cPrefItems(X,i).map(it=>it==='-'?it:Object.assign({},it,{t:(it.chk?'✓ ':'')+it.t,fn:()=>{ it.fn();
+    try{ maj(ch02cRender(X,i,DS.get(CH02C_T,id)||rec)); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }}))),true)];
+  if(typeof ch01aView==='function') return ch01aView(rec.doc.nom,R,typeof ch01aTexts!=='function'?{outils}:{outils,edit:upd=>{ const cur=DS.get(CH02C_T,id); if(!cur||!cur.doc) return; const bseq=ctBseq(CH02C_T,id);
     ch01aTexts(cur,x=>{ try{ upd(ch02cRender(X,i,x)); }catch(e){ console.error(e); } },async rep=>{ const c2=DS.get(CH02C_T,id)||cur;
       await DS.commit([{t:CH02C_T,id,val:Object.assign({},c2,{doc:Object.assign({},c2.doc,{report:rep,modifieLe:today(),modifiePar:ME.id})}),bseq}]); }); }});
   const ifr=h('iframe',{style:{width:'100%',height:'72vh',border:'1px solid var(--line)',background:'#fff',display:'block'}}); ifr.srcdoc=svDpDocHTML(R);
@@ -21402,7 +21406,8 @@ function ch03bView(titre,src,o){ o=o||{};
   zs.onchange=()=>{ z=+zs.value; ch03bZoomEcrit(z); let s=null; try{ s=ifr.contentDocument.getElementById('ch03b-zoom'); }catch(_){}
     if(s) s.textContent=ch03bZoomRegle(z); else rendre(); };
   const bar=phead([ibtn({i:'print',t:'Imprimer',fn:imprimer}),zs,
-    ch03bBouton('pdf','PDF',P?b=>ch03bMenu(b,menuPdf()):apercu,!!P),ch03bBouton('share','Partager',b=>ch03bMenu(b,menuPart()),true)]);
+    ch03bBouton('pdf','PDF',P?b=>ch03bMenu(b,menuPdf()):apercu,!!P),ch03bBouton('share','Partager',b=>ch03bMenu(b,menuPart()),true),
+    ...(typeof o.outils==='function'?(o.outils(maj)||[]):[])]);   /* outils propres au document (07.11.2026, SUBGestion 3 : « Réglages » des documents du devis) : reçoivent maj(src) pour redessiner */
   rendre();
   const D=dialog({title:nomT(),width:'min(1000px, 96vw)',body:h('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},bar,ifr),
     buttons:[...(o.boutons||[]).map(b=>({t:b.t,fn:()=>{ try{ b.fn(maj); }catch(e){ console.error(e); } return false; }})),{t:'Fermer',pri:true}]});

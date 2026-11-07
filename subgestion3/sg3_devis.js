@@ -131,6 +131,8 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgde-docs .ch02-dpane>.ph2>b{font-size:14px}
 .sgde-docs .ch02-dpane .ib{border:0;background:transparent}
 .sgde-docs .ch02-dpane>.ph2{border-top:2px solid var(--s-noir)!important;padding-top:8px}
+.sgde-docs .ch02-dpane>.sgde-dh{margin-top:14px}
+.sgde-docs .ch02-dpane>.sgde-dh+.sgde-dl{margin-top:0;border-top:0}
 .sgde-docs .ch02-dpane>div:not(.ph2):not(.sgde-dl){border:0!important;height:auto!important;min-height:96px}
 .dlg.sgdc-dlg{width:min(1180px,94vw)!important;max-height:92vh}
 .ov:has(>.dlg.sgdc-dlg){padding-top:4vh}
@@ -507,7 +509,8 @@ const pdfLigne=(X,r)=>{ try{ return ch03aTrouve(ch02cDos(X),r.g+'.pdf')||ch03aTr
 function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<2||!K[1].classList.contains('pane')) return; const pdf=ch02cPdfOn(), L=el('div','sgde-dl');
   CH02C_ROWS.forEach((r,i)=>{ const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');
     a.append(ibtn({label:d?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})); L.append(c); });
-  K[0].remove(); K[1].replaceWith(L); const bz=K[2]&&K[2].querySelector('.ib'); if(bz) lib(bz,'Fonctions'); }
+  K[0].remove(); K[1].replaceWith(L); dp.querySelectorAll(':scope>.sgde-dh').forEach(x=>x.remove()); L.before(el('div','ph2 sgde-dh','<b>Devis</b>'));   /* titre de la section, comme « Fichiers PDF » (Paulo, 07.11.2026 : « ajouter ici Devis ») */
+  const bz=K[2]&&K[2].querySelector('.ib'); if(bz) lib(bz,'Fonctions'); }
 const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLignes(X); }catch(e){ console.error(e); } };
 
 /* ── fenêtre « Calcul pour <CFC> » ── */

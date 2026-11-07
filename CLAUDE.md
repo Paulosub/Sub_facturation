@@ -1628,11 +1628,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   général - <phase> » et anciens modèles ; un état saisi avant qui n'est pas une phase reste affiché « (état saisi avant) » jusqu'au choix —, marge d'approximation, indice ;
   « Etat de planification » retiré à la demande, valeur gardée dans le devis ; phrase d'aide de l'arrondi retirée ; Affichage — pourcentage, arrondi ; dernière section « Information » (Paulo : « voici ce que je souhaiterais écrire dans Information », page Information de son DG 24PRC) = les remarques préliminaires
   du devis (`E.remarques` {nom, texte}, mêmes données que Fonctions ▸ Remarques préliminaires, qui ouvre maintenant cette section) : une ligne par remarque, libellé à gauche,
-  texte à droite (hauteur selon le contenu), au graphisme des autres sections (libellé en gris comme leurs libellés, cadre au survol et en saisie ; texte dans un champ encadré ; filets entre les lignes ;
+  texte à droite (hauteur selon le contenu ; une cellule par libellé : le libellé et les entrées sans libellé qui le suivent regroupés en un texte de plusieurs lignes,
+  `remGroupes`, enregistrés ainsi à la première modification — le PDF imprime chaque ligne sur sa rangée, même page qu'avec une entrée par ligne), au graphisme des autres sections (libellé en gris comme leurs libellés, cadre au survol et en saisie ; texte dans un champ encadré ; filets entre les lignes ;
   pas les rangées grises du PDF, à la demande), ↑ ↓ × au survol (suppression confirmée si la ligne a du texte), « + Ajouter une ligne » ; lignes vides
   retirées à l'enregistrement (comme la fenêtre du moteur) ; ouvrages du devis en gris à la fin (ajoutés d'office par le PDF) ; **texte type** (Paulo, même jour, choix
   « texte type des nouveaux devis », texte de son DG 24PRC : `REM_TYPE`, `remType`) — Devis général / {ouvrage} (description du projet, sinon titre), réserves (prix des
-  matières, inflation, autorités / MO, imprévus, expérience Substances), « plans datés du [date à compléter] », « (TVA {taux par défaut}%) », Réserve CFC 583, Subventions —
+  matières, inflation, autorités / MO, imprévus, expérience Substances), « plans datés du [date à compléter] », « (TVA {taux par défaut}%) », Réserve CFC 583, Subventions,
+  trois cellules —
   posé à la création d'un devis sans remarques (enveloppe de `ch02dCommit` ; une copie garde les remarques de l'original), bouton « Insérer le texte type » pour un devis
   existant (à la suite, confirmation s'il y a déjà des lignes) ; textes libres 1 à 5 et « Commentaire » retirés
   de la page, valeurs gardées dans le devis ; « Titres » retiré à la

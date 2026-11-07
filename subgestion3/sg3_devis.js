@@ -481,11 +481,12 @@ const PAR_AIDE={phase:'Phase SIA 102 du devis ; son nom est repris sur la page d
 /* texte type de la page Information (Paulo, 07.11.2026, choix « texte type des nouveaux devis ») : texte du bureau, une ligne par entrée comme dans l'ancien logiciel (une ligne
    sans libellé continue la précédente) ; {ouvrage} = description du projet (sinon son titre, comme « Ouvrage » de la page de garde), {tva} = taux de TVA par défaut,
    date des plans à compléter */
-const REM_TYPE=[['Devis général','{ouvrage}'],['','-----------------------------------------------------------'],['','Ce devis est estimatif et reste sous réserve des points suivants:'],
-  ['','-évolution des prix des matières premières'],['','-inflation'],['','-exigences supplémentaires des autorités / MO'],['','-imprévus durant la phase d\'exécution'],
-  ['','-estimation basées sur l\'expérience Substances'],['','Ce DG correspond aux plans datés du [date à compléter]'],['','(TVA {tva}%)'],
-  ['Réserve','CFC 583 Réserve pour divers et imprévus (env. 10%)'],['Subventions','Les subventions ne sont pas affichées dans ce document.'],['','Ces montants ne sont pas acquis d\'office.'],
-  ['','Pour obtenir ces montants, AUCUN travaux ne doit commencer (yc travaux préparatoires) sans validation par les autorités.']];
+const REM_TYPE=[['Devis général',['{ouvrage}','-----------------------------------------------------------','Ce devis est estimatif et reste sous réserve des points suivants:',
+    '-évolution des prix des matières premières','-inflation','-exigences supplémentaires des autorités / MO','-imprévus durant la phase d\'exécution',
+    '-estimation basées sur l\'expérience Substances','Ce DG correspond aux plans datés du [date à compléter]','(TVA {tva}%)'].join('\n')],
+  ['Réserve','CFC 583 Réserve pour divers et imprévus (env. 10%)'],
+  ['Subventions',['Les subventions ne sont pas affichées dans ce document.','Ces montants ne sont pas acquis d\'office.',
+    'Pour obtenir ces montants, AUCUN travaux ne doit commencer (yc travaux préparatoires) sans validation par les autorités.'].join('\n')]];   /* une cellule par libellé */
 function remType(pid){ const p=DS.get('project',pid)||{}, ouv=String(p.DESCRIPTION||p.TITLE||'').trim()||'[ouvrage à compléter]'; let t=8.1; try{ const v=+ch02aVat(); if(isFinite(v)&&v>0) t=v; }catch(_){ }
   return REM_TYPE.map(([n,x])=>({nom:n,texte:x.replace('{ouvrage}',ouv).replace('{tva}',String(Math.round(t*100)/100))})); }
 /* titres des documents (page de garde, devis à 1 et 2 chiffres, document principal) = nom de la version du devis, à la création (Paulo, 07.11.2026) : enregistrement qui crée
@@ -509,6 +510,9 @@ function presMenu(X){ const L=ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seuleme
 /* redessin : seulement si les valeurs enregistrées diffèrent de celles affichées (signature) — un champ modifié ici ne redessine pas la page (le curseur et le clic suivant
    restent), un conflit ou une modification d'un autre poste la redessine (le champ qui avait le curseur le garde) */
 const remDe=X=>(X.E.remarques||[]).map(r=>[String((r||{}).nom||''),String((r||{}).texte||'')]);
+/* une cellule par libellé (Paulo, 07.11.2026 : « regrouper dans une cellule ») : un libellé et les lignes sans libellé qui le suivent = un seul texte de plusieurs lignes ;
+   le PDF imprime chaque ligne d'un texte sur sa propre rangée, libellé sur la première (ch02bIntro) : même page Information qu'avec une entrée par ligne */
+const remGroupes=X=>{ const G=[]; remDe(X).forEach(([n,t])=>{ if(!n.trim()&&G.length) G[G.length-1][1]+='\n'+t; else G.push([n,t]); }); return G; };
 function parSig(X){ const v=ch02aPrefInit(X.E,ch02aHdr(X)), R1=X.E.reglages||{};
   return JSON.stringify([v.date,phDe(R1),String(R1.etatProjet||''),v.marge,v.pourcentageSur,!!v.arrondi5ct,remDe(X),ecrit()&&ch02aCanEdit(ch02aHdr(X))]); }
 function parPage(X,par,force){ if(!par) return; const act=document.activeElement;
@@ -534,12 +538,12 @@ function parPage(X,par,force){ if(!par) return; const act=document.activeElement
   /* « Information » (Paulo, 07.11.2026 : « voici ce que je souhaiterais écrire dans Information », page Information du devis général 24PRC) : remarques préliminaires du devis
      (E.remarques {nom, texte}, mêmes données que Fonctions ▸ Remarques préliminaires), une ligne par remarque — libellé à gauche, texte à droite, graphisme de la page —,
      puis les ouvrages ajoutés d'office par le PDF (lecture seule). Remplace le texte libre 1 (« Commentaire », valeurs des textes libres gardées dans le devis). */
-  const RM=remDe(X), OV=(()=>{ try{ return dgOuvInfo(X); }catch(_){ return []; } })();
+  const RM=remGroupes(X), OV=(()=>{ try{ return dgOuvInfo(X); }catch(_){ return []; } })();
   const lgRm=(r,i)=>'<div class="sgde-rmr" data-i="'+i+'"><input class="inp sgde-rmn" data-k="rem.'+i+'.n" value="'+E(r[0])+'"'+dis+'><textarea class="inp sgde-rmt" rows="1" data-k="rem.'+i+'.t" placeholder="Texte"'+dis+'>'+E(r[1])+'</textarea>'
     +(peut?'<span class="sgde-rma"><button data-rm="haut" title="Monter">↑</button><button data-rm="bas" title="Descendre">↓</button><button data-rm="suppr" title="Supprimer la ligne">×</button></span>':'<span></span>')+'</div>';
   h+='<section class="sgde-ps sgde-rms"><h3>'+E(P.info)+'<small>Page « Information » du devis général</small></h3><div class="sgde-rm">'+RM.map(lgRm).join('')
     +(OV.length?OV.map(s=>'<div class="sgde-rmr sgde-rmo" title="Ouvrage du devis : ajouté d’office à la fin de la page Information"><span>'+E([s.CODE,s.LOCATIONCODE].filter(Boolean).join(' | '))+'</span><span>'+E([s.DESCRIPTION,s.LOCATIONDESCRIPTION].filter(Boolean).join(' | '))+'</span><span></span></div>').join(''):'')+'</div>'
-    +(peut?'<p class="sgde-rmp"><button class="sgde-hreg" data-rm="plus">+ Ajouter une ligne</button><button class="sgde-hreg" data-rm="type" title="Texte du bureau : réserves, réserve CFC 583, subventions ; titre de l’ouvrage et TVA remplis d’office">Insérer le texte type</button><span>Un libellé (Devis général, Réserve, Subventions…) et son texte ; une ligne sans libellé continue la précédente.'+(OV.length?' Les ouvrages s’ajoutent d’office à la fin.':'')+'</span></p>':'')+'</section>';
+    +(peut?'<p class="sgde-rmp"><button class="sgde-hreg" data-rm="plus">+ Ajouter une ligne</button><button class="sgde-hreg" data-rm="type" title="Texte du bureau : réserves, réserve CFC 583, subventions ; titre de l’ouvrage et TVA remplis d’office">Insérer le texte type</button><span>Un libellé (Devis général, Réserve, Subventions…) et son texte, une ligne du texte par ligne de la page.'+(OV.length?' Les ouvrages s’ajoutent d’office à la fin.':'')+'</span></p>':'')+'</section>';
   /* « Titres » retiré (Paulo, 07.11.2026 : « supprimer et utiliser le nom de la version du devis lors de la création d'un devis ») : titres posés à la création (ch02dCommit) */
   if(!peut) h+='<p class="sgde-pl0">Lecture seule : vous n’avez pas le droit de modifier ce devis.</p>';
   par.innerHTML=h; par._sig=sig; par.scrollTop=y; parIndice(X,par); par.querySelectorAll('.sgde-rmt').forEach(remHaut);

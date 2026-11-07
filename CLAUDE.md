@@ -1568,6 +1568,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   plan CFC retiré (« supprimer », même jour). « figé » sous Honoraires HT, la raison en infobulle. Plus de « CHF » sous les chiffres du devis (« supprimer le CHF dans le devis général », même jour) : seules restent les
   indications utiles (montants exclus, filtre, contrat signé, liens). Chiffre « Soumis aux honoraires HT » renommé « Montant soumis HT » (une seule ligne, comme la colonne) ; « figé » retiré sous
   Honoraires HT (« supprimer », même jour), devis validé ou annulé signalé dans l'infobulle du chiffre.
+  **Chiffres toujours sur une seule ligne (même jour, « toujours sur une ligne, pas de renvoi à la ligne »)** : rangée en colonnes fixes (`grid-auto-flow:column`, 1re colonne
+  86 px), libellés et sous-lignes sans retour (points de suspension au besoin), montants à taille qui suit la largeur (`container-type:inline-size`, `clamp(11px, 2.4cqi − 5.6px, 22px)` ;
+  17 px en plein écran, 18 px sur écran bas) : 13 signes tiennent dans une colonne ; lien « reprendre le contrat » seul sur sa ligne. Vérifié à 800, 1000 et 1440 px.
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis
   général (PDF) » (première entrée ; les présentations de l'ancien livret restent dessous). `dgPdf` / `dgCreer` (sg3_devis.js) : livret du moteur `ch02bBook` avec des gabarits de
   pages synthétiques (tableau 728 × 388 pt, Information 402 pt, rangées 15 pt) et la présentation de la référence `DG_PRESET` (page de garde, Information si remarques

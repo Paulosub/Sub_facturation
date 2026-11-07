@@ -1656,7 +1656,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   version plus ancienne de la page (ni titres, ni indice, ni texte) ; création réelle vérifiée le 07.11.2026 (22MFO, 19BBS, 24PRC, 99TST, ROZ-R1E : texte de base ; texte
   adapté dans l'app repris par le devis suivant du même projet ; relecture contradictoire : 6 défauts confirmés, corrigés). « Phase du devis » : ancien état comparé sans
   tenir compte des apostrophes ni des espaces (`phDe` + `normTxt` : « Projet de l'ouvrage » des anciens devis = 32) ; chaque devis reste modifiable pour lui seul, un devis existant n'est jamais modifié ; bouton « Insérer le texte type » pour un devis
-  existant (à la suite, confirmation s'il y a déjà des lignes) ; textes libres 1 à 5 et « Commentaire » retirés
+  existant (à la suite, confirmation s'il y a déjà des lignes) — retiré le même soir (« supprimer » ; code `remAction` 'type' gardé, plus appelé), ainsi que le texte d'aide gris sous « + Ajouter une ligne » ; textes libres 1 à 5 et « Commentaire » retirés
   de la page, valeurs gardées dans le devis ; « Titres » retiré à la
   demande : les titres des documents — page de garde, 1 chiffre, 2 chiffres, document principal — prennent le nom de la version du devis à sa création, enveloppe de
   `ch02dCommit` : en-tête et contenu créés ensemble, nouveau devis, Dupliquer, Dupliquer et modifier, import ; devis existants : titres inchangés ; un champ modifié dans

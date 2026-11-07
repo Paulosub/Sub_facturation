@@ -177,46 +177,98 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgde-rmo>span{padding:7px 0;font-size:13px}
 .sgde-rmp{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin:10px 0 0;font-size:12px;color:var(--s-gris)}
 .sgde-rmp .sgde-hreg{font-size:13px}
-.dlg.sgdc-dlg{width:min(1180px,94vw)!important;max-height:92vh}
-.ov:has(>.dlg.sgdc-dlg){padding-top:4vh}
+/* fenêtre « Calcul de la position » = proposition 2 « Tableur » (Paulo, 07.11.2026 : « applique proposition 2 » ; maquette subgestion3/_backup_20261107_maquette_calcul/) :
+   bandeau jaune avec le total TTC en grand, réglages de la position dans une bande grise, grille de tableur (numéros de ligne, colonnes groupées Quantité / Prix,
+   cellule active encadrée de bleu nuit, cellules calculées sur fond gris), totaux HT / TVA / TTC en pied du tableau, descriptif, aide au clavier dans le pied */
+.dlg.sgdc-dlg{width:min(1180px,96vw)!important;max-width:96vw!important;max-height:94vh}
+.ov:has(>.dlg.sgdc-dlg){padding-top:3vh}
 .dlg.sgdc-dlg>.tt{display:none}
 .dlg.sgdc-dlg>.bd{padding:0}
 .sgdc-dlg .sgfh-tete{margin:0;border-top:0;padding:14px 24px}
 .sgdc-dlg .sgfh-ini{font-size:26px;white-space:nowrap}
 .sgdc-dlg .sgfh-nm{min-width:0}
 .sgdc-dlg .sgfh-nm h2{font-size:20px}
-.sgdc-tot{margin-left:auto;font-size:12.5px}
-.sgdc-tot>div{gap:6px 14px!important;flex-wrap:wrap;justify-content:flex-end}
-.sgdc-tot b{margin-right:0!important;font-size:15px!important}
-.sgdc{padding:10px 24px 8px}
+.sgdc-tot{margin-left:auto;text-align:right;white-space:nowrap}
+.sgdc-tot>div:not(.sgdc-ttc){display:none!important}
+.sgdc-ttc .l{font-size:11px;font-weight:700;color:var(--s-gris)}
+.sgdc-ttc .v{font-size:24px;font-weight:700;color:var(--s-nuit);line-height:1.1;font-variant-numeric:tabular-nums}
+.sgdc-ttc .s{margin-top:3px;font-size:11.5px;color:var(--s-gris);font-variant-numeric:tabular-nums}
+.sgdc-ttc .s b{color:var(--s-noir);font-weight:700}
+.sgdc{padding:0}
+.sgdc>div:not(.sgdc-host){padding:10px 24px 0}
 .sgdc .seg{margin-bottom:6px}
-.sgdc-outils{flex-wrap:wrap;align-items:center;gap:2px!important;margin-bottom:4px!important}
-.sgdc-outils .ib{border:0;background:transparent;height:32px;padding:0 8px;font-size:12.5px;font-weight:700;color:var(--s-noir)}
-.sgdc-outils .ib:first-child{padding-left:0}
-.sgdc-outils .ib:hover{background:var(--s-jaune3)}
-.sgdc-tab{border:0!important;border-top:0!important;max-height:42vh!important}
-.sgdc table.g{table-layout:fixed!important;min-width:900px}
-.sgdc table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:6px 4px!important;height:auto!important;white-space:nowrap}
-.sgdc table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;padding:3px 4px!important;height:auto;overflow:visible;font-size:12.5px}
-.sgdc table.g tbody tr:hover td{background:var(--s-jaune3)}
-.sgdc table.g tbody td[style*="background"]{background:var(--s-jaune2)!important}
-.sgdc table.g input.inp,.sgdc table.g select.inp{width:100%!important;height:28px!important;box-sizing:border-box;border:1px solid var(--s-gris3);border-radius:0;background:#fff;font-size:12.5px;padding:0 5px}
-.sgdc table.g input.inp:focus,.sgdc table.g select.inp:focus{outline:none;border-color:var(--s-nuit);background:var(--s-jaune3)}
-.sgdc table.g th:nth-child(4),.sgdc table.g th:nth-child(6),.sgdc table.g th:nth-child(7),.sgdc table.g th:nth-child(8),.sgdc table.g th:nth-child(9),.sgdc table.g td:nth-child(4),.sgdc table.g td:nth-child(6) input,.sgdc table.g td:nth-child(7) input,.sgdc table.g td:nth-child(8) input,.sgdc table.g td:nth-child(4) input{text-align:right}
-.sgdc table.g th:nth-child(10),.sgdc table.g td:nth-child(10){text-align:center}
-.sgdc table.g td:nth-child(9){font-weight:700;white-space:nowrap}
-.sgdc-vide{font-size:12.5px;color:var(--s-gris);padding:12px 0}
-.sgdc-opts{display:grid!important;grid-template-columns:minmax(0,1fr) 130px 190px auto!important;gap:8px 16px!important;align-items:end!important;margin-top:12px!important}
+.sgdc-opts{display:grid!important;grid-template-columns:minmax(0,1fr) 150px 220px auto!important;gap:6px 20px!important;align-items:end!important;margin:0!important;padding:10px 24px 12px;background:var(--s-fond);border-top:1px solid var(--s-noir);border-bottom:1px solid var(--s-filet)}
 .sgdc-opts .f{display:flex;flex-direction:column;gap:4px;min-width:0}
 .sgdc-opts .f>label,.sgdc-desc>div:first-child{font-size:11px;font-weight:700;color:var(--s-gris);white-space:nowrap}
-.sgdc-opts .f input.inp,.sgdc-opts .f select.inp{height:32px;box-sizing:border-box;border:1px solid var(--s-gris3);border-radius:0;width:100%}
-.sgdc-opts .f>div{display:flex;align-items:center;gap:6px;white-space:nowrap}
-.sgdc-opts .f>div input.inp{width:78px!important}
-.sgdc-opts .f>div .ib{border:0;background:transparent;height:30px;min-width:26px;padding:0 4px}
-.sgdc-opts>label{height:32px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;white-space:nowrap}
-.sgdc-desc{margin-top:10px!important}
+.sgdc-opts .f input.inp,.sgdc-opts .f select.inp{height:32px;box-sizing:border-box;border:1px solid var(--s-gris3);border-radius:0;width:100%;background:#fff;font-size:13px}
+.sgdc-opts .f>div{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px}
+.sgdc-opts .f>div input.inp{width:76px!important;text-align:right}
+.sgdc-opts .f>div .ib{border:0;background:transparent;height:30px;min-width:26px;padding:0 5px;color:var(--s-nuit)}
+.sgdc-opts .f>div .ib:hover{background:var(--s-jaune)}
+.sgdc-opts .f>div .ib svg{width:12px;height:12px}
+.sgdc-opts>label{height:32px;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.sgdc-outils{display:flex!important;flex-wrap:nowrap;align-items:center;gap:0!important;margin:0!important;padding:6px 24px 6px;min-height:42px}
+.sgdc-outils .ib{border:0;border-radius:0;background:transparent;height:30px;padding:0 8px;font-size:12px;font-weight:700;color:var(--s-noir);gap:5px}
+.sgdc-outils .ib:first-child{padding-left:0}
+.sgdc-outils .ib:hover{background:var(--s-jaune3)}
+.sgdc-outils .ib svg{width:16px;height:16px;flex:none}
+.sgdc-sep{width:1px;height:18px;background:var(--s-gris3);margin:0 8px;flex:none}
+.sgdc-ref{display:flex;align-items:stretch;flex:0 1 240px;min-width:0;height:28px;border:1px solid var(--s-gris3);font-size:12px;white-space:nowrap;overflow:hidden}
+.sgdc-ref:empty{display:none}
+.sgdc-ref b{display:flex;align-items:center;padding:0 9px;background:var(--s-nuit);color:#fff;font-weight:700}
+.sgdc-ref span{display:flex;align-items:center;flex:none;padding:0 10px;color:var(--s-gris);font-weight:700;border-right:1px solid var(--s-filet)}
+.sgdc-ref i{display:block;flex:1 1 auto;line-height:26px;min-width:0;padding:0 10px;font-style:normal;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.sgdc-tab{margin:0 24px;border:0!important;max-height:42vh!important}
+.sgdc table.g{table-layout:fixed!important;min-width:900px;width:100%;border-collapse:separate!important;border-spacing:0;font-variant-numeric:tabular-nums}
+.sgdc table.g thead th{position:sticky;top:0;z-index:2;background:var(--s-fond)!important;border:0!important;border-right:1px solid var(--s-filet)!important;border-bottom:1px solid var(--s-filet)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:0 9px!important;height:26px!important;white-space:nowrap;text-align:left;text-transform:none!important;letter-spacing:0!important;font-family:inherit!important}
+.sgdc table.g thead tr:first-child th{border-top:2px solid var(--s-noir)!important}
+.sgdc table.g thead th:first-child,.sgdc table.g tbody td:first-child{border-left:1px solid var(--s-filet)!important}
+.sgdc table.g thead tr.sgdc-grp th{color:var(--s-noir)!important;font-size:11.5px;text-align:center!important;border-bottom-color:var(--s-gris3)!important}
+.sgdc table.g thead tr.sgdc-grp th small{font-weight:400;color:var(--s-gris);font-size:11px;margin-left:4px}
+.sgdc table.g thead tr:not(.sgdc-grp) th{border-bottom:1px solid var(--s-noir)!important}
+.sgdc table.g thead tr:not(.sgdc-grp) th:first-child,.sgdc table.g thead tr.sgdc-grp th:first-child{padding-left:43px!important}
+.sgdc table.g tbody{counter-reset:sgdcl}
+.sgdc table.g tbody tr{counter-increment:sgdcl}
+.sgdc table.g tbody td{border:0!important;border-right:1px solid var(--s-filet)!important;border-bottom:1px solid var(--s-filet)!important;padding:0!important;height:34px;overflow:hidden;font-size:13px;background:#fff}
+.sgdc table.g tbody td:first-child{position:relative;padding-left:34px!important}
+.sgdc table.g tbody td:first-child::before{content:counter(sgdcl);position:absolute;left:0;top:0;bottom:0;width:34px;display:flex;align-items:center;justify-content:center;background:var(--s-fond);color:var(--s-gris);font-size:11.5px;font-weight:700;border-right:1px solid var(--s-filet)}
+.sgdc table.g tbody tr:hover td{background:var(--s-jaune3)}
+.sgdc table.g tbody tr:has(>td[style*="background"]) td{background:var(--s-jaune3)!important}
+.sgdc table.g tbody tr:has(>td[style*="background"]) td:first-child::before{background:var(--s-nuit);color:#fff}
+.sgdc table.g tbody td.sgdc-k{background:var(--s-fond)!important;color:var(--s-gris);padding:0 9px!important}
+.sgdc table.g tbody td.sgdc-mt{background:var(--s-fond)!important;font-weight:700;white-space:nowrap;padding:0 9px!important}
+.sgdc table.g tbody tr:has(>td[style*="background"]) td.sgdc-k,.sgdc table.g tbody tr:has(>td[style*="background"]) td.sgdc-mt{background:color-mix(in srgb,var(--s-jaune3),var(--s-noir) 5%)!important}
+.sgdc table.g tbody tr:has(>td:last-child input:checked) td{color:var(--s-gris)}
+.sgdc table.g tbody tr:has(>td:last-child input:checked) td.sgdc-mt{text-decoration:line-through}
+.sgdc table.g input.inp,.sgdc table.g select.inp{width:100%!important;height:33px!important;box-sizing:border-box;border:0!important;border-radius:0;background:transparent!important;font-size:13px;padding:0 9px;color:inherit}
+.sgdc table.g select.inp{padding-right:4px}
+.sgdc table.g input[list]{padding-right:2px}
+.sgdc table.g input[list]::-webkit-calendar-picker-indicator{margin:0;opacity:0}
+.sgdc table.g input[list]:hover::-webkit-calendar-picker-indicator,.sgdc table.g input[list]:focus::-webkit-calendar-picker-indicator{opacity:.6}
+.sgdc table.g thead th:nth-child(10){padding:0 4px!important}
+.sgdc table.g input.inp:focus,.sgdc table.g select.inp:focus{outline:2px solid var(--s-nuit);outline-offset:-2px;background:#fff!important}
+.sgdc table.g th:nth-child(4),.sgdc table.g th:nth-child(6),.sgdc table.g th:nth-child(7),.sgdc table.g th:nth-child(8),.sgdc table.g th:nth-child(9),.sgdc table.g td:nth-child(4),.sgdc table.g td:nth-child(6) input,.sgdc table.g td:nth-child(7) input,.sgdc table.g td:nth-child(8) input,.sgdc table.g td:nth-child(4) input,.sgdc table.g td:nth-child(9){text-align:right}
+.sgdc table.g th:nth-child(10),.sgdc table.g td:nth-child(10){text-align:center}
+.sgdc table.g tfoot td{border:0;border-bottom:1px solid var(--s-filet);height:28px;font-size:12.5px;padding:0 9px;background:#fff}
+.sgdc table.g tfoot tr:first-child td{border-top:1px solid var(--s-noir)}
+.sgdc table.g tfoot tr.fixe td.v{color:var(--s-nuit)}
+.sgdc table.g tfoot td.inf{color:var(--s-gris);font-size:12px}
+.sgdc table.g tfoot td.lbl{text-align:right;font-weight:700;color:var(--s-gris)}
+.sgdc table.g tfoot td.v{text-align:right;font-weight:700;white-space:nowrap}
+.sgdc table.g tfoot tr.ttc td{border-top:2px solid var(--s-noir);border-bottom:0;height:34px;font-size:14px}
+.sgdc table.g tfoot tr.ttc td.lbl{color:var(--s-noir)}
+.sgdc table.g tfoot tr.ttc td.v{color:var(--s-nuit);background:var(--s-jaune2)}
+.sgdc-vide{font-size:12.5px;color:var(--s-gris);padding:12px 0}
+.sgdc-desc{margin:0!important;padding:14px 24px 4px}
 .sgdc-desc>div:first-child{margin-bottom:4px}
-.sgdc-desc textarea{width:100%;box-sizing:border-box;border:1px solid var(--s-gris3);border-radius:0}
+.sgdc-desc textarea{width:100%;box-sizing:border-box;border:1px solid var(--s-gris3);border-radius:0;min-height:76px;font-size:13px;line-height:1.5;padding:9px 10px}
+.sgdc-dlg>.ft{align-items:center}
+.sgdc-aide{margin-right:auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--s-gris)}
+.sgdc-aide kbd{display:inline-block;min-width:20px;padding:1px 5px;margin-right:4px;border:1px solid var(--s-gris3);background:#fff;font:inherit;font-size:11px;font-weight:700;color:var(--s-noir);text-align:center}
+.sgdc-aide i{display:inline-block;width:14px;height:14px;margin-right:5px;vertical-align:-3px;border:1px solid var(--s-gris3);background:#fff}
+.sgdc-aide i.k{background:var(--s-fond)}
+.sgdc-aide i.a{border:2px solid var(--s-nuit)}
+@media (max-height:860px){.sgdc-opts{padding:8px 24px 10px}.sgdc-desc{padding-top:10px}.sgdc-desc textarea{min-height:52px}.sgdc-ttc .v{font-size:21px}}
 @media (max-height:860px){.sgde-tete .sgfh-meta{display:none}.sgde-tete .sgfh-tete{padding:6px 14px}.sgde-tete .sgfh-ini{font-size:22px}.sgde-tete .sgfh-nm h2{font-size:17px}.sgde-tete .sgfh-nm .lb{margin:0}.sgde-kp .nx-kpi{padding:6px 12px 6px 0}.sgde-kp .nx-kpi .v{font-size:clamp(11px,calc(2.4cqi - 5.6px),18px);margin-top:3px}.sgde-kp .nx-kpi .s{display:none}.sgdc-dlg .sgfh-tete{padding:8px 24px}.sgdc-tab{max-height:36vh!important}}
 @media (max-width:980px){.sgde-cfc{flex-basis:260px!important;width:260px!important}.sgde-dc{grid-template-columns:1fr}.sgde-dc .a{justify-content:flex-start}.sgdc-opts{grid-template-columns:1fr 1fr!important}}
 `;
@@ -757,26 +809,63 @@ const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLi
   ch01aView=function(t,R,o){ if(sansTextes&&o&&o.edit){ o=Object.assign({},o); delete o.edit; } return a0.call(this,t,R,o); }; }
 
 /* ── fenêtre « Calcul pour <CFC> » ── */
-const TH_CALC={'Calcul de quantités':['Calcul des quantités','Formule de calcul, par exemple 12.5*3'],Base:['Base','Base du prix'],Var:['Var.','Variante : la ligne n’est pas comptée dans le total']};
-const COLS_CALC=[0,112,140,84,62,88,88,54,100,42];
+const TH_CALC={'Calcul de quantités':['Formule','Calcul des quantités : formule, par exemple 12.5*3'],Base:['Base','Base du prix'],'Quantité':['Résultat','Quantité : résultat de la formule, ou saisie s’il n’y a pas de formule'],
+  'Unité':['Unité','Unité de la quantité'],'Prix HT':['HT','Prix unitaire hors TVA'],'Prix TTC':['TTC','Prix unitaire TVA comprise'],TVA:['TVA %','Taux de TVA de la ligne'],Montant:['Montant TTC','Montant de la ligne, TVA comprise'],
+  Var:['Var.','Variante : la ligne n’est pas comptée dans le total']};
+const COLS_CALC=[0,104,100,92,64,80,80,56,104,40];
+/* icônes de la barre (proposition 2 « Tableur ») et libellés courts ; ancien titre du moteur → [icône, libellé] */
+const IC_CALC=(d)=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+d+'</svg>';
+const OUT_CALC={'Insérer une ligne':[IC_CALC('<path d="M12 5v14M5 12h14"/>'),'Insérer'],'Effacer la ligne':[IC_CALC('<path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/>'),'Effacer'],
+  'Déplacer au début':[IC_CALC('<path d="M5 4h14M12 20V9M7 13l5-5 5 5"/>'),'Haut'],'Déplacer vers le haut':[IC_CALC('<path d="M12 19V6M6 11l6-6 6 6"/>'),'Monter'],
+  'Déplacer vers le bas':[IC_CALC('<path d="M12 5v13M6 13l6 6 6-6"/>'),'Descendre'],'Déplacer à la fin':[IC_CALC('<path d="M5 20h14M12 4v11M7 11l5 5 5-5"/>'),'Bas']};
+const COLN_CALC=['Commentaire','Base','Formule','Résultat','Unité','Prix HT','Prix TTC','TVA %','Montant TTC','Variante'];
+const nCalc=t=>{ const v=parseFloat(String(t||'').replace(/['’\s]/g,'').replace(/[^0-9.\-]/g,'')); return isFinite(v)?v:null; };
 function habCalc(dlg,X){ const bd=dlg.querySelector('.bd'), body=bd&&bd.firstElementChild, host=body&&body.lastElementChild, pos=(X.E.positions||[]).find(x=>String(x.cfc)===String(X.st.sel)); if(!host||!pos) return; cssD();
-  dlg.classList.add('sgdc-dlg'); dlg.style.width=''; body.classList.add('sgdc');
+  dlg.classList.add('sgdc-dlg'); dlg.style.width=''; body.classList.add('sgdc'); host.classList.add('sgdc-host');
+  const ft=dlg.querySelector('.ft'); if(ft&&!ft.querySelector('.sgdc-aide')) ft.prepend(el('div','sgdc-aide','<span><kbd>Tab</kbd>ou <kbd>Entrée</kbd> cellule suivante</span><span><i></i>saisie</span><span><i class="k"></i>calculé</span><span><i class="a"></i>cellule active</span>'));
+  /* cellule active (proposition 2) : n° de ligne, colonne et contenu, à droite de la barre */
+  const majRef=c=>{ const ref=host.querySelector('.sgdc-ref'), td=c&&c.isConnected&&c.closest&&c.closest('tbody td'); if(!ref||!td) return; const tr=td.parentNode;   /* champ détaché (ancienne grille, après un redessin) : ignoré */
+    const v=c.tagName==='SELECT'?((c.options[c.selectedIndex]||{}).text||''):c.type==='checkbox'?(c.checked?'oui':'non'):c.value;
+    ref.innerHTML='<b>L'+(tr.sectionRowIndex+1)+'</b><span>'+E(COLN_CALC[td.cellIndex]||'')+'</span><i>'+E(v)+'</i>'; ref.title='Cellule active'; };
+  host.addEventListener('focusin',e=>majRef(e.target)); host.addEventListener('input',e=>majRef(e.target)); host.addEventListener('change',e=>majRef(e.target));
   const t=el('div','sgfh-tete','<div class="sgfh-id"><div class="sgfh-ini">'+E(pos.cfc)+'</div><div class="sgfh-nm"><div class="lb">'+E(['Calcul de la position',(ch02aHdr(X)||{}).VERSION].filter(Boolean).join(' · '))+'</div><h2>'+E([pos.texte,pos.texte2].filter(Boolean).join(' '))+'</h2></div></div><div class="sgdc-tot"></div>'), slot=t.querySelector('.sgdc-tot'); bd.prepend(t);
   host.tabIndex=-1; host.style.outline='none'; let rep=null, ajout=null; const ctl=(tr,c)=>{ const td=tr&&tr.cells[c]; return td?td.querySelector('input,select'):null; };
   const poser=()=>{ const K=[...host.children]; if(K.length<5||K[0].classList.contains('sgdc-outils')) return; const actif=document.activeElement, [out,tab,opts,desc,bas]=K, sp=[...out.children].find(x=>x.style&&x.style.flex), tb=tab.querySelector('table'), bdy=tb&&tb.tBodies[0];
     out.classList.add('sgdc-outils'); tab.classList.add('sgdc-tab'); opts.classList.add('sgdc-opts'); desc.classList.add('sgdc-desc');
     const totB=sp&&sp.nextElementSibling; if(totB) slot.replaceChildren(totB); if(sp) sp.before(...bas.children); else out.append(...bas.children); bas.remove();
-    if(out.firstElementChild) lib(out.firstElementChild,'Insérer une ligne'); const fx=[...out.children].find(b=>/Fixer/.test(b.title||'')); if(fx) lib(fx,'Fixer le coût');
+    [...out.children].forEach(b=>{ const m=OUT_CALC[b.title||'']; if(m) b.innerHTML=m[0]+'<span class="lb">'+E(m[1])+'</span>'; });
+    const fx=[...out.children].find(b=>/Fixer/.test(b.title||'')); if(fx) lib(fx,'Fixer le coût');
+    const bt=t0=>[...out.children].find(b=>b.title===t0); [bt('Effacer la ligne'),bt('Déplacer à la fin')].forEach(b=>{ if(b) b.after(el('span','sgdc-sep')); });
+    if(sp) sp.after(el('div','sgdc-ref')); else out.append(el('div','sgdc-ref'));
+    /* totaux : lus dans la boîte du moteur (cachée), affichés dans le bandeau et en pied du tableau */
+    const T={}; if(totB){ const k=[...totB.children]; k.forEach((x,i)=>{ if(x.tagName!=='SPAN'||!k[i+1]) return; const lb=x.textContent.trim(), v=nCalc(k[i+1].textContent); if(lb==='Total TTC') T.ttc=v; else if(lb==='Total HT') T.ht=v; else if(/fix/i.test(lb)) T.fixe=v; }); }
+    const lignes=bdy?[...bdy.rows]:[], varL=r=>{ const c=r.cells[9]&&r.cells[9].querySelector('input'); return !!(c&&c.checked); };
+    const taux=[...new Set(lignes.filter(r=>!varL(r)).map(r=>{ const c=ctl(r,7); return c?nCalc(c.value):null; }).filter(v=>v!=null))];
+    const tvaLb='TVA'+(taux.length===1?' '+String(taux[0])+' %':''), tva=T.ht!=null&&T.ttc!=null?T.ttc-T.ht:null;
+    /* coût fixé : c'est le montant de la position (il remplace les lignes) → en grand ; plusieurs ouvrages : total de l'ouvrage affiché, nommé */
+    const ouvOn=body.querySelector('.seg .on'), ouv=ouvOn&&body.querySelector('.seg').children.length>1?ouvOn.textContent.trim():'';
+    if(T.ttc!=null){ const fx0=T.fixe!=null, lgn=fx0?'Lignes TTC <b>'+num2(T.ttc)+'</b>':'', s0=[lgn,tva!=null?'HT <b>'+num2(T.ht)+'</b> · '+E(tvaLb)+' <b>'+num2(tva)+'</b>':''].filter(Boolean).join(' · ');
+      slot.append(el('div','sgdc-ttc','<div class="l">'+(fx0?'Coût fixé TTC':'Total TTC')+(ouv?' · '+E(ouv):'')+'</div><div class="v">'+num2(fx0?T.fixe:T.ttc)+'</div>'+(s0?'<div class="s">'+s0+'</div>':''))); }
+    if(tb&&tb.tHead&&!tb.tHead.querySelector('.sgdc-grp')){ const g=document.createElement('tr'); g.className='sgdc-grp'; g.innerHTML='<th colspan="2"></th><th colspan="3">Quantité<small>formule → résultat · unité</small></th><th colspan="3">Prix<small>HT · TTC · TVA</small></th><th colspan="2"></th>'; tb.tHead.prepend(g); }
+    if(tb&&tb.tHead&&tb.tHead.rows.length>1){ const h0=tb.tHead.rows[0].getBoundingClientRect().height; if(h0) [...tb.tHead.rows[1].cells].forEach(th=>{ th.style.top=h0+'px'; }); }   /* 2e rangée de titres figée sous la 1re */
+    lignes.forEach(r=>{ if(r.cells[3]&&!ctl(r,3)) r.cells[3].classList.add('sgdc-k'); if(r.cells[8]) r.cells[8].classList.add('sgdc-mt'); });
+    if(tb&&lignes.length&&T.ttc!=null){ const nV=lignes.filter(varL).length, nL=lignes.length, inf=nL+(nL>1?' lignes':' ligne')+' · '+(nV?nV+(nV>1?' en variante, non comptées':' en variante, non comptée'):'aucune en variante');
+      const lg=(a,b,v,c)=>'<tr'+(c?' class="'+c+'"':'')+'><td colspan="3" class="inf">'+a+'</td><td colspan="5" class="lbl">'+E(b)+'</td><td class="v">'+num2(v)+'</td><td></td></tr>';
+      const fx0=T.fixe!=null, tf=document.createElement('tfoot');
+      tf.innerHTML=(tva!=null?lg(E(inf),'Total HT',T.ht)+lg('',tvaLb,tva):'')+lg(tva!=null?'':E(inf),fx0?'Total des lignes TTC':'Total TTC',T.ttc,fx0?'':'ttc')+(fx0?lg('','Coût fixé TTC',T.fixe,'ttc fixe'):''); tb.append(tf); }
     if(tb&&!tb.querySelector('colgroup')){ const cg=document.createElement('colgroup'); COLS_CALC.forEach(w=>{ const c=document.createElement('col'); if(w) c.style.width=w+'px'; cg.append(c); }); tb.prepend(cg); }
     if(tb) tb.querySelectorAll('thead th').forEach(th=>{ const m=TH_CALC[th.textContent.trim()]; if(m){ th.textContent=m[0]; th.title=m[1]; } });
     const f=[...opts.children]; if(f.length>=8){ const pa=(l,x,c)=>{ const w=el('div','f'+(c?' '+c:'')); w.append(l,x); return w; }; opts.replaceChildren(pa(f[0],f[1]),pa(f[2],f[3]),pa(f[4],f[5]),f[7]); }
-    if(bdy&&!bdy.rows.length) tab.append(el('div','sgdc-vide','Aucune ligne de calcul. Cliquez sur « Insérer une ligne » pour commencer.'));
+    host.insertBefore(opts,out);   /* réglages au-dessus de la barre, aussi dans l'ordre du clavier (Tab), pas seulement à l'affichage */
+    const hb=opts.querySelector('.f>div .ib'); if(hb){ hb.innerHTML=IC_CALC('<path d="m6 9 6 6 6-6"/>'); hb.title='Pourcentages usuels : 100, 90, 50 ou 0 %'; }
+    if(bdy&&!bdy.rows.length) tab.append(el('div','sgdc-vide','Aucune ligne de calcul. Cliquez sur « Insérer » pour commencer.'));
     let n=null; if(rep&&bdy){ let [r,k,pas]=rep, q=bdy.rows[r]; rep=null; while(q&&!(n=ctl(q,k))){ k+=pas; if(k<0||k>=q.cells.length){ r+=pas; q=bdy.rows[r]; if(q) k=pas>0?0:q.cells.length-1; } } }   /* la quantité calculée n'a pas de champ : cellule suivante */
     else if(ajout&&bdy&&bdy.rows.length>ajout.n){ const tr=[...bdy.rows].find(r=>r.cells[0]&&r.cells[0].style.background); n=ctl(tr,0); ajout=null; }
     if(n){ n.focus(); if(n.select&&n.type!=='checkbox') n.select(); }
     else if(bdy&&!bdy.rows.length&&out.firstElementChild) out.firstElementChild.focus();   /* position vide : Espace insère la première ligne, Échap ferme */
     else if(actif===document.body){ const tr=bdy?[...bdy.rows].find(r=>r.cells[0]&&r.cells[0].style.background):null, c=ctl(tr,0); (c||host).focus({preventScroll:true}); }   /* champ détruit par le redessin : le clavier et Échap restent dans la fenêtre */
-    else if(actif&&actif.isConnected&&dlg.contains(actif)) actif.focus(); };
+    else if(actif&&actif.isConnected&&dlg.contains(actif)) actif.focus();
+    majRef(document.activeElement); };
   host.addEventListener('keydown',e=>{ const c=e.target; if((e.key!=='Tab'&&e.key!=='Enter')||!c.closest||!c.closest('tbody')||c.tagName==='TEXTAREA') return; const td=c.closest('td'), tr=td&&td.parentNode, tb=tr&&tr.parentNode; if(!tb) return; const pas=e.shiftKey?-1:1; let r=tr.sectionRowIndex, k=td.cellIndex, q=tr;
     for(;;){ k+=pas; if(k<0||k>=q.cells.length){ r+=pas; q=tb.rows[r]; if(!q) break; k=pas>0?0:q.cells.length-1; } if(ctl(q,k)) break; }
     rep=q?[r,k,pas]:null; setTimeout(()=>{ rep=null; },0);

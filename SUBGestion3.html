@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 07.11.2026 18:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 07.11.2026 18:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38087,21 +38087,19 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgde-pi span{font-size:13px}
 .sgde-par .inp:disabled,.sgde-par input:disabled{background:#fafafa;color:var(--s-noir);opacity:1}
 .sgde-pl0{font-size:12px;color:var(--s-gris);margin:10px 0 0}
-/* Information : remarques comme la page Information du devis général (libellé | texte, rangées alternées) */
-.sgde-rm{border-top:1px solid var(--s-gris3,#c8c8c8);margin-top:4px}
-.sgde-rmr{display:grid;grid-template-columns:230px minmax(0,1fr) 84px;gap:0 14px;align-items:start;padding:2px 4px}
-.sgde-rmr:nth-child(odd){background:#ececec}
-.sgde-rmr .inp{border:1px solid transparent;background:transparent;font-size:13.5px;padding:5px 6px;min-height:30px;box-sizing:border-box;width:100%;max-width:none;border-radius:0}
-.sgde-rmr .inp:hover:not(:disabled){border-color:var(--s-gris3,#c8c8c8)}
-.sgde-rmr .inp:focus{border-color:var(--s-nuit);background:#fff;outline:none}
-.sgde-rmr textarea.inp{resize:none;overflow:hidden;line-height:1.45;min-height:30px}
-.sgde-rmr .sgde-rma{display:flex;gap:2px;justify-content:flex-end;padding-top:3px;opacity:0;transition:opacity .1s}
+/* Information : remarques au graphisme des autres sections de la page (champs encadrés, filets entre les lignes, fond blanc ; pas le graphisme du PDF, Paulo, 07.11.2026) */
+.sgde-rmr{display:grid;grid-template-columns:230px minmax(0,1fr) 84px;gap:0 18px;align-items:start;padding:8px 0;border-bottom:1px solid var(--s-filet)}
+.sgde-rmr .inp{width:100%;max-width:none;box-sizing:border-box}
+.sgde-rmr textarea.inp{resize:none;overflow:hidden;line-height:1.45;min-height:34px}
+.sgde-rmr .inp.sgde-rmn{border-color:transparent;background:transparent;color:var(--s-gris);font-size:13px;padding-left:0}   /* libellé comme ceux des autres sections ; cadre au survol et en saisie */
+.sgde-rmr .inp.sgde-rmn:hover:not(:disabled),.sgde-rmr .inp.sgde-rmn:focus{border-color:var(--s-gris3,#c8c8c8);background:#fff;color:var(--s-noir);padding-left:6px}
+.sgde-rmr .sgde-rma{display:flex;gap:2px;justify-content:flex-end;padding-top:4px;opacity:0;transition:opacity .1s}
 .sgde-rmr:hover .sgde-rma,.sgde-rmr:focus-within .sgde-rma{opacity:1}
 .sgde-rma button{border:0;background:transparent;width:24px;height:24px;cursor:pointer;font-size:14px;color:var(--s-noir)}
 .sgde-rma button:hover{background:var(--s-jaune3)}
 .sgde-rma button[data-rm="suppr"]:hover{color:var(--s-rouge,#bd1e42)}
 .sgde-rmo{color:var(--s-gris)}
-.sgde-rmo>span{padding:6px 7px;font-size:13.5px}
+.sgde-rmo>span{padding:7px 0;font-size:13px}
 .sgde-rmp{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin:10px 0 0;font-size:12px;color:var(--s-gris)}
 .sgde-rmp .sgde-hreg{font-size:13px}
 .dlg.sgdc-dlg{width:min(1180px,94vw)!important;max-height:92vh}
@@ -38463,7 +38461,7 @@ function parPage(X,par,force){ if(!par) return; const act=document.activeElement
         +'<label class="sgde-pr"><input type="radio" name="sgde-pct" data-k="pourcentageSur" value="total"'+(v.pourcentageSur==='total'?' checked':'')+dis+'> '+E(P.procTot)+'</label>','Colonne « % » du devis et des documents.')
       +ligne(P.round,'<label class="sgde-pr"><input type="checkbox" data-k="arrondi5ct"'+(v.arrondi5ct?' checked':'')+dis+'> Arrondir les montants des lignes</label>'));   /* phrase d'aide retirée (Paulo, 07.11.2026 : « supprimer ») */
   /* « Information » (Paulo, 07.11.2026 : « voici ce que je souhaiterais écrire dans Information », page Information du devis général 24PRC) : remarques préliminaires du devis
-     (E.remarques {nom, texte}, mêmes données que Fonctions ▸ Remarques préliminaires), une ligne par remarque — libellé à gauche, texte à droite, rangées alternées comme le PDF —,
+     (E.remarques {nom, texte}, mêmes données que Fonctions ▸ Remarques préliminaires), une ligne par remarque — libellé à gauche, texte à droite, graphisme de la page —,
      puis les ouvrages ajoutés d'office par le PDF (lecture seule). Remplace le texte libre 1 (« Commentaire », valeurs des textes libres gardées dans le devis). */
   const RM=remDe(X), OV=(()=>{ try{ return dgOuvInfo(X); }catch(_){ return []; } })();
   const lgRm=(r,i)=>'<div class="sgde-rmr" data-i="'+i+'"><input class="inp sgde-rmn" data-k="rem.'+i+'.n" value="'+E(r[0])+'"'+dis+'><textarea class="inp sgde-rmt" rows="1" data-k="rem.'+i+'.t" placeholder="Texte"'+dis+'>'+E(r[1])+'</textarea>'

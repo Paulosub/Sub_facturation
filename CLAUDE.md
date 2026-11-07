@@ -1623,7 +1623,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   pages complétées jusqu'en bas (zébrage) ; en « Assembler les descriptifs », une totalisatrice qui a son propre descriptif n'est pas ventilée.
   **Onglet « Paramètres » (07.11.2026, Paulo : « glisser Paramètres après Documents, sous forme de page comme Documents, pas une fenêtre ; l'ensemble des éléments par catégorie, le
   titre, dessous les éléments »)** : onglets Devis · Documents · Paramètres ; bouton « Paramètres » retiré de la barre ; lien « définir » de la Précision = onglet Paramètres,
-  curseur dans la marge. `parPage` / `parChange` / `parIndice` (sg3_devis.js) : catégories de la fenêtre du moteur l'une sous l'autre (Information — date en tête, « Phase du
+  curseur dans la marge. `parPage` / `parChange` / `parIndice` (sg3_devis.js) : catégories de la fenêtre du moteur l'une sous l'autre (« Générale », ex-Information, renommée à la demande — date en tête, « Phase du
   devis » à la place de l'état du projet : liste des phases SIA 102 11 à 53 (`PH_SIA`), code dans `reglages.phaseSia`, nom écrit dans `etatProjet` → page de garde « Devis
   général - <phase> » et anciens modèles ; un état saisi avant qui n'est pas une phase reste affiché « (état saisi avant) » jusqu'au choix —, marge d'approximation, indice ;
   « Etat de planification » retiré à la demande, valeur gardée dans le devis ; phrase d'aide de l'arrondi retirée ; Affichage — pourcentage, arrondi ; dernière section « Information » (Paulo : « voici ce que je souhaiterais écrire dans Information », page Information de son DG 24PRC) = les remarques préliminaires

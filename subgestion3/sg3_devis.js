@@ -512,7 +512,7 @@ function parPage(X,par,force){ if(!par) return; const act=document.activeElement
   const R0=(X.E.reglages||{}), ph=phDe(R0), etat=String(R0.etatProjet||'').trim();
   const selPh='<select class="inp" data-k="phaseSia"'+dis+'><option value="">— à définir —</option>'+(!ph&&etat?'<option value="__txt" selected>'+E(etat)+' (état saisi avant)</option>':'')
     +PH_SIA.map(([g,L])=>'<optgroup label="'+E(g)+'">'+L.map(([k,n])=>'<option value="'+k+'"'+(k===ph?' selected':'')+'>'+E(k+' '+n)+'</option>').join('')+'</optgroup>').join('')+'</select>';
-  let h=sec(P.info,'',/* « Etat de planification » retiré (Paulo, 07.11.2026 : « supprimer ») : valeur gardée dans le devis ; « Date » en tête (Paulo, même jour : « déplacer la date ici ») */
+  let h=sec('Générale' /* titre de la première section (Paulo, 07.11.2026 : « générale ») */,'',/* « Etat de planification » retiré (Paulo, 07.11.2026 : « supprimer ») : valeur gardée dans le devis ; « Date » en tête (Paulo, même jour : « déplacer la date ici ») */
       ligne(P.date,'<input class="inp c" type="date" data-k="date" value="'+E(v.date||'')+'"'+dis+'>',PAR_AIDE.date)
       +ligne('Phase du devis',selPh,PAR_AIDE.phase)
       +ligne(P.prec,'<input class="inp c" data-k="marge" list="sgde-dl-mg" value="'+E(v.marge)+'"'+dis+'><datalist id="sgde-dl-mg">'+P.marges.map(x=>'<option value="'+E(x)+'">').join('')+'</datalist>',PAR_AIDE.marge)

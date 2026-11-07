@@ -1625,7 +1625,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   titre, dessous les éléments »)** : onglets Devis · Documents · Paramètres ; bouton « Paramètres » retiré de la barre ; lien « définir » de la Précision = onglet Paramètres,
   curseur dans la marge. `parPage` / `parChange` / `parIndice` (sg3_devis.js) : catégories de la fenêtre du moteur l'une sous l'autre (« Générale », ex-Information, renommée à la demande — date en tête, « Phase du
   devis » à la place de l'état du projet : liste des phases SIA 102 11 à 53 (`PH_SIA`), code dans `reglages.phaseSia`, nom écrit dans `etatProjet` → page de garde « Devis
-  général - <phase> » et anciens modèles ; un état saisi avant qui n'est pas une phase reste affiché « (état saisi avant) » jusqu'au choix —, marge d'approximation, indice, **date des plans** (même jour,
+  général - <phase> » et anciens modèles ; un état saisi avant qui n'est pas une phase n'est plus proposé dans la liste (« supprimer », même jour) : « — à définir — » jusqu'au choix d'une phase, l'ancien état reste dans le devis et sur sa page de garde tant qu'aucune phase n'est choisie —, marge d'approximation, indice, **date des plans** (même jour,
   « ajoute une cellule date des plans » : `reglages.datePlans` ; choisie → écrite en toutes lettres — « 26 février 2026 », « 1er mars » — dans le texte Information à la place de
   « [date à compléter] » ou de l'ancienne date des plans, `datePlansChange` ; effacée → « [date à compléter] » ; absente du texte → message ; reprise avec le texte par un nouveau
   devis du projet) ; « Etat de planification » retiré à la demande, valeur gardée dans le devis ; phrase d'aide de l'arrondi retirée ; Affichage — pourcentage, arrondi ; dernière section « Information » (Paulo : « voici ce que je souhaiterais écrire dans Information », page Information de son DG 24PRC) = les remarques préliminaires
@@ -1647,7 +1647,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   posé à la création d'un devis sans remarques (enveloppe de `ch02dCommit` ; une copie garde les remarques de l'original), **repris du projet** (Paulo, même jour :
   « conserver ce texte type pour tous les projets, celui-ci peut être modifié par projet », choix « repris du projet ») : un nouveau devis reprend le texte du dernier devis du
   même projet qui en a un (`remProjet` : date de modification puis numéro, corbeille exclue, nom de l'affaire automatique compris), le texte type du bureau seulement pour le
-  premier devis d'un projet ; chaque devis reste modifiable pour lui seul, un devis existant n'est jamais modifié ; bouton « Insérer le texte type » pour un devis
+  premier devis d'un projet ; **texte de base** (Paulo, même soir : « voici le texte que le devis doit avoir à la création de devis ; ce texte peut être adapté pour chaque
+  devis et projet, mais c'est le texte de base » ; `REM_TYPE` = ce texte) : seul un texte tenu dans l'app est repris (`remSg` : `reglages.infoSg` — posé à la création et
+  quand le TEXTE change dans les Paramètres (`remCanon` : texte tel qu'affiché, une cellule par libellé ; pas pour une ligne vide ajoutée puis retirée, ni pour la seule date
+  des plans), texte type inséré, date écrite dans le texte —, ou devis créé dans l'app avant ce drapeau : `infoAffaire` + `indiceIcc`) ; le plus récemment adapté d'abord
+  (`reglages.infoSgLe`, sinon date du devis) ; texte vidé non repris ; lignes modèles « [...] … » écartées (`remModele`) ; les textes des devis venus de l'ancien logiciel ne sont jamais repris (variantes, phrases propres à un ancien devis, « [...] Information sur niveau de
+  précision ») : un nouveau devis de ces projets reçoit le texte de base. Un « Devis provisoire » vide de 99TST (base de l'aperçu de Paulo, supprimé) avait été créé avec une
+  version plus ancienne de la page (ni titres, ni indice, ni texte) ; création réelle vérifiée le 07.11.2026 (22MFO, 19BBS, 24PRC, 99TST, ROZ-R1E : texte de base ; texte
+  adapté dans l'app repris par le devis suivant du même projet ; relecture contradictoire : 6 défauts confirmés, corrigés). « Phase du devis » : ancien état comparé sans
+  tenir compte des apostrophes ni des espaces (`phDe` + `normTxt` : « Projet de l'ouvrage » des anciens devis = 32) ; chaque devis reste modifiable pour lui seul, un devis existant n'est jamais modifié ; bouton « Insérer le texte type » pour un devis
   existant (à la suite, confirmation s'il y a déjà des lignes) ; textes libres 1 à 5 et « Commentaire » retirés
   de la page, valeurs gardées dans le devis ; « Titres » retiré à la
   demande : les titres des documents — page de garde, 1 chiffre, 2 chiffres, document principal — prennent le nom de la version du devis à sa création, enveloppe de

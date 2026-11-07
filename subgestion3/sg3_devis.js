@@ -511,6 +511,15 @@ function remAuto(E,p){ const R=(E&&E.reglages)||{}, L=((E&&E.remarques)||[]).map
 /* remarques telles qu'imprimées : nom de l'affaire et trait en tête si automatique (déclaré ou reconnu : même texte que la page Paramètres) */
 const remImpr=(E,p)=>{ const A=remAuto(E,p); return A.auto?[{nom:'Devis général',texte:nomAffaire(p)+'\n'+TRAIT},...A.rest]:((E&&E.remarques)||[]); };
 { const b0=ch02bBook; ch02bBook=function(E,doc,p){ if(!E||!remAuto(E,p).auto) return b0.apply(this,arguments); const o=E.remarques; E.remarques=remImpr(E,p); try{ return b0.apply(this,arguments); } finally{ E.remarques=o; } }; }
+/* texte Information d'un nouveau devis repris du projet (Paulo, 07.11.2026 : « conserver ce texte type pour tous les projets, celui-ci peut être modifié par projet », choix
+   « repris du projet ») : celui du dernier devis du même projet qui en a un (date de modification, puis numéro ; corbeille exclue), nom de l'affaire automatique compris ;
+   sinon le texte type du bureau. Chaque devis reste modifiable pour lui seul ; un devis existant (validé ou non) n'est jamais modifié. */
+function remProjet(pid,sauf){ if(pid==null) return null; const p=DS.get('project',pid)||{};
+  const L=DS.all('costestimatedocument').filter(d=>String(d.PROJECT_ID)===String(pid)&&String(d.ID)!==String(sauf)&&!d.ISMARKEDASDELETED)
+    .sort((a,b)=>String(b.CHANGEDDATE||'').localeCompare(String(a.CHANGEDDATE||''))||(+b.ID||0)-(+a.ID||0));
+  for(const d of L){ const E=DS.get('costestimate',d.ID); if(!E) continue; const A=remAuto(E,p), rest=(A.rest||[]).filter(r=>r.nom.trim()||r.texte.trim());
+    if(rest.length||A.auto) return {rem:rest.map(r=>({nom:r.nom,texte:r.texte})),auto:A.auto,de:d}; }
+  return null; }
 /* titres des documents (page de garde, devis à 1 et 2 chiffres, document principal) = nom de la version du devis, à la création (Paulo, 07.11.2026) : enregistrement qui crée
    un en-tête (bseq 0) et son contenu (bseq 0) — nouveau devis, Dupliquer, Dupliquer et modifier, import ; nom vide : titres inchangés (« Devis général » par défaut) */
 { const k0=ch02dCommit; ch02dCommit=function(ops){ try{ (Array.isArray(ops)?ops:[]).forEach(o=>{ if(!o||o.t!=='costestimatedocument'||+o.bseq!==0||!o.val) return; const V=String(o.val.VERSION||'').trim(); if(!V) return;
@@ -518,7 +527,8 @@ const remImpr=(E,p)=>{ const A=remAuto(E,p); return A.auto?[{nom:'Devis généra
       const R=c.val.reglages||(c.val.reglages={}); R.titres=Object.assign({},R.titres||{},{garde:V,unChiffre:V,deuxChiffres:V,document:V}); }); }catch(e){ console.error(e); }
     /* page Information : texte type quand le nouveau devis n'en a pas (nouveau devis ; une copie garde les remarques de l'original) */
     try{ (Array.isArray(ops)?ops:[]).forEach(o=>{ if(!o||o.t!=='costestimatedocument'||+o.bseq!==0||!o.val) return; const c=ops.find(x=>x&&x.t==='costestimate'&&String(x.id)===String(o.id)&&+x.bseq===0&&x.val&&typeof x.val==='object');
-      if(c&&!((c.val.remarques||[]).some(r=>String((r||{}).nom||'').trim()||String((r||{}).texte||'').trim()))){ c.val.remarques=remType(o.val.PROJECT_ID||c.val.PROJECT_ID); (c.val.reglages||(c.val.reglages={})).infoAffaire=true; } }); }catch(e){ console.error(e); }
+      if(c&&!((c.val.remarques||[]).some(r=>String((r||{}).nom||'').trim()||String((r||{}).texte||'').trim()))){ const pid=o.val.PROJECT_ID||c.val.PROJECT_ID, P=remProjet(pid,o.id), R=c.val.reglages||(c.val.reglages={});
+        if(P){ c.val.remarques=P.rem; if(P.auto) R.infoAffaire=true; } else { c.val.remarques=remType(pid); R.infoAffaire=true; } } }); }catch(e){ console.error(e); }
     return k0.apply(this,arguments); }; }
 /* menu « Présentation » : présentations du moteur + « Avec le descriptif et le calcul de prix » entre « Toutes les colonnes avec le calcul de prix » et « Avec le descriptif » */
 function presMenu(X){ const L=ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seulement positions de 1 à 3 chiffres'), c4=calcDesc(X.E), m=ch02aMode(X.E);
@@ -568,7 +578,7 @@ function parPage(X,par,force){ if(!par) return; const act=document.activeElement
     +(peut?'<span class="sgde-rma"><button data-rm="haut" title="Monter">↑</button><button data-rm="bas" title="Descendre">↓</button><button data-rm="suppr" title="Supprimer la ligne">×</button></span>':'<span></span>')+'</div>';
   h+='<section class="sgde-ps sgde-rms"><h3>'+E(P.info)+'<small>Page « Information » du devis général</small></h3><div class="sgde-rm">'+lgAuto+RM.map(lgRm).join('')
     +(OV.length?OV.map(s=>'<div class="sgde-rmr sgde-rmo" title="Ouvrage du devis : ajouté d’office à la fin de la page Information"><span>'+E([s.CODE,s.LOCATIONCODE].filter(Boolean).join(' | '))+'</span><span>'+E([s.DESCRIPTION,s.LOCATIONDESCRIPTION].filter(Boolean).join(' | '))+'</span><span></span></div>').join(''):'')+'</div>'
-    +(peut?'<p class="sgde-rmp"><button class="sgde-hreg" data-rm="plus">+ Ajouter une ligne</button><button class="sgde-hreg" data-rm="type" title="Texte du bureau : réserves, réserve CFC 583, subventions ; titre de l’ouvrage et TVA remplis d’office">Insérer le texte type</button><span>Un libellé (Devis général, Réserve, Subventions…) et son texte, une ligne du texte par ligne de la page.'+(OV.length?' Les ouvrages s’ajoutent d’office à la fin.':'')+'</span></p>':'')+'</section>';
+    +(peut?'<p class="sgde-rmp"><button class="sgde-hreg" data-rm="plus">+ Ajouter une ligne</button><button class="sgde-hreg" data-rm="type" title="Texte du bureau : réserves, réserve CFC 583, subventions ; titre de l’ouvrage et TVA remplis d’office">Insérer le texte type</button><span>Un libellé (Devis général, Réserve, Subventions…) et son texte, une ligne du texte par ligne de la page. Un nouveau devis reprend le texte du dernier devis du projet, sinon le texte type du bureau.'+(OV.length?' Les ouvrages s’ajoutent d’office à la fin.':'')+'</span></p>':'')+'</section>';
   /* « Titres » retiré (Paulo, 07.11.2026 : « supprimer et utiliser le nom de la version du devis lors de la création d'un devis ») : titres posés à la création (ch02dCommit) */
   if(!peut) h+='<p class="sgde-pl0">Lecture seule : vous n’avez pas le droit de modifier ce devis.</p>';
   par.innerHTML=h; par._sig=sig; par.scrollTop=y; parIndice(X,par); par.querySelectorAll('.sgde-rmt').forEach(remHaut);

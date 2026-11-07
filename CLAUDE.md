@@ -1642,7 +1642,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   projet ») automatique aussi : filet noir sous le nom dans la page, ligne de tirets du modèle 24PRC (`TRAIT`) imprimée sous le nom ; une ligne de tirets saisie juste après le
   nom est retirée du texte modifiable et du texte type (`sansTrait`) ; devis plus ancien dont la 1re remarque est « Devis général » suivie de la
   désignation ou de la description de l'affaire : reconnu (`remAuto`), imprimé et affiché de même, converti à la première modification —
-  posé à la création d'un devis sans remarques (enveloppe de `ch02dCommit` ; une copie garde les remarques de l'original), bouton « Insérer le texte type » pour un devis
+  posé à la création d'un devis sans remarques (enveloppe de `ch02dCommit` ; une copie garde les remarques de l'original), **repris du projet** (Paulo, même jour :
+  « conserver ce texte type pour tous les projets, celui-ci peut être modifié par projet », choix « repris du projet ») : un nouveau devis reprend le texte du dernier devis du
+  même projet qui en a un (`remProjet` : date de modification puis numéro, corbeille exclue, nom de l'affaire automatique compris), le texte type du bureau seulement pour le
+  premier devis d'un projet ; chaque devis reste modifiable pour lui seul, un devis existant n'est jamais modifié ; bouton « Insérer le texte type » pour un devis
   existant (à la suite, confirmation s'il y a déjà des lignes) ; textes libres 1 à 5 et « Commentaire » retirés
   de la page, valeurs gardées dans le devis ; « Titres » retiré à la
   demande : les titres des documents — page de garde, 1 chiffre, 2 chiffres, document principal — prennent le nom de la version du devis à sa création, enveloppe de

@@ -1562,11 +1562,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   enfants). Liste CFC : retrait avec sous-positions toujours confirmé ; clic droit = « Ajouter au devis » / « Retirer du devis ». Débogage : `SGDE.honContrat`, `SGDE.honEtat`.
   **Taux de TVA du document (07.11.2026, Paulo : « affiche la TVA du document »)** : chiffre « TVA 8.1 % » — taux des lignes chiffrées et des coûts fixés (variantes et parties
   « Exclure » non comptées), plusieurs taux listés (« TVA 7.7 · 8.1 % ») ; lignes à 0 % (taxes, émoluments, CFC 51…) hors du libellé, signalées dans l'infobulle ; devis vide : taux par défaut (`ch02aVat`).
-  Montant soumis aux honoraires = hors taxe (% × montant HT, `dvCompute`) : chiffre « Soumis aux honoraires HT », colonne « Montant soumis HT » (07.11.2026, Paulo : « indiquer si HT ou TTC »).
+  Montant soumis aux honoraires = hors taxe (% × montant HT, `dvCompute`) : chiffre « Montant soumis HT » (d'abord « Soumis aux honoraires HT »), colonne « Montant soumis HT » (07.11.2026, Paulo : « indiquer si HT ou TTC »).
   **Précision du devis (07.11.2026, Paulo : « ajoute le degré de précision du devis devant le total TTC »)** : premier chiffre, étroit (colonne de 86 px), « Précision ±10 % » = « Marge
   d'approximation du DG » des Paramètres (`E.reglages.marge`, textes « [...] » ignorés) ; vide → « — » et lien « définir » (Paramètres, `ch02aSettings`). Texte d'aide sous la recherche du
   plan CFC retiré (« supprimer », même jour). « figé » sous Honoraires HT, la raison en infobulle. Plus de « CHF » sous les chiffres du devis (« supprimer le CHF dans le devis général », même jour) : seules restent les
-  indications utiles (montants exclus, filtre, contrat signé, liens).
+  indications utiles (montants exclus, filtre, contrat signé, liens). Chiffre « Soumis aux honoraires HT » renommé « Montant soumis HT » (une seule ligne, comme la colonne) ; « figé » retiré sous
+  Honoraires HT (« supprimer », même jour), devis validé ou annulé signalé dans l'infobulle du chiffre.
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis
   général (PDF) » (première entrée ; les présentations de l'ancien livret restent dessous). `dgPdf` / `dgCreer` (sg3_devis.js) : livret du moteur `ch02bBook` avec des gabarits de
   pages synthétiques (tableau 728 × 388 pt, Information 402 pt, rangées 15 pt) et la présentation de la référence `DG_PRESET` (page de garde, Information si remarques

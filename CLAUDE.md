@@ -1544,7 +1544,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Soumis aux honoraires, règle du bureau (07.11.2026, Paulo : « définir tous les postes à 100 % pour les honoraires hormis le CFC 5 et les honoraires ; doit être compris dans le
   montant le CFC 583 »)** : `honRegle(cfc)` = 100 % partout, 0 % pour le CFC 5 et les honoraires (CFC 09, 19, 29, 39, 49, 99 — second chiffre 9 ; 59 est dans le 5), 583 (réserves pour
   imprévus) à 100 %. D'office pour les positions ajoutées depuis la liste CFC (`dvNewParts` enveloppé, `CODE_NEUF`) ; sur demande pour tout le devis : Fonctions ▸ Modifier les montants ▸
-  « Soumis aux honoraires selon la règle du bureau … », ou lien « appliquer la règle » sous le chiffre « Soumis aux honoraires » quand des positions s'en écartent (`horsRegle`) —
+  « Soumis aux honoraires selon la règle du bureau … » (entrée retirée le même soir, « supprimer »), ou lien « appliquer la règle » sous le chiffre « Soumis aux honoraires » quand des positions s'en écartent (`horsRegle`) —
   confirmation avec le nombre de positions et le montant soumis avant → après. Les pourcentages restent modifiables position par position (fenêtre de calcul).
   **Honoraires d'architecte repris du contrat signé (07.11.2026, Paulo : « reprends le principe que l'on avait travaillé sur le devis classé dans archives », choix « tout le
   principe »)** : même règle que le devis de Facturation (Archives ▸ Devis : `dvHonContrat`, `dvHonSync`, `dvHonReinit`) — contrats de l'affaire non annulés (`sgContratsDuProjet`),

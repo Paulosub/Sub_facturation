@@ -1629,7 +1629,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Etat de planification » retiré à la demande, valeur gardée dans le devis ; phrase d'aide de l'arrondi retirée ; Affichage — pourcentage, arrondi ; dernière section « Information » (Paulo : « voici ce que je souhaiterais écrire dans Information », page Information de son DG 24PRC) = les remarques préliminaires
   du devis (`E.remarques` {nom, texte}, mêmes données que Fonctions ▸ Remarques préliminaires, qui ouvre maintenant cette section) : une ligne par remarque, libellé à gauche,
   texte à droite (hauteur selon le contenu), rangées alternées comme le PDF, ↑ ↓ × au survol (suppression confirmée si la ligne a du texte), « + Ajouter une ligne » ; lignes vides
-  retirées à l'enregistrement (comme la fenêtre du moteur) ; ouvrages du devis en gris à la fin (ajoutés d'office par le PDF) ; textes libres 1 à 5 et « Commentaire » retirés
+  retirées à l'enregistrement (comme la fenêtre du moteur) ; ouvrages du devis en gris à la fin (ajoutés d'office par le PDF) ; **texte type** (Paulo, même jour, choix
+  « texte type des nouveaux devis », texte de son DG 24PRC : `REM_TYPE`, `remType`) — Devis général / {ouvrage} (description du projet, sinon titre), réserves (prix des
+  matières, inflation, autorités / MO, imprévus, expérience Substances), « plans datés du [date à compléter] », « (TVA {taux par défaut}%) », Réserve CFC 583, Subventions —
+  posé à la création d'un devis sans remarques (enveloppe de `ch02dCommit` ; une copie garde les remarques de l'original), bouton « Insérer le texte type » pour un devis
+  existant (à la suite, confirmation s'il y a déjà des lignes) ; textes libres 1 à 5 et « Commentaire » retirés
   de la page, valeurs gardées dans le devis ; « Titres » retiré à la
   demande : les titres des documents — page de garde, 1 chiffre, 2 chiffres, document principal — prennent le nom de la version du devis à sa création, enveloppe de
   `ch02dCommit` : en-tête et contenu créés ensemble, nouveau devis, Dupliquer, Dupliquer et modifier, import ; devis existants : titres inchangés ; un champ modifié dans

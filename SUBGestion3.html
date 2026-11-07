@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 07.11.2026 18:09 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 07.11.2026 18:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38409,11 +38409,24 @@ const phNom=c=>{ for(const [,L] of PH_SIA) for(const [k,n] of L) if(k===String(c
 const phDe=R=>{ const c=String((R||{}).phaseSia||''); if(phNom(c)) return c; const t=String((R||{}).etatProjet||'').trim().toLowerCase(); for(const [,L] of PH_SIA) for(const [k,n] of L) if(t&&n.toLowerCase()===t) return k; return ''; };
 const PAR_AIDE={phase:'Phase SIA 102 du devis ; son nom est repris sur la page de garde du devis général (« Devis général - <phase> »).',etatProjet:'Repris sur la page de garde du devis général (« Devis général - <état> »).',
   marge:'Degré de précision du devis, affiché devant le total TTC et sur la page de garde.',date:'Date du devis, en tête des documents.'};
+/* texte type de la page Information (Paulo, 07.11.2026, choix « texte type des nouveaux devis ») : texte du bureau, une ligne par entrée comme dans l'ancien logiciel (une ligne
+   sans libellé continue la précédente) ; {ouvrage} = description du projet (sinon son titre, comme « Ouvrage » de la page de garde), {tva} = taux de TVA par défaut,
+   date des plans à compléter */
+const REM_TYPE=[['Devis général','{ouvrage}'],['','-----------------------------------------------------------'],['','Ce devis est estimatif et reste sous réserve des points suivants:'],
+  ['','-évolution des prix des matières premières'],['','-inflation'],['','-exigences supplémentaires des autorités / MO'],['','-imprévus durant la phase d\'exécution'],
+  ['','-estimation basées sur l\'expérience Substances'],['','Ce DG correspond aux plans datés du [date à compléter]'],['','(TVA {tva}%)'],
+  ['Réserve','CFC 583 Réserve pour divers et imprévus (env. 10%)'],['Subventions','Les subventions ne sont pas affichées dans ce document.'],['','Ces montants ne sont pas acquis d\'office.'],
+  ['','Pour obtenir ces montants, AUCUN travaux ne doit commencer (yc travaux préparatoires) sans validation par les autorités.']];
+function remType(pid){ const p=DS.get('project',pid)||{}, ouv=String(p.DESCRIPTION||p.TITLE||'').trim()||'[ouvrage à compléter]'; let t=8.1; try{ const v=+ch02aVat(); if(isFinite(v)&&v>0) t=v; }catch(_){ }
+  return REM_TYPE.map(([n,x])=>({nom:n,texte:x.replace('{ouvrage}',ouv).replace('{tva}',String(Math.round(t*100)/100))})); }
 /* titres des documents (page de garde, devis à 1 et 2 chiffres, document principal) = nom de la version du devis, à la création (Paulo, 07.11.2026) : enregistrement qui crée
    un en-tête (bseq 0) et son contenu (bseq 0) — nouveau devis, Dupliquer, Dupliquer et modifier, import ; nom vide : titres inchangés (« Devis général » par défaut) */
 { const k0=ch02dCommit; ch02dCommit=function(ops){ try{ (Array.isArray(ops)?ops:[]).forEach(o=>{ if(!o||o.t!=='costestimatedocument'||+o.bseq!==0||!o.val) return; const V=String(o.val.VERSION||'').trim(); if(!V) return;
       const c=ops.find(x=>x&&x.t==='costestimate'&&String(x.id)===String(o.id)&&+x.bseq===0&&x.val&&typeof x.val==='object'); if(!c) return;
       const R=c.val.reglages||(c.val.reglages={}); R.titres=Object.assign({},R.titres||{},{garde:V,unChiffre:V,deuxChiffres:V,document:V}); }); }catch(e){ console.error(e); }
+    /* page Information : texte type quand le nouveau devis n'en a pas (nouveau devis ; une copie garde les remarques de l'original) */
+    try{ (Array.isArray(ops)?ops:[]).forEach(o=>{ if(!o||o.t!=='costestimatedocument'||+o.bseq!==0||!o.val) return; const c=ops.find(x=>x&&x.t==='costestimate'&&String(x.id)===String(o.id)&&+x.bseq===0&&x.val&&typeof x.val==='object');
+      if(c&&!((c.val.remarques||[]).some(r=>String((r||{}).nom||'').trim()||String((r||{}).texte||'').trim()))) c.val.remarques=remType(o.val.PROJECT_ID||c.val.PROJECT_ID); }); }catch(e){ console.error(e); }
     return k0.apply(this,arguments); }; }
 /* menu « Présentation » : présentations du moteur + « Avec le descriptif et le calcul de prix » entre « Toutes les colonnes avec le calcul de prix » et « Avec le descriptif » */
 function presMenu(X){ const L=ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seulement positions de 1 à 3 chiffres'), c4=calcDesc(X.E), m=ch02aMode(X.E);
@@ -38457,7 +38470,7 @@ function parPage(X,par,force){ if(!par) return; const act=document.activeElement
     +(peut?'<span class="sgde-rma"><button data-rm="haut" title="Monter">↑</button><button data-rm="bas" title="Descendre">↓</button><button data-rm="suppr" title="Supprimer la ligne">×</button></span>':'<span></span>')+'</div>';
   h+='<section class="sgde-ps sgde-rms"><h3>'+E(P.info)+'<small>Page « Information » du devis général</small></h3><div class="sgde-rm">'+RM.map(lgRm).join('')
     +(OV.length?OV.map(s=>'<div class="sgde-rmr sgde-rmo" title="Ouvrage du devis : ajouté d’office à la fin de la page Information"><span>'+E([s.CODE,s.LOCATIONCODE].filter(Boolean).join(' | '))+'</span><span>'+E([s.DESCRIPTION,s.LOCATIONDESCRIPTION].filter(Boolean).join(' | '))+'</span><span></span></div>').join(''):'')+'</div>'
-    +(peut?'<p class="sgde-rmp"><button class="sgde-hreg" data-rm="plus">+ Ajouter une ligne</button><span>Un libellé (Devis général, Réserve, Subventions…) et son texte ; une ligne sans libellé continue la précédente.'+(OV.length?' Les ouvrages s’ajoutent d’office à la fin.':'')+'</span></p>':'')+'</section>';
+    +(peut?'<p class="sgde-rmp"><button class="sgde-hreg" data-rm="plus">+ Ajouter une ligne</button><button class="sgde-hreg" data-rm="type" title="Texte du bureau : réserves, réserve CFC 583, subventions ; titre de l’ouvrage et TVA remplis d’office">Insérer le texte type</button><span>Un libellé (Devis général, Réserve, Subventions…) et son texte ; une ligne sans libellé continue la précédente.'+(OV.length?' Les ouvrages s’ajoutent d’office à la fin.':'')+'</span></p>':'')+'</section>';
   /* « Titres » retiré (Paulo, 07.11.2026 : « supprimer et utiliser le nom de la version du devis lors de la création d'un devis ») : titres posés à la création (ch02dCommit) */
   if(!peut) h+='<p class="sgde-pl0">Lecture seule : vous n’avez pas le droit de modifier ce devis.</p>';
   par.innerHTML=h; par._sig=sig; par.scrollTop=y; parIndice(X,par); par.querySelectorAll('.sgde-rmt').forEach(remHaut);
@@ -38475,6 +38488,9 @@ function remEnregistrer(X,par){ if(!ch02aCan(X)){ parPage(X,par,true); return; }
 function remAction(X,par,b){ const a=b.dataset.rm, rw=b.closest('.sgde-rmr'), box=par.querySelector('.sgde-rm');
   if(a==='plus'){ const i=par.querySelectorAll('.sgde-rmr:not(.sgde-rmo)').length, d=document.createElement('div'); d.innerHTML='<div class="sgde-rmr" data-i="'+i+'"><input class="inp sgde-rmn" data-k="rem.'+i+'.n" placeholder="Titre"><textarea class="inp sgde-rmt" rows="1" data-k="rem.'+i+'.t" placeholder="Texte"></textarea><span class="sgde-rma"><button data-rm="haut" title="Monter">↑</button><button data-rm="bas" title="Descendre">↓</button><button data-rm="suppr" title="Supprimer la ligne">×</button></span></div>';
     const n=d.firstChild, o=box.querySelector('.sgde-rmo'); if(o) box.insertBefore(n,o); else box.append(n); remHaut(n.querySelector('.sgde-rmt')); n.querySelector('.sgde-rmn').focus(); return; }
+  if(a==='type'){ const go2=()=>{ remEnregistrer(X,par); if(!ch02aCanEdit(ch02aHdr(X))) return; X.E.remarques=[...(X.E.remarques||[]),...remType(X.p&&X.p.ID)]; par._sig=parSig(X); X.touch(); parPage(X,par,true); };
+    const deja=[...par.querySelectorAll('.sgde-rmr:not(.sgde-rmo)')].some(d=>((d.querySelector('.sgde-rmn')||{}).value||'').trim()||((d.querySelector('.sgde-rmt')||{}).value||'').trim());
+    if(deja) sgConfirm('Ajouter le texte type à la suite des lignes existantes de la page Information ?',go2,{title:'Information',yesText:'Ajouter'}); else go2(); return; }
   if(!rw) return;
   if(a==='haut'&&rw.previousElementSibling&&!rw.previousElementSibling.classList.contains('sgde-rmo')) rw.parentNode.insertBefore(rw,rw.previousElementSibling);
   else if(a==='bas'&&rw.nextElementSibling&&!rw.nextElementSibling.classList.contains('sgde-rmo')) rw.parentNode.insertBefore(rw.nextElementSibling,rw);

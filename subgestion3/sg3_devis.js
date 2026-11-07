@@ -172,7 +172,7 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgde-rmo{color:var(--s-gris)}
 .sgde-rml{padding:7px 0;font-size:13px;color:var(--s-gris)}
 .sgde-rmc{display:flex;flex-direction:column;gap:4px;min-width:0}
-.sgde-rmf{padding:7px 7px 6px;font-size:13.5px;color:var(--s-nuit);font-weight:600;border-bottom:1px solid var(--s-noir);margin-bottom:4px}   /* trait sous le titre du projet */
+.sgde-rmf{padding:7px 10px 6px;font-size:13px;line-height:1.45;color:var(--s-noir);font-weight:400;border-bottom:1px solid var(--s-noir);margin-bottom:4px}   /* trait sous le titre du projet ; nom au même texte que les cellules (Paulo, 07.11.2026), aligné sur leur texte (filet 1 px + 9 px) */
 .sgde-rmo>span{padding:7px 0;font-size:13px}
 .sgde-rmp{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin:10px 0 0;font-size:12px;color:var(--s-gris)}
 .sgde-rmp .sgde-hreg{font-size:13px}

@@ -1560,6 +1560,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   la main : pas recréée (`pt.sgHonPose`, `E.sgHon.pose`), lien « reprendre le contrat ». `l.sgHon.k` = montant du contrat (comparaison sans boucle d'écriture). Devis annulé : « figé (devis
   annulé) ». Liens des chiffres visibles en plein écran et sur petit écran (`.s:has(.sgde-hreg)`). Chiffre sans contrat : montant propre de chaque position d'honoraires (sans ses
   enfants). Liste CFC : retrait avec sous-positions toujours confirmé ; clic droit = « Ajouter au devis » / « Retirer du devis ». Débogage : `SGDE.honContrat`, `SGDE.honEtat`.
+  **Taux de TVA du document (07.11.2026, Paulo : « affiche la TVA du document »)** : chiffre « TVA 8.1 % » — taux des lignes chiffrées et des coûts fixés (variantes et parties
+  « Exclure » non comptées), plusieurs taux listés (« TVA 7.7 · 8.1 % ») ; lignes à 0 % (taxes, émoluments, CFC 51…) hors du libellé, signalées dans l'infobulle ; devis vide : taux par défaut (`ch02aVat`).
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis
   général (PDF) » (première entrée ; les présentations de l'ancien livret restent dessous). `dgPdf` / `dgCreer` (sg3_devis.js) : livret du moteur `ch02bBook` avec des gabarits de
   pages synthétiques (tableau 728 × 388 pt, Information 402 pt, rangées 15 pt) et la présentation de la référence `DG_PRESET` (page de garde, Information si remarques

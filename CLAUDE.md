@@ -1519,6 +1519,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   position est une ligne juste sous elle, avant ses lignes de calcul (Paulo : « sous le CFC concerné, et pas dans une colonne », puis « ajoute le descriptif sous le CFC » ; lignes
   `dsc` ajoutées aux rangées, texte dans la désignation en gris italique, retours à la ligne gardés, « Desc. » dans la colonne N° à droite, à la hauteur de la première ligne
   (demande du même jour), copie et CSV le gardent ; pas de tri par colonne dans ces trois présentations) ;
+  **« Avec le descriptif et le calcul de prix »** (Paulo, 07.11.2026), entre « Toutes les colonnes avec le calcul de prix » et « Avec le descriptif » dans Présentation
+  (`presMenu`) : colonnes de « Avec le descriptif », sous chaque position son descriptif puis ses lignes de calcul (rangées ajoutées par l'enveloppe de `ch02aDraw`, mêmes
+  colonnes et montants que le mode 3) ; enregistré displayMode 4 + `reglages.affichage.sgCalc` (DeltaSub.html seul : « Avec le descriptif » ; enveloppe de `ch02aSetMode`
+  : `sgCalc` retiré quand on choisit une autre présentation).
   Standard et « Avec colonnes honoraires » : sans descriptif ; tous les textes de la désignation (positions de tous niveaux, descriptifs, lignes de calcul) au même bord gauche,
   celui du titre de la colonne « Désignation » (Paulo, 07.11.2026 : plus de retrait par niveau ; la hiérarchie se lit au gras et à la trame des chapitres) ; colonnes fixes N° et Désignation opaques sur toutes les lignes (la règle des lignes alternées de
   sg3.css les rendait transparentes : les montants se voyaient au travers au défilement horizontal), lignes de niveau 1 sur trame bleu nuit pâle sur toute la ligne.
@@ -1593,10 +1597,63 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   comme la référence ; page de garde non numérotée (`nonum`, pages « 1 | n » ensuite). « Quantité 1500 = 1500.0 » (formule réduite à un nombre) montrée une fois.
   Corrections après relecture (07.11.2026) : ouvrages affichés dès que le devis en a (`displaySubprojects:ch02bHasSub(E)`, sinon les lignes des parties manquaient) ; devis vide sans
   document principal (un seul total) ; pages vides retirées (sauts posés pour une autre mise en page) ; textes modèles « [...] … » de l'ancien logiciel ignorés (titres, état, marge) ;
-  ligne de calcul trop longue : formule retirée (quantité et prix gardés) et texte qui déborde sur la colonne voisine vide ; filtre d'ouvrages actif signalé (« Filtre : … » sur la
+  ligne de calcul trop longue : formule retirée (quantité et prix gardés ; débordement sur la colonne voisine vide retiré avec le modèle 24PRC, voir plus bas) ; filtre d'ouvrages actif signalé (« Filtre : … » sur la
   page de garde, dans l'en-tête et le nom du fichier) ; titre de garde coupé au besoin, marge limitée à 150 pt ; accents décomposés recomposés (`prep` : `normalize('NFC')`, tous les
   PDF de sgDsPdf). Limite connue : les montants des lignes de calcul suivent l'ancien logiciel (sans facteur du filtre ni parenthèses d'une partie exclue ; le total de la position,
   lui, en tient compte). Vérifié sur 99TST, 24PRC (7101), 24BRC (7251, 4751), ROZ-R4 (1101), 23RUS (2951) : toutes les lignes de calcul imprimées, aucune page vide.
+  **Documents ▸ Devis général = ce modèle (07.11.2026, Paulo : « modifier cette page par ce modèle », 24PRC-DG_TRAVAIL_20260216.pdf de l'ancien logiciel)** : la ligne
+  « Devis général » de l'onglet Documents (Ouvrir, fenêtre du document — Imprimer, PDF, Partager, Réglages —, Créer le PDF) montre et enregistre le livret paysage du bloc 46 au
+  lieu du document portrait du modèle .dpdoc (`ch02cRender`, `ch02cPrefItems`, `ch02cOpen`, `ch02cGenPdf`, `ch02cNewItems` enveloppés pour la ligne 0 d'un devis SUBGestion ;
+  `dgRendu` : page repérée `/*sgimp:id*/` dont le PDF est déjà fait, servie par `sgImpPdf` du bloc 31 ; `dgOuvrir` / `dgGenPdf` : mêmes étapes que le moteur — PDF officiel
+  existant, mode filtre, message d'arrondi selon les réglages du modèle — mais AUCUNE écriture dans la base, pas d'enregistrement `costestimatedpdoc` : consultation possible avec un
+  profil en lecture seule, pas de faux conflit au double-clic, DeltaSub.html / v1 / v2 gardent leur propre choix de modèle). Honoraires et Devis descriptif inchangés. **Réglages** de la fenêtre et du menu de la ligne (`DG_MENU`, mêmes libellés que le moteur) = options du
+  livret de l'ancien logiciel, choix enregistrés dans le devis (`E.reglages.dgPdf`), valeurs de la référence tant que rien n'est choisi, mêmes dépendances que sa fenêtre
+  « Paramètres » ; « Pourcentages sur le total général » (`E.reglages.pourcentageSur`, réglage du devis) ; « Sauts de page : <présentation> » / « Sans sauts de page »
+  (`dgPresSel` : rang et nom de la présentation, une présentation sans nom comprise ; « Sans sauts de page » = `sansSauts`, garde les options de base de la présentation par
+  défaut). Comme le modèle : ventilation par ouvrage des positions totalisatrices à 2 chiffres et plus (`dgAgreger`, pendant la création seulement : somme des ouvrages des
+  sous-positions ; pourcentages sur la même base que le moteur ; en « Assembler les descriptifs » le descriptif propre de la totalisatrice est gardé), noms des ouvrages, page
+  Information refaite depuis les remarques et les ouvrages (`ch02bIntro`, titre souligné, rangées alternées, ligne vide avant chaque remarque nommée et avant les ouvrages, lignes
+  vides d'une remarque en paragraphes gardées, 23 lignes par page, textes coupés à 229 pt : 298 pt moins 15 % moins les 25 pt de `ch02bWrap`), page Information aussi sans
+  remarque quand le devis a des ouvrages (`dgOuvInfo`), textes des positions recollés (`dgTexte` / `ch01bDbl` : « con- duites » → « conduites »), « Quantité 1500 = 1500.0 » tel
+  quel, texte trop long coupé au bord de sa colonne par « ... » (plus de débordement sur la colonne voisine ; formule d'une ligne de calcul retirée si elle ne tient pas dans la
+  colonne Texte). Jamais plus de 25 rangées par page de tableau (avec un filtre d'ouvrages, le moteur ne garde pas une position et ses ouvrages ensemble : la suite part sur une
+  page insérée, coupée avant une position si possible). En-tête : papier des contrats (le modèle a l'en-tête de l'ancien logiciel). Écarts qui restent : l'ancien logiciel ne ventile pas certains totalisateurs (CFC 2, 51),
+  sauts de page de sa propre mise en page, « ... » au lieu de « … » (glyphe absent d'Akkurat). Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
+  seconde relecture des corrections : le surplus d'une page trop pleine passe en tête de la page suivante de la même série (récapitulatif, document principal, page du total),
+  pages complétées jusqu'en bas (zébrage) ; en « Assembler les descriptifs », une totalisatrice qui a son propre descriptif n'est pas ventilée.
+  **Onglet « Paramètres » (07.11.2026, Paulo : « glisser Paramètres après Documents, sous forme de page comme Documents, pas une fenêtre ; l'ensemble des éléments par catégorie, le
+  titre, dessous les éléments »)** : onglets Devis · Documents · Paramètres ; bouton « Paramètres » retiré de la barre ; lien « définir » de la Précision = onglet Paramètres,
+  curseur dans la marge. `parPage` / `parChange` / `parIndice` (sg3_devis.js) : catégories de la fenêtre du moteur l'une sous l'autre (Information — date en tête, « Phase du
+  devis » à la place de l'état du projet : liste des phases SIA 102 11 à 53 (`PH_SIA`), code dans `reglages.phaseSia`, nom écrit dans `etatProjet` → page de garde « Devis
+  général - <phase> » et anciens modèles ; un état saisi avant qui n'est pas une phase reste affiché « (état saisi avant) » jusqu'au choix —, marge d'approximation, indice ;
+  « Etat de planification » retiré à la demande, valeur gardée dans le devis ; phrase d'aide de l'arrondi retirée ; Affichage — pourcentage, arrondi ; dernière section « Information » (Paulo : « voici ce que je souhaiterais écrire dans Information », page Information de son DG 24PRC) = les remarques préliminaires
+  du devis (`E.remarques` {nom, texte}, mêmes données que Fonctions ▸ Remarques préliminaires, qui ouvre maintenant cette section) : une ligne par remarque, libellé à gauche,
+  texte à droite (hauteur selon le contenu), rangées alternées comme le PDF, ↑ ↓ × au survol (suppression confirmée si la ligne a du texte), « + Ajouter une ligne » ; lignes vides
+  retirées à l'enregistrement (comme la fenêtre du moteur) ; ouvrages du devis en gris à la fin (ajoutés d'office par le PDF) ; textes libres 1 à 5 et « Commentaire » retirés
+  de la page, valeurs gardées dans le devis ; « Titres » retiré à la
+  demande : les titres des documents — page de garde, 1 chiffre, 2 chiffres, document principal — prennent le nom de la version du devis à sa création, enveloppe de
+  `ch02dCommit` : en-tête et contenu créés ensemble, nouveau devis, Dupliquer, Dupliquer et modifier, import ; devis existants : titres inchangés ; un champ modifié dans
+  l'onglet ne réécrit plus les titres par défaut), un titre et une phrase d'aide par champ ; même enregistrement que la fenêtre (`ch02aPrefInit`,
+  `ch02aPrefApply`, `X.touch`) à chaque champ modifié (change, Entrée), arrondi changé → lignes recalculées (message) ; sans droit (`ecrit()` et `ch02aCanEdit`) : champs grisés ;
+  page redessinée quand les valeurs enregistrées diffèrent de celles affichées (signature `parSig`, posée avant chaque enregistrement fait dans l'onglet : le curseur et le clic
+  suivant ne sont jamais perdus ; un conflit 409 ou un autre poste redessine la page, le champ qui avait le curseur le garde) ; « Arrondi » demande confirmation (recalcule le TTC de
+  toutes les lignes de calcul) ; en plein écran, les onglets Documents et Paramètres gardent le bouton de sortie. La fenêtre du moteur (`ch02aSettings`) reste, plus appelée par SUBGestion 3.
+  **Indice des prix de la construction automatique (07.11.2026, bloc 47, `subgestion3/sg3_icc.js`, concaténé en dernier ; Paulo : « un indice que tu mets à jour toi
+  automatiquement, que je ne souhaite pas modifier manuellement ; qu'il se mette à jour lors de la création du devis et que tu indiques sur la base de quel indice avec l'année »)** :
+  Indice suisse des prix de la construction de l'OFS, région lémanique (VD, VS, GE), bâtiment — tableau `cc-t-05.05.01` (« Évolution des prix de la construction (multibases),
+  valeurs par grande région et par type d'objet », codes `<REG_02>` / `<OBJ_03>`, une feuille par base : 1998, 2010, 2015, 2020, 2025 = 100), publié en juin (valeurs d'avril) et
+  en décembre (valeurs d'octobre). Lu sur `https://dam-api.bfs.admin.ch/hub/api/dam/assets?orderNr=cc-t-05.05.01` puis `/assets/<id>/master` (accès ouvert depuis une page
+  web, aussi en file:// ; xlsx décompressé par `dezip` + `DecompressionStream`, lu par `lireXlsx`), 15 s après le démarrage puis tous les 3 jours, fichier téléchargé seulement si
+  l'OFS en a publié un nouveau ; copie dans le navigateur (`localStorage` `sg3_icc`) ; valeurs intégrées `ICC_INT` (tableau du 18.06.2026, jusqu'à avril 2026 : 100.3 en base
+  octobre 2025, 116.1 en base octobre 2020) si l'OFS est injoignable. Création d'un devis (`ch02dNewContent`, `ch02dCopy` : nouveau, Dupliquer, Dupliquer et modifier, import) :
+  dernière valeur publiée dans la base la plus récente → `reglages.indiceIcc` {v, p (AAAA-04|10), base, le, serie} et `reglages.indice` (valeur lue par les anciens modèles,
+  `constructionIndex`). Devis créé avant : indice d'après la date du devis (`ch02aDate`), base en vigueur à cette date (base B dès juin B+1) et dernière publication à cette date
+  (avril → 20 juin, octobre → 20 décembre), rien n'est écrit. Jamais saisi : Paramètres ▸ Indice en lecture seule (valeur, « avril 2026, base octobre 2025 = 100 », série,
+  origine, source) ; fenêtre du moteur : champ en lecture seule ; `ch02aPrefApply` remet toujours l'indice calculé. `nas/nettoyer.py` : `dam-api.bfs.admin.ch` admis.
+  Relecture du même jour : relecture aussi toutes les 6 heures (app restée ouverte), toutes les 6 heures au lieu de 3 jours quand une publication est attendue
+  (`attendu()`), et juste avant la création d'un devis (enveloppe de `ch02dHeadDialog`, attendue au plus 4 s après OK) ; fichier relu aussi si l'OFS l'a remplacé sous le même
+  numéro (`bfs.lastUpdatedVersion`, `maj`) ou si la lecture a changé (`ICC_FMT`) ; la source affichée est la publication d'où vient l'indice enregistré (`indiceIcc.src`).
+  DeltaSub.html seul : champ manuel d'origine. Débogage `window.SGICC` (`actuel()`, `a(date)`, `devis(E,doc)`, `rafraichir(true)`).
 - **Documents des estimations (05.11.2026, bloc 38, `subgestion3/sg3_estimation.js`, concaténé en dernier ; Paulo : « dans Détermination des coûts - Estimation avant-projet (2) il n'est pas possible de créer un fichier pdf du document »)** :
   le lot 4 n'avait jamais été construit (`ec4SectionDocuments`, `ec4PrintOld`, `ec4PrintRefQuantities` n'existaient pas ; le moteur les appelle par leur nom, `ecExt`). Ils sont définis ici, DeltaSub.html inchangé. Calcul des coûts ▸ ELEMENTS ▸ Documents : ligne « Estimation des coûts »
   (état, Ouvrir / Créer le document, Créer le PDF, Ouvrir le PDF, Réglages ▾ — options du cahier des charges dans `P.impressionDoc`, par estimation —, Supprimer ▾), puis Fichiers PDF (zone du moteur, dossier `Construction/Costplanning/<P>/<D>/documents/archive`). Document = copie du modèle

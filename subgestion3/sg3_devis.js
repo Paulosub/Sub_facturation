@@ -134,6 +134,47 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgde-docs .ch02-dpane>.sgde-dh{margin-top:14px}
 .sgde-docs .ch02-dpane>.sgde-dh+.sgde-dl{margin-top:0;border-top:0}
 .sgde-docs .ch02-dpane>div:not(.ph2):not(.sgde-dl){border:0!important;height:auto!important;min-height:96px}
+/* onglet Paramètres (07.11.2026) : catégories l'une sous l'autre, titre puis champs, comme l'onglet Documents */
+.sgde-par{display:none;flex:1 1 auto;min-height:0;overflow:auto;padding:0 24px 24px}
+.sgde.par .sgde-par{display:block}
+.sgde.par>.cols,.sgde.par>.sgde-bar,.sgde.par .sgde-niv{display:none}
+/* plein écran dans Documents et Paramètres : la barre garde le seul bouton pour sortir */
+.sgde.sgde-plein:is(.par,.docs)>.sgde-bar{display:flex!important}
+.sgde.sgde-plein:is(.par,.docs)>.sgde-bar>:not(.sgde-pl):not(.sgde-fin){display:none!important}
+.sgde-ps{max-width:980px;margin:14px 0 8px}
+.sgde-ps>h3{margin:0;padding:8px 0;border-top:2px solid var(--s-noir);font-size:14px;font-weight:700;display:flex;align-items:baseline;gap:12px}
+.sgde-ps>h3 small{font-size:12px;font-weight:400;color:var(--s-gris)}
+.sgde-pg{display:grid;grid-template-columns:230px minmax(0,1fr);gap:0 18px;align-items:start}
+.sgde-pg>label{padding:15px 0 9px;font-size:13px;color:var(--s-gris);border-bottom:1px solid var(--s-filet)}
+.sgde-pg>div{padding:8px 0;border-bottom:1px solid var(--s-filet);min-width:0}
+.sgde-pg .inp{width:100%;max-width:520px;box-sizing:border-box}
+.sgde-pg .inp.c{max-width:180px}
+.sgde-pg select.inp{max-width:520px;height:34px}
+.sgde-pg textarea.inp{min-height:96px;resize:vertical}
+.sgde-pg .sgde-pr{display:block;margin:5px 0 3px;font-size:13px}
+.sgde-pg .sgde-ph{display:block;font-size:12px;color:var(--s-gris);margin-top:3px;line-height:1.4;max-width:620px}
+.sgde-pi{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding-top:4px}
+.sgde-pi b{font-size:22px;font-weight:700;color:var(--s-nuit)}
+.sgde-pi span{font-size:13px}
+.sgde-par .inp:disabled,.sgde-par input:disabled{background:#fafafa;color:var(--s-noir);opacity:1}
+.sgde-pl0{font-size:12px;color:var(--s-gris);margin:10px 0 0}
+/* Information : remarques comme la page Information du devis général (libellé | texte, rangées alternées) */
+.sgde-rm{border-top:1px solid var(--s-gris3,#c8c8c8);margin-top:4px}
+.sgde-rmr{display:grid;grid-template-columns:230px minmax(0,1fr) 84px;gap:0 14px;align-items:start;padding:2px 4px}
+.sgde-rmr:nth-child(odd){background:#ececec}
+.sgde-rmr .inp{border:1px solid transparent;background:transparent;font-size:13.5px;padding:5px 6px;min-height:30px;box-sizing:border-box;width:100%;max-width:none;border-radius:0}
+.sgde-rmr .inp:hover:not(:disabled){border-color:var(--s-gris3,#c8c8c8)}
+.sgde-rmr .inp:focus{border-color:var(--s-nuit);background:#fff;outline:none}
+.sgde-rmr textarea.inp{resize:none;overflow:hidden;line-height:1.45;min-height:30px}
+.sgde-rmr .sgde-rma{display:flex;gap:2px;justify-content:flex-end;padding-top:3px;opacity:0;transition:opacity .1s}
+.sgde-rmr:hover .sgde-rma,.sgde-rmr:focus-within .sgde-rma{opacity:1}
+.sgde-rma button{border:0;background:transparent;width:24px;height:24px;cursor:pointer;font-size:14px;color:var(--s-noir)}
+.sgde-rma button:hover{background:var(--s-jaune3)}
+.sgde-rma button[data-rm="suppr"]:hover{color:var(--s-rouge,#bd1e42)}
+.sgde-rmo{color:var(--s-gris)}
+.sgde-rmo>span{padding:6px 7px;font-size:13.5px}
+.sgde-rmp{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin:10px 0 0;font-size:12px;color:var(--s-gris)}
+.sgde-rmp .sgde-hreg{font-size:13px}
 .dlg.sgdc-dlg{width:min(1180px,94vw)!important;max-height:92vh}
 .ov:has(>.dlg.sgdc-dlg){padding-top:4vh}
 .dlg.sgdc-dlg>.tt{display:none}
@@ -250,14 +291,19 @@ function deco(X){ const S=X.sgde, rp=X.rp, t=rp&&rp.querySelector('table.g'); if
    même jour) : elle reste dans « Avec le descriptif » ; copie et CSV suivent les colonnes affichées */
 /* « Avec le descriptif » (07.11.2026, Paulo : « le descriptif sera indiqué sous le CFC concerné, et pas dans une colonne ») : une ligne sous chaque position qui a un descriptif,
    texte dans la désignation (copie et CSV le gardent) ; ordre fixe, comme les lignes de calcul (pas de tri par colonne) */
-{ const cd0=ch02aDraw; ch02aDraw=function(X){ const m=X&&X.E?ch02aMode(X.E):-1; if(m!==1&&m!==3&&m!==4) return cd0.apply(this,arguments);
+/* « Avec le descriptif et le calcul de prix » (Paulo, 07.11.2026 : « ajoute avec le descriptif avec le calcul de prix ») : colonnes de « Avec le descriptif » (sans les colonnes
+   d'honoraires), sous chaque position son descriptif puis ses lignes de calcul, comme « Toutes les colonnes avec le calcul de prix ». Présentation propre à SUBGestion 3 :
+   displayMode 4 du moteur + reglages.affichage.sgCalc (DeltaSub.html seul : « Avec le descriptif ») */
+const calcDesc=E=>ch02aMode(E)===4&&!!((((E||{}).reglages||{}).affichage||{}).sgCalc);
+{ const cd0=ch02aDraw; ch02aDraw=function(X){ const m=X&&X.E?ch02aMode(X.E):-1; if(m!==1&&m!==3&&m!==4) return cd0.apply(this,arguments); const c4=calcDesc(X.E);
     const g0=grid; grid=function(el,o){ if(el===X.rp&&o&&Array.isArray(o.cols)){ o.cols=o.cols.filter(c=>c.k!=='desc'&&c.k!=='com');   /* colonne Commentaire retirée aussi (Paulo, 07.11.2026) */
         if(Array.isArray(o.rows)){   /* descriptif sous le CFC dans les trois présentations qui le montraient en colonne (Paulo, 07.11.2026 : « ajoute le descriptif sous le CFC ») : juste sous la position, avant ses lignes de calcul */ const cd=o.cols.find(c=>c.k==='d'); if(cd&&!cd._sgde){ const f0=cd.f; cd.f=r=>r&&r.dsc?'<i style="color:#666">'+esc(r.txt).replace(/\n/g,' <br>')+'</i>':f0(r); cd._sgde=1; }
           const cn=o.cols.find(c=>c.k==='cfc'); if(cn&&!cn._sgde){ const f1=cn.f; cn.f=r=>r&&r.dsc?'<i class="sgde-dlab">Desc.</i>':f1(r); cn._sgde=1; }   /* « Desc. » dans la colonne N°, à gauche du texte (Paulo, 07.11.2026) */
-          if(m===3){ const det=r=>r&&r.det&&!r.dsc, cdd=o.cols.find(c=>c.k==='d');   /* lignes de calcul : texte et montants dans les colonnes elles-mêmes (affichage, copie, CSV) */
+          if(m===3||c4){ const det=r=>r&&r.det&&!r.dsc, cdd=o.cols.find(c=>c.k==='d');   /* lignes de calcul : texte et montants dans les colonnes elles-mêmes (affichage, copie, CSV) */
             if(cdd&&!cdd._sgdc){ const f2=cdd.f; cdd.f=r=>{ if(!det(r)) return f2(r); const L=ligneCalc(X,r); return '<div class="sgde-ddv"><span class="t">'+esc(L.txt||'Ligne de calcul')+(L.note?' ('+esc(L.note)+')':'')+'</span> '+(L.form?'<span class="f">'+esc(L.form)+'</span>':'')+'</div>'; }; cdd._sgdc=1; }
             ['ht','tva','ttc'].forEach(k=>{ const c=o.cols.find(x=>x.k===k); if(!c||c._sgdc) return; const f3=c.f; c.f=r=>det(r)?ligneCalc(X,r).mt(ligneCalc(X,r).v[k]):f3(r); c._sgdc=1; }); }
-          const R=[]; o.rows.forEach(r=>{ R.push(r); if(r&&!r.det&&r.p){ const t=String(ch02aDesc(r.p)||'').trim(); if(t) R.push({det:true,dsc:true,n:r,pt:{},l:{},txt:t,k:'x|'+r.p.cfc}); } });
+          const R=[]; o.rows.forEach(r=>{ R.push(r); if(r&&!r.det&&r.p){ const t=String(ch02aDesc(r.p)||'').trim(); if(t) R.push({det:true,dsc:true,n:r,pt:{},l:{},txt:t,k:'x|'+r.p.cfc});
+            if(c4&&r.leaf) (r.p.parts||[]).forEach((pt,pi)=>(pt.lignes||[]).forEach((l,li)=>R.push({det:true,n:r,pt,l,k:'d|'+r.p.cfc+'|'+pi+'|'+li}))); } });   /* lignes de calcul, comme le moteur en mode 3 */
           o.rows=R; o.sort=null; if(o.state) o.state.sort=null; } }
       return g0.apply(this,arguments); };
     try{ const r=cd0.apply(this,arguments); if(X.rp) X.rp.querySelectorAll('thead th').forEach(th=>{ th.onclick=null; th.classList.remove('sort'); }); return r; }finally{ grid=g0; } }; }
@@ -422,25 +468,122 @@ let PLEIN=false, BOXP=null;
 addEventListener('keydown',e=>{ if(e.key!=='Escape'||!PLEIN||!BOXP||!BOXP.isConnected||e.defaultPrevented||document.querySelector('.ov,.sg-visu,.menu')) return; const a=document.activeElement;
   if(a&&a.classList&&a.classList.contains('psearch')&&BOXP.contains(a)){ e.preventDefault(); if(a.value){ a.value=''; a.dispatchEvent(new Event('input',{bubbles:true})); } else { a.blur(); if(BOXP._plein) BOXP._plein(false); } return; }   /* recherche du plan CFC : Échap la vide, puis quitte le plein écran */
   if(a&&(a.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(a.tagName))) return; e.preventDefault(); if(BOXP._plein) BOXP._plein(false); },true);   /* capture : vu avant que le moteur ferme sa fenêtre — Échap dans une fenêtre la ferme sans quitter le plein écran */
+/* ── onglet « Paramètres » (Paulo, 07.11.2026 : « glisser Paramètres après Documents, sous forme de page comme Documents, pas une fenêtre ; l'ensemble des éléments par
+   catégorie, le titre, dessous les éléments ») : les catégories de la fenêtre « Paramètres » du moteur (Information, Affichage, Commentaire, Titres), mêmes champs, mêmes
+   valeurs (ch02aPrefInit) et même enregistrement (ch02aPrefApply puis X.touch, à chaque champ modifié) ; Indice des prix de la construction : lecture seule (bloc 47, SGICC) ;
+   sans droit d'écriture : champs grisés. ── */
+/* phases SIA 102 (phases partielles) pour « Phase du devis » ; noms des phases 3 à 5 comme le reste de l'app (SG_PH_FICH) */
+const PH_SIA=[['1 Définition des objectifs',[['11','Énoncé des besoins, approche méthodologique']]],['2 Études préliminaires',[['21','Définition du projet de construction, étude de faisabilité'],['22','Procédure de choix de mandataires']]],
+  ['3 Étude du projet',[['31','Avant-projet'],['32','Projet de l’ouvrage'],['33','Procédure de demande d’autorisation']]],['4 Appel d’offres',[['41','Appel d’offres, comparaison des offres et propositions d’adjudication']]],
+  ['5 Réalisation',[['51','Projet d’exécution'],['52','Exécution de l’ouvrage'],['53','Mise en service, achèvement']]]];
+const phNom=c=>{ for(const [,L] of PH_SIA) for(const [k,n] of L) if(k===String(c)) return n; return ''; };
+const phDe=R=>{ const c=String((R||{}).phaseSia||''); if(phNom(c)) return c; const t=String((R||{}).etatProjet||'').trim().toLowerCase(); for(const [,L] of PH_SIA) for(const [k,n] of L) if(t&&n.toLowerCase()===t) return k; return ''; };
+const PAR_AIDE={phase:'Phase SIA 102 du devis ; son nom est repris sur la page de garde du devis général (« Devis général - <phase> »).',etatProjet:'Repris sur la page de garde du devis général (« Devis général - <état> »).',
+  marge:'Degré de précision du devis, affiché devant le total TTC et sur la page de garde.',date:'Date du devis, en tête des documents.'};
+/* titres des documents (page de garde, devis à 1 et 2 chiffres, document principal) = nom de la version du devis, à la création (Paulo, 07.11.2026) : enregistrement qui crée
+   un en-tête (bseq 0) et son contenu (bseq 0) — nouveau devis, Dupliquer, Dupliquer et modifier, import ; nom vide : titres inchangés (« Devis général » par défaut) */
+{ const k0=ch02dCommit; ch02dCommit=function(ops){ try{ (Array.isArray(ops)?ops:[]).forEach(o=>{ if(!o||o.t!=='costestimatedocument'||+o.bseq!==0||!o.val) return; const V=String(o.val.VERSION||'').trim(); if(!V) return;
+      const c=ops.find(x=>x&&x.t==='costestimate'&&String(x.id)===String(o.id)&&+x.bseq===0&&x.val&&typeof x.val==='object'); if(!c) return;
+      const R=c.val.reglages||(c.val.reglages={}); R.titres=Object.assign({},R.titres||{},{garde:V,unChiffre:V,deuxChiffres:V,document:V}); }); }catch(e){ console.error(e); }
+    return k0.apply(this,arguments); }; }
+/* menu « Présentation » : présentations du moteur + « Avec le descriptif et le calcul de prix » entre « Toutes les colonnes avec le calcul de prix » et « Avec le descriptif » */
+function presMenu(X){ const L=ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seulement positions de 1 à 3 chiffres'), c4=calcDesc(X.E), m=ch02aMode(X.E);
+  const poser=v=>{ const R=X.E.reglages||(X.E.reglages={}), A=R.affichage||(R.affichage={}); if(+A.displayMode===4&&!!A.sgCalc===v) return; A.displayMode=4; if(v) A.sgCalc=true; else delete A.sgCalc; X.touch(); };
+  const i4=L.findIndex(x=>x&&x.t===(CH02A_MODES.find(q=>q[0]===4)||[])[1]);
+  if(i4<0) return L;
+  L[i4]=Object.assign({},L[i4],{chk:m===4&&!c4,fn:()=>poser(false)});
+  L.splice(i4,0,{t:'Avec le descriptif et le calcul de prix',chk:c4,fn:()=>poser(true)});
+  return L; }
+{ const sm0=ch02aSetMode; ch02aSetMode=function(X,k){ const A=(((X||{}).E||{}).reglages||{}).affichage; if(A&&A.sgCalc&&+k!==4) delete A.sgCalc; return sm0.apply(this,arguments); }; }
+/* redessin : seulement si les valeurs enregistrées diffèrent de celles affichées (signature) — un champ modifié ici ne redessine pas la page (le curseur et le clic suivant
+   restent), un conflit ou une modification d'un autre poste la redessine (le champ qui avait le curseur le garde) */
+const remDe=X=>(X.E.remarques||[]).map(r=>[String((r||{}).nom||''),String((r||{}).texte||'')]);
+function parSig(X){ const v=ch02aPrefInit(X.E,ch02aHdr(X)), R1=X.E.reglages||{};
+  return JSON.stringify([v.date,phDe(R1),String(R1.etatProjet||''),v.marge,v.pourcentageSur,!!v.arrondi5ct,remDe(X),ecrit()&&ch02aCanEdit(ch02aHdr(X))]); }
+function parPage(X,par,force){ if(!par) return; const act=document.activeElement;
+  const P=CH02A_PREF, v=ch02aPrefInit(X.E,ch02aHdr(X)), peut=ecrit()&&ch02aCanEdit(ch02aHdr(X)), dis=peut?'':' disabled', y=par.scrollTop, sig=parSig(X);
+  if(!force&&par._sig===sig){ parIndice(X,par); return; }
+  const fk=act&&act!==par&&par.contains(act)&&act.dataset?act.dataset.k:null, fval=act&&act.type==='radio'?act.value:null;
+  const ligne=(l,ctl,aide)=>'<label>'+E(l)+'</label><div>'+ctl+(aide?'<span class="sgde-ph">'+E(aide)+'</span>':'')+'</div>';
+  const txt=(k,val,c)=>'<input class="inp'+(c?' c':'')+'" data-k="'+k+'" value="'+E(val==null?'':val)+'"'+dis+'>';
+  const sec=(t,n,corps)=>'<section class="sgde-ps"><h3>'+E(t)+(n?'<small>'+E(n)+'</small>':'')+'</h3><div class="sgde-pg">'+corps+'</div></section>';
+  /* « Phase du devis » (Paulo, 07.11.2026 : « définir la phase du devis au lieu de état du projet ; à droite liste de sélection de la phase de projet SIA ») : reglages.phaseSia,
+     son nom écrit dans l'état du projet (page de garde « Devis général - <phase> », anciens modèles) ; un état saisi avant, qui n'est pas une phase, reste affiché jusqu'au choix */
+  const R0=(X.E.reglages||{}), ph=phDe(R0), etat=String(R0.etatProjet||'').trim();
+  const selPh='<select class="inp" data-k="phaseSia"'+dis+'><option value="">— à définir —</option>'+(!ph&&etat?'<option value="__txt" selected>'+E(etat)+' (état saisi avant)</option>':'')
+    +PH_SIA.map(([g,L])=>'<optgroup label="'+E(g)+'">'+L.map(([k,n])=>'<option value="'+k+'"'+(k===ph?' selected':'')+'>'+E(k+' '+n)+'</option>').join('')+'</optgroup>').join('')+'</select>';
+  let h=sec(P.info,'',/* « Etat de planification » retiré (Paulo, 07.11.2026 : « supprimer ») : valeur gardée dans le devis ; « Date » en tête (Paulo, même jour : « déplacer la date ici ») */
+      ligne(P.date,'<input class="inp c" type="date" data-k="date" value="'+E(v.date||'')+'"'+dis+'>',PAR_AIDE.date)
+      +ligne('Phase du devis',selPh,PAR_AIDE.phase)
+      +ligne(P.prec,'<input class="inp c" data-k="marge" list="sgde-dl-mg" value="'+E(v.marge)+'"'+dis+'><datalist id="sgde-dl-mg">'+P.marges.map(x=>'<option value="'+E(x)+'">').join('')+'</datalist>',PAR_AIDE.marge)
+      +ligne(P.index,'<div class="sgde-pidx"></div>'))
+    +sec(P.disp,'',ligne('Pourcentage','<label class="sgde-pr"><input type="radio" name="sgde-pct" data-k="pourcentageSur" value="groupe"'+(v.pourcentageSur!=='total'?' checked':'')+dis+'> '+E(P.procGrp)+'</label>'
+        +'<label class="sgde-pr"><input type="radio" name="sgde-pct" data-k="pourcentageSur" value="total"'+(v.pourcentageSur==='total'?' checked':'')+dis+'> '+E(P.procTot)+'</label>','Colonne « % » du devis et des documents.')
+      +ligne(P.round,'<label class="sgde-pr"><input type="checkbox" data-k="arrondi5ct"'+(v.arrondi5ct?' checked':'')+dis+'> Arrondir les montants des lignes</label>'));   /* phrase d'aide retirée (Paulo, 07.11.2026 : « supprimer ») */
+  /* « Information » (Paulo, 07.11.2026 : « voici ce que je souhaiterais écrire dans Information », page Information du devis général 24PRC) : remarques préliminaires du devis
+     (E.remarques {nom, texte}, mêmes données que Fonctions ▸ Remarques préliminaires), une ligne par remarque — libellé à gauche, texte à droite, rangées alternées comme le PDF —,
+     puis les ouvrages ajoutés d'office par le PDF (lecture seule). Remplace le texte libre 1 (« Commentaire », valeurs des textes libres gardées dans le devis). */
+  const RM=remDe(X), OV=(()=>{ try{ return dgOuvInfo(X); }catch(_){ return []; } })();
+  const lgRm=(r,i)=>'<div class="sgde-rmr" data-i="'+i+'"><input class="inp sgde-rmn" data-k="rem.'+i+'.n" value="'+E(r[0])+'"'+dis+'><textarea class="inp sgde-rmt" rows="1" data-k="rem.'+i+'.t" placeholder="Texte"'+dis+'>'+E(r[1])+'</textarea>'
+    +(peut?'<span class="sgde-rma"><button data-rm="haut" title="Monter">↑</button><button data-rm="bas" title="Descendre">↓</button><button data-rm="suppr" title="Supprimer la ligne">×</button></span>':'<span></span>')+'</div>';
+  h+='<section class="sgde-ps sgde-rms"><h3>'+E(P.info)+'<small>Page « Information » du devis général</small></h3><div class="sgde-rm">'+RM.map(lgRm).join('')
+    +(OV.length?OV.map(s=>'<div class="sgde-rmr sgde-rmo" title="Ouvrage du devis : ajouté d’office à la fin de la page Information"><span>'+E([s.CODE,s.LOCATIONCODE].filter(Boolean).join(' | '))+'</span><span>'+E([s.DESCRIPTION,s.LOCATIONDESCRIPTION].filter(Boolean).join(' | '))+'</span><span></span></div>').join(''):'')+'</div>'
+    +(peut?'<p class="sgde-rmp"><button class="sgde-hreg" data-rm="plus">+ Ajouter une ligne</button><span>Un libellé (Devis général, Réserve, Subventions…) et son texte ; une ligne sans libellé continue la précédente.'+(OV.length?' Les ouvrages s’ajoutent d’office à la fin.':'')+'</span></p>':'')+'</section>';
+  /* « Titres » retiré (Paulo, 07.11.2026 : « supprimer et utiliser le nom de la version du devis lors de la création d'un devis ») : titres posés à la création (ch02dCommit) */
+  if(!peut) h+='<p class="sgde-pl0">Lecture seule : vous n’avez pas le droit de modifier ce devis.</p>';
+  par.innerHTML=h; par._sig=sig; par.scrollTop=y; parIndice(X,par); par.querySelectorAll('.sgde-rmt').forEach(remHaut);
+  if(fk){ const f=par.querySelector('[data-k="'+fk+'"]'+(fval!=null?'[value="'+fval+'"]':'')); if(f&&!f.disabled) try{ f.focus({preventScroll:true}); }catch(_){ } } }
+/* indice des prix de la construction (bloc 47) : valeur, série, période et base ; jamais saisi */
+function parIndice(X,par){ const b=par&&par.querySelector('.sgde-pidx'); if(!b) return; const I=window.SGICC; let x=null; try{ x=I?I.devis(X.E,ch02aHdr(X)):null; }catch(e){ console.error(e); }
+  b.innerHTML=x?'<div class="sgde-pi"><b>'+E(I.val(x))+'</b><span>'+E(I.periode(x)+', '+I.base(x))+'</span></div><span class="sgde-ph">'+E(I.serie)+'. '+E(I.origine(x))+' Source : '+E(I.source(x))+'. Mis à jour automatiquement, sans saisie.</span>'
+    :'<span class="sgde-ph">Indice indisponible.</span>'; }
+/* hauteur d'un texte de remarque : selon son contenu */
+const remHaut=t=>{ t.style.height='auto'; t.style.height=Math.max(30,t.scrollHeight+2)+'px'; };
+/* remarques : relues dans l'ordre affiché, lignes vides retirées (comme la fenêtre du moteur), enregistrées */
+function remEnregistrer(X,par){ if(!ch02aCan(X)){ parPage(X,par,true); return; }
+  const L=[...par.querySelectorAll('.sgde-rmr:not(.sgde-rmo)')].map(d=>({nom:(d.querySelector('.sgde-rmn')||{}).value||'',texte:(d.querySelector('.sgde-rmt')||{}).value||''})).filter(r=>r.nom.trim()||r.texte.trim());
+  const s0=JSON.stringify(X.E.remarques||[]); X.E.remarques=L; if(JSON.stringify(L)!==s0){ par._sig=parSig(X); X.touch(); } }
+function remAction(X,par,b){ const a=b.dataset.rm, rw=b.closest('.sgde-rmr'), box=par.querySelector('.sgde-rm');
+  if(a==='plus'){ const i=par.querySelectorAll('.sgde-rmr:not(.sgde-rmo)').length, d=document.createElement('div'); d.innerHTML='<div class="sgde-rmr" data-i="'+i+'"><input class="inp sgde-rmn" data-k="rem.'+i+'.n" placeholder="Titre"><textarea class="inp sgde-rmt" rows="1" data-k="rem.'+i+'.t" placeholder="Texte"></textarea><span class="sgde-rma"><button data-rm="haut" title="Monter">↑</button><button data-rm="bas" title="Descendre">↓</button><button data-rm="suppr" title="Supprimer la ligne">×</button></span></div>';
+    const n=d.firstChild, o=box.querySelector('.sgde-rmo'); if(o) box.insertBefore(n,o); else box.append(n); remHaut(n.querySelector('.sgde-rmt')); n.querySelector('.sgde-rmn').focus(); return; }
+  if(!rw) return;
+  if(a==='haut'&&rw.previousElementSibling&&!rw.previousElementSibling.classList.contains('sgde-rmo')) rw.parentNode.insertBefore(rw,rw.previousElementSibling);
+  else if(a==='bas'&&rw.nextElementSibling&&!rw.nextElementSibling.classList.contains('sgde-rmo')) rw.parentNode.insertBefore(rw.nextElementSibling,rw);
+  else if(a==='suppr'){ const vide=!((rw.querySelector('.sgde-rmn')||{}).value||'').trim()&&!((rw.querySelector('.sgde-rmt')||{}).value||'').trim();
+    if(!vide){ sgConfirm('Supprimer cette ligne de la page Information ?',()=>{ rw.remove(); remEnregistrer(X,par); parPage(X,par,true); },{title:'Information',yesText:'Supprimer',yesColor:'#bd1e42'}); return; } rw.remove(); }
+  else return;
+  remEnregistrer(X,par); }
+/* enregistrement d'un champ : valeurs à jour du devis, le champ changé, puis l'enregistrement du moteur (un seul X.touch) ; la signature est posée avant : la page ne se redessine pas */
+function parChange(X,par,t){ if(String(t.dataset.k||'').startsWith('rem.')){ remEnregistrer(X,par); return; }
+  if(!ch02aCan(X)){ parPage(X,par,true); return; }
+  /* arrondi : recalcule les montants de toutes les lignes de calcul (un clic de trop, puis son annulation, changerait des montants) → confirmation d'abord */
+  if(t.dataset.k==='arrondi5ct'&&!t._ok){ const on=t.checked, n=(X.E.positions||[]).reduce((a,q)=>a+(q.genere?0:(q.parts||[]).reduce((b,pt)=>b+(pt.lignes||[]).length,0)),0); t.checked=!on;
+    sgConfirm((on?'Arrondir':'Ne plus arrondir')+' les montants des lignes : le montant TTC de '+n+(n>1?' lignes de calcul sera recalculé':' ligne de calcul sera recalculé')+' (quantité × prix). Continuer ?',
+      ()=>{ const f=par.querySelector('[data-k="arrondi5ct"]'); if(!f) return; f.checked=on; f._ok=true; try{ parChange(X,par,f); } finally{ f._ok=false; } },{title:'Arrondi',yesText:on?'Arrondir':'Ne plus arrondir'}); return; }
+  const v=ch02aPrefInit(X.E,ch02aHdr(X)), k=t.dataset.k; v.titres=Object.assign({},((X.E.reglages||{}).titres)||{});   /* titres tels qu'enregistrés (ch02aPrefInit met « Devis général » à la place d'un titre vide) */
+  let ph=null; if(k==='phaseSia'){ if(t.value==='__txt') return; ph=phNom(t.value)?t.value:''; v.etatProjet=ph?phNom(ph):''; }
+  else if(k==='pourcentageSur'){ if(!t.checked) return; v.pourcentageSur=t.value==='total'?'total':'groupe'; } else if(k==='arrondi5ct') v.arrondi5ct=t.checked;
+  else if(/^tl[0-4]$/.test(k)) v.textesLibres[+k.slice(2)]=t.value; else if(k.startsWith('titre.')) v.titres[k.slice(6)]=t.value; else v[k]=t.value;
+  const s0=JSON.stringify(X.E), n=ch02aPrefApply(X.E,v); if(ph!=null){ const R=X.E.reglages||(X.E.reglages={}); if(ph) R.phaseSia=ph; else delete R.phaseSia; } if(JSON.stringify(X.E)!==s0){ par._sig=parSig(X); X.touch(); if(n) toast(n+(n>1?' lignes recalculées':' ligne recalculée')+' (arrondi).'); }
+  parIndice(X,par); }
 function habiller(m,X){ cssD();
   const B=[...X.bar.children], bListe=B[0], bEd=B[3], bPar=B[4];
   if(!bListe||!/Liste/.test(bListe.textContent)||!bEd||!bEd._sgB||!bPar||!bPar._sgB||!X.bDel||!X.bFil||!X.bDoc||!X.bWh||!X.bWh._sgB) return;   /* barre inattendue : l'écran du moteur reste tel quel */
   const S=X.sgde={ong:'pos',cfc:!(X.E.positions||[]).length,niv:niv0(),vu:X.st.sel};
-  const box=el('div','sgde'), hd=el('div','sgde-tete'), kp=el('div','nx-kpis sgde-kp'), ong=el('div','sgde-ong'), ongL=el('div','sg-onglets'), niv=el('div','sgde-niv'), bar=el('div','ph2 sgde-bar'), docs=el('div','sgde-docs');
+  const box=el('div','sgde'), hd=el('div','sgde-tete'), kp=el('div','nx-kpis sgde-kp'), ong=el('div','sgde-ong'), ongL=el('div','sg-onglets'), niv=el('div','sgde-niv'), bar=el('div','ph2 sgde-bar'), docs=el('div','sgde-docs'), par=el('div','sgde-par');
   const mEd=bEd._sgB.menu, mPar=bPar._sgB.menu, mWh=X.bWh._sgB.menu, ec=ecrit();
   const fonctions=()=>{ const ed=mEd().slice(), dern=Object.assign(ch02aExt(X,'ch02dLastVersion',4,CH02A_L.last),{dis:ch02dLastDis(X)}), pr=mPar().filter(x=>x!=='-'&&x.t!==CH02A_L.prefs), vis=()=>Object.assign({},X.R2,{view:(X.R2.view||[]).filter(r=>!S.niv||cfcLevel((r.det?r.n:r).p.cfc)<=S.niv)}), wh=mWh().filter(x=>x==='-'||!String(x.t).startsWith(CH02A_L.docs)).map(x=>x==='-'?x:x.t===CH02A_L.copy?{t:x.t,fn:()=>{ const g=vis(); ctCopy(tableText(g,'\t'),'Tableau copié ('+g.view.length+' lignes).'); }}:x.t===CH02A_L.csv?{t:x.t,fn:()=>csvTable(vis(),'Devis_'+(X.p?X.p.NUMBER:''))}:x), rows=!!((X.R2||{}).view||[]).length;
     const fil=dvOuvCodes(X.E).length?[{t:'Filtre des ouvrages',sub:()=>ch02aSps(X).length?ch02aFilterMenu(X):[{t:'Filtre…',fn:()=>ch02aFilterDialog(X)}]},'-']:[];   /* bouton « Filtre » retiré de la barre (Paulo, 07.11.2026) : ici, seulement si le devis a des ouvrages */
-    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,{t:'Soumis aux honoraires selon la règle du bureau …',fn:()=>regleHon(X)},'-',dern]},{t:CH02A_L.intro,fn:()=>X.dvIntro()},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),...fil,{t:'Exporter',dis:!rows,sub:()=>wh}]; };
+    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,{t:'Soumis aux honoraires selon la règle du bureau …',fn:()=>regleHon(X)},'-',dern]},{t:CH02A_L.intro,fn:()=>{ S.ouvrirPar(); const r=par.querySelector('.sgde-rms'); if(r) r.scrollIntoView({block:'start'}); }},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),...fil,{t:'Exporter',dis:!rows,sub:()=>wh}]; };
   const sep=()=>el('span','sgde-sep'), fin=el('span','sgde-fin');
   const bAdd=lib(ibtn({i:'grille',t:'Liste CFC',fn:()=>plan(!S.cfc)}),'Liste CFC'); bAdd.title='Liste CFC : double-cliquez sur un CFC pour l’ajouter au devis ou l’en retirer';   /* menu du clic droit : « Liste CFC » (_sgB.t) */   /* « Liste CFC » (Paulo, 07.11.2026) */
   X.bModif=ibtn({i:'edit',t:'Editer la position',fn:()=>X.dvCalc()});
-  const bPres=ibtn({i:'list',t:'Présentation',menu:()=>ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seulement positions de 1 à 3 chiffres')});
-  const bReg=ibtn({i:'wrench',t:'Paramètres',fn:()=>ch02aSettings(X)});
+  const bPres=ibtn({i:'list',t:'Présentation',menu:()=>presMenu(X)});
   const bFon=ibtn({i:'gear',t:'Fonctions',fn:()=>menuSous(bFon,fonctions())}); bFon.insertAdjacentHTML('beforeend','<span class="dd">▼</span>'); X.bWh=bFon;
   lib(X.bDoc,'Imprimer'); X.bDoc.title='Imprimer le devis'; if(X.bDoc._sgB) X.bDoc._sgB.t='Imprimer'; if(X.bDoc._sgB&&X.bDoc._sgB.menu){ const mD=X.bDoc._sgB.menu; X.bDoc._sgB.menu=()=>[{t:'Devis général (PDF)',fn:()=>dgPdf(X)},'-',...mD().map(x=>x&&x.t?Object.assign({},x,{t:String(x.t).replace(CH02B_L.legacy,'')}):x)]; }   /* devis général au papier des contrats en premier (bloc 46) */
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!PLEIN)}); bPlein.classList.add('sgde-pl');   /* icône seule, comme dans la soumission : coins de cadrage (07.11.2026) */
   box._plein=v=>{ PLEIN=!!v; BOXP=box; box.classList.toggle('sgde-plein',PLEIN); bPlein.classList.toggle('on',PLEIN); const svP=bPlein.querySelector('svg'); if(svP) svP.outerHTML=nxSvg(PLEIN?'pleinq':'plein'); bPlein.title=PLEIN?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
-  bar.append(...(ec?[bAdd,sep()]:[]),bPres,sep(),X.bDoc,...(ec?[bReg]:[]),fin,bFon,bPlein);   /* « Modifier », « Supprimer » et « Filtre » retirés de la barre (Paulo, 07.11.2026) : double-clic, clic droit, Fonctions ▸ Filtre des ouvrages ; X.bFil reste hors de la page (le moteur le tient à jour) */
+  bar.append(...(ec?[bAdd,sep()]:[]),bPres,sep(),X.bDoc,fin,bFon,bPlein);   /* « Paramètres » : onglet après Documents (07.11.2026) */   /* « Modifier », « Supprimer » et « Filtre » retirés de la barre (Paulo, 07.11.2026) : double-clic, clic droit, Fonctions ▸ Filtre des ouvrages ; X.bFil reste hors de la page (le moteur le tient à jour) */
   /* clic droit sur une position (ou une de ses lignes) : ouvrir le calcul, supprimer la position (confirmation du moteur), liste CFC */
   X.rp.addEventListener('contextmenu',e=>{ const tr=e.target.closest&&e.target.closest('tbody tr[data-k]'); if(!tr||e.altKey||String(getSelection()).trim()) return; const r=(X.R2.view||[]).find(x=>String(x.det?x.k:x.p.cfc)===tr.dataset.k); if(!r) return;
     e.preventDefault(); const code=String((r.det?r.n:r).p.cfc), sel=()=>{ if(String(X.st.sel)!==code){ X.st.sel=code; X.R2.sel=code; X.draw(); } }; sel();
@@ -451,7 +594,13 @@ function habiller(m,X){ cssD();
   const cT=el('div','sgde-cfc-t','<b>Plan CFC</b><span class="sgde-cfc-g"><button data-tout="1" title="Agrandir tous les groupes">Tout agrandir</button><button data-tout="0" title="Réduire tous les groupes">Tout réduire</button></span><button class="sgde-x" title="Fermer le plan CFC" aria-label="Fermer le plan CFC">×</button>'); cT.querySelector('.sgde-x').onclick=()=>plan(false);
   cT.querySelectorAll('[data-tout]').forEach(b=>{ b.onclick=()=>toutCfc(X,b.dataset.tout==='1'); });
   X.L.el.classList.add('sgde-cfc'); X.L.el.prepend(cT); /* texte d'aide sous la recherche retiré (Paulo, 07.11.2026 : « supprimer ») : l'infobulle du bouton « Liste CFC » le dit */
-  const dessOng=()=>{ ongL.innerHTML=[['pos','Devis'],['docs','Documents']].map(([k,t])=>'<button data-o="'+k+'" class="'+(S.ong===k?'on':'')+'">'+t+'</button>').join(''); box.classList.toggle('docs',S.ong==='docs'); };
+  const dessOng=()=>{ ongL.innerHTML=[['pos','Devis'],['docs','Documents'],['par','Paramètres']].map(([k,t])=>'<button data-o="'+k+'" class="'+(S.ong===k?'on':'')+'">'+t+'</button>').join('');
+    box.classList.toggle('docs',S.ong==='docs'); box.classList.toggle('par',S.ong==='par'); if(S.ong==='par') parPage(X,par,true); };
+  S.par=par; S.ouvrirPar=k=>{ S.ong='par'; dessOng(); const f=k&&par.querySelector('[data-k="'+k+'"]'); if(f&&!f.disabled){ f.focus(); f.scrollIntoView({block:'nearest'}); } };
+  par.addEventListener('change',e=>{ const t=e.target.closest&&e.target.closest('[data-k]'); if(t) parChange(X,par,t); });
+  par.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.matches('input.inp:not([type=date])')){ e.preventDefault(); e.target.blur(); } });
+  par.addEventListener('input',e=>{ if(e.target.classList&&e.target.classList.contains('sgde-rmt')) remHaut(e.target); });
+  par.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-rm]'); if(b){ e.preventDefault(); remAction(X,par,b); } });
   const dessNiv=()=>{ niv.innerHTML='<span title="Niveau de CFC affiché">CFC</span>'+[[0,'Tout','Tous les CFC'],[3,'3','CFC de 1 à 3 chiffres'],[2,'2','CFC de 1 et 2 chiffres'],[1,'1','CFC à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(S.niv===v?'on':'')+'">'+t+'</button>').join(''); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-o]'); if(b){ S.ong=b.dataset.o; dessOng(); } };
   S.dessNiv=dessNiv;
@@ -481,11 +630,11 @@ function habiller(m,X){ cssD();
        (E.reglages.marge) ; textes modèles « [...] » de l'ancien logiciel ignorés ; vide → « — » et lien « définir » (Paramètres) pour qui peut écrire */
     const mg=(()=>{ const m=String(((X.E||{}).reglages||{}).marge||'').trim(); return !m||/^\[.*\]/.test(m)?'':m.replace(/^±\s*/,'±').replace(/\s*%$/,' %'); })();
     const precK='<div class="nx-kpi sgde-prec" title="Degré de précision du devis : marge d’approximation (Paramètres ▸ Information)"><div class="l">Précision</div><div class="v">'+(mg?esc(mg):'—')+'</div>'
-      +(mg?'':ec&&ch02aCanEdit(ch02aHdr(X))?'<div class="s"><button class="sgde-hreg" data-a="prec" title="Définir la marge d’approximation dans les Paramètres">définir</button></div>':'')+'</div>';
+      +(mg?'':ec&&ch02aCanEdit(ch02aHdr(X))?'<div class="s"><button class="sgde-hreg" data-a="prec" title="Définir la marge d’approximation (onglet Paramètres)">définir</button></div>':'')+'</div>';
     kp.innerHTML=precK+kpi('Total TTC',num2(T.ttc),ff||(T.opt?'+ '+num2(T.opt)+' exclus':''),'','Total du devis, TVA comprise')+(sepV?kpi('Total HT',num2(T.ht),'')+kpi('TVA '+tvaLib,num2(T.tva),'','',tvaTip):'')+kpi('Montant soumis HT',num2(T.hon),(hR?'<button class="sgde-hreg" data-a="hreg" title="'+hR+(hR>1?' positions ne suivent pas':' position ne suit pas')+' la règle du bureau : 100 %, sauf CFC 5 et honoraires (583 compris)">appliquer la règle</button>':''),'','Montant hors taxe soumis aux honoraires, selon le pourcentage de chaque position (libellé court : une seule ligne, comme la colonne « Montant soumis HT »)')+honKpi()+kpi('Positions',String(nC),'chiffrées sur '+fe.length); };
-  kp.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('[data-a]'); if(!a) return; if(a.dataset.a==='hreg') regleHon(X); else if(a.dataset.a==='hcont') honReprendre(X); else if(a.dataset.a==='prec') ch02aSettings(X); });
+  kp.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('[data-a]'); if(!a) return; if(a.dataset.a==='hreg') regleHon(X); else if(a.dataset.a==='hcont') honReprendre(X); else if(a.dataset.a==='prec') S.ouvrirPar('marge'); });
   dessOng(); dessNiv(); ong.append(ongL,niv);   /* légende du montant saisi retirée (Paulo, 07.11.2026) : l'infobulle du cadre le dit */ X.sgdeMaj();
-  box.append(hd,kp,ong,bar,X.body,docs); if(X.dpane) docs.append(X.dpane); m.replaceChildren(box); box._plein(PLEIN); setTimeout(()=>honSync(X).catch(e=>console.error(e)),0);   /* honoraires du contrat signé (position 291) */   /* plein écran gardé d'un devis à l'autre pendant la séance */
+  box.append(hd,kp,ong,bar,X.body,docs,par); if(X.dpane) docs.append(X.dpane); m.replaceChildren(box); box._plein(PLEIN); setTimeout(()=>honSync(X).catch(e=>console.error(e)),0);   /* honoraires du contrat signé (position 291) */   /* plein écran gardé d'un devis à l'autre pendant la séance */
   plan(S.cfc&&ec); if(!ec) S.cfc=false;
   const ouvertA=performance.now(); box.addEventListener('dblclick',e=>{ if(performance.now()-ouvertA<450){ e.stopPropagation(); e.preventDefault(); } },true);   /* double-clic d'habitude sur la liste : le 2e clic n'agit pas dans le devis */
   new MutationObserver(()=>deco(X)).observe(X.rp,{childList:true}); new MutationObserver(()=>decoCat(X)).observe(X.L.pane,{childList:true}); brancherGroupes(X);
@@ -500,15 +649,15 @@ const cx0=ch02aCtx; ch02aCtx=function(o){ const X=cx0(o); SGDE.X=X; return X; };
 { const cl0=ch02aClose; ch02aClose=function(X){ const pid=X&&X.p&&X.p.ID; if(pid!=null&&typeof NX_VIEW!=='undefined'&&NX_VIEW['nx-pdom']&&(typeof sgProjetPermis!=='function'||sgProjetPermis(pid))) DV.back=()=>go('nx-pdom',pid+'|Devis général'); return cl0.apply(this,arguments); }; }
 const ed0=dvEditor; dvEditor=function(m,id){ ed0(m,id); const X=SGDE.X; if(X&&X.m===m&&+X.id===+id) try{ habiller(m,X); }catch(e){ console.error(e); } };
 const u0=ch02aUpd; ch02aUpd=function(X){ u0(X); if(X.sgde&&X.bWh) X.bWh.disabled=false; if(X.bModif){ const q=ch02aSelPos(X); X.bModif.disabled=!(q&&!q.genere); } };   /* Fonctions regroupe aussi ce qui reste utile sur un devis vide : seul Exporter y est grisé */
-const t0=ch02aTotals; ch02aTotals=function(X){ t0(X); if(X.sgdeMaj) X.sgdeMaj(); };
+const t0=ch02aTotals; ch02aTotals=function(X){ t0(X); if(X.sgdeMaj) X.sgdeMaj(); if(X.sgde&&X.sgde.ong==='par'&&X.sgde.par) parPage(X,X.sgde.par,false); };
 const dr0=ch02aDraw; ch02aDraw=function(X){ dr0(X); if(X.sgde) decoCat(X); };
 /* documents : une ligne par document, ses actions à côté ; les fichiers PDF du moteur suivent */
 const ETAT_DOC=(d,f,pdf)=>[d?'Document créé':'Pas encore créé',...(pdf?[f?'PDF créé : '+f.NOM:'sans PDF']:[])].join(' · ');
 /* PDF d'une ligne : le moteur ne connaît que le PDF officiel (documents/<genre>.pdf) ; « Créer le PDF » écrit dans documents/archive, sous le nom proposé. Sans ceci, la ligne restait « sans PDF » juste après sa création. Affichage seulement : les règles du moteur (ch02cPdfHas : effacer, avertir à l'ouverture) ne changent pas. Un PDF renommé reste dans la liste Fichiers PDF. */
 const pdfLigne=(X,r)=>{ try{ return ch03aTrouve(ch02cDos(X),r.g+'.pdf')||ch03aTrouve(ch02cDos(X,'archive'),ch03aNomPdf(r.pdf))||null; }catch(_){ return null; } };
 function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<2||!K[1].classList.contains('pane')) return; const pdf=ch02cPdfOn(), L=el('div','sgde-dl');
-  CH02C_ROWS.forEach((r,i)=>{ const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');
-    a.append(ibtn({label:d?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})); L.append(c); });
+  CH02C_ROWS.forEach((r,i)=>{ const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(i===0?['Modèle du bureau (ancien logiciel)',...(pdf?[fl?'PDF créé : '+fl.NOM:'sans PDF']:[])].join(' · '):ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');   /* ligne 0 : devis général au modèle du bureau (bloc 46), toujours prêt */
+    a.append(ibtn({label:d||i===0?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})); L.append(c); });
   K[0].remove(); K[1].replaceWith(L); dp.querySelectorAll(':scope>.sgde-dh').forEach(x=>x.remove()); L.before(el('div','ph2 sgde-dh','<b>Devis</b>'));   /* titre de la section, comme « Fichiers PDF » (Paulo, 07.11.2026 : « ajouter ici Devis ») */
   const bz=K[2]&&K[2].querySelector('.ib'); if(bz) lib(bz,'Fonctions'); }
 const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLignes(X); }catch(e){ console.error(e); } };
@@ -559,31 +708,55 @@ const ca0=ch02aCalc; ch02aCalc=function(X){ if(SANS_CALC) return; const n0=docum
    calcul « Quantité … Prix … », descriptif, une rangée sur deux grisée), total — mis en pages pour le papier des contrats en paysage (gabarits de pages fournis ici : tableau
    de 728 pt, rangées de 15 pt) et dessiné par sgDsPdf (o.livretDG, sg3_docsub.js). Les sauts de page et le filtre (ouvrages) de la présentation favorite sont repris ;
    ses autres options sont remplacées par celles de la référence (DG_PRESET). Aucune donnée n'est écrite. */
-const DG_PRESET={includeKvCover:true,includeKvOneDigit:false,includeKvTwoDigit:true,includeDocument:true,hierarchicalAdjust:true,lightHierarchicalAdjust:false,commentInColumn:true,displayComment:true,
+const DG_PRESET={includeKvCover:true,includeKvOneDigit:false,includeKvTwoDigit:true,includeDocument:true,hierarchicalAdjust:true,lightHierarchicalAdjust:false,commentInColumn:false,displaySubprojectNames:true,displayComment:true,
   displayDescription:true,compactDescription:false,displayQuanPriceValue:true,displayDetailComment:true,displayDetailValues:true,dispalyCalcualtion:true,displayPriceBase:false,displayDetailOptions:true,
   displayDeviation:true,zebra:true,grayDetails:false,dispalyAfterComma:false,separateVat:false,displayValuesPositions:true,displayNoTitlePositions:true,displayPosOptions:true,onlyThreeDigits:false,
   titleFontSize:10,posFontSize:9,detailFontSize:8,rowHeigth:15,titlePosBold:true,detailItalic:false,specialRound:false,coverKvEmptyPages:0,kvOneDigitEmptyPages:0,kvTwoDigitEmptyPages:0,infoKvEmptyPages:0,
   titleFontName:'',standardFontName:'',detailFontName:'',kagNumberColTitle:'CFC',kagTextColTitle:'Texte',commentColTitle:'Commentaire',value4ColTitle:'à 4 chiffres TTC',value3ColTitle:'à 3 chiffres TTC',
   value2ColTitle:'à 2 chiffres TTC',value1ColTitle:'à 1 chiffre TTC',devColTitle:'[%]',infoNameColTitle:'',infoDescColTitle:''};
-const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=402;   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
+const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=388;   /* Information : rangées dès 121 pt, sous un filet (modèle 24PRC) */   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
 let DG_COURS=null;
 function dgPdf(X){ if(DG_COURS){ toast('Le PDF est en cours de création…'); return DG_COURS; } DG_COURS=dgCreer(X).finally(()=>{ DG_COURS=null; }); return DG_COURS; }
-async function dgCreer(X){ try{ toast('Création du PDF…'); await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
-    const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{}, L=E.presentations||[], fav=L.find(x=>x.favori)||L[0]||{};
+/* ventilation par ouvrage des positions totalisatrices (modèle 24PRC de l'ancien logiciel : 10, 101… montrent AP1, AP2… COM ; les positions à 1 chiffre, non) : le moteur ne la
+   calcule que pour les positions saisies (« la reprise ne garde pas leurs caches ») ; pendant la création du PDF, somme des ouvrages des sous-positions, dans l'ordre des
+   ouvrages du devis, pourcentages comme la position */
+let DG_AGREGE=null;   /* pendant la création : { tot (pourcentages sur le total général), compact (« Assembler les descriptifs des ouvrages ») } */
+function dgAgreger(r){ const M=r&&r.M; if(!M) return; const ord=((r.T||{}).subs||[]).map(s=>s.ouv+'\u0001'+(s.lg||'')), vu=new Map(), A=DG_AGREGE||{};
+  /* base des pourcentages = celle du moteur (ch02bCalc) : total général, sinon la position à 1 chiffre du groupe (un total nul ne met plus les ouvrages à 0 %) */
+  const pere=new Map(); M.forEach((n,c)=>(n.kids||[]).forEach(k=>pere.set(k,c))); const haut=c=>{ let x=c, i=0; while(pere.has(x)&&i++<50) x=pere.get(x); return x; };
+  const base=c=>A.tot?(+((r.T||{}).ttc)||0):(+((M.get(haut(c))||{}).ttc)||0);
+  const agg=c=>{ if(vu.has(c)) return vu.get(c); const n=M.get(c); if(!n) return []; vu.set(c,n.subs);
+    /* « Assembler les descriptifs » : le moteur remplace le descriptif d'une position à ouvrages par ceux de ses ouvrages ; une totalisatrice qui a son propre descriptif garde
+       donc son affichage d'origine (pas de ventilation), sinon son descriptif serait perdu ou mal placé */
+    if(!(n.p.parts||[]).length&&(n.kids||[]).length&&String(c).length>1&&!(A.compact&&n.desc!=null&&String(n.desc).trim())){ const acc=new Map();
+      n.kids.forEach(k=>agg(k).forEach(x=>{ const key=x.ouv+'\u0001'+(x.lg||''); let a=acc.get(key); if(!a){ a={ouv:x.ouv,lg:x.lg||'',ttc:0,ht:0,ott:0,oht:0,hon:0,pct:0,honorPct:0,option:false,com:'',desc:null,calc:[]}; acc.set(key,a); }
+        a.ttc+=x.ttc; a.ht+=x.ht; a.ott+=x.ott; a.oht+=x.oht; a.hon+=x.hon; }));
+      if(acc.size){ const L=[...acc.values()].sort((a,b)=>{ const ia=ord.indexOf(a.ouv+'\u0001'+a.lg), ib=ord.indexOf(b.ouv+'\u0001'+b.lg); return (ia<0?1e9:ia)-(ib<0?1e9:ib); }), b=base(c);
+        L.forEach(x=>{ x.pct=b?x.ttc/b*100:0; });
+        n.subs=L; vu.set(c,L); } }
+    return vu.get(c); };
+  M.forEach((n,c)=>agg(c)); }
+let DG_ACTIF=false;
+/* textes des positions : « - » final du 1er libellé = césure (ch01bDbl, createDoubleText de l'ancien logiciel : « con- duites » → « conduites », comme le modèle 24PRC) */
+const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':String(p.texte2); return a?(b?ch01bDbl(a,b):a):b.trim(); };
+{ const c0=ch02bCalc; ch02bCalc=function(){ const r=c0.apply(this,arguments); if(DG_ACTIF) try{ (r.list||[]).forEach(n=>{ if(n&&n.p) n.texte=dgTexte(n.p); }); if(DG_AGREGE) dgAgreger(r); }catch(e){ console.error(e); } return r; }; }
+async function dgOctets(X){ { await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
+    const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{}, sel=dgPresSel(E), fav=sel.pres||{};
     /* mesure du texte aux vraies polices (coupure du descriptif et des remarques comme à l'impression) */
     const pd=await w.PDFLib.PDFDocument.create(); pd.registerFontkit(w.fontkit); const fL=await pd.embedFont(R.polices.light), fB=await pd.embedFont(R.polices.bold);
     const meas=(s,name,size)=>{ try{ return (/bold/i.test(String(name||''))?fB:fL).widthOfTextAtSize(String(s),+size||9); }catch(_){ return String(s).length*(+size||9)*0.5; } };
     const tab=h=>({orientation:'paysage',elements:[{t:'tableau',champ:'constructionEstimateTable',l:DG_W,h}]});
     /* ouvrages : affichés dès que le devis en a (sinon les lignes de leurs parties manqueraient), jamais sinon (colonne OUV vide) ; devis vide : pas de document principal (un seul total) */
-    const pres={nom:fav.nom||'',options:Object.assign({},fav.options||{},DG_PRESET,{includeKvInformation:(E.remarques||[]).some(r=>String(r.nom||'').trim()||String(r.texte||'').trim()),dispalyEmptyPositions:((fav.options||{}).dispalyEmptyPositions)!==false,
-      displaySubprojects:ch02bHasSub(E),includeDocument:(E.positions||[]).length>0}),sautsDePage:fav.sautsDePage||[]};
-    const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(DG_HT),pageN:tab(DG_HT),pageToc1:tab(DG_HI),pageTocN:tab(DG_HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
-    const B=ch02bBook(E,doc,p,pres,X.filter,env); if(B.err){ toast('Devis général : mise en pages impossible ('+B.err+').',true); return; }
+    const pres={nom:fav.nom||'',options:dgOptions(X),sautsDePage:sel.sauts};
+    const tabI=h=>({orientation:'paysage',elements:[{t:'tableau',champ:'constructionEstimateTable',l:298,h}]});   /* Information : textes coupés comme le modèle 24PRC (298 − 15 % = 254 pt, moins les 25 pt de ch02bWrap = 229 pt) ; dessin sur toute la largeur */
+    const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(DG_HT),pageN:tab(DG_HT),pageToc1:tabI(DG_HI),pageTocN:tabI(DG_HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
+    let B; DG_ACTIF=true; DG_AGREGE=pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
+    try{ B=ch02bBook(E,doc,p,pres,X.filter,env); } finally{ DG_ACTIF=false; DG_AGREGE=null; } if(B.err) throw new Error('mise en pages impossible ('+B.err+')');
     const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=Math.floor(DG_W*0.15), colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];
     const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
-    const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0, wC=o.commentInColumn?((cols[2]||{}).w||0):0;
-    /* ligne de calcul trop longue pour sa place (Texte, et Commentaire s'il est vide) : la formule est retirée, la quantité et le prix restent */
-    const court=(v,c)=>{ const i=v.lastIndexOf(' =  '); if(!/^Quantité /.test(v)||i<0) return v; const lib=wT-4+(o.commentInColumn&&!String(c[2]||'').trim()?wC:0); return meas(v,'',dz)>lib?'Quantité '+v.slice(i+4).trim():v; };
+    const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
+    /* ligne de calcul trop longue pour la colonne Texte (le texte est coupé à son bord, comme le modèle) : la formule est retirée, la quantité et le prix restent */
+    const court=v=>{ const i=v.lastIndexOf(' =  '); if(!/^Quantité /.test(v)||i<0) return v; return meas(v,'',dz)>wT-4?'Quantité '+v.slice(i+4).trim():v; };
     const G=E.reglages||{}, ti=G.titres||{}, mod=v=>/^\[\.\.\.\]/.test(String(v||'').trim()), tt=k=>{ const v=String(ti[k]==null?'':ti[k]).trim(); return v&&!mod(v)?v:'Devis général'; }, etat=String(G.etatProjet||'').trim(), etatOk=etat&&!mod(etat);   /* « [...] … » : texte modèle de l'ancien logiciel, ignoré */
     const titrePage=pg=>pg.type===0?(tt('garde')+(etatOk?' - '+etat:'')):(pg.type===1||pg.type===2)?(pg.digit===0?tt('unChiffre'):pg.digit===1?tt('deuxChiffres'):tt('document')):tt('document');
     const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
@@ -593,14 +766,107 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); await DS.need(['su
     const couverture={titre:titrePage({type:0}).toUpperCase(),marge:mod(G.marge)?'':String(G.marge||'').trim(),filtre,
       rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',A&&A.mo?un(A.mo.lignes||[]):''],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
-    const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:titrePage(pg),cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
-      return {c:c0.map((v,j)=>j===1&&r.s==='D'?court(v.replace(/^(Quantité )(-?[0-9.]+) += +(-?[0-9.]+)/,(m,a,x,y)=>+x===+y?a+y:m),c0):v),s:String(r.s||'S')}; })}));   /* « Quantité 1500 = 1500.0 » : formule réduite à un nombre, montrée une fois */
+    const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
+      return {c:c0.map((v,j)=>j===1&&r.s==='D'?court(v):v),s:String(r.s||'S')}; })}));   /* « Quantité 467 =  467.0 » gardé tel quel, comme le modèle 24PRC */
+    /* Information (modèle 24PRC) : rangées refaites depuis les remarques et les ouvrages, coupées comme le moteur (ch02bIntro) — rangée vide avant chaque remarque nommée et avant la
+       liste des ouvrages (pas entre deux ouvrages ; une entrée sans nom continue la précédente, comme dans les données de l'ancien logiciel), lignes vides d'une remarque écrite en
+       paragraphes gardées —, puis réparties sur les pages d'Information (23 rangées par page : règle du moteur rows > lpp − 3, comme le modèle ; pas de rangée vide en tête de page) */
+    { const iI=pages.map((pg,i)=>pg.type===3||pg.type===4?i:-1).filter(i=>i>=0);
+      if(iI.length){ const tw=298-Math.floor(298*0.15), fsz=+o.posFontSize||9, fnm=o.standardFontName, R0=[]; let prev=null;
+        const ent=(E.remarques||[]).map(r=>({name:r.nom||'',desc:r.texte||'',o:false}));
+        if(o.displaySubprojectNames) dgOuvInfo(X).forEach(s=>{ const c=String(s.CODE||''), lc=String(s.LOCATIONCODE||'');
+          ent.push(lc?{name:c+' | '+lc,desc:String(s.DESCRIPTION||'')+' | '+String(s.LOCATIONDESCRIPTION||''),o:true}:{name:c,desc:String(s.DESCRIPTION||''),o:true}); });
+        ent.forEach(d=>{ const nm=String(d.name||'').trim(); if(nm&&R0.length&&!(d.o&&prev==='o')) R0.push({c:['',''],s:'S'});
+          ch02bIntro(d,tw,fsz,meas,fnm).forEach(c=>R0.push({c:Array.from(c).map(v=>v==null?'':String(v)),s:'S'})); if(nm) prev=d.o?'o':'r'; });
+        const cap=Math.max(1,Math.floor(DG_HI/DG_RH)-2), P2=[], vide=r=>!r.c.some(v=>String(v).trim()); let cur=null;
+        R0.forEach(r=>{ if(!cur||cur.rows.length>=cap){ if(cur&&vide(r)) return; cur={type:P2.length?4:3,titre:pages[iI[0]].titre,cols:pages[iI[0]].cols,rows:[]}; P2.push(cur); } cur.rows.push(r); });
+        pages.splice(iI[0],iI.length,...P2); } }
+    /* pages de tableau : jamais plus de rangées que la page n'en tient (avec un filtre d'ouvrages, ch02bSumFill ne garde pas une position et ses ouvrages ensemble et les rangées en
+       trop passaient sur le pied). Rangées de remplissage en trop retirées ; coupure de préférence avant le début d'une position ; la suite passe en tête de la page suivante de la
+       même série (même récapitulatif ou document principal, page du total comprise), sinon sur une page insérée ; pages complétées jusqu'en bas (zébrage), comme ch02bFinish */
+    { const capT=Math.max(1,Math.floor(DG_HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
+      for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT));
+        while(R.length>cap&&vide(R[R.length-1])) R.pop();
+        if(R.length>cap){ let k=cap; for(let j=cap;j>cap-8&&j>0;j--){ if(String((R[j].c||[])[0]||'').trim()){ k=j; break; } }
+          const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
+          if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
+        while(R.length<cap) R.push({c:[],s:'E'}); } }
     const sT={b:o.titlePosBold!==false,z:+o.titleFontSize||10}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:+o.posFontSize||9},D:{b:false,z:+o.detailFontSize||8},X:{b:false,z:+o.detailFontSize||8},E:{b:false,z:+o.posFontSize||9}};
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
       livretDG:{couverture,pages,st,zebra:!!o.zebra,rh:DG_RH,infoTitre:'Information'}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
-    sgVisionneuse(new Blob([oct],{type:'application/pdf'}),titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'); }
+    return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
+async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }
   catch(e){ console.error(e); toast('Le PDF du devis général n’a pas pu être créé : '+(e&&e.message||e),true); } }
+/* ── Documents ▸ Devis général = ce modèle (Paulo, 07.11.2026 : « modifier cette page par ce modèle », 24PRC-DG_TRAVAIL_20260216.pdf de l'ancien logiciel, même mise en pages que
+   le 23JOG) : « Ouvrir », la fenêtre (Imprimer, PDF, Partager, Réglages) et « Créer le PDF » montrent et enregistrent ce PDF au lieu du document portrait du modèle .dpdoc.
+   Le moteur garde ses chemins : ch02cRender rend, pour la ligne 0, une page repérée dont le PDF est déjà fait (SGIMP.memo, pdf = promesse de dgOctets), que la visionneuse et
+   l'enregistrement (ch03aApi, bloc 31) servent tels quels. Honoraires et Devis descriptif : inchangés. ── */
+/* « Réglages » du devis général : les cases du menu de la ligne (mêmes libellés que le moteur) sur les options du livret de l'ancien logiciel (ch02b, libellés identiques dans sa
+   fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
+   du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
+const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['displayNoTitlePositions','Afficher les positions saisies et les totalisateurs'],
+  ['displayComment','Base et commentaire de la position'],['commentInColumn','Base et commentaire dans colonne séparée'],'-',['*tous','Tous les montants détaillés'],'-',
+  ['displayDetailComment','Commentaire du calcul'],['displayPriceBase','Bases de prix'],['dispalyCalcualtion','Afficher le calcul'],['displayQuanPriceValue','Quantités et prix'],
+  ['displayDetailValues','Afficher les montants'],['displayDetailOptions','Variantes'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
+  ['dispalyRound1000','Arrondir à 1000'],'-',['dispalyEmptyPositions','Afficher les positions sans montant'],['displayDescription','Descriptif'],['compactDescription','Assembler les descriptifs des ouvrages','sub']];
+const DG_TOUS=['displayDetailComment','dispalyCalcualtion','displayQuanPriceValue','displayDetailValues','displayDetailOptions'], DG_RONDS=['dispalyRound10','dispalyRound100','dispalyRound1000'];
+const dgChoix=E=>{ const v=((E||{}).reglages||{}).dgPdf; return v&&typeof v==='object'?v:{}; };
+/* présentation dont les sauts de page et les options de base sont repris : choix du menu (« Sauts de page : … » : rang et nom, une présentation sans nom comprise), sinon la favorite,
+   sinon la première ; « Sans sauts de page » (sansSauts) garde les options de base de celle-ci, sans ses sauts. presNom '' sans rang = ancien « Sans sauts de page » du 07.11.2026. */
+function dgPresSel(E){ const L=(E&&E.presentations)||[], c=dgChoix(E), def=L.find(q=>q.favori)||L[0]||null, nm=q=>String((q&&q.nom)||'');
+  if(c.sansSauts===true||(c.presNom===''&&!Number.isInteger(c.presIdx))) return {pres:def,sauts:[],aucune:true};
+  if(typeof c.presNom==='string'){ const q=Number.isInteger(c.presIdx)&&L[c.presIdx]&&nm(L[c.presIdx])===c.presNom?L[c.presIdx]:L.find(x=>nm(x)===c.presNom); if(q) return {pres:q,sauts:q.sautsDePage||[],aucune:false}; }
+  return {pres:def,sauts:(def&&def.sautsDePage)||[],aucune:false}; }
+const dgPres=E=>dgPresSel(E).pres;
+/* ouvrages listés sur la page Information (même règle que ch02bBook : utilisés par une position et dans le filtre) */
+function dgOuvInfo(X){ const E=X.E||{}, p=X.p||{}, F=X.filter&&X.filter.length?X.filter:null; if(!ch02bHasSub(E)) return [];
+  return DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).filter(s=>{ const c=String(s.CODE||''); return (E.positions||[]).some(q=>(q.parts||[]).some(pt=>pt.ouv===c))&&ch02bInF(F,c); }); }
+function dgOptions(X){ const E=X.E||{}, fav=dgPres(E)||{}, sub=ch02bHasSub(E), c=dgChoix(E);
+  const o=Object.assign({},fav.options||{},DG_PRESET,{includeKvInformation:(E.remarques||[]).some(r=>String(r.nom||'').trim()||String(r.texte||'').trim())||dgOuvInfo(X).length>0,dispalyEmptyPositions:((fav.options||{}).dispalyEmptyPositions)!==false,
+    displaySubprojects:sub,includeDocument:(E.positions||[]).length>0});
+  if(!o.specialRound) DG_RONDS.forEach(k=>{ o[k]=false; });   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
+  DG_MENU.forEach(m=>{ if(Array.isArray(m)&&m[0][0]!=='*'&&typeof c[m[0]]==='boolean') o[m[0]]=c[m[0]]; });
+  if(!sub){ o.displaySubprojects=false; o.compactDescription=false; o.displaySubprojectNames=false; }   /* affaire sans ouvrage : colonne OUV vide (comme la fenêtre du moteur) */
+  o.specialRound=DG_RONDS.some(k=>o[k]); return o; }
+function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), c=Object.assign({},dgChoix(E));
+  if(k.startsWith('pres:')||k==='*sans'){ if(k==='*sans'){ c.sansSauts=true; } else { const i=+k.slice(5), q=(E.presentations||[])[i]; if(!q) return; c.presNom=String(q.nom||''); c.presIdx=i; delete c.sansSauts; }
+    const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }
+  if(k==='*total'){ const R=E.reglages||(E.reglages={}); R.pourcentageSur=R.pourcentageSur==='total'?'groupe':'total'; X.touch(); return; }   /* réglage du devis (Paramètres ▸ Affichage), aussi pour l'écran */
+  if(k==='*tous'){ const tout=DG_TOUS.every(x=>o[x]); DG_TOUS.forEach(x=>{ c[x]=!tout; }); }
+  else { const v=!o[k]; c[k]=v; if(DG_RONDS.includes(k)&&v) DG_RONDS.forEach(x=>{ if(x!==k) c[x]=false; });
+    if(k==='displayComment'&&!v) c.commentInColumn=false; if(k==='displayDetailValues'&&!v) c.displayDetailOptions=false; if(k==='displayQuanPriceValue'&&!v) c.dispalyCalcualtion=false;
+    if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
+  const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
+function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
+  const dis=k=>(k==='commentInColumn'&&!o.displayComment)||(k==='displayDetailOptions'&&!o.displayDetailValues)||(k==='dispalyCalcualtion'&&!o.displayQuanPriceValue);
+  const L=DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])});
+  const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
+  L.push('-',{t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total')});
+  if(P.length) L.push('-',...P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans')});
+  return L.filter((x,i,a)=>!(x==='-'&&(i===0||a[i-1]==='-'))); }
+/* page repérée dont le PDF est celui du modèle (préparé tout de suite, servi par sgImpPdf) */
+function dgRendu(X){ const S=window.SGIMP, id=(++S.n).toString(36)+'g'+Date.now().toString(36), pdf=dgOctets(X).then(r=>new Blob([r.oct],{type:'application/pdf'}));
+  pdf.catch(()=>{}); S.memo.set(id,{pdf,titre:'Devis général',o:{}}); while(S.memo.size>40) S.memo.delete(S.memo.keys().next().value);
+  return {title:'Devis général',css:'/*sgimp:'+id+'*/',html:''}; }
+/* « Ouvrir » et « Créer le PDF » de la ligne 0 : le PDF du modèle ne demande aucun enregistrement du document (costestimatedpdoc) — rien n'est écrit dans la base (profil en
+   lecture seule, double-clic, autres apps sur la même base). Mêmes étapes que le moteur (ch02cOpen0, ch02cGenPdf) : PDF officiel existant, mode filtre, arrondi — ici selon les
+   réglages du modèle (dgOptions). */
+async function dgOuvrir(X){ if(X.dBusy) return; X.dBusy=true;
+  try{ if(ch02cPdfHas(X,0)&&(await ivAsk('Avertissement',CH02C_MSG.pdfAvail))===true) return;
+    await ch02aFilterMsg(X); if(dgOptions(X).specialRound) await ch02aInfo('Information',CH02C_MSG.round);
+    const rec=ch02cRec(X,0), R=dgRendu(X); return ch02cView(X,0,{ID:ch02cId(X,0),doc:{nom:(rec&&rec.doc&&rec.doc.nom)||CH02C_ROWS[0].t}},R); }
+  finally{ X.dBusy=false; } }
+async function dgGenPdf(X){ const dos=ch02cDos(X,'archive'); if(!dos) return;
+  await ch02aFilterMsg(X); if(dgOptions(X).specialRound) await ch02aInfo('Information',CH02C_MSG.round);
+  const o={}, nom=await ch03bNouveauPdfDlg(CH02C_ROWS[0].pdf,dos,o); if(nom==null) return;
+  await ch03bProduire(dos,nom,()=>svDpDocHTML(dgRendu(X)),{projet:X.p.ID,origine:'pdf',bseq:o.bseq}); ch02cDocPane(X); }
+{ const r0=ch02cRender; ch02cRender=function(X,i,rec){ return +i===0&&X&&X.sgde?dgRendu(X):r0.apply(this,arguments); }; }
+{ const p0=ch02cPrefItems; ch02cPrefItems=function(X,i){ return +i===0&&X&&X.sgde?dgPrefItems(X):p0.apply(this,arguments); }; }
+{ const o0=ch02cOpen; ch02cOpen=function(X,i){ return +i===0&&X&&X.sgde?dgOuvrir(X):o0.apply(this,arguments); }; }
+{ const g0=ch02cGenPdf; ch02cGenPdf=function(X,i){ return +i===0&&X&&X.sgde?dgGenPdf(X):g0.apply(this,arguments); }; }
+{ const n0=ch02cNewItems; ch02cNewItems=function(X,i){ const L=n0.apply(this,arguments); if(+i!==0||!X||!X.sgde) return L;
+    const ok=typeof ch03bNouveauPdfDlg==='function'&&typeof ch03bProduire==='function'; return L.map(x=>x&&x.t===CH02C_L.genPdf?Object.assign({},x,{dis:!ok}):x); }; }
 const SGDE=window.SGDE={X:null,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 })();

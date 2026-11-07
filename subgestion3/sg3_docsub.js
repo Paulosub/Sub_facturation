@@ -1535,22 +1535,22 @@ async function sgDsPdf(R, rep, o){
     const tableau = (pg) => {
       const X0 = cx.Z.x0, cols = Array.from(pg.cols || []), rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
       let x = X0; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
-      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); }
+      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); cx.ligne(X0, T(108.5), X0 + W, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
       else {
         cx.ligne(X0, T(100.5), X0 + W, T(100.5));
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
         cx.ligne(X0, T(116.5), X0 + W, T(116.5));
       }
-      let y = info ? 108 : 122;
+      let y = info ? 121 : 122;
       Array.from(pg.rows || []).forEach((r, i) => {
         const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []);
-        if(!info && D.zebra && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });
+        if(D.zebra && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* Information aussi, une rangée sur deux (modèle 24PRC) */
         if(!info && (s === 'O' || s === 'F' || s === 'T') && c.some(v => String(v == null ? '' : v).trim())) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
-          const q = pos[j + 1], libre = !p.r && q && !q.r && q.w && !String(c[j + 1] == null ? '' : c[j + 1]).trim();   /* texte trop long : déborde sur la colonne de droite si elle est vide */
+          const q = pos[j + 1], libre = D.deborde === true && !p.r && q && !q.r && q.w && !String(c[j + 1] == null ? '' : c[j + 1]).trim();   /* texte trop long : coupé par « … » au bord de sa colonne, comme l'ancien logiciel (modèle 24PRC) ; débordement sur la colonne vide de droite seulement si D.deborde */
           const t = ajuste(v, pol.f, pol.z, p.w - 4 + (libre && cx.largeur(P(v), pol.f, pol.z) > p.w - 4 ? q.w : 0)); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(base), { police:pol.f, taille:pol.z, align:p.r ? 'd' : 'g' }); });
-        if(info) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
+        if(info && !D.zebra) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
         y += rh; });
     };
     Array.from(D.pages || []).forEach(pg => {

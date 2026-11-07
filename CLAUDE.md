@@ -1572,6 +1572,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Chiffres toujours sur une seule ligne (même jour, « toujours sur une ligne, pas de renvoi à la ligne »)** : rangée en colonnes fixes (`grid-auto-flow:column`, 1re colonne
   86 px), libellés et sous-lignes sans retour (points de suspension au besoin), montants à taille qui suit la largeur (`container-type:inline-size`, `clamp(11px, 2.4cqi − 5.6px, 22px)` ;
   17 px en plein écran, 18 px sur écran bas) : 13 signes tiennent dans une colonne ; lien « reprendre le contrat » seul sur sa ligne. Vérifié à 800, 1000 et 1440 px.
+  **Retour à la page des devis du projet (même jour, « retour à la page des devis du projet »)** : bouton « ‹ Devis du projet » du bandeau et toute fermeture du devis (`ch02aClose`
+  enveloppé) → page du projet ▸ Devis général (`nx-pdom` « ID|Devis général »), d'où que le devis ait été ouvert (liste de tous les devis, reprise de session) ; projet non permis
+  au profil (`sgProjetPermis`) ou sans projet : retour du moteur (`DV.back`, sinon liste des devis).
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis
   général (PDF) » (première entrée ; les présentations de l'ancien livret restent dessous). `dgPdf` / `dgCreer` (sg3_devis.js) : livret du moteur `ch02bBook` avec des gabarits de
   pages synthétiques (tableau 728 × 388 pt, Information 402 pt, rangées 15 pt) et la présentation de la référence `DG_PRESET` (page de garde, Information si remarques

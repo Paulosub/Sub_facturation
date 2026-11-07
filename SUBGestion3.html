@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 07.11.2026 16:19 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 07.11.2026 16:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38398,7 +38398,7 @@ function habiller(m,X){ cssD();
       const sub=(eH==='manuel'||eH==='retire')&&peut?(eH==='manuel'?lien('La position 291 ne correspond pas au contrat signé ('+num2(K.tot)+' CHF TTC)'):lien('Position 291 retirée du devis : la reprendre au montant du contrat signé ('+num2(K.tot)+' CHF TTC)'))
         :(avec?(K.signe?'contrat signé':'contrat non signé')+pc:ok&&!K?(X._honCh==='echec'?'contrats non disponibles':'lecture des contrats…'):'chapitres d’honoraires du devis')+etat;   /* « CHF » retiré des chiffres (Paulo, 07.11.2026) */
       return kpi('Honoraires HT',num2(avec?K.m100ht:hh),sub,'','Montant HT pour 100 % des prestations : contrats d’honoraires de l’affaire (signés ou non), extrapolés si le contrat ne couvre qu’une partie des phases ; sans contrat : chapitres d’honoraires du devis (09, 19, 29, 39, 49, 99). La position 291 suit d’office le contrat signé, sauf devis validé ou annulé et montant modifié ou retiré à la main.'+(eH==='valide'?' Ce devis est validé : la position 291 ne suit plus le contrat.':eH==='annule'?' Ce devis est annulé : la position 291 ne suit plus le contrat.':'')); };
-    hd.innerHTML=tete(p.NUMBER||'','Devis général'+(et?' · '+et:''),d.VERSION||'(sans titre)',[p.TITLE,mo?'Maître de l’ouvrage : '+mo:'',d.VERSIONNUMBER!=null?'version '+d.VERSIONNUMBER:'',d.CHANGEDDATE?'modifié le '+dfr(d.CHANGEDDATE)+(d.USERID?' par '+d.USERID:''):''].filter(Boolean).join(' · '),'<button class="nx-btn" data-a="liste">‹ '+(DV.back?'Retour':'Liste des devis')+'</button>');
+    hd.innerHTML=tete(p.NUMBER||'','Devis général'+(et?' · '+et:''),d.VERSION||'(sans titre)',[p.TITLE,mo?'Maître de l’ouvrage : '+mo:'',d.VERSIONNUMBER!=null?'version '+d.VERSIONNUMBER:'',d.CHANGEDDATE?'modifié le '+dfr(d.CHANGEDDATE)+(d.USERID?' par '+d.USERID:''):''].filter(Boolean).join(' · '),'<button class="nx-btn" data-a="liste" title="Retour à la page des devis du projet">‹ Devis du projet</button>');
     /* degré de précision du devis (Paulo, 07.11.2026 : « ajoute le degré de précision du devis devant le total TTC ») = « Marge d'approximation du DG » des Paramètres
        (E.reglages.marge) ; textes modèles « [...] » de l'ancien logiciel ignorés ; vide → « — » et lien « définir » (Paramètres) pour qui peut écrire */
     const mg=(()=>{ const m=String(((X.E||{}).reglages||{}).marge||'').trim(); return !m||/^\[.*\]/.test(m)?'':m.replace(/^±\s*/,'±').replace(/\s*%$/,' %'); })();
@@ -38417,6 +38417,9 @@ function habiller(m,X){ cssD();
   deco(X); decoCat(X); ch02aUpd(X);
   if(typeof VIEW==='object'&&VIEW) VIEW.nxTitle=[X.p&&X.p.NUMBER,(ch02aHdr(X)||{}).VERSION].filter(Boolean).join(' · '); }
 const cx0=ch02aCtx; ch02aCtx=function(o){ const X=cx0(o); SGDE.X=X; return X; };
+/* fermer un devis = page des devis de son projet (Paulo, 07.11.2026 : « retour à la page des devis du projet »), d'où qu'il ait été ouvert (liste de tous les devis, recherche,
+   reprise de session…) : page du projet ▸ Devis général ; sans projet connu, le retour du moteur (DV.back, sinon la liste des devis) */
+{ const cl0=ch02aClose; ch02aClose=function(X){ const pid=X&&X.p&&X.p.ID; if(pid!=null&&typeof NX_VIEW!=='undefined'&&NX_VIEW['nx-pdom']&&(typeof sgProjetPermis!=='function'||sgProjetPermis(pid))) DV.back=()=>go('nx-pdom',pid+'|Devis général'); return cl0.apply(this,arguments); }; }
 const ed0=dvEditor; dvEditor=function(m,id){ ed0(m,id); const X=SGDE.X; if(X&&X.m===m&&+X.id===+id) try{ habiller(m,X); }catch(e){ console.error(e); } };
 const u0=ch02aUpd; ch02aUpd=function(X){ u0(X); if(X.sgde&&X.bWh) X.bWh.disabled=false; if(X.bModif){ const q=ch02aSelPos(X); X.bModif.disabled=!(q&&!q.genere); } };   /* Fonctions regroupe aussi ce qui reste utile sur un devis vide : seul Exporter y est grisé */
 const t0=ch02aTotals; ch02aTotals=function(X){ t0(X); if(X.sgdeMaj) X.sgdeMaj(); };

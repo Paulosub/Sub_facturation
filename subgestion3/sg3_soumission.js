@@ -131,8 +131,8 @@ const cssM=()=>{ css(); if(!document.getElementById('sgsm-css')){ const s=docume
 const num2=n=>{ try{ return num(n); }catch(_){ return String(n); } };
 const contenu=d=>{ const S=DS.get('soumission',d.ID); try{ return S?svNorm(JSON.parse(JSON.stringify(S))):null; }catch(_){ return null; } };
 /* fiche d'une soumission pour la liste : entreprises, proposée, offre nette */
-function resume(d){ const S=DS.get('soumission',d.ID), L=((S&&S.entreprises)||[]).filter(e=>+e.contactId>0), pr=L.find(e=>e.proposee)||null, net=pr&&pr.detail&&pr.detail.offre?+pr.detail.offre.net||0:0;
-  let nomP=''; if(pr){ const c=DS.get('contact',pr.contactId); nomP=pr.abreviation||(c&&c.NAME1)||''; } return {n:L.length,nomP,net,et:(S&&S.etape)||'B'}; }
+function resume(d){ const S=DS.get('soumission',d.ID), L=((S&&S.entreprises)||[]).filter(e=>+e.contactId>0), pr=L.find(e=>e.proposee)||null, Dt=pr&&((S.travail&&S.travail.modifie&&(S.travail.detail||{})[pr.contactId])||pr.detail), net=Dt&&Dt.offre?+((Dt.negociee||{}).net)||+Dt.offre.net||0:0;
+  let nomP=''; if(pr){ const c=DS.get('contact',pr.contactId); nomP=pr.abreviation||(c&&c.NAME1)||''; } return {n:L.length,nomP,net,et:(S&&S.etape)||'B',mode:S&&S.mode}; }
 const SOUM={
   rendre(I){ const p=I.p, u=I.u, G=!!p.GLOBAL, pr=d=>DS.get('project',d.PROJECT_ID)||{}, tous=(G?DS.all('devisdocument'):DS.by('devisdocument','PROJECT_ID',p.ID)).filter(d=>!G||!u.mine||svIsMine(d)), vivant=tous.filter(d=>!+d.ISMARKEDASDELETED), base=u.supp?tous:vivant, st=u.stade??null;
     const R=base.filter(d=>(st==null||+d.DOCUMENTSTATECODE===st)&&trouve(u.q,d.BKP,d.AWARDINGTEXT,d.VERSION,d.NOTE,d.USERID,G?pr(d).NUMBER:'',G?pr(d).TITLE:'')).sort((a,b)=>G?cmp(pr(b).NUMBER,pr(a).NUMBER)||cmp(a.BKP,b.BKP):cmp(a.BKP,b.BKP)||cmp(b.CHANGEDDATE,a.CHANGEDDATE));
@@ -145,7 +145,7 @@ const SOUM={
       +'<div class="sgsv-fil">'+(G?[['0','Toutes'],['1','Mes soumissions']].map(([v,t])=>'<button data-a="mine" data-v="'+v+'" class="'+((+v===1)===!!u.mine?'on':'')+'">'+t+'</button>').join('')+'<span style="width:10px"></span>':'')+(stades.length>1?[['','Tous'],...stades].map(([c,t])=>{ const v=c===''?null:c; return '<button data-a="stade" data-c="'+c+'" class="'+(v===st?'on':'')+'" aria-pressed="'+(v===st)+'">'+E(t)+'</button>'; }).join(''):'')
       +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher une soumission" aria-label="Rechercher une soumission" value="'+E(u.q||'')+'"></span></div>'
       +(R.length?'<table class="nx-tbl sgsv-tb sgsm-tb"><thead><tr>'+(G?'<th>Projet</th>':'')+'<th>CFC</th><th>Lot</th><th>Version</th><th>Stade</th><th>Statut</th><th class="r">Entreprises</th><th>Proposée</th><th class="r">Offre nette CHF</th><th>Modifié</th><th>Par</th></tr></thead><tbody>'
-        +R.map(d=>{ const r=Rs.get(d.ID); return '<tr data-a="open" data-d="'+d.ID+'"'+(+d.ISMARKEDASDELETED?' class="supp"':'')+'>'+(G?'<td class="nw" title="'+E(pr(d).TITLE||'')+'">'+E(pr(d).NUMBER||'')+'</td>':'')+'<td class="nw"><b>'+E(d.BKP||'—')+'</b></td><td>'+E(d.AWARDINGTEXT||'(sans titre)')+(d.LOCKUSERID?' <span title="'+E('Ouvert par '+d.LOCKUSERID)+'">'+IC('lock')+'</span>':'')+'</td><td class="nw">'+E(d.VERSION||'')+'</td><td class="nw">'+E(SV_STADE_L[d.DOCUMENTSTATECODE]??'')+'</td><td class="nw">'+E(SV_STATE[d.STATECODE]??'')+'</td><td class="r">'+(r.n||'—')+'</td><td class="nw">'+E(r.nomP||'—')+'</td><td class="r nw">'+(r.net?E(num2(r.net)):'—')+'</td><td class="nw">'+E(dfr(d.CHANGEDDATE))+'</td><td class="nw">'+E(d.USERID||'')+'</td></tr>'; }).join('')+'</tbody></table>'
+        +R.map(d=>{ const r=Rs.get(d.ID); return '<tr data-a="open" data-d="'+d.ID+'"'+(+d.ISMARKEDASDELETED?' class="supp"':'')+'>'+(G?'<td class="nw" title="'+E(pr(d).TITLE||'')+'">'+E(pr(d).NUMBER||'')+'</td>':'')+'<td class="nw"><b>'+E(d.BKP||'—')+'</b></td><td>'+E(d.AWARDINGTEXT||'(sans titre)')+(r.mode==='descriptif'?' <span class="nx-tag">Descriptif</span>':'')+(d.LOCKUSERID?' <span title="'+E('Ouvert par '+d.LOCKUSERID)+'">'+IC('lock')+'</span>':'')+'</td><td class="nw">'+E(d.VERSION||'')+'</td><td class="nw">'+E(SV_STADE_L[d.DOCUMENTSTATECODE]??'')+'</td><td class="nw">'+E(SV_STATE[d.STATECODE]??'')+'</td><td class="r">'+(r.n||'—')+'</td><td class="nw">'+E(r.nomP||'—')+'</td><td class="r nw">'+(r.net?E(num2(r.net)):'—')+'</td><td class="nw">'+E(dfr(d.CHANGEDDATE))+'</td><td class="nw">'+E(d.USERID||'')+'</td></tr>'; }).join('')+'</tbody></table>'
         :'<p class="sgsv-rien">Aucune soumission trouvée.</p>')+'</div>'; },
   action(I,a,t){ const p=I.p, u=I.u, d=t.dataset.d?DS.get('devisdocument',t.dataset.d):null;
     if(a==='new'){ if(p.GLOBAL) pickProject('Choix de l’affaire',q=>svNew(q)); else svNew(p); } else if(a==='ex') sgSoumExemple(p);
@@ -166,8 +166,8 @@ if(VIEWS.soum){ const r0=VIEWS.soum.render; VIEWS.soum.render=function(m,arg){ i
 /* ── fenêtre : bandeau et parcours au-dessus de l'arbre des étapes ── */
 const uni=(S,k)=>(S.unites&&S.unites[k]&&S.unites[k].chapitres)||[];
 function parcours(X){ const S=X.S, nE=(S.entreprises||[]).filter(e=>+e.contactId>0).length, nA=uni(S,'B').reduce((n,c)=>n+c.articles.filter(a=>(a.quantites||[]).length).length,0), pr=(S.entreprises||[]).find(e=>e.proposee&&+e.contactId>0), c1=uni(S,'C1').length, ct=uni(S,'D').length, me=uni(S,'I').length;
-  const L=[['tenderEdit',"Appel d’offres",nA?pl(nA,'article'):'descriptif à écrire',nA>0],['tenderingEdit','Soumissionnaires',nE?pl(nE,'entreprise'):'entreprises à choisir',nE>0],['priceComparisonEdit','Comparatif',c1?(pr?'proposée : '+(pr.abreviation||''):'offres à saisir'):'à créer depuis l’appel d’offres',c1>0],['contractEdit','Contrat',ct?'créé':'après l’adjudication',ct>0],['measureEdit','Métré',me?'créé':'pendant les travaux',me>0]];
-  const cour=SV_UI.node?((svStepOf(SV_UI.node)||{}).k):''; const k2={tender:0,tendering:1,offerOverview:2,priceComparison:2,offer:2,contract:3,measure:4}[cour];
+  const nD=((S.descriptif||{}).blocs||[]).filter(b=>b.t==='pu'&&b.x).length, des=S.mode==='descriptif'; const L=des?[['tenderEdit',"Appel d’offres",nD?'descriptif · '+pl(nD,'ligne'):'descriptif à écrire',nD>0],['tenderingEdit','Soumissionnaires',nE?pl(nE,'entreprise'):'entreprises à choisir',nE>0],['offerOverviewEdit','Comparatif bref',pr?'proposée : '+(pr.abreviation||''):'offres à saisir',!!pr]]:[['tenderEdit',"Appel d’offres",nA?pl(nA,'article'):'descriptif à écrire',nA>0],['tenderingEdit','Soumissionnaires',nE?pl(nE,'entreprise'):'entreprises à choisir',nE>0],['priceComparisonEdit','Comparatif',c1?(pr?'proposée : '+(pr.abreviation||''):'offres à saisir'):'à créer depuis l’appel d’offres',c1>0],['contractEdit','Contrat',ct?'créé':'après l’adjudication',ct>0],['measureEdit','Métré',me?'créé':'pendant les travaux',me>0]];
+  const cour=SV_UI.node?((svStepOf(SV_UI.node)||{}).k):''; const k2={tender:0,tendering:1,offerOverview:2,priceComparison:2,travail:2,offer:2,contract:3,measure:4}[cour];
   return L.map(([k,t,s,f],i)=>'<button class="sgsm-e'+(i===k2?' cour':f?' fait':'')+'" data-n="'+k+'"><i></i><b>'+E(t)+'</b><span title="'+E(s)+'">'+E(s)+'</span></button>').join(''); }
 function habiller(m,id){ const X=SV_UI.ed&&SV_UI.ed.X, d=DS.get('devisdocument',id); if(!X||!d) return; cssM(); const p=DS.get('project',d.PROJECT_ID)||{}, bar=m.querySelector(':scope>.ph2'); if(!bar) return;
   /* enveloppe : #main sert à tous les écrans, il ne porte jamais la classe ; m.innerHTML='' de go() retire tout */
@@ -214,7 +214,7 @@ function habArticle(dlg,ctx,ch,a){ const bd=dlg.querySelector('.bd'), body=bd&&b
   kw.addEventListener('input',titre); kwa.addEventListener('change',()=>setTimeout(titre,0)); tabs.addEventListener('click',()=>setTimeout(titre,0)); titre();
   new MutationObserver(()=>tableQP(host)).observe(host,{childList:true,subtree:true}); tableQP(host); }
 const ea0=svdEditArticle; svdEditArticle=function(){ const n0=document.querySelectorAll('.dlg').length, r=ea0.apply(this,arguments), L=document.querySelectorAll('.dlg'); if(L.length>n0) try{ habArticle(L[L.length-1],arguments[0],arguments[1],arguments[2]); }catch(e){ console.error(e); } return r; };
-const SV_LIB={tender:'Appel d’offres',tendering:'Soumissionnaires',offerOverview:'Comparatif bref',priceComparison:'Comparatif',offer:'Offre',contract:'Contrat',measure:'Métré',masterTender:'Descriptif type',costEstimating:'Estimatif'};
+const SV_LIB={tender:'Appel d’offres',tendering:'Soumissionnaires',offerOverview:'Comparatif bref',priceComparison:'Comparatif des offres',offer:'Offre',contract:'Contrat',measure:'Métré',masterTender:'Descriptif type',costEstimating:'Estimatif'};
 SV_TREE.forEach(s=>{ s.t=SV_LIB[s.k]||s.t; s.subs.forEach(x=>{ if(x[1]==='Editer') x[1]='Éditer'; }); });
 
 /* ── exemple complet : CFC 271 Plâtrerie ── */
@@ -260,4 +260,55 @@ async function sgSoumExemple(p){ const dj=DS.by('devisdocument','PROJECT_ID',p.I
   await DS.commit(ops); toast('Exemple créé : CFC 271 Plâtrerie.'); ouvrirDoc(doc,p); }
 window.sgSoumExemple=sgSoumExemple;
 window.SGSM={resume,habiller,parcours};
+})();
+
+/* ═══ SOUMISSIONNAIRES ▸ Éditer : SUIVI DES OFFRES (07.11.2026 ; Paulo : « dans le tableau des soumissionnaires, ajoute : si rendu, relancer le, renonce, etc. ») ═══
+   Colonnes ajoutées au tableau du moteur (svTenderingEdit enveloppé, grid intercepté le temps de l'appel) : Invitée le, Rendue (case + date), Relancer le (rouge quand la date est passée et
+   que l'offre n'est ni rendue ni refusée), Renonce (case). Données : e.suivi = {invite, rendu, renduLe, relance, renonce, auto} dans S.entreprises (svNorm garde les champs ajoutés).
+   « Situation de l'offre » remplie d'office (« Offre reçue, <date> », « Renonce, <date> ») si elle est vide ou si elle a été remplie d'office (suivi.auto). Résumé au-dessus du tableau.
+   Saisie dans le tableau : X.touch() à chaque changement (date choisie, case cochée). DeltaSub.html seul garde le tableau d'origine. Styles #sgts-css. */
+(function(){
+if(typeof svTenderingEdit!=='function'||typeof grid!=='function') return;
+const E=s=>esc(String(s==null?'':s)), auj=()=>today(), dmy=d=>d?dfr(d):'';
+const CSS=`
+.sgts-res{display:flex;flex-wrap:wrap;gap:4px 18px;padding:8px 2px 10px;font-size:12.5px;color:var(--s-gris)}
+.sgts-res b{color:var(--s-noir);font-weight:700}
+.sgts-res .rel{color:var(--s-rouge)}
+input.sgts-d{height:26px;width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--s-filet);border-radius:0;padding:0 2px;font:inherit;font-size:11.5px;letter-spacing:0;background:#fff;color:var(--s-noir)}
+input.sgts-d:focus{border-color:var(--s-noir);outline:0}
+input.sgts-d.retard{color:var(--s-rouge);border-color:var(--s-rouge);font-weight:700}
+input.sgts-d:disabled{background:transparent;border-color:transparent}
+.sgts-r{display:flex;align-items:center;gap:6px}
+.sgts-r input[type=checkbox],td input.sgts-c{width:15px;height:15px;margin:0;accent-color:var(--s-nuit);cursor:pointer}
+tr.sgts-non td{color:var(--s-gris)}
+`;
+const css=()=>{ if(!document.getElementById('sgts-css')){ const s=document.createElement('style'); s.id='sgts-css'; s.textContent=CSS; document.head.appendChild(s); } };
+/* état du suivi ; sans suivi enregistré, déduit de la situation de l'offre (« Offre reçue, 18.12.2024 », « Pas offert », « Refusé »…) et de la note d'expédition (date d'invitation) */
+const iso=t=>{ const m=/(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(String(t||'')); return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):''; };
+const etatDe=e=>{ if(e.suivi) return e.suivi; const sit=String(e.situationOffre||''), o={}, inv=iso(((e.notes||{}).lettre||{}).exp); if(inv) o.invite=inv;
+  if(/^offre re[çc]ue/i.test(sit)){ o.rendu=true; o.renduLe=iso(sit)||''; } else if(/^(pas offert|renonce|refus|annul)/i.test(sit)) o.renonce=true; o.auto=sit; return o; };
+const su=e=>e.suivi||(e.suivi=JSON.parse(JSON.stringify(etatDe(e))));
+const enRetard=e=>{ const s=etatDe(e); return !!s.relance&&!s.rendu&&!s.renonce&&s.relance<auj(); };
+const cols=X=>{ const ro=!!X.ro||!svCanEdit(X.doc), ds=ro?' disabled':'', date=(e,k,cl,mut)=>{ const v=etatDe(e)[k]||''; return '<input type="date" class="sgts-d'+(cl||'')+'" data-sv="'+k+'" data-k="'+E(e.contactId)+'" value="'+E(v)+'"'+ds+' aria-label="'+E(k)+'">'+(mut?'':'<span hidden>'+E(dmy(v))+'</span>'); };
+  return [{k:'sv_inv',t:'Invitée le',w:120,f:e=>date(e,'invite')},
+    {k:'sv_ren',t:'Rendue',w:146,f:e=>{ const s=etatDe(e); return '<span class="sgts-r"><input type="checkbox" class="sgts-c" data-sv="rendu" data-k="'+E(e.contactId)+'"'+(s.rendu?' checked':'')+ds+' aria-label="Offre rendue">'+(s.rendu?date(e,'renduLe','',1):'')+'</span><span hidden>'+(s.rendu?'oui '+E(dmy(s.renduLe)):'')+'</span>'; }},
+    {k:'sv_rel',t:'Relancer le',w:120,f:e=>date(e,'relance',enRetard(e)?' retard':'')},
+    {k:'sv_non',t:'Renonce',w:66,cls:'c',f:e=>{ const s=etatDe(e); return '<input type="checkbox" class="sgts-c" data-sv="renonce" data-k="'+E(e.contactId)+'"'+(s.renonce?' checked':'')+ds+' aria-label="Renonce"><span hidden>'+(s.renonce?'oui':'')+'</span>'; }}]; };
+const resume=X=>{ const L=(X.S.entreprises||[]).filter(e=>+e.contactId>0), r=L.filter(e=>etatDe(e).rendu).length, n=L.filter(e=>etatDe(e).renonce).length, att=L.filter(e=>!etatDe(e).rendu&&!etatDe(e).renonce), ret=L.filter(enRetard), proch=att.map(e=>etatDe(e).relance).filter(Boolean).sort()[0], ao=X.S.appelOffres||{};
+  return '<span><b>'+r+'</b> offre'+(r>1?'s':'')+' rendue'+(r>1?'s':'')+' sur '+L.length+'</span>'+(n?'<span><b>'+n+'</b> renonce'+(n>1?'nt':'')+'</span>':'')+'<span><b>'+att.length+'</b> en attente</span>'+(ret.length?'<span class="rel"><b>'+ret.length+'</b> à relancer</span>':proch?'<span>prochaine relance le '+E(dmy(proch))+'</span>':'')+(ao.dateDepot?'<span>dépôt des offres le '+E(dmy(ao.dateDepot))+'</span>':''); };
+const te0=svTenderingEdit; svTenderingEdit=function(X){ css(); const g0=grid;
+  grid=function(pane,o){ if(o&&Array.isArray(o.cols)&&o.cols.some(c=>c.k==='s')&&!o.cols.some(c=>c.k==='sv_inv')){ const i=o.cols.findIndex(c=>c.k==='s'); o.cols.splice(i+1,0,...cols(X)); o.cols.forEach(c=>{ if(c.k==='e') c.w=200; if(c.k==='r') c.w=130; if(c.k==='s') c.w=160; if(c.k==='p'){ c.w=90; c.t='Pris en compte'; } }); }
+    const r=g0.apply(this,arguments); try{ pane.querySelectorAll('tr[data-k]').forEach(tr=>{ const e=(X.S.entreprises||[]).find(x=>String(x.contactId)===tr.dataset.k); if(e&&etatDe(e).renonce) tr.classList.add('sgts-non'); }); }catch(_){ } return r; };
+  let r; try{ r=te0.apply(this,arguments); }finally{ grid=g0; }
+  const pane=X.el.querySelector('.pane'); if(!pane) return r;
+  const res=document.createElement('div'); res.className='sgts-res'; res.innerHTML=resume(X); pane.parentElement.insertBefore(res,pane);
+  pane.addEventListener('dblclick',ev=>{ if(ev.target.closest('[data-sv]')) ev.stopPropagation(); },true);
+  pane.addEventListener('change',ev=>{ const t=ev.target, k=t.dataset&&t.dataset.sv; if(!k) return; if(!X.can()){ X.redraw(); return; } const e=(X.S.entreprises||[]).find(x=>String(x.contactId)===t.dataset.k); if(!e) return; const s=su(e);
+    if(t.type==='checkbox'){ s[k]=t.checked;
+      if(k==='rendu'&&t.checked){ if(!s.renduLe) s.renduLe=auj(); s.renonce=false; } if(k==='renonce'&&t.checked) s.rendu=false;
+      const sit=s.rendu?'Offre reçue, '+dmy(s.renduLe):s.renonce?'Renonce, '+dmy(auj()):''; if(!e.situationOffre||e.situationOffre===s.auto){ e.situationOffre=sit; s.auto=sit; } }
+    else { s[k]=t.value||''; if(k==='renduLe'&&s.rendu&&(!e.situationOffre||e.situationOffre===s.auto)){ e.situationOffre='Offre reçue, '+dmy(s.renduLe); s.auto=e.situationOffre; } }
+    X.touch(); });
+  return r; };
+window.SGTS={cols,resume,enRetard};
 })();

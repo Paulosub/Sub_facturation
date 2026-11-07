@@ -203,7 +203,6 @@ RETRAITS = [
     ("{t:'Exporter le fichier SIA451',dis:true},", ""),
     ("{k:'s',t:'Document SIA451',w:110,cls:'c',f:()=>''},", ""),
     ("(impression par le navigateur). SIA451 et PDF enregistrés : lot 4.", "(impression par le navigateur). PDF enregistrés : lot 4."),
-    ("(document .dpdoc « devisDocument », cahier, PDF enregistrés et SIA451 : lot 4)", "(cahier et PDF enregistrés : lot 4)"),
 ]
 RETRAITS_RE = [(r"const FR_CAT_NOM=\{[^}]*\};", "const FR_CAT_NOM={};"),            # aucune liste de libellés de catalogue sous licence
                (r"const FR_CAT_DE=\{.*?\};", "const FR_CAT_DE={};")]

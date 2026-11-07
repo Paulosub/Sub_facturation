@@ -73,7 +73,7 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
     if(E.pdf) return E.pdf;
     const P=E.prep||sgImpPreparer(E), {w,R,fn}=await SGDS.ressources(), journal=new w.Array();
     const opt=w.JSON.parse(JSON.stringify({titre:P.jobs[0].titre,date:P.jobs[0].date,jobs:P.jobs,type:E.o.type||'',jeu:E.o.jeu||''}));
-    opt.journal=journal;
+    opt.journal=journal; if(window.SGIMP_PLUS) Object.assign(opt,w.JSON.parse(JSON.stringify(window.SGIMP_PLUS)));   /* cahier de soumission (bloc 44) : en-tête, logo et numérotation de la suite du cahier */
     const oct=await fn(R,w.JSON.parse(JSON.stringify(P.rep)),opt);
     if(journal.length) console.info('Impression « '+P.jobs[0].titre+' » :',Array.from(journal));
     E.pdf=new Blob([oct],{type:'application/pdf'}); return E.pdf; };

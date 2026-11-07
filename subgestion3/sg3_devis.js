@@ -3,7 +3,7 @@
    Le moteur reste celui de DeltaSub.html (positions, calculs, filtre, présentations, impressions, documents) ; DeltaSub.html seul garde ses écrans.
    Liste (VIEWS.devis, ch02dDomain) : page commune de la liste du projet et de tous les projets — bandeau, chiffres, statuts, recherche, tableau ; un clic
    ouvre le devis, clic droit = en-tête, dupliquer, supprimer ; un devis créé s'ouvre aussitôt.
-   Devis ouvert (dvEditor enveloppé, éléments du moteur déplacés tels quels) : bandeau jaune, chiffres (totaux), onglets Positions · Documents. Positions : tableau
+   Devis ouvert (dvEditor enveloppé, éléments du moteur déplacés tels quels) : bandeau jaune, chiffres (totaux), onglets Devis · Documents (ex-Positions). Devis : tableau
    sur toute la largeur (les montants ne sortent plus de l'écran), niveaux CFC lisibles, choix du détail (Tout · 3 · 2 · 1 chiffres), barre en texte réduite à
    l'essentiel, le reste dans Fonctions (sous-menus) ; le plan CFC ne s'ouvre que pour ajouter une position (d'office si le devis est vide). Documents : une ligne
    par document (Devis général, Honoraires, Devis descriptif) avec ses actions, puis les fichiers PDF.
@@ -18,6 +18,11 @@ const CSS=`
 .sgde-lt td.note{max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sgde-tag{display:inline-block;margin-left:8px;font-size:11px;font-weight:400;color:var(--s-gris);white-space:nowrap}
 .sgde{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden;background:#fff}
+.sgde.sgde-plein{position:fixed;inset:0;z-index:800;height:auto;padding-top:8px}
+.sgde.sgde-plein>.sgde-tete{display:none}
+.sgde.sgde-plein .sgde-kp .nx-kpi{padding:4px 12px 6px 0}
+.sgde.sgde-plein .sgde-kp .nx-kpi .v{font-size:17px;margin-top:2px}
+.sgde.sgde-plein .sgde-kp .nx-kpi .s{display:none}
 .sgde-tete{flex:none;padding:8px 24px 0}
 .sgde-tete .sgfh-tete{margin:0;padding:10px 18px}
 .sgde-tete .sgfh-ini{font-size:28px;white-space:nowrap}
@@ -38,6 +43,7 @@ const CSS=`
 .sgde-bar .ib:first-child{padding-left:0}
 .sgde-bar .ib:hover{background:var(--s-jaune3)!important}
 .sgde-bar .ib.on{box-shadow:inset 0 -2px 0 var(--s-nuit)!important}
+.sgde-kp .sgde-hreg{border:0;background:none;padding:0;font:inherit;color:var(--s-nuit);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .sgde-bar .ib:disabled{color:#b9b9b6}
 .sgde-bar .ib .lb{display:inline!important}
 .sgde-sep{flex:none;width:1px;height:18px;background:var(--s-filet);margin:0 6px}
@@ -59,6 +65,16 @@ const CSS=`
 .sgde-cfc table.g tr.sgde-dans td:last-child::after{content:'';position:absolute;right:6px;top:50%;width:9px;height:5px;margin-top:-5px;border-left:2px solid var(--s-nuit);border-bottom:2px solid var(--s-nuit);transform:rotate(-45deg)}
 .sgde-cfc table.g td{position:relative}
 .sgde-cfc table.g tr.sgde-dans td:last-child{padding-right:22px}
+.sgde-cfc-t .sgde-cfc-g{display:flex;gap:2px;margin-left:auto}
+.sgde-cfc-t .sgde-cfc-g button{border:0;background:none;padding:2px 6px;font:inherit;font-size:11.5px;color:var(--s-gris);cursor:pointer}
+.sgde-cfc-t .sgde-cfc-g button:hover{color:var(--s-noir);text-decoration:underline}
+.sgde-cfc table.g tr.sgde-g1 td{background:var(--s-nuit3)}
+.sgde-cfc table.g tr.sgde-g1.on td{background:var(--s-jaune2)!important}
+.sgde-tg{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin:0 4px 0 -4px;vertical-align:-3px;cursor:pointer;color:var(--s-nuit)}
+.sgde-tg::before{content:'';width:0;height:0;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .12s}
+.sgde-tg.ouv::before{transform:rotate(90deg)}
+.sgde-tg:hover{background:var(--s-jaune3)}
+.sgde-cfc .sgde-nbg{color:var(--s-gris);font-weight:400;font-size:11px;margin-left:6px}
 .sgde .ch02-flab{background:var(--s-jaune3)!important;border:0!important;font-size:12px;padding:4px 8px!important}
 .sgde table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important}
 .sgde table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;height:30px;padding:0 8px!important;font-size:12.5px}
@@ -68,15 +84,31 @@ const CSS=`
 .sgde-t tbody td:first-child{font-variant-numeric:tabular-nums}
 .sgde-t th:first-child,.sgde-t td:first-child{position:sticky;left:0;z-index:1}
 .sgde-t th:nth-child(2),.sgde-t td:nth-child(2){position:sticky;left:68px;z-index:1}
-.sgde-t tbody td:nth-child(-n+2){background:#fff}
+.sgde table.g.sgde-t tbody tr td:nth-child(-n+2){background:#fff}
+html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-child(-n+2){background:var(--p-zb,#fff)}
+.sgde-t tr.sgde-nc td.r{font-style:italic}
 .sgde-t thead th:nth-child(-n+2){z-index:3}
 .sgde-t tbody td span[style*="background"]{background:transparent!important;padding:0!important}
-.sgde-t tr.sgde-n1 td{background:var(--s-nuit3);height:32px}
-.sgde-t tr.sgde-n2 td:nth-child(2){padding-left:18px!important}
-.sgde-t tr.sgde-n3 td:nth-child(2){padding-left:30px!important}
-.sgde-t tr.sgde-n4 td:nth-child(2){padding-left:42px!important}
+.sgde-t tr.sgde-n1 td{height:32px}
+.sgde table.g.sgde-t tbody tr.sgde-n1:nth-child(n) td:nth-child(n){background:var(--s-nuit3)}
+.sgde-t tbody tr td:nth-child(2){padding-left:8px!important}   /* tous les textes de la désignation au même bord, celui du titre de la colonne (Paulo, 07.11.2026 : « aligner à Déblaiement… », puis « aligner à Désignation ») : plus de retrait par niveau */
 .sgde-t tr.sgde-zero td{color:var(--s-gris)}
 .sgde-t tr.sgde-det td{font-size:12px;height:26px;color:var(--s-gris)}
+.sgde-t tr.sgde-det td.sgde-dd{white-space:normal;padding-top:4px!important;padding-bottom:4px!important}
+.sgde-ddv{display:block;font-style:italic}
+.sgde-ddv .t,.sgde-ddv .f{display:block;color:inherit;overflow-wrap:anywhere}
+.sgde-ddv .f{margin-top:1px;font-variant-numeric:tabular-nums}
+.sgde-t tr.sgde-det td.r{font-variant-numeric:tabular-nums}
+.sgde-t tr.sgde-det td.sgde-dsc{line-height:1.45;padding-top:5px!important;padding-bottom:7px!important}
+.sgde-t tr.sgde-det td.sgde-dsc i{color:inherit!important}
+.sgde-t tr.sgde-ldsc td{vertical-align:top}
+/* montant saisi, modifiable (07.11.2026, Paulo, d'après l'écran de l'ancien logiciel : un rectangle pour le montant HT uniquement) : cadre au filet bleu nuit sur fond bleu nuit pâle */
+.sgde table.g tbody td.sgde-saisi{position:relative;z-index:0}
+.sgde table.g tbody td.sgde-saisi::before{content:'';position:absolute;inset:4px 2px;border:1px solid rgba(0,51,70,.35);background:rgba(0,51,70,.07);z-index:-1;pointer-events:none}
+.sgde-leg{display:inline-flex;align-items:center;gap:7px;margin-left:auto;margin-right:18px;font-size:12px;color:var(--s-gris)}
+.sgde-leg i{display:inline-block;width:22px;height:11px;border:1px solid rgba(0,51,70,.35);background:rgba(0,51,70,.07)}
+.sgde-t tr.sgde-ldsc td:first-child{text-align:right;padding-top:5px!important;padding-right:3px!important}
+.sgde-t tr.sgde-ldsc td:first-child .sgde-dlab{font-style:italic;color:var(--s-gris);line-height:1.45}
 .sgde-t tr.sgde-cache{display:none}
 .sgde-t tbody td.c{text-align:center}
 .sgde-vide{padding:18px 8px;font-size:13px;line-height:1.5;color:var(--s-gris);max-width:560px}
@@ -190,17 +222,117 @@ function deco(X){ const S=X.sgde, rp=X.rp, t=rp&&rp.querySelector('table.g'); if
   cols.forEach((c,i)=>{ const w=c.k==='d'?0:LARG_POS[c.k]||+c.w||0; if(cg[i]) cg[i].style.width=w?w+'px':''; mini+=w||(S.cfc?170:340); if(c.k==='pct'&&th[i]) th[i].textContent='%'; });
   t.style.minWidth=mini+'px';
   const V=new Map((X.R2.view||[]).map(r=>[String(r.det?r.k:r.p.cfc),r]));
+  /* lignes de calcul (Présentation ▸ avec les lignes de calcul, 07.11.2026, Paulo : « le calcul des prix ne s'affiche pas ») : le moteur les écrit dans les colonnes Commentaire et
+     Descriptif, tout à droite, hors de l'écran ; elles sont montrées sous leur position — texte et quantité × prix unitaire dans la désignation, montants dans leurs colonnes */
+  const ix={}; cols.forEach((c,i)=>{ ix[c.k]=i; }); const sep=ch02aSep(X), arr=ch02aRnd(X.E), f=x=>num(ch02aR(x,arr)), modif=ecrit()&&ch02aCanEdit(ch02aHdr(X));
+  /* contenu écrit par les colonnes (ligneCalc, enveloppe de ch02aDraw) : ici seulement la présentation, l'infobulle et la couleur des chiffres saisis */
+  const calc=(tr,r)=>{ const L=ligneCalc(X,r), d=ix.d!=null?tr.cells[ix.d]:null; if(d){ d.classList.add('sgde-dd'); d.title=[L.txt,L.note,L.form?L.form+' = '+f(L.v.ht)+(sep?' HT':''):''].filter(Boolean).join('\n'); }
+    if(!L.compte) tr.classList.add('sgde-nc'); };
   t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const r=V.get(tr.dataset.k); if(!r) return; const n=r.det?r.n:r, lv=cfcLevel(n.p.cfc);
-    tr.classList.add('sgde-n'+lv); tr.classList.toggle('sgde-det',!!r.det); tr.classList.toggle('sgde-cache',!!S.niv&&lv>S.niv); tr.classList.toggle('sgde-zero',!r.det&&!n.ttc&&!n.opt); });
+    tr.classList.add('sgde-n'+lv); tr.classList.toggle('sgde-det',!!r.det); tr.classList.toggle('sgde-cache',!!S.niv&&lv>S.niv); tr.classList.toggle('sgde-zero',!r.det&&!n.ttc&&!n.opt);
+    if(r.det) try{ if(r.dsc){ const d=ix.d!=null?tr.cells[ix.d]:null; if(d) d.classList.add('sgde-dd','sgde-dsc'); tr.classList.add('sgde-ldsc'); } else calc(tr,r); }catch(e){ console.error(e); }
+    /* montant saisi, modifiable dans la fenêtre de calcul (Paulo, 07.11.2026 : d'abord « une couleur différente », puis « un rectangle pour le montant HT uniquement », comme
+       l'ancien logiciel) : positions qui ont un calcul ; seulement avec le droit d'écrire */
+    if(modif&&!r.det&&n.leaf){ const c=tr.cells[ix.ht!=null?ix.ht:ix.ttc]; if(c&&c.textContent.trim()){ c.classList.add('sgde-saisi'); c.title='Montant saisi : double-cliquez sur la position pour le modifier'; } }   /* montant HT des positions qui ont un calcul (sans colonne HT : le montant TTC) */
+  });
   const cachee=t.querySelector('tbody tr.on.sgde-cache');
   if(cachee){ if(S.vu!==X.st.sel){ S.niv=0; if(S.dessNiv) S.dessNiv(); t.querySelectorAll('.sgde-cache').forEach(x=>x.classList.remove('sgde-cache')); cachee.scrollIntoView({block:'nearest'}); }   /* position ajoutée ou choisie dans le plan CFC : le détail s'ouvre pour la montrer */
     else { X.st.sel=null; X.R2.sel=null; cachee.classList.remove('on'); ch02aUpd(X); } }   /* sinon elle n'est plus choisie : rien n'agit sur une ligne invisible */
   S.vu=X.st.sel;
   const vide=!(X.E.positions||[]).length, msg=rp.querySelector('.sgde-vide');
   if(vide&&!msg) rp.append(el('div','sgde-vide','<b>Ce devis n’a pas encore de position.</b>Choisissez un CFC dans le plan à gauche et double-cliquez dessus pour l’ajouter.')); else if(!vide&&msg) msg.remove(); }
+/* colonnes fixes N° et Désignation (07.11.2026) : fond opaque sur toutes les lignes — la règle des lignes alternées de sg3.css (fond transparent) passait avant elles, les
+   montants se voyaient au travers en faisant défiler le tableau. Présentations « Toutes les colonnes » et « … avec le calcul de prix » sans la colonne Descriptif (Paulo,
+   même jour) : elle reste dans « Avec le descriptif » ; copie et CSV suivent les colonnes affichées */
+/* « Avec le descriptif » (07.11.2026, Paulo : « le descriptif sera indiqué sous le CFC concerné, et pas dans une colonne ») : une ligne sous chaque position qui a un descriptif,
+   texte dans la désignation (copie et CSV le gardent) ; ordre fixe, comme les lignes de calcul (pas de tri par colonne) */
+{ const cd0=ch02aDraw; ch02aDraw=function(X){ const m=X&&X.E?ch02aMode(X.E):-1; if(m!==1&&m!==3&&m!==4) return cd0.apply(this,arguments);
+    const g0=grid; grid=function(el,o){ if(el===X.rp&&o&&Array.isArray(o.cols)){ o.cols=o.cols.filter(c=>c.k!=='desc'&&c.k!=='com');   /* colonne Commentaire retirée aussi (Paulo, 07.11.2026) */
+        if(Array.isArray(o.rows)){   /* descriptif sous le CFC dans les trois présentations qui le montraient en colonne (Paulo, 07.11.2026 : « ajoute le descriptif sous le CFC ») : juste sous la position, avant ses lignes de calcul */ const cd=o.cols.find(c=>c.k==='d'); if(cd&&!cd._sgde){ const f0=cd.f; cd.f=r=>r&&r.dsc?'<i style="color:#666">'+esc(r.txt).replace(/\n/g,' <br>')+'</i>':f0(r); cd._sgde=1; }
+          const cn=o.cols.find(c=>c.k==='cfc'); if(cn&&!cn._sgde){ const f1=cn.f; cn.f=r=>r&&r.dsc?'<i class="sgde-dlab">Desc.</i>':f1(r); cn._sgde=1; }   /* « Desc. » dans la colonne N°, à gauche du texte (Paulo, 07.11.2026) */
+          if(m===3){ const det=r=>r&&r.det&&!r.dsc, cdd=o.cols.find(c=>c.k==='d');   /* lignes de calcul : texte et montants dans les colonnes elles-mêmes (affichage, copie, CSV) */
+            if(cdd&&!cdd._sgdc){ const f2=cdd.f; cdd.f=r=>{ if(!det(r)) return f2(r); const L=ligneCalc(X,r); return '<div class="sgde-ddv"><span class="t">'+esc(L.txt||'Ligne de calcul')+(L.note?' ('+esc(L.note)+')':'')+'</span> '+(L.form?'<span class="f">'+esc(L.form)+'</span>':'')+'</div>'; }; cdd._sgdc=1; }
+            ['ht','tva','ttc'].forEach(k=>{ const c=o.cols.find(x=>x.k===k); if(!c||c._sgdc) return; const f3=c.f; c.f=r=>det(r)?ligneCalc(X,r).mt(ligneCalc(X,r).v[k]):f3(r); c._sgdc=1; }); }
+          const R=[]; o.rows.forEach(r=>{ R.push(r); if(r&&!r.det&&r.p){ const t=String(ch02aDesc(r.p)||'').trim(); if(t) R.push({det:true,dsc:true,n:r,pt:{},l:{},txt:t,k:'x|'+r.p.cfc}); } });
+          o.rows=R; o.sort=null; if(o.state) o.state.sort=null; } }
+      return g0.apply(this,arguments); };
+    try{ const r=cd0.apply(this,arguments); if(X.rp) X.rp.querySelectorAll('thead th').forEach(th=>{ th.onclick=null; th.classList.remove('sort'); }); return r; }finally{ grid=g0; } }; }
+/* ligne de calcul (présentation « … avec le calcul de prix ») : texte, quantité × prix unitaire, montants comme dvCompute — facteur du filtre d'ouvrage appliqué ; variante et partie
+   « Exclure » non comptées (montants entre parenthèses) ; partie à coût fixé signalée (le coût fixé remplace la somme de ses lignes) */
+function ligneCalc(X,r){ const l=r.l||{}, pt=r.pt||{}, q=+l.qte||0, F=X.filter, ouv=(r.n.p.parts||[]).length>1&&pt.ouv?String(pt.ouv):'';
+  const k=(()=>{ if(!F||!F.length||pt.ouv==null) return 1; const x=F.find(y=>y.ouv===pt.ouv); if(!x||!x.actif) return 0; return x.facteur==null||x.facteur===''||!isFinite(+x.facteur)?1:+x.facteur; })();
+  const v0=dvLine(l), v={ht:v0.ht*k,ttc:v0.ttc*k,tva:v0.tva*k}, compte=!l.var&&pt.mode!=='exclure', arr=ch02aRnd(X.E), fx=x=>num(ch02aR(x,arr));
+  const note=[l.var?'variante, non comptée':'',pt.mode==='exclure'?'partie exclue du total':'',pt.fixe&&pt.fixe.ttc!=null?'coût fixé de la partie : '+fx(+pt.fixe.ttc)+' TTC':'',k!==1?'filtre des ouvrages × '+num(k,2):''].filter(Boolean).join(' · ');
+  return {txt:[ouv,String(l.commentaire||'').trim()].filter(Boolean).join(' · '),form:Math.abs(q)<5e-10?'':ch02aJd(q)+' '+(l.unite||'')+' × '+num(+l.prixHT||0),v,compte,note,fx,
+    mt:x=>compte?fx(x):'('+fx(x)+')'}; }
 /* plan CFC : niveaux, coche sur les CFC déjà dans le devis */
 function decoCat(X){ const L=X.L, t=L&&L.pane.querySelector('table.g'); if(!t) return; const cs=new Set((X.E.positions||[]).map(p=>String(p.cfc))), byId=new Map((X.catPos||[]).map(c=>[String(c.ID),String(c.CODE)]));
-  t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const c=byId.get(tr.dataset.k); tr.classList.toggle('sgde-dans',c!=null&&cs.has(c)); }); }
+  t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const c=byId.get(tr.dataset.k); tr.classList.toggle('sgde-dans',c!=null&&cs.has(c)); tr.classList.toggle('sgde-g1',c!=null&&cfcLevel(c)===1); });
+  if(L.pane._sgdeX) t.querySelectorAll('thead th').forEach(th=>{ th.onclick=null; th.classList.remove('sort'); }); }   /* plan en groupes : ordre du plan CFC, pas de tri par colonne */
+/* plan CFC en groupes de CFC à 1 chiffre (07.11.2026, Paulo : « créer des groupes de CFC à 1 chiffre, permettre de réduire ou agrandir ») : ordre du plan CFC (0, 00, 000, 001, 01…, 1, 10…),
+   flèche sur chaque CFC à 1 chiffre, groupes réduits d'office, ouverts gardés (sg3_devis_cfc_ouv) ; une recherche montre tous les CFC trouvés ; double-clic inchangé (ajoute le CFC) */
+const CFC_OUV='sg3_devis_cfc_ouv';
+const ouvertsCfc=()=>{ try{ const v=JSON.parse(localStorage.getItem(CFC_OUV)||'[]'); return new Set(Array.isArray(v)?v.map(String):[]); }catch(_){ return new Set(); } };
+const garderOuverts=S=>{ try{ localStorage.setItem(CFC_OUV,JSON.stringify([...S])); }catch(_){ } };
+const grpCfc=c=>String(c==null?'':c).trim().charAt(0);
+function planGroupes(X,o){ if(o.rows&&o.rows._sgde) return o;   /* déjà traité (même o redonné à grid) */
+  const q=String((X.L&&X.L.q)||'').trim(), R=o.rows.slice().sort((a,b)=>cfcCmp(a.CODE,b.CODE)), nb={}, tete={};
+  R.forEach(c=>{ const g=grpCfc(c.CODE); nb[g]=(nb[g]||0)+1; if(cfcLevel(c.CODE)===1) tete[g]=true; });
+  const ouv=ouvertsCfc(), vu=c=>{ const g=grpCfc(c.CODE); return !!q||cfcLevel(c.CODE)===1||!tete[g]||ouv.has(g); };   /* groupe sans CFC à 1 chiffre dans le plan : toujours ouvert (rien pour le replier) */
+  const cols=(o.cols||[]).map(c=>Object.assign({},c)), c0=cols[0], c1=cols[1];
+  if(c0&&!q){ const f0=c0.f; c0.f=c=>{ const g=grpCfc(c.CODE); return cfcLevel(c.CODE)===1&&nb[g]>1?'<span class="sgde-tg'+(ouv.has(g)?' ouv':'')+'" data-g="'+E(g)+'" title="'+(ouv.has(g)?'Réduire':'Agrandir')+' le groupe '+E(g)+'" role="button" aria-expanded="'+ouv.has(g)+'"></span>'+f0(c):f0(c); }; }
+  if(c1&&!q){ const f1=c1.f; c1.f=c=>{ const g=grpCfc(c.CODE); return cfcLevel(c.CODE)===1&&nb[g]>1?f1(c)+'<span class="sgde-nbg">'+(nb[g]-1)+'</span>':f1(c); }; }
+  const rows=R.filter(vu); rows._sgde=1; if(o.sel!=null&&!rows.some(c=>String(c.ID)===String(o.sel))) o.sel=null;   /* CFC choisi puis groupe réduit : plus choisi (« + » n'ajoute pas une ligne invisible) */
+  if(o.state) o.state.sort=null; return Object.assign(o,{rows,cols,sort:null}); }
+{ const gP=grid; grid=function(el,o){ const X=el&&el._sgdeX; if(X&&o&&Array.isArray(o.rows)) try{ o=planGroupes(X,o); }catch(e){ console.error(e); } return gP.call(this,el,o); }; }
+/* Soumis aux honoraires, règle du bureau (Paulo, 07.11.2026 : « définir tous les postes à 100 % pour les honoraires, hormis le CFC 5 et les honoraires ; doit être compris dans
+   le montant le CFC 583 ») : 100 % partout ; 0 % pour le CFC 5 (frais secondaires et comptes d'attente) et les honoraires (CFC 09, 19, 29, 39, 49, 99 ; le 59 est dans le 5) ;
+   le CFC 583 (réserves pour imprévus) compris à 100 %. Appliquée d'office aux positions ajoutées depuis la liste CFC (dvNewParts enveloppé, CODE_NEUF), et sur demande à tout
+   le devis (Fonctions ▸ Modifier les montants, ou le lien sous « Soumis aux honoraires » quand des positions s'en écartent). */
+const honRegle=cfc=>{ const c=String(cfc==null?'':cfc).replace(/[^0-9]/g,''); if(c.startsWith('583')) return 100; if(c.startsWith('5')) return 0; if(c.length>=2&&c[1]==='9') return 0; return 100; };
+const horsRegle=E=>(E&&E.positions||[]).filter(p=>!p.genere&&(p.parts||[]).some(pt=>(+pt.honorPct||0)!==honRegle(p.cfc)));
+let CODE_NEUF=null;
+{ const nP0=dvNewParts; dvNewParts=function(E){ const r=nP0.apply(this,arguments); if(CODE_NEUF!=null&&Array.isArray(r)) r.forEach(pt=>{ if(pt) pt.honorPct=honRegle(CODE_NEUF); }); return r; }; }
+const regleHon=X=>{ if(!ch02aCan(X)) return; const E=X.E, L=horsRegle(E);
+  if(!L.length){ toast('Toutes les positions suivent déjà la règle des honoraires.'); return; }
+  let av=0, ap=0; try{ av=dvCompute(E,X.filter).T.hon; const C=ch02aClone(E); (C.positions||[]).forEach(p=>{ if(!p.genere) (p.parts||[]).forEach(pt=>{ pt.honorPct=honRegle(p.cfc); }); }); ap=dvCompute(C,X.filter).T.hon; }catch(e){ console.error(e); }
+  sgConfirm('Soumis aux honoraires selon la règle du bureau : 100 % pour tous les CFC, 0 % pour le CFC 5 (frais secondaires) et les honoraires (CFC 09, 19, 29, 39, 49, 99), le CFC 583 (réserves pour imprévus) compris à 100 %.\n\n'
+    +L.length+(L.length>1?' positions changent':' position change')+' de pourcentage.\nMontant soumis : '+num2(av)+' → '+num2(ap)+' CHF HT'+(X.filter&&X.filter.length?' (filtre actif)':'')+'.',
+    ()=>{ if(!ch02aCan(X)) return; const n=horsRegle(X.E); n.forEach(p=>(p.parts||[]).forEach(pt=>{ pt.honorPct=honRegle(p.cfc); })); X.touch(); toast('Règle des honoraires appliquée à '+n.length+(n.length>1?' positions.':' position.')); },
+    {title:'Soumis aux honoraires',yesText:'Appliquer'}); };
+function brancherGroupes(X){ const pane=X.L&&X.L.pane; if(!pane||pane._sgdeX) return; pane._sgdeX=X;
+  const cible=e=>e.target&&e.target.closest&&e.target.closest('.sgde-tg');
+  ['mousedown','dblclick'].forEach(t=>pane.addEventListener(t,e=>{ if(cible(e)){ e.stopPropagation(); e.preventDefault(); } },true));   /* la flèche ne choisit ni n'ajoute le CFC */
+  pane.addEventListener('click',e=>{ const b=cible(e); if(!b) return; e.stopPropagation(); e.preventDefault(); const S=ouvertsCfc(), g=b.dataset.g; if(S.has(g)) S.delete(g); else S.add(g); garderOuverts(S); const y=pane.scrollTop; X.drawCat(); pane.scrollTop=y; },true);
+  /* double-clic dans la liste CFC (Paulo, 07.11.2026 : « si je clique deux fois dans la liste des CFC je ne veux pas que cette fenêtre s'affiche, il faut uniquement copier dans le
+     devis ou supprimer du devis ») : CFC absent → ajouté (parents manquants compris, règles du moteur), SANS ouvrir la fenêtre de calcul ; CFC présent → retiré du devis
+     (ch02aDelPosCalc, comme « Supprimer la position ») : tout de suite si rien ne serait perdu, après confirmation s'il y a des lignes de calcul, un coût fixé, un descriptif,
+     un commentaire ou des sous-positions. Double-clic reconnu par l'app (deux clics sur le même CFC en moins de 500 ms, même si la ligne a été redessinée entre les deux) ;
+     le double-clic du navigateur est neutralisé (sinon le moteur ajouterait aussi la position et ouvrirait sa fenêtre). « + » du plan : ajoute ou choisit, sans fenêtre. */
+  const codeDe=id=>{ const c=(X.catPos||[]).find(x=>String(x.ID)===String(id)); return c?String(c.CODE):''; };
+  const ajouter=c=>{ SANS_CALC=true; CODE_NEUF=String(c.CODE); try{ X.dvAdd(c.CODE,c.TEXT1,c.TEXT2); }finally{ SANS_CALC=false; CODE_NEUF=null; } };
+  const pleine=p=>!!(String(p.descriptif||'').trim()||String(p.commentaire||'').trim()||(p.parts||[]).some(pt=>(pt.lignes||[]).length||pt.fixe||String(pt.descriptif||'').trim()||String(pt.commentaire||'').trim()));
+  const basculer=c=>{ if(!c||!ch02aCan(X)) return; const code=String(c.CODE), nom=code+' '+[c.TEXT1,c.TEXT2].filter(Boolean).join(' ');
+    const P=X.E.positions||[]; if(!P.some(p=>String(p.cfc)===code)){ ajouter(c); toast('Position '+nom+' ajoutée au devis.'); return; }
+    const kids=ch02aKids(X.E,code), avec=ch02aDelPosKind(X.E,code)==='msg2'&&!code.includes('.'), gone=P.filter(p=>String(p.cfc)===code||(avec&&kids.includes(p)));
+    const retirer=()=>{ const g=ch02aDelPosCalc(X.E,code); if(!g.length) return; X.st.sel=null; X.touch(); toast('Position '+nom+' retirée du devis'+(g.length>1?' ('+g.length+' positions).':'.')); };
+    if(!gone.some(pleine)){ retirer(); return; }
+    const ttc=gone.reduce((a,p)=>a+(p.parts||[]).reduce((b,pt)=>b+(+ch02aPartTTC(pt)||0),0),0), n=gone.length-1;
+    sgConfirm('Retirer « '+nom+' » du devis'+(n?', avec '+(n>1?'ses '+n+' positions subordonnées':'sa position subordonnée'):'')+' ?\n'+(ttc?'Montant retiré : '+num2(ttc)+' CHF TTC. ':'')+'Les lignes de calcul, le descriptif et le commentaire seront perdus.',retirer,{title:'Retirer du devis',yesText:'Retirer du devis'}); };
+  let dern=null;
+  pane.addEventListener('click',e=>{ if(cible(e)) return; const tr=e.target.closest&&e.target.closest('tbody tr[data-k]'); if(!tr){ dern=null; return; } const k=tr.dataset.k, t=Date.now();
+    if(dern&&dern.k===k&&t-dern.t<500){ dern=null; const c=(X.catPos||[]).find(x=>String(x.ID)===String(k)); if(c) setTimeout(()=>basculer(c),0); }
+    else dern={k,t}; });
+  pane.addEventListener('dblclick',e=>{ if(cible(e)) return; if(e.target.closest&&e.target.closest('tbody tr[data-k]')){ e.stopPropagation(); e.preventDefault(); } },true);
+  const plus=X.L.el.querySelector('.ph2 .ib'); if(plus) plus.addEventListener('click',()=>{ SANS_CALC=true; CODE_NEUF=codeDe(X.L.o&&X.L.o.sel)||null; setTimeout(()=>{ SANS_CALC=false; CODE_NEUF=null; },0); },true);   /* avant le clic du moteur (capture) */
+  X.drawCat(); }
+const toutCfc=(X,ouvrir)=>{ const S=new Set(); if(ouvrir) (X.catPos||[]).forEach(c=>{ if(cfcLevel(c.CODE)===1) S.add(grpCfc(c.CODE)); }); garderOuverts(S); X.drawCat(); };
+/* plein écran (07.11.2026, Paulo : « ajouter un bouton comme dans soumission permettant de passer en plein écran ») : le devis couvre toute la fenêtre, menu et en-tête masqués,
+   bandeau retiré, chiffres réduits ; gardé pour la séance, comme celui de la soumission (SVD_UI.full) ; Échap ou le même bouton pour revenir */
+let PLEIN=false, BOXP=null;
+addEventListener('keydown',e=>{ if(e.key!=='Escape'||!PLEIN||!BOXP||!BOXP.isConnected||e.defaultPrevented||document.querySelector('.ov,.sg-visu,.menu')) return; const a=document.activeElement;
+  if(a&&a.classList&&a.classList.contains('psearch')&&BOXP.contains(a)){ e.preventDefault(); if(a.value){ a.value=''; a.dispatchEvent(new Event('input',{bubbles:true})); } else { a.blur(); if(BOXP._plein) BOXP._plein(false); } return; }   /* recherche du plan CFC : Échap la vide, puis quitte le plein écran */
+  if(a&&(a.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(a.tagName))) return; e.preventDefault(); if(BOXP._plein) BOXP._plein(false); },true);   /* capture : vu avant que le moteur ferme sa fenêtre — Échap dans une fenêtre la ferme sans quitter le plein écran */
 function habiller(m,X){ cssD();
   const B=[...X.bar.children], bListe=B[0], bEd=B[3], bPar=B[4];
   if(!bListe||!/Liste/.test(bListe.textContent)||!bEd||!bEd._sgB||!bPar||!bPar._sgB||!X.bDel||!X.bFil||!X.bDoc||!X.bWh||!X.bWh._sgB) return;   /* barre inattendue : l'écran du moteur reste tel quel */
@@ -208,32 +340,42 @@ function habiller(m,X){ cssD();
   const box=el('div','sgde'), hd=el('div','sgde-tete'), kp=el('div','nx-kpis sgde-kp'), ong=el('div','sgde-ong'), ongL=el('div','sg-onglets'), niv=el('div','sgde-niv'), bar=el('div','ph2 sgde-bar'), docs=el('div','sgde-docs');
   const mEd=bEd._sgB.menu, mPar=bPar._sgB.menu, mWh=X.bWh._sgB.menu, ec=ecrit();
   const fonctions=()=>{ const ed=mEd().slice(), dern=Object.assign(ch02aExt(X,'ch02dLastVersion',4,CH02A_L.last),{dis:ch02dLastDis(X)}), pr=mPar().filter(x=>x!=='-'&&x.t!==CH02A_L.prefs), vis=()=>Object.assign({},X.R2,{view:(X.R2.view||[]).filter(r=>!S.niv||cfcLevel((r.det?r.n:r).p.cfc)<=S.niv)}), wh=mWh().filter(x=>x==='-'||!String(x.t).startsWith(CH02A_L.docs)).map(x=>x==='-'?x:x.t===CH02A_L.copy?{t:x.t,fn:()=>{ const g=vis(); ctCopy(tableText(g,'\t'),'Tableau copié ('+g.view.length+' lignes).'); }}:x.t===CH02A_L.csv?{t:x.t,fn:()=>csvTable(vis(),'Devis_'+(X.p?X.p.NUMBER:''))}:x), rows=!!((X.R2||{}).view||[]).length;
-    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,'-',dern]},{t:CH02A_L.intro,fn:()=>X.dvIntro()},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),{t:'Exporter',dis:!rows,sub:()=>wh}]; };
+    const fil=dvOuvCodes(X.E).length?[{t:'Filtre des ouvrages',sub:()=>ch02aSps(X).length?ch02aFilterMenu(X):[{t:'Filtre…',fn:()=>ch02aFilterDialog(X)}]},'-']:[];   /* bouton « Filtre » retiré de la barre (Paulo, 07.11.2026) : ici, seulement si le devis a des ouvrages */
+    return [...(ec?[{t:'Modifier les montants',sub:()=>[...ed,{t:'Soumis aux honoraires selon la règle du bureau …',fn:()=>regleHon(X)},'-',dern]},{t:CH02A_L.intro,fn:()=>X.dvIntro()},...pr,{t:'Modifier l’en-tête du devis …',fn:()=>ch02dEditDoc(X.p,ch02aHdr(X))},'-']:[]),...fil,{t:'Exporter',dis:!rows,sub:()=>wh}]; };
   const sep=()=>el('span','sgde-sep'), fin=el('span','sgde-fin');
-  const bAdd=lib(ibtn({i:'plus',t:'Ajouter une position',fn:()=>plan(!S.cfc)}),'Ajouter une position');
+  const bAdd=lib(ibtn({i:'grille',t:'Liste CFC',fn:()=>plan(!S.cfc)}),'Liste CFC'); bAdd.title='Liste CFC : double-cliquez sur un CFC pour l’ajouter au devis ou l’en retirer';   /* menu du clic droit : « Liste CFC » (_sgB.t) */   /* « Liste CFC » (Paulo, 07.11.2026) */
   X.bModif=ibtn({i:'edit',t:'Editer la position',fn:()=>X.dvCalc()});
   const bPres=ibtn({i:'list',t:'Présentation',menu:()=>ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seulement positions de 1 à 3 chiffres')});
   const bReg=ibtn({i:'wrench',t:'Paramètres',fn:()=>ch02aSettings(X)});
   const bFon=ibtn({i:'gear',t:'Fonctions',fn:()=>menuSous(bFon,fonctions())}); bFon.insertAdjacentHTML('beforeend','<span class="dd">▼</span>'); X.bWh=bFon;
-  lib(X.bDoc,'Imprimer'); X.bDoc.title='Imprimer le devis'; if(X.bDoc._sgB&&X.bDoc._sgB.menu){ const mD=X.bDoc._sgB.menu; X.bDoc._sgB.menu=()=>mD().map(x=>x&&x.t?Object.assign({},x,{t:String(x.t).replace(CH02B_L.legacy,'')}):x); }
-  bar.append(...(ec?[bAdd]:[]),X.bModif,...(ec?[X.bDel]:[]),sep(),bPres,X.bFil,sep(),X.bDoc,...(ec?[bReg]:[]),fin,bFon);
+  lib(X.bDoc,'Imprimer'); X.bDoc.title='Imprimer le devis'; if(X.bDoc._sgB) X.bDoc._sgB.t='Imprimer'; if(X.bDoc._sgB&&X.bDoc._sgB.menu){ const mD=X.bDoc._sgB.menu; X.bDoc._sgB.menu=()=>[{t:'Devis général (PDF)',fn:()=>dgPdf(X)},'-',...mD().map(x=>x&&x.t?Object.assign({},x,{t:String(x.t).replace(CH02B_L.legacy,'')}):x)]; }   /* devis général au papier des contrats en premier (bloc 46) */
+  const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!PLEIN)}); bPlein.classList.add('sgde-pl');   /* icône seule, comme dans la soumission : coins de cadrage (07.11.2026) */
+  box._plein=v=>{ PLEIN=!!v; BOXP=box; box.classList.toggle('sgde-plein',PLEIN); bPlein.classList.toggle('on',PLEIN); const svP=bPlein.querySelector('svg'); if(svP) svP.outerHTML=nxSvg(PLEIN?'pleinq':'plein'); bPlein.title=PLEIN?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
+  bar.append(...(ec?[bAdd,sep()]:[]),bPres,sep(),X.bDoc,...(ec?[bReg]:[]),fin,bFon,bPlein);   /* « Modifier », « Supprimer » et « Filtre » retirés de la barre (Paulo, 07.11.2026) : double-clic, clic droit, Fonctions ▸ Filtre des ouvrages ; X.bFil reste hors de la page (le moteur le tient à jour) */
+  /* clic droit sur une position (ou une de ses lignes) : ouvrir le calcul, supprimer la position (confirmation du moteur), liste CFC */
+  X.rp.addEventListener('contextmenu',e=>{ const tr=e.target.closest&&e.target.closest('tbody tr[data-k]'); if(!tr||e.altKey||String(getSelection()).trim()) return; const r=(X.R2.view||[]).find(x=>String(x.det?x.k:x.p.cfc)===tr.dataset.k); if(!r) return;
+    e.preventDefault(); const code=String((r.det?r.n:r).p.cfc), sel=()=>{ if(String(X.st.sel)!==code){ X.st.sel=code; X.R2.sel=code; X.draw(); } }; sel();
+    const peut=ec&&ch02aCanEdit(ch02aHdr(X));
+    sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir le calcul',fn:()=>{ sel(); X.dvCalc(); }},...(peut?[{t:'Supprimer la position…',danger:true,fn:()=>{ sel(); ch02aDelPos(X); }},'-',{t:'Liste CFC',fn:()=>plan(true)}]:[])]); });
   const plan=on=>{ S.cfc=on; X.L.el.classList.toggle('sgde-ferme',!on); bAdd.classList.toggle('on',on); deco(X); if(on){ const q=X.L.el.querySelector('.psearch'); if(q) q.focus(); } };
-  const cT=el('div','sgde-cfc-t','<b>Plan CFC</b><button class="sgde-x" title="Fermer le plan CFC" aria-label="Fermer le plan CFC">×</button>'); cT.querySelector('button').onclick=()=>plan(false);
-  X.L.el.classList.add('sgde-cfc'); X.L.el.prepend(cT); const ph=X.L.el.querySelector('.ph2'); if(ph) ph.after(el('div','sgde-aide','Double-cliquez sur un CFC pour l’ajouter au devis. Une coche indique les CFC déjà présents.'));
-  const dessOng=()=>{ ongL.innerHTML=[['pos','Positions'],['docs','Documents']].map(([k,t])=>'<button data-o="'+k+'" class="'+(S.ong===k?'on':'')+'">'+t+'</button>').join(''); box.classList.toggle('docs',S.ong==='docs'); };
-  const dessNiv=()=>{ niv.innerHTML='<span>Détail</span>'+[[0,'Tout','Toutes les positions'],[3,'3','Positions de 1 à 3 chiffres'],[2,'2','Positions de 1 et 2 chiffres'],[1,'1','Positions à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(S.niv===v?'on':'')+'">'+t+'</button>').join(''); };
+  const cT=el('div','sgde-cfc-t','<b>Plan CFC</b><span class="sgde-cfc-g"><button data-tout="1" title="Agrandir tous les groupes">Tout agrandir</button><button data-tout="0" title="Réduire tous les groupes">Tout réduire</button></span><button class="sgde-x" title="Fermer le plan CFC" aria-label="Fermer le plan CFC">×</button>'); cT.querySelector('.sgde-x').onclick=()=>plan(false);
+  cT.querySelectorAll('[data-tout]').forEach(b=>{ b.onclick=()=>toutCfc(X,b.dataset.tout==='1'); });
+  X.L.el.classList.add('sgde-cfc'); X.L.el.prepend(cT); const ph=X.L.el.querySelector('.ph2'); if(ph) ph.after(el('div','sgde-aide','Double-cliquez sur un CFC pour l’ajouter au devis ou l’en retirer. Une coche indique les CFC déjà présents.'));
+  const dessOng=()=>{ ongL.innerHTML=[['pos','Devis'],['docs','Documents']].map(([k,t])=>'<button data-o="'+k+'" class="'+(S.ong===k?'on':'')+'">'+t+'</button>').join(''); box.classList.toggle('docs',S.ong==='docs'); };
+  const dessNiv=()=>{ niv.innerHTML='<span title="Niveau de CFC affiché">CFC</span>'+[[0,'Tout','Tous les CFC'],[3,'3','CFC de 1 à 3 chiffres'],[2,'2','CFC de 1 et 2 chiffres'],[1,'1','CFC à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(S.niv===v?'on':'')+'">'+t+'</button>').join(''); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-o]'); if(b){ S.ong=b.dataset.o; dessOng(); } };
   S.dessNiv=dessNiv;
   niv.onclick=e=>{ const b=e.target.closest('[data-v]'); if(!b) return; S.niv=+b.dataset.v; try{ localStorage.setItem('sg3_devis_niv',String(S.niv)); }catch(_){} const q=ch02aSelPos(X); if(S.niv&&q&&cfcLevel(q.cfc)>S.niv){ X.st.sel=null; X.R2.sel=null; } S.vu=X.st.sel; dessNiv(); X.draw(); };
   hd.onclick=e=>{ if(e.target.closest('[data-a="liste"]')) ch02aClose(X); };
-  X.sgdeMaj=()=>{ const d=ch02aHdr(X)||{}, p=X.p||{}, {T,M}=dvCompute(X.E,X.filter), sepV=ch02aSep(X), fe=[...M.values()].filter(n=>n.leaf), nC=fe.filter(n=>n.ttc||n.opt).length, mo=moT(p), et=DV_STATE[d.STATECODE]||'', ff=X.filter&&X.filter.length?'filtre actif':'';
+  X.sgdeMaj=()=>{ const d=ch02aHdr(X)||{}, p=X.p||{}, {T,M}=dvCompute(X.E,X.filter), sepV=ch02aSep(X), fe=[...M.values()].filter(n=>n.leaf), nC=fe.filter(n=>n.ttc||n.opt).length, mo=moT(p), et=DV_STATE[d.STATECODE]||'', ff=X.filter&&X.filter.length?'filtre actif':''; const hR=ec&&ch02aCanEdit(ch02aHdr(X))?horsRegle(X.E).length:0;
     hd.innerHTML=tete(p.NUMBER||'','Devis général'+(et?' · '+et:''),d.VERSION||'(sans titre)',[p.TITLE,mo?'Maître de l’ouvrage : '+mo:'',d.VERSIONNUMBER!=null?'version '+d.VERSIONNUMBER:'',d.CHANGEDDATE?'modifié le '+dfr(d.CHANGEDDATE)+(d.USERID?' par '+d.USERID:''):''].filter(Boolean).join(' · '),'<button class="nx-btn" data-a="liste">‹ '+(DV.back?'Retour':'Liste des devis')+'</button>');
-    kp.innerHTML=kpi('Total TTC',num2(T.ttc),ff||(T.opt?'+ '+num2(T.opt)+' exclus':'CHF'),'','Total du devis, TVA comprise')+(sepV?kpi('Total HT',num2(T.ht),'CHF')+kpi('TVA',num2(T.tva),'CHF'):'')+kpi('Soumis aux honoraires',num2(T.hon),'CHF HT','','Montant hors taxe soumis aux honoraires, selon le pourcentage de chaque position')+kpi('Positions',String(nC),'chiffrées sur '+fe.length); };
-  dessOng(); dessNiv(); ong.append(ongL,niv); X.sgdeMaj();
-  box.append(hd,kp,ong,bar,X.body,docs); if(X.dpane) docs.append(X.dpane); m.replaceChildren(box);
+    kp.innerHTML=kpi('Total TTC',num2(T.ttc),ff||(T.opt?'+ '+num2(T.opt)+' exclus':'CHF'),'','Total du devis, TVA comprise')+(sepV?kpi('Total HT',num2(T.ht),'CHF')+kpi('TVA',num2(T.tva),'CHF'):'')+kpi('Soumis aux honoraires',num2(T.hon),'CHF HT'+(hR?' · <button class="sgde-hreg" data-a="hreg" title="'+hR+(hR>1?' positions ne suivent pas':' position ne suit pas')+' la règle du bureau : 100 %, sauf CFC 5 et honoraires (583 compris)">appliquer la règle</button>':''),'','Montant hors taxe soumis aux honoraires, selon le pourcentage de chaque position')+kpi('Positions',String(nC),'chiffrées sur '+fe.length); };
+  kp.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('[data-a="hreg"]')) regleHon(X); });
+  dessOng(); dessNiv(); ong.append(ongL,niv);   /* légende du montant saisi retirée (Paulo, 07.11.2026) : l'infobulle du cadre le dit */ X.sgdeMaj();
+  box.append(hd,kp,ong,bar,X.body,docs); if(X.dpane) docs.append(X.dpane); m.replaceChildren(box); box._plein(PLEIN);   /* plein écran gardé d'un devis à l'autre pendant la séance */
   plan(S.cfc&&ec); if(!ec) S.cfc=false;
   const ouvertA=performance.now(); box.addEventListener('dblclick',e=>{ if(performance.now()-ouvertA<450){ e.stopPropagation(); e.preventDefault(); } },true);   /* double-clic d'habitude sur la liste : le 2e clic n'agit pas dans le devis */
-  new MutationObserver(()=>deco(X)).observe(X.rp,{childList:true}); new MutationObserver(()=>decoCat(X)).observe(X.L.pane,{childList:true});
+  new MutationObserver(()=>deco(X)).observe(X.rp,{childList:true}); new MutationObserver(()=>decoCat(X)).observe(X.L.pane,{childList:true}); brancherGroupes(X);
   X.rp.addEventListener('keydown',e=>{ if(e.target.closest('input,textarea,select')) return;
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const L=[...X.rp.querySelectorAll('tbody tr:not(.sgde-cache)')], i=L.findIndex(t=>t.classList.contains('on')), n=L[i<0?0:i+(e.key==='ArrowDown'?1:-1)]; if(n){ e.preventDefault(); n.click(); n.scrollIntoView({block:'nearest'}); } }
     else if(e.key==='Enter'){ const t=X.rp.querySelector('tbody tr.on'); if(t){ e.preventDefault(); t.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); } } });
@@ -287,6 +429,56 @@ function habCalc(dlg,X){ const bd=dlg.querySelector('.bd'), body=bd&&bd.firstEle
   /* la ligne choisie suit le curseur : « Effacer la ligne » agit sur la ligne où l'on est */
   host.addEventListener('focusin',e=>{ const tr=e.target.closest&&e.target.closest('tbody tr'); if(tr&&tr.cells[0]&&!tr.cells[0].style.background) tr.click(); });
   new MutationObserver(poser).observe(host,{childList:true}); poser(); }
-const ca0=ch02aCalc; ch02aCalc=function(X){ const n0=document.querySelectorAll('.dlg').length, r=ca0.apply(this,arguments), L=document.querySelectorAll('.dlg'); if(L.length>n0&&X.sgde) try{ habCalc(L[L.length-1],X); }catch(e){ console.error(e); } return r; };
-const SGDE=window.SGDE={X:null,deco,decoCat,habiller,DEVI};
+let SANS_CALC=false;   /* vrai pendant un ajout depuis la liste CFC : le moteur ouvrirait sa fenêtre de calcul (dvAdd → dvCalc) */
+const ca0=ch02aCalc; ch02aCalc=function(X){ if(SANS_CALC) return; const n0=document.querySelectorAll('.dlg').length, r=ca0.apply(this,arguments), L=document.querySelectorAll('.dlg'); if(L.length>n0&&X.sgde) try{ habCalc(L[L.length-1],X); }catch(e){ console.error(e); } return r; };
+/* ═══ DEVIS GÉNÉRAL EN PDF (bloc 46, 07.11.2026 ; Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel) ═══
+   Imprimer ▸ Devis général (PDF) : le livret du moteur (ch02bBook : mêmes règles que l'ancien logiciel) avec la présentation de la référence — page de garde, Information
+   (remarques préliminaires, s'il y en a), récapitulatif à 2 chiffres, document principal (colonnes à 4, 3, 2, 1 chiffres TTC et [%], commentaire en colonne, lignes de
+   calcul « Quantité … Prix … », descriptif, une rangée sur deux grisée), total — mis en pages pour le papier des contrats en paysage (gabarits de pages fournis ici : tableau
+   de 728 pt, rangées de 15 pt) et dessiné par sgDsPdf (o.livretDG, sg3_docsub.js). Les sauts de page et le filtre (ouvrages) de la présentation favorite sont repris ;
+   ses autres options sont remplacées par celles de la référence (DG_PRESET). Aucune donnée n'est écrite. */
+const DG_PRESET={includeKvCover:true,includeKvOneDigit:false,includeKvTwoDigit:true,includeDocument:true,hierarchicalAdjust:true,lightHierarchicalAdjust:false,commentInColumn:true,displayComment:true,
+  displayDescription:true,compactDescription:false,displayQuanPriceValue:true,displayDetailComment:true,displayDetailValues:true,dispalyCalcualtion:true,displayPriceBase:false,displayDetailOptions:true,
+  displayDeviation:true,zebra:true,grayDetails:false,dispalyAfterComma:false,separateVat:false,displayValuesPositions:true,displayNoTitlePositions:true,displayPosOptions:true,onlyThreeDigits:false,
+  titleFontSize:10,posFontSize:9,detailFontSize:8,rowHeigth:15,titlePosBold:true,detailItalic:false,specialRound:false,coverKvEmptyPages:0,kvOneDigitEmptyPages:0,kvTwoDigitEmptyPages:0,infoKvEmptyPages:0,
+  titleFontName:'',standardFontName:'',detailFontName:'',kagNumberColTitle:'CFC',kagTextColTitle:'Texte',commentColTitle:'Commentaire',value4ColTitle:'à 4 chiffres TTC',value3ColTitle:'à 3 chiffres TTC',
+  value2ColTitle:'à 2 chiffres TTC',value1ColTitle:'à 1 chiffre TTC',devColTitle:'[%]',infoNameColTitle:'',infoDescColTitle:''};
+const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=402;   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
+let DG_COURS=null;
+function dgPdf(X){ if(DG_COURS){ toast('Le PDF est en cours de création…'); return DG_COURS; } DG_COURS=dgCreer(X).finally(()=>{ DG_COURS=null; }); return DG_COURS; }
+async function dgCreer(X){ try{ toast('Création du PDF…'); await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
+    const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{}, L=E.presentations||[], fav=L.find(x=>x.favori)||L[0]||{};
+    /* mesure du texte aux vraies polices (coupure du descriptif et des remarques comme à l'impression) */
+    const pd=await w.PDFLib.PDFDocument.create(); pd.registerFontkit(w.fontkit); const fL=await pd.embedFont(R.polices.light), fB=await pd.embedFont(R.polices.bold);
+    const meas=(s,name,size)=>{ try{ return (/bold/i.test(String(name||''))?fB:fL).widthOfTextAtSize(String(s),+size||9); }catch(_){ return String(s).length*(+size||9)*0.5; } };
+    const tab=h=>({orientation:'paysage',elements:[{t:'tableau',champ:'constructionEstimateTable',l:DG_W,h}]});
+    /* ouvrages : affichés dès que le devis en a (sinon les lignes de leurs parties manqueraient), jamais sinon (colonne OUV vide) ; devis vide : pas de document principal (un seul total) */
+    const pres={nom:fav.nom||'',options:Object.assign({},fav.options||{},DG_PRESET,{includeKvInformation:(E.remarques||[]).some(r=>String(r.nom||'').trim()||String(r.texte||'').trim()),dispalyEmptyPositions:((fav.options||{}).dispalyEmptyPositions)!==false,
+      displaySubprojects:ch02bHasSub(E),includeDocument:(E.positions||[]).length>0}),sautsDePage:fav.sautsDePage||[]};
+    const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(DG_HT),pageN:tab(DG_HT),pageToc1:tab(DG_HI),pageTocN:tab(DG_HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
+    const B=ch02bBook(E,doc,p,pres,X.filter,env); if(B.err){ toast('Devis général : mise en pages impossible ('+B.err+').',true); return; }
+    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=Math.floor(DG_W*0.15), colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];
+    const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
+    const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0, wC=o.commentInColumn?((cols[2]||{}).w||0):0;
+    /* ligne de calcul trop longue pour sa place (Texte, et Commentaire s'il est vide) : la formule est retirée, la quantité et le prix restent */
+    const court=(v,c)=>{ const i=v.lastIndexOf(' =  '); if(!/^Quantité /.test(v)||i<0) return v; const lib=wT-4+(o.commentInColumn&&!String(c[2]||'').trim()?wC:0); return meas(v,'',dz)>lib?'Quantité '+v.slice(i+4).trim():v; };
+    const G=E.reglages||{}, ti=G.titres||{}, mod=v=>/^\[\.\.\.\]/.test(String(v||'').trim()), tt=k=>{ const v=String(ti[k]==null?'':ti[k]).trim(); return v&&!mod(v)?v:'Devis général'; }, etat=String(G.etatProjet||'').trim(), etatOk=etat&&!mod(etat);   /* « [...] … » : texte modèle de l'ancien logiciel, ignoré */
+    const titrePage=pg=>pg.type===0?(tt('garde')+(etatOk?' - '+etat:'')):(pg.type===1||pg.type===2)?(pg.digit===0?tt('unChiffre'):pg.digit===1?tt('deuxChiffres'):tt('document')):tt('document');
+    const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
+    let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
+    const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burT=un([bur.nom,...(bur.lignes||[])]);
+    const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
+    const couverture={titre:titrePage({type:0}).toUpperCase(),marge:mod(G.marge)?'':String(G.marge||'').trim(),filtre,
+      rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',A&&A.mo?un(A.mo.lignes||[]):''],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
+    const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
+    const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:titrePage(pg),cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
+      return {c:c0.map((v,j)=>j===1&&r.s==='D'?court(v.replace(/^(Quantité )(-?[0-9.]+) += +(-?[0-9.]+)/,(m,a,x,y)=>+x===+y?a+y:m),c0):v),s:String(r.s||'S')}; })}));   /* « Quantité 1500 = 1500.0 » : formule réduite à un nombre, montrée une fois */
+    const sT={b:o.titlePosBold!==false,z:+o.titleFontSize||10}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:+o.posFontSize||9},D:{b:false,z:+o.detailFontSize||8},X:{b:false,z:+o.detailFontSize||8},E:{b:false,z:+o.posFontSize||9}};
+    const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
+    const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
+      livretDG:{couverture,pages,st,zebra:!!o.zebra,rh:DG_RH,infoTitre:'Information'}})), j=new w.Array(); opt.journal=j;
+    const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
+    sgVisionneuse(new Blob([oct],{type:'application/pdf'}),titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'); }
+  catch(e){ console.error(e); toast('Le PDF du devis général n’a pas pu être créé : '+(e&&e.message||e),true); } }
+const SGDE=window.SGDE={X:null,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc};
 })();

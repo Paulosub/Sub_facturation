@@ -39,6 +39,8 @@ const NXI={
   pdf:'<path d="M14 2H5v20h14V7Z"/><path d="M14 2v5h5M8 13h8M8 17h5"/>', moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   prev:'<path d="m15 18-6-6 6-6"/>', next:'<path d="m9 18 6-6-6-6"/>', first:'<path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/>', last:'<path d="m13 17 5-5-5-5M6 17l5-5-5-5"/>',
   today:'<rect x="8" y="8" width="8" height="8" fill="currentColor"/>',
+  /* plein écran (07.11.2026, Paulo : proposition 1 « Coins de cadrage » parmi 5) : coins ouverts = entrer, coins repliés = quitter (bouton actif) */
+  plein:'<path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/>', pleinq:'<path d="M8 3v5H3M16 3v5h5M21 16h-5v5M3 16h5v5"/>',
   timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5"/>',
   receipt:'<path d="M5 2v20l2.3-1.5L9.7 22l2.3-1.5 2.3 1.5 2.4-1.5L19 22V2l-2.3 1.5L14.3 2 12 3.5 9.7 2 7.3 3.5Z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
   building:'<path d="M4 22V2h12v20M16 8h4v14M2 22h20"/><path d="M8 6h4M8 10h4M8 14h4M10 18v4"/>',
@@ -61,8 +63,9 @@ icon=function(n){ return NXI[n]?nxSvg(n):`<svg viewBox="0 0 16 16" fill="none" s
 const SG_LBL={plus:'Nouveau',edit:'Modifier',minus:'Supprimer',dup:'Dupliquer',doc:'Documents',print:'Imprimer',filter:'Filtre',wrench:'Configuration',person:'Intervenants',tree:'Subdivisions',
   gear:'Fonctions',list:'Liste',info:'Infos',analyse:'Analyse',import:'Importer',export:'Exporter',save:'Modèles',share:'Partager',pdf:'PDF',moon:'Veille'};
 const sgIbtn0=ibtn;
-ibtn=function(b){ const el=sgIbtn0(b);
-  try{ if(b&&b.i&&!b.label&&el.tagName==='BUTTON'&&!/^(prev|next|first|last|today)$/.test(b.i)){ const t=String(b.t||'').replace(/\s*…$/,'').trim(), lb=t&&t.length<=16?t:SG_LBL[b.i];
+ibtn=function(b){ if(b&&b.i==='today'&&/^Plein écran/.test(String(b.t||''))) b=Object.assign({},b,{i:b.on?'pleinq':'plein',t:b.on?'Quitter le plein écran':'Plein écran'});   /* bouton plein écran du moteur (soumission) : coins de cadrage au lieu du carré plein */
+  const el=sgIbtn0(b);
+  try{ if(b&&b.i&&!b.label&&el.tagName==='BUTTON'&&!/^(prev|next|first|last|today|plein|pleinq)$/.test(b.i)){ const t=String(b.t||'').replace(/\s*…$/,'').trim(), lb=t&&t.length<=16?t:SG_LBL[b.i];
     if(lb){ const s=document.createElement('span'); s.className='lb'; s.textContent=lb; el.insertBefore(s,el.querySelector('.dd')); } } }catch(_){}
   return el; };
 

@@ -277,6 +277,7 @@ async function sgDsPdf(R, rep, o){
      Bold n'a pas « … ») et signalé ; le titre complet reste dans les métadonnées du PDF. Aucun des 163 documents types n'est
      concerné (67 caractères au plus) — correction de robustesse de l'agent 3 */
   let titreTronque = false;
+  let sansEntete = false;   /* page de garde du cahier de soumission (bloc 44) : sans en-tête */
   const titreEntete = (w, E) => {
     const max = w - 2 * E.titre.x;
     if(largeur(titreDoc, F.bold, PAP.taille) <= max) return titreDoc;
@@ -287,6 +288,16 @@ async function sgDsPdf(R, rep, o){
   };
   const entete = (pg, ori) => {
     const E = PAP.entete[ori], h = pg.getHeight();
+    if(sansEntete) return;
+    if(o.enteteLibre){                  /* en-tête à quatre champs du descriptif de soumission (bloc 40) : mesures du PDF de Paulo */
+      const L = o.enteteLibre, T = 7.9, xD = 518.9;
+      texte(pg, L.g1 || '', 28.3, h - 36.9, { police:F.bold, taille:T, couleur:C.N });
+      texte(pg, L.d1 || '', xD, h - 36.9, { police:F.light, taille:T, couleur:C.N, align:'d' });
+      texte(pg, L.g2 || '', 28.3, h - 46.8, { police:F.light, taille:T, couleur:C.N });
+      texte(pg, L.d2 || '', xD, h - 46.8, { police:F.light, taille:T, couleur:C.N, align:'d' });
+      ligne(pg, 26.9, h - 50.4, xD, h - 50.4);
+      return;
+    }
     texte(pg, titreEntete(pg.getWidth(), E), E.titre.x, h - E.titre.dh, { police:F.bold, taille:PAP.taille, couleur:C.N });
     ligne(pg, E.trait1.x0, h - E.trait1.dh, E.trait1.x1, h - E.trait1.dh);
     if(sousTitre){
@@ -350,7 +361,7 @@ async function sgDsPdf(R, rep, o){
       const fm = PAP.format[ori];
       const pg = doc.addPage([fm.w, fm.h]);
       /* logo noir : première page du document, ou de chaque exemplaire (o.jobs : une lettre par entreprise…) */
-      const premiere = ctx.pages.length === (ctx.debutJob || 0);
+      const premiere = !o.logoGris && ctx.pages.length === (ctx.debutJob || 0);   /* o.logoGris : suite d'un document (cahier de soumission par articles) */
       entete(pg, ori); pied(pg, ori); logo(pg, ori, premiere);
       const Z = zoneDe(ori);
       if(o.zones || o.epreuve) tracerZone(pg, ori);
@@ -616,7 +627,7 @@ async function sgDsPdf(R, rep, o){
      invisible) est signalé dans o.journal, une fois par caractère */
   const sansGlyphe = new Set(), POLICES = [F.light, F.regular, F.bold, F.lightItalic];
   const prep = (s) => {
-    const t = nettoyer(String(s == null ? '' : s).replace(/[\u00A0\u202F]/g, ' ').replace(/[\u00AD\u200B\u2060\uFEFF]/g, ''));
+    const t = nettoyer(String(s == null ? '' : s).normalize('NFC').replace(/[\u00A0\u202F]/g, ' ').replace(/[\u00AD\u200B\u2060\uFEFF]/g, ''));   /* accents décomposés (e + accent) recomposés : les polices n'ont que les lettres accentuées */
     for(const c of t){
       const cp = c.codePointAt(0);
       if(cp > 32 && !sansGlyphe.has(cp) && !POLICES.some(f => aGlyphe(f, cp))){
@@ -1222,7 +1233,338 @@ async function sgDsPdf(R, rep, o){
     return res;
   };
 
+  /* descriptif de soumission (bloc 40) : o.descriptif = { lettre, titre, blocs:[{ t, x, b }] } ; mesures relevées sur 23JOG_descriptif_250 sanitaire.pdf
+     (corps 9,12 Light, tirets à x 67,2, texte à x 85 ; petites listes 7,54 ; bande noire 18 pt ; emphase en Regular ; titres gardés avec la ligne suivante) */
+  const contenuDescriptif = (cx) => {
+    const D = o.descriptif, BL = Array.from(D.blocs || []).filter(b => String(b.x || '').trim() !== ''), XP = 67.2, XT = 85, XD = 524, HT = { sec:7.56, pjt:7.54, pj:7.54 }, CORPS = 9.12, TITRES = ['sec','sou','gr','pjt'];
+    const avant = (t, p) => { if(!p) return 0; if(t === 'kv' && p === 'kv') return 12.4; if(t === 'pj') return 11.5; if(t === 'pjt') return 25; if(t === 'sec') return 34.6; if(t === 'sou') return p === 'sec' ? 24.2 : 25; if(t === 'gr') return 25; return TITRES.includes(p) ? 14 : 12.4; };
+    cx.nouvellePage('portrait');
+    const h = cx.page.getHeight(), blanc = PDFLib.rgb(1, 1, 1), HAUT = h - 76.2;
+    if(D.titre || D.lettre){
+      cx.rect(29, h - 135, 499, 18, { fond:C.N });
+      if(D.lettre) cx.texte(D.lettre, 32.4, h - 129.6, { police:F.bold, taille:11.52, couleur:blanc });
+      const xB = Math.max(49.1, 32.4 + (D.lettre ? cx.largeur(D.lettre, F.bold, 11.52) + 8 : 0) - (D.lettre ? 0 : 16.7));
+      let tB = 11.52; while(tB > 6 && cx.largeur(D.titre || '', F.bold, tB) > 524 - xB) tB -= 0.25;   /* titre long : corps réduit, il reste dans la bande */
+      cx.texte(D.titre || '', xB, h - 129.6, { police:F.bold, taille:tB, couleur:blanc });
+    }
+    let y = h - 185.6, prev = null;
+    const lead = 11.2, hUtile = HAUT - cx.Z.bas;
+    /* titres gardés avec ce qui suit : les titres suivants et deux lignes du premier texte */
+    const suiteTitre = (i) => { let hS = 0, j = i + 1, p = BL[i].t;
+      while(j < BL.length && TITRES.includes(BL[j].t)){ hS += avant(BL[j].t, p); p = BL[j].t; j++; }
+      if(j < BL.length){ const n = BL[j], szN = HT[n.t] || CORPS; hS += avant(n.t, p) + (Math.min(2, cx.couper(n.t === 'kv' ? (n.v || '') : n.x, F.light, szN, XD - XT).length) - 1) * lead; }
+      return hS; };
+    BL.forEach((b, i) => {
+      const t = b.t, sz = HT[t] || CORPS, f = t === 'sec' ? F.bold : (b.b ? F.regular : F.light), xT = t === 'pj' ? 89.7 : (t === 'kv' ? XT + 190 : XT), L = cx.couper(t === 'kv' ? (b.v || '') : b.x, f, sz, XD - xT), G = t === 'kv' ? cx.couper(b.x, F.light, sz, 182) : [], n = Math.max(L.length, G.length);
+      let dy = avant(t, prev), besoin = dy + (n - 1) * lead;
+      if(TITRES.includes(t)) besoin += suiteTitre(i);
+      if(besoin > hUtile) besoin = dy + lead;   /* plus haut qu'une page : il commence ici et continue page après page */
+      if(y - besoin < cx.Z.bas){ cx.nouvellePage('portrait'); y = HAUT; dy = 0; }
+      y -= dy;
+      if(t === 'pu') cx.texte('-', XP, y, { police:F.light, taille:sz });
+      if(t === 'pj') cx.texte('-', XT, y, { police:F.light, taille:sz });
+      for(let j = 0; j < n; j++){
+        if(j){ y -= lead; if(y < cx.Z.bas){ cx.nouvellePage('portrait'); y = HAUT; } }
+        if(G[j]) cx.texte(G[j], XT, y, { police:F.light, taille:sz });
+        if(L[j]){ cx.texte(L[j], xT, y, { police:f, taille:sz });
+          if(t === 'sec' || t === 'sou' || t === 'pjt') cx.ligne(xT, y - 1.2, xT + cx.largeur(L[j], f, sz), y - 1.2); }
+      }
+      prev = t;
+    });
+    /* signatures côte à côte (contrat d'entreprise) : o.descriptif.signatures = [{ t, n }] */
+    const SIG = Array.from(D.signatures || []);
+    if(SIG.length){
+      if(y - 112 < cx.Z.bas){ cx.nouvellePage('portrait'); y = HAUT; } else y -= 38;
+      SIG.forEach((s, i) => { const x = XT + i * 226;
+        cx.texte(s.t || '', x, y, { police:F.regular, taille:CORPS });
+        cx.couper(s.n || '', F.light, CORPS, 200).slice(0, 2).forEach((l, j) => cx.texte(l, x, y - 12.4 * (j + 1), { police:F.light, taille:CORPS }));
+        cx.texte('Lieu et date :', x, y - 52, { police:F.light, taille:7.54 });
+        cx.ligne(x, y - 82, x + 200, y - 82);
+        cx.texte('Signature', x, y - 91, { police:F.light, taille:7.54 }); });
+      y -= 91;
+    }
+    cx.y = y;
+  };
+  /* tableau comparatif de la soumission (bloc 42) : paysage, 7 pt sur 4 mm comme l'annexe 2 du contrat ; 5 entreprises par bande, en-tête répété, prix le plus bas sur fond jaune pâle,
+     montants en rouge, lignes grisées en gris ; textes passés par prep() (glyphes absents signalés dans o.journal) */
+  const contenuComparatif = (cx) => {
+    const D = o.comparatif, ENTS = Array.from(D.ents || []), LG = Array.from(D.lignes || []), PAS = 11.34, T = 7, PAR = 5, JAUNE = PDFLib.rgb(0.996, 0.965, 0.69);
+    cx.nouvellePage('paysage');
+    const Z = cx.Z, X0 = Z.x0, X1 = Z.x1, HAUT = Z.haut - 6; let y = HAUT;
+    const page = () => { cx.nouvellePage('paysage'); y = HAUT; };
+    const P = (t) => prep(t == null ? '' : t);
+    /* au plus n lignes ; ce qui ne tient pas finit par « ... » (la police Bold n'a pas « … ») */
+    const lignesDe = (t, f, w, n) => { const L = cx.couper(P(t), f, T, w); if(L.length <= n) return L; const R = L.slice(0, n); let d = R[n - 1]; while(d && cx.largeur(d + '...', f, T) > w) d = d.slice(0, -1); R[n - 1] = d.trimEnd() + '...'; return R; };
+    const titre = (t, s) => { if(y - 40 < Z.bas) page(); cx.texte(P(t), X0, y, { police:F.bold, taille:9.12 }); if(s) cx.texte(P(s), X1, y, { police:F.light, taille:T, couleur:C.G, align:'d' }); y -= 7; cx.ligne(X0, y, X1, y); y -= 3; };
+    const cols = (L) => { let x = X0; return L.map(c => { const r = { ...c, x }; x += c.w; return r; }); };
+    /* cellule v = { t (texte ou lignes), f, coul, fond } ; une ligne de tableau = filet dessous ; en-tête répété après un saut de page */
+    const hauteur = (cells) => Math.max(1, ...cells.map(v => (v && Array.isArray(v.t) ? v.t.length : 1))) * PAS;
+    const ligneT = (C2, cells, tete) => { const h = hauteur(cells); if(y - h < Z.bas){ page(); if(tete) tete(); }
+      C2.forEach((c, i) => { const v = cells[i]; if(!v) return; if(v.fond) cx.rect(c.x, y - h, c.w, h, { fond:v.fond }); if(v.t === '' || v.t == null) return;
+        const f = v.f || F.light, x = c.a === 'd' ? c.x + c.w - 2 : c.x + 2; (Array.isArray(v.t) ? v.t : [v.t]).forEach((l, k) => cx.texte(P(l), x, y - 8.2 - k * PAS, { police:f, taille:T, couleur:v.coul || C.N, align:c.a === 'd' ? 'd' : 'g' })); });
+      y -= h; cx.ligne(X0, y, X1, y); };
+    const rouge = (t, f) => ({ t, f:f || F.regular, coul:C.R });
+    const nomE = (e, w) => lignesDe((e.rang ? e.rang + '. ' : '') + (e.prop ? '(+) ' : '') + e.nom, F.regular, w - 4, 2);
+    if(D.nature) cx.texte(P(D.nature), X0, y, { police:F.regular, taille:T, couleur:C.G }); y -= 12;
+    if(D.sous) cx.texte(P(D.sous), X0, y, { police:F.light, taille:T, couleur:C.G }); y -= 18;
+    /* synthèse */
+    titre('Synthèse');
+    const cS = cols([{ w:28 }, { w:X1 - X0 - 28 - 76 * 3 - 52 - 66 - 52 }, { w:76, a:'d' }, { w:76, a:'d' }, { w:76, a:'d' }, { w:52, a:'d' }, { w:66, a:'d' }, { w:52, a:'d' }]);
+    const teteS = () => ligneT(cS, ['Rang', 'Entreprise', 'Brut', 'Net de l’offre', 'Net négocié', 'Écart', 'Prix les plus bas', 'Sans prix'].map(t => ({ t, f:F.regular })));
+    teteS();
+    ENTS.forEach(e => ligneT(cS, [{ t:String(e.rang || '') }, { t:lignesDe((e.prop ? '(+) ' : '') + e.nom, F.light, cS[1].w - 4, 2) }, rouge(e.brut), rouge(e.net), rouge(e.neg), { t:e.ecart }, { t:String(e.bas || 0) }, { t:String(e.vide || 0) }], teteS));
+    y -= 16;
+    const bandes = []; for(let i = 0; i < ENTS.length; i += PAR) bandes.push(i);
+    bandes.forEach((i0, ib) => {
+      const E2 = ENTS.slice(i0, i0 + PAR), nb = E2.length, suite = bandes.length > 1 ? ' · entreprises ' + (i0 + 1) + ' à ' + (i0 + nb) : '';
+      /* récapitulatif par chapitre */
+      const wM = Math.min(120, Math.floor((X1 - X0 - 36 - 220) / nb)), cR = cols([{ w:36 }, { w:X1 - X0 - 36 - nb * wM }, ...E2.map(() => ({ w:wM, a:'d' }))]);
+      const teteR = () => ligneT(cR, [{ t:'Chapitre', f:F.regular }, { t:'', f:F.regular }, ...E2.map(e => ({ t:nomE(e, wM), f:F.regular }))]);
+      titre('Récapitulatif par chapitre' + suite); teteR();
+      Array.from(D.chap || []).forEach(c => ligneT(cR, [{ t:c.n, coul:c.g ? C.G : C.N }, { t:lignesDe(c.x, F.light, cR[1].w - 4, 2), coul:c.g ? C.G : C.N }, ...E2.map((e, j) => c.g ? { t:c.c[i0 + j], coul:C.G } : rouge(c.c[i0 + j]))], teteR));
+      /* détail : à la suite, sauf s'il ne reste presque plus de place */
+      y -= 18; if(y - 8 * PAS < Z.bas) page();
+      const wN = 36, wQ = 40, wU = 20, wP = 46, wA = 58, wD = X1 - X0 - wN - wQ - wU - nb * (wP + wA), cD = cols([{ w:wN }, { w:wD }, { w:wQ, a:'d' }, { w:wU }, ...E2.flatMap(() => [{ w:wP, a:'d' }, { w:wA, a:'d' }])]), cL = cols([{ w:wN }, { w:X1 - X0 - wN }]);
+      const teteD = () => { let x = X0 + wN + wD + wQ + wU; E2.forEach(e => { nomE(e, wP + wA).forEach((l, k) => cx.texte(P(l), x + 2, y - 8.2 - k * PAS, { police:F.regular, taille:T })); x += wP + wA; }); y -= 2 * PAS;
+        ligneT(cD, [{ t:'N°', f:F.regular }, { t:'Article', f:F.regular }, { t:'Quantité', f:F.regular }, { t:'Un.', f:F.regular }, ...E2.flatMap(() => [{ t:'Prix unit.', f:F.regular }, { t:'Montant', f:F.regular }])]); };
+      const celTitre = (l) => [{ t:l.n, f:l.k === 'ch' ? F.bold : F.regular, coul:l.g ? C.G : C.N }, { t:lignesDe(l.x || '', l.k === 'ch' ? F.bold : F.regular, cL[1].w - 4, 2), f:l.k === 'ch' ? F.bold : F.regular, coul:l.g ? C.G : C.N }];
+      const celArt = (l) => { const gr = !!l.g, ton = gr ? C.G : C.N; return [{ t:l.n, coul:ton }, { t:lignesDe(l.x || '', F.light, wD - 4, 2), coul:ton }, { t:l.q, coul:ton }, { t:l.u, coul:ton },
+        ...E2.flatMap((e, j) => { const v = l.c[i0 + j] || {}, fd = v.b ? JAUNE : null; return [{ t:v.p, coul:ton, fond:fd }, { t:v.m, f:gr || v.i ? F.light : F.regular, coul:gr ? C.G : v.i ? C.N : C.R, fond:fd }]; })]; };
+      titre('Détail des articles' + suite); teteD();
+      LG.forEach((l, n) => {
+        if(l.k === 'ch' || l.k === 'ti'){
+          /* titres gardés avec la première ligne d'article qui suit */
+          let h = 0, k = n; while(k < LG.length && (LG[k].k === 'ch' || LG[k].k === 'ti')){ h += hauteur(celTitre(LG[k])); k++; } if(k < LG.length && LG[k].k === 'ar') h += hauteur(celArt(LG[k]));
+          if(l === LG[n] && (n === 0 || (LG[n - 1].k !== 'ch' && LG[n - 1].k !== 'ti')) && y - h < Z.bas && h < Z.haut - Z.bas - 4 * PAS){ page(); teteD(); }
+          ligneT(cL, celTitre(l), teteD); return; }
+        if(l.k === 'to'){ ligneT(cD, [{}, { t:l.x, f:F.bold, coul:l.g ? C.G : C.N }, {}, {}, ...E2.flatMap((e, j) => [{}, l.g ? { t:l.c[i0 + j].m, f:F.bold, coul:C.G } : rouge(l.c[i0 + j].m, F.bold)])], teteD); y -= 5; return; }
+        ligneT(cD, celArt(l), teteD);
+      });
+      const PD = Array.from(D.pied || []);
+      y -= 8; if(y - (PD.length + 1) * PAS < Z.bas){ page(); teteD(); }
+      PD.forEach(p => ligneT(cD, [{}, { t:lignesDe(p.x, p.f ? F.bold : F.regular, wD - 4, 2), f:p.f ? F.bold : F.regular }, {}, {}, ...E2.flatMap((e, j) => { const v = p.c[i0 + j] || {}; return [{ t:v.p || '' }, rouge(v.m || '', p.f ? F.bold : F.regular)]; })], teteD));
+      if(ib < bandes.length - 1) page();
+    });
+    y -= 12; const LEG = cx.couper(P(D.legende || ''), F.light, T, X1 - X0); if(y - LEG.length * PAS < Z.bas) page();
+    LEG.forEach((l, k) => cx.texte(l, X0, y - k * PAS, { police:F.light, taille:T, couleur:C.G }));
+    cx.y = y - LEG.length * PAS;
+  };
+  /* cahier de soumission (bloc 44, 07.11.2026, Paulo : « voici à quoi ressemble le cahier complet avec les conditions au départ et en dernier le cahier des charges ») :
+     conditions de l'appel d'offres au papier des contrats — page de garde (sans en-tête), résumé de l'offre, généralités, organisation, site, régie, conditions techniques,
+     annexes — mesures relevées sur le cahier 23JOG 250 Sanitaire du 06.11.2026 : corps 8.4, interligne 10.1, colonne 127.7, retrait 142, droite 517.4, bandes de
+     section 29 → 518 sous l'en-tête, page de garde aux positions du modèle. o.cahier = { blocs:[{ t, x, b, r }], auto:{ garde, resume, orga }, annexes:{ sha:{ type } } }
+     (textes déjà résolus par l'app) ; ctx.annexes = plans joints déjà intégrés (sgDsPdf, avant contenu). Puis le descriptif (o.descriptif) s'il y en a un. */
+  const contenuCahier = (cx) => {
+    const K = o.cahier, A = K.auto || {}, AN = cx.annexes || {}, T = 8.4, LD = 10.1, XL = 28.3, X = 127.7, XR = 142, XD = 517.4, BLANC = PDFLib.rgb(1, 1, 1);
+    /* petits tirets et petits titres (import d'un PDF) : imprimés comme un tiret et comme une rubrique soulignée en Light */
+    const BL = Array.from(K.blocs || []).map(b => b.t === 'pj' ? Object.assign({}, b, { t:'pu' }) : b.t === 'pjt' ? Object.assign({}, b, { t:'sou', pt:1 }) : b);
+    const h = PAP.format.portrait.h, HAUT = h - 75.8, BAS = () => cx.Z.bas + 2, TITRES = ['sec','sou','gr'], TXT = new Set(['sec','sou','gr','txt','pu','kv','fl','cad']);
+    let y = HAUT, prev = null, ouverte = false, aOuvrir = false;
+    const P = (t) => prep(t == null ? '' : t);
+    const page = (garde) => { sansEntete = !!garde; cx.nouvellePage('portrait'); sansEntete = false; y = HAUT; prev = null; ouverte = true; aOuvrir = false; };
+    /* saut de page demandé : la page s'ouvre au prochain élément imprimé ; une section, une page de garde ou la fin du cahier n'ouvrent donc jamais de page blanche */
+    const libre = () => !ouverte || aOuvrir;
+    const L0 = (x0, yy, x1) => cx.ligne(x0, yy, x1, yy);
+    const ecr = (t, x, yy, f, op) => cx.texte(P(t), x, yy, Object.assign({ police:f || F.light, taille:T }, op || {}));
+    const couper = (t, f, w) => cx.couper(P(t), f || F.light, T, w);
+    const num = (t) => /^(\d+[.)])\s+(.*)$/.exec(String(t || ''));
+    /* espace avant un bloc (de la ligne de base précédente à la première ligne de base du bloc) */
+    const avant = (b, p) => { const t = b.t;
+      if(!p) return 0;
+      if(p === 'ban') return t === 'sec' ? 25 : 40;
+      if(p === 'garde') return 24.7;
+      if(t === 'sec') return 30; if(t === 'sou') return p === 'sec' ? 40.6 : 26;
+      if(t === 'gr') return p === 'sec' ? 32 : 23;
+      if(t === 'kv') return p === 'kv' ? 18.8 : (p === 'gr' || p === 'txt') ? 16 : 24;
+      if(t === 'fl') return p === 'fl' ? 20.7 : 20.4;
+      if(t === 'pu') return p === 'pu' ? 12.4 : 14;
+      if(t === 'cad') return 20; if(t === 'sig') return 62;
+      if(t === 'txt'){ if(p === 'sou') return 30.7; if(p === 'gr') return 12.4; if(p === 'num' && b.r) return LD; if(p === 'num' && num(b.x)) return 20.4; return 23.1; }
+      return 20; };
+    const reste = (hh) => { if(libre()){ page(false); return; } if(y - hh < BAS()) page(false); };
+    /* mise en ligne d'un bloc de texte : position, police, lignes coupées ; ligne numérotée : numéro à base − 5,7, texte à base + 14,3 (avec ou sans retrait) */
+    const geo = (b) => { const t = b.t, base = b.r ? XR : X, nm = t === 'txt' ? num(b.x) : null, g = { base, x0:base, w:XD - base, fs:b.b ? F.regular : F.light, souligne:false, xNum:null, nm, texte:String(b.x || '') };
+      if(t === 'sec'){ g.x0 = XL; g.fs = F.bold; g.souligne = true; g.w = XD - XL; }
+      else if(t === 'sou'){ g.souligne = true; if(!b.pt){ g.x0 = base - 7.7; g.fs = F.bold; } }
+      else if(t === 'pu'){ g.x0 = base + 10; g.w = XD - g.x0; }
+      else if(t === 'fl'){ g.w = 447 - base - 8; }
+      else if(t === 'cad'){ g.x0 = XR + 5; g.w = XD - XR - 10; }
+      else if(nm){ g.xNum = base - 5.7; g.x0 = base + 14.3; g.w = XD - g.x0; g.texte = nm[2]; }
+      if(t === 'kv'){ const i = g.texte.indexOf(' : '), lib = i < 0 ? g.texte : g.texte.slice(0, i), val = i < 0 ? '' : g.texte.slice(i + 3); g.LL = couper(lib, g.fs, 305 - base - 8); g.VV = couper(val, g.fs, XD - 305); }
+      else { g.LL = couper(g.texte, g.fs, g.w); g.VV = []; }
+      g.n = Math.max(g.LL.length, g.VV.length, 1); g.hh = (g.n - 1) * LD + (t === 'cad' ? 23 : 0); return g; };
+    const G = BL.map(b => TXT.has(b.t) ? geo(b) : null);
+    const apres = (i, p) => { const b = BL[i], g = G[i]; return g && g.nm ? 'num' : (b.t === 'txt' && b.r && p === 'num') ? 'num' : b.t; };
+    /* place réservée par le résumé de l'offre : espace avant compris (après une rubrique 76,8, après un autre bloc 40) */
+    const resumeH = (R, p) => { let hh = (p === 'sec' ? 76.8 : p ? 40 : 0) + 50.4 + 23.5; Array.from(R.lignes || []).forEach((c, i) => { hh += c.tva ? 18.9 : (i ? 20.4 : 18.5); if(!c.tva) hh += 23.5; }); return hh + 27.6 + 3; };
+    /* plans joints : à la largeur de la colonne (482 pt), sans dépasser la page ni 160 % ; moins de 70 % de cette taille faute de place : page suivante */
+    const hAnn = () => HAUT - 13 - BAS() - 4, hPlein = (a) => a.h * Math.min(482 / a.w, hAnn() / a.h, 1.6);
+    /* place demandée par le début du bloc i (après p), pour garder un titre avec ce qui le suit */
+    const debut = (i, p) => { const b = BL[i], t = b.t;
+      if(t === 'auto') return b.x === 'entreprise' ? (p ? 24.2 : 0) + 7 * 25.9 + 4 : b.x === 'resume' ? resumeH(A.resume || {}, p) : b.x === 'orga' ? (p === 'ban' ? 40 : p ? 22 : 0) + 2 * 12.4 + 4 : 0;
+      if(t === 'sig') return 62 + 12; if(t === 'annexe') return AN[b.sha] ? 13 + 0.7 * hPlein(AN[b.sha]) : 0;
+      const g = G[i]; if(!g) return 0; return avant(b, p) + (t === 'cad' ? g.hh : (Math.min(2, g.n) - 1) * LD); };
+    const suite = (i, p0) => { let hS = 0, j = i + 1, p = apres(i, p0); while(j < BL.length && TITRES.includes(BL[j].t)){ hS += avant(BL[j], p); p = apres(j, p); j++; } if(j < BL.length) hS += debut(j, p); return hS; };
+    /* ── pièces remplies d'office ── */
+    const garde = (g) => {
+      page(true);
+      let yy = h - 77.7;
+      Array.from(g.rub || []).forEach(r => { ecr(r[0], X, yy, F.regular); L0(X, yy - 4.1, XD); couper(r[1], F.light, XD - X).slice(0, 2).forEach((l, k) => ecr(l, X, yy - 14.4 - k * LD)); yy -= 42.6; });
+      const yb = yy + 10.3; L0(XL, yb, XD);
+      let tz = 13.92; while(tz > 8 && cx.largeur(P(g.titre || ''), F.bold, tz) > XD - X) tz -= 0.25;
+      cx.texte(P(g.cfc || ''), 74.5, yb - 19.7, { police:F.bold, taille:13.92 }); cx.texte(P(g.titre || ''), X, yb - 19.7, { police:F.bold, taille:tz });
+      L0(XL, yb - 28.8, XD);
+      let yv = yb - 52.3;
+      ecr('Montant total brut', X, yv, F.regular); ecr('Fr.', 352.8, yv, F.regular); L0(X, yv - 3.4, XD);
+      yv -= 26; ecr('Montant total net', X, yv, F.regular); ecr('TVA incl.', 287, yv); ecr('Fr.', 352.8, yv, F.regular); L0(X, yv - 3.4, XD);
+      Array.from(g.infos || []).forEach(r => { yv -= 26; const wl = ecr(r[0], X, yv); if(r[1]){ const dispo = XD - X - wl - 14; let tv = T; while(tv > 6 && cx.largeur(P(r[1]), F.regular, tv) > dispo) tv -= 0.2; cx.texte(P(r[1]), XD, yv, { police:F.regular, taille:tv, align:'d' }); } L0(X, yv - 3.4, XD); });
+      y = yv; prev = 'garde'; };
+    const entreprise = () => {
+      const L = ['Nom de l’entreprise', 'Rue', 'NPA, lieu', 'Téléphone', 'Fax', 'Responsable', 'Lieu, date', 'Timbre & Signature'];
+      reste(24.2 + (L.length - 1) * 25.9 + 4); let yy = y - (prev ? 24.2 : 0);
+      L.forEach((l, k) => { if(k) yy -= 25.9; ecr(l, X, yy, F.regular); L0(X, yy - 3.4, XD); }); y = yy; prev = 'champs'; };
+    const resume = (R) => {
+      const lignesR = Array.from(R.lignes || []);
+      reste(resumeH(R, prev)); let yy = y - (prev === 'sec' ? 76.8 : prev ? 40 : 0);
+      ecr('CFC/ Travaux', XL, yy, F.bold); let tz = 13.92; const tt = (R.cfc ? R.cfc + '  ' : '') + (R.titre || ''); while(tz > 8 && cx.largeur(P(tt), F.bold, tz) > XD - 104.8) tz -= 0.25; cx.texte(P(tt), 104.8, yy, { police:F.bold, taille:tz });
+      yy -= 50.4; ecr('déposée', 316.4, yy); ecr('contrôlée', 449.1, yy);
+      const PTS = '...............................', fr = (v) => { ecr('Fr.', 267.6, v); ecr(PTS, 300.6, v); ecr('Fr.', 396.6, v); ecr(PTS, 429.8, v); };
+      yy -= 23.5; ecr('Offre brute', 31.9, yy); fr(yy);
+      lignesR.forEach((c, i) => {
+        yy -= c.tva ? 18.9 : (i ? 20.4 : 18.5); ecr(c.lib, 31.9, yy);
+        if(c.taux) cx.texte(P(c.taux), 214, yy, { police:F.light, taille:T, align:'d' }); else ecr('........... %', 177.1, yy);
+        const plus = c.tva || c.signe === '+'; ecr(plus ? '+' : './.', plus ? 250 : 247.2, yy); fr(yy);
+        if(!c.tva){ L0(286.6, yy - 6.9, 385.9); L0(417.4, yy - 6.9, 516.7); yy -= 23.5; fr(yy); } });
+      yy -= 27.6; ecr(lignesR.some(c => c.tva) ? 'Offre nette (TVA incluse)' : 'Offre nette', 31.9, yy); fr(yy);
+      y = yy; prev = 'resume'; };
+    /* organisation du projet : libellé (≤ 81 pt), adresse (≤ 171 pt) et téléphone / courriel (jusqu'à la marge) coupés dans leur colonne */
+    const orga = (O) => {
+      const LIGNES = Array.from(O.lignes || []);
+      LIGNES.forEach((r, k) => {
+        const LB = r.lib ? couper(r.lib, F.light, 216 - 131 - 4) : [], V = Array.from(r.val || []).flatMap(l => couper(l, F.light, 393 - 216 - 6)), V2 = Array.from(r.val2 || []).flatMap(l => couper(l, F.light, XD - 393));
+        const n = Math.max(1, LB.length, V.length, V2.length), hh = (n - 1) * 12.4, dy = prev ? (prev === 'ban' ? 40 : r.titre ? 26 : 22) : 0;
+        reste(dy + hh + 4 + (!V.length && !V2.length && LIGNES[k + 1] ? 22 + 2 * 12.4 : 0)); if(prev) y -= (prev === 'ban' ? 40 : r.titre ? 26 : 22);   /* titre sans valeur (« Les mandataires : ») gardé avec la ligne suivante */
+        LB.forEach((l, j) => { const w = ecr(l, 131, y - j * 12.4); if(r.sou) L0(131, y - j * 12.4 - 1.2, 131 + w); });
+        V.forEach((l, j) => ecr(l, 216, y - j * 12.4)); V2.forEach((l, j) => ecr(l, 393, y - j * 12.4));
+        y -= hh; prev = 'orga'; }); };
+    const annexe = (b) => {
+      const a = AN[b.sha]; if(!a) return;
+      if(libre() || y - 13 - BAS() - 4 < 0.7 * hPlein(a)) page(false);
+      const top = y - 13, hmax = top - BAS() - 4, s = Math.min(482 / a.w, hmax / a.h, 1.6); if(!(s > 0)) return;
+      const w = a.w * s, hh = a.h * s, x0 = 33, r = a.page ? (a.rot || 0) : 0;
+      if(a.page && r){   /* page tournée (/Rotate) : dessinée tournée, à sa place */
+        const q = r === 90 || r === 270, pos = r === 90 ? [x0, top] : r === 180 ? [x0 + w, top] : [x0 + w, top - hh];
+        cx.page.drawPage(a.obj, { x:pos[0], y:pos[1], width:q ? hh : w, height:q ? w : hh, rotate:PDFLib.degrees(-r) }); }
+      else if(a.page) cx.page.drawPage(a.obj, { x:x0, y:top - hh, width:w, height:hh });
+      else cx.page.drawImage(a.obj, { x:x0, y:top - hh, width:w, height:hh });
+      y = top - hh; prev = 'annexe'; };
+    /* ── blocs ── */
+    BL.forEach((b, i) => {
+      const t = b.t, pAv = prev;
+      if(t === 'auto'){ if(b.x === 'garde') garde(A.garde || {}); else if(b.x === 'entreprise') entreprise(); else if(b.x === 'resume') resume(A.resume || {}); else if(b.x === 'orga') orga(A.orga || {}); return; }
+      if(t === 'saut'){ if(ouverte) aOuvrir = true; return; }
+      if(t === 'ban'){
+        page(false); const m = /^([A-Z])\s*(\d*)\s+(.*)$/.exec(String(b.x || '').trim()), le = m ? m[1] : '', ch = m ? m[2] : '', ti = m ? m[3] : String(b.x || '');
+        const LT = cx.couper(P(ti), F.bold, 11.52, 518 - 53 - 6), top = h - 67.7, hb = 17.7 + (LT.length - 1) * 13.7;
+        cx.rect(29, top - hb, 489, hb, { fond:C.N });
+        if(le) cx.texte(le, 32.4, top - 13.2, { police:F.bold, taille:11.52, couleur:BLANC }); if(ch) cx.texte(ch, 40.5, top - 13.2, { police:F.bold, taille:11.52, couleur:BLANC });
+        LT.forEach((l, k) => cx.texte(l, 53.4, top - 13.2 - k * 13.7, { police:F.bold, taille:11.52, couleur:BLANC }));
+        y = top - hb; prev = 'ban'; return; }
+      if(t === 'annexe'){ annexe(b); return; }
+      if(t === 'sig'){
+        reste(62 + 12); y -= prev ? 62 : 0; ecr('.......................................................', XR, y); ecr('..............................................................................', 347, y);
+        ecr('Date', XR, y - 10.3); ecr(b.x || 'Le soumissionnaire (timbre et signature)', 347, y - 10.3); y -= 10.3; prev = 'sig'; return; }
+      const g = G[i]; if(!g) return;
+      const cad = t === 'cad', hU = HAUT - BAS();
+      let d = avant(b, prev), besoin = d + g.hh;
+      if(TITRES.includes(t)) besoin += suite(i, prev);   /* titre gardé avec les titres suivants et le début du bloc qui suit */
+      if(cad && BL[i + 1] && BL[i + 1].t === 'sig') besoin += 62 + 12;   /* encadré (déclaration) gardé avec sa signature */
+      if(besoin > hU) besoin = d + (cad ? 23 : 0) + LD;   /* plus haut qu'une page : il commence ici et continue page après page */
+      if(libre() || y - besoin < BAS()){ page(false); d = 0; }
+      if(cad){   /* encadré : fermé en bas de page et rouvert sur la suivante s'il est plus long qu'une page */
+        let top = y - d + 4, yl = top - 15;
+        for(let j = 0; j < g.n; j++){
+          if(j){ if(yl - LD - 7.7 < BAS()){ cx.rect(XR, yl - 7.7, XD - XR, top - (yl - 7.7), { bord:C.N }); page(false); top = y + 4; yl = top - 15; } else yl -= LD; }
+          ecr(g.LL[j] || '', g.x0, yl, g.fs); }
+        const bot = yl - 7.7; cx.rect(XR, bot, XD - XR, top - bot, { bord:C.N }); y = bot; prev = 'cad'; return; }
+      y -= d;
+      if(g.xNum != null) ecr(g.nm[1], g.xNum, y, g.fs);
+      if(t === 'pu') ecr('–', g.base, y, g.fs);
+      const xL = t === 'kv' ? g.base : g.x0;
+      for(let j = 0; j < g.n; j++){ if(j){ y -= LD; if(y < BAS()) page(false); }
+        if(g.LL[j]){ const wd = ecr(g.LL[j], xL, y, g.fs); if(g.souligne) L0(xL, y - 1.2, xL + wd); } if(g.VV[j]) ecr(g.VV[j], 305, y, g.fs); }
+      if(t === 'fl') L0(447, y - 3, XD);
+      prev = apres(i, pAv); });
+    if(!ouverte) page(false);
+    cx.y = y;
+  };
+  /* devis général (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel) : A4 paysage au papier des
+     contrats ; pages du livret calculées par le moteur (ch02bBook : page de garde, information, récapitulatif à 2 chiffres, document principal, total), dessinées ici aux mesures
+     relevées sur la référence : en-tête du tableau 8 pt entre deux filets, rangées de 15 pt, 1 et 2 chiffres en gras 10 pt, positions 9 pt, détails 8 pt, une rangée sur deux
+     sur fond gris (232), filet noir au-dessus des CFC à 1 chiffre et du total ; textes trop longs coupés par « … ». o.livretDG = { couverture:{ titre, marge, rub:[[libellé, valeur]],
+     sig:[titre] }, pages:[{ type 0 garde | 3, 4 information | 1, 2 tableau, titre, cols:[{ t, w, r }], rows:[{ c:[…], s }] }], st:{ s:{ z, b } }, zebra } */
+  const contenuLivret = (cx) => {
+    const D = o.livretDG, H = PAP.format.paysage.h, T = (v) => H - v, GRIS = PDFLib.rgb(0.91, 0.91, 0.91), FIL = PDFLib.rgb(0.8, 0.8, 0.8);
+    const P = (t) => prep(t == null ? '' : t);
+    const police = (s) => { const x = (D.st || {})[s] || {}; return { f: x.b ? F.bold : F.light, z: +x.z || 9 }; };
+    const ell = (f) => aGlyphe(f, 0x2026) ? '…' : '...';
+    /* texte coupé à la largeur de la cellule, fin « … » (comme l'original) */
+    const ajuste = (t, f, z, w) => { let s = P(t); if(cx.largeur(s, f, z) <= w) return s; const e = ell(f); while(s && cx.largeur(s.trimEnd() + e, f, z) > w) s = s.slice(0, -1); return s ? s.trimEnd() + e : ''; };
+    const page = (titre, sansNum) => {
+      titreBrut = nettoyer(titre || titreDocument); titreDoc = maj(titreBrut);
+      cx.nouvellePage('paysage'); if(sansNum) cx.pages[cx.pages.length - 1].nonum = true;
+    };
+    /* page de garde : titre et marge d'approximation, rubriques soulignées, signatures (positions de la référence, mesurées depuis le haut) */
+    const garde = (G) => {
+      const XG = 124.4, XD2 = 485.5;
+      const mg = G.marge ? ajuste(G.marge, F.bold, 12, 150) : '', lm = mg ? cx.largeur(mg, F.bold, 12) + 16 : 0;   /* marge limitée à 150 pt ; titre réduit jusqu'à 8 pt puis coupé : jamais l'un sur l'autre */
+      let tz = 12; while(tz > 8 && cx.largeur(P(G.titre || ''), F.bold, tz) + lm > XD2 - XG) tz -= 0.25;
+      cx.texte(ajuste(G.titre || '', F.bold, tz, XD2 - XG - lm), XG, T(152), { police:F.bold, taille:tz });
+      if(mg) cx.texte(mg, XD2, T(152), { police:F.bold, taille:12, align:'d' });
+      if(G.filtre) cx.texte(ajuste(G.filtre, F.regular, 8, XD2 - XG), XG, T(170), { police:F.regular, taille:8 });   /* montants partiels (filtre des ouvrages) */
+      cx.ligne(XG, T(156.5), XD2, T(156.5));
+      Array.from(G.rub || []).forEach((r, i) => { const y = 230 + i * 42;
+        cx.texte(P(r[0]), XG, T(y), { police:F.regular, taille:8 }); cx.ligne(XG, T(y + 3.5), XD2, T(y + 3.5));
+        cx.couper(P(r[1] || ''), F.light, 8, XD2 - XG).slice(0, 2).forEach((l, k) => cx.texte(l, XG, T(y + 15 + k * 10), { police:F.light, taille:8 })); });
+      Array.from(G.sig || []).forEach((s, i) => { const y = 426 + i * 58;
+        cx.texte(P(s), XG, T(y), { police:F.regular, taille:8 });
+        cx.texte('Lieu, date', XG, T(y + 22), { police:F.light, taille:8 }); cx.ligne(XG + 50, T(y + 23), 296, T(y + 23));
+        cx.texte('Tampon,', 312, T(y + 12), { police:F.light, taille:8 }); cx.texte('signature', 312, T(y + 22), { police:F.light, taille:8 }); cx.ligne(352, T(y + 23), XD2, T(y + 23)); });
+    };
+    /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
+    const tableau = (pg) => {
+      const X0 = cx.Z.x0, cols = Array.from(pg.cols || []), rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
+      let x = X0; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
+      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); }
+      else {
+        cx.ligne(X0, T(100.5), X0 + W, T(100.5));
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
+        cx.ligne(X0, T(116.5), X0 + W, T(116.5));
+      }
+      let y = info ? 108 : 122;
+      Array.from(pg.rows || []).forEach((r, i) => {
+        const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []);
+        if(!info && D.zebra && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });
+        if(!info && (s === 'O' || s === 'F' || s === 'T') && c.some(v => String(v == null ? '' : v).trim())) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
+        const base = y + rh - 4;
+        cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
+          const q = pos[j + 1], libre = !p.r && q && !q.r && q.w && !String(c[j + 1] == null ? '' : c[j + 1]).trim();   /* texte trop long : déborde sur la colonne de droite si elle est vide */
+          const t = ajuste(v, pol.f, pol.z, p.w - 4 + (libre && cx.largeur(P(v), pol.f, pol.z) > p.w - 4 ? q.w : 0)); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(base), { police:pol.f, taille:pol.z, align:p.r ? 'd' : 'g' }); });
+        if(info) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
+        y += rh; });
+    };
+    Array.from(D.pages || []).forEach(pg => {
+      page(pg.titre, pg.type === 0);
+      if(pg.type === 0) garde(D.couverture || {}); else tableau(pg);
+    });
+    if(!cx.pages.length) page(titreDocument, false);
+    cx.y = cx.Z.bas;
+  };
   const contenu = (cx) => {
+    if(o.livretDG){ contenuLivret(cx); return; }
+    if(o.cahier){ contenuCahier(cx); if(o.descriptif) contenuDescriptif(cx); return; }
+    if(o.comparatif){ contenuComparatif(cx); return; }
+    if(o.descriptif){ contenuDescriptif(cx); return; }
     if(Array.isArray(o.epreuve)){
       /* épreuve du papier : pages vides aux orientations demandées (zone utile tracée) */
       o.epreuve.forEach((ori, i) => {
@@ -1270,14 +1612,24 @@ async function sgDsPdf(R, rep, o){
       catch(e){ alerte('Image « ' + k + ' » illisible : ' + (e && e.message || e)); }
     }
   }
+  /* plans joints du cahier de soumission (bloc 44) : intégrés avant le dessin — première page d'un PDF, ou image PNG / JPEG */
+  if(o.cahier && o.cahierFichiers){ ctx.annexes = {};
+    for(const k of Object.keys(o.cahierFichiers)){ const by = o.cahierFichiers[k], ty = String(((o.cahier.annexes || {})[k] || {}).type || '');
+      try{ if(/pdf/i.test(ty)){   /* première page, à sa zone visible (CropBox) et dans son sens d'affichage (/Rotate) */
+          const src = await PDFLib.PDFDocument.load(by), p0 = src.getPage(0), cb = p0.getCropBox(), rot = (((p0.getRotation().angle || 0) % 360) + 360) % 360, q = rot === 90 || rot === 270;
+          const pg = await doc.embedPage(p0, { left:cb.x, bottom:cb.y, right:cb.x + cb.width, top:cb.y + cb.height });
+          ctx.annexes[k] = { obj:pg, w:q ? pg.height : pg.width, h:q ? pg.width : pg.height, page:true, rot:[90, 180, 270].includes(rot) ? rot : 0 }; }
+        else { const im = /png/i.test(ty) ? await doc.embedPng(by) : await doc.embedJpg(by); ctx.annexes[k] = { obj:im, w:im.width, h:im.height, page:false }; } }
+      catch(e){ alerte('Plan joint illisible : ' + (e && e.message || e)); } } }
   contenu(ctx);
   if(!ctx.pages.length) ctx.nouvellePage('portrait');
 
   /* ── Fin : numérotation « n | total » (le total n'est connu qu'ici), métadonnées, octets ── */
   /* par exemplaire (B7) : chaque lettre a sa propre numérotation ; sans o.jobs, un seul exemplaire (job 0) */
   const tot = {}, rang = {};
-  ctx.pages.forEach(p => { tot[p.job] = (tot[p.job] || 0) + 1; });
-  ctx.pages.forEach(p => { rang[p.job] = (rang[p.job] || 0) + 1; numeroter(p.page, rang[p.job], tot[p.job]); });
+  ctx.pages.forEach(p => { if(!p.nonum) tot[p.job] = (tot[p.job] || 0) + 1; });   /* page sans numéro (garde du devis général, bloc 46) : ni numérotée ni comptée */
+  /* o.numDebut / o.numTotal / o.numTotalPlus : pages d'un document assemblé (cahier de soumission : conditions puis cahier des charges, numérotation continue) */
+  ctx.pages.forEach(p => { if(p.nonum) return; rang[p.job] = (rang[p.job] || 0) + 1; numeroter(p.page, rang[p.job] + (+o.numDebut || 0), +o.numTotal || (tot[p.job] + (+o.numTotalPlus || 0))); });
   doc.setTitle(titreDocument);
   doc.setAuthor('Substances Architectes');
   doc.setCreator(o.jobs ? 'SUBGestion' : 'SUBGestion — Documents Substances');

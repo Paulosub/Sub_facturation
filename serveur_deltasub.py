@@ -88,7 +88,7 @@ PROTECTED_IF_EDITED |= {"statisticalvalue", "constructionpart", "constructioncom
 # rafraîchis depuis Deltaproject. Les mots de passe de Deltaproject ne sont jamais repris (SKIP_COLUMNS inchangé).
 CH08_PIT = {"appuser", "appuser_staff", "appuser_appcompanyrole", "appcompanyrole", "appcompanyrole_approle", "approle", "setting"}
 PROTECTED |= {"appusersignature"}   # CH-08 : signatures PNG des comptes (collection propre à DeltaSub, lot 3)
-PROTECTED |= {"svbiblio"}   # bibliothèque d'articles des appels d'offres (18.10.2026), écrite dans SUBGestion : jamais vidée au ré-import
+PROTECTED |= {"svbiblio", "sgcgmodele"}   # bibliothèque d'articles des appels d'offres (18.10.2026), écrite dans SUBGestion : jamais vidée au ré-import
 CH08_CLE = {"appuser": "USERID", "setting": "SETTINGNAME"}   # même ID des deux côtés, mais autre compte / autre réglage
 MANUEL_FR = os.environ.get("DELTASUB_MANUEL") or "/Applications/DELTAproject.app/Contents/app/rsrc/help/manual_fr.pdf"   # Aide ▸ Aide
 
@@ -1963,7 +1963,7 @@ SG_T_CONTRATS = {"projectfee", "projectfeecalculation", "projectfeecalculationam
 SG_T_FACTURES = {"projectinvoice", "projectinvoicepos", "projectpayment", "projectscheduledpayment", "qrbill", "qrbillaccount"}
 SG_T_CHANTIER = {"costestimate", "costestimatedocument", "costestimatedpdoc", "costestimatehist", "costcontrol", "costcontroldocument",
                  "costplanning", "costplanningdocument", "projectcatalog", "projectcatalogpos", "projecttenderer", "devisdocument",
-                 "soumission", "soumissiondoc", "soumissionhist"}
+                 "soumission", "soumissiondoc", "soumissionhist", "sgcontratent"}
 SG_T_CONTACTS = {"contactowner", "contact", "contact_property", "contactnote", "contactgroup", "contactgroup_contact", "contactquery", "contactqueryclause",
                  "bankaccount", "documentrecipient"}
 SG_T_BIBLIO = {"modele", "modeledocument", "modelegroupe", "doctemplate", "doctemplategroup", "formtemplate", "formtemplategroup",
@@ -2245,6 +2245,10 @@ def sg_refus_ecriture(ctx, c, ops):
             if sg_niv(ctx, "chantier", "ecriture") or sg_niv(ctx, "bibliotheque", "ecriture"):
                 continue
             return "Bibliothèque d'articles des appels d'offres : lecture seule pour votre profil."
+        if t == "sgcgmodele":   # modèle du bureau des conditions de l'appel d'offres (07.11.2026, cahier de soumission)
+            if sg_niv(ctx, "chantier", "ecriture") or sg_niv(ctx, "bibliotheque", "ecriture"):
+                continue
+            return "Modèle des conditions de l'appel d'offres : lecture seule pour votre profil."
         p0 = SG_IDX.projet(c, t, i)
         p1 = SG_IDX.projet_de(c, t, i, v) if v is not None else None
         ps = {p for p in (p0, p1) if p}

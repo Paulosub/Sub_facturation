@@ -153,3 +153,7 @@ html body.sg-tactile #pv_out table.pv-xl td>textarea,html body.sg-tactile #pv_ou
 /* contrats et factures « à valider » (sg3_plus.js ▸ 11) */
 html body .sg-val-tag{display:inline-block;margin-left:6px;padding:1px 6px;font-size:10.5px;font-weight:700;background:#FEF6B0;color:#003346;border:1px solid #003346;vertical-align:1px}
 html body .sg-val-tag.refuse{background:#BD1E42;color:#fff;border-color:#BD1E42}
+/* bouton « Agrandir / réduire la fenêtre » du carnet d'adresses : coins de cadrage (07.11.2026, sg3_plus.js) */
+.sg-plbtn>span{display:block}
+.sg-plbtn svg{width:16px;height:16px;display:block}
+#adr_pick_w[data-max="1"] .sg-plbtn .sg-pl,#adr_pick_w:not([data-max="1"]) .sg-plbtn .sg-plq{display:none}

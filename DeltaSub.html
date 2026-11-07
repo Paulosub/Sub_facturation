@@ -11884,7 +11884,7 @@ function svStaffOfUser(uid){ const u=DS.all('appuser').find(x=>x.USERID===uid); 
 
 /* écriture du contenu : une COPIE du contenu de travail (sinon le cache DS partagerait l'objet édité et les modifications non
    enregistrées, p. ex. l'étape et le dernier nœud, passeraient pour enregistrées) et la version lue à l'ouverture (bseq → 409) */
-const svSoumOp=(id,S,seq)=>({t:'soumission',id,val:JSON.parse(JSON.stringify(S)),bseq:seq||0});
+const svSoumOp=(id,S,seq)=>({t:'soumission',id,val:JSON.parse(JSON.stringify(typeof svSoumVal==='function'?svSoumVal(S):S)),bseq:seq||0});   /* svSoumVal : SUBGestion 3, comparatif de travail (bloc 42) */
 
 /* ── Écritures dans l'affaire à la fermeture et à l'enregistrement (§9.4 : matchTenderers, setTenderers, DevisToProjectMembers) ── */
 function svCloseOps(doc,S){ const ops=[], pid=doc.PROJECT_ID, bkp=(doc.BKP||'').trim()||null, same=(a,b)=>String(a||'').trim()===String(b||'').trim();
@@ -14982,7 +14982,7 @@ function svcPriceInput(ctx){ const X=ctx.X, S=ctx.S, U=ctx.U, a5=svcA5(S), ents=
   const gpOpts=p=>{ const G=['A','I','N']; if(p&&svdIs('FR',p.gp)) G.push(p.gp); gp.replaceChildren(...G.map(g=>h('option',{value:g},g+'  '+SVD_GP_PI[g]))); gp.value=p&&G.includes(p.gp)?p.gp:'A'; };
   const box=ctBox(210,330), eg={sel:String(cid)};
   const show=()=>{ const x=L[k], p=pe(x.q); svdRecalc(S,'C1');
-    art.textContent=x.ch.numero+'  '+svdNum('',x.a.m,x.a.u)+'  | '+(x.i+1)+'\n'+svdKeyword(x.a); qte.value=svdQtyCell(x.q); qte.readOnly=!!(x.q.metre||[]).length||x.q.gq==='W'; un.textContent=x.a.unite||'';
+    art.textContent=x.ch.numero+'  '+svdNum('',x.a.m,x.a.u)+'  | '+(x.i+1)+'\n'+svdKeyword(x.a); qte.value=svdQtyCell(x.q); qte.readOnly=!!(x.q.metre||[]).length||x.q.gq==='W'||(typeof sgQteFixe==='function'&&sgQteFixe(X));   /* SUBGestion 3 : comparatif des offres figé (bloc 42) */ un.textContent=x.a.unite||'';
     gpOpts(p); pr.value=p?svdFmtAmt(p.prix).replace(/'/g,''):''; pr.disabled=svdIs('IN',gp.value)||null; eq_.checked=!!x.a.prixIdentique;
     tot.textContent=svdFmtAmt(svdRnd((p?+p.prix||0:0)*(+x.q.quantite||0),a5));
     let last=k; while(last+1<L.length&&L[last+1].a===x.a) last++;                                             // total cumulé : du début à l'article courant compris
@@ -15177,22 +15177,23 @@ function svcStepRows(et){ const r=(g,kind,t)=>({k:g+'|'+kind,g,kind,t}), sep=k=>
 function svcStepDocs(X,et){ const S=X.S, U=svdUnit(S,et), ro=X.ro, st=SVC_UI.sd[X.id+et]||(SVC_UI.sd[X.id+et]={g:{}}), rows=svcStepRows(et), D=et==='D';
   const notes=g=>g==='order'?(S.documents.commandeContrat||svNotes0()):g==='work'?(U.notesDebutPrep||svNotes0()):(U.notesDoc||svNotes0());
   const setNotes=(g,v)=>{ if(g==='order') S.documents.commandeContrat=v; else if(g==='work') U.notesDebutPrep=v; else U.notesDoc=v; };
-  const docOf=g=>svcDocOf(X,et,SVC_SD_TYPE[g],null), pdfOf=g=>{ const d=docOf(g); return !!(d&&d.pdf); };
-  const open=g=>{ if(pdfOf(g)){ toast('PDF enregistrés : prévu au lot 4.'); return; }
+  const docOf=g=>g==='cg'||g==='cahier'?(typeof sgCgDoc==='function'?sgCgDoc(X,g):null):svcDocOf(X,et,SVC_SD_TYPE[g],null), pdfOf=g=>{ const d=docOf(g); return !!(d&&d.pdf); };
+  const open=g=>{ if(g==='cg'||g==='cahier'){ if(typeof sgCgPdf==='function') sgCgPdf(X,g); return; }   /* conditions générales et cahier complet (SUBGestion 3, blocs 40 et 44) */
+    if(pdfOf(g)){ toast('PDF enregistrés : prévu au lot 4.'); return; }
     if(g!=='desc'&&!svcUnitEnt(S,et)){ ctMsg('Information','Vous n\'avez choisi aucun entrepreneur pour l\'ordre.'); return; }
     if(g==='desc'){ svcFiltreWarn(S,et); svdPrint(svcCx(X,et),'desc'); } else if(g==='order') svcPrintOrder(X); else svcPrintWorkPrep(X);
     const op=svcDocEnsure(X,et,SVC_SD_TYPE[g],null); if(op) DS.commit([op]).catch(()=>{}); };
   const note=g=>svbDlgNote(X,()=>notes(g),v=>setNotes(g,v));
-  const act=r=>{ if(!r||!r.g) return; if(r.kind==='doc') open(r.g); else if(r.kind==='pdf') toast('Fichiers PDF enregistrés : prévu au lot 4.'); else if(!ro) note(r.g); };
-  const edit=()=>[{t:'Document descriptif',fn:()=>open('desc')},{t:'Descriptif en PDF',dis:true},{t:'Note d\'expédition et remarque',dis:ro,fn:()=>note('desc')},
-    ...(D?['-',{t:'Commande',fn:()=>open('order')},{t:'Ouvrir PDF',dis:true},{t:'Note d\'expédition et remarque',dis:ro,fn:()=>note('order')},{t:'Note d\'expédition',dis:ro,fn:()=>note('order')},
-      '-',{t:'Document début de la préparation',fn:()=>open('work')},{t:'Début de préparation en PDF',dis:true},{t:'Remarque pour le début de la préparation',dis:ro,fn:()=>note('work')},
+  const act=r=>{ if(!r||!r.g) return; if(r.kind==='doc'||r.kind==='pdf') open(r.g); else if(!ro) note(r.g); };   /* 06.11.2026 : la ligne « en PDF » ouvre le même document */
+  const edit=()=>[{t:'Document descriptif',fn:()=>open('desc')},{t:'Descriptif en PDF',fn:()=>open('desc')},{t:'Note d\'expédition et remarque',dis:ro,fn:()=>note('desc')},
+    ...(D?['-',{t:'Commande',fn:()=>open('order')},{t:'Ouvrir PDF',fn:()=>open('order')},{t:'Note d\'expédition et remarque',dis:ro,fn:()=>note('order')},{t:'Note d\'expédition',dis:ro,fn:()=>note('order')},
+      '-',{t:'Document début de la préparation',fn:()=>open('work')},{t:'Début de préparation en PDF',fn:()=>open('work')},{t:'Remarque pour le début de la préparation',dis:ro,fn:()=>note('work')},
       {t:'Note d\'expédition',dis:ro,fn:()=>note('work')}]:[])];
   const del=()=>(D?['desc','order','work']:['desc']).flatMap((g,i)=>[...(i?['-']:[]),{t:'Effacer le document',dis:!docOf(g)||ro,fn:()=>svDocErase(X,docOf(g))},{t:'Effacer le PDF',dis:true}]);
   const pane=h('div',{class:'pane'});
   X.el.append(phead([ibtn({i:'edit',t:'Editer',menu:edit}),svBtn({sv:'eraser',t:'Effacer',menu:del}),
     ibtn({i:'share',t:'Partager',menu:()=>[{t:'Partager le document',dis:true},...(D?[{t:'Partager la commande',dis:true}]:[])]})]),pane,
-    h('div',{style:{padding:'8px 12px',color:'#777',borderTop:'1px solid var(--line)'}},'Double-clic sur une ligne : document ou note. « Descriptif » : impression simple par le navigateur (document .dpdoc « devisDocument », cahier, PDF enregistrés et SIA451 : lot 4).'+
+    h('div',{style:{padding:'8px 12px',color:'#777',borderTop:'1px solid var(--line)'}},'Double-clic sur une ligne : document, PDF ou note.'+
       (D?' Commande et début de la préparation : entreprise du contrat'+(svcUnitEnt(S,et)?' ('+svcName(svcUnitEnt(S,et))+').':'.'):'')));
   const avail=r=>r.kind==='doc'?(docOf(r.g)?'✔':''):r.kind==='pdf'?(pdfOf(r.g)?'✔':''):'';
   const info=r=>r.kind==='exp'?esc(notes(r.g).exp):r.kind==='rem'?esc(notes(r.g).rem):'';

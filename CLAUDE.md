@@ -1570,7 +1570,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Précision du devis (07.11.2026, Paulo : « ajoute le degré de précision du devis devant le total TTC »)** : premier chiffre, étroit (colonne de 86 px), « Précision ±10 % » = « Marge
   d'approximation du DG » des Paramètres (`E.reglages.marge`, textes « [...] » ignorés), sans sous-ligne (« du devis » retiré à la demande) ; vide → « — » et lien « définir »
   (Paramètres, `ch02aSettings`). Texte d'aide sous la recherche du
-  plan CFC retiré (« supprimer », même jour). « figé » sous Honoraires HT, la raison en infobulle. Plus de « CHF » sous les chiffres du devis (« supprimer le CHF dans le devis général », même jour) : seules restent les
+  plan CFC retiré (« supprimer », même jour). « figé » sous Honoraires HT, la raison en infobulle. Chiffre « Positions » : sous le nombre de positions chiffrées, « chiffrées sur <total> » en gris toujours visible, aussi sur écran bas et en plein écran (Paulo, 07.11.2026 : « pour identifier si j'ai des positions vides » ; nombre sans montant en infobulle ; les autres sous-lignes restent masquées sur écran bas). Plus de « CHF » sous les chiffres du devis (« supprimer le CHF dans le devis général », même jour) : seules restent les
   indications utiles (montants exclus, filtre, contrat signé, liens). Chiffre « Soumis aux honoraires HT » renommé « Montant soumis HT » (une seule ligne, comme la colonne) ; « figé » retiré sous
   Honoraires HT (« supprimer », même jour), devis validé ou annulé signalé dans l'infobulle du chiffre.
   **Chiffres toujours sur une seule ligne (même jour, « toujours sur une ligne, pas de renvoi à la ligne »)** : rangée en colonnes fixes (`grid-auto-flow:column`, 1re colonne

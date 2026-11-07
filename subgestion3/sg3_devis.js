@@ -479,7 +479,7 @@ const PH_SIA=[['1 Définition des objectifs',[['11','Énoncé des besoins, appro
   ['5 Réalisation',[['51','Projet d’exécution'],['52','Exécution de l’ouvrage'],['53','Mise en service, achèvement']]]];
 const phNom=c=>{ for(const [,L] of PH_SIA) for(const [k,n] of L) if(k===String(c)) return n; return ''; };
 const phDe=R=>{ const c=String((R||{}).phaseSia||''); if(phNom(c)) return c; const t=String((R||{}).etatProjet||'').trim().toLowerCase(); for(const [,L] of PH_SIA) for(const [k,n] of L) if(t&&n.toLowerCase()===t) return k; return ''; };
-const PAR_AIDE={phase:'Phase SIA 102 du devis ; son nom est repris sur la page de garde du devis général (« Devis général - <phase> »).',etatProjet:'Repris sur la page de garde du devis général (« Devis général - <état> »).',
+const PAR_AIDE={plans:'Date des plans sur lesquels repose le devis, écrite dans la page Information (« Ce DG correspond aux plans datés du … »).',phase:'Phase SIA 102 du devis ; son nom est repris sur la page de garde du devis général (« Devis général - <phase> »).',etatProjet:'Repris sur la page de garde du devis général (« Devis général - <état> »).',
   marge:'Degré de précision du devis, affiché devant le total TTC et sur la page de garde.',date:'Date du devis, en tête des documents.'};
 /* texte type de la page Information (Paulo, 07.11.2026, choix « texte type des nouveaux devis ») : texte du bureau, une ligne par entrée comme dans l'ancien logiciel (une ligne
    sans libellé continue la précédente) ; {ouvrage} = description du projet (sinon son titre, comme « Ouvrage » de la page de garde), {tva} = taux de TVA par défaut,
@@ -518,7 +518,7 @@ function remProjet(pid,sauf){ if(pid==null) return null; const p=DS.get('project
   const L=DS.all('costestimatedocument').filter(d=>String(d.PROJECT_ID)===String(pid)&&String(d.ID)!==String(sauf)&&!d.ISMARKEDASDELETED)
     .sort((a,b)=>String(b.CHANGEDDATE||'').localeCompare(String(a.CHANGEDDATE||''))||(+b.ID||0)-(+a.ID||0));
   for(const d of L){ const E=DS.get('costestimate',d.ID); if(!E) continue; const A=remAuto(E,p), rest=(A.rest||[]).filter(r=>r.nom.trim()||r.texte.trim());
-    if(rest.length||A.auto) return {rem:rest.map(r=>({nom:r.nom,texte:r.texte})),auto:A.auto,de:d}; }
+    if(rest.length||A.auto) return {rem:rest.map(r=>({nom:r.nom,texte:r.texte})),auto:A.auto,de:d,datePlans:String((E.reglages||{}).datePlans||'')}; }
   return null; }
 /* titres des documents (page de garde, devis à 1 et 2 chiffres, document principal) = nom de la version du devis, à la création (Paulo, 07.11.2026) : enregistrement qui crée
    un en-tête (bseq 0) et son contenu (bseq 0) — nouveau devis, Dupliquer, Dupliquer et modifier, import ; nom vide : titres inchangés (« Devis général » par défaut) */
@@ -528,7 +528,7 @@ function remProjet(pid,sauf){ if(pid==null) return null; const p=DS.get('project
     /* page Information : texte type quand le nouveau devis n'en a pas (nouveau devis ; une copie garde les remarques de l'original) */
     try{ (Array.isArray(ops)?ops:[]).forEach(o=>{ if(!o||o.t!=='costestimatedocument'||+o.bseq!==0||!o.val) return; const c=ops.find(x=>x&&x.t==='costestimate'&&String(x.id)===String(o.id)&&+x.bseq===0&&x.val&&typeof x.val==='object');
       if(c&&!((c.val.remarques||[]).some(r=>String((r||{}).nom||'').trim()||String((r||{}).texte||'').trim()))){ const pid=o.val.PROJECT_ID||c.val.PROJECT_ID, P=remProjet(pid,o.id), R=c.val.reglages||(c.val.reglages={});
-        if(P){ c.val.remarques=P.rem; if(P.auto) R.infoAffaire=true; } else { c.val.remarques=remType(pid); R.infoAffaire=true; } } }); }catch(e){ console.error(e); }
+        if(P){ c.val.remarques=P.rem; if(P.auto) R.infoAffaire=true; if(P.datePlans) R.datePlans=P.datePlans; } else { c.val.remarques=remType(pid); R.infoAffaire=true; } } }); }catch(e){ console.error(e); }
     return k0.apply(this,arguments); }; }
 /* menu « Présentation » : présentations du moteur + « Avec le descriptif et le calcul de prix » entre « Toutes les colonnes avec le calcul de prix » et « Avec le descriptif » */
 function presMenu(X){ const L=ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seulement positions de 1 à 3 chiffres'), c4=calcDesc(X.E), m=ch02aMode(X.E);
@@ -546,7 +546,7 @@ const remDe=X=>(X.E.remarques||[]).map(r=>[String((r||{}).nom||''),String((r||{}
    le PDF imprime chaque ligne d'un texte sur sa propre rangée, libellé sur la première (ch02bIntro) : même page Information qu'avec une entrée par ligne */
 const remGroupes=L=>{ const G=[]; L.forEach(r=>{ const n=String(r.nom||''), t=String(r.texte||''); if(!n.trim()&&G.length) G[G.length-1][1]+='\n'+t; else G.push([n,t]); }); return G; };
 function parSig(X){ const v=ch02aPrefInit(X.E,ch02aHdr(X)), R1=X.E.reglages||{};
-  return JSON.stringify([v.date,phDe(R1),String(R1.etatProjet||''),v.marge,v.pourcentageSur,!!v.arrondi5ct,remDe(X),!!R1.infoAffaire,nomAffaire(X.p),ecrit()&&ch02aCanEdit(ch02aHdr(X))]); }
+  return JSON.stringify([v.date,phDe(R1),String(R1.etatProjet||''),v.marge,v.pourcentageSur,!!v.arrondi5ct,remDe(X),!!R1.infoAffaire,nomAffaire(X.p),String(R1.datePlans||''),ecrit()&&ch02aCanEdit(ch02aHdr(X))]); }
 function parPage(X,par,force){ if(!par) return; const act=document.activeElement;
   const P=CH02A_PREF, v=ch02aPrefInit(X.E,ch02aHdr(X)), peut=ecrit()&&ch02aCanEdit(ch02aHdr(X)), dis=peut?'':' disabled', y=par.scrollTop, sig=parSig(X);
   if(!force&&par._sig===sig){ parIndice(X,par); return; }
@@ -563,7 +563,9 @@ function parPage(X,par,force){ if(!par) return; const act=document.activeElement
       ligne(P.date,'<input class="inp c" type="date" data-k="date" value="'+E(v.date||'')+'"'+dis+'>',PAR_AIDE.date)
       +ligne('Phase du devis',selPh,PAR_AIDE.phase)
       +ligne(P.prec,'<input class="inp c" data-k="marge" list="sgde-dl-mg" value="'+E(v.marge)+'"'+dis+'><datalist id="sgde-dl-mg">'+P.marges.map(x=>'<option value="'+E(x)+'">').join('')+'</datalist>',PAR_AIDE.marge)
-      +ligne(P.index,'<div class="sgde-pidx"></div>'))
+      +ligne(P.index,'<div class="sgde-pidx"></div>')
+      /* « Date des plans » (Paulo, 07.11.2026 : « ajoute une cellule date des plans ») : reglages.datePlans ; écrite dans le texte Information (« … plans datés du <date> ») */
+      +ligne('Date des plans','<input class="inp c" type="date" data-k="datePlans" value="'+E(String((X.E.reglages||{}).datePlans||''))+'"'+dis+'>',PAR_AIDE.plans))
     +sec(P.disp,'',ligne('Pourcentage','<label class="sgde-pr"><input type="radio" name="sgde-pct" data-k="pourcentageSur" value="groupe"'+(v.pourcentageSur!=='total'?' checked':'')+dis+'> '+E(P.procGrp)+'</label>'
         +'<label class="sgde-pr"><input type="radio" name="sgde-pct" data-k="pourcentageSur" value="total"'+(v.pourcentageSur==='total'?' checked':'')+dis+'> '+E(P.procTot)+'</label>','Colonne « % » du devis et des documents.')
       +ligne(P.round,'<label class="sgde-pr"><input type="checkbox" data-k="arrondi5ct"'+(v.arrondi5ct?' checked':'')+dis+'> Arrondir les montants des lignes</label>'));   /* phrase d'aide retirée (Paulo, 07.11.2026 : « supprimer ») */
@@ -612,8 +614,19 @@ function remAction(X,par,b){ const a=b.dataset.rm, rw=b.closest('.sgde-rmr'), bo
   else return;
   remEnregistrer(X,par); }
 /* enregistrement d'un champ : valeurs à jour du devis, le champ changé, puis l'enregistrement du moteur (un seul X.touch) ; la signature est posée avant : la page ne se redessine pas */
+/* date en toutes lettres, comme la page Information de l'ancien logiciel : « 26 février 2026 », « 1er mars 2026 » */
+const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const dateLongue=iso=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||'')); if(!m) return ''; const j=+m[3]; return (j===1?'1er':String(j))+' '+MOIS_L[+m[2]-1]+' '+m[1]; };
+const A_COMPLETER='[date à compléter]';
+/* date des plans changée : elle remplace dans le texte Information « [date à compléter] » et l'ancienne date des plans (en toutes lettres) ; effacée → « [date à compléter] » */
+function datePlansChange(X,par,v){ const R=X.E.reglages||(X.E.reglages={}), avant=dateLongue(R.datePlans), apres=dateLongue(v)||A_COMPLETER, s0=JSON.stringify([X.E.remarques||[],R.datePlans||'']);
+  if(v) R.datePlans=v; else delete R.datePlans; let vu=false;
+  X.E.remarques=(X.E.remarques||[]).map(r=>{ let t=String((r||{}).texte||''); const t0=t; t=t.split(A_COMPLETER).join(apres); if(avant&&avant!==apres) t=t.split(avant).join(apres); if(t!==t0||t.includes(apres)) vu=true; return t===t0?r:Object.assign({},r,{texte:t}); });
+  if(JSON.stringify([X.E.remarques,R.datePlans||''])!==s0){ par._sig=parSig(X); X.touch(); parPage(X,par,true); }
+  if(v&&!vu) toast('Date des plans enregistrée. Elle n’apparaît pas dans le texte Information : ajoutez-la à la phrase « Ce DG correspond aux plans datés du … ».'); }
 function parChange(X,par,t){ if(String(t.dataset.k||'').startsWith('rem.')){ remEnregistrer(X,par); return; }
   if(!ch02aCan(X)){ parPage(X,par,true); return; }
+  if(t.dataset.k==='datePlans'){ datePlansChange(X,par,t.value); return; }
   /* arrondi : recalcule les montants de toutes les lignes de calcul (un clic de trop, puis son annulation, changerait des montants) → confirmation d'abord */
   if(t.dataset.k==='arrondi5ct'&&!t._ok){ const on=t.checked, n=(X.E.positions||[]).reduce((a,q)=>a+(q.genere?0:(q.parts||[]).reduce((b,pt)=>b+(pt.lignes||[]).length,0)),0); t.checked=!on;
     sgConfirm((on?'Arrondir':'Ne plus arrondir')+' les montants des lignes : le montant TTC de '+n+(n>1?' lignes de calcul sera recalculé':' ligne de calcul sera recalculé')+' (quantité × prix). Continuer ?',

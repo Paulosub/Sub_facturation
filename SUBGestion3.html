@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 07.11.2026 16:07 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 07.11.2026 16:09 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -37952,7 +37952,7 @@ const CSS=`
 .sgde-tete .sgfh-ini{font-size:28px;white-space:nowrap}
 .sgde-tete .sgfh-nm{min-width:0}
 .sgde-tete .sgfh-nm h2{font-size:20px}
-.sgde-kp{flex:none;margin:0 24px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));border-top:0}
+.sgde-kp{flex:none;margin:0 24px;grid-template-columns:86px repeat(auto-fit,minmax(140px,1fr));border-top:0}   /* 1re colonne étroite : précision du devis */
 .sgde-kp .nx-kpi{padding:10px 12px 10px 0;margin-right:12px;min-width:0}
 .sgde-kp .nx-kpi .v{font-size:22px;margin-top:5px;white-space:nowrap}
 .sgde-kp .nx-kpi .s{margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -38371,7 +38371,7 @@ function habiller(m,X){ cssD();
   const plan=on=>{ S.cfc=on; X.L.el.classList.toggle('sgde-ferme',!on); bAdd.classList.toggle('on',on); deco(X); if(on){ const q=X.L.el.querySelector('.psearch'); if(q) q.focus(); } };
   const cT=el('div','sgde-cfc-t','<b>Plan CFC</b><span class="sgde-cfc-g"><button data-tout="1" title="Agrandir tous les groupes">Tout agrandir</button><button data-tout="0" title="Réduire tous les groupes">Tout réduire</button></span><button class="sgde-x" title="Fermer le plan CFC" aria-label="Fermer le plan CFC">×</button>'); cT.querySelector('.sgde-x').onclick=()=>plan(false);
   cT.querySelectorAll('[data-tout]').forEach(b=>{ b.onclick=()=>toutCfc(X,b.dataset.tout==='1'); });
-  X.L.el.classList.add('sgde-cfc'); X.L.el.prepend(cT); const ph=X.L.el.querySelector('.ph2'); if(ph) ph.after(el('div','sgde-aide','Double-cliquez sur un CFC pour l’ajouter au devis ou l’en retirer. Une coche indique les CFC déjà présents.'));
+  X.L.el.classList.add('sgde-cfc'); X.L.el.prepend(cT); /* texte d'aide sous la recherche retiré (Paulo, 07.11.2026 : « supprimer ») : l'infobulle du bouton « Liste CFC » le dit */
   const dessOng=()=>{ ongL.innerHTML=[['pos','Devis'],['docs','Documents']].map(([k,t])=>'<button data-o="'+k+'" class="'+(S.ong===k?'on':'')+'">'+t+'</button>').join(''); box.classList.toggle('docs',S.ong==='docs'); };
   const dessNiv=()=>{ niv.innerHTML='<span title="Niveau de CFC affiché">CFC</span>'+[[0,'Tout','Tous les CFC'],[3,'3','CFC de 1 à 3 chiffres'],[2,'2','CFC de 1 et 2 chiffres'],[1,'1','CFC à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(S.niv===v?'on':'')+'">'+t+'</button>').join(''); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-o]'); if(b){ S.ong=b.dataset.o; dessOng(); } };
@@ -38392,13 +38392,18 @@ function habiller(m,X){ cssD();
       M.forEach((n,c)=>{ if(n.leaf&&/^\d9/.test(String(c).replace(/[^0-9]/g,''))) hh+=n.ht-(n.children||[]).reduce((t,k)=>t+((M.get(String(k))||{}).ht||0),0); });   /* montant propre de chaque position (sans ses enfants) */
       const avec=K&&K.cs.length, pc=avec&&K.partiel&&!K.recoup&&K.pct<=100?' · '+(Math.round(K.pct*10)/10).toFixed(1).replace('.0','')+' % → 100 %':'';
       const lien=t=>' · <button class="sgde-hreg" data-a="hcont" title="'+t+'">reprendre le contrat</button>';
-      const etat={valide:' · figé (devis validé)',annule:' · figé (devis annulé)',ouvrages:' · à répartir entre les ouvrages',parent:' · saisis dans le CFC '+(honAnc(X.E)||'29'),sous:' · 291 détaillée en sous-positions',parties:' · 291 en plusieurs parties'}[eH]||'';
+      const etat={valide:' · <span title="Devis validé : la position 291 ne suit plus le contrat">figé</span>',annule:' · <span title="Devis annulé : la position 291 ne suit plus le contrat">figé</span>',ouvrages:' · à répartir entre les ouvrages',parent:' · saisis dans le CFC '+(honAnc(X.E)||'29'),sous:' · 291 détaillée en sous-positions',parties:' · 291 en plusieurs parties'}[eH]||'';
       const sub=(avec?'CHF · '+(K.signe?'contrat signé':'contrat non signé')+pc:ok&&!K?'CHF · '+(X._honCh==='echec'?'contrats non disponibles':'lecture des contrats…'):'CHF · chapitres d’honoraires du devis')
         +(eH==='manuel'&&peut?lien('La position 291 ne correspond pas au contrat signé ('+num2(K.tot)+' CHF TTC)'):eH==='retire'&&peut?lien('Position 291 retirée du devis : la reprendre au montant du contrat signé ('+num2(K.tot)+' CHF TTC)'):etat);
       return kpi('Honoraires HT',num2(avec?K.m100ht:hh),sub,'','Montant HT pour 100 % des prestations : contrats d’honoraires de l’affaire (signés ou non), extrapolés si le contrat ne couvre qu’une partie des phases ; sans contrat : chapitres d’honoraires du devis (09, 19, 29, 39, 49, 99). La position 291 suit d’office le contrat signé, sauf devis validé ou annulé et montant modifié ou retiré à la main.'); };
     hd.innerHTML=tete(p.NUMBER||'','Devis général'+(et?' · '+et:''),d.VERSION||'(sans titre)',[p.TITLE,mo?'Maître de l’ouvrage : '+mo:'',d.VERSIONNUMBER!=null?'version '+d.VERSIONNUMBER:'',d.CHANGEDDATE?'modifié le '+dfr(d.CHANGEDDATE)+(d.USERID?' par '+d.USERID:''):''].filter(Boolean).join(' · '),'<button class="nx-btn" data-a="liste">‹ '+(DV.back?'Retour':'Liste des devis')+'</button>');
-    kp.innerHTML=kpi('Total TTC',num2(T.ttc),ff||(T.opt?'+ '+num2(T.opt)+' exclus':'CHF'),'','Total du devis, TVA comprise')+(sepV?kpi('Total HT',num2(T.ht),'CHF')+kpi('TVA '+tvaLib,num2(T.tva),'CHF','',tvaTip):'')+kpi('Soumis aux honoraires HT',num2(T.hon),'CHF'+(hR?' · <button class="sgde-hreg" data-a="hreg" title="'+hR+(hR>1?' positions ne suivent pas':' position ne suit pas')+' la règle du bureau : 100 %, sauf CFC 5 et honoraires (583 compris)">appliquer la règle</button>':''),'','Montant hors taxe soumis aux honoraires, selon le pourcentage de chaque position')+honKpi()+kpi('Positions',String(nC),'chiffrées sur '+fe.length); };
-  kp.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('[data-a]'); if(!a) return; if(a.dataset.a==='hreg') regleHon(X); else if(a.dataset.a==='hcont') honReprendre(X); });
+    /* degré de précision du devis (Paulo, 07.11.2026 : « ajoute le degré de précision du devis devant le total TTC ») = « Marge d'approximation du DG » des Paramètres
+       (E.reglages.marge) ; textes modèles « [...] » de l'ancien logiciel ignorés ; vide → « — » et lien « définir » (Paramètres) pour qui peut écrire */
+    const mg=(()=>{ const m=String(((X.E||{}).reglages||{}).marge||'').trim(); return !m||/^\[.*\]/.test(m)?'':m.replace(/^±\s*/,'±').replace(/\s*%$/,' %'); })();
+    const precK='<div class="nx-kpi sgde-prec" title="Degré de précision du devis : marge d’approximation (Paramètres ▸ Information)"><div class="l">Précision</div><div class="v">'+(mg?esc(mg):'—')+'</div>'
+      +(mg?'<div class="s">du devis</div>':ec&&ch02aCanEdit(ch02aHdr(X))?'<div class="s"><button class="sgde-hreg" data-a="prec" title="Définir la marge d’approximation dans les Paramètres">définir</button></div>':'')+'</div>';
+    kp.innerHTML=precK+kpi('Total TTC',num2(T.ttc),ff||(T.opt?'+ '+num2(T.opt)+' exclus':'CHF'),'','Total du devis, TVA comprise')+(sepV?kpi('Total HT',num2(T.ht),'CHF')+kpi('TVA '+tvaLib,num2(T.tva),'CHF','',tvaTip):'')+kpi('Soumis aux honoraires HT',num2(T.hon),'CHF'+(hR?' · <button class="sgde-hreg" data-a="hreg" title="'+hR+(hR>1?' positions ne suivent pas':' position ne suit pas')+' la règle du bureau : 100 %, sauf CFC 5 et honoraires (583 compris)">appliquer la règle</button>':''),'','Montant hors taxe soumis aux honoraires, selon le pourcentage de chaque position')+honKpi()+kpi('Positions',String(nC),'chiffrées sur '+fe.length); };
+  kp.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('[data-a]'); if(!a) return; if(a.dataset.a==='hreg') regleHon(X); else if(a.dataset.a==='hcont') honReprendre(X); else if(a.dataset.a==='prec') ch02aSettings(X); });
   dessOng(); dessNiv(); ong.append(ongL,niv);   /* légende du montant saisi retirée (Paulo, 07.11.2026) : l'infobulle du cadre le dit */ X.sgdeMaj();
   box.append(hd,kp,ong,bar,X.body,docs); if(X.dpane) docs.append(X.dpane); m.replaceChildren(box); box._plein(PLEIN); setTimeout(()=>honSync(X).catch(e=>console.error(e)),0);   /* honoraires du contrat signé (position 291) */   /* plein écran gardé d'un devis à l'autre pendant la séance */
   plan(S.cfc&&ec); if(!ec) S.cfc=false;

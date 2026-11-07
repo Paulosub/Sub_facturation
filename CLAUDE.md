@@ -1542,6 +1542,24 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   imprévus) à 100 %. D'office pour les positions ajoutées depuis la liste CFC (`dvNewParts` enveloppé, `CODE_NEUF`) ; sur demande pour tout le devis : Fonctions ▸ Modifier les montants ▸
   « Soumis aux honoraires selon la règle du bureau … », ou lien « appliquer la règle » sous le chiffre « Soumis aux honoraires » quand des positions s'en écartent (`horsRegle`) —
   confirmation avec le nombre de positions et le montant soumis avant → après. Les pourcentages restent modifiables position par position (fenêtre de calcul).
+  **Honoraires d'architecte repris du contrat signé (07.11.2026, Paulo : « reprends le principe que l'on avait travaillé sur le devis classé dans archives », choix « tout le
+  principe »)** : même règle que le devis de Facturation (Archives ▸ Devis : `dvHonContrat`, `dvHonSync`, `dvHonReinit`) — contrats de l'affaire non annulés (`sgContratsDuProjet`),
+  version courante si signée, sinon dernière version signée ; contrat partiel (somme des % des phases entre 0 et 100) → extrapolé à 100 % et arrondi au franc. Position CFC 291 tenue à
+  jour à l'ouverture du devis (`honSync`) par UNE ligne de calcul marquée `l.sgHon = {v}` (« Contrat d’honoraires signé », TTC du contrat, HT = TTC ÷ (1 + TVA du devis)) : créée si la
+  position manque (`honCreer`, `p.sgHon`) ou n'a aucune ligne, mise à jour si la ligne n'a pas été changée (tolérance 0.06 pour l'arrondi du moteur). Jamais : devis validé ou annulé
+  (STATECODE 2 / 3 : « figé »), montant modifié à la main (ligne changée, autres lignes ou coût fixé), devis à ouvrages, 291 à sous-positions, profil sans droit d'écriture. Plus de contrat
+  signé : ligne reprise retirée si inchangée (et la position créée par l'app si vide). Chiffre **« Honoraires HT »** (après « Soumis aux honoraires ») = montant HT pour 100 % des
+  prestations des contrats de l'affaire (comme Facturation : signés ou non), sinon total des chapitres d'honoraires du devis ; sous-titre contrat signé / non signé, % → 100 %, « figé (devis
+  validé) », lien « reprendre le contrat » (`honReprendre`, confirmation si des lignes saisies à la main sont remplacées), aussi au clic droit sur la position 291. Essai 99TST (base de test) :
+  contrats signés 567'957.40 + 14'539.50 = 582'496.90 TTC ; Devis général validé → figé ; Devis estimatif (ligne saisie à la main) → lien ; brouillon → position 291 créée.
+  **Relecture contradictoire du même jour (21 défauts confirmés sur 27, corrigés)** : extrapolation (`honExtra`) — contrats aux phases SIA toutes distinctes = un seul mandat, somme ÷ somme des
+  % (17QUE : 431–433 + 441–453 → 626'741 HT au lieu du double), une phase commune = mandats distincts, chacun ramené à 100 % (20MMA) ; Facturation (`dvHonSync`) garde l'ancien calcul.
+  Contrats lisibles seulement (`honOk` : administrateur ou « contrats : lecture », finances non verrouillées) ; `honContrat` = null si les données manquent (jamais lu comme « aucun
+  contrat ») ; ligne reprise retirée seulement si un contrat visible n'est plus signé. Aucune écriture sans projet modifiable (`honPeut`, règle du planning). Pas de reprise si la 291 a
+  des sous-positions, plusieurs parties, ou si un CFC parent (29) est chiffré (`honAnc`) ; ni si d'autres lignes, un coût fixé ou « Var » sont dans la 291. Ligne ou position retirée à
+  la main : pas recréée (`pt.sgHonPose`, `E.sgHon.pose`), lien « reprendre le contrat ». `l.sgHon.k` = montant du contrat (comparaison sans boucle d'écriture). Devis annulé : « figé (devis
+  annulé) ». Liens des chiffres visibles en plein écran et sur petit écran (`.s:has(.sgde-hreg)`). Chiffre sans contrat : montant propre de chaque position d'honoraires (sans ses
+  enfants). Liste CFC : retrait avec sous-positions toujours confirmé ; clic droit = « Ajouter au devis » / « Retirer du devis ». Débogage : `SGDE.honContrat`, `SGDE.honEtat`.
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis
   général (PDF) » (première entrée ; les présentations de l'ancien livret restent dessous). `dgPdf` / `dgCreer` (sg3_devis.js) : livret du moteur `ch02bBook` avec des gabarits de
   pages synthétiques (tableau 728 × 388 pt, Information 402 pt, rangées 15 pt) et la présentation de la référence `DG_PRESET` (page de garde, Information si remarques

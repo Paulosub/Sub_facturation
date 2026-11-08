@@ -916,7 +916,7 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
       +'<div class="sgdv-fig"><span class="l">Pages</span><span class="v sgdv-np">—</span></div><div class="sgdv-fig"><span class="l">État</span><span class="v et"><i></i>'+E(etat||'—')+'</span></div>'
       +'<div class="sgdv-act"><button class="sgdv-ib sgdv-imp" type="button" title="Imprimer le document">'+ICV('<path d="M7 9V4h10v5M7 17H4V9h16v8h-3M7 14h10v6H7z"/>')+'Imprimer</button></div></div>'
     +'<div class="sgdv-corps"><div class="sgdv-doc"></div>'
-    +'<aside class="sgdv-reg" aria-label="Réglages du document"><div class="sgdv-rh"><h4>Réglages</h4><span>appliqués aussitôt</span></div><div class="sgdv-rb"></div>'
+    +'<aside class="sgdv-reg" aria-label="Réglages du document"><div class="sgdv-rh"><h4>Réglages</h4></div><div class="sgdv-rb"></div>'
       +'<div class="sgdv-rf"><span class="pied"></span><button class="sgdv-btn" type="button">Fermer</button></div></aside></div>');
   const act=R.querySelector('.sgdv-act'); [pdfB,partB].forEach(b=>{ if(b){ b.classList.add('sgdv-moteur'); act.append(b); } });
   const garde=el('div','sgdv-garde'); garde.append(...D.bd.childNodes); D.bd.replaceChildren(R,garde);

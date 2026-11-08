@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 21:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 21:18 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38885,7 +38885,7 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
       +'<div class="sgdv-fig"><span class="l">Pages</span><span class="v sgdv-np">—</span></div><div class="sgdv-fig"><span class="l">État</span><span class="v et"><i></i>'+E(etat||'—')+'</span></div>'
       +'<div class="sgdv-act"><button class="sgdv-ib sgdv-imp" type="button" title="Imprimer le document">'+ICV('<path d="M7 9V4h10v5M7 17H4V9h16v8h-3M7 14h10v6H7z"/>')+'Imprimer</button></div></div>'
     +'<div class="sgdv-corps"><div class="sgdv-doc"></div>'
-    +'<aside class="sgdv-reg" aria-label="Réglages du document"><div class="sgdv-rh"><h4>Réglages</h4><span>appliqués aussitôt</span></div><div class="sgdv-rb"></div>'
+    +'<aside class="sgdv-reg" aria-label="Réglages du document"><div class="sgdv-rh"><h4>Réglages</h4></div><div class="sgdv-rb"></div>'
       +'<div class="sgdv-rf"><span class="pied"></span><button class="sgdv-btn" type="button">Fermer</button></div></aside></div>');
   const act=R.querySelector('.sgdv-act'); [pdfB,partB].forEach(b=>{ if(b){ b.classList.add('sgdv-moteur'); act.append(b); } });
   const garde=el('div','sgdv-garde'); garde.append(...D.bd.childNodes); D.bd.replaceChildren(R,garde);
@@ -41235,7 +41235,7 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
       +'<button class="sglp-bt" data-a="suiv" type="button" title="Page suivante">'+sglpIco(SGLP_I.suiv)+'</button><span class="sglp-sep"></span>'
       +'<button class="sglp-bt" data-a="moins" type="button" title="Réduire">'+sglpIco(SGLP_I.moins)+'</button><span class="sglp-zm">—</span>'
       +'<button class="sglp-bt" data-a="plus" type="button" title="Agrandir">'+sglpIco(SGLP_I.plus)+'</button>'
-      +'<button class="sglp-ib on" data-a="larg" type="button" title="Ajuster à la largeur">'+sglpIco(SGLP_I.larg)+'<span class="lib">Ajuster à la largeur</span></button>'
+      +'<button class="sglp-ib on" data-a="larg" type="button" title="Ajuster à la largeur" aria-label="Ajuster à la largeur">'+sglpIco(SGLP_I.larg)+'</button>'   /* icône seule (Paulo, 08.11.2026 : « supprimer le texte ») ; nom en infobulle */
       +'<span class="sglp-maj" role="status" title="Le document se met à jour ; la page affichée est gardée">'+sglpIco(SGLP_I.tour)+'<b>Mise à jour…</b></span></div>'
     +'<div class="sglp-vue" tabindex="0" aria-label="Document"><div class="sglp-pages"><div class="sglp-msg">Préparation du document…</div></div></div>';
   const vue=R.querySelector('.sglp-vue'), cont=R.querySelector('.sglp-pages'), maj=R.querySelector('.sglp-maj'), inP=R.querySelector('.sglp-in'),

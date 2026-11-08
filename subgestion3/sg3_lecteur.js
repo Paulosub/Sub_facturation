@@ -106,7 +106,7 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
       +'<button class="sglp-bt" data-a="suiv" type="button" title="Page suivante">'+sglpIco(SGLP_I.suiv)+'</button><span class="sglp-sep"></span>'
       +'<button class="sglp-bt" data-a="moins" type="button" title="Réduire">'+sglpIco(SGLP_I.moins)+'</button><span class="sglp-zm">—</span>'
       +'<button class="sglp-bt" data-a="plus" type="button" title="Agrandir">'+sglpIco(SGLP_I.plus)+'</button>'
-      +'<button class="sglp-ib on" data-a="larg" type="button" title="Ajuster à la largeur">'+sglpIco(SGLP_I.larg)+'<span class="lib">Ajuster à la largeur</span></button>'
+      +'<button class="sglp-ib on" data-a="larg" type="button" title="Ajuster à la largeur" aria-label="Ajuster à la largeur">'+sglpIco(SGLP_I.larg)+'</button>'   /* icône seule (Paulo, 08.11.2026 : « supprimer le texte ») ; nom en infobulle */
       +'<span class="sglp-maj" role="status" title="Le document se met à jour ; la page affichée est gardée">'+sglpIco(SGLP_I.tour)+'<b>Mise à jour…</b></span></div>'
     +'<div class="sglp-vue" tabindex="0" aria-label="Document"><div class="sglp-pages"><div class="sglp-msg">Préparation du document…</div></div></div>';
   const vue=R.querySelector('.sglp-vue'), cont=R.querySelector('.sglp-pages'), maj=R.querySelector('.sglp-maj'), inP=R.querySelector('.sglp-in'),

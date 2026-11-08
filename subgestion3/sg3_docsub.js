@@ -1570,12 +1570,13 @@ async function sgDsPdf(R, rep, o){
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
           let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
-          const pf = info && j === 0 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : pol.f;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
+          const pf = info && (r.lib || (j === 0 && cols.length > 1)) ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : pol.f;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
           const cl = nuit && j === jPct && s !== 'T' && s !== 'W' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
           const dispo = p.w - 2 - ins + (cx.largeur(P(v), pf, pol.z) > p.w - 2 - ins ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
           const zz = D.deborde === true && lw > dispo && lw <= dispo * 1.08 ? pol.z * dispo / lw : pol.z;   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé */
           const t = ajuste(v, pf, zz, dispo); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : ins), T(base), Object.assign({ police:pf, taille:zz, align:p.r ? 'd' : 'g' }, cl ? { couleur:cl } : {})); });   /* Information : sans retrait, colonnes du pied */
-        if(info && !D.zebra && !D.style) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });   /* page Information du Bleu nuit : ni grisé ni filets (demande du 08.11.2026) */
+        if(info && !D.zebra && !D.style) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
+        if(info && r.lib && pos[0]) cx.ligne(pos[0].x, T(y + rh - 0.5), pos[0].x + pos[0].w, T(y + rh - 0.5));   /* libellé souligné d'un filet, comme les rubriques de la page de garde (08.11.2026) */   /* page Information du Bleu nuit : ni grisé ni filets (demande du 08.11.2026) */
         y += rh; });
     };
     Array.from(D.pages || []).forEach(pg => {

@@ -1694,7 +1694,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   colonne CFC `DG_CFC` 40.68 pt), désignations, lignes de calcul et descriptif à x 125.72 (2e colonne du pied) ;
   la dernière colonne ([%]) finit sur la barre du numéro de page (largeur − 84.6 : 757.29 paysage, 510.68 portrait) — largeurs `DG_WL` 674.25, `DG_WP` 427.64 ;
   textes à gauche sans retrait (`livretDG.aligne`, bandes et filets 2 pt de part et d'autre) ; paysage : place reprise sur les montants (66 pt), [%] (32), Commentaire (90), puis Texte ; portrait : CFC 40.68, Commentaire 84,
-  OUV / Localisation 30, Montant 56, Total 60, % 26. Page Information inchangée (libellés col. 2, texte col. 3), filet jusqu'à la barre. Relecture du portrait
+  OUV / Localisation 30, Montant 56, Total 60, % 26. Page Information refaite (même jour, « ajouter une ligne et le texte en dessous ») comme les rubriques de la page de garde : libellé en gras à x 125.72 souligné
+  d'un filet jusqu'à x 485.5, texte en dessous à x 125.72 (repassé à la ligne à cette largeur, paragraphes gardés) ; ouvrages sous un libellé « Ouvrages », une ligne
+  « code – description » chacun ; jamais de libellé seul en bas de page. Relecture du portrait
   (3 défauts confirmés sur 5, corrigés) : colonnes repérées par leur POSITION (ordre de ch02bCols, `K`), pas par leur titre ; colonne Localisation gardée ;
   lignes du descriptif plus réunies (retours à la ligne voulus gardés ; etaler recoupe seulement ce qui dépasse) ; niveau d'un montant lisible à la graisse
   (`r.cf`) : Montant — 4 chiffres Light, sous-total à 3 chiffres Regular ; Total — 2 chiffres Regular, 1 chiffre gras ; calculs Light. **« Base et commentaire de la position »

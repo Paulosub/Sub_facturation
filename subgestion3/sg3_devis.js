@@ -1153,7 +1153,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})),
       /* colonnes repérées par leur POSITION (ordre de ch02bCols : CFC, Texte, [Commentaire], [OUV], [Localisation], montants, [%]) et non par leur titre, que la présentation peut changer (relecture du 08.11.2026) */
       K=(()=>{ let k=2; const iC=o.displayComment&&o.commentInColumn?k++:-1, iO=o.displaySubprojects?k++:-1, iL=o.displaySubprojects&&B.loc?k++:-1, h=!!o.hierarchicalAdjust, fv=k;
-        return {iC,iO,iL,h,i4:h?fv:-1,i3:h?fv+1:-1,i2:h?fv+2:-1,i1:h?fv+3:fv,ip:o.displayDeviation?(h?fv+4:fv+1):-1}; })(), iDx=97.37, iA=97.26, colsI=[{t:'',w:iA,r:false},{t:'',w:WI-iDx-iA,r:false}];   /* page Information, décalée de iDx : libellés à l'aplomb de la 2e colonne du pied (x 125.72), texte de la 3e (x 222.98) — demandes de Paulo, 08.11.2026 (« déplacer le tout ») */
+        return {iC,iO,iL,h,i4:h?fv:-1,i3:h?fv+1:-1,i2:h?fv+2:-1,i1:h?fv+3:fv,ip:o.displayDeviation?(h?fv+4:fv+1):-1}; })(), iDx=97.37, colsI=[{t:'',w:485.5-125.72,r:false}];   /* page Information (08.11.2026, « ajouter une ligne et le texte en dessous ») : une colonne de x 125.72 à 485.5, comme les rubriques de la page de garde */   /* page Information, décalée de iDx : libellés à l'aplomb de la 2e colonne du pied (x 125.72), texte de la 3e (x 222.98) — demandes de Paulo, 08.11.2026 (« déplacer le tout ») */
     /* « les CFC doivent être alignés à la colonne info@substances » (Paulo, 08.11.2026, portrait et paysage) : les tableaux commencent à x 125.72 (2e colonne du
        pied, livretDG.x0Tab) et gardent leur bord droit ; en paysage la largeur (630.63 pt au lieu de 728) est reprise sur les colonnes de montants (pas sous 66 pt),
        la colonne [%] (32 pt), puis Commentaire (90 pt), enfin Texte */
@@ -1226,11 +1226,17 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
         const ent=remImpr(E,p).map(r=>({name:r.nom||'',desc:r.texte||'',o:false}));
         if(o.displaySubprojectNames) dgOuvInfo(X).forEach(s=>{ const c=String(s.CODE||''), lc=String(s.LOCATIONCODE||'');
           ent.push(lc?{name:c+' | '+lc,desc:String(s.DESCRIPTION||'')+' | '+String(s.LOCATIONDESCRIPTION||''),o:true}:{name:c,desc:String(s.DESCRIPTION||''),o:true}); });
-        ent.forEach(d=>{ const nm=String(d.name||'').trim(); if(nm&&R0.length&&!(d.o&&prev==='o')) R0.push({c:['',''],s:'S'});
-          ch02bIntro(d,tw,fsz,meas,fnm).forEach(c=>R0.push({c:Array.from(c).map(v=>v==null?'':String(v)),s:'S'})); if(nm) prev=d.o?'o':'r'; });
-        R0.splice(0,R0.length,...etaler(R0,pages[iI[0]].cols,true));   /* libellés jamais coupés (08.11.2026) */
+        /* chaque remarque : libellé en gras souligné d'un filet (lib), puis son texte en dessous, repassé à la ligne à la largeur de la colonne ; une entrée sans nom continue
+           la précédente ; ouvrages sous un libellé « Ouvrages », une ligne « code – description » chacun ; lignes vides d'un texte écrit en paragraphes gardées */
+        const WTI=485.5-125.72-4-1.5, lignes=t=>{ const L=String(t||'').replace(/\s+$/,'').split('\n'), R=[]; L.forEach(par=>{ if(!par.trim()){ if(R.length) R.push({c:[''],s:'S'}); return; } couperMots(par.trim(),false,DG_TXT,WTI).forEach(l=>R.push({c:[l],s:'S'})); }); return R; };
+        ent.forEach(d=>{ const nm=String(d.name||'').trim();
+          if(d.o){ if(prev!=='o'){ if(R0.length) R0.push({c:[''],s:'S'}); R0.push({c:['Ouvrages'],s:'S',lib:1}); prev='o'; }
+            R0.push(...lignes(nm+(String(d.desc||'').trim()?' – '+String(d.desc).trim():''))); return; }
+          if(nm){ if(R0.length) R0.push({c:[''],s:'S'}); R0.push({c:[nm],s:'S',lib:1}); prev='r'; }
+          R0.push(...lignes(d.desc)); });
         const cap=Math.max(1,Math.floor(HI/DG_RH)-2), P2=[], vide=r=>!r.c.some(v=>String(v).trim()); let cur=null;
-        R0.forEach(r=>{ if(!cur||cur.rows.length>=cap){ if(cur&&vide(r)) return; cur={type:P2.length?4:3,titre:pages[iI[0]].titre,cols:pages[iI[0]].cols,rows:[]}; P2.push(cur); } cur.rows.push(r); });
+        R0.forEach(r=>{ if(!cur||cur.rows.length>=cap||(r.lib&&cur.rows.length>=cap-1)){ if(cur&&vide(r)) return; cur={type:P2.length?4:3,titre:pages[iI[0]].titre,cols:colsI,rows:[]}; P2.push(cur); }
+          if(!cur.rows.length&&vide(r)) return; cur.rows.push(r); });   /* pas de libellé seul en bas de page, pas de rangée vide en tête */
         pages.splice(iI[0],iI.length,...P2); } }
     /* pages de tableau : jamais plus de rangées que la page n'en tient (avec un filtre d'ouvrages, ch02bSumFill ne garde pas une position et ses ouvrages ensemble et les rangées en
        trop passaient sur le pied). Rangées de remplissage en trop retirées ; coupure de préférence avant le début d'une position ; la suite passe en tête de la page suivante de la

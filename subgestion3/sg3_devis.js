@@ -678,13 +678,14 @@ function remProjet(pid,sauf){ if(pid==null) return null; const p=DS.get('project
     return k0.apply(this,arguments); }; }
 /* menu « Présentation » : présentations du moteur + « Avec le descriptif et le calcul de prix » entre « Toutes les colonnes avec le calcul de prix » et « Avec le descriptif » */
 function presMenu(X){ const L=ch02aPresMenu(X).filter(x=>x==='-'||x.t!=='Seulement positions de 1 à 3 chiffres'), c4=calcDesc(X.E), m=ch02aMode(X.E);
-  const poser=v=>{ const R=X.E.reglages||(X.E.reglages={}), A=R.affichage||(R.affichage={}); if(+A.displayMode===4&&!!A.sgCalc===v) return; A.displayMode=4; if(v) A.sgCalc=true; else delete A.sgCalc; X.touch(); };
+  const poser=v=>{ const R=X.E.reglages||(X.E.reglages={}), A=R.affichage||(R.affichage={}); if(+A.displayMode===4&&!!A.sgCalc===v) return; A.displayMode=4; if(v) A.sgCalc=true; else delete A.sgCalc; try{ dgSuivreMode(X.E); }catch(e){ console.error(e); } X.touch(); };
   const i4=L.findIndex(x=>x&&x.t===(CH02A_MODES.find(q=>q[0]===4)||[])[1]);
   if(i4<0) return L;
   L[i4]=Object.assign({},L[i4],{chk:m===4&&!c4,fn:()=>poser(false)});
   L.splice(i4,0,{t:'Avec le descriptif et le calcul de prix',chk:c4,fn:()=>poser(true)});
   return L; }
-{ const sm0=ch02aSetMode; ch02aSetMode=function(X,k){ const A=(((X||{}).E||{}).reglages||{}).affichage; if(A&&A.sgCalc&&+k!==4) delete A.sgCalc; return sm0.apply(this,arguments); }; }
+{ const sm0=ch02aSetMode; ch02aSetMode=function(X,k){ const A=(((X||{}).E||{}).reglages||{}).affichage; if(A&&A.sgCalc&&+k!==4) delete A.sgCalc; const r=sm0.apply(this,arguments);
+    try{ if(X&&X.E&&dgSuivreMode(X.E)) X.touch(); }catch(e){ console.error(e); } return r; }; }   /* le PDF du devis général suit la présentation choisie (08.11.2026) */
 /* redessin : seulement si les valeurs enregistrées diffèrent de celles affichées (signature) — un champ modifié ici ne redessine pas la page (le curseur et le clic suivant
    restent), un conflit ou une modification d'un autre poste la redessine (le champ qui avait le curseur le garde) */
 const remDe=X=>(X.E.remarques||[]).map(r=>[String((r||{}).nom||''),String((r||{}).texte||'')]);
@@ -1417,6 +1418,13 @@ const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyTh
   ['dispalyRound1000','Arrondir à 1000'],'-',['dispalyEmptyPositions','Afficher les positions sans montant'],['displayDescription','Descriptif'],['compactDescription','Assembler les descriptifs des ouvrages','sub']];
 const DG_RONDS=['dispalyRound10','dispalyRound100','dispalyRound1000'];
 const dgChoix=E=>{ const v=((E||{}).reglages||{}).dgPdf; return v&&typeof v==='object'?v:{}; };
+/* le PDF suit la présentation choisie dans le devis (Paulo, 08.11.2026 : « dans PDF, afficher les options selon affichage sélectionné dans devis ») : Standard et Avec
+   colonnes honoraires → sans descriptif ni calcul ; Toutes les colonnes et Avec le descriptif → descriptif ; … avec le calcul de prix → descriptif et calcul (avec ses trois
+   cases). Appliqué quand la présentation change (dgPdf.modeSync = présentation suivie) ; les cases restent modifiables ensuite dans les Réglages du PDF. Devis dont la
+   présentation n'a pas encore été suivie : réglages du PDF gardés tels quels (modeSync posé au premier réglage). */
+const dgModeCle=E=>String(ch02aMode(E))+(calcDesc(E)?'c':'');
+const dgModeOpts=k=>{ const d=k!=='0'&&k!=='2', cl=k==='3'||k==='4c'; return {displayDescription:d,dispalyCalcualtion:cl,displayQuanPriceValue:cl,displayDetailComment:cl,displayDetailValues:cl}; };
+function dgSuivreMode(E){ const R=E.reglages||(E.reglages={}), k=dgModeCle(E), c=Object.assign({},dgChoix(E)); if(c.modeSync===k) return false; Object.assign(c,dgModeOpts(k),{modeSync:k}); R.dgPdf=c; return true; }
 /* présentation dont les sauts de page et les options de base sont repris : choix du menu (« Sauts de page : … » : rang et nom, une présentation sans nom comprise), sinon la favorite,
    sinon la première ; « Sans sauts de page » (sansSauts) garde les options de base de celle-ci, sans ses sauts. presNom '' sans rang = ancien « Sans sauts de page » du 07.11.2026. */
 function dgPresSel(E){ const L=(E&&E.presentations)||[], c=dgChoix(E), def=L.find(q=>q.favori)||L[0]||null, nm=q=>String((q&&q.nom)||'');
@@ -1433,10 +1441,12 @@ function dgOptions(X){ const E=X.E||{}, fav=dgPres(E)||{}, sub=ch02bHasSub(E), c
   if(!o.specialRound) DG_RONDS.forEach(k=>{ o[k]=false; });
   o.displayComment=true; o.displayNoTitlePositions=true;   /* réglages retirés du menu (08.11.2026) : toujours actifs */   /* plus d'option « Base et commentaire de la position » (08.11.2026) : toujours affichés ; « … dans colonne séparée » choisit leur place */   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
   DG_MENU.forEach(m=>{ if(Array.isArray(m)&&m[0][0]!=='*'&&typeof c[m[0]]==='boolean') o[m[0]]=c[m[0]]; });
+  { const k=dgModeCle(E); if(c.modeSync&&c.modeSync!==k) Object.assign(o,dgModeOpts(k)); }   /* présentation changée ailleurs (autre poste, ancienne version) : le PDF la suit */
   if(!sub){ o.displaySubprojects=false; o.compactDescription=false; o.displaySubprojectNames=false; }   /* affaire sans ouvrage : colonne OUV vide (comme la fenêtre du moteur) */
   if(!o.dispalyCalcualtion) o.displayDetailValues=false;   /* « Afficher les montants » dépend du calcul (08.11.2026) : sinon des montants seuls, sans texte, seraient imprimés */
   o.specialRound=DG_RONDS.some(k=>o[k]); return o; }
 function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), c=Object.assign({},dgChoix(E));
+  { const mk=dgModeCle(E); if(!c.modeSync) c.modeSync=mk; else if(c.modeSync!==mk) Object.assign(c,dgModeOpts(mk),{modeSync:mk}); }   /* présentation suivie (08.11.2026) */
   if(k.startsWith('pres:')||k==='*sans'){ if(k==='*sans'){ const sans=c.sansSauts===true||(c.presNom===''&&!Number.isInteger(c.presIdx));   /* interrupteur (Paulo, 08.11.2026) : désactivé, la présentation choisie avant (sinon celle par défaut) revient */
       if(sans){ delete c.sansSauts; if(c.presNom===''&&!Number.isInteger(c.presIdx)) delete c.presNom; } else c.sansSauts=true; } else { const i=+k.slice(5), q=(E.presentations||[])[i]; if(!q) return; c.presNom=String(q.nom||''); c.presIdx=i; delete c.sansSauts; }
     const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }

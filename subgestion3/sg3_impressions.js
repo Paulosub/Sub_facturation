@@ -95,10 +95,13 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
   /* ── visionneuse du moteur : le cadre montre le PDF du document repéré (le zoom, propre au HTML, est masqué) ── */
   const SRCDOC=Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype,'srcdoc');
   const sgImpMontrer=(ifr,html)=>{ const id=sgImpIdDe(html); if(!id||ifr._sgimp===id) return; ifr._sgimp=id;
+    /* fenêtre d'aperçu des documents du devis (sg3_devis.js, vueDoc) : le lecteur de l'app reçoit le PDF (ifr._sgVue) et garde la page affichée */
+    if(typeof ifr._sgVuePrep==='function') try{ ifr._sgVuePrep(); }catch(e){ console.error(e); }
     SRCDOC.set.call(ifr,'<!doctype html><meta charset="utf-8"><body style="font:13px Akkurat,Helvetica,Arial,sans-serif;color:#555;padding:20px">Préparation du document…</body>');
     sgImpPdf(id).then(pdf=>{ if(ifr._sgimp!==id) return; if(ifr._sgurl) URL.revokeObjectURL(ifr._sgurl);
-      ifr._sgurl=URL.createObjectURL(pdf); ifr.removeAttribute('sandbox'); ifr.removeAttribute('srcdoc'); ifr.src=ifr._sgurl; },
-    e=>{ console.error(e); if(ifr._sgimp!==id) return; ifr._sgimp=null;
+      ifr._sgurl=URL.createObjectURL(pdf); ifr._sgblob=pdf; if(typeof ifr._sgVue==='function'){ try{ ifr._sgVue(pdf); }catch(e){ console.error(e); } return; }
+      ifr.removeAttribute('sandbox'); ifr.removeAttribute('srcdoc'); ifr.src=ifr._sgurl; },
+    e=>{ console.error(e); if(ifr._sgimp!==id) return; ifr._sgimp=null; if(typeof ifr._sgVueErr==='function') try{ ifr._sgVueErr(e); }catch(_){}
       SRCDOC.set.call(ifr,'<!doctype html><meta charset="utf-8"><body style="font:13px Akkurat,Helvetica,Arial,sans-serif;color:#b00;padding:20px">'+esc('PDF impossible : '+(e&&e.message||e))+'</body>'); }); };
   const ch03bView0=ch03bView;
 

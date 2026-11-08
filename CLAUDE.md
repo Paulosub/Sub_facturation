@@ -1594,6 +1594,21 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   commentaire… », `pdfCommentaire`, droit « documents : dépôt ») ; devis : groupes Devis · Descriptif · Honoraires (« Aucun PDF » si vide) + Autres (PDF
   importés, fusionnés ; anciens PDF reconnus au nom par défaut du moteur), bouton « Fonctions » de la liste retiré (même menu au clic droit, `popMenu`
   enveloppé pour y ajouter « Modifier le commentaire… »). Classes `.sgpdf*`. Visuel (même jour, « améliore le visuel pour correspondre au visuel de l'app ») : icône PDF au trait devant le nom, colonne du nom à 300 px et Commentaire juste à côté, « Dernière modification » (ex-« Date de dernière modification ») à 170 px à droite ; groupes en intertitres bleu nuit sur filet noir avec « n fichier(s) » (groupe vide : titre seul, « aucun PDF » retiré le même jour).
+  **Fenêtre d'aperçu des documents du devis = proposition 2 « Réglages en panneau », état comme la proposition 1 (08.11.2026, Paulo : « lorsque je
+  clique sur une option ne pas redémarrer l'aperçu et laisser sur la page sur laquelle je me situe », « revoir le graphisme de la fenêtre, 5 visuels »,
+  « je vais choisir la variante 2 mais je souhaite la représentation de l'état de la version 1 » ; maquettes `subgestion3/_backup_20261108_maquette_apercu/`)** :
+  `vueDoc` (sg3_devis.js, enveloppe de `ch02cView` pour les devis SUBGestion) rhabille la fenêtre du moteur (`ch03bView`, gardée dessous) — bandeau jaune
+  (n° du projet, « Descriptifs & devis · Documents », titre, désignation · n pages · format), chiffres « Pages » et « État ■ <statut du devis> » (`DV_STATE`),
+  Imprimer (`vueImprimer` : le PDF dans un cadre caché puis impression du navigateur), PDF ▾ et Partager ▾ = boutons du moteur déplacés ; lecteur de
+  l'app (pdf.js du cadre Facturation, `ownerDocument:document`, rendu `intent:'print'`, calque de texte pour sélectionner et chercher) : pages l'une
+  sous l'autre rendues à la demande (file, jetons `V.tok` / `V.rt`, pages lointaines libérées), barre ‹ Page n / N ›, zoom −/+ (25 à 300 %), « Ajuster à la
+  largeur » (d'office), « Mise à jour… » ; un réglage coché refait le document (`D.maj` → `sgImpMontrer` → crochet `ifr._sgVue(blob)` de
+  sg3_impressions.js, le PDF n'est plus chargé dans le cadre du moteur) et la page affichée est gardée (`position` / `poser` : pages visibles rendues
+  d'abord, puis échange — même page, même position, aussi au zoom et au redimensionnement) ; panneau « Réglages · appliqués aussitôt » à droite (300 px) :
+  cases de `ch02cPrefItems` rangées en Positions, Calcul, Montants, Affichage, Sauts de page (`vueGroupe`, `VUE_ORDRE`, retraits `VUE_RETRAIT`),
+  « Arrondir à » et « Sauts de page » en boutons segmentés, dernière case changée surlignée « appliqué », pied « Enregistrés dans le devis » + Fermer.
+  Autres visionneuses inchangées. Classes `.sgdv-*`. Vérifié sur 24PRC (75 pages) : page 10 gardée après Variantes, « Seulement positions de 1 à 3
+  chiffres » (75 → 34 pages), zoom.
   Bouton « Modifier les textes… » retiré de cette fenêtre (« supprimer », même jour ; `ch02cView` / `ch01aView` enveloppés dans sg3_devis.js, sans l'option `edit`) ; les autres
   visionneuses le gardent, DeltaSub.html seul aussi.
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis

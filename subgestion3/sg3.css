@@ -454,7 +454,13 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pdom-tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
 .sg-pdom-bar{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:2px solid var(--s-noir);background:#fff;flex:0 0 auto;min-width:0}
 .sg-pdom-bar>b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32%;flex:0 1 auto}
-.sg-intro h2 .sg-pdnum{display:block;color:var(--s-nuit)}
+.sg-intro h2 .sg-pdnum{display:block;color:var(--s-nuit);padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--s-noir)}   /* filet et espace entre le n° et le nom (08.11.2026) */
+.sg-intro .sg-mandat{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:14px 0 24px;font-size:13px;color:var(--s-noir)}
+.sg-intro .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
+.sg-intro .sg-mandat .d{color:var(--s-gris)}
+.sg-intro .sg-mandat+p{margin-top:0}
+.sg-intro .sg-frise{width:120px}
+@container (max-width:1180px){.sg-intro .sg-mandat{flex:0 0 100%;margin:2px 0 16px}}   /* présentation compacte : la frise sur sa ligne, sous le nom */
 .sg-pretour{display:inline-flex;align-items:center;gap:12px;min-width:0;max-width:100%;padding:0;border:0;background:none;font:inherit;color:var(--s-noir);text-align:left;cursor:pointer}
 .sg-pretour i{flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--s-nuit);color:#fff}
 .sg-pretour i svg{width:20px;height:20px}

@@ -992,18 +992,7 @@ async function sgOuvrirUrl(url,telecharger){ const q=new URLSearchParams(String(
   if(!b.type||b.type==='application/octet-stream') b=new Blob([b],{type:sgMime(nom)});
   if(telecharger||q.get('dl')==='1'){ const a=h('a',{href:URL.createObjectURL(b),download:nom}); document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000); return; }
   sgVisionneuse(b,nom); }
-/* aperçu d'un fichier : seulement des types sans script — PDF (lecteur du navigateur), images (<img>), texte brut ; HTML seulement pour les
-   documents faits par l'app (o.interne), dans un cadre sans scripts. Un fichier déposé (HTML, SVG, XML…) ne s'exécute jamais dans l'app. */
-function sgVisionneuse(b,nom,o){ o=o||{}; const t=String(b.type||'').toLowerCase().split(';')[0].trim();
-  const vue=t==='application/pdf'?'pdf':/^image\/(png|jpe?g|gif|webp|bmp|svg\+xml)$/.test(t)?'img':/^text\/(plain|csv|tab-separated-values)$/.test(t)?'txt':t==='text/html'&&o.interne?'html':null;
-  const u=URL.createObjectURL(vue==='txt'?new Blob([b],{type:'text/plain;charset=utf-8'}):b), ov=h('div',{class:'sg-visu'});
-  const fermer=()=>{ ov.remove(); URL.revokeObjectURL(u); document.removeEventListener('keydown',esc,true); }, esc=e=>{ if(e.key==='Escape'){ e.stopPropagation(); fermer(); } };
-  const corps=vue==='img'?h('div',{class:'sg-visu-img'},h('img',{src:u,alt:nom})):vue?h('iframe',Object.assign({src:u,title:nom},vue==='pdf'?{}:{sandbox:'allow-same-origin allow-modals'})):h('div',{class:'nx-empty'},'Aperçu impossible pour ce type de fichier : utilisez « Télécharger ».');
-  ov.append(h('div',{class:'sg-visu-bar'},h('b',{},nom),h('span',{style:{flex:1}}),
-    h('button',{class:'btn',onclick:()=>{ const a=h('a',{href:u,download:nom}); document.body.append(a); a.click(); a.remove(); }},'Télécharger'),
-    corps.tagName==='IFRAME'?h('button',{class:'btn',onclick:()=>{ try{ corps.contentWindow.print(); }catch(_){ toast('Impression : utilisez Télécharger puis imprimez.',true); } }},'Imprimer'):'',
-    h('button',{class:'btn pri',onclick:fermer},'Fermer')),corps);
-  document.body.append(ov); document.addEventListener('keydown',esc,true); }
+/* sgVisionneuse(b, nom, o) : fenêtre des fichiers (PDF dans le lecteur de l'app, images, texte brut, documents HTML de l'app) — voir sg3_lecteur.js (bloc 48, 08.11.2026) */
 /* titre lisible d'un dossier du dépôt (fiche projet ▸ Documents) : « Contrôle des coûts › <document> › Adjudications »… */
 function sgDossierLib(d){ const s=String(d||'').split('/'), doc=(t,id)=>{ const x=DS.get(t,id); return x?(x.NOTE||x.VERSION||'document '+id):'document '+id; }, reste=a=>a.filter(Boolean).join(' › ');
   const coco=typeof CC_DOC_SOUS!=='undefined'?CC_DOC_SOUS:{'':'Général'};
@@ -2783,7 +2772,7 @@ VIEWS['nx-pdom']={
       +'<div class="sg-pgrps">'+(G.length?G.map(([g,L],i)=>'<section class="sg-pgrp'+(i===ouvert?' on':'')+'"><button class="sg-pgrp-h" data-fn="grp" aria-expanded="'+(i===ouvert)+'">'
           +nxSvg(SG_PDOM_GI[g]||'folder')+'<span class="t"><b>'+nxE(g)+'</b><small>'+L.map(d=>nxE(SG_TUILE_LIB[d]||d)).join(' · ')+'</small></span>'   /* nombre de domaines / modules retiré du titre du groupe (21.10.2026) */+nxSvg('next','chev')+'</button>'
           +'<div class="sg-tiles">'+L.map(d=>tuile(d,g)).join('')+'</div></section>').join(''):'<div class="nx-empty">Aucun domaine accessible avec votre profil.</div>')+'</div></div>';
-    const pg=nxPage(m,html);
+    const pg=nxPage(m,html.replace('</h2>','</h2>'+sgFriseHeures(logs)));   /* frise des heures (première et dernière heure, durée) sous le nom de l'affaire, comme la fiche projet (08.11.2026) */
     Object.assign(pg._fn,{grp:b=>{ const x=b.closest('.sg-pgrp'), on=x.classList.toggle('on'); b.setAttribute('aria-expanded',String(on)); },dom:b=>{ const d=b.dataset.dom; /* Documents : page pleine (sgDocsModule) comme les autres domaines, depuis le retrait des onglets Documents et Projet (20.10.2026) */ go('nx-pdom',p.ID+'|'+d); },
       fiche:()=>go('nx-projet',p.ID),temps:()=>sgSaisieRapide({projet:p.ID}),
       mod:b=>go('nx-pdom',p.ID+'|'+b.dataset.mod+'|'+b.dataset.dom),fz:()=>go('nx-faisa',p.ID),fzfiche:()=>sgFaisaFiche(p)});   /* modules Projet / Faisabilité, Parcelle & règlements, fiche (bloc 21) */

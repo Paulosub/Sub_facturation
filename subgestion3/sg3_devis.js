@@ -1332,6 +1332,10 @@ async function dgGenPdf(X){ const dos=ch02cDos(X,'archive'); if(!dos) return;
 { const r0=ch02cRender; ch02cRender=function(X,i,rec){ if(+i===0&&X&&X.sgde) return dgRendu(X); const E0=X&&X.E; if(!E0||!remAuto(E0,X.p).auto) return r0.apply(this,arguments);
     const o=E0.remarques; E0.remarques=remImpr(E0,X.p); try{ return r0.apply(this,arguments); } finally{ E0.remarques=o; } }; }
 { const p0=ch02cPrefItems; ch02cPrefItems=function(X,i){ return +i===0&&X&&X.sgde?dgPrefItems(X):p0.apply(this,arguments); }; }
+/* « Bases de prix » retiré des réglages des documents (Paulo, 08.11.2026 : « supprimer ») : panneau de la fenêtre d'aperçu et menu « Réglages » de la ligne ;
+   gardé seulement s'il est déjà coché (pour pouvoir le décocher) ; option inchangée dans le devis */
+{ const p1=ch02cPrefItems; ch02cPrefItems=function(X,i){ const L=p1.apply(this,arguments); if(!X||!X.sgde||!Array.isArray(L)) return L;
+    return L.filter(x=>!(x&&x!=='-'&&x.t==='Bases de prix'&&!x.chk)).filter((x,k,a)=>!(x==='-'&&(k===0||a[k-1]==='-'||k===a.length-1))); }; }
 { const o0=ch02cOpen; ch02cOpen=function(X,i){ return +i===0&&X&&X.sgde?dgOuvrir(X):o0.apply(this,arguments); }; }
 { const g0=ch02cGenPdf; ch02cGenPdf=function(X,i){ return +i===0&&X&&X.sgde?dgGenPdf(X):g0.apply(this,arguments); }; }
 { const n0=ch02cNewItems; ch02cNewItems=function(X,i){ const L=n0.apply(this,arguments); if(+i!==0||!X||!X.sgde) return L;

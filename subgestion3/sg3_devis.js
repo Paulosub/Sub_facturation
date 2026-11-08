@@ -1303,7 +1303,7 @@ function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), 
     if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
   const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
 function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
-  const dis=k=>(k==='displayDetailOptions'&&!o.displayDetailValues);   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
+  const dis=k=>(k==='displayDetailOptions'&&!o.displayDetailValues)||((k==='displayQuanPriceValue'||k==='displayDetailComment')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
   const pt=dgChoix(X.E).format==='portrait';
   const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])}));
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);

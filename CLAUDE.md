@@ -1680,8 +1680,21 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sa colonne déborde sur les colonnes de texte vides à sa droite (`livretDG.deborde`, dessin compris), sinon passe à la ligne sur des rangées de suite (`k:1`, même
   style, pas de filet entre une rangée et sa suite ; mot trop long coupé à la lettre), avant la répartition sur les pages ; Information : la suite d'un libellé va sur
   les rangées suivantes de la même remarque. Ligne de calcul complète (formule gardée, `court` retiré). Écart de mesure de quelques points au dessin : corps à peine
-  réduit plutôt que « … ». **Corps du texte = corps de l'en-tête (même jour)** : `DG_TXT` 7,5 pt Akkurat Light pour positions, lignes de calcul, descriptif,
-  Information et titres des colonnes ; titres des CFC à 1 et 2 chiffres et total gardés en gras 10 pt ; page de garde inchangée. Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
+  réduit plutôt que « … ». **Corps du texte (même jour)** : `DG_TXT` 8 pt pour TOUT le texte du tableau — titres des colonnes (`livretDG.corpsTitres`),
+  CFC à 1 et 2 chiffres et total (gras), positions, lignes de calcul, descriptif, page Information et son titre (d'abord 7,5 pt, puis « taille des textes 8 pt, mais
+  ne pas changer les en-têtes et les pieds de page ») ; en-tête et pied du papier à 7,5 pt ; page de garde inchangée.
+  **Format Paysage | Portrait (08.11.2026, Paulo : « conserver la possibilité de créer une version verticale ou horizontale du devis » ; maquette
+  `subgestion3/_backup_20261108_maquette_dg/proposition_portrait.js`)** : Réglages ▸ Format (boutons en tête du panneau, aussi dans le menu Réglages de la
+  ligne), `E.reglages.dgPdf.format` ('portrait' ; paysage par défaut). Portrait : même papier des contrats (en-tête, pied et logo identiques au paysage),
+  pages du moteur à la hauteur `DG_HP` 630 pt, tableau de x 28.35 sur `DG_WP` 490 pt ; les quatre colonnes de montants deviennent **Montant** (positions à 3 et
+  4 chiffres, lignes de calcul) et **Total** (CFC à 1 et 2 chiffres) ; colonne vide dans sa série retirée (récapitulatif : Total et % seulement) ; lignes d'un
+  descriptif réunies en un paragraphe puis repassées à la ligne ; `livretDG.orientation` / `x0` dans contenuLivret.
+  **Alignement sur le pied (même jour, « test d'alignement », portrait et paysage)** : colonne CFC de x 28.35 à 125.72 (97,37 pt), texte des colonnes à gauche
+  sans retrait (`livretDG.aligne`, bandes et filets 2 pt plus à gauche) : CFC à l'aplomb de la 1re colonne du pied (x 28.35), Texte de la 2e (x 125.72) ;
+  en paysage la largeur est prise sur Commentaire (pas sous 90 pt), sinon sur Texte ; portrait : tableau de 500 pt (Commentaire 110, Montant 62, Total 66,
+  % 30). 99TST : 17 pages en paysage, 10 en portrait. **« Base et commentaire de la position »
+  retiré des Réglages (même jour)** : `displayComment` toujours vrai, « Base et commentaire dans colonne séparée » seul choisit leur place (colonne ou sous la
+  position). Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
   seconde relecture des corrections : le surplus d'une page trop pleine passe en tête de la page suivante de la même série (récapitulatif, document principal, page du total),
   pages complétées jusqu'en bas (zébrage) ; en « Assembler les descriptifs », une totalisatrice qui a son propre descriptif n'est pas ventilée.
   **Onglet « Paramètres » (07.11.2026, Paulo : « glisser Paramètres après Documents, sous forme de page comme Documents, pas une fenêtre ; l'ensemble des éléments par catégorie, le

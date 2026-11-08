@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 18:10 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 18:34 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33617,7 +33617,7 @@ async function sgDsPdf(R, rep, o){
      sur fond gris (232), filet noir au-dessus des CFC à 1 chiffre et du total ; textes trop longs coupés par « … ». o.livretDG = { couverture:{ titre, marge, rub:[[libellé, valeur]],
      sig:[titre] }, pages:[{ type 0 garde | 3, 4 information | 1, 2 tableau, titre, cols:[{ t, w, r }], rows:[{ c:[…], s }] }], st:{ s:{ z, b } }, zebra } */
   const contenuLivret = (cx) => {
-    const D = o.livretDG, H = PAP.format.paysage.h, T = (v) => H - v, GRIS = PDFLib.rgb(0.91, 0.91, 0.91), FIL = PDFLib.rgb(0.8, 0.8, 0.8);
+    const D = o.livretDG, ORI = D.orientation === 'portrait' ? 'portrait' : 'paysage', H = PAP.format[ORI].h, T = (v) => H - v,   /* paysage (défaut) ou portrait (08.11.2026) : même papier, même logo, même pied */ GRIS = PDFLib.rgb(0.91, 0.91, 0.91), FIL = PDFLib.rgb(0.8, 0.8, 0.8);
     const NUIT = PDFLib.rgb(0, 0.2, 0.2745), FILN = PDFLib.rgb(0.847, 0.847, 0.831), GRT = PDFLib.rgb(0.439, 0.435, 0.435), BLANC = PDFLib.rgb(1, 1, 1);   /* bleu nuit #003346, filet #d8d8d4, gris #706F6F de la charte */
     const P = (t) => prep(t == null ? '' : t);
     const police = (s) => { const x = (D.st || {})[s] || {}; return { f: x.b ? F.bold : F.light, z: +x.z || 9 }; };
@@ -33626,7 +33626,7 @@ async function sgDsPdf(R, rep, o){
     const ajuste = (t, f, z, w) => { let s = P(t); if(cx.largeur(s, f, z) <= w) return s; const e = ell(f); while(s && cx.largeur(s.trimEnd() + e, f, z) > w) s = s.slice(0, -1); return s ? s.trimEnd() + e : ''; };
     const page = (titre, sansNum) => {
       titreBrut = nettoyer(titre || titreDocument); titreDoc = maj(titreBrut);
-      cx.nouvellePage('paysage'); if(sansNum) cx.pages[cx.pages.length - 1].nonum = true;
+      cx.nouvellePage(ORI); if(sansNum) cx.pages[cx.pages.length - 1].nonum = true;
     };
     /* page de garde : titre et marge d'approximation, rubriques soulignées, signatures (positions de la référence, mesurées depuis le haut) */
     const garde = (G) => {
@@ -33647,14 +33647,16 @@ async function sgDsPdf(R, rep, o){
     };
     /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
     const tableau = (pg) => {
-      const X0 = cx.Z.x0, cols = Array.from(pg.cols || []), rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
-      const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => /%/.test(String(c.t || '')));   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
+      const X0 = !(pg.type === 3 || pg.type === 4) && D.x0Tab != null ? +D.x0Tab : D.x0 != null ? +D.x0 : cx.Z.x0, cols = Array.from(pg.cols || []),   /* tableaux : D.x0Tab (devis général : x 125.72) ; Information : D.x0 */   /* portrait : tableau à la marge de l'en-tête et du pied (x 28.35), comme le paysage */ rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
+      const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => c.pct || /%/.test(String(c.t || '')));
+      /* D.aligne : textes des colonnes à gauche sans retrait, à l'aplomb des colonnes du pied (CFC x 28.35 ; en portrait, Texte x 125.72) ; bandes et filets 2 pt plus à gauche */
+      const al = D.aligne === true && !info, ins = al ? 0 : 2, XB = al ? X0 - 2 : X0, WB = al ? W + 2 : W;   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
       const dI = info ? (+D.infoDx || 0) : 0;   /* page Information : contenu décalé (libellés et texte sur les 2e et 3e colonnes du pied) ; titre et filet à la marge */
       let x = X0 + dI; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
-      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
+      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:+D.corpsTitres || 9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
       else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
-        cx.rect(X0, T(116.5), W, 16, { fond:NUIT });
-        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.regular, 7.5, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(111), { police:F.regular, taille:7.5, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* corps de l'en-tête (7,5 pt) */
+        cx.rect(XB, T(116.5), WB, 16, { fond:NUIT });
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const zc = +D.corpsTitres || 7.5, t = ajuste(c.t, F.regular, zc, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + ins, T(111.2), { police:F.regular, taille:zc, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* titres des colonnes : D.corpsTitres (devis général : 8 pt) */
       }
       else {
         cx.ligne(X0, T(100.5), X0 + W, T(100.5));
@@ -33674,18 +33676,18 @@ async function sgDsPdf(R, rep, o){
         if(pl && !(enBloc && suiteDe(r))) tete = s; enBloc = pl || (enBloc && det(r));
         if(D.zebra && !info && !nuit && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* une rangée sur deux (modèle 24PRC) ; plus sur la page Information (demande de Paulo, 08.11.2026) */
         if(!info && !nuit && !r.k && (s === 'O' || s === 'F' || s === 'T') && pl) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
-        if(nuit && s === 'T' && pl) cx.rect(X0, T(y + rh), W, rh, { fond:NUIT });   /* total : bande bleu nuit, texte blanc */
+        if(nuit && s === 'T' && pl) cx.rect(XB, T(y + rh), WB, rh, { fond:NUIT });   /* total : bande bleu nuit, texte blanc */
         /* Bleu nuit : un filet fin sous chaque position, après ses lignes de calcul et son descriptif (rien entre une position et ses détails) ; filet bleu nuit sous les CFC à 1 chiffre */
-        if(nuit && pl && s !== 'T' && tete !== 'T' && !suiteDe(prochaine(i))){ if(tete === 'O' || tete === 'F') cx.rect(X0, T(y + rh) - 0.25, W, 0.5, { fond:NUIT }); else cx.ligne(X0, T(y + rh), X0 + W, T(y + rh), { couleur:FILN }); }
+        if(nuit && pl && s !== 'T' && tete !== 'T' && !suiteDe(prochaine(i))){ if(tete === 'O' || tete === 'F') cx.rect(XB, T(y + rh) - 0.25, WB, 0.5, { fond:NUIT }); else cx.ligne(XB, T(y + rh), XB + WB, T(y + rh), { couleur:FILN }); }
         const coul = !nuit ? undefined : s === 'T' ? BLANC : det(r) ? GRT : (s === 'O' || s === 'F' || s === 'W') ? NUIT : undefined;
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
           let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
-          const pf = info && j === 0 ? F.bold : pol.f;   /* page Information : libellés en gras (demande de Paulo, 08.11.2026) */
+          const pf = info && j === 0 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : pol.f;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
           const cl = nuit && j === jPct && s !== 'T' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
-          const dispo = p.w - 4 + (cx.largeur(P(v), pf, pol.z) > p.w - 4 ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
+          const dispo = p.w - 2 - ins + (cx.largeur(P(v), pf, pol.z) > p.w - 2 - ins ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
           const zz = D.deborde === true && lw > dispo && lw <= dispo * 1.08 ? pol.z * dispo / lw : pol.z;   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé */
-          const t = ajuste(v, pf, zz, dispo); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : 2), T(base), Object.assign({ police:pf, taille:zz, align:p.r ? 'd' : 'g' }, cl ? { couleur:cl } : {})); });   /* Information : sans retrait, colonnes du pied */
+          const t = ajuste(v, pf, zz, dispo); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : ins), T(base), Object.assign({ police:pf, taille:zz, align:p.r ? 'd' : 'g' }, cl ? { couleur:cl } : {})); });   /* Information : sans retrait, colonnes du pied */
         if(info && !D.zebra && !D.style) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });   /* page Information du Bleu nuit : ni grisé ni filets (demande du 08.11.2026) */
         y += rh; });
     };
@@ -38857,13 +38859,13 @@ const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLi
    demande) et un réglage coché le refait SANS revenir à la page 1 (même page, même position ; demande de Paulo : « ne pas redémarrer l'aperçu et
    laisser sur la page sur laquelle je me situe »). Réglages = ch02cPrefItems (mêmes cases que le menu), rangés en groupes, appliqués aussitôt. ═══ */
 const ICV=d=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+d+'</svg>';
-const VUE_GROUPES=['Positions','Calcul','Montants','Affichage','Sauts de page','Autres'];
+const VUE_GROUPES=['Format','Positions','Calcul','Montants','Affichage','Sauts de page','Autres'];
 const VUE_ORDRE=['Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Afficher les subdivisions',
   'Afficher le calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Variantes',
   'Afficher les montants','Tous les montants détaillés','Uniquement les montants avec calculs et remarque','Masquer les décimales','Pourcentages sur le total général',
   'Descriptif','Assembler les descriptifs des ouvrages','Base et commentaire de la position','Base et commentaire dans colonne séparée'];
 const VUE_RETRAIT=new Set(['Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Base et commentaire dans colonne séparée','Assembler les descriptifs des ouvrages']);
-const vueGroupe=t=>/sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
+const vueGroupe=t=>/^format\s*:/i.test(t)?'Format':/sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
   :/calcul|quantités|prix ht|prix ttc|bases de prix|variantes/i.test(t)?'Calcul':/positions|chiffres|subdivisions/i.test(t)?'Positions':/descriptif|commentaire/i.test(t)?'Affichage':'Autres';
 function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if(!dlg||!ifr||typeof sgLecteurPdf!=='function') return; cssD();
   const bar=D.bd.querySelector('.ph2'), btn=re=>bar?[...bar.querySelectorAll('button,.ib')].find(b=>re.test((b.textContent||'').trim())):null;
@@ -38895,12 +38897,13 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
     const L0=(ch02cPrefItems(X,i)||[]).filter(x=>x&&x!=='-'&&x.t), G={}; VUE_GROUPES.forEach(g=>{ G[g]=[]; });
     L0.forEach(it=>{ G[vueGroupe(it.t)].push(it); });
     const rang=t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }, M=[]; let h='';
-    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(VUE_RETRAIT.has(it.t)?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
+    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position'))?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
     const seg=(lib,opts)=>'<div class="sgdv-sg">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg'+(ok?'':' dis')+'" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'" tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'" data-k="'+E('seg:'+lib+':'+o.l)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
     VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>rang(a.t)-rang(b.t)); if(!A.length) return; let corps='';
       if(g==='Montants'){ const ar=A.filter(x=>/^arrondir à/i.test(x.t)); A=A.filter(x=>!/^arrondir à/i.test(x.t)); const sp=A.findIndex(x=>/pourcentages/i.test(x.t)), av=sp<0?A:A.slice(0,sp), ap=sp<0?[]:A.slice(sp);
         corps=av.map(ck).join('')+(ar.length?seg('Arrondir à',[{l:'aucun',ti:'Sans arrondi',on:!ar.some(x=>x.chk),it:ar.find(x=>x.chk)?Object.assign({},ar.find(x=>x.chk),{chk:false}):null},...ar.map(x=>({l:x.t.replace(/^arrondir à\s*/i,''),on:x.chk,it:x.chk?null:x}))]):'')+ap.map(ck).join(''); }
       else if(g==='Sauts de page') corps=seg('',A.map(x=>({l:/^sans/i.test(x.t)?'Sans sauts de page':x.t.replace(/^sauts de page\s*:\s*/i,''),ti:x.t,on:x.chk,it:x.chk?null:x})));
+      else if(g==='Format') corps=seg('',A.map(x=>({l:x.t.replace(/^format\s*:\s*/i,''),ti:'Document en '+x.t.replace(/^format\s*:\s*/i,'').toLowerCase(),on:x.chk,it:x.chk?null:x})));   /* paysage ou portrait (08.11.2026) */
       else corps=A.map(ck).join('');
       h+='<div class="sgdv-gt">'+E(g)+'</div>'+corps; });
     rb.innerHTML=h||'<div class="sgdv-msg">Aucun réglage pour ce document.</div>'; rb._M=M;
@@ -39070,7 +39073,7 @@ const DG_PRESET={includeKvCover:true,includeKvOneDigit:false,includeKvTwoDigit:t
   titleFontSize:10,posFontSize:9,detailFontSize:8,rowHeigth:15,titlePosBold:true,detailItalic:false,specialRound:false,coverKvEmptyPages:0,kvOneDigitEmptyPages:0,kvTwoDigitEmptyPages:0,infoKvEmptyPages:0,
   titleFontName:'',standardFontName:'',detailFontName:'',kagNumberColTitle:'CFC',kagTextColTitle:'Texte',commentColTitle:'Commentaire',value4ColTitle:'à 4 chiffres TTC',value3ColTitle:'à 3 chiffres TTC',
   value2ColTitle:'à 2 chiffres TTC',value1ColTitle:'à 1 chiffre TTC',devColTitle:'[%]',infoNameColTitle:'',infoDescColTitle:''};
-const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=388;   /* Information : rangées dès 121 pt, sous un filet (modèle 24PRC) */   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
+const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=388, DG_X0T=125.72, DG_WL=633.57, DG_WP=386.96, DG_WIL=730.94, DG_WIP=484.33, DG_HP=630;   /* (08.11.2026, Paulo) tableaux de x 125.72 (2e colonne du pied) jusqu'à 2 pt après la barre verticale du numéro de page (largeur − 84.6 : paysage 757.29, portrait 510.68), de sorte que la dernière colonne, alignée à droite avec 2 pt de retrait, finisse sur cette barre ; Information dès 28.35 jusqu'au même bord ; portrait : rangées de 122 à 752 pt */   /* Information : rangées dès 121 pt, sous un filet (modèle 24PRC) */   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
 let DG_COURS=null;
 function dgPdf(X){ if(DG_COURS){ toast('Le PDF est en cours de création…'); return DG_COURS; } DG_COURS=dgCreer(X).finally(()=>{ DG_COURS=null; }); return DG_COURS; }
 /* ventilation par ouvrage des positions totalisatrices (modèle 24PRC de l'ancien logiciel : 10, 101… montrent AP1, AP2… COM ; les positions à 1 chiffre, non) : le moteur ne la
@@ -39105,10 +39108,21 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* ouvrages : affichés dès que le devis en a (sinon les lignes de leurs parties manqueraient), jamais sinon (colonne OUV vide) ; devis vide : pas de document principal (un seul total) */
     const pres={nom:fav.nom||'',options:dgOptions(X),sautsDePage:sel.sauts};
     const tabI=h=>({orientation:'paysage',elements:[{t:'tableau',champ:'constructionEstimateTable',l:298,h}]});   /* Information : textes coupés comme le modèle 24PRC (298 − 15 % = 254 pt, moins les 25 pt de ch02bWrap = 229 pt) ; dessin sur toute la largeur */
-    const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(DG_HT),pageN:tab(DG_HT),pageToc1:tabI(DG_HI),pageTocN:tabI(DG_HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
+    const portrait=dgChoix(E).format==='portrait', HT=portrait?DG_HP:DG_HT, HI=portrait?DG_HP:DG_HI, WI=portrait?DG_WIP:DG_WIL;   /* format choisi dans les Réglages (paysage par défaut) */
+    const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(HT),pageN:tab(HT),pageToc1:tabI(HI),pageTocN:tabI(HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
     let B; DG_ACTIF=true; DG_AGREGE=pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
     try{ B=ch02bBook(E,doc,p,pres,X.filter,env); } finally{ DG_ACTIF=false; DG_AGREGE=null; } if(B.err) throw new Error('mise en pages impossible ('+B.err+')');
-    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iDx=97.37, iA=97.26, colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iDx-iA,r:false}];   /* page Information, décalée de iDx : libellés à l'aplomb de la 2e colonne du pied (x 125.72), texte de la 3e (x 222.98) — demandes de Paulo, 08.11.2026 (« déplacer le tout ») */
+    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})),
+      /* colonnes repérées par leur POSITION (ordre de ch02bCols : CFC, Texte, [Commentaire], [OUV], [Localisation], montants, [%]) et non par leur titre, que la présentation peut changer (relecture du 08.11.2026) */
+      K=(()=>{ let k=2; const iC=o.displayComment&&o.commentInColumn?k++:-1, iO=o.displaySubprojects?k++:-1, iL=o.displaySubprojects&&B.loc?k++:-1, h=!!o.hierarchicalAdjust, fv=k;
+        return {iC,iO,iL,h,i4:h?fv:-1,i3:h?fv+1:-1,i2:h?fv+2:-1,i1:h?fv+3:fv,ip:o.displayDeviation?(h?fv+4:fv+1):-1}; })(), iDx=97.37, iA=97.26, colsI=[{t:'',w:iA,r:false},{t:'',w:WI-iDx-iA,r:false}];   /* page Information, décalée de iDx : libellés à l'aplomb de la 2e colonne du pied (x 125.72), texte de la 3e (x 222.98) — demandes de Paulo, 08.11.2026 (« déplacer le tout ») */
+    /* « les CFC doivent être alignés à la colonne info@substances » (Paulo, 08.11.2026, portrait et paysage) : les tableaux commencent à x 125.72 (2e colonne du
+       pied, livretDG.x0Tab) et gardent leur bord droit ; en paysage la largeur (630.63 pt au lieu de 728) est reprise sur les colonnes de montants (pas sous 66 pt),
+       la colonne [%] (32 pt), puis Commentaire (90 pt), enfin Texte */
+    if(K.ip>=0&&cols[K.ip]) cols[K.ip].pct=true;   /* colonne [%] (pourcentages en bleu nuit) */
+    if(!portrait){ let manque=cols.reduce((t,c)=>t+(+c.w||0),0)-DG_WL; const prendre=(c,min)=>{ if(manque>0&&c&&c.w>min){ const q=Math.min(manque,c.w-min); c.w-=q; manque-=q; } };
+      [K.i4,K.i3,K.i2,K.i1].forEach(i=>{ if(i>=0&&cols[i]&&cols[i].w) prendre(cols[i],66); }); if(K.ip>=0) prendre(cols[K.ip],32); if(K.iC>=0) prendre(cols[K.iC],90);
+      if(manque>0&&cols[1]) cols[1].w-=manque; }
     const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
     const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
     const G=E.reglages||{}, ti=G.titres||{}, mod=v=>/^\[\.\.\.\]/.test(String(v||'').trim()), tt=k=>{ const v=String(ti[k]==null?'':ti[k]).trim(); return v&&!mod(v)?v:'Devis général'; }, etat=String(G.etatProjet||'').trim(), etatOk=etat&&!mod(etat);   /* « [...] … » : texte modèle de l'ancien logiciel, ignoré */
@@ -39122,7 +39136,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
        texte vides à sa droite (comme le dessin, livretDG.deborde) ; s'il ne tient toujours pas, il passe à la ligne sur des rangées de suite (k:1, même style, sans
        filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */
-    const bT=o.titlePosBold!==false, zT=+o.titleFontSize||10, zP=DG_TXT, zD=DG_TXT;
+    const bT=o.titlePosBold!==false, zT=DG_TXT, zP=DG_TXT, zD=DG_TXT;
     const stDe=x=>(x==='T'||x==='O'||x==='W'||x==='F')?{b:bT,z:zT}:(x==='D'||x==='X')?{b:false,z:zD}:{b:false,z:zP};
     const larg=(t,b,z)=>meas(t,b?'bold':'',z);
     const couperMots=(t,b,z,wd)=>{ const s0=String(t); if(larg(s0,b,z)<=wd) return [s0]; const L=[]; let cur='';
@@ -39146,6 +39160,25 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
     const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
       return {c:c0,s:String(r.s||'S')}; })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
+    /* PORTRAIT (Paulo, 08.11.2026 : « conserver la possibilité de créer une version verticale ou horizontale du devis ») — les quatre colonnes de montants du paysage
+       deviennent deux : Montant (positions à 3 et 4 chiffres, lignes de calcul) et Total (CFC à 1 et 2 chiffres) ; colonnes CFC, Texte, Commentaire, OUV, [%]
+       gardées ; colonne sans aucune valeur dans sa série (récapitulatif, document principal) retirée ; lignes d'un descriptif réunies en un paragraphe, repassé à la
+       ligne à la largeur du portrait par etaler (ci-dessous). Largeur 490 pt (DG_WP), hauteur 630 pt (DG_HP), même papier, logo et pied que le paysage. */
+    if(portrait){ const ser={}; pages.forEach(pg=>{ if(pg.type===1||pg.type===2) (ser[pg.digit]=ser[pg.digit]||[]).push(pg); });
+      const v=(c,i)=>i>=0?String(c[i]==null?'':c[i]):'', T0=i=>i>=0&&cols[i]?cols[i].t:'', suf=((/(TTC|HT)\s*$/.exec(T0(K.i1)||T0(K.i2))||[])[1])||'TTC';
+      Object.values(ser).forEach(S=>{ const tous=S.flatMap(pg=>pg.rows), aCom=K.iC>=0&&tous.some(r=>v(r.c,K.iC).trim()), aOuv=K.iO>=0&&tous.some(r=>v(r.c,K.iO).trim()),
+          aLoc=K.iL>=0&&tous.some(r=>v(r.c,K.iL).trim()), aMt=K.h&&tous.some(r=>(v(r.c,K.i4)||v(r.c,K.i3)).trim());
+        const fixe=36+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+(aMt?56:0)+60+(K.ip>=0?26:0);   /* tableau de x 125.72 à 512.68 (386.96 pt) */
+        const cols2=[{t:T0(0)||'CFC',w:36,r:false},{t:T0(1)||'Texte',w:DG_WP-fixe,r:false}].concat(aCom?[{t:T0(K.iC),w:84,r:false}]:[],aOuv?[{t:T0(K.iO),w:30,r:false}]:[],aLoc?[{t:T0(K.iL),w:30,r:false}]:[],
+          aMt?[{t:'Montant '+suf,w:56,r:true}]:[],[{t:K.h?'Total '+suf:T0(K.i1),w:60,r:true}],K.ip>=0?[{t:T0(K.ip),w:26,r:true,pct:true}]:[]);
+        const jM=2+(aCom?1:0)+(aOuv?1:0)+(aLoc?1:0), jT=jM+(aMt?1:0);
+        S.forEach(pg=>{ pg.rows=pg.rows.map(r=>{ const c=Array.from(r.c||[]), m4=v(c,K.i4), m3=v(c,K.i3), t2=v(c,K.i2), t1=v(c,K.i1);
+            const n=[v(c,0),v(c,1)].concat(aCom?[v(c,K.iC)]:[],aOuv?[v(c,K.iO)]:[],aLoc?[v(c,K.iL)]:[],aMt?[m4||m3]:[],[K.h?(t2||t1):t1],K.ip>=0?[v(c,K.ip)]:[]);
+            /* niveau lisible à la graisse (relecture : un sous-total et ses sous-positions se suivaient dans la même colonne) : Montant — position à 4 chiffres Light,
+               sous-total à 3 chiffres Regular ; Total — CFC à 2 chiffres Regular, CFC à 1 chiffre gras */
+            const cf={}, det=r.s==='D'||r.s==='X';   /* lignes de calcul et descriptif : Light gris, quelle que soit leur colonne */
+            if(!det){ if(aMt&&!m4.trim()&&m3.trim()) cf[jM]='r'; if(K.h&&t2.trim()) cf[jT]='r'; else if(t1.trim()&&(r.s==='O'||r.s==='F'||r.s==='T')) cf[jT]='b'; }
+            return Object.assign({c:n,s:String(r.s||'S')},Object.keys(cf).length?{cf}:{}); }); pg.cols=cols2; }); }); }
     /* Information (modèle 24PRC) : rangées refaites depuis les remarques et les ouvrages, coupées comme le moteur (ch02bIntro) — rangée vide avant chaque remarque nommée et avant la
        liste des ouvrages (pas entre deux ouvrages ; une entrée sans nom continue la précédente, comme dans les données de l'ancien logiciel), lignes vides d'une remarque écrite en
        paragraphes gardées —, puis réparties sur les pages d'Information (23 rangées par page : règle du moteur rows > lpp − 3, comme le modèle ; pas de rangée vide en tête de page) */
@@ -39157,24 +39190,24 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
         ent.forEach(d=>{ const nm=String(d.name||'').trim(); if(nm&&R0.length&&!(d.o&&prev==='o')) R0.push({c:['',''],s:'S'});
           ch02bIntro(d,tw,fsz,meas,fnm).forEach(c=>R0.push({c:Array.from(c).map(v=>v==null?'':String(v)),s:'S'})); if(nm) prev=d.o?'o':'r'; });
         R0.splice(0,R0.length,...etaler(R0,pages[iI[0]].cols,true));   /* libellés jamais coupés (08.11.2026) */
-        const cap=Math.max(1,Math.floor(DG_HI/DG_RH)-2), P2=[], vide=r=>!r.c.some(v=>String(v).trim()); let cur=null;
+        const cap=Math.max(1,Math.floor(HI/DG_RH)-2), P2=[], vide=r=>!r.c.some(v=>String(v).trim()); let cur=null;
         R0.forEach(r=>{ if(!cur||cur.rows.length>=cap){ if(cur&&vide(r)) return; cur={type:P2.length?4:3,titre:pages[iI[0]].titre,cols:pages[iI[0]].cols,rows:[]}; P2.push(cur); } cur.rows.push(r); });
         pages.splice(iI[0],iI.length,...P2); } }
     /* pages de tableau : jamais plus de rangées que la page n'en tient (avec un filtre d'ouvrages, ch02bSumFill ne garde pas une position et ses ouvrages ensemble et les rangées en
        trop passaient sur le pied). Rangées de remplissage en trop retirées ; coupure de préférence avant le début d'une position ; la suite passe en tête de la page suivante de la
        même série (même récapitulatif ou document principal, page du total comprise), sinon sur une page insérée ; pages complétées jusqu'en bas (zébrage), comme ch02bFinish */
     pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows=etaler(pg.rows,pg.cols,false); });   /* textes jamais coupés (08.11.2026) */
-    { const capT=Math.max(1,Math.floor(DG_HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
+    { const capT=Math.max(1,Math.floor(HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
       for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT));
         while(R.length>cap&&vide(R[R.length-1])) R.pop();
         if(R.length>cap){ let k=cap; for(let j=cap;j>cap-8&&j>0;j--){ if(String((R[j].c||[])[0]||'').trim()){ k=j; break; } }
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
           if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
-    const sT={b:o.titlePosBold!==false,z:+o.titleFontSize||10}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
+    const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
-      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoDx:iDx}})), j=new w.Array(); opt.journal=j;
+      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoDx:iDx,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
     return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
 async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }
@@ -39186,9 +39219,9 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
 /* « Réglages » du devis général : les cases du menu de la ligne (mêmes libellés que le moteur) sur les options du livret de l'ancien logiciel (ch02b, libellés identiques dans sa
    fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
-const DG_TXT=7.5;   /* corps du texte du tableau du devis général en PDF = corps de l'en-tête du papier (PAP.taille) — positions, lignes de calcul, descriptif, Information (08.11.2026) */
+const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['displayNoTitlePositions','Afficher les positions saisies et les totalisateurs'],
-  ['displayComment','Base et commentaire de la position'],['commentInColumn','Base et commentaire dans colonne séparée'],'-',['*tous','Tous les montants détaillés'],'-',
+  ['commentInColumn','Base et commentaire dans colonne séparée'],'-',   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */['*tous','Tous les montants détaillés'],'-',
   ['displayDetailComment','Commentaire du calcul'],['displayPriceBase','Bases de prix'],['dispalyCalcualtion','Afficher le calcul'],['displayQuanPriceValue','Quantités et prix'],
   ['displayDetailValues','Afficher les montants'],['displayDetailOptions','Variantes'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
   ['dispalyRound1000','Arrondir à 1000'],'-',['dispalyEmptyPositions','Afficher les positions sans montant'],['displayDescription','Descriptif'],['compactDescription','Assembler les descriptifs des ouvrages','sub']];
@@ -39207,14 +39240,16 @@ function dgOuvInfo(X){ const E=X.E||{}, p=X.p||{}, F=X.filter&&X.filter.length?X
 function dgOptions(X){ const E=X.E||{}, fav=dgPres(E)||{}, sub=ch02bHasSub(E), c=dgChoix(E);
   const o=Object.assign({},fav.options||{},DG_PRESET,{includeKvInformation:remImpr(E,X.p).some(r=>String(r.nom||'').trim()||String(r.texte||'').trim())||dgOuvInfo(X).length>0,dispalyEmptyPositions:((fav.options||{}).dispalyEmptyPositions)!==false,
     displaySubprojects:sub,includeDocument:(E.positions||[]).length>0});
-  if(!o.specialRound) DG_RONDS.forEach(k=>{ o[k]=false; });   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
+  if(!o.specialRound) DG_RONDS.forEach(k=>{ o[k]=false; });
+  o.displayComment=true;   /* plus d'option « Base et commentaire de la position » (08.11.2026) : toujours affichés ; « … dans colonne séparée » choisit leur place */   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
   DG_MENU.forEach(m=>{ if(Array.isArray(m)&&m[0][0]!=='*'&&typeof c[m[0]]==='boolean') o[m[0]]=c[m[0]]; });
   if(!sub){ o.displaySubprojects=false; o.compactDescription=false; o.displaySubprojectNames=false; }   /* affaire sans ouvrage : colonne OUV vide (comme la fenêtre du moteur) */
   o.specialRound=DG_RONDS.some(k=>o[k]); return o; }
 function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), c=Object.assign({},dgChoix(E));
   if(k.startsWith('pres:')||k==='*sans'){ if(k==='*sans'){ c.sansSauts=true; } else { const i=+k.slice(5), q=(E.presentations||[])[i]; if(!q) return; c.presNom=String(q.nom||''); c.presIdx=i; delete c.sansSauts; }
     const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }
-  if(k==='*total'){ const R=E.reglages||(E.reglages={}); R.pourcentageSur=R.pourcentageSur==='total'?'groupe':'total'; X.touch(); return; }   /* réglage du devis (Paramètres ▸ Affichage), aussi pour l'écran */
+  if(k==='*total'){ const R=E.reglages||(E.reglages={}); R.pourcentageSur=R.pourcentageSur==='total'?'groupe':'total'; X.touch(); return; }
+  if(k==='*paysage'||k==='*portrait'){ c.format=k.slice(1); const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }   /* format du PDF (08.11.2026) */   /* réglage du devis (Paramètres ▸ Affichage), aussi pour l'écran */
   if(k==='*tous'){ const tout=DG_TOUS.every(x=>o[x]); DG_TOUS.forEach(x=>{ c[x]=!tout; }); }
   else { const v=!o[k]; c[k]=v; if(DG_RONDS.includes(k)&&v) DG_RONDS.forEach(x=>{ if(x!==k) c[x]=false; });
     if(k==='dispalyCalcualtion'){ c.displayQuanPriceValue=v; c.displayDetailComment=v; }   /* « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (Paulo, 08.11.2026) */
@@ -39222,8 +39257,9 @@ function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), 
     if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
   const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
 function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
-  const dis=k=>(k==='commentInColumn'&&!o.displayComment)||(k==='displayDetailOptions'&&!o.displayDetailValues);   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
-  const L=DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])});
+  const dis=k=>(k==='displayDetailOptions'&&!o.displayDetailValues);   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
+  const pt=dgChoix(X.E).format==='portrait';
+  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])}));
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   L.push('-',{t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total')});
   if(P.length) L.push('-',...P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans')});

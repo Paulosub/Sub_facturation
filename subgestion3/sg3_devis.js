@@ -1139,9 +1139,19 @@ const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':Strin
 /* « Quantités et prix » sans « Afficher les montants » (Paulo, 08.11.2026 : « je veux voir les quantités et les prix et commentaires du calcul sans avoir besoin de
    sélectionner d'autre option ») : le moteur (KvBook.writeDetailLine) n'imprime la ligne « Quantité … Prix … » qu'avec les montants ; pour le devis général, elle
    est construite comme avec les montants, puis le montant est retiré */
-{ const d0=ch02bDetail; ch02bDetail=function(l,o,no,loc,R){ if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) return d0.apply(this,arguments);
-    const out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
-    if(k>=0&&out[k]&&Array.isArray(out[k].c)) out[k]={c:out[k].c.map((v,j)=>j<=1?v:''),s:out[k].s}; return out; }; }
+/* hiérarchie « Filet de calcul » (variante E, choisie par Paulo le 08.11.2026 sur maquette, subgestion3/_backup_20261108_maquette_hierarchie/) : chaque rangée d'une ligne de calcul
+   est repérée (cal : retrait derrière un filet vertical bleu nuit, montants en italique) ; la rangée « Quantité … Prix … » aussi (q : italique gris) ; le libellé reste en gris droit */
+const DG_CALR=7;   /* retrait du calcul (pt) derrière le filet */
+const dgQte=r=>{ const t=String(((r&&r.c)||[])[1]==null?'':r.c[1]).trim(), K=typeof CH02B_KB!=='undefined'?CH02B_KB:{}; return !!t&&[K.quantity||'Quantité',K.price||'Prix'].some(m=>t===m||t.startsWith(m+' ')); };
+{ const d0=ch02bDetail; ch02bDetail=function(l,o,no,loc,R){ let out;
+    if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) out=d0.apply(this,arguments);
+    else { out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
+      if(k>=0&&out[k]&&Array.isArray(out[k].c)) out[k]={c:out[k].c.map((v,j)=>j<=1?v:''),s:out[k].s}; }
+    return DG_ACTIF?out.map(r=>r&&Object.assign({},r,{cal:1},dgQte(r)?{q:1}:{})):out; }; }
+/* descriptif : le moteur le coupe à la largeur de son propre tableau, puis dgOctets le recoupait à la largeur réelle (portrait : lignes très courtes, « l'ascenseur en béton »).
+   Pendant le devis général, seuls les retours à la ligne voulus sont gardés (mêmes règles que ch02bWrap pour \n et les lignes vides) ; etaler coupe ensuite à la largeur réelle, en italique */
+{ const w0=ch02bWrap; ch02bWrap=function(text){ if(!DG_ACTIF) return w0.apply(this,arguments);
+    const P=String(text==null?'':text).replace(/\r\n?/g,'\n').split('\n'), fin=P.pop(), out=P.map(x=>x.trim()); if(fin.length>0) out.push(fin.trim()); return out; }; }
 /* « déplacer le descriptif sous le CFC » (Paulo, 08.11.2026) : dans le devis général, le descriptif d'une position suit directement sa rangée, avant son commentaire et ses
    lignes de calcul (le moteur, KvBook.createDocumentPage, l'écrit après) ; descriptif d'un ouvrage (plusieurs ouvrages, sans « Assembler les descriptifs ») : sous la rangée de
    l'ouvrage, avant ses lignes de calcul ; « Assembler les descriptifs » : sous la position. Seul l'ordre change (mêmes rangées, mêmes textes). */
@@ -1164,8 +1174,8 @@ function dgDescEnTete(rows,o){ const out=[], R=rows||[], compact=!!(o.displaySub
 async function dgOctets(X){ { await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
     const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{}, sel=dgPresSel(E), fav=sel.pres||{};
     /* mesure du texte aux vraies polices (coupure du descriptif et des remarques comme à l'impression) */
-    const pd=await w.PDFLib.PDFDocument.create(); pd.registerFontkit(w.fontkit); const fL=await pd.embedFont(R.polices.light), fB=await pd.embedFont(R.polices.bold);
-    const meas=(s,name,size)=>{ try{ return (/bold/i.test(String(name||''))?fB:fL).widthOfTextAtSize(String(s),+size||9); }catch(_){ return String(s).length*(+size||9)*0.5; } };
+    const pd=await w.PDFLib.PDFDocument.create(); pd.registerFontkit(w.fontkit); const fL=await pd.embedFont(R.polices.light), fB=await pd.embedFont(R.polices.bold), fI=await pd.embedFont(R.polices.lightItalic||R.polices.light);
+    const meas=(s,name,size)=>{ try{ return (/bold/i.test(String(name||''))?fB:/italic/i.test(String(name||''))?fI:fL).widthOfTextAtSize(String(s),+size||9); }catch(_){ return String(s).length*(+size||9)*0.5; } };
     const tab=h=>({orientation:'paysage',elements:[{t:'tableau',champ:'constructionEstimateTable',l:DG_W,h}]});
     /* ouvrages : affichés dès que le devis en a (sinon les lignes de leurs parties manqueraient), jamais sinon (colonne OUV vide) ; devis vide : pas de document principal (un seul total) */
     const pres={nom:fav.nom||'',options:dgOptions(X),sautsDePage:sel.sauts};
@@ -1201,19 +1211,20 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */
     const bT=o.titlePosBold!==false, zT=DG_TXT, zP=DG_TXT, zD=DG_TXT;
     const stDe=x=>(x==='T'||x==='O'||x==='W'||x==='F')?{b:bT,z:zT}:(x==='D'||x==='X')?{b:false,z:zD}:{b:false,z:zP};
-    const larg=(t,b,z)=>meas(t,b?'bold':'',z);
-    const couperMots=(t,b,z,wd)=>{ const s0=String(t); if(larg(s0,b,z)<=wd) return [s0]; const L=[]; let cur='';
-      s0.split(' ').forEach(m=>{ const e=cur?cur+' '+m:m; if(larg(e,b,z)<=wd){ cur=e; return; } if(cur.trim()) L.push(cur);
-        if(larg(m,b,z)<=wd){ cur=m; return; } let x=''; for(const ch of m){ if(x&&larg(x+ch,b,z)>wd){ L.push(x); x=ch; } else x+=ch; } cur=x; });
+    const larg=(t,b,z,it)=>meas(t,b?'bold':it?'italic':'',z);
+    const couperMots=(t,b,z,wd,it)=>{ const s0=String(t); if(larg(s0,b,z,it)<=wd) return [s0]; const L=[]; let cur='';
+      s0.split(' ').forEach(m=>{ const e=cur?cur+' '+m:m; if(larg(e,b,z,it)<=wd){ cur=e; return; } if(cur.trim()) L.push(cur);
+        if(larg(m,b,z,it)<=wd){ cur=m; return; } let x=''; for(const ch of m){ if(x&&larg(x+ch,b,z,it)>wd){ L.push(x); x=ch; } else x+=ch; } cur=x; });
       if(cur.trim()) L.push(cur); return L.length?L:[s0]; };
     const placeDe=(cols,c,j)=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&!cols[k].r&&+cols[k].w&&!String(c[k]==null?'':c[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };   /* marge de 1,5 pt : mesure du dessin un peu différente (glyphes de secours) */
     const etaler=(rows,cols,info)=>{ const out=[]; rows.forEach(r=>{ const c=Array.from(r.c||[]), sty=stDe(r.s);
-        const L=c.map((v,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(v==null?'':v).trim()) return [v]; return couperMots(v,(info&&j===0)||sty.b,sty.z,placeDe(cols,c,j)); });
+        const it=!info&&(r.s==='X'||!!r.q), rt=!info&&r.cal?DG_CALR:0;   /* variante E : descriptif et quantités en italique, calcul en retrait */
+        const L=c.map((v,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(v==null?'':v).trim()) return [v]; return couperMots(v,(info&&j===0)||sty.b,sty.z,placeDe(cols,c,j)-(j===1?rt:0),it&&j===1); });
         const n=Math.max(1,...L.map(x=>x.length));
         if(n===1){ out.push(r); return; }
         if(info){ /* Information : la suite du libellé va sur les rangées suivantes de la même remarque (libellé vide), sinon sur une rangée de suite */
           out.push(Object.assign({},r,{c:L.map(x=>x[0]==null?'':x[0])})); r._suite=L[0].slice(1); return; }
-        for(let i=0;i<n;i++) out.push(i===0?Object.assign({},r,{c:L.map(x=>x[0]==null?'':x[0])}):{c:L.map(x=>x[i]==null?'':x[i]),s:r.s,k:1}); });
+        for(let i=0;i<n;i++) out.push(i===0?Object.assign({},r,{c:L.map(x=>x[0]==null?'':x[0])}):Object.assign({c:L.map(x=>x[i]==null?'':x[i]),s:r.s,k:1},r.cal?{cal:1}:{},r.q?{q:1}:{})); });
       if(info){ const R2=[]; let reste=[]; out.forEach(r=>{ const c=Array.from(r.c||[]);
           if(reste.length&&!String(c[0]||'').trim()&&String(c[1]||'').trim()){ R2.push(Object.assign({},r,{c:[reste.shift(),...c.slice(1)]})); return; }
           while(reste.length) R2.push({c:[reste.shift(),''],s:'S',k:1});
@@ -1222,7 +1233,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
       return out; };
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
     const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
-      return {c:c0,s:String(r.s||'S')}; })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
+      return Object.assign({c:c0,s:String(r.s||'S')},r.cal?{cal:1}:{},r.q?{q:1}:{}); })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
     /* PORTRAIT (Paulo, 08.11.2026 : « conserver la possibilité de créer une version verticale ou horizontale du devis ») — les quatre colonnes de montants du paysage
        deviennent deux : Montant (positions à 3 et 4 chiffres, lignes de calcul) et Total (CFC à 1 et 2 chiffres) ; colonnes CFC, Texte, Commentaire, OUV, [%]
        gardées ; colonne sans aucune valeur dans sa série (récapitulatif, document principal) retirée ; lignes d'un descriptif réunies en un paragraphe, repassé à la
@@ -1241,7 +1252,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
                sous-total à 3 chiffres Regular ; Total — CFC à 2 chiffres Regular, CFC à 1 chiffre gras */
             const cf={}, det=r.s==='D'||r.s==='X';   /* lignes de calcul et descriptif : Light gris, quelle que soit leur colonne */
             if(!det){ if(aMt&&!m4.trim()&&m3.trim()) cf[jM]='r'; if(K.h&&t2.trim()) cf[jT]='r'; else if(t1.trim()&&(r.s==='O'||r.s==='F'||r.s==='T')) cf[jT]='b'; }
-            return Object.assign({c:n,s:String(r.s||'S')},Object.keys(cf).length?{cf}:{}); }); pg.cols=cols2; }); }); }
+            return Object.assign({c:n,s:String(r.s||'S')},Object.keys(cf).length?{cf}:{},r.cal?{cal:1}:{},r.q?{q:1}:{}); }); pg.cols=cols2; }); }); }
     /* Information (modèle 24PRC) : rangées refaites depuis les remarques et les ouvrages, coupées comme le moteur (ch02bIntro) — rangée vide avant chaque remarque nommée et avant la
        liste des ouvrages (pas entre deux ouvrages ; une entrée sans nom continue la précédente, comme dans les données de l'ancien logiciel), lignes vides d'une remarque écrite en
        paragraphes gardées —, puis réparties sur les pages d'Information (23 rangées par page : règle du moteur rows > lpp − 3, comme le modèle ; pas de rangée vide en tête de page) */
@@ -1277,7 +1288,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
-      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoGarde:true,infoDx:iDx,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT}})), j=new w.Array(); opt.journal=j;
+      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoGarde:true,infoDx:iDx,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:DG_CALR}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
     return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
 async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }

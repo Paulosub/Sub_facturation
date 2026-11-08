@@ -1683,6 +1683,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sous chaque position, après ses lignes de calcul (D) et son descriptif (X), rien entre une position et ses détails ; lignes de calcul et descriptif en gris
   #706F6F ; pourcentages en bleu nuit ; total (T) sur une bande bleu nuit, texte blanc ; plus de rangées grises ni de filet noir. Montants en noir. Sans
   `style`, l'ancien rendu (zébrage, filets noirs) reste. Page Information : ni grisé ni filets.
+  **Hiérarchie « Filet de calcul » (08.11.2026, variante E choisie par Paulo parmi 5 ; Paulo : « tout est au même niveau d'information … passer en italique comme dans le devis » ;
+  maquettes `subgestion3/_backup_20261108_maquette_hierarchie/`)** : descriptif en Akkurat Light Italic gris ; lignes de calcul (rangées repérées `cal` par l'enveloppe de
+  `ch02bDetail` pendant `DG_ACTIF`) en retrait de 7 pt (`DG_CALR`, `livretDG.calRetrait`) derrière un filet vertical bleu nuit de 0,75 pt à l'aplomb du texte (3 pt en retrait
+  en haut et en bas, coupé en fin de page) ; libellé du calcul en gris droit, rangée « Quantité … Prix … » (`q`, `dgQte`) et montants du calcul en italique gris. Descriptif
+  recoupé à la largeur réelle de la colonne (portrait et paysage) : pendant `DG_ACTIF`, `ch02bWrap` ne coupe qu'aux retours à la ligne voulus, `etaler` coupe en mesurant en
+  italique. Vérifié : mêmes caractères qu'avant sur 3 devis × portrait / paysage × avec / sans montants.
   **Textes jamais coupés (08.11.2026, Paulo : « toujours écrire complet, ne pas couper les textes »)** : `etaler` (dgOctets, sg3_devis.js) — un texte plus large que
   sa colonne déborde sur les colonnes de texte vides à sa droite (`livretDG.deborde`, dessin compris), sinon passe à la ligne sur des rangées de suite (`k:1`, même
   style, pas de filet entre une rangée et sa suite ; mot trop long coupé à la lettre), avant la répartition sur les pages ; Information : la suite d'un libellé va sur

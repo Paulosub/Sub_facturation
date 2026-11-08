@@ -1691,8 +1691,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Le PDF suit la présentation du devis (08.11.2026, Paulo : « dans PDF, afficher les options selon affichage sélectionné dans devis »)** : choisir une présentation
   (Présentation ▾ du devis) règle aussi le PDF — Standard et Avec colonnes honoraires : sans descriptif ni calcul ; Toutes les colonnes et Avec le descriptif : descriptif ;
   Toutes les colonnes avec le calcul de prix et Avec le descriptif et le calcul de prix : descriptif et calcul (ses trois cases) — enveloppes de `ch02aSetMode` et de `presMenu`,
-  `dgSuivreMode`, `dgModeOpts` ; présentation suivie gardée dans `dgPdf.modeSync` ; les cases restent modifiables ensuite dans les Réglages du PDF ; devis jamais suivi :
-  réglages du PDF inchangés jusqu'au premier choix de présentation ; présentation changée ailleurs (autre poste) : suivie à l'affichage (`dgOptions`).
+  `dgSuivreMode`, `dgModeOpts` ; présentation suivie gardée dans `dgPdf.modeSync` ; toujours, y compris pour un devis dont la présentation n'a jamais été
+  choisie (Paulo : « c'est plutôt le PDF qui suit les réglages du devis ») ; les cases restent modifiables dans les Réglages du PDF pour la présentation en cours (`dgOptions`, `dgBasculer`).
   **Saut de page au clic droit dans la fenêtre du document (08.11.2026, Paulo : « en cliquant avec le bouton droit sur le pdf et sur la ligne que je sélectionne, je souhaite
   pouvoir mettre un saut de page »)** : clic droit sur une ligne du tableau → « Saut de page avant « <CFC> <texte> » » (la position de la ligne : le moteur ne coupe qu'avant une
   position) ou « Retirer le saut de page avant … » (et, ailleurs sur une page qui commence par un saut, « Retirer le saut de page de cette page ») ; niveau selon la série de la

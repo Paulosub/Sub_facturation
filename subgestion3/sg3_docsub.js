@@ -1565,7 +1565,7 @@ async function sgDsPdf(R, rep, o){
         if(!info && !nuit && !r.k && (s === 'O' || s === 'F' || s === 'T') && pl) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
         if(nuit && s === 'T' && pl) cx.rect(XB, T(y + rh), WB, rh, { fond:NUIT });   /* total : bande bleu nuit, texte blanc */
         /* Bleu nuit : un filet fin sous chaque position, après ses lignes de calcul et son descriptif (rien entre une position et ses détails) ; filet bleu nuit sous les CFC à 1 chiffre */
-        if(nuit && pl && s !== 'T' && tete !== 'T' && !suiteDe(prochaine(i))){ if(tete === 'O' || tete === 'F') cx.rect(XB, T(y + rh) - 0.25, WB, 0.5, { fond:NUIT }); else cx.ligne(XB, T(y + rh), XB + WB, T(y + rh), { couleur:FILN }); }
+        if(nuit && pl && s !== 'T' && tete !== 'T' && !suiteDe(prochaine(i))){ if(tete === 'O' || tete === 'F') cx.rect(XB, T(y + rh) - 0.375, WB, 0.75, { fond:NUIT }); else cx.rect(XB, T(y + rh) - 0.25, WB, 0.5, { fond:FILN }); }   /* filets épaissis (Paulo, 08.11.2026 : « épaissir légèrement les lignes ») : gris 0,5 pt, bleu nuit 0,75 pt — en aplat, ligne() plafonne à 0,25 pt */
         const coul = !nuit ? undefined : s === 'T' ? BLANC : det(r) ? GRT : (s === 'O' || s === 'F' || s === 'W') ? NUIT : undefined;
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;

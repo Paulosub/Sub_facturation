@@ -1575,6 +1575,13 @@ function hoRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'h'+Date.
    chiffres, CFC à 1 chiffre entre deux filets), descriptif en Light 7,5 pt, lignes en capitales soulignées (sous-titres) — et les remarques du devis à la fin. Réglages ▸
    Montants ▸ « Afficher les montants » (reglages.descMontants, faux par défaut comme le modèle) : montant de chaque position et ouvrage à droite. */
 const deDate=d=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d||'')); if(m) return m[3]+'.'+m[2]+'.'+m[1].slice(2); const x=/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/.exec(String(d||'').trim()); return x?x[1].padStart(2,'0')+'.'+x[2].padStart(2,'0')+'.'+x[3].slice(-2):String(d||''); };
+/* variante 5 « Sommaire et fiches » (08.11.2026) : CFC à 1 chiffre → h1, à 2 chiffres → h2, positions à 3 chiffres et plus → fiche avec ses lignes (descriptif, sous-titres en
+   capitales, ouvrages, lignes vides) ; descriptif d'un CFC à 1 ou 2 chiffres → fiche sans titre ; remarque nommée → fiche à son nom */
+function deFiches(blocs){ const items=[]; let cur=null; const neuve=(n,txt,mt)=>{ cur={t:'f',n:n||'',txt:txt||'',mt:mt||'',lignes:[]}; items.push(cur); };
+  (blocs||[]).forEach(b=>{ if(b.t==='h'){ if(b.niv===1||b.niv===2){ items.push({t:b.niv===1?'h1':'h2',n:b.n||'',txt:b.txt||'',mt:b.mt||''}); cur=null; } else neuve(b.n,b.txt,b.mt); return; }
+    if(b.t==='lib'){ neuve('',b.txt,''); return; } if(!cur){ if(b.t==='vide') return; neuve('','',''); }
+    cur.lignes.push({k:b.t==='ouv'||b.t==='sub'||b.t==='vide'?b.t:'txt',txt:b.txt||'',mt:b.mt||''}); });
+  return items; }
 async function deOctets(X,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
   const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{};
   const cD=ch02cC(X,'desc'), oD=cD.o, MTd=!!((E.reglages||{}).descMontants), rep=ch02cPrep(rec.doc.report), J=ch02cJob(cD,rep); let band=null;
@@ -1598,7 +1605,7 @@ async function deOctets(X,rec){ await DS.need(['subproject','contact','projectme
     rub:[['Ouvrage :',ouv],['Maître de l’ouvrage :',A&&A.mo?un(A.mo.lignes||[]):''],['Architecte :',burT],['Direction des travaux :',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
   const nomF='Descriptif '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
   const opt=w.JSON.parse(JSON.stringify({titre:'Descriptif',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:dte,type:'Devis descriptif',description:nomF,
-    descDG:{couverture,blocs,montants:MTd}})), j=new w.Array(); opt.journal=j;
+    descDG:{couverture,items:deFiches(blocs),montants:MTd}})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info('Descriptif :',Array.from(j));
   return {oct,nom:nomF.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; }
 function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.now().toString(36), pdf=deOctets(X,rec).then(r=>new Blob([r.oct],{type:'application/pdf'}));

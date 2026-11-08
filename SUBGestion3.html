@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 22:20 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 22:32 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33722,41 +33722,53 @@ async function sgDsPdf(R, rep, o){
     let yt = 431; Array.from(G.titre || []).forEach(l => { cx.couper(P(l), F.bold, 11, XF1 - XV).forEach(m => { if(yt < 560){ cx.texte(m, XV, T(yt), { police:F.bold, taille:11 }); yt += 17; } }); });
     Array.from(G.sig || []).forEach((sg, i) => { const y = 617 + i * 92; cx.texte(P(sg), 213.5, T(y), { police:F.light, taille:8 });
       cx.texte('Lieu, date', 213.5, T(y + 33), { police:F.light, taille:8 }); cx.texte('Signature', 379.7, T(y + 33), { police:F.light, taille:8 }); });
-    /* corps : rangées à poser, avec leur hauteur et l'écart avant elles */
-    const L = []; let prec = null;
-    Array.from(D.blocs || []).forEach(b => {
-      if(b.t === 'h'){ while(L.length && L[L.length - 1].k === 'vide') L.pop();   /* pas de ligne vide avant un titre : l'écart du titre suffit (modèle) */
-        const bold = b.niv <= 2, f = bold ? F.bold : F.regular, ls = cx.couper(P(String(b.txt || '').toLocaleUpperCase('fr')), f, 8, WT);
-        const gap = prec === 'h' ? 17 : b.niv === 1 ? 39 : b.niv === 2 ? 37 : 22;
-        L.push({ k:'h', b, f, ls, gap, h:(ls.length - 1) * 10 }); prec = 'h'; return; }
-      if(b.t === 'vide'){ if(prec === 'txt' && L.length && L[L.length - 1].k !== 'vide') L.push({ k:'vide', gap:9, h:0 }); return; }
-      const sub = b.t === 'sub', lib = b.t === 'lib' || b.t === 'ouv', f = sub || lib ? F.regular : F.light, z = sub ? 8 : 7.5;
-      cx.couper(P(b.txt || ''), f, z, b.t === 'ouv' && MT ? WT : WTX).forEach((l, i) => {
-        const gap = i ? 9 : (prec === 'h' ? 12 : prec === 'vide' ? 9 : 9);
-        L.push({ k:'txt', l, f, z, sub, gap, h:0, mt:i === 0 ? b.mt : '' }); prec = 'txt'; });
-    });
-    /* mise en pages : un titre n'est jamais seul en bas de page (gardé avec ses deux lignes suivantes) */
-    let y = null; const nouvelle = () => { cx.nouvellePage('portrait'); y = null; };
-    nouvelle();
-    L.forEach((it, i) => {
-      if(it.k === 'vide'){ if(y != null) y += it.gap; return; }
-      const debut = (k) => k === 'h' ? HAUT_H : HAUT_T;
-      let yy = y == null ? debut(it.k) : y + it.gap;
-      if(it.k === 'h'){ let besoin = yy + it.h; for(let j = i + 1, n = 0; j < L.length && n < 2; j++){ if(L[j].k === 'vide') continue; besoin += L[j].gap + L[j].h; n++; if(L[j].k === 'h') break; }
-        if(y != null && besoin > BAS){ nouvelle(); yy = HAUT_H; } }
-      else if(yy + it.h > BAS){ nouvelle(); yy = HAUT_T; }
-      if(it.k === 'h'){ const b = it.b, f = it.f;
-        if(b.niv === 1) filet(yy - 12.7, 0.75);
-        cx.texte(P(b.n || ''), XN, T(yy), { police:f, taille:8, align:'d' });
-        it.ls.forEach((l, k) => cx.texte(l, XT, T(yy + k * 10), { police:f, taille:8 }));
-        if(MT && b.mt) cx.texte(P(b.mt), XM, T(yy), { police:f, taille:8, align:'d' });
-        if(b.niv === 1) filet(yy + it.h + 4.3, 0.75);
-        y = yy + it.h; }
-      else { cx.texte(it.l, XT, T(yy), { police:it.f, taille:it.z });
-        if(it.sub) cx.rect(XT, T(yy + 0.4) - 0.2, cx.largeur(it.l, it.f, it.z), 0.4, { fond:C.N });
-        if(MT && it.mt) cx.texte(P(it.mt), XM, T(yy), { police:F.light, taille:7.5, align:'d' });
-        y = yy; }
-    });
+    /* corps — variante 5 « Sommaire et fiches » (choisie par Paulo le 08.11.2026 ; maquettes subgestion3/_backup_20261108_maquette_descriptif/) : bande bleu nuit
+       « CFC · Désignation » (« Montant » avec la case) répétée sur chaque page ; CFC à 1 chiffre Bold bleu nuit + filet bleu nuit 0,75 ; CFC à 2 chiffres Bold noir ;
+       chaque position à 3 chiffres et plus = fiche entre deux filets gris (un seul entre deux fiches) : numéro Regular bleu nuit à x 85, titre Regular noir à x 125.7,
+       descriptif Light 7,5 interligne 9,5 jusqu'à x 460 ; montants à droite (x 510) seulement avec la case */
+    const NUIT = PDFLib.rgb(0, 0.2, 0.2745), FILN = PDFLib.rgb(0.847, 0.847, 0.831), BLANC = PDFLib.rgb(1, 1, 1);
+    const XA = 83, XB = 512.68, XNo = 85.04, XTx = 125.72, XD = 460, XR = 510.68, TOP = 100.5, BH = 14, Y0 = TOP + BH + 6, BAS2 = 760;
+    const WTI = (MT ? 455 : XR) - XTx, WD = XD - XTx, fil = (yy, col, ep) => cx.rect(XA, T(yy) - ep / 2, XB - XA, ep, { fond:col });
+    let y = 0, prev = 'band';
+    const page = () => { cx.nouvellePage('portrait'); cx.rect(XA, T(TOP + BH), XB - XA, BH, { fond:NUIT });
+      cx.texte('CFC', XNo, T(TOP + 9.6), { police:F.regular, taille:8, couleur:BLANC }); cx.texte('Désignation', XTx, T(TOP + 9.6), { police:F.regular, taille:8, couleur:BLANC });
+      if(MT) cx.texte('Montant', XR - 2, T(TOP + 9.6), { police:F.regular, taille:8, couleur:BLANC, align:'d' }); y = Y0; prev = 'band'; };
+    /* fiches préparées : lignes du titre, lignes du descriptif (texte, sous-titre, ouvrage, vide) */
+    const prepF = (it) => { const tl = it.txt ? cx.couper(P(it.txt), F.regular, 8, WTI) : [], L2 = [];
+      (it.lignes || []).forEach(l => { if(l.k === 'vide'){ if(L2.length && !L2[L2.length - 1].vide) L2.push({ vide:true }); return; }
+        const f = l.k === 'txt' ? F.light : F.regular; cx.couper(P(l.txt || ''), f, 7.5, l.k === 'ouv' && MT ? WTI : WD).forEach((m, i) => L2.push({ l:m, f, mt:i === 0 ? l.mt : '' })); });
+      while(L2.length && L2[L2.length - 1].vide) L2.pop(); return { tl, L2 }; };
+    const hTitre = (tl) => tl.length ? 3.5 + 10 * tl.length : 3.5, hLigne = (x) => x.vide ? 5 : 9.5;
+    const hFiche = (F2) => hTitre(F2.tl) + (F2.L2.length ? 1 + F2.L2.reduce((t, x) => t + hLigne(x), 0) : 0) + 4;
+    const hDebut = (F2) => hTitre(F2.tl) + (F2.L2.length ? 1 + F2.L2.slice(0, 2).reduce((t, x) => t + hLigne(x), 0) : 0) + 4;
+    const IT = Array.from(D.items || []).map(it => it.t === 'f' ? Object.assign({}, it, { F2:prepF(it) }) : it);
+    const montant = (v, yb, f, c) => { if(MT && v) cx.texte(P(v), XR - 2, T(yb), Object.assign({ police:f, taille:8, align:'d' }, c ? { couleur:c } : {})); };
+    const titreH = (it, yb, f, c) => { cx.texte(P(it.n || ''), XNo, T(yb), { police:f, taille:8, couleur:c }); cx.couper(P(it.txt || ''), f, 8, WTI).forEach((m, i) => cx.texte(m, XTx, T(yb + i * 10), { police:f, taille:8, couleur:c })); };
+    const hH = (it, niv, avant) => avant + (niv === 1 ? 7.4 + 8 : 10 + 3) + (cx.couper(P(it.txt || ''), F.bold, 8, WTI).length - 1) * 10;
+    page();
+    IT.forEach((it, idx) => {
+      const suiv = IT[idx + 1], suiv2 = IT[idx + 2];
+      if(it.t === 'h1' || it.t === 'h2'){ const niv = it.t === 'h1' ? 1 : 2, avant = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10);
+        let besoin = hH(it, niv, avant); if(suiv && suiv.t === 'h2') besoin += hH(suiv, 2, 4); const fi = [suiv, suiv2].find(x => x && x.t === 'f'); if(fi && (suiv === fi || (suiv && suiv.t === 'h2' && suiv2 === fi))) besoin += hDebut(fi.F2);
+        if(prev !== 'band' && y + besoin > BAS2) page();
+        const av = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), yb = y + av + 7.4, c = niv === 1 ? NUIT : C.N;
+        titreH(it, yb, F.bold, c); montant(it.mt, yb, F.bold, c); const nl = cx.couper(P(it.txt || ''), F.bold, 8, WTI).length;
+        if(niv === 1){ fil(yb + (nl - 1) * 10 + 4, NUIT, 0.75); y = yb + (nl - 1) * 10 + 8; } else y = y + av + 10 * nl + 3;
+        prev = it.t; return; }
+      /* fiche */
+      const F2 = it.F2, H2 = hFiche(F2);
+      if(prev !== 'band' && y + H2 > BAS2){ const coupable = F2.L2.length > 4 && y + hDebut(F2) <= BAS2; if(!coupable) page(); }
+      if(prev !== 'f') fil(y, FILN, 0.5);
+      let yy = y + 3.5;
+      F2.tl.forEach((m, i) => { const yb = yy + 7.4 + i * 10; if(i === 0){ cx.texte(P(it.n || ''), XNo, T(yb), { police:F.regular, taille:8, couleur:NUIT }); montant(it.mt, yb, F.regular); } cx.texte(m, XTx, T(yb), { police:F.regular, taille:8 }); });
+      if(F2.tl.length) yy += 10 * F2.tl.length; else if(it.n){ cx.texte(P(it.n), XNo, T(yy + 7.4), { police:F.regular, taille:8, couleur:NUIT }); }
+      if(F2.L2.length) yy += 1;
+      F2.L2.forEach((x, i) => {
+        const reste = F2.L2.length - i;
+        if(yy + hLigne(x) + 4 > BAS2 && i >= 2 && reste >= 2){ fil(yy + 4, FILN, 0.5); page(); fil(y, FILN, 0.5); yy = y + 3.5; }   /* fiche coupée : filet fermé en bas de page, rouvert sous la bande */
+        if(!x.vide){ cx.texte(x.l, XTx, T(yy + 7.0), { police:x.f, taille:7.5 }); if(MT && x.mt) cx.texte(P(x.mt), XR - 2, T(yy + 7.0), { police:F.light, taille:7.5, align:'d' }); }
+        yy += hLigne(x); });
+      y = yy + 4; fil(y, FILN, 0.5); prev = 'f'; });
   };
   const contenu = (cx) => {
     if(o.descDG){ contenuDescDG(cx); return; }
@@ -39598,6 +39610,13 @@ function hoRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'h'+Date.
    chiffres, CFC à 1 chiffre entre deux filets), descriptif en Light 7,5 pt, lignes en capitales soulignées (sous-titres) — et les remarques du devis à la fin. Réglages ▸
    Montants ▸ « Afficher les montants » (reglages.descMontants, faux par défaut comme le modèle) : montant de chaque position et ouvrage à droite. */
 const deDate=d=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d||'')); if(m) return m[3]+'.'+m[2]+'.'+m[1].slice(2); const x=/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/.exec(String(d||'').trim()); return x?x[1].padStart(2,'0')+'.'+x[2].padStart(2,'0')+'.'+x[3].slice(-2):String(d||''); };
+/* variante 5 « Sommaire et fiches » (08.11.2026) : CFC à 1 chiffre → h1, à 2 chiffres → h2, positions à 3 chiffres et plus → fiche avec ses lignes (descriptif, sous-titres en
+   capitales, ouvrages, lignes vides) ; descriptif d'un CFC à 1 ou 2 chiffres → fiche sans titre ; remarque nommée → fiche à son nom */
+function deFiches(blocs){ const items=[]; let cur=null; const neuve=(n,txt,mt)=>{ cur={t:'f',n:n||'',txt:txt||'',mt:mt||'',lignes:[]}; items.push(cur); };
+  (blocs||[]).forEach(b=>{ if(b.t==='h'){ if(b.niv===1||b.niv===2){ items.push({t:b.niv===1?'h1':'h2',n:b.n||'',txt:b.txt||'',mt:b.mt||''}); cur=null; } else neuve(b.n,b.txt,b.mt); return; }
+    if(b.t==='lib'){ neuve('',b.txt,''); return; } if(!cur){ if(b.t==='vide') return; neuve('','',''); }
+    cur.lignes.push({k:b.t==='ouv'||b.t==='sub'||b.t==='vide'?b.t:'txt',txt:b.txt||'',mt:b.mt||''}); });
+  return items; }
 async function deOctets(X,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
   const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{};
   const cD=ch02cC(X,'desc'), oD=cD.o, MTd=!!((E.reglages||{}).descMontants), rep=ch02cPrep(rec.doc.report), J=ch02cJob(cD,rep); let band=null;
@@ -39621,7 +39640,7 @@ async function deOctets(X,rec){ await DS.need(['subproject','contact','projectme
     rub:[['Ouvrage :',ouv],['Maître de l’ouvrage :',A&&A.mo?un(A.mo.lignes||[]):''],['Architecte :',burT],['Direction des travaux :',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
   const nomF='Descriptif '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
   const opt=w.JSON.parse(JSON.stringify({titre:'Descriptif',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:dte,type:'Devis descriptif',description:nomF,
-    descDG:{couverture,blocs,montants:MTd}})), j=new w.Array(); opt.journal=j;
+    descDG:{couverture,items:deFiches(blocs),montants:MTd}})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info('Descriptif :',Array.from(j));
   return {oct,nom:nomF.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; }
 function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.now().toString(36), pdf=deOctets(X,rec).then(r=>new Blob([r.oct],{type:'application/pdf'}));

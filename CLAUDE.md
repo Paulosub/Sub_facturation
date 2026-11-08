@@ -1702,9 +1702,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   de sg3_docsub.js, `o.descDG`) — mêmes données et réglages que le modèle du moteur (`ch02cJob` → descTable). Page de garde : « PROVISOIRE » en rouge (Bold 31, devis non
   validé ; « ANNULÉ » s'il est annulé ; rien s'il est validé), rubriques Ouvrage (description + adresse d'affaire), Maître de l'ouvrage, Architecte, Direction des travaux
   (libellés Light 8 alignés à droite à x 205.5, valeurs Regular 8 à x 210.5), date jj.mm.aa et titre « N° - DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION » + description en gras 11,
-  deux blocs de signature. Corps : numéro CFC aligné à droite à x 122.4, titre en capitales à x 128.8 (gras pour 1 et 2 chiffres, Regular au-delà), CFC à 1 chiffre entre deux
-  filets de 0,75 pt (x 85 → 510.2), descriptif Light 7,5 pt interligne 9, lignes entièrement en capitales = sous-titres Regular 8 soulignés, remarques du devis à la fin
-  (« Remarques ») ; écarts du modèle (titre après texte : 22 / 37 / 39 pt, après titre : 17, titre → texte : 12) ; titre jamais seul en bas de page. Réglages ▸ Montants ▸
+  deux blocs de signature. Corps (remplacé le même jour par la **variante 5 « Sommaire et fiches »**, choisie par Paulo parmi 5 pour correspondre aux autres documents ; maquettes
+  `subgestion3/_backup_20261108_maquette_descriptif/`) : bande bleu nuit « CFC · Désignation » (« Montant » avec la case) répétée sur chaque page ; CFC à 1 chiffre Bold
+  bleu nuit + filet bleu nuit 0,75 ; CFC à 2 chiffres Bold noir ; chaque position à 3 chiffres et plus = fiche entre deux filets gris (un seul entre deux fiches) : numéro
+  Regular bleu nuit à x 85, titre Regular noir à x 125.7, descriptif Light 7,5 interligne 9,5 jusqu'à x 460 ; descriptif d'un CFC à 1 ou 2 chiffres = fiche sans titre ;
+  remarques du devis à la fin (« Remarques », une fiche par remarque) ; titres jamais seuls en bas de page, fiche coupée au-delà de 4 lignes (2 au moins de chaque côté)
+  (`deFiches`, `contenuDescDG`). Réglages ▸ Montants ▸
   **« Afficher les montants »** (Paulo, même jour ; `reglages.descMontants`, décoché par défaut) : montant à droite de chaque CFC et ouvrage ; descriptifs assemblés sans
   montants : lignes d'ouvrage masquées. Case placée par `rang` (tri du panneau).
   **Le PDF suit la présentation du devis (08.11.2026, Paulo : « dans PDF, afficher les options selon affichage sélectionné dans devis »)** : choisir une présentation

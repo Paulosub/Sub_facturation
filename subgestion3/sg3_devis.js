@@ -1299,7 +1299,7 @@ function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), 
   if(k==='*tous'){ const tout=DG_TOUS.every(x=>o[x]); DG_TOUS.forEach(x=>{ c[x]=!tout; }); }
   else { const v=!o[k]; c[k]=v; if(DG_RONDS.includes(k)&&v) DG_RONDS.forEach(x=>{ if(x!==k) c[x]=false; });
     if(k==='dispalyCalcualtion'){ c.displayQuanPriceValue=v; c.displayDetailComment=v; }   /* « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (Paulo, 08.11.2026) */
-    if(k==='displayComment'&&!v) c.commentInColumn=false; if(k==='displayDetailValues'&&!v) c.displayDetailOptions=false; if(k==='displayQuanPriceValue'&&!v) c.dispalyCalcualtion=false;
+    if(k==='displayComment'&&!v) c.commentInColumn=false; if(k==='displayDetailValues'&&!v) c.displayDetailOptions=false;   /* décocher « Quantités et prix » ne décoche plus « Afficher le calcul » (Paulo, 08.11.2026 : ses cases ne se grisaient plus qu'ensemble) */
     if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
   const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
 function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});

@@ -1683,6 +1683,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   à l'aplomb de la 2e colonne du pied (x 125.72) et texte de la 3e (x 222.98) — `livretDG.infoDx` 97.37, `colsI` 97.26 + reste, sans retrait de 2 pt ; titre
   « Information » et son filet à la marge ; en-tête de la page de garde = nom du document seul
   (`tt('document')`, comme les autres pages ; le grand titre de la garde garde la phase).
+  **Page de garde = celle du devis descriptif (08.11.2026, Paulo : « applique à l'ensemble de l'app la mise en page du descriptif », puis « première page uniquement pour
+  le devis et le descriptif », « page de garde seulement »)** : `gardeEdito(cx, G, ori)` de sg3_docsub.js, commune au devis descriptif et au devis général
+  (`livretDG.couverture.edito`) ; le document Honoraires garde l'ancienne page de garde (`garde`). Devis général : état « ■ PROVISOIRE » / « ANNULÉ » (rien s'il est
+  validé), numéro de l'affaire, titre de garde (« DEVIS GÉNÉRAL », `reglages.titres.garde`), désignation, ligne d'information en bleu nuit « <phase> – PRÉCISION ±10 % »
+  (état / phase du devis et marge d'approximation, textes modèles « [...] » écartés), filtre, rubriques (`deGardeRub`, communes avec le descriptif), signatures. Portrait :
+  comme le descriptif. Paysage : même grille, contenu de x 124.4 à 732.1 (barre du numéro de page − 25 pt), rubriques à gauche (jusqu'à x 464.4), signatures à droite
+  (485.5–600.8 et 616.8–732.1) à la hauteur du premier filet des rubriques. Page de garde toujours non numérotée mais comptée. Copie d'avant :
+  `subgestion3/_backup_20261108_avant_garde_devis/`.
   **Graphisme « Bleu nuit » du tableau (08.11.2026, variante 4 choisie par Paulo parmi 5 ; maquettes `subgestion3/_backup_20261108_maquette_dg/`)** :
   `livretDG.style:'nuit'` (au lieu de `zebra`) dans `contenuLivret` ▸ `tableau` (sg3_docsub.js) : titres des colonnes en blanc (Regular 8) sur une bande bleu
   nuit #003346 ; CFC à 1 chiffre (styles O, F) en bleu nuit, CFC à 2 chiffres (W) en noir, pourcentage compris (d'abord en bleu nuit ; « texte en noir », même jour), filet bleu nuit sous les CFC à 1 chiffre (0,75 pt ; d'abord 0,5) ; filet gris (#d8d8d4, 0,5 pt ; d'abord 0,25, « épaissir légèrement les lignes ») — pas de filet gris sous la dernière position d'une page (Paulo, 08.11.2026 : « supprimer la ligne lorsqu'il n'y a plus de texte en dessous » ; le trait bleu nuit sous un CFC à 1 chiffre reste)
@@ -1699,15 +1707,27 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   trait sous l'icône « Ajuster à la largeur » (même jour).
   **Document « Devis descriptif » au dessin du descriptif du bureau (08.11.2026, Paulo : « voici à quoi doit ressembler le descriptif, reproduis celui-ci ici », modèle
   17QUE_DESCRIPTIF_230619.pdf — client, jamais dans le dépôt)** : ligne 2 de Documents (`deOctets`, `deRendu`, enveloppe de `ch02cRender` pour i = 2 ; dessin `contenuDescDG`
-  de sg3_docsub.js, `o.descDG`) — mêmes données et réglages que le modèle du moteur (`ch02cJob` → descTable). Page de garde : « PROVISOIRE » en rouge (Bold 31, devis non
-  validé ; « ANNULÉ » s'il est annulé ; rien s'il est validé), rubriques Ouvrage (description + adresse d'affaire), Maître de l'ouvrage, Architecte, Direction des travaux
-  (libellés Light 8 alignés à droite à x 205.5, valeurs Regular 8 à x 210.5), date jj.mm.aa et titre « N° - DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION » + description en gras 11,
-  deux blocs de signature. Corps (remplacé le même jour par la **variante 5 « Sommaire et fiches »**, choisie par Paulo parmi 5 pour correspondre aux autres documents ; maquettes
+  de sg3_docsub.js, `o.descDG`) — mêmes données et réglages que le modèle du moteur (`ch02cJob` → descTable). **Page de garde = variante 3 « Grand titre éditorial »**
+  (choisie par Paulo parmi 5 le 08.11.2026, « la version 3 » ; maquettes et mesures `subgestion3/_backup_20261108_maquette_garde/`, entrée vC de `variantes.json`) : filet noir
+  1 pt à y 100 ; à droite, état en rouge #BD1E42 précédé d'un carré de 5 pt (« PROVISOIRE » devis non validé, « ANNULÉ » annulé, rien s'il est validé ; la date, d'abord
+  à gauche, retirée le même soir à la demande — elle est dans l'en-tête) ; numéro de l'affaire Light 30 bleu nuit puis « DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION » Bold 30 bleu nuit (coupé à 340 pt, 24 pt au-delà de 4 lignes) ; désignation
+  de l'affaire en capitales Regular 10, lignes équilibrées (300 pt) ; filtre d'ouvrage éventuel en Light 8 gris ; filet bleu nuit 0,75 ; rubriques Ouvrage, Maître de
+  l'ouvrage (celui de l'ouvrage filtré s'il a le sien : `deMoFiltre`, règle du moteur `ch02cMoOuv`, appliquée aussi au devis général), Architecte, Direction des travaux
+  en tableau à filets gris (libellé Regular 7,5 en capitales à la marge, nom Regular 9 en lignes équilibrées puis adresse Light 9 à x 222.98, nom et adresse séparés par
+  `deNomAdr` / `sgNomAdresse` — `SG_SALUT` reconnaît aussi « Monsieur, », « Madame, Monsieur, » — ; adresse de l'ouvrage pas répétée quand la désignation la contient,
+  rue saisie dans le nom de l'adresse gardée ; maître de l'ouvrage de l'ouvrage filtré : lignes cochées du filtre seulement ; rubrique vide omise ; rien n'est coupé ;
+  désignation et noms en lignes équilibrées « en pyramide ») ; signatures sur deux colonnes à place fixe (x 124.4–296 et 312–485.5, y 610, plus bas seulement si les rubriques
+  l'exigent, signalé au journal). Marges = celles de la page de garde du devis général et des honoraires, x 124.4 → 485.5 (Paulo, même soir : « alignement », « marges »,
+  choix « Comme le devis général ») ; le corps garde les siennes (CFC x 85.04, texte x 125.72, barre x 510.68). Corps (remplacé le même jour par la **variante 5 « Sommaire et fiches »**, choisie par Paulo parmi 5 pour correspondre aux autres documents ; maquettes
   `subgestion3/_backup_20261108_maquette_descriptif/`) : bande bleu nuit « CFC · Désignation » (« Montant » avec la case) répétée sur chaque page ; CFC à 1 chiffre Bold
   bleu nuit + filet bleu nuit 0,75 ; CFC à 2 chiffres Bold noir ; chaque position à 3 chiffres et plus = fiche entre deux filets gris (un seul entre deux fiches) : numéro
   Regular bleu nuit à x 85, titre Regular noir à x 125.7, descriptif Light 7,5 interligne 9,5 jusqu'à x 460 ; descriptif d'un CFC à 1 ou 2 chiffres = fiche sans titre ;
-  remarques du devis à la fin (« Remarques », une fiche par remarque) ; titres jamais seuls en bas de page, fiche coupée au-delà de 4 lignes (2 au moins de chaque côté)
-  (`deFiches`, `contenuDescDG`). Réglages ▸ Montants ▸
+  remarques du devis à la fin (« Remarques », une fiche par remarque, telles qu'imprimées partout : `remImpr`, nom de l'affaire automatique compris, regroupées comme dans
+  les Paramètres — `remGroupes` —, sans la ligne de tirets, jamais en sous-titres) ; sous-titres (lignes en capitales soulignées) = lignes courtes faites de mots seulement (pas de puce, parenthèse, montant, sigles seuls ni
+  phrase) ; titres de CFC gardés avec les titres qui les suivent et le début (ou toute) la fiche suivante (`besoinTitre`, `hGarde`) ; fiche coupée seulement au-delà de 4
+  lignes de texte, devant une ligne de texte, 2 au moins de chaque côté (lignes vides non comptées : `nTx`), jamais juste après un sous-titre ou une ligne d'ouvrage
+  suivis de leur texte (`tete`, `points`) ; suite de titres plus haute qu'une page : chaque titre gardé seulement avec ce qui le suit (`libre`) ; position sans désignation : numéro et montant gardés ;
+  devis sans position ni remarque : page de garde seule (`deFiches`, `contenuDescDG` ; relecture du 08.11.2026). Réglages ▸ Montants ▸
   **« Afficher les montants »** (Paulo, même jour ; `reglages.descMontants`, décoché par défaut) : montant à droite de chaque CFC et ouvrage ; descriptifs assemblés sans
   montants : lignes d'ouvrage masquées. Case placée par `rang` (tri du panneau).
   **Le PDF suit la présentation du devis (08.11.2026, Paulo : « dans PDF, afficher les options selon affichage sélectionné dans devis »)** : choisir une présentation

@@ -1498,6 +1498,66 @@ async function sgDsPdf(R, rep, o){
     if(!ouverte) page(false);
     cx.y = y;
   };
+  /* ── page de garde « Grand titre éditorial » (variante 3, choisie par Paulo le 08.11.2026 pour le devis descriptif ; puis « première page uniquement pour le devis et
+     le descriptif » : aussi le devis général) — dessinée sur la page courante. G = { statut, num, titre, sous, info, filtre, rub:[{ lib, nom, adr }], sig:[libellés] }.
+     Filet noir de 1 pt en tête ; à droite, l'état en rouge précédé d'un carré (« PROVISOIRE » / « ANNULÉ », rien une fois le devis validé) ; numéro de l'affaire en Light 30
+     bleu nuit puis titre en Bold 30 bleu nuit (24 pt au-delà de 4 lignes) ; désignation en capitales (Regular 10, lignes équilibrées), ligne d'information (phase, précision :
+     Regular 10 bleu nuit) et filtre éventuel (Light 8 gris) ; filet bleu nuit ; rubriques en tableau à filets gris (libellé en capitales à la marge, nom en Regular 9 et
+     adresse en Light 9 à x 222.98 = 3e colonne du pied, rubrique vide omise, rien n'est coupé) ; signatures. Portrait : marges de l'ancienne page de garde du devis général
+     (x 124.4 → 485.5, Paulo : « alignement », « marges »), signatures en bas (y 610, plus bas si les rubriques l'exigent). Paysage (devis général) : même grille, contenu
+     jusqu'à x 732.1 (barre du numéro de page − 25 pt, comme en portrait), rubriques à gauche (jusqu'à x 464.4) et signatures à droite, à la hauteur des rubriques. ── */
+  const gardeEdito = (cx, G, ori) => {
+    G = G || {}; const PAYS = ori === 'paysage', FMT = PAP.format[PAYS ? 'paysage' : 'portrait'], H = FMT.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t);
+    const NUITc = PDFLib.rgb(0, 0.2, 0.2745), GRISc = PDFLib.rgb(0.4392, 0.4353, 0.4353), FILc = PDFLib.rgb(0.847, 0.847, 0.831), ROUGEc = PDFLib.rgb(0.741, 0.118, 0.259);
+    const X0 = 124.4, X1 = PAYS ? FMT.w - 84.6 - 25.18 : 485.5, XV = 222.98, XR1 = PAYS ? 464.4 : X1, WV = XR1 - XV, BAS = PAYS ? 540 : 772;
+    const bar = (y, ep, col, a, b) => cx.rect(a == null ? X0 : a, T(y + ep), (b == null ? X1 : b) - (a == null ? X0 : a), ep, { fond:col });   /* filet : haut à y ; ligne() plafonne à 0,25 pt */
+    /* lignes équilibrées : autant de lignes que le retour au mot, à la plus petite largeur, puis « en pyramide » (dernière ligne jamais la plus large) — sans remonter un mot
+       après une virgule, sans laisser un mot seul en dernière ligne (relecture du 08.11.2026 : « …DE 18 LOGEMENTS » / « AVEC PARKING SOUTERRAIN ») */
+    const equi = (t, f, z, wm) => { let L = cx.couper(t, f, z, wm); if(L.length < 2) return L; const n = L.length; let lo = wm / n, hi = wm;
+      for(let k = 0; k < 16; k++){ const mi = (lo + hi) / 2; if(cx.couper(t, f, z, mi).length > n) lo = mi; else hi = mi; }
+      L = cx.couper(t, f, z, hi);
+      for(let g = 0; g < 50; g++){ const a = L[L.length - 2], b = L[L.length - 1];
+        if(cx.largeur(b, f, z) <= cx.largeur(a, f, z) || /[,;:]$/.test(a)) break;
+        const w2 = cx.largeur(a + ' ' + b.split(' ')[0], f, z); if(w2 > wm) break;
+        const L2 = cx.couper(t, f, z, w2); if(L2.length !== n || L2[L2.length - 1].split(' ').length < 2) break;
+        L = L2; }
+      return L; };
+    bar(100, 1, C.N);   /* pas de date : elle est dans l'en-tête du papier (Paulo, 08.11.2026 : « supprimer ») */
+    if(G.statut){ const st = P(G.statut), ws = cx.texte(st, X1, T(114), { police:F.bold, taille:8, couleur:ROUGEc, align:'d' }) || cx.largeur(st, F.bold, 8);
+      cx.rect(X1 - ws - 4 - 5, T(114), 5, 5, { fond:ROUGEc }); }
+    const num = String(G.num || '').trim(), tit = String(G.titre || '').trim();
+    let z = 30, lh = 33, TL = tit ? cx.couper(P(tit), F.bold, 30, 340) : [];
+    if((num ? 1 : 0) + TL.length > 4){ z = 24; lh = 26; TL = cx.couper(P(tit), F.bold, 24, 340); }
+    const LT = (num ? [{ t:P(num), f:F.light }] : []).concat(TL.map(t => ({ t, f:F.bold })));
+    let y = 160; LT.forEach((l, i) => { if(i) y += lh; const zl = Math.min(z, z * (X1 - X0) / Math.max(1, cx.largeur(l.t, l.f, z)));   /* numéro plus large que la page : corps réduit */
+      cx.texte(l.t, X0, T(y), { police:l.f, taille:zl, couleur:NUITc }); });
+    let yb = LT.length ? y : 114, k = 0; const y1 = LT.length ? y + 28 : 140;
+    (G.sous ? equi(P(G.sous), F.regular, 10, 300) : []).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10 }); });
+    if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:NUITc }); });
+    if(G.filtre) cx.couper(P(G.filtre), F.light, 8, X1 - X0).forEach(l => { yb = k++ ? yb + 12 : y1; cx.texte(l, X0, T(yb), { police:F.light, taille:8, couleur:GRISc }); });
+    const yN = yb + 15; bar(yN, 0.75, NUITc);
+    /* rubriques : premier filet à y 350 au plus tôt (paysage : 300) ; dans une rubrique, 1re ligne de base au filet + 16, interligne 12, filet suivant à la dernière ligne + 10 */
+    const RUB = Array.from(G.rub || []).filter(r => r && (String(r.nom || '').trim() || String(r.adr || '').trim()));
+    const yR0 = PAYS ? Math.max(300, yN + 40) : Math.max(350, yN + 68); let yr = yR0;
+    if(RUB.length) bar(yr, 0.5, FILc, X0, XR1);
+    RUB.forEach(r => { const b = yr + 16, LL = cx.couper(cx.maj(P(r.lib || '')), F.regular, 7.5, XV - X0 - 8);
+      const LV = [].concat(String(r.nom || '').trim() ? equi(P(r.nom), F.regular, 9, WV).map(l => ({ l, f:F.regular })) : [],
+        String(r.adr || '').trim() ? cx.couper(P(r.adr), F.light, 9, WV).map(l => ({ l, f:F.light })) : []);
+      LL.forEach((l, i) => cx.texte(l, X0, T(b + i * 12), { police:F.regular, taille:7.5 }));
+      LV.forEach((x, i) => cx.texte(x.l, XV, T(b + i * 12), { police:x.f, taille:9 }));
+      yr = b + (Math.max(1, LL.length, LV.length) - 1) * 12 + 10; bar(yr, 0.5, FILc, X0, XR1); });
+    if(yr > BAS) alerte('Page de garde : rubriques trop longues, elles descendent sur le pied de page');
+    /* signatures : filet noir 0,75 pt, libellé, « Lieu, date » et « Signature » sous des filets de 0,5 pt. Portrait : A de x 124.4 à 296, B de x 312 à 485.5 (colonnes de
+       l'ancienne page de garde du devis général). Paysage : colonne de droite, A de x 485.5 à 600.8, B de x 616.8 à 732.1, à la hauteur du premier filet des rubriques */
+    const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[485.5, 600.8], [616.8, X1]] : [[X0, 296], [312, X1]];
+    const ys = PAYS ? yR0 : Math.max(610, yr + 30);
+    if(SG.length && !PAYS && ys > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');
+    if(SG.length && ys + 135 > BAS) alerte('Page de garde : signatures au-delà de la zone prévue');
+    SG.forEach((sg, i) => { const [a, b] = CO[i];
+      bar(ys, 0.75, C.N, a, b); cx.couper(P(sg), F.regular, 8, b - a).slice(0, 2).forEach((l, n) => cx.texte(l, a, T(ys + 14 + n * 10), { police:F.regular, taille:8 }));
+      bar(ys + 56, 0.5, C.N, a, b); cx.texte('Lieu, date', a, T(ys + 65), { police:F.light, taille:7.5, couleur:GRISc });
+      bar(ys + 126, 0.5, C.N, a, b); cx.texte('Signature', a, T(ys + 135), { police:F.light, taille:7.5, couleur:GRISc }); });
+  };
   /* devis général (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel) : A4 paysage au papier des
      contrats ; pages du livret calculées par le moteur (ch02bBook : page de garde, information, récapitulatif à 2 chiffres, document principal, total), dessinées ici aux mesures
      relevées sur la référence : en-tête du tableau 8 pt entre deux filets, rangées de 15 pt, 1 et 2 chiffres en gras 10 pt, positions 9 pt, détails 8 pt, une rangée sur deux
@@ -1587,28 +1647,18 @@ async function sgDsPdf(R, rep, o){
     };
     Array.from(D.pages || []).forEach(pg => {
       page(pg.titre, pg.type === 0);
-      if(pg.type === 0) garde(D.couverture || {}); else tableau(pg);
+      if(pg.type === 0){ if(D.couverture && D.couverture.edito) gardeEdito(cx, D.couverture, ORI); else garde(D.couverture || {}); } else tableau(pg);   /* devis général : page de garde du descriptif (08.11.2026) ; honoraires : l'ancienne */
     });
     if(!cx.pages.length) page(titreDocument, false);
     cx.y = cx.Z.bas;
   };
   /* ── Devis descriptif au dessin du descriptif du bureau (modèle 17QUE_DESCRIPTIF_230619 ; Paulo, 08.11.2026 : « voici à quoi doit ressembler le descriptif,
-     reproduis celui-ci ici ») — o.descDG = { couverture:{ statut, rub:[[libellé, valeur]], date, titre:[lignes], sig:[libellés] }, blocs:[{ t:'h', n, txt, niv 1|2|3, mt }
-     | { t:'txt'|'sub'|'lib'|'ouv'|'vide', txt, mt }], montants } ; positions relevées sur le modèle (pt depuis le haut, portrait) ── */
+     reproduis celui-ci ici ») — o.descDG = { couverture:{ statut, num, titre, sous, filtre, rub:[{ lib, nom, adr }], sig:[libellés] },
+     items:[{ t:'h1'|'h2', n, txt, mt } | { t:'f', n, txt, mt, lignes:[{ k:'txt'|'sub'|'ouv'|'vide', txt, mt }] }], montants } (pt depuis le haut, portrait) ── */
   const contenuDescDG = (cx) => {
-    const D = o.descDG || {}, H = PAP.format.portrait.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t);
-    const ROUGE = PDFLib.rgb(1, 0.18, 0.09), XL = 205.5, XV = 210.5, XN = 122.4, XT = 128.8, XF0 = 85.0, XF1 = 510.2, XM = 510.2, MT = !!D.montants;
-    const WT = (MT ? 440 : 500) - XT, WTX = 500 - XT, HAUT_T = 96, HAUT_H = 114, BAS = 765;
-    const filet = (y, ep) => cx.rect(XF0, T(y) - ep / 2, XF1 - XF0, ep, { fond:C.N });
-    /* page de garde */
-    const G = D.couverture || {}; cx.nouvellePage('portrait');
-    if(G.statut) cx.texte(P(G.statut), XV, T(201), { police:F.bold, taille:31, couleur:ROUGE });
-    Array.from(G.rub || []).forEach((r, i) => { const y = 251 + i * 22; cx.texte(P(r[0]), XL, T(y), { police:F.light, taille:8, align:'d' });
-      cx.couper(P(r[1] || ''), F.regular, 8, XF1 - XV).slice(0, 2).forEach((l, k) => cx.texte(l, XV, T(y + k * 10), { police:F.regular, taille:8 })); });
-    if(G.date) cx.texte(P(G.date), XL, T(431), { police:F.bold, taille:11, align:'d' });
-    let yt = 431; Array.from(G.titre || []).forEach(l => { cx.couper(P(l), F.bold, 11, XF1 - XV).forEach(m => { if(yt < 560){ cx.texte(m, XV, T(yt), { police:F.bold, taille:11 }); yt += 17; } }); });
-    Array.from(G.sig || []).forEach((sg, i) => { const y = 617 + i * 92; cx.texte(P(sg), 213.5, T(y), { police:F.light, taille:8 });
-      cx.texte('Lieu, date', 213.5, T(y + 33), { police:F.light, taille:8 }); cx.texte('Signature', 379.7, T(y + 33), { police:F.light, taille:8 }); });
+    const D = o.descDG || {}, H = PAP.format.portrait.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t), MT = !!D.montants;
+    /* page de garde : variante 3 « Grand titre éditorial » (gardeEdito, commune avec le devis général) */
+    cx.nouvellePage('portrait'); gardeEdito(cx, D.couverture || {}, 'portrait');
     /* corps — variante 5 « Sommaire et fiches » (choisie par Paulo le 08.11.2026 ; maquettes subgestion3/_backup_20261108_maquette_descriptif/) : bande bleu nuit
        « CFC · Désignation » (« Montant » avec la case) répétée sur chaque page ; CFC à 1 chiffre Bold bleu nuit + filet bleu nuit 0,75 ; CFC à 2 chiffres Bold noir ;
        chaque position à 3 chiffres et plus = fiche entre deux filets gris (un seul entre deux fiches) : numéro Regular bleu nuit à x 85, titre Regular noir à x 125.7,
@@ -1621,22 +1671,38 @@ async function sgDsPdf(R, rep, o){
       cx.texte('CFC', XNo, T(TOP + 9.6), { police:F.regular, taille:8, couleur:BLANC }); cx.texte('Désignation', XTx, T(TOP + 9.6), { police:F.regular, taille:8, couleur:BLANC });
       if(MT) cx.texte('Montant', XR - 2, T(TOP + 9.6), { police:F.regular, taille:8, couleur:BLANC, align:'d' }); y = Y0; prev = 'band'; };
     /* fiches préparées : lignes du titre, lignes du descriptif (texte, sous-titre, ouvrage, vide) */
-    const prepF = (it) => { const tl = it.txt ? cx.couper(P(it.txt), F.regular, 8, WTI) : [], L2 = [];
+    const prepF = (it) => { const tl = it.txt ? cx.couper(P(it.txt), F.regular, 8, WTI) : (it.n || it.mt ? [''] : []), L2 = [];   /* position sans désignation : une ligne de titre vide (numéro et montant posés, filet dessous) */
       (it.lignes || []).forEach(l => { if(l.k === 'vide'){ if(L2.length && !L2[L2.length - 1].vide) L2.push({ vide:true }); return; }
-        const f = l.k === 'txt' ? F.light : F.regular; cx.couper(P(l.txt || ''), f, 7.5, l.k === 'ouv' && MT ? WTI : WD).forEach((m, i) => L2.push({ l:m, f, mt:i === 0 ? l.mt : '' })); });
+        const f = l.k === 'txt' ? F.light : F.regular; cx.couper(P(l.txt || ''), f, 7.5, l.k === 'ouv' && MT ? WTI : WD).forEach((m, i) => L2.push({ l:m, f, k:l.k, mt:i === 0 ? l.mt : '' })); });
       while(L2.length && L2[L2.length - 1].vide) L2.pop(); return { tl, L2 }; };
     const hTitre = (tl) => tl.length ? 3.5 + 10 * tl.length : 3.5, hLigne = (x) => x.vide ? 5 : 9.5;
     const hFiche = (F2) => hTitre(F2.tl) + (F2.L2.length ? 1 + F2.L2.reduce((t, x) => t + hLigne(x), 0) : 0) + 4;
-    const hDebut = (F2) => hTitre(F2.tl) + (F2.L2.length ? 1 + F2.L2.slice(0, 2).reduce((t, x) => t + hLigne(x), 0) : 0) + 4;
+    const nTx = (A) => A.reduce((t, x) => t + (x.vide ? 0 : 1), 0);   /* lignes de texte (les lignes vides ne comptent pas : relecture du 08.11.2026) */
+    /* coupures permises d'une fiche (relecture du 08.11.2026) : devant une ligne de texte, 2 lignes au moins de chaque côté, plus de 4 lignes de texte en tout, et jamais juste
+       après une tête (sous-titre en capitales ou ligne d'ouvrage suivis de leur texte) : une tête ne reste jamais seule en bas de page */
+    const tete = (L, i) => { const x = L[i]; if(!x || (x.k !== 'sub' && x.k !== 'ouv')) return false; const j = L.findIndex((q, n) => n > i && !q.vide); return j > 0 && L[j].k === 'txt'; };
+    const points = (L) => { const nT = nTx(L), R = []; if(nT <= 4) return R; let f = 0, pv = -1;
+      L.forEach((x, i) => { if(x.vide) return; if(f >= 2 && nT - f >= 2 && !(pv >= 0 && tete(L, pv))) R.push(i); f++; pv = i; }); return R; };
+    const hDe = (L, a, b) => { while(b > a && L[b - 1].vide) b--; let h = 0; for(let i = a; i < b; i++) h += hLigne(L[i]); return h; };   /* lignes a à b − 1, sans le blanc final */
+    const hDebut = (F2) => { const R = points(F2.L2); return hTitre(F2.tl) + 1 + hDe(F2.L2, 0, R.length ? R[0] : F2.L2.length) + 4; };   /* jusqu'à la première coupure permise */
+    const hGarde = (F2) => points(F2.L2).length ? hDebut(F2) : hFiche(F2);   /* ce qu'une fiche exige sous son titre : son début si elle peut être coupée, sinon toute la fiche */
     const IT = Array.from(D.items || []).map(it => it.t === 'f' ? Object.assign({}, it, { F2:prepF(it) }) : it);
     const montant = (v, yb, f, c) => { if(MT && v) cx.texte(P(v), XR - 2, T(yb), Object.assign({ police:f, taille:8, align:'d' }, c ? { couleur:c } : {})); };
     const titreH = (it, yb, f, c) => { cx.texte(P(it.n || ''), XNo, T(yb), { police:f, taille:8, couleur:c }); cx.couper(P(it.txt || ''), f, 8, WTI).forEach((m, i) => cx.texte(m, XTx, T(yb + i * 10), { police:f, taille:8, couleur:c })); };
     const hH = (it, niv, avant) => avant + (niv === 1 ? 7.4 + 8 : 10 + 3) + (cx.couper(P(it.txt || ''), F.bold, 8, WTI).length - 1) * 10;
+    /* titre de CFC gardé avec les titres qui le suivent et le début (ou toute) la fiche qui suit (relecture du 08.11.2026 : titre seul en bas de page) */
+    const besoinTitre = (k, pr) => { const it = IT[k], niv = it.t === 'h1' ? 1 : 2, av = pr === 'band' ? 0 : niv === 1 ? 14 : (pr === 'h1' ? 4 : 10);
+      let b = hH(it, niv, av); const s2 = IT[k + 1];
+      if(s2 && s2.t === 'h2') b += besoinTitre(k + 1, it.t); else if(s2 && s2.t === 'f') b += hGarde(s2.F2);
+      return b; };
+    if(!IT.length) return;   /* devis sans position ni remarque : page de garde seule (pas de page vide numérotée) */
+    let libre = false;   /* suite de titres plus haute qu'une page : elle s'écoule, chaque titre gardé seulement avec ce qui le suit (relecture du 08.11.2026) */
     page();
     IT.forEach((it, idx) => {
-      const suiv = IT[idx + 1], suiv2 = IT[idx + 2];
-      if(it.t === 'h1' || it.t === 'h2'){ const niv = it.t === 'h1' ? 1 : 2, avant = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10);
-        let besoin = hH(it, niv, avant); if(suiv && suiv.t === 'h2') besoin += hH(suiv, 2, 4); const fi = [suiv, suiv2].find(x => x && x.t === 'f'); if(fi && (suiv === fi || (suiv && suiv.t === 'h2' && suiv2 === fi))) besoin += hDebut(fi.F2);
+      if(it.t === 'h1' || it.t === 'h2'){ const niv = it.t === 'h1' ? 1 : 2;
+        const av0 = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), s2 = IT[idx + 1], bT = besoinTitre(idx, prev);
+        if(prev !== 'h1' && prev !== 'h2') libre = bT > BAS2 - Y0;   /* tête de suite : la suite entière tient-elle sur une page ? */
+        const besoin = libre ? hH(it, niv, av0) + (s2 && s2.t === 'h2' ? hH(s2, 2, it.t === 'h1' ? 4 : 10) : s2 && s2.t === 'f' ? hGarde(s2.F2) : 0) : bT;
         if(prev !== 'band' && y + besoin > BAS2) page();
         const av = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), yb = y + av + 7.4, c = niv === 1 ? NUIT : C.N;
         titreH(it, yb, F.bold, c); montant(it.mt, yb, F.bold, c); const nl = cx.couper(P(it.txt || ''), F.bold, 8, WTI).length;
@@ -1644,16 +1710,19 @@ async function sgDsPdf(R, rep, o){
         prev = it.t; return; }
       /* fiche */
       const F2 = it.F2, H2 = hFiche(F2);
-      if(prev !== 'band' && y + H2 > BAS2){ const coupable = F2.L2.length > 4 && y + hDebut(F2) <= BAS2; if(!coupable) page(); }
+      if(prev !== 'band' && y + H2 > BAS2){ const coupable = points(F2.L2).length > 0 && y + hDebut(F2) <= BAS2; if(!coupable) page(); }
       if(prev !== 'f') fil(y, FILN, 0.5);
       let yy = y + 3.5;
       F2.tl.forEach((m, i) => { const yb = yy + 7.4 + i * 10; if(i === 0){ cx.texte(P(it.n || ''), XNo, T(yb), { police:F.regular, taille:8, couleur:NUIT }); montant(it.mt, yb, F.regular); } cx.texte(m, XTx, T(yb), { police:F.regular, taille:8 }); });
-      if(F2.tl.length) yy += 10 * F2.tl.length; else if(it.n){ cx.texte(P(it.n), XNo, T(yy + 7.4), { police:F.regular, taille:8, couleur:NUIT }); }
+      if(F2.tl.length) yy += 10 * F2.tl.length;
       if(F2.L2.length) yy += 1;
+      /* fiche coupée à une coupure permise seulement (points), quand ce qui va jusqu'à la coupure suivante (ou la fin de la fiche) ne tient plus */
+      const RP = points(F2.L2);
       F2.L2.forEach((x, i) => {
-        const reste = F2.L2.length - i;
-        if(yy + hLigne(x) + 4 > BAS2 && i >= 2 && reste >= 2){ fil(yy + 4, FILN, 0.5); page(); fil(y, FILN, 0.5); yy = y + 3.5; }   /* fiche coupée : filet fermé en bas de page, rouvert sous la bande */
-        if(!x.vide){ cx.texte(x.l, XTx, T(yy + 7.0), { police:x.f, taille:7.5 }); if(MT && x.mt) cx.texte(P(x.mt), XR - 2, T(yy + 7.0), { police:F.light, taille:7.5, align:'d' }); }
+        if(x.vide){ yy += hLigne(x); return; }
+        const r = RP.indexOf(i), coupe = r >= 0 && yy + hDe(F2.L2, i, r + 1 < RP.length ? RP[r + 1] : F2.L2.length) + 4 > BAS2;
+        if(coupe){ const pv = F2.L2[i - 1], yf = pv && pv.vide ? yy - hLigne(pv) : yy; fil(yf + 4, FILN, 0.5); page(); fil(y, FILN, 0.5); yy = y + 3.5; }   /* filet fermé en bas de page (sans le blanc qui précède), rouvert sous la bande */
+        cx.texte(x.l, XTx, T(yy + 7.0), { police:x.f, taille:7.5 }); if(MT && x.mt) cx.texte(P(x.mt), XR - 2, T(yy + 7.0), { police:F.light, taille:7.5, align:'d' });
         yy += hLigne(x); });
       y = yy + 4; fil(y, FILN, 0.5); prev = 'f'; });
   };

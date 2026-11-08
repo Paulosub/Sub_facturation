@@ -1309,12 +1309,12 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
     const G=E.reglages||{}, ti=G.titres||{}, mod=v=>/^\[\.\.\.\]/.test(String(v||'').trim()), tt=k=>{ const v=String(ti[k]==null?'':ti[k]).trim(); return v&&!mod(v)?v:'Devis général'; }, etat=String(G.etatProjet||'').trim(), etatOk=etat&&!mod(etat);   /* « [...] … » : texte modèle de l'ancien logiciel, ignoré */
     const titrePage=pg=>pg.type===0?(tt('garde')+(etatOk?' - '+etat:'')):(pg.type===1||pg.type===2)?(pg.digit===0?tt('unChiffre'):pg.digit===1?tt('deuxChiffres'):tt('document')):tt('document');
-    const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
-    let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
-    const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burT=un([bur.nom,...(bur.lignes||[])]);
-    const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
-    const couverture={titre:titrePage({type:0}).toUpperCase(),marge:mod(G.marge)?'':String(G.marge||'').trim(),filtre,
-      rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',A&&A.mo?un(A.mo.lignes||[]):''],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
+    /* page de garde = celle du devis descriptif, variante 3 « Grand titre éditorial » (Paulo, 08.11.2026 : « applique à l'ensemble de l'app la mise en page du descriptif »,
+       « première page uniquement pour le devis et le descriptif ») : état (PROVISOIRE / ANNULÉ), numéro de l'affaire, titre de garde (« Devis général »), désignation, ligne
+       d'information (phase du devis – précision), filtre, rubriques (deGardeRub), signatures ; portrait ou paysage selon le format choisi (gardeEdito de sg3_docsub.js) */
+    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim(), info=[etatOk?etat:'',mg?'Précision '+mg:''].filter(Boolean).join(' – ');
+    const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
+      sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
        texte vides à sa droite (comme le dessin, livretDG.deborde) ; s'il ne tient toujours pas, il passe à la ligne sur des rangées de suite (k:1, même style, sans
        filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */
@@ -1554,8 +1554,7 @@ async function hoOctets(X,rec){ await DS.need(['subproject','contact','projectme
   let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
   const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burT=un([bur.nom,...(bur.lignes||[])]);
   const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
-  let moT=A&&A.mo?un(A.mo.lignes||[]):''; { const spsH=ch02cSps(p), FH=X.filter;   /* ouvrage filtré qui a son maître de l'ouvrage : celui du moteur (projectmanagementBuilderBySuproject) */
-    if(Array.isArray(FH)&&FH.length&&FH.some(f=>spsH.some(x=>ch02cTr(x.CODE)===ch02cTr(f.ouv)&&ch02cTr(x.LOCATIONCODE)===ch02cTr(f.lg)&&x.CONTACT_ID!=null))){ const m=J.F&&J.F.projectmanagementBuilderBySuproject; const cm=m&&m.id!=null&&DS.get('contact',m.id); if(cm) moT=un(adrLines(cm)); } }
+  let moT=A&&A.mo?un(A.mo.lignes||[]):''; { const cm=deMoFiltre(p,X); if(cm) moT=un(adrLines(cm)); }   /* ouvrage filtré (lignes cochées) qui a son maître de l'ouvrage : même règle que le descriptif et le devis général */
   const couverture={titre:T0.toUpperCase(),marge:'',filtre,rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',moT],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:[]};
   const sT={b:true,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};
   const nomF=T0+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
@@ -1570,11 +1569,36 @@ function hoRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'h'+Date.
 /* ═══ DEVIS DESCRIPTIF AU DESSIN DU DESCRIPTIF DU BUREAU (08.11.2026, Paulo : « voici à quoi doit ressembler le descriptif, reproduis celui-ci ici », modèle
    17QUE_DESCRIPTIF_230619 ; « ajoute une option qui permet d'afficher les montants en lien avec le descriptif ») ═══
    Ligne 2 de Documents : mêmes données et réglages que le modèle du moteur (ch02cJob → descTable : positions, descriptifs, ouvrages, options du document), dessinées par
-   sgDsPdf (o.descDG, contenuDescDG de sg3_docsub.js) : page de garde (« PROVISOIRE » en rouge tant que le devis n'est pas validé, « ANNULÉ » s'il est annulé ; ouvrage, maître
-   de l'ouvrage, architecte, direction des travaux ; date et titre en gras 11 pt ; signatures), puis les CFC — numéro dans la marge, titre en capitales (gras pour 1 et 2
-   chiffres, CFC à 1 chiffre entre deux filets), descriptif en Light 7,5 pt, lignes en capitales soulignées (sous-titres) — et les remarques du devis à la fin. Réglages ▸
-   Montants ▸ « Afficher les montants » (reglages.descMontants, faux par défaut comme le modèle) : montant de chaque position et ouvrage à droite. */
-const deDate=d=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d||'')); if(m) return m[3]+'.'+m[2]+'.'+m[1].slice(2); const x=/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/.exec(String(d||'').trim()); return x?x[1].padStart(2,'0')+'.'+x[2].padStart(2,'0')+'.'+x[3].slice(-2):String(d||''); };
+   sgDsPdf (o.descDG, contenuDescDG de sg3_docsub.js) : page de garde variante 3 « Grand titre éditorial » (choisie par Paulo le 08.11.2026 : état —
+   « PROVISOIRE » en rouge tant que le devis n'est pas validé, « ANNULÉ » s'il est annulé —, numéro et titre en grand bleu nuit, désignation, rubriques ouvrage, maître
+   de l'ouvrage — celui de l'ouvrage filtré s'il a le sien —, architecte, direction des travaux en tableau, signatures), puis le corps « Sommaire et fiches » et les
+   remarques du devis (telles qu'imprimées partout : remImpr) à la fin. Réglages ▸ Montants ▸ « Afficher les montants » (reglages.descMontants, faux par défaut comme
+   le modèle) : montant de chaque position et ouvrage à droite. */
+/* maître de l'ouvrage de l'ouvrage filtré quand cet ouvrage a le sien (règle du moteur, ch02cMoOuv) : le contact, sinon null (celui de l'affaire) ; plusieurs ouvrages
+   cochés aux maîtres de l'ouvrage différents : null (relecture du 08.11.2026 : le document Honoraires le faisait déjà, pas le descriptif ni le devis général) */
+function deMoFiltre(p,X){ try{ const F=((X&&Array.isArray(X.filter)&&X.filter)||[]).filter(f=>f&&f.actif); if(!F.length||typeof ch02cMoOuv!=='function') return null; const sps=ch02cSps(p);   /* lignes cochées du filtre seulement (relecture du 08.11.2026) */
+    if(!F.some(f=>sps.some(x=>ch02cTr(x.CODE)===ch02cTr(f.ouv)&&ch02cTr(x.LOCATIONCODE)===ch02cTr(f.lg)&&x.CONTACT_ID!=null))) return null;
+    const m=ch02cMoOuv(p,F,sps); return m&&m.id!=null?DS.get('contact',m.id)||null:null; }catch(_){ return null; } }
+/* nom et adresse d'un contact, séparés (page de garde du descriptif : nom en Regular, adresse en Light) ; formules de politesse seules sur leur ligne écartées */
+function deNomAdr(c){ if(!c) return {nom:'',adr:''}; const t=v=>String(v==null?'':v).trim(), sal=x=>typeof SG_SALUT!=='undefined'&&SG_SALUT.test(x);
+  const nom=(typeof sgNomAdresse==='function'?sgNomAdresse(c):[c.NAME1,c.NAME2,c.NAME3].map(t).filter(x=>x&&!sal(x)).join(' '))||t(typeof contactName==='function'?contactName(c):'');   /* même règle que l'adresse de facturation (sgNomAdresse) */
+  const loc=[c.COUNTRYCODE&&c.COUNTRYCODE!=='CH'?c.COUNTRYCODE+'-':'',typeof locality==='function'?locality(c):''].join('');
+  return {nom,adr:[c.STREET,c.POBOX,loc].map(t).filter(Boolean).join(', ')}; }
+/* rubriques de la page de garde « Grand titre éditorial » (devis descriptif et devis général, 08.11.2026) : ouvrage, maître de l'ouvrage, architecte, direction des travaux,
+   nom et adresse séparés (nom en Regular, adresse en Light) */
+function deGardeRub(p,X){ const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
+  let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
+  const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burNA={nom:bur.nom,adr:un(bur.lignes||[])};
+  const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dtNA=c2&&!/^substances architectes/i.test(contactName(c2)||'')?deNomAdr(c2):burNA;
+  const desc=String(p.DESCRIPTION||p.TITLE||'').trim(), Aa=(A&&A.affaire)||{lignes:[]}, c1o=Aa.src==='choisie'&&Aa.id!=null?DS.get('contact',Aa.id):null;
+  /* rue, bâtiment ou lieu-dit parfois saisis dans NAME1..3 (23COL : « Colombaire 49 ») : les lignes du nom ne sont retirées que si l'adresse a une rue ou une case postale */
+  const ouvAdr0=c1o&&(String(c1o.STREET||'').trim()||String(c1o.POBOX||'').trim())?deNomAdr(c1o).adr:un((Aa.lignes||[]).filter(x=>!(typeof SG_SALUT!=='undefined'&&SG_SALUT.test(String(x).trim()))));
+  /* adresse déjà écrite dans la désignation (17QUE, ROC2-DE) : pas répétée dessous */
+  const nrmA=s=>' '+String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' ', dnA=nrmA(desc), dansA=x=>nrmA(x).trim()!==''&&dnA.includes(nrmA(x));
+  const ouvP=String(ouvAdr0||'').split(', ').filter(Boolean), ouvAdr=ouvP.length&&(ouvP.every(dansA)||dansA(ouvP[0]))?'':ouvAdr0;
+  const cmF=deMoFiltre(p,X), Am=(A&&A.mo)||{lignes:[]}, moNA=cmF?deNomAdr(cmF):Am.src==='contrat'?{nom:Am.nom||'',adr:un((Am.lignes||[]).slice(1))}
+    :Am.id!=null?Object.assign(deNomAdr(DS.get('contact',Am.id)),Am.nom?{nom:Am.nom}:{}):{nom:Am.nom||'',adr:''};
+  return [{lib:'Ouvrage',nom:desc,adr:ouvAdr},{lib:'Maître de l’ouvrage',nom:moNA.nom,adr:moNA.adr},{lib:'Architecte',nom:burNA.nom,adr:burNA.adr},{lib:'Direction des travaux',nom:dtNA.nom,adr:dtNA.adr}]; }
 /* variante 5 « Sommaire et fiches » (08.11.2026) : CFC à 1 chiffre → h1, à 2 chiffres → h2, positions à 3 chiffres et plus → fiche avec ses lignes (descriptif, sous-titres en
    capitales, ouvrages, lignes vides) ; descriptif d'un CFC à 1 ou 2 chiffres → fiche sans titre ; remarque nommée → fiche à son nom */
 function deFiches(blocs){ const items=[]; let cur=null; const neuve=(n,txt,mt)=>{ cur={t:'f',n:n||'',txt:txt||'',mt:mt||'',lignes:[]}; items.push(cur); };
@@ -1587,22 +1611,24 @@ async function deOctets(X,rec){ await DS.need(['subproject','contact','projectme
   const cD=ch02cC(X,'desc'), oD=cD.o, MTd=!!((E.reglages||{}).descMontants), rep=ch02cPrep(rec.doc.report), J=ch02cJob(cD,rep); let band=null;
   (rep.sections||[]).forEach(sec=>(sec.bands||[]).forEach(b=>{ if(b&&b.ch02c&&b.ch02c.name==='descTable'&&!band) band=b; }));
   const key=band?String(band.f).split('|').pop():'', rows0=(key&&J.tables[key]&&J.tables[key].rows)||[], v=(c,j)=>c[j]==null?'':String(c[j]);
-  const blocs=[], maj=t=>/[A-ZÀ-Ý]/.test(t)&&!/[a-zà-ÿ]/.test(t)&&t.replace(/[^A-Za-zÀ-ÿ]/g,'').length>=3;
-  const texte=t=>{ String(t==null?'':t).replace(/\r\n?/g,'\n').split('\n').forEach(l=>{ const x=l.replace(/\s+$/,''); if(!x.trim()) blocs.push({t:'vide'}); else blocs.push({t:maj(x.trim())?'sub':'txt',txt:x.trim()}); }); blocs.push({t:'vide'}); };
+  /* sous-titre = ligne courte en capitales faite de mots (« REZ-DE-CHAUSSEE », « CUISINE », « ETAGE 1 », « IMPORTANT : ») ; jamais une puce, une parenthèse, un montant ou
+     une surface (plus de 2 chiffres), des sigles seuls (TVA, PVC DN, SIA, EU / EC), ni une phrase (point final, plus de 6 mots) — relecture du 08.11.2026 */
+  const blocs=[], maj=t=>{ t=String(t).trim(); if(/^[-–—•·>*+]/.test(t)||/^\(.*\)$/.test(t)) return false; if(!/[A-ZÀ-Ý]/.test(t)||/[a-zà-ÿ]/.test(t)) return false;
+    if((t.match(/\d/g)||[]).length>2||/\.\s*$/.test(t)||t.split(/\s+/).length>6) return false; return /[A-ZÀ-ÖØ-Ý]{4,}/.test(t); };
+  const texte=(t,brut)=>{ String(t==null?'':t).replace(/\r\n?/g,'\n').split('\n').forEach(l=>{ const x=l.replace(/\s+$/,''); if(!x.trim()) blocs.push({t:'vide'}); else blocs.push({t:!brut&&maj(x.trim())?'sub':'txt',txt:x.trim()}); }); blocs.push({t:'vide'}); };
   rows0.forEach(r=>{ if(!r||!r.c||r.st==='space') return; const c=r.c, n=v(c,0).trim();
     if(r.st==='cd'){ texte(v(c,1)); return; }
     if(n){ blocs.push({t:'h',n,txt:v(c,1).trim(),niv:n.length===1?1:n.length===2?2:3,mt:v(c,4).trim()}); return; }
     if((v(c,2).trim()||v(c,3).trim())&&!(oD.compactDescription&&!MTd)) blocs.push({t:'ouv',txt:[v(c,2).trim(),v(c,3).trim()].filter(Boolean).join(' · '),mt:v(c,4).trim()}); });
-  const rem=(E.remarques||[]).filter(r=>String(r.nom||'').trim()||String(r.texte||'').trim());
-  if(rem.length){ blocs.push({t:'h',n:'',txt:'Remarques',niv:2,mt:''}); rem.forEach(r=>{ if(String(r.nom||'').trim()) blocs.push({t:'lib',txt:String(r.nom).trim()}); texte(r.texte); }); }
-  const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
-  let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
-  const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burT=un([bur.nom,...(bur.lignes||[])]);
-  const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
-  const desc=String(p.DESCRIPTION||p.TITLE||'').trim(), ouv=un([desc,...((A&&A.affaire&&A.affaire.lignes)||[])]);
+  /* remarques telles qu'imprimées partout (remImpr : nom de l'affaire automatique compris), sans la ligne de tirets du modèle (le descriptif trace ses filets) */
+  /* regroupées comme dans les Paramètres (remGroupes : une entrée sans libellé continue la précédente, sans blanc entre elles ; relecture du 08.11.2026) */
+  const rem=remGroupes(remImpr(E,p).map(r=>r||{})).map(([n,t])=>({nom:String(n).trim(),texte:String(t).split(/\r\n?|\n/).filter(l=>!RX_TRAIT.test(l)).join('\n')})).filter(r=>r.nom||r.texte.trim());
+  if(rem.length){ blocs.push({t:'h',n:'',txt:'Remarques',niv:2,mt:''}); rem.forEach(r=>{ if(r.nom) blocs.push({t:'lib',txt:r.nom}); texte(r.texte,true); }); }
+  const desc=String(p.DESCRIPTION||p.TITLE||'').trim();
   const sc=+doc.STATECODE, statut=sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE', dte=ch02aDate(E,doc)||today(), filtre=dgFiltreTexte(E,X.filter);
-  const couverture={statut,date:deDate(dte),titre:[[p.NUMBER,'DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION'].filter(Boolean).join(' - '),desc.toLocaleUpperCase('fr')].concat(filtre?[filtre]:[]),
-    rub:[['Ouvrage :',ouv],['Maître de l’ouvrage :',A&&A.mo?un(A.mo.lignes||[]):''],['Architecte :',burT],['Direction des travaux :',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
+  /* page de garde, variante 3 « Grand titre éditorial » (08.11.2026) : numéro de l'affaire et titre à part, désignation en capitales, rubriques nom / adresse séparés */
+  const couverture={statut,num:String(p.NUMBER||'').trim(),titre:'DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION',sous:desc.toLocaleUpperCase('fr'),filtre:filtre||'',
+    rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
   const nomF='Descriptif '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
   const opt=w.JSON.parse(JSON.stringify({titre:'Descriptif',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:dte,type:'Devis descriptif',description:nomF,
     descDG:{couverture,items:deFiches(blocs),montants:MTd}})), j=new w.Array(); opt.journal=j;

@@ -2804,7 +2804,7 @@ function sgBureauAdresse(){ const c=DS.all('contact').filter(x=>/^substances arc
   if(!c) return {nom:'Substances Architectes Sàrl',lignes:['Rue de la Gare 12','1096 Cully']};
   return {nom:contactName(c),lignes:adrLines(c).filter(x=>x!==c.NAME1&&x!==c.NAME2&&x!==c.NAME3)}; }
 /* nom d'une adresse tel qu'il y est écrit (« Famille Queloz », « Marianne Converset »), sans les formules de politesse seules sur leur ligne */
-const SG_SALUT=/^(madame|monsieur|mesdames|messieurs|madame,? monsieur|madame et monsieur|monsieur et madame|mme|m\.|mm\.)$/i;
+const SG_SALUT=/^(madame|monsieur|mesdames|messieurs|madame,? monsieur|madame et monsieur|monsieur et madame|mme|m\.|mm\.)[\s,;:]*$/i;   /* « Monsieur, », « Madame, Monsieur, » reconnus aussi (relecture du 08.11.2026) */
 const sgNomAdresse=c=>c?([c.NAME1,c.NAME2,c.NAME3].map(x=>String(x||'').trim()).filter(x=>x&&!SG_SALUT.test(x)).join(' ')||contactName(c)):'';
 const sgLocMaj=v=>String(v||'').trim().replace(/^(\d{4}\s+)(\p{Ll})/u,(m,a,b)=>a+b.toUpperCase());
 function sgAdressesAffaire(p,D,o){ o=o||{}; const t=v=>String(v||'').trim(), ctc=id=>id!=null?DS.get('contact',id):null, R={};

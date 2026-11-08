@@ -1558,7 +1558,8 @@ async function sgDsPdf(R, rep, o){
          dernière rangée du bloc, bleu nuit si sa tête est un CFC à 1 chiffre (O, F), gris sinon (relecture du 08.11.2026). */
       const suiteDe = r => plein(r) && (det(r) || !!r.k || (String(r.s || 'S') === 'S' && !String((r.c || [])[0] == null ? '' : r.c[0]).trim()));
       const prochaine = i => { let j = i + 1; while(j < RG.length && !plein(RG[j]) && det(RG[j])) j++; return RG[j]; };
-      let tete = 'S', enBloc = false, calDeb = null;
+      let tete = 'S', enBloc = false, calDeb = null, calFin = null;
+      const calT = r => !!(r && r.cal) && String(((r.c || [])[1]) == null ? '' : r.c[1]).trim() !== '';   /* rangée de calcul écrite dans la colonne Texte (relecture du 08.11.2026) */
       const CR = +D.calRetrait || 0;   /* hiérarchie « Filet de calcul » (devis général, variante E du 08.11.2026) : lignes de calcul (r.cal) en retrait derrière un filet vertical bleu nuit ; descriptif (X) et quantités (r.q) en italique, montants du calcul en italique */
       RG.forEach((r, i) => {
         const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []), pl = plein(r);
@@ -1572,13 +1573,14 @@ async function sgDsPdf(R, rep, o){
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
           let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
-          const pf = info && r.lib ? F.light : info && j === 0 && cols.length > 1 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : (CR && !info && (s === 'X' || r.q || (r.cal && p.r))) ? F.lightItalic : pol.f;
+          const pf = info && r.lib ? F.light : info && j === 0 && cols.length > 1 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : (CR && !info && (s === 'X' || (r.q && j === 1) || (r.cal && p.r))) ? F.lightItalic : pol.f;
           const rt = CR && r.cal && j === 1 && !info ? CR : 0;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
           const cl = nuit && j === jPct && s !== 'T' && s !== 'W' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
           const dispo = p.w - 2 - ins - rt + (cx.largeur(P(v), pf, pol.z) > p.w - 2 - ins - rt ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
           const zz = D.deborde === true && lw > dispo && lw <= dispo * 1.08 ? pol.z * dispo / lw : pol.z;   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé */
           const t = ajuste(v, pf, zz, dispo); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : ins) + rt, T(base), Object.assign({ police:pf, taille:zz, align:p.r ? 'd' : 'g' }, cl ? { couleur:cl } : {})); });   /* Information : sans retrait, colonnes du pied */
-        if(CR && !info && pos[1]){ if(r.cal){ if(calDeb == null) calDeb = y; if(!(RG[i + 1] && RG[i + 1].cal)){ const h0 = (y + rh - 3) - (calDeb + 3); if(h0 > 0) cx.rect(pos[1].x + ins, T(y + rh - 3), 0.75, h0, { fond:NUIT }); calDeb = null; } } else calDeb = null; }   /* filet vertical bleu nuit 0,75 pt devant le calcul, à l'aplomb du texte, 3 pt en retrait en haut et en bas ; coupé en fin de page */
+        if(CR && !info && pos[1]){ if(calT(r)){ if(calDeb == null) calDeb = y; calFin = y; }
+          if(!(r.cal && RG[i + 1] && RG[i + 1].cal)){ if(calDeb != null){ const h0 = (calFin + rh - 3) - (calDeb + 3); if(h0 > 0) cx.rect(pos[1].x + ins, T(calFin + rh - 3), 0.75, h0, { fond:NUIT }); } calDeb = calFin = null; } }   /* filet vertical bleu nuit 0,75 pt devant le calcul, à l'aplomb du texte, 3 pt en retrait en haut et en bas ; coupé en fin de page */
         if(info && !D.zebra && !D.style) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
         if(info && r.lib && pos[0]) cx.ligne(pos[0].x, T(y + rh - 0.5), pos[0].x + pos[0].w, T(y + rh - 0.5));   /* libellé souligné d'un filet, comme les rubriques de la page de garde (08.11.2026) */   /* page Information du Bleu nuit : ni grisé ni filets (demande du 08.11.2026) */
         y += rh; });

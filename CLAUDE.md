@@ -1696,6 +1696,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   en haut et en bas, coupé en fin de page) ; libellé du calcul en gris droit, rangée « Quantité … Prix … » (`q`, `dgQte`) et montants du calcul en italique gris. Descriptif
   recoupé à la largeur réelle de la colonne (portrait et paysage) : pendant `DG_ACTIF`, `ch02bWrap` ne coupe qu'aux retours à la ligne voulus, `etaler` coupe en mesurant en
   italique. Vérifié : mêmes caractères qu'avant sur 3 devis × portrait / paysage × avec / sans montants.
+  Relecture du 08.11.2026 (8 défauts confirmés, 5 corrections) : descriptif limité à la colonne Texte (plus de débordement sur OUV / Localisation / Commentaire) ; rangée
+  « Quantité … Prix … » repérée par sa place (dernière rangée du moteur), jamais par son texte (« Prix bloc selon offre … » reste un libellé droit) ; italique de cette rangée
+  limité à la colonne Texte (libellé de la colonne Commentaire droit) ; filet le long des seules rangées de calcul écrites dans la colonne Texte ; pages qui commencent par un
+  saut de la présentation (`pg.saut`) : le surplus de la page précédente n'y est jamais collé devant (une page est insérée).
   **Textes jamais coupés (08.11.2026, Paulo : « toujours écrire complet, ne pas couper les textes »)** : `etaler` (dgOctets, sg3_devis.js) — un texte plus large que
   sa colonne déborde sur les colonnes de texte vides à sa droite (`livretDG.deborde`, dessin compris), sinon passe à la ligne sur des rangées de suite (`k:1`, même
   style, pas de filet entre une rangée et sa suite ; mot trop long coupé à la lettre), avant la répartition sur les pages ; Information : la suite d'un libellé va sur

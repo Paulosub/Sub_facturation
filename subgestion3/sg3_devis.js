@@ -1169,12 +1169,12 @@ const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':Strin
 /* hiérarchie « Filet de calcul » (variante E, choisie par Paulo le 08.11.2026 sur maquette, subgestion3/_backup_20261108_maquette_hierarchie/) : chaque rangée d'une ligne de calcul
    est repérée (cal : retrait derrière un filet vertical bleu nuit, montants en italique) ; la rangée « Quantité … Prix … » aussi (q : italique gris) ; le libellé reste en gris droit */
 const DG_CALR=7;   /* retrait du calcul (pt) derrière le filet */
-const dgQte=r=>{ const t=String(((r&&r.c)||[])[1]==null?'':r.c[1]).trim(), K=typeof CH02B_KB!=='undefined'?CH02B_KB:{}; return !!t&&[K.quantity||'Quantité',K.price||'Prix'].some(m=>t===m||t.startsWith(m+' ')); };
 { const d0=ch02bDetail; ch02bDetail=function(l,o,no,loc,R){ let out;
     if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) out=d0.apply(this,arguments);
     else { out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
       if(k>=0&&out[k]&&Array.isArray(out[k].c)) out[k]={c:out[k].c.map((v,j)=>j<=1?v:''),s:out[k].s}; }
-    return DG_ACTIF?out.map(r=>r&&Object.assign({},r,{cal:1},dgQte(r)?{q:1}:{})):out; }; }
+    const qi=DG_ACTIF&&o&&o.displayQuanPriceValue?out.length-1:-1;   /* rangée « Quantité … Prix … » = dernière rangée du moteur quand « Quantités et prix » est coché ; jamais d'après le texte (« Prix bloc selon offre … » est un libellé ; relecture du 08.11.2026) */
+    return DG_ACTIF?out.map((r,i)=>r&&Object.assign({},r,{cal:1},i===qi?{q:1}:{})):out; }; }
 /* descriptif : le moteur le coupe à la largeur de son propre tableau, puis dgOctets le recoupait à la largeur réelle (portrait : lignes très courtes, « l'ascenseur en béton »).
    Pendant le devis général, seuls les retours à la ligne voulus sont gardés (mêmes règles que ch02bWrap pour \n et les lignes vides) ; etaler coupe ensuite à la largeur réelle, en italique */
 { const w0=ch02bWrap; ch02bWrap=function(text){ if(!DG_ACTIF) return w0.apply(this,arguments);
@@ -1246,7 +1246,8 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const placeDe=(cols,c,j)=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&!cols[k].r&&+cols[k].w&&!String(c[k]==null?'':c[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };   /* marge de 1,5 pt : mesure du dessin un peu différente (glyphes de secours) */
     const etaler=(rows,cols,info)=>{ const out=[]; rows.forEach(r=>{ const c=Array.from(r.c||[]), sty=stDe(r.s);
         const it=!info&&(r.s==='X'||!!r.q), rt=!info&&r.cal?DG_CALR:0;   /* variante E : descriptif et quantités en italique, calcul en retrait */
-        const L=c.map((v,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(v==null?'':v).trim()) return [v]; return couperMots(v,(info&&j===0)||sty.b,sty.z,placeDe(cols,c,j)-(j===1?rt:0),it&&j===1); });
+        const dsc=!info&&r.s==='X';   /* descriptif : paragraphe dans la seule colonne Texte (maquette E), jamais sur OUV / Localisation / Commentaire (relecture du 08.11.2026) */
+        const L=c.map((v,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(v==null?'':v).trim()) return [v]; const wd=dsc&&j===1?(+col.w||0)-4-1.5:placeDe(cols,c,j); return couperMots(v,(info&&j===0)||sty.b,sty.z,wd-(j===1?rt:0),it&&j===1); });
         const n=Math.max(1,...L.map(x=>x.length));
         if(n===1){ out.push(r); return; }
         if(info){ /* Information : la suite du libellé va sur les rangées suivantes de la même remarque (libellé vide), sinon sur une rangée de suite */
@@ -1304,13 +1305,18 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        trop passaient sur le pied). Rangées de remplissage en trop retirées ; coupure de préférence avant le début d'une position ; la suite passe en tête de la page suivante de la
        même série (même récapitulatif ou document principal, page du total comprise), sinon sur une page insérée ; pages complétées jusqu'en bas (zébrage), comme ch02bFinish */
     /* lignes de calcul et descriptif dans la colonne Texte, à x 125.72 comme les désignations (les numéros CFC sont dans la marge, 08.11.2026) */
+    /* pages qui commencent par un saut de la présentation (relecture du 08.11.2026) : repérées avant toute répartition, le surplus de la page précédente n'est jamais collé
+       devant (sinon la page du saut commençait par la fin de la précédente) ; il part sur une page insérée */
+    { const SB=ch02bBreaks(pres.sautsDePage||[]), pl0=r=>(r.c||[]).some(v=>String(v==null?'':v).trim());
+      pages.forEach(pg=>{ if(pg.type!==1&&pg.type!==2) return; const r=(pg.rows||[]).find(pl0), c0=r?String((r.c||[])[0]==null?'':r.c[0]).trim():'';
+        pg.saut=!!c0&&!r.k&&SB.some(b=>b.cfc===c0&&b.niveau===ch02bLv(pg.digit)); }); }
     pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows=etaler(pg.rows,pg.cols,false); });   /* textes jamais coupés (08.11.2026) */
     { const capT=Math.max(1,Math.floor(HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
       for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT));
         while(R.length>cap&&vide(R[R.length-1])) R.pop();
         if(R.length>cap){ let k=cap; for(let j=cap;j>cap-8&&j>0;j--){ if(String((R[j].c||[])[0]||'').trim()){ k=j; break; } }
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
-          if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
+          if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit&&!nx.saut) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */

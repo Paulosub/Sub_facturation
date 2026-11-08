@@ -1666,8 +1666,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   colonne Texte). Jamais plus de 25 rangées par page de tableau (avec un filtre d'ouvrages, le moteur ne garde pas une position et ses ouvrages ensemble : la suite part sur une
   page insérée, coupée avant une position si possible). En-tête : papier des contrats (le modèle a l'en-tête de l'ancien logiciel). Écarts qui restent : l'ancien logiciel ne ventile pas certains totalisateurs (CFC 2, 51),
   sauts de page de sa propre mise en page, « ... » au lieu de « … » (glyphe absent d'Akkurat).
-  **Retouches du 08.11.2026 (Paulo)** : page Information sans rangées grises alternées, libellés en gras, libellés à l'aplomb de la 1re colonne du pied
-  (x 28.35) et texte de la 2e (x 125.72 : `colsI` largeur 97.37, sans retrait de 2 pt) ; en-tête de la page de garde = nom du document seul
+  **Retouches du 08.11.2026 (Paulo)** : page Information sans rangées grises alternées, libellés en gras ; contenu décalé (« déplacer le tout ») : libellés
+  à l'aplomb de la 2e colonne du pied (x 125.72) et texte de la 3e (x 222.98) — `livretDG.infoDx` 97.37, `colsI` 97.26 + reste, sans retrait de 2 pt ; titre
+  « Information » et son filet à la marge ; en-tête de la page de garde = nom du document seul
   (`tt('document')`, comme les autres pages ; le grand titre de la garde garde la phase).
   **Graphisme « Bleu nuit » du tableau (08.11.2026, variante 4 choisie par Paulo parmi 5 ; maquettes `subgestion3/_backup_20261108_maquette_dg/`)** :
   `livretDG.style:'nuit'` (au lieu de `zebra`) dans `contenuLivret` ▸ `tableau` (sg3_docsub.js) : titres des colonnes en blanc (Regular 8) sur une bande bleu

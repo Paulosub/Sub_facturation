@@ -1148,7 +1148,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(DG_HT),pageN:tab(DG_HT),pageToc1:tabI(DG_HI),pageTocN:tabI(DG_HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
     let B; DG_ACTIF=true; DG_AGREGE=pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
     try{ B=ch02bBook(E,doc,p,pres,X.filter,env); } finally{ DG_ACTIF=false; DG_AGREGE=null; } if(B.err) throw new Error('mise en pages impossible ('+B.err+')');
-    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=97.37, colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];   /* page Information : libellés à l'aplomb de la 1re colonne du pied (x 28.38), texte de la 2e (x 125.72) — demande de Paulo, 08.11.2026 */
+    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iDx=97.37, iA=97.26, colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iDx-iA,r:false}];   /* page Information, décalée de iDx : libellés à l'aplomb de la 2e colonne du pied (x 125.72), texte de la 3e (x 222.98) — demandes de Paulo, 08.11.2026 (« déplacer le tout ») */
     const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
     const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
     const G=E.reglages||{}, ti=G.titres||{}, mod=v=>/^\[\.\.\.\]/.test(String(v||'').trim()), tt=k=>{ const v=String(ti[k]==null?'':ti[k]).trim(); return v&&!mod(v)?v:'Devis général'; }, etat=String(G.etatProjet||'').trim(), etatOk=etat&&!mod(etat);   /* « [...] … » : texte modèle de l'ancien logiciel, ignoré */
@@ -1214,7 +1214,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const sT={b:o.titlePosBold!==false,z:+o.titleFontSize||10}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
-      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information'}})), j=new w.Array(); opt.journal=j;
+      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoDx:iDx}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
     return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
 async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }

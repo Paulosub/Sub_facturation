@@ -1536,8 +1536,9 @@ async function sgDsPdf(R, rep, o){
     const tableau = (pg) => {
       const X0 = cx.Z.x0, cols = Array.from(pg.cols || []), rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
       const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => /%/.test(String(c.t || '')));   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
-      let x = X0; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
-      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); cx.ligne(X0, T(108.5), X0 + W, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
+      const dI = info ? (+D.infoDx || 0) : 0;   /* page Information : contenu décalé (libellés et texte sur les 2e et 3e colonnes du pied) ; titre et filet à la marge */
+      let x = X0 + dI; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
+      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
       else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
         cx.rect(X0, T(116.5), W, 16, { fond:NUIT });
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.regular, 7.5, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(111), { police:F.regular, taille:7.5, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* corps de l'en-tête (7,5 pt) */

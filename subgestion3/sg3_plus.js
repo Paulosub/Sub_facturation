@@ -2772,7 +2772,7 @@ VIEWS['nx-pdom']={
       h30=logs.filter(r=>tlKey(r)>=lim30).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=projMO(p), cat=sgCatProjet(p);
     const tuile=(d,g)=>{ const mod=mods.includes(g), x=(mod?SG_PMOD[d]:SG_PDOM[d])||['doc',''], fn=!mod||x[2]==='dom'?'dom':x[2]==='fz'?'fz':x[2]==='fiche'?'fzfiche':'mod';   /* tuiles des modules Projet / Faisabilité (bloc 21) */
       return '<div class="sg-tile'+(SG_TUILE_BR.has(d)?' br':'')+'" data-fn="'+fn+'" data-dom="'+nxE(d)+'"'+(fn==='mod'?' data-mod="'+nxE(x[2])+'"':'')+'><div class="ti">'+nxSvg(x[0])+'<h3>'+nxE(SG_TUILE_LIB[d]||d)+'</h3></div><div class="nb" data-nb="'+nxE(d)+'">…</div><p>'+nxE(x[1])+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>'; };
-    const info=[mo,p.LOCATION,p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE)+(p.PROJECTENDDATE?' → '+dfr(p.PROJECTENDDATE):''):''].filter(Boolean).map(nxE).join(' · ');
+    const info=[mo,p.LOCATION].filter(Boolean).map(nxE).join(' · ');   /* dates du projet retirées à la demande (08.11.2026) */
     const html='<div class="sg-split">'+sgIntro('',(p.NUMBER&&p.TITLE?'<span class="sg-pdnum">'+nxE(p.NUMBER)+'</span>':'')+nxE(p.TITLE||p.NUMBER||''),info,   /* libellé « Projet <n°> » retiré, numéro de l'affaire au-dessus du nom, même taille (demandes du 08.11.2026) ; la ligne épaisse reste */
         '<div class="sg-pdom-tags">'+nxStateTag(p)+(cat!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[cat]+'</span>':'')+'</div>'
         +'<div class="acts"><button class="nx-btn pri" data-fn="fiche">'+nxSvg('gauge')+'Tableau de bord du projet</button><button class="nx-btn" data-fn="temps">'+nxSvg('timer')+'Saisir des heures</button>'

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 17:31 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 17:32 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -29222,7 +29222,7 @@ VIEWS['nx-pdom']={
       h30=logs.filter(r=>tlKey(r)>=lim30).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=projMO(p), cat=sgCatProjet(p);
     const tuile=(d,g)=>{ const mod=mods.includes(g), x=(mod?SG_PMOD[d]:SG_PDOM[d])||['doc',''], fn=!mod||x[2]==='dom'?'dom':x[2]==='fz'?'fz':x[2]==='fiche'?'fzfiche':'mod';   /* tuiles des modules Projet / Faisabilité (bloc 21) */
       return '<div class="sg-tile'+(SG_TUILE_BR.has(d)?' br':'')+'" data-fn="'+fn+'" data-dom="'+nxE(d)+'"'+(fn==='mod'?' data-mod="'+nxE(x[2])+'"':'')+'><div class="ti">'+nxSvg(x[0])+'<h3>'+nxE(SG_TUILE_LIB[d]||d)+'</h3></div><div class="nb" data-nb="'+nxE(d)+'">…</div><p>'+nxE(x[1])+'</p><div class="ft">'+nxSvg('arrow','go')+'</div></div>'; };
-    const info=[mo,p.LOCATION,p.PROJECTSTARTDATE?dfr(p.PROJECTSTARTDATE)+(p.PROJECTENDDATE?' → '+dfr(p.PROJECTENDDATE):''):''].filter(Boolean).map(nxE).join(' · ');
+    const info=[mo,p.LOCATION].filter(Boolean).map(nxE).join(' · ');   /* dates du projet retirées à la demande (08.11.2026) */
     const html='<div class="sg-split">'+sgIntro('',(p.NUMBER&&p.TITLE?'<span class="sg-pdnum">'+nxE(p.NUMBER)+'</span>':'')+nxE(p.TITLE||p.NUMBER||''),info,   /* libellé « Projet <n°> » retiré, numéro de l'affaire au-dessus du nom, même taille (demandes du 08.11.2026) ; la ligne épaisse reste */
         '<div class="sg-pdom-tags">'+nxStateTag(p)+(cat!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[cat]+'</span>':'')+'</div>'
         +'<div class="acts"><button class="nx-btn pri" data-fn="fiche">'+nxSvg('gauge')+'Tableau de bord du projet</button><button class="nx-btn" data-fn="temps">'+nxSvg('timer')+'Saisir des heures</button>'

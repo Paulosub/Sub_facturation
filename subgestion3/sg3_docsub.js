@@ -1513,7 +1513,9 @@ async function sgDsPdf(R, rep, o){
     const bar = (y, ep, col, a, b) => cx.rect(a == null ? X0 : a, T(y + ep), (b == null ? X1 : b) - (a == null ? X0 : a), ep, { fond:col });   /* filet : haut à y ; ligne() plafonne à 0,25 pt */
     /* lignes équilibrées : autant de lignes que le retour au mot, à la plus petite largeur, puis « en pyramide » (dernière ligne jamais la plus large) — sans remonter un mot
        après une virgule, sans laisser un mot seul en dernière ligne (relecture du 08.11.2026 : « …DE 18 LOGEMENTS » / « AVEC PARKING SOUTERRAIN ») */
-    const equi = (t, f, z, wm) => { let L = cx.couper(t, f, z, wm); if(L.length < 2) return L; const n = L.length; let lo = wm / n, hi = wm;
+    const equi = (t, f, z, wm) => { let L = cx.couper(t, f, z, wm); if(L.length < 2) return L; const n = L.length;
+      const mx = Math.max(0, ...String(t).split(/\s+/).map(m => Math.min(wm, cx.largeur(m, f, z))));   /* plancher : le mot le plus long — un mot qui tient dans wm n'est jamais coupé */
+      let lo = Math.max(wm / n, mx), hi = wm;
       for(let k = 0; k < 16; k++){ const mi = (lo + hi) / 2; if(cx.couper(t, f, z, mi).length > n) lo = mi; else hi = mi; }
       L = cx.couper(t, f, z, hi);
       for(let g = 0; g < 50; g++){ const a = L[L.length - 2], b = L[L.length - 1];
@@ -1680,7 +1682,7 @@ async function sgDsPdf(R, rep, o){
     const nTx = (A) => A.reduce((t, x) => t + (x.vide ? 0 : 1), 0);   /* lignes de texte (les lignes vides ne comptent pas : relecture du 08.11.2026) */
     /* coupures permises d'une fiche (relecture du 08.11.2026) : devant une ligne de texte, 2 lignes au moins de chaque côté, plus de 4 lignes de texte en tout, et jamais juste
        après une tête (sous-titre en capitales ou ligne d'ouvrage suivis de leur texte) : une tête ne reste jamais seule en bas de page */
-    const tete = (L, i) => { const x = L[i]; if(!x || (x.k !== 'sub' && x.k !== 'ouv')) return false; const j = L.findIndex((q, n) => n > i && !q.vide); return j > 0 && L[j].k === 'txt'; };
+    const tete = (L, i, d = 0) => { const x = L[i]; if(!x || (x.k !== 'sub' && x.k !== 'ouv')) return false; const j = L.findIndex((q, n) => n > i && !q.vide); return j > 0 && (L[j].k === 'txt' || (d < 2 && L[j].k === 'sub' && tete(L, j, d + 1))); };   /* une tête suivie d'un sous-titre qui est lui-même une tête (« REZ-DE-CHAUSSÉE » puis « CUISINE ») reste avec lui ; au plus 3 têtes en chaîne */
     const points = (L) => { const nT = nTx(L), R = []; if(nT <= 4) return R; let f = 0, pv = -1;
       L.forEach((x, i) => { if(x.vide) return; if(f >= 2 && nT - f >= 2 && !(pv >= 0 && tete(L, pv))) R.push(i); f++; pv = i; }); return R; };
     const hDe = (L, a, b) => { while(b > a && L[b - 1].vide) b--; let h = 0; for(let i = a; i < b; i++) h += hLigne(L[i]); return h; };   /* lignes a à b − 1, sans le blanc final */

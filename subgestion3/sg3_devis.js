@@ -1312,7 +1312,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* page de garde = celle du devis descriptif, variante 3 « Grand titre éditorial » (Paulo, 08.11.2026 : « applique à l'ensemble de l'app la mise en page du descriptif »,
        « première page uniquement pour le devis et le descriptif ») : état (PROVISOIRE / ANNULÉ), numéro de l'affaire, titre de garde (« Devis général »), désignation, ligne
        d'information (phase du devis – précision), filtre, rubriques (deGardeRub), signatures ; portrait ou paysage selon le format choisi (gardeEdito de sg3_docsub.js) */
-    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim(), info=[etatOk?etat:'',mg?'Précision '+mg:''].filter(Boolean).join(' – ');
+    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim(), info=[etatOk?etat:'',mg?(/^pr[ée]cision/i.test(mg)?mg:'Précision '+mg):''].filter(Boolean).join(' – ');   /* « Précision » ajouté seulement s'il manque */
     const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
       sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
@@ -1595,7 +1595,9 @@ function deGardeRub(p,X){ const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).fi
   const ouvAdr0=c1o&&(String(c1o.STREET||'').trim()||String(c1o.POBOX||'').trim())?deNomAdr(c1o).adr:un((Aa.lignes||[]).filter(x=>!(typeof SG_SALUT!=='undefined'&&SG_SALUT.test(String(x).trim()))));
   /* adresse déjà écrite dans la désignation (17QUE, ROC2-DE) : pas répétée dessous */
   const nrmA=s=>' '+String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' ', dnA=nrmA(desc), dansA=x=>nrmA(x).trim()!==''&&dnA.includes(nrmA(x));
-  const ouvP=String(ouvAdr0||'').split(', ').filter(Boolean), ouvAdr=ouvP.length&&(ouvP.every(dansA)||dansA(ouvP[0]))?'':ouvAdr0;
+  /* seules les parties déjà écrites sont retirées ; une localité compte comme écrite quand son nom, sans le NPA, figure dans la désignation (22GUS : « Chemin des Aveneyres 14 » → « 1806 St-Légier » reste) */
+  const ouvP=String(ouvAdr0||'').split(', ').filter(Boolean), lieuDe=x=>String(x).replace(/^(?:[A-Z]{1,3}-)?\d{4,5}\s+/,''), ecritA=x=>dansA(x)||dansA(lieuDe(x));
+  const ouvAdr=ouvP.length&&(ouvP.every(dansA)||dansA(ouvP[0]))?ouvP.filter(x=>!ecritA(x)).join(', '):ouvAdr0;
   const cmF=deMoFiltre(p,X), Am=(A&&A.mo)||{lignes:[]}, moNA=cmF?deNomAdr(cmF):Am.src==='contrat'?{nom:Am.nom||'',adr:un((Am.lignes||[]).slice(1))}
     :Am.id!=null?Object.assign(deNomAdr(DS.get('contact',Am.id)),Am.nom?{nom:Am.nom}:{}):{nom:Am.nom||'',adr:''};
   return [{lib:'Ouvrage',nom:desc,adr:ouvAdr},{lib:'Maître de l’ouvrage',nom:moNA.nom,adr:moNA.adr},{lib:'Architecte',nom:burNA.nom,adr:burNA.adr},{lib:'Direction des travaux',nom:dtNA.nom,adr:dtNA.adr}]; }

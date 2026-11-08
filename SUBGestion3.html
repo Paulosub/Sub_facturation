@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 23:14 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 23:39 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -29267,7 +29267,7 @@ function sgAdressesAffaire(p,D,o){ o=o||{}; const t=v=>String(v||'').trim(), ctc
   const cs=D&&p?sgContratsDuProjet(p,D).filter(c=>!c.annule).map(c=>({c,d:String(sgContratInfo(c).date||'')})).sort((a,b)=>cmp(b.d,a.d)).map(x=>x.c):[];
   const ca=cs.find(c=>t(c.padr)||t(c.ploc)), c1=ctc(p&&p.CONTACT1_ID);
   R.affaire=ca?{lignes:[t(ca.padr),sgLocMaj(ca.ploc)].filter(Boolean),src:'contrat',ctr:ca.id}:c1?{lignes:adrLines(c1),src:'choisie',id:c1.ID}:{lignes:[],src:''};
-  const cm=cs.find(c=>t(c.nom)), m8=p&&p.ID!=null?svMember(p,8):null, c8=ctc(o.moId!=null?o.moId:m8&&m8.CONTACT_ID);
+  const cm=cs.find(c=>/\p{L}/u.test(t(c.nom))), m8=p&&p.ID!=null?svMember(p,8):null, c8=ctc(o.moId!=null?o.moId:m8&&m8.CONTACT_ID);   /* nom de contrat sans lettre (« - » des anciens contrats sans maître de l'ouvrage) ignoré : l'intervenant rôle 8 prend le relais (relecture du 08.11.2026) */
   R.mo=cm?{nom:t(cm.nom),lignes:[t(cm.nom),t(cm.adr),sgLocMaj(cm.loc)].filter(Boolean),src:'contrat',ctr:cm.id}
     :c8?{nom:sgNomAdresse(c8),lignes:adrLines(c8),src:o.moId!=null?'choisie':'intervenant',id:c8.ID}:{nom:'',lignes:[],src:''};
   const b=sgBureauAdresse(), c2=ctc(p&&p.CONTACT2_ID);
@@ -33626,7 +33626,9 @@ async function sgDsPdf(R, rep, o){
     const bar = (y, ep, col, a, b) => cx.rect(a == null ? X0 : a, T(y + ep), (b == null ? X1 : b) - (a == null ? X0 : a), ep, { fond:col });   /* filet : haut à y ; ligne() plafonne à 0,25 pt */
     /* lignes équilibrées : autant de lignes que le retour au mot, à la plus petite largeur, puis « en pyramide » (dernière ligne jamais la plus large) — sans remonter un mot
        après une virgule, sans laisser un mot seul en dernière ligne (relecture du 08.11.2026 : « …DE 18 LOGEMENTS » / « AVEC PARKING SOUTERRAIN ») */
-    const equi = (t, f, z, wm) => { let L = cx.couper(t, f, z, wm); if(L.length < 2) return L; const n = L.length; let lo = wm / n, hi = wm;
+    const equi = (t, f, z, wm) => { let L = cx.couper(t, f, z, wm); if(L.length < 2) return L; const n = L.length;
+      const mx = Math.max(0, ...String(t).split(/\s+/).map(m => Math.min(wm, cx.largeur(m, f, z))));   /* plancher : le mot le plus long — un mot qui tient dans wm n'est jamais coupé */
+      let lo = Math.max(wm / n, mx), hi = wm;
       for(let k = 0; k < 16; k++){ const mi = (lo + hi) / 2; if(cx.couper(t, f, z, mi).length > n) lo = mi; else hi = mi; }
       L = cx.couper(t, f, z, hi);
       for(let g = 0; g < 50; g++){ const a = L[L.length - 2], b = L[L.length - 1];
@@ -33793,7 +33795,7 @@ async function sgDsPdf(R, rep, o){
     const nTx = (A) => A.reduce((t, x) => t + (x.vide ? 0 : 1), 0);   /* lignes de texte (les lignes vides ne comptent pas : relecture du 08.11.2026) */
     /* coupures permises d'une fiche (relecture du 08.11.2026) : devant une ligne de texte, 2 lignes au moins de chaque côté, plus de 4 lignes de texte en tout, et jamais juste
        après une tête (sous-titre en capitales ou ligne d'ouvrage suivis de leur texte) : une tête ne reste jamais seule en bas de page */
-    const tete = (L, i) => { const x = L[i]; if(!x || (x.k !== 'sub' && x.k !== 'ouv')) return false; const j = L.findIndex((q, n) => n > i && !q.vide); return j > 0 && L[j].k === 'txt'; };
+    const tete = (L, i, d = 0) => { const x = L[i]; if(!x || (x.k !== 'sub' && x.k !== 'ouv')) return false; const j = L.findIndex((q, n) => n > i && !q.vide); return j > 0 && (L[j].k === 'txt' || (d < 2 && L[j].k === 'sub' && tete(L, j, d + 1))); };   /* une tête suivie d'un sous-titre qui est lui-même une tête (« REZ-DE-CHAUSSÉE » puis « CUISINE ») reste avec lui ; au plus 3 têtes en chaîne */
     const points = (L) => { const nT = nTx(L), R = []; if(nT <= 4) return R; let f = 0, pv = -1;
       L.forEach((x, i) => { if(x.vide) return; if(f >= 2 && nT - f >= 2 && !(pv >= 0 && tete(L, pv))) R.push(i); f++; pv = i; }); return R; };
     const hDe = (L, a, b) => { while(b > a && L[b - 1].vide) b--; let h = 0; for(let i = a; i < b; i++) h += hLigne(L[i]); return h; };   /* lignes a à b − 1, sans le blanc final */
@@ -39416,7 +39418,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* page de garde = celle du devis descriptif, variante 3 « Grand titre éditorial » (Paulo, 08.11.2026 : « applique à l'ensemble de l'app la mise en page du descriptif »,
        « première page uniquement pour le devis et le descriptif ») : état (PROVISOIRE / ANNULÉ), numéro de l'affaire, titre de garde (« Devis général »), désignation, ligne
        d'information (phase du devis – précision), filtre, rubriques (deGardeRub), signatures ; portrait ou paysage selon le format choisi (gardeEdito de sg3_docsub.js) */
-    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim(), info=[etatOk?etat:'',mg?'Précision '+mg:''].filter(Boolean).join(' – ');
+    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim(), info=[etatOk?etat:'',mg?(/^pr[ée]cision/i.test(mg)?mg:'Précision '+mg):''].filter(Boolean).join(' – ');   /* « Précision » ajouté seulement s'il manque */
     const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
       sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
@@ -39699,7 +39701,9 @@ function deGardeRub(p,X){ const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).fi
   const ouvAdr0=c1o&&(String(c1o.STREET||'').trim()||String(c1o.POBOX||'').trim())?deNomAdr(c1o).adr:un((Aa.lignes||[]).filter(x=>!(typeof SG_SALUT!=='undefined'&&SG_SALUT.test(String(x).trim()))));
   /* adresse déjà écrite dans la désignation (17QUE, ROC2-DE) : pas répétée dessous */
   const nrmA=s=>' '+String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' ', dnA=nrmA(desc), dansA=x=>nrmA(x).trim()!==''&&dnA.includes(nrmA(x));
-  const ouvP=String(ouvAdr0||'').split(', ').filter(Boolean), ouvAdr=ouvP.length&&(ouvP.every(dansA)||dansA(ouvP[0]))?'':ouvAdr0;
+  /* seules les parties déjà écrites sont retirées ; une localité compte comme écrite quand son nom, sans le NPA, figure dans la désignation (22GUS : « Chemin des Aveneyres 14 » → « 1806 St-Légier » reste) */
+  const ouvP=String(ouvAdr0||'').split(', ').filter(Boolean), lieuDe=x=>String(x).replace(/^(?:[A-Z]{1,3}-)?\d{4,5}\s+/,''), ecritA=x=>dansA(x)||dansA(lieuDe(x));
+  const ouvAdr=ouvP.length&&(ouvP.every(dansA)||dansA(ouvP[0]))?ouvP.filter(x=>!ecritA(x)).join(', '):ouvAdr0;
   const cmF=deMoFiltre(p,X), Am=(A&&A.mo)||{lignes:[]}, moNA=cmF?deNomAdr(cmF):Am.src==='contrat'?{nom:Am.nom||'',adr:un((Am.lignes||[]).slice(1))}
     :Am.id!=null?Object.assign(deNomAdr(DS.get('contact',Am.id)),Am.nom?{nom:Am.nom}:{}):{nom:Am.nom||'',adr:''};
   return [{lib:'Ouvrage',nom:desc,adr:ouvAdr},{lib:'Maître de l’ouvrage',nom:moNA.nom,adr:moNA.adr},{lib:'Architecte',nom:burNA.nom,adr:burNA.adr},{lib:'Direction des travaux',nom:dtNA.nom,adr:dtNA.adr}]; }

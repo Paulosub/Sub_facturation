@@ -1687,7 +1687,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   le devis et le descriptif », « page de garde seulement »)** : `gardeEdito(cx, G, ori)` de sg3_docsub.js, commune au devis descriptif et au devis général
   (`livretDG.couverture.edito`) ; le document Honoraires garde l'ancienne page de garde (`garde`). Devis général : état « ■ PROVISOIRE » / « ANNULÉ » (rien s'il est
   validé), numéro de l'affaire, titre de garde (« DEVIS GÉNÉRAL », `reglages.titres.garde`), désignation, ligne d'information en bleu nuit « <phase> – PRÉCISION ±10 % »
-  (état / phase du devis et marge d'approximation, textes modèles « [...] » écartés), filtre, rubriques (`deGardeRub`, communes avec le descriptif), signatures. Portrait :
+  (état / phase du devis et marge d'approximation, « Précision » ajouté seulement s'il manque, textes modèles « [...] » écartés), filtre, rubriques (`deGardeRub`, communes avec le descriptif), signatures. Portrait :
   comme le descriptif. Paysage : même grille, contenu de x 124.4 à 732.1 (barre du numéro de page − 25 pt), rubriques à gauche (jusqu'à x 464.4), signatures à droite
   (485.5–600.8 et 616.8–732.1) à la hauteur du premier filet des rubriques. Page de garde toujours non numérotée mais comptée. Copie d'avant :
   `subgestion3/_backup_20261108_avant_garde_devis/`.
@@ -1716,7 +1716,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   en tableau à filets gris (libellé Regular 7,5 en capitales à la marge, nom Regular 9 en lignes équilibrées puis adresse Light 9 à x 222.98, nom et adresse séparés par
   `deNomAdr` / `sgNomAdresse` — `SG_SALUT` reconnaît aussi « Monsieur, », « Madame, Monsieur, » — ; adresse de l'ouvrage pas répétée quand la désignation la contient,
   rue saisie dans le nom de l'adresse gardée ; maître de l'ouvrage de l'ouvrage filtré : lignes cochées du filtre seulement ; rubrique vide omise ; rien n'est coupé ;
-  désignation et noms en lignes équilibrées « en pyramide ») ; signatures sur deux colonnes à place fixe (x 124.4–296 et 312–485.5, y 610, plus bas seulement si les rubriques
+  désignation et noms en lignes équilibrées « en pyramide », jamais un mot coupé ; seconde relecture du même soir : localité gardée quand seule la rue est dans la
+  désignation, nom de contrat sans lettre — « - » des anciens contrats — ignoré par `sgAdressesAffaire` au profit de l'intervenant « Maître d'ouvrage ») ; signatures sur deux colonnes à place fixe (x 124.4–296 et 312–485.5, y 610, plus bas seulement si les rubriques
   l'exigent, signalé au journal). Marges = celles de la page de garde du devis général et des honoraires, x 124.4 → 485.5 (Paulo, même soir : « alignement », « marges »,
   choix « Comme le devis général ») ; le corps garde les siennes (CFC x 85.04, texte x 125.72, barre x 510.68). Corps (remplacé le même jour par la **variante 5 « Sommaire et fiches »**, choisie par Paulo parmi 5 pour correspondre aux autres documents ; maquettes
   `subgestion3/_backup_20261108_maquette_descriptif/`) : bande bleu nuit « CFC · Désignation » (« Montant » avec la case) répétée sur chaque page ; CFC à 1 chiffre Bold
@@ -1726,7 +1727,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   les Paramètres — `remGroupes` —, sans la ligne de tirets, jamais en sous-titres) ; sous-titres (lignes en capitales soulignées) = lignes courtes faites de mots seulement (pas de puce, parenthèse, montant, sigles seuls ni
   phrase) ; titres de CFC gardés avec les titres qui les suivent et le début (ou toute) la fiche suivante (`besoinTitre`, `hGarde`) ; fiche coupée seulement au-delà de 4
   lignes de texte, devant une ligne de texte, 2 au moins de chaque côté (lignes vides non comptées : `nTx`), jamais juste après un sous-titre ou une ligne d'ouvrage
-  suivis de leur texte (`tete`, `points`) ; suite de titres plus haute qu'une page : chaque titre gardé seulement avec ce qui le suit (`libre`) ; position sans désignation : numéro et montant gardés ;
+  suivis de leur texte, ni entre deux têtes qui se suivent (« REZ-DE-CHAUSSÉE » puis « CUISINE », 3 au plus) (`tete`, `points`) ; suite de titres plus haute qu'une page : chaque titre gardé seulement avec ce qui le suit (`libre`) ; position sans désignation : numéro et montant gardés ;
   devis sans position ni remarque : page de garde seule (`deFiches`, `contenuDescDG` ; relecture du 08.11.2026). Réglages ▸ Montants ▸
   **« Afficher les montants »** (Paulo, même jour ; `reglages.descMontants`, décoché par défaut) : montant à droite de chaque CFC et ouvrage ; descriptifs assemblés sans
   montants : lignes d'ouvrage masquées. Case placée par `rang` (tri du panneau).

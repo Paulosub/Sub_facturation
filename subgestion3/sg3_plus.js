@@ -2811,7 +2811,7 @@ function sgAdressesAffaire(p,D,o){ o=o||{}; const t=v=>String(v||'').trim(), ctc
   const cs=D&&p?sgContratsDuProjet(p,D).filter(c=>!c.annule).map(c=>({c,d:String(sgContratInfo(c).date||'')})).sort((a,b)=>cmp(b.d,a.d)).map(x=>x.c):[];
   const ca=cs.find(c=>t(c.padr)||t(c.ploc)), c1=ctc(p&&p.CONTACT1_ID);
   R.affaire=ca?{lignes:[t(ca.padr),sgLocMaj(ca.ploc)].filter(Boolean),src:'contrat',ctr:ca.id}:c1?{lignes:adrLines(c1),src:'choisie',id:c1.ID}:{lignes:[],src:''};
-  const cm=cs.find(c=>t(c.nom)), m8=p&&p.ID!=null?svMember(p,8):null, c8=ctc(o.moId!=null?o.moId:m8&&m8.CONTACT_ID);
+  const cm=cs.find(c=>/\p{L}/u.test(t(c.nom))), m8=p&&p.ID!=null?svMember(p,8):null, c8=ctc(o.moId!=null?o.moId:m8&&m8.CONTACT_ID);   /* nom de contrat sans lettre (« - » des anciens contrats sans maître de l'ouvrage) ignoré : l'intervenant rôle 8 prend le relais (relecture du 08.11.2026) */
   R.mo=cm?{nom:t(cm.nom),lignes:[t(cm.nom),t(cm.adr),sgLocMaj(cm.loc)].filter(Boolean),src:'contrat',ctr:cm.id}
     :c8?{nom:sgNomAdresse(c8),lignes:adrLines(c8),src:o.moId!=null?'choisie':'intervenant',id:c8.ID}:{nom:'',lignes:[],src:''};
   const b=sgBureauAdresse(), c2=ctc(p&&p.CONTACT2_ID);

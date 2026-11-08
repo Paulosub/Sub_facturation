@@ -901,7 +901,7 @@ const VUE_GROUPES=['Format','Positions','Calcul','Montants','Affichage','Sauts d
 const VUE_ORDRE=['Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Afficher les subdivisions',
   'Afficher le calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Variantes',
   'Afficher les montants','Tous les montants détaillés','Uniquement les montants avec calculs et remarque','Masquer les décimales','Pourcentages sur le total général',
-  'Descriptif','Assembler les descriptifs des ouvrages','Base et commentaire de la position','Base et commentaire dans colonne séparée'];
+  'Descriptif','Assembler les descriptifs des ouvrages','Commentaire dans colonne séparée','Base et commentaire de la position','Base et commentaire dans colonne séparée'];
 const VUE_RETRAIT=new Set(['Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Base et commentaire dans colonne séparée','Assembler les descriptifs des ouvrages']);
 const vueGroupe=t=>/^format\s*:/i.test(t)?'Format':/sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
   :/calcul|quantités|prix ht|prix ttc|bases de prix|variantes/i.test(t)?'Calcul':/positions|chiffres|subdivisions/i.test(t)?'Positions':/descriptif|commentaire/i.test(t)?'Affichage':'Autres';
@@ -1261,7 +1261,7 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['displayNoTitlePositions','Afficher les positions saisies et les totalisateurs'],
-  ['commentInColumn','Base et commentaire dans colonne séparée'],'-',   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */['*tous','Tous les montants détaillés'],'-',
+  ['commentInColumn','Commentaire dans colonne séparée'],'-',   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */['*tous','Tous les montants détaillés'],'-',
   ['displayDetailComment','Commentaire du calcul'],['displayPriceBase','Bases de prix'],['dispalyCalcualtion','Afficher le calcul'],['displayQuanPriceValue','Quantités et prix'],
   ['displayDetailValues','Afficher les montants'],['displayDetailOptions','Variantes'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
   ['dispalyRound1000','Arrondir à 1000'],'-',['dispalyEmptyPositions','Afficher les positions sans montant'],['displayDescription','Descriptif'],['compactDescription','Assembler les descriptifs des ouvrages','sub']];

@@ -1698,7 +1698,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (3 défauts confirmés sur 5, corrigés) : colonnes repérées par leur POSITION (ordre de ch02bCols, `K`), pas par leur titre ; colonne Localisation gardée ;
   lignes du descriptif plus réunies (retours à la ligne voulus gardés ; etaler recoupe seulement ce qui dépasse) ; niveau d'un montant lisible à la graisse
   (`r.cf`) : Montant — 4 chiffres Light, sous-total à 3 chiffres Regular ; Total — 2 chiffres Regular, 1 chiffre gras ; calculs Light. **« Base et commentaire de la position »
-  retiré des Réglages (même jour)** : `displayComment` toujours vrai, « Base et commentaire dans colonne séparée » seul choisit leur place (colonne ou sous la
+  retiré des Réglages (même jour)** : `displayComment` toujours vrai, « Commentaire dans colonne séparée » (libellé raccourci le même jour) seul choisit leur place (colonne ou sous la
   position).
   (Bloc 46, 07.11.2026, suite) Relecture contradictoire du 07.11 : 14 défauts confirmés sur 18, corrigés ;
   seconde relecture des corrections : le surplus d'une page trop pleine passe en tête de la page suivante de la même série (récapitulatif, document principal, page du total),

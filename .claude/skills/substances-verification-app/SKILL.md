@@ -66,6 +66,13 @@ Attendu : `__r.err` nul et `AT.ctx.verif.n === 0`. Rejouable : l'affaire précé
 Panneau masqué (`document.hidden`) : captures en retard d'une étape, lire le texte avec `innerText` ou reprendre une capture.
 Détails : `subgestion3/affaire_travail/LISEZMOI.md` ; écarts de l'app déjà connus : `ECARTS_APP.md`.
 
+## 3 bis. Rendre l'onglet de Paulo à l'endroit de sa demande
+
+Après chaque modification, ne pas seulement recharger son onglet (« seed », aperçu 7797) : exécuter d'abord
+`scripts/retour_capture.js` (écran, devis ouvert, fenêtre du document, n° de page, gardés dans sessionStorage), recharger,
+puis `scripts/retour_restaurer.js` (rouvre le devis, l'onglet Documents, la fenêtre, la page). Vérifier le résultat.
+Demande de Paulo du 08.11.2026 : « reviens toujours à la dernière page de la demande de modification ».
+
 ## 4. Test du mode réel (double-clic, `file://`)
 
 ```bash

@@ -1654,9 +1654,9 @@ async function sgDsPdf(R, rep, o){
   /* ── Fin : numérotation « n | total » (le total n'est connu qu'ici), métadonnées, octets ── */
   /* par exemplaire (B7) : chaque lettre a sa propre numérotation ; sans o.jobs, un seul exemplaire (job 0) */
   const tot = {}, rang = {};
-  ctx.pages.forEach(p => { if(!p.nonum) tot[p.job] = (tot[p.job] || 0) + 1; });   /* page sans numéro (garde du devis général, bloc 46) : ni numérotée ni comptée */
+  ctx.pages.forEach(p => { tot[p.job] = (tot[p.job] || 0) + 1; });   /* page sans numéro (garde du devis général, bloc 46) : comptée, mais son numéro n'est pas écrit — la page 2 porte « 2 | n » (Paulo, 08.11.2026 : « commencer la numérotation par le 2 à la page 2 ») */
   /* o.numDebut / o.numTotal / o.numTotalPlus : pages d'un document assemblé (cahier de soumission : conditions puis cahier des charges, numérotation continue) */
-  ctx.pages.forEach(p => { if(p.nonum) return; rang[p.job] = (rang[p.job] || 0) + 1; numeroter(p.page, rang[p.job] + (+o.numDebut || 0), +o.numTotal || (tot[p.job] + (+o.numTotalPlus || 0))); });
+  ctx.pages.forEach(p => { rang[p.job] = (rang[p.job] || 0) + 1; if(p.nonum) return; numeroter(p.page, rang[p.job] + (+o.numDebut || 0), +o.numTotal || (tot[p.job] + (+o.numTotalPlus || 0))); });
   doc.setTitle(titreDocument);
   doc.setAuthor('Substances Architectes');
   doc.setCreator(o.jobs ? 'SUBGestion' : 'SUBGestion — Documents Substances');

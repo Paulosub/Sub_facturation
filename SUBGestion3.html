@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 19:58 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 20:19 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33767,9 +33767,9 @@ async function sgDsPdf(R, rep, o){
   /* ── Fin : numérotation « n | total » (le total n'est connu qu'ici), métadonnées, octets ── */
   /* par exemplaire (B7) : chaque lettre a sa propre numérotation ; sans o.jobs, un seul exemplaire (job 0) */
   const tot = {}, rang = {};
-  ctx.pages.forEach(p => { if(!p.nonum) tot[p.job] = (tot[p.job] || 0) + 1; });   /* page sans numéro (garde du devis général, bloc 46) : ni numérotée ni comptée */
+  ctx.pages.forEach(p => { tot[p.job] = (tot[p.job] || 0) + 1; });   /* page sans numéro (garde du devis général, bloc 46) : comptée, mais son numéro n'est pas écrit — la page 2 porte « 2 | n » (Paulo, 08.11.2026 : « commencer la numérotation par le 2 à la page 2 ») */
   /* o.numDebut / o.numTotal / o.numTotalPlus : pages d'un document assemblé (cahier de soumission : conditions puis cahier des charges, numérotation continue) */
-  ctx.pages.forEach(p => { if(p.nonum) return; rang[p.job] = (rang[p.job] || 0) + 1; numeroter(p.page, rang[p.job] + (+o.numDebut || 0), +o.numTotal || (tot[p.job] + (+o.numTotalPlus || 0))); });
+  ctx.pages.forEach(p => { rang[p.job] = (rang[p.job] || 0) + 1; if(p.nonum) return; numeroter(p.page, rang[p.job] + (+o.numDebut || 0), +o.numTotal || (tot[p.job] + (+o.numTotalPlus || 0))); });
   doc.setTitle(titreDocument);
   doc.setAuthor('Substances Architectes');
   doc.setCreator(o.jobs ? 'SUBGestion' : 'SUBGestion — Documents Substances');
@@ -38863,8 +38863,8 @@ const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLi
 const ICV=d=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+d+'</svg>';
 const VUE_GROUPES=['Format','Positions','Calcul','Montants','Affichage','Sauts de page','Autres'];
 const VUE_ORDRE=['Descriptif','Assembler les descriptifs des ouvrages','Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Afficher les subdivisions',
-  'Afficher le calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Variantes',
-  'Afficher les montants','Tous les montants détaillés','Uniquement les montants avec calculs et remarque','Masquer les décimales','Pourcentages sur le total général',
+  'Afficher le calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Afficher les montants','Bases de prix','Variantes',
+  'Tous les montants détaillés','Uniquement les montants avec calculs et remarque','Masquer les décimales','Pourcentages sur le total général',
   'Descriptif','Assembler les descriptifs des ouvrages','Commentaire dans colonne séparée','Base et commentaire de la position','Base et commentaire dans colonne séparée'];
 const VUE_RETRAIT=new Set(['Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Base et commentaire dans colonne séparée','Assembler les descriptifs des ouvrages']);
 const vueGroupe=t=>/^format\s*:/i.test(t)?'Format':/^(descriptif|assembler les descriptifs)/i.test(t)?'Positions':   /* « Descriptif » en tête des Positions (Paulo, 08.11.2026) *//sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
@@ -38897,9 +38897,9 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
     try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); L.echec(e); } };
   const panneau=()=>{ const ok=peut(), a=document.activeElement, kf=a&&rb.contains(a)&&a.dataset?a.dataset.k:null;
     const L0=(ch02cPrefItems(X,i)||[]).filter(x=>x&&x!=='-'&&x.t), G={}; VUE_GROUPES.forEach(g=>{ G[g]=[]; });
-    L0.forEach(it=>{ G[vueGroupe(it.t)].push(it); });
+    L0.forEach(it=>{ G[it.grp&&G[it.grp]?it.grp:vueGroupe(it.t)].push(it); });
     const rang=t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }, M=[]; let h='';
-    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position'))?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
+    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(it.ind||(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position')))?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
     const seg=(lib,opts)=>'<div class="sgdv-sg">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg'+(ok?'':' dis')+'" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'" tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'" data-k="'+E('seg:'+lib+':'+o.l)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
     VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>rang(a.t)-rang(b.t)); if(!A.length) return; let corps='';
       if(g==='Montants'){ const ar=A.filter(x=>/^arrondir à/i.test(x.t)); A=A.filter(x=>!/^arrondir à/i.test(x.t)); const sp=A.findIndex(x=>/pourcentages/i.test(x.t)), av=sp<0?A:A.slice(0,sp), ap=sp<0?[]:A.slice(sp);
@@ -39106,6 +39106,24 @@ const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':Strin
 { const d0=ch02bDetail; ch02bDetail=function(l,o,no,loc,R){ if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) return d0.apply(this,arguments);
     const out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
     if(k>=0&&out[k]&&Array.isArray(out[k].c)) out[k]={c:out[k].c.map((v,j)=>j<=1?v:''),s:out[k].s}; return out; }; }
+/* « déplacer le descriptif sous le CFC » (Paulo, 08.11.2026) : dans le devis général, le descriptif d'une position suit directement sa rangée, avant son commentaire et ses
+   lignes de calcul (le moteur, KvBook.createDocumentPage, l'écrit après) ; descriptif d'un ouvrage (plusieurs ouvrages, sans « Assembler les descriptifs ») : sous la rangée de
+   l'ouvrage, avant ses lignes de calcul ; « Assembler les descriptifs » : sous la position. Seul l'ordre change (mêmes rangées, mêmes textes). */
+function dgDescEnTete(rows,o){ const out=[], R=rows||[], compact=!!(o.displaySubprojects&&o.compactDescription), plein=r=>((r&&r.c)||[]).some(v=>String(v==null?'':v).trim()); let aPos=-1, aSub=-1;
+  for(let i=0;i<R.length;i++){ const r=R[i], s=r&&r.s, c0=String(((r&&r.c)||[])[0]==null?'':r.c[0]).trim();
+    if(s==='X'){ let k=i; while(k+1<R.length&&R[k+1]&&R[k+1].s==='X') k++;   /* une suite de rangées X = un descriptif (un appel de desc() du moteur) */
+      const run=R.slice(i,k+1), f=run.findIndex(plein), l=run.length-1-run.slice().reverse().findIndex(plein), at=compact?aPos:aSub; i=k;
+      if(f<0||at<0){ out.push(...run); continue; }   /* descriptif sans texte, ou sans rangée de tête : rien ne bouge */
+      /* relecture du 08.11.2026 : seul le texte remonte ; les lignes vides du début et de la fin (« …\n », « \nSELON OFFRE… » des données reprises) restent à leur place,
+         après les lignes de calcul — sinon un trou de 15 pt séparait le descriptif du calcul, ou le CFC de son descriptif */
+      const mv=run.slice(f,l+1), n=mv.length; out.splice(at,0,...mv); if(aSub>=at) aSub+=n; if(aPos>=at&&(compact||aPos>at)) aPos+=n;
+      out.push(...run.slice(0,f),...run.slice(l+1)); continue; }
+    out.push(r);
+    if(c0&&(s==='O'||s==='W'||s==='S'||s==='F')){ aPos=out.length; aSub=aPos; }   /* rangée d'une position : son descriptif ira juste dessous */
+    else if(!c0&&s==='S'&&aPos>=0) aSub=out.length; }   /* rangée d'un ouvrage (CFC vide) : descriptif de l'ouvrage juste dessous */
+  return out; }
+{ const r0=ch02bDocRows; ch02bDocRows=function(L,o,x){ const rows=r0.apply(this,arguments); if(!DG_ACTIF||!o||!o.displayDescription) return rows;
+    try{ return dgDescEnTete(rows,o); }catch(e){ console.error(e); return rows; } }; }
 { const c0=ch02bCalc; ch02bCalc=function(){ const r=c0.apply(this,arguments); if(DG_ACTIF) try{ (r.list||[]).forEach(n=>{ if(n&&n.p) n.texte=dgTexte(n.p); }); if(DG_AGREGE) dgAgreger(r); }catch(e){ console.error(e); } return r; }; }
 async function dgOctets(X){ { await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
     const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{}, sel=dgPresSel(E), fav=sel.pres||{};
@@ -39237,11 +39255,11 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],   /* « Afficher les positions saisies et les totalisateurs » regroupé ici (Paulo, 08.11.2026) : toujours actif */
-  ['commentInColumn','Commentaire dans colonne séparée'],'-',   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */['*tous','Tous les montants détaillés'],'-',
-  ['displayDetailComment','Commentaire du calcul'],['displayPriceBase','Bases de prix'],['dispalyCalcualtion','Afficher le calcul'],['displayQuanPriceValue','Quantités et prix'],
-  ['displayDetailValues','Afficher les montants'],['displayDetailOptions','Variantes'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
+  ['commentInColumn','Commentaire dans colonne séparée'],'-',   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */   /* « Tous les montants détaillés » fusionné dans « Afficher les montants », placé sous « Commentaire du calcul » (Paulo, 08.11.2026) */
+  ['dispalyCalcualtion','Afficher le calcul'],['displayQuanPriceValue','Quantités et prix'],['displayDetailComment','Commentaire du calcul'],
+  ['displayDetailValues','Afficher les montants'],['displayDetailOptions','Variantes'],['displayPriceBase','Bases de prix'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
   ['dispalyRound1000','Arrondir à 1000'],'-',['dispalyEmptyPositions','Afficher les positions sans montant'],['displayDescription','Descriptif'],['compactDescription','Assembler les descriptifs des ouvrages','sub']];
-const DG_TOUS=['displayDetailComment','dispalyCalcualtion','displayQuanPriceValue','displayDetailValues','displayDetailOptions'], DG_RONDS=['dispalyRound10','dispalyRound100','dispalyRound1000'];
+const DG_RONDS=['dispalyRound10','dispalyRound100','dispalyRound1000'];
 const dgChoix=E=>{ const v=((E||{}).reglages||{}).dgPdf; return v&&typeof v==='object'?v:{}; };
 /* présentation dont les sauts de page et les options de base sont repris : choix du menu (« Sauts de page : … » : rang et nom, une présentation sans nom comprise), sinon la favorite,
    sinon la première ; « Sans sauts de page » (sansSauts) garde les options de base de celle-ci, sans ses sauts. presNom '' sans rang = ancien « Sans sauts de page » du 07.11.2026. */
@@ -39260,15 +39278,15 @@ function dgOptions(X){ const E=X.E||{}, fav=dgPres(E)||{}, sub=ch02bHasSub(E), c
   o.displayComment=true; o.displayNoTitlePositions=true;   /* réglages retirés du menu (08.11.2026) : toujours actifs */   /* plus d'option « Base et commentaire de la position » (08.11.2026) : toujours affichés ; « … dans colonne séparée » choisit leur place */   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
   DG_MENU.forEach(m=>{ if(Array.isArray(m)&&m[0][0]!=='*'&&typeof c[m[0]]==='boolean') o[m[0]]=c[m[0]]; });
   if(!sub){ o.displaySubprojects=false; o.compactDescription=false; o.displaySubprojectNames=false; }   /* affaire sans ouvrage : colonne OUV vide (comme la fenêtre du moteur) */
+  if(!o.dispalyCalcualtion) o.displayDetailValues=false;   /* « Afficher les montants » dépend du calcul (08.11.2026) : sinon des montants seuls, sans texte, seraient imprimés */
   o.specialRound=DG_RONDS.some(k=>o[k]); return o; }
 function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), c=Object.assign({},dgChoix(E));
   if(k.startsWith('pres:')||k==='*sans'){ if(k==='*sans'){ c.sansSauts=true; } else { const i=+k.slice(5), q=(E.presentations||[])[i]; if(!q) return; c.presNom=String(q.nom||''); c.presIdx=i; delete c.sansSauts; }
     const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }
   if(k==='*total'){ const R=E.reglages||(E.reglages={}); R.pourcentageSur=R.pourcentageSur==='total'?'groupe':'total'; X.touch(); return; }
   if(k==='*paysage'||k==='*portrait'){ c.format=k.slice(1); const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }   /* format du PDF (08.11.2026) */   /* réglage du devis (Paramètres ▸ Affichage), aussi pour l'écran */
-  if(k==='*tous'){ const tout=DG_TOUS.every(x=>o[x]); DG_TOUS.forEach(x=>{ c[x]=!tout; }); }
-  else { const v=!o[k]; c[k]=v; if(DG_RONDS.includes(k)&&v) DG_RONDS.forEach(x=>{ if(x!==k) c[x]=false; });
-    if(k==='dispalyCalcualtion'){ c.displayQuanPriceValue=v; c.displayDetailComment=v; }   /* « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (Paulo, 08.11.2026) */
+  { const v=!o[k]; c[k]=v; if(DG_RONDS.includes(k)&&v) DG_RONDS.forEach(x=>{ if(x!==k) c[x]=false; });
+    if(k==='dispalyCalcualtion'){ c.displayQuanPriceValue=v; c.displayDetailComment=v; if(!v) c.displayDetailValues=false; }   /* « Afficher les montants » (montants des lignes de calcul) : décoché avec le calcul, à cocher soi-même ensuite (08.11.2026) */   /* « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (Paulo, 08.11.2026) */
     if(k==='displayComment'&&!v) c.commentInColumn=false; if(k==='displayDetailValues'&&!v) c.displayDetailOptions=false;   /* décocher « Quantités et prix » ne décoche plus « Afficher le calcul » (Paulo, 08.11.2026 : ses cases ne se grisaient plus qu'ensemble) */
     if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
   const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
@@ -39276,10 +39294,10 @@ function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
   /* cases selon le contenu du devis (Paulo, 08.11.2026) : « Afficher le calcul » et ses deux cases seulement s'il y a des lignes de calcul, « Variantes » seulement s'il y a
      des variantes (plus lié à « Afficher les montants ») ; sinon grisées, décochées, non cliquables */
   const lgn=((X.E||{}).positions||[]).flatMap(q=>(q.parts||[]).flatMap(pt=>pt.lignes||[])), aCalc=lgn.length>0, aVar=lgn.some(l=>l&&l.var);
-  const absent=k=>(!aCalc&&(k==='dispalyCalcualtion'||k==='displayQuanPriceValue'||k==='displayDetailComment'))||(!aVar&&k==='displayDetailOptions');
-  const dis=k=>absent(k)||((k==='displayQuanPriceValue'||k==='displayDetailComment')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
+  const absent=k=>(!aCalc&&(k==='dispalyCalcualtion'||k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues'))||(!aVar&&k==='displayDetailOptions');
+  const dis=k=>absent(k)||((k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
   const pt=dgChoix(X.E).format==='portrait';
-  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):(!absent(m[0])&&!!o[m[0]]),dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])}));
+  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul',ind:true}:{})));
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   L.push('-',{t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total')});
   if(P.length) L.push('-',...P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans')});

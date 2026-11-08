@@ -1179,7 +1179,8 @@ function dgSpFermer(){ const s=DG_SP; DG_SP=null; if(!s) return; s.m.remove(); s
 function dgSpCss(){ if(document.getElementById('sgsp-css')) return; const st=document.createElement('style'); st.id='sgsp-css'; st.textContent=`
 .sgsp-hl{position:absolute;background:#fffbd6;mix-blend-mode:multiply;pointer-events:none;z-index:3}
 .sgsp-cut{position:absolute;height:0;pointer-events:none;z-index:4;border-top:1px dashed var(--s-nuit)}
-.sgsp-cut.on{border-top:2px solid var(--s-nuit)}
+.sgsp-cut.on{border-top:2px solid var(--s-rouge,#BD1E42)}
+.sgsp-cut.on i{border-left-color:var(--s-rouge,#BD1E42)}.sgsp-cut.on span{color:var(--s-rouge,#BD1E42)}   /* saut de page existant en rouge (Paulo, 08.11.2026 : « afficher en rouge ») ; proposition « Nouvelle page » en pointillé bleu nuit */
 .sgsp-cut i{position:absolute;left:-11px;top:-6px;width:0;height:0;border-left:7px solid var(--s-nuit);border-top:5px solid transparent;border-bottom:5px solid transparent}
 .sgsp-cut span{position:absolute;left:calc(100% + 6px);top:-6px;padding:0;font-size:9px;line-height:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--s-nuit);white-space:nowrap}
 .sgsp-menu{position:fixed;z-index:100000;width:312px;box-sizing:border-box;background:#fff;border:1px solid #d8d8d4;border-top:2px solid var(--s-noir);box-shadow:0 6px 18px rgba(0,0,0,.18);color:var(--s-noir);font-family:var(--s-font);text-align:left}

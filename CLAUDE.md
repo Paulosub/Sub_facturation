@@ -1699,7 +1699,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   nom de la position, effet écrit en clair ; sur la page, rangée de la position surlignée en jaune très pâle et coupure tracée au-dessus (pointillé « Nouvelle page » / trait
   plein « Saut de page », étiquette dans la marge droite) ; Échap, clic ailleurs, défilement : fermé ; ↑ ↓ Entrée (`dgSpOuvrir`, `dgSpFermer`, classes `sgsp-*`).
   **Sauts de page visibles à l'écran, jamais imprimés** (même jour, Paulo : « indique visuellement sur le pdf, mais ne sera pas imprimé, les sauts de page ») : chaque page
-  qui commence par un saut de la présentation porte le trait plein bleu nuit, le repère de marge et « Saut de page » — éléments posés sur la page du lecteur, absents du PDF
+  qui commence par un saut de la présentation porte le trait plein, le repère de marge et « Saut de page », en rouge #BD1E42 (« afficher en rouge », même jour ; la proposition « Nouvelle page » du menu reste en pointillé bleu nuit) — éléments posés sur la page du lecteur, absents du PDF
   (Imprimer, PDF, Partager) ; reposés à chaque mise en page (`dgSautsMarquer`, MutationObserver sur `.sglp-pages`) ; aucun avec « Sans sauts de page ».
   **Hiérarchie « Filet de calcul » (08.11.2026, variante E choisie par Paulo parmi 5 ; Paulo : « tout est au même niveau d'information … passer en italique comme dans le devis » ;
   maquettes `subgestion3/_backup_20261108_maquette_hierarchie/`)** : descriptif en Akkurat Light Italic gris ; lignes de calcul (rangées repérées `cal` par l'enveloppe de

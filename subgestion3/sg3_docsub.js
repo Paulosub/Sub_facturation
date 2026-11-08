@@ -1791,9 +1791,8 @@ if(typeof SG_DOM!=='undefined'&&typeof VIEWS==='object'&&VIEWS){
     try{ const x=await sgdsProduire(d), b=new Blob([x.b],{ type:'application/pdf' }), nom=sgdsFichier(d);
       if(quoi==='telecharger'){ const u=URL.createObjectURL(b), a=h('a',{ href:u, download:nom }); document.body.append(a); a.click();
         setTimeout(()=>{ URL.revokeObjectURL(u); a.remove(); },3000); toast('« '+nom+' » téléchargé.'); return; }
-      sgVisionneuse(b,nom);
-      if(quoi==='imprimer'){ const fr=[...document.querySelectorAll('.sg-visu iframe')].pop();
-        if(fr) fr.addEventListener('load',()=>setTimeout(()=>SGDS.imprimer(fr),300),{ once:true }); }
+      const fen=sgVisionneuse(b,nom);
+      if(quoi==='imprimer'&&fen&&fen.imprimer) fen.imprimer();   /* fenêtre des fichiers à lecteur de l'app (bloc 48, 08.11.2026) */
     }catch(e){ console.error(e); toast('Le document n’a pas pu être produit : '+(e&&e.message||e),true); } };
   SGDS.imprimer=fr=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(_){ toast('Impression : utilisez « Télécharger », puis imprimez le PDF.',true); } };
   SGDS.produire=sgdsProduire; SGDS.action=sgdsAction; SGDS.fichier=sgdsFichier; SGDS.famille=sgdsFamille;

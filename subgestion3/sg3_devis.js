@@ -310,33 +310,8 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgdv-tete .sgdv-ib:hover,.sgdv-act .ib.sgdv-moteur:hover{background:var(--s-jaune)!important}
 .sgdv-corps{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px}
 .sgdv-doc{display:flex;flex-direction:column;min-width:0;min-height:0}
-.sgdv-bar{flex:none;height:44px;display:flex;align-items:center;gap:2px;padding:0 16px;border-bottom:1px solid var(--s-filet)}
-.sgdv-bt{width:28px;height:28px;display:inline-grid;place-items:center;padding:0;border:0;background:none;color:var(--s-noir);cursor:pointer}
-.sgdv-bt svg{width:16px;height:16px}
-.sgdv-bt:hover,.sgdv-bar .sgdv-ib:hover{background:var(--s-jaune3)}
-.sgdv-bar .sgdv-ib{height:30px;padding:0 8px}
-.sgdv-pg{display:inline-flex;align-items:center;gap:6px;margin:0 4px;font-size:12.5px;font-weight:700;white-space:nowrap}
-.sgdv-in{width:38px;height:26px;border:1px solid var(--s-gris3);background:#fff;font:inherit;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;border-radius:0;padding:0}
-.sgdv-in:focus{outline:2px solid var(--s-nuit);outline-offset:-2px}
-.sgdv-pg .tot{font-weight:400;color:var(--s-gris)}
-.sgdv-sep{width:1px;height:18px;background:var(--s-gris3);margin:0 10px}
-.sgdv-zm{min-width:46px;text-align:center;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
-.sgdv-maj{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--s-gris);white-space:nowrap;visibility:hidden}
-.sgdv-maj.on{visibility:visible}
-.sgdv-maj b{color:var(--s-nuit);font-weight:700}
-.sgdv-maj svg{width:15px;height:15px;color:var(--s-nuit);animation:sgdv-tour 1s linear infinite}
-@keyframes sgdv-tour{to{transform:rotate(360deg)}}
-.sgdv-vue{position:relative;flex:1;min-height:0;overflow:auto;background:var(--s-filet);outline:none}
-.sgdv-pages{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 24px;box-sizing:border-box;min-width:min-content}
-.sgdv-p{position:relative;flex:none;background:#fff;box-shadow:0 1px 3px rgba(29,29,27,.18)}
-.sgdv-p canvas{display:block;width:100%;height:100%}
 .sgdv-msg{margin:40px auto;color:var(--s-gris);font-size:13px}
-.sgdv-msg.err{color:var(--s-rouge,#bd1e42)}
-.sgdv .textLayer{position:absolute;text-align:initial;inset:0;overflow:hidden;opacity:1;line-height:1;-webkit-text-size-adjust:none;text-size-adjust:none;forced-color-adjust:none;transform-origin:0 0;z-index:2}
-.sgdv .textLayer :is(span,br){color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%}
-.sgdv .textLayer span.markedContent{top:0;height:0}
-.sgdv .textLayer ::selection{background:rgba(0,51,70,.25)}
-.sgdv .textLayer br::selection{background:transparent}
+.sgdv-seg.dis b{opacity:.45;cursor:default}
 .sgdv-reg{display:flex;flex-direction:column;min-height:0;border-left:2px solid var(--s-noir);background:#fff}
 .sgdv-rh{flex:none;display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 18px 9px;border-bottom:1px solid var(--s-noir)}
 .sgdv-rh h4{margin:0;font-size:15px;font-weight:700}
@@ -922,7 +897,6 @@ const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLi
    demande) et un réglage coché le refait SANS revenir à la page 1 (même page, même position ; demande de Paulo : « ne pas redémarrer l'aperçu et
    laisser sur la page sur laquelle je me situe »). Réglages = ch02cPrefItems (mêmes cases que le menu), rangés en groupes, appliqués aussitôt. ═══ */
 const ICV=d=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+d+'</svg>';
-const VUE_ZOOM=[25,33,50,67,75,85,100,110,125,150,175,200,250,300], VUE_PT=96/72, VUE_PAD=16, VUE_GAP=14;
 const VUE_GROUPES=['Positions','Calcul','Montants','Affichage','Sauts de page','Autres'];
 const VUE_ORDRE=['Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Afficher les subdivisions',
   'Afficher le calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Variantes',
@@ -931,107 +905,62 @@ const VUE_ORDRE=['Seulement positions de 1 à 3 chiffres','Afficher les position
 const VUE_RETRAIT=new Set(['Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Base et commentaire dans colonne séparée','Assembler les descriptifs des ouvrages']);
 const vueGroupe=t=>/sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
   :/calcul|quantités|prix ht|prix ttc|bases de prix|variantes/i.test(t)?'Calcul':/positions|chiffres|subdivisions/i.test(t)?'Positions':/descriptif|commentaire/i.test(t)?'Affichage':'Autres';
-const vueFormat=pg=>{ if(!pg) return ''; const a=Math.max(pg.w,pg.h), b=Math.min(pg.w,pg.h), A4=Math.abs(a-842)<6&&Math.abs(b-595)<6;
-  return (A4?'A4':Math.round(pg.w/72*25.4)+' × '+Math.round(pg.h/72*25.4)+' mm')+(pg.w>pg.h?' paysage':' portrait'); };
-function vueImprimer(blob){ if(!blob){ toast('Le document est en préparation.',true); return; } const u=URL.createObjectURL(blob), f=document.createElement('iframe');
-  f.style.cssText='position:fixed;right:0;bottom:0;width:2px;height:2px;border:0;opacity:0;pointer-events:none'; f.src=u;
-  f.onload=()=>setTimeout(()=>{ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ window.open(u,'_blank'); } },250);
-  document.body.append(f); setTimeout(()=>{ f.remove(); URL.revokeObjectURL(u); },120000); }
-function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if(!dlg||!ifr) return; cssD();
+function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if(!dlg||!ifr||typeof sgLecteurPdf!=='function') return; cssD();
   const bar=D.bd.querySelector('.ph2'), btn=re=>bar?[...bar.querySelectorAll('button,.ib')].find(b=>re.test((b.textContent||'').trim())):null;
   const pdfB=btn(/^PDF/), partB=btn(/^Partager/), hdr=ch02aHdr(X)||{}, etat=DV_STATE[hdr.STATECODE]||'', p=X.p||{};
+  /* relecture du 08.11.2026 : en lecture seule (profil sans « chantier : écriture » ou devis verrouillé), le panneau ne change rien */
+  const peut=()=>{ try{ return ecrit()&&ch02aCanEdit(ch02aHdr(X)); }catch(_){ return true; } };
   dlg.classList.add('sgdv-dlg');
   const R=el('div','sgdv','<div class="sgdv-tete"><div class="sgdv-ini">'+E(p.NUMBER||'')+'</div><div class="sgdv-nm"><div class="lb">Descriptifs &amp; devis · Documents</div><h3>'
       +E((rec&&rec.doc&&rec.doc.nom)||(CH02C_ROWS[i]||{}).t||'Document')+'</h3><div class="mt"></div></div>'
       +'<div class="sgdv-fig"><span class="l">Pages</span><span class="v sgdv-np">—</span></div><div class="sgdv-fig"><span class="l">État</span><span class="v et"><i></i>'+E(etat||'—')+'</span></div>'
       +'<div class="sgdv-act"><button class="sgdv-ib sgdv-imp" type="button" title="Imprimer le document">'+ICV('<path d="M7 9V4h10v5M7 17H4V9h16v8h-3M7 14h10v6H7z"/>')+'Imprimer</button></div></div>'
-    +'<div class="sgdv-corps"><div class="sgdv-doc"><div class="sgdv-bar">'
-      +'<button class="sgdv-bt" data-a="prec" type="button" title="Page précédente">'+ICV('<path d="m15 5-7 7 7 7"/>')+'</button>'
-      +'<span class="sgdv-pg">Page <input class="sgdv-in" inputmode="numeric" aria-label="Page"><span class="tot">/ —</span></span>'
-      +'<button class="sgdv-bt" data-a="suiv" type="button" title="Page suivante">'+ICV('<path d="m9 5 7 7-7 7"/>')+'</button><span class="sgdv-sep"></span>'
-      +'<button class="sgdv-bt" data-a="moins" type="button" title="Réduire">'+ICV('<path d="M5 12h14"/>')+'</button><span class="sgdv-zm">—</span>'
-      +'<button class="sgdv-bt" data-a="plus" type="button" title="Agrandir">'+ICV('<path d="M12 5v14M5 12h14"/>')+'</button>'
-      +'<button class="sgdv-ib" data-a="larg" type="button" title="Ajuster à la largeur">'+ICV('<path d="M4 5v14M20 5v14M7.5 12h9M10.5 9l-3 3 3 3M13.5 9l3 3-3 3"/>')+'Ajuster à la largeur</button>'
-      +'<span class="sgdv-maj" title="Le document se met à jour ; la page affichée est gardée">'+ICV('<circle cx="12" cy="12" r="8" stroke="#c9c9c7"/><path d="M12 4a8 8 0 0 1 8 8"/>')+'<b>Mise à jour…</b><span></span></span></div>'
-      +'<div class="sgdv-vue" tabindex="0"><div class="sgdv-pages"><div class="sgdv-msg">Préparation du document…</div></div></div></div>'
+    +'<div class="sgdv-corps"><div class="sgdv-doc"></div>'
     +'<aside class="sgdv-reg" aria-label="Réglages du document"><div class="sgdv-rh"><h4>Réglages</h4><span>appliqués aussitôt</span></div><div class="sgdv-rb"></div>'
-      +'<div class="sgdv-rf"><span>Enregistrés dans le devis</span><button class="sgdv-btn" type="button">Fermer</button></div></aside></div>');
+      +'<div class="sgdv-rf"><span class="pied"></span><button class="sgdv-btn" type="button">Fermer</button></div></aside></div>');
   const act=R.querySelector('.sgdv-act'); [pdfB,partB].forEach(b=>{ if(b){ b.classList.add('sgdv-moteur'); act.append(b); } });
   const garde=el('div','sgdv-garde'); garde.append(...D.bd.childNodes); D.bd.replaceChildren(R,garde);
-  const vue=R.querySelector('.sgdv-vue'), cont=R.querySelector('.sgdv-pages'), maj=R.querySelector('.sgdv-maj'), inP=R.querySelector('.sgdv-in'), totP=R.querySelector('.sgdv-pg .tot'), zm=R.querySelector('.sgdv-zm');
-  const V={pdf:null,lib:null,pages:[],geo:[],zoom:'l',s:1,tok:0,rt:0,blob:null,vivant:true};
-  const attente=on=>{ maj.classList.toggle('on',!!on); };
-  const echelle=()=>{ const mw=Math.max(1,...V.pages.map(x=>x.w)); return V.zoom==='l'?Math.max(.2,(vue.clientWidth-2*24-12)/mw):V.zoom/100*VUE_PT; };
-  const geometrie=s=>{ let y=VUE_PAD; return V.pages.map(pg=>{ const g={y,w:Math.round(pg.w*s),h:Math.round(pg.h*s)}; y+=g.h+VUE_GAP; return g; }); };
-  const position=()=>{ const st=vue.scrollTop; for(let k=V.geo.length-1;k>=0;k--){ const g=V.geo[k]; if(g.y<=st+1) return {k,f:Math.min(1,Math.max(0,(st-g.y)/Math.max(1,g.h+VUE_GAP)))}; } return {k:0,f:0}; };
-  const pageCourante=()=>{ const st=vue.scrollTop+vue.clientHeight*.3; let k=0; V.geo.forEach((g,j)=>{ if(g.y<=st) k=j; }); return k; };
-  const tete=()=>{ const n=V.pages.length; R.querySelector('.sgdv-np').textContent=n||'—'; totP.textContent='/ '+(n||'—');
-    R.querySelector('.sgdv-nm .mt').textContent=[p.TITLE||p.DESCRIPTION||'',n?n+(n>1?' pages':' page'):'',vueFormat(V.pages[0])].filter(Boolean).join(' · ');
-    zm.textContent=Math.round(V.s/VUE_PT*100)+' %'; if(document.activeElement!==inP) inP.value=n?pageCourante()+1:''; };
-  const vider=div=>{ div.querySelectorAll('canvas,.textLayer').forEach(x=>x.remove()); div._s=null; };
-  const rendrePage=async(k,div,t)=>{ const pg=V.pages[k], s=V.s, dpr=Math.min(2,window.devicePixelRatio||1), vp=pg.p.getViewport({scale:s*dpr}), cv=document.createElement('canvas');
-    cv.width=Math.round(vp.width); cv.height=Math.round(vp.height);
-    await pg.p.render({canvasContext:cv.getContext('2d'),viewport:vp,intent:'print'}).promise;   /* « print » : sans requestAnimationFrame du cadre Facturation, masqué */
-    if(t!==V.rt||!V.vivant) return; vider(div); div.prepend(cv); div._s=s;
-    try{ const tl=document.createElement('div'); tl.className='textLayer'; tl.style.setProperty('--scale-factor',String(s));
-      V.lib.renderTextLayer({textContentSource:pg.p.streamTextContent(),container:tl,viewport:pg.p.getViewport({scale:s}),textDivs:[]}).promise.then(()=>{ if(div._s===s&&t===V.rt) div.append(tl); },()=>{}); }catch(_){} };
-  let file=Promise.resolve();
-  const visibles=()=>{ if(!V.pdf) return; const t=V.rt, st=vue.scrollTop, vh=vue.clientHeight, divs=cont.children;
-    V.geo.forEach((g,k)=>{ const d=divs[k]; if(!d) return; const pres=g.y+g.h>st-vh&&g.y<st+2*vh, loin=g.y+g.h<st-4*vh||g.y>st+5*vh;
-      if(pres&&d._s!==V.s&&!d._file){ d._file=true; file=file.then(()=>t===V.rt?rendrePage(k,d,t):null).catch(e=>console.error(e)).then(()=>{ d._file=false; }); }
-      else if(loin&&d._s) vider(d); }); tete(); };
-  const poser=(pos,av)=>{ V.s=echelle(); V.geo=geometrie(V.s); V.rt++;
-    const divs=V.geo.map((g,k)=>{ const d=document.createElement('div'); d.className='sgdv-p'; d.style.width=g.w+'px'; d.style.height=g.h+'px'; d.setAttribute('aria-label','Page '+(k+1)+' sur '+V.geo.length); return d; });
-    const cible=pos&&V.geo[Math.min(pos.k,V.geo.length-1)]?Math.round(V.geo[Math.min(pos.k,V.geo.length-1)].y+pos.f*(V.geo[Math.min(pos.k,V.geo.length-1)].h+VUE_GAP)):0;
-    const fin=()=>{ if(!V.vivant) return; cont.replaceChildren(...divs); cont.style.height=(V.geo.length?V.geo[V.geo.length-1].y+V.geo[V.geo.length-1].h+VUE_PAD:0)+'px'; vue.scrollTop=cible; visibles(); };
-    if(!av){ fin(); return Promise.resolve(); }
-    /* mise à jour : pages visibles rendues d'abord, puis échange (pas de page blanche, pas de retour en haut) */
-    const t=V.rt, vh=vue.clientHeight, ks=V.geo.map((g,k)=>k).filter(k=>V.geo[k].y+V.geo[k].h>cible&&V.geo[k].y<cible+vh);
-    return ks.reduce((pr,k)=>pr.then(()=>t===V.rt?rendrePage(k,divs[k],t):null),Promise.resolve()).catch(e=>console.error(e)).then(()=>{ if(t===V.rt) fin(); }); };
-  const charger=async blob=>{ const t=++V.tok; V.blob=blob; attente(true);
-    try{ const w=await fxEnsure(); await w.offreLoadPdfJs(); const buf=await blob.arrayBuffer(); if(t!==V.tok||!V.vivant) return;
-      const pdf=await w.pdfjsLib.getDocument({data:new w.Uint8Array(buf),ownerDocument:document}).promise; if(t!==V.tok||!V.vivant){ pdf.destroy(); return; }
-      const pages=[]; for(let n=1;n<=pdf.numPages;n++) pages.push(await pdf.getPage(n)); if(t!==V.tok||!V.vivant){ pdf.destroy(); return; }
-      const av=!!V.pdf, pos=av?position():null, old=V.pdf; V.lib=w.pdfjsLib; V.pdf=pdf; V.pages=pages.map(pg=>{ const v=pg.getViewport({scale:1}); return {p:pg,w:v.width,h:v.height}; });
-      await poser(pos,av); if(old) try{ old.destroy(); }catch(_){}
-    }catch(e){ console.error(e); if(t===V.tok) cont.replaceChildren(el('div','sgdv-msg err','Le document n’a pas pu être affiché : '+E(e&&e.message||e))); }
-    finally{ if(t===V.tok) attente(false); tete(); } };
-  ifr._sgVue=blob=>charger(blob); ifr._sgVuePrep=()=>attente(true); ifr._sgVueErr=e=>{ attente(false); if(!V.pdf) cont.replaceChildren(el('div','sgdv-msg err','PDF impossible : '+E(e&&e.message||e))); };
-  if(ifr._sgblob) charger(ifr._sgblob);
-  /* réglages en panneau */
+  /* lecteur commun de l'app (sg3_lecteur.js, bloc 48) : pages, zoom, page gardée à la mise à jour, attente de la dernière version, erreurs signalées */
   const rb=R.querySelector('.sgdv-rb'); let dernier='';
-  const appliquer=it=>{ if(!it||it.dis) return; try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau(); attente(true);
-    try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); attente(false); toast('Document impossible à préparer : '+(e&&e.message||e),true); } };
-  const panneau=()=>{ const L=(ch02cPrefItems(X,i)||[]).filter(x=>x&&x!=='-'&&x.t), G={}; VUE_GROUPES.forEach(g=>{ G[g]=[]; });
-    L.forEach(it=>{ G[vueGroupe(it.t)].push(it); });
+  const tete=inf=>{ const n=inf?inf.n:L.n; R.querySelector('.sgdv-np').textContent=n||'—';
+    R.querySelector('.sgdv-nm .mt').textContent=[p.TITLE||p.DESCRIPTION||'',n?n+(n>1?' pages':' page'):'',sglpFormat(inf?inf.page:L.premiere)].filter(Boolean).join(' · '); };
+  const L=sgLecteurPdf({surInfo:inf=>tete(inf),surEchec:()=>{ dernier=''; panneau(); }});   /* mise à jour échouée : plus de mention « appliqué » */
+  R.querySelector('.sgdv-doc').append(L.el);
+  ifr._sgVue=blob=>L.charger(blob); ifr._sgVuePrep=()=>L.attendre(); ifr._sgVueErr=e=>L.echec(e);
+  if(ifr._sgblob) L.charger(ifr._sgblob);
+  /* réglages en panneau */
+  const appliquer=it=>{ if(!it||it.dis||!peut()) return; try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau();
+    try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); L.echec(e); } };
+  const panneau=()=>{ const ok=peut(), a=document.activeElement, kf=a&&rb.contains(a)&&a.dataset?a.dataset.k:null;
+    const L0=(ch02cPrefItems(X,i)||[]).filter(x=>x&&x!=='-'&&x.t), G={}; VUE_GROUPES.forEach(g=>{ G[g]=[]; });
+    L0.forEach(it=>{ G[vueGroupe(it.t)].push(it); });
     const rang=t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }, M=[]; let h='';
-    const ck=it=>{ M.push(it); return '<div class="sgdv-ck'+(it.chk?' on':'')+(it.dis?' dis':'')+(VUE_RETRAIT.has(it.t)?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'" tabindex="0" data-n="'+(M.length-1)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
-    const seg=(lib,opts)=>'<div class="sgdv-sg">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'" tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
+    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(VUE_RETRAIT.has(it.t)?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
+    const seg=(lib,opts)=>'<div class="sgdv-sg">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg'+(ok?'':' dis')+'" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'" tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'" data-k="'+E('seg:'+lib+':'+o.l)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
     VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>rang(a.t)-rang(b.t)); if(!A.length) return; let corps='';
       if(g==='Montants'){ const ar=A.filter(x=>/^arrondir à/i.test(x.t)); A=A.filter(x=>!/^arrondir à/i.test(x.t)); const sp=A.findIndex(x=>/pourcentages/i.test(x.t)), av=sp<0?A:A.slice(0,sp), ap=sp<0?[]:A.slice(sp);
         corps=av.map(ck).join('')+(ar.length?seg('Arrondir à',[{l:'aucun',ti:'Sans arrondi',on:!ar.some(x=>x.chk),it:ar.find(x=>x.chk)?Object.assign({},ar.find(x=>x.chk),{chk:false}):null},...ar.map(x=>({l:x.t.replace(/^arrondir à\s*/i,''),on:x.chk,it:x.chk?null:x}))]):'')+ap.map(ck).join(''); }
       else if(g==='Sauts de page') corps=seg('',A.map(x=>({l:/^sans/i.test(x.t)?'Sans sauts de page':x.t.replace(/^sauts de page\s*:\s*/i,''),ti:x.t,on:x.chk,it:x.chk?null:x})));
       else corps=A.map(ck).join('');
       h+='<div class="sgdv-gt">'+E(g)+'</div>'+corps; });
-    rb.innerHTML=h||'<div class="sgdv-msg">Aucun réglage pour ce document.</div>'; rb._M=M; };
+    rb.innerHTML=h||'<div class="sgdv-msg">Aucun réglage pour ce document.</div>'; rb._M=M;
+    R.querySelector('.sgdv-rf .pied').textContent=ok?'Enregistrés dans le devis':'Lecture seule : réglages non modifiables';
+    /* relecture : le panneau est redessiné à chaque réglage ; le focus revient sur le même réglage (Échap ferme encore la fenêtre, Tab ne repart pas du début) */
+    if(kf!=null){ const x=[...rb.querySelectorAll('[data-k]')].find(e=>e.dataset.k===kf); try{ (x||L.vue).focus({preventScroll:true}); }catch(_){} } };
   rb.addEventListener('click',e=>{ const x=e.target.closest&&e.target.closest('[data-n]'); if(!x) return; appliquer((rb._M||[])[+x.dataset.n]); });
   rb.addEventListener('keydown',e=>{ if(e.key!==' '&&e.key!=='Enter') return; const x=e.target.closest&&e.target.closest('[data-n]'); if(!x) return; e.preventDefault(); appliquer((rb._M||[])[+x.dataset.n]); });
   panneau();
-  /* lecteur : pages, zoom, défilement, taille */
-  const allerA=k=>{ k=Math.max(0,Math.min(V.geo.length-1,k)); if(V.geo[k]) vue.scrollTop=V.geo[k].y-VUE_PAD+2; };
-  const zoomer=d=>{ const cur=Math.round(V.s/VUE_PT*100); let z; if(d>0) z=VUE_ZOOM.find(x=>x>cur+0.5)||VUE_ZOOM[VUE_ZOOM.length-1]; else z=[...VUE_ZOOM].reverse().find(x=>x<cur-0.5)||VUE_ZOOM[0]; V.zoom=z; if(V.pdf) poser(position(),true); };
-  R.querySelector('.sgdv-bar').addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-a]'); if(!b) return; const a=b.dataset.a;
-    if(a==='prec') allerA(pageCourante()-1); else if(a==='suiv') allerA(pageCourante()+1); else if(a==='moins') zoomer(-1); else if(a==='plus') zoomer(1); else if(a==='larg'){ V.zoom='l'; if(V.pdf) poser(position(),true); } });
-  inP.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const n=parseInt(inP.value,10); if(n) allerA(n-1); inP.blur(); } });
-  inP.addEventListener('blur',()=>tete());
-  let att=null; vue.addEventListener('scroll',()=>{ clearTimeout(att); att=setTimeout(visibles,60); tete(); });
-  let ro=null, rt=null; try{ ro=new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(V.pdf&&V.zoom==='l'&&Math.abs(echelle()-V.s)>.004) poser(position(),true); },150); }); ro.observe(vue); }catch(_){}
-  R.querySelector('.sgdv-imp').addEventListener('click',()=>vueImprimer(V.blob));
-  const fini=()=>{ if(!V.vivant) return; V.vivant=false; V.tok++; V.rt++; try{ ro&&ro.disconnect(); }catch(_){} try{ V.pdf&&V.pdf.destroy(); }catch(_){} ifr._sgVue=ifr._sgVuePrep=ifr._sgVueErr=null; };
+  R.querySelector('.sgdv-imp').addEventListener('click',()=>L.imprimer());
+  const ov=dlg.closest('.ov')||dlg;
+  /* Échap quand le focus est sorti de la fenêtre (cadre d'impression, clic hors champ) : la fenêtre du dessus se ferme quand même */
+  const escDoc=e=>{ if(e.key!=='Escape'||!dlg.isConnected||e.defaultPrevented||ov.contains(document.activeElement)||document.querySelector('.menu,.sg-visu')) return;
+    const ovs=[...document.querySelectorAll('.ov')]; if(ovs[ovs.length-1]!==ov) return; e.preventDefault(); e.stopPropagation(); D.close(); };
+  document.addEventListener('keydown',escDoc,true);
+  let vivant=true; const fini=()=>{ if(!vivant) return; vivant=false; document.removeEventListener('keydown',escDoc,true); try{ L.fini(); }catch(_){} ifr._sgVue=ifr._sgVuePrep=ifr._sgVueErr=null; };
   R.querySelector('.sgdv-btn').addEventListener('click',()=>{ D.close(); });
-  const ov=dlg.closest('.ov')||dlg, mo=new MutationObserver(()=>{ if(!dlg.isConnected){ fini(); mo.disconnect(); } }); mo.observe(ov.parentNode||document.body,{childList:true});
+  const mo=new MutationObserver(()=>{ if(!dlg.isConnected){ fini(); mo.disconnect(); } }); mo.observe(ov.parentNode||document.body,{childList:true});
   const c0=D.close; D.close=function(){ fini(); return c0.apply(this,arguments); };
-  setTimeout(()=>{ try{ vue.focus({preventScroll:true}); }catch(_){} },0); tete(); }
+  setTimeout(()=>L.focus(),0); tete(); }
 { const v1=ch02cView; ch02cView=function(X,i,rec,R){ const D=v1.apply(this,arguments); if(X&&X.sgde&&D&&D.bd) try{ vueDoc(D,X,+i,rec); }catch(e){ console.error(e); } return D; }; }
 
 /* ═══ Fichiers PDF : commentaire, groupes par document, menu au clic droit (08.11.2026, Paulo : « lorsque je crée le PDF, ajouter une cellule

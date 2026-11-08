@@ -1611,7 +1611,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   d'abord, puis échange — même page, même position, aussi au zoom et au redimensionnement) ; panneau « Réglages · appliqués aussitôt » à droite (300 px) :
   cases de `ch02cPrefItems` rangées en Positions, Calcul, Montants, Affichage, Sauts de page (`vueGroupe`, `VUE_ORDRE`, retraits `VUE_RETRAIT`),
   « Arrondir à » et « Sauts de page » en boutons segmentés, dernière case changée surlignée « appliqué », pied « Enregistrés dans le devis » + Fermer. « Bases de prix » retiré des réglages (panneau et menu de la ligne ; gardé seulement s'il est coché, pour le décocher ; « supprimer », même jour). « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (`dgBasculer`, même jour ; toujours cliquable ; décocher « Quantités et prix » seul décoche encore « Afficher le calcul », règle de l'ancien logiciel).
-  Autres visionneuses inchangées. Classes `.sgdv-*`. Vérifié sur 24PRC (75 pages) : page 10 gardée après Variantes, « Seulement positions de 1 à 3
+  Autres visionneuses inchangées. Classes `.sgdv-*`.
+  **Lecteur commun et fenêtre PDF (08.11.2026, bloc 48, `subgestion3/sg3_lecteur.js`, concaténé en dernier ; Paulo : « améliore la fenêtre PDF lorsque je
+  clique sur PDF, adapte le design au reste de l'app »)** : `sgLecteurPdf(o)` = le lecteur de cette fenêtre, rendu commun (barre ‹ Page n / N ›, zoom,
+  Ajuster à la largeur, pages rendues à la demande, texte sélectionnable ; `charger(blob)`, `attendre()`, `echec(e)`, `imprimer()`, `fini()` ; o.surInfo,
+  o.surEchec ; classes `.sglp-*`) ; `vueDoc` s'en sert. `sgVisionneuse(b,nom,o)` (déplacée de sg3_plus.js) = même graphisme : bandeau jaune (n° de l'affaire
+  trouvé dans le titre ou le nom, sinon type du fichier en grand ; « Aperçu du … à … » pour les aperçus du moteur, titre = titre du document — `pdf._sgTitre`
+  posé par le POST `/api/pdf` aperçu de sg3_impressions.js, sinon titre du PDF —, pages · format · taille), chiffre Pages, Imprimer, Télécharger (aperçu :
+  « <titre>.pdf »), Fermer ; PDF dans le lecteur, images, texte brut et HTML de l'app comme avant (mêmes règles de sécurité) ; renvoie {fermer, imprimer,
+  telecharger, lecteur} (Documents Substances ▸ Imprimer s'en sert). Corrections de la relecture du 08.11.2026 (6 défauts confirmés sur 7) : échec d'une
+  mise à jour signalé (message, ancienne version gardée, plus de « appliqué »), indicateur et Imprimer qui attendent la dernière version, canevas plafonnés
+  à 16 Mpx, focus gardé (réglage, Page + Entrée, impression ; Échap ferme la fenêtre même si le focus en est sorti), panneau inactif en lecture seule
+  (« Lecture seule : réglages non modifiables »), barre réduite à ses icônes sous 600 px. Vérifié sur 24PRC (75 pages) : page 10 gardée après Variantes, « Seulement positions de 1 à 3
   chiffres » (75 → 34 pages), zoom.
   Bouton « Modifier les textes… » retiré de cette fenêtre (« supprimer », même jour ; `ch02cView` / `ch01aView` enveloppés dans sg3_devis.js, sans l'option `edit`) ; les autres
   visionneuses le gardent, DeltaSub.html seul aussi.

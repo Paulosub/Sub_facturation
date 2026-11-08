@@ -88,7 +88,7 @@ if(typeof SG_DOM!=='undefined'&&typeof svDpHTML==='function'&&typeof sgDsPdf==='
     if(/^\/api\/pdf(\?|$)/.test(String(url))&&meth==='POST'){ let c={}; try{ c=JSON.parse(String(o.body||'{}')); }catch(_){ c={}; }
       const id=sgImpIdDe(c.html)||SGIMP.parHtml.get(String(c.html||''))||null;
       if(id){ const pdf=await sgImpPdf(id), buf=await pdf.arrayBuffer();
-        if(c.apercu){ const a='ap'+Date.now().toString(36); SG_APERCUS[a]=pdf; return {ok:true,apercu:a,taille:pdf.size,pages:await sgCompterPages(buf)}; }
+        if(c.apercu){ const a='ap'+Date.now().toString(36); SG_APERCUS[a]=pdf; try{ pdf._sgTitre=(SGIMP.memo.get(id)||{}).titre||''; }catch(_){} return {ok:true,apercu:a,taille:pdf.size,pages:await sgCompterPages(buf)}; }
         return Object.assign({ok:true},await sgFichierRanger(pdf,'document.pdf')); } }
     return ch03aApi1(url,o); };
 

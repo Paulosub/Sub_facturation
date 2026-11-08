@@ -1606,7 +1606,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sg3_impressions.js, le PDF n'est plus chargé dans le cadre du moteur) et la page affichée est gardée (`position` / `poser` : pages visibles rendues
   d'abord, puis échange — même page, même position, aussi au zoom et au redimensionnement) ; panneau « Réglages · appliqués aussitôt » à droite (300 px) :
   cases de `ch02cPrefItems` rangées en Positions, Calcul, Montants, Affichage, Sauts de page (`vueGroupe`, `VUE_ORDRE`, retraits `VUE_RETRAIT`),
-  « Arrondir à » et « Sauts de page » en boutons segmentés, dernière case changée surlignée « appliqué », pied « Enregistrés dans le devis » + Fermer. « Bases de prix » retiré des réglages (panneau et menu de la ligne ; gardé seulement s'il est coché, pour le décocher ; « supprimer », même jour).
+  « Arrondir à » et « Sauts de page » en boutons segmentés, dernière case changée surlignée « appliqué », pied « Enregistrés dans le devis » + Fermer. « Bases de prix » retiré des réglages (panneau et menu de la ligne ; gardé seulement s'il est coché, pour le décocher ; « supprimer », même jour). « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (`dgBasculer`, même jour ; toujours cliquable ; décocher « Quantités et prix » seul décoche encore « Afficher le calcul », règle de l'ancien logiciel).
   Autres visionneuses inchangées. Classes `.sgdv-*`. Vérifié sur 24PRC (75 pages) : page 10 gardée après Variantes, « Seulement positions de 1 à 3
   chiffres » (75 → 34 pages), zoom.
   Bouton « Modifier les textes… » retiré de cette fenêtre (« supprimer », même jour ; `ch02cView` / `ch01aView` enveloppés dans sg3_devis.js, sans l'option `edit`) ; les autres

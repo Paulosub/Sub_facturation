@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 17:20 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 17:22 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -39235,11 +39235,12 @@ function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), 
   if(k==='*total'){ const R=E.reglages||(E.reglages={}); R.pourcentageSur=R.pourcentageSur==='total'?'groupe':'total'; X.touch(); return; }   /* réglage du devis (Paramètres ▸ Affichage), aussi pour l'écran */
   if(k==='*tous'){ const tout=DG_TOUS.every(x=>o[x]); DG_TOUS.forEach(x=>{ c[x]=!tout; }); }
   else { const v=!o[k]; c[k]=v; if(DG_RONDS.includes(k)&&v) DG_RONDS.forEach(x=>{ if(x!==k) c[x]=false; });
+    if(k==='dispalyCalcualtion'){ c.displayQuanPriceValue=v; c.displayDetailComment=v; }   /* « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (Paulo, 08.11.2026) */
     if(k==='displayComment'&&!v) c.commentInColumn=false; if(k==='displayDetailValues'&&!v) c.displayDetailOptions=false; if(k==='displayQuanPriceValue'&&!v) c.dispalyCalcualtion=false;
     if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
   const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
 function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
-  const dis=k=>(k==='commentInColumn'&&!o.displayComment)||(k==='displayDetailOptions'&&!o.displayDetailValues)||(k==='dispalyCalcualtion'&&!o.displayQuanPriceValue);
+  const dis=k=>(k==='commentInColumn'&&!o.displayComment)||(k==='displayDetailOptions'&&!o.displayDetailValues);   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
   const L=DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])});
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   L.push('-',{t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total')});

@@ -1689,6 +1689,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sous chaque position, après ses lignes de calcul (D) et son descriptif (X), rien entre une position et ses détails ; lignes de calcul et descriptif en gris
   #706F6F ; pourcentages en bleu nuit ; total (T) sur une bande bleu nuit, texte blanc ; plus de rangées grises ni de filet noir. Montants en noir. Sans
   `style`, l'ancien rendu (zébrage, filets noirs) reste. Page Information : ni grisé ni filets.
+  **Document « Honoraires » au dessin du devis général (08.11.2026, Paulo : « corriger le design pour correspondre au design du devis »)** : ligne 1 de Documents
+  (`hoOctets`, `hoRendu`, enveloppe de `ch02cRender` pour i = 1) — mêmes données et réglages que le modèle du moteur (`ch02cJob` → honorarTable), dessinés comme le devis
+  général (sgDsPdf, `livretDG`, style Bleu nuit, portrait) : page de garde au titre du document (« Soumis à honoraires ») avec ouvrage, maître de l'ouvrage (celui de l'ouvrage
+  filtré s'il en a un), architecte, direction des travaux ; tableau CFC | Texte | [OUV | Loc. | Commentaire] | Montant HT | % soumis (bleu nuit) | Honoraires, CFC dans la
+  marge, CFC à 1 chiffre en bleu nuit, à 2 chiffres en gras (montants Regular), totalisatrices à 3 chiffres en Light (montants Regular), total sur bande bleu nuit, montants en
+  noir, textes passés à la ligne ; colonne Commentaire seulement avec « Base et commentaire de la position » + « … dans colonne séparée ». Relecture du 08.11.2026 (8 défauts, 5
+  corrections) ; le filtre est signalé d'après son effet réel (`dgFiltreTexte`, aussi pour le devis général : filtre rapide d'un seul ouvrage compris). Lecteur PDF : plus de
+  trait sous l'icône « Ajuster à la largeur » (même jour).
   **Le PDF suit la présentation du devis (08.11.2026, Paulo : « dans PDF, afficher les options selon affichage sélectionné dans devis »)** : choisir une présentation
   (Présentation ▾ du devis) règle aussi le PDF — Standard et Avec colonnes honoraires : sans descriptif ni calcul ; Toutes les colonnes et Avec le descriptif : descriptif ;
   Toutes les colonnes avec le calcul de prix et Avec le descriptif et le calcul de prix : descriptif et calcul (ses trois cases) — enveloppes de `ch02aSetMode` et de `presMenu`,

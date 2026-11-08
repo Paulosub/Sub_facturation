@@ -1127,6 +1127,8 @@ const DG_PRESET={includeKvCover:true,includeKvOneDigit:false,includeKvTwoDigit:t
   value2ColTitle:'à 2 chiffres TTC',value1ColTitle:'à 1 chiffre TTC',devColTitle:'[%]',infoNameColTitle:'',infoDescColTitle:''};
 const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=388, DG_X0T=85.04, DG_CFC=40.68, DG_WL=674.25, DG_WP=427.64, DG_WIL=730.94, DG_WIP=484.33, DG_HP=630;   /* « déplacer les numéros de CFC » (08.11.2026) : numéros CFC dans la marge à x 85.04 (comme les numéros de chapitre des contrats), texte à x 125.72 (2e colonne du pied) — colonne CFC de 40.68 pt */   /* (08.11.2026, Paulo) tableaux de x 125.72 (2e colonne du pied) jusqu'à 2 pt après la barre verticale du numéro de page (largeur − 84.6 : paysage 757.29, portrait 510.68), de sorte que la dernière colonne, alignée à droite avec 2 pt de retrait, finisse sur cette barre ; Information dès 28.35 jusqu'au même bord ; portrait : rangées de 122 à 752 pt */   /* Information : rangées dès 121 pt, sous un filet (modèle 24PRC) */   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
 let DG_COURS=null;
+/* montants partiels signalés d'après l'effet réel du filtre sur les parties du devis (ouvrage décoché, absent de la liste — filtre rapide d'un seul ouvrage —, facteur ≠ 1) (relecture du 08.11.2026) */
+const dgFiltreTexte=(E,F)=>{ const partiel=Array.isArray(F)&&F.length>0&&((E||{}).positions||[]).some(pt=>(pt.parts||[]).some(pa=>pa&&pa.ouv!=null&&pa.ouv!==''&&ch02cScale(F,ch02cTr(pa.ouv),ch02cTr(pa.lg))!==1)); return partiel?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):''; };
 function dgPdf(X){ if(DG_COURS){ toast('Le PDF est en cours de création…'); return DG_COURS; } DG_COURS=dgCreer(X).finally(()=>{ DG_COURS=null; }); return DG_COURS; }
 /* ventilation par ouvrage des positions totalisatrices (modèle 24PRC de l'ancien logiciel : 10, 101… montrent AP1, AP2… COM ; les positions à 1 chiffre, non) : le moteur ne la
    calcule que pour les positions saisies (« la reprise ne garde pas leurs caches ») ; pendant la création du PDF, somme des ouvrages des sous-positions, dans l'ordre des
@@ -1303,7 +1305,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     if(!portrait){ let manque=cols.reduce((t,c)=>t+(+c.w||0),0)-DG_WL; const prendre=(c,min)=>{ if(manque>0&&c&&c.w>min){ const q=Math.min(manque,c.w-min); c.w-=q; manque-=q; } };
       [K.i4,K.i3,K.i2,K.i1].forEach(i=>{ if(i>=0&&cols[i]&&cols[i].w) prendre(cols[i],66); }); if(K.ip>=0) prendre(cols[K.ip],32); if(K.iC>=0) prendre(cols[K.iC],90);
       if(manque>0&&cols[1]) cols[1].w-=manque; }
-    const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
+    const F=X.filter, filtre=dgFiltreTexte(E,F);   /* montants partiels : toujours signalés */
     const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
     const G=E.reglages||{}, ti=G.titres||{}, mod=v=>/^\[\.\.\.\]/.test(String(v||'').trim()), tt=k=>{ const v=String(ti[k]==null?'':ti[k]).trim(); return v&&!mod(v)?v:'Devis général'; }, etat=String(G.etatProjet||'').trim(), etatOk=etat&&!mod(etat);   /* « [...] … » : texte modèle de l'ancien logiciel, ignoré */
     const titrePage=pg=>pg.type===0?(tt('garde')+(etatOk?' - '+etat:'')):(pg.type===1||pg.type===2)?(pg.digit===0?tt('unChiffre'):pg.digit===1?tt('deuxChiffres'):tt('document')):tt('document');
@@ -1513,5 +1515,57 @@ async function dgGenPdf(X){ const dos=ch02cDos(X,'archive'); if(!dos) return;
 { const g1=ch02cGenPdf; ch02cGenPdf=function(X,i){ SGPDF.genre=GENRE_LIGNE[+i]||null; let r;
     try{ r=g1.apply(this,arguments); }catch(e){ SGPDF.genre=null; throw e; }
     Promise.resolve(r).catch(()=>{}).then(()=>{ SGPDF.genre=null; }); return r; }; }
+/* ═══ HONORAIRES AU DESSIN DU DEVIS GÉNÉRAL (08.11.2026, Paulo : « corriger le design pour correspondre au design du devis ») ═══
+   Document « Honoraires » (ligne 1 de Documents) : mêmes données et mêmes réglages que le modèle du moteur (ch02cJob → honorarTable : options du document, filtre, ouvrages),
+   mais dessiné comme le devis général (sgDsPdf, o.livretDG, style « Bleu nuit », portrait) : page de garde au titre du document (« Soumis à honoraires ») avec les rubriques
+   ouvrage, maître de l'ouvrage, architecte, direction des travaux ; puis le tableau — CFC dans la marge (x 85.04), texte à x 125.72, colonnes Montant HT, % soumis (bleu nuit),
+   Honoraires (dernière colonne alignée sur la barre du numéro de page), bande d'en-tête bleu nuit, CFC à 1 chiffre en bleu nuit, CFC à 2 chiffres en gras, filets, total sur
+   bande bleu nuit, montants en noir ; texte jamais coupé (passé à la ligne). Colonnes Ouvrage, Localisation, Commentaire seulement si le document en a. */
+async function hoOctets(X,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
+  const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{};
+  const pd=await w.PDFLib.PDFDocument.create(); pd.registerFontkit(w.fontkit); const fL=await pd.embedFont(R.polices.light), fB=await pd.embedFont(R.polices.bold);
+  const larg=(t,b)=>{ try{ return (b?fB:fL).widthOfTextAtSize(String(t),DG_TXT); }catch(_){ return String(t).length*DG_TXT*0.5; } };
+  const couper=(t,b,wd)=>{ const s0=String(t); if(larg(s0,b)<=wd) return [s0]; const L=[]; let cur='';
+    s0.split(' ').forEach(m=>{ const e=cur?cur+' '+m:m; if(larg(e,b)<=wd){ cur=e; return; } if(cur.trim()) L.push(cur); if(larg(m,b)<=wd){ cur=m; return; }
+      let x=''; for(const ch of m){ if(x&&larg(x+ch,b)>wd){ L.push(x); x=ch; } else x+=ch; } cur=x; }); if(cur.trim()) L.push(cur); return L.length?L:[s0]; };
+  const cH=ch02cC(X,'honorar'), oH=cH.o, rep=ch02cPrep(rec.doc.report), J=ch02cJob(cH,rep); let band=null;
+  (rep.sections||[]).forEach(sec=>(sec.bands||[]).forEach(b=>{ if(!band&&b&&b.ch02c&&b.ch02c.name==='honorarTable') band=b; }));
+  const key=band?String(band.f).split('|').pop():'', rows0=(key&&J.tables[key]&&J.tables[key].rows)||[], cols0=(((band||{}).tableSettings||[])[0]||{}).columns||[];
+  const titre=id=>{ const x=cols0.find(k=>+k.id===id); return String((x&&(x.title||x.t))||'').trim(); }, v=(c,j)=>c[j]==null?'':String(c[j]);
+  const has=j=>rows0.some(r=>r&&r.c&&v(r.c,j).trim()), aOuv=has(2), aLoc=has(3), aCom=!!(oH.displayCommentToPositionColumn&&oH.displayRemarkInCommentColumn)&&has(5);   /* colonne Commentaire seulement quand les réglages l'y rangent (relecture du 08.11.2026 : sinon affichée d'office, ou commentaire imprimé deux fois) */
+  const fixe=DG_CFC+(aOuv?30:0)+(aLoc?30:0)+(aCom?84:0)+62+42+66;   /* tableau de x 85.04 à 512.68 (427.64 pt) : la dernière colonne finit sur la barre du numéro de page */
+  const cols=[{t:'CFC',w:DG_CFC,r:false},{t:'Texte',w:DG_WP-fixe,r:false}].concat(aOuv?[{t:'OUV',w:30,r:false}]:[],aLoc?[{t:'Loc.',w:30,r:false}]:[],
+    aCom?[{t:titre(5)||'Commentaire',w:84,r:false}]:[],[{t:titre(6)||'Montant HT',w:62,r:true},{t:titre(7)||'% soumis',w:42,r:true,pct:true},{t:titre(8)||'Honoraires',w:66,r:true}]);
+  /* styles du moteur (ch02cSt) → rangées du livret : 1 chiffre O, 2 chiffres W, position S, total T ; parties d'ouvrage (CFC vide) S, commentaire de la position D */
+  const sty=st=>st==='c1'?'O':st==='c2'?'W':st==='c3'?'S':st==='ct'?'T':st==='cta'?'S':null, rows=[];
+  rows0.forEach(r=>{ if(!r||!r.c||r.st==='space') return; const c=r.c; let s=sty(r.st); if(!s) s=(v(c,2).trim()||v(c,3).trim())?'S':'D';
+    const n=[v(c,0),v(c,1)].concat(aOuv?[v(c,2)]:[],aLoc?[v(c,3)]:[],aCom?[v(c,5)]:[],[v(c,6),v(c,7),v(c,8)]);
+    let cf=null; if(s==='W'){ if(v(c,0).trim().length>2) s='S'; cf={}; cf[n.length-3]='r'; cf[n.length-1]='r'; }   /* comme le devis général en portrait : montants des CFC à 2 chiffres et des totalisatrices à 3 chiffres en Regular (texte du CFC à 2 chiffres en gras, totalisatrice en Light) */
+    const b0=s==='O'||s==='W'||s==='T', place=j=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&!cols[k].r&&+cols[k].w&&!String(n[k]==null?'':n[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };
+    const L=n.map((x,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(x==null?'':x).trim()) return [x]; return couper(x,b0,place(j)); });   /* désignation, OUV, Loc., Commentaire : jamais coupés, suite sur des rangées de suite (comme etaler du devis général) */
+    const nb=Math.max(1,...L.map(x=>x.length)); for(let i=0;i<nb;i++){ const ci=L.map(x=>x[i]==null?'':x[i]); rows.push(i===0?Object.assign({c:ci,s},cf?{cf}:{}):{c:ci,s,k:1}); } });
+  const T0=String(J.F.docTitle||'').trim()||'Soumis à honoraires', cap=Math.max(1,Math.floor(DG_HP/DG_RH));
+  const F=X.filter, filtre=dgFiltreTexte(E,F);
+  const pages=[{type:0,titre:T0,rows:[]}]; let i=0;
+  while(i<rows.length){ let k=Math.min(rows.length,i+cap);
+    if(k<rows.length) for(let j=k;j>k-8&&j>i;j--){ if(v(rows[j].c,0).trim()&&!rows[j].k){ k=j; break; } }   /* coupure de préférence avant une position */
+    const rr=rows.slice(i,k); while(rr.length<cap) rr.push({c:[],s:'E'}); pages.push({type:pages.length===1?1:2,titre:T0,digit:2,lpp:cap,cols,rows:rr}); i=k; }
+  const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
+  let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
+  const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burT=un([bur.nom,...(bur.lignes||[])]);
+  const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
+  let moT=A&&A.mo?un(A.mo.lignes||[]):''; { const spsH=ch02cSps(p), FH=X.filter;   /* ouvrage filtré qui a son maître de l'ouvrage : celui du moteur (projectmanagementBuilderBySuproject) */
+    if(Array.isArray(FH)&&FH.length&&FH.some(f=>spsH.some(x=>ch02cTr(x.CODE)===ch02cTr(f.ouv)&&ch02cTr(x.LOCATIONCODE)===ch02cTr(f.lg)&&x.CONTACT_ID!=null))){ const m=J.F&&J.F.projectmanagementBuilderBySuproject; const cm=m&&m.id!=null&&DS.get('contact',m.id); if(cm) moT=un(adrLines(cm)); } }
+  const couverture={titre:T0.toUpperCase(),marge:'',filtre,rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',moT],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:[]};
+  const sT={b:true,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};
+  const nomF=T0+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
+  const opt=w.JSON.parse(JSON.stringify({titre:T0,sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Honoraires',description:nomF,
+    livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,orientation:'portrait',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT}})), j=new w.Array(); opt.journal=j;
+  const oct=await fn(R,null,opt); if(j.length) console.info('Honoraires :',Array.from(j));
+  return {oct,nom:nomF.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; }
+function hoRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'h'+Date.now().toString(36), pdf=hoOctets(X,rec).then(r=>new Blob([r.oct],{type:'application/pdf'}));
+  pdf.catch(e=>console.error(e)); S.memo.set(id,{pdf,titre:'Honoraires',o:{}}); while(S.memo.size>40) S.memo.delete(S.memo.keys().next().value);
+  return {title:(rec&&rec.doc&&rec.doc.nom)||'Honoraires',css:'/*sgimp:'+id+'*/',html:''}; }
+{ const r1=ch02cRender; ch02cRender=function(X,i,rec){ if(+i===1&&X&&X.sgde&&rec&&rec.doc&&rec.doc.report&&window.SGIMP&&typeof SGDS!=='undefined') return hoRendu(X,rec); return r1.apply(this,arguments); }; }
 const SGDE=window.SGDE={X:null,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 })();

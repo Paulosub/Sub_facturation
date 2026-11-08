@@ -29,7 +29,7 @@ function sglpCss(){ if(document.getElementById('sglp-css')) return; const st=doc
 .sglp-bt:not(:disabled):hover,.sglp-ib:hover{background:var(--s-jaune3)}
 .sglp-ib{flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 8px;border:0;background:none;font:inherit;font-size:12.5px;font-weight:700;color:var(--s-noir);cursor:pointer;white-space:nowrap}
 .sglp-ib svg{width:16px;height:16px;flex:none}
-.sglp-ib.on{box-shadow:inset 0 -2px 0 var(--s-nuit)}
+.sglp-ib.on{box-shadow:none}   /* plus de trait sous l'icône « Ajuster à la largeur » (Paulo, 08.11.2026) */
 .sglp-pg{flex:none;display:inline-flex;align-items:center;gap:6px;margin:0 4px;font-size:12.5px;font-weight:700;white-space:nowrap}
 .sglp-in{width:38px;height:26px;border:1px solid var(--s-gris3);background:#fff;font:inherit;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;border-radius:0;padding:0}
 .sglp-in:focus{outline:2px solid var(--s-nuit);outline-offset:-2px}

@@ -1592,7 +1592,61 @@ async function sgDsPdf(R, rep, o){
     if(!cx.pages.length) page(titreDocument, false);
     cx.y = cx.Z.bas;
   };
+  /* ── Devis descriptif au dessin du descriptif du bureau (modèle 17QUE_DESCRIPTIF_230619 ; Paulo, 08.11.2026 : « voici à quoi doit ressembler le descriptif,
+     reproduis celui-ci ici ») — o.descDG = { couverture:{ statut, rub:[[libellé, valeur]], date, titre:[lignes], sig:[libellés] }, blocs:[{ t:'h', n, txt, niv 1|2|3, mt }
+     | { t:'txt'|'sub'|'lib'|'ouv'|'vide', txt, mt }], montants } ; positions relevées sur le modèle (pt depuis le haut, portrait) ── */
+  const contenuDescDG = (cx) => {
+    const D = o.descDG || {}, H = PAP.format.portrait.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t);
+    const ROUGE = PDFLib.rgb(1, 0.18, 0.09), XL = 205.5, XV = 210.5, XN = 122.4, XT = 128.8, XF0 = 85.0, XF1 = 510.2, XM = 510.2, MT = !!D.montants;
+    const WT = (MT ? 440 : 500) - XT, WTX = 500 - XT, HAUT_T = 96, HAUT_H = 114, BAS = 765;
+    const filet = (y, ep) => cx.rect(XF0, T(y) - ep / 2, XF1 - XF0, ep, { fond:C.N });
+    /* page de garde */
+    const G = D.couverture || {}; cx.nouvellePage('portrait');
+    if(G.statut) cx.texte(P(G.statut), XV, T(201), { police:F.bold, taille:31, couleur:ROUGE });
+    Array.from(G.rub || []).forEach((r, i) => { const y = 251 + i * 22; cx.texte(P(r[0]), XL, T(y), { police:F.light, taille:8, align:'d' });
+      cx.couper(P(r[1] || ''), F.regular, 8, XF1 - XV).slice(0, 2).forEach((l, k) => cx.texte(l, XV, T(y + k * 10), { police:F.regular, taille:8 })); });
+    if(G.date) cx.texte(P(G.date), XL, T(431), { police:F.bold, taille:11, align:'d' });
+    let yt = 431; Array.from(G.titre || []).forEach(l => { cx.couper(P(l), F.bold, 11, XF1 - XV).forEach(m => { if(yt < 560){ cx.texte(m, XV, T(yt), { police:F.bold, taille:11 }); yt += 17; } }); });
+    Array.from(G.sig || []).forEach((sg, i) => { const y = 617 + i * 92; cx.texte(P(sg), 213.5, T(y), { police:F.light, taille:8 });
+      cx.texte('Lieu, date', 213.5, T(y + 33), { police:F.light, taille:8 }); cx.texte('Signature', 379.7, T(y + 33), { police:F.light, taille:8 }); });
+    /* corps : rangées à poser, avec leur hauteur et l'écart avant elles */
+    const L = []; let prec = null;
+    Array.from(D.blocs || []).forEach(b => {
+      if(b.t === 'h'){ while(L.length && L[L.length - 1].k === 'vide') L.pop();   /* pas de ligne vide avant un titre : l'écart du titre suffit (modèle) */
+        const bold = b.niv <= 2, f = bold ? F.bold : F.regular, ls = cx.couper(P(String(b.txt || '').toLocaleUpperCase('fr')), f, 8, WT);
+        const gap = prec === 'h' ? 17 : b.niv === 1 ? 39 : b.niv === 2 ? 37 : 22;
+        L.push({ k:'h', b, f, ls, gap, h:(ls.length - 1) * 10 }); prec = 'h'; return; }
+      if(b.t === 'vide'){ if(prec === 'txt' && L.length && L[L.length - 1].k !== 'vide') L.push({ k:'vide', gap:9, h:0 }); return; }
+      const sub = b.t === 'sub', lib = b.t === 'lib' || b.t === 'ouv', f = sub || lib ? F.regular : F.light, z = sub ? 8 : 7.5;
+      cx.couper(P(b.txt || ''), f, z, b.t === 'ouv' && MT ? WT : WTX).forEach((l, i) => {
+        const gap = i ? 9 : (prec === 'h' ? 12 : prec === 'vide' ? 9 : 9);
+        L.push({ k:'txt', l, f, z, sub, gap, h:0, mt:i === 0 ? b.mt : '' }); prec = 'txt'; });
+    });
+    /* mise en pages : un titre n'est jamais seul en bas de page (gardé avec ses deux lignes suivantes) */
+    let y = null; const nouvelle = () => { cx.nouvellePage('portrait'); y = null; };
+    nouvelle();
+    L.forEach((it, i) => {
+      if(it.k === 'vide'){ if(y != null) y += it.gap; return; }
+      const debut = (k) => k === 'h' ? HAUT_H : HAUT_T;
+      let yy = y == null ? debut(it.k) : y + it.gap;
+      if(it.k === 'h'){ let besoin = yy + it.h; for(let j = i + 1, n = 0; j < L.length && n < 2; j++){ if(L[j].k === 'vide') continue; besoin += L[j].gap + L[j].h; n++; if(L[j].k === 'h') break; }
+        if(y != null && besoin > BAS){ nouvelle(); yy = HAUT_H; } }
+      else if(yy + it.h > BAS){ nouvelle(); yy = HAUT_T; }
+      if(it.k === 'h'){ const b = it.b, f = it.f;
+        if(b.niv === 1) filet(yy - 12.7, 0.75);
+        cx.texte(P(b.n || ''), XN, T(yy), { police:f, taille:8, align:'d' });
+        it.ls.forEach((l, k) => cx.texte(l, XT, T(yy + k * 10), { police:f, taille:8 }));
+        if(MT && b.mt) cx.texte(P(b.mt), XM, T(yy), { police:f, taille:8, align:'d' });
+        if(b.niv === 1) filet(yy + it.h + 4.3, 0.75);
+        y = yy + it.h; }
+      else { cx.texte(it.l, XT, T(yy), { police:it.f, taille:it.z });
+        if(it.sub) cx.rect(XT, T(yy + 0.4) - 0.2, cx.largeur(it.l, it.f, it.z), 0.4, { fond:C.N });
+        if(MT && it.mt) cx.texte(P(it.mt), XM, T(yy), { police:F.light, taille:7.5, align:'d' });
+        y = yy; }
+    });
+  };
   const contenu = (cx) => {
+    if(o.descDG){ contenuDescDG(cx); return; }
     if(o.livretDG){ contenuLivret(cx); return; }
     if(o.cahier){ contenuCahier(cx); if(o.descriptif) contenuDescriptif(cx); return; }
     if(o.comparatif){ contenuComparatif(cx); return; }

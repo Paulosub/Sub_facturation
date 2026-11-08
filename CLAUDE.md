@@ -1697,6 +1697,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   noir, textes passés à la ligne ; colonne Commentaire seulement avec « Base et commentaire de la position » + « … dans colonne séparée ». Relecture du 08.11.2026 (8 défauts, 5
   corrections) ; le filtre est signalé d'après son effet réel (`dgFiltreTexte`, aussi pour le devis général : filtre rapide d'un seul ouvrage compris). Lecteur PDF : plus de
   trait sous l'icône « Ajuster à la largeur » (même jour).
+  **Document « Devis descriptif » au dessin du descriptif du bureau (08.11.2026, Paulo : « voici à quoi doit ressembler le descriptif, reproduis celui-ci ici », modèle
+  17QUE_DESCRIPTIF_230619.pdf — client, jamais dans le dépôt)** : ligne 2 de Documents (`deOctets`, `deRendu`, enveloppe de `ch02cRender` pour i = 2 ; dessin `contenuDescDG`
+  de sg3_docsub.js, `o.descDG`) — mêmes données et réglages que le modèle du moteur (`ch02cJob` → descTable). Page de garde : « PROVISOIRE » en rouge (Bold 31, devis non
+  validé ; « ANNULÉ » s'il est annulé ; rien s'il est validé), rubriques Ouvrage (description + adresse d'affaire), Maître de l'ouvrage, Architecte, Direction des travaux
+  (libellés Light 8 alignés à droite à x 205.5, valeurs Regular 8 à x 210.5), date jj.mm.aa et titre « N° - DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION » + description en gras 11,
+  deux blocs de signature. Corps : numéro CFC aligné à droite à x 122.4, titre en capitales à x 128.8 (gras pour 1 et 2 chiffres, Regular au-delà), CFC à 1 chiffre entre deux
+  filets de 0,75 pt (x 85 → 510.2), descriptif Light 7,5 pt interligne 9, lignes entièrement en capitales = sous-titres Regular 8 soulignés, remarques du devis à la fin
+  (« Remarques ») ; écarts du modèle (titre après texte : 22 / 37 / 39 pt, après titre : 17, titre → texte : 12) ; titre jamais seul en bas de page. Réglages ▸ Montants ▸
+  **« Afficher les montants »** (Paulo, même jour ; `reglages.descMontants`, décoché par défaut) : montant à droite de chaque CFC et ouvrage ; descriptifs assemblés sans
+  montants : lignes d'ouvrage masquées. Case placée par `rang` (tri du panneau).
   **Le PDF suit la présentation du devis (08.11.2026, Paulo : « dans PDF, afficher les options selon affichage sélectionné dans devis »)** : choisir une présentation
   (Présentation ▾ du devis) règle aussi le PDF — Standard et Avec colonnes honoraires : sans descriptif ni calcul ; Toutes les colonnes et Avec le descriptif : descriptif ;
   Toutes les colonnes avec le calcul de prix et Avec le descriptif et le calcul de prix : descriptif et calcul (ses trois cases) — enveloppes de `ch02aSetMode` et de `presMenu`,

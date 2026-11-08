@@ -947,7 +947,7 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
     const rang=t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }, M=[]; let h='';
     const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(it.ind||(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position')))?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
     const seg=(lib,opts,pile)=>'<div class="sgdv-sg'+(pile?' pile':'')+'">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg'+(ok?'':' dis')+'" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'" tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'" data-k="'+E('seg:'+lib+':'+o.l)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
-    VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>rang(a.t)-rang(b.t)); if(!A.length) return; let corps='';
+    VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>(a.rang!=null?a.rang:rang(a.t))-(b.rang!=null?b.rang:rang(b.t))); if(!A.length) return; let corps='';
       if(g==='Montants'){ const ar=A.filter(x=>/^arrondir à/i.test(x.t)); A=A.filter(x=>!/^arrondir à/i.test(x.t)); const sp=A.findIndex(x=>/pourcentages/i.test(x.t)), av=sp<0?A:A.slice(0,sp), ap=sp<0?[]:A.slice(sp);
         corps=av.map(ck).join('')+(ar.length?seg('Arrondir à',[{l:'aucun',ti:'Sans arrondi',on:!ar.some(x=>x.chk),it:ar.find(x=>x.chk)?Object.assign({},ar.find(x=>x.chk),{chk:false}):null},...ar.map(x=>({l:x.t.replace(/^arrondir à\s*/i,''),on:x.chk,it:x.chk?null:x}))],true):'')+ap.map(ck).join(''); }
       else if(g==='Sauts de page'){ const rz=A.find(x=>x.raz); A=A.filter(x=>x!==rz); const sa=A.find(x=>x.bascule), pr=A.filter(x=>x!==sa);   /* devis général : interrupteur « Sans sauts de page » (blanc désactivé, bleu nuit activé), présentations seulement s'il y en a plusieurs ; autres documents : choix d'origine */
@@ -1567,5 +1567,46 @@ function hoRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'h'+Date.
   pdf.catch(e=>console.error(e)); S.memo.set(id,{pdf,titre:'Honoraires',o:{}}); while(S.memo.size>40) S.memo.delete(S.memo.keys().next().value);
   return {title:(rec&&rec.doc&&rec.doc.nom)||'Honoraires',css:'/*sgimp:'+id+'*/',html:''}; }
 { const r1=ch02cRender; ch02cRender=function(X,i,rec){ if(+i===1&&X&&X.sgde&&rec&&rec.doc&&rec.doc.report&&window.SGIMP&&typeof SGDS!=='undefined') return hoRendu(X,rec); return r1.apply(this,arguments); }; }
+/* ═══ DEVIS DESCRIPTIF AU DESSIN DU DESCRIPTIF DU BUREAU (08.11.2026, Paulo : « voici à quoi doit ressembler le descriptif, reproduis celui-ci ici », modèle
+   17QUE_DESCRIPTIF_230619 ; « ajoute une option qui permet d'afficher les montants en lien avec le descriptif ») ═══
+   Ligne 2 de Documents : mêmes données et réglages que le modèle du moteur (ch02cJob → descTable : positions, descriptifs, ouvrages, options du document), dessinées par
+   sgDsPdf (o.descDG, contenuDescDG de sg3_docsub.js) : page de garde (« PROVISOIRE » en rouge tant que le devis n'est pas validé, « ANNULÉ » s'il est annulé ; ouvrage, maître
+   de l'ouvrage, architecte, direction des travaux ; date et titre en gras 11 pt ; signatures), puis les CFC — numéro dans la marge, titre en capitales (gras pour 1 et 2
+   chiffres, CFC à 1 chiffre entre deux filets), descriptif en Light 7,5 pt, lignes en capitales soulignées (sous-titres) — et les remarques du devis à la fin. Réglages ▸
+   Montants ▸ « Afficher les montants » (reglages.descMontants, faux par défaut comme le modèle) : montant de chaque position et ouvrage à droite. */
+const deDate=d=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d||'')); if(m) return m[3]+'.'+m[2]+'.'+m[1].slice(2); const x=/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/.exec(String(d||'').trim()); return x?x[1].padStart(2,'0')+'.'+x[2].padStart(2,'0')+'.'+x[3].slice(-2):String(d||''); };
+async function deOctets(X,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
+  const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{};
+  const cD=ch02cC(X,'desc'), oD=cD.o, MTd=!!((E.reglages||{}).descMontants), rep=ch02cPrep(rec.doc.report), J=ch02cJob(cD,rep); let band=null;
+  (rep.sections||[]).forEach(sec=>(sec.bands||[]).forEach(b=>{ if(b&&b.ch02c&&b.ch02c.name==='descTable'&&!band) band=b; }));
+  const key=band?String(band.f).split('|').pop():'', rows0=(key&&J.tables[key]&&J.tables[key].rows)||[], v=(c,j)=>c[j]==null?'':String(c[j]);
+  const blocs=[], maj=t=>/[A-ZÀ-Ý]/.test(t)&&!/[a-zà-ÿ]/.test(t)&&t.replace(/[^A-Za-zÀ-ÿ]/g,'').length>=3;
+  const texte=t=>{ String(t==null?'':t).replace(/\r\n?/g,'\n').split('\n').forEach(l=>{ const x=l.replace(/\s+$/,''); if(!x.trim()) blocs.push({t:'vide'}); else blocs.push({t:maj(x.trim())?'sub':'txt',txt:x.trim()}); }); blocs.push({t:'vide'}); };
+  rows0.forEach(r=>{ if(!r||!r.c||r.st==='space') return; const c=r.c, n=v(c,0).trim();
+    if(r.st==='cd'){ texte(v(c,1)); return; }
+    if(n){ blocs.push({t:'h',n,txt:v(c,1).trim(),niv:n.length===1?1:n.length===2?2:3,mt:v(c,4).trim()}); return; }
+    if((v(c,2).trim()||v(c,3).trim())&&!(oD.compactDescription&&!MTd)) blocs.push({t:'ouv',txt:[v(c,2).trim(),v(c,3).trim()].filter(Boolean).join(' · '),mt:v(c,4).trim()}); });
+  const rem=(E.remarques||[]).filter(r=>String(r.nom||'').trim()||String(r.texte||'').trim());
+  if(rem.length){ blocs.push({t:'h',n:'',txt:'Remarques',niv:2,mt:''}); rem.forEach(r=>{ if(String(r.nom||'').trim()) blocs.push({t:'lib',txt:String(r.nom).trim()}); texte(r.texte); }); }
+  const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
+  let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
+  const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burT=un([bur.nom,...(bur.lignes||[])]);
+  const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
+  const desc=String(p.DESCRIPTION||p.TITLE||'').trim(), ouv=un([desc,...((A&&A.affaire&&A.affaire.lignes)||[])]);
+  const sc=+doc.STATECODE, statut=sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE', dte=ch02aDate(E,doc)||today(), filtre=dgFiltreTexte(E,X.filter);
+  const couverture={statut,date:deDate(dte),titre:[[p.NUMBER,'DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION'].filter(Boolean).join(' - '),desc.toLocaleUpperCase('fr')].concat(filtre?[filtre]:[]),
+    rub:[['Ouvrage :',ouv],['Maître de l’ouvrage :',A&&A.mo?un(A.mo.lignes||[]):''],['Architecte :',burT],['Direction des travaux :',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
+  const nomF='Descriptif '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
+  const opt=w.JSON.parse(JSON.stringify({titre:'Descriptif',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:dte,type:'Devis descriptif',description:nomF,
+    descDG:{couverture,blocs,montants:MTd}})), j=new w.Array(); opt.journal=j;
+  const oct=await fn(R,null,opt); if(j.length) console.info('Descriptif :',Array.from(j));
+  return {oct,nom:nomF.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; }
+function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.now().toString(36), pdf=deOctets(X,rec).then(r=>new Blob([r.oct],{type:'application/pdf'}));
+  pdf.catch(e=>console.error(e)); S.memo.set(id,{pdf,titre:'Devis descriptif',o:{}}); while(S.memo.size>40) S.memo.delete(S.memo.keys().next().value);
+  return {title:(rec&&rec.doc&&rec.doc.nom)||'Devis descriptif',css:'/*sgimp:'+id+'*/',html:''}; }
+{ const r2=ch02cRender; ch02cRender=function(X,i,rec){ if(+i===2&&X&&X.sgde&&rec&&rec.doc&&rec.doc.report&&window.SGIMP&&typeof SGDS!=='undefined') return deRendu(X,rec); return r2.apply(this,arguments); }; }
+/* « Afficher les montants » du devis descriptif (Paulo, 08.11.2026) : dans le groupe Montants, sous « Masquer les décimales » */
+{ const p2=ch02cPrefItems; ch02cPrefItems=function(X,i){ const L=p2.apply(this,arguments); if(+i!==2||!X||!X.sgde||!Array.isArray(L)) return L; const on=!!(((X.E||{}).reglages||{}).descMontants);
+    return L.concat([{t:'Afficher les montants',chk:on,grp:'Montants',rang:999,fn:()=>{ if(!ch02aCan(X)) return; const Rg=X.E.reglages||(X.E.reglages={}); if(on) delete Rg.descMontants; else Rg.descMontants=true; X.touch(); }}]); }; }
 const SGDE=window.SGDE={X:null,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 })();

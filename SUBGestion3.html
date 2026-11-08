@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 17:06 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 17:07 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38804,7 +38804,7 @@ function pdfCommentaire(M,id){ const rec=DS.get(CH03A_T,id); if(!rec) return; if
 function pdfGroupes(el,o){ const tb=el.querySelector('tbody'); if(!tb) return; const nc=(o.cols||[]).length||3, cle=o.key||(r=>r.ID), par=new Map((o.rows||[]).map(r=>[String(cle(r)),r]));
   const trs=[...tb.rows].filter(t=>t.dataset&&t.dataset.k), ordre=[...PDF_GENRES,['autres','Autres']], gi=t=>{ const r=par.get(t.dataset.k); const k=ordre.findIndex(x=>x[0]===pdfGenre(r)); return k<0?ordre.length-1:k; };
   ordre.forEach(([k,lib],i)=>{ const L=trs.filter(t=>gi(t)===i); if(!L.length&&k==='autres') return;
-    const hd=document.createElement('tr'); hd.className='sgpdf-g'+(L.length?'':' vide'); hd.innerHTML='<td colspan="'+nc+'">'+E(lib)+(L.length?'<small>'+L.length+(L.length>1?' fichiers':' fichier')+'</small>':'<small>aucun PDF</small>')+'</td>';
+    const hd=document.createElement('tr'); hd.className='sgpdf-g'+(L.length?'':' vide'); hd.innerHTML='<td colspan="'+nc+'">'+E(lib)+(L.length?'<small>'+L.length+(L.length>1?' fichiers':' fichier')+'</small>':'')   /* « aucun PDF » retiré (Paulo, 08.11.2026 : « supprimer ») */+'</td>';
     tb.insertBefore(hd,L.length?L[0]:(trs.find(t=>gi(t)>i)||null)); }); }
 { const g0=grid; grid=function(el,o){ const M=el&&el._sgPdf; if(!M||!o||!Array.isArray(o.cols)) return g0.apply(this,arguments);
     o.cols.forEach(c=>{ if(c._sgpdf) return; c._sgpdf=true;

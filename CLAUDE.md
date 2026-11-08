@@ -1684,7 +1684,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`tt('document')`, comme les autres pages ; le grand titre de la garde garde la phase).
   **Graphisme « Bleu nuit » du tableau (08.11.2026, variante 4 choisie par Paulo parmi 5 ; maquettes `subgestion3/_backup_20261108_maquette_dg/`)** :
   `livretDG.style:'nuit'` (au lieu de `zebra`) dans `contenuLivret` ▸ `tableau` (sg3_docsub.js) : titres des colonnes en blanc (Regular 8) sur une bande bleu
-  nuit #003346 ; CFC à 1 chiffre (styles O, F) en bleu nuit, CFC à 2 chiffres (W) en noir, pourcentage compris (d'abord en bleu nuit ; « texte en noir », même jour), filet bleu nuit sous les CFC à 1 chiffre (0,75 pt ; d'abord 0,5) ; filet gris (#d8d8d4, 0,5 pt ; d'abord 0,25, « épaissir légèrement les lignes »)
+  nuit #003346 ; CFC à 1 chiffre (styles O, F) en bleu nuit, CFC à 2 chiffres (W) en noir, pourcentage compris (d'abord en bleu nuit ; « texte en noir », même jour), filet bleu nuit sous les CFC à 1 chiffre (0,75 pt ; d'abord 0,5) ; filet gris (#d8d8d4, 0,5 pt ; d'abord 0,25, « épaissir légèrement les lignes ») — pas de filet gris sous la dernière position d'une page (Paulo, 08.11.2026 : « supprimer la ligne lorsqu'il n'y a plus de texte en dessous » ; le trait bleu nuit sous un CFC à 1 chiffre reste)
   sous chaque position, après ses lignes de calcul (D) et son descriptif (X), rien entre une position et ses détails ; lignes de calcul et descriptif en gris
   #706F6F ; pourcentages en bleu nuit ; total (T) sur une bande bleu nuit, texte blanc ; plus de rangées grises ni de filet noir. Montants en noir. Sans
   `style`, l'ancien rendu (zébrage, filets noirs) reste. Page Information : ni grisé ni filets.

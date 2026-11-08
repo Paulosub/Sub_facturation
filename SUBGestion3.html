@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 17:00 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 17:06 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38198,11 +38198,21 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgdc-aide i.k{background:var(--s-fond)}
 .sgdc-aide i.a{border:2px solid var(--s-nuit)}
 /* listes « Fichiers PDF » : commentaire, groupes par document (devis) */
-.sgpdf .sgpdf-com{color:var(--s-gris);white-space:normal}
-.sgpdf tr.sgpdf-g td{background:var(--s-nuit3)!important;color:var(--s-noir)!important;font-weight:700;font-size:12px;padding:7px 12px!important;border-top:1px solid var(--s-filet)}
-.sgpdf tr.sgpdf-g td small{font-weight:400;color:var(--s-gris);margin-left:8px;font-size:11.5px}
-.sgpdf tr.sgpdf-v td{color:var(--s-gris)!important;font-style:italic;font-size:12px;padding:6px 12px 6px 24px!important;background:#fff!important}
-.sgpdf tr.sgpdf-g,.sgpdf tr.sgpdf-v{pointer-events:none}
+.sgpdf .sgpdf-com{color:var(--s-noir);white-space:normal}
+/* groupes : intertitre comme les sections de l'app (bleu nuit, filet noir au-dessus), nombre ou « aucun PDF » à côté */
+.sgpdf table.g tbody tr.sgpdf-g td{background:#fff!important;color:var(--s-nuit)!important;font-weight:700;font-size:12.5px;height:auto;padding:16px 12px 6px!important;border-top:1px solid var(--s-noir)!important;border-bottom:1px solid var(--s-filet)!important}
+.sgpdf table.g tbody tr.sgpdf-g:first-child td{border-top:0!important;padding-top:12px!important}
+.sgpdf table.g tbody tr.sgpdf-g td small{font-weight:400;color:var(--s-gris);margin-left:10px;font-size:11.5px}
+.sgpdf table.g tbody tr.sgpdf-g.vide td{border-bottom:0!important}
+.sgpdf tr.sgpdf-g{pointer-events:none}
+/* lignes : icône, nom, commentaire juste à côté, date à droite */
+.sgpdf table.g tbody tr:not(.sgpdf-g) td{height:36px;font-size:13px}
+.sgpdf table.g tbody tr:not(.sgpdf-g) td:first-child{padding-left:12px!important}
+.sgpdf .sgpdf-nom{display:inline-flex;align-items:center;gap:8px;max-width:100%}
+.sgpdf .sgpdf-nom svg{width:15px;height:15px;flex:none;color:var(--s-gris)}
+.sgpdf table.g tbody tr.on .sgpdf-nom svg{color:var(--s-nuit)}
+.sgpdf table.g td.r,.sgpdf table.g th.r{text-align:right;font-variant-numeric:tabular-nums;color:var(--s-gris)}
+.sgpdf table.g thead th:first-child{padding-left:12px!important}
 .sgde .sgpdf.sgpdf-dv{height:auto!important;min-height:150px;max-height:none!important}
 .sgpdf-ta{width:100%;min-width:340px;box-sizing:border-box;resize:vertical;font:inherit;font-size:13px;line-height:1.45;padding:7px 9px}
 @media (max-height:860px){.sgdc-opts{padding:8px 24px 10px}.sgdc-desc{padding-top:10px}.sgdc-desc textarea{min-height:52px}.sgdc-ttc .v{font-size:21px}}
@@ -38767,6 +38777,7 @@ const PDF_GENRES=[['devis','Devis'],['descriptif','Descriptif'],['honoraires','H
 const pdfCle=v=>String(v==null?'':v).normalize('NFC').trim().toLowerCase();
 const pdfGenre=r=>{ if(r&&r.GENRE_DOC) return r.GENRE_DOC; const n=pdfCle(r&&r.NOM);
   for(let i=0;i<CH02C_ROWS.length&&i<GENRE_LIGNE.length;i++){ const p=pdfCle(CH02C_ROWS[i].pdf); if(p&&n.startsWith(p)) return GENRE_LIGNE[i]; } return 'autres'; };
+const ICO_PDF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg>';
 const pdfPeut=M=>!(M&&M.ro&&M.ro())&&(typeof sgDroit!=='function'||!!sgDroit('documents','depot'));
 { const nd0=ch03bNouveauPdfDlg; ch03bNouveauPdfDlg=function(nom,dossier,o){ const n0=document.querySelectorAll('.dlg').length, p=nd0.apply(this,arguments), L=document.querySelectorAll('.dlg'), dlg=L.length>n0?L[L.length-1]:null;
     let ta=null; try{ const f=dlg&&dlg.querySelector('.form'), inp=f&&f.querySelector('input.inp');
@@ -38793,10 +38804,12 @@ function pdfCommentaire(M,id){ const rec=DS.get(CH03A_T,id); if(!rec) return; if
 function pdfGroupes(el,o){ const tb=el.querySelector('tbody'); if(!tb) return; const nc=(o.cols||[]).length||3, cle=o.key||(r=>r.ID), par=new Map((o.rows||[]).map(r=>[String(cle(r)),r]));
   const trs=[...tb.rows].filter(t=>t.dataset&&t.dataset.k), ordre=[...PDF_GENRES,['autres','Autres']], gi=t=>{ const r=par.get(t.dataset.k); const k=ordre.findIndex(x=>x[0]===pdfGenre(r)); return k<0?ordre.length-1:k; };
   ordre.forEach(([k,lib],i)=>{ const L=trs.filter(t=>gi(t)===i); if(!L.length&&k==='autres') return;
-    const hd=document.createElement('tr'); hd.className='sgpdf-g'; hd.innerHTML='<td colspan="'+nc+'">'+E(lib)+(L.length?'<small>'+L.length+'</small>':'')+'</td>';
-    if(L.length){ tb.insertBefore(hd,L[0]); return; }
-    const suiv=trs.find(t=>gi(t)>i)||null, v=document.createElement('tr'); v.className='sgpdf-v'; v.innerHTML='<td colspan="'+nc+'">Aucun PDF</td>'; tb.insertBefore(hd,suiv); tb.insertBefore(v,suiv); }); }
+    const hd=document.createElement('tr'); hd.className='sgpdf-g'+(L.length?'':' vide'); hd.innerHTML='<td colspan="'+nc+'">'+E(lib)+(L.length?'<small>'+L.length+(L.length>1?' fichiers':' fichier')+'</small>':'<small>aucun PDF</small>')+'</td>';
+    tb.insertBefore(hd,L.length?L[0]:(trs.find(t=>gi(t)>i)||null)); }); }
 { const g0=grid; grid=function(el,o){ const M=el&&el._sgPdf; if(!M||!o||!Array.isArray(o.cols)) return g0.apply(this,arguments);
+    o.cols.forEach(c=>{ if(c._sgpdf) return; c._sgpdf=true;
+      if(c.k==='NOM'){ c.w=c.w||300; if(!c.f) c.f=r=>'<span class="sgpdf-nom">'+ICO_PDF+E(r.NOM||'')+'</span>'; }
+      else if(c.k==='MODIFIED'){ c.w=170; c.t='Dernière modification'; c.cls=((c.cls||'')+' r').trim(); } });
     if(!o.cols.some(c=>c.k==='COMMENTAIRE')){ const i=o.cols.findIndex(c=>c.k==='NOM');
       o.cols.splice(i<0?1:i+1,0,{k:'COMMENTAIRE',t:'Commentaire',f:r=>'<span class="sgpdf-com" title="'+E(r.COMMENTAIRE?'Double-cliquez pour modifier le commentaire':'Double-cliquez pour ajouter un commentaire')+'">'+E(r.COMMENTAIRE||'')+'</span>'}); }
     const dv=M.devis(); if(dv&&Array.isArray(o.rows)){ const ordre=PDF_GENRES.map(x=>x[0]), rg=r=>{ const k=ordre.indexOf(pdfGenre(r)); return k<0?ordre.length:k; };

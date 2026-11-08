@@ -1583,6 +1583,17 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `o.outils(maj)` (boutons ajoutés après « Partager », reçoivent `maj(src)` pour redessiner), `ch01aView` le transmet, `ch02cView` y met « Réglages ▾ » (`ch02cPrefItems`, cases cochées
   « ✓ », enregistrées par `ch02cSetOpt`) puis recalcule le document (`ch02cRender`) : le PDF se redessine aussitôt, « PDF » enregistre la version à jour. Devis général, Honoraires,
   Devis descriptif ; v1 et v2 reconstruites. Onglet Documents : titre de section « Devis » au-dessus des trois documents, comme « Fichiers PDF » (`.sgde-dh`).
+  **Documents du devis : ordre, commentaire et groupes des PDF (08.11.2026, Paulo : « modifier l'ordre, et même ordre dans la liste des fichiers PDF »,
+  « lorsque je crée le PDF, ajouter une cellule commentaire ; ajouter commentaire dans la liste des PDF », « créer des groupes de type de fichier : Devis,
+  honoraires, descriptif », « supprimer [Fonctions] et ajouter la fonction au bouton de droite »)** : documents dans l'ordre Devis général, Devis descriptif,
+  Honoraires (`ORDRE_DOCS`, indices du moteur gardés) ; fenêtre « Nom du fichier » de « Créer le PDF » (`ch03bNouveauPdfDlg` enveloppé : toutes les listes de
+  PDF de l'app) avec un champ « Commentaire », prérempli par celui du fichier du même nom ; enregistré dans le fichier (`depotfichier.COMMENTAIRE`) avec le
+  document d'origine (`GENRE_DOC` devis | descriptif | honoraires, posé par « Créer le PDF » des documents du devis, enveloppe de `ch02cGenPdf` posée en
+  dernier) dans le même `DS.commit` (enveloppe de `ch03aEnregistrer`) ; un PDF remplacé autrement garde son commentaire et son document. Listes « Fichiers
+  PDF » (`ch03cPdfZone` enveloppé, `grid` pour les zones `el._sgPdf`) : colonne « Commentaire » (double-clic dessus ou clic droit ▸ « Modifier le
+  commentaire… », `pdfCommentaire`, droit « documents : dépôt ») ; devis : groupes Devis · Descriptif · Honoraires (« Aucun PDF » si vide) + Autres (PDF
+  importés, fusionnés ; anciens PDF reconnus au nom par défaut du moteur), bouton « Fonctions » de la liste retiré (même menu au clic droit, `popMenu`
+  enveloppé pour y ajouter « Modifier le commentaire… »). Classes `.sgpdf*`.
   Bouton « Modifier les textes… » retiré de cette fenêtre (« supprimer », même jour ; `ch02cView` / `ch01aView` enveloppés dans sg3_devis.js, sans l'option `edit`) ; les autres
   visionneuses le gardent, DeltaSub.html seul aussi.
   **Devis général en PDF (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel)** : Imprimer ▸ « Devis

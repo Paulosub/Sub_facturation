@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 16:40 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 17:00 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38197,6 +38197,14 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgdc-aide i{display:inline-block;width:14px;height:14px;margin-right:5px;vertical-align:-3px;border:1px solid var(--s-gris3);background:#fff}
 .sgdc-aide i.k{background:var(--s-fond)}
 .sgdc-aide i.a{border:2px solid var(--s-nuit)}
+/* listes « Fichiers PDF » : commentaire, groupes par document (devis) */
+.sgpdf .sgpdf-com{color:var(--s-gris);white-space:normal}
+.sgpdf tr.sgpdf-g td{background:var(--s-nuit3)!important;color:var(--s-noir)!important;font-weight:700;font-size:12px;padding:7px 12px!important;border-top:1px solid var(--s-filet)}
+.sgpdf tr.sgpdf-g td small{font-weight:400;color:var(--s-gris);margin-left:8px;font-size:11.5px}
+.sgpdf tr.sgpdf-v td{color:var(--s-gris)!important;font-style:italic;font-size:12px;padding:6px 12px 6px 24px!important;background:#fff!important}
+.sgpdf tr.sgpdf-g,.sgpdf tr.sgpdf-v{pointer-events:none}
+.sgde .sgpdf.sgpdf-dv{height:auto!important;min-height:150px;max-height:none!important}
+.sgpdf-ta{width:100%;min-width:340px;box-sizing:border-box;resize:vertical;font:inherit;font-size:13px;line-height:1.45;padding:7px 9px}
 @media (max-height:860px){.sgdc-opts{padding:8px 24px 10px}.sgdc-desc{padding-top:10px}.sgdc-desc textarea{min-height:52px}.sgdc-ttc .v{font-size:21px}}
 @media (max-height:860px){.sgde-tete .sgfh-meta{display:none}.sgde-tete .sgfh-tete{padding:6px 14px}.sgde-tete .sgfh-ini{font-size:22px}.sgde-tete .sgfh-nm h2{font-size:17px}.sgde-tete .sgfh-nm .lb{margin:0}.sgde-kp .nx-kpi{padding:6px 12px 6px 0}.sgde-kp .nx-kpi .v{font-size:clamp(11px,calc(2.4cqi - 5.6px),18px);margin-top:3px}.sgde-kp .nx-kpi .s{display:none}.sgdc-dlg .sgfh-tete{padding:8px 24px}.sgdc-tab{max-height:36vh!important}}
 @media (max-width:980px){.sgde-cfc{flex-basis:260px!important;width:260px!important}.sgde-dc{grid-template-columns:1fr}.sgde-dc .a{justify-content:flex-start}.sgdc-opts{grid-template-columns:1fr 1fr!important}}
@@ -38729,17 +38737,81 @@ const dr0=ch02aDraw; ch02aDraw=function(X){ dr0(X); if(X.sgde) decoCat(X); };
 const ETAT_DOC=(d,f,pdf)=>[d?'Document créé':'Pas encore créé',...(pdf?[f?'PDF créé : '+f.NOM:'sans PDF']:[])].join(' · ');
 /* PDF d'une ligne : le moteur ne connaît que le PDF officiel (documents/<genre>.pdf) ; « Créer le PDF » écrit dans documents/archive, sous le nom proposé. Sans ceci, la ligne restait « sans PDF » juste après sa création. Affichage seulement : les règles du moteur (ch02cPdfHas : effacer, avertir à l'ouverture) ne changent pas. Un PDF renommé reste dans la liste Fichiers PDF. */
 const pdfLigne=(X,r)=>{ try{ return ch03aTrouve(ch02cDos(X),r.g+'.pdf')||ch03aTrouve(ch02cDos(X,'archive'),ch03aNomPdf(r.pdf))||null; }catch(_){ return null; } };
+/* ordre des documents du devis (Paulo, 08.11.2026 : « modifier l'ordre, et même ordre dans la liste des fichiers PDF ») : Devis général, Devis descriptif,
+   Honoraires — indices du moteur (CH02C_ROWS) gardés */
+const ORDRE_DOCS=[0,2,1];
 function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<2||!K[1].classList.contains('pane')) return; const pdf=ch02cPdfOn(), L=el('div','sgde-dl');
-  CH02C_ROWS.forEach((r,i)=>{ const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(i===0?['Modèle du bureau (ancien logiciel)',...(pdf?[fl?'PDF créé : '+fl.NOM:'sans PDF']:[])].join(' · '):ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');   /* ligne 0 : devis général au modèle du bureau (bloc 46), toujours prêt */
+  ORDRE_DOCS.forEach(i=>{ const r=CH02C_ROWS[i]; if(!r) return; const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(i===0?['Modèle du bureau (ancien logiciel)',...(pdf?[fl?'PDF créé : '+fl.NOM:'sans PDF']:[])].join(' · '):ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');   /* ligne 0 : devis général au modèle du bureau (bloc 46), toujours prêt */
     a.append(ibtn({label:d||i===0?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})); L.append(c); });
   K[0].remove(); K[1].replaceWith(L); dp.querySelectorAll(':scope>.sgde-dh').forEach(x=>x.remove()); L.before(el('div','ph2 sgde-dh','<b>Devis</b>'));   /* titre de la section, comme « Fichiers PDF » (Paulo, 07.11.2026 : « ajouter ici Devis ») */
-  const bz=K[2]&&K[2].querySelector('.ib'); if(bz) lib(bz,'Fonctions'); }
+  const bz=K[2]&&K[2].querySelector('.ib'); if(bz) bz.style.display='none';   /* « Fonctions » retiré (Paulo, 08.11.2026 : « supprimer et ajouter la fonction au bouton de droite ») : même menu au clic droit sur la liste */
+}
 const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLignes(X); }catch(e){ console.error(e); } };
 /* fenêtre des documents du devis (Devis général, Honoraires, Devis descriptif) : sans « Modifier les textes… » (Paulo, 07.11.2026 : « supprimer ») ; les « Réglages » restent dans la barre.
    Les autres visionneuses (contrôle des coûts, soumission…) gardent le bouton. */
 { let sansTextes=false; const v0=ch02cView, a0=ch01aView;
   ch02cView=function(){ sansTextes=true; try{ return v0.apply(this,arguments); } finally{ sansTextes=false; } };
   ch01aView=function(t,R,o){ if(sansTextes&&o&&o.edit){ o=Object.assign({},o); delete o.edit; } return a0.call(this,t,R,o); }; }
+
+/* ═══ Fichiers PDF : commentaire, groupes par document, menu au clic droit (08.11.2026, Paulo : « lorsque je crée le PDF, ajouter une cellule
+   commentaire ; ajouter commentaire dans la liste des PDF », « créer des groupes de type de fichier : Devis, Honoraires, Descriptif ») ═══
+   - fenêtre « Nom du fichier » de « Créer le PDF » (ch03bNouveauPdfDlg, toutes les listes de PDF) : champ « Commentaire », prérempli avec celui du
+     fichier du même nom ; enregistré dans le fichier (depotfichier.COMMENTAIRE) avec le document d'origine (GENRE_DOC : devis | honoraires |
+     descriptif, posé par « Créer le PDF » des documents du devis) ; un PDF remplacé autrement garde son commentaire et son document ;
+   - listes « Fichiers PDF » (ch03cPdfZone) : colonne « Commentaire » ; double-clic sur le commentaire ou clic droit ▸ « Modifier le commentaire… » ;
+   - devis : liste rangée en groupes Devis · Descriptif · Honoraires (+ Autres : PDF importés, fusionnés…) ; PDF créés avant : document reconnu au
+     nom par défaut (« Devis général », « Montant soumis », « Devis descriptif »). */
+const SGPDF={attente:null,genre:null,ctx:null};
+const GENRE_LIGNE=['devis','honoraires','descriptif'];   /* document d'origine par indice du moteur (CH02C_ROWS) */
+const PDF_GENRES=[['devis','Devis'],['descriptif','Descriptif'],['honoraires','Honoraires']];   /* ordre des groupes = ordre des documents (ORDRE_DOCS) */
+const pdfCle=v=>String(v==null?'':v).normalize('NFC').trim().toLowerCase();
+const pdfGenre=r=>{ if(r&&r.GENRE_DOC) return r.GENRE_DOC; const n=pdfCle(r&&r.NOM);
+  for(let i=0;i<CH02C_ROWS.length&&i<GENRE_LIGNE.length;i++){ const p=pdfCle(CH02C_ROWS[i].pdf); if(p&&n.startsWith(p)) return GENRE_LIGNE[i]; } return 'autres'; };
+const pdfPeut=M=>!(M&&M.ro&&M.ro())&&(typeof sgDroit!=='function'||!!sgDroit('documents','depot'));
+{ const nd0=ch03bNouveauPdfDlg; ch03bNouveauPdfDlg=function(nom,dossier,o){ const n0=document.querySelectorAll('.dlg').length, p=nd0.apply(this,arguments), L=document.querySelectorAll('.dlg'), dlg=L.length>n0?L[L.length-1]:null;
+    let ta=null; try{ const f=dlg&&dlg.querySelector('.form'), inp=f&&f.querySelector('input.inp');
+      if(f&&inp){ ta=document.createElement('textarea'); ta.className='inp sgpdf-ta'; ta.rows=3; ta.placeholder='Facultatif'; let touche=false;
+        const pre=()=>{ if(touche) return; const ex=ch03aNomPdf(inp.value)?ch03aTrouve(dossier,ch03aNomPdf(inp.value)):null; ta.value=ex&&ex.COMMENTAIRE?String(ex.COMMENTAIRE):''; };
+        ta.addEventListener('input',()=>{ touche=true; }); inp.addEventListener('input',pre);
+        const lb=document.createElement('label'); lb.textContent='Commentaire'; f.append(lb,ta); pre(); } }catch(e){ console.error(e); }
+    const g=SGPDF.genre;
+    return Promise.resolve(p).then(n=>{ if(n!=null) SGPDF.attente={dos:ch03aDos(dossier),nom:pdfCle(n),com:ta?ta.value.trim():null,genre:g||null}; return n; }); }; }
+/* enregistrement : commentaire et document d'origine posés dans le même DS.commit que le fichier ; gardés quand un PDF est remplacé sans la fenêtre */
+{ const en0=ch03aEnregistrer; ch03aEnregistrer=async function(dossier,nom,r,o){ const dos=ch03aDos(dossier), cle=pdfCle(nom), A0=SGPDF.attente;
+    const A=A0&&A0.dos===dos&&A0.nom===cle?A0:null; if(A) SGPDF.attente=null;
+    const ex=ch03aTrouve(dos,nom), garde={}; if(ex){ if(ex.COMMENTAIRE) garde.COMMENTAIRE=ex.COMMENTAIRE; if(ex.GENRE_DOC) garde.GENRE_DOC=ex.GENRE_DOC; }
+    if(A){ if(A.com!=null){ if(A.com) garde.COMMENTAIRE=A.com; else delete garde.COMMENTAIRE; } if(A.genre) garde.GENRE_DOC=A.genre; }
+    if(!Object.keys(garde).length) return en0.apply(this,arguments);
+    const dc0=DS.commit; DS.commit=function(ops){ (Array.isArray(ops)?ops:[]).forEach(op=>{ if(op&&op.t===CH03A_T&&op.val&&op.val.DOSSIER===dos&&pdfCle(op.val.NOM)===cle) Object.assign(op.val,garde); }); return dc0.apply(this,arguments); };
+    try{ return await en0.apply(this,arguments); } finally{ DS.commit=dc0; } }; }
+function pdfCommentaire(M,id){ const rec=DS.get(CH03A_T,id); if(!rec) return; if(!pdfPeut(M)){ toast('Commentaire en lecture seule.',true); return; }
+  const ta=h('textarea',{class:'inp sgpdf-ta',rows:4}); ta.value=rec.COMMENTAIRE||'';
+  dialog({title:'Commentaire du PDF',body:formRows([['Fichier',h('div',{style:{paddingTop:'6px'}},rec.NOM)],['Commentaire',ta]],460),buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+    const v=ta.value.trim(), cur=DS.get(CH03A_T,id)||rec; if(String(cur.COMMENTAIRE||'')===v) return; const val=Object.assign({},cur); if(v) val.COMMENTAIRE=v; else delete val.COMMENTAIRE;
+    DS.commit([{t:CH03A_T,id,val,bseq:ctBseq(CH03A_T,id)}]).catch(e=>{ if(!(e&&e.conflict)) toast((e&&e.message)||String(e),true); }); }}]});
+  setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); },0); }
+function pdfGroupes(el,o){ const tb=el.querySelector('tbody'); if(!tb) return; const nc=(o.cols||[]).length||3, cle=o.key||(r=>r.ID), par=new Map((o.rows||[]).map(r=>[String(cle(r)),r]));
+  const trs=[...tb.rows].filter(t=>t.dataset&&t.dataset.k), ordre=[...PDF_GENRES,['autres','Autres']], gi=t=>{ const r=par.get(t.dataset.k); const k=ordre.findIndex(x=>x[0]===pdfGenre(r)); return k<0?ordre.length-1:k; };
+  ordre.forEach(([k,lib],i)=>{ const L=trs.filter(t=>gi(t)===i); if(!L.length&&k==='autres') return;
+    const hd=document.createElement('tr'); hd.className='sgpdf-g'; hd.innerHTML='<td colspan="'+nc+'">'+E(lib)+(L.length?'<small>'+L.length+'</small>':'')+'</td>';
+    if(L.length){ tb.insertBefore(hd,L[0]); return; }
+    const suiv=trs.find(t=>gi(t)>i)||null, v=document.createElement('tr'); v.className='sgpdf-v'; v.innerHTML='<td colspan="'+nc+'">Aucun PDF</td>'; tb.insertBefore(hd,suiv); tb.insertBefore(v,suiv); }); }
+{ const g0=grid; grid=function(el,o){ const M=el&&el._sgPdf; if(!M||!o||!Array.isArray(o.cols)) return g0.apply(this,arguments);
+    if(!o.cols.some(c=>c.k==='COMMENTAIRE')){ const i=o.cols.findIndex(c=>c.k==='NOM');
+      o.cols.splice(i<0?1:i+1,0,{k:'COMMENTAIRE',t:'Commentaire',f:r=>'<span class="sgpdf-com" title="'+E(r.COMMENTAIRE?'Double-cliquez pour modifier le commentaire':'Double-cliquez pour ajouter un commentaire')+'">'+E(r.COMMENTAIRE||'')+'</span>'}); }
+    const dv=M.devis(); if(dv&&Array.isArray(o.rows)){ const ordre=PDF_GENRES.map(x=>x[0]), rg=r=>{ const k=ordre.indexOf(pdfGenre(r)); return k<0?ordre.length:k; };
+      o.rows=o.rows.map((r,i)=>({r,i,g:rg(r)})).sort((a,b)=>a.g-b.g||a.i-b.i).map(x=>x.r); }
+    const res=g0.apply(this,arguments); el.classList.toggle('sgpdf-dv',!!dv); if(dv) try{ pdfGroupes(el,o); }catch(e){ console.error(e); } return res; }; }
+{ const pm0=popMenu; popMenu=function(at,items){ const C=SGPDF.ctx; if(C){ SGPDF.ctx=null; const L=typeof items==='function'?items():items;
+      if(Array.isArray(L)) items=[...L,...(L.length?['-']:[]),{t:'Modifier le commentaire…',dis:!C.id||!pdfPeut(C.M),fn:()=>pdfCommentaire(C.M,C.id)}]; }
+    return pm0.apply(this,[at,items,...[].slice.call(arguments,2)]); }; }
+{ const z0=ch03cPdfZone; ch03cPdfZone=function(o){ const z=z0.apply(this,arguments); try{ if(z&&z.el){
+      const val=v=>typeof v==='function'?v():v, M={dos:()=>val(o&&o.dossier), ro:()=>!!val(o&&o.lectureSeule), devis:()=>/(^|\/)Costestimate\/.+\/archive$/i.test(String(val(o&&o.dossier)||''))};
+      z.el._sgPdf=M; z.el.classList.add('sgpdf');
+      z.el.addEventListener('dblclick',e=>{ const td=e.target.closest&&e.target.closest('td'), tr=td&&td.parentNode; if(!tr||!tr.dataset||!tr.dataset.k||!td.querySelector('.sgpdf-com')) return;
+        e.stopPropagation(); e.preventDefault(); pdfCommentaire(M,tr.dataset.k); },true);
+      z.el.addEventListener('contextmenu',e=>{ const tr=e.target.closest&&e.target.closest('tr[data-k]'); SGPDF.ctx={M,id:tr?tr.dataset.k:null}; setTimeout(()=>{ SGPDF.ctx=null; },0); },true);
+      if(z.redraw) z.redraw(); } }catch(e){ console.error(e); } return z; }; }
 
 /* ── fenêtre « Calcul pour <CFC> » ── */
 const TH_CALC={'Calcul de quantités':['Formule','Calcul des quantités : formule, par exemple 12.5*3'],Base:['Base','Base du prix'],'Quantité':['Résultat','Quantité : résultat de la formule, ou saisie s’il n’y a pas de formule'],
@@ -38980,6 +39052,10 @@ async function dgGenPdf(X){ const dos=ch02cDos(X,'archive'); if(!dos) return;
 { const g0=ch02cGenPdf; ch02cGenPdf=function(X,i){ return +i===0&&X&&X.sgde?dgGenPdf(X):g0.apply(this,arguments); }; }
 { const n0=ch02cNewItems; ch02cNewItems=function(X,i){ const L=n0.apply(this,arguments); if(+i!==0||!X||!X.sgde) return L;
     const ok=typeof ch03bNouveauPdfDlg==='function'&&typeof ch03bProduire==='function'; return L.map(x=>x&&x.t===CH02C_L.genPdf?Object.assign({},x,{dis:!ok}):x); }; }
+/* document d'origine des PDF créés (« Créer le PDF » des documents du devis) : enveloppe posée en dernier, au-dessus de celle du devis général (dgGenPdf) */
+{ const g1=ch02cGenPdf; ch02cGenPdf=function(X,i){ SGPDF.genre=GENRE_LIGNE[+i]||null; let r;
+    try{ r=g1.apply(this,arguments); }catch(e){ SGPDF.genre=null; throw e; }
+    Promise.resolve(r).catch(()=>{}).then(()=>{ SGPDF.genre=null; }); return r; }; }
 const SGDE=window.SGDE={X:null,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 })();
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 21:52 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 21:57 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38307,7 +38307,9 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgdv-seg b:first-child{border-left:0}
 .sgdv-seg b:hover,.sgdv-seg b:focus-visible{background:var(--s-jaune3)}
 .sgdv-seg b.on{background:var(--s-nuit);color:#fff;cursor:default}
-.sgdv-seg.sgdv-tgl b.on{cursor:pointer}.sgdv-seg.sgdv-tgl b.on:hover,.sgdv-seg.sgdv-tgl b.on:focus-visible{background:var(--s-nuit);color:#fff;opacity:.88}   /* interrupteur « Sans sauts de page » : bleu nuit activé, cliquable pour désactiver */
+.sgdv-seg.sgdv-tgl b.on{cursor:pointer}
+.sgdv-raz{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:26px;margin:8px 0 4px;padding:0 8px;border:1px solid var(--s-gris3);background:#fff;font:inherit;font-size:12px;font-weight:700;color:var(--s-noir);cursor:pointer}
+.sgdv-raz svg{width:14px;height:14px;flex:none}.sgdv-raz:hover:not(:disabled),.sgdv-raz:focus-visible{background:var(--s-jaune3);outline:none}.sgdv-raz:disabled{opacity:.45;cursor:default}   /* remise à zéro des sauts de page (08.11.2026) */.sgdv-seg.sgdv-tgl b.on:hover,.sgdv-seg.sgdv-tgl b.on:focus-visible{background:var(--s-nuit);color:#fff;opacity:.88}   /* interrupteur « Sans sauts de page » : bleu nuit activé, cliquable pour désactiver */
 .sgdv-rf{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-top:1px solid var(--s-filet);background:var(--s-fond)}
 .sgdv-rf span{font-size:11.5px;color:var(--s-gris)}
 .sgdv-btn{height:34px;min-width:96px;padding:0 18px;border:2px solid var(--s-nuit);background:var(--s-nuit);font:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;border-radius:0}
@@ -38904,7 +38906,9 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
   if(+i===0){ const cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>dgSautsMarquer(cont,X)).observe(cont,{childList:true}); }   /* sauts de page visibles à l'écran (08.11.2026) */
   if(+i===0) R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>dgSautMenu(e,X,()=>{ dernier=''; panneau();
       try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(err){ console.error(err); L.echec(err); } },peut),true);   /* saut de page au clic droit (08.11.2026) */
-  const appliquer=it=>{ if(!it||it.dis||!peut()) return; try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau();
+  const appliquer=it=>{ if(!it||it.dis||!peut()) return;
+    if(it.raz){ try{ it.fn(()=>{ dernier=''; panneau(); try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); L.echec(e); } }); }catch(e){ console.error(e); } return; }   /* remise à zéro : redessin après la confirmation */
+    try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau();
     try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); L.echec(e); } };
   const panneau=()=>{ const ok=peut(), a=document.activeElement, kf=a&&rb.contains(a)&&a.dataset?a.dataset.k:null;
     const L0=(ch02cPrefItems(X,i)||[]).filter(x=>x&&x!=='-'&&x.t), G={}; VUE_GROUPES.forEach(g=>{ G[g]=[]; });
@@ -38915,10 +38919,11 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
     VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>rang(a.t)-rang(b.t)); if(!A.length) return; let corps='';
       if(g==='Montants'){ const ar=A.filter(x=>/^arrondir à/i.test(x.t)); A=A.filter(x=>!/^arrondir à/i.test(x.t)); const sp=A.findIndex(x=>/pourcentages/i.test(x.t)), av=sp<0?A:A.slice(0,sp), ap=sp<0?[]:A.slice(sp);
         corps=av.map(ck).join('')+(ar.length?seg('Arrondir à',[{l:'aucun',ti:'Sans arrondi',on:!ar.some(x=>x.chk),it:ar.find(x=>x.chk)?Object.assign({},ar.find(x=>x.chk),{chk:false}):null},...ar.map(x=>({l:x.t.replace(/^arrondir à\s*/i,''),on:x.chk,it:x.chk?null:x}))],true):'')+ap.map(ck).join(''); }
-      else if(g==='Sauts de page'){ const sa=A.find(x=>x.bascule), pr=A.filter(x=>x!==sa);   /* devis général : interrupteur « Sans sauts de page » (blanc désactivé, bleu nuit activé), présentations seulement s'il y en a plusieurs ; autres documents : choix d'origine */
+      else if(g==='Sauts de page'){ const rz=A.find(x=>x.raz); A=A.filter(x=>x!==rz); const sa=A.find(x=>x.bascule), pr=A.filter(x=>x!==sa);   /* devis général : interrupteur « Sans sauts de page » (blanc désactivé, bleu nuit activé), présentations seulement s'il y en a plusieurs ; autres documents : choix d'origine */
         if(!sa) corps=seg('',A.map(x=>({l:/^sans/i.test(x.t)?'Sans sauts de page':x.t.replace(/^sauts de page\s*:\s*/i,''),ti:x.t,on:x.chk,it:x.chk?null:x})));
         else { corps=(pr.length?seg('',pr.map(x=>({l:x.t.replace(/^sauts de page\s*:\s*/i,''),ti:x.t,on:x.chk,it:x.chk?null:x}))):'');
-          M.push(sa); corps+='<div class="sgdv-sg"><div class="sgdv-seg sgdv-tgl'+(ok?'':' dis')+'"><b class="'+(sa.chk?'on':'')+'" role="switch" aria-checked="'+(sa.chk?'true':'false')+'" tabindex="0" title="'+(sa.chk?'Activé : aucun saut de page. Cliquer pour désactiver':'Cliquer pour imprimer sans aucun saut de page')+'" data-n="'+(M.length-1)+'" data-k="sans-sauts">Sans sauts de page</b></div></div>'; } }
+          M.push(sa); corps+='<div class="sgdv-sg"><div class="sgdv-seg sgdv-tgl'+(ok?'':' dis')+'"><b class="'+(sa.chk?'on':'')+'" role="switch" aria-checked="'+(sa.chk?'true':'false')+'" tabindex="0" title="'+(sa.chk?'Activé : aucun saut de page. Cliquer pour désactiver':'Cliquer pour imprimer sans aucun saut de page')+'" data-n="'+(M.length-1)+'" data-k="sans-sauts">Sans sauts de page</b></div></div>'; }
+        if(rz){ M.push(rz); const dz=rz.dis||!ok; corps+='<button type="button" class="sgdv-raz"'+(dz?' disabled aria-disabled="true"':'')+' title="'+E(rz.ti||'')+'" data-n="'+(M.length-1)+'" data-k="raz-sauts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg>Remettre à zéro les sauts de page</button>'; } }
       else if(g==='Format') corps=seg('',A.map(x=>({l:x.t.replace(/^format\s*:\s*/i,''),ti:'Document en '+x.t.replace(/^format\s*:\s*/i,'').toLowerCase(),on:x.chk,it:x.chk?null:x})));   /* paysage ou portrait (08.11.2026) */
       else corps=A.map(ck).join('');
       h+='<div class="sgdv-gt">'+E(g)+'</div>'+corps; });
@@ -39124,6 +39129,11 @@ function dgSaut(X,cfc,niv,ajout,maj){ if(!ch02aCan(X)) return; const E=X.E, L=E.
   const meme=x=>{ const b=ch02bBreaks([x])[0]; return !!b&&b.cfc===String(cfc)&&b.niveau===niv; };
   q.sautsDePage=(q.sautsDePage||[]).filter(x=>!meme(x)).concat(ajout?[{cfc:String(cfc),niveau:niv}]:[]);
   (E.reglages||(E.reglages={})).dgPdf=c; X.touch(); maj(); }
+/* remise à zéro des sauts de page (Paulo, 08.11.2026 : « ajouter une remise à zéro des sauts de page ») : retire tous les sauts de la présentation choisie (celle par
+   défaut si « Sans sauts de page » est allumé), après confirmation ; « Sans sauts de page » n'est pas touché */
+function dgSautsRaz(X,apres){ if(!ch02aCan(X)) return; const E=X.E, q=dgPresSel(E).pres, n=q?(q.sautsDePage||[]).length:0; if(!n){ toast('Aucun saut de page à retirer.'); return; }
+  sgConfirm('Retirer les '+n+' saut'+(n>1?'s':'')+' de page de la présentation « '+(q.nom||'sans nom')+' » ?\nLe tableau se répartira de nouveau sur les pages sans coupure imposée.',
+    ()=>{ q.sautsDePage=[]; X.touch(); toast(n+' saut'+(n>1?'s':'')+' de page retiré'+(n>1?'s':'')+'.'); if(apres) apres(); },{yesText:'Remettre à zéro'}); }
 function dgSautMenu(e,X,maj,peut){ if(e.altKey) return; const pe=e.target&&e.target.closest?e.target.closest('.sglp-p'):null; if(!pe) return; e.preventDefault(); e.stopPropagation();
   const car=DG_CARTE.get(X); if(!car){ toast('Document en préparation…'); return; }
   const k=[...pe.parentNode.querySelectorAll('.sglp-p')].indexOf(pe), cp=car.pages[k];
@@ -39438,7 +39448,8 @@ function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
   /* « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 : « déplacer ») — panneau et menu de la ligne */
   { const it={t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total'),grp:'Positions'}, k=L.findIndex(x=>x&&x.t==='Afficher les positions sans montant');
     if(k>=0) L.splice(k+1,0,it); else L.push('-',it); }
-  if(P.length) L.push('-',...(P.length>1?P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})):[]),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans'),bascule:true});
+  if(P.length) L.push('-',...(P.length>1?P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})):[]),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans'),bascule:true},
+    (()=>{ const q=sel.pres, n=q?(q.sautsDePage||[]).length:0; return {t:'Remettre à zéro les sauts de page',raz:true,dis:!n,ti:n?n+' saut'+(n>1?'s':'')+' de page dans la présentation « '+(q.nom||'sans nom')+' »':'Aucun saut de page',fn:apres=>dgSautsRaz(X,apres)}; })());
   return L.filter((x,i,a)=>!(x==='-'&&(i===0||a[i-1]==='-'))); }
 /* page repérée dont le PDF est celui du modèle (préparé tout de suite, servi par sgImpPdf) */
 function dgRendu(X){ const S=window.SGIMP, id=(++S.n).toString(36)+'g'+Date.now().toString(36), pdf=dgOctets(X).then(r=>new Blob([r.oct],{type:'application/pdf'}));

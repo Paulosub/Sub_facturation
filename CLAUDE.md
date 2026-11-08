@@ -1620,7 +1620,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   et menu de la ligne) ; décocher « Quantités et prix » ne décoche plus « Afficher le calcul » (règle de l'ancien logiciel retirée le 08.11.2026 : rien ne se grise tant que le calcul est affiché)).
   Autres visionneuses inchangées. Classes `.sgdv-*`.
   **Icône « Ajuster à la largeur » du lecteur PDF (08.11.2026, proposition 3 « Cadrage horizontal » choisie par Paulo parmi 5 ; maquettes
-  `subgestion3/_backup_20261108_maquette_icone_largeur/`)** : deux crochets, de la famille du bouton plein écran (`NXI.plein`), et une flèche double entre eux (`SGLP_I.larg`). Icône seule, sans libellé (Paulo, 08.11.2026 : « supprimer le texte » ; nom en infobulle) ; « appliqués aussitôt » retiré du titre du panneau Réglages.
+  `subgestion3/_backup_20261108_maquette_icone_largeur/`)** : deux crochets, de la famille du bouton plein écran (`NXI.plein`), et une flèche double entre eux (`SGLP_I.larg`). Icône seule, sans libellé (Paulo, 08.11.2026 : « supprimer le texte » ; nom en infobulle) ; « appliqués aussitôt » retiré du titre du panneau Réglages. Sauts de page (même jour, Paulo : « supprimer [Standard], activer ou désactiver Sans sauts de page, blanc si pas sélectionné et bleu si
+  sélectionné ») : « Sans sauts de page » est un interrupteur (`bascule`, `.sgdv-tgl`, `role=switch`) ; désactivé, la présentation choisie avant revient (sinon celle par défaut) ;
+  boutons des présentations seulement si le devis en a plusieurs (panneau et menu de la ligne). « Arrondir à » : boutons aucun / 10 / 100 / 1000 sur la ligne sous le libellé
+  (`seg(…, pile)`, « déplacer », même jour).
   **Lecteur commun et fenêtre PDF (08.11.2026, bloc 48, `subgestion3/sg3_lecteur.js`, concaténé en dernier ; Paulo : « améliore la fenêtre PDF lorsque je
   clique sur PDF, adapte le design au reste de l'app »)** : `sgLecteurPdf(o)` = le lecteur de cette fenêtre, rendu commun (barre ‹ Page n / N ›, zoom,
   Ajuster à la largeur, pages rendues à la demande, texte sélectionnable ; `charger(blob)`, `attendre()`, `echec(e)`, `imprimer()`, `fini()` ; o.surInfo,

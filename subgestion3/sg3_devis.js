@@ -1136,6 +1136,12 @@ function dgAgreger(r){ const M=r&&r.M; if(!M) return; const ord=((r.T||{}).subs|
 let DG_ACTIF=false;
 /* textes des positions : « - » final du 1er libellé = césure (ch01bDbl, createDoubleText de l'ancien logiciel : « con- duites » → « conduites », comme le modèle 24PRC) */
 const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':String(p.texte2); return a?(b?ch01bDbl(a,b):a):b.trim(); };
+/* « Quantités et prix » sans « Afficher les montants » (Paulo, 08.11.2026 : « je veux voir les quantités et les prix et commentaires du calcul sans avoir besoin de
+   sélectionner d'autre option ») : le moteur (KvBook.writeDetailLine) n'imprime la ligne « Quantité … Prix … » qu'avec les montants ; pour le devis général, elle
+   est construite comme avec les montants, puis le montant est retiré */
+{ const d0=ch02bDetail; ch02bDetail=function(l,o,no,loc,R){ if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) return d0.apply(this,arguments);
+    const out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
+    if(k>=0&&out[k]&&Array.isArray(out[k].c)) out[k]={c:out[k].c.map((v,j)=>j<=1?v:''),s:out[k].s}; return out; }; }
 { const c0=ch02bCalc; ch02bCalc=function(){ const r=c0.apply(this,arguments); if(DG_ACTIF) try{ (r.list||[]).forEach(n=>{ if(n&&n.p) n.texte=dgTexte(n.p); }); if(DG_AGREGE) dgAgreger(r); }catch(e){ console.error(e); } return r; }; }
 async function dgOctets(X){ { await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
     const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{}, sel=dgPresSel(E), fav=sel.pres||{};

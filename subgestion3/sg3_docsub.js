@@ -1540,7 +1540,8 @@ async function sgDsPdf(R, rep, o){
       const al = D.aligne === true && !info, ins = al ? 0 : 2, XB = al ? X0 - 2 : X0, WB = al ? W + 2 : W;   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
       const dI = info ? (+D.infoDx || 0) : 0;   /* page Information : contenu décalé (libellés et texte sur les 2e et 3e colonnes du pied) ; titre et filet à la marge */
       let x = X0 + dI; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
-      if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:+D.corpsTitres || 9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
+      if(info){ if(D.infoGarde){ cx.texte(P(String(D.infoTitre || 'Information').toUpperCase()), X0, T(101), { police:F.regular, taille:8 }); cx.ligne(X0, T(104.5), X0 + W + dI, T(104.5)); }   /* titre au dessin des rubriques de la page de garde : Regular 8 capitales, filet noir (Paulo, 08.11.2026) */
+        else { cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:+D.corpsTitres || 9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); } }   /* titre souligné d'un filet gris (modèle 24PRC) */
       else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
         cx.rect(XB, T(116.5), WB, 16, { fond:NUIT });
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const zc = +D.corpsTitres || 7.5, t = ajuste(c.t, F.regular, zc, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + ins, T(111.2), { police:F.regular, taille:zc, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* titres des colonnes : D.corpsTitres (devis général : 8 pt) */
@@ -1570,7 +1571,7 @@ async function sgDsPdf(R, rep, o){
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
           let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
-          const pf = info && (r.lib || (j === 0 && cols.length > 1)) ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : pol.f;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
+          const pf = info && r.lib ? F.light : info && j === 0 && cols.length > 1 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : pol.f;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
           const cl = nuit && j === jPct && s !== 'T' && s !== 'W' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
           const dispo = p.w - 2 - ins + (cx.largeur(P(v), pf, pol.z) > p.w - 2 - ins ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
           const zz = D.deborde === true && lw > dispo && lw <= dispo * 1.08 ? pol.z * dispo / lw : pol.z;   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé */

@@ -1253,7 +1253,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
-      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoDx:iDx,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT}})), j=new w.Array(); opt.journal=j;
+      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoGarde:true,infoDx:iDx,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
     return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
 async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }

@@ -586,6 +586,10 @@ function remProjet(pid,sauf){ if(pid==null) return null; const p=DS.get('project
   for(const {d,E} of L){ const A=remAuto({reglages:E.reglages,remarques:(E.remarques||[]).filter(r=>!remModele(r))},p), rest=(A.rest||[]).filter(r=>r.nom.trim()||r.texte.trim());
     if(rest.length) return {rem:rest.map(r=>({nom:r.nom,texte:r.texte})),auto:A.auto,de:d,datePlans:String((E.reglages||{}).datePlans||'')}; }
   return null; }
+/* « Pourcentage sur le total général » = réglage de base de tout nouveau devis (Paulo, 08.11.2026 : « définir en standard pour tous les devis », « comme base de tout
+   devis, comme discuté plus haut » — même principe que le texte de base de la page Information) : posé à la création (ch02dNewContent : nouveau devis), modifiable ensuite
+   dans Paramètres ▸ Affichage ; une copie garde le réglage de l'original ; les devis existants gardent le leur */
+{ const nc0=ch02dNewContent; ch02dNewContent=function(){ const C=nc0.apply(this,arguments); try{ if(C&&typeof C==='object'){ const R=C.reglages||(C.reglages={}); R.pourcentageSur='total'; } }catch(e){ console.error(e); } return C; }; }
 /* titres des documents (page de garde, devis à 1 et 2 chiffres, document principal) = nom de la version du devis, à la création (Paulo, 07.11.2026) : enregistrement qui crée
    un en-tête (bseq 0) et son contenu (bseq 0) — nouveau devis, Dupliquer, Dupliquer et modifier, import ; nom vide : titres inchangés (« Devis général » par défaut) */
 { const k0=ch02dCommit; ch02dCommit=function(ops){ try{ (Array.isArray(ops)?ops:[]).forEach(o=>{ if(!o||o.t!=='costestimatedocument'||+o.bseq!==0||!o.val) return; const V=String(o.val.VERSION||'').trim(); if(!V) return;

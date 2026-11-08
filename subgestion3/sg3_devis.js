@@ -898,12 +898,12 @@ const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLi
    laisser sur la page sur laquelle je me situe »). Réglages = ch02cPrefItems (mêmes cases que le menu), rangés en groupes, appliqués aussitôt. ═══ */
 const ICV=d=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+d+'</svg>';
 const VUE_GROUPES=['Format','Positions','Calcul','Montants','Affichage','Sauts de page','Autres'];
-const VUE_ORDRE=['Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Afficher les subdivisions',
+const VUE_ORDRE=['Descriptif','Assembler les descriptifs des ouvrages','Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Afficher les subdivisions',
   'Afficher le calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Variantes',
   'Afficher les montants','Tous les montants détaillés','Uniquement les montants avec calculs et remarque','Masquer les décimales','Pourcentages sur le total général',
   'Descriptif','Assembler les descriptifs des ouvrages','Commentaire dans colonne séparée','Base et commentaire de la position','Base et commentaire dans colonne séparée'];
 const VUE_RETRAIT=new Set(['Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Base et commentaire dans colonne séparée','Assembler les descriptifs des ouvrages']);
-const vueGroupe=t=>/^format\s*:/i.test(t)?'Format':/sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
+const vueGroupe=t=>/^format\s*:/i.test(t)?'Format':/^(descriptif|assembler les descriptifs)/i.test(t)?'Positions':   /* « Descriptif » en tête des Positions (Paulo, 08.11.2026) *//sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
   :/calcul|quantités|prix ht|prix ttc|bases de prix|variantes/i.test(t)?'Calcul':/positions|chiffres|subdivisions/i.test(t)?'Positions':/descriptif|commentaire/i.test(t)?'Affichage':'Autres';
 function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if(!dlg||!ifr||typeof sgLecteurPdf!=='function') return; cssD();
   const bar=D.bd.querySelector('.ph2'), btn=re=>bar?[...bar.querySelectorAll('button,.ib')].find(b=>re.test((b.textContent||'').trim())):null;
@@ -1309,9 +1309,13 @@ function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), 
     if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
   const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
 function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
-  const dis=k=>(k==='displayDetailOptions'&&!o.displayDetailValues)||((k==='displayQuanPriceValue'||k==='displayDetailComment')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
+  /* cases selon le contenu du devis (Paulo, 08.11.2026) : « Afficher le calcul » et ses deux cases seulement s'il y a des lignes de calcul, « Variantes » seulement s'il y a
+     des variantes (plus lié à « Afficher les montants ») ; sinon grisées, décochées, non cliquables */
+  const lgn=((X.E||{}).positions||[]).flatMap(q=>(q.parts||[]).flatMap(pt=>pt.lignes||[])), aCalc=lgn.length>0, aVar=lgn.some(l=>l&&l.var);
+  const absent=k=>(!aCalc&&(k==='dispalyCalcualtion'||k==='displayQuanPriceValue'||k==='displayDetailComment'))||(!aVar&&k==='displayDetailOptions');
+  const dis=k=>absent(k)||((k==='displayQuanPriceValue'||k==='displayDetailComment')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
   const pt=dgChoix(X.E).format==='portrait';
-  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])}));
+  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:{t:m[1],chk:m[0]==='*tous'?DG_TOUS.every(x=>o[x]):(!absent(m[0])&&!!o[m[0]]),dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])}));
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   L.push('-',{t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total')});
   if(P.length) L.push('-',...P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans')});

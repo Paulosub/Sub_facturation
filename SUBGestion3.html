@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 18:35 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 18:38 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -39073,7 +39073,7 @@ const DG_PRESET={includeKvCover:true,includeKvOneDigit:false,includeKvTwoDigit:t
   titleFontSize:10,posFontSize:9,detailFontSize:8,rowHeigth:15,titlePosBold:true,detailItalic:false,specialRound:false,coverKvEmptyPages:0,kvOneDigitEmptyPages:0,kvTwoDigitEmptyPages:0,infoKvEmptyPages:0,
   titleFontName:'',standardFontName:'',detailFontName:'',kagNumberColTitle:'CFC',kagTextColTitle:'Texte',commentColTitle:'Commentaire',value4ColTitle:'à 4 chiffres TTC',value3ColTitle:'à 3 chiffres TTC',
   value2ColTitle:'à 2 chiffres TTC',value1ColTitle:'à 1 chiffre TTC',devColTitle:'[%]',infoNameColTitle:'',infoDescColTitle:''};
-const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=388, DG_X0T=125.72, DG_WL=633.57, DG_WP=386.96, DG_WIL=730.94, DG_WIP=484.33, DG_HP=630;   /* (08.11.2026, Paulo) tableaux de x 125.72 (2e colonne du pied) jusqu'à 2 pt après la barre verticale du numéro de page (largeur − 84.6 : paysage 757.29, portrait 510.68), de sorte que la dernière colonne, alignée à droite avec 2 pt de retrait, finisse sur cette barre ; Information dès 28.35 jusqu'au même bord ; portrait : rangées de 122 à 752 pt */   /* Information : rangées dès 121 pt, sous un filet (modèle 24PRC) */   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
+const DG_W=728, DG_RH=15, DG_HT=388, DG_HI=388, DG_X0T=85.04, DG_CFC=40.68, DG_WL=674.25, DG_WP=427.64, DG_WIL=730.94, DG_WIP=484.33, DG_HP=630;   /* « déplacer les numéros de CFC » (08.11.2026) : numéros CFC dans la marge à x 85.04 (comme les numéros de chapitre des contrats), texte à x 125.72 (2e colonne du pied) — colonne CFC de 40.68 pt */   /* (08.11.2026, Paulo) tableaux de x 125.72 (2e colonne du pied) jusqu'à 2 pt après la barre verticale du numéro de page (largeur − 84.6 : paysage 757.29, portrait 510.68), de sorte que la dernière colonne, alignée à droite avec 2 pt de retrait, finisse sur cette barre ; Information dès 28.35 jusqu'au même bord ; portrait : rangées de 122 à 752 pt */   /* Information : rangées dès 121 pt, sous un filet (modèle 24PRC) */   /* largeur du tableau (zone du papier en paysage : 28.35 → 756.85), hauteur des rangées ; hauteurs utiles (dès 122 et 108 pt du haut jusqu'au pied) */
 let DG_COURS=null;
 function dgPdf(X){ if(DG_COURS){ toast('Le PDF est en cours de création…'); return DG_COURS; } DG_COURS=dgCreer(X).finally(()=>{ DG_COURS=null; }); return DG_COURS; }
 /* ventilation par ouvrage des positions totalisatrices (modèle 24PRC de l'ancien logiciel : 10, 101… montrent AP1, AP2… COM ; les positions à 1 chiffre, non) : le moteur ne la
@@ -39120,6 +39120,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        pied, livretDG.x0Tab) et gardent leur bord droit ; en paysage la largeur (630.63 pt au lieu de 728) est reprise sur les colonnes de montants (pas sous 66 pt),
        la colonne [%] (32 pt), puis Commentaire (90 pt), enfin Texte */
     if(K.ip>=0&&cols[K.ip]) cols[K.ip].pct=true;   /* colonne [%] (pourcentages en bleu nuit) */
+    if(!portrait&&cols[0]) cols[0].w=DG_CFC;   /* numéros CFC de x 85.04 à 125.72 */
     if(!portrait){ let manque=cols.reduce((t,c)=>t+(+c.w||0),0)-DG_WL; const prendre=(c,min)=>{ if(manque>0&&c&&c.w>min){ const q=Math.min(manque,c.w-min); c.w-=q; manque-=q; } };
       [K.i4,K.i3,K.i2,K.i1].forEach(i=>{ if(i>=0&&cols[i]&&cols[i].w) prendre(cols[i],66); }); if(K.ip>=0) prendre(cols[K.ip],32); if(K.iC>=0) prendre(cols[K.iC],90);
       if(manque>0&&cols[1]) cols[1].w-=manque; }
@@ -39168,8 +39169,8 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
       const v=(c,i)=>i>=0?String(c[i]==null?'':c[i]):'', T0=i=>i>=0&&cols[i]?cols[i].t:'', suf=((/(TTC|HT)\s*$/.exec(T0(K.i1)||T0(K.i2))||[])[1])||'TTC';
       Object.values(ser).forEach(S=>{ const tous=S.flatMap(pg=>pg.rows), aCom=K.iC>=0&&tous.some(r=>v(r.c,K.iC).trim()), aOuv=K.iO>=0&&tous.some(r=>v(r.c,K.iO).trim()),
           aLoc=K.iL>=0&&tous.some(r=>v(r.c,K.iL).trim()), aMt=K.h&&tous.some(r=>(v(r.c,K.i4)||v(r.c,K.i3)).trim());
-        const fixe=36+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+(aMt?56:0)+60+(K.ip>=0?26:0);   /* tableau de x 125.72 à 512.68 (386.96 pt) */
-        const cols2=[{t:T0(0)||'CFC',w:36,r:false},{t:T0(1)||'Texte',w:DG_WP-fixe,r:false}].concat(aCom?[{t:T0(K.iC),w:84,r:false}]:[],aOuv?[{t:T0(K.iO),w:30,r:false}]:[],aLoc?[{t:T0(K.iL),w:30,r:false}]:[],
+        const fixe=DG_CFC+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+(aMt?56:0)+60+(K.ip>=0?26:0);   /* tableau de x 85.04 à 512.68 (427.64 pt) */
+        const cols2=[{t:T0(0)||'CFC',w:DG_CFC,r:false},{t:T0(1)||'Texte',w:DG_WP-fixe,r:false}].concat(aCom?[{t:T0(K.iC),w:84,r:false}]:[],aOuv?[{t:T0(K.iO),w:30,r:false}]:[],aLoc?[{t:T0(K.iL),w:30,r:false}]:[],
           aMt?[{t:'Montant '+suf,w:56,r:true}]:[],[{t:K.h?'Total '+suf:T0(K.i1),w:60,r:true}],K.ip>=0?[{t:T0(K.ip),w:26,r:true,pct:true}]:[]);
         const jM=2+(aCom?1:0)+(aOuv?1:0)+(aLoc?1:0), jT=jM+(aMt?1:0);
         S.forEach(pg=>{ pg.rows=pg.rows.map(r=>{ const c=Array.from(r.c||[]), m4=v(c,K.i4), m3=v(c,K.i3), t2=v(c,K.i2), t1=v(c,K.i1);
@@ -39196,9 +39197,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* pages de tableau : jamais plus de rangées que la page n'en tient (avec un filtre d'ouvrages, ch02bSumFill ne garde pas une position et ses ouvrages ensemble et les rangées en
        trop passaient sur le pied). Rangées de remplissage en trop retirées ; coupure de préférence avant le début d'une position ; la suite passe en tête de la page suivante de la
        même série (même récapitulatif ou document principal, page du total comprise), sinon sur une page insérée ; pages complétées jusqu'en bas (zébrage), comme ch02bFinish */
-    /* lignes de calcul et descriptif depuis le bord gauche du tableau (colonne CFC, vide sur ces lignes) : ils gagnent la largeur de la colonne CFC et débordent sur
-       Texte (Paulo, 08.11.2026 : « déplacer le texte ») */
-    pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows.forEach(r=>{ const c=r.c||[]; if((r.s==='D'||r.s==='X')&&!String(c[0]==null?'':c[0]).trim()&&String(c[1]==null?'':c[1]).trim()){ c[0]=c[1]; c[1]=''; } }); });
+    /* lignes de calcul et descriptif dans la colonne Texte, à x 125.72 comme les désignations (les numéros CFC sont dans la marge, 08.11.2026) */
     pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows=etaler(pg.rows,pg.cols,false); });   /* textes jamais coupés (08.11.2026) */
     { const capT=Math.max(1,Math.floor(HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
       for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT));

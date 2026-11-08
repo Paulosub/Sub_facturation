@@ -1694,7 +1694,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   page (document principal « tous », récapitulatifs « 2 » / « 1 », règle de `ch02bUb`) ; enregistré dans la présentation choisie (`sautsDePage`), « Sans sauts de page » choisi :
   la présentation par défaut est choisie et reçoit le saut (message) ; aucune présentation : « Standard » créée (`ch02dStdPres`). Ligne repérée par la carte du dernier PDF
   (`DG_CARTE`, posée par `dgOctets` : série et position de chaque rangée), PDF refait aussitôt, page gardée ; lecture seule : message ; ⌥ + clic droit = menu du navigateur
-  (`dgSautMenu`, `dgSaut`).
+  (`dgSautMenu`, `dgSaut`). **Menu « version 1 — Menu net et explicite »** (choisie par Paulo parmi 5, même jour ; maquettes conçues par 5 designers :
+  `subgestion3/_backup_20261108_maquette_menu_saut/`) : en-tête « Saut de page · Document principal / Récapitulatif … », action avec icône au trait, CFC en gras bleu nuit et
+  nom de la position, effet écrit en clair ; sur la page, rangée de la position surlignée en jaune très pâle et coupure tracée au-dessus (pointillé « Nouvelle page » / trait
+  plein « Saut de page », étiquette dans la marge droite) ; Échap, clic ailleurs, défilement : fermé ; ↑ ↓ Entrée (`dgSpOuvrir`, `dgSpFermer`, classes `sgsp-*`).
+  **Sauts de page visibles à l'écran, jamais imprimés** (même jour, Paulo : « indique visuellement sur le pdf, mais ne sera pas imprimé, les sauts de page ») : chaque page
+  qui commence par un saut de la présentation porte le trait plein bleu nuit, le repère de marge et « Saut de page » — éléments posés sur la page du lecteur, absents du PDF
+  (Imprimer, PDF, Partager) ; reposés à chaque mise en page (`dgSautsMarquer`, MutationObserver sur `.sglp-pages`) ; aucun avec « Sans sauts de page ».
   **Hiérarchie « Filet de calcul » (08.11.2026, variante E choisie par Paulo parmi 5 ; Paulo : « tout est au même niveau d'information … passer en italique comme dans le devis » ;
   maquettes `subgestion3/_backup_20261108_maquette_hierarchie/`)** : descriptif en Akkurat Light Italic gris ; lignes de calcul (rangées repérées `cal` par l'enveloppe de
   `ch02bDetail` pendant `DG_ACTIF`) en retrait de 7 pt (`DG_CALR`, `livretDG.calRetrait`) derrière un filet vertical bleu nuit de 0,75 pt à l'aplomb du texte (3 pt en retrait

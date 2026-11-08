@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 21:22 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 21:34 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38900,6 +38900,7 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
   ifr._sgVue=blob=>L.charger(blob); ifr._sgVuePrep=()=>L.attendre(); ifr._sgVueErr=e=>L.echec(e);
   if(ifr._sgblob) L.charger(ifr._sgblob);
   /* réglages en panneau */
+  if(+i===0){ const cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>dgSautsMarquer(cont,X)).observe(cont,{childList:true}); }   /* sauts de page visibles à l'écran (08.11.2026) */
   if(+i===0) R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>dgSautMenu(e,X,()=>{ dernier=''; panneau();
       try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(err){ console.error(err); L.echec(err); } },peut),true);   /* saut de page au clic droit (08.11.2026) */
   const appliquer=it=>{ if(!it||it.dis||!peut()) return; try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau();
@@ -39131,10 +39132,72 @@ function dgSautMenu(e,X,maj,peut){ if(e.altKey) return; const pe=e.target&&e.tar
   let j=Math.max(0,Math.min(cp.rows.length-1,Math.floor((y-cp.y0)/DG_RH))); while(j>0&&!cp.rows[j]) j--; const b=cp.rows[j]||cp.rows.find(Boolean);
   if(!b){ toast('Aucune position sur cette ligne.'); return; }
   const niv=cp.digit===0?'1':cp.digit===1?'2':'tous', sel=dgPresSel(X.E), S=sel.aucune?[]:ch02bBreaks(sel.sauts||[]), a=c=>S.some(x=>x.cfc===String(c)&&x.niveau===niv);
-  const lib=x=>{ const t=x.cfc+(x.t?' '+x.t:''); return t.length>48?t.slice(0,47)+'…':t; }, M=[];
-  M.push(a(b.cfc)?{t:'Retirer le saut de page avant « '+lib(b)+' »',fn:()=>dgSaut(X,b.cfc,niv,false,maj)}:{t:'Saut de page avant « '+lib(b)+' »',fn:()=>dgSaut(X,b.cfc,niv,true,maj)});
-  const p0=cp.rows.find(Boolean); if(p0&&p0.cfc!==b.cfc&&a(p0.cfc)) M.push({t:'Retirer le saut de page de cette page (avant « '+lib(p0)+' »)',fn:()=>dgSaut(X,p0.cfc,niv,false,maj)});
-  sgMenuAt(e.clientX,e.clientY,M); }
+  const M=[{ajout:!a(b.cfc),b,fn:()=>dgSaut(X,b.cfc,niv,!a(b.cfc),maj)}];
+  const p0=cp.rows.find(Boolean); if(p0&&p0.cfc!==b.cfc&&a(p0.cfc)) M.push({ajout:false,b:p0,haut:true,fn:()=>dgSaut(X,p0.cfc,niv,false,maj)});
+  let jh=-1; (cp.tetes||[]).forEach(i=>{ if(i<=j&&cp.rows[i]===b) jh=i; });   /* rangée de tête de la position sur cette page (sinon : sur la page précédente, pas de repère) */
+  dgSpOuvrir(e,pe,car,cp,jh,!M[0].ajout,niv,M); }
+/* menu du saut de page, « version 1 — Menu net et explicite » (maquette subgestion3/_backup_20261108_maquette_menu_saut/, choisie par Paulo le 08.11.2026) : en-tête
+   « Saut de page · <série> », une action par ligne avec icône au trait, CFC en gras bleu nuit et nom de la position, effet écrit en clair ; sur la page : rangée de la position
+   surlignée en jaune très pâle et coupure tracée au-dessus (pointillé bleu nuit « Nouvelle page » à l'ajout, trait plein « Saut de page » s'il existe) ; tout est retiré à la
+   fermeture (clic ailleurs, Échap, défilement, action). Classes sgsp-*. */
+const DG_SP_NIV={tous:'Document principal','2':'Récapitulatif à 2 chiffres','1':'Récapitulatif à 1 chiffre'};
+const DG_SP_IC={ajout:'<path d="M6 3v5h12V3"/><path d="M6 21v-5h12v5"/><path d="M4 12h1M8 12h2M14 12h2M19 12h1"/>',retrait:'<path d="M6 3v5h12V3"/><path d="M6 21v-5h12v5"/><path d="M10.5 10.5l3 3M13.5 10.5l-3 3"/>'};
+let DG_SP=null;
+function dgSpFermer(){ const s=DG_SP; DG_SP=null; if(!s) return; s.m.remove(); s.marques.forEach(x=>x.remove()); document.removeEventListener('mousedown',s.dehors,true); document.removeEventListener('keydown',s.clav,true);
+  window.removeEventListener('resize',dgSpFermer); if(s.vue) s.vue.removeEventListener('scroll',dgSpFermer); try{ if(s.focus&&s.focus.isConnected) s.focus.focus({preventScroll:true}); }catch(_){} }
+function dgSpCss(){ if(document.getElementById('sgsp-css')) return; const st=document.createElement('style'); st.id='sgsp-css'; st.textContent=`
+.sgsp-hl{position:absolute;background:#fffbd6;mix-blend-mode:multiply;pointer-events:none;z-index:3}
+.sgsp-cut{position:absolute;height:0;pointer-events:none;z-index:4;border-top:1px dashed var(--s-nuit)}
+.sgsp-cut.on{border-top:2px solid var(--s-nuit)}
+.sgsp-cut i{position:absolute;left:-11px;top:-6px;width:0;height:0;border-left:7px solid var(--s-nuit);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.sgsp-cut span{position:absolute;left:calc(100% + 6px);top:-6px;padding:0;font-size:9px;line-height:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--s-nuit);white-space:nowrap}
+.sgsp-menu{position:fixed;z-index:100000;width:312px;box-sizing:border-box;background:#fff;border:1px solid #d8d8d4;border-top:2px solid var(--s-noir);box-shadow:0 6px 18px rgba(0,0,0,.18);color:var(--s-noir);font-family:var(--s-font);text-align:left}
+.sgsp-hd{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 12px 6px;border-bottom:1px solid #d8d8d4;font-size:10px;line-height:12px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--s-gris)}
+.sgsp-hd em{font-style:normal;font-size:10.5px;font-weight:300;letter-spacing:0;text-transform:none}
+.sgsp-it{display:flex;align-items:flex-start;gap:10px;padding:10px 12px 11px;cursor:pointer;outline:none}
+.sgsp-it+.sgsp-it{border-top:1px solid #d8d8d4}
+.sgsp-it:hover,.sgsp-it:focus{background:var(--s-jaune2,#FEF6B0)}
+.sgsp-it svg{flex:0 0 20px;width:20px;height:20px;margin-top:1px;color:var(--s-nuit)}
+.sgsp-tx{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}
+.sgsp-ac{font-size:12.5px;line-height:16px;font-weight:400}
+.sgsp-pos{font-size:13px;line-height:17px;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgsp-pos b{font-weight:700;color:var(--s-nuit);margin-right:4px}
+.sgsp-ex{margin-top:5px;font-size:11px;line-height:14px;font-weight:300;color:var(--s-gris)}`; document.head.append(st); }
+/* sauts de page visibles sur l'aperçu, jamais imprimés (Paulo, 08.11.2026 : « indique visuellement sur le pdf, mais ne sera pas imprimé, les sauts de page ») : sur chaque page
+   qui commence par un saut de la présentation choisie, trait bleu nuit plein au-dessus de la première position, repère dans la marge gauche et « Saut de page » dans la marge
+   droite — éléments posés sur la page du lecteur (pas dans le PDF : ni Imprimer, ni PDF, ni Partager ne les contiennent) ; reposés à chaque nouvelle mise en page (zoom, réglage) */
+function dgSautsMarquer(cont,X){ if(!cont) return; cont.querySelectorAll('.sgsp-mq').forEach(x=>x.remove());
+  const car=DG_CARTE.get(X), sel=dgPresSel(X.E); if(!car||sel.aucune) return; const S=ch02bBreaks(sel.sauts||[]); if(!S.length) return; dgSpCss();
+  const por=car.ori==='portrait', W=por?595.28:841.89, H=por?841.89:595.28, x0=DG_X0T-2, wT=(por?DG_WP:DG_WL)+4, P=[...cont.querySelectorAll('.sglp-p')];
+  car.pages.forEach((cp,k)=>{ if(!cp.rows||!P[k]) return; const i=cp.rows.findIndex(Boolean); if(i<0||!(cp.tetes||[]).includes(i)) return; const b=cp.rows[i], niv=cp.digit===0?'1':cp.digit===1?'2':'tous';
+    if(!S.some(x=>x.cfc===b.cfc&&x.niveau===niv)) return;
+    const d=document.createElement('div'); d.className='sgsp-cut on sgsp-mq'; Object.assign(d.style,{left:x0/W*100+'%',width:wT/W*100+'%',top:(cp.y0+i*DG_RH)/H*100+'%'});
+    d.title='Saut de page avant '+b.cfc+(b.t?' '+b.t:'')+' — repère à l’écran seulement, pas imprimé'; d.innerHTML='<i></i><span>Saut de page</span>'; P[k].append(d); }); }
+function dgSpOuvrir(e,pe,car,cp,jh,existe,niv,M){ dgSpFermer(); dgSpCss(); const E=x=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+  const por=car.ori==='portrait', W=por?595.28:841.89, H=por?841.89:595.28, x0=DG_X0T-2, wT=(por?DG_WP:DG_WL)+4, marques=[];
+  if(jh>=0){ const top=(cp.y0+jh*DG_RH)/H*100, pc=v=>v+'%';
+    const hl=document.createElement('div'); hl.className='sgsp-hl'; Object.assign(hl.style,{left:pc(x0/W*100),width:pc(wT/W*100),top:pc(top),height:pc(DG_RH/H*100)});
+    const cut=document.createElement('div'); cut.className='sgsp-cut'+(existe?' on':''); Object.assign(cut.style,{left:pc(x0/W*100),width:pc(wT/W*100),top:pc(top)});
+    cut.innerHTML='<i></i><span>'+(existe?'Saut de page':'Nouvelle page')+'</span>'; pe.append(hl); marques.push(hl); if(!(existe&&pe.querySelector('.sgsp-mq'))){ pe.append(cut); marques.push(cut); } }
+  const m=document.createElement('div'); m.className='sgsp-menu'; m.setAttribute('role','menu'); m.setAttribute('aria-label','Saut de page');
+  m.innerHTML='<div class="sgsp-hd"><span>Saut de page</span><em>'+E(DG_SP_NIV[niv]||'')+'</em></div>'+M.map((it,i)=>{ const c=it.b;
+    const ex=it.ajout?'Une nouvelle page commencera par '+c.cfc+(c.t?' '+c.t:'')+'.':it.haut?'Cette page ne commencera plus par '+c.cfc+' : le tableau continuera à la suite.':'La page ne commencera plus par '+c.cfc+' : le tableau continuera à la suite.';
+    return '<div class="sgsp-it" role="menuitem" tabindex="-1" data-i="'+i+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+DG_SP_IC[it.ajout?'ajout':'retrait']+'</svg>'
+      +'<span class="sgsp-tx"><span class="sgsp-ac">'+(it.ajout?'Saut de page avant':it.haut?'Retirer le saut de page de cette page, avant':'Retirer le saut de page avant')+'</span><span class="sgsp-pos" title="'+E(c.cfc+' '+c.t)+'"><b>'+E(c.cfc)+'</b>'+E(c.t)+'</span><span class="sgsp-ex">'+E(ex)+'</span></span></div>'; }).join('');
+  document.body.append(m);
+  const r=m.getBoundingClientRect(), vx=Math.max(8,Math.min(e.clientX+2,innerWidth-r.width-8)), vy=Math.max(8,Math.min(e.clientY+2,innerHeight-r.height-8)); m.style.left=vx+'px'; m.style.top=vy+'px';
+  const its=[...m.querySelectorAll('.sgsp-it')], agir=i=>{ const it=M[i]; dgSpFermer(); if(it) try{ it.fn(); }catch(err){ console.error(err); toast('✗ '+(err&&err.message||err),true); } };
+  its.forEach((x,i)=>x.addEventListener('click',()=>agir(i)));
+  m.addEventListener('contextmenu',ev=>{ ev.preventDefault(); ev.stopPropagation(); });
+  const dehors=ev=>{ if(!m.contains(ev.target)) dgSpFermer(); };
+  const clav=ev=>{ if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); dgSpFermer(); return; }
+    const k=its.indexOf(document.activeElement);
+    if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){ ev.preventDefault(); ev.stopPropagation(); const n=its.length; its[((k<0?(ev.key==='ArrowDown'?-1:0):k)+(ev.key==='ArrowDown'?1:-1)+n)%n].focus(); return; }
+    if((ev.key==='Enter'||ev.key===' ')&&k>=0){ ev.preventDefault(); ev.stopPropagation(); agir(k); } };
+  const vue=pe.closest('.sglp-vue');
+  DG_SP={m,marques,dehors,clav,vue,focus:document.activeElement};
+  setTimeout(()=>{ if(DG_SP&&DG_SP.m===m){ document.addEventListener('mousedown',dehors,true); document.addEventListener('keydown',clav,true); window.addEventListener('resize',dgSpFermer); if(vue) vue.addEventListener('scroll',dgSpFermer,{passive:true}); } },0);
+  its[0].focus({preventScroll:true}); }
 /* textes des positions : « - » final du 1er libellé = césure (ch01bDbl, createDoubleText de l'ancien logiciel : « con- duites » → « conduites », comme le modèle 24PRC) */
 const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':String(p.texte2); return a?(b?ch01bDbl(a,b):a):b.trim(); };
 /* « Quantités et prix » sans « Afficher les montants » (Paulo, 08.11.2026 : « je veux voir les quantités et les prix et commentaires du calcul sans avoir besoin de
@@ -39296,8 +39359,8 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
     { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;
       pages.forEach(pg=>{ if(!(pg.type===1||pg.type===2)){ carte.pages.push({type:pg.type}); return; } if(pg.digit!==dg){ bloc=null; dg=pg.digit; }
-        carte.pages.push({type:pg.type,digit:pg.digit,y0:122,rows:(pg.rows||[]).map(r=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
-          if(c0&&!r.k&&r.s!=='T'&&r.s!=='E') bloc={cfc:c0,t:String(c[1]==null?'':c[1]).trim()}; return pl&&r.s!=='T'?bloc:null; })}); });
+        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122,tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
+          if(c0&&!r.k&&r.s!=='T'&&r.s!=='E'){ bloc={cfc:c0,t:String(c[1]==null?'':c[1]).trim()}; tetes.push(i); } return pl&&r.s!=='T'?bloc:null; })}); });
       DG_CARTE.set(X,carte); }
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');

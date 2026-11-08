@@ -1659,7 +1659,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   quel, texte trop long coupé au bord de sa colonne par « ... » (plus de débordement sur la colonne voisine ; formule d'une ligne de calcul retirée si elle ne tient pas dans la
   colonne Texte). Jamais plus de 25 rangées par page de tableau (avec un filtre d'ouvrages, le moteur ne garde pas une position et ses ouvrages ensemble : la suite part sur une
   page insérée, coupée avant une position si possible). En-tête : papier des contrats (le modèle a l'en-tête de l'ancien logiciel). Écarts qui restent : l'ancien logiciel ne ventile pas certains totalisateurs (CFC 2, 51),
-  sauts de page de sa propre mise en page, « ... » au lieu de « … » (glyphe absent d'Akkurat). Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
+  sauts de page de sa propre mise en page, « ... » au lieu de « … » (glyphe absent d'Akkurat).
+  **Retouches du 08.11.2026 (Paulo)** : page Information sans rangées grises alternées, libellés en gras, libellés à l'aplomb de la 1re colonne du pied
+  (x 28.35) et texte de la 2e (x 125.72 : `colsI` largeur 97.37, sans retrait de 2 pt) ; en-tête de la page de garde = nom du document seul
+  (`tt('document')`, comme les autres pages ; le grand titre de la garde garde la phase). Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
   seconde relecture des corrections : le surplus d'une page trop pleine passe en tête de la page suivante de la même série (récapitulatif, document principal, page du total),
   pages complétées jusqu'en bas (zébrage) ; en « Assembler les descriptifs », une totalisatrice qui a son propre descriptif n'est pas ventilée.
   **Onglet « Paramètres » (07.11.2026, Paulo : « glisser Paramètres après Documents, sous forme de page comme Documents, pas une fenêtre ; l'ensemble des éléments par catégorie, le

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 17:38 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 17:43 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33657,12 +33657,13 @@ async function sgDsPdf(R, rep, o){
       let y = info ? 121 : 122;
       Array.from(pg.rows || []).forEach((r, i) => {
         const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []);
-        if(D.zebra && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* Information aussi, une rangée sur deux (modèle 24PRC) */
+        if(D.zebra && !info && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* une rangée sur deux (modèle 24PRC) ; plus sur la page Information (demande de Paulo, 08.11.2026) */
         if(!info && (s === 'O' || s === 'F' || s === 'T') && c.some(v => String(v == null ? '' : v).trim())) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
           const q = pos[j + 1], libre = D.deborde === true && !p.r && q && !q.r && q.w && !String(c[j + 1] == null ? '' : c[j + 1]).trim();   /* texte trop long : coupé par « … » au bord de sa colonne, comme l'ancien logiciel (modèle 24PRC) ; débordement sur la colonne vide de droite seulement si D.deborde */
-          const t = ajuste(v, pol.f, pol.z, p.w - 4 + (libre && cx.largeur(P(v), pol.f, pol.z) > p.w - 4 ? q.w : 0)); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(base), { police:pol.f, taille:pol.z, align:p.r ? 'd' : 'g' }); });
+          const pf = info && j === 0 ? F.bold : pol.f;   /* page Information : libellés en gras (demande de Paulo, 08.11.2026) */
+          const t = ajuste(v, pf, pol.z, p.w - 4 + (libre && cx.largeur(P(v), pf, pol.z) > p.w - 4 ? q.w : 0)); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : 2), T(base), { police:pf, taille:pol.z, align:p.r ? 'd' : 'g' }); });   /* Information : sans retrait, colonnes du pied */
         if(info && !D.zebra) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
         y += rh; });
     };
@@ -39085,7 +39086,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(DG_HT),pageN:tab(DG_HT),pageToc1:tabI(DG_HI),pageTocN:tabI(DG_HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
     let B; DG_ACTIF=true; DG_AGREGE=pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
     try{ B=ch02bBook(E,doc,p,pres,X.filter,env); } finally{ DG_ACTIF=false; DG_AGREGE=null; } if(B.err) throw new Error('mise en pages impossible ('+B.err+')');
-    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=Math.floor(DG_W*0.15), colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];
+    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=97.37, colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];   /* page Information : libellés à l'aplomb de la 1re colonne du pied (x 28.38), texte de la 2e (x 125.72) — demande de Paulo, 08.11.2026 */
     const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
     const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
     /* ligne de calcul trop longue pour la colonne Texte (le texte est coupé à son bord, comme le modèle) : la formule est retirée, la quantité et le prix restent */
@@ -39099,7 +39100,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const couverture={titre:titrePage({type:0}).toUpperCase(),marge:mod(G.marge)?'':String(G.marge||'').trim(),filtre,
       rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',A&&A.mo?un(A.mo.lignes||[]):''],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
-    const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
+    const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
       return {c:c0.map((v,j)=>j===1&&r.s==='D'?court(v):v),s:String(r.s||'S')}; })}));   /* « Quantité 467 =  467.0 » gardé tel quel, comme le modèle 24PRC */
     /* Information (modèle 24PRC) : rangées refaites depuis les remarques et les ouvrages, coupées comme le moteur (ch02bIntro) — rangée vide avant chaque remarque nommée et avant la
        liste des ouvrages (pas entre deux ouvrages ; une entrée sans nom continue la précédente, comme dans les données de l'ancien logiciel), lignes vides d'une remarque écrite en

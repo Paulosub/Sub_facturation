@@ -1148,7 +1148,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(DG_HT),pageN:tab(DG_HT),pageToc1:tabI(DG_HI),pageTocN:tabI(DG_HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
     let B; DG_ACTIF=true; DG_AGREGE=pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
     try{ B=ch02bBook(E,doc,p,pres,X.filter,env); } finally{ DG_ACTIF=false; DG_AGREGE=null; } if(B.err) throw new Error('mise en pages impossible ('+B.err+')');
-    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=Math.floor(DG_W*0.15), colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];
+    const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=97.37, colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];   /* page Information : libellés à l'aplomb de la 1re colonne du pied (x 28.38), texte de la 2e (x 125.72) — demande de Paulo, 08.11.2026 */
     const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
     const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
     /* ligne de calcul trop longue pour la colonne Texte (le texte est coupé à son bord, comme le modèle) : la formule est retirée, la quantité et le prix restent */
@@ -1162,7 +1162,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const couverture={titre:titrePage({type:0}).toUpperCase(),marge:mod(G.marge)?'':String(G.marge||'').trim(),filtre,
       rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',A&&A.mo?un(A.mo.lignes||[]):''],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
-    const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
+    const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
       return {c:c0.map((v,j)=>j===1&&r.s==='D'?court(v):v),s:String(r.s||'S')}; })}));   /* « Quantité 467 =  467.0 » gardé tel quel, comme le modèle 24PRC */
     /* Information (modèle 24PRC) : rangées refaites depuis les remarques et les ouvrages, coupées comme le moteur (ch02bIntro) — rangée vide avant chaque remarque nommée et avant la
        liste des ouvrages (pas entre deux ouvrages ; une entrée sans nom continue la précédente, comme dans les données de l'ancien logiciel), lignes vides d'une remarque écrite en

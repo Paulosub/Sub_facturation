@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 21:04 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 21:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -41143,7 +41143,8 @@ window.SGICC={actuel,a,devis,texte,origine,source,serie:ICC_SERIE,rafraichir,lir
 const SGLP_ZOOM=[25,33,50,67,75,85,100,110,125,150,175,200,250,300], SGLP_PT=96/72, SGLP_PAD=16, SGLP_GAP=14, SGLP_MPX=16e6;
 const sglpIco=d=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+d+'</svg>';
 const SGLP_I={prec:'<path d="m15 5-7 7 7 7"/>',suiv:'<path d="m9 5 7 7-7 7"/>',moins:'<path d="M5 12h14"/>',plus:'<path d="M12 5v14M5 12h14"/>',
-  larg:'<path d="M4 5v14M20 5v14M7.5 12h9M10.5 9l-3 3 3 3M13.5 9l3 3-3 3"/>',tour:'<circle cx="12" cy="12" r="8" stroke="#c9c9c7"/><path d="M12 4a8 8 0 0 1 8 8"/>',
+  larg:'<path d="M7.5 5H4v14h3.5M16.5 5H20v14h-3.5"/><path d="M8.5 12h7M10.3 10.2 8.5 12l1.8 1.8M13.7 10.2l1.8 1.8-1.8 1.8"/>',   /* « Ajuster à la largeur » : proposition 3 « Cadrage horizontal » (Paulo, 08.11.2026) — crochets de la famille du plein écran, flèche double */
+  tour:'<circle cx="12" cy="12" r="8" stroke="#c9c9c7"/><path d="M12 4a8 8 0 0 1 8 8"/>',
   imp:'<path d="M7 9V4h10v5M7 17H4V9h16v8h-3M7 14h10v6H7z"/>',tel:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'};
 const sglpFormat=pg=>{ if(!pg) return ''; const a=Math.max(pg.w,pg.h), b=Math.min(pg.w,pg.h), A4=Math.abs(a-842)<6&&Math.abs(b-595)<6, A3=Math.abs(a-1191)<8&&Math.abs(b-842)<8;
   return (A4?'A4':A3?'A3':Math.round(pg.w/72*25.4)+' × '+Math.round(pg.h/72*25.4)+' mm')+(pg.w>pg.h?' paysage':' portrait'); };

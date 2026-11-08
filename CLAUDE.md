@@ -1695,7 +1695,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   la dernière colonne ([%]) finit sur la barre du numéro de page (largeur − 84.6 : 757.29 paysage, 510.68 portrait) — largeurs `DG_WL` 674.25, `DG_WP` 427.64 ;
   textes à gauche sans retrait (`livretDG.aligne`, bandes et filets 2 pt de part et d'autre) ; paysage : place reprise sur les montants (66 pt), [%] (32), Commentaire (90), puis Texte ; portrait : CFC 40.68, Commentaire 84,
   OUV / Localisation 30, Montant 56, Total 60, % 26. Page Information refaite (même jour, « ajouter une ligne et le texte en dessous ») comme les rubriques de la page de garde — titre « INFORMATION » en Regular 8
-  capitales souligné d'un filet noir (`livretDG.infoGarde`) — : libellé en Light, tel que saisi (d'abord en gras), à x 125.72 souligné
+  capitales souligné d'un filet noir (`livretDG.infoGarde`), à x 125.72 comme les libellés — : libellé en Light, tel que saisi (d'abord en gras), à x 125.72 souligné
   d'un filet jusqu'à x 485.5, texte en dessous à x 125.72 (repassé à la ligne à cette largeur, paragraphes gardés) ; ouvrages sous un libellé « Ouvrages », une ligne
   « code – description » chacun ; jamais de libellé seul en bas de page. Relecture du portrait
   (3 défauts confirmés sur 5, corrigés) : colonnes repérées par leur POSITION (ordre de ch02bCols, `K`), pas par leur titre ; colonne Localisation gardée ;

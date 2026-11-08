@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 19:34 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 19:40 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33653,7 +33653,7 @@ async function sgDsPdf(R, rep, o){
       const al = D.aligne === true && !info, ins = al ? 0 : 2, XB = al ? X0 - 2 : X0, WB = al ? W + 2 : W;   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
       const dI = info ? (+D.infoDx || 0) : 0;   /* page Information : contenu décalé (libellés et texte sur les 2e et 3e colonnes du pied) ; titre et filet à la marge */
       let x = X0 + dI; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
-      if(info){ if(D.infoGarde){ cx.texte(P(String(D.infoTitre || 'Information').toUpperCase()), X0, T(101), { police:F.regular, taille:8 }); cx.ligne(X0, T(104.5), X0 + W + dI, T(104.5)); }   /* titre au dessin des rubriques de la page de garde : Regular 8 capitales, filet noir (Paulo, 08.11.2026) */
+      if(info){ if(D.infoGarde){ cx.texte(P(String(D.infoTitre || 'Information').toUpperCase()), X0 + dI, T(101), { police:F.regular, taille:8 }); cx.ligne(X0 + dI, T(104.5), X0 + W + dI, T(104.5)); }   /* aligné sur les libellés (x 125.72) */   /* titre au dessin des rubriques de la page de garde : Regular 8 capitales, filet noir (Paulo, 08.11.2026) */
         else { cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:+D.corpsTitres || 9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); } }   /* titre souligné d'un filet gris (modèle 24PRC) */
       else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
         cx.rect(XB, T(116.5), WB, 16, { fond:NUIT });

@@ -454,6 +454,16 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-pdom-tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
 .sg-pdom-bar{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:2px solid var(--s-noir);background:#fff;flex:0 0 auto;min-width:0}
 .sg-pdom-bar>b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32%;flex:0 1 auto}
+.sg-intro h2 .sg-pdnum{display:block;color:var(--s-nuit)}
+.sg-pretour{display:inline-flex;align-items:center;gap:12px;min-width:0;max-width:100%;padding:0;border:0;background:none;font:inherit;color:var(--s-noir);text-align:left;cursor:pointer}
+.sg-pretour i{flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--s-nuit);color:#fff}
+.sg-pretour i svg{width:20px;height:20px}
+.sg-pretour>span{min-width:0}
+.sg-pretour small{display:block;font-size:11px;line-height:1.15;color:var(--s-gris)}
+.sg-pretour b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-pretour:hover i{background:var(--s-noir)}
+.sg-pretour:hover b{text-decoration:underline}
+.sg-pretour:focus-visible{outline:2px solid var(--s-nuit);outline-offset:3px}
 .sg-pdom-chips{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;padding-bottom:2px}
 .sg-pdom-chips button{flex:0 0 auto;border:1px solid var(--s-filet);background:#fff;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
 .sg-pdom-chips button:hover{background:var(--s-jaune3)}

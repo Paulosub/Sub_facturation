@@ -1234,6 +1234,9 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* pages de tableau : jamais plus de rangées que la page n'en tient (avec un filtre d'ouvrages, ch02bSumFill ne garde pas une position et ses ouvrages ensemble et les rangées en
        trop passaient sur le pied). Rangées de remplissage en trop retirées ; coupure de préférence avant le début d'une position ; la suite passe en tête de la page suivante de la
        même série (même récapitulatif ou document principal, page du total comprise), sinon sur une page insérée ; pages complétées jusqu'en bas (zébrage), comme ch02bFinish */
+    /* lignes de calcul et descriptif depuis le bord gauche du tableau (colonne CFC, vide sur ces lignes) : ils gagnent la largeur de la colonne CFC et débordent sur
+       Texte (Paulo, 08.11.2026 : « déplacer le texte ») */
+    pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows.forEach(r=>{ const c=r.c||[]; if((r.s==='D'||r.s==='X')&&!String(c[0]==null?'':c[0]).trim()&&String(c[1]==null?'':c[1]).trim()){ c[0]=c[1]; c[1]=''; } }); });
     pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows=etaler(pg.rows,pg.cols,false); });   /* textes jamais coupés (08.11.2026) */
     { const capT=Math.max(1,Math.floor(HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
       for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT));

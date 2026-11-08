@@ -1689,12 +1689,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   pages du moteur à la hauteur `DG_HP` 630 pt, tableau de x 28.35 sur `DG_WP` 490 pt ; les quatre colonnes de montants deviennent **Montant** (positions à 3 et
   4 chiffres, lignes de calcul) et **Total** (CFC à 1 et 2 chiffres) ; colonne vide dans sa série retirée (récapitulatif : Total et % seulement) ; lignes d'un
   descriptif réunies en un paragraphe puis repassées à la ligne ; `livretDG.orientation` / `x0` dans contenuLivret.
-  **Alignement sur le pied (même jour, « test d'alignement », portrait et paysage)** : colonne CFC de x 28.35 à 125.72 (97,37 pt), texte des colonnes à gauche
-  sans retrait (`livretDG.aligne`, bandes et filets 2 pt plus à gauche) : CFC à l'aplomb de la 1re colonne du pied (x 28.35), Texte de la 2e (x 125.72) ;
-  en paysage la largeur est prise sur Commentaire (pas sous 90 pt), sinon sur Texte ; portrait : tableau de 500 pt (Commentaire 110, Montant 62, Total 66,
-  % 30). 99TST : 17 pages en paysage, 10 en portrait. **« Base et commentaire de la position »
+  **Alignement sur le papier (même jour, portrait et paysage ; Paulo : « les CFC doivent être alignés à la colonne info@substances », « la dernière colonne doit
+  être alignée à la barre verticale entre la page et le nombre de pages », « déplacer le texte »)** : tableaux dès x 125.72 (`livretDG.x0Tab`, 2e colonne du pied) ;
+  la dernière colonne ([%]) finit sur la barre du numéro de page (largeur − 84.6 : 757.29 paysage, 510.68 portrait) — largeurs `DG_WL` 633.57, `DG_WP` 386.96 ;
+  textes à gauche sans retrait (`livretDG.aligne`, bandes et filets 2 pt de part et d'autre) ; lignes de calcul et descriptif depuis la colonne CFC (vide sur ces
+  lignes), débordant sur Texte ; paysage : place reprise sur les montants (66 pt), [%] (32), Commentaire (90), puis Texte ; portrait : CFC 36, Commentaire 84,
+  OUV / Localisation 30, Montant 56, Total 60, % 26. Page Information inchangée (libellés col. 2, texte col. 3), filet jusqu'à la barre. Relecture du portrait
+  (3 défauts confirmés sur 5, corrigés) : colonnes repérées par leur POSITION (ordre de ch02bCols, `K`), pas par leur titre ; colonne Localisation gardée ;
+  lignes du descriptif plus réunies (retours à la ligne voulus gardés ; etaler recoupe seulement ce qui dépasse) ; niveau d'un montant lisible à la graisse
+  (`r.cf`) : Montant — 4 chiffres Light, sous-total à 3 chiffres Regular ; Total — 2 chiffres Regular, 1 chiffre gras ; calculs Light. **« Base et commentaire de la position »
   retiré des Réglages (même jour)** : `displayComment` toujours vrai, « Base et commentaire dans colonne séparée » seul choisit leur place (colonne ou sous la
-  position). Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
+  position).
+  (Bloc 46, 07.11.2026, suite) Relecture contradictoire du 07.11 : 14 défauts confirmés sur 18, corrigés ;
   seconde relecture des corrections : le surplus d'une page trop pleine passe en tête de la page suivante de la même série (récapitulatif, document principal, page du total),
   pages complétées jusqu'en bas (zébrage) ; en « Assembler les descriptifs », une totalisatrice qui a son propre descriptif n'est pas ventilée.
   **Onglet « Paramètres » (07.11.2026, Paulo : « glisser Paramètres après Documents, sous forme de page comme Documents, pas une fenêtre ; l'ensemble des éléments par catégorie, le

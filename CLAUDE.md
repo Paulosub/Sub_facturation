@@ -1690,10 +1690,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   4 chiffres, lignes de calcul) et **Total** (CFC à 1 et 2 chiffres) ; colonne vide dans sa série retirée (récapitulatif : Total et % seulement) ; lignes d'un
   descriptif réunies en un paragraphe puis repassées à la ligne ; `livretDG.orientation` / `x0` dans contenuLivret.
   **Alignement sur le papier (même jour, portrait et paysage ; Paulo : « les CFC doivent être alignés à la colonne info@substances », « la dernière colonne doit
-  être alignée à la barre verticale entre la page et le nombre de pages », « déplacer le texte »)** : tableaux dès x 125.72 (`livretDG.x0Tab`, 2e colonne du pied) ;
-  la dernière colonne ([%]) finit sur la barre du numéro de page (largeur − 84.6 : 757.29 paysage, 510.68 portrait) — largeurs `DG_WL` 633.57, `DG_WP` 386.96 ;
-  textes à gauche sans retrait (`livretDG.aligne`, bandes et filets 2 pt de part et d'autre) ; lignes de calcul et descriptif depuis la colonne CFC (vide sur ces
-  lignes), débordant sur Texte ; paysage : place reprise sur les montants (66 pt), [%] (32), Commentaire (90), puis Texte ; portrait : CFC 36, Commentaire 84,
+  être alignée à la barre verticale entre la page et le nombre de pages », « déplacer le texte », « déplacer les numéros de CFC »)** : numéros CFC dans la marge à x 85.04 (comme les numéros de chapitre des contrats ; `livretDG.x0Tab`,
+  colonne CFC `DG_CFC` 40.68 pt), désignations, lignes de calcul et descriptif à x 125.72 (2e colonne du pied) ;
+  la dernière colonne ([%]) finit sur la barre du numéro de page (largeur − 84.6 : 757.29 paysage, 510.68 portrait) — largeurs `DG_WL` 674.25, `DG_WP` 427.64 ;
+  textes à gauche sans retrait (`livretDG.aligne`, bandes et filets 2 pt de part et d'autre) ; paysage : place reprise sur les montants (66 pt), [%] (32), Commentaire (90), puis Texte ; portrait : CFC 40.68, Commentaire 84,
   OUV / Localisation 30, Montant 56, Total 60, % 26. Page Information inchangée (libellés col. 2, texte col. 3), filet jusqu'à la barre. Relecture du portrait
   (3 défauts confirmés sur 5, corrigés) : colonnes repérées par leur POSITION (ordre de ch02bCols, `K`), pas par leur titre ; colonne Localisation gardée ;
   lignes du descriptif plus réunies (retours à la ligne voulus gardés ; etaler recoupe seulement ce qui dépasse) ; niveau d'un montant lisible à la graisse

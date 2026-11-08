@@ -1683,6 +1683,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sous chaque position, après ses lignes de calcul (D) et son descriptif (X), rien entre une position et ses détails ; lignes de calcul et descriptif en gris
   #706F6F ; pourcentages en bleu nuit ; total (T) sur une bande bleu nuit, texte blanc ; plus de rangées grises ni de filet noir. Montants en noir. Sans
   `style`, l'ancien rendu (zébrage, filets noirs) reste. Page Information : ni grisé ni filets.
+  **Saut de page au clic droit dans la fenêtre du document (08.11.2026, Paulo : « en cliquant avec le bouton droit sur le pdf et sur la ligne que je sélectionne, je souhaite
+  pouvoir mettre un saut de page »)** : clic droit sur une ligne du tableau → « Saut de page avant « <CFC> <texte> » » (la position de la ligne : le moteur ne coupe qu'avant une
+  position) ou « Retirer le saut de page avant … » (et, ailleurs sur une page qui commence par un saut, « Retirer le saut de page de cette page ») ; niveau selon la série de la
+  page (document principal « tous », récapitulatifs « 2 » / « 1 », règle de `ch02bUb`) ; enregistré dans la présentation choisie (`sautsDePage`), « Sans sauts de page » choisi :
+  la présentation par défaut est choisie et reçoit le saut (message) ; aucune présentation : « Standard » créée (`ch02dStdPres`). Ligne repérée par la carte du dernier PDF
+  (`DG_CARTE`, posée par `dgOctets` : série et position de chaque rangée), PDF refait aussitôt, page gardée ; lecture seule : message ; ⌥ + clic droit = menu du navigateur
+  (`dgSautMenu`, `dgSaut`).
   **Hiérarchie « Filet de calcul » (08.11.2026, variante E choisie par Paulo parmi 5 ; Paulo : « tout est au même niveau d'information … passer en italique comme dans le devis » ;
   maquettes `subgestion3/_backup_20261108_maquette_hierarchie/`)** : descriptif en Akkurat Light Italic gris ; lignes de calcul (rangées repérées `cal` par l'enveloppe de
   `ch02bDetail` pendant `DG_ACTIF`) en retrait de 7 pt (`DG_CALR`, `livretDG.calRetrait`) derrière un filet vertical bleu nuit de 0,75 pt à l'aplomb du texte (3 pt en retrait

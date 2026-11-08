@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 20:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 20:57 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38896,6 +38896,8 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
   ifr._sgVue=blob=>L.charger(blob); ifr._sgVuePrep=()=>L.attendre(); ifr._sgVueErr=e=>L.echec(e);
   if(ifr._sgblob) L.charger(ifr._sgblob);
   /* réglages en panneau */
+  if(+i===0) R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>dgSautMenu(e,X,()=>{ dernier=''; panneau();
+      try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(err){ console.error(err); L.echec(err); } },peut),true);   /* saut de page au clic droit (08.11.2026) */
   const appliquer=it=>{ if(!it||it.dis||!peut()) return; try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau();
     try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); L.echec(e); } };
   const panneau=()=>{ const ok=peut(), a=document.activeElement, kf=a&&rb.contains(a)&&a.dataset?a.dataset.k:null;
@@ -39101,6 +39103,31 @@ function dgAgreger(r){ const M=r&&r.M; if(!M) return; const ord=((r.T||{}).subs|
     return vu.get(c); };
   M.forEach((n,c)=>agg(c)); }
 let DG_ACTIF=false;
+const DG_CARTE=new WeakMap();   /* devis ouvert → carte du dernier PDF du devis général (dgOctets) */
+/* saut de page au clic droit sur une ligne du PDF (Paulo, 08.11.2026 : « en cliquant avec le bouton droit sur le pdf et sur la ligne que je sélectionne, je souhaite
+   pouvoir mettre un saut de page ») : saut AVANT la position de la ligne (le moteur ne coupe qu'avant une position), au niveau de la série de la page (document principal
+   « tous », récapitulatif à 2 chiffres « 2 », à 1 chiffre « 1 », comme ch02bUb) ; enregistré dans la présentation choisie (Réglages ▸ Sauts de page) ; « Sans sauts de
+   page » choisi : la présentation par défaut est choisie et reçoit le saut (message) ; aucune présentation : une « Standard » est créée (ch02dStdPres) */
+function dgSaut(X,cfc,niv,ajout,maj){ if(!ch02aCan(X)) return; const E=X.E, L=E.presentations||(E.presentations=[]);
+  if(!L.length&&ajout&&typeof ch02dStdPres==='function') L.push(ch02dStdPres());
+  const sel=dgPresSel(E), q=sel.pres; if(!q){ toast('Aucune présentation où enregistrer le saut de page.',true); return; }
+  const c=Object.assign({},dgChoix(E)); if(sel.aucune){ if(!ajout) return; c.presNom=String(q.nom||''); c.presIdx=L.indexOf(q); delete c.sansSauts; toast('Sauts de page de la présentation « '+(q.nom||'sans nom')+' »'); }
+  const meme=x=>{ const b=ch02bBreaks([x])[0]; return !!b&&b.cfc===String(cfc)&&b.niveau===niv; };
+  q.sautsDePage=(q.sautsDePage||[]).filter(x=>!meme(x)).concat(ajout?[{cfc:String(cfc),niveau:niv}]:[]);
+  (E.reglages||(E.reglages={})).dgPdf=c; X.touch(); maj(); }
+function dgSautMenu(e,X,maj,peut){ if(e.altKey) return; const pe=e.target&&e.target.closest?e.target.closest('.sglp-p'):null; if(!pe) return; e.preventDefault(); e.stopPropagation();
+  const car=DG_CARTE.get(X); if(!car){ toast('Document en préparation…'); return; }
+  const k=[...pe.parentNode.querySelectorAll('.sglp-p')].indexOf(pe), cp=car.pages[k];
+  if(!cp||!cp.rows){ toast('Les sauts de page se posent dans le tableau des positions.'); return; }
+  if(!peut()){ toast('Lecture seule : sauts de page non modifiables.'); return; }
+  const rc=pe.getBoundingClientRect(), y=(e.clientY-rc.top)/rc.height*(car.ori==='portrait'?841.89:595.28);
+  let j=Math.max(0,Math.min(cp.rows.length-1,Math.floor((y-cp.y0)/DG_RH))); while(j>0&&!cp.rows[j]) j--; const b=cp.rows[j]||cp.rows.find(Boolean);
+  if(!b){ toast('Aucune position sur cette ligne.'); return; }
+  const niv=cp.digit===0?'1':cp.digit===1?'2':'tous', sel=dgPresSel(X.E), S=sel.aucune?[]:ch02bBreaks(sel.sauts||[]), a=c=>S.some(x=>x.cfc===String(c)&&x.niveau===niv);
+  const lib=x=>{ const t=x.cfc+(x.t?' '+x.t:''); return t.length>48?t.slice(0,47)+'…':t; }, M=[];
+  M.push(a(b.cfc)?{t:'Retirer le saut de page avant « '+lib(b)+' »',fn:()=>dgSaut(X,b.cfc,niv,false,maj)}:{t:'Saut de page avant « '+lib(b)+' »',fn:()=>dgSaut(X,b.cfc,niv,true,maj)});
+  const p0=cp.rows.find(Boolean); if(p0&&p0.cfc!==b.cfc&&a(p0.cfc)) M.push({t:'Retirer le saut de page de cette page (avant « '+lib(p0)+' »)',fn:()=>dgSaut(X,p0.cfc,niv,false,maj)});
+  sgMenuAt(e.clientX,e.clientY,M); }
 /* textes des positions : « - » final du 1er libellé = césure (ch01bDbl, createDoubleText de l'ancien logiciel : « con- duites » → « conduites », comme le modèle 24PRC) */
 const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':String(p.texte2); return a?(b?ch01bDbl(a,b):a):b.trim(); };
 /* « Quantités et prix » sans « Afficher les montants » (Paulo, 08.11.2026 : « je veux voir les quantités et les prix et commentaires du calcul sans avoir besoin de
@@ -39252,6 +39279,13 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
           if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
+    /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
+       elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
+    { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;
+      pages.forEach(pg=>{ if(!(pg.type===1||pg.type===2)){ carte.pages.push({type:pg.type}); return; } if(pg.digit!==dg){ bloc=null; dg=pg.digit; }
+        carte.pages.push({type:pg.type,digit:pg.digit,y0:122,rows:(pg.rows||[]).map(r=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
+          if(c0&&!r.k&&r.s!=='T'&&r.s!=='E') bloc={cfc:c0,t:String(c[1]==null?'':c[1]).trim()}; return pl&&r.s!=='T'?bloc:null; })}); });
+      DG_CARTE.set(X,carte); }
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,

@@ -1616,7 +1616,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   l'ouvrage ; « Assembler les descriptifs » : sous la position (`dgDescEnTete`, enveloppe de `ch02bDocRows` pendant `DG_ACTIF` ; mêmes rangées, mêmes pages, seul l'ordre change ; les lignes vides du début et de la fin d'un descriptif restent à leur place, après les calculs — relecture du 08.11.2026) ;
   **« Tous les montants détaillés » fusionné dans « Afficher les montants »** (Paulo, 08.11.2026), placé dans le groupe Calcul sous « Commentaire du calcul », en retrait :
   montants des lignes de calcul, mêmes règles que les deux autres cases (absente sans ligne de calcul, grisée et décochée sans « Afficher le calcul » — `dgOptions` le force à faux —,
-  pas cochée d'office quand on recoche le calcul) ; case placée par `grp` / `ind` (vueDoc) ; décocher « Quantités et prix » ne décoche plus « Afficher le calcul » (règle de l'ancien logiciel retirée le 08.11.2026 : rien ne se grise tant que le calcul est affiché)).
+  pas cochée d'office quand on recoche le calcul) ; case placée par `grp` / `ind` (vueDoc) ; « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 ; panneau
+  et menu de la ligne) ; décocher « Quantités et prix » ne décoche plus « Afficher le calcul » (règle de l'ancien logiciel retirée le 08.11.2026 : rien ne se grise tant que le calcul est affiché)).
   Autres visionneuses inchangées. Classes `.sgdv-*`.
   **Lecteur commun et fenêtre PDF (08.11.2026, bloc 48, `subgestion3/sg3_lecteur.js`, concaténé en dernier ; Paulo : « améliore la fenêtre PDF lorsque je
   clique sur PDF, adapte le design au reste de l'app »)** : `sgLecteurPdf(o)` = le lecteur de cette fenêtre, rendu commun (barre ‹ Page n / N ›, zoom,

@@ -898,7 +898,7 @@ const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLi
    laisser sur la page sur laquelle je me situe »). Réglages = ch02cPrefItems (mêmes cases que le menu), rangés en groupes, appliqués aussitôt. ═══ */
 const ICV=d=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+d+'</svg>';
 const VUE_GROUPES=['Format','Positions','Calcul','Montants','Affichage','Sauts de page','Autres'];
-const VUE_ORDRE=['Descriptif','Assembler les descriptifs des ouvrages','Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Afficher les subdivisions',
+const VUE_ORDRE=['Descriptif','Assembler les descriptifs des ouvrages','Seulement positions de 1 à 3 chiffres','Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Pourcentages sur le total général','Afficher les subdivisions',
   'Afficher le calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Afficher les montants','Bases de prix','Variantes',
   'Tous les montants détaillés','Uniquement les montants avec calculs et remarque','Masquer les décimales','Pourcentages sur le total général',
   'Descriptif','Assembler les descriptifs des ouvrages','Commentaire dans colonne séparée','Base et commentaire de la position','Base et commentaire dans colonne séparée'];
@@ -1335,7 +1335,9 @@ function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
   const pt=dgChoix(X.E).format==='portrait';
   const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul',ind:true}:{})));
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
-  L.push('-',{t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total')});
+  /* « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 : « déplacer ») — panneau et menu de la ligne */
+  { const it={t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total'),grp:'Positions'}, k=L.findIndex(x=>x&&x.t==='Afficher les positions sans montant');
+    if(k>=0) L.splice(k+1,0,it); else L.push('-',it); }
   if(P.length) L.push('-',...P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans')});
   return L.filter((x,i,a)=>!(x==='-'&&(i===0||a[i-1]==='-'))); }
 /* page repérée dont le PDF est celui du modèle (préparé tout de suite, servi par sgImpPdf) */

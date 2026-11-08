@@ -1505,6 +1505,7 @@ async function sgDsPdf(R, rep, o){
      sig:[titre] }, pages:[{ type 0 garde | 3, 4 information | 1, 2 tableau, titre, cols:[{ t, w, r }], rows:[{ c:[…], s }] }], st:{ s:{ z, b } }, zebra } */
   const contenuLivret = (cx) => {
     const D = o.livretDG, H = PAP.format.paysage.h, T = (v) => H - v, GRIS = PDFLib.rgb(0.91, 0.91, 0.91), FIL = PDFLib.rgb(0.8, 0.8, 0.8);
+    const NUIT = PDFLib.rgb(0, 0.2, 0.2745), FILN = PDFLib.rgb(0.847, 0.847, 0.831), GRT = PDFLib.rgb(0.439, 0.435, 0.435), BLANC = PDFLib.rgb(1, 1, 1);   /* bleu nuit #003346, filet #d8d8d4, gris #706F6F de la charte */
     const P = (t) => prep(t == null ? '' : t);
     const police = (s) => { const x = (D.st || {})[s] || {}; return { f: x.b ? F.bold : F.light, z: +x.z || 9 }; };
     const ell = (f) => aGlyphe(f, 0x2026) ? '…' : '...';
@@ -1534,24 +1535,44 @@ async function sgDsPdf(R, rep, o){
     /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
     const tableau = (pg) => {
       const X0 = cx.Z.x0, cols = Array.from(pg.cols || []), rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
+      const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => /%/.test(String(c.t || '')));   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
       let x = X0; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
       if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); cx.ligne(X0, T(108.5), X0 + W, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
+      else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
+        cx.rect(X0, T(116.5), W, 16, { fond:NUIT });
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.regular, 7.5, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(111), { police:F.regular, taille:7.5, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* corps de l'en-tête (7,5 pt) */
+      }
       else {
         cx.ligne(X0, T(100.5), X0 + W, T(100.5));
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
         cx.ligne(X0, T(116.5), X0 + W, T(116.5));
       }
       let y = info ? 121 : 122;
-      Array.from(pg.rows || []).forEach((r, i) => {
-        const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []);
-        if(D.zebra && !info && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* une rangée sur deux (modèle 24PRC) ; plus sur la page Information (demande de Paulo, 08.11.2026) */
-        if(!info && (s === 'O' || s === 'F' || s === 'T') && c.some(v => String(v == null ? '' : v).trim())) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
+      const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
+      /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages
+         (rangée S à CFC vide) ; les rangées D / X vides (paragraphe vide d'un descriptif) n'interrompent pas le bloc, une rangée vide (E) le ferme. Un seul filet, sous la
+         dernière rangée du bloc, bleu nuit si sa tête est un CFC à 1 chiffre (O, F), gris sinon (relecture du 08.11.2026). */
+      const suiteDe = r => plein(r) && (det(r) || !!r.k || (String(r.s || 'S') === 'S' && !String((r.c || [])[0] == null ? '' : r.c[0]).trim()));
+      const prochaine = i => { let j = i + 1; while(j < RG.length && !plein(RG[j]) && det(RG[j])) j++; return RG[j]; };
+      let tete = 'S', enBloc = false;
+      RG.forEach((r, i) => {
+        const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []), pl = plein(r);
+        if(pl && !(enBloc && suiteDe(r))) tete = s; enBloc = pl || (enBloc && det(r));
+        if(D.zebra && !info && !nuit && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* une rangée sur deux (modèle 24PRC) ; plus sur la page Information (demande de Paulo, 08.11.2026) */
+        if(!info && !nuit && !r.k && (s === 'O' || s === 'F' || s === 'T') && pl) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
+        if(nuit && s === 'T' && pl) cx.rect(X0, T(y + rh), W, rh, { fond:NUIT });   /* total : bande bleu nuit, texte blanc */
+        /* Bleu nuit : un filet fin sous chaque position, après ses lignes de calcul et son descriptif (rien entre une position et ses détails) ; filet bleu nuit sous les CFC à 1 chiffre */
+        if(nuit && pl && s !== 'T' && tete !== 'T' && !suiteDe(prochaine(i))){ if(tete === 'O' || tete === 'F') cx.rect(X0, T(y + rh) - 0.25, W, 0.5, { fond:NUIT }); else cx.ligne(X0, T(y + rh), X0 + W, T(y + rh), { couleur:FILN }); }
+        const coul = !nuit ? undefined : s === 'T' ? BLANC : det(r) ? GRT : (s === 'O' || s === 'F' || s === 'W') ? NUIT : undefined;
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
-          const q = pos[j + 1], libre = D.deborde === true && !p.r && q && !q.r && q.w && !String(c[j + 1] == null ? '' : c[j + 1]).trim();   /* texte trop long : coupé par « … » au bord de sa colonne, comme l'ancien logiciel (modèle 24PRC) ; débordement sur la colonne vide de droite seulement si D.deborde */
+          let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
           const pf = info && j === 0 ? F.bold : pol.f;   /* page Information : libellés en gras (demande de Paulo, 08.11.2026) */
-          const t = ajuste(v, pf, pol.z, p.w - 4 + (libre && cx.largeur(P(v), pf, pol.z) > p.w - 4 ? q.w : 0)); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : 2), T(base), { police:pf, taille:pol.z, align:p.r ? 'd' : 'g' }); });   /* Information : sans retrait, colonnes du pied */
-        if(info && !D.zebra) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
+          const cl = nuit && j === jPct && s !== 'T' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
+          const dispo = p.w - 4 + (cx.largeur(P(v), pf, pol.z) > p.w - 4 ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
+          const zz = D.deborde === true && lw > dispo && lw <= dispo * 1.08 ? pol.z * dispo / lw : pol.z;   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé */
+          const t = ajuste(v, pf, zz, dispo); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : 2), T(base), Object.assign({ police:pf, taille:zz, align:p.r ? 'd' : 'g' }, cl ? { couleur:cl } : {})); });   /* Information : sans retrait, colonnes du pied */
+        if(info && !D.zebra && !D.style) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });   /* page Information du Bleu nuit : ni grisé ni filets (demande du 08.11.2026) */
         y += rh; });
     };
     Array.from(D.pages || []).forEach(pg => {

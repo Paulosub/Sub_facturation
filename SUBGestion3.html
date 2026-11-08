@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 08.11.2026 17:43 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 08.11.2026 18:03 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -468,7 +468,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-intro .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
 .sg-intro .sg-mandat .d{color:var(--s-gris)}
 .sg-intro .sg-mandat+p{margin-top:0}
-.sg-intro .sg-frise{width:120px}
+html body .sg-intro .sg-frise{width:120px}   /* « html body » : plus fort que la frise des visuels à l'essai (visuels.css, 200 px) */
 @container (max-width:1180px){.sg-intro .sg-mandat{flex:0 0 100%;margin:2px 0 16px}}   /* présentation compacte : la frise sur sa ligne, sous le nom */
 .sg-pretour{display:inline-flex;align-items:center;gap:12px;min-width:0;max-width:100%;padding:0;border:0;background:none;font:inherit;color:var(--s-noir);text-align:left;cursor:pointer}
 .sg-pretour i{flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--s-nuit);color:#fff}
@@ -1054,7 +1054,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-id .sg-mandat{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:4px 0 22px;font-size:12.5px}
 .sg-ag-id .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
 .sg-ag-id .sg-mandat .d{color:var(--s-gris)}
-.sg-ag-id .sg-frise{width:120px}
+html body .sg-ag-id .sg-frise{width:120px}
 .sg-ag-wc{padding:2px 18px 24px}
 .sg-ag-bloc{margin-top:22px}
 .sg-ag-bloc>h4{margin:0;padding-bottom:7px;border-bottom:2px solid var(--s-noir);font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
@@ -33618,6 +33618,7 @@ async function sgDsPdf(R, rep, o){
      sig:[titre] }, pages:[{ type 0 garde | 3, 4 information | 1, 2 tableau, titre, cols:[{ t, w, r }], rows:[{ c:[…], s }] }], st:{ s:{ z, b } }, zebra } */
   const contenuLivret = (cx) => {
     const D = o.livretDG, H = PAP.format.paysage.h, T = (v) => H - v, GRIS = PDFLib.rgb(0.91, 0.91, 0.91), FIL = PDFLib.rgb(0.8, 0.8, 0.8);
+    const NUIT = PDFLib.rgb(0, 0.2, 0.2745), FILN = PDFLib.rgb(0.847, 0.847, 0.831), GRT = PDFLib.rgb(0.439, 0.435, 0.435), BLANC = PDFLib.rgb(1, 1, 1);   /* bleu nuit #003346, filet #d8d8d4, gris #706F6F de la charte */
     const P = (t) => prep(t == null ? '' : t);
     const police = (s) => { const x = (D.st || {})[s] || {}; return { f: x.b ? F.bold : F.light, z: +x.z || 9 }; };
     const ell = (f) => aGlyphe(f, 0x2026) ? '…' : '...';
@@ -33647,24 +33648,44 @@ async function sgDsPdf(R, rep, o){
     /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
     const tableau = (pg) => {
       const X0 = cx.Z.x0, cols = Array.from(pg.cols || []), rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
+      const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => /%/.test(String(c.t || '')));   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
       let x = X0; const pos = cols.map(c => { const r = { x, w:+c.w || 0, r:!!c.r }; x += r.w; return r; });
       if(info){ cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:9 }); cx.ligne(X0, T(108.5), X0 + W, T(108.5), { couleur:FIL }); }   /* titre souligné d'un filet gris (modèle 24PRC) */
+      else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
+        cx.rect(X0, T(116.5), W, 16, { fond:NUIT });
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.regular, 7.5, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(111), { police:F.regular, taille:7.5, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* corps de l'en-tête (7,5 pt) */
+      }
       else {
         cx.ligne(X0, T(100.5), X0 + W, T(100.5));
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
         cx.ligne(X0, T(116.5), X0 + W, T(116.5));
       }
       let y = info ? 121 : 122;
-      Array.from(pg.rows || []).forEach((r, i) => {
-        const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []);
-        if(D.zebra && !info && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* une rangée sur deux (modèle 24PRC) ; plus sur la page Information (demande de Paulo, 08.11.2026) */
-        if(!info && (s === 'O' || s === 'F' || s === 'T') && c.some(v => String(v == null ? '' : v).trim())) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
+      const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
+      /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages
+         (rangée S à CFC vide) ; les rangées D / X vides (paragraphe vide d'un descriptif) n'interrompent pas le bloc, une rangée vide (E) le ferme. Un seul filet, sous la
+         dernière rangée du bloc, bleu nuit si sa tête est un CFC à 1 chiffre (O, F), gris sinon (relecture du 08.11.2026). */
+      const suiteDe = r => plein(r) && (det(r) || !!r.k || (String(r.s || 'S') === 'S' && !String((r.c || [])[0] == null ? '' : r.c[0]).trim()));
+      const prochaine = i => { let j = i + 1; while(j < RG.length && !plein(RG[j]) && det(RG[j])) j++; return RG[j]; };
+      let tete = 'S', enBloc = false;
+      RG.forEach((r, i) => {
+        const s = String(r.s || 'S'), pol = police(s), c = Array.from(r.c || []), pl = plein(r);
+        if(pl && !(enBloc && suiteDe(r))) tete = s; enBloc = pl || (enBloc && det(r));
+        if(D.zebra && !info && !nuit && i % 2 === 0) cx.rect(X0, T(y + rh), W, rh, { fond:GRIS });   /* une rangée sur deux (modèle 24PRC) ; plus sur la page Information (demande de Paulo, 08.11.2026) */
+        if(!info && !nuit && !r.k && (s === 'O' || s === 'F' || s === 'T') && pl) cx.rect(X0, T(y) - 0.375, W, 0.75, { fond:C.N });
+        if(nuit && s === 'T' && pl) cx.rect(X0, T(y + rh), W, rh, { fond:NUIT });   /* total : bande bleu nuit, texte blanc */
+        /* Bleu nuit : un filet fin sous chaque position, après ses lignes de calcul et son descriptif (rien entre une position et ses détails) ; filet bleu nuit sous les CFC à 1 chiffre */
+        if(nuit && pl && s !== 'T' && tete !== 'T' && !suiteDe(prochaine(i))){ if(tete === 'O' || tete === 'F') cx.rect(X0, T(y + rh) - 0.25, W, 0.5, { fond:NUIT }); else cx.ligne(X0, T(y + rh), X0 + W, T(y + rh), { couleur:FILN }); }
+        const coul = !nuit ? undefined : s === 'T' ? BLANC : det(r) ? GRT : (s === 'O' || s === 'F' || s === 'W') ? NUIT : undefined;
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
-          const q = pos[j + 1], libre = D.deborde === true && !p.r && q && !q.r && q.w && !String(c[j + 1] == null ? '' : c[j + 1]).trim();   /* texte trop long : coupé par « … » au bord de sa colonne, comme l'ancien logiciel (modèle 24PRC) ; débordement sur la colonne vide de droite seulement si D.deborde */
+          let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
           const pf = info && j === 0 ? F.bold : pol.f;   /* page Information : libellés en gras (demande de Paulo, 08.11.2026) */
-          const t = ajuste(v, pf, pol.z, p.w - 4 + (libre && cx.largeur(P(v), pf, pol.z) > p.w - 4 ? q.w : 0)); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : 2), T(base), { police:pf, taille:pol.z, align:p.r ? 'd' : 'g' }); });   /* Information : sans retrait, colonnes du pied */
-        if(info && !D.zebra) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });
+          const cl = nuit && j === jPct && s !== 'T' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
+          const dispo = p.w - 4 + (cx.largeur(P(v), pf, pol.z) > p.w - 4 ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
+          const zz = D.deborde === true && lw > dispo && lw <= dispo * 1.08 ? pol.z * dispo / lw : pol.z;   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé */
+          const t = ajuste(v, pf, zz, dispo); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : 2), T(base), Object.assign({ police:pf, taille:zz, align:p.r ? 'd' : 'g' }, cl ? { couleur:cl } : {})); });   /* Information : sans retrait, colonnes du pied */
+        if(info && !D.zebra && !D.style) cx.ligne(X0, T(y + rh + 0.5), X0 + W, T(y + rh + 0.5), { couleur:FIL });   /* page Information du Bleu nuit : ni grisé ni filets (demande du 08.11.2026) */
         y += rh; });
     };
     Array.from(D.pages || []).forEach(pg => {
@@ -39089,8 +39110,6 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})), iA=97.37, colsI=[{t:'',w:iA,r:false},{t:'',w:DG_W-iA,r:false}];   /* page Information : libellés à l'aplomb de la 1re colonne du pied (x 28.38), texte de la 2e (x 125.72) — demande de Paulo, 08.11.2026 */
     const F=X.filter, filtre=Array.isArray(F)&&F.length&&F.some(f=>!f.actif||(f.facteur!=null&&f.facteur!==''&&isFinite(+f.facteur)&&+f.facteur!==1))?'Filtre : '+(ch02bFilterText(F)||'aucun ouvrage'):'';   /* montants partiels : toujours signalés */
     const dz=+o.detailFontSize||8, wT=(cols[1]||{}).w||0;
-    /* ligne de calcul trop longue pour la colonne Texte (le texte est coupé à son bord, comme le modèle) : la formule est retirée, la quantité et le prix restent */
-    const court=v=>{ const i=v.lastIndexOf(' =  '); if(!/^Quantité /.test(v)||i<0) return v; return meas(v,'',dz)>wT-4?'Quantité '+v.slice(i+4).trim():v; };
     const G=E.reglages||{}, ti=G.titres||{}, mod=v=>/^\[\.\.\.\]/.test(String(v||'').trim()), tt=k=>{ const v=String(ti[k]==null?'':ti[k]).trim(); return v&&!mod(v)?v:'Devis général'; }, etat=String(G.etatProjet||'').trim(), etatOk=etat&&!mod(etat);   /* « [...] … » : texte modèle de l'ancien logiciel, ignoré */
     const titrePage=pg=>pg.type===0?(tt('garde')+(etatOk?' - '+etat:'')):(pg.type===1||pg.type===2)?(pg.digit===0?tt('unChiffre'):pg.digit===1?tt('deuxChiffres'):tt('document')):tt('document');
     const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
@@ -39099,9 +39118,33 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
     const couverture={titre:titrePage({type:0}).toUpperCase(),marge:mod(G.marge)?'':String(G.marge||'').trim(),filtre,
       rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',A&&A.mo?un(A.mo.lignes||[]):''],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:['Le maître de l’ouvrage :','L’architecte :']};
+    /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
+       texte vides à sa droite (comme le dessin, livretDG.deborde) ; s'il ne tient toujours pas, il passe à la ligne sur des rangées de suite (k:1, même style, sans
+       filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */
+    const bT=o.titlePosBold!==false, zT=+o.titleFontSize||10, zP=DG_TXT, zD=DG_TXT;
+    const stDe=x=>(x==='T'||x==='O'||x==='W'||x==='F')?{b:bT,z:zT}:(x==='D'||x==='X')?{b:false,z:zD}:{b:false,z:zP};
+    const larg=(t,b,z)=>meas(t,b?'bold':'',z);
+    const couperMots=(t,b,z,wd)=>{ const s0=String(t); if(larg(s0,b,z)<=wd) return [s0]; const L=[]; let cur='';
+      s0.split(' ').forEach(m=>{ const e=cur?cur+' '+m:m; if(larg(e,b,z)<=wd){ cur=e; return; } if(cur.trim()) L.push(cur);
+        if(larg(m,b,z)<=wd){ cur=m; return; } let x=''; for(const ch of m){ if(x&&larg(x+ch,b,z)>wd){ L.push(x); x=ch; } else x+=ch; } cur=x; });
+      if(cur.trim()) L.push(cur); return L.length?L:[s0]; };
+    const placeDe=(cols,c,j)=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&!cols[k].r&&+cols[k].w&&!String(c[k]==null?'':c[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };   /* marge de 1,5 pt : mesure du dessin un peu différente (glyphes de secours) */
+    const etaler=(rows,cols,info)=>{ const out=[]; rows.forEach(r=>{ const c=Array.from(r.c||[]), sty=stDe(r.s);
+        const L=c.map((v,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(v==null?'':v).trim()) return [v]; return couperMots(v,(info&&j===0)||sty.b,sty.z,placeDe(cols,c,j)); });
+        const n=Math.max(1,...L.map(x=>x.length));
+        if(n===1){ out.push(r); return; }
+        if(info){ /* Information : la suite du libellé va sur les rangées suivantes de la même remarque (libellé vide), sinon sur une rangée de suite */
+          out.push(Object.assign({},r,{c:L.map(x=>x[0]==null?'':x[0])})); r._suite=L[0].slice(1); return; }
+        for(let i=0;i<n;i++) out.push(i===0?Object.assign({},r,{c:L.map(x=>x[0]==null?'':x[0])}):{c:L.map(x=>x[i]==null?'':x[i]),s:r.s,k:1}); });
+      if(info){ const R2=[]; let reste=[]; out.forEach(r=>{ const c=Array.from(r.c||[]);
+          if(reste.length&&!String(c[0]||'').trim()&&String(c[1]||'').trim()){ R2.push(Object.assign({},r,{c:[reste.shift(),...c.slice(1)]})); return; }
+          while(reste.length) R2.push({c:[reste.shift(),''],s:'S',k:1});
+          R2.push(r); if(r._suite){ reste=r._suite; delete r._suite; } });
+        while(reste.length) R2.push({c:[reste.shift(),''],s:'S',k:1}); return R2; }
+      return out; };
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
     const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
-      return {c:c0.map((v,j)=>j===1&&r.s==='D'?court(v):v),s:String(r.s||'S')}; })}));   /* « Quantité 467 =  467.0 » gardé tel quel, comme le modèle 24PRC */
+      return {c:c0,s:String(r.s||'S')}; })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
     /* Information (modèle 24PRC) : rangées refaites depuis les remarques et les ouvrages, coupées comme le moteur (ch02bIntro) — rangée vide avant chaque remarque nommée et avant la
        liste des ouvrages (pas entre deux ouvrages ; une entrée sans nom continue la précédente, comme dans les données de l'ancien logiciel), lignes vides d'une remarque écrite en
        paragraphes gardées —, puis réparties sur les pages d'Information (23 rangées par page : règle du moteur rows > lpp − 3, comme le modèle ; pas de rangée vide en tête de page) */
@@ -39112,12 +39155,14 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
           ent.push(lc?{name:c+' | '+lc,desc:String(s.DESCRIPTION||'')+' | '+String(s.LOCATIONDESCRIPTION||''),o:true}:{name:c,desc:String(s.DESCRIPTION||''),o:true}); });
         ent.forEach(d=>{ const nm=String(d.name||'').trim(); if(nm&&R0.length&&!(d.o&&prev==='o')) R0.push({c:['',''],s:'S'});
           ch02bIntro(d,tw,fsz,meas,fnm).forEach(c=>R0.push({c:Array.from(c).map(v=>v==null?'':String(v)),s:'S'})); if(nm) prev=d.o?'o':'r'; });
+        R0.splice(0,R0.length,...etaler(R0,pages[iI[0]].cols,true));   /* libellés jamais coupés (08.11.2026) */
         const cap=Math.max(1,Math.floor(DG_HI/DG_RH)-2), P2=[], vide=r=>!r.c.some(v=>String(v).trim()); let cur=null;
         R0.forEach(r=>{ if(!cur||cur.rows.length>=cap){ if(cur&&vide(r)) return; cur={type:P2.length?4:3,titre:pages[iI[0]].titre,cols:pages[iI[0]].cols,rows:[]}; P2.push(cur); } cur.rows.push(r); });
         pages.splice(iI[0],iI.length,...P2); } }
     /* pages de tableau : jamais plus de rangées que la page n'en tient (avec un filtre d'ouvrages, ch02bSumFill ne garde pas une position et ses ouvrages ensemble et les rangées en
        trop passaient sur le pied). Rangées de remplissage en trop retirées ; coupure de préférence avant le début d'une position ; la suite passe en tête de la page suivante de la
        même série (même récapitulatif ou document principal, page du total comprise), sinon sur une page insérée ; pages complétées jusqu'en bas (zébrage), comme ch02bFinish */
+    pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows=etaler(pg.rows,pg.cols,false); });   /* textes jamais coupés (08.11.2026) */
     { const capT=Math.max(1,Math.floor(DG_HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
       for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT));
         while(R.length>cap&&vide(R[R.length-1])) R.pop();
@@ -39125,10 +39170,10 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
           if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
-    const sT={b:o.titlePosBold!==false,z:+o.titleFontSize||10}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:+o.posFontSize||9},D:{b:false,z:+o.detailFontSize||8},X:{b:false,z:+o.detailFontSize||8},E:{b:false,z:+o.posFontSize||9}};
+    const sT={b:o.titlePosBold!==false,z:+o.titleFontSize||10}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
-      livretDG:{couverture,pages,st,zebra:!!o.zebra,rh:DG_RH,infoTitre:'Information'}})), j=new w.Array(); opt.journal=j;
+      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information'}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
     return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
 async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }
@@ -39140,6 +39185,7 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
 /* « Réglages » du devis général : les cases du menu de la ligne (mêmes libellés que le moteur) sur les options du livret de l'ancien logiciel (ch02b, libellés identiques dans sa
    fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
+const DG_TXT=7.5;   /* corps du texte du tableau du devis général en PDF = corps de l'en-tête du papier (PAP.taille) — positions, lignes de calcul, descriptif, Information (08.11.2026) */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['displayNoTitlePositions','Afficher les positions saisies et les totalisateurs'],
   ['displayComment','Base et commentaire de la position'],['commentInColumn','Base et commentaire dans colonne séparée'],'-',['*tous','Tous les montants détaillés'],'-',
   ['displayDetailComment','Commentaire du calcul'],['displayPriceBase','Bases de prix'],['dispalyCalcualtion','Afficher le calcul'],['displayQuanPriceValue','Quantités et prix'],
@@ -41034,6 +41080,18 @@ function sglpImprimer(blob,retour){ if(!blob) return; const u=URL.createObjectUR
   f.onload=()=>setTimeout(()=>{ try{ f.contentWindow.addEventListener('afterprint',()=>setTimeout(rendre,0),{once:true}); }catch(_){}
     try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ window.open(u,'_blank'); } setTimeout(rendre,0); },250);
   document.body.append(f); setTimeout(()=>{ f.remove(); URL.revokeObjectURL(u); },120000); }
+/* impression d'une image : cadre SANS scripts (sandbox sans allow-scripts) qui ne contient qu'un <img> — un SVG déposé n'est jamais chargé comme document,
+   ses scripts ne s'exécutent pas (relecture du 08.11.2026) */
+function sglpImprimerImage(url,retour){ const f=document.createElement('iframe'); f.setAttribute('sandbox','allow-same-origin allow-modals');
+  f.style.cssText='position:fixed;right:0;bottom:0;width:2px;height:2px;border:0;opacity:0;pointer-events:none';
+  f.srcdoc='<!doctype html><meta charset="utf-8"><style>@page{margin:10mm}html,body{margin:0;height:100%}img{display:block;max-width:100%;max-height:100%;margin:0 auto;object-fit:contain}</style><img src="'+String(url).replace(/"/g,'&quot;')+'" alt="">';
+  const rendre=()=>{ try{ window.focus(); }catch(_){} try{ if(retour&&retour.isConnected) retour.focus({preventScroll:true}); }catch(_){} };
+  f.onload=()=>{ const im=f.contentDocument&&f.contentDocument.querySelector('img'), go=()=>setTimeout(()=>{ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ toast('Impression : utilisez Télécharger puis imprimez.',true); } setTimeout(rendre,0); },150);
+    if(im&&!im.complete){ im.onload=go; im.onerror=go; } else go(); };
+  document.body.append(f); setTimeout(()=>f.remove(),120000); }
+/* message en français pour les erreurs de pdf.js (relecture : « No password given » s'affichait tel quel) */
+const sglpErreur=e=>{ const n=String(e&&e.name||''); if(n==='PasswordException') return 'ce PDF est protégé par un mot de passe : utilisez « Télécharger » pour l’ouvrir avec son mot de passe.';
+  if(n==='InvalidPDFException'||n==='MissingPDFException') return 'le fichier PDF est illisible ou abîmé.'; return String(e&&e.message||e); };
 /* lecteur PDF : o.surInfo({n, page, taille, titre}) à chaque document affiché ; o.surEchec(e) quand une mise à jour échoue */
 function sgLecteurPdf(o){ o=o||{}; sglpCss();
   const R=document.createElement('div'); R.className='sglp';
@@ -41048,14 +41106,15 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
     +'<div class="sglp-vue" tabindex="0" aria-label="Document"><div class="sglp-pages"><div class="sglp-msg">Préparation du document…</div></div></div>';
   const vue=R.querySelector('.sglp-vue'), cont=R.querySelector('.sglp-pages'), maj=R.querySelector('.sglp-maj'), inP=R.querySelector('.sglp-in'),
     totP=R.querySelector('.sglp-pg .tot'), zm=R.querySelector('.sglp-zm'), bLarg=R.querySelector('[data-a="larg"]'), bPrec=R.querySelector('[data-a="prec"]'), bSuiv=R.querySelector('[data-a="suiv"]');
-  const V={pdf:null,lib:null,pages:[],geo:[],zoom:'l',s:1,tok:0,rt:0,blob:null,vivant:true,attendu:false,charge:false,apres:[]};
+  const V={pdf:null,lib:null,pages:[],geo:[],zoom:'l',s:1,tok:0,rt:0,blob:null,vivant:true,attendu:false,charge:false,apres:[],cible:null,protege:false};
   /* indicateur : allumé tant qu'une version est demandée (attendre) ou en cours d'affichage ; ce qui attend la version à jour (impression) part ensuite */
   const etat=()=>{ const on=V.attendu||V.charge; maj.classList.toggle('on',on);
     if(!on&&V.apres.length){ V.apres.splice(0).forEach(f=>{ try{ f(); }catch(e){ console.error(e); } }); } };
   const echelle=()=>{ const mw=Math.max(1,...V.pages.map(x=>x.w)); return V.zoom==='l'?Math.max(.2,(vue.clientWidth-2*24-12)/mw):V.zoom/100*SGLP_PT; };
   const geometrie=s=>{ let y=SGLP_PAD; return V.pages.map(pg=>{ const g={y,w:Math.round(pg.w*s),h:Math.round(pg.h*s)}; y+=g.h+SGLP_GAP; return g; }); };
-  const position=()=>{ const st=vue.scrollTop; for(let k=V.geo.length-1;k>=0;k--){ const g=V.geo[k]; if(g.y<=st+1) return {k,f:Math.min(1,Math.max(0,(st-g.y)/Math.max(1,g.h+SGLP_GAP)))}; } return {k:0,f:0}; };
-  const pageCourante=()=>{ const st=vue.scrollTop+vue.clientHeight*.3; let k=0; V.geo.forEach((g,j)=>{ if(g.y<=st) k=j; }); return k; };
+  /* mise en page en cours (poser avant fin) : la position demandée fait foi — l'ancien défilement ne correspond plus à la nouvelle géométrie (relecture : deux zooms rapides sautaient de page) */
+  const position=()=>{ if(V.cible) return Object.assign({},V.cible); const st=vue.scrollTop; for(let k=V.geo.length-1;k>=0;k--){ const g=V.geo[k]; if(g.y<=st+1) return {k,f:Math.min(1,Math.max(0,(st-g.y)/Math.max(1,g.h+SGLP_GAP)))}; } return {k:0,f:0}; };
+  const pageCourante=()=>{ if(V.cible) return Math.min(V.cible.k,Math.max(0,V.geo.length-1)); const st=vue.scrollTop+vue.clientHeight*.3; let k=0; V.geo.forEach((g,j)=>{ if(g.y<=st) k=j; }); return k; };
   const tete=()=>{ const n=V.pages.length, k=n?pageCourante():0; totP.textContent='/ '+(n||'—'); zm.textContent=n?Math.round(V.s/SGLP_PT*100)+' %':'—';
     if(document.activeElement!==inP) inP.value=n?k+1:''; bPrec.disabled=!n||k<=0; bSuiv.disabled=!n||k>=n-1; bLarg.classList.toggle('on',V.zoom==='l'); };
   const vider=div=>{ div.querySelectorAll('canvas,.textLayer').forEach(x=>x.remove()); div._s=null; };
@@ -41067,14 +41126,14 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
     try{ const tl=document.createElement('div'); tl.className='textLayer'; tl.style.setProperty('--scale-factor',String(s));
       V.lib.renderTextLayer({textContentSource:pg.p.streamTextContent(),container:tl,viewport:pg.p.getViewport({scale:s}),textDivs:[]}).promise.then(()=>{ if(div._s===s&&t===V.rt) div.append(tl); },()=>{}); }catch(_){} };
   let file=Promise.resolve();
-  const visibles=()=>{ if(!V.pdf) return; const t=V.rt, st=vue.scrollTop, vh=vue.clientHeight, divs=cont.children;
+  const visibles=()=>{ if(!V.pdf||V.cible) return; const t=V.rt, st=vue.scrollTop, vh=vue.clientHeight, divs=cont.children;
     V.geo.forEach((g,k)=>{ const d=divs[k]; if(!d||!d.classList.contains('sglp-p')) return; const pres=g.y+g.h>st-vh&&g.y<st+2*vh, loin=g.y+g.h<st-4*vh||g.y>st+5*vh;
       if(pres&&d._s!==V.s&&!d._file){ d._file=true; file=file.then(()=>t===V.rt?rendrePage(k,d,t):null).catch(e=>console.error(e)).then(()=>{ d._file=false; }); }
       else if(loin&&d._s) vider(d); }); tete(); };
-  const poser=(pos,av)=>{ V.s=echelle(); V.geo=geometrie(V.s); V.rt++;
+  const poser=(pos,av)=>{ V.s=echelle(); V.geo=geometrie(V.s); V.rt++; V.cible=av?Object.assign({k:0,f:0},pos):null;
     const divs=V.geo.map((g,k)=>{ const d=document.createElement('div'); d.className='sglp-p'; d.style.width=g.w+'px'; d.style.height=g.h+'px'; d.setAttribute('aria-label','Page '+(k+1)+' sur '+V.geo.length); return d; });
     const gk=pos&&V.geo[Math.min(pos.k,V.geo.length-1)], cible=gk?Math.round(gk.y+pos.f*(gk.h+SGLP_GAP)):0;
-    const fin=()=>{ if(!V.vivant) return; cont.replaceChildren(...divs); cont.style.height=(V.geo.length?V.geo[V.geo.length-1].y+V.geo[V.geo.length-1].h+SGLP_PAD:0)+'px'; vue.scrollTop=cible; visibles(); };
+    const fin=()=>{ if(!V.vivant) return; V.cible=null; cont.replaceChildren(...divs); cont.style.height=(V.geo.length?V.geo[V.geo.length-1].y+V.geo[V.geo.length-1].h+SGLP_PAD:0)+'px'; vue.scrollTop=cible; visibles(); };
     if(!av){ fin(); return Promise.resolve(); }
     /* mise à jour : pages visibles rendues d'abord, puis échange (pas de page blanche, pas de retour en haut) */
     const t=V.rt, vh=vue.clientHeight, ks=V.geo.map((g,k)=>k).filter(k=>V.geo[k].y+V.geo[k].h>cible&&V.geo[k].y<cible+vh);
@@ -41091,8 +41150,8 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
       if(o.surInfo) try{ o.surInfo({n:V.pages.length,page:V.pages[0],taille:blob.size,titre}); }catch(e){ console.error(e); }
     }catch(e){ console.error(e); if(t===V.tok&&V.vivant){ V.apres=[];
         /* relecture : une mise à jour qui échoue n'est plus muette ; l'ancienne version reste affichée et c'est elle qu'on imprime */
-        if(av&&V.pdf){ V.blob=ancien; toast('Le document n’a pas pu être mis à jour : '+(e&&e.message||e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
-        else { try{ V.pdf&&V.pdf.destroy(); }catch(_){} V.pdf=null; V.pages=[]; message('Le document n’a pas pu être affiché : '+(e&&e.message||e),true); } } }
+        if(av&&V.pdf){ V.blob=ancien; toast('Le document n’a pas pu être mis à jour : '+sglpErreur(e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
+        else { try{ V.pdf&&V.pdf.destroy(); }catch(_){} V.pdf=null; V.pages=[]; V.protege=String(e&&e.name||'')==='PasswordException'; message('Le document n’a pas pu être affiché : '+sglpErreur(e),true); } } }
     finally{ if(t===V.tok){ V.charge=false; etat(); } tete(); } };
   const allerA=k=>{ k=Math.max(0,Math.min(V.geo.length-1,k)); if(V.geo[k]) vue.scrollTop=V.geo[k].y-SGLP_PAD+2; };
   const zoomer=d=>{ const cur=Math.round(V.s/SGLP_PT*100); let z; if(d>0) z=SGLP_ZOOM.find(x=>x>cur+0.5)||SGLP_ZOOM[SGLP_ZOOM.length-1]; else z=[...SGLP_ZOOM].reverse().find(x=>x<cur-0.5)||SGLP_ZOOM[0]; V.zoom=z; if(V.pdf) poser(position(),true); tete(); };
@@ -41105,9 +41164,10 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
   let ro=null, rt=null; try{ ro=new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(V.pdf&&V.zoom==='l'&&Math.abs(echelle()-V.s)>.004) poser(position(),true); },150); }); ro.observe(vue); }catch(_){}
   const L={el:R,vue,charger,
     attendre(){ V.attendu=true; etat(); },                                        /* une nouvelle version est demandée (réglage du devis) */
-    echec(e){ V.attendu=false; V.apres=[]; etat(); if(V.pdf){ toast('Le document n’a pas pu être mis à jour : '+(e&&e.message||e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
-      else message('PDF impossible : '+(e&&e.message||e),true); },
-    imprimer(){ if(V.attendu||V.charge){ if(!V.apres.some(f=>f._imp)){ const f=()=>sglpImprimer(V.blob,vue); f._imp=1; V.apres.push(f); } toast('Impression dès que le document est à jour…'); return; }
+    echec(e){ V.attendu=false; V.apres=[]; etat(); if(V.pdf){ toast('Le document n’a pas pu être mis à jour : '+sglpErreur(e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
+      else message('PDF impossible : '+sglpErreur(e),true); },
+    imprimer(){ if(V.protege){ toast('Ce PDF est protégé par un mot de passe : utilisez « Télécharger » pour l’ouvrir et l’imprimer.',true); return; }
+      if(V.attendu||V.charge){ if(!V.apres.some(f=>f._imp)){ const f=()=>sglpImprimer(V.blob,vue); f._imp=1; V.apres.push(f); } toast('Impression dès que le document est à jour…'); return; }
       if(!V.blob){ toast('Le document est en préparation.',true); return; } sglpImprimer(V.blob,vue); },
     focus(){ try{ vue.focus({preventScroll:true}); }catch(_){} },
     get blob(){ return V.blob; }, get n(){ return V.pages.length; }, get premiere(){ return V.pages[0]||null; },
@@ -41148,7 +41208,7 @@ function sgVisionneuse(b,nom,o){ o=o||{}; sglpCss(); const t=String(b.type||'').
   let ouvert=true;
   const fermer=()=>{ if(!ouvert) return; ouvert=false; try{ L&&L.fini(); }catch(_){} ov.remove(); URL.revokeObjectURL(u); document.removeEventListener('keydown',esc,true);
     try{ if(avant&&avant.isConnected&&avant.focus) avant.focus({preventScroll:true}); }catch(_){} };
-  const imprimer=()=>{ if(L) return L.imprimer(); if(vue==='img') return sglpImprimer(b,box);
+  const imprimer=()=>{ if(L) return L.imprimer(); if(vue==='img') return sglpImprimerImage(u,box);
     if(ifr) try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); setTimeout(()=>{ try{ box.focus({preventScroll:true}); }catch(_){} },0); }catch(_){ toast('Impression : utilisez Télécharger puis imprimez.',true); } };
   const telecharger=()=>{ const a=h('a',{href:u,download:nomDl()}); document.body.append(a); a.click(); a.remove(); };
   const esc=e=>{ if(e.key!=='Escape'||!ouvert) return; const tous=[...document.querySelectorAll('.sg-visu')]; if(tous[tous.length-1]!==ov||document.querySelector('.menu')) return;

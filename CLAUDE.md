@@ -1622,7 +1622,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   telecharger, lecteur} (Documents Substances ▸ Imprimer s'en sert). Corrections de la relecture du 08.11.2026 (6 défauts confirmés sur 7) : échec d'une
   mise à jour signalé (message, ancienne version gardée, plus de « appliqué »), indicateur et Imprimer qui attendent la dernière version, canevas plafonnés
   à 16 Mpx, focus gardé (réglage, Page + Entrée, impression ; Échap ferme la fenêtre même si le focus en est sorti), panneau inactif en lecture seule
-  (« Lecture seule : réglages non modifiables »), barre réduite à ses icônes sous 600 px. Vérifié sur 24PRC (75 pages) : page 10 gardée après Variantes, « Seulement positions de 1 à 3
+  (« Lecture seule : réglages non modifiables »), barre réduite à ses icônes sous 600 px.
+  Seconde relecture (même jour, 7 défauts confirmés sur 7, corrigés) : une image s'imprime dans un cadre SANS scripts qui ne contient qu'un `<img>`
+  (`sglpImprimerImage` ; un SVG déposé n'est jamais chargé comme document) ; pendant une mise en page en cours, la position demandée fait foi (`V.cible` :
+  deux zooms rapides ne sautent plus de page) ; erreurs de pdf.js en français (`sglpErreur`), PDF protégé par mot de passe : message « utilisez Télécharger »,
+  pas d'impression invisible ; Bleu nuit : un bloc = tête + détails (D, X), suites (k) et ouvrages (rangée S à CFC vide), rangées D / X vides comprises, un
+  seul filet en fin de bloc, bleu nuit si la tête est un CFC à 1 chiffre ; frise de la page du projet et de la fiche de l'affaire à 120 px aussi dans les
+  visuels à l'essai (`html body …`). Vérifié sur 24PRC (75 pages) : page 10 gardée après Variantes, « Seulement positions de 1 à 3
   chiffres » (75 → 34 pages), zoom.
   Bouton « Modifier les textes… » retiré de cette fenêtre (« supprimer », même jour ; `ch02cView` / `ch01aView` enveloppés dans sg3_devis.js, sans l'option `edit`) ; les autres
   visionneuses le gardent, DeltaSub.html seul aussi.
@@ -1662,7 +1668,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sauts de page de sa propre mise en page, « ... » au lieu de « … » (glyphe absent d'Akkurat).
   **Retouches du 08.11.2026 (Paulo)** : page Information sans rangées grises alternées, libellés en gras, libellés à l'aplomb de la 1re colonne du pied
   (x 28.35) et texte de la 2e (x 125.72 : `colsI` largeur 97.37, sans retrait de 2 pt) ; en-tête de la page de garde = nom du document seul
-  (`tt('document')`, comme les autres pages ; le grand titre de la garde garde la phase). Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
+  (`tt('document')`, comme les autres pages ; le grand titre de la garde garde la phase).
+  **Graphisme « Bleu nuit » du tableau (08.11.2026, variante 4 choisie par Paulo parmi 5 ; maquettes `subgestion3/_backup_20261108_maquette_dg/`)** :
+  `livretDG.style:'nuit'` (au lieu de `zebra`) dans `contenuLivret` ▸ `tableau` (sg3_docsub.js) : titres des colonnes en blanc (Regular 8) sur une bande bleu
+  nuit #003346 ; CFC à 1 chiffre (styles O, F) et à 2 chiffres (W) en bleu nuit, filet bleu nuit de 0,5 pt sous les CFC à 1 chiffre ; filet gris fin (#d8d8d4)
+  sous chaque position, après ses lignes de calcul (D) et son descriptif (X), rien entre une position et ses détails ; lignes de calcul et descriptif en gris
+  #706F6F ; pourcentages en bleu nuit ; total (T) sur une bande bleu nuit, texte blanc ; plus de rangées grises ni de filet noir. Montants en noir. Sans
+  `style`, l'ancien rendu (zébrage, filets noirs) reste. Page Information : ni grisé ni filets.
+  **Textes jamais coupés (08.11.2026, Paulo : « toujours écrire complet, ne pas couper les textes »)** : `etaler` (dgOctets, sg3_devis.js) — un texte plus large que
+  sa colonne déborde sur les colonnes de texte vides à sa droite (`livretDG.deborde`, dessin compris), sinon passe à la ligne sur des rangées de suite (`k:1`, même
+  style, pas de filet entre une rangée et sa suite ; mot trop long coupé à la lettre), avant la répartition sur les pages ; Information : la suite d'un libellé va sur
+  les rangées suivantes de la même remarque. Ligne de calcul complète (formule gardée, `court` retiré). Écart de mesure de quelques points au dessin : corps à peine
+  réduit plutôt que « … ». **Corps du texte = corps de l'en-tête (même jour)** : `DG_TXT` 7,5 pt Akkurat Light pour positions, lignes de calcul, descriptif,
+  Information et titres des colonnes ; titres des CFC à 1 et 2 chiffres et total gardés en gras 10 pt ; page de garde inchangée. Relecture contradictoire du même jour : 14 défauts confirmés sur 18, corrigés ;
   seconde relecture des corrections : le surplus d'une page trop pleine passe en tête de la page suivante de la même série (récapitulatif, document principal, page du total),
   pages complétées jusqu'en bas (zébrage) ; en « Assembler les descriptifs », une totalisatrice qui a son propre descriptif n'est pas ventilée.
   **Onglet « Paramètres » (07.11.2026, Paulo : « glisser Paramètres après Documents, sous forme de page comme Documents, pas une fenêtre ; l'ensemble des éléments par catégorie, le

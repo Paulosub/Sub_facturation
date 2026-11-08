@@ -459,7 +459,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-intro .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
 .sg-intro .sg-mandat .d{color:var(--s-gris)}
 .sg-intro .sg-mandat+p{margin-top:0}
-.sg-intro .sg-frise{width:120px}
+html body .sg-intro .sg-frise{width:120px}   /* « html body » : plus fort que la frise des visuels à l'essai (visuels.css, 200 px) */
 @container (max-width:1180px){.sg-intro .sg-mandat{flex:0 0 100%;margin:2px 0 16px}}   /* présentation compacte : la frise sur sa ligne, sous le nom */
 .sg-pretour{display:inline-flex;align-items:center;gap:12px;min-width:0;max-width:100%;padding:0;border:0;background:none;font:inherit;color:var(--s-noir);text-align:left;cursor:pointer}
 .sg-pretour i{flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--s-nuit);color:#fff}
@@ -1045,7 +1045,7 @@ html body *,html body svg text{font-family:var(--s-font)!important}
 .sg-ag-id .sg-mandat{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:4px 0 22px;font-size:12.5px}
 .sg-ag-id .sg-mandat b{font-weight:700;font-variant-numeric:tabular-nums}
 .sg-ag-id .sg-mandat .d{color:var(--s-gris)}
-.sg-ag-id .sg-frise{width:120px}
+html body .sg-ag-id .sg-frise{width:120px}
 .sg-ag-wc{padding:2px 18px 24px}
 .sg-ag-bloc{margin-top:22px}
 .sg-ag-bloc>h4{margin:0;padding-bottom:7px;border-bottom:2px solid var(--s-noir);font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}

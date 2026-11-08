@@ -84,6 +84,18 @@ function sglpImprimer(blob,retour){ if(!blob) return; const u=URL.createObjectUR
   f.onload=()=>setTimeout(()=>{ try{ f.contentWindow.addEventListener('afterprint',()=>setTimeout(rendre,0),{once:true}); }catch(_){}
     try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ window.open(u,'_blank'); } setTimeout(rendre,0); },250);
   document.body.append(f); setTimeout(()=>{ f.remove(); URL.revokeObjectURL(u); },120000); }
+/* impression d'une image : cadre SANS scripts (sandbox sans allow-scripts) qui ne contient qu'un <img> — un SVG déposé n'est jamais chargé comme document,
+   ses scripts ne s'exécutent pas (relecture du 08.11.2026) */
+function sglpImprimerImage(url,retour){ const f=document.createElement('iframe'); f.setAttribute('sandbox','allow-same-origin allow-modals');
+  f.style.cssText='position:fixed;right:0;bottom:0;width:2px;height:2px;border:0;opacity:0;pointer-events:none';
+  f.srcdoc='<!doctype html><meta charset="utf-8"><style>@page{margin:10mm}html,body{margin:0;height:100%}img{display:block;max-width:100%;max-height:100%;margin:0 auto;object-fit:contain}</style><img src="'+String(url).replace(/"/g,'&quot;')+'" alt="">';
+  const rendre=()=>{ try{ window.focus(); }catch(_){} try{ if(retour&&retour.isConnected) retour.focus({preventScroll:true}); }catch(_){} };
+  f.onload=()=>{ const im=f.contentDocument&&f.contentDocument.querySelector('img'), go=()=>setTimeout(()=>{ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ toast('Impression : utilisez Télécharger puis imprimez.',true); } setTimeout(rendre,0); },150);
+    if(im&&!im.complete){ im.onload=go; im.onerror=go; } else go(); };
+  document.body.append(f); setTimeout(()=>f.remove(),120000); }
+/* message en français pour les erreurs de pdf.js (relecture : « No password given » s'affichait tel quel) */
+const sglpErreur=e=>{ const n=String(e&&e.name||''); if(n==='PasswordException') return 'ce PDF est protégé par un mot de passe : utilisez « Télécharger » pour l’ouvrir avec son mot de passe.';
+  if(n==='InvalidPDFException'||n==='MissingPDFException') return 'le fichier PDF est illisible ou abîmé.'; return String(e&&e.message||e); };
 /* lecteur PDF : o.surInfo({n, page, taille, titre}) à chaque document affiché ; o.surEchec(e) quand une mise à jour échoue */
 function sgLecteurPdf(o){ o=o||{}; sglpCss();
   const R=document.createElement('div'); R.className='sglp';
@@ -98,14 +110,15 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
     +'<div class="sglp-vue" tabindex="0" aria-label="Document"><div class="sglp-pages"><div class="sglp-msg">Préparation du document…</div></div></div>';
   const vue=R.querySelector('.sglp-vue'), cont=R.querySelector('.sglp-pages'), maj=R.querySelector('.sglp-maj'), inP=R.querySelector('.sglp-in'),
     totP=R.querySelector('.sglp-pg .tot'), zm=R.querySelector('.sglp-zm'), bLarg=R.querySelector('[data-a="larg"]'), bPrec=R.querySelector('[data-a="prec"]'), bSuiv=R.querySelector('[data-a="suiv"]');
-  const V={pdf:null,lib:null,pages:[],geo:[],zoom:'l',s:1,tok:0,rt:0,blob:null,vivant:true,attendu:false,charge:false,apres:[]};
+  const V={pdf:null,lib:null,pages:[],geo:[],zoom:'l',s:1,tok:0,rt:0,blob:null,vivant:true,attendu:false,charge:false,apres:[],cible:null,protege:false};
   /* indicateur : allumé tant qu'une version est demandée (attendre) ou en cours d'affichage ; ce qui attend la version à jour (impression) part ensuite */
   const etat=()=>{ const on=V.attendu||V.charge; maj.classList.toggle('on',on);
     if(!on&&V.apres.length){ V.apres.splice(0).forEach(f=>{ try{ f(); }catch(e){ console.error(e); } }); } };
   const echelle=()=>{ const mw=Math.max(1,...V.pages.map(x=>x.w)); return V.zoom==='l'?Math.max(.2,(vue.clientWidth-2*24-12)/mw):V.zoom/100*SGLP_PT; };
   const geometrie=s=>{ let y=SGLP_PAD; return V.pages.map(pg=>{ const g={y,w:Math.round(pg.w*s),h:Math.round(pg.h*s)}; y+=g.h+SGLP_GAP; return g; }); };
-  const position=()=>{ const st=vue.scrollTop; for(let k=V.geo.length-1;k>=0;k--){ const g=V.geo[k]; if(g.y<=st+1) return {k,f:Math.min(1,Math.max(0,(st-g.y)/Math.max(1,g.h+SGLP_GAP)))}; } return {k:0,f:0}; };
-  const pageCourante=()=>{ const st=vue.scrollTop+vue.clientHeight*.3; let k=0; V.geo.forEach((g,j)=>{ if(g.y<=st) k=j; }); return k; };
+  /* mise en page en cours (poser avant fin) : la position demandée fait foi — l'ancien défilement ne correspond plus à la nouvelle géométrie (relecture : deux zooms rapides sautaient de page) */
+  const position=()=>{ if(V.cible) return Object.assign({},V.cible); const st=vue.scrollTop; for(let k=V.geo.length-1;k>=0;k--){ const g=V.geo[k]; if(g.y<=st+1) return {k,f:Math.min(1,Math.max(0,(st-g.y)/Math.max(1,g.h+SGLP_GAP)))}; } return {k:0,f:0}; };
+  const pageCourante=()=>{ if(V.cible) return Math.min(V.cible.k,Math.max(0,V.geo.length-1)); const st=vue.scrollTop+vue.clientHeight*.3; let k=0; V.geo.forEach((g,j)=>{ if(g.y<=st) k=j; }); return k; };
   const tete=()=>{ const n=V.pages.length, k=n?pageCourante():0; totP.textContent='/ '+(n||'—'); zm.textContent=n?Math.round(V.s/SGLP_PT*100)+' %':'—';
     if(document.activeElement!==inP) inP.value=n?k+1:''; bPrec.disabled=!n||k<=0; bSuiv.disabled=!n||k>=n-1; bLarg.classList.toggle('on',V.zoom==='l'); };
   const vider=div=>{ div.querySelectorAll('canvas,.textLayer').forEach(x=>x.remove()); div._s=null; };
@@ -117,14 +130,14 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
     try{ const tl=document.createElement('div'); tl.className='textLayer'; tl.style.setProperty('--scale-factor',String(s));
       V.lib.renderTextLayer({textContentSource:pg.p.streamTextContent(),container:tl,viewport:pg.p.getViewport({scale:s}),textDivs:[]}).promise.then(()=>{ if(div._s===s&&t===V.rt) div.append(tl); },()=>{}); }catch(_){} };
   let file=Promise.resolve();
-  const visibles=()=>{ if(!V.pdf) return; const t=V.rt, st=vue.scrollTop, vh=vue.clientHeight, divs=cont.children;
+  const visibles=()=>{ if(!V.pdf||V.cible) return; const t=V.rt, st=vue.scrollTop, vh=vue.clientHeight, divs=cont.children;
     V.geo.forEach((g,k)=>{ const d=divs[k]; if(!d||!d.classList.contains('sglp-p')) return; const pres=g.y+g.h>st-vh&&g.y<st+2*vh, loin=g.y+g.h<st-4*vh||g.y>st+5*vh;
       if(pres&&d._s!==V.s&&!d._file){ d._file=true; file=file.then(()=>t===V.rt?rendrePage(k,d,t):null).catch(e=>console.error(e)).then(()=>{ d._file=false; }); }
       else if(loin&&d._s) vider(d); }); tete(); };
-  const poser=(pos,av)=>{ V.s=echelle(); V.geo=geometrie(V.s); V.rt++;
+  const poser=(pos,av)=>{ V.s=echelle(); V.geo=geometrie(V.s); V.rt++; V.cible=av?Object.assign({k:0,f:0},pos):null;
     const divs=V.geo.map((g,k)=>{ const d=document.createElement('div'); d.className='sglp-p'; d.style.width=g.w+'px'; d.style.height=g.h+'px'; d.setAttribute('aria-label','Page '+(k+1)+' sur '+V.geo.length); return d; });
     const gk=pos&&V.geo[Math.min(pos.k,V.geo.length-1)], cible=gk?Math.round(gk.y+pos.f*(gk.h+SGLP_GAP)):0;
-    const fin=()=>{ if(!V.vivant) return; cont.replaceChildren(...divs); cont.style.height=(V.geo.length?V.geo[V.geo.length-1].y+V.geo[V.geo.length-1].h+SGLP_PAD:0)+'px'; vue.scrollTop=cible; visibles(); };
+    const fin=()=>{ if(!V.vivant) return; V.cible=null; cont.replaceChildren(...divs); cont.style.height=(V.geo.length?V.geo[V.geo.length-1].y+V.geo[V.geo.length-1].h+SGLP_PAD:0)+'px'; vue.scrollTop=cible; visibles(); };
     if(!av){ fin(); return Promise.resolve(); }
     /* mise à jour : pages visibles rendues d'abord, puis échange (pas de page blanche, pas de retour en haut) */
     const t=V.rt, vh=vue.clientHeight, ks=V.geo.map((g,k)=>k).filter(k=>V.geo[k].y+V.geo[k].h>cible&&V.geo[k].y<cible+vh);
@@ -141,8 +154,8 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
       if(o.surInfo) try{ o.surInfo({n:V.pages.length,page:V.pages[0],taille:blob.size,titre}); }catch(e){ console.error(e); }
     }catch(e){ console.error(e); if(t===V.tok&&V.vivant){ V.apres=[];
         /* relecture : une mise à jour qui échoue n'est plus muette ; l'ancienne version reste affichée et c'est elle qu'on imprime */
-        if(av&&V.pdf){ V.blob=ancien; toast('Le document n’a pas pu être mis à jour : '+(e&&e.message||e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
-        else { try{ V.pdf&&V.pdf.destroy(); }catch(_){} V.pdf=null; V.pages=[]; message('Le document n’a pas pu être affiché : '+(e&&e.message||e),true); } } }
+        if(av&&V.pdf){ V.blob=ancien; toast('Le document n’a pas pu être mis à jour : '+sglpErreur(e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
+        else { try{ V.pdf&&V.pdf.destroy(); }catch(_){} V.pdf=null; V.pages=[]; V.protege=String(e&&e.name||'')==='PasswordException'; message('Le document n’a pas pu être affiché : '+sglpErreur(e),true); } } }
     finally{ if(t===V.tok){ V.charge=false; etat(); } tete(); } };
   const allerA=k=>{ k=Math.max(0,Math.min(V.geo.length-1,k)); if(V.geo[k]) vue.scrollTop=V.geo[k].y-SGLP_PAD+2; };
   const zoomer=d=>{ const cur=Math.round(V.s/SGLP_PT*100); let z; if(d>0) z=SGLP_ZOOM.find(x=>x>cur+0.5)||SGLP_ZOOM[SGLP_ZOOM.length-1]; else z=[...SGLP_ZOOM].reverse().find(x=>x<cur-0.5)||SGLP_ZOOM[0]; V.zoom=z; if(V.pdf) poser(position(),true); tete(); };
@@ -155,9 +168,10 @@ function sgLecteurPdf(o){ o=o||{}; sglpCss();
   let ro=null, rt=null; try{ ro=new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(V.pdf&&V.zoom==='l'&&Math.abs(echelle()-V.s)>.004) poser(position(),true); },150); }); ro.observe(vue); }catch(_){}
   const L={el:R,vue,charger,
     attendre(){ V.attendu=true; etat(); },                                        /* une nouvelle version est demandée (réglage du devis) */
-    echec(e){ V.attendu=false; V.apres=[]; etat(); if(V.pdf){ toast('Le document n’a pas pu être mis à jour : '+(e&&e.message||e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
-      else message('PDF impossible : '+(e&&e.message||e),true); },
-    imprimer(){ if(V.attendu||V.charge){ if(!V.apres.some(f=>f._imp)){ const f=()=>sglpImprimer(V.blob,vue); f._imp=1; V.apres.push(f); } toast('Impression dès que le document est à jour…'); return; }
+    echec(e){ V.attendu=false; V.apres=[]; etat(); if(V.pdf){ toast('Le document n’a pas pu être mis à jour : '+sglpErreur(e),true); if(o.surEchec) try{ o.surEchec(e); }catch(_){} }
+      else message('PDF impossible : '+sglpErreur(e),true); },
+    imprimer(){ if(V.protege){ toast('Ce PDF est protégé par un mot de passe : utilisez « Télécharger » pour l’ouvrir et l’imprimer.',true); return; }
+      if(V.attendu||V.charge){ if(!V.apres.some(f=>f._imp)){ const f=()=>sglpImprimer(V.blob,vue); f._imp=1; V.apres.push(f); } toast('Impression dès que le document est à jour…'); return; }
       if(!V.blob){ toast('Le document est en préparation.',true); return; } sglpImprimer(V.blob,vue); },
     focus(){ try{ vue.focus({preventScroll:true}); }catch(_){} },
     get blob(){ return V.blob; }, get n(){ return V.pages.length; }, get premiere(){ return V.pages[0]||null; },
@@ -198,7 +212,7 @@ function sgVisionneuse(b,nom,o){ o=o||{}; sglpCss(); const t=String(b.type||'').
   let ouvert=true;
   const fermer=()=>{ if(!ouvert) return; ouvert=false; try{ L&&L.fini(); }catch(_){} ov.remove(); URL.revokeObjectURL(u); document.removeEventListener('keydown',esc,true);
     try{ if(avant&&avant.isConnected&&avant.focus) avant.focus({preventScroll:true}); }catch(_){} };
-  const imprimer=()=>{ if(L) return L.imprimer(); if(vue==='img') return sglpImprimer(b,box);
+  const imprimer=()=>{ if(L) return L.imprimer(); if(vue==='img') return sglpImprimerImage(u,box);
     if(ifr) try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); setTimeout(()=>{ try{ box.focus({preventScroll:true}); }catch(_){} },0); }catch(_){ toast('Impression : utilisez Télécharger puis imprimez.',true); } };
   const telecharger=()=>{ const a=h('a',{href:u,download:nomDl()}); document.body.append(a); a.click(); a.remove(); };
   const esc=e=>{ if(e.key!=='Escape'||!ouvert) return; const tous=[...document.querySelectorAll('.sg-visu')]; if(tous[tous.length-1]!==ov||document.querySelector('.menu')) return;

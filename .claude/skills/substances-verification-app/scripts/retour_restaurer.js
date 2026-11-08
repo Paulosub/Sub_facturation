@@ -15,8 +15,10 @@
     const ob = (ligne ? [...ligne.querySelectorAll('button')] : [...document.querySelectorAll('#main button')]).find(b => b.textContent.trim() === 'Ouvrir');
     if (ob) ob.click();
   }
-  if (st.page) { for (let i = 0; i < 80 && !document.querySelector('.sglp-p canvas'); i++) await dodo(250);
-    const inp = document.querySelector('.sglp-in'); if (inp) { inp.value = st.page; inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); } }
+  if (st.page) { for (let i = 0; i < 80 && !document.querySelector('.sglp-p canvas'); i++) await dodo(250); await dodo(1200);
+    const v = document.querySelector('.sglp-vue');
+    if (v && st.defil != null) v.scrollTop = st.defil;   /* même défilement (même endroit de la page), sinon la page seule */
+    else { const inp = document.querySelector('.sglp-in'); if (inp) { inp.value = st.page; inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); } } }
   else if (st.mainDefil && document.querySelector('#main')) document.querySelector('#main').scrollTop = st.mainDefil;
   sessionStorage.removeItem('__retour');
   return { vue: (typeof VIEW !== 'undefined' && VIEW) ? VIEW.id : null, fenetre: !!document.querySelector('.sgdv'), page: (document.querySelector('.sglp-in') || {}).value };

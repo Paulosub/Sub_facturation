@@ -1260,7 +1260,7 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
    fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
-const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['displayNoTitlePositions','Afficher les positions saisies et les totalisateurs'],
+const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],   /* « Afficher les positions saisies et les totalisateurs » regroupé ici (Paulo, 08.11.2026) : toujours actif */
   ['commentInColumn','Commentaire dans colonne séparée'],'-',   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */['*tous','Tous les montants détaillés'],'-',
   ['displayDetailComment','Commentaire du calcul'],['displayPriceBase','Bases de prix'],['dispalyCalcualtion','Afficher le calcul'],['displayQuanPriceValue','Quantités et prix'],
   ['displayDetailValues','Afficher les montants'],['displayDetailOptions','Variantes'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
@@ -1281,7 +1281,7 @@ function dgOptions(X){ const E=X.E||{}, fav=dgPres(E)||{}, sub=ch02bHasSub(E), c
   const o=Object.assign({},fav.options||{},DG_PRESET,{includeKvInformation:remImpr(E,X.p).some(r=>String(r.nom||'').trim()||String(r.texte||'').trim())||dgOuvInfo(X).length>0,dispalyEmptyPositions:((fav.options||{}).dispalyEmptyPositions)!==false,
     displaySubprojects:sub,includeDocument:(E.positions||[]).length>0});
   if(!o.specialRound) DG_RONDS.forEach(k=>{ o[k]=false; });
-  o.displayComment=true;   /* plus d'option « Base et commentaire de la position » (08.11.2026) : toujours affichés ; « … dans colonne séparée » choisit leur place */   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
+  o.displayComment=true; o.displayNoTitlePositions=true;   /* réglages retirés du menu (08.11.2026) : toujours actifs */   /* plus d'option « Base et commentaire de la position » (08.11.2026) : toujours affichés ; « … dans colonne séparée » choisit leur place */   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
   DG_MENU.forEach(m=>{ if(Array.isArray(m)&&m[0][0]!=='*'&&typeof c[m[0]]==='boolean') o[m[0]]=c[m[0]]; });
   if(!sub){ o.displaySubprojects=false; o.compactDescription=false; o.displaySubprojectNames=false; }   /* affaire sans ouvrage : colonne OUV vide (comme la fenêtre du moteur) */
   o.specialRound=DG_RONDS.some(k=>o[k]); return o; }

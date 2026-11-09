@@ -1289,7 +1289,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* ouvrages : affichés dès que le devis en a (sinon les lignes de leurs parties manqueraient), jamais sinon (colonne OUV vide) ; devis vide : pas de document principal (un seul total) */
     const pres={nom:fav.nom||'',options:dgOptions(X),sautsDePage:sel.sauts};
     const tabI=h=>({orientation:'paysage',elements:[{t:'tableau',champ:'constructionEstimateTable',l:298,h}]});   /* Information : textes coupés comme le modèle 24PRC (298 − 15 % = 254 pt, moins les 25 pt de ch02bWrap = 229 pt) ; dessin sur toute la largeur */
-    const portrait=dgChoix(E).format==='portrait', HT=portrait?DG_HP:DG_HT, HI=portrait?DG_HP:DG_HI, WI=portrait?DG_WIP:DG_WIL;   /* format choisi dans les Réglages (paysage par défaut) */
+    const portrait=dgPortrait(E), HT=portrait?DG_HP:DG_HT, HI=portrait?DG_HP:DG_HI, WI=portrait?DG_WIP:DG_WIL;   /* format choisi dans les Réglages (portrait par défaut depuis le 09.11.2026) */
     const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(HT),pageN:tab(HT),pageToc1:tabI(HI),pageTocN:tabI(HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
     let B; DG_ACTIF=true; DG_AGREGE=pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
     try{ B=ch02bBook(E,doc,p,pres,X.filter,env); } finally{ DG_ACTIF=false; DG_AGREGE=null; } if(B.err) throw new Error('mise en pages impossible ('+B.err+')');
@@ -1436,6 +1436,13 @@ const dgChoix=E=>{ const v=((E||{}).reglages||{}).dgPdf; return v&&typeof v==='o
    la présentation) ; dans les Réglages du PDF, les cases restent modifiables pour la présentation en cours. */
 const dgModeCle=E=>String(ch02aMode(E))+(calcDesc(E)?'c':'');
 const dgModeOpts=k=>{ const d=k!=='0'&&k!=='2', cl=k==='3'||k==='4c'; return {displayDescription:d,dispalyCalcualtion:cl,displayQuanPriceValue:cl,displayDetailComment:cl,displayDetailValues:cl}; };
+/* base de TOUTES les mises en page du devis général (Paulo, 09.11.2026 : « cette mise en page devient la base de toutes les mises en page de devis » — celle de 99TST) :
+   format portrait, descriptif, calcul complet (quantités et prix, commentaire du calcul, montants), positions sans montant ; ni variantes, ni « 1 à 3 chiffres », ni
+   commentaire en colonne, ni décimales masquées, ni arrondi (valeurs de DG_PRESET). Vaut pour tout devis dont les cases du PDF n'ont jamais été réglées (pas de modeSync) :
+   ses cases réglées depuis, ou une présentation choisie ensuite dans le devis (le PDF la suit, dgSuivreMode), restent prioritaires. */
+const DG_BASE={displayDescription:true,dispalyCalcualtion:true,displayQuanPriceValue:true,displayDetailComment:true,displayDetailValues:true};
+const dgModeOuBase=(c,k)=>c.modeSync==null?DG_BASE:dgModeOpts(k);
+const dgPortrait=E=>dgChoix(E).format!=='paysage';   /* portrait par défaut (base du 09.11.2026 ; avant : paysage) */
 function dgSuivreMode(E){ const R=E.reglages||(E.reglages={}), k=dgModeCle(E), c=Object.assign({},dgChoix(E)); if(c.modeSync===k) return false; Object.assign(c,dgModeOpts(k),{modeSync:k}); R.dgPdf=c; return true; }
 /* présentation dont les sauts de page et les options de base sont repris : choix du menu (« Sauts de page : … » : rang et nom, une présentation sans nom comprise), sinon la favorite,
    sinon la première ; « Sans sauts de page » (sansSauts) garde les options de base de celle-ci, sans ses sauts. presNom '' sans rang = ancien « Sans sauts de page » du 07.11.2026. */
@@ -1453,12 +1460,12 @@ function dgOptions(X){ const E=X.E||{}, fav=dgPres(E)||{}, sub=ch02bHasSub(E), c
   if(!o.specialRound) DG_RONDS.forEach(k=>{ o[k]=false; });
   o.displayComment=true; o.displayNoTitlePositions=true;   /* réglages retirés du menu (08.11.2026) : toujours actifs */   /* plus d'option « Base et commentaire de la position » (08.11.2026) : toujours affichés ; « … dans colonne séparée » choisit leur place */   /* « Arrondir à … » des présentations ne vaut qu'avec l'arrondi spécial (éteint dans la référence) : jamais d'arrondi sans choix */
   DG_MENU.forEach(m=>{ if(Array.isArray(m)&&m[0][0]!=='*'&&typeof c[m[0]]==='boolean') o[m[0]]=c[m[0]]; });
-  { const k=dgModeCle(E); if(c.modeSync!==k) Object.assign(o,dgModeOpts(k)); }   /* le PDF suit toujours la présentation du devis (Paulo : « c'est plutôt le PDF qui suit les réglages du devis ») ; seules les cases changées depuis dans le PDF pour cette présentation sont gardées */
+  { const k=dgModeCle(E); if(c.modeSync!==k) Object.assign(o,dgModeOuBase(c,k)); }   /* jamais réglé : la base (09.11.2026) */   /* le PDF suit toujours la présentation du devis (Paulo : « c'est plutôt le PDF qui suit les réglages du devis ») ; seules les cases changées depuis dans le PDF pour cette présentation sont gardées */
   if(!sub){ o.displaySubprojects=false; o.compactDescription=false; o.displaySubprojectNames=false; }   /* affaire sans ouvrage : colonne OUV vide (comme la fenêtre du moteur) */
   if(!o.dispalyCalcualtion) o.displayDetailValues=false;   /* « Afficher les montants » dépend du calcul (08.11.2026) : sinon des montants seuls, sans texte, seraient imprimés */
   o.specialRound=DG_RONDS.some(k=>o[k]); return o; }
 function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), c=Object.assign({},dgChoix(E));
-  { const mk=dgModeCle(E); if(c.modeSync!==mk) Object.assign(c,dgModeOpts(mk),{modeSync:mk}); }   /* présentation suivie (08.11.2026) */
+  { const mk=dgModeCle(E); if(c.modeSync!==mk) Object.assign(c,dgModeOuBase(c,mk),{modeSync:mk}); }   /* présentation suivie (08.11.2026) ; jamais réglé : la base (09.11.2026) */
   if(k.startsWith('pres:')||k==='*sans'){ if(k==='*sans'){ const sans=c.sansSauts===true||(c.presNom===''&&!Number.isInteger(c.presIdx));   /* interrupteur (Paulo, 08.11.2026) : désactivé, la présentation choisie avant (sinon celle par défaut) revient */
       if(sans){ delete c.sansSauts; if(c.presNom===''&&!Number.isInteger(c.presIdx)) delete c.presNom; } else c.sansSauts=true; } else { const i=+k.slice(5), q=(E.presentations||[])[i]; if(!q) return; c.presNom=String(q.nom||''); c.presIdx=i; delete c.sansSauts; }
     const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }
@@ -1475,7 +1482,7 @@ function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
   const lgn=((X.E||{}).positions||[]).flatMap(q=>(q.parts||[]).flatMap(pt=>pt.lignes||[])), aCalc=lgn.length>0, aVar=lgn.some(l=>l&&l.var);
   const absent=k=>(!aCalc&&(k==='dispalyCalcualtion'||k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues'))||(!aVar&&k==='displayDetailOptions');
   const dis=k=>absent(k)||((k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
-  const pt=dgChoix(X.E).format==='portrait';
+  const pt=dgPortrait(X.E);
   const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul',ind:true}:{})));
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   /* « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 : « déplacer ») — panneau et menu de la ligne */

@@ -1691,6 +1691,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   comme le descriptif. Paysage : même grille, contenu de x 124.4 à 732.1 (barre du numéro de page − 25 pt), rubriques à gauche (jusqu'à x 464.4), signatures à droite
   (485.5–600.8 et 616.8–732.1) à la hauteur du premier filet des rubriques. Page de garde toujours non numérotée mais comptée. Copie d'avant :
   `subgestion3/_backup_20261108_avant_garde_devis/`.
+  **Base de toutes les mises en page du devis général = celle de 99TST (09.11.2026, Paulo : « cette mise en page devient la base de toutes les mises en page de
+  devis »)** : `DG_BASE` (sg3_devis.js) — format **portrait par défaut** (`dgPortrait` : paysage seulement si choisi ; avant, paysage par défaut), descriptif, calcul
+  complet (quantités et prix, commentaire du calcul, montants), positions sans montant ; le reste comme `DG_PRESET` (ni variantes, ni « 1 à 3 chiffres », ni commentaire en
+  colonne, ni décimales masquées, ni arrondi). Vaut pour tout devis dont les cases du PDF n'ont jamais été réglées (`dgPdf.modeSync` absent : `dgModeOuBase`, dans
+  `dgOptions` et `dgBasculer`) ; un devis réglé garde ses cases (format compris s'il l'a choisi) ; une présentation choisie ensuite dans le devis fait suivre le PDF comme
+  avant (`dgSuivreMode`). « Pourcentages sur le total général » reste un réglage du devis (écran et PDF), déjà la base des nouveaux devis depuis le 08.11.2026. Copie
+  d'avant : `subgestion3/_backup_20261109_avant_base_devis/`.
   **Graphisme « Bleu nuit » du tableau (08.11.2026, variante 4 choisie par Paulo parmi 5 ; maquettes `subgestion3/_backup_20261108_maquette_dg/`)** :
   `livretDG.style:'nuit'` (au lieu de `zebra`) dans `contenuLivret` ▸ `tableau` (sg3_docsub.js) : titres des colonnes en blanc (Regular 8) sur une bande bleu
   nuit #003346 ; CFC à 1 chiffre (styles O, F) en bleu nuit, CFC à 2 chiffres (W) en noir, pourcentage compris (d'abord en bleu nuit ; « texte en noir », même jour), filet bleu nuit sous les CFC à 1 chiffre (0,75 pt ; d'abord 0,5) ; filet gris (#d8d8d4, 0,5 pt ; d'abord 0,25, « épaissir légèrement les lignes ») — pas de filet gris sous la dernière position d'une page (Paulo, 08.11.2026 : « supprimer la ligne lorsqu'il n'y a plus de texte en dessous » ; le trait bleu nuit sous un CFC à 1 chiffre reste)

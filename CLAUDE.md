@@ -2046,8 +2046,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   contrôle des coûts `CC_STATE`, Imprimer, PDF ▾, Partager ▾, lecteur de l'app, volet Réglages, pied « Enregistrés dans le document ») ; « Modifier les textes… » en
   bouton d'en-tête pour les lettres. Lecture seule : sans « chantier : écriture » ou contrôle verrouillé (`ch03dLecture`).
   **Documents redessinés** (`ch01aRender` enveloppé → page repérée dont le PDF est fait ici, comme le devis général : même PDF pour la fenêtre, « Créer le PDF »,
-  « Sauvegarder et ouvrir », « Partager » — vérifié à l'octet) : « Contrôle des coûts » (`ovOctets` : page de garde éditoriale avec signatures, page « Centres de coût »
-  HT / TVA / TTC, récapitulatif CFC à 1 chiffre toujours, à 2 chiffres sur demande, contrôle du coût détaillé — positions, entreprises (nom dans la désignation),
+  « Sauvegarder et ouvrir », « Partager » — vérifié à l'octet) : « Contrôle des coûts » (`ovOctets` : page de garde éditoriale — signatures seulement pour un décompte final : nom du document contenant « décompte
+  final », case « Signatures » du volet pour un autre choix (Paulo, 10.11.2026) —, page « Centres de coût » retirée le même soir (« supprimer » ; code gardé), récapitulatif CFC à 1 chiffre toujours, à 2 chiffres sur demande, contrôle du coût détaillé — positions, entreprises (nom dans la désignation),
   écritures en italique gris derrière un filet comme les lignes de calcul du devis, sans le signe « > » —, colonnes de la présentation Standard par défaut, titres
   sans « TTC » quand tous le sont (« Désignation · montants TTC ») et abrégés s'ils ne tiennent pas, colonne « État du coût » en rouge #BD1E42 si dépassement / vert
   #4E6B0F si économie, `r.cc` de `contenuLivret`), « Devis général » du contrôle (`kvOctets`, portrait par défaut, récapitulatif, devis, Montant HT / TVA / TTC / %,

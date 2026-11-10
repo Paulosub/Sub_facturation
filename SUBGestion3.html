@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 22:27 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 23:00 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42943,6 +42943,10 @@ const entDe=o=>{ if(sv(o.type)!=='costControlEntrepreneurSummary') return null; 
 const filtreDe=o=>{ if(sv(o.type)!=='costControlPaymentList') return null; const C=o.E.C||{}, f=C.filtrePaiements, p=o.E.p; if(!f||!f.applique||typeof ch01dFilterText!=='function') return null;
   const nb=p?DS.by('subproject','PROJECT_ID',p.ID).length:0, m=typeof ch01aMoOuv==='function'?ch01aMoOuv(p,(f.ouvrages||[]).map(x=>x[0])):null, cid=m&&(m.id!=null?m.id:m.ID);
   return {txt:sv(ch01dFilterText(f,nb,false)).replace(/\s*\n\s*/g,' · ').trim(),mo:cid!=null?DS.get('contact',cid):null}; };
+/* signatures du « Contrôle des coûts » (Paulo, 10.11.2026 : « supprimer la signature lorsque le document s'appelle contrôle des coûts, ajouter lorsqu'il s'agit du
+   décompte final ») : d'office seulement si le nom du document contient « décompte final » ; case « Signatures » du volet pour un autre choix */
+const estDecompte=rec=>/d[ée]compte\s+final/i.test(sv(rec&&rec.doc&&rec.doc.nom).normalize('NFC'));
+const sigDe=(o,rec)=>{ const v=optsDe(o).sig; return v!=null?!!v:estDecompte(rec); };
 const titreDe=(o,rec)=>{ const t=sv(rec.doc&&rec.doc.nom||o.label||'Document'), e=entDe(o); return e&&e.nom?t+' · '+e.nom:t; };
 const garde=(o,rec,sig)=>{ const E=o.E, p=E.p||{}, doc=DS.get('costcontroldocument',E.id)||{}, rub=deGardeRub(p,{filter:null}), e=entDe(o), F=filtreDe(o);
   if(F&&F.mo){ const k=rub.findIndex(x=>/ma[iî]tre/i.test(sv(x.lib))); if(k>=0) rub[k]=Object.assign({},rub[k],deNomAdr(F.mo)); }
@@ -42951,7 +42955,7 @@ const garde=(o,rec,sig)=>{ const E=o.E, p=E.p||{}, doc=DS.get('costcontroldocume
     sous:'',info:'',marge:'',filtre:F?(F.txt?'Filtre : '+F.txt:'Paiements filtrés'):'',rub,sig:sig||[]}; };
 const sortie=async(o,rec,pages,ori,type)=>{ const {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, T0=titreDe(o,rec), F=filtreDe(o);
   const sT={b:true,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};
-  const op=optsDe(o), couverture=op.garde===false?null:garde(o,rec,type==='liste'?[]:['Le maître de l’ouvrage :','L’architecte :']);
+  const op=optsDe(o), signe=type==='estimate'||(type==='overview'&&sigDe(o,rec)), couverture=op.garde===false?null:garde(o,rec,signe?['Le maître de l’ouvrage :','L’architecte :']:[]);
   if(couverture) pages.unshift({type:0,titre:T0,rows:[]}); else if(pages[0]) pages[0].type=1;
   pages.forEach(pg=>{ if(pg.type!==0) pg.titre=T0; });   /* en-tête de chaque page : nom du document (et de l'entreprise) */
   const opt=w.JSON.parse(JSON.stringify({titre:T0,sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(F?' · Filtré':''),date:today(),type:'Contrôle des coûts',description:T0+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(F?' (filtre)':''),
@@ -42974,7 +42978,7 @@ const bandeDe=(rec,nom)=>{ try{ return ch01aBands((rec&&rec.doc&&rec.doc.report)
 /* valeurs par défaut : celles de la présentation choisie (sinon la favorite) et des propriétés du modèle (relecture du 10.11.2026) */
 const ovEtat=(o,rec)=>{ const C=o.E.C||{}, op=optsDe(o), P=presDe(C,op), F=favDe(C), Pr=P||F, fo=(Pr&&Pr.options)||{};
   return {op,C,P,niv:op.niv||(fo.displayOnlyThreeDigitPos?'3':'tout'),ent:op.ent!==false,ouv:op.ouv!=null?!!op.ouv:ch01aProp(bandeDe(rec,'costcontrolOverviewSummaryTable'),1,false),
-    centres:op.centres!==false,recap2:op.recap2===true,docu:op.doc!==false,det:op.det!==false,dk:k=>op['det_'+k]!=null?!!op['det_'+k]:detDefaut(Pr,k),
+    centres:false,recap2:op.recap2===true,   /* page « Centres de coût » retirée (Paulo, 10.11.2026 : « supprimer ») ; code gardé dans ovOctets */docu:op.doc!==false,det:op.det!==false,dk:k=>op['det_'+k]!=null?!!op['det_'+k]:detDefaut(Pr,k),
     mutDate:op.mutDate!=null?!!op.mutDate:ch01aProp(bandeDe(rec,'costcontrolOverviewTable'),0,true),dateFacture:op.dateFacture!=null?!!op.dateFacture:!!fo.invoiceNumberInsteadOfPayNumber,
     dernier:op.dernier!=null?!!op.dernier:!!fo.markFinalPays,marque:fo.finalPayment!=null&&sv(fo.finalPayment).trim()?sv(fo.finalPayment).trim():'+',format:op.format==='portrait'?'portrait':'paysage'}; };
 async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
@@ -43097,7 +43101,8 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
     PL.forEach((x,i)=>{ if(estStandard(x)&&S.P!==x) return;   /* présentation identique à Standard : pas en double (comme le menu de l'écran) */
       L.push(it(sv(x.nom||'Présentation '+(i+1))+(sv(x.nom)==='Standard'?' (du document)':''),S.P===x,opt(o,'pres',{i,nom:sv(x.nom)}),{grp:'Colonnes',seg:'Colonnes',segLib:false})); });
     gardeIt();
-    L.push(it('Totaux des centres de coût',S.centres,opt(o,'centres',!S.centres),{grp:'Parties'}),it('Récapitulatif CFC à 2 chiffres',S.recap2,opt(o,'recap2',!S.recap2),{grp:'Parties'}),it('Contrôle du coût détaillé',S.docu,opt(o,'doc',!S.docu),{grp:'Parties'}));
+    L.push(it('Signatures',sigDe(o,rec),opt(o,'sig',!sigDe(o,rec)),{grp:'Parties',dis:optsDe(o).garde===false,ti:'Maître de l’ouvrage et architecte, sur la page de garde ; d’office pour un décompte final (nom du document)'}));
+    L.push(it('Récapitulatif CFC à 2 chiffres',S.recap2,opt(o,'recap2',!S.recap2),{grp:'Parties'}),it('Contrôle du coût détaillé',S.docu,opt(o,'doc',!S.docu),{grp:'Parties'}));
     niv(S.niv); L.push(it('Afficher les entreprises',S.ent,opt(o,'ent',!S.ent),{grp:'Positions'}));
     if(typeof ch01aOuvs==='function'&&ch01aOuvs(C).length) L.push(it('Subdivisions par ouvrage (récapitulatif)',S.ouv,opt(o,'ouv',!S.ouv),{grp:'Positions'}));
     L.push(it('Afficher les écritures',S.det,opt(o,'det',!S.det),{grp:'Écritures'}));

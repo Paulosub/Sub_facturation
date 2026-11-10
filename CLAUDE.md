@@ -1701,7 +1701,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   au haut du texte de la première rubrique = `ECART` (`yR0 = yN + 0,75 + ECART + HC × 9 − 16`, 1re ligne de base à 273,5 pt sur 99TST) — trois espaces égaux de
   20,77 pt : filet de tête → numéro, titre → désignation, filet du titre → rubriques. Puis (« déplacer ±10% devant devis général en alignant à droite ») :
   devis général — précision (`couverture.marge`, marge d'approximation sans le mot « Précision ») sur la dernière ligne du titre, alignée à droite sur le bord des
-  filets (x 485.5 en portrait), Akkurat Light au corps du titre ; le titre se coupe avant elle (12 pt d'écart) ; la ligne d'information ne garde que la phase ; sans
+  filets (x 485.5 en portrait), même typo que le titre (Akkurat Bold, même corps ; « même typo que devis général », essayée d'abord en Light) ; essai sur le
+  Devis estimatif de 99TST : « DEVIS ESTIMATIF » et « ±15% » sur une ligne, 38 pt d'écart ; le titre se coupe avant elle (12 pt d'écart) ; la ligne d'information ne garde que la phase ; sans
   titre, la précision reste dans la ligne d'information. Vaut pour le devis
   général et le devis descriptif (même fonction).
   **Base de toutes les mises en page du devis général = celle de 99TST (09.11.2026, Paulo : « cette mise en page devient la base de toutes les mises en page de

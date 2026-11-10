@@ -2047,7 +2047,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   bouton d'en-tête pour les lettres. Lecture seule : sans « chantier : écriture » ou contrôle verrouillé (`ch03dLecture`).
   **Documents redessinés** (`ch01aRender` enveloppé → page repérée dont le PDF est fait ici, comme le devis général : même PDF pour la fenêtre, « Créer le PDF »,
   « Sauvegarder et ouvrir », « Partager » — vérifié à l'octet) : « Contrôle des coûts » (`ovOctets` : page de garde éditoriale — signatures seulement pour un décompte final : nom du document contenant « décompte
-  final », case « Signatures » du volet pour un autre choix (Paulo, 10.11.2026) —, page « Centres de coût » retirée le même soir (« supprimer » ; code gardé), récapitulatif CFC à 1 chiffre toujours, à 2 chiffres sur demande, contrôle du coût détaillé — positions, entreprises (nom dans la désignation),
+  final », case « Signatures » du volet pour un autre choix (Paulo, 10.11.2026) —, page « Centres de coût » retirée le même soir (« supprimer » ; code gardé) ;
+  **colonnes et ordre de l'exemple de Paulo** (10.11.2026, « Contrôle du cout_250604.pdf » de 23COL, document client gardé hors du dépôt : « ajoute les colonnes dans le
+  pdf contrôle du coûts ») : Standard du PDF = Standard de l'écran + « Provision TTC » après « Contrats + avenants » (`PDF_STD`) ; colonne **Entreprise** en paysage
+  (nom sans la localité ; désignation ≥ 96 pt, montants 40 à 62 pt, sinon l'entreprise repasse dans la désignation) ; position avec son entreprise sur la même ligne
+  quand elle n'en a qu'une, puis mutations et provisions sous la désignation, puis chaque entreprise et ses contrats et paiements dans la colonne Entreprise ;
+  **écritures aux couleurs de l'écran** (choix de Paulo, plutôt que celles de l'exemple) : mutations #993300, contrats #FF6633, paiements #003366, provisions et coût
+  probable #555555 (`COUL_ECR`, couleur de cellule `r.cc` « #rrggbb » de `contenuLivret`), en italique (`r.ital`), **sans trait vertical, ligne claire dessous**
+  (`r.filet` : 0,3 pt #d8d8d4) ; titres abrégés pour les colonnes étroites (`ABREV2` : « Contr. + av. », « État coût »…, « Désignation · TTC ») ;
+  **sauts de page** (« ajouter l'option saut de page ») dans le contrôle détaillé et le devis général détaillé : `sgPdf.sauts` {cfc, sans}, nouvelle page avant la
+  position, clic droit sur une position du PDF = menu du devis (`SGDE.saut.ouvrir` = `dgSpOuvrir`), repères rouges à l'écran seulement (observateur des pages avec
+  sous-arbre), Réglages ▸ Sauts de page (interrupteur, remise à zéro). ⚠ Aperçu masqué : Chrome freine les minuteries et pdf-lib attend (même cause que pour l'affaire
+  de travail) — essais dans un onglet visible ou minuteries 0 ms passées par une file de messages. Récapitulatif CFC à 1 chiffre toujours, à 2 chiffres sur demande, contrôle du coût détaillé — positions, entreprises (nom dans la désignation),
   écritures en italique gris derrière un filet comme les lignes de calcul du devis, sans le signe « > » —, colonnes de la présentation Standard par défaut, titres
   sans « TTC » quand tous le sont (« Désignation · montants TTC ») et abrégés s'ils ne tiennent pas, colonne « État du coût » en rouge #BD1E42 si dépassement / vert
   #4E6B0F si économie, `r.cc` de `contenuLivret`), « Devis général » du contrôle (`kvOctets`, portrait par défaut, récapitulatif, devis, Montant HT / TVA / TTC / %,

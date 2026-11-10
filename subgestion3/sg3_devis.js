@@ -1972,5 +1972,5 @@ VIEWS['mq-vignettes-pdf']={ render(m){
     +'<div class="sgmqv">'+css+html+'</div></div>'); } };
 const SGDE=window.SGDE={X:null,dgOctets,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 /* pour les documents du contrôle des coûts (bloc 52, sg3_coco_docs.js, 10.11.2026) : fenêtre commune et constantes du livret « Bleu nuit » */
-SGDE.vue=vueDocG; SGDE.cssD=cssD; SGDE.livret={DG_RH,DG_X0T,DG_CFC,DG_WL,DG_WP,DG_HP,DG_HT,DG_TXT,DG_WM,deGardeRub,dgFiltreTexte,deNomAdr};
+SGDE.vue=vueDocG; SGDE.cssD=cssD; SGDE.saut={ouvrir:dgSpOuvrir,css:dgSpCss};   /* menu « Saut de page » du clic droit (contrôle des coûts, 10.11.2026) */ SGDE.livret={DG_RH,DG_X0T,DG_CFC,DG_WL,DG_WP,DG_HP,DG_HT,DG_TXT,DG_WM,deGardeRub,dgFiltreTexte,deNomAdr};
 })();

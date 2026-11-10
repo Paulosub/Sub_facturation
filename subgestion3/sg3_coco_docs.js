@@ -20,7 +20,10 @@
    Débogage : window.SGCD. */
 (function(){
 if(typeof ch01aOpen!=='function'||typeof ch01aRender!=='function'||typeof ch01aRec!=='function'||!window.SGDE||!SGDE.vue||!SGDE.livret) return;
-const {DG_RH,DG_X0T,DG_CFC,DG_WL,DG_WP,DG_HP,DG_HT,DG_TXT,deGardeRub,deNomAdr}=SGDE.livret;
+const {DG_RH,DG_CFC,DG_HP,DG_HT,DG_TXT,deGardeRub,deNomAdr}=SGDE.livret;
+/* tableaux élargis (Paulo, 10.11.2026 : « élargir le tableau, aligner le CFC à gauche sur la marge pour élargir les colonnes du tableau ») : le CFC part de la marge de la
+   page (x 28.35, comme l'en-tête) au lieu de la colonne du pied (x 85.04, devis) ; même bord droit (barre du numéro de page) : 56,69 pt de plus pour les colonnes */
+const MARGE_G=28.35, DG_X0T=MARGE_G, DG_WL=SGDE.livret.DG_WL+(SGDE.livret.DG_X0T-MARGE_G), DG_WP=SGDE.livret.DG_WP+(SGDE.livret.DG_X0T-MARGE_G);
 const ecrit=()=>{ try{ return !!sgDroit('chantier','ecriture'); }catch(_){ return true; } };
 const ETATS=typeof CC_STATE!=='undefined'?CC_STATE:{0:'Provisoire',1:'En cours',2:'Etat intermédiaire',3:'Terminé'};
 const ETAT_GARDE={0:'PROVISOIRE',1:'EN COURS',2:'ÉTAT INTERMÉDIAIRE',3:''};   /* mot rouge de la page de garde ; rien pour un contrôle terminé (comme un devis validé) */
@@ -165,7 +168,7 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
   const ori=S.format==='portrait'&&nv<=5?'portrait':'paysage', G=largeurs(ori,nv,nv>8?52:62);
   /* colonne Entreprise (exemple 23COL) : en paysage, si la place le permet (désignation ≥ 104 pt, entreprise ≥ 90 pt) ; sinon l'entreprise passe dans la désignation */
   let aEnt=S.ent&&ori==='paysage', wv=G.wv, dw=G.tw, ew=0;
-  if(aEnt){ const base=G.W-DG_CFC; wv=Math.max(40,Math.min(62,(base-210)/nv)); const reste=base-nv*wv; if(reste<190) aEnt=false; else { dw=Math.max(96,reste*0.48); ew=reste-dw; } }   /* entreprise et écritures sur une ligne le plus souvent (montants en corps à peine réduit si besoin) */
+  if(aEnt){ const base=G.W-DG_CFC; wv=Math.max(40,Math.min(62,(base-230)/nv)); const reste=base-nv*wv; if(reste<190) aEnt=false; else { dw=Math.max(96,reste*0.48); ew=reste-dw; } }   /* entreprise et écritures sur une ligne le plus souvent (montants en corps à peine réduit si besoin) */
   const TA=titresAjustes(flex.map((x,i)=>titres[i]||x.t),wv-4,M);   /* « Transferts TTC » → « Transferts » quand tous les montants sont TTC (dit dans le titre de la désignation) */
   const vcols=flex.map((x,i)=>({t:TA.T[i],w:wv,r:true,pct:!!(CC_COL[x.id]&&CC_COL[x.id].pct)}));
   const tD=!TA.ttc?'Désignation':M.larg('Désignation · montants TTC',true)<=dw-6?'Désignation · montants TTC':'Désignation · TTC';   /* colonne étroite : titre court */

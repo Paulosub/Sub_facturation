@@ -2057,7 +2057,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`r.filet` : 0,3 pt #d8d8d4) ; titres abrégés pour les colonnes étroites (`ABREV2` : « Contr. + av. », « État coût »…, « Désignation · TTC ») ;
   **sauts de page** (« ajouter l'option saut de page ») dans le contrôle détaillé et le devis général détaillé : `sgPdf.sauts` {cfc, sans}, nouvelle page avant la
   position, clic droit sur une position du PDF = menu du devis (`SGDE.saut.ouvrir` = `dgSpOuvrir`), repères rouges à l'écran seulement (observateur des pages avec
-  sous-arbre), Réglages ▸ Sauts de page (interrupteur, remise à zéro). ⚠ Aperçu masqué : Chrome freine les minuteries et pdf-lib attend (même cause que pour l'affaire
+  sous-arbre), Réglages ▸ Sauts de page (interrupteur, remise à zéro). **Tableaux élargis** (même soir, Paulo : « élargir le tableau, aligner le CFC à gauche sur la
+  marge ») : dans tous les documents redessinés du contrôle des coûts, le CFC part de la marge de la page (x 28.35, comme l'en-tête) et non de la colonne du pied (x 85.04
+  du devis) ; même bord droit ; 56,69 pt de plus (paysage 730.94, portrait 484.33 : `MARGE_G`, `DG_X0T` / `DG_WL` / `DG_WP` redéfinis dans sg3_coco_docs.js) ; le devis
+  n'est pas touché. ⚠ Aperçu masqué : Chrome freine les minuteries et pdf-lib attend (même cause que pour l'affaire
   de travail) — essais dans un onglet visible ou minuteries 0 ms passées par une file de messages. Récapitulatif CFC à 1 chiffre toujours, à 2 chiffres sur demande, contrôle du coût détaillé — positions, entreprises (nom dans la désignation),
   écritures en italique gris derrière un filet comme les lignes de calcul du devis, sans le signe « > » —, colonnes de la présentation Standard par défaut, titres
   sans « TTC » quand tous le sont (« Désignation · montants TTC ») et abrégés s'ils ne tiennent pas, colonne « État du coût » en rouge #BD1E42 si dépassement / vert

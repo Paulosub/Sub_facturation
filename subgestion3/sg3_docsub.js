@@ -1641,6 +1641,7 @@ async function sgDsPdf(R, rep, o){
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
         cx.ligne(X0, T(116.5), X0 + W, T(116.5));
       }
+      if(!info && pg.recapTitre) cx.texte(P(String(pg.recapTitre).toUpperCase()), X0, T(92), { police:F.regular, taille:8 });   /* titre d'un récapitulatif (devis général, 10.11.2026) : Regular 8 capitales comme « INFORMATION », à la colonne CFC, au-dessus de la bande */
       let y = info ? 121 : 122;
       const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
       /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages

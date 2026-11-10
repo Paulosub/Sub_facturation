@@ -1382,6 +1382,14 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
             const cf={}, det=r.s==='D'||r.s==='X';   /* lignes de calcul et descriptif : Light gris, quelle que soit leur colonne */
             if(!det){ if(aMt&&!m4.trim()&&m3.trim()) cf[jM]='r'; if(K.h&&t2.trim()) cf[jT]='r'; else if(t1.trim()&&(r.s==='O'||r.s==='F'||r.s==='T')) cf[jT]='b'; }
             return Object.assign({c:n,s:String(r.s||'S')},Object.keys(cf).length?{cf}:{},r.cal?{cal:1}:{},r.q?{q:1}:{}); }); pg.cols=cols2; }); }); }
+    /* récapitulatifs en paysage (Paulo, 10.11.2026 : « afficher uniquement CFC 1 et CFC 2 chiffres ») : colonnes de montant vides dans la série retirées, comme en
+       portrait — récapitulatif à 2 chiffres : « à 2 chiffres » et « à 1 chiffre » ; à 1 chiffre : « à 1 chiffre » —, leur largeur rendue à la colonne Texte */
+    if(!portrait&&K.h){ const v=(c,i)=>i>=0?String(c[i]==null?'':c[i]):'', ser={};
+      pages.forEach(pg=>{ if((pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1)) (ser[pg.digit]=ser[pg.digit]||[]).push(pg); });
+      Object.values(ser).forEach(S=>{ const tous=S.flatMap(pg=>pg.rows), C0=S[0].cols||cols, vides=[K.i4,K.i3,K.i2,K.i1].filter(i=>i>=0&&C0[i]&&!tous.some(r=>v(r.c,i).trim()));
+        if(!vides.length||!C0[1]) return; const gain=vides.reduce((t,i)=>t+(+C0[i].w||0),0), ok=i=>!vides.includes(i);
+        const cols2=C0.map(c=>Object.assign({},c)).filter((c,i)=>ok(i)); cols2[1].w=(+cols2[1].w||0)+gain;
+        S.forEach(pg=>{ pg.rows=pg.rows.map(r=>Object.assign({},r,{c:Array.from(r.c||[]).filter((x,i)=>ok(i))})); pg.cols=cols2; }); }); }
     /* Information (modèle 24PRC) : rangées refaites depuis les remarques et les ouvrages, coupées comme le moteur (ch02bIntro) — rangée vide avant chaque remarque nommée et avant la
        liste des ouvrages (pas entre deux ouvrages ; une entrée sans nom continue la précédente, comme dans les données de l'ancien logiciel), lignes vides d'une remarque écrite en
        paragraphes gardées —, puis réparties sur les pages d'Information (23 rangées par page : règle du moteur rows > lpp − 3, comme le modèle ; pas de rangée vide en tête de page) */
@@ -1419,6 +1427,10 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
           if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit&&!nx.saut) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
+    /* titre « Récapitulatif » sur la première page de chaque récapitulatif (Paulo, 10.11.2026 : « ajouter un titre récapitulatif »), au-dessus de la bande des titres
+       des colonnes ; avec les deux récapitulatifs : « … CFC à 1 chiffre » et « … CFC à 2 chiffres » */
+    { const rec=pg=>(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1), deux=pages.some(pg=>rec(pg)&&pg.digit===0)&&pages.some(pg=>rec(pg)&&pg.digit===1); let dg=null;
+      pages.forEach(pg=>{ const r=rec(pg); if(r&&pg.digit!==dg) pg.recapTitre=pg.digit===0?'Récapitulatif CFC à 1 chiffre':deux?'Récapitulatif CFC à 2 chiffres':'Récapitulatif'; dg=r?pg.digit:null; }); }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
     { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;

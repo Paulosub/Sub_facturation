@@ -911,7 +911,7 @@ function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<
       ibtn({label:'Supprimer le document',dis:!d,fn:()=>i===0?supDG(X):supDoc(X,i)})); L.append(c); });   /* plus de « Supprimer le PDF » : PDF enregistré = archive (10.11.2026) */
   K[0].remove(); K[1].replaceWith(L); dp.querySelectorAll(':scope>.sgde-dh').forEach(x=>x.remove()); L.before(el('div','ph2 sgde-dh','<b>Devis</b>'));   /* titre de la section, comme « Fichiers PDF » (Paulo, 07.11.2026 : « ajouter ici Devis ») */
   const bz=K[2]&&K[2].querySelector('.ib'); if(bz) bz.style.display='none';
-  { const hz=K[2], zEl=hz&&hz.nextElementSibling; if(hz&&zEl&&zEl._sgPdf&&zEl._sgPdf.devis()){ pdfEtCss(); pdfVuesBarre(hz,zEl); } }   /* Fichiers PDF · Archivés · Effacés (10.11.2026) */   /* « Fonctions » retiré (Paulo, 08.11.2026 : « supprimer et ajouter la fonction au bouton de droite ») : même menu au clic droit sur la liste */
+  { const hz=K[2], zEl=hz&&hz.nextElementSibling; if(hz&&zEl&&zEl._sgPdf&&zEl._sgPdf.devis()){ pdfEtCss(); pdfStock(zEl); } }   /* Archivés et Effacés sous la liste (10.11.2026) */   /* « Fonctions » retiré (Paulo, 08.11.2026 : « supprimer et ajouter la fonction au bouton de droite ») : même menu au clic droit sur la liste */
 }
 const dp0=ch02cDocPane; ch02cDocPane=function(X){ dp0(X); if(X.sgde) try{ docsLignes(X); }catch(e){ console.error(e); } };
 /* fenêtre des documents du devis (Devis général, Honoraires, Devis descriptif) : sans « Modifier les textes… » (Paulo, 07.11.2026 : « supprimer ») ; les « Réglages » restent dans la barre.
@@ -1037,24 +1037,46 @@ function pdfChanger(M,id,cible){ const rec=DS.get(CH03A_T,id); if(!rec) return; 
     const ou=n==='archive'?'rangé dans Archivés':n==='supprime'?'rangé dans Effacés':e!=='cree'&&e!=='valide'?'remis dans Fichiers PDF'+(n==='valide'?' (validé)':''):PDF_ET[n][0].toLowerCase();
     DS.commit([{t:CH03A_T,id,val:v,bseq:ctBseq(CH03A_T,id)}]).then(()=>toast('« '+rec.NOM+' » '+ou+'.'),e2=>{ if(!(e2&&e2.conflict)) toast((e2&&e2.message)||String(e2),true); }); };
   if(cible==='supprime') sgConfirm('Supprimer « '+rec.NOM+' » ?\nLe fichier quitte la liste et va dans « Effacés », d’où il pourra être rétabli.',fin,{yesText:'Supprimer'}); else fin(); }
-/* vues de la liste du devis (Paulo, 10.11.2026 : « lorsque je valide supprimer, supprimer le fichier ; ajoute un menu archivé et un menu effacé, pour stocker les devis,
-   descriptif et honoraires ») : Fichiers PDF (créés et validés) · Archivés · Effacés, rangés par document ; choix dans l'en-tête de la liste (pdfVuesBarre), gardé
-   pendant la séance (SGPDF.vue) ; colonnes de dates sans objet retirées (o._sgAll filtré dans l'enveloppe de grid) */
-const PDF_VUES=[['actifs','Fichiers PDF',e=>e==='cree'||e==='valide'],['archive','Archivés',e=>e==='archive'],['supprime','Effacés',e=>e==='supprime']];
-const pdfVue=()=>PDF_VUES.find(v=>v[0]===SGPDF.vue)||PDF_VUES[0];
-function pdfVuesBarre(hz,zEl){ const M=zEl._sgPdf; if(!M) return; hz.querySelectorAll('.sgpdf-vues').forEach(x=>x.remove()); const b=hz.querySelector('b'); if(b) b.style.display='none';
+/* PDF archivés et effacés (Paulo, 10.11.2026 : « lorsque je valide supprimer, supprimer le fichier ; ajoute un menu archivé et un menu effacé, pour stocker les devis,
+   descriptif et honoraires », puis « déplacer archivé et effacé » sous la liste) : « Fichiers PDF » ne montre que les PDF en cours (créés, validés) ; sous la liste,
+   deux rubriques repliables « Archivés » et « Effacés » (pdfStock, ouvertes gardées pendant la séance : SGPDF.ouv), rangées par Devis · Descriptif · Honoraires,
+   mêmes colonnes que le registre, actions (Rétablir, Supprimer), double-clic = ouvrir, clic droit = actions */
+const PDF_VUES=[['actifs','Fichiers PDF',e=>e==='cree'||e==='valide']];
+const pdfVue=()=>PDF_VUES[0];
+function pdfStock(zEl){ const M=zEl._sgPdf; if(!M) return; const par=zEl.parentNode; if(!par) return; par.querySelectorAll(':scope>.sgpdf-stock').forEach(x=>x.remove());
   let F=[]; try{ F=DS.by(CH03A_T,'DOSSIER',ch03aDos(M.dos())).filter(f=>/\.pdf$/i.test(f.NOM||'')); }catch(_){ }
-  const v0=pdfVue()[0], w=document.createElement('div'); w.className='sgpdf-vues';
-  PDF_VUES.forEach(([k,t,ok])=>{ const n=F.filter(f=>ok(pdfEtat(f))).length, bt=document.createElement('button'); bt.type='button'; bt.className=k===v0?'on':''; bt.innerHTML=E(t)+'<small>'+n+'</small>';
-    bt.addEventListener('click',()=>{ SGPDF.vue=k; zEl.dataset.vue=k; pdfVuesBarre(hz,zEl); if(M.redraw) M.redraw(); }); w.append(bt); });
-  zEl.dataset.vue=v0; hz.prepend(w); }
+  const ouv=SGPDF.ouv||(SGPDF.ouv={}), box=document.createElement('div'); box.className='sgpdf sgpdf-stock';
+  const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  const jour=(r,k)=>{ const v=k==='cree'?r.MODIFIED:r[PDF_LE[k]]; if(!v) return '<span class="sgpdf-le">—</span>'; const on=pdfEtat(r)===k; return '<span class="sgpdf-le'+(on?' on':'')+'"'+(on?' style="color:'+PDF_ET[k][1]+'"':'')+'>'+pdfJour(v)+'</span>'; };
+  [['archive','Archivés','Les PDF archivés du devis : gardés, hors de la liste en cours.'],['supprime','Effacés','Les PDF supprimés : retirés de la liste, conservés et rétablissables.']].forEach(([k,t,ti])=>{
+    const L=F.filter(f=>pdfEtat(f)===k), o=!!ouv[k], sec=document.createElement('div'); sec.className='sgpdf-sec'+(o?' ouv':'');
+    sec.innerHTML='<button type="button" class="sgpdf-st" title="'+E(ti)+'" aria-expanded="'+o+'">'+chev+E(t)+'<small>'+L.length+(L.length>1?' fichiers':' fichier')+'</small></button>';
+    if(o){ const cols=['Nom du fichier','Créé le','Validé le','Archivé le',...(k==='supprime'?['Supprimé le']:[]),'Par','Commentaire',''], ordre=[...PDF_GENRES,['autres','Autres']];
+      let h='<table class="g"><thead><tr>'+cols.map((c,n)=>'<th'+(n>=1&&n<=(k==='supprime'?4:3)?' style="width:96px"':n===cols.length-3?' style="width:56px"':n===cols.length-1?' style="width:150px"':'')+'>'+E(c)+'</th>').join('')+'</tr></thead><tbody>';
+      ordre.forEach(([g,lib])=>{ const R=L.filter(f=>pdfGenre(f)===g); if(!R.length&&g==='autres') return;
+        h+='<tr class="sgpdf-g'+(R.length?'':' vide')+'"><td colspan="'+cols.length+'">'+E(lib)+(R.length?'<small>'+R.length+(R.length>1?' fichiers':' fichier')+'</small>':'')+'</td></tr>';
+        R.forEach(r=>{ const A=pdfActions(r); h+='<tr data-k="'+E(r.ID)+'"><td><span class="sgpdf-nom'+(k==='supprime'?' sgpdf-sup':'')+'">'+ICO_PDF+E(r.NOM||'')+'</span></td><td>'+jour(r,'cree')+'</td><td>'+jour(r,'valide')+'</td><td>'+jour(r,'archive')+'</td>'
+          +(k==='supprime'?'<td>'+jour(r,'supprime')+'</td>':'')+'<td>'+E(r.ETAT_PAR||r.USERID||'')+'</td><td><span class="sgpdf-com">'+E(r.COMMENTAIRE||'')+'</span></td>'
+          +'<td><span class="sgpdf-act" data-id="'+E(r.ID)+'" title="Changer l’état du PDF">'+E(A[0][1])+' ▾</span></td></tr>'; }); });
+      sec.insertAdjacentHTML('beforeend',h+'</tbody></table>'); }
+    sec.querySelector('.sgpdf-st').addEventListener('click',()=>{ ouv[k]=!ouv[k]; pdfStock(zEl); });
+    box.append(sec); });
+  const rec=tr=>tr&&tr.dataset&&tr.dataset.k?DS.get(CH03A_T,tr.dataset.k):null, menu=(at,r)=>popMenu(at,[{t:'Ouvrir',fn:()=>ch03aOuvrir(r)},'-',...pdfActions(r).map(([k2,t2])=>({t:t2+(k2==='supprime'?'…':''),dis:!pdfPeut(M),fn:()=>pdfChanger(M,r.ID,k2)}))]);
+  box.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('.sgpdf-act'); if(!a) return; e.stopPropagation(); const r=DS.get(CH03A_T,a.dataset.id); if(!r) return;
+    if(!pdfPeut(M)){ toast('Lecture seule : état du PDF non modifiable.',true); return; } popMenu(a,pdfActions(r).map(([k2,t2])=>({t:t2,fn:()=>pdfChanger(M,r.ID,k2)}))); });
+  box.addEventListener('dblclick',e=>{ const r=rec(e.target.closest&&e.target.closest('tr[data-k]')); if(r) ch03aOuvrir(r); });
+  box.addEventListener('contextmenu',e=>{ const r=rec(e.target.closest&&e.target.closest('tr[data-k]')); if(!r||e.altKey) return; e.preventDefault(); e.stopPropagation(); menu({x:e.clientX,y:e.clientY},r); });
+  zEl.after(box); }
 function pdfEtCss(){ if(document.getElementById('sgpdfet-css')) return; const st=document.createElement('style'); st.id='sgpdfet-css'; st.textContent=`
 .sgpdf td .sgpdf-le{font-variant-numeric:tabular-nums;color:var(--s-gris)}.sgpdf td .sgpdf-le.on{font-weight:700}
 .sgpdf td .sgpdf-sup{text-decoration:line-through}.sgpdf tr:has(.sgpdf-sup) td{color:var(--s-gris)}
 .sgpdf .sgpdf-act{font-size:12.5px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap;color:var(--s-noir)}
 .sgpdf .sgpdf-act:hover{background:var(--s-jaune3,#FFFBDE)}
-.sgpdf-vues{display:flex;gap:22px;align-items:baseline}.sgpdf-vues button{font:inherit;font-size:15px;font-weight:400;background:none;border:0;padding:0 0 3px;cursor:pointer;color:var(--s-gris)}
-.sgpdf-vues button.on{font-weight:700;color:var(--s-noir);box-shadow:inset 0 -2px 0 var(--s-nuit)}.sgpdf-vues button:hover{color:var(--s-noir)}.sgpdf-vues small{font-size:11.5px;font-weight:400;color:var(--s-gris);margin-left:6px}`; document.head.append(st); }
+.sgpdf-stock{margin-top:18px}.sgpdf-stock .sgpdf-sec{border-top:1px solid var(--s-noir)}
+.sgpdf-stock .sgpdf-st{display:flex;align-items:baseline;gap:8px;width:100%;font:inherit;font-size:15px;font-weight:700;color:var(--s-noir);background:none;border:0;padding:12px 0 10px;cursor:pointer;text-align:left}
+.sgpdf-stock .sgpdf-st svg{width:14px;height:14px;align-self:center;transition:transform .15s}.sgpdf-stock .sgpdf-sec.ouv .sgpdf-st svg{transform:rotate(90deg)}
+.sgpdf-stock .sgpdf-st small{font-size:11.5px;font-weight:400;color:var(--s-gris)}.sgpdf-stock .sgpdf-st:hover{background:var(--s-jaune3,#FFFBDE)}
+.sgpdf-stock table.g{width:100%;margin:0 0 6px}.sgpdf-stock table.g thead th{text-align:left}`; document.head.append(st); }
 const SGPDF={attente:null,genre:null,ctx:null};
 const GENRE_LIGNE=['devis','honoraires','descriptif'];   /* document d'origine par indice du moteur (CH02C_ROWS) */
 const PDF_GENRES=[['devis','Devis'],['descriptif','Descriptif'],['honoraires','Honoraires']];   /* ordre des groupes = ordre des documents (ORDRE_DOCS) */

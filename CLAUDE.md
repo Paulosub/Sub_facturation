@@ -1763,10 +1763,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   confirmé). « Supprimé » ne retire jamais le fichier (ligne barrée ; « Supprimer » du menu du moteur retiré de cette liste). « Ouvrir le PDF » d'une ligne Documents :
   le PDF validé du document, sinon le plus récent en cours (`pdfLigne`). Plusieurs versions validées possibles (question posée à Paulo). Droit : documents : dépôt.
   **Puis, même jour (Paulo : « lorsque je valide supprimer, supprimer le fichier ; ajoute un menu archivé et un menu effacé, pour stocker les devis, descriptif et
-  honoraires »)** : en-tête de la liste = choix **Fichiers PDF · Archivés · Effacés** avec leur nombre (`pdfVuesBarre`, `PDF_VUES`, gardé pendant la séance
-  `SGPDF.vue`) ; Fichiers PDF = créés et validés, Archivés = archivés, Effacés = supprimés, toujours rangés par Devis · Descriptif · Honoraires ; un PDF supprimé quitte
-  la liste (confirmation « va dans Effacés ») ; colonnes sans objet retirées selon la vue (Archivé le / Supprimé le : `o._sgAll` filtré) ; « Supprimer » aussi pour un
-  PDF validé ; messages « rangé dans Archivés / Effacés », « remis dans Fichiers PDF ».
+  honoraires », puis « déplacer archivé et effacé » sous la liste)** : « Fichiers PDF » = PDF en cours seulement (créés, validés ; colonnes Archivé le / Supprimé le
+  retirées : `o._sgAll` filtré) ; sous la liste, deux rubriques repliables **Archivés** et **Effacés** avec leur nombre (`pdfStock`, ouvertes gardées pendant la séance
+  `SGPDF.ouv`), rangées par Devis · Descriptif · Honoraires, mêmes colonnes que le registre (+ Archivé le, Supprimé le), Rétablir / Supprimer, double-clic = ouvrir, clic
+  droit = actions ; un PDF supprimé quitte la liste (confirmation « va dans Effacés ») ; « Supprimer » aussi pour un PDF validé ; messages « rangé dans Archivés /
+  Effacés », « remis dans Fichiers PDF ». (Essai du même jour, retiré : choix Fichiers PDF · Archivés · Effacés en onglets dans l'en-tête de la liste.)
   **Variante C « Vignettes » gardée (Paulo : « conserve-la, elle peut m'intéresser visuellement, sauvegarde-la dans Archives »)** : Archives ▸ Maquettes ▸ Vignettes des
   PDF (`mq-vignettes-pdf`, `dom:'reglages'`, fin de sg3_devis.js) — maquette avec données d'exemple, rien n'est lu ni écrit.
   **Bouton « Réglages ▾ » retiré des lignes Documents (10.11.2026, Paulo : « supprimer »)** : les réglages des trois documents sont dans le panneau de leur fenêtre

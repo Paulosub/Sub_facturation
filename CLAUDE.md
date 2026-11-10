@@ -1702,7 +1702,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   20,77 pt : filet de tête → numéro, titre → désignation, filet du titre → rubriques. Puis (« déplacer ±10% devant devis général en alignant à droite ») :
   devis général — précision (`couverture.marge`, marge d'approximation sans le mot « Précision ») sur la dernière ligne du titre, alignée à droite sur le bord des
   filets (x 485.5 en portrait), même typo que le titre (Akkurat Bold, même corps ; « même typo que devis général », essayée d'abord en Light) ; essai sur le
-  Devis estimatif de 99TST : « DEVIS ESTIMATIF » et « ±15% » sur une ligne, 38 pt d'écart ; le titre se coupe avant elle (12 pt d'écart) ; la ligne d'information ne garde que la phase ; sans
+  Devis estimatif de 99TST : « DEVIS ESTIMATIF » et « ±15% » sur une ligne, 38 pt d'écart ;
+  paysage (« glisser le bloc en dessous ») : signatures SOUS les rubriques, sur leur largeur (A x 124.4–286.4, B 302.4–464.4), filet à `ECART` sous la
+  dernière rubrique, « Lieu, date » à +40 et « Signature » à +80 (portrait inchangé : +56, +126) ; 99TST : « Signature » à la ligne de base 531, pied du papier à 553 ; le titre se coupe avant elle (12 pt d'écart) ; la ligne d'information ne garde que la phase ; sans
   titre, la précision reste dans la ligne d'information. Vaut pour le devis
   général et le devis descriptif (même fonction).
   **Base de toutes les mises en page du devis général = celle de 99TST (09.11.2026, Paulo : « cette mise en page devient la base de toutes les mises en page de

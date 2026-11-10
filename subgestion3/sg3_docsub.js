@@ -1564,15 +1564,18 @@ async function sgDsPdf(R, rep, o){
       yr = b + (Math.max(1, LL.length, LV.length) - 1) * 12 + 10; if(ir < RUB.length - 1) bar(yr, 0.5, FILc, X0, XR1); });
     if(yr > BAS) alerte('Page de garde : rubriques trop longues, elles descendent sur le pied de page');
     /* signatures : filet noir 0,75 pt, libellé, « Lieu, date » et « Signature » sous des filets de 0,5 pt. Portrait : A de x 124.4 à 296, B de x 312 à 485.5 (colonnes de
-       l'ancienne page de garde du devis général). Paysage : colonne de droite, A de x 485.5 à 600.8, B de x 616.8 à 732.1, à la hauteur du premier filet des rubriques */
-    const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[485.5, 600.8], [616.8, X1]] : [[X0, 296], [312, X1]];
-    const ys = PAYS ? yR0 : Math.max(610, yr + 30);
+       l'ancienne page de garde du devis général). Paysage (Paulo, 10.11.2026 : « glisser le bloc en dessous » ; avant : colonne de droite, x 485.5 à 732.1, à la hauteur
+       des rubriques) : SOUS les rubriques, sur leur largeur (A de x 124.4 à 286.4, B de x 302.4 à 464.4), à ECART sous la dernière rubrique ; filets « Lieu, date » et
+       « Signature » rapprochés (+40 et +80 au lieu de +56 et +126) pour tenir au-dessus du pied du papier */
+    const SG = Array.from(G.sig || []).slice(0, 2), XM = (X0 + XR1) / 2, CO = PAYS ? [[X0, XM - 8], [XM + 8, XR1]] : [[X0, 296], [312, X1]];
+    const ESG = PAYS ? { l:40, s:80 } : { l:56, s:126 };
+    const ys = PAYS ? yr + ECART : Math.max(610, yr + 30);
     if(SG.length && !PAYS && ys > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');
-    if(SG.length && ys + 135 > BAS) alerte('Page de garde : signatures au-delà de la zone prévue');
+    if(SG.length && ys + ESG.s + 9 > BAS) alerte('Page de garde : signatures au-delà de la zone prévue');
     SG.forEach((sg, i) => { const [a, b] = CO[i];
       bar(ys, 0.75, C.N, a, b); cx.couper(P(sg), F.regular, 8, b - a).slice(0, 2).forEach((l, n) => cx.texte(l, a, T(ys + 14 + n * 10), { police:F.regular, taille:8 }));
-      bar(ys + 56, 0.5, C.N, a, b); cx.texte('Lieu, date', a, T(ys + 65), { police:F.light, taille:7.5, couleur:GRISc });
-      bar(ys + 126, 0.5, C.N, a, b); cx.texte('Signature', a, T(ys + 135), { police:F.light, taille:7.5, couleur:GRISc }); });
+      bar(ys + ESG.l, 0.5, C.N, a, b); cx.texte('Lieu, date', a, T(ys + ESG.l + 9), { police:F.light, taille:7.5, couleur:GRISc });
+      bar(ys + ESG.s, 0.5, C.N, a, b); cx.texte('Signature', a, T(ys + ESG.s + 9), { police:F.light, taille:7.5, couleur:GRISc }); });
   };
   /* devis général (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel) : A4 paysage au papier des
      contrats ; pages du livret calculées par le moteur (ch02bBook : page de garde, information, récapitulatif à 2 chiffres, document principal, total), dessinées ici aux mesures

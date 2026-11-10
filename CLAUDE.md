@@ -1694,7 +1694,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Retouche du 10.11.2026 (Paulo : « texte en noir, ligne aussi », « même espace pour les deux, copie l'espace en bas en haut »)** : numéro, titre, ligne d'information
   et filet sous le bloc du titre en noir (`C.N`, noir des contrats ; plus de bleu nuit sur la page de garde, l'état « PROVISOIRE » / « ANNULÉ » reste rouge) ; numéro
   remonté : du filet de tête (bas à y 101) au haut du numéro = du pied du titre au haut de la désignation = 20,77 pt (`HC` 0,723 = hauteur des capitales et chiffres
-  d'Akkurat mesurée, `ECART` = 28 − 10 × HC ; numéro à la ligne de base 143,46 au lieu de 160 en corps 30). Rubriques et signatures inchangées. Vaut pour le devis
+  d'Akkurat mesurée, `ECART` = 28 − 10 × HC ; numéro à la ligne de base 143,46 au lieu de 160 en corps 30). Puis (« déplacer le bloc en laissant un espace x comme avant ») :
+  rubriques remontées, premier filet gris à `ECART` sous le filet noir du titre (`yR0 = yN + 0,75 + ECART`, au lieu de y 350 au plus tôt, paysage 300 ; 99TST :
+  267 pt) ; signatures inchangées en portrait (y 610, plus bas si besoin), en paysage toujours à la hauteur du premier filet des rubriques. Vaut pour le devis
   général et le devis descriptif (même fonction).
   **Base de toutes les mises en page du devis général = celle de 99TST (09.11.2026, Paulo : « cette mise en page devient la base de toutes les mises en page de
   devis »)** : `DG_BASE` (sg3_devis.js) — format **portrait par défaut** (`dgPortrait` : paysage seulement si choisi ; avant, paysage par défaut), descriptif, calcul

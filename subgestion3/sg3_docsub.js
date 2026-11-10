@@ -1542,9 +1542,11 @@ async function sgDsPdf(R, rep, o){
     if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:C.N }); });
     if(G.filtre) cx.couper(P(G.filtre), F.light, 8, X1 - X0).forEach(l => { yb = k++ ? yb + 12 : y1; cx.texte(l, X0, T(yb), { police:F.light, taille:8, couleur:GRISc }); });
     const yN = yb + 15; bar(yN, 0.75, C.N);   /* numéro, titre, ligne d'information et ce filet en noir (Paulo, 10.11.2026 : « texte en noir, ligne aussi » ; avant : bleu nuit) */
-    /* rubriques : premier filet à y 350 au plus tôt (paysage : 300) ; dans une rubrique, 1re ligne de base au filet + 16, interligne 12, filet suivant à la dernière ligne + 10 */
+    /* rubriques : dans une rubrique, 1re ligne de base au filet + 16, interligne 12, filet suivant à la dernière ligne + 10 */
     const RUB = Array.from(G.rub || []).filter(r => r && (String(r.nom || '').trim() || String(r.adr || '').trim()));
-    const yR0 = PAYS ? Math.max(300, yN + 40) : Math.max(350, yN + 68); let yr = yR0;
+    /* rubriques remontées sous le filet du titre, au même espace (Paulo, 10.11.2026 : « déplacer le bloc en laissant un espace x comme avant » ; avant : y 350 au plus tôt,
+       paysage 300) : du bas du filet (0,75 pt) au premier filet des rubriques = ECART, l'espace entre le filet de tête et le numéro */
+    const yR0 = yN + 0.75 + ECART; let yr = yR0;
     if(RUB.length) bar(yr, 0.5, FILc, X0, XR1);
     RUB.forEach(r => { const b = yr + 16, LL = cx.couper(cx.maj(P(r.lib || '')), F.regular, 7.5, XV - X0 - 8);
       const LV = [].concat(String(r.nom || '').trim() ? equi(P(r.nom), F.regular, 9, WV).map(l => ({ l, f:F.regular })) : [],

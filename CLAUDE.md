@@ -1970,6 +1970,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (orphelin sans effet) ; `sgestimdoc` absent de `SG_T_CHANTIER` (côté NAS, l'écriture suit « projet modifiable », le droit chantier n'est contrôlé que dans l'app). Styles `#sgec-css`, débogage `window.SGEC`. Copie d'avant : `subgestion3/_backup_20261105_avant_documents_estimation/`, `SUBGestion3_backup_20261105_avant_documents_estimation.html`.
   **Essai du 06.11.2026 sur un NAS local (page nettoyée, `serveur_deltasub.py`, mot de passe et profils)** : mode bureau, fichiers sur le serveur, `sgestimdoc` filtré par périmètre (document d'un projet hors périmètre non servi). Chef de projet : document et PDF sur ses projets. Collaborateur (« chantier : lecture », « documents : dépôt ») : consulte le document, peut créer le PDF (dépôt, accepté par le serveur), ne crée pas le document et n'a pas les réglages (grisés depuis ce jour, le serveur les refusait en 403).
   **Descriptifs & devis, même jour** : ligne d'un document (`docsLignes`, sg3_devis.js) : état et « Ouvrir le PDF » tiennent compte du PDF créé par « Créer le PDF » (dossier `archive`, nom proposé, `pdfLigne`) ; le moteur ne connaît que le PDF officiel `documents/<genre>.pdf`, la ligne restait « sans PDF » juste après la création. Règles du moteur (`ch02cPdfHas`) inchangées.
+- **Contrôle des coûts au graphisme des devis (bloc 50, `subgestion3/sg3_coco.js`, concaténé en dernier par `construire.py`)** — **Liste** (écrite le
+  09.11.2026, Paulo : « corriger le design de la liste, reprend le principe de devis » ; restée hors de l'app jusqu'au 10.11.2026 : `window.VIEWS` / `window.VIEW` sont
+  des `const` / `let` du moteur, pas des propriétés de window — le bloc s'arrêtait d'office ; tests remplacés par `typeof VIEWS` / `typeof VIEW`) : page du projet ▸
+  Contrôle des coûts (`ccDomain`) et liste de tous les projets (`VIEWS.coco` sans document ouvert) = page `SGSV.outils.monter` comme les devis (bandeau, chiffres,
+  statuts, recherche, tableau Variante / N° / Statut / Remarque / Coût probable TTC / État du coût TTC / Modifié / Par ; clic = ouvrir, clic droit = en-tête,
+  dupliquer, supprimer). **Éditeur ouvert (10.11.2026, Paulo : « modifier la présentation comme pour le devis, ajouter les documents dans la barre du haut, etc. »)** :
+  `ccEditor` enveloppé (`habillerEd`), éléments du moteur déplacés tels quels — bandeau jaune (numéro, statut, variante, désignation, maître de l'ouvrage, version,
+  modification ; « ‹ Contrôles du projet » = page du projet ▸ Contrôle des coûts), chiffres (Devis général, Mutations, DG révisé, Contrats + avenants, Paiements,
+  Coût probable, État du coût — TTC, une rangée ; état du coût rouge si dépassement, vert si économie), **onglets = sections du moteur** (menu de gauche masqué, ses
+  éléments servent toujours : un onglet clique l'élément) **puis Documents** : choix sous les onglets « Fichiers déposés » (`ccDocsDraw`) et les documents de chaque
+  section (`ch01aDocNode`) ; chaque document (panneau `ch01aPanel`) en ligne comme l'onglet Documents du devis — titre, état (Pas encore créé / Document créé),
+  actions Ouvrir ou Créer le document, Créer le PDF, Renommer…, Supprimer le document (celles du menu « Document » du moteur), puis ses fichiers PDF (`decoDocs`,
+  refait quand un panneau se redessine). Barre : Nouvelle écriture, Présentation (sans « 1 à 3 chiffres »), **CFC Tout · 3 · 2 · 1** (Contrôle du coût et Devis
+  général ; `sg3_coco_niv` ; copie, CSV et impression du tableau = lignes affichées, `tableText` filtré le temps de l'appel), Imprimer ▾ (tableau A4 paysage,
+  documents de la section, fichiers déposés), légende des couleurs des écritures (avec « Afficher les détails »), Paramètres, Fonctions ▾ (éditer, supprimer,
+  copier, exporter, enregistrer), plein écran (Échap). Tableau au graphisme du devis : CFC à 1 chiffre sur trame bleu nuit pâle, 1re et 2e colonnes fixes au
+  défilement horizontal, total général encadré ; clic droit sur une ligne = Éditer / Supprimer l'écriture (lignes de détail ; toutes les lignes des autres
+  sections), Nouvelle écriture ▸ ; ↑ ↓ Entrée. Classes `sgce-*` (liste : `sgcc-*`), `window.SGCC` (`SGCC.ed` = état de l'éditeur). DeltaSub.html seul garde ses écrans.
+  NB : la présentation « Standard » de 99TST n'a pas de colonne CFC (données du générateur) : Présentation ▸ Configuration pour l'ajouter.
 - **Surfaces et volumes (10.11.2026, bloc 49, `subgestion3/sg3_surfaces.js`, concaténé en dernier ; Paulo : « le volume doit être entré quelque part dans
   le logiciel dans un module de calcul de surface et volume, ajoute ce module dans Projet et ajoute uniquement le volume pour l'affaire 99TST ; on regardera
   ensemble comment créer le module de calcul de surface et volume, pour réaliser des métrés »)** : page du projet ▸ Projet ▸ tuile « Surfaces et volumes »

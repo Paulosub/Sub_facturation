@@ -906,7 +906,7 @@ const VUE_GROUPES=['Format','Positions','Calcul','Montants','Affichage','Sauts d
 const VUE_ORDRE=['Afficher les positions sans montant','Seulement positions de 1 à 3 chiffres','Descriptif','Assembler les descriptifs des ouvrages','Récapitulatif CFC à 1 chiffre',   /* « Afficher les positions sans montant » en tête des Positions (Paulo, 10.11.2026, après un essai dans Affichage) */
   'Récapitulatif CFC à 2 chiffres',   /* « Seulement positions de 1 à 3 chiffres » en tête des Positions, avant « Descriptif » (Paulo, 10.11.2026) */
   'Afficher les positions saisies et les totalisateurs','Afficher les positions sans montant','Pourcentages sur le total général','Afficher les subdivisions',
-  'Afficher le calcul','Commentaire du calcul','Quantités et prix','Quantités','Prix HT','Prix TTC','Afficher les montants',   /* « Commentaire du calcul » juste sous « Afficher le calcul » (Paulo, 10.11.2026 : « déplacer ») */'Bases de prix','Variantes',
+  'Afficher les montants','Afficher le calcul','Commentaire du calcul','Quantités et prix','Quantités','Prix HT','Prix TTC',   /* « Afficher les montants » en tête du Calcul, sans retrait : indépendant (10.11.2026) */   /* « Commentaire du calcul » juste sous « Afficher le calcul » (Paulo, 10.11.2026 : « déplacer ») */'Bases de prix','Variantes',
   'Tous les montants détaillés','Uniquement les montants avec calculs et remarque','Masquer les décimales','Pourcentages sur le total général',
   'Descriptif','Assembler les descriptifs des ouvrages','Commentaire dans colonne séparée','Base et commentaire de la position','Base et commentaire dans colonne séparée'];
 const VUE_RETRAIT=new Set(['Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Base et commentaire dans colonne séparée','Assembler les descriptifs des ouvrages']);
@@ -1254,7 +1254,12 @@ const dgTexte=p=>{ const a=String(p.texte||'').trim(), b=p.texte2==null?'':Strin
 /* hiérarchie « Filet de calcul » (variante E, choisie par Paulo le 08.11.2026 sur maquette, subgestion3/_backup_20261108_maquette_hierarchie/) : chaque rangée d'une ligne de calcul
    est repérée (cal : retrait derrière un filet vertical bleu nuit, montants en italique) ; la rangée « Quantité … Prix … » aussi (q : italique gris) ; le libellé reste en gris droit */
 const DG_CALR=7;   /* retrait du calcul (pt) derrière le filet */
+/* montants des lignes de calcul (Paulo, 10.11.2026 : « afficher les montants devant le commentaire du calcul, afficher les montants même lorsque les calculs ne sont
+   pas affichés ») : sans « Quantités et prix », le montant est sur la rangée du commentaire du calcul (règle « same » du moteur, qui ne joue que sans formule : la
+   formule n'est imprimée que dans la rangée « Quantité … Prix … », absente ici) ; même colonne que dans la rangée « Quantité … Prix … » (à 3 chiffres pour une
+   position à 3 chiffres : visible aussi avec « Seulement positions de 1 à 3 chiffres ») ; sans commentaire, une rangée du seul montant */
 { const d0=ch02bDetail; ch02bDetail=function(l,o,no,loc,R){ let out;
+    if(DG_ACTIF&&o&&o.displayDetailValues&&!o.displayQuanPriceValue&&o.dispalyCalcualtion){ o=Object.assign({},o,{dispalyCalcualtion:false}); arguments[1]=o; }
     if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) out=d0.apply(this,arguments);
     else { out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
       if(k>=0&&out[k]&&Array.isArray(out[k].c)) out[k]={c:out[k].c.map((v,j)=>j<=1?v:''),s:out[k].s}; }
@@ -1483,8 +1488,8 @@ const DG_P4=true;   /* ESSAI du 10.11.2026 : portrait à quatre colonnes de mont
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['dispalyEmptyPositions','Afficher les positions sans montant'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['displayDescription','Descriptif'],['compactDescription','Assembler les descriptifs des ouvrages','sub'],'-',   /* Positions, puis Affichage (ordre du panneau, Paulo, 10.11.2026) */   /* récapitulatif à 2 chiffres (includeKvTwoDigit, DG_PRESET : oui) — Paulo, 10.11.2026 : « dans Positions ajouter récapitulatif CFC à 2 chiffres » */   /* récapitulatif à 1 chiffre du livret (includeKvOneDigit, DG_PRESET : non) — Paulo, 10.11.2026 : « dans Positions ajoute une option CFC 1 chiffre » */   /* « Afficher les positions saisies et les totalisateurs » regroupé ici (Paulo, 08.11.2026) : toujours actif */
   ['includeKvTwoDigit','Récapitulatif CFC à 2 chiffres'],['commentInColumn','Commentaire dans colonne séparée'],['sgChiffres','Volume SIA 416 et prix au m³'],'-',   /* chiffres clés des récapitulatifs (Paulo, 10.11.2026 : « ajouter une option dans Affichage pour afficher VB et prix / m³ ») ; DG_PRESET : oui */   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */   /* « Tous les montants détaillés » fusionné dans « Afficher les montants », placé sous « Commentaire du calcul » (Paulo, 08.11.2026) */
-  ['dispalyCalcualtion','Afficher le calcul'],['displayDetailComment','Commentaire du calcul'],['displayQuanPriceValue','Quantités et prix'],
-  ['displayDetailValues','Afficher les montants'],['displayDetailOptions','Variantes'],['displayPriceBase','Bases de prix'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
+  ['displayDetailValues','Afficher les montants'],['dispalyCalcualtion','Afficher le calcul'],['displayDetailComment','Commentaire du calcul'],['displayQuanPriceValue','Quantités et prix'],
+  ['displayDetailOptions','Variantes'],['displayPriceBase','Bases de prix'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
   ['dispalyRound1000','Arrondir à 1000']];
 const DG_RONDS=['dispalyRound10','dispalyRound100','dispalyRound1000'];
 const dgChoix=E=>{ const v=((E||{}).reglages||{}).dgPdf; return v&&typeof v==='object'?v:{}; };
@@ -1520,7 +1525,7 @@ function dgOptions(X){ const E=X.E||{}, fav=dgPres(E)||{}, sub=ch02bHasSub(E), c
   DG_MENU.forEach(m=>{ if(Array.isArray(m)&&m[0][0]!=='*'&&typeof c[m[0]]==='boolean') o[m[0]]=c[m[0]]; });
   { const k=dgModeCle(E); if(c.modeSync!==k) Object.assign(o,dgModeOuBase(c,k)); }   /* jamais réglé : la base (09.11.2026) */   /* le PDF suit toujours la présentation du devis (Paulo : « c'est plutôt le PDF qui suit les réglages du devis ») ; seules les cases changées depuis dans le PDF pour cette présentation sont gardées */
   if(!sub){ o.displaySubprojects=false; o.compactDescription=false; o.displaySubprojectNames=false; }   /* affaire sans ouvrage : colonne OUV vide (comme la fenêtre du moteur) */
-  if(!o.dispalyCalcualtion) o.displayDetailValues=false;   /* « Afficher les montants » dépend du calcul (08.11.2026) : sinon des montants seuls, sans texte, seraient imprimés */
+  /* « Afficher les montants » ne dépend plus de « Afficher le calcul » (Paulo, 10.11.2026 : « afficher les montants même lorsque les calculs ne sont pas affichés ») */
   o.specialRound=DG_RONDS.some(k=>o[k]); return o; }
 function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), c=Object.assign({},dgChoix(E));
   { const mk=dgModeCle(E); if(c.modeSync!==mk) Object.assign(c,dgModeOuBase(c,mk),{modeSync:mk}); }   /* présentation suivie (08.11.2026) ; jamais réglé : la base (09.11.2026) */
@@ -1530,7 +1535,7 @@ function dgBasculer(X,k){ if(!ch02aCan(X)) return; const E=X.E, o=dgOptions(X), 
   if(k==='*total'){ const R=E.reglages||(E.reglages={}); R.pourcentageSur=R.pourcentageSur==='total'?'groupe':'total'; X.touch(); return; }
   if(k==='*paysage'||k==='*portrait'){ c.format=k.slice(1); const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); return; }   /* format du PDF (08.11.2026) */   /* réglage du devis (Paramètres ▸ Affichage), aussi pour l'écran */
   { const v=!o[k]; c[k]=v; if(DG_RONDS.includes(k)&&v) DG_RONDS.forEach(x=>{ if(x!==k) c[x]=false; });
-    if(k==='dispalyCalcualtion'){ c.displayQuanPriceValue=v; c.displayDetailComment=v; c.displayDetailValues=v; }   /* « Afficher le calcul » coche ou décoche ses trois cases : Quantités et prix, Commentaire du calcul, Afficher les montants (Paulo, 08.11.2026) */   /* « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (Paulo, 08.11.2026) */
+    if(k==='dispalyCalcualtion'){ c.displayQuanPriceValue=v; c.displayDetailComment=v; }   /* « Afficher les montants » indépendant (10.11.2026) */   /* « Afficher le calcul » coche ou décoche ses trois cases : Quantités et prix, Commentaire du calcul, Afficher les montants (Paulo, 08.11.2026) */   /* « Afficher le calcul » coche ou décoche aussi « Quantités et prix » et « Commentaire du calcul » (Paulo, 08.11.2026) */
     if(k==='displayComment'&&!v) c.commentInColumn=false; if(k==='displayDetailValues'&&!v) c.displayDetailOptions=false;   /* décocher « Quantités et prix » ne décoche plus « Afficher le calcul » (Paulo, 08.11.2026 : ses cases ne se grisaient plus qu'ensemble) */
     if(k==='displayNoTitlePositions'&&!v) c.onlyThreeDigits=false; if(k==='onlyThreeDigits'&&v) c.displayNoTitlePositions=true; }
   const R=E.reglages||(E.reglages={}); R.dgPdf=c; X.touch(); }
@@ -1540,9 +1545,9 @@ function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
   const lgn=((X.E||{}).positions||[]).flatMap(q=>(q.parts||[]).flatMap(pt=>pt.lignes||[])), aCalc=lgn.length>0, aVar=lgn.some(l=>l&&l.var);
   const aVol=(()=>{ try{ return typeof sgVolumeSIA416==='function'&&+sgVolumeSIA416(X.p)>0; }catch(_){ return false; } })(), aRec=!!o.includeKvOneDigit;   /* volume et prix au m³ : seulement avec un volume (Projet ▸ Surfaces et volumes), sur le récapitulatif à 1 chiffre (toujours imprimé) */
   const absent=k=>(!aCalc&&(k==='dispalyCalcualtion'||k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues'))||(!aVar&&k==='displayDetailOptions')||(!aVol&&k==='sgChiffres');
-  const dis=k=>absent(k)||(k==='sgChiffres'&&!aRec)||((k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
+  const dis=k=>absent(k)||(k==='sgChiffres'&&!aRec)||((k==='displayQuanPriceValue'||k==='displayDetailComment')&&!o.dispalyCalcualtion);   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
   const pt=dgPortrait(X.E);
-  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul',ind:true}:m[0]==='sgChiffres'||m[0]==='includeKvTwoDigit'?{grp:'Affichage'}:{})));   /* « Récapitulatif CFC à 2 chiffres » en tête d'Affichage (Paulo, 10.11.2026) */
+  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul'}:m[0]==='sgChiffres'||m[0]==='includeKvTwoDigit'?{grp:'Affichage'}:{})));   /* « Récapitulatif CFC à 2 chiffres » en tête d'Affichage (Paulo, 10.11.2026) */
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   /* « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 : « déplacer ») — panneau et menu de la ligne */
   { const it={t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total'),grp:'Positions'}, k=(i=>i>=0?i:L.findIndex(x=>x&&x.t==='Descriptif'))(L.findIndex(x=>x&&x.t==='Assembler les descriptifs des ouvrages'));   /* après Descriptif (et Assembler…), dans Positions */
@@ -1709,5 +1714,5 @@ function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.
 /* « Afficher les montants » du devis descriptif (Paulo, 08.11.2026) : dans le groupe Montants, sous « Masquer les décimales » */
 { const p2=ch02cPrefItems; ch02cPrefItems=function(X,i){ const L=p2.apply(this,arguments); if(+i!==2||!X||!X.sgde||!Array.isArray(L)) return L; const on=!!(((X.E||{}).reglages||{}).descMontants);
     return L.concat([{t:'Afficher les montants',chk:on,grp:'Montants',rang:999,fn:()=>{ if(!ch02aCan(X)) return; const Rg=X.E.reglages||(X.E.reglages={}); if(on) delete Rg.descMontants; else Rg.descMontants=true; X.touch(); }}]); }; }
-const SGDE=window.SGDE={X:null,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
+const SGDE=window.SGDE={X:null,dgOctets,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 })();

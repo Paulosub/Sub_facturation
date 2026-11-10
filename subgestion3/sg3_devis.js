@@ -1427,21 +1427,21 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
           if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit&&!nx.saut) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
-    /* titre « Récapitulatif » sur la première page de chaque récapitulatif (Paulo, 10.11.2026 : « ajouter un titre récapitulatif »), au-dessus de la bande des titres
-       des colonnes ; avec les deux récapitulatifs : « … CFC à 1 chiffre » et « … CFC à 2 chiffres » */
+    /* titre « Récapitulatif » sur chaque page d'un récapitulatif (Paulo, 10.11.2026 : « ajouter un titre récapitulatif »), dans la bande des titres des
+       colonnes à la place de « Texte » (variante 2, sans place en plus : aussi sur les pages de suite) ; avec les deux récapitulatifs : « … CFC à 1 chiffre » et « … CFC à 2 chiffres » */
     { const rec=pg=>(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1), deux=pages.some(pg=>rec(pg)&&pg.digit===0)&&pages.some(pg=>rec(pg)&&pg.digit===1); let dg=null;
-      pages.forEach(pg=>{ const r=rec(pg); if(r&&pg.digit!==dg) pg.recapTitre=pg.digit===0?'Récapitulatif CFC à 1 chiffre':deux?'Récapitulatif CFC à 2 chiffres':'Récapitulatif'; dg=r?pg.digit:null; }); }
+      pages.forEach(pg=>{ const r=rec(pg); if(r) pg.recapTitre=pg.digit===0?'Récapitulatif CFC à 1 chiffre':deux?'Récapitulatif CFC à 2 chiffres':'Récapitulatif'; dg=r?pg.digit:null; }); }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
     { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;
       pages.forEach(pg=>{ if(!(pg.type===1||pg.type===2)){ carte.pages.push({type:pg.type}); return; } if(pg.digit!==dg){ bloc=null; dg=pg.digit; }
-        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122+(pg.recapTitre?DG_RDY:0),tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
+        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122,tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
           if(c0&&!r.k&&r.s!=='T'&&r.s!=='E'){ bloc={cfc:c0,t:String(c[1]==null?'':c[1]).trim()}; tetes.push(i); } return pl&&r.s!=='T'?bloc:null; })}); });
       DG_CARTE.set(X,carte); }
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
-      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoGarde:true,infoDx:iDx,recapDy:DG_RDY,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:DG_CALR}})), j=new w.Array(); opt.journal=j;
+      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoGarde:true,infoDx:iDx,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:DG_CALR}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
     return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
 async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }
@@ -1453,7 +1453,6 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
 /* « Réglages » du devis général : les cases du menu de la ligne (mêmes libellés que le moteur) sur les options du livret de l'ancien logiciel (ch02b, libellés identiques dans sa
    fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
-const DG_RDY=14;   /* page de récapitulatif : titre à la hauteur de « INFORMATION » (ligne de base 101), bande et rangées 14 pt plus bas (10.11.2026) */
 const DG_P4=true;   /* ESSAI du 10.11.2026 : portrait à quatre colonnes de montants (voir dgOctets) ; false = Montant / Total */
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['includeKvOneDigit','Récapitulatif CFC à 1 chiffre'],   /* récapitulatif à 1 chiffre du livret (includeKvOneDigit, DG_PRESET : non) — Paulo, 10.11.2026 : « dans Positions ajoute une option CFC 1 chiffre » */   /* « Afficher les positions saisies et les totalisateurs » regroupé ici (Paulo, 08.11.2026) : toujours actif */

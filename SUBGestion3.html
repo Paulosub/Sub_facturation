@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 09:37 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 09:56 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33738,7 +33738,8 @@ async function sgDsPdf(R, rep, o){
     /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
     const tableau = (pg) => {
       const X0 = !(pg.type === 3 || pg.type === 4) && D.x0Tab != null ? +D.x0Tab : D.x0 != null ? +D.x0 : cx.Z.x0, cols = Array.from(pg.cols || []),   /* tableaux : D.x0Tab (devis général : x 125.72) ; Information : D.x0 */   /* portrait : tableau à la marge de l'en-tête et du pied (x 28.35), comme le paysage */ rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
-      const dyR = !info && pg.recapTitre ? (+D.recapDy || 14) : 0;   /* page de récapitulatif titrée : bande et rangées descendues (Paulo, 10.11.2026 : « l'espace doit toujours être le même que sur les autres pages ; si on rajoute récapitulatif, descendre le tableau ») */
+      const dyR = 0;   /* tableau toujours à la même hauteur (le titre d'un récapitulatif est dans la bande, variante 2 du 10.11.2026) */
+      const rT = !info && pg.recapTitre ? P(String(pg.recapTitre).toUpperCase()) : '';   /* récapitulatif : titre en gras blanc dans la bande, à la place de « Texte » (variante 2 choisie par Paulo parmi 5, 10.11.2026) */
       const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => c.pct || /%/.test(String(c.t || '')));
       /* D.aligne : textes des colonnes à gauche sans retrait, à l'aplomb des colonnes du pied (CFC x 28.35 ; en portrait, Texte x 125.72) ; bandes et filets 2 pt plus à gauche */
       const al = D.aligne === true && !info, ins = al ? 0 : 2, XB = al ? X0 - 2 : X0, WB = al ? W + 2 : W;   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
@@ -33748,14 +33749,13 @@ async function sgDsPdf(R, rep, o){
         else { cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:+D.corpsTitres || 9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); } }   /* titre souligné d'un filet gris (modèle 24PRC) */
       else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
         cx.rect(XB, T(116.5 + dyR), WB, 16, { fond:NUIT });
-        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const zc = +D.corpsTitres || 7.5, t = ajuste(c.t, F.regular, zc, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + ins, T(111.2 + dyR), { police:F.regular, taille:zc, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* titres des colonnes : D.corpsTitres (devis général : 8 pt) */
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const zc = +D.corpsTitres || 7.5, tit = rT && j === 1, fc = tit ? F.bold : F.regular, t = ajuste(tit ? rT : c.t, fc, zc, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + ins, T(111.2 + dyR), { police:fc, taille:zc, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* titres des colonnes : D.corpsTitres (devis général : 8 pt) */
       }
       else {
         cx.ligne(X0, T(100.5 + dyR), X0 + W, T(100.5 + dyR));
-        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110 + dyR), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const tit = rT && j === 1, fc = tit ? F.bold : F.light, t = ajuste(tit ? rT : c.t, fc, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110 + dyR), { police:fc, taille:8, align:p.r ? 'd' : 'g' }); });
         cx.ligne(X0, T(116.5 + dyR), X0 + W, T(116.5 + dyR));
       }
-      if(!info && pg.recapTitre) cx.texte(P(String(pg.recapTitre).toUpperCase()), X0, T(101), { police:F.regular, taille:8 });   /* titre d'un récapitulatif (devis général, 10.11.2026) : Regular 8 capitales comme « INFORMATION », à la même hauteur (ligne de base 101), à la colonne CFC ; le tableau descend de dyR */
       let y = (info ? 121 : 122) + dyR;
       const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
       /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages
@@ -39563,21 +39563,21 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
           if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit&&!nx.saut) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
-    /* titre « Récapitulatif » sur la première page de chaque récapitulatif (Paulo, 10.11.2026 : « ajouter un titre récapitulatif »), au-dessus de la bande des titres
-       des colonnes ; avec les deux récapitulatifs : « … CFC à 1 chiffre » et « … CFC à 2 chiffres » */
+    /* titre « Récapitulatif » sur chaque page d'un récapitulatif (Paulo, 10.11.2026 : « ajouter un titre récapitulatif »), dans la bande des titres des
+       colonnes à la place de « Texte » (variante 2, sans place en plus : aussi sur les pages de suite) ; avec les deux récapitulatifs : « … CFC à 1 chiffre » et « … CFC à 2 chiffres » */
     { const rec=pg=>(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1), deux=pages.some(pg=>rec(pg)&&pg.digit===0)&&pages.some(pg=>rec(pg)&&pg.digit===1); let dg=null;
-      pages.forEach(pg=>{ const r=rec(pg); if(r&&pg.digit!==dg) pg.recapTitre=pg.digit===0?'Récapitulatif CFC à 1 chiffre':deux?'Récapitulatif CFC à 2 chiffres':'Récapitulatif'; dg=r?pg.digit:null; }); }
+      pages.forEach(pg=>{ const r=rec(pg); if(r) pg.recapTitre=pg.digit===0?'Récapitulatif CFC à 1 chiffre':deux?'Récapitulatif CFC à 2 chiffres':'Récapitulatif'; dg=r?pg.digit:null; }); }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
     { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;
       pages.forEach(pg=>{ if(!(pg.type===1||pg.type===2)){ carte.pages.push({type:pg.type}); return; } if(pg.digit!==dg){ bloc=null; dg=pg.digit; }
-        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122+(pg.recapTitre?DG_RDY:0),tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
+        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122,tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
           if(c0&&!r.k&&r.s!=='T'&&r.s!=='E'){ bloc={cfc:c0,t:String(c[1]==null?'':c[1]).trim()}; tetes.push(i); } return pl&&r.s!=='T'?bloc:null; })}); });
       DG_CARTE.set(X,carte); }
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */
     const titre=tt('document')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
     const opt=w.JSON.parse(JSON.stringify({titre:tt('document'),sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Devis général',description:titre,
-      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoGarde:true,infoDx:iDx,recapDy:DG_RDY,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:DG_CALR}})), j=new w.Array(); opt.journal=j;
+      livretDG:{couverture,pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,infoTitre:'Information',infoGarde:true,infoDx:iDx,orientation:portrait?'portrait':'paysage',x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:DG_CALR}})), j=new w.Array(); opt.journal=j;
     const oct=await fn(R,null,opt); if(j.length) console.info('Devis général :',Array.from(j));
     return {oct,nom:titre.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; } }
 async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOctets(X); sgVisionneuse(new Blob([r.oct],{type:'application/pdf'}),r.nom); }
@@ -39589,7 +39589,6 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
 /* « Réglages » du devis général : les cases du menu de la ligne (mêmes libellés que le moteur) sur les options du livret de l'ancien logiciel (ch02b, libellés identiques dans sa
    fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
-const DG_RDY=14;   /* page de récapitulatif : titre à la hauteur de « INFORMATION » (ligne de base 101), bande et rangées 14 pt plus bas (10.11.2026) */
 const DG_P4=true;   /* ESSAI du 10.11.2026 : portrait à quatre colonnes de montants (voir dgOctets) ; false = Montant / Total */
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['includeKvOneDigit','Récapitulatif CFC à 1 chiffre'],   /* récapitulatif à 1 chiffre du livret (includeKvOneDigit, DG_PRESET : non) — Paulo, 10.11.2026 : « dans Positions ajoute une option CFC 1 chiffre » */   /* « Afficher les positions saisies et les totalisateurs » regroupé ici (Paulo, 08.11.2026) : toujours actif */

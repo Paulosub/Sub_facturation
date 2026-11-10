@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 13:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 13:51 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -39053,11 +39053,11 @@ const ORDRE_DOCS=[0,2,1];
    créés sont gardés ; refusé s'il reste le PDF du document, comme les autres lignes). Imprimer ▸ « Devis général (PDF) » de l'onglet Devis n'en dépend pas. */
 const dgCree=X=>{ const R=((X&&X.E)||{}).reglages||{}; return R.dgDoc===true||(R.dgDoc!==false&&ch02cHas(X,0)); };
 function dgCreerDoc(X){ if(!ch02aCan(X)) return; const R=X.E.reglages||(X.E.reglages={}); R.dgDoc=true; X.touch(); ch02cDocPane(X); return ch02cOpen(X,0); }
-async function supDG(X){ if(!dgCree(X)||!ch02aCan(X)) return; if(ch02cPdfHas(X,0)){ await ch02aInfo('Erreur',CH02C_MSG.pdfExists+' Supprimez d’abord le PDF du document.'); return; }
+async function supDG(X){ if(!dgCree(X)||!ch02aCan(X)) return; if(ch02cPdfHas(X,0)){ await ch02aInfo('Erreur','Ce document a un PDF enregistré, qui est une archive définitive : le document ne peut plus être supprimé.'); return; }
   if((await ivAsk('Supprimer le document','Supprimer le document « Devis général » ? La ligne repassera sur « Créer le document » : il pourra être recréé à tout moment. Les fichiers PDF déjà créés sont gardés.'))!==true) return;
   const R=X.E.reglages||(X.E.reglages={}); R.dgDoc=false; X.touch(); ch02cDocPane(X); }
 async function supDoc(X,i){ const id=ch02cId(X,i), rec=DS.get(CH02C_T,id); if(!rec||!rec.doc) return; if(!ch02aCan(X)) return;
-  if(ch02cPdfHas(X,i)){ await ch02aInfo('Erreur',CH02C_MSG.pdfExists+' Supprimez d’abord le PDF du document.'); return; }
+  if(ch02cPdfHas(X,i)){ await ch02aInfo('Erreur','Ce document a un PDF enregistré, qui est une archive définitive : le document ne peut plus être supprimé.'); return; }
   const nom=(CH02C_ROWS[i]||{}).t||'document', bseq=ctBseq(CH02C_T,id);
   if((await ivAsk('Supprimer le document','Supprimer le document « '+nom+' » ? La ligne repassera sur « Créer le document » : il pourra être recréé à tout moment. Les fichiers PDF déjà créés sont gardés.'))!==true) return;
   try{ await DS.commit([{t:CH02C_T,id,val:Object.assign({},rec,{doc:null}),bseq}]); }catch(e){ if(!e||!e.conflict) console.error(e); toast('Le document n’a pas pu être supprimé.',true); }
@@ -39067,7 +39067,7 @@ function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<
     a.append(ibtn({label:d?'Ouvrir':'Créer le document',fn:()=>i===0&&!d?dgCreerDoc(X):ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:(gen?!!gen.dis:true)||(i===0&&!d),fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),
       /* « Supprimer le document » directement dans la ligne (Paulo, 10.11.2026 : « lorsque le document est créé, pouvoir le supprimer pour afficher Créer le document à
          nouveau », puis « appliquer à Devis général ») ; « Supprimer le PDF » seulement s'il y a un PDF du document */
-      ibtn({label:'Supprimer le document',dis:!d,fn:()=>i===0?supDG(X):supDoc(X,i)}),...(f?[ibtn({label:'Supprimer le PDF',fn:()=>ch02cDelPdf(X,i)})]:[])); L.append(c); });
+      ibtn({label:'Supprimer le document',dis:!d,fn:()=>i===0?supDG(X):supDoc(X,i)})); L.append(c); });   /* plus de « Supprimer le PDF » : PDF enregistré = archive (10.11.2026) */
   K[0].remove(); K[1].replaceWith(L); dp.querySelectorAll(':scope>.sgde-dh').forEach(x=>x.remove()); L.before(el('div','ph2 sgde-dh','<b>Devis</b>'));   /* titre de la section, comme « Fichiers PDF » (Paulo, 07.11.2026 : « ajouter ici Devis ») */
   const bz=K[2]&&K[2].querySelector('.ib'); if(bz) bz.style.display='none';   /* « Fonctions » retiré (Paulo, 08.11.2026 : « supprimer et ajouter la fonction au bouton de droite ») : même menu au clic droit sur la liste */
 }
@@ -39952,6 +39952,30 @@ function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.
 /* « Afficher les montants » du devis descriptif (Paulo, 08.11.2026) : dans le groupe Montants, sous « Masquer les décimales » */
 { const p2=ch02cPrefItems; ch02cPrefItems=function(X,i){ const L=p2.apply(this,arguments); if(+i!==2||!X||!X.sgde||!Array.isArray(L)) return L; const on=!!(((X.E||{}).reglages||{}).descMontants);
     return L.concat([{t:'Afficher les montants',chk:on,grp:'Montants',rang:999,fn:()=>{ if(!ch02aCan(X)) return; const Rg=X.E.reglages||(X.E.reglages={}); if(on) delete Rg.descMontants; else Rg.descMontants=true; X.touch(); }}]); }; }
+/* ═══ PDF enregistrés du devis = archive définitive (10.11.2026, Paulo : « une fois les documents sauvés, le fichier ne peut plus être modifié », choix « PDF figé,
+   ni remplacé ni supprimé ») : tout fichier .pdf des dossiers d'un devis (Construction/Costestimate/<P>/<D>/documents et sous-dossiers : Créer le PDF, PDF du
+   document, import, fusion) — un nom déjà pris n'écrase jamais l'existant : nouveau fichier « <nom> (2).pdf » (ch03aEnregistrer, message) ; fenêtre « Nom du fichier »
+   préremplie avec un nom libre, question « remplacer ? » réécrite ; suppression refusée (ch03aSupprimer, ch03cSupprimerDlg, menu « Supprimer » grisé). Le commentaire
+   reste modifiable. Seulement dans l'app (le serveur du NAS ne bloque pas). Les fichiers .dpdoc (documents de l'ancien logiciel) ne sont pas concernés. */
+const PDF_FIGE=(d,nom)=>{ let x=''; try{ x=String(ch03aDos(d)||''); }catch(_){ x=String(d||''); } return /^Construction\/Costestimate\//.test(x)&&/\.pdf$/i.test(String(nom||'')); };
+const pdfLibre=(d,nom)=>{ const m=/^(.*?)(\.pdf)$/i.exec(String(nom)), b=m?m[1]:String(nom), e=m?m[2]:'.pdf'; for(let k=2;k<1000;k++){ const n=b+' ('+k+')'+e; if(!ch03aTrouve(d,n)) return n; } return b+' ('+Date.now()+')'+e; };
+const PDF_FIGE_MSG='Les PDF enregistrés du devis sont une archive définitive : ils ne peuvent être ni remplacés ni supprimés.';
+{ const e0=ch03aEnregistrer; ch03aEnregistrer=function(dossier,nom,r,o){ if(PDF_FIGE(dossier,nom)&&ch03aTrouve(dossier,nom)){ const n2=pdfLibre(dossier,nom), A=SGPDF.attente;
+      if(A&&A.dos===ch03aDos(dossier)&&A.nom===pdfCle(nom)) A.nom=pdfCle(n2);   /* commentaire saisi dans « Nom du fichier » : suit le nouveau nom */
+      toast('« '+nom+' » est déjà enregistré et ne peut plus être remplacé : nouveau PDF « '+n2+' ».'); return e0.call(this,dossier,n2,r,o); }
+    return e0.apply(this,arguments); }; }
+{ const nd=ch03bNouveauPdfDlg; ch03bNouveauPdfDlg=function(nom,dossier,o){ if(!PDF_FIGE(dossier,'x.pdf')) return nd.apply(this,arguments);
+    let n0=''; try{ n0=ch03aNomPdf(nom||''); }catch(_){ }
+    const m0=CH03A_MSG.existe; CH03A_MSG.existe='Un PDF de ce nom est déjà enregistré : il ne peut plus être remplacé. Le nouveau PDF sera enregistré sous un autre nom (« … (2) »). Continuer ?';
+    let p; try{ p=nd.call(this,n0&&ch03aTrouve(dossier,n0)?pdfLibre(dossier,n0):nom,dossier,o); }catch(e){ CH03A_MSG.existe=m0; throw e; }
+    Promise.resolve(p).finally(()=>{ CH03A_MSG.existe=m0; }); return p; }; }
+{ const s0=ch03aSupprimer; ch03aSupprimer=function(recs){ const L=(Array.isArray(recs)?recs:[recs]).filter(Boolean);
+    if(L.some(r=>PDF_FIGE(r.DOSSIER,r.NOM))){ toast(PDF_FIGE_MSG,true); return Promise.reject(Object.assign(new Error(PDF_FIGE_MSG),{sgFige:true})); }
+    return s0.apply(this,arguments); }; }
+{ const sd0=ch03cSupprimerDlg; ch03cSupprimerDlg=async function(recs){ const L=(recs||[]).filter(Boolean);
+    if(L.some(r=>PDF_FIGE(r.DOSSIER,r.NOM))){ await ch02aInfo('Information',PDF_FIGE_MSG); return false; } return sd0.apply(this,arguments); }; }
+{ const mp0=ch03cMenuPdf; ch03cMenuPdf=function(n,o){ const L=mp0.apply(this,arguments); if(!(o&&o.dossier&&PDF_FIGE(o.dossier,'x.pdf'))) return L;
+    return L.map(x=>x&&x.k==='supprimer'?Object.assign({},x,{dis:true,t:'Supprimer (archive : impossible)'}):x); }; }
 const SGDE=window.SGDE={X:null,dgOctets,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 })();
 

@@ -1754,6 +1754,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   noir, textes passés à la ligne ; colonne Commentaire seulement avec « Base et commentaire de la position » + « … dans colonne séparée ». Relecture du 08.11.2026 (8 défauts, 5
   corrections) ; le filtre est signalé d'après son effet réel (`dgFiltreTexte`, aussi pour le devis général : filtre rapide d'un seul ouvrage compris). Lecteur PDF : plus de
   trait sous l'icône « Ajuster à la largeur » (même jour).
+  **PDF enregistrés du devis = archive définitive (10.11.2026, Paulo : « une fois les documents sauvés, le fichier ne peut plus être modifié », choix « PDF figé, ni
+  remplacé ni supprimé »)** : tout `.pdf` des dossiers d'un devis (`Construction/Costestimate/<P>/<D>/documents` et sous-dossiers ; `PDF_FIGE`) — un nom déjà pris
+  n'écrase jamais l'existant : nouveau fichier « <nom> (2).pdf » (enveloppe de `ch03aEnregistrer`, message ; le commentaire saisi suit le nouveau nom) ; fenêtre « Nom
+  du fichier » préremplie avec un nom libre (`pdfLibre`) et question « remplacer ? » réécrite (`CH03A_MSG.existe` le temps de la fenêtre) ; suppression refusée
+  (`ch03aSupprimer`, `ch03cSupprimerDlg` : message ; menu « Supprimer (archive : impossible) » grisé, `ch03cMenuPdf`) ; boutons « Supprimer le PDF » retirés des lignes
+  Documents ; un document qui a son PDF officiel ne peut plus être supprimé (message). Commentaire toujours modifiable. Règle de l'app seulement (le serveur du NAS
+  ne bloque pas) ; fichiers `.dpdoc` non concernés.
   **Sauts de page des documents Honoraires et Devis descriptif (10.11.2026, Paulo : « ajouter les sauts de page », sur le modèle du devis général)** :
   `reglages.sautsDoc` = { honoraires | descriptif : { cfc:[clés], sans } } (clé = n° CFC de la position ; titre sans numéro, p. ex. « Remarques » : « · » + texte) — nouvelle
   page AVANT la position ; Réglages ▸ Sauts de page : interrupteur « Sans sauts de page » (ignore la liste sans l'effacer) et « Remettre à zéro les sauts de page »

@@ -1314,7 +1314,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        d'information (phase du devis – précision), filtre, rubriques (deGardeRub), signatures ; portrait ou paysage selon le format choisi (gardeEdito de sg3_docsub.js) */
     /* précision (« ±10% ») sortie de la ligne d'information : sur la ligne du titre, alignée à droite (Paulo, 10.11.2026 : « déplacer ±10% devant devis général en
        alignant à droite ») ; le mot « Précision » éventuellement saisi est retiré */
-    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim().replace(/^pr[ée]cision\s*:?\s*/i,'').trim(), info=etatOk?etat:'';
+    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim().replace(/^pr[ée]cision\s*:?\s*/i,'').trim(), info='';   /* ligne d'information (phase du devis) retirée de la page de garde (Paulo, 10.11.2026 : « supprimer ») */
     const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
       sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),marge:mg,filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de

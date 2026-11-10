@@ -1643,18 +1643,23 @@ async function sgDsPdf(R, rep, o){
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const tit = rT && j === 1, fc = tit ? F.bold : F.light, t = ajuste(tit ? rT : c.t, fc, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110 + dyR), { police:fc, taille:8, align:p.r ? 'd' : 'g' }); });
         cx.ligne(X0, T(116.5 + dyR), X0 + W, T(116.5 + dyR));
       }
-      /* chiffres clés d'un récapitulatif (devis général, variante 1 du 10.11.2026, « améliore l'intégration » le même jour) : dessinés comme des rangées du tableau,
-         juste au-dessus de la bande — rangées de rh pt, texte 8 pt, libellé Light à la colonne Texte suivi de l'unité en gris, valeur Regular alignée comme les montants
-         sur la colonne « à 1 chiffre », filet gris 0,5 sur toute la largeur du tableau entre les rangées (comme sous les positions) ; dernière ligne de base à 20,77 pt
-         (ECART de la page de garde) du haut de la bande */
-      if(!info && Array.isArray(pg.chiffres) && pg.chiffres.length){ const L = pg.chiffres, n = L.length, haut = 100.5 + dyR, jv = jPct > 0 ? jPct - 1 : pos.length - 1, zc = 8;
-        const xL = pos[1] ? pos[1].x + ins : X0, xR = pos[jv] ? pos[jv].x + pos[jv].w - 2 : X0 + W, pas = +rh || 15;
-        L.forEach((d, i) => { const yy = haut - 20.77 - (n - 1 - i) * pas, lb = P(d[0]), un = P(d[2] || ''), wv = cx.largeur(P(d[1]), F.regular, zc);
-          const wl = Math.min(cx.largeur(lb, F.light, zc), xR - wv - 12 - xL);
-          cx.texte(ajuste(d[0], F.light, zc, xR - wv - 12 - xL), xL, T(yy), { police:F.light, taille:zc });
-          if(un) cx.texte(ajuste(un, F.light, zc, Math.max(0, xR - wv - 12 - xL - wl - 6)), xL + wl + 6, T(yy), { police:F.light, taille:zc, couleur:GRT });
-          cx.texte(P(d[1]), xR, T(yy), { police:F.regular, taille:zc, align:'d' });
-          if(i < n - 1) cx.rect(XB, T(yy + 4) - 0.25, WB, 0.5, { fond:FILN }); }); }
+      /* chiffres clés d'un récapitulatif (devis général, 10.11.2026 ; dessin = variante 5 « Dans la grille du tableau », choisie par Paulo parmi 5) : juste au-dessus de
+         la bande, rangées de rh pt dans les colonnes du tableau — repère (VB, 2, 1–9) en bleu nuit dans la colonne CFC, libellé Light 8 à la colonne Texte, valeur Regular 8
+         sur la colonne « à 1 chiffre » comme les montants, unité Light 7,5 grise dans la colonne [%] (« CHF/m³ » qui n'y tient pas, en portrait : « CHF », le libellé
+         dit « au m³ ») ; filet bleu nuit 0,75 au-dessus, filet gris 0,5 sous chaque rangée, sur toute la largeur du tableau ; dernière ligne de base à 20,77 pt du haut
+         de la bande (ECART de la page de garde). pg.chiffres = [[repère, libellé, valeur, unité]] */
+      if(!info && Array.isArray(pg.chiffres) && pg.chiffres.length){ const L = pg.chiffres, n = L.length, haut = 100.5 + dyR, jv = jPct > 0 ? jPct - 1 : pos.length - 1, zc = 8, zu = 7.5;
+        const xR = pos[jv] ? pos[jv].x + pos[jv].w - 2 : X0 + W, pas = +rh || 15, y1 = haut - 20.77 - (n - 1) * pas;
+        const pc = jPct >= 0 && jPct !== jv ? pos[jPct] : null, xU = pc ? pc.x + pc.w - 2 : 0, wUmax = pc ? pc.w - 2 - 4 : 0;   /* unité : dans la colonne [%], au moins 6 pt de la valeur */
+        cx.rect(XB, T(y1 - 11) - 0.375, WB, 0.75, { fond:NUIT });
+        L.forEach((d, i) => { const yy = y1 + i * pas, wv = cx.largeur(P(d[2]), F.regular, zc);
+          if(pos[0] && d[0]) cx.texte(ajuste(d[0], F.regular, zc, pos[0].w - 4), pos[0].x + ins, T(yy), { police:F.regular, taille:zc, couleur:NUIT });
+          if(pos[1]) cx.texte(ajuste(d[1], F.light, zc, Math.max(0, xR - wv - 12 - pos[1].x - ins)), pos[1].x + ins, T(yy), { police:F.light, taille:zc });
+          let u = P(d[3] || ''), wu = u ? cx.largeur(u, F.light, zu) : 0;
+          if(pc && u && wu > wUmax && /^CHF\//.test(u)){ u = 'CHF'; wu = cx.largeur(u, F.light, zu); }
+          if(pc){ cx.texte(P(d[2]), xR, T(yy), { police:F.regular, taille:zc, align:'d' }); if(u) cx.texte(u, xU, T(yy), { police:F.light, taille:zu, couleur:GRT, align:'d' }); }
+          else { if(u) cx.texte(u, xR, T(yy), { police:F.light, taille:zu, couleur:GRT, align:'d' }); cx.texte(P(d[2]), xR - (u ? wu + 4 : 0), T(yy), { police:F.regular, taille:zc, align:'d' }); }   /* sans colonne [%] : unité après la valeur */
+          cx.rect(XB, T(yy + 4) - 0.25, WB, 0.5, { fond:FILN }); }); }
       let y = (info ? 121 : 122) + dyR;
       const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
       /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages

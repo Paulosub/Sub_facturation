@@ -1925,12 +1925,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   — puis « déplacer » juste au-dessus du tableau ; « ne pas intégrer dans le tableau ») : sur la PREMIÈRE page de chaque récapitulatif (CFC à 1 chiffre, CFC à 2
   chiffres ; jamais le document principal), trois lignes au-dessus de la bande bleu nuit — Volume SIA 416 (m³), Prix au m³ SIA 416, CFC 2, Prix au m³ SIA 416, CFC 1
   à 9 (CHF/m³ TTC ou HT selon le titre de la colonne « à 1 chiffre ») ; prix = totaux des CFC à 1 chiffre du devis ÷ volume (`CHIF` dans `dgOctets`, sg3_devis.js,
-  lus avant le retrait des colonnes vides ; le CFC 0 n'entre pas dans « 1 à 9 ») ; sans volume (`sgVolumeSIA416` = 0) : rien. Dessin (`pg.chiffres`, `tableau` de
-  sg3_docsub.js ; « améliore l'intégration », même jour : dessinés comme des rangées du tableau) : rangées de 15 pt, texte 8 pt comme le tableau, libellé Light en
-  minuscules à la colonne Texte (x 125.72) suivi de l'unité en gris (m³, CHF/m³ TTC), valeur Regular alignée comme les montants sur la colonne « à 1 chiffre »
-  (paysage x 712.3, portrait 484.7), filet gris 0,5 sur toute la largeur du tableau entre les rangées, dernière ligne à `ECART` (20,77 pt) du haut de la bande ;
-  (première version du même jour : libellés en capitales 7,5, valeur 9 suivie de l'unité, filets courts, interligne 16 — « M³ » en capitales) ;
-  le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
+  lus avant le retrait des colonnes vides ; le CFC 0 n'entre pas dans « 1 à 9 ») ; sans volume (`sgVolumeSIA416` = 0) : rien. Dessin (`pg.chiffres` = [[repère, libellé, valeur, unité]], `tableau`
+  de sg3_docsub.js) = **variante 5 « Dans la grille du tableau »**, choisie par Paulo parmi 5 propositions inspirées de la page de garde (« améliore l'intégration »
+  puis « propose-moi 5 variantes, inspire-toi aussi de la page de garde » ; maquette `subgestion3/_backup_20261110_maquette_recap/proposition_chiffres2.js` : 1 rubriques
+  de la garde, 2 grands chiffres, 3 titre gras et filet noir, 4 ligne d'état à carrés, 5 grille) : rangées de 15 pt dans les colonnes du tableau — repères VB, 2, 1–9
+  en bleu nuit Regular 8 dans la colonne CFC, libellés Light 8 « Volume SIA 416 », « Prix au m³ SIA 416 » à la colonne Texte, valeur Regular 8 sur la colonne « à 1
+  chiffre » (paysage x 712.3, portrait 484.7), unité Light 7,5 grise alignée à droite dans la colonne [%] (« m³ », « CHF/m³ » ; en portrait « CHF/m³ » n'y tient pas :
+  « CHF », le libellé dit « au m³ » ; TTC ou HT = titre de la colonne « à 1 chiffre ») ; filet bleu nuit 0,75 au-dessus du bloc, filet gris 0,5 sous chaque rangée,
+  sur toute la largeur du tableau ; dernière ligne de base à `ECART` (20,77 pt) du haut de la bande. Versions d'avant du même jour : libellés en capitales 7,5 et
+  valeur 9 suivie de l'unité (« M³ » en capitales), puis rangées sans repère avec l'unité après le libellé ; le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
   de 101 + 20,77 + 2 × 15 pt). 99TST : 12'000 m³, 293.80 et 317.31 CHF/m³ TTC.
 - **Veille retirée de SUBGestion 3 (05.11.2026, Paulo : « supprimer de toute l'app, icône pas nécessaire »)** : plus de bouton lune dans les documents ouverts (devis, contrôle des coûts, estimations, soumission), `ch10dIsDoc` neutralisée dans `sg3.js`, `ch10dStart` sans effet ; la barre vide au-dessus du document disparaît. DeltaSub.html, v1 et v2 inchangés.
 - **Fenêtre « Editer l'article » au graphisme de l'app (04.11.2026, `sg3_soumission.js`, `habArticle`, Paulo : « améliorer la fenêtre, pour adapter le design au reste de l'app »)** : `svdEditArticle`

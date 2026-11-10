@@ -1347,18 +1347,17 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
     const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
       return Object.assign({c:c0,s:String(r.s||'S')},r.cal?{cal:1}:{},r.q?{q:1}:{}); })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
-    /* chiffres clés des récapitulatifs (Paulo, 10.11.2026 : variante 1 « Liste », placée juste au-dessus du tableau) : volume bâti SIA 416 du module Surfaces et
-       volumes, prix au m³ des CFC 2 et des CFC 1 à 9 (totaux des CFC à 1 chiffre du devis, colonne « à 1 chiffre », TTC ou HT selon le titre de la colonne) ;
-       sans volume : rien. Lus avant le retrait des colonnes vides (indices K d'origine). */
+    /* chiffres clés des récapitulatifs (Paulo, 10.11.2026 : juste au-dessus du tableau, dessin = variante 5 « Dans la grille du tableau » de la 2e série) : volume
+       bâti SIA 416 du module Surfaces et volumes, prix au m³ des CFC 2 et des CFC 1 à 9 (totaux des CFC à 1 chiffre du devis, colonne « à 1 chiffre » : TTC ou HT comme
+       le titre de cette colonne) ; [repère de la colonne CFC, libellé, valeur, unité] ; sans volume : rien. Lus avant le retrait des colonnes vides (indices K d'origine). */
     const LIMB=portrait?841.89-89.245:595.276-85.9;   /* bas de l'encre du logo (mesuré au rendu le 10.11.2026) */
     const CHIF=(()=>{ const vb=typeof sgVolumeSIA416==='function'?+sgVolumeSIA416(p)||0:0; if(!(vb>0)) return null;
       const v=(c,i)=>i>=0?String(c[i]==null?'':c[i]):'', num=t=>{ const x=String(t).replace(/[’'\s\u00a0]/g,'').replace('−','-'); return x&&isFinite(+x)?+x:null; }, tot={};
       pages.forEach(pg=>{ if(pg.type!==1&&pg.type!==2) return; (pg.rows||[]).forEach(r=>{ const c=Array.from(r.c||[]), k=String(c[0]==null?'':c[0]).trim(); if(/^\d$/.test(k)&&tot[k]==null){ const n=num(v(c,K.i1)); if(n!=null) tot[k]=n; } }); });
-      const T0=i=>i>=0&&cols[i]?cols[i].t:'', suf=((/(TTC|HT)\s*$/.exec(T0(K.i1))||[])[1])||'TTC';
       const mil=(n,d)=>{ const t=Math.abs(n).toFixed(d).split('.'); return (n<0?'−':'')+t[0].replace(/\B(?=(\d{3})+(?!\d))/g,'\'')+(t[1]?'.'+t[1]:''); };
-      const s19=Object.keys(tot).filter(k=>k!=='0').reduce((a,k)=>a+tot[k],0), L=[['Volume SIA 416',mil(vb,vb%1?1:0),'m³']];
-      if(tot['2']!=null) L.push(['Prix au m³ SIA 416, CFC 2',mil(tot['2']/vb,2),'CHF/m³ '+suf]);
-      if(Object.keys(tot).some(k=>k!=='0')) L.push(['Prix au m³ SIA 416, CFC 1 à 9',mil(s19/vb,2),'CHF/m³ '+suf]);
+      const s19=Object.keys(tot).filter(k=>k!=='0').reduce((a,k)=>a+tot[k],0), L=[['VB','Volume SIA 416',mil(vb,vb%1?1:0),'m³']];
+      if(tot['2']!=null) L.push(['2','Prix au m³ SIA 416',mil(tot['2']/vb,2),'CHF/m³']);
+      if(Object.keys(tot).some(k=>k!=='0')) L.push(['1–9','Prix au m³ SIA 416',mil(s19/vb,2),'CHF/m³']);
       return L; })();
     /* première page de chaque récapitulatif : chiffres clés (place réservée à la répartition : la bande du tableau jamais plus haut que ce qu'il faut pour eux) */
     if(CHIF){ let dg=null; pages.forEach(pg=>{ const r=(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1); if(r&&pg.digit!==dg) pg.chiffres=CHIF; dg=r?pg.digit:null; }); }

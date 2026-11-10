@@ -3570,7 +3570,7 @@ const CC_COL={
   contractMinusPayment:{t:'Contrat moins paiements TTC',fn:v=>(v.contratsAvenants||0)-(v.paiements||0),e:1}, kvMinusPayment:{t:'DG rév. moins paiements TTC',fn:v=>(v.dgRevise||0)-(v.paiements||0)},
   awardingProfit:{t:'Bénéfice d’adjudication',fn:v=>v.contratsAvenants?(v.contratsAvenants-v.dgRevise):0}
 };
-const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationTot1','contractAndAddendumTot','addendumToContractTot','additionalCostsTot','kv1Tot','payementTot','forcastCalculatedTot','balanceOfCostsTot','kvProcent']};
+const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationTransferTot1','mutationIncreaseTot1','kv1Tot','contractAndAddendumTot','payementTot','forcastCalculatedTot','balanceOfCostsTot']};   // présentation « Standard » de Deltaproject (manuel, Contrôle des coûts ▸ Disposition des colonnes ; titres de CostColumns) : présentation par défaut de tous les contrôles des coûts (Paulo, 10.11.2026)
 
 const CCV={g:{},d:{},q:'',open:null,sec:'CONTRÔLE DU COÛT',pres:null,det:true,only3:false,sel:null,detSel:null};
 VIEWS['coco']={
@@ -3690,8 +3690,8 @@ function ccEditor(m,id){
     ['positions','mutations','ecritures','contrats','paiements','ordresPaiement','arretes','entreprises'].forEach(k=>C[k]=C[k]||[]); C.parametres=C.parametres||{}; C.presentations=C.presentations||{}; }; load();
   const save=()=>(typeof ch10cGuard==='function'&&!ch10cGuard('costcontroldocument',id))?Promise.reject(Object.assign(new Error('droits'),{conflict:true})):DS.commit([{t:'costcontrol',id,val:C},{t:'costcontroldocument',id,val:(d=>({...d,CHANGEDDATE:today(),USERID:(d&&d.USERID)||ME.id}))(DS.get('costcontroldocument',id))}]);
   const touch=async()=>{ try{ await save(); }catch(e){ if(e.conflict) load(); } draw(); };
-  const pres=()=>{ const L=(C.presentations.controle||[]); if(!L.length) return {nom:'Standard',colonnes:CC_PRES_DEF.Standard.map(id=>({id,details:!!CC_COL[id].det}))};
-    return L.find(x=>x.nom===CCV.pres)||L.find(x=>x.favori)||L[0]; };
+  /* présentation affichée : « Standard » de Deltaproject par défaut (titres standards), sinon celle du document choisie dans « Présentation » (CCV.pres = rang ; 10.11.2026) */
+  const pres=()=>{ const L=(C.presentations.controle||[]); if(CCV.pres!=null&&L[CCV.pres]) return L[CCV.pres]; return {nom:'Standard',base:true,colonnes:CC_PRES_DEF.Standard.map(id=>({id,details:!!CC_COL[id].det}))}; };
   const bar=h('div',{class:'ph2',style:{gap:'6px'}}), side=h('div',{class:'col',style:{flex:'0 0 210px',background:'var(--side)'}}), main=h('div',{class:'col fill'}), pane=h('div',{class:'pane'});
   const body=h('div',{class:'cols'}); body.append(side,main); main.append(pane); m.append(bar,body);
   CC_SECS.forEach(s=>{ const it=h('div',{class:'item'+(s===CCV.sec&&!CCV.docs?' on':''),style:Object.assign({paddingLeft:'14px',fontWeight:600,letterSpacing:'.04em',fontSize:'12.5px'},s==='DOCUMENTS'?{borderTop:'1px solid var(--line)',marginTop:'8px'}:null)},s); it.onclick=()=>{ CCV.docs=false; CCV.sec=s; CCV.detSel=null; $$('.item',side).forEach(x=>x.classList.toggle('on',x===it)); draw(); }; side.append(it);
@@ -3706,7 +3706,7 @@ function ccEditor(m,id){
   const G={};
   bar.append(ibtn({label:'‹ Liste',fn:()=>{ CCV.open=null; go('coco'); }}),h('b',{style:{margin:'0 10px'}},'Contrôle des coûts  '+projLabel(p)+' — '+(doc.VERSION||'')),
     ibtn({i:'plus',t:'Nouvelle écriture',menu:addMenu}),ibtn({i:'edit',t:'Editer l’écriture',fn:()=>editDet()}),ibtn({i:'minus',t:'Supprimer l’écriture',fn:()=>delDet()}),
-    ibtn({i:'list',t:'Présentation',menu:()=>[...(C.presentations.controle||[{nom:'Standard'}]).map(x=>({t:x.nom,chk:pres().nom===x.nom,fn:()=>{ CCV.pres=x.nom; draw(); }})),'-',
+    ibtn({i:'list',t:'Présentation',menu:()=>[{t:'Standard',chk:!!pres().base,fn:()=>{ CCV.pres=null; draw(); }},...(C.presentations.controle||[]).map((x,i)=>[x,i]).filter(([x])=>!(x.nom==='Standard'&&(x.colonnes||[]).map(c=>c.id).join()===CC_PRES_DEF.Standard.join())).map(([x,i])=>({t:(x.nom||'(sans nom)')+(x.nom==='Standard'?' (du document)':''),chk:CCV.pres===i&&!pres().base,fn:()=>{ CCV.pres=i; draw(); }})),'-',
       {t:'Afficher les détails',chk:CCV.det,fn:()=>{ CCV.det=!CCV.det; draw(); }},{t:'N’afficher que les positions de 1 à 3 chiffres',chk:CCV.only3,fn:()=>{ CCV.only3=!CCV.only3; draw(); }}]}),
     ibtn({i:'wrench',t:'Paramètres',menu:()=>[{t:'Attribuer le devis général validé …',fn:()=>ccAssignDG(C,p,touch)},{t:'Configuration …',fn:()=>ccConfig(C,touch)}]}),
     ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(G,'Controle_couts_'+(p.NUMBER||''))},{t:'Imprimer le tableau (A4 paysage)',fn:()=>ccPrint(p,doc,G)}]}),
@@ -3735,13 +3735,14 @@ function ccEditor(m,id){
         if(id==='payementTot'&&!r.tot&&!r.sub){ const b=r.v.contratsAvenants||r.v.dgRevise; return `<span style="color:${v<=b+0.05?'#2e7d46':'#c62828'}">${num(v)}</span>`; }
         return num(v); };
       const B=r=>r.tot||(r.title&&r.lvl<=2)?'font-weight:700;':'';
-      const title=id=>{ const t=(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):CC_COL[id].t; };
+      const title=id=>{ if(pres().base) return CC_COL[id].t; const t=(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):CC_COL[id].t; };   // Standard : titres standards de Deltaproject
       Object.assign(G,{key:r=>r.k,cols:ids.map(id=>{ const c=CC_COL[id];
           if(c.sp==='cfc') return {k:'cfc',t:title(id),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`};
           if(c.sp==='lbl') return {k:'lbl',t:title(id),w:230,f:r=>`<span style="${B(r)}">${esc(r.lbl)}</span>`};
           if(c.sp==='ent') return {k:'ent',t:title(id),w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)};
           return {k:id,t:title(id),w:c.pct?60:118,cls:'r',f:r=>`<span style="${B(r)}">${cell(r,id)}</span>`}; }),
         rows,sort:null,sel:CCV.sel,onSel:r=>{ if(r.det){ CCV.detSel=r.det; } else { CCV.sel=r.k.split('|').slice(0,2).join('|'); CCV.detSel=null; } },onDbl:r=>{ if(r.det){ CCV.detSel=r.det; editDet(); } }});
+      if(!ids.some(i=>CC_COL[i].sp==='cfc')) G.cols.unshift({k:'cfc',t:title('kag'),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`});   // colonne CFC fixe et toujours la première, comme Deltaproject (les présentations reprises de Deltaproject ne la contiennent pas ; 10.11.2026)
       if(!ids.some(i=>CC_COL[i].sp==='ent')&&sec!=='DEVIS GENERAL') G.cols.splice(2,0,{k:'ent',t:'Entreprise',w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)});
       grid(pane,G); return; }
     if(sec==='MUTATIONS'){ Object.assign(G,{key:x=>x.id,cols:[{k:'numero',t:'N°',w:50,cls:'r'},{k:'date',t:'Date',w:86,f:x=>dfr(x.date)},{k:'g',t:'Genre',w:140,f:x=>esc(x.genreTexte||((C.genresMutation||[]).find(g=>g.code===x.code)||{}).texte||x.genre)},

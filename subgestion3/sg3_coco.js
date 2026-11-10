@@ -24,8 +24,9 @@ const ETATS=typeof CC_STATE!=='undefined'?CC_STATE:{0:'Provisoire',1:'En cours',
 /* totaux d'un contrôle des coûts (ccCalc du moteur), gardés tant que son contenu ne change pas */
 const CACHE=new WeakMap();
 const totaux=d=>{ const C=DS.get('costcontrol',d.ID); if(!C) return null; if(CACHE.has(C)) return CACHE.get(C); let G=null; try{ G=ccCalc(C).G||null; }catch(e){ console.error(e); } CACHE.set(C,G); return G; };
-const mt=v=>v==null||!isFinite(+v)?'—':num(v);
-const signe=v=>v==null||!isFinite(+v)?'—':(+v>0.005?'+':'')+num(v);
+const z=v=>Math.abs(+v)<0.005?0:+v;   /* reste flottant de ccCalc (-5e-12) : jamais « -0.00 » (relecture du 10.11.2026) */
+const mt=v=>v==null||!isFinite(+v)?'—':num(z(v));
+const signe=v=>v==null||!isFinite(+v)?'—':(+v>0.005?'+':'')+num(z(v));
 const cls=v=>v==null||!isFinite(+v)?'':+v>0.005?'pos':+v<-0.005?'neg':'';
 /* retour à l'écran d'où le contrôle des coûts a été ouvert (page du projet, liste…), comme les devis */
 const SGCC=window.SGCC={retour:null};
@@ -35,7 +36,7 @@ const ouvrir=d=>{ CCV.g.sel=String(d.PROJECT_ID); ccOpen(d.ID); };
 const supprimer=async d=>{ if(d&&await confirmDlg('Supprimer le contrôle des coûts « '+(d.VERSION||'(sans titre)')+' » ?','Supprimer')) DS.save('costcontroldocument',{...d,ISMARKEDASDELETED:1}); };
 /* colonnes de la copie et de l'export : celles du tableau */
 const colsListe=G=>[...(G?[{k:'pn',t:'N° d’affaire',f:d=>E(prj(d).NUMBER||'')}]:[]),{k:'VERSION',t:'Variante'},{k:'VERSIONNUMBER',t:'N°'},{k:'st',t:'Statut',f:d=>E(ETATS[d.STATECODE]||'')},{k:'NOTE',t:'Remarque'},
-  {k:'cp',t:'Coût probable TTC',f:d=>{ const g=totaux(d); return g?E(num(g.coutProbable)):''; }},{k:'ec',t:'État du coût TTC',f:d=>{ const g=totaux(d); return g?E(num(g.etatCout)):''; }},{k:'dt',t:'Modifié',f:d=>E(dfr(d.CHANGEDDATE))},{k:'USERID',t:'Par'}];
+  {k:'cp',t:'Coût probable TTC',f:d=>{ const g=totaux(d); return g?E(num(z(g.coutProbable))):''; }},{k:'ec',t:'État du coût TTC',f:d=>{ const g=totaux(d); return g?E(num(z(g.etatCout))):''; }},{k:'dt',t:'Modifié',f:d=>E(dfr(d.CHANGEDDATE))},{k:'USERID',t:'Par'}];
 const COCO={
   rendre(I){ cssC(); const p=I.p, u=I.u, G=!!p.GLOBAL, ec=ecrit();
     const tous=(G?DS.all('costcontroldocument'):DS.by('costcontroldocument','PROJECT_ID',p.ID)).filter(d=>!+d.ISMARKEDASDELETED&&(!G||!u.mine||d.USERID===ME.id));
@@ -74,7 +75,7 @@ const COCO={
     sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir le contrôle des coûts',fn:()=>ouvrir(d)},...(ec?[{t:'Modifier l’en-tête…',fn:()=>ccEditDoc(prj(d),d)},{t:'Dupliquer (état intermédiaire)',fn:()=>ccDuplicate(d)},'-',{t:'Supprimer…',danger:true,fn:()=>supprimer(d)}]:[])]); return true; } };
 ccDomain=function(C,top,pane,p){ monter(C,p,'coco',BESOIN,COCO); };
 { const V=VIEWS.coco, r0=V.render, f0=V.refresh;
-  V.render=function(m,arg){ if(CCV.open||['costcontrol','costcontroldocument'].some(x=>!DS.loaded.has(x))) return r0.call(this,m,arg);
+  V.render=function(m,arg){ if(CCV.open||!DS.loaded.has('costcontrol')) return r0.call(this,m,arg);   /* costcontroldocument : chargée par monter (DS.need), même vide (relecture du 10.11.2026) */
     const pa=arg&&arg.project?DS.get('project',arg.project):null; if(pa) CCV.g.sel=String(pa.ID);
     monter(m,pa||{ID:'tous',GLOBAL:1,NUMBER:'',TITLE:''},pa?'coco':'cocog',BESOIN,COCO); };
   V.refresh=function(ts){ if(CCV.open) return f0.call(this,ts); };   /* liste : redessinée par monter (DS.on) */ }

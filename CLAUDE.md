@@ -1988,7 +1988,17 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   copier, exporter, enregistrer), plein écran (Échap). Tableau au graphisme du devis : CFC à 1 chiffre sur trame bleu nuit pâle, 1re et 2e colonnes fixes au
   défilement horizontal, total général encadré ; clic droit sur une ligne = Éditer / Supprimer l'écriture (lignes de détail ; toutes les lignes des autres
   sections), Nouvelle écriture ▸ ; ↑ ↓ Entrée. Classes `sgce-*` (liste : `sgcc-*`), `window.SGCC` (`SGCC.ed` = état de l'éditeur). DeltaSub.html seul garde ses écrans.
-  NB : la présentation « Standard » de 99TST n'a pas de colonne CFC (données du générateur) : Présentation ▸ Configuration pour l'ajouter.
+  **Colonnes du contrôle du coût = celles de Deltaproject (10.11.2026, Paulo : « dans le contrôle du coût reprends les colonnes identiques à Deltaproject », choix
+  « Standard de l'ancien logiciel »)** — moteur `DeltaSub.html` (v1, v2, v3 reconstruites) : **colonne CFC fixe et toujours la première** (Deltaproject ne la met
+  pas dans ses présentations : les présentations reprises ne l'avaient pas) ; **présentation par défaut de tous les contrôles des coûts = « Standard » de
+  Deltaproject** (manuel ▸ Contrôle des coûts ▸ Disposition des colonnes ; titres de `rsrc/deltaproject/costcontrol/data/strings/CostColumns.rtf`) : CFC,
+  Désignation, Entreprise, DG TTC, Transferts TTC, Variations TTC, DG rév. TTC, Contrats + avenants TTC, Paiements TTC, Coût probable TTC, Etat du coût TTC
+  (`CC_PRES_DEF.Standard`, titres standards `CC_COL` — les titres propres du document, `titresColonnes`, ne valent que pour ses présentations) ; les présentations
+  du document restent dans « Présentation » (« Standard (du document) » si le nom est le même ; celle d'un document créé dans l'app, identique, n'est pas répétée) ;
+  `CCV.pres` = rang de la présentation du document choisie, null = Standard. L'impression du document « Contrôle du coût » (`ch01aFlex`) suit toujours la
+  présentation favorite du document. Colonnes inconnues du moteur encore écartées : OUV (`og`), équations (`equ1`…), DG indexé (`kvTotInclFac`), montants par m² /
+  m³, contrat/DG rév. − paiements (`contractKvMinusAccordPayment`). Copie d'avant : `DeltaSub_backup_20261110_1810_avant_colonne_cfc.html`. Liste : « -0.00 » évité,
+  rendu même sans contrôle des coûts dans la base (relecture du 10.11.2026).
   **Fenêtres des écritures = proposition B « Tableur » (10.11.2026, bloc 51, `subgestion3/sg3_ecritures.js`, concaténé après `sg3_coco.js` ; Paulo : « proposer un
   autre graphisme pour correspondre à la section devis, fais 5 propositions » — paiement, situation sur contrat, mutation —, puis « version B » ; maquettes A étapes,
   B tableur, C décompte, D rubriques, E chiffres et onglets : `subgestion3/_backup_20261110_maquette_ecritures/`)** : `ccPayment` (situation, paiement hors contrat),

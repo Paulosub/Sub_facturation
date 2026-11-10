@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 13:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 13:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -39039,9 +39039,20 @@ const pdfLigne=(X,r)=>{ try{ return ch03aTrouve(ch02cDos(X),r.g+'.pdf')||ch03aTr
 /* ordre des documents du devis (Paulo, 08.11.2026 : « modifier l'ordre, et même ordre dans la liste des fichiers PDF ») : Devis général, Devis descriptif,
    Honoraires — indices du moteur (CH02C_ROWS) gardés */
 const ORDRE_DOCS=[0,2,1];
+/* « Supprimer le document » (ligne Devis descriptif ou Honoraires) : comme « Effacer le document … » du moteur (ch02cErase : refusé s'il reste le PDF du document,
+   enregistrement remis à doc:null), avec un message clair ; la ligne repasse sur « Créer le document ». Les PDF déjà créés (Fichiers PDF) sont gardés. */
+async function supDoc(X,i){ const id=ch02cId(X,i), rec=DS.get(CH02C_T,id); if(!rec||!rec.doc) return; if(!ch02aCan(X)) return;
+  if(ch02cPdfHas(X,i)){ await ch02aInfo('Erreur',CH02C_MSG.pdfExists+' Supprimez d’abord le PDF du document.'); return; }
+  const nom=(CH02C_ROWS[i]||{}).t||'document', bseq=ctBseq(CH02C_T,id);
+  if((await ivAsk('Supprimer le document','Supprimer le document « '+nom+' » ? La ligne repassera sur « Créer le document » : il pourra être recréé à tout moment. Les fichiers PDF déjà créés sont gardés.'))!==true) return;
+  try{ await DS.commit([{t:CH02C_T,id,val:Object.assign({},rec,{doc:null}),bseq}]); }catch(e){ if(!e||!e.conflict) console.error(e); toast('Le document n’a pas pu être supprimé.',true); }
+  ch02cDocPane(X); }
 function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<2||!K[1].classList.contains('pane')) return; const pdf=ch02cPdfOn(), L=el('div','sgde-dl');
   ORDRE_DOCS.forEach(i=>{ const r=CH02C_ROWS[i]; if(!r) return; const d=ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(i===0?['Modèle du bureau (ancien logiciel)',...(pdf?[fl?'PDF créé : '+fl.NOM:'sans PDF']:[])].join(' · '):ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');   /* ligne 0 : devis général au modèle du bureau (bloc 46), toujours prêt */
-    a.append(ibtn({label:d||i===0?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})); L.append(c); });
+    a.append(ibtn({label:d||i===0?'Ouvrir':'Créer le document',fn:()=>ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:gen?!!gen.dis:true,fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),...(i===0?[ibtn({label:CH02C_L.suppr,dis:!d&&!f,menu:()=>ch02cDelItems(X,i)})]
+      /* Devis descriptif et Honoraires : « Supprimer le document » directement dans la ligne (Paulo, 10.11.2026 : « lorsque le document est créé, pouvoir le supprimer pour
+         afficher Créer le document à nouveau » ; avant : Supprimer ▾ ▸ Effacer le document …) ; « Supprimer le PDF » seulement s'il y a un PDF du document */
+      :[ibtn({label:'Supprimer le document',dis:!d,fn:()=>supDoc(X,i)}),...(f?[ibtn({label:'Supprimer le PDF',fn:()=>ch02cDelPdf(X,i)})]:[])])); L.append(c); });
   K[0].remove(); K[1].replaceWith(L); dp.querySelectorAll(':scope>.sgde-dh').forEach(x=>x.remove()); L.before(el('div','ph2 sgde-dh','<b>Devis</b>'));   /* titre de la section, comme « Fichiers PDF » (Paulo, 07.11.2026 : « ajouter ici Devis ») */
   const bz=K[2]&&K[2].querySelector('.ib'); if(bz) bz.style.display='none';   /* « Fonctions » retiré (Paulo, 08.11.2026 : « supprimer et ajouter la fonction au bouton de droite ») : même menu au clic droit sur la liste */
 }

@@ -1263,6 +1263,11 @@ const DG_CALR=7;   /* retrait du calcul (pt) derrière le filet */
     if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) out=d0.apply(this,arguments);
     else { out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
       if(k>=0&&out[k]&&Array.isArray(out[k].c)) out[k]={c:out[k].c.map((v,j)=>j<=1?v:''),s:out[k].s}; }
+    /* montant toujours en face du commentaire du calcul (Paulo, 10.11.2026), aussi avec « Quantités et prix » : le moteur l'écrit sur la rangée « Quantité … Prix … » ;
+       il passe sur la rangée du commentaire (même colonne), la rangée des quantités reste dessous sans montant. Sans commentaire : il reste sur la rangée des quantités */
+    if(DG_ACTIF&&o&&o.displayDetailValues&&o.displayQuanPriceValue&&!o.commentInColumn&&out.length>=2){ const ka=out.length-2, kb=out.length-1, A=out[ka], Bq=out[kb];
+      if(A&&Bq&&A.s==='D'&&Array.isArray(A.c)&&Array.isArray(Bq.c)&&A.c.length<=2&&String(A.c[1]==null?'':A.c[1]).trim()){ const j=Bq.c.length-1, val=Bq.c[j];
+        if(j>1&&String(val==null?'':val).trim()){ const c=A.c.slice(); while(c.length<j) c.push(''); c[j]=val; out[ka]=Object.assign({},A,{c}); out[kb]=Object.assign({},Bq,{c:Bq.c.map((v,k)=>k===j?'':v)}); } } }
     const qi=DG_ACTIF&&o&&o.displayQuanPriceValue?out.length-1:-1;   /* rangée « Quantité … Prix … » = dernière rangée du moteur quand « Quantités et prix » est coché ; jamais d'après le texte (« Prix bloc selon offre … » est un libellé ; relecture du 08.11.2026) */
     return DG_ACTIF?out.map((r,i)=>r&&Object.assign({},r,{cal:1},i===qi?{q:1}:{})):out; }; }
 /* descriptif : le moteur le coupe à la largeur de son propre tableau, puis dgOctets le recoupait à la largeur réelle (portrait : lignes très courtes, « l'ascenseur en béton »).

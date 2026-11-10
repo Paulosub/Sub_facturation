@@ -1619,8 +1619,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   montants des lignes de calcul, mêmes règles que les deux autres cases (absente sans ligne de calcul, grisée et décochée sans « Afficher le calcul » — `dgOptions` le force à faux —,
   cochée avec le calcul comme les deux autres — Paulo, 08.11.2026 : « en activant Afficher le calcul, activer toutes les options ») ; **depuis le 10.11.2026 (Paulo : « afficher les montants devant le
   commentaire du calcul, afficher les montants même lorsque les calculs ne sont pas affichés »)** : « Afficher les montants » entre « Commentaire du calcul » et « Quantités et prix », en retrait (essayée
-  d'abord en tête du groupe, sans retrait), indépendante (ni grisée ni décochée par « Afficher le calcul », qui ne coche plus que Commentaire et Quantités) ; sans « Quantités et prix », le montant de chaque
-  ligne de calcul est sur la rangée de son commentaire (enveloppe de `ch02bDetail` : règle « same » du moteur), sans commentaire sur une rangée à lui ; colonne = celle
+  d'abord en tête du groupe, sans retrait), indépendante (ni grisée ni décochée par « Afficher le calcul », qui ne coche plus que Commentaire et Quantités) ; le montant de chaque ligne de calcul est TOUJOURS sur la
+  rangée de son commentaire (« montant toujours en face du commentaire de calcul », même jour : avec « Quantités et prix », la rangée « Quantité … Prix … » reste dessous
+  sans montant ; sans commentaire, le montant reste sur la rangée des quantités) ; sans « Quantités et prix » (enveloppe de `ch02bDetail` : règle « same » du moteur), sans commentaire sur une rangée à lui ; colonne = celle
   de la rangée « Quantité … Prix … » (« à 3 chiffres » pour une position à 3 chiffres), donc visible aussi avec « Seulement positions de 1 à 3 chiffres » (avant : rangée
   à part dans la colonne « à 4 chiffres », masquée dans ce mode) ; case placée par `grp` / `ind` (vueDoc) ; « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 ; panneau
   et menu de la ligne) ; décocher « Quantités et prix » ne décoche plus « Afficher le calcul » (règle de l'ancien logiciel retirée le 08.11.2026 : rien ne se grise tant que le calcul est affiché)).

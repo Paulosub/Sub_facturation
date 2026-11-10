@@ -1347,6 +1347,22 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
     const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
       return Object.assign({c:c0,s:String(r.s||'S')},r.cal?{cal:1}:{},r.q?{q:1}:{}); })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
+    /* chiffres clés des récapitulatifs (Paulo, 10.11.2026 : variante 1 « Liste », placée juste au-dessus du tableau) : volume bâti SIA 416 du module Surfaces et
+       volumes, prix au m³ des CFC 2 et des CFC 1 à 9 (totaux des CFC à 1 chiffre du devis, colonne « à 1 chiffre », TTC ou HT selon le titre de la colonne) ;
+       sans volume : rien. Lus avant le retrait des colonnes vides (indices K d'origine). */
+    const LIMB=portrait?841.89-89.245:595.276-85.9;   /* bas de l'encre du logo (mesuré au rendu le 10.11.2026) */
+    const CHIF=(()=>{ const vb=typeof sgVolumeSIA416==='function'?+sgVolumeSIA416(p)||0:0; if(!(vb>0)) return null;
+      const v=(c,i)=>i>=0?String(c[i]==null?'':c[i]):'', num=t=>{ const x=String(t).replace(/[’'\s\u00a0]/g,'').replace('−','-'); return x&&isFinite(+x)?+x:null; }, tot={};
+      pages.forEach(pg=>{ if(pg.type!==1&&pg.type!==2) return; (pg.rows||[]).forEach(r=>{ const c=Array.from(r.c||[]), k=String(c[0]==null?'':c[0]).trim(); if(/^\d$/.test(k)&&tot[k]==null){ const n=num(v(c,K.i1)); if(n!=null) tot[k]=n; } }); });
+      const T0=i=>i>=0&&cols[i]?cols[i].t:'', suf=((/(TTC|HT)\s*$/.exec(T0(K.i1))||[])[1])||'TTC';
+      const mil=(n,d)=>{ const t=Math.abs(n).toFixed(d).split('.'); return (n<0?'−':'')+t[0].replace(/\B(?=(\d{3})+(?!\d))/g,'\'')+(t[1]?'.'+t[1]:''); };
+      const s19=Object.keys(tot).filter(k=>k!=='0').reduce((a,k)=>a+tot[k],0), L=[['Volume SIA 416',mil(vb,vb%1?1:0),'m³']];
+      if(tot['2']!=null) L.push(['Prix au m³ SIA 416, CFC 2',mil(tot['2']/vb,2),'CHF/m³ '+suf]);
+      if(Object.keys(tot).some(k=>k!=='0')) L.push(['Prix au m³ SIA 416, CFC 1 à 9',mil(s19/vb,2),'CHF/m³ '+suf]);
+      return L; })();
+    /* première page de chaque récapitulatif : chiffres clés (place réservée à la répartition : la bande du tableau jamais plus haut que ce qu'il faut pour eux) */
+    if(CHIF){ let dg=null; pages.forEach(pg=>{ const r=(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1); if(r&&pg.digit!==dg) pg.chiffres=CHIF; dg=r?pg.digit:null; }); }
+    const capChif=CHIF?Math.max(1,Math.floor((100.5+LIMB-122-(101+20.77+(CHIF.length-1)*16))/DG_RH)):99;
     /* PORTRAIT (Paulo, 08.11.2026 : « conserver la possibilité de créer une version verticale ou horizontale du devis ») — les quatre colonnes de montants du paysage
        deviennent deux : Montant (positions à 3 et 4 chiffres, lignes de calcul) et Total (CFC à 1 et 2 chiffres) ; colonnes CFC, Texte, Commentaire, OUV, [%]
        gardées ; colonne sans aucune valeur dans sa série (récapitulatif, document principal) retirée ; lignes d'un descriptif réunies en un paragraphe, repassé à la
@@ -1421,7 +1437,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
         pg.saut=!!c0&&!r.k&&SB.some(b=>b.cfc===c0&&b.niveau===ch02bLv(pg.digit)); }); }
     pages.forEach(pg=>{ if(pg.type===1||pg.type===2) pg.rows=etaler(pg.rows,pg.cols,false); });   /* textes jamais coupés (08.11.2026) */
     { const capT=Math.max(1,Math.floor(HT/DG_RH)), vide=r=>!(r.c||[]).some(v=>String(v==null?'':v).trim()), tab=pg=>!!pg&&(pg.type===1||pg.type===2);
-      for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT));
+      for(let i=0;i<pages.length;i++){ const pg=pages[i]; if(!tab(pg)) continue; const R=pg.rows, cap=Math.max(1,Math.min(capT,+pg.lpp||capT,pg.chiffres?capChif:99));
         while(R.length>cap&&vide(R[R.length-1])) R.pop();
         if(R.length>cap){ let k=cap; for(let j=cap;j>cap-8&&j>0;j--){ if(String((R[j].c||[])[0]||'').trim()){ k=j; break; } }
           const reste=R.splice(k); while(reste.length&&vide(reste[0])) reste.shift();
@@ -1435,7 +1451,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* tableaux des récapitulatifs alignés en bas sur le bas du logo (Paulo, 10.11.2026 : « aligner les tableaux récapitulatifs, le bas du tableau aligné avec le bas du
        logo ») : bas de la dernière rangée écrite (bande du total) = bas de l'encre du logo — paysage 595.28 − 85.9 = 509.38, portrait 841.89 − 89.25 = 752.64 (mesurés au
        rendu) ; décalage pg.dy (jamais négatif : un tableau plein reste en haut), suivi par le dessin (contenuLivret) et la carte des clics */
-    { const LIMB=portrait?841.89-89.245:595.276-85.9;
+    {
       pages.forEach(pg=>{ if(!pg.recapTitre) return; let k=-1; (pg.rows||[]).forEach((r,i)=>{ if((r.c||[]).some(v=>String(v==null?'':v).trim())) k=i; }); if(k<0) return;
         pg.dy=Math.max(0,Math.round((LIMB-(122+(k+1)*DG_RH))*100)/100); }); }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle

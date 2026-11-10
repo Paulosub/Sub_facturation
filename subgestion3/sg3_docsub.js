@@ -1643,6 +1643,15 @@ async function sgDsPdf(R, rep, o){
         cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const tit = rT && j === 1, fc = tit ? F.bold : F.light, t = ajuste(tit ? rT : c.t, fc, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110 + dyR), { police:fc, taille:8, align:p.r ? 'd' : 'g' }); });
         cx.ligne(X0, T(116.5 + dyR), X0 + W, T(116.5 + dyR));
       }
+      /* chiffres clés d'un récapitulatif (devis général, variante 1 du 10.11.2026) : juste au-dessus de la bande, dernière ligne à 20.77 pt du haut de la bande ;
+         libellés Regular 7,5 capitales à la colonne Texte, valeur Regular 9 et unité Light 7,5 grise alignées à droite sur la dernière colonne de montants, filets gris */
+      if(!info && Array.isArray(pg.chiffres) && pg.chiffres.length){ const L = pg.chiffres, n = L.length, haut = 100.5 + dyR, jv = jPct > 0 ? jPct - 1 : pos.length - 1;
+        const xL = pos[1] ? pos[1].x + ins : X0, xR = pos[jv] ? pos[jv].x + pos[jv].w - 2 : X0 + W;
+        L.forEach((d, i) => { const yy = haut - 20.77 - (n - 1 - i) * 16;
+          cx.texte(P(String(d[0]).toUpperCase()), xL, T(yy), { police:F.regular, taille:7.5 });
+          const wu = cx.largeur(P(d[2]), F.light, 7.5); cx.texte(P(d[2]), xR, T(yy), { police:F.light, taille:7.5, couleur:GRT, align:'d' });
+          cx.texte(P(d[1]), xR - wu - 4, T(yy), { police:F.regular, taille:9, align:'d' });
+          if(i < n - 1) cx.rect(xL, T(yy + 6) - 0.25, xR - xL, 0.5, { fond:FILN }); }); }
       let y = (info ? 121 : 122) + dyR;
       const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
       /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages

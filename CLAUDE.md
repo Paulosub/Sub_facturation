@@ -1921,8 +1921,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   PROJECT_ID, VB (m³), MODIFIE, PAR} (gardée par les reprises ; NAS : règle « projet modifiable » par PROJECT_ID) ; sans valeur saisie, le volume des
   caractéristiques de l'affaire (`project.VOLUME`, ancien logiciel, remplacé à chaque reprise) est repris et signalé. `window.sgVolumeSIA416(p)` pour le devis
   général. Droits : écriture = projet modifiable. 99TST : VB 12'000 m³ (volume de sa référence, `REF.volume`, aussi dans le générateur : module 90). Prix au m³ des
-  récapitulatifs du devis général : 4 variantes maquettées (`subgestion3/_backup_20261110_maquette_recap/proposition_chiffres.js` : 1 liste libellés / valeurs
-  sous les montants, 2 trois chiffres clés côte à côte, 3 encadré à droite, 4 une ligne), en attente du choix de Paulo.
+  récapitulatifs du devis général (même jour, **variante 1 « Liste »** choisie par Paulo parmi 4 — maquette `subgestion3/_backup_20261110_maquette_recap/proposition_chiffres.js`
+  — puis « déplacer » juste au-dessus du tableau ; « ne pas intégrer dans le tableau ») : sur la PREMIÈRE page de chaque récapitulatif (CFC à 1 chiffre, CFC à 2
+  chiffres ; jamais le document principal), trois lignes au-dessus de la bande bleu nuit — Volume SIA 416 (m³), Prix au m³ SIA 416, CFC 2, Prix au m³ SIA 416, CFC 1
+  à 9 (CHF/m³ TTC ou HT selon le titre de la colonne « à 1 chiffre ») ; prix = totaux des CFC à 1 chiffre du devis ÷ volume (`CHIF` dans `dgOctets`, sg3_devis.js,
+  lus avant le retrait des colonnes vides ; le CFC 0 n'entre pas dans « 1 à 9 ») ; sans volume (`sgVolumeSIA416` = 0) : rien. Dessin (`pg.chiffres`, `tableau` de
+  sg3_docsub.js) : libellés Regular 7,5 en capitales à la colonne Texte (x 125.72), valeur Regular 9 et unité Light 7,5 grise alignées à droite sur la colonne
+  « à 1 chiffre » (paysage x 712.3, portrait 484.7), interligne 16 pt, filets gris 0,5 entre les lignes, dernière ligne à `ECART` (20,77 pt) du haut de la bande ;
+  le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
+  de 101 + 20,77 + 2 × 16 pt). 99TST : 12'000 m³, 293.80 et 317.31 CHF/m³ TTC.
 - **Veille retirée de SUBGestion 3 (05.11.2026, Paulo : « supprimer de toute l'app, icône pas nécessaire »)** : plus de bouton lune dans les documents ouverts (devis, contrôle des coûts, estimations, soumission), `ch10dIsDoc` neutralisée dans `sg3.js`, `ch10dStart` sans effet ; la barre vide au-dessus du document disparaît. DeltaSub.html, v1 et v2 inchangés.
 - **Fenêtre « Editer l'article » au graphisme de l'app (04.11.2026, `sg3_soumission.js`, `habArticle`, Paulo : « améliorer la fenêtre, pour adapter le design au reste de l'app »)** : `svdEditArticle`
   enveloppé, DeltaSub.html inchangé ; éléments du moteur déplacés tels quels (gestionnaires, contrôles et enregistrement inchangés). Bandeau jaune `sgfh-tete` (numéro de l'article, étape, chapitre, mot-clé tenu à jour),

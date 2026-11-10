@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 10:01 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 10:12 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33686,7 +33686,7 @@ async function sgDsPdf(R, rep, o){
        encre du logo paysage à 85.9 pt du bas ; Paulo : « aligner les lignes de date et signature au logo » — légendes dessous) ; ECART entre les deux rangées ; filet d'écriture à +56 sous le libellé, moins (30 au plus bas) si la
        place manque sous les rubriques (rangée du haut jamais à moins de ECART sous la dernière ligne des rubriques). */
     const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[X0, X1], [X0, X1]] : [[X0, 296], [312, X1]];
-    const LIM = H - (PAYS ? 85.9 : 83.5);   /* bas du logo vertical (paysage : encre ; portrait : LOGO_BB) */
+    const LIM = H - (PAYS ? 85.9 : 89.245);   /* bas de l'encre du logo vertical (mesuré au rendu le 10.11.2026 : paysage 509.38, portrait 752.64) */
     const yHaut = yr - 10 + ECART, nR = Math.max(1, SG.length);
     const sP = PAYS ? Math.max(30, Math.min(56, (LIM - 0.5 - yHaut - (nR - 1) * (9 + ECART)) / nR)) : 0;
     const YS = PAYS ? SG.map((_, i) => LIM - 0.5 - sP - (nR - 1 - i) * (sP + 9 + ECART)) : SG.map(() => Math.max(610, yr + 30));
@@ -33738,7 +33738,7 @@ async function sgDsPdf(R, rep, o){
     /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
     const tableau = (pg) => {
       const X0 = !(pg.type === 3 || pg.type === 4) && D.x0Tab != null ? +D.x0Tab : D.x0 != null ? +D.x0 : cx.Z.x0, cols = Array.from(pg.cols || []),   /* tableaux : D.x0Tab (devis général : x 125.72) ; Information : D.x0 */   /* portrait : tableau à la marge de l'en-tête et du pied (x 28.35), comme le paysage */ rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
-      const dyR = 0;   /* tableau toujours à la même hauteur (le titre d'un récapitulatif est dans la bande, variante 2 du 10.11.2026) */
+      const dyR = !info ? Math.max(0, +pg.dy || 0) : 0;   /* récapitulatif : tableau descendu pour que son bas soit au bas du logo (pg.dy, calculé par le devis général, 10.11.2026) */
       const rT = !info && pg.recapTitre ? P(String(pg.recapTitre)) : '';   /* récapitulatif : titre « Récapitulatif » en gras blanc dans la bande, à la place de « Texte » (variante 2 choisie par Paulo parmi 5, 10.11.2026), en minuscules comme les autres titres de colonnes (« en minuscule », même jour) */
       const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => c.pct || /%/.test(String(c.t || '')));
       /* D.aligne : textes des colonnes à gauche sans retrait, à l'aplomb des colonnes du pied (CFC x 28.35 ; en portrait, Texte x 125.72) ; bandes et filets 2 pt plus à gauche */
@@ -39568,11 +39568,17 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        10.11.2026 : « ne pas préciser, indiquer uniquement Récapitulatif ») */
     { const rec=pg=>(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1), deux=pages.some(pg=>rec(pg)&&pg.digit===0)&&pages.some(pg=>rec(pg)&&pg.digit===1); let dg=null;
       pages.forEach(pg=>{ const r=rec(pg); if(r) pg.recapTitre='Récapitulatif'; dg=r?pg.digit:null; }); }
+    /* tableaux des récapitulatifs alignés en bas sur le bas du logo (Paulo, 10.11.2026 : « aligner les tableaux récapitulatifs, le bas du tableau aligné avec le bas du
+       logo ») : bas de la dernière rangée écrite (bande du total) = bas de l'encre du logo — paysage 595.28 − 85.9 = 509.38, portrait 841.89 − 89.25 = 752.64 (mesurés au
+       rendu) ; décalage pg.dy (jamais négatif : un tableau plein reste en haut), suivi par le dessin (contenuLivret) et la carte des clics */
+    { const LIMB=portrait?841.89-89.245:595.276-85.9;
+      pages.forEach(pg=>{ if(!pg.recapTitre) return; let k=-1; (pg.rows||[]).forEach((r,i)=>{ if((r.c||[]).some(v=>String(v==null?'':v).trim())) k=i; }); if(k<0) return;
+        pg.dy=Math.max(0,Math.round((LIMB-(122+(k+1)*DG_RH))*100)/100); }); }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
     { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;
       pages.forEach(pg=>{ if(!(pg.type===1||pg.type===2)){ carte.pages.push({type:pg.type}); return; } if(pg.digit!==dg){ bloc=null; dg=pg.digit; }
-        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122,tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
+        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122+(+pg.dy||0),tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
           if(c0&&!r.k&&r.s!=='T'&&r.s!=='E'){ bloc={cfc:c0,t:String(c[1]==null?'':c[1]).trim()}; tetes.push(i); } return pl&&r.s!=='T'?bloc:null; })}); });
       DG_CARTE.set(X,carte); }
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */

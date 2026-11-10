@@ -1821,6 +1821,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   récapitulatif (`pg.recapTitre`, posé dans `dgOctets` après la répartition ; `rT` dans `contenuLivret` ▸ `tableau`) ; toujours « Récapitulatif », en minuscules comme
   les autres titres de colonnes, sans préciser 1 ou 2 chiffres (« ne pas préciser, indiquer uniquement Récapitulatif », « en minuscule », même jour). En paysage aussi, colonnes de montant vides dans la série d'un récapitulatif retirées (2 chiffres : « à 2 chiffres » et
   « à 1 chiffre » seulement), largeur rendue à la colonne Texte.
+  **Tableau d'un récapitulatif aligné en bas sur le logo (10.11.2026, « le bas du tableau aligné avec le bas du logo »)** : bas de la bande du total = bas de
+  l'encre du logo (paysage 595.28 − 85.9 = 509.38, portrait 841.89 − 89.25 = 752.64, mesurés au rendu) ; `pg.dy` calculé dans `dgOctets` (jamais négatif : un
+  tableau plein reste en haut), suivi par `contenuLivret` (`dyR`) et la carte des clics (`y0`). Page de garde : `LIM` portrait corrigé à 752.64 (avant 758.39).
   **Alignement sur le papier (même jour, portrait et paysage ; Paulo : « les CFC doivent être alignés à la colonne info@substances », « la dernière colonne doit
   être alignée à la barre verticale entre la page et le nombre de pages », « déplacer le texte », « déplacer les numéros de CFC »)** : numéros CFC dans la marge à x 85.04 (comme les numéros de chapitre des contrats ; `livretDG.x0Tab`,
   colonne CFC `DG_CFC` 40.68 pt), désignations, lignes de calcul et descriptif à x 125.72 (2e colonne du pied) ;

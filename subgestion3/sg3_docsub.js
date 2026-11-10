@@ -1573,7 +1573,7 @@ async function sgDsPdf(R, rep, o){
        encre du logo paysage à 85.9 pt du bas ; Paulo : « aligner les lignes de date et signature au logo » — légendes dessous) ; ECART entre les deux rangées ; filet d'écriture à +56 sous le libellé, moins (30 au plus bas) si la
        place manque sous les rubriques (rangée du haut jamais à moins de ECART sous la dernière ligne des rubriques). */
     const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[X0, X1], [X0, X1]] : [[X0, 296], [312, X1]];
-    const LIM = H - (PAYS ? 85.9 : 83.5);   /* bas du logo vertical (paysage : encre ; portrait : LOGO_BB) */
+    const LIM = H - (PAYS ? 85.9 : 89.245);   /* bas de l'encre du logo vertical (mesuré au rendu le 10.11.2026 : paysage 509.38, portrait 752.64) */
     const yHaut = yr - 10 + ECART, nR = Math.max(1, SG.length);
     const sP = PAYS ? Math.max(30, Math.min(56, (LIM - 0.5 - yHaut - (nR - 1) * (9 + ECART)) / nR)) : 0;
     const YS = PAYS ? SG.map((_, i) => LIM - 0.5 - sP - (nR - 1 - i) * (sP + 9 + ECART)) : SG.map(() => Math.max(610, yr + 30));
@@ -1625,7 +1625,7 @@ async function sgDsPdf(R, rep, o){
     /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
     const tableau = (pg) => {
       const X0 = !(pg.type === 3 || pg.type === 4) && D.x0Tab != null ? +D.x0Tab : D.x0 != null ? +D.x0 : cx.Z.x0, cols = Array.from(pg.cols || []),   /* tableaux : D.x0Tab (devis général : x 125.72) ; Information : D.x0 */   /* portrait : tableau à la marge de l'en-tête et du pied (x 28.35), comme le paysage */ rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
-      const dyR = 0;   /* tableau toujours à la même hauteur (le titre d'un récapitulatif est dans la bande, variante 2 du 10.11.2026) */
+      const dyR = !info ? Math.max(0, +pg.dy || 0) : 0;   /* récapitulatif : tableau descendu pour que son bas soit au bas du logo (pg.dy, calculé par le devis général, 10.11.2026) */
       const rT = !info && pg.recapTitre ? P(String(pg.recapTitre)) : '';   /* récapitulatif : titre « Récapitulatif » en gras blanc dans la bande, à la place de « Texte » (variante 2 choisie par Paulo parmi 5, 10.11.2026), en minuscules comme les autres titres de colonnes (« en minuscule », même jour) */
       const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => c.pct || /%/.test(String(c.t || '')));
       /* D.aligne : textes des colonnes à gauche sans retrait, à l'aplomb des colonnes du pied (CFC x 28.35 ; en portrait, Texte x 125.72) ; bandes et filets 2 pt plus à gauche */

@@ -1432,11 +1432,17 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        10.11.2026 : « ne pas préciser, indiquer uniquement Récapitulatif ») */
     { const rec=pg=>(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1), deux=pages.some(pg=>rec(pg)&&pg.digit===0)&&pages.some(pg=>rec(pg)&&pg.digit===1); let dg=null;
       pages.forEach(pg=>{ const r=rec(pg); if(r) pg.recapTitre='Récapitulatif'; dg=r?pg.digit:null; }); }
+    /* tableaux des récapitulatifs alignés en bas sur le bas du logo (Paulo, 10.11.2026 : « aligner les tableaux récapitulatifs, le bas du tableau aligné avec le bas du
+       logo ») : bas de la dernière rangée écrite (bande du total) = bas de l'encre du logo — paysage 595.28 − 85.9 = 509.38, portrait 841.89 − 89.25 = 752.64 (mesurés au
+       rendu) ; décalage pg.dy (jamais négatif : un tableau plein reste en haut), suivi par le dessin (contenuLivret) et la carte des clics */
+    { const LIMB=portrait?841.89-89.245:595.276-85.9;
+      pages.forEach(pg=>{ if(!pg.recapTitre) return; let k=-1; (pg.rows||[]).forEach((r,i)=>{ if((r.c||[]).some(v=>String(v==null?'':v).trim())) k=i; }); if(k<0) return;
+        pg.dy=Math.max(0,Math.round((LIMB-(122+(k+1)*DG_RH))*100)/100); }); }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
     { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;
       pages.forEach(pg=>{ if(!(pg.type===1||pg.type===2)){ carte.pages.push({type:pg.type}); return; } if(pg.digit!==dg){ bloc=null; dg=pg.digit; }
-        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122,tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
+        const tetes=[]; carte.pages.push({type:pg.type,digit:pg.digit,y0:122+(+pg.dy||0),tetes,rows:(pg.rows||[]).map((r,i)=>{ const c=r.c||[], c0=String(c[0]==null?'':c[0]).trim(), pl=c.some(v=>String(v==null?'':v).trim());
           if(c0&&!r.k&&r.s!=='T'&&r.s!=='E'){ bloc={cfc:c0,t:String(c[1]==null?'':c[1]).trim()}; tetes.push(i); } return pl&&r.s!=='T'?bloc:null; })}); });
       DG_CARTE.set(X,carte); }
     const sT={b:o.titlePosBold!==false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};   /* texte à la taille de l'en-tête (7,5 pt, Akkurat Light ; Paulo, 08.11.2026) ; titres des CFC à 1 et 2 chiffres et total gardés */

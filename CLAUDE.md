@@ -1930,7 +1930,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   puis « propose-moi 5 variantes, inspire-toi aussi de la page de garde » ; maquette `subgestion3/_backup_20261110_maquette_recap/proposition_chiffres2.js` : 1 rubriques
   de la garde, 2 grands chiffres, 3 titre gras et filet noir, 4 ligne d'état à carrés, 5 grille) : rangées de 15 pt dans les colonnes du tableau — repères VB, 2, 1–9
   en bleu nuit Regular 8 dans la colonne CFC, libellés Light 8 « Volume SIA 416 », « Prix au m³ SIA 416 » à la colonne Texte, valeur Regular 8 sur la colonne « à 1
-  chiffre » (paysage x 712.3, portrait 484.7), unité Light 7,5 grise alignée à droite dans la colonne [%] (« m³ », « CHF/m³ » ; en portrait « CHF/m³ » n'y tient pas :
+  chiffre » (paysage x 712.3, portrait 484.7), unité Light 7,5 grise dans la colonne [%], les unités alignées à gauche les unes sous les autres, la plus longue finissant au bord droit de la colonne
+  (« ajuster m³ à gauche de CHF », même jour) (« m³ », « CHF/m³ » ; en portrait « CHF/m³ » n'y tient pas :
   « CHF », le libellé dit « au m³ » ; TTC ou HT = titre de la colonne « à 1 chiffre ») ; filet bleu nuit 0,75 au-dessus du bloc, filet gris 0,5 sous chaque rangée,
   sur toute la largeur du tableau ; dernière ligne de base à `ECART` (20,77 pt) du haut de la bande. Versions d'avant du même jour : libellés en capitales 7,5 et
   valeur 9 suivie de l'unité (« M³ » en capitales), puis rangées sans repère avec l'unité après le libellé ; le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus

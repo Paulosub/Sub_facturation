@@ -1926,10 +1926,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   chiffres ; jamais le document principal), trois lignes au-dessus de la bande bleu nuit — Volume SIA 416 (m³), Prix au m³ SIA 416, CFC 2, Prix au m³ SIA 416, CFC 1
   à 9 (CHF/m³ TTC ou HT selon le titre de la colonne « à 1 chiffre ») ; prix = totaux des CFC à 1 chiffre du devis ÷ volume (`CHIF` dans `dgOctets`, sg3_devis.js,
   lus avant le retrait des colonnes vides ; le CFC 0 n'entre pas dans « 1 à 9 ») ; sans volume (`sgVolumeSIA416` = 0) : rien. Dessin (`pg.chiffres`, `tableau` de
-  sg3_docsub.js) : libellés Regular 7,5 en capitales à la colonne Texte (x 125.72), valeur Regular 9 et unité Light 7,5 grise alignées à droite sur la colonne
-  « à 1 chiffre » (paysage x 712.3, portrait 484.7), interligne 16 pt, filets gris 0,5 entre les lignes, dernière ligne à `ECART` (20,77 pt) du haut de la bande ;
+  sg3_docsub.js ; « améliore l'intégration », même jour : dessinés comme des rangées du tableau) : rangées de 15 pt, texte 8 pt comme le tableau, libellé Light en
+  minuscules à la colonne Texte (x 125.72) suivi de l'unité en gris (m³, CHF/m³ TTC), valeur Regular alignée comme les montants sur la colonne « à 1 chiffre »
+  (paysage x 712.3, portrait 484.7), filet gris 0,5 sur toute la largeur du tableau entre les rangées, dernière ligne à `ECART` (20,77 pt) du haut de la bande ;
+  (première version du même jour : libellés en capitales 7,5, valeur 9 suivie de l'unité, filets courts, interligne 16 — « M³ » en capitales) ;
   le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
-  de 101 + 20,77 + 2 × 16 pt). 99TST : 12'000 m³, 293.80 et 317.31 CHF/m³ TTC.
+  de 101 + 20,77 + 2 × 15 pt). 99TST : 12'000 m³, 293.80 et 317.31 CHF/m³ TTC.
 - **Veille retirée de SUBGestion 3 (05.11.2026, Paulo : « supprimer de toute l'app, icône pas nécessaire »)** : plus de bouton lune dans les documents ouverts (devis, contrôle des coûts, estimations, soumission), `ch10dIsDoc` neutralisée dans `sg3.js`, `ch10dStart` sans effet ; la barre vide au-dessus du document disparaît. DeltaSub.html, v1 et v2 inchangés.
 - **Fenêtre « Editer l'article » au graphisme de l'app (04.11.2026, `sg3_soumission.js`, `habArticle`, Paulo : « améliorer la fenêtre, pour adapter le design au reste de l'app »)** : `svdEditArticle`
   enveloppé, DeltaSub.html inchangé ; éléments du moteur déplacés tels quels (gestionnaires, contrôles et enregistrement inchangés). Bandeau jaune `sgfh-tete` (numéro de l'article, étape, chapitre, mot-clé tenu à jour),

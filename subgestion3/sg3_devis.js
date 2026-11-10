@@ -1362,7 +1362,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
       return L; })();
     /* première page de chaque récapitulatif : chiffres clés (place réservée à la répartition : la bande du tableau jamais plus haut que ce qu'il faut pour eux) */
     if(CHIF){ let dg=null; pages.forEach(pg=>{ const r=(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1); if(r&&pg.digit!==dg) pg.chiffres=CHIF; dg=r?pg.digit:null; }); }
-    const capChif=CHIF?Math.max(1,Math.floor((100.5+LIMB-122-(101+20.77+(CHIF.length-1)*16))/DG_RH)):99;
+    const capChif=CHIF?Math.max(1,Math.floor((100.5+LIMB-122-(101+20.77+(CHIF.length-1)*DG_RH))/DG_RH)):99;
     /* PORTRAIT (Paulo, 08.11.2026 : « conserver la possibilité de créer une version verticale ou horizontale du devis ») — les quatre colonnes de montants du paysage
        deviennent deux : Montant (positions à 3 et 4 chiffres, lignes de calcul) et Total (CFC à 1 et 2 chiffres) ; colonnes CFC, Texte, Commentaire, OUV, [%]
        gardées ; colonne sans aucune valeur dans sa série (récapitulatif, document principal) retirée ; lignes d'un descriptif réunies en un paragraphe, repassé à la

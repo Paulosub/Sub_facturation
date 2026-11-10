@@ -328,7 +328,7 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgdv-cb svg{display:none;width:11px;height:11px;color:#fff}
 .sgdv-ck.on .sgdv-cb{background:var(--s-nuit);border-color:var(--s-nuit)}
 .sgdv-ck.on .sgdv-cb svg{display:block}
-.sgdv-ck.vient{background:var(--s-jaune2);box-shadow:inset 3px 0 0 var(--s-nuit)}
+.sgdv-ck.vient{background:var(--s-jaune2);box-shadow:inset 3px 0 0 var(--s-nuit)}   /* dernière case changée surlignée ; mot « appliqué » retiré (Paulo, 10.11.2026 : « supprimer le texte ») */
 .sgdv-ck em{flex:none;font-style:normal;font-size:11px;font-weight:700;color:var(--s-nuit)}
 .sgdv-sg{display:flex;align-items:center;gap:10px;padding:3px 0;font-size:12.5px}
 .sgdv-sg>span{flex:none;width:66px}
@@ -947,7 +947,7 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
     const L0=(ch02cPrefItems(X,i)||[]).filter(x=>x&&x!=='-'&&x.t), G={}; VUE_GROUPES.forEach(g=>{ G[g]=[]; });
     L0.forEach(it=>{ G[it.grp&&G[it.grp]?it.grp:vueGroupe(it.t)].push(it); });
     const rang=t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }, M=[]; let h='';
-    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(it.ind||(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position')))?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+(it.t===dernier?'<em>appliqué</em>':'')+'</div>'; };
+    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(it.ind||(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position')))?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+'</div>'; };
     const seg=(lib,opts,pile)=>'<div class="sgdv-sg'+(pile?' pile':'')+'">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg'+(ok?'':' dis')+'" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'" tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'" data-k="'+E('seg:'+lib+':'+o.l)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
     VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>(a.rang!=null?a.rang:rang(a.t))-(b.rang!=null?b.rang:rang(b.t))); if(!A.length) return; let corps='';
       if(g==='Montants'){ const ar=A.filter(x=>/^arrondir à/i.test(x.t)); A=A.filter(x=>!/^arrondir à/i.test(x.t)); const sp=A.findIndex(x=>/pourcentages/i.test(x.t)), av=sp<0?A:A.slice(0,sp), ap=sp<0?[]:A.slice(sp);

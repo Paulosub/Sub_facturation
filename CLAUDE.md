@@ -1808,6 +1808,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (« 4 chiffres TTC », « 3 chiffres TTC », « 2 chiffres TTC », « 1 chiffre TTC », 56 pt chacune) au lieu de Montant / Total ; colonne vide dans sa série retirée
   (récapitulatif : 2 et 1 chiffres ; « 4 chiffres » seulement sans « Seulement positions de 1 à 3 chiffres ») ; texte ≈ 137 pt. Interrupteur `DG_P4` (sg3_devis.js) :
   false = Montant / Total (code gardé). À confirmer ou retirer par Paulo.
+  **Option « Récapitulatif CFC à 1 chiffre » (10.11.2026, Paulo : « dans Positions ajoute une option CFC 1 chiffre »)** : case du groupe Positions (sous « Seulement
+  positions de 1 à 3 chiffres ») et du menu Réglages de la ligne = `includeKvOneDigit` du livret (`DG_MENU`, `VUE_ORDRE` ; `vueGroupe` reconnaît « chiffre » au
+  singulier et « récapitulatif ») : ajoute le récapitulatif des CFC à 1 chiffre avant celui à 2 chiffres ; non coché par défaut (`DG_PRESET`), enregistré dans le devis.
   **Alignement sur le papier (même jour, portrait et paysage ; Paulo : « les CFC doivent être alignés à la colonne info@substances », « la dernière colonne doit
   être alignée à la barre verticale entre la page et le nombre de pages », « déplacer le texte », « déplacer les numéros de CFC »)** : numéros CFC dans la marge à x 85.04 (comme les numéros de chapitre des contrats ; `livretDG.x0Tab`,
   colonne CFC `DG_CFC` 40.68 pt), désignations, lignes de calcul et descriptif à x 125.72 (2e colonne du pied) ;

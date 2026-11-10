@@ -1546,7 +1546,9 @@ async function sgDsPdf(R, rep, o){
     const RUB = Array.from(G.rub || []).filter(r => r && (String(r.nom || '').trim() || String(r.adr || '').trim()));
     /* rubriques remontées sous le filet du titre, au même espace (Paulo, 10.11.2026 : « déplacer le bloc en laissant un espace x comme avant » ; avant : y 350 au plus tôt,
        paysage 300) : du bas du filet (0,75 pt) au premier filet des rubriques = ECART, l'espace entre le filet de tête et le numéro */
-    const yR0 = yN + 0.75 + ECART; let yr = yR0;
+    /* sans filet au-dessus de la première rubrique (« supprimer ») : du bas du filet du titre au HAUT du texte de la première rubrique = ECART (Paulo, 10.11.2026 :
+       « espace x ») ; sa 1re ligne (nom ou adresse, corps 9) a sa ligne de base à yR0 + 16 */
+    const yR0 = yN + 0.75 + ECART + HC * 9 - 16; let yr = yR0;
     /* filets gris ENTRE les rubriques seulement : plus de filet au-dessus de la première ni sous la dernière (Paulo, 10.11.2026 : « supprimer ») ; places inchangées */
     RUB.forEach((r, ir) => { const b = yr + 16, LL = cx.couper(cx.maj(P(r.lib || '')), F.regular, 7.5, XV - X0 - 8);
       const LV = [].concat(String(r.nom || '').trim() ? equi(P(r.nom), F.regular, 9, WV).map(l => ({ l, f:F.regular })) : [],

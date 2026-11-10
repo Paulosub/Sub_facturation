@@ -1697,7 +1697,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   d'Akkurat mesurée, `ECART` = 28 − 10 × HC ; numéro à la ligne de base 143,46 au lieu de 160 en corps 30). Puis (« déplacer le bloc en laissant un espace x comme avant ») :
   rubriques remontées, premier filet gris à `ECART` sous le filet noir du titre (`yR0 = yN + 0,75 + ECART`, au lieu de y 350 au plus tôt, paysage 300 ; 99TST :
   267 pt) ; signatures inchangées en portrait (y 610, plus bas si besoin), en paysage toujours à la hauteur du premier filet des rubriques. Puis (« supprimer ») :
-  plus de filet gris au-dessus de la première rubrique ni sous la dernière, filets seulement entre les rubriques (places inchangées). Vaut pour le devis
+  plus de filet gris au-dessus de la première rubrique ni sous la dernière, filets seulement entre les rubriques ; puis (« espace x ») : du bas du filet du titre
+  au haut du texte de la première rubrique = `ECART` (`yR0 = yN + 0,75 + ECART + HC × 9 − 16`, 1re ligne de base à 273,5 pt sur 99TST) — trois espaces égaux de
+  20,77 pt : filet de tête → numéro, titre → désignation, filet du titre → rubriques. Vaut pour le devis
   général et le devis descriptif (même fonction).
   **Base de toutes les mises en page du devis général = celle de 99TST (09.11.2026, Paulo : « cette mise en page devient la base de toutes les mises en page de
   devis »)** : `DG_BASE` (sg3_devis.js) — format **portrait par défaut** (`dgPortrait` : paysage seulement si choisi ; avant, paysage par défaut), descriptif, calcul

@@ -1564,18 +1564,22 @@ async function sgDsPdf(R, rep, o){
       yr = b + (Math.max(1, LL.length, LV.length) - 1) * 12 + 10; if(ir < RUB.length - 1) bar(yr, 0.5, FILc, X0, XR1); });
     if(yr > BAS) alerte('Page de garde : rubriques trop longues, elles descendent sur le pied de page');
     /* signatures : filet noir 0,75 pt, libellé, « Lieu, date » et « Signature » sous des filets de 0,5 pt. Portrait : A de x 124.4 à 296, B de x 312 à 485.5 (colonnes de
-       l'ancienne page de garde du devis général). Paysage (Paulo, 10.11.2026 : « glisser le bloc en dessous » ; avant : colonne de droite, x 485.5 à 732.1, à la hauteur
-       des rubriques) : SOUS les rubriques, sur leur largeur (A de x 124.4 à 286.4, B de x 302.4 à 464.4), à ECART sous la dernière rubrique ; filets « Lieu, date » et
-       « Signature » rapprochés (+40 et +80 au lieu de +56 et +126) pour tenir au-dessus du pied du papier */
-    const SG = Array.from(G.sig || []).slice(0, 2), XM = (X0 + XR1) / 2, CO = PAYS ? [[X0, XM - 8], [XM + 8, XR1]] : [[X0, 296], [312, X1]];
-    const ESG = PAYS ? { l:40, s:80 } : { l:56, s:126 };
-    const ys = PAYS ? yr + ECART : Math.max(610, yr + 30);
+       l'ancienne page de garde du devis général). Paysage (Paulo, 10.11.2026 : « glisser le bloc en dessous », puis « ne pas passer sous le logo » ; avant : colonne de
+       droite, x 485.5 à 732.1, à la hauteur des rubriques) : SOUS les rubriques, à ECART sous leur dernière ligne, sur la largeur des filets du titre (A de x 124.4 à
+       420.25, B de x 436.25 à 732.1) ; dans chaque colonne, « Lieu, date » (40 %) et « Signature » côte à côte sur un même filet, à +56 comme en portrait (moins si la place
+       manque) : rien ne descend plus bas que le logo (encre du logo paysage jusqu'à 85.9 pt du bas, `LIM`) */
+    const SG = Array.from(G.sig || []).slice(0, 2), XM = (X0 + X1) / 2, CO = PAYS ? [[X0, XM - 8], [XM + 8, X1]] : [[X0, 296], [312, X1]];
+    const LIM = H - (PAYS ? 85.9 : 83.5);   /* bas du logo vertical (paysage : encre ; portrait : LOGO_BB) */
+    const ys = PAYS ? yr - 10 + ECART : Math.max(610, yr + 30), sP = PAYS ? Math.max(30, Math.min(56, LIM - 9 - ys)) : 0;
     if(SG.length && !PAYS && ys > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');
-    if(SG.length && ys + ESG.s + 9 > BAS) alerte('Page de garde : signatures au-delà de la zone prévue');
+    if(SG.length && ys + (PAYS ? sP : 126) + 9 > LIM) alerte('Page de garde : signatures plus bas que le logo');
     SG.forEach((sg, i) => { const [a, b] = CO[i];
       bar(ys, 0.75, C.N, a, b); cx.couper(P(sg), F.regular, 8, b - a).slice(0, 2).forEach((l, n) => cx.texte(l, a, T(ys + 14 + n * 10), { police:F.regular, taille:8 }));
-      bar(ys + ESG.l, 0.5, C.N, a, b); cx.texte('Lieu, date', a, T(ys + ESG.l + 9), { police:F.light, taille:7.5, couleur:GRISc });
-      bar(ys + ESG.s, 0.5, C.N, a, b); cx.texte('Signature', a, T(ys + ESG.s + 9), { police:F.light, taille:7.5, couleur:GRISc }); });
+      if(PAYS){ const xs = a + Math.round((b - a) * 0.4) + 16;
+        bar(ys + sP, 0.5, C.N, a, xs - 16); cx.texte('Lieu, date', a, T(ys + sP + 9), { police:F.light, taille:7.5, couleur:GRISc });
+        bar(ys + sP, 0.5, C.N, xs, b); cx.texte('Signature', xs, T(ys + sP + 9), { police:F.light, taille:7.5, couleur:GRISc }); return; }
+      bar(ys + 56, 0.5, C.N, a, b); cx.texte('Lieu, date', a, T(ys + 65), { police:F.light, taille:7.5, couleur:GRISc });
+      bar(ys + 126, 0.5, C.N, a, b); cx.texte('Signature', a, T(ys + 135), { police:F.light, taille:7.5, couleur:GRISc }); });
   };
   /* devis général (bloc 46, 07.11.2026, Paulo : « voici à quoi devrait ressembler le DG pdf », 23JOG-DG_TRAVAIL_20260417.pdf de l'ancien logiciel) : A4 paysage au papier des
      contrats ; pages du livret calculées par le moteur (ch02bBook : page de garde, information, récapitulatif à 2 chiffres, document principal, total), dessinées ici aux mesures

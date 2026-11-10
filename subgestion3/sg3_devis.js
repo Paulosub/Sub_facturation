@@ -1338,7 +1338,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
       if(cur.trim()) L.push(cur); return L.length?L:[s0]; };
     const placeDe=(cols,c,j)=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&!cols[k].r&&+cols[k].w&&!String(c[k]==null?'':c[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };   /* marge de 1,5 pt : mesure du dessin un peu différente (glyphes de secours) */
     const etaler=(rows,cols,info)=>{ const out=[]; rows.forEach(r=>{ const c=Array.from(r.c||[]), sty=stDe(r.s);
-        const it=!info&&(r.s==='X'||!!r.q), rt=!info&&r.cal?DG_CALR:0;   /* variante E : descriptif et quantités en italique, calcul en retrait */
+        const it=!info&&(r.s==='X'||!!r.q||!!r.cal), rt=!info&&r.cal?DG_CALR:0;   /* libellé du calcul en italique (10.11.2026) : mesuré en italique */   /* variante E : descriptif et quantités en italique, calcul en retrait */
         const dsc=!info&&r.s==='X';   /* descriptif : paragraphe dans la seule colonne Texte (maquette E), jamais sur OUV / Localisation / Commentaire (relecture du 08.11.2026) */
         const L=c.map((v,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(v==null?'':v).trim()) return [v]; const wd=dsc&&j===1?(+col.w||0)-4-1.5:placeDe(cols,c,j); return couperMots(v,(info&&j===0)||sty.b,sty.z,wd-(j===1?rt:0),it&&j===1); });
         const n=Math.max(1,...L.map(x=>x.length));

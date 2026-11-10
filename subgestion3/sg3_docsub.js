@@ -1684,7 +1684,7 @@ async function sgDsPdf(R, rep, o){
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
           let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
-          const pf = info && r.lib ? F.light : info && j === 0 && cols.length > 1 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : (CR && !info && (s === 'X' || (r.q && j === 1) || (r.cal && p.r))) ? F.lightItalic : pol.f;
+          const pf = info && r.lib ? F.light : info && j === 0 && cols.length > 1 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : (CR && !info && (s === 'X' || (r.cal && j === 1) || (r.cal && p.r))) ? F.lightItalic : pol.f;   /* libellé du calcul aussi en italique (Paulo, 10.11.2026 : « italic ») */
           const rt = CR && r.cal && j === 1 && !info ? CR : 0;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
           const cl = nuit && j === jPct && s !== 'T' && s !== 'W' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
           const dispo = p.w - 2 - ins - rt + (cx.largeur(P(v), pf, pol.z) > p.w - 2 - ins - rt ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);

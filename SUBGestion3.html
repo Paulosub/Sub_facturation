@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 12:40 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 12:44 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33799,7 +33799,7 @@ async function sgDsPdf(R, rep, o){
         const base = y + rh - 4;
         cols.forEach((col, j) => { const p = pos[j], v = c[j]; if(!p.w || v == null || String(v) === '') return;
           let ext = 0; if(D.deborde === true && !p.r) for(let k = j + 1; k < pos.length && pos[k].w && !pos[k].r && !String(c[k] == null ? '' : c[k]).trim(); k++) ext += pos[k].w;   /* débordement sur les colonnes de texte vides à droite (D.deborde) ; le devis général passe ensuite à la ligne (dgOctets, etaler) : rien n'est coupé */
-          const pf = info && r.lib ? F.light : info && j === 0 && cols.length > 1 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : (CR && !info && (s === 'X' || (r.q && j === 1) || (r.cal && p.r))) ? F.lightItalic : pol.f;
+          const pf = info && r.lib ? F.light : info && j === 0 && cols.length > 1 ? F.bold : (r.cf && r.cf[j]) ? ({ r:F.regular, b:F.bold, l:F.light })[r.cf[j]] || pol.f : (CR && !info && (s === 'X' || (r.cal && j === 1) || (r.cal && p.r))) ? F.lightItalic : pol.f;   /* libellé du calcul aussi en italique (Paulo, 10.11.2026 : « italic ») */
           const rt = CR && r.cal && j === 1 && !info ? CR : 0;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
           const cl = nuit && j === jPct && s !== 'T' && s !== 'W' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
           const dispo = p.w - 2 - ins - rt + (cx.largeur(P(v), pf, pol.z) > p.w - 2 - ins - rt ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
@@ -39495,7 +39495,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
       if(cur.trim()) L.push(cur); return L.length?L:[s0]; };
     const placeDe=(cols,c,j)=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&!cols[k].r&&+cols[k].w&&!String(c[k]==null?'':c[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };   /* marge de 1,5 pt : mesure du dessin un peu différente (glyphes de secours) */
     const etaler=(rows,cols,info)=>{ const out=[]; rows.forEach(r=>{ const c=Array.from(r.c||[]), sty=stDe(r.s);
-        const it=!info&&(r.s==='X'||!!r.q), rt=!info&&r.cal?DG_CALR:0;   /* variante E : descriptif et quantités en italique, calcul en retrait */
+        const it=!info&&(r.s==='X'||!!r.q||!!r.cal), rt=!info&&r.cal?DG_CALR:0;   /* libellé du calcul en italique (10.11.2026) : mesuré en italique */   /* variante E : descriptif et quantités en italique, calcul en retrait */
         const dsc=!info&&r.s==='X';   /* descriptif : paragraphe dans la seule colonne Texte (maquette E), jamais sur OUV / Localisation / Commentaire (relecture du 08.11.2026) */
         const L=c.map((v,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!String(v==null?'':v).trim()) return [v]; const wd=dsc&&j===1?(+col.w||0)-4-1.5:placeDe(cols,c,j); return couperMots(v,(info&&j===0)||sty.b,sty.z,wd-(j===1?rt:0),it&&j===1); });
         const n=Math.max(1,...L.map(x=>x.length));

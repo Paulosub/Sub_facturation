@@ -1789,7 +1789,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Hiérarchie « Filet de calcul » (08.11.2026, variante E choisie par Paulo parmi 5 ; Paulo : « tout est au même niveau d'information … passer en italique comme dans le devis » ;
   maquettes `subgestion3/_backup_20261108_maquette_hierarchie/`)** : descriptif en Akkurat Light Italic gris ; lignes de calcul (rangées repérées `cal` par l'enveloppe de
   `ch02bDetail` pendant `DG_ACTIF`) en retrait de 7 pt (`DG_CALR`, `livretDG.calRetrait`) derrière un filet vertical bleu nuit de 0,75 pt à l'aplomb du texte (3 pt en retrait
-  en haut et en bas, coupé en fin de page) ; libellé du calcul en gris droit, rangée « Quantité … Prix … » (`q`, `dgQte`) et montants du calcul en italique gris. Descriptif
+  en haut et en bas, coupé en fin de page) ; libellé du calcul en gris droit (en italique depuis le 10.11.2026, Paulo : « italic » ; mesuré en italique pour la coupure), rangée « Quantité … Prix … » (`q`, `dgQte`) et montants du calcul en italique gris. Descriptif
   recoupé à la largeur réelle de la colonne (portrait et paysage) : pendant `DG_ACTIF`, `ch02bWrap` ne coupe qu'aux retours à la ligne voulus, `etaler` coupe en mesurant en
   italique. Vérifié : mêmes caractères qu'avant sur 3 devis × portrait / paysage × avec / sans montants.
   Relecture du 08.11.2026 (8 défauts confirmés, 5 corrections) : descriptif limité à la colonne Texte (plus de débordement sur OUV / Localisation / Commentaire) ; rangée

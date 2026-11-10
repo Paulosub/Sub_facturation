@@ -1566,18 +1566,21 @@ async function sgDsPdf(R, rep, o){
       yr = b + (Math.max(1, LL.length, LV.length) - 1) * 12 + 10; if(ir < RUB.length - 1) bar(yr, 0.5, FILc, X0, XR1); });
     if(yr > BAS) alerte('Page de garde : rubriques trop longues, elles descendent sur le pied de page');
     /* signatures : filet noir 0,75 pt, libellé, « Lieu, date » et « Signature » sous des filets de 0,5 pt. Portrait : A de x 124.4 à 296, B de x 312 à 485.5 (colonnes de
-       l'ancienne page de garde du devis général). Paysage (Paulo, 10.11.2026 : « glisser le bloc en dessous », puis « ne pas passer sous le logo » ; avant : colonne de
-       droite, x 485.5 à 732.1, à la hauteur des rubriques) : SOUS les rubriques, à ECART sous leur dernière ligne, dans les colonnes du portrait (A de x 124.4 à 296,
-       B de x 312 à 485.5) ; dans chaque colonne, « Lieu, date » (40 %) et « Signature » côte à côte sur un même filet, à +56 comme en portrait (moins si la place
-       manque) : rien ne descend plus bas que le logo (encre du logo paysage jusqu'à 85.9 pt du bas, `LIM`) */
-    /* paysage (Paulo, 10.11.2026, croquis : le maître de l'ouvrage sur toute la largeur du bloc, « architecte » à droite) : A de x 124.4 à 485.5 sous les rubriques,
-       B (architecte) à droite de x 510.68 (bord du bloc + 25.18) à 732.1 (barre du numéro de page − 25.18), à la même hauteur ; portrait : A 124.4–296, B 312–485.5 */
-    const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[X0, X1], [X1 + 25.18, FMT.w - 84.6 - 25.18]] : [[X0, 296], [312, X1]];
+       l'ancienne page de garde du devis général), à y 610 (plus bas si les rubriques l'exigent).
+       Paysage (Paulo, 10.11.2026 : « glisser le bloc en dessous », « ne pas passer sous le logo », croquis, puis « déplacer dessous, ligne inférieure alignée sur la ligne y
+       alignée au logo ») : deux rangées sur la largeur du bloc (x 124.4 → 485.5), le maître de l'ouvrage puis l'architecte DESSOUS ; dans chaque rangée « Lieu, date »
+       (40 %) et « Signature » côte à côte sur un même filet ; la dernière ligne (légendes « Lieu, date » / « Signature » de l'architecte) a sa ligne de base sur le bas du
+       logo (`LIM`, encre du logo paysage à 85.9 pt du bas) ; ECART entre les deux rangées ; filet d'écriture à +56 sous le libellé, moins (30 au plus bas) si la
+       place manque sous les rubriques (rangée du haut jamais à moins de ECART sous la dernière ligne des rubriques). */
+    const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[X0, X1], [X0, X1]] : [[X0, 296], [312, X1]];
     const LIM = H - (PAYS ? 85.9 : 83.5);   /* bas du logo vertical (paysage : encre ; portrait : LOGO_BB) */
-    const ys = PAYS ? yr - 10 + ECART : Math.max(610, yr + 30), sP = PAYS ? Math.max(30, Math.min(56, LIM - 9 - ys)) : 0;
-    if(SG.length && !PAYS && ys > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');
-    if(SG.length && ys + (PAYS ? sP : 126) + 9 > LIM) alerte('Page de garde : signatures plus bas que le logo');
-    SG.forEach((sg, i) => { const [a, b] = CO[i];
+    const yHaut = yr - 10 + ECART, nR = Math.max(1, SG.length);
+    const sP = PAYS ? Math.max(30, Math.min(56, (LIM - yHaut - nR * 9 - (nR - 1) * ECART) / nR)) : 0;
+    const YS = PAYS ? SG.map((_, i) => LIM - 9 - sP - (nR - 1 - i) * (sP + 9 + ECART)) : SG.map(() => Math.max(610, yr + 30));
+    if(SG.length && !PAYS && YS[0] > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');
+    if(SG.length && PAYS && YS[0] < yHaut - 0.01) alerte('Page de garde : signatures trop près des rubriques (place insuffisante au-dessus du bas du logo)');
+    if(SG.length && !PAYS && YS[0] + 135 > LIM) alerte('Page de garde : signatures plus bas que le logo');
+    SG.forEach((sg, i) => { const [a, b] = CO[i], ys = YS[i];
       bar(ys, 0.75, C.N, a, b); cx.couper(P(sg), F.regular, 8, b - a).slice(0, 2).forEach((l, n) => cx.texte(l, a, T(ys + 14 + n * 10), { police:F.regular, taille:8 }));
       if(PAYS){ const xs = a + Math.round((b - a) * 0.4) + 16;
         bar(ys + sP, 0.5, C.N, a, xs - 16); cx.texte('Lieu, date', a, T(ys + sP + 9), { police:F.light, taille:7.5, couleur:GRISc });

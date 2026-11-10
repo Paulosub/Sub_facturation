@@ -1706,7 +1706,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   directement suivi du filet noir, à `ECART` sous sa ligne de base ; propositions de justification montrées avant, sans suite) —, même typo que le titre (Akkurat Bold, même corps ; « même typo que devis général », essayée d'abord en Light) ; essai sur le
   Devis estimatif de 99TST : « DEVIS ESTIMATIF » et « ±15% » sur une ligne, 38 pt d'écart ;
   paysage (« glisser le bloc en dessous », puis « ne pas passer sous le logo ») : signatures SOUS les rubriques, filet à `ECART` sous leur dernière ligne,
-  maître de l'ouvrage sur toute la largeur du bloc (x 124.4–485.5), architecte à droite à la même hauteur (x 510.68–732.1, croquis de Paulo) ; « largeur
+  deux rangées sur la largeur du bloc (x 124.4–485.5) : maître de l'ouvrage, puis l'architecte DESSOUS (« déplacer dessous, ligne inférieure alignée sur la
+  ligne y alignée au logo » ; avant, le même jour : architecte à droite, x 510.68–732.1) — légendes de la rangée du bas à la ligne de base du bas du logo (509.4),
+  ECART entre les rangées, filet d'écriture à +56 sous le libellé ou moins (30 au plus bas) pour que la rangée du haut reste à ECART sous les rubriques (99TST : +43) ; « largeur
   identique à la mise en page portrait » : titre et rubriques de la page de garde paysage à la largeur du portrait, x 124.4 → 485.5, au lieu de 732.1 ; « Lieu, date » (40 % de la colonne) et « Signature » côte à côte sur un même filet à +56
   (moins si la place manque) ; rien sous le bas du logo (`LIM` = hauteur − 85.9 en paysage, − 83.5 en portrait, alerte sinon) ; 99TST : textes à 497 pt, logo à 509 ;
   portrait inchangé (+56, +126) ; le titre se coupe avant elle (12 pt d'écart) ; la ligne d'information ne garde que la phase ; sans

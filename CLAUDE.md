@@ -1704,7 +1704,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   filets (x 485.5 en portrait), même typo que le titre (Akkurat Bold, même corps ; « même typo que devis général », essayée d'abord en Light) ; essai sur le
   Devis estimatif de 99TST : « DEVIS ESTIMATIF » et « ±15% » sur une ligne, 38 pt d'écart ;
   paysage (« glisser le bloc en dessous », puis « ne pas passer sous le logo ») : signatures SOUS les rubriques, filet à `ECART` sous leur dernière ligne,
-  sur la largeur des filets du titre (A x 124.4–420.25, B 436.25–732.1), « Lieu, date » (40 % de la colonne) et « Signature » côte à côte sur un même filet à +56
+  dans les colonnes du portrait (A x 124.4–296, B 312–485.5 ; « largeur identique à la mise en page portrait » : TOUTE la page de garde paysage a la largeur du
+  portrait, x 124.4 → 485.5, au lieu de 732.1), « Lieu, date » (40 % de la colonne) et « Signature » côte à côte sur un même filet à +56
   (moins si la place manque) ; rien sous le bas du logo (`LIM` = hauteur − 85.9 en paysage, − 83.5 en portrait, alerte sinon) ; 99TST : textes à 497 pt, logo à 509 ;
   portrait inchangé (+56, +126) ; le titre se coupe avant elle (12 pt d'écart) ; la ligne d'information ne garde que la phase ; sans
   titre, la précision reste dans la ligne d'information. Vaut pour le devis

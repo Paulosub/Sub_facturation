@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 08:21 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 08:23 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33617,12 +33617,14 @@ async function sgDsPdf(R, rep, o){
      noir puis titre en Bold 30 noir (24 pt au-delà de 4 lignes) ; désignation en capitales (Regular 10, lignes équilibrées), ligne d'information (phase, précision :
      Regular 10 noir) et filtre éventuel (Light 8 gris) ; filet noir 0,75 (bleu nuit jusqu'au 10.11.2026) ; rubriques séparées par des filets gris, sans filet avant la première ni après la dernière (libellé en capitales à la marge, nom en Regular 9 et
      adresse en Light 9 à x 222.98 = 3e colonne du pied, rubrique vide omise, rien n'est coupé) ; signatures. Portrait : marges de l'ancienne page de garde du devis général
-     (x 124.4 → 485.5, Paulo : « alignement », « marges »), signatures en bas (y 610, plus bas si les rubriques l'exigent). Paysage (devis général) : même grille, contenu
-     jusqu'à x 732.1 (barre du numéro de page − 25 pt, comme en portrait), rubriques à gauche (jusqu'à x 464.4) et signatures à droite, à la hauteur des rubriques. ── */
+     (x 124.4 → 485.5, Paulo : « alignement », « marges »), signatures en bas (y 610, plus bas si les rubriques l'exigent). Paysage (devis général, 10.11.2026) : même largeur
+     qu'en portrait (x 124.4 → 485.5), signatures sous les rubriques, « Lieu, date » et « Signature » côte à côte (place en hauteur), jamais sous le logo. ── */
   const gardeEdito = (cx, G, ori) => {
     G = G || {}; const PAYS = ori === 'paysage', FMT = PAP.format[PAYS ? 'paysage' : 'portrait'], H = FMT.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t);
     const NUITc = PDFLib.rgb(0, 0.2, 0.2745), GRISc = PDFLib.rgb(0.4392, 0.4353, 0.4353), FILc = PDFLib.rgb(0.847, 0.847, 0.831), ROUGEc = PDFLib.rgb(0.741, 0.118, 0.259);
-    const X0 = 124.4, X1 = PAYS ? FMT.w - 84.6 - 25.18 : 485.5, XV = 222.98, XR1 = PAYS ? 464.4 : X1, WV = XR1 - XV, BAS = PAYS ? 540 : 772;
+    /* même largeur en paysage qu'en portrait, x 124.4 → 485.5 (Paulo, 10.11.2026 : « largeur identique à la mise en page portrait » ; avant : paysage jusqu'à x 732.1,
+       rubriques jusqu'à 464.4) */
+    const X0 = 124.4, X1 = 485.5, XV = 222.98, XR1 = X1, WV = XR1 - XV, BAS = PAYS ? 540 : 772;
     const bar = (y, ep, col, a, b) => cx.rect(a == null ? X0 : a, T(y + ep), (b == null ? X1 : b) - (a == null ? X0 : a), ep, { fond:col });   /* filet : haut à y ; ligne() plafonne à 0,25 pt */
     /* lignes équilibrées : autant de lignes que le retour au mot, à la plus petite largeur, puis « en pyramide » (dernière ligne jamais la plus large) — sans remonter un mot
        après une virgule, sans laisser un mot seul en dernière ligne (relecture du 08.11.2026 : « …DE 18 LOGEMENTS » / « AVEC PARKING SOUTERRAIN ») */
@@ -33678,10 +33680,10 @@ async function sgDsPdf(R, rep, o){
     if(yr > BAS) alerte('Page de garde : rubriques trop longues, elles descendent sur le pied de page');
     /* signatures : filet noir 0,75 pt, libellé, « Lieu, date » et « Signature » sous des filets de 0,5 pt. Portrait : A de x 124.4 à 296, B de x 312 à 485.5 (colonnes de
        l'ancienne page de garde du devis général). Paysage (Paulo, 10.11.2026 : « glisser le bloc en dessous », puis « ne pas passer sous le logo » ; avant : colonne de
-       droite, x 485.5 à 732.1, à la hauteur des rubriques) : SOUS les rubriques, à ECART sous leur dernière ligne, sur la largeur des filets du titre (A de x 124.4 à
-       420.25, B de x 436.25 à 732.1) ; dans chaque colonne, « Lieu, date » (40 %) et « Signature » côte à côte sur un même filet, à +56 comme en portrait (moins si la place
+       droite, x 485.5 à 732.1, à la hauteur des rubriques) : SOUS les rubriques, à ECART sous leur dernière ligne, dans les colonnes du portrait (A de x 124.4 à 296,
+       B de x 312 à 485.5) ; dans chaque colonne, « Lieu, date » (40 %) et « Signature » côte à côte sur un même filet, à +56 comme en portrait (moins si la place
        manque) : rien ne descend plus bas que le logo (encre du logo paysage jusqu'à 85.9 pt du bas, `LIM`) */
-    const SG = Array.from(G.sig || []).slice(0, 2), XM = (X0 + X1) / 2, CO = PAYS ? [[X0, XM - 8], [XM + 8, X1]] : [[X0, 296], [312, X1]];
+    const SG = Array.from(G.sig || []).slice(0, 2), CO = [[X0, 296], [312, X1]];   /* colonnes du portrait, aussi en paysage */
     const LIM = H - (PAYS ? 85.9 : 83.5);   /* bas du logo vertical (paysage : encre ; portrait : LOGO_BB) */
     const ys = PAYS ? yr - 10 + ECART : Math.max(610, yr + 30), sP = PAYS ? Math.max(30, Math.min(56, LIM - 9 - ys)) : 0;
     if(SG.length && !PAYS && ys > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');

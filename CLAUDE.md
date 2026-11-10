@@ -1854,10 +1854,24 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   pages du moteur à la hauteur `DG_HP` 630 pt, tableau de x 28.35 sur `DG_WP` 490 pt ; les quatre colonnes de montants deviennent **Montant** (positions à 3 et
   4 chiffres, lignes de calcul) et **Total** (CFC à 1 et 2 chiffres) ; colonne vide dans sa série retirée (récapitulatif : Total et % seulement) ; lignes d'un
   descriptif réunies en un paragraphe puis repassées à la ligne ; `livretDG.orientation` / `x0` dans contenuLivret.
-  **ESSAI du 10.11.2026 (Paulo : « afficher CFC à 1, 2, 3 et 4 chiffres pour tester »)** : en portrait, une colonne de montant par niveau comme le paysage
-  (« 4 chiffres TTC », « 3 chiffres TTC », « 2 chiffres TTC », « 1 chiffre TTC », 56 pt chacune) au lieu de Montant / Total ; colonne vide dans sa série retirée
-  (récapitulatif : 2 et 1 chiffres ; « 4 chiffres » seulement sans « Seulement positions de 1 à 3 chiffres ») ; texte ≈ 137 pt. Interrupteur `DG_P4` (sg3_devis.js) :
-  false = Montant / Total (code gardé). À confirmer ou retirer par Paulo.
+  **Portrait : « Montant HT » et « Montant TTC » (10.11.2026 au soir, Paulo : « pour la version portrait, afficher que la version 1 chiffre TTC et HT et supprimer
+  3 chiffres et 2 chiffres TTC », choix « deux colonnes HT et TTC » ; remplace l'essai DG_P4 du même jour et la présentation Montant / Total du 08.11.2026)** : deux
+  colonnes de 62 pt (`DG_WM`), chacune avec le montant de chaque rangée (CFC à 1, 2, 3, 4 chiffres, ouvrages, lignes de calcul, total), le niveau se lisant à la
+  graisse (CFC à 1 chiffre et total gras, 2 et 3 chiffres Regular, 4 chiffres et détails Light) ; récapitulatifs et document principal. HT = seconde passe du livret
+  (`DG_PASSE_HT` : `dgEnHT` remplace dans l'arbre de ch02bCalc chaque TTC par son HT, ch02bDetail prend le HT de chaque ligne de calcul), rapprochée rangée par
+  rangée avec la passe TTC (page, style, CFC, texte hors calcul) ; au moindre écart, « Montant TTC » seule (avertissement dans la console). **Option « Montants de
+  1 à 4 chiffres »** (Réglages ▸ Affichage, après « Récapitulatif CFC à 2 chiffres », clé `sgNiveaux` de `dgPdf`, non cochée par défaut ; Paulo : « ajouter une
+  option qui permet d'afficher de 1 à 4 chiffres, mais uniquement lorsque l'option est activée ») : en portrait, une colonne TTC par niveau comme le paysage
+  (« 4 chiffres TTC », « 3 chiffres TTC », « 2 chiffres TTC », « 1 chiffre TTC », 56 pt ; colonne vide dans sa série retirée ; la colonne Texte vise 120 pt :
+  Commentaire réduite jusqu'à 60 pt, montants 46 pt — titres alors « 4 ch. TTC » —, OUV / Localisation 24 pt, [%] 22 pt) ; en paysage, toujours de 1 à 4
+  chiffres (case cochée et grisée). Relecture contradictoire du 10.11.2026 (workflow, 5 défauts confirmés, corrigés ou expliqués) : devis « TVA non séparée »
+  (`ch02aSep` faux : prix saisis TTC, TVA 0) → pas de passe HT, « Montant TTC » seule ; rapprochement des deux passes par clé (série, style, position, ouvrage,
+  CFC, texte, rang d'apparition ; lignes de total sans position) au lieu de l'index : une position « sans montant » d'un seul côté (TTC nul et HT non nul,
+  devis 1601) ne fait plus perdre toute la colonne HT ; un montant trop large pour sa colonne est imprimé en corps réduit (jusqu'à 5,5 pt), jamais coupé par
+  « … » (`contenuLivret`, sg3_docsub.js). Limite connue : avec « Arrondir à 10 / 100 / 1000 », le moteur arrondit le HT et le TTC chacun vers le haut (règle de
+  l'ancien logiciel en TVA séparée) : petites positions à HT = TTC possibles. Essais : 186 devis × portrait HT / TTC, 1 à 4 chiffres, paysage ; 173 devis à
+  calculs × 4 variantes (calcul et descriptif, arrondi 1000 + positions vides masquées + 1 à 3 chiffres, commentaire en colonne, récapitulatif à 2 chiffres et
+  filtre d'ouvrages) ; aucune erreur, aucun chevauchement.
   **Option « Récapitulatif CFC à 1 chiffre » (10.11.2026, Paulo : « dans Positions ajoute une option CFC 1 chiffre »)** : case du groupe Positions (sous « Seulement
   positions de 1 à 3 chiffres ») et du menu Réglages de la ligne = `includeKvOneDigit` du livret (`DG_MENU`, `VUE_ORDRE` ; `vueGroupe` reconnaît « chiffre » au
   singulier et « récapitulatif ») : ajoute le récapitulatif des CFC à 1 chiffre avant celui à 2 chiffres ; non coché par défaut (`DG_PRESET`), enregistré dans le devis.

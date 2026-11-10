@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 20:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 21:09 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33806,7 +33806,7 @@ async function sgDsPdf(R, rep, o){
           const rt = CR && r.cal && j === 1 && !info ? CR : 0;   /* Information : libellés en gras ; r.cf : graisse propre à une cellule (portrait : niveau d'un montant) */
           const cl = nuit && j === jPct && s !== 'T' && s !== 'W' && !det(r) ? NUIT : coul;   /* Bleu nuit : pourcentages en bleu nuit */
           const dispo = p.w - 2 - ins - rt + (cx.largeur(P(v), pf, pol.z) > p.w - 2 - ins - rt ? ext : 0), lw = cx.largeur(P(v), pf, pol.z);
-          const zz = D.deborde === true && lw > dispo && lw <= dispo * 1.08 ? pol.z * dispo / lw : pol.z;   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé */
+          const zz = D.deborde === true && lw > dispo && (lw <= dispo * 1.08 || (p.r && /^[\s(−\-]*[\d'’.,\s]+\)?$/.test(P(v)))) ? Math.max(p.r ? 5.5 : 0, pol.z * dispo / lw * 0.99) : pol.z;   /* × 0.99 : la mesure au corps réduit tombait parfois un rien au-dessus de dispo (arrondi) et ajuste ajoutait « ... » (« 2'803'691.... », relecture du 10.11.2026) */   /* écart de mesure de quelques points : corps à peine réduit plutôt que texte coupé ; un montant (colonne à droite) n'est jamais coupé par « … » : corps réduit jusqu'à 5,5 pt (10.11.2026) */
           const t = ajuste(v, pf, zz, dispo); if(t) cx.texte(t, p.r ? p.x + p.w - 2 : p.x + (info ? 0 : ins) + rt, T(base), Object.assign({ police:pf, taille:zz, align:p.r ? 'd' : 'g' }, cl ? { couleur:cl } : {})); });   /* Information : sans retrait, colonnes du pied */
         if(CR && !info && pos[1]){ if(calT(r)){ if(calDeb == null) calDeb = y; calFin = y; }
           if(!(r.cal && RG[i + 1] && RG[i + 1].cal)){ if(calDeb != null){ const h0 = (calFin + rh - 3) - (calDeb + 3); if(h0 > 0) cx.rect(pos[1].x + ins, T(calFin + rh - 3), 0.75, h0, { fond:NUIT }); } calDeb = calFin = null; } }   /* filet vertical bleu nuit 0,75 pt devant le calcul, à l'aplomb du texte, 3 pt en retrait en haut et en bas ; coupé en fin de page */
@@ -39424,6 +39424,13 @@ function dgAgreger(r){ const M=r&&r.M; if(!M) return; const ord=((r.T||{}).subs|
     return vu.get(c); };
   M.forEach((n,c)=>agg(c)); }
 let DG_ACTIF=false;
+/* passe HT du devis général en portrait (Paulo, 10.11.2026 : colonnes « Montant HT » et « Montant TTC ») : le livret est calculé une seconde fois, chaque montant TTC de
+   l'arbre (ch02bCalc) remplacé par son montant HT (ttc ← ht, ott ← oht) et chaque ligne de calcul par son HT (ch02bDetail) ; mêmes pages, mêmes rangées, seuls les montants
+   changent ; dgOctets rapproche les deux passes rangée par rangée et n'écrit la colonne HT que si elles concordent */
+let DG_PASSE_HT=false;
+function dgEnHT(r){ const vu=new Set(), ht=x=>{ if(!x||typeof x!=='object'||vu.has(x)) return; vu.add(x); x.ttc=+x.ht||0; x.ott=+x.oht||0; };
+  (r.list||[]).forEach(n=>{ ht(n); ((n&&n.subs)||[]).forEach(ht); }); if(r.M) r.M.forEach(n=>{ ht(n); ((n&&n.subs)||[]).forEach(ht); });
+  if(r.T){ ht(r.T); (r.T.subs||[]).forEach(ht); } }
 const DG_CARTE=new WeakMap();   /* devis ouvert → carte du dernier PDF du devis général (dgOctets) */
 /* saut de page au clic droit sur une ligne du PDF (Paulo, 08.11.2026 : « en cliquant avec le bouton droit sur le pdf et sur la ligne que je sélectionne, je souhaite
    pouvoir mettre un saut de page ») : saut AVANT la position de la ligne (le moteur ne coupe qu'avant une position), au niveau de la série de la page (document principal
@@ -39565,6 +39572,7 @@ const DG_CALR=7;   /* retrait du calcul (pt) derrière le filet */
    formule n'est imprimée que dans la rangée « Quantité … Prix … », absente ici) ; même colonne que dans la rangée « Quantité … Prix … » (à 3 chiffres pour une
    position à 3 chiffres : visible aussi avec « Seulement positions de 1 à 3 chiffres ») ; sans commentaire, une rangée du seul montant */
 { const d0=ch02bDetail; ch02bDetail=function(l,o,no,loc,R){ let out;
+    if(DG_ACTIF&&DG_PASSE_HT&&l){ const v=dvLine(l); l=Object.assign({},l,{ttc:v.ht,tva:0}); arguments[0]=l; }   /* passe HT : montant de la ligne = son HT (le libellé « Quantité … Prix … » de cette passe n'est pas repris) */
     if(DG_ACTIF&&o&&o.displayDetailValues&&!o.displayQuanPriceValue&&o.dispalyCalcualtion){ o=Object.assign({},o,{dispalyCalcualtion:false}); arguments[1]=o; }
     if(!DG_ACTIF||!o||!o.displayQuanPriceValue||o.displayDetailValues||(o.displayDetailComment&&o.commentInColumn)||o.displayPriceBase) out=d0.apply(this,arguments);
     else { out=d0.call(this,l,Object.assign({},o,{displayDetailValues:true}),no,loc,R); const k=out.length-1;
@@ -39598,7 +39606,7 @@ function dgDescEnTete(rows,o){ const out=[], R=rows||[], compact=!!(o.displaySub
   return out; }
 { const r0=ch02bDocRows; ch02bDocRows=function(L,o,x){ const rows=r0.apply(this,arguments); if(!DG_ACTIF||!o||!o.displayDescription) return rows;
     try{ return dgDescEnTete(rows,o); }catch(e){ console.error(e); return rows; } }; }
-{ const c0=ch02bCalc; ch02bCalc=function(){ const r=c0.apply(this,arguments); if(DG_ACTIF) try{ (r.list||[]).forEach(n=>{ if(n&&n.p) n.texte=dgTexte(n.p); }); if(DG_AGREGE) dgAgreger(r); }catch(e){ console.error(e); } return r; }; }
+{ const c0=ch02bCalc; ch02bCalc=function(){ const r=c0.apply(this,arguments); if(DG_ACTIF) try{ (r.list||[]).forEach(n=>{ if(n&&n.p) n.texte=dgTexte(n.p); }); if(DG_AGREGE) dgAgreger(r); if(DG_PASSE_HT) dgEnHT(r); }catch(e){ console.error(e); if(DG_PASSE_HT) throw e; } return r; }; }   /* passe HT : une erreur l'arrête (pas de colonne HT plutôt qu'un TTC sous « Montant HT ») */
 async function dgOctets(X){ { await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
     const {w,R,fn}=await SGDS.ressources(), E=X.E, doc=ch02aHdr(X)||{}, p=X.p||{}, sel=dgPresSel(E), fav=sel.pres||{};
     /* mesure du texte aux vraies polices (coupure du descriptif et des remarques comme à l'impression) */
@@ -39610,8 +39618,29 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     const tabI=h=>({orientation:'paysage',elements:[{t:'tableau',champ:'constructionEstimateTable',l:298,h}]});   /* Information : textes coupés comme le modèle 24PRC (298 − 15 % = 254 pt, moins les 25 pt de ch02bWrap = 229 pt) ; dessin sur toute la largeur */
     const portrait=dgPortrait(E), HT=portrait?DG_HP:DG_HT, HI=portrait?DG_HP:DG_HI, WI=portrait?DG_WIP:DG_WIL;   /* format choisi dans les Réglages (portrait par défaut depuis le 09.11.2026) */
     const env={pages:{cover:{orientation:'paysage',elements:[]},page1:tab(HT),pageN:tab(HT),pageToc1:tabI(HI),pageTocN:tabI(HI)},sps:DS.by('subproject','PROJECT_ID',p.ID).slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)),measure:meas};
-    let B; DG_ACTIF=true; DG_AGREGE=pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
+    const agr=()=>pres.options.displaySubprojects?{tot:(E.reglages||{}).pourcentageSur==='total',compact:!!(pres.options.displayDescription&&pres.options.compactDescription)}:null;
+    let B; DG_ACTIF=true; DG_AGREGE=agr();
     try{ B=ch02bBook(E,doc,p,pres,X.filter,env); } finally{ DG_ACTIF=false; DG_AGREGE=null; } if(B.err) throw new Error('mise en pages impossible ('+B.err+')');
+    /* portrait sans « Montants de 1 à 4 chiffres » (Paulo, 10.11.2026) : colonnes « Montant HT » et « Montant TTC » — seconde passe en HT (DG_PASSE_HT), rapprochée de la passe TTC
+       rangée par rangée par une clé : série (récapitulatif à 1 / 2 chiffres, document principal), style, position (dernier CFC rencontré), ouvrage en cours, CFC, texte
+       (« Quantité … Prix … » : repère seul, son prix diffère), Commentaire / OUV / Localisation, rang d'apparition. Une rangée que la passe HT n'a pas (position masquée
+       « sans montant » d'un côté seulement : TTC nul, HT non nul ou l'inverse) garde une cellule HT vide ; sans aucun rapprochement : « Montant TTC » seule */
+    const niv=!!pres.options.sgNiveaux, duo=portrait&&!niv&&ch02aSep(X); let aHT=false;   /* devis « TVA non séparée » (prix saisis TTC, TVA 0) : pas de HT, « Montant TTC » seule (relecture du 10.11.2026 : la passe HT y recopiait les TTC) */
+    if(duo){ let BH=null; DG_ACTIF=true; DG_PASSE_HT=true; DG_AGREGE=agr();
+      try{ BH=ch02bBook(E,doc,p,pres,X.filter,env); if(BH&&BH.err) BH=null; }catch(e){ console.error(e); BH=null; } finally{ DG_ACTIF=false; DG_PASSE_HT=false; DG_AGREGE=null; }
+      if(BH){ const sv=x=>String(x==null?'':x), fv=ch02bCols(B.o,B.loc,DG_W).fv;
+        const parcourir=(Bk,f)=>{ let ser=null, pos='', ouv='', vu=new Map();
+          (Bk.pages||[]).forEach(pg=>{ const se=pg.type===1||pg.type===2?'d'+pg.digit:'t'+pg.type; if(se!==ser){ ser=se; pos=''; ouv=''; }
+            ((pg&&pg.rows)||[]).forEach(r=>{ if(!r||r.s==='E') return; const c=r.c||[], c0=sv(c[0]).trim(), mid=c.slice(2,fv).map(sv).join('\u0002');
+              const tot=!c0&&!r.cal&&(r.s==='T'||(r.s==='S'&&TOT.has(sv(c[1]).trim())));   /* rangées de total (ch02bTotRows) : clé sans position (relecture du 10.11.2026 : la dernière position d'une série présente d'un seul côté leur faisait perdre le HT) */
+              if(c0){ pos=c0; ouv=''; } else if(!tot&&r.s==='S'&&!r.cal&&mid.trim()) ouv=mid;
+              const k=(tot?[ser,sv(r.s),'\u0004tot',sv(c[1]),mid]:[ser,sv(r.s),pos,ouv,c0,r.q?'\u0003q':sv(c[1]),mid]).join('\u0001'), n=(vu.get(k)||0)+1; vu.set(k,n); f(r,k+'\u0001'+n); }); }); };
+        const TOT=new Set([CH02B_KB.total,CH02B_KB.totalExVat,CH02B_KB.vat,CH02B_KB.totalInclVat].map(x=>String(x||'').trim()).filter(Boolean)), chiffre=r=>(r.c||[]).slice(fv).some(x=>sv(x).trim());
+        const M=new Map(); parcourir(BH,(r,k)=>M.set(k,Array.from(r.c||[]).map(sv)));
+        let ok=0, manque=0; parcourir(B,(r,k)=>{ const h=M.get(k); if(h) r.h=h; if(!chiffre(r)) return; if(h) ok++; else manque++; });
+        aHT=ok>0; if(manque) console.info('Devis général : '+manque+' rangée(s) sans montant HT rapproché'+(aHT?'':' — colonne « Montant HT » omise')); }
+      else console.warn('Devis général : passe HT impossible, colonne « Montant HT » omise'); }
+
     const o=B.o, C=ch02bCols(o,B.loc,DG_W), cols=C.cols.map(c=>({t:c.t,w:+c.w||0,r:!!c.r})),
       /* colonnes repérées par leur POSITION (ordre de ch02bCols : CFC, Texte, [Commentaire], [OUV], [Localisation], montants, [%]) et non par leur titre, que la présentation peut changer (relecture du 08.11.2026) */
       K=(()=>{ let k=2; const iC=o.displayComment&&o.commentInColumn?k++:-1, iO=o.displaySubprojects?k++:-1, iL=o.displaySubprojects&&B.loc?k++:-1, h=!!o.hierarchicalAdjust, fv=k;
@@ -39665,7 +39694,7 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
       return out; };
     const pleine=pg=>pg.type===0||(pg.rows||[]).some(r=>(r.c||[]).some(v=>String(v==null?'':v).trim()));   /* pages vides (saut posé pour une autre mise en page) retirées */
     const pages=B.pages.filter(pleine).map(pg=>({type:pg.type,titre:pg.type===0?tt('document'):titrePage(pg),digit:pg.digit,lpp:pg.lpp,cols:pg.type===3||pg.type===4?colsI:cols,rows:(pg.rows||[]).map(r=>{ const c0=Array.from(r.c||[]).map(v=>v==null?'':String(v));
-      return Object.assign({c:c0,s:String(r.s||'S')},r.cal?{cal:1}:{},r.q?{q:1}:{}); })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
+      return Object.assign({c:c0,s:String(r.s||'S')},r.cal?{cal:1}:{},r.q?{q:1}:{},aHT&&r.h?{h:r.h}:{}); })}));   /* textes complets, ligne de calcul comprise (08.11.2026 : plus de formule retirée ; le texte passe à la ligne, voir etaler) */
     /* chiffres clés des récapitulatifs (Paulo, 10.11.2026 : juste au-dessus du tableau, dessin = variante 5 « Dans la grille du tableau » de la 2e série) : volume
        bâti SIA 416 du module Surfaces et volumes, prix au m³ des CFC 2 et des CFC 1 à 9 (totaux des CFC à 1 chiffre du devis, colonne « à 1 chiffre » : TTC ou HT comme
        le titre de cette colonne) ; [repère de la colonne CFC, libellé, valeur, unité] ; sans volume : rien. Lus avant le retrait des colonnes vides (indices K d'origine). */
@@ -39682,23 +39711,29 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* première page du récapitulatif à 1 chiffre : chiffres clés (place réservée à la répartition : la bande du tableau jamais plus haut que ce qu'il faut pour eux) */
     if(CHIF){ let dg=null; pages.forEach(pg=>{ const r=(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1); if(r&&pg.digit===0&&pg.digit!==dg) pg.chiffres=CHIF; dg=r?pg.digit:null; }); }   /* seulement sur le récapitulatif à 1 chiffre (Paulo, 10.11.2026 : « VB, etc. uniquement visible dans le récapitulatif CFC 1 chiffre ») */
     const capChif=CHIF?Math.max(1,Math.floor((100.5+LIMB-122-(101+20.77+(CHIF.length-1)*DG_RH))/DG_RH)):99;
-    /* PORTRAIT (Paulo, 08.11.2026 : « conserver la possibilité de créer une version verticale ou horizontale du devis ») — les quatre colonnes de montants du paysage
-       deviennent deux : Montant (positions à 3 et 4 chiffres, lignes de calcul) et Total (CFC à 1 et 2 chiffres) ; colonnes CFC, Texte, Commentaire, OUV, [%]
-       gardées ; colonne sans aucune valeur dans sa série (récapitulatif, document principal) retirée ; lignes d'un descriptif réunies en un paragraphe, repassé à la
-       ligne à la largeur du portrait par etaler (ci-dessous). Largeur 490 pt (DG_WP), hauteur 630 pt (DG_HP), même papier, logo et pied que le paysage. */
+    /* PORTRAIT (Paulo, 08.11.2026 : « conserver la possibilité de créer une version verticale ou horizontale du devis ») — colonnes de montants : « Montant HT » et
+       « Montant TTC » (10.11.2026), ou une colonne par niveau avec « Montants de 1 à 4 chiffres » ; colonnes CFC, Texte, Commentaire, OUV, [%] gardées ; colonne sans
+       aucune valeur dans sa série (récapitulatif, document principal) retirée ; lignes d'un descriptif réunies en un paragraphe, repassé à la ligne à la largeur du portrait
+       par etaler (ci-dessous). Largeur 427.64 pt (DG_WP), hauteur 630 pt (DG_HP), même papier, logo et pied que le paysage. (Montant / Total du 08.11.2026 remplacé.) */
     if(portrait){ const ser={}; pages.forEach(pg=>{ if(pg.type===1||pg.type===2) (ser[pg.digit]=ser[pg.digit]||[]).push(pg); });
       const v=(c,i)=>i>=0?String(c[i]==null?'':c[i]):'', T0=i=>i>=0&&cols[i]?cols[i].t:'', suf=((/(TTC|HT)\s*$/.exec(T0(K.i1)||T0(K.i2))||[])[1])||'TTC';
       Object.values(ser).forEach(S=>{ const tous=S.flatMap(pg=>pg.rows), aCom=K.iC>=0&&tous.some(r=>v(r.c,K.iC).trim()), aOuv=K.iO>=0&&tous.some(r=>v(r.c,K.iO).trim()),
-          aLoc=K.iL>=0&&tous.some(r=>v(r.c,K.iL).trim()), aMt=K.h&&tous.some(r=>(v(r.c,K.i4)||v(r.c,K.i3)).trim());
-        /* ESSAI (Paulo, 10.11.2026 : « afficher CFC à 1, 2, 3 et 4 chiffres pour tester ») : en portrait, une colonne de montant par niveau, comme le paysage
-           (« 4 chiffres TTC », « 3 chiffres TTC », « 2 chiffres TTC », « 1 chiffre TTC », 56 pt chacune), au lieu de Montant / Total ; colonne vide dans sa série
-           retirée (récapitulatif : 2 et 1 chiffres). Graisse : 4 chiffres Light, 3 et 2 chiffres Regular, 1 chiffre gras (CFC à 1 chiffre et total). Pour revenir à
-           Montant / Total : DG_P4 = false. */
-        if(DG_P4){ const NIV=K.h?[[K.i4,'4 chiffres'],[K.i3,'3 chiffres'],[K.i2,'2 chiffres'],[K.i1,'1 chiffre']]:[[K.i1,'']];
+          aLoc=K.iL>=0&&tous.some(r=>v(r.c,K.iL).trim());
+        /* « Montants de 1 à 4 chiffres » (Réglages ▸ Affichage, Paulo, 10.11.2026 : « afficher de 1 à 4 chiffres, mais uniquement lorsque l'option est activée ») : une
+           colonne de montant par niveau, comme le paysage (« 4 chiffres TTC », « 3 chiffres TTC », « 2 chiffres TTC », « 1 chiffre TTC », 56 pt chacune) ; colonne vide dans
+           sa série retirée (récapitulatif : 2 et 1 chiffres). Graisse : 4 chiffres Light, 3 et 2 chiffres Regular, 1 chiffre gras (CFC à 1 chiffre et total). */
+        if(niv){ const NIV=K.h?[[K.i4,'4 chiffres'],[K.i3,'3 chiffres'],[K.i2,'2 chiffres'],[K.i1,'1 chiffre']]:[[K.i1,'']];
           const am=NIV.filter(([i])=>i>=0&&tous.some(r=>v(r.c,i).trim()));
-          const fixe=DG_CFC+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+am.length*56+(K.ip>=0?26:0);
-          const cols2=[{t:T0(0)||'CFC',w:DG_CFC,r:false},{t:T0(1)||'Texte',w:DG_WP-fixe,r:false}].concat(aCom?[{t:T0(K.iC),w:84,r:false}]:[],aOuv?[{t:T0(K.iO),w:30,r:false}]:[],aLoc?[{t:T0(K.iL),w:30,r:false}]:[],
-            am.map(([i,l])=>({t:l?l+' '+suf:T0(i),w:56,r:true})),K.ip>=0?[{t:T0(K.ip),w:26,r:true,pct:true}]:[]);
+          /* largeurs (relecture du 10.11.2026) : la colonne Texte vise 120 pt — Commentaire réduite d'abord (jusqu'à 60 pt), puis les colonnes de montant (46 pt),
+             OUV / Localisation (24 pt), [%] (22 pt) ; avant, Commentaire + OUV + Localisation + quatre niveaux laissaient 23 pt, voire une largeur négative */
+          const TMIN=120, nA=am.length; let wc=aCom?84:0, wa=56, wo=30, wp=26;
+          const reste=()=>DG_WP-DG_CFC-wc-(aOuv?wo:0)-(aLoc?wo:0)-nA*wa-(K.ip>=0?wp:0);
+          if(aCom&&reste()<TMIN) wc=Math.max(60,wc-(TMIN-reste()));
+          if(nA&&reste()<TMIN) wa=Math.max(46,wa-(TMIN-reste())/nA);
+          if((aOuv||aLoc)&&reste()<TMIN) wo=Math.max(24,wo-(TMIN-reste())/((aOuv?1:0)+(aLoc?1:0)));
+          if(K.ip>=0&&reste()<TMIN) wp=Math.max(22,wp-(TMIN-reste()));   /* pire cas (Commentaire, OUV, Localisation, quatre niveaux) : Texte 72,96 pt */
+          const cols2=[{t:T0(0)||'CFC',w:DG_CFC,r:false},{t:T0(1)||'Texte',w:reste(),r:false}].concat(aCom?[{t:T0(K.iC),w:wc,r:false}]:[],aOuv?[{t:T0(K.iO),w:wo,r:false}]:[],aLoc?[{t:T0(K.iL),w:wo,r:false}]:[],
+            am.map(([i,l])=>({t:!l?T0(i):meas(l+' '+suf,'',DG_TXT)*1.05<=wa-4?l+' '+suf:l.replace(/ chiffres?$/,' ch.')+' '+suf,w:wa,r:true})),K.ip>=0?[{t:T0(K.ip),w:wp,r:true,pct:true}]:[]);   /* colonne réduite : « 4 ch. TTC » plutôt que « 4 chiffre… » */
           const j0=2+(aCom?1:0)+(aOuv?1:0)+(aLoc?1:0);
           S.forEach(pg=>{ pg.rows=pg.rows.map(r=>{ const c=Array.from(r.c||[]);
               const n=[v(c,0),v(c,1)].concat(aCom?[v(c,K.iC)]:[],aOuv?[v(c,K.iO)]:[],aLoc?[v(c,K.iL)]:[],am.map(([i])=>v(c,i)),K.ip>=0?[v(c,K.ip)]:[]);
@@ -39706,16 +39741,19 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
               if(!det) am.forEach(([i],k)=>{ if(!v(c,i).trim()) return; if(i===K.i1&&K.h){ if(r.s==='O'||r.s==='F'||r.s==='T') cf[j0+k]='b'; } else if(i===K.i3||i===K.i2) cf[j0+k]='r'; });
               return Object.assign({c:n,s:String(r.s||'S')},Object.keys(cf).length?{cf}:{},r.cal?{cal:1}:{},r.q?{q:1}:{}); }); pg.cols=cols2; });
           return; }
-        const fixe=DG_CFC+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+(aMt?56:0)+60+(K.ip>=0?26:0);   /* tableau de x 85.04 à 512.68 (427.64 pt) */
+        /* sans l'option (Paulo, 10.11.2026 : « afficher que la version 1 chiffre TTC et HT et supprimer 3 chiffres et 2 chiffres TTC », choix « deux colonnes HT et
+           TTC ») : « Montant HT » et « Montant TTC », chacune avec le montant de chaque rangée (CFC à 1, 2, 3 et 4 chiffres, lignes de calcul, ouvrages, total), le niveau
+           se lisant à la graisse (CFC à 1 chiffre et total en gras, 2 et 3 chiffres Regular, 4 chiffres et détails Light) ; montant HT de la seconde passe (DG_PASSE_HT, r.h, même
+           colonne d'origine) ; sans elle, « Montant TTC » seule */
+        const NV=K.h?[K.i4,K.i3,K.i2,K.i1]:[K.i1], niv0=c=>{ for(const i of NV) if(i>=0&&v(c,i).trim()) return i; return -1; };
+        const fixe=DG_CFC+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+(aHT?2:1)*DG_WM+(K.ip>=0?26:0);   /* tableau de x 85.04 à 512.68 (427.64 pt) */
         const cols2=[{t:T0(0)||'CFC',w:DG_CFC,r:false},{t:T0(1)||'Texte',w:DG_WP-fixe,r:false}].concat(aCom?[{t:T0(K.iC),w:84,r:false}]:[],aOuv?[{t:T0(K.iO),w:30,r:false}]:[],aLoc?[{t:T0(K.iL),w:30,r:false}]:[],
-          aMt?[{t:'Montant '+suf,w:56,r:true}]:[],[{t:K.h?'Total '+suf:T0(K.i1),w:60,r:true}],K.ip>=0?[{t:T0(K.ip),w:26,r:true,pct:true}]:[]);
-        const jM=2+(aCom?1:0)+(aOuv?1:0)+(aLoc?1:0), jT=jM+(aMt?1:0);
-        S.forEach(pg=>{ pg.rows=pg.rows.map(r=>{ const c=Array.from(r.c||[]), m4=v(c,K.i4), m3=v(c,K.i3), t2=v(c,K.i2), t1=v(c,K.i1);
-            const n=[v(c,0),v(c,1)].concat(aCom?[v(c,K.iC)]:[],aOuv?[v(c,K.iO)]:[],aLoc?[v(c,K.iL)]:[],aMt?[m4||m3]:[],[K.h?(t2||t1):t1],K.ip>=0?[v(c,K.ip)]:[]);
-            /* niveau lisible à la graisse (relecture : un sous-total et ses sous-positions se suivaient dans la même colonne) : Montant — position à 4 chiffres Light,
-               sous-total à 3 chiffres Regular ; Total — CFC à 2 chiffres Regular, CFC à 1 chiffre gras */
+          aHT?[{t:'Montant HT',w:DG_WM,r:true}]:[],[{t:'Montant TTC',w:DG_WM,r:true}],K.ip>=0?[{t:T0(K.ip),w:26,r:true,pct:true}]:[]);
+        const jH=2+(aCom?1:0)+(aOuv?1:0)+(aLoc?1:0), jT=jH+(aHT?1:0);
+        S.forEach(pg=>{ pg.rows=pg.rows.map(r=>{ const c=Array.from(r.c||[]), i=niv0(c), mT=i>=0?v(c,i):'', mH=i>=0&&Array.isArray(r.h)?v(r.h,i):'';
+            const n=[v(c,0),v(c,1)].concat(aCom?[v(c,K.iC)]:[],aOuv?[v(c,K.iO)]:[],aLoc?[v(c,K.iL)]:[],aHT?[mH]:[],[mT],K.ip>=0?[v(c,K.ip)]:[]);
             const cf={}, det=r.s==='D'||r.s==='X';   /* lignes de calcul et descriptif : Light gris, quelle que soit leur colonne */
-            if(!det){ if(aMt&&!m4.trim()&&m3.trim()) cf[jM]='r'; if(K.h&&t2.trim()) cf[jT]='r'; else if(t1.trim()&&(r.s==='O'||r.s==='F'||r.s==='T')) cf[jT]='b'; }
+            if(!det&&i>=0){ const g=(i===K.i1&&(r.s==='O'||r.s==='F'||r.s==='T'))?'b':(K.h&&(i===K.i3||i===K.i2))?'r':''; if(g){ if(aHT) cf[jH]=g; cf[jT]=g; } }
             return Object.assign({c:n,s:String(r.s||'S')},Object.keys(cf).length?{cf}:{},r.cal?{cal:1}:{},r.q?{q:1}:{}); }); pg.cols=cols2; }); }); }
     /* récapitulatifs en paysage (Paulo, 10.11.2026 : « afficher uniquement CFC 1 et CFC 2 chiffres ») : colonnes de montant vides dans la série retirées, comme en
        portrait — récapitulatif à 2 chiffres : « à 2 chiffres » et « à 1 chiffre » ; à 1 chiffre : « à 1 chiffre » —, leur largeur rendue à la colonne Texte */
@@ -39795,10 +39833,10 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
 /* « Réglages » du devis général : les cases du menu de la ligne (mêmes libellés que le moteur) sur les options du livret de l'ancien logiciel (ch02b, libellés identiques dans sa
    fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
-const DG_P4=true;   /* ESSAI du 10.11.2026 : portrait à quatre colonnes de montants (voir dgOctets) ; false = Montant / Total */
+const DG_WM=62;   /* portrait : largeur des colonnes « Montant HT » et « Montant TTC », comme la colonne « Montant HT » du document Honoraires — « 99'999'999.99 » en gras 54,6 pt, « (99'999'999.99) » et « -99'999'999.99 » ~58 pt, et un écart lisible entre les deux colonnes alignées à droite ; au-delà, corps réduit au dessin (contenuLivret), jamais « … » */
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['dispalyEmptyPositions','Afficher les positions sans montant'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],['displayDescription','Descriptif'],['compactDescription','Assembler les descriptifs des ouvrages','sub'],'-',   /* Positions, puis Affichage (ordre du panneau, Paulo, 10.11.2026) */   /* récapitulatif à 2 chiffres (includeKvTwoDigit, DG_PRESET : oui) — Paulo, 10.11.2026 : « dans Positions ajouter récapitulatif CFC à 2 chiffres » */   /* récapitulatif à 1 chiffre du livret (includeKvOneDigit, DG_PRESET : non) — Paulo, 10.11.2026 : « dans Positions ajoute une option CFC 1 chiffre » */   /* « Afficher les positions saisies et les totalisateurs » regroupé ici (Paulo, 08.11.2026) : toujours actif */
-  ['sgChiffres','Volume SIA 416 et prix au m³'],['includeKvTwoDigit','Récapitulatif CFC à 2 chiffres'],['commentInColumn','Commentaire dans colonne séparée'],   /* Volume… sous « Pourcentages sur le total général » (Paulo, 10.11.2026) */'-',   /* chiffres clés des récapitulatifs (Paulo, 10.11.2026 : « ajouter une option dans Affichage pour afficher VB et prix / m³ ») ; DG_PRESET : oui */   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */   /* « Tous les montants détaillés » fusionné dans « Afficher les montants », placé sous « Commentaire du calcul » (Paulo, 08.11.2026) */
+  ['sgChiffres','Volume SIA 416 et prix au m³'],['includeKvTwoDigit','Récapitulatif CFC à 2 chiffres'],['sgNiveaux','Montants de 1 à 4 chiffres'],['commentInColumn','Commentaire dans colonne séparée'],   /* portrait : colonnes de 1 à 4 chiffres au lieu de Montant HT / TTC (Paulo, 10.11.2026 : « ajoute cette option dans affichage ») ; non cochée par défaut */   /* Volume… sous « Pourcentages sur le total général » (Paulo, 10.11.2026) */'-',   /* chiffres clés des récapitulatifs (Paulo, 10.11.2026 : « ajouter une option dans Affichage pour afficher VB et prix / m³ ») ; DG_PRESET : oui */   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */   /* « Tous les montants détaillés » fusionné dans « Afficher les montants », placé sous « Commentaire du calcul » (Paulo, 08.11.2026) */
   ['dispalyCalcualtion','Afficher le calcul'],['displayDetailComment','Commentaire du calcul'],['displayDetailValues','Afficher les montants'],['displayQuanPriceValue','Quantités et prix'],
   ['displayDetailOptions','Variantes'],['displayPriceBase','Bases de prix'],'-',['dispalyAfterComma','Masquer les décimales'],['dispalyRound10','Arrondir à 10'],['dispalyRound100','Arrondir à 100'],
   ['dispalyRound1000','Arrondir à 1000']];
@@ -39858,7 +39896,7 @@ function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
   const absent=k=>(!aCalc&&(k==='dispalyCalcualtion'||k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues'))||(!aVar&&k==='displayDetailOptions')||(!aVol&&k==='sgChiffres');
   const dis=k=>absent(k)||(k==='sgChiffres'&&!aRec)||((k==='displayQuanPriceValue'||k==='displayDetailComment'||k==='displayDetailValues')&&!o.dispalyCalcualtion)||(k==='displayDetailValues'&&!o.displayDetailComment);   /* « Afficher les montants » grisée sans « Commentaire du calcul » (Paulo, 10.11.2026) */   /* sans « Afficher le calcul », ses deux cases sont grisées (Paulo, 08.11.2026) */   /* « Afficher le calcul » toujours cliquable : il commande ses deux cases (08.11.2026) */
   const pt=dgPortrait(X.E);
-  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul',ind:true}:m[0]==='sgChiffres'?{grp:'Affichage',rang:-0.5}:m[0]==='includeKvTwoDigit'?{grp:'Affichage'}:{})));   /* « Récapitulatif CFC à 2 chiffres » en tête d'Affichage (Paulo, 10.11.2026) */
+  const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul',ind:true}:m[0]==='sgChiffres'?{grp:'Affichage',rang:-0.5}:m[0]==='includeKvTwoDigit'?{grp:'Affichage'}:m[0]==='sgNiveaux'?Object.assign({grp:'Affichage',rang:5.5},pt?{}:{chk:true,dis:true}):{})));   /* « Montants de 1 à 4 chiffres » : portrait seulement ; en paysage toujours de 1 à 4 chiffres (cochée, grisée) */   /* « Récapitulatif CFC à 2 chiffres » en tête d'Affichage (Paulo, 10.11.2026) */
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   /* « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 : « déplacer ») — panneau et menu de la ligne */
   { const it={t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total'),grp:'Affichage',rang:-1}, k=(i=>i>=0?i:L.findIndex(x=>x&&x.t==='Récapitulatif CFC à 2 chiffres'))(L.findIndex(x=>x&&x.t==='Volume SIA 416 et prix au m³'));   /* en tête d'Affichage, avant « Volume SIA 416 et prix au m³ » (Paulo, 10.11.2026) */

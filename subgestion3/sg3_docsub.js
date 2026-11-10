@@ -1569,14 +1569,14 @@ async function sgDsPdf(R, rep, o){
        l'ancienne page de garde du devis général), à y 610 (plus bas si les rubriques l'exigent).
        Paysage (Paulo, 10.11.2026 : « glisser le bloc en dessous », « ne pas passer sous le logo », croquis, puis « déplacer dessous, ligne inférieure alignée sur la ligne y
        alignée au logo ») : deux rangées sur la largeur du bloc (x 124.4 → 485.5), le maître de l'ouvrage puis l'architecte DESSOUS ; dans chaque rangée « Lieu, date »
-       (40 %) et « Signature » côte à côte sur un même filet ; la dernière ligne (légendes « Lieu, date » / « Signature » de l'architecte) a sa ligne de base sur le bas du
-       logo (`LIM`, encre du logo paysage à 85.9 pt du bas) ; ECART entre les deux rangées ; filet d'écriture à +56 sous le libellé, moins (30 au plus bas) si la
+       (40 %) et « Signature » côte à côte sur un même filet ; les filets « Lieu, date » / « Signature » de l'architecte alignés sur le bas du logo (bas du filet = `LIM`,
+       encre du logo paysage à 85.9 pt du bas ; Paulo : « aligner les lignes de date et signature au logo » — légendes dessous) ; ECART entre les deux rangées ; filet d'écriture à +56 sous le libellé, moins (30 au plus bas) si la
        place manque sous les rubriques (rangée du haut jamais à moins de ECART sous la dernière ligne des rubriques). */
     const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[X0, X1], [X0, X1]] : [[X0, 296], [312, X1]];
     const LIM = H - (PAYS ? 85.9 : 83.5);   /* bas du logo vertical (paysage : encre ; portrait : LOGO_BB) */
     const yHaut = yr - 10 + ECART, nR = Math.max(1, SG.length);
-    const sP = PAYS ? Math.max(30, Math.min(56, (LIM - yHaut - nR * 9 - (nR - 1) * ECART) / nR)) : 0;
-    const YS = PAYS ? SG.map((_, i) => LIM - 9 - sP - (nR - 1 - i) * (sP + 9 + ECART)) : SG.map(() => Math.max(610, yr + 30));
+    const sP = PAYS ? Math.max(30, Math.min(56, (LIM - 0.5 - yHaut - (nR - 1) * (9 + ECART)) / nR)) : 0;
+    const YS = PAYS ? SG.map((_, i) => LIM - 0.5 - sP - (nR - 1 - i) * (sP + 9 + ECART)) : SG.map(() => Math.max(610, yr + 30));
     if(SG.length && !PAYS && YS[0] > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');
     if(SG.length && PAYS && YS[0] < yHaut - 0.01) alerte('Page de garde : signatures trop près des rubriques (place insuffisante au-dessus du bas du logo)');
     if(SG.length && !PAYS && YS[0] + 135 > LIM) alerte('Page de garde : signatures plus bas que le logo');

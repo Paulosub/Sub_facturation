@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 08:06 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 08:08 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33641,8 +33641,13 @@ async function sgDsPdf(R, rep, o){
     if(G.statut){ const st = P(G.statut), ws = cx.texte(st, X1, T(114), { police:F.bold, taille:8, couleur:ROUGEc, align:'d' }) || cx.largeur(st, F.bold, 8);
       cx.rect(X1 - ws - 4 - 5, T(114), 5, 5, { fond:ROUGEc }); }
     const num = String(G.num || '').trim(), tit = String(G.titre || '').trim();
-    let z = 30, lh = 33, TL = tit ? cx.couper(P(tit), F.bold, 30, 340) : [];
-    if((num ? 1 : 0) + TL.length > 4){ z = 24; lh = 26; TL = cx.couper(P(tit), F.bold, 24, 340); }
+    /* précision du devis (G.marge, « ±10% ») : sur la dernière ligne du titre, alignée à droite sur le bord des filets, Light au corps du titre (Paulo, 10.11.2026) ;
+       le titre se coupe alors avant elle (12 pt d'écart au moins) ; sans titre : reste dans la ligne d'information */
+    const MG = tit && String(G.marge || '').trim() ? P(String(G.marge).trim()) : '';
+    if(!tit && String(G.marge || '').trim()) G = Object.assign({}, G, { info:[G.info, cx.maj(P('Précision ' + String(G.marge).trim()))].filter(Boolean).join(' – ') });
+    const wTit = (zz) => MG ? Math.min(340, X1 - X0 - cx.largeur(MG, F.light, zz) - 12) : 340;
+    let z = 30, lh = 33, TL = tit ? cx.couper(P(tit), F.bold, 30, wTit(30)) : [];
+    if((num ? 1 : 0) + TL.length > 4){ z = 24; lh = 26; TL = cx.couper(P(tit), F.bold, 24, wTit(24)); }
     const LT = (num ? [{ t:P(num), f:F.light }] : []).concat(TL.map(t => ({ t, f:F.bold })));
     const zL = (l) => Math.min(z, z * (X1 - X0) / Math.max(1, cx.largeur(l.t, l.f, z)));   /* numéro plus large que la page : corps réduit */
     /* même espace entre le filet de tête et le haut du numéro qu'entre le pied du titre et le haut de la désignation (Paulo, 10.11.2026 : « même espace pour les deux,
@@ -33650,6 +33655,7 @@ async function sgDsPdf(R, rep, o){
     const HC = 0.723, ECART = 28 - HC * 10;
     let y = LT.length ? 101 + ECART + HC * zL(LT[0]) : 160; LT.forEach((l, i) => { if(i) y += lh;
       cx.texte(l.t, X0, T(y), { police:l.f, taille:zL(l), couleur:C.N }); });
+    if(MG && TL.length) cx.texte(MG, X1, T(y), { police:F.light, taille:z, couleur:C.N, align:'d' });
     let yb = LT.length ? y : 114, k = 0; const y1 = LT.length ? y + 28 : 140;
     (G.sous ? equi(P(G.sous), F.regular, 10, 300) : []).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10 }); });
     if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:C.N }); });
@@ -39426,9 +39432,11 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* page de garde = celle du devis descriptif, variante 3 « Grand titre éditorial » (Paulo, 08.11.2026 : « applique à l'ensemble de l'app la mise en page du descriptif »,
        « première page uniquement pour le devis et le descriptif ») : état (PROVISOIRE / ANNULÉ), numéro de l'affaire, titre de garde (« Devis général »), désignation, ligne
        d'information (phase du devis – précision), filtre, rubriques (deGardeRub), signatures ; portrait ou paysage selon le format choisi (gardeEdito de sg3_docsub.js) */
-    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim(), info=[etatOk?etat:'',mg?(/^pr[ée]cision/i.test(mg)?mg:'Précision '+mg):''].filter(Boolean).join(' – ');   /* « Précision » ajouté seulement s'il manque */
+    /* précision (« ±10% ») sortie de la ligne d'information : sur la ligne du titre, alignée à droite (Paulo, 10.11.2026 : « déplacer ±10% devant devis général en
+       alignant à droite ») ; le mot « Précision » éventuellement saisi est retiré */
+    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim().replace(/^pr[ée]cision\s*:?\s*/i,'').trim(), info=etatOk?etat:'';
     const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
-      sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
+      sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),marge:mg,filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
        texte vides à sa droite (comme le dessin, livretDG.deborde) ; s'il ne tient toujours pas, il passe à la ligne sur des rangées de suite (k:1, même style, sans
        filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */

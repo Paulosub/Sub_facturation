@@ -1312,9 +1312,11 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
     /* page de garde = celle du devis descriptif, variante 3 « Grand titre éditorial » (Paulo, 08.11.2026 : « applique à l'ensemble de l'app la mise en page du descriptif »,
        « première page uniquement pour le devis et le descriptif ») : état (PROVISOIRE / ANNULÉ), numéro de l'affaire, titre de garde (« Devis général »), désignation, ligne
        d'information (phase du devis – précision), filtre, rubriques (deGardeRub), signatures ; portrait ou paysage selon le format choisi (gardeEdito de sg3_docsub.js) */
-    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim(), info=[etatOk?etat:'',mg?(/^pr[ée]cision/i.test(mg)?mg:'Précision '+mg):''].filter(Boolean).join(' – ');   /* « Précision » ajouté seulement s'il manque */
+    /* précision (« ±10% ») sortie de la ligne d'information : sur la ligne du titre, alignée à droite (Paulo, 10.11.2026 : « déplacer ±10% devant devis général en
+       alignant à droite ») ; le mot « Précision » éventuellement saisi est retiré */
+    const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim().replace(/^pr[ée]cision\s*:?\s*/i,'').trim(), info=etatOk?etat:'';
     const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
-      sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
+      sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),marge:mg,filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
        texte vides à sa droite (comme le dessin, livretDG.deborde) ; s'il ne tient toujours pas, il passe à la ligne sur des rangées de suite (k:1, même style, sans
        filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */

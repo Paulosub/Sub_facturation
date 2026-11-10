@@ -1699,7 +1699,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   267 pt) ; signatures inchangées en portrait (y 610, plus bas si besoin), en paysage toujours à la hauteur du premier filet des rubriques. Puis (« supprimer ») :
   plus de filet gris au-dessus de la première rubrique ni sous la dernière, filets seulement entre les rubriques ; puis (« espace x ») : du bas du filet du titre
   au haut du texte de la première rubrique = `ECART` (`yR0 = yN + 0,75 + ECART + HC × 9 − 16`, 1re ligne de base à 273,5 pt sur 99TST) — trois espaces égaux de
-  20,77 pt : filet de tête → numéro, titre → désignation, filet du titre → rubriques. Vaut pour le devis
+  20,77 pt : filet de tête → numéro, titre → désignation, filet du titre → rubriques. Puis (« déplacer ±10% devant devis général en alignant à droite ») :
+  devis général — précision (`couverture.marge`, marge d'approximation sans le mot « Précision ») sur la dernière ligne du titre, alignée à droite sur le bord des
+  filets (x 485.5 en portrait), Akkurat Light au corps du titre ; le titre se coupe avant elle (12 pt d'écart) ; la ligne d'information ne garde que la phase ; sans
+  titre, la précision reste dans la ligne d'information. Vaut pour le devis
   général et le devis descriptif (même fonction).
   **Base de toutes les mises en page du devis général = celle de 99TST (09.11.2026, Paulo : « cette mise en page devient la base de toutes les mises en page de
   devis »)** : `DG_BASE` (sg3_devis.js) — format **portrait par défaut** (`dgPortrait` : paysage seulement si choisi ; avant, paysage par défaut), descriptif, calcul

@@ -1528,8 +1528,13 @@ async function sgDsPdf(R, rep, o){
     if(G.statut){ const st = P(G.statut), ws = cx.texte(st, X1, T(114), { police:F.bold, taille:8, couleur:ROUGEc, align:'d' }) || cx.largeur(st, F.bold, 8);
       cx.rect(X1 - ws - 4 - 5, T(114), 5, 5, { fond:ROUGEc }); }
     const num = String(G.num || '').trim(), tit = String(G.titre || '').trim();
-    let z = 30, lh = 33, TL = tit ? cx.couper(P(tit), F.bold, 30, 340) : [];
-    if((num ? 1 : 0) + TL.length > 4){ z = 24; lh = 26; TL = cx.couper(P(tit), F.bold, 24, 340); }
+    /* précision du devis (G.marge, « ±10% ») : sur la dernière ligne du titre, alignée à droite sur le bord des filets, Light au corps du titre (Paulo, 10.11.2026) ;
+       le titre se coupe alors avant elle (12 pt d'écart au moins) ; sans titre : reste dans la ligne d'information */
+    const MG = tit && String(G.marge || '').trim() ? P(String(G.marge).trim()) : '';
+    if(!tit && String(G.marge || '').trim()) G = Object.assign({}, G, { info:[G.info, cx.maj(P('Précision ' + String(G.marge).trim()))].filter(Boolean).join(' – ') });
+    const wTit = (zz) => MG ? Math.min(340, X1 - X0 - cx.largeur(MG, F.light, zz) - 12) : 340;
+    let z = 30, lh = 33, TL = tit ? cx.couper(P(tit), F.bold, 30, wTit(30)) : [];
+    if((num ? 1 : 0) + TL.length > 4){ z = 24; lh = 26; TL = cx.couper(P(tit), F.bold, 24, wTit(24)); }
     const LT = (num ? [{ t:P(num), f:F.light }] : []).concat(TL.map(t => ({ t, f:F.bold })));
     const zL = (l) => Math.min(z, z * (X1 - X0) / Math.max(1, cx.largeur(l.t, l.f, z)));   /* numéro plus large que la page : corps réduit */
     /* même espace entre le filet de tête et le haut du numéro qu'entre le pied du titre et le haut de la désignation (Paulo, 10.11.2026 : « même espace pour les deux,
@@ -1537,6 +1542,7 @@ async function sgDsPdf(R, rep, o){
     const HC = 0.723, ECART = 28 - HC * 10;
     let y = LT.length ? 101 + ECART + HC * zL(LT[0]) : 160; LT.forEach((l, i) => { if(i) y += lh;
       cx.texte(l.t, X0, T(y), { police:l.f, taille:zL(l), couleur:C.N }); });
+    if(MG && TL.length) cx.texte(MG, X1, T(y), { police:F.light, taille:z, couleur:C.N, align:'d' });
     let yb = LT.length ? y : 114, k = 0; const y1 = LT.length ? y + 28 : 140;
     (G.sous ? equi(P(G.sous), F.regular, 10, 300) : []).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10 }); });
     if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:C.N }); });

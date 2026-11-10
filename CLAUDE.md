@@ -1818,9 +1818,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   visualisation ; VB, etc. uniquement visible dans le récapitulatif CFC 1 chiffre »)** : case « Récapitulatif CFC à 1 chiffre » retirée, récapitulatif à 1 chiffre
   toujours imprimé (`dgOptions` : `includeKvOneDigit` toujours vrai) ; « Récapitulatif CFC à 2 chiffres » décochée par défaut (`DG_PRESET` ; un devis où elle a été
   cochée la garde) ; volume et prix au m³ sur le seul récapitulatif à 1 chiffre.
-  Ordre des Réglages (même jour, annotations de Paulo) : Positions = Seulement positions de 1 à 3 chiffres (en tête, avant Descriptif : `VUE_ORDRE`), Descriptif,
-  Pourcentages sur le total général ; Affichage = Afficher les positions sans montant, Récapitulatif CFC à 2 chiffres (`grp:'Affichage'`), Commentaire dans colonne
-  séparée, Volume SIA 416 et prix au m³ ; même ordre dans le menu Réglages de la ligne (`DG_MENU`, « Pourcentages… » inséré après Descriptif / Assembler…).
+  Ordre des Réglages (même jour, annotations de Paulo) : Positions = Afficher les positions sans montant (en tête ; essayée un moment en tête d'Affichage), Seulement
+  positions de 1 à 3 chiffres, Descriptif (`VUE_ORDRE`), Pourcentages sur le total général ; Affichage = Récapitulatif CFC à 2 chiffres (`grp:'Affichage'`),
+  Commentaire dans colonne séparée, Volume SIA 416 et prix au m³ ; même ordre dans le menu Réglages de la ligne (`DG_MENU`, « Pourcentages… » inséré après Descriptif / Assembler…).
   **Récapitulatifs (10.11.2026, Paulo : « ajouter un titre récapitulatif », « afficher uniquement CFC 1 et CFC 2 chiffres »)** : titre « RÉCAPITULATIF » en
   Akkurat Bold blanc DANS la bande bleu nuit des titres des colonnes, à la place de « Texte » (variante 2 choisie par Paulo parmi 5 — maquettes
   `subgestion3/_backup_20261110_maquette_recap/` : 1 comme « Information », 2 dans la bande, 3 double bande, 4 onglet, 5 grand titre ; essais d'avant le même jour :

@@ -71,10 +71,10 @@ const mesure=()=>MES||(MES=(async()=>{ const {w,R}=await SGDS.ressources(); cons
   return {larg,couper}; })().catch(e=>{ MES=null; throw e; }));
 /* texte jamais coupé : une cellule de texte trop large déborde sur les colonnes de texte vides à sa droite, sinon passe à la ligne (rangées de suite k:1) */
 const etaler=(rows,cols,M)=>{ const out=[]; rows.forEach(r=>{ const c=r.c||[], b=r.s==='O'||r.s==='W'||r.s==='T';
-    const place=j=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&!cols[k].r&&+cols[k].w&&!sv(c[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };
+    const place=j=>{ let wd=(+cols[j].w||0)-4; for(let k=j+1;k<cols.length&&cols[k]&&(!cols[k].r||r.debR)&&+cols[k].w&&!sv(c[k]).trim();k++) wd+=+cols[k].w; return wd-1.5; };   /* r.debR : aussi sur les colonnes de montants vides */
     const L=c.map((x,j)=>{ const col=cols[j]; if(!col||col.r||!(+col.w)||!sv(x).trim()) return [x]; return sv(x).split('\n').flatMap(pp=>pp.trim()?M.couper(pp,b,place(j)-(r.cal&&j===1?7:0)):['']); });   /* lignes voulues (adresses « 2 lignes », « Complète ») gardées */
     const n=Math.max(1,...L.map(x=>x.length));
-    for(let i=0;i<n;i++){ const ci=L.map(x=>x[i]==null?'':x[i]); out.push(i===0?Object.assign({},r,{c:ci}):Object.assign({c:ci,s:r.s,k:1},r.cal?{cal:1}:{},r.ital?{ital:1}:{},r.filet?{filet:1}:{},r.cc?{cc:r.cc}:{})); } });
+    for(let i=0;i<n;i++){ const ci=L.map(x=>x[i]==null?'':x[i]); out.push(i===0?Object.assign({},r,{c:ci}):Object.assign({c:ci,s:r.s,k:1},r.cal?{cal:1}:{},r.ital?{ital:1}:{},r.filet?{filet:1}:{},r.cc?{cc:r.cc}:{},r.debR?{debR:1}:{})); } });
   return out; };
 /* pages : cap rangées par page, coupure de préférence avant une position (rangée de tête), pages complétées (rangées E) ; récapitulatif aligné en bas sur le logo */
 const paginer=(rows,cols,cap,titre,digit,o2)=>{ const P=[]; let i=0; o2=o2||{}; const SB=o2.sauts||null, cle=r=>sv((r.c||[])[0]).trim();
@@ -168,7 +168,7 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
   const ori=S.format==='portrait'&&nv<=5?'portrait':'paysage', G=largeurs(ori,nv,nv>8?52:62);
   /* colonne Entreprise (exemple 23COL) : en paysage, si la place le permet (désignation ≥ 104 pt, entreprise ≥ 90 pt) ; sinon l'entreprise passe dans la désignation */
   let aEnt=S.ent&&ori==='paysage', wv=G.wv, dw=G.tw, ew=0;
-  if(aEnt){ const base=G.W-DG_CFC; wv=Math.max(40,Math.min(62,(base-230)/nv)); const reste=base-nv*wv; if(reste<190) aEnt=false; else { dw=Math.max(96,reste*0.48); ew=reste-dw; } }   /* entreprise et écritures sur une ligne le plus souvent (montants en corps à peine réduit si besoin) */
+  if(aEnt){ const base=G.W-DG_CFC; wv=Math.max(40,Math.min(62,(base-230)/nv)); const reste=base-nv*wv; if(reste<190) aEnt=false; else { ew=Math.max(84,reste*0.43); dw=reste-ew; } }   /* colonne Entreprise réduite au profit de la désignation (Paulo, 10.11.2026 : « réduire la largeur de la colonne entreprise ») */   /* entreprise et écritures sur une ligne le plus souvent (montants en corps à peine réduit si besoin) */
   const TA=titresAjustes(flex.map((x,i)=>titres[i]||x.t),wv-4,M);   /* « Transferts TTC » → « Transferts » quand tous les montants sont TTC (dit dans le titre de la désignation) */
   const vcols=flex.map((x,i)=>({t:TA.T[i],w:wv,r:true,pct:!!(CC_COL[x.id]&&CC_COL[x.id].pct)}));
   const tD=!TA.ttc?'Désignation':M.larg('Désignation · montants TTC',true)<=dw-6?'Désignation · montants TTC':'Désignation · TTC';   /* colonne étroite : titre court */
@@ -191,7 +191,7 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
      par type »), en italique, sans trait vertical, ligne claire dessous, sans le signe « > » de l'ancien logiciel ; total */
   const max=S.niv==='tout'?99:+S.niv, ov=[]; let blk=null;
   const ecriture=(r,k)=>{ const enEnt=aEnt&&(k==='ctr'||k==='pay'), txt=sv((r.c||[])[2]).replace(/^\s*[^\p{L}\p{N}(«"'’]+\s*/u,'');
-    const x=enEnt?ligneD('','',r.f,'D',txt):ligneD('',txt,r.f,'D',''), col=COUL_ECR[k]||null, jt=enEnt?2:1; x.ital=1; x.filet=1;
+    const x=enEnt?ligneD('','',r.f,'D',txt):ligneD('',txt,r.f,'D',''), col=COUL_ECR[k]||null, jt=enEnt?2:1; x.ital=1; x.filet=1; x.debR=1;   /* écriture : déborde sur les montants vides à sa droite plutôt que de passer à la ligne (colonne Entreprise étroite) */
     if(col){ x.cc={}; x.c.forEach((v,j)=>{ if(j===jt||(j>=j0D&&sv(v).trim())) x.cc[j]=col; }); } return x; };
   const vider=()=>{ if(!blk) return; const G2=blk.groupes;
     if(aEnt&&G2.length===1&&G2[0].row){ blk.pos.c[2]=G2[0].row.c[2]; G2[0].row=null; }   /* une seule entreprise : sur la ligne de la position (exemple 23COL) */
@@ -204,7 +204,8 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
     if(r.st==='cd'){ if(!S.det) return; const k=kindDe(r.f), x=ecriture(r,k); if(k==='ctr'||k==='pay'){ const g=blk.groupes[blk.groupes.length-1]; if(g){ g.det.push(x); return; } } blk.libres.push(x); return; }
     /* entreprise */
     const nom=aEnt?sv(c[2]).replace(/,\s*[^,]+$/,''):sv(c[2]);   /* colonne Entreprise : le nom sans la localité (exemple 23COL) */
-    blk.groupes.push({row:S.ent?(aEnt?ligneD('','',r.f,'S',nom):ligneD('',nom,r.f,'S','')):null,det:[]}); });
+    const er=S.ent?(aEnt?ligneD('','',r.f,'S',nom):ligneD('',nom,r.f,'S','')):null; if(er) er.debR=1;
+    blk.groupes.push({row:er,det:[]}); });
   vider();
   const pages=[];
   if(S.centres){ const cen=((T.costcontrolTotalTable||{}).rows||[]), Wc=G.W-DG_CFC, wc=Math.min(96,(Wc-170)/3);

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 12:45 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 12:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -39712,8 +39712,8 @@ function dgPrefItems(X){ const o=dgOptions(X), sub=ch02bHasSub(X.E||{});
   const L=[{t:'Format : Paysage',chk:!pt,fn:()=>dgBasculer(X,'*paysage')},{t:'Format : Portrait',chk:pt,fn:()=>dgBasculer(X,'*portrait')},'-'].concat(DG_MENU.filter(m=>m==='-'||sub||m[2]!=='sub').map(m=>m==='-'?m:Object.assign({t:m[1],chk:!absent(m[0])&&!!o[m[0]],dis:dis(m[0]),fn:()=>dgBasculer(X,m[0])},m[0]==='displayDetailValues'?{grp:'Calcul',ind:true}:m[0]==='sgChiffres'||m[0]==='includeKvTwoDigit'?{grp:'Affichage'}:{})));   /* « Récapitulatif CFC à 2 chiffres » en tête d'Affichage (Paulo, 10.11.2026) */
   const E=X.E||{}, P=E.presentations||[], sel=dgPresSel(E);
   /* « Pourcentages sur le total général » dans le groupe Positions, après « Afficher les positions sans montant » (Paulo, 08.11.2026 : « déplacer ») — panneau et menu de la ligne */
-  { const it={t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total'),grp:'Positions'}, k=(i=>i>=0?i:L.findIndex(x=>x&&x.t==='Descriptif'))(L.findIndex(x=>x&&x.t==='Assembler les descriptifs des ouvrages'));   /* après Descriptif (et Assembler…), dans Positions */
-    if(k>=0) L.splice(k+1,0,it); else L.push('-',it); }
+  { const it={t:'Pourcentages sur le total général',chk:(E.reglages||{}).pourcentageSur==='total',fn:()=>dgBasculer(X,'*total'),grp:'Affichage',rang:-1}, k=L.findIndex(x=>x&&x.t==='Récapitulatif CFC à 2 chiffres');   /* en tête d'Affichage, avant « Récapitulatif CFC à 2 chiffres » (Paulo, 10.11.2026) */
+    if(k>=0) L.splice(k,0,it); else L.push('-',it); }
   if(P.length) L.push('-',...(P.length>1?P.map((q,i)=>({t:'Sauts de page : '+(q.nom||'présentation sans nom'),chk:!sel.aucune&&sel.pres===q,fn:()=>dgBasculer(X,'pres:'+i)})):[]),{t:'Sans sauts de page',chk:sel.aucune,fn:()=>dgBasculer(X,'*sans'),bascule:true},
     (()=>{ const q=sel.pres, n=q?(q.sautsDePage||[]).length:0; return {t:'Remettre à zéro les sauts de page',raz:true,dis:!n,ti:n?n+' saut'+(n>1?'s':'')+' de page dans la présentation « '+(q.nom||'sans nom')+' »':'Aucun saut de page',fn:apres=>dgSautsRaz(X,apres)}; })());
   return L.filter((x,i,a)=>!(x==='-'&&(i===0||a[i-1]==='-'))); }

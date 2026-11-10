@@ -1501,8 +1501,8 @@ async function sgDsPdf(R, rep, o){
   /* ── page de garde « Grand titre éditorial » (variante 3, choisie par Paulo le 08.11.2026 pour le devis descriptif ; puis « première page uniquement pour le devis et
      le descriptif » : aussi le devis général) — dessinée sur la page courante. G = { statut, num, titre, sous, info, filtre, rub:[{ lib, nom, adr }], sig:[libellés] }.
      Filet noir de 1 pt en tête ; à droite, l'état en rouge précédé d'un carré (« PROVISOIRE » / « ANNULÉ », rien une fois le devis validé) ; numéro de l'affaire en Light 30
-     bleu nuit puis titre en Bold 30 bleu nuit (24 pt au-delà de 4 lignes) ; désignation en capitales (Regular 10, lignes équilibrées), ligne d'information (phase, précision :
-     Regular 10 bleu nuit) et filtre éventuel (Light 8 gris) ; filet bleu nuit ; rubriques en tableau à filets gris (libellé en capitales à la marge, nom en Regular 9 et
+     noir puis titre en Bold 30 noir (24 pt au-delà de 4 lignes) ; désignation en capitales (Regular 10, lignes équilibrées), ligne d'information (phase, précision :
+     Regular 10 noir) et filtre éventuel (Light 8 gris) ; filet noir 0,75 (bleu nuit jusqu'au 10.11.2026) ; rubriques en tableau à filets gris (libellé en capitales à la marge, nom en Regular 9 et
      adresse en Light 9 à x 222.98 = 3e colonne du pied, rubrique vide omise, rien n'est coupé) ; signatures. Portrait : marges de l'ancienne page de garde du devis général
      (x 124.4 → 485.5, Paulo : « alignement », « marges »), signatures en bas (y 610, plus bas si les rubriques l'exigent). Paysage (devis général) : même grille, contenu
      jusqu'à x 732.1 (barre du numéro de page − 25 pt, comme en portrait), rubriques à gauche (jusqu'à x 464.4) et signatures à droite, à la hauteur des rubriques. ── */
@@ -1531,13 +1531,17 @@ async function sgDsPdf(R, rep, o){
     let z = 30, lh = 33, TL = tit ? cx.couper(P(tit), F.bold, 30, 340) : [];
     if((num ? 1 : 0) + TL.length > 4){ z = 24; lh = 26; TL = cx.couper(P(tit), F.bold, 24, 340); }
     const LT = (num ? [{ t:P(num), f:F.light }] : []).concat(TL.map(t => ({ t, f:F.bold })));
-    let y = 160; LT.forEach((l, i) => { if(i) y += lh; const zl = Math.min(z, z * (X1 - X0) / Math.max(1, cx.largeur(l.t, l.f, z)));   /* numéro plus large que la page : corps réduit */
-      cx.texte(l.t, X0, T(y), { police:l.f, taille:zl, couleur:NUITc }); });
+    const zL = (l) => Math.min(z, z * (X1 - X0) / Math.max(1, cx.largeur(l.t, l.f, z)));   /* numéro plus large que la page : corps réduit */
+    /* même espace entre le filet de tête et le haut du numéro qu'entre le pied du titre et le haut de la désignation (Paulo, 10.11.2026 : « même espace pour les deux,
+       copie l'espace en bas en haut ») : capitales et chiffres d'Akkurat hauts de 0,723 corps (mesuré), désignation à la ligne de base du titre + 28 en corps 10 */
+    const HC = 0.723, ECART = 28 - HC * 10;
+    let y = LT.length ? 101 + ECART + HC * zL(LT[0]) : 160; LT.forEach((l, i) => { if(i) y += lh;
+      cx.texte(l.t, X0, T(y), { police:l.f, taille:zL(l), couleur:C.N }); });
     let yb = LT.length ? y : 114, k = 0; const y1 = LT.length ? y + 28 : 140;
     (G.sous ? equi(P(G.sous), F.regular, 10, 300) : []).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10 }); });
-    if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:NUITc }); });
+    if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:C.N }); });
     if(G.filtre) cx.couper(P(G.filtre), F.light, 8, X1 - X0).forEach(l => { yb = k++ ? yb + 12 : y1; cx.texte(l, X0, T(yb), { police:F.light, taille:8, couleur:GRISc }); });
-    const yN = yb + 15; bar(yN, 0.75, NUITc);
+    const yN = yb + 15; bar(yN, 0.75, C.N);   /* numéro, titre, ligne d'information et ce filet en noir (Paulo, 10.11.2026 : « texte en noir, ligne aussi » ; avant : bleu nuit) */
     /* rubriques : premier filet à y 350 au plus tôt (paysage : 300) ; dans une rubrique, 1re ligne de base au filet + 16, interligne 12, filet suivant à la dernière ligne + 10 */
     const RUB = Array.from(G.rub || []).filter(r => r && (String(r.nom || '').trim() || String(r.adr || '').trim()));
     const yR0 = PAYS ? Math.max(300, yN + 40) : Math.max(350, yN + 68); let yr = yR0;

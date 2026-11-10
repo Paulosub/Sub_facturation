@@ -1428,9 +1428,10 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
           if(reste.length){ const nx=pages[i+1]; if(tab(nx)&&nx.digit===pg.digit&&!nx.saut) nx.rows=reste.concat(nx.rows); else pages.splice(i+1,0,{type:2,titre:pg.titre,digit:pg.digit,lpp:capT,cols:pg.cols,rows:reste}); } }
         while(R.length<cap) R.push({c:[],s:'E'}); } }
     /* titre « Récapitulatif » sur chaque page d'un récapitulatif (Paulo, 10.11.2026 : « ajouter un titre récapitulatif »), dans la bande des titres des
-       colonnes à la place de « Texte » (variante 2, sans place en plus : aussi sur les pages de suite) ; avec les deux récapitulatifs : « … CFC à 1 chiffre » et « … CFC à 2 chiffres » */
+       colonnes à la place de « Texte » (variante 2, sans place en plus : aussi sur les pages de suite) ; toujours « Récapitulatif », sans préciser 1 ou 2 chiffres (Paulo,
+       10.11.2026 : « ne pas préciser, indiquer uniquement Récapitulatif ») */
     { const rec=pg=>(pg.type===1||pg.type===2)&&(pg.digit===0||pg.digit===1), deux=pages.some(pg=>rec(pg)&&pg.digit===0)&&pages.some(pg=>rec(pg)&&pg.digit===1); let dg=null;
-      pages.forEach(pg=>{ const r=rec(pg); if(r) pg.recapTitre=pg.digit===0?'Récapitulatif CFC à 1 chiffre':deux?'Récapitulatif CFC à 2 chiffres':'Récapitulatif'; dg=r?pg.digit:null; }); }
+      pages.forEach(pg=>{ const r=rec(pg); if(r) pg.recapTitre='Récapitulatif'; dg=r?pg.digit:null; }); }
     /* carte des pages pour le clic droit de la fenêtre du document (sauts de page, 08.11.2026) : par page du PDF, sa série (digit) et, par rangée, la position à laquelle
        elle appartient (CFC et texte de la rangée de tête ; rangées de calcul, descriptif, ouvrages et suites : leur position ; total et rangées vides : rien) */
     { const carte={ori:portrait?'portrait':'paysage',pages:[]}; let bloc=null, dg=null;

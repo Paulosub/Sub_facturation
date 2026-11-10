@@ -1818,8 +1818,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Akkurat Bold blanc DANS la bande bleu nuit des titres des colonnes, à la place de « Texte » (variante 2 choisie par Paulo parmi 5 — maquettes
   `subgestion3/_backup_20261110_maquette_recap/` : 1 comme « Information », 2 dans la bande, 3 double bande, 4 onglet, 5 grand titre ; essais d'avant le même jour :
   titre au-dessus de la bande, puis à la hauteur de « INFORMATION » avec le tableau descendu de 14 pt) ; tableau à sa hauteur habituelle, sur toutes les pages du
-  récapitulatif (`pg.recapTitre`, posé dans `dgOctets` après la répartition ; `rT` dans `contenuLivret` ▸ `tableau`) ; avec les deux récapitulatifs : « … CFC à
-  1 chiffre » / « … CFC à 2 chiffres ». En paysage aussi, colonnes de montant vides dans la série d'un récapitulatif retirées (2 chiffres : « à 2 chiffres » et
+  récapitulatif (`pg.recapTitre`, posé dans `dgOctets` après la répartition ; `rT` dans `contenuLivret` ▸ `tableau`) ; toujours « Récapitulatif », en minuscules comme
+  les autres titres de colonnes, sans préciser 1 ou 2 chiffres (« ne pas préciser, indiquer uniquement Récapitulatif », « en minuscule », même jour). En paysage aussi, colonnes de montant vides dans la série d'un récapitulatif retirées (2 chiffres : « à 2 chiffres » et
   « à 1 chiffre » seulement), largeur rendue à la colonne Texte.
   **Alignement sur le papier (même jour, portrait et paysage ; Paulo : « les CFC doivent être alignés à la colonne info@substances », « la dernière colonne doit
   être alignée à la barre verticale entre la page et le nombre de pages », « déplacer le texte », « déplacer les numéros de CFC »)** : numéros CFC dans la marge à x 85.04 (comme les numéros de chapitre des contrats ; `livretDG.x0Tab`,

@@ -1626,7 +1626,7 @@ async function sgDsPdf(R, rep, o){
     const tableau = (pg) => {
       const X0 = !(pg.type === 3 || pg.type === 4) && D.x0Tab != null ? +D.x0Tab : D.x0 != null ? +D.x0 : cx.Z.x0, cols = Array.from(pg.cols || []),   /* tableaux : D.x0Tab (devis général : x 125.72) ; Information : D.x0 */   /* portrait : tableau à la marge de l'en-tête et du pied (x 28.35), comme le paysage */ rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
       const dyR = 0;   /* tableau toujours à la même hauteur (le titre d'un récapitulatif est dans la bande, variante 2 du 10.11.2026) */
-      const rT = !info && pg.recapTitre ? P(String(pg.recapTitre).toUpperCase()) : '';   /* récapitulatif : titre en gras blanc dans la bande, à la place de « Texte » (variante 2 choisie par Paulo parmi 5, 10.11.2026) */
+      const rT = !info && pg.recapTitre ? P(String(pg.recapTitre)) : '';   /* récapitulatif : titre « Récapitulatif » en gras blanc dans la bande, à la place de « Texte » (variante 2 choisie par Paulo parmi 5, 10.11.2026), en minuscules comme les autres titres de colonnes (« en minuscule », même jour) */
       const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => c.pct || /%/.test(String(c.t || '')));
       /* D.aligne : textes des colonnes à gauche sans retrait, à l'aplomb des colonnes du pied (CFC x 28.35 ; en portrait, Texte x 125.72) ; bandes et filets 2 pt plus à gauche */
       const al = D.aligne === true && !info, ins = al ? 0 : 2, XB = al ? X0 - 2 : X0, WB = al ? W + 2 : W;   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */

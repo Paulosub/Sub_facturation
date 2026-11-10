@@ -1570,7 +1570,9 @@ async function sgDsPdf(R, rep, o){
        droite, x 485.5 à 732.1, à la hauteur des rubriques) : SOUS les rubriques, à ECART sous leur dernière ligne, dans les colonnes du portrait (A de x 124.4 à 296,
        B de x 312 à 485.5) ; dans chaque colonne, « Lieu, date » (40 %) et « Signature » côte à côte sur un même filet, à +56 comme en portrait (moins si la place
        manque) : rien ne descend plus bas que le logo (encre du logo paysage jusqu'à 85.9 pt du bas, `LIM`) */
-    const SG = Array.from(G.sig || []).slice(0, 2), CO = [[X0, 296], [312, X1]];   /* colonnes du portrait, aussi en paysage */
+    /* paysage (Paulo, 10.11.2026, croquis : le maître de l'ouvrage sur toute la largeur du bloc, « architecte » à droite) : A de x 124.4 à 485.5 sous les rubriques,
+       B (architecte) à droite de x 510.68 (bord du bloc + 25.18) à 732.1 (barre du numéro de page − 25.18), à la même hauteur ; portrait : A 124.4–296, B 312–485.5 */
+    const SG = Array.from(G.sig || []).slice(0, 2), CO = PAYS ? [[X0, X1], [X1 + 25.18, FMT.w - 84.6 - 25.18]] : [[X0, 296], [312, X1]];
     const LIM = H - (PAYS ? 85.9 : 83.5);   /* bas du logo vertical (paysage : encre ; portrait : LOGO_BB) */
     const ys = PAYS ? yr - 10 + ECART : Math.max(610, yr + 30), sP = PAYS ? Math.max(30, Math.min(56, LIM - 9 - ys)) : 0;
     if(SG.length && !PAYS && ys > 610) alerte('Page de garde : rubriques longues, signatures placées plus bas');

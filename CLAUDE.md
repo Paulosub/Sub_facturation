@@ -1702,7 +1702,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   20,77 pt : filet de tête → numéro, titre → désignation, filet du titre → rubriques. Puis (« déplacer ±10% devant devis général en alignant à droite ») :
   devis général — précision (`couverture.marge`, marge d'approximation sans le mot « Précision ») sur la dernière ligne du titre, alignée à droite sur le bord des
   filets (x 485.5 en portrait) — puis la ligne d'information (phase du devis) retirée de la page de garde (« supprimer », 10.11.2026 : `info` vide ; la
-  désignation est directement suivie du filet noir) —, même typo que le titre (Akkurat Bold, même corps ; « même typo que devis général », essayée d'abord en Light) ; essai sur le
+  désignation est directement suivie du filet noir), puis la désignation aussi (« supprimer » : `sous` vide, elle est dans la rubrique Ouvrage ; titre
+  directement suivi du filet noir, à `ECART` sous sa ligne de base ; propositions de justification montrées avant, sans suite) —, même typo que le titre (Akkurat Bold, même corps ; « même typo que devis général », essayée d'abord en Light) ; essai sur le
   Devis estimatif de 99TST : « DEVIS ESTIMATIF » et « ±15% » sur une ligne, 38 pt d'écart ;
   paysage (« glisser le bloc en dessous », puis « ne pas passer sous le logo ») : signatures SOUS les rubriques, filet à `ECART` sous leur dernière ligne,
   maître de l'ouvrage sur toute la largeur du bloc (x 124.4–485.5), architecte à droite à la même hauteur (x 510.68–732.1, croquis de Paulo) ; « largeur

@@ -1316,7 +1316,8 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        alignant à droite ») ; le mot « Précision » éventuellement saisi est retiré */
     const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim().replace(/^pr[ée]cision\s*:?\s*/i,'').trim(), info='';   /* ligne d'information (phase du devis) retirée de la page de garde (Paulo, 10.11.2026 : « supprimer ») */
     const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
-      sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),marge:mg,filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
+      sous:'',info:info.toLocaleUpperCase('fr'),marge:mg,   /* désignation retirée de la page de garde (Paulo, 10.11.2026 : « supprimer » ; elle est dans la rubrique Ouvrage) */
+     filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
        texte vides à sa droite (comme le dessin, livretDG.deborde) ; s'il ne tient toujours pas, il passe à la ligne sur des rangées de suite (k:1, même style, sans
        filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */

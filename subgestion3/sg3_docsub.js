@@ -1549,7 +1549,7 @@ async function sgDsPdf(R, rep, o){
     (G.sous ? equi(P(G.sous), F.regular, 10, 300) : []).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10 }); });
     if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:C.N }); });
     if(G.filtre) cx.couper(P(G.filtre), F.light, 8, X1 - X0).forEach(l => { yb = k++ ? yb + 12 : y1; cx.texte(l, X0, T(yb), { police:F.light, taille:8, couleur:GRISc }); });
-    const yN = yb + 15; bar(yN, 0.75, C.N);   /* numéro, titre, ligne d'information et ce filet en noir (Paulo, 10.11.2026 : « texte en noir, ligne aussi » ; avant : bleu nuit) */
+    const yN = k ? yb + 15 : yb + ECART; bar(yN, 0.75, C.N);   /* rien sous le titre (désignation retirée) : filet à ECART sous sa ligne de base */   /* numéro, titre, ligne d'information et ce filet en noir (Paulo, 10.11.2026 : « texte en noir, ligne aussi » ; avant : bleu nuit) */
     /* rubriques : dans une rubrique, 1re ligne de base au filet + 16, interligne 12, filet suivant à la dernière ligne + 10 */
     const RUB = Array.from(G.rub || []).filter(r => r && (String(r.nom || '').trim() || String(r.adr || '').trim()));
     /* rubriques remontées sous le filet du titre, au même espace (Paulo, 10.11.2026 : « déplacer le bloc en laissant un espace x comme avant » ; avant : y 350 au plus tôt,

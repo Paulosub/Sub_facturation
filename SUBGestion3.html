@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 08:34 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 08:39 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33662,7 +33662,7 @@ async function sgDsPdf(R, rep, o){
     (G.sous ? equi(P(G.sous), F.regular, 10, 300) : []).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10 }); });
     if(G.info) cx.couper(P(G.info), F.regular, 10, 340).forEach(l => { yb = k++ ? yb + 13 : y1; cx.texte(l, X0, T(yb), { police:F.regular, taille:10, couleur:C.N }); });
     if(G.filtre) cx.couper(P(G.filtre), F.light, 8, X1 - X0).forEach(l => { yb = k++ ? yb + 12 : y1; cx.texte(l, X0, T(yb), { police:F.light, taille:8, couleur:GRISc }); });
-    const yN = yb + 15; bar(yN, 0.75, C.N);   /* numéro, titre, ligne d'information et ce filet en noir (Paulo, 10.11.2026 : « texte en noir, ligne aussi » ; avant : bleu nuit) */
+    const yN = k ? yb + 15 : yb + ECART; bar(yN, 0.75, C.N);   /* rien sous le titre (désignation retirée) : filet à ECART sous sa ligne de base */   /* numéro, titre, ligne d'information et ce filet en noir (Paulo, 10.11.2026 : « texte en noir, ligne aussi » ; avant : bleu nuit) */
     /* rubriques : dans une rubrique, 1re ligne de base au filet + 16, interligne 12, filet suivant à la dernière ligne + 10 */
     const RUB = Array.from(G.rub || []).filter(r => r && (String(r.nom || '').trim() || String(r.adr || '').trim()));
     /* rubriques remontées sous le filet du titre, au même espace (Paulo, 10.11.2026 : « déplacer le bloc en laissant un espace x comme avant » ; avant : y 350 au plus tôt,
@@ -39447,7 +39447,8 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
        alignant à droite ») ; le mot « Précision » éventuellement saisi est retiré */
     const sc=+doc.STATECODE, mg=mod(G.marge)?'':String(G.marge||'').trim().replace(/^pr[ée]cision\s*:?\s*/i,'').trim(), info='';   /* ligne d'information (phase du devis) retirée de la page de garde (Paulo, 10.11.2026 : « supprimer ») */
     const couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:tt('garde').toLocaleUpperCase('fr'),
-      sous:String(p.DESCRIPTION||p.TITLE||'').trim().toLocaleUpperCase('fr'),info:info.toLocaleUpperCase('fr'),marge:mg,filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
+      sous:'',info:info.toLocaleUpperCase('fr'),marge:mg,   /* désignation retirée de la page de garde (Paulo, 10.11.2026 : « supprimer » ; elle est dans la rubrique Ouvrage) */
+     filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
     /* textes jamais coupés (Paulo, 08.11.2026 : « toujours écrire complet, ne pas couper les textes ») : un texte plus large que sa colonne déborde sur les colonnes de
        texte vides à sa droite (comme le dessin, livretDG.deborde) ; s'il ne tient toujours pas, il passe à la ligne sur des rangées de suite (k:1, même style, sans
        filet entre elles), avant le calcul des pages (la suite passe à la page suivante comme toute rangée). Mot plus large que la colonne : coupé à la lettre. */

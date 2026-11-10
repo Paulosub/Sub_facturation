@@ -1989,6 +1989,23 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   défilement horizontal, total général encadré ; clic droit sur une ligne = Éditer / Supprimer l'écriture (lignes de détail ; toutes les lignes des autres
   sections), Nouvelle écriture ▸ ; ↑ ↓ Entrée. Classes `sgce-*` (liste : `sgcc-*`), `window.SGCC` (`SGCC.ed` = état de l'éditeur). DeltaSub.html seul garde ses écrans.
   NB : la présentation « Standard » de 99TST n'a pas de colonne CFC (données du générateur) : Présentation ▸ Configuration pour l'ajouter.
+  **Fenêtres des écritures = proposition B « Tableur » (10.11.2026, bloc 51, `subgestion3/sg3_ecritures.js`, concaténé après `sg3_coco.js` ; Paulo : « proposer un
+  autre graphisme pour correspondre à la section devis, fais 5 propositions » — paiement, situation sur contrat, mutation —, puis « version B » ; maquettes A étapes,
+  B tableur, C décompte, D rubriques, E chiffres et onglets : `subgestion3/_backup_20261110_maquette_ecritures/`)** : `ccPayment` (situation, paiement hors contrat),
+  `ccContract` (contrat, avenant), `ccMut` (transfert, variation, renchérissement) et `ccEntry` (provision, coût probable perso) enveloppés ; mêmes champs, contrôles et
+  enregistrement (le moteur garde tout ; éléments déplacés tels quels ; `linesGrid` / `condTable` remplacés le temps de la construction pour repérer le document et ses
+  tableaux). Même mise en page que la fenêtre « Calcul pour <CFC> » du devis : bandeau jaune (numéro en grand, filet, « Paiement n° 19 · Situation · débité », entreprise,
+  lot · contrat · facture ; total net TTC en grand à droite, « dont TVA »), réglages dans une bande grise (libellés au-dessus des champs : entreprise, lot, n°, genre,
+  statut, facture, dates, dernier paiement ; contrat : désignation, date, délai de garantie, contrat prioritaire), une seule barre (Position, Condition, TVA, Arrondi,
+  Paiements à ce jour, Effacer la ligne, Saisie du brut | du net) avec la cellule active à droite (L<n> · colonne · contenu), tableaux de tableur (lignes numérotées à la
+  suite d'un tableau à l'autre, cellule active encadrée de bleu nuit, ligne active en jaune, cases calculées sur fond gris, total en pied ; bouton « − » des lignes
+  retiré, gardé pour « Effacer la ligne » ; conditions : titres en clair — Niv., Réf., Taux, Appl. —, lettre de l'ancien logiciel retirée, colonne **Sous-total** = brut
+  des positions + conditions jusqu'à ce niveau), pied (commentaire, description, annexes ; brut des positions, conditions hors TVA, net HT, TVA, net TTC, « montant
+  enregistré » s'il diffère). Mutation et provision : grille Sens | CFC | Entreprise | Montant HT | TVA | Montant TVA | Montant TTC — transfert : origine (−, calculée) et
+  destination (+, saisie), « Effet sur le devis général révisé » au pied (0.00 ; variation : + le montant) ; barre « Choisir l’entreprise », « Aucune entreprise » (ligne du
+  curseur). Clavier : le moteur redessine ses tableaux à chaque modification — Tab, Entrée (ligne suivante), ↑ ↓ et le clic gardent la cellule visée ; Échap rétablit la
+  saisie en cours, sinon ferme la fenêtre comme avant. Vérifié sur 99TST (situation n° 19, contrat, avenant, paiement hors contrat, mutations, provision, coût probable,
+  créations ; Annuler ne modifie rien, OK enregistre). DeltaSub.html seul garde ses fenêtres. Classes `sgew-*`, `<style id="sgew-css">`, débogage `window.SGEW`.
 - **Surfaces et volumes (10.11.2026, bloc 49, `subgestion3/sg3_surfaces.js`, concaténé en dernier ; Paulo : « le volume doit être entré quelque part dans
   le logiciel dans un module de calcul de surface et volume, ajoute ce module dans Projet et ajoute uniquement le volume pour l'affaire 99TST ; on regardera
   ensemble comment créer le module de calcul de surface et volume, pour réaliser des métrés »)** : page du projet ▸ Projet ▸ tuile « Surfaces et volumes »

@@ -1812,7 +1812,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   positions de 1 à 3 chiffres ») et du menu Réglages de la ligne = `includeKvOneDigit` du livret (`DG_MENU`, `VUE_ORDRE` ; `vueGroupe` reconnaît « chiffre » au
   singulier et « récapitulatif ») : ajoute le récapitulatif des CFC à 1 chiffre avant celui à 2 chiffres ; non coché par défaut (`DG_PRESET`), enregistré dans le devis.
   **Récapitulatifs (10.11.2026, Paulo : « ajouter un titre récapitulatif », « afficher uniquement CFC 1 et CFC 2 chiffres »)** : titre « RÉCAPITULATIF » (Regular 8
-  capitales comme « INFORMATION », à la colonne CFC x 85.04, ligne de base 92, au-dessus de la bande des titres) sur la première page de chaque récapitulatif
+  capitales comme « INFORMATION », à la colonne CFC x 85.04, même ligne de base 101 que « INFORMATION » — « l'espace doit toujours être le même que sur les autres
+  pages ; si on rajoute récapitulatif, descendre le tableau » : bande et rangées de cette page 14 pt plus bas, `DG_RDY` / `livretDG.recapDy`, carte des clics `y0`
+  suivie) sur la première page de chaque récapitulatif
   (`pg.recapTitre`, posé dans `dgOctets` après la répartition ; avec les deux récapitulatifs : « … CFC à 1 chiffre » / « … CFC à 2 chiffres ») ; en paysage aussi, colonnes
   de montant vides dans la série d'un récapitulatif retirées (2 chiffres : « à 2 chiffres » et « à 1 chiffre » seulement), largeur rendue à la colonne Texte.
   **Alignement sur le papier (même jour, portrait et paysage ; Paulo : « les CFC doivent être alignés à la colonne info@substances », « la dernière colonne doit

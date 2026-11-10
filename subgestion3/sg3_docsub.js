@@ -1625,6 +1625,7 @@ async function sgDsPdf(R, rep, o){
     /* tableau d'une page : x des colonnes depuis la marge gauche ; rangées de rh pt dès 125 pt du haut */
     const tableau = (pg) => {
       const X0 = !(pg.type === 3 || pg.type === 4) && D.x0Tab != null ? +D.x0Tab : D.x0 != null ? +D.x0 : cx.Z.x0, cols = Array.from(pg.cols || []),   /* tableaux : D.x0Tab (devis général : x 125.72) ; Information : D.x0 */   /* portrait : tableau à la marge de l'en-tête et du pied (x 28.35), comme le paysage */ rh = +D.rh || 15, info = pg.type === 3 || pg.type === 4, W = cols.reduce((s, c) => s + (+c.w || 0), 0);
+      const dyR = !info && pg.recapTitre ? (+D.recapDy || 14) : 0;   /* page de récapitulatif titrée : bande et rangées descendues (Paulo, 10.11.2026 : « l'espace doit toujours être le même que sur les autres pages ; si on rajoute récapitulatif, descendre le tableau ») */
       const nuit = D.style === 'nuit' && !info, jPct = cols.findIndex(c => c.pct || /%/.test(String(c.t || '')));
       /* D.aligne : textes des colonnes à gauche sans retrait, à l'aplomb des colonnes du pied (CFC x 28.35 ; en portrait, Texte x 125.72) ; bandes et filets 2 pt plus à gauche */
       const al = D.aligne === true && !info, ins = al ? 0 : 2, XB = al ? X0 - 2 : X0, WB = al ? W + 2 : W;   /* variante « Bleu nuit » (choisie par Paulo le 08.11.2026) ; colonne [%] */
@@ -1633,16 +1634,16 @@ async function sgDsPdf(R, rep, o){
       if(info){ if(D.infoGarde){ cx.texte(P(String(D.infoTitre || 'Information').toUpperCase()), X0 + dI, T(101), { police:F.regular, taille:8 }); cx.ligne(X0 + dI, T(104.5), X0 + W + dI, T(104.5)); }   /* aligné sur les libellés (x 125.72) */   /* titre au dessin des rubriques de la page de garde : Regular 8 capitales, filet noir (Paulo, 08.11.2026) */
         else { cx.texte(P(D.infoTitre || 'Information'), X0, T(101), { police:F.regular, taille:+D.corpsTitres || 9 }); cx.ligne(X0, T(108.5), X0 + W + dI, T(108.5), { couleur:FIL }); } }   /* titre souligné d'un filet gris (modèle 24PRC) */
       else if(nuit){   /* variante « Bleu nuit » : titres des colonnes en blanc sur une bande bleu nuit */
-        cx.rect(XB, T(116.5), WB, 16, { fond:NUIT });
-        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const zc = +D.corpsTitres || 7.5, t = ajuste(c.t, F.regular, zc, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + ins, T(111.2), { police:F.regular, taille:zc, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* titres des colonnes : D.corpsTitres (devis général : 8 pt) */
+        cx.rect(XB, T(116.5 + dyR), WB, 16, { fond:NUIT });
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const zc = +D.corpsTitres || 7.5, t = ajuste(c.t, F.regular, zc, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + ins, T(111.2 + dyR), { police:F.regular, taille:zc, couleur:BLANC, align:p.r ? 'd' : 'g' }); });   /* titres des colonnes : D.corpsTitres (devis général : 8 pt) */
       }
       else {
-        cx.ligne(X0, T(100.5), X0 + W, T(100.5));
-        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
-        cx.ligne(X0, T(116.5), X0 + W, T(116.5));
+        cx.ligne(X0, T(100.5 + dyR), X0 + W, T(100.5 + dyR));
+        cols.forEach((c, j) => { const p = pos[j]; if(!p.w) return; const t = ajuste(c.t, F.light, 8, p.w - 4); cx.texte(t, p.r ? p.x + p.w - 2 : p.x + 2, T(110 + dyR), { police:F.light, taille:8, align:p.r ? 'd' : 'g' }); });
+        cx.ligne(X0, T(116.5 + dyR), X0 + W, T(116.5 + dyR));
       }
-      if(!info && pg.recapTitre) cx.texte(P(String(pg.recapTitre).toUpperCase()), X0, T(92), { police:F.regular, taille:8 });   /* titre d'un récapitulatif (devis général, 10.11.2026) : Regular 8 capitales comme « INFORMATION », à la colonne CFC, au-dessus de la bande */
-      let y = info ? 121 : 122;
+      if(!info && pg.recapTitre) cx.texte(P(String(pg.recapTitre).toUpperCase()), X0, T(101), { police:F.regular, taille:8 });   /* titre d'un récapitulatif (devis général, 10.11.2026) : Regular 8 capitales comme « INFORMATION », à la même hauteur (ligne de base 101), à la colonne CFC ; le tableau descend de dyR */
+      let y = (info ? 121 : 122) + dyR;
       const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
       /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages
          (rangée S à CFC vide) ; les rangées D / X vides (paragraphe vide d'un descriptif) n'interrompent pas le bloc, une rangée vide (E) le ferme. Un seul filet, sous la

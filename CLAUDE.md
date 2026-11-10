@@ -1811,6 +1811,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Option « Récapitulatif CFC à 1 chiffre » (10.11.2026, Paulo : « dans Positions ajoute une option CFC 1 chiffre »)** : case du groupe Positions (sous « Seulement
   positions de 1 à 3 chiffres ») et du menu Réglages de la ligne = `includeKvOneDigit` du livret (`DG_MENU`, `VUE_ORDRE` ; `vueGroupe` reconnaît « chiffre » au
   singulier et « récapitulatif ») : ajoute le récapitulatif des CFC à 1 chiffre avant celui à 2 chiffres ; non coché par défaut (`DG_PRESET`), enregistré dans le devis.
+  Puis (même jour, « dans Positions ajouter récapitulatif CFC à 2 chiffres ») : case « Récapitulatif CFC à 2 chiffres » juste dessous = `includeKvTwoDigit` (cochée
+  par défaut, `DG_PRESET`) ; les deux décochées : pas de récapitulatif, le document principal suit l'Information. Essai sur 99TST : 1 + 2 → 18 pages, 1 seul → 17,
+  aucun → 16, 2 seul → 17.
   **Récapitulatifs (10.11.2026, Paulo : « ajouter un titre récapitulatif », « afficher uniquement CFC 1 et CFC 2 chiffres »)** : titre « RÉCAPITULATIF » en
   Akkurat Bold blanc DANS la bande bleu nuit des titres des colonnes, à la place de « Texte » (variante 2 choisie par Paulo parmi 5 — maquettes
   `subgestion3/_backup_20261110_maquette_recap/` : 1 comme « Information », 2 dans la bande, 3 double bande, 4 onglet, 5 grand titre ; essais d'avant le même jour :

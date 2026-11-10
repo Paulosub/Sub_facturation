@@ -1701,7 +1701,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`tt('document')`, comme les autres pages ; le grand titre de la garde garde la phase).
   **Page de garde = celle du devis descriptif (08.11.2026, Paulo : « applique à l'ensemble de l'app la mise en page du descriptif », puis « première page uniquement pour
   le devis et le descriptif », « page de garde seulement »)** : `gardeEdito(cx, G, ori)` de sg3_docsub.js, commune au devis descriptif et au devis général
-  (`livretDG.couverture.edito`) ; le document Honoraires garde l'ancienne page de garde (`garde`). Devis général : état « ■ PROVISOIRE » / « ANNULÉ » (rien s'il est
+  (`livretDG.couverture.edito`) ; le document Honoraires aussi depuis le 10.11.2026 (Paulo : « reprendre le graphisme de devis », « les mises en page sont identiques à
+  devis ; pour les deux derniers uniquement document portrait » : titre du document, rubriques `deGardeRub`, signatures ; avant : ancienne page de garde `garde`) ; le devis
+  descriptif sans la désignation sous le titre (même jour, comme le devis général). Devis général : état « ■ PROVISOIRE » / « ANNULÉ » (rien s'il est
   validé), numéro de l'affaire, titre de garde (« DEVIS GÉNÉRAL », `reglages.titres.garde`), désignation, ligne d'information en bleu nuit « <phase> – PRÉCISION ±10 % »
   (état / phase du devis et marge d'approximation, « Précision » ajouté seulement s'il manque, textes modèles « [...] » écartés), filtre, rubriques (`deGardeRub`, communes avec le descriptif), signatures. Portrait :
   comme le descriptif. Paysage : même grille, contenu de x 124.4 à 732.1 (barre du numéro de page − 25 pt), rubriques à gauche (jusqu'à x 464.4), signatures à droite
@@ -1752,6 +1754,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   noir, textes passés à la ligne ; colonne Commentaire seulement avec « Base et commentaire de la position » + « … dans colonne séparée ». Relecture du 08.11.2026 (8 défauts, 5
   corrections) ; le filtre est signalé d'après son effet réel (`dgFiltreTexte`, aussi pour le devis général : filtre rapide d'un seul ouvrage compris). Lecteur PDF : plus de
   trait sous l'icône « Ajuster à la largeur » (même jour).
+  **Sauts de page des documents Honoraires et Devis descriptif (10.11.2026, Paulo : « ajouter les sauts de page », sur le modèle du devis général)** :
+  `reglages.sautsDoc` = { honoraires | descriptif : { cfc:[clés], sans } } (clé = n° CFC de la position ; titre sans numéro, p. ex. « Remarques » : « · » + texte) — nouvelle
+  page AVANT la position ; Réglages ▸ Sauts de page : interrupteur « Sans sauts de page » (ignore la liste sans l'effacer) et « Remettre à zéro les sauts de page »
+  (`sdItems`, enveloppe de `ch02cPrefItems` pour les lignes 1 et 2) ; clic droit sur une position du PDF = menu du devis général (`sdMenu` → `dgSpOuvrir` avec `geo` :
+  rangée surlignée donnée en pt) ; repères rouges à l'écran seulement (`sdMarquer`, MutationObserver). Carte des positions par page (`SD_CARTE`, `sdCarte`) : Honoraires
+  posée par `hoOctets` (rangées de 15 pt dès y 122 ; coupure forcée dans la répartition des rangées), Devis descriptif renvoyée par `contenuDescDG` de sg3_docsub.js
+  (`D.sauts`, tableau `D.carte` fourni par `deOctets` : { p, cle, n, t, y, h, suite }, fiche coupée = deux parties). Un saut posé alors que « Sans sauts de page » est
+  allumé l'éteint (message). Vérifié sur 99TST (224 Couverture des Honoraires, 2 Bâtiment du descriptif, interrupteur, remise à zéro).
   **Document « Devis descriptif » au dessin du descriptif du bureau (08.11.2026, Paulo : « voici à quoi doit ressembler le descriptif, reproduis celui-ci ici », modèle
   17QUE_DESCRIPTIF_230619.pdf — client, jamais dans le dépôt)** : ligne 2 de Documents (`deOctets`, `deRendu`, enveloppe de `ch02cRender` pour i = 2 ; dessin `contenuDescDG`
   de sg3_docsub.js, `o.descDG`) — mêmes données et réglages que le modèle du moteur (`ch02cJob` → descTable). **Page de garde = variante 3 « Grand titre éditorial »**

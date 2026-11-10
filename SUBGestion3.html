@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 13:32 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 13:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33862,23 +33862,29 @@ async function sgDsPdf(R, rep, o){
       if(s2 && s2.t === 'h2') b += besoinTitre(k + 1, it.t); else if(s2 && s2.t === 'f') b += hGarde(s2.F2);
       return b; };
     if(!IT.length) return;   /* devis sans position ni remarque : page de garde seule (pas de page vide numérotée) */
+    /* sauts de page du document (10.11.2026) : D.sauts = clés des positions qui commencent une nouvelle page (n° CFC, sinon « · » + texte) ; D.carte (tableau fourni par
+       l'appelant) reçoit la place de chaque position par page { p, cle, n, t, y, h, suite } pour le clic droit de l'aperçu */
+    const SAUTS = new Set(Array.from(D.sauts || []).map(String)), CARTE = D.carte || null;
+    const cle = (it) => String(it.n == null ? '' : it.n).trim() || ('·' + String(it.txt == null ? '' : it.txt).trim());
+    const noter = (it, y0, y1, suite) => { if(CARTE) CARTE.push({ p:cx.pages.length - 1, cle:cle(it), n:String(it.n == null ? '' : it.n), t:String(it.txt == null ? '' : it.txt), y:y0, h:Math.max(8, y1 - y0), suite:!!suite }); };
     let libre = false;   /* suite de titres plus haute qu'une page : elle s'écoule, chaque titre gardé seulement avec ce qui le suit (relecture du 08.11.2026) */
     page();
     IT.forEach((it, idx) => {
+      if(SAUTS.has(cle(it)) && prev !== 'band') page();   /* saut de page voulu avant cette position */
       if(it.t === 'h1' || it.t === 'h2'){ const niv = it.t === 'h1' ? 1 : 2;
         const av0 = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), s2 = IT[idx + 1], bT = besoinTitre(idx, prev);
         if(prev !== 'h1' && prev !== 'h2') libre = bT > BAS2 - Y0;   /* tête de suite : la suite entière tient-elle sur une page ? */
         const besoin = libre ? hH(it, niv, av0) + (s2 && s2.t === 'h2' ? hH(s2, 2, it.t === 'h1' ? 4 : 10) : s2 && s2.t === 'f' ? hGarde(s2.F2) : 0) : bT;
         if(prev !== 'band' && y + besoin > BAS2) page();
-        const av = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), yb = y + av + 7.4, c = niv === 1 ? NUIT : C.N;
+        const av = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), yb = y + av + 7.4, c = niv === 1 ? NUIT : C.N, yH = y + av - 1;
         titreH(it, yb, F.bold, c); montant(it.mt, yb, F.bold, c); const nl = cx.couper(P(it.txt || ''), F.bold, 8, WTI).length;
         if(niv === 1){ fil(yb + (nl - 1) * 10 + 4, NUIT, 0.75); y = yb + (nl - 1) * 10 + 8; } else y = y + av + 10 * nl + 3;
-        prev = it.t; return; }
+        noter(it, yH, y); prev = it.t; return; }
       /* fiche */
       const F2 = it.F2, H2 = hFiche(F2);
       if(prev !== 'band' && y + H2 > BAS2){ const coupable = points(F2.L2).length > 0 && y + hDebut(F2) <= BAS2; if(!coupable) page(); }
       if(prev !== 'f') fil(y, FILN, 0.5);
-      let yy = y + 3.5;
+      let yy = y + 3.5, yP = y, suiteP = false;   /* partie de la fiche sur la page en cours (carte des clics) */
       F2.tl.forEach((m, i) => { const yb = yy + 7.4 + i * 10; if(i === 0){ cx.texte(P(it.n || ''), XNo, T(yb), { police:F.regular, taille:8, couleur:NUIT }); montant(it.mt, yb, F.regular); } cx.texte(m, XTx, T(yb), { police:F.regular, taille:8 }); });
       if(F2.tl.length) yy += 10 * F2.tl.length;
       if(F2.L2.length) yy += 1;
@@ -33887,10 +33893,10 @@ async function sgDsPdf(R, rep, o){
       F2.L2.forEach((x, i) => {
         if(x.vide){ yy += hLigne(x); return; }
         const r = RP.indexOf(i), coupe = r >= 0 && yy + hDe(F2.L2, i, r + 1 < RP.length ? RP[r + 1] : F2.L2.length) + 4 > BAS2;
-        if(coupe){ const pv = F2.L2[i - 1], yf = pv && pv.vide ? yy - hLigne(pv) : yy; fil(yf + 4, FILN, 0.5); page(); fil(y, FILN, 0.5); yy = y + 3.5; }   /* filet fermé en bas de page (sans le blanc qui précède), rouvert sous la bande */
+        if(coupe){ const pv = F2.L2[i - 1], yf = pv && pv.vide ? yy - hLigne(pv) : yy; fil(yf + 4, FILN, 0.5); noter(it, yP, yf + 4, suiteP); page(); fil(y, FILN, 0.5); yy = y + 3.5; yP = y; suiteP = true; }   /* filet fermé en bas de page (sans le blanc qui précède), rouvert sous la bande */
         cx.texte(x.l, XTx, T(yy + 7.0), { police:x.f, taille:7.5 }); if(MT && x.mt) cx.texte(P(x.mt), XR - 2, T(yy + 7.0), { police:F.light, taille:7.5, align:'d' });
         yy += hLigne(x); });
-      y = yy + 4; fil(y, FILN, 0.5); prev = 'f'; });
+      y = yy + 4; fil(y, FILN, 0.5); noter(it, yP, y, suiteP); prev = 'f'; });
   };
   const contenu = (cx) => {
     if(o.descDG){ contenuDescDG(cx); return; }
@@ -39114,6 +39120,9 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
   if(ifr._sgblob) L.charger(ifr._sgblob);
   /* réglages en panneau */
   if(+i===0){ const cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>dgSautsMarquer(cont,X)).observe(cont,{childList:true}); }   /* sauts de page visibles à l'écran (08.11.2026) */
+  if(+i===1||+i===2){ const g=SD_G[+i], cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>sdMarquer(cont,X,g)).observe(cont,{childList:true});   /* Honoraires, Devis descriptif (10.11.2026) */
+    R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>sdMenu(e,X,g,()=>{ dernier=''; panneau();
+      try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(err){ console.error(err); L.echec(err); } },peut),true); }
   if(+i===0) R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>dgSautMenu(e,X,()=>{ dernier=''; panneau();
       try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(err){ console.error(err); L.echec(err); } },peut),true);   /* saut de page au clic droit (08.11.2026) */
   const appliquer=it=>{ if(!it||it.dis||!peut()) return;
@@ -39345,7 +39354,7 @@ function dgSaut(X,cfc,niv,ajout,maj){ if(!ch02aCan(X)) return; const E=X.E, L=E.
 /* remise à zéro des sauts de page (Paulo, 08.11.2026 : « ajouter une remise à zéro des sauts de page ») : retire tous les sauts de la présentation choisie (celle par
    défaut si « Sans sauts de page » est allumé), après confirmation ; « Sans sauts de page » n'est pas touché */
 function dgSautsRaz(X,apres){ if(!ch02aCan(X)) return; const E=X.E, q=dgPresSel(E).pres, n=q?(q.sautsDePage||[]).length:0; if(!n){ toast('Aucun saut de page à retirer.'); return; }
-  sgConfirm('Retirer les '+n+' saut'+(n>1?'s':'')+' de page de la présentation « '+(q.nom||'sans nom')+' » ?\nLe tableau se répartira de nouveau sur les pages sans coupure imposée.',
+  sgConfirm('Retirer '+(n>1?'les '+n+' sauts':'le saut')+' de page de la présentation « '+(q.nom||'sans nom')+' » ?\nLe tableau se répartira de nouveau sur les pages sans coupure imposée.',
     ()=>{ q.sautsDePage=[]; X.touch(); toast(n+' saut'+(n>1?'s':'')+' de page retiré'+(n>1?'s':'')+'.'); if(apres) apres(); },{yesText:'Remettre à zéro'}); }
 function dgSautMenu(e,X,maj,peut){ if(e.altKey) return; const pe=e.target&&e.target.closest?e.target.closest('.sglp-p'):null; if(!pe) return; e.preventDefault(); e.stopPropagation();
   const car=DG_CARTE.get(X); if(!car){ toast('Document en préparation…'); return; }
@@ -39398,14 +39407,49 @@ function dgSautsMarquer(cont,X){ if(!cont) return; cont.querySelectorAll('.sgsp-
     if(!S.some(x=>x.cfc===b.cfc&&x.niveau===niv)) return;
     const d=document.createElement('div'); d.className='sgsp-cut on sgsp-mq'; Object.assign(d.style,{left:x0/W*100+'%',width:wT/W*100+'%',top:(cp.y0+i*DG_RH)/H*100+'%'});
     d.title='Saut de page avant '+b.cfc+(b.t?' '+b.t:'')+' — repère à l’écran seulement, pas imprimé'; d.innerHTML='<i></i><span>Saut de page</span>'; P[k].append(d); }); }
-function dgSpOuvrir(e,pe,car,cp,jh,existe,niv,M){ dgSpFermer(); dgSpCss(); const E=x=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
-  const por=car.ori==='portrait', W=por?595.28:841.89, H=por?841.89:595.28, x0=DG_X0T-2, wT=(por?DG_WP:DG_WL)+4, marques=[];
-  if(jh>=0){ const top=(cp.y0+jh*DG_RH)/H*100, pc=v=>v+'%';
-    const hl=document.createElement('div'); hl.className='sgsp-hl'; Object.assign(hl.style,{left:pc(x0/W*100),width:pc(wT/W*100),top:pc(top),height:pc(DG_RH/H*100)});
+/* ═══ Sauts de page des documents Honoraires et Devis descriptif (10.11.2026, Paulo : « ajouter les sauts de page », sur le modèle du devis général) ═══
+   Une liste par document, gardée dans le devis : reglages.sautsDoc = { honoraires:{ cfc:[clés], sans }, descriptif:{ cfc:[clés], sans } } — clé = n° CFC de la
+   position (titre sans numéro, p. ex. « Remarques » du descriptif : « · » + son texte) ; nouvelle page AVANT la position ; « Sans sauts de page » les ignore sans les
+   effacer. Réglages ▸ Sauts de page (interrupteur, remise à zéro) ; clic droit sur une position du PDF = même menu que le devis général (dgSpOuvrir, geo) ; repères
+   rouges à l'écran seulement (sdMarquer). Carte des positions par page (SD_CARTE) posée par hoOctets / deOctets : items { cle, n, t, y, h, suite } en pt depuis le haut. */
+const SD_G={1:'honoraires',2:'descriptif'}, SD_NOM={honoraires:'Honoraires',descriptif:'Devis descriptif'}, SD_CARTE=new WeakMap();
+const sdLire=(E,g)=>{ const x=((((E||{}).reglages||{}).sautsDoc)||{})[g]||{}; return {cfc:Array.isArray(x.cfc)?x.cfc.map(String):[],sans:x.sans===true}; };
+const sdActifs=(E,g)=>{ const x=sdLire(E,g); return x.sans?[]:x.cfc; };
+function sdEcrire(X,g,f){ const R=X.E.reglages||(X.E.reglages={}), S=Object.assign({},R.sautsDoc||{}), x=sdLire(X.E,g); f(x); S[g]={cfc:x.cfc,sans:x.sans}; R.sautsDoc=S; X.touch(); }
+function sdSaut(X,g,cle,ajout,maj){ if(!ch02aCan(X)) return; let msg='';
+  sdEcrire(X,g,x=>{ x.cfc=x.cfc.filter(c=>c!==cle).concat(ajout?[cle]:[]); if(ajout&&x.sans){ x.sans=false; msg='« Sans sauts de page » désactivé.'; } }); if(msg) toast(msg); maj(); }
+function sdRaz(X,g,apres){ if(!ch02aCan(X)) return; const n=sdLire(X.E,g).cfc.length; if(!n){ toast('Aucun saut de page à retirer.'); return; }
+  sgConfirm('Retirer '+(n>1?'les '+n+' sauts':'le saut')+' de page du document « '+SD_NOM[g]+' » ?\nLe document se répartira de nouveau sur les pages sans coupure imposée.',
+    ()=>{ sdEcrire(X,g,x=>{ x.cfc=[]; }); toast(n+' saut'+(n>1?'s':'')+' de page retiré'+(n>1?'s':'')+'.'); if(apres) apres(); },{yesText:'Remettre à zéro'}); }
+function sdItems(X,g){ const x=sdLire(X.E,g), n=x.cfc.length;
+  return [{t:'Sans sauts de page',chk:x.sans,bascule:true,fn:()=>{ if(!ch02aCan(X)) return; sdEcrire(X,g,y=>{ y.sans=!y.sans; }); }},
+    {t:'Remettre à zéro les sauts de page',raz:true,dis:!n,ti:n?n+' saut'+(n>1?'s':'')+' de page dans le document':'Aucun saut de page',fn:apres=>sdRaz(X,g,apres)}]; }
+{ const pi0=ch02cPrefItems; ch02cPrefItems=function(X,i){ const L=pi0.apply(this,arguments); if((+i===1||+i===2)&&X&&X.sgde) return (L||[]).concat(['-',...sdItems(X,SD_G[+i])]); return L; }; }
+function sdCarte(X,g,car){ let m=SD_CARTE.get(X); if(!m){ m={}; SD_CARTE.set(X,m); } m[g]=car; }
+function sdMenu(e,X,g,maj,peut){ if(e.altKey) return; const pe=e.target&&e.target.closest?e.target.closest('.sglp-p'):null; if(!pe) return; e.preventDefault(); e.stopPropagation();
+  const car=(SD_CARTE.get(X)||{})[g]; if(!car){ toast('Document en préparation…'); return; }
+  const k=[...pe.parentNode.querySelectorAll('.sglp-p')].indexOf(pe), cp=car.pages[k];
+  if(!cp||!cp.items||!cp.items.length){ toast('Les sauts de page se posent sur les positions du document.'); return; }
+  if(!peut()){ toast('Lecture seule : sauts de page non modifiables.'); return; }
+  const rc=pe.getBoundingClientRect(), y=(e.clientY-rc.top)/rc.height*841.89, it=cp.items.filter(x=>x.y<=y+0.01).pop()||cp.items[0];
+  const S=new Set(sdActifs(X.E,g)), a=c=>S.has(c), lib=x=>({cfc:x.n||'',t:x.t||''});
+  const M=[{ajout:!a(it.cle),b:lib(it),fn:()=>sdSaut(X,g,it.cle,!a(it.cle),maj)}];
+  const p0=cp.items[0]; if(p0&&p0.cle!==it.cle&&!p0.suite&&a(p0.cle)) M.push({ajout:false,b:lib(p0),haut:true,fn:()=>sdSaut(X,g,p0.cle,false,maj)});
+  dgSpOuvrir(e,pe,{ori:'portrait'},cp,-1,!M[0].ajout,'',M,{x:cp.x,w:cp.w,y:it.y,h:it.h,lib:SD_NOM[g]}); }
+function sdMarquer(cont,X,g){ if(!cont) return; cont.querySelectorAll('.sgsp-mq').forEach(x=>x.remove());
+  const car=(SD_CARTE.get(X)||{})[g], S=new Set(sdActifs(X.E,g)); if(!car||!S.size) return; dgSpCss(); const P=[...cont.querySelectorAll('.sglp-p')];
+  car.pages.forEach((cp,k)=>{ const it=cp&&cp.items&&cp.items[0]; if(!it||it.suite||!P[k]||!S.has(it.cle)) return;
+    const d=document.createElement('div'); d.className='sgsp-cut on sgsp-mq'; Object.assign(d.style,{left:cp.x/595.28*100+'%',width:cp.w/595.28*100+'%',top:it.y/841.89*100+'%'});
+    d.title='Saut de page avant '+[it.n,it.t].filter(Boolean).join(' ')+' — repère à l’écran seulement, pas imprimé'; d.innerHTML='<i></i><span>Saut de page</span>'; P[k].append(d); }); }
+function dgSpOuvrir(e,pe,car,cp,jh,existe,niv,M,geo){ dgSpFermer(); dgSpCss(); const E=x=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+  /* geo (Honoraires, Devis descriptif, 10.11.2026) : rangée surlignée donnée en pt { x, w, y, h, lib } au lieu des rangées de 15 pt du devis général */
+  const por=car.ori==='portrait', W=por?595.28:841.89, H=por?841.89:595.28, x0=geo?geo.x:DG_X0T-2, wT=geo?geo.w:(por?DG_WP:DG_WL)+4, marques=[];
+  if(geo||jh>=0){ const top=(geo?geo.y:cp.y0+jh*DG_RH)/H*100, pc=v=>v+'%';
+    const hl=document.createElement('div'); hl.className='sgsp-hl'; Object.assign(hl.style,{left:pc(x0/W*100),width:pc(wT/W*100),top:pc(top),height:pc((geo?geo.h:DG_RH)/H*100)});
     const cut=document.createElement('div'); cut.className='sgsp-cut'+(existe?' on':''); Object.assign(cut.style,{left:pc(x0/W*100),width:pc(wT/W*100),top:pc(top)});
     cut.innerHTML='<i></i><span>'+(existe?'Saut de page':'Nouvelle page')+'</span>'; pe.append(hl); marques.push(hl); if(!(existe&&pe.querySelector('.sgsp-mq'))){ pe.append(cut); marques.push(cut); } }
   const m=document.createElement('div'); m.className='sgsp-menu'; m.setAttribute('role','menu'); m.setAttribute('aria-label','Saut de page');
-  m.innerHTML='<div class="sgsp-hd"><span>Saut de page</span><em>'+E(DG_SP_NIV[niv]||'')+'</em></div>'+M.map((it,i)=>{ const c=it.b;
+  m.innerHTML='<div class="sgsp-hd"><span>Saut de page</span><em>'+E(DG_SP_NIV[niv]||(geo&&geo.lib)||'')+'</em></div>'+M.map((it,i)=>{ const c=it.b;
     const ex=it.ajout?'Une nouvelle page commencera par '+c.cfc+(c.t?' '+c.t:'')+'.':it.haut?'Cette page ne commencera plus par '+c.cfc+' : le tableau continuera à la suite.':'La page ne commencera plus par '+c.cfc+' : le tableau continuera à la suite.';
     return '<div class="sgsp-it" role="menuitem" tabindex="-1" data-i="'+i+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">'+DG_SP_IC[it.ajout?'ajout':'retrait']+'</svg>'
       +'<span class="sgsp-tx"><span class="sgsp-ac">'+(it.ajout?'Saut de page avant':it.haut?'Retirer le saut de page de cette page, avant':'Retirer le saut de page avant')+'</span><span class="sgsp-pos" title="'+E(c.cfc+' '+c.t)+'"><b>'+E(c.cfc)+'</b>'+E(c.t)+'</span><span class="sgsp-ex">'+E(ex)+'</span></span></div>'; }).join('');
@@ -39800,15 +39844,23 @@ async function hoOctets(X,rec){ await DS.need(['subproject','contact','projectme
   const T0=String(J.F.docTitle||'').trim()||'Soumis à honoraires', cap=Math.max(1,Math.floor(DG_HP/DG_RH));
   const F=X.filter, filtre=dgFiltreTexte(E,F);
   const pages=[{type:0,titre:T0,rows:[]}]; let i=0;
-  while(i<rows.length){ let k=Math.min(rows.length,i+cap);
-    if(k<rows.length) for(let j=k;j>k-8&&j>i;j--){ if(v(rows[j].c,0).trim()&&!rows[j].k){ k=j; break; } }   /* coupure de préférence avant une position */
+  const brk=new Set(sdActifs(E,'honoraires')), estB=j=>{ const r=rows[j]; return !!r&&!r.k&&brk.has(v(r.c,0).trim()); };   /* sauts de page du document (10.11.2026) : nouvelle page avant la position */
+  while(i<rows.length){ let k=Math.min(rows.length,i+cap), force=false;
+    for(let j=i+1;j<k;j++) if(estB(j)){ k=j; force=true; break; }
+    if(!force&&k<rows.length) for(let j=k;j>k-8&&j>i;j--){ if(v(rows[j].c,0).trim()&&!rows[j].k){ k=j; break; } }   /* coupure de préférence avant une position */
     const rr=rows.slice(i,k); while(rr.length<cap) rr.push({c:[],s:'E'}); pages.push({type:pages.length===1?1:2,titre:T0,digit:2,lpp:cap,cols,rows:rr}); i=k; }
-  const un=Lx=>Lx.map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
-  let A=null; try{ A=sgAdressesAffaire(p,typeof fxData==='function'?fxData():null); }catch(_){ }
-  const bur=typeof sgBureauAdresse==='function'?sgBureauAdresse():{nom:'Substances Architectes Sàrl',lignes:[]}, burT=un([bur.nom,...(bur.lignes||[])]);
-  const m2=typeof svMember==='function'?svMember(p,2):null, c2=m2&&DS.get('contact',m2.CONTACT_ID), dt=c2&&!/^substances architectes/i.test(contactName(c2)||'')?un(adrLines(c2)):burT;
-  let moT=A&&A.mo?un(A.mo.lignes||[]):''; { const cm=deMoFiltre(p,X); if(cm) moT=un(adrLines(cm)); }   /* ouvrage filtré (lignes cochées) qui a son maître de l'ouvrage : même règle que le descriptif et le devis général */
-  const couverture={titre:T0.toUpperCase(),marge:'',filtre,rub:[['OUVRAGE',String(p.DESCRIPTION||p.TITLE||'').trim()],['MAÎTRE DE L’OUVRAGE',moT],['ARCHITECTE',burT],['DIRECTION DES TRAVAUX',dt]],sig:[]};
+  /* page de garde = celle du devis général (Paulo, 10.11.2026 : « reprendre le graphisme de devis », « les mises en page sont identiques à devis ; pour les deux derniers
+     uniquement document portrait ») : gardeEdito — état, numéro de l'affaire, titre du document, rubriques (deGardeRub), signatures ; avant : ancienne page de garde (garde) */
+  const sc=+doc.STATECODE, couverture={edito:true,statut:sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE',num:String(p.NUMBER||'').trim(),titre:T0.toLocaleUpperCase('fr'),sous:'',info:'',marge:'',
+    filtre:filtre||'',rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
+  /* carte des positions par page pour le clic droit (sauts de page, 10.11.2026) : rangées de DG_RH dès y 122 */
+  { const car={ori:'portrait',pages:[]}; let cur=null;
+    pages.forEach(pg=>{ if(pg.type===0){ car.pages.push({}); return; } const its=[];
+      (pg.rows||[]).forEach((r,j)=>{ const c=r.c||[], c0=v(c,0).trim(), pl=c.some(x=>String(x==null?'':x).trim()), y=122+j*DG_RH;
+        if(c0&&!r.k&&r.s!=='T'&&r.s!=='E'){ cur={cle:c0,n:c0,t:v(c,1).trim()}; its.push(Object.assign({},cur,{y,h:DG_RH})); }
+        else if(pl&&r.s!=='T'&&cur){ const L0=its[its.length-1]; if(L0&&L0.cle===cur.cle) L0.h=y+DG_RH-L0.y; else its.push(Object.assign({},cur,{suite:true,y,h:DG_RH})); } });
+      car.pages.push({items:its,x:DG_X0T-2,w:DG_WP+4}); });
+    sdCarte(X,'honoraires',car); }
   const sT={b:true,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};
   const nomF=T0+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
   const opt=w.JSON.parse(JSON.stringify({titre:T0,sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:ch02aDate(E,doc)||today(),type:'Honoraires',description:nomF,
@@ -39882,12 +39934,16 @@ async function deOctets(X,rec){ await DS.need(['subproject','contact','projectme
   const desc=String(p.DESCRIPTION||p.TITLE||'').trim();
   const sc=+doc.STATECODE, statut=sc===2?'':sc===3?'ANNULÉ':'PROVISOIRE', dte=ch02aDate(E,doc)||today(), filtre=dgFiltreTexte(E,X.filter);
   /* page de garde, variante 3 « Grand titre éditorial » (08.11.2026) : numéro de l'affaire et titre à part, désignation en capitales, rubriques nom / adresse séparés */
-  const couverture={statut,num:String(p.NUMBER||'').trim(),titre:'DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION',sous:desc.toLocaleUpperCase('fr'),filtre:filtre||'',
+  /* même page de garde que le devis général (Paulo, 10.11.2026 : « les mises en page sont identiques à devis ») : désignation retirée (elle est dans la rubrique Ouvrage) */
+  const couverture={statut,num:String(p.NUMBER||'').trim(),titre:'DESCRIPTIF GÉNÉRAL DE LA CONSTRUCTION',sous:'',filtre:filtre||'',
     rub:deGardeRub(p,X),sig:['Le maître de l’ouvrage :','L’architecte :']};
   const nomF='Descriptif '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(filtre?' (filtre)':'');
   const opt=w.JSON.parse(JSON.stringify({titre:'Descriptif',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(filtre?' · '+filtre:''),date:dte,type:'Devis descriptif',description:nomF,
-    descDG:{couverture,items:deFiches(blocs),montants:MTd}})), j=new w.Array(); opt.journal=j;
+    descDG:{couverture,items:deFiches(blocs),montants:MTd,sauts:sdActifs(E,'descriptif')}})), j=new w.Array(); opt.journal=j;
+  const carteD=new w.Array(); opt.descDG.carte=carteD;   /* place des positions par page (sauts de page au clic droit, 10.11.2026) */
   const oct=await fn(R,null,opt); if(j.length) console.info('Descriptif :',Array.from(j));
+  { const car={ori:'portrait',pages:[]}; Array.from(carteD).forEach(x=>{ const P=car.pages[x.p]||(car.pages[x.p]={items:[],x:83,w:512.68-83}); P.items.push({cle:x.cle,n:x.n,t:x.t,y:x.y,h:x.h,suite:x.suite}); });
+    for(let k=0;k<car.pages.length;k++) if(!car.pages[k]) car.pages[k]={}; sdCarte(X,'descriptif',car); }
   return {oct,nom:nomF.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'}; }
 function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.now().toString(36), pdf=deOctets(X,rec).then(r=>new Blob([r.oct],{type:'application/pdf'}));
   pdf.catch(e=>console.error(e)); S.memo.set(id,{pdf,titre:'Devis descriptif',o:{}}); while(S.memo.size>40) S.memo.delete(S.memo.keys().next().value);

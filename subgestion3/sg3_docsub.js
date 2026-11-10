@@ -1747,23 +1747,29 @@ async function sgDsPdf(R, rep, o){
       if(s2 && s2.t === 'h2') b += besoinTitre(k + 1, it.t); else if(s2 && s2.t === 'f') b += hGarde(s2.F2);
       return b; };
     if(!IT.length) return;   /* devis sans position ni remarque : page de garde seule (pas de page vide numérotée) */
+    /* sauts de page du document (10.11.2026) : D.sauts = clés des positions qui commencent une nouvelle page (n° CFC, sinon « · » + texte) ; D.carte (tableau fourni par
+       l'appelant) reçoit la place de chaque position par page { p, cle, n, t, y, h, suite } pour le clic droit de l'aperçu */
+    const SAUTS = new Set(Array.from(D.sauts || []).map(String)), CARTE = D.carte || null;
+    const cle = (it) => String(it.n == null ? '' : it.n).trim() || ('·' + String(it.txt == null ? '' : it.txt).trim());
+    const noter = (it, y0, y1, suite) => { if(CARTE) CARTE.push({ p:cx.pages.length - 1, cle:cle(it), n:String(it.n == null ? '' : it.n), t:String(it.txt == null ? '' : it.txt), y:y0, h:Math.max(8, y1 - y0), suite:!!suite }); };
     let libre = false;   /* suite de titres plus haute qu'une page : elle s'écoule, chaque titre gardé seulement avec ce qui le suit (relecture du 08.11.2026) */
     page();
     IT.forEach((it, idx) => {
+      if(SAUTS.has(cle(it)) && prev !== 'band') page();   /* saut de page voulu avant cette position */
       if(it.t === 'h1' || it.t === 'h2'){ const niv = it.t === 'h1' ? 1 : 2;
         const av0 = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), s2 = IT[idx + 1], bT = besoinTitre(idx, prev);
         if(prev !== 'h1' && prev !== 'h2') libre = bT > BAS2 - Y0;   /* tête de suite : la suite entière tient-elle sur une page ? */
         const besoin = libre ? hH(it, niv, av0) + (s2 && s2.t === 'h2' ? hH(s2, 2, it.t === 'h1' ? 4 : 10) : s2 && s2.t === 'f' ? hGarde(s2.F2) : 0) : bT;
         if(prev !== 'band' && y + besoin > BAS2) page();
-        const av = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), yb = y + av + 7.4, c = niv === 1 ? NUIT : C.N;
+        const av = prev === 'band' ? 0 : niv === 1 ? 14 : (prev === 'h1' ? 4 : 10), yb = y + av + 7.4, c = niv === 1 ? NUIT : C.N, yH = y + av - 1;
         titreH(it, yb, F.bold, c); montant(it.mt, yb, F.bold, c); const nl = cx.couper(P(it.txt || ''), F.bold, 8, WTI).length;
         if(niv === 1){ fil(yb + (nl - 1) * 10 + 4, NUIT, 0.75); y = yb + (nl - 1) * 10 + 8; } else y = y + av + 10 * nl + 3;
-        prev = it.t; return; }
+        noter(it, yH, y); prev = it.t; return; }
       /* fiche */
       const F2 = it.F2, H2 = hFiche(F2);
       if(prev !== 'band' && y + H2 > BAS2){ const coupable = points(F2.L2).length > 0 && y + hDebut(F2) <= BAS2; if(!coupable) page(); }
       if(prev !== 'f') fil(y, FILN, 0.5);
-      let yy = y + 3.5;
+      let yy = y + 3.5, yP = y, suiteP = false;   /* partie de la fiche sur la page en cours (carte des clics) */
       F2.tl.forEach((m, i) => { const yb = yy + 7.4 + i * 10; if(i === 0){ cx.texte(P(it.n || ''), XNo, T(yb), { police:F.regular, taille:8, couleur:NUIT }); montant(it.mt, yb, F.regular); } cx.texte(m, XTx, T(yb), { police:F.regular, taille:8 }); });
       if(F2.tl.length) yy += 10 * F2.tl.length;
       if(F2.L2.length) yy += 1;
@@ -1772,10 +1778,10 @@ async function sgDsPdf(R, rep, o){
       F2.L2.forEach((x, i) => {
         if(x.vide){ yy += hLigne(x); return; }
         const r = RP.indexOf(i), coupe = r >= 0 && yy + hDe(F2.L2, i, r + 1 < RP.length ? RP[r + 1] : F2.L2.length) + 4 > BAS2;
-        if(coupe){ const pv = F2.L2[i - 1], yf = pv && pv.vide ? yy - hLigne(pv) : yy; fil(yf + 4, FILN, 0.5); page(); fil(y, FILN, 0.5); yy = y + 3.5; }   /* filet fermé en bas de page (sans le blanc qui précède), rouvert sous la bande */
+        if(coupe){ const pv = F2.L2[i - 1], yf = pv && pv.vide ? yy - hLigne(pv) : yy; fil(yf + 4, FILN, 0.5); noter(it, yP, yf + 4, suiteP); page(); fil(y, FILN, 0.5); yy = y + 3.5; yP = y; suiteP = true; }   /* filet fermé en bas de page (sans le blanc qui précède), rouvert sous la bande */
         cx.texte(x.l, XTx, T(yy + 7.0), { police:x.f, taille:7.5 }); if(MT && x.mt) cx.texte(P(x.mt), XR - 2, T(yy + 7.0), { police:F.light, taille:7.5, align:'d' });
         yy += hLigne(x); });
-      y = yy + 4; fil(y, FILN, 0.5); prev = 'f'; });
+      y = yy + 4; fil(y, FILN, 0.5); noter(it, yP, y, suiteP); prev = 'f'; });
   };
   const contenu = (cx) => {
     if(o.descDG){ contenuDescDG(cx); return; }

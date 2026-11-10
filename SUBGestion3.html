@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 10:12 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 10:31 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -27050,7 +27050,7 @@ function sgVoirContrat(w,id){ const c=((fxData()||{}).c||[]).find(x=>x.id===id);
   if(!w._sgCloseOffre){ w._sgCloseOffre=w.closeOffre; w.closeOffre=function(){ const r=w._sgCloseOffre.apply(this,arguments); if(w._sgRetour){ w._sgRetour=false; if(VIEW&&VIEW.id==='fx-contrats') nxHist(-1); } return r; }; }
   w._sgRetour=NX.pos>0; }
 /* icônes de l'onglet Heures (20.10.2026) : phases = escalier, collaborateur × phase = grille */
-Object.assign(NXI,{permis:'<path d="M13 3H6v18h6"/><path d="M13 3l5 5v4"/><path d="M13 3v5h5"/><path d="M8.5 12h5M8.5 15.5h3"/><circle cx="17" cy="17.5" r="3.5"/><path d="M15.5 17.5l1 1 2-2"/>',gantt:'<path d="M3 4v16h18"/><path d="M6 7.5h7M9 11.5h8M12 15.5h6"/>',tampon:'<path d="M9.5 3.5h5v5.5l2.5 3H7l2.5-3zM5 12h14v4H5zM5 20h14"/>',   /* Planning, Enquête (02.11.2026) */
+Object.assign(NXI,{volume:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',permis:'<path d="M13 3H6v18h6"/><path d="M13 3l5 5v4"/><path d="M13 3v5h5"/><path d="M8.5 12h5M8.5 15.5h3"/><circle cx="17" cy="17.5" r="3.5"/><path d="M15.5 17.5l1 1 2-2"/>',gantt:'<path d="M3 4v16h18"/><path d="M6 7.5h7M9 11.5h8M12 15.5h6"/>',tampon:'<path d="M9.5 3.5h5v5.5l2.5 3H7l2.5-3zM5 12h14v4H5zM5 20h14"/>',   /* Planning, Enquête (02.11.2026) */
   escalier:'<path d="M3 20.5h5v-5h5v-5h5v-5h3"/>',grille:'<rect x="3" y="4" width="18" height="16"/><path d="M3 9.5h18M3 15h18M9 4v16"/>'});
 const SG_CGRP={};   // Chantier : rubriques ouvertes par projet (le temps de la session de l'onglet)
 function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet'); const set=h0=>{ box.innerHTML=h0; };   // cible : partie d'un onglet regroupé (20.10.2026)
@@ -29122,7 +29122,7 @@ const SG_PDOM_GI={'Équipe et adresses':'users','Suivi du projet':'task','Honora
 /* plannings du projet et du chantier (02.11.2026, sg3_planning.js) : pages pleines de la page du projet, collection « sgplanning » */
 const SG_PLAN_PAGES={'Planning du projet':'projet','Planning du chantier':'chantier'};
 /* tuiles qui commencent une nouvelle ligne dans leur groupe (02.11.2026, Paulo : « Estimations, Descriptifs & devis mettre à la ligne ») */
-const SG_TUILE_BR=new Set(['Estimations','Conditions générales','Planning du chantier','Documents du chantier']);   /* Chantier (07.11.2026) : une ligne par étape, quel que soit le nombre de colonnes */
+const SG_TUILE_BR=new Set(['Surfaces et volumes','Conditions générales','Planning du chantier','Documents du chantier']);   /* Chantier (07.11.2026) : une ligne par étape, quel que soit le nombre de colonnes */
 const SG_PDOM={'Conditions générales':['doc','Le cahier de base des soumissions du projet : conditions, page de garde, résumé de l’offre, annexes ; repris dans chaque CFC.'],'PV de chantier':['pv','Les procès-verbaux des séances de chantier : annotation, envoi, PDF.'],'Contrats d’entreprise':['doc','Les contrats avec les entreprises : lots adjugés, montants, avenants, clauses, PDF.'],'Planning du chantier':['gantt','Les dates du chantier : appels d’offres, exécution, travaux des entreprises, réception.'],'Présentation du chantier':['pdf','Les documents de présentation du chantier.'],'Documents du chantier':['folder','Les fichiers du chantier : contrôles des coûts, devis, soumissions, appels d’offres et réalisation.'],'Intervenants':['users','Les intervenants du projet et leur rôle.'],'Soumissionnaires':['group','Les entreprises invitées aux appels d’offres.'],
   'Liste d’adresses':['contacts','Les adresses des intervenants, à copier ou exporter.'],'Documents':['folder','Les fichiers joints du projet.'],
   'Séances':['cal','Séances, convocations et procès-verbaux.'],'Notes':['edit','Les notes du projet.'],'Tâches':['task','À faire, en cours, réglées.'],'Frais':['receipt','Frais et dépenses imputés au projet.'],
@@ -29201,7 +29201,7 @@ VIEWS['nx-pdom']={
     if(!p){ nxPage(m,'<div class="nx-empty">Projet introuvable. <a href="#" data-go="nx-mesprojets">Mes projets</a></div>'); return; }
     if(!sgProjetPermis(p.ID)){ VIEW.nxTitle='Projet non attribué'; nxPage(m,SG_NON_ATTRIBUE); return; }
     nxRecent('p',p.ID); const G0=sgPdomListe(), M=sgPdomModules(p), mods=M.map(([g])=>g), pick=n=>G0.filter(([g])=>g===n), G=[...pick('Honoraires et facturation'),...pick('Suivi du projet'),...M,...pick('Chantier'),...G0.filter(([g])=>!['Honoraires et facturation','Suivi du projet','Chantier'].includes(g))], doms=G0.flatMap(([,L])=>L);   /* ordre (21.10.2026) : Honoraires et facturation, Suivi du projet, Faisabilité, Projet, Chantier, puis les autres groupes */   /* M : modules Projet / Faisabilité en tête (bloc 21, 20.10.2026) */
-    if(dom&&(mods.includes(dom)||doms.includes(dom)||(dom==='Documents de la faisabilité'&&mods.includes('Faisabilité'))||(dom==='Planning du projet'&&mods.includes('Projet'))||(dom==='Permis de construire'&&mods.includes('Enquête'))||(dom==='Calcul des coûts'&&M.some(([,L])=>L.includes(dom)))||(dom==='PV MO'&&mods.includes('Projet')))){   /* + Documents de la faisabilité (21.10.2026) */                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
+    if(dom&&(mods.includes(dom)||doms.includes(dom)||(dom==='Documents de la faisabilité'&&mods.includes('Faisabilité'))||(dom==='Planning du projet'&&mods.includes('Projet'))||(dom==='Permis de construire'&&mods.includes('Enquête'))||(dom==='Surfaces et volumes'&&mods.includes('Projet'))||(dom==='Calcul des coûts'&&M.some(([,L])=>L.includes(dom)))||(dom==='PV MO'&&mods.includes('Projet')))){   /* + Documents de la faisabilité (21.10.2026) */                                              /* un domaine en pleine page (Documents : sgDocsModule, 20.10.2026) */
       VIEW.nxTitle=dom+' · '+(p.NUMBER||p.TITLE||'');
       /* retour à la page du projet : variante 3 « carré bleu nuit » choisie par Paulo le 08.11.2026 (maquettes : subgestion3/_backup_20261108_maquette_retour/) ;
          ligne des domaines (Faisabilité, Projet, Enquête…) retirée à la demande le même jour */
@@ -29210,7 +29210,7 @@ VIEWS['nx-pdom']={
           onclick:()=>{ const gf=G.findIndex(([,L])=>!!foc&&L.includes(foc)); go('nx-pdom',p.ID+'|#'+(gf>=0?gf:G.findIndex(([g,L])=>g===dom||L.includes(dom)))); }}));   /* rubrique d'un autre groupe (Dossier d'enquête ▸ Enquête, 02.11.2026) */
       const cols=h('div',{class:'cols'}), C=h('div',{class:'col fill'}); cols.append(C); m.append(bar,cols);
       this.domPropre=dom==='Contrats d’entreprise'||dom==='Conditions générales';   /* saisie sur place : le module suit lui-même la base (sg3_contrats_ent.js) ; un redessin général ferait perdre la frappe */
-      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Documents du chantier') sgPdomModulePage(C,p2,dom,foc); else if(SG_DOCS_PAGES[dom]) sgDocsModule(C,p2,SG_DOCS_PAGES[dom](p2));   /* Documents du chantier : phases 41 à 53 et types (21.10.2026) */ else if(dom==='Frais') sgFraisModule(C,p2); else if(SG_PLAN_PAGES[dom]){ if(typeof sgPlanningModule==='function') sgPlanningModule(C,p2,SG_PLAN_PAGES[dom]); } else if(dom==='Permis de construire'){ if(typeof sgPermisModule==='function') sgPermisModule(C,p2); } else if(dom==='Contrats d’entreprise'){ if(typeof sgContratsEntModule==='function') sgContratsEntModule(C,p2); } else if(dom==='Conditions générales'){ if(typeof sgCgModule==='function') sgCgModule(C,p2); } else if(dom==='PV de chantier'){ if(typeof sgPvChantierModule==='function') sgPvChantierModule(C,p2); } else if(dom==='PV MO'){ if(typeof sgPvMoModule==='function') sgPvMoModule(C,p2); } else domainView(C,p2,dom); } }; this.drawC(); return; }
+      this.drawC=()=>{ C.innerHTML=''; const p2=DS.get('project',pid); if(p2){ if(mods.includes(dom)) sgPdomModulePage(C,p2,dom,foc); else if(dom==='Documents') sgDocsModule(C,p2); else if(dom==='Documents du chantier') sgPdomModulePage(C,p2,dom,foc); else if(SG_DOCS_PAGES[dom]) sgDocsModule(C,p2,SG_DOCS_PAGES[dom](p2));   /* Documents du chantier : phases 41 à 53 et types (21.10.2026) */ else if(dom==='Frais') sgFraisModule(C,p2); else if(SG_PLAN_PAGES[dom]){ if(typeof sgPlanningModule==='function') sgPlanningModule(C,p2,SG_PLAN_PAGES[dom]); } else if(dom==='Permis de construire'){ if(typeof sgPermisModule==='function') sgPermisModule(C,p2); } else if(dom==='Surfaces et volumes'){ if(typeof sgSurfacesModule==='function') sgSurfacesModule(C,p2); } else if(dom==='Contrats d’entreprise'){ if(typeof sgContratsEntModule==='function') sgContratsEntModule(C,p2); } else if(dom==='Conditions générales'){ if(typeof sgCgModule==='function') sgCgModule(C,p2); } else if(dom==='PV de chantier'){ if(typeof sgPvChantierModule==='function') sgPvChantierModule(C,p2); } else if(dom==='PV MO'){ if(typeof sgPvMoModule==='function') sgPvMoModule(C,p2); } else domainView(C,p2,dom); } }; this.drawC(); return; }
     VIEW.nxTitle=(p.NUMBER?p.NUMBER+' · ':'')+(p.TITLE||'');                                        /* page du projet : groupes repliables de domaines */
     const ouvert=/^#\d+$/.test(dom||'')?+dom.slice(1):-1;                                            // 18.10.2026 : tout replié à l'arrivée ; au retour d'un domaine, son groupe ouvert
     const logs=DS.by('timelog','PROJECT_ID',p.ID), lim30=dayKey(new Date(Date.now()-30*864e5)), tot=logs.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0),
@@ -29842,6 +29842,7 @@ const SG_PMOD={'PV MO':['pv','Les séances avec le maître de l’ouvrage : ques
   'Documents':['folder','Tous les fichiers du projet, par dossier.','Projet'],
   'Planning du projet':['gantt','Les dates des phases d’étude : avant-projet, projet, demande d’autorisation.','dom'],
   'Permis de construire':['permis','Demande, enquête publique, oppositions, décision, conditions du permis, délais et documents.','dom'],   /* sg3_permis.js (02.11.2026) */
+  'Surfaces et volumes':['volume','Volume bâti SIA 416 du projet ; surfaces et métrés à venir.','dom'],   /* sg3_surfaces.js (10.11.2026) */
   'Parcelle & règlements':['map','Parcelle, recherche automatique (geo.admin.ch, cadastre RDPPF), règlements, contraintes et réponses du projet.','fz'],
   'Documents de base':['folder','Plans, extraits et photos : les pièces de départ de l’étude.','Faisabilité'],
   'Études':['doc','Études et calculs de la faisabilité.','Faisabilité'],
@@ -29851,10 +29852,10 @@ const SG_PMOD={'PV MO':['pv','Les séances avec le maître de l’ouvrage : ques
   'Calcul des coûts':['ruler','Estimations du coût par éléments.','dom'],   /* déplacé de Chantier dans Projet et Faisabilité (04.11.2026) */
   'Fiche de faisabilité':['print','Le document de synthèse : parcelle, sources, règlements, contraintes et réponses, variantes, conclusion.','fiche']};
 const SG_PMOD_G=[['Faisabilité',['Parcelle & règlements','Documents de base','Études','Variantes','Calcul des coûts','Présentation au client','Fiche de faisabilité','Documents de la faisabilité']],   // Faisabilité avant Projet (21.10.2026)
-  ['Projet',['PV MO','Présentation client','Planning du projet','Documents','Estimations','Descriptifs & devis','Calcul des coûts']],   /* Planning ; Estimations et Descriptifs & devis à la ligne (02.11.2026) */
+  ['Projet',['PV MO','Présentation client','Planning du projet','Documents','Surfaces et volumes','Estimations','Descriptifs & devis','Calcul des coûts']],   /* Surfaces et volumes en tête de la 2e ligne (10.11.2026) */   /* Planning ; Estimations et Descriptifs & devis à la ligne (02.11.2026) */
   ['Enquête',['Dossier d’enquête','Permis de construire']]];   /* groupe entre Projet et Chantier (02.11.2026, Paulo : « entre chantier et projet ajouter enquête ») */
 Object.assign(SG_PDOM_GI,{'Projet':'building','Faisabilité':'ruler'});
-SG_PDOM_T.push('sgfaisa','sgdocphase','sgplanning','sgpermis','sgcontratent','sgcgprojet');
+SG_PDOM_T.push('sgfaisa','sgdocphase','sgplanning','sgpermis','sgcontratent','sgcgprojet','sgsurfaces');
 /* faisabilité aussi dès qu'une analyse de parcelle existe pour le projet */
 { const f0=sgFaisaOk; sgFaisaOk=function(p){ return f0(p)||!!DS.get('sgfaisa',String(p.ID)); }; }
 /* groupes de modules de la page du projet : Projet (sauf projet uniquement de faisabilité), Faisabilité (phase de faisabilité) */
@@ -29862,6 +29863,7 @@ const sgCalcOk=()=>{ try{ return new Set(ch08bDomains(DOMAINS)).has('Calcul des 
 function sgPdomModules(p){ const fS=sgCatProjet(p)==='faisabilite'; return SG_PMOD_G.filter(([g])=>g==='Faisabilité'?sgFaisaOk(p):!fS).map(([g,L])=>[g,L.filter(d=>d!=='Calcul des coûts'||sgCalcOk())]); }
 /* compteurs des tuiles des modules (appelés par sgPdomCompte quand le domaine n'est pas un domaine du moteur) */
 function sgPdomModuleCompte(p,d){ if(d==='Permis de construire') return typeof sgPermisCompte==='function'?sgPermisCompte(p):'';   /* sg3_permis.js (02.11.2026) */
+  if(d==='Surfaces et volumes') return typeof sgSurfacesCompte==='function'?sgSurfacesCompte(p):'';   /* sg3_surfaces.js (10.11.2026) */
   const pl=(n,s,s2)=>n+' '+(n>1?(s2||s+'s'):s), F=DS.all('depotfichier'), nfc=s=>String(s||'').normalize('NFC');
   let base='', baseF=''; try{ base=ch03aDossier('document',p.ID,'Projet')+'/'; baseF=ch03aDossier('document',p.ID,'Faisabilité')+'/'; }catch(_){ return ''; }
   const sousPhase=sous=>F.filter(f=>{ const s=nfc(f.DOSSIER); return s.startsWith(base)&&s.slice(base.length).split('/')[1]===nfc(sous); }).length;
@@ -41786,6 +41788,93 @@ function sgVisionneuse(b,nom,o){ o=o||{}; sglpCss(); const t=String(b.type||'').
   ov.append(box); document.body.append(ov); document.addEventListener('keydown',esc,true);
   setTimeout(()=>{ try{ (L?L.vue:box).focus({preventScroll:true}); }catch(_){} },0);
   return {fermer,imprimer,telecharger,lecteur:L}; }
+
+/* ═══ SURFACES ET VOLUMES (10.11.2026, bloc 49 ; Paulo : « le volume doit être entré quelque part dans le logiciel dans un module de calcul de
+   surface et volume, ajoute ce module dans Projet et ajoute uniquement le volume pour l'affaire 99TST ; on regardera ensemble comment créer le
+   module de calcul de surface et volume, pour réaliser des métrés etc. ») ═══
+   Page du projet (nx-pdom) ▸ groupe Projet ▸ tuile « Surfaces et volumes » (première de la 2e ligne, avant Estimations) ; SG_PMOD, SG_PMOD_G,
+   compteur et page pleine branchés dans sg3_plus.js. Première étape : le volume bâti (VB) selon SIA 416 seulement ; surfaces SIA 416, calcul
+   des volumes et métrés : à concevoir avec Paulo.
+   Données : collection propre « sgsurfaces » (gardée par les reprises ; serveur du NAS : règle « projet modifiable » des collections rattachées
+   par PROJECT_ID, rien à changer), un enregistrement par projet : {ID = ID du projet, PROJECT_ID, VB (m³), MODIFIE, PAR}. Sans valeur saisie ici,
+   le volume des caractéristiques de l'affaire (project.VOLUME, venu de l'ancien logiciel) est repris et signalé comme tel (il serait remplacé à
+   la prochaine reprise : c'est pourquoi la saisie se fait ici, pas dans project).
+   Utilisé par : devis général ▸ récapitulatifs (prix au m³ SIA 416, sg3_devis.js), via window.sgVolumeSIA416(p).
+   Droits : lecture = qui voit le projet ; écriture = projet modifiable (comme le planning et le permis). Styles #sgsf-css, classes sgsf-*. */
+(function(){
+const T='sgsurfaces';
+const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const moi=()=>{ try{ return typeof ME==='object'&&ME&&ME.id?String(ME.id):''; }catch(_){ return ''; } };
+const dire=(m,err)=>{ if(typeof toast==='function') toast(m,err); };
+const ver=id=>{ try{ return ((DS.S&&DS.S[T])||{})[String(id)]||0; }catch(_){ return 0; } };
+const peut=p=>{ try{ return !!(sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID)))); }catch(_){ return false; } };
+const mille=n=>{ const v=Math.round(+n*10)/10, e=Math.trunc(Math.abs(v)), d=Math.round((Math.abs(v)-e)*10); return (v<0?'−':'')+String(e).replace(/\B(?=(\d{3})+(?!\d))/g,'\'')+(d?'.'+d:''); };
+const lireNb=s=>{ const t=String(s==null?'':s).replace(/[’'\s ]/g,'').replace(',','.').replace(/m³|m3/gi,''); if(!t) return null; const v=+t; return isFinite(v)&&v>0?v:NaN; };
+const dfr=iso=>{ const d=new Date(iso); return isNaN(d)?'':String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear(); };
+
+/* volume bâti du projet : saisi ici, sinon caractéristiques de l'affaire */
+function val(p){ if(!p) return {vb:0,src:''}; const r=DS.get(T,String(p.ID)); if(r&&+r.VB>0) return {vb:+r.VB,src:'module',r};
+  if(+p.VOLUME>0) return {vb:+p.VOLUME,src:'affaire'}; return {vb:0,src:''}; }
+window.sgVolumeSIA416=p=>{ try{ return val(p).vb||0; }catch(_){ return 0; } };
+window.sgSurfacesCompte=p=>{ try{ const v=val(p); return v.vb?'VB '+mille(v.vb)+' m³':'Volume à saisir'; }catch(_){ return ''; } };
+
+function css(){ if(document.getElementById('sgsf-css')) return; const s=document.createElement('style'); s.id='sgsf-css'; s.textContent=`
+.sgsf-box{flex:1 1 auto;min-height:0;overflow:auto}
+.sgsf{padding:16px 24px 28px;box-sizing:border-box;max-width:1100px}
+.sgsf .sgfh-tete{margin:0 0 22px}
+.sgsf-sec{border-top:2px solid var(--s-noir);margin:0 0 26px}
+.sgsf-sh{display:flex;align-items:baseline;gap:8px 16px;padding:9px 0 12px}
+.sgsf-sh h3{margin:0;font-size:15px;font-weight:700;color:var(--s-noir)}
+.sgsf-sh .nb{font-size:12px;color:var(--s-gris)}
+.sgsf-l{display:grid;grid-template-columns:minmax(220px,320px) minmax(0,1fr);gap:6px 24px;align-items:center;padding:4px 0 10px}
+.sgsf-l .lb{font-size:13px;color:var(--s-noir)}
+.sgsf-l .lb small{display:block;font-size:11.5px;color:var(--s-gris);margin-top:2px}
+.sgsf-v{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sgsf-v input{width:140px;font:inherit;font-size:15px;padding:6px 8px;border:1px solid var(--s-gris3,#c8c8c4);text-align:right;background:#fff;color:var(--s-noir)}
+.sgsf-v input:focus{outline:2px solid var(--s-nuit);outline-offset:-1px}
+.sgsf-v .u{font-size:14px;color:var(--s-noir)}
+.sgsf-v .grand{font-size:28px;font-weight:700;color:var(--s-noir)}
+.sgsf-note{font-size:12px;color:var(--s-gris);margin:2px 0 0}
+.sgsf-note.av{color:var(--s-orange,#D7860D)}
+.sgsf-ul{margin:0;padding:0 0 0 18px;font-size:13px;color:var(--s-noir);line-height:1.6}
+.sgsf-ul li span{color:var(--s-gris)}`; document.head.append(s); }
+
+function dessiner(u){ const p=DS.get('project',u.p.ID)||u.p, v=val(p), ok=peut(p), r=v.r, vu=p&&p.VOLUME>0?+p.VOLUME:0;
+  const meta=['Volume bâti selon SIA 416',r&&r.MODIFIE?'modifié le '+dfr(r.MODIFIE):''].filter(Boolean).join(' · ');
+  let h='<div class="sgsf"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+E(p.NUMBER||'')+'</div><div class="sgfh-nm"><div class="lb">Surfaces et volumes</div><h2>'+E(p.TITLE||p.NUMBER||'')+'</h2>'
+    +'<div class="sgfh-meta">'+E(meta)+'</div></div></div></div>';
+  h+='<section class="sgsf-sec"><div class="sgsf-sh"><h3>Volume</h3><span class="nb">SIA 416</span></div>'
+    +'<div class="sgsf-l"><div class="lb">Volume bâti (VB)<small>Volume de l’ouvrage selon la norme SIA 416, en m³</small></div><div class="sgsf-v">'
+    +(ok?'<input type="text" inputmode="decimal" data-k="vb" value="'+E(v.src==='module'?mille(v.vb):'')+'" placeholder="'+E(v.src==='affaire'?mille(v.vb):'')+'" aria-label="Volume bâti SIA 416, en mètres cubes"><span class="u">m³</span><button class="nx-btn" data-a="ok">Enregistrer</button>'
+        :'<span class="grand">'+(v.vb?E(mille(v.vb)):'—')+'</span><span class="u">'+(v.vb?'m³':'')+'</span>')
+    +'</div></div>'
+    +(v.src==='affaire'?'<p class="sgsf-note av">Valeur reprise des caractéristiques de l’affaire (ancien logiciel) : '+E(mille(vu))+' m³. Enregistrez-la ici pour la garder.</p>':'')
+    +(!v.vb?'<p class="sgsf-note">Aucun volume pour ce projet.</p>':'')
+    +(v.src==='module'&&vu&&Math.abs(vu-v.vb)>0.5?'<p class="sgsf-note">Caractéristiques de l’affaire (ancien logiciel) : '+E(mille(vu))+' m³.</p>':'')
+    +'</section>';
+  h+='<section class="sgsf-sec"><div class="sgsf-sh"><h3>Utilisé par</h3></div><ul class="sgsf-ul"><li>Devis général : prix au m³ SIA 416 des récapitulatifs <span>(CFC 2 et CFC 1 à 9)</span></li></ul></section>';
+  h+='<section class="sgsf-sec"><div class="sgsf-sh"><h3>À venir</h3></div><p class="sgsf-note" style="font-size:13px">Surfaces SIA 416, calcul des volumes et métrés : ce module sera complété.</p></section></div>';
+  u.box.innerHTML=h;
+  const inp=u.box.querySelector('[data-k="vb"]'), go=()=>enregistrer(u,inp);
+  if(inp){ inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); go(); } }); }
+  const b=u.box.querySelector('[data-a="ok"]'); if(b) b.addEventListener('click',go); }
+
+async function enregistrer(u,inp){ const p=DS.get('project',u.p.ID)||u.p; if(!peut(p)){ dire('Lecture seule : votre profil ne permet pas de modifier ce projet.',true); return; }
+  if(u.enCours) return; const vb=lireNb(inp.value); if(Number.isNaN(vb)){ dire('Volume non valable : indiquez un nombre de m³, par exemple 12000.',true); inp.focus(); return; }
+  const id=String(p.ID), r0=DS.get(T,id);
+  if(vb==null&&!r0){ dessiner(u); return; }
+  if(r0&&vb!=null&&Math.abs(+r0.VB-vb)<1e-9){ dire('Volume inchangé.'); return; }
+  const val0=vb==null?null:Object.assign({},r0||{},{ID:id,PROJECT_ID:p.ID,VB:vb,MODIFIE:new Date().toISOString(),PAR:moi()||null});
+  u.enCours=true; let ok=false;
+  try{ await DS.commit([{t:T,id,val:val0,bseq:ver(id)}]); ok=true; }catch(e){ if(!e||!e.conflict) console.error(e); }
+  finally{ u.enCours=false; }
+  if(ok) dire(vb==null?'Volume retiré du module.':'Volume enregistré : '+mille(vb)+' m³.'); dessiner(u); }
+
+window.sgSurfacesModule=function(C,p){ try{ css(); C.innerHTML=''; const box=document.createElement('div'); box.className='sgsf-box'; C.append(box);
+    DS.need([T]).catch(()=>{}).then(()=>dessiner({p,box})); }
+  catch(e){ console.error(e); C.innerHTML='<p style="padding:20px">Le module Surfaces et volumes n’a pas pu s’afficher.</p>'; } };
+window.SGSF={val,T};
+})();
 </script>
 </body>
 </html>

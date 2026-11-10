@@ -306,12 +306,14 @@ function bouclement(ctx){ const an=+A.REF.aujourdhui.slice(0,4)-1, qui=ctx.me.us
     ops.push({t:'sgbouclement',id,val:{ID:id,ANNEE:an,STAFF_ID:s.ID,VALIDE:1,PAR:qui,LE,HS:A.arr(b.hs+ecart),VAC:b.vacSolde,TRANSFERE:0,TRANSFERE_LE:null}}); noms.push(k+' '+b.hs); });
   return {ops,noms}; }
 
-A.mod(90,'modules','Faisabilité, plannings, permis, avancement, apports, bouclement',async ctx=>{
+A.mod(90,'modules','Faisabilité, plannings, permis, avancement, apports, bouclement, volume SIA 416',async ctx=>{
   const p=DS.get('project',ctx.pid); if(!p) throw new Error('module 90 : affaire absente');
-  await DS.need(['sgfaisa',AJD,'sgplanning','sgplanningarch','sgpermis','sgavancement','projectimplementation','sgapport','sgbouclement','sgcontrattravail','timelog','projectphase','projectsubphase','stafftargettime','publicholiday']);
+  await DS.need(['sgfaisa',AJD,'sgplanning','sgplanningarch','sgpermis','sgavancement','projectimplementation','sgapport','sgbouclement','sgcontrattravail','timelog','projectphase','projectsubphase','stafftargettime','publicholiday','sgsurfaces']);
   await A.cadre();
   const F=await faisabilite(ctx,p), Pl=plannings(ctx), Pc=permis(ctx,p), Av=avancement(ctx,p), Ap=apports(ctx), Bo=bouclement(ctx);
-  await A.commit([...F.ops,...Pl,...Pc.ops,...Av.ops,...Ap,...Bo.ops]);
+  /* surfaces et volumes (10.11.2026) : volume bâti SIA 416 de la référence, saisi dans le module du projet */
+  const Sv=[{t:'sgsurfaces',id:String(ctx.pid),val:{ID:String(ctx.pid),PROJECT_ID:ctx.pid,VB:A.REF.volume,MODIFIE:'2024-04-18T16:00:00.000Z',PAR:ctx.me.user}}];
+  await A.commit([...F.ops,...Pl,...Pc.ops,...Av.ops,...Ap,...Bo.ops,...Sv]);
   ctx.permis={demandes:Pc.ids};
   ctx.faisa={source:'srcreg',titre:F.TR,texte:F.reg.texte,pages:F.reg.pages,articles:F.reg.articles,
     lierFichier:async fid=>{ const r=JSON.parse(JSON.stringify(DS.get('sgfaisa',String(ctx.pid)))), s=r.SOURCES.find(x=>x.ID==='srcreg'); s.FICHIER=fid; await A.commit([{t:'sgfaisa',id:r.ID,val:r}]); }};

@@ -1999,6 +1999,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   présentation favorite du document. Colonnes inconnues du moteur encore écartées : OUV (`og`), équations (`equ1`…), DG indexé (`kvTotInclFac`), montants par m² /
   m³, contrat/DG rév. − paiements (`contractKvMinusAccordPayment`). Copie d'avant : `DeltaSub_backup_20261110_1810_avant_colonne_cfc.html`. Liste : « -0.00 » évité,
   rendu même sans contrôle des coûts dans la base (relecture du 10.11.2026).
+  **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
+  l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
+  option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût
+  (sections Contrôle du coût et Devis général) et sur le tableau des positions du devis (`ch02aDraw`, toutes les présentations ; avant, seulement « avec le calcul de
+  prix »). Les listes (mutations, adjudications, paiements…) gardent leur tri. Copie d'avant : `DeltaSub_backup_20261110_1840_avant_tri_fixe.html`.
   **Fenêtres des écritures = proposition B « Tableur » (10.11.2026, bloc 51, `subgestion3/sg3_ecritures.js`, concaténé après `sg3_coco.js` ; Paulo : « proposer un
   autre graphisme pour correspondre à la section devis, fais 5 propositions » — paiement, situation sur contrat, mutation —, puis « version B » ; maquettes A étapes,
   B tableur, C décompte, D rubriques, E chiffres et onglets : `subgestion3/_backup_20261110_maquette_ecritures/`)** : `ccPayment` (situation, paiement hors contrat),

@@ -575,6 +575,7 @@ function grid(el,o){
   const st=o.state||(o.state={}); if(st.sort==null&&o.sort) st.sort=o.sort;
   const key=o.key||(r=>r.ID);
   let rows=o.rows.slice();
+  if(o.noSort) st.sort=null;   /* o.noSort : ordre des lignes fixe (contrôle du coût : hiérarchie des CFC), pas de tri par les titres (10.11.2026) */
   if(st.sort){ const [k,dir]=st.sort; const c=o.cols.find(c=>c.k===k)||{}; const g=c.v||(r=>r[k]); rows.sort((a,b)=>cmp(g(a),g(b))*(dir<0?-1:1)); }
   o.view=rows;
   if(o.multi&&!o.selSet) o.selSet=new Set(o.sel!=null?[String(o.sel)]:[]);
@@ -582,7 +583,7 @@ function grid(el,o){
   const t=h('table',{class:'g'}), cg=h('colgroup'), th=h('tr');
   o.cols.forEach(c=>{ cg.append(h('col',{style:c.w?{width:c.w+'px'}:null}));
     const x=h('th',{class:(c.cls||'')+(st.sort&&st.sort[0]===c.k?' sort'+(st.sort[1]<0?' desc':''):''),title:c.t},c.t);
-    x.onclick=()=>{ st.sort=[c.k, st.sort&&st.sort[0]===c.k?-st.sort[1]:1]; grid(el,o); }; th.append(x); });
+    if(!o.noSort) x.onclick=()=>{ st.sort=[c.k, st.sort&&st.sort[0]===c.k?-st.sort[1]:1]; grid(el,o); }; else x.style.cursor='default'; th.append(x); });
   const tb=h('tbody'); let anchor=null;
   rows.forEach((r,i)=>{ const k=String(key(r)), tr=h('tr',{'data-k':k,class:isOn(k)?'on':null});
     o.cols.forEach(c=>tr.append(h('td',{class:c.cls||null,html:c.f?c.f(r):esc(r[c.k])})));
@@ -3741,7 +3742,7 @@ function ccEditor(m,id){
           if(c.sp==='lbl') return {k:'lbl',t:title(id),w:230,f:r=>`<span style="${B(r)}">${esc(r.lbl)}</span>`};
           if(c.sp==='ent') return {k:'ent',t:title(id),w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)};
           return {k:id,t:title(id),w:c.pct?60:118,cls:'r',f:r=>`<span style="${B(r)}">${cell(r,id)}</span>`}; }),
-        rows,sort:null,sel:CCV.sel,onSel:r=>{ if(r.det){ CCV.detSel=r.det; } else { CCV.sel=r.k.split('|').slice(0,2).join('|'); CCV.detSel=null; } },onDbl:r=>{ if(r.det){ CCV.detSel=r.det; editDet(); } }});
+        rows,sort:null,noSort:true,sel:CCV.sel,onSel:r=>{ if(r.det){ CCV.detSel=r.det; } else { CCV.sel=r.k.split('|').slice(0,2).join('|'); CCV.detSel=null; } },onDbl:r=>{ if(r.det){ CCV.detSel=r.det; editDet(); } }});   // ordre fixe (hiérarchie des CFC, comme Deltaproject) : pas de tri par les titres (Paulo, 10.11.2026)
       if(!ids.some(i=>CC_COL[i].sp==='cfc')) G.cols.unshift({k:'cfc',t:title('kag'),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`});   // colonne CFC fixe et toujours la première, comme Deltaproject (les présentations reprises de Deltaproject ne la contiennent pas ; 10.11.2026)
       if(!ids.some(i=>CC_COL[i].sp==='ent')&&sec!=='DEVIS GENERAL') G.cols.splice(2,0,{k:'ent',t:'Entreprise',w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)});
       grid(pane,G); return; }
@@ -17261,8 +17262,8 @@ function ch02aDraw(X){ const E=X.E, st=X.st, sep=ch02aSep(X), mode=ch02aMode(E),
       {k:'def',t:'Définitif',w:70,cls:'c',f:D(n=>n.leaf?ch02aDef(n.p):'')}]:[]),
     ...([1,3].includes(mode)?[{k:'com',t:'Commentaire',w:200,f:r=>r.det?I(esc(r.l.commentaire||'')):tip(ch02aCom(r.p))}]:[]),
     ...([1,3,4].includes(mode)?[{k:'desc',t:'Descriptif',w:mode===4?420:260,f:r=>r.det?I(esc(ch02aCalcText(r.l,R,sep))):tip(ch02aDesc(r.p))}]:[])];
-  if(mode===3&&X.R2.state) X.R2.state.sort=null;                                                          // mode 3 : ordre fixe (lignes de calcul sous leur position)
-  grid(X.rp,Object.assign(X.R2,{key:r=>r.det?r.k:r.p.cfc,cols,rows,sort:null,sel:st.sel,onSel:r=>{ st.sel=r.det?null:String(r.p.cfc); ch02aUpd(X); },
+  if(X.R2.state) X.R2.state.sort=null;   /* devis : CFC toujours dans l'ordre, pas de tri par les titres (Paulo, 10.11.2026 : « les cfc doivent rester dans l'ordre ») ; avant : seulement en mode 3 */                                                          // mode 3 : ordre fixe (lignes de calcul sous leur position)
+  grid(X.rp,Object.assign(X.R2,{key:r=>r.det?r.k:r.p.cfc,cols,rows,sort:null,noSort:true,sel:st.sel,onSel:r=>{ st.sel=r.det?null:String(r.p.cfc); ch02aUpd(X); },
     onDbl:r=>{ if(r.det) return; st.sel=String(r.p.cfc); X.dvCalc(); }}));
   if(mode===3) X.rp.querySelectorAll('thead th').forEach(th=>{ th.onclick=null; });
   if(X.flab){ X.flab.textContent=X.flabel||''; X.flab.style.display=X.flabel?'':'none'; }                  // jFilterLabel : nom du favori marqué

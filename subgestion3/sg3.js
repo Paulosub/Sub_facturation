@@ -183,6 +183,7 @@ const SG_DOM=[
     {v:'adr-favoris',t:'Favoris',dom:'contacts',ico:'star',d:'Vos adresses favorites (venu du chapitre Contacts le 25.10.2026 ; dom : droits et visuel de Contacts).'},
     {v:'adr-chercher',dom:'contacts',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…) (venu du chapitre Contacts le 25.10.2026).'},
     {v:'affd-controlling',dom:'reglages',t:'Controlling',ico:'trend',d:'Ancien Controlling du chapitre Affaires : contrôle des heures et des frais, critères d’analyse (gardé pour un usage ultérieur).'},
+    {v:'mq-vignettes-pdf',grp:'Maquettes',dom:'reglages',t:'Vignettes des PDF',ico:'pdf',d:'Variante C du statut des PDF du devis (10.11.2026), gardée pour plus tard : maquette avec des données d’exemple.'},
     /* sous-menu « Heures » (Configuration → Archives le 24.10.2026, demande de Paulo) : dom:'temps' garde leurs droits, leur code d'accès et leur
        visuel — les collaborateurs ont toujours accès à leurs notes de frais et rapports de temps */
     {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},

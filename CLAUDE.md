@@ -1754,6 +1754,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   noir, textes passés à la ligne ; colonne Commentaire seulement avec « Base et commentaire de la position » + « … dans colonne séparée ». Relecture du 08.11.2026 (8 défauts, 5
   corrections) ; le filtre est signalé d'après son effet réel (`dgFiltreTexte`, aussi pour le devis général : filtre rapide d'un seul ouvrage compris). Lecteur PDF : plus de
   trait sous l'icône « Ajuster à la largeur » (même jour).
+  **État des PDF du devis = registre daté (10.11.2026, variante D choisie par Paulo parmi 10 — deux séries de 5 maquettes,
+  `subgestion3/_backup_20261110_maquette_statut_pdf/` ; Paulo : « définir le statut du fichier : archiver, validé, supprimer »)** : champs du fichier (`depotfichier`)
+  `ETAT_PDF` valide | archive | supprime (absent = créé), `VALIDE_LE`, `ARCHIVE_LE`, `SUPPRIME_LE`, `ETAT_PAR` (initiales), `ETAT_LE` ; liste « Fichiers PDF » du devis :
+  colonnes Nom du fichier, Créé le (date du fichier), Validé le, Archivé le, Supprimé le — date de l'état actuel en couleur et en gras (bleu nuit, vert #4E6B0F, gris,
+  rouge) —, Par, Commentaire, action à droite (« Valider ▾ » : `pdfActions`) et mêmes actions au clic droit. Créé → Valider, Archiver, Supprimer ; Validé → Archiver,
+  Annuler la validation ; Archivé → Rétablir, Supprimer ; Supprimé → Rétablir (état précédent = date restante la plus récente, sinon Créé) ; `pdfChanger` (« Supprimer »
+  confirmé). « Supprimé » ne retire jamais le fichier (ligne barrée ; « Supprimer » du menu du moteur retiré de cette liste). « Ouvrir le PDF » d'une ligne Documents :
+  le PDF validé du document, sinon le plus récent non supprimé (`pdfLigne`). Plusieurs versions validées possibles (question posée à Paulo). Droit : documents : dépôt.
+  **Variante C « Vignettes » gardée (Paulo : « conserve-la, elle peut m'intéresser visuellement, sauvegarde-la dans Archives »)** : Archives ▸ Maquettes ▸ Vignettes des
+  PDF (`mq-vignettes-pdf`, `dom:'reglages'`, fin de sg3_devis.js) — maquette avec données d'exemple, rien n'est lu ni écrit.
   **Bouton « Réglages ▾ » retiré des lignes Documents (10.11.2026, Paulo : « supprimer »)** : les réglages des trois documents sont dans le panneau de leur fenêtre
   (Ouvrir) ; lignes = Ouvrir / Créer le document, Créer le PDF, Ouvrir le PDF, Supprimer le document.
   **PDF enregistrés du devis = archive définitive (10.11.2026, Paulo : « une fois les documents sauvés, le fichier ne peut plus être modifié », choix « PDF figé, ni

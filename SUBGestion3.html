@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 13:51 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 13:53 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -39064,7 +39064,7 @@ async function supDoc(X,i){ const id=ch02cId(X,i), rec=DS.get(CH02C_T,id); if(!r
   ch02cDocPane(X); }
 function docsLignes(X){ const dp=X.dpane, K=dp?[...dp.children]:[]; if(K.length<2||!K[1].classList.contains('pane')) return; const pdf=ch02cPdfOn(), L=el('div','sgde-dl');
   ORDRE_DOCS.forEach(i=>{ const r=CH02C_ROWS[i]; if(!r) return; const d=i===0?dgCree(X):ch02cHas(X,i), f=ch02cPdfHas(X,i), fl=pdfLigne(X,r), it=ch02cNewItems(X,i).filter(x=>x!=='-'), gen=it[2], c=el('div','sgde-dc','<div class="t"><b>'+E(r.t)+'</b><span>'+E(ETAT_DOC(d,fl,pdf))+'</span></div><div class="a"></div>'), a=c.querySelector('.a');   /* ligne 0 : devis général au modèle du bureau (bloc 46) ; « créé » = dgCree (10.11.2026) */
-    a.append(ibtn({label:d?'Ouvrir':'Créer le document',fn:()=>i===0&&!d?dgCreerDoc(X):ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:(gen?!!gen.dis:true)||(i===0&&!d),fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),ibtn({label:CH02C_L.prefs,menu:()=>ch02cPrefItems(X,i)}),
+    a.append(ibtn({label:d?'Ouvrir':'Créer le document',fn:()=>i===0&&!d?dgCreerDoc(X):ch02cOpen(X,i)}),...(pdf?[ibtn({label:'Créer le PDF',dis:(gen?!!gen.dis:true)||(i===0&&!d),fn:()=>gen&&gen.fn&&gen.fn()}),ibtn({label:'Ouvrir le PDF',dis:!fl,fn:()=>{ const x=pdfLigne(X,r); if(x) ch03aOuvrir(x); }})]:[]),/* « Réglages ▾ » retiré des lignes (Paulo, 10.11.2026 : « supprimer ») : les réglages sont dans le panneau de la fenêtre du document */
       /* « Supprimer le document » directement dans la ligne (Paulo, 10.11.2026 : « lorsque le document est créé, pouvoir le supprimer pour afficher Créer le document à
          nouveau », puis « appliquer à Devis général ») ; « Supprimer le PDF » seulement s'il y a un PDF du document */
       ibtn({label:'Supprimer le document',dis:!d,fn:()=>i===0?supDG(X):supDoc(X,i)})); L.append(c); });   /* plus de « Supprimer le PDF » : PDF enregistré = archive (10.11.2026) */

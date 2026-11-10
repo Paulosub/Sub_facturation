@@ -1754,6 +1754,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   noir, textes passés à la ligne ; colonne Commentaire seulement avec « Base et commentaire de la position » + « … dans colonne séparée ». Relecture du 08.11.2026 (8 défauts, 5
   corrections) ; le filtre est signalé d'après son effet réel (`dgFiltreTexte`, aussi pour le devis général : filtre rapide d'un seul ouvrage compris). Lecteur PDF : plus de
   trait sous l'icône « Ajuster à la largeur » (même jour).
+  **Bouton « Réglages ▾ » retiré des lignes Documents (10.11.2026, Paulo : « supprimer »)** : les réglages des trois documents sont dans le panneau de leur fenêtre
+  (Ouvrir) ; lignes = Ouvrir / Créer le document, Créer le PDF, Ouvrir le PDF, Supprimer le document.
   **PDF enregistrés du devis = archive définitive (10.11.2026, Paulo : « une fois les documents sauvés, le fichier ne peut plus être modifié », choix « PDF figé, ni
   remplacé ni supprimé »)** : tout `.pdf` des dossiers d'un devis (`Construction/Costestimate/<P>/<D>/documents` et sous-dossiers ; `PDF_FIGE`) — un nom déjà pris
   n'écrase jamais l'existant : nouveau fichier « <nom> (2).pdf » (enveloppe de `ch03aEnregistrer`, message ; le commentaire saisi suit le nouveau nom) ; fenêtre « Nom

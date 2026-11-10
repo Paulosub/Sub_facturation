@@ -1761,7 +1761,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   rouge) —, Par, Commentaire, action à droite (« Valider ▾ » : `pdfActions`) et mêmes actions au clic droit. Créé → Valider, Archiver, Supprimer ; Validé → Archiver,
   Annuler la validation ; Archivé → Rétablir, Supprimer ; Supprimé → Rétablir (état précédent = date restante la plus récente, sinon Créé) ; `pdfChanger` (« Supprimer »
   confirmé). « Supprimé » ne retire jamais le fichier (ligne barrée ; « Supprimer » du menu du moteur retiré de cette liste). « Ouvrir le PDF » d'une ligne Documents :
-  le PDF validé du document, sinon le plus récent non supprimé (`pdfLigne`). Plusieurs versions validées possibles (question posée à Paulo). Droit : documents : dépôt.
+  le PDF validé du document, sinon le plus récent en cours (`pdfLigne`). Plusieurs versions validées possibles (question posée à Paulo). Droit : documents : dépôt.
+  **Puis, même jour (Paulo : « lorsque je valide supprimer, supprimer le fichier ; ajoute un menu archivé et un menu effacé, pour stocker les devis, descriptif et
+  honoraires »)** : en-tête de la liste = choix **Fichiers PDF · Archivés · Effacés** avec leur nombre (`pdfVuesBarre`, `PDF_VUES`, gardé pendant la séance
+  `SGPDF.vue`) ; Fichiers PDF = créés et validés, Archivés = archivés, Effacés = supprimés, toujours rangés par Devis · Descriptif · Honoraires ; un PDF supprimé quitte
+  la liste (confirmation « va dans Effacés ») ; colonnes sans objet retirées selon la vue (Archivé le / Supprimé le : `o._sgAll` filtré) ; « Supprimer » aussi pour un
+  PDF validé ; messages « rangé dans Archivés / Effacés », « remis dans Fichiers PDF ».
   **Variante C « Vignettes » gardée (Paulo : « conserve-la, elle peut m'intéresser visuellement, sauvegarde-la dans Archives »)** : Archives ▸ Maquettes ▸ Vignettes des
   PDF (`mq-vignettes-pdf`, `dom:'reglages'`, fin de sg3_devis.js) — maquette avec données d'exemple, rien n'est lu ni écrit.
   **Bouton « Réglages ▾ » retiré des lignes Documents (10.11.2026, Paulo : « supprimer »)** : les réglages des trois documents sont dans le panneau de leur fenêtre

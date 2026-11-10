@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 08:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 08:04 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -33615,7 +33615,7 @@ async function sgDsPdf(R, rep, o){
      le descriptif » : aussi le devis général) — dessinée sur la page courante. G = { statut, num, titre, sous, info, filtre, rub:[{ lib, nom, adr }], sig:[libellés] }.
      Filet noir de 1 pt en tête ; à droite, l'état en rouge précédé d'un carré (« PROVISOIRE » / « ANNULÉ », rien une fois le devis validé) ; numéro de l'affaire en Light 30
      noir puis titre en Bold 30 noir (24 pt au-delà de 4 lignes) ; désignation en capitales (Regular 10, lignes équilibrées), ligne d'information (phase, précision :
-     Regular 10 noir) et filtre éventuel (Light 8 gris) ; filet noir 0,75 (bleu nuit jusqu'au 10.11.2026) ; rubriques en tableau à filets gris (libellé en capitales à la marge, nom en Regular 9 et
+     Regular 10 noir) et filtre éventuel (Light 8 gris) ; filet noir 0,75 (bleu nuit jusqu'au 10.11.2026) ; rubriques séparées par des filets gris, sans filet avant la première ni après la dernière (libellé en capitales à la marge, nom en Regular 9 et
      adresse en Light 9 à x 222.98 = 3e colonne du pied, rubrique vide omise, rien n'est coupé) ; signatures. Portrait : marges de l'ancienne page de garde du devis général
      (x 124.4 → 485.5, Paulo : « alignement », « marges »), signatures en bas (y 610, plus bas si les rubriques l'exigent). Paysage (devis général) : même grille, contenu
      jusqu'à x 732.1 (barre du numéro de page − 25 pt, comme en portrait), rubriques à gauche (jusqu'à x 464.4) et signatures à droite, à la hauteur des rubriques. ── */
@@ -33660,13 +33660,13 @@ async function sgDsPdf(R, rep, o){
     /* rubriques remontées sous le filet du titre, au même espace (Paulo, 10.11.2026 : « déplacer le bloc en laissant un espace x comme avant » ; avant : y 350 au plus tôt,
        paysage 300) : du bas du filet (0,75 pt) au premier filet des rubriques = ECART, l'espace entre le filet de tête et le numéro */
     const yR0 = yN + 0.75 + ECART; let yr = yR0;
-    if(RUB.length) bar(yr, 0.5, FILc, X0, XR1);
-    RUB.forEach(r => { const b = yr + 16, LL = cx.couper(cx.maj(P(r.lib || '')), F.regular, 7.5, XV - X0 - 8);
+    /* filets gris ENTRE les rubriques seulement : plus de filet au-dessus de la première ni sous la dernière (Paulo, 10.11.2026 : « supprimer ») ; places inchangées */
+    RUB.forEach((r, ir) => { const b = yr + 16, LL = cx.couper(cx.maj(P(r.lib || '')), F.regular, 7.5, XV - X0 - 8);
       const LV = [].concat(String(r.nom || '').trim() ? equi(P(r.nom), F.regular, 9, WV).map(l => ({ l, f:F.regular })) : [],
         String(r.adr || '').trim() ? cx.couper(P(r.adr), F.light, 9, WV).map(l => ({ l, f:F.light })) : []);
       LL.forEach((l, i) => cx.texte(l, X0, T(b + i * 12), { police:F.regular, taille:7.5 }));
       LV.forEach((x, i) => cx.texte(x.l, XV, T(b + i * 12), { police:x.f, taille:9 }));
-      yr = b + (Math.max(1, LL.length, LV.length) - 1) * 12 + 10; bar(yr, 0.5, FILc, X0, XR1); });
+      yr = b + (Math.max(1, LL.length, LV.length) - 1) * 12 + 10; if(ir < RUB.length - 1) bar(yr, 0.5, FILc, X0, XR1); });
     if(yr > BAS) alerte('Page de garde : rubriques trop longues, elles descendent sur le pied de page');
     /* signatures : filet noir 0,75 pt, libellé, « Lieu, date » et « Signature » sous des filets de 0,5 pt. Portrait : A de x 124.4 à 296, B de x 312 à 485.5 (colonnes de
        l'ancienne page de garde du devis général). Paysage : colonne de droite, A de x 485.5 à 600.8, B de x 616.8 à 732.1, à la hauteur du premier filet des rubriques */

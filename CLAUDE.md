@@ -2035,6 +2035,46 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   curseur). Clavier : le moteur redessine ses tableaux à chaque modification — Tab, Entrée (ligne suivante), ↑ ↓ et le clic gardent la cellule visée ; Échap rétablit la
   saisie en cours, sinon ferme la fenêtre comme avant. Vérifié sur 99TST (situation n° 19, contrat, avenant, paiement hors contrat, mutations, provision, coût probable,
   créations ; Annuler ne modifie rien, OK enregistre). DeltaSub.html seul garde ses fenêtres. Classes `sgew-*`, `<style id="sgew-css">`, débogage `window.SGEW`.
+- **Documents du contrôle des coûts au graphisme du devis (10.11.2026, bloc 52, `subgestion3/sg3_coco_docs.js`, concaténé en dernier ; Paulo, document « Contrôle
+  des coûts » ouvert : « créer le même visuel que pour devis, fenêtre identique et document également, adapte les options du volet à droite » ; choix : colonnes
+  Standard comme l'écran, paysage par défaut, état du coût rouge / vert, listes aussi redessinées)** :
+  **Fenêtre** : `vueDoc` du devis devenue `vueDocG(D,cfg)` (sg3_devis.js, exportée `SGDE.vue`, avec `SGDE.cssD` et `SGDE.livret` = constantes DG_*, `deGardeRub`) ;
+  `vueDoc` (devis) n'en est qu'un adaptateur — fenêtre identique, vérifiée sur les trois documents du devis. `cfg` = {p, lb, titre, etat, peut(), items(), rendre(), pied,
+  groupes, groupe, rang, retrait, actions [{t, ico, fn}], installer} ; réglage `asy` (enregistre lui-même ; fn rend false = pas de dessin tout de suite) ; réglages au
+  même `seg` = bouton segmenté ; option `dis` d'un bouton segmenté grisée. `ch01aOpen` enveloppé : TOUS les documents ouverts depuis Contrôle des coûts ▸ Documents
+  (bouton principal, Ouvrir, après création, bons de paiement, arrêtés de compte) ont cette fenêtre (bandeau « Contrôle des coûts · Documents », état = statut du
+  contrôle des coûts `CC_STATE`, Imprimer, PDF ▾, Partager ▾, lecteur de l'app, volet Réglages, pied « Enregistrés dans le document ») ; « Modifier les textes… » en
+  bouton d'en-tête pour les lettres. Lecture seule : sans « chantier : écriture » ou contrôle verrouillé (`ch03dLecture`).
+  **Documents redessinés** (`ch01aRender` enveloppé → page repérée dont le PDF est fait ici, comme le devis général : même PDF pour la fenêtre, « Créer le PDF »,
+  « Sauvegarder et ouvrir », « Partager » — vérifié à l'octet) : « Contrôle des coûts » (`ovOctets` : page de garde éditoriale avec signatures, page « Centres de coût »
+  HT / TVA / TTC, récapitulatif CFC à 1 chiffre toujours, à 2 chiffres sur demande, contrôle du coût détaillé — positions, entreprises (nom dans la désignation),
+  écritures en italique gris derrière un filet comme les lignes de calcul du devis, sans le signe « > » —, colonnes de la présentation Standard par défaut, titres
+  sans « TTC » quand tous le sont (« Désignation · montants TTC ») et abrégés s'ils ne tiennent pas, colonne « État du coût » en rouge #BD1E42 si dépassement / vert
+  #4E6B0F si économie, `r.cc` de `contenuLivret`), « Devis général » du contrôle (`kvOctets`, portrait par défaut, récapitulatif, devis, Montant HT / TVA / TTC / %,
+  OUV et Loc. avec les subdivisions, DG indexé sur demande si facteur ≠ 1), listes des contrats et avenants, des mutations, des paiements, compte d'entreprise, liste
+  des garanties (`listeOctets` : tableaux du modèle mis en texte par le bloc 31 — `SGIMP.preparer` —, largeurs d'après le contenu, total sur bande bleu nuit, page de
+  garde sans signatures ; échec → PDF du bloc 31). Données = jobs du moteur sur une copie de travail (présentation choisie, propriétés des tableaux réglées par le
+  volet) : rien n'est écrit dans le contrôle des coûts. Mots coupés de l'ancien logiciel recollés (« inté- rieures »). Lettres (contrat, avenant, mutation, bons,
+  ordre, arrêté) : rendu du bloc 31 inchangé.
+  **Réglages** : `cocodoc.options.sgPdf` du document (`optsDe` / `optsSet` : gardés en mémoire pendant l'envoi, envois à la suite, refus → message et retour) ;
+  Contrôle des coûts : Format (portrait grisé au-delà de 5 colonnes de montants), Colonnes (Standard · présentations du document), Parties (page de garde, centres de
+  coût, récapitulatif à 2 chiffres, contrôle détaillé), Positions (CFC Tout · 3 · 2 · 1, entreprises, subdivisions par ouvrage), Écritures (case principale, puis
+  mutations, contrats et avenants, paiements, provisions et coût probable — défaut : détails de la présentation favorite —, date et n° des mutations, date de facture,
+  dernier paiement « + ») ; Devis général : Format, Parties, Positions, Montants (sans décimales, pourcentages sur le total, DG indexé) ; listes : Format, page de
+  garde ; réglages existants à leur place d'origine : tri et récapitulatif TVA des paiements (`ch01dSetOpt` + `E.touch`), tri et adresses des garanties
+  (`ch01cSetPref`), arrondis des lettres (`cocodoc.options` de la section, comme la roue `ch01aGear`). Débogage `window.SGCD`. Essais (99TST, base de travail) :
+  6 documents créés et ouverts, réglages, aucune écriture à l'ouverture, « Créer le PDF » identique, lecture seule, balayage 119 écrans. Relecture contradictoire
+  (workflow, 5 défauts confirmés et une quinzaine signalés, corrigés) : compte d'entreprise — entreprise en rubrique de la page de garde et dans l'en-tête
+  (« Entreprise · <nom> », `entDe`) ; rapport des paiements filtré — « Filtre : … » sur la page de garde, « Filtré » dans l'en-tête, maître de l'ouvrage des ouvrages
+  filtrés (`filtreDe`) ; réglages du moteur (tri, TVA, garanties) par `moteurSet` — version du contrôle lue à l'ouverture, modifié ailleurs ou enregistrement non
+  retrouvé → fenêtre fermée et message ; réglages du document en attente par clés (`PP`, `envoi` : envois à la suite sur la version la plus récente, refus → retour de
+  la seule clé) ; arrondis seulement pour les documents qui les lisent (`ARR_TYPES` : contrat, avenant, bons, arrêté — pas l'ordre de paiement), état en attente
+  affiché aussitôt (`PA`) ; Devis général : défauts du moteur (`ch01aKvPref` : pourcentages sur le total, sans décimales), désignation d'au moins 150 pt, subdivisions
+  du récapitulatif = modèle ; défauts tirés de la présentation choisie et des propriétés du modèle ; présentation enregistrée par nom et rang, « Standard » du document
+  identique non répétée ; colonnes nombreuses (15+) : désignation ≥ 120 pt ; « Récapitulatif · montants TTC » ; marque du dernier paiement selon la présentation
+  (« FF ») et montant ainsi marqué réduit plutôt que coupé ; adresses des garanties sur leurs lignes ; « pré- et post-… » non recollé ; échec du nouveau dessin →
+  PDF du bloc 31 ; rappel d'un réglage sans effet après la fermeture de la fenêtre. Copies d'avant :
+  `subgestion3/_backup_20261110_2144_avant_documents_coco/`, `SUBGestion3_backup_20261110_2144_avant_documents_coco.html`.
 - **Surfaces et volumes (10.11.2026, bloc 49, `subgestion3/sg3_surfaces.js`, concaténé en dernier ; Paulo : « le volume doit être entré quelque part dans
   le logiciel dans un module de calcul de surface et volume, ajoute ce module dans Projet et ajoute uniquement le volume pour l'affaire 99TST ; on regardera
   ensemble comment créer le module de calcul de surface et volume, pour réaliser des métrés »)** : page du projet ▸ Projet ▸ tuile « Surfaces et volumes »

@@ -311,7 +311,7 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgdv-corps{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px}
 .sgdv-doc{display:flex;flex-direction:column;min-width:0;min-height:0}
 .sgdv-msg{margin:40px auto;color:var(--s-gris);font-size:13px}
-.sgdv-seg.dis b{opacity:.45;cursor:default}
+.sgdv-seg.dis b{opacity:.45;cursor:default}.sgdv-seg b.dis{opacity:.45;cursor:default}
 .sgdv-reg{display:flex;flex-direction:column;min-height:0;border-left:2px solid var(--s-noir);background:#fff}
 .sgdv-rh{flex:none;display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 18px 9px;border-bottom:1px solid var(--s-noir)}
 .sgdv-rh h4{margin:0;font-size:15px;font-weight:700}
@@ -937,20 +937,28 @@ const VUE_ORDRE=['Afficher les positions sans montant','Seulement positions de 1
 const VUE_RETRAIT=new Set(['Quantités et prix','Quantités','Prix HT','Prix TTC','Commentaire du calcul','Bases de prix','Base et commentaire dans colonne séparée','Assembler les descriptifs des ouvrages']);
 const vueGroupe=t=>/^format\s*:/i.test(t)?'Format':/^(descriptif|assembler les descriptifs)/i.test(t)?'Positions':   /* « Descriptif » en tête des Positions (Paulo, 08.11.2026) *//sauts? de page/i.test(t)?'Sauts de page':/^uniquement les montants|^arrondir à|montants|décimales|pourcentages/i.test(t)?'Montants'
   :/calcul|quantités|prix ht|prix ttc|bases de prix|variantes/i.test(t)?'Calcul':/positions|chiffres?|subdivisions|récapitulatif/i.test(t)?'Positions':/descriptif|commentaire/i.test(t)?'Affichage':'Autres';
-function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if(!dlg||!ifr||typeof sgLecteurPdf!=='function') return; cssD();
+/* fenêtre commune des documents (10.11.2026, Paulo : contrôle des coûts « créer le même visuel que pour devis, fenêtre identique ») — cfg :
+   { p (affaire), lb (rubrique), titre, etat, peut(), items() (réglages du panneau), rendre() (document refait, repéré /*sgimp:id*\/), pied (texte « Enregistrés
+   dans … »), groupes / groupe(it) / rang(t) / retrait(it,L0) (rangement du panneau), actions [{t, ico, fn}] (boutons d'en-tête en plus d'Imprimer),
+   installer({R,L,maj,reset,peut}) (crochets propres : sauts de page du devis) }. Réglage it.asy : it.fn(redessiner) écrit lui-même et peut demander un
+   nouveau dessin après un refus ; réglages it.seg (même libellé) : bouton segmenté. vueDoc (devis) n'en est qu'un adaptateur : même fenêtre qu'avant. */
+function vueDocG(D,cfg){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if(!dlg||!ifr||typeof sgLecteurPdf!=='function') return; cssD();
   const bar=D.bd.querySelector('.ph2'), btn=re=>bar?[...bar.querySelectorAll('button,.ib')].find(b=>re.test((b.textContent||'').trim())):null;
-  const pdfB=btn(/^PDF/), partB=btn(/^Partager/), hdr=ch02aHdr(X)||{}, etat=DV_STATE[hdr.STATECODE]||'', p=X.p||{};
+  const pdfB=btn(/^PDF/), partB=btn(/^Partager/), etat=String(cfg.etat||''), p=cfg.p||{};
   /* relecture du 08.11.2026 : en lecture seule (profil sans « chantier : écriture » ou devis verrouillé), le panneau ne change rien */
-  const peut=()=>{ try{ return ecrit()&&ch02aCanEdit(ch02aHdr(X)); }catch(_){ return true; } };
+  const peut=()=>{ try{ return cfg.peut?!!cfg.peut():true; }catch(_){ return true; } };
+  const GRP=cfg.groupes||VUE_GROUPES, grpDe=cfg.groupe||((it,G)=>it.grp&&G[it.grp]?it.grp:vueGroupe(it.t)), rangDe=cfg.rang||(t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }),
+    retraitDe=cfg.retrait||((it,L0)=>it.ind||(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position'))));
   dlg.classList.add('sgdv-dlg');
-  const R=el('div','sgdv','<div class="sgdv-tete"><div class="sgdv-ini">'+E(p.NUMBER||'')+'</div><div class="sgdv-nm"><div class="lb">Descriptifs &amp; devis · Documents</div><h3>'
-      +E((rec&&rec.doc&&rec.doc.nom)||(CH02C_ROWS[i]||{}).t||'Document')+'</h3><div class="mt"></div></div>'
+  const R=el('div','sgdv','<div class="sgdv-tete"><div class="sgdv-ini">'+E(p.NUMBER||'')+'</div><div class="sgdv-nm"><div class="lb">'+E(cfg.lb||'')+'</div><h3>'
+      +E(cfg.titre||'Document')+'</h3><div class="mt"></div></div>'
       +'<div class="sgdv-fig"><span class="l">Pages</span><span class="v sgdv-np">—</span></div><div class="sgdv-fig"><span class="l">État</span><span class="v et"><i></i>'+E(etat||'—')+'</span></div>'
       +'<div class="sgdv-act"><button class="sgdv-ib sgdv-imp" type="button" title="Imprimer le document">'+ICV('<path d="M7 9V4h10v5M7 17H4V9h16v8h-3M7 14h10v6H7z"/>')+'Imprimer</button></div></div>'
     +'<div class="sgdv-corps"><div class="sgdv-doc"></div>'
     +'<aside class="sgdv-reg" aria-label="Réglages du document"><div class="sgdv-rh"><h4>Réglages</h4></div><div class="sgdv-rb"></div>'
       +'<div class="sgdv-rf"><span class="pied"></span><button class="sgdv-btn" type="button">Fermer</button></div></aside></div>');
   const act=R.querySelector('.sgdv-act'); [pdfB,partB].forEach(b=>{ if(b){ b.classList.add('sgdv-moteur'); act.append(b); } });
+  (cfg.actions||[]).forEach(a=>{ const b=el('button','sgdv-ib',(a.ico?ICV(a.ico):'')+E(a.t)); b.type='button'; if(a.ti) b.title=a.ti; b.addEventListener('click',()=>{ try{ a.fn(); }catch(e){ console.error(e); } }); act.append(b); });
   const garde=el('div','sgdv-garde'); garde.append(...D.bd.childNodes); D.bd.replaceChildren(R,garde);
   /* lecteur commun de l'app (sg3_lecteur.js, bloc 48) : pages, zoom, page gardée à la mise à jour, attente de la dernière version, erreurs signalées */
   const rb=R.querySelector('.sgdv-rb'); let dernier='';
@@ -961,23 +969,18 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
   ifr._sgVue=blob=>L.charger(blob); ifr._sgVuePrep=()=>L.attendre(); ifr._sgVueErr=e=>L.echec(e);
   if(ifr._sgblob) L.charger(ifr._sgblob);
   /* réglages en panneau */
-  if(+i===0){ const cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>dgSautsMarquer(cont,X)).observe(cont,{childList:true}); }   /* sauts de page visibles à l'écran (08.11.2026) */
-  if(+i===1||+i===2){ const g=SD_G[+i], cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>sdMarquer(cont,X,g)).observe(cont,{childList:true});   /* Honoraires, Devis descriptif (10.11.2026) */
-    R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>sdMenu(e,X,g,()=>{ dernier=''; panneau();
-      try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(err){ console.error(err); L.echec(err); } },peut),true); }
-  if(+i===0) R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>dgSautMenu(e,X,()=>{ dernier=''; panneau();
-      try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(err){ console.error(err); L.echec(err); } },peut),true);   /* saut de page au clic droit (08.11.2026) */
+  const maj=()=>{ try{ D.maj(cfg.rendre()); }catch(e){ console.error(e); L.echec(e); } };
   const appliquer=it=>{ if(!it||it.dis||!peut()) return;
-    if(it.raz){ try{ it.fn(()=>{ dernier=''; panneau(); try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); L.echec(e); } }); }catch(e){ console.error(e); } return; }   /* remise à zéro : redessin après la confirmation */
-    try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau();
-    try{ D.maj(ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec)); }catch(e){ console.error(e); L.echec(e); } };
+    if(it.raz){ try{ it.fn(()=>{ dernier=''; panneau(); maj(); }); }catch(e){ console.error(e); } return; }   /* remise à zéro : redessin après la confirmation */
+    if(it.asy){ let r; try{ r=it.fn(ok=>{ if(!vivant) return; if(ok===false) dernier=''; panneau(); maj(); }); }catch(e){ console.error(e); } dernier=it.t; panneau(); if(r!==false) maj(); return; }   /* réglage qui enregistre lui-même (contrôle des coûts) : il rappelle le redessin quand l'enregistrement est fait (fn rend false : pas de dessin tout de suite) ou refusé (ok === false) */
+    try{ it.fn(); }catch(e){ console.error(e); } dernier=it.t; panneau(); maj(); };
   const panneau=()=>{ const ok=peut(), a=document.activeElement, kf=a&&rb.contains(a)&&a.dataset?a.dataset.k:null;
-    const L0=(ch02cPrefItems(X,i)||[]).filter(x=>x&&x!=='-'&&x.t), G={}; VUE_GROUPES.forEach(g=>{ G[g]=[]; });
-    L0.forEach(it=>{ G[it.grp&&G[it.grp]?it.grp:vueGroupe(it.t)].push(it); });
-    const rang=t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }, M=[]; let h='';
-    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(it.ind||(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position')))?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+'</div>'; };
-    const seg=(lib,opts,pile)=>'<div class="sgdv-sg'+(pile?' pile':'')+'">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg'+(ok?'':' dis')+'" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'" tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'" data-k="'+E('seg:'+lib+':'+o.l)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
-    VUE_GROUPES.forEach(g=>{ let A=G[g].slice().sort((a,b)=>(a.rang!=null?a.rang:rang(a.t))-(b.rang!=null?b.rang:rang(b.t))); if(!A.length) return; let corps='';
+    const L0=(cfg.items()||[]).filter(x=>x&&x!=='-'&&x.t), G={}; GRP.forEach(g=>{ G[g]=[]; });
+    L0.forEach(it=>{ const g=grpDe(it,G); (G[g]||G[GRP[GRP.length-1]]).push(it); });
+    const rang=rangDe, M=[]; let h='';
+    const ck=it=>{ M.push(it); const dis=it.dis||!ok; return '<div class="sgdv-ck'+(it.chk?' on':'')+(dis?' dis':'')+(retraitDe(it,L0)?' ind':'')+(it.t===dernier?' vient':'')+'" role="checkbox" aria-checked="'+(it.chk?'true':'false')+'"'+(dis?' aria-disabled="true"':'')+' tabindex="0" data-n="'+(M.length-1)+'" data-k="'+E(it.t)+'"><span class="sgdv-cb">'+ICV('<path d="m5 12 4.5 4.5L19 7"/>')+'</span><span>'+E(it.t)+'</span>'+'</div>'; };
+    const seg=(lib,opts,pile)=>'<div class="sgdv-sg'+(pile?' pile':'')+'">'+(lib?'<span>'+E(lib)+'</span>':'')+'<div class="sgdv-seg'+(ok?'':' dis')+'" role="radiogroup"'+(lib?' aria-label="'+E(lib)+'"':'')+'>'+opts.map(o=>{ M.push(o.it); return '<b class="'+(o.on?'on':'')+(o.dis?' dis':'')+'" role="radio" aria-checked="'+(o.on?'true':'false')+'"'+(o.dis?' aria-disabled="true"':'')+' tabindex="0" title="'+E(o.ti||o.l)+'" data-n="'+(M.length-1)+'" data-k="'+E('seg:'+lib+':'+o.l)+'">'+E(o.l)+'</b>'; }).join('')+'</div></div>';
+    GRP.forEach(g=>{ let A=G[g].slice().sort((a,b)=>(a.rang!=null?a.rang:rang(a.t))-(b.rang!=null?b.rang:rang(b.t))); if(!A.length) return; let corps='';
       if(g==='Montants'){ const ar=A.filter(x=>/^arrondir à/i.test(x.t)); A=A.filter(x=>!/^arrondir à/i.test(x.t)); const sp=A.findIndex(x=>/pourcentages/i.test(x.t)), av=sp<0?A:A.slice(0,sp), ap=sp<0?[]:A.slice(sp);
         corps=av.map(ck).join('')+(ar.length?seg('Arrondir à',[{l:'aucun',ti:'Sans arrondi',on:!ar.some(x=>x.chk),it:ar.find(x=>x.chk)?Object.assign({},ar.find(x=>x.chk),{chk:false}):null},...ar.map(x=>({l:x.t.replace(/^arrondir à\s*/i,''),on:x.chk,it:x.chk?null:x}))],true):'')+ap.map(ck).join(''); }
       else if(g==='Sauts de page'){ const rz=A.find(x=>x.raz); A=A.filter(x=>x!==rz); const sa=A.find(x=>x.bascule), pr=A.filter(x=>x!==sa);   /* devis général : interrupteur « Sans sauts de page » (blanc désactivé, bleu nuit activé), présentations seulement s'il y en a plusieurs ; autres documents : choix d'origine */
@@ -985,16 +988,18 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
         else { corps=(pr.length?seg('',pr.map(x=>({l:x.t.replace(/^sauts de page\s*:\s*/i,''),ti:x.t,on:x.chk,it:x.chk?null:x}))):'');
           M.push(sa); corps+='<div class="sgdv-sg"><div class="sgdv-seg sgdv-tgl'+(ok?'':' dis')+'"><b class="'+(sa.chk?'on':'')+'" role="switch" aria-checked="'+(sa.chk?'true':'false')+'" tabindex="0" title="'+(sa.chk?'Activé : aucun saut de page. Cliquer pour désactiver':'Cliquer pour imprimer sans aucun saut de page')+'" data-n="'+(M.length-1)+'" data-k="sans-sauts">Sans sauts de page</b></div></div>'; }
         if(rz){ M.push(rz); const dz=rz.dis||!ok; corps+='<button type="button" class="sgdv-raz"'+(dz?' disabled aria-disabled="true"':'')+' title="'+E(rz.ti||'')+'" data-n="'+(M.length-1)+'" data-k="raz-sauts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg>Remettre à zéro les sauts de page</button>'; } }
-      else if(g==='Format') corps=seg('',A.map(x=>({l:x.t.replace(/^format\s*:\s*/i,''),ti:'Document en '+x.t.replace(/^format\s*:\s*/i,'').toLowerCase(),on:x.chk,it:x.chk?null:x})));   /* paysage ou portrait (08.11.2026) */
-      else corps=A.map(ck).join('');
+      else if(g==='Format') corps=seg('',A.map(x=>({l:x.t.replace(/^format\s*:\s*/i,''),ti:x.ti||('Document en '+x.t.replace(/^format\s*:\s*/i,'').toLowerCase()),on:x.chk,dis:!!x.dis,it:x.chk?null:x})));   /* paysage ou portrait (08.11.2026) */
+      else { const fait=new Set(); corps=A.map(x=>{ if(!x.seg) return ck(x); if(fait.has(x.seg)) return ''; fait.add(x.seg);   /* réglages au même it.seg : bouton segmenté (contrôle des coûts) */
+          const S=A.filter(y=>y.seg===x.seg); return seg(x.segLib===false?'':x.seg,S.map(y=>({l:y.l||y.t,ti:y.ti||y.t,on:y.chk,dis:!!y.dis,it:y.chk||y.dis?null:y})),x.pile!==false); }).join(''); }
       h+='<div class="sgdv-gt">'+E(g)+'</div>'+corps; });
     rb.innerHTML=h||'<div class="sgdv-msg">Aucun réglage pour ce document.</div>'; rb._M=M;
-    R.querySelector('.sgdv-rf .pied').textContent=ok?'Enregistrés dans le devis':'Lecture seule : réglages non modifiables';
+    R.querySelector('.sgdv-rf .pied').textContent=ok?(cfg.pied||'Enregistrés dans le devis'):'Lecture seule : réglages non modifiables';
     /* relecture : le panneau est redessiné à chaque réglage ; le focus revient sur le même réglage (Échap ferme encore la fenêtre, Tab ne repart pas du début) */
     if(kf!=null){ const x=[...rb.querySelectorAll('[data-k]')].find(e=>e.dataset.k===kf); try{ (x||L.vue).focus({preventScroll:true}); }catch(_){} } };
   rb.addEventListener('click',e=>{ const x=e.target.closest&&e.target.closest('[data-n]'); if(!x) return; appliquer((rb._M||[])[+x.dataset.n]); });
   rb.addEventListener('keydown',e=>{ if(e.key!==' '&&e.key!=='Enter') return; const x=e.target.closest&&e.target.closest('[data-n]'); if(!x) return; e.preventDefault(); appliquer((rb._M||[])[+x.dataset.n]); });
   panneau();
+  if(cfg.installer) try{ cfg.installer({R,L,maj,reset:()=>{ dernier=''; panneau(); },peut,panneau}); }catch(e){ console.error(e); }
   R.querySelector('.sgdv-imp').addEventListener('click',()=>L.imprimer());
   const ov=dlg.closest('.ov')||dlg;
   /* Échap quand le focus est sorti de la fenêtre (cadre d'impression, clic hors champ) : la fenêtre du dessus se ferme quand même */
@@ -1005,7 +1010,16 @@ function vueDoc(D,X,i,rec){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe;
   R.querySelector('.sgdv-btn').addEventListener('click',()=>{ D.close(); });
   const mo=new MutationObserver(()=>{ if(!dlg.isConnected){ fini(); mo.disconnect(); } }); mo.observe(ov.parentNode||document.body,{childList:true});
   const c0=D.close; D.close=function(){ fini(); return c0.apply(this,arguments); };
-  setTimeout(()=>L.focus(),0); tete(); }
+  setTimeout(()=>L.focus(),0); tete(); return {R,L,maj,panneau}; }
+function vueDoc(D,X,i,rec){ const hdr=ch02aHdr(X)||{};
+  return vueDocG(D,{p:X.p||{},lb:'Descriptifs & devis · Documents',titre:(rec&&rec.doc&&rec.doc.nom)||(CH02C_ROWS[i]||{}).t||'Document',etat:DV_STATE[hdr.STATECODE]||'',
+    peut:()=>ecrit()&&ch02aCanEdit(ch02aHdr(X)),items:()=>ch02cPrefItems(X,i),rendre:()=>ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec),
+    installer:({R,L,maj,reset,peut})=>{
+  if(+i===0){ const cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>dgSautsMarquer(cont,X)).observe(cont,{childList:true}); }   /* sauts de page visibles à l'écran (08.11.2026) */
+  if(+i===1||+i===2){ const g=SD_G[+i], cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>sdMarquer(cont,X,g)).observe(cont,{childList:true});   /* Honoraires, Devis descriptif (10.11.2026) */
+    R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>sdMenu(e,X,g,()=>{ reset(); maj(); },peut),true); }
+  if(+i===0) R.querySelector('.sgdv-doc').addEventListener('contextmenu',e=>dgSautMenu(e,X,()=>{ reset(); maj(); },peut),true);   /* saut de page au clic droit (08.11.2026) */
+    }}); }
 { const v1=ch02cView; ch02cView=function(X,i,rec,R){ const D=v1.apply(this,arguments); if(X&&X.sgde&&D&&D.bd) try{ vueDoc(D,X,+i,rec); }catch(e){ console.error(e); } return D; }; }
 
 /* ═══ Fichiers PDF : commentaire, groupes par document, menu au clic droit (08.11.2026, Paulo : « lorsque je crée le PDF, ajouter une cellule
@@ -1957,4 +1971,6 @@ VIEWS['mq-vignettes-pdf']={ render(m){
   nxPage(m,'<div class="sg-split">'+sgIntro('Archives · Maquettes','Vignettes des PDF','Variante C des propositions du 10.11.2026 pour l’état des PDF du devis (Créé, Validé, Archivé, Supprimé), gardée pour plus tard. Maquette avec des données d’exemple : rien n’est lu ni enregistré. La variante en place est le registre daté (D), dans Descriptifs & devis ▸ Documents.')
     +'<div class="sgmqv">'+css+html+'</div></div>'); } };
 const SGDE=window.SGDE={X:null,dgOctets,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
+/* pour les documents du contrôle des coûts (bloc 52, sg3_coco_docs.js, 10.11.2026) : fenêtre commune et constantes du livret « Bleu nuit » */
+SGDE.vue=vueDocG; SGDE.cssD=cssD; SGDE.livret={DG_RH,DG_X0T,DG_CFC,DG_WL,DG_WP,DG_HP,DG_HT,DG_TXT,DG_WM,deGardeRub,dgFiltreTexte,deNomAdr};
 })();

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 10.11.2026 08:51 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 10.11.2026 09:00 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -39489,6 +39489,22 @@ async function dgOctets(X){ { await DS.need(['subproject','contact','projectmemb
       const v=(c,i)=>i>=0?String(c[i]==null?'':c[i]):'', T0=i=>i>=0&&cols[i]?cols[i].t:'', suf=((/(TTC|HT)\s*$/.exec(T0(K.i1)||T0(K.i2))||[])[1])||'TTC';
       Object.values(ser).forEach(S=>{ const tous=S.flatMap(pg=>pg.rows), aCom=K.iC>=0&&tous.some(r=>v(r.c,K.iC).trim()), aOuv=K.iO>=0&&tous.some(r=>v(r.c,K.iO).trim()),
           aLoc=K.iL>=0&&tous.some(r=>v(r.c,K.iL).trim()), aMt=K.h&&tous.some(r=>(v(r.c,K.i4)||v(r.c,K.i3)).trim());
+        /* ESSAI (Paulo, 10.11.2026 : « afficher CFC à 1, 2, 3 et 4 chiffres pour tester ») : en portrait, une colonne de montant par niveau, comme le paysage
+           (« 4 chiffres TTC », « 3 chiffres TTC », « 2 chiffres TTC », « 1 chiffre TTC », 56 pt chacune), au lieu de Montant / Total ; colonne vide dans sa série
+           retirée (récapitulatif : 2 et 1 chiffres). Graisse : 4 chiffres Light, 3 et 2 chiffres Regular, 1 chiffre gras (CFC à 1 chiffre et total). Pour revenir à
+           Montant / Total : DG_P4 = false. */
+        if(DG_P4){ const NIV=K.h?[[K.i4,'4 chiffres'],[K.i3,'3 chiffres'],[K.i2,'2 chiffres'],[K.i1,'1 chiffre']]:[[K.i1,'']];
+          const am=NIV.filter(([i])=>i>=0&&tous.some(r=>v(r.c,i).trim()));
+          const fixe=DG_CFC+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+am.length*56+(K.ip>=0?26:0);
+          const cols2=[{t:T0(0)||'CFC',w:DG_CFC,r:false},{t:T0(1)||'Texte',w:DG_WP-fixe,r:false}].concat(aCom?[{t:T0(K.iC),w:84,r:false}]:[],aOuv?[{t:T0(K.iO),w:30,r:false}]:[],aLoc?[{t:T0(K.iL),w:30,r:false}]:[],
+            am.map(([i,l])=>({t:l?l+' '+suf:T0(i),w:56,r:true})),K.ip>=0?[{t:T0(K.ip),w:26,r:true,pct:true}]:[]);
+          const j0=2+(aCom?1:0)+(aOuv?1:0)+(aLoc?1:0);
+          S.forEach(pg=>{ pg.rows=pg.rows.map(r=>{ const c=Array.from(r.c||[]);
+              const n=[v(c,0),v(c,1)].concat(aCom?[v(c,K.iC)]:[],aOuv?[v(c,K.iO)]:[],aLoc?[v(c,K.iL)]:[],am.map(([i])=>v(c,i)),K.ip>=0?[v(c,K.ip)]:[]);
+              const cf={}, det=r.s==='D'||r.s==='X';
+              if(!det) am.forEach(([i],k)=>{ if(!v(c,i).trim()) return; if(i===K.i1&&K.h){ if(r.s==='O'||r.s==='F'||r.s==='T') cf[j0+k]='b'; } else if(i===K.i3||i===K.i2) cf[j0+k]='r'; });
+              return Object.assign({c:n,s:String(r.s||'S')},Object.keys(cf).length?{cf}:{},r.cal?{cal:1}:{},r.q?{q:1}:{}); }); pg.cols=cols2; });
+          return; }
         const fixe=DG_CFC+(aCom?84:0)+(aOuv?30:0)+(aLoc?30:0)+(aMt?56:0)+60+(K.ip>=0?26:0);   /* tableau de x 85.04 à 512.68 (427.64 pt) */
         const cols2=[{t:T0(0)||'CFC',w:DG_CFC,r:false},{t:T0(1)||'Texte',w:DG_WP-fixe,r:false}].concat(aCom?[{t:T0(K.iC),w:84,r:false}]:[],aOuv?[{t:T0(K.iO),w:30,r:false}]:[],aLoc?[{t:T0(K.iL),w:30,r:false}]:[],
           aMt?[{t:'Montant '+suf,w:56,r:true}]:[],[{t:K.h?'Total '+suf:T0(K.i1),w:60,r:true}],K.ip>=0?[{t:T0(K.ip),w:26,r:true,pct:true}]:[]);
@@ -39559,6 +39575,7 @@ async function dgCreer(X){ try{ toast('Création du PDF…'); const r=await dgOc
 /* « Réglages » du devis général : les cases du menu de la ligne (mêmes libellés que le moteur) sur les options du livret de l'ancien logiciel (ch02b, libellés identiques dans sa
    fenêtre « Paramètres ») ; valeurs de la référence (DG_PRESET) tant que rien n'est choisi ; choix enregistrés dans le devis (E.reglages.dgPdf), mêmes dépendances que la fenêtre
    du moteur (commentaire en colonne ⇒ commentaire, variantes ⇒ montants détaillés, calcul ⇒ quantités et prix, 1 à 3 chiffres ⇒ totalisateurs) ; arrondis exclusifs. */
+const DG_P4=true;   /* ESSAI du 10.11.2026 : portrait à quatre colonnes de montants (voir dgOctets) ; false = Montant / Total */
 const DG_TXT=8;   /* corps de TOUT le texte du tableau du devis général en PDF — titres des colonnes, CFC à 1 et 2 chiffres, positions, calculs, descriptif, total, Information (Paulo, 08.11.2026 : « taille des textes 8 pt, mais ne pas changer les en-têtes et les pieds de page ») */
 const DG_MENU=[['displaySubprojects','Afficher les subdivisions','sub'],['onlyThreeDigits','Seulement positions de 1 à 3 chiffres'],   /* « Afficher les positions saisies et les totalisateurs » regroupé ici (Paulo, 08.11.2026) : toujours actif */
   ['commentInColumn','Commentaire dans colonne séparée'],'-',   /* libellé sans « Base et » (Paulo, 08.11.2026) */   /* « Base et commentaire de la position » retiré (Paulo, 08.11.2026) : base et commentaire toujours imprimés, dans leur colonne ou sous la position */   /* « Tous les montants détaillés » fusionné dans « Afficher les montants », placé sous « Commentaire du calcul » (Paulo, 08.11.2026) */

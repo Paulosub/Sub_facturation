@@ -1804,6 +1804,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   pages du moteur à la hauteur `DG_HP` 630 pt, tableau de x 28.35 sur `DG_WP` 490 pt ; les quatre colonnes de montants deviennent **Montant** (positions à 3 et
   4 chiffres, lignes de calcul) et **Total** (CFC à 1 et 2 chiffres) ; colonne vide dans sa série retirée (récapitulatif : Total et % seulement) ; lignes d'un
   descriptif réunies en un paragraphe puis repassées à la ligne ; `livretDG.orientation` / `x0` dans contenuLivret.
+  **ESSAI du 10.11.2026 (Paulo : « afficher CFC à 1, 2, 3 et 4 chiffres pour tester »)** : en portrait, une colonne de montant par niveau comme le paysage
+  (« 4 chiffres TTC », « 3 chiffres TTC », « 2 chiffres TTC », « 1 chiffre TTC », 56 pt chacune) au lieu de Montant / Total ; colonne vide dans sa série retirée
+  (récapitulatif : 2 et 1 chiffres ; « 4 chiffres » seulement sans « Seulement positions de 1 à 3 chiffres ») ; texte ≈ 137 pt. Interrupteur `DG_P4` (sg3_devis.js) :
+  false = Montant / Total (code gardé). À confirmer ou retirer par Paulo.
   **Alignement sur le papier (même jour, portrait et paysage ; Paulo : « les CFC doivent être alignés à la colonne info@substances », « la dernière colonne doit
   être alignée à la barre verticale entre la page et le nombre de pages », « déplacer le texte », « déplacer les numéros de CFC »)** : numéros CFC dans la marge à x 85.04 (comme les numéros de chapitre des contrats ; `livretDG.x0Tab`,
   colonne CFC `DG_CFC` 40.68 pt), désignations, lignes de calcul et descriptif à x 125.72 (2e colonne du pied) ;

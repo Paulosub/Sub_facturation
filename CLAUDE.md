@@ -1934,7 +1934,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (« ajuster m³ à gauche de CHF », même jour) (« m³ », « CHF/m³ » ; en portrait « CHF/m³ » n'y tient pas :
   « CHF », le libellé dit « au m³ » ; TTC ou HT = titre de la colonne « à 1 chiffre ») ; filet bleu nuit 0,75 au-dessus du bloc, filet gris 0,5 sous chaque rangée,
   sur toute la largeur du tableau ; dernière ligne de base à `ECART` (20,77 pt) du haut de la bande. Versions d'avant du même jour : libellés en capitales 7,5 et
-  valeur 9 suivie de l'unité (« M³ » en capitales), puis rangées sans repère avec l'unité après le libellé ; le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
+  valeur 9 suivie de l'unité (« M³ » en capitales), puis rangées sans repère avec l'unité après le libellé ; **case « Volume SIA 416 et prix au m³ »** (Paulo, même jour : « ajouter une option dans Affichage pour afficher VB et prix / m³ ») dans Réglages ▸ Affichage du PDF
+  et le menu Réglages de la ligne (`DG_MENU` `sgChiffres`, `DG_PRESET` : cochée ; enregistrée dans `dgPdf`) : décochée, aucun chiffre clé ; grisée et décochée sans
+  volume dans Surfaces et volumes, grisée sans récapitulatif ; le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
   de 101 + 20,77 + 2 × 15 pt). 99TST : 12'000 m³, 293.80 et 317.31 CHF/m³ TTC.
 - **Veille retirée de SUBGestion 3 (05.11.2026, Paulo : « supprimer de toute l'app, icône pas nécessaire »)** : plus de bouton lune dans les documents ouverts (devis, contrôle des coûts, estimations, soumission), `ch10dIsDoc` neutralisée dans `sg3.js`, `ch10dStart` sans effet ; la barre vide au-dessus du document disparaît. DeltaSub.html, v1 et v2 inchangés.
 - **Fenêtre « Editer l'article » au graphisme de l'app (04.11.2026, `sg3_soumission.js`, `habArticle`, Paulo : « améliorer la fenêtre, pour adapter le design au reste de l'app »)** : `svdEditArticle`

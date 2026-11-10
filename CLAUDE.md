@@ -1814,6 +1814,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Puis (même jour, « dans Positions ajouter récapitulatif CFC à 2 chiffres ») : case « Récapitulatif CFC à 2 chiffres » juste dessous = `includeKvTwoDigit` (cochée
   par défaut, `DG_PRESET`) ; les deux décochées : pas de récapitulatif, le document principal suit l'Information. Essai sur 99TST : 1 + 2 → 18 pages, 1 seul → 17,
   aucun → 16, 2 seul → 17.
+  **Puis (même jour, Paulo : « le récapitulatif à CFC 1 chiffre sera toujours visible sur les documents ; le récapitulatif à 2 chiffres uniquement en activant la
+  visualisation ; VB, etc. uniquement visible dans le récapitulatif CFC 1 chiffre »)** : case « Récapitulatif CFC à 1 chiffre » retirée, récapitulatif à 1 chiffre
+  toujours imprimé (`dgOptions` : `includeKvOneDigit` toujours vrai) ; « Récapitulatif CFC à 2 chiffres » décochée par défaut (`DG_PRESET` ; un devis où elle a été
+  cochée la garde) ; volume et prix au m³ sur le seul récapitulatif à 1 chiffre.
   **Récapitulatifs (10.11.2026, Paulo : « ajouter un titre récapitulatif », « afficher uniquement CFC 1 et CFC 2 chiffres »)** : titre « RÉCAPITULATIF » en
   Akkurat Bold blanc DANS la bande bleu nuit des titres des colonnes, à la place de « Texte » (variante 2 choisie par Paulo parmi 5 — maquettes
   `subgestion3/_backup_20261110_maquette_recap/` : 1 comme « Information », 2 dans la bande, 3 double bande, 4 onglet, 5 grand titre ; essais d'avant le même jour :
@@ -1922,8 +1926,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   caractéristiques de l'affaire (`project.VOLUME`, ancien logiciel, remplacé à chaque reprise) est repris et signalé. `window.sgVolumeSIA416(p)` pour le devis
   général. Droits : écriture = projet modifiable. 99TST : VB 12'000 m³ (volume de sa référence, `REF.volume`, aussi dans le générateur : module 90). Prix au m³ des
   récapitulatifs du devis général (même jour, **variante 1 « Liste »** choisie par Paulo parmi 4 — maquette `subgestion3/_backup_20261110_maquette_recap/proposition_chiffres.js`
-  — puis « déplacer » juste au-dessus du tableau ; « ne pas intégrer dans le tableau ») : sur la PREMIÈRE page de chaque récapitulatif (CFC à 1 chiffre, CFC à 2
-  chiffres ; jamais le document principal), trois lignes au-dessus de la bande bleu nuit — Volume SIA 416 (m³), Prix au m³ SIA 416, CFC 2, Prix au m³ SIA 416, CFC 1
+  — puis « déplacer » juste au-dessus du tableau ; « ne pas intégrer dans le tableau ») : sur la PREMIÈRE page du récapitulatif CFC à 1 chiffre (d'abord aussi sur celui à 2 chiffres ;
+  jamais le document principal), trois lignes au-dessus de la bande bleu nuit — Volume SIA 416 (m³), Prix au m³ SIA 416, CFC 2, Prix au m³ SIA 416, CFC 1
   à 9 (CHF/m³ TTC ou HT selon le titre de la colonne « à 1 chiffre ») ; prix = totaux des CFC à 1 chiffre du devis ÷ volume (`CHIF` dans `dgOctets`, sg3_devis.js,
   lus avant le retrait des colonnes vides ; le CFC 0 n'entre pas dans « 1 à 9 ») ; sans volume (`sgVolumeSIA416` = 0) : rien. Dessin (`pg.chiffres` = [[repère, libellé, valeur, unité]], `tableau`
   de sg3_docsub.js) = **variante 5 « Dans la grille du tableau »**, choisie par Paulo parmi 5 propositions inspirées de la page de garde (« améliore l'intégration »
@@ -1936,7 +1940,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sur toute la largeur du tableau ; dernière ligne de base à `ECART` (20,77 pt) du haut de la bande. Versions d'avant du même jour : libellés en capitales 7,5 et
   valeur 9 suivie de l'unité (« M³ » en capitales), puis rangées sans repère avec l'unité après le libellé ; **case « Volume SIA 416 et prix au m³ »** (Paulo, même jour : « ajouter une option dans Affichage pour afficher VB et prix / m³ ») dans Réglages ▸ Affichage du PDF
   et le menu Réglages de la ligne (`DG_MENU` `sgChiffres`, `DG_PRESET` : cochée ; enregistrée dans `dgPdf`) : décochée, aucun chiffre clé ; grisée et décochée sans
-  volume dans Surfaces et volumes, grisée sans récapitulatif ; le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
+  volume dans Surfaces et volumes ; le bloc suit le tableau descendu sur le logo (`pg.dy`) ; à la répartition, la première page d'un récapitulatif garde la place du bloc (`capChif` : bande jamais au-dessus
   de 101 + 20,77 + 2 × 15 pt). 99TST : 12'000 m³, 293.80 et 317.31 CHF/m³ TTC.
 - **Veille retirée de SUBGestion 3 (05.11.2026, Paulo : « supprimer de toute l'app, icône pas nécessaire »)** : plus de bouton lune dans les documents ouverts (devis, contrôle des coûts, estimations, soumission), `ch10dIsDoc` neutralisée dans `sg3.js`, `ch10dStart` sans effet ; la barre vide au-dessus du document disparaît. DeltaSub.html, v1 et v2 inchangés.
 - **Fenêtre « Editer l'article » au graphisme de l'app (04.11.2026, `sg3_soumission.js`, `habArticle`, Paulo : « améliorer la fenêtre, pour adapter le design au reste de l'app »)** : `svdEditArticle`

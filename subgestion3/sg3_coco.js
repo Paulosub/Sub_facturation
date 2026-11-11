@@ -445,7 +445,7 @@ function habillerEd(m,id){ cssC(); cssE();
   /* listes des écritures : « Nouvelle écriture » réduit aux écritures de la liste (Paulo, 11.11.2026 : « adapter la liste des éléments selon les éléments visibles dans
      le tableau ») — Mutations : transfert, variation, renchérissement ; Adjudications : contrat, avenant ; Paiements : sur contrat, hors contrat. Avenant et paiement sur
      contrat : contrat de la ligne choisie dans la liste (avenant lié : son contrat), sinon la règle du moteur (CFC choisi dans le contrôle du coût). */
-  const NOUV={MUTATIONS:/^Mutations\b/,ADJUDICATIONS:/^(Contrat|Avenant)\b/,PAIEMENTS:/^Paiement\b/};
+  const NOUV={MUTATIONS:/^Mutations\b/,ADJUDICATIONS:/^(Contrat|Avenant)\b/,PAIEMENTS:/^Paiement\b/,'ARRÊTÉS DE COMPTE':/^Nouvel arrêté/};   /* Arrêtés de compte : seulement « Nouvel arrêté de compte » (Paulo, 11.11.2026 : « supprimer ») */
   const nouv=items=>{ const re=!CCV.docs&&NOUV[CCV.sec]; if(!re||!Array.isArray(items)) return items; const K=CCV.cur||{}, C=K.C, d=CCV.detSel, r=d&&d.ref;
     let c=C&&r?(d.k==='ctr'?r:d.k==='pay'&&r.contratId?(C.contrats||[]).find(x=>x.id===r.contratId):null):null;
     if(c&&c.type==='avenant'&&c.lieAuContrat!==false) c=(C.contrats||[]).find(x=>x.id===c.contratParentId)||c;

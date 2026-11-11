@@ -2132,6 +2132,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (ordre choisi à gauche ; document `paymentorder/<ref>` ouvert, sinon créé d'office sous son nom) et « Bon de paiement n° … (PDF) » (paiement choisi à droite,
   `ch01dBonOpen`), dans la fenêtre des documents au graphisme du devis général.
   Onglet Arrêtés de compte : « Nouvelle écriture » = « Nouvel arrêté de compte … » seulement (même jour, « supprimer » ; `NOUV['ARRÊTÉS DE COMPTE']`, aussi au clic droit).
+  **Comptes d'entreprise ▸ Imprimer = « Comptes d'entreprise (PDF) » (même jour, Paulo : « impression de la liste des comptes des entreprises, même design que pour
+  les autres documents comme adjudications »)** : le moteur n'a pas de document pour cette liste ; `comptesOctets(E)` (`sg3_coco_docs.js`, `SGCD.comptesOctets`) fait le
+  PDF au graphisme des listes (`sortie` : page de garde, en-tête, tableau bleu nuit, paysage ; texte dès x 125.72, bord droit sur la barre) — colonnes de l'écran
+  (Entreprise, Contrats, Avenants, Contrats + avenants, Paiements, Contrat − paiements sur contrat, TTC), entreprises par nom, total en pied ; ouvert dans la
+  visionneuse de l'app (`imprimerComptes`, `sgVisionneuse` : Imprimer, Télécharger), sans volet de réglages. ⚠ `num` de `sg3_coco_docs.js` lit un nombre : formater
+  avec `window.num` (moteur).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

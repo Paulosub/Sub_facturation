@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 18:25 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 18:35 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42710,6 +42710,9 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
 const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',nomDefaut:'Liste des mutations',label:'Liste des mutations',job:(E,rep)=>ch01bMutListJob(E,rep)},
   ADJUDICATIONS:{dossier:'award',type:'costControlAwardList',nomDefaut:'Liste des adjudications',label:'Contrats et avenants',job:(E,rep)=>ch01bAwardListJob(E,rep)},
   PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Rapport des paiements',label:'Rapport des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
+async function imprimerComptes(){ const K=CCV.cur||{}; if(!K.C) return; try{ const p=K.p||{}, oct=await SGCD.comptesOctets({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'COMPTES D’ENTREPRISE',touch:K.touch||(()=>{})});
+    sgVisionneuse(new Blob([oct],{type:'application/pdf'}),[p.NUMBER,'Comptes d’entreprise'].filter(Boolean).join(' ')+'.pdf',{titre:'Comptes d’entreprise'}); }
+  catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
 async function ouvrirListe(sec){ const L=LISTE_DOC[sec], K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
   try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
   const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
@@ -42922,7 +42925,8 @@ function habillerEd(m,id){ cssC(); cssE();
   const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
-    const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]:fon(/^Imprimer/);   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
+    const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
+      :!CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&window.SGCD&&SGCD.comptesOctets?[{t:'Comptes d’entreprise (PDF)',fn:()=>imprimerComptes()}]:fon(/^Imprimer/);   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');
@@ -44078,7 +44082,23 @@ function vueCoco(D,o){ const E=o.E||{}, p=E.p||{}, rec=ch01aRec(E,o.dossier)||{}
 const o0=ch01aOpen;
 ch01aOpen=function(o){ const D=o0.apply(this,arguments); if(D&&D.bd&&o&&o.E) try{ vueCoco(D,o); }catch(e){ console.error(e); } return D; };
 
-window.SGCD={ovOctets,kvOctets,listeOctets,items,optsDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+/* Comptes d'entreprise ▸ Imprimer (11.11.2026, Paulo : « impression de la liste des comptes des entreprises, même design que pour les autres documents comme
+   adjudications ») : le moteur n'a pas de document « liste des comptes d'entreprise » ; PDF fait ici au graphisme des listes (page de garde, tableau bleu nuit,
+   texte dès la colonne « info@ » du pied, paysage), mêmes colonnes et mêmes montants que le tableau de l'écran, total en pied */
+async function comptesOctets(E){ const C=E.C, M=await mesure(), L0=SGDE.livret, ori='paysage', geo={x0:L0.DG_X0T,W:L0.DG_WL}, W=geo.W, cap=Math.max(1,Math.floor(DG_HT/DG_RH));
+  const ents=[...new Set([...(C.contrats||[]).map(c=>c.contactId),...(C.paiements||[]).map(x=>x.contactId)])].filter(x=>x!=null).sort((a,b)=>sv(ccEntName(C,a)).localeCompare(sv(ccEntName(C,b)),'fr'));
+  const ctrN=(e,t)=>(C.contrats||[]).filter(c=>c.contactId===e&&c.type===t).reduce((a,c)=>a+docNet(c),0), payN=(e,surC)=>(C.paiements||[]).filter(x=>x.contactId===e&&(!surC||x.contratId)).reduce((a,x)=>a+docNet(x),0);
+  const F=x=>window.num(Math.round(x*100)/100);   /* num du moteur (le num de ce bloc lit un nombre) */
+  const V=e=>{ const c=ctrN(e,'contrat'), a=ctrN(e,'avenant'); return [c,a,c+a,payN(e),c+a-payN(e,true)]; }, T=[0,0,0,0,0];
+  const rows=ents.map(e=>{ const v=V(e); v.forEach((x,i)=>{ T[i]+=x; }); return {c:['',sv(ccEntName(C,e)),...v.map(F)],s:'S'}; });
+  rows.push({c:['','Total',...T.map(F)],s:'T'});
+  const tit=['','Entreprise','Contrats TTC','Avenants TTC','Contrats + avenants TTC','Paiements TTC','Contrat − paiements sur contrat TTC'];
+  const wn=tit.map((t,j)=>j<2?0:Math.max(M.larg(t,true),...rows.map(r=>M.larg(sv(r.c[j]),r.s!=='S')))+10), sn=wn.reduce((a,b)=>a+b,0);
+  const cols=tit.map((t,j)=>({t,w:j===0?DG_CFC:j===1?Math.max(120,W-DG_CFC-sn):wn[j],r:j>=2}));
+  const tot=cols.reduce((a,c)=>a+c.w,0); if(tot>W){ const f=(W-DG_CFC-cols[1].w)/(tot-DG_CFC-cols[1].w); cols.forEach((c,j)=>{ if(j>=2) c.w*=f; }); }
+  const o={E,type:'costControlEntrepreneurList',dossier:'entrepreneur',label:'Comptes d’entreprise',nomDefaut:'Comptes d’entreprise'}, rec={doc:{nom:'Comptes d’entreprise'}};
+  const pages=paginer(etaler(rows,cols,M),cols,cap,'Comptes d’entreprise',2,{}); return sortie(o,rec,pages,ori,'liste',geo); }
+window.SGCD={comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();
 </script>
 </body>

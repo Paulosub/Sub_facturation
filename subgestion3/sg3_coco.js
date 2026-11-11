@@ -218,6 +218,9 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
 const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',nomDefaut:'Liste des mutations',label:'Liste des mutations',job:(E,rep)=>ch01bMutListJob(E,rep)},
   ADJUDICATIONS:{dossier:'award',type:'costControlAwardList',nomDefaut:'Liste des adjudications',label:'Contrats et avenants',job:(E,rep)=>ch01bAwardListJob(E,rep)},
   PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Rapport des paiements',label:'Rapport des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
+async function imprimerComptes(){ const K=CCV.cur||{}; if(!K.C) return; try{ const p=K.p||{}, oct=await SGCD.comptesOctets({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'COMPTES D’ENTREPRISE',touch:K.touch||(()=>{})});
+    sgVisionneuse(new Blob([oct],{type:'application/pdf'}),[p.NUMBER,'Comptes d’entreprise'].filter(Boolean).join(' ')+'.pdf',{titre:'Comptes d’entreprise'}); }
+  catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
 async function ouvrirListe(sec){ const L=LISTE_DOC[sec], K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
   try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
   const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
@@ -430,7 +433,8 @@ function habillerEd(m,id){ cssC(); cssE();
   const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
-    const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]:fon(/^Imprimer/);   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
+    const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
+      :!CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&window.SGCD&&SGCD.comptesOctets?[{t:'Comptes d’entreprise (PDF)',fn:()=>imprimerComptes()}]:fon(/^Imprimer/);   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');

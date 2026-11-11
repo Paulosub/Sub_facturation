@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.11.2026 15:44 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 11.11.2026 17:42 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4054,7 +4054,7 @@ function ccAffichage(C,o){
   if(LI) tab='colonnes';
   const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],...(LI?[]:[['couleurs','Couleurs des écritures']])].forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
   body.append(tabs,pane); drawT();
-  dialog({title:LI?'Affichage · '+LI.titre:'Affichage',width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+  dialog({title:LI?(LI.titreDlg||'Affichage · '+LI.titre):'Affichage',width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
     if(LI){ if(JSON.stringify(cols)!==cols0){ LI.set(cols.map(c=>c.id)); o.touch(); } return; }
     if(JSON.stringify(cols)!==cols0) o.setCols(cols);
     const pc=C.parametres||(C.parametres={}); if(Object.keys(CC_DEF_COUL).every(k=>cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase())) delete pc.couleursDetails; else pc.couleursDetails=Object.assign({},cou);

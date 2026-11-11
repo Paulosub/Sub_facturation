@@ -307,13 +307,71 @@ function piedListe(sec,el,o){ const C=CCV.cur&&CCV.cur.C, t=el&&el.querySelector
   if(sec){ try{ piedListe(sec,el,o); }catch(e){ console.error(e); }
     if(sec==='PAIEMENTS') queueMicrotask(()=>{ [el,el.parentNode].filter(Boolean).forEach(z=>[...z.children].forEach(x=>{ if(x.classList&&x.classList.contains('card')&&/Récapitulatif de TVA/.test((x.querySelector('h3')||{}).textContent||'')) x.remove(); })); }); }   /* carte du moteur : remplacée par le pied du tableau */
   return r; }; }
-function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), cle=LCLE[sec], std=LSIG[sec].split(','), cat=[];
+/* Présentations des listes des écritures (11.11.2026, Paulo : « personnalisé ; ajouter une option permettant d'enregistrer une présentation selon les colonnes et
+   éléments affichés ; dès que j'enregistre, la vue s'enregistre sous Standard ; ajoute la possibilité de récupérer les présentations depuis une autre affaire ») —
+   menu Présentation : Standard, puis les présentations enregistrées (cochée = colonnes affichées identiques), « Personnalisée (non enregistrée) », Personnalisé …
+   (fenêtre des colonnes), Enregistrer la présentation …, Gérer les présentations …, Récupérer d’un autre projet … (libellé : l'app affiche « projet » pour « affaire »). Enregistrées dans le contrôle des coûts :
+   C.listePresentations = {mutations|paiements|adjudications: [{nom, cols, recap (paiements : récapitulatif de TVA)}]}, C.listePresActive = {cle: nom}. */
+const lpL=(C,cle)=>((C&&C.listePresentations)||{})[cle]||[];
+const lpCols=(C,sec)=>((C&&C.listeColonnes)||{})[LCLE[sec]]||LSIG[sec].split(',');
+const lpRecap=C=>typeof ch01dOpt==='function'?!!ch01dOpt(C).recapTVA:false;
+const lpEgal=(C,sec,p)=>p.cols.join(',')===lpCols(C,sec).join(',')&&(sec!=='PAIEMENTS'||p.recap==null||!!p.recap===lpRecap(C));
+const lpActive=(C,sec)=>{ const L=lpL(C,LCLE[sec]), a=((C&&C.listePresActive)||{})[LCLE[sec]], A=L.find(p=>p.nom===a&&lpEgal(C,sec,p)); return A||L.find(p=>lpEgal(C,sec,p))||null; };
+const lpSetCols=(C,sec,ids)=>{ const cle=LCLE[sec], std=LSIG[sec].split(','), L=C.listeColonnes||(C.listeColonnes={});
+  if(!ids||!ids.length||ids.join(',')===std.join(',')) delete L[cle]; else L[cle]=ids.slice(); if(!Object.keys(L).length) delete C.listeColonnes; };
+const lpSetActive=(C,sec,nom)=>{ const A=C.listePresActive||(C.listePresActive={}); if(nom) A[LCLE[sec]]=nom; else delete A[LCLE[sec]]; if(!Object.keys(A).length) delete C.listePresActive; };
+const lpPut=(C,sec,L)=>{ const P=C.listePresentations||(C.listePresentations={}); if(L.length) P[LCLE[sec]]=L; else delete P[LCLE[sec]]; if(!Object.keys(P).length) delete C.listePresentations; };
+const lpTouch=()=>{ const K=CCV.cur||{}; if(K.touch) K.touch(); };
+function lpAppliquer(sec,p){ const C=(CCV.cur||{}).C; if(!C) return; lpSetCols(C,sec,p?p.cols:null); lpSetActive(C,sec,p?p.nom:null);
+  if(p&&sec==='PAIEMENTS'&&p.recap!=null&&typeof ch01dSetOpt==='function'&&!!p.recap!==lpRecap(C)) ch01dSetOpt(C,'recapTVA',!!p.recap); lpTouch(); }
+function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), std=LSIG[sec].split(','), cat=[];
   Object.entries(D).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l,{}]); });
-  ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:SLIB(sec),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:((C.listeColonnes||{})[cle])||std,
-    set:ids=>{ const L=C.listeColonnes||(C.listeColonnes={}); if(!ids.length||ids.join(',')===std.join(',')) delete L[cle]; else L[cle]=ids; if(!Object.keys(L).length) delete C.listeColonnes; }}}); }
-const listePresMenu=sec=>{ const K=CCV.cur||{}, C=K.C, cle=LCLE[sec], perso=!!(C&&(C.listeColonnes||{})[cle]);
-  return [{t:'Standard',chk:!perso,fn:()=>{ if(!perso) return; delete C.listeColonnes[cle]; if(!Object.keys(C.listeColonnes).length) delete C.listeColonnes; if(K.touch) K.touch(); }},...(perso?[{t:'Personnalisée',chk:true,fn:()=>{}}]:[]),'-',
-    {t:'Affichage … (colonnes)',fn:()=>listeAffichage(sec)}]; };
+  ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:SLIB(sec),titreDlg:'Présentation personnalisée · '+SLIB(sec),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:lpCols(C,sec),
+    set:ids=>lpSetCols(C,sec,ids)}}); }
+function lpEnregistrer(sec){ const C=(CCV.cur||{}).C; if(!C) return; const L=lpL(C,LCLE[sec]).slice(), A=lpActive(C,sec), cols=lpCols(C,sec), D=LDEF(sec,C);
+  let n=L.length+1; while(L.some(p=>p.nom==='Présentation '+n)) n++;
+  const inp=h('input',{class:'inp',value:A?A.nom:'Présentation '+n,style:{width:'100%',boxSizing:'border-box'}}), msg=h('div',{class:'sglp-msg',style:{fontSize:'12px',color:'#888',marginTop:'6px',minHeight:'16px'}});
+  const maj=()=>{ const v=inp.value.trim(); msg.textContent=!v?'Donnez un nom à la présentation.':L.some(p=>p.nom===v)?'« '+v+' » existe déjà : elle sera remplacée.':''; }; inp.oninput=maj; maj();
+  const rc=sec==='PAIEMENTS'?lpRecap(C):null;
+  const body=h('div',{style:{width:'460px',maxWidth:'80vw'}},h('div',{style:{fontWeight:600,marginBottom:'6px'}},'Nom de la présentation'),inp,msg,
+    h('div',{style:{marginTop:'12px',fontSize:'12.5px',color:'#555'}},'Colonnes affichées ('+cols.length+') : '+cols.map(k=>(D[k]&&D[k].t)||k).join(', ')+(rc!=null?' · récapitulatif de TVA : '+(rc?'oui':'non'):'')));
+  dialog({title:'Enregistrer la présentation · '+SLIB(sec),body,buttons:[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:()=>{ const v=inp.value.trim(); if(!v){ maj(); inp.focus(); return false; }
+    const p={nom:v,cols:cols.slice()}; if(rc!=null) p.recap=rc; const i=L.findIndex(x=>x.nom===v); if(i>=0) L[i]=p; else L.push(p);
+    lpPut(C,sec,L); lpSetActive(C,sec,v); lpTouch(); toast('Présentation « '+v+' » enregistrée.'); }}]});
+  setTimeout(()=>{ inp.focus(); inp.select(); },0); }
+function lpGerer(sec){ const C=(CCV.cur||{}).C; if(!C) return; const L=lpL(C,LCLE[sec]).map(p=>Object.assign({},p,{_n:p.nom})), box=h('div',{style:{width:'460px',maxWidth:'80vw'}});
+  const draw=()=>{ box.innerHTML=''; if(!L.length){ box.append(h('div',{style:{color:'#888'}},'Aucune présentation enregistrée.')); return; }
+    L.forEach((p,i)=>{ const inp=h('input',{class:'inp',value:p.nom,style:{flex:'1'}}); inp.oninput=()=>{ p.nom=inp.value; };
+      box.append(h('div',{style:{display:'flex',gap:'8px',alignItems:'center',padding:'4px 0',borderBottom:'1px solid #e3e3e0'}},inp,h('span',{style:{fontSize:'12px',color:'#888',whiteSpace:'nowrap'}},p.cols.length+' colonnes'),
+        h('button',{type:'button',class:'btn',title:'Supprimer la présentation',onclick:()=>{ L.splice(i,1); draw(); }},'✕'))); }); };
+  draw();
+  dialog({title:'Présentations enregistrées · '+SLIB(sec),body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const noms=L.map(p=>p.nom.trim());
+    if(noms.some(x=>!x)){ toast('Chaque présentation doit avoir un nom.',true); return false; } if(new Set(noms).size!==noms.length){ toast('Deux présentations portent le même nom.',true); return false; }
+    const a=((C.listePresActive||{})[LCLE[sec]]), r=L.find(p=>p._n===a); lpPut(C,sec,L.map(p=>{ const q=Object.assign({},p,{nom:p.nom.trim()}); delete q._n; return q; })); lpSetActive(C,sec,r?r.nom.trim():null); lpTouch(); }}]}); }
+async function lpRecuperer(sec){ const K=CCV.cur||{}, C=K.C; if(!C) return; try{ await DS.need(['costcontrol','costcontroldocument']); }catch(_){}
+  const cle=LCLE[sec], lib={mutations:'Mutations',paiements:'Paiements',adjudications:'Adjudications'};
+  const src=DS.all('costcontroldocument').filter(d=>d.ID!==K.id&&(typeof sgProjetPermis!=='function'||sgProjetPermis(d.PROJECT_ID))).map(d=>{ const X=DS.get('costcontrol',d.ID)||{}, it=[];
+      Object.keys(lib).forEach(k=>{ (((X.listePresentations||{})[k])||[]).forEach(p=>it.push({k,p})); const c=(X.listeColonnes||{})[k]; if(c&&c.length&&!(((X.listePresentations||{})[k])||[]).some(p=>p.cols.join(',')===c.join(','))) it.push({k,p:{nom:'Présentation en cours (non enregistrée)',cols:c.slice()}}); });
+      const pr=DS.get('project',d.PROJECT_ID)||{}; return {d,it,lib:[pr.NUMBER,pr.TITLE].filter(Boolean).join(' · ')+(d.VERSION?' — version '+d.VERSION:'')}; }).filter(x=>x.it.length)
+    .sort((a,b)=>String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
+  if(!src.length){ dialog({title:'Récupérer des présentations',body:h('div',{style:{maxWidth:'460px'}},'Aucun autre projet n’a de présentation enregistrée pour les listes des écritures.')}); return; }
+  const sel=h('select',{class:'inp',style:{width:'100%'}}), liste=h('div',{style:{marginTop:'10px',maxHeight:'50vh',overflow:'auto'}}); let cases=[];
+  src.forEach((x,i)=>sel.append(h('option',{value:i},x.lib)));
+  const draw=()=>{ const x=src[+sel.value]; liste.innerHTML=''; cases=[];
+    Object.keys(lib).forEach(k=>{ const I=x.it.filter(y=>y.k===k); if(!I.length) return; liste.append(h('div',{style:{fontWeight:600,margin:'10px 0 4px'}},lib[k]));
+      I.forEach(y=>{ const cb=h('input',{type:'checkbox',checked:k===cle||null}); cases.push({cb,y}); liste.append(h('label',{style:{display:'flex',gap:'8px',alignItems:'center',padding:'3px 0'}},cb,h('span',{},y.p.nom),h('span',{style:{color:'#888',fontSize:'12px'}},y.p.cols.length+' colonnes'))); }); }); };
+  sel.onchange=draw; draw();
+  dialog({title:'Récupérer des présentations d’un autre projet',width:'560px',body:h('div',{},h('div',{style:{fontWeight:600,marginBottom:'6px'}},'Contrôle des coûts'),sel,liste),buttons:[{t:'Annuler'},{t:'Récupérer',pri:true,fn:()=>{
+    const x=src[+sel.value], pr=DS.get('project',x.d.PROJECT_ID)||{}; let n=0;
+    cases.filter(c=>c.cb.checked).forEach(({y})=>{ const S=Object.keys(LCLE).find(s=>LCLE[s]===y.k), L=lpL(C,y.k).slice(); let nom=y.p.nom==='Présentation en cours (non enregistrée)'?'Présentation '+(pr.NUMBER||'reprise'):y.p.nom;
+      const same=L.find(p=>p.nom===nom); if(same&&same.cols.join(',')===y.p.cols.join(',')) return; if(same){ let j=2; const b=nom+' ('+(pr.NUMBER||'reprise')+')'; nom=b; while(L.some(p=>p.nom===nom)) nom=b+' '+(j++); }
+      const q={nom,cols:y.p.cols.slice()}; if(y.p.recap!=null) q.recap=!!y.p.recap; L.push(q); lpPut(C,S,L); n++; });
+    if(!n){ toast('Aucune nouvelle présentation : elles existent déjà ou aucune n’est cochée.'); return; } lpTouch(); toast(n+(n>1?' présentations reprises.':' présentation reprise.')); }}]}); }
+const listePresMenu=sec=>{ const C=(CCV.cur||{}).C, L=lpL(C,LCLE[sec]), A=lpActive(C,sec), perso=!!(C&&(C.listeColonnes||{})[LCLE[sec]]), stdOn=!perso&&!A;
+  return [{t:'Standard',chk:stdOn,fn:()=>{ if(!stdOn) lpAppliquer(sec,null); }},...L.map(p=>({t:p.nom,chk:A===p,fn:()=>{ if(A!==p) lpAppliquer(sec,p); }})),
+    ...(perso&&!A?[{t:'Personnalisée (non enregistrée)',chk:true,fn:()=>{}}]:[]),'-',
+    {t:'Personnalisé …',fn:()=>listeAffichage(sec)},{t:'Enregistrer la présentation …',fn:()=>lpEnregistrer(sec)},...(L.length?[{t:'Gérer les présentations …',fn:()=>lpGerer(sec)}]:[]),
+    {t:'Récupérer d’un autre projet …',fn:()=>lpRecuperer(sec)}]; };
 const DGV=(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_dgv'))||{}; }catch(_){ return {}; } })(), dgvSave=()=>{ try{ localStorage.setItem('sg3_coco_dgv',JSON.stringify(DGV)); }catch(_){} };
 let DGX=null;   /* tableau de l'onglet Devis général (contexte réduit du devis d'origine) */
 async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}

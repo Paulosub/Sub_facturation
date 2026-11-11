@@ -128,7 +128,7 @@ const ED_CSS=`
 .sgce-dsub{flex:none;margin:0 24px;padding:9px 0 8px;flex-wrap:wrap;gap:6px 16px}
 .sgce-dsub .sgce-dt{color:var(--s-gris)}
 .sgce-leg{flex:none;display:flex;align-items:center;gap:12px;font-size:11.5px;font-style:italic;margin:0 12px 0 6px;white-space:nowrap}
-.sgce.dg .sgce-bar .sgce-new,.sgce.dg .sgce-bar .sgce-sep.nw,.sgce.dg .sgce-bar .sgce-fon{display:none!important}   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture » ni « Fonctions » (Paulo, 11.11.2026) */
+.sgce.dg .sgce-bar .sgce-new,.sgce.dg .sgce-bar .sgce-sep.nw,.sgce.dg .sgce-bar .sgce-fon,.sgce.dg .sgce-bar .sgce-par{display:none!important}   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
 .sgce-leg button{border:0;background:none;padding:3px 0;font:inherit;font-size:11.5px;font-style:italic;cursor:pointer;white-space:nowrap}
 .sgce-leg button:hover{text-decoration:underline}
 .sgce-bar .sgce-x{display:none}
@@ -215,7 +215,7 @@ function habillerEd(m,id){ cssC(); cssE();
   ED.majLeg(); leg.onclick=e=>{ const b=e.target.closest('[data-k]'); if(b&&typeof CCV.affichage==='function') CCV.affichage('couleurs',b.dataset.k); };
   if(!SGCC._legEv){ SGCC._legEv=1; document.addEventListener('cc-affichage',()=>{ if(ED.majLeg) ED.majLeg(); }); }
   const autres=[...bar.children].filter(x=>!B.includes(x)&&x.tagName!=='B');   /* éléments ajoutés à la barre par d'autres blocs : gardés à la fin */
-  bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bar2.append(bNew,sep('nw'),bPresN,sep('n'),niv,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
+  bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep('n'),niv,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */
   const docs=k=>{ ED.sub=k; if(k==='fichiers') secIt.DOCUMENTS.click(); else if(docIt[k]) docIt[k].click(); maj(); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b) return; if(b.dataset.s==='DOCUMENTS') docs(ED.sub||'fichiers'); else { secIt[b.dataset.s].click(); maj(); } };

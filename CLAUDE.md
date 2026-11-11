@@ -2018,7 +2018,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Onglets et titres (11.11.2026, annotations de Paulo)** : onglet « Devis général » placé avant « Contrôle du coût » (`SECS` de `sg3_coco.js` ; la section ouverte
   d'office reste le Contrôle du coût) ; titres des colonnes du tableau : « Contrats + avenants TTC » passe à la ligne avant « avenants » (espaces insécables avant « + » et
   avant l'unité HT / TVA / TTC, affichage seulement, `deco`). Onglet Devis général = base du contrôle, affichée seulement (Paulo : « il sert uniquement comme base au contrôle et doit uniquement être affiché, pas de
-  modification possible ») : « Nouvelle écriture » et « Fonctions » masqués (classe `dg` de `.sgce`), clic droit sans menu ; Présentation, CFC, Imprimer et Paramètres restent.
+  modification possible ») : « Nouvelle écriture », « Paramètres » et « Fonctions » masqués (classe `dg` de `.sgce`), clic droit sans menu ; Présentation, CFC et Imprimer restent
+  (« Attribuer le devis général validé » et « Configuration » : dans « Paramètres » des autres onglets).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

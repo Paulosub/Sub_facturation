@@ -2021,7 +2021,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   modification possible ») : « Nouvelle écriture », « Paramètres » et « Fonctions » masqués (classe `dg` de `.sgce`), clic droit sans menu ; Présentation, CFC et Imprimer restent
   (« Attribuer le devis général validé » et « Configuration » : dans « Paramètres » des autres onglets).
   **Onglet Devis général ▸ Imprimer ▸ « Devis général (PDF) » (11.11.2026, Paulo : « identique à devis général avec les mêmes options, vertical, etc. et calcul »)** :
-  remplace « Imprimer le tableau (A4 paysage) » dans cet onglet ; ouvre le document « Devis général » du devis d'origine, exactement comme Descriptifs & devis ▸ Documents
+  seule entrée du menu Imprimer de cet onglet (« Imprimer le tableau (A4 paysage) » et « Fichiers déposés » retirés) ; ouvre le document « Devis général » du devis d'origine, exactement comme Descriptifs & devis ▸ Documents
   (même fenêtre `vueDocG`, mêmes réglages enregistrés dans ce devis : format, descriptif, lignes de calcul, montants, sauts de page…) — `dgDuDevis` de `sg3_coco.js` :
   contexte de devis réduit (`ch02aCtx` : E, en-tête, projet ; `touch` = `ch02aSave`) puis `ch02cOpen(X,0)` (→ `dgOuvrir`). Devis d'origine : `C.devisSourceId` (noté par
   `ccAssignDG` du moteur depuis ce jour), sinon le devis du projet dont le total TTC est celui du devis du contrôle (validé et le plus récent d'abord) ; aucun : message.

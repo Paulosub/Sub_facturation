@@ -221,7 +221,8 @@ function habillerEd(m,id){ cssC(); cssE();
   lbl(bNew,'Nouvelle écriture'); lbl(bPar,'Paramètres');
   const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
-    const imp=!CCV.docs&&CCV.sec==='DEVIS GENERAL'?[{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}]:fon(/^Imprimer/);   /* onglet Devis général : le document du devis (11.11.2026) */
+    if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
+    const imp=fon(/^Imprimer/);
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-',...fon(/^(Copier|Exporter)/),'-',{t:'Enregistrer',fn:()=>bSave.click()}]}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');

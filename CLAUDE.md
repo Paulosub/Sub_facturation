@@ -2020,6 +2020,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   avant l'unité HT / TVA / TTC, affichage seulement, `deco`). Onglet Devis général = base du contrôle, affichée seulement (Paulo : « il sert uniquement comme base au contrôle et doit uniquement être affiché, pas de
   modification possible ») : « Nouvelle écriture », « Paramètres » et « Fonctions » masqués (classe `dg` de `.sgce`), clic droit sans menu ; Présentation, CFC et Imprimer restent
   (« Attribuer le devis général validé » et « Configuration » : dans « Paramètres » des autres onglets).
+  **Onglet Devis général ▸ Imprimer ▸ « Devis général (PDF) » (11.11.2026, Paulo : « identique à devis général avec les mêmes options, vertical, etc. et calcul »)** :
+  remplace « Imprimer le tableau (A4 paysage) » dans cet onglet ; ouvre le document « Devis général » du devis d'origine, exactement comme Descriptifs & devis ▸ Documents
+  (même fenêtre `vueDocG`, mêmes réglages enregistrés dans ce devis : format, descriptif, lignes de calcul, montants, sauts de page…) — `dgDuDevis` de `sg3_coco.js` :
+  contexte de devis réduit (`ch02aCtx` : E, en-tête, projet ; `touch` = `ch02aSave`) puis `ch02cOpen(X,0)` (→ `dgOuvrir`). Devis d'origine : `C.devisSourceId` (noté par
+  `ccAssignDG` du moteur depuis ce jour), sinon le devis du projet dont le total TTC est celui du devis du contrôle (validé et le plus récent d'abord) ; aucun : message.
+  Titre de la fenêtre « Contrôle des coûts · Devis général » (`X.sgde.lb`, lu par `vueDoc`).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

@@ -171,6 +171,23 @@ const ED_CSS=`
 const cssE=()=>{ if(!document.getElementById('sgce-css')){ const s=document.createElement('style'); s.id='sgce-css'; s.textContent=ED_CSS; document.head.appendChild(s); } };
 const SECS=CC_SECS.filter(s=>s!=='DOCUMENTS').sort((a,b)=>(b==='DEVIS GENERAL')-(a==='DEVIS GENERAL')), SLIB=s=>(typeof CC_SEC_LIB!=='undefined'&&CC_SEC_LIB[s])||s;
 const estCC=()=>!CCV.docs&&(CCV.sec==='CONTRÔLE DU COÛT'||CCV.sec==='DEVIS GENERAL');
+/* ═══ Onglet Devis général ▸ Imprimer ▸ « Devis général (PDF) » (11.11.2026, Paulo : « identique à devis général avec les mêmes options, vertical, etc. et calcul ») :
+   le contrôle des coûts ne garde que les montants du devis attribué ; le document est donc celui du devis général d'origine — même fenêtre, mêmes réglages (format,
+   descriptif, lignes de calcul, montants, sauts de page…) et même enregistrement des réglages que Descriptifs & devis ▸ Documents ▸ Devis général (sg3_devis.js : ch02cOpen
+   ligne 0 → dgOuvrir). Devis d'origine = celui noté à l'attribution (C.devisSourceId, ccAssignDG depuis le 11.11.2026), sinon le devis général du projet dont le total TTC
+   est celui du contrôle (validé et le plus récent d'abord). Contexte de devis réduit (ch02aCtx : E, en-tête, projet, enregistrement ch02aSave) — rien n'est écrit sans
+   changement de réglage. */
+const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!(DS.get('costestimatedocument',id)||{}).ISMARKEDASDELETED; if(ok(C.devisSourceId)) return C.devisSourceId;
+  const tot=ccCalc(C).G.dg||0, L=DS.by('costestimatedocument','PROJECT_ID',pid).filter(d=>ok(d.ID)).map(d=>({d,t:dvCompute(DS.get('costestimate',d.ID)).T.ttc}));
+  const M=L.filter(x=>Math.abs(x.t-tot)<1).sort((a,b)=>((b.d.STATECODE===2)-(a.d.STATECODE===2))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
+  return M.length?M[0].d.ID:null; };
+async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}
+  const C=CCV.cur&&CCV.cur.C, p=DS.get('project',d&&d.PROJECT_ID); if(!C||!p) return;
+  const sid=devisSource(C,p.ID); if(sid==null){ toast('Aucun devis général ne correspond au devis de ce contrôle des coûts : attribuez le devis général validé (onglet Contrôle du coût ▸ Paramètres ▸ Attribuer le devis général validé).',true); return; }
+  if(typeof ch02aCtx!=='function'||typeof ch02cOpen!=='function'||typeof ch02aSave!=='function'){ toast('Document du devis indisponible.',true); return; }
+  const X=ch02aCtx({id:sid,doc:DS.get('costestimatedocument',sid),p,E:ch02aClone(DS.get('costestimate',sid)),st:{},dirty:false,draw:()=>{},totals:()=>{},drawCat:()=>{}});
+  X.touch=()=>{ X.dirty=true; ch02aSave(X).catch(()=>{}); }; X.sgde={ong:'docs',cfc:false,niv:0,vu:null,cc:true,lb:'Contrôle des coûts · Devis général'};
+  try{ await ch02cOpen(X,0); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }
 const ED=SGCC.ed={niv:(()=>{ try{ const v=+localStorage.getItem('sg3_coco_niv'); return [1,2,3].includes(v)?v:0; }catch(_){ return 0; } })(),sub:'fichiers',plein:false,box:null};
 /* ligne masquée par le choix du niveau de CFC (k = « cfc|entreprise[|détail] » des sections Contrôle du coût et Devis général ; total toujours affiché) */
 const masquee=k=>{ if(!ED.niv||k==null||k==='TOTAL') return false; const c=String(k).split('|')[0]; return !!c&&cfcLevel(c)>ED.niv; };
@@ -204,7 +221,8 @@ function habillerEd(m,id){ cssC(); cssE();
   lbl(bNew,'Nouvelle écriture'); lbl(bPar,'Paramètres');
   const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
-    return [...fon(/^Imprimer/),...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
+    const imp=!CCV.docs&&CCV.sec==='DEVIS GENERAL'?[{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}]:fon(/^Imprimer/);   /* onglet Devis général : le document du devis (11.11.2026) */
+    return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-',...fon(/^(Copier|Exporter)/),'-',{t:'Enregistrer',fn:()=>bSave.click()}]}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');
   box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgce-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const s=bPlein.querySelector('svg'); if(s&&typeof nxSvg==='function') s.outerHTML=nxSvg(ED.plein?'pleinq':'plein'); bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };

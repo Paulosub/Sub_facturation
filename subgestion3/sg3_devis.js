@@ -1013,7 +1013,7 @@ function vueDocG(D,cfg){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if
   const c0=D.close; D.close=function(){ fini(); return c0.apply(this,arguments); };
   setTimeout(()=>L.focus(),0); tete(); return {R,L,maj,panneau}; }
 function vueDoc(D,X,i,rec){ const hdr=ch02aHdr(X)||{};
-  return vueDocG(D,{p:X.p||{},lb:'Descriptifs & devis · Documents',titre:(rec&&rec.doc&&rec.doc.nom)||(CH02C_ROWS[i]||{}).t||'Document',etat:DV_STATE[hdr.STATECODE]||'',
+  return vueDocG(D,{p:X.p||{},lb:(X.sgde&&X.sgde.lb)||'Descriptifs & devis · Documents',titre:(rec&&rec.doc&&rec.doc.nom)||(CH02C_ROWS[i]||{}).t||'Document',etat:DV_STATE[hdr.STATECODE]||'',
     peut:()=>ecrit()&&ch02aCanEdit(ch02aHdr(X)),items:()=>ch02cPrefItems(X,i),rendre:()=>ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec),
     installer:({R,L,maj,reset,peut})=>{
   if(+i===0){ const cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>dgSautsMarquer(cont,X)).observe(cont,{childList:true}); }   /* sauts de page visibles à l'écran (08.11.2026) */

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.11.2026 14:10 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 11.11.2026 14:29 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4464,6 +4464,7 @@ async function ccAssignDG(C,p,touch){
       else { po.dgTTC=po.dgTTC||0; po.dgHT=po.dgHT||0; po.dgTVA=po.dgTVA||0; }
       map.set(cfc,po); });
     C.positions=[...map.values()].sort((a,b)=>cfcCmp(a.cfc,b.cfc)); if(!C.ouvragesProjet) C.ouvragesProjet=DS.by('subproject','PROJECT_ID',p.ID).map(s=>s.CODE);
+    C.devisSourceId=d.ID;   /* devis d'origine noté (11.11.2026) : son document « Devis général » s'imprime depuis l'onglet Devis général de SUBGestion 3 */
     touch(); toast('Devis attribué.'); }}]});
 }
 function ccConfig(C,touch){ const pp=C.parametres||(C.parametres={}); const j=h('input',{class:'inp',type:'number',value:pp.joursPaiementApresFacture??30,style:{width:'70px'}}), t=h('input',{class:'inp',value:pp.texteCompte||''});

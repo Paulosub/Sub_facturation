@@ -3571,7 +3571,7 @@ const CC_COL={
   contractMinusPayment:{t:'Contrat moins paiements TTC',fn:v=>(v.contratsAvenants||0)-(v.paiements||0),e:1}, kvMinusPayment:{t:'DG rév. moins paiements TTC',fn:v=>(v.dgRevise||0)-(v.paiements||0)},
   awardingProfit:{t:'Bénéfice d’adjudication',fn:v=>v.contratsAvenants?(v.contratsAvenants-v.dgRevise):0}
 };
-const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationTransferTot1','mutationIncreaseTot1','kv1Tot','contractAndAddendumTot','payementTot','forcastCalculatedTot','balanceOfCostsTot']};   // présentation « Standard » de Deltaproject (manuel, Contrôle des coûts ▸ Disposition des colonnes ; titres de CostColumns) : présentation par défaut de tous les contrôles des coûts (Paulo, 10.11.2026)
+const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationTot1','mutationIncreaseTot1','kv1Tot','contractAndAddendumTot','payementTot','forcastCalculatedTot','balanceOfCostsTot']};   // présentation « Standard » de Deltaproject (manuel, Contrôle des coûts ▸ Disposition des colonnes ; titres de CostColumns) : présentation par défaut de tous les contrôles des coûts (Paulo, 10.11.2026) ; « Transferts TTC » remplacé par « Mutations TTC » (Paulo, 11.11.2026)
 /* ═══ Catalogue complet des colonnes du contrôle du coût et couleurs des écritures (11.11.2026, Paulo : « dans une option affichage, ajoute toutes les colonnes
    possibles qui se trouvent dans le contrôle du coût de l'ancien logiciel », puis « changer les couleurs de ces éléments [Mutations, Contrats, Paiements, Provisions,
    coût probable], cette nouvelle couleur devra intégrer le tableau du contrôle ; une palette de 256 couleurs pour sélectionner pour chaque élément ») ───────────

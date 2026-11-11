@@ -128,6 +128,7 @@ const ED_CSS=`
 .sgce-dsub{flex:none;margin:0 24px;padding:9px 0 8px;flex-wrap:wrap;gap:6px 16px}
 .sgce-dsub .sgce-dt{color:var(--s-gris)}
 .sgce-leg{flex:none;display:flex;align-items:center;gap:12px;font-size:11.5px;font-style:italic;margin:0 12px 0 6px;white-space:nowrap}
+.sgce.dg .sgce-bar .sgce-new,.sgce.dg .sgce-bar .sgce-sep.nw{display:none!important}   /* Devis général : pas de « Nouvelle écriture » (Paulo, 11.11.2026) */
 .sgce-leg button{border:0;background:none;padding:3px 0;font:inherit;font-size:11.5px;font-style:italic;cursor:pointer;white-space:nowrap}
 .sgce-leg button:hover{text-decoration:underline}
 .sgce-bar .sgce-x{display:none}
@@ -214,7 +215,7 @@ function habillerEd(m,id){ cssC(); cssE();
   ED.majLeg(); leg.onclick=e=>{ const b=e.target.closest('[data-k]'); if(b&&typeof CCV.affichage==='function') CCV.affichage('couleurs',b.dataset.k); };
   if(!SGCC._legEv){ SGCC._legEv=1; document.addEventListener('cc-affichage',()=>{ if(ED.majLeg) ED.majLeg(); }); }
   const autres=[...bar.children].filter(x=>!B.includes(x)&&x.tagName!=='B');   /* éléments ajoutés à la barre par d'autres blocs : gardés à la fin */
-  bar2.append(bNew,sep(),bPresN,sep('n'),niv,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
+  bNew.classList.add('sgce-new'); bar2.append(bNew,sep('nw'),bPresN,sep('n'),niv,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */
   const docs=k=>{ ED.sub=k; if(k==='fichiers') secIt.DOCUMENTS.click(); else if(docIt[k]) docIt[k].click(); maj(); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b) return; if(b.dataset.s==='DOCUMENTS') docs(ED.sub||'fichiers'); else { secIt[b.dataset.s].click(); maj(); } };
@@ -225,7 +226,7 @@ function habillerEd(m,id){ cssC(); cssE();
     dsub.innerHTML='<span class="sgce-dt">Documents</span>'+[['fichiers','Fichiers déposés'],...SECS.filter(s=>docIt[s]).map(s=>[s,SLIB(s)])].map(([k,t])=>'<button data-d="'+E(k)+'" class="'+(sub===k&&actif==='DOCUMENTS'?'on':'')+'">'+E(t)+'</button>').join('');
     niv.innerHTML='<span title="Niveau de CFC affiché">CFC</span>'+[[0,'Tout','Tous les CFC'],[3,'3','CFC de 1 à 3 chiffres'],[2,'2','CFC de 1 et 2 chiffres'],[1,'1','CFC à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(ED.niv===v?'on':'')+'">'+t+'</button>').join('');
     (actif==='DOCUMENTS'?dsub:bar2).append(bPlein);   /* Documents : la barre d'outils laisse la place au choix des documents, le bouton du plein écran passe à sa droite */
-    box.classList.toggle('docs',actif==='DOCUMENTS'); box.classList.toggle('cc',estCC()); box.classList.toggle('det',CCV.sec==='CONTRÔLE DU COÛT'&&!CCV.docs&&!!CCV.det); };
+    box.classList.toggle('docs',actif==='DOCUMENTS'); box.classList.toggle('cc',estCC()); box.classList.toggle('det',CCV.sec==='CONTRÔLE DU COÛT'&&!CCV.docs&&!!CCV.det); box.classList.toggle('dg',CCV.sec==='DEVIS GENERAL'&&!CCV.docs); };
   /* bandeau et chiffres, à chaque dessin du moteur */
   hd.onclick=e=>{ if(e.target.closest('[data-a="liste"]')) fermer(); };
   const entete=()=>{ const d=doc(), p=DS.get('project',d.PROJECT_ID)||{}, mo=moT(p), et=ETATS[d.STATECODE]||'', g=totaux(d)||{};

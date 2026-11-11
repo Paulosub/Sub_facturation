@@ -2029,7 +2029,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Onglet Devis général = tableau du devis d'origine, en lecture seule (11.11.2026, Paulo : « ajoute les options d'affichage comme dans devis général : calcul,
   commentaires, etc. »)** : `dgVue` (`sg3_coco.js`, appelé par `deco`) remplace le tableau du moteur par celui de Descriptifs & devis — `ch02aDraw` sur un contexte réduit
   du devis d'origine (`devisSource`), puis `SGDE.deco` (styles `SGDE.cssD`) : présentations Standard, Avec colonnes honoraires, Toutes les colonnes, … avec le calcul de prix,
-  Avec le descriptif et le calcul de prix, Avec le descriptif, subdivisions, positions sans montant (menu Présentation de l'onglet : `dgPresMenu`) ; choix du poste
+  Avec le descriptif et le calcul de prix, Avec le descriptif, subdivisions, positions sans montant (menu Présentation de l'onglet : `dgPresMenu`) — sans « Avec colonnes
+  honoraires » ni les colonnes d'honoraires (% soumis, Montant soumis HT, Définitif : `grid` filtré pendant `ch02aDraw`), dans le contrôle des coûts seulement (même jour) ; choix du poste
   `sg3_coco_dgv`, sinon la présentation enregistrée dans le devis ; rien n'est écrit (pas de double-clic de calcul ; `deco` de sg3_devis.js ne pose plus le « montant
   saisi » quand `X.sgde.ro`). Sans devis d'origine : tableau du moteur (montants du contrôle). **CFC Tout · 3 · 2 · 1 à droite de la ligne des onglets**, comme le devis
   (`ong.append(ongL,niv)`), pour l'onglet Contrôle du coût comme pour Devis général (masqué ailleurs).

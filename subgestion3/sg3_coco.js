@@ -280,15 +280,18 @@ function habillerEd(m,id){ cssC(); cssE();
     if(w&&w.classList.contains('sgce-dgv')&&DGX&&DGX.E0===E0&&DGX.cle===cle){ DGX.sgde.niv=ED.niv||0; try{ SGDE.deco(DGX); }catch(e){ console.error(e); } return true; }
     const E=ch02aClone(E0), A=(E.reglages||(E.reglages={})).affichage||(E.reglages.affichage={});
     if(DGV.mode!=null){ A.displayMode=DGV.mode; if(DGV.calc) A.sgCalc=true; else delete A.sgCalc; }
+    if(+A.displayMode===2) A.displayMode=0;   /* « Avec colonnes honoraires » : pas dans le contrôle des coûts (11.11.2026) → Standard */
     const wrap=el('div','sgde sgce-dgv'), rp=el('div','pane'); wrap.append(rp);
     const X={id:sid,doc:DS.get('costestimatedocument',sid),p,E,E0,cle,st:{sel:null,ouv:!!DGV.ouv,only3:false,empty:DGV.vides!==false},R2:{},rp,filter:null,OUV:()=>dvOuvCodes(E),
       totals:()=>{},dvCalc:()=>{},draw:()=>{},touch:()=>{},sgde:{niv:ED.niv||0,vu:null,cfc:false,ro:true}};
     if(typeof SGDE.cssD==='function') SGDE.cssD();   /* styles du tableau des devis (aussi sans devis ouvert dans la séance) */
     DGX=X; pane.replaceChildren(wrap);
-    try{ ch02aDraw(X); SGDE.deco(X); }catch(e){ console.error(e); DGX=null; return false; } return true; };
+    /* colonnes d'honoraires (% soumis, Montant soumis HT, Définitif) retirées du tableau du contrôle des coûts seulement (Paulo, 11.11.2026) */
+    const g0=grid; grid=function(el2,o){ if(el2===rp&&o&&Array.isArray(o.cols)) o.cols=o.cols.filter(c=>!['hp','hon','def'].includes(c.k)); return g0.apply(this,arguments); };
+    try{ ch02aDraw(X); SGDE.deco(X); }catch(e){ console.error(e); DGX=null; return false; } finally{ grid=g0; } return true; };
   const dgPresMenu=()=>{ const E=DGX&&DGX.E, m=ch02aMode(E||{}), c4=m===4&&!!(((E||{}).reglages||{}).affichage||{}).sgCalc;
     const poser=(k,calc)=>{ DGV.mode=k; DGV.calc=!!calc; dgvSave(); DGX=null; deco(); };
-    return [...CH02A_MODES.flatMap(([k,t])=>k===4?[{t:'Avec le descriptif et le calcul de prix',chk:c4,fn:()=>poser(4,true)},{t,chk:m===4&&!c4,fn:()=>poser(4,false)}]:[{t,chk:m===k,fn:()=>poser(k,false)}]),'-',
+    return [...CH02A_MODES.filter(([k])=>k!==2).flatMap(([k,t])=>k===4?[{t:'Avec le descriptif et le calcul de prix',chk:c4,fn:()=>poser(4,true)},{t,chk:m===4&&!c4,fn:()=>poser(4,false)}]:[{t,chk:m===k,fn:()=>poser(k,false)}]),'-',
       ...(E&&dvOuvCodes(E).length?[{t:'Afficher les subdivisions',chk:!!DGV.ouv,fn:()=>{ DGV.ouv=!DGV.ouv; dgvSave(); DGX=null; deco(); }}]:[]),
       {t:'Afficher les positions sans montant',chk:DGV.vides!==false,fn:()=>{ DGV.vides=DGV.vides===false; dgvSave(); DGX=null; deco(); }}]; };
   const deco=()=>{ if(dgVue()) return; const t=pane.querySelector(':scope>table.g'); if(!t) return; const cc=estCC(); t.classList.toggle('sgce-t',cc); if(!cc) return;

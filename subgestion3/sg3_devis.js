@@ -1158,7 +1158,7 @@ function pdfGroupes(el,o){ const tb=el.querySelector('tbody'); if(!tb) return; c
     return pm0.apply(this,[at,items,...[].slice.call(arguments,2)]); }; }
 { const z0=ch03cPdfZone; ch03cPdfZone=function(o){ const z=z0.apply(this,arguments); try{ if(z&&z.el){
       const val=v=>typeof v==='function'?v():v, M={dos:()=>val(o&&o.dossier), ro:()=>!!val(o&&o.lectureSeule), devis:()=>/(^|\/)Costestimate\/.+\/archive$/i.test(String(val(o&&o.dossier)||''))};
-      M.reg=()=>M.devis()||PDF_COCO.test(String(val(o&&o.dossier)||''));   /* registre daté aussi pour les documents du contrôle des coûts (Paulo, 11.11.2026 : « conforme au devis général ») */
+      M.reg=()=>M.devis()||!!M.coco||PDF_COCO.test(String(val(o&&o.dossier)||''));   /* M.coco : document du contrôle des coûts encore sans dossier (aucune ligne choisie), posé par sg3_coco.js */   /* registre daté aussi pour les documents du contrôle des coûts (Paulo, 11.11.2026 : « conforme au devis général ») */
       z.el._sgPdf=M; z.el.classList.add('sgpdf'); M.redraw=()=>{ try{ if(z.redraw) z.redraw(); }catch(e){ console.error(e); } };
       z.el.addEventListener('dblclick',e=>{ const td=e.target.closest&&e.target.closest('td'), tr=td&&td.parentNode; if(!tr||!tr.dataset||!tr.dataset.k||!td.querySelector('.sgpdf-com')) return;
         e.stopPropagation(); e.preventDefault(); pdfCommentaire(M,tr.dataset.k); },true);

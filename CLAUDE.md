@@ -2117,6 +2117,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`#sgde-css`) injectés par `pdfEtCss`. `sg3_coco.js` (`decoDocs`) : ligne du document = Ouvrir / Créer le document, Créer le PDF, **Ouvrir le PDF** (validé le
   plus récent, sinon le dernier créé), Renommer…, Supprimer le document ; bouton « Fichiers PDF ▾ » masqué (`.sgce-dpdf.reg`, même menu au clic droit sur la liste).
   Essai 99TST (PDF fictif, retiré) : Créé → Validé → Archivé ; devis général inchangé. Copie d'avant : `subgestion3/_backup_20261111_avant_docs_coco_registre/`.
+  Toutes les rubriques (même jour, « pour l'ensemble des onglets ») : `decoDocs` pose `M.coco` sur chaque liste de PDF d'un document (aussi un document de ligne —
+  Mutation, Document d'adjudication, Arrêté de compte, Entreprise, Ordre de paiement — encore sans dossier faute de ligne choisie) et la redessine au registre ;
+  tableaux des sections : « x » des colonnes Document, PDF, Bon de paiement PDF, Annexe PDF à la facture → coche bleu nuit (`.sgce-ok`). Les listes « Facture
+  d'entrepreneur » et « Autres annexes au paiement » (pièces jointes d'un paiement) ne sont pas des documents de l'app : inchangées.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

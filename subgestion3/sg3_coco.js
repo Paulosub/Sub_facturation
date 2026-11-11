@@ -177,6 +177,7 @@ const ED_CSS=`
 .sgce-dc .a .ib:hover{background:var(--s-jaune3)}
 .sgce-dc .a .ib:disabled{color:#b9b9b6;cursor:default;background:transparent}
 .sgce-dpdf{flex-wrap:wrap}
+.sgce .sgce-ok{color:var(--s-nuit,#003346);font-weight:700}
 .sgce-dpdf.reg>button.ib{display:none!important}   /* « Fichiers PDF ▾ » : même menu au clic droit sur la liste, comme le devis (11.11.2026) */
 .sgce-dpdf.reg>.sgpdf,.sgce-dpdf>.sgpdf-stock{flex:1 1 100%!important;min-width:0}
 .sgce-dpdf>span:first-child{flex:1 1 100%!important;font-size:12px;color:var(--s-gris)!important}
@@ -528,7 +529,13 @@ function habillerEd(m,id){ cssC(); cssE();
       L.querySelector('.a').append(act(cree?'Ouvrir':'Créer le document',cree?'Ouvrir le document':'Créer le document à partir d’un modèle',null,dis),act('Créer le PDF','Enregistrer le document sous forme de fichier PDF','Enregistrer sous forme',dis||!pdf||pdf.dis),bOuv,
         ...(cree?[act('Renommer…','Renommer le document','Renommer',dis||!ren||ren.dis),act('Supprimer le document','Supprimer le document (les fichiers PDF déjà créés sont gardés)','Supprimer le document',dis||!sup||sup.dis)]:[]));
       [titreEl,lab,nameRow].forEach(r=>r&&r.classList.add('sgce-x2')); pdfRow.classList.add('sgce-dpdf'); P.insertBefore(L,P.firstChild); });
-    pane.querySelectorAll('.sgce-dpdf').forEach(r=>{ const z=r.querySelector(':scope>.sgpdf'), on=!!(z&&z._sgPdf&&z._sgPdf.reg&&z._sgPdf.reg()); if(r.classList.contains('reg')!==on) r.classList.toggle('reg',on); }); };
+    /* toutes les rubriques (Paulo, 11.11.2026 : « pour l'ensemble des onglets ») : chaque liste de PDF d'un document au registre du devis, même pour un document de
+       ligne encore sans dossier (aucune ligne choisie) */
+    pane.querySelectorAll('.sgce-dpdf').forEach(r=>{ const z=r.querySelector(':scope>.sgpdf'), M=z&&z._sgPdf; if(M&&!M.coco){ M.coco=true; if(M.redraw) M.redraw(); }
+      const on=!!(M&&M.reg&&M.reg()); if(r.classList.contains('reg')!==on) r.classList.toggle('reg',on); });
+    /* tableaux des sections : « x » des colonnes Document / PDF / Bon de paiement PDF / Annexe PDF → coche */
+    pane.querySelectorAll('table.g').forEach(t=>{ if(t.closest('.sgpdf')) return; const th=[...t.querySelectorAll('thead th')], J=th.map((x,i)=>/^(Document|PDF|Bon de paiement PDF|Annexe PDF à la facture)$/.test(x.textContent.trim())?i:-1).filter(i=>i>=0); if(!J.length) return;
+      t.querySelectorAll('tbody tr').forEach(tr=>J.forEach(i=>{ const td=tr.cells[i]; if(td&&td.textContent.trim()==='x'&&!td._sgok){ td._sgok=1; td.innerHTML='<span class="sgce-ok" title="Disponible">✓</span>'; } })); }); };
   new MutationObserver(()=>{ deco(); entete(); maj(); }).observe(pane,{childList:true});
   new MutationObserver(()=>decoDocs()).observe(pane,{childList:true,subtree:true});   /* un panneau du moteur se redessine seul (création, renommage…) */
   /* clic droit sur une ligne : la choisir, puis éditer / supprimer l'écriture, nouvelle écriture */

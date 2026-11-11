@@ -2126,6 +2126,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Document créé · sans PDF » / « … · PDF créé : <nom> » comme `ETAT_DOC`, actions) ; « Fichiers PDF » en titre gras sous un filet noir, liste sans cadre et sans
   hauteur fixe ; tableaux des sections (`.sgce-dgb` : bloc qui contient directement un table.g) sans cadre, 420 px au plus, et leur titre (`.sgce-dhd` : élément
   juste avant) au même style que « Fichiers PDF ». Repérés par `decoDocs`, donc valables pour toutes les rubriques quelle que soit leur forme dans le moteur.
+  Fenêtre des documents du contrôle des coûts sans « Modifier les textes… » (même jour, « supprimer », comme le devis) : lettres (contrat, avenant, mutation, bons,
+  ordre de paiement, arrêté) avec Imprimer, PDF, Partager seulement (`sg3_coco_docs.js`, `actions` vide).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

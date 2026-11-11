@@ -384,7 +384,7 @@ function vueCoco(D,o){ const E=o.E||{}, p=E.p||{}, rec=ch01aRec(E,o.dossier)||{}
   o._sgD=D; o._ccSeq=typeof ctBseq==='function'?ctBseq('costcontrol',E.id):null;   /* version du contrôle des coûts à l'ouverture (réglages du moteur) */
   const peut=()=>{ try{ return ecrit()&&!(typeof ch03dLecture==='function'&&ch03dLecture(E)); }catch(_){ return true; } };
   const rendre=()=>ch01aRender(o,ch01aRec(E,o.dossier));
-  const actions=[]; if(!g&&rec.doc&&typeof ch01aTexts==='function') actions.push({t:'Modifier les textes…',ico:ICO_TXT,ti:'Textes du modèle de ce document',fn:()=>{
+  const actions=[]; if(false&&!g&&rec.doc&&typeof ch01aTexts==='function') actions.push({   /* « Modifier les textes… » retiré (Paulo, 11.11.2026 : « supprimer »), comme dans le devis */t:'Modifier les textes…',ico:ICO_TXT,ti:'Textes du modèle de ce document',fn:()=>{
     if(!peut()){ toast('Lecture seule : textes non modifiables.',true); return; } const cur=ch01aRec(E,o.dossier); if(cur&&cur.doc) ch01aTexts(cur,r2=>{ try{ D.maj(ch01aRender(o,r2)); }catch(e){ console.error(e); } }); }});
   SGDE.vue(D,{p,lb:'Contrôle des coûts · Documents',titre:titreDe(o,rec),etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre,
     pied:'Enregistrés dans le document',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,actions,

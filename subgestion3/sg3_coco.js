@@ -189,6 +189,19 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
   const tot=ccCalc(C).G.dg||0, L=DS.by('costestimatedocument','PROJECT_ID',pid).filter(d=>ok(d.ID)).map(d=>({d,t:dvCompute(DS.get('costestimate',d.ID)).T.ttc}));
   const M=L.filter(x=>Math.abs(x.t-tot)<1).sort((a,b)=>((b.d.STATECODE===2)-(a.d.STATECODE===2))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
   return M.length?M[0].d.ID:null; };
+/* ═══ Liste des écritures ▸ Imprimer (11.11.2026, Paulo : « reproduire les mises en page de devis général ou contrôle du coût pour les listes des paiements, mutations,
+   adjudications ») : à la place de « Imprimer le tableau (A4 paysage) », le document de la liste au graphisme du devis général et du contrôle des coûts — Liste des
+   mutations, Liste des adjudications (contrats et avenants), Rapport des paiements — dans la même fenêtre (bloc 52, sg3_coco_docs.js : réglages, lecteur, PDF). Mêmes
+   documents que Documents ▸ <liste> (ch01aOpen ; pas encore créé : ch01aNew avec le nom par défaut, puis choix du modèle s'il y en a plusieurs). Contexte = celui de
+   l'éditeur du moteur (CCV.cur : C, projet, en-tête, id, enregistrement). */
+const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',nomDefaut:'Liste des mutations',label:'Liste des mutations',job:(E,rep)=>ch01bMutListJob(E,rep)},
+  ADJUDICATIONS:{dossier:'award',type:'costControlAwardList',nomDefaut:'Liste des adjudications',label:'Contrats et avenants',job:(E,rep)=>ch01bAwardListJob(E,rep)},
+  PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Rapport des paiements',label:'Rapport des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
+async function ouvrirListe(sec){ const L=LISTE_DOC[sec], K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
+  try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
+  const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
+  const o={E,dossier:L.dossier,type:L.type,nomDefaut:L.nomDefaut,label:L.label,fixe:L.nomDefaut,job:rep=>L.job(E,rep)};
+  try{ const r=ch01aRec(E,o.dossier); return r&&r.doc?await ch01aOpen(o):await ch01aNew(o); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }
 const DGV=(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_dgv'))||{}; }catch(_){ return {}; } })(), dgvSave=()=>{ try{ localStorage.setItem('sg3_coco_dgv',JSON.stringify(DGV)); }catch(_){} };
 let DGX=null;   /* tableau de l'onglet Devis général (contexte réduit du devis d'origine) */
 async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}
@@ -232,7 +245,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
-    const imp=fon(/^Imprimer/);
+    const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]:fon(/^Imprimer/);   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-',...fon(/^(Copier|Exporter)/),'-',{t:'Enregistrer',fn:()=>bSave.click()}]}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');

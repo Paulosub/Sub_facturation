@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 15:24 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 15:27 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -6642,8 +6642,8 @@ function ccEditor(m,id){
   const COLOR=ccCouleurs(C), coulDe=d=>d&&d.k==='pay'&&!(d.ref&&d.ref.contratId)?COLOR.payh:COLOR[d&&d.k];   /* paiement hors contrat : sa couleur */   /* couleurs des écritures : celles du document (Affichage ▸ Couleurs des écritures, 11.11.2026), sinon celles de l'ancien logiciel */
   /* Affichage (colonnes du catalogue complet, couleurs) : « Standard » n'est jamais modifiée — une présentation « Personnalisée » du document est créée ou mise à jour */
   const setCols=cols=>{ const L=C.presentations.controle||(C.presentations.controle=[]), P=pres(); if(P.base){ let i=L.findIndex(x=>x.nom==='Personnalisée'); if(i<0){ L.push({nom:'Personnalisée',app:true,colonnes:cols,options:{}}); i=L.length-1; } else L[i]=Object.assign({},L[i],{app:true,colonnes:cols}); CCV.pres=i; } else { P.colonnes=cols; if(P.nom==='Personnalisée') P.app=true; } };
-  CCV.cur={C}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
-  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
+  CCV.cur={C,p,doc,id,touch}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
+  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C,p,doc,id,touch}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
     if(sec==='DOCUMENTS'){ ccDocsDraw(pane,{C,p,doc,id,touch},G); return; }
     if(sec==='CONTRÔLE DU COÛT'||sec==='DEVIS GENERAL'){
       const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]).sort((a,b)=>(b==='kag')-(a==='kag'));   /* CFC toujours la première colonne */
@@ -42672,6 +42672,19 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
   const tot=ccCalc(C).G.dg||0, L=DS.by('costestimatedocument','PROJECT_ID',pid).filter(d=>ok(d.ID)).map(d=>({d,t:dvCompute(DS.get('costestimate',d.ID)).T.ttc}));
   const M=L.filter(x=>Math.abs(x.t-tot)<1).sort((a,b)=>((b.d.STATECODE===2)-(a.d.STATECODE===2))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
   return M.length?M[0].d.ID:null; };
+/* ═══ Liste des écritures ▸ Imprimer (11.11.2026, Paulo : « reproduire les mises en page de devis général ou contrôle du coût pour les listes des paiements, mutations,
+   adjudications ») : à la place de « Imprimer le tableau (A4 paysage) », le document de la liste au graphisme du devis général et du contrôle des coûts — Liste des
+   mutations, Liste des adjudications (contrats et avenants), Rapport des paiements — dans la même fenêtre (bloc 52, sg3_coco_docs.js : réglages, lecteur, PDF). Mêmes
+   documents que Documents ▸ <liste> (ch01aOpen ; pas encore créé : ch01aNew avec le nom par défaut, puis choix du modèle s'il y en a plusieurs). Contexte = celui de
+   l'éditeur du moteur (CCV.cur : C, projet, en-tête, id, enregistrement). */
+const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',nomDefaut:'Liste des mutations',label:'Liste des mutations',job:(E,rep)=>ch01bMutListJob(E,rep)},
+  ADJUDICATIONS:{dossier:'award',type:'costControlAwardList',nomDefaut:'Liste des adjudications',label:'Contrats et avenants',job:(E,rep)=>ch01bAwardListJob(E,rep)},
+  PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Rapport des paiements',label:'Rapport des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
+async function ouvrirListe(sec){ const L=LISTE_DOC[sec], K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
+  try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
+  const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
+  const o={E,dossier:L.dossier,type:L.type,nomDefaut:L.nomDefaut,label:L.label,fixe:L.nomDefaut,job:rep=>L.job(E,rep)};
+  try{ const r=ch01aRec(E,o.dossier); return r&&r.doc?await ch01aOpen(o):await ch01aNew(o); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }
 const DGV=(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_dgv'))||{}; }catch(_){ return {}; } })(), dgvSave=()=>{ try{ localStorage.setItem('sg3_coco_dgv',JSON.stringify(DGV)); }catch(_){} };
 let DGX=null;   /* tableau de l'onglet Devis général (contexte réduit du devis d'origine) */
 async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}
@@ -42715,7 +42728,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
-    const imp=fon(/^Imprimer/);
+    const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]:fon(/^Imprimer/);   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-',...fon(/^(Copier|Exporter)/),'-',{t:'Enregistrer',fn:()=>bSave.click()}]}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');

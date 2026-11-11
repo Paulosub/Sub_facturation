@@ -3985,8 +3985,8 @@ function ccEditor(m,id){
   const COLOR=ccCouleurs(C), coulDe=d=>d&&d.k==='pay'&&!(d.ref&&d.ref.contratId)?COLOR.payh:COLOR[d&&d.k];   /* paiement hors contrat : sa couleur */   /* couleurs des écritures : celles du document (Affichage ▸ Couleurs des écritures, 11.11.2026), sinon celles de l'ancien logiciel */
   /* Affichage (colonnes du catalogue complet, couleurs) : « Standard » n'est jamais modifiée — une présentation « Personnalisée » du document est créée ou mise à jour */
   const setCols=cols=>{ const L=C.presentations.controle||(C.presentations.controle=[]), P=pres(); if(P.base){ let i=L.findIndex(x=>x.nom==='Personnalisée'); if(i<0){ L.push({nom:'Personnalisée',app:true,colonnes:cols,options:{}}); i=L.length-1; } else L[i]=Object.assign({},L[i],{app:true,colonnes:cols}); CCV.pres=i; } else { P.colonnes=cols; if(P.nom==='Personnalisée') P.app=true; } };
-  CCV.cur={C}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
-  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
+  CCV.cur={C,p,doc,id,touch}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
+  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C,p,doc,id,touch}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
     if(sec==='DOCUMENTS'){ ccDocsDraw(pane,{C,p,doc,id,touch},G); return; }
     if(sec==='CONTRÔLE DU COÛT'||sec==='DEVIS GENERAL'){
       const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]).sort((a,b)=>(b==='kag')-(a==='kag'));   /* CFC toujours la première colonne */

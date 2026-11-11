@@ -2037,6 +2037,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Onglet « Liste des écritures » (11.11.2026, Paulo : « regrouper [Mutations, Adjudications, Paiements] dans une liste qui s'appelle liste des écritures », choix : un
   onglet, trois sous-listes)** : un seul onglet à la place des trois (`ECR`), puis la ligne « Liste des écritures · Mutations · Adjudications · Paiements » (`esub`,
   comme le choix des documents) ; chaque liste garde ses colonnes, totaux et fonctions ; l'onglet rouvre la dernière sous-liste choisie (`ED.ecr`).
+  **Imprimer d'une liste des écritures (même jour, Paulo : « reproduire les mises en page de devis général ou contrôle du coût pour les listes des paiements, mutations,
+  adjudications »)** : « Liste des mutations (PDF) », « Liste des adjudications (PDF) », « Rapport des paiements (PDF) » remplacent « Imprimer le tableau (A4 paysage) »
+  (`LISTE_DOC`, `ouvrirListe` de `sg3_coco.js`) : le document de la liste (Documents ▸ <liste>, même enregistrement `cocodoc`) dans la fenêtre au graphisme du devis
+  général (bloc 52 : page de garde, tableaux bleu nuit, réglages) ; pas encore créé : créé d'office sous son nom par défaut (`ch01aNew`, `fixe`). Le moteur expose le
+  contexte de l'éditeur (`CCV.cur = {C, p, doc, id, touch}`).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

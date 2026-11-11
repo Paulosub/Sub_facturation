@@ -2040,6 +2040,26 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   curseur). Clavier : le moteur redessine ses tableaux à chaque modification — Tab, Entrée (ligne suivante), ↑ ↓ et le clic gardent la cellule visée ; Échap rétablit la
   saisie en cours, sinon ferme la fenêtre comme avant. Vérifié sur 99TST (situation n° 19, contrat, avenant, paiement hors contrat, mutations, provision, coût probable,
   créations ; Annuler ne modifie rien, OK enregistre). DeltaSub.html seul garde ses fenêtres. Classes `sgew-*`, `<style id="sgew-css">`, débogage `window.SGEW`.
+  **Remplacée le 11.11.2026 par la proposition B « Liste des positions »** (Paulo : « fais-moi de nouvelles propositions de design des fenêtres mutations, paiement,
+  contrat, etc. ; reprends les éléments des fenêtres de l'ancien logiciel », 5 maquettes — A avant / après, B liste des positions, C le document, D saisie express,
+  E cascade : `subgestion3/_backup_20261111_maquette_ecritures2/` —, puis « variante B, ajoute la version A dans archives pour plus tard » ; copie de la version
+  « Tableur » : `subgestion3/_backup_20261111_avant_ecritures_liste/`). Même fichier, mêmes enveloppes (`envelopper`), mêmes champs, contrôles et enregistrement du
+  moteur. Organisation de l'ancien logiciel, épurée : **à gauche la liste des CFC** du contrôle des coûts (`navPos` : codes de `ccPosSelect`, montants de `ccCalc`
+  avant l'écriture, recherche, « Seulement les positions comptabilisées » `sg3_ew_compta`, ↑ ↓ Entrée) — paiement : Adjugé / Payé, double-clic ou Entrée = ajouter la
+  position au paiement (« Ajouter une position » du moteur, puis CFC choisi ; déjà présente = curseur sur son montant), CFC du paiement marqués ✓, ceux du contrat
+  « contrat » ; contrat / avenant : Devis révisé / Adjugé, même ajout ; mutation : Devis révisé / Mutations, clic = CFC du cadre encadré (origine tant qu'elle est vide,
+  puis destination ; ⌥ + clic = destination) ; provision, coût probable perso : Devis révisé / Coût probable, clic = CFC. **À droite la fiche** : bandeau jaune
+  (inchangé), entreprise et lot, « Positions du … » (contrat prioritaire, Ajouter une position, Saisie du brut | du net), tableau, « Conditions du … » (Condition,
+  TVA, Arrondi, Paiements à ce jour), tableau avec Sous-total, bouton × de chaque ligne gardé, numéros et dates groupés (paiement : commentaire, genre, statut,
+  dernier paiement, n° de paiement, dates et n° de facture ; contrat : désignation, numéro, date, statut), description (+ délai de garantie, annexes) et totaux.
+  Mutation : cadres « Origine de la mutation » / « Mutation » (HT, TVA, TTC) / « Destination de la mutation » (variation, renchérissement : « Position » + « Mutation »),
+  avant / mutation / après · TTC du devis révisé de la position (une mutation déjà enregistrée en est retirée), « Effet sur le devis général révisé ». Provision /
+  coût probable perso : cadres « Position » (devis révisé, coût probable) et écriture. Plus de numéros de ligne ni de cellule active ; Tab, Entrée, ↑ ↓ et le maintien
+  du curseur au redessin sont gardés. Vérifié sur 99TST (situation n° 19 : ajout du CFC 102 par double-clic, montant, ×, saisie du net, Annuler ; contrat n° 5 ;
+  transfert n° 4 avec avant / après ; variation n° 5, OK sans changement ; coût probable perso).
+  **Archives ▸ Maquettes ▸ « Fenêtres des écritures · Avant / après »** (`mq-ecritures-a`, fin de `sg3_ecritures.js`, `dom:'reglages'`) : la proposition A
+  (mutation, paiement, contrat) en maquette, données d'exemple de 99TST, rien n'est lu ni écrit ; dessinée dans une racine fantôme (shadow DOM) pour que ses
+  classes ne touchent pas l'app.
 - **Documents du contrôle des coûts au graphisme du devis (10.11.2026, bloc 52, `subgestion3/sg3_coco_docs.js`, concaténé en dernier ; Paulo, document « Contrôle
   des coûts » ouvert : « créer le même visuel que pour devis, fenêtre identique et document également, adapte les options du volet à droite » ; choix : colonnes
   Standard comme l'écran, paysage par défaut, état du coût rouge / vert, listes aussi redessinées)** :

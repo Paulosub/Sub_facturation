@@ -2086,8 +2086,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Ordres de paiement sans « Paramètres » ; Comptes d'entreprise dans Liste des écritures (même jour, Paulo : « supprimer paramètre dans ordres paiement »,
   « à glisser dans listes »)** : classe `ord` de `.sgce` (bouton masqué) ; `ECR` = Mutations, Adjudications, Paiements, Comptes d'entreprise (plus d'onglet « Comptes
   d'entreprise » ; quatrième liste de la ligne « Liste des écritures », sans Paramètres, Fonctions sans éditer / supprimer) ; clic droit sur une entreprise : menu du
-  moteur (« Synchroniser l'adresse … »), jamais « Éditer / Supprimer l'écriture » (une ligne = une entreprise). Onglets : Devis général, Contrôle du coût, Liste des
-  écritures, Ordres de paiement, Arrêtés de compte, Documents.
+  moteur (« Synchroniser l'adresse … »), jamais « Éditer / Supprimer l'écriture » (une ligne = une entreprise). Onglets (ordre du même jour, « déplacer ») : Devis
+  général, Contrôle du coût, Ordres de paiement, Arrêtés de compte, Liste des écritures, Documents.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

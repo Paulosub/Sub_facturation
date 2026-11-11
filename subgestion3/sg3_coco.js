@@ -202,6 +202,72 @@ async function ouvrirListe(sec){ const L=LISTE_DOC[sec], K=CCV.cur||{}; if(!L||!
   const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
   const o={E,dossier:L.dossier,type:L.type,nomDefaut:L.nomDefaut,label:L.label,fixe:L.nomDefaut,job:rep=>L.job(E,rep)};
   try{ const r=ch01aRec(E,o.dossier); return r&&r.doc?await ch01aOpen(o):await ch01aNew(o); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }
+/* ═══ Colonnes des listes des écritures (11.11.2026, Paulo : « adapter la liste des éléments selon les éléments visibles dans le tableau paiement, ou adjudication, etc. ;
+   dans affichage adapter également les colonnes possibles selon l'ancien logiciel, pour chaque type de tableau ») : Mutations, Adjudications, Paiements ont chacune leur
+   catalogue (colonnes de l'ancien logiciel pour ce type de liste, spec 4.2, 6.1, 7.3) ; « Présentation » de ces listes = Standard (colonnes d'origine) · Personnalisée ·
+   Affichage … (colonnes) (même fenêtre que le contrôle du coût, `ccAffichage` option `liste`, sans couleurs) ; choix enregistré dans le contrôle des coûts
+   (C.listeColonnes = {mutations, adjudications, paiements} : clés des colonnes, dans l'ordre). Les colonnes d'origine du moteur gardent leur définition (tri, valeurs) ;
+   `grid` enveloppé : seul le tableau de la liste (signature des colonnes d'origine) est modifié. */
+const LCLE={MUTATIONS:'mutations',ADJUDICATIONS:'adjudications',PAIEMENTS:'paiements'};
+const LSIG={MUTATIONS:'numero,date,g,o,d,ttc,statut,remarque',ADJUDICATIONS:'lot,lt,e,type,net,num,date,statut',PAIEMENTS:'lot,lt,e,numero,dp,g,ht,tva,ttc,st,o'};
+function LDEF(sec,C){ const E2=x=>esc(String(x??'')), N=v=>v||v===0?num(v):'', ent=id=>id==null?'':E2(ccEntName(C,id)), R=ccCalc(C), cfcLib=c=>c?E2(c+' '+(R.lbl.get(String(c))||'')):'';
+  const ctr=id=>(C.contrats||[]).find(c=>c.id===id)||null, payDe=c=>(C.paiements||[]).filter(x=>x.contratId===c.id), avDe=c=>(C.contrats||[]).filter(a=>a.contratParentId===c.id&&a.lieAuContrat!==false);
+  const col=(cat,k,t,l,w,f,o)=>[k,Object.assign({t,l:l||t,cat,col:Object.assign({k,t,w,f},o||{})})];
+  const r=(o)=>Object.assign({cls:'r'},o||{});
+  if(sec==='MUTATIONS') return Object.fromEntries([
+    col('Mutation','numero','N°','Numéro de mutation',50,null,r()),col('Mutation','date','Date','Date de la mutation',86),col('Mutation','g','Genre','Genre de mutation',140),
+    col('Mutation','centre','Centre','Mutations 1 ou Mutations 2 (DG révisé 2)',100,m=>m.centre===2?'Mutations 2':'Mutations 1'),col('Mutation','statut','Statut','Statut de la mutation',110),
+    col('Mutation','remarque','Remarque','Remarque (affichée dans le contrôle du coût)',220),col('Mutation','com','Commentaire','Commentaire',220,m=>E2(m.commentaire)),
+    col('Positions','o','Origine','Origine de la mutation (CFC et désignation)',200),col('Positions','entO','Entreprise d’origine','Entreprise de l’origine',180,m=>m.origine?ent(m.origine.contactId):''),
+    col('Positions','d','Destination / position','Destination de la mutation ou position (CFC et désignation)',200),col('Positions','entD','Entreprise','Entreprise de la destination / position',180,m=>ent((m.destination||{}).contactId)),
+    col('Positions','cp','Contreparties','Contreparties : CFC de l’autre côté du transfert',96,m=>m.origine&&m.origine.cfc?'['+E2(m.origine.cfc)+']':''),
+    col('Montants','ht','Montant HT','Montant HT',110,m=>N(m.ht),r()),col('Montants','tvaM','TVA','Montant de la TVA',90,m=>N(m.tva!=null?+m.tva:(+m.ttc||0)-(+m.ht||0)),r()),
+    col('Montants','taux','Taux TVA','Taux de TVA',70,m=>m.tauxTVA!=null?num(+m.tauxTVA,1)+' %':'',r()),col('Montants','ttc','Montant TTC','Montant TTC',110),
+    col('Montants','transf','Transferts TTC','Transferts TTC',110,m=>/^transfert/.test(m.genre||'')?N(m.ttc):'',r()),col('Montants','modif','Modifications TTC','Modifications TTC (variations de coût)',110,m=>m.genre==='variation'?N(m.ttc):'',r()),
+    col('Montants','renc','Renchérissement TTC','Renchérissement TTC',110,m=>m.genre==='rencherissement'?N(m.ttc):'',r())]);
+  if(sec==='ADJUDICATIONS'){ const T=c=>ch01aTot(c), CA=c=>c.type==='avenant'?null:[c,...avDe(c)].reduce((a,x)=>{ const t=T(x); return {ht:a.ht+t.ht,ttc:a.ttc+t.net}; },{ht:0,ttc:0}), PY=c=>c.type==='avenant'?null:payDe(c).reduce((a,x)=>a+docNet(x),0);
+    const lig=(c,k)=>[...new Set((c.lignes||[]).map(l=>l[k]).filter(Boolean))].join(', ');
+    return Object.fromEntries([
+    col('Adjudication','lot','N°','N° du lot d’adjudication',70),col('Adjudication','lt','Lot d’adjudication','Lot d’adjudication',200),col('Adjudication','e','Entreprise','Entreprise (adjudicataire)',240),
+    col('Adjudication','type','Genre','Contrat ou avenant',80),col('Adjudication','num','Numéro du contrat','Numéro du contrat (avenant : contrat-avenant)',110),col('Adjudication','date','Date','Date du contrat',86),
+    col('Adjudication','statut','Statut','Statut du contrat',110),col('Adjudication','des','Désignation','Désignation du contrat',160,c=>E2(c.designation)),col('Adjudication','desc','Description','Description du contrat',240,c=>E2(c.description)),
+    col('Adjudication','niv','Niveau des prestations','Niveau des prestations',96,c=>+c.niveauPrestations?num(+c.niveauPrestations,0)+' %':'',r()),col('Adjudication','gar','Délai de garantie','Délai de garantie',140,c=>E2(c.delaiGarantie)),
+    col('Adjudication','prio','Prioritaire','Contrat prioritaire sur le devis pour le coût probable',80,c=>c.type==='avenant'?'':c.prioritaireSurDevis!==false?'Oui':'Non'),
+    col('Adjudication','lie','Lié au contrat','Avenant lié au contrat',90,c=>c.type!=='avenant'?'':c.lieAuContrat!==false?'Oui':'Non'),
+    col('Adjudication','ouv','Ouvrage','Ouvrage des positions',100,c=>E2(lig(c,'ouvrage'))),col('Adjudication','loc','Localisation','Localisation des positions',100,c=>E2(lig(c,'localisation'))),
+    col('Montants','ht','Montant HT','Montant HT du contrat ou de l’avenant',110,c=>N(T(c).ht),r()),col('Montants','tva','TVA','TVA du contrat ou de l’avenant',90,c=>N(T(c).tva),r()),col('Montants','net','Montant TTC','Montant TTC du contrat ou de l’avenant',120),
+    col('Montants','ctr','Contrats TTC','Contrats TTC',110,c=>c.type==='avenant'?'':N(T(c).net),r()),col('Montants','av','Avenants TTC','Avenants TTC',110,c=>c.type==='avenant'?N(T(c).net):'',r()),
+    col('Montants','caht','Contrats + avenants HT','Contrat et ses avenants liés, HT',120,c=>{ const a=CA(c); return a?N(a.ht):''; },r()),col('Montants','ca','Contrats + avenants TTC','Contrat et ses avenants liés, TTC',130,c=>{ const a=CA(c); return a?N(a.ttc):''; },r()),
+    col('Paiements','pay','Paiements TTC','Paiements sur ce contrat, TTC',120,c=>{ const v=PY(c); return v==null?'':N(v); },r()),
+    col('Paiements','reste','Contrat − paiements TTC','(Contrat + avenants) − paiements sur contrat, TTC',140,c=>{ const a=CA(c), v=PY(c); return a?N(a.ttc-v):''; },r()),
+    col('Paiements','nbp','Nombre de paiements','Nombre de paiements sur ce contrat',90,c=>c.type==='avenant'?'':String(payDe(c).length||''),r()),
+    col('Paiements','fin','Paiement final','Paiement final comptabilisé',90,c=>c.type==='avenant'?'':payDe(c).some(x=>x.dernier)?'Oui':'')]); }
+  if(sec==='PAIEMENTS'){ const cond=(x,k)=>(x.conditions||[]).find(c=>c.kind===k), b=x=>x.banque||{};
+    return Object.fromEntries([
+    col('Paiement','lot','N°','N° du lot d’adjudication',70),col('Paiement','lt','Lot d’adjudication','Lot d’adjudication',170),col('Paiement','e','Entreprise','Entreprise',220),
+    col('Paiement','numero','N° pmt','Numéro de paiement',60),col('Paiement','dp','Date pmt','Date du paiement',86),col('Paiement','g','Genre','Genre de paiement',140),col('Paiement','st','Statut','Statut du paiement',90),
+    col('Paiement','o','Ordre','Numéro de l’ordre de paiement',60),col('Paiement','ctr','N° du contrat','Numéro du contrat payé',90,x=>{ const c=x.contratId&&ctr(x.contratId); return c?E2(c.numero):''; }),
+    col('Paiement','nf','N° de facture','Numéro de facture',110,x=>E2(x.numeroFacture)),col('Paiement','df','Date de facture','Date de la facture',86,x=>dfr(x.dateFacture),{v:x=>x.dateFacture}),
+    col('Paiement','com','Commentaire','Commentaire',160,x=>E2(x.commentaire)),col('Paiement','desc','Description','Description du paiement',220,x=>E2(x.description)),
+    col('Paiement','der','Dernier paiement','Dernier paiement (paiement final)',90,x=>x.dernier?'Oui':''),col('Paiement','niv','Niveau des prestations','Niveau des prestations',96,x=>+x.niveauPrestations?num(+x.niveauPrestations,0)+' %':'',r()),
+    col('Montants','brut','Montant brut','Montant brut (cumul des acomptes pour une situation)',110,x=>N(docBrut(x)),r()),col('Montants','ht','Paiements HT','Paiement HT',110),col('Montants','tva','TVA','TVA du paiement',90),col('Montants','ttc','Paiements TTC','Paiement TTC',120),
+    col('Montants','sc','Paiements sur contrat TTC','Paiement sur contrat, TTC',130,x=>x.contratId?N(docNet(x)):'',r()),col('Montants','hc','Paiements hors contrat TTC','Paiement hors contrat, TTC',130,x=>x.contratId?'':N(docNet(x)),r()),
+    col('Montants','renc','Renchérissement TTC','Paiement de renchérissement, TTC',120,x=>x.genre==='rencherissement'?N(docNet(x)):'',r()),
+    col('Montants','ret','Retenue de garantie','Retenue de garantie du paiement',110,x=>{ const c=cond(x,4); return c&&c.appliquee!==false&&+c.montant?N(+c.montant):''; },r()),
+    col('Montants','prev','Paiements à ce jour','Paiements à ce jour (déduits du paiement)',120,x=>{ const c=cond(x,20); return c&&+c.valeur?N(+c.valeur):''; },r()),
+    col('Banque','iban','Compte d’entreprise','Compte de l’entreprise (IBAN)',170,x=>E2(b(x).iban||b(x).compte||b(x).texteCompte)),col('Banque','benef','Bénéficiaire','Bénéficiaire',170,x=>E2(b(x).nom)),
+    col('Banque','mo','Compte du MO','Compte du maître d’ouvrage',150,x=>E2(b(x).compteMO))]); }
+  return {}; }
+const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C, keys=C&&(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) return;
+  const D=LDEF(sec,C), base=new Map(o.cols.map(c=>[c.k,c])); const L=keys.map(k=>base.get(k)||(D[k]&&D[k].col)).filter(Boolean); if(L.length) o.cols=L; };
+{ const g0=grid; grid=function(el,o){ try{ const sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]) listeCols(sec,o); }catch(e){ console.error(e); } return g0.apply(this,arguments); }; }
+function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), cle=LCLE[sec], std=LSIG[sec].split(','), cat=[];
+  Object.entries(D).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l,{}]); });
+  ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:SLIB(sec),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:((C.listeColonnes||{})[cle])||std,
+    set:ids=>{ const L=C.listeColonnes||(C.listeColonnes={}); if(!ids.length||ids.join(',')===std.join(',')) delete L[cle]; else L[cle]=ids; if(!Object.keys(L).length) delete C.listeColonnes; }}}); }
+const listePresMenu=sec=>{ const K=CCV.cur||{}, C=K.C, cle=LCLE[sec], perso=!!(C&&(C.listeColonnes||{})[cle]);
+  return [{t:'Standard',chk:!perso,fn:()=>{ if(!perso) return; delete C.listeColonnes[cle]; if(!Object.keys(C.listeColonnes).length) delete C.listeColonnes; if(K.touch) K.touch(); }},...(perso?[{t:'Personnalisée',chk:true,fn:()=>{}}]:[]),'-',
+    {t:'Affichage … (colonnes)',fn:()=>listeAffichage(sec)}]; };
 const DGV=(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_dgv'))||{}; }catch(_){ return {}; } })(), dgvSave=()=>{ try{ localStorage.setItem('sg3_coco_dgv',JSON.stringify(DGV)); }catch(_){} };
 let DGX=null;   /* tableau de l'onglet Devis général (contexte réduit du devis d'origine) */
 async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}
@@ -242,7 +308,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const mPres=bPres._sgB.menu, mFon=bFon._sgB.menu;
   const fon=t=>(mFon()||[]).filter(x=>x&&x.t&&t.test(x.t)).map(x=>Object.assign({},x,{fn:filtrer(x.fn)}));
   lbl(bNew,'Nouvelle écriture'); lbl(bPar,'Paramètres');
-  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
+  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
     const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]:fon(/^Imprimer/);   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
@@ -257,6 +323,20 @@ function habillerEd(m,id){ cssC(); cssE();
   ED.majLeg(); leg.onclick=e=>{ const b=e.target.closest('[data-k]'); if(b&&typeof CCV.affichage==='function') CCV.affichage('couleurs',b.dataset.k); };
   if(!SGCC._legEv){ SGCC._legEv=1; document.addEventListener('cc-affichage',()=>{ if(ED.majLeg) ED.majLeg(); }); }
   const autres=[...bar.children].filter(x=>!B.includes(x)&&x.tagName!=='B');   /* éléments ajoutés à la barre par d'autres blocs : gardés à la fin */
+  /* listes des écritures : « Nouvelle écriture » réduit aux écritures de la liste (Paulo, 11.11.2026 : « adapter la liste des éléments selon les éléments visibles dans
+     le tableau ») — Mutations : transfert, variation, renchérissement ; Adjudications : contrat, avenant ; Paiements : sur contrat, hors contrat. Avenant et paiement sur
+     contrat : contrat de la ligne choisie dans la liste (avenant lié : son contrat), sinon la règle du moteur (CFC choisi dans le contrôle du coût). */
+  const NOUV={MUTATIONS:/^Mutations\b/,ADJUDICATIONS:/^(Contrat|Avenant)\b/,PAIEMENTS:/^Paiement\b/};
+  const nouv=items=>{ const re=!CCV.docs&&NOUV[CCV.sec]; if(!re||!Array.isArray(items)) return items; const K=CCV.cur||{}, C=K.C, d=CCV.detSel, r=d&&d.ref;
+    let c=C&&r?(d.k==='ctr'?r:d.k==='pay'&&r.contratId?(C.contrats||[]).find(x=>x.id===r.contratId):null):null;
+    if(c&&c.type==='avenant'&&c.lieAuContrat!==false) c=(C.contrats||[]).find(x=>x.id===c.contratParentId)||c;
+    const sc=c?{cfc:String(((c.lignes||[])[0]||{}).cfc||(c.lot||{}).numero||''),ent:c.contactId??null}:null, n=c?' (contrat '+(c.numero||'')+')':'';
+    const L=items.filter(x=>x==='-'||(x&&x.t&&re.test(x.t))).map(x=>{ if(!c||!x||!x.t||!K.touch) return x;
+      if(x.t==='Avenant …'&&c.type==='contrat') return Object.assign({},x,{t:'Avenant'+n+' …',dis:false,fn:()=>ccContract(C,null,'avenant',sc,K.touch,c)});
+      if(x.t==='Paiement sur contrat …') return Object.assign({},x,{t:'Paiement sur contrat'+n+' …',dis:false,fn:()=>ccPayment(C,null,c,sc,K.touch)});
+      return x; });
+    return L.filter((x,i)=>x!=='-'||(i>0&&i<L.length-1&&L[i-1]!=='-')); };
+  { const clic=bNew.onclick; bNew.onclick=e=>{ const p0=popMenu; popMenu=function(a,items){ return p0.call(this,a,nouv(items)); }; try{ return clic.call(bNew,e); } finally{ popMenu=p0; } }; }
   bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */
   const docs=k=>{ ED.sub=k; if(k==='fichiers') secIt.DOCUMENTS.click(); else if(docIt[k]) docIt[k].click(); maj(); };
@@ -343,7 +423,7 @@ function habillerEd(m,id){ cssC(); cssE();
     const tr=e.target.closest&&e.target.closest('table.g tbody tr[data-k]'); if(!tr||!pane.contains(tr)) return; e.preventDefault(); tr.click();
     if(CCV.sec==='DEVIS GENERAL') return;   /* Devis général : affiché seulement, aucun menu d'écriture (Paulo, 11.11.2026) */
     const ecr=!estCC()||tr.dataset.k.split('|').length>=3;   /* Contrôle du coût : seules les lignes de détail sont des écritures */
-    sgMenuAt(e.clientX,e.clientY,[...(ecr?[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',danger:true,fn:()=>bDel.click()},'-']:[]),{t:'Nouvelle écriture',sub:()=>bNew._sgB.menu()}],tr); });
+    sgMenuAt(e.clientX,e.clientY,[...(ecr?[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',danger:true,fn:()=>bDel.click()},'-']:[]),{t:'Nouvelle écriture',sub:()=>nouv(bNew._sgB.menu())}],tr); });
   pane.tabIndex=-1;
   pane.addEventListener('keydown',e=>{ if(e.target.closest('input,textarea,select,[contenteditable]')) return;
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const L=[...pane.querySelectorAll(':scope>table.g>tbody>tr:not(.sgce-cache)')], i=L.findIndex(t=>t.classList.contains('on')), n=L[i<0?0:i+(e.key==='ArrowDown'?1:-1)]; if(n){ e.preventDefault(); n.click(); n.scrollIntoView({block:'nearest'}); } }

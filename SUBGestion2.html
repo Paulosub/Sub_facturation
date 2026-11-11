@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.11.2026 15:27 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 11.11.2026 15:44 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4001,43 +4001,45 @@ function ccAffichage(C,o){
 .cca-ap div{display:grid;grid-template-columns:minmax(0,1fr) 120px;padding:6px 4px;border-bottom:1px solid #e3e3e0;font-style:italic}
 .cca-ap div span:last-child{text-align:right;font-variant-numeric:tabular-nums}
 `; document.head.appendChild(st); }
-  const P=o.pres(), cols=(P.colonnes||[]).map(c=>Object.assign({},c)), cou=ccCouleurs(C), eqs=(C.parametres||{}).equations||[];
-  { const k=cols.findIndex(x=>x.id==='kag'); if(k<0) cols.unshift({id:'kag',idDelta:0,details:false}); else if(k>0) cols.unshift(cols.splice(k,1)[0]); }   /* CFC : toujours la première colonne, ni déplacée ni retirée */
+  /* o.liste (11.11.2026) : fenêtre d'une liste des écritures (mutations, adjudications, paiements) — ses colonnes propres {titre, cat, def(id), std, cols, set(ids)}, sans couleurs ni colonne fixe */
+  const LI=o.liste||null, CAT=LI?LI.cat:CC_CAT, DEF=id=>LI?LI.def(id):CC_COL[id], PIN=LI?null:'kag';
+  const P=LI?{colonnes:(LI.cols||[]).map(id=>({id}))}:o.pres(), cols=(P.colonnes||[]).map(c=>Object.assign({},c)), cou=ccCouleurs(C), eqs=(C.parametres||{}).equations||[];
+  if(PIN){ const k=cols.findIndex(x=>x.id===PIN); if(k<0) cols.unshift({id:'kag',idDelta:0,details:false}); else if(k>0) cols.unshift(cols.splice(k,1)[0]); }   /* CFC : toujours la première colonne, ni déplacée ni retirée */
   const cols0=JSON.stringify(cols);
   delete cou.cpp; let tab=o.tab==='couleurs'?'couleurs':'colonnes', elC=o.el&&cou[o.el]?o.el:'mut';
   const NOMS={mut:'Mutations',ctr:'Contrats et avenants',pay:'Paiements sur contrat',payh:'Paiements hors contrat',prov:'Provisions, coût probable'};
   const body=h('div',{class:'cca'}), tabs=h('div',{class:'cca-tabs'}), pane=h('div');
-  const titreDe=id=>{ const c=CC_COL[id]; if(!c) return id; if(c.eq!=null){ const e=(eqs[c.eq]||'').trim(); return c.t+(e?' : '+e:' (non définie)'); } return c.l||c.t; };
-  const court=id=>{ const t=!P.base&&!P.app&&(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):((CC_COL[id]||{}).t||id); };
+  const titreDe=id=>{ const c=DEF(id); if(!c) return id; if(c.eq!=null){ const e=(eqs[c.eq]||'').trim(); return c.t+(e?' : '+e:' (non définie)'); } return c.l||c.t; };
+  const court=id=>{ const t=!LI&&!P.base&&!P.app&&(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):((DEF(id)||{}).t||id); };
   let q='';
   const drawCol=()=>{ pane.innerHTML='';
     const qi=h('input',{class:'inp cca-q',placeholder:'Rechercher une colonne',value:q}); qi.oninput=()=>{ q=qi.value; drawL(); };
     const L=h('div',{class:'cca-cat'}), S=h('div',{class:'cca-sel'}), ls=h('div',{class:'cca-ls'});
     const drawL=()=>{ const sc=L.scrollTop; L.innerHTML=''; const t=q.trim().toLowerCase();
-      CC_CAT.forEach(([cat,E])=>{ const F=E.filter(([id,c,l])=>!t||(c+' '+titreDe(id)+' '+cat).toLowerCase().includes(t)); if(!F.length) return;
+      CAT.forEach(([cat,E])=>{ const F=E.filter(([id,c,l])=>!t||(c+' '+titreDe(id)+' '+cat).toLowerCase().includes(t)); if(!F.length) return;
         L.append(h('div',{class:'cca-h'},cat,h('em',{},F.filter(([id])=>cols.some(x=>x.id===id)).length+' / '+F.length)));
-        F.forEach(([id])=>{ const c=CC_COL[id], on=cols.some(x=>x.id===id), cb=h('input',{type:'checkbox',checked:on||null,disabled:c.nd||id==='kag'||null});
+        F.forEach(([id])=>{ const c=DEF(id)||{}, on=cols.some(x=>x.id===id), cb=h('input',{type:'checkbox',checked:on||null,disabled:c.nd||id===PIN||null});
           const x=cols.find(y=>y.id===id), dt=c.det&&on?h('label',{class:'dt',title:'Afficher les écritures sous chaque position (montants dans cette colonne)',onclick:e=>e.stopPropagation()},h('input',{type:'checkbox',checked:x&&x.details||null,onchange:e=>{ x.details=e.target.checked; }}),'détails'):null;
           const it=h('div',{class:'cca-it'+(c.nd?' nd':''),title:c.nd?'Pas de données dans l’app pour cette colonne':''},cb,h('span',{onclick:()=>{ if(!c.nd) cb.click(); }},titreDe(id)),dt||h('span',{class:'s'},c.nd?'pas de données':court(id)));
-          cb.onchange=()=>{ if(cb.checked){ if(!cols.some(y=>y.id===id)) cols.push({id,idDelta:CH01A_IDD[id],details:!!c.det}); } else { const i=cols.findIndex(y=>y.id===id); if(i>=0) cols.splice(i,1); } drawL(); drawS(); };
+          cb.onchange=()=>{ if(cb.checked){ if(!cols.some(y=>y.id===id)) cols.push(LI?{id}:{id,idDelta:CH01A_IDD[id],details:!!c.det}); } else { const i=cols.findIndex(y=>y.id===id); if(i>=0) cols.splice(i,1); } drawL(); drawS(); };
           L.append(it); }); }); L.scrollTop=sc; };
     /* ordre des colonnes : cliquer et glisser (Paulo, 11.11.2026 : « déplacer l'ordre en cliquant maintenant, cliquer et déplacer ») ; le CFC reste en tête */
-    const drawS=()=>{ const sc=ls.scrollTop; ls.innerHTML=''; cols.forEach((x,i)=>{ const c=CC_COL[x.id], fx=x.id==='kag';
+    const drawS=()=>{ const sc=ls.scrollTop; ls.innerHTML=''; cols.forEach((x,i)=>{ const c=DEF(x.id), fx=!!PIN&&x.id===PIN;
         ls.append(h('div',{class:'cca-li'+(fx?' fx':' dg'),'data-i':i,title:fx?'Le numéro CFC reste la première colonne':'Cliquer et glisser pour changer l’ordre'},h('i',{class:'g'}),
           h('span',{title:titreDe(x.id)},court(x.id),h('em',{},(c?c.cat||'':'colonne inconnue')+(x.details&&c&&c.det?' · détails':''))),
           h('div',{class:'b'},h('button',{type:'button',title:'Retirer',disabled:fx||null,onclick:()=>{ cols.splice(i,1); drawL(); drawS(); }},'✕')))); }); ls.scrollTop=sc; };
-    ls.classList.add('cca-ls'); ls.addEventListener('pointerdown',e=>{ const li=e.target.closest('.cca-li'); if(!li||e.button!==0||e.target.closest('button')) return; const i=+li.dataset.i; if(!(i>0)) return;
+    ls.classList.add('cca-ls'); ls.addEventListener('pointerdown',e=>{ const li=e.target.closest('.cca-li'); if(!li||e.button!==0||e.target.closest('button')) return; const i=+li.dataset.i; if(!(i>(PIN?0:-1))) return;
       e.preventDefault(); const y0=e.clientY; let on=false, to=i, tm=null;
       const L=()=>[...ls.querySelectorAll('.cca-li')];
-      const place=y=>{ const A=L(); to=A.length; for(let j=0;j<A.length;j++){ const b=A[j].getBoundingClientRect(); if(y<b.top+b.height/2){ to=j; break; } } if(to<1) to=1;
+      const place=y=>{ const A=L(); to=A.length; for(let j=0;j<A.length;j++){ const b=A[j].getBoundingClientRect(); if(y<b.top+b.height/2){ to=j; break; } } if(PIN&&to<1) to=1;
         const nul=to===i||to===i+1; A.forEach((el,j)=>{ el.classList.toggle('dzt',!nul&&j===to); el.classList.toggle('dzb',!nul&&to===A.length&&j===A.length-1); }); };
       const defile=y=>{ clearInterval(tm); const r=ls.getBoundingClientRect(), d=y<r.top+28?-10:y>r.bottom-28?10:0; if(d) tm=setInterval(()=>{ ls.scrollTop+=d; place(y); },30); };
       const mv=ev=>{ if(!on&&Math.abs(ev.clientY-y0)<4) return; if(!on){ on=true; li.classList.add('on'); ls.classList.add('drag'); } place(ev.clientY); defile(ev.clientY); };
       const fin=()=>{ clearInterval(tm); document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',fin); document.removeEventListener('pointercancel',fin); ls.classList.remove('drag');
         if(on){ const k=to>i?to-1:to; if(k!==i) cols.splice(k,0,cols.splice(i,1)[0]); drawS(); } };
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',fin); document.addEventListener('pointercancel',fin); });
-    S.append(h('h4',{},'Colonnes affichées, dans l’ordre'),ls,h('div',{class:'cca-acts'},h('button',{type:'button',class:'btn',onclick:()=>{ cols.splice(0,cols.length,...CC_PRES_DEF.Standard.map(id=>({id,idDelta:CH01A_IDD[id],details:!!CC_COL[id].det}))); drawL(); drawS(); }},'Colonnes Standard')),
-      h('div',{class:'cca-note'},'Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.'));
+    S.append(h('h4',{},'Colonnes affichées, dans l’ordre'),ls,h('div',{class:'cca-acts'},h('button',{type:'button',class:'btn',onclick:()=>{ cols.splice(0,cols.length,...(LI?LI.std.map(id=>({id})):CC_PRES_DEF.Standard.map(id=>({id,idDelta:CH01A_IDD[id],details:!!CC_COL[id].det})))); drawL(); drawS(); }},'Colonnes Standard')),
+      h('div',{class:'cca-note'},LI?'Colonnes de la liste « '+LI.titre+' », enregistrées dans ce contrôle des coûts.':'Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.'));
     pane.append(h('div',{class:'cca-col'},h('div',{},qi,L),S)); drawL(); drawS(); };
   const drawCou=()=>{ pane.innerHTML=''; const els=h('div'), pal=h('div',{class:'cca-pal'}), ap=h('div',{class:'cca-ap'});
     const maj=()=>{ els.innerHTML=''; Object.keys(NOMS).forEach(k=>{ const def=cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase();
@@ -4049,9 +4051,11 @@ function ccAffichage(C,o){
     CC_PALETTE.forEach(c=>pal.append(h('button',{type:'button','data-c':c,title:c.toUpperCase(),style:{background:c},onclick:()=>{ cou[elC]=c; maj(); }})));
     pane.append(h('div',{class:'cca-cou'},h('div',{},h('div',{class:'cca-note',style:{marginTop:'0',marginBottom:'8px'}},'Choisissez un élément, puis sa couleur dans la palette. Les couleurs valent pour le tableau du contrôle du coût et ses documents PDF.'),els),
       h('div',{},pal,h('div',{class:'cca-note'},'Aperçu dans le tableau'),ap))); maj(); };
-  const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],['couleurs','Couleurs des écritures']].forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
+  if(LI) tab='colonnes';
+  const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],...(LI?[]:[['couleurs','Couleurs des écritures']])].forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
   body.append(tabs,pane); drawT();
-  dialog({title:'Affichage',width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+  dialog({title:LI?'Affichage · '+LI.titre:'Affichage',width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+    if(LI){ if(JSON.stringify(cols)!==cols0){ LI.set(cols.map(c=>c.id)); o.touch(); } return; }
     if(JSON.stringify(cols)!==cols0) o.setCols(cols);
     const pc=C.parametres||(C.parametres={}); if(Object.keys(CC_DEF_COUL).every(k=>cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase())) delete pc.couleursDetails; else pc.couleursDetails=Object.assign({},cou);
     o.touch(); try{ document.dispatchEvent(new CustomEvent('cc-affichage')); }catch(_){} }}]});

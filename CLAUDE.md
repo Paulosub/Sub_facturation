@@ -2042,6 +2042,23 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`LISTE_DOC`, `ouvrirListe` de `sg3_coco.js`) : le document de la liste (Documents ▸ <liste>, même enregistrement `cocodoc`) dans la fenêtre au graphisme du devis
   général (bloc 52 : page de garde, tableaux bleu nuit, réglages) ; pas encore créé : créé d'office sous son nom par défaut (`ch01aNew`, `fixe`). Le moteur expose le
   contexte de l'éditeur (`CCV.cur = {C, p, doc, id, touch}`).
+  **Barre et colonnes propres à chaque liste des écritures (11.11.2026, Paulo : « adapter la liste des éléments selon les éléments visibles dans le tableau paiement,
+  adjudication… ; dans affichage adapter les colonnes possibles selon l'ancien logiciel, pour chaque type de tableau ; ne pas tout mettre dans affichage »)** —
+  `sg3_coco.js` : **Nouvelle écriture** réduit aux écritures de la liste (`NOUV`, `nouv`, aussi au clic droit) : Mutations = transfert, variation, renchérissement ;
+  Adjudications = contrat, avenant ; Paiements = sur contrat, hors contrat ; « Avenant (contrat n) » et « Paiement sur contrat (contrat n) » prennent le contrat de la ligne
+  choisie dans la liste (avenant lié : son contrat ; paiement : son contrat), sinon la règle du moteur (CFC choisi dans le contrôle du coût, sinon grisé).
+  **Présentation** d'une liste = Standard (colonnes d'origine) · Personnalisée · « Affichage … (colonnes) » (`listePresMenu`) — sans les présentations ni les couleurs du
+  contrôle du coût. Fenêtre = `ccAffichage` du moteur avec l'option `liste` {titre, cat, def, std, cols, set} (DeltaSub.html : sans onglet Couleurs, sans colonne fixe,
+  mêmes recherche, cases par catégorie et glisser pour l'ordre). Catalogues par liste (`LDEF(sec,C)`) d'après les colonnes de l'ancien logiciel pour ce type de
+  tableau : **Mutations** (Mutation : n°, date, genre, centre 1 / 2, statut, remarque, commentaire ; Positions : origine, entreprise d'origine, destination,
+  entreprise, contreparties ; Montants : HT, TVA, taux, TTC, transferts, modifications, renchérissement), **Adjudications** (lot, entreprise, genre, n°, date,
+  statut, désignation, description, niveau des prestations, délai de garantie, prioritaire, lié au contrat, ouvrage, localisation ; HT, TVA, TTC, contrats, avenants,
+  contrats + avenants HT / TTC ; paiements TTC, contrat − paiements, nombre de paiements, paiement final), **Paiements** (lot, entreprise, n°, date, genre, statut,
+  ordre, n° du contrat, n° et date de facture, commentaire, description, dernier paiement, niveau des prestations ; brut, HT, TVA, TTC, sur contrat, hors contrat,
+  renchérissement, retenue de garantie, paiements à ce jour ; compte d'entreprise, bénéficiaire, compte du MO). Choix enregistré dans le contrôle des coûts
+  `C.listeColonnes` = {mutations, adjudications, paiements} (clés dans l'ordre ; Standard = clé retirée). `grid` enveloppé : seul le tableau de la liste (signature des
+  colonnes d'origine `LSIG`) reçoit ses colonnes ; les colonnes d'origine gardent leur définition (tri, valeurs). Les PDF des listes ne changent pas. Essai 99TST :
+  toutes les colonnes des trois listes affichées sans erreur (133 paiements, 33 contrats et avenants, 13 mutations).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

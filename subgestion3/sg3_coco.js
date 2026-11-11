@@ -469,7 +469,9 @@ function habillerEd(m,id){ cssC(); cssE();
     const tr=e.target.closest&&e.target.closest('table.g tbody tr[data-k]'); if(!tr||!pane.contains(tr)) return; e.preventDefault(); tr.click();
     if(CCV.sec==='DEVIS GENERAL') return;   /* Devis général : affiché seulement, aucun menu d'écriture (Paulo, 11.11.2026) */
     const ecr=CCV.sec!=='COMPTES D’ENTREPRISE'&&(!estCC()||tr.dataset.k.split('|').length>=3);   /* comptes d'entreprise : une ligne = une entreprise, pas une écriture */   /* Contrôle du coût : seules les lignes de détail sont des écritures */
-    sgMenuAt(e.clientX,e.clientY,[...(ecr?[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',danger:true,fn:()=>bDel.click()},'-']:[]),{t:'Nouvelle écriture',sub:()=>nouv(bNew._sgB.menu())}],tr); });
+    const liste=ECR.includes(CCV.sec);   /* listes des écritures : sans « Nouvelle écriture » au clic droit (Paulo, 11.11.2026 : « supprimer » ; reste dans la barre) */
+    const L=[...(ecr?[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',danger:true,fn:()=>bDel.click()}]:[]),...(liste?[]:[...(ecr?['-']:[]),{t:'Nouvelle écriture',sub:()=>nouv(bNew._sgB.menu())}])];
+    if(L.length) sgMenuAt(e.clientX,e.clientY,L,tr); });
   pane.tabIndex=-1;
   pane.addEventListener('keydown',e=>{ if(e.target.closest('input,textarea,select,[contenteditable]')) return;
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const L=[...pane.querySelectorAll(':scope>table.g>tbody>tr:not(.sgce-cache)')], i=L.findIndex(t=>t.classList.contains('on')), n=L[i<0?0:i+(e.key==='ArrowDown'?1:-1)]; if(n){ e.preventDefault(); n.click(); n.scrollIntoView({block:'nearest'}); } }

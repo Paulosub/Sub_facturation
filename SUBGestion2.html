@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.11.2026 13:49 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 11.11.2026 13:56 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3794,8 +3794,8 @@ const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationT
    (ccExtra : mutations 2, renchérissement ICC, montants plafonnés, métrés, libres 1 à 3, paiements de renchérissement et paiements finaux) ; fx = calcul ;
    eq = équation du document (variables de l'ancien logiciel, ccEval) ; info = texte des lignes d'entreprise et des écritures (ccInfo) ; nd = pas de données dans
    l'app (grisé dans « Affichage »). Les entrées déjà connues de CC_COL gardent leur titre ; kvValue (DG HT) affichait le TTC : corrigé. */
-const CC_DEF_COUL={mut:'#993300',ctr:'#FF6633',pay:'#003366',prov:'#555555'};
-function ccCouleurs(C){ const x=((((C||{}).parametres)||{}).couleursDetails)||{}, o={}; Object.keys(CC_DEF_COUL).forEach(k=>{ o[k]=/^#[0-9a-f]{6}$/i.test(x[k]||'')?x[k]:CC_DEF_COUL[k]; }); o.cpp=o.prov; return o; }
+const CC_DEF_COUL={mut:'#993300',ctr:'#FF6633',pay:'#003366',payh:'#003366',prov:'#555555'};   /* payh = paiements hors contrat (11.11.2026 : couleur propre, demandée par Paulo) */
+function ccCouleurs(C){ const x=((((C||{}).parametres)||{}).couleursDetails)||{}, o={}; const ok=v=>/^#[0-9a-f]{6}$/i.test(v||''); Object.keys(CC_DEF_COUL).forEach(k=>{ o[k]=ok(x[k])?x[k]:CC_DEF_COUL[k]; }); if(!ok(x.payh)&&ok(x.pay)) o.payh=x.pay; o.cpp=o.prov; return o; }   /* hors contrat non choisi : couleur des paiements */
 const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[i],longs[i],Object.assign({},base,i===0?{m:'ht'}:i===1?{m:'tva'}:{},i===2&&det?{det}:{})]);
   const D=(id,t,l,s)=>[id,t,l,s||{}];
   return [
@@ -3997,7 +3997,7 @@ function ccAffichage(C,o){
   { const k=cols.findIndex(x=>x.id==='kag'); if(k<0) cols.unshift({id:'kag',idDelta:0,details:false}); else if(k>0) cols.unshift(cols.splice(k,1)[0]); }   /* CFC : toujours la première colonne, ni déplacée ni retirée */
   const cols0=JSON.stringify(cols);
   delete cou.cpp; let tab=o.tab==='couleurs'?'couleurs':'colonnes', elC=o.el&&cou[o.el]?o.el:'mut';
-  const NOMS={mut:'Mutations',ctr:'Contrats et avenants',pay:'Paiements',prov:'Provisions, coût probable'};
+  const NOMS={mut:'Mutations',ctr:'Contrats et avenants',pay:'Paiements sur contrat',payh:'Paiements hors contrat',prov:'Provisions, coût probable'};
   const body=h('div',{class:'cca'}), tabs=h('div',{class:'cca-tabs'}), pane=h('div');
   const titreDe=id=>{ const c=CC_COL[id]; if(!c) return id; if(c.eq!=null){ const e=(eqs[c.eq]||'').trim(); return c.t+(e?' : '+e:' (non définie)'); } return c.l||c.t; };
   const court=id=>{ const t=!P.base&&!P.app&&(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):((CC_COL[id]||{}).t||id); };
@@ -4026,7 +4026,7 @@ function ccAffichage(C,o){
         els.append(h('div',{class:'cca-el'+(k===elC?' on':''),onclick:()=>{ elC=k; maj(); }},h('i',{style:{background:cou[k]}}),h('span',{},h('b',{style:{color:cou[k]}},NOMS[k]),h('small',{},cou[k].toUpperCase())),
           def?h('span'):h('button',{type:'button',title:'Couleur d’origine',onclick:e=>{ e.stopPropagation(); cou[k]=CC_DEF_COUL[k]; maj(); }},'d’origine'))); });
       [...pal.children].forEach(b=>b.classList.toggle('on',b.dataset.c.toLowerCase()===cou[elC].toLowerCase()));
-      ap.innerHTML=''; [['mut','> Rocher plus dur que prévu dans la fouille nord [4]',"25'944.00"],['ctr','> Contrat 10.02.2025 [5]',"36'336.75"],['pay','> Situation 25.04.2025 [19]',"30'086.82"],['prov','> Réserve 30.10.2026',"20'000.00"]]
+      ap.innerHTML=''; [['mut','> Rocher plus dur que prévu dans la fouille nord [4]',"25'944.00"],['ctr','> Contrat 10.02.2025 [5]',"36'336.75"],['pay','> Situation 25.04.2025 [19]',"30'086.82"],['payh','> Paiement 10.05.2024 [2]',"12'755.80"],['prov','> Réserve 30.10.2026',"20'000.00"]]
         .forEach(([k,t,v])=>ap.append(h('div',{style:{color:cou[k]}},h('span',{},t),h('span',{},v)))); };
     CC_PALETTE.forEach(c=>pal.append(h('button',{type:'button','data-c':c,title:c.toUpperCase(),style:{background:c},onclick:()=>{ cou[elC]=c; maj(); }})));
     pane.append(h('div',{class:'cca-cou'},h('div',{},h('div',{class:'cca-note',style:{marginTop:'0',marginBottom:'8px'}},'Choisissez un élément, puis sa couleur dans la palette. Les couleurs valent pour le tableau du contrôle du coût et ses documents PDF.'),els),
@@ -4178,7 +4178,7 @@ function ccEditor(m,id){
     ibtn({i:'wrench',t:'Paramètres',menu:()=>[{t:'Attribuer le devis général validé …',fn:()=>ccAssignDG(C,p,touch)},{t:'Configuration …',fn:()=>ccConfig(C,touch)}]}),
     ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(G,'Controle_couts_'+(p.NUMBER||''))},{t:'Imprimer le tableau (A4 paysage)',fn:()=>ccPrint(p,doc,G)}]}),
     ibtn({i:'save',t:'Enregistrer',fn:()=>save().then(()=>toast('Enregistré.'))}));
-  const COLOR=ccCouleurs(C);   /* couleurs des écritures : celles du document (Affichage ▸ Couleurs des écritures, 11.11.2026), sinon celles de l'ancien logiciel */
+  const COLOR=ccCouleurs(C), coulDe=d=>d&&d.k==='pay'&&!(d.ref&&d.ref.contratId)?COLOR.payh:COLOR[d&&d.k];   /* paiement hors contrat : sa couleur */   /* couleurs des écritures : celles du document (Affichage ▸ Couleurs des écritures, 11.11.2026), sinon celles de l'ancien logiciel */
   /* Affichage (colonnes du catalogue complet, couleurs) : « Standard » n'est jamais modifiée — une présentation « Personnalisée » du document est créée ou mise à jour */
   const setCols=cols=>{ const L=C.presentations.controle||(C.presentations.controle=[]), P=pres(); if(P.base){ let i=L.findIndex(x=>x.nom==='Personnalisée'); if(i<0){ L.push({nom:'Personnalisée',app:true,colonnes:cols,options:{}}); i=L.length-1; } else L[i]=Object.assign({},L[i],{app:true,colonnes:cols}); CCV.pres=i; } else { P.colonnes=cols; if(P.nom==='Personnalisée') P.app=true; } };
   CCV.cur={C}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
@@ -4208,8 +4208,8 @@ function ccEditor(m,id){
         if(!r.tot&&!r.sub&&!r.det&&r.cfc){ const tc=top(r.cfc); a.T=tc===r.cfc?a:acc({cfc:tc,v:R.tot.get(tc)||{}}); } return a; };
       const valeur=(r,c)=>{ if(c.fx){ const a=acc(r); return c.fx(a); } if(c.x) return acc(r).X(c.x,c.m); if(c.eq!=null) return ccEval(((C.parametres||{}).equations||[])[c.eq],acc(r)); if(c.f&&c.m) return acc(r).V(c.f,c.m); return c.fn?c.fn(r.v):((r.v||{})[c.f]||0); };
       const cell=(r,id)=>{ const c=CC_COL[id]; if(c.nd) return '';
-        if(c.info){ const t=ccInfo(C,r,c.info); if(t==null||t==='') return ''; return r.det?`<i style="color:${COLOR[r.det.k]}">${esc(String(t))}</i>`:esc(String(t)); }
-        if(r.det) return c.det&&(c.det===r.det.k||(c.det==='prov'&&r.det.k==='cpp')||(c.det==='cpp'&&r.det.k==='cpp'))?`<i style="color:${COLOR[r.det.k]}">${r.det.last?'F':''}${num(r.det.v)}</i>`:'';
+        if(c.info){ const t=ccInfo(C,r,c.info); if(t==null||t==='') return ''; return r.det?`<i style="color:${coulDe(r.det)}">${esc(String(t))}</i>`:esc(String(t)); }
+        if(r.det) return c.det&&(c.det===r.det.k||(c.det==='prov'&&r.det.k==='cpp')||(c.det==='cpp'&&r.det.k==='cpp'))?`<i style="color:${coulDe(r.det)}">${r.det.last?'F':''}${num(r.det.v)}</i>`:'';
         if(c.pct) return pct(r,c.pct); if(r.sub&&!c.e) return '';
         const v=valeur(r,c); if(v==null||!isFinite(v)||Math.abs(v)<0.005) return '';
         if(id==='payementTot'&&!r.tot&&!r.sub){ const b=r.v.contratsAvenants||r.v.dgRevise; return `<span style="color:${v<=b+0.05?'#2e7d46':'#c62828'}">${num(v)}</span>`; }
@@ -4220,12 +4220,12 @@ function ccEditor(m,id){
       Object.assign(G,{key:r=>r.k,cols:ids.map(id=>{ const c=CC_COL[id];
           if(c.sp==='cfc') return {k:'cfc',t:title(id),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`};
           if(c.sp==='lbl') return {k:'lbl',t:title(id),w:230,f:r=>`<span style="${B(r)}">${esc(r.lbl)}</span>`};
-          if(c.sp==='ent') return {k:'ent',t:title(id),w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)};
+          if(c.sp==='ent') return {k:'ent',t:title(id),w:230,f:r=>r.det?`<i style="color:${coulDe(r.det)}">${esc(r.ent)}</i>`:esc(r.ent)};
           if(c.info) return {k:id,t:title(id),w:c.w||110,cls:c.num?'r':'',f:r=>cell(r,id)};
           return {k:id,t:title(id),w:c.w||(c.pct?60:118),cls:'r',f:r=>`<span style="${B(r)}">${cell(r,id)}</span>`}; }),
         rows,sort:null,noSort:true,sel:CCV.sel,onSel:r=>{ if(r.det){ CCV.detSel=r.det; } else { CCV.sel=r.k.split('|').slice(0,2).join('|'); CCV.detSel=null; } },onDbl:r=>{ if(r.det){ CCV.detSel=r.det; editDet(); } }});   // ordre fixe (hiérarchie des CFC, comme Deltaproject) : pas de tri par les titres (Paulo, 10.11.2026)
       if(!ids.some(i=>CC_COL[i].sp==='cfc')) G.cols.unshift({k:'cfc',t:title('kag'),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`});   // colonne CFC fixe et toujours la première, comme Deltaproject (les présentations reprises de Deltaproject ne la contiennent pas ; 10.11.2026)
-      if(!ids.some(i=>CC_COL[i].sp==='ent')&&sec!=='DEVIS GENERAL') G.cols.splice(2,0,{k:'ent',t:'Entreprise',w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)});
+      if(!ids.some(i=>CC_COL[i].sp==='ent')&&sec!=='DEVIS GENERAL') G.cols.splice(2,0,{k:'ent',t:'Entreprise',w:230,f:r=>r.det?`<i style="color:${coulDe(r.det)}">${esc(r.ent)}</i>`:esc(r.ent)});
       grid(pane,G); return; }
     if(sec==='MUTATIONS'){ Object.assign(G,{key:x=>x.id,cols:[{k:'numero',t:'N°',w:50,cls:'r'},{k:'date',t:'Date',w:86,f:x=>dfr(x.date)},{k:'g',t:'Genre',w:140,f:x=>esc(x.genreTexte||((C.genresMutation||[]).find(g=>g.code===x.code)||{}).texte||x.genre)},
         {k:'o',t:'Origine',w:200,f:x=>x.origine?esc(x.origine.cfc+' '+(R.lbl.get(String(x.origine.cfc))||'')):''},{k:'d',t:'Destination / position',w:200,f:x=>x.destination?esc(x.destination.cfc+' '+(R.lbl.get(String(x.destination.cfc))||'')):''},
@@ -16413,7 +16413,7 @@ function ch01aOverviewJob(E,rep){ const C=E.C, p=E.p, pp=C.parametres||{}, cfg=!
   /* détails (CostOverviewTable.write*DetailLine) : texte ch01aDetTxt ; montant formatValue, précédé sans espace de la marque du paiement final (writePaymentLine@0-31, recette « \u0001\u0001 ») */
   const pos=new Map((C.positions||[]).map(x=>[String(x.cfc),x])), md=ch01aProp(bO,0,true), fin=opt.markFinalPays?(opt.finalPayment!=null?String(opt.finalPayment):'+'):'';   // k0 writeMutDetailDate (absent : vrai) ; OverviewPref.<init> : « + »
   const dv=v=>v==null||!isFinite(v)||Math.abs(v)<.005?'':ch01aV(v,cfg);
-  const detRow=d=>({c:['','',ch01aDetTxt(C,d,opt,md),'',''],f:flex.map(x=>{ const cc=CC_COL[x.id], s=cc&&cc.det&&(cc.det===d.k||(cc.det==='prov'&&d.k==='cpp'))?dv(d.v):''; return s&&d.last&&fin?fin+s:s; }),st:'cd'});
+  const detRow=d=>({pk:d.k==='pay'&&!(d.ref&&d.ref.contratId)?'payh':d.k,c:['','',ch01aDetTxt(C,d,opt,md),'',''],f:flex.map(x=>{ const cc=CC_COL[x.id], s=cc&&cc.det&&(cc.det===d.k||(cc.det==='prov'&&d.k==='cpp'))?dv(d.v):''; return s&&d.last&&fin?fin+s:s; }),st:'cd'});
   /* positions : catalogLevel1 / 2 / 3, positions générées de 3 chiffres et plus comme 2 chiffres si k6 (absent : vrai) [CostOverviewTable.initProperties, xxx@283-354] */
   const ov=[]; R.codes.forEach(c=>{ if(opt.displayOnlyThreeDigitPos&&cfcLevel(c)>3) return; const v=R.tot.get(c); if(!v) return; const f=vals(v,H.tot.get(c),c,'pos'); if(!shown(f)) return; const n=String(c).length;
     ov.push({c:[c,R.lbl.get(c)||'','','',''],f,st:n===1?'c1':n===2?'c2':k6&&(pos.get(c)||{}).genere?'c2':'c3'});

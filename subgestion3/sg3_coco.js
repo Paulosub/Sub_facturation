@@ -209,8 +209,8 @@ function habillerEd(m,id){ cssC(); cssE();
   box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgce-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const s=bPlein.querySelector('svg'); if(s&&typeof nxSvg==='function') s.outerHTML=nxSvg(ED.plein?'pleinq':'plein'); bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
   /* légende des couleurs des écritures : couleurs du document (Présentation ▸ Affichage ▸ Couleurs des écritures, 11.11.2026) ; un clic ouvre la palette sur l'élément */
   const leg=el('span','sgce-leg'); ED.leg=leg;
-  ED.majLeg=()=>{ const K=typeof ccCouleurs==='function'?ccCouleurs(CCV.cur&&CCV.cur.C):{mut:'#993300',ctr:'#FF6633',pay:'#003366',prov:'#555555'};
-    leg.innerHTML=[['mut','Mutations'],['ctr','Contrats'],['pay','Paiements'],['prov','Provisions, coût probable']].map(([k,t])=>'<button type="button" data-k="'+k+'" style="color:'+K[k]+'" title="Changer la couleur : '+t.toLowerCase()+'">'+t+'</button>').join(''); };
+  ED.majLeg=()=>{ const K=typeof ccCouleurs==='function'?ccCouleurs(CCV.cur&&CCV.cur.C):{mut:'#993300',ctr:'#FF6633',pay:'#003366',payh:'#003366',prov:'#555555'};
+    leg.innerHTML=[['mut','Mutations'],['ctr','Contrats'],['pay','Paiements sur contrat'],['payh','Paiements hors contrat'],['prov','Provisions, coût probable']].map(([k,t])=>'<button type="button" data-k="'+k+'" style="color:'+K[k]+'" title="Changer la couleur : '+t.toLowerCase()+'">'+t+'</button>').join(''); };
   ED.majLeg(); leg.onclick=e=>{ const b=e.target.closest('[data-k]'); if(b&&typeof CCV.affichage==='function') CCV.affichage('couleurs',b.dataset.k); };
   if(!SGCC._legEv){ SGCC._legEv=1; document.addEventListener('cc-affichage',()=>{ if(ED.majLeg) ED.majLeg(); }); }
   const autres=[...bar.children].filter(x=>!B.includes(x)&&x.tagName!=='B');   /* éléments ajoutés à la barre par d'autres blocs : gardés à la fin */

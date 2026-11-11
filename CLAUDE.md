@@ -2043,6 +2043,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`COLOR`) et au PDF « Contrôle des coûts » (`sg3_coco_docs.js`). SUBGestion 3 (`sg3_coco.js`) : légende des couleurs aux couleurs du document, un clic ouvre la palette
   sur l'élément (`CCV.affichage(tab, el)`, évènement `cc-affichage`). Repli PDF `ch01aOvVal` : `fx` et `m` (HT / TVA) gérés, colonnes d'information et
   complémentaires vides. Copies d'avant : `DeltaSub_backup_20261111_avant_affichage_colonnes.html`, `subgestion3/_backup_20261111_avant_affichage_colonnes/`.
+  **Paiements sur contrat et hors contrat : deux couleurs (11.11.2026, Paulo : « ajoute une couleur pour les paiements sur contrat et hors contrat »)** : `CC_DEF_COUL.payh`
+  (hors contrat ; tant qu'elle n'est pas choisie : la couleur des paiements), `coulDe(d)` dans l'éditeur (écriture `pay` sans `contratId` → `payh`), légende « Paiements sur
+  contrat » / « Paiements hors contrat », PDF : `pk` des lignes d'écriture du travail du moteur (`detRow`) lu par `sg3_coco_docs.js`.
   **Fenêtres des écritures = proposition B « Tableur » (10.11.2026, bloc 51, `subgestion3/sg3_ecritures.js`, concaténé après `sg3_coco.js` ; Paulo : « proposer un
   autre graphisme pour correspondre à la section devis, fais 5 propositions » — paiement, situation sur contrat, mutation —, puis « version B » ; maquettes A étapes,
   B tableur, C décompte, D rubriques, E chiffres et onglets : `subgestion3/_backup_20261110_maquette_ecritures/`)** : `ccPayment` (situation, paiement hors contrat),

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 14:10 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 14:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42650,7 +42650,7 @@ const ED_CSS=`
 @media (max-height:860px){.sgce-tete .sgfh-meta{display:none}.sgce-tete .sgfh-tete{padding:6px 14px}.sgce-tete .sgfh-ini{font-size:22px}.sgce-tete .sgfh-nm h2{font-size:17px}.sgce-tete .sgfh-nm .lb{margin:0}.sgce-kp .nx-kpi{padding:6px 12px 6px 0}.sgce-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),18px);margin-top:3px}.sgce-kp .nx-kpi .s{display:none}}
 `;
 const cssE=()=>{ if(!document.getElementById('sgce-css')){ const s=document.createElement('style'); s.id='sgce-css'; s.textContent=ED_CSS; document.head.appendChild(s); } };
-const SECS=CC_SECS.filter(s=>s!=='DOCUMENTS'), SLIB=s=>(typeof CC_SEC_LIB!=='undefined'&&CC_SEC_LIB[s])||s;
+const SECS=CC_SECS.filter(s=>s!=='DOCUMENTS').sort((a,b)=>(b==='DEVIS GENERAL')-(a==='DEVIS GENERAL')), SLIB=s=>(typeof CC_SEC_LIB!=='undefined'&&CC_SEC_LIB[s])||s;
 const estCC=()=>!CCV.docs&&(CCV.sec==='CONTRÔLE DU COÛT'||CCV.sec==='DEVIS GENERAL');
 const ED=SGCC.ed={niv:(()=>{ try{ const v=+localStorage.getItem('sg3_coco_niv'); return [1,2,3].includes(v)?v:0; }catch(_){ return 0; } })(),sub:'fichiers',plein:false,box:null};
 /* ligne masquée par le choix du niveau de CFC (k = « cfc|entreprise[|détail] » des sections Contrôle du coût et Devis général ; total toujours affiché) */
@@ -42727,6 +42727,10 @@ function habillerEd(m,id){ cssC(); cssE();
     t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const k=tr.dataset.k, P=k.split('|'), c=P[0], n=c?cfcLevel(c):0, det=P.length>=3, ent=!det&&P[1]!=='-'&&k!=='TOTAL';
       tr.classList.toggle('sgce-tot',k==='TOTAL'); tr.classList.toggle('sgce-det',det); tr.classList.toggle('sgce-ent',ent);
       tr.classList.toggle('sgce-n1',!det&&!ent&&n===1); tr.classList.toggle('sgce-cache',masquee(k)); });
+    /* titres des colonnes : « Contrats + avenants TTC » passe à la ligne avant « avenants » (Paulo, 11.11.2026) — espaces insécables avant « + » et avant l'unité
+       (HT, TVA, TTC), affichage seulement (copie et CSV gardent les titres) */
+    t.querySelectorAll('thead th').forEach(th=>{ if(th._sgceT) return; th._sgceT=1; const w=document.createTreeWalker(th,NodeFilter.SHOW_TEXT); let n;
+      while((n=w.nextNode())){ const x=n.textContent.replace(/ \+ /g,'\u00a0+ ').replace(/ (HT|TVA|TTC)\s*$/,'\u00a0$1'); if(x!==n.textContent) n.textContent=x; } });
     const c1=t.querySelector('thead th'); if(c1) t.style.setProperty('--sgce-w1',c1.offsetWidth+'px'); };
   /* Documents d'une section : chaque document (panneau du moteur) en ligne comme l'onglet Documents du devis — titre, état, actions à droite
      (Ouvrir ou Créer le document, Créer le PDF, Renommer, Supprimer le document : celles du menu « Document » du moteur), puis ses fichiers PDF */

@@ -2015,6 +2015,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   présentation favorite du document. Colonnes inconnues du moteur encore écartées : OUV (`og`), équations (`equ1`…), DG indexé (`kvTotInclFac`), montants par m² /
   m³, contrat/DG rév. − paiements (`contractKvMinusAccordPayment`). Copie d'avant : `DeltaSub_backup_20261110_1810_avant_colonne_cfc.html`. Liste : « -0.00 » évité,
   rendu même sans contrôle des coûts dans la base (relecture du 10.11.2026).
+  **Onglets et titres (11.11.2026, annotations de Paulo)** : onglet « Devis général » placé avant « Contrôle du coût » (`SECS` de `sg3_coco.js` ; la section ouverte
+  d'office reste le Contrôle du coût) ; titres des colonnes du tableau : « Contrats + avenants TTC » passe à la ligne avant « avenants » (espaces insécables avant « + » et
+  avant l'unité HT / TVA / TTC, affichage seulement, `deco`).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

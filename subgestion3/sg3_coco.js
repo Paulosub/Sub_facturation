@@ -132,7 +132,12 @@ const ED_CSS=`
 .sgce-leg button{border:0;background:none;padding:3px 0;font:inherit;font-size:11.5px;font-style:italic;cursor:pointer;white-space:nowrap}
 .sgce-leg button:hover{text-decoration:underline}
 .sgce-bar .sgce-x{display:none}
-.sgce:not(.cc) .sgce-bar .sgce-niv,.sgce:not(.cc) .sgce-sep.n,.sgce:not(.det) .sgce-leg{display:none}
+.sgce:not(.cc) .sgce-bar .sgce-niv,.sgce:not(.cc) .sgce-ong>.sgce-niv,.sgce:not(.cc) .sgce-sep.n,.sgce:not(.det) .sgce-leg{display:none}
+.sgce-ong{display:flex;align-items:center;gap:12px}
+.sgce-ong>.sg-onglets{flex:1 1 auto;min-width:0}
+.sgce-ong>.sgce-niv{flex:none;margin:0 0 0 auto}   /* CFC Tout · 3 · 2 · 1 à droite des onglets, comme le devis (11.11.2026) */
+.sgce-dgv.sgde{display:block;height:auto;overflow:visible;flex:none;background:transparent}
+.sgce-dgv>.pane{overflow:visible;height:auto}
 .sgce.docs>.sgce-bar,.sgce:not(.docs)>.sgce-dsub{display:none}
 .sgce-dsub .sgce-pl{margin-left:auto}
 .sgce>.cols{flex:1 1 auto;min-height:0;padding:0 24px 12px;gap:0}
@@ -181,6 +186,8 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
   const tot=ccCalc(C).G.dg||0, L=DS.by('costestimatedocument','PROJECT_ID',pid).filter(d=>ok(d.ID)).map(d=>({d,t:dvCompute(DS.get('costestimate',d.ID)).T.ttc}));
   const M=L.filter(x=>Math.abs(x.t-tot)<1).sort((a,b)=>((b.d.STATECODE===2)-(a.d.STATECODE===2))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
   return M.length?M[0].d.ID:null; };
+const DGV=(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_dgv'))||{}; }catch(_){ return {}; } })(), dgvSave=()=>{ try{ localStorage.setItem('sg3_coco_dgv',JSON.stringify(DGV)); }catch(_){} };
+let DGX=null;   /* tableau de l'onglet Devis général (contexte réduit du devis d'origine) */
 async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}
   const C=CCV.cur&&CCV.cur.C, p=DS.get('project',d&&d.PROJECT_ID); if(!C||!p) return;
   const sid=devisSource(C,p.ID); if(sid==null){ toast('Aucun devis général ne correspond au devis de ce contrôle des coûts : attribuez le devis général validé (onglet Contrôle du coût ▸ Paramètres ▸ Attribuer le devis général validé).',true); return; }
@@ -219,7 +226,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const mPres=bPres._sgB.menu, mFon=bFon._sgB.menu;
   const fon=t=>(mFon()||[]).filter(x=>x&&x.t&&t.test(x.t)).map(x=>Object.assign({},x,{fn:filtrer(x.fn)}));
   lbl(bNew,'Nouvelle écriture'); lbl(bPar,'Paramètres');
-  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
+  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
     const imp=fon(/^Imprimer/);
@@ -234,7 +241,7 @@ function habillerEd(m,id){ cssC(); cssE();
   ED.majLeg(); leg.onclick=e=>{ const b=e.target.closest('[data-k]'); if(b&&typeof CCV.affichage==='function') CCV.affichage('couleurs',b.dataset.k); };
   if(!SGCC._legEv){ SGCC._legEv=1; document.addEventListener('cc-affichage',()=>{ if(ED.majLeg) ED.majLeg(); }); }
   const autres=[...bar.children].filter(x=>!B.includes(x)&&x.tagName!=='B');   /* éléments ajoutés à la barre par d'autres blocs : gardés à la fin */
-  bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep('n'),niv,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
+  bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */
   const docs=k=>{ ED.sub=k; if(k==='fichiers') secIt.DOCUMENTS.click(); else if(docIt[k]) docIt[k].click(); maj(); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b) return; if(b.dataset.s==='DOCUMENTS') docs(ED.sub||'fichiers'); else { secIt[b.dataset.s].click(); maj(); } };
@@ -261,7 +268,30 @@ function habillerEd(m,id){ cssC(); cssE();
       +kpi('État du coût TTC',signe(v('etatCout')),v('dgRevise')&&v('etatCout')?pc(v('etatCout'),v('dgRevise'))+' du DG révisé':'',cls(v('etatCout')),'Coût probable moins devis général révisé : positif = dépassement (rouge), négatif = économie (vert)');
     if(typeof VIEW==='object'&&VIEW) VIEW.nxTitle=[p.NUMBER,d.VERSION].filter(Boolean).join(' · '); };
   /* tableau : niveaux de CFC (Contrôle du coût, Devis général), lignes d'entreprise et de détail, total, choix du niveau */
-  const deco=()=>{ const t=pane.querySelector(':scope>table.g'); if(!t) return; const cc=estCC(); t.classList.toggle('sgce-t',cc); if(!cc) return;
+  /* ═══ Onglet Devis général = tableau du devis général d'origine, en lecture seule (11.11.2026, Paulo : « ajoute les options d'affichage comme dans devis général :
+     calcul, commentaires, etc. ») : le tableau de Descriptifs & devis (ch02aDraw + habillage SGDE.deco : présentations, descriptifs, lignes de calcul « > », niveaux CFC)
+     dessiné à partir du devis d'origine (devisSource) dans un contexte réduit — aucune écriture (pas de double-clic de calcul, pas de « montant saisi »). Présentation
+     (Standard, colonnes honoraires, toutes les colonnes, avec le calcul de prix, avec le descriptif…), subdivisions et positions sans montant : choix du poste
+     (sg3_coco_dgv) ; sans choix, la présentation enregistrée dans le devis. CFC Tout · 3 · 2 · 1 = niveau du devis (ED.niv). Sans devis d'origine : tableau du moteur. */
+  const dgVue=()=>{ if(CCV.docs||CCV.sec!=='DEVIS GENERAL'||!window.SGDE||typeof SGDE.deco!=='function'||typeof ch02aDraw!=='function'){ DGX=null; return false; }
+    const C=CCV.cur&&CCV.cur.C, d=doc(), p=DS.get('project',d.PROJECT_ID); if(!C||!p){ DGX=null; return false; }
+    const sid=devisSource(C,p.ID), E0=sid!=null?DS.get('costestimate',sid):null; if(!E0){ DGX=null; return false; }
+    const w=pane.firstElementChild, cle=JSON.stringify(DGV);
+    if(w&&w.classList.contains('sgce-dgv')&&DGX&&DGX.E0===E0&&DGX.cle===cle){ DGX.sgde.niv=ED.niv||0; try{ SGDE.deco(DGX); }catch(e){ console.error(e); } return true; }
+    const E=ch02aClone(E0), A=(E.reglages||(E.reglages={})).affichage||(E.reglages.affichage={});
+    if(DGV.mode!=null){ A.displayMode=DGV.mode; if(DGV.calc) A.sgCalc=true; else delete A.sgCalc; }
+    const wrap=el('div','sgde sgce-dgv'), rp=el('div','pane'); wrap.append(rp);
+    const X={id:sid,doc:DS.get('costestimatedocument',sid),p,E,E0,cle,st:{sel:null,ouv:!!DGV.ouv,only3:false,empty:DGV.vides!==false},R2:{},rp,filter:null,OUV:()=>dvOuvCodes(E),
+      totals:()=>{},dvCalc:()=>{},draw:()=>{},touch:()=>{},sgde:{niv:ED.niv||0,vu:null,cfc:false,ro:true}};
+    if(typeof SGDE.cssD==='function') SGDE.cssD();   /* styles du tableau des devis (aussi sans devis ouvert dans la séance) */
+    DGX=X; pane.replaceChildren(wrap);
+    try{ ch02aDraw(X); SGDE.deco(X); }catch(e){ console.error(e); DGX=null; return false; } return true; };
+  const dgPresMenu=()=>{ const E=DGX&&DGX.E, m=ch02aMode(E||{}), c4=m===4&&!!(((E||{}).reglages||{}).affichage||{}).sgCalc;
+    const poser=(k,calc)=>{ DGV.mode=k; DGV.calc=!!calc; dgvSave(); DGX=null; deco(); };
+    return [...CH02A_MODES.flatMap(([k,t])=>k===4?[{t:'Avec le descriptif et le calcul de prix',chk:c4,fn:()=>poser(4,true)},{t,chk:m===4&&!c4,fn:()=>poser(4,false)}]:[{t,chk:m===k,fn:()=>poser(k,false)}]),'-',
+      ...(E&&dvOuvCodes(E).length?[{t:'Afficher les subdivisions',chk:!!DGV.ouv,fn:()=>{ DGV.ouv=!DGV.ouv; dgvSave(); DGX=null; deco(); }}]:[]),
+      {t:'Afficher les positions sans montant',chk:DGV.vides!==false,fn:()=>{ DGV.vides=DGV.vides===false; dgvSave(); DGX=null; deco(); }}]; };
+  const deco=()=>{ if(dgVue()) return; const t=pane.querySelector(':scope>table.g'); if(!t) return; const cc=estCC(); t.classList.toggle('sgce-t',cc); if(!cc) return;
     t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const k=tr.dataset.k, P=k.split('|'), c=P[0], n=c?cfcLevel(c):0, det=P.length>=3, ent=!det&&P[1]!=='-'&&k!=='TOTAL';
       tr.classList.toggle('sgce-tot',k==='TOTAL'); tr.classList.toggle('sgce-det',det); tr.classList.toggle('sgce-ent',ent);
       tr.classList.toggle('sgce-n1',!det&&!ent&&n===1); tr.classList.toggle('sgce-cache',masquee(k)); });
@@ -297,7 +327,7 @@ function habillerEd(m,id){ cssC(); cssE();
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const L=[...pane.querySelectorAll(':scope>table.g>tbody>tr:not(.sgce-cache)')], i=L.findIndex(t=>t.classList.contains('on')), n=L[i<0?0:i+(e.key==='ArrowDown'?1:-1)]; if(n){ e.preventDefault(); n.click(); n.scrollIntoView({block:'nearest'}); } }
     else if(e.key==='Enter'){ const t=pane.querySelector(':scope>table.g>tbody>tr.on'); if(t){ e.preventDefault(); t.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); } } });
   const ouvertA=performance.now(); box.addEventListener('dblclick',e=>{ if(performance.now()-ouvertA<450){ e.stopPropagation(); e.preventDefault(); } },true);   /* le 2e clic d'un double-clic d'habitude sur la liste n'ouvre pas une écriture */
-  ong.append(ongL); box.append(hd,kp,ong,bar2,dsub,body); m.replaceChildren(box); box._plein(ED.plein);   /* plein écran gardé d'un contrôle des coûts à l'autre pendant la séance */
+  ong.append(ongL,niv); box.append(hd,kp,ong,bar2,dsub,body); m.replaceChildren(box); box._plein(ED.plein);   /* plein écran gardé d'un contrôle des coûts à l'autre pendant la séance */
   maj(); entete(); deco(); decoDocs(); }
 { const e0=ccEditor; ccEditor=function(m,id){ e0.apply(this,arguments); try{ habillerEd(m,id); }catch(e){ console.error(e); } }; }
 Object.assign(SGCC,{COCO,totaux});

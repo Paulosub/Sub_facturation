@@ -402,7 +402,7 @@ function deco(X){ const S=X.sgde, rp=X.rp, t=rp&&rp.querySelector('table.g'); if
   const V=new Map((X.R2.view||[]).map(r=>[String(r.det?r.k:r.p.cfc),r]));
   /* lignes de calcul (Présentation ▸ avec les lignes de calcul, 07.11.2026, Paulo : « le calcul des prix ne s'affiche pas ») : le moteur les écrit dans les colonnes Commentaire et
      Descriptif, tout à droite, hors de l'écran ; elles sont montrées sous leur position — texte et quantité × prix unitaire dans la désignation, montants dans leurs colonnes */
-  const ix={}; cols.forEach((c,i)=>{ ix[c.k]=i; }); const sep=ch02aSep(X), arr=ch02aRnd(X.E), f=x=>num(ch02aR(x,arr)), modif=ecrit()&&ch02aCanEdit(ch02aHdr(X));
+  const ix={}; cols.forEach((c,i)=>{ ix[c.k]=i; }); const sep=ch02aSep(X), arr=ch02aRnd(X.E), f=x=>num(ch02aR(x,arr)), modif=!S.ro&&ecrit()&&ch02aCanEdit(ch02aHdr(X));   /* S.ro : tableau en lecture seule (contrôle des coûts ▸ Devis général, 11.11.2026) */
   /* contenu écrit par les colonnes (ligneCalc, enveloppe de ch02aDraw) : ici seulement la présentation, l'infobulle et la couleur des chiffres saisis */
   const calc=(tr,r)=>{ const L=ligneCalc(X,r), d=ix.d!=null?tr.cells[ix.d]:null; if(d){ d.classList.add('sgde-dd'); d.title=[L.txt,L.note,L.form?L.form+' = '+f(L.v.ht)+(sep?' HT':''):''].filter(Boolean).join('\n'); }
     if(!L.compte) tr.classList.add('sgde-nc'); };

@@ -2026,6 +2026,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   contexte de devis réduit (`ch02aCtx` : E, en-tête, projet ; `touch` = `ch02aSave`) puis `ch02cOpen(X,0)` (→ `dgOuvrir`). Devis d'origine : `C.devisSourceId` (noté par
   `ccAssignDG` du moteur depuis ce jour), sinon le devis du projet dont le total TTC est celui du devis du contrôle (validé et le plus récent d'abord) ; aucun : message.
   Titre de la fenêtre « Contrôle des coûts · Devis général » (`X.sgde.lb`, lu par `vueDoc`).
+  **Onglet Devis général = tableau du devis d'origine, en lecture seule (11.11.2026, Paulo : « ajoute les options d'affichage comme dans devis général : calcul,
+  commentaires, etc. »)** : `dgVue` (`sg3_coco.js`, appelé par `deco`) remplace le tableau du moteur par celui de Descriptifs & devis — `ch02aDraw` sur un contexte réduit
+  du devis d'origine (`devisSource`), puis `SGDE.deco` (styles `SGDE.cssD`) : présentations Standard, Avec colonnes honoraires, Toutes les colonnes, … avec le calcul de prix,
+  Avec le descriptif et le calcul de prix, Avec le descriptif, subdivisions, positions sans montant (menu Présentation de l'onglet : `dgPresMenu`) ; choix du poste
+  `sg3_coco_dgv`, sinon la présentation enregistrée dans le devis ; rien n'est écrit (pas de double-clic de calcul ; `deco` de sg3_devis.js ne pose plus le « montant
+  saisi » quand `X.sgde.ro`). Sans devis d'origine : tableau du moteur (montants du contrôle). **CFC Tout · 3 · 2 · 1 à droite de la ligne des onglets**, comme le devis
+  (`ong.append(ongL,niv)`), pour l'onglet Contrôle du coût comme pour Devis général (masqué ailleurs).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

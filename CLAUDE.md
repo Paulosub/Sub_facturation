@@ -2023,6 +2023,26 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Signe des écritures « > » (11.11.2026, Paulo : « remplacer - par > »)** : à l'écran, les lignes d'écriture du tableau CFC (contrats, situations,
   paiements, mutations, provisions) commencent par « > » suivi d'une espace (« > Contrat 10.02.25[5] » ; espace demandée le même jour), au lieu de « - » (DeltaSub.html, lignes
   `ent:'> '+d.txt` du tableau du contrôle du coût ; v1, v2, v3 reconstruites). Les documents PDF gardent leurs règles (signe retiré).
+  **Présentation ▸ Affichage … (colonnes et couleurs) (11.11.2026, moteur `DeltaSub.html`, après `CC_PRES_DEF` ; Paulo : « dans une option affichage, ajoute toutes les
+  colonnes possibles qui se trouvent dans le contrôle du coût de l'ancien logiciel », puis « changer les couleurs de ces éléments [légende Mutations, Contrats,
+  Paiements, Provisions / coût probable], cette nouvelle couleur devra intégrer le tableau du contrôle ; une palette de 256 couleurs pour chaque élément »)** :
+  `CC_CAT` = catalogue complet de l'ancien logiciel (175 colonnes, identifiants `CH01A_IDD`, titres de CostColumns.rtf : court = en-tête, long = liste), par catégorie :
+  Subdivision, Devis général, Mutations du DG, DG révisé, Mutations 2 du DG révisé, DG révisé 2, Renchérissement ICC, Adjudication, Paiements, Garantie, Différences,
+  Coût probable, Équations, Libres, Honoraires ; fusionné dans `CC_COL` (entrées existantes gardées ; `kvValue` = DG HT, affichait le TTC). Valeurs : HT =
+  `ccCalc(ch01aHT(C))`, TVA = TTC − HT ; `ccExtra(C,R)` (mutations du centre 2, écritures icc / montantPlafonne / metre / libre1-3, paiements de renchérissement et
+  paiements finaux, cumulés aux parents) ; `fx` (différences, DG révisé 2, par m² = `project.AREA`, par m³ = `sgVolumeSIA416` sinon `project.VOLUME`, bénéfice
+  d'adjudication) ; équations 1 à 6 du document (`ccEval`, variables de deux lettres `CC_VARS`, avec ou sans crochets : « kc-cc », « [Ki]-[cc] ») ; colonnes
+  d'information (`ccInfo` : n° d'adresse, entreprise et CFC, ouvrage, localisation, lot, n° / statut / remarque / genre / date / contrepartie de la mutation, n° /
+  date / statut / genre / niveau des prestations / descriptif du contrat, genre / n° / date / statut / ordre / facture / description / compte / bénéficiaire du paiement,
+  garantie de l'arrêté de compte) sur les lignes d'entreprise et d'écriture ; 14 colonnes sans données dans l'app (`nd` : indice de base, infos des mutations 2,
+  honoraires) grisées. `ccAffichage(C,o)` : onglet **Colonnes** (recherche, cases par catégorie, « détails » pour les colonnes à écritures, liste ordonnée ↑ ↓ ✕,
+  « Colonnes Standard » ; CFC toujours première, ni déplacée ni retirée) — « Standard » n'est jamais modifiée : une présentation **« Personnalisée »** du document
+  (`app:true`, titres du catalogue) est créée ou mise à jour et choisie ; une présentation du document est modifiée en place ; onglet **Couleurs des écritures** :
+  Mutations, Contrats et avenants, Paiements, Provisions / coût probable, palette `CC_PALETTE` de 256 couleurs (16 gris + 15 teintes × 16 clartés), « d'origine »,
+  aperçu — enregistrées dans le document (`C.parametres.couleursDetails`, `ccCouleurs(C)`, défaut `CC_DEF_COUL` de l'ancien logiciel) et appliquées au tableau
+  (`COLOR`) et au PDF « Contrôle des coûts » (`sg3_coco_docs.js`). SUBGestion 3 (`sg3_coco.js`) : légende des couleurs aux couleurs du document, un clic ouvre la palette
+  sur l'élément (`CCV.affichage(tab, el)`, évènement `cc-affichage`). Repli PDF `ch01aOvVal` : `fx` et `m` (HT / TVA) gérés, colonnes d'information et
+  complémentaires vides. Copies d'avant : `DeltaSub_backup_20261111_avant_affichage_colonnes.html`, `subgestion3/_backup_20261111_avant_affichage_colonnes/`.
   **Fenêtres des écritures = proposition B « Tableur » (10.11.2026, bloc 51, `subgestion3/sg3_ecritures.js`, concaténé après `sg3_coco.js` ; Paulo : « proposer un
   autre graphisme pour correspondre à la section devis, fais 5 propositions » — paiement, situation sur contrat, mutation —, puis « version B » ; maquettes A étapes,
   B tableur, C décompte, D rubriques, E chiffres et onglets : `subgestion3/_backup_20261110_maquette_ecritures/`)** : `ccPayment` (situation, paiement hors contrat),

@@ -2070,6 +2070,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   adjudications, même si la présentation favorite n'a pas la colonne CFC (99TST : la liste des mutations n'avait aucun n°).
   **Liste des écritures sans « Paramètres » (même jour, Paulo : « supprimer des listes des écritures »)** : bouton masqué dans les trois listes (`.sgce.ecr .sgce-par`) ;
   « Attribuer le devis général validé » et « Configuration » restent dans l'onglet Contrôle du coût.
+  Même jour (« supprimer du menu Fonctions, garder dans le bouton de droite ») : dans les trois listes, « Fonctions » = copier, exporter CSV, enregistrer ;
+  « Éditer l'écriture » et « Supprimer l'écriture… » seulement au clic droit sur une ligne (et double-clic = éditer). Contrôle du coût : Fonctions inchangé.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

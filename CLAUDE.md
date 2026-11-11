@@ -2068,6 +2068,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `SGDE.livret.DG_WL` / `DG_WP`) ; tableau sans n° de CFC (totaux par genre, « Montant des contrats »…) : 1re colonne vide, libellés à x 125.72. Les autres documents du
   contrôle des coûts gardent le CFC à la marge (x 28.35, décision du 10.11.2026). `ch01bIds` enveloppé : n° de CFC toujours dans les listes des mutations et des
   adjudications, même si la présentation favorite n'a pas la colonne CFC (99TST : la liste des mutations n'avait aucun n°).
+  **Liste des écritures sans « Paramètres » (même jour, Paulo : « supprimer des listes des écritures »)** : bouton masqué dans les trois listes (`.sgce.ecr .sgce-par`) ;
+  « Attribuer le devis général validé » et « Configuration » restent dans l'onglet Contrôle du coût.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

@@ -2121,6 +2121,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Mutation, Document d'adjudication, Arrêté de compte, Entreprise, Ordre de paiement — encore sans dossier faute de ligne choisie) et la redessine au registre ;
   tableaux des sections : « x » des colonnes Document, PDF, Bon de paiement PDF, Annexe PDF à la facture → coche bleu nuit (`.sgce-ok`). Les listes « Facture
   d'entrepreneur » et « Autres annexes au paiement » (pièces jointes d'un paiement) ne sont pas des documents de l'app : inchangées.
+  **Mise en forme de l'onglet Documents = celle du devis général (même jour, Paulo : « faire correspondre contrôle du coût à devis général pour tous les onglets
+  documents »)** : pleine largeur (cadre du moteur à 780 / 980 px annulé), sans panneaux encadrés ; chaque document = ligne au filet noir de 2 px (titre, état
+  « Document créé · sans PDF » / « … · PDF créé : <nom> » comme `ETAT_DOC`, actions) ; « Fichiers PDF » en titre gras sous un filet noir, liste sans cadre et sans
+  hauteur fixe ; tableaux des sections (`.sgce-dgb` : bloc qui contient directement un table.g) sans cadre, 420 px au plus, et leur titre (`.sgce-dhd` : élément
+  juste avant) au même style que « Fichiers PDF ». Repérés par `decoDocs`, donc valables pour toutes les rubriques quelle que soit leur forme dans le moteur.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

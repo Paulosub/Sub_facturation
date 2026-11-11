@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 18:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 18:16 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42669,6 +42669,18 @@ const ED_CSS=`
 .sgce-dc .a .ib:hover{background:var(--s-jaune3)}
 .sgce-dc .a .ib:disabled{color:#b9b9b6;cursor:default;background:transparent}
 .sgce-dpdf{flex-wrap:wrap}
+/* onglet Documents à la mise en forme du devis général (Paulo, 11.11.2026 : « faire correspondre contrôle du coût à devis général pour tous les onglets documents ») :
+   pleine largeur, sans cadres ; chaque document = ligne (filet noir de 2 px au-dessus), « Fichiers PDF » en titre gras sous un filet noir, liste sans cadre ;
+   titre du tableau de la section au même style, tableau sans cadre */
+.sgce.docs .pane>div[style*="max-width"]{max-width:none!important;padding:0 0 16px!important;gap:0!important}
+.sgce.docs div[style*="border-radius: 6px"]{border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;margin:0 0 22px!important}
+.sgce.docs .sgce-dc{border-top:2px solid var(--s-noir);border-bottom:1px solid var(--s-filet);margin:0!important;padding:12px 0}
+.sgce.docs .sgce-dpdf{display:block!important;margin-top:14px!important}
+.sgce.docs .sgce-dpdf>span:first-child{display:block!important;border-top:2px solid var(--s-noir);padding:8px 0 8px!important;font-size:14px!important;font-weight:700!important;color:var(--s-noir)!important}
+.sgce.docs .sgce-dpdf>.sgpdf:not(.sgpdf-stock){border:0!important;height:auto!important;min-height:96px;max-height:none!important}
+.sgce.docs .sgce-dhd{display:flex!important;align-items:center;gap:8px;border-top:2px solid var(--s-noir);padding:8px 0 8px!important;margin:8px 0 0!important;font-size:14px!important;font-weight:700!important;color:var(--s-noir)!important}
+.sgce.docs .sgce-dhd>*{color:var(--s-noir)!important}
+.sgce.docs .sgce-dgb{border:0!important;height:auto!important;max-height:420px;margin-bottom:22px}
 .sgce .sgce-ok{color:var(--s-nuit,#003346);font-weight:700}
 .sgce-dpdf.reg>button.ib{display:none!important}   /* « Fichiers PDF ▾ » : même menu au clic droit sur la liste, comme le devis (11.11.2026) */
 .sgce-dpdf.reg>.sgpdf,.sgce-dpdf>.sgpdf-stock{flex:1 1 100%!important;min-width:0}
@@ -43018,6 +43030,7 @@ function habillerEd(m,id){ cssC(); cssE();
       const bOuv=document.createElement('button'); bOuv.className='ib'; bOuv.textContent='Ouvrir le PDF'; bOuv.title=pOuv?'Ouvrir « '+pOuv.NOM+' »':'Aucun PDF de ce document'; bOuv.disabled=!pOuv||typeof ch03aOuvrir!=='function';
       bOuv.onclick=()=>{ const r=pdfDoc(); if(r) ch03aOuvrir(r); };
       const L=el('div','sgce-dc','<div class="t"><b></b><span></span></div><div class="a"></div>'); L.querySelector('b').textContent=titre; L.querySelector('span').textContent=etat;
+      L.querySelector('span').textContent=etat+(typeof ch02cPdfOn!=='function'||ch02cPdfOn()?' · '+(pOuv?'PDF créé : '+pOuv.NOM:'sans PDF'):'');   /* état comme le devis : « … · sans PDF » */
       L.querySelector('.a').append(act(cree?'Ouvrir':'Créer le document',cree?'Ouvrir le document':'Créer le document à partir d’un modèle',null,dis),act('Créer le PDF','Enregistrer le document sous forme de fichier PDF','Enregistrer sous forme',dis||!pdf||pdf.dis),bOuv,
         ...(cree?[act('Renommer…','Renommer le document','Renommer',dis||!ren||ren.dis),act('Supprimer le document','Supprimer le document (les fichiers PDF déjà créés sont gardés)','Supprimer le document',dis||!sup||sup.dis)]:[]));
       [titreEl,lab,nameRow].forEach(r=>r&&r.classList.add('sgce-x2')); pdfRow.classList.add('sgce-dpdf'); P.insertBefore(L,P.firstChild); });
@@ -43025,6 +43038,10 @@ function habillerEd(m,id){ cssC(); cssE();
        ligne encore sans dossier (aucune ligne choisie) */
     pane.querySelectorAll('.sgce-dpdf').forEach(r=>{ const z=r.querySelector(':scope>.sgpdf'), M=z&&z._sgPdf; if(M&&!M.coco){ M.coco=true; if(M.redraw) M.redraw(); }
       const on=!!(M&&M.reg&&M.reg()); if(r.classList.contains('reg')!==on) r.classList.toggle('reg',on); });
+    /* titres et tableaux des sections, quelle que soit leur forme dans le moteur : tableau = bloc qui contient directement un table.g (hors listes de PDF) ;
+       titre = l'élément juste avant, s'il n'est ni un tableau ni une ligne de document */
+    pane.querySelectorAll('div').forEach(d=>{ if(d.classList.contains('sgpdf')||d.closest('.sgpdf')||!d.querySelector(':scope>table.g')) return; if(!d.classList.contains('sgce-dgb')) d.classList.add('sgce-dgb');
+      const pv=d.previousElementSibling; if(pv&&!pv.classList.contains('sgce-dhd')&&!pv.classList.contains('sgce-dgb')&&!pv.querySelector('table')&&!pv.classList.contains('sgce-dc')&&pv.textContent.trim()) pv.classList.add('sgce-dhd'); });
     /* tableaux des sections : « x » des colonnes Document / PDF / Bon de paiement PDF / Annexe PDF → coche */
     pane.querySelectorAll('table.g').forEach(t=>{ if(t.closest('.sgpdf')) return; const th=[...t.querySelectorAll('thead th')], J=th.map((x,i)=>/^(Document|PDF|Bon de paiement PDF|Annexe PDF à la facture)$/.test(x.textContent.trim())?i:-1).filter(i=>i>=0); if(!J.length) return;
       t.querySelectorAll('tbody tr').forEach(tr=>J.forEach(i=>{ const td=tr.cells[i]; if(td&&td.textContent.trim()==='x'&&!td._sgok){ td._sgok=1; td.innerHTML='<span class="sgce-ok" title="Disponible">✓</span>'; } })); }); };

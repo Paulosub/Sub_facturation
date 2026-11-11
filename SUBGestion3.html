@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 17:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 17:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42616,7 +42616,7 @@ const ED_CSS=`
 .sgce-dsub .sgce-dt{color:var(--s-gris)}
 .sgce-leg{flex:none;display:flex;align-items:center;gap:12px;font-size:11.5px;font-style:italic;margin:0 12px 0 6px;white-space:nowrap}
 .sgce.dg .sgce-bar .sgce-new,.sgce.dg .sgce-bar .sgce-sep.nw,.sgce.dg .sgce-bar .sgce-fon,.sgce.dg .sgce-bar .sgce-par{display:none!important}
-.sgce.ecr .sgce-bar .sgce-par{display:none!important}   /* Liste des écritures : sans « Paramètres » (Paulo, 11.11.2026 : « supprimer des listes des écritures ») ; devis général attribué et configuration dans l'onglet Contrôle du coût */   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
+.sgce.ecr .sgce-bar .sgce-par,.sgce.ord .sgce-bar .sgce-par{display:none!important}   /* Liste des écritures et Ordres de paiement : sans « Paramètres » (Paulo, 11.11.2026) ; devis général attribué et configuration dans l'onglet Contrôle du coût */   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
 .sgce-leg button{border:0;background:none;padding:3px 0;font:inherit;font-size:11.5px;font-style:italic;cursor:pointer;white-space:nowrap}
 .sgce-leg button:hover{text-decoration:underline}
 .sgce-bar .sgce-x{display:none}
@@ -42669,7 +42669,7 @@ const ED_CSS=`
 @media (max-height:860px){.sgce-tete .sgfh-meta{display:none}.sgce-tete .sgfh-tete{padding:6px 14px}.sgce-tete .sgfh-ini{font-size:22px}.sgce-tete .sgfh-nm h2{font-size:17px}.sgce-tete .sgfh-nm .lb{margin:0}.sgce-kp .nx-kpi{padding:6px 12px 6px 0}.sgce-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),18px);margin-top:3px}.sgce-kp .nx-kpi .s{display:none}}
 `;
 const cssE=()=>{ if(!document.getElementById('sgce-css')){ const s=document.createElement('style'); s.id='sgce-css'; s.textContent=ED_CSS; document.head.appendChild(s); } };
-const ECR=['MUTATIONS','ADJUDICATIONS','PAIEMENTS'];   /* regroupés sous l'onglet « Liste des écritures » (Paulo, 11.11.2026) */
+const ECR=['MUTATIONS','ADJUDICATIONS','PAIEMENTS','COMPTES D’ENTREPRISE'];   /* regroupés sous l'onglet « Liste des écritures » (Paulo, 11.11.2026 ; Comptes d'entreprise : « à glisser dans listes », même jour) */
 const SECS=CC_SECS.filter(s=>s!=='DOCUMENTS').sort((a,b)=>(b==='DEVIS GENERAL')-(a==='DEVIS GENERAL')), SLIB=s=>(typeof CC_SEC_LIB!=='undefined'&&CC_SEC_LIB[s])||s;
 const estCC=()=>!CCV.docs&&(CCV.sec==='CONTRÔLE DU COÛT'||CCV.sec==='DEVIS GENERAL');
 /* ═══ Onglet Devis général ▸ Imprimer ▸ « Devis général (PDF) » (11.11.2026, Paulo : « identique à devis général avec les mêmes options, vertical, etc. et calcul ») :
@@ -42879,12 +42879,12 @@ function habillerEd(m,id){ cssC(); cssE();
   niv.onclick=e=>{ const b=e.target.closest('[data-v]'); if(!b) return; ED.niv=+b.dataset.v; try{ localStorage.setItem('sg3_coco_niv',String(ED.niv)); }catch(_){} maj(); deco(); };
   const maj=()=>{ const actif=CCV.docs||CCV.sec==='DOCUMENTS'?'DOCUMENTS':CCV.sec, sub=CCV.docs?CCV.sec:'fichiers'; if(actif==='DOCUMENTS') ED.sub=sub;
     if(ECR.includes(actif)) ED.ecr=actif;
-    ongL.innerHTML=SECS.filter(s=>!ECR.includes(s)||s===ECR[0]).map(s=>ECR.includes(s)?'<button data-s="ECRITURES" class="'+(ECR.includes(actif)?'on':'')+'" title="Mutations, adjudications (contrats et avenants) et paiements">Liste des écritures</button>':'<button data-s="'+E(s)+'" class="'+(actif===s?'on':'')+'">'+E(SLIB(s))+'</button>').join('')+'<span class="sgce-osep"></span><button data-s="DOCUMENTS" class="'+(actif==='DOCUMENTS'?'on':'')+'" title="Fichiers déposés et documents de chaque section">Documents</button>';
+    ongL.innerHTML=SECS.filter(s=>!ECR.includes(s)||s===ECR[0]).map(s=>ECR.includes(s)?'<button data-s="ECRITURES" class="'+(ECR.includes(actif)?'on':'')+'" title="Mutations, adjudications (contrats et avenants), paiements et comptes d’entreprise">Liste des écritures</button>':'<button data-s="'+E(s)+'" class="'+(actif===s?'on':'')+'">'+E(SLIB(s))+'</button>').join('')+'<span class="sgce-osep"></span><button data-s="DOCUMENTS" class="'+(actif==='DOCUMENTS'?'on':'')+'" title="Fichiers déposés et documents de chaque section">Documents</button>';
     esub.innerHTML='<span class="sgce-dt">Liste des écritures</span>'+ECR.map(k=>'<button data-e="'+E(k)+'" class="'+(actif===k?'on':'')+'">'+E(SLIB(k))+'</button>').join('');
     dsub.innerHTML='<span class="sgce-dt">Documents</span>'+[['fichiers','Fichiers déposés'],...SECS.filter(s=>docIt[s]).map(s=>[s,SLIB(s)])].map(([k,t])=>'<button data-d="'+E(k)+'" class="'+(sub===k&&actif==='DOCUMENTS'?'on':'')+'">'+E(t)+'</button>').join('');
     niv.innerHTML='<span title="Niveau de CFC affiché">CFC</span>'+[[0,'Tout','Tous les CFC'],[3,'3','CFC de 1 à 3 chiffres'],[2,'2','CFC de 1 et 2 chiffres'],[1,'1','CFC à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(ED.niv===v?'on':'')+'">'+t+'</button>').join('');
     (actif==='DOCUMENTS'?dsub:bar2).append(bPlein);   /* Documents : la barre d'outils laisse la place au choix des documents, le bouton du plein écran passe à sa droite */
-    box.classList.toggle('docs',actif==='DOCUMENTS'); box.classList.toggle('cc',estCC()); box.classList.toggle('det',CCV.sec==='CONTRÔLE DU COÛT'&&!CCV.docs&&!!CCV.det); box.classList.toggle('dg',CCV.sec==='DEVIS GENERAL'&&!CCV.docs); box.classList.toggle('ecr',ECR.includes(actif)); };
+    box.classList.toggle('docs',actif==='DOCUMENTS'); box.classList.toggle('cc',estCC()); box.classList.toggle('det',CCV.sec==='CONTRÔLE DU COÛT'&&!CCV.docs&&!!CCV.det); box.classList.toggle('dg',CCV.sec==='DEVIS GENERAL'&&!CCV.docs); box.classList.toggle('ecr',ECR.includes(actif)); box.classList.toggle('ord',actif==='ORDRES DE PAIEMENT'); };
   /* bandeau et chiffres, à chaque dessin du moteur */
   hd.onclick=e=>{ if(e.target.closest('[data-a="liste"]')) fermer(); };
   const entete=()=>{ const d=doc(), p=DS.get('project',d.PROJECT_ID)||{}, mo=moT(p), et=ETATS[d.STATECODE]||'', g=totaux(d)||{};
@@ -42955,7 +42955,7 @@ function habillerEd(m,id){ cssC(); cssE();
   pane.addEventListener('contextmenu',e=>{ if(e.defaultPrevented||e.altKey||String(getSelection()).trim()||CCV.docs||CCV.sec==='DOCUMENTS') return;
     const tr=e.target.closest&&e.target.closest('table.g tbody tr[data-k]'); if(!tr||!pane.contains(tr)) return; e.preventDefault(); tr.click();
     if(CCV.sec==='DEVIS GENERAL') return;   /* Devis général : affiché seulement, aucun menu d'écriture (Paulo, 11.11.2026) */
-    const ecr=!estCC()||tr.dataset.k.split('|').length>=3;   /* Contrôle du coût : seules les lignes de détail sont des écritures */
+    const ecr=CCV.sec!=='COMPTES D’ENTREPRISE'&&(!estCC()||tr.dataset.k.split('|').length>=3);   /* comptes d'entreprise : une ligne = une entreprise, pas une écriture */   /* Contrôle du coût : seules les lignes de détail sont des écritures */
     sgMenuAt(e.clientX,e.clientY,[...(ecr?[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',danger:true,fn:()=>bDel.click()},'-']:[]),{t:'Nouvelle écriture',sub:()=>nouv(bNew._sgB.menu())}],tr); });
   pane.tabIndex=-1;
   pane.addEventListener('keydown',e=>{ if(e.target.closest('input,textarea,select,[contenteditable]')) return;

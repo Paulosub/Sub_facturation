@@ -138,7 +138,9 @@ const ED_CSS=`
 .sgce-ong>.sgce-niv{flex:none;margin:0 0 0 auto}   /* CFC Tout · 3 · 2 · 1 à droite des onglets, comme le devis (11.11.2026) */
 .sgce-dgv.sgde{display:block;height:auto;overflow:visible;flex:none;background:transparent}
 .sgce-dgv>.pane{overflow:visible;height:auto}
-.sgce.docs>.sgce-bar,.sgce:not(.docs)>.sgce-dsub{display:none}
+.sgce.docs>.sgce-bar,.sgce:not(.docs)>.sgce-dsub,.sgce:not(.ecr)>.sgce-esub{display:none}
+.sgce-esub{flex:none;margin:0 24px;padding:9px 0 0;flex-wrap:wrap;gap:6px 16px}
+.sgce-esub .sgce-dt{color:var(--s-gris)}   /* Liste des écritures : Mutations · Adjudications · Paiements (11.11.2026) */
 .sgce-dsub .sgce-pl{margin-left:auto}
 .sgce>.cols{flex:1 1 auto;min-height:0;padding:0 24px 12px;gap:0}
 .sgce>.cols>.col:first-child{display:none!important}
@@ -174,6 +176,7 @@ const ED_CSS=`
 @media (max-height:860px){.sgce-tete .sgfh-meta{display:none}.sgce-tete .sgfh-tete{padding:6px 14px}.sgce-tete .sgfh-ini{font-size:22px}.sgce-tete .sgfh-nm h2{font-size:17px}.sgce-tete .sgfh-nm .lb{margin:0}.sgce-kp .nx-kpi{padding:6px 12px 6px 0}.sgce-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),18px);margin-top:3px}.sgce-kp .nx-kpi .s{display:none}}
 `;
 const cssE=()=>{ if(!document.getElementById('sgce-css')){ const s=document.createElement('style'); s.id='sgce-css'; s.textContent=ED_CSS; document.head.appendChild(s); } };
+const ECR=['MUTATIONS','ADJUDICATIONS','PAIEMENTS'];   /* regroupés sous l'onglet « Liste des écritures » (Paulo, 11.11.2026) */
 const SECS=CC_SECS.filter(s=>s!=='DOCUMENTS').sort((a,b)=>(b==='DEVIS GENERAL')-(a==='DEVIS GENERAL')), SLIB=s=>(typeof CC_SEC_LIB!=='undefined'&&CC_SEC_LIB[s])||s;
 const estCC=()=>!CCV.docs&&(CCV.sec==='CONTRÔLE DU COÛT'||CCV.sec==='DEVIS GENERAL');
 /* ═══ Onglet Devis général ▸ Imprimer ▸ « Devis général (PDF) » (11.11.2026, Paulo : « identique à devis général avec les mêmes options, vertical, etc. et calcul ») :
@@ -217,7 +220,7 @@ function habillerEd(m,id){ cssC(); cssE();
   if(CC_SECS.some(s=>!secIt[s])) return;
   CCV.only3=false;   /* remplacé par le choix CFC Tout · 3 · 2 · 1 */
   const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.innerHTML=x; return e; };
-  const box=el('div','sgce'), hd=el('div','sgce-tete'), kp=el('div','nx-kpis sgce-kp'), ong=el('div','sgce-ong'), ongL=el('div','sg-onglets'), bar2=el('div','ph2 sgce-bar'), dsub=el('div','sgce-niv sgce-dsub'), niv=el('div','sgce-niv');
+  const box=el('div','sgce'), hd=el('div','sgce-tete'), kp=el('div','nx-kpis sgce-kp'), ong=el('div','sgce-ong'), ongL=el('div','sg-onglets'), esub=el('div','sgce-niv sgce-esub'), bar2=el('div','ph2 sgce-bar'), dsub=el('div','sgce-niv sgce-dsub'), niv=el('div','sgce-niv');
   const sep=c=>el('span','sgce-sep'+(c?' '+c:'')), fin=el('span','sgce-fin');
   const doc=()=>DS.get('costcontroldocument',id)||{};
   const fermer=()=>{ const pid=doc().PROJECT_ID; CCV.open=null; if(ED.plein) box._plein(false);
@@ -244,15 +247,18 @@ function habillerEd(m,id){ cssC(); cssE();
   bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */
   const docs=k=>{ ED.sub=k; if(k==='fichiers') secIt.DOCUMENTS.click(); else if(docIt[k]) docIt[k].click(); maj(); };
-  ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b) return; if(b.dataset.s==='DOCUMENTS') docs(ED.sub||'fichiers'); else { secIt[b.dataset.s].click(); maj(); } };
+  ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b) return; if(b.dataset.s==='DOCUMENTS') docs(ED.sub||'fichiers'); else if(b.dataset.s==='ECRITURES'){ secIt[ED.ecr||ECR[0]].click(); maj(); } else { secIt[b.dataset.s].click(); maj(); } };
+  esub.onclick=e=>{ const b=e.target.closest('[data-e]'); if(!b||!secIt[b.dataset.e]) return; ED.ecr=b.dataset.e; secIt[ED.ecr].click(); maj(); };
   dsub.onclick=e=>{ const b=e.target.closest('[data-d]'); if(b) docs(b.dataset.d); };
   niv.onclick=e=>{ const b=e.target.closest('[data-v]'); if(!b) return; ED.niv=+b.dataset.v; try{ localStorage.setItem('sg3_coco_niv',String(ED.niv)); }catch(_){} maj(); deco(); };
   const maj=()=>{ const actif=CCV.docs||CCV.sec==='DOCUMENTS'?'DOCUMENTS':CCV.sec, sub=CCV.docs?CCV.sec:'fichiers'; if(actif==='DOCUMENTS') ED.sub=sub;
-    ongL.innerHTML=SECS.map(s=>'<button data-s="'+E(s)+'" class="'+(actif===s?'on':'')+'">'+E(SLIB(s))+'</button>').join('')+'<span class="sgce-osep"></span><button data-s="DOCUMENTS" class="'+(actif==='DOCUMENTS'?'on':'')+'" title="Fichiers déposés et documents de chaque section">Documents</button>';
+    if(ECR.includes(actif)) ED.ecr=actif;
+    ongL.innerHTML=SECS.filter(s=>!ECR.includes(s)||s===ECR[0]).map(s=>ECR.includes(s)?'<button data-s="ECRITURES" class="'+(ECR.includes(actif)?'on':'')+'" title="Mutations, adjudications (contrats et avenants) et paiements">Liste des écritures</button>':'<button data-s="'+E(s)+'" class="'+(actif===s?'on':'')+'">'+E(SLIB(s))+'</button>').join('')+'<span class="sgce-osep"></span><button data-s="DOCUMENTS" class="'+(actif==='DOCUMENTS'?'on':'')+'" title="Fichiers déposés et documents de chaque section">Documents</button>';
+    esub.innerHTML='<span class="sgce-dt">Liste des écritures</span>'+ECR.map(k=>'<button data-e="'+E(k)+'" class="'+(actif===k?'on':'')+'">'+E(SLIB(k))+'</button>').join('');
     dsub.innerHTML='<span class="sgce-dt">Documents</span>'+[['fichiers','Fichiers déposés'],...SECS.filter(s=>docIt[s]).map(s=>[s,SLIB(s)])].map(([k,t])=>'<button data-d="'+E(k)+'" class="'+(sub===k&&actif==='DOCUMENTS'?'on':'')+'">'+E(t)+'</button>').join('');
     niv.innerHTML='<span title="Niveau de CFC affiché">CFC</span>'+[[0,'Tout','Tous les CFC'],[3,'3','CFC de 1 à 3 chiffres'],[2,'2','CFC de 1 et 2 chiffres'],[1,'1','CFC à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(ED.niv===v?'on':'')+'">'+t+'</button>').join('');
     (actif==='DOCUMENTS'?dsub:bar2).append(bPlein);   /* Documents : la barre d'outils laisse la place au choix des documents, le bouton du plein écran passe à sa droite */
-    box.classList.toggle('docs',actif==='DOCUMENTS'); box.classList.toggle('cc',estCC()); box.classList.toggle('det',CCV.sec==='CONTRÔLE DU COÛT'&&!CCV.docs&&!!CCV.det); box.classList.toggle('dg',CCV.sec==='DEVIS GENERAL'&&!CCV.docs); };
+    box.classList.toggle('docs',actif==='DOCUMENTS'); box.classList.toggle('cc',estCC()); box.classList.toggle('det',CCV.sec==='CONTRÔLE DU COÛT'&&!CCV.docs&&!!CCV.det); box.classList.toggle('dg',CCV.sec==='DEVIS GENERAL'&&!CCV.docs); box.classList.toggle('ecr',ECR.includes(actif)); };
   /* bandeau et chiffres, à chaque dessin du moteur */
   hd.onclick=e=>{ if(e.target.closest('[data-a="liste"]')) fermer(); };
   const entete=()=>{ const d=doc(), p=DS.get('project',d.PROJECT_ID)||{}, mo=moT(p), et=ETATS[d.STATECODE]||'', g=totaux(d)||{};
@@ -330,7 +336,7 @@ function habillerEd(m,id){ cssC(); cssE();
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){ const L=[...pane.querySelectorAll(':scope>table.g>tbody>tr:not(.sgce-cache)')], i=L.findIndex(t=>t.classList.contains('on')), n=L[i<0?0:i+(e.key==='ArrowDown'?1:-1)]; if(n){ e.preventDefault(); n.click(); n.scrollIntoView({block:'nearest'}); } }
     else if(e.key==='Enter'){ const t=pane.querySelector(':scope>table.g>tbody>tr.on'); if(t){ e.preventDefault(); t.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); } } });
   const ouvertA=performance.now(); box.addEventListener('dblclick',e=>{ if(performance.now()-ouvertA<450){ e.stopPropagation(); e.preventDefault(); } },true);   /* le 2e clic d'un double-clic d'habitude sur la liste n'ouvre pas une écriture */
-  ong.append(ongL,niv); box.append(hd,kp,ong,bar2,dsub,body); m.replaceChildren(box); box._plein(ED.plein);   /* plein écran gardé d'un contrôle des coûts à l'autre pendant la séance */
+  ong.append(ongL,niv); box.append(hd,kp,ong,esub,bar2,dsub,body); m.replaceChildren(box); box._plein(ED.plein);   /* plein écran gardé d'un contrôle des coûts à l'autre pendant la séance */
   maj(); entete(); deco(); decoDocs(); }
 { const e0=ccEditor; ccEditor=function(m,id){ e0.apply(this,arguments); try{ habillerEd(m,id); }catch(e){ console.error(e); } }; }
 Object.assign(SGCC,{COCO,totaux});

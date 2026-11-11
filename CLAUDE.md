@@ -2034,6 +2034,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `sg3_coco_dgv`, sinon la présentation enregistrée dans le devis ; rien n'est écrit (pas de double-clic de calcul ; `deco` de sg3_devis.js ne pose plus le « montant
   saisi » quand `X.sgde.ro`). Sans devis d'origine : tableau du moteur (montants du contrôle). **CFC Tout · 3 · 2 · 1 à droite de la ligne des onglets**, comme le devis
   (`ong.append(ongL,niv)`), pour l'onglet Contrôle du coût comme pour Devis général (masqué ailleurs).
+  **Onglet « Liste des écritures » (11.11.2026, Paulo : « regrouper [Mutations, Adjudications, Paiements] dans une liste qui s'appelle liste des écritures », choix : un
+  onglet, trois sous-listes)** : un seul onglet à la place des trois (`ECR`), puis la ligne « Liste des écritures · Mutations · Adjudications · Paiements » (`esub`,
+  comme le choix des documents) ; chaque liste garde ses colonnes, totaux et fonctions ; l'onglet rouvre la dernière sous-liste choisie (`ED.ecr`).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

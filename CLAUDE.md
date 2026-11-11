@@ -2018,6 +2018,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût
   (sections Contrôle du coût et Devis général) et sur le tableau des positions du devis (`ch02aDraw`, toutes les présentations ; avant, seulement « avec le calcul de
   prix »). Les listes (mutations, adjudications, paiements…) gardent leur tri. Copie d'avant : `DeltaSub_backup_20261110_1840_avant_tri_fixe.html`.
+  **Signe des écritures « > » (11.11.2026, Paulo : « remplacer - par > »)** : à l'écran, les lignes d'écriture du tableau CFC (contrats, situations,
+  paiements, mutations, provisions) commencent par « > » comme dans l'ancien logiciel (« >Contrat 10.02.25[5] »), au lieu de « - » (DeltaSub.html, lignes
+  `ent:'>'+d.txt` du tableau du contrôle du coût ; v1, v2, v3 reconstruites). Les documents PDF gardent leurs règles (signe retiré).
   **Fenêtres des écritures = proposition B « Tableur » (10.11.2026, bloc 51, `subgestion3/sg3_ecritures.js`, concaténé après `sg3_coco.js` ; Paulo : « proposer un
   autre graphisme pour correspondre à la section devis, fais 5 propositions » — paiement, situation sur contrat, mutation —, puis « version B » ; maquettes A étapes,
   B tableur, C décompte, D rubriques, E chiffres et onglets : `subgestion3/_backup_20261110_maquette_ecritures/`)** : `ccPayment` (situation, paiement hors contrat),

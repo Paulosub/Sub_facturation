@@ -2072,6 +2072,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Attribuer le devis général validé » et « Configuration » restent dans l'onglet Contrôle du coût.
   Même jour (« supprimer du menu Fonctions, garder dans le bouton de droite ») : dans les trois listes, « Fonctions » = copier, exporter CSV, enregistrer ;
   « Éditer l'écriture » et « Supprimer l'écriture… » seulement au clic droit sur une ligne (et double-clic = éditer). Contrôle du coût : Fonctions inchangé.
+  **Rapport des paiements ▸ « Récapitulatif de la TVA » visible (même jour, Paulo : « l'activation de ce bouton ne fait rien »)** : le moteur ajoutait les lignes
+  « Total TVA x % » après le « Total » du tableau des paiements, en dernière page (rien ne changeait à l'écran ouvert) ; `listeOctets` les place sur la page du
+  récapitulatif, sous « Total paiements » : intertitre « Récapitulatif de la TVA », puis une ligne « TVA x % » par taux (CHF, HT, TVA, TTC ; `ch01dVat` sur les
+  paiements filtrés) ; retirées du tableau des paiements seulement une fois placées.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

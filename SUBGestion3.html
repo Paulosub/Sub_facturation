@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 16:05 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 16:56 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -43791,8 +43791,17 @@ async function listeOctets(o,rec,R0){ const id=/\/\*sgimp:([a-z0-9]+)\*\//.exec(
      dans la marge (x 85.04, largeur du devis général), textes dès la 2e colonne du pied (x 125.72, « info@… ») ; tableau sans n° de CFC (totaux) : 1re colonne vide */
   const dg=LISTES_DG.has(sv(o.type)), L0=SGDE.livret, geo=dg?{x0:L0.DG_X0T,W:ori==='portrait'?L0.DG_WP:L0.DG_WL}:null;
   const W=geo?geo.W:ori==='portrait'?DG_WP:DG_WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), pages=[];
+  const TVA=(()=>{ const C=o.E.C; if(sv(o.type)!=='costControlPaymentList'||typeof ch01dOpt!=='function'||typeof ch01dVat!=='function'||!C||!ch01dOpt(C).recapTVA) return null;
+    const cfg=!!(C.parametres||{}).arrondir, cur=(o.E.p&&o.E.p.CURRENCY)||'CHF', V=x=>typeof ch01aV==='function'?ch01aV(x,cfg):num(x), J=t=>typeof ch01aJd==='function'?ch01aJd(t):String(t);
+    return ch01dVat(ch01dList(C),cfg).slice().sort((a,b)=>a.taux-b.taux).map(m=>({t:J(m.taux),cur,ht:V(m.ht),tva:V(m.tva),ttc:V(m.ttc)})); })();
   (P.rep.sections||[]).filter(s=>s&&s.isVisible!==false).forEach(sec=>(sec.bands||[]).forEach(b=>{ if(!b||b.isH||b.class!=='TableBand'||!b._sgk) return; const T=job.T[b._sgk]; if(!T||!(T.rows||[]).length) return;
     let rows=T.rows.map(r=>{ const c=r.fuse?[sv(r.c[0])]:r.c.map(sv), s=r.st==='tt'||r.st==='ct'?'T':(r.st==='c2'||r.gras)?'W':'S'; return {c,s}; }), TC=T.cols;
+    if(TVA){ /* récapitulatif de la TVA (Paulo, 11.11.2026 : « l'activation de ce bouton ne fait rien ») : le moteur l'ajoute après le « Total » du tableau des paiements,
+         en dernière page ; il est placé sur la page du récapitulatif, sous « Total paiements », avec son titre */
+      const iT=rows.map(r=>r.s).lastIndexOf('T');
+      if(TVA.fait!=null&&iT>=0&&rows.slice(iT+1).some(r=>/^Total TVA /.test(r.c.join('').trim()))) rows=rows.filter((r,i)=>!(i>iT&&/^Total TVA /.test(r.c.join('').trim())));
+      else if(iT>=0&&/^Total paiements$/.test(sv(rows[iT].c[0]).trim())&&rows[iT].c.length===5){ const n=TVA.length;
+        rows.push({c:['Récapitulatif de la TVA','','','',''],s:'W'},...TVA.map(m=>({c:['TVA '+m.t+' %',m.cur,m.ht,m.tva,m.ttc],s:'S'}))); TVA.fait=n; } }
     if(dg){ const n0=rows.filter(r=>r.c.length>1&&r.s!=='T').map(r=>r.c[0].trim()).filter(Boolean);
       if(!(n0.length&&n0.every(x=>/^\d[\d.]*[a-z]?$/i.test(x)))){ TC=[{titre:''},...T.cols]; rows=rows.map(r=>r.c.length>1?Object.assign({},r,{c:['',...r.c]}):r); } }
     /* largeurs d'après le contenu (les largeurs du modèle de l'ancien logiciel coupaient les titres) : nombres et dates à leur largeur, textes jusqu'à 220 pt (à la

@@ -218,8 +218,8 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
 const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',nomDefaut:'Liste des mutations',label:'Liste des mutations',job:(E,rep)=>ch01bMutListJob(E,rep)},
   ADJUDICATIONS:{dossier:'award',type:'costControlAwardList',nomDefaut:'Liste des adjudications',label:'Contrats et avenants',job:(E,rep)=>ch01bAwardListJob(E,rep)},
   PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Rapport des paiements',label:'Rapport des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
-async function imprimerComptes(){ const K=CCV.cur||{}; if(!K.C) return; try{ const p=K.p||{}, oct=await SGCD.comptesOctets({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'COMPTES D’ENTREPRISE',touch:K.touch||(()=>{})});
-    sgVisionneuse(new Blob([oct],{type:'application/pdf'}),[p.NUMBER,'Comptes d’entreprise'].filter(Boolean).join(' ')+'.pdf',{titre:'Comptes d’entreprise'}); }
+async function imprimerComptes(){ const K=CCV.cur||{}; if(!K.C) return; try{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
+    SGCD.comptesVue({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'COMPTES D’ENTREPRISE',touch:K.touch||(()=>{})}); }   /* fenêtre des documents, volet Réglages à droite (11.11.2026) */
   catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
 async function ouvrirListe(sec){ const L=LISTE_DOC[sec], K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
   try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}

@@ -2136,7 +2136,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   les autres documents comme adjudications »)** : le moteur n'a pas de document pour cette liste ; `comptesOctets(E)` (`sg3_coco_docs.js`, `SGCD.comptesOctets`) fait le
   PDF au graphisme des listes (`sortie` : page de garde, en-tête, tableau bleu nuit, paysage ; texte dès x 125.72, bord droit sur la barre) — colonnes de l'écran
   (Entreprise, Contrats, Avenants, Contrats + avenants, Paiements, Contrat − paiements sur contrat, TTC), entreprises par nom, total en pied ; ouvert dans la
-  visionneuse de l'app (`imprimerComptes`, `sgVisionneuse` : Imprimer, Télécharger), sans volet de réglages. ⚠ `num` de `sg3_coco_docs.js` lit un nombre : formater
+  fenêtre des documents (même jour, « ajouter la fenêtre d'option à droite » : `SGCD.comptesVue`, `SGDE.vue` avec un dialogue du moteur et un faux cadre — lecteur,
+  Imprimer, PDF = téléchargement, volet Réglages Format Paysage / Portrait et Page de garde, enregistrés dans la fiche `cocodoc` <id>/entrepreneur-liste, sans document
+  du moteur ; type `costControlEntrepreneurList` ajouté à `LISTES`). ⚠ `num` de `sg3_coco_docs.js` lit un nombre : formater
   avec `window.num` (moteur).
   Sans colonne CFC (même jour, « supprimer l'élément qui dépasse ») : tableau et bande bleu nuit dès x 125.72 (`geo.x0 = DG_X0T + DG_CFC`), plus de colonne vide dans la marge.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer

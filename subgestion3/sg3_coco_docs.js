@@ -32,7 +32,7 @@ const LISTES_DG=new Set(['costControlAwardList','costControlMutationsList','cost
 /* n° de CFC toujours imprimé dans les listes des mutations et des adjudications (11.11.2026), même si la présentation favorite n'a pas la colonne CFC (n° 0),
    comme la colonne CFC toujours première du tableau du contrôle du coût */
 if(typeof ch01bIds==='function'){ const i0=ch01bIds; ch01bIds=function(C,cle){ const L=i0.apply(this,arguments); return Array.isArray(L)&&(cle==='mutations'||cle==='adjudications')&&!L.includes(0)?[0,...L]:L; }; }
-const LISTES=new Set(['costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
+const LISTES=new Set(['costControlEntrepreneurList','costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
 const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':''; };
 const LIMB={paysage:595.276-85.9,portrait:841.89-89.245};   /* bas de l'encre du logo (comme le devis général) */
 
@@ -399,8 +399,9 @@ ch01aOpen=function(o){ const D=o0.apply(this,arguments); if(D&&D.bd&&o&&o.E) try
 /* Comptes d'entreprise ▸ Imprimer (11.11.2026, Paulo : « impression de la liste des comptes des entreprises, même design que pour les autres documents comme
    adjudications ») : le moteur n'a pas de document « liste des comptes d'entreprise » ; PDF fait ici au graphisme des listes (page de garde, tableau bleu nuit,
    texte dès la colonne « info@ » du pied, paysage), mêmes colonnes et mêmes montants que le tableau de l'écran, total en pied */
-async function comptesOctets(E){ const C=E.C, M=await mesure(), L0=SGDE.livret, ori='paysage', geo={x0:L0.DG_X0T+DG_CFC,W:L0.DG_WL-DG_CFC}, W=geo.W,   /* pas de colonne CFC : le tableau commence à la colonne « info@ » (x 125.72), rien ne dépasse à gauche (Paulo, 11.11.2026) */
-    cap=Math.max(1,Math.floor(DG_HT/DG_RH));
+const COMPTES_O=E=>({E,type:'costControlEntrepreneurList',dossier:'entrepreneur-liste',label:'Comptes d’entreprise',nomDefaut:'Comptes d’entreprise'});   /* réglages : cocodoc <id>/entrepreneur-liste (options.sgPdf), sans document du moteur */
+async function comptesOctets(E){ const o=COMPTES_O(E), C=E.C, M=await mesure(), L0=SGDE.livret, ori=optsDe(o).format==='portrait'?'portrait':'paysage', geo={x0:L0.DG_X0T+DG_CFC,W:(ori==='portrait'?L0.DG_WP:L0.DG_WL)-DG_CFC}, W=geo.W,   /* pas de colonne CFC : le tableau commence à la colonne « info@ » (x 125.72), rien ne dépasse à gauche (Paulo, 11.11.2026) */
+    cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH));
   const ents=[...new Set([...(C.contrats||[]).map(c=>c.contactId),...(C.paiements||[]).map(x=>x.contactId)])].filter(x=>x!=null).sort((a,b)=>sv(ccEntName(C,a)).localeCompare(sv(ccEntName(C,b)),'fr'));
   const ctrN=(e,t)=>(C.contrats||[]).filter(c=>c.contactId===e&&c.type===t).reduce((a,c)=>a+docNet(c),0), payN=(e,surC)=>(C.paiements||[]).filter(x=>x.contactId===e&&(!surC||x.contratId)).reduce((a,x)=>a+docNet(x),0);
   const F=x=>window.num(Math.round(x*100)/100);   /* num du moteur (le num de ce bloc lit un nombre) */
@@ -411,7 +412,20 @@ async function comptesOctets(E){ const C=E.C, M=await mesure(), L0=SGDE.livret, 
   const wn=tit.map((t,j)=>j<1?0:Math.max(M.larg(t,true),...rows.map(r=>M.larg(sv(r.c[j]),r.s!=='S')))+10), sn=wn.reduce((a,b)=>a+b,0);
   const cols=tit.map((t,j)=>({t,w:j===0?Math.max(120,W-sn):wn[j],r:j>=1}));
   const tot=cols.reduce((a,c)=>a+c.w,0); if(tot>W){ const f=(W-cols[0].w)/(tot-cols[0].w); cols.forEach((c,j)=>{ if(j>=1) c.w*=f; }); }
-  const o={E,type:'costControlEntrepreneurList',dossier:'entrepreneur',label:'Comptes d’entreprise',nomDefaut:'Comptes d’entreprise'}, rec={doc:{nom:'Comptes d’entreprise'}};
+  const rec={doc:{nom:'Comptes d’entreprise'}};
   const pages=paginer(etaler(rows,cols,M),cols,cap,'Comptes d’entreprise',2,{}); return sortie(o,rec,pages,ori,'liste',geo); }
-window.SGCD={comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+/* fenêtre des documents (SGDE.vue) pour la liste des comptes d'entreprise (Paulo, 11.11.2026 : « ajouter la fenêtre d'option à droite ») : lecteur, Imprimer, PDF
+   (téléchargement), volet Réglages (Format, Page de garde) enregistrés dans le contrôle des coûts (cocodoc <id>/entrepreneur-liste) */
+function comptesVue(E){ const o=COMPTES_O(E), doc=DS.get('costcontroldocument',E.id)||{}, p=E.p||{}; let dernier=null;
+  const dg=dialog({title:'Comptes d’entreprise',body:h('div'),buttons:[]}), ifr={};
+  const D={bd:dg.bd,iframe:ifr,close:dg.close,maj:r=>{ try{ if(ifr._sgVuePrep) ifr._sgVuePrep(); }catch(_){}
+    return Promise.resolve(r).then(oct=>{ dernier=oct; if(ifr._sgVue) ifr._sgVue(new Blob([oct],{type:'application/pdf'})); },e=>{ console.error(e); if(ifr._sgVueErr) ifr._sgVueErr(e); }); }};
+  const nomF=()=>[p.NUMBER,'Comptes d’entreprise'].filter(Boolean).join(' ')+'.pdf';
+  const tel=()=>{ if(!dernier) return; const u=URL.createObjectURL(new Blob([dernier],{type:'application/pdf'})), a=document.createElement('a'); a.href=u; a.download=nomF(); document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); };
+  const peut=()=>{ try{ return ecrit(); }catch(_){ return true; } };
+  SGDE.vue(D,{p,lb:'Contrôle des coûts · Documents',titre:'Comptes d’entreprise',etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>comptesOctets(E),
+    pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
+    actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
+  D.maj(comptesOctets(E)); }
+window.SGCD={comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();

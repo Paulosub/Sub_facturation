@@ -129,7 +129,7 @@ const ED_CSS=`
 .sgce-dsub .sgce-dt{color:var(--s-gris)}
 .sgce-leg{flex:none;display:flex;align-items:center;gap:12px;font-size:11.5px;font-style:italic;margin:0 12px 0 6px;white-space:nowrap}
 .sgce.dg .sgce-bar .sgce-new,.sgce.dg .sgce-bar .sgce-sep.nw,.sgce.dg .sgce-bar .sgce-fon,.sgce.dg .sgce-bar .sgce-par{display:none!important}
-.sgce.ecr .sgce-bar .sgce-par,.sgce.ord .sgce-bar .sgce-par{display:none!important}   /* Liste des écritures et Ordres de paiement : sans « Paramètres » (Paulo, 11.11.2026) ; devis général attribué et configuration dans l'onglet Contrôle du coût */   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
+.sgce.ecr .sgce-bar .sgce-par,.sgce.ord .sgce-bar .sgce-par,.sgce.ecr .sgce-bar .sgce-new,.sgce.ecr .sgce-bar .sgce-sep.nw{display:none!important}   /* Liste des écritures et Ordres de paiement : sans « Paramètres » ; listes des écritures aussi sans « Nouvelle écriture » (Paulo, 11.11.2026 : « supprimer » ; les écritures se créent dans l'onglet Contrôle du coût) ; devis général attribué et configuration dans l'onglet Contrôle du coût */   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
 .sgce-leg button{border:0;background:none;padding:3px 0;font:inherit;font-size:11.5px;font-style:italic;cursor:pointer;white-space:nowrap}
 .sgce-leg button:hover{text-decoration:underline}
 .sgce-bar .sgce-x{display:none}

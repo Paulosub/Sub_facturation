@@ -2095,6 +2095,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   onglet Contrôle du coût : clic droit inchangé (Nouvelle écriture sur une position).
   Ligne des listes sans le libellé « Liste des écritures » (même jour, « supprimer texte »), alignée sur les onglets ; ordre (même jour, signe d'interversion) :
   Mutations, Paiements, Adjudications, Comptes d'entreprise (`ECR`).
+  Listes des écritures sans « Nouvelle écriture » (même jour, « supprimer ») : barre = Présentation, Imprimer, Fonctions ; les écritures se créent dans l'onglet
+  Contrôle du coût (le filtre `NOUV` du menu reste en place, sans effet visible).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

@@ -2107,6 +2107,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Données du contrôle des coûts : `C.listePresentations` = {mutations|paiements|adjudications: [{nom, cols, recap}]}, `C.listePresActive` = {clé: nom}
   (`lpL`, `lpSetCols`, `lpAppliquer`, `lpEnregistrer`, `lpGerer`, `lpRecuperer`). Libellés écrits « projet » (sgLib change « affaire » en « projet » et donnait
   « une autre projet »). Essai 99TST : enregistrer, appliquer, Standard, renommer, reprendre de 20MMA ; données d'essai retirées.
+  Onglet Documents : ligne des documents sans le libellé « Documents » (même jour, « supprimer texte ») ; « Fichiers déposés » en tête, aligné sur les onglets.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

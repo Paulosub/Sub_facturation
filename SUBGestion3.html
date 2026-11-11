@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 17:43 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 17:45 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42939,7 +42939,7 @@ function habillerEd(m,id){ cssC(); cssE();
     if(ECR.includes(actif)) ED.ecr=actif;
     ongL.innerHTML=[...SECS.filter(s=>!ECR.includes(s)),ECR[0]].map(s=>ECR.includes(s)?'<button data-s="ECRITURES" class="'+(ECR.includes(actif)?'on':'')+'" title="Mutations, adjudications (contrats et avenants), paiements et comptes d’entreprise">Liste des écritures</button>':'<button data-s="'+E(s)+'" class="'+(actif===s?'on':'')+'">'+E(SLIB(s))+'</button>').join('')+'<span class="sgce-osep"></span><button data-s="DOCUMENTS" class="'+(actif==='DOCUMENTS'?'on':'')+'" title="Fichiers déposés et documents de chaque section">Documents</button>';
     esub.innerHTML=ECR.map(k=>'<button data-e="'+E(k)+'" class="'+(actif===k?'on':'')+'">'+E(SLIB(k))+'</button>').join('');
-    dsub.innerHTML='<span class="sgce-dt">Documents</span>'+[['fichiers','Fichiers déposés'],...SECS.filter(s=>docIt[s]).map(s=>[s,SLIB(s)])].map(([k,t])=>'<button data-d="'+E(k)+'" class="'+(sub===k&&actif==='DOCUMENTS'?'on':'')+'">'+E(t)+'</button>').join('');
+    dsub.innerHTML=[['fichiers','Fichiers déposés'],...SECS.filter(s=>docIt[s]).map(s=>[s,SLIB(s)])].map(([k,t])=>'<button data-d="'+E(k)+'" class="'+(sub===k&&actif==='DOCUMENTS'?'on':'')+'">'+E(t)+'</button>').join('');
     niv.innerHTML='<span title="Niveau de CFC affiché">CFC</span>'+[[0,'Tout','Tous les CFC'],[3,'3','CFC de 1 à 3 chiffres'],[2,'2','CFC de 1 et 2 chiffres'],[1,'1','CFC à 1 chiffre']].map(([v,t,ti])=>'<button data-v="'+v+'" title="'+E(ti)+'" aria-label="'+E(ti)+'" class="'+(ED.niv===v?'on':'')+'">'+t+'</button>').join('');
     (actif==='DOCUMENTS'?dsub:bar2).append(bPlein);   /* Documents : la barre d'outils laisse la place au choix des documents, le bouton du plein écran passe à sa droite */
     box.classList.toggle('docs',actif==='DOCUMENTS'); box.classList.toggle('cc',estCC()); box.classList.toggle('det',CCV.sec==='CONTRÔLE DU COÛT'&&!CCV.docs&&!!CCV.det); box.classList.toggle('dg',CCV.sec==='DEVIS GENERAL'&&!CCV.docs); box.classList.toggle('ecr',ECR.includes(actif)); box.classList.toggle('ord',actif==='ORDRES DE PAIEMENT'); };

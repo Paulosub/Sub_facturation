@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 15:49 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 16:00 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42747,7 +42747,13 @@ function LDEF(sec,C){ const E2=x=>esc(String(x??'')), N=v=>v||v===0?num(v):'', e
   return {}; }
 const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C, keys=C&&(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) return;
   const D=LDEF(sec,C), base=new Map(o.cols.map(c=>[c.k,c])); const L=keys.map(k=>base.get(k)||(D[k]&&D[k].col)).filter(Boolean); if(L.length) o.cols=L; };
-{ const g0=grid; grid=function(el,o){ try{ const sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]) listeCols(sec,o); }catch(e){ console.error(e); } return g0.apply(this,arguments); }; }
+/* Paiements : toujours dans l'ordre des numéros de paiement (Paulo, 11.11.2026 : « supprimer le tri et laisser trier par numéro de paiement ») — bouton « Tri » du
+   moteur retiré, pas de tri par les titres de colonnes ; le filtre et le récapitulatif de TVA restent. Le PDF « Rapport des paiements » aussi (ch01dOpt enveloppé : tri enregistré ignoré). */
+if(typeof ch01dOpt==='function'){ const o0=ch01dOpt; ch01dOpt=function(C){ return Object.assign({},o0.apply(this,arguments),{tri:'numero'}); }; }   /* écran et PDF « Rapport des paiements » */
+const payNum=(el,o)=>{ if(Array.isArray(o.rows)) o.rows=o.rows.slice().sort((a,b)=>cmp(String(a.numero??''),String(b.numero??''))||cmp(a.datePaiement,b.datePaiement));
+  o.sort=null; o.noSort=true; const bar=el&&el.previousElementSibling;
+  if(bar&&bar.classList&&bar.classList.contains('ph2')) [...bar.querySelectorAll('button')].forEach(b=>{ const d=b._sgB||{}; if(d.label==='Tri'||d.t==='Tri') b.remove(); }); };
+{ const g0=grid; grid=function(el,o){ try{ const sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]){ listeCols(sec,o); if(sec==='PAIEMENTS') payNum(el,o); } }catch(e){ console.error(e); } return g0.apply(this,arguments); }; }
 function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), cle=LCLE[sec], std=LSIG[sec].split(','), cat=[];
   Object.entries(D).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l,{}]); });
   ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:SLIB(sec),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:((C.listeColonnes||{})[cle])||std,
@@ -43551,6 +43557,10 @@ const ecrit=()=>{ try{ return !!sgDroit('chantier','ecriture'); }catch(_){ retur
 const ETATS=typeof CC_STATE!=='undefined'?CC_STATE:{0:'Provisoire',1:'En cours',2:'Etat intermédiaire',3:'Terminé'};
 const ETAT_GARDE={0:'PROVISOIRE',1:'EN COURS',2:'ÉTAT INTERMÉDIAIRE',3:''};   /* mot rouge de la page de garde ; rien pour un contrôle terminé (comme un devis validé) */
 const sv=x=>String(x==null?'':x);
+const LISTES_DG=new Set(['costControlAwardList','costControlMutationsList','costControlPaymentList']);
+/* n° de CFC toujours imprimé dans les listes des mutations et des adjudications (11.11.2026), même si la présentation favorite n'a pas la colonne CFC (n° 0),
+   comme la colonne CFC toujours première du tableau du contrôle du coût */
+if(typeof ch01bIds==='function'){ const i0=ch01bIds; ch01bIds=function(C,cle){ const L=i0.apply(this,arguments); return Array.isArray(L)&&(cle==='mutations'||cle==='adjudications')&&!L.includes(0)?[0,...L]:L; }; }
 const LISTES=new Set(['costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
 const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':''; };
 const LIMB={paysage:595.276-85.9,portrait:841.89-89.245};   /* bas de l'encre du logo (comme le devis général) */
@@ -43637,20 +43647,20 @@ const garde=(o,rec,sig)=>{ const E=o.E, p=E.p||{}, doc=DS.get('costcontroldocume
   if(e&&e.nom) rub.unshift({lib:'Entreprise',nom:e.nom,adr:e.adr});
   return {edito:true,statut:ETAT_GARDE[+doc.STATECODE]!=null?ETAT_GARDE[+doc.STATECODE]:'PROVISOIRE',num:sv(p.NUMBER).trim(),titre:sv(rec.doc&&rec.doc.nom||o.label||'Document').toLocaleUpperCase('fr'),
     sous:'',info:'',marge:'',filtre:F?(F.txt?'Filtre : '+F.txt:'Paiements filtrés'):'',rub,sig:sig||[]}; };
-const sortie=async(o,rec,pages,ori,type)=>{ const {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, T0=titreDe(o,rec), F=filtreDe(o);
+const sortie=async(o,rec,pages,ori,type,geo)=>{ const X0T=geo?geo.x0:DG_X0T, {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, T0=titreDe(o,rec), F=filtreDe(o);
   const sT={b:true,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:{b:false,z:DG_TXT},D:{b:false,z:DG_TXT},X:{b:false,z:DG_TXT},E:{b:false,z:DG_TXT}};
   const op=optsDe(o), signe=type==='estimate'||(type==='overview'&&sigDe(o,rec)), couverture=op.garde===false?null:garde(o,rec,signe?['Le maître de l’ouvrage :','L’architecte :']:[]);
   if(couverture) pages.unshift({type:0,titre:T0,rows:[]}); else if(pages[0]) pages[0].type=1;
   pages.forEach(pg=>{ if(pg.type!==0) pg.titre=T0; });   /* en-tête de chaque page : nom du document (et de l'entreprise) */
-  { const W0=ori==='portrait'?DG_WP:DG_WL, car={ori,pages:[]}; let cur=null;
+  { const W0=geo?geo.W:ori==='portrait'?DG_WP:DG_WL, car={ori,pages:[]}; let cur=null;
     pages.forEach(pg=>{ if(!pg.carte){ car.pages.push({}); cur=null; return; } const its=[];
       (pg.rows||[]).forEach((r,j)=>{ const c=r.c||[], c0=sv(c[0]).trim(), pl=c.some(x=>sv(x).trim()), y=122+(+pg.dy||0)+j*DG_RH;
         if(c0&&!r.k&&r.s!=='T'&&r.s!=='E'){ cur={cle:c0,n:c0,t:sv(c[1]).trim()}; its.push(Object.assign({},cur,{y,h:DG_RH})); }
         else if(pl&&r.s!=='T'&&cur){ const L0=its[its.length-1]; if(L0&&L0.cle===cur.cle) L0.h=y+DG_RH-L0.y; else its.push(Object.assign({},cur,{suite:true,y,h:DG_RH})); } });
-      car.pages.push({items:its,x:DG_X0T-2,w:W0+4}); });
+      car.pages.push({items:its,x:X0T-2,w:W0+4}); });
     CARTES.set(ch01aId(o.E,o.dossier),car); }
   const opt=w.JSON.parse(JSON.stringify({titre:T0,sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' - ')+(F?' · Filtré':''),date:today(),type:'Contrôle des coûts',description:T0+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')+(F?' (filtre)':''),
-    livretDG:{couverture:couverture||{},pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,orientation:ori,x0:28.35,x0Tab:DG_X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:7}})), j=new w.Array(); opt.journal=j;
+    livretDG:{couverture:couverture||{},pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,orientation:ori,x0:28.35,x0Tab:X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:7}})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info(T0+' :',Array.from(j)); return oct; };
 const largeurs=(ori,nv,wv0)=>{ const W=ori==='portrait'?DG_WP:DG_WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)); let tw=W-DG_CFC-nv*wv0, wv=wv0;
   if(tw<170&&nv){ wv=Math.max(44,(W-DG_CFC-170)/nv); tw=W-DG_CFC-nv*wv; }
@@ -43776,20 +43786,26 @@ async function kvOctets(o,rec){ await DS.need(['subproject','contact','projectme
    (SGIMP.preparer), dessinés au graphisme du devis ═══ */
 async function listeOctets(o,rec,R0){ const id=/\/\*sgimp:([a-z0-9]+)\*\//.exec(sv(R0&&R0.css)); if(!id||!window.SGIMP||!SGIMP.preparer) throw new Error('document non repéré');
   const M=await mesure(), P=SGIMP.preparer(id[1]), job=(P.jobs||[])[0]||{T:{}}, op=optsDe(o), ori=op.format==='portrait'?'portrait':'paysage';
-  const W=ori==='portrait'?DG_WP:DG_WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), pages=[];
+  /* listes des mutations, des adjudications et des paiements (Paulo, 11.11.2026 : « aligner CFC à info et ramener le n° de CFC comme pour les devis général ») : n° de CFC
+     dans la marge (x 85.04, largeur du devis général), textes dès la 2e colonne du pied (x 125.72, « info@… ») ; tableau sans n° de CFC (totaux) : 1re colonne vide */
+  const dg=LISTES_DG.has(sv(o.type)), L0=SGDE.livret, geo=dg?{x0:L0.DG_X0T,W:ori==='portrait'?L0.DG_WP:L0.DG_WL}:null;
+  const W=geo?geo.W:ori==='portrait'?DG_WP:DG_WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), pages=[];
   (P.rep.sections||[]).filter(s=>s&&s.isVisible!==false).forEach(sec=>(sec.bands||[]).forEach(b=>{ if(!b||b.isH||b.class!=='TableBand'||!b._sgk) return; const T=job.T[b._sgk]; if(!T||!(T.rows||[]).length) return;
-    const rows=T.rows.map(r=>{ const c=r.fuse?[sv(r.c[0])]:r.c.map(sv), s=r.st==='tt'||r.st==='ct'?'T':(r.st==='c2'||r.gras)?'W':'S'; return {c,s}; });
+    let rows=T.rows.map(r=>{ const c=r.fuse?[sv(r.c[0])]:r.c.map(sv), s=r.st==='tt'||r.st==='ct'?'T':(r.st==='c2'||r.gras)?'W':'S'; return {c,s}; }), TC=T.cols;
+    if(dg){ const n0=rows.filter(r=>r.c.length>1&&r.s!=='T').map(r=>r.c[0].trim()).filter(Boolean);
+      if(!(n0.length&&n0.every(x=>/^\d[\d.]*[a-z]?$/i.test(x)))){ TC=[{titre:''},...T.cols]; rows=rows.map(r=>r.c.length>1?Object.assign({},r,{c:['',...r.c]}):r); } }
     /* largeurs d'après le contenu (les largeurs du modèle de l'ancien logiciel coupaient les titres) : nombres et dates à leur largeur, textes jusqu'à 220 pt (à la
        ligne au-delà) ; place restante aux textes ; manque de place : textes réduits jusqu'à 50 pt, puis toutes les colonnes */
-    const rC=T.cols.map(c=>c.ha==='right'||!!c.num), besoin=T.cols.map((c,j)=>Math.max(M.larg(c.titre||'',true),...rows.map(r=>r.c.length===1&&j>0?0:M.larg(sv(r.c[j]),r.s!=='S')))+6);
-    let wv=besoin.map((b,j)=>rC[j]?b:Math.min(b,220)), tot=wv.reduce((a,b)=>a+b,0); const tx=wv.map((_,j)=>!rC[j]);
+    const rC=TC.map((c,j)=>!(dg&&!j)&&(c.ha==='right'||!!c.num)), besoin=TC.map((c,j)=>Math.max(M.larg(c.titre||'',true),...rows.map(r=>r.c.length===1&&j>0?0:M.larg(sv(r.c[j]),r.s!=='S')))+6);
+    let wv=besoin.map((b,j)=>dg&&!j?DG_CFC:rC[j]?b:Math.min(b,220)), tot=wv.reduce((a,b)=>a+b,0); const tx=wv.map((_,j)=>!(dg&&!j)&&!rC[j]);
     if(tot<W){ const st=wv.reduce((a,b,j)=>a+(tx[j]?b:0),0), xs=W-tot; wv=wv.map((b,j)=>st?(tx[j]?b+xs*b/st:b):b+xs/wv.length); }
     else if(tot>W){ let tr=wv.reduce((a,b,j)=>a+(tx[j]?b:0),0), surplus=tot-W; const red=Math.min(surplus,Math.max(0,tr-50*tx.filter(Boolean).length));
-      if(red>0) wv=wv.map((b,j)=>tx[j]?Math.max(50,b-red*b/tr):b); tot=wv.reduce((a,b)=>a+b,0); if(tot>W) wv=wv.map(b=>b*W/tot); }
-    const cols=T.cols.map((c,j)=>({t:c.titre||'',w:wv[j],r:rC[j]}));
+      if(red>0) wv=wv.map((b,j)=>tx[j]?Math.max(50,b-red*b/tr):b); tot=wv.reduce((a,b)=>a+b,0);
+      if(tot>W){ const f=dg?DG_CFC:0; wv=wv.map((b,j)=>dg&&!j?b:b*(W-f)/(tot-f)); } }
+    const cols=TC.map((c,j)=>({t:c.titre||'',w:wv[j],r:rC[j]}));
     pages.push(...paginer(etaler(rows,cols,M),cols,cap,sv(rec.doc.nom||o.label||'Liste'),2,{})); }));
   if(!pages.length) throw new Error('aucun tableau');
-  return sortie(o,rec,pages,ori,'liste'); }
+  return sortie(o,rec,pages,ori,'liste',geo); }
 
 /* ── rendu repéré : le PDF est fait ici, la fenêtre, « Créer le PDF » et « Partager » le reprennent (sgImpPdf du bloc 31) ── */
 const r0=ch01aRender;
@@ -43872,7 +43888,7 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
   /* réglages existants du moteur, à leur place d'origine */
   const T=sv(o.type);
   if(T==='costControlPaymentList'&&typeof ch01dOpt==='function'){ const po=ch01dOpt(C);
-    (typeof CH01D_TRI!=='undefined'?CH01D_TRI:[]).forEach(([k,lib])=>L.push({t:'Tri : '+lib,chk:po.tri===k,grp:'Tri',seg:'Trier',segLib:false,l:lib.replace(/^par /,''),fn:moteurSet(o,c=>ch01dSetOpt(c,'tri',k),c=>ch01dOpt(c).tri)}));
+    /* plus de choix du tri : toujours par numéro de paiement (Paulo, 11.11.2026 ; ch01dOpt enveloppé dans sg3_coco.js) */
     L.push({t:'Récapitulatif de la TVA',chk:po.recapTVA,grp:'Montants',fn:moteurSet(o,c=>ch01dSetOpt(c,'recapTVA',!po.recapTVA),c=>ch01dOpt(c).recapTVA)}); }
   if(T==='costControlGuaranteeList'&&typeof ch01cPref==='function'){ const po=ch01cPref(C);
     [['date','date'],['adjudication','adjudication'],['adresse','adresse'],['numero','numéro']].forEach(([k,l])=>L.push({t:'Tri : '+l,chk:po.tri===k,grp:'Tri',seg:'Trier',segLib:false,l,fn:moteurSet(o,c=>ch01cSetPref(c,'triGaranties',k,()=>{}),c=>ch01cPref(c).tri)}));

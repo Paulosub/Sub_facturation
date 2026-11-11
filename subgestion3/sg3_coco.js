@@ -260,7 +260,13 @@ function LDEF(sec,C){ const E2=x=>esc(String(x??'')), N=v=>v||v===0?num(v):'', e
   return {}; }
 const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C, keys=C&&(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) return;
   const D=LDEF(sec,C), base=new Map(o.cols.map(c=>[c.k,c])); const L=keys.map(k=>base.get(k)||(D[k]&&D[k].col)).filter(Boolean); if(L.length) o.cols=L; };
-{ const g0=grid; grid=function(el,o){ try{ const sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]) listeCols(sec,o); }catch(e){ console.error(e); } return g0.apply(this,arguments); }; }
+/* Paiements : toujours dans l'ordre des numéros de paiement (Paulo, 11.11.2026 : « supprimer le tri et laisser trier par numéro de paiement ») — bouton « Tri » du
+   moteur retiré, pas de tri par les titres de colonnes ; le filtre et le récapitulatif de TVA restent. Le PDF « Rapport des paiements » aussi (ch01dOpt enveloppé : tri enregistré ignoré). */
+if(typeof ch01dOpt==='function'){ const o0=ch01dOpt; ch01dOpt=function(C){ return Object.assign({},o0.apply(this,arguments),{tri:'numero'}); }; }   /* écran et PDF « Rapport des paiements » */
+const payNum=(el,o)=>{ if(Array.isArray(o.rows)) o.rows=o.rows.slice().sort((a,b)=>cmp(String(a.numero??''),String(b.numero??''))||cmp(a.datePaiement,b.datePaiement));
+  o.sort=null; o.noSort=true; const bar=el&&el.previousElementSibling;
+  if(bar&&bar.classList&&bar.classList.contains('ph2')) [...bar.querySelectorAll('button')].forEach(b=>{ const d=b._sgB||{}; if(d.label==='Tri'||d.t==='Tri') b.remove(); }); };
+{ const g0=grid; grid=function(el,o){ try{ const sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]){ listeCols(sec,o); if(sec==='PAIEMENTS') payNum(el,o); } }catch(e){ console.error(e); } return g0.apply(this,arguments); }; }
 function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), cle=LCLE[sec], std=LSIG[sec].split(','), cat=[];
   Object.entries(D).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l,{}]); });
   ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:SLIB(sec),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:((C.listeColonnes||{})[cle])||std,

@@ -2059,6 +2059,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `C.listeColonnes` = {mutations, adjudications, paiements} (clés dans l'ordre ; Standard = clé retirée). `grid` enveloppé : seul le tableau de la liste (signature des
   colonnes d'origine `LSIG`) reçoit ses colonnes ; les colonnes d'origine gardent leur définition (tri, valeurs). Les PDF des listes ne changent pas. Essai 99TST :
   toutes les colonnes des trois listes affichées sans erreur (133 paiements, 33 contrats et avenants, 13 mutations).
+  **Paiements toujours par numéro de paiement (11.11.2026, Paulo : « supprimer le tri et laisser trier par numéro de paiement »)** : `ch01dOpt` enveloppé
+  (`sg3_coco.js`, tri enregistré ignoré) — écran (bouton « Tri » du moteur retiré, pas de tri par les titres de colonnes : `payNum`) et PDF « Rapport des paiements »
+  (choix « Tri » retiré des réglages, `sg3_coco_docs.js`). Filtre et récapitulatif de TVA inchangés. DeltaSub.html seul garde son tri.
+  **Listes des mutations, des adjudications et des paiements en PDF : n° de CFC comme le devis général (même jour, Paulo : « aligner CFC à info et ramener le n° de
+  CFC comme pour les devis général », « corriger pour mutation et adjudication »)** : `listeOctets` (`LISTES_DG`, géométrie `geo` passée à `sortie`) — n° de CFC dans
+  la marge à x 85.04 (largeur `DG_CFC`), désignation et textes dès x 125.72 (colonne « +41… / info@ » du pied), bord droit sur la barre du numéro de page (largeurs
+  `SGDE.livret.DG_WL` / `DG_WP`) ; tableau sans n° de CFC (totaux par genre, « Montant des contrats »…) : 1re colonne vide, libellés à x 125.72. Les autres documents du
+  contrôle des coûts gardent le CFC à la marge (x 28.35, décision du 10.11.2026). `ch01bIds` enveloppé : n° de CFC toujours dans les listes des mutations et des
+  adjudications, même si la présentation favorite n'a pas la colonne CFC (99TST : la liste des mutations n'avait aucun n°).
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

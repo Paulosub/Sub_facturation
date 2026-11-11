@@ -182,7 +182,7 @@ const ED_CSS=`
 @media (max-height:860px){.sgce-tete .sgfh-meta{display:none}.sgce-tete .sgfh-tete{padding:6px 14px}.sgce-tete .sgfh-ini{font-size:22px}.sgce-tete .sgfh-nm h2{font-size:17px}.sgce-tete .sgfh-nm .lb{margin:0}.sgce-kp .nx-kpi{padding:6px 12px 6px 0}.sgce-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),18px);margin-top:3px}.sgce-kp .nx-kpi .s{display:none}}
 `;
 const cssE=()=>{ if(!document.getElementById('sgce-css')){ const s=document.createElement('style'); s.id='sgce-css'; s.textContent=ED_CSS; document.head.appendChild(s); } };
-const ECR=['MUTATIONS','ADJUDICATIONS','PAIEMENTS','COMPTES D’ENTREPRISE'];   /* regroupés sous l'onglet « Liste des écritures » (Paulo, 11.11.2026 ; Comptes d'entreprise : « à glisser dans listes », même jour) */
+const ECR=['MUTATIONS','PAIEMENTS','ADJUDICATIONS','COMPTES D’ENTREPRISE'];   /* Paiements avant Adjudications (Paulo, 11.11.2026, signe d'interversion) */   /* regroupés sous l'onglet « Liste des écritures » (Paulo, 11.11.2026 ; Comptes d'entreprise : « à glisser dans listes », même jour) */
 const SECS=CC_SECS.filter(s=>s!=='DOCUMENTS').sort((a,b)=>(b==='DEVIS GENERAL')-(a==='DEVIS GENERAL')), SLIB=s=>(typeof CC_SEC_LIB!=='undefined'&&CC_SEC_LIB[s])||s;
 const estCC=()=>!CCV.docs&&(CCV.sec==='CONTRÔLE DU COÛT'||CCV.sec==='DEVIS GENERAL');
 /* ═══ Onglet Devis général ▸ Imprimer ▸ « Devis général (PDF) » (11.11.2026, Paulo : « identique à devis général avec les mêmes options, vertical, etc. et calcul ») :

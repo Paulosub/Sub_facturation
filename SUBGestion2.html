@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.11.2026 12:27 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 11.11.2026 12:30 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3939,8 +3939,8 @@ function ccEditor(m,id){
         rows.push({k:c+'|-',cfc:c,lbl:R.lbl.get(c)||'',ent:'',v,lvl:cfcLevel(c),title});
         if(sec==='DEVIS GENERAL') return;
         const E=R.ents.get(c); if(E) E.forEach((x,eid)=>{ rows.push({k:c+'|'+eid,cfc:'',lbl:'',ent:ccEntName(C,eid),v:x,sub:true});
-          if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.ent??null)===(eid??null)).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|'+eid+'|'+d.k+i,det:d,cfc:'',lbl:'',ent:'>'+d.txt,v:{}})); });
-        if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.k==='mut'||d.k==='prov'||d.k==='cpp')&&!(E&&E.has(d.ent??null))).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|-|'+d.k+i,det:d,cfc:'',lbl:'',ent:'>'+d.txt,v:{}})); });
+          if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.ent??null)===(eid??null)).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|'+eid+'|'+d.k+i,det:d,cfc:'',lbl:'',ent:'> '+d.txt,v:{}})); });
+        if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.k==='mut'||d.k==='prov'||d.k==='cpp')&&!(E&&E.has(d.ent??null))).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|-|'+d.k+i,det:d,cfc:'',lbl:'',ent:'> '+d.txt,v:{}})); });
       rows.push({k:'TOTAL',tot:true,cfc:'',lbl:'Total général',ent:'',v:R.G});
       const pct=(r,f)=>{ if(r.sub||r.tot||r.det) return ''; const base=(R.tot.get(top(r.cfc))||{})[f]; return base?num(r.v[f]/base*100,1):''; };
       const cell=(r,id)=>{ const c=CC_COL[id];

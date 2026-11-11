@@ -2108,6 +2108,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`lpL`, `lpSetCols`, `lpAppliquer`, `lpEnregistrer`, `lpGerer`, `lpRecuperer`). Libellés écrits « projet » (sgLib change « affaire » en « projet » et donnait
   « une autre projet »). Essai 99TST : enregistrer, appliquer, Standard, renommer, reprendre de 20MMA ; données d'essai retirées.
   Onglet Documents : ligne des documents sans le libellé « Documents » (même jour, « supprimer texte ») ; « Fichiers déposés » en tête, aligné sur les onglets.
+  **Documents du contrôle des coûts conformes au devis général (même jour, Paulo : « revoir la mise en forme des tableaux, reprendre le principe des tableaux pour
+  l'impression des documents conforme au devis général »)** : registre daté des PDF du devis (`sg3_devis.js`) étendu aux PDF des documents du contrôle des coûts —
+  `PDF_COCO` (dossiers `…/Costcontrol/<projet>/<document>/coco/<section>…`, sauf `documents` = fichiers déposés), `M.reg()` (= devis ou PDF_COCO) à la place de
+  `M.devis()` pour les colonnes Créé le / Validé le / Par / Commentaire / action « Valider ▾ », la vue des PDF en cours, le clic droit d'état et les rubriques
+  Archivés / Effacés sous chaque liste (`pdfStock` appelé après le dessin de la liste ; groupes Devis · Descriptif · Honoraires seulement pour le devis) ; PDF
+  enregistrés = archive définitive aussi (`PDF_FIGE` : nom déjà pris → « (2) », suppression refusée → « Supprimer » = rangé dans Effacés) ; styles des listes
+  (`#sgde-css`) injectés par `pdfEtCss`. `sg3_coco.js` (`decoDocs`) : ligne du document = Ouvrir / Créer le document, Créer le PDF, **Ouvrir le PDF** (validé le
+  plus récent, sinon le dernier créé), Renommer…, Supprimer le document ; bouton « Fichiers PDF ▾ » masqué (`.sgce-dpdf.reg`, même menu au clic droit sur la liste).
+  Essai 99TST (PDF fictif, retiré) : Créé → Validé → Archivé ; devis général inchangé. Copie d'avant : `subgestion3/_backup_20261111_avant_docs_coco_registre/`.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

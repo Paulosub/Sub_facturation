@@ -1063,13 +1063,13 @@ function pdfStock(zEl){ const M=zEl._sgPdf; if(!M) return; const par=zEl.parentN
   const ouv=SGPDF.ouv||(SGPDF.ouv={}), box=document.createElement('div'); box.className='sgpdf sgpdf-stock';
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
   const jour=(r,k)=>{ const v=k==='cree'?r.MODIFIED:r[PDF_LE[k]]; if(!v) return '<span class="sgpdf-le">—</span>'; const on=pdfEtat(r)===k; return '<span class="sgpdf-le'+(on?' on':'')+'"'+(on?' style="color:'+PDF_ET[k][1]+'"':'')+'>'+pdfJour(v)+'</span>'; };
-  [['archive','Archivés','Les PDF archivés du devis : gardés, hors de la liste en cours.'],['supprime','Effacés','Les PDF supprimés : retirés de la liste, conservés et rétablissables.']].forEach(([k,t,ti])=>{
+  [['archive','Archivés','Les PDF archivés : gardés, hors de la liste en cours.'],['supprime','Effacés','Les PDF supprimés : retirés de la liste, conservés et rétablissables.']].forEach(([k,t,ti])=>{
     const L=F.filter(f=>pdfEtat(f)===k), o=!!ouv[k], sec=document.createElement('div'); sec.className='sgpdf-sec'+(o?' ouv':'');
     sec.innerHTML='<button type="button" class="sgpdf-st" title="'+E(ti)+'" aria-expanded="'+o+'">'+chev+E(t)+'<small>'+L.length+(L.length>1?' fichiers':' fichier')+'</small></button>';
-    if(o){ const cols=['Nom du fichier','Créé le','Validé le','Archivé le',...(k==='supprime'?['Supprimé le']:[]),'Par','Commentaire',''], ordre=[...PDF_GENRES,['autres','Autres']];
+    if(o){ const cols=['Nom du fichier','Créé le','Validé le','Archivé le',...(k==='supprime'?['Supprimé le']:[]),'Par','Commentaire',''], ordre=M.devis()?[...PDF_GENRES,['autres','Autres']]:[['*','']];
       let h='<table class="g"><thead><tr>'+cols.map((c,n)=>'<th'+(n>=1&&n<=(k==='supprime'?4:3)?' style="width:96px"':n===cols.length-3?' style="width:56px"':n===cols.length-1?' style="width:150px"':'')+'>'+E(c)+'</th>').join('')+'</tr></thead><tbody>';
-      ordre.forEach(([g,lib])=>{ const R=L.filter(f=>pdfGenre(f)===g); if(!R.length&&g==='autres') return;
-        h+='<tr class="sgpdf-g'+(R.length?'':' vide')+'"><td colspan="'+cols.length+'">'+E(lib)+(R.length?'<small>'+R.length+(R.length>1?' fichiers':' fichier')+'</small>':'')+'</td></tr>';
+      ordre.forEach(([g,lib])=>{ const R=L.filter(f=>g==='*'||pdfGenre(f)===g); if(!R.length&&(g==='autres'||g==='*')) return;
+        if(lib) h+='<tr class="sgpdf-g'+(R.length?'':' vide')+'"><td colspan="'+cols.length+'">'+E(lib)+(R.length?'<small>'+R.length+(R.length>1?' fichiers':' fichier')+'</small>':'')+'</td></tr>';
         R.forEach(r=>{ const A=pdfActions(r); h+='<tr data-k="'+E(r.ID)+'"><td><span class="sgpdf-nom'+(k==='supprime'?' sgpdf-sup':'')+'">'+ICO_PDF+E(r.NOM||'')+'</span></td><td>'+jour(r,'cree')+'</td><td>'+jour(r,'valide')+'</td><td>'+jour(r,'archive')+'</td>'
           +(k==='supprime'?'<td>'+jour(r,'supprime')+'</td>':'')+'<td>'+E(r.ETAT_PAR||r.USERID||'')+'</td><td><span class="sgpdf-com">'+E(r.COMMENTAIRE||'')+'</span></td>'
           +'<td><span class="sgpdf-act" data-id="'+E(r.ID)+'" title="Changer l’état du PDF">'+E(A[0][1])+' ▾</span></td></tr>'; }); });
@@ -1082,7 +1082,7 @@ function pdfStock(zEl){ const M=zEl._sgPdf; if(!M) return; const par=zEl.parentN
   box.addEventListener('dblclick',e=>{ const r=rec(e.target.closest&&e.target.closest('tr[data-k]')); if(r) ch03aOuvrir(r); });
   box.addEventListener('contextmenu',e=>{ const r=rec(e.target.closest&&e.target.closest('tr[data-k]')); if(!r||e.altKey) return; e.preventDefault(); e.stopPropagation(); menu({x:e.clientX,y:e.clientY},r); });
   zEl.after(box); }
-function pdfEtCss(){ if(document.getElementById('sgpdfet-css')) return; const st=document.createElement('style'); st.id='sgpdfet-css'; st.textContent=`
+function pdfEtCss(){ try{ cssD(); }catch(_){} if(document.getElementById('sgpdfet-css')) return;   /* styles des listes « Fichiers PDF » (#sgde-css) aussi hors du devis : contrôle des coûts (11.11.2026) */ const st=document.createElement('style'); st.id='sgpdfet-css'; st.textContent=`
 .sgpdf td .sgpdf-le{font-variant-numeric:tabular-nums;color:var(--s-gris)}.sgpdf td .sgpdf-le.on{font-weight:700}
 .sgpdf td .sgpdf-sup{text-decoration:line-through}.sgpdf tr:has(.sgpdf-sup) td{color:var(--s-gris)}
 .sgpdf .sgpdf-act{font-size:12.5px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap;color:var(--s-noir)}
@@ -1093,6 +1093,8 @@ function pdfEtCss(){ if(document.getElementById('sgpdfet-css')) return; const st
 .sgpdf-stock .sgpdf-st small{font-size:11.5px;font-weight:400;color:var(--s-gris)}.sgpdf-stock .sgpdf-st:hover{background:var(--s-jaune3,#FFFBDE)}
 .sgpdf-stock table.g{width:100%;margin:0 0 6px}.sgpdf-stock table.g thead th{text-align:left}`; document.head.append(st); }
 const SGPDF={attente:null,genre:null,ctx:null};
+/* PDF des documents du contrôle des coûts (dossiers …/Costcontrol/<projet>/<document>/coco/<section>…, sauf « documents » = fichiers déposés) */
+const PDF_COCO=/(^|\/)Costcontrol\/[^/]+\/[^/]+\/coco\/(?!documents(\/|$))[^/]/i;
 const GENRE_LIGNE=['devis','honoraires','descriptif'];   /* document d'origine par indice du moteur (CH02C_ROWS) */
 const PDF_GENRES=[['devis','Devis'],['descriptif','Descriptif'],['honoraires','Honoraires']];   /* ordre des groupes = ordre des documents (ORDRE_DOCS) */
 const pdfCle=v=>String(v==null?'':v).normalize('NFC').trim().toLowerCase();
@@ -1133,7 +1135,7 @@ function pdfGroupes(el,o){ const tb=el.querySelector('tbody'); if(!tb) return; c
       else if(c.k==='MODIFIED'){ c.w=170; c.t='Dernière modification'; c.cls=((c.cls||'')+' r').trim(); } });
     if(!o.cols.some(c=>c.k==='COMMENTAIRE')){ const i=o.cols.findIndex(c=>c.k==='NOM');
       o.cols.splice(i<0?1:i+1,0,{k:'COMMENTAIRE',t:'Commentaire',f:r=>'<span class="sgpdf-com" title="'+E(r.COMMENTAIRE?'Double-cliquez pour modifier le commentaire':'Double-cliquez pour ajouter un commentaire')+'">'+E(r.COMMENTAIRE||'')+'</span>'}); }
-    if(M.devis()&&!o._sgAll){ pdfEtCss();   /* registre daté (variante D, 10.11.2026) */
+    if(M.reg()&&!o._sgAll){ pdfEtCss();   /* registre daté (variante D, 10.11.2026) */
       const le=k=>({k:PDF_LE[k],t:PDF_ET[k][0]+' le',w:96,f:r=>{ const v=r[PDF_LE[k]]; if(!v) return '<span class="sgpdf-le">—</span>'; const on=pdfEtat(r)===k;
         return '<span class="sgpdf-le'+(on?' on':'')+'"'+(on?' style="color:'+PDF_ET[k][1]+'"':'')+' title="'+E(PDF_ET[k][0]+' le '+pdfJour(v)+(on&&r.ETAT_PAR?' par '+r.ETAT_PAR:''))+'">'+pdfJour(v)+'</span>'; }});
       const iN=o.cols.findIndex(c=>c.k==='NOM'), cM=o.cols.find(c=>c.k==='MODIFIED'), cC=o.cols.find(c=>c.k==='COMMENTAIRE');
@@ -1141,19 +1143,22 @@ function pdfGroupes(el,o){ const tb=el.querySelector('tbody'); if(!tb) return; c
       const reste=o.cols.filter(c=>c!==o.cols[iN]&&c!==cM&&c!==cC);
       o.cols.splice(0,o.cols.length,...[o.cols[iN],cM,le('valide'),le('archive'),le('supprime'),{k:'ETAT_PAR',t:'Par',w:56,f:r=>E(r.ETAT_PAR||r.USERID||'')},cC,...reste,
         {k:'ACT',t:'',w:150,f:r=>{ const A=pdfActions(r); return '<span class="sgpdf-act" data-id="'+E(r.ID)+'" title="Changer l’état du PDF">'+E(A[0][1])+' ▾</span>'; }}].filter(Boolean)); o._sgAll=o.cols.slice(); }
-    if(M.devis()&&o._sgAll){ const vu=pdfVue()[0]; o.cols=o._sgAll.filter(c=>!(vu==='actifs'&&(c.k==='ARCHIVE_LE'||c.k==='SUPPRIME_LE'))&&!(vu==='archive'&&c.k==='SUPPRIME_LE')); }   /* colonnes de dates sans objet retirées selon la vue */
+    if(M.reg()&&o._sgAll){ const vu=pdfVue()[0]; o.cols=o._sgAll.filter(c=>!(vu==='actifs'&&(c.k==='ARCHIVE_LE'||c.k==='SUPPRIME_LE'))&&!(vu==='archive'&&c.k==='SUPPRIME_LE')); }   /* colonnes de dates sans objet retirées selon la vue */
     const nomF=o.cols.find(c=>c.k==='NOM'); if(nomF&&!nomF._sgsup){ nomF._sgsup=true; const f1=nomF.f; nomF.f=r=>{ const h0=f1?f1(r):E(r.NOM||''); return pdfEtat(r)==='supprime'?'<span class="sgpdf-sup">'+h0+'</span>':h0; }; }
-    if(M.devis()&&Array.isArray(o.rows)){ const ok=pdfVue()[2]; o.rows=o.rows.filter(r=>ok(pdfEtat(r))); el.dataset.vue=pdfVue()[0]; }   /* vue Fichiers PDF · Archivés · Effacés (10.11.2026) */
+    if(M.reg()&&Array.isArray(o.rows)){ const ok=pdfVue()[2]; o.rows=o.rows.filter(r=>ok(pdfEtat(r))); el.dataset.vue=pdfVue()[0]; }   /* vue Fichiers PDF · Archivés · Effacés (10.11.2026) */
     const dv=M.devis(); if(dv&&Array.isArray(o.rows)){ const ordre=PDF_GENRES.map(x=>x[0]), rg=r=>{ const k=ordre.indexOf(pdfGenre(r)); return k<0?ordre.length:k; };
       o.rows=o.rows.map((r,i)=>({r,i,g:rg(r)})).sort((a,b)=>a.g-b.g||a.i-b.i).map(x=>x.r); }
-    const res=g0.apply(this,arguments); el.classList.toggle('sgpdf-dv',!!dv); if(dv) try{ pdfGroupes(el,o); }catch(e){ console.error(e); } return res; }; }
+    const res=g0.apply(this,arguments); el.classList.toggle('sgpdf-dv',!!dv); if(dv) try{ pdfGroupes(el,o); }catch(e){ console.error(e); }
+    if(M.reg()&&!dv) setTimeout(()=>{ if(el.isConnected) try{ pdfEtCss(); pdfStock(el); }catch(e){ console.error(e); } },0);   /* contrôle des coûts : Archivés et Effacés sous la liste de chaque document */
+    return res; }; }
 { const pm0=popMenu; popMenu=function(at,items){ const C=SGPDF.ctx; if(C){ SGPDF.ctx=null; const L=typeof items==='function'?items():items;
-      if(Array.isArray(L)){ const rec=C.id&&C.M&&C.M.devis()?DS.get(CH03A_T,C.id):null;   /* devis : actions d'état du PDF (registre daté, 10.11.2026) */
+      if(Array.isArray(L)){ const rec=C.id&&C.M&&C.M.reg()?DS.get(CH03A_T,C.id):null;   /* devis : actions d'état du PDF (registre daté, 10.11.2026) */
         const et=rec?pdfActions(rec).map(([k,t])=>({t:t+(k==='supprime'?'…':''),dis:!pdfPeut(C.M),fn:()=>pdfChanger(C.M,rec.ID,k)})):[];
         items=[...L,...(L.length?['-']:[]),...et,...(et.length?['-']:[]),{t:'Modifier le commentaire…',dis:!C.id||!pdfPeut(C.M),fn:()=>pdfCommentaire(C.M,C.id)}]; } }
     return pm0.apply(this,[at,items,...[].slice.call(arguments,2)]); }; }
 { const z0=ch03cPdfZone; ch03cPdfZone=function(o){ const z=z0.apply(this,arguments); try{ if(z&&z.el){
       const val=v=>typeof v==='function'?v():v, M={dos:()=>val(o&&o.dossier), ro:()=>!!val(o&&o.lectureSeule), devis:()=>/(^|\/)Costestimate\/.+\/archive$/i.test(String(val(o&&o.dossier)||''))};
+      M.reg=()=>M.devis()||PDF_COCO.test(String(val(o&&o.dossier)||''));   /* registre daté aussi pour les documents du contrôle des coûts (Paulo, 11.11.2026 : « conforme au devis général ») */
       z.el._sgPdf=M; z.el.classList.add('sgpdf'); M.redraw=()=>{ try{ if(z.redraw) z.redraw(); }catch(e){ console.error(e); } };
       z.el.addEventListener('dblclick',e=>{ const td=e.target.closest&&e.target.closest('td'), tr=td&&td.parentNode; if(!tr||!tr.dataset||!tr.dataset.k||!td.querySelector('.sgpdf-com')) return;
         e.stopPropagation(); e.preventDefault(); pdfCommentaire(M,tr.dataset.k); },true);
@@ -1929,9 +1934,9 @@ function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.
    document, import, fusion) — un nom déjà pris n'écrase jamais l'existant : nouveau fichier « <nom> (2).pdf » (ch03aEnregistrer, message) ; fenêtre « Nom du fichier »
    préremplie avec un nom libre, question « remplacer ? » réécrite ; suppression refusée (ch03aSupprimer, ch03cSupprimerDlg, menu « Supprimer » grisé). Le commentaire
    reste modifiable. Seulement dans l'app (le serveur du NAS ne bloque pas). Les fichiers .dpdoc (documents de l'ancien logiciel) ne sont pas concernés. */
-const PDF_FIGE=(d,nom)=>{ let x=''; try{ x=String(ch03aDos(d)||''); }catch(_){ x=String(d||''); } return /^Construction\/Costestimate\//.test(x)&&/\.pdf$/i.test(String(nom||'')); };
+const PDF_FIGE=(d,nom)=>{ let x=''; try{ x=String(ch03aDos(d)||''); }catch(_){ x=String(d||''); } return (/^Construction\/Costestimate\//.test(x)||PDF_COCO.test(x))&&/\.pdf$/i.test(String(nom||'')); };   /* + documents du contrôle des coûts (11.11.2026) */
 const pdfLibre=(d,nom)=>{ const m=/^(.*?)(\.pdf)$/i.exec(String(nom)), b=m?m[1]:String(nom), e=m?m[2]:'.pdf'; for(let k=2;k<1000;k++){ const n=b+' ('+k+')'+e; if(!ch03aTrouve(d,n)) return n; } return b+' ('+Date.now()+')'+e; };
-const PDF_FIGE_MSG='Les PDF enregistrés du devis sont une archive définitive : ils ne peuvent être ni remplacés ni supprimés.';
+const PDF_FIGE_MSG='Les PDF enregistrés sont une archive définitive : ils ne peuvent être ni remplacés ni supprimés.';
 { const e0=ch03aEnregistrer; ch03aEnregistrer=function(dossier,nom,r,o){ if(PDF_FIGE(dossier,nom)&&ch03aTrouve(dossier,nom)){ const n2=pdfLibre(dossier,nom), A=SGPDF.attente;
       if(A&&A.dos===ch03aDos(dossier)&&A.nom===pdfCle(nom)) A.nom=pdfCle(n2);   /* commentaire saisi dans « Nom du fichier » : suit le nouveau nom */
       toast('« '+nom+' » est déjà enregistré et ne peut plus être remplacé : nouveau PDF « '+n2+' ».'); return e0.call(this,dossier,n2,r,o); }

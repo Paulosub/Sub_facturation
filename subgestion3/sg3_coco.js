@@ -177,6 +177,8 @@ const ED_CSS=`
 .sgce-dc .a .ib:hover{background:var(--s-jaune3)}
 .sgce-dc .a .ib:disabled{color:#b9b9b6;cursor:default;background:transparent}
 .sgce-dpdf{flex-wrap:wrap}
+.sgce-dpdf.reg>button.ib{display:none!important}   /* « Fichiers PDF ▾ » : même menu au clic droit sur la liste, comme le devis (11.11.2026) */
+.sgce-dpdf.reg>.sgpdf,.sgce-dpdf>.sgpdf-stock{flex:1 1 100%!important;min-width:0}
 .sgce-dpdf>span:first-child{flex:1 1 100%!important;font-size:12px;color:var(--s-gris)!important}
 .sgce-x2{display:none!important}
 @media (max-height:860px){.sgce-tete .sgfh-meta{display:none}.sgce-tete .sgfh-tete{padding:6px 14px}.sgce-tete .sgfh-ini{font-size:22px}.sgce-tete .sgfh-nm h2{font-size:17px}.sgce-tete .sgfh-nm .lb{margin:0}.sgce-kp .nx-kpi{padding:6px 12px 6px 0}.sgce-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),18px);margin-top:3px}.sgce-kp .nx-kpi .s{display:none}}
@@ -516,10 +518,17 @@ function habillerEd(m,id){ cssC(); cssE();
       const titre=titreEl?titreEl.textContent.trim():nom, etat=cree?'Document créé'+(titreEl&&nom!==titre?' : '+nom:''):'Pas encore créé', I=menuB._sgB.menu()||[], f=t=>I.find(x=>x&&x.t&&x.t.startsWith(t)), dis=main.disabled;
       const act=(t,ti,x,d)=>{ const b=document.createElement('button'); b.className='ib'; b.textContent=t; if(ti) b.title=ti; b.disabled=!!d; b.onclick=()=>{ const it=x&&f(x); if(x==null) main.click(); else if(it&&!it.dis) it.fn(); }; return b; };
       const pdf=f('Enregistrer sous forme'), ren=f('Renommer'), sup=f('Supprimer le document');
+      /* « Ouvrir le PDF » comme le devis (11.11.2026) : le PDF validé le plus récent du document, sinon le dernier créé (Archivés et Effacés exclus) */
+      const zP=P.querySelector('.sgpdf'), dosP=zP&&zP._sgPdf&&zP._sgPdf.dos(), pdfDoc=()=>{ if(!dosP||typeof ch03aDos!=='function') return null; let F=[]; try{ F=DS.by('depotfichier','DOSSIER',ch03aDos(dosP)).filter(r=>/\.pdf$/i.test(r.NOM||'')); }catch(_){ return null; }
+        const et=r=>r.ETAT_PDF||'cree', V=F.filter(r=>et(r)==='valide').sort((a,b)=>String(b.VALIDE_LE||'').localeCompare(String(a.VALIDE_LE||''))); if(V.length) return V[0];
+        return F.filter(r=>et(r)==='cree').sort((a,b)=>String(b.MODIFIED||'').localeCompare(String(a.MODIFIED||'')))[0]||null; }, pOuv=pdfDoc();
+      const bOuv=document.createElement('button'); bOuv.className='ib'; bOuv.textContent='Ouvrir le PDF'; bOuv.title=pOuv?'Ouvrir « '+pOuv.NOM+' »':'Aucun PDF de ce document'; bOuv.disabled=!pOuv||typeof ch03aOuvrir!=='function';
+      bOuv.onclick=()=>{ const r=pdfDoc(); if(r) ch03aOuvrir(r); };
       const L=el('div','sgce-dc','<div class="t"><b></b><span></span></div><div class="a"></div>'); L.querySelector('b').textContent=titre; L.querySelector('span').textContent=etat;
-      L.querySelector('.a').append(act(cree?'Ouvrir':'Créer le document',cree?'Ouvrir le document':'Créer le document à partir d’un modèle',null,dis),act('Créer le PDF','Enregistrer le document sous forme de fichier PDF','Enregistrer sous forme',dis||!pdf||pdf.dis),
+      L.querySelector('.a').append(act(cree?'Ouvrir':'Créer le document',cree?'Ouvrir le document':'Créer le document à partir d’un modèle',null,dis),act('Créer le PDF','Enregistrer le document sous forme de fichier PDF','Enregistrer sous forme',dis||!pdf||pdf.dis),bOuv,
         ...(cree?[act('Renommer…','Renommer le document','Renommer',dis||!ren||ren.dis),act('Supprimer le document','Supprimer le document (les fichiers PDF déjà créés sont gardés)','Supprimer le document',dis||!sup||sup.dis)]:[]));
-      [titreEl,lab,nameRow].forEach(r=>r&&r.classList.add('sgce-x2')); pdfRow.classList.add('sgce-dpdf'); P.insertBefore(L,P.firstChild); }); };
+      [titreEl,lab,nameRow].forEach(r=>r&&r.classList.add('sgce-x2')); pdfRow.classList.add('sgce-dpdf'); P.insertBefore(L,P.firstChild); });
+    pane.querySelectorAll('.sgce-dpdf').forEach(r=>{ const z=r.querySelector(':scope>.sgpdf'), on=!!(z&&z._sgPdf&&z._sgPdf.reg&&z._sgPdf.reg()); if(r.classList.contains('reg')!==on) r.classList.toggle('reg',on); }); };
   new MutationObserver(()=>{ deco(); entete(); maj(); }).observe(pane,{childList:true});
   new MutationObserver(()=>decoDocs()).observe(pane,{childList:true,subtree:true});   /* un panneau du moteur se redessine seul (création, renommage…) */
   /* clic droit sur une ligne : la choisir, puis éditer / supprimer l'écriture, nouvelle écriture */

@@ -98,8 +98,9 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgde-t tr.sgde-zero td{color:var(--s-gris)}
 .sgde-t tr.sgde-det td{font-size:12px;height:26px;color:var(--s-gris)}
 .sgde-t tr.sgde-det td.sgde-dd{white-space:normal;padding-top:4px!important;padding-bottom:4px!important}
-.sgde-ddv{display:block;font-style:italic}
-.sgde-ddv .t,.sgde-ddv .f{display:block;color:inherit;overflow-wrap:anywhere}
+.sgde-ddv{display:grid;grid-template-columns:auto minmax(0,1fr);font-style:italic}
+.sgde-ddv .m{grid-row:1/span 2;white-space:pre}   /* signe « > » des lignes de calcul (Paulo, 11.11.2026, comme les écritures du contrôle des coûts) ; la formule reste alignée sur le texte */
+.sgde-ddv .t,.sgde-ddv .f{display:block;grid-column:2;color:inherit;overflow-wrap:anywhere}
 .sgde-ddv .f{margin-top:1px;font-variant-numeric:tabular-nums}
 .sgde-t tr.sgde-det td.r{font-variant-numeric:tabular-nums}
 .sgde-t tr.sgde-det td.sgde-dsc{line-height:1.45;padding-top:5px!important;padding-bottom:7px!important}
@@ -432,7 +433,7 @@ const calcDesc=E=>ch02aMode(E)===4&&!!((((E||{}).reglages||{}).affichage||{}).sg
         if(Array.isArray(o.rows)){   /* descriptif sous le CFC dans les trois présentations qui le montraient en colonne (Paulo, 07.11.2026 : « ajoute le descriptif sous le CFC ») : juste sous la position, avant ses lignes de calcul */ const cd=o.cols.find(c=>c.k==='d'); if(cd&&!cd._sgde){ const f0=cd.f; cd.f=r=>r&&r.dsc?'<i style="color:#666">'+esc(r.txt).replace(/\n/g,' <br>')+'</i>':f0(r); cd._sgde=1; }
           const cn=o.cols.find(c=>c.k==='cfc'); if(cn&&!cn._sgde){ const f1=cn.f; cn.f=r=>r&&r.dsc?'<i class="sgde-dlab">Desc.</i>':f1(r); cn._sgde=1; }   /* « Desc. » dans la colonne N°, à gauche du texte (Paulo, 07.11.2026) */
           if(m===3||c4){ const det=r=>r&&r.det&&!r.dsc, cdd=o.cols.find(c=>c.k==='d');   /* lignes de calcul : texte et montants dans les colonnes elles-mêmes (affichage, copie, CSV) */
-            if(cdd&&!cdd._sgdc){ const f2=cdd.f; cdd.f=r=>{ if(!det(r)) return f2(r); const L=ligneCalc(X,r); return '<div class="sgde-ddv"><span class="t">'+esc(L.txt||'Ligne de calcul')+(L.note?' ('+esc(L.note)+')':'')+'</span> '+(L.form?'<span class="f">'+esc(L.form)+'</span>':'')+'</div>'; }; cdd._sgdc=1; }
+            if(cdd&&!cdd._sgdc){ const f2=cdd.f; cdd.f=r=>{ if(!det(r)) return f2(r); const L=ligneCalc(X,r); return '<div class="sgde-ddv"><span class="m">&gt; </span><span class="t">'+esc(L.txt||'Ligne de calcul')+(L.note?' ('+esc(L.note)+')':'')+'</span> '+(L.form?'<span class="f">'+esc(L.form)+'</span>':'')+'</div>'; }; cdd._sgdc=1; }
             ['ht','tva','ttc'].forEach(k=>{ const c=o.cols.find(x=>x.k===k); if(!c||c._sgdc) return; const f3=c.f; c.f=r=>det(r)?ligneCalc(X,r).mt(ligneCalc(X,r).v[k]):f3(r); c._sgdc=1; }); }
           const R=[]; o.rows.forEach(r=>{ R.push(r); if(r&&!r.det&&r.p){ const t=String(ch02aDesc(r.p)||'').trim(); if(t) R.push({det:true,dsc:true,n:r,pt:{},l:{},txt:t,k:'x|'+r.p.cfc});
             if(c4&&r.leaf) (r.p.parts||[]).forEach((pt,pi)=>(pt.lignes||[]).forEach((l,li)=>R.push({det:true,n:r,pt,l,k:'d|'+r.p.cfc+'|'+pi+'|'+li}))); } });   /* lignes de calcul, comme le moteur en mode 3 */

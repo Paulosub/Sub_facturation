@@ -1517,6 +1517,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   chaque ligne de calcul dans les colonnes Commentaire et Descriptif, hors de l'écran depuis la nouvelle mise en page ; `deco` (`calc`) la montre sous sa position : texte de la ligne
   (et ouvrage s'il y en a plusieurs) dans la désignation, en retrait, puis « quantité unité × prix unitaire HT » dessous, alignés à gauche, en gris italique (demande de Paulo),
   montants HT / TVA / TTC dans leurs colonnes (`dvLine`, arrondi du devis) ; Commentaire et Descriptif vides sur ces lignes. Copie, CSV et impressions inchangés (données du moteur).
+  **Signe « > » devant chaque ligne de calcul (11.11.2026, Paulo : « ajouter > », comme les écritures du contrôle des coûts)** : « > » dans la désignation, la
+  formule « quantité × prix » alignée sur le texte dessous (`.sgde-ddv .m`, grille) ; écran seulement (PDF du devis : filet de calcul inchangé).
   **Plein écran (07.11.2026, « un bouton comme dans soumission »)** : icône au bout de la barre (`.sgde-pl`, après Fonctions) ; le devis couvre la fenêtre (`.sgde.sgde-plein`,
   fixe, z-index 800 comme la soumission — fenêtres et menus du moteur au-dessus), bandeau masqué, chiffres réduits ; gardé pendant la séance (`PLEIN`) ; Échap (écouté en capture :
   une fenêtre ouverte se ferme d'abord, sans quitter le plein écran) ou le même bouton pour revenir.

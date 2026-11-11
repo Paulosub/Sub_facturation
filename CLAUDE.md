@@ -2088,6 +2088,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   d'entreprise » ; quatrième liste de la ligne « Liste des écritures », sans Paramètres, Fonctions sans éditer / supprimer) ; clic droit sur une entreprise : menu du
   moteur (« Synchroniser l'adresse … »), jamais « Éditer / Supprimer l'écriture » (une ligne = une entreprise). Onglets (ordre du même jour, « déplacer ») : Devis
   général, Contrôle du coût, Ordres de paiement, Arrêtés de compte, Liste des écritures, Documents.
+  **Plus d'« Enregistrer » dans Fonctions (même jour, Paulo : « à quoi sert enregistrer », puis « supprimer partout »)** : chaque modification du contrôle des coûts
+  est déjà enregistrée (`touch` → `save`) ; le bouton ne faisait que réécrire l'état et changer « modifié le … par … ». Fonctions = (Éditer, Supprimer l'écriture
+  hors listes des écritures) + Copier le tableau, Exporter en CSV.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

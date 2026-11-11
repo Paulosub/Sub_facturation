@@ -3754,8 +3754,16 @@ function ccAffichage(C,o){
 .cca-it .dt{font-size:11.5px;color:#555;display:flex;gap:4px;align-items:center;white-space:nowrap}
 .cca-sel h4{margin:0 0 6px;font-size:12.5px}
 .cca-ls{max-height:52vh;overflow:auto;border-top:2px solid #1d1d1b}
-.cca-li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line,#e3e3e0)}
-.cca-li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cca-li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line,#e3e3e0);background:#fff;user-select:none}
+.cca-li>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cca-li .g{width:10px;height:16px;justify-self:center;background:radial-gradient(circle,#9d9d9c 1.2px,transparent 1.6px) 0 0/5px 5px;opacity:.9}
+.cca-li.dg{cursor:grab}
+.cca-li.dg:hover .g{background-image:radial-gradient(circle,#003346 1.2px,transparent 1.6px)}
+.cca-li.fx .g{visibility:hidden}
+.cca-ls.drag,.cca-ls.drag .cca-li{cursor:grabbing}
+.cca-li.on{opacity:.4;background:#fffbdc}
+.cca-li.dzt{box-shadow:inset 0 3px 0 #003346}
+.cca-li.dzb{box-shadow:inset 0 -3px 0 #003346}
 .cca-li em{display:block;font-style:normal;font-size:11px;color:#888}
 .cca-li .b{display:flex;gap:0}
 .cca-li .b button{border:0;background:none;width:26px;height:24px;cursor:pointer;color:#003346;font-size:13px}
@@ -3799,11 +3807,21 @@ function ccAffichage(C,o){
           const it=h('div',{class:'cca-it'+(c.nd?' nd':''),title:c.nd?'Pas de données dans l’app pour cette colonne':''},cb,h('span',{onclick:()=>{ if(!c.nd) cb.click(); }},titreDe(id)),dt||h('span',{class:'s'},c.nd?'pas de données':court(id)));
           cb.onchange=()=>{ if(cb.checked){ if(!cols.some(y=>y.id===id)) cols.push({id,idDelta:CH01A_IDD[id],details:!!c.det}); } else { const i=cols.findIndex(y=>y.id===id); if(i>=0) cols.splice(i,1); } drawL(); drawS(); };
           L.append(it); }); }); L.scrollTop=sc; };
-    const drawS=()=>{ const sc=ls.scrollTop; ls.innerHTML=''; cols.forEach((x,i)=>{ const c=CC_COL[x.id];
-        const bt=(t,tt,fn,dis)=>h('button',{type:'button',title:tt,disabled:dis||null,onclick:fn},t);
-        ls.append(h('div',{class:'cca-li'},h('span',{title:titreDe(x.id)},court(x.id),h('em',{},(c?c.cat||'':'colonne inconnue')+(x.details&&c&&c.det?' · détails':''))),
-          h('div',{class:'b'},bt('↑','Monter',()=>{ cols.splice(i-1,0,cols.splice(i,1)[0]); drawS(); },i<=1||x.id==='kag'),bt('↓','Descendre',()=>{ cols.splice(i+1,0,cols.splice(i,1)[0]); drawS(); },i===cols.length-1||x.id==='kag'),
-            bt('✕','Retirer',()=>{ cols.splice(i,1); drawL(); drawS(); },x.id==='kag')))); }); ls.scrollTop=sc; };
+    /* ordre des colonnes : cliquer et glisser (Paulo, 11.11.2026 : « déplacer l'ordre en cliquant maintenant, cliquer et déplacer ») ; le CFC reste en tête */
+    const drawS=()=>{ const sc=ls.scrollTop; ls.innerHTML=''; cols.forEach((x,i)=>{ const c=CC_COL[x.id], fx=x.id==='kag';
+        ls.append(h('div',{class:'cca-li'+(fx?' fx':' dg'),'data-i':i,title:fx?'Le numéro CFC reste la première colonne':'Cliquer et glisser pour changer l’ordre'},h('i',{class:'g'}),
+          h('span',{title:titreDe(x.id)},court(x.id),h('em',{},(c?c.cat||'':'colonne inconnue')+(x.details&&c&&c.det?' · détails':''))),
+          h('div',{class:'b'},h('button',{type:'button',title:'Retirer',disabled:fx||null,onclick:()=>{ cols.splice(i,1); drawL(); drawS(); }},'✕')))); }); ls.scrollTop=sc; };
+    ls.classList.add('cca-ls'); ls.addEventListener('pointerdown',e=>{ const li=e.target.closest('.cca-li'); if(!li||e.button!==0||e.target.closest('button')) return; const i=+li.dataset.i; if(!(i>0)) return;
+      e.preventDefault(); const y0=e.clientY; let on=false, to=i, tm=null;
+      const L=()=>[...ls.querySelectorAll('.cca-li')];
+      const place=y=>{ const A=L(); to=A.length; for(let j=0;j<A.length;j++){ const b=A[j].getBoundingClientRect(); if(y<b.top+b.height/2){ to=j; break; } } if(to<1) to=1;
+        const nul=to===i||to===i+1; A.forEach((el,j)=>{ el.classList.toggle('dzt',!nul&&j===to); el.classList.toggle('dzb',!nul&&to===A.length&&j===A.length-1); }); };
+      const defile=y=>{ clearInterval(tm); const r=ls.getBoundingClientRect(), d=y<r.top+28?-10:y>r.bottom-28?10:0; if(d) tm=setInterval(()=>{ ls.scrollTop+=d; place(y); },30); };
+      const mv=ev=>{ if(!on&&Math.abs(ev.clientY-y0)<4) return; if(!on){ on=true; li.classList.add('on'); ls.classList.add('drag'); } place(ev.clientY); defile(ev.clientY); };
+      const fin=()=>{ clearInterval(tm); document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',fin); document.removeEventListener('pointercancel',fin); ls.classList.remove('drag');
+        if(on){ const k=to>i?to-1:to; if(k!==i) cols.splice(k,0,cols.splice(i,1)[0]); drawS(); } };
+      document.addEventListener('pointermove',mv); document.addEventListener('pointerup',fin); document.addEventListener('pointercancel',fin); });
     S.append(h('h4',{},'Colonnes affichées, dans l’ordre'),ls,h('div',{class:'cca-acts'},h('button',{type:'button',class:'btn',onclick:()=>{ cols.splice(0,cols.length,...CC_PRES_DEF.Standard.map(id=>({id,idDelta:CH01A_IDD[id],details:!!CC_COL[id].det}))); drawL(); drawS(); }},'Colonnes Standard')),
       h('div',{class:'cca-note'},'Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.'));
     pane.append(h('div',{class:'cca-col'},h('div',{},qi,L),S)); drawL(); drawS(); };

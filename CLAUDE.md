@@ -2035,7 +2035,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   d'information (`ccInfo` : n° d'adresse, entreprise et CFC, ouvrage, localisation, lot, n° / statut / remarque / genre / date / contrepartie de la mutation, n° /
   date / statut / genre / niveau des prestations / descriptif du contrat, genre / n° / date / statut / ordre / facture / description / compte / bénéficiaire du paiement,
   garantie de l'arrêté de compte) sur les lignes d'entreprise et d'écriture ; 14 colonnes sans données dans l'app (`nd` : indice de base, infos des mutations 2,
-  honoraires) grisées. `ccAffichage(C,o)` : onglet **Colonnes** (recherche, cases par catégorie, « détails » pour les colonnes à écritures, liste ordonnée ↑ ↓ ✕,
+  honoraires) grisées. `ccAffichage(C,o)` : onglet **Colonnes** (recherche, cases par catégorie, « détails » pour les colonnes à écritures, liste ordonnée : cliquer et glisser une colonne pour la déplacer (11.11.2026, à la demande ; flèches ↑ ↓ retirées, repère bleu nuit à l'endroit du dépôt, défilement près des bords), ✕ pour la retirer,
   « Colonnes Standard » ; CFC toujours première, ni déplacée ni retirée) — « Standard » n'est jamais modifiée : une présentation **« Personnalisée »** du document
   (`app:true`, titres du catalogue) est créée ou mise à jour et choisie ; une présentation du document est modifiée en place ; onglet **Couleurs des écritures** :
   Mutations, Contrats et avenants, Paiements, Provisions / coût probable, palette `CC_PALETTE` de 256 couleurs (16 gris + 15 teintes × 16 clartés), « d'origine »,

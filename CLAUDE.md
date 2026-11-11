@@ -2008,7 +2008,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Standard de l'ancien logiciel »)** — moteur `DeltaSub.html` (v1, v2, v3 reconstruites) : **colonne CFC fixe et toujours la première** (Deltaproject ne la met
   pas dans ses présentations : les présentations reprises ne l'avaient pas) ; **présentation par défaut de tous les contrôles des coûts = « Standard » de
   Deltaproject** (manuel ▸ Contrôle des coûts ▸ Disposition des colonnes ; titres de `rsrc/deltaproject/costcontrol/data/strings/CostColumns.rtf`) : CFC,
-  Désignation, Entreprise, DG TTC, Mutations TTC (à la place de « Transferts TTC » depuis le 11.11.2026, demande de Paulo), Variations TTC, DG rév. TTC, Contrats + avenants TTC, Paiements TTC, Coût probable TTC, Etat du coût TTC
+  Désignation, Entreprise, DG TTC, Mutations TTC (à la place de « Transferts TTC » depuis le 11.11.2026, demande de Paulo), Modifications TTC (titre de la colonne des variations de coût, ex-« Variations TTC », 11.11.2026 ; famille HT / TVA et mutations 2 renommées de même ; menu « Variation … » et fenêtre « Variation de coût » inchangés ; « Plus-/moins-values » essayé puis annulé le même jour), DG rév. TTC, Contrats + avenants TTC, Paiements TTC, Coût probable TTC, Etat du coût TTC
   (`CC_PRES_DEF.Standard`, titres standards `CC_COL` — les titres propres du document, `titresColonnes`, ne valent que pour ses présentations) ; les présentations
   du document restent dans « Présentation » (« Standard (du document) » si le nom est le même ; celle d'un document créé dans l'app, identique, n'est pas répétée) ;
   `CCV.pres` = rang de la présentation du document choisie, null = Standard. L'impression du document « Contrôle du coût » (`ch01aFlex`) suit toujours la

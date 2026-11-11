@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 11.11.2026 14:01 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 11.11.2026 14:10 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -6220,7 +6220,7 @@ function ccCP(v,s){
 const CC_COL={
   kag:{t:'CFC',sp:'cfc'}, kagText:{t:'Désignation',sp:'lbl'}, entrepreneur:{t:'Entreprise',sp:'ent'},
   kvTot:{t:'DG TTC',f:'dg'}, kvValue:{t:'DG',f:'dg'}, kvProcent:{t:'DG %',pct:'dg'},
-  mutationTransferTot1:{t:'Transferts TTC',f:'transferts',det:'mut'}, mutationIncreaseTot1:{t:'Variations TTC',f:'variations',det:'mut'}, mutationTot1:{t:'Mutations TTC',f:'mutations',det:'mut'},
+  mutationTransferTot1:{t:'Transferts TTC',f:'transferts',det:'mut'}, mutationIncreaseTot1:{t:'Modifications TTC',f:'variations',det:'mut'}, mutationTot1:{t:'Mutations TTC',f:'mutations',det:'mut'},
   kv1Tot:{t:'DG rév. TTC',f:'dgRevise'}, kv1Procent:{t:'DG rév. %',pct:'dgRevise'},
   contractTot:{t:'Contrats TTC',f:'contrats',det:'ctr',e:1}, addendumToContractTot:{t:'Avenants TTC',f:'avenants',e:1}, contractAndAddendumTot:{t:'Contrats + avenants TTC',f:'contratsAvenants',det:'ctr',e:1},
   payementTot:{t:'Paiements TTC',f:'paiements',det:'pay',e:1}, forcastCalculatedTot:{t:'Coût probable TTC',f:'coutProbable',det:'cpp'},
@@ -6250,7 +6250,7 @@ const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[
     D('kvTotInclFac','DG indexé','Devis général indexé (DG TTC × facteur du DG)',{fx:A=>A.V('dg')*A.ctx.fac}),D('kvProcent','DG %','Évaluation du devis général en pourcents',{pct:'dg'})]],
   ['Mutations du DG',[...T(['mutationInflation1','mutationInflationVat1','mutationInflationTot1'],['Renchérissement HT','TVA renchérissement','Renchérissement TTC'],['Renchérissement HT (mutations du DG)','TVA renchérissement (mutations du DG)','Renchérissement TTC (mutations du DG)'],{f:'rencherissement'},'mut'),
     ...T(['mutationTransfer1','mutationTransferVat1','mutationTransferTot1'],['Transferts HT','TVA transferts','Transferts TTC'],['Transferts HT (mutations du DG)','TVA transferts (mutations du DG)','Transferts TTC (mutations du DG)'],{f:'transferts'},'mut'),
-    ...T(['mutationIncrease1','mutationIncreaseVat1','mutationIncreaseTot1'],['Variations HT','TVA variations','Variations TTC'],['Variations HT (mutations du DG)','TVA variations (mutations du DG)','Variations TTC (mutations du DG)'],{f:'variations'},'mut'),
+    ...T(['mutationIncrease1','mutationIncreaseVat1','mutationIncreaseTot1'],['Modifications HT','TVA modifications','Modifications TTC'],['Modifications HT (variations de coût, mutations du DG)','TVA modifications (mutations du DG)','Modifications TTC (variations de coût, mutations du DG)'],{f:'variations'},'mut'),
     ...T(['mutation1','mutationVat1','mutationTot1'],['Mutations HT','TVA mutations','Mutations TTC'],['Mutations HT (somme des mutations du DG)','TVA mutations (somme des mutations du DG)','Mutations TTC (somme des mutations du DG)'],{f:'mutations'},'mut'),
     D('mutationNumber1','N° mutation','Numéro de mutation',{info:'mutNum',w:80}),D('mutationStatus1','Statut','Statut de la mutation',{info:'mutSt'}),D('mutationRemark1','Remarque','Remarque de la mutation',{info:'mutRem',w:200}),
     D('mutationMutKind1','Genre de mutation','Genre de mutation',{info:'mutGen',w:150}),D('mutationDate1','Date','Date de la mutation',{info:'mutDate',w:86}),D('transfer1','Contreparties','Contreparties (CFC de l’autre côté du transfert)',{info:'mutCp',w:96})]],
@@ -6261,7 +6261,7 @@ const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[
     D('kv1MinusKv','DG rév. − DG orig.','Différence entre le DG révisé et le DG (TTC)',{fx:A=>A.V('dgRevise')-A.V('dg')})]],
   ['Mutations 2 du DG révisé',[...T(['mutationInflation2','mutationInflationVat2','mutationInflationTot2'],['Renchérissement 2 HT','TVA renchérissement 2','Renchérissement 2 TTC'],['Renchérissement 2 HT (mutations 2 du DG révisé)','TVA renchérissement 2','Renchérissement 2 TTC (mutations 2 du DG révisé)'],{x:'renc2'}),
     ...T(['mutationTransfer2','mutationTransferVat2','mutationTransferTot2'],['Transferts 2 HT','TVA transferts 2','Transferts 2 TTC'],['Transferts 2 HT (mutations 2 du DG révisé)','TVA transferts 2','Transferts 2 TTC (mutations 2 du DG révisé)'],{x:'transf2'}),
-    ...T(['mutationIncrease2','mutationIncreaseVat2','mutationIncreaseTot2'],['Variations 2 HT','TVA variations 2','Variations 2 TTC'],['Variations 2 HT (mutations 2 du DG révisé)','TVA variations 2','Variations 2 TTC (mutations 2 du DG révisé)'],{x:'varia2'}),
+    ...T(['mutationIncrease2','mutationIncreaseVat2','mutationIncreaseTot2'],['Modifications 2 HT','TVA modifications 2','Modifications 2 TTC'],['Modifications 2 HT (variations de coût, mutations 2 du DG révisé)','TVA modifications 2','Modifications 2 TTC (variations de coût, mutations 2 du DG révisé)'],{x:'varia2'}),
     ...T(['mutation2','mutationVat2','mutationTot2'],['Mutations 2 HT','TVA mutations 2','Mutations 2 TTC'],['Mutations 2 HT (somme des mutations 2)','TVA mutations 2','Mutations 2 TTC (somme des mutations 2)'],{x:'mut2'}),
     D('mutationNumber2','N° mutation 2','Numéro de la mutation 2',{nd:1}),D('mutationStatus2','Statut 2','Statut de la mutation 2',{nd:1}),D('mutationRemark2','Remarque 2','Remarque de la mutation 2',{nd:1}),
     D('mutationMutKind2','Genre de mutation 2','Genre de mutation 2',{nd:1}),D('mutationDate2','Date 2','Date de la mutation 2',{nd:1}),D('transfer2','Contreparties 2','Contreparties 2',{nd:1})]],
@@ -43449,7 +43449,7 @@ const paginer=(rows,cols,cap,titre,digit,o2)=>{ const P=[]; let i=0; o2=o2||{}; 
   return P; };
 const ABREV={'Contrats + avenants':'Contrats + av.','Coût probable':'Coût prob.','Renchérissement':'Renchériss.','Etat du coût':'État du coût','DG rév.':'DG rév.','Devis général':'DG',
   'Contrats moins paiements':'Contr. − paiem.','DG rév. moins paiements':'DG rév. − paiem.','Bénéfice d’adjudication':'Bénéf. adjud.','Provision':'Provisions'};
-const ABREV2={'Contrats + av.':'Contr. + av.','État du coût':'État coût','Coût prob.':'Coût prob.','Paiements':'Paiem.','Variations':'Variat.','Transferts':'Transf.'};   /* colonnes étroites (colonne Entreprise) */
+const ABREV2={'Contrats + av.':'Contr. + av.','État du coût':'État coût','Coût prob.':'Coût prob.','Paiements':'Paiem.','Variations':'Variat.','Modifications':'Modif.','Transferts':'Transf.','Mutations':'Mutat.'};   /* colonnes étroites (colonne Entreprise) */
 const titresAjustes=(T,wd,M)=>{ const ttc=T.length>0&&T.every(t=>/\sTTC$/.test(sv(t).trim())), out=T.map(t=>{ let x=sv(t).trim(); if(ttc) x=x.replace(/\s+TTC$/,'');
     if(M.larg(x,true)>wd&&ABREV[x]) x=ABREV[x]; if(M.larg(x,true)>wd&&ABREV2[x]) x=ABREV2[x]; return x; }); return {T:out,ttc}; };
 const recol=t=>sv(t).replace(/(\p{Ll})- (?!(?:et|ou|à)\s)(\p{Ll})/gu,'$1$2');   /* sauf « pré- et post-… » */   /* mots coupés en fin de ligne dans les données de l'ancien logiciel */
@@ -43685,7 +43685,7 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
   if(g==='overview'){ const S=ovEtat(o,rec), nv=ch01aFlex(Object.assign({},C,{presentations:Object.assign({},C.presentations||{},{controle:[{favori:true,colonnes:(S.P?S.P.colonnes:PDF_STD().map(id=>({id,idDelta:CH01A_IDD[id]})))||[]}]})}),'controle').length;
     L.push(it('Format : Paysage',S.format==='paysage'||nv>5,opt(o,'format','paysage'),{grp:'Format'}),it('Format : Portrait',S.format==='portrait'&&nv<=5,opt(o,'format','portrait'),{grp:'Format',dis:nv>5,ti:nv>5?'Portrait : 5 colonnes de montants au plus ('+nv+' dans cette présentation)':'Document en portrait'}));
     const PL=((C.presentations||{}).controle)||[];
-    L.push(it('Standard',!S.P,opt(o,'pres',null),{grp:'Colonnes',seg:'Colonnes',segLib:false,l:'Standard',ti:'Colonnes de l’écran et la provision : DG, transferts, variations, DG révisé, contrats et avenants, provision, paiements, coût probable, état du coût'}));
+    L.push(it('Standard',!S.P,opt(o,'pres',null),{grp:'Colonnes',seg:'Colonnes',segLib:false,l:'Standard',ti:'Colonnes de l’écran et la provision : DG, mutations, modifications, DG révisé, contrats et avenants, provision, paiements, coût probable, état du coût'}));
     PL.forEach((x,i)=>{ if(estStandard(x)&&S.P!==x) return;   /* présentation identique à Standard : pas en double (comme le menu de l'écran) */
       L.push(it(sv(x.nom||'Présentation '+(i+1))+(sv(x.nom)==='Standard'?' (du document)':''),S.P===x,opt(o,'pres',{i,nom:sv(x.nom)}),{grp:'Colonnes',seg:'Colonnes',segLib:false})); });
     gardeIt();

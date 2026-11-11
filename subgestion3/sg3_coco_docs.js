@@ -88,7 +88,7 @@ const paginer=(rows,cols,cap,titre,digit,o2)=>{ const P=[]; let i=0; o2=o2||{}; 
   return P; };
 const ABREV={'Contrats + avenants':'Contrats + av.','Coût probable':'Coût prob.','Renchérissement':'Renchériss.','Etat du coût':'État du coût','DG rév.':'DG rév.','Devis général':'DG',
   'Contrats moins paiements':'Contr. − paiem.','DG rév. moins paiements':'DG rév. − paiem.','Bénéfice d’adjudication':'Bénéf. adjud.','Provision':'Provisions'};
-const ABREV2={'Contrats + av.':'Contr. + av.','État du coût':'État coût','Coût prob.':'Coût prob.','Paiements':'Paiem.','Variations':'Variat.','Transferts':'Transf.'};   /* colonnes étroites (colonne Entreprise) */
+const ABREV2={'Contrats + av.':'Contr. + av.','État du coût':'État coût','Coût prob.':'Coût prob.','Paiements':'Paiem.','Variations':'Variat.','Modifications':'Modif.','Transferts':'Transf.','Mutations':'Mutat.'};   /* colonnes étroites (colonne Entreprise) */
 const titresAjustes=(T,wd,M)=>{ const ttc=T.length>0&&T.every(t=>/\sTTC$/.test(sv(t).trim())), out=T.map(t=>{ let x=sv(t).trim(); if(ttc) x=x.replace(/\s+TTC$/,'');
     if(M.larg(x,true)>wd&&ABREV[x]) x=ABREV[x]; if(M.larg(x,true)>wd&&ABREV2[x]) x=ABREV2[x]; return x; }); return {T:out,ttc}; };
 const recol=t=>sv(t).replace(/(\p{Ll})- (?!(?:et|ou|à)\s)(\p{Ll})/gu,'$1$2');   /* sauf « pré- et post-… » */   /* mots coupés en fin de ligne dans les données de l'ancien logiciel */
@@ -324,7 +324,7 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
   if(g==='overview'){ const S=ovEtat(o,rec), nv=ch01aFlex(Object.assign({},C,{presentations:Object.assign({},C.presentations||{},{controle:[{favori:true,colonnes:(S.P?S.P.colonnes:PDF_STD().map(id=>({id,idDelta:CH01A_IDD[id]})))||[]}]})}),'controle').length;
     L.push(it('Format : Paysage',S.format==='paysage'||nv>5,opt(o,'format','paysage'),{grp:'Format'}),it('Format : Portrait',S.format==='portrait'&&nv<=5,opt(o,'format','portrait'),{grp:'Format',dis:nv>5,ti:nv>5?'Portrait : 5 colonnes de montants au plus ('+nv+' dans cette présentation)':'Document en portrait'}));
     const PL=((C.presentations||{}).controle)||[];
-    L.push(it('Standard',!S.P,opt(o,'pres',null),{grp:'Colonnes',seg:'Colonnes',segLib:false,l:'Standard',ti:'Colonnes de l’écran et la provision : DG, transferts, variations, DG révisé, contrats et avenants, provision, paiements, coût probable, état du coût'}));
+    L.push(it('Standard',!S.P,opt(o,'pres',null),{grp:'Colonnes',seg:'Colonnes',segLib:false,l:'Standard',ti:'Colonnes de l’écran et la provision : DG, mutations, modifications, DG révisé, contrats et avenants, provision, paiements, coût probable, état du coût'}));
     PL.forEach((x,i)=>{ if(estStandard(x)&&S.P!==x) return;   /* présentation identique à Standard : pas en double (comme le menu de l'écran) */
       L.push(it(sv(x.nom||'Présentation '+(i+1))+(sv(x.nom)==='Standard'?' (du document)':''),S.P===x,opt(o,'pres',{i,nom:sv(x.nom)}),{grp:'Colonnes',seg:'Colonnes',segLib:false})); });
     gardeIt();

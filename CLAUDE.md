@@ -2138,6 +2138,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (Entreprise, Contrats, Avenants, Contrats + avenants, Paiements, Contrat − paiements sur contrat, TTC), entreprises par nom, total en pied ; ouvert dans la
   visionneuse de l'app (`imprimerComptes`, `sgVisionneuse` : Imprimer, Télécharger), sans volet de réglages. ⚠ `num` de `sg3_coco_docs.js` lit un nombre : formater
   avec `window.num` (moteur).
+  Sans colonne CFC (même jour, « supprimer l'élément qui dépasse ») : tableau et bande bleu nuit dès x 125.72 (`geo.x0 = DG_X0T + DG_CFC`), plus de colonne vide dans la marge.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

@@ -139,6 +139,11 @@ const ED_CSS=`
 .sgce-ong>.sgce-niv{flex:none;margin:0 0 0 auto}   /* CFC Tout · 3 · 2 · 1 à droite des onglets, comme le devis (11.11.2026) */
 .sgce-dgv.sgde{display:block;height:auto;overflow:visible;flex:none;background:transparent}
 .sgce-dgv>.pane{overflow:visible;height:auto}
+.sgce table.g tfoot td{padding:6px 8px;border-bottom:1px solid var(--s-filet,#e3e3e0);background:var(--s-blanc,#fff);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sgce table.g tfoot tr:first-child td{border-top:2px solid var(--s-noir,#1d1d1b)}
+.sgce table.g tfoot tr.s td{font-weight:700;padding-top:12px}
+.sgce table.g tfoot tr.t td{font-weight:700;background:var(--s-nuit3,#e9eef1)}
+.sgce table.g tfoot td.lb{text-align:left}
 .sgce.docs>.sgce-bar,.sgce:not(.docs)>.sgce-dsub,.sgce:not(.ecr)>.sgce-esub{display:none}
 .sgce-esub{flex:none;margin:0 24px;padding:9px 0 0;flex-wrap:wrap;gap:6px 16px}
 .sgce-esub .sgce-dt{color:var(--s-gris)}   /* Liste des écritures : Mutations · Adjudications · Paiements (11.11.2026) */
@@ -267,7 +272,41 @@ if(typeof ch01dOpt==='function'){ const o0=ch01dOpt; ch01dOpt=function(C){ retur
 const payNum=(el,o)=>{ if(Array.isArray(o.rows)) o.rows=o.rows.slice().sort((a,b)=>cmp(String(a.numero??''),String(b.numero??''))||cmp(a.datePaiement,b.datePaiement));
   o.sort=null; o.noSort=true; const bar=el&&el.previousElementSibling;
   if(bar&&bar.classList&&bar.classList.contains('ph2')) [...bar.querySelectorAll('button')].forEach(b=>{ const d=b._sgB||{}; if(d.label==='Tri'||d.t==='Tri') b.remove(); }); };
-{ const g0=grid; grid=function(el,o){ try{ const sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]){ listeCols(sec,o); if(sec==='PAIEMENTS') payNum(el,o); } }catch(e){ console.error(e); } return g0.apply(this,arguments); }; }
+/* pied des listes des écritures (Paulo, 11.11.2026 : « aligner les montants avec les colonnes en lien », « pour les 3 listes ») : lignes dans le tableau même (tfoot),
+   chaque montant sous sa colonne — Paiements : récapitulatif de la TVA (case du moteur, remplace sa carte séparée) puis total ; Mutations : par genre (transferts : montants
+   déplacés, sans effet sur le DG révisé) puis total des mutations (modifications + renchérissement = Mutations TTC) ; Adjudications : contrats, avenants, total.
+   Colonnes additionnées : celles qui portent un montant (SOMME) ; les autres restent vides. */
+function SOMME(sec,C){ const T=x=>typeof ch01aTot==='function'?ch01aTot(x):{ht:docNet(x)-docTva(x),tva:docTva(x),net:docNet(x)}, G=m=>/^transfert/.test(m.genre||'')?'tr':m.genre==='rencherissement'?'re':m.genre==='variation'?'mo':'';
+  if(sec==='PAIEMENTS'){ const ret=x=>{ const c=(x.conditions||[]).find(c=>c.kind===4&&c.appliquee!==false); return c&&+c.montant?+c.montant:null; };
+    return {ht:x=>docNet(x)-docTva(x),tva:x=>docTva(x),ttc:x=>docNet(x),brut:x=>docBrut(x),sc:x=>x.contratId?docNet(x):null,hc:x=>x.contratId?null:docNet(x),renc:x=>x.genre==='rencherissement'?docNet(x):null,ret}; }
+  if(sec==='MUTATIONS') return {ht:m=>+m.ht||0,tvaM:m=>m.tva!=null?+m.tva:(+m.ttc||0)-(+m.ht||0),ttc:m=>+m.ttc||0,transf:m=>G(m)==='tr'?+m.ttc||0:null,modif:m=>G(m)==='mo'?+m.ttc||0:null,renc:m=>G(m)==='re'?+m.ttc||0:null};
+  if(sec==='ADJUDICATIONS'){ const avs=c=>(C.contrats||[]).filter(a=>a.contratParentId===c.id&&a.lieAuContrat!==false), PY=c=>(C.paiements||[]).filter(x=>x.contratId===c.id).reduce((a,x)=>a+docNet(x),0);
+    const CA=c=>c.type==='avenant'?null:[c,...avs(c)].reduce((a,x)=>({ht:a.ht+T(x).ht,ttc:a.ttc+T(x).net}),{ht:0,ttc:0});
+    return {net:c=>docNet(c),ht:c=>T(c).ht,tva:c=>T(c).tva,ctr:c=>c.type==='avenant'?null:T(c).net,av:c=>c.type==='avenant'?T(c).net:null,caht:c=>{ const a=CA(c); return a?a.ht:null; },ca:c=>{ const a=CA(c); return a?a.ttc:null; },
+      pay:c=>c.type==='avenant'?null:PY(c),reste:c=>{ const a=CA(c); return a?a.ttc-PY(c):null; }}; }
+  return {}; }
+function piedListe(sec,el,o){ const C=CCV.cur&&CCV.cur.C, t=el&&el.querySelector(':scope>table.g'); if(!C||!t||!Array.isArray(o.rows)) return; const S=SOMME(sec,C), R=o.rows, L=[];
+  const somme=(lib,sub,cls,tip)=>{ const v={}; o.cols.forEach(c=>{ const f=S[c.k]; if(!f) return; let n=null; sub.forEach(x=>{ const y=f(x); if(y!=null&&isFinite(y)) n=(n||0)+(+y); }); v[c.k]=n; }); L.push({lib,v,cls,tip}); };
+  if(sec==='PAIEMENTS'){ const on=typeof ch01dOpt==='function'&&ch01dOpt(C).recapTVA;
+    if(on&&typeof ch01dVat==='function'){ const cfg=!!(C.parametres||{}).arrondir, J=x=>typeof ch01aJd==='function'?ch01aJd(x):String(x);
+      L.push({lib:'Récapitulatif de la TVA',v:{},cls:'s'}); ch01dVat(R,cfg).slice().sort((a,b)=>a.taux-b.taux).forEach(m=>L.push({lib:'TVA '+J(m.taux)+' %',v:{ht:m.ht,tva:m.tva,ttc:m.ttc}})); }
+    somme('Total',R,'t'); }
+  if(sec==='MUTATIONS'){ const G=m=>/^transfert/.test(m.genre||'')?'tr':m.genre==='rencherissement'?'re':m.genre==='variation'?'mo':'';
+    const mo=R.filter(m=>G(m)==='mo'), re=R.filter(m=>G(m)==='re'), tr=R.filter(m=>G(m)==='tr'), au=R.filter(m=>!G(m));
+    if(mo.length) somme('Modifications',mo); if(re.length) somme('Renchérissement',re); if(au.length) somme('Autres',au);
+    if(tr.length) somme('Transferts',tr,'','Montants déplacés d’une position à l’autre : sans effet sur le devis général révisé (origine −, destination +)');
+    somme('Total des mutations',R.filter(m=>G(m)!=='tr'),'t','Modifications et renchérissement : effet sur le devis général révisé (Mutations TTC)'); }
+  if(sec==='ADJUDICATIONS'){ somme('Montant des contrats',R.filter(c=>c.type!=='avenant')); somme('Montant des avenants',R.filter(c=>c.type==='avenant')); somme('Total des adjudications',R,'t'); }
+  if(!L.length) return; const A=o.cols.map((c,j)=>S[c.k]?j:-1).filter(j=>j>=0), a0=A.length?Math.min(...A):o.cols.length, E2=x=>esc(String(x??''));
+  const tf=document.createElement('tfoot'); tf.className='sgce-pied';
+  tf.innerHTML=L.map(r=>'<tr class="'+(r.cls||'')+'"'+(r.tip?' title="'+E2(r.tip)+'"':'')+'>'+(a0>0?'<td class="lb" colspan="'+a0+'">'+E2(r.lib)+'</td>':'')+o.cols.slice(a0).map((c,j)=>{ const v=r.v[c.k];
+    return '<td class="'+(c.cls||'')+(S[c.k]?' r':'')+'"'+(a0===0&&j===0?' title="'+E2(r.lib)+'"':'')+'>'+(v!=null&&S[c.k]?num(v):'')+'</td>'; }).join('')+'</tr>').join('');
+  t.append(tf); }
+{ const g0=grid; grid=function(el,o){ let sec=null; try{ sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]){ listeCols(sec,o); if(sec==='PAIEMENTS') payNum(el,o); } else sec=null; }catch(e){ console.error(e); sec=null; }
+  const r=g0.apply(this,arguments);
+  if(sec){ try{ piedListe(sec,el,o); }catch(e){ console.error(e); }
+    if(sec==='PAIEMENTS') queueMicrotask(()=>{ [el,el.parentNode].filter(Boolean).forEach(z=>[...z.children].forEach(x=>{ if(x.classList&&x.classList.contains('card')&&/Récapitulatif de TVA/.test((x.querySelector('h3')||{}).textContent||'')) x.remove(); })); }); }   /* carte du moteur : remplacée par le pied du tableau */
+  return r; }; }
 function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), cle=LCLE[sec], std=LSIG[sec].split(','), cat=[];
   Object.entries(D).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l,{}]); });
   ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:SLIB(sec),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:((C.listeColonnes||{})[cle])||std,

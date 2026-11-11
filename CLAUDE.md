@@ -2076,6 +2076,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Total TVA x % » après le « Total » du tableau des paiements, en dernière page (rien ne changeait à l'écran ouvert) ; `listeOctets` les place sur la page du
   récapitulatif, sous « Total paiements » : intertitre « Récapitulatif de la TVA », puis une ligne « TVA x % » par taux (CHF, HT, TVA, TTC ; `ch01dVat` sur les
   paiements filtrés) ; retirées du tableau des paiements seulement une fois placées.
+  **Pied des trois listes à l'écran, montants sous leurs colonnes (même jour, Paulo : « aligner les montants avec les colonnes en lien », « pour les 3 listes »)** :
+  `piedListe` (`sg3_coco.js`, après chaque dessin de la liste par l'enveloppe de `grid`) ajoute un `tfoot` au tableau ; colonnes additionnées = `SOMME(sec,C)` (montants
+  d'origine et colonnes « Affichage » qui portent un montant), libellé sur les colonnes qui précèdent le premier montant. **Paiements** : « Récapitulatif de la TVA »
+  (si la case du moteur est cochée ; remplace sa carte séparée sous le tableau) — une ligne par taux (HT, TVA, TTC) —, puis « Total ». **Mutations** :
+  Modifications, Renchérissement, (Autres), Transferts (montants déplacés, sans effet sur le DG révisé), « Total des mutations » = modifications + renchérissement
+  (= Mutations TTC du bandeau). **Adjudications** : Montant des contrats, Montant des avenants, Total des adjudications (= Contrats + avenants TTC). Essai 99TST :
+  totaux égaux aux chiffres du bandeau, montants alignés au pixel sous leurs colonnes.
   **Ordre fixe, plus de tri par les titres de colonnes (10.11.2026, Paulo : « pas possible de changer la liste, celle-ci ne doit pas être modifiable, supprimer
   l'organisation des colonnes » ; puis pour le devis : « supprimer la possibilité de modifier l'organisation du devis, les CFC doivent rester dans l'ordre »)** :
   option `noSort` de `grid` (DeltaSub.html : clic sur un titre sans effet, curseur normal, tri mémorisé ignoré), posée sur le tableau CFC du contrôle du coût

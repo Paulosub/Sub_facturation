@@ -512,7 +512,22 @@ function habillerEd(m,id){ cssC(); cssE();
     return [...CH02A_MODES.filter(([k])=>k!==2).flatMap(([k,t])=>k===4?[{t:'Avec le descriptif et le calcul de prix',chk:c4,fn:()=>poser(4,true)},{t,chk:m===4&&!c4,fn:()=>poser(4,false)}]:[{t,chk:m===k,fn:()=>poser(k,false)}]),'-',
       ...(E&&dvOuvCodes(E).length?[{t:'Afficher les subdivisions',chk:!!DGV.ouv,fn:()=>{ DGV.ouv=!DGV.ouv; dgvSave(); DGX=null; deco(); }}]:[]),
       {t:'Afficher les positions sans montant',chk:DGV.vides!==false,fn:()=>{ DGV.vides=DGV.vides===false; dgvSave(); DGX=null; deco(); }}]; };
-  const deco=()=>{ if(dgVue()) return; const t=pane.querySelector(':scope>table.g'); if(!t) return; const cc=estCC(); t.classList.toggle('sgce-t',cc); if(!cc) return;
+  /* Ordres de paiement : « Imprimer » à côté de « Documents » (Paulo, 11.11.2026 : « ajouter imprimer ») — Ordre de paiement n° … (ordre choisi à gauche) et Bon de
+     paiement n° … (paiement choisi à droite), dans la fenêtre des documents (créés d'office sous leur nom par défaut s'ils n'existent pas) */
+  const ordImp=()=>{ if(CCV.docs||CCV.sec!=='ORDRES DE PAIEMENT') return; const bD=[...pane.querySelectorAll('button.ib')].find(b=>b._sgB&&b._sgB.t==='Documents'&&!b.closest('.sgce-bar'));
+    if(!bD||(bD.nextElementSibling&&bD.nextElementSibling._sgceImp)) return; const wrap=bD.closest('.cols'); if(!wrap) return;
+    const selDe=i=>{ const tr=wrap.children[i]&&wrap.children[i].querySelector('table.g tbody tr.on'); return tr?tr.dataset.k:null; };
+    const ordre=()=>{ const K=CCV.cur||{}, k=selDe(0); return K.C&&k!=null?(K.C.ordresPaiement||[]).find(o=>String(o.id)===k)||null:null; };
+    const paie=()=>{ const K=CCV.cur||{}, k=selDe(1); return K.C&&k!=null?(K.C.paiements||[]).find(x=>String(x.id)===k)||null:null; };
+    const E=()=>{ const K=CCV.cur||{}; return {C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'ORDRES DE PAIEMENT',touch:K.touch||(()=>{})}; };
+    const ouvrirOrdre=async o=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} const e=E();
+      const d={E:e,dossier:'paymentorder/'+(typeof ch01dRef==='function'?ch01dRef(o):o.id),type:'costControlPaymentOrder',nomDefaut:'Ordre de paiement',label:'Ordre de paiement',fixe:'Ordre de paiement',job:rep=>ch01dOrderJob(e,o,rep)};
+      try{ const r=ch01aRec(e,d.dossier); return r&&r.doc?await ch01aOpen(d):await ch01aNew(d); }catch(x){ console.error(x); toast('Document impossible à préparer : '+x.message,true); } };
+    const b=ibtn({i:'print',label:'Imprimer',t:'Imprimer',menu:()=>{ const o=ordre(), x=paie();
+      return [{t:o?'Ordre de paiement n° '+(o.numero||'')+' (PDF)':'Ordre de paiement (choisir un ordre)',dis:!o||typeof ch01dOrderJob!=='function',fn:()=>ouvrirOrdre(o)},
+        {t:x?'Bon de paiement n° '+(x.numero||'')+' (PDF)':'Bon de paiement (choisir un paiement)',dis:!o||!x||typeof ch01dBonOpen!=='function',fn:async()=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} ch01dBonOpen(E(),o,x); }}]; }});
+    b._sgceImp=1; bD.after(b); };
+  const deco=()=>{ try{ ordImp(); }catch(e){ console.error(e); } if(dgVue()) return; const t=pane.querySelector(':scope>table.g'); if(!t) return; const cc=estCC(); t.classList.toggle('sgce-t',cc); if(!cc) return;
     t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const k=tr.dataset.k, P=k.split('|'), c=P[0], n=c?cfcLevel(c):0, det=P.length>=3, ent=!det&&P[1]!=='-'&&k!=='TOTAL';
       tr.classList.toggle('sgce-tot',k==='TOTAL'); tr.classList.toggle('sgce-det',det); tr.classList.toggle('sgce-ent',ent);
       tr.classList.toggle('sgce-n1',!det&&!ent&&n===1); tr.classList.toggle('sgce-cache',masquee(k)); });

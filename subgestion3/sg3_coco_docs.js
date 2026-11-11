@@ -191,7 +191,7 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
      par type »), en italique, sans trait vertical, ligne claire dessous, sans le signe « > » de l'ancien logiciel ; total */
   const max=S.niv==='tout'?99:+S.niv, ov=[]; let blk=null;
   const ecriture=(r,k)=>{ const enEnt=aEnt&&(k==='ctr'||k==='pay'), txt=sv((r.c||[])[2]).replace(/^\s*[^\p{L}\p{N}(«"'’]+\s*/u,'');
-    const x=enEnt?ligneD('','',r.f,'D',txt):ligneD('',txt,r.f,'D',''), col=COUL_ECR[k]||null, jt=enEnt?2:1; x.ital=1; x.filet=1; x.debR=1;   /* écriture : déborde sur les montants vides à sa droite plutôt que de passer à la ligne (colonne Entreprise étroite) */
+    const x=enEnt?ligneD('','',r.f,'D',txt):ligneD('',txt,r.f,'D',''), col=(typeof ccCouleurs==='function'?ccCouleurs(C):COUL_ECR)[k]||null, jt=enEnt?2:1; x.ital=1; x.filet=1; x.debR=1;   /* écriture : déborde sur les montants vides à sa droite plutôt que de passer à la ligne (colonne Entreprise étroite) */
     if(col){ x.cc={}; x.c.forEach((v,j)=>{ if(j===jt||(j>=j0D&&sv(v).trim())) x.cc[j]=col; }); } return x; };
   const vider=()=>{ if(!blk) return; const G2=blk.groupes;
     if(aEnt&&G2.length===1&&G2[0].row){ blk.pos.c[2]=G2[0].row.c[2]; G2[0].row=null; }   /* une seule entreprise : sur la ligne de la position (exemple 23COL) */

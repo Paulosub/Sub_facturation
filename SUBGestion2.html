@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.11.2026 12:30 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 11.11.2026 13:49 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3786,6 +3786,258 @@ const CC_COL={
   awardingProfit:{t:'Bénéfice d’adjudication',fn:v=>v.contratsAvenants?(v.contratsAvenants-v.dgRevise):0}
 };
 const CC_PRES_DEF={'Standard':['kag','kagText','entrepreneur','kvTot','mutationTransferTot1','mutationIncreaseTot1','kv1Tot','contractAndAddendumTot','payementTot','forcastCalculatedTot','balanceOfCostsTot']};   // présentation « Standard » de Deltaproject (manuel, Contrôle des coûts ▸ Disposition des colonnes ; titres de CostColumns) : présentation par défaut de tous les contrôles des coûts (Paulo, 10.11.2026)
+/* ═══ Catalogue complet des colonnes du contrôle du coût et couleurs des écritures (11.11.2026, Paulo : « dans une option affichage, ajoute toutes les colonnes
+   possibles qui se trouvent dans le contrôle du coût de l'ancien logiciel », puis « changer les couleurs de ces éléments [Mutations, Contrats, Paiements, Provisions,
+   coût probable], cette nouvelle couleur devra intégrer le tableau du contrôle ; une palette de 256 couleurs pour sélectionner pour chaque élément ») ───────────
+   Identifiants et titres de l'ancien logiciel (CH01A_IDD, CostColumns : titre court = en-tête, titre long = liste « Affichage »), rangés par catégorie comme le menu
+   de l'en-tête de l'ancien logiciel. Valeur d'une colonne : f = champ de ccCalc (TTC ; m:'ht' = ccCalc(ch01aHT(C)), m:'tva' = TTC − HT) ; x = montant complémentaire
+   (ccExtra : mutations 2, renchérissement ICC, montants plafonnés, métrés, libres 1 à 3, paiements de renchérissement et paiements finaux) ; fx = calcul ;
+   eq = équation du document (variables de l'ancien logiciel, ccEval) ; info = texte des lignes d'entreprise et des écritures (ccInfo) ; nd = pas de données dans
+   l'app (grisé dans « Affichage »). Les entrées déjà connues de CC_COL gardent leur titre ; kvValue (DG HT) affichait le TTC : corrigé. */
+const CC_DEF_COUL={mut:'#993300',ctr:'#FF6633',pay:'#003366',prov:'#555555'};
+function ccCouleurs(C){ const x=((((C||{}).parametres)||{}).couleursDetails)||{}, o={}; Object.keys(CC_DEF_COUL).forEach(k=>{ o[k]=/^#[0-9a-f]{6}$/i.test(x[k]||'')?x[k]:CC_DEF_COUL[k]; }); o.cpp=o.prov; return o; }
+const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[i],longs[i],Object.assign({},base,i===0?{m:'ht'}:i===1?{m:'tva'}:{},i===2&&det?{det}:{})]);
+  const D=(id,t,l,s)=>[id,t,l,s||{}];
+  return [
+  ['Subdivision',[D('kag','CFC','Numéro CFC',{sp:'cfc'}),D('kagText','Désignation','Désignation CFC',{sp:'lbl'}),D('entrepreneur','Entreprise','Entreprise',{sp:'ent'}),
+    D('entrepreneurNr','Numéro','Numéro d’adresse de l’entreprise',{info:'entNr'}),D('kagTextAndEntrepreneur','Entreprise et CFC','Entreprise et texte CFC',{info:'lblEnt',w:200}),
+    D('og','OUV','Ouvrage',{info:'og'}),D('lg','LOC','Localisation',{info:'lg'}),D('vergabeNr','N°','N° d’adjudication',{info:'lotNr',w:70}),D('vergabeText','Lot d’adjudication','Lot d’adjudication',{info:'lotTx',w:170})]],
+  ['Devis général',[D('kvIndex','Indice de base','Indice de base du devis général',{nd:1}),
+    ...T(['kvValue','kvVat','kvTot'],['DG HT','TVA DG','DG TTC'],['Devis général HT','TVA du devis général','Devis général TTC'],{f:'dg'}),
+    D('kvTotInclFac','DG indexé','Devis général indexé (DG TTC × facteur du DG)',{fx:A=>A.V('dg')*A.ctx.fac}),D('kvProcent','DG %','Évaluation du devis général en pourcents',{pct:'dg'})]],
+  ['Mutations du DG',[...T(['mutationInflation1','mutationInflationVat1','mutationInflationTot1'],['Renchérissement HT','TVA renchérissement','Renchérissement TTC'],['Renchérissement HT (mutations du DG)','TVA renchérissement (mutations du DG)','Renchérissement TTC (mutations du DG)'],{f:'rencherissement'},'mut'),
+    ...T(['mutationTransfer1','mutationTransferVat1','mutationTransferTot1'],['Transferts HT','TVA transferts','Transferts TTC'],['Transferts HT (mutations du DG)','TVA transferts (mutations du DG)','Transferts TTC (mutations du DG)'],{f:'transferts'},'mut'),
+    ...T(['mutationIncrease1','mutationIncreaseVat1','mutationIncreaseTot1'],['Variations HT','TVA variations','Variations TTC'],['Variations HT (mutations du DG)','TVA variations (mutations du DG)','Variations TTC (mutations du DG)'],{f:'variations'},'mut'),
+    ...T(['mutation1','mutationVat1','mutationTot1'],['Mutations HT','TVA mutations','Mutations TTC'],['Mutations HT (somme des mutations du DG)','TVA mutations (somme des mutations du DG)','Mutations TTC (somme des mutations du DG)'],{f:'mutations'},'mut'),
+    D('mutationNumber1','N° mutation','Numéro de mutation',{info:'mutNum',w:80}),D('mutationStatus1','Statut','Statut de la mutation',{info:'mutSt'}),D('mutationRemark1','Remarque','Remarque de la mutation',{info:'mutRem',w:200}),
+    D('mutationMutKind1','Genre de mutation','Genre de mutation',{info:'mutGen',w:150}),D('mutationDate1','Date','Date de la mutation',{info:'mutDate',w:86}),D('transfer1','Contreparties','Contreparties (CFC de l’autre côté du transfert)',{info:'mutCp',w:96})]],
+  ['DG révisé',[...T(['kv1Value','kv1Vat','kv1Tot'],['DG rév. HT','TVA DG rév.','DG rév. TTC'],['DG révisé HT','TVA du DG révisé','DG révisé TTC'],{f:'dgRevise'}),
+    D('kv1Procent','DG rév. %','Évaluation du DG révisé en pourcents',{pct:'dgRevise'}),
+    D('kv1M2Procent','DG rév. par m²','DG révisé TTC par m² (surface de l’affaire)',{fx:A=>A.ctx.m2?A.V('dgRevise')/A.ctx.m2:null}),
+    D('kv1M3Procent','DG rév. par m³','DG révisé TTC par m³ (volume SIA 416 de l’affaire)',{fx:A=>A.ctx.m3?A.V('dgRevise')/A.ctx.m3:null}),
+    D('kv1MinusKv','DG rév. − DG orig.','Différence entre le DG révisé et le DG (TTC)',{fx:A=>A.V('dgRevise')-A.V('dg')})]],
+  ['Mutations 2 du DG révisé',[...T(['mutationInflation2','mutationInflationVat2','mutationInflationTot2'],['Renchérissement 2 HT','TVA renchérissement 2','Renchérissement 2 TTC'],['Renchérissement 2 HT (mutations 2 du DG révisé)','TVA renchérissement 2','Renchérissement 2 TTC (mutations 2 du DG révisé)'],{x:'renc2'}),
+    ...T(['mutationTransfer2','mutationTransferVat2','mutationTransferTot2'],['Transferts 2 HT','TVA transferts 2','Transferts 2 TTC'],['Transferts 2 HT (mutations 2 du DG révisé)','TVA transferts 2','Transferts 2 TTC (mutations 2 du DG révisé)'],{x:'transf2'}),
+    ...T(['mutationIncrease2','mutationIncreaseVat2','mutationIncreaseTot2'],['Variations 2 HT','TVA variations 2','Variations 2 TTC'],['Variations 2 HT (mutations 2 du DG révisé)','TVA variations 2','Variations 2 TTC (mutations 2 du DG révisé)'],{x:'varia2'}),
+    ...T(['mutation2','mutationVat2','mutationTot2'],['Mutations 2 HT','TVA mutations 2','Mutations 2 TTC'],['Mutations 2 HT (somme des mutations 2)','TVA mutations 2','Mutations 2 TTC (somme des mutations 2)'],{x:'mut2'}),
+    D('mutationNumber2','N° mutation 2','Numéro de la mutation 2',{nd:1}),D('mutationStatus2','Statut 2','Statut de la mutation 2',{nd:1}),D('mutationRemark2','Remarque 2','Remarque de la mutation 2',{nd:1}),
+    D('mutationMutKind2','Genre de mutation 2','Genre de mutation 2',{nd:1}),D('mutationDate2','Date 2','Date de la mutation 2',{nd:1}),D('transfer2','Contreparties 2','Contreparties 2',{nd:1})]],
+  ['DG révisé 2',[D('kv2Value','DG rév. 2 HT','DG révisé 2 HT',{fx:A=>A.V('dgRevise','ht')+A.X('mut2','ht')}),D('kv2Vat','TVA DG rév. 2','TVA du DG révisé 2',{fx:A=>A.V('dgRevise','tva')+A.X('mut2','tva')}),
+    D('kv2Tot','DG rév. 2 TTC','DG révisé 2 TTC',{fx:A=>A.V('dgRevise')+A.X('mut2')}),
+    D('kv2Procent','DG rév. 2 %','Part du DG révisé 2',{fx:A=>{ if(!A.T) return null; const b=A.T.V('dgRevise')+A.T.X('mut2'); return b?(A.V('dgRevise')+A.X('mut2'))/b*100:null; },dec:1,w:60}),
+    D('kv2M2Procent','DG rév. 2 par m²','DG révisé 2 TTC par m²',{fx:A=>A.ctx.m2?(A.V('dgRevise')+A.X('mut2'))/A.ctx.m2:null}),
+    D('kv2M3Procent','DG rév. 2 par m³','DG révisé 2 TTC par m³',{fx:A=>A.ctx.m3?(A.V('dgRevise')+A.X('mut2'))/A.ctx.m3:null}),
+    D('kv2MinusKv','DG rév. 2 − DG','Différence entre le DG révisé 2 et le DG (TTC)',{fx:A=>A.V('dgRevise')+A.X('mut2')-A.V('dg')}),
+    D('kv2MinusKv1','DG rév. 2 − DG rév.','Différence entre le DG révisé 2 et le DG révisé (TTC)',{fx:A=>A.X('mut2')})]],
+  ['Renchérissement ICC',[...T(['kvIndexValue','kvIndexVat','kvIndexTot'],['Renchérissement ICC HT','TVA renchérissement ICC','Renchérissement ICC TTC'],['Renchérissement ICC du DG HT','TVA du renchérissement ICC','Renchérissement ICC du DG TTC'],{x:'icc'}),
+    D('kvIndexTotValue','DG indicé','DG indicé (DG révisé + renchérissement ICC, TTC)',{fx:A=>A.V('dgRevise')+A.X('icc')})]],
+  ['Adjudication',[...T(['contract','contractVat','contractTot'],['Contrats HT','TVA contrats','Contrats TTC'],['Contrats HT','TVA contrats','Contrats TTC'],{f:'contrats',e:1},'ctr'),
+    ...T(['addendumToContract','addendumToContractVat','addendumToContractTot'],['Avenants HT','TVA avenants','Avenants TTC'],['Avenants HT','TVA avenants','Avenants TTC'],{f:'avenants',e:1}),
+    ...T(['contractAndAddendum','contractAndAddendumVat','contractAndAddendumTot'],['Contrats + avenants HT','TVA contrats + avenants','Contrats + avenants TTC'],['Contrats + avenants HT','TVA contrats + avenants','Contrats + avenants TTC'],{f:'contratsAvenants',e:1},'ctr'),
+    D('contractNr','N° du contrat','Numéro du contrat',{info:'ctrNr',w:86}),D('contractDate','Date du contrat','Date du contrat',{info:'ctrDate',w:86}),D('contractStatus','Statut du contrat','Statut du contrat',{info:'ctrSt'}),
+    D('contractKind','Genre de contrat','Genre de contrat (contrat, avenant)',{info:'ctrGenre',w:96}),D('progress','Niveau des prestations','Niveau des prestations',{info:'ctrNiv',w:96,num:1}),
+    D('contractDesc','Descriptif du contrat','Descriptif du contrat',{info:'ctrDesc',w:200}),
+    ...T(['award','awardVat','awardTot'],['Montants plafonnés HT','TVA montants plafonnés','Montants plafonnés TTC'],['Montants plafonnés HT','TVA des montants plafonnés','Montants plafonnés TTC'],{x:'plaf',e:1}),
+    ...T(['measure','measureVat','measureTot'],['Métrés HT','TVA métrés','Métrés TTC'],['Métrés HT','TVA métrés','Métrés TTC'],{x:'metre',e:1}),
+    ...['ht','tva','ttc'].map((m,i)=>D(['awardingProfitExVat','awardingProfitVat','awardingProfit'][i],['Bénéfice d’adjudication HT','TVA bénéfice d’adjudication','Bénéfice d’adjudication TTC'][i],
+      ['Bénéfice d’adjudication HT (montant plafonné ou contrats + avenants − DG révisé 2)','TVA du bénéfice d’adjudication','Bénéfice d’adjudication TTC (montant plafonné ou contrats + avenants − DG révisé 2)'][i],
+      {fx:A=>{ const ca=A.V('contratsAvenants',m), pl=A.X('plaf',m); if(!A.V('contratsAvenants')&&!A.X('plaf')) return 0; return (pl||ca)-(A.V('dgRevise',m)+A.X('mut2',m)); }}))]],
+  ['Paiements',[...T(['payementValue','payementVat','payementTot'],['Paiements HT','TVA paiements','Paiements TTC'],['Somme de tous les paiements HT','TVA de tous les paiements','Somme de tous les paiements TTC'],{f:'paiements',e:1},'pay'),
+    ...T(['accordPayment','accordPaymentVat','accordPaymentTot'],['Paiements sur contrat HT','TVA paiements sur contrat','Paiements sur contrat TTC'],['Paiements sur contrat HT','TVA paiements sur contrat','Paiements sur contrat TTC'],{f:'paiementsContrat',e:1}),
+    ...T(['generalPayment','generalPaymentVat','generalPaymentTot'],['Paiements hors contrat HT','TVA paiements hors contrat','Paiements hors contrat TTC'],['Paiements hors contrat HT','TVA paiements hors contrat','Paiements hors contrat TTC'],{f:'paiementsHorsContrat',e:1}),
+    ...T(['inflationPayment','inflationPaymentVat','inflationPaymentTot'],['Renchér. payé HT','TVA renchér. payé','Renchér. payé TTC'],['Paiements de renchérissement HT','TVA des paiements de renchérissement','Paiements de renchérissement TTC'],{x:'payRenc',e:1}),
+    ...T(['finalPayment','finalPaymentVat','finalPaymentTot'],['Paiements finaux HT','TVA paiements finaux','Paiements finaux TTC'],['Paiements finaux HT (dernier paiement)','TVA des paiements finaux','Paiements finaux TTC (dernier paiement)'],{x:'payFin',e:1}),
+    D('payKind','Genre de paiement','Genre de paiement',{info:'payKind',w:130}),D('previousPayment','Paiements à ce jour','Paiements à ce jour (déduits du paiement)',{info:'payPrev',w:110,num:1}),
+    D('payNr','N° paiement','Numéro de paiement',{info:'payNr',w:80}),D('payDate','Date du paiement','Date du paiement',{info:'payDate',w:86}),D('payStatus','Statut du paiement','Statut du paiement',{info:'paySt'}),
+    D('vergNr','N° d’ordre','Numéro de l’ordre de paiement',{info:'payOrdre',w:80}),D('billNr','N° de facture','Numéro de facture',{info:'billNr'}),D('billDate','Date de la facture','Date de la facture',{info:'billDate',w:86}),
+    D('paymentDesc','Description du paiement','Description du paiement',{info:'payDesc',w:200}),D('entrepreneurAccount','Compte d’entreprise','Compte de l’entreprise (IBAN)',{info:'payBank',w:170}),
+    D('buildOwnerAccount','Compte du MO','Compte du maître d’ouvrage',{info:'payMO',w:150}),D('beneficiary','Bénéficiaire','Bénéficiaire',{info:'payBenef',w:170})]],
+  ['Garantie',[D('garantyKind','Genre de garantie','Genre de garantie (arrêté de compte)',{info:'garGenre',w:110}),D('garantyRed','Montant de garantie','Montant de garantie',{info:'garMt',num:1}),
+    D('garantyBegin','Début de la garantie','Début de la garantie',{info:'garDebut',w:96}),D('garantyEnd','Échéance de la garantie','Échéance de la garantie',{info:'garFin',w:96}),D('finalPaymentNr','N° de la garantie','Numéro de l’arrêté de compte',{info:'garNr',w:80})]],
+  ['Différences',[...['ht','tva','ttc'].map((m,i)=>D(['contractMinusPaymentExVat','contractMinusPaymentVat','contractMinusPayment'][i],['Contrat − paiements HT','TVA contrat − paiements','Contrat − paiements TTC'][i],['(Contrats + avenants) − paiements HT','TVA de (contrats + avenants) − paiements','(Contrats + avenants) − paiements TTC'][i],{fx:A=>A.V('contratsAvenants',m)-A.V('paiements',m),e:1})),
+    ...['ht','tva','ttc'].map((m,i)=>D(['contractMinusAccordPaymentExVat','contractMinusAccordPaymentVat','contractMinusAccordPayment'][i],['Contrat − pmts sur contrat HT','TVA contrat − pmts sur contrat','Contrat − pmts sur contrat TTC'][i],['(Contrats + avenants) − paiements sur contrat HT','TVA de (contrats + avenants) − paiements sur contrat','(Contrats + avenants) − paiements sur contrat TTC'][i],{fx:A=>A.V('contratsAvenants',m)-A.V('paiementsContrat',m),e:1})),
+    ...['ht','tva','ttc'].map((m,i)=>D(['contractMinusAccordFinalPaymentExVat','contractMinusAccordFinalPaymentVat','contractMinusAccordFinalPayment'][i],['Plus-/moins-values HT','TVA plus-/moins-values','Plus-/moins-values TTC'][i],['(Contrats + avenants) − paiements sur contrat, après le dernier paiement HT','TVA des plus-/moins-values','(Contrats + avenants) − paiements sur contrat, après le dernier paiement TTC'][i],{fx:A=>A.X('payFin')?A.V('contratsAvenants',m)-A.V('paiementsContrat',m):0,e:1})),
+    ...['ht','tva','ttc'].map((m,i)=>D(['contractKvMinusAccordPaymentExVat','contractKvMinusAccordPaymentVat','contractKvMinusAccordPayment'][i],['Contrat/DG rév. − pmts HT','TVA contrat/DG rév. − pmts','Contrat/DG rév. − pmts TTC'][i],['(Contrats + avenants, à défaut DG révisé 2) − paiements HT','TVA de (contrats + avenants, à défaut DG révisé 2) − paiements','(Contrats + avenants, à défaut DG révisé 2) − paiements TTC'][i],{fx:A=>(A.V('contratsAvenants')?A.V('contratsAvenants',m):A.V('dgRevise',m)+A.X('mut2',m))-A.V('paiements',m)})),
+    ...['ht','tva','ttc'].map((m,i)=>D(['kvMinusPaymentExVat','kvMinusPaymentVat','kvMinusPayment'][i],['DG rév. − paiements HT','TVA DG rév. − paiements','DG rév. − paiements TTC'][i],['DG révisé 2 − paiements HT','TVA de DG révisé 2 − paiements','DG révisé 2 − paiements TTC'][i],{fx:A=>A.V('dgRevise',m)+A.X('mut2',m)-A.V('paiements',m)}))]],
+  ['Coût probable',[...T(['forcastCalculated','forcastCalculatedVat','forcastCalculatedTot'],['Coût probable HT','TVA coût probable','Coût probable TTC'],['Coût probable HT','TVA coût probable','Coût probable TTC'],{f:'coutProbable'},'cpp'),
+    ...T(['forcastBooked','forcastBookedVat','forcastBookedTot'],['Coût probable perso HT','TVA coût probable perso','Coût probable perso TTC'],['Coût probable perso HT','TVA coût probable perso','Coût probable perso TTC'],{f:'coutProbablePerso'},'cpp'),
+    ...T(['additionalCosts','additionalCostsVat','additionalCostsTot'],['Provision HT','TVA provision','Provision TTC'],['Provisions HT','TVA des provisions','Provisions TTC'],{f:'provisions'},'prov'),
+    ...T(['balanceOfCosts','balanceOfCostsVat','balanceOfCostsTot'],['État du coût HT','TVA état du coût','État du coût TTC'],['État du coût HT (coût probable − DG révisé)','TVA état du coût','État du coût TTC (coût probable − DG révisé)'],{f:'etatCout'})]],
+  ['Équations',[1,2,3,4,5,6].map(n=>D('equ'+n,'Équation '+n,'Équation '+n,{eq:n-1}))],
+  ['Libres',[1,2,3].flatMap(n=>T(['freeAccountValue'+n,'freeAccount'+n+'Vat','freeAccount'+n+'Tot'],['Libre '+n+' HT','TVA libre '+n,'Libre '+n+' TTC'],['Montant libre '+n+' HT','TVA libre '+n,'Montant libre '+n+' TTC'],{x:'libre'+n,e:1}))],
+  ['Honoraires',[D('honorarSumProc','Honoraires %','Honoraires [%]',{nd:1}),D('honorarSumValue','Montant soumis HT','Honoraires : montant du DG soumis HT',{nd:1}),D('honorarSumVat','TVA montant soumis','Honoraires : TVA du montant du DG soumis',{nd:1}),
+    D('honorarSumTot','Montant soumis TTC','Honoraires : montant du DG soumis TTC',{nd:1}),D('honorarValue','Honoraires HT','Honoraires HT',{nd:1}),D('honorarVat','TVA honoraires','TVA honoraires',{nd:1}),D('honorarTot','Honoraires TTC','Honoraires TTC',{nd:1})]]]; })();
+/* entrées du catalogue dans CC_COL : les colonnes déjà connues gardent leur titre et leur calcul (sauf kvValue, DG HT) ; les autres reçoivent le leur */
+CC_CAT.forEach(([cat,L])=>L.forEach(([id,t,l,s])=>{ const c=CC_COL[id]; if(c){ c.l=l; c.cat=cat; if(id==='kvValue') Object.assign(c,{t:'DG HT',m:'ht'}); else if(s.m&&!c.m&&c.f) c.m=s.m;
+    if(s.fx&&!c.fx&&!c.fn) c.fx=s.fx; } else CC_COL[id]=Object.assign({t,l,cat},s); }));
+['contractMinusPayment','kvMinusPayment','awardingProfit'].forEach(id=>{ const s=CC_CAT.flatMap(x=>x[1]).find(x=>x[0]===id); if(s&&CC_COL[id]){ delete CC_COL[id].fn; CC_COL[id].fx=s[3].fx; } });   /* même calcul que leurs variantes HT / TVA (DG révisé 2, montant plafonné) */
+/* montants complémentaires par CFC (TTC et HT ; parents cumulés comme ccCalc) : mutations 2, ICC, montants plafonnés, métrés, libres, paiements de renchérissement et finaux */
+function ccExtra(C,R){
+  const pos=new Map((C.positions||[]).map(p=>[String(p.cfc),p])), ouvP=C.ouvragesProjet==null?null:new Set(C.ouvragesProjet), ign=o=>!!(o&&ouvP&&!ouvP.has(o));
+  const norm=c=>{ c=String(c==null?'':c); if(pos.has(c)||!c.endsWith('.0')) return c; return pos.has(c.slice(0,-2))?c.slice(0,-2):c; };
+  const K=['renc2','transf2','varia2','mut2','icc','plaf','metre','libre1','libre2','libre3','payRenc','payFin'];
+  const z=()=>({ttc:Object.fromEntries(K.map(k=>[k,0])),ht:Object.fromEntries(K.map(k=>[k,0]))}), S=new Map(), E=new Map(), G=z();
+  const add=(cfc,ent,k,ttc,ht,avecEnt)=>{ cfc=norm(cfc); ttc=+ttc||0; ht=+ht||0; if(!cfc||(!ttc&&!ht)) return;
+    if(!S.has(cfc)) S.set(cfc,z()); const s=S.get(cfc); s.ttc[k]+=ttc; s.ht[k]+=ht; G.ttc[k]+=ttc; G.ht[k]+=ht;
+    if(avecEnt){ if(!E.has(cfc)) E.set(cfc,new Map()); const M=E.get(cfc), id=ent??null; if(!M.has(id)) M.set(id,z()); const e=M.get(id); e.ttc[k]+=ttc; e.ht[k]+=ht; } };
+  (C.mutations||[]).forEach(m=>{ if(m.centre!==2) return; const f={transfert:'transf2',transfertSansContrepartie:'transf2',variation:'varia2',rencherissement:'renc2'}[m.genre]||'varia2', t=+m.ttc||0, hh=m.ht!=null?+m.ht||0:t;
+    [[m.origine,-1],[m.destination,1]].forEach(([p,sg])=>{ if(p&&!ign(p.ouvrage)){ add(p.cfc,p.contactId,f,sg*t,sg*hh); add(p.cfc,p.contactId,'mut2',sg*t,sg*hh); } }); });
+  const TY={icc:'icc',montantPlafonne:'plaf',metre:'metre',libre1:'libre1',libre2:'libre2',libre3:'libre3'};
+  (C.ecritures||[]).forEach(e=>{ const k=TY[e.type]; if(!k||ign(e.ouvrage)) return; add(e.cfc,e.contactId,k,e.ttc,e.ht!=null?e.ht:e.ttc,true); });
+  const ctrs=new Map((C.contrats||[]).map(c=>[c.id,c]));
+  (C.paiements||[]).forEach(p=>{ const renc=p.genre==='rencherissement', fin=!!p.dernier; if(!renc&&!fin) return; const ent=p.contratId?(ctrs.get(p.contratId)||{}).contactId:p.contactId;
+    (p.lignes||[]).forEach(l=>{ if(ign(l.ouvrage)) return; const n=+l.net||0, hh=n-(+l.tva||0); if(renc) add(l.cfc,ent,'payRenc',n,hh,true); if(fin) add(l.cfc,ent,'payFin',n,hh,true); }); });
+  const tot=new Map(); S.forEach((s,c)=>{ for(let x=c,g=0;x&&g<30;x=R.par(x),g++){ if(!tot.has(x)) tot.set(x,z()); const t=tot.get(x); K.forEach(k=>{ t.ttc[k]+=s.ttc[k]; t.ht[k]+=s.ht[k]; }); } });
+  return {tot,ents:E,G}; }
+/* équations du document (paramètres ▸ équations 1 à 6) : variables de deux lettres de l'ancien logiciel, entre crochets ou non (« kc-cc », « [Ki]-[cc] ») */
+const CC_VARS=(()=>{ const V=(f,m)=>A=>A.V(f,m), X=(k,m)=>A=>A.X(k,m), F=fn=>A=>{ const c=CC_COL[fn]; return c&&c.fx?c.fx(A):null; };
+  const o={ab:V('dg','ht'),ac:V('dg','tva'),ad:V('dg'),ae:A=>A.V('dg')*A.ctx.fac,af:A=>A.P('dg'),
+    ba:V('rencherissement','ht'),bb:V('rencherissement','tva'),bc:V('rencherissement'),bd:V('transferts','ht'),be:V('transferts','tva'),bf:V('transferts'),
+    bg:V('variations','ht'),bh:V('variations','tva'),bi:V('variations'),bj:V('mutations','ht'),bk:V('mutations','tva'),bl:V('mutations'),
+    ca:V('dgRevise','ht'),cb:V('dgRevise','tva'),cc:V('dgRevise'),cd:A=>A.P('dgRevise'),ce:F('kv1M2Procent'),cf:F('kv1M3Procent'),cg:F('kv1MinusKv'),
+    da:X('renc2','ht'),db:X('renc2','tva'),dc:X('renc2'),dd:X('transf2','ht'),de:X('transf2','tva'),df:X('transf2'),dg:X('varia2','ht'),dh:X('varia2','tva'),di:X('varia2'),dj:X('mut2','ht'),dk:X('mut2','tva'),dl:X('mut2'),
+    ea:F('kv2Value'),eb:F('kv2Vat'),ec:F('kv2Tot'),ed:F('kv2Procent'),ee:F('kv2M2Procent'),ef:F('kv2M3Procent'),eg:F('kv2MinusKv'),eh:F('kv2MinusKv'),ei:F('kv2MinusKv1'),ej:F('kv2MinusKv1'),
+    fa:X('icc','ht'),fb:X('icc','tva'),fc:X('icc'),fd:F('kvIndexTotValue'),
+    ga:V('contrats','ht'),gb:V('contrats','tva'),gc:V('contrats'),gh:V('avenants','ht'),gi:V('avenants','tva'),gj:V('avenants'),gd:V('contratsAvenants','ht'),ge:V('contratsAvenants','tva'),gg:V('contratsAvenants'),
+    gk:X('plaf','ht'),gl:X('plaf','tva'),gm:X('plaf'),gn:X('metre','ht'),go:X('metre','tva'),gp:X('metre'),gq:F('awardingProfit'),
+    ha:V('paiements','ht'),hb:V('paiements','tva'),hc:V('paiements'),hd:X('payRenc','ht'),he:X('payRenc','tva'),hf:X('payRenc'),hh:V('paiementsContrat','ht'),hi:V('paiementsContrat','tva'),hj:V('paiementsContrat'),
+    hk:V('paiementsHorsContrat','ht'),hl:V('paiementsHorsContrat','tva'),hm:V('paiementsHorsContrat'),hn:X('payFin','ht'),ho:X('payFin'),
+    ja:F('contractMinusPayment'),jb:F('contractMinusAccordPayment'),jc:F('contractMinusAccordFinalPayment'),jd:F('contractKvMinusAccordPayment'),je:F('contractKvMinusAccordPayment'),
+    ka:V('coutProbable','ht'),kb:V('coutProbable','tva'),kc:V('coutProbable'),kd:V('coutProbablePerso','ht'),ke:V('coutProbablePerso','tva'),kf:V('coutProbablePerso'),
+    kg:V('provisions','ht'),kh:V('provisions','tva'),ki:V('provisions'),kj:V('etatCout','ht'),kk:V('etatCout','tva'),kl:V('etatCout')};
+  [1,2,3].forEach((n,i)=>{ const a='lmn'[i]; o[a+'a']=X('libre'+n,'ht'); o[a+'b']=X('libre'+n,'tva'); o[a+'c']=X('libre'+n); }); return o; })();
+function ccEval(expr,A){ const s=String(expr||'').toLowerCase().replace(/[\[\]\s]/g,''); if(!s) return null; let i=0, bad=false;
+  const val=()=>{ const c=s[i]; if(c==='('){ i++; const v=add(); if(s[i]===')') i++; else bad=true; return v; } if(c==='-'){ i++; return -val(); } if(c==='+'){ i++; return val(); }
+    const m=/^\d+(?:\.\d+)?/.exec(s.slice(i)); if(m){ i+=m[0].length; return +m[0]; }
+    const w=/^[a-z]{2}/.exec(s.slice(i)); if(w&&CC_VARS[w[0]]){ i+=2; const v=CC_VARS[w[0]](A); return v==null||!isFinite(v)?NaN:+v; } bad=true; i=s.length; return NaN; };
+  const mul=()=>{ let v=val(); while(s[i]==='*'||s[i]==='/'){ const o=s[i++], w=val(); v=o==='*'?v*w:(w?v/w:NaN); } return v; };
+  const add=()=>{ let v=mul(); while(s[i]==='+'||s[i]==='-'){ const o=s[i++], w=mul(); v=o==='+'?v+w:v-w; } return v; };
+  const v=add(); return bad||i<s.length||!isFinite(v)?null:v; }
+/* texte des colonnes d'information (lignes d'entreprise et lignes d'écriture) */
+function ccInfo(C,r,k){ const d=r.det, ref=d&&d.ref, K=d&&d.k;
+  const ctrE=()=>{ if(!r.sub) return null; const eid=r.eid??null; return (C.contrats||[]).find(c=>c.type==='contrat'&&(c.contactId??null)===eid&&(c.lignes||[]).some(l=>String(l.cfc)===String(r.pc)))||null; };
+  const ctrOf=()=>K==='ctr'?ref:K==='pay'&&ref.contratId?(C.contrats||[]).find(c=>c.id===ref.contratId)||null:d?null:ctrE();
+  const arr=()=>{ const c=ctrOf(); const id=c&&(c.type==='avenant'&&c.contratParentId?c.contratParentId:c.id); return id?(C.arretes||[]).find(a=>a.contratId===id)||null:null; };
+  const gar=()=>{ const a=arr(); return a&&a.garantie||null; }, pay=K==='pay'?ref:null, b=(pay&&pay.banque)||{};
+  switch(k){
+    case 'entNr': return r.sub&&r.eid!=null?String(r.eid):'';
+    case 'lblEnt': return r.sub?r.ent:d||r.tot?'':r.lbl;
+    case 'og': case 'lg': { const key=k==='og'?'ouvrage':'localisation';
+      if(d){ const L=[...(ref.lignes||[]).map(l=>l[key]),ref.destination&&ref.destination[key],ref.origine&&ref.origine[key],ref[key]].filter(Boolean); return [...new Set(L)].join(', '); }
+      if(r.sub||r.tot) return ''; const p=(C.positions||[]).find(x=>String(x.cfc)===String(r.cfc)); return p?[...new Set((p.parOuvrage||[]).map(o=>o[key]).filter(Boolean))].join(', '):''; }
+    case 'lotNr': case 'lotTx': { const c=pay||ctrOf(), l=c&&c.lot; return l?(k==='lotNr'?l.numero:l.texte)||'':''; }
+    case 'mutNum': return K==='mut'?String(ref.numero??''):''; case 'mutSt': return K==='mut'?MUT_ST[ref.statut]||ref.statut||'':''; case 'mutRem': return K==='mut'?ref.remarque||'':'';
+    case 'mutGen': return K==='mut'?ref.genreTexte||((C.genresMutation||[]).find(g=>g.code===ref.code)||{}).texte||'':''; case 'mutDate': return K==='mut'?dfr(ref.date):'';
+    case 'mutCp': { if(K!=='mut') return ''; const o=d.v<0?ref.destination:ref.origine; return o&&o.cfc?'['+o.cfc+']':''; }
+    case 'ctrNr': { const c=ctrOf(); if(!c) return ''; return c.type==='avenant'?(((C.contrats||[]).find(x=>x.id===c.contratParentId)||{}).numero||'')+'-'+(c.numero||''):String(c.numero||''); }
+    case 'ctrDate': { const c=ctrOf(); return c?dfr(c.date):''; } case 'ctrSt': { const c=ctrOf(); return c?CTR_ST[c.statut]||c.statut||'':''; }
+    case 'ctrNiv': { const c=ctrOf(); return c&&+c.niveauPrestations?num(+c.niveauPrestations,0)+' %':''; } case 'ctrGenre': { const c=ctrOf(); return c?(c.type==='avenant'?'Avenant':'Contrat'):''; }
+    case 'ctrDesc': { const c=ctrOf(); return c?c.description||'':''; }
+    case 'payKind': return pay?pay.genreTexte||pay.commentaire||'':''; case 'payPrev': { const si=pay&&(pay.conditions||[]).find(c=>c.kind===20); return si&&+si.valeur?num(+si.valeur):''; }
+    case 'payNr': return pay?String(pay.numero||''):''; case 'payDate': return pay?dfr(pay.datePaiement):''; case 'paySt': return pay?PAY_ST[pay.statut]||pay.statut||'':'';
+    case 'payOrdre': { const o=pay&&(C.ordresPaiement||[]).find(o=>o.id===pay.ordreId||(o.paiementIds||[]).includes(pay.id)); return o?String(o.numero||''):''; }
+    case 'billNr': return pay?pay.numeroFacture||'':''; case 'billDate': return pay?dfr(pay.dateFacture):''; case 'payDesc': return pay?pay.description||'':'';
+    case 'payBank': return pay?b.iban||b.compte||b.texteCompte||'':''; case 'payMO': return pay?b.compteMO||'':'';
+    case 'payBenef': return pay?b.nom||ccEntName(C,pay.contratId?((C.contrats||[]).find(x=>x.id===pay.contratId)||{}).contactId:pay.contactId)||'':'';
+    case 'garGenre': { const g=gar(); return g?({banque:'Banque',assurance:'Assurance',comptant:'Comptant',sansGarantie:'Sans garantie'})[g.genre]||'':''; }
+    case 'garMt': { const g=gar(); return g&&+g.montant?num(+g.montant):''; } case 'garDebut': { const g=gar(); return g?dfr(g.debut):''; } case 'garFin': { const g=gar(); return g?dfr(g.fin):''; }
+    case 'garNr': { const a=arr(); return a?String(a.numero||''):''; }
+  } return ''; }
+/* palette de 256 couleurs : 16 gris, puis 15 teintes (tous les 24°) en 16 clartés */
+const CC_PALETTE=(()=>{ const hx=n=>Math.round(n).toString(16).padStart(2,'0'), out=[];
+  const hsl=(hh,s,l)=>{ s/=100; l/=100; const k=n=>(n+hh/30)%12, a=s*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return '#'+hx(f(0)*255)+hx(f(8)*255)+hx(f(4)*255); };
+  for(let r=0;r<16;r++){ out.push('#'+hx(r*17).repeat(3)); for(let c=0;c<15;c++){ const l=12+r*5.4; out.push(hsl(c*24,l<20||l>88?60:78,l)); } }
+  return out; })();
+/* fenêtre « Affichage » : colonnes du tableau (catalogue complet) et couleurs des écritures ; o = {pres, setCols, touch, tab, el} */
+function ccAffichage(C,o){
+  if(!document.getElementById('cca-css')){ const st=document.createElement('style'); st.id='cca-css'; st.textContent=`
+.cca{width:1040px;max-width:92vw;font-size:13px}
+.cca-tabs{display:flex;gap:22px;border-bottom:1px solid var(--line,#ddd);margin:-4px 0 12px}
+.cca-tabs button{border:0;background:none;padding:6px 0 8px;font:inherit;font-size:13.5px;color:#777;cursor:pointer}
+.cca-tabs button.on{color:#1d1d1b;font-weight:700;box-shadow:inset 0 -3px 0 #003346}
+.cca-col{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px}
+.cca-cat{max-height:56vh;overflow:auto;padding-right:6px}
+.cca-q{width:100%;box-sizing:border-box;height:30px;margin-bottom:8px}
+.cca-h{font-weight:700;font-size:12.5px;margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--line,#ddd);display:flex;gap:8px;align-items:baseline}
+.cca-h:first-child{margin-top:0;border-top:0;padding-top:0}
+.cca-h em{font-style:normal;font-weight:400;color:#888;font-size:11.5px}
+.cca-it{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:center;padding:3px 4px;cursor:pointer}
+.cca-it:hover{background:#fffbdc}
+.cca-it.nd{color:#aaa;cursor:default}
+.cca-it .s{color:#888;font-size:11.5px;white-space:nowrap}
+.cca-it .dt{font-size:11.5px;color:#555;display:flex;gap:4px;align-items:center;white-space:nowrap}
+.cca-sel h4{margin:0 0 6px;font-size:12.5px}
+.cca-ls{max-height:52vh;overflow:auto;border-top:2px solid #1d1d1b}
+.cca-li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line,#e3e3e0)}
+.cca-li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cca-li em{display:block;font-style:normal;font-size:11px;color:#888}
+.cca-li .b{display:flex;gap:0}
+.cca-li .b button{border:0;background:none;width:26px;height:24px;cursor:pointer;color:#003346;font-size:13px}
+.cca-li .b button:hover{background:#fffbdc}
+.cca-li .b button:disabled{color:#ccc;cursor:default;background:none}
+.cca-note{font-size:11.5px;color:#888;margin-top:8px}
+.cca-acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.cca-cou{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px}
+.cca-el{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border:1px solid transparent;cursor:pointer;margin-bottom:4px}
+.cca-el:hover{background:#fffbdc}
+.cca-el.on{border:2px solid #003346;padding:7px}
+.cca-el i{width:28px;height:28px;display:block;border:1px solid rgba(0,0,0,.15)}
+.cca-el b{display:block}
+.cca-el small{display:block;color:#888;font-family:monospace;font-size:11.5px}
+.cca-el button{border:0;background:none;color:#003346;font:inherit;font-size:11.5px;cursor:pointer;padding:2px 4px}
+.cca-pal{display:grid;grid-template-columns:repeat(16,26px);gap:2px}
+.cca-pal button{width:26px;height:26px;border:0;padding:0;cursor:pointer;outline-offset:1px}
+.cca-pal button:hover{outline:2px solid #1d1d1b}
+.cca-pal button.on{outline:3px solid #1d1d1b;box-shadow:inset 0 0 0 2px #fff}
+.cca-ap{margin-top:14px;border-top:2px solid #1d1d1b}
+.cca-ap div{display:grid;grid-template-columns:minmax(0,1fr) 120px;padding:6px 4px;border-bottom:1px solid #e3e3e0;font-style:italic}
+.cca-ap div span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+`; document.head.appendChild(st); }
+  const P=o.pres(), cols=(P.colonnes||[]).map(c=>Object.assign({},c)), cou=ccCouleurs(C), eqs=(C.parametres||{}).equations||[];
+  { const k=cols.findIndex(x=>x.id==='kag'); if(k<0) cols.unshift({id:'kag',idDelta:0,details:false}); else if(k>0) cols.unshift(cols.splice(k,1)[0]); }   /* CFC : toujours la première colonne, ni déplacée ni retirée */
+  const cols0=JSON.stringify(cols);
+  delete cou.cpp; let tab=o.tab==='couleurs'?'couleurs':'colonnes', elC=o.el&&cou[o.el]?o.el:'mut';
+  const NOMS={mut:'Mutations',ctr:'Contrats et avenants',pay:'Paiements',prov:'Provisions, coût probable'};
+  const body=h('div',{class:'cca'}), tabs=h('div',{class:'cca-tabs'}), pane=h('div');
+  const titreDe=id=>{ const c=CC_COL[id]; if(!c) return id; if(c.eq!=null){ const e=(eqs[c.eq]||'').trim(); return c.t+(e?' : '+e:' (non définie)'); } return c.l||c.t; };
+  const court=id=>{ const t=!P.base&&!P.app&&(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):((CC_COL[id]||{}).t||id); };
+  let q='';
+  const drawCol=()=>{ pane.innerHTML='';
+    const qi=h('input',{class:'inp cca-q',placeholder:'Rechercher une colonne',value:q}); qi.oninput=()=>{ q=qi.value; drawL(); };
+    const L=h('div',{class:'cca-cat'}), S=h('div',{class:'cca-sel'}), ls=h('div',{class:'cca-ls'});
+    const drawL=()=>{ const sc=L.scrollTop; L.innerHTML=''; const t=q.trim().toLowerCase();
+      CC_CAT.forEach(([cat,E])=>{ const F=E.filter(([id,c,l])=>!t||(c+' '+titreDe(id)+' '+cat).toLowerCase().includes(t)); if(!F.length) return;
+        L.append(h('div',{class:'cca-h'},cat,h('em',{},F.filter(([id])=>cols.some(x=>x.id===id)).length+' / '+F.length)));
+        F.forEach(([id])=>{ const c=CC_COL[id], on=cols.some(x=>x.id===id), cb=h('input',{type:'checkbox',checked:on||null,disabled:c.nd||id==='kag'||null});
+          const x=cols.find(y=>y.id===id), dt=c.det&&on?h('label',{class:'dt',title:'Afficher les écritures sous chaque position (montants dans cette colonne)',onclick:e=>e.stopPropagation()},h('input',{type:'checkbox',checked:x&&x.details||null,onchange:e=>{ x.details=e.target.checked; }}),'détails'):null;
+          const it=h('div',{class:'cca-it'+(c.nd?' nd':''),title:c.nd?'Pas de données dans l’app pour cette colonne':''},cb,h('span',{onclick:()=>{ if(!c.nd) cb.click(); }},titreDe(id)),dt||h('span',{class:'s'},c.nd?'pas de données':court(id)));
+          cb.onchange=()=>{ if(cb.checked){ if(!cols.some(y=>y.id===id)) cols.push({id,idDelta:CH01A_IDD[id],details:!!c.det}); } else { const i=cols.findIndex(y=>y.id===id); if(i>=0) cols.splice(i,1); } drawL(); drawS(); };
+          L.append(it); }); }); L.scrollTop=sc; };
+    const drawS=()=>{ const sc=ls.scrollTop; ls.innerHTML=''; cols.forEach((x,i)=>{ const c=CC_COL[x.id];
+        const bt=(t,tt,fn,dis)=>h('button',{type:'button',title:tt,disabled:dis||null,onclick:fn},t);
+        ls.append(h('div',{class:'cca-li'},h('span',{title:titreDe(x.id)},court(x.id),h('em',{},(c?c.cat||'':'colonne inconnue')+(x.details&&c&&c.det?' · détails':''))),
+          h('div',{class:'b'},bt('↑','Monter',()=>{ cols.splice(i-1,0,cols.splice(i,1)[0]); drawS(); },i<=1||x.id==='kag'),bt('↓','Descendre',()=>{ cols.splice(i+1,0,cols.splice(i,1)[0]); drawS(); },i===cols.length-1||x.id==='kag'),
+            bt('✕','Retirer',()=>{ cols.splice(i,1); drawL(); drawS(); },x.id==='kag')))); }); ls.scrollTop=sc; };
+    S.append(h('h4',{},'Colonnes affichées, dans l’ordre'),ls,h('div',{class:'cca-acts'},h('button',{type:'button',class:'btn',onclick:()=>{ cols.splice(0,cols.length,...CC_PRES_DEF.Standard.map(id=>({id,idDelta:CH01A_IDD[id],details:!!CC_COL[id].det}))); drawL(); drawS(); }},'Colonnes Standard')),
+      h('div',{class:'cca-note'},'Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.'));
+    pane.append(h('div',{class:'cca-col'},h('div',{},qi,L),S)); drawL(); drawS(); };
+  const drawCou=()=>{ pane.innerHTML=''; const els=h('div'), pal=h('div',{class:'cca-pal'}), ap=h('div',{class:'cca-ap'});
+    const maj=()=>{ els.innerHTML=''; Object.keys(NOMS).forEach(k=>{ const def=cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase();
+        els.append(h('div',{class:'cca-el'+(k===elC?' on':''),onclick:()=>{ elC=k; maj(); }},h('i',{style:{background:cou[k]}}),h('span',{},h('b',{style:{color:cou[k]}},NOMS[k]),h('small',{},cou[k].toUpperCase())),
+          def?h('span'):h('button',{type:'button',title:'Couleur d’origine',onclick:e=>{ e.stopPropagation(); cou[k]=CC_DEF_COUL[k]; maj(); }},'d’origine'))); });
+      [...pal.children].forEach(b=>b.classList.toggle('on',b.dataset.c.toLowerCase()===cou[elC].toLowerCase()));
+      ap.innerHTML=''; [['mut','> Rocher plus dur que prévu dans la fouille nord [4]',"25'944.00"],['ctr','> Contrat 10.02.2025 [5]',"36'336.75"],['pay','> Situation 25.04.2025 [19]',"30'086.82"],['prov','> Réserve 30.10.2026',"20'000.00"]]
+        .forEach(([k,t,v])=>ap.append(h('div',{style:{color:cou[k]}},h('span',{},t),h('span',{},v)))); };
+    CC_PALETTE.forEach(c=>pal.append(h('button',{type:'button','data-c':c,title:c.toUpperCase(),style:{background:c},onclick:()=>{ cou[elC]=c; maj(); }})));
+    pane.append(h('div',{class:'cca-cou'},h('div',{},h('div',{class:'cca-note',style:{marginTop:'0',marginBottom:'8px'}},'Choisissez un élément, puis sa couleur dans la palette. Les couleurs valent pour le tableau du contrôle du coût et ses documents PDF.'),els),
+      h('div',{},pal,h('div',{class:'cca-note'},'Aperçu dans le tableau'),ap))); maj(); };
+  const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],['couleurs','Couleurs des écritures']].forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
+  body.append(tabs,pane); drawT();
+  dialog({title:'Affichage',width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+    if(JSON.stringify(cols)!==cols0) o.setCols(cols);
+    const pc=C.parametres||(C.parametres={}); if(Object.keys(CC_DEF_COUL).every(k=>cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase())) delete pc.couleursDetails; else pc.couleursDetails=Object.assign({},cou);
+    o.touch(); try{ document.dispatchEvent(new CustomEvent('cc-affichage')); }catch(_){} }}]});
+}
 
 const CCV={g:{},d:{},q:'',open:null,sec:'CONTRÔLE DU COÛT',pres:null,det:true,only3:false,sel:null,detSel:null};
 VIEWS['coco']={
@@ -3922,15 +4174,18 @@ function ccEditor(m,id){
   bar.append(ibtn({label:'‹ Liste',fn:()=>{ CCV.open=null; go('coco'); }}),h('b',{style:{margin:'0 10px'}},'Contrôle des coûts  '+projLabel(p)+' — '+(doc.VERSION||'')),
     ibtn({i:'plus',t:'Nouvelle écriture',menu:addMenu}),ibtn({i:'edit',t:'Editer l’écriture',fn:()=>editDet()}),ibtn({i:'minus',t:'Supprimer l’écriture',fn:()=>delDet()}),
     ibtn({i:'list',t:'Présentation',menu:()=>[{t:'Standard',chk:!!pres().base,fn:()=>{ CCV.pres=null; draw(); }},...(C.presentations.controle||[]).map((x,i)=>[x,i]).filter(([x])=>!(x.nom==='Standard'&&(x.colonnes||[]).map(c=>c.id).join()===CC_PRES_DEF.Standard.join())).map(([x,i])=>({t:(x.nom||'(sans nom)')+(x.nom==='Standard'?' (du document)':''),chk:CCV.pres===i&&!pres().base,fn:()=>{ CCV.pres=i; draw(); }})),'-',
-      {t:'Afficher les détails',chk:CCV.det,fn:()=>{ CCV.det=!CCV.det; draw(); }},{t:'N’afficher que les positions de 1 à 3 chiffres',chk:CCV.only3,fn:()=>{ CCV.only3=!CCV.only3; draw(); }}]}),
+      {t:'Affichage … (colonnes et couleurs)',fn:()=>CCV.affichage()},'-',{t:'Afficher les détails',chk:CCV.det,fn:()=>{ CCV.det=!CCV.det; draw(); }},{t:'N’afficher que les positions de 1 à 3 chiffres',chk:CCV.only3,fn:()=>{ CCV.only3=!CCV.only3; draw(); }}]}),
     ibtn({i:'wrench',t:'Paramètres',menu:()=>[{t:'Attribuer le devis général validé …',fn:()=>ccAssignDG(C,p,touch)},{t:'Configuration …',fn:()=>ccConfig(C,touch)}]}),
     ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Copier le contenu du tableau dans le presse-papier',fn:()=>copyTable(G)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(G,'Controle_couts_'+(p.NUMBER||''))},{t:'Imprimer le tableau (A4 paysage)',fn:()=>ccPrint(p,doc,G)}]}),
     ibtn({i:'save',t:'Enregistrer',fn:()=>save().then(()=>toast('Enregistré.'))}));
-  const COLOR={mut:'#993300',ctr:'#FF6633',pay:'#003366',prov:'#555',cpp:'#555'};
-  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
+  const COLOR=ccCouleurs(C);   /* couleurs des écritures : celles du document (Affichage ▸ Couleurs des écritures, 11.11.2026), sinon celles de l'ancien logiciel */
+  /* Affichage (colonnes du catalogue complet, couleurs) : « Standard » n'est jamais modifiée — une présentation « Personnalisée » du document est créée ou mise à jour */
+  const setCols=cols=>{ const L=C.presentations.controle||(C.presentations.controle=[]), P=pres(); if(P.base){ let i=L.findIndex(x=>x.nom==='Personnalisée'); if(i<0){ L.push({nom:'Personnalisée',app:true,colonnes:cols,options:{}}); i=L.length-1; } else L[i]=Object.assign({},L[i],{app:true,colonnes:cols}); CCV.pres=i; } else { P.colonnes=cols; if(P.nom==='Personnalisée') P.app=true; } };
+  CCV.cur={C}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
+  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
     if(sec==='DOCUMENTS'){ ccDocsDraw(pane,{C,p,doc,id,touch},G); return; }
     if(sec==='CONTRÔLE DU COÛT'||sec==='DEVIS GENERAL'){
-      const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]);
+      const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]).sort((a,b)=>(b==='kag')-(a==='kag'));   /* CFC toujours la première colonne */
       const detK=new Set(sec==='DEVIS GENERAL'?[]:pres().colonnes.filter(c=>c.details&&CC_COL[c.id]&&CC_COL[c.id].det).map(c=>CC_COL[c.id].det)); if(detK.has('prov')) detK.add('cpp');
       const top=c=>{ let x=c; while(R.par(x)) x=R.par(x); return x; };
       const rows=[];
@@ -3938,24 +4193,36 @@ function ccEditor(m,id){
         if(!Object.values(v).some(x=>Math.abs(x)>0.004)&&!R.lbl.has(c)) return;
         rows.push({k:c+'|-',cfc:c,lbl:R.lbl.get(c)||'',ent:'',v,lvl:cfcLevel(c),title});
         if(sec==='DEVIS GENERAL') return;
-        const E=R.ents.get(c); if(E) E.forEach((x,eid)=>{ rows.push({k:c+'|'+eid,cfc:'',lbl:'',ent:ccEntName(C,eid),v:x,sub:true});
+        const E=R.ents.get(c); if(E) E.forEach((x,eid)=>{ rows.push({k:c+'|'+eid,cfc:'',lbl:'',ent:ccEntName(C,eid),v:x,sub:true,pc:c,eid});
           if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.ent??null)===(eid??null)).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|'+eid+'|'+d.k+i,det:d,cfc:'',lbl:'',ent:'> '+d.txt,v:{}})); });
         if(CCV.det) (R.det.get(c)||[]).filter(d=>detK.has(d.k)&&(d.k==='mut'||d.k==='prov'||d.k==='cpp')&&!(E&&E.has(d.ent??null))).sort((a,b)=>cmp(a.d,b.d)).forEach((d,i)=>rows.push({k:c+'|-|'+d.k+i,det:d,cfc:'',lbl:'',ent:'> '+d.txt,v:{}})); });
       rows.push({k:'TOTAL',tot:true,cfc:'',lbl:'Total général',ent:'',v:R.G});
       const pct=(r,f)=>{ if(r.sub||r.tot||r.det) return ''; const base=(R.tot.get(top(r.cfc))||{})[f]; return base?num(r.v[f]/base*100,1):''; };
-      const cell=(r,id)=>{ const c=CC_COL[id];
+      /* catalogue complet (11.11.2026) : HT (ccCalc sur les montants HT), TVA = TTC − HT, montants complémentaires (ccExtra), calculs, équations, informations */
+      let RH=null, XX=null; const HT=()=>RH||(RH=ccCalc(ch01aHT(C))), XT=()=>XX||(XX=ccExtra(C,R));
+      const fac=(C.parametres||{}).facteurDG!=null?+C.parametres.facteurDG:1, m2=+(p&&p.AREA)||0, m3=(typeof sgVolumeSIA416==='function'&&+sgVolumeSIA416(p))||+(p&&p.VOLUME)||0;
+      const src=(r,S)=>r.tot?S.G:r.sub?((S.ents.get(r.pc)||new Map()).get(r.eid??null)||{}):(S.tot.get(r.cfc)||{});
+      const acc=r=>{ const a={ctx:{fac,m2,m3},V:(f,m)=>{ const t=+((r.v||{})[f]||0); if(!m||m==='ttc') return t; const hh=+(src(r,HT())[f]||0); return m==='ht'?hh:t-hh; },
+          X:(k,m)=>{ const z=src(r,XT()), t=+((z.ttc||{})[k]||0), hh=+((z.ht||{})[k]||0); return !m||m==='ttc'?t:m==='ht'?hh:t-hh; },
+          P:f=>{ if(r.tot) return 100; if(r.sub||r.det) return null; const b=(R.tot.get(top(r.cfc))||{})[f]; return b?((r.v||{})[f]||0)/b*100:null; }};
+        if(!r.tot&&!r.sub&&!r.det&&r.cfc){ const tc=top(r.cfc); a.T=tc===r.cfc?a:acc({cfc:tc,v:R.tot.get(tc)||{}}); } return a; };
+      const valeur=(r,c)=>{ if(c.fx){ const a=acc(r); return c.fx(a); } if(c.x) return acc(r).X(c.x,c.m); if(c.eq!=null) return ccEval(((C.parametres||{}).equations||[])[c.eq],acc(r)); if(c.f&&c.m) return acc(r).V(c.f,c.m); return c.fn?c.fn(r.v):((r.v||{})[c.f]||0); };
+      const cell=(r,id)=>{ const c=CC_COL[id]; if(c.nd) return '';
+        if(c.info){ const t=ccInfo(C,r,c.info); if(t==null||t==='') return ''; return r.det?`<i style="color:${COLOR[r.det.k]}">${esc(String(t))}</i>`:esc(String(t)); }
         if(r.det) return c.det&&(c.det===r.det.k||(c.det==='prov'&&r.det.k==='cpp')||(c.det==='cpp'&&r.det.k==='cpp'))?`<i style="color:${COLOR[r.det.k]}">${r.det.last?'F':''}${num(r.det.v)}</i>`:'';
         if(c.pct) return pct(r,c.pct); if(r.sub&&!c.e) return '';
-        const v=c.fn?c.fn(r.v):(r.v[c.f]||0); if(!v) return '';
+        const v=valeur(r,c); if(v==null||!isFinite(v)||Math.abs(v)<0.005) return '';
         if(id==='payementTot'&&!r.tot&&!r.sub){ const b=r.v.contratsAvenants||r.v.dgRevise; return `<span style="color:${v<=b+0.05?'#2e7d46':'#c62828'}">${num(v)}</span>`; }
-        return num(v); };
+        return num(v,c.dec??2); };
       const B=r=>r.tot||(r.title&&r.lvl<=2)?'font-weight:700;':'';
-      const title=id=>{ if(pres().base) return CC_COL[id].t; const t=(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):CC_COL[id].t; };   // Standard : titres standards de Deltaproject
+      const title=id=>{ if(pres().base||pres().app) return CC_COL[id].t;   /* « Personnalisée » (app) : titres du catalogue, HT / TVA / TTC explicites */
+        const t=(C.titresColonnes||{})[id]; return t&&t.filter(Boolean).length?t.filter(Boolean).join(' '):CC_COL[id].t; };   // Standard : titres standards de Deltaproject
       Object.assign(G,{key:r=>r.k,cols:ids.map(id=>{ const c=CC_COL[id];
           if(c.sp==='cfc') return {k:'cfc',t:title(id),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`};
           if(c.sp==='lbl') return {k:'lbl',t:title(id),w:230,f:r=>`<span style="${B(r)}">${esc(r.lbl)}</span>`};
           if(c.sp==='ent') return {k:'ent',t:title(id),w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)};
-          return {k:id,t:title(id),w:c.pct?60:118,cls:'r',f:r=>`<span style="${B(r)}">${cell(r,id)}</span>`}; }),
+          if(c.info) return {k:id,t:title(id),w:c.w||110,cls:c.num?'r':'',f:r=>cell(r,id)};
+          return {k:id,t:title(id),w:c.w||(c.pct?60:118),cls:'r',f:r=>`<span style="${B(r)}">${cell(r,id)}</span>`}; }),
         rows,sort:null,noSort:true,sel:CCV.sel,onSel:r=>{ if(r.det){ CCV.detSel=r.det; } else { CCV.sel=r.k.split('|').slice(0,2).join('|'); CCV.detSel=null; } },onDbl:r=>{ if(r.det){ CCV.detSel=r.det; editDet(); } }});   // ordre fixe (hiérarchie des CFC, comme Deltaproject) : pas de tri par les titres (Paulo, 10.11.2026)
       if(!ids.some(i=>CC_COL[i].sp==='cfc')) G.cols.unshift({k:'cfc',t:title('kag'),w:62,f:r=>`<span style="${B(r)}">${esc(r.cfc)}</span>`});   // colonne CFC fixe et toujours la première, comme Deltaproject (les présentations reprises de Deltaproject ne la contiennent pas ; 10.11.2026)
       if(!ids.some(i=>CC_COL[i].sp==='ent')&&sec!=='DEVIS GENERAL') G.cols.splice(2,0,{k:'ent',t:'Entreprise',w:230,f:r=>r.det?`<i style="color:${COLOR[r.det.k]}">${esc(r.ent)}</i>`:esc(r.ent)});
@@ -16106,7 +16373,10 @@ function ch01aCentres(C,R,H){ R=R||ccCalc(C); H=H||ccCalc(ch01aHT(C)); const L=(
 function ch01aOvVal(id,v,hv,p,fac){ switch(id){ case 'kvValue': return hv?hv.dg:null; case 'kvTotInclFac': return (v.dg||0)*fac;
     case 'kv1M2Procent': return p&&+p.AREA?(v.dgRevise||0)/+p.AREA:null; case 'kv1M3Procent': return p&&+p.VOLUME?(v.dgRevise||0)/+p.VOLUME:null; case 'equ1': return null;
     case 'awardingProfit': return (v.dgRevise||0)-(v.contratsAvenants||0); }
-  const c=CC_COL[id]; if(!c||c.sp) return null; if(c.pct) return 'pct'; return c.fn?c.fn(v):(v[c.f]||0); }
+  const c=CC_COL[id]; if(!c||c.sp) return null; if(c.pct) return 'pct'; if(c.nd||c.info||c.x||c.eq!=null) return null;
+  if(c.fx){ const A={ctx:{fac,m2:p&&+p.AREA,m3:p&&+p.VOLUME},V:(f,m)=>{ const t=+(v[f]||0); if(!m||m==='ttc') return t; if(!hv) return NaN; const hh=+(hv[f]||0); return m==='ht'?hh:t-hh; },X:()=>0,P:()=>null,T:null}; const y=c.fx(A); return y==null||!isFinite(y)?null:y; }   /* catalogue complet (11.11.2026) */
+  if(c.m){ if(!hv) return null; const t=+(v[c.f]||0), hh=+(hv[c.f]||0); return c.m==='ht'?hh:t-hh; }
+  return c.fn?c.fn(v):(v[c.f]||0); }
 /* texte d'une ligne de détail du « Récapitulatif des coûts » (CostOverviewTable.getMutationsString, getContractString, getAddendumString, getPayString,
    getAdditionalCostBookString, getPrognosisBookString) : signe de la présentation (OverviewPref.<init> : « > »), remarque sinon libellé, date courte
    « jj.mm.aa » (Formatter.formatShortDate), n° entre crochets. Mutation : remarque sinon genre, date et n° si writeMutDetailDate (md) ; contrat / avenant :

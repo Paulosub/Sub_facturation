@@ -128,6 +128,8 @@ const ED_CSS=`
 .sgce-dsub{flex:none;margin:0 24px;padding:9px 0 8px;flex-wrap:wrap;gap:6px 16px}
 .sgce-dsub .sgce-dt{color:var(--s-gris)}
 .sgce-leg{flex:none;display:flex;align-items:center;gap:12px;font-size:11.5px;font-style:italic;margin:0 12px 0 6px;white-space:nowrap}
+.sgce-leg button{border:0;background:none;padding:3px 0;font:inherit;font-size:11.5px;font-style:italic;cursor:pointer;white-space:nowrap}
+.sgce-leg button:hover{text-decoration:underline}
 .sgce-bar .sgce-x{display:none}
 .sgce:not(.cc) .sgce-bar .sgce-niv,.sgce:not(.cc) .sgce-sep.n,.sgce:not(.det) .sgce-leg{display:none}
 .sgce.docs>.sgce-bar,.sgce:not(.docs)>.sgce-dsub{display:none}
@@ -205,8 +207,12 @@ function habillerEd(m,id){ cssC(); cssE();
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-',...fon(/^(Copier|Exporter)/),'-',{t:'Enregistrer',fn:()=>bSave.click()}]}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');
   box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgce-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const s=bPlein.querySelector('svg'); if(s&&typeof nxSvg==='function') s.outerHTML=nxSvg(ED.plein?'pleinq':'plein'); bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
-  const leg=el('span','sgce-leg','<span style="color:#993300">Mutations</span><span style="color:#FF6633">Contrats</span><span style="color:#003366">Paiements</span><span style="color:#555">Provisions, coût probable</span>');
-  leg.title='Couleur des écritures affichées sous chaque position (Présentation ▸ Afficher les détails)';
+  /* légende des couleurs des écritures : couleurs du document (Présentation ▸ Affichage ▸ Couleurs des écritures, 11.11.2026) ; un clic ouvre la palette sur l'élément */
+  const leg=el('span','sgce-leg'); ED.leg=leg;
+  ED.majLeg=()=>{ const K=typeof ccCouleurs==='function'?ccCouleurs(CCV.cur&&CCV.cur.C):{mut:'#993300',ctr:'#FF6633',pay:'#003366',prov:'#555555'};
+    leg.innerHTML=[['mut','Mutations'],['ctr','Contrats'],['pay','Paiements'],['prov','Provisions, coût probable']].map(([k,t])=>'<button type="button" data-k="'+k+'" style="color:'+K[k]+'" title="Changer la couleur : '+t.toLowerCase()+'">'+t+'</button>').join(''); };
+  ED.majLeg(); leg.onclick=e=>{ const b=e.target.closest('[data-k]'); if(b&&typeof CCV.affichage==='function') CCV.affichage('couleurs',b.dataset.k); };
+  if(!SGCC._legEv){ SGCC._legEv=1; document.addEventListener('cc-affichage',()=>{ if(ED.majLeg) ED.majLeg(); }); }
   const autres=[...bar.children].filter(x=>!B.includes(x)&&x.tagName!=='B');   /* éléments ajoutés à la barre par d'autres blocs : gardés à la fin */
   bar2.append(bNew,sep(),bPresN,sep('n'),niv,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */

@@ -17,6 +17,14 @@ Le script reconstruit la version, la copie dans `/tmp/subgestion_apercu/` avec l
 (`base_test.json.gz`) et rappelle la configuration `subgestion-apercu` (port 7797) à ajouter à `.claude/launch.json`
 si elle manque. Puis `preview_start {name:"subgestion-apercu"}` et naviguer vers `http://localhost:7797/SUBGestion3.html`.
 
+Deux entrées de `.claude/launch.json` (fichier propre à chaque poste, hors git) servent ce dossier sur le port 7797 :
+`subgestion-apercu` et `subgestion` — celle que le volet d'aperçu de l'app démarre quand Paulo l'ouvre lui-même (14.11.2026 :
+elle pointait sur un dossier supprimé, d'où une page « File not found »). Même port = même base. Une seule tourne à la fois :
+faire `preview_list` d'abord et, si l'une tourne déjà, utiliser son onglet (démarrer l'autre donne « Port … already in use »).
+Le dossier a une page d'accueil `index.html`, écrite par le script, qui renvoie vers l'app : le volet ouvre la racine, pas l'app.
+Le script signale l'entrée qui manque ou qui pointe ailleurs. Quand Paulo demande de « charger l'aperçu » : vérifier que le dossier
+existe (`/tmp` est vidé au redémarrage du Mac : relancer le script), démarrer l'aperçu, puis `show_pane {pane:"preview"}`.
+
 L'aperçu a sa propre origine (localhost) : sa base est séparée de celle de Paulo. Pour y charger la base de test :
 ```js
 const b=await (await fetch('/base_test.json.gz')).blob(); await lbImport(new File([b],'base_test.json.gz')); location.reload();

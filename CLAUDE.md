@@ -2514,6 +2514,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `base_test.json.gz` ; les maquettes (`proposition_*.html`, copies complètes de l'app) et l'ancienne copie NAS supprimées, leurs scripts gardés dans
   `subgestion3/_backup_20261024_maquettes_apercu/` (ignoré par git) — pour remontrer une maquette, recopier SUBGestion3.html sous un autre nom et y
   injecter le script. Le stockage du navigateur intégré peut être vidé (fermeture de l'app) : recharger la base de test (skill de vérification).
+  **Volet d'aperçu ouvert par Paulo (14.11.2026, « charger l'aperçu »)** : l'app démarre alors l'entrée `subgestion` de `.claude/launch.json` (fichier hors
+  git, propre à chaque poste), qui pointait encore sur le dossier supprimé d'une ancienne session (port 7796 : page « File not found ») ; elle sert désormais le
+  même dossier sur le même port 7797 que `subgestion-apercu` (même base ; une seule à la fois, démarrer l'autre donne « Port … already in use »). Le dossier a
+  aussi une page d'accueil `index.html` qui renvoie vers l'app (le volet ouvre la racine) : écrite par `construire_et_previsualiser.sh`, qui contrôle les deux entrées.
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
 

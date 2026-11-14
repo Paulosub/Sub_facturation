@@ -2227,8 +2227,42 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   du moteur). Arrêtés : N°, Entreprise, Date, Statut, Garantie, Début et Échéance de garantie, Montant de garantie, Facture finale nette (liste et ordre de l'écran,
   `ch01cGarList`), totaux. Ordres : chaque ordre en gras (n°, date, maître de l'ouvrage, nombre de paiements, statut, total) puis ses paiements (CFC, bénéficiaire, n° de
   paiement, statut, montant), du plus récent au plus ancien, total général. Les documents eux-mêmes (bon de paiement, ordre de paiement, arrêté de compte) : maquettes
-  demandées par Paulo le même jour (reproduction des documents du bureau + 5 variantes), `subgestion3/_backup_20261114_maquette_bon_arrete/`, choix en attente.
+  demandées par Paulo le même jour (reproduction des documents du bureau + 5 variantes), `subgestion3/_backup_20261114_maquette_bon_arrete/` — choix fait le même jour (paragraphe suivant).
   Copies d'avant : `subgestion3/_backup_20261114_1001_avant_fenetre_controle_reglages/`, `DeltaSub_backup_20261114_1001_avant_fenetre_controle_reglages.html`.
+  **Bon de paiement et arrêté de compte = variante 2 « Grand chiffre » (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans archives et appliquer
+  la version 2 pour le moment », puis, deux documents du bureau à l'appui — 17QUE.BOP.135 et 17QUE.AC.222, clients, jamais dans le dépôt : « voici les bons de paiement
+  avec les données qui doivent apparaître sur le bon et l'arrêté de compte, ajoute et adapte la version actuelle », « il est possible d'avoir les documents sur deux pages
+  si nécessaire »)** — dessin : `contenuDecompte` de `sgDsPdf` (`sg3_docsub.js`, option `o.decompte` = {etat, num, titre, no, chiffre {lib, sous, monnaie, montant}, blocs,
+  sig}) : papier des contrats en portrait, colonne de x 125.72 à 510.68 ; filet noir de 1 pt à 100 pt du haut, état en rouge à droite, numéro en Light 26, titre en Bold 26
+  (« Ordre de paiement n° … » / « N° … » à droite sur sa ligne), filet, puis le chiffre (libellé en capitales, ligne grise, montant en Bold 26 précédé de « CHF ») ;
+  rubriques séparées par des filets gris, libellé en capitales à x 125.72, contenu dès x 222.98, interligne 12,5 ; blocs `rub` (lignes ; préfixe gris `p`, deux moitiés
+  `p2` / `x2`, texte à droite `d`), `tab` (colonnes aux largeurs des valeurs, colonne de texte `flex` passée à la ligne, titres gris 7 pt sur deux lignes, `large` = dès la
+  colonne des libellés, le libellé tenant lieu de titre à la 1re colonne ; rangées `s` : '' ligne, 'p' palier gras, 'q' Regular, 't' total gras à filet noir, 'i' gris, 'h'
+  intertitre, 'v' espace), `par` (paragraphe) ; signatures en deux colonnes (libellé, nom, adresse, place, filet, « Lieu, date » / « Signature, tampon »), en bas de la
+  première page sur le bas du logo, à 40 pt sous le texte sur une page de suite. Deux pages si nécessaire : tableau coupé = libellé « (suite) » et titres répétés, un total
+  ne part jamais seul, les blocs `fin` (décompte du bon ; déclaration et garantie de l'arrêté) restent avec les signatures. Données (`sg3_coco_docs.js` : `DEC_TYPES`,
+  `bonDonnees`, `arrDonnees`, `decOctets`, genre 'bon' / 'arrete' de `ch01aRender`) = tableaux du moteur (`ch01dBonJob`, `ch01cGuaranteeJob` : mêmes valeurs, mêmes
+  arrondis et mêmes libellés du modèle que le document d'avant). **Bon** : entreprise ; banque et IBAN de l'entreprise (`banque.iban`, sinon compte, sinon texte du
+  compte) ; affaire (description du projet) ; banque / compte du maître de l'ouvrage (`ch01dBankMO`) ; « L'architecte confirme que le versement suivant peut être effectué »
+  + lot, dates de facture et de paiement ; tableau CFC (adjudication brute / nette, paiement brut / net, total ; hors contrat : paiement brut / net) ; décompte (conditions,
+  total HT, TVA, total TTC, arrondi — sans la 1re ligne « Total brut », qui est le total du tableau) ; état = commentaire du paiement (« acompte 02 »), sinon son genre ;
+  numéro `<affaire>.BOP.<n°>` ; date de l'en-tête = date de l'ordre de paiement ; signatures architecte / maître de l'ouvrage (celui de l'ordre, sinon de l'affaire).
+  **Arrêté** : adjudication (contrat et avenants), récapitulatif par CFC, facture finale (décompte brut, conditions, total HT, TVA, total net TTC), paiements (à ce jour,
+  total, solde à verser, autres paiements, montant total ; colonne « Date pmt » = colonne 4 du tableau du moteur, celle du document du bureau, décision F1), déclaration
+  (`ARR_DECL`, texte du bureau avec l'art. 156 SIA 118, coquille « au sera versé » corrigée), « Certificat de garantie d'assurance » + montant ; numéro
+  `<affaire>.AC.<n° CFC du lot>` (sans lot : n° de l'arrêté), « N° <arrêté> » à droite du titre, état « Facture finale », chiffre = solde à verser ; signatures architecte /
+  entreprise. Renvoi « (1) », « (2) » entre une position et sa condition quand le paiement en a (deux taux de TVA). Fenêtre : titre « Bon de paiement n° 135 » / « Arrêté
+  de compte n° 24 » (`decNom`, au lieu du nom technique « 135_10511_payment ») ; Réglages = « Arrondir les conditions », « Afficher le total arrondi » (déjà là) et, pour un
+  arrêté qui a un paiement final, « Inclure le paiement final » (`o.final`, la question que le moteur pose à l'ouverture ; vaut pour cette ouverture). Création : plus de
+  fenêtre « Choisir le modèle » pour ces deux documents (`ch01aTplPick` enveloppé : premier modèle de la liste, celui proposé d'office — le dessin ne dépend plus du
+  modèle, seuls quelques libellés en viennent). Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement garde son rendu. Vérifié le 14.11.2026 : bon n° 135
+  et arrêté n° 24 de 17QUE = mêmes chiffres que les PDF du bureau ; 440 documents en série (tous les bons et arrêtés de 17QUE.DF.1 et de 99TST, arrêtés avec et sans
+  paiement final) : aucune erreur, 393 sur une page, 47 sur deux (des arrêtés), aucun tableau trop large ; essai d'un bon de 38 lignes (deux pages) ; « Créer le PDF » =
+  même dessin ; balayage des 121 écrans ; `nas/nettoyer.py` passe (rien déposé). Débogage : `SGCD.bonDonnees(o,rec)`, `SGCD.arrDonnees`, `SGCD.decOctets`.
+  **Archives ▸ Maquettes ▸ « Bon de paiement et arrêté · Deux colonnes »** (`mq-bon-arrete-4`, fin de `sg3_coco_docs.js`, `dom:'reglages'`) : la variante 4 (à gauche qui
+  et quoi, à droite le décompte sur bande bleu nuit et les signatures), gardée pour plus tard — pages et feuille de style produites par le script de la maquette
+  (`maquette.py`, fonctions `v4_bon` / `v4_arrete`), données fictives de 99TST, racine fantôme, rien n'est lu ni écrit ; un clic agrandit une page. Copies d'avant :
+  `subgestion3/_backup_20261114_1500_avant_bon_arrete_grand_chiffre/`, `SUBGestion3_backup_20261114_1500_avant_bon_arrete_grand_chiffre.html`.
   **Paiements sur contrat et hors contrat : deux couleurs (11.11.2026, Paulo : « ajoute une couleur pour les paiements sur contrat et hors contrat »)** : `CC_DEF_COUL.payh`
   (hors contrat ; tant qu'elle n'est pas choisie : la couleur des paiements), `coulDe(d)` dans l'éditeur (écriture `pay` sans `contratId` → `payh`), libellés « Paiements sur
   contrat » / « Paiements hors contrat » dans la fenêtre des couleurs, PDF : `pk` des lignes d'écriture du travail du moteur (`detRow`) lu par `sg3_coco_docs.js`.
@@ -2303,7 +2337,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   des garanties (`listeOctets` : tableaux du modèle mis en texte par le bloc 31 — `SGIMP.preparer` —, largeurs d'après le contenu, total sur bande bleu nuit, page de
   garde sans signatures ; échec → PDF du bloc 31). Données = jobs du moteur sur une copie de travail (présentation choisie, propriétés des tableaux réglées par le
   volet) : rien n'est écrit dans le contrôle des coûts. Mots coupés de l'ancien logiciel recollés (« inté- rieures »). Lettres (contrat, avenant, mutation, bons,
-  ordre, arrêté) : rendu du bloc 31 inchangé.
+  ordre, arrêté) : rendu du bloc 31 inchangé — sauf, depuis le 14.11.2026, le bon de paiement et l'arrêté de compte, dessinés en « Grand chiffre » (voir plus haut).
   **Réglages** : `cocodoc.options.sgPdf` du document (`optsDe` / `optsSet` : gardés en mémoire pendant l'envoi, envois à la suite, refus → message et retour) ;
   Contrôle des coûts : Format (portrait grisé au-delà de 5 colonnes de montants), Colonnes (Standard · présentations du document), Parties (page de garde, centres de
   coût, récapitulatif à 2 chiffres, contrôle détaillé), Positions (CFC Tout · 3 · 2 · 1, entreprises, subdivisions par ouvrage), Écritures (case principale, puis

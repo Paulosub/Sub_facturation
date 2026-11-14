@@ -1786,7 +1786,153 @@ async function sgDsPdf(R, rep, o){
         yy += hLigne(x); });
       y = yy + 4; fil(y, FILN, 0.5); noter(it, yP, y, suiteP); prev = 'f'; });
   };
+  /* ── décompte « Grand chiffre » (variante 2 choisie par Paulo le 14.11.2026 pour le bon de paiement et l'arrêté de compte du contrôle des coûts : « appliquer la
+     version 2 pour le moment » ; maquettes : subgestion3/_backup_20261114_maquette_bon_arrete/) — o.decompte = { etat, num, titre, no,
+       chiffre:{ lib, sous (texte ou parties), monnaie, montant },
+       blocs:[ { t:'rub', lib, wp, lignes:[{ x, f:'l'|'r'|'b', z, g (gris), d (texte à droite), p (préfixe gris), p2, x2 (seconde moitié de la ligne) }] }
+             | { t:'tab', lib, large (dès la colonne des libellés : le libellé tient lieu de titre à la 1re colonne), cols:[{ t (titre, « \n » = deux lignes), r (à droite), flex (colonne de texte), g (gris), w }], rows:[{ c:[…], s }] }
+             | { t:'par', lib, x }   — chaque bloc : fin (gardé avec les signatures) ],
+       sig:[{ lib, nom, adr }] }.
+     Rangées d'un tableau, s : '' ligne, 'p' palier (gras), 'q' Regular, 't' total (gras, filet noir dessus), 'i' gris (information, arrondi), 'h' intertitre, 'v' espace.
+     Page (portrait, papier des contrats) : colonne de x 125.72 (2e colonne du pied) à 510.68 (trait du numéro de page) ; filet noir de 1 pt à 100 pt du haut, état en
+     rouge à droite, numéro en Light 26, titre en Bold 26 (« N° … » à droite sur sa ligne), filet, puis le chiffre : libellé en capitales, ligne grise, montant en
+     Bold 26 précédé de la monnaie ; rubriques séparées par des filets gris : libellé en capitales à x 125.72, contenu dès x 222.98 (3e colonne du pied), interligne
+     12,5 ; tableaux dans la colonne du contenu (largeurs d'après les valeurs, colonne de texte passée à la ligne, titres en gris 7 pt) ; signatures en deux colonnes,
+     en bas de la première page, alignées sur le bas du logo (sur une page de suite : à 40 pt sous le texte). Deux pages si nécessaire (Paulo, 14.11.2026) : un tableau coupé reprend son libellé « (suite) » et ses titres ; un total ne
+     part jamais seul ; les blocs « fin » restent avec les signatures. ── */
+  const contenuDecompte = (cx) => {
+    const D = o.decompte || {}, H = PAP.format.portrait.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t);
+    const GRISc = PDFLib.rgb(0.4392, 0.4353, 0.4353), FILc = PDFLib.rgb(0.847, 0.847, 0.831), ROUGEc = PDFLib.rgb(0.741, 0.118, 0.259);
+    const X0 = 125.72, X1 = 510.68, XV = 222.98, W = X1 - X0, WV = X1 - XV, LW = XV - X0 - 8, HAUT = 100, BAS = H - 89.245, PAS = 12.5;
+    const bar = (y, ep, col, a, b) => cx.rect(a == null ? X0 : a, T(y + ep), (b == null ? X1 : b) - (a == null ? X0 : a), ep, { fond:col });   /* filet : haut à y */
+    const dB = (h, z) => (h - z) / 2 + 0.7785 * z;   /* du haut d'une ligne de hauteur h à sa ligne de base, corps z */
+    const pol = (f) => f === 'b' ? F.bold : f === 'r' ? F.regular : f === 'i' ? F.lightItalic : F.light;
+    const reduit = (t, f, z, w) => Math.min(z, z * w / Math.max(1, cx.largeur(t, f, z)));   /* corps réduit si le texte dépasse la largeur */
+
+    /* tête de la première page ; renvoie le y (depuis le haut) où commencent les rubriques */
+    const tete = () => {
+      bar(HAUT, 1, C.N);
+      if(D.etat){ const st = cx.maj(P(D.etat)), ws = cx.largeur(st, F.regular, 7.5), yb = HAUT + 7 + dB(8, 7.5);
+        cx.texte(st, X1, T(yb), { police:F.regular, taille:7.5, couleur:ROUGEc, align:'d' }); cx.rect(X1 - ws - 4 - 5, T(yb) + 0.2, 5, 5, { fond:ROUGEc }); }
+      let y = HAUT + 17; const num = P(D.num || ''), tit = cx.maj(P(D.titre || '')), no = P(D.no || '');
+      if(num){ cx.texte(num, X0, T(y + dB(29, 26)), { police:F.light, taille:reduit(num, F.light, 26, W) }); y += 29; }
+      if(tit || no){ const wNo = no ? cx.largeur(no, F.regular, 9) + 14 : 0;
+        if(tit) cx.texte(tit, X0, T(y + dB(29, 26)), { police:F.bold, taille:reduit(tit, F.bold, 26, W - wNo) });
+        if(no) cx.texte(no, X1, T(y + dB(29, 26)), { police:F.regular, taille:9, align:'d' }); y += 29; }
+      y += 11; bar(y, 0.75, C.N); y += 0.75;
+      const G = D.chiffre || {}, mt = P(G.montant || ''), mo = P(G.monnaie || ''), zM = mt ? reduit(mt, F.bold, 26, W * 0.62) : 26;
+      const wM = mt ? cx.largeur(mt, F.bold, zM) : 0, wMo = mt && mo ? cx.largeur(mo, F.light, 8) + 6 : 0;
+      const wS = Math.max(110, W - wM - wMo - 16), sous = [];   /* parties réunies par « · » tant qu'elles tiennent sur la ligne ; sinon à la ligne suivante */
+      (Array.isArray(G.sous) ? Array.from(G.sous) : G.sous ? [G.sous] : []).map(P).filter(Boolean).forEach(t => { const d = sous.length ? sous[sous.length - 1] + ' · ' + t : null;
+        if(d && cx.largeur(d, F.light, 8) <= wS) sous[sous.length - 1] = d; else cx.couper(t, F.light, 8, wS).forEach(l => sous.push(l)); });
+      sous.length = Math.min(sous.length, 4);
+      const hL = 11 * ((G.lib ? 1 : 0) + sous.length), bas = y + 12 + Math.max(hL, 25);
+      let yl = bas - hL;
+      if(G.lib){ cx.texte(cx.maj(P(G.lib)), X0, T(yl + dB(11, 7.5)), { police:F.regular, taille:7.5 }); yl += 11; }
+      sous.forEach(l => { cx.texte(l, X0, T(yl + dB(11, 8)), { police:F.light, taille:8, couleur:GRISc }); yl += 11; });
+      if(mt){ const yb = bas - 25 + dB(25, 26); cx.texte(mt, X1, T(yb), { police:F.bold, taille:zM, align:'d' });
+        if(mo) cx.texte(mo, X1 - wM - 6, T(yb), { police:F.light, taille:8, couleur:GRISc, align:'d' }); }
+      y = bas + 10; bar(y, 0.75, C.N); return y + 0.75;
+    };
+
+    /* rangées d'une rubrique simple : une par ligne de texte (h, draw(y du haut de la rangée)) */
+    const rangeesRub = (b) => { const R = [], wp = +b.wp || 40, pw = (t) => t != null ? Math.max(wp, cx.largeur(P(t), F.light, 8) + 6) : 0;   /* préfixe gris : wp, ou sa largeur + 6 s'il est plus long */
+      const une = (l) => { const z = +l.z || 8, f = pol(l.f), col = l.g ? GRISc : C.N, d = l.d != null && String(l.d) !== '' ? P(l.d) : '';
+        const px = l.p != null ? P(l.p) : null, x0 = XV + pw(l.p);
+        if(l.p2 != null || l.x2 != null){   /* deux moitiés sur une ligne si elles tiennent (la seconde au milieu, ou plus à droite), sinon l'une sous l'autre */
+          const t1 = P(l.x == null ? '' : l.x), t2 = P(l.x2 == null ? '' : l.x2), w1 = pw(l.p) + cx.largeur(t1, f, z), w2 = pw(l.p2) + cx.largeur(t2, f, z);
+          let xM = XV + Math.max(Math.round(WV / 2), w1 + 12); if(xM + w2 > X1) xM = X1 - w2;
+          if(xM < XV + w1 + 8){ une({ p:l.p, x:l.x, f:l.f, z:l.z, g:l.g }); une({ p:l.p2, x:l.x2, f:l.f, z:l.z, g:l.g }); return; }
+          R.push({ h:PAS, draw:(y) => { const yb = T(y + dB(PAS, z));
+            if(px) cx.texte(px, XV, yb, { police:F.light, taille:8, couleur:GRISc }); if(t1) cx.texte(t1, x0, yb, { police:f, taille:z, couleur:col });
+            if(l.p2 != null) cx.texte(P(l.p2), xM, yb, { police:F.light, taille:8, couleur:GRISc }); if(t2) cx.texte(t2, xM + pw(l.p2), yb, { police:f, taille:z, couleur:col }); } });
+          return; }
+        const wd = d ? cx.largeur(d, f, z) + 10 : 0, L = l.x != null && String(l.x) !== '' ? cx.couper(P(l.x), f, z, X1 - x0 - wd) : [''];
+        L.forEach((t, k) => R.push({ h:PAS, draw:(y) => { const yb = T(y + dB(PAS, z));
+          if(!k && px) cx.texte(px, XV, yb, { police:F.light, taille:8, couleur:GRISc });
+          if(t) cx.texte(t, x0, yb, { police:f, taille:z, couleur:col });
+          if(!k && d) cx.texte(d, X1, yb, { police:f, taille:z, couleur:col, align:'d' }); } })); };
+      Array.from(b.lignes || []).forEach(une);
+      return R; };
+    /* paragraphe : lignes de 10,5 pt ; jamais une ligne seule en haut ou en bas d'une page */
+    const rangeesPar = (b) => cx.couper(P(b.x || ''), F.light, 8, WV).map((t, k, A) => ({ h:10.5, lie:k === 1 || (k > 0 && k === A.length - 1),
+      draw:(y) => { if(t) cx.texte(t, XV, T(y + dB(10.5, 8)), { police:F.light, taille:8 }); } }));
+    /* tableau : largeur des colonnes d'après leurs valeurs, la colonne de texte (flex) prend le reste et passe à la ligne ; corps réduit si elle devient trop étroite */
+    const rangeesTab = (b) => { const cols = Array.from(b.cols || []), rows = Array.from(b.rows || []), n = cols.length, R = [], XT = b.large ? X0 : XV, WT = X1 - XT;   /* large : dès la colonne des libellés */
+      if(n && !cols.some(c => c.flex)) cols[0] = Object.assign({}, cols[0], { flex:true });
+      const tit = cols.map((c, j) => c.t && !(b.large && b.lib && !j) ? String(c.t).split('\n').map(P) : []), nT = Math.max(0, ...tit.map(t => t.length));   /* tableau large : le libellé de la rubrique tient lieu de titre à la première colonne */
+      const fS = (s) => s === 'p' || s === 't' ? F.bold : (s === 'q' || s === 'h') ? F.regular : F.light;
+      let z = 8, GT = 9, ws = [];
+      for(;;){ GT = z >= 8 ? 9 : 7;
+        ws = cols.map((c, j) => c.flex ? 0 : Math.max(+c.w || 0, ...tit[j].map(l => cx.largeur(l, F.light, 7)), ...rows.map(r => (r.s === 'h' || r.s === 'v') ? 0 : cx.largeur(P((r.c || [])[j]), fS(r.s), z))) + GT);
+        const wf = WT - ws.reduce((a, v) => a + v, 0);
+        if(wf >= 74 || z <= 6.5){ if(wf < 40) cx.alerte('Décompte : tableau « ' + (b.lib || '') + ' » plus large que la colonne'); cols.forEach((c, j) => { if(c.flex) ws[j] = Math.max(40, wf); }); break; }
+        z -= 0.5; }
+      const xs = []; { let a = XT; ws.forEach(w => { xs.push(a); a += w; }); }
+      const xDe = (j) => cols[j].r ? xs[j] + ws[j] : xs[j] + (cols[j].flex ? 0 : GT);
+      if(nT) R.push({ h:(nT - 1) * 8.5 + PAS, tete:true, avec:true, draw:(y) => tit.forEach((L, j) => L.forEach((l, k) =>
+        cx.texte(l, xDe(j), T(y + (nT - L.length + k) * 8.5 + dB(PAS, 7)), { police:F.light, taille:7, couleur:GRISc, align:cols[j].r ? 'd' : 'g' }))) });
+      else if(b.large && b.lib) R.push({ h:PAS, tete:true, avec:true, draw:() => {} });   /* tableau large sans titres : la première ligne est celle du libellé */
+      let nd = 0;
+      rows.forEach((r, ri) => { const s = r.s || '', c = r.c || [];
+        if(s === 'v'){ R.push({ h:5, draw:() => {} }); return; }
+        const f = fS(s), dh = s === 't' ? 3 : (s === 'h' && nd) ? 4 : 0, pv = ri > 0 ? (rows[ri - 1].s || '') : '';
+        const cells = cols.map((cl, j) => { const t = P(c[j]); if(!t) return []; if(!cl.flex) return [t];
+          let wd = ws[j]; for(let k = j + 1; k < n && !P(c[k]); k++) wd += ws[k];   /* une cellule de texte déborde sur les cellules vides qui la suivent */
+          return cx.couper(t, f, z, wd - 2); });
+        const nL = Math.max(1, ...cells.map(L => L.length));
+        R.push({ h:nL * PAS + dh, lie:s === 't' || (s === 'i' && pv === 't') || nd === 1, avec:s === 'h', draw:(y) => {
+          if(s === 't') bar(y + 1.5, 0.5, C.N, XT, X1);
+          cells.forEach((L, j) => L.forEach((t, k) => cx.texte(t, xDe(j), T(y + dh + k * PAS + dB(PAS, z)),
+            { police:f, taille:z, couleur:(s === 'i' || (cols[j].g && s !== 'p' && s !== 't')) ? GRISc : C.N, align:cols[j].r ? 'd' : 'g' }))); } });
+        nd++; });
+      return R; };
+
+    const libDe = (b, suite) => b.lib ? cx.couper(cx.maj(P(b.lib + (suite ? ' (suite)' : ''))), F.regular, 7.5, LW) : [];
+    const BL = Array.from(D.blocs || []).map(b => ({ b, lab:libDe(b), R:b.t === 'tab' ? rangeesTab(b) : b.t === 'par' ? rangeesPar(b) : rangeesRub(b) })).filter(X => X.R.length || X.lab.length);
+    const hBloc = (X) => 0.5 + 6 + Math.max(X.lab.length * PAS, X.R.reduce((a, r) => a + r.h, 0)) + 5.5;
+    /* signatures : libellé, nom et adresse, place pour écrire, filet, « Lieu, date » et « Signature, tampon » */
+    const SG = Array.from(D.sig || []).slice(0, 2), CW = (W - 16) / 2;
+    const SL = SG.map(s => [].concat(String(s.nom || '').trim() ? cx.couper(P(s.nom), F.regular, 8, CW).map(t => ({ t, f:F.regular })) : [],
+      String(s.adr || '').trim() ? cx.couper(P(s.adr), F.light, 8, CW).map(t => ({ t, f:F.light })) : []));
+    const nSL = Math.max(0, ...SL.map(L => L.length)), hSig = (esp) => 14 + nSL * 11.5 + esp + 0.5 + 11;
+
+    let y = 0, premier = true;
+    const page = () => { cx.nouvellePage('portrait'); bar(HAUT, 1, C.N); y = HAUT + 1; premier = true; };
+    cx.nouvellePage('portrait'); y = tete();
+    let iFin = BL.length; while(iFin > 0 && BL[iFin - 1].b.fin) iFin--;
+    BL.forEach((X, bi) => {
+      /* blocs de fin : gardés avec les signatures (jamais une page avec les seules signatures) */
+      if(bi === iFin && SG.length && !premier){ const need = BL.slice(bi).reduce((a, q) => a + hBloc(q), 0) + 10 + hSig(30);
+        if(y + need > BAS && HAUT + 1 + need <= BAS) page(); }
+      const R = X.R, TT = R.filter(r => r.tete), hT = TT.reduce((a, r) => a + r.h, 0); let i = 0, suite = false;
+      for(;;){
+        const y0 = y + (premier ? 0 : 0.5) + 6, dispo = BAS - 5.5 - y0 - (suite ? hT : 0);
+        let j = i, h = 0; while(j < R.length && h + R[j].h <= dispo + 0.01){ h += R[j].h; j++; }
+        if(j < R.length){ let k = j; while(k > i && (R[k].lie || R[k - 1].avec)) k--;   /* coupure permise : pas avant une rangée liée, pas après un titre */
+          if(k === i){ if(!premier){ page(); continue; } k = Math.max(j, i + 1); }   /* page neuve : on avance quand même */
+          j = k; }
+        else if(!i && !premier && y0 + X.lab.length * PAS > BAS - 5.5){ page(); continue; }
+        if(!premier) bar(y, 0.5, FILc);
+        libDe(X.b, suite).forEach((l, k) => cx.texte(l, X0, T(y0 + k * PAS + dB(PAS, 7.5)), { police:F.regular, taille:7.5 }));
+        let yy = y0; if(suite) TT.forEach(r => { r.draw(yy); yy += r.h; });
+        for(let k = i; k < j; k++){ R[k].draw(yy); yy += R[k].h; }
+        y = Math.max(yy, y0 + libDe(X.b, suite).length * PAS) + 5.5; premier = false;
+        i = j; if(i >= R.length) break; page(); suite = true; }
+    });
+    if(SG.length){ let esp = 42;
+      if(y + 14 + hSig(esp) > BAS){ if(y + 10 + hSig(30) <= BAS) esp = Math.max(30, BAS - y - 10 - hSig(0)); else page(); }
+      /* première page : signatures en bas, alignées sur le bas du logo (maquette) ; page de suite : à 40 pt sous le texte qu'elles valident (jamais plus bas que le logo) */
+      const top = cx.pages.length > 1 ? Math.min(BAS - hSig(esp), y + 40) : BAS - hSig(esp);
+      SG.forEach((s, i) => { const a = X0 + i * (CW + 16), bx = a + CW; let yy = top;
+        cx.texte(cx.maj(P(s.lib || '')), a, T(yy + dB(11.5, 7.5)), { police:F.regular, taille:7.5 }); yy += 14;
+        SL[i].forEach(l => { cx.texte(l.t, a, T(yy + dB(11.5, 8)), { police:l.f, taille:8 }); yy += 11.5; });
+        yy = top + 14 + nSL * 11.5 + esp; bar(yy, 0.5, C.N, a, bx);
+        cx.texte('Lieu, date', a, T(yy + 0.5 + dB(11, 7)), { police:F.light, taille:7, couleur:GRISc });
+        cx.texte('Signature, tampon', a + Math.round(CW * 0.4), T(yy + 0.5 + dB(11, 7)), { police:F.light, taille:7, couleur:GRISc }); }); }
+  };
   const contenu = (cx) => {
+    if(o.decompte){ contenuDecompte(cx); return; }
     if(o.descDG){ contenuDescDG(cx); return; }
     if(o.livretDG){ contenuLivret(cx); return; }
     if(o.cahier){ contenuCahier(cx); if(o.descriptif) contenuDescriptif(cx); return; }

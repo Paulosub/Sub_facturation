@@ -2,7 +2,8 @@
    que pour devis, fenêtre identique et document également, adapte les options du volet à droite ») ═══
    Choix de Paulo (10.11.2026) : colonnes « Standard » comme l'écran (les présentations du document restent au choix), paysage par défaut, état du coût en rouge
    (dépassement) / vert (économie), graphisme du devis aussi pour les listes ; les lettres (contrat, avenant, mutation, bons, ordre, arrêté de compte) gardent leur rendu
-   au papier des contrats (bloc 31).
+   au papier des contrats (bloc 31). Depuis le 14.11.2026 : le bon de paiement et l'arrêté de compte sont dessinés en « Grand chiffre » (variante 2, voir plus bas :
+   DEC_TYPES, bonDonnees, arrDonnees, decOctets) ; fin du fichier : Archives ▸ Maquettes ▸ « Bon de paiement et arrêté · Deux colonnes » (variante 4, mq-bon-arrete-4).
    - FENÊTRE : tous les documents ouverts depuis Contrôle des coûts ▸ Documents (ch01aOpen enveloppé) ont la fenêtre des documents du devis (SGDE.vue = vueDocG de
      sg3_devis.js) : bandeau jaune (numéro, « Contrôle des coûts · Documents », nom du document, désignation · pages · format), chiffres Pages et État (statut du contrôle
      des coûts), Imprimer, PDF ▾, Partager ▾, lecteur de l'app (page gardée à chaque réglage), volet Réglages à droite ; « Modifier les textes… » dans l'en-tête pour les
@@ -33,7 +34,7 @@ const LISTES_DG=new Set(['costControlAwardList','costControlMutationsList','cost
    comme la colonne CFC toujours première du tableau du contrôle du coût */
 if(typeof ch01bIds==='function'){ const i0=ch01bIds; ch01bIds=function(C,cle){ const L=i0.apply(this,arguments); return Array.isArray(L)&&(cle==='mutations'||cle==='adjudications')&&!L.includes(0)?[0,...L]:L; }; }
 const LISTES=new Set(['costControlFinalPaymentTable','costControlPaymentOrderTable','costControlEntrepreneurList','costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
-const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':''; };
+const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':DEC_TYPES[t]||''; };   /* 'bon', 'arrete' : dessin « Grand chiffre » (14.11.2026) */
 const LIMB={paysage:595.276-85.9,portrait:841.89-89.245};   /* bas de l'encre du logo (comme le devis général) */
 
 /* ── réglages du document : cocodoc.options.sgPdf. Réglages en attente d'envoi gardés en mémoire (PP : seulement les clés changées), envois à la suite, chacun
@@ -113,7 +114,8 @@ const estDecompte=rec=>/d[ée]compte\s+final/i.test(sv(rec&&rec.doc&&rec.doc.nom
 const sautsDe=o=>{ const x=optsDe(o).sauts||{}; return {cfc:Array.isArray(x.cfc)?x.cfc.map(String):[],sans:x.sans===true}; };
 const sautsActifs=o=>{ const x=sautsDe(o); return new Set(x.sans?[]:x.cfc); };
 const sigDe=(o,rec)=>{ const v=optsDe(o).sig; return v!=null?!!v:estDecompte(rec); };
-const titreDe=(o,rec)=>{ const t=sv(rec.doc&&rec.doc.nom||o.label||'Document'), e=entDe(o); return e&&e.nom?t+' · '+e.nom:t; };
+const titreDe=(o,rec)=>{ const dn=decNom(o); if(dn) return dn;   /* « Bon de paiement n° 135 », « Arrêté de compte n° 24 » (le nom du document du moteur est technique : « 135_10511_payment ») */
+  const t=sv(rec.doc&&rec.doc.nom||o.label||'Document'), e=entDe(o); return e&&e.nom?t+' · '+e.nom:t; };
 const garde=(o,rec,sig)=>{ const E=o.E, p=E.p||{}, doc=DS.get('costcontroldocument',E.id)||{}, rub=deGardeRub(p,{filter:null}), e=entDe(o), F=filtreDe(o);
   if(F&&F.mo){ const k=rub.findIndex(x=>/ma[iî]tre/i.test(sv(x.lib))); if(k>=0) rub[k]=Object.assign({},rub[k],deNomAdr(F.mo)); }
   if(e&&e.nom) rub.unshift({lib:'Entreprise',nom:e.nom,adr:e.adr});
@@ -302,12 +304,108 @@ async function listeOctets(o,rec,R0){ const id=/\/\*sgimp:([a-z0-9]+)\*\//.exec(
   if(!pages.length) throw new Error('aucun tableau');
   return sortie(o,rec,pages,ori,'liste',geo); }
 
+/* ═══ Bon de paiement et arrêté de compte : dessin « Grand chiffre » (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans archives et
+   appliquer la version 2 pour le moment », puis, exemples 17QUE.BOP.135 et 17QUE.AC.222 à l'appui : « voici les bons de paiement avec les données qui doivent
+   apparaître sur le bon et l'arrêté de compte, ajoute et adapte la version actuelle », « il est possible d'avoir les documents sur deux pages si nécessaire ») ═══
+   Variante 2 des maquettes du 14.11.2026 (subgestion3/_backup_20261114_maquette_bon_arrete/) : numéro et titre en grand, état en rouge, montant à régler en très
+   grand, le reste en rubriques (libellé à gauche, contenu à droite), signatures en deux colonnes ; dessin = contenuDecompte de sgDsPdf (sg3_docsub.js, o.decompte).
+   Données = celles des documents du bureau, prises dans les tableaux du moteur (mêmes valeurs, mêmes arrondis — « Arrondir les conditions », « Afficher le total
+   arrondi » — et mêmes libellés du modèle que le document d'avant) :
+   - BON DE PAIEMENT (ch01dBonJob) : entreprise ; banque et IBAN de l'entreprise ; affaire ; banque / compte du maître de l'ouvrage ; « L'architecte confirme que le
+     versement suivant peut être effectué » + lot, dates de facture et de paiement ; tableau CFC (adjudication brute / nette, paiement brut / net, total) ; décompte
+     (conditions, total HT, TVA, total TTC, arrondi) ; « Ordre de paiement n° … » à droite du titre ; signatures de l'architecte et du maître de l'ouvrage.
+   - ARRÊTÉ DE COMPTE (ch01cGuaranteeJob) : adjudication (contrat et avenants), récapitulatif par CFC, facture finale (décompte brut, conditions, total HT, TVA,
+     total net TTC), paiements (à ce jour, total, solde à verser, autres paiements, montant total), déclaration, certificat de garantie ; « N° … » à droite du titre ;
+     signatures de l'architecte et de l'entreprise. Colonne « Date pmt » = celle du document du bureau (colonne 4 du tableau du moteur, décision F1).
+   Numéros : <affaire>.BOP.<n° du paiement> ; <affaire>.AC.<n° CFC du lot> (sans lot : n° de l'arrêté). En-tête du papier : titre, « n° - affaire », date de l'ordre
+   de paiement (bon) ou de l'arrêté. Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement garde son rendu. */
+const DEC_TYPES={costControlContractPaymentSummary:'bon',costControlGeneralPaymentSummary:'bon',costControlGuaranteeSummary:'arrete'};
+const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const isoDe=v=>(/^(\d{4}-\d{2}-\d{2})/.exec(sv(v&&typeof v==='object'?v.v:v))||[])[1]||'';
+const dateL=v=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDe(v)); return m?(+m[3]===1?'1er':String(+m[3]))+' '+MOIS_L[+m[2]-1]+' '+m[1]:''; };
+const dateC=v=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDe(v)); return m?m[3]+'.'+m[2]+'.'+m[1]:''; };
+const maj1=t=>{ t=sv(t).trim(); return t?t.charAt(0).toLocaleUpperCase('fr')+t.slice(1):t; };
+const naDe=id=>{ const c=id!=null?DS.get('contact',id):null; return c?deNomAdr(c):{nom:'',adr:''}; };
+const adrL=t=>sv(t).split(', ').map(x=>x.trim()).filter(Boolean).join('\n');   /* adresse des signatures : une ligne par partie (rue, localité) */
+const decArr=o=>{ const C=(o&&o.E&&o.E.C)||{}; return typeof ch01cDir==='function'?(C.arretes||[]).find(a=>ch01cDir(a)===sv(o.dossier))||null:null; };
+const decNom=o=>{ const g=DEC_TYPES[sv(o&&o.type)]; if(!g) return '';
+  if(g==='bon'){ const n=(/^paymentorder\/[^/]+\/(.+)$/.exec(sv(o.dossier))||[])[1]; return 'Bon de paiement'+(n?' n° '+n:''); }
+  const a=decArr(o); return 'Arrêté de compte'+(a&&sv(a.numero).trim()?' n° '+a.numero:''); };
+const ST_DEC={tr:'',tt:'t',l1t:'p',l4:'i'};
+const repDec=rec=>typeof ch01aPrep==='function'?ch01aPrep(rec.doc.report):rec.doc.report;   /* modèle préparé comme le fait le moteur avant de calculer les tableaux */
+const decParties=p=>{ let R=[]; try{ R=deGardeRub(p,{filter:null})||[]; }catch(_){ } const de=re=>{ const x=R.find(r=>re.test(sv(r.lib))); return x?{nom:sv(x.nom),adr:sv(x.adr)}:{nom:'',adr:''}; };
+  return {archi:de(/^architecte/i),mo:de(/ma[iî]tre/i)}; };
+const ARR_DECL='Cet arrêté de compte est reconnu comme complet et définitif par l’entreprise, laquelle renonce à toute action juridique ayant trait à ce contrat ou à ses travaux supplémentaires. '
+  +'L’entreprise déclare avoir remis toutes les factures relatives aux travaux précités. Le solde ci-dessus sera versé à l’entreprise, sur présentation du certificat de garantie d’assurance '
+  +'et du présent arrêté de compte daté et signé au sens de l’art. 156 de la norme SIA 118.';
+/* désignation d'une position : « n° CFC texte », puis l'ouvrage (et la localisation) s'il y en a, puis entre parenthèses le n° qui renvoie aux conditions (colonne « N° » du
+   document d'avant : deux lignes du même CFC à deux taux de TVA) ; iR = rang de ce n° dans la rangée du moteur */
+const posDec=(c,iR)=>{ const ouv=c.slice(2,iR).map(v=>sv(v).trim()).filter(Boolean).join(' | '), ref=sv(c[iR]).trim();
+  return recol([c[0],c[1]].map(v=>sv(v).trim()).filter(Boolean).join(' ')+(ouv?' · '+ouv:'')+(ref?' ('+ref+')':'')); };
+const condDec=r=>{ const c=r.c||[], ref=sv(c[2]).trim(); return {c:[sv(c[0])+(ref?' ('+ref+')':''),c[1],c[4]],s:ST_DEC[r.st]||''}; };   /* condition : libellé (n° de renvoi), taux, montant */
+function bonDonnees(o,rec){ const E=o.E, C=E.C||{}, p=E.p||{}, J=o.job(repDec(rec)), x=J&&J.ref; if(!x) throw new Error('paiement introuvable');
+  const T=J.tables||{}, F=J.F||{}, cur=(p&&p.CURRENCY)||'CHF', ref=(/^paymentorder\/([^/]+)\//.exec(sv(o.dossier))||[])[1];
+  const ord=(C.ordresPaiement||[]).find(q=>typeof ch01dRef==='function'&&ch01dRef(q)===ref)||null, PT=decParties(p);
+  const lot=x.lot||{}, lotT=[lot.numero,lot.texte].filter(v=>v!=null&&sv(v).trim()!=='').join(' '), ent=naDe(x.contactId), b=x.banque||{};
+  const ob=typeof ch01dBankMO==='function'?(ch01dBankMO(C,ord)||{}):{}, des=maj1(x.commentaire||x.genreTexte||'');
+  const mo=(()=>{ const m=ord&&ord.maitreOuvrageContactId!=null?naDe(ord.maitreOuvrageContactId):null; return m&&m.nom?m:PT.mo; })();
+  const cond=((T.conditionTable||{}).rows||[]), tot=cond.filter(r=>r.st==='tt').pop(), sur=!!T.awardTable, A=((T.awardTable||T.positionsTable||{}).rows||[]);
+  const banque=bb=>[bb.nom,[bb.npa,bb.lieu].map(v=>sv(v).trim()).filter(Boolean).join(' ')].map(v=>sv(v).trim()).filter(Boolean).join(', ');
+  const compte=bb=>[bb.iban,bb.compte,bb.texteCompte].map(v=>sv(v).trim()).filter(Boolean)[0]||'';
+  const blocs=[
+    {t:'rub',lib:'Entreprise',lignes:[{x:ent.nom,f:'r',z:9},{x:ent.adr,z:9}].filter(l=>sv(l.x).trim())},
+    {t:'rub',lib:'Banque entreprise',wp:34,lignes:[{p:'Banque',x:banque(b)},{p:'IBAN',x:compte(b)}]},
+    {t:'rub',lib:'Affaire',lignes:[{x:sv(p.DESCRIPTION||p.TITLE).replace(/\s*\n\s*/g,', ').trim()}]},
+    {t:'rub',lib:'Banque / compte du maître de l’ouvrage',wp:34,lignes:[{p:'Banque',x:banque(ob)},{p:'Compte',x:compte(ob)}]},
+    {t:'rub',lib:'Versement',wp:66,lignes:[{x:'L’architecte confirme que le versement suivant peut être effectué :'},{x:lotT,f:'r',z:9},
+      {p:'Date de facture',x:dateL(x.dateFacture),p2:'Date de paiement',x2:dateL(x.datePaiement)}].filter(l=>l.p||sv(l.x).trim())},
+    {t:'tab',lib:'CFC',large:true,cols:sur?[{t:'',flex:true},{t:'Adjudication\nbrute',r:true},{t:'Adjudication\nnette',r:true},{t:'Paiement\nbrut',r:true},{t:'Paiement\nnet',r:true}]
+        :[{t:'',flex:true},{t:'Paiement\nbrut',r:true},{t:'Paiement\nnet',r:true}],
+      rows:A.map(r=>{ const c=r.c||[]; return {c:[posDec(c,3),...c.slice(5)],s:ST_DEC[r.st]||''}; })},
+    /* décompte : sans la première ligne « Total brut » (c'est le total « Paiement brut » du tableau au-dessus, comme sur le document du bureau) */
+    {t:'tab',lib:'Décompte',fin:true,cols:[{t:'',flex:true},{t:'',r:true,g:true},{t:'',r:true}],rows:cond.slice(A.length?1:0).map(condDec)}];
+  return {titre:'Bon de paiement',date:isoDe(ord&&ord.date)||isoDe(x.datePaiement)||'',dec:{etat:des,num:[p.NUMBER,'BOP',x.numero].map(v=>sv(v).trim()).filter(Boolean).join('.'),titre:'Bon de paiement',
+    no:ord&&sv(ord.numero).trim()?'Ordre de paiement n° '+ord.numero:'',
+    chiffre:{lib:'Présent paiement à régler',sous:[des?des+(isoDe(x.dateFacture)?' du '+dateC(x.dateFacture):''):'',lotT?'CFC '+lotT:''].filter(Boolean),monnaie:cur,montant:sv(tot?(tot.c||[])[4]:F.amountTotal)},
+    blocs,sig:[{lib:'L’architecte',nom:PT.archi.nom,adr:adrL(PT.archi.adr)},{lib:'Le maître de l’ouvrage',nom:mo.nom,adr:adrL(mo.adr)}]}}; }
+function arrDonnees(o,rec){ const E=o.E, C=E.C||{}, p=E.p||{}, a=decArr(o); if(!a) throw new Error('arrêté de compte introuvable');
+  const J=o.job(repDec(rec)), T=J.tables||{}, F=J.F||{}, cur=(p&&p.CURRENCY)||'CHF', PT=decParties(p), K=typeof ch01cCtr==='function'?(ch01cCtr(C,a)||{}):{}, ctr=K.ctr||null;
+  const lot=(ctr&&ctr.lot)||{}, lotT=[lot.numero,lot.texte].filter(v=>v!=null&&sv(v).trim()!=='').join(' '), ent=naDe(ctr&&ctr.contactId!=null?ctr.contactId:a.contactId);
+  const R=k=>((T[k]||{}).rows||[]), prev=R('previousPaymentsTable'), solde=prev.find(r=>r.st==='tt')||null, gm=+((a.garantie||{}).montant)||0;
+  const blocs=[
+    {t:'tab',lib:'Adjudication',large:true,cols:[{t:'Contrat',flex:true},{t:'N° du\ncontrat'},{t:'Date du\ncontrat'},{t:'Adjudication\nbrute HT',r:true},{t:'Adjudication\nnette TTC',r:true}],
+      rows:R('summaryTable').map(r=>{ const c=r.c||[]; return {c:[c[0],c[1],c[2],c[4],c[5]],s:ST_DEC[r.st]||''}; })},
+    {t:'tab',lib:'Récapitulatif',large:true,cols:[{t:'CFC',flex:true},{t:'Adjudication\nbrute',r:true},{t:'Adjudication\nnette',r:true},{t:'Décompte\nbrut',r:true},{t:'Décompte\nnet',r:true}],
+      rows:R('orderTable').map(r=>{ const c=r.c||[]; return {c:[posDec(c,4),c[6],c[7],c[8],c[9]],s:ST_DEC[r.st]||''}; })},
+    {t:'tab',lib:'Facture finale',cols:[{t:'',flex:true},{t:'',r:true,g:true},{t:'',r:true}],rows:R('guaranteeConditionTable').map(condDec)},
+    /* paiements : désignation, n° de paiement, date (colonne 4 du moteur = « Date pmt » du document du bureau), HT, taux, TVA, TTC ; lignes vides = espace ;
+       « Paiements à ce jour », « Autres paiements » = intertitres */
+    {t:'tab',lib:'Paiements',large:true,cols:[{t:'Désignation',flex:true},{t:'N° pmt'},{t:'Date pmt'},{t:'Montant HT',r:true},{t:'Taux',r:true,g:true},{t:'TVA',r:true},{t:'Montant TTC',r:true}],
+      rows:prev.map(r=>{ const c=r.c||[]; if(!c.some(v=>sv(v).trim())) return {c:[],s:'v'};
+        return {c:[c[0],c[3],c[4],c[6],c[7],c[8],c[9]],s:r.st==='l1t'&&!c.slice(1).some(v=>sv(v).trim())?'h':ST_DEC[r.st]||''}; })},
+    {t:'par',lib:'Déclaration',x:ARR_DECL,fin:true},
+    {t:'rub',lib:'Garantie',fin:true,lignes:[{x:'Certificat de garantie d’assurance',d:gm?cur+' '+sv(F.constructionGuarantyValue||window.num(gm)):''}]}];
+  return {titre:'Arrêté de compte',date:isoDe(a.date)||'',dec:{etat:'Facture finale',num:[p.NUMBER,'AC',sv(lot.numero).trim()||sv(a.numero).trim()].map(v=>sv(v).trim()).filter(Boolean).join('.'),titre:'Arrêté de compte',
+    no:sv(a.numero).trim()?'N° '+a.numero:'',
+    chiffre:{lib:'Solde à verser',sous:['Facture finale',lotT?'CFC '+lotT:'',ent.nom].filter(Boolean),monnaie:cur,montant:sv(solde?(solde.c||[])[9]:F.totalToPay)},
+    blocs,sig:[{lib:'L’architecte',nom:PT.archi.nom,adr:adrL(PT.archi.adr)},{lib:'L’entreprise',nom:ent.nom,adr:adrL(ent.adr)}]}}; }
+async function decOctets(o,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
+  const {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, X=DEC_TYPES[sv(o.type)]==='bon'?bonDonnees(o,rec):arrDonnees(o,rec), aff=[p.NUMBER,p.TITLE].filter(Boolean).join(' - ');   /* cadre Facturation chargé : adresses de l'affaire (deGardeRub) */
+  const opt=w.JSON.parse(JSON.stringify({titre:X.titre,sousTitre:aff,date:X.date||today(),type:'Contrôle des coûts',description:decNom(o)+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' '),decompte:X.dec})), j=new w.Array(); opt.journal=j;
+  const oct=await fn(R,null,opt); if(j.length) console.info(decNom(o)+' :',Array.from(j)); return oct; }
+
+/* choix du modèle à la création : sans objet pour le bon de paiement et l'arrêté de compte (même dessin quel que soit le modèle ; seuls quelques libellés — « Total
+   net HT », « Totaux » — en viennent) : le premier modèle de la liste, celui que la fenêtre « Choisir le modèle » proposait d'office, est pris sans question */
+if(typeof ch01aTplPick==='function'&&typeof ch01aTplList==='function'){ const t0=ch01aTplPick;
+  ch01aTplPick=async function(type,p){ if(DEC_TYPES[type]) try{ await DS.need(['doctemplate','modeledocument','image']); const L=ch01aTplList(type,p);
+      if(L&&L.list.length>1){ const t=L.list[0], m=(DS.T.modeledocument||{})[L.jeu+'/'+t.FILENAME]; if(m&&m.report) return {jeu:L.jeu,fichier:t.FILENAME,desc:t.DESCRIPTION||'',rep:m.report,id:t.ID}; } }catch(e){ console.error(e); }
+    return t0.apply(this,arguments); }; }
 /* ── rendu repéré : le PDF est fait ici, la fenêtre, « Créer le PDF » et « Partager » le reprennent (sgImpPdf du bloc 31) ── */
 const r0=ch01aRender;
 ch01aRender=function(o,rec){ const g=genre(o); if(!g||!window.SGIMP||typeof SGDS==='undefined'||!rec||!rec.doc||!rec.doc.report) return r0.apply(this,arguments);
   const S=window.SGIMP; let R0=null; if(g==='liste') R0=r0.apply(this,arguments);   /* listes : rendu du moteur d'abord (repère et valeurs du bloc 31) */
   const id=(++S.n).toString(36)+'c'+Date.now().toString(36);
-  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
+  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='bon'||g==='arrete'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
   const titre=titreDe(o,rec);
   if(g==='liste'){ /* liste : en cas d'échec du nouveau dessin, le PDF du bloc 31 */ const id0=(/\/\*sgimp:([a-z0-9]+)\*\//.exec(sv(R0.css))||[])[1];
     const sur=pdf.catch(e=>{ console.error(e); return id0&&S.pdf?S.pdf(id0):Promise.reject(e); }); S.memo.set(id,{pdf:sur,titre,o:{}}); }
@@ -401,6 +499,9 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
   if(baseArr(o.dossier)&&ARR_TYPES.has(T)&&typeof ch01aArr==='function'){ const a=arrDe(o);
     L.push(it('Arrondir les conditions',a.cond,fin=>{ arrSet(o,'roundContractSummary',!a.cond,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'}),
       it('Afficher le total arrondi',a.tot,fin=>{ arrSet(o,'addRoundedTotalKey',!a.tot,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'})); }
+  /* arrêté de compte : paiement final compté ou non dans les paiements à ce jour (la question que le moteur pose à l'ouverture ; vaut pour cette ouverture) */
+  if(g==='arrete'){ const a=decArr(o); if(a&&typeof ch01cHasFinal==='function'&&ch01cHasFinal(C,a)) L.push({t:'Inclure le paiement final',chk:o.final!==false,grp:'Montants',
+    ti:'Compte le paiement final dans les paiements à ce jour : le solde à verser est alors ce qui reste après lui',fn:()=>{ o.final=!(o.final!==false); }}); }
   return L; }
 const GROUPES=['Format','Colonnes','Positions','Écritures','Montants','Affichage','Tri','Adresses','Sauts de page','Autres'];   /* ordre de la fenêtre du devis général : Format, Positions, Calcul (ici Écritures), Montants, Affichage, Sauts de page */
 
@@ -491,5 +592,26 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
     actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
   D.maj(tableOctets(E,k)); }
-window.SGCD={tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+window.SGCD={decOctets,bonDonnees,arrDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+})();
+
+/* ═══ Archives ▸ Maquettes ▸ Bon de paiement et arrêté de compte · Deux colonnes (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans
+   archives et appliquer la version 2 pour le moment ») ═══
+   Variante 4 des maquettes du 14.11.2026 (subgestion3/_backup_20261114_maquette_bon_arrete/maquette.py, fonctions v4_bon / v4_arrete) : la page partagée en deux —
+   à gauche, sur les colonnes du pied de page, qui et quoi (document, CFC, entreprise, banque, parties) ; à droite le décompte sur bande bleu nuit et les
+   signatures. Maquette seulement : données d'exemple de 99TST (affaire fictive), aucune action, rien n'est lu ni écrit. Dessinée dans une racine fantôme
+   (shadow DOM) : ses classes ne touchent pas l'app. Un clic sur une page l'agrandit. Pages et feuille de style produites par le script de la maquette. */
+(function(){ if(typeof VIEWS==='undefined'||typeof nxPage!=='function'||typeof sgIntro!=='function') return;
+const CSS="/* ── papier (unités : points du PDF) ── */\n.pg{position:relative;width:595.28pt;height:841.89pt;background:#fff;color:#1d1d1b;font:300 8pt/15pt var(--s-font);overflow:hidden;text-align:left;flex:none}\n.pg *{box-sizing:border-box;margin:0;padding:0;font-style:normal}\n.pg b,.pg .b{font-weight:700}\n.pg .rg{font-weight:400}\n.pg .nm{font-weight:400}\n.tb,.tt{position:absolute;left:28.35pt;font-size:7.5pt;text-transform:uppercase;white-space:nowrap}\n.tb{top:15.6pt;line-height:13.9pt}\n.tb span{display:block;position:relative;height:13.9pt}\n.tb span+span::before,.tt>*+*::before,.pd div span+span::before{content:\"\";position:absolute;left:0;top:-.3pt;width:7.8pt;border-top:.4pt solid #1d1d1b}\n.tt{top:26.8pt;line-height:14pt}\n.tt>*{display:block;position:relative;height:14pt}\n.tt>*+*::before{top:-.9pt}\n.tt .g{color:#666}\n.pd{font-size:7.5pt;line-height:14pt;text-transform:uppercase;white-space:nowrap}\n.pd div{position:absolute;top:790.4pt}\n.pd div span{display:block;position:relative;height:14pt}\n.pd div span+span::before{top:-.9pt}\n.pd .p1{left:28.35pt}.pd .p2{left:125.72pt}.pd .p3{left:222.98pt}\n.pd i{position:absolute;top:804.4pt}\n.pd .pn1{right:87.6pt}.pd .pn2{left:513.08pt}\n.pd .pnt{left:510.68pt;top:807.4pt;height:8pt;border-left:.4pt solid #1d1d1b}\n.lg{position:absolute;left:542.2pt;top:606pt;width:25.2pt;height:146.6pt;overflow:visible}\n#sub-logo .L{fill:#1d1d1b}#sub-logo .g{fill:#9d9d9c}#sub-logo .G{opacity:.5}\n/* signatures communes aux variantes : « Lieu, date | Signature, tampon » sur un même filet */\n.sig{display:grid;grid-template-columns:1fr 1fr;column-gap:16pt;line-height:11.5pt}\n.sig>div>span{display:block}\n.sig .lb{font-size:7.5pt;font-weight:400;text-transform:uppercase;margin-bottom:2.5pt}\n.sig .ec{height:42pt;border-bottom:.5pt solid #1d1d1b}\n.sig .lg2{display:grid;grid-template-columns:40% 1fr;font-size:7pt;color:#706F6F;line-height:11pt}\n/* ── variante 4 : deux colonnes ── */\n.v4 .cg{position:absolute;left:28.35pt;width:176.65pt;top:100.5pt;border-top:1pt solid #1d1d1b}\n.v4 .cd{position:absolute;left:222.98pt;width:287.7pt;top:100.5pt}\n.v4 .rb{padding:6pt 0 6pt;line-height:11.5pt}\n.v4 .rb+.rb{border-top:.5pt solid #d8d8d4}\n.v4 .r.i{color:#706F6F}\n.v4 .rb span{display:block}\n.v4 .rb .lb{font-size:7.5pt;font-weight:400;text-transform:uppercase;margin-bottom:2pt}\n.v4 .rb .gd{font-weight:300;font-size:15pt;line-height:19pt;letter-spacing:-.01em}\n.v4 .rb .et{font-size:7.5pt;font-weight:400;color:#BD1E42;text-transform:uppercase;margin-top:2pt}\n.v4 .rb .et::before{content:\"\";display:inline-block;width:5pt;height:5pt;background:#BD1E42;margin-right:4pt;vertical-align:.2pt}\n.v4 .rb .mm{text-align:right;padding-right:2pt}\n.v4 .rb .par{line-height:10.5pt;text-align:justify;hyphens:auto;-webkit-hyphens:auto}\n.v4 .r,.v4 .bd{display:grid;grid-template-columns:minmax(0,1fr) auto 76pt;padding:0 2pt;white-space:nowrap;margin:0 -2pt}\n.v4 .r{height:15pt;line-height:14.5pt;border-bottom:.5pt solid #d8d8d4}\n.v4 .x,.v4 .m{text-align:right}\n.v4 .r .x{color:#706F6F}\n.v4 .r.p{font-weight:700;border-bottom:.75pt solid #003346}\n.v4 .r.q{font-weight:400;border-bottom:.75pt solid #003346}\n.v4 .r.p .x,.v4 .r.q .x{color:inherit}\n.v4 .r.w{font-weight:400}\n.v4 .rt{padding-left:7pt}\n.v4 .bd{height:16pt;line-height:16pt;background:#003346;color:#fff;font-weight:400}\n.v4 .bd.t{font-weight:700}\n.v4 .bas{position:absolute;left:222.98pt;width:287.7pt;top:675pt}\n.v4 .sig.nu .ec{height:52pt}\n.v4 .sig.nu .nm{display:none}";
+const PAGES=[['Bon de paiement',"<div class=\"pg v4\"><div class=\"tt\"><b>Bon de paiement</b><span>99TST - Immeuble Les Exemples</span><span class=\"g\">Cully - 16 septembre 2026</span></div><div class=\"cg\"><div class=\"rb\"><span class=\"lb\">Bon de paiement</span><span class=\"gd\">99TST.BOP.037</span><span class=\"et\">Facture finale</span></div><div class=\"rb\"><span class=\"lb\">CFC</span><span class=\"nm\">224 Couverture</span></div><div class=\"rb\"><span class=\"lb\">Entreprise</span><span class=\"nm\">Toiture Exemple SA</span><span>Rue de l’Essai 4</span><span>1000 Exempleville</span></div><div class=\"rb\"><span class=\"lb\">Banque, clearing</span><span class=\"nm\">Banque Exemple SA</span></div><div class=\"rb\"><span class=\"lb\">Compte, ccp</span><span class=\"nm\">CH00 0000 0000 0000 0000 0</span></div><div class=\"rb\"><span class=\"lb\">Maître de l’ouvrage</span><span class=\"nm\">Fondation Exemple</span><span>Rue de l’Essai 1</span><span>1000 Exempleville</span></div><div class=\"rb\"><span class=\"lb\">Architecte</span><span class=\"nm\">Substances Architectes Sàrl</span><span>Rue de la Gare 12</span><span>1096 Cully</span></div></div><div class=\"cd\"><div class=\"bd\"><span>Désignation</span><span class=\"x\">Date</span><span class=\"m\">Montant CHF</span></div><div class=\"r \"><span>Montant TTC selon contrat ou devis</span><span class=\"x\"></span><span class=\"m\">178'200.00</span></div><div class=\"r \"><span>Travaux supplémentaires</span><span class=\"x\"></span><span class=\"m\">6'551.55</span></div><div class=\"r \"><span>Avenants</span><span class=\"x\"></span><span class=\"m\">0.00</span></div><div class=\"r p\"><span>Total Brut</span><span class=\"x\"></span><span class=\"m\">184'751.55</span></div><div class=\"r w\"><span>Récapitulatif des paiements</span><span class=\"x\"></span><span class=\"m\"></span></div><div class=\"r \"><span><span class=\"rt\">acompte 1</span></span><span class=\"x\">12.03.2026</span><span class=\"m\">-38'000.00</span></div><div class=\"r \"><span><span class=\"rt\">acompte 2</span></span><span class=\"x\">16.04.2026</span><span class=\"m\">-46'500.00</span></div><div class=\"r \"><span><span class=\"rt\">acompte 3</span></span><span class=\"x\">21.05.2026</span><span class=\"m\">-42'000.00</span></div><div class=\"r \"><span><span class=\"rt\">acompte 4</span></span><span class=\"x\">25.06.2026</span><span class=\"m\">-38'500.00</span></div><div class=\"r \"><span><span class=\"rt\">acompte 5</span></span><span class=\"x\"></span><span class=\"m\">0.00</span></div><div class=\"bd t\"><span>Présent paiement à régler</span><span class=\"x\">Facture finale · 14.09.2026</span><span class=\"m\">19'751.55</span></div><div class=\"r \"><span>Prévision solde TTC à valoir</span><span class=\"x\"></span><span class=\"m\">0.00</span></div></div><div class=\"bas\"><div class=\"sig nu\"><div><span class=\"lb\">L’architecte</span><span class=\"nm\"></span><div class=\"ec\"></div><div class=\"lg2\"><span>Lieu, date</span><span>Signature, tampon</span></div></div><div><span class=\"lb\">Le maître de l’ouvrage</span><span class=\"nm\"></span><div class=\"ec\"></div><div class=\"lg2\"><span>Lieu, date</span><span>Signature, tampon</span></div></div></div></div><svg class=\"lg\" viewBox=\"0 0 1210 7050\" role=\"img\" aria-label=\"Substances Architectes\"><g transform=\"translate(0,7050) rotate(-90) translate(-600,-1690)\"><use href=\"#sub-logo\"/></g></svg><div class=\"pd\"><div class=\"p1\"><span>Rue de la Gare 12</span><span>CH – 1096 Cully</span></div><div class=\"p2\"><span>+41 21 711 50 50</span><span>info@substances.ch</span></div><div class=\"p3\"><span>CHE-403.117.623</span><span>CH-550.1.175.460-8</span></div><i class=\"pn1\">1</i><i class=\"pnt\"></i><i class=\"pn2\">1</i></div></div>"],['Arrêté de compte',"<div class=\"pg v4\"><div class=\"tt\"><b>Arrêté de compte</b><span>99TST - Immeuble Les Exemples</span><span class=\"g\">Cully - 7 septembre 2026</span></div><div class=\"cg\"><div class=\"rb\"><span class=\"lb\">Arrêté de compte</span><span class=\"gd\">99TST.ARC.004</span><span class=\"et\">Facture finale</span></div><div class=\"rb\"><span class=\"lb\">CFC</span><span class=\"nm\">224 Couverture</span></div><div class=\"rb\"><span class=\"lb\">Entreprise</span><span class=\"nm\">Toiture Exemple SA</span><span>Rue de l’Essai 4</span><span>1000 Exempleville</span></div><div class=\"rb\"><span class=\"lb\">Architecte</span><span class=\"nm\">Substances Architectes Sàrl</span><span>Rue de la Gare 12</span><span>1096 Cully</span></div><div class=\"rb\"><span class=\"lb\">Certificat de garantie d’assurance</span><span class=\"mm\">184'751.55</span><span class=\"mm\">18'475.15</span></div><div class=\"rb\"><span class=\"lb\">Déclaration</span><p class=\"par\">Cet arrêté de compte est reconnu comme complet et définitif par l’entreprise; laquelle renonce à toute action juridique ayant trait à ce contrat ou à ses travaux supplémentaires. L’entreprise déclare avoir remis toutes les factures relatives aux travaux précités. Le solde ci-dessus sera versé à l’entreprise; sur présentation du certificat de garantie d’assurance et du présent arrêté de compte daté et signé.</p></div></div><div class=\"cd\"><div class=\"bd\"><span>Désignation</span><span class=\"x\">Taux</span><span class=\"m\">Montant CHF</span></div><div class=\"r i\"><span>Montant TTC selon contrat ou devis</span><span class=\"x\"></span><span class=\"m\">178'200.00</span></div><div class=\"r \"><span>Montant adjugé</span><span class=\"x\"></span><span class=\"m\">172'500.00</span></div><div class=\"r \"><span>Devis</span><span class=\"x\"></span><span class=\"m\">0.00</span></div><div class=\"r \"><span>Travaux supplémentaires</span><span class=\"x\"></span><span class=\"m\">6'350.00</span></div><div class=\"r p\"><span>Total Brut</span><span class=\"x\"></span><span class=\"m\">178'850.00</span></div><div class=\"r \"><span>Rabais</span><span class=\"x\">2.0 %</span><span class=\"m\">-3'577.00</span></div><div class=\"r \"><span>Escompte</span><span class=\"x\">2.0 %</span><span class=\"m\">-3'505.46</span></div><div class=\"r p\"><span>Montant total des travaux HT</span><span class=\"x\"></span><span class=\"m\">171'767.54</span></div><div class=\"r \"><span>Participation au prorata</span><span class=\"x\">0.5 %</span><span class=\"m\">-858.84</span></div><div class=\"r \"><span>Divers pour arrondi</span><span class=\"x\"></span><span class=\"m\">-0.70</span></div><div class=\"r p\"><span>Montant net HT</span><span class=\"x\"></span><span class=\"m\">170'908.00</span></div><div class=\"r \"><span>TVA</span><span class=\"x\">8.1 %</span><span class=\"m\">13'843.55</span></div><div class=\"r q\"><span>Montant net TTC</span><span class=\"x\"></span><span class=\"m\">184'751.55</span></div><div class=\"r \"><span>Acomptes payés à ce jour</span><span class=\"x\"></span><span class=\"m\">-165'000.00</span></div><div class=\"r \"><span>Acomptes en attente</span><span class=\"x\"></span><span class=\"m\">0.00</span></div><div class=\"bd t\"><span>Solde TTC à valoir</span><span class=\"x\">Facture finale</span><span class=\"m\">19'751.55</span></div></div><div class=\"bas\"><div class=\"sig nu\"><div><span class=\"lb\">L’architecte</span><span class=\"nm\"></span><div class=\"ec\"></div><div class=\"lg2\"><span>Lieu, date</span><span>Signature, tampon</span></div></div><div><span class=\"lb\">L’entreprise</span><span class=\"nm\"></span><div class=\"ec\"></div><div class=\"lg2\"><span>Lieu, date</span><span>Signature, tampon</span></div></div></div></div><svg class=\"lg\" viewBox=\"0 0 1210 7050\" role=\"img\" aria-label=\"Substances Architectes\"><g transform=\"translate(0,7050) rotate(-90) translate(-600,-1690)\"><use href=\"#sub-logo\"/></g></svg><div class=\"pd\"><div class=\"p1\"><span>Rue de la Gare 12</span><span>CH – 1096 Cully</span></div><div class=\"p2\"><span>+41 21 711 50 50</span><span>info@substances.ch</span></div><div class=\"p3\"><span>CHE-403.117.623</span><span>CH-550.1.175.460-8</span></div><i class=\"pn1\">1</i><i class=\"pnt\"></i><i class=\"pn2\">1</i></div></div>"]];
+VIEWS['mq-bon-arrete-4']={ render(m){
+  nxPage(m,'<div class="sg-split">'+sgIntro('Archives · Maquettes','Bon de paiement et arrêté de compte · Deux colonnes','Variante 4 des maquettes du 14.11.2026, gardée pour plus tard : à gauche qui et quoi (document, CFC, entreprise, banque, parties), à droite le décompte sur bande bleu nuit et les signatures. Maquette avec des données d’exemple : rien n’est lu ni enregistré. Le dessin en place est la variante 2, « Grand chiffre ». Un clic sur une page l’agrandit.')+'<div id="sgmq4-h"></div></div>');
+  const host=m.querySelector('#sgmq4-h'); if(!host||!host.attachShadow) return; const sh=host.attachShadow({mode:'open'});
+  const logo=(typeof SG_LOGO==='string'?(/<svg[^>]*>([\s\S]*)<\/svg>/.exec(SG_LOGO)||[])[1]:'')||'';
+  sh.innerHTML='<style>:host{display:block}.mq4{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;align-items:flex-start;background:#eeeeeb;padding:26px 22px;margin-top:14px}'
+    +'.mq4 figure{margin:0;cursor:zoom-in}.mq4 figure.grand{cursor:zoom-out}.mq4 figcaption{font:400 12px/1.4 var(--s-font);letter-spacing:.08em;text-transform:uppercase;color:#706F6F;margin-bottom:8px}'
+    +'.mq4 .pg{zoom:.62;box-shadow:0 0 0 1px #cfcfc9,0 6px 22px rgba(0,0,0,.10)}.mq4 figure.grand .pg{zoom:1.25}'+CSS+'</style>'
+    +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><g id="sub-logo">'+logo+'</g></defs></svg>'
+    +'<div class="mq4">'+PAGES.map(([t,h])=>'<figure><figcaption>'+t+'</figcaption>'+h+'</figure>').join('')+'</div>';
+  sh.addEventListener('click',e=>{ const f=e.target&&e.target.closest?e.target.closest('figure'):null; if(!f) return; f.classList.toggle('grand'); if(f.classList.contains('grand')) f.scrollIntoView({block:'start'}); }); } };
 })();

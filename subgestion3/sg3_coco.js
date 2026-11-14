@@ -127,13 +127,10 @@ const ED_CSS=`
 .sgce-niv button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
 .sgce-dsub{flex:none;margin:0 24px;padding:9px 0 8px;flex-wrap:wrap;gap:6px 16px}
 .sgce-dsub .sgce-dt{color:var(--s-gris)}
-.sgce-leg{flex:none;display:flex;align-items:center;gap:12px;font-size:11.5px;font-style:italic;margin:0 12px 0 6px;white-space:nowrap}
 .sgce.dg .sgce-bar .sgce-new,.sgce.dg .sgce-bar .sgce-sep.nw,.sgce.dg .sgce-bar .sgce-fon,.sgce.dg .sgce-bar .sgce-par{display:none!important}
 .sgce.ecr .sgce-bar .sgce-par,.sgce.ord .sgce-bar .sgce-par,.sgce.ecr .sgce-bar .sgce-new,.sgce.ecr .sgce-bar .sgce-sep.nw{display:none!important}   /* Liste des écritures et Ordres de paiement : sans « Paramètres » ; listes des écritures aussi sans « Nouvelle écriture » (Paulo, 11.11.2026 : « supprimer » ; les écritures se créent dans l'onglet Contrôle du coût) ; devis général attribué et configuration dans l'onglet Contrôle du coût */   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
-.sgce-leg button{border:0;background:none;padding:3px 0;font:inherit;font-size:11.5px;font-style:italic;cursor:pointer;white-space:nowrap}
-.sgce-leg button:hover{text-decoration:underline}
 .sgce-bar .sgce-x{display:none}
-.sgce:not(.cc) .sgce-bar .sgce-niv,.sgce:not(.cc) .sgce-ong>.sgce-niv,.sgce:not(.cc) .sgce-sep.n,.sgce:not(.det) .sgce-leg{display:none}
+.sgce:not(.cc) .sgce-bar .sgce-niv,.sgce:not(.cc) .sgce-ong>.sgce-niv,.sgce:not(.cc) .sgce-sep.n{display:none}
 .sgce-ong{display:flex;align-items:center;gap:12px}
 .sgce-ong>.sg-onglets{flex:1 1 auto;min-width:0}
 .sgce-ong>.sgce-niv{flex:none;margin:0 0 0 auto}   /* CFC Tout · 3 · 2 · 1 à droite des onglets, comme le devis (11.11.2026) */
@@ -439,12 +436,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');
   box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgce-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const s=bPlein.querySelector('svg'); if(s&&typeof nxSvg==='function') s.outerHTML=nxSvg(ED.plein?'pleinq':'plein'); bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
-  /* légende des couleurs des écritures : couleurs du document (Présentation ▸ Affichage ▸ Couleurs des écritures, 11.11.2026) ; un clic ouvre la palette sur l'élément */
-  const leg=el('span','sgce-leg'); ED.leg=leg;
-  ED.majLeg=()=>{ const K=typeof ccCouleurs==='function'?ccCouleurs(CCV.cur&&CCV.cur.C):{mut:'#993300',ctr:'#FF6633',pay:'#003366',payh:'#003366',prov:'#555555'};
-    leg.innerHTML=[['mut','Mutations'],['ctr','Contrats'],['pay','Paiements sur contrat'],['payh','Paiements hors contrat'],['prov','Provisions, coût probable']].map(([k,t])=>'<button type="button" data-k="'+k+'" style="color:'+K[k]+'" title="Changer la couleur : '+t.toLowerCase()+'">'+t+'</button>').join(''); };
-  ED.majLeg(); leg.onclick=e=>{ const b=e.target.closest('[data-k]'); if(b&&typeof CCV.affichage==='function') CCV.affichage('couleurs',b.dataset.k); };
-  if(!SGCC._legEv){ SGCC._legEv=1; document.addEventListener('cc-affichage',()=>{ if(ED.majLeg) ED.majLeg(); }); }
+  /* légende des couleurs des écritures retirée de la barre (Paulo, 14.11.2026 : « supprimer ») : les couleurs restent réglables dans Présentation ▸ Affichage ▸ Couleurs des écritures */
   const autres=[...bar.children].filter(x=>!B.includes(x)&&x.tagName!=='B');   /* éléments ajoutés à la barre par d'autres blocs : gardés à la fin */
   /* listes des écritures : « Nouvelle écriture » réduit aux écritures de la liste (Paulo, 11.11.2026 : « adapter la liste des éléments selon les éléments visibles dans
      le tableau ») — Mutations : transfert, variation, renchérissement ; Adjudications : contrat, avenant ; Paiements : sur contrat, hors contrat. Avenant et paiement sur
@@ -460,7 +452,7 @@ function habillerEd(m,id){ cssC(); cssE();
       return x; });
     return L.filter((x,i)=>x!=='-'||(i>0&&i<L.length-1&&L[i-1]!=='-')); };
   { const clic=bNew.onclick; bNew.onclick=e=>{ const p0=popMenu; popMenu=function(a,items){ return p0.call(this,a,nouv(items)); }; try{ return clic.call(bNew,e); } finally{ popMenu=p0; } }; }
-  bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep(),bImp,fin,leg,...autres,bPar,bFonN,bPlein);
+  bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep(),bImp,fin,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */
   const docs=k=>{ ED.sub=k; if(k==='fichiers') secIt.DOCUMENTS.click(); else if(docIt[k]) docIt[k].click(); maj(); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b) return; if(b.dataset.s==='DOCUMENTS') docs(ED.sub||'fichiers'); else if(b.dataset.s==='ECRITURES'){ secIt[ED.ecr||ECR[0]].click(); maj(); } else { secIt[b.dataset.s].click(); maj(); } };

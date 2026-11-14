@@ -2000,7 +2000,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   actions Ouvrir ou Créer le document, Créer le PDF, Renommer…, Supprimer le document (celles du menu « Document » du moteur), puis ses fichiers PDF (`decoDocs`,
   refait quand un panneau se redessine). Barre : Nouvelle écriture, Présentation (sans « 1 à 3 chiffres »), **CFC Tout · 3 · 2 · 1** (Contrôle du coût et Devis
   général ; `sg3_coco_niv` ; copie, CSV et impression du tableau = lignes affichées, `tableText` filtré le temps de l'appel), Imprimer ▾ (tableau A4 paysage,
-  documents de la section, fichiers déposés), légende des couleurs des écritures (avec « Afficher les détails »), Paramètres, Fonctions ▾ (éditer, supprimer,
+  documents de la section, fichiers déposés), Paramètres (légende des couleurs des écritures retirée de la barre le 14.11.2026, Paulo : « supprimer »), Fonctions ▾ (éditer, supprimer,
   copier, exporter, enregistrer), plein écran (Échap). Tableau au graphisme du devis : CFC à 1 chiffre sur trame bleu nuit pâle, 1re et 2e colonnes fixes au
   défilement horizontal, total général encadré ; clic droit sur une ligne = Éditer / Supprimer l'écriture (lignes de détail ; toutes les lignes des autres
   sections), Nouvelle écriture ▸ ; ↑ ↓ Entrée. Classes `sgce-*` (liste : `sgcc-*`), `window.SGCC` (`SGCC.ed` = état de l'éditeur). DeltaSub.html seul garde ses écrans.
@@ -2166,12 +2166,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`app:true`, titres du catalogue) est créée ou mise à jour et choisie ; une présentation du document est modifiée en place ; onglet **Couleurs des écritures** :
   Mutations, Contrats et avenants, Paiements, Provisions / coût probable, palette `CC_PALETTE` de 256 couleurs (16 gris + 15 teintes × 16 clartés), « d'origine »,
   aperçu — enregistrées dans le document (`C.parametres.couleursDetails`, `ccCouleurs(C)`, défaut `CC_DEF_COUL` de l'ancien logiciel) et appliquées au tableau
-  (`COLOR`) et au PDF « Contrôle des coûts » (`sg3_coco_docs.js`). SUBGestion 3 (`sg3_coco.js`) : légende des couleurs aux couleurs du document, un clic ouvre la palette
-  sur l'élément (`CCV.affichage(tab, el)`, évènement `cc-affichage`). Repli PDF `ch01aOvVal` : `fx` et `m` (HT / TVA) gérés, colonnes d'information et
+  (`COLOR`) et au PDF « Contrôle des coûts » (`sg3_coco_docs.js`). SUBGestion 3 (`sg3_coco.js`) : la légende des couleurs de la barre (un clic ouvrait la palette sur l'élément,
+  `CCV.affichage(tab, el)`) a été retirée le 14.11.2026 à la demande ; couleurs réglables par Présentation ▸ Affichage … ▸ Couleurs des écritures. Repli PDF `ch01aOvVal` : `fx` et `m` (HT / TVA) gérés, colonnes d'information et
   complémentaires vides. Copies d'avant : `DeltaSub_backup_20261111_avant_affichage_colonnes.html`, `subgestion3/_backup_20261111_avant_affichage_colonnes/`.
   **Paiements sur contrat et hors contrat : deux couleurs (11.11.2026, Paulo : « ajoute une couleur pour les paiements sur contrat et hors contrat »)** : `CC_DEF_COUL.payh`
-  (hors contrat ; tant qu'elle n'est pas choisie : la couleur des paiements), `coulDe(d)` dans l'éditeur (écriture `pay` sans `contratId` → `payh`), légende « Paiements sur
-  contrat » / « Paiements hors contrat », PDF : `pk` des lignes d'écriture du travail du moteur (`detRow`) lu par `sg3_coco_docs.js`.
+  (hors contrat ; tant qu'elle n'est pas choisie : la couleur des paiements), `coulDe(d)` dans l'éditeur (écriture `pay` sans `contratId` → `payh`), libellés « Paiements sur
+  contrat » / « Paiements hors contrat » dans la fenêtre des couleurs, PDF : `pk` des lignes d'écriture du travail du moteur (`detRow`) lu par `sg3_coco_docs.js`.
   **Fenêtres des écritures = proposition B « Tableur » (10.11.2026, bloc 51, `subgestion3/sg3_ecritures.js`, concaténé après `sg3_coco.js` ; Paulo : « proposer un
   autre graphisme pour correspondre à la section devis, fais 5 propositions » — paiement, situation sur contrat, mutation —, puis « version B » ; maquettes A étapes,
   B tableur, C décompte, D rubriques, E chiffres et onglets : `subgestion3/_backup_20261110_maquette_ecritures/`)** : `ccPayment` (situation, paiement hors contrat),

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 14.11.2026 15:39 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 14.11.2026 18:52 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -38324,8 +38324,8 @@ window.SGSV={version:'04.11.2026',ETAT,ouvertsSerie,etatPV,tachesDe,notesDe,outi
    comment corriger et adapter à nos besoins ») ═══
    Le moteur reste celui de DeltaSub.html (9 étapes, descriptif, comparatif, impressions) ; DeltaSub.html seul garde ses écrans.
    Page du projet ▸ Chantier ▸ Soumission (svDomain remplacé) : bandeau, chiffres, stades, tableau des soumissions de l'affaire ; clic = ouvrir la
-   fenêtre, clic droit = éditer, dupliquer, supprimer. Fenêtre (svEditor enveloppé) : bandeau jaune et parcours Appel d'offres → Soumissionnaires →
-   Comparatif → Contrat → Métré au-dessus de l'arbre des 9 étapes ; « ‹ Liste » revient à la page du projet.
+   fenêtre, clic droit = éditer, dupliquer, supprimer. Fenêtre (svEditor enveloppé) : jusqu'au 14.11.2026, bandeau jaune et parcours Appel d'offres →
+   Soumissionnaires → Comparatif → Contrat → Métré au-dessus de l'arbre des étapes ; depuis, la présentation du devis général (voir plus bas).
    Visuel des appels d'offres (04.11.2026, même bloc ; Paulo : « adapte le visuel des appels d'offre pour correspondre au reste de l'app ») : mêmes menus,
    gestes et données. Descriptif de toutes les étapes (svdBuildRows, svdColumns enveloppés) : lignes de quantité simples fondues dans leur article, numéro de
    chapitre dans la colonne Art., colonnes sans donnée masquées (G et P aussi s'ils ne valent que A), montants nuls masqués hors comparatif, titres de colonnes
@@ -38338,6 +38338,14 @@ window.SGSV={version:'04.11.2026',ETAT,ouvertsSerie,etatPV,tachesDe,notesDe,outi
    Exemple (sgSoumExemple) : vrai document du moteur, CFC 271 Plâtrerie, marqué EXEMPLE : descriptif (6 paragraphes, 9 articles de quantité), conditions
    (rabais, escompte, TVA), 3 entreprises fictives (entités masquées de l'annuaire), prix, critères et notes, comparatif créé par le transfert du moteur
    (svcTransferDoc B → C1), entreprise proposée. Rien n'est livré d'office : créé à la demande depuis la liste. Aucun texte d'origine de catalogue.
+   Soumission ouverte = présentation du devis général et du contrôle des coûts (14.11.2026 ; Paulo : « modifie le visuel de la page soumission lorsque l'on
+   sélectionne un cfc, pour être identique à celui de devis général ou contrôle des coûts ») : bandeau jaune (numéro du projet, « Soumission · stade · statut »,
+   CFC et lot, projet, maître de l'ouvrage, version, modification ; « ‹ Soumissions du projet » à droite), chiffres (devis général du lot, appel d'offres et dépôt des offres,
+   entreprises, offre proposée, écart au devis, contrat, métré), onglets = étapes de l'arbre (SV_TREE ; le menu de gauche est masqué, il sert toujours), puis la
+   ligne des éléments de l'étape (Éditer, Documents, Négociation…) avec à droite le plein écran du devis (toute la soumission, Échap ; celui du moteur, limité au
+   tableau, est masqué). Le parcours à carrés et la barre
+   « ‹ Liste · Fichier · Paramètres » sont retirés (⌘S enregistre toujours ; « Paramètres » revient si une de ses commandes est livrée). Étape sans contenu :
+   onglet atténué. Mêmes fonctions, mêmes données.
    Styles <style id="sgsm-css">, classes sgsm-*. Débogage : window.SGSM. */
 (function(){
 if(typeof svDomain!=='function'||typeof svEditor!=='function'||!window.SGSV||!window.SGSV.outils) return;
@@ -38346,31 +38354,50 @@ const CSS=`
 .sgsm-tb tr[data-a]{cursor:pointer}
 .sgsm-tb tr.supp td{opacity:.5}
 .sgsm-note{font-size:12px;color:var(--s-gris);margin-top:10px}
-.sgsm-ed{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden}
+.sgsm-ed{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden;background:#fff}
+.sgsm-ed.sgsm-plein{position:fixed;inset:0;z-index:800;height:auto;padding-top:8px}
+.sgsm-ed.sgsm-plein>.sgsm-tete{display:none}
+.sgsm-ed.sgsm-plein .sgsm-kp .nx-kpi{padding:4px 12px 6px 0}
+.sgsm-ed.sgsm-plein .sgsm-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),17px);margin-top:2px}
+.sgsm-ed.sgsm-plein .sgsm-kp .nx-kpi .s{display:none}
 .sgsm-tete{flex:none;padding:8px 24px 0}
 .sgsm-tete .sgfh-tete{margin:0;padding:10px 18px}
-.sgsm-tete .sgfh-ini{font-size:28px}.sgsm-tete .sgfh-nm h2{font-size:20px}
-@media (max-height:860px){.sgsm-tete .sgfh-meta,.sgsm-e span{display:none}.sgsm-tete .sgfh-tete{padding:6px 14px}.sgsm-tete .sgfh-ini{font-size:22px}.sgsm-tete .sgfh-nm h2{font-size:17px}.sgsm-tete .sgfh-nm .lb{margin:0}.sgsm-par{padding:6px 0 2px!important}.sgsm-par:before{top:13px!important}.sgsm-e i{margin:0 0 4px}}
-.sgsm-par{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:relative;padding:12px 0 8px}
-.sgsm-par:before{content:'';position:absolute;left:6px;right:6px;top:20px;border-top:2px solid #d6d6d6}
-.sgsm-e{position:relative;border:0;background:none;padding:0 8px 2px 0;font:inherit;text-align:left;cursor:pointer;min-width:0}
-.sgsm-e i{display:block;width:12px;height:12px;box-sizing:border-box;border:2px solid var(--s-gris);background:#fff;position:relative;margin:2px 0 7px}
-.sgsm-e.fait i{background:var(--s-nuit);border-color:var(--s-nuit)}
-.sgsm-e.cour i{background:var(--s-jaune);border-color:var(--s-noir)}
-.sgsm-e b{display:block;font-size:12px;font-weight:700;color:var(--s-noir)}
-.sgsm-e span{display:block;font-size:11px;color:var(--s-gris);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sgsm-e:hover b{color:var(--s-nuit);text-decoration:underline}
-.sgsm-ed>.ph2{flex:none;margin:0 24px;padding:6px 0;border-top:2px solid var(--s-noir);border-bottom:1px solid var(--s-filet);background:#fff;height:auto;min-height:38px}
-.sgsm-ed>.ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;font-size:12.5px;font-weight:700;color:var(--s-noir);height:30px}
-.sgsm-ed>.ph2 .ib:hover{background:var(--s-jaune3)!important}
-.sgsm-ed>.ph2>b{display:none}
-.sgsm-ed>.cols{flex:1 1 auto;min-height:0;padding:0 24px 12px;gap:16px}
-.sgsm-ed>.cols>.col:first-child{flex:0 0 220px!important;background:#fff!important;border:0!important;border-right:1px solid var(--s-filet)!important;padding:8px 0!important;box-shadow:none!important}
-.sgsm-ed>.cols>.col:first-child>div{color:var(--s-noir)}
-.sgsm-ed>.cols>.col:first-child>div:not(.item){font-size:11px!important;font-weight:700!important;letter-spacing:0!important;color:var(--s-gris)!important;padding:8px 10px 4px 2px!important;margin-top:2px!important}
-.sgsm-ed>.cols>.col:first-child .item{font-size:12.5px!important;padding:6px 10px 6px 14px!important;border:0}
-.sgsm-ed>.cols>.col:first-child .item:hover{background:var(--s-jaune3)}
-.sgsm-ed>.cols>.col:first-child .item.on{background:var(--s-jaune2)!important;color:var(--s-noir)!important;font-weight:700;box-shadow:inset 3px 0 0 var(--s-nuit)}
+.sgsm-tete .sgfh-ini{font-size:28px;white-space:nowrap}
+.sgsm-tete .sgfh-nm{min-width:0}
+.sgsm-tete .sgfh-nm h2{font-size:20px}
+.sgsm-tete .sgsv-hact{align-items:center}
+.sgsm-ro{font-size:12px;color:var(--s-gris)}
+.sgsm-kp{flex:none;margin:0 24px;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border-top:0;container-type:inline-size}
+.sgsm-kp .nx-kpi{padding:10px 12px 10px 0;margin-right:12px;min-width:0}
+.sgsm-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),22px);margin-top:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sgsm-kp .nx-kpi .l,.sgsm-kp .nx-kpi .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgsm-kp .nx-kpi .s{margin-top:3px}
+.sgsm-kp .nx-kpi .v.pos{color:var(--s-rouge)}
+.sgsm-kp .nx-kpi .v.neg{color:#4E6B0F}
+.sgsm-ong{flex:none;margin:0 24px;border-bottom:1px solid var(--s-filet);display:flex;align-items:center;gap:12px}
+.sgsm-ong>.sg-onglets{flex:1 1 auto;min-width:0;margin:0;border:0;gap:0 16px;flex-wrap:wrap;overflow:visible}   /* dix étapes : 16 px entre les onglets (20 dans le devis) pour tenir sur une ligne dès 1040 px */
+.sgsm-ong .sg-onglets button{font-size:13.5px}
+.sgsm-ong .sg-onglets button.vide:not(.on){opacity:.55}
+.sgsm-ong .sg-onglets button.vide:not(.on):hover{opacity:1}
+.sgsm-ong .sg-onglets button:disabled{opacity:.4;cursor:default}
+html[data-visuel="papier"] .sgsm-ong>.sg-onglets{row-gap:0!important}html[data-visuel="brume"] .sgsm-ong>.sg-onglets{row-gap:6px!important}   /* visuels à l'essai : dix onglets plus larges, sur deux lignes serrées */
+.sgsm-sub{flex:none;margin:0 24px;padding:4px 0 0;min-height:36px;display:flex;align-items:center;flex-wrap:wrap;gap:2px 16px}
+.sgsm-niv{display:flex;align-items:center;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--s-gris)}
+.sgsm-niv button{border:0;background:none;padding:2px 0 3px;font:inherit;font-size:12.5px;color:var(--s-gris);cursor:pointer;white-space:nowrap}
+.sgsm-niv button:hover{color:var(--s-noir)}
+.sgsm-niv button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
+.sgsm-niv button:disabled{color:#b9b9b6;cursor:default}
+.sgsm-dr{margin-left:auto;display:flex;align-items:center;gap:2px}
+.sgsm-dr .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:32px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir)}
+.sgsm-dr .ib:hover{background:var(--s-jaune3)!important}
+.sgsm-dr .ib.on{box-shadow:inset 0 -2px 0 var(--s-nuit)!important}
+.sgsm-dr .ib .lb{display:inline!important}
+.sgsm-ed>.ph2{display:none!important}
+.sgsm-ed>.cols{flex:1 1 auto;min-height:0;padding:0 24px 12px;gap:0}
+.sgsm-ed>.cols>.col:first-child{display:none!important}
+.sgsm-ed .col.fill .ph2 .ib[title="Plein écran"],.sgsm-ed .col.fill .ph2 .ib[title^="Quitter le plein"]{display:none!important}
+.sgsm-ed .col.fill .ph2 .sgcp-aide{flex:1 1 300px}   /* aide au clavier au bout de la barre : à la ligne si la place manque, plutôt qu'écrasée (« Q… ») */
+@media (max-height:860px){.sgsm-tete .sgfh-meta{display:none}.sgsm-tete .sgfh-tete{padding:6px 14px}.sgsm-tete .sgfh-ini{font-size:22px}.sgsm-tete .sgfh-nm h2{font-size:17px}.sgsm-tete .sgfh-nm .lb{margin:0}.sgsm-kp .nx-kpi{padding:6px 12px 6px 0}.sgsm-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),18px);margin-top:3px}.sgsm-kp .nx-kpi .s{display:none}.sgsm-sub{min-height:32px;padding-top:2px}}
 .sgsm-ed .col.fill{border:0!important;background:#fff!important;box-shadow:none!important;min-width:0}
 .sgsm-ed .pane{border:0!important;background:#fff!important;box-shadow:none!important}
 .sgsm-ed .col.fill .ph2,.sgsm-ful .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:0 0 6px;border:0!important;background:transparent!important}
@@ -38484,17 +38511,73 @@ svDomain=function(C,top,pane,p){ monter(C,p,'soumission',[...SV_NEED,'project'],
 if(VIEWS.soum){ const r0=VIEWS.soum.render; VIEWS.soum.render=function(m,arg){ if(SV_NEED.some(t=>!DS.loaded.has(t))||(SV_UI.open!=null&&DS.get('devisdocument',SV_UI.open))) return r0.call(this,m,arg);
   SV_UI.open=null; this.L=null; monter(m,{ID:'tous',GLOBAL:1,NUMBER:'',TITLE:''},'soumg',[...SV_NEED,'project'],SOUM); }; }
 
-/* ── fenêtre : bandeau et parcours au-dessus de l'arbre des étapes ── */
+/* ── soumission ouverte : même présentation que le devis général et le contrôle des coûts (14.11.2026) ──
+   Les éléments du moteur restent : sa barre (masquée) et son arbre (masqué, redessiné à
+   chaque étape) ; un onglet ou un élément appelle X.go(clé), comme un clic dans l'arbre. */
 const uni=(S,k)=>(S.unites&&S.unites[k]&&S.unites[k].chapitres)||[];
-function parcours(X){ const S=X.S, nE=(S.entreprises||[]).filter(e=>+e.contactId>0).length, nA=uni(S,'B').reduce((n,c)=>n+c.articles.filter(a=>(a.quantites||[]).length).length,0), pr=(S.entreprises||[]).find(e=>e.proposee&&+e.contactId>0), c1=uni(S,'C1').length, ct=uni(S,'D').length, me=uni(S,'I').length;
-  const nD=((S.descriptif||{}).blocs||[]).filter(b=>b.t==='pu'&&b.x).length, des=S.mode==='descriptif'; const L=des?[['tenderEdit',"Appel d’offres",nD?'descriptif · '+pl(nD,'ligne'):'descriptif à écrire',nD>0],['tenderingEdit','Soumissionnaires',nE?pl(nE,'entreprise'):'entreprises à choisir',nE>0],['offerOverviewEdit','Comparatif bref',pr?'proposée : '+(pr.abreviation||''):'offres à saisir',!!pr]]:[['tenderEdit',"Appel d’offres",nA?pl(nA,'article'):'descriptif à écrire',nA>0],['tenderingEdit','Soumissionnaires',nE?pl(nE,'entreprise'):'entreprises à choisir',nE>0],['priceComparisonEdit','Comparatif',c1?(pr?'proposée : '+(pr.abreviation||''):'offres à saisir'):'à créer depuis l’appel d’offres',c1>0],['contractEdit','Contrat',ct?'créé':'après l’adjudication',ct>0],['measureEdit','Métré',me?'créé':'pendant les travaux',me>0]];
-  const cour=SV_UI.node?((svStepOf(SV_UI.node)||{}).k):''; const k2={tender:0,tendering:1,offerOverview:2,priceComparison:2,travail:2,offer:2,contract:3,measure:4}[cour];
-  return L.map(([k,t,s,f],i)=>'<button class="sgsm-e'+(i===k2?' cour':f?' fait':'')+'" data-n="'+k+'"><i></i><b>'+E(t)+'</b><span title="'+E(s)+'">'+E(s)+'</span></button>').join(''); }
-function habiller(m,id){ const X=SV_UI.ed&&SV_UI.ed.X, d=DS.get('devisdocument',id); if(!X||!d) return; cssM(); const p=DS.get('project',d.PROJECT_ID)||{}, bar=m.querySelector(':scope>.ph2'); if(!bar) return;
+const ED={plein:false,box:null,id:null};
+const parseM=x=>{ const t=String(x==null?'':x).replace(/[^0-9.,-]/g,'').replace(/,(\d{1,2})$/,'.$1').replace(/,/g,''), v=parseFloat(t); return isFinite(v)?v:0; };
+const signe=v=>(v>0.005?'+':'')+num2(v), clsE=v=>v>0.005?'pos':v<-0.005?'neg':'', pc=(a,b)=>b?(Math.round(a/b*1000)/10).toFixed(1)+' %':'';
+const entsDe=S=>(S.entreprises||[]).filter(e=>+e.contactId>0);
+/* net d'une entreprise : comparatif choix des articles s'il a été modifié, sinon comparatif des offres (négocié s'il existe), sinon comparatif bref */
+const netEnt=(S,e)=>{ const T=S.travail&&S.travail.modifie&&(S.travail.detail||{})[e.contactId], D=T||e.detail||{}, n=+((D.negociee||{}).net)||+((D.offre||{}).net)||0; if(n) return n;
+  try{ return (+svbNeg(e).net||0)||(+svbOff(e).net||0); }catch(_){ return 0; } };
+const netUnite=(S,et)=>{ try{ return uni(S,et).length?+svdTotals(S,et).net||0:0; }catch(_){ return 0; } };
+function chiffres(X){ const S=X.S, des=S.mode==='descriptif', ao=S.appelOffres||{}, Le=entsDe(S), dg=parseM(ao.montantDG), pr=Le.find(e=>e.proposee)||null, net=pr?netEnt(S,pr):0, ec=dg&&net?net-dg:null;
+  const nA=uni(S,'B').reduce((n,c)=>n+(c.articles||[]).filter(a=>(a.quantites||[]).length).length,0), nD=((S.descriptif||{}).blocs||[]).filter(b=>b.t==='pu'&&b.x).length, nO=Le.filter(e=>netEnt(S,e)).length, n1=des?nD:nA;
+  let nomP=''; if(pr){ const c=DS.get('contact',pr.contactId); nomP=pr.abreviation||(c&&c.NAME1)||''; }
+  let peutDG=false; try{ peutDG=!X.ro&&svCanEdit(X.doc)&&typeof svDlgMontantDG==='function'; }catch(_){}
+  const K=[kpi('Devis général',dg?num2(dg):'—',dg?'montant du lot':(peutDG?lien('dg','définir','Saisir le montant du devis général pour ce lot'):''),'','Montant du devis général pour ce lot'),
+    kpi('Appel d’offres',n1?E(pl(n1,des?'ligne':'article')):'—',E(ao.dateDepot?'dépôt le '+dfr(ao.dateDepot):n1?(des?'descriptif':'date de dépôt à fixer'):'descriptif à écrire'),'',des?'Lignes du descriptif de l’appel d’offres ; date de dépôt des offres':'Articles de l’appel d’offres qui portent une quantité ; date de dépôt des offres'),
+    kpi('Entreprises',Le.length?String(Le.length):'—',Le.length?(nO?pl(nO,'offre'):'offres à saisir'):'à choisir','','Entreprises consultées ; offres dont le montant est saisi'),
+    kpi('Offre proposée',net?num2(net):'—',pr?E(nomP||'entreprise proposée'):'aucune entreprise proposée','','Montant net de l’offre de l’entreprise proposée (négocié s’il existe)'),
+    kpi('Écart au devis',ec==null?'—':signe(ec),ec==null?'':pc(ec,dg)+' du devis général',ec==null?'':clsE(ec),'Offre proposée moins devis général du lot : positif = dépassement (rouge), négatif = économie (vert)')];
+  if(!des){ const ct=uni(S,'D').length>0, me=uni(S,'I').length>0, nd=netUnite(S,'D'), ni=netUnite(S,'I');
+    K.push(kpi('Contrat',ct?num2(nd):'—',ct?'net':'après l’adjudication','','Montant net du contrat (étape Contrat)'),kpi('Métré',me?num2(ni):'—',me?(nd?pc(ni,nd)+' du contrat':'net'):'pendant les travaux','','Montant net du métré (étape Métré), part du contrat')); }
+  return K.join(''); }
+/* étape encore sans contenu (onglet atténué) ; élément ouvert par l'onglet d'une étape : « Éditer » (Soumission, Descriptif) */
+const etVide=(S,st)=>{ try{ if(st.k==='tender') return false; if(st.k==='tendering') return !entsDe(S).length;
+  if(st.k==='offerOverview') return !entsDe(S).some(e=>(+svbOff(e).net||0)||(+svbNeg(e).net||0)); return st.etape?!uni(S,st.etape).length:false; }catch(_){ return false; } };
+const noeudOk=k=>typeof svNodeFn(k)==='function';
+const noeudPrincipal=st=>{ const x=st.subs.find(x=>/Edit$/.test(x[0])&&noeudOk(x[0]))||st.subs.find(x=>noeudOk(x[0])); return x?x[0]:null; };
+addEventListener('keydown',e=>{ const B=ED.box; if(e.key!=='Escape'||!ED.plein||!B||!B.isConnected||e.defaultPrevented||document.querySelector('.ov,.sg-visu,.menu')) return; const a=document.activeElement;
+  if(a&&(a.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(a.tagName))) return; e.preventDefault(); B._plein(false); },true);   /* capture : une fenêtre ouverte se ferme d'abord, sans quitter le plein écran */
+function habiller(m,id){ const X=SV_UI.ed&&SV_UI.ed.X, d=DS.get('devisdocument',id); if(!X||!d) return; cssM();
+  const p=DS.get('project',d.PROJECT_ID)||{}, bar=m.querySelector(':scope>.ph2'), body=m.querySelector(':scope>.cols'); if(!bar||!body||body.children.length<2) return;   /* écran inattendu : celui du moteur reste */
+  const el=(t,c)=>{ const e=document.createElement(t); if(c) e.className=c; return e; };
   /* enveloppe : #main sert à tous les écrans, il ne porte jamais la classe ; m.innerHTML='' de go() retire tout */
-  const box=document.createElement('div'); box.className='sgsm-ed'; box.append(...m.childNodes); m.append(box);
-  const hd=document.createElement('div'); hd.className='sgsm-tete'; box.prepend(hd); hd.onclick=e=>{ const b=e.target.closest('[data-n]'); if(b&&SV_UI.ed) SV_UI.ed.X.go(b.dataset.n); };
-  const maj=()=>{ const x=DS.get('devisdocument',id)||d; hd.innerHTML=tete(x.BKP||'—','Soumission · '+(SV_STADE_L[x.DOCUMENTSTATECODE]??'')+' · '+(SV_STATE[x.STATECODE]??''),x.AWARDINGTEXT||'(sans titre)',[[p.NUMBER,p.TITLE].filter(Boolean).join(' · '),x.VERSION?'version '+x.VERSION:'',X.S.appelOffres&&X.S.appelOffres.dateDepot?'dépôt des offres le '+dfr(X.S.appelOffres.dateDepot):''].filter(Boolean).join(' · '),X.ro?'<span class="sgsm-note" style="margin:0">Lecture seule</span>':'')+'<div class="sgsm-par">'+parcours(X)+'</div>'; };
+  const box=el('div','sgsm-ed'); box.append(...m.childNodes); m.append(box);
+  const hd=el('div','sgsm-tete'), kp=el('div','nx-kpis sgsm-kp'), ong=el('div','sgsm-ong'), ongL=el('div','sg-onglets'), sub=el('div','sgsm-sub'), subL=el('div','sgsm-niv'), dr=el('div','sgsm-dr');
+  ong.append(ongL); sub.append(subL,dr); box.prepend(hd,kp,ong,sub);
+  /* à droite de la ligne des éléments : plein écran (et « Paramètres » du moteur, déplacé tel quel, quand il sert) */
+  const B=[...bar.querySelectorAll(':scope>button.ib')], bDe=l=>B.find(b=>b._sgB&&b._sgB.label===l);
+  const hab=(b,ic,t,ti)=>{ if(!b) return null; const sp=b.querySelector('span:not(.dd)'); if(sp){ sp.className='lb'; if(t) sp.textContent=t; } if(ic&&!b.querySelector('svg')) b.insertAdjacentHTML('afterbegin',IC(ic)); if(ti) b.title=ti; return b; };
+  const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgsm-pl');
+  box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgsm-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const g=bPlein.querySelector('svg'); if(g&&typeof nxSvg==='function') g.outerHTML=nxSvg(ED.plein?'pleinq':'plein');
+    bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
+  /* « Paramètres » du moteur (Présentation…, À la dernière version…) : montré seulement si l'une de ses commandes existe (aucune n'est livrée : le menu n'avait qu'une entrée grisée).
+     « Fichier » (Enregistrer, Fermer…) n'est pas repris, comme dans le devis et le contrôle des coûts : chaque modification est enregistrée (X.touch), « ‹ Soumissions du projet »
+     ferme la soumission (svClose : contenu, entreprises de l'affaire, verrou) et ⌘S enregistre toujours. Plusieurs étapes ont leur propre bouton « Fonctions » dans leur barre. */
+  dr.append(...[noeudOk('preferences')||noeudOk('toLastVersion')?hab(bDe('Paramètres'),'wrench',null,'Présentation de la soumission'):null,bPlein].filter(Boolean));
+  if(typeof SVD_UI==='object'&&SVD_UI) SVD_UI.full=false;   /* plein écran du moteur (tableau seul) : remplacé par celui de la soumission */
+  ED.box=box; if(ED.plein&&ED.id===id) box._plein(true); else ED.plein=false; ED.id=id;
+  const fermer=()=>{ const pid=(DS.get('devisdocument',id)||d).PROJECT_ID; if(ED.plein) box._plein(false);
+    if(pid!=null&&typeof NX_VIEW!=='undefined'&&NX_VIEW['nx-pdom']&&(typeof sgProjetPermis!=='function'||sgProjetPermis(pid))) SV_UI.back={view:'nx-pdom',arg:pid+'|Soumission'};   /* comme le devis : toujours la page du projet */
+    svClose(); };
+  hd.onclick=e=>{ if(e.target.closest('[data-a="liste"]')) fermer(); };
+  kp.onclick=e=>{ if(e.target.closest('[data-a="dg"]')&&typeof svDlgMontantDG==='function') svDlgMontantDG(X); };
+  ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b||b.disabled) return; const st=SV_TREE.find(x=>x.k===b.dataset.s), k=st&&noeudPrincipal(st); if(k) X.go(k); };
+  subL.onclick=e=>{ const b=e.target.closest('[data-n]'); if(b&&!b.disabled) X.go(b.dataset.n); };
+  const maj=()=>{ const x=DS.get('devisdocument',id)||d, S=X.S, cur=svStepOf(X.node||SV_UI.node)||SV_TREE[0], mo=moT(p);
+    hd.innerHTML=tete(p.NUMBER||'','Soumission'+[SV_STADE_L[x.DOCUMENTSTATECODE],SV_STATE[x.STATECODE]].filter(Boolean).map(t=>' · '+t).join(''),[x.BKP,x.AWARDINGTEXT].filter(Boolean).join(' ')||'(sans titre)',
+      [p.TITLE,mo?'Maître de l’ouvrage : '+mo:'',x.VERSION?'version '+x.VERSION:'',x.CHANGEDDATE?'modifié le '+dfr(x.CHANGEDDATE)+(x.USERID?' par '+x.USERID:''):''].filter(Boolean).join(' · '),   /* dépôt des offres : dans les chiffres */
+      (X.ro?'<span class="sgsm-ro" title="'+E(SV_UI.roMsg||'Document ouvert en lecture seule')+'">Lecture seule</span>':'')+'<button class="nx-btn" data-a="liste" title="Retour aux soumissions du projet">‹ Soumissions du projet</button>');
+    try{ kp.innerHTML=chiffres(X); }catch(e){ console.error(e); }
+    ongL.innerHTML=SV_TREE.map(st=>{ const v=etVide(S,st); return '<button data-s="'+E(st.k)+'" class="'+(st===cur?'on':'')+(v?' vide':'')+'"'+(noeudPrincipal(st)?'':' disabled')+(v?' title="Pas encore créé"':'')+'>'+E(st.t)+'</button>'; }).join('');
+    subL.innerHTML=cur.subs.map(([k,t,lot])=>'<button data-n="'+E(k)+'" class="'+(X.node===k?'on':'')+'"'+(noeudOk(k)?'':' disabled title="'+E('prévu au lot '+lot)+'"')+'>'+E(t)+'</button>').join(''); };
+  /* chiffres tenus à jour pendant la saisie (prix et quantités saisis dans le tableau, sans redessin) */
+  let tm=0; const plus=()=>{ clearTimeout(tm); tm=setTimeout(()=>{ if(box.isConnected&&SV_UI.ed&&SV_UI.ed.X===X) try{ kp.innerHTML=chiffres(X); }catch(_){} },500); };
+  body.addEventListener('change',plus,true); body.addEventListener('input',plus,true);
   maj(); SV_UI.ed.majTete=maj; if(typeof VIEW==='object'&&VIEW) VIEW.nxTitle='Soumission · '+[d.BKP,d.AWARDINGTEXT].filter(Boolean).join(' '); }
 const ed0=svEditor; svEditor=function(m,id){ ed0(m,id); habiller(m,id); };
 const n0=svNodeFn; svNodeFn=function(k){ const f=n0(k); if(typeof f!=='function') return f; return function(X){ const r=f.apply(this,arguments); setTimeout(()=>{ if(SV_UI.ed&&SV_UI.ed.majTete) SV_UI.ed.majTete(); },0);
@@ -38580,7 +38663,7 @@ async function sgSoumExemple(p){ const dj=DS.by('devisdocument','PROJECT_ID',p.I
   ops.push({t:'devisdocument',id:did,val:doc},{t:'soumission',id:did,val:S});
   await DS.commit(ops); toast('Exemple créé : CFC 271 Plâtrerie.'); ouvrirDoc(doc,p); }
 window.sgSoumExemple=sgSoumExemple;
-window.SGSM={resume,habiller,parcours};
+window.SGSM={resume,habiller,chiffres,ed:ED};
 })();
 
 /* ═══ SOUMISSIONNAIRES ▸ Éditer : SUIVI DES OFFRES (07.11.2026 ; Paulo : « dans le tableau des soumissionnaires, ajoute : si rendu, relancer le, renonce, etc. ») ═══

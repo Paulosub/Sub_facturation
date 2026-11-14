@@ -1497,6 +1497,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Appels d'offres (`VIEWS.soum` sans document ouvert) : même page que la liste du projet, tous les projets (`p.GLOBAL` : colonne Projet, Toutes · Mes soumissions, « Nouvelle soumission » choisit l'affaire ; remplace la colonne des affaires). Copie d'avant : `subgestion3/_backup_20261104_avant_visuel_appels_offres/`.
   **Exemple** (`sgSoumExemple(p)`, liste ▸ ⋯ ou page vide ; un seul par projet, version « EXEMPLE ») : CFC 271 Plâtrerie, chapitre libre, 9 articles de quantité, conditions rabais / escompte / TVA, critères et notes,
   trois entreprises fictives (`contactowner` masqués, `ISHIDDEN`, jamais de faux prix sur de vraies entreprises), prix, comparatif créé par le transfert du moteur (`svcTransferDoc`), entreprise proposée. Textes écrits pour l'exemple, aucun texte de catalogue.
+  **Soumission ouverte = présentation du devis général et du contrôle des coûts (14.11.2026, Paulo : « modifie le visuel de la page soumission lorsque l'on sélectionne un
+  cfc, pour être identique à celui de devis général ou contrôle des coûts »)** : `habiller` refait (`sg3_soumission.js`), mêmes fonctions et mêmes données ; elle remplace le
+  bandeau au CFC, le parcours à carrés, la barre « ‹ Liste · Fichier · Paramètres » et le menu de gauche décrits ci-dessus. Bandeau jaune comme le devis : numéro du PROJET en
+  grand, « Soumission · stade · statut », titre = CFC et lot, projet · maître de l'ouvrage · version · modification ; à droite « ‹ Soumissions du projet » (`svClose`, toujours
+  vers la page du projet ▸ Soumission si le projet est permis) et « Lecture seule » (raison en infobulle). Chiffres (`chiffres(X)`, sept par articles, cinq pour un descriptif) :
+  Devis général du lot (`appelOffres.montantDG`, lien « définir » → `svDlgMontantDG`), Appel d'offres (articles ou lignes du descriptif, date de dépôt des offres), Entreprises
+  (offres chiffrées), Offre proposée (net de l'entreprise proposée, `netEnt` : comparatif choix des articles s'il a été modifié, sinon comparatif des offres — négocié s'il existe
+  —, sinon comparatif bref), Écart au devis (rouge = dépassement, vert = économie), Contrat et Métré nets (`svdTotals` des étapes D et I) ; tenus à jour pendant la saisie des
+  prix (500 ms après un changement). **Onglets = étapes de l'arbre** (`SV_TREE` tel que la soumission ouverte le règle : 10 étapes par articles, 3 pour un descriptif) : un clic
+  ouvre « Éditer » de l'étape (`noeudPrincipal`), étape sans contenu atténuée (`etVide`). Dessous, la **ligne des éléments de l'étape** (Conditions générales · Soumission ·
+  Documents ; Éditer · Documents · Négociation · Courriers de refus · Descriptif…) et, à droite, le plein écran du devis (toute la soumission, bandeau masqué, chiffres réduits,
+  Échap ; `box._plein`, état `ED`) — celui du moteur, limité au tableau, est masqué (`SVD_UI.full` reste faux). Le menu de gauche et la barre du moteur sont masqués, pas
+  retirés (l'arbre est toujours redessiné ; un onglet appelle `X.go(clé)`). « Fichier » (Enregistrer, Fermer…) n'est pas repris, comme dans le devis et le contrôle des coûts :
+  chaque modification est enregistrée, le retour ferme la soumission, ⌘S enregistre toujours ; « Paramètres » (Présentation… : aucune commande livrée, entrée grisée) ne revient
+  que si une de ses commandes existe. Onglets à 16 px d'écart : dix étapes sur une ligne dès 1040 px de zone, deux lignes en dessous et dans les visuels à l'essai ; aide au
+  clavier de la barre (`.sgcp-aide`) à la ligne si la place manque. Non repris : les écrans Documents des étapes gardent leur liste (pas la mise en forme de l'onglet Documents du
+  devis). Vérifié le 14.11.2026 sur 99TST (aperçu de travail) : les 27 écrans de la soumission 201.1, une soumission sous forme de descriptif, plein écran, retour, lecture seule,
+  saisie d'un prix, six visuels, balayage des 121 écrans, `nas/nettoyer.py`. Copie d'avant : `subgestion3/_backup_20261114_1836_avant_soumission_onglets/`,
+  `SUBGestion3_backup_20261114_1836_avant_soumission_onglets.html`.
 - **Descriptifs & devis au graphisme de l'app (05.11.2026, bloc 37, `subgestion3/sg3_devis.js`, concaténé en dernier ; Paulo : « reproduire graphiquement ce chapitre comme tout le reste de l'app, améliore pour rendre plus lisible et simple à utiliser »)** :
   moteur inchangé, DeltaSub.html seul garde ses écrans. Liste (`VIEWS.devis` sans document ouvert, tous les projets, et `ch02dDomain`, page du projet) : page `monter` comme la Soumission — bandeau, chiffres, Tous · Mes devis (tous les projets), statuts, recherche, tableau
   où le total TTC est visible ; clic = ouvrir (`ch02dOpen`, retour à l'écran d'origine ; le 2e clic d'un double-clic d'habitude est ignoré, 450 ms), clic droit = en-tête, dupliquer, dupliquer et modifier la subdivision, supprimer ; ⋯ = documents supprimés, importer, copie, CSV ; un devis créé s'ouvre aussitôt. Devis ouvert (`dvEditor` enveloppé,

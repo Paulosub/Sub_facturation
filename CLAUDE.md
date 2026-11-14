@@ -2261,7 +2261,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   même dessin ; balayage des 121 écrans ; `nas/nettoyer.py` passe (rien déposé). Débogage : `SGCD.bonDonnees(o,rec)`, `SGCD.arrDonnees`, `SGCD.decOctets`.
   **Ordre de paiement, même dessin (14.11.2026, Paulo : « Oui, l'ordre aussi »)** — `ordDonnees` (`sg3_coco_docs.js`, `DEC_TYPES.costControlPaymentOrder = 'ordre'`), mêmes
   informations que le document d'avant (modèle du bureau : fiche de l'ordre puis lettre à la banque, 3 pages), prises dans `ch01dOrderJob` : numéro `<affaire>.OP.<n°>`
-  (code « OP » choisi par analogie avec BOP et AC : à confirmer par Paulo), « Date valeur jj.mm.aaaa » en rouge à droite du filet de tête, chiffre = total des paiements
+  (code « OP » choisi par analogie avec BOP et AC, confirmé par Paulo le 14.11.2026 : « Oui, garder OP »), « Date valeur jj.mm.aaaa » en rouge à droite du filet de tête, chiffre = total des paiements
   (« n paiements · Ordre du … ») ; rubriques Affaire, Maître de l'ouvrage (adresse, téléphone · courriel), Banque du maître de l'ouvrage (banque, IBAN, contact),
   Architecte et direction des travaux (une seule rubrique s'ils sont les mêmes, sinon deux), Ordre (« Nous vous prions d'effectuer les paiements suivants à partir du compte
   du maître d'ouvrage et d'en retourner un exemplaire à l'architecte. », date et date valeur), Totaux (avant paiement, des paiements, après paiement) ; tableau Paiements

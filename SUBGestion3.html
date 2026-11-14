@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 14.11.2026 15:20 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 14.11.2026 15:39 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -34222,9 +34222,9 @@ async function sgDsPdf(R, rep, o){
      version 2 pour le moment » ; maquettes : subgestion3/_backup_20261114_maquette_bon_arrete/) — o.decompte = { etat, num, titre, no,
        chiffre:{ lib, sous (texte ou parties), monnaie, montant },
        blocs:[ { t:'rub', lib, wp, lignes:[{ x, f:'l'|'r'|'b', z, g (gris), d (texte à droite), p (préfixe gris), p2, x2 (seconde moitié de la ligne) }] }
-             | { t:'tab', lib, large (dès la colonne des libellés : le libellé tient lieu de titre à la 1re colonne), cols:[{ t (titre, « \n » = deux lignes), r (à droite), flex (colonne de texte), g (gris), w }], rows:[{ c:[…], s }] }
+             | { t:'tab', lib, large (dès la colonne des libellés : le libellé tient lieu de titre à la 1re colonne ; lib1 : libellé sur sa propre ligne, la 1re colonne garde son titre), cols:[{ t (titre, « \n » = deux lignes), r (à droite), flex (colonne de texte), g (gris), w }], rows:[{ c:[… texte, ou lignes [{ t, f, g }] dans la colonne de texte], s }] }
              | { t:'par', lib, x }   — chaque bloc : fin (gardé avec les signatures) ],
-       sig:[{ lib, nom, adr }] }.
+       sig:[{ lib, nom, adr }] (deux ou trois) }.
      Rangées d'un tableau, s : '' ligne, 'p' palier (gras), 'q' Regular, 't' total (gras, filet noir dessus), 'i' gris (information, arrondi), 'h' intertitre, 'v' espace.
      Page (portrait, papier des contrats) : colonne de x 125.72 (2e colonne du pied) à 510.68 (trait du numéro de page) ; filet noir de 1 pt à 100 pt du haut, état en
      rouge à droite, numéro en Light 26, titre en Bold 26 (« N° … » à droite sur sa ligne), filet, puis le chiffre : libellé en capitales, ligne grise, montant en
@@ -34292,31 +34292,38 @@ async function sgDsPdf(R, rep, o){
     /* tableau : largeur des colonnes d'après leurs valeurs, la colonne de texte (flex) prend le reste et passe à la ligne ; corps réduit si elle devient trop étroite */
     const rangeesTab = (b) => { const cols = Array.from(b.cols || []), rows = Array.from(b.rows || []), n = cols.length, R = [], XT = b.large ? X0 : XV, WT = X1 - XT;   /* large : dès la colonne des libellés */
       if(n && !cols.some(c => c.flex)) cols[0] = Object.assign({}, cols[0], { flex:true });
-      const tit = cols.map((c, j) => c.t && !(b.large && b.lib && !j) ? String(c.t).split('\n').map(P) : []), nT = Math.max(0, ...tit.map(t => t.length));   /* tableau large : le libellé de la rubrique tient lieu de titre à la première colonne */
+      const tit = cols.map((c, j) => c.t && !(b.large && b.lib && !b.lib1 && !j) ? String(c.t).split('\n').map(P) : []), nT = Math.max(0, ...tit.map(t => t.length));   /* tableau large : le libellé de la rubrique tient lieu de titre à la première colonne */
       const fS = (s) => s === 'p' || s === 't' ? F.bold : (s === 'q' || s === 'h') ? F.regular : F.light;
       let z = 8, GT = 9, ws = [];
       for(;;){ GT = z >= 8 ? 9 : 7;
-        ws = cols.map((c, j) => c.flex ? 0 : Math.max(+c.w || 0, ...tit[j].map(l => cx.largeur(l, F.light, 7)), ...rows.map(r => (r.s === 'h' || r.s === 'v') ? 0 : cx.largeur(P((r.c || [])[j]), fS(r.s), z))) + GT);
+        ws = cols.map((c, j) => c.flex ? 0 : Math.max(+c.w || 0, ...tit[j].map(l => cx.largeur(l, F.light, 7)), ...rows.map(r => (r.s === 'h' || r.s === 'v' || Array.isArray((r.c || [])[j])) ? 0 : cx.largeur(P((r.c || [])[j]), fS(r.s), z))) + GT);
         const wf = WT - ws.reduce((a, v) => a + v, 0);
         if(wf >= 74 || z <= 6.5){ if(wf < 40) cx.alerte('Décompte : tableau « ' + (b.lib || '') + ' » plus large que la colonne'); cols.forEach((c, j) => { if(c.flex) ws[j] = Math.max(40, wf); }); break; }
         z -= 0.5; }
       const xs = []; { let a = XT; ws.forEach(w => { xs.push(a); a += w; }); }
-      const xDe = (j) => cols[j].r ? xs[j] + ws[j] : xs[j] + (cols[j].flex ? 0 : GT);
+      /* gouttière d'une colonne fixe : à sa gauche si elle suit la colonne de texte, à sa droite si elle la précède (n° de CFC devant le bénéficiaire) */
+      const jF = cols.findIndex(c => c.flex), avant = (j) => jF >= 0 && j < jF;
+      const xDe = (j) => cols[j].r ? xs[j] + ws[j] - (avant(j) ? GT : 0) : xs[j] + (cols[j].flex || avant(j) ? 0 : GT);
+      if(b.large && b.lib && b.lib1) R.push({ h:PAS, tete:true, avec:true, draw:() => {} });   /* lib1 : le libellé sur sa propre ligne, au-dessus des titres */
       if(nT) R.push({ h:(nT - 1) * 8.5 + PAS, tete:true, avec:true, draw:(y) => tit.forEach((L, j) => L.forEach((l, k) =>
         cx.texte(l, xDe(j), T(y + (nT - L.length + k) * 8.5 + dB(PAS, 7)), { police:F.light, taille:7, couleur:GRISc, align:cols[j].r ? 'd' : 'g' }))) });
-      else if(b.large && b.lib) R.push({ h:PAS, tete:true, avec:true, draw:() => {} });   /* tableau large sans titres : la première ligne est celle du libellé */
+      else if(b.large && b.lib && !b.lib1) R.push({ h:PAS, tete:true, avec:true, draw:() => {} });   /* tableau large sans titres : la première ligne est celle du libellé */
       let nd = 0;
       rows.forEach((r, ri) => { const s = r.s || '', c = r.c || [];
         if(s === 'v'){ R.push({ h:5, draw:() => {} }); return; }
         const f = fS(s), dh = s === 't' ? 3 : (s === 'h' && nd) ? 4 : 0, pv = ri > 0 ? (rows[ri - 1].s || '') : '';
-        const cells = cols.map((cl, j) => { const t = P(c[j]); if(!t) return []; if(!cl.flex) return [t];
-          let wd = ws[j]; for(let k = j + 1; k < n && !P(c[k]); k++) wd += ws[k];   /* une cellule de texte déborde sur les cellules vides qui la suivent */
-          return cx.couper(t, f, z, wd - 2); });
+        const plein = (v) => Array.isArray(v) ? v.length > 0 : !!P(v);
+        const cells = cols.map((cl, j) => { const v = c[j]; let wd = ws[j];
+          if(cl.flex) for(let k = j + 1; k < n && !plein(c[k]); k++) wd += ws[k];   /* une cellule de texte déborde sur les cellules vides qui la suivent */
+          if(Array.isArray(v)) return Array.from(v).flatMap(l => { const fl = l && l.f ? pol(l.f) : f;   /* cellule à plusieurs lignes { t, f, g } : police et gris par ligne */
+            return cx.couper(P(l && l.t), fl, z, wd - 2).filter(t => t !== '').map(t => ({ t, f:fl, g:!!(l && l.g) })); });
+          const t = P(v); if(!t) return []; if(!cl.flex) return [{ t, f, g:false }];
+          return cx.couper(t, f, z, wd - 2).map(x => ({ t:x, f, g:false })); });
         const nL = Math.max(1, ...cells.map(L => L.length));
         R.push({ h:nL * PAS + dh, lie:s === 't' || (s === 'i' && pv === 't') || nd === 1, avec:s === 'h', draw:(y) => {
           if(s === 't') bar(y + 1.5, 0.5, C.N, XT, X1);
-          cells.forEach((L, j) => L.forEach((t, k) => cx.texte(t, xDe(j), T(y + dh + k * PAS + dB(PAS, z)),
-            { police:f, taille:z, couleur:(s === 'i' || (cols[j].g && s !== 'p' && s !== 't')) ? GRISc : C.N, align:cols[j].r ? 'd' : 'g' }))); } });
+          cells.forEach((L, j) => L.forEach((x, k) => cx.texte(x.t, xDe(j), T(y + dh + k * PAS + dB(PAS, z)),
+            { police:x.f, taille:z, couleur:(x.g || s === 'i' || (cols[j].g && s !== 'p' && s !== 't')) ? GRISc : C.N, align:cols[j].r ? 'd' : 'g' }))); } });
         nd++; });
       return R; };
 
@@ -34324,7 +34331,7 @@ async function sgDsPdf(R, rep, o){
     const BL = Array.from(D.blocs || []).map(b => ({ b, lab:libDe(b), R:b.t === 'tab' ? rangeesTab(b) : b.t === 'par' ? rangeesPar(b) : rangeesRub(b) })).filter(X => X.R.length || X.lab.length);
     const hBloc = (X) => 0.5 + 6 + Math.max(X.lab.length * PAS, X.R.reduce((a, r) => a + r.h, 0)) + 5.5;
     /* signatures : libellé, nom et adresse, place pour écrire, filet, « Lieu, date » et « Signature, tampon » */
-    const SG = Array.from(D.sig || []).slice(0, 2), CW = (W - 16) / 2;
+    const SG = Array.from(D.sig || []).slice(0, 3), CW = (W - 16 * (Math.max(2, SG.length) - 1)) / Math.max(2, SG.length);   /* deux ou trois colonnes (ordre de paiement : architecte, direction des travaux, maître de l'ouvrage) */
     const SL = SG.map(s => [].concat(String(s.nom || '').trim() ? cx.couper(P(s.nom), F.regular, 8, CW).map(t => ({ t, f:F.regular })) : [],
       String(s.adr || '').trim() ? cx.couper(P(s.adr), F.light, 8, CW).map(t => ({ t, f:F.light })) : []));
     const nSL = Math.max(0, ...SL.map(L => L.length)), hSig = (esp) => 14 + nSL * 11.5 + esp + 0.5 + 11;
@@ -43989,7 +43996,7 @@ const LISTES_DG=new Set(['costControlAwardList','costControlMutationsList','cost
    comme la colonne CFC toujours première du tableau du contrôle du coût */
 if(typeof ch01bIds==='function'){ const i0=ch01bIds; ch01bIds=function(C,cle){ const L=i0.apply(this,arguments); return Array.isArray(L)&&(cle==='mutations'||cle==='adjudications')&&!L.includes(0)?[0,...L]:L; }; }
 const LISTES=new Set(['costControlFinalPaymentTable','costControlPaymentOrderTable','costControlEntrepreneurList','costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
-const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':DEC_TYPES[t]||''; };   /* 'bon', 'arrete' : dessin « Grand chiffre » (14.11.2026) */
+const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':DEC_TYPES[t]||''; };   /* 'bon', 'arrete', 'ordre' : dessin « Grand chiffre » (14.11.2026) */
 const LIMB={paysage:595.276-85.9,portrait:841.89-89.245};   /* bas de l'encre du logo (comme le devis général) */
 
 /* ── réglages du document : cocodoc.options.sgPdf. Réglages en attente d'envoi gardés en mémoire (PP : seulement les clés changées), envois à la suite, chacun
@@ -44273,8 +44280,8 @@ async function listeOctets(o,rec,R0){ const id=/\/\*sgimp:([a-z0-9]+)\*\//.exec(
      total net TTC), paiements (à ce jour, total, solde à verser, autres paiements, montant total), déclaration, certificat de garantie ; « N° … » à droite du titre ;
      signatures de l'architecte et de l'entreprise. Colonne « Date pmt » = celle du document du bureau (colonne 4 du tableau du moteur, décision F1).
    Numéros : <affaire>.BOP.<n° du paiement> ; <affaire>.AC.<n° CFC du lot> (sans lot : n° de l'arrêté). En-tête du papier : titre, « n° - affaire », date de l'ordre
-   de paiement (bon) ou de l'arrêté. Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement garde son rendu. */
-const DEC_TYPES={costControlContractPaymentSummary:'bon',costControlGeneralPaymentSummary:'bon',costControlGuaranteeSummary:'arrete'};
+   de paiement (bon) ou de l'arrêté. Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement : même dessin depuis le même jour (ordDonnees, plus bas). */
+const DEC_TYPES={costControlContractPaymentSummary:'bon',costControlGeneralPaymentSummary:'bon',costControlGuaranteeSummary:'arrete',costControlPaymentOrder:'ordre'};
 const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const isoDe=v=>(/^(\d{4}-\d{2}-\d{2})/.exec(sv(v&&typeof v==='object'?v.v:v))||[])[1]||'';
 const dateL=v=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDe(v)); return m?(+m[3]===1?'1er':String(+m[3]))+' '+MOIS_L[+m[2]-1]+' '+m[1]:''; };
@@ -44284,12 +44291,13 @@ const naDe=id=>{ const c=id!=null?DS.get('contact',id):null; return c?deNomAdr(c
 const adrL=t=>sv(t).split(', ').map(x=>x.trim()).filter(Boolean).join('\n');   /* adresse des signatures : une ligne par partie (rue, localité) */
 const decArr=o=>{ const C=(o&&o.E&&o.E.C)||{}; return typeof ch01cDir==='function'?(C.arretes||[]).find(a=>ch01cDir(a)===sv(o.dossier))||null:null; };
 const decNom=o=>{ const g=DEC_TYPES[sv(o&&o.type)]; if(!g) return '';
+  if(g==='ordre'){ const q=ordDe(o); return 'Ordre de paiement'+(q&&sv(q.numero).trim()?' n° '+q.numero:''); }
   if(g==='bon'){ const n=(/^paymentorder\/[^/]+\/(.+)$/.exec(sv(o.dossier))||[])[1]; return 'Bon de paiement'+(n?' n° '+n:''); }
   const a=decArr(o); return 'Arrêté de compte'+(a&&sv(a.numero).trim()?' n° '+a.numero:''); };
 const ST_DEC={tr:'',tt:'t',l1t:'p',l4:'i'};
 const repDec=rec=>typeof ch01aPrep==='function'?ch01aPrep(rec.doc.report):rec.doc.report;   /* modèle préparé comme le fait le moteur avant de calculer les tableaux */
 const decParties=p=>{ let R=[]; try{ R=deGardeRub(p,{filter:null})||[]; }catch(_){ } const de=re=>{ const x=R.find(r=>re.test(sv(r.lib))); return x?{nom:sv(x.nom),adr:sv(x.adr)}:{nom:'',adr:''}; };
-  return {archi:de(/^architecte/i),mo:de(/ma[iî]tre/i)}; };
+  return {archi:de(/^architecte/i),mo:de(/ma[iî]tre/i),dt:de(/^direction/i)}; };
 const ARR_DECL='Cet arrêté de compte est reconnu comme complet et définitif par l’entreprise, laquelle renonce à toute action juridique ayant trait à ce contrat ou à ses travaux supplémentaires. '
   +'L’entreprise déclare avoir remis toutes les factures relatives aux travaux précités. Le solde ci-dessus sera versé à l’entreprise, sur présentation du certificat de garantie d’assurance '
   +'et du présent arrêté de compte daté et signé au sens de l’art. 156 de la norme SIA 118.';
@@ -44344,8 +44352,58 @@ function arrDonnees(o,rec){ const E=o.E, C=E.C||{}, p=E.p||{}, a=decArr(o); if(!
     no:sv(a.numero).trim()?'N° '+a.numero:'',
     chiffre:{lib:'Solde à verser',sous:['Facture finale',lotT?'CFC '+lotT:'',ent.nom].filter(Boolean),monnaie:cur,montant:sv(solde?(solde.c||[])[9]:F.totalToPay)},
     blocs,sig:[{lib:'L’architecte',nom:PT.archi.nom,adr:adrL(PT.archi.adr)},{lib:'L’entreprise',nom:ent.nom,adr:adrL(ent.adr)}]}}; }
+/* ORDRE DE PAIEMENT (Paulo, 14.11.2026 : « Oui, l'ordre aussi ») : mêmes informations que le document d'avant (modèle du bureau : fiche de l'ordre puis lettre à la
+   banque), prises dans ch01dOrderJob — affaire ; maître de l'ouvrage (adresse, téléphone, courriel) et sa banque (banque, IBAN, contact) ; architecte et direction des
+   travaux (une seule rubrique s'ils sont les mêmes) ; « Nous vous prions d'effectuer les paiements suivants… », date et date valeur ; totaux avant paiement, des
+   paiements, après paiement ; tableau des paiements (CFC, bénéficiaire — nom, adresse, banque en gris, IBAN —, n° de paiement, colonnes de la présentation des ordres,
+   total) ; « L'ordre de paiements est validé par : » et les signatures (architecte, direction des travaux, maître de l'ouvrage). Numéro <affaire>.OP.<n°> ; à
+   droite du filet de tête, la date valeur ; chiffre = total des paiements ; date de l'en-tête = date de l'ordre. */
+const ordDe=o=>{ const C=(o&&o.E&&o.E.C)||{}, ref=(/^paymentorder\/([^/]+)$/.exec(sv(o&&o.dossier))||[])[1]; return ref&&typeof ch01dRef==='function'?(C.ordresPaiement||[]).find(q=>ch01dRef(q)===ref)||null:null; };
+const titre2=t=>{ const m=sv(t).trim().split(/\s+/); if(m.length<2||sv(t).length<13) return sv(t).trim(); let k=1, best=1e9; for(let i=1;i<m.length;i++){ const d=Math.abs(m.slice(0,i).join(' ').length-m.slice(i).join(' ').length); if(d<best){ best=d; k=i; } } return m.slice(0,k).join(' ')+'\n'+m.slice(k).join(' '); };   /* titre de colonne sur deux lignes équilibrées */
+/* bénéficiaire d'un paiement : le texte du moteur (ch01dBenef) redécoupé — nom en Regular, adresse sur une ligne, lignes de la banque en gris, IBAN en noir */
+const benefLignes=(x,txt,op)=>{ const b=(x&&x.banque)||{}; let bank='';
+  if(b.nom){ let t=[b.nom,b.npa||'',b.lieu||''].join(' ').trim(); if(b.texteCompte) t=t+'\n'+b.texteCompte; bank+='\n'+t.trim(); }
+  if(b.iban) bank+='\n'+b.iban; else if(!b.nom&&b.texteCompte) bank+='\n'+b.texteCompte;
+  if(op.displayPayDate===true&&x&&x.datePaiement&&typeof dfr==='function') bank+='\nDate pmt: '+dfr(x.datePaiement);
+  const full=sv(txt), ok=!!bank&&full.endsWith(bank), L=[], lig=t=>sv(t).split('\n').map(v=>v.trim()).filter(Boolean), ent=lig(ok?full.slice(0,-bank.length):full);
+  if(op.displayBkpText===true&&ent.length>1) L.push({t:ent.shift(),g:true});   /* texte du lot en tête (option de la présentation des ordres) */
+  if(ent.length) L.push({t:ent[0],f:'r'}); if(ent.length>1) L.push({t:ent.slice(1).join(', ')});
+  (ok?lig(bank):[]).forEach(t=>L.push({t,g:sv(b.iban).trim()!==t})); return L; };
+function ordDonnees(o,rec){ const E=o.E, C=E.C||{}, p=E.p||{}, J=o.job(repDec(rec)), ord=J&&J.ref; if(!ord) throw new Error('ordre de paiement introuvable');
+  const F=J.F||{}, T=(J.tables||{}).adviceOfPaymentTable||{rows:[]}, cur=(p&&p.CURRENCY)||'CHF', PT=decParties(p), P=typeof ch01dPaysOf==='function'?ch01dPaysOf(C,ord).slice():[];
+  const op=((typeof ch01dPres==='function'?ch01dPres(C,'ordresPaiement'):null)||{}).options||{}, flex=Array.from(T.flex||[]);
+  const cDe=v=>{ const id=v&&typeof v==='object'?v.id:v; return id!=null?DS.get('contact',id)||null:null; };
+  const tm=c=>c?[typeof phone==='function'?phone(c,1):'',c.EMAIL1].map(v=>sv(v).trim()).filter(Boolean).join(' · '):'';
+  const part=(na,c)=>[{x:na.nom,f:'r',z:9},{x:na.adr,z:9},{x:tm(c),z:9}].filter(l=>sv(l.x).trim());
+  const moC=cDe(ord.maitreOuvrageContactId)||cDe(F.projectmanagementBuilderBySuproject), mo=(()=>{ const m=cDe(ord.maitreOuvrageContactId)?deNomAdr(cDe(ord.maitreOuvrageContactId)):null; return m&&m.nom?m:PT.mo; })();
+  const arC=cDe(F.projectMemberArchitectContact), dtC=cDe(F.projectMemberConstructionManagerContact), ar=PT.archi, dt=PT.dt&&PT.dt.nom?PT.dt:PT.archi, meme=ar.nom===dt.nom&&ar.adr===dt.adr;
+  const b=typeof ch01dBankMO==='function'?(ch01dBankMO(C,ord)||{}):{};
+  const banque=[b.nom,b.rue,[b.npa,b.lieu].map(v=>sv(v).trim()).filter(Boolean).join(' ')].map(v=>sv(v).trim()).filter(Boolean).join(', '), compte=[b.iban,b.compte,b.texteCompte].map(v=>sv(v).trim()).filter(Boolean)[0]||'';
+  const rows=[]; let k=0;
+  (T.rows||[]).forEach(r=>{ const c=r.c||[], f=Array.from(r.f||[]);
+    if(r.st==='tt'){ rows.push({c:['',c[1],'',...f],s:'t'}); return; }
+    if(!c.some(v=>sv(v).trim())&&!f.some(v=>sv(v).trim())){ rows.push({c:[],s:'v'}); return; }
+    if(!sv(c[2]).trim()){ rows.push({c:['',c[1],'',...f],s:'q'}); return; }   /* « Paiements avant / après exécution de l'ordre » (option de la présentation) */
+    let x=P[k]; if(!x||sv(x.numero)!==sv(c[2])) x=P.find(y=>sv(y.numero)===sv(c[2]))||null; else k++;
+    if(rows.length&&rows[rows.length-1].s==='') rows.push({c:[],s:'v'});   /* un peu d'air entre deux paiements */
+    rows.push({c:[c[0],benefLignes(x,c[1],op),c[2],...f],s:''}); });
+  const n=P.length, blocs=[
+    {t:'rub',lib:'Affaire',lignes:[{x:[p.NUMBER,p.TITLE].map(v=>sv(v).trim()).filter(Boolean).join(' '),f:'r',z:9}]},
+    {t:'rub',lib:'Maître de l’ouvrage',lignes:part(mo,moC)},
+    {t:'rub',lib:'Banque du maître de l’ouvrage',wp:40,lignes:[{p:'Banque',x:banque},{p:'IBAN',x:compte}].concat(sv(b.contact).trim()?[{p:'Contact',x:sv(b.contact).trim()}]:[])}]
+    .concat(meme?[{t:'rub',lib:'Architecte et direction des travaux',lignes:part(ar,arC||dtC)}]:[{t:'rub',lib:'Architecte',lignes:part(ar,arC)},{t:'rub',lib:'Direction des travaux',lignes:part(dt,dtC)}])
+    .concat([
+    {t:'rub',lib:'Ordre',wp:30,lignes:[{x:'Nous vous prions d’effectuer les paiements suivants à partir du compte du maître d’ouvrage et d’en retourner un exemplaire à l’architecte.'},
+      {p:'Date',x:dateL(ord.date),p2:'Date valeur',x2:dateL(ord.dateValeur)}]},
+    {t:'tab',lib:'Totaux',cols:[{t:'',flex:true},{t:'',r:true}],rows:[{c:['Total avant paiement',F.constructionTotalBeforeRemittance],s:''},{c:['Total des paiements',F.constructionRemittanceSummary],s:'p'},{c:['Total après paiement',F.constructionTotalAfterRemittance],s:'t'}]},
+    {t:'tab',lib:'Paiements',large:true,lib1:true,cols:[{t:'CFC'},{t:'Bénéficiaire',flex:true},{t:'N° pmt'}].concat(flex.map(t=>({t:titre2(t),r:true}))),rows},
+    {t:'rub',lib:'Validation',fin:true,lignes:[{x:'L’ordre de paiements est validé par :'}]}]);
+  const sig=meme?[{lib:'Architecte et direction des travaux',nom:ar.nom,adr:adrL(ar.adr)},{lib:'Le maître de l’ouvrage',nom:mo.nom,adr:adrL(mo.adr)}]
+    :[{lib:'L’architecte',nom:ar.nom,adr:adrL(ar.adr)},{lib:'La direction des travaux',nom:dt.nom,adr:adrL(dt.adr)},{lib:'Le maître de l’ouvrage',nom:mo.nom,adr:adrL(mo.adr)}];
+  return {titre:'Ordre de paiement',date:isoDe(ord.date)||'',dec:{etat:isoDe(ord.dateValeur)?'Date valeur '+dateC(ord.dateValeur):'',num:[p.NUMBER,'OP',ord.numero].map(v=>sv(v).trim()).filter(Boolean).join('.'),titre:'Ordre de paiement',no:'',
+    chiffre:{lib:'Total des paiements',sous:[n+' paiement'+(n>1?'s':''),isoDe(ord.date)?'Ordre du '+dateL(ord.date):''].filter(Boolean),monnaie:cur,montant:sv(F.constructionRemittanceSummary)},blocs,sig}}; }
 async function decOctets(o,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
-  const {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, X=DEC_TYPES[sv(o.type)]==='bon'?bonDonnees(o,rec):arrDonnees(o,rec), aff=[p.NUMBER,p.TITLE].filter(Boolean).join(' - ');   /* cadre Facturation chargé : adresses de l'affaire (deGardeRub) */
+  const {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, X=({bon:bonDonnees,arrete:arrDonnees,ordre:ordDonnees})[DEC_TYPES[sv(o.type)]](o,rec), aff=[p.NUMBER,p.TITLE].filter(Boolean).join(' - ');   /* cadre Facturation chargé : adresses de l'affaire (deGardeRub) */
   const opt=w.JSON.parse(JSON.stringify({titre:X.titre,sousTitre:aff,date:X.date||today(),type:'Contrôle des coûts',description:decNom(o)+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' '),decompte:X.dec})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info(decNom(o)+' :',Array.from(j)); return oct; }
 
@@ -44360,7 +44418,7 @@ const r0=ch01aRender;
 ch01aRender=function(o,rec){ const g=genre(o); if(!g||!window.SGIMP||typeof SGDS==='undefined'||!rec||!rec.doc||!rec.doc.report) return r0.apply(this,arguments);
   const S=window.SGIMP; let R0=null; if(g==='liste') R0=r0.apply(this,arguments);   /* listes : rendu du moteur d'abord (repère et valeurs du bloc 31) */
   const id=(++S.n).toString(36)+'c'+Date.now().toString(36);
-  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='bon'||g==='arrete'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
+  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='bon'||g==='arrete'||g==='ordre'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
   const titre=titreDe(o,rec);
   if(g==='liste'){ /* liste : en cas d'échec du nouveau dessin, le PDF du bloc 31 */ const id0=(/\/\*sgimp:([a-z0-9]+)\*\//.exec(sv(R0.css))||[])[1];
     const sur=pdf.catch(e=>{ console.error(e); return id0&&S.pdf?S.pdf(id0):Promise.reject(e); }); S.memo.set(id,{pdf:sur,titre,o:{}}); }
@@ -44547,7 +44605,7 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
     actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
   D.maj(tableOctets(E,k)); }
-window.SGCD={decOctets,bonDonnees,arrDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+window.SGCD={decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();
 
 /* ═══ Archives ▸ Maquettes ▸ Bon de paiement et arrêté de compte · Deux colonnes (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans

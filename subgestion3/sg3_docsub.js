@@ -1790,9 +1790,9 @@ async function sgDsPdf(R, rep, o){
      version 2 pour le moment » ; maquettes : subgestion3/_backup_20261114_maquette_bon_arrete/) — o.decompte = { etat, num, titre, no,
        chiffre:{ lib, sous (texte ou parties), monnaie, montant },
        blocs:[ { t:'rub', lib, wp, lignes:[{ x, f:'l'|'r'|'b', z, g (gris), d (texte à droite), p (préfixe gris), p2, x2 (seconde moitié de la ligne) }] }
-             | { t:'tab', lib, large (dès la colonne des libellés : le libellé tient lieu de titre à la 1re colonne), cols:[{ t (titre, « \n » = deux lignes), r (à droite), flex (colonne de texte), g (gris), w }], rows:[{ c:[…], s }] }
+             | { t:'tab', lib, large (dès la colonne des libellés : le libellé tient lieu de titre à la 1re colonne ; lib1 : libellé sur sa propre ligne, la 1re colonne garde son titre), cols:[{ t (titre, « \n » = deux lignes), r (à droite), flex (colonne de texte), g (gris), w }], rows:[{ c:[… texte, ou lignes [{ t, f, g }] dans la colonne de texte], s }] }
              | { t:'par', lib, x }   — chaque bloc : fin (gardé avec les signatures) ],
-       sig:[{ lib, nom, adr }] }.
+       sig:[{ lib, nom, adr }] (deux ou trois) }.
      Rangées d'un tableau, s : '' ligne, 'p' palier (gras), 'q' Regular, 't' total (gras, filet noir dessus), 'i' gris (information, arrondi), 'h' intertitre, 'v' espace.
      Page (portrait, papier des contrats) : colonne de x 125.72 (2e colonne du pied) à 510.68 (trait du numéro de page) ; filet noir de 1 pt à 100 pt du haut, état en
      rouge à droite, numéro en Light 26, titre en Bold 26 (« N° … » à droite sur sa ligne), filet, puis le chiffre : libellé en capitales, ligne grise, montant en
@@ -1860,31 +1860,38 @@ async function sgDsPdf(R, rep, o){
     /* tableau : largeur des colonnes d'après leurs valeurs, la colonne de texte (flex) prend le reste et passe à la ligne ; corps réduit si elle devient trop étroite */
     const rangeesTab = (b) => { const cols = Array.from(b.cols || []), rows = Array.from(b.rows || []), n = cols.length, R = [], XT = b.large ? X0 : XV, WT = X1 - XT;   /* large : dès la colonne des libellés */
       if(n && !cols.some(c => c.flex)) cols[0] = Object.assign({}, cols[0], { flex:true });
-      const tit = cols.map((c, j) => c.t && !(b.large && b.lib && !j) ? String(c.t).split('\n').map(P) : []), nT = Math.max(0, ...tit.map(t => t.length));   /* tableau large : le libellé de la rubrique tient lieu de titre à la première colonne */
+      const tit = cols.map((c, j) => c.t && !(b.large && b.lib && !b.lib1 && !j) ? String(c.t).split('\n').map(P) : []), nT = Math.max(0, ...tit.map(t => t.length));   /* tableau large : le libellé de la rubrique tient lieu de titre à la première colonne */
       const fS = (s) => s === 'p' || s === 't' ? F.bold : (s === 'q' || s === 'h') ? F.regular : F.light;
       let z = 8, GT = 9, ws = [];
       for(;;){ GT = z >= 8 ? 9 : 7;
-        ws = cols.map((c, j) => c.flex ? 0 : Math.max(+c.w || 0, ...tit[j].map(l => cx.largeur(l, F.light, 7)), ...rows.map(r => (r.s === 'h' || r.s === 'v') ? 0 : cx.largeur(P((r.c || [])[j]), fS(r.s), z))) + GT);
+        ws = cols.map((c, j) => c.flex ? 0 : Math.max(+c.w || 0, ...tit[j].map(l => cx.largeur(l, F.light, 7)), ...rows.map(r => (r.s === 'h' || r.s === 'v' || Array.isArray((r.c || [])[j])) ? 0 : cx.largeur(P((r.c || [])[j]), fS(r.s), z))) + GT);
         const wf = WT - ws.reduce((a, v) => a + v, 0);
         if(wf >= 74 || z <= 6.5){ if(wf < 40) cx.alerte('Décompte : tableau « ' + (b.lib || '') + ' » plus large que la colonne'); cols.forEach((c, j) => { if(c.flex) ws[j] = Math.max(40, wf); }); break; }
         z -= 0.5; }
       const xs = []; { let a = XT; ws.forEach(w => { xs.push(a); a += w; }); }
-      const xDe = (j) => cols[j].r ? xs[j] + ws[j] : xs[j] + (cols[j].flex ? 0 : GT);
+      /* gouttière d'une colonne fixe : à sa gauche si elle suit la colonne de texte, à sa droite si elle la précède (n° de CFC devant le bénéficiaire) */
+      const jF = cols.findIndex(c => c.flex), avant = (j) => jF >= 0 && j < jF;
+      const xDe = (j) => cols[j].r ? xs[j] + ws[j] - (avant(j) ? GT : 0) : xs[j] + (cols[j].flex || avant(j) ? 0 : GT);
+      if(b.large && b.lib && b.lib1) R.push({ h:PAS, tete:true, avec:true, draw:() => {} });   /* lib1 : le libellé sur sa propre ligne, au-dessus des titres */
       if(nT) R.push({ h:(nT - 1) * 8.5 + PAS, tete:true, avec:true, draw:(y) => tit.forEach((L, j) => L.forEach((l, k) =>
         cx.texte(l, xDe(j), T(y + (nT - L.length + k) * 8.5 + dB(PAS, 7)), { police:F.light, taille:7, couleur:GRISc, align:cols[j].r ? 'd' : 'g' }))) });
-      else if(b.large && b.lib) R.push({ h:PAS, tete:true, avec:true, draw:() => {} });   /* tableau large sans titres : la première ligne est celle du libellé */
+      else if(b.large && b.lib && !b.lib1) R.push({ h:PAS, tete:true, avec:true, draw:() => {} });   /* tableau large sans titres : la première ligne est celle du libellé */
       let nd = 0;
       rows.forEach((r, ri) => { const s = r.s || '', c = r.c || [];
         if(s === 'v'){ R.push({ h:5, draw:() => {} }); return; }
         const f = fS(s), dh = s === 't' ? 3 : (s === 'h' && nd) ? 4 : 0, pv = ri > 0 ? (rows[ri - 1].s || '') : '';
-        const cells = cols.map((cl, j) => { const t = P(c[j]); if(!t) return []; if(!cl.flex) return [t];
-          let wd = ws[j]; for(let k = j + 1; k < n && !P(c[k]); k++) wd += ws[k];   /* une cellule de texte déborde sur les cellules vides qui la suivent */
-          return cx.couper(t, f, z, wd - 2); });
+        const plein = (v) => Array.isArray(v) ? v.length > 0 : !!P(v);
+        const cells = cols.map((cl, j) => { const v = c[j]; let wd = ws[j];
+          if(cl.flex) for(let k = j + 1; k < n && !plein(c[k]); k++) wd += ws[k];   /* une cellule de texte déborde sur les cellules vides qui la suivent */
+          if(Array.isArray(v)) return Array.from(v).flatMap(l => { const fl = l && l.f ? pol(l.f) : f;   /* cellule à plusieurs lignes { t, f, g } : police et gris par ligne */
+            return cx.couper(P(l && l.t), fl, z, wd - 2).filter(t => t !== '').map(t => ({ t, f:fl, g:!!(l && l.g) })); });
+          const t = P(v); if(!t) return []; if(!cl.flex) return [{ t, f, g:false }];
+          return cx.couper(t, f, z, wd - 2).map(x => ({ t:x, f, g:false })); });
         const nL = Math.max(1, ...cells.map(L => L.length));
         R.push({ h:nL * PAS + dh, lie:s === 't' || (s === 'i' && pv === 't') || nd === 1, avec:s === 'h', draw:(y) => {
           if(s === 't') bar(y + 1.5, 0.5, C.N, XT, X1);
-          cells.forEach((L, j) => L.forEach((t, k) => cx.texte(t, xDe(j), T(y + dh + k * PAS + dB(PAS, z)),
-            { police:f, taille:z, couleur:(s === 'i' || (cols[j].g && s !== 'p' && s !== 't')) ? GRISc : C.N, align:cols[j].r ? 'd' : 'g' }))); } });
+          cells.forEach((L, j) => L.forEach((x, k) => cx.texte(x.t, xDe(j), T(y + dh + k * PAS + dB(PAS, z)),
+            { police:x.f, taille:z, couleur:(x.g || s === 'i' || (cols[j].g && s !== 'p' && s !== 't')) ? GRISc : C.N, align:cols[j].r ? 'd' : 'g' }))); } });
         nd++; });
       return R; };
 
@@ -1892,7 +1899,7 @@ async function sgDsPdf(R, rep, o){
     const BL = Array.from(D.blocs || []).map(b => ({ b, lab:libDe(b), R:b.t === 'tab' ? rangeesTab(b) : b.t === 'par' ? rangeesPar(b) : rangeesRub(b) })).filter(X => X.R.length || X.lab.length);
     const hBloc = (X) => 0.5 + 6 + Math.max(X.lab.length * PAS, X.R.reduce((a, r) => a + r.h, 0)) + 5.5;
     /* signatures : libellé, nom et adresse, place pour écrire, filet, « Lieu, date » et « Signature, tampon » */
-    const SG = Array.from(D.sig || []).slice(0, 2), CW = (W - 16) / 2;
+    const SG = Array.from(D.sig || []).slice(0, 3), CW = (W - 16 * (Math.max(2, SG.length) - 1)) / Math.max(2, SG.length);   /* deux ou trois colonnes (ordre de paiement : architecte, direction des travaux, maître de l'ouvrage) */
     const SL = SG.map(s => [].concat(String(s.nom || '').trim() ? cx.couper(P(s.nom), F.regular, 8, CW).map(t => ({ t, f:F.regular })) : [],
       String(s.adr || '').trim() ? cx.couper(P(s.adr), F.light, 8, CW).map(t => ({ t, f:F.light })) : []));
     const nSL = Math.max(0, ...SL.map(L => L.length)), hSig = (esp) => 14 + nSL * 11.5 + esp + 0.5 + 11;

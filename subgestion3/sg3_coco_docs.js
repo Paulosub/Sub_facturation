@@ -34,7 +34,7 @@ const LISTES_DG=new Set(['costControlAwardList','costControlMutationsList','cost
    comme la colonne CFC toujours première du tableau du contrôle du coût */
 if(typeof ch01bIds==='function'){ const i0=ch01bIds; ch01bIds=function(C,cle){ const L=i0.apply(this,arguments); return Array.isArray(L)&&(cle==='mutations'||cle==='adjudications')&&!L.includes(0)?[0,...L]:L; }; }
 const LISTES=new Set(['costControlFinalPaymentTable','costControlPaymentOrderTable','costControlEntrepreneurList','costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
-const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':DEC_TYPES[t]||''; };   /* 'bon', 'arrete' : dessin « Grand chiffre » (14.11.2026) */
+const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':DEC_TYPES[t]||''; };   /* 'bon', 'arrete', 'ordre' : dessin « Grand chiffre » (14.11.2026) */
 const LIMB={paysage:595.276-85.9,portrait:841.89-89.245};   /* bas de l'encre du logo (comme le devis général) */
 
 /* ── réglages du document : cocodoc.options.sgPdf. Réglages en attente d'envoi gardés en mémoire (PP : seulement les clés changées), envois à la suite, chacun
@@ -318,8 +318,8 @@ async function listeOctets(o,rec,R0){ const id=/\/\*sgimp:([a-z0-9]+)\*\//.exec(
      total net TTC), paiements (à ce jour, total, solde à verser, autres paiements, montant total), déclaration, certificat de garantie ; « N° … » à droite du titre ;
      signatures de l'architecte et de l'entreprise. Colonne « Date pmt » = celle du document du bureau (colonne 4 du tableau du moteur, décision F1).
    Numéros : <affaire>.BOP.<n° du paiement> ; <affaire>.AC.<n° CFC du lot> (sans lot : n° de l'arrêté). En-tête du papier : titre, « n° - affaire », date de l'ordre
-   de paiement (bon) ou de l'arrêté. Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement garde son rendu. */
-const DEC_TYPES={costControlContractPaymentSummary:'bon',costControlGeneralPaymentSummary:'bon',costControlGuaranteeSummary:'arrete'};
+   de paiement (bon) ou de l'arrêté. Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement : même dessin depuis le même jour (ordDonnees, plus bas). */
+const DEC_TYPES={costControlContractPaymentSummary:'bon',costControlGeneralPaymentSummary:'bon',costControlGuaranteeSummary:'arrete',costControlPaymentOrder:'ordre'};
 const MOIS_L=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const isoDe=v=>(/^(\d{4}-\d{2}-\d{2})/.exec(sv(v&&typeof v==='object'?v.v:v))||[])[1]||'';
 const dateL=v=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDe(v)); return m?(+m[3]===1?'1er':String(+m[3]))+' '+MOIS_L[+m[2]-1]+' '+m[1]:''; };
@@ -329,12 +329,13 @@ const naDe=id=>{ const c=id!=null?DS.get('contact',id):null; return c?deNomAdr(c
 const adrL=t=>sv(t).split(', ').map(x=>x.trim()).filter(Boolean).join('\n');   /* adresse des signatures : une ligne par partie (rue, localité) */
 const decArr=o=>{ const C=(o&&o.E&&o.E.C)||{}; return typeof ch01cDir==='function'?(C.arretes||[]).find(a=>ch01cDir(a)===sv(o.dossier))||null:null; };
 const decNom=o=>{ const g=DEC_TYPES[sv(o&&o.type)]; if(!g) return '';
+  if(g==='ordre'){ const q=ordDe(o); return 'Ordre de paiement'+(q&&sv(q.numero).trim()?' n° '+q.numero:''); }
   if(g==='bon'){ const n=(/^paymentorder\/[^/]+\/(.+)$/.exec(sv(o.dossier))||[])[1]; return 'Bon de paiement'+(n?' n° '+n:''); }
   const a=decArr(o); return 'Arrêté de compte'+(a&&sv(a.numero).trim()?' n° '+a.numero:''); };
 const ST_DEC={tr:'',tt:'t',l1t:'p',l4:'i'};
 const repDec=rec=>typeof ch01aPrep==='function'?ch01aPrep(rec.doc.report):rec.doc.report;   /* modèle préparé comme le fait le moteur avant de calculer les tableaux */
 const decParties=p=>{ let R=[]; try{ R=deGardeRub(p,{filter:null})||[]; }catch(_){ } const de=re=>{ const x=R.find(r=>re.test(sv(r.lib))); return x?{nom:sv(x.nom),adr:sv(x.adr)}:{nom:'',adr:''}; };
-  return {archi:de(/^architecte/i),mo:de(/ma[iî]tre/i)}; };
+  return {archi:de(/^architecte/i),mo:de(/ma[iî]tre/i),dt:de(/^direction/i)}; };
 const ARR_DECL='Cet arrêté de compte est reconnu comme complet et définitif par l’entreprise, laquelle renonce à toute action juridique ayant trait à ce contrat ou à ses travaux supplémentaires. '
   +'L’entreprise déclare avoir remis toutes les factures relatives aux travaux précités. Le solde ci-dessus sera versé à l’entreprise, sur présentation du certificat de garantie d’assurance '
   +'et du présent arrêté de compte daté et signé au sens de l’art. 156 de la norme SIA 118.';
@@ -389,8 +390,58 @@ function arrDonnees(o,rec){ const E=o.E, C=E.C||{}, p=E.p||{}, a=decArr(o); if(!
     no:sv(a.numero).trim()?'N° '+a.numero:'',
     chiffre:{lib:'Solde à verser',sous:['Facture finale',lotT?'CFC '+lotT:'',ent.nom].filter(Boolean),monnaie:cur,montant:sv(solde?(solde.c||[])[9]:F.totalToPay)},
     blocs,sig:[{lib:'L’architecte',nom:PT.archi.nom,adr:adrL(PT.archi.adr)},{lib:'L’entreprise',nom:ent.nom,adr:adrL(ent.adr)}]}}; }
+/* ORDRE DE PAIEMENT (Paulo, 14.11.2026 : « Oui, l'ordre aussi ») : mêmes informations que le document d'avant (modèle du bureau : fiche de l'ordre puis lettre à la
+   banque), prises dans ch01dOrderJob — affaire ; maître de l'ouvrage (adresse, téléphone, courriel) et sa banque (banque, IBAN, contact) ; architecte et direction des
+   travaux (une seule rubrique s'ils sont les mêmes) ; « Nous vous prions d'effectuer les paiements suivants… », date et date valeur ; totaux avant paiement, des
+   paiements, après paiement ; tableau des paiements (CFC, bénéficiaire — nom, adresse, banque en gris, IBAN —, n° de paiement, colonnes de la présentation des ordres,
+   total) ; « L'ordre de paiements est validé par : » et les signatures (architecte, direction des travaux, maître de l'ouvrage). Numéro <affaire>.OP.<n°> ; à
+   droite du filet de tête, la date valeur ; chiffre = total des paiements ; date de l'en-tête = date de l'ordre. */
+const ordDe=o=>{ const C=(o&&o.E&&o.E.C)||{}, ref=(/^paymentorder\/([^/]+)$/.exec(sv(o&&o.dossier))||[])[1]; return ref&&typeof ch01dRef==='function'?(C.ordresPaiement||[]).find(q=>ch01dRef(q)===ref)||null:null; };
+const titre2=t=>{ const m=sv(t).trim().split(/\s+/); if(m.length<2||sv(t).length<13) return sv(t).trim(); let k=1, best=1e9; for(let i=1;i<m.length;i++){ const d=Math.abs(m.slice(0,i).join(' ').length-m.slice(i).join(' ').length); if(d<best){ best=d; k=i; } } return m.slice(0,k).join(' ')+'\n'+m.slice(k).join(' '); };   /* titre de colonne sur deux lignes équilibrées */
+/* bénéficiaire d'un paiement : le texte du moteur (ch01dBenef) redécoupé — nom en Regular, adresse sur une ligne, lignes de la banque en gris, IBAN en noir */
+const benefLignes=(x,txt,op)=>{ const b=(x&&x.banque)||{}; let bank='';
+  if(b.nom){ let t=[b.nom,b.npa||'',b.lieu||''].join(' ').trim(); if(b.texteCompte) t=t+'\n'+b.texteCompte; bank+='\n'+t.trim(); }
+  if(b.iban) bank+='\n'+b.iban; else if(!b.nom&&b.texteCompte) bank+='\n'+b.texteCompte;
+  if(op.displayPayDate===true&&x&&x.datePaiement&&typeof dfr==='function') bank+='\nDate pmt: '+dfr(x.datePaiement);
+  const full=sv(txt), ok=!!bank&&full.endsWith(bank), L=[], lig=t=>sv(t).split('\n').map(v=>v.trim()).filter(Boolean), ent=lig(ok?full.slice(0,-bank.length):full);
+  if(op.displayBkpText===true&&ent.length>1) L.push({t:ent.shift(),g:true});   /* texte du lot en tête (option de la présentation des ordres) */
+  if(ent.length) L.push({t:ent[0],f:'r'}); if(ent.length>1) L.push({t:ent.slice(1).join(', ')});
+  (ok?lig(bank):[]).forEach(t=>L.push({t,g:sv(b.iban).trim()!==t})); return L; };
+function ordDonnees(o,rec){ const E=o.E, C=E.C||{}, p=E.p||{}, J=o.job(repDec(rec)), ord=J&&J.ref; if(!ord) throw new Error('ordre de paiement introuvable');
+  const F=J.F||{}, T=(J.tables||{}).adviceOfPaymentTable||{rows:[]}, cur=(p&&p.CURRENCY)||'CHF', PT=decParties(p), P=typeof ch01dPaysOf==='function'?ch01dPaysOf(C,ord).slice():[];
+  const op=((typeof ch01dPres==='function'?ch01dPres(C,'ordresPaiement'):null)||{}).options||{}, flex=Array.from(T.flex||[]);
+  const cDe=v=>{ const id=v&&typeof v==='object'?v.id:v; return id!=null?DS.get('contact',id)||null:null; };
+  const tm=c=>c?[typeof phone==='function'?phone(c,1):'',c.EMAIL1].map(v=>sv(v).trim()).filter(Boolean).join(' · '):'';
+  const part=(na,c)=>[{x:na.nom,f:'r',z:9},{x:na.adr,z:9},{x:tm(c),z:9}].filter(l=>sv(l.x).trim());
+  const moC=cDe(ord.maitreOuvrageContactId)||cDe(F.projectmanagementBuilderBySuproject), mo=(()=>{ const m=cDe(ord.maitreOuvrageContactId)?deNomAdr(cDe(ord.maitreOuvrageContactId)):null; return m&&m.nom?m:PT.mo; })();
+  const arC=cDe(F.projectMemberArchitectContact), dtC=cDe(F.projectMemberConstructionManagerContact), ar=PT.archi, dt=PT.dt&&PT.dt.nom?PT.dt:PT.archi, meme=ar.nom===dt.nom&&ar.adr===dt.adr;
+  const b=typeof ch01dBankMO==='function'?(ch01dBankMO(C,ord)||{}):{};
+  const banque=[b.nom,b.rue,[b.npa,b.lieu].map(v=>sv(v).trim()).filter(Boolean).join(' ')].map(v=>sv(v).trim()).filter(Boolean).join(', '), compte=[b.iban,b.compte,b.texteCompte].map(v=>sv(v).trim()).filter(Boolean)[0]||'';
+  const rows=[]; let k=0;
+  (T.rows||[]).forEach(r=>{ const c=r.c||[], f=Array.from(r.f||[]);
+    if(r.st==='tt'){ rows.push({c:['',c[1],'',...f],s:'t'}); return; }
+    if(!c.some(v=>sv(v).trim())&&!f.some(v=>sv(v).trim())){ rows.push({c:[],s:'v'}); return; }
+    if(!sv(c[2]).trim()){ rows.push({c:['',c[1],'',...f],s:'q'}); return; }   /* « Paiements avant / après exécution de l'ordre » (option de la présentation) */
+    let x=P[k]; if(!x||sv(x.numero)!==sv(c[2])) x=P.find(y=>sv(y.numero)===sv(c[2]))||null; else k++;
+    if(rows.length&&rows[rows.length-1].s==='') rows.push({c:[],s:'v'});   /* un peu d'air entre deux paiements */
+    rows.push({c:[c[0],benefLignes(x,c[1],op),c[2],...f],s:''}); });
+  const n=P.length, blocs=[
+    {t:'rub',lib:'Affaire',lignes:[{x:[p.NUMBER,p.TITLE].map(v=>sv(v).trim()).filter(Boolean).join(' '),f:'r',z:9}]},
+    {t:'rub',lib:'Maître de l’ouvrage',lignes:part(mo,moC)},
+    {t:'rub',lib:'Banque du maître de l’ouvrage',wp:40,lignes:[{p:'Banque',x:banque},{p:'IBAN',x:compte}].concat(sv(b.contact).trim()?[{p:'Contact',x:sv(b.contact).trim()}]:[])}]
+    .concat(meme?[{t:'rub',lib:'Architecte et direction des travaux',lignes:part(ar,arC||dtC)}]:[{t:'rub',lib:'Architecte',lignes:part(ar,arC)},{t:'rub',lib:'Direction des travaux',lignes:part(dt,dtC)}])
+    .concat([
+    {t:'rub',lib:'Ordre',wp:30,lignes:[{x:'Nous vous prions d’effectuer les paiements suivants à partir du compte du maître d’ouvrage et d’en retourner un exemplaire à l’architecte.'},
+      {p:'Date',x:dateL(ord.date),p2:'Date valeur',x2:dateL(ord.dateValeur)}]},
+    {t:'tab',lib:'Totaux',cols:[{t:'',flex:true},{t:'',r:true}],rows:[{c:['Total avant paiement',F.constructionTotalBeforeRemittance],s:''},{c:['Total des paiements',F.constructionRemittanceSummary],s:'p'},{c:['Total après paiement',F.constructionTotalAfterRemittance],s:'t'}]},
+    {t:'tab',lib:'Paiements',large:true,lib1:true,cols:[{t:'CFC'},{t:'Bénéficiaire',flex:true},{t:'N° pmt'}].concat(flex.map(t=>({t:titre2(t),r:true}))),rows},
+    {t:'rub',lib:'Validation',fin:true,lignes:[{x:'L’ordre de paiements est validé par :'}]}]);
+  const sig=meme?[{lib:'Architecte et direction des travaux',nom:ar.nom,adr:adrL(ar.adr)},{lib:'Le maître de l’ouvrage',nom:mo.nom,adr:adrL(mo.adr)}]
+    :[{lib:'L’architecte',nom:ar.nom,adr:adrL(ar.adr)},{lib:'La direction des travaux',nom:dt.nom,adr:adrL(dt.adr)},{lib:'Le maître de l’ouvrage',nom:mo.nom,adr:adrL(mo.adr)}];
+  return {titre:'Ordre de paiement',date:isoDe(ord.date)||'',dec:{etat:isoDe(ord.dateValeur)?'Date valeur '+dateC(ord.dateValeur):'',num:[p.NUMBER,'OP',ord.numero].map(v=>sv(v).trim()).filter(Boolean).join('.'),titre:'Ordre de paiement',no:'',
+    chiffre:{lib:'Total des paiements',sous:[n+' paiement'+(n>1?'s':''),isoDe(ord.date)?'Ordre du '+dateL(ord.date):''].filter(Boolean),monnaie:cur,montant:sv(F.constructionRemittanceSummary)},blocs,sig}}; }
 async function decOctets(o,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
-  const {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, X=DEC_TYPES[sv(o.type)]==='bon'?bonDonnees(o,rec):arrDonnees(o,rec), aff=[p.NUMBER,p.TITLE].filter(Boolean).join(' - ');   /* cadre Facturation chargé : adresses de l'affaire (deGardeRub) */
+  const {w,R,fn}=await SGDS.ressources(), p=o.E.p||{}, X=({bon:bonDonnees,arrete:arrDonnees,ordre:ordDonnees})[DEC_TYPES[sv(o.type)]](o,rec), aff=[p.NUMBER,p.TITLE].filter(Boolean).join(' - ');   /* cadre Facturation chargé : adresses de l'affaire (deGardeRub) */
   const opt=w.JSON.parse(JSON.stringify({titre:X.titre,sousTitre:aff,date:X.date||today(),type:'Contrôle des coûts',description:decNom(o)+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' '),decompte:X.dec})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info(decNom(o)+' :',Array.from(j)); return oct; }
 
@@ -405,7 +456,7 @@ const r0=ch01aRender;
 ch01aRender=function(o,rec){ const g=genre(o); if(!g||!window.SGIMP||typeof SGDS==='undefined'||!rec||!rec.doc||!rec.doc.report) return r0.apply(this,arguments);
   const S=window.SGIMP; let R0=null; if(g==='liste') R0=r0.apply(this,arguments);   /* listes : rendu du moteur d'abord (repère et valeurs du bloc 31) */
   const id=(++S.n).toString(36)+'c'+Date.now().toString(36);
-  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='bon'||g==='arrete'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
+  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='bon'||g==='arrete'||g==='ordre'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
   const titre=titreDe(o,rec);
   if(g==='liste'){ /* liste : en cas d'échec du nouveau dessin, le PDF du bloc 31 */ const id0=(/\/\*sgimp:([a-z0-9]+)\*\//.exec(sv(R0.css))||[])[1];
     const sur=pdf.catch(e=>{ console.error(e); return id0&&S.pdf?S.pdf(id0):Promise.reject(e); }); S.memo.set(id,{pdf:sur,titre,o:{}}); }
@@ -592,7 +643,7 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
     actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
   D.maj(tableOctets(E,k)); }
-window.SGCD={decOctets,bonDonnees,arrDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+window.SGCD={decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();
 
 /* ═══ Archives ▸ Maquettes ▸ Bon de paiement et arrêté de compte · Deux colonnes (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans

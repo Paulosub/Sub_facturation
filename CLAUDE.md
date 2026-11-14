@@ -2255,10 +2255,23 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   de compte n° 24 » (`decNom`, au lieu du nom technique « 135_10511_payment ») ; Réglages = « Arrondir les conditions », « Afficher le total arrondi » (déjà là) et, pour un
   arrêté qui a un paiement final, « Inclure le paiement final » (`o.final`, la question que le moteur pose à l'ouverture ; vaut pour cette ouverture). Création : plus de
   fenêtre « Choisir le modèle » pour ces deux documents (`ch01aTplPick` enveloppé : premier modèle de la liste, celui proposé d'office — le dessin ne dépend plus du
-  modèle, seuls quelques libellés en viennent). Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement garde son rendu. Vérifié le 14.11.2026 : bon n° 135
+  modèle, seuls quelques libellés en viennent). Échec du nouveau dessin : rendu d'avant (bloc 31). L'ordre de paiement : même dessin depuis le même jour (paragraphe suivant). Vérifié le 14.11.2026 : bon n° 135
   et arrêté n° 24 de 17QUE = mêmes chiffres que les PDF du bureau ; 440 documents en série (tous les bons et arrêtés de 17QUE.DF.1 et de 99TST, arrêtés avec et sans
   paiement final) : aucune erreur, 393 sur une page, 47 sur deux (des arrêtés), aucun tableau trop large ; essai d'un bon de 38 lignes (deux pages) ; « Créer le PDF » =
   même dessin ; balayage des 121 écrans ; `nas/nettoyer.py` passe (rien déposé). Débogage : `SGCD.bonDonnees(o,rec)`, `SGCD.arrDonnees`, `SGCD.decOctets`.
+  **Ordre de paiement, même dessin (14.11.2026, Paulo : « Oui, l'ordre aussi »)** — `ordDonnees` (`sg3_coco_docs.js`, `DEC_TYPES.costControlPaymentOrder = 'ordre'`), mêmes
+  informations que le document d'avant (modèle du bureau : fiche de l'ordre puis lettre à la banque, 3 pages), prises dans `ch01dOrderJob` : numéro `<affaire>.OP.<n°>`
+  (code « OP » choisi par analogie avec BOP et AC : à confirmer par Paulo), « Date valeur jj.mm.aaaa » en rouge à droite du filet de tête, chiffre = total des paiements
+  (« n paiements · Ordre du … ») ; rubriques Affaire, Maître de l'ouvrage (adresse, téléphone · courriel), Banque du maître de l'ouvrage (banque, IBAN, contact),
+  Architecte et direction des travaux (une seule rubrique s'ils sont les mêmes, sinon deux), Ordre (« Nous vous prions d'effectuer les paiements suivants à partir du compte
+  du maître d'ouvrage et d'en retourner un exemplaire à l'architecte. », date et date valeur), Totaux (avant paiement, des paiements, après paiement) ; tableau Paiements
+  (libellé sur sa propre ligne : option `lib1`) — CFC, Bénéficiaire, N° pmt, puis les colonnes de la présentation des ordres (« Paiements à ce jour », « Contrats +
+  avenants », « Paiements »… titres sur deux lignes, `titre2`), total ; bénéficiaire = le texte du moteur (`ch01dBenef`) redécoupé par `benefLignes` : nom en Regular,
+  adresse sur une ligne, lignes de la banque en gris, IBAN en noir (cellule à plusieurs lignes `[{t, f, g}]` de `contenuDecompte`) ; « L'ordre de paiements est validé
+  par : » puis deux signatures (« Architecte et direction des travaux », maître de l'ouvrage) ou trois (`contenuDecompte` : jusqu'à trois colonnes). Fenêtre : « Ordre de
+  paiement n° … » ; pas de réglage propre. Une colonne fixe placée avant la colonne de texte a sa gouttière à droite (n° de CFC devant le bénéficiaire). Vérifié : les
+  43 ordres de 17QUE.DF.1 et de 99TST sans erreur (10 sur une page, 27 sur deux, 5 sur trois, 1 de 169 paiements sur 14), bons et arrêtés revérifiés en série. Copie
+  d'avant : `subgestion3/_backup_20261114_1545_avant_ordre_grand_chiffre/`.
   **Archives ▸ Maquettes ▸ « Bon de paiement et arrêté · Deux colonnes »** (`mq-bon-arrete-4`, fin de `sg3_coco_docs.js`, `dom:'reglages'`) : la variante 4 (à gauche qui
   et quoi, à droite le décompte sur bande bleu nuit et les signatures), gardée pour plus tard — pages et feuille de style produites par le script de la maquette
   (`maquette.py`, fonctions `v4_bon` / `v4_arrete`), données fictives de 99TST, racine fantôme, rien n'est lu ni écrit ; un clic agrandit une page. Copies d'avant :
@@ -2337,7 +2350,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   des garanties (`listeOctets` : tableaux du modèle mis en texte par le bloc 31 — `SGIMP.preparer` —, largeurs d'après le contenu, total sur bande bleu nuit, page de
   garde sans signatures ; échec → PDF du bloc 31). Données = jobs du moteur sur une copie de travail (présentation choisie, propriétés des tableaux réglées par le
   volet) : rien n'est écrit dans le contrôle des coûts. Mots coupés de l'ancien logiciel recollés (« inté- rieures »). Lettres (contrat, avenant, mutation, bons,
-  ordre, arrêté) : rendu du bloc 31 inchangé — sauf, depuis le 14.11.2026, le bon de paiement et l'arrêté de compte, dessinés en « Grand chiffre » (voir plus haut).
+  ordre, arrêté) : rendu du bloc 31 inchangé — sauf, depuis le 14.11.2026, le bon de paiement et l'arrêté de compte, dessinés en « Grand chiffre », ainsi que l'ordre de paiement (voir plus haut).
   **Réglages** : `cocodoc.options.sgPdf` du document (`optsDe` / `optsSet` : gardés en mémoire pendant l'envoi, envois à la suite, refus → message et retour) ;
   Contrôle des coûts : Format (portrait grisé au-delà de 5 colonnes de montants), Colonnes (Standard · présentations du document), Parties (page de garde, centres de
   coût, récapitulatif à 2 chiffres, contrôle détaillé), Positions (CFC Tout · 3 · 2 · 1, entreprises, subdivisions par ouvrage), Écritures (case principale, puis

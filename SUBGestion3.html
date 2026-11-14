@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 14.11.2026 09:18 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 14.11.2026 09:35 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -6244,7 +6244,8 @@ const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[
   return [
   ['Subdivision',[D('kag','CFC','Numéro CFC',{sp:'cfc'}),D('kagText','Désignation','Désignation CFC',{sp:'lbl'}),D('entrepreneur','Entreprise','Entreprise',{sp:'ent'}),
     D('entrepreneurNr','Numéro','Numéro d’adresse de l’entreprise',{info:'entNr'}),D('kagTextAndEntrepreneur','Entreprise et CFC','Entreprise et texte CFC',{info:'lblEnt',w:200}),
-    D('og','OUV','Ouvrage',{info:'og'}),D('lg','LOC','Localisation',{info:'lg'}),D('vergabeNr','N°','N° d’adjudication',{info:'lotNr',w:70}),D('vergabeText','Lot d’adjudication','Lot d’adjudication',{info:'lotTx',w:170})]],
+    D('og','OUV','Ouvrage',{info:'og'}),D('lg','LOC','Localisation',{info:'lg'}),D('vergabeNr','N°','N° d’adjudication',{info:'lotNr',w:70}),D('vergabeText','Lot d’adjudication','Lot d’adjudication',{info:'lotTx',w:170}),
+    D('desc','Descriptif','Descriptif de la position (texte du devis général)',{info:'posDesc',w:260})]],   /* desc, finalPaymentStatus : colonnes de l'ancien logiciel absentes du catalogue jusqu'au 14.11.2026 (vérification sur ColumnSetting / CostColumns) */
   ['Devis général',[D('kvIndex','Indice de base','Indice de base du devis général',{nd:1}),
     ...T(['kvValue','kvVat','kvTot'],['DG HT','TVA DG','DG TTC'],['Devis général HT','TVA du devis général','Devis général TTC'],{f:'dg'}),
     D('kvTotInclFac','DG indexé','Devis général indexé (DG TTC × facteur du DG)',{fx:A=>A.V('dg')*A.ctx.fac}),D('kvProcent','DG %','Évaluation du devis général en pourcents',{pct:'dg'})]],
@@ -6296,7 +6297,7 @@ const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[
     D('paymentDesc','Description du paiement','Description du paiement',{info:'payDesc',w:200}),D('entrepreneurAccount','Compte d’entreprise','Compte de l’entreprise (IBAN)',{info:'payBank',w:170}),
     D('buildOwnerAccount','Compte du MO','Compte du maître d’ouvrage',{info:'payMO',w:150}),D('beneficiary','Bénéficiaire','Bénéficiaire',{info:'payBenef',w:170})]],
   ['Garantie',[D('garantyKind','Genre de garantie','Genre de garantie (arrêté de compte)',{info:'garGenre',w:110}),D('garantyRed','Montant de garantie','Montant de garantie',{info:'garMt',num:1}),
-    D('garantyBegin','Début de la garantie','Début de la garantie',{info:'garDebut',w:96}),D('garantyEnd','Échéance de la garantie','Échéance de la garantie',{info:'garFin',w:96}),D('finalPaymentNr','N° de la garantie','Numéro de l’arrêté de compte',{info:'garNr',w:80})]],
+    D('garantyBegin','Début de la garantie','Début de la garantie',{info:'garDebut',w:96}),D('garantyEnd','Échéance de la garantie','Échéance de la garantie',{info:'garFin',w:96}),D('finalPaymentNr','N° de la garantie','Numéro de l’arrêté de compte',{info:'garNr',w:80}),D('finalPaymentStatus','Statut de la garantie','Statut de la garantie (arrêté de compte)',{info:'garSt',w:110})]],
   ['Différences',[...['ht','tva','ttc'].map((m,i)=>D(['contractMinusPaymentExVat','contractMinusPaymentVat','contractMinusPayment'][i],['Contrat − paiements HT','TVA contrat − paiements','Contrat − paiements TTC'][i],['(Contrats + avenants) − paiements HT','TVA de (contrats + avenants) − paiements','(Contrats + avenants) − paiements TTC'][i],{fx:A=>A.V('contratsAvenants',m)-A.V('paiements',m),e:1})),
     ...['ht','tva','ttc'].map((m,i)=>D(['contractMinusAccordPaymentExVat','contractMinusAccordPaymentVat','contractMinusAccordPayment'][i],['Contrat − pmts sur contrat HT','TVA contrat − pmts sur contrat','Contrat − pmts sur contrat TTC'][i],['(Contrats + avenants) − paiements sur contrat HT','TVA de (contrats + avenants) − paiements sur contrat','(Contrats + avenants) − paiements sur contrat TTC'][i],{fx:A=>A.V('contratsAvenants',m)-A.V('paiementsContrat',m),e:1})),
     ...['ht','tva','ttc'].map((m,i)=>D(['contractMinusAccordFinalPaymentExVat','contractMinusAccordFinalPaymentVat','contractMinusAccordFinalPayment'][i],['Plus-/moins-values HT','TVA plus-/moins-values','Plus-/moins-values TTC'][i],['(Contrats + avenants) − paiements sur contrat, après le dernier paiement HT','TVA des plus-/moins-values','(Contrats + avenants) − paiements sur contrat, après le dernier paiement TTC'][i],{fx:A=>A.X('payFin')?A.V('contratsAvenants',m)-A.V('paiementsContrat',m):0,e:1})),
@@ -6385,7 +6386,17 @@ function ccInfo(C,r,k){ const d=r.det, ref=d&&d.ref, K=d&&d.k;
     case 'garGenre': { const g=gar(); return g?({banque:'Banque',assurance:'Assurance',comptant:'Comptant',sansGarantie:'Sans garantie'})[g.genre]||'':''; }
     case 'garMt': { const g=gar(); return g&&+g.montant?num(+g.montant):''; } case 'garDebut': { const g=gar(); return g?dfr(g.debut):''; } case 'garFin': { const g=gar(); return g?dfr(g.fin):''; }
     case 'garNr': { const a=arr(); return a?String(a.numero||''):''; }
+    case 'garSt': { const a=arr(); return a?ARR_ST[a.statut]||'':''; }
+    case 'posDesc': return r.sub||r.tot||d?'':ccPosDesc(C,r.cfc);
   } return ''; }
+/* descriptif d'une position : celui de la position du contrôle des coûts, sinon celui du devis général d'origine (C.devisSourceId, ou le devis trouvé par SUBGestion 3) ; sur une ligne */
+const CC_DESC=new WeakMap();
+function ccPosDesc(C,cfc){ const un=t=>String(t||'').replace(/\s*\n\s*/g,' ').trim(), k=String(cfc);
+  const p=(C.positions||[]).find(x=>String(x.cfc)===k), t=un(p&&(p.descriptif||p.description)); if(t) return t;
+  let sid=C.devisSourceId; try{ if(sid==null&&window.SGCC&&typeof SGCC.devisSource==='function') sid=SGCC.devisSource(C); }catch(_){}
+  const E=sid!=null&&typeof DS!=='undefined'?DS.get('costestimate',sid):null; if(!E||!Array.isArray(E.positions)) return '';
+  let M=CC_DESC.get(E); if(!M){ M=new Map(); E.positions.forEach(x=>{ const d=un(typeof ch02aDesc==='function'?ch02aDesc(x):x.descriptif); if(d) M.set(String(x.cfc),d); }); CC_DESC.set(E,M); }
+  return M.get(k)||''; }
 /* palette de 256 couleurs : 16 gris, puis 15 teintes (tous les 24°) en 16 clartés */
 const CC_PALETTE=(()=>{ const hx=n=>Math.round(n).toString(16).padStart(2,'0'), out=[];
   const hsl=(hh,s,l)=>{ s/=100; l/=100; const k=n=>(n+hh/30)%12, a=s*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return '#'+hx(f(0)*255)+hx(f(8)*255)+hx(f(4)*255); };
@@ -6449,7 +6460,7 @@ function ccAffichage(C,o){
   const P=LI?{colonnes:(LI.cols||[]).map(id=>({id}))}:o.pres(), cols=(P.colonnes||[]).map(c=>Object.assign({},c)), cou=ccCouleurs(C), eqs=(C.parametres||{}).equations||[];
   if(PIN){ const k=cols.findIndex(x=>x.id===PIN); if(k<0) cols.unshift({id:'kag',idDelta:0,details:false}); else if(k>0) cols.unshift(cols.splice(k,1)[0]); }   /* CFC : toujours la première colonne, ni déplacée ni retirée */
   const cols0=JSON.stringify(cols);
-  delete cou.cpp; let tab=o.tab==='couleurs'?'couleurs':'colonnes', elC=o.el&&cou[o.el]?o.el:'mut';
+  delete cou.cpp; let tab=o.seul||(o.tab==='couleurs'?'couleurs':'colonnes'), elC=o.el&&cou[o.el]?o.el:'mut';   /* o.seul (14.11.2026) : un seul onglet — 'colonnes' (présentation personnalisée du contrôle du coût) ou 'couleurs' ; o.titreDlg, o.note */
   const NOMS={mut:'Mutations',ctr:'Contrats et avenants',pay:'Paiements sur contrat',payh:'Paiements hors contrat',prov:'Provisions, coût probable'};
   const body=h('div',{class:'cca'}), tabs=h('div',{class:'cca-tabs'}), pane=h('div');
   const titreDe=id=>{ const c=DEF(id); if(!c) return id; if(c.eq!=null){ const e=(eqs[c.eq]||'').trim(); return c.t+(e?' : '+e:' (non définie)'); } return c.l||c.t; };
@@ -6482,7 +6493,7 @@ function ccAffichage(C,o){
         if(on){ const k=to>i?to-1:to; if(k!==i) cols.splice(k,0,cols.splice(i,1)[0]); drawS(); } };
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',fin); document.addEventListener('pointercancel',fin); });
     S.append(h('h4',{},'Colonnes affichées, dans l’ordre'),ls,h('div',{class:'cca-acts'},h('button',{type:'button',class:'btn',onclick:()=>{ cols.splice(0,cols.length,...(LI?LI.std.map(id=>({id})):CC_PRES_DEF.Standard.map(id=>({id,idDelta:CH01A_IDD[id],details:!!CC_COL[id].det})))); drawL(); drawS(); }},'Colonnes Standard')),
-      h('div',{class:'cca-note'},LI?'Colonnes de la liste « '+LI.titre+' », enregistrées dans ce contrôle des coûts.':'Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.'));
+      h('div',{class:'cca-note'},LI?'Colonnes de la liste « '+LI.titre+' », enregistrées dans ce contrôle des coûts.':o.note||('Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.')));
     pane.append(h('div',{class:'cca-col'},h('div',{},qi,L),S)); drawL(); drawS(); };
   const drawCou=()=>{ pane.innerHTML=''; const els=h('div'), pal=h('div',{class:'cca-pal'}), ap=h('div',{class:'cca-ap'});
     const maj=()=>{ els.innerHTML=''; Object.keys(NOMS).forEach(k=>{ const def=cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase();
@@ -6495,11 +6506,12 @@ function ccAffichage(C,o){
     pane.append(h('div',{class:'cca-cou'},h('div',{},h('div',{class:'cca-note',style:{marginTop:'0',marginBottom:'8px'}},'Choisissez un élément, puis sa couleur dans la palette. Les couleurs valent pour le tableau du contrôle du coût et ses documents PDF.'),els),
       h('div',{},pal,h('div',{class:'cca-note'},'Aperçu dans le tableau'),ap))); maj(); };
   if(LI) tab='colonnes';
-  const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],...(LI?[]:[['couleurs','Couleurs des écritures']])].forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
+  const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],...(LI?[]:[['couleurs','Couleurs des écritures']])].filter(([k])=>!o.seul||LI||k===o.seul).forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
   body.append(tabs,pane); drawT();
-  dialog({title:LI?(LI.titreDlg||'Affichage · '+LI.titre):'Affichage',width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+  dialog({title:LI?(LI.titreDlg||'Affichage · '+LI.titre):(o.titreDlg||'Affichage'),width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
     if(LI){ if(JSON.stringify(cols)!==cols0){ LI.set(cols.map(c=>c.id)); o.touch(); } return; }
-    if(JSON.stringify(cols)!==cols0) o.setCols(cols);
+    if(o.seul==='colonnes'){ if(JSON.stringify(cols)!==cols0){ o.setCols(cols); o.touch(); } return; }   /* colonnes seules : rien n'est écrit sans changement */
+    if(o.seul!=='couleurs'&&JSON.stringify(cols)!==cols0) o.setCols(cols);
     const pc=C.parametres||(C.parametres={}); if(Object.keys(CC_DEF_COUL).every(k=>cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase())) delete pc.couleursDetails; else pc.couleursDetails=Object.assign({},cou);
     o.touch(); try{ document.dispatchEvent(new CustomEvent('cc-affichage')); }catch(_){} }}]});
 }
@@ -6646,8 +6658,8 @@ function ccEditor(m,id){
   const COLOR=ccCouleurs(C), coulDe=d=>d&&d.k==='pay'&&!(d.ref&&d.ref.contratId)?COLOR.payh:COLOR[d&&d.k];   /* paiement hors contrat : sa couleur */   /* couleurs des écritures : celles du document (Affichage ▸ Couleurs des écritures, 11.11.2026), sinon celles de l'ancien logiciel */
   /* Affichage (colonnes du catalogue complet, couleurs) : « Standard » n'est jamais modifiée — une présentation « Personnalisée » du document est créée ou mise à jour */
   const setCols=cols=>{ const L=C.presentations.controle||(C.presentations.controle=[]), P=pres(); if(P.base){ let i=L.findIndex(x=>x.nom==='Personnalisée'); if(i<0){ L.push({nom:'Personnalisée',app:true,colonnes:cols,options:{}}); i=L.length-1; } else L[i]=Object.assign({},L[i],{app:true,colonnes:cols}); CCV.pres=i; } else { P.colonnes=cols; if(P.nom==='Personnalisée') P.app=true; } };
-  CCV.cur={C,p,doc,id,touch}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
-  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C,p,doc,id,touch}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
+  CCV.cur={C,p,doc,id,touch,pres,draw:()=>draw()}; CCV.affichage=(tab,el,x)=>ccAffichage(C,Object.assign({pres,setCols,touch,tab,el},x||{}));   /* x (14.11.2026) : options de la fenêtre (seul, titreDlg, note, setCols) */
+  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C,p,doc,id,touch,pres,draw:()=>draw()}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
     if(sec==='DOCUMENTS'){ ccDocsDraw(pane,{C,p,doc,id,touch},G); return; }
     if(sec==='CONTRÔLE DU COÛT'||sec==='DEVIS GENERAL'){
       const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]).sort((a,b)=>(b==='kag')-(a==='kag'));   /* CFC toujours la première colonne */
@@ -42699,6 +42711,8 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
   const tot=ccCalc(C).G.dg||0, L=DS.by('costestimatedocument','PROJECT_ID',pid).filter(d=>ok(d.ID)).map(d=>({d,t:dvCompute(DS.get('costestimate',d.ID)).T.ttc}));
   const M=L.filter(x=>Math.abs(x.t-tot)<1).sort((a,b)=>((b.d.STATECODE===2)-(a.d.STATECODE===2))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
   return M.length?M[0].d.ID:null; };
+{ const M=new WeakMap(); SGCC.devisSource=C=>{ if(!C) return null; if(C.devisSourceId!=null&&DS.get('costestimate',C.devisSourceId)) return C.devisSourceId; if(M.has(C)) return M.get(C);
+    const K=CCV.cur, pid=K&&K.C===C&&K.p?K.p.ID:null; if(pid==null) return null; let v=null; try{ v=devisSource(C,pid); }catch(_){} M.set(C,v); return v; }; }   /* colonne « Descriptif » du contrôle du coût (moteur, ccPosDesc) */
 /* ═══ Liste des écritures ▸ Imprimer (11.11.2026, Paulo : « reproduire les mises en page de devis général ou contrôle du coût pour les listes des paiements, mutations,
    adjudications ») : à la place de « Imprimer le tableau (A4 paysage) », le document de la liste au graphisme du devis général et du contrôle des coûts — Liste des
    mutations, Liste des adjudications (contrats et avenants), Rapport des paiements — dans la même fenêtre (bloc 52, sg3_coco_docs.js : réglages, lecteur, PDF). Mêmes
@@ -42879,6 +42893,93 @@ const listePresMenu=sec=>{ const C=(CCV.cur||{}).C, L=lpL(C,LCLE[sec]), A=lpActi
     ...(perso&&!A?[{t:'Personnalisée (non enregistrée)',chk:true,fn:()=>{}}]:[]),'-',
     {t:'Personnalisé …',fn:()=>listeAffichage(sec)},{t:'Enregistrer la présentation …',fn:()=>lpEnregistrer(sec)},...(L.length?[{t:'Gérer les présentations …',fn:()=>lpGerer(sec)}]:[]),
     {t:'Récupérer d’un autre projet …',fn:()=>lpRecuperer(sec)}]; };
+/* ═══ Contrôle du coût : menu Présentation comme les listes des écritures (Paulo, 14.11.2026 : « ajoute dans contrôle des coûts le menu comme dans liste des écritures
+   et la possibilité d'enregistrer dans présentation ; créer également la fenêtre pour la sélection des colonnes du tableau, uniquement pour le contrôle du coût ») —
+   Standard, présentations enregistrées, « Personnalisée (non enregistrée) », Personnalisé … (fenêtre des colonnes seules, catalogue complet de l'ancien logiciel),
+   Enregistrer la présentation …, Gérer les présentations …, Récupérer d'un autre projet …, puis Couleurs des écritures … et Afficher les détails.
+   Présentations enregistrées = présentations du document (C.presentations.controle : {nom, app:true, colonnes, options}) — celles de l'ancien logiciel comprises,
+   proposées aussi par le PDF « Contrôle des coûts » (Réglages ▸ Colonnes). Présentation de travail : entrée {travail:true} (« Personnalisée »), créée ou mise à jour
+   par « Personnalisé … » ; une présentation enregistrée n'est jamais modifiée sans « Enregistrer » (même nom = remplacée). Présentation affichée : CCV.pres (rang),
+   retenue par poste et par contrôle des coûts (localStorage sg3_coco_pres : nom, '*' = présentation de travail). */
+const cpL=C=>((C&&C.presentations&&C.presentations.controle)||[]);
+const cpCache=x=>!!x&&x.nom==='Standard'&&(x.colonnes||[]).map(c=>c.id).join()===CC_PRES_DEF.Standard.join();   /* « Standard » du document identique à la base : pas répétée */
+const cpTravail=x=>!!x&&(x.travail===true||(x.app===true&&x.nom==='Personnalisée'&&x.travail!==false));
+const cpNom=x=>(x.nom||'(sans nom)')+(x.nom==='Standard'?' (du document)':'');
+const cpClone=v=>JSON.parse(JSON.stringify(v==null?null:v));
+const cpColT=id=>((CC_COL[id]||{}).t||id);
+const cpLecture=()=>{ try{ return typeof ch03dLecture==='function'&&ch03dLecture(CCV.cur); }catch(_){ return false; } };
+const CP={doc:null,M:(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_pres'))||{}; }catch(_){ return {}; } })()};
+const cpMemo=(id,x)=>{ if(id==null) return; if(!x) delete CP.M[id]; else CP.M[id]=cpTravail(x)?'*':(x.nom||''); try{ localStorage.setItem('sg3_coco_pres',JSON.stringify(CP.M)); }catch(_){} };
+const cpRestaurer=id=>{ if(CP.doc===id) return; CP.doc=id; const n=CP.M[id]; if(n==null) return; const L=cpL(DS.get('costcontrol',id)), i=n==='*'?L.findIndex(cpTravail):L.findIndex(x=>!cpTravail(x)&&!cpCache(x)&&(x.nom||'')===n); CCV.pres=i>=0?i:null; };
+{ const o1=ccOpen; ccOpen=function(id){ CP.doc=null; return o1.apply(this,arguments); }; }   /* à chaque ouverture : la présentation retenue pour ce contrôle des coûts */
+const cpChoisir=i=>{ const K=CCV.cur||{}, L=cpL(K.C); CCV.pres=i!=null&&L[i]?i:null; cpMemo(K.id,CCV.pres!=null?L[CCV.pres]:null); if(K.draw) K.draw(); else if(K.touch) K.touch(); };
+/* colonnes choisies dans « Personnalisé … » : présentation de travail créée ou mise à jour (les présentations enregistrées ne changent pas) */
+const cpSetCols=cols=>{ const K=CCV.cur||{}, C=K.C; if(!C) return; const P=C.presentations||(C.presentations={}), L=P.controle||(P.controle=[]), cur=K.pres?K.pres():null; let i=L.findIndex(cpTravail);
+  const x={nom:'Personnalisée',app:true,travail:true,colonnes:cols,options:i>=0?L[i].options||{}:cur&&!cur.base&&cur.options?cpClone(cur.options):{}};
+  if(i<0){ L.push(x); i=L.length-1; } else L[i]=Object.assign({},L[i],x);
+  CCV.pres=i; cpMemo(K.id,L[i]); };
+function cpAffichage(){ if(typeof CCV.affichage!=='function') return;
+  CCV.affichage('colonnes',null,{seul:'colonnes',titreDlg:'Présentation personnalisée · Contrôle du coût',setCols:cpSetCols,
+    note:'Le numéro CFC reste la première colonne. Pour garder ces colonnes sous un nom : Présentation ▸ Enregistrer la présentation …'}); }
+function cpEnregistrer(){ const K=CCV.cur||{}; if(!K.C||!K.pres) return; const cur=K.pres(), noms=cpL(K.C).filter(x=>!cpTravail(x)&&!cpCache(x)).map(x=>x.nom||'');
+  let n=noms.filter(x=>x!=='Standard').length+1; while(noms.includes('Présentation '+n)) n++;
+  const ids=['kag',...(cur.colonnes||[]).map(c=>c.id).filter(i=>i!=='kag'&&CC_COL[i])];
+  const inp=h('input',{class:'inp',value:!cur.base&&!cpTravail(cur)&&cur.nom&&cur.nom!=='Standard'?cur.nom:'Présentation '+n,style:{width:'100%',boxSizing:'border-box'}}), msg=h('div',{style:{fontSize:'12px',color:'#888',marginTop:'6px',minHeight:'16px'}});
+  const maj=()=>{ const v=inp.value.trim(); msg.textContent=!v?'Donnez un nom à la présentation.':v==='Standard'?'« Standard » est la présentation de base : choisissez un autre nom.':noms.includes(v)?'« '+v+' » existe déjà : elle sera remplacée.':''; return !!v&&v!=='Standard'; };
+  inp.oninput=maj; maj();
+  const body=h('div',{style:{width:'520px',maxWidth:'80vw'}},h('div',{style:{fontWeight:600,marginBottom:'6px'}},'Nom de la présentation'),inp,msg,
+    h('div',{style:{marginTop:'12px',fontSize:'12.5px',color:'#555'}},'Colonnes affichées ('+ids.length+') : '+ids.map(cpColT).join(', ')));
+  dialog({title:'Enregistrer la présentation · Contrôle du coût',body,buttons:[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:()=>{ if(!maj()){ inp.focus(); return false; }
+    const v=inp.value.trim(), K2=CCV.cur||{}, C=K2.C; if(!C||!K2.pres) return; const P=C.presentations||(C.presentations={}), L=P.controle||(P.controle=[]), c2=K2.pres(), tr=cpTravail(c2)?L.indexOf(c2):-1;
+    const x={nom:v,app:true,travail:false,colonnes:cpClone(c2.colonnes||[]).map(c=>Object.assign({idDelta:CH01A_IDD[c.id]},c)),options:cpClone(c2.options||{})};
+    let j=L.findIndex(y=>!cpTravail(y)&&!cpCache(y)&&(y.nom||'')===v);
+    if(j>=0) L[j]=Object.assign({},L[j],x); else { L.push(x); j=L.length-1; }
+    if(tr>=0&&tr!==j){ L.splice(tr,1); if(tr<j) j--; }   /* la présentation de travail devient la présentation enregistrée */
+    CCV.pres=j; cpMemo(K2.id,L[j]); if(K2.touch) K2.touch(); toast('Présentation « '+v+' » enregistrée.'); }}]});
+  setTimeout(()=>{ inp.focus(); inp.select(); },0); }
+function cpGerer(){ const K=CCV.cur||{}, C=K.C; if(!C) return; const M=cpL(C).filter(x=>!cpTravail(x)&&!cpCache(x)).map(x=>({x,nom:x.nom||'',sup:false})), box=h('div',{style:{width:'520px',maxWidth:'80vw'}});
+  const draw=()=>{ box.innerHTML=''; const V=M.filter(m=>!m.sup); if(!V.length){ box.append(h('div',{style:{color:'#888'}},'Aucune présentation enregistrée.')); return; }
+    V.forEach(m=>{ const fixe=m.x.nom==='Standard', inp=h('input',{class:'inp',value:m.nom,style:{flex:'1'},disabled:fixe||null,title:fixe?'Présentation « Standard » du document (ancien logiciel) : nom fixe':''}); inp.oninput=()=>{ m.nom=inp.value; };
+      box.append(h('div',{style:{display:'flex',gap:'8px',alignItems:'center',padding:'4px 0',borderBottom:'1px solid #e3e3e0'}},inp,h('span',{style:{fontSize:'12px',color:'#888',whiteSpace:'nowrap'}},(fixe?'du document · ':'')+(m.x.colonnes||[]).length+' colonnes'),
+        h('button',{type:'button',class:'btn',title:'Supprimer la présentation',onclick:()=>{ m.sup=true; draw(); }},'✕'))); }); };
+  draw();
+  dialog({title:'Présentations enregistrées · Contrôle du coût',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const V=M.filter(m=>!m.sup), noms=V.map(m=>m.nom.trim());
+    if(noms.some(x=>!x)){ toast('Chaque présentation doit avoir un nom.',true); return false; } if(new Set(noms).size!==noms.length){ toast('Deux présentations portent le même nom.',true); return false; }
+    if(V.some(m=>m.nom.trim()==='Standard'&&m.x.nom!=='Standard')){ toast('« Standard » est la présentation de base : choisissez un autre nom.',true); return false; }
+    const K2=CCV.cur||{}; if(K2.C!==C){ toast('Le contrôle des coûts a changé entre-temps : recommencez.',true); return; }
+    const L=cpL(C), act=CCV.pres!=null?L[CCV.pres]:null, out=[];
+    L.forEach(x=>{ const m=M.find(y=>y.x===x); if(m&&m.sup) return; if(m) x.nom=m.nom.trim(); out.push(x); });
+    if(L.some(x=>x.favori)&&!out.some(x=>x.favori)){ const f=out.find(x=>!cpTravail(x)); if(f) f.favori=true; }   /* la présentation favorite (documents de l'ancien logiciel) supprimée : la première restante */
+    (C.presentations||(C.presentations={})).controle=out; CCV.pres=act&&out.includes(act)?out.indexOf(act):null; cpMemo(K2.id,CCV.pres!=null?out[CCV.pres]:null); if(K2.touch) K2.touch(); }}]}); }
+async function cpRecuperer(){ const K=CCV.cur||{}; if(!K.C) return; try{ await DS.need(['costcontrol','costcontroldocument']); }catch(_){}
+  const src=DS.all('costcontroldocument').filter(d=>d.ID!==K.id&&!d.ISMARKEDASDELETED&&(typeof sgProjetPermis!=='function'||sgProjetPermis(d.PROJECT_ID))).map(d=>{ const it=cpL(DS.get('costcontrol',d.ID)).filter(x=>!cpCache(x)&&(x.colonnes||[]).length);
+      const pr=DS.get('project',d.PROJECT_ID)||{}, propres=it.filter(x=>cpTravail(x)||x.nom!=='Standard').length; return {d,it,pr,propres,lib:[pr.NUMBER,pr.TITLE].filter(Boolean).join(' · ')+(d.VERSION?' — version '+d.VERSION:'')+' ('+it.map(x=>cpTravail(x)?'en cours':x.nom||'sans nom').join(', ')+')'}; }).filter(x=>x.it.length)
+    .sort((a,b)=>((b.propres>0)-(a.propres>0))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
+  if(!src.length){ dialog({title:'Récupérer des présentations',body:h('div',{style:{maxWidth:'460px'}},'Aucun autre projet n’a de présentation du contrôle du coût.')}); return; }
+  const sel=h('select',{class:'inp',style:{width:'100%'}}), liste=h('div',{style:{marginTop:'10px',maxHeight:'50vh',overflow:'auto'}}); let cases=[];
+  src.forEach((x,i)=>sel.append(h('option',{value:i},x.lib)));
+  const draw=()=>{ const x=src[+sel.value]; liste.innerHTML=''; cases=[];
+    x.it.forEach(y=>{ const cb=h('input',{type:'checkbox',checked:(cpTravail(y)||y.nom!=='Standard'||x.it.length===1)||null}), ids=(y.colonnes||[]).map(c=>c.id).filter(i=>CC_COL[i]); cases.push({cb,y});
+      liste.append(h('label',{style:{display:'grid',gridTemplateColumns:'18px minmax(0,1fr)',gap:'8px',alignItems:'start',padding:'5px 0',borderBottom:'1px solid #e3e3e0'}},cb,
+        h('span',{},h('b',{},cpTravail(y)?'Présentation en cours (non enregistrée)':cpNom(y)),h('span',{style:{color:'#888',fontSize:'12px',marginLeft:'8px'}},ids.length+' colonnes'),
+          h('span',{style:{display:'block',color:'#888',fontSize:'12px'}},ids.map(cpColT).join(', '))))); }); };
+  sel.onchange=draw; draw();
+  dialog({title:'Récupérer des présentations d’un autre projet',width:'620px',body:h('div',{},h('div',{style:{fontWeight:600,marginBottom:'6px'}},'Contrôle des coûts'),sel,liste),buttons:[{t:'Annuler'},{t:'Récupérer',pri:true,fn:()=>{
+    const x=src[+sel.value], num=x.pr.NUMBER||'reprise', K2=CCV.cur||{}, C=K2.C; if(!C) return; const L=(C.presentations||(C.presentations={})).controle||(C.presentations.controle=[]); let n=0;
+    const col=y=>(y.colonnes||[]).map(c=>c.id+(c.details?'+':'')).join(',');
+    cases.filter(c=>c.cb.checked).forEach(({y})=>{ let nom=cpTravail(y)?'Présentation '+num:y.nom==='Standard'||!y.nom?'Standard ('+num+')':y.nom;
+      const pris=v=>L.find(p=>!cpTravail(p)&&(p.nom||'')===v), same=pris(nom); if(same&&col(same)===col(y)) return;
+      if(same){ const b=nom+' ('+num+')'; let j=2; nom=b; while(pris(nom)) nom=b+' '+(j++); }
+      L.push({nom,app:true,travail:false,colonnes:cpClone(y.colonnes||[]).filter(c=>CC_COL[c.id]),options:cpClone(y.options||{})}); n++; });
+    if(!n){ toast('Aucune nouvelle présentation : elles existent déjà ou aucune n’est cochée.'); return; } if(K2.touch) K2.touch(); toast(n+(n>1?' présentations reprises.':' présentation reprise.')); }}]}); }
+/* menu (mot = menu du moteur : son entrée « Afficher les détails » est reprise) */
+const cpPresMenu=mot=>{ const K=CCV.cur||{}, cur=K.pres?K.pres():{base:true}, V=cpL(K.C).map((x,i)=>[x,i]).filter(([x])=>!cpCache(x)), enr=V.filter(([x])=>!cpTravail(x)), tr=V.find(([x])=>cpTravail(x)), ro=cpLecture();
+  const det=(mot||[]).find(x=>x&&x.t==='Afficher les détails');
+  return [{t:'Standard',chk:!!cur.base,fn:()=>cpChoisir(null)},...enr.map(([x,i])=>({t:cpNom(x),chk:!cur.base&&CCV.pres===i,fn:()=>cpChoisir(i)})),
+    ...(tr?[{t:'Personnalisée (non enregistrée)',chk:!cur.base&&CCV.pres===tr[1],fn:()=>cpChoisir(tr[1])}]:[]),'-',
+    {t:'Personnalisé …',dis:ro,fn:()=>cpAffichage()},{t:'Enregistrer la présentation …',dis:ro,fn:()=>cpEnregistrer()},...(enr.length?[{t:'Gérer les présentations …',dis:ro,fn:()=>cpGerer()}]:[]),
+    {t:'Récupérer d’un autre projet …',dis:ro,fn:()=>cpRecuperer()},'-',
+    {t:'Couleurs des écritures …',dis:ro,fn:()=>CCV.affichage('couleurs',null,{seul:'couleurs',titreDlg:'Couleurs des écritures · Contrôle du coût'})},...(det?[det]:[])]; };
 const DGV=(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_dgv'))||{}; }catch(_){ return {}; } })(), dgvSave=()=>{ try{ localStorage.setItem('sg3_coco_dgv',JSON.stringify(DGV)); }catch(_){} };
 let DGX=null;   /* tableau de l'onglet Devis général (contexte réduit du devis d'origine) */
 async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}
@@ -42919,7 +43020,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const mPres=bPres._sgB.menu, mFon=bFon._sgB.menu;
   const fon=t=>(mFon()||[]).filter(x=>x&&x.t&&t.test(x.t)).map(x=>Object.assign({},x,{fn:filtrer(x.fn)}));
   lbl(bNew,'Nouvelle écriture'); lbl(bPar,'Paramètres');
-  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
+  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&CCV.cur&&CCV.cur.pres?cpPresMenu(mPres()):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
     const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
@@ -43073,7 +43174,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const ouvertA=performance.now(); box.addEventListener('dblclick',e=>{ if(performance.now()-ouvertA<450){ e.stopPropagation(); e.preventDefault(); } },true);   /* le 2e clic d'un double-clic d'habitude sur la liste n'ouvre pas une écriture */
   ong.append(ongL,niv); box.append(hd,kp,ong,esub,bar2,dsub,body); m.replaceChildren(box); box._plein(ED.plein);   /* plein écran gardé d'un contrôle des coûts à l'autre pendant la séance */
   maj(); entete(); deco(); decoDocs(); }
-{ const e0=ccEditor; ccEditor=function(m,id){ e0.apply(this,arguments); try{ habillerEd(m,id); }catch(e){ console.error(e); } }; }
+{ const e0=ccEditor; ccEditor=function(m,id){ try{ cpRestaurer(id); }catch(e){ console.error(e); } e0.apply(this,arguments); try{ habillerEd(m,id); }catch(e){ console.error(e); } }; }
 Object.assign(SGCC,{COCO,totaux});
 })();
 

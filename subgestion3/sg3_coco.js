@@ -207,6 +207,8 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
   const tot=ccCalc(C).G.dg||0, L=DS.by('costestimatedocument','PROJECT_ID',pid).filter(d=>ok(d.ID)).map(d=>({d,t:dvCompute(DS.get('costestimate',d.ID)).T.ttc}));
   const M=L.filter(x=>Math.abs(x.t-tot)<1).sort((a,b)=>((b.d.STATECODE===2)-(a.d.STATECODE===2))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
   return M.length?M[0].d.ID:null; };
+{ const M=new WeakMap(); SGCC.devisSource=C=>{ if(!C) return null; if(C.devisSourceId!=null&&DS.get('costestimate',C.devisSourceId)) return C.devisSourceId; if(M.has(C)) return M.get(C);
+    const K=CCV.cur, pid=K&&K.C===C&&K.p?K.p.ID:null; if(pid==null) return null; let v=null; try{ v=devisSource(C,pid); }catch(_){} M.set(C,v); return v; }; }   /* colonne « Descriptif » du contrôle du coût (moteur, ccPosDesc) */
 /* ═══ Liste des écritures ▸ Imprimer (11.11.2026, Paulo : « reproduire les mises en page de devis général ou contrôle du coût pour les listes des paiements, mutations,
    adjudications ») : à la place de « Imprimer le tableau (A4 paysage) », le document de la liste au graphisme du devis général et du contrôle des coûts — Liste des
    mutations, Liste des adjudications (contrats et avenants), Rapport des paiements — dans la même fenêtre (bloc 52, sg3_coco_docs.js : réglages, lecteur, PDF). Mêmes
@@ -387,6 +389,93 @@ const listePresMenu=sec=>{ const C=(CCV.cur||{}).C, L=lpL(C,LCLE[sec]), A=lpActi
     ...(perso&&!A?[{t:'Personnalisée (non enregistrée)',chk:true,fn:()=>{}}]:[]),'-',
     {t:'Personnalisé …',fn:()=>listeAffichage(sec)},{t:'Enregistrer la présentation …',fn:()=>lpEnregistrer(sec)},...(L.length?[{t:'Gérer les présentations …',fn:()=>lpGerer(sec)}]:[]),
     {t:'Récupérer d’un autre projet …',fn:()=>lpRecuperer(sec)}]; };
+/* ═══ Contrôle du coût : menu Présentation comme les listes des écritures (Paulo, 14.11.2026 : « ajoute dans contrôle des coûts le menu comme dans liste des écritures
+   et la possibilité d'enregistrer dans présentation ; créer également la fenêtre pour la sélection des colonnes du tableau, uniquement pour le contrôle du coût ») —
+   Standard, présentations enregistrées, « Personnalisée (non enregistrée) », Personnalisé … (fenêtre des colonnes seules, catalogue complet de l'ancien logiciel),
+   Enregistrer la présentation …, Gérer les présentations …, Récupérer d'un autre projet …, puis Couleurs des écritures … et Afficher les détails.
+   Présentations enregistrées = présentations du document (C.presentations.controle : {nom, app:true, colonnes, options}) — celles de l'ancien logiciel comprises,
+   proposées aussi par le PDF « Contrôle des coûts » (Réglages ▸ Colonnes). Présentation de travail : entrée {travail:true} (« Personnalisée »), créée ou mise à jour
+   par « Personnalisé … » ; une présentation enregistrée n'est jamais modifiée sans « Enregistrer » (même nom = remplacée). Présentation affichée : CCV.pres (rang),
+   retenue par poste et par contrôle des coûts (localStorage sg3_coco_pres : nom, '*' = présentation de travail). */
+const cpL=C=>((C&&C.presentations&&C.presentations.controle)||[]);
+const cpCache=x=>!!x&&x.nom==='Standard'&&(x.colonnes||[]).map(c=>c.id).join()===CC_PRES_DEF.Standard.join();   /* « Standard » du document identique à la base : pas répétée */
+const cpTravail=x=>!!x&&(x.travail===true||(x.app===true&&x.nom==='Personnalisée'&&x.travail!==false));
+const cpNom=x=>(x.nom||'(sans nom)')+(x.nom==='Standard'?' (du document)':'');
+const cpClone=v=>JSON.parse(JSON.stringify(v==null?null:v));
+const cpColT=id=>((CC_COL[id]||{}).t||id);
+const cpLecture=()=>{ try{ return typeof ch03dLecture==='function'&&ch03dLecture(CCV.cur); }catch(_){ return false; } };
+const CP={doc:null,M:(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_pres'))||{}; }catch(_){ return {}; } })()};
+const cpMemo=(id,x)=>{ if(id==null) return; if(!x) delete CP.M[id]; else CP.M[id]=cpTravail(x)?'*':(x.nom||''); try{ localStorage.setItem('sg3_coco_pres',JSON.stringify(CP.M)); }catch(_){} };
+const cpRestaurer=id=>{ if(CP.doc===id) return; CP.doc=id; const n=CP.M[id]; if(n==null) return; const L=cpL(DS.get('costcontrol',id)), i=n==='*'?L.findIndex(cpTravail):L.findIndex(x=>!cpTravail(x)&&!cpCache(x)&&(x.nom||'')===n); CCV.pres=i>=0?i:null; };
+{ const o1=ccOpen; ccOpen=function(id){ CP.doc=null; return o1.apply(this,arguments); }; }   /* à chaque ouverture : la présentation retenue pour ce contrôle des coûts */
+const cpChoisir=i=>{ const K=CCV.cur||{}, L=cpL(K.C); CCV.pres=i!=null&&L[i]?i:null; cpMemo(K.id,CCV.pres!=null?L[CCV.pres]:null); if(K.draw) K.draw(); else if(K.touch) K.touch(); };
+/* colonnes choisies dans « Personnalisé … » : présentation de travail créée ou mise à jour (les présentations enregistrées ne changent pas) */
+const cpSetCols=cols=>{ const K=CCV.cur||{}, C=K.C; if(!C) return; const P=C.presentations||(C.presentations={}), L=P.controle||(P.controle=[]), cur=K.pres?K.pres():null; let i=L.findIndex(cpTravail);
+  const x={nom:'Personnalisée',app:true,travail:true,colonnes:cols,options:i>=0?L[i].options||{}:cur&&!cur.base&&cur.options?cpClone(cur.options):{}};
+  if(i<0){ L.push(x); i=L.length-1; } else L[i]=Object.assign({},L[i],x);
+  CCV.pres=i; cpMemo(K.id,L[i]); };
+function cpAffichage(){ if(typeof CCV.affichage!=='function') return;
+  CCV.affichage('colonnes',null,{seul:'colonnes',titreDlg:'Présentation personnalisée · Contrôle du coût',setCols:cpSetCols,
+    note:'Le numéro CFC reste la première colonne. Pour garder ces colonnes sous un nom : Présentation ▸ Enregistrer la présentation …'}); }
+function cpEnregistrer(){ const K=CCV.cur||{}; if(!K.C||!K.pres) return; const cur=K.pres(), noms=cpL(K.C).filter(x=>!cpTravail(x)&&!cpCache(x)).map(x=>x.nom||'');
+  let n=noms.filter(x=>x!=='Standard').length+1; while(noms.includes('Présentation '+n)) n++;
+  const ids=['kag',...(cur.colonnes||[]).map(c=>c.id).filter(i=>i!=='kag'&&CC_COL[i])];
+  const inp=h('input',{class:'inp',value:!cur.base&&!cpTravail(cur)&&cur.nom&&cur.nom!=='Standard'?cur.nom:'Présentation '+n,style:{width:'100%',boxSizing:'border-box'}}), msg=h('div',{style:{fontSize:'12px',color:'#888',marginTop:'6px',minHeight:'16px'}});
+  const maj=()=>{ const v=inp.value.trim(); msg.textContent=!v?'Donnez un nom à la présentation.':v==='Standard'?'« Standard » est la présentation de base : choisissez un autre nom.':noms.includes(v)?'« '+v+' » existe déjà : elle sera remplacée.':''; return !!v&&v!=='Standard'; };
+  inp.oninput=maj; maj();
+  const body=h('div',{style:{width:'520px',maxWidth:'80vw'}},h('div',{style:{fontWeight:600,marginBottom:'6px'}},'Nom de la présentation'),inp,msg,
+    h('div',{style:{marginTop:'12px',fontSize:'12.5px',color:'#555'}},'Colonnes affichées ('+ids.length+') : '+ids.map(cpColT).join(', ')));
+  dialog({title:'Enregistrer la présentation · Contrôle du coût',body,buttons:[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:()=>{ if(!maj()){ inp.focus(); return false; }
+    const v=inp.value.trim(), K2=CCV.cur||{}, C=K2.C; if(!C||!K2.pres) return; const P=C.presentations||(C.presentations={}), L=P.controle||(P.controle=[]), c2=K2.pres(), tr=cpTravail(c2)?L.indexOf(c2):-1;
+    const x={nom:v,app:true,travail:false,colonnes:cpClone(c2.colonnes||[]).map(c=>Object.assign({idDelta:CH01A_IDD[c.id]},c)),options:cpClone(c2.options||{})};
+    let j=L.findIndex(y=>!cpTravail(y)&&!cpCache(y)&&(y.nom||'')===v);
+    if(j>=0) L[j]=Object.assign({},L[j],x); else { L.push(x); j=L.length-1; }
+    if(tr>=0&&tr!==j){ L.splice(tr,1); if(tr<j) j--; }   /* la présentation de travail devient la présentation enregistrée */
+    CCV.pres=j; cpMemo(K2.id,L[j]); if(K2.touch) K2.touch(); toast('Présentation « '+v+' » enregistrée.'); }}]});
+  setTimeout(()=>{ inp.focus(); inp.select(); },0); }
+function cpGerer(){ const K=CCV.cur||{}, C=K.C; if(!C) return; const M=cpL(C).filter(x=>!cpTravail(x)&&!cpCache(x)).map(x=>({x,nom:x.nom||'',sup:false})), box=h('div',{style:{width:'520px',maxWidth:'80vw'}});
+  const draw=()=>{ box.innerHTML=''; const V=M.filter(m=>!m.sup); if(!V.length){ box.append(h('div',{style:{color:'#888'}},'Aucune présentation enregistrée.')); return; }
+    V.forEach(m=>{ const fixe=m.x.nom==='Standard', inp=h('input',{class:'inp',value:m.nom,style:{flex:'1'},disabled:fixe||null,title:fixe?'Présentation « Standard » du document (ancien logiciel) : nom fixe':''}); inp.oninput=()=>{ m.nom=inp.value; };
+      box.append(h('div',{style:{display:'flex',gap:'8px',alignItems:'center',padding:'4px 0',borderBottom:'1px solid #e3e3e0'}},inp,h('span',{style:{fontSize:'12px',color:'#888',whiteSpace:'nowrap'}},(fixe?'du document · ':'')+(m.x.colonnes||[]).length+' colonnes'),
+        h('button',{type:'button',class:'btn',title:'Supprimer la présentation',onclick:()=>{ m.sup=true; draw(); }},'✕'))); }); };
+  draw();
+  dialog({title:'Présentations enregistrées · Contrôle du coût',body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const V=M.filter(m=>!m.sup), noms=V.map(m=>m.nom.trim());
+    if(noms.some(x=>!x)){ toast('Chaque présentation doit avoir un nom.',true); return false; } if(new Set(noms).size!==noms.length){ toast('Deux présentations portent le même nom.',true); return false; }
+    if(V.some(m=>m.nom.trim()==='Standard'&&m.x.nom!=='Standard')){ toast('« Standard » est la présentation de base : choisissez un autre nom.',true); return false; }
+    const K2=CCV.cur||{}; if(K2.C!==C){ toast('Le contrôle des coûts a changé entre-temps : recommencez.',true); return; }
+    const L=cpL(C), act=CCV.pres!=null?L[CCV.pres]:null, out=[];
+    L.forEach(x=>{ const m=M.find(y=>y.x===x); if(m&&m.sup) return; if(m) x.nom=m.nom.trim(); out.push(x); });
+    if(L.some(x=>x.favori)&&!out.some(x=>x.favori)){ const f=out.find(x=>!cpTravail(x)); if(f) f.favori=true; }   /* la présentation favorite (documents de l'ancien logiciel) supprimée : la première restante */
+    (C.presentations||(C.presentations={})).controle=out; CCV.pres=act&&out.includes(act)?out.indexOf(act):null; cpMemo(K2.id,CCV.pres!=null?out[CCV.pres]:null); if(K2.touch) K2.touch(); }}]}); }
+async function cpRecuperer(){ const K=CCV.cur||{}; if(!K.C) return; try{ await DS.need(['costcontrol','costcontroldocument']); }catch(_){}
+  const src=DS.all('costcontroldocument').filter(d=>d.ID!==K.id&&!d.ISMARKEDASDELETED&&(typeof sgProjetPermis!=='function'||sgProjetPermis(d.PROJECT_ID))).map(d=>{ const it=cpL(DS.get('costcontrol',d.ID)).filter(x=>!cpCache(x)&&(x.colonnes||[]).length);
+      const pr=DS.get('project',d.PROJECT_ID)||{}, propres=it.filter(x=>cpTravail(x)||x.nom!=='Standard').length; return {d,it,pr,propres,lib:[pr.NUMBER,pr.TITLE].filter(Boolean).join(' · ')+(d.VERSION?' — version '+d.VERSION:'')+' ('+it.map(x=>cpTravail(x)?'en cours':x.nom||'sans nom').join(', ')+')'}; }).filter(x=>x.it.length)
+    .sort((a,b)=>((b.propres>0)-(a.propres>0))||String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
+  if(!src.length){ dialog({title:'Récupérer des présentations',body:h('div',{style:{maxWidth:'460px'}},'Aucun autre projet n’a de présentation du contrôle du coût.')}); return; }
+  const sel=h('select',{class:'inp',style:{width:'100%'}}), liste=h('div',{style:{marginTop:'10px',maxHeight:'50vh',overflow:'auto'}}); let cases=[];
+  src.forEach((x,i)=>sel.append(h('option',{value:i},x.lib)));
+  const draw=()=>{ const x=src[+sel.value]; liste.innerHTML=''; cases=[];
+    x.it.forEach(y=>{ const cb=h('input',{type:'checkbox',checked:(cpTravail(y)||y.nom!=='Standard'||x.it.length===1)||null}), ids=(y.colonnes||[]).map(c=>c.id).filter(i=>CC_COL[i]); cases.push({cb,y});
+      liste.append(h('label',{style:{display:'grid',gridTemplateColumns:'18px minmax(0,1fr)',gap:'8px',alignItems:'start',padding:'5px 0',borderBottom:'1px solid #e3e3e0'}},cb,
+        h('span',{},h('b',{},cpTravail(y)?'Présentation en cours (non enregistrée)':cpNom(y)),h('span',{style:{color:'#888',fontSize:'12px',marginLeft:'8px'}},ids.length+' colonnes'),
+          h('span',{style:{display:'block',color:'#888',fontSize:'12px'}},ids.map(cpColT).join(', '))))); }); };
+  sel.onchange=draw; draw();
+  dialog({title:'Récupérer des présentations d’un autre projet',width:'620px',body:h('div',{},h('div',{style:{fontWeight:600,marginBottom:'6px'}},'Contrôle des coûts'),sel,liste),buttons:[{t:'Annuler'},{t:'Récupérer',pri:true,fn:()=>{
+    const x=src[+sel.value], num=x.pr.NUMBER||'reprise', K2=CCV.cur||{}, C=K2.C; if(!C) return; const L=(C.presentations||(C.presentations={})).controle||(C.presentations.controle=[]); let n=0;
+    const col=y=>(y.colonnes||[]).map(c=>c.id+(c.details?'+':'')).join(',');
+    cases.filter(c=>c.cb.checked).forEach(({y})=>{ let nom=cpTravail(y)?'Présentation '+num:y.nom==='Standard'||!y.nom?'Standard ('+num+')':y.nom;
+      const pris=v=>L.find(p=>!cpTravail(p)&&(p.nom||'')===v), same=pris(nom); if(same&&col(same)===col(y)) return;
+      if(same){ const b=nom+' ('+num+')'; let j=2; nom=b; while(pris(nom)) nom=b+' '+(j++); }
+      L.push({nom,app:true,travail:false,colonnes:cpClone(y.colonnes||[]).filter(c=>CC_COL[c.id]),options:cpClone(y.options||{})}); n++; });
+    if(!n){ toast('Aucune nouvelle présentation : elles existent déjà ou aucune n’est cochée.'); return; } if(K2.touch) K2.touch(); toast(n+(n>1?' présentations reprises.':' présentation reprise.')); }}]}); }
+/* menu (mot = menu du moteur : son entrée « Afficher les détails » est reprise) */
+const cpPresMenu=mot=>{ const K=CCV.cur||{}, cur=K.pres?K.pres():{base:true}, V=cpL(K.C).map((x,i)=>[x,i]).filter(([x])=>!cpCache(x)), enr=V.filter(([x])=>!cpTravail(x)), tr=V.find(([x])=>cpTravail(x)), ro=cpLecture();
+  const det=(mot||[]).find(x=>x&&x.t==='Afficher les détails');
+  return [{t:'Standard',chk:!!cur.base,fn:()=>cpChoisir(null)},...enr.map(([x,i])=>({t:cpNom(x),chk:!cur.base&&CCV.pres===i,fn:()=>cpChoisir(i)})),
+    ...(tr?[{t:'Personnalisée (non enregistrée)',chk:!cur.base&&CCV.pres===tr[1],fn:()=>cpChoisir(tr[1])}]:[]),'-',
+    {t:'Personnalisé …',dis:ro,fn:()=>cpAffichage()},{t:'Enregistrer la présentation …',dis:ro,fn:()=>cpEnregistrer()},...(enr.length?[{t:'Gérer les présentations …',dis:ro,fn:()=>cpGerer()}]:[]),
+    {t:'Récupérer d’un autre projet …',dis:ro,fn:()=>cpRecuperer()},'-',
+    {t:'Couleurs des écritures …',dis:ro,fn:()=>CCV.affichage('couleurs',null,{seul:'couleurs',titreDlg:'Couleurs des écritures · Contrôle du coût'})},...(det?[det]:[])]; };
 const DGV=(()=>{ try{ return JSON.parse(localStorage.getItem('sg3_coco_dgv'))||{}; }catch(_){ return {}; } })(), dgvSave=()=>{ try{ localStorage.setItem('sg3_coco_dgv',JSON.stringify(DGV)); }catch(_){} };
 let DGX=null;   /* tableau de l'onglet Devis général (contexte réduit du devis d'origine) */
 async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedocument','costestimatedpdoc','subproject']); }catch(_){}
@@ -427,7 +516,7 @@ function habillerEd(m,id){ cssC(); cssE();
   const mPres=bPres._sgB.menu, mFon=bFon._sgB.menu;
   const fon=t=>(mFon()||[]).filter(x=>x&&x.t&&t.test(x.t)).map(x=>Object.assign({},x,{fn:filtrer(x.fn)}));
   lbl(bNew,'Nouvelle écriture'); lbl(bPar,'Paramètres');
-  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
+  const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&CCV.cur&&CCV.cur.pres?cpPresMenu(mPres()):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
     const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
@@ -581,6 +670,6 @@ function habillerEd(m,id){ cssC(); cssE();
   const ouvertA=performance.now(); box.addEventListener('dblclick',e=>{ if(performance.now()-ouvertA<450){ e.stopPropagation(); e.preventDefault(); } },true);   /* le 2e clic d'un double-clic d'habitude sur la liste n'ouvre pas une écriture */
   ong.append(ongL,niv); box.append(hd,kp,ong,esub,bar2,dsub,body); m.replaceChildren(box); box._plein(ED.plein);   /* plein écran gardé d'un contrôle des coûts à l'autre pendant la séance */
   maj(); entete(); deco(); decoDocs(); }
-{ const e0=ccEditor; ccEditor=function(m,id){ e0.apply(this,arguments); try{ habillerEd(m,id); }catch(e){ console.error(e); } }; }
+{ const e0=ccEditor; ccEditor=function(m,id){ try{ cpRestaurer(id); }catch(e){ console.error(e); } e0.apply(this,arguments); try{ habillerEd(m,id); }catch(e){ console.error(e); } }; }
 Object.assign(SGCC,{COCO,totaux});
 })();

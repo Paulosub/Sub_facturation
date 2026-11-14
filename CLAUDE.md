@@ -2169,6 +2169,30 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`COLOR`) et au PDF « Contrôle des coûts » (`sg3_coco_docs.js`). SUBGestion 3 (`sg3_coco.js`) : la légende des couleurs de la barre (un clic ouvrait la palette sur l'élément,
   `CCV.affichage(tab, el)`) a été retirée le 14.11.2026 à la demande ; couleurs réglables par Présentation ▸ Affichage … ▸ Couleurs des écritures. Repli PDF `ch01aOvVal` : `fx` et `m` (HT / TVA) gérés, colonnes d'information et
   complémentaires vides. Copies d'avant : `DeltaSub_backup_20261111_avant_affichage_colonnes.html`, `subgestion3/_backup_20261111_avant_affichage_colonnes/`.
+  **Contrôle du coût : menu Présentation comme les listes, fenêtre des colonnes seules (14.11.2026, Paulo : « ajoute dans contrôle des coûts le menu comme dans
+  liste des écritures et la possibilité d'enregistrer dans présentation ; créer également la fenêtre pour la sélection des colonnes du tableau, uniquement pour le
+  contrôle du coût ; vérifie les colonnes possibles de Deltaproject et crée-les dans cette fenêtre »)** — `sg3_coco.js` (`cpPresMenu`, onglet Contrôle du coût
+  seulement) : Standard, présentations enregistrées, « Personnalisée (non enregistrée) », Personnalisé … (`cpAffichage` → `CCV.affichage('colonnes',null,{seul:
+  'colonnes',titreDlg,setCols:cpSetCols,note})` : fenêtre « Présentation personnalisée · Contrôle du coût », onglet Colonnes seul, catalogue complet), Enregistrer la
+  présentation … (`cpEnregistrer` : nom, même nom = remplacée, « Standard » refusé), Gérer les présentations … (`cpGerer` : renommer, supprimer ; « Standard » du
+  document : nom fixe), Récupérer d’un autre projet … (`cpRecuperer` : contrôles des coûts des projets permis, ceux qui ont des présentations propres d'abord),
+  puis Couleurs des écritures … (fenêtre des couleurs seule, `seul:'couleurs'`) et Afficher les détails. Présentations enregistrées = présentations du document
+  (`C.presentations.controle` : {nom, app:true, travail:false, colonnes, options}), celles de l'ancien logiciel comprises, donc proposées aussi par le PDF « Contrôle
+  des coûts » (Réglages ▸ Colonnes). Présentation de travail = entrée {travail:true} (« Personnalisée » ; une « Personnalisée » `app` d'avant compte comme telle) :
+  « Personnalisé … » la crée ou la met à jour à partir des colonnes affichées, sans jamais modifier une présentation enregistrée ; « Enregistrer » la transforme
+  en présentation nommée. Présentation affichée (`CCV.pres`, rang) retenue par poste et par contrôle des coûts (`localStorage` `sg3_coco_pres` : nom, « * » =
+  présentation de travail ; `cpRestaurer` avant `ccEditor`, `ccOpen` enveloppé) ; choisir une présentation n'écrit rien dans le document (`CCV.cur.draw`).
+  Entrées d'écriture grisées en lecture seule (`ch03dLecture`). Moteur (`DeltaSub.html`, v1 / v2 / v3 reconstruites) : `CCV.cur` = {C, p, doc, id, touch, pres,
+  draw} ; `CCV.affichage(tab, el, x)` et `ccAffichage(C,o)` avec `o.seul` ('colonnes' | 'couleurs'), `o.titreDlg`, `o.note` (colonnes seules : rien n'est écrit sans
+  changement) ; le menu du moteur seul (« Affichage … (colonnes et couleurs) ») reste, aussi dans les onglets Ordres de paiement et Arrêtés de compte.
+  **Colonnes vérifiées sur l'ancien logiciel le même jour** (`/Applications/DELTAproject.app` : `rsrc/deltaproject/costcontrol/data/strings/CostColumns.rtf`,
+  et les 182 réglages `display…` de `ColumnSetting.class` dans `lib/DELTAbauad.jar`) : le catalogue `CC_CAT` les couvrait sauf deux, ajoutées (177 colonnes) —
+  `desc` « Descriptif » (id 230 ; Subdivision ; `ccPosDesc` : descriptif de la position, sinon celui du devis général d'origine — `C.devisSourceId`, sinon
+  `SGCC.devisSource(C)` de SUBGestion 3 —, sur une ligne) et `finalPaymentStatus` « Statut de la garantie » (id 138 ; Garantie ; statut de l'arrêté de compte,
+  `ARR_ST`). Pas reprises : `internRef`, `contractComment`, `paymentComment` (réglages sans titre de colonne dans l'ancien logiciel), colonnes WIR et colonnes des
+  conditions (`cond…` : autres tableaux). Alias de l'ancien logiciel déjà couverts : genealPayment = generalPayment, workprocess = progress, paymentKind = payKind,
+  garantyNumber = finalPaymentNr, kv2MinusKv2 = kv2MinusKv1, honor… = honorar…. Copies d'avant : `DeltaSub_backup_20261114_0931_avant_presentation_controle.html`,
+  `subgestion3/_backup_20261114_0931_avant_presentation_controle/`, `SUBGestion3_backup_20261114_0931_avant_presentation_controle.html`.
   **Paiements sur contrat et hors contrat : deux couleurs (11.11.2026, Paulo : « ajoute une couleur pour les paiements sur contrat et hors contrat »)** : `CC_DEF_COUL.payh`
   (hors contrat ; tant qu'elle n'est pas choisie : la couleur des paiements), `coulDe(d)` dans l'éditeur (écriture `pay` sans `contratId` → `payh`), libellés « Paiements sur
   contrat » / « Paiements hors contrat » dans la fenêtre des couleurs, PDF : `pk` des lignes d'écriture du travail du moteur (`detRow`) lu par `sg3_coco_docs.js`.

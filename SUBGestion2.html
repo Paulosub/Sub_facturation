@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 11.11.2026 17:42 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 14.11.2026 09:35 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3801,7 +3801,8 @@ const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[
   return [
   ['Subdivision',[D('kag','CFC','Numéro CFC',{sp:'cfc'}),D('kagText','Désignation','Désignation CFC',{sp:'lbl'}),D('entrepreneur','Entreprise','Entreprise',{sp:'ent'}),
     D('entrepreneurNr','Numéro','Numéro d’adresse de l’entreprise',{info:'entNr'}),D('kagTextAndEntrepreneur','Entreprise et CFC','Entreprise et texte CFC',{info:'lblEnt',w:200}),
-    D('og','OUV','Ouvrage',{info:'og'}),D('lg','LOC','Localisation',{info:'lg'}),D('vergabeNr','N°','N° d’adjudication',{info:'lotNr',w:70}),D('vergabeText','Lot d’adjudication','Lot d’adjudication',{info:'lotTx',w:170})]],
+    D('og','OUV','Ouvrage',{info:'og'}),D('lg','LOC','Localisation',{info:'lg'}),D('vergabeNr','N°','N° d’adjudication',{info:'lotNr',w:70}),D('vergabeText','Lot d’adjudication','Lot d’adjudication',{info:'lotTx',w:170}),
+    D('desc','Descriptif','Descriptif de la position (texte du devis général)',{info:'posDesc',w:260})]],   /* desc, finalPaymentStatus : colonnes de l'ancien logiciel absentes du catalogue jusqu'au 14.11.2026 (vérification sur ColumnSetting / CostColumns) */
   ['Devis général',[D('kvIndex','Indice de base','Indice de base du devis général',{nd:1}),
     ...T(['kvValue','kvVat','kvTot'],['DG HT','TVA DG','DG TTC'],['Devis général HT','TVA du devis général','Devis général TTC'],{f:'dg'}),
     D('kvTotInclFac','DG indexé','Devis général indexé (DG TTC × facteur du DG)',{fx:A=>A.V('dg')*A.ctx.fac}),D('kvProcent','DG %','Évaluation du devis général en pourcents',{pct:'dg'})]],
@@ -3853,7 +3854,7 @@ const CC_CAT=(()=>{ const T=(ids,noms,longs,base,det)=>ids.map((id,i)=>[id,noms[
     D('paymentDesc','Description du paiement','Description du paiement',{info:'payDesc',w:200}),D('entrepreneurAccount','Compte d’entreprise','Compte de l’entreprise (IBAN)',{info:'payBank',w:170}),
     D('buildOwnerAccount','Compte du MO','Compte du maître d’ouvrage',{info:'payMO',w:150}),D('beneficiary','Bénéficiaire','Bénéficiaire',{info:'payBenef',w:170})]],
   ['Garantie',[D('garantyKind','Genre de garantie','Genre de garantie (arrêté de compte)',{info:'garGenre',w:110}),D('garantyRed','Montant de garantie','Montant de garantie',{info:'garMt',num:1}),
-    D('garantyBegin','Début de la garantie','Début de la garantie',{info:'garDebut',w:96}),D('garantyEnd','Échéance de la garantie','Échéance de la garantie',{info:'garFin',w:96}),D('finalPaymentNr','N° de la garantie','Numéro de l’arrêté de compte',{info:'garNr',w:80})]],
+    D('garantyBegin','Début de la garantie','Début de la garantie',{info:'garDebut',w:96}),D('garantyEnd','Échéance de la garantie','Échéance de la garantie',{info:'garFin',w:96}),D('finalPaymentNr','N° de la garantie','Numéro de l’arrêté de compte',{info:'garNr',w:80}),D('finalPaymentStatus','Statut de la garantie','Statut de la garantie (arrêté de compte)',{info:'garSt',w:110})]],
   ['Différences',[...['ht','tva','ttc'].map((m,i)=>D(['contractMinusPaymentExVat','contractMinusPaymentVat','contractMinusPayment'][i],['Contrat − paiements HT','TVA contrat − paiements','Contrat − paiements TTC'][i],['(Contrats + avenants) − paiements HT','TVA de (contrats + avenants) − paiements','(Contrats + avenants) − paiements TTC'][i],{fx:A=>A.V('contratsAvenants',m)-A.V('paiements',m),e:1})),
     ...['ht','tva','ttc'].map((m,i)=>D(['contractMinusAccordPaymentExVat','contractMinusAccordPaymentVat','contractMinusAccordPayment'][i],['Contrat − pmts sur contrat HT','TVA contrat − pmts sur contrat','Contrat − pmts sur contrat TTC'][i],['(Contrats + avenants) − paiements sur contrat HT','TVA de (contrats + avenants) − paiements sur contrat','(Contrats + avenants) − paiements sur contrat TTC'][i],{fx:A=>A.V('contratsAvenants',m)-A.V('paiementsContrat',m),e:1})),
     ...['ht','tva','ttc'].map((m,i)=>D(['contractMinusAccordFinalPaymentExVat','contractMinusAccordFinalPaymentVat','contractMinusAccordFinalPayment'][i],['Plus-/moins-values HT','TVA plus-/moins-values','Plus-/moins-values TTC'][i],['(Contrats + avenants) − paiements sur contrat, après le dernier paiement HT','TVA des plus-/moins-values','(Contrats + avenants) − paiements sur contrat, après le dernier paiement TTC'][i],{fx:A=>A.X('payFin')?A.V('contratsAvenants',m)-A.V('paiementsContrat',m):0,e:1})),
@@ -3942,7 +3943,17 @@ function ccInfo(C,r,k){ const d=r.det, ref=d&&d.ref, K=d&&d.k;
     case 'garGenre': { const g=gar(); return g?({banque:'Banque',assurance:'Assurance',comptant:'Comptant',sansGarantie:'Sans garantie'})[g.genre]||'':''; }
     case 'garMt': { const g=gar(); return g&&+g.montant?num(+g.montant):''; } case 'garDebut': { const g=gar(); return g?dfr(g.debut):''; } case 'garFin': { const g=gar(); return g?dfr(g.fin):''; }
     case 'garNr': { const a=arr(); return a?String(a.numero||''):''; }
+    case 'garSt': { const a=arr(); return a?ARR_ST[a.statut]||'':''; }
+    case 'posDesc': return r.sub||r.tot||d?'':ccPosDesc(C,r.cfc);
   } return ''; }
+/* descriptif d'une position : celui de la position du contrôle des coûts, sinon celui du devis général d'origine (C.devisSourceId, ou le devis trouvé par SUBGestion 3) ; sur une ligne */
+const CC_DESC=new WeakMap();
+function ccPosDesc(C,cfc){ const un=t=>String(t||'').replace(/\s*\n\s*/g,' ').trim(), k=String(cfc);
+  const p=(C.positions||[]).find(x=>String(x.cfc)===k), t=un(p&&(p.descriptif||p.description)); if(t) return t;
+  let sid=C.devisSourceId; try{ if(sid==null&&window.SGCC&&typeof SGCC.devisSource==='function') sid=SGCC.devisSource(C); }catch(_){}
+  const E=sid!=null&&typeof DS!=='undefined'?DS.get('costestimate',sid):null; if(!E||!Array.isArray(E.positions)) return '';
+  let M=CC_DESC.get(E); if(!M){ M=new Map(); E.positions.forEach(x=>{ const d=un(typeof ch02aDesc==='function'?ch02aDesc(x):x.descriptif); if(d) M.set(String(x.cfc),d); }); CC_DESC.set(E,M); }
+  return M.get(k)||''; }
 /* palette de 256 couleurs : 16 gris, puis 15 teintes (tous les 24°) en 16 clartés */
 const CC_PALETTE=(()=>{ const hx=n=>Math.round(n).toString(16).padStart(2,'0'), out=[];
   const hsl=(hh,s,l)=>{ s/=100; l/=100; const k=n=>(n+hh/30)%12, a=s*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return '#'+hx(f(0)*255)+hx(f(8)*255)+hx(f(4)*255); };
@@ -4006,7 +4017,7 @@ function ccAffichage(C,o){
   const P=LI?{colonnes:(LI.cols||[]).map(id=>({id}))}:o.pres(), cols=(P.colonnes||[]).map(c=>Object.assign({},c)), cou=ccCouleurs(C), eqs=(C.parametres||{}).equations||[];
   if(PIN){ const k=cols.findIndex(x=>x.id===PIN); if(k<0) cols.unshift({id:'kag',idDelta:0,details:false}); else if(k>0) cols.unshift(cols.splice(k,1)[0]); }   /* CFC : toujours la première colonne, ni déplacée ni retirée */
   const cols0=JSON.stringify(cols);
-  delete cou.cpp; let tab=o.tab==='couleurs'?'couleurs':'colonnes', elC=o.el&&cou[o.el]?o.el:'mut';
+  delete cou.cpp; let tab=o.seul||(o.tab==='couleurs'?'couleurs':'colonnes'), elC=o.el&&cou[o.el]?o.el:'mut';   /* o.seul (14.11.2026) : un seul onglet — 'colonnes' (présentation personnalisée du contrôle du coût) ou 'couleurs' ; o.titreDlg, o.note */
   const NOMS={mut:'Mutations',ctr:'Contrats et avenants',pay:'Paiements sur contrat',payh:'Paiements hors contrat',prov:'Provisions, coût probable'};
   const body=h('div',{class:'cca'}), tabs=h('div',{class:'cca-tabs'}), pane=h('div');
   const titreDe=id=>{ const c=DEF(id); if(!c) return id; if(c.eq!=null){ const e=(eqs[c.eq]||'').trim(); return c.t+(e?' : '+e:' (non définie)'); } return c.l||c.t; };
@@ -4039,7 +4050,7 @@ function ccAffichage(C,o){
         if(on){ const k=to>i?to-1:to; if(k!==i) cols.splice(k,0,cols.splice(i,1)[0]); drawS(); } };
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',fin); document.addEventListener('pointercancel',fin); });
     S.append(h('h4',{},'Colonnes affichées, dans l’ordre'),ls,h('div',{class:'cca-acts'},h('button',{type:'button',class:'btn',onclick:()=>{ cols.splice(0,cols.length,...(LI?LI.std.map(id=>({id})):CC_PRES_DEF.Standard.map(id=>({id,idDelta:CH01A_IDD[id],details:!!CC_COL[id].det})))); drawL(); drawS(); }},'Colonnes Standard')),
-      h('div',{class:'cca-note'},LI?'Colonnes de la liste « '+LI.titre+' », enregistrées dans ce contrôle des coûts.':'Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.'));
+      h('div',{class:'cca-note'},LI?'Colonnes de la liste « '+LI.titre+' », enregistrées dans ce contrôle des coûts.':o.note||('Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.')));
     pane.append(h('div',{class:'cca-col'},h('div',{},qi,L),S)); drawL(); drawS(); };
   const drawCou=()=>{ pane.innerHTML=''; const els=h('div'), pal=h('div',{class:'cca-pal'}), ap=h('div',{class:'cca-ap'});
     const maj=()=>{ els.innerHTML=''; Object.keys(NOMS).forEach(k=>{ const def=cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase();
@@ -4052,11 +4063,12 @@ function ccAffichage(C,o){
     pane.append(h('div',{class:'cca-cou'},h('div',{},h('div',{class:'cca-note',style:{marginTop:'0',marginBottom:'8px'}},'Choisissez un élément, puis sa couleur dans la palette. Les couleurs valent pour le tableau du contrôle du coût et ses documents PDF.'),els),
       h('div',{},pal,h('div',{class:'cca-note'},'Aperçu dans le tableau'),ap))); maj(); };
   if(LI) tab='colonnes';
-  const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],...(LI?[]:[['couleurs','Couleurs des écritures']])].forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
+  const drawT=()=>{ tabs.innerHTML=''; [['colonnes','Colonnes'],...(LI?[]:[['couleurs','Couleurs des écritures']])].filter(([k])=>!o.seul||LI||k===o.seul).forEach(([k,t])=>tabs.append(h('button',{type:'button',class:k===tab?'on':'',onclick:()=>{ tab=k; drawT(); }},t))); tab==='colonnes'?drawCol():drawCou(); };
   body.append(tabs,pane); drawT();
-  dialog({title:LI?(LI.titreDlg||'Affichage · '+LI.titre):'Affichage',width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
+  dialog({title:LI?(LI.titreDlg||'Affichage · '+LI.titre):(o.titreDlg||'Affichage'),width:'1100px',body,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{
     if(LI){ if(JSON.stringify(cols)!==cols0){ LI.set(cols.map(c=>c.id)); o.touch(); } return; }
-    if(JSON.stringify(cols)!==cols0) o.setCols(cols);
+    if(o.seul==='colonnes'){ if(JSON.stringify(cols)!==cols0){ o.setCols(cols); o.touch(); } return; }   /* colonnes seules : rien n'est écrit sans changement */
+    if(o.seul!=='couleurs'&&JSON.stringify(cols)!==cols0) o.setCols(cols);
     const pc=C.parametres||(C.parametres={}); if(Object.keys(CC_DEF_COUL).every(k=>cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase())) delete pc.couleursDetails; else pc.couleursDetails=Object.assign({},cou);
     o.touch(); try{ document.dispatchEvent(new CustomEvent('cc-affichage')); }catch(_){} }}]});
 }
@@ -4203,8 +4215,8 @@ function ccEditor(m,id){
   const COLOR=ccCouleurs(C), coulDe=d=>d&&d.k==='pay'&&!(d.ref&&d.ref.contratId)?COLOR.payh:COLOR[d&&d.k];   /* paiement hors contrat : sa couleur */   /* couleurs des écritures : celles du document (Affichage ▸ Couleurs des écritures, 11.11.2026), sinon celles de l'ancien logiciel */
   /* Affichage (colonnes du catalogue complet, couleurs) : « Standard » n'est jamais modifiée — une présentation « Personnalisée » du document est créée ou mise à jour */
   const setCols=cols=>{ const L=C.presentations.controle||(C.presentations.controle=[]), P=pres(); if(P.base){ let i=L.findIndex(x=>x.nom==='Personnalisée'); if(i<0){ L.push({nom:'Personnalisée',app:true,colonnes:cols,options:{}}); i=L.length-1; } else L[i]=Object.assign({},L[i],{app:true,colonnes:cols}); CCV.pres=i; } else { P.colonnes=cols; if(P.nom==='Personnalisée') P.app=true; } };
-  CCV.cur={C,p,doc,id,touch}; CCV.affichage=(tab,el)=>ccAffichage(C,{pres,setCols,touch,tab,el});
-  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C,p,doc,id,touch}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
+  CCV.cur={C,p,doc,id,touch,pres,draw:()=>draw()}; CCV.affichage=(tab,el,x)=>ccAffichage(C,Object.assign({pres,setCols,touch,tab,el},x||{}));   /* x (14.11.2026) : options de la fenêtre (seul, titreDlg, note, setCols) */
+  const draw=()=>{ pane.innerHTML=''; for(const k in G) delete G[k]; const R=ccCalc(C), sec=CCV.sec; Object.assign(COLOR,ccCouleurs(C)); CCV.cur={C,p,doc,id,touch,pres,draw:()=>draw()}; if(CCV.docs){ ch01aDocsDraw(pane,{C,p,doc,id,sec,touch}); return; }
     if(sec==='DOCUMENTS'){ ccDocsDraw(pane,{C,p,doc,id,touch},G); return; }
     if(sec==='CONTRÔLE DU COÛT'||sec==='DEVIS GENERAL'){
       const ids=(sec==='DEVIS GENERAL'?['kag','kagText','kvTot','kvProcent']:pres().colonnes.map(c=>c.id)).filter(i=>CC_COL[i]).sort((a,b)=>(b==='kag')-(a==='kag'));   /* CFC toujours la première colonne */

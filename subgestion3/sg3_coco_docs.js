@@ -32,7 +32,7 @@ const LISTES_DG=new Set(['costControlAwardList','costControlMutationsList','cost
 /* n° de CFC toujours imprimé dans les listes des mutations et des adjudications (11.11.2026), même si la présentation favorite n'a pas la colonne CFC (n° 0),
    comme la colonne CFC toujours première du tableau du contrôle du coût */
 if(typeof ch01bIds==='function'){ const i0=ch01bIds; ch01bIds=function(C,cle){ const L=i0.apply(this,arguments); return Array.isArray(L)&&(cle==='mutations'||cle==='adjudications')&&!L.includes(0)?[0,...L]:L; }; }
-const LISTES=new Set(['costControlEntrepreneurList','costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
+const LISTES=new Set(['costControlFinalPaymentTable','costControlPaymentOrderTable','costControlEntrepreneurList','costControlAwardList','costControlMutationsList','costControlPaymentList','costControlEntrepreneurSummary','costControlGuaranteeList']);
 const genre=o=>{ const t=sv(o&&o.type); return t==='costControlOverview'?'overview':t==='costControlEstimate'?'estimate':LISTES.has(t)?'liste':''; };
 const LIMB={paysage:595.276-85.9,portrait:841.89-89.245};   /* bas de l'encre du logo (comme le devis général) */
 
@@ -93,8 +93,9 @@ const paginer=(rows,cols,cap,titre,digit,o2)=>{ const P=[]; let i=0; o2=o2||{}; 
 const ABREV={'Contrats + avenants':'Contrats + av.','Coût probable':'Coût prob.','Renchérissement':'Renchériss.','Etat du coût':'État du coût','DG rév.':'DG rév.','Devis général':'DG',
   'Contrats moins paiements':'Contr. − paiem.','DG rév. moins paiements':'DG rév. − paiem.','Bénéfice d’adjudication':'Bénéf. adjud.','Provision':'Provisions'};
 const ABREV2={'Contrats + av.':'Contr. + av.','État du coût':'État coût','Coût prob.':'Coût prob.','Paiements':'Paiem.','Variations':'Variat.','Modifications':'Modif.','Transferts':'Transf.','Mutations':'Mutat.'};   /* colonnes étroites (colonne Entreprise) */
+const ABREV3={'Contr. + av.':'Ctr.+av.','État coût':'État','Coût prob.':'C. prob.','Provisions':'Prov.','Provision':'Prov.','Paiem.':'Paiem.','DG rév.':'DG rév.','Renchériss.':'Rench.'};   /* portrait à 6 colonnes et plus (14.11.2026) */
 const titresAjustes=(T,wd,M)=>{ const ttc=T.length>0&&T.every(t=>/\sTTC$/.test(sv(t).trim())), out=T.map(t=>{ let x=sv(t).trim(); if(ttc) x=x.replace(/\s+TTC$/,'');
-    if(M.larg(x,true)>wd&&ABREV[x]) x=ABREV[x]; if(M.larg(x,true)>wd&&ABREV2[x]) x=ABREV2[x]; return x; }); return {T:out,ttc}; };
+    if(M.larg(x,true)>wd&&ABREV[x]) x=ABREV[x]; if(M.larg(x,true)>wd&&ABREV2[x]) x=ABREV2[x]; if(M.larg(x,true)>wd&&ABREV3[x]) x=ABREV3[x]; return x; }); return {T:out,ttc}; };
 const recol=t=>sv(t).replace(/(\p{Ll})- (?!(?:et|ou|à)\s)(\p{Ll})/gu,'$1$2');   /* sauf « pré- et post-… » */   /* mots coupés en fin de ligne dans les données de l'ancien logiciel */
 const num=t=>{ const x=sv(t).replace(/[’'\s ()+]/g,'').replace('−','-'); return x&&isFinite(+x)?+x:null; };
 const couleur=t=>{ const v=num(t); return v==null?null:v>0.005?'rouge':v<-0.005?'vert':null; };
@@ -153,7 +154,8 @@ const bandeDe=(rec,nom)=>{ try{ return ch01aBands((rec&&rec.doc&&rec.doc.report)
 /* valeurs par défaut : celles de la présentation choisie (sinon la favorite) et des propriétés du modèle (relecture du 10.11.2026) */
 const ovEtat=(o,rec)=>{ const C=o.E.C||{}, op=optsDe(o), P=presDe(C,op), F=favDe(C), Pr=P||F, fo=(Pr&&Pr.options)||{};
   return {op,C,P,niv:op.niv||(fo.displayOnlyThreeDigitPos?'3':'tout'),ent:op.ent!==false,ouv:op.ouv!=null?!!op.ouv:ch01aProp(bandeDe(rec,'costcontrolOverviewSummaryTable'),1,false),
-    centres:false,recap2:op.recap2===true,   /* page « Centres de coût » retirée (Paulo, 10.11.2026 : « supprimer ») ; code gardé dans ovOctets */docu:op.doc!==false,det:op.det!==false,dk:k=>op['det_'+k]!=null?!!op['det_'+k]:detDefaut(Pr,k),
+    centres:false,recap2:op.recap2===true,   /* page « Centres de coût » retirée (Paulo, 10.11.2026 : « supprimer ») ; code gardé dans ovOctets */docu:op.doc!==false,det:op.det!==false,dk:k=>op['det_'+k]!=null?!!op['det_'+k]:detDefaut(P,k),   /* sans présentation choisie (Standard) : toutes les écritures, comme le Standard de l'écran (14.11.2026) */
+    vides:op.vides===true,desc:op.desc===true,sansDec:op.sansDec===true,arr:[10,100,1000].includes(+op.arr)?+op.arr:0,chif:op.chif===true,   /* réglages du devis général repris (Paulo, 14.11.2026 : « avec les mêmes options ») */
     mutDate:op.mutDate!=null?!!op.mutDate:ch01aProp(bandeDe(rec,'costcontrolOverviewTable'),0,true),dateFacture:op.dateFacture!=null?!!op.dateFacture:!!fo.invoiceNumberInsteadOfPayNumber,
     dernier:op.dernier!=null?!!op.dernier:!!fo.markFinalPays,marque:fo.finalPayment!=null&&sv(fo.finalPayment).trim()?sv(fo.finalPayment).trim():'+',format:op.format==='portrait'?'portrait':'paysage'}; };
 async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectmember','contactowner','setting']).catch(()=>{});
@@ -162,14 +164,15 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
   /* colonnes du PDF « Standard » = celles de l'écran + « Provision TTC » après « Contrats + avenants » (Paulo, 10.11.2026, exemple 23COL du 04.06.2025 : « ajoute les
      colonnes dans le pdf contrôle du coûts ») */
   const std=PDF_STD().map(id=>({id,idDelta:CH01A_IDD[id],details:!!(CC_COL[id]&&CC_COL[id].det)}));
-  const colonnes=(S.P?S.P.colonnes||[]:std).map(c=>{ const x=Object.assign({},c), k=CC_COL[c.id]&&CC_COL[c.id].det; if(k){ const kk=k==='cpp'?'prov':k; x.details=S.det&&S.dk(kk); } return x; });
-  const options=Object.assign({},fo,S.P?S.P.options||{}:{},{markFinalPays:S.dernier,invoiceNumberInsteadOfPayNumber:S.dateFacture,displayOnlyThreeDigitPos:false});
+  /* colonnes de texte du catalogue (n° du contrat, descriptif, statut…) et colonnes sans données : pas imprimées (le descriptif a son réglage, sous la position) */
+  const colonnes=(S.P?S.P.colonnes||[]:std).filter(c=>!(CC_COL[c.id]&&(CC_COL[c.id].info||CC_COL[c.id].nd))).map(c=>{ const x=Object.assign({},c), k=CC_COL[c.id]&&CC_COL[c.id].det; if(k){ const kk=k==='cpp'?'prov':k; x.details=S.det&&S.dk(kk); } return x; });
+  const options=Object.assign({},fo,S.P?S.P.options||{}:{},{markFinalPays:S.dernier,invoiceNumberInsteadOfPayNumber:S.dateFacture,displayOnlyThreeDigitPos:false,sgPosVides:S.vides});
   const C2=Object.assign({},C,{presentations:Object.assign({},C.presentations||{},{controle:[{nom:S.P?S.P.nom:'Standard',favori:true,colonnes,options}]}),titresColonnes:S.P?C.titresColonnes||{}:{}});
   const rep=ch01aPrep(rec.doc.report); ch01aBands(rep,'costcontrolOverviewSummaryTable').forEach(b=>{ setProp(b,0,'displayTwoDigitPositions'); setProp(b,1,S.ouv); });
   ch01aBands(rep,'costcontrolOverviewTable').forEach(b=>setProp(b,0,S.mutDate));
   const E2=Object.assign({},o.E,{C:C2}), J=ch01aOverviewJob(E2,rep), flex=ch01aFlex(C2,'controle'), T=J.tables||{};
   const titres=(T.costcontrolOverviewTable&&T.costcontrolOverviewTable.flex)||flex.map(x=>x.t), nv=flex.length;
-  const ori=S.format==='portrait'&&nv<=5?'portrait':'paysage', G=largeurs(ori,nv,nv>8?52:62);
+  const ori=S.format==='portrait'?'portrait':'paysage', G=largeurs(ori,nv,nv>8?52:62);   /* portrait toujours possible (14.11.2026) : au-delà de 5 colonnes, montants en corps réduit */
   /* colonne Entreprise (exemple 23COL) : en paysage, si la place le permet (désignation ≥ 104 pt, entreprise ≥ 90 pt) ; sinon l'entreprise passe dans la désignation */
   let aEnt=S.ent&&ori==='paysage', wv=G.wv, dw=G.tw, ew=0;
   if(aEnt){ const base=G.W-DG_CFC; wv=Math.max(40,Math.min(62,(base-230)/nv)); const reste=base-nv*wv; if(reste<190) aEnt=false; else { ew=Math.max(84,reste*0.43); dw=reste-ew; } }   /* colonne Entreprise réduite au profit de la désignation (Paulo, 10.11.2026 : « réduire la largeur de la colonne entreprise ») */   /* entreprise et écritures sur une ligne le plus souvent (montants en corps à peine réduit si besoin) */
@@ -181,7 +184,12 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
   const iEtat=flex.map((x,i)=>CC_COL[x.id]&&CC_COL[x.id].f==='etatCout'?i:-1).filter(i=>i>=0);
   const kindDe=f=>{ const i=(f||[]).findIndex(v=>sv(v).trim()); const cc=i>=0&&flex[i]?CC_COL[flex[i].id]:null; return cc&&cc.det?cc.det:''; };
   const lg=c=>{ const s=sv(c).trim(); return !s?0:(typeof cfcLevel==='function'?cfcLevel(s):s.length); };
-  const fabrique=avecEnt=>(c0,txt,f,s,ent)=>{ const j0=avecEnt?3:2, n=[c0,txt].concat(avecEnt?[sv(ent)]:[],(f||[]).map(sv)), r={c:n,s};
+  /* « Masquer les décimales » et « Arrondir à » (réglages du devis général) : chaque montant imprimé est arrondi pour lui-même (au franc, à 10, 100 ou 1000) ; marque du
+     dernier paiement gardée devant le montant ; pourcentages inchangés */
+  const pas=S.arr||1, rond=S.sansDec||S.arr>0, estPct=flex.map(x=>!!(CC_COL[x.id]&&CC_COL[x.id].pct));
+  const mt=(t,i)=>{ const x=sv(t); if(!rond||estPct[i]||!x.trim()) return x; const m=/^([^\d\-−(]*)(\(?[\-−]?\s*[\d’'\u00a0 ]*\d(?:\.\d+)?\)?)$/.exec(x.trim()); if(!m) return x;
+    const v=num(m[2]); if(v==null) return x; const r=Math.round(v/pas)*pas; return m[1]+window.num(r===0?0:r,0); };
+  const fabrique=avecEnt=>(c0,txt,f,s,ent)=>{ const j0=avecEnt?3:2, n=[c0,txt].concat(avecEnt?[sv(ent)]:[],(f||[]).map(mt)), r={c:n,s};
     if(s==='W'){ r.cf={}; n.forEach((x,j)=>{ if(j>=j0&&sv(x).trim()) r.cf[j]='r'; }); }
     if(s!=='T'&&s!=='D'&&iEtat.length){ const cc={}; iEtat.forEach(i=>{ const k=couleur(n[i+j0]); if(k) cc[i+j0]=k; }); if(Object.keys(cc).length) r.cc=cc; } return r; };
   const ligneR=fabrique(false), ligneD=fabrique(aEnt), j0D=aEnt?3:2;
@@ -197,9 +205,11 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
   const ecriture=(r,k)=>{ const enEnt=aEnt&&(k==='ctr'||k==='pay'), txt=sv((r.c||[])[2]).replace(/^\s*[^\p{L}\p{N}(«"'’]+\s*/u,'');
     const x=enEnt?ligneD('','',r.f,'D',txt):ligneD('',txt,r.f,'D',''), col=(typeof ccCouleurs==='function'?ccCouleurs(C):COUL_ECR)[k==='pay'&&r.pk==='payh'?'payh':k]||null, jt=enEnt?2:1; x.ital=1; x.filet=1; x.debR=1;   /* écriture : déborde sur les montants vides à sa droite plutôt que de passer à la ligne (colonne Entreprise étroite) */
     if(col){ x.cc={}; x.c.forEach((v,j)=>{ if(j===jt||(j>=j0D&&sv(v).trim())) x.cc[j]=col; }); } return x; };
+  /* « Descriptif » (réglage du devis général) : descriptif de la position sous sa ligne, en italique gris (style X), dans les colonnes de texte */
+  const descDe=c0=>{ if(!S.desc||typeof ccPosDesc!=='function') return []; let t=''; try{ t=sv(ccPosDesc(C,c0,true)); }catch(_){} return t.trim()?[ligneD('',recol(t),[],'X','')]:[]; };
   const vider=()=>{ if(!blk) return; const G2=blk.groupes;
     if(aEnt&&G2.length===1&&G2[0].row){ blk.pos.c[2]=G2[0].row.c[2]; G2[0].row=null; }   /* une seule entreprise : sur la ligne de la position (exemple 23COL) */
-    ov.push(blk.pos,...blk.libres); G2.forEach(g=>{ if(g.row) ov.push(g.row); ov.push(...g.det); }); blk=null; };
+    ov.push(blk.pos,...descDe(sv(blk.pos.c[0]).trim()),...blk.libres); G2.forEach(g=>{ if(g.row) ov.push(g.row); ov.push(...g.det); }); blk=null; };
   ((T.costcontrolOverviewTable||{}).rows||[]).forEach(r=>{ const c=r.c||[];
     if(r.st==='ct'){ vider(); ov.push(ligneD('','Total',r.f,'T','')); return; }
     const c0=sv(c[0]).trim();
@@ -217,7 +227,12 @@ async function ovOctets(o,rec){ await DS.need(['subproject','contact','projectme
     const rc=cen.map(r=>{ const c=(r.c||[]).map(sv), x={c:['',c[0],c[1],c[2],c[3]],s:'S'}; if(/^etat du co[uû]t/i.test(c[0])){ const k=couleur(c[3]); if(k) x.cc={2:k,3:k,4:k}; } return x; });
     if(rc.length) pages.push(...paginer(etaler(rc,colsC,M),colsC,G.cap,'Centres de coût',0,{})); }
   const RT=TA.ttc?'Récapitulatif · montants TTC':'Récapitulatif';   /* titres sans « TTC » : la mention reste sur les récapitulatifs */
-  pages.push(...paginer(etaler(recap(1),colsR,M),colsR,G.cap,'Récapitulatif',0,{recap:RT,limb:LIMB[ori]}));
+  /* « Volume SIA 416 et prix au m³ » (réglage du devis général) : chiffres clés au-dessus du récapitulatif à 1 chiffre — volume bâti du module Surfaces et volumes,
+     coût probable TTC au m³ des CFC 2 et des CFC 1 à 9 (calcul du contrôle des coûts, pas les montants arrondis) ; la place est gardée au-dessus de la bande */
+  const CHIF=(()=>{ if(!S.chif) return null; const vb=typeof sgVolumeSIA416==='function'?+sgVolumeSIA416(o.E.p)||0:0; if(!(vb>0)) return null; const R0=ccCalc(C), cp=c=>+((R0.tot.get(c)||{}).coutProbable)||0;
+    const mil=(n,d)=>window.num(n,d), s19=['1','2','3','4','5','6','7','8','9'].reduce((a,c)=>a+cp(c),0), Lc=[['VB','Volume SIA 416',mil(vb,vb%1?1:0),'m³']];
+    if(cp('2')) Lc.push(['2','Coût probable au m³ SIA 416',mil(cp('2')/vb,2),'CHF/m³']); if(s19) Lc.push(['1–9','Coût probable au m³ SIA 416',mil(s19/vb,2),'CHF/m³']); return Lc; })();
+  { const P1=paginer(etaler(recap(1),colsR,M),colsR,CHIF?Math.max(4,G.cap-4):G.cap,'Récapitulatif',0,{recap:RT,limb:LIMB[ori]}); if(CHIF&&P1[0]&&(+P1[0].dy||0)>=52) P1[0].chiffres=CHIF; pages.push(...P1); }
   if(S.recap2) pages.push(...paginer(etaler(recap(2),colsR,M),colsR,G.cap,'Récapitulatif',1,{recap:RT,limb:LIMB[ori]}));
   if(S.docu) pages.push(...paginer(etaler(ov,cols,M),cols,G.cap,sv(rec.doc.nom||'Contrôle des coûts'),2,{sauts:sautsActifs(o),carte:true}));
   return sortie(o,rec,pages,ori,'overview'); }
@@ -338,19 +353,29 @@ const it=(t,chk,fn,x)=>Object.assign({t,chk:!!chk,fn,asy:true},x||{});
 const opt=(o,k,v)=>fin=>{ optsSet(o,{[k]:v},ok=>{ if(!ok) fin(false); }); };   /* dessin tout de suite (réglage gardé en mémoire) ; nouveau dessin seulement si l'enregistrement est refusé */
 function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,o.dossier)||{};
   const format=(def)=>{ const f=optsDe(o).format||def; L.push(it('Format : Paysage',f==='paysage',opt(o,'format','paysage'),{grp:'Format'}),it('Format : Portrait',f==='portrait',opt(o,'format','portrait'),{grp:'Format'})); };
-  const gardeIt=()=>L.push(it('Page de garde',optsDe(o).garde!==false,opt(o,'garde',optsDe(o).garde===false),{grp:'Parties'}));
+  const gardeIt=()=>L.push(it('Page de garde',optsDe(o).garde!==false,opt(o,'garde',optsDe(o).garde===false),{grp:'Affichage'}));
   const niv=(cur)=>['tout','3','2','1'].forEach(v=>L.push(it('CFC : '+(v==='tout'?'Tout':v+(v==='1'?' chiffre':' chiffres')),cur===v,opt(o,'niv',v),{grp:'Positions',seg:'CFC',l:v==='tout'?'Tout':v,ti:v==='tout'?'Tous les niveaux de CFC':'CFC jusqu’à '+v+(v==='1'?' chiffre':' chiffres')})));
   if(g==='overview'){ const S=ovEtat(o,rec), nv=ch01aFlex(Object.assign({},C,{presentations:Object.assign({},C.presentations||{},{controle:[{favori:true,colonnes:(S.P?S.P.colonnes:PDF_STD().map(id=>({id,idDelta:CH01A_IDD[id]})))||[]}]})}),'controle').length;
-    L.push(it('Format : Paysage',S.format==='paysage'||nv>5,opt(o,'format','paysage'),{grp:'Format'}),it('Format : Portrait',S.format==='portrait'&&nv<=5,opt(o,'format','portrait'),{grp:'Format',dis:nv>5,ti:nv>5?'Portrait : 5 colonnes de montants au plus ('+nv+' dans cette présentation)':'Document en portrait'}));
+    L.push(it('Format : Paysage',S.format==='paysage',opt(o,'format','paysage'),{grp:'Format'}),it('Format : Portrait',S.format==='portrait',opt(o,'format','portrait'),{grp:'Format',ti:nv>5?'Document en portrait : '+nv+' colonnes de montants, en petits caractères':'Document en portrait'}));
     const PL=((C.presentations||{}).controle)||[];
     L.push(it('Standard',!S.P,opt(o,'pres',null),{grp:'Colonnes',seg:'Colonnes',segLib:false,l:'Standard',ti:'Colonnes de l’écran et la provision : DG, mutations, modifications, DG révisé, contrats et avenants, provision, paiements, coût probable, état du coût'}));
     PL.forEach((x,i)=>{ if(estStandard(x)&&S.P!==x) return;   /* présentation identique à Standard : pas en double (comme le menu de l'écran) */
       L.push(it(sv(x.nom||'Présentation '+(i+1))+(sv(x.nom)==='Standard'?' (du document)':''),S.P===x,opt(o,'pres',{i,nom:sv(x.nom)}),{grp:'Colonnes',seg:'Colonnes',segLib:false})); });
-    gardeIt();
-    L.push(it('Signatures',sigDe(o,rec),opt(o,'sig',!sigDe(o,rec)),{grp:'Parties',dis:optsDe(o).garde===false,ti:'Maître de l’ouvrage et architecte, sur la page de garde ; d’office pour un décompte final (nom du document)'}));
-    L.push(it('Récapitulatif CFC à 2 chiffres',S.recap2,opt(o,'recap2',!S.recap2),{grp:'Parties'}),it('Contrôle du coût détaillé',S.docu,opt(o,'doc',!S.docu),{grp:'Parties'}));
-    niv(S.niv); L.push(it('Afficher les entreprises',S.ent,opt(o,'ent',!S.ent),{grp:'Positions'}));
+    /* mêmes rubriques et mêmes cases que la fenêtre du devis général (Paulo, 14.11.2026 : « semblable à celle du devis général, avec les mêmes options ») : Positions
+       (sans montant, 1 à 3 chiffres, descriptif), Écritures (le « calcul » du contrôle des coûts), Montants (décimales, arrondi), Affichage (volume et prix au m³,
+       récapitulatif à 2 chiffres, parties du document), Sauts de page ; « Colonnes » est propre au contrôle des coûts */
+    L.push(it('Afficher les positions sans montant',S.vides,opt(o,'vides',!S.vides),{grp:'Positions',ti:'Imprime aussi les positions qui n’ont aucun montant dans les colonnes choisies'}),
+      it('Seulement positions de 1 à 3 chiffres',S.niv!=='tout',opt(o,'niv',S.niv==='tout'?'3':'tout'),{grp:'Positions',ti:S.niv==='2'||S.niv==='1'?'Document limité aux CFC à '+S.niv+(S.niv==='1'?' chiffre':' chiffres')+' (réglage d’avant) : décocher pour tout imprimer':'Contrôle du coût détaillé sans les positions à 4 chiffres et plus'}),
+      it('Descriptif',S.desc,opt(o,'desc',!S.desc),{grp:'Positions',ti:'Descriptif de chaque position sous sa ligne (texte du devis général)'}),
+      it('Afficher les entreprises',S.ent,opt(o,'ent',!S.ent),{grp:'Positions'}));
     if(typeof ch01aOuvs==='function'&&ch01aOuvs(C).length) L.push(it('Subdivisions par ouvrage (récapitulatif)',S.ouv,opt(o,'ouv',!S.ouv),{grp:'Positions'}));
+    L.push(it('Masquer les décimales',S.sansDec||S.arr>0,opt(o,'sansDec',!S.sansDec),{grp:'Montants',dis:S.arr>0,ti:S.arr>0?'Montants arrondis à '+S.arr+' : sans décimales':'Montants arrondis au franc'}));
+    [10,100,1000].forEach(v=>L.push(it('Arrondir à '+v,S.arr===v,opt(o,'arr',S.arr===v?0:v),{grp:'Montants',ti:'Chaque montant imprimé est arrondi à '+v+' francs'})));
+    { const vb=typeof sgVolumeSIA416==='function'?+sgVolumeSIA416(E.p)||0:0;
+      L.push(it('Volume SIA 416 et prix au m³',S.chif&&vb>0,opt(o,'chif',!S.chif),{grp:'Affichage',dis:!(vb>0),ti:vb>0?'Volume bâti et coût probable au m³ (CFC 2, CFC 1 à 9), au-dessus du récapitulatif':'Volume à saisir dans Projet ▸ Surfaces et volumes'})); }
+    L.push(it('Récapitulatif CFC à 2 chiffres',S.recap2,opt(o,'recap2',!S.recap2),{grp:'Affichage'}),it('Contrôle du coût détaillé',S.docu,opt(o,'doc',!S.docu),{grp:'Affichage'}));
+    gardeIt();
+    L.push(it('Signatures',sigDe(o,rec),opt(o,'sig',!sigDe(o,rec)),{grp:'Affichage',dis:optsDe(o).garde===false,ti:'Maître de l’ouvrage et architecte, sur la page de garde ; d’office pour un décompte final (nom du document)'}));
     L.push(it('Afficher les écritures',S.det,opt(o,'det',!S.det),{grp:'Écritures'}));
     [['mut','Mutations'],['ctr','Contrats et avenants'],['pay','Paiements'],['prov','Provisions et coût probable']].forEach(([k,t])=>L.push(it(t,S.det&&S.dk(k),opt(o,'det_'+k,!S.dk(k)),{grp:'Écritures',ind:true,dis:!S.det})));
     L.push(it('Date et n° des mutations',S.mutDate,opt(o,'mutDate',!S.mutDate),{grp:'Écritures',ind:true,dis:!S.det||!S.dk('mut')}),
@@ -359,7 +384,7 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
     L.push(...sautItems(o)); }
   else if(g==='estimate'){ const S=kvEtat(o,rec);
     L.push(it('Format : Paysage',S.format==='paysage',opt(o,'format','paysage'),{grp:'Format'}),it('Format : Portrait',S.format==='portrait',opt(o,'format','portrait'),{grp:'Format'}));
-    gardeIt(); L.push(it('Récapitulatif CFC à 2 chiffres',S.recap2,opt(o,'recap2',!S.recap2),{grp:'Parties'}),it('Devis général détaillé',S.docu,opt(o,'doc',!S.docu),{grp:'Parties'}));
+    L.push(it('Récapitulatif CFC à 2 chiffres',S.recap2,opt(o,'recap2',!S.recap2),{grp:'Affichage'}),it('Devis général détaillé',S.docu,opt(o,'doc',!S.docu),{grp:'Affichage'})); gardeIt();
     niv(S.niv); if(S.subs) L.push(it('Subdivisions par ouvrage',S.ouv,opt(o,'ouv',!S.ouv),{grp:'Positions'}));
     L.push(it('Masquer les décimales',S.sansDec,opt(o,'sansDec',!S.sansDec),{grp:'Montants'}),it('Pourcentages sur le total général',S.pctTot,opt(o,'pctTot',!S.pctTot),{grp:'Montants'}));
     if(S.fac!==1) L.push(it('Colonne « DG indexé »',S.indexe,opt(o,'indexe',!S.indexe),{grp:'Montants'}));
@@ -377,7 +402,7 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
     L.push(it('Arrondir les conditions',a.cond,fin=>{ arrSet(o,'roundContractSummary',!a.cond,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'}),
       it('Afficher le total arrondi',a.tot,fin=>{ arrSet(o,'addRoundedTotalKey',!a.tot,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'})); }
   return L; }
-const GROUPES=['Format','Colonnes','Parties','Positions','Écritures','Montants','Tri','Adresses','Sauts de page','Autres'];
+const GROUPES=['Format','Colonnes','Positions','Écritures','Montants','Affichage','Tri','Adresses','Sauts de page','Autres'];   /* ordre de la fenêtre du devis général : Format, Positions, Calcul (ici Écritures), Montants, Affichage, Sauts de page */
 
 /* ═══ fenêtre ═══ */
 function vueCoco(D,o){ const E=o.E||{}, p=E.p||{}, rec=ch01aRec(E,o.dossier)||{}, doc=DS.get('costcontroldocument',E.id)||{}, g=genre(o);
@@ -427,5 +452,44 @@ function comptesVue(E){ const o=COMPTES_O(E), doc=DS.get('costcontroldocument',E
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
     actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
   D.maj(comptesOctets(E)); }
-window.SGCD={comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+/* ═══ Arrêtés de compte et Ordres de paiement ▸ Imprimer (Paulo, 14.11.2026 : « produis la même fenêtre dans arrêtés de compte et ordres de paiement ») : le moteur n'a pas
+   de document pour la liste de ces onglets ; PDF fait ici au graphisme des listes (page de garde, tableau bleu nuit, texte dès la colonne « info@ »), mêmes lignes et mêmes
+   montants que l'écran, dans la fenêtre des documents avec le volet Réglages (Format, Page de garde) — réglages : cocodoc <id>/<dossier> (options.sgPdf), sans document du
+   moteur. Arrêtés de compte : une ligne par arrêté (liste et ordre de l'écran, ch01cGarList), total des garanties et des factures finales. Ordres de paiement : chaque
+   ordre (n°, date, maître de l'ouvrage, nombre de paiements, statut, total) suivi de ses paiements (lot, bénéficiaire, n° de paiement, statut, montant), total général. ═══ */
+const TABLES={
+  arretes:{type:'costControlFinalPaymentTable',dossier:'finalpayment-liste',titre:'Arrêtés de compte',flex:1,donnees:E=>{ const C=E.C||{}, F=x=>window.num(Math.round((+x||0)*100)/100), g=a=>a.garantie||{};
+      let L=[]; try{ const P=typeof ch01cPref==='function'?ch01cPref(C):{}; L=typeof ch01cGarList==='function'?ch01cGarList(C,P.tri,true).map(x=>({a:x.a,ent:(typeof ch01cAdr==='function'&&ch01cAdr(x.cid,P.adr))||ccEntName(C,x.cid)})):[]; }catch(_){ L=[]; }
+      if(!L.length) L=(C.arretes||[]).map(a=>({a,ent:ccEntName(C,a.contactId)}));
+      let tg=0, tn=0; const rows=L.map(x=>{ const a=x.a, G=g(a), m=+G.montant||0, n=docNet(a); tg+=m; tn+=n;
+        return {c:[sv(a.numero),sv(x.ent).split('\n')[0],dfr(a.date),sv(ARR_ST[a.statut]||''),sv(GAR_T[G.genre]||''),dfr(G.debut),dfr(G.fin),m?F(m):'',F(n)],s:'S'}; });
+      if(rows.length) rows.push({c:['','Total','','','','','',F(tg),F(tn)],s:'T'});
+      return {tit:['N°','Entreprise','Date','Statut','Garantie','Début garantie','Échéance garantie','Montant garantie','Facture finale nette'],r:[0,0,0,0,0,0,0,1,1],rows}; }},   /* montants en dernières colonnes */
+  ordres:{type:'costControlPaymentOrderTable',dossier:'paymentorder-liste',titre:'Ordres de paiement',flex:3,donnees:E=>{ const C=E.C||{}, F=x=>window.num(Math.round((+x||0)*100)/100), rows=[]; let T=0;
+      const OP=(C.ordresPaiement||[]).slice().sort((a,b)=>(+b.numero||0)-(+a.numero||0)||sv(b.numero).localeCompare(sv(a.numero),'fr'));   /* ordre de l'écran : du plus récent au plus ancien */
+      OP.forEach(o=>{ const ps=(C.paiements||[]).filter(x=>(o.paiementIds||[]).includes(x.id)), t=ps.reduce((a,x)=>a+docNet(x),0); T+=t; let mo=''; try{ mo=contactName(DS.get('contact',o.maitreOuvrageContactId))||''; }catch(_){}
+        rows.push({c:[sv(o.numero),dfr(o.date),'',sv(mo),ps.length+(ps.length>1?' paiements':' paiement'),sv(ORD_ST[o.statut]||o.statut||''),F(t)],s:'W'});
+        ps.forEach(x=>rows.push({c:['','',sv((x.lot||{}).numero),sv(ccEntName(C,x.contactId)),sv(x.numero),sv(PAY_ST[x.statut]||x.statut||''),F(docNet(x))],s:'S'})); });
+      if(rows.length) rows.push({c:['','','','Total','','',F(T)],s:'T'});
+      return {tit:['N°','Date','CFC','Maître de l’ouvrage · bénéficiaire','N° de paiement','Statut','Montant TTC'],r:[0,0,0,0,0,0,1],rows}; }}};
+const TABLE_O=(E,k)=>({E,type:TABLES[k].type,dossier:TABLES[k].dossier,label:TABLES[k].titre,nomDefaut:TABLES[k].titre});
+async function tableOctets(E,k){ const T=TABLES[k], o=TABLE_O(E,k), M=await mesure(), L0=SGDE.livret, ori=optsDe(o).format==='portrait'?'portrait':'paysage', geo={x0:L0.DG_X0T+DG_CFC,W:(ori==='portrait'?L0.DG_WP:L0.DG_WL)-DG_CFC}, W=geo.W,
+    cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), D=T.donnees(E), fx=T.flex||0;
+  if(!D.rows.length) D.rows.push({c:D.tit.map((_,j)=>j===fx?'Aucune ligne.':''),s:'S'});
+  /* largeurs : chaque colonne à la mesure de son titre et de son contenu, la colonne de texte principale prend le reste (110 pt au moins) ; trop large : les autres réduites */
+  const nat=D.tit.map((t,j)=>Math.max(M.larg(t,true),...D.rows.map(r=>M.larg(sv(r.c[j]),r.s!=='S')))+10), fixe=nat.reduce((a,b,j)=>a+(j===fx?0:b),0);
+  const cols=D.tit.map((t,j)=>({t,w:j===fx?Math.max(110,W-fixe):nat[j],r:!!D.r[j]})), tot=cols.reduce((a,c)=>a+c.w,0);
+  if(tot>W){ const f=(W-cols[fx].w)/(tot-cols[fx].w); cols.forEach((c,j)=>{ if(j!==fx) c.w*=f; }); }
+  return sortie(o,{doc:{nom:T.titre}},paginer(etaler(D.rows,cols,M),cols,cap,T.titre,2,{}),ori,'liste',geo); }
+function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontroldocument',E.id)||{}, p=E.p||{}; let dernier=null;
+  const dg=dialog({title:T.titre,body:h('div'),buttons:[]}), ifr={};
+  const D={bd:dg.bd,iframe:ifr,close:dg.close,maj:r=>{ try{ if(ifr._sgVuePrep) ifr._sgVuePrep(); }catch(_){}
+    return Promise.resolve(r).then(oct=>{ dernier=oct; if(ifr._sgVue) ifr._sgVue(new Blob([oct],{type:'application/pdf'})); },e=>{ console.error(e); if(ifr._sgVueErr) ifr._sgVueErr(e); }); }};
+  const tel=()=>{ if(!dernier) return; const u=URL.createObjectURL(new Blob([dernier],{type:'application/pdf'})), a=document.createElement('a'); a.href=u; a.download=[p.NUMBER,T.titre].filter(Boolean).join(' ')+'.pdf'; document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); };
+  const peut=()=>{ try{ return ecrit(); }catch(_){ return true; } };
+  SGDE.vue(D,{p,lb:'Contrôle des coûts · Documents',titre:T.titre,etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>tableOctets(E,k),
+    pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
+    actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
+  D.maj(tableOctets(E,k)); }
+window.SGCD={tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();

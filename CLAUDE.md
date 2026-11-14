@@ -2197,8 +2197,38 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   page que dans documents, et ouvrir la fenêtre du même type avec les options »)** : remplace « Imprimer le tableau (A4 paysage) » ; ouvre le document « Contrôle des
   coûts » de Documents ▸ Contrôle du coût (même enregistrement `cocodoc` <id>/overview) dans la fenêtre des documents (bloc 52 : page de garde, récapitulatif, tableau
   bleu nuit, volet Réglages — format, colonnes, parties, positions, écritures, sauts de page) ; pas encore créé : créé d'office sous son nom par défaut (`CC_DOC`,
-  `ouvrirListe('CONTRÔLE DU COÛT')` de `sg3_coco.js`, comme les listes des écritures). Le document garde ses propres réglages : il ne suit pas la présentation
-  affichée à l'écran (les présentations enregistrées sont proposées dans Réglages ▸ Colonnes).
+  `ouvrirListe('CONTRÔLE DU COÛT')` de `sg3_coco.js`, comme les listes des écritures). Le document garde ses propres réglages (les présentations
+  enregistrées sont proposées dans Réglages ▸ Colonnes).
+  **Le PDF suit l'écran (même jour, Paulo : « Oui, suivre l'écran »)** : ouvert par Imprimer, le document prend la présentation affichée (`suivreEcran` de
+  `sg3_coco.js` : réglage « Colonnes » `cocodoc.options.sgPdf.pres` mis sur la présentation de l'écran s'il diffère, enregistré dans le document — lecture seule : en
+  mémoire pour la séance) ; ouvert depuis l'onglet Documents, il garde son dernier réglage. Sans présentation choisie (Standard), les écritures imprimées par défaut
+  sont toutes celles du Standard de l'écran (`detDefaut(P,k)`, avant : celles de la présentation favorite du document). Niveau de CFC et « Afficher les détails » de
+  l'écran : pas repris (réglages du document).
+  **Mêmes valeurs qu'à l'écran** : moteur `ccValeurs(C,p,R,H)` (DeltaSub.html) = calcul des cellules partagé par le tableau (`ccEditor`) et le document
+  (`ch01aOverviewJob`) : équations du document, montants complémentaires (`ccExtra`), calculs `fx` du catalogue — avant, ces colonnes sortaient vides ou sans les
+  montants complémentaires dans le PDF. « Bénéfice d'adjudication » garde le calcul du document (DG révisé − contrats), de signe opposé à celui de l'écran : à trancher.
+  Colonnes de texte du catalogue (n° du contrat, descriptif, statut…) et colonnes sans données : pas imprimées (`ovOctets` les écarte).
+  **Fenêtre du Contrôle du coût = mêmes rubriques et mêmes cases que celle du Devis général (même jour, Paulo : « la fenêtre de l'impression du contrôle du coût est
+  semblable à celle de devis général, avec les mêmes options ; corrige »)** — `items` de `sg3_coco_docs.js`, ordre `GROUPES` = Format, Colonnes, Positions, Écritures,
+  Montants, Affichage, Sauts de page (rubrique « Parties » renommée « Affichage » pour tous les documents du contrôle des coûts) : Format Paysage | Portrait (portrait
+  toujours possible ; au-delà de 5 colonnes, montants en corps réduit et titres abrégés `ABREV3`) ; Positions — « Afficher les positions sans montant » (`vides` →
+  `options.sgPosVides` lu par le travail du moteur), « Seulement positions de 1 à 3 chiffres » (`niv` '3' | 'tout', à la place du choix CFC Tout · 3 · 2 · 1 ; un
+  réglage '2' ou '1' d'avant reste honoré), « Descriptif » (`desc` : descriptif de la position sous sa ligne, style X italique gris, `ccPosDesc(C,cfc,true)` = texte de
+  la position, sinon du devis général d'origine), « Afficher les entreprises » ; Écritures (le « calcul » du contrôle : inchangé) ; Montants — « Masquer les décimales »
+  (`sansDec`) et « Arrondir à » aucun | 10 | 100 | 1000 (`arr`) : chaque montant imprimé arrondi pour lui-même (`mt`), pourcentages et chiffres clés non arrondis ;
+  Affichage — « Volume SIA 416 et prix au m³ » (`chif` : VB du module Surfaces et volumes, coût probable TTC au m³ des CFC 2 et 1 à 9, au-dessus du récapitulatif à
+  1 chiffre, `pg.chiffres`), « Récapitulatif CFC à 2 chiffres », « Contrôle du coût détaillé », « Page de garde », « Signatures ». Non repris du devis général (sans
+  objet pour un contrôle des coûts) : calcul du devis (quantités et prix), variantes, pourcentages sur le total, montants de 1 à 4 chiffres, commentaire en colonne.
+  Valeurs par défaut inchangées (aucune nouvelle case cochée), sauf les écritures du Standard.
+  **Arrêtés de compte et Ordres de paiement ▸ Imprimer (même jour, « produis la même fenêtre dans arrêtés de compte et ordres de paiement »)** : « Arrêtés de compte
+  (PDF) » et « Ordres de paiement (PDF) » remplacent « Imprimer le tableau (A4 paysage) » — plus aucun onglet n'a l'ancienne impression. `TABLES`, `tableOctets(E,k)`,
+  `tableVue(E,k)` de `sg3_coco_docs.js` (`SGCD.tableVue`, appelé par `imprimerTable` de `sg3_coco.js`) : liste de l'onglet au graphisme des listes (page de garde, bande
+  bleu nuit, total sur bande), fenêtre des documents avec Réglages (Format, Page de garde ; `cocodoc` <id>/finalpayment-liste et <id>/paymentorder-liste, sans document
+  du moteur). Arrêtés : N°, Entreprise, Date, Statut, Garantie, Début et Échéance de garantie, Montant de garantie, Facture finale nette (liste et ordre de l'écran,
+  `ch01cGarList`), totaux. Ordres : chaque ordre en gras (n°, date, maître de l'ouvrage, nombre de paiements, statut, total) puis ses paiements (CFC, bénéficiaire, n° de
+  paiement, statut, montant), du plus récent au plus ancien, total général. Les documents eux-mêmes (bon de paiement, ordre de paiement, arrêté de compte) : maquettes
+  demandées par Paulo le même jour (reproduction des documents du bureau + 5 variantes), `subgestion3/_backup_20261114_maquette_bon_arrete/`, choix en attente.
+  Copies d'avant : `subgestion3/_backup_20261114_1001_avant_fenetre_controle_reglages/`, `DeltaSub_backup_20261114_1001_avant_fenetre_controle_reglages.html`.
   **Paiements sur contrat et hors contrat : deux couleurs (11.11.2026, Paulo : « ajoute une couleur pour les paiements sur contrat et hors contrat »)** : `CC_DEF_COUL.payh`
   (hors contrat ; tant qu'elle n'est pas choisie : la couleur des paiements), `coulDe(d)` dans l'éditeur (écriture `pay` sans `contratId` → `payh`), libellés « Paiements sur
   contrat » / « Paiements hors contrat » dans la fenêtre des couleurs, PDF : `pk` des lignes d'écriture du travail du moteur (`detRow`) lu par `sg3_coco_docs.js`.

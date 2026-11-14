@@ -3700,6 +3700,18 @@ function ccEval(expr,A){ const s=String(expr||'').toLowerCase().replace(/[\[\]\s
   const mul=()=>{ let v=val(); while(s[i]==='*'||s[i]==='/'){ const o=s[i++], w=val(); v=o==='*'?v*w:(w?v/w:NaN); } return v; };
   const add=()=>{ let v=mul(); while(s[i]==='+'||s[i]==='-'){ const o=s[i++], w=mul(); v=o==='+'?v+w:v-w; } return v; };
   const v=add(); return bad||i<s.length||!isFinite(v)?null:v; }
+/* valeurs du tableau du contrôle du coût, communes à l'écran (ccEditor) et au document « Contrôle des coûts » (ch01aOverviewJob) — 14.11.2026, « le PDF suit l'écran » :
+   HT (ccCalc sur les montants HT), TVA = TTC − HT, montants complémentaires (ccExtra), calculs (fx), équations du document. r = ligne {cfc, v} | {sub, pc, eid, v} | {tot, v} */
+function ccValeurs(C,p,R,H){ let RH=H||null, XX=null; const HT=()=>RH||(RH=ccCalc(ch01aHT(C))), XT=()=>XX||(XX=ccExtra(C,R));
+  const top=c=>{ let x=c; while(R.par(x)) x=R.par(x); return x; };
+  const fac=(C.parametres||{}).facteurDG!=null?+C.parametres.facteurDG:1, m2=+(p&&p.AREA)||0, m3=(typeof sgVolumeSIA416==='function'&&+sgVolumeSIA416(p))||+(p&&p.VOLUME)||0;
+  const src=(r,S)=>r.tot?S.G:r.sub?((S.ents.get(r.pc)||new Map()).get(r.eid??null)||{}):(S.tot.get(r.cfc)||{});
+  const acc=r=>{ const a={ctx:{fac,m2,m3},V:(f,m)=>{ const t=+((r.v||{})[f]||0); if(!m||m==='ttc') return t; const hh=+(src(r,HT())[f]||0); return m==='ht'?hh:t-hh; },
+      X:(k,m)=>{ const z=src(r,XT()), t=+((z.ttc||{})[k]||0), hh=+((z.ht||{})[k]||0); return !m||m==='ttc'?t:m==='ht'?hh:t-hh; },
+      P:f=>{ if(r.tot) return 100; if(r.sub||r.det) return null; const b=(R.tot.get(top(r.cfc))||{})[f]; return b?((r.v||{})[f]||0)/b*100:null; }};
+    if(!r.tot&&!r.sub&&!r.det&&r.cfc){ const tc=top(r.cfc); a.T=tc===r.cfc?a:acc({cfc:tc,v:R.tot.get(tc)||{}}); } return a; };
+  const valeur=(r,c)=>{ if(c.fx){ const a=acc(r); return c.fx(a); } if(c.x) return acc(r).X(c.x,c.m); if(c.eq!=null) return ccEval(((C.parametres||{}).equations||[])[c.eq],acc(r)); if(c.f&&c.m) return acc(r).V(c.f,c.m); return c.fn?c.fn(r.v):((r.v||{})[c.f]||0); };
+  return {valeur,acc,top}; }
 /* texte des colonnes d'information (lignes d'entreprise et lignes d'écriture) */
 function ccInfo(C,r,k){ const d=r.det, ref=d&&d.ref, K=d&&d.k;
   const ctrE=()=>{ if(!r.sub) return null; const eid=r.eid??null; return (C.contrats||[]).find(c=>c.type==='contrat'&&(c.contactId??null)===eid&&(c.lignes||[]).some(l=>String(l.cfc)===String(r.pc)))||null; };
@@ -3734,12 +3746,12 @@ function ccInfo(C,r,k){ const d=r.det, ref=d&&d.ref, K=d&&d.k;
   } return ''; }
 /* descriptif d'une position : celui de la position du contrôle des coûts, sinon celui du devis général d'origine (C.devisSourceId, ou le devis trouvé par SUBGestion 3) ; sur une ligne */
 const CC_DESC=new WeakMap();
-function ccPosDesc(C,cfc){ const un=t=>String(t||'').replace(/\s*\n\s*/g,' ').trim(), k=String(cfc);
+function ccPosDesc(C,cfc,brut){ const un=t=>brut?String(t||'').replace(/\r/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim():String(t||'').replace(/\s*\n\s*/g,' ').trim(), k=String(cfc);   /* brut : paragraphes gardés (document PDF) */
   const p=(C.positions||[]).find(x=>String(x.cfc)===k), t=un(p&&(p.descriptif||p.description)); if(t) return t;
   let sid=C.devisSourceId; try{ if(sid==null&&window.SGCC&&typeof SGCC.devisSource==='function') sid=SGCC.devisSource(C); }catch(_){}
   const E=sid!=null&&typeof DS!=='undefined'?DS.get('costestimate',sid):null; if(!E||!Array.isArray(E.positions)) return '';
-  let M=CC_DESC.get(E); if(!M){ M=new Map(); E.positions.forEach(x=>{ const d=un(typeof ch02aDesc==='function'?ch02aDesc(x):x.descriptif); if(d) M.set(String(x.cfc),d); }); CC_DESC.set(E,M); }
-  return M.get(k)||''; }
+  let M=CC_DESC.get(E); if(!M){ M=new Map(); E.positions.forEach(x=>{ const d=String(typeof ch02aDesc==='function'?ch02aDesc(x):x.descriptif||''); if(d.trim()) M.set(String(x.cfc),d); }); CC_DESC.set(E,M); }
+  return un(M.get(k)||''); }
 /* palette de 256 couleurs : 16 gris, puis 15 teintes (tous les 24°) en 16 clartés */
 const CC_PALETTE=(()=>{ const hx=n=>Math.round(n).toString(16).padStart(2,'0'), out=[];
   const hsl=(hh,s,l)=>{ s/=100; l/=100; const k=n=>(n+hh/30)%12, a=s*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return '#'+hx(f(0)*255)+hx(f(8)*255)+hx(f(4)*255); };
@@ -4019,14 +4031,7 @@ function ccEditor(m,id){
       rows.push({k:'TOTAL',tot:true,cfc:'',lbl:'Total général',ent:'',v:R.G});
       const pct=(r,f)=>{ if(r.sub||r.tot||r.det) return ''; const base=(R.tot.get(top(r.cfc))||{})[f]; return base?num(r.v[f]/base*100,1):''; };
       /* catalogue complet (11.11.2026) : HT (ccCalc sur les montants HT), TVA = TTC − HT, montants complémentaires (ccExtra), calculs, équations, informations */
-      let RH=null, XX=null; const HT=()=>RH||(RH=ccCalc(ch01aHT(C))), XT=()=>XX||(XX=ccExtra(C,R));
-      const fac=(C.parametres||{}).facteurDG!=null?+C.parametres.facteurDG:1, m2=+(p&&p.AREA)||0, m3=(typeof sgVolumeSIA416==='function'&&+sgVolumeSIA416(p))||+(p&&p.VOLUME)||0;
-      const src=(r,S)=>r.tot?S.G:r.sub?((S.ents.get(r.pc)||new Map()).get(r.eid??null)||{}):(S.tot.get(r.cfc)||{});
-      const acc=r=>{ const a={ctx:{fac,m2,m3},V:(f,m)=>{ const t=+((r.v||{})[f]||0); if(!m||m==='ttc') return t; const hh=+(src(r,HT())[f]||0); return m==='ht'?hh:t-hh; },
-          X:(k,m)=>{ const z=src(r,XT()), t=+((z.ttc||{})[k]||0), hh=+((z.ht||{})[k]||0); return !m||m==='ttc'?t:m==='ht'?hh:t-hh; },
-          P:f=>{ if(r.tot) return 100; if(r.sub||r.det) return null; const b=(R.tot.get(top(r.cfc))||{})[f]; return b?((r.v||{})[f]||0)/b*100:null; }};
-        if(!r.tot&&!r.sub&&!r.det&&r.cfc){ const tc=top(r.cfc); a.T=tc===r.cfc?a:acc({cfc:tc,v:R.tot.get(tc)||{}}); } return a; };
-      const valeur=(r,c)=>{ if(c.fx){ const a=acc(r); return c.fx(a); } if(c.x) return acc(r).X(c.x,c.m); if(c.eq!=null) return ccEval(((C.parametres||{}).equations||[])[c.eq],acc(r)); if(c.f&&c.m) return acc(r).V(c.f,c.m); return c.fn?c.fn(r.v):((r.v||{})[c.f]||0); };
+      const valeur=ccValeurs(C,p,R).valeur;   /* calcul partagé avec le document « Contrôle des coûts » (14.11.2026) */
       const cell=(r,id)=>{ const c=CC_COL[id]; if(c.nd) return '';
         if(c.info){ const t=ccInfo(C,r,c.info); if(t==null||t==='') return ''; return r.det?`<i style="color:${coulDe(r.det)}">${esc(String(t))}</i>`:esc(String(t)); }
         if(r.det) return c.det&&(c.det===r.det.k||(c.det==='prov'&&r.det.k==='cpp')||(c.det==='cpp'&&r.det.k==='cpp'))?`<i style="color:${coulDe(r.det)}">${r.det.last?'F':''}${num(r.det.v)}</i>`:'';
@@ -16216,18 +16221,20 @@ function ch01aOverviewJob(E,rep){ const C=E.C, p=E.p, pp=C.parametres||{}, cfg=!
   /* formatValue : 0, NaN ou |v| < 0.005 → vide ; % : formatOneDigitProc, base = TOTAL GÉNÉRAL pour les positions et les subdivisions (liste du document calculée
      par CalcCost.calc(…, true, …) → calcKvAbweichung / calcKv1Abweichung avec base au total : OverviewDocumentsFrame.setReportData@137-153, CalcCost@4648-4797),
      « 100.0 » aux lignes « Total » (overview.Columns@1135-1146, isTotalPos) ; lignes d'entreprise : vides [D] */
-  const val=(x,v,hv,c,kind)=>{ const y=ch01aOvVal(x.id,v,hv,p,fac); if(y==='pct'){ if(kind==='tot') return ch01aP1(100); if(kind!=='pos'&&kind!=='sub') return ''; const f=CC_COL[x.id].pct, b=R.G[f]; return ch01aP1(b?(v[f]||0)/b*100:0); }
+  /* équations, montants complémentaires (ccExtra) et calculs du catalogue : mêmes valeurs qu'à l'écran (ccValeurs, 14.11.2026) ; « Bénéfice d'adjudication » garde le calcul du document */
+  const VV=ccValeurs(C,p,R,H), commun=x=>{ const cc=CC_COL[x.id]; return !!cc&&!cc.sp&&!cc.pct&&!cc.nd&&!cc.info&&x.id!=='awardingProfit'&&(!!cc.x||cc.eq!=null||!!cc.fx); };
+  const val=(x,v,hv,c,kind,eid,W)=>{ const y=commun(x)?(W||VV).valeur(kind==='tot'?{tot:true,v}:kind==='ent'?{sub:true,pc:c,eid,v}:{cfc:c,v},CC_COL[x.id]):ch01aOvVal(x.id,v,hv,p,fac); if(y==='pct'){ if(kind==='tot') return ch01aP1(100); if(kind!=='pos'&&kind!=='sub') return ''; const f=CC_COL[x.id].pct, b=R.G[f]; return ch01aP1(b?(v[f]||0)/b*100:0); }
     return y==null||!isFinite(y)||Math.abs(y)<.005?'':ch01aV(y,cfg); };
-  const vals=(v,hv,c,kind)=>flex.map(x=>val(x,v,hv,c,kind)), shown=f=>f.some((s,i)=>s!==''&&!isPct(flex[i]));   // Columns.isEmpty : colonnes de valeur affichées, % exclus
+  const vals=(v,hv,c,kind,W)=>flex.map(x=>val(x,v,hv,c,kind,null,W)), shown=f=>f.some((s,i)=>s!==''&&!isPct(flex[i]));   // Columns.isEmpty : colonnes de valeur affichées, % exclus
   /* page de garde */
   const cen=ch01aCentres(C,R,H).map(x=>({c:[x.nom,ch01aF(x.ht,cfg),ch01aF(x.tva,cfg),ch01aF(x.ttc,cfg)],st:'tr'}));
   /* récapitulatif à 1 chiffre, ou à 1 et 2 chiffres (k0 ; absent : 1 chiffre) ; subdivisions par ouvrage (k1 ; absent : non) [CostOverviewSummaryTable.initProperties, fillTable@1204-1411] :
      1 chiffre catalogLevel1 (catalogLevel3 en mode 1 chiffre), 2 chiffres catalogLevel3, subdivisions catalogLevel1a / catalogLevel2a */
   const bS=ch01aBands(rep,'costcontrolOverviewSummaryTable')[0], bO=ch01aBands(rep,'costcontrolOverviewTable')[0], two=ch01aProp(bS,0,'displayOneDigitPositions')==='displayTwoDigitPositions', k1=ch01aProp(bS,1,false), maxL=two?2:1;
-  const ouvs=ch01aOuvs(C), OV=k1&&ouvs.length?ouvs.map(o=>{ const X=ch01aOuv(C,o); return {o,R:ccCalc(X),H:ccCalc(ch01aHT(X))}; }):[];
-  const sum=[]; R.codes.forEach(c=>{ const n=String(c).length; if(n>maxL) return; const v=R.tot.get(c); if(!v) return; const f=vals(v,H.tot.get(c),c,'pos'); if(!shown(f)) return;
+  const ouvs=ch01aOuvs(C), OV=k1&&ouvs.length?ouvs.map(o=>{ const X=ch01aOuv(C,o), Ro=ccCalc(X), Ho=ccCalc(ch01aHT(X)); return {o,R:Ro,H:Ho,V:ccValeurs(X,p,Ro,Ho)}; }):[];
+  const sum=[]; R.codes.forEach(c=>{ const n=String(c).length; if(n>maxL) return; const v=R.tot.get(c); if(!v) return; const f=vals(v,H.tot.get(c),c,'pos'); if(!shown(f)&&!opt.sgPosVides) return;   /* opt.sgPosVides : positions sans montant gardées (réglage du document, 14.11.2026) */
     sum.push({c:[c,R.lbl.get(c)||'','',''],f,st:n===1&&two?'c1':'c3'});
-    OV.forEach(x=>{ const w=x.R.tot.get(c); if(!w) return; const g=vals(w,x.H.tot.get(c),c,'sub'); if(shown(g)) sum.push({c:['','',x.o,''],f:g,st:n===1?'c1a':'c2a'}); }); });
+    OV.forEach(x=>{ const w=x.R.tot.get(c); if(!w) return; const g=vals(w,x.H.tot.get(c),c,'sub',x.V); if(shown(g)) sum.push({c:['','',x.o,''],f:g,st:n===1?'c1a':'c2a'}); }); });
   sum.push({c:['','Total','',''],f:vals(R.G,H.G,null,'tot'),st:'ct'});
   /* récapitulatif des coûts : lignes de l'écran (positions, entreprises, détails des colonnes marquées « détails ») */
   const k6=ch01aProp(bO,6,true), detK=new Set((P.colonnes||[]).filter(c=>c.details&&CC_COL[c.id]&&CC_COL[c.id].det).map(c=>CC_COL[c.id].det)); if(detK.has('prov')) detK.add('cpp');
@@ -16236,10 +16243,10 @@ function ch01aOverviewJob(E,rep){ const C=E.C, p=E.p, pp=C.parametres||{}, cfg=!
   const dv=v=>v==null||!isFinite(v)||Math.abs(v)<.005?'':ch01aV(v,cfg);
   const detRow=d=>({pk:d.k==='pay'&&!(d.ref&&d.ref.contratId)?'payh':d.k,c:['','',ch01aDetTxt(C,d,opt,md),'',''],f:flex.map(x=>{ const cc=CC_COL[x.id], s=cc&&cc.det&&(cc.det===d.k||(cc.det==='prov'&&d.k==='cpp'))?dv(d.v):''; return s&&d.last&&fin?fin+s:s; }),st:'cd'});
   /* positions : catalogLevel1 / 2 / 3, positions générées de 3 chiffres et plus comme 2 chiffres si k6 (absent : vrai) [CostOverviewTable.initProperties, xxx@283-354] */
-  const ov=[]; R.codes.forEach(c=>{ if(opt.displayOnlyThreeDigitPos&&cfcLevel(c)>3) return; const v=R.tot.get(c); if(!v) return; const f=vals(v,H.tot.get(c),c,'pos'); if(!shown(f)) return; const n=String(c).length;
+  const ov=[]; R.codes.forEach(c=>{ if(opt.displayOnlyThreeDigitPos&&cfcLevel(c)>3) return; const v=R.tot.get(c); if(!v) return; const f=vals(v,H.tot.get(c),c,'pos'); if(!shown(f)&&!opt.sgPosVides) return; const n=String(c).length;
     ov.push({c:[c,R.lbl.get(c)||'','','',''],f,st:n===1?'c1':n===2?'c2':k6&&(pos.get(c)||{}).genere?'c2':'c3'});
     const En=R.ents.get(c), D=(R.det.get(c)||[]).filter(d=>detK.has(d.k)).sort((a,b)=>cmp(a.d,b.d));
-    if(En) En.forEach((x,eid)=>{ ov.push({c:['','',ccEntName(C,eid),'',''],f:flex.map(y=>CC_COL[y.id]&&CC_COL[y.id].e?val(y,x,null,c,'ent'):''),st:'c3'});
+    if(En) En.forEach((x,eid)=>{ ov.push({c:['','',ccEntName(C,eid),'',''],f:flex.map(y=>CC_COL[y.id]&&CC_COL[y.id].e?val(y,x,null,c,'ent',eid):''),st:'c3'});
       D.filter(d=>(d.ent??null)===(eid??null)).forEach(d=>ov.push(detRow(d))); });
     D.filter(d=>(d.k==='mut'||d.k==='prov'||d.k==='cpp')&&!(En&&En.has(d.ent??null))).forEach(d=>ov.push(detRow(d))); });
   ov.push({c:['','Total','','',''],f:vals(R.G,H.G,null,'tot'),st:'ct'});

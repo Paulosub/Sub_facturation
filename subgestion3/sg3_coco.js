@@ -217,6 +217,21 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
 const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',nomDefaut:'Liste des mutations',label:'Liste des mutations',job:(E,rep)=>ch01bMutListJob(E,rep)},
   ADJUDICATIONS:{dossier:'award',type:'costControlAwardList',nomDefaut:'Liste des adjudications',label:'Contrats et avenants',job:(E,rep)=>ch01bAwardListJob(E,rep)},
   PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Rapport des paiements',label:'Rapport des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
+/* le PDF reprend la présentation affichée à l'écran (Paulo, 14.11.2026 : « Oui, suivre l'écran ») : avant l'ouverture depuis Imprimer, le réglage « Colonnes » du document
+   (cocodoc.options.sgPdf.pres : null = Standard, sinon {i, nom}) est mis sur la présentation de l'écran s'il diffère, et enregistré dans le document (lecture seule :
+   pour la séance seulement, rien n'est écrit). Ouvert depuis l'onglet Documents, le document garde son dernier réglage. */
+async function suivreEcran(o){ const K=CCV.cur||{}, D=window.SGCD; if(!D||!D.optsDe||!D.presDe||!K.pres||!K.C) return; const cur=K.pres(), L=cpL(K.C);
+  const veut=cur.base?null:cur, i=veut?L.indexOf(veut):-1; if(veut&&i<0) return;
+  if((D.presDe(K.C,D.optsDe(o))||null)===veut) return;
+  const v=veut?{i,nom:String(veut.nom||'')}:null;
+  if(cpLecture()||!D.optsSet){ const id=ch01aId(o.E,o.dossier); D.PP.set(id,Object.assign({},D.PP.get(id)||{},{pres:v})); return; }
+  await new Promise(res=>D.optsSet(o,{pres:v},()=>res())); }
+/* Arrêtés de compte et Ordres de paiement ▸ Imprimer (Paulo, 14.11.2026 : « produis la même fenêtre dans arrêtés de compte et ordres de paiement ») : la liste de l'onglet
+   au graphisme des listes, dans la fenêtre des documents (SGCD.tableVue : volet Réglages), à la place de « Imprimer le tableau (A4 paysage) » */
+const TABLE_SEC={'ARRÊTÉS DE COMPTE':['arretes','Arrêtés de compte (PDF)'],'ORDRES DE PAIEMENT':['ordres','Ordres de paiement (PDF)']};
+async function imprimerTable(k){ const K=CCV.cur||{}; if(!K.C||!window.SGCD||!SGCD.tableVue) return; try{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
+    SGCD.tableVue({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:CCV.sec,touch:K.touch||(()=>{})},k); }
+  catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
 async function imprimerComptes(){ const K=CCV.cur||{}; if(!K.C) return; try{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
     SGCD.comptesVue({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'COMPTES D’ENTREPRISE',touch:K.touch||(()=>{})}); }   /* fenêtre des documents, volet Réglages à droite (11.11.2026) */
   catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
@@ -228,6 +243,7 @@ async function ouvrirListe(sec){ const L=LISTE_DOC[sec]||(sec==='CONTRÔLE DU CO
   try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
   const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
   const o={E,dossier:L.dossier,type:L.type,nomDefaut:L.nomDefaut,label:L.label,fixe:L.nomDefaut,job:rep=>L.job(E,rep)};
+  if(sec==='CONTRÔLE DU COÛT') try{ await suivreEcran(o); }catch(e){ console.error(e); }
   try{ const r=ch01aRec(E,o.dossier); return r&&r.doc?await ch01aOpen(o):await ch01aNew(o); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }
 /* ═══ Colonnes des listes des écritures (11.11.2026, Paulo : « adapter la liste des éléments selon les éléments visibles dans le tableau paiement, ou adjudication, etc. ;
    dans affichage adapter également les colonnes possibles selon l'ancien logiciel, pour chaque type de tableau ») : Mutations, Adjudications, Paiements ont chacune leur
@@ -525,7 +541,8 @@ function habillerEd(m,id){ cssC(); cssE();
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
     const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
       :!CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&window.SGCD&&SGCD.comptesOctets?[{t:'Comptes d’entreprise (PDF)',fn:()=>imprimerComptes()}]
-      :!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&typeof ch01aOverviewJob==='function'?[{t:'Contrôle des coûts (PDF)',fn:()=>ouvrirListe('CONTRÔLE DU COÛT')}]:fon(/^Imprimer/);   /* contrôle du coût : son document, fenêtre et réglages de Documents (14.11.2026) */   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
+      :!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&typeof ch01aOverviewJob==='function'?[{t:'Contrôle des coûts (PDF)',fn:()=>ouvrirListe('CONTRÔLE DU COÛT')}]
+      :!CCV.docs&&TABLE_SEC[CCV.sec]&&window.SGCD&&SGCD.tableVue?[{t:TABLE_SEC[CCV.sec][1],fn:()=>imprimerTable(TABLE_SEC[CCV.sec][0])}]:fon(/^Imprimer/);   /* contrôle du coût : son document, fenêtre et réglages de Documents (14.11.2026) */   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');

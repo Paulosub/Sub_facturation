@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 14.11.2026 09:35 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 14.11.2026 09:40 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42724,7 +42724,11 @@ const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',n
 async function imprimerComptes(){ const K=CCV.cur||{}; if(!K.C) return; try{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
     SGCD.comptesVue({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'COMPTES D’ENTREPRISE',touch:K.touch||(()=>{})}); }   /* fenêtre des documents, volet Réglages à droite (11.11.2026) */
   catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
-async function ouvrirListe(sec){ const L=LISTE_DOC[sec], K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
+/* onglet Contrôle du coût ▸ Imprimer (Paulo, 14.11.2026 : « lorsque je clique imprimer le tableau, je souhaite avoir la même mise en page que dans documents, et ouvrir
+   la fenêtre du même type avec les options ») : le document « Contrôle des coûts » de Documents ▸ Contrôle du coût (même enregistrement cocodoc <id>/overview, mêmes
+   réglages : format, colonnes, parties, positions, écritures, sauts de page), à la place de « Imprimer le tableau (A4 paysage) » ; pas encore créé : créé d'office */
+const CC_DOC={dossier:'overview',type:'costControlOverview',nomDefaut:'Contrôle des coûts',label:'Contrôle des coûts',job:(E,rep)=>ch01aOverviewJob(E,rep)};
+async function ouvrirListe(sec){ const L=LISTE_DOC[sec]||(sec==='CONTRÔLE DU COÛT'?CC_DOC:null), K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
   try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
   const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
   const o={E,dossier:L.dossier,type:L.type,nomDefaut:L.nomDefaut,label:L.label,fixe:L.nomDefaut,job:rep=>L.job(E,rep)};
@@ -43024,7 +43028,8 @@ function habillerEd(m,id){ cssC(); cssE();
   const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
     const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
-      :!CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&window.SGCD&&SGCD.comptesOctets?[{t:'Comptes d’entreprise (PDF)',fn:()=>imprimerComptes()}]:fon(/^Imprimer/);   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
+      :!CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&window.SGCD&&SGCD.comptesOctets?[{t:'Comptes d’entreprise (PDF)',fn:()=>imprimerComptes()}]
+      :!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&typeof ch01aOverviewJob==='function'?[{t:'Contrôle des coûts (PDF)',fn:()=>ouvrirListe('CONTRÔLE DU COÛT')}]:fon(/^Imprimer/);   /* contrôle du coût : son document, fenêtre et réglages de Documents (14.11.2026) */   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');

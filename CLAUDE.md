@@ -2193,6 +2193,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   conditions (`cond…` : autres tableaux). Alias de l'ancien logiciel déjà couverts : genealPayment = generalPayment, workprocess = progress, paymentKind = payKind,
   garantyNumber = finalPaymentNr, kv2MinusKv2 = kv2MinusKv1, honor… = honorar…. Copies d'avant : `DeltaSub_backup_20261114_0931_avant_presentation_controle.html`,
   `subgestion3/_backup_20261114_0931_avant_presentation_controle/`, `SUBGestion3_backup_20261114_0931_avant_presentation_controle.html`.
+  **Onglet Contrôle du coût ▸ Imprimer = « Contrôle des coûts (PDF) » (14.11.2026, Paulo : « lorsque je clique imprimer le tableau, je souhaite avoir la même mise en
+  page que dans documents, et ouvrir la fenêtre du même type avec les options »)** : remplace « Imprimer le tableau (A4 paysage) » ; ouvre le document « Contrôle des
+  coûts » de Documents ▸ Contrôle du coût (même enregistrement `cocodoc` <id>/overview) dans la fenêtre des documents (bloc 52 : page de garde, récapitulatif, tableau
+  bleu nuit, volet Réglages — format, colonnes, parties, positions, écritures, sauts de page) ; pas encore créé : créé d'office sous son nom par défaut (`CC_DOC`,
+  `ouvrirListe('CONTRÔLE DU COÛT')` de `sg3_coco.js`, comme les listes des écritures). Le document garde ses propres réglages : il ne suit pas la présentation
+  affichée à l'écran (les présentations enregistrées sont proposées dans Réglages ▸ Colonnes).
   **Paiements sur contrat et hors contrat : deux couleurs (11.11.2026, Paulo : « ajoute une couleur pour les paiements sur contrat et hors contrat »)** : `CC_DEF_COUL.payh`
   (hors contrat ; tant qu'elle n'est pas choisie : la couleur des paiements), `coulDe(d)` dans l'éditeur (écriture `pay` sans `contratId` → `payh`), libellés « Paiements sur
   contrat » / « Paiements hors contrat » dans la fenêtre des couleurs, PDF : `pk` des lignes d'écriture du travail du moteur (`detRow`) lu par `sg3_coco_docs.js`.

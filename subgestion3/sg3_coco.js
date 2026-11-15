@@ -542,11 +542,16 @@ function bonsBarre(H){ if(!H||H.querySelector('.sgce-bact')) return; const a=doc
 function bonsZone(B){ if(!B||(B.nextElementSibling&&B.nextElementSibling.classList.contains('sgce-bpdf'))||typeof ch03cPdfZone!=='function') return; const E=ctxE('PAIEMENTS'), dos=bonsDos(E); if(!dos) return;
   let z=null; try{ z=ch03cPdfZone({dossier:dos,projet:E.p?E.p.ID:null,fusionNom:'',hauteur:120,lectureSeule:()=>!peutDepot()}); }catch(e){ console.error(e); } if(!z||!z.el) return;
   const w=document.createElement('div'); w.className='sgce-dpdf sgce-bpdf'; const s=document.createElement('span'); s.textContent='Fichiers PDF · Bons de paiement'; w.append(s,z.el); B.after(w); if(z.redraw) try{ z.redraw(); }catch(e){ console.error(e); } }
+/* Fonctions de l'onglet Ordres de paiement (Paulo, 15.11.2026 : « Oui, retirer ») : plus d'« Éditer / Supprimer l'écriture » (elles ne s'appliquaient ni à un ordre ni à ses
+   paiements) ; copie et export portent sur les deux tableaux de l'onglet — celles du moteur visaient la grille de l'éditeur, vide ici, et ne faisaient rien */
+const ordFonctions=()=>{ const K=CCV.cur||{}, p=K.p||{}, C=K.C||{}, g=OSEL.g, gp=OSEL.gp, ok=x=>!!(x&&Array.isArray(x.cols)&&Array.isArray(x.view)), o=ok(g)&&g.sel!=null?(C.ordresPaiement||[]).find(x=>String(x.id)===String(g.sel))||null:null, n=o?' n° '+(o.numero||''):'';
+  return [{t:'Copier la liste des ordres',dis:!ok(g),fn:()=>copyTable(g)},{t:'Copier les paiements de l’ordre'+n,dis:!o||!ok(gp),fn:()=>copyTable(gp)},'-',
+    {t:'Exporter la liste des ordres en CSV …',dis:!ok(g),fn:()=>csvTable(g,'Ordres_de_paiement_'+(p.NUMBER||''))},{t:'Exporter les paiements de l’ordre'+n+' en CSV …',dis:!o||!ok(gp),fn:()=>csvTable(gp,'Paiements_ordre_'+(o?o.numero||'':'')+'_'+(p.NUMBER||''))}]; };
 /* Ordres de paiement : l'ordre choisi dans la liste de gauche le reste quand l'onglet est redessiné (colonnes changées, ordre ou paiement modifié, relevé d'un autre poste) —
    le moteur repartait sans ordre choisi, et le tableau des paiements se vidait après chaque réglage des colonnes (15.11.2026) */
-const OSEL={sig:'numero,date,mo,n,statut',id:null,k:null};
+const OSEL={sig:'numero,date,mo,n,statut',id:null,k:null,g:null,gp:null};   /* g : liste des ordres, gp : paiements de l'ordre choisi (grilles du dernier dessin) */
 const ordreGarde=o=>{ if(!CCV.open||CCV.docs||CCV.sec!=='ORDRES DE PAIEMENT'||!o||!Array.isArray(o.cols)||!Array.isArray(o.rows)||o.cols.map(c=>c.k).join(',')!==OSEL.sig) return;
-  const key=o.key||(r=>r.ID); if(o.sel==null&&OSEL.id===CCV.open&&OSEL.k!=null&&o.rows.some(r=>String(key(r))===OSEL.k)) o.sel=OSEL.k;
+  const key=o.key||(r=>r.ID); OSEL.g=o; if(o.sel==null&&OSEL.id===CCV.open&&OSEL.k!=null&&o.rows.some(r=>String(key(r))===OSEL.k)) o.sel=OSEL.k;
   if(!o._sgSel){ o._sgSel=1; const f=o.onSel; o.onSel=function(r){ OSEL.id=CCV.open; OSEL.k=String(key(r)); return f&&f.apply(this,arguments); }; } };
 { const g0=grid; grid=function(el,o){ let sec=null, pied=false, ft=false; try{ ordreGarde(o); }catch(e){ console.error(e); }
     try{ if(CCV.open&&o&&Array.isArray(o.cols)&&Array.isArray(o.rows)){ const sg=o.cols.map(c=>c.k).join(',');   /* onglet Documents (15.11.2026) : fichiers déposés, comptes d'entreprise, bons de paiement */
@@ -554,7 +559,7 @@ const ordreGarde=o=>{ if(!CCV.open||CCV.docs||CCV.sec!=='ORDRES DE PAIEMENT'||!o
         else if(CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&sg==='nom'&&!o._sgEnt) entDocCols(o);
         else if(CCV.docs&&CCV.sec==='PAIEMENTS'&&sg===BONS.sig) bonsCols(o); } }catch(e){ console.error(e); }
     try{ sec=CCV.open&&!CCV.docs?CCV.sec:null; const sig=sec&&LSIG[sec]&&o&&Array.isArray(o.cols)?o.cols.map(c=>c.k).join(','):null;
-      if(sig!=null&&(sig===LSIG[sec]||o._sgL===sec)){ if(sig===LSIG[sec]) listeCols(sec,o); o._sgL=sec; if(sec==='PAIEMENTS') payNum(el,o); } else sec=null; }catch(e){ console.error(e); sec=null; }   /* o._sgL : tableau déjà réglé, redessiné par un tri sur un titre de colonne (ses colonnes ne sont plus celles d'origine) — le pied est reposé */
+      if(sig!=null&&(sig===LSIG[sec]||o._sgL===sec)){ if(sig===LSIG[sec]) listeCols(sec,o); o._sgL=sec; if(sec==='PAIEMENTS') payNum(el,o); if(sec==='ORDRES DE PAIEMENT') OSEL.gp=o; } else sec=null; }catch(e){ console.error(e); sec=null; }   /* o._sgL : tableau déjà réglé, redessiné par un tri sur un titre de colonne (ses colonnes ne sont plus celles d'origine) — le pied est reposé */
   const r=g0.apply(this,arguments);
   if(ft){ try{ ftGroupes(el,o); }catch(e){ console.error(e); } }
   if(sec){ try{ pied=!!piedListe(sec,el,o); }catch(e){ console.error(e); }
@@ -761,7 +766,7 @@ function habillerEd(m,id){ cssC(); cssE();
       :!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&typeof ch01aOverviewJob==='function'?[{t:'Contrôle des coûts (PDF)',fn:()=>ouvrirListe('CONTRÔLE DU COÛT')}]
       :!CCV.docs&&TABLE_SEC[CCV.sec]&&window.SGCD&&SGCD.tableVue?[{t:TABLE_SEC[CCV.sec][1],fn:()=>imprimerTable(TABLE_SEC[CCV.sec][0])}]:fon(/^Imprimer/);   /* contrôle du coût : son document, fenêtre et réglages de Documents (14.11.2026) */   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
-  const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
+  const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>!CCV.docs&&CCV.sec==='ORDRES DE PAIEMENT'?ordFonctions():[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');
   box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgce-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const s=bPlein.querySelector('svg'); if(s&&typeof nxSvg==='function') s.outerHTML=nxSvg(ED.plein?'pleinq':'plein'); bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
   /* légende des couleurs des écritures retirée de la barre (Paulo, 14.11.2026 : « supprimer ») : les couleurs restent réglables dans Présentation ▸ Affichage ▸ Couleurs des écritures */

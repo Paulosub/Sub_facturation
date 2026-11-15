@@ -1596,6 +1596,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   et le total tiennent dans le panneau. Bouton « Documents ▾ » du panneau des paiements (anciens documents du
   moteur) retiré : « Imprimer ▾ » prend sa place (`ordImp` : `bD.replaceWith(b)`). Clic droit dans cet onglet : menu commun des tableaux (boutons du panneau, copie) — les
   entrées « Éditer / Supprimer l'écriture » et « Nouvelle écriture » ne s'appliquaient ni à un ordre ni à ses paiements.
+  **Fonctions de cet onglet (même jour, Paulo : « Oui, retirer »)** : plus d'« Éditer l'écriture » ni de « Supprimer l'écriture… » (un ordre se modifie et se supprime
+  par les boutons de sa liste, ses paiements par « Supprimer » du panneau) ; le menu = Copier la liste des ordres, Copier les paiements de l'ordre n° …, Exporter la liste des
+  ordres en CSV …, Exporter les paiements de l'ordre n° … en CSV … (`ordFonctions` de `sg3_coco.js` ; entrées des paiements grisées sans ordre choisi ; fichiers
+  « Ordres_de_paiement_<projet>_<date>.csv », « Paiements_ordre_<n°>_<projet>_<date>.csv »). Les entrées « Copier le tableau » et « Exporter en CSV » du moteur visaient la
+  grille de l'éditeur, vide dans cet onglet, et ne faisaient rien : les deux tableaux du dernier dessin sont gardés (`OSEL.g` liste des ordres, `OSEL.gp` paiements de
+  l'ordre choisi) et passés à `copyTable` / `csvTable` — copie et CSV suivent donc les colonnes et le tri affichés. Les autres onglets gardent leur menu.
   **Ordre de paiement et bons de paiement dans un seul document à imprimer (15.11.2026, Paulo : « activer l'impression des bons de paiement de l'ensemble des bons de
   paiement de l'ordre de paiement », « regrouper les deux dans un seul document à imprimer », « ajoute une option ordre et une option bon »)** : Imprimer ▾ du panneau des
   paiements = « Ordre de paiement n° … et bons de paiement (PDF) » (plus « Bon de paiement n° … (PDF) » seulement quand un paiement est choisi ; plus d'entrée grisée

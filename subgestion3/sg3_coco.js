@@ -74,6 +74,13 @@ const COCO={
   ctx(I,t,e){ if(t.dataset.a!=='open') return false; const d=DS.get('costcontroldocument',t.dataset.d); if(!d) return false; const ec=ecrit();
     sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir le contrôle des coûts',fn:()=>ouvrir(d)},...(ec?[{t:'Modifier l’en-tête…',fn:()=>ccEditDoc(prj(d),d)},{t:'Dupliquer (état intermédiaire)',fn:()=>ccDuplicate(d)},'-',{t:'Supprimer…',danger:true,fn:()=>supprimer(d)}]:[])]); return true; } };
 ccDomain=function(C,top,pane,p){ monter(C,p,'coco',BESOIN,COCO); };
+/* Ordre de paiement : « Débité » retiré de la liste des statuts (Paulo, 15.11.2026 : « supprimer de la liste débité ») — fenêtre « Ordre de paiement » du moteur
+   (ccOrders ▸ edO, liste ORD_ST) : l'option est retirée à l'ouverture, sauf pour un ordre déjà « Débité » (son statut reste affiché tant qu'il n'est pas changé ; les
+   ordres déjà débités gardent leur statut dans la liste et les documents). DeltaSub.html seul garde les quatre statuts. */
+{ const d0=dialog; dialog=function(o){ const D=d0.apply(this,arguments);
+    try{ if(o&&o.title==='Ordre de paiement'&&D&&D.bd){ const sel=[...D.bd.querySelectorAll('select')].find(x=>x.querySelector('option[value="enTraitement"]')&&x.querySelector('option[value="debite"]'));
+        if(sel&&sel.value!=='debite') sel.querySelector('option[value="debite"]').remove(); } }catch(e){ console.error(e); }
+    return D; }; }
 { const V=VIEWS.coco, r0=V.render, f0=V.refresh;
   V.render=function(m,arg){ if(CCV.open||!DS.loaded.has('costcontrol')) return r0.call(this,m,arg);   /* costcontroldocument : chargée par monter (DS.need), même vide (relecture du 10.11.2026) */
     const pa=arg&&arg.project?DS.get('project',arg.project):null; if(pa) CCV.g.sel=String(pa.ID);
@@ -242,7 +249,7 @@ const CC_DOC={dossier:'overview',type:'costControlOverview',nomDefaut:'Contrôle
 async function ouvrirListe(sec){ const L=LISTE_DOC[sec]||(sec==='CONTRÔLE DU COÛT'?CC_DOC:null), K=CCV.cur||{}; if(!L||!K.C||typeof ch01aOpen!=='function') return;
   try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
   const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec,touch:K.touch||(()=>{})};
-  const o={E,dossier:L.dossier,type:L.type,nomDefaut:L.nomDefaut,label:L.label,fixe:L.nomDefaut,job:rep=>L.job(E,rep)};
+  const o={E,dossier:L.dossier,type:L.type,nomDefaut:L.nomDefaut,label:L.label,fixe:L.nomDefaut,job:rep=>L.job(E,rep),sgBarre:'pdf'};   /* fenêtre ouverte par « Imprimer » : barre « Document PDF » */
   if(sec==='CONTRÔLE DU COÛT') try{ await suivreEcran(o); }catch(e){ console.error(e); }
   try{ const r=ch01aRec(E,o.dossier); return r&&r.doc?await ch01aOpen(o):await ch01aNew(o); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }
 /* ═══ Colonnes des listes des écritures (11.11.2026, Paulo : « adapter la liste des éléments selon les éléments visibles dans le tableau paiement, ou adjudication, etc. ;
@@ -251,8 +258,45 @@ async function ouvrirListe(sec){ const L=LISTE_DOC[sec]||(sec==='CONTRÔLE DU CO
    Affichage … (colonnes) (même fenêtre que le contrôle du coût, `ccAffichage` option `liste`, sans couleurs) ; choix enregistré dans le contrôle des coûts
    (C.listeColonnes = {mutations, adjudications, paiements} : clés des colonnes, dans l'ordre). Les colonnes d'origine du moteur gardent leur définition (tri, valeurs) ;
    `grid` enveloppé : seul le tableau de la liste (signature des colonnes d'origine) est modifié. */
-const LCLE={MUTATIONS:'mutations',ADJUDICATIONS:'adjudications',PAIEMENTS:'paiements'};
-const LSIG={MUTATIONS:'numero,date,g,o,d,ttc,statut,remarque',ADJUDICATIONS:'lot,lt,e,type,net,num,date,statut',PAIEMENTS:'lot,lt,e,numero,dp,g,ht,tva,ttc,st,o'};
+const LCLE={MUTATIONS:'mutations',ADJUDICATIONS:'adjudications',PAIEMENTS:'paiements','ORDRES DE PAIEMENT':'ordres','ARRÊTÉS DE COMPTE':'arretes','COMPTES D’ENTREPRISE':'comptes'};
+const LSIG={MUTATIONS:'numero,date,g,o,d,ttc,statut,remarque',ADJUDICATIONS:'lot,lt,e,type,net,num,date,statut',PAIEMENTS:'lot,lt,e,numero,dp,g,ht,tva,ttc,st,o',
+  'ORDRES DE PAIEMENT':'lot,b,numero,m,s','ARRÊTÉS DE COMPTE':'numero,e,date,st,g,m,d,f,net','COMPTES D’ENTREPRISE':'e,c,a,ca,p,d'};
+/* ═══ Colonnes par onglet (15.11.2026, Paulo : « dans la fenêtre affichage, adapter aux colonnes par éléments, dans ordres, arrêtés de compte, contrôle du coût, etc. : les
+   colonnes qui peuvent s'afficher ne sont pas les mêmes ; adapte par élément selon les colonnes possibles dans l'ancien logiciel ») — dans les onglets Ordres de paiement,
+   Arrêtés de compte et Comptes d'entreprise, « Présentation » ouvrait la fenêtre du contrôle du coût (ses 177 colonnes et les couleurs des écritures), sans effet sur leur
+   tableau. Chaque onglet a maintenant son catalogue, comme les listes des écritures : les colonnes que l'ancien logiciel propose pour ce tableau, plus celles que l'écran de
+   l'app avait déjà —
+   · Ordres de paiement (tableau des paiements de l'ordre choisi ; la liste des ordres, à gauche, est fixe) : N° du lot, Bénéficiaire, N° Paiement, Paiements à ce jour,
+     Contrats + avenants TTC, Paiements TTC ; ses options d'affichage (désignation du lot, date du paiement, compte du bénéficiaire) sont ici des colonnes ; Statut (écran de l'app) ;
+   · Arrêtés de compte : N° du lot, Entreprise, Lot d'adjudication, Genre, Montant, Début et Échéance de la garantie, Numéro de la garantie (= n° de l'arrêté), Statut ; Date et
+     Facture finale nette (écran de l'app) ;
+   · Comptes d'entreprise (une ligne par entreprise dans l'app ; l'ancien logiciel détaille le compte de l'entreprise choisie, écriture par écriture) : lots, CFC, n° des contrats,
+     compte d'entreprise et les montants du compte — contrats, avenants, contrats + avenants, paiements, sur contrat, hors contrat, renchérissement, contrat − paiements sur
+     contrat, chacun TTC, HT et TVA ; les colonnes propres à une écriture (dates, statuts, n° de paiement, n° de facture…) n'ont pas de sens sur une ligne d'entreprise.
+   Même menu que les listes (Standard · présentations enregistrées · Personnalisé … · Enregistrer · Gérer · Récupérer d'un autre projet), même enregistrement
+   (C.listeColonnes.ordres | arretes | comptes, C.listePresentations, C.listePresActive) ; Standard = colonnes d'origine de l'écran. Les documents PDF gardent leurs colonnes.
+   LVAL : valeurs partagées par les catalogues et les totaux. */
+const LLIB={'ORDRES DE PAIEMENT':'Paiements de l’ordre'};
+function LVAL(C){ const cfg=!!(C.parametres||{}).arrondir, R5=v=>(typeof ch01aR==='function'?ch01aR(v,cfg):+v)||0, T=x=>typeof ch01aTot==='function'?ch01aTot(x):{net:docNet(x),tva:docTva(x)};
+  const K=C.contrats||[], P=C.paiements||[], cE=new Map(), uni=L=>[...new Set(L.filter(x=>x!=null&&x!==''))], tri=L=>typeof cfcCmp==='function'?L.sort((x,y)=>cfcCmp(String(x),String(y))):L.sort();
+  const tr=L=>L.reduce((a,x)=>{ const n=docNet(x), t=docTva(x); a.ht+=n-t; a.tva+=t; a.ttc+=n; return a; },{ht:0,tva:0,ttc:0});
+  const V={
+    /* paiement d'un ordre : paiements antérieurs (même règle et même arrondi que l'ordre imprimé), contrat payé et ses avenants liés */
+    prev:x=>typeof ch01dPrevPays==='function'?ch01dPrevPays(C,x).reduce((s,y)=>s+R5(T(y).net),0):null,
+    ca:x=>x.contratId&&typeof ch01dCtrSum==='function'?ch01dCtrSum(C,x):null,
+    /* arrêté de compte : ligne {a, x, lot, cid} de la liste du moteur, ou l'arrêté lui-même */
+    arr:r=>r&&r.a?r.a:r,
+    lotArr:r=>{ if(r&&r.a&&r.lot&&(r.lot.numero||r.lot.texte)) return r.lot; const k=typeof ch01cCtr==='function'?ch01cCtr(C,V.arr(r)):{}; return (k.ctr||k.x||{}).lot||{}; },
+    /* entreprise (n° d'adresse) : contrats, avenants et paiements — mêmes sommes que les colonnes d'origine de l'écran */
+    ent:e=>{ let m=cE.get(e); if(m) return m; const KC=K.filter(c=>c.contactId===e), PP=P.filter(x=>x.contactId===e), c=tr(KC.filter(x=>x.type==='contrat')), a=tr(KC.filter(x=>x.type==='avenant')), sc=tr(PP.filter(x=>x.contratId)), tous=[...KC,...PP];
+      m={c,a,ca:{ht:c.ht+a.ht,tva:c.tva+a.tva,ttc:c.ttc+a.ttc},p:tr(PP),sc,hc:tr(PP.filter(x=>!x.contratId)),re:tr(PP.filter(x=>x.genre==='rencherissement')),
+        d:{ht:c.ht+a.ht-sc.ht,tva:c.tva+a.tva-sc.tva,ttc:c.ttc+a.ttc-sc.ttc},
+        lots:tri(uni(tous.map(x=>(x.lot||{}).numero))).join(', '),lt:uni(tous.map(x=>(x.lot||{}).texte)).join(', '),cfc:tri(uni(tous.flatMap(x=>(x.lignes||[]).map(l=>l.cfc)))).join(', '),
+        ctrN:uni(KC.filter(x=>x.type==='contrat').map(x=>x.numero)).join(', '),iban:uni(PP.map(x=>{ const b=x.banque||{}; return b.iban||b.compte||''; })).join(', ')}; cE.set(e,m); return m; }};
+  return V; }
+/* sommes d'une entreprise : [clé de colonne, clé de V.ent, titre, catégorie] — TTC = colonne d'origine de l'écran pour c, a, ca, p, d */
+const LENT=[['c','c','Contrats','Adjudication'],['a','a','Avenants','Adjudication'],['ca','ca','Contrats + avenants','Adjudication'],['p','p','Paiements','Paiements'],['sc','sc','Paiements sur contrat','Paiements'],
+  ['hc','hc','Paiements hors contrat','Paiements'],['re','re','Renchérissement','Paiements'],['d','d','Contrat − pmts sur contrat','Différences']];
 function LDEF(sec,C){ const E2=x=>esc(String(x??'')), N=v=>v||v===0?num(v):'', ent=id=>id==null?'':E2(ccEntName(C,id)), R=ccCalc(C), cfcLib=c=>c?E2(c+' '+(R.lbl.get(String(c))||'')):'';
   const ctr=id=>(C.contrats||[]).find(c=>c.id===id)||null, payDe=c=>(C.paiements||[]).filter(x=>x.contratId===c.id), avDe=c=>(C.contrats||[]).filter(a=>a.contratParentId===c.id&&a.lieAuContrat!==false);
   const col=(cat,k,t,l,w,f,o)=>[k,Object.assign({t,l:l||t,cat,col:Object.assign({k,t,w,f},o||{})})];
@@ -300,6 +344,33 @@ function LDEF(sec,C){ const E2=x=>esc(String(x??'')), N=v=>v||v===0?num(v):'', e
     col('Montants','prev','Paiements à ce jour','Paiements à ce jour (déduits du paiement)',120,x=>{ const c=cond(x,20); return c&&+c.valeur?N(+c.valeur):''; },r()),
     col('Banque','iban','Compte d’entreprise','Compte de l’entreprise (IBAN)',170,x=>E2(b(x).iban||b(x).compte||b(x).texteCompte)),col('Banque','benef','Bénéficiaire','Bénéficiaire',170,x=>E2(b(x).nom)),
     col('Banque','mo','Compte du MO','Compte du maître d’ouvrage',150,x=>E2(b(x).compteMO))]); }
+  /* onglets Ordres de paiement (paiements de l'ordre), Arrêtés de compte, Comptes d'entreprise (15.11.2026) : colonnes de l'ancien logiciel pour le tableau, plus celles de l'écran de l'app */
+  const V=LVAL(C), colN=(cat,k,t,l,w,val,sansZero)=>col(cat,k,t,l,w,x=>{ const v=val(x); return v==null||!isFinite(v)||(sansZero&&!v)?'':num(v); },{cls:'r',v:x=>{ const v=val(x); return v==null||!isFinite(v)?null:+v; }});
+  const colT=(cat,k,t,l,w,val,o)=>col(cat,k,t,l,w,x=>E2(val(x)),Object.assign({v:x=>{ const v=val(x); return v==null?'':v; }},o||{})), colD=(cat,k,t,l,w,val)=>col(cat,k,t,l,w,x=>dfr(val(x)),{v:val});
+  if(sec==='ORDRES DE PAIEMENT'){ const b=x=>x.banque||{};
+    return Object.fromEntries([
+    col('Paiement','lot','N°','N° du lot d’adjudication (CFC)',60),colT('Paiement','lt','Lot d’adjudication','Désignation du lot d’adjudication',170,x=>(x.lot||{}).texte),
+    col('Paiement','b','Bénéficiaire','Bénéficiaire (entreprise)',280),colT('Paiement','iban','Compte d’entreprise','Compte du bénéficiaire (IBAN)',190,x=>b(x).iban||b(x).compte||b(x).texteCompte),
+    col('Paiement','numero','N° Paiement','Numéro de paiement',80),colD('Paiement','dp','Date pmt','Date du paiement',86,x=>x.datePaiement),col('Paiement','s','Statut','Statut du paiement',90),
+    colN('Montants','prev','Paiements à ce jour','Paiements à ce jour : paiements antérieurs sur le même contrat (hors contrat : même entreprise et même lot), TTC',130,x=>V.prev(x),true),
+    colN('Montants','ca','Contrats + avenants TTC','Contrat payé et ses avenants liés, TTC',140,x=>V.ca(x)),col('Montants','m','Paiements TTC','Paiement TTC',130)]); }
+  if(sec==='ARRÊTÉS DE COMPTE') return Object.fromEntries([
+    col('Arrêté de compte','numero','N°','Numéro de la garantie (numéro de l’arrêté de compte)',50),colT('Arrêté de compte','lotN','N° du lot','N° du lot d’adjudication (CFC)',70,r=>V.lotArr(r).numero),
+    colT('Arrêté de compte','lotT','Lot d’adjudication','Désignation du lot d’adjudication',180,r=>V.lotArr(r).texte),col('Arrêté de compte','e','Entreprise','Entreprise',240),
+    col('Arrêté de compte','date','Date','Date de l’arrêté de compte',86),col('Arrêté de compte','st','Statut','Statut de l’arrêté de compte',100),
+    col('Garantie','g','Genre de garantie','Genre de garantie',130),col('Garantie','m','Montant de garantie','Montant de garantie',130),col('Garantie','d','Début de la garantie','Début de la garantie',120),col('Garantie','f','Echéance de la garantie','Échéance de la garantie',130),
+    col('Montants','net','Facture finale nette','Facture finale nette, TTC',130)]);
+  if(sec==='COMPTES D’ENTREPRISE'){ const X=e=>V.ent(e), min=t=>t.charAt(0).toLowerCase()+t.slice(1);
+    const mont=cat=>LENT.filter(x=>x[3]===cat).flatMap(([k,s,t])=>{ const w=k==='d'?200:k==='ca'?150:130;
+      return [['c','a','ca','p','d'].includes(k)?col(cat,k,k==='d'?'Contrat − paiements sur contrat TTC':t+' TTC',k==='d'?'(Contrats + avenants) − paiements sur contrat, TTC':t+' TTC',w):colN(cat,k,t+' TTC',t+' TTC',w,e=>X(e)[s].ttc),
+        colN(cat,k+'HT',t+' HT',t+' HT',w,e=>X(e)[s].ht),colN(cat,k+'TVA','TVA '+min(t),'TVA '+min(t),w,e=>X(e)[s].tva)]; });
+    return Object.fromEntries([
+    col('Entreprise','e','Entreprise','Entreprise',280),
+    colT('Subdivision','lots','N° du lot','Numéros des lots d’adjudication de ses contrats et de ses paiements',110,e=>X(e).lots),colT('Subdivision','lt','Lot d’adjudication','Désignation des lots d’adjudication',200,e=>X(e).lt),
+    colT('Subdivision','cfc','CFC','Numéros CFC de ses contrats et de ses paiements',140,e=>X(e).cfc),
+    ...mont('Adjudication'),colT('Adjudication','ctrN','Numéro du contrat','Numéros de ses contrats',110,e=>X(e).ctrN),
+    ...mont('Paiements'),colT('Paiements','iban','Compte d’entreprise','Compte de l’entreprise (IBAN de ses paiements)',190,e=>X(e).iban),
+    ...mont('Différences')]); }
   return {}; }
 const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C, keys=C&&(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) return;
   const D=LDEF(sec,C), base=new Map(o.cols.map(c=>[c.k,c])); const L=keys.map(k=>base.get(k)||(D[k]&&D[k].col)).filter(Boolean); if(L.length) o.cols=L; };
@@ -311,7 +382,7 @@ const payNum=(el,o)=>{ if(Array.isArray(o.rows)) o.rows=o.rows.slice().sort((a,b
   if(bar&&bar.classList&&bar.classList.contains('ph2')) [...bar.querySelectorAll('button')].forEach(b=>{ const d=b._sgB||{}; if(d.label==='Tri'||d.t==='Tri') b.remove(); }); };
 /* pied des listes des écritures (Paulo, 11.11.2026 : « aligner les montants avec les colonnes en lien », « pour les 3 listes ») : lignes dans le tableau même (tfoot),
    chaque montant sous sa colonne — Paiements : récapitulatif de la TVA (case du moteur, remplace sa carte séparée) puis total ; Mutations : par genre (transferts : montants
-   déplacés, sans effet sur le DG révisé) puis total des mutations (modifications + renchérissement = Mutations TTC) ; Adjudications : contrats, avenants, total.
+   déplacés, sans effet sur le DG révisé) puis total des mutations (modifications + renchérissement = chiffre « Variation TTC » du bandeau) ; Adjudications : contrats, avenants, total.
    Colonnes additionnées : celles qui portent un montant (SOMME) ; les autres restent vides. */
 function SOMME(sec,C){ const T=x=>typeof ch01aTot==='function'?ch01aTot(x):{ht:docNet(x)-docTva(x),tva:docTva(x),net:docNet(x)}, G=m=>/^transfert/.test(m.genre||'')?'tr':m.genre==='rencherissement'?'re':m.genre==='variation'?'mo':'';
   if(sec==='PAIEMENTS'){ const ret=x=>{ const c=(x.conditions||[]).find(c=>c.kind===4&&c.appliquee!==false); return c&&+c.montant?+c.montant:null; };
@@ -321,6 +392,9 @@ function SOMME(sec,C){ const T=x=>typeof ch01aTot==='function'?ch01aTot(x):{ht:d
     const CA=c=>c.type==='avenant'?null:[c,...avs(c)].reduce((a,x)=>({ht:a.ht+T(x).ht,ttc:a.ttc+T(x).net}),{ht:0,ttc:0});
     return {net:c=>docNet(c),ht:c=>T(c).ht,tva:c=>T(c).tva,ctr:c=>c.type==='avenant'?null:T(c).net,av:c=>c.type==='avenant'?T(c).net:null,caht:c=>{ const a=CA(c); return a?a.ht:null; },ca:c=>{ const a=CA(c); return a?a.ttc:null; },
       pay:c=>c.type==='avenant'?null:PY(c),reste:c=>{ const a=CA(c); return a?a.ttc-PY(c):null; }}; }
+  if(sec==='ORDRES DE PAIEMENT') return {m:x=>docNet(x)};   /* paiements à ce jour, contrats + avenants : pas additionnés (plusieurs paiements d'un même contrat) */
+  if(sec==='ARRÊTÉS DE COMPTE'){ const V=LVAL(C); return {m:r=>+((V.arr(r).garantie||{}).montant)||0,net:r=>docNet(V.arr(r))}; }
+  if(sec==='COMPTES D’ENTREPRISE'){ const V=LVAL(C), o={}; LENT.forEach(([k,s])=>{ o[k]=e=>V.ent(e)[s].ttc; o[k+'HT']=e=>V.ent(e)[s].ht; o[k+'TVA']=e=>V.ent(e)[s].tva; }); return o; }
   return {}; }
 function piedListe(sec,el,o){ const C=CCV.cur&&CCV.cur.C, t=el&&el.querySelector(':scope>table.g'); if(!C||!t||!Array.isArray(o.rows)) return; const S=SOMME(sec,C), R=o.rows, L=[];
   const somme=(lib,sub,cls,tip)=>{ const v={}; o.cols.forEach(c=>{ const f=S[c.k]; if(!f) return; let n=null; sub.forEach(x=>{ const y=f(x); if(y!=null&&isFinite(y)) n=(n||0)+(+y); }); v[c.k]=n; }); L.push({lib,v,cls,tip}); };
@@ -332,16 +406,26 @@ function piedListe(sec,el,o){ const C=CCV.cur&&CCV.cur.C, t=el&&el.querySelector
     const mo=R.filter(m=>G(m)==='mo'), re=R.filter(m=>G(m)==='re'), tr=R.filter(m=>G(m)==='tr'), au=R.filter(m=>!G(m));
     if(mo.length) somme('Modifications',mo); if(re.length) somme('Renchérissement',re); if(au.length) somme('Autres',au);
     if(tr.length) somme('Transferts',tr,'','Montants déplacés d’une position à l’autre : sans effet sur le devis général révisé (origine −, destination +)');
-    somme('Total des mutations',R.filter(m=>G(m)!=='tr'),'t','Modifications et renchérissement : effet sur le devis général révisé (Mutations TTC)'); }
+    somme('Total des mutations',R.filter(m=>G(m)!=='tr'),'t','Modifications et renchérissement : effet sur le devis général révisé (Variation TTC)'); }
   if(sec==='ADJUDICATIONS'){ somme('Montant des contrats',R.filter(c=>c.type!=='avenant')); somme('Montant des avenants',R.filter(c=>c.type==='avenant')); somme('Total des adjudications',R,'t'); }
+  if((sec==='ORDRES DE PAIEMENT'||sec==='ARRÊTÉS DE COMPTE'||sec==='COMPTES D’ENTREPRISE')&&R.length&&o.cols.some(c=>S[c.k])) somme('Total',R,'t');   /* onglets (15.11.2026) : un total sous chaque colonne de montant */
   if(!L.length) return; const A=o.cols.map((c,j)=>S[c.k]?j:-1).filter(j=>j>=0), a0=A.length?Math.min(...A):o.cols.length, E2=x=>esc(String(x??''));
   const tf=document.createElement('tfoot'); tf.className='sgce-pied';
   tf.innerHTML=L.map(r=>'<tr class="'+(r.cls||'')+'"'+(r.tip?' title="'+E2(r.tip)+'"':'')+'>'+(a0>0?'<td class="lb" colspan="'+a0+'">'+E2(r.lib)+'</td>':'')+o.cols.slice(a0).map((c,j)=>{ const v=r.v[c.k];
     return '<td class="'+(c.cls||'')+(S[c.k]?' r':'')+'"'+(a0===0&&j===0?' title="'+E2(r.lib)+'"':'')+'>'+(v!=null&&S[c.k]?num(v):'')+'</td>'; }).join('')+'</tr>').join('');
-  t.append(tf); }
-{ const g0=grid; grid=function(el,o){ let sec=null; try{ sec=CCV.open&&!CCV.docs?CCV.sec:null; if(sec&&LSIG[sec]&&o&&Array.isArray(o.cols)&&o.cols.map(c=>c.k).join(',')===LSIG[sec]){ listeCols(sec,o); if(sec==='PAIEMENTS') payNum(el,o); } else sec=null; }catch(e){ console.error(e); sec=null; }
+  t.append(tf); return true; }
+/* Ordres de paiement : l'ordre choisi dans la liste de gauche le reste quand l'onglet est redessiné (colonnes changées, ordre ou paiement modifié, relevé d'un autre poste) —
+   le moteur repartait sans ordre choisi, et le tableau des paiements se vidait après chaque réglage des colonnes (15.11.2026) */
+const OSEL={sig:'numero,date,mo,n,statut',id:null,k:null};
+const ordreGarde=o=>{ if(!CCV.open||CCV.docs||CCV.sec!=='ORDRES DE PAIEMENT'||!o||!Array.isArray(o.cols)||!Array.isArray(o.rows)||o.cols.map(c=>c.k).join(',')!==OSEL.sig) return;
+  const key=o.key||(r=>r.ID); if(o.sel==null&&OSEL.id===CCV.open&&OSEL.k!=null&&o.rows.some(r=>String(key(r))===OSEL.k)) o.sel=OSEL.k;
+  if(!o._sgSel){ o._sgSel=1; const f=o.onSel; o.onSel=function(r){ OSEL.id=CCV.open; OSEL.k=String(key(r)); return f&&f.apply(this,arguments); }; } };
+{ const g0=grid; grid=function(el,o){ let sec=null, pied=false; try{ ordreGarde(o); }catch(e){ console.error(e); }
+    try{ sec=CCV.open&&!CCV.docs?CCV.sec:null; const sig=sec&&LSIG[sec]&&o&&Array.isArray(o.cols)?o.cols.map(c=>c.k).join(','):null;
+      if(sig!=null&&(sig===LSIG[sec]||o._sgL===sec)){ if(sig===LSIG[sec]) listeCols(sec,o); o._sgL=sec; if(sec==='PAIEMENTS') payNum(el,o); } else sec=null; }catch(e){ console.error(e); sec=null; }   /* o._sgL : tableau déjà réglé, redessiné par un tri sur un titre de colonne (ses colonnes ne sont plus celles d'origine) — le pied est reposé */
   const r=g0.apply(this,arguments);
-  if(sec){ try{ piedListe(sec,el,o); }catch(e){ console.error(e); }
+  if(sec){ try{ pied=!!piedListe(sec,el,o); }catch(e){ console.error(e); }
+    if(sec==='ORDRES DE PAIEMENT'&&pied) queueMicrotask(()=>{ [...el.children].forEach(x=>{ if(x.classList&&x.classList.contains('card')&&/^Total\s/.test(x.textContent||'')) x.remove(); }); });   /* « Total … CHF » du moteur : remplacé par le pied du tableau */
     if(sec==='PAIEMENTS') queueMicrotask(()=>{ [el,el.parentNode].filter(Boolean).forEach(z=>[...z.children].forEach(x=>{ if(x.classList&&x.classList.contains('card')&&/Récapitulatif de TVA/.test((x.querySelector('h3')||{}).textContent||'')) x.remove(); })); }); }   /* carte du moteur : remplacée par le pied du tableau */
   return r; }; }
 /* Présentations des listes des écritures (11.11.2026, Paulo : « personnalisé ; ajouter une option permettant d'enregistrer une présentation selon les colonnes et
@@ -363,7 +447,7 @@ function lpAppliquer(sec,p){ const C=(CCV.cur||{}).C; if(!C) return; lpSetCols(C
   if(p&&sec==='PAIEMENTS'&&p.recap!=null&&typeof ch01dSetOpt==='function'&&!!p.recap!==lpRecap(C)) ch01dSetOpt(C,'recapTVA',!!p.recap); lpTouch(); }
 function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), std=LSIG[sec].split(','), cat=[];
   Object.entries(D).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l,{}]); });
-  ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:SLIB(sec),titreDlg:'Présentation personnalisée · '+SLIB(sec),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:lpCols(C,sec),
+  ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:LLIB[sec]||SLIB(sec),titreDlg:'Présentation personnalisée · '+SLIB(sec)+(LLIB[sec]?' · '+LLIB[sec].charAt(0).toLowerCase()+LLIB[sec].slice(1):''),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:lpCols(C,sec),
     set:ids=>lpSetCols(C,sec,ids)}}); }
 function lpEnregistrer(sec){ const C=(CCV.cur||{}).C; if(!C) return; const L=lpL(C,LCLE[sec]).slice(), A=lpActive(C,sec), cols=lpCols(C,sec), D=LDEF(sec,C);
   let n=L.length+1; while(L.some(p=>p.nom==='Présentation '+n)) n++;
@@ -386,12 +470,12 @@ function lpGerer(sec){ const C=(CCV.cur||{}).C; if(!C) return; const L=lpL(C,LCL
     if(noms.some(x=>!x)){ toast('Chaque présentation doit avoir un nom.',true); return false; } if(new Set(noms).size!==noms.length){ toast('Deux présentations portent le même nom.',true); return false; }
     const a=((C.listePresActive||{})[LCLE[sec]]), r=L.find(p=>p._n===a); lpPut(C,sec,L.map(p=>{ const q=Object.assign({},p,{nom:p.nom.trim()}); delete q._n; return q; })); lpSetActive(C,sec,r?r.nom.trim():null); lpTouch(); }}]}); }
 async function lpRecuperer(sec){ const K=CCV.cur||{}, C=K.C; if(!C) return; try{ await DS.need(['costcontrol','costcontroldocument']); }catch(_){}
-  const cle=LCLE[sec], lib={mutations:'Mutations',paiements:'Paiements',adjudications:'Adjudications'};
+  const cle=LCLE[sec], lib={mutations:'Mutations',paiements:'Paiements',adjudications:'Adjudications',ordres:'Ordres de paiement',arretes:'Arrêtés de compte',comptes:'Comptes d’entreprise'};
   const src=DS.all('costcontroldocument').filter(d=>d.ID!==K.id&&(typeof sgProjetPermis!=='function'||sgProjetPermis(d.PROJECT_ID))).map(d=>{ const X=DS.get('costcontrol',d.ID)||{}, it=[];
       Object.keys(lib).forEach(k=>{ (((X.listePresentations||{})[k])||[]).forEach(p=>it.push({k,p})); const c=(X.listeColonnes||{})[k]; if(c&&c.length&&!(((X.listePresentations||{})[k])||[]).some(p=>p.cols.join(',')===c.join(','))) it.push({k,p:{nom:'Présentation en cours (non enregistrée)',cols:c.slice()}}); });
       const pr=DS.get('project',d.PROJECT_ID)||{}; return {d,it,lib:[pr.NUMBER,pr.TITLE].filter(Boolean).join(' · ')+(d.VERSION?' — version '+d.VERSION:'')}; }).filter(x=>x.it.length)
     .sort((a,b)=>String(b.d.CHANGEDDATE||'').localeCompare(String(a.d.CHANGEDDATE||'')));
-  if(!src.length){ dialog({title:'Récupérer des présentations',body:h('div',{style:{maxWidth:'460px'}},'Aucun autre projet n’a de présentation enregistrée pour les listes des écritures.')}); return; }
+  if(!src.length){ dialog({title:'Récupérer des présentations',body:h('div',{style:{maxWidth:'460px'}},'Aucun autre projet n’a de présentation enregistrée pour ces tableaux.')}); return; }
   const sel=h('select',{class:'inp',style:{width:'100%'}}), liste=h('div',{style:{marginTop:'10px',maxHeight:'50vh',overflow:'auto'}}); let cases=[];
   src.forEach((x,i)=>sel.append(h('option',{value:i},x.lib)));
   const draw=()=>{ const x=src[+sel.value]; liste.innerHTML=''; cases=[];
@@ -503,7 +587,7 @@ async function dgDuDevis(d){ try{ await DS.need(['costestimate','costestimatedoc
   const sid=devisSource(C,p.ID); if(sid==null){ toast('Aucun devis général ne correspond au devis de ce contrôle des coûts : attribuez le devis général validé (onglet Contrôle du coût ▸ Paramètres ▸ Attribuer le devis général validé).',true); return; }
   if(typeof ch02aCtx!=='function'||typeof ch02cOpen!=='function'||typeof ch02aSave!=='function'){ toast('Document du devis indisponible.',true); return; }
   const X=ch02aCtx({id:sid,doc:DS.get('costestimatedocument',sid),p,E:ch02aClone(DS.get('costestimate',sid)),st:{},dirty:false,draw:()=>{},totals:()=>{},drawCat:()=>{}});
-  X.touch=()=>{ X.dirty=true; ch02aSave(X).catch(()=>{}); }; X.sgde={ong:'docs',cfc:false,niv:0,vu:null,cc:true,lb:'Contrôle des coûts · Devis général'};
+  X.touch=()=>{ X.dirty=true; ch02aSave(X).catch(()=>{}); }; X.sgde={ong:'docs',cfc:false,niv:0,vu:null,cc:true,lb:'Contrôle des coûts · Devis général',barre:'pdf'};
   try{ await ch02cOpen(X,0); }catch(e){ console.error(e); toast('Document impossible à préparer : '+e.message,true); } }
 const ED=SGCC.ed={niv:(()=>{ try{ const v=+localStorage.getItem('sg3_coco_niv'); return [1,2,3].includes(v)?v:0; }catch(_){ return 0; } })(),sub:'fichiers',plein:false,box:null};
 /* ligne masquée par le choix du niveau de CFC (k = « cfc|entreprise[|détail] » des sections Contrôle du coût et Devis général ; total toujours affiché) */
@@ -585,7 +669,7 @@ function habillerEd(m,id){ cssC(); cssE();
       '<button class="nx-btn" data-a="liste" title="Retour aux contrôles des coûts du projet">‹ Contrôles du projet</button>');
     const v=k=>+g[k]||0;
     kp.innerHTML=kpi('Devis général TTC',mt(v('dg')),'','','Devis général attribué au contrôle des coûts, TVA comprise (Paramètres ▸ Attribuer le devis général validé)')
-      +kpi('Mutations TTC',signe(v('mutations')),v('dg')&&v('mutations')?pc(v('mutations'),v('dg'))+' du devis général':'','','Transferts, variations et renchérissement')
+      +kpi('Variation TTC',signe(v('mutations')),v('dg')&&v('mutations')?pc(v('mutations'),v('dg'))+' du devis général':'','','Variation du devis général : somme des mutations (transferts, modifications et renchérissement)')   /* « Variation TTC » : ex-« Mutations TTC » (Paulo, 15.11.2026 : « remplacer mutation TTC par variation TTC ») ; la colonne « Mutations TTC » du tableau garde son titre */
       +kpi('DG révisé TTC',mt(v('dgRevise')),'','','Devis général révisé : devis général + mutations')
       +kpi('Contrats + avenants TTC',mt(v('contratsAvenants')),v('avenants')?'dont avenants '+mt(v('avenants')):'','','Contrats d’entreprise et avenants, TVA comprise')
       +kpi('Paiements TTC',mt(v('paiements')),v('contratsAvenants')&&v('paiements')?pc(v('paiements'),v('contratsAvenants'))+' des contrats':'','','Paiements sur contrat et hors contrat, TVA comprise')
@@ -628,11 +712,11 @@ function habillerEd(m,id){ cssC(); cssE();
     const paie=()=>{ const K=CCV.cur||{}, k=selDe(1); return K.C&&k!=null?(K.C.paiements||[]).find(x=>String(x.id)===k)||null:null; };
     const E=()=>{ const K=CCV.cur||{}; return {C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'ORDRES DE PAIEMENT',touch:K.touch||(()=>{})}; };
     const ouvrirOrdre=async o=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} const e=E();
-      const d={E:e,dossier:'paymentorder/'+(typeof ch01dRef==='function'?ch01dRef(o):o.id),type:'costControlPaymentOrder',nomDefaut:'Ordre de paiement',label:'Ordre de paiement',fixe:'Ordre de paiement',job:rep=>ch01dOrderJob(e,o,rep)};
+      const d={E:e,dossier:'paymentorder/'+(typeof ch01dRef==='function'?ch01dRef(o):o.id),type:'costControlPaymentOrder',nomDefaut:'Ordre de paiement',label:'Ordre de paiement',fixe:'Ordre de paiement',job:rep=>ch01dOrderJob(e,o,rep),sgBarre:'pdf'};
       try{ const r=ch01aRec(e,d.dossier); return r&&r.doc?await ch01aOpen(d):await ch01aNew(d); }catch(x){ console.error(x); toast('Document impossible à préparer : '+x.message,true); } };
     const b=ibtn({i:'print',label:'Imprimer',t:'Imprimer',menu:()=>{ const o=ordre(), x=paie();
       return [{t:o?'Ordre de paiement n° '+(o.numero||'')+' (PDF)':'Ordre de paiement (choisir un ordre)',dis:!o||typeof ch01dOrderJob!=='function',fn:()=>ouvrirOrdre(o)},
-        {t:x?'Bon de paiement n° '+(x.numero||'')+' (PDF)':'Bon de paiement (choisir un paiement)',dis:!o||!x||typeof ch01dBonOpen!=='function',fn:async()=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} ch01dBonOpen(E(),o,x); }}]; }});
+        {t:x?'Bon de paiement n° '+(x.numero||'')+' (PDF)':'Bon de paiement (choisir un paiement)',dis:!o||!x||typeof ch01dBonOpen!=='function',fn:async()=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} const e=E(); e.sgBarre='pdf'; ch01dBonOpen(e,o,x); }}]; }});
     b._sgceImp=1; bD.after(b); };
   const deco=()=>{ try{ ordImp(); }catch(e){ console.error(e); } if(dgVue()) return; const t=pane.querySelector(':scope>table.g'); if(!t) return; const cc=estCC(); t.classList.toggle('sgce-t',cc); if(!cc) return;
     t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const k=tr.dataset.k, P=k.split('|'), c=P[0], n=c?cfcLevel(c):0, det=P.length>=3, ent=!det&&P[1]!=='-'&&k!=='TOTAL';

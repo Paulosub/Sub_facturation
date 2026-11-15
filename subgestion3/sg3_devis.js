@@ -346,6 +346,7 @@ html[data-visuel="mac"] .sgde table.g.sgde-t tbody tr:nth-child(even) td:nth-chi
 .sgdv-rf span{font-size:11.5px;color:var(--s-gris)}
 .sgdv-btn{height:34px;min-width:96px;padding:0 18px;border:2px solid var(--s-nuit);background:var(--s-nuit);font:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;border-radius:0}
 .sgdv-btn:hover{background:var(--s-nuit2);border-color:var(--s-nuit2)}
+.sgdv.sgdv-pdf .sgdv-rf .sgdv-btn{display:none}   /* barre « Document PDF » : Fermer est dans la barre */
 @media (max-width:980px){.sgdv-corps{grid-template-columns:minmax(0,1fr) 250px}.sgdv-fig{display:none}}
 @media (max-height:860px){.sgdc-opts{padding:8px 24px 10px}.sgdc-desc{padding-top:10px}.sgdc-desc textarea{min-height:52px}.sgdc-ttc .v{font-size:21px}}
 @media (max-height:860px){.sgde-tete .sgfh-meta{display:none}.sgde-tete .sgfh-tete{padding:6px 14px}.sgde-tete .sgfh-ini{font-size:22px}.sgde-tete .sgfh-nm h2{font-size:17px}.sgde-tete .sgfh-nm .lb{margin:0}.sgde-kp .nx-kpi{padding:6px 12px 6px 0}.sgde-kp .nx-kpi .v{font-size:clamp(11px,calc(2.4cqi - 5.6px),18px);margin-top:3px}.sgde-kp .nx-kpi .s{display:none}.sgdc-dlg .sgfh-tete{padding:8px 24px}.sgdc-tab{max-height:36vh!important}}
@@ -951,24 +952,36 @@ function vueDocG(D,cfg){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if
   const GRP=cfg.groupes||VUE_GROUPES, grpDe=cfg.groupe||((it,G)=>it.grp&&G[it.grp]?it.grp:vueGroupe(it.t)), rangDe=cfg.rang||(t=>{ const k=VUE_ORDRE.indexOf(t); return k<0?999:k; }),
     retraitDe=cfg.retrait||((it,L0)=>it.ind||(VUE_RETRAIT.has(it.t)&&(it.t!=='Base et commentaire dans colonne séparée'||L0.some(x=>x.t==='Base et commentaire de la position'))));
   dlg.classList.add('sgdv-dlg');
-  const R=el('div','sgdv','<div class="sgdv-tete"><div class="sgdv-ini">'+E(p.NUMBER||'')+'</div><div class="sgdv-nm"><div class="lb">'+E(cfg.lb||'')+'</div><h3>'
+  /* cfg.barre === 'pdf' (15.11.2026, Paulo : « lorsque je clique sur imprimer dans contrôle des coûts, ordres, arrêtés de compte… je souhaite la même barre de fenêtre
+     que devis général ») : la barre de la visionneuse commune (sgVisionneuse, sg3_lecteur.js) — « Document PDF », titre du document et de l'affaire, pages · format ·
+     taille, Pages, Imprimer, Télécharger, Fermer — à la place de celle des documents (État, PDF ▾, Partager ▾, Fermer au pied du volet). Le volet Réglages reste. */
+  const pdfBar=cfg.barre==='pdf', titrePdf=[cfg.titre||'Document',p.NUMBER,p.TITLE].filter(x=>x!=null&&String(x).trim()).join(' ');
+  const R=el('div','sgdv'+(pdfBar?' sgdv-pdf':''),(pdfBar
+      ?'<div class="sglv-tete"><div class="sglv-ini">'+E(p.NUMBER||'')+'</div><div class="sglv-nm sgdv-nm"><div class="lb">Document PDF</div><h3 title="'+E(titrePdf)+'">'+E(titrePdf)+'</h3><div class="mt"></div></div>'
+        +'<div class="sglv-fig"><span class="l">Pages</span><span class="v sgdv-np">—</span></div>'
+        +'<div class="sglv-act"><button class="sglv-ib sgdv-imp" type="button" title="Imprimer">'+sglpIco(SGLP_I.imp)+'<span class="lib">Imprimer</span></button>'
+        +'<button class="sglv-ib sgdv-tel" type="button" title="Télécharger « '+E(titrePdf.replace(/[\\/:*?"<>|]+/g,'-'))+'.pdf »">'+sglpIco(SGLP_I.tel)+'<span class="lib">Télécharger</span></button>'
+        +'<button class="sglv-btn sgdv-ferm" type="button">Fermer</button></div></div>'
+      :'<div class="sgdv-tete"><div class="sgdv-ini">'+E(p.NUMBER||'')+'</div><div class="sgdv-nm"><div class="lb">'+E(cfg.lb||'')+'</div><h3>'
       +E(cfg.titre||'Document')+'</h3><div class="mt"></div></div>'
       +'<div class="sgdv-fig"><span class="l">Pages</span><span class="v sgdv-np">—</span></div><div class="sgdv-fig"><span class="l">État</span><span class="v et"><i></i>'+E(etat||'—')+'</span></div>'
-      +'<div class="sgdv-act"><button class="sgdv-ib sgdv-imp" type="button" title="Imprimer le document">'+ICV('<path d="M7 9V4h10v5M7 17H4V9h16v8h-3M7 14h10v6H7z"/>')+'Imprimer</button></div></div>'
+      +'<div class="sgdv-act"><button class="sgdv-ib sgdv-imp" type="button" title="Imprimer le document">'+ICV('<path d="M7 9V4h10v5M7 17H4V9h16v8h-3M7 14h10v6H7z"/>')+'Imprimer</button></div></div>')
     +'<div class="sgdv-corps"><div class="sgdv-doc"></div>'
     +'<aside class="sgdv-reg" aria-label="Réglages du document"><div class="sgdv-rh"><h4>Réglages</h4></div><div class="sgdv-rb"></div>'
       +'<div class="sgdv-rf"><span class="pied"></span><button class="sgdv-btn" type="button">Fermer</button></div></aside></div>');
-  const act=R.querySelector('.sgdv-act'); [pdfB,partB].forEach(b=>{ if(b){ b.classList.add('sgdv-moteur'); act.append(b); } });
-  (cfg.actions||[]).forEach(a=>{ const b=el('button','sgdv-ib',(a.ico?ICV(a.ico):'')+E(a.t)); b.type='button'; if(a.ti) b.title=a.ti; b.addEventListener('click',()=>{ try{ a.fn(); }catch(e){ console.error(e); } }); act.append(b); });
+  const act=R.querySelector('.sgdv-act'); if(act){ [pdfB,partB].forEach(b=>{ if(b){ b.classList.add('sgdv-moteur'); act.append(b); } });
+  (cfg.actions||[]).forEach(a=>{ const b=el('button','sgdv-ib',(a.ico?ICV(a.ico):'')+E(a.t)); b.type='button'; if(a.ti) b.title=a.ti; b.addEventListener('click',()=>{ try{ a.fn(); }catch(e){ console.error(e); } }); act.append(b); }); }
   const garde=el('div','sgdv-garde'); garde.append(...D.bd.childNodes); D.bd.replaceChildren(R,garde);
   /* lecteur commun de l'app (sg3_lecteur.js, bloc 48) : pages, zoom, page gardée à la mise à jour, attente de la dernière version, erreurs signalées */
   const rb=R.querySelector('.sgdv-rb'); let dernier='';
+  let courant=null;   /* PDF affiché (Télécharger) */
   const tete=inf=>{ const n=inf?inf.n:L.n; R.querySelector('.sgdv-np').textContent=n||'—';
-    R.querySelector('.sgdv-nm .mt').textContent=[p.TITLE||p.DESCRIPTION||'',n?n+(n>1?' pages':' page'):'',sglpFormat(inf?inf.page:L.premiere)].filter(Boolean).join(' · '); };
+    R.querySelector('.sgdv-nm .mt').textContent=(pdfBar?[n?n+(n>1?' pages':' page'):'',sglpFormat(inf?inf.page:L.premiere),sglpTaille(inf&&inf.taille?inf.taille:courant?courant.size:0)]
+      :[p.TITLE||p.DESCRIPTION||'',n?n+(n>1?' pages':' page'):'',sglpFormat(inf?inf.page:L.premiere)]).filter(Boolean).join(' · '); };
   const L=sgLecteurPdf({surInfo:inf=>tete(inf),surEchec:()=>{ dernier=''; panneau(); }});   /* mise à jour échouée : plus de mention « appliqué » */
   R.querySelector('.sgdv-doc').append(L.el);
-  ifr._sgVue=blob=>L.charger(blob); ifr._sgVuePrep=()=>L.attendre(); ifr._sgVueErr=e=>L.echec(e);
-  if(ifr._sgblob) L.charger(ifr._sgblob);
+  ifr._sgVue=blob=>{ courant=blob; return L.charger(blob); }; ifr._sgVuePrep=()=>L.attendre(); ifr._sgVueErr=e=>L.echec(e);
+  if(ifr._sgblob){ courant=ifr._sgblob; L.charger(ifr._sgblob); }
   /* réglages en panneau */
   const maj=()=>{ try{ D.maj(cfg.rendre()); }catch(e){ console.error(e); L.echec(e); } };
   const appliquer=it=>{ if(!it||it.dis||!peut()) return;
@@ -1009,11 +1022,14 @@ function vueDocG(D,cfg){ const dlg=D&&D.bd&&D.bd.parentNode, ifr=D&&D.iframe; if
   document.addEventListener('keydown',escDoc,true);
   let vivant=true; const fini=()=>{ if(!vivant) return; vivant=false; document.removeEventListener('keydown',escDoc,true); try{ L.fini(); }catch(_){} ifr._sgVue=ifr._sgVuePrep=ifr._sgVueErr=null; };
   R.querySelector('.sgdv-btn').addEventListener('click',()=>{ D.close(); });
+  if(pdfBar){ R.querySelector('.sgdv-ferm').addEventListener('click',()=>{ D.close(); });
+    R.querySelector('.sgdv-tel').addEventListener('click',()=>{ if(!courant){ toast('Le document n’est pas encore prêt.'); return; }
+      const u=URL.createObjectURL(courant), a=document.createElement('a'); a.href=u; a.download=titrePdf.replace(/[\\/:*?"<>|]+/g,'-')+'.pdf'; document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); }); }
   const mo=new MutationObserver(()=>{ if(!dlg.isConnected){ fini(); mo.disconnect(); } }); mo.observe(ov.parentNode||document.body,{childList:true});
   const c0=D.close; D.close=function(){ fini(); return c0.apply(this,arguments); };
   setTimeout(()=>L.focus(),0); tete(); return {R,L,maj,panneau}; }
 function vueDoc(D,X,i,rec){ const hdr=ch02aHdr(X)||{};
-  return vueDocG(D,{p:X.p||{},lb:(X.sgde&&X.sgde.lb)||'Descriptifs & devis · Documents',titre:(rec&&rec.doc&&rec.doc.nom)||(CH02C_ROWS[i]||{}).t||'Document',etat:DV_STATE[hdr.STATECODE]||'',
+  return vueDocG(D,{barre:(X.sgde&&X.sgde.barre)||null,p:X.p||{},lb:(X.sgde&&X.sgde.lb)||'Descriptifs & devis · Documents',titre:(rec&&rec.doc&&rec.doc.nom)||(CH02C_ROWS[i]||{}).t||'Document',etat:DV_STATE[hdr.STATECODE]||'',
     peut:()=>ecrit()&&ch02aCanEdit(ch02aHdr(X)),items:()=>ch02cPrefItems(X,i),rendre:()=>ch02cRender(X,i,DS.get(CH02C_T,rec&&rec.ID)||rec),
     installer:({R,L,maj,reset,peut})=>{
   if(+i===0){ const cont=R.querySelector('.sglp-pages'); if(cont) new MutationObserver(()=>dgSautsMarquer(cont,X)).observe(cont,{childList:true}); }   /* sauts de page visibles à l'écran (08.11.2026) */

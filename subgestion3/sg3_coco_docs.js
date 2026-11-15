@@ -563,7 +563,8 @@ function vueCoco(D,o){ const E=o.E||{}, p=E.p||{}, rec=ch01aRec(E,o.dossier)||{}
   const rendre=()=>ch01aRender(o,ch01aRec(E,o.dossier));
   const actions=[]; if(false&&!g&&rec.doc&&typeof ch01aTexts==='function') actions.push({   /* « Modifier les textes… » retiré (Paulo, 11.11.2026 : « supprimer »), comme dans le devis */t:'Modifier les textes…',ico:ICO_TXT,ti:'Textes du modèle de ce document',fn:()=>{
     if(!peut()){ toast('Lecture seule : textes non modifiables.',true); return; } const cur=ch01aRec(E,o.dossier); if(cur&&cur.doc) ch01aTexts(cur,r2=>{ try{ D.maj(ch01aRender(o,r2)); }catch(e){ console.error(e); } }); }});
-  SGDE.vue(D,{p,lb:'Contrôle des coûts · Documents',titre:titreDe(o,rec),etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre,
+  SGDE.vue(D,{barre:o.sgBarre||E.sgBarre||null,   /* ouvert par « Imprimer » : barre « Document PDF » du devis général (15.11.2026) ; ouvert depuis Documents : barre des documents */
+    p,lb:'Contrôle des coûts · Documents',titre:titreDe(o,rec),etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre,
     pied:'Enregistrés dans le document',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,actions,
     installer:({R,maj,reset,peut})=>{ if(g!=='overview'&&g!=='estimate') return;   /* sauts de page : repères à l'écran, menu au clic droit */
       const cont=R.querySelector('.sglp-pages'); let att=0;   /* repères reposés après chaque mise en page et chaque page rendue (les mutations des repères eux-mêmes sont ignorées) */
@@ -600,9 +601,8 @@ function comptesVue(E){ const o=COMPTES_O(E), doc=DS.get('costcontroldocument',E
   const nomF=()=>[p.NUMBER,'Comptes d’entreprise'].filter(Boolean).join(' ')+'.pdf';
   const tel=()=>{ if(!dernier) return; const u=URL.createObjectURL(new Blob([dernier],{type:'application/pdf'})), a=document.createElement('a'); a.href=u; a.download=nomF(); document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); };
   const peut=()=>{ try{ return ecrit(); }catch(_){ return true; } };
-  SGDE.vue(D,{p,lb:'Contrôle des coûts · Documents',titre:'Comptes d’entreprise',etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>comptesOctets(E),
-    pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
-    actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
+  SGDE.vue(D,{barre:'pdf',p,lb:'Contrôle des coûts · Documents',titre:'Comptes d’entreprise',etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>comptesOctets(E),
+    pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});   /* Télécharger : dans la barre « Document PDF » (15.11.2026) */
   D.maj(comptesOctets(E)); }
 /* ═══ Arrêtés de compte et Ordres de paiement ▸ Imprimer (Paulo, 14.11.2026 : « produis la même fenêtre dans arrêtés de compte et ordres de paiement ») : le moteur n'a pas
    de document pour la liste de ces onglets ; PDF fait ici au graphisme des listes (page de garde, tableau bleu nuit, texte dès la colonne « info@ »), mêmes lignes et mêmes
@@ -639,9 +639,8 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
     return Promise.resolve(r).then(oct=>{ dernier=oct; if(ifr._sgVue) ifr._sgVue(new Blob([oct],{type:'application/pdf'})); },e=>{ console.error(e); if(ifr._sgVueErr) ifr._sgVueErr(e); }); }};
   const tel=()=>{ if(!dernier) return; const u=URL.createObjectURL(new Blob([dernier],{type:'application/pdf'})), a=document.createElement('a'); a.href=u; a.download=[p.NUMBER,T.titre].filter(Boolean).join(' ')+'.pdf'; document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); };
   const peut=()=>{ try{ return ecrit(); }catch(_){ return true; } };
-  SGDE.vue(D,{p,lb:'Contrôle des coûts · Documents',titre:T.titre,etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>tableOctets(E,k),
-    pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind,
-    actions:[{t:'PDF',ti:'Télécharger le PDF',ico:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',fn:tel}]});
+  SGDE.vue(D,{barre:'pdf',p,lb:'Contrôle des coûts · Documents',titre:T.titre,etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>tableOctets(E,k),
+    pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
   D.maj(tableOctets(E,k)); }
 window.SGCD={decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();

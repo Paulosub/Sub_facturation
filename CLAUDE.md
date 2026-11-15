@@ -1547,6 +1547,47 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Devis général » passe avant « Contrôle du coût » (`SECS` trié, 11.11.2026), `habillerEd` (`sg3_coco.js`) associait les documents de chaque section par leur RANG dans le
   menu du moteur : les deux premiers n'étaient plus reconnus, donc plus proposés dans la ligne de choix de l'onglet Documents ni dans Imprimer ▸ « Documents · … » (ils restaient
   ouverts par Imprimer ▸ « Contrôle des coûts (PDF) » / « Devis général (PDF) »). Association par libellé désormais (`docsIts.find`).
+  **Fenêtres ouvertes par « Imprimer » du contrôle des coûts : barre « Document PDF » du devis général (15.11.2026, Paulo : « lorsque je clique sur imprimer dans contrôle des
+  coûts, ordres, et arrêté de compte, etc. je souhaite la même barre de fenêtre que devis général »)** : `vueDocG(D,cfg)` (`sg3_devis.js`) accepte `cfg.barre:'pdf'` — en-tête de
+  la visionneuse commune (`.sglv-tete` de `sg3_lecteur.js` : n° du projet, « Document PDF », « <document> <n°> <désignation> », « n pages · format · taille », chiffre Pages,
+  Imprimer, Télécharger, Fermer) à la place du bandeau des documents (État, PDF ▾, Partager ▾) ; le volet Réglages reste (son bouton Fermer est masqué : `.sgdv.sgdv-pdf`),
+  « Télécharger » = le PDF affiché, « <titre>.pdf » (`courant`, tenu à jour après chaque réglage). Demandé par `o.sgBarre` du descripteur du document ou `E.sgBarre` (`vueCoco`
+  de `sg3_coco_docs.js`), par `X.sgde.barre` (document du devis ouvert depuis le contrôle des coûts : `dgDuDevis`), et d'office pour `comptesVue` / `tableVue`. Concerne
+  Imprimer ▸ « Contrôle des coûts (PDF) », « Devis général (PDF) », « Liste des mutations (PDF) », « Liste des adjudications (PDF) », « Rapport des paiements (PDF) », « Comptes
+  d'entreprise (PDF) », « Ordres de paiement (PDF) », « Arrêtés de compte (PDF) », « Ordre de paiement n° … (PDF) », « Bon de paiement n° … (PDF) ». Les mêmes documents ouverts
+  par l'onglet Documents ▸ Ouvrir gardent la barre des documents (État, PDF ▾, Partager ▾), comme dans le devis (choix fait sans demande : à confirmer). Vérifié dans les six visuels.
+  **Ordre de paiement : statut « Débité » retiré de la liste (15.11.2026, « supprimer de la liste débité »)** : fenêtre « Ordre de paiement » de l'onglet Ordres de paiement
+  (`edO` de `ccOrders`, moteur) — enveloppe de `dialog` dans `sg3_coco.js` (fenêtre de ce titre dont une liste contient `enTraitement` et `debite`) : En traitement, Contrôlé,
+  Transmis ; un ordre déjà « Débité » garde l'option (sinon l'ouvrir changerait son statut). Le statut « débité » des paiements (`PAY_ST`) n'est pas touché. DeltaSub.html seul :
+  liste d'origine.
+  **Chiffre « Variation TTC » (15.11.2026, « remplacer mutation TTC par variation TTC »)** : bandeau du contrôle des coûts ouvert, ex-« Mutations TTC » (somme des mutations :
+  transferts, modifications, renchérissement = DG révisé − devis général) ; la colonne « Mutations TTC » du tableau et la liste des mutations gardent leur nom.
+  **Colonnes par onglet : Ordres de paiement, Arrêtés de compte, Comptes d'entreprise (15.11.2026, Paulo : « dans la fenêtre affichage, adapter aux colonnes par éléments, dans
+  ordres, arrêté de comptes, contrôle du coût, etc. ; les colonnes qui peuvent s'afficher ne sont pas les mêmes ; adapte par éléments selon les colonnes possibles dans delta
+  project »)** — dans ces trois onglets, « Présentation » ouvrait encore la fenêtre du contrôle du coût (ses 177 colonnes, couleurs des écritures), sans effet sur leur tableau.
+  Ils ont maintenant le menu des listes des écritures (Standard · présentations enregistrées · Personnalisée (non enregistrée) · Personnalisé … · Enregistrer la présentation … ·
+  Gérer les présentations … · Récupérer d'un autre projet …) et chacun son catalogue (`LCLE`, `LSIG`, `LDEF`, `LVAL`, `LENT`, `SOMME` de `sg3_coco.js` ; fenêtre `ccAffichage`
+  option `liste`, onglet Colonnes seul) : les colonnes que l'ancien logiciel propose pour ce tableau (relevé du 15.11.2026), plus celles que l'écran de l'app avait déjà.
+  **Ordres de paiement** — tableau des paiements de l'ordre choisi (la liste des ordres, à gauche, reste fixe comme dans l'ancien logiciel) : N° du lot, Bénéficiaire,
+  N° Paiement, Paiements à ce jour, Contrats + avenants TTC, Paiements TTC (les six colonnes de l'ancien logiciel, ni HT ni TVA) ; ses options d'affichage sont ici des
+  colonnes (Lot d'adjudication, Date pmt, Compte d'entreprise = IBAN du bénéficiaire) ; Statut (écran de l'app). Paiements à ce jour et Contrats + avenants = valeurs de
+  l'ordre imprimé (`ch01dPrevPays`, `ch01dCtrSum`, même arrondi). **Arrêtés de compte** : N° (numéro de la garantie = n° de l'arrêté), N° du lot, Lot d'adjudication,
+  Entreprise, Statut, Genre, Montant, Début et Échéance de la garantie (ancien logiciel) ; Date et Facture finale nette (écran de l'app). **Comptes d'entreprise** : l'app a une
+  ligne par entreprise, l'ancien logiciel détaille le compte de l'entreprise choisie (contrats, avenants, paiements, totaux) — repris : N° du lot, Lot d'adjudication, CFC,
+  Numéro du contrat (listes), Compte d'entreprise, et les 24 montants du compte (contrats, avenants, contrats + avenants, paiements, sur contrat, hors contrat, renchérissement,
+  contrat − paiements sur contrat ; TTC, HT, TVA) ; pas repris, faute de lignes d'écriture : ouvrage, localisation, dates, statuts, niveau des prestations, descriptifs,
+  n° et genre de paiement, n° d'ordre, n° de facture. Standard = colonnes d'origine de l'écran (celui de l'ancien logiciel est : ordres — N°, Bénéficiaire, N° Paiement,
+  Paiements à ce jour, Contrats + avenants, Paiements ; arrêtés — N° du lot, Entreprise, Genre, Montant, Début, Échéance : à proposer à Paulo). Enregistrement comme les
+  listes : `C.listeColonnes.ordres | arretes | comptes` (clés dans l'ordre), `C.listePresentations`, `C.listePresActive`. Pied du tableau : « Total » sous chaque colonne de
+  montant (Ordres : remplace la carte « Total … CHF » du moteur ; Paiements à ce jour et Contrats + avenants ne sont pas additionnés). `grid` enveloppé : un tableau déjà réglé
+  et redessiné par un tri sur un titre de colonne est reconnu (`o._sgL`) — le pied restait absent après un tri dans les listes aux colonnes personnalisées ; l'ordre choisi dans
+  la liste de gauche le reste quand l'onglet est redessiné (`OSEL`, `ordreGarde` : le moteur repartait sans ordre choisi après chaque modification). Les documents PDF
+  gardent leurs colonnes ; copie et CSV suivent les colonnes affichées. Devis général et Contrôle du coût : menus inchangés (ils avaient déjà leurs colonnes). Vérifié le
+  15.11.2026 dans un onglet à part (base de test, 17QUE.DF.1 : 19 ordres et 239 paiements — valeurs égales à celles de l'ordre imprimé —, 22 arrêtés, 51 entreprises : TTC = HT +
+  TVA, totaux = chiffres du bandeau) et sur 99TST ; enregistrer / gérer / reprendre une présentation ; balayage des 121 écrans ; `nas/nettoyer.py` ; `sonde_chrome.sh`.
+  ⚠ Le relevé du 15.11.2026 a lu le code du logiciel installé (fichiers de travail supprimés ensuite, rien dans le dépôt) : à rapprocher du plan de conformité du 25.10.2026
+  (`MISE_EN_CONFORMITE_DELTAPROJECT.md`, non versionné) — signalé à Paulo. Copies d'avant : `subgestion3/_backup_20261115_1148_avant_barre_impression_colonnes/`,
+  `SUBGestion3_backup_20261115_1148_avant_barre_impression_colonnes.html`.
 - **Descriptifs & devis au graphisme de l'app (05.11.2026, bloc 37, `subgestion3/sg3_devis.js`, concaténé en dernier ; Paulo : « reproduire graphiquement ce chapitre comme tout le reste de l'app, améliore pour rendre plus lisible et simple à utiliser »)** :
   moteur inchangé, DeltaSub.html seul garde ses écrans. Liste (`VIEWS.devis` sans document ouvert, tous les projets, et `ch02dDomain`, page du projet) : page `monter` comme la Soumission — bandeau, chiffres, Tous · Mes devis (tous les projets), statuts, recherche, tableau
   où le total TTC est visible ; clic = ouvrir (`ch02dOpen`, retour à l'écran d'origine ; le 2e clic d'un double-clic d'habitude est ignoré, 450 ms), clic droit = en-tête, dupliquer, dupliquer et modifier la subdivision, supprimer ; ⋯ = documents supprimés, importer, copie, CSV ; un devis créé s'ouvre aussitôt. Devis ouvert (`dvEditor` enveloppé,

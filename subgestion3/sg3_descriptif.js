@@ -362,11 +362,11 @@ async function enregistrerModele(X){ if(!peut(X)) return; const D=X.S[CG]||prepa
   catch(e){ toast('Modèle non enregistré : '+(e&&e.message||e),true); } }
 /* cahier des charges par articles : l'impression du moteur (Documents ▸ Descriptif), mise au papier des contrats par le bloc 31, récupérée sans l'afficher */
 const fermerOv=ov=>{ const b=[...ov.querySelectorAll('button')].find(x=>/^\s*Fermer\s*$/.test(x.textContent)); if(b) b.click(); else ov.remove(); };
-async function pdfArticles(X,plus){ const U=(X.S.unites||{}).B; if(!U||!(U.chapitres||[]).length) return null; const r=svdControls(svdNormUnit(JSON.parse(JSON.stringify(U)),'B')); if(r){ toast('Cahier des charges : '+r.msg,true); return null; }
+async function pdfArticles(X,plus,et){ et=et||'B'; const U=(X.S.unites||{})[et]; if(!U||!(U.chapitres||[]).length) return null; const r=svdControls(svdNormUnit(JSON.parse(JSON.stringify(U)),et)); if(r){ toast('Cahier des charges : '+r.msg,true); return null; }   /* et : étape imprimée (B appel d'offres ; D contrat, pour le dossier d'un contrat d'entreprise, 15.11.2026) */
   let ov=null; const mo=new MutationObserver(M=>{ if(ov) return; for(const m of M) for(const n of m.addedNodes) if(!ov&&n.nodeType===1&&n.classList&&n.classList.contains('ov')){ ov=n; n.classList.add('sgdp-cap'); } });
   mo.observe(document.documentElement,{childList:true,subtree:true}); const Fi=U.filtre, filtre=!!(Fi&&Fi.actif);
   window.SGIMP_PLUS=plus||null;   /* lu par le bloc 31 au moment de faire le PDF : en-tête du cahier, logo gris, numérotation à la suite des conditions */
-  try{ if(filtre) Fi.actif=false; try{ svdPrint(svcCx(X,'B'),'desc'); }finally{ if(filtre) Fi.actif=true; }   /* le cahier envoyé aux entreprises contient tous les articles : le filtre de l'écran est ignoré le temps de l'impression */
+  try{ if(filtre) Fi.actif=false; try{ svdPrint(svcCx(X,et),'desc'); }finally{ if(filtre) Fi.actif=true; }   /* le cahier envoyé aux entreprises contient tous les articles : le filtre de l'écran est ignoré le temps de l'impression */
     if(filtre) toast('Filtre de la soumission ignoré : le cahier des charges contient tous les articles.');
     for(let i=0;i<120;i++){ await new Promise(z=>setTimeout(z,250)); const f=ov&&ov.querySelector('iframe'); if(f&&f._sgimp&&String(f.src||'').startsWith('blob:')){ const by=await (await fetch(f.src)).arrayBuffer(); return new TextDecoder('latin1').decode(by.slice(0,5))==='%PDF-'?by:null; } }
     return null; }
@@ -386,7 +386,7 @@ async function annexePrete(w,by){ const ty=sorte(by);
 async function fusionner(w,L,titre){ const P=w.PDFLib, doc=await P.PDFDocument.create(); for(const by of L){ const src=await P.PDFDocument.load(new w.Uint8Array(by)); (await doc.copyPages(src,src.getPageIndices())).forEach(x=>doc.addPage(x)); } doc.setTitle(titre); doc.setAuthor('Substances Architectes'); doc.setProducer('SUBGestion'); return await doc.save(); }
 let CAHIER=null;
 function ouvrirCahier(X,opt){ if(CAHIER){ toast('Le PDF est en cours de création…'); return CAHIER; } CAHIER=creerCahier(X,opt||{}).finally(()=>{ CAHIER=null; }); return CAHIER; }
-async function creerCahier(X,opt){ try{ if(ETAT.t) envoyerD(X); toast('Création du PDF…'); await DS.need([MOD_T,CGP_T,'sgfaisa','projectmember','contact','staff']).catch(()=>{});
+async function creerCahier(X,opt){ try{ if(!opt.octets){ if(ETAT.t) envoyerD(X); toast('Création du PDF…'); } await DS.need([MOD_T,CGP_T,'sgfaisa','projectmember','contact','staff']).catch(()=>{});
     const {w,R,fn}=await SGDS.ressources();   /* cadre Facturation chargé d'abord : adresses et maître de l'ouvrage repris des contrats, comme l'organisation */
     const S=X.S, des=!opt.base&&estD(S), Dc=opt.base?{blocs:opt.base.blocs,entete:opt.base.entete}:cgSoumission(X), J=jetons(X), d=X.doc||{}, p=X.p||{}, fich={}, ann={};
     for(const b of (Dc.blocs||[])) if(b.t==='annexe'&&b.f&&b.f.sha&&!fich[b.f.sha]){ const bl=await sgFichierLire(b.f.sha); if(!bl){ toast('Plan joint introuvable : '+(b.f.nom||''),true); continue; }
@@ -406,8 +406,14 @@ async function creerCahier(X,opt){ try{ if(ETAT.t) envoyerD(X); toast('Création
     if(!opt.seul&&!des){ const N=await nbPages(w,oct), art=await pdfArticles(X,{enteteLibre:base.enteteLibre,logoGris:true,numDebut:N,numTotalPlus:N});
       if(art){ const o2=w.JSON.parse(JSON.stringify(base)); o2.journal=new w.Array(); o2.numTotal=N+await nbPages(w,art); if(o.cahierFichiers){ o2.cahierFichiers={}; Object.keys(fich).forEach(k=>{ o2.cahierFichiers[k]=new w.Uint8Array(fich[k]); }); } oct=await fusionner(w,[await fn(R,null,o2),art],titre); }
       else toast('Cahier des charges par articles non ajouté : seules les conditions sont dans ce PDF.',true); }
+    if(opt.octets) return oct;   /* dossier d'un contrat d'entreprise : les octets, sans ouvrir la visionneuse */
     sgVisionneuse(new Blob([oct],{type:'application/pdf'}),titre+' '+(p.NUMBER||'')+'.pdf'); }
-  catch(e){ console.error(e); toast('Le PDF n’a pas pu être créé : '+(e&&e.message||e),true); } }
+  catch(e){ console.error(e); if(opt.octets) throw e; toast('Le PDF n’a pas pu être créé : '+(e&&e.message||e),true); } }
+/* conditions générales ou cahier en octets, sans visionneuse (contrats d'entreprise ▸ Imprimer, 15.11.2026) : X = contexte d'une soumission (même réduit : id, p, doc, S),
+   ou rien avec opt.projet = les conditions du projet, sans les données d'un CFC (comme « Aperçu en PDF » du module) */
+async function cahierOctets(X,opt){ opt=Object.assign({},opt,{octets:true});
+  if(!X){ const p=opt.projet; if(!p) return null; await DS.need([CGP_T,MOD_T,'sgfaisa']).catch(()=>{}); X={p,S:{appelOffres:{},unites:{}},doc:{BKP:'',AWARDINGTEXT:''},id:null}; opt.base=baseCG(p); }
+  return creerCahier(X,opt); }
 async function ouvrirPdf(X,cle){ cle=cle||'descriptif'; if(cle===CG) return ouvrirCahier(X,{seul:true}); try{ const D0=preparer(X,cle); if(!(D0.blocs||[]).some(b=>['pu','txt','pj','kv'].includes(b.t)&&String(b.x||'').trim())) toast((cle===CG?'Les conditions générales n’ont':'Le descriptif n’a')+' pas encore de texte : seuls les titres apparaissent.',true); const b=await pdfDe(X,cle), d=X.doc||{}, nom=(cle===CG?'Conditions générales ':'Descriptif ')+[(X.p||{}).NUMBER,d.BKP,d.AWARDINGTEXT].filter(Boolean).join(' ')+'.pdf'; sgVisionneuse(b,nom); }catch(e){ console.error(e); toast('Le PDF n’a pas pu être créé : '+(e&&e.message||e),true); } }
 
 /* ── éditeur ── */
@@ -644,5 +650,5 @@ const ss0=svNewSoum; svNewSoum=function(id,pid){ const S=ss0(id,pid); if(ETAT.ov
 const sn0=svNew; svNew=function(p){ css(); const fin=m=>{ D.close(); ETAT.ov=null; sn0(p); if(m==='descriptif') ETAT.ov=[...document.querySelectorAll('.ov')].pop()||null; };
   const corps=h('div',{class:'sgdp-choix'},h('button',{type:'button',onclick:()=>fin(null)},h('b',{},'Par articles'),h('span',{},'Articles de soumission avec quantités et prix, comparatif détaillé article par article.')),h('button',{type:'button',onclick:()=>fin('descriptif')},h('b',{},'Sous forme de descriptif'),h('span',{},'Texte par rubriques et tirets, comme un descriptif Word ; les entreprises répondent par une offre, à reporter au comparatif bref.')));
   const D=dialog({title:'Nouvelle soumission',body:corps,buttons:[{t:'Annuler'}]}); };
-window.SGDP={ETAT,lirePdf,analyser,classer,modele,ouvrirPdf,pdfDe,pdfDoc,feuille,outils,nouv,css,annexePrete,ouvrirCahier,calcResume,calcGarde,calcOrga,jetons,adrAffaire};
+window.SGDP={ETAT,lirePdf,analyser,classer,modele,ouvrirPdf,pdfDe,pdfDoc,feuille,outils,nouv,css,annexePrete,ouvrirCahier,calcResume,calcGarde,calcOrga,jetons,adrAffaire,cahierOctets,pdfArticles,estD};
 })();

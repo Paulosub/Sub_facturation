@@ -17,6 +17,18 @@
    travaux, lot, montants, adjudicataire, offre et délais, signatures ; 2e page : positions, conditions, totaux, avenants, remarque ; clauses particulières à la suite
    s'il y en a. L'ébauche de clauses du 06.11.2026 (jamais validée) n'est plus posée ; restée telle quelle dans un contrat, elle n'est ni affichée ni imprimée.
    Droits : lecture « chantier : lecture » (sgPdomListe) ; modifier = projet modifiable et « chantier : écriture ».
+   Dossier du contrat à imprimer (15.11.2026, Paulo, fenêtre du PDF annotée : « ajoute une fenêtre d'option pour imprimer la page de garde, contrat, soumission,
+   conditions générales, PV de préadjudication ») : Imprimer ouvre la fenêtre des documents (SGDE.vue, barre « Document PDF ») avec le volet « Pièces du dossier » —
+   Page de garde (1re page du contrat), Contrat (positions, conditions, totaux, avenants, remarque, clauses), Soumission (contrat lié à une soumission : son descriptif —
+   par articles : étape Contrat de la soumission, sinon les prix de l'entreprise du contrat repris du comparatif en mémoire, à défaut le cahier de l'appel d'offres ;
+   sous forme de descriptif : le descriptif), Conditions générales (celles du CFC, sinon celles du projet), PV de préadjudication. Pièces assemblées dans cet ordre par
+   pdf-lib, chacune avec sa numérotation ; choix gardé dans le contrat (IMPRESSION {garde, contrat, soumission, cg, preadj} ; contrat verrouillé ou lecture seule : pour
+   la séance), au moins une pièce reste cochée. Soumission et conditions générales ne sont fabriquées qu'une fois par ouverture de la fenêtre.
+   PV de préadjudication = le formulaire « Séance pré-adjudication » du bureau (PA : une seule description pour l'onglet Préadjudication et pour le PDF, o.preadj de
+   sgDsPdf) : données générales, participants, entreprise, planning et effectifs, projet, prix et validités, conditions de paiements, garanties, divers (questions Oui /
+   Non, précisions), questions et précisions sur l'offre, documents de la séance, récapitulatif de l'offre (offre reçue et dernières conditions de la soumission, montant
+   final du contrat), déclaration et signatures. Saisie dans PREADJ {clé: valeur} du contrat ; ce qui n'est pas saisi s'imprime en pointillés et cases vides (formulaire
+   à remplir en séance). Entreprise, travaux et date de l'offre viennent de l'onglet Contrat.
    Styles <style id="sgcn-css">, classes sgcn-* (jusqu'au 15.11.2026 : sgce-*, le même identifiant et les mêmes classes que l'éditeur du contrôle des coûts — le premier
    des deux écrans ouvert privait l'autre de ses styles). Débogage : window.SGCE. */
 (function(){
@@ -24,9 +36,10 @@ if(!window.SGDP||!window.SGSV||typeof sgDroit!=='function') return;
 const {tete,kpi,btn,E,IC,pl,moT,css:cssSv}=SGSV.outils, T='sgcontratent';
 const ETATS=[['brouillon','Brouillon'],['envoye','Envoyé'],['signe','Signé'],['resilie','Résilié']], ELIB=Object.fromEntries(ETATS);
 const GENRES=['Prix unitaires','Forfait','Prix global'], GENRE_DOC={'Prix unitaires':'A prix unitaires','Forfait':'A prix forfaitaire','Prix global':'A prix global'};
-const ONG=[['contrat','Contrat'],['positions','Positions et conditions'],['avenants','Avenants'],['clauses','Clauses']], TYPES=[['sou','Rubrique'],['pu','Tiret'],['txt','Texte']];
+const ONG=[['contrat','Contrat'],['positions','Positions et conditions'],['avenants','Avenants'],['clauses','Clauses'],['preadj','Préadjudication']], TYPES=[['sou','Rubrique'],['pu','Tiret'],['txt','Texte']];
 const COND_TYPES=['Rabais','Escompte','Prorata (%)'];
-const ETAT={sel:{},ong:{},rec:null,cour:null}, SV={t:null,cours:false,encore:false};
+const ETAT={sel:{},ong:{},rec:null,cour:null,imp:{}}, SV={t:null,cours:false,encore:false};
+const PIECES=[['garde','Page de garde'],['contrat','Contrat'],['soumission','Soumission'],['cg','Conditions générales'],['preadj','PV de préadjudication']], IMP_DEF={garde:true,contrat:true,soumission:false,cg:false,preadj:false};
 const peut=p=>{ try{ return !!((sgAdmin()||sgDroit('projets_modifier','tous')||(sgDroit('projets_modifier','siens')&&sgMesProjets().has(String(p.ID))))&&(sgAdmin()||sgDroit('chantier','ecriture'))); }catch(_){ return false; } };
 const num2=n=>svdFmtAmt(+n||0), dmy=d=>d?dfr(d):'', sn=v=>{ const x=parseFloat(String(v==null?'':v).replace(/['’\s]/g,'').replace(',','.')); return isFinite(x)?x:0; };
 const r2=x=>Math.round((+x||0)*100)/100, r5=x=>svdRnd(x,true), uid=()=>Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36);
@@ -98,8 +111,25 @@ const CSS=`
 .sgcn-cbar .ib{border:0!important;background:transparent!important;box-shadow:none!important;height:30px;font-size:12.5px;font-weight:700;color:var(--s-noir)}
 .sgcn-cbar .ib:hover{background:var(--s-jaune3)!important}
 .sgcn-cbar .ib.on{box-shadow:inset 0 -3px 0 var(--s-nuit)!important}
+.sgcn-pa{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px}
+.sgcn-pl{display:grid;grid-template-columns:minmax(110px,40%) minmax(0,1fr);gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--s-filet);font-size:12.5px;min-width:0}
+.sgcn-pl>span{min-width:0;overflow-wrap:anywhere}
+.sgcn-pl.q{grid-column:1/-1;grid-template-columns:minmax(0,1fr) auto}
+.sgcn-pl.l,.sgcn-pl.x,.sgcn-pl.d{grid-column:1/-1;grid-template-columns:minmax(110px,19.2%) minmax(0,1fr)}
+.sgcn-pl.x>span{color:var(--s-gris);padding-left:14px}
+.sgcn-pd{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sgcn-pd label{display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:700;color:var(--s-gris);min-width:0}
+.sgcn-pn{grid-column:1/-1;margin:7px 0 5px;font-size:12px;line-height:1.4;color:var(--s-gris)}
+.sgcn-on{display:inline-flex}
+.sgcn-on button{height:30px;min-width:54px;padding:0 10px;border:1.5px solid var(--s-noir);border-radius:0;background:#fff;font:inherit;font-size:12.5px;color:var(--s-noir);cursor:pointer}
+.sgcn-on button+button{border-left:0}
+.sgcn-on button:hover:not(:disabled){background:var(--s-jaune3)}
+.sgcn-on button.on{background:var(--s-nuit);border-color:var(--s-nuit);color:#fff;font-weight:700}
+.sgcn-on button:disabled{cursor:default;opacity:.55}
+.sgcn-rc td.r,.sgcn-rc th.r{text-align:right;font-variant-numeric:tabular-nums}
+.sgcn-rc tr.t td{font-weight:700;border-top:2px solid var(--s-noir)}
 @container (max-width:900px){.sgcn-kp7{grid-auto-flow:row;grid-template-columns:repeat(4,minmax(0,1fr))}.sgcn-kp7 .nx-kpi .v{font-size:18px}}
-@container (max-width:760px){.sgcn-kp{grid-template-columns:repeat(2,minmax(0,1fr))}.sgcn-g{grid-template-columns:repeat(2,minmax(0,1fr))}.sgcn-kp7{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (max-width:760px){.sgcn-pa{grid-template-columns:minmax(0,1fr)}.sgcn-kp{grid-template-columns:repeat(2,minmax(0,1fr))}.sgcn-g{grid-template-columns:repeat(2,minmax(0,1fr))}.sgcn-kp7{grid-template-columns:repeat(2,minmax(0,1fr))}}
 `;
 const css=()=>{ if(!document.getElementById('sgcn-css')){ const s=document.createElement('style'); s.id='sgcn-css'; s.textContent=CSS; document.head.appendChild(s); } if(cssSv) cssSv(); SGDP.css&&SGDP.css(); };
 
@@ -164,11 +194,94 @@ function donneesPdf(p,c){ const K=calc(c), g=c.GENRE||'Prix unitaires', mt=x=>nu
   if(AV.length){ rows.push({c:[],s:'v'},{c:['Avenants'],s:'h'}); AV.forEach(a=>rows.push({c:['Avenant n° '+a.n+(a.date?' du '+dmy(a.date):'')+(a.objet?' – '+a.objet:''),'',mt(a.ht),mt(ttc(a.ht,c.TVA))],l2:true,s:''})); rows.push({c:['Total avec avenants','','',mt(totalTTC(c))],s:'t'}); }
   return {rubriques:rub,cfc:c.CFC||'',lot:c.LOT||'',montants,infos,signatures:['L’entreprise','L’architecte','Le maître de l’ouvrage'],signaturesTitre:'Signature et tampons',
     positions:{tit:['CFC','Ouvrage','Contrat brut','Contrat net'],rows},remarque:c.REMARQUE||'',clauses:(estEbauche(c.TEXTE)?[]:(c.TEXTE||[])).map(b=>({t:b.t,x:b.x,b:!!b.b})),clausesTitre:'Conditions particulières'}; }
-async function pdfOctets(p,c){ const {w,R,fn}=await SGDS.ressources(), j=new w.Array();
-  const o=w.JSON.parse(JSON.stringify({titre:'Contrat d’entreprise',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' '),date:isoDe(c.DATE)||today(),type:'Contrat d’entreprise',description:'Contrat d’entreprise '+[p.NUMBER,c.CFC,c.LOT].filter(Boolean).join(' '),contratEnt:donneesPdf(p,c)})); o.journal=j;
+async function pdfOctets(p,c,parties){ const {w,R,fn}=await SGDS.ressources(), j=new w.Array(), D=donneesPdf(p,c); if(parties) D.parties={garde:parties.garde!==false,contrat:parties.contrat!==false};
+  const o=w.JSON.parse(JSON.stringify({titre:'Contrat d’entreprise',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' '),date:isoDe(c.DATE)||today(),type:'Contrat d’entreprise',description:'Contrat d’entreprise '+[p.NUMBER,c.CFC,c.LOT].filter(Boolean).join(' '),contratEnt:D})); o.journal=j;
   const oct=await fn(R,null,o); if(j.length) console.info('Contrat d’entreprise :',Array.from(j)); return oct; }
 async function ouvrirPdf(p,c){ try{ const oct=await pdfOctets(p,c); sgVisionneuse(new Blob([oct],{type:'application/pdf'}),'Contrat '+[p.NUMBER,c.CFC,c.LOT].filter(Boolean).join(' ')+'.pdf'); }
   catch(e){ console.error(e); toast('Le PDF n’a pas pu être créé : '+(e&&e.message||e),true); } }
+
+/* ── procès-verbal de préadjudication : le formulaire « Séance pré-adjudication » du bureau, libellés et phrases tels quels — une seule description pour l'onglet et le PDF.
+   Champ : {k clé, l libellé, ty 'date' | 'on' (Oui / Non) | 'long' (texte libre), def (valeur proposée tant que rien n'est saisi), x (clé d'une précision)},
+   {l, auto} (valeur du contrat, non saisie ici), {l, duo:[[clé, libellé, def]…]} (deux valeurs côte à côte), {note} (phrase du formulaire) ── */
+const PA=[
+  {t:'Données générales',ch:[{k:'date',l:'Date',ty:'date'},{k:'lieu',l:'Lieu'},{l:'Entreprise',auto:c=>entNom(c)},{l:'Travaux de (CFC)',auto:c=>[c.CFC,c.LOT].map(x=>String(x||'').trim()).filter(Boolean).join(' ')},{l:'Offre / soumission du',auto:c=>c.OFFRE_DU||''}]},
+  {t:'Participants',ch:[{k:'pEnt',l:'Entreprise'},{k:'pArch',l:'Architecte / DT'},{k:'pIng',l:'Ingénieur spécialisé'},{k:'pMo',l:'Maître de l’ouvrage',def:(c,p)=>moT(p)||''}]},
+  {t:'Entreprise',ch:[{k:'ass',l:'Assurance'},{l:'Montant assuré',duo:[['assCas','Par cas'],['assPers','Par personne']]},{k:'assoc',l:'Association',ty:'on'},{k:'assocNom',l:'Entreprise associée'},{k:'st',l:'Sous-traitants',ty:'on'},{k:'stNom',l:'Sous-traitants'},
+    {k:'legal',l:'L’entreprise est à jour avec les obligations légales',ty:'on'},{note:'En cas d’adjudication les attestations valables seront transmises à la DT pour l’établissement du contrat.'}]},
+  {t:'Planning & effectifs',ch:[{l:'Programme travaux de l’ensemble',duo:[['ensD','Début'],['ensF','Fin']]},{l:'Programme prévisionnel des travaux adjugés',duo:[['adjD','Début',c=>c.DEBUT_TXT||dmy(c.DEBUT)],['adjF','Fin',c=>c.FIN_TXT||dmy(c.FIN)]]},
+    {k:'duree',l:'Durée des travaux adjugés (semaines)'},{l:'Effectif prévu pour les travaux',duo:[['effChef','Chef équipes'],['effOuv','Ouvrier / Appr.']]},{l:'Vacances estivales',duo:[['veD','du'],['veF','au']]},{l:'Vacances hivernales',duo:[['vhD','du'],['vhF','au']]},{k:'planPrec',l:'Précisions',ty:'long'}]},
+  {t:'Projet',ch:[{k:'prPlace',l:'L’entrepreneur s’est rendu sur place et a pris connaissance de la situation locale',ty:'on'},{k:'prSoum',l:'L’entrepreneur a compris la soumission et validé les quantités',ty:'on'},
+    {k:'prProjet',l:'L’entrepreneur a compris le projet, validé les détails et les principes techniques',ty:'on'},{k:'prRes',l:'L’entrepreneur a fait des réserves sur des articles de la soumission ou identifié des prestations nécessaires qui n’apparaissent pas dans la soumission',ty:'on'},{k:'prPrec',l:'Précisions / compléments',ty:'long'}]},
+  {t:'Prix et validités',ch:[{k:'pxExact',l:'L’entreprise confirme l’exactitude des prix HT de son offre',ty:'on'},{k:'pxMat',l:'Prix matériaux bloqués jusqu’à la fin des travaux',ty:'on',x:'pxMatX'},{k:'pxMo',l:'Prix main d’œuvre bloqués jusqu’à la fin des travaux',ty:'on'},
+    {k:'pxForf',l:'L’entreprise est favorable à un contrat forfaitaire',ty:'on'},{k:'pxPrec',l:'Précisions / conditions',ty:'long'}]},
+  {t:'Conditions de paiements',ch:[{k:'paAc',l:'Acompte à la commande',ty:'on'},{note:'En cas d’acompte à la commande, une garantie de restitution sera transmise à la DT.'},{k:'paSit',l:'Situations et factures',def:()=>'Selon cond. gén. architecte'},
+    {note:'Mémo : les situations intermédiaires ainsi que les factures seront libellées par CFC et par parties d’ouvrages séparément selon structure du contrat. Le non-respect de cette directive rendra nulle la facture ou la situation intermédiaire.'},{k:'paPrec',l:'Précisions / compléments',ty:'long'}]},
+  {t:'Garanties',ch:[{k:'gaFin',l:'Garantie bancaire, ou d’assurance, de fin de travaux (min. 10%)',ty:'on'},{k:'gaPrec',l:'Précisions / compléments',ty:'long'}]},
+  {t:'Divers',ch:[{k:'diCg',l:'L’entreprise accepte les conditions générales architecte',ty:'on'},{k:'diPrec',l:'Précisions / compléments',ty:'long'}]}];
+const PA_DOCS='Plans\nOffre de l’entreprise\nDétails\nVisite sur place', PA_QT='Questions & précisions sur offre', PA_DT='Documents pour séance de préadjudication';
+const PA_DECL='Par sa signature sur le présent document, l’entrepreneur reconnaît avoir eu connaissance de tous les éléments et documents nécessaires et utiles (plans, descriptifs, situation, etc.) pour l’établissement de son prix.';
+const paVal=(c,p,k,def)=>{ const v=(c.PREADJ||{})[k]; return String(v!=null?v:(def?def(c,p)||'':'')); };
+/* soumission liée au contrat et offre de son entreprise (l'entreprise du contrat, sinon l'entreprise proposée) */
+const soumDe=c=>{ const d=c.DOC_ID!=null&&c.DOC_ID!==''?DS.get('devisdocument',c.DOC_ID):null, S=d&&!+d.ISMARKEDASDELETED?DS.get('soumission',d.ID):null; return d&&S?{d,S}:null; };
+const offresDe=c=>{ const L=soumDe(c); if(!L) return {O:null,N:null}; const S=L.S, E0=S.entreprises||[], e=E0.find(x=>String(x.contactId)===String(c.CONTACT_ID))||E0.find(x=>x.proposee); if(!e) return {O:null,N:null};
+  const c1=((S.unites||{}).C1||{}).chapitres||[], tr=S.travail&&S.travail.modifie&&(S.travail.detail||{})[e.contactId], src=tr||(c1.length?e.detail:e.bref)||{}; return {O:src.offre||null,N:src.negociee&&(+src.negociee.net||0)!==0?src.negociee:null}; };
+/* récapitulatif de l'offre : offre reçue et dernières conditions (soumission liée), montant final (contrat) ; une ligne par condition du contrat */
+function recapPa(p,c){ const K=calc(c), {O,N}=offresDe(c), m=(B,k)=>B&&(+B[k]||0)?num2(B[k]):'', ht=B=>B&&(+B.net||0)?num2((+B.net||0)-(+B.tva||0)):'';
+  const cond=(B,lib)=>{ const k=B&&(B.conditions||[]).find(x=>+x.genre!==2&&String(x.texte||'').trim().toLowerCase()===String(lib||'').trim().toLowerCase()); return k&&(+k.montant||0)?num2(k.montant):''; };
+  const rows=[{c:['Total brut',m(O,'brut'),m(N,'brut'),num2(K.brut)],s:''}];
+  K.conds.forEach(k=>rows.push({c:[[k.lib,k.pct!=null?pct2(k.pct):''].filter(Boolean).join(' '),cond(O,k.lib),cond(N,k.lib),num2(k.m)],s:''}));
+  rows.push({c:['Total net HT',ht(O),ht(N),num2(K.ht)],s:'t'},{c:['TVA '+pct2(K.tvaP),m(O,'tva'),m(N,'tva'),num2(K.tva)],s:''},{c:['Total net TTC',m(O,'net'),m(N,'net'),num2(K.ttc)],s:'t'});
+  return {t:'Récapitulatif offre',tit:['Offre','Offre reçue','Dernières conditions','Montant final'],rows,libre:paVal(c,p,'recapLibre').trim()}; }
+const paQuestions=t=>String(t||'').replace(/\r/g,'').split('\n').map(x=>x.trim()).filter(Boolean).map(x=>/^[-–—•]\s*/.test(x)?{k:'q',x:x.replace(/^[-–—•]\s*/,'')}:(x.length>2&&x===x.toUpperCase()&&/[A-ZÀ-Ý]/.test(x)?{k:'h',x}:{k:'r',x}));
+function preadjDonnees(p,c){ const A=c.PREADJ||{}, v=(k,def)=>paVal(c,p,k,def).trim(), on=k=>A[k]==='o'?true:A[k]==='n'?false:null;
+  const sections=PA.map(S=>({t:S.t,rows:S.ch.map(f=>f.note?{note:f.note}:f.auto?{lib:f.l,val:String(f.auto(c,p)||'')}:f.duo?{lib:f.l,duo:f.duo.map(([k,l,def])=>[l,v(k,def)])}
+    :f.ty==='on'?{lib:f.l,on:on(f.k),val:f.x?v(f.x):''}:f.ty==='long'?{long:f.l,val:v(f.k,f.def)}:{lib:f.l,val:f.ty==='date'?(dmy(isoDe(v(f.k)))||v(f.k)):v(f.k,f.def)})}));
+  return {cfc:c.CFC||'',lot:c.LOT||'',sections,questions:{t:PA_QT,lignes:paQuestions(A.questions)},documents:{t:PA_DT,lignes:String(A.docs!=null?A.docs:PA_DOCS).split('\n').map(x=>x.replace(/^[-–—•]\s*/,'').trim()).filter(Boolean)},
+    recap:recapPa(p,c),declaration:PA_DECL,lieu:'',date:'',signatures:['Entreprise','Architecte','Ingénieur spécialisé']}; }
+async function preadjOctets(p,c){ const {w,R,fn}=await SGDS.ressources(), j=new w.Array();
+  const o=w.JSON.parse(JSON.stringify({titre:'Séance de préadjudication',sousTitre:[p.NUMBER,p.TITLE].filter(Boolean).join(' '),date:isoDe(paVal(c,p,'date'))||today(),type:'Procès-verbal de préadjudication',description:'Séance de préadjudication '+[p.NUMBER,c.CFC,c.LOT].filter(Boolean).join(' '),preadj:preadjDonnees(p,c)})); o.journal=j;
+  const oct=await fn(R,null,o); if(j.length) console.info('PV de préadjudication :',Array.from(j)); return oct; }
+
+/* ── dossier du contrat : pièces au choix, assemblées dans l'ordre (page de garde, contrat, soumission, conditions générales, PV de préadjudication) ── */
+const impDe=c=>Object.assign({},IMP_DEF,ETAT.imp[c.ID]||c.IMPRESSION||{});
+/* contexte de lecture d'une soumission qui n'est pas ouverte (copie de travail : rien n'est enregistré) */
+const ctxSoum=(p,L)=>{ const S=svNorm(JSON.parse(JSON.stringify(L.S))), id=L.d.ID; return {id,p,ro:true,node:null,el:null,get doc(){ return DS.get('devisdocument',id)||L.d; },get S(){ return S; },get etape(){ return S.etape||'B'; },can:()=>false,commit:async()=>{},touch:async()=>{},redraw(){},go(){},reload(){}}; };
+const enOctets=async b=>b&&typeof b.arrayBuffer==='function'?await b.arrayBuffer():b;
+async function soumissionOctets(p,c){ const L=soumDe(c); if(!L) return null; const X=ctxSoum(p,L), S=X.S;
+  if(SGDP.estD&&SGDP.estD(S)) return enOctets(await SGDP.pdfDe(X,'descriptif'));   /* soumission sous forme de descriptif : le descriptif */
+  if(typeof SGDP.pdfArticles!=='function') return null;
+  const U=S.unites||{}, a=k=>((U[k]||{}).chapitres||[]).length; let et=a('D')?'D':null;
+  /* pas d'étape Contrat dans la soumission : prix et conditions de l'entreprise du contrat repris du comparatif, en mémoire (transfert du moteur sur la copie) */
+  if(!et&&a('C1')&&typeof svcTransferDoc==='function'){ const E0=S.entreprises||[], e=E0.find(x=>String(x.contactId)===String(c.CONTACT_ID));
+    if(e){ E0.forEach(x=>{ x.proposee=x===e; }); try{ delete U.D; const r=svcTransferDoc(S,'C1','D'); if(r&&r.ok&&a('D')) et='D'; }catch(err){ console.error(err); } } }
+  if(!et){ et='B'; toast('Soumission : aucune offre chiffrée de cette entreprise, le cahier de l’appel d’offres est imprimé sans prix.',true); }
+  return enOctets(await SGDP.pdfArticles(X,null,et)); }
+async function cgOctets(p,c){ if(typeof SGDP.cahierOctets!=='function') return null; const L=soumDe(c); return enOctets(await (L?SGDP.cahierOctets(ctxSoum(p,L),{seul:true}):SGDP.cahierOctets(null,{seul:true,projet:p}))); }
+async function fusion(w,L,titre){ const P=w.PDFLib, doc=await P.PDFDocument.create(); for(const by of L){ const src=await P.PDFDocument.load(new w.Uint8Array(by)); (await doc.copyPages(src,src.getPageIndices())).forEach(x=>doc.addPage(x)); }
+  doc.setTitle(titre); doc.setAuthor('Substances Architectes'); doc.setProducer('SUBGestion'); return await doc.save(); }
+/* cache : soumission et conditions générales ne sont fabriquées qu'une fois par ouverture de la fenêtre (la fenêtre est modale, le contrat ne change pas dessous) */
+async function dossierOctets(p,c,sel,cache){ cache=cache||{}; const {w}=await SGDS.ressources(), L=[], une=(k,f,nom)=>{ if(!cache[k]) cache[k]=f().catch(e=>{ console.error(e); return null; }); return cache[k].then(by=>{ if(by) L.push(by); else toast(nom+' : cette pièce n’a pas pu être ajoutée au PDF.',true); }); };
+  if(sel.garde||sel.contrat) L.push(await pdfOctets(p,c,{garde:!!sel.garde,contrat:!!sel.contrat}));
+  if(sel.soumission) await une('soum',()=>soumissionOctets(p,c),'Soumission');
+  if(sel.cg) await une('cg',()=>cgOctets(p,c),'Conditions générales');
+  if(sel.preadj) L.push(await preadjOctets(p,c));
+  if(!L.length) throw new Error('Aucune pièce à imprimer.');
+  return L.length===1?L[0]:await fusion(w,L,'Contrat '+[p.NUMBER,c.CFC,c.LOT].filter(Boolean).join(' ')); }
+/* fenêtre des documents de l'app (lecteur, barre « Document PDF ») avec le volet des pièces à imprimer ; seul = une seule pièce pour cette ouverture (choix non gardé) */
+function ouvrirDossier(p,c,seul){ if(!window.SGDE||typeof SGDE.vue!=='function') return ouvrirPdf(p,c);
+  const sel=seul?Object.assign({garde:false,contrat:false,soumission:false,cg:false,preadj:false},{[seul]:true}):impDe(c), cache={}, lie=!!soumDe(c), verrou=c.ETAT==='signe'||c.ETAT==='resilie';
+  if(!lie) sel.soumission=false; if(!PIECES.some(([k])=>sel[k])) sel.contrat=true;
+  const titre=(seul==='preadj'?'PV de préadjudication ':'Contrat ')+[c.CFC,c.LOT].map(x=>String(x||'').trim()).filter(Boolean).join(' ');
+  const dg=dialog({title:titre,body:h('div'),buttons:[]}), ifr={};
+  const D={bd:dg.bd,iframe:ifr,close:dg.close,maj:r=>{ try{ if(ifr._sgVuePrep) ifr._sgVuePrep(); }catch(_){ }
+    return Promise.resolve(r).then(oct=>{ if(ifr._sgVue) ifr._sgVue(new Blob([oct],{type:'application/pdf'})); },e=>{ console.error(e); if(ifr._sgVueErr) ifr._sgVueErr(e); }); }};
+  const rendre=()=>dossierOctets(p,c,sel,cache);
+  const poser=k=>{ const n=Object.assign({},sel,{[k]:!sel[k]}); if(!PIECES.some(([x])=>n[x])){ toast('Au moins une pièce reste cochée.'); return false; }
+    sel[k]=n[k]; if(!seul){ ETAT.imp[c.ID]=Object.assign({},sel); if(peut(p)&&!verrou){ c.IMPRESSION=Object.assign({},sel); planif(c); } } };
+  const items=()=>PIECES.map(([k,t])=>({t:t+(k==='soumission'&&!lie?' (aucune soumission liée)':''),chk:!!sel[k],dis:k==='soumission'&&!lie,asy:true,grp:'Pièces du dossier',fn:()=>poser(k)}));
+  SGDE.vue(D,{barre:'pdf',p,lb:'Contrats d’entreprise',titre,etat:ELIB[c.ETAT]||'',peut:()=>true,items,rendre,pied:seul?'Choix pour cette impression':peut(p)&&!verrou?'Choix gardé dans le contrat':'Choix gardé pour la séance',
+    groupes:['Pièces du dossier'],groupe:()=>'Pièces du dossier',rang:()=>0,retrait:()=>false});
+  D.maj(rendre()); }
 
 /* ── écran : liste ── */
 const lignesTableau=L=>L.map(c=>{ const a=avHT(c); return '<tr data-id="'+E(c.ID)+'"><td class="nw"><b>'+E(c.CFC||'—')+'</b></td><td>'+E(c.LOT||'(sans lot)')+'</td><td>'+E(entNom(c)||'—')+'</td><td class="nw">'+E(c.GENRE||'')+'</td><td class="nw">'+E(dmy(c.DATE))+'</td><td class="r nw">'+num2(ttc(c.HT,c.TVA))+'</td><td class="r nw">'+(a?num2(ttc(a,c.TVA)):'')+'</td><td class="r nw"><b>'+num2(totalTTC(c))+'</b></td><td class="nw">'+E(ELIB[c.ETAT]||'')+(c.ETAT==='signe'&&c.SIGNE_LE?' '+E(dmy(c.SIGNE_LE)):'')+'</td></tr>'; }).join('');
@@ -215,6 +328,24 @@ function fiche(C,p,c,I){ const ec=peut(p), v=c.ETAT==='signe'||c.ETAT==='resilie
   const oAvenants=()=>'<div class="sgcn-t">Avenants <small data-avtot></small></div>'+((c.AVENANTS||[]).length?'<table class="nx-tbl sgcn-tab"><thead><tr><th style="width:44px">N°</th><th style="width:150px">Date</th><th>Objet</th><th class="r" style="width:140px">Montant HT</th><th class="r" style="width:130px">Montant TTC</th><th style="width:70px">Signé</th><th style="width:34px"></th></tr></thead><tbody>'
       +(c.AVENANTS||[]).map(a=>'<tr data-av="'+E(a.id)+'"><td>'+E(a.n)+'</td><td><input class="inp" type="date" data-v="date" value="'+E(a.date||'')+'"'+da+'></td><td><input class="inp" data-v="objet" value="'+E(a.objet||'')+'"'+da+'></td><td><input class="inp r" data-v="ht" value="'+num2(a.ht)+'"'+da+'></td><td class="r nw calc" data-avttc="'+E(a.id)+'">'+num2(ttc(a.ht,c.TVA))+'</td><td><input type="checkbox" data-v="signe"'+(a.signe?' checked':'')+da+'></td><td>'+(ec?'<button type="button" class="sgcn-x" data-a="avsup" aria-label="Supprimer l’avenant" title="Supprimer l’avenant">×</button>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="sgcn-note">Aucun avenant.</p>')
     +(ec?'<div class="sgcn-plus">'+btn('avplus','Ajouter un avenant','plus')+'</div>':'');
+  /* onglet Préadjudication : le formulaire de la séance (PA), saisi dans c.PREADJ */
+  const oPreadj=()=>{ const A=c.PREADJ||{}, val=(k,def)=>paVal(c,p,k,def);
+    const inp=(k,def,ty)=>'<input class="inp" data-pa="'+k+'" type="'+(ty==='date'?'date':'text')+'" value="'+E(ty==='date'?isoDe(val(k,def)):val(k,def))+'"'+ds+'>';
+    const on=k=>'<span class="sgcn-on" role="group">'+[['o','Oui'],['n','Non']].map(([v,t])=>'<button type="button" data-pon="'+k+'" data-v="'+v+'" class="'+(A[k]===v?'on':'')+'" aria-pressed="'+(A[k]===v?'true':'false')+'"'+ds+'>'+t+'</button>').join('')+'</span>';
+    const champ=f=>f.note?'<p class="sgcn-pn">'+E(f.note)+'</p>'
+      :f.auto?'<div class="sgcn-pl"><span>'+E(f.l)+'</span><input class="inp" value="'+E(f.auto(c,p)||'')+'" disabled title="Repris de l’onglet Contrat"></div>'
+      :f.duo?'<div class="sgcn-pl d"><span>'+E(f.l)+'</span><div class="sgcn-pd">'+f.duo.map(([k,l,def])=>'<label>'+E(l)+inp(k,def)+'</label>').join('')+'</div></div>'
+      :f.ty==='on'?'<div class="sgcn-pl q"><span>'+E(f.l)+'</span>'+on(f.k)+'</div>'+(f.x?'<div class="sgcn-pl x"><span>Précision</span>'+inp(f.x)+'</div>':'')
+      :f.ty==='long'?'<div class="sgcn-pl l"><span>'+E(f.l)+'</span><textarea class="inp" rows="2" data-pa="'+f.k+'"'+ds+'>'+E(val(f.k,f.def))+'</textarea></div>'
+      :'<div class="sgcn-pl"><span>'+E(f.l)+'</span>'+inp(f.k,f.def,f.ty)+'</div>';
+    const R=recapPa(p,c);
+    return '<p class="sgcn-note">Formulaire de la séance de préadjudication. Ce qui n’est pas rempli s’imprime en pointillés et en cases vides, pour être complété en séance : Imprimer ▸ PV de préadjudication (PDF).</p>'
+      +PA.map(S=>'<div class="sgcn-t">'+E(S.t)+'</div><div class="sgcn-pa">'+S.ch.map(champ).join('')+'</div>').join('')
+      +'<div class="sgcn-t">'+E(PA_QT)+' <small>une ligne commençant par un tiret = une question, la ligne suivante = sa réponse, une ligne en MAJUSCULES = un intertitre</small></div><div class="sgcn-g"><label class="tt"><textarea class="inp" rows="6" data-pa="questions"'+ds+'>'+E(A.questions||'')+'</textarea></label></div>'
+      +'<div class="sgcn-t">'+E(PA_DT)+' <small>un document par ligne</small></div><div class="sgcn-g"><label class="tt"><textarea class="inp" rows="4" data-pa="docs"'+ds+'>'+E(A.docs!=null?A.docs:PA_DOCS)+'</textarea></label></div>'
+      +'<div class="sgcn-t">'+E(R.t)+' <small>offre reçue et dernières conditions : soumission liée ; montant final : ce contrat</small></div>'
+      +'<table class="nx-tbl sgcn-rc"><thead><tr>'+R.tit.map((t,i)=>'<th'+(i?' class="r"':'')+'>'+E(t)+'</th>').join('')+'</tr></thead><tbody>'+R.rows.map(r=>'<tr class="'+(r.s||'')+'">'+r.c.map((x,i)=>'<td'+(i?' class="r nw"':'')+'>'+E(x||(i?'—':''))+'</td>').join('')+'</tr>').join('')+'</tbody></table>'
+      +'<div class="sgcn-g" style="margin-top:10px"><label class="tt">Ligne libre sous le récapitulatif<input class="inp" data-pa="recapLibre" type="text" value="'+E(A.recapLibre||'')+'"'+ds+'></label></div>'; };
   /* onglet Clauses */
   const oClauses=()=>'<div class="sgcn-t">Clauses particulières <small>imprimées à la suite du contrat ; sans clause, rien n’est ajouté</small></div><div class="sgcn-cbar"></div><div class="sgcn-clauses"></div>';
   C.innerHTML='<div class="sgsv sgcn sgcn-f">'+tete(p.NUMBER||'','Contrat d’entreprise · '+(ELIB[c.ETAT]||''),titre(),meta(),btn('liste','‹ Contrats du projet',''))
@@ -230,17 +361,18 @@ function fiche(C,p,c,I){ const ec=peut(p), v=c.ETAT==='signe'||c.ETAT==='resilie
     set('[data-tot="brut"]',num2(K.brut)); set('[data-tot="cond"]',num2(K.cond)); set('[data-tot="ht"]',num2(K.ht)); set('[data-tot="tva"]',num2(K.tva)); set('[data-tot="ttc"]',num2(K.ttc)); set('[data-tot="ttc2"]',num2(K.ttc));
     (c.AVENANTS||[]).forEach(a=>set('[data-avttc="'+a.id+'"]',num2(ttc(a.ht,c.TVA))));
     set('[data-avtot]',(c.AVENANTS||[]).length?'Total du contrat avec avenants : CHF '+num2(totalTTC(c))+' TTC':''); bandeau(); onglets(); };
-  const corps=()=>{ const k=og(); corpsEl.innerHTML=k==='positions'?oPositions():k==='avenants'?oAvenants():k==='clauses'?oClauses():oContrat();
+  const corps=()=>{ const k=og(); corpsEl.innerHTML=k==='positions'?oPositions():k==='avenants'?oAvenants():k==='clauses'?oClauses():k==='preadj'?oPreadj():oContrat();
     if(k==='clauses'){ const host=corpsEl.querySelector('.sgcn-clauses'), cb=corpsEl.querySelector('.sgcn-cbar'); const F=SGDP.feuille(host,{blocs:()=>c.TEXTE||(c.TEXTE=[]),modifie:()=>{ planif(c); onglets(); },ce:!ro,bar:()=>cb});
       if(!ro){ cb.append(...SGDP.outils(F,TYPES)); cb.addEventListener('mousedown',e=>{ if(e.target.closest('.ib')) e.preventDefault(); }); } else cb.remove(); }
     maj(); };
   /* barre : Imprimer, Fonctions (comme les autres documents de l'app) */
   const supprimer=()=>sgConfirm('Supprimer ce contrat ? Cette action est irréversible.',async()=>{ clearTimeout(SV.t); SV.t=null; while(SV.cours) await new Promise(r=>setTimeout(r,60)); try{ await DS.commit([{t:T,id:c.ID,val:null,bseq:seq(c.ID)}]); }catch(_){ return; } ETAT.sel[p.ID]=null; ETAT.rec=null; I.dessiner(); });
-  bar.append(ibtn({i:'print',label:'Imprimer',t:'Imprimer',menu:()=>[{t:'Contrat d’entreprise (PDF)',fn:()=>ouvrirPdf(p,c)}]}),
+  bar.append(ibtn({i:'print',label:'Imprimer',t:'Imprimer',menu:()=>[{t:'Contrat d’entreprise (PDF)',fn:()=>ouvrirDossier(p,c)},{t:'PV de préadjudication (PDF)',fn:()=>ouvrirDossier(p,c,'preadj')}]}),
     ibtn({i:'gear',label:'Fonctions',t:'Fonctions',menu:()=>[{t:'Supprimer le contrat…',dis:!(ec&&c.ETAT==='brouillon'),fn:supprimer}]}));
   { const fin=document.createElement('span'); fin.className='sgcn-fin'; bar.append(fin); if(ro){ const s=document.createElement('span'); s.className='sgcn-ro'; s.textContent=!ec?'Lecture seule':c.ETAT==='signe'?'Contrat signé : verrouillé':'Contrat résilié : verrouillé'; bar.append(s); } }
   corps();
-  box.addEventListener('change',e=>{ const t=e.target, k=t.dataset&&t.dataset.f, trp=t.closest&&t.closest('tr[data-pos]'), trc=t.closest&&t.closest('tr[data-cond]'), av=t.closest&&t.closest('tr[data-av]');
+  box.addEventListener('change',e=>{ const t=e.target; if(t.dataset&&t.dataset.pa){ if(ro) return; (c.PREADJ||(c.PREADJ={}))[t.dataset.pa]=t.value; planif(c); return; }
+    const k=t.dataset&&t.dataset.f, trp=t.closest&&t.closest('tr[data-pos]'), trc=t.closest&&t.closest('tr[data-cond]'), av=t.closest&&t.closest('tr[data-av]');
     if(k){ const seule=c.POSITIONS.length===1?c.POSITIONS[0]:null, suit=seule&&String(seule.cfc||'')===String(c.CFC||'')&&String(seule.lib||'')===String(c.LOT||'');
       if(k==='TVA'||k==='RETENUE'){ const vide=t.value.trim()===''; c[k]=k==='RETENUE'&&vide?'':sn(t.value); }
       else if(k==='DEBUT_TXT'||k==='FIN_TXT'){ c[k]=t.value.trim(); c[k==='DEBUT_TXT'?'DEBUT':'FIN']=isoDe(t.value); }
@@ -253,7 +385,9 @@ function fiche(C,p,c,I){ const ec=peut(p), v=c.ETAT==='signe'||c.ETAT==='resilie
       else if(f==='pct'){ const avant=x.pct===''||x.pct==null, vide=t.value.trim()===''; if(vide){ if(!avant) x.m=(calc(c).conds.find(k=>k.id===x.id)||{m:0}).m; x.pct=''; } else x.pct=sn(t.value); planif(c); if(avant!==vide){ corps(); return; } t.value=num(+x.pct||0,2); }
       planif(c); maj(); }
     else if(av&&t.dataset.v){ const a=(c.AVENANTS||[]).find(x=>x.id===av.dataset.av); if(!a) return; if(t.dataset.v==='signe') a.signe=t.checked; else if(t.dataset.v==='ht'){ a.ht=sn(t.value); t.value=num2(a.ht); } else a[t.dataset.v]=t.value; planif(c); maj(); } });
-  box.addEventListener('click',e=>{ const b=e.target.closest('[data-a],[data-etat],[data-o]'); if(!b||!box.contains(b)) return; const a=b.dataset.a, et=b.dataset.etat, o=b.dataset.o;
+  box.addEventListener('click',e=>{ const pn=e.target.closest('[data-pon]'); if(pn&&box.contains(pn)){ if(ro) return; const A=c.PREADJ||(c.PREADJ={}), k=pn.dataset.pon; A[k]=A[k]===pn.dataset.v?'':pn.dataset.v; planif(c);
+      pn.parentNode.querySelectorAll('[data-pon]').forEach(x=>{ const on=A[k]===x.dataset.v; x.classList.toggle('on',on); x.setAttribute('aria-pressed',on?'true':'false'); }); return; }
+    const b=e.target.closest('[data-a],[data-etat],[data-o]'); if(!b||!box.contains(b)) return; const a=b.dataset.a, et=b.dataset.etat, o=b.dataset.o;
     if(o){ if(o!==og()){ ETAT.ong[p.ID]=o; corps(); } return; }
     if(a==='liste'){ vider(c).then(ok=>{ if(!ok){ toast('Contrat non enregistré : le serveur ne répond pas. La fiche reste ouverte.',true); return; } ETAT.sel[p.ID]=null; ETAT.rec=null; I.dessiner(); }); }
     else if(a==='ent') pickContact('Entreprise du contrat',x=>{ if(!x) return; c.CONTACT_ID=x.ID; planif(c); b.textContent=entNom(c)||'Choisir…'; maj(); });
@@ -271,5 +405,5 @@ function ouvrir(C,p){ css(); const I={box:null,garder:false,dessiner:null}; ETAT
 DS.on(ts=>{ const I=ETAT.cour; if(!I||!I.box||!I.box.isConnected||!hit(ts,T,'devisdocument','soumission','contact','contactowner')) return; if(I.box.contains(document.activeElement)||SV.t||SV.cours) return; setTimeout(()=>{ if(I.box&&I.box.isConnected&&!I.box.contains(document.activeElement)) I.dessiner(); },0); });
 window.sgContratsEntModule=function(C,p){ try{ ouvrir(C,p); }catch(e){ console.error(e); C.textContent='Contrats d’entreprise : erreur — '+String(e&&e.message||e); } };
 window.sgContratsEntCompte=p=>{ try{ const n=contrats(p).length, a=DS.loaded.has('soumission')?lots(p).length:0; return (n?n+' contrat'+(n>1?'s':''):'aucun contrat')+(a?' · '+a+' à établir':''); }catch(_){ return ''; } };
-window.SGCE={ETAT,contrats,lots,offre,calc,donneesPdf,pdfOctets,estEbauche};
+window.SGCE={ETAT,contrats,lots,offre,calc,donneesPdf,pdfOctets,estEbauche,PA,preadjDonnees,preadjOctets,dossierOctets,soumissionOctets,cgOctets,ouvrirDossier,impDe};
 })();

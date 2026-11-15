@@ -2040,7 +2040,10 @@ async function sgDsPdf(R, rep, o){
     const lignesDe = (t, f, z, w) => { const R = []; String(t == null ? '' : t).replace(/\r/g, '').split('\n').forEach(par => { const L = cx.couper(P(par), f, z, w); if(L && L.length) L.forEach(l => R.push(l)); else R.push(''); });
       while(R.length && !String(R[R.length - 1]).trim()) R.pop(); return R; };
 
+    /* parties à imprimer (15.11.2026, fenêtre du contrat : « page de garde », « contrat ») : D.parties = { garde, contrat }, toutes deux par défaut */
+    const PT = D.parties || {}, pGarde = PT.garde !== false, pContrat = PT.contrat !== false;
     /* ── page 1 : rubriques, lot, montants, adjudicataire, offre et délais, signatures ── */
+    if(pGarde){
     cx.nouvellePage('portrait');
     let y = 120, yv = 96;
     (Array.isArray(D.rubriques) ? Array.from(D.rubriques) : []).forEach(r => {
@@ -2073,6 +2076,8 @@ async function sgDsPdf(R, rep, o){
       const y1 = ys + 16, pasS = S.length > 1 ? Math.max(38, Math.min(71, (BAS + 4 - y1 - 39) / (S.length - 1))) : 71, dp = Math.min(39, pasS - 10);
       S.forEach((t, i) => { const yl = y1 + i * pasS; cx.texte(cx.maj(t), X0, T(yl), { police:F.light, taille:8 });
         for(let x = X0 + 2; x < X1 - 0.5; x += 5) cx.rect(x, T(yl + dp + 0.75), 1, 0.75, { fond:C.N }); }); }
+    }
+    if(!pContrat) return;
 
     /* ── page 2 : positions, conditions et totaux ── */
     const TB = D.positions || {}, rows = Array.isArray(TB.rows) ? Array.from(TB.rows) : []; let yFin = null;
@@ -2113,8 +2118,110 @@ async function sgDsPdf(R, rep, o){
         yc += t === 'sou' ? 2 : 3; }); }
   };
 
+
+  /* ── procès-verbal de préadjudication (15.11.2026, Paulo : « ajoute une fenêtre d'option pour imprimer la page de garde, contrat, soumission, conditions générales,
+     PV de préadjudication » ; modèle : le formulaire « Séance pré-adjudication » du bureau, six pages — document client, jamais dans le dépôt) — o.preadj = {
+       cfc, lot                       grand titre entre deux filets, comme la première page du contrat
+       sections:[{ t, rows:[ { lib, val }                        libellé à gauche, valeur à la colonne des valeurs ; valeur vide : pointillé pour écrire
+                             | { lib, on:true|false|null, val }   question à cocher : cases Oui / Non à droite (case pleine = choisie), précision dessous
+                             | { lib, duo:[[l1,v1],[l2,v2]] }     deux valeurs côte à côte (Début / Fin, du / au, Par cas / Par personne)
+                             | { note }                           phrase d'information (Light 7,5 gris)
+                             | { long, val }                      libellé puis texte libre dessous ; vide : deux lignes pointillées ] }],
+       questions:{ t, lignes:[{ k:'h' intertitre | 'q' question (tiret) | 'r' réponse, x }] }, documents:{ t, lignes:[textes] },
+       recap:{ t, tit:[4 titres], rows:[{ c:[libellé, offre reçue, dernières conditions, montant final], s:'' | 't' (gras, filet noir dessus) }], libre },
+       declaration, lieu, date, signatures:[libellés] }
+     Formulaire à remplir en séance : tout ce qui n'est pas saisi garde sa place (pointillés, cases vides). Papier des contrats, colonne de x 125.72 à 510.68 ; rubriques
+     comme celles de la première page du contrat (Regular 8 en capitales sur filet), rangées au pas de 17 pt sur filet gris. Rien n'est coupé : un texte trop long passe
+     à la ligne, une rangée ne se coupe pas entre deux pages, un titre de rubrique ne reste pas seul en bas de page. ── */
+  const contenuPreadj = (cx) => {
+    const D = o.preadj || {}, H = PAP.format.portrait.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t), A = (x) => Array.isArray(x) ? Array.from(x) : [];
+    const X0 = 125.72, X1 = 510.68, XC = 70, W = X1 - X0, XV = X0 + 168, XV2 = X0 + 280, XO = X1 - 92, XN = X1 - 42, BAS = H - 89.245, HAUT = 100;
+    const GF = PDFLib.rgb(0.8, 0.8, 0.8);
+    let y = 0;
+    const page = () => { cx.nouvellePage('portrait'); y = HAUT; };
+    const place = (h) => { if(y + h > BAS) page(); };
+    const fil = (yy, a) => cx.ligne(a == null ? X0 : a, T(yy), X1, T(yy));
+    const filGris = (yy) => cx.ligne(X0, T(yy), X1, T(yy), { couleur:GF });
+    const points = (yy, a, b) => { if(b - a > 6) cx.ligne(a, T(yy), b, T(yy), { tirets:[0.5, 2.5], couleur:C.G }); };
+    const lignesDe = (t, f, z, w) => { const R = []; String(t == null ? '' : t).replace(/\r/g, '').split('\n').forEach(par => { const L = cx.couper(P(par), f, z, w); if(L && L.length) L.forEach(l => R.push(l)); else R.push(''); });
+      while(R.length && !String(R[R.length - 1]).trim()) R.pop(); return R; };
+    const caze = (x, yb, on, lib) => { cx.rect(x, T(yb + 1), 7, 7, { bord:C.N }); if(on) cx.rect(x + 1.7, T(yb - 0.7), 3.6, 3.6, { fond:C.N }); cx.texte(lib, x + 11, T(yb), { police:on ? F.regular : F.light, taille:8 }); };
+    const titre = (t, h) => { place(22 + (h || 34)); if(y > HAUT) y += 12; cx.texte(cx.maj(P(t)), X0, T(y), { police:F.regular, taille:8 }); fil(y + 5.75); y += 21; };
+    /* valeur après un petit libellé (« Début : … ») : libellé en Light, valeur en Regular, pointillé si vide */
+    const paire = (x, xf, lib, val, yb) => { const l = P(lib) + ' :', wl = cx.largeur(l, F.light, 8) + 4, v = P(val || '');
+      cx.texte(l, x, T(yb), { police:F.light, taille:8 });
+      if(v){ const L = cx.couper(v, F.regular, 8, xf - x - wl); L.forEach((t, i) => cx.texte(t, x + wl, T(yb + i * 10), { police:F.regular, taille:8 })); return L.length; }
+      points(yb + 1.5, x + wl, xf); return 1; };
+
+    page(); y = 120;
+    /* titre du lot, entre deux filets partant de la marge (comme le contrat) */
+    { const cfc = P(D.cfc || ''), lot = P(D.lot || '');
+      if(cfc || lot){ fil(y, XC); if(cfc) cx.texte(cfc, XC, T(y + 19), { police:F.bold, taille:Math.max(8, Math.min(14, 14 * (X0 - XC - 6) / Math.max(1, cx.largeur(cfc, F.bold, 14)))) });
+        const L = cx.largeur(lot, F.bold, 14) > W ? cx.couper(lot, F.bold, 9, W) : [lot]; L.forEach((l, i) => { if(l) cx.texte(l, X0, T(y + 19 + i * 12), { police:F.bold, taille:L.length > 1 ? 9 : 14 }); });
+        y += 26 + (L.length - 1) * 12; fil(y, XC); y += 30; } }
+
+    A(D.sections).forEach(S => { const rows = A(S.rows); if(!rows.length) return; titre(S.t);
+      rows.forEach(r => {
+        if(r.note != null){ const L = lignesDe(r.note, F.light, 7.5, W); place(L.length * 9.5 + 6); L.forEach((l, i) => cx.texte(l, X0, T(y + i * 9.5), { police:F.light, taille:7.5, couleur:C.G })); y += L.length * 9.5 + 6; return; }
+        if(r.long != null){ const L = lignesDe(r.val, F.regular, 8, W), n = L.length;
+          /* champ vide en bas de page : une seule ligne pointillée plutôt qu'un libellé renvoyé seul à la page suivante */
+          const court = !n && y + 46 > BAS && y + 28 <= BAS;
+          place(n ? 14 + Math.min(n, 3) * 10 : court ? 28 : 46); cx.texte(P(r.long) + ' :', X0, T(y), { police:F.light, taille:8 }); y += 13;
+          if(n){ L.forEach(l => { if(y > BAS){ page(); } if(l) cx.texte(l, X0, T(y), { police:F.regular, taille:8 }); y += 10; }); y += 3; filGris(y - 4); y += 9; }
+          else if(court){ points(y + 2, X0, X1); y += 15; }
+          else { points(y + 2, X0, X1); points(y + 18, X0, X1); y += 31; }
+          return; }
+        if(r.on !== undefined){ const L = lignesDe(r.lib, F.light, 8, XO - X0 - 14), V = r.val ? lignesDe(r.val, F.regular, 8, XO - X0 - 14) : [], n = L.length + V.length;
+          place(n * 10 + 8); L.forEach((l, i) => cx.texte(l, X0, T(y + i * 10), { police:F.light, taille:8 }));
+          V.forEach((l, i) => cx.texte(l, X0, T(y + (L.length + i) * 10), { police:F.regular, taille:8 }));
+          caze(XO, y, r.on === true, 'Oui'); caze(XN, y, r.on === false, 'Non');
+          y += (n - 1) * 10; filGris(y + 6); y += 17; return; }
+        if(Array.isArray(r.duo)){ const L = lignesDe(r.lib, F.light, 8, XV - X0 - 10), d = Array.from(r.duo);
+          place(Math.max(L.length, 2) * 10 + 8); L.forEach((l, i) => cx.texte(l, X0, T(y + i * 10), { police:F.light, taille:8 }));
+          const n1 = d[0] ? paire(XV, XV2 - 10, d[0][0], d[0][1], y) : 1, n2 = d[1] ? paire(XV2, X1, d[1][0], d[1][1], y) : 1, n = Math.max(L.length, n1, n2);
+          y += (n - 1) * 10; filGris(y + 6); y += 17; return; }
+        { const L = lignesDe(r.lib, F.light, 8, XV - X0 - 10), V = lignesDe(r.val, F.regular, 8, X1 - XV), n = Math.max(L.length, V.length, 1);
+          place(n * 10 + 8); L.forEach((l, i) => cx.texte(l, X0, T(y + i * 10), { police:F.light, taille:8 }));
+          if(V.length) V.forEach((l, i) => cx.texte(l, XV, T(y + i * 10), { police:F.regular, taille:8 })); else points(y + 1.5, XV, X1);
+          y += (n - 1) * 10; filGris(y + 6); y += 17; } }); });
+
+    /* questions et précisions sur l'offre */
+    const Q = D.questions || {}, QL = A(Q.lignes).filter(l => l && String(l.x || '').trim());
+    if(Q.t){ titre(Q.t, 40);
+      if(!QL.length){ for(let i = 0; i < 8; i++){ place(18); points(y + 2, X0, X1); y += 18; } y += 4; }
+      QL.forEach(l => { const k = l.k || 'r', f = k === 'q' ? F.light : F.regular, ind = k === 'h' ? 0 : 12, L = lignesDe(k === 'h' ? cx.maj(P(l.x)) : l.x, f, 8, W - ind);
+        if(k === 'h'){ y += 6; place(30); } else place(Math.min(L.length, 2) * 10 + 4);
+        L.forEach((t, i) => { if(y > BAS) page(); if(k === 'q' && i === 0) cx.texte('–', X0, T(y), { police:F.light, taille:8 }); if(t) cx.texte(t, X0 + ind, T(y), { police:f, taille:8 }); y += 10; });
+        y += k === 'q' ? 2 : 6; }); }
+    const DC = D.documents || {}, DL = A(DC.lignes).map(P).filter(Boolean);
+    if(DC.t && DL.length){ titre(DC.t, 20); DL.forEach(t => { const L = cx.couper(t, F.light, 8, W - 12); place(L.length * 10 + 2); cx.texte('–', X0, T(y), { police:F.light, taille:8 });
+        L.forEach((x, i) => cx.texte(x, X0 + 12, T(y + i * 10), { police:F.light, taille:8 })); y += L.length * 10 + 2; }); y += 6; }
+
+    /* récapitulatif de l'offre */
+    const RC = D.recap || {}, RR = A(RC.rows);
+    if(RC.t && RR.length){ const wc = 84, c3 = X1, c2 = X1 - wc, c1 = X1 - 2 * wc, wl = W - 3 * wc - 8, tit = A(RC.tit);
+      titre(RC.t, 30 + Math.min(RR.length, 6) * 15);
+      [[c1, tit[1]], [c2, tit[2]], [c3, tit[3]]].forEach(([x, t]) => { if(t) cx.texte(P(t), x - 1.5, T(y), { police:F.regular, taille:7.5, couleur:C.G, align:'d' }); });
+      if(tit[0]) cx.texte(P(tit[0]), X0, T(y), { police:F.regular, taille:7.5, couleur:C.G }); fil(y + 5); y += 17;
+      RR.forEach(r => { const c = A(r.c), g = r.s === 't', f = g ? F.bold : F.light, L = lignesDe(c[0], f, 8, wl), n = Math.max(1, L.length);
+        place(n * 10 + 8); if(g) fil(y - 10.5);
+        L.forEach((l, i) => cx.texte(l, X0, T(y + i * 10), { police:f, taille:8 }));
+        [[c1, c[1]], [c2, c[2]], [c3, c[3]]].forEach(([x, t]) => { if(t) cx.texte(P(t), x - 1.5, T(y), { police:g ? F.bold : F.regular, taille:8, align:'d' }); });
+        y += (n - 1) * 10; if(!g) filGris(y + 6); y += 17; });
+      const LB = lignesDe(RC.libre || '', F.regular, 8, W); if(LB.length){ place(LB.length * 10 + 6); LB.forEach((l, i) => cx.texte(l, X0, T(y + i * 10), { police:F.regular, taille:8 })); y += LB.length * 10 + 6; } }
+
+    /* déclaration, lieu et date, signatures */
+    const DE = lignesDe(D.declaration || '', F.light, 8, W), SG = A(D.signatures).map(P).filter(Boolean);
+    place(DE.length * 10 + 36 + (SG.length ? 78 : 0)); y += 14;
+    DE.forEach((l, i) => cx.texte(l, X0, T(y + i * 10), { police:F.light, taille:8 })); y += DE.length * 10 + 18;
+    paire(X0, X0 + W / 2 - 14, 'Lieu', D.lieu, y); paire(X0 + W / 2, X1, 'Date', D.date, y); y += 34;
+    if(SG.length){ const g = 14, w = (W - g * (SG.length - 1)) / SG.length;
+      SG.forEach((t, i) => { const x = X0 + i * (w + g); cx.texte(t + ' :', x, T(y), { police:F.light, taille:8 }); points(y + 40, x, x + w); }); y += 46; }
+  };
+
   const contenu = (cx) => {
     if(o.pvmo){ contenuPvMo(cx); return; }   /* PV MO (piste PV, 15.11.2026) */
+    if(o.preadj){ contenuPreadj(cx); return; }   /* procès-verbal de préadjudication (15.11.2026) */
     if(o.contratEnt){ contenuContratEnt(cx); return; }
     if(o.decompte){ contenuDecompte(cx); return; }
     if(o.descDG){ contenuDescDG(cx); return; }

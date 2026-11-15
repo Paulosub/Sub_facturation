@@ -12949,16 +12949,16 @@ function pvCreate(){
 function pvCfgHTML(){
   const A=pvA(), cfg=A.cfg;
   const lst=_pvCfcFull?pvCfcAll():PV_CFC_COURT;
-  let h='<div class="pv-card"><h4>AFFAIRE — CONDITIONS INITIALES</h4><div class="pv-meta">'+
+  let h='<div class="pv-card"><h4>Affaire — conditions initiales</h4><div class="pv-meta">'+
     '<label>Lieu <input style="width:340px" value="'+pvEscA(cfg.lieu)+'" onchange="pvCfgSet('+PV_Q+'lieu'+PV_Q+',this.value)" placeholder="Rue, NPA localité (ECA …)"></label>'+
     '<label>Heure des séances <input type="time" value="'+pvEscA(cfg.heure)+'" onchange="pvCfgSet('+PV_Q+'heure'+PV_Q+',this.value)"></label>'+
     '<label>Numérotation — dernier n° déjà émis <input type="number" min="0" style="width:76px" value="'+(+cfg.numDeb||0)+'" onchange="pvCfgSet('+PV_Q+'numDeb'+PV_Q+',this.value)" title="0 = nouvelle affaire, le premier PV portera le n° 0. Reprise d’un chantier : ex. 32 → le prochain PV portera le n° 33."></label>'+
     '</div></div>';
-  h+='<div class="pv-card"><h4>CFC DU PROJET</h4><div class="pv-grid">'+
+  h+='<div class="pv-card"><h4>CFC du projet</h4><div class="pv-grid">'+
     lst.map(x=>'<label><input type="checkbox" '+(cfg.cfc.includes(x[0])?'checked':'')+' onchange="pvCfcTog('+PV_Q+pvEscA(x[0])+PV_Q+')"> <b>'+pvEsc(x[0])+'</b> '+pvEsc(x[1])+'</label>').join('')+
     '</div><div style="margin-top:8px"><button class="btn btn-sm pv-mini" onclick="_pvCfcFull=!_pvCfcFull;pvRender()">'+(_pvCfcFull?'Liste raccourcie':'Afficher tous les CFC')+'</button></div></div>';
   if(cfg.cfc.length){
-    h+='<div class="pv-card"><h4>ENTREPRISES PAR CFC (adjudications)</h4><table class="pv-int" style="width:100%"><tr style="font-size:11px;color:#777"><td style="width:140px">CFC</td><td>Entreprise</td><td style="width:120px">Responsable</td><td style="width:112px">Tél / Natel</td><td style="width:170px">E-mail</td><td style="width:56px;text-align:center">Adjugé</td></tr>'+
+    h+='<div class="pv-card"><h4>Entreprises par CFC (adjudications)</h4><table class="pv-int" style="width:100%"><tr style="font-size:11px;color:#777"><td style="width:140px">CFC</td><td>Entreprise</td><td style="width:120px">Responsable</td><td style="width:112px">Tél / Natel</td><td style="width:170px">E-mail</td><td style="width:56px;text-align:center">Adjugé</td></tr>'+
       cfg.cfc.map(c=>{ const e=cfg.ent[c]||{};
         const st=(k,ph,w)=>'<td><input value="'+pvEscA(e[k]||'')+'" onchange="pvEntSet('+PV_Q+pvEscA(c)+PV_Q+','+PV_Q+k+PV_Q+',this.value)" placeholder="'+ph+'"></td>';
         return '<tr><td><b>'+pvEsc(c)+'</b> <span style="color:#777;font-size:11px">'+pvEsc(pvCfcLabel(c))+'</span> '+
@@ -12968,7 +12968,7 @@ function pvCfgHTML(){
       '</table></div>';
   }
   const GRP={mo:"Maître de l'ouvrage",mand:'Mandataires',ext:'Externes'};
-  h+='<div class="pv-card"><h4>INTERVENANTS</h4>';
+  h+='<div class="pv-card"><h4>Intervenants</h4>';
   ['mo','mand','ext'].forEach(g=>{
     h+='<div style="font-weight:600;font-size:12px;margin:8px 0 3px">'+GRP[g]+
       ' <button class="btn btn-sm pv-mini" onclick="pvIntAdd('+PV_Q+g+PV_Q+')">+</button>'+
@@ -12987,7 +12987,7 @@ function pvCfgHTML(){
     h+='</table>';
   });
   h+='<div style="color:#888;font-size:11px;margin-top:6px">D = reçoit le PV par e-mail (distribution).</div></div>';
-  h+='<div class="pv-card"><h4>0. GÉNÉRAL — TEXTES FIXES DU PV <button class="btn btn-sm pv-mini" onclick="pvGenAdd()">+ bloc</button></h4>'+
+  h+='<div class="pv-card"><h4>0. Général — textes fixes du PV <button class="btn btn-sm pv-mini" onclick="pvGenAdd()">+ bloc</button></h4>'+
     cfg.gen.map((b,i)=>'<div style="margin-bottom:10px"><input style="width:60%;font-weight:600;border:1px solid #ddd;border-radius:5px;padding:4px 7px;font-size:12px" value="'+pvEscA(b.t)+'" onchange="pvGenSet('+i+','+PV_Q+'t'+PV_Q+',this.value)"> '+
       '<button class="btn btn-sm pv-mini" style="color:#b00" onclick="pvGenDel('+i+')">−</button>'+
       '<textarea class="pv-ta" rows="'+Math.min(10,Math.max(2,String(b.x).split(PV_NL).length))+'" onchange="pvGenSet('+i+','+PV_Q+'x'+PV_Q+',this.value)">'+pvEsc(b.x)+'</textarea></div>').join('')+
@@ -13028,7 +13028,7 @@ function pvEditHTML(out, pv){
        :(pvValideur()?'<button class="btn btn-sm" style="color:#1e6b2d;font-weight:700" onclick="pvEnvoyer('+PV_Q+pv.id+PV_Q+')">À envoyer</button>':''))+
     '</div>';
   if(_pvTab==='gen'){ pvEditWrap(out, h+pvCfgHTML()); return; }
-  h+='<div class="pv-card"><h4>SÉANCE</h4><div class="pv-meta">'+
+  h+='<div class="pv-card"><h4>Séance</h4><div class="pv-meta">'+
     '<label>N° <b style="font-size:13px">'+pvPad(pv.num,4)+'</b> <span style="color:#999;font-size:10.5px">(automatique)</span></label>'+
     '<label>Séance du <input type="date" value="'+pvEscA(pv.date)+'" onchange="pvSet('+PV_Q+'date'+PV_Q+',this.value)"'+dis+'></label>'+
     '<label>Heure <input type="time" value="'+pvEscA(pv.heure)+'" onchange="pvSet('+PV_Q+'heure'+PV_Q+',this.value)"'+dis+'></label>'+
@@ -13116,7 +13116,7 @@ function pvPresHTML(pv, RO){
       '<td>'+(cur.includes('C')
         ?'<input style="width:60px;border:1px solid #ddd;border-radius:5px;padding:3px 5px;font-size:11.5px" placeholder="8:30" value="'+pvEscA((pv.presH||{})[key]||'')+'" onchange="pvPresH('+PV_Q+key+PV_Q+',this.value)"'+dis+'>'
         :'<span style="color:#ccc;font-size:11px" title="Cochez C (convoqué) pour saisir une heure">—</span>')+'</td></tr>'; };
-  let h='<div class="pv-card"><h4>PRÉSENCES ET DISTRIBUTION</h4><table style="border-collapse:collapse"><tr><td></td>'+
+  let h='<div class="pv-card"><h4>Présences et distribution</h4><table style="border-collapse:collapse"><tr><td></td>'+
     L.map(x=>'<td style="text-align:center;font-weight:700;font-size:11px;width:34px">'+x+'</td>').join('')+'<td style="font-weight:700;font-size:11px">Heure</td></tr>';
   A.cfg.interv.forEach(it=>{ h+=row('i'+it.id, pvEsc((it.role?it.role+' — ':'')+(it.soc?it.soc+' : ':'')+it.nom)); });
   A.cfg.cfc.forEach(c=>{ const e=A.cfg.ent[c]||{}; if(!(e.adj||e.soc)) return;

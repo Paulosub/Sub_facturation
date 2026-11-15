@@ -10,11 +10,15 @@
    points sont copiés d'un procès-verbal au suivant, sans lien : reconnus par leur titre, sinon leur texte).
    Notes (branche « Notes » de domainView remplacée) : colonne par année + recherche, note à droite. Tâches (ptDomain remplacé) : colonne par
    état + recherche, chiffres du projet, fiche de la tâche et ses notes. Frais (sgFraisModule) : bandeau, chiffres, années, tableau.
-   PV MO (Projet ▸ PV MO, 04.11.2026, Paulo : « reproduit séance dans pv MO, la structure de présentation mais pour des question de MO et décision ») :
-   même présentation que Séances, mêmes tables du moteur (meetingsequence, meeting, meetingparticipant, meetingitem) ; séries du genre « PV MO »
-   (RX_MO : aussi « Maître de l'ouvrage » ; créé à la première séance), une série par phase SIA (NUMBER = 31, 32…) ; ces séries ne sont plus dans Séances.
-   Point : Question = catégorie 4 (TITLE = question, TEXT = réponse, réglé = répondu), Décision = catégorie 2, le reste = Information. Vues Procès-verbal ·
-   Questions ouvertes (toutes phases, la dernière occurrence fait foi) · Décisions (registre du projet) · Fichiers (dossiers « PV MO » des phases, déjà déposés).
+   PV MO (Projet ▸ PV MO, 04.11.2026, Paulo : « reproduit séance dans pv MO, la structure de présentation mais pour des question de MO et décision » ;
+   refait le 15.11.2026 : « adapter pv mo avec le style de pv de chantier, exemple de pv mo ») : mêmes tables du moteur (meetingsequence, meeting,
+   meetingparticipant, meetingitem) ; séries du genre « PV MO » (RX_MO : aussi « Maître de l'ouvrage » ; créé à la première séance), une série par
+   phase SIA (NUMBER = 31, 32…) ; ces séries ne sont plus dans Séances. Organisation de l'app des PV de chantier : liste des PV (n°, référence, séance,
+   phase, statut, actions) avec les vues Questions ouvertes (toutes phases, la dernière occurrence fait foi) · Décisions (registre du projet) ·
+   Fichiers (dossiers « PV MO » des phases) ; PV ouvert = séance, participants, rubriques numérotées et leurs points n.m à gauche, aperçu « PDF
+   fidèle » à droite (lecteur de l'app). Rubrique = titre de niveau 1 sans catégorie ; point = niveau 2 : Information (catégorie 1), Décision (2),
+   Question du maître de l'ouvrage (4 : TITLE = question, TEXT = réponse, réglé = répondu) ; points sans rubrique des PV d'avant rangés par sorte.
+   Document (procès-verbal, convocation) : sgDsPdf, o.pvmo (contenuPvMo de sg3_docsub.js), mise en page relevée sur l'exemple du bureau.
    Droits : modifier = projet modifiable, comme le Planning (Frais : règles de editCost / delCost, comme avant) ; imprimer et lire : qui voit le projet.
    La page se redessine à chaque changement de la base (drawC) : état par projet dans ETAT, défilement et focus de la recherche rétablis.
    Débogage : window.SGSV. Styles <style id="sgsv-css">, classes sgsv-*. */
@@ -128,6 +132,54 @@ button.sgsv-p{cursor:pointer}button.sgsv-p:hover{background:var(--s-jaune3)}
 .sgsv-dlg [hidden]{display:none}
 @container sgsv (max-width:760px){.sgsv-kp{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){.sgd.sgsv-b{flex-direction:column;overflow:auto;height:auto}.sgsv-b .sgd-col{flex:none;width:auto;max-height:40vh}.sgsv-b .sgd-m{overflow:visible}.sgsv-fiche{grid-template-columns:1fr 1fr}.sgsv-kp{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* PV MO au style des PV de chantier (15.11.2026) : liste des PV, PV ouvert en deux colonnes (saisie, aperçu PDF) */
+.sgpm-fil{margin-top:0}
+.sgpm-liste tbody tr{cursor:pointer}
+.sgpm-liste td{vertical-align:middle}
+.sgpm-liste td.nw,.sgpm-liste th{white-space:nowrap}
+.sgpm-liste .sgsv-lien{margin-left:16px}
+.sgpm-bdg{display:inline-block;padding:2px 8px;font-size:11px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.sgpm-bdg.brouillon,.sgpm-bdg.prevue{background:var(--s-jaune2);border-color:var(--s-jaune2);color:var(--s-noir)}
+.sgpm-bdg.diffuse{color:#4E6B0F;border-color:#4E6B0F}
+.sgpm-ed{display:flex;align-items:flex-start;gap:18px;margin-top:16px}
+.sgpm-g{flex:1 1 50%;min-width:0}
+.sgpm-d{flex:1 1 50%;min-width:380px;position:sticky;top:0;height:calc(100vh - 210px);min-height:420px;display:flex;flex-direction:column;border:1px solid var(--s-filet);box-sizing:border-box}
+.sgpm-d .bar{flex:none;background:var(--s-nuit);color:#fff;font-size:12px;font-weight:700;padding:9px 14px}
+.sgpm-prev-h{flex:1;min-height:0;display:flex;background:#fff}
+.sgpm-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sgpm-top .num{font-size:15px}
+.sgpm-top .ph{color:var(--s-gris);font-size:12.5px}
+.sgpm-top .fin{flex:1}
+.sgpm-card,.sgpm-sec{border-top:2px solid var(--s-noir);margin-top:22px}
+.sgpm-card h4,.sgpm-sec .hd{margin:0 0 10px;padding:10px 0 9px;font-size:14px;font-weight:700;border-bottom:1px solid var(--s-filet);display:flex;align-items:baseline;gap:10px}
+.sgpm-sec .hd{margin-bottom:0}
+.sgpm-card h4 .dr,.sgpm-sec .hd .dr{margin-left:auto;display:flex;gap:14px;font-weight:400;flex:none}
+.sgpm-sec .hd .n{min-width:20px;font-variant-numeric:tabular-nums}
+.sgpm-sec .hd .t{min-width:0;overflow-wrap:anywhere}
+.sgpm-meta{display:flex;flex-wrap:wrap;gap:10px 28px;padding-bottom:4px}
+.sgpm-meta div{display:flex;flex-direction:column;gap:3px;font-size:13px;min-width:0;overflow-wrap:anywhere}
+.sgpm-meta div span{font-size:11px;font-weight:700;color:var(--s-gris)}
+.sgpm-tb,.sgpm-pts{width:100%;border-collapse:collapse;font-size:13px}
+.sgpm-tb th{text-align:left;font-size:11.5px;font-weight:700;padding:0 10px 6px 0;border-bottom:1.5px solid var(--s-noir);white-space:nowrap}
+.sgpm-tb td,.sgpm-pts td{padding:6px 10px 6px 0;border-bottom:1px solid var(--s-filet);vertical-align:top;overflow-wrap:break-word}
+.sgpm-tb td small{display:block;font-size:11.5px;color:var(--s-gris)}
+.sgpm-tb .c{text-align:center;padding-right:0}
+.sgpm-tb tr.ed,.sgpm-pts tr.ed{cursor:pointer}
+.sgpm-tb tr.ed:hover td,.sgpm-pts tr.ed:hover td{background:var(--s-jaune3)}
+.sgpm-tb tr.abs td{color:var(--s-gris)}
+.sgpm-pts td.nn{width:40px;white-space:nowrap;color:var(--s-gris);font-variant-numeric:tabular-nums}
+.sgpm-pts td.tt b{display:block;font-weight:400;white-space:pre-line}
+.sgpm-pts td.tt span{display:block;color:var(--s-gris);white-space:pre-line;margin-top:2px}
+.sgpm-pts td.tt span.it{font-style:italic}
+.sgpm-pts td.ct{width:22px}
+.sgpm-pts td.rs{width:44px}
+.sgpm-pts td.dl{width:72px;white-space:nowrap}
+.sgpm-pts td.ck{width:18px;padding-right:0}
+.sgpm-pts tr.ok td.tt b{color:var(--s-gris)}
+.sgpm-plus{margin-top:18px}
+.sgpm-leg{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin-top:16px;font-size:11.5px;color:var(--s-gris)}
+.sgpm-leg>span{display:inline-flex;align-items:center;gap:6px}
+@container sgsv (max-width:900px){.sgpm-ed{flex-direction:column;align-items:stretch}.sgpm-d{position:static;height:72vh;min-width:0;flex:none}}
 `;
 const css=()=>{ if(!document.getElementById('sgsv-css')){ const s=document.createElement('style'); s.id='sgsv-css'; s.textContent=CSS; document.head.appendChild(s); } };
 
@@ -254,7 +306,15 @@ const menuPV=(u,p,s,m)=>[...(u.peut?[{t:'Participants…',fn:()=>mtPartsDialog(m
 const menuSerie=(u,p,s)=>[...(u.peut?[{t:'Nouveau procès-verbal…',fn:()=>mtMeetingDialog(s)},{t:'Modifier la série…',fn:()=>mtSeqDialog(p,s)}]:[]),{t:'Rechercher dans les points…',fn:()=>mtSearch(s)},...(u.peut?['-',{t:'Supprimer la série…',danger:true,fn:()=>mtSeqDelete(s)}]:[])];
 mtDomain=function(C,top,pane,p){ monter(C,p,'seances',['meetingsequence','meeting','meetingitem','meetingparticipant','projectmeetingtype'],SEANCES); };
 
-/* ── PV MO : questions du maître de l'ouvrage et décisions ── */
+/* ── PV MO : procès-verbaux des séances avec le maître de l'ouvrage, au style des PV de chantier (15.11.2026) ──
+   Paulo : « adapter pv mo avec le style de pv de chantier, exemple de pv mo ». Même organisation que l'app des PV de chantier : la liste des PV
+   (n°, référence, séance, phase, statut, actions), puis le PV ouvert — séance, participants, rubriques et points à gauche, aperçu « PDF fidèle »
+   à droite. Mêmes tables du moteur (meetingsequence par phase, meeting, meetingparticipant, meetingitem) et mêmes fenêtres.
+   Rubriques : un titre de niveau 1 sans catégorie (comme dans Séances) ouvre une rubrique ; ses points, de niveau 2, sont numérotés n.m. Les points
+   sans rubrique des procès-verbaux d'avant sont rangés par sorte (Questions du maître de l'ouvrage, Décisions, Informations). Un nouveau PV reprend
+   les rubriques du précédent, sinon les rubriques types (PM_RUB) ; les questions ouvertes reprises vont dans « Questions en suspens ».
+   Document (pmOctets) : sgDsPdf, o.pvmo (contenuPvMo de sg3_docsub.js), d'après l'exemple du bureau — ordre du jour tiré des rubriques,
+   participants, rubriques numérotées, points n.m, responsable et délai à droite ; même PDF pour l'aperçu, « PDF » et la convocation. */
 const estQ=x=>cat(x)===4, estD=x=>cat(x)===2, cleP=x=>String(x.TITLE||x.TEXT||'').trim().toLowerCase();
 const pvsMO=L=>L.flatMap(s=>mtMeetings(s).map(m=>({s,m}))).sort((a,b)=>cmp(a.m.MEETINGDATE,b.m.MEETINGDATE)||cmp(+a.m.MEETINGNUMBER||0,+b.m.MEETINGNUMBER||0));
 /* questions ouvertes : la dernière occurrence d'une question fait foi ; depuis = le procès-verbal le plus ancien qui la pose */
@@ -262,87 +322,165 @@ function questionsMO(L){ const V=new Map(); pvsMO(L).reverse().forEach(({s,m})=>
   return [...V.values()].filter(o=>!+o.x.ISDONE).sort((a,b)=>cmp(a.x.DEADLINE||'9',b.x.DEADLINE||'9')); }
 const decisionsMO=L=>pvsMO(L).reverse().flatMap(({s,m})=>mtItems(m).filter(estD).map(x=>({x,m,s})));
 const retQ=x=>!+x.ISDONE&&!!x.DEADLINE&&x.DEADLINE<today();
-const numP=(It,f,pre)=>{ const M=new Map(); It.filter(f).forEach((x,i)=>M.set(x.ID,pre+(i+1))); return M; };
 const iniR=x=>x.USERNAME?'<span class="sgsv-ini" title="'+E(x.USERNAME)+'">'+E(String(x.USERNAME).slice(0,4))+'</span>':'';
-const lignesPt=(I,L,N,ck)=>'<table class="sgsv-pts"><thead><tr><th>N°</th><th>'+(ck?'Question et réponse':'Texte')+'</th><th>Resp.</th><th>Délai</th>'+(ck?'<th title="Répondu"></th>':'')+'</tr></thead><tbody>'
-  +L.map(x=>'<tr class="n1'+(+x.ISDONE?' ok':'')+(I.u.peut?' ed':'')+'"'+(I.u.peut?' data-a="ptmo" data-p="'+x.ID+'"':'')+'><td class="nn">'+E(N.get(x.ID)||'')+'</td><td class="tt">'+(x.TITLE?'<b>'+E(x.TITLE)+'</b>':'')+(x.TEXT?'<span>'+E(x.TEXT)+'</span>':ck?'<span style="font-style:italic">Sans réponse pour le moment.</span>':'')+'</td><td>'+iniR(x)+'</td>'
-    +'<td class="dl'+(ck&&retQ(x)?' sgsv-ret':'')+'">'+E(dmy(x.DEADLINE))+'</td>'+(ck?'<td class="ck">'+(I.u.peut?'<button class="sgsv-ck'+(+x.ISDONE?' on':'')+'" data-a="regle" data-p="'+x.ID+'" title="Répondu, réglé" aria-label="Répondu, réglé" aria-pressed="'+!!+x.ISDONE+'"></button>':'<span class="sgsv-ck'+(+x.ISDONE?' on':'')+'"></span>')+'</td>':'')+'</tr>').join('')+'</tbody></table>';
-const SORTES_PT=[[4,'Question','Question du maître de l’ouvrage','Réponse'],[2,'Décision','Décision','Précisions'],[1,'Information','Information','Précisions']];
-/* fenêtre d'une question, d'une décision ou d'une information */
-function pmPoint(I,m,x,c0){ const its=mtItems(m), v=x?{...x}:{ID:null,MEETING_ID:m.ID,STRUCTURINGLEVEL:0,TITLE:'',TEXT:null,ITEMCATEGORYCODE:c0,ITEMID:null,USERNAME:null,DEADLINE:null,ISDONE:0,ISPAGEBREAKBEFORE:0,PAGEBREAKBEFORECODES:null,NUMBER:null,SORTORDER:its.length,PROJECTTASK_ID:null};
+/* rubriques d'un procès-verbal */
+const estRub=x=>(+x.STRUCTURINGLEVEL||0)===0&&!cat(x)&&!x.TEXT&&!x.DEADLINE&&!x.USERNAME&&!!String(x.TITLE||'').trim();
+const PM_RUB=['Remarques sur le procès-verbal précédent','Convocation à la prochaine séance','Travaux effectués','Documents distribués','Général et administration','Divers','Points bloquants'];
+const RX_FIXE=/^(remarques?\b|convocation\b|travaux effectu|documents? (distribu|transmis|remis)|points? bloquants?|questions? en suspens)/i, RX_FIN=/^(divers|points? bloquants?)\b/i, RX_SUSP=/^questions? en suspens/i;
+function pmStruct(m){ const S=[], or={4:[],2:[],1:[]}; let cur=null;
+  mtItems(m).forEach(x=>{ if(estRub(x)){ cur={x,t:String(x.TITLE).trim(),pts:[]}; S.push(cur); } else if(cur) cur.pts.push({x}); else or[estQ(x)?4:estD(x)?2:1].push({x}); });
+  [[4,'Questions du maître de l’ouvrage'],[2,'Décisions'],[1,'Informations']].forEach(([c,t])=>{ if(or[c].length) S.push({x:null,c,t,pts:or[c]}); });
+  S.forEach((z,i)=>{ z.n=String(i+1); z.pts.forEach((q,k)=>{ q.n=z.n+'.'+(k+1); }); });
+  return S; }
+const pm2=m=>String(m.MEETINGNUMBER||'').padStart(2,'0'), pmRef=(p,m)=>(p.NUMBER||'')+'.PVMO.'+pm2(m), pmNum=m=>'PVMO '+pm2(m);
+const itemVide=(m,o)=>Object.assign({ID:null,MEETING_ID:m.ID,STRUCTURINGLEVEL:0,TITLE:null,TEXT:null,ITEMCATEGORYCODE:0,ITEMID:null,USERNAME:null,DEADLINE:null,ISDONE:0,ISPAGEBREAKBEFORE:0,PAGEBREAKBEFORECODES:null,NUMBER:null,SORTORDER:0,PROJECTTASK_ID:null},o||{});
+/* ops d'une liste de points remise en ordre : tous ceux qui changent, et les nouveaux */
+const opsListe=(list,neufs)=>{ const ops=mtRenumber(list); (neufs||[]).forEach(v=>{ if(!ops.some(o=>o.id===v.ID)) ops.push({t:'meetingitem',id:v.ID,val:list.find(y=>y.ID===v.ID)}); }); return ops; };
+const SORTES_PT=[[1,'Information','Texte du point','Précisions'],[2,'Décision','Décision','Précisions'],[4,'Question','Question du maître de l’ouvrage','Réponse']];
+/* fenêtre d'un point (information, décision ou question) ; rub = rubrique où ranger un nouveau point */
+function pmPoint(I,m,x,c0,rub){ const its=mtItems(m), v=x?{...x}:itemVide(m,{STRUCTURINGLEVEL:rub?1:0,ITEMCATEGORYCODE:c0||1,SORTORDER:its.length});
   let c=[4,2].includes(cat(v))?cat(v):1; const k='sgsv-r-'+Math.random().toString(36).slice(2,9), b=document.createElement('div'); b.className='sgsv-dlg';
   const us=[...new Set(mtParts(m).map(y=>y.INITIALS||inis(mtPartName(y))).filter(Boolean))];
   b.innerHTML='<div class="seg w" role="group" aria-label="Sorte">'+SORTES_PT.map(([n,t])=>'<button type="button" data-c="'+n+'">'+t+'</button>').join('')+'</div>'
-    +'<label class="w"><span data-l1></span><textarea data-k="t" style="height:64px" maxlength="500">'+E(v.TITLE||'')+'</textarea></label><label class="w"><span data-l2></span><textarea data-k="x" style="height:120px" maxlength="4096">'+E(v.TEXT||'')+'</textarea></label>'
+    +'<label class="w"><span data-l1></span><textarea data-k="t" style="height:96px" maxlength="500">'+E(v.TITLE||'')+'</textarea></label><label class="w"><span data-l2></span><textarea data-k="x" style="height:120px" maxlength="4096">'+E(v.TEXT||'')+'</textarea></label>'
     +'<label>Responsable<input data-k="r" list="'+k+'" maxlength="64" value="'+E(v.USERNAME||'')+'"><datalist id="'+k+'">'+us.map(y=>'<option value="'+E(y)+'">').join('')+'</datalist></label><label>Délai<input type="date" data-k="d" value="'+E(v.DEADLINE||'')+'"></label>'
-    +'<label class="ck w" data-q2><input type="checkbox" data-k="f"'+(+v.ISDONE?' checked':'')+'>Répondu, réglé</label>';
+    +'<label class="ck w" data-q2><input type="checkbox" data-k="f"'+(+v.ISDONE?' checked':'')+'>Répondu, réglé</label><div class="q">Une ligne qui commence par un tiret (« - ») est imprimée en puce.</div>';
   const q=n=>b.querySelector('[data-k="'+n+'"]'), maj=()=>{ const S=SORTES_PT.find(y=>y[0]===c); b.querySelectorAll('[data-c]').forEach(y=>y.classList.toggle('on',+y.dataset.c===c)); b.querySelector('[data-l1]').textContent=S[2]; b.querySelector('[data-l2]').textContent=S[3]; b.querySelector('[data-q2]').hidden=c!==4; };
   b.querySelectorAll('[data-c]').forEach(y=>y.onclick=()=>{ c=+y.dataset.c; maj(); }); maj();
   const bt=[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const t=q('t').value.trim(), tx=q('x').value.trim(); if(!t&&!tx){ toast('Écrivez le texte.',true); q('t').focus(); return false; }
     Object.assign(v,{TITLE:t||null,TEXT:tx||null,ITEMCATEGORYCODE:c,USERNAME:q('r').value.trim()||null,DEADLINE:q('d').value||null,ISDONE:c===4&&q('f').checked?1:0}); const neuf=v.ID==null; if(neuf) v.ID=DS.newIds('meetingitem')[0];
-    const list=its.filter(y=>y.ID!==v.ID), at=neuf?list.length:its.findIndex(y=>y.ID===v.ID); list.splice(at<0?list.length:at,0,v); const ops=mtRenumber(list); if(!ops.some(o=>o.id===v.ID)) ops.push({t:'meetingitem',id:v.ID,val:list.find(y=>y.ID===v.ID)}); await DS.commit(ops); }}];
-  if(x) bt.unshift({t:'Supprimer',fn:async()=>{ if(!await confirmDlg('Supprimer ce point ?','Supprimer')) return false; await DS.del('meetingitem',x.ID); }});
+    const list=its.filter(y=>y.ID!==v.ID); let at=neuf?list.length:its.findIndex(y=>y.ID===v.ID);
+    if(neuf&&rub){ let j=list.findIndex(y=>y.ID===rub.ID)+1; while(j>0&&j<list.length&&!estRub(list[j])) j++; if(j>0) at=j; }   /* à la fin de sa rubrique */
+    list.splice(at<0?list.length:at,0,v); await DS.commit(opsListe(list,[v])); }}];
+  if(x) bt.unshift({t:'Supprimer',fn:async()=>{ if(!await confirmDlg('Supprimer ce point ?','Supprimer')) return false; await DS.commit([{t:'meetingitem',id:x.ID,val:null},...mtRenumber(its.filter(y=>y.ID!==x.ID))]); }});
   dialog({title:x?'Modifier le point':'Nouveau point',width:'620px',body:b,buttons:bt}); setTimeout(()=>q('t').focus(),0); }
-/* nouvelle séance : genre « PV MO » et série de la phase créés au besoin ; participants et questions ouvertes repris du dernier procès-verbal */
+/* fenêtre d'une rubrique : nouvelle (avant « Divers » et « Points bloquants » s'ils ferment le procès-verbal), renommée, supprimée avec ses points */
+function pmRubrique(I,m,x){ const its=mtItems(m), b=document.createElement('div'); b.className='sgsv-dlg';
+  b.innerHTML='<label class="w">Titre de la rubrique<input data-k="t" maxlength="200" value="'+E(x?x.TITLE||'':'')+'"></label>'; const q=b.querySelector('input');
+  const bt=[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const t=q.value.trim(); if(!t){ toast('Écrivez le titre de la rubrique.',true); q.focus(); return false; }
+    if(x){ if(t!==x.TITLE) await DS.save('meetingitem',{...x,TITLE:t}); return; }
+    const v=itemVide(m,{ID:DS.newIds('meetingitem')[0],TITLE:t}), list=its.slice(), R=list.filter(estRub); let at=list.length;
+    for(let i=R.length-1;i>=0&&RX_FIN.test(String(R[i].TITLE||'').trim());i--) at=list.indexOf(R[i]);
+    list.splice(at,0,v); await DS.commit(opsListe(list,[v])); }}];
+  if(x) bt.unshift({t:'Supprimer',fn:async()=>{ const z=pmStruct(m).find(y=>y.x&&y.x.ID===x.ID), n=z?z.pts.length:0;
+    if(!await confirmDlg('Supprimer la rubrique « '+(x.TITLE||'')+' »'+(n?' et ses '+pl(n,'point'):'')+' ?','Supprimer')) return false;
+    const ids=new Set([x.ID,...(z?z.pts.map(y=>y.x.ID):[])]); await DS.commit([...[...ids].map(id=>({t:'meetingitem',id,val:null})),...mtRenumber(its.filter(y=>!ids.has(y.ID)))]); }});
+  dialog({title:x?'Modifier la rubrique':'Nouvelle rubrique',width:'520px',body:b,buttons:bt}); setTimeout(()=>{ q.focus(); q.select(); },0); }
+/* nouvelle séance : genre « PV MO » et série de la phase créés au besoin ; participants, rubriques et questions ouvertes repris du dernier procès-verbal */
 function pmNouveau(I){ const p=I.p, L=seriesDe(p,true), T=pvsMO(L), der=T[T.length-1]||null, Qo=questionsMO(L), cur=DS.get('meetingsequence',MT.seq.sel), ph0=cur&&L.some(x=>x.ID===cur.ID)&&+cur.NUMBER||31;
-  const b=document.createElement('div'); b.className='sgsv-dlg';
+  const rubDer=der?pmStruct(der.m).filter(z=>z.x).map(z=>z.t):[], b=document.createElement('div'); b.className='sgsv-dlg';
   b.innerHTML='<label class="w">Phase<select data-k="ph">'+SG_PH_FICH.map(([n,l])=>'<option value="'+n+'"'+(n===+ph0?' selected':'')+'>'+n+' '+E(l)+'</option>').join('')+'</select></label>'
     +'<label class="w">Titre<input data-k="s" maxlength="128" value="Séance avec le maître de l’ouvrage"></label><label>Date<input type="date" data-k="d" value="'+E(today())+'"></label><label>Lieu<input data-k="l" maxlength="128" value="'+E(der&&der.m.LOCATION||'')+'"></label>'
     +'<label>De<input type="time" data-k="f"></label><label>À<input type="time" data-k="t"></label>'
-    +(der?'<label class="ck w"><input type="checkbox" data-k="cp" checked>Reprendre les participants du procès-verbal n° '+E(der.m.MEETINGNUMBER||'')+'</label>':'')+(Qo.length?'<label class="ck w"><input type="checkbox" data-k="cq" checked>Reprendre les questions ouvertes ('+Qo.length+')</label>':'');
+    +(der?'<label class="ck w"><input type="checkbox" data-k="cp" checked>Reprendre les participants du procès-verbal n° '+E(der.m.MEETINGNUMBER||'')+'</label>':'')
+    +(rubDer.length?'<label class="ck w"><input type="checkbox" data-k="cr" checked>Reprendre ses rubriques ('+rubDer.length+')</label>':'<div class="q">Rubriques types : '+E(PM_RUB.join(', '))+'.</div>')
+    +(Qo.length?'<label class="ck w"><input type="checkbox" data-k="cq" checked>Reprendre les questions ouvertes ('+Qo.length+')</label>':'');
   const q=n=>b.querySelector('[data-k="'+n+'"]');
   dialog({title:'Nouveau PV MO',width:'560px',body:b,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:async()=>{ const ph=+q('ph').value, lib=(SG_PH_FICH.find(x=>x[0]===ph)||[])[1]||'', ops=[];
     let s=L.find(x=>+x.NUMBER===ph), ty=DS.by('projectmeetingtype','PROJECT_ID',p.ID).find(x=>RX_MO.test(nm(x)||''));
     if(!ty){ const id=DS.newIds('projectmeetingtype')[0]; ty={ID:id,PROJECT_ID:p.ID,SORTORDER:DS.by('projectmeetingtype','PROJECT_ID',p.ID).length,NAMEFR:'PV MO'}; ops.push({t:'projectmeetingtype',id,val:ty}); }
     if(!s){ const id=DS.newIds('meetingsequence')[0]; s={ID:id,PROJECT_ID:p.ID,NUMBER:String(ph),SUBJECT:lib,ISCLOSED:0,NOTE:null,PROJECTMEETINGTYPE_ID:ty.ID,SUBPROJECT_ID:null,TEMPLATEPROPERTIES:null,DOCUMENTLOCK_ID:null}; ops.push({t:'meetingsequence',id,val:s}); }
-    const id=DS.newIds('meeting')[0], num=T.reduce((n,x)=>Math.max(n,parseInt(x.m.MEETINGNUMBER,10)||0),0)+1, tm=n=>q(n).value?q(n).value+':00':null;
+    const id=DS.newIds('meeting')[0], num=T.reduce((n,x)=>Math.max(n,parseInt(x.m.MEETINGNUMBER,10)||0),0)+1, tm=n=>q(n).value?q(n).value+':00':null, mm={ID:id};
     ops.push({t:'meeting',id,val:{ID:id,MEETINGSEQUENCE_ID:s.ID,MEETINGNUMBER:String(num),SUBJECT:q('s').value.trim()||null,GOAL:null,MEETINGDATE:q('d').value||null,TIMEFROM:tm('f'),TIMETO:tm('t'),LOCATION:q('l').value.trim()||null,MINUTESDATE:null,ISDRAFT:1,NOTE:null,ATTACHEMENTFOLDER:null}});
     if(der&&q('cp')&&q('cp').checked){ const P=mtParts(der.m), ids=P.length?DS.newIds('meetingparticipant',P.length):[]; P.forEach((x,i)=>ops.push({t:'meetingparticipant',id:ids[i],val:{...x,ID:ids[i],MEETING_ID:id}})); }
-    if(Qo.length&&q('cq')&&q('cq').checked){ const ids=DS.newIds('meetingitem',Qo.length); Qo.forEach((o,i)=>ops.push({t:'meetingitem',id:ids[i],val:{...o.x,ID:ids[i],MEETING_ID:id,PROJECTTASK_ID:null,NUMBER:String(i+1),SORTORDER:i}})); }
-    await DS.commit(ops); MT.seq.sel=String(s.ID); MT.mtg.sel=String(id); const ou=I.u.ouv||(I.u.ouv={}); ou[s.ID]=true; I.u.sM=0; }}]}); }
-/* impression : procès-verbal ou convocation, registre des décisions (papier des contrats) */
-function pmImprimer(I,s,m,conv){ const p=I.p, P=mtParts(m), It=mtItems(m), Q=It.filter(estQ), D=It.filter(estD), A=It.filter(x=>!estQ(x)&&!estD(x)), t=E, heure=m.TIMEFROM?mtTime(m.TIMEFROM)+(m.TIMETO?' – '+mtTime(m.TIMETO):''):'';
-  const tb=(L,pre,ck)=>'<table><tr><th>N°</th><th>'+(ck?'Question et réponse':'Texte')+'</th><th>Resp.</th><th>Délai</th>'+(ck?'<th>Réglé</th>':'')+'</tr>'+L.map((x,i)=>'<tr><td>'+pre+(i+1)+'</td><td>'+t(x.TITLE||'')+(x.TITLE&&x.TEXT?'<br>':'')+t(x.TEXT||'')+'</td><td>'+t(x.USERNAME||'')+'</td><td>'+t(dmy(x.DEADLINE))+'</td>'+(ck?'<td>'+(+x.ISDONE?'oui':'')+'</td>':'')+'</tr>').join('')+'</table>';
-  sgImprimer((conv?'Convocation':'Procès-verbal')+' MO n° '+(m.MEETINGNUMBER||'')+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p><b>'+t(m.SUBJECT||'Séance avec le maître de l’ouvrage')+'</b><br>'+t([[dmy(m.MEETINGDATE),heure].filter(Boolean).join(', '),m.LOCATION,(s.NUMBER?s.NUMBER+' ':'')+(s.SUBJECT||'')].filter(Boolean).join(' · '))+'</p>'
-    +(P.length?'<h2>Participants</h2><table><tr><th>Participant</th><th>Société</th><th>Fonction</th>'+(conv?'':'<th>Présence</th>')+'</tr>'+P.map(x=>'<tr><td>'+t(mtPartName(x))+'</td><td>'+t(mtCompany(mtPartContact(x)))+'</td><td>'+t(x.PROJECTROLE||'')+'</td>'+(conv?'':'<td>'+(+x.ISPRESENT?'présent':t(x.ATTENDANCENOTE||'absent'))+'</td>')+'</tr>').join('')+'</table>':'')
-    +(Q.length?'<h2>Questions du maître de l’ouvrage</h2>'+tb(Q,'Q',true):'')+(D.length&&!conv?'<h2>Décisions</h2>'+tb(D,'D',false):'')+(A.length?'<h2>Informations</h2>'+tb(A,'I',false):'')); }
+    /* rubriques, puis les questions ouvertes dans « Questions en suspens » (après les remarques sur le procès-verbal précédent) */
+    const rub=(rubDer.length&&q('cr')&&q('cr').checked?rubDer:PM_RUB).slice(), list=rub.map(t=>itemVide(mm,{TITLE:t}));
+    if(Qo.length&&q('cq')&&q('cq').checked){ let at=list.findIndex(y=>RX_SUSP.test(y.TITLE));
+      if(at<0){ at=list.findIndex(y=>/^remarques?\b/i.test(y.TITLE))+1; list.splice(at,0,itemVide(mm,{TITLE:'Questions en suspens'})); }
+      list.splice(at+1,0,...Qo.map(o=>({...o.x,ID:null,MEETING_ID:id,PROJECTTASK_ID:null,STRUCTURINGLEVEL:1,NUMBER:null}))); }
+    const ids=list.length?DS.newIds('meetingitem',list.length):[]; list.forEach((y,i)=>{ y.ID=ids[i]; });
+    ops.push(...opsListe(list,list)); await DS.commit(ops); MT.seq.sel=String(s.ID); MT.mtg.sel=String(id); I.u.vue='pv'; I.u.sM=0; }}]}); }
+/* données du document, d'après l'exemple du bureau */
+const PM_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const pmDate=(iso,court)=>{ const a=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||'')); return !a?'':court?a[3]+'.'+a[2]+'.'+a[1].slice(2):(+a[3]===1?'1er':String(+a[3]))+' '+PM_MOIS[+a[2]-1]+' '+a[1]; };
+const pmHeure=t=>{ const a=/^(\d{1,2}):(\d{2})/.exec(String(t||'')); return a?(+a[1])+'h'+a[2]:''; };
+function pmDonnees(I,s,m,conv){ const p=I.p, S=pmStruct(m), tx=x=>[x.TITLE,x.TEXT].map(v=>String(v||'').trim()).filter(Boolean).join('\n'), dr=x=>[x.USERNAME,pmDate(x.DEADLINE,true)].filter(Boolean).join(' · ');
+  const rows=mtParts(m).map(x=>{ const c=mtPartContact(x), o=c&&DS.get('contactowner',c.CONTACTOWNER_ID), pers=!!(o&&o.TYPECODE===1), abs=!conv&&!+x.ISPRESENT, f=String(x.PROJECTROLE||'').trim();
+    return [mtCompany(c)||'',pers?(o.NAME1||''):contactName(c),pers?(o.NAME2||''):'',x.INITIALS||inis(mtPartName(x)),[f,abs?'('+(String(x.ATTENDANCENOTE||'').trim().toLowerCase()||'absent')+')':''].filter(Boolean).join(' '),(c&&c.EMAIL1)||'']; });
+  const secs=[], th=S.filter(z=>!RX_FIXE.test(z.t));
+  if(conv){ if(S.length) secs.push({n:'0',t:'ORDRE DU JOUR',pts:S.map(z=>({n:'0.'+z.n,x:z.t}))});
+    const Q=S.flatMap(z=>z.pts).filter(y=>estQ(y.x)&&!+y.x.ISDONE); if(Q.length) secs.push({n:'1',t:'Questions en suspens',pts:Q.map((y,i)=>({n:'1.'+(i+1),x:tx(y.x),r:dr(y.x)}))}); }
+  else { if(th.length) secs.push({n:'0',t:'ORDRE DU JOUR',pts:th.map(z=>({n:'0.'+z.n,x:z.t}))});
+    S.forEach(z=>secs.push({n:z.n,t:z.t,pts:z.pts.map(y=>({n:y.n,x:tx(y.x),r:dr(y.x)}))})); }
+  const heure=[pmHeure(m.TIMEFROM),pmHeure(m.TIMETO)].filter(Boolean).join(' - ');
+  return {entete:conv?'Convocation':'Procès-verbal',projet:p.TITLE||'',ref:pmRef(p,m),date:'Cully – '+pmDate(m.MINUTESDATE||today()),
+    titre:[(conv?'Convocation à la séance':'Procès-verbal de la séance')+' maître de l’ouvrage',m.MEETINGDATE?'du '+pmDate(m.MEETINGDATE):''].filter(Boolean),num:'PVMO - '+pm2(m),
+    infoG:[m.MEETINGDATE?'Date : '+pmDate(m.MEETINGDATE,true):''].filter(Boolean),infoD:[m.LOCATION?'Lieu : '+m.LOCATION:'',heure?'Heure : '+heure:''].filter(Boolean),
+    participants:{tit:['Entité','Nom','Prénom','Initiales','Fonction','E-mail'],rows},sections:secs}; }
+async function pmOctets(I,s,m,conv,d){ if(!window.SGDS||!SGDS.ressources) throw new Error('moteur de PDF indisponible');
+  const {w,R,fn}=await SGDS.ressources(), auj=new Date(), opt=w.JSON.parse(JSON.stringify({titre:(conv?'Convocation':'Procès-verbal')+' MO n° '+(m.MEETINGNUMBER||''),type:'PV MO',description:pmRef(I.p,m)+' '+(I.p.TITLE||''),pvmo:d||pmDonnees(I,s,m,conv)}));
+  opt.date=new w.Date(auj.getFullYear(),auj.getMonth(),auj.getDate()); opt.journal=new w.Array(); return fn(R,null,opt); }
+async function pmPdf(I,s,m,conv){ try{ const oct=await pmOctets(I,s,m,conv); sgVisionneuse(new Blob([oct],{type:'application/pdf'}),pmRef(I.p,m)+(conv?'_convocation':'')+'.pdf'); }
+  catch(e){ console.error(e); toast('Le PDF n’a pas pu être créé : '+(e&&e.message||e),true); } }
+/* aperçu « PDF fidèle » du PV ouvert : un seul lecteur par page, gardé d'un dessin à l'autre ; le PDF n'est refait que si ses données changent */
+function pmApercu(I){ const u=I.u, h=I.box.querySelector('.sgpm-prev-h'); if(!h||typeof sgLecteurPdf!=='function') return;
+  if(!u.lect){ u.lect=sgLecteurPdf({}); u.sig=null; }
+  if(u.lect.el.parentNode!==h){ h.textContent=''; h.append(u.lect.el); if(u.lectTop) try{ u.lect.vue.scrollTop=u.lectTop; }catch(_){} }
+  const s=DS.get('meetingsequence',MT.seq.sel), m=DS.get('meeting',MT.mtg.sel); if(!s||!m) return;
+  let d=null, sig=''; try{ d=pmDonnees(I,s,m,false); sig=JSON.stringify(d); }catch(e){ console.error(e); return; }
+  if(sig===u.sig) return; u.sig=sig; clearTimeout(u.tp); u.lect.attendre(); const L=u.lect;
+  u.tp=setTimeout(async()=>{ try{ const oct=await pmOctets(I,s,m,false,d); if(u.sig!==sig||u.lect!==L) return; await L.charger(new Blob([oct],{type:'application/pdf'})); }catch(e){ console.error(e); if(u.lect===L){ u.sig=null; L.echec(e); } } },200); }
+const pmFinApercu=u=>{ clearTimeout(u.tp); if(u.lect){ try{ u.lect.fini(); }catch(_){} u.lect=null; } u.sig=null; u.lectTop=0; };
 function pmRegistre(I,T){ const p=I.p, t=E; sgImprimer('Registre des décisions — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<table><tr><th>Date</th><th>PV</th><th>Phase</th><th>Décision</th></tr>'+T.map(o=>'<tr><td>'+t(dmy(o.m.MEETINGDATE))+'</td><td>n° '+t(o.m.MEETINGNUMBER||'')+'</td><td>'+t(o.s.NUMBER||'')+'</td><td>'+t(o.x.TITLE||'')+(o.x.TITLE&&o.x.TEXT?'<br>':'')+t(o.x.TEXT||'')+'</td></tr>').join('')+'</table>'); }
 const docsMO=p=>{ const pr=sgDosNfc(p,'Projet'); return {fil:d=>!!pr&&d.startsWith(pr+'/')&&/^\/[^/]+\/PV MO(\/|$)/.test(d.slice(pr.length)),dos:()=>ch03aDossier('document',p.ID,'Projet'),vide:'Aucun fichier de PV MO.',ajout:'Ajouter des PV MO',
   phaseDlg:{titre:'Ajouter des PV MO',phases:SG_PH_FICH.map(x=>x[0]),phase:31,rubriques:[['PV MO','PV']],rubrique:'PV MO',sansPhase:'',enquete:false}}; };
+const PM_CAT={4:['Q','Question du maître de l’ouvrage'],2:['D','Décision']};
 const PVMO={
-  rendre(I){ const p=I.p, u=I.u, L=seriesDe(p,true), T=pvsMO(L), plus={t:'PV MO',n:pl(T.length,'procès-verbal','procès-verbaux'),plus:'npm',plusT:'Nouveau PV MO'};
-    const ong=u.onglet||'pv', Q=questionsMO(L), Dc=decisionsMO(L), fil=(sans)=>'<div class="sgsv-fil">'+[['pv','Procès-verbal'],['q','Questions ouvertes',Q.length],['d','Décisions',Dc.length],['f','Fichiers']].map(([k,t,n])=>'<button data-a="ong" data-o="'+k+'" class="'+(k===ong?'on':'')+'">'+t+(n?'<small>'+n+'</small>':'')+'</button>').join('')+'<span class="dr">'+(ong==='d'&&Dc.length?btn('impreg','Imprimer le registre','print'):'')+(u.peut&&!sans?btn('npm','Nouveau PV MO','plus'):'')+'</span></div>';
-    const vQ=()=>'<section class="sgsv-sec"><h3>Questions ouvertes du maître de l’ouvrage<span>'+pl(Q.length,'question')+', '+Q.filter(o=>retQ(o.x)).length+' en retard</span></h3>'+(Q.length?'<table class="sgsv-tb"><thead><tr><th>Délai</th><th>Resp.</th><th>Question</th><th>Phase</th><th>Dernier PV</th><th>Depuis</th><th class="c">Réglé</th></tr></thead><tbody>'
-        +Q.map(o=>'<tr><td class="dl'+(retQ(o.x)?' sgsv-ret':'')+'">'+E(dmy(o.x.DEADLINE)||'—')+'</td><td>'+iniR(o.x)+'</td><td>'+E(o.x.TITLE||o.x.TEXT||'')+'</td><td class="nw">'+E(o.s.NUMBER||'')+'</td><td class="nw"><button class="sgsv-lien" data-a="pv" data-m="'+o.m.ID+'">n° '+E(o.m.MEETINGNUMBER||'—')+'</button></td><td class="nw">n° '+E(o.de.MEETINGNUMBER||'—')+'</td><td class="c">'+(u.peut?'<button class="sgsv-ck" data-a="regle" data-p="'+o.x.ID+'" title="Répondu, réglé" aria-label="Répondu, réglé"></button>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="sgsv-rien">Aucune question ouverte.</p>')+'</section>';
-    const vD=()=>'<section class="sgsv-sec"><h3>Registre des décisions<span>'+pl(Dc.length,'décision')+', de la plus récente à la plus ancienne</span></h3>'+(Dc.length?'<table class="sgsv-tb"><thead><tr><th>Date</th><th>PV</th><th>Phase</th><th>Décision</th></tr></thead><tbody>'
-        +Dc.map(o=>'<tr><td class="dl">'+E(dmy(o.m.MEETINGDATE))+'</td><td class="nw"><button class="sgsv-lien" data-a="pv" data-m="'+o.m.ID+'">n° '+E(o.m.MEETINGNUMBER||'—')+'</button></td><td class="nw">'+E(o.s.NUMBER||'')+'</td><td>'+(o.x.TITLE?'<b>'+E(o.x.TITLE)+'</b>':'')+(o.x.TITLE&&o.x.TEXT?'<br>':'')+(o.x.TEXT?'<span class="gr">'+E(o.x.TEXT)+'</span>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="sgsv-rien">Aucune décision.</p>')+'</section>';
-    const vF='<section class="sgsv-sec"><div class="sgsv-docs"></div></section>';
-    if(!T.length) return '<div class="sgsv">'+tete(p.NUMBER||'','PV MO',p.TITLE||'',moT(p)?'Maître de l’ouvrage : '+moT(p):'',u.peut?btn('npm','Nouveau PV MO','plus',1):'')
-      +'<div style="height:14px"></div>'+fil(true)+(ong==='f'?vF:'<div class="sgsv-vide"><b>Aucun procès-verbal avec le maître de l’ouvrage.</b><br>Chaque séance réunit ses participants, les questions du maître de l’ouvrage avec leurs réponses, et les décisions prises. Les questions restées ouvertes se reprennent d’une séance à l’autre ; les décisions forment le registre du projet.</div>')+'</div>';
-    const {s,m}=choixPV(p,L), col=colSeances(I,L,s,m,plus);
-    if(!m) return '<div class="sgd sgsv-b">'+col+'<div class="sgd-m">'+tete(s.NUMBER||'—','PV MO',s.SUBJECT||'','Aucun procès-verbal dans cette phase',u.peut?btn('npm','Nouveau PV MO','plus',1):'')+'</div></div>';
-    const e=etatPV(m), P=mtParts(m), It=mtItems(m), Qp=It.filter(estQ), Dp=It.filter(estD), Ap=It.filter(x=>!estQ(x)&&!estD(x)), oQ=Qp.filter(x=>!+x.ISDONE), rt=oQ.filter(retQ).length, pres=P.filter(x=>+x.ISPRESENT).length, heure=m.TIMEFROM?mtTime(m.TIMEFROM)+(m.TIMETO?' – '+mtTime(m.TIMETO):''):'';
-    const act=(e==='prevue'?btn('convmo','Convocation','print',1)+btn('impmo','Procès-verbal','print'):btn('impmo','Procès-verbal','print',1)+btn('convmo','Convocation','print'))+(u.peut?btn('modpv','Modifier','edit'):'')+'<button class="nx-btn" data-a="pvmenu" title="Autres actions" aria-label="Autres actions">⋯</button>';
-    const corps=ong==='q'?vQ():ong==='d'?vD():ong==='f'?vF:'<section class="sgsv-sec" style="margin-bottom:18px"><h3>Participants<span class="dr">'+(u.peut?lien('parts','Modifier','Ajouter, retirer ou modifier les participants'):'')+lien('partsmenu','Fonctions ▾','Présences, distribution, courriels, invitation')+'</span></h3>'+blocParts(I,m)+'</section>'
-      +'<section class="sgsv-sec fl"><h3>Questions du maître de l’ouvrage<span>'+(oQ.length?pl(oQ.length,'ouverte'):Qp.length?'toutes réglées':'')+'</span>'+(u.peut?'<span class="dr">'+lien('addq','+ Question')+'</span>':'')+'</h3>'+(Qp.length?lignesPt(I,Qp,numP(It,estQ,'Q'),true):'<p class="sgsv-rien">Aucune question.</p>')+'</section>'
-      +'<section class="sgsv-sec fl"><h3>Décisions'+(u.peut?'<span class="dr">'+lien('addd','+ Décision')+'</span>':'')+'</h3>'+(Dp.length?lignesPt(I,Dp,numP(It,estD,'D'),false):'<p class="sgsv-rien">Aucune décision.</p>')+'</section>'
-      +((Ap.length||u.peut)?'<section class="sgsv-sec fl"><h3>Informations'+(u.peut?'<span class="dr">'+lien('addi','+ Information')+'</span>':'')+'</h3>'+(Ap.length?lignesPt(I,Ap,numP(It,x=>!estQ(x)&&!estD(x),'I'),false):'<p class="sgsv-rien">Aucune information.</p>')+'</section>':'')+(m.NOTE?'<section class="sgsv-sec fl"><h3>Notes</h3><div class="sgsv-texte">'+E(m.NOTE)+'</div></section>':'');
-    return '<div class="sgd sgsv-b">'+col+'<div class="sgd-m">'+tete(m.MEETINGNUMBER||'—','PV MO · '+[s.NUMBER,s.SUBJECT].filter(Boolean).join(' ')+' · '+ETATS_PV[e],m.SUBJECT||'Séance avec le maître de l’ouvrage',[[dmy(m.MEETINGDATE),heure].filter(Boolean).join(', '),m.LOCATION,m.GOAL].filter(Boolean).join(' · '),act)
-      +'<div class="nx-kpis sgsv-kp">'+kpi('Participants',pres+'<small>/'+P.length+'</small>','présents')+kpi('Questions',String(Qp.length),'dans ce procès-verbal')+kpi('Ouvertes',String(oQ.length),'sans réponse réglée')+kpi('Décisions',String(Dp.length),'prises à cette séance')+kpi('En retard',String(rt),rt?'délai dépassé':'aucune',rt?'ret':'')+'</div>'+fil(false)+corps+'</div></div>'; },
-  apres(I){ const dz=I.box.querySelector('.sgsv-docs'); if(dz&&typeof sgDocsModule==='function'){ try{ sgDocsModule(dz,I.p,docsMO(I.p)); }catch(e){ console.error(e); } } },
-  action(I,a,t){ const p=I.p, u=I.u, s=DS.get('meetingsequence',MT.seq.sel), m=DS.get('meeting',MT.mtg.sel), r=()=>I.dessiner(), it=()=>DS.get('meetingitem',t.dataset.p);
-    if(a==='npm') pmNouveau(I); else if(a==='impmo'){ if(m) pmImprimer(I,s,m,false); } else if(a==='convmo'){ if(m) pmImprimer(I,s,m,true); } else if(a==='impreg') pmRegistre(I,decisionsMO(seriesDe(p,true)));
-    else if(a==='addq'||a==='addd'||a==='addi'){ if(m) pmPoint(I,m,null,{addq:4,addd:2,addi:1}[a]); }
-    else if(a==='ptmo'){ const x=it(); if(x) pmPoint(I,DS.get('meeting',x.MEETING_ID)||m,x); }
+  rendre(I){ const p=I.p, u=I.u, L=seriesDe(p,true), T=pvsMO(L), Q=questionsMO(L), Dc=decisionsMO(L), ong=u.onglet||'pv';
+    if(u.lect&&u.lect.vue) try{ u.lectTop=u.lect.vue.scrollTop; }catch(_){}
+    const bandeau=act=>tete(p.NUMBER||'','PV MO',p.TITLE||'',moT(p)?'Maître de l’ouvrage : '+moT(p):'',act||'');
+    const mSel=DS.get('meeting',MT.mtg.sel); if(u.vue==='pv'&&!(mSel&&T.some(o=>o.m.ID===mSel.ID))) u.vue='liste';
+    if(u.vue!=='pv'){ pmFinApercu(u);
+      const fil='<div class="sgsv-fil sgpm-fil">'+[['pv','Procès-verbaux',T.length],['q','Questions ouvertes',Q.length],['d','Décisions',Dc.length],['f','Fichiers']].map(([k,t,n])=>'<button data-a="ong" data-o="'+k+'" class="'+(k===ong?'on':'')+'">'+t+(n?'<small>'+n+'</small>':'')+'</button>').join('')+'<span class="dr">'+(ong==='d'&&Dc.length?btn('impreg','Imprimer le registre','print'):'')+'</span></div>';
+      const vL=()=>T.length?'<table class="nx-tbl sgpm-liste"><thead><tr><th>N°</th><th>Référence</th><th>Séance</th><th>Phase</th><th>Statut</th><th>Questions</th><th class="sg-notri"></th></tr></thead><tbody>'
+          +T.slice().reverse().map(({s,m})=>{ const e=etatPV(m), nq=mtItems(m).filter(x=>estQ(x)&&!+x.ISDONE).length;
+            return '<tr data-a="ouvrir" data-m="'+m.ID+'"><td class="nw"><b>'+E(pmNum(m))+'</b></td><td class="nw">'+E(pmRef(p,m))+'</td><td class="nw">'+E(dmy(m.MEETINGDATE)||'Sans date')+'</td><td>'+E([s.NUMBER,s.SUBJECT].filter(Boolean).join(' '))+'</td><td><span class="sgpm-bdg '+e+'">'+ETATS_PV[e]+'</span></td><td class="nw">'+(nq?pl(nq,'ouverte'):'—')+'</td>'
+              +'<td class="r nw"><button class="sgsv-lien" data-a="ouvrir" data-m="'+m.ID+'">Ouvrir</button><button class="sgsv-lien" data-a="pdfmo" data-m="'+m.ID+'">Aperçu PDF</button><button class="sgsv-lien" data-a="convmo" data-m="'+m.ID+'">Convocation</button></td></tr>'; }).join('')+'</tbody></table>'
+        :'<div class="sgsv-vide"><b>Aucun procès-verbal avec le maître de l’ouvrage.</b><br>Chaque procès-verbal réunit la séance, ses participants et des rubriques numérotées (remarques sur le procès-verbal précédent, convocation à la prochaine séance, travaux effectués, thèmes du jour…) avec leurs points : informations, décisions, questions du maître de l’ouvrage. Les questions restées ouvertes se reprennent d’une séance à l’autre ; les décisions forment le registre du projet.</div>';
+      const vQ=()=>'<section class="sgsv-sec"><h3>Questions ouvertes du maître de l’ouvrage<span>'+pl(Q.length,'question')+', '+Q.filter(o=>retQ(o.x)).length+' en retard</span></h3>'+(Q.length?'<table class="sgsv-tb"><thead><tr><th>Délai</th><th>Resp.</th><th>Question</th><th>Phase</th><th>Dernier PV</th><th>Depuis</th><th class="c">Réglé</th></tr></thead><tbody>'
+          +Q.map(o=>'<tr><td class="dl'+(retQ(o.x)?' sgsv-ret':'')+'">'+E(dmy(o.x.DEADLINE)||'—')+'</td><td>'+iniR(o.x)+'</td><td>'+E(o.x.TITLE||o.x.TEXT||'')+'</td><td class="nw">'+E(o.s.NUMBER||'')+'</td><td class="nw"><button class="sgsv-lien" data-a="ouvrir" data-m="'+o.m.ID+'">n° '+E(o.m.MEETINGNUMBER||'—')+'</button></td><td class="nw">n° '+E(o.de.MEETINGNUMBER||'—')+'</td><td class="c">'+(u.peut?'<button class="sgsv-ck" data-a="regle" data-p="'+o.x.ID+'" title="Répondu, réglé" aria-label="Répondu, réglé"></button>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="sgsv-rien">Aucune question ouverte.</p>')+'</section>';
+      const vD=()=>'<section class="sgsv-sec"><h3>Registre des décisions<span>'+pl(Dc.length,'décision')+', de la plus récente à la plus ancienne</span></h3>'+(Dc.length?'<table class="sgsv-tb"><thead><tr><th>Date</th><th>PV</th><th>Phase</th><th>Décision</th></tr></thead><tbody>'
+          +Dc.map(o=>'<tr><td class="dl">'+E(dmy(o.m.MEETINGDATE))+'</td><td class="nw"><button class="sgsv-lien" data-a="ouvrir" data-m="'+o.m.ID+'">n° '+E(o.m.MEETINGNUMBER||'—')+'</button></td><td class="nw">'+E(o.s.NUMBER||'')+'</td><td>'+(o.x.TITLE?'<b>'+E(o.x.TITLE)+'</b>':'')+(o.x.TITLE&&o.x.TEXT?'<br>':'')+(o.x.TEXT?'<span class="gr">'+E(o.x.TEXT)+'</span>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="sgsv-rien">Aucune décision.</p>')+'</section>';
+      return '<div class="sgsv sgpm">'+bandeau(u.peut?btn('npm','Créer un PV MO','plus',1):'')+'<div style="height:14px"></div>'+fil+(ong==='q'?vQ():ong==='d'?vD():ong==='f'?'<section class="sgsv-sec"><div class="sgsv-docs"></div></section>':vL())+'</div>'; }
+    /* le procès-verbal ouvert */
+    const m=mSel, s=DS.get('meetingsequence',m.MEETINGSEQUENCE_ID); MT.seq.sel=String(s.ID);
+    const e=etatPV(m), S=pmStruct(m), P=mtParts(m), heure=m.TIMEFROM?mtTime(m.TIMEFROM)+(m.TIMETO?' – '+mtTime(m.TIMETO):''):'', kv=(l,v)=>'<div><span>'+E(l)+'</span>'+E(v)+'</div>';
+    const haut='<div class="sgpm-top"><button class="nx-btn" data-a="liste" title="Revenir à la liste des PV MO">'+IC('back')+'Liste</button><b class="num">'+E(pmNum(m))+'</b><span class="ph">'+E([s.NUMBER,s.SUBJECT].filter(Boolean).join(' '))+'</span><span class="sgpm-bdg '+e+'">'+ETATS_PV[e]+'</span><span class="fin"></span>'
+      +btn('convmo','Convocation','print')+btn('pdfmo','PDF','pdf',1)+'<button class="nx-btn" data-a="pvmenu" title="Autres actions" aria-label="Autres actions">⋯</button></div>';
+    const seance='<section class="sgpm-card"><h4>Séance'+(u.peut?'<span class="dr">'+lien('modpv','Modifier','Date, heure, lieu, titre, état du procès-verbal')+'</span>':'')+'</h4><div class="sgpm-meta">'+kv('N°',pm2(m))+kv('Séance du',dmy(m.MEETINGDATE)||'—')+kv('Heure',heure||'—')+kv('Lieu',m.LOCATION||'—')+kv('Rédigé le',dmy(m.MINUTESDATE)||'—')+kv('Titre',m.SUBJECT||'—')+'</div>'+(m.NOTE?'<div class="sgsv-texte">'+E(m.NOTE)+'</div>':'')+'</section>';
+    const parts='<section class="sgpm-card"><h4>Participants<span class="dr">'+(u.peut?lien('parts','Modifier','Ajouter, retirer ou modifier les participants'):'')+lien('partsmenu','Fonctions ▾','Présences, distribution, courriels, invitation')+'</span></h4>'
+      +(P.length?'<table class="sgpm-tb"><thead><tr><th>Nom</th><th>Initiales</th><th>Fonction</th><th class="c">Présent</th></tr></thead><tbody>'+P.map(x=>{ const c=mtPartContact(x), n=mtPartName(x), ab=!+x.ISPRESENT;
+          return '<tr class="'+(ab?'abs ':'')+(u.peut?'ed':'')+'"'+(u.peut?' data-a="part" data-p="'+x.ID+'"':'')+'><td'+(c&&c.EMAIL1?' title="'+E(c.EMAIL1)+'"':'')+'>'+E(n)+(mtCompany(c)?'<small>'+E(mtCompany(c))+'</small>':'')+'</td><td>'+E(x.INITIALS||inis(n))+'</td><td>'+E(x.PROJECTROLE||'')+'</td><td class="c">'+(ab?E(String(x.ATTENDANCENOTE||'').trim().toLowerCase()||'absent'):'✓')+'</td></tr>'; }).join('')+'</tbody></table>':'<p class="sgsv-rien">Aucun participant.</p>')+'</section>';
+    const ligne=q=>{ const x=q.x, c=PM_CAT[cat(x)], ck=estQ(x)?(u.peut?'<button class="sgsv-ck'+(+x.ISDONE?' on':'')+'" data-a="regle" data-p="'+x.ID+'" title="Répondu, réglé" aria-label="Répondu, réglé" aria-pressed="'+!!+x.ISDONE+'"></button>':'<span class="sgsv-ck'+(+x.ISDONE?' on':'')+'"></span>'):'';
+      return '<tr class="'+(+x.ISDONE?'ok ':'')+(u.peut?'ed':'')+'"'+(u.peut?' data-a="ptmo" data-p="'+x.ID+'"':'')+'><td class="nn">'+E(q.n)+'</td><td class="tt">'+(x.TITLE?'<b>'+E(x.TITLE)+'</b>':'')+(x.TEXT?'<span>'+E(x.TEXT)+'</span>':estQ(x)&&!+x.ISDONE?'<span class="it">Sans réponse pour le moment.</span>':'')+'</td>'
+        +'<td class="ct">'+(c?'<span class="sgsv-cat c'+cat(x)+'" title="'+E(c[1])+'">'+c[0]+'</span>':'')+'</td><td class="rs">'+iniR(x)+'</td><td class="dl'+(estQ(x)&&retQ(x)?' sgsv-ret':'')+'">'+E(dmy(x.DEADLINE))+'</td><td class="ck">'+ck+'</td></tr>'; };
+    const rubs=S.map(z=>{ const k=z.x?String(z.x.ID):'c'+z.c;
+      return '<section class="sgpm-sec"><div class="hd"><b class="n">'+E(z.n)+'</b><b class="t">'+E(z.t)+'</b>'+(u.peut?'<span class="dr">'+'<button class="sgsv-lien" data-a="addl" data-r="'+k+'" title="Ajouter un point à cette rubrique">+ ligne</button>'+(z.x?'<button class="sgsv-lien" data-a="modrub" data-r="'+k+'" title="Renommer ou supprimer la rubrique">Modifier</button>':'')+'</span>':'')+'</div>'
+        +(z.pts.length?'<table class="sgpm-pts"><tbody>'+z.pts.map(ligne).join('')+'</tbody></table>':'<p class="sgsv-rien">Aucun point.</p>')+'</section>'; }).join('');
+    return '<div class="sgsv sgpm">'+bandeau('')+'<div class="sgpm-ed"><div class="sgpm-g">'+haut+seance+parts+(S.length?rubs:'<p class="sgsv-rien" style="margin-top:18px">Aucune rubrique.</p>')
+      +(u.peut?'<div class="sgpm-plus">'+btn('addrub','Rubrique','plus')+'</div>':'')+'<div class="sgpm-leg"><span><span class="sgsv-cat c2">D</span>Décision</span><span><span class="sgsv-cat c4">Q</span>Question du maître de l’ouvrage</span>'+(u.peut?'<span>Un clic sur un point pour le modifier ; carré = question réglée.</span>':'')+'</div></div>'
+      +'<div class="sgpm-d"><div class="bar">Aperçu PV MO — PDF fidèle</div><div class="sgpm-prev-h"></div></div></div></div>'; },
+  apres(I){ const dz=I.box.querySelector('.sgsv-docs'); if(dz&&typeof sgDocsModule==='function'){ try{ sgDocsModule(dz,I.p,docsMO(I.p)); }catch(e){ console.error(e); } } pmApercu(I); },
+  action(I,a,t){ const p=I.p, u=I.u, s=DS.get('meetingsequence',MT.seq.sel), m=DS.get('meeting',MT.mtg.sel), r=()=>I.dessiner();
+    if(a==='npm') pmNouveau(I);
+    else if(a==='liste'){ u.vue='liste'; u.sM=0; r(); }
+    else if(a==='ouvrir'||a==='pv'){ const x=DS.get('meeting',t.dataset.m); if(!x) return; MT.seq.sel=String(x.MEETINGSEQUENCE_ID); MT.mtg.sel=String(x.ID); u.vue='pv'; u.sM=0; r(); }
+    else if(a==='pdfmo'||a==='convmo'){ const x=t.dataset.m?DS.get('meeting',t.dataset.m):(u.vue==='pv'?m:null); if(x) pmPdf(I,DS.get('meetingsequence',x.MEETINGSEQUENCE_ID),x,a==='convmo'); }
+    else if(a==='impreg') pmRegistre(I,decisionsMO(seriesDe(p,true)));
+    else if(a==='addl'){ if(!m) return; const z=pmStruct(m).find(y=>(y.x?String(y.x.ID):'c'+y.c)===t.dataset.r); if(z) pmPoint(I,m,null,z.x?1:z.c,z.x||null); }
+    else if(a==='addrub'){ if(m) pmRubrique(I,m,null); }
+    else if(a==='modrub'){ const x=DS.get('meetingitem',t.dataset.r); if(x&&m) pmRubrique(I,m,x); }
+    else if(a==='ptmo'){ const x=DS.get('meetingitem',t.dataset.p); if(x) pmPoint(I,DS.get('meeting',x.MEETING_ID)||m,x); }
     else if(a==='pvmenu'){ if(m) menuSous(t,menuMO(u,p,s,m)); } else SEANCES.action(I,a,t); },
   ctx(I,t,e){ const a=t.dataset.a, p=I.p, u=I.u;
-    if(a==='serie'){ const s=DS.get('meetingsequence',t.dataset.s); if(!s) return false; sgMenuAt(e.clientX,e.clientY,[...(u.peut?[{t:'Modifier la série…',fn:()=>mtSeqDialog(p,s)},'-',{t:'Supprimer la série…',danger:true,fn:()=>mtSeqDelete(s)}]:[])]); return u.peut; }
-    if(a==='pv'){ const m=DS.get('meeting',t.dataset.m), s=m&&DS.get('meetingsequence',m.MEETINGSEQUENCE_ID); if(!m) return false; sgMenuAt(e.clientX,e.clientY,[...(u.peut?[{t:'Modifier le procès-verbal…',fn:()=>mtMeetingDialog(s,m)}]:[]),...menuMO(u,p,s,m)]); return true; }
+    if(a==='ouvrir'){ const m=DS.get('meeting',t.dataset.m), s=m&&DS.get('meetingsequence',m.MEETINGSEQUENCE_ID); if(!m) return false;
+      sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir',fn:()=>PVMO.action(I,'ouvrir',t)},{t:'Aperçu PDF',fn:()=>pmPdf(I,s,m,false)},{t:'Convocation (PDF)',fn:()=>pmPdf(I,s,m,true)},...(u.peut?['-',{t:'Modifier la séance…',fn:()=>mtMeetingDialog(s,m)}]:[]),'-',...menuMO(u,p,s,m)]); return true; }
     return false; } };
-const menuMO=(u,p,s,m)=>[...(u.peut?[{t:'Participants…',fn:()=>mtPartsDialog(m)},{t:'Tous les points…',fn:()=>mtItemsDialog(m)},'-']:[]),{t:'Envoi courriel',dis:!mtParts(m).length,fn:()=>mtInvite(m)},...(u.peut?['-',{t:'Supprimer le procès-verbal…',danger:true,fn:()=>mtMeetingDelete(m)}]:[])];
-window.sgPvMoModule=(C,p)=>monter(C,p,'pvmo',['meetingsequence','meeting','meetingitem','meetingparticipant','projectmeetingtype','depotfichier'],PVMO);
+const menuMO=(u,p,s,m)=>[...(u.peut?[{t:'Participants…',fn:()=>mtPartsDialog(m)},{t:'Tous les points… (ordre, niveaux)',fn:()=>mtItemsDialog(m)},'-']:[]),{t:'Envoi courriel',dis:!mtParts(m).length,fn:()=>mtInvite(m)},...(u.peut?['-',{t:'Supprimer le procès-verbal…',danger:true,fn:()=>mtMeetingDelete(m)}]:[])];
+window.sgPvMoModule=(C,p)=>monter(C,p,'pvmo',['meetingsequence','meeting','meetingitem','meetingparticipant','projectmeetingtype','depotfichier','contact','contactowner'],PVMO);
 window.sgPvMoCompte=p=>{ try{ const L=seriesDe(p,true), n=pvsMO(L).length, q=questionsMO(L).length; return n?pl(n,'PV','PV')+(q?' · '+pl(q,'question ouverte','questions ouvertes'):''):'à commencer'; }catch(_){ return ''; } };
 window.sgEstSerieMO=estMO;
+window.SGPM={pmStruct,pmDonnees,pmOctets,PM_RUB};
 
 /* ── NOTES ── */
 const auteur=o=>{ if(o==null||o==='') return ''; try{ const a=DS.all('appuser').find(x=>String(x.USERID)===String(o)||String(x.ID)===String(o)); return (a&&a.NAME)||String(o); }catch(_){ return String(o); } };

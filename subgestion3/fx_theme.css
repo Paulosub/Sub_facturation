@@ -5,9 +5,13 @@
    contour noir, suppression rouge), sélection jaune clair.
    ⚠ Les documents PDF et leurs aperçus (.offre-page, aperçus « PDF fidèle ») ne sont PAS touchés : ils reproduisent
    les documents papier du bureau. */
-@font-face{font-family:'SUB Akkurat';font-weight:300;src:local('Akkurat-Light'),local('Akkurat Light'),local('AkkuratLLTT-Light')}
-@font-face{font-family:'SUB Akkurat';font-weight:400;src:local('Akkurat-Regular'),local('Akkurat Regular'),local('Akkurat'),local('AkkuratStd')}
-@font-face{font-family:'SUB Akkurat';font-weight:700;src:local('Akkurat-Bold'),local('Akkurat Bold'),local('AkkuratStd-Bold')}
+/* mêmes noms locaux que la coquille (sg3.css) — 15.11.2026 : sans « AkkuratLLTT-Regular / -Bold », les graisses 400 et 700 n'étaient pas trouvées sur les
+   postes où la police installée s'appelle « Akkurat LL TT » : tout le cadre passait en Arial (seul le Light était en Akkurat) */
+@font-face{font-family:'SUB Akkurat';font-weight:300;font-style:normal;src:local('Akkurat-Light'),local('Akkurat Light'),local('AkkuratLLTT-Light'),local('Akkurat LL TT Light')}
+@font-face{font-family:'SUB Akkurat';font-weight:400;font-style:normal;src:local('Akkurat-Regular'),local('Akkurat Regular'),local('Akkurat'),local('AkkuratLLTT-Regular'),local('Akkurat LL TT Regular'),local('AkkuratStd')}
+@font-face{font-family:'SUB Akkurat';font-weight:400;font-style:italic;src:local('Akkurat-Italic'),local('Akkurat Italic')}
+@font-face{font-family:'SUB Akkurat';font-weight:700;font-style:normal;src:local('Akkurat-Bold'),local('Akkurat Bold'),local('AkkuratLLTT-Bold'),local('Akkurat LL TT Bold'),local('AkkuratStd-Bold')}
+@font-face{font-family:'SUB Akkurat';font-weight:700;font-style:italic;src:local('Akkurat-BoldItalic'),local('Akkurat Bold Italic')}
 :root{--s-noir:#1d1d1b;--s-gris:#706f6f;--s-gris2:#9d9d9c;--s-gris3:#c9c9c7;--s-filet:#e3e3e0;--s-fond:#f5f5f3;
   --s-jaune:#fff266;--s-jaune2:#fef6b0;--s-jaune3:#fffbdc;--s-nuit:#003346;--s-nuit2:#636e7e;--s-rouge:#bd1e42;
   --s-orange:#d7860d;--s-vert:#98c21f;--s-turq:#4cbab5;--s-bleu:#3f4193;
@@ -150,6 +154,134 @@ html body.sg-tactile #panel-pv-chantier .pv-grid{grid-template-columns:repeat(au
 html body.sg-tactile #panel-pv-chantier .pv-sec .hd{min-height:48px}
 html body.sg-tactile #pv_out table.pv-xl{width:100%!important}
 html body.sg-tactile #pv_out table.pv-xl td>textarea,html body.sg-tactile #pv_out table.pv-xl td>.pv-ta{width:100%!important;box-sizing:border-box}
+/* ══ PV de chantier au graphisme de l'app (15.11.2026, demande de Paulo : « adapte le design au reste de l'app ») ══════════════
+   Tous les écrans du module (#panel-pv-chantier) : liste des PV, réglages de l'affaire (« Général »), éditeur d'un PV. Titres de
+   section sur filet noir de 2 px (plus de barres bleu nuit), champs carrés (comme .inp de la coquille), tableaux de saisie en grille
+   fine, boutons de ligne et de section en texte, cases à cocher et boutons radio bleu nuit, états en étiquettes carrées.
+   Mêmes fonctions, mêmes données. Les aperçus « PDF fidèle » (.col-right-pdf ▸ #pvf-frame) et les PDF ne sont pas touchés.
+   Les titres des cartes sont écrits en minuscules dans Facturation.html (son propre style les met en capitales). */
+html body #panel-pv-chantier .adm-wrap{padding:16px 24px 44px!important}
+html body #panel-pv-chantier .adm-form{margin:0 0 4px}
+html body #pv_ctx{color:var(--s-gris)!important;font-size:12px!important}
+html.sgof-pv body #pv_out>div[style*="font-size:14.5px"]{display:none}   /* nom de l'affaire : déjà dans le bandeau de la page du projet */
+html body #pv_out>div[style*="font-size:14.5px"]{font-size:15px!important;margin:0 0 10px!important}
+
+/* boutons : actions principales en contour noir (comme .nx-btn), actions de ligne et de section en texte */
+html body #panel-pv-chantier .btn{height:32px;padding:0 12px!important;font-size:12.5px!important;display:inline-flex;align-items:center;gap:6px;line-height:1;vertical-align:middle;white-space:nowrap}
+html body #panel-pv-chantier .btn.pv-mini{height:26px;border:0!important;background:transparent!important;color:var(--s-nuit)!important;padding:0 7px!important;font-weight:700}
+html body #panel-pv-chantier .btn.pv-mini:hover{background:var(--s-jaune3)!important;color:var(--s-nuit)!important}
+html body #panel-pv-chantier .btn.pv-mini[style*="#b00" i],html body #panel-pv-chantier .btn.pv-mini[style*="#b00" i]:hover{color:var(--s-rouge)!important}
+html body #panel-pv-chantier .btn.pv-mini[style*="color:#999" i]{color:var(--s-gris2)!important}
+html body #panel-pv-chantier .btn[style*="#1e6b2d" i]{background:var(--s-nuit)!important;border:2px solid var(--s-nuit)!important;color:#fff!important;padding:0 10px!important}   /* « À envoyer » : action principale */
+html body #panel-pv-chantier .btn[style*="#1e6b2d" i]:hover{background:var(--s-nuit2)!important;border-color:var(--s-nuit2)!important;color:#fff!important}
+html body #panel-pv-chantier .pv-img .btn.pv-mini{background:#fff!important}
+html body #panel-pv-chantier .col-right-pdf .btn{height:26px;padding:0 9px!important}
+html body #panel-pv-chantier .col-right-pdf{border-left:0}
+
+/* liste des PV : filets, survol jaune clair */
+html body #pv_out .pv-tb{border:0;font-size:13px}
+html body #pv_out .pv-tb th{padding:8px 10px 7px 0;font-size:11.5px}
+html body #pv_out .pv-tb td{padding:6px 10px 6px 0;border-top:0;border-bottom:1px solid var(--s-filet)}
+html body #pv_out .pv-tb tbody tr:hover td{background:var(--s-jaune3)}
+/* états : étiquettes carrées */
+html body .pv-badge{padding:2px 8px;font-size:11px;font-weight:700;border:1px solid transparent;vertical-align:middle}
+html body .pv-badge.an{background:var(--s-jaune2);color:var(--s-noir);border-color:var(--s-jaune2)}
+html body .pv-badge.df{background:transparent;color:#4E6B0F;border-color:#4E6B0F}
+
+/* cartes : titre sur filet noir */
+html body #pv_out .pv-card{padding:0;margin-top:26px;overflow:visible;border-top:2px solid var(--s-noir)}
+html body #pv_out .pv-card h4{margin:0 0 12px;padding:10px 0 9px;background:none;color:var(--s-noir);font-size:14px;font-weight:700;letter-spacing:0;text-transform:none;border-bottom:1px solid var(--s-filet);display:flex;align-items:center;gap:10px}
+html body #pv_out .pv-card h4 .btn{margin-left:auto}
+html body #pv_out .pv-card div[style*="color:#888" i]{color:var(--s-gris)!important;font-size:12px!important;margin-top:8px!important}
+
+/* champs : libellé au-dessus, champ carré */
+html body #pv_out .pv-meta{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin-bottom:10px}
+html body #pv_out .pv-meta label{display:inline-flex;flex-direction:column;align-items:flex-start;gap:4px;margin:0;font-size:11px;font-weight:700;color:var(--s-gris)}
+html body #pv_out .pv-meta label:has(>b){flex-direction:row;align-items:center;gap:6px;height:32px}
+html body #pv_out .pv-meta label b{font-size:13.5px!important;color:var(--s-noir)}
+html body #pv_out .pv-meta label span{font-weight:400;color:var(--s-gris2)!important}
+html body #pv_out .pv-meta input,html body #pv_out textarea.pv-ta,html body #pv_out .pv-card>div>input[style*="font-weight:600" i],
+html body #pv_out .pv-card table input[style*="width:60px" i],html body #pv_out .pv-img input{border:1px solid var(--s-gris3)!important;border-radius:0!important;background:#fff;color:var(--s-noir);font-size:13px!important;padding:0 9px!important;height:32px;box-sizing:border-box}
+html body #pv_out .pv-meta input:hover,html body #pv_out textarea.pv-ta:hover,html body #pv_out .pv-card>div>input[style*="font-weight:600" i]:hover{border-color:var(--s-gris2)!important}
+html body #pv_out textarea.pv-ta{height:auto;padding:7px 9px!important;line-height:1.45;margin:4px 0 10px;display:block}
+html body #pv_out .pv-card>div>input[style*="font-weight:600" i]{font-weight:700!important;margin-right:4px}
+html body #pv_out .pv-card label[style*="12.5px" i]:not(:has(input)){display:block;font-size:11px!important;font-weight:700;color:var(--s-gris);margin-top:4px}
+html body #pv_out .pv-card label:has(input[type=radio]){font-size:13px!important;display:inline-flex;align-items:center;gap:7px}
+html body #pv_out .pv-img input{color:var(--s-rouge)!important;height:28px;font-size:12px!important}
+
+/* CFC du projet : grille de cases */
+html body #pv_out .pv-grid{gap:8px 18px}
+html body #pv_out .pv-grid label{font-size:13px;display:flex;align-items:center;gap:7px}
+html body #pv_out .pv-grid+div{margin-top:12px!important}
+
+/* cases à cocher et boutons radio : filet noir, bleu nuit une fois cochés */
+html body #panel-pv-chantier input[type=checkbox],html body #panel-pv-chantier input[type=radio]{appearance:none;-webkit-appearance:none;width:15px!important;height:15px;flex:none;margin:0;padding:0!important;
+  border:1.5px solid var(--s-noir)!important;border-radius:0!important;background:#fff;display:inline-block;vertical-align:-2px;cursor:pointer}
+html body #panel-pv-chantier input[type=radio]{border-radius:50%!important}
+html body #panel-pv-chantier input[type=checkbox]:checked{background:var(--s-nuit) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='m5 12 4.5 4.5L19 7' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='square'/></svg>") center/11px 11px no-repeat;border-color:var(--s-nuit)!important}
+html body #panel-pv-chantier input[type=radio]:checked{background:radial-gradient(circle,var(--s-nuit) 0 40%,#fff 46%);border-color:var(--s-nuit)!important}
+html body #panel-pv-chantier input[type=checkbox]:disabled,html body #panel-pv-chantier input[type=radio]:disabled{opacity:.45;cursor:default}
+html body #panel-pv-chantier input[type=checkbox]:focus-visible,html body #panel-pv-chantier input[type=radio]:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
+
+/* tableaux de saisie (entreprises par CFC, intervenants) : grille fine, champs sans cadre */
+html body #pv_out .pv-card>div[style*="font-weight:600" i]{font-size:13px!important;font-weight:700!important;margin:16px 0 6px!important;display:flex;align-items:center;gap:2px}
+html body #pv_out .pv-card>h4+div[style*="font-weight:600" i]{margin-top:2px!important}
+html body #pv_out .pv-int{border-collapse:collapse;margin:0 0 4px}
+html body #pv_out .pv-int td{padding:0;border:1px solid var(--s-filet);font-size:13px;height:32px}
+html body #pv_out .pv-int td input:not([type=checkbox]){border:0!important;border-radius:0!important;height:31px;padding:0 8px!important;font-size:13px!important;background:transparent;width:100%;box-sizing:border-box}
+html body #pv_out .pv-int td input:not([type=checkbox]):hover{background:var(--s-jaune3)}
+html body #pv_out .pv-int tr[style*="color:#777" i] td{border:0;border-bottom:1.5px solid var(--s-noir);font-size:11.5px;font-weight:700;color:var(--s-noir);padding:0 8px 6px;height:auto}
+html body #pv_out .pv-int td:has(>b){padding:0 4px 0 8px;white-space:nowrap}
+html body #pv_out .pv-int td:has(>b) span[style*="color:#777" i]{color:var(--s-gris)!important;font-size:12px!important}
+html body #pv_out .pv-int td[style*="text-align:center" i]{padding:0 8px;white-space:nowrap;font-size:11.5px!important;color:var(--s-gris)}
+html body #pv_out .pv-int td:has(>.btn.pv-mini:only-child){border:0;padding:0 0 0 2px}
+
+/* présences et distribution : tableau à filets */
+html body #pv_out .pv-card>table:not(.pv-int) td{border-bottom:1px solid var(--s-filet);padding:6px 10px 6px 0!important;font-size:13px!important}
+html body #pv_out .pv-card>table:not(.pv-int) tr:first-child td{border-bottom:1.5px solid var(--s-noir);font-size:11.5px!important;padding-bottom:6px!important}
+
+/* choix Général | PV : onglets en texte */
+html body #pv_out .pv-seg{border:0;gap:18px;overflow:visible;margin:0 6px}
+html body #pv_out .pv-seg button{background:none!important;color:var(--s-gris)!important;padding:7px 0 5px;font-size:13.5px;border-bottom:3px solid transparent}
+html body #pv_out .pv-seg button:hover{color:var(--s-noir)!important}
+html body #pv_out .pv-seg button.on{color:var(--s-noir)!important;font-weight:700;border-bottom-color:var(--s-nuit)}
+
+/* sections du PV : titre sur filet noir, actions en texte à droite */
+html body #pv_out .pv-sec{margin-top:22px;overflow:visible;border-top:2px solid var(--s-noir)}
+html body #pv_out .pv-sec .hd{background:none;padding:6px 0;gap:2px;border-bottom:1px solid var(--s-filet);min-height:40px;box-sizing:border-box}
+html body #pv_out .pv-sec .hd input,html body #pv_out .pv-sec .hd b{color:var(--s-noir);font-size:13.5px!important;font-weight:700;letter-spacing:0;text-transform:none}
+html body #pv_out .pv-sec .hd input{height:28px;padding:0 6px 0 0;border:1px solid transparent!important;min-width:0}
+html body #pv_out .pv-sec .hd input:not(:disabled):hover{border-color:var(--s-gris3)!important;padding-left:6px}
+html body #pv_out .pv-sec .hd input:focus{padding-left:6px}
+html body #pv_out .pv-sec .bd{padding:8px 0 2px}
+
+/* lignes d'un PV : grille fine, champs sans cadre */
+html body #pv_out .pv-xl th{border:0!important;border-bottom:1px solid var(--s-filet)!important;padding:10px 0 5px;font-size:11.5px;color:var(--s-gris)!important}
+html body #pv_out .pv-xl td{border:1px solid var(--s-filet)}
+html body #pv_out .pv-xl textarea,html body #pv_out .pv-xl input:not([type=checkbox]),html body #pv_out .pv-xl select{font-size:12.5px;line-height:1.45;padding:6px 8px}
+html body #pv_out .pv-xl textarea:focus,html body #pv_out .pv-xl input:not([type=checkbox]):focus,html body #pv_out .pv-xl select:focus{outline:0;background:var(--s-jaune3)}
+html body #pv_out .pv-xl td>div>button{background:#fff!important;color:var(--s-gris)!important;font-size:12px!important;height:24px;border-color:var(--s-filet)!important}
+html body #pv_out .pv-xl td>div>button:hover{background:var(--s-jaune3)!important;color:var(--s-noir)!important}
+html body #pv_out .pv-xl span[draggable]{color:var(--s-gris2)!important}
+html body #pv_out .pv-pb{border-top:1.5px dashed var(--s-rouge);color:var(--s-rouge);font-size:11px;font-weight:700;letter-spacing:.3px}
+html body #pv_out .pv-img img{border-color:var(--s-filet)}
+html body #pv_out div[style*="color:#b26a12" i]{color:var(--s-orange)!important}
+html body #pv_out>div[style*="color:#999" i]{color:var(--s-gris)!important}
+
+/* « Navigateur d'adresses » (carnet), ouvert par « Carnet » dans les PV : même graphisme — onglets en texte, champs carrés, sélection jaune clair */
+html body #adr_pick_w{background:#fff!important;border-radius:0!important}
+html body #adr_pick_t{border-radius:0!important;background:var(--s-nuit)!important}
+html body #adr_nav_tabs{border:0!important;border-radius:0!important;background:none!important;overflow:visible!important;gap:20px}
+html body #adr_nav_tabs>div{padding:7px 0 5px!important;border:0!important;border-bottom:3px solid transparent!important;background:none!important;color:var(--s-gris)!important;font-size:13.5px!important;font-weight:400!important}
+html body #adr_nav_tabs>div:hover{color:var(--s-noir)!important}
+html body #adr_nav_tabs>div[style*="#2f7fe8" i]{color:var(--s-noir)!important;font-weight:700!important;border-bottom-color:var(--s-nuit)!important}
+html body #adr_pick_w [style*="background:#2f7fe8" i]:not(#adr_nav_tabs>div){background:var(--s-jaune2)!important;color:var(--s-noir)!important}
+html body #adr_pick_f,html body #adr_nav_left input:not([type=checkbox]):not([type=radio]),html body #adr_nav_left select{border-radius:0!important;border-color:var(--s-gris3)!important}
+html body #adr_pick_ls,html body #adr_nav_left div[style*="border:1px" i]{border-radius:0!important;border-color:var(--s-filet)!important}
+html body #adr_nav_mcols,html body #adr_nav_mplus{border-radius:0!important;border-color:var(--s-noir)!important;box-shadow:0 6px 24px rgba(0,0,0,.18)!important}
+/* fenêtre « Ajouter une affaire au module PV » */
+html body #pv_aff_ov>div{border-radius:0!important;border-top:2px solid var(--s-noir);box-shadow:0 8px 40px rgba(0,0,0,.25)!important}
+html body #pv_aff_f,html body #pv_aff_ls{border-radius:0!important;border-color:var(--s-gris3)!important}
 /* contrats et factures « à valider » (sg3_plus.js ▸ 11) */
 html body .sg-val-tag{display:inline-block;margin-left:6px;padding:1px 6px;font-size:10.5px;font-weight:700;background:#FEF6B0;color:#003346;border:1px solid #003346;vertical-align:1px}
 html body .sg-val-tag.refuse{background:#BD1E42;color:#fff;border-color:#BD1E42}

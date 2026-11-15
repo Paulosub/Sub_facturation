@@ -1938,6 +1938,83 @@ async function sgDsPdf(R, rep, o){
         cx.texte('Lieu, date', a, T(yy + 0.5 + dB(11, 7)), { police:F.light, taille:7, couleur:GRISc });
         cx.texte('Signature, tampon', a + Math.round(CW * 0.4), T(yy + 0.5 + dB(11, 7)), { police:F.light, taille:7, couleur:GRISc }); }); }
   };
+  /* ══ DÉBUT — PV MO (piste PV, 15.11.2026) ══════════════════════════════════════════════════════════════════════════════
+     Procès-verbal de la séance avec le maître de l'ouvrage (demande de Paulo : « adapter pv mo avec le style de pv de chantier, exemple de pv mo »).
+     Mise en page relevée sur l'exemple du bureau, de la famille des PV de chantier : en-tête à quatre lignes en première page (PROCÈS-VERBAL, projet,
+     référence, lieu et date), à deux lignes ensuite ; titre Bold 10 et numéro à droite ; date à gauche, lieu et heure à droite ; tableau des
+     participants (filets de 0,5 pt autour des titres, de 0,25 pt entre les rangées) ; rubriques numérotées entre deux filets de 0,5 pt ; points
+     numérotés n.m en Light 8 (interligne 9,6), puces en retrait ; responsable et délai en gris dans la colonne de droite quand il y en a.
+     o.pvmo = { entete, projet, ref, date, titre:[lignes], num, infoG:[…], infoD:[…], participants:{ tit:[6], rows:[[6]] },
+       sections:[{ n, t, pts:[{ n, x, r }] }] } — textes déjà prêts. L'en-tête ordinaire du papier n'est pas dessiné (sansEntete) ; pied, logo et
+     numérotation « n | total » restent ceux du papier. */
+  const contenuPvMo = (cx) => {
+    const D = o.pvmo || {}, H = PAP.format.portrait.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t);
+    const X0 = 85.04, X1 = 510.19, XN = 89.04, XT = 115.97, XP = 121.64, XPT = 130.14, XR = 446.46, FIN = 505.7;
+    const BAS = 752, PAS = 9.6, ESP = 15.64, TOPT = 96.68, TOPS = 102.05, COL = [47.48, 66.61, 63.07, 42.52, 94.96, 110.5];
+    const bar = (y, ep, a, b) => cx.rect(a, T(y) - ep / 2, b - a, ep, { fond:C.N });   /* filet plein, centré sur y (depuis le haut) */
+    const une = (t, f, z, w) => { let r = t; if(cx.largeur(r, f, z) <= w) return r; while(r.length > 1 && cx.largeur(r.trimEnd() + '...', f, z) > w) r = r.slice(0, -1); return r.trimEnd() + '...'; };
+    let prem = true;
+    const page = () => { sansEntete = true; cx.nouvellePage('portrait'); sansEntete = false;
+      const yb = prem ? 34.51 : 35.51, g = { police:F.light, taille:7.5, couleur:C.G };
+      cx.texte(cx.maj(P(D.entete || 'Procès-verbal')), 28.38, T(yb), { police:F.bold, taille:7.5 }); cx.ligne(28.35, T(yb + 4.6), 36.85, T(yb + 4.6));
+      if(prem){ let yy = yb;
+        [D.projet ? une(cx.maj(P(D.projet)), F.light, 7.5, 480) : '', P(D.ref || ''), D.date ? cx.maj(P(D.date)) : ''].filter(Boolean).forEach((t, i, A) => {
+          yy += 14; cx.texte(t, 28.38, T(yy), g); if(i < A.length - 1) cx.ligne(28.35, T(yy + 4.4), 36.85, T(yy + 4.4)); }); }
+      else if(D.ref) cx.texte(P(D.ref), 28.38, T(yb + 14), g);
+      prem = false; };
+    page();
+    /* titre et numéro, puis date à gauche, lieu et heure à droite */
+    const num = P(D.num || ''), wNum = num ? cx.largeur(num, F.bold, 10) + 16 : 0, TT = [];
+    Array.from(D.titre || []).map(t => cx.maj(P(t))).filter(Boolean).forEach(t => cx.couper(t, F.bold, 10, X1 - 85.09 - wNum).forEach(l => TT.push(l)));
+    TT.forEach((t, i) => cx.texte(t, 85.09, T(196.64 + 14 * i), { police:F.bold, taille:10 }));
+    if(num) cx.texte(num, 510.24, T(196.64), { police:F.bold, taille:10, align:'d' });
+    let y = 196.64 + 14 * Math.max(0, TT.length - 1) + 41.28;
+    const IG = Array.from(D.infoG || []).map(P).filter(Boolean), ID = Array.from(D.infoD || []).map(P).filter(Boolean);
+    IG.forEach((t, i) => cx.texte(t, 85.04, T(y + 10 * i), { police:F.regular, taille:8 }));
+    ID.forEach((t, i) => cx.texte(t, 510.38, T(y + 10 * i), { police:F.regular, taille:8, align:'d' }));
+    y += 10 * Math.max(0, Math.max(IG.length, ID.length) - 1);
+    /* participants */
+    const PT = D.participants || {}, tit = Array.from(PT.tit || []), rows = Array.from(PT.rows || []), xc = []; COL.reduce((x, w, i) => { xc[i] = x; return x + w; }, X0);
+    if(rows.length){ const yt = y + 34.85; bar(yt, 0.5, X0, X1);
+      tit.forEach((t, i) => { if(i < COL.length) cx.texte(P(t), xc[i] + 4, T(yt + 11.64), { police:F.regular, taille:8 }); });
+      bar(yt + 15.64, 0.5, X0, X1); let yr = yt + 15.64 + 16.53; cx.ligne(X0, T(yr), X1, T(yr));
+      rows.forEach(r => { const R0 = Array.from(r || []), Z = [];
+        /* un mot plus large que sa colonne (adresse de courriel) : corps réduit sur une ligne plutôt que coupé à la lettre */
+        const L = COL.map((w, i) => { const t = P(R0[i] || ''), lt = cx.largeur(t, F.regular, 7); Z[i] = 7;
+          if(t && !/\s/.test(t) && lt > w - 6 && 7 * (w - 6) / lt >= 5){ Z[i] = 7 * (w - 6) / lt; return [t]; }
+          return cx.couper(t, F.regular, 7, w - 6); }), n = Math.max(1, ...L.map(a => a.length));
+        if(yr + 10.68 + 8.4 * (n - 1) + 4 > BAS){ page(); yr = TOPS; cx.ligne(X0, T(yr), X1, T(yr)); }
+        L.forEach((a, i) => a.forEach((t, k) => cx.texte(t, xc[i] + 4, T(yr + 10.68 + 8.4 * k), { police:F.regular, taille:Z[i] })));
+        yr += 10.68 + 8.4 * (n - 1) + 4; cx.ligne(X0, T(yr), X1, T(yr)); });
+      y = yr; }
+    /* rubriques et points */
+    const SEC = Array.from(D.sections || []), droite = SEC.some(S => Array.from(S.pts || []).some(p => P(p.r || '')));
+    const WT = (droite ? XR - 6 : FIN) - XT, WP = (droite ? XR - 6 : FIN) - XPT;
+    const lignesDe = (x) => { const out = [];
+      P(x).split('\n').forEach(raw => { const m = /^\s*[•\-–—*]\s+(.*)$/.exec(raw);
+        if(m) cx.couper(m[1], F.light, 8, WP).forEach((t, k) => out.push({ t, x:XPT, p:k === 0 }));
+        else if(raw.trim() === ''){ if(out.length) out.push({ t:'', x:XT }); }
+        else cx.couper(raw, F.light, 8, WT).forEach(t => out.push({ t, x:XT })); });
+      while(out.length && out[out.length - 1].t === '') out.pop();
+      return out; };
+    let ys = y + 32.98;
+    SEC.forEach(S => { const pts = Array.from(S.pts || []).map(p => ({ n:P(p.n || ''), r:P(p.r || ''), L:lignesDe(p.x) })).filter(p => p.L.length);
+      if(ys + 15.64 + (pts.length ? ESP + PAS * Math.min(1, pts[0].L.length - 1) : 0) > BAS){ page(); ys = TOPS; }
+      bar(ys, 0.5, X0, X1); cx.texte(P(S.n), XN, T(ys + 11.64), { police:F.bold, taille:8 });
+      const tt = P(S.t || ''); cx.texte(tt, XT, T(ys + 11.64), { police:F.bold, taille:Math.min(8, 8 * (X1 - XT - 4) / Math.max(1, cx.largeur(tt, F.bold, 8))) });
+      bar(ys + 15.64, 0.5, X0, X1);
+      let yb = ys + 11.64;
+      pts.forEach(pt => { let yk = yb + ESP;
+        if(yk + PAS * Math.min(1, pt.L.length - 1) > BAS){ page(); yk = TOPT; }
+        if(pt.n) cx.texte(pt.n, XN, T(yk), { police:F.light, taille:8 });
+        if(pt.r) cx.texte(pt.r, X1 - 2, T(yk), { police:F.light, taille:7, couleur:C.G, align:'d' });
+        pt.L.forEach((l, k) => { if(k){ yk += PAS; if(yk > BAS){ page(); yk = TOPT; } }
+          if(l.p) cx.texte('•', XP, T(yk), { police:F.light, taille:8 });
+          if(l.t) cx.texte(l.t, l.x, T(yk), { police:F.light, taille:8 }); });
+        yb = yk; });
+      ys = (pts.length ? yb : ys + 11.64) + 19.64; });
+  };
+  /* ══ FIN — PV MO ══ */
   /* ── contrat d'entreprise à la mise en page du bureau (15.11.2026, Paulo : « ajoute également la mise en page des contrats d'entreprises », modèle joint :
      contrat d'un lot, deux pages — document client, jamais dans le dépôt) — o.contratEnt = {
        rubriques:[{ lib, val }]                 Ouvrage, Maître de l'ouvrage, Architecte, Direction des travaux (libellé en capitales, filet, valeur dessous)
@@ -2037,6 +2114,7 @@ async function sgDsPdf(R, rep, o){
   };
 
   const contenu = (cx) => {
+    if(o.pvmo){ contenuPvMo(cx); return; }   /* PV MO (piste PV, 15.11.2026) */
     if(o.contratEnt){ contenuContratEnt(cx); return; }
     if(o.decompte){ contenuDecompte(cx); return; }
     if(o.descDG){ contenuDescDG(cx); return; }

@@ -1485,6 +1485,29 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
 - **Chantier ▸ PV de chantier (04.11.2026, Paulo : « dans chantier il manque pv de chantier basé sur l'app de pv actuel »)** : l'app de PV de Facturation posée dans la page du projet, limitée à l'affaire (fin de
   `sg3_offres.js`, `sgPvChantierModule`, mode `pv` du cadre posé `EMB` ; « ← Affaires » et « ✚ » masqués par `html.sgof-pv`), mêmes données (`sa_pv_data`, clé retrouvée par `sgCle`), mêmes fonctions, droit « PV : lecture ». Sans PV :
   page d'accueil, l'affaire n'est créée dans `sa_pv_data` qu'à la demande. `sgPvVue` compte aussi ce cadre posé (présentation tactile). L'écran `fx-pv-chantier` reste.
+- **PV de chantier au graphisme de l'app (15.11.2026, Paulo : « adapte le design au reste de l'app » ; refonte d'ensemble, lot 1, fait dans une copie privée des sources puis
+  intégré)** — `subgestion3/fx_theme.css`, bloc « PV de chantier au graphisme de l'app » : tous les écrans de `#panel-pv-chantier` (liste, « Général » de l'affaire, éditeur,
+  PV envoyé, mode chantier) ont les titres de carte et de section sur filet noir de 2 px (plus de barres bleu nuit), champs carrés à libellé au-dessus, cases et boutons
+  radio dessinés (bleu nuit cochés), tableaux de saisie en grille fine, boutons `.pv-mini` en texte (rouge pour supprimer), « À envoyer » en bouton principal, états en
+  étiquettes carrées, « Général | PV » en onglets ; fenêtres « Navigateur d'adresses » (carnet) et « Ajouter une affaire » aux angles droits. Mêmes fonctions et données ;
+  aperçus « PDF fidèle » et PDF non touchés (trois PV identiques à l'octet avant / après, horloge figée ; la barre bleu nuit de l'aperçu, commune aux contrats et factures,
+  est gardée). `Facturation.html` : seuls les sept titres `<h4>` des cartes PV sont écrits en minuscules (son style les met en capitales : rendu inchangé hors SUBGestion 3 ;
+  v1 reconstruite). **Police du cadre Facturation** : `@font-face` de `fx_theme.css` alignés sur `sg3.css` (`AkkuratLLTT-Regular / -Bold`, « Akkurat LL TT … ») — sans
+  eux, les graisses 400 et 700 n'étaient pas trouvées sur les postes où la police s'appelle « Akkurat LL TT » et tout le cadre (contrats, factures, cockpit, PV) s'affichait
+  en Arial. Pas vérifié : vraie tablette.
+- **PV MO au style des PV de chantier (15.11.2026, Paulo : « adapter pv mo avec le style de pv de chantier, exemple de pv mo » ; exemple client, jamais dans le dépôt ;
+  même chantier)** — `sg3_suivi.js` (`PVMO`, classes `sgpm-*`, `window.SGPM`) : liste des PV (n°, référence `<projet>.PVMO.nn`, séance, phase, statut, questions, Ouvrir ·
+  Aperçu PDF · Convocation) avec les onglets Questions ouvertes · Décisions · Fichiers ; PV ouvert = séance, participants, rubriques numérotées et points n.m à gauche,
+  aperçu « PDF fidèle » à droite (`sgLecteurPdf` gardé d'un dessin à l'autre, PDF refait si `pmDonnees` change). Mêmes tables du moteur : rubrique = `meetingitem` de
+  niveau 0 sans catégorie (`estRub`), point = niveau 1 (Information 1, Décision 2, Question 4) ; points sans rubrique des PV d'avant rangés par sorte (`pmStruct`), rien
+  n'est réécrit. Fenêtres `pmPoint` (rangé à la fin de sa rubrique), `pmRubrique` (nouvelle avant « Divers » / « Points bloquants », supprimée avec ses points), `pmNouveau`
+  (rubriques du PV précédent, sinon sept rubriques types `PM_RUB` ; questions ouvertes dans « Questions en suspens »). Document (procès-verbal, convocation) : `pmOctets` →
+  `sgDsPdf`, option `o.pvmo` (`contenuPvMo` de `sg3_docsub.js`, en-tête propre par `sansEntete`), mesures relevées sur l'exemple : en-tête à 4 puis 2 lignes, titre Bold 10
+  et « PVMO - nn », date / lieu / heure, tableau des participants, ordre du jour tiré des rubriques hors rubriques fixes (`RX_FIXE`), rubriques entre deux filets de 0,5 pt,
+  points Light 8 à l'interligne 9,6, puces pour les lignes en « - », responsable et délai en gris à droite ; pied et logo = papier de l'app (trois colonnes ; l'exemple en a
+  deux). `pmImprimer` (ancien rendu `sgImprimer`) supprimé ; le registre des décisions garde `sgImprimer`. Pas fait : saisie directe dans le tableau (un clic ouvre la
+  fenêtre du point), gras en tête de puce et césure de l'exemple. Pas vérifié : mode bureau, profil en lecture seule, suppression d'un PV ou d'une rubrique par clic.
+  Copies d'avant : `subgestion3/_backup_20261115_1551_avant_pv_chantier_pvmo/`, `Facturation_backup_20261115_1551_avant_pv_chantier.html`.
 - **Soumission au graphisme de l'app + exemple (04.11.2026, bloc 36, `subgestion3/sg3_soumission.js`, concaténé après `sg3_suivi.js` dont il reprend `SGSV.outils` ; Paulo : « adapte le module soumission au reste de l'app et
   créer une version de soumission comme exemple pour un cfc pour que je puisse comprendre le fonctionnement […] qu'on puisse travailler ensemble comment corriger et adapter à nos besoins »)** : moteur inchangé (`DeltaSub.html`, 9 étapes).
   Page du projet ▸ Chantier ▸ Soumission (`svDomain` remplacé) : bandeau, chiffres, stades, recherche, tableau (`resume` : entreprises, proposée, offre nette de `detail.offre`) ; clic = `ouvrirDoc` (« ‹ Liste » revient à la page du projet : `SV_UI.back`),
@@ -2740,6 +2763,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   chiffres, barre d'outils, contenu ; il est retiré dès que l'écran n'est plus dans la liste (enveloppe de `go`, `DS.on`). Fonctions et données inchangées ; le contenu
   de ces écrans (colonnes, tableaux du moteur) reste à reprendre chapitre par chapitre. Pas dans cette étape : Estimations (`coplan`, liste et document ouvert à refaire
   ensemble), intervenants / soumissionnaires / liste d'adresses / calcul des coûts de la page du projet. Vérifié : bandeau sur les 25 écrans et sur aucun autre.
+  **Lot 1, analyse des heures — cinq propositions en attente du choix de Paulo (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
+  modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie
+  de l'app (`subgestion3/_backup_20261115_maquette_analyse_heures/` : `proposition_analyse_heures.js` et ses sources ; page `proposition_analyse_heures.html` de l'aperçu),
+  données réelles lues dans la base, rien n'est écrit (écriture locale, sauvegarde automatique et « Français seulement » coupées dans cette page). 1 Modules au menu
+  (les quatre fenêtres deviennent quatre modules du menu Heures + page d'entrée) ; 2 Dossier de l'affaire (une entrée, l'affaire s'ouvre comme un devis, modules en
+  onglets) ; 3 Tout le bureau (l'affaire devient un critère ; ferait doublon avec Administration ▸ Contrôle des heures et Situation des heures) ; 4 File de contrôle et
+  rapports (cartes « à contrôler », rapports tout faits) ; 5 Matrice (affaires × mois, contrôle du mois en calendrier, analyse en graphiques). Intégration de la proposition
+  choisie : nouveau bloc `sg3_analyse_heures.js` (vraies écritures `TIMELOGSTATECODE` / `PROJECTCOSTSTATECODE` selon les règles de `sgcFenetre` et `ctlCostCheck`, statut
+  Facturable / Facturé, double-clic pour modifier, rapports au papier des contrats), entrées du menu Heures et droits de `nx-controle`, retrait ou renvoi des quatre écrans
+  `adm-ctl-*` / `adm-ana-*` d'Administration ; Archives ▸ Suivi & écarts inchangé.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

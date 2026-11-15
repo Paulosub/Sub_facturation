@@ -262,3 +262,6 @@ de la barre en texte. Pour un nouveau tableau : déclarer son catalogue avec `sg
 `sgtabEntete(cols)`, `sgtabCellules(cols,r,ctx)` ; bouton « Présentation » → `sgtabMenu(cle,bouton,redessiner)` ; Imprimer → `sgtabImprimer(cle,lignes,ctx,o)`
 (SGDH.ouvrir) ; CSV → `sgtabCsv`. Présentations enregistrées : collection `sgpresentation` (communes) ; choix par poste : `localStorage` `sg3_tab`. Modèle :
 Affaires ▸ Liste des affaires (`VIEWS['affd-gestion']`, catalogue `affaires`). ⚠ Pas de classe `nx-row` sur un `<tr>` (elle met la ligne en `display:flex`).
+Colonnes fixes autour des colonnes choisies (case à cocher, boutons, champs de saisie) : `sgtabTableauX(cle,lignes,ctx,{tr,cls,avant,apres:{th,td},tot:{lib},totLignes})`
+(exemples : Coût de revient, Apports de projets, Analyse des heures) ; colonne proposée selon le cas : `ok:()=>…` dans le catalogue ; ligne Total : `sum(lignes)` sur
+les colonnes et `tot:{lib:'Total'}` ; impression d'un tableau aux colonnes choisies : `sgtabCols(cle)` + `sgtabTexte(cols,ligne)` (+ `sgtabTotal`) dans `SGDH.ouvrir`.

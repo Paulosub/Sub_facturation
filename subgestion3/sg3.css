@@ -1848,6 +1848,7 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .nx-tbl.sgtab-t tbody tr:hover td{background:var(--s-jaune3)}
 .nx-tbl.sgtab-t th{white-space:nowrap;vertical-align:bottom}
 .nx-tbl.sgtab-t td{vertical-align:top}
+.nx-tbl.sgtab-t tr:has(input.inp) td{vertical-align:middle}   /* lignes à champs de saisie (coût de revient, heures dues) : texte centré sur la hauteur des champs */
 .nx-tbl.sgtab-t td.nw{white-space:nowrap}
 .nx-tbl.sgtab-t td.c,.nx-tbl.sgtab-t th.c{text-align:center}
 .nx-tbl.sgtab-t td svg{width:14px;height:14px;vertical-align:-2px;flex:none}   /* icônes dans les cellules (cadenas d'une soumission ouverte…) */

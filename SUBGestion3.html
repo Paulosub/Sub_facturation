@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 23:46 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 23:59 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1857,6 +1857,7 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .nx-tbl.sgtab-t tbody tr:hover td{background:var(--s-jaune3)}
 .nx-tbl.sgtab-t th{white-space:nowrap;vertical-align:bottom}
 .nx-tbl.sgtab-t td{vertical-align:top}
+.nx-tbl.sgtab-t tr:has(input.inp) td{vertical-align:middle}   /* lignes à champs de saisie (coût de revient, heures dues) : texte centré sur la hauteur des champs */
 .nx-tbl.sgtab-t td.nw{white-space:nowrap}
 .nx-tbl.sgtab-t td.c,.nx-tbl.sgtab-t th.c{text-align:center}
 .nx-tbl.sgtab-t td svg{width:14px;height:14px;vertical-align:-2px;flex:none}   /* icônes dans les cellules (cadenas d'une soumission ouverte…) */
@@ -28760,26 +28761,34 @@ async function sgCrAppliquer(xs){ const td=today(), ops=[];
   await DS.commit(ops); toast(ops.length+' taux interne(s) enregistré(s), valables dès aujourd’hui.'); go('nx-coutrevient'); }
 VIEWS['nx-coutrevient']={ render(m){ const T=sgCrTout(), P=T.P, f2=v=>num(v,2), f0=v=>nxCHF(v), oc=nxLS.get('sg3_cr_ong','collab')==='param'?'param':'collab';
     const nb=(k,v,st,w)=>'<input class="inp" type="number" step="'+(st||'0.1')+'" data-'+k+' value="'+(v??'')+'" style="width:'+(w||'84px')+';text-align:right">';
-    const lignes=T.L.map((x,i)=>{ const S=x.S, c=x.c, act=sgTauxActuel(x.s.ID);
-      return '<tr data-i="'+i+'"><td><b class="sg-cr-nom" data-fn="d'+i+'" style="cursor:pointer">'+nxE(staffName(x.s))+'</b></td>'
-        +['SALAIRE','MOIS','OCC','VAC','ABS','PROD','DIRECTS'].map(k=>'<td>'+nb('s="'+x.s.ID+'" data-k="'+k+'"',S[k],k==='SALAIRE'||k==='DIRECTS'?'50':k==='MOIS'?'1':'0.5',k==='SALAIRE'||k==='DIRECTS'?'96px':'64px')+'</td>').join('')
-        +'<td class="r">'+f0(c.annuel)+'</td><td class="r">'+nxH(c.presence)+'</td><td class="r">'+nxH(c.factu)+'</td><td class="r"><b>'+f2(c.taux)+'</b></td><td class="r">'+f2(c.revient)+'</td><td class="r">'+f2(c.vente)+'</td>'
-        +'<td class="r">'+(act!=null?f2(act):'—')+'</td><td><button class="nx-btn" data-fn="a'+i+'"'+(c.taux>0?'':' disabled')+'>Appliquer</button></td></tr>'; }).join('');
+    /* colonnes de la présentation (bloc 57, catalogue « coutrevient », 15.11.2026) : champs de saisie et colonnes calculées ; « Appliquer » reste en dernière colonne */
+    { const inp=(k,st,w)=>x=>nb('s="'+x.s.ID+'" data-k="'+k+'"',x.S[k],st,w), cat='Saisie', calc='Calcul', pc=v=>v==null||v===''?'':num(+v||0,(+v||0)%1?1:0);
+      sgtabDef('coutrevient',{titre:'Coût de revient',std:['coll','sal','mois','occ','vac','abs','prod','directs','annuel','presence','factu','taux','revient','vente','actuel'],cat:{
+        coll:{t:'Collaborateur',cat:'Collaborateur',f:x=>'<b class="sg-cr-nom" data-fn="d'+T.L.indexOf(x)+'" style="cursor:pointer">'+nxE(staffName(x.s))+'</b>',v:x=>staffName(x.s)},
+        sal:{t:'Salaire mensuel brut',cat,f:inp('SALAIRE','50','96px'),v:x=>x.S.SALAIRE==null?'':f0(x.S.SALAIRE)},mois:{t:'Mois',l:'Nombre de salaires par an',cat,f:inp('MOIS','1','64px'),v:x=>pc(x.S.MOIS)},
+        occ:{t:'Occupation %',cat,f:inp('OCC','0.5','64px'),v:x=>pc(x.S.OCC)},vac:{t:'Vacances (sem.)',cat,f:inp('VAC','0.5','64px'),v:x=>pc(x.S.VAC)},
+        abs:{t:'Autres absences (j)',cat,f:inp('ABS','0.5','64px'),v:x=>pc(x.S.ABS)},prod:{t:'Part facturable %',cat,f:inp('PROD','0.5','64px'),v:x=>pc(x.S.PROD)},
+        directs:{t:'Frais directs / an',cat,f:inp('DIRECTS','50','96px'),v:x=>x.S.DIRECTS==null?'':f0(x.S.DIRECTS)},
+        annuel:{t:'Coût annuel',cat:calc,r:1,nw:1,v:x=>f0(x.c.annuel)},
+        presence:{t:'Heures de présence',cat:calc,r:1,nw:1,v:x=>nxH(x.c.presence)},
+        factu:{t:'Heures facturables',cat:calc,r:1,nw:1,v:x=>nxH(x.c.factu)},
+        taux:{t:'Taux interne / h',cat:calc,r:1,nw:1,f:x=>'<b>'+f2(x.c.taux)+'</b>',v:x=>f2(x.c.taux)},revient:{t:'Coût de revient / h fact.',cat:calc,r:1,nw:1,v:x=>f2(x.c.revient)},
+        vente:{t:'Prix de vente conseillé',cat:calc,r:1,nw:1,v:x=>f2(x.c.vente)},actuel:{t:'Taux actuel',l:'Taux interne enregistré',cat:calc,r:1,nw:1,v:x=>{ const a=sgTauxActuel(x.s.ID); return a!=null?f2(a):'—'; }}}}); }
     const pg=nxPage(m,'<div class="sg-split">'+sgTete('Ressources humaines','Coût de revient','Coût horaire de chaque collaborateur à partir de son salaire, des charges sociales, de sa part des frais généraux du bureau et de ses heures productives. Le taux interne obtenu sert au coût de revient (rentabilité des projets).',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+T.L.length+'</div><div class="t">collaborateurs</div></div><div class="sg-fig"><div class="n">'+f0(T.fg)+'</div><div class="t">frais généraux / an</div></div><div class="sg-fig"><div class="n">'+num(Object.values(P.CHARGES).reduce((a,b)=>a+(+b||0),0),1)+' %</div><div class="t">charges sociales</div></div></div>'
         /* navigation et paramètres comme le devis ouvert (15.11.2026) : onglets Collaborateurs | Paramètres (charges sociales, frais généraux, temps de travail et marge) */
         +sgPageNav({cle:'sg3_cr_ong',onglets:[{t:'Collaborateurs',arg:'collab',on:oc==='collab'},{t:'Paramètres',arg:'param',on:oc==='param'}],
-          gauche:[{t:'Appliquer tous les taux',i:'check',fn:'tous',ti:'Enregistrer le taux interne calculé de chaque collaborateur'},'-',{t:'Imprimer',i:'print',fn:'imp',ti:'Coût de revient (PDF)'}]}))
+          gauche:[{t:'Appliquer tous les taux',i:'check',fn:'tous',ti:'Enregistrer le taux interne calculé de chaque collaborateur'},'-',{t:'Présentation',i:'list',fn:'pres',dd:1,si:'collab',ti:'Colonnes du tableau des collaborateurs'},{t:'Imprimer',i:'print',fn:'imp',ti:'Coût de revient (PDF)'}]}))
       +'<div><div class="nx-grid">'+sgOngBloc('param',oc,''
       +nxCard('c6','Charges sociales (part employeur)','<div class="b"><table class="nx-tbl">'+SG_CR_CHARGES.map(([k,t])=>'<tr><td>'+nxE(t)+'</td><td class="r">'+nb('ch="'+k+'"',P.CHARGES[k],'0.05','74px')+' %</td></tr>').join('')+'</table></div>')
       +nxCard('c6','Frais généraux du bureau (par an)','<div class="b"><table class="nx-tbl">'+P.FG.map((x,i)=>'<tr><td><input class="inp" data-fgl="'+i+'" value="'+nxE(x.l)+'" style="width:100%"></td><td class="r">'+nb('fg="'+i+'"',x.m,'100','110px')+' CHF</td></tr>').join('')
         +'<tr><td><button class="nx-btn" data-fn="fgplus">'+nxSvg('plus')+'Ajouter un poste</button></td><td class="r"><b>'+f0(T.fg)+' CHF</b></td></tr></table></div>')
       +nxCard('c12','Temps de travail et marge','<div class="b sg-sit-f"><label>Semaines par an '+nb('p="SEMAINES"',P.SEMAINES,'1')+'</label><label>Heures par semaine '+nb('p="HSEM"',P.HSEM,'0.25')+'</label><label>Jours fériés par an '+nb('p="FERIES"',P.FERIES,'0.5')+'</label><label>Marge sur le prix de vente '+nb('p="MARGE"',P.MARGE,'1')+' %</label></div>')
-      )+sgOngBloc('collab',oc,nxCard('c12','Collaborateurs actuels','<div class="b flush" style="overflow:auto"><table class="nx-tbl sg-cr"><tr><th>Collaborateur</th><th>Salaire mensuel brut</th><th>Mois</th><th>Occupation %</th><th>Vacances (sem.)</th><th>Autres absences (j)</th><th>Part facturable %</th><th>Frais directs / an</th>'
-        +'<th class="r">Coût annuel</th><th class="r">Heures de présence</th><th class="r">Heures facturables</th><th class="r">Taux interne / h</th><th class="r">Coût de revient / h fact.</th><th class="r">Prix de vente conseillé</th><th class="r">Taux actuel</th><th></th></tr>'+lignes+'</table></div>'
+      )+sgOngBloc('collab',oc,nxCard('c12','Collaborateurs actuels','<div class="b flush" style="overflow:auto">'+sgtabTableauX('coutrevient',T.L,null,{cls:'sg-cr',tr:x=>' data-i="'+T.L.indexOf(x)+'"',apres:{th:'<th></th>',td:x=>'<td><button class="nx-btn" data-fn="a'+T.L.indexOf(x)+'"'+(x.c.taux>0?'':' disabled')+'>Appliquer</button></td>'}})+'</div>'
         +'<div class="b" style="font-size:12px;color:var(--s-gris);font-weight:300">Taux interne = coût annuel ÷ heures de présence (appliqué à toutes les heures saisies). Coût de revient = coût annuel ÷ heures facturables (base du prix de vente). Frais généraux répartis au prorata des heures de présence des collaborateurs dont le salaire est saisi. Cliquer sur un nom : détail du calcul.</div>'))
       +'</div></div></div>');
     const sauverP=async o=>{ const r=Object.assign({ID:'param'},DS.get('sgcoutrevient','param')||{},o); await DS.save('sgcoutrevient',r); go('nx-coutrevient'); };
+    pg._fn.pres=b=>sgtabMenu('coutrevient',b,()=>go('nx-coutrevient'));
     m.querySelectorAll('[data-ch]').forEach(e=>e.onchange=()=>sauverP({CHARGES:Object.assign({},P.CHARGES,{[e.dataset.ch]:+e.value||0})}));
     m.querySelectorAll('[data-fg]').forEach(e=>e.onchange=()=>{ const FG=P.FG.map(x=>({...x})); FG[+e.dataset.fg].m=+e.value||0; sauverP({FG}); });
     m.querySelectorAll('[data-fgl]').forEach(e=>e.onchange=()=>{ const FG=P.FG.map(x=>({...x})); FG[+e.dataset.fgl].l=e.value.trim(); sauverP({FG}); });
@@ -28796,10 +28805,10 @@ VIEWS['nx-coutrevient']={ render(m){ const T=sgCrTout(), P=T.P, f2=v=>num(v,2), 
         rows:[{c:['Charges sociales (part employeur)'],g:'g'},...SG_CR_CHARGES.map(([k,t])=>({c:[t,num(+P.CHARGES[k]||0,2),'%'],g:''})),{c:['Total des charges sociales',num(tch,1),'%'],g:'s'},
           {c:['Frais généraux du bureau (par an)'],g:'g'},...P.FG.map(x=>({c:[x.l||'(sans libellé)',f0(x.m),'CHF'],g:''})),{c:['Total des frais généraux',f0(T.fg),'CHF'],g:'s'},
           {c:['Temps de travail et marge'],g:'g'},{c:['Semaines par an',pc(P.SEMAINES),'semaines'],g:''},{c:['Heures par semaine',num(P.HSEM,2),'h'],g:''},{c:['Jours fériés par an',pc(P.FERIES),'jours'],g:''},{c:['Marge sur le prix de vente',pc(P.MARGE),'%'],g:''}],
-        suite:[{cols:[{t:'Collaborateur'},{t:'Salaire mensuel brut',r:1},{t:'Mois',r:1},{t:'Occupation %',r:1},{t:'Vacances (sem.)',r:1},{t:'Autres absences (j)',r:1},{t:'Part facturable %',r:1},{t:'Frais directs / an',r:1}],
-            rows:[{c:['Collaborateurs actuels — données'],g:'g'},...T.L.map(x=>({c:[staffName(x.s),f0(x.S.SALAIRE),pc(x.S.MOIS),pc(x.S.OCC),pc(x.S.VAC),pc(x.S.ABS),pc(x.S.PROD),f0(x.S.DIRECTS)],g:''}))]},
-          {cols:[{t:'Collaborateur'},{t:'Coût annuel',r:1},{t:'Heures de présence',r:1},{t:'Heures facturables',r:1},{t:'Taux interne / h',r:1},{t:'Coût de revient / h fact.',r:1},{t:'Prix de vente conseillé',r:1},{t:'Taux actuel',r:1}],
-            rows:[{c:['Collaborateurs actuels — coût de revient'],g:'g'},...T.L.map(x=>{ const c=x.c, act=sgTauxActuel(x.s.ID); return {c:[staffName(x.s),f0(c.annuel),nxH(c.presence),nxH(c.factu),f2(c.taux),f2(c.revient),f2(c.vente),act!=null?f2(act):'—'],g:''}; })]}]}); };
+        /* collaborateurs : colonnes de la présentation du tableau, en deux tableaux comme avant — données saisies, puis coût de revient (Standard = toutes) */
+        suite:(()=>{ const cs=sgtabCols('coutrevient').filter(c=>c.k!=='coll'), tb=(L,lib)=>L.length?[{cols:[{t:'Collaborateur'},...L.map(c=>({t:c.t,r:c.r?1:0}))],
+            rows:[{c:[lib],g:'g'},...T.L.map(x=>({c:[staffName(x.s),...sgtabTexte(L,x,null)],g:''}))]}]:[];
+          return [...tb(cs.filter(c=>c.cat==='Saisie'),'Collaborateurs actuels — données'),...tb(cs.filter(c=>c.cat==='Calcul'),'Collaborateurs actuels — coût de revient')]; })()}); };
     pg._fn.tous=()=>sgConfirm('Enregistrer le taux interne calculé de chaque collaborateur, valable dès aujourd’hui ?',()=>sgCrAppliquer(T.L));
     T.L.forEach((x,i)=>{ pg._fn['a'+i]=()=>sgCrAppliquer([x]);
       pg._fn['d'+i]=()=>{ const c=x.c, l=(t,v)=>'<tr><td>'+t+'</td><td class="r">'+v+'</td></tr>';
@@ -29427,30 +29436,58 @@ VIEWS['nx-apports']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcu
     const T={acq:som(S,x=>x.acq),ver:som(S,x=>x.ver),exi:som(S,x=>x.exi),prev:som(S,x=>x.prev),fHT:som(S,x=>x.fHT)}, M=sgApportSerie(XS,VS), ans={};
     M.forEach(x=>{ const y=x.k.slice(0,4), r=ans[y]||(ans[y]={y,da:0,dv:0,sol:0}); r.da+=x.da; r.dv+=x.dv; r.sol=x.a-x.v; });
     const nomS=sid=>staffName(DS.get('staff',sid))||'#'+sid, projet=p=>p?'<span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span> '+nxE((p.TITLE||'').slice(0,40)):'<i>projet supprimé</i>';
-    const tabS=S.length?'<table class="nx-tbl sg-apports"><tr><th>Collaborateur</th><th class="r">Projets</th><th class="r">Facturé HT</th><th class="r">Commission acquise</th><th class="r">Versé</th><th class="r">Solde</th><th class="r">dont exigible</th><th class="r">Prévue (contrats entiers)</th></tr>'
-      +S.map(x=>'<tr class="'+(x.id===sel?'sel':'')+'" data-fn="s_'+x.id+'" title="'+(x.id===sel?'Afficher tous les collaborateurs':'Afficher le détail')+'" style="cursor:pointer"><td><b>'+nxE(staffName(x.s)||'#'+x.id)+'</b>'+(x.s&&!+x.s.ISACTIVE?' <span class="nx-tag s4">ancien</span>':'')+'</td><td class="r">'+x.xs.length+'</td><td class="r">'+nxCHF(x.fHT)+'</td><td class="r">'+nxCHF(x.acq)+'</td><td class="r">'+nxCHF(x.ver)+'</td><td class="r"><b>'+nxCHF(x.solde)+'</b></td><td class="r">'+(x.exi>0.5?'<span class="nx-tag urg">'+nxCHF(x.exi)+'</span>':'—')+'</td><td class="r">'+nxCHF(x.prev)+'</td></tr>').join('')
-      +'<tr class="tot"><td>Total</td><td class="r">'+X.length+'</td><td class="r">'+nxCHF(T.fHT)+'</td><td class="r">'+nxCHF(T.acq)+'</td><td class="r">'+nxCHF(T.ver)+'</td><td class="r">'+nxCHF(T.acq-T.ver)+'</td><td class="r">'+nxCHF(T.exi)+'</td><td class="r">'+nxCHF(T.prev)+'</td></tr></table>'
+    /* colonnes de la présentation (bloc 57, 15.11.2026) : « appS » par collaborateur, « appA » projets apportés, « appV » versements, « appY » évolution par année ;
+       la colonne Collaborateur des projets et des versements n'est proposée que pour tous les collaborateurs (comme avant) ; boutons et ligne Total gardés */
+    const pj=p=>p?[p.NUMBER,p.TITLE].filter(Boolean).join(' '):'projet supprimé', tous=()=>!cur, chf=v=>nxCHF(v), sV=(L,f)=>nxCHF(som(L,f)), dt=v=>v?dfr(v):'';
+    const pjL=x=>x.p?'<span data-ref="p:'+x.p.ID+'" style="cursor:pointer">'+projet(x.p)+'</span>':projet(null), mo=p=>{ try{ return p?projMO(p)||'':''; }catch(_){ return ''; } };
+    sgtabDef('appS',{titre:'Apports de projets · par collaborateur',std:['coll','projets','fht','acq','ver','solde','exi','prev'],cat:{
+      coll:{t:'Collaborateur',cat:'Collaborateur',f:x=>'<b>'+nxE(staffName(x.s)||'#'+x.id)+'</b>'+(x.s&&!+x.s.ISACTIVE?' <span class="nx-tag s4">ancien</span>':''),v:x=>(staffName(x.s)||'#'+x.id)+(x.s&&!+x.s.ISACTIVE?' (ancien)':'')},
+      ini:{t:'Initiales',cat:'Collaborateur',nw:1,v:x=>(x.s&&x.s.INITIALS)||''},
+      etat:{t:'Actuel / ancien',l:'Collaborateur actuel ou ancien',cat:'Collaborateur',nw:1,v:x=>x.s&&!+x.s.ISACTIVE?'Ancien':'Actuel'},
+      cond:{t:'Conditions',l:'Conditions de la commission (contrat de travail)',cat:'Collaborateur',w:220,v:x=>{ try{ return sgCommTexte(sgCommCond(x.id)); }catch(_){ return ''; } }},
+      projets:{t:'Projets',l:'Nombre de projets apportés',cat:'Commission',r:1,v:x=>String(x.xs.length),sum:L=>String(som(L,x=>x.xs.length))},
+      hon:{t:'Honoraires HT',l:'Honoraires HT des contrats des projets apportés',cat:'Honoraires',r:1,nw:1,v:x=>chf(som(x.xs,y=>y.contratHT)),sum:L=>sV(L,x=>som(x.xs,y=>y.contratHT))},
+      fht:{t:'Facturé HT',cat:'Honoraires',r:1,nw:1,v:x=>chf(x.fHT),sum:L=>sV(L,x=>x.fHT)},
+      enc:{t:'Encaissé TTC',cat:'Honoraires',r:1,nw:1,v:x=>chf(som(x.xs,y=>y.encTTC)),sum:L=>sV(L,x=>som(x.xs,y=>y.encTTC))},
+      acq:{t:'Commission acquise',cat:'Commission',r:1,nw:1,v:x=>chf(x.acq),sum:L=>sV(L,x=>x.acq)},
+      ver:{t:'Versé',cat:'Commission',r:1,nw:1,v:x=>chf(x.ver),sum:L=>sV(L,x=>x.ver)},
+      solde:{t:'Solde',cat:'Commission',r:1,nw:1,f:x=>'<b>'+chf(x.solde)+'</b>',v:x=>chf(x.solde),sum:L=>chf(som(L,x=>x.acq)-som(L,x=>x.ver))},
+      exi:{t:'dont exigible',l:'Solde exigible (décompte final, ou tout facturé et encaissé)',cat:'Commission',r:1,nw:1,f:x=>x.exi>0.5?'<span class="nx-tag urg">'+chf(x.exi)+'</span>':'—',v:x=>x.exi>0.5?chf(x.exi):'',sum:L=>sV(L,x=>x.exi)},
+      prev:{t:'Prévue (contrats entiers)',l:'Commission prévue sur les contrats entiers',cat:'Commission',r:1,nw:1,v:x=>chf(x.prev),sum:L=>sV(L,x=>x.prev)},
+      nvers:{t:'Versements',l:'Nombre de versements',cat:'Versements',r:1,v:x=>String((x.vs||[]).length),sum:L=>String(som(L,x=>(x.vs||[]).length))},
+      dvers:{t:'Dernier versement',l:'Date du dernier versement',cat:'Versements',nw:1,v:x=>dt((x.vs||[]).map(v=>v.DATE||'').filter(Boolean).sort().pop())}}});
+    sgtabDef('appA',{titre:'Apports de projets · projets apportés',std:['projet','coll','date','trav','taux','hon','fht','enc','acq','ver','solde','statut'],cat:{
+      projet:{t:'Projet',cat:'Projet',f:pjL,v:x=>pj(x.p)},num:{t:'N° du projet',cat:'Projet',nw:1,v:x=>x.p?x.p.NUMBER||'':''},titre:{t:'Désignation',l:'Désignation du projet',cat:'Projet',v:x=>x.p?x.p.TITLE||'':''},
+      mo:{t:'Maître d’ouvrage',cat:'Projet',v:x=>mo(x.p)},etatp:{t:'Statut du projet',cat:'Projet',nw:1,v:x=>{ try{ return x.p?projState(x.p)||'':''; }catch(_){ return ''; } }},
+      coll:{t:'Collaborateur',cat:'Apport',ok:tous,v:x=>nomS(x.a.STAFF_ID)},
+      date:{t:'Apporté le',cat:'Apport',nw:1,f:x=>(x.a.DATE?dfr(x.a.DATE):'—')+(x.a.FINAL?'<br><small>décompte final '+dfr(x.a.FINAL)+'</small>':''),v:x=>dt(x.a.DATE)+(x.a.FINAL?' · décompte final '+dfr(x.a.FINAL):'')},
+      final:{t:'Décompte final',l:'Date du décompte final',cat:'Apport',nw:1,v:x=>dt(x.a.FINAL)},rem:{t:'Remarque',cat:'Apport',v:x=>x.a.REMARQUE||''},
+      trav:{t:'Travaux TTC',l:'Montant des travaux TTC (saisi, sinon selon les contrats d’honoraires)',cat:'Commission',r:1,nw:1,f:x=>'<span title="'+(x.travSaisi?'Montant saisi':'Selon les contrats d’honoraires (CFC 1, 2, 4, 5 et 9, TTC)')+'">'+(x.trav?chf(x.trav):'<span style="color:var(--s-orange)">à saisir</span>')+(x.travSaisi?' <small>saisi</small>':'')+'</span>',v:x=>x.trav?chf(x.trav):'à saisir'},
+      taux:{t:'Taux',l:'Taux de la commission',cat:'Commission',r:1,nw:1,f:x=>'<span title="'+nxE(x.tauxSaisi?'Taux convenu pour ce projet':sgCommTexte(x.C)+' — selon le '+x.C.src)+'">'+sgPcT(x.t)+' %'+(x.tauxSaisi?' <small>convenu</small>':'')+'</span>',v:x=>sgPcT(x.t)+' %'},
+      hon:{t:'Honoraires HT',cat:'Honoraires',r:1,nw:1,f:x=>x.contratHT?chf(x.contratHT):'—',v:x=>x.contratHT?chf(x.contratHT):''},
+      fht:{t:'Facturé HT',cat:'Honoraires',nw:1,f:x=>{ const f=x.contratHT?x.fHT/x.contratHT:null; return chf(x.fHT)+(f!=null?' '+sgBarre(Math.min(1,f))+' '+sgPct(f):''); },v:x=>chf(x.fHT)},
+      pctf:{t:'Facturé %',l:'Part facturée des honoraires',cat:'Honoraires',r:1,nw:1,v:x=>x.contratHT?sgPct(x.fHT/x.contratHT):''},
+      enc:{t:'Encaissé TTC',cat:'Honoraires',r:1,nw:1,f:x=>chf(x.encTTC)+(x.ouvertes?'<br><small style="color:var(--s-orange)">'+x.ouvertes+' facture'+(x.ouvertes>1?'s':'')+' ouverte'+(x.ouvertes>1?'s':'')+'</small>':''),v:x=>chf(x.encTTC)},
+      ouv:{t:'Factures ouvertes',cat:'Honoraires',r:1,v:x=>x.ouvertes?String(x.ouvertes):''},
+      prevue:{t:'Commission prévue',l:'Commission prévue sur le contrat entier',cat:'Commission',r:1,nw:1,v:x=>chf(x.prevue)},
+      acq:{t:'Acquise',l:'Commission acquise',cat:'Commission',r:1,nw:1,v:x=>chf(x.acquise)},ver:{t:'Versé',cat:'Commission',r:1,nw:1,v:x=>chf(x.verse)},
+      solde:{t:'Solde',cat:'Commission',r:1,nw:1,f:x=>'<b>'+chf(x.solde)+'</b>',v:x=>chf(x.solde)},exig:{t:'Exigible',l:'Commission exigible',cat:'Commission',nw:1,v:x=>x.exigible?'Oui':''},
+      statut:{t:'Statut',cat:'Commission',nw:1,f:x=>'<span class="nx-tag '+x.statut[1]+'">'+x.statut[0]+'</span>',v:x=>x.statut[0]}}});
+    sgtabDef('appV',{titre:'Apports de projets · versements',std:['date','coll','projet','montant','rem'],cat:{
+      date:{t:'Versé le',cat:'Versement',nw:1,v:v=>dt(v.DATE)},coll:{t:'Collaborateur',cat:'Versement',ok:tous,v:v=>nomS(v.STAFF_ID)},
+      projet:{t:'Projet',cat:'Projet',f:v=>{ const p=DS.get('project',v.PROJECT_ID); return p?projet(p):'<span style="color:var(--s-gris)">acompte sur l’ensemble</span>'; },v:v=>{ const p=DS.get('project',v.PROJECT_ID); return p?pj(p):'acompte sur l’ensemble'; }},
+      num:{t:'N° du projet',cat:'Projet',nw:1,v:v=>(DS.get('project',v.PROJECT_ID)||{}).NUMBER||''},mo:{t:'Maître d’ouvrage',cat:'Projet',v:v=>mo(DS.get('project',v.PROJECT_ID))},
+      montant:{t:'Montant',cat:'Versement',r:1,nw:1,v:v=>chf(v.MONTANT),sum:L=>sV(L,v=>v.MONTANT)},rem:{t:'Remarque',cat:'Versement',v:v=>v.REMARQUE||''}}});
+    sgtabDef('appY',{titre:'Apports de projets · évolution par année',std:['annee','da','dv','sol'],cat:{
+      annee:{t:'Année',cat:'Année',nw:1,v:r=>String(r.y)},da:{t:'Commission acquise',cat:'Montants',r:1,nw:1,v:r=>chf(r.da)},dv:{t:'Versé',cat:'Montants',r:1,nw:1,v:r=>chf(r.dv)},
+      sol:{t:'Solde à verser en fin d’année',cat:'Montants',r:1,nw:1,f:r=>'<b>'+chf(r.sol)+'</b>',v:r=>chf(r.sol)}}});
+    const tabS=S.length?sgtabTableauX('appS',S,null,{cls:'sg-apports',tot:{lib:'Total'},tr:x=>' class="'+(x.id===sel?'sel':'')+'" data-fn="s_'+x.id+'" title="'+(x.id===sel?'Afficher tous les collaborateurs':'Afficher le détail')+'" style="cursor:pointer"'})
       :'<div class="nx-empty">Aucun apport enregistré. « Nouvel apport » : choisissez le collaborateur et le projet qu’il a apporté.</div>';
-    const tabA=XS.length?'<table class="nx-tbl"><tr><th>Projet</th>'+(cur?'':'<th>Collaborateur</th>')+'<th>Apporté le</th><th class="r">Travaux TTC</th><th class="r">Taux</th><th class="r">Honoraires HT</th><th>Facturé HT</th><th class="r">Encaissé TTC</th><th class="r">Acquise</th><th class="r">Versé</th><th class="r">Solde</th><th>Statut</th><th></th></tr>'
-      +XS.map(x=>{ const i=x.a.ID, f=x.contratHT?x.fHT/x.contratHT:null;
-        return '<tr><td'+(x.p?' data-ref="p:'+x.p.ID+'" style="cursor:pointer"':'')+'>'+projet(x.p)+'</td>'+(cur?'':'<td>'+nxE(nomS(x.a.STAFF_ID))+'</td>')
-          +'<td style="white-space:nowrap">'+(x.a.DATE?dfr(x.a.DATE):'—')+(x.a.FINAL?'<br><small>décompte final '+dfr(x.a.FINAL)+'</small>':'')+'</td>'
-          +'<td class="r" title="'+(x.travSaisi?'Montant saisi':'Selon les contrats d’honoraires (CFC 1, 2, 4, 5 et 9, TTC)')+'">'+(x.trav?nxCHF(x.trav):'<span style="color:var(--s-orange)">à saisir</span>')+(x.travSaisi?' <small>saisi</small>':'')+'</td>'
-          +'<td class="r" title="'+nxE(x.tauxSaisi?'Taux convenu pour ce projet':sgCommTexte(x.C)+' — selon le '+x.C.src)+'">'+sgPcT(x.t)+' %'+(x.tauxSaisi?' <small>convenu</small>':'')+'</td>'
-          +'<td class="r">'+(x.contratHT?nxCHF(x.contratHT):'—')+'</td>'
-          +'<td style="white-space:nowrap">'+nxCHF(x.fHT)+(f!=null?' '+sgBarre(Math.min(1,f))+' '+sgPct(f):'')+'</td>'
-          +'<td class="r">'+nxCHF(x.encTTC)+(x.ouvertes?'<br><small style="color:var(--s-orange)">'+x.ouvertes+' facture'+(x.ouvertes>1?'s':'')+' ouverte'+(x.ouvertes>1?'s':'')+'</small>':'')+'</td>'
-          +'<td class="r">'+nxCHF(x.acquise)+'</td><td class="r">'+nxCHF(x.verse)+'</td><td class="r"><b>'+nxCHF(x.solde)+'</b></td>'
-          +'<td><span class="nx-tag '+x.statut[1]+'">'+x.statut[0]+'</span></td>'
-          +'<td style="white-space:nowrap;text-align:right"><button class="nx-btn" data-fn="v_'+i+'">Versement</button> <button class="nx-btn" data-fn="e_'+i+'">Modifier</button></td></tr>'; }).join('')+'</table>'
+    const tabA=XS.length?sgtabTableauX('appA',XS,null,{apres:{th:'<th></th>',td:x=>'<td><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end"><button class="nx-btn" data-fn="v_'+x.a.ID+'">Versement</button><button class="nx-btn" data-fn="e_'+x.a.ID+'">Modifier</button></div></td>'}})
       :'<div class="nx-empty">Aucun projet apporté'+(cur?' par '+nxE(staffName(cur.s)):'')+'.</div>';
-    const tabV=VS.length?'<table class="nx-tbl"><tr><th>Versé le</th>'+(cur?'':'<th>Collaborateur</th>')+'<th>Projet</th><th class="r">Montant</th><th>Remarque</th><th></th></tr>'
-      +VS.slice().reverse().map(v=>{ const p=DS.get('project',v.PROJECT_ID); return '<tr><td style="white-space:nowrap">'+dfr(v.DATE)+'</td>'+(cur?'':'<td>'+nxE(nomS(v.STAFF_ID))+'</td>')
-        +'<td>'+(p?projet(p):'<span style="color:var(--s-gris)">acompte sur l’ensemble</span>')+'</td><td class="r">'+nxCHF(v.MONTANT)+'</td><td>'+nxE(v.REMARQUE||'')+'</td><td style="text-align:right"><button class="nx-btn" data-fn="w_'+v.ID+'">Modifier</button></td></tr>'; }).join('')
-      +'<tr class="tot"><td>Total</td>'+(cur?'':'<td></td>')+'<td></td><td class="r">'+nxCHF(som(VS,v=>v.MONTANT))+'</td><td></td><td></td></tr></table>'
+    const tabV=VS.length?sgtabTableauX('appV',VS.slice().reverse(),null,{tot:{lib:'Total'},apres:{th:'<th></th>',td:v=>'<td style="text-align:right"><button class="nx-btn" data-fn="w_'+v.ID+'">Modifier</button></td>'}})
       :'<div class="nx-empty">Aucun versement enregistré.</div>';
-    const Y=Object.values(ans).sort((a,b)=>cmp(b.y,a.y)), tabY=Y.length?'<table class="nx-tbl"><tr><th>Année</th><th class="r">Commission acquise</th><th class="r">Versé</th><th class="r">Solde à verser en fin d’année</th></tr>'
-      +Y.map(r=>'<tr><td>'+r.y+'</td><td class="r">'+nxCHF(r.da)+'</td><td class="r">'+nxCHF(r.dv)+'</td><td class="r"><b>'+nxCHF(r.sol)+'</b></td></tr>').join('')+'</table>':'';
+    const Y=Object.values(ans).sort((a,b)=>cmp(b.y,a.y)), tabY=Y.length?sgtabTableauX('appY',Y,null,{}):'';
     const titreSel=cur?staffName(cur.s):'tous les collaborateurs', C0=cur?sgCommCond(cur.id):null, oa=['collab','projets','evol','vers'].includes(nxLS.get('sg3_apport_ong','collab'))?nxLS.get('sg3_apport_ong','collab'):'collab';
     const html='<div class="sg-split">'+sgTete('Finances','Apports de projets','Commission des collaborateurs sur les mandats qu’ils apportent au bureau (contrat de travail, conditions particulières) : un pourcentage des honoraires facturés HT, selon le montant des travaux, versé au décompte final une fois tous les honoraires encaissés.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxCHF(T.acq)+'</div><div class="t">commission acquise (CHF)</div></div><div class="sg-fig"><div class="n">'+nxCHF(T.ver)+'</div><div class="t">versé (CHF)</div></div>'
@@ -29459,7 +29496,7 @@ VIEWS['nx-apports']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcu
            Imprimer, Fonctions ▾ (CSV, copie) */
         +sgPageNav({cle:'sg3_apport_ong',onglets:[{t:'Par collaborateur',arg:'collab',on:oa==='collab',n:S.length||null},{t:'Projets apportés',arg:'projets',on:oa==='projets',n:XS.length||null},{t:'Évolution',arg:'evol',on:oa==='evol'},{t:'Versements',arg:'vers',on:oa==='vers',n:VS.length||null}],
           choix:[S.length?{lb:'Collaborateur',items:[{t:'Tous',fn:'staff',arg:'',on:!cur,ti:'Tous les collaborateurs'},...S.map(x=>({t:staffName(x.s)||'#'+x.id,fn:'staff',arg:x.id,on:x.id===sel}))]}:null],
-          gauche:[{t:'Nouvel apport',i:'plus',fn:'nouveau'},{t:'Nouveau versement',i:'plus',fn:'versement'},'-',{t:'Imprimer',i:'print',fn:'imp',ti:'Apports de projets (PDF)'}],
+          gauche:[{t:'Nouvel apport',i:'plus',fn:'nouveau'},{t:'Nouveau versement',i:'plus',fn:'versement'},'-',{t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau de l’onglet affiché'},{t:'Imprimer',i:'print',fn:'imp',ti:'Apports de projets (PDF)'}],
           droite:[{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]}))
       +'<div><div class="nx-grid">'+sgOngBloc('collab',oa,nxCard('c12','Par collaborateur','<div class="b flush" style="overflow:auto">'+tabS+'</div>')
       +(C0?nxCard('c12','Conditions — '+nxE(titreSel),'<div class="b"><p style="margin:0;font-size:13.5px">'+nxE(sgCommTexte(C0))+'</p><p style="margin:6px 0 0;font-size:12px;color:var(--s-gris);font-weight:300">Selon le '+nxE(C0.src)+' (Ressources humaines ▸ Contrats de travail). Le taux de chaque projet suit le montant des travaux TTC ; un taux convenu peut être saisi par projet. Commission versée au décompte final, une fois tous les honoraires encaissés ; due aussi après le départ du collaborateur.</p></div>'):''))
@@ -29470,19 +29507,16 @@ VIEWS['nx-apports']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcu
     Object.assign(pg0._fn,{nouveau:()=>sgApportDlg(null,cur?cur.id:null),versement:()=>sgVersementDlg(null,cur?cur.id:null,null,null),tous:()=>{ nxLS.set('sg3_apport_staff',''); go('nx-apports'); },
       staff:b=>{ const v=String(b.dataset.arg||''); if(v!==sel){ nxLS.set('sg3_apport_staff',v); go('nx-apports'); } },
       fonctions:b=>sgMenuSous(b,sgFnTable(()=>pg0.querySelector('.sg-ob:not([hidden]) table.nx-tbl'),()=>pg0._fn.csv())),
+      pres:b=>{ const o=nxLS.get('sg3_apport_ong','collab'); sgtabMenu({collab:'appS',projets:'appA',evol:'appY',vers:'appV'}[o]||'appS',b,()=>go('nx-apports')); },
       /* Imprimer (15.11.2026) : les tableaux de la page au graphisme des documents — par collaborateur, projets apportés (du collaborateur choisi ou de tous), versements */
       imp:()=>{ if(!window.SGDH||!SGDH.ouvrir||!S.length){ toast(S.length?'Impression indisponible.':'Rien à imprimer.',true); return; }
-        const pj=p=>p?[p.NUMBER,p.TITLE].filter(Boolean).join(' '):'projet supprimé', un1=c=>cur?[]:[c];
-        const tA={cols:[{t:'Projet'},...un1({t:'Collaborateur'}),{t:'Apporté le'},{t:'Travaux TTC',r:1},{t:'Taux',r:1},{t:'Honoraires HT',r:1},{t:'Facturé HT',r:1},{t:'Encaissé TTC',r:1},{t:'Acquise',r:1},{t:'Versé',r:1},{t:'Solde',r:1},{t:'Statut'}],
-          rows:[{c:['Projets apportés — '+titreSel],g:'g'},...XS.map(x=>({c:[pj(x.p),...un1(nomS(x.a.STAFF_ID)),(x.a.DATE?dfr(x.a.DATE):'')+(x.a.FINAL?' · décompte final '+dfr(x.a.FINAL):''),x.trav?nxCHF(x.trav):'à saisir',sgPcT(x.t)+' %',x.contratHT?nxCHF(x.contratHT):'',nxCHF(x.fHT),nxCHF(x.encTTC),nxCHF(x.acquise),nxCHF(x.verse),nxCHF(x.solde),x.statut[0]],g:''}))]};
-        const tV={cols:[{t:'Versé le'},...un1({t:'Collaborateur'}),{t:'Projet'},{t:'Montant',r:1},{t:'Remarque'}],
-          rows:[{c:['Versements — '+titreSel],g:'g'},...VS.slice().reverse().map(v=>{ const p=DS.get('project',v.PROJECT_ID); return {c:[dfr(v.DATE),...un1(nomS(v.STAFF_ID)),p?pj(p):'acompte sur l’ensemble',nxCHF(v.MONTANT),v.REMARQUE||''],g:''}; }),{c:['Total',...un1(''),'',nxCHF(som(VS,v=>v.MONTANT)),''],g:'t'}]};
+        /* chaque tableau avec les colonnes de sa présentation (Standard = les colonnes de la page) */
+        const tb=(cle,L,lib,tot)=>{ const cs=sgtabCols(cle), T0=tot&&L.length?sgtabTotal(cs,L,null,'Total'):null;
+          return {cols:cs.map(c=>({t:c.t,r:c.r?1:0})),rows:[{c:[lib],g:'g'},...L.map(r=>({c:sgtabTexte(cs,r,null),g:''})),...(T0?[{c:T0,g:'t'}]:[])]}; };
+        const t1=tb('appS',S,'Par collaborateur',1), tA=tb('appA',XS,'Projets apportés — '+titreSel), tV=tb('appV',VS.slice().reverse(),'Versements — '+titreSel,1);
         SGDH.ouvrir({cle:'Apports de projets',titre:'Apports de projets',p:null,lb:'Finances · Documents',type:'Finances',format:'paysage',sous:titreSel,
           meta:[['Collaborateur',cur?staffName(cur.s):'Tous les collaborateurs'],['Total commission acquise',nxCHF(T.acq)+' CHF'],['Total versé',nxCHF(T.ver)+' CHF'],['Total solde à verser',nxCHF(T.acq-T.ver)+' CHF'],['Total dont exigible',nxCHF(T.exi)+' CHF']],
-          cols:[{t:'Collaborateur'},{t:'Projets',r:1},{t:'Facturé HT',r:1},{t:'Commission acquise',r:1},{t:'Versé',r:1},{t:'Solde',r:1},{t:'dont exigible',r:1},{t:'Prévue (contrats entiers)',r:1}],
-          rows:[{c:['Par collaborateur'],g:'g'},...S.map(x=>({c:[(staffName(x.s)||'#'+x.id)+(x.s&&!+x.s.ISACTIVE?' (ancien)':''),String(x.xs.length),nxCHF(x.fHT),nxCHF(x.acq),nxCHF(x.ver),nxCHF(x.solde),x.exi>0.5?nxCHF(x.exi):'',nxCHF(x.prev)],g:''})),
-            {c:['Total',String(X.length),nxCHF(T.fHT),nxCHF(T.acq),nxCHF(T.ver),nxCHF(T.acq-T.ver),nxCHF(T.exi),nxCHF(T.prev)],g:'t'}],
-          suite:[...(XS.length?[tA]:[]),...(VS.length?[tV]:[])]}); },
+          cols:t1.cols,rows:t1.rows,suite:[...(XS.length?[tA]:[]),...(VS.length?[tV]:[])]}); },
       csv:()=>{ const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"', r0=n=>Math.round(+n||0), rows=[['Collaborateur','Projet','Titre','Apporté le','Décompte final','Travaux TTC','Taux %','Honoraires HT','Facturé HT','Encaissé TTC','Commission prévue','Commission acquise','Versé','Solde','Statut']]
         .concat(XS.map(x=>[nomS(x.a.STAFF_ID),x.p?x.p.NUMBER:'',x.p?x.p.TITLE:'',x.a.DATE||'',x.a.FINAL||'',r0(x.trav),x.t,r0(x.contratHT),r0(x.fHT),r0(x.encTTC),r0(x.prevue),r0(x.acquise),r0(x.verse),r0(x.solde),x.statut[0]]),
           [[]],[['Versements']],[['Versé le','Collaborateur','Projet','Montant','Remarque']],VS.map(v=>[v.DATE||'',nomS(v.STAFF_ID),(DS.get('project',v.PROJECT_ID)||{}).NUMBER||'',v.MONTANT,v.REMARQUE||'']));

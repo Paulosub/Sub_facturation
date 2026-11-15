@@ -3162,8 +3162,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   exactement ses colonnes, dans son ordre (classe `sgtab-pres` : les règles de largeur ne s'appliquent plus, `fx_theme.css`). Boutons « Présentation ▾ » et
   « Imprimer » (liste affichée à l'écran, au graphisme des documents) ajoutés à côté de « + Nouveau contrat » / « + Nouvelle facture » ; menu placé sous le bouton
   malgré le cadre (position décalée de celle du cadre). Les offres et contrats de la page du projet (même liste posée, `EMB`) suivent la même présentation.
-  **Reste à faire** : Apports de projets, Coût de revient, autres petits tableaux (Occupation et effectif, Situation des heures : tableaux croisés, sans
-  présentation pour l'instant) ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  **Lot 7 (16.11.2026)** : Ressources humaines ▸ Coût de revient (catalogue `coutrevient` : les sept champs de saisie restent des champs, colonnes calculées,
+  « Appliquer » en dernière colonne ; Imprimer : les paramètres, puis les colonnes choisies en deux tableaux comme avant — données saisies (catégorie « Saisie »),
+  coût de revient (« Calcul ») ; Standard = l'impression d'avant) et Finances ▸ Apports de projets (`appS` par collaborateur avec la ligne Total, `appA` projets
+  apportés, `appV` versements avec la ligne Total, `appY` évolution par année ; colonne Collaborateur proposée seulement pour « Tous » (`ok`), comme avant ;
+  « Présentation ▾ » agit sur le tableau de l'onglet affiché ; Versement / Modifier restent à droite et passent l'un sous l'autre si la place manque ; Imprimer =
+  colonnes de la présentation de chaque tableau ; CSV inchangé, c'est un export complet). Lignes à champs de saisie centrées en hauteur
+  (`.nx-tbl.sgtab-t tr:has(input.inp) td`, aussi Heures dues et vacances).
+  **Reste à faire** : tableaux croisés (Occupation et effectif, Situation des heures), sans présentation pour l'instant ; sources : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.

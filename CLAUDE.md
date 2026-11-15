@@ -2954,7 +2954,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   un tableau par page, chacun avec ses colonnes) ; titre vide (Indicateurs) : celui de l'onglet ; tableau trop large (18 colonnes du Suivi RH) : colonnes de nombres
   resserrées. Modèle d'une autre forme : rapport d'avant (bloc 31). Pas repris : Contrats des projets et Facturation des projets (leurs rapports passent par les
   formulaires de la Bibliothèque, `tplPrint`).
-  **Pas changés** : les écrans d'Archives (Suivi & écarts, Controlling, Rapports de temps, Notes de frais…) gardent leurs documents — l'enveloppe ne s'applique pas quand
+  **Pas changés (décision de Paulo, 15.11.2026, à la question posée : « Non, laisser »)** : les écrans d'Archives (Suivi & écarts, Controlling, Rapports de temps, Notes de frais…) gardent leurs documents — l'enveloppe ne s'applique pas quand
   l'écran ouvert est rangé dans Archives (`archives()`) ; DeltaSub.html seul : documents d'origine. `sg3_coco_docs.js` exporte ses outils de mise en page
   (`SGCD.outils` : mesure, etaler, paginer). Rien n'est écrit dans la base. Débogage : `window.SGDH`.
   Vérifié le 15.11.2026 hors de l'aperçu (99TST) : les sept documents depuis leurs boutons (2 à 117 pages, 3,3 s pour le plus long), paysage et portrait, page de garde

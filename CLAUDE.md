@@ -2839,6 +2839,21 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   trois écrans sont retirés de `SGMV.LISTE` (`sg3_ecrans.js`). DeltaSub.html seul garde l'écran d'origine. Vérifié hors de l'aperçu (99TST : 2 en cours, 1 urgente,
   réglées ; fenêtre, clic droit, changement de collaborateur, cinq visuels), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant :
   `subgestion3/_backup_20261115_1730_avant_taches_bureau/`.
+  **Lot 3, sixième étape — membres de l'équipe (même jour, fin de `sg3_ecrans.js`, `EQUIPE`)** : Administration ▸ Équipe ▸ Membres, Tous les membres, Anciens membres
+  (`collab-actuels`, `collab-tous`, `collab-anciens`) = page des listes de l'app (`monter`) à la place de la grille du moteur : bandeau, chiffres (membres actuels,
+  anciens, arrivées et départs de l'année), choix Actuels · Tous · Anciens (= les trois entrées du menu, selon les droits ; absent si une seule liste est permise),
+  recherche, tableau (initiales en pastille, membre et fonction, appartient à, téléphone, mobile, courriel, engagement, départ, heures bloquées jusqu'au ; anciens en
+  gris dans « Tous » ; ordre du moteur `SORTORDER`). Un clic = fiche du membre (`nx-collab`) ; clic droit = les fonctions de la barre du moteur pour ce membre —
+  Modifier (`editStaff`), Coût de revient (`staffRates`), Durée prévue (`staffTargets`), Vacances (`staffHolidays`), Disponibilité (`staffProjectTimes`), Verrouillage
+  des heures (`staffFreeze`), Courriel (`mailList`), Supprimer (`delStaff`) ; « Nouveau membre » dans le bandeau ; ⋯ : courriel aux membres affichés, copie, CSV.
+  Droits (`peutEq`) : fonctions d'écriture seulement avec « équipe : taux » du profil ET le droit de l'ancien logiciel (`staffNew`, `staffEdit`, `staffDelete`) ;
+  collaborateur et chef de projet (équipe : liste) : membres actuels, fiche et courriel seulement. Pas repris : la sélection multiple de la grille (courriel et
+  verrouillage des heures de plusieurs membres choisis à la fois — le courriel se fait sur la liste affichée, le verrouillage membre par membre). Ces trois écrans
+  sont retirés de `SGMV.LISTE`. Vérifié hors de l'aperçu (trois listes, recherche, clic droit, fenêtre du coût de revient, fiche, profils collaborateur et chef de projet
+  simulés avec leurs droits, cinq visuels), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_1745_avant_membres/`.
+  **Reste du lot 3** : Temps de l'équipe (`mg-heures`), Finances (`mg-*`, `fact-controle`), Planification RH, Suivi RH, Bibliothèque (`tpl-*`), `config` — bandeau et
+  présentation épurée posés, contenu pas encore refait ; page « Paramètres » de l'estimation en onglet. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
+  (`{...SG_ACC, profil, droits: sgDroitsRole(profil)}`), changer `profil` seul laisse les droits de l'administrateur.
   **Lot 1, analyse des heures — cinq propositions (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie
   de l'app (`subgestion3/_backup_20261115_maquette_analyse_heures/` : `proposition_analyse_heures.js` et ses sources ; page `proposition_analyse_heures.html` de l'aperçu),

@@ -1671,3 +1671,8 @@ html[data-vep] #main>.cols,html[data-vep] #main>.col{padding:8px 24px 14px!impor
 .sgmv-dom{flex:0 0 auto;container-type:inline-size}
 .sgmv-dom .sg-tete{margin:0 0 8px}
 .sgmv-corps{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+/* Équipe ▸ Membres (sg3_ecrans.js) : anciens membres en gris dans « Tous », initiales en pastille */
+.sgmv-eq td{vertical-align:middle}
+.sgmv-eq tr.anc td{color:var(--s-gris)}
+.sgmv-eq tr.anc .sgsv-ini{background:var(--s-gris)}
+.sgmv-eq th:first-child,.sgmv-eq td:first-child{width:44px}

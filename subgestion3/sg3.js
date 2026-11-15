@@ -429,7 +429,7 @@ const nxKpi=(ico,l,v,s,bar,go_,hero)=>'<div class="nx-kpi'+(go_?' lnk':'')+(hero
 function nxPage(m,html){ const p=h('div',{class:'nx-page'}); p.innerHTML='<div class="nx-wrap">'+html+'</div>'; m.append(p);
   p.addEventListener('click',e=>{ const t=e.target.closest('[data-go],[data-ref],[data-fn]'); if(!t||!p.contains(t)) return;
     if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); else if(t.dataset.fn&&p._fn&&p._fn[t.dataset.fn]) p._fn[t.dataset.fn](t); });
-  p._fn={}; return p; }
+  p._fn={sgong:t=>sgOng(p,t)}; return p; }   /* sgong : onglets d'une page (sgPageNav), blocs montrés ou cachés sur place */
 const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro"><div class="sg-lbl'+(lbl?'':' vide')+'">'+nxE(lbl||'')+'</div><h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
 /* En-tête des pages de l'app = bandeau des listes (refonte d'ensemble, lot 2, 15.11.2026 ; Paulo : « refonte complète de l'app pour avoir une cohérence des éléments de
    l'app identique aux éléments définis dans l'app notamment dans devis ») : monogramme de la page, chapitre, titre, texte de présentation (deux lignes au plus, entier en
@@ -440,7 +440,61 @@ const sgMono=t=>{ const s=String(t==null?'':t).replace(/<[^>]*>/g,' ').replace(/
 const sgTete=(lbl,title,txt,extra,mono)=>{ const brut=String(txt||'').replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/"/g,'&quot;');
   /* chiffres de la page (« sg-figs » : nombre puis légende) → chiffres des listes (« nx-kpi » : libellé puis valeur), pour qu'ils suivent aussi les visuels à l'essai */
   const ex=String(extra||'').replace(/<div class="sg-figs"([^>]*)>/g,'<div class="nx-kpis sg-tkp"$1>').replace(/<div class="sg-fig"><div class="n">([\s\S]*?)<\/div><div class="t">([\s\S]*?)<\/div><\/div>/g,(m,n,t)=>{ const l=String(t).trim(); return '<div class="nx-kpi"><div class="l">'+l.charAt(0).toLocaleUpperCase('fr')+l.slice(1)+'</div><div class="v">'+n+'</div></div>'; });
-  return '<header class="sg-tete"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+nxE(mono||sgMono(title))+'</div><div class="sgfh-nm">'+(lbl?'<div class="lb">'+nxE(lbl)+'</div>':'')+'<h2>'+title+'</h2>'+(txt?'<div class="sgfh-meta" title="'+brut+'">'+txt+'</div>':'')+'</div></div></div>'+ex+'</header>'; };
+  /* une seule rangée de chiffres, comme le devis ouvert (15.11.2026) : au-delà de cinq chiffres, autant de colonnes que de chiffres (--sgk), valeurs à taille qui suit la largeur */
+  const nK=(ex.match(/class="nx-kpi[ "]/g)||[]).length, ex2=nK>5?ex.replace(/<div class="nx-kpis sg-tkp"(?![^>]*style=)/,'<div class="nx-kpis sg-tkp sg-kn" style="--sgk:'+nK+'"'):ex;
+  return '<header class="sg-tete"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+nxE(mono||sgMono(title))+'</div><div class="sgfh-nm">'+(lbl?'<div class="lb">'+nxE(lbl)+'</div>':'')+'<h2>'+title+'</h2>'+(txt?'<div class="sgfh-meta" title="'+brut+'">'+txt+'</div>':'')+'</div></div></div>'+ex2+'</header>'; };
+/* Navigation et paramètres d'une page = ceux du devis ouvert (15.11.2026, Paulo, deux captures à l'appui : « voici à quoi devrait ressembler la navigation et les
+   paramètres pour toutes les fenêtres […] reprendre le principe de l'image 1 à appliquer sur toutes les pages de administration, heures, etc. ») : sous le bandeau et la
+   rangée de chiffres, 1) la ligne des onglets — onglets à gauche, choix d'affichage en texte à droite (« CFC Tout · 3 · 2 · 1 » du devis) —, 2) la barre en texte —
+   actions à gauche (icône + libellé), « Fonctions ▾ » à droite. Plus aucun bouton encadré dans le bandeau. À passer à sgTete après les chiffres (extra).
+   sgPageNav({cle, onglets:[{t,arg,on,n,ti,fn}], choix:[{lb,si,items:[{t,fn,arg,on,ti}]}|{html}], gauche:[{t,i,fn,go,arg,ti,dis,dd,on,si}|'-'|{html}], droite:[…]})
+   Onglet sans « fn » : blocs sgOngBloc(k,…) montrés ou cachés sur place (action commune « sgong » de nxPage), choix gardé par poste sous « cle » ; « si » = élément
+   propre à un ou plusieurs onglets (caché ailleurs). Les clics passent par data-fn / data-go (nxPage) ; l'argument est dans b.dataset.arg. */
+const sgKpi=(l,v,s,c,ti)=>'<div class="nx-kpi"'+(ti?' title="'+nxE(ti)+'"':'')+'><div class="l">'+nxE(l)+'</div><div class="v'+(c?' '+c:'')+'">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>';
+const sgKpis=L=>'<div class="nx-kpis sg-tkp">'+L.filter(Boolean).join('')+'</div>';
+const sgOngBloc=(k,cur,html)=>'<div class="sg-ob" data-sgv="'+k+'"'+(String(k).split(' ').includes(cur)?'':' hidden')+'>'+html+'</div>';
+function sgOng(pg,b){ const nav=b.closest('.sg-onglets'), k=b.dataset.arg; if(!nav||k==null) return; if(nav.dataset.cle) nxLS.set(nav.dataset.cle,k);
+  nav.querySelectorAll('button').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-selected',on?'true':'false'); });
+  pg.querySelectorAll('[data-sgv],[data-sgs]').forEach(e=>{ e.hidden=!String(e.dataset.sgv||e.dataset.sgs).split(' ').includes(k); }); }
+const sgPageNav=o=>{ o=o||{}; const cur=((o.onglets||[]).find(x=>x.on)||{}).arg;
+  const at=x=>(x.fn?' data-fn="'+x.fn+'"':'')+(x.go?' data-go="'+x.go+'"':'')+(x.arg!=null?' data-arg="'+nxE(String(x.arg))+'"':'')+(x.ti?' title="'+nxE(x.ti)+'"':'')+(x.dis?' disabled':'')
+    +(x.si?' data-sgs="'+x.si+'"'+(String(x.si).split(' ').includes(cur)?'':' hidden'):'');
+  const tb=x=>x==='-'?'<span class="sg-tsep"></span>':x.html!=null?x.html:'<button type="button" class="sg-tb'+(x.on?' on':'')+'"'+at(x)+'>'+(x.i?nxSvg(x.i):'')+'<span>'+nxE(x.t)+'</span>'+(x.dd?'<span class="dd"></span>':'')+'</button>';
+  const ong=(o.onglets||[]).length?'<div class="sg-onglets" role="tablist"'+(o.cle?' data-cle="'+o.cle+'"':'')+'>'+o.onglets.map(x=>'<button type="button" role="tab" aria-selected="'+(x.on?'true':'false')+'" class="'+(x.on?'on':'')+'"'
+      +at(Object.assign({fn:'sgong'},x))+'>'+nxE(x.t)+(x.n!=null?'<small>'+nxE(String(x.n))+'</small>':'')+'</button>').join('')+'</div>':'';
+  const ch=(o.choix||[]).filter(Boolean).map(g=>g.html!=null?g.html:'<span class="sg-nch-g"'+(g.si?' data-sgs="'+g.si+'"'+(String(g.si).split(' ').includes(cur)?'':' hidden'):'')+'>'+(g.lb?'<span class="lb">'+nxE(g.lb)+'</span>':'')
+      +g.items.map(x=>'<button type="button" class="'+(x.on?'on':'')+'" aria-pressed="'+(x.on?'true':'false')+'"'+at(x)+'>'+nxE(x.t)+'</button>').join('')+'</span>').join('');
+  const G=(o.gauche||[]).filter(Boolean), D=(o.droite||[]).filter(Boolean);
+  return (ong||ch?'<div class="sg-nav">'+(ong||'<span class="sg-nfin"></span>')+(ch?'<div class="sg-nch">'+ch+'</div>':'')+'</div>':'')
+    +(G.length||D.length?'<div class="sg-tbar">'+G.map(tb).join('')+'<span class="sg-tfin"></span>'+D.map(tb).join('')+'</div>':''); };
+/* menu ouvert sous un bouton de la barre (« Fonctions ▾ », « Imprimer ▾ ») */
+const sgMenuSous=(el,items)=>{ const r=el.getBoundingClientRect(); return sgMenuAt(r.left,r.bottom+2,items); };
+/* Boutons d'action restés dans un bandeau jaune (listes, modules de la page du projet, Bibliothèque, Contacts…) → barre en texte sous les chiffres (15.11.2026, même
+   principe que sgPageNav, pour toutes les pages sans les réécrire une à une) : les boutons sont DÉPLACÉS tels quels (attributs, gestionnaires, clics délégués gardés),
+   « ⋯ » devient « Fonctions ▾ » à droite ; un bouton de retour (« ‹ … ») et les indications restent dans le bandeau ; les boutons d'action de la ligne des filtres
+   (.sgsv-fil .dr) rejoignent la barre. Point d'insertion : après les chiffres et la ligne des filtres qui suivent le bandeau. Fenêtres et documents ouverts : pas touchés. */
+const SG_TB_SAUTE='.nx-kpis,.sgsv-fil,.sgpc-dem,.sgpl-bar,.sg-nav';
+function sgBandeauVersBarre(root){ if(!root) return;
+  root.querySelectorAll('.sgfh-tete').forEach(bd=>{ if(bd.closest('.ov,.dlg,.sgdv,.sglv,.sg-visu')||!bd.parentNode) return;
+    const act=[...bd.querySelectorAll('button.nx-btn')].filter(b=>!/^\s*‹/.test(b.textContent||'')), par=bd.parentNode;
+    const run=[]; for(let n=bd.nextElementSibling;n;n=n.nextElementSibling){ if(n.matches(SG_TB_SAUTE)||(n.tagName==='DIV'&&!n.className&&(!n.children.length||n.firstElementChild.matches('.nx-kpis')))) run.push(n); else break; }
+    /* chiffres toujours juste sous le bandeau (permis : la ligne des demandes passait avant) */
+    const kp=run.find(x=>x.matches('.nx-kpis')); if(kp&&run[0]!==kp){ bd.after(kp); run.splice(run.indexOf(kp),1); run.unshift(kp); }
+    let ref=run.length?run[run.length-1]:bd;
+    const fil=run.filter(x=>x.matches('.sgsv-fil,.sgpl-bar')).flatMap(x=>[...x.querySelectorAll(x.matches('.sgsv-fil')?'.dr button.nx-btn':'button.nx-btn')]);
+    if(!act.length&&!fil.length) return;
+    let tb=ref.nextElementSibling; if(!tb||!tb.matches('.sg-tbar.sg-tbar-auto')){ tb=document.createElement('div'); tb.className='sg-tbar sg-tbar-auto'; tb.innerHTML='<span class="sg-tfin"></span>'; ref.after(tb); }
+    const fin=tb.querySelector('.sg-tfin'), vides=new Set();
+    [...act,...fil].forEach((b,i)=>{ vides.add(b.parentNode); const plus=/^\s*⋯\s*$/.test(b.textContent||'');
+      b.classList.remove('nx-btn','pri','sm'); b.classList.add('sg-tb'); b.style.height='';
+      if(plus){ b.innerHTML=nxSvg('gear')+'<span>Fonctions</span><span class="dd"></span>'; if(!b.title) b.title='Autres actions'; fin.after(b); return; }
+      const tn=[...b.childNodes].reverse().find(n=>n.nodeType===3&&n.nodeValue.trim()); if(tn&&/\s*▾\s*$/.test(tn.nodeValue)){ tn.nodeValue=tn.nodeValue.replace(/\s*▾\s*$/,''); b.insertAdjacentHTML('beforeend','<span class="dd"></span>'); }
+      if(i===act.length&&act.length) fin.before(Object.assign(document.createElement('span'),{className:'sg-tsep'}));
+      fin.before(b); });
+    vides.forEach(c=>{ if(c&&c!==bd&&!c.children.length&&!String(c.textContent||'').trim()&&!c.matches('.sgfh-tete')) c.remove(); }); }); }
+{ const brancher=()=>{ const m=document.getElementById('main'); if(!m){ setTimeout(brancher,300); return; } let en=false;
+    new MutationObserver(()=>{ if(en) return; en=true; try{ sgBandeauVersBarre(m); }catch(e){ console.error(e); } en=false; }).observe(m,{childList:true,subtree:true}); sgBandeauVersBarre(m); };
+  brancher(); }
 
 /* ═══ Accueil ═══ */
 VIEWS['nx-home']={

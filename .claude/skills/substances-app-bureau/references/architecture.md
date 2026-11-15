@@ -243,3 +243,11 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   'g' titre de groupe, '1' sous-ligne, 's' sous-total, 't' total, 'x' commentaire sous sa ligne ; `sgDocTableau({titre, p, table, meta, sous})` reprend un `table.nx-tbl`
   affiché. À employer pour toute nouvelle impression de liste plutôt que `sgImprimer`. Écrans à catégories de l'ancien logiciel : `SGMV.CATS` (catégories en onglets),
   `SGMV.CHIFFRES` (chiffres du bandeau, calculés par les fonctions des tableaux du moteur), `SGMV.habiller`.
+
+### Navigation et paramètres d'une page (15.11.2026)
+
+Ordre de toute page de SUBGestion 3, calqué sur le devis général ouvert : bandeau jaune sans bouton encadré (seul « ‹ … » de retour), une rangée de chiffres,
+la ligne des onglets (onglets à gauche, choix en texte à droite), la barre en texte (actions à gauche, « Fonctions ▾ » à droite). Pour une page écrite avec
+`sgTete` : passer `sgKpis([sgKpi(…)])` (ou les `sg-figs`) puis `sgPageNav({cle, onglets, choix, gauche, droite})` dans l'argument `extra` ; les blocs d'un onglet
+sans `fn` se déclarent avec `sgOngBloc(k, cur, html)`. Les pages plus anciennes qui posent des boutons dans un bandeau `.sgfh-tete` sont corrigées à l'affichage
+par `sgBandeauVersBarre` (MutationObserver sur `#main`) : ne pas en ajouter de nouvelles.

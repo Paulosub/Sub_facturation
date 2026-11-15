@@ -2942,6 +2942,35 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   données » et « Collaborateurs actuels — coût de revient ». Titres abrégés quand la page est trop étroite (`ABR` de `sg3_docs_heures.js` étendu aux titres RH :
   « H. dues », « Vac. (h) », « Occup. », « Taux interne », « Revient / h fact. »…). Vérifié hors de l'aperçu (base de test) : 4, 2 et 4 pages, balayage des
   120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_2002_avant_imprimer_rh/`.
+  **Navigation et paramètres des pages = ceux du devis ouvert (15.11.2026, Paulo, deux captures — le devis général ouvert, et Administration ▸ Rentabilité des
+  projets avec ses boutons encadrés dans le bandeau : « voici à quoi devrait ressembler la navigation et les paramètres pour toutes les fenêtres […] reprendre le
+  principe de l'image 1 à appliquer sur toutes les pages de administration, heures, etc. »)** — ordre de toute page : bandeau jaune SANS bouton encadré (seul un
+  bouton de retour « ‹ … » y reste, comme « ‹ Devis du projet ») ; UNE rangée de chiffres collée au bandeau, sans filet noir (au-delà de cinq chiffres, autant de
+  colonnes, valeurs qui suivent la largeur : `--sgk`, `.sg-kn`) ; la ligne des onglets (onglets à gauche, choix d'affichage en texte à droite : année, période,
+  collaborateur, recherche) ; la barre en texte (actions à gauche avec icône, « Fonctions ▾ » à droite : export CSV, copie du tableau…). Outils (`sg3.js`, après
+  `sgTete`) : `sgPageNav({cle, onglets:[{t,arg,on,n,fn}], choix:[{lb,items}|{html}], gauche, droite})`, `sgKpi`, `sgKpis`, `sgOngBloc(k,cur,html)` (onglet sans `fn` :
+  blocs montrés ou cachés sur place par l'action commune `sgong` de `nxPage`, choix gardé par poste sous `cle` ; attributs `data-sgv` / `data-sgs`), `sgMenuSous` ;
+  `sgFnTable`, `sgChoixAn` (`sg3_plus.js`) ; styles `.sg-nav`, `.sg-nch`, `.sg-tbar`, `.sg-tb`, `.sg-tsep`, `.sg-tfin` (fin de `sg3.css`, mesures du devis).
+  Pages réécrites : Rentabilité des projets (Projets en cours | En cours et terminés ; six chiffres en une rangée), Apports de projets (Par collaborateur | Projets
+  apportés | Évolution | Versements, collaborateur à droite), Occupation et effectif (les trois tableaux en onglets, année à droite), Contrats de travail
+  (Collaborateurs actuels | Avec les anciens), Heures dues et vacances (Heures dues et vacances | Jours fériés | Rappel de la CCT, année à droite), Bouclement annuel
+  (sort des heures sup. positives et année à droite, à la place des boutons radio), Coût de revient (Collaborateurs | Paramètres), Situation des heures
+  (regroupements en onglets, période à droite, projet dans la barre), Gestion des utilisateurs, Paramètres système, Préférences (action dans la barre), Réunir les
+  registres, Données & sauvegarde (chiffres sans icônes dans l'en-tête ; Sauvegarder maintenant, Exporter, Importer ; Fonctions ▾ : dossier de sauvegarde, fichiers
+  joints, Sauvegarde Facturation, Réunir les registres, outils), Contrôle des heures (« Par collaborateur | Par projet » sorti du bandeau en onglets, chiffres sans
+  icônes), Mes projets et Liste des adresses (bandeau, chiffres, onglets, recherche à droite ; adresses : Imprimer ▾, Courriel …, Fonctions ▾).
+  **Toutes les autres pages** : `sgBandeauVersBarre` (`sg3.js`, MutationObserver sur `#main`) DÉPLACE tels quels (attributs, gestionnaires, clics délégués gardés) les
+  boutons encadrés restés dans un bandeau — et ceux de la ligne des filtres (`.sgsv-fil .dr`) et de la barre du planning (`.sgpl-bar`) — dans une barre en texte posée
+  après les chiffres et la ligne des filtres (`SG_TB_SAUTE`) ; « ⋯ » devient « Fonctions ▾ » ; un bouton « ‹ … » reste ; chiffres remis juste sous le bandeau
+  (permis) ; fenêtres et documents ouverts non touchés (devis, contrôle des coûts, soumission, contrat d'entreprise ouverts : vérifié). Concerne les listes
+  (Descriptifs & devis, Contrôle des coûts, Estimations, Appels d'offres, Membres, Tâches), les modules de la page du projet (Séances, Notes, Tâches, Frais,
+  Avancement, Factures, Devis général, Soumission, Contrats d'entreprise, Planning, PV MO, Permis), Bibliothèque (Documents Substances, modèles d'impression) et
+  Contacts (Listes de diffusion, Catégories). La ligne des filtres des listes (`html .sgsv-fil`), la barre du planning et la ligne des demandes du permis ont le trait
+  de la ligne des onglets (filet fin dessous, plus de filet noir dessus). Pas changés : Cockpit, vues d'ensemble et page du projet (`sgIntro`), Annuaire (proposition
+  D), écrans de Facturation dans leur cadre (bandeau seul, choix du 15.11.2026), Archives ; boutons des lignes de tableau (Appliquer, Valider, Contrôler…) et des
+  cartes à formulaire. ⚠ Nouvelle page : ne pas remettre de bouton encadré dans un bandeau (`sgPageNav` pour la navigation et la barre). Vérifié hors de l'aperçu :
+  pages réécrites et 16 modules de 99TST (boutons déplacés : menus et fenêtres s'ouvrent), six visuels, balayage des 120 écrans, `nas/nettoyer.py`,
+  `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_2026_avant_navigation_pages/`, `SUBGestion3_backup_20261115_2026_avant_navigation_pages.html`.
   **Registre des décisions des PV MO (même soir, lot 5)** : « Imprimer le registre » (page du projet ▸ PV MO ▸ Décisions ; `pmRegistre` de `sg3_suivi.js`) ouvre le même
   document — page de garde (ouvrage, maître de l'ouvrage, période, nombre de décisions), tableau Date · PV · Phase · Décision, le texte de la décision sous son
   titre ; repli sur l'impression d'avant si le bloc 56 manque. Restent à l'ancienne impression (`sgImprimer`, papier des contrats) : le planning (tableau et diagramme)

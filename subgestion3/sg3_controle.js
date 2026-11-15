@@ -204,20 +204,23 @@ VIEWS['nx-controle']={
     const meta=[nbS+' collaborateur'+(nbS>1?'s':''),C.ctl?C.ctl+' inscription'+(C.ctl>1?'s':'')+' à contrôler':'rien à contrôler','une inscription approuvée n’est plus modifiable par le collaborateur'].join(' · ');
     const w=h('div',{class:'sgfh sgc'}); m.append(w);
     w.innerHTML='<div class="sgfh-haut"><div class="sgfh-tete"><div class="sgfh-id"><span class="sgfh-ini">'+nxE(gros)+'</span><div class="sgfh-nm"><div class="lb">Contrôle des heures</div><h2>'+(tous?'Tout le bureau':'Heures de mes projets')+'</h2><div class="sgfh-meta">'+nxE(meta)+'</div></div></div>'
-      +'<div class="sgfh-per"><span class="lbl">'+nxE(P.lib)+'</span><div class="seg sgfh-vues">'+[['collab','Par collaborateur'],['projet','Par projet']].map(([k,t])=>'<button data-fn="vue" data-k="'+k+'" class="'+((st.vue||'collab')===k?'on':'')+'">'+t+'</button>').join('')+'</div></div></div>'
+      +'<div class="sgfh-per"><span class="lbl">'+nxE(P.lib)+'</span></div></div>'
+      /* chiffres sans icônes, puis « Par collaborateur · Par projet » en onglets sous les chiffres, comme le devis ouvert (15.11.2026 : « reprendre le principe de l'image 1 ») ;
+         ils étaient un bouton à deux choix dans le bandeau */
       +'<div class="nx-kpis sgfh-kp">'
-      +'<div class="nx-kpi" title="'+nxE('Heures saisies '+(sem?'de la semaine':'du mois')+' : '+nxH(C.h)+' h sur '+nxH(pP)+' h prévues')+'"><div class="l">'+nxSvg('clock')+'Heures saisies</div><div class="v">'+nxH(C.h)+'<small>h</small></div>'+sgfhJauge(C.h,pP)+'</div>'
-      +'<div class="nx-kpi" title="Heures prévues de la période : heures prévues du mois réparties sur ses jours ouvrés"><div class="l">'+nxSvg('cal')+'Heures prévues</div><div class="v">'+nxH(pP)+'<small>h</small></div></div>'
-      +'<div class="nx-kpi" title="Heures saisies jusqu’à hier − heures prévues jusqu’à hier"><div class="l">'+nxSvg('trend')+'Écart à ce jour</div><div class="v '+(ec<-.25?'sgfh-neg':ec>.25?'sgfh-pos':'')+'">'+(pT?(ec>0?'+':'')+nxH(ec)+'<small>h</small>':'—')+'</div></div>'
-      +'<div class="nx-kpi" title="'+nxE(C.ctl+' inscription(s) saisie(s) ou corrigée(s), pas encore approuvée(s) : '+nxH(C.hctl)+' h ; '+C.ok+' approuvée(s)')+'"><div class="l">'+nxSvg('check')+'À contrôler</div><div class="v">'+C.ctl+'</div></div>'
-      +'<div class="nx-kpi" title="Refusées : à corriger par le collaborateur"><div class="l">'+nxSvg('pv')+'Refusées</div><div class="v'+(C.ref?' sgfh-neg':'')+'">'+C.ref+'</div></div></div>'
+      +'<div class="nx-kpi" title="'+nxE('Heures saisies '+(sem?'de la semaine':'du mois')+' : '+nxH(C.h)+' h sur '+nxH(pP)+' h prévues')+'"><div class="l">Heures saisies</div><div class="v">'+nxH(C.h)+'<small>h</small></div>'+sgfhJauge(C.h,pP)+'</div>'
+      +'<div class="nx-kpi" title="Heures prévues de la période : heures prévues du mois réparties sur ses jours ouvrés"><div class="l">Heures prévues</div><div class="v">'+nxH(pP)+'<small>h</small></div></div>'
+      +'<div class="nx-kpi" title="Heures saisies jusqu’à hier − heures prévues jusqu’à hier"><div class="l">Écart à ce jour</div><div class="v '+(ec<-.25?'sgfh-neg':ec>.25?'sgfh-pos':'')+'">'+(pT?(ec>0?'+':'')+nxH(ec)+'<small>h</small>':'—')+'</div></div>'
+      +'<div class="nx-kpi" title="'+nxE(C.ctl+' inscription(s) saisie(s) ou corrigée(s), pas encore approuvée(s) : '+nxH(C.hctl)+' h ; '+C.ok+' approuvée(s)')+'"><div class="l">À contrôler</div><div class="v">'+C.ctl+'</div></div>'
+      +'<div class="nx-kpi" title="Refusées : à corriger par le collaborateur"><div class="l">Refusées</div><div class="v'+(C.ref?' sgfh-neg':'')+'">'+C.ref+'</div></div></div>'
+      +sgPageNav({onglets:[['collab','Par collaborateur'],['projet','Par projet']].map(([k,t])=>({t,arg:k,fn:'vue',on:(st.vue||'collab')===k}))})
       +'<div class="sgfh-outils"></div></div><div class="sgc-corps">'+corps+'</div>';
     const ou=w.querySelector('.sgfh-outils'), tl=document.getElementById('tools'); if(ou&&tl){ ou.append(tl); document.documentElement.classList.add('sgfh-on'); }
     const approuver=(rs,qui)=>{ if(!rs.length) return; const hh=rs.reduce((t,r)=>t+(+r.TIMEPERIOD||0),0);
       sgConfirm('Approuver '+rs.length+' inscription'+(rs.length>1?'s':'')+' à contrôler ('+nxH(hh)+' h) — '+qui+', '+P.lib.toLowerCase()+' ?\n\nUne inscription approuvée n’est plus modifiable par le collaborateur. « Contrôler » permet de revenir en arrière (Réinitialiser).',
         async()=>{ await DS.commit(rs.map(r=>({t:'timelog',id:r.ID,val:{...r,TIMELOGSTATECODE:3}}))); toast(rs.length+' inscription(s) approuvée(s).'); },{title:'Approuver les heures',yesText:'Approuver'}); };
     const f=this._fn={};
-    f.vue=b=>this.sv({vue:b.dataset.k});
+    f.vue=b=>{ const k=b.dataset.arg||b.dataset.k; if(k!==(st.vue||'collab')) this.sv({vue:k}); };
     f.ctl=b=>sgcFenetre(null,{staffs:S,staff:+b.dataset.s,date:b.dataset.d,titre:'Contrôle des heures',peut:V?peut:null});
     f.ctlp=b=>{ const p=DS.get('project',+b.dataset.p); if(p) sgcFenetre(p,{date:diso(P.a)}); };
     f.app=b=>{ const s=DS.get('staff',+b.dataset.s); approuver((parS.get(+b.dataset.s)||[]).filter(r=>SGC_ETAT(r)==='ctl'),s?staffName(s):'collaborateur'); };

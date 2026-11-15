@@ -1640,6 +1640,64 @@ html:has(#main .sgd) #nx-sub{display:none!important}
   .sg-tete>.sg-figs,.sg-tete>.sg-tkp{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+/* ═══ Navigation et paramètres des pages = ceux du devis ouvert (15.11.2026, Paulo, deux captures : « voici à quoi devrait ressembler la navigation et les paramètres
+   pour toutes les fenêtres […] reprendre le principe de l'image 1 ») — sgPageNav (sg3.js) : sous le bandeau, UNE rangée de chiffres ; la ligne des onglets (onglets à
+   gauche, choix d'affichage en texte à droite) ; la barre en texte (actions à gauche, « Fonctions ▾ » à droite). Plus de bouton encadré dans le bandeau.
+   Mêmes mesures que le devis (sgde-ong, sgde-niv, sgde-bar de sg3_devis.js). Aussi pour les listes (sgsv-tbar, sg3_suivi.js) et le bandeau des écrans du moteur. ═══ */
+.sg-tete>.sg-tkp{border-top:0;margin-top:4px;grid-template-columns:repeat(var(--sgk,5),minmax(0,1fr))}
+.sg-tete>.sg-tkp.sg-kn{container-type:inline-size}
+.sg-tete>.sg-tkp.sg-kn .nx-kpi{padding-right:0;margin-right:12px}
+.sg-tete>.sg-tkp.sg-kn .nx-kpi .v{font-size:clamp(13px,calc(2.7cqi - 5.6px),28px);overflow:visible;text-overflow:clip}
+.sg-tete>.sg-tkp.sg-kn .nx-kpi .v small{font-size:11px;margin-left:3px}
+.sg-tete>.sg-tkp .nx-kpi .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-tete>.sg-tkp .nx-kpi .v.neg{color:var(--s-rouge)}
+.sg-tete>.sg-tkp .nx-kpi .v.posi{color:#4e6b0f}
+.sg-tete>.sg-nav,.sg-tete>.sg-tbar{grid-column:1/-1}
+.sg-tete:has(>.sg-nav),.sg-tete:has(>.sg-tbar){margin-bottom:12px}
+.sg-nav{display:flex;align-items:center;gap:0 24px;flex-wrap:wrap;margin:6px 0 0;border-bottom:1px solid var(--s-filet);min-width:0}
+.sg-nav>.sg-onglets{flex:1 1 auto;margin:0;border:0;min-width:0;gap:0 24px;flex-wrap:wrap;overflow:visible}
+.sg-nav>.sg-onglets button{margin-bottom:-1px}
+.sg-nav>.sg-onglets button small{font-size:11px;font-weight:400;color:var(--s-gris);margin-left:5px}
+.sg-nav>.sg-nfin{flex:1 1 auto}
+.sg-nch{flex:0 1 auto;display:flex;align-items:center;gap:4px 22px;flex-wrap:wrap;margin-left:auto;padding:6px 0;min-width:0}
+.sg-nch-g{display:flex;align-items:center;gap:4px 12px;flex-wrap:wrap;font-size:12px;color:var(--s-gris);min-width:0}
+.sg-nch-g .lb{white-space:nowrap}
+.sg-nch-g button{border:0;background:none;padding:2px 0 3px;font:inherit;font-size:12.5px;color:var(--s-gris);cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sg-nch-g button:hover{color:var(--s-noir)}
+.sg-nch-g button.on{color:var(--s-noir);font-weight:700;box-shadow:inset 0 -2px 0 var(--s-nuit)}
+.sg-nch .inp{height:28px;font-size:12.5px;padding-top:0;padding-bottom:0;max-width:300px}
+.sg-nch label{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--s-gris);white-space:nowrap}
+.sg-nch .sg-nn{color:var(--s-gris);font-size:12.5px;white-space:nowrap;margin-left:-10px}
+.sg-tbar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:4px 0;min-height:40px;min-width:0}
+.sg-tb{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 9px;border:0;border-radius:0;background:transparent;font:inherit;font-size:12.5px;font-weight:700;color:var(--s-noir);cursor:pointer;white-space:nowrap;text-decoration:none}
+.sg-tbar>.sg-tb:first-child{padding-left:0}
+.sg-tb:hover{background:var(--s-jaune3)}
+.sg-tb.on{box-shadow:inset 0 -2px 0 var(--s-nuit)}
+.sg-tb:disabled{color:#b9b9b6;cursor:default;background:transparent}
+.sg-tb.danger{color:var(--s-rouge)}
+.sg-tb svg{width:16px;height:16px;flex:0 0 16px}
+.sg-tb .dd{width:8px;height:8px;opacity:.7;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1b' stroke-width='3.2' stroke-linecap='square'%3E%3Cpath d='m5 9 7 7 7-7'/%3E%3C/svg%3E") center/8px no-repeat}
+.sg-tsep{flex:none;width:1px;height:18px;background:var(--s-filet);margin:0 6px}
+.sg-tfin{flex:1 1 auto}
+.sg-tbar .inp{height:28px;font-size:12.5px;padding-top:0;padding-bottom:0}
+.sg-tbar label{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--s-gris);white-space:nowrap;margin:0 6px}
+.sg-ob{display:contents}
+/* barre posée par sgBandeauVersBarre (boutons venus du bandeau) ; chiffres collés au bandeau sans filet noir, comme le devis ouvert ; ligne des filtres des listes
+   (.sgsv-fil) = ligne des onglets du devis (filet fin dessous, plus de filet noir dessus) */
+.sg-tbar-auto{margin:0 0 6px}
+.sgsv .sg-tbar-auto,.sgd-m .sg-tbar-auto{margin:2px 0 8px}
+.sgfh-tete+.nx-kpis,.sgfh-tete~.sgsv-kp{border-top:0}
+html .sgsv-fil{border-top:0;border-bottom:1px solid var(--s-filet);padding:6px 0 6px;margin-top:2px}
+html .sgpl-bar{border-top:0;border-bottom:1px solid var(--s-filet);padding:6px 0 6px}
+html .sgpc-dem{border-bottom:1px solid var(--s-filet);padding:6px 0 6px}
+.sg-tbar-auto+table,.sg-tbar-auto+.nx-tbl{margin-top:0}
+.sg-ob[hidden],[data-sgs][hidden]{display:none!important}
+@container (max-width:860px){
+  .sg-tete>.sg-tkp.sg-kn{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sg-tete>.sg-tkp.sg-kn .nx-kpi .v{font-size:20px}
+  .sg-nch{margin-left:0}
+}
+
 /* ═══ En-tête de l'app au-dessus des écrans de l'ancien logiciel (refonte d'ensemble, lot 3, sg3_ecrans.js) : bandeau posé avant la barre contextuelle, hors de #main ═══ */
 #sg-mv{flex:0 0 auto;background:#fff}
 #sg-mv:empty{display:none}

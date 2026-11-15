@@ -151,17 +151,22 @@ VIEWS['adr-liste']={
         +'<td><b>'+nxE(x.nom)+'</b>'+cats.slice(0,2).map(t=>' <span class="nx-tag">'+nxE(t)+'</span>').join('')+(cats.length>2?' <span class="nx-tag" title="'+nxE(cats.slice(2).join(', '))+'">+'+(cats.length-2)+'</span>':'')+'</td>'
         +'<td>'+nxE(OWNER_T[x.t]||'')+'</td><td>'+nxE(x.rel)+'</td><td>'+nxE([c.STREET,c.POBOX].filter(Boolean).join(', '))+(at?' <span class="sgl-at">'+nxE(at)+'</span>':'')+'</td>'
         +'<td>'+nxE(locality(c))+'</td><td class="sgl-nw">'+nxE(tel)+'</td><td>'+nxE(c.EMAIL1||'')+'</td><td>'+nxE(c.BKP||'')+'</td></tr>'; };
-    const F=sglFonc(), html='<div class="sg-mesp-bar"><div class="seg">'+SGL_TYPES.map(([k,t])=>'<button data-fn="type" data-k="'+k+'" class="'+(k===ty0?'on':'')+'">'+t+'</button>').join('')+'</div>'
-      +'<input class="inp" id="sgl-q" placeholder="Rechercher une adresse…" value="'+nxE(q0)+'"><span class="n"></span>'
-      +'<span class="sgl-act"><button class="nx-btn sm" data-fn="impr" title="Imprimer les adresses affichées">'+nxSvg('print')+'<span>Imprimer</span></button>'
-      +(F?'<button class="nx-btn sm" data-fn="mail" title="Courriels des adresses affichées, à copier">'+nxSvg('mail')+'<span>Courriel …</span></button><button class="nx-btn sm" data-fn="csv" title="Exporter les adresses affichées (CSV)">'+nxSvg('export')+'<span>Exporter CSV</span></button>':'')+'</span></div>'
-      +(L.length?'<table class="nx-tbl sg-mesp sgl-t sg-sanstot"><tr><th>Nom</th><th>Type</th><th>Appartient à</th><th>Adresse</th><th>Localité</th><th>Téléphone</th><th>Courriel</th><th>CFC</th></tr>'+L.map(row).join('')+'</table>'
-        :'<div class="nx-empty">Aucune adresse dans l’annuaire.</div>');
-    const pg=nxPage(m,html), inp=pg.querySelector('#sgl-q'), nb=pg.querySelector('.sg-mesp-bar .n');
+    /* bandeau, chiffres, onglets des types et recherche à droite, barre en texte (Imprimer ▾, Courriel …, Fonctions ▾) : comme les autres listes (15.11.2026,
+       navigation et paramètres du devis ouvert) */
+    const F=sglFonc(), nT=k=>{ const f=(SGL_TYPES.find(x=>x[0]===k)||SGL_TYPES[0])[2]; return L.filter(x=>f(x.t)).length; }, nM=L.filter(x=>x.c.EMAIL1).length;
+    const html='<div class="sg-split">'+sgTete('Contacts','Liste des adresses','Toutes les adresses de l’annuaire. Un clic ouvre la fiche du contact ; clic droit : modifier l’adresse, listes de diffusion, catégories, courriel.',
+        sgKpis([sgKpi('Adresses',sgdN(L.length)),sgKpi('Sociétés',sgdN(nT('societe'))),sgKpi('Personnes',sgdN(nT('personne'))),sgKpi('Avec courriel',sgdN(nM),L.length?Math.round(nM/L.length*100)+' %':''),sgKpi('Sans courriel',sgdN(L.length-nM))])
+        +sgPageNav({onglets:SGL_TYPES.map(([k,t])=>({t,arg:k,fn:'type',on:k===ty0})),choix:[{html:'<input class="inp" id="sgl-q" placeholder="Rechercher une adresse…" value="'+nxE(q0)+'" style="width:240px"><span class="sg-nn n"></span>'}],
+          gauche:[{t:'Imprimer',i:'print',fn:'impr',dd:1,ti:'Imprimer les adresses affichées'},...(F?[{t:'Courriel …',i:'mail',fn:'mail',ti:'Courriels des adresses affichées, à copier'}]:[])],
+          droite:F?[{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]:[]}))
+      +'<div>'+(L.length?'<table class="nx-tbl sg-mesp sgl-t sg-sanstot"><tr><th>Nom</th><th>Type</th><th>Appartient à</th><th>Adresse</th><th>Localité</th><th>Téléphone</th><th>Courriel</th><th>CFC</th></tr>'+L.map(row).join('')+'</table>'
+        :'<div class="nx-empty">Aucune adresse dans l’annuaire.</div>')+'</div></div>';
+    const pg=nxPage(m,html), inp=pg.querySelector('#sgl-q'), nb=pg.querySelector('.sg-nn');
     let ty=ty0; const visibles=()=>[...pg.querySelectorAll('tr[data-c]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('contact',tr.dataset.c)).filter(Boolean);
     const filt=()=>{ const v=inp.value.trim().toLowerCase(), f=(SGL_TYPES.find(x=>x[0]===ty)||SGL_TYPES[0])[2]; nxLS.set('sg3_adrl_q',inp.value); let n=0;
       pg.querySelectorAll('tr[data-c]').forEach(tr=>{ const ok=f(+tr.dataset.t)&&(!v||tr.dataset.q.includes(v)); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=sgdAdr(n); };
-    pg._fn.type=b=>{ ty=b.dataset.k; nxLS.set('sg3_adrl_type',ty); pg.querySelectorAll('.seg [data-fn="type"]').forEach(x=>x.classList.toggle('on',x===b)); filt(); };
+    pg._fn.type=b=>{ ty=b.dataset.arg||b.dataset.k; nxLS.set('sg3_adrl_type',ty); pg.querySelectorAll('[data-fn="type"]').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-selected',x===b?'true':'false'); }); filt(); };
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>pg._fn.csv()},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgl-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
     pg._fn.impr=b=>popMenu(b,[{t:'Liste d’adresses',fn:()=>printAdr(visibles(),'Liste d’adresses')},{t:'Liste d’adresses par CFC',fn:()=>printAdr(visibles().sort((a,b2)=>cmp(a.BKP,b2.BKP)),'Liste d’adresses par CFC')}]);
     pg._fn.mail=()=>{ const cs=visibles(); if(cs.length) mailList(cs); };
     /* export : les colonnes de la présentation « Tous » de la liste du moteur (ACOL, PRES), le type de contact et les catégories */

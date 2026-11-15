@@ -1565,6 +1565,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Colonnes par onglet : Ordres de paiement, Arrêtés de compte, Comptes d'entreprise (15.11.2026, Paulo : « dans la fenêtre affichage, adapter aux colonnes par éléments, dans
   ordres, arrêté de comptes, contrôle du coût, etc. ; les colonnes qui peuvent s'afficher ne sont pas les mêmes ; adapte par éléments selon les colonnes possibles dans delta
   project »)** — dans ces trois onglets, « Présentation » ouvrait encore la fenêtre du contrôle du coût (ses 177 colonnes, couleurs des écritures), sans effet sur leur tableau.
+  (Ordres de paiement : menu « Présentation » retiré le même jour à la demande, colonnes fixes au Standard — paragraphe « Onglet Ordres de paiement allégé » plus bas.)
   Ils ont maintenant le menu des listes des écritures (Standard · présentations enregistrées · Personnalisée (non enregistrée) · Personnalisé … · Enregistrer la présentation … ·
   Gérer les présentations … · Récupérer d'un autre projet …) et chacun son catalogue (`LCLE`, `LSIG`, `LDEF`, `LVAL`, `LENT`, `SOMME` de `sg3_coco.js` ; fenêtre `ccAffichage`
   option `liste`, onglet Colonnes seul) : les colonnes que l'ancien logiciel propose pour ce tableau (relevé du 15.11.2026), plus celles que l'écran de l'app avait déjà.
@@ -1588,6 +1589,49 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   gardent leurs colonnes ; copie et CSV suivent les colonnes affichées. Devis général et Contrôle du coût : menus inchangés (ils avaient déjà leurs colonnes). Vérifié le
   15.11.2026 dans un onglet à part (base de test, 17QUE.DF.1 : 19 ordres et 239 paiements — valeurs égales à celles de l'ordre imprimé —, 22 arrêtés, 51 entreprises : TTC = HT +
   TVA, totaux = chiffres du bandeau) et sur 99TST ; enregistrer / gérer / reprendre une présentation ; balayage des 121 écrans ; `nas/nettoyer.py` ; `sonde_chrome.sh`.
+  **Onglet Ordres de paiement allégé (15.11.2026, trois annotations « supprimer » de Paulo)** : barre du haut sans « Nouvelle écriture » ni « Présentation »
+  (`.sgce.ord` : `.sgce-new`, `.sgce-pres` et leurs séparateurs masqués ; un ordre se crée par le « + » de la liste, ses paiements par « Nouveau ») — il reste Imprimer,
+  Fonctions, plein écran ; le tableau des paiements de l'ordre a donc des colonnes fixes, toujours le Standard (`LFIXE` : des colonnes enregistrées avant sont ignorées ;
+  le catalogue reste dans `LDEF`, il fournit « Paiements à ce jour » et « Contrats + avenants TTC »). Le bénéficiaire prend la place restante et les montants 120 px : les six colonnes
+  et le total tiennent dans le panneau. Bouton « Documents ▾ » du panneau des paiements (anciens documents du
+  moteur) retiré : « Imprimer ▾ » prend sa place (`ordImp` : `bD.replaceWith(b)`). Clic droit dans cet onglet : menu commun des tableaux (boutons du panneau, copie) — les
+  entrées « Éditer / Supprimer l'écriture » et « Nouvelle écriture » ne s'appliquaient ni à un ordre ni à ses paiements.
+  **Ordre de paiement et bons de paiement dans un seul document à imprimer (15.11.2026, Paulo : « activer l'impression des bons de paiement de l'ensemble des bons de
+  paiement de l'ordre de paiement », « regrouper les deux dans un seul document à imprimer », « ajoute une option ordre et une option bon »)** : Imprimer ▾ du panneau des
+  paiements = « Ordre de paiement n° … et bons de paiement (PDF) » (plus « Bon de paiement n° … (PDF) » seulement quand un paiement est choisi ; plus d'entrée grisée
+  « choisir un paiement »). Fenêtre de l'ordre (barre « Document PDF », descripteur `o.sgLot`) : l'ordre de paiement, puis le bon de chaque paiement de l'ordre dans
+  l'ordre des numéros de paiement, chacun avec sa propre numérotation de pages (documents signés séparément) ; même dessin que l'ordre et le bon ouverts seuls (`decOctets`),
+  assemblés par pdf-lib (`lotOctets`, `bonsOctets`, `lotDe` de `sg3_coco_docs.js`). Réglages ▸ Affichage : « Ordre de paiement », « Bons de paiement » — cochés d'office, au
+  moins l'un des deux reste coché ; enregistrés dans le document de l'ordre (`cocodoc.options.sgPdf.lotOrdre`, `lotBons`). Rien d'autre n'est écrit : un bon dont le document
+  n'est pas encore créé est dessiné avec le modèle qu'« Ouvrir » prendrait (`ch01aTplPick`, sans question), à défaut sans modèle. L'ordre ouvert par l'onglet Documents reste
+  l'ordre seul (et « Créer le PDF » aussi). Durée : environ 0,3 s et 60 Ko par bon (ordre de 2 paiements : 2 s ; cas extrême de la base de test, 169 paiements : 45 s,
+  183 pages, 10 Mo — chaque bon porte ses polices ; à dessiner en une seule passe si le besoin se présente).
+  **Onglet Documents du contrôle des coûts (15.11.2026, six annotations de Paulo ; `sg3_coco.js`, section « Onglet Documents », et `sg3_coco_docs.js`)** —
+  **Fichiers déposés** (« ne comprend que les fichiers importés hors de l'app ; ne pas afficher les documents se trouvant dans les sections ; le cas échéant créer des titres
+  par type de document ») : la liste du moteur (`ccDocsDraw`) montrait tout le dossier du contrôle des coûts, documents `.dpdoc` et PDF de chaque rubrique compris. Gardés
+  (`ftGarde`) : le dossier `coco/documents` (dépôts faits ici) et `coco/entrepreneurInvoices/<n° de paiement>` (factures d'entreprise jointes aux paiements, reprises de l'ancien
+  logiciel ; colonne « Rattaché à » : paiement et entreprise). Un titre par type (`ftType`, `FT_TYPES` : Garanties, Factures d'entreprise, Contrats et avenants, Offres, Bons et
+  ordres de paiement, Arrêtés de compte, Correspondance, Procès-verbaux, Plans, Photos, Autres documents) : type choisi à la main (clic droit ▸ Type de document, champ
+  `depotfichier.TYPE_DOC`, aussi pour plusieurs fichiers choisis), sinon sous-dossier de `documents`, sinon reconnu au nom du fichier (`FT_MOTS` ; « Plan de situation » → Plans),
+  sinon Autres documents ; ordre fixe (type, nom), plus de colonne « Dossier ». Les documents et PDF des rubriques restent dans leur rubrique.
+  **Tableau de la rubrique sous la ligne de son document** (« déplacer sous liste d'adjudications », « déplacer sous liste des paiements ») : dans toute rubrique où le
+  document de liste vient en premier (Adjudications, Paiements, Mutations, Arrêtés de compte), l'ordre est : ligne du document, titre et tableau, « Fichiers PDF · <document> »,
+  puis le document de la ligne choisie. Le panneau du moteur se redessine en vidant son contenu : rien n'y est déplacé, l'ordre d'affichage est donné par CSS
+  (`decoDocs` pose `.sgce-fr`, `.sgce-p1` — `display:contents` —, `.sgce-o2`, `.sgce-o3` ; `order`). Ordres de paiement et Comptes d'entreprise (tableau en premier) : inchangés.
+  **« Liste des paiements »** (« remplacer par liste des paiements ») : ex-« Rapport des paiements » — ligne de l'onglet Documents, Imprimer ▸ « Liste des paiements (PDF) », nom
+  des nouveaux documents, titre du PDF, sujet d'un envoi (`LISTE_DOC`, enveloppe de `ch01aPanel`, `CH03D_SUJET`, `titreDe`) ; un document déjà créé sous l'ancien nom par défaut
+  est affiché et imprimé sous le nouveau, sans rien réécrire (`NOM_ALIAS`, `aliasDoc`) ; son nom de fichier PDF proposé reste l'ancien.
+  **« Bons de paiement »** (« modifier le nom de rapport de paiement par bon de paiement », « je souhaite créer des fichiers pdf des bons de paiement individuels ou groupe de
+  bons ») : tableau des paiements de Documents ▸ Paiements, à choix multiple (Cmd-clic, Maj-clic) ; boutons Ouvrir (les bons choisis dans la visionneuse, un seul document),
+  Créer le PDF (un paiement : fenêtre « Nom du fichier » avec commentaire ; plusieurs : « Un seul PDF pour les n bons … » ou « Un PDF par bon (n fichiers) », noms « Bon de
+  paiement n° <n°> - <entreprise>.pdf »), Ouvrir le PDF (validé le plus récent, sinon le dernier). PDF rangés dans `coco/payments/bons` avec `GENRE_DOC` « bon:<id> » ou
+  « bons:<id>,<id>… » ; registre daté « Fichiers PDF · Bons de paiement » sous le tableau (Valider ▾, Archivés, Effacés ; archive définitive : nom déjà pris → « (2) ») ;
+  colonnes Bon de paiement PDF (✓ et date du dernier), Validé le, Commentaire ; colonne « Annexe PDF à la facture » (toujours vide) retirée. Un bon est dessiné pour l'ordre qui
+  contient le paiement ; paiement hors de tout ordre : bon sans ordre (`bonOctets`, `bonsPdf`, `assembler` de `sg3_coco_docs.js`). Droit : « documents : dépôt » et contrôle des
+  coûts modifiable. **Comptes d'entreprise** (« indiquer dans les colonnes si le document a été créé, commentaires, etc. ») : colonnes Document (✓ et nom, ou « pas encore
+  créé »), PDF créé le, Validé le, Commentaire (du PDF le plus récent : `colsPdf`, `pdfRecent`) pour chaque entreprise. Vérifié le 15.11.2026 dans un Chrome sans fenêtre
+  (`chrome_pilote.py` du skill de vérification, base de test) : dépôts et types, PDF groupé et un par bon, doublon « (2) », document « ordre + bons », captures des cinq
+  écrans, six visuels, balayage des 121 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`.
   ⚠ Le relevé du 15.11.2026 a lu le code du logiciel installé (fichiers de travail supprimés ensuite, rien dans le dépôt) : à rapprocher du plan de conformité du 25.10.2026
   (`MISE_EN_CONFORMITE_DELTAPROJECT.md`, non versionné) — signalé à Paulo. Copies d'avant : `subgestion3/_backup_20261115_1148_avant_barre_impression_colonnes/`,
   `SUBGestion3_backup_20261115_1148_avant_barre_impression_colonnes.html`.

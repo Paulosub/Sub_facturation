@@ -115,7 +115,7 @@ const sautsDe=o=>{ const x=optsDe(o).sauts||{}; return {cfc:Array.isArray(x.cfc)
 const sautsActifs=o=>{ const x=sautsDe(o); return new Set(x.sans?[]:x.cfc); };
 const sigDe=(o,rec)=>{ const v=optsDe(o).sig; return v!=null?!!v:estDecompte(rec); };
 const titreDe=(o,rec)=>{ const dn=decNom(o); if(dn) return dn;   /* « Bon de paiement n° 135 », « Arrêté de compte n° 24 » (le nom du document du moteur est technique : « 135_10511_payment ») */
-  const t=sv(rec.doc&&rec.doc.nom||o.label||'Document'), e=entDe(o); return e&&e.nom?t+' · '+e.nom:t; };
+  const t0=sv(rec.doc&&rec.doc.nom||o.label||'Document'), t=t0==='Rapport des paiements'?'Liste des paiements':t0, e=entDe(o); return e&&e.nom?t+' · '+e.nom:t; };   /* « Liste des paiements » : ex-« Rapport des paiements » (15.11.2026), aussi pour un document créé sous l'ancien nom */
 const garde=(o,rec,sig)=>{ const E=o.E, p=E.p||{}, doc=DS.get('costcontroldocument',E.id)||{}, rub=deGardeRub(p,{filter:null}), e=entDe(o), F=filtreDe(o);
   if(F&&F.mo){ const k=rub.findIndex(x=>/ma[iî]tre/i.test(sv(x.lib))); if(k>=0) rub[k]=Object.assign({},rub[k],deNomAdr(F.mo)); }
   if(e&&e.nom) rub.unshift({lib:'Entreprise',nom:e.nom,adr:e.adr});
@@ -445,6 +445,31 @@ async function decOctets(o,rec){ await DS.need(['subproject','contact','projectm
   const opt=w.JSON.parse(JSON.stringify({titre:X.titre,sousTitre:aff,date:X.date||today(),type:'Contrôle des coûts',description:decNom(o)+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' '),decompte:X.dec})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info(decNom(o)+' :',Array.from(j)); return oct; }
 
+/* ordre de paiement et bons de paiement dans un seul document à imprimer (Paulo, 15.11.2026 : « activer l'impression des bons de paiement de l'ensemble des bons de paiement de
+   l'ordre de paiement », « regrouper les deux dans un seul document à imprimer », « ajoute une option ordre et une option bon ») — fenêtre ouverte par Imprimer ▸ « Ordre de
+   paiement n° … et bons de paiement (PDF) » (descripteur o.sgLot) : l'ordre de paiement, puis le bon de chaque paiement de l'ordre dans l'ordre des numéros de paiement,
+   chacun avec sa propre numérotation de pages (documents signés séparément) ; même dessin que l'ordre et le bon ouverts seuls (decOctets), assemblés par pdf-lib. Réglages
+   ▸ Affichage : « Ordre de paiement », « Bons de paiement » (cochés d'office, au moins l'un des deux ; enregistrés dans le document de l'ordre : sgPdf.lotOrdre, lotBons).
+   Rien d'autre n'est écrit : un bon dont le document n'est pas encore créé est dessiné avec le modèle qu'« Ouvrir » prendrait (ch01aTplPick, sans question), à défaut
+   sans modèle (libellés par défaut du moteur). L'ordre ouvert par l'onglet Documents reste l'ordre seul. */
+const MODELES=new Map();
+async function modeleBon(E,x){ const ty=ch01dBonType(x), k=ty+'|'+sv((E.p||{}).DOCTEMPLATEGROUPNAME); if(!MODELES.has(k)){ let t=null; try{ t=await ch01aTplPick(ty,E.p||{}); }catch(e){ console.error(e); } MODELES.set(k,(t&&t!=='aucun'&&t.rep)||{sections:[]}); } return MODELES.get(k); }
+/* bon de paiement d'un paiement : celui de son ordre (o donné, sinon l'ordre qui le contient) ; paiement hors de tout ordre : bon sans ordre (signataire : maître de l'ouvrage de l'affaire) */
+async function bonOctets(E,x,o){ const C=(E&&E.C)||{}; if(o===undefined) o=(C.ordresPaiement||[]).find(q=>(q.paiementIds||[]).includes(x.id))||null;
+  const d=o?ch01dBonO(E,o,x):{E,dossier:'paymentorder/-/'+(x.numero!=null?x.numero:''),type:ch01dBonType(x),nomDefaut:ch01dBonNom(x),label:'Bon de paiement',job:rep=>ch01dBonJob(E,null,x,rep)};
+  let rec=o?ch01dBonRec(E,o,x):null; if(!rec||!rec.doc||!rec.doc.report) rec={doc:{report:await modeleBon(E,x)}}; return decOctets(d,rec); }
+async function assembler(L,titre){ if(L.length===1) return L[0]; const {w}=await SGDS.ressources(), PL=w.PDFLib, doc=await PL.PDFDocument.create();
+  for(const by of L){ const src=await PL.PDFDocument.load(new w.Uint8Array(by)); (await doc.copyPages(src,src.getPageIndices())).forEach(pg=>doc.addPage(pg)); }
+  doc.setTitle(sv(titre)); doc.setAuthor('Substances Architectes'); doc.setProducer('SUBGestion'); return await doc.save(); }
+async function bonsOctets(E,o){ const P=o&&typeof ch01dPaysOf==='function'?ch01dPaysOf((E&&E.C)||{},o):[], L=[]; if(!P.length) return L;
+  await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']).catch(()=>{}); for(const x of P) L.push(await bonOctets(E,x,o)); return L; }
+/* bons de paiement d'une suite de paiements en un seul PDF (Documents ▸ Paiements : aperçu et « Créer le PDF », sg3_coco.js) */
+async function bonsPdf(E,L){ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']).catch(()=>{}); const P=[], p=(E&&E.p)||{}; for(const x of L) P.push(await bonOctets(E,x));
+  if(!P.length) throw new Error('aucun paiement choisi'); return assembler(P,('Bons de paiement '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')).trim()); }
+const lotDe=o=>{ const op=optsDe(o), q=ordDe(o), n=q&&typeof ch01dPaysOf==='function'?ch01dPaysOf((o.E&&o.E.C)||{},q).length:0, bons=op.lotBons!==false&&n>0; return {q,n,bons,ordre:op.lotOrdre!==false||!bons}; };
+async function lotOctets(o,rec){ const S=lotDe(o), L=[], p=(o.E&&o.E.p)||{}; if(S.ordre) L.push(await decOctets(o,rec)); if(S.bons) (await bonsOctets(o.E,S.q)).forEach(b=>L.push(b));
+  return assembler(L,(decNom(o)+(S.bons?' et bons de paiement':'')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')).trim()); }
+
 /* choix du modèle à la création : sans objet pour le bon de paiement et l'arrêté de compte (même dessin quel que soit le modèle ; seuls quelques libellés — « Total
    net HT », « Totaux » — en viennent) : le premier modèle de la liste, celui que la fenêtre « Choisir le modèle » proposait d'office, est pris sans question */
 if(typeof ch01aTplPick==='function'&&typeof ch01aTplList==='function'){ const t0=ch01aTplPick;
@@ -456,7 +481,7 @@ const r0=ch01aRender;
 ch01aRender=function(o,rec){ const g=genre(o); if(!g||!window.SGIMP||typeof SGDS==='undefined'||!rec||!rec.doc||!rec.doc.report) return r0.apply(this,arguments);
   const S=window.SGIMP; let R0=null; if(g==='liste') R0=r0.apply(this,arguments);   /* listes : rendu du moteur d'abord (repère et valeurs du bloc 31) */
   const id=(++S.n).toString(36)+'c'+Date.now().toString(36);
-  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='bon'||g==='arrete'||g==='ordre'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
+  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='ordre'&&o.sgLot?lotOctets(o,rec):g==='bon'||g==='arrete'||g==='ordre'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
   const titre=titreDe(o,rec);
   if(g==='liste'){ /* liste : en cas d'échec du nouveau dessin, le PDF du bloc 31 */ const id0=(/\/\*sgimp:([a-z0-9]+)\*\//.exec(sv(R0.css))||[])[1];
     const sur=pdf.catch(e=>{ console.error(e); return id0&&S.pdf?S.pdf(id0):Promise.reject(e); }); S.memo.set(id,{pdf:sur,titre,o:{}}); }
@@ -550,6 +575,10 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
   if(baseArr(o.dossier)&&ARR_TYPES.has(T)&&typeof ch01aArr==='function'){ const a=arrDe(o);
     L.push(it('Arrondir les conditions',a.cond,fin=>{ arrSet(o,'roundContractSummary',!a.cond,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'}),
       it('Afficher le total arrondi',a.tot,fin=>{ arrSet(o,'addRoundedTotalKey',!a.tot,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'})); }
+  /* ordre de paiement ouvert par « Imprimer » : l'ordre et les bons de paiement de ses paiements dans un seul document (lotOctets) — une option pour chacun */
+  if(g==='ordre'&&o.sgLot){ const S=lotDe(o), garde=()=>{ toast('Le document garde au moins l’ordre de paiement ou les bons de paiement.'); return false; };
+    L.push(it('Ordre de paiement',S.ordre,fin=>S.ordre&&!S.bons?garde():opt(o,'lotOrdre',!S.ordre)(fin),{grp:'Affichage',ti:'L’ordre de paiement, en tête du document'}),
+      it('Bons de paiement',S.bons,fin=>S.bons&&!S.ordre?garde():opt(o,'lotBons',!S.bons)(fin),{grp:'Affichage',dis:!S.n,ti:S.n?'Le bon de paiement de chacun des '+S.n+' paiements de l’ordre, à la suite de l’ordre':'Cet ordre n’a aucun paiement'})); }
   /* arrêté de compte : paiement final compté ou non dans les paiements à ce jour (la question que le moteur pose à l'ouverture ; vaut pour cette ouverture) */
   if(g==='arrete'){ const a=decArr(o); if(a&&typeof ch01cHasFinal==='function'&&ch01cHasFinal(C,a)) L.push({t:'Inclure le paiement final',chk:o.final!==false,grp:'Montants',
     ti:'Compte le paiement final dans les paiements à ce jour : le solde à verser est alors ce qui reste après lui',fn:()=>{ o.final=!(o.final!==false); }}); }
@@ -642,7 +671,7 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
   SGDE.vue(D,{barre:'pdf',p,lb:'Contrôle des coûts · Documents',titre:T.titre,etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>tableOctets(E,k),
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
   D.maj(tableOctets(E,k)); }
-window.SGCD={decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+window.SGCD={lotOctets,bonsOctets,bonsPdf,bonOctets,lotDe,decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();
 
 /* ═══ Archives ▸ Maquettes ▸ Bon de paiement et arrêté de compte · Deux colonnes (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans

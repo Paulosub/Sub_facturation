@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 12:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 14:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -42903,7 +42903,8 @@ const ED_CSS=`
 .sgce-dsub{flex:none;margin:0 24px;padding:9px 0 8px;flex-wrap:wrap;gap:6px 16px}
 .sgce-dsub .sgce-dt{color:var(--s-gris)}
 .sgce.dg .sgce-bar .sgce-new,.sgce.dg .sgce-bar .sgce-sep.nw,.sgce.dg .sgce-bar .sgce-fon,.sgce.dg .sgce-bar .sgce-par{display:none!important}
-.sgce.ecr .sgce-bar .sgce-par,.sgce.ord .sgce-bar .sgce-par,.sgce.ecr .sgce-bar .sgce-new,.sgce.ecr .sgce-bar .sgce-sep.nw{display:none!important}   /* Liste des écritures et Ordres de paiement : sans « Paramètres » ; listes des écritures aussi sans « Nouvelle écriture » (Paulo, 11.11.2026 : « supprimer » ; les écritures se créent dans l'onglet Contrôle du coût) ; devis général attribué et configuration dans l'onglet Contrôle du coût */   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
+.sgce.ecr .sgce-bar .sgce-par,.sgce.ord .sgce-bar .sgce-par,.sgce.ecr .sgce-bar .sgce-new,.sgce.ecr .sgce-bar .sgce-sep.nw{display:none!important}
+.sgce.ord .sgce-bar .sgce-new,.sgce.ord .sgce-bar .sgce-sep.nw,.sgce.ord .sgce-bar .sgce-pres,.sgce.ord .sgce-bar .sgce-sep.pr{display:none!important}   /* Ordres de paiement : ni « Nouvelle écriture » ni « Présentation » dans la barre (Paulo, 15.11.2026, deux fois « supprimer ») — un ordre se crée par le « + » de la liste, ses paiements par « Nouveau » ; colonnes du tableau des paiements fixes (Standard de l'ancien logiciel) */   /* Liste des écritures et Ordres de paiement : sans « Paramètres » ; listes des écritures aussi sans « Nouvelle écriture » (Paulo, 11.11.2026 : « supprimer » ; les écritures se créent dans l'onglet Contrôle du coût) ; devis général attribué et configuration dans l'onglet Contrôle du coût */   /* Devis général : base du contrôle, affichée seulement — ni « Nouvelle écriture », ni « Paramètres », ni « Fonctions » (Paulo, 11.11.2026) */
 .sgce-bar .sgce-x{display:none}
 .sgce:not(.cc) .sgce-bar .sgce-niv,.sgce:not(.cc) .sgce-ong>.sgce-niv,.sgce:not(.cc) .sgce-sep.n{display:none}
 .sgce-ong{display:flex;align-items:center;gap:12px}
@@ -42962,6 +42963,24 @@ const ED_CSS=`
 .sgce.docs .sgce-dhd>*{color:var(--s-noir)!important}
 .sgce.docs .sgce-dgb{border:0!important;height:auto!important;max-height:420px;margin-bottom:22px}
 .sgce .sgce-ok{color:var(--s-nuit,#003346);font-weight:700}
+/* onglet Documents (15.11.2026) : titres par type des fichiers déposés ; tableau de la rubrique sous la ligne de son document ; barre des bons de paiement */
+.sgce table.g tbody tr.sgce-ftg td{background:var(--s-blanc,#fff)!important;color:var(--s-nuit,#003346)!important;font-weight:700;font-size:12.5px;height:auto;padding:16px 12px 6px!important;border-top:1px solid var(--s-noir,#1d1d1b)!important;border-bottom:1px solid var(--s-filet,#e3e3e0)!important}
+.sgce table.g tbody tr.sgce-ftg:first-child td{border-top:0!important;padding-top:10px!important}
+.sgce table.g tbody tr.sgce-ftg td small{font-weight:400;color:var(--s-gris,#706F6F);margin-left:10px;font-size:11.5px}
+.sgce tr.sgce-ftg{pointer-events:none}
+.sgce .sgce-val{color:#4E6B0F;font-weight:700}
+.sgce .sgce-non{color:var(--s-gris,#706F6F)}
+.sgce.docs .sgce-fr>*{order:5}
+.sgce.docs .sgce-fr>.sgce-p1{display:contents!important}
+.sgce.docs .sgce-fr>.sgce-p1>*{order:1}
+.sgce.docs .sgce-fr>.sgce-o2{order:2}
+.sgce.docs .sgce-fr>.sgce-o3{order:3}
+.sgce.docs .sgce-fr>.sgce-p1>.sgce-dpdf{order:4;margin-bottom:22px!important}
+.sgce.docs .sgce-dhd .sgce-bact{margin-left:auto;display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:flex-end}
+.sgce.docs .sgce-dhd .sgce-bact .ib{border:0;background:transparent;height:30px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);cursor:pointer}
+.sgce.docs .sgce-dhd .sgce-bact .ib:hover{background:var(--s-jaune3)}
+.sgce.docs .sgce-dhd .sgce-bact .aide{font-size:11.5px;font-weight:400;color:var(--s-gris,#706F6F)!important;margin-right:10px}
+.sgce.docs .sgce-bpdf{margin-bottom:22px}
 .sgce-dpdf.reg>button.ib{display:none!important}   /* « Fichiers PDF ▾ » : même menu au clic droit sur la liste, comme le devis (11.11.2026) */
 .sgce-dpdf.reg>.sgpdf,.sgce-dpdf>.sgpdf-stock{flex:1 1 100%!important;min-width:0}
 .sgce-dpdf>span:first-child{flex:1 1 100%!important;font-size:12px;color:var(--s-gris)!important}
@@ -42991,7 +43010,12 @@ const devisSource=(C,pid)=>{ const ok=id=>id!=null&&DS.get('costestimate',id)&&!
    l'éditeur du moteur (CCV.cur : C, projet, en-tête, id, enregistrement). */
 const LISTE_DOC={MUTATIONS:{dossier:'mutation',type:'costControlMutationsList',nomDefaut:'Liste des mutations',label:'Liste des mutations',job:(E,rep)=>ch01bMutListJob(E,rep)},
   ADJUDICATIONS:{dossier:'award',type:'costControlAwardList',nomDefaut:'Liste des adjudications',label:'Contrats et avenants',job:(E,rep)=>ch01bAwardListJob(E,rep)},
-  PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Rapport des paiements',label:'Rapport des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
+  PAIEMENTS:{dossier:'payments',type:'costControlPaymentList',nomDefaut:'Liste des paiements',label:'Liste des paiements',job:(E,rep)=>ch01dPayListJob(E,rep)}};
+/* « Liste des paiements » (Paulo, 15.11.2026 : « remplacer par liste des paiements ») : ex-« Rapport des paiements » — menu Imprimer, ligne de l'onglet Documents, nom des
+   nouveaux documents, titre du PDF ; un document déjà créé sous l'ancien nom par défaut est affiché et imprimé sous le nouveau (rien n'est réécrit dans la base) */
+const NOM_ALIAS={'Rapport des paiements':'Liste des paiements'}, aliasDoc=n=>NOM_ALIAS[n]||n;
+if(typeof ch01aPanel==='function'){ const p0=ch01aPanel; ch01aPanel=function(o){ try{ if(o&&o.type==='costControlPaymentList'){ o.label='Liste des paiements'; if(!o.nomDefaut||NOM_ALIAS[o.nomDefaut]) o.nomDefaut='Liste des paiements'; } }catch(_){} return p0.apply(this,arguments); }; }
+try{ if(typeof CH03D_SUJET!=='undefined') CH03D_SUJET.costControlPaymentList='Liste des paiements'; }catch(_){}
 /* le PDF reprend la présentation affichée à l'écran (Paulo, 14.11.2026 : « Oui, suivre l'écran ») : avant l'ouverture depuis Imprimer, le réglage « Colonnes » du document
    (cocodoc.options.sgPdf.pres : null = Standard, sinon {i, nom}) est mis sur la présentation de l'écran s'il diffère, et enregistré dans le document (lecture seule :
    pour la séance seulement, rien n'est écrit). Ouvert depuis l'onglet Documents, le document garde son dernier réglage. */
@@ -43053,6 +43077,9 @@ const LLIB={'ORDRES DE PAIEMENT':'Paiements de l’ordre'};
    sont enregistrées comme une présentation personnalisée. */
 const LSTD={'ORDRES DE PAIEMENT':['lot','b','numero','prev','ca','m'],'ARRÊTÉS DE COMPTE':['lotN','e','g','m','d','f']};
 const lstd=sec=>LSTD[sec]||LSIG[sec].split(',');
+/* tableau aux colonnes fixes : toujours son Standard, sans menu « Présentation » (Ordres de paiement, Paulo, 15.11.2026 : « supprimer ») — des colonnes enregistrées avant sont
+   ignorées (le catalogue reste dans LDEF : il fournit « Paiements à ce jour » et « Contrats + avenants TTC ») */
+const LFIXE={'ORDRES DE PAIEMENT':1};
 function LVAL(C){ const cfg=!!(C.parametres||{}).arrondir, R5=v=>(typeof ch01aR==='function'?ch01aR(v,cfg):+v)||0, T=x=>typeof ch01aTot==='function'?ch01aTot(x):{net:docNet(x),tva:docTva(x)};
   const K=C.contrats||[], P=C.paiements||[], cE=new Map(), uni=L=>[...new Set(L.filter(x=>x!=null&&x!==''))], tri=L=>typeof cfcCmp==='function'?L.sort((x,y)=>cfcCmp(String(x),String(y))):L.sort();
   const tr=L=>L.reduce((a,x)=>{ const n=docNet(x), t=docTva(x); a.ht+=n-t; a.tva+=t; a.ttc+=n; return a; },{ht:0,tva:0,ttc:0});
@@ -43148,8 +43175,9 @@ function LDEF(sec,C){ const E2=x=>esc(String(x??'')), N=v=>v||v===0?num(v):'', e
     ...mont('Paiements'),colT('Paiements','iban','Compte d’entreprise','Compte de l’entreprise (IBAN de ses paiements)',190,e=>X(e).iban),
     ...mont('Différences')]); }
   return {}; }
-const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C; if(!C) return; let keys=(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) keys=LSTD[sec]; if(!keys||!keys.length) return;
-  const D=LDEF(sec,C), base=new Map(o.cols.map(c=>[c.k,c])); const L=keys.map(k=>base.get(k)||(D[k]&&D[k].col)).filter(Boolean); if(L.length) o.cols=L; };
+const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C; if(!C) return; let keys=LFIXE[sec]?null:(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) keys=LSTD[sec]; if(!keys||!keys.length) return;
+  const D=LDEF(sec,C), base=new Map(o.cols.map(c=>[c.k,c])); let L=keys.map(k=>base.get(k)||(D[k]&&D[k].col)).filter(Boolean); if(LFIXE[sec]) L=L.map(c=>c.k==='b'?Object.assign({},c,{w:null}):c.w>120?Object.assign({},c,{w:120}):c);   /* colonnes fixes : le bénéficiaire prend la place restante, tout tient dans le panneau */
+  if(L.length) o.cols=L; };
 /* Paiements : toujours dans l'ordre des numéros de paiement (Paulo, 11.11.2026 : « supprimer le tri et laisser trier par numéro de paiement ») — bouton « Tri » du
    moteur retiré, pas de tri par les titres de colonnes ; le filtre et le récapitulatif de TVA restent. Le PDF « Rapport des paiements » aussi (ch01dOpt enveloppé : tri enregistré ignoré). */
 if(typeof ch01dOpt==='function'){ const o0=ch01dOpt; ch01dOpt=function(C){ return Object.assign({},o0.apply(this,arguments),{tri:'numero'}); }; }   /* écran et PDF « Rapport des paiements » */
@@ -43190,16 +43218,113 @@ function piedListe(sec,el,o){ const C=CCV.cur&&CCV.cur.C, t=el&&el.querySelector
   tf.innerHTML=L.map(r=>'<tr class="'+(r.cls||'')+'"'+(r.tip?' title="'+E2(r.tip)+'"':'')+'>'+(a0>0?'<td class="lb" colspan="'+a0+'">'+E2(r.lib)+'</td>':'')+o.cols.slice(a0).map((c,j)=>{ const v=r.v[c.k];
     return '<td class="'+(c.cls||'')+(S[c.k]?' r':'')+'"'+(a0===0&&j===0?' title="'+E2(r.lib)+'"':'')+'>'+(v!=null&&S[c.k]?num(v):'')+'</td>'; }).join('')+'</tr>').join('');
   t.append(tf); return true; }
+/* ═══ Onglet Documents (15.11.2026, annotations de Paulo) ═══
+   · Fichiers déposés (« ne comprend que les fichiers importés hors de l'app ; ne pas afficher les documents se trouvant dans les sections ; le cas échéant créer des titres par
+     type de document ») : la liste du moteur (ccDocsDraw) montrait tout le dossier du contrôle des coûts, documents et PDF de chaque rubrique compris. Gardés : le dossier
+     « documents » (dépôts faits ici) et « entrepreneurInvoices/<n° de paiement> » (factures d'entreprise jointes aux paiements, reprises de l'ancien logiciel) ; les documents
+     et PDF des rubriques restent dans leur rubrique. Un titre par type de document : celui choisi à la main (clic droit ▸ Type de document, champ TYPE_DOC du fichier), sinon
+     le sous-dossier de « documents », sinon reconnu au nom du fichier (FT_MOTS), sinon « Autres documents ». Ordre fixe : type, puis nom.
+   · Comptes d'entreprise (« indiquer dans les colonnes si le document a été créé, commentaires, etc. ») : colonnes Document, PDF créé le, Validé le, Commentaire.
+   · Paiements (« je souhaite créer des fichiers pdf des bons de paiement individuels ou groupe de bons de paiement ») : tableau « Bons de paiement » à choix multiple
+     (Cmd-clic, Maj-clic), boutons Ouvrir, Créer le PDF, Ouvrir le PDF ; PDF rangés dans …/coco/payments/bons avec GENRE_DOC « bon:<id> » ou « bons:<id>,<id>… »
+     (registre daté et archive définitive, comme les autres PDF) ; colonnes Bon de paiement PDF (date du dernier), Validé le, Commentaire. */
+const ctxE=sec=>{ const K=CCV.cur||{}; return {C:K.C,p:K.p,doc:K.doc,id:K.id,sec:sec||CCV.sec,touch:K.touch||(()=>{})}; };
+const peutDepot=()=>{ const E=ctxE(); return !!E.C&&!(typeof ch03dLecture==='function'&&ch03dLecture(E))&&(typeof sgDroit!=='function'||sgDroit('documents','depot')); };
+const jourF=v=>v?dfr(String(v).slice(0,10)):'';
+const propreNom=t=>String(t||'').replace(/["*\/:;<>?|\\]+/g,'-').replace(/\s+/g,' ').trim().slice(0,90);
+const pdfsDu=dos=>{ if(!dos||typeof ch03aDos!=='function') return []; try{ return DS.by(CH03A_T,'DOSSIER',ch03aDos(dos)).filter(r=>/\.pdf$/i.test(r.NOM||'')&&!['supprime','archive'].includes(r.ETAT_PDF||'')); }catch(_){ return []; } };
+const pdfRecent=L=>{ const V=L.filter(r=>r.ETAT_PDF==='valide').sort((a,b)=>String(b.VALIDE_LE||'').localeCompare(String(a.VALIDE_LE||''))); return V[0]||L.slice().sort((a,b)=>String(b.MODIFIED||'').localeCompare(String(a.MODIFIED||'')))[0]||null; };
+/* colonnes « PDF » d'un tableau de l'onglet Documents : pdfs(ligne) → fichiers PDF en cours de la ligne */
+const colsPdf=(pdfs,t,w)=>{ const P=r=>pdfRecent(pdfs(r));
+  return [{k:'pdfLe',t:t||'PDF créé le',w:w||128,f:r=>{ const p=P(r); return p?'<span class="sgce-ok" title="'+esc(p.NOM)+'">✓</span> '+esc(jourF(p.MODIFIED)):''; },v:r=>{ const p=P(r); return p?String(p.MODIFIED||''):''; }},
+    {k:'pdfVal',t:'Validé le',w:96,f:r=>{ const p=P(r); return p&&p.ETAT_PDF==='valide'?'<span class="sgce-val">'+esc(jourF(p.VALIDE_LE))+'</span>':''; },v:r=>{ const p=P(r); return p&&p.ETAT_PDF==='valide'?String(p.VALIDE_LE||''):''; }},
+    {k:'pdfCom',t:'Commentaire',f:r=>{ const p=P(r); return p?esc(p.COMMENTAIRE||''):''; },v:r=>{ const p=P(r); return p?String(p.COMMENTAIRE||''):''; }}]; };
+/* ── Fichiers déposés ── */
+const FT_SIG='d,NOM,EXT,TAILLE,PAGES,MODIFIED,USERID';
+const FT_TYPES=['Garanties','Factures d’entreprise','Contrats et avenants','Offres','Bons et ordres de paiement','Arrêtés de compte','Correspondance','Procès-verbaux','Plans','Photos','Autres documents'];
+const FT_MOTS=[['Garanties',/garantie|caution/i],['Bons et ordres de paiement',/bons?[ _-]*de[ _-]*paiement|ordres?[ _-]*de[ _-]*paiement|(^|[ _.-])BOP([ _.-]|$)/i],['Arrêtés de compte',/arr[êe]t[ée]s?[ _-]*de[ _-]*compte|d[ée]compte[ _-]*final/i],
+  ['Plans',/(^|[ _.-])plans?([ _.-]|$)|coupe|fa[çc]ade/i],['Factures d’entreprise',/facture|situation|acompte|d[ée]compte/i],['Contrats et avenants',/contrat|avenant|commande|adjudication/i],['Offres',/offre|soumission|devis/i],
+  ['Correspondance',/lettre|courrier|courriel|e-?mail/i],['Procès-verbaux',/(^|[ _.-])pv([ _.-]|$)|proc[èe]s[ _-]*verbal|s[ée]ance/i]];
+const ftSous=r=>{ const m=/\/coco(?:\/(.*))?$/.exec(String(r.DOSSIER||'')); return m?(m[1]||''):null; };
+const ftGarde=r=>{ const s=ftSous(r); if(s==null) return false; const a=s.split('/')[0]; return (a==='documents'||a==='entrepreneurInvoices')&&String(r.EXT||'').toLowerCase()!=='dpdoc'; };
+const ftType=r=>{ const t=String(r.TYPE_DOC||'').trim(); if(t) return t; const P=(ftSous(r)||'').split('/'); if(P[0]==='entrepreneurInvoices') return 'Factures d’entreprise'; if(P[0]==='documents'&&P[1]) return P.slice(1).join(' › ');
+  const n=String(r.NOM||''); if(/^(jpe?g|png|heic|heif|gif|webp|tiff?)$/i.test(String(r.EXT||''))&&!/plan/i.test(n)) return 'Photos'; const m=FT_MOTS.find(x=>x[1].test(n)); return m?m[0]:'Autres documents'; };
+const ftRang=t=>{ const i=FT_TYPES.indexOf(t); return i<0?FT_TYPES.length-1.5:i; };   /* types libres (sous-dossiers) : juste avant « Autres documents » */
+const FT_AIDE='Fichiers reçus de l’extérieur (garanties, factures d’entreprise, contrats signés, courriers…) : déposez-les ici ou cliquez sur « Ajouter … ». Les documents et les PDF créés dans l’app sont dans leur rubrique.';
+function ftAppliquer(o){ const C=(CCV.cur||{}).C||{};
+  const R=(o.rows||[]).filter(ftGarde).map(r=>({r,t:ftType(r)})).sort((a,b)=>ftRang(a.t)-ftRang(b.t)||cmp(a.t,b.t)||(typeof ch03aOrdre==='function'?ch03aOrdre(a.r,b.r):cmp(a.r.NOM,b.r.NOM)));
+  o.rows=R.map(x=>x.r); o.noSort=true; o.sort=null; if(o.state) o.state.sort=null; o._sgFtT=new Map(R.map(x=>[String(x.r.ID),x.t]));
+  if(!o._sgFtC){ const B=new Map(o.cols.map(c=>[c.k,c])), pay=r=>{ const m=/\/coco\/entrepreneurInvoices\/([^/]+)/.exec(String(r.DOSSIER||'')); if(!m) return ''; const x=(C.paiements||[]).find(y=>String(y.numero)===m[1]); return 'Paiement n° '+m[1]+(x?' · '+ccEntName(C,x.contactId):''); };
+    o._sgFtC=[B.get('NOM'),{k:'ratt',t:'Rattaché à',w:250,f:r=>esc(pay(r)),v:pay},B.get('EXT'),B.get('TAILLE'),B.get('PAGES'),B.get('MODIFIED'),B.get('USERID')].filter(Boolean);
+    o.empty='Aucun fichier déposé pour ce contrôle des coûts.'; }
+  const avec=o.rows.some(r=>/\/coco\/entrepreneurInvoices\//.test(String(r.DOSSIER||''))); o.cols=o._sgFtC.filter(c=>c.k!=='ratt'||avec); }
+function ftGroupes(el,o){ const tb=el.querySelector(':scope>table.g>tbody'); if(!tb) return; const n=(o.cols||[]).length, T=o._sgFtT||new Map(), N={}; let cur=null; T.forEach(t=>{ N[t]=(N[t]||0)+1; });
+  [...tb.rows].forEach(tr=>{ const t=T.get(tr.dataset.k); if(t==null||t===cur) return; cur=t; const g=document.createElement('tr'); g.className='sgce-ftg'; g.innerHTML='<td colspan="'+n+'">'+esc(t)+'<small>'+N[t]+' fichier'+(N[t]>1?'s':'')+'</small></td>'; tb.insertBefore(g,tr); });
+  const w=el.parentNode, hint=w&&[...w.children].find(x=>x!==el&&/^Dossier « Documents » du contrôle des coûts/.test(x.textContent||'')); if(hint) hint.textContent=FT_AIDE; }
+function ftSetType(L,t){ const ops=L.map(r=>{ const cur=DS.get(CH03A_T,r.ID)||r, val=Object.assign({},cur); if(t) val.TYPE_DOC=t; else delete val.TYPE_DOC; return {t:CH03A_T,id:cur.ID,val,bseq:ctBseq(CH03A_T,cur.ID)}; });
+  if(ops.length) DS.commit(ops).catch(e=>{ if(!(e&&e.conflict)) toast((e&&e.message)||String(e),true); }); }
+function ftMenu(e,pane){ const tr=e.target.closest&&e.target.closest('table.g tbody tr[data-k]'); if(!tr||!pane.contains(tr)) return; const T=DS.all(CH03A_T), r=T.find(x=>String(x.ID)===tr.dataset.k); if(!r||!ftGarde(r)) return;
+  e.preventDefault(); if(!tr.classList.contains('on')) tr.click();
+  const S=[...tr.parentNode.querySelectorAll('tr.on[data-k]')].map(x=>T.find(y=>String(y.ID)===x.dataset.k)).filter(x=>x&&ftGarde(x)), L=S.length?S:[r], cur=ftType(r), ok=peutDepot();
+  const barre=typeof sgCtxBarre==='function'?sgCtxBarre(tr):null, B=barre&&typeof sgCtxBoutons==='function'?sgCtxBoutons(barre).filter(x=>!/^Ajouter/.test(x.t)):[];
+  const types=()=>[...new Set([...FT_TYPES,cur])].sort((a,b)=>ftRang(a)-ftRang(b)).map(t=>({t,chk:L.length===1&&t===cur,fn:()=>ftSetType(L,t)})).concat(['-',{t:'Reconnaître d’après le nom',dis:!L.some(x=>x.TYPE_DOC),fn:()=>ftSetType(L,null)}]);
+  sgMenuAt(e.clientX,e.clientY,[...B,...(B.length?['-']:[]),{t:'Type de document'+(L.length>1?' ('+L.length+' fichiers)':''),dis:!ok,sub:types}],tr); }
+/* ── Comptes d'entreprise ▸ Documents : colonnes du document de chaque entreprise ── */
+function entDocCols(o){ const E=ctxE('COMPTES D’ENTREPRISE'), rec=r=>DS.get('cocodoc',E.id+'/entrepreneur/'+r.id), pdfs=r=>pdfsDu(typeof ch03dCocoDossier==='function'?ch03dCocoDossier(E,'entrepreneur/'+r.id):null);
+  o._sgEnt=1; o.cols=[Object.assign({},o.cols[0],{w:320}),{k:'doc',t:'Document',w:170,f:r=>{ const d=rec(r); return d&&d.doc?'<span class="sgce-ok">✓</span> '+esc(d.doc.nom||'créé'):'<span class="sgce-non">pas encore créé</span>'; },v:r=>{ const d=rec(r); return d&&d.doc?'1':''; }},...colsPdf(pdfs)]; }
+/* ── Paiements ▸ Documents : bons de paiement en PDF, un par un ou en groupe ── */
+const BONS={g:null,occ:false,sig:'numero,cfc,d,e,m,bp,ap'};
+const bonsDos=E=>typeof ch03dCocoDossier==='function'?ch03dCocoDossier(E,'payments/bons'):null;
+const bonLie=(r,x)=>{ const g=String(r.GENRE_DOC||''); return /^bons?:/.test(g)&&g.slice(g.indexOf(':')+1).split(',').includes(String(x.id)); };
+function bonsCols(o){ const E=ctxE('PAIEMENTS'), L=pdfsDu(bonsDos(E)), B=new Map(o.cols.map(c=>[c.k,c]));
+  o.multi=true; o._sgBon=1; BONS.g=o; o.cols=[B.get('numero'),B.get('cfc'),B.get('d'),B.get('e'),B.get('m'),...colsPdf(x=>L.filter(r=>bonLie(r,x)),'Bon de paiement PDF',170)].filter(Boolean); }
+const bonsSel=()=>{ const C=(CCV.cur||{}).C, g=BONS.g; if(!C||!g) return []; const S=g.selSet&&g.selSet.size?g.selSet:new Set(g.sel!=null?[String(g.sel)]:[]);
+  return (C.paiements||[]).filter(x=>S.has(String(x.id))).sort((a,b)=>(+a.numero||0)-(+b.numero||0)||cmp(String(a.numero??''),String(b.numero??''))); };
+const bonsNom=L=>{ const n=L.map(x=>String(x.numero??'')); return L.length===1?'Bon de paiement n° '+n[0]:'Bons de paiement n° '+(L.length<=6?n.join(', '):n[0]+' à '+n[n.length-1]+' ('+L.length+' bons)'); };
+const bonsChoix=()=>{ const L=bonsSel(); if(!L.length) toast('Choisissez un ou plusieurs paiements dans le tableau (Cmd-clic ou Maj-clic pour en choisir plusieurs).',true); return L; };
+async function bonsApercu(){ const L=bonsChoix(); if(!L.length||!window.SGCD||!SGCD.bonsPdf) return; const E=ctxE('PAIEMENTS'), p=E.p||{};
+  try{ if(L.length>3) toast('Préparation des bons de paiement…'); const oct=await SGCD.bonsPdf(E,L), t=(bonsNom(L)+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')).trim();
+    sgVisionneuse(new Blob([oct],{type:'application/pdf'}),propreNom(t)+'.pdf',{titre:t}); }
+  catch(e){ console.error(e); toast('Bons de paiement impossibles à préparer : '+((e&&e.message)||e),true); } }
+async function bonsCreer(mode){ if(BONS.occ){ toast('Un PDF est déjà en cours de création…'); return; } const L=bonsChoix(); if(!L.length||!window.SGCD||!SGCD.bonsPdf) return;
+  if(!peutDepot()){ toast('Création de PDF en lecture seule (droit « documents : dépôt », contrôle des coûts modifiable).',true); return; }
+  const E=ctxE('PAIEMENTS'), dos=bonsDos(E), C=E.C||{}; if(!dos){ toast('Dossier du contrôle des coûts indisponible.',true); return; } BONS.occ=true;
+  try{ if(typeof ch03aPret==='function') await ch03aPret(); const p=E.p||{}, G=window.SGDE&&SGDE.pdf&&SGDE.pdf.SGPDF, ent=x=>String(ccEntName(C,x.contactId)||'').split(',')[0].trim();
+    const poser=async(nom,oct,genre,bseq)=>{ const rec=await ch03aDeposer(dos,nom,new Blob([oct],{type:'application/pdf'}),{projet:p.ID,origine:'pdf',bseq,remplacer:true}), cur=DS.get(CH03A_T,rec.ID)||rec;
+      if(cur.GENRE_DOC!==genre) await DS.commit([{t:CH03A_T,id:cur.ID,val:Object.assign({},cur,{GENRE_DOC:genre}),bseq:ctBseq(CH03A_T,cur.ID)}]).catch(()=>{}); return DS.get(CH03A_T,rec.ID)||rec; };
+    if(mode==='un'&&L.length>1){ if(!await confirmDlg('Créer '+L.length+' fichiers PDF, un par bon de paiement ?','Créer')) return; toast('Création des PDF…'); let n=0;
+      for(const x of L){ await poser(propreNom(bonsNom([x])+' - '+ent(x))+'.pdf',await SGCD.bonsPdf(E,[x]),'bon:'+x.id); n++; } toast(n+' PDF enregistrés.'); }
+    else { const genre=(L.length>1?'bons:':'bon:')+L.map(x=>x.id).join(','), o={}; if(G) G.genre=genre; let pr; try{ pr=ch03bNouveauPdfDlg(propreNom(bonsNom(L)+(L.length===1?' - '+ent(L[0]):''))+'.pdf',dos,o); } finally{ if(G) G.genre=null; }
+      const nom=await pr; if(nom==null) return; toast('Création du PDF…'); const rec=await poser(nom,await SGCD.bonsPdf(E,L),genre,o.bseq); toast('PDF enregistré : '+rec.NOM); } }
+  catch(e){ if(!(e&&(e.conflict||e.sgFige))){ console.error(e); toast('PDF non enregistré : '+((e&&e.message)||e),true); } }
+  finally{ BONS.occ=false; const K=CCV.cur; if(K&&K.draw&&CCV.docs&&CCV.sec==='PAIEMENTS') K.draw(); } }
+function bonsOuvrirPdf(){ const L=bonsChoix(); if(!L.length) return; if(L.length>1){ toast('Choisissez un seul paiement pour ouvrir son PDF.',true); return; }
+  const p=pdfRecent(pdfsDu(bonsDos(ctxE('PAIEMENTS'))).filter(r=>bonLie(r,L[0]))); if(p&&typeof ch03aOuvrir==='function') ch03aOuvrir(p); else toast('Aucun PDF enregistré pour ce bon de paiement : « Créer le PDF ».',true); }
+/* barre du tableau et registre des PDF des bons (appelé par decoDocs, Documents ▸ Paiements) */
+function bonsBarre(H){ if(!H||H.querySelector('.sgce-bact')) return; const a=document.createElement('span'); a.className='sgce-bact';
+  const b=(t,ti,fn)=>{ const x=document.createElement('button'); x.className='ib'; x.type='button'; x.textContent=t; x.title=ti; x.onclick=fn; return x; }, aide=document.createElement('span'); aide.className='aide'; aide.textContent='Cmd-clic ou Maj-clic : plusieurs bons';
+  a.append(aide,b('Ouvrir','Ouvrir les bons de paiement des paiements choisis (un seul document)',()=>bonsApercu()),
+    b('Créer le PDF','Enregistrer le bon de paiement choisi sous forme de fichier PDF ; plusieurs paiements choisis : un PDF par bon ou un seul PDF',ev=>{ const L=bonsSel();
+      if(L.length>1) popMenu(ev.currentTarget,[{t:'Un seul PDF pour les '+L.length+' bons …',fn:()=>bonsCreer('groupe')},{t:'Un PDF par bon ('+L.length+' fichiers)',fn:()=>bonsCreer('un')}]); else bonsCreer('groupe'); }),
+    b('Ouvrir le PDF','Ouvrir le dernier PDF enregistré du bon de paiement choisi',()=>bonsOuvrirPdf())); H.append(a); }
+function bonsZone(B){ if(!B||(B.nextElementSibling&&B.nextElementSibling.classList.contains('sgce-bpdf'))||typeof ch03cPdfZone!=='function') return; const E=ctxE('PAIEMENTS'), dos=bonsDos(E); if(!dos) return;
+  let z=null; try{ z=ch03cPdfZone({dossier:dos,projet:E.p?E.p.ID:null,fusionNom:'',hauteur:120,lectureSeule:()=>!peutDepot()}); }catch(e){ console.error(e); } if(!z||!z.el) return;
+  const w=document.createElement('div'); w.className='sgce-dpdf sgce-bpdf'; const s=document.createElement('span'); s.textContent='Fichiers PDF · Bons de paiement'; w.append(s,z.el); B.after(w); if(z.redraw) try{ z.redraw(); }catch(e){ console.error(e); } }
 /* Ordres de paiement : l'ordre choisi dans la liste de gauche le reste quand l'onglet est redessiné (colonnes changées, ordre ou paiement modifié, relevé d'un autre poste) —
    le moteur repartait sans ordre choisi, et le tableau des paiements se vidait après chaque réglage des colonnes (15.11.2026) */
 const OSEL={sig:'numero,date,mo,n,statut',id:null,k:null};
 const ordreGarde=o=>{ if(!CCV.open||CCV.docs||CCV.sec!=='ORDRES DE PAIEMENT'||!o||!Array.isArray(o.cols)||!Array.isArray(o.rows)||o.cols.map(c=>c.k).join(',')!==OSEL.sig) return;
   const key=o.key||(r=>r.ID); if(o.sel==null&&OSEL.id===CCV.open&&OSEL.k!=null&&o.rows.some(r=>String(key(r))===OSEL.k)) o.sel=OSEL.k;
   if(!o._sgSel){ o._sgSel=1; const f=o.onSel; o.onSel=function(r){ OSEL.id=CCV.open; OSEL.k=String(key(r)); return f&&f.apply(this,arguments); }; } };
-{ const g0=grid; grid=function(el,o){ let sec=null, pied=false; try{ ordreGarde(o); }catch(e){ console.error(e); }
+{ const g0=grid; grid=function(el,o){ let sec=null, pied=false, ft=false; try{ ordreGarde(o); }catch(e){ console.error(e); }
+    try{ if(CCV.open&&o&&Array.isArray(o.cols)&&Array.isArray(o.rows)){ const sg=o.cols.map(c=>c.k).join(',');   /* onglet Documents (15.11.2026) : fichiers déposés, comptes d'entreprise, bons de paiement */
+        if(!CCV.docs&&CCV.sec==='DOCUMENTS'&&(sg===FT_SIG||o._sgFtC)){ ftAppliquer(o); ft=true; }
+        else if(CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&sg==='nom'&&!o._sgEnt) entDocCols(o);
+        else if(CCV.docs&&CCV.sec==='PAIEMENTS'&&sg===BONS.sig) bonsCols(o); } }catch(e){ console.error(e); }
     try{ sec=CCV.open&&!CCV.docs?CCV.sec:null; const sig=sec&&LSIG[sec]&&o&&Array.isArray(o.cols)?o.cols.map(c=>c.k).join(','):null;
       if(sig!=null&&(sig===LSIG[sec]||o._sgL===sec)){ if(sig===LSIG[sec]) listeCols(sec,o); o._sgL=sec; if(sec==='PAIEMENTS') payNum(el,o); } else sec=null; }catch(e){ console.error(e); sec=null; }   /* o._sgL : tableau déjà réglé, redessiné par un tri sur un titre de colonne (ses colonnes ne sont plus celles d'origine) — le pied est reposé */
   const r=g0.apply(this,arguments);
+  if(ft){ try{ ftGroupes(el,o); }catch(e){ console.error(e); } }
   if(sec){ try{ pied=!!piedListe(sec,el,o); }catch(e){ console.error(e); }
     if(sec==='ORDRES DE PAIEMENT'&&pied) queueMicrotask(()=>{ [...el.children].forEach(x=>{ if(x.classList&&x.classList.contains('card')&&/^Total\s/.test(x.textContent||'')) x.remove(); }); });   /* « Total … CHF » du moteur : remplacé par le pied du tableau */
     if(sec==='PAIEMENTS') queueMicrotask(()=>{ [el,el.parentNode].filter(Boolean).forEach(z=>[...z.children].forEach(x=>{ if(x.classList&&x.classList.contains('card')&&/Récapitulatif de TVA/.test((x.querySelector('h3')||{}).textContent||'')) x.remove(); })); }); }   /* carte du moteur : remplacée par le pied du tableau */
@@ -43246,7 +43371,7 @@ function lpGerer(sec){ const C=(CCV.cur||{}).C; if(!C) return; const L=lpL(C,LCL
     if(noms.some(x=>!x)){ toast('Chaque présentation doit avoir un nom.',true); return false; } if(new Set(noms).size!==noms.length){ toast('Deux présentations portent le même nom.',true); return false; }
     const a=((C.listePresActive||{})[LCLE[sec]]), r=L.find(p=>p._n===a); lpPut(C,sec,L.map(p=>{ const q=Object.assign({},p,{nom:p.nom.trim()}); delete q._n; return q; })); lpSetActive(C,sec,r?r.nom.trim():null); lpTouch(); }}]}); }
 async function lpRecuperer(sec){ const K=CCV.cur||{}, C=K.C; if(!C) return; try{ await DS.need(['costcontrol','costcontroldocument']); }catch(_){}
-  const cle=LCLE[sec], lib={mutations:'Mutations',paiements:'Paiements',adjudications:'Adjudications',ordres:'Ordres de paiement',arretes:'Arrêtés de compte',comptes:'Comptes d’entreprise'};
+  const cle=LCLE[sec], lib={mutations:'Mutations',paiements:'Paiements',adjudications:'Adjudications',arretes:'Arrêtés de compte',comptes:'Comptes d’entreprise'};
   const src=DS.all('costcontroldocument').filter(d=>d.ID!==K.id&&(typeof sgProjetPermis!=='function'||sgProjetPermis(d.PROJECT_ID))).map(d=>{ const X=DS.get('costcontrol',d.ID)||{}, it=[];
       Object.keys(lib).forEach(k=>{ (((X.listePresentations||{})[k])||[]).forEach(p=>it.push({k,p})); const c=(X.listeColonnes||{})[k]; if(c&&c.length&&!(((X.listePresentations||{})[k])||[]).some(p=>p.cols.join(',')===c.join(','))) it.push({k,p:{nom:'Présentation en cours (non enregistrée)',cols:c.slice()}}); });
       const pr=DS.get('project',d.PROJECT_ID)||{}; return {d,it,lib:[pr.NUMBER,pr.TITLE].filter(Boolean).join(' · ')+(d.VERSION?' — version '+d.VERSION:'')}; }).filter(x=>x.it.length)
@@ -43423,7 +43548,7 @@ function habillerEd(m,id){ cssC(); cssE();
       return x; });
     return L.filter((x,i)=>x!=='-'||(i>0&&i<L.length-1&&L[i-1]!=='-')); };
   { const clic=bNew.onclick; bNew.onclick=e=>{ const p0=popMenu; popMenu=function(a,items){ return p0.call(this,a,nouv(items)); }; try{ return clic.call(bNew,e); } finally{ popMenu=p0; } }; }
-  bNew.classList.add('sgce-new'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep(),bImp,fin,...autres,bPar,bFonN,bPlein);
+  bNew.classList.add('sgce-new'); bPresN.classList.add('sgce-pres'); bFonN.classList.add('sgce-fon'); bPar.classList.add('sgce-par'); bar2.append(bNew,sep('nw'),bPresN,sep('pr'),bImp,fin,...autres,bPar,bFonN,bPlein);
   /* onglets : les sections, puis Documents (fichiers déposés et documents de chaque section) */
   const docs=k=>{ ED.sub=k; if(k==='fichiers') secIt.DOCUMENTS.click(); else if(docIt[k]) docIt[k].click(); maj(); };
   ongL.onclick=e=>{ const b=e.target.closest('[data-s]'); if(!b) return; if(b.dataset.s==='DOCUMENTS') docs(ED.sub||'fichiers'); else if(b.dataset.s==='ECRITURES'){ secIt[ED.ecr||ECR[0]].click(); maj(); } else { secIt[b.dataset.s].click(); maj(); } };
@@ -43482,18 +43607,21 @@ function habillerEd(m,id){ cssC(); cssE();
   /* Ordres de paiement : « Imprimer » à côté de « Documents » (Paulo, 11.11.2026 : « ajouter imprimer ») — Ordre de paiement n° … (ordre choisi à gauche) et Bon de
      paiement n° … (paiement choisi à droite), dans la fenêtre des documents (créés d'office sous leur nom par défaut s'ils n'existent pas) */
   const ordImp=()=>{ if(CCV.docs||CCV.sec!=='ORDRES DE PAIEMENT') return; const bD=[...pane.querySelectorAll('button.ib')].find(b=>b._sgB&&b._sgB.t==='Documents'&&!b.closest('.sgce-bar'));
-    if(!bD||(bD.nextElementSibling&&bD.nextElementSibling._sgceImp)) return; const wrap=bD.closest('.cols'); if(!wrap) return;
+    if(!bD) return; const wrap=bD.closest('.cols'); if(!wrap) return;   /* « Documents » (anciens documents du moteur) retiré (Paulo, 15.11.2026 : « supprimer ») : « Imprimer » prend sa place */
     const selDe=i=>{ const tr=wrap.children[i]&&wrap.children[i].querySelector('table.g tbody tr.on'); return tr?tr.dataset.k:null; };
     const ordre=()=>{ const K=CCV.cur||{}, k=selDe(0); return K.C&&k!=null?(K.C.ordresPaiement||[]).find(o=>String(o.id)===k)||null:null; };
     const paie=()=>{ const K=CCV.cur||{}, k=selDe(1); return K.C&&k!=null?(K.C.paiements||[]).find(x=>String(x.id)===k)||null:null; };
     const E=()=>{ const K=CCV.cur||{}; return {C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'ORDRES DE PAIEMENT',touch:K.touch||(()=>{})}; };
     const ouvrirOrdre=async o=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} const e=E();
-      const d={E:e,dossier:'paymentorder/'+(typeof ch01dRef==='function'?ch01dRef(o):o.id),type:'costControlPaymentOrder',nomDefaut:'Ordre de paiement',label:'Ordre de paiement',fixe:'Ordre de paiement',job:rep=>ch01dOrderJob(e,o,rep),sgBarre:'pdf'};
+      const d={E:e,dossier:'paymentorder/'+(typeof ch01dRef==='function'?ch01dRef(o):o.id),type:'costControlPaymentOrder',nomDefaut:'Ordre de paiement',label:'Ordre de paiement',fixe:'Ordre de paiement',job:rep=>ch01dOrderJob(e,o,rep),sgBarre:'pdf',sgLot:true};   /* sgLot : l'ordre et ses bons de paiement dans un seul document (réglages « Ordre de paiement », « Bons de paiement ») */
       try{ const r=ch01aRec(e,d.dossier); return r&&r.doc?await ch01aOpen(d):await ch01aNew(d); }catch(x){ console.error(x); toast('Document impossible à préparer : '+x.message,true); } };
+    /* un seul document à imprimer : l'ordre de paiement et les bons de paiement de tous ses paiements (Paulo, 15.11.2026 : « activer l'impression … de l'ensemble des bons de
+       paiement de l'ordre », « regrouper les deux dans un seul document à imprimer ») — choix de ce qu'il contient dans le volet Réglages de la fenêtre (sg3_coco_docs.js :
+       lotOctets) ; « Bon de paiement n° … » seul : seulement quand un paiement est choisi dans le tableau (plus d'entrée grisée « choisir un paiement ») */
     const b=ibtn({i:'print',label:'Imprimer',t:'Imprimer',menu:()=>{ const o=ordre(), x=paie();
-      return [{t:o?'Ordre de paiement n° '+(o.numero||'')+' (PDF)':'Ordre de paiement (choisir un ordre)',dis:!o||typeof ch01dOrderJob!=='function',fn:()=>ouvrirOrdre(o)},
-        {t:x?'Bon de paiement n° '+(x.numero||'')+' (PDF)':'Bon de paiement (choisir un paiement)',dis:!o||!x||typeof ch01dBonOpen!=='function',fn:async()=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} const e=E(); e.sgBarre='pdf'; ch01dBonOpen(e,o,x); }}]; }});
-    b._sgceImp=1; bD.after(b); };
+      return [{t:o?'Ordre de paiement n° '+(o.numero||'')+' et bons de paiement (PDF)':'Ordre de paiement et bons de paiement (choisir un ordre)',dis:!o||typeof ch01dOrderJob!=='function',fn:()=>ouvrirOrdre(o)},
+        ...(o&&x?[{t:'Bon de paiement n° '+(x.numero||'')+' (PDF)',dis:typeof ch01dBonOpen!=='function',fn:async()=>{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){} const e=E(); e.sgBarre='pdf'; ch01dBonOpen(e,o,x); }}]:[])]; }});
+    b._sgceImp=1; bD.replaceWith(b); };
   const deco=()=>{ try{ ordImp(); }catch(e){ console.error(e); } if(dgVue()) return; const t=pane.querySelector(':scope>table.g'); if(!t) return; const cc=estCC(); t.classList.toggle('sgce-t',cc); if(!cc) return;
     t.querySelectorAll('tbody tr[data-k]').forEach(tr=>{ const k=tr.dataset.k, P=k.split('|'), c=P[0], n=c?cfcLevel(c):0, det=P.length>=3, ent=!det&&P[1]!=='-'&&k!=='TOTAL';
       tr.classList.toggle('sgce-tot',k==='TOTAL'); tr.classList.toggle('sgce-det',det); tr.classList.toggle('sgce-ent',ent);
@@ -43509,7 +43637,7 @@ function habillerEd(m,id){ cssC(); cssE();
     pane.querySelectorAll('div[style*="border-radius: 6px"]').forEach(P=>{ const main=P.querySelector(':scope>div>button.btn'); if(!main||main._sgce) return;
       const menuB=[...P.querySelectorAll('button.ib')].find(b=>b._sgB&&b._sgB.t==='Document'&&b._sgB.menu); if(!menuB) return; main._sgce=1;
       const rows=[...P.children], nameRow=main.parentElement, pdfRow=rows[rows.length-1], lab=rows.find(r=>r!==nameRow&&r.textContent==='Document');
-      const titreEl=rows[0]!==nameRow&&rows[0]!==lab&&rows[0]!==pdfRow?rows[0]:null, txt=main.textContent.trim(), cree=!/^«.*»$/.test(txt), nom=txt.replace(/^«|»$/g,'');
+      const titreEl=rows[0]!==nameRow&&rows[0]!==lab&&rows[0]!==pdfRow?rows[0]:null, txt=main.textContent.trim(), cree=!/^«.*»$/.test(txt), nom=aliasDoc(txt.replace(/^«|»$/g,''));
       const titre=titreEl?titreEl.textContent.trim():nom, etat=cree?'Document créé'+(titreEl&&nom!==titre?' : '+nom:''):'Pas encore créé', I=menuB._sgB.menu()||[], f=t=>I.find(x=>x&&x.t&&x.t.startsWith(t)), dis=main.disabled;
       const act=(t,ti,x,d)=>{ const b=document.createElement('button'); b.className='ib'; b.textContent=t; if(ti) b.title=ti; b.disabled=!!d; b.onclick=()=>{ const it=x&&f(x); if(x==null) main.click(); else if(it&&!it.dis) it.fn(); }; return b; };
       const pdf=f('Enregistrer sous forme'), ren=f('Renommer'), sup=f('Supprimer le document');
@@ -43531,14 +43659,26 @@ function habillerEd(m,id){ cssC(); cssE();
     /* titres et tableaux des sections, quelle que soit leur forme dans le moteur : tableau = bloc qui contient directement un table.g (hors listes de PDF) ;
        titre = l'élément juste avant, s'il n'est ni un tableau ni une ligne de document */
     pane.querySelectorAll('div').forEach(d=>{ if(d.classList.contains('sgpdf')||d.closest('.sgpdf')||!d.querySelector(':scope>table.g')) return; if(!d.classList.contains('sgce-dgb')) d.classList.add('sgce-dgb');
-      const pv=d.previousElementSibling; if(pv&&!pv.classList.contains('sgce-dhd')&&!pv.classList.contains('sgce-dgb')&&!pv.querySelector('table')&&!pv.classList.contains('sgce-dc')&&pv.textContent.trim()) pv.classList.add('sgce-dhd'); });
+      const pv=d.previousElementSibling; if(pv&&!pv.classList.contains('sgce-dhd')&&!pv.classList.contains('sgce-dgb')&&!pv.querySelector('table')&&!pv.classList.contains('sgce-dc')&&pv.textContent.trim()) pv.classList.add('sgce-dhd');
+      if(pv&&pv.classList.contains('sgce-dhd')&&pv.textContent.trim()==='Rapport de paiements'){ pv.textContent='Bons de paiement'; pv.classList.add('sgce-bh'); } });   /* Paiements : le tableau liste les bons de paiement (Paulo, 15.11.2026 : « modifier le nom de rapport de paiement par bon de paiement ») */
+    /* tableau de la rubrique juste sous la ligne de son document (Paulo, 15.11.2026 : « déplacer sous liste d'adjudications », « déplacer sous liste des paiements ») : le panneau
+       du moteur se redessine en vidant son contenu, rien n'y est donc déplacé — l'ordre d'affichage est donné par CSS (panneau « déplié », display:contents) : ligne du
+       document, titre et tableau de la rubrique, fichiers PDF du document (titrés « Fichiers PDF · <document> »), puis la suite */
+    { const fr=pane.querySelector(':scope>div[style*="max-width"]'), H=fr&&fr.querySelector('.sgce-dhd'); if(H){ let a=H; while(a.parentElement&&a.parentElement!==fr) a=a.parentElement;
+        const p1=a.parentElement===fr?a.previousElementSibling:null, cl=(e,c)=>{ if(e&&!e.classList.contains(c)) e.classList.add(c); };
+        if(p1&&p1===fr.firstElementChild&&p1.querySelector(':scope>.sgce-dc')&&p1.querySelector(':scope>.sgce-dpdf')){ cl(fr,'sgce-fr'); cl(p1,'sgce-p1'); cl(a,'sgce-o2'); if(a===H) cl(H.nextElementSibling,'sgce-o3');
+          const sp=p1.querySelector(':scope>.sgce-dpdf>span:first-child'), b=p1.querySelector(':scope>.sgce-dc b'), t=b&&b.textContent.trim()?'Fichiers PDF · '+b.textContent.trim():''; if(sp&&t&&sp.textContent!==t) sp.textContent=t; } } }
+    /* Paiements : boutons du tableau des bons de paiement et registre de leurs PDF */
+    if(CCV.sec==='PAIEMENTS'){ const H=pane.querySelector('.sgce-dhd.sgce-bh'); if(H){ try{ bonsBarre(H); const B=H.nextElementSibling; if(B&&B.classList.contains('sgce-dgb')) bonsZone(B); }catch(e){ console.error(e); } } }
     /* tableaux des sections : « x » des colonnes Document / PDF / Bon de paiement PDF / Annexe PDF → coche */
     pane.querySelectorAll('table.g').forEach(t=>{ if(t.closest('.sgpdf')) return; const th=[...t.querySelectorAll('thead th')], J=th.map((x,i)=>/^(Document|PDF|Bon de paiement PDF|Annexe PDF à la facture)$/.test(x.textContent.trim())?i:-1).filter(i=>i>=0); if(!J.length) return;
       t.querySelectorAll('tbody tr').forEach(tr=>J.forEach(i=>{ const td=tr.cells[i]; if(td&&td.textContent.trim()==='x'&&!td._sgok){ td._sgok=1; td.innerHTML='<span class="sgce-ok" title="Disponible">✓</span>'; } })); }); };
   new MutationObserver(()=>{ deco(); entete(); maj(); }).observe(pane,{childList:true});
   new MutationObserver(()=>decoDocs()).observe(pane,{childList:true,subtree:true});   /* un panneau du moteur se redessine seul (création, renommage…) */
   /* clic droit sur une ligne : la choisir, puis éditer / supprimer l'écriture, nouvelle écriture */
-  pane.addEventListener('contextmenu',e=>{ if(e.defaultPrevented||e.altKey||String(getSelection()).trim()||CCV.docs||CCV.sec==='DOCUMENTS') return;
+  pane.addEventListener('contextmenu',e=>{ if(e.defaultPrevented||e.altKey||String(getSelection()).trim()||CCV.docs) return;
+    if(CCV.sec==='DOCUMENTS'){ try{ ftMenu(e,pane); }catch(x){ console.error(x); } return; }   /* fichiers déposés : boutons de la liste et « Type de document » */
+    if(CCV.sec==='ORDRES DE PAIEMENT') return;   /* Ordres de paiement : « Éditer / Supprimer l'écriture » et « Nouvelle écriture » ne s'appliquent ni à un ordre ni à ses paiements — menu commun des tableaux (boutons du panneau, copie) */
     const tr=e.target.closest&&e.target.closest('table.g tbody tr[data-k]'); if(!tr||!pane.contains(tr)) return; e.preventDefault(); tr.click();
     if(CCV.sec==='DEVIS GENERAL') return;   /* Devis général : affiché seulement, aucun menu d'écriture (Paulo, 11.11.2026) */
     const ecr=CCV.sec!=='COMPTES D’ENTREPRISE'&&(!estCC()||tr.dataset.k.split('|').length>=3);   /* comptes d'entreprise : une ligne = une entreprise, pas une écriture */   /* Contrôle du coût : seules les lignes de détail sont des écritures */
@@ -44272,7 +44412,7 @@ const sautsDe=o=>{ const x=optsDe(o).sauts||{}; return {cfc:Array.isArray(x.cfc)
 const sautsActifs=o=>{ const x=sautsDe(o); return new Set(x.sans?[]:x.cfc); };
 const sigDe=(o,rec)=>{ const v=optsDe(o).sig; return v!=null?!!v:estDecompte(rec); };
 const titreDe=(o,rec)=>{ const dn=decNom(o); if(dn) return dn;   /* « Bon de paiement n° 135 », « Arrêté de compte n° 24 » (le nom du document du moteur est technique : « 135_10511_payment ») */
-  const t=sv(rec.doc&&rec.doc.nom||o.label||'Document'), e=entDe(o); return e&&e.nom?t+' · '+e.nom:t; };
+  const t0=sv(rec.doc&&rec.doc.nom||o.label||'Document'), t=t0==='Rapport des paiements'?'Liste des paiements':t0, e=entDe(o); return e&&e.nom?t+' · '+e.nom:t; };   /* « Liste des paiements » : ex-« Rapport des paiements » (15.11.2026), aussi pour un document créé sous l'ancien nom */
 const garde=(o,rec,sig)=>{ const E=o.E, p=E.p||{}, doc=DS.get('costcontroldocument',E.id)||{}, rub=deGardeRub(p,{filter:null}), e=entDe(o), F=filtreDe(o);
   if(F&&F.mo){ const k=rub.findIndex(x=>/ma[iî]tre/i.test(sv(x.lib))); if(k>=0) rub[k]=Object.assign({},rub[k],deNomAdr(F.mo)); }
   if(e&&e.nom) rub.unshift({lib:'Entreprise',nom:e.nom,adr:e.adr});
@@ -44602,6 +44742,31 @@ async function decOctets(o,rec){ await DS.need(['subproject','contact','projectm
   const opt=w.JSON.parse(JSON.stringify({titre:X.titre,sousTitre:aff,date:X.date||today(),type:'Contrôle des coûts',description:decNom(o)+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' '),decompte:X.dec})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info(decNom(o)+' :',Array.from(j)); return oct; }
 
+/* ordre de paiement et bons de paiement dans un seul document à imprimer (Paulo, 15.11.2026 : « activer l'impression des bons de paiement de l'ensemble des bons de paiement de
+   l'ordre de paiement », « regrouper les deux dans un seul document à imprimer », « ajoute une option ordre et une option bon ») — fenêtre ouverte par Imprimer ▸ « Ordre de
+   paiement n° … et bons de paiement (PDF) » (descripteur o.sgLot) : l'ordre de paiement, puis le bon de chaque paiement de l'ordre dans l'ordre des numéros de paiement,
+   chacun avec sa propre numérotation de pages (documents signés séparément) ; même dessin que l'ordre et le bon ouverts seuls (decOctets), assemblés par pdf-lib. Réglages
+   ▸ Affichage : « Ordre de paiement », « Bons de paiement » (cochés d'office, au moins l'un des deux ; enregistrés dans le document de l'ordre : sgPdf.lotOrdre, lotBons).
+   Rien d'autre n'est écrit : un bon dont le document n'est pas encore créé est dessiné avec le modèle qu'« Ouvrir » prendrait (ch01aTplPick, sans question), à défaut
+   sans modèle (libellés par défaut du moteur). L'ordre ouvert par l'onglet Documents reste l'ordre seul. */
+const MODELES=new Map();
+async function modeleBon(E,x){ const ty=ch01dBonType(x), k=ty+'|'+sv((E.p||{}).DOCTEMPLATEGROUPNAME); if(!MODELES.has(k)){ let t=null; try{ t=await ch01aTplPick(ty,E.p||{}); }catch(e){ console.error(e); } MODELES.set(k,(t&&t!=='aucun'&&t.rep)||{sections:[]}); } return MODELES.get(k); }
+/* bon de paiement d'un paiement : celui de son ordre (o donné, sinon l'ordre qui le contient) ; paiement hors de tout ordre : bon sans ordre (signataire : maître de l'ouvrage de l'affaire) */
+async function bonOctets(E,x,o){ const C=(E&&E.C)||{}; if(o===undefined) o=(C.ordresPaiement||[]).find(q=>(q.paiementIds||[]).includes(x.id))||null;
+  const d=o?ch01dBonO(E,o,x):{E,dossier:'paymentorder/-/'+(x.numero!=null?x.numero:''),type:ch01dBonType(x),nomDefaut:ch01dBonNom(x),label:'Bon de paiement',job:rep=>ch01dBonJob(E,null,x,rep)};
+  let rec=o?ch01dBonRec(E,o,x):null; if(!rec||!rec.doc||!rec.doc.report) rec={doc:{report:await modeleBon(E,x)}}; return decOctets(d,rec); }
+async function assembler(L,titre){ if(L.length===1) return L[0]; const {w}=await SGDS.ressources(), PL=w.PDFLib, doc=await PL.PDFDocument.create();
+  for(const by of L){ const src=await PL.PDFDocument.load(new w.Uint8Array(by)); (await doc.copyPages(src,src.getPageIndices())).forEach(pg=>doc.addPage(pg)); }
+  doc.setTitle(sv(titre)); doc.setAuthor('Substances Architectes'); doc.setProducer('SUBGestion'); return await doc.save(); }
+async function bonsOctets(E,o){ const P=o&&typeof ch01dPaysOf==='function'?ch01dPaysOf((E&&E.C)||{},o):[], L=[]; if(!P.length) return L;
+  await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']).catch(()=>{}); for(const x of P) L.push(await bonOctets(E,x,o)); return L; }
+/* bons de paiement d'une suite de paiements en un seul PDF (Documents ▸ Paiements : aperçu et « Créer le PDF », sg3_coco.js) */
+async function bonsPdf(E,L){ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']).catch(()=>{}); const P=[], p=(E&&E.p)||{}; for(const x of L) P.push(await bonOctets(E,x));
+  if(!P.length) throw new Error('aucun paiement choisi'); return assembler(P,('Bons de paiement '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')).trim()); }
+const lotDe=o=>{ const op=optsDe(o), q=ordDe(o), n=q&&typeof ch01dPaysOf==='function'?ch01dPaysOf((o.E&&o.E.C)||{},q).length:0, bons=op.lotBons!==false&&n>0; return {q,n,bons,ordre:op.lotOrdre!==false||!bons}; };
+async function lotOctets(o,rec){ const S=lotDe(o), L=[], p=(o.E&&o.E.p)||{}; if(S.ordre) L.push(await decOctets(o,rec)); if(S.bons) (await bonsOctets(o.E,S.q)).forEach(b=>L.push(b));
+  return assembler(L,(decNom(o)+(S.bons?' et bons de paiement':'')+' '+[p.NUMBER,p.TITLE].filter(Boolean).join(' ')).trim()); }
+
 /* choix du modèle à la création : sans objet pour le bon de paiement et l'arrêté de compte (même dessin quel que soit le modèle ; seuls quelques libellés — « Total
    net HT », « Totaux » — en viennent) : le premier modèle de la liste, celui que la fenêtre « Choisir le modèle » proposait d'office, est pris sans question */
 if(typeof ch01aTplPick==='function'&&typeof ch01aTplList==='function'){ const t0=ch01aTplPick;
@@ -44613,7 +44778,7 @@ const r0=ch01aRender;
 ch01aRender=function(o,rec){ const g=genre(o); if(!g||!window.SGIMP||typeof SGDS==='undefined'||!rec||!rec.doc||!rec.doc.report) return r0.apply(this,arguments);
   const S=window.SGIMP; let R0=null; if(g==='liste') R0=r0.apply(this,arguments);   /* listes : rendu du moteur d'abord (repère et valeurs du bloc 31) */
   const id=(++S.n).toString(36)+'c'+Date.now().toString(36);
-  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='bon'||g==='arrete'||g==='ordre'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
+  const pdf=(g==='overview'?ovOctets(o,rec):g==='estimate'?kvOctets(o,rec):g==='ordre'&&o.sgLot?lotOctets(o,rec):g==='bon'||g==='arrete'||g==='ordre'?decOctets(o,rec):listeOctets(o,rec,R0)).then(oct=>new Blob([oct],{type:'application/pdf'}));
   const titre=titreDe(o,rec);
   if(g==='liste'){ /* liste : en cas d'échec du nouveau dessin, le PDF du bloc 31 */ const id0=(/\/\*sgimp:([a-z0-9]+)\*\//.exec(sv(R0.css))||[])[1];
     const sur=pdf.catch(e=>{ console.error(e); return id0&&S.pdf?S.pdf(id0):Promise.reject(e); }); S.memo.set(id,{pdf:sur,titre,o:{}}); }
@@ -44707,6 +44872,10 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
   if(baseArr(o.dossier)&&ARR_TYPES.has(T)&&typeof ch01aArr==='function'){ const a=arrDe(o);
     L.push(it('Arrondir les conditions',a.cond,fin=>{ arrSet(o,'roundContractSummary',!a.cond,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'}),
       it('Afficher le total arrondi',a.tot,fin=>{ arrSet(o,'addRoundedTotalKey',!a.tot,fin); return false; },{grp:'Montants',ti:'Vaut pour tous les documents de la section'})); }
+  /* ordre de paiement ouvert par « Imprimer » : l'ordre et les bons de paiement de ses paiements dans un seul document (lotOctets) — une option pour chacun */
+  if(g==='ordre'&&o.sgLot){ const S=lotDe(o), garde=()=>{ toast('Le document garde au moins l’ordre de paiement ou les bons de paiement.'); return false; };
+    L.push(it('Ordre de paiement',S.ordre,fin=>S.ordre&&!S.bons?garde():opt(o,'lotOrdre',!S.ordre)(fin),{grp:'Affichage',ti:'L’ordre de paiement, en tête du document'}),
+      it('Bons de paiement',S.bons,fin=>S.bons&&!S.ordre?garde():opt(o,'lotBons',!S.bons)(fin),{grp:'Affichage',dis:!S.n,ti:S.n?'Le bon de paiement de chacun des '+S.n+' paiements de l’ordre, à la suite de l’ordre':'Cet ordre n’a aucun paiement'})); }
   /* arrêté de compte : paiement final compté ou non dans les paiements à ce jour (la question que le moteur pose à l'ouverture ; vaut pour cette ouverture) */
   if(g==='arrete'){ const a=decArr(o); if(a&&typeof ch01cHasFinal==='function'&&ch01cHasFinal(C,a)) L.push({t:'Inclure le paiement final',chk:o.final!==false,grp:'Montants',
     ti:'Compte le paiement final dans les paiements à ce jour : le solde à verser est alors ce qui reste après lui',fn:()=>{ o.final=!(o.final!==false); }}); }
@@ -44799,7 +44968,7 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
   SGDE.vue(D,{barre:'pdf',p,lb:'Contrôle des coûts · Documents',titre:T.titre,etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>tableOctets(E,k),
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
   D.maj(tableOctets(E,k)); }
-window.SGCD={decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+window.SGCD={lotOctets,bonsOctets,bonsPdf,bonOctets,lotDe,decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();
 
 /* ═══ Archives ▸ Maquettes ▸ Bon de paiement et arrêté de compte · Deux colonnes (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans

@@ -81,6 +81,19 @@ Après chaque modification, ne pas seulement recharger son onglet (« seed », a
 puis `scripts/retour_restaurer.js` (rouvre le devis, l'onglet Documents, la fenêtre, la page). Vérifier le résultat.
 Demande de Paulo du 08.11.2026 : « reviens toujours à la dernière page de la demande de modification ».
 
+## 3 quater. Essais hors du volet d'aperçu (Chrome sans fenêtre)
+
+Paulo travaille dans le volet d'aperçu et ferme les onglets d'essai qui y apparaissent (15.11.2026) : dès qu'il s'y trouve,
+essayer ailleurs. `scripts/chrome_pilote.py` pilote un Chrome sans fenêtre (profil et base à part, origine 127.0.0.1:7811) :
+scénario en étapes JavaScript, résultats affichés, captures d'écran PNG — mode d'emploi en tête du script.
+```bash
+A=<atelier hors du dépôt>; mkdir -p $A/www && cp SUBGestion3.html $A/www/essai.html && cp /tmp/subgestion_apercu/base_test.json.gz $A/www/
+(cd $A/www && python3 -m http.server 7811 --bind 127.0.0.1 >/dev/null 2>&1 &)
+python3 -I .claude/skills/substances-verification-app/scripts/chrome_pilote.py http://127.0.0.1:7811/essai.html $A/cas.js
+```
+Regarder les captures avec l'outil de lecture d'images. Les essais qui écrivent (dépôts, PDF) restent dans cette base à part.
+À la fin, ne recharger l'onglet de Paulo qu'après avoir regardé son état (fenêtre ouverte, saisie en cours).
+
 ## 4. Test du mode réel (double-clic, `file://`)
 
 ```bash

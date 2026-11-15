@@ -78,3 +78,6 @@ Détails techniques (API du moteur, globales de Facturation, clés de session, i
   de la ligne et casse tout le script (l'app ne démarre plus). Utiliser `/* … */`, puis vérifier la syntaxe du plus grand
   `<script>` de DeltaSub.html (JavaScriptCore : `osascript -l JavaScript`, `new Function(source)`).
 - Profils d'accès : listes `SG_DROITS` / `SG_DEFAUTS` en double (serveur et `sg3_plus.js`) — les modifier ensemble.
+- **Préfixe de classes et identifiant de `<style>` uniques par bloc** : deux blocs de SUBGestion 3 ont porté le même `<style id="sgce-css">` et les mêmes classes `sgce-*`
+  (contrats d'entreprise et contrôle des coûts) — le premier écran ouvert privait l'autre de ses styles. Avant de créer un bloc : `grep` du préfixe et de l'identifiant
+  dans `subgestion3/*.js|css`, `DeltaSub.html` et `Facturation.html`.

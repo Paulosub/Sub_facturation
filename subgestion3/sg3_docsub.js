@@ -1938,7 +1938,106 @@ async function sgDsPdf(R, rep, o){
         cx.texte('Lieu, date', a, T(yy + 0.5 + dB(11, 7)), { police:F.light, taille:7, couleur:GRISc });
         cx.texte('Signature, tampon', a + Math.round(CW * 0.4), T(yy + 0.5 + dB(11, 7)), { police:F.light, taille:7, couleur:GRISc }); }); }
   };
+  /* ── contrat d'entreprise à la mise en page du bureau (15.11.2026, Paulo : « ajoute également la mise en page des contrats d'entreprises », modèle joint :
+     contrat d'un lot, deux pages — document client, jamais dans le dépôt) — o.contratEnt = {
+       rubriques:[{ lib, val }]                 Ouvrage, Maître de l'ouvrage, Architecte, Direction des travaux (libellé en capitales, filet, valeur dessous)
+       cfc, lot                                  grand titre entre deux filets : n° CFC dans la marge (x 70), désignation du lot
+       montants:[{ lib, mid, val, gras }]       libellé, précision à droite (« HT (après rabais) », « TVA incl. »), « Fr. », montant
+       infos:[{ lib, val, gras }]               libellé à gauche, valeur à droite (Adjudicataire, Selon offre du, Confirmation du mandat le, Début des travaux…)
+       signatures:[libellés], signaturesTitre   « SIGNATURE ET TAMPONS », un libellé et une ligne pointillée par signataire
+       positions:{ tit:[4 titres], rows:[{ c:[texte, ouvrage ou taux, montant, montant], d1 (2e cellule à droite : taux), l2 (texte sur les deux premières colonnes), s:'' | 'v' (vide) | 'p' (filet noir
+                   dessous) | 't' (gras, filet noir dessous) | 'h' (intertitre gras) }] }      2e page : tableau aux rangées alternées
+       remarque                                  texte au bas de la 2e page ; clauses:[{ t:'sou'|'pu'|'txt', x, b }], clausesTitre : pages suivantes s'il y en a }
+     Mesures relevées sur le modèle (pt depuis le haut, A4 portrait) et posées sur le papier des contrats : colonne de x 125.72 (2e colonne du pied) à 510.68 (trait
+     du numéro de page) ; rubriques tous les 50 pt dès 120 (Regular 8 en capitales, filet 0,25 à +5,75, valeur Light 8 à +18) ; titre du lot en Bold 14 entre deux
+     filets partant de x 70 ; lignes de montant au pas de 16 pt (filet à +5), ligne en gras 34 pt plus bas ; signatures au pas de 71 pt, pointillé (1 pt tous les
+     5 pt, 0,75 d'épaisseur) 39 pt sous le libellé ; tableau dès 85 pt : colonnes 142,96 / 100 / 71 / 71, rangées de 15 pt en Light 9, titres en gras sur fond gris
+     (234), filet noir de 1 pt sous les titres, sous « Total HT » et sous « Total TTC » ; remarque en Regular 8 à 620 pt (plus bas si le tableau y arrive).
+     Rien n'est coupé : un texte trop long passe à la ligne et sa rangée grandit ; un tableau trop long continue sur la page suivante, titres répétés. ── */
+  const contenuContratEnt = (cx) => {
+    const D = o.contratEnt || {}, H = PAP.format.portrait.h, T = (v) => H - v, P = (t) => prep(t == null ? '' : t);
+    const X0 = 125.72, X1 = 510.68, XC = 70, W = X1 - X0, BAS = H - 89.245, FONDc = PDFLib.rgb(0.918, 0.918, 0.918);
+    const bar = (y, ep, a, b, col) => cx.rect(a == null ? X0 : a, T(y + ep), (b == null ? X1 : b) - (a == null ? X0 : a), ep, { fond:col || C.N });   /* filet : haut à y */
+    const fil = (y, a) => bar(y, 0.25, a);
+    const reduit = (t, f, z, w, min) => Math.max(min || 6, Math.min(z, z * w / Math.max(1, cx.largeur(t, f, z))));
+    const lignesDe = (t, f, z, w) => { const R = []; String(t == null ? '' : t).replace(/\r/g, '').split('\n').forEach(par => { const L = cx.couper(P(par), f, z, w); if(L && L.length) L.forEach(l => R.push(l)); else R.push(''); });
+      while(R.length && !String(R[R.length - 1]).trim()) R.pop(); return R; };
+
+    /* ── page 1 : rubriques, lot, montants, adjudicataire, offre et délais, signatures ── */
+    cx.nouvellePage('portrait');
+    let y = 120, yv = 96;
+    (Array.isArray(D.rubriques) ? Array.from(D.rubriques) : []).forEach(r => {
+      cx.texte(cx.maj(P(r.lib)), X0, T(y), { police:F.regular, taille:8 }); fil(y + 5.75);
+      const L = lignesDe(r.val, F.light, 8, W); yv = y + 18;
+      (L.length ? L : ['']).forEach((l, i) => { if(i) yv += 10; cx.texte(l, X0, T(yv), { police:F.light, taille:8 }); });
+      y = yv + 32; });
+    let yt = yv + 24; fil(yt, XC);
+    const cfc = P(D.cfc || ''), lot = P(D.lot || ''), zl = reduit(lot, F.bold, 14, W, 9), Ll = lot && cx.largeur(lot, F.bold, zl) > W + 0.5 ? cx.couper(lot, F.bold, 9, W) : [lot];
+    if(cfc) cx.texte(cfc, XC, T(yt + 19), { police:F.bold, taille:reduit(cfc, F.bold, 14, X0 - XC - 6, 8) });
+    Ll.forEach((l, i) => { if(l) cx.texte(l, X0, T(yt + 19 + i * 12), { police:F.bold, taille:Ll.length > 1 ? 9 : zl }); });
+    yt += 26 + (Ll.length - 1) * 12; fil(yt, XC);
+    const XM = 397, XF = 417.5, XD = X1 - 1;
+    /* une ligne : libellé à gauche ; avec « mid » : précision, « Fr. » et montant ; sans : valeur à droite (à la ligne si elle ne tient pas) ; renvoie la dernière ligne de base */
+    const rang = (r, yb) => { const f = r.gras ? F.bold : F.light, lib = P(r.lib), v = P(r.val == null ? '' : r.val);
+      cx.texte(lib, X0, T(yb), { police:f, taille:8 });
+      if(r.mid != null){ if(r.mid) cx.texte(P(r.mid), XM, T(yb), { police:f, taille:8, align:'d' });
+        if(v){ cx.texte('Fr.', XF, T(yb), { police:f, taille:8 }); cx.texte(v, XD, T(yb), { police:f, taille:8, align:'d' }); } }
+      else if(v){ const Lv = lignesDe(r.val, f, 8, Math.max(120, W - cx.largeur(lib, f, 8) - 14));
+        Lv.forEach((l, i) => { if(i) yb += 10; cx.texte(l, XD, T(yb), { police:f, taille:8, align:'d' }); }); }
+      fil(yb + 5); return yb; };
+    let yb = null; const pas = (g) => { yb = yb == null ? yt + 39 : yb + g; };
+    const M = Array.isArray(D.montants) ? Array.from(D.montants) : [], I = Array.isArray(D.infos) ? Array.from(D.infos) : [];
+    M.forEach((r, i) => { pas(r.gras || (i && M[i - 1].gras) ? 34 : 16); yb = rang(r, yb); });
+    I.forEach((r, i) => { pas(i === 0 || r.gras || I[i - 1].gras ? 34 : 16); yb = rang(r, yb); });
+    const S = (Array.isArray(D.signatures) ? Array.from(D.signatures) : []).map(P).filter(Boolean);
+    if(S.length){ let ys = (yb == null ? yt : yb) + 32;
+      if(ys + 16 + 39 + (S.length - 1) * 38 > BAS + 6){ cx.nouvellePage('portrait'); ys = 120; }   /* trop de lignes au-dessus : signatures sur la page suivante */
+      cx.texte(cx.maj(P(D.signaturesTitre || 'Signature et tampons')), X0 + 2, T(ys), { police:F.light, taille:8 }); fil(ys + 3);
+      const y1 = ys + 16, pasS = S.length > 1 ? Math.max(38, Math.min(71, (BAS + 4 - y1 - 39) / (S.length - 1))) : 71, dp = Math.min(39, pasS - 10);
+      S.forEach((t, i) => { const yl = y1 + i * pasS; cx.texte(cx.maj(t), X0, T(yl), { police:F.light, taille:8 });
+        for(let x = X0 + 2; x < X1 - 0.5; x += 5) cx.rect(x, T(yl + dp + 0.75), 1, 0.75, { fond:C.N }); }); }
+
+    /* ── page 2 : positions, conditions et totaux ── */
+    const TB = D.positions || {}, rows = Array.isArray(TB.rows) ? Array.from(TB.rows) : []; let yFin = null;
+    if(rows.length){ const w0 = 142.96, w1 = 100, w2 = 71, c1 = X0 + w0, c2 = c1 + w1, c3 = c2 + w2, tit = Array.isArray(TB.tit) ? Array.from(TB.tit) : []; let yy = 0, k = 0;
+      const tetes = () => { cx.nouvellePage('portrait'); yy = 85; cx.rect(X0, T(yy + 15), W, 15, { fond:FONDc });
+        cx.texte(P(tit[0] || ''), X0 + 1.3, T(yy + 10), { police:F.bold, taille:9 }); cx.texte(P(tit[1] || ''), c1 + 1.3, T(yy + 10), { police:F.bold, taille:9 });
+        cx.texte(P(tit[2] || ''), c3 - 1.5, T(yy + 10), { police:F.bold, taille:9, align:'d' }); cx.texte(P(tit[3] || ''), X1 - 1.5, T(yy + 10), { police:F.bold, taille:9, align:'d' });
+        bar(yy + 14, 1); yy += 15; k = 0; };
+      tetes();
+      rows.forEach(r => { const c = Array.isArray(r.c) ? Array.from(r.c) : [], f = r.s === 't' || r.s === 'h' ? F.bold : F.light, vide = r.s === 'v';
+        const L0 = vide ? [] : lignesDe(c[0], f, 9, (r.s === 'h' || r.l2 ? w0 + w1 : w0) - 4), L1 = vide || r.d1 || r.l2 || r.s === 'h' ? [] : lignesDe(c[1], f, 9, w1 - 4), n = Math.max(1, L0.length, L1.length), h = 15 + (n - 1) * 10;
+        if(yy + h > BAS) tetes();
+        if(k % 2) cx.rect(X0, T(yy + h), W, h, { fond:FONDc }); k++;
+        L0.forEach((l, i) => cx.texte(l, X0 + 1.3, T(yy + 10 + i * 10), { police:f, taille:9 }));
+        L1.forEach((l, i) => cx.texte(l, c1 + 1.3, T(yy + 10 + i * 10), { police:f, taille:9 }));
+        if(!vide && r.d1 && c[1]) cx.texte(P(c[1]), c2 - 1.7, T(yy + 10), { police:f, taille:9, align:'d' });
+        if(!vide && c[2]) cx.texte(P(c[2]), c3 - 1.5, T(yy + 10), { police:f, taille:9, align:'d' });
+        if(!vide && c[3]) cx.texte(P(c[3]), X1 - 1.5, T(yy + 10), { police:f, taille:9, align:'d' });
+        if(r.s === 'p' || r.s === 't') bar(yy + h - 1, 1);
+        yy += h; });
+      yFin = yy; }
+
+    /* ── remarque (bas de la 2e page), puis clauses particulières s'il y en a ── */
+    const rem = lignesDe(D.remarque || '', F.regular, 8, W);
+    if(rem.length){ let yr;
+      if(yFin == null){ cx.nouvellePage('portrait'); yr = 120; }
+      else { yr = Math.max(yFin + 30, 620); if(yr + (rem.length - 1) * 10 > BAS) yr = yFin + 30; if(yr > BAS - 20){ cx.nouvellePage('portrait'); yr = 100; } }
+      rem.forEach(l => { if(yr > BAS){ cx.nouvellePage('portrait'); yr = 100; } if(l) cx.texte(l, X0, T(yr), { police:F.regular, taille:8 }); yr += 10; }); }
+    const CL = (Array.isArray(D.clauses) ? Array.from(D.clauses) : []).filter(b => b && String(b.x || '').trim());
+    if(CL.length){ cx.nouvellePage('portrait'); let yc = 120;
+      cx.texte(cx.maj(P(D.clausesTitre || 'Conditions particulières')), X0, T(yc), { police:F.regular, taille:8 }); fil(yc + 5.75); yc += 22;
+      CL.forEach(b => { const t = String(b.t || 'txt'), f = t === 'sou' || b.b ? F.regular : F.light, ind = t === 'pu' ? 10 : 0, L = lignesDe(b.x, f, 8, W - ind);
+        if(t === 'sou') yc += 8;
+        if(t === 'sou' && yc + 11 * 3 > BAS){ cx.nouvellePage('portrait'); yc = 100; }   /* une rubrique ne reste pas seule en bas de page */
+        L.forEach((l, i) => { if(yc > BAS){ cx.nouvellePage('portrait'); yc = 100; }
+          if(t === 'pu' && i === 0) cx.texte('–', X0, T(yc), { police:F.light, taille:8 });
+          if(l) cx.texte(t === 'sou' ? cx.maj(l) : l, X0 + ind, T(yc), { police:f, taille:8 }); yc += 11; });
+        yc += t === 'sou' ? 2 : 3; }); }
+  };
+
   const contenu = (cx) => {
+    if(o.contratEnt){ contenuContratEnt(cx); return; }
     if(o.decompte){ contenuDecompte(cx); return; }
     if(o.descDG){ contenuDescDG(cx); return; }
     if(o.livretDG){ contenuLivret(cx); return; }

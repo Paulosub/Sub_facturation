@@ -37,15 +37,21 @@ const supprimer=async d=>{ if(d&&await confirmDlg('Supprimer le contrôle des co
 /* colonnes de la copie et de l'export : celles du tableau */
 const colsListe=G=>[...(G?[{k:'pn',t:'N° d’affaire',f:d=>E(prj(d).NUMBER||'')}]:[]),{k:'VERSION',t:'Variante'},{k:'VERSIONNUMBER',t:'N°'},{k:'st',t:'Statut',f:d=>E(ETATS[d.STATECODE]||'')},{k:'NOTE',t:'Remarque'},
   {k:'cp',t:'Coût probable TTC',f:d=>{ const g=totaux(d); return g?E(num(z(g.coutProbable))):''; }},{k:'ec',t:'État du coût TTC',f:d=>{ const g=totaux(d); return g?E(num(z(g.etatCout))):''; }},{k:'dt',t:'Modifié',f:d=>E(dfr(d.CHANGEDDATE))},{k:'USERID',t:'Par'}];
+/* colonnes de la liste (bloc 57, catalogues « coco » / « cocog », 15.11.2026) : en-tête du contrôle des coûts (champs de l'ancien logiciel) et totaux calculés */
+const catCoco=()=>{ if(SGTAB.def.coco) return; const C=sgtabColsDoc({version:'Variante',note:'Remarque',statut:d=>ETATS[d.STATECODE]||''});
+  Object.assign(C,{cp:{t:'Coût probable TTC',cat:'Montants',r:1,nw:1,v:d=>{ const g=totaux(d); return g?mt(g.coutProbable):'—'; }},
+    ec:{t:'État du coût TTC',l:'État du coût TTC (coût probable moins devis général révisé)',cat:'Montants',r:1,nw:1,cl:d=>{ const g=totaux(d); return g?cls(g.etatCout):''; },v:d=>{ const g=totaux(d); return g?signe(g.etatCout):'—'; }}});
+  sgtabDef('coco',{titre:'Contrôles des coûts',std:['version','num','statut','note','cp','ec','modifie','par'],cat:C});
+  sgtabDef('cocog',{titre:'Contrôles des coûts · tous les projets',std:['projet','version','num','statut','note','cp','ec','modifie','par'],cat:C}); };
 const COCO={
-  rendre(I){ cssC(); const p=I.p, u=I.u, G=!!p.GLOBAL, ec=ecrit();
+  rendre(I){ cssC(); catCoco(); const p=I.p, u=I.u, G=!!p.GLOBAL, ec=ecrit();
     const tous=(G?DS.all('costcontroldocument'):DS.by('costcontroldocument','PROJECT_ID',p.ID)).filter(d=>!+d.ISMARKEDASDELETED&&(!G||!u.mine||d.USERID===ME.id));
     const vivant=G?DS.all('costcontroldocument').filter(d=>!+d.ISMARKEDASDELETED):tous, parSt=[...new Set(tous.map(d=>+d.STATECODE||0))].sort();
     if(u.statut!=null&&!parSt.includes(u.statut)) u.statut=null;   /* statut disparu : son filtre ne reste pas actif */
     const st=u.statut??null, recent=(a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE)||(+b.VERSIONNUMBER||0)-(+a.VERSIONNUMBER||0)||(+b.ID-+a.ID);
     const R=tous.filter(d=>(st==null||+d.STATECODE===st)&&trouve(u.q,d.VERSION,d.NOTE,d.USERID,d.VERSIONNUMBER,ETATS[d.STATECODE],G?prj(d).NUMBER:'',G?prj(d).TITLE:'')).sort(recent); I.R=R;
     const nE=vivant.filter(d=>+d.STATECODE===1).length, dern=vivant.slice().sort(recent)[0]||null, ref=vivant.filter(d=>+d.STATECODE===1).sort(recent)[0]||dern, gR=!G&&ref?totaux(ref):null, mo=moT(p);
-    const acts=(ec?btn('new','Nouveau contrôle des coûts','plus',1):'')+'<button class="nx-btn" data-a="menu" title="Autres actions" aria-label="Autres actions">⋯</button>';
+    const acts=(ec?btn('new','Nouveau contrôle des coûts','plus',1):'')+sgtabBoutons(btn)+'<button class="nx-btn" data-a="menu" title="Autres actions" aria-label="Autres actions">⋯</button>';
     const teteP=G?tete('CC','Contrôles des coûts','Chantier',pl(vivant.length,'contrôle des coûts','contrôles des coûts')+' · tous les projets',acts)
       :tete(p.NUMBER||'','Contrôles des coûts',p.TITLE||'',[mo?'Maître de l’ouvrage : '+mo:'',pl(vivant.length,'contrôle des coûts','contrôles des coûts')].filter(Boolean).join(' · '),acts);
     if(!vivant.length) return '<div class="sgsv">'+teteP+'<div class="sgsv-vide"><b>'+(G?'Aucun contrôle des coûts.':'Aucun contrôle des coûts pour ce projet.')+'</b><br>Le contrôle des coûts suit l’ouvrage pendant le chantier : devis général révisé, contrats, mutations, paiements et coût probable par CFC.'+(ec?'<div class="acts">'+btn('new','Nouveau contrôle des coûts','plus',1)+'</div>':'')+'</div></div>';
@@ -58,19 +64,16 @@ const COCO={
       +'<div class="sgsv-fil">'+(G?[['0','Tous'],['1','Mes contrôles']].map(([v,t])=>'<button data-a="mine" data-v="'+v+'" class="'+((+v===1)===!!u.mine?'on':'')+'">'+t+'</button>').join('')+'<span style="width:10px"></span>':'')
       +(parSt.length>1?[['','Tous les statuts'],...parSt.map(c=>[c,ETATS[c]||String(c)])].map(([c,t])=>{ const v=c===''?null:+c; return '<button data-a="statut" data-c="'+c+'" class="'+(v===st?'on':'')+'" aria-pressed="'+(v===st)+'">'+E(t)+'</button>'; }).join(''):'')
       +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher un contrôle des coûts" aria-label="Rechercher un contrôle des coûts" value="'+E(u.q||'')+'"></span></div>'
-      +(R.length?'<table class="nx-tbl sgsv-tb sgcc-lt"><thead><tr>'+(G?'<th>Projet</th>':'')+'<th>Variante</th><th class="r">N°</th><th>Statut</th><th>Remarque</th><th class="r">Coût probable TTC</th><th class="r">État du coût TTC</th><th>Modifié</th><th>Par</th></tr></thead><tbody>'
-        +R.map(d=>{ const g=totaux(d), nt=d.NOTE||''; return '<tr data-a="open" data-d="'+E(d.ID)+'">'+(G?'<td class="nw" title="'+E(prj(d).TITLE||'')+'">'+E(prj(d).NUMBER||'')+'</td>':'')
-          +'<td><b>'+E(d.VERSION||'(sans titre)')+'</b></td><td class="r">'+E(d.VERSIONNUMBER??'')+'</td><td class="nw">'+E(ETATS[d.STATECODE]||'')+'</td><td class="note" title="'+E(nt)+'">'+E(nt)+'</td>'
-          +'<td class="r nw">'+(g?E(mt(g.coutProbable)):'—')+'</td><td class="r nw '+(g?cls(g.etatCout):'')+'" title="Coût probable moins devis général révisé">'+(g?E(signe(g.etatCout)):'—')+'</td>'
-          +'<td class="nw">'+E(dfr(d.CHANGEDDATE))+'</td><td class="nw">'+E(d.USERID||'')+'</td></tr>'; }).join('')+'</tbody></table>'
+      +(R.length?sgtabTableau(G?'cocog':'coco',R,null,d=>' data-a="open" data-d="'+E(d.ID)+'"','sgcc-lt')
         :'<p class="sgsv-rien">Aucun contrôle des coûts trouvé.</p>')+'</div>'; },
   action(I,a,t,e){ const p=I.p, u=I.u, d=t.dataset.d?DS.get('costcontroldocument',t.dataset.d):null;
+    if(sgtabActionListe(p.GLOBAL?'cocog':'coco',I,a,t,()=>({titre:'Contrôles des coûts',p:p.GLOBAL?null:p,lb:'Contrôle des coûts · Documents',type:'Contrôle des coûts',sous:p.GLOBAL?'Tous les projets':'',meta:[['Projets',p.GLOBAL?'Tous':(p.NUMBER||'')],['Recherche',u.q?'« '+u.q+' »':'']]}))) return;
     if(a==='new'){ if(!ecrit()) return; if(p.GLOBAL) pickProject('Choix de l’affaire',q=>ccEditDoc(q)); else ccEditDoc(p); }
     else if(a==='open'){ if(d&&!(e&&e.detail>1)) ouvrir(d); }   /* le 2e clic d'un double-clic d'habitude est ignoré */
     else if(a==='mine'){ u.mine=t.dataset.v==='1'; u.statut=null; I.dessiner(); }
     else if(a==='statut'){ u.statut=t.dataset.c===''?null:+t.dataset.c; I.dessiner(); }
     else if(a==='menu'){ const g=()=>({cols:colsListe(!!p.GLOBAL),view:I.R||[]});
-      menuSous(t,[{t:'Copier le tableau',fn:()=>copyTable(g())},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(g(),'Controles_des_couts')}]); } },
+      menuSous(t,[{t:'Copier le tableau',fn:()=>sgtabCopie(I.box)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>sgtabCsv(p.GLOBAL?'cocog':'coco',I.R||[],null,'controles_des_couts')}]); } },
   ctx(I,t,e){ if(t.dataset.a!=='open') return false; const d=DS.get('costcontroldocument',t.dataset.d); if(!d) return false; const ec=ecrit();
     sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir le contrôle des coûts',fn:()=>ouvrir(d)},...(ec?[{t:'Modifier l’en-tête…',fn:()=>ccEditDoc(prj(d),d)},{t:'Dupliquer (état intermédiaire)',fn:()=>ccDuplicate(d)},'-',{t:'Supprimer…',danger:true,fn:()=>supprimer(d)}]:[])]); return true; } };
 ccDomain=function(C,top,pane,p){ monter(C,p,'coco',BESOIN,COCO); };

@@ -362,13 +362,20 @@ const ouvrir=d=>ch02dOpen(d,VIEW&&VIEW.id!=='devis'?{view:VIEW.id,arg:VIEW.arg}:
 const nouveau=q=>ch02dEditDoc(q,null,x=>{ if(x) ouvrir(x); });
 /* colonnes de l'export de la liste : mêmes colonnes que le tableau */
 const colsListe=G=>[...(G?[{k:'pn',t:'N° d’affaire',f:d=>E(prj(d).NUMBER||'')}]:[]),{k:'VERSION',t:'Version'},{k:'VERSIONNUMBER',t:'N° de version'},{k:'st',t:'Statut',f:d=>E(DV_STATE[d.STATECODE]||'')},{k:'NOTE',t:'Note'},{k:'tot',t:'Total TTC',f:d=>{ const v=ch02dTot(d.ID); return v==null?'':E(num2(v)); }},{k:'dt',t:'Modifié',f:d=>E(dfr(d.CHANGEDDATE))},{k:'USERID',t:'Par'}];
+/* colonnes de la liste (bloc 57, catalogues « devis » / « devisg », 15.11.2026) : en-tête du devis (champs de l'ancien logiciel) et total calculé */
+const catDevis=()=>{ if(SGTAB.def.devis) return; const C=sgtabColsDoc({statut:d=>DV_STATE[d.STATECODE]||'',
+    tags:d=>(+d.ISAPPLYSUBPROJECTS?'<span class="sgde-tag">subdivisions</span>':'')+(+d.ISMARKEDASDELETED?'<span class="sgde-tag">supprimé</span>':'')});
+  Object.assign(C,{ttc:{t:'Total TTC',l:'Total du devis TTC',cat:'Montants',r:1,nw:1,v:d=>{ const v=ch02dTot(d.ID); return v==null?'—':num2(v); }},
+    tva:{t:'TVA séparée',cat:'Document',nw:1,v:d=>+d.ISVATSEPARETED?'Oui':'Non'},sub:{t:'Subdivisions',l:'Ouvrages et localisations appliqués',cat:'Document',nw:1,v:d=>+d.ISAPPLYSUBPROJECTS?'Oui':'Non'}});
+  sgtabDef('devis',{titre:'Devis généraux',std:['version','num','statut','note','ttc','modifie','par'],cat:C});
+  sgtabDef('devisg',{titre:'Devis généraux · tous les projets',std:['projet','version','num','statut','note','ttc','modifie','par'],cat:C}); };
 const DEVI={
-  rendre(I){ cssD(); const p=I.p, u=I.u, G=!!p.GLOBAL, tous=(G?DS.all('costestimatedocument'):DS.by('costestimatedocument','PROJECT_ID',p.ID)).filter(d=>!G||!u.mine||d.USERID===ME.id), vivant=tous.filter(d=>!+d.ISMARKEDASDELETED), base=u.supp?tous:vivant, parSt=[...new Set(base.map(d=>+d.STATECODE||0))].sort(), ec=ecrit();
+  rendre(I){ cssD(); catDevis(); const p=I.p, u=I.u, G=!!p.GLOBAL, tous=(G?DS.all('costestimatedocument'):DS.by('costestimatedocument','PROJECT_ID',p.ID)).filter(d=>!G||!u.mine||d.USERID===ME.id), vivant=tous.filter(d=>!+d.ISMARKEDASDELETED), base=u.supp?tous:vivant, parSt=[...new Set(base.map(d=>+d.STATECODE||0))].sort(), ec=ecrit();
     if(u.statut!=null&&!parSt.includes(u.statut)) u.statut=null;   /* statut disparu de la liste : ses boutons aussi, le filtre ne reste pas actif */
     const st=u.statut??null;
     const R=base.filter(d=>(st==null||+d.STATECODE===st)&&trouve(u.q,d.VERSION,d.NOTE,d.USERID,d.VERSIONNUMBER,DV_STATE[d.STATECODE],G?prj(d).NUMBER:'',G?prj(d).TITLE:'')).sort((a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE)||(+b.ID-+a.ID)); I.R=R;
     const nV=vivant.filter(d=>+d.STATECODE===2).length, nP=vivant.filter(d=>[0,1].includes(+d.STATECODE||0)).length, dern=vivant.slice().sort((a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE)||(+b.ID-+a.ID))[0]||null, totD=dern?ch02dTot(dern.ID):null, mo=moT(p);
-    const acts=(ec?btn('new','Nouveau devis','plus',1):'')+'<button class="nx-btn" data-a="menu" title="Autres actions" aria-label="Autres actions">⋯</button>';
+    const acts=(ec?btn('new','Nouveau devis','plus',1):'')+sgtabBoutons(btn)+'<button class="nx-btn" data-a="menu" title="Autres actions" aria-label="Autres actions">⋯</button>';
     const teteP=G?tete('DG','Devis généraux','Descriptifs & devis',pl(vivant.length,'devis','devis')+' · tous les projets',acts):tete(p.NUMBER||'','Devis généraux',p.TITLE||'',[mo?'Maître de l’ouvrage : '+mo:'',pl(vivant.length,'devis','devis')].filter(Boolean).join(' · '),acts);
     if(!vivant.length&&!u.supp&&!(G&&u.mine)) return '<div class="sgsv">'+teteP+'<div class="sgsv-vide"><b>'+(G?'Aucun devis.':'Aucun devis pour ce projet.')+'</b><br>Un devis général chiffre l’ouvrage par CFC : positions, quantités, prix, puis documents et impressions.'+(ec?'<div class="acts">'+btn('new','Nouveau devis','plus',1)+'</div>':'')+'</div></div>';
     return '<div class="sgsv">'+teteP
@@ -376,16 +383,16 @@ const DEVI={
       +'<div class="sgsv-fil">'+(G?[['0','Tous'],['1','Mes devis']].map(([v,t])=>'<button data-a="mine" data-v="'+v+'" class="'+((+v===1)===!!u.mine?'on':'')+'">'+t+'</button>').join('')+'<span style="width:10px"></span>':'')
       +(parSt.length>1?[['','Tous les statuts'],...parSt.map(c=>[c,DV_STATE[c]||String(c)])].map(([c,t])=>{ const v=c===''?null:+c; return '<button data-a="statut" data-c="'+c+'" class="'+(v===st?'on':'')+'" aria-pressed="'+(v===st)+'">'+E(t)+'</button>'; }).join(''):'')
       +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher un devis" aria-label="Rechercher un devis" value="'+E(u.q||'')+'"></span></div>'
-      +(R.length?'<table class="nx-tbl sgsv-tb sgde-lt"><thead><tr>'+(G?'<th>Projet</th>':'')+'<th>Version</th><th class="r">N°</th><th>Statut</th><th>Note</th><th class="r">Total TTC</th><th>Modifié</th><th>Par</th></tr></thead><tbody>'
-        +R.map(d=>{ const v=ch02dTot(d.ID), nt=d.NOTE||''; return '<tr data-a="open" data-d="'+d.ID+'"'+(+d.ISMARKEDASDELETED?' class="supp"':'')+'>'+(G?'<td class="nw" title="'+E(prj(d).TITLE||'')+'">'+E(prj(d).NUMBER||'')+'</td>':'')+'<td><b>'+E(d.VERSION||'(sans titre)')+'</b>'+(+d.ISAPPLYSUBPROJECTS?'<span class="sgde-tag">subdivisions</span>':'')+(+d.ISMARKEDASDELETED?'<span class="sgde-tag">supprimé</span>':'')+'</td><td class="r">'+E(d.VERSIONNUMBER??'')+'</td><td class="nw">'+E(DV_STATE[d.STATECODE]||'')+'</td><td class="note" title="'+E(nt)+'">'+E(nt)+'</td><td class="r nw">'+(v==null?'—':E(num2(v)))+'</td><td class="nw">'+E(dfr(d.CHANGEDDATE))+'</td><td class="nw">'+E(d.USERID||'')+'</td></tr>'; }).join('')+'</tbody></table>'
+      +(R.length?sgtabTableau(G?'devisg':'devis',R,null,d=>' data-a="open" data-d="'+d.ID+'"'+(+d.ISMARKEDASDELETED?' class="supp"':''),'sgde-lt')
         :'<p class="sgsv-rien">Aucun devis trouvé.</p>')+'</div>'; },
   action(I,a,t,e){ const p=I.p, u=I.u, d=t.dataset.d?DS.get('costestimatedocument',t.dataset.d):null;
+    if(sgtabActionListe(p.GLOBAL?'devisg':'devis',I,a,t,()=>({titre:'Devis généraux',p:p.GLOBAL?null:p,lb:'Descriptifs & devis · Documents',type:'Devis',sous:p.GLOBAL?'Tous les projets':'',meta:[['Projets',p.GLOBAL?'Tous':(p.NUMBER||'')],['Recherche',u.q?'« '+u.q+' »':'']]}))) return;
     if(a==='new'){ if(p.GLOBAL) pickProject(CH02D_L.pickP,q=>nouveau(q)); else nouveau(p); }
     else if(a==='open'){ if(d&&!(e&&e.detail>1)) ouvrir(d); }
     else if(a==='mine'){ u.mine=t.dataset.v==='1'; u.statut=null; I.dessiner(); }
     else if(a==='statut'){ u.statut=t.dataset.c===''?null:+t.dataset.c; I.dessiner(); }
     else if(a==='menu'){ const g=()=>({cols:colsListe(!!p.GLOBAL),view:I.R||[]}), ec=ecrit();
-      menuSous(t,[{t:CH02D_L.delShown,chk:!!u.supp,fn:()=>{ u.supp=!u.supp; I.dessiner(); }},...(ec?['-',{t:CH02D_L.impInt,fn:()=>{ if(p.GLOBAL) pickProject(CH02D_L.pickP,q=>ch02dImportFromProject(q)); else ch02dImportFromProject(p); }}]:[]),'-',{t:CH02D_L.tblCopy,fn:()=>copyTable(g())},{t:CH02D_L.tblCsv,fn:()=>csvTable(g(),'Devis')}]); } },
+      menuSous(t,[{t:CH02D_L.delShown,chk:!!u.supp,fn:()=>{ u.supp=!u.supp; I.dessiner(); }},...(ec?['-',{t:CH02D_L.impInt,fn:()=>{ if(p.GLOBAL) pickProject(CH02D_L.pickP,q=>ch02dImportFromProject(q)); else ch02dImportFromProject(p); }}]:[]),'-',{t:CH02D_L.tblCopy,fn:()=>sgtabCopie(I.box)},{t:CH02D_L.tblCsv,fn:()=>sgtabCsv(p.GLOBAL?'devisg':'devis',I.R||[],null,'devis')}]); } },
   ctx(I,t,e){ if(t.dataset.a!=='open') return false; const d=DS.get('costestimatedocument',t.dataset.d); if(!d) return false; const def=!!+d.ISMARKEDASDELETED;
     sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir le devis',fn:()=>ouvrir(d)},...(ecrit()?[{t:'Modifier l’en-tête…',fn:()=>ch02dEditDoc(prj(d),d)},{t:'Dupliquer…',fn:()=>ch02dDuplicate(d)},...(ch02dSps(d.PROJECT_ID).length?[{t:CH02D_L.match+' …',fn:()=>ch02dMatchStructure(d)}]:[]),'-',{t:def?'Supprimer définitivement…':'Supprimer…',danger:true,fn:()=>ch02dDelete(d)}]:[])]); return true; } };
 ch02dDomain=function(C,top,pane,p){ monter(C,p,'devis',BESOIN,DEVI); };

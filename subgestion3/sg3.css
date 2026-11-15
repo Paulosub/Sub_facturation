@@ -1850,3 +1850,5 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .nx-tbl.sgtab-t td{vertical-align:top}
 .nx-tbl.sgtab-t td.nw{white-space:nowrap}
 .nx-tbl.sgtab-t td.c,.nx-tbl.sgtab-t th.c{text-align:center}
+.nx-tbl.sgtab-t td svg{width:14px;height:14px;vertical-align:-2px;flex:none}   /* icônes dans les cellules (cadenas d'une soumission ouverte…) */
+.sgtab-note{display:inline-block;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}

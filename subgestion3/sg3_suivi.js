@@ -614,19 +614,35 @@ const moisAn=r=>String(r.DATEYEAR||'');
 const nomC=(t,id)=>{ try{ return nm(DS.get(t,id))||''; }catch(_){ return ''; } };
 const etatF=r=>r.ISCHARGED?'Facturé':(typeof TSTATE!=='undefined'&&TSTATE[r.PROJECTCOSTSTATECODE])||'';
 const fmt=n=>num(n);
+/* colonnes de la liste des frais (bloc 57, catalogue « frais », 15.11.2026) : champs d'une écriture de frais (ancien logiciel) ; total sous le montant */
+const catFrais=()=>{ if(SGTAB.def.frais) return; const st=r=>staffName(DS.get('staff',r.STAFF_ID)), oui=v=>v?'Oui':'';
+  sgtabDef('frais',{titre:'Frais du projet',std:['date','coll','grp','genre','desc','piece','qte','montant','phase','etat','fact'],cat:{
+    date:{t:'Date',cat:'Frais',nw:1,v:r=>dfr(diso(pcDate(r)))},coll:{t:'Collaborateur',cat:'Frais',nw:1,v:st},
+    grp:{t:'Groupe de frais',cat:'Frais',v:r=>nomC('projectcostcategorygroup',r.COSTCATEGORYGROUP_ID)},genre:{t:'Genre de frais',cat:'Frais',v:r=>nomC('projectcostcategory',r.COSTCATEGORY_ID)},
+    desc:{t:'Désignation',cat:'Frais',w:160,v:r=>r.DESCRIPTION||''},piece:{t:'N° pièce',cat:'Frais',nw:1,v:r=>r.DOCUMENTNUMBER||''},
+    phase:{t:'Phase',cat:'Projet',v:r=>nomC('projectphase',r.PHASE_ID)},sphase:{t:'Phase partielle',cat:'Projet',v:r=>nomC('projectsubphase',r.SUBPHASE_ID)},
+    ouv:{t:'Ouvrage',cat:'Projet',v:r=>nomC('subproject',r.SUBPROJECT_ID)},
+    qte:{t:'Quantité',cat:'Montants',r:1,nw:1,v:r=>num(r.QUANTITY)+(r.UNIT?' '+r.UNIT:'')},unite:{t:'Unité',cat:'Montants',nw:1,v:r=>r.UNIT||''},
+    pu:{t:'Prix unitaire',cat:'Montants',r:1,nw:1,v:r=>r.UNITPRICE==null||r.UNITPRICE===''?'':fmt(+r.UNITPRICE)},
+    montant:{t:'Montant CHF',cat:'Montants',r:1,nw:1,v:r=>fmt(pcAmount(r)),sum:L=>fmt(L.reduce((s,r)=>s+pcAmount(r),0))},
+    tva:{t:'TVA %',cat:'Montants',r:1,nw:1,v:r=>r.VATRATE==null||r.VATRATE===''?'':String(r.VATRATE)},
+    devise:{t:'Monnaie étrangère',cat:'Montants',nw:1,v:r=>r.FOREIGNCURRENCYCODE?r.FOREIGNCURRENCYCODE+(r.FOREIGNCURRENCYRATE?' · cours '+r.FOREIGNCURRENCYRATE:''):''},
+    etat:{t:'État',cat:'Facturation',nw:1,v:r=>etatF(r)},fact:{t:'Facturable',cat:'Facturation',c:1,v:r=>r.ISCHARGEABLE?'✓':''},
+    facture:{t:'Facturé',cat:'Facturation',nw:1,v:r=>oui(r.ISCHARGED)},factle:{t:'Facturé le',cat:'Facturation',nw:1,v:r=>dfr(r.CHARGEDDATE)},
+    remb:{t:'Remboursable',cat:'Remboursement',nw:1,v:r=>oui(r.ISREFUNDABLE)},rembo:{t:'Remboursé',cat:'Remboursement',nw:1,v:r=>oui(r.ISREFUNDED)}}}); };
 const FRAIS={
-  rendre(I){ const p=I.p, u=I.u, tous=DS.by('projectcost','PROJECT_ID',p.ID), A=[...new Set(tous.map(moisAn).filter(y=>/^\d{4}$/.test(y)))].sort().reverse(), s0=String(nxLS.get('sg3_frais_an','')||''), y=A.length>1&&A.includes(s0)?s0:'';
-    const R=tous.filter(r=>(!y||moisAn(r)===y)&&trouve(u.q,r.DESCRIPTION,r.DOCUMENTNUMBER,nomC('projectcostcategorygroup',r.COSTCATEGORYGROUP_ID),nomC('projectcostcategory',r.COSTCATEGORY_ID),staffName(DS.get('staff',r.STAFF_ID)))).sort((a,b)=>pcDate(b)-pcDate(a)||cmp(b.ID,a.ID));
+  rendre(I){ catFrais(); const p=I.p, u=I.u, tous=DS.by('projectcost','PROJECT_ID',p.ID), A=[...new Set(tous.map(moisAn).filter(y=>/^\d{4}$/.test(y)))].sort().reverse(), s0=String(nxLS.get('sg3_frais_an','')||''), y=A.length>1&&A.includes(s0)?s0:'';
+    const R=I.R=tous.filter(r=>(!y||moisAn(r)===y)&&trouve(u.q,r.DESCRIPTION,r.DOCUMENTNUMBER,nomC('projectcostcategorygroup',r.COSTCATEGORYGROUP_ID),nomC('projectcostcategory',r.COSTCATEGORY_ID),staffName(DS.get('staff',r.STAFF_ID)))).sort((a,b)=>pcDate(b)-pcDate(a)||cmp(b.ID,a.ID));
     const somme=f=>R.filter(f).reduce((s,r)=>s+pcAmount(r),0), tot=somme(()=>true), fa=somme(r=>r.ISCHARGEABLE), fd=somme(r=>r.ISCHARGED), af=somme(r=>r.ISCHARGEABLE&&!r.ISCHARGED), ar=somme(r=>r.ISREFUNDABLE&&!r.ISREFUNDED), mo=moT(p);
-    return '<div class="sgsv">'+tete(p.NUMBER||'','Frais du projet',p.TITLE||'',[mo?'Maître de l’ouvrage : '+mo:'',pl(tous.length,'frais','frais')].filter(Boolean).join(' · '),btn('nf','Nouveau frais','plus',1))
+    return '<div class="sgsv">'+tete(p.NUMBER||'','Frais du projet',p.TITLE||'',[mo?'Maître de l’ouvrage : '+mo:'',pl(tous.length,'frais','frais')].filter(Boolean).join(' · '),btn('nf','Nouveau frais','plus',1)+sgtabBoutons(btn)+'<button class="nx-btn" data-a="menu" title="Copier, exporter" aria-label="Copier, exporter">⋯</button>')
       +'<div class="nx-kpis sgsv-kp">'+kpi(y?'Total '+y:'Total',fmt(tot)+'<small>CHF</small>',pl(R.length,'frais','frais'))+kpi('Facturables',fmt(fa)+'<small>CHF</small>','')+kpi('À facturer',fmt(af)+'<small>CHF</small>','facturables, pas encore facturés')+kpi('Facturés',fmt(fd)+'<small>CHF</small>','')+kpi('À rembourser',fmt(ar)+'<small>CHF</small>','aux collaborateurs')+'</div>'
       +'<div class="sgsv-fil">'+(A.length>1?[['','Toutes'],...A.map(a=>[a,a])].map(([v,t])=>'<button data-a="an" data-y="'+v+'" class="'+(v===y?'on':'')+'" aria-pressed="'+(v===y)+'">'+t+'</button>').join(''):'')+'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher dans les frais" aria-label="Rechercher dans les frais" value="'+E(u.q||'')+'"></span></div>'
-      +(R.length?'<table class="nx-tbl sgsv-tb"><thead><tr><th>Date</th><th>Collaborateur</th><th>Groupe de frais</th><th>Genre de frais</th><th>Désignation</th><th>N° pièce</th><th class="r">Quantité</th><th class="r">Montant CHF</th><th>Phase</th><th>État</th><th class="c">Facturable</th></tr></thead><tbody>'
-        +R.map(r=>'<tr data-a="f" data-f="'+r.ID+'"><td class="nw">'+E(dfr(diso(pcDate(r))))+'</td><td class="nw">'+E(staffName(DS.get('staff',r.STAFF_ID)))+'</td><td>'+E(nomC('projectcostcategorygroup',r.COSTCATEGORYGROUP_ID))+'</td><td>'+E(nomC('projectcostcategory',r.COSTCATEGORY_ID))+'</td><td>'+E(r.DESCRIPTION||'')+'</td><td class="nw">'+E(r.DOCUMENTNUMBER||'')+'</td>'
-          +'<td class="r nw">'+E(num(r.QUANTITY))+(r.UNIT?' '+E(r.UNIT):'')+'</td><td class="r nw"'+(r.FOREIGNCURRENCYCODE?' title="'+E(r.FOREIGNCURRENCYCODE)+'"':'')+'>'+E(fmt(pcAmount(r)))+'</td><td>'+E(nomC('projectphase',r.PHASE_ID))+'</td><td class="nw">'+E(etatF(r))+'</td><td class="c">'+(r.ISCHARGEABLE?'✓':'')+'</td></tr>').join('')
-        +'<tr class="tot"><td class="nw">Total'+(y?' '+y:'')+'</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="r nw">'+E(fmt(tot))+'</td><td></td><td></td><td></td></tr></tbody></table>'
+      +(R.length?sgtabTableau('frais',R,null,r=>' data-a="f" data-f="'+r.ID+'"','',{lib:'Total'+(y?' '+y:'')})
         :'<p class="sgsv-rien">'+(u.q?'Aucun frais trouvé.':y?'Aucun frais en '+y+'.':'Aucun frais pour ce projet.')+'</p>')+'</div>'; },
-  action(I,a,t){ if(a==='nf') editCost(null,{project:I.p.ID,date:new Date()}); else if(a==='f'){ const r=DS.get('projectcost',t.dataset.f); if(r) editCost(r); } else if(a==='an'){ nxLS.set('sg3_frais_an',t.dataset.y); I.u.sM=0; I.dessiner(); } },
+  action(I,a,t){ const y0=String(nxLS.get('sg3_frais_an','')||'');
+    if(sgtabActionListe('frais',I,a,t,()=>({titre:'Frais du projet',p:I.p,lb:'Frais · Documents',type:'Frais',sous:I.u.q?'« '+I.u.q+' »':'',total:{lib:'Total'},meta:[['Année',y0||'Toutes'],['Recherche',I.u.q?'« '+I.u.q+' »':'']]}))) return;
+    if(a==='menu'){ menuSous(t,[{t:'Copier le tableau',fn:()=>sgtabCopie(I.box)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>sgtabCsv('frais',I.R||[],null,'frais')}]); return; }
+    if(a==='nf') editCost(null,{project:I.p.ID,date:new Date()}); else if(a==='f'){ const r=DS.get('projectcost',t.dataset.f); if(r) editCost(r); } else if(a==='an'){ nxLS.set('sg3_frais_an',t.dataset.y); I.u.sM=0; I.dessiner(); } },
   ctx(I,t,e){ if(t.dataset.a!=='f') return false; const r=DS.get('projectcost',t.dataset.f); if(!r) return false; sgMenuAt(e.clientX,e.clientY,[{t:'Modifier…',fn:()=>editCost(r)},'-',{t:'Supprimer…',danger:true,fn:()=>delCost(r)}]); return true; } };
 sgFraisModule=function(C,p){ monter(C,p,'frais',['projectcost','projectcostcategory','projectcostcategorygroup','projectphase','staff'],FRAIS); };
 

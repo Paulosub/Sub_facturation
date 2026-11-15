@@ -56,7 +56,8 @@ const sgtabBrut=h0=>{ if(h0==null) return ''; const d=document.createElement('di
 /* rendu : titres, cellules, texte (impression, CSV) */
 const sgtabCl=c=>{ const k=[c.r?'r':c.c?'c':'',c.nw?'nw':''].filter(Boolean).join(' '); return k?' class="'+k+'"':''; };   /* r : à droite, c : centré, nw : sur une ligne */
 const sgtabEntete=cols=>'<tr>'+cols.map(c=>'<th'+sgtabCl(c)+(c.w?' style="min-width:'+(+c.w)+'px"':'')+(c.l&&c.l!==c.t?' title="'+nxE(c.l)+'"':'')+'>'+nxE(c.th!=null?c.th:c.t)+'</th>').join('')+'</tr>';
-const sgtabCellules=(cols,r,ctx)=>cols.map(c=>{ let v=''; try{ v=c.f?c.f(r,ctx):nxE(c.v?c.v(r,ctx):''); }catch(_){ v=''; } return '<td'+sgtabCl(c)+'>'+(v==null?'':v)+'</td>'; }).join('');
+const sgtabCellules=(cols,r,ctx)=>cols.map(c=>{ let v='', k=''; try{ v=c.f?c.f(r,ctx):nxE(c.v?c.v(r,ctx):''); }catch(_){ v=''; } try{ k=c.cl?c.cl(r,ctx)||'':''; }catch(_){ k=''; }   /* c.cl : classe propre à la cellule (couleur d'un écart…) */
+  const b=sgtabCl(c); return '<td'+(k?(b?b.replace(/"$/,' '+k+'"'):' class="'+k+'"'):b)+'>'+(v==null?'':v)+'</td>'; }).join('');
 const sgtabTexte=(cols,r,ctx)=>cols.map(c=>{ try{ const v=c.v?c.v(r,ctx):sgtabBrut(c.f?c.f(r,ctx):''); return v==null?'':String(v); }catch(_){ return ''; } });
 /* enregistrement des présentations du tableau (base commune) ; refus (profil, serveur) : message, rien n'est changé à l'écran */
 function sgtabEcrire(cle,L){ const D=SGTAB.def[cle]||{}, r0=(()=>{ try{ return DS.get(SGTAB.T,cle); }catch(_){ return null; } })();
@@ -107,7 +108,8 @@ function sgtabImprimer(cle,lignes,ctx,o){ o=o||{}; const D=SGTAB.def[cle]; if(!D
   if(!window.SGDH||!SGDH.ouvrir){ toast('Impression indisponible.',true); return; } if(!lignes||!lignes.length){ toast('Rien à imprimer.',true); return; }
   const cols=sgtabCols(cle), meta=(o.meta||[]).filter(x=>x&&x[1]!=null&&x[1]!=='');
   SGDH.ouvrir({cle:o.cle||('Liste · '+D.titre),titre:o.titre||D.titre,p:o.p||null,lb:o.lb||'Documents',type:o.type||'',sous:o.sous||'',
-    meta:meta.concat([['Présentation',sgtabNom(cle)]]),cols:cols.map(c=>({t:c.t,r:c.r?1:0})),rows:lignes.map(r=>({c:sgtabTexte(cols,r,ctx),g:''}))}); }
+    meta:meta.concat([['Présentation',sgtabNom(cle)]]),cols:cols.map(c=>({t:c.t,r:c.r?1:0})),rows:lignes.map(r=>({c:sgtabTexte(cols,r,ctx),g:''}))
+      .concat((()=>{ const T=o.total?sgtabTotal(cols,lignes,ctx,o.total.lib):null; return T?[{c:T,g:'t'}]:[]; })())}); }
 function sgtabCsv(cle,lignes,ctx,nom){ const D=SGTAB.def[cle]; if(!D) return; const cols=sgtabCols(cle), t=h('table'), tr=a=>{ const r=h('tr'); a.forEach(v=>r.append(h('td',{},v==null?'':String(v)))); t.append(r); };
   tr(cols.map(c=>c.l||c.t)); (lignes||[]).forEach(r=>tr(sgtabTexte(cols,r,ctx))); sgCsvTable(t,(nom||D.titre.toLowerCase().replace(/[^a-z0-9]+/gi,'_'))+'_'+diso(new Date())+'.csv'); }
 
@@ -158,6 +160,27 @@ function sgtabCsv(cle,lignes,ctx,nom){ const D=SGTAB.def[cle]; if(!D) return; co
     vol:{t:'Volume m³',l:'Volume construit (m³)',cat:'Caractéristiques',r:1,v:p=>nb(p.VOLUME)},
     vb:{t:'VB SIA 416',l:'Volume bâti SIA 416 (m³, Surfaces et volumes)',cat:'Caractéristiques',r:1,v:p=>{ const v=typeof sgVolumeSIA416==='function'?sgVolumeSIA416(p):0; return v?num(v,0):''; }},
     icc:{t:'Indice ICC',l:'Indice ICC',cat:'Caractéristiques',r:1,v:p=>nb(p.BASISINDEX,1)}}}); }
+/* listes des modules (SGSV.outils.monter : devis, contrôles des coûts, estimations, soumissions, frais…) — boutons du bandeau (déplacés dans la barre en
+   texte par sgBandeauVersBarre), leurs actions, le tableau et sa copie */
+function sgtabBoutons(btn){ return btn('pres','Présentation ▾','list',0,'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …')+btn('imp','Imprimer','print',0,'Liste affichée (PDF)'); }
+function sgtabActionListe(cle,I,a,t,imp){ if(a==='pres'){ sgtabMenu(cle,t,()=>I.dessiner()); return true; }
+  if(a==='imp'){ let o={}; try{ o=(typeof imp==='function'?imp():imp)||{}; }catch(_){ o={}; } sgtabImprimer(cle,I.R||[],o.ctx||null,o); return true; } return false; }
+/* ligne de total sous les colonnes affichées qui ont une somme (c.sum(lignes, ctx) → texte) ; libellé dans la première colonne */
+const sgtabTotal=(cols,rows,ctx,lib)=>cols.some(c=>c.sum)?cols.map((c,i)=>{ let v=''; try{ v=c.sum?c.sum(rows,ctx):''; }catch(_){ v=''; } return i===0&&!c.sum?(lib||'Total'):(v==null?'':String(v)); }):null;
+function sgtabTableau(cle,rows,ctx,tr,cls,tot){ const cols=sgtabCols(cle), T=tot&&rows.length?sgtabTotal(cols,rows,ctx,tot.lib):null;
+  return '<table class="nx-tbl sgsv-tb sgtab-t'+(cls?' '+cls:'')+'"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+rows.map(r=>'<tr'+(tr?tr(r):'')+'>'+sgtabCellules(cols,r,ctx)+'</tr>').join('')
+    +(T?'<tr class="tot">'+T.map((v,i)=>'<td'+sgtabCl(cols[i])+'>'+nxE(v)+'</td>').join('')+'</tr>':'')+'</tbody></table>'; }
+function sgtabCopie(box){ const t=box&&box.querySelector('table.sgtab-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); else toast('Rien à copier.',true); }
+/* colonnes communes des listes de documents (devis, contrôles des coûts, estimations) : projet, version, numéro, statut, note, modification */
+function sgtabColsDoc(o){ const E=nxE, prj=d=>DS.get('project',d.PROJECT_ID)||{};
+  return {projet:{t:'Projet',l:'Numéro du projet',cat:'Projet',nw:1,f:d=>'<span title="'+E(prj(d).TITLE||'')+'">'+E(prj(d).NUMBER||'')+'</span>',v:d=>prj(d).NUMBER||''},
+    projetd:{t:'Désignation du projet',cat:'Projet',v:d=>prj(d).TITLE||''},mo:{t:'Maître d’ouvrage',cat:'Projet',v:d=>{ try{ return projMO(prj(d))||''; }catch(_){ return ''; } }},
+    version:{t:o.version||'Version',l:'Version (titre du document)',cat:'Document',w:160,f:d=>'<b>'+E(d.VERSION||'(sans titre)')+'</b>'+(o.tags?o.tags(d):''),v:d=>d.VERSION||''},
+    num:{t:'N°',l:'Numéro de version',cat:'Document',r:1,v:d=>d.VERSIONNUMBER==null?'':String(d.VERSIONNUMBER)},
+    statut:{t:'Statut',cat:'Document',nw:1,v:d=>o.statut(d)||''},
+    note:{t:o.note||'Note',cat:'Document',f:d=>'<span class="sgtab-note" title="'+E(d.NOTE||'')+'">'+E(d.NOTE||'')+'</span>',v:d=>d.NOTE||''},
+    supp:{t:'Supprimé',l:'Document supprimé (corbeille)',cat:'Document',nw:1,v:d=>+d.ISMARKEDASDELETED?'Oui':''},
+    modifie:{t:'Modifié',l:'Date de modification',cat:'Suivi',nw:1,v:d=>dfr(d.CHANGEDDATE)},par:{t:'Par',l:'Modifié par (utilisateur)',cat:'Suivi',nw:1,v:d=>d.USERID||''}}; }
 /* colonne d'un tableau du moteur ({k,t,cls,f,v} : colonnes de l'ancien logiciel déjà reproduites) → colonne d'un catalogue ; texte = ce qui est affiché */
 const sgtabMoteur=(c,cat,o)=>Object.assign({t:c.t,cat,f:r=>c.f?c.f(r):nxE(r[c.k]==null?'':String(r[c.k])),v:r=>c.f?sgtabBrut(c.f(r)):(r[c.k]==null?'':String(r[c.k])),r:c.cls==='r'?1:0,c:c.cls==='c'?1:0},o||{});
 /* contexte commun des listes de projets : heures par projet (total, 30 jours, dernière saisie, par collaborateur), phase actuelle, catégorie, heures prévues */

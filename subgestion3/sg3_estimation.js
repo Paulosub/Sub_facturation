@@ -358,14 +358,24 @@ const retablir=async d=>{ if(!d) return; if(!ecCanEdit(d)){ toast(EC_MSG_DROITS,
 const fnG=n=>typeof globalThis[n]==='function'?globalThis[n]:null;
 const colsListe=G=>[...(G?[{k:'pn',t:'N° d’affaire',f:d=>E(prj(d).NUMBER||'')}]:[]),{k:'VERSION',t:'Version'},{k:'VERSIONNUMBER',t:'N° de version'},{k:'st',t:'Statut',f:d=>E(etat(d.STATECODE))},{k:'NOTE',t:'Note'},
   {k:'inv',t:'Coût d’investissement',f:d=>{ const t=totaux(d); return t?E(num(z(t.inv))):''; }},{k:'dt',t:'Modifié',f:d=>E(dfr(d.CHANGEDDATE))},{k:'USERID',t:'Par'}];
+/* colonnes de la liste (bloc 57, catalogues « estim » / « estimg », 15.11.2026) : en-tête de l'estimation (champs de l'ancien logiciel) et coûts calculés */
+const catEstim=()=>{ if(SGTAB.def.estim) return; const C=sgtabColsDoc({statut:d=>etat(d.STATECODE),
+    tags:d=>(+d.ISAPPLYSUBPROJECTS?'<span class="sgee-tag">subdivisions</span>':'')+(+d.ISMARKEDASDELETED?'<span class="sgee-tag">supprimée</span>':'')});
+  Object.assign(C,{inv:{t:'Coût d’investissement',cat:'Montants',r:1,nw:1,v:d=>{ const t=totaux(d); return t?mt(t.inv):'—'; }},
+    real:{t:'Coût de réalisation',cat:'Montants',r:1,nw:1,v:d=>{ const t=totaux(d); return t?mt(t.real):'—'; }},
+    ouv:{t:'Coût de l’ouvrage',cat:'Montants',r:1,nw:1,v:d=>{ const t=totaux(d); return t?mt(t.ouv):'—'; }},
+    sub:{t:'Subdivisions',l:'Ouvrages et localisations appliqués',cat:'Document',nw:1,v:d=>+d.ISAPPLYSUBPROJECTS?'Oui':'Non'},
+    refA:{t:'Référence A',l:'Base de référence A (valeurs référentielles)',cat:'Document',nw:1,v:d=>+d.ISREFERENCEBASEA?'Oui':''}});
+  sgtabDef('estim',{titre:'Estimations des coûts',std:['version','num','statut','note','inv','modifie','par'],cat:C});
+  sgtabDef('estimg',{titre:'Estimations des coûts · tous les projets',std:['projet','version','num','statut','note','inv','modifie','par'],cat:C}); };
 const ESTIM={
-  rendre(I){ cssE(); const p=I.p, u=I.u, G=!!p.GLOBAL, ec=ecrit();
+  rendre(I){ cssE(); catEstim(); const p=I.p, u=I.u, G=!!p.GLOBAL, ec=ecrit();
     const tous=(G?DS.all(T_D):DS.by(T_D,'PROJECT_ID',p.ID)).filter(d=>!G||!u.mine||d.USERID===ME.id), vivant=tous.filter(d=>!+d.ISMARKEDASDELETED), base=u.supp?tous:vivant, parSt=[...new Set(base.map(d=>+d.STATECODE||0))].sort();
     if(u.statut!=null&&!parSt.includes(u.statut)) u.statut=null;
     const st=u.statut??null, recent=(a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE)||(+b.VERSIONNUMBER||0)-(+a.VERSIONNUMBER||0)||(+b.ID-+a.ID);
     const R=base.filter(d=>(st==null||(+d.STATECODE||0)===st)&&trouve(u.q,d.VERSION,d.NOTE,d.USERID,d.VERSIONNUMBER,etat(d.STATECODE),G?prj(d).NUMBER:'',G?prj(d).TITLE:'')).sort(recent); I.R=R;
     const nV=vivant.filter(d=>+d.STATECODE===2).length, dern=vivant.slice().sort(recent)[0]||null, ref=vivant.filter(d=>+d.STATECODE===2).sort(recent)[0]||dern, tR=!G&&ref?totaux(ref):null, mo=moT(p);
-    const acts=(ec?btn('new','Nouvelle estimation','plus',1):'')+'<button class="nx-btn" data-a="menu" title="Autres actions" aria-label="Autres actions">⋯</button>';
+    const acts=(ec?btn('new','Nouvelle estimation','plus',1):'')+sgtabBoutons(btn)+'<button class="nx-btn" data-a="menu" title="Autres actions" aria-label="Autres actions">⋯</button>';
     const teteP=G?tete('ES','Estimations des coûts','Estimations',pl(vivant.length,'estimation')+' · tous les projets',acts)
       :tete(p.NUMBER||'','Estimations des coûts',p.TITLE||'',[mo?'Maître de l’ouvrage : '+mo:'',pl(vivant.length,'estimation')].filter(Boolean).join(' · '),acts);
     if(!vivant.length&&!u.supp&&!(G&&u.mine)) return '<div class="sgsv">'+teteP+'<div class="sgsv-vide"><b>'+(G?'Aucune estimation.':'Aucune estimation pour ce projet.')+'</b><br>Une estimation chiffre l’ouvrage par éléments, avant le devis général : grandeurs référentielles, valeurs référentielles, coût de chaque élément.'+(ec?'<div class="acts">'+btn('new','Nouvelle estimation','plus',1)+'</div>':'')+'</div></div>';
@@ -378,12 +388,10 @@ const ESTIM={
       +'<div class="sgsv-fil">'+(G?[['0','Toutes'],['1','Mes estimations']].map(([v,t])=>'<button data-a="mine" data-v="'+v+'" class="'+((+v===1)===!!u.mine?'on':'')+'">'+t+'</button>').join('')+'<span style="width:10px"></span>':'')
       +(parSt.length>1?[['','Tous les statuts'],...parSt.map(c=>[c,etat(c)||String(c)])].map(([c,t])=>{ const v=c===''?null:+c; return '<button data-a="statut" data-c="'+c+'" class="'+(v===st?'on':'')+'" aria-pressed="'+(v===st)+'">'+E(t)+'</button>'; }).join(''):'')
       +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher une estimation" aria-label="Rechercher une estimation" value="'+E(u.q||'')+'"></span></div>'
-      +(R.length?'<table class="nx-tbl sgsv-tb sgee-lt"><thead><tr>'+(G?'<th>Projet</th>':'')+'<th>Version</th><th class="r">N°</th><th>Statut</th><th>Note</th><th class="r">Coût d’investissement</th><th>Modifié</th><th>Par</th></tr></thead><tbody>'
-        +R.map(d=>{ const t=totaux(d), nt=d.NOTE||''; return '<tr data-a="open" data-d="'+E(d.ID)+'"'+(+d.ISMARKEDASDELETED?' class="supp"':'')+'>'+(G?'<td class="nw" title="'+E(prj(d).TITLE||'')+'">'+E(prj(d).NUMBER||'')+'</td>':'')
-          +'<td><b>'+E(d.VERSION||'(sans titre)')+'</b>'+(+d.ISAPPLYSUBPROJECTS?'<span class="sgee-tag">subdivisions</span>':'')+(+d.ISMARKEDASDELETED?'<span class="sgee-tag">supprimée</span>':'')+'</td><td class="r">'+E(d.VERSIONNUMBER??'')+'</td><td class="nw">'+E(etat(d.STATECODE))+'</td><td class="note" title="'+E(nt)+'">'+E(nt)+'</td>'
-          +'<td class="r nw">'+(t?E(mt(t.inv)):'—')+'</td><td class="nw">'+E(dfr(d.CHANGEDDATE))+'</td><td class="nw">'+E(d.USERID||'')+'</td></tr>'; }).join('')+'</tbody></table>'
+      +(R.length?sgtabTableau(G?'estimg':'estim',R,null,d=>' data-a="open" data-d="'+E(d.ID)+'"'+(+d.ISMARKEDASDELETED?' class="supp"':''),'sgee-lt')
         :'<p class="sgsv-rien">Aucune estimation trouvée.</p>')+'</div>'; },
   action(I,a,t,e){ const p=I.p, u=I.u, d=t.dataset.d?DS.get(T_D,t.dataset.d):null;
+    if(sgtabActionListe(p.GLOBAL?'estimg':'estim',I,a,t,()=>({titre:'Estimations des coûts',p:p.GLOBAL?null:p,lb:'Calcul des coûts · Documents',type:'Estimations',sous:p.GLOBAL?'Tous les projets':'',meta:[['Projets',p.GLOBAL?'Tous':(p.NUMBER||'')],['Recherche',u.q?'« '+u.q+' »':'']]}))) return;
     if(a==='new'){ if(!ecrit()) return; ecNeed().then(()=>{ if(p.GLOBAL) pickProject('Choisir le projet',q=>ecDocDialog(q,null,'new')); else ecDocDialog(p,null,'new'); }).catch(e=>console.error(e)); }
     else if(a==='open'){ if(d&&!(e&&e.detail>1)) ouvrir(d); }
     else if(a==='mine'){ u.mine=t.dataset.v==='1'; u.statut=null; I.dessiner(); }
@@ -393,7 +401,7 @@ const ESTIM={
       menuSous(t,[{t:'Afficher les estimations supprimées',chk:!!u.supp,fn:()=>{ u.supp=!u.supp; I.dessiner(); }},
         ...(ec&&imp&&!p.GLOBAL?['-',{t:'Importer un calcul des coûts d’un autre projet…',fn:()=>ecNeed().then(()=>imp(p))}]:[]),
         ...(vr.length?['-',...vr.map(([tt,n])=>({t:tt,fn:()=>fnG(n)()}))]:[]),
-        '-',{t:'Copier le tableau',fn:()=>copyTable(g())},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(g(),'Estimations')}]); } },
+        '-',{t:'Copier le tableau',fn:()=>sgtabCopie(I.box)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>sgtabCsv(p.GLOBAL?'estimg':'estim',I.R||[],null,'estimations')}]); } },
   ctx(I,t,e){ if(t.dataset.a!=='open') return false; const d=DS.get(T_D,t.dataset.d); if(!d) return false; const ec=ecrit(), def=!!+d.ISMARKEDASDELETED;
     sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir l’estimation',fn:()=>ouvrir(d)},
       ...(ec?(def?[{t:'Rétablir l’estimation',fn:()=>retablir(d)},'-',{t:'Supprimer définitivement…',danger:true,fn:()=>supprimer(d)}]

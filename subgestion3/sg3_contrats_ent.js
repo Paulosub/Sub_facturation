@@ -284,12 +284,34 @@ function ouvrirDossier(p,c,seul){ if(!window.SGDE||typeof SGDE.vue!=='function')
   D.maj(rendre()); }
 
 /* ── écran : liste ── */
+/* colonnes de la liste (bloc 57, catalogue « contratsent », 15.11.2026) : champs du contrat et montants calculés (contrat, avenants, total TTC) */
+const catContrats=()=>{ if(SGTAB.def.contratsent) return;
+  sgtabDef('contratsent',{titre:'Contrats d’entreprise',std:['cfc','lot','ent','genre','date','ttc','avttc','total','etat'],cat:{
+    n:{t:'N°',l:'Numéro d’ordre du contrat',cat:'Contrat',r:1,v:c=>c.N==null?'':String(c.N)},
+    cfc:{t:'CFC',cat:'Contrat',nw:1,f:c=>'<b>'+E(c.CFC||'—')+'</b>',v:c=>c.CFC||''},
+    lot:{t:'Lot',cat:'Contrat',w:160,v:c=>c.LOT||'(sans lot)'},
+    ent:{t:'Entreprise',cat:'Contrat',w:150,v:c=>entNom(c)||'—'},
+    genre:{t:'Genre',l:'Genre du contrat (prix unitaires, forfait, global)',cat:'Contrat',nw:1,v:c=>c.GENRE||''},
+    date:{t:'Date',l:'Date du contrat',cat:'Dates',nw:1,v:c=>dmy(c.DATE)},
+    offre:{t:'Offre du',l:'Date de l’offre',cat:'Dates',nw:1,v:c=>dmy(c.OFFRE_DU)},
+    conf:{t:'Confirmé le',l:'Confirmation du mandat',cat:'Dates',nw:1,v:c=>dmy(c.CONFIRME)},
+    signe:{t:'Signé le',cat:'Dates',nw:1,v:c=>dmy(c.SIGNE_LE)},
+    debut:{t:'Début des travaux',cat:'Dates',nw:1,v:c=>c.DEBUT_TXT||dmy(c.DEBUT)},fin:{t:'Fin des travaux',cat:'Dates',nw:1,v:c=>c.FIN_TXT||dmy(c.FIN)},
+    ht:{t:'Contrat HT',cat:'Montants',r:1,nw:1,v:c=>num2(+c.HT||0)},tva:{t:'TVA %',cat:'Montants',r:1,nw:1,v:c=>c.TVA==null||c.TVA===''?'':String(c.TVA)},
+    ttc:{t:'Contrat TTC',cat:'Montants',r:1,nw:1,v:c=>num2(ttc(c.HT,c.TVA))},
+    nav:{t:'Avenants',l:'Nombre d’avenants',cat:'Montants',r:1,v:c=>{ const n=(c.AVENANTS||[]).length; return n?String(n):''; }},
+    avttc:{t:'Avenants TTC',cat:'Montants',r:1,nw:1,v:c=>{ const a=avHT(c); return a?num2(ttc(a,c.TVA)):''; }},
+    total:{t:'Total TTC',l:'Contrat et avenants TTC',cat:'Montants',r:1,nw:1,f:c=>'<b>'+num2(totalTTC(c))+'</b>',v:c=>num2(totalTTC(c))},
+    ret:{t:'Retenue de garantie',cat:'Montants',nw:1,v:c=>c.RETENUE==null?'':String(c.RETENUE)},
+    etat:{t:'État',cat:'Contrat',nw:1,v:c=>(ELIB[c.ETAT]||'')+(c.ETAT==='signe'&&c.SIGNE_LE?' '+dmy(c.SIGNE_LE):'')},
+    rem:{t:'Remarque',cat:'Contrat',v:c=>c.REMARQUE||''}}}); };
 const lignesTableau=L=>L.map(c=>{ const a=avHT(c); return '<tr data-id="'+E(c.ID)+'"><td class="nw"><b>'+E(c.CFC||'—')+'</b></td><td>'+E(c.LOT||'(sans lot)')+'</td><td>'+E(entNom(c)||'—')+'</td><td class="nw">'+E(c.GENRE||'')+'</td><td class="nw">'+E(dmy(c.DATE))+'</td><td class="r nw">'+num2(ttc(c.HT,c.TVA))+'</td><td class="r nw">'+(a?num2(ttc(a,c.TVA)):'')+'</td><td class="r nw"><b>'+num2(totalTTC(c))+'</b></td><td class="nw">'+E(ELIB[c.ETAT]||'')+(c.ETAT==='signe'&&c.SIGNE_LE?' '+E(dmy(c.SIGNE_LE)):'')+'</td></tr>'; }).join('');
 function liste(p){ const L=contrats(p), A=lots(p), sign=L.filter(c=>c.ETAT==='signe'), vivants=L.filter(c=>c.ETAT!=='resilie'), tot=vivants.reduce((s,c)=>s+ttc(c.HT,c.TVA),0), av=vivants.reduce((s,c)=>s+ttc(avHT(c),c.TVA),0), ec=peut(p);
-  return '<div class="sgsv sgcn">'+tete(p.NUMBER||'','Contrats d’entreprise',p.TITLE||'',[moT(p)?'Maître de l’ouvrage : '+moT(p):'',pl(L.length,'contrat')].filter(Boolean).join(' · '),ec?btn('new','Nouveau contrat','plus',1):'')
+  catContrats();
+  return '<div class="sgsv sgcn">'+tete(p.NUMBER||'','Contrats d’entreprise',p.TITLE||'',[moT(p)?'Maître de l’ouvrage : '+moT(p):'',pl(L.length,'contrat')].filter(Boolean).join(' · '),(ec?btn('new','Nouveau contrat','plus',1):'')+sgtabBoutons(btn)+'<button class="nx-btn" data-a="menu" title="Copier, exporter" aria-label="Copier, exporter">⋯</button>')
     +'<div class="nx-kpis sgsv-kp sgcn-kp">'+kpi('Contrats',String(L.length),'')+kpi('Signés',String(sign.length),'')+kpi('À établir',String(A.length),'lots adjugés')+kpi('Montant des contrats',num2(tot),'TTC')+kpi('Avenants',num2(av),'TTC')+'</div>'
     +(A.length?'<div class="sgcn-t">Lots adjugés sans contrat <small>entreprise proposée dans la soumission</small></div><table class="nx-tbl"><thead><tr><th>CFC</th><th>Lot</th><th>Entreprise proposée</th><th class="r">Offre TTC</th><th></th></tr></thead><tbody>'+A.map(x=>'<tr><td class="nw"><b>'+E(x.d.BKP||'—')+'</b></td><td>'+E(x.d.AWARDINGTEXT||'')+'</td><td>'+E(svcName(x.e))+'</td><td class="r nw">'+num2(x.o.net)+'</td><td class="r">'+(ec?btn('lot','Établir le contrat','',0,'',' data-d="'+x.d.ID+'"'):'')+'</td></tr>').join('')+'</tbody></table>':'')
-    +'<div class="sgcn-t">Contrats</div>'+(L.length?'<table class="nx-tbl"><thead><tr><th>CFC</th><th>Lot</th><th>Entreprise</th><th>Genre</th><th>Date</th><th class="r">Contrat TTC</th><th class="r">Avenants TTC</th><th class="r">Total TTC</th><th>État</th></tr></thead><tbody>'+lignesTableau(L)+'</tbody></table>':'<p class="sgcn-note">Aucun contrat pour ce projet. Choisissez l’entreprise dans le comparatif de la soumission : le lot apparaît ici, prêt à être établi.</p>')+'</div>'; }
+    +'<div class="sgcn-t">Contrats</div>'+(L.length?sgtabTableau('contratsent',L,null,c=>' data-id="'+E(c.ID)+'"'):'<p class="sgcn-note">Aucun contrat pour ce projet. Choisissez l’entreprise dans le comparatif de la soumission : le lot apparaît ici, prêt à être établi.</p>')+'</div>'; }
 
 /* ── écran : fiche d'un contrat (présentation des documents de l'app) ── */
 function fiche(C,p,c,I){ const ec=peut(p), v=c.ETAT==='signe'||c.ETAT==='resilie', ro=!ec||v, ds=ro?' disabled':'', da=ec?'':' disabled';
@@ -400,7 +422,10 @@ function fiche(C,p,c,I){ const ec=peut(p), v=c.ETAT==='signe'||c.ETAT==='resilie
     else if(et&&et!==c.ETAT){ const faire=()=>{ c.ETAT=et; if(et==='signe'&&!c.SIGNE_LE) c.SIGNE_LE=today(); planif(c); I.garder=true; I.dessiner(); }; if(v&&(et==='brouillon'||et==='envoye')) sgConfirm('Ce contrat est verrouillé. Le rouvrir pour le modifier ?',faire); else faire(); } }); }
 function ouvrir(C,p){ css(); const I={box:null,garder:false,dessiner:null}; ETAT.cour=I;
   I.dessiner=()=>{ const id=ETAT.sel[p.ID], d=id?DS.get(T,id):null; if(id&&d){ const c=I.garder&&ETAT.rec&&ETAT.rec.ID===id?ETAT.rec:(ETAT.rec=JSON.parse(JSON.stringify(d))); I.garder=false; fiche(C,p,c,I); } else { ETAT.rec=null; C.innerHTML=liste(p); } I.box=C.firstElementChild; };
-  C.onclick=e=>{ if(ETAT.sel[p.ID]) return; const b=e.target.closest('[data-a]'), tr=e.target.closest('tr[data-id]'); const cree=l=>{ if(I.cree) return; I.cree=true; creer(p,l).then(I.dessiner).finally(()=>{ I.cree=false; }); }; if(b&&b.dataset.a==='new'){ cree(null); return; } if(b&&b.dataset.a==='lot'){ const L=lots(p).find(x=>String(x.d.ID)===b.dataset.d); if(L) cree(L); return; } if(tr){ ETAT.sel[p.ID]=tr.dataset.id; ETAT.ong[p.ID]='contrat'; I.dessiner(); } };
+  C.onclick=e=>{ if(ETAT.sel[p.ID]) return; const b=e.target.closest('[data-a]'), tr=e.target.closest('tr[data-id]'); const cree=l=>{ if(I.cree) return; I.cree=true; creer(p,l).then(I.dessiner).finally(()=>{ I.cree=false; }); }; if(b&&b.dataset.a==='new'){ cree(null); return; }
+    if(b&&b.dataset.a==='pres'){ sgtabMenu('contratsent',b,I.dessiner); return; }
+    if(b&&b.dataset.a==='imp'){ sgtabImprimer('contratsent',contrats(p),null,{titre:'Contrats d’entreprise',p,lb:'Contrats d’entreprise · Documents',type:'Chantier',meta:[['Contrats',String(contrats(p).length)]]}); return; }
+    if(b&&b.dataset.a==='menu'){ const r=b.getBoundingClientRect(); sgMenuAt(r.left,r.bottom+2,[{t:'Copier le tableau',fn:()=>sgtabCopie(C)},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>sgtabCsv('contratsent',contrats(p),null,'contrats_entreprise')}]); return; } if(b&&b.dataset.a==='lot'){ const L=lots(p).find(x=>String(x.d.ID)===b.dataset.d); if(L) cree(L); return; } if(tr){ ETAT.sel[p.ID]=tr.dataset.id; ETAT.ong[p.ID]='contrat'; I.dessiner(); } };
   C.innerHTML='<p class="sgcn-note">Chargement…</p>'; DS.need([...SV_NEED,T]).then(I.dessiner).catch(e=>{ console.error(e); C.innerHTML='<p class="sgcn-note">Lecture impossible.</p>'; }); }
 DS.on(ts=>{ const I=ETAT.cour; if(!I||!I.box||!I.box.isConnected||!hit(ts,T,'devisdocument','soumission','contact','contactowner')) return; if(I.box.contains(document.activeElement)||SV.t||SV.cours) return; setTimeout(()=>{ if(I.box&&I.box.isConnected&&!I.box.contains(document.activeElement)) I.dessiner(); },0); });
 window.sgContratsEntModule=function(C,p){ try{ ouvrir(C,p); }catch(e){ console.error(e); C.textContent='Contrats d’entreprise : erreur — '+String(e&&e.message||e); } };

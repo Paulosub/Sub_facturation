@@ -3123,7 +3123,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   adresse privée, n° AVS ni date de naissance ; vacances et remarque seulement pour l'administrateur ou le droit « équipe : taux » — `c.ok`), Projets ▸ Tâches
   (catalogues `taches` et `tachesreg` = colonnes de la liste des tâches de l'ancien logiciel, `PTC`, + Projet, Tâche). Outils ajoutés au bloc 57 :
   `sgtabMoteur(colonne du moteur, catégorie)`, `sgtabCtxProjets()`, présentations d'origine (`pres`), colonnes permises (`ok`), titre d'en-tête propre (`th`).
-  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour chaque autre tableau de l'app (listes des modules du projet,
+  **Lot 3 (même soir)** : listes des modules du projet et leurs listes « tous les projets » — Descriptifs & devis (`devis`/`devisg`), Contrôle des coûts
+  (`coco`/`cocog` : + coût probable, état du coût en couleur `c.cl`), Estimations (`estim`/`estimg` : + coûts d'investissement, de réalisation, de l'ouvrage),
+  Soumissions (`soum`/`soumg` : CFC, lot, forme, stade, statut, entreprises, proposée, offre nette), Contrats d'entreprise (`contratsent` : + dates, HT, TVA,
+  nombre d'avenants, retenue, remarque), Frais du projet (`frais` : tous les champs d'une écriture de frais, ligne « Total » sous le montant — `c.sum`,
+  `sgtabTableau(…, tot)`, `sgtabImprimer(…, {total})`). Champs des en-têtes de documents de l'ancien logiciel (version, n°, statut, note, TVA séparée,
+  subdivisions, supprimé, modification) : `sgtabColsDoc(o)`. Pages montées par `SGSV.outils.monter` : `sgtabBoutons(btn)` (Présentation ▾ et Imprimer dans le
+  bandeau, déplacés dans la barre en texte), `sgtabActionListe(cle,I,a,t,imp)`, `sgtabTableau(cle,lignes,ctx,tr,cls,tot)`, `sgtabCopie(box)`. Icônes des
+  cellules à 14 px (le cadenas d'une soumission ouverte s'affichait en très grand). Catalogues définis à la première ouverture (`catDevis`, `catCoco`…) :
+  `SGTAB` n'existe pas encore quand ces fichiers sont lus.
+  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour les autres tableaux de l'app (Factures et offres de l'affaire,
   Administration, Heures, écrans du moteur, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,

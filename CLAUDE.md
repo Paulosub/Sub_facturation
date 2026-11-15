@@ -1135,6 +1135,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `sgaActions(o,c0)` — barre en texte entre les chiffres et les parties (Appeler, Courriel, Carte, Favori, Modifier ; « Fonctions ▾ » à droite = l'ancien « Plus »,
   même menu `sgaSections`) ; mêmes règles (Appeler / Courriel / Carte grisés sans numéro, courriel ou adresse ; Favori souligné et étoile pleine quand la fiche est
   épinglée) ; le bandeau ne garde que le monogramme, le nom et ses informations. Copie d'avant : `subgestion3/_backup_20261115_2129_avant_annuaire_actions/`.
+  **Ajouter des contacts à une entité (même soir, Paulo, titre de la carte Personnes sélectionné : « ajouter une option pour ajouter des contacts »)** : dans le
+  titre de la carte « Personnes », « Nouvelle personne » (fenêtre du moteur `editOwner(null,1)`, puis son adresse `editContact(null,personne,entité)` : rattachée à
+  l'entité — CONTACTRELATION_ID —, adresse de l'entité proposée ; la fiche de l'entité reste ouverte et la personne s'ajoute à la liste) et « Rattacher… »
+  (personne ou entité existante, `sgaRattacher`), avec le droit « nouveau contact » ; « Rattacher… » n'est plus dans le titre « Coordonnées » quand la carte
+  Personnes est affichée. Vérifié : 22 → 23 personnes, rattachement relu dans la base (essai retiré ensuite).
 - **Contacts ▸ Listes de diffusion et Catégories au graphisme de l'app (25.10.2026, bloc 29, `subgestion3/sg3_contacts.js` + styles `.sgd-*` en
   fin de `sg3.css`)** — demandes de Paulo « améliorer la liste de diffusion pour avoir le même graphisme que le reste de l'app », « modifier catégorie
   pour avoir le même graphisme que le reste de l'app ». `VIEWS['adr-groupes']` et `VIEWS['adr-props']` remplacés (page commune `sgdPage`) :

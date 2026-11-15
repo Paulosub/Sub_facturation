@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 21:29 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 21:38 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -31648,10 +31648,13 @@ function sgaPage(ix,o,D){ const {cs,c0,pers,prj,soum,notes,props}=D, nw=sgaPeut(
     +sgaActions(o,c0)
     +'<div class="sga-cols"><div class="sg-pcol">'
       +sec('adr',nxCard('',cs.length>1?'Adresses':'Coordonnées','<div class="b">'+(cs.length?cs.map(c=>'<div class="sga-adr-bloc">'+sgaCoord(c,o)+actsAdr(c)+'</div>').join(''):sgaCoord(null,o))+'</div>',
-        (cs.length>1?'<span class="n">'+cs.length+'</span>':'')+(nw?lienT('nadr','Nouvelle adresse','Ajouter une adresse à cette entité')+lienT('lier','Rattacher…','Rattacher une personne ou une entité à celle-ci'):'')))
+        (cs.length>1?'<span class="n">'+cs.length+'</span>':'')+(nw?lienT('nadr','Nouvelle adresse','Ajouter une adresse à cette entité')+(soc||pers.length?'':lienT('lier','Rattacher…','Rattacher une personne ou une entité à celle-ci')):'')))
       +sec('cat',props.length||(ed&&c0)?nxCard('','Catégories','<div class="b">'+sgaTagsHtml(props,ed)+'</div>','<span class="n">'+props.length+'</span>'+(ed&&c0?lienT('cat-ajout','Ajouter…','Ajouter des catégories à une adresse'):'')):'')
     +'</div><div class="sg-pcol">'
-      +sec('pers',soc||pers.length?nxCard('','Personnes','<div class="b flush">'+sgaPersListe(pers)+'</div>','<span class="n">'+pers.length+'</span>'):'')
+      /* ajouter des contacts à l'entité (15.11.2026, Paulo : « ajouter une option pour ajouter des contacts ») : « Nouvelle personne » (créée puis son adresse, rattachée
+         à l'entité, comme Nouveau contact ▸ Personne) et « Rattacher… » (personne ou entité existante), dans le titre de la carte */
+      +sec('pers',soc||pers.length?nxCard('','Personnes','<div class="b flush">'+sgaPersListe(pers)+'</div>','<span class="n">'+pers.length+'</span>'
+        +(nw?lienT('npers','Nouvelle personne','Créer une personne rattachée à cette entité (puis son adresse)')+lienT('lier','Rattacher…','Rattacher une personne ou une entité existante à celle-ci'):'')):'')
       +sec('notes',nxCard('','Notes','<div class="b">'+sgaNotesHtml(notes)+'</div>','<span class="n">'+notes.length+'</span>'+(ed&&c0?lienT('note-nouv','Nouvelle note'):'')))
     +'</div></div>'
     +(prj.length?sec('proj','<div class="sga-bloc">'+nxCard('','Projets','<div class="b flush">'+sgaProjTable(prj)+'</div>','<span class="n">'+prj.length+'</span>')+'</div>'):'')
@@ -31765,6 +31768,7 @@ function sgaClic(e,w,o){ const b=e.target.closest('[data-fn],[data-ref]'); if(!b
   else if(f==='pin'){ const on=nxTogglePin('c',o.ID); b.classList.toggle('on',on); try{ sgSide(); }catch(_){} }
   else if(f==='modifier') editOwner(o,o.TYPECODE); else if(f==='plus') sgaMenu(b,sgaSections(o,ix()));
   else if(f==='nadr') editContact(null,o,null); else if(f==='lier') sgaRattacher(o);
+  else if(f==='npers') editOwner(null,1,(e,isNew)=>{ if(isNew) editContact(null,e,o); });   /* nouvelle personne rattachée : la fiche de l'entité reste ouverte */
   else if(f==='adr-mod'&&adr()) editContact(adr()); else if(f==='adr-sup'&&adr()) delContact(adr());
   else if(f==='adr-copie'&&adr()) ctCopy(adrLines(adr()).join('\n'),'Adresse copiée.'); else if(f==='adr-fav'&&adr()) addToGroup(favGroup(true),[adr()]);
   else if(f==='adr-liste'&&adr()) pickGroup(g=>addToGroup(g,[adr()]));

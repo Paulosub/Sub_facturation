@@ -2759,22 +2759,29 @@ VIEWS['nx-mesprojets']={
       .sort((a,b)=>(+sgInterne(a)-+sgInterne(b))||(rang(a)-rang(b))||cmp(String(b.NUMBER||''),String(a.NUMBER||'')));
     const me=nxMe(), lim30=dayKey(new Date(Date.now()-30*864e5)), h30={};
     if(me) DS.by('timelog','STAFF_ID',me.ID).forEach(r=>{ if(tlKey(r)>=lim30) h30[r.PROJECT_ID]=(h30[r.PROJECT_ID]||0)+(+r.TIMEPERIOD||0); });
-    const row=p=>{ const c=sgCatProjet(p), mo=projMO(p);
-      return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'
-        +'<td><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b>'+(c!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[c]+'</span>':'')+'</td>'
-        +'<td>'+nxE(mo)+'</td><td>'+nxE(p.LOCATION||'')+'</td><td>'+nxStateTag(p)+'</td><td>'+nxE(sgTermine(p)?'Terminé':sgPhaseLib(sgPhaseActuelle(p),true))+'</td><td class="r">'+(h30[p.ID]?nxH(h30[p.ID])+' h':'')+'</td></tr>'; };
+    /* colonnes de la présentation (bloc 57, catalogue « mesprojets », 15.11.2026) ; plus de tri par les titres */
+    const X=sgtabCtxProjets(); X.mes=h30; const cols=sgtabCols('mesprojets');
+    const row=p=>{ const mo=projMO(p);
+      return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'+sgtabCellules(cols,p,X)+'</tr>'; };
     /* bandeau, chiffres, onglets En cours · Tous et recherche à droite, comme les autres listes (15.11.2026, navigation et paramètres du devis ouvert) */
     const nE=L.filter(p=>+p.PROJECTSTATECODE===2).length, nA=L.filter(p=>+p.PROJECTSTATECODE===3).length, hT=L.reduce((t,p)=>t+(h30[p.ID]||0),0), nH=L.filter(p=>h30[p.ID]).length;
     const html='<div class="sg-split">'+sgTete('Projets','Mes projets',(adm?'Tous les projets du bureau':'Les projets dont vous faites partie de l’équipe')+' — un clic ouvre la page du projet.',
         sgKpis([sgKpi('Projets',String(L.length),tous?'tous les états':'en cours'),sgKpi('En cours',String(nE)),sgKpi('En attente',String(nA)),sgKpi('Mes heures',nxH(hT)+'<small>h</small>','ces 30 derniers jours'),sgKpi('Projets actifs',String(nH),'avec mes heures ces 30 jours')])
         +sgPageNav({onglets:collab?[]:[{t:'En cours',arg:'0',on:!tous,fn:'encours'},{t:adm?'Tous les projets':'Tous mes projets',arg:'1',on:tous,fn:'tous'}],
-          choix:[{html:'<input class="inp" id="sg-mesp-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'" style="width:240px"><span class="sg-nn n"></span>'}]}))
-      +'<div>'+(L.length?'<table class="nx-tbl sg-mesp"><tr><th>N°</th><th>Projet</th><th>Maître d’ouvrage</th><th>Lieu</th><th>État</th><th>Phase actuelle</th><th class="r">Mes heures (30 j)</th></tr>'+L.map(row).join('')+'</table>'
+          choix:[{html:'<input class="inp" id="sg-mesp-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'" style="width:240px"><span class="sg-nn n"></span>'}],
+          gauche:[{t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …'},{t:'Imprimer',i:'print',fn:'imp',ti:'Liste affichée (PDF)'}],
+          droite:[{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]}))
+      +'<div>'+(L.length?'<table class="nx-tbl sgtab-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+L.map(row).join('')+'</tbody></table>'
         :'<div class="nx-empty">'+(me?'Vous ne faites partie de l’équipe d’aucun projet'+(tous?'':' en cours')+' (Intervenants du projet).':'Votre compte n’est relié à aucun membre de l’équipe.')+(collab?'':' <a href="#" data-go="nx-listeprojets" data-arg="tous">Liste des projets</a>')+'</div>')+'</div></div>';
     const pg=nxPage(m,html), inp=pg.querySelector('#sg-mesp-q'), nb=pg.querySelector('.sg-nn');
     pg._fn.encours=()=>{ if(tous){ nxLS.set('sg3_mesp_tous',false); go('nx-mesprojets'); } }; pg._fn.tous=()=>{ if(!tous){ nxLS.set('sg3_mesp_tous',true); go('nx-mesprojets'); } };
     const filt=()=>{ const v=inp.value.trim().toLowerCase(); nxLS.set('sg3_mesp_q',inp.value); let n=0;
       pg.querySelectorAll('tr[data-q]').forEach(tr=>{ const ok=!v||tr.dataset.q.includes(v); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=n+' projet'+(n>1?'s':''); };
+    const vis=()=>[...pg.querySelectorAll('tr[data-q]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('project',tr.dataset.arg)).filter(Boolean);
+    pg._fn.pres=b=>sgtabMenu('mesprojets',b,()=>go('nx-mesprojets'));
+    pg._fn.imp=()=>{ const v=inp.value.trim(); sgtabImprimer('mesprojets',vis(),X,{titre:'Mes projets',lb:'Projets · Documents',type:'Projets',sous:(tous?(adm?'Tous les projets':'Tous mes projets'):'Projets en cours')+(v?' · « '+v+' »':''),
+      meta:[['Projets',tous?(adm?'Tous les projets':'Tous mes projets'):'En cours'],['Recherche',v?'« '+v+' »':'']]}); };
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>sgtabCsv('mesprojets',vis(),X,'mes_projets')},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgtab-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
     inp.oninput=filt; filt(); },
   refresh(ts){ if(hit(ts,'project','projectmember')) go('nx-mesprojets'); } };
 /* domaines d'affaire en tuiles : groupes, icône, texte ; compteurs (tables chargées à la demande) */
@@ -3464,24 +3471,32 @@ VIEWS['dom-affaires']={
     nxPage(m,html); },
   refresh(ts){ if(hit(ts,'project','timelog')) go('dom-affaires'); } };
 /* liste des projets visibles, filtrée par catégorie (cat:…) ou par état (etat:…) ; un clic ouvre la page du projet */
+/* Liste des projets au graphisme des listes (15.11.2026, lot 2 des tableaux) : bandeau, chiffres, onglets des catégories (Tous · Projets · Expertises · Faisabilités ·
+   Autres) avec leur nombre, états à droite, barre en texte (Présentation ▾, Imprimer ; recherche, Fonctions ▾) ; colonnes de la présentation (catalogue « projets »,
+   bloc 57) ; mêmes projets visibles et même ordre qu'avant (projets internes à la fin, états, numéro) ; un clic ouvre la page du projet. */
 VIEWS['nx-listeprojets']={
   render(m,arg){ const a=String(arg||'tous'), [k,v]=a.split(':'), cat=k==='cat'?v:null, etat=k==='etat'?+v:null, q=String(nxLS.get('sg3_listep_q','')||'');
     const C=SG_CATS.find(x=>x[0]===cat), E=SG_ETATS.find(x=>x[0]===etat);
     VIEW.nxTitle=C?C[1]:E?'Projets · '+E[1].toLowerCase():'Tous les projets';
     const rang=p=>{ const i=[2,3,1,4,5].indexOf(+p.PROJECTSTATECODE); return i<0?9:i; };
-    const L=sgProjetsVisibles().filter(p=>C?sgCatOuInterne(p)===cat:E?+p.PROJECTSTATECODE===etat:true).sort((x,y)=>(+sgInterne(x)-+sgInterne(y))||(rang(x)-rang(y))||cmp(String(y.NUMBER||''),String(x.NUMBER||'')));
-    const chip=(ar,t)=>'<button data-go="nx-listeprojets" data-arg="'+ar+'" class="'+(ar===a?'on':'')+'">'+nxE(t)+'</button>';
-    const row=p=>{ const c=sgCatProjet(p), mo=projMO(p);
-      return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'
-        +'<td><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b>'+(!sgInterne(p)&&c!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[c]+'</span>':'')+'</td>'
-        +'<td>'+nxE(mo)+'</td><td>'+nxE(p.LOCATION||'')+'</td><td>'+nxStateTag(p)+'</td></tr>'; };
-    const html='<div class="sg-mesp-bar"><div class="seg">'+chip('tous','Tous')+SG_CATS.map(([kk,t])=>chip('cat:'+kk,t)).join('')+'</div>'
-      +'<div class="seg">'+SG_ETATS.filter(([c])=>!sgCollabSeul()||SG_ETATS_COLLAB.includes(c)).map(([c,t])=>chip('etat:'+c,t)).join('')+'</div>'
-      +'<input class="inp" id="sg-listep-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'"><span class="n"></span></div>'
-      +(L.length?'<table class="nx-tbl sg-mesp"><tr><th>N°</th><th>Projet</th><th>Maître d’ouvrage</th><th>Lieu</th><th>État</th></tr>'+L.map(row).join('')+'</table>':'<div class="nx-empty">Aucun projet.</div>');
-    const pg=nxPage(m,html), inp=pg.querySelector('#sg-listep-q'), nb=pg.querySelector('.sg-mesp-bar .n');
+    const V=sgProjetsVisibles(), L=V.filter(p=>C?sgCatOuInterne(p)===cat:E?+p.PROJECTSTATECODE===etat:true).sort((x,y)=>(+sgInterne(x)-+sgInterne(y))||(rang(x)-rang(y))||cmp(String(y.NUMBER||''),String(x.NUMBER||'')));
+    const X=sgtabCtxProjets(), cols=sgtabCols('projets'), nCat=kk=>V.filter(p=>sgCatOuInterne(p)===kk).length, nEt=c=>V.filter(p=>+p.PROJECTSTATECODE===c).length;
+    const etats=SG_ETATS.filter(([c])=>!sgCollabSeul()||SG_ETATS_COLLAB.includes(c));
+    const row=p=>{ const mo=projMO(p); return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'+sgtabCellules(cols,p,X)+'</tr>'; };
+    const html='<div class="sg-split">'+sgTete('Projets',nxE(VIEW.nxTitle),'Les projets visibles pour vous, par catégorie ou par état. Un clic ouvre la page du projet ; colonnes au choix : Présentation.',
+        sgKpis([sgKpi('Projets',String(V.length),'visibles'),...SG_CATS.slice(0,3).map(([kk,t])=>sgKpi(t,String(nCat(kk)))),sgKpi('En cours',String(nEt(2)),nEt(3)?nEt(3)+' en attente':'')])
+        +sgPageNav({onglets:[{t:'Tous',arg:'tous',go:'nx-listeprojets',on:a==='tous',n:V.length},...SG_CATS.map(([kk,t])=>({t,arg:'cat:'+kk,go:'nx-listeprojets',on:a==='cat:'+kk,n:nCat(kk)}))],
+          choix:[{lb:'État',items:etats.map(([c,t])=>({t,go:'nx-listeprojets',arg:'etat:'+c,on:a==='etat:'+c}))}],
+          gauche:[{t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …'},{t:'Imprimer',i:'print',fn:'imp',ti:'Liste affichée (PDF)'}],
+          droite:[{html:'<input class="inp" id="sg-listep-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'" style="width:220px"><span class="sg-nn n"></span>'},{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]}))
+      +'<div>'+(L.length?'<table class="nx-tbl sgtab-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+L.map(row).join('')+'</tbody></table>':'<div class="nx-empty">Aucun projet.</div>')+'</div></div>';
+    const pg=nxPage(m,html), inp=pg.querySelector('#sg-listep-q'), nb=pg.querySelector('.sg-nn');
     const filt=()=>{ const s=inp.value.trim().toLowerCase(); nxLS.set('sg3_listep_q',inp.value); let n=0;
       pg.querySelectorAll('tr[data-q]').forEach(tr=>{ const ok=!s||tr.dataset.q.includes(s); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=n+' projet'+(n>1?'s':''); };
+    const vis=()=>[...pg.querySelectorAll('tr[data-q]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('project',tr.dataset.arg)).filter(Boolean);
+    pg._fn.pres=b=>sgtabMenu('projets',b,()=>go('nx-listeprojets',a));
+    pg._fn.imp=()=>{ const s0=inp.value.trim(); sgtabImprimer('projets',vis(),X,{titre:VIEW.nxTitle,lb:'Projets · Documents',type:'Projets',sous:s0?'« '+s0+' »':'',meta:[['Choix',VIEW.nxTitle],['Recherche',s0?'« '+s0+' »':'']]}); };
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>sgtabCsv('projets',vis(),X,'projets')},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgtab-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
     inp.oninput=filt; filt(); },
   refresh(ts){ if(hit(ts,'project','projectmember')) go('nx-listeprojets',VIEW.arg); } };
 NX_VIEW['nx-listeprojets']={d:SG_D.projets,t:'Liste des projets',fiche:1};

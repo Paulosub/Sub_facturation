@@ -3114,8 +3114,17 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   supprimer, copie). Bandeau fixe, la liste et la fiche défilent chacune (`.sg-aglp`, `.sg-agl`). Choix par poste : `sg3_agl_etat`, `sg3_agl_type`, `sg3_agl_q`.
   Imprimer = la liste affichée au graphisme des documents (page de garde : statut, type, recherche, nombre, présentation ; paysage au-delà de 6 colonnes).
   ⚠ Classe `nx-row` = ligne de liste en `display:flex` : ne pas la mettre sur un `<tr>` (sinon `style="display:table-row"`).
-  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour chaque autre tableau de l'app (Mes projets, Liste des adresses,
-  Membres, Tâches, listes des modules du projet, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  **Lot 2 (même soir, Paulo : « Oui, continuer »)** : Projets ▸ Mes projets (catalogue `mesprojets` = colonnes des affaires + « Mes heures (30 j) » ; barre
+  Présentation ▾, Imprimer, Fonctions ▾), Projets ▸ Liste des projets (`nx-listeprojets` refaite au graphisme des listes : bandeau, chiffres, onglets des
+  catégories avec leur nombre, états à droite ; catalogue `projets`), Contacts ▸ Liste des adresses (catalogue `adresses` = colonnes de la liste d'adresses de
+  l'ancien logiciel reproduites par le moteur, `ACOL`, + Nom, Type, Adresse, Catégories ; ses présentations d'origine proposées d'office : « Coordonnées »
+  (= son « Standard »), « Adresse », « Communication », « Adresse + Communication », « Tous » — `D.pres`, noms réservés ; Imprimer ▾ ▸ « Liste affichée (PDF) »
+  en tête, les impressions du moteur gardées ; CSV = colonnes de la présentation), Équipe ▸ Membres (catalogue `membres` : collaborateur et sa personne, sans
+  adresse privée, n° AVS ni date de naissance ; vacances et remarque seulement pour l'administrateur ou le droit « équipe : taux » — `c.ok`), Projets ▸ Tâches
+  (catalogues `taches` et `tachesreg` = colonnes de la liste des tâches de l'ancien logiciel, `PTC`, + Projet, Tâche). Outils ajoutés au bloc 57 :
+  `sgtabMoteur(colonne du moteur, catégorie)`, `sgtabCtxProjets()`, présentations d'origine (`pres`), colonnes permises (`ok`), titre d'en-tête propre (`th`).
+  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour chaque autre tableau de l'app (listes des modules du projet,
+  Administration, Heures, écrans du moteur, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.

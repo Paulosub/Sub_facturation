@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 22:36 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 22:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1851,6 +1851,14 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .sg-agl-t td.c{text-align:center}
 .sg-agl-t .sg-ag-pt{vertical-align:-1px}
 #sg-agl-q{height:28px}
+
+/* ═══ Tableaux à colonnes au choix (bloc 57, sg3_tableaux.js : Mes projets, Liste des projets, Liste des adresses, Membres, Tâches…) ═══ */
+.nx-tbl.sgtab-t tr[data-go],.nx-tbl.sgtab-t tr[data-c],.nx-tbl.sgtab-t tr[data-a]{cursor:pointer}
+.nx-tbl.sgtab-t tbody tr:hover td{background:var(--s-jaune3)}
+.nx-tbl.sgtab-t th{white-space:nowrap;vertical-align:bottom}
+.nx-tbl.sgtab-t td{vertical-align:top}
+.nx-tbl.sgtab-t td.nw{white-space:nowrap}
+.nx-tbl.sgtab-t td.c,.nx-tbl.sgtab-t th.c{text-align:center}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -29829,22 +29837,29 @@ VIEWS['nx-mesprojets']={
       .sort((a,b)=>(+sgInterne(a)-+sgInterne(b))||(rang(a)-rang(b))||cmp(String(b.NUMBER||''),String(a.NUMBER||'')));
     const me=nxMe(), lim30=dayKey(new Date(Date.now()-30*864e5)), h30={};
     if(me) DS.by('timelog','STAFF_ID',me.ID).forEach(r=>{ if(tlKey(r)>=lim30) h30[r.PROJECT_ID]=(h30[r.PROJECT_ID]||0)+(+r.TIMEPERIOD||0); });
-    const row=p=>{ const c=sgCatProjet(p), mo=projMO(p);
-      return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'
-        +'<td><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b>'+(c!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[c]+'</span>':'')+'</td>'
-        +'<td>'+nxE(mo)+'</td><td>'+nxE(p.LOCATION||'')+'</td><td>'+nxStateTag(p)+'</td><td>'+nxE(sgTermine(p)?'Terminé':sgPhaseLib(sgPhaseActuelle(p),true))+'</td><td class="r">'+(h30[p.ID]?nxH(h30[p.ID])+' h':'')+'</td></tr>'; };
+    /* colonnes de la présentation (bloc 57, catalogue « mesprojets », 15.11.2026) ; plus de tri par les titres */
+    const X=sgtabCtxProjets(); X.mes=h30; const cols=sgtabCols('mesprojets');
+    const row=p=>{ const mo=projMO(p);
+      return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'+sgtabCellules(cols,p,X)+'</tr>'; };
     /* bandeau, chiffres, onglets En cours · Tous et recherche à droite, comme les autres listes (15.11.2026, navigation et paramètres du devis ouvert) */
     const nE=L.filter(p=>+p.PROJECTSTATECODE===2).length, nA=L.filter(p=>+p.PROJECTSTATECODE===3).length, hT=L.reduce((t,p)=>t+(h30[p.ID]||0),0), nH=L.filter(p=>h30[p.ID]).length;
     const html='<div class="sg-split">'+sgTete('Projets','Mes projets',(adm?'Tous les projets du bureau':'Les projets dont vous faites partie de l’équipe')+' — un clic ouvre la page du projet.',
         sgKpis([sgKpi('Projets',String(L.length),tous?'tous les états':'en cours'),sgKpi('En cours',String(nE)),sgKpi('En attente',String(nA)),sgKpi('Mes heures',nxH(hT)+'<small>h</small>','ces 30 derniers jours'),sgKpi('Projets actifs',String(nH),'avec mes heures ces 30 jours')])
         +sgPageNav({onglets:collab?[]:[{t:'En cours',arg:'0',on:!tous,fn:'encours'},{t:adm?'Tous les projets':'Tous mes projets',arg:'1',on:tous,fn:'tous'}],
-          choix:[{html:'<input class="inp" id="sg-mesp-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'" style="width:240px"><span class="sg-nn n"></span>'}]}))
-      +'<div>'+(L.length?'<table class="nx-tbl sg-mesp"><tr><th>N°</th><th>Projet</th><th>Maître d’ouvrage</th><th>Lieu</th><th>État</th><th>Phase actuelle</th><th class="r">Mes heures (30 j)</th></tr>'+L.map(row).join('')+'</table>'
+          choix:[{html:'<input class="inp" id="sg-mesp-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'" style="width:240px"><span class="sg-nn n"></span>'}],
+          gauche:[{t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …'},{t:'Imprimer',i:'print',fn:'imp',ti:'Liste affichée (PDF)'}],
+          droite:[{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]}))
+      +'<div>'+(L.length?'<table class="nx-tbl sgtab-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+L.map(row).join('')+'</tbody></table>'
         :'<div class="nx-empty">'+(me?'Vous ne faites partie de l’équipe d’aucun projet'+(tous?'':' en cours')+' (Intervenants du projet).':'Votre compte n’est relié à aucun membre de l’équipe.')+(collab?'':' <a href="#" data-go="nx-listeprojets" data-arg="tous">Liste des projets</a>')+'</div>')+'</div></div>';
     const pg=nxPage(m,html), inp=pg.querySelector('#sg-mesp-q'), nb=pg.querySelector('.sg-nn');
     pg._fn.encours=()=>{ if(tous){ nxLS.set('sg3_mesp_tous',false); go('nx-mesprojets'); } }; pg._fn.tous=()=>{ if(!tous){ nxLS.set('sg3_mesp_tous',true); go('nx-mesprojets'); } };
     const filt=()=>{ const v=inp.value.trim().toLowerCase(); nxLS.set('sg3_mesp_q',inp.value); let n=0;
       pg.querySelectorAll('tr[data-q]').forEach(tr=>{ const ok=!v||tr.dataset.q.includes(v); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=n+' projet'+(n>1?'s':''); };
+    const vis=()=>[...pg.querySelectorAll('tr[data-q]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('project',tr.dataset.arg)).filter(Boolean);
+    pg._fn.pres=b=>sgtabMenu('mesprojets',b,()=>go('nx-mesprojets'));
+    pg._fn.imp=()=>{ const v=inp.value.trim(); sgtabImprimer('mesprojets',vis(),X,{titre:'Mes projets',lb:'Projets · Documents',type:'Projets',sous:(tous?(adm?'Tous les projets':'Tous mes projets'):'Projets en cours')+(v?' · « '+v+' »':''),
+      meta:[['Projets',tous?(adm?'Tous les projets':'Tous mes projets'):'En cours'],['Recherche',v?'« '+v+' »':'']]}); };
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>sgtabCsv('mesprojets',vis(),X,'mes_projets')},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgtab-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
     inp.oninput=filt; filt(); },
   refresh(ts){ if(hit(ts,'project','projectmember')) go('nx-mesprojets'); } };
 /* domaines d'affaire en tuiles : groupes, icône, texte ; compteurs (tables chargées à la demande) */
@@ -30534,24 +30549,32 @@ VIEWS['dom-affaires']={
     nxPage(m,html); },
   refresh(ts){ if(hit(ts,'project','timelog')) go('dom-affaires'); } };
 /* liste des projets visibles, filtrée par catégorie (cat:…) ou par état (etat:…) ; un clic ouvre la page du projet */
+/* Liste des projets au graphisme des listes (15.11.2026, lot 2 des tableaux) : bandeau, chiffres, onglets des catégories (Tous · Projets · Expertises · Faisabilités ·
+   Autres) avec leur nombre, états à droite, barre en texte (Présentation ▾, Imprimer ; recherche, Fonctions ▾) ; colonnes de la présentation (catalogue « projets »,
+   bloc 57) ; mêmes projets visibles et même ordre qu'avant (projets internes à la fin, états, numéro) ; un clic ouvre la page du projet. */
 VIEWS['nx-listeprojets']={
   render(m,arg){ const a=String(arg||'tous'), [k,v]=a.split(':'), cat=k==='cat'?v:null, etat=k==='etat'?+v:null, q=String(nxLS.get('sg3_listep_q','')||'');
     const C=SG_CATS.find(x=>x[0]===cat), E=SG_ETATS.find(x=>x[0]===etat);
     VIEW.nxTitle=C?C[1]:E?'Projets · '+E[1].toLowerCase():'Tous les projets';
     const rang=p=>{ const i=[2,3,1,4,5].indexOf(+p.PROJECTSTATECODE); return i<0?9:i; };
-    const L=sgProjetsVisibles().filter(p=>C?sgCatOuInterne(p)===cat:E?+p.PROJECTSTATECODE===etat:true).sort((x,y)=>(+sgInterne(x)-+sgInterne(y))||(rang(x)-rang(y))||cmp(String(y.NUMBER||''),String(x.NUMBER||'')));
-    const chip=(ar,t)=>'<button data-go="nx-listeprojets" data-arg="'+ar+'" class="'+(ar===a?'on':'')+'">'+nxE(t)+'</button>';
-    const row=p=>{ const c=sgCatProjet(p), mo=projMO(p);
-      return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'
-        +'<td><span class="nx-tag num">'+nxE(p.NUMBER||'')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b>'+(!sgInterne(p)&&c!=='architecture'?' <span class="nx-tag">'+SG_CAT_L[c]+'</span>':'')+'</td>'
-        +'<td>'+nxE(mo)+'</td><td>'+nxE(p.LOCATION||'')+'</td><td>'+nxStateTag(p)+'</td></tr>'; };
-    const html='<div class="sg-mesp-bar"><div class="seg">'+chip('tous','Tous')+SG_CATS.map(([kk,t])=>chip('cat:'+kk,t)).join('')+'</div>'
-      +'<div class="seg">'+SG_ETATS.filter(([c])=>!sgCollabSeul()||SG_ETATS_COLLAB.includes(c)).map(([c,t])=>chip('etat:'+c,t)).join('')+'</div>'
-      +'<input class="inp" id="sg-listep-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'"><span class="n"></span></div>'
-      +(L.length?'<table class="nx-tbl sg-mesp"><tr><th>N°</th><th>Projet</th><th>Maître d’ouvrage</th><th>Lieu</th><th>État</th></tr>'+L.map(row).join('')+'</table>':'<div class="nx-empty">Aucun projet.</div>');
-    const pg=nxPage(m,html), inp=pg.querySelector('#sg-listep-q'), nb=pg.querySelector('.sg-mesp-bar .n');
+    const V=sgProjetsVisibles(), L=V.filter(p=>C?sgCatOuInterne(p)===cat:E?+p.PROJECTSTATECODE===etat:true).sort((x,y)=>(+sgInterne(x)-+sgInterne(y))||(rang(x)-rang(y))||cmp(String(y.NUMBER||''),String(x.NUMBER||'')));
+    const X=sgtabCtxProjets(), cols=sgtabCols('projets'), nCat=kk=>V.filter(p=>sgCatOuInterne(p)===kk).length, nEt=c=>V.filter(p=>+p.PROJECTSTATECODE===c).length;
+    const etats=SG_ETATS.filter(([c])=>!sgCollabSeul()||SG_ETATS_COLLAB.includes(c));
+    const row=p=>{ const mo=projMO(p); return '<tr class="nx-row" data-go="nx-pdom" data-arg="'+p.ID+'" data-q="'+nxE([p.NUMBER,p.TITLE,mo,p.LOCATION].filter(Boolean).join(' ').toLowerCase())+'" style="display:table-row">'+sgtabCellules(cols,p,X)+'</tr>'; };
+    const html='<div class="sg-split">'+sgTete('Projets',nxE(VIEW.nxTitle),'Les projets visibles pour vous, par catégorie ou par état. Un clic ouvre la page du projet ; colonnes au choix : Présentation.',
+        sgKpis([sgKpi('Projets',String(V.length),'visibles'),...SG_CATS.slice(0,3).map(([kk,t])=>sgKpi(t,String(nCat(kk)))),sgKpi('En cours',String(nEt(2)),nEt(3)?nEt(3)+' en attente':'')])
+        +sgPageNav({onglets:[{t:'Tous',arg:'tous',go:'nx-listeprojets',on:a==='tous',n:V.length},...SG_CATS.map(([kk,t])=>({t,arg:'cat:'+kk,go:'nx-listeprojets',on:a==='cat:'+kk,n:nCat(kk)}))],
+          choix:[{lb:'État',items:etats.map(([c,t])=>({t,go:'nx-listeprojets',arg:'etat:'+c,on:a==='etat:'+c}))}],
+          gauche:[{t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …'},{t:'Imprimer',i:'print',fn:'imp',ti:'Liste affichée (PDF)'}],
+          droite:[{html:'<input class="inp" id="sg-listep-q" placeholder="Rechercher un projet…" value="'+nxE(q)+'" style="width:220px"><span class="sg-nn n"></span>'},{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]}))
+      +'<div>'+(L.length?'<table class="nx-tbl sgtab-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+L.map(row).join('')+'</tbody></table>':'<div class="nx-empty">Aucun projet.</div>')+'</div></div>';
+    const pg=nxPage(m,html), inp=pg.querySelector('#sg-listep-q'), nb=pg.querySelector('.sg-nn');
     const filt=()=>{ const s=inp.value.trim().toLowerCase(); nxLS.set('sg3_listep_q',inp.value); let n=0;
       pg.querySelectorAll('tr[data-q]').forEach(tr=>{ const ok=!s||tr.dataset.q.includes(s); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=n+' projet'+(n>1?'s':''); };
+    const vis=()=>[...pg.querySelectorAll('tr[data-q]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('project',tr.dataset.arg)).filter(Boolean);
+    pg._fn.pres=b=>sgtabMenu('projets',b,()=>go('nx-listeprojets',a));
+    pg._fn.imp=()=>{ const s0=inp.value.trim(); sgtabImprimer('projets',vis(),X,{titre:VIEW.nxTitle,lb:'Projets · Documents',type:'Projets',sous:s0?'« '+s0+' »':'',meta:[['Choix',VIEW.nxTitle],['Recherche',s0?'« '+s0+' »':'']]}); };
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>sgtabCsv('projets',vis(),X,'projets')},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgtab-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
     inp.oninput=filt; filt(); },
   refresh(ts){ if(hit(ts,'project','projectmember')) go('nx-listeprojets',VIEW.arg); } };
 NX_VIEW['nx-listeprojets']={d:SG_D.projets,t:'Liste des projets',fiche:1};
@@ -32801,29 +32824,32 @@ VIEWS['adr-liste']={
     const lc=s=>String(s||'').toLowerCase(), L=DS.all('contact').filter(c=>c&&!c.ISHIDDEN).map(c=>{ const o=ownerOf(c);
       return {c,o,nom:(o?ownerName(o,true):'')||[c.NAME1,c.NAME2].filter(Boolean).join(' ')||c.SHORTLABEL||'',rel:ownerName(relOf(c),true),t:o?+o.TYPECODE:0}; })
       .sort((a,b)=>a.nom.localeCompare(b.nom,'fr',{sensitivity:'base'}));
-    const row=x=>{ const c=x.c, cats=contactProps(c).map(nm).filter(Boolean), at=+c.ADDRESSTYPECODE?ADR_T[+c.ADDRESSTYPECODE]||'':'', tel=phone(c,1)||phone(c,2);
+    /* colonnes de la présentation (bloc 57, catalogue « adresses » : colonnes et présentations de la liste d'adresses de l'ancien logiciel, 15.11.2026) */
+    const cols=sgtabCols('adresses'), parC=new Map(L.map(x=>[String(x.c.ID),x]));
+    const row=x=>{ const c=x.c, cats=contactProps(c).map(nm).filter(Boolean);
       const q=lc([x.nom,x.rel,c.NAME1,c.NAME2,c.NAME3,c.STREET,c.POBOX,locality(c),c.EMAIL1,c.BKP,c.SHORTLABEL,phone(c,1),phone(c,2),cats.join(' ')].filter(Boolean).join(' '));
       return '<tr class="nx-row'+(String(c.ID)===String(SGL.der)?' sgl-der':'')+'"'+(x.o?' data-o="'+x.o.ID+'"':'')+' data-c="'+c.ID+'" data-t="'+x.t+'" data-q="'+nxE(q)+'" title="Clic : fiche du contact · clic droit : modifier l’adresse, listes, catégories, courriel">'
-        +'<td><b>'+nxE(x.nom)+'</b>'+cats.slice(0,2).map(t=>' <span class="nx-tag">'+nxE(t)+'</span>').join('')+(cats.length>2?' <span class="nx-tag" title="'+nxE(cats.slice(2).join(', '))+'">+'+(cats.length-2)+'</span>':'')+'</td>'
-        +'<td>'+nxE(OWNER_T[x.t]||'')+'</td><td>'+nxE(x.rel)+'</td><td>'+nxE([c.STREET,c.POBOX].filter(Boolean).join(', '))+(at?' <span class="sgl-at">'+nxE(at)+'</span>':'')+'</td>'
-        +'<td>'+nxE(locality(c))+'</td><td class="sgl-nw">'+nxE(tel)+'</td><td>'+nxE(c.EMAIL1||'')+'</td><td>'+nxE(c.BKP||'')+'</td></tr>'; };
+        +sgtabCellules(cols,x)+'</tr>'; };
     /* bandeau, chiffres, onglets des types et recherche à droite, barre en texte (Imprimer ▾, Courriel …, Fonctions ▾) : comme les autres listes (15.11.2026,
        navigation et paramètres du devis ouvert) */
     const F=sglFonc(), nT=k=>{ const f=(SGL_TYPES.find(x=>x[0]===k)||SGL_TYPES[0])[2]; return L.filter(x=>f(x.t)).length; }, nM=L.filter(x=>x.c.EMAIL1).length;
     const html='<div class="sg-split">'+sgTete('Contacts','Liste des adresses','Toutes les adresses de l’annuaire. Un clic ouvre la fiche du contact ; clic droit : modifier l’adresse, listes de diffusion, catégories, courriel.',
         sgKpis([sgKpi('Adresses',sgdN(L.length)),sgKpi('Sociétés',sgdN(nT('societe'))),sgKpi('Personnes',sgdN(nT('personne'))),sgKpi('Avec courriel',sgdN(nM),L.length?Math.round(nM/L.length*100)+' %':''),sgKpi('Sans courriel',sgdN(L.length-nM))])
         +sgPageNav({onglets:SGL_TYPES.map(([k,t])=>({t,arg:k,fn:'type',on:k===ty0})),choix:[{html:'<input class="inp" id="sgl-q" placeholder="Rechercher une adresse…" value="'+nxE(q0)+'" style="width:240px"><span class="sg-nn n"></span>'}],
-          gauche:[{t:'Imprimer',i:'print',fn:'impr',dd:1,ti:'Imprimer les adresses affichées'},...(F?[{t:'Courriel …',i:'mail',fn:'mail',ti:'Courriels des adresses affichées, à copier'}]:[])],
+          gauche:[{t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau : Standard, présentations de l’ancien logiciel (Coordonnées, Adresse, Communication…), Personnalisé …'},{t:'Imprimer',i:'print',fn:'impr',dd:1,ti:'Imprimer les adresses affichées'},...(F?[{t:'Courriel …',i:'mail',fn:'mail',ti:'Courriels des adresses affichées, à copier'}]:[])],
           droite:F?[{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]:[]}))
-      +'<div>'+(L.length?'<table class="nx-tbl sg-mesp sgl-t sg-sanstot"><tr><th>Nom</th><th>Type</th><th>Appartient à</th><th>Adresse</th><th>Localité</th><th>Téléphone</th><th>Courriel</th><th>CFC</th></tr>'+L.map(row).join('')+'</table>'
+      +'<div>'+(L.length?'<table class="nx-tbl sgtab-t sgl-t sg-sanstot"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+L.map(row).join('')+'</tbody></table>'
         :'<div class="nx-empty">Aucune adresse dans l’annuaire.</div>')+'</div></div>';
     const pg=nxPage(m,html), inp=pg.querySelector('#sgl-q'), nb=pg.querySelector('.sg-nn');
     let ty=ty0; const visibles=()=>[...pg.querySelectorAll('tr[data-c]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('contact',tr.dataset.c)).filter(Boolean);
     const filt=()=>{ const v=inp.value.trim().toLowerCase(), f=(SGL_TYPES.find(x=>x[0]===ty)||SGL_TYPES[0])[2]; nxLS.set('sg3_adrl_q',inp.value); let n=0;
       pg.querySelectorAll('tr[data-c]').forEach(tr=>{ const ok=f(+tr.dataset.t)&&(!v||tr.dataset.q.includes(v)); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=sgdAdr(n); };
     pg._fn.type=b=>{ ty=b.dataset.arg||b.dataset.k; nxLS.set('sg3_adrl_type',ty); pg.querySelectorAll('[data-fn="type"]').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-selected',x===b?'true':'false'); }); filt(); };
-    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>pg._fn.csv()},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgl-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
-    pg._fn.impr=b=>popMenu(b,[{t:'Liste d’adresses',fn:()=>printAdr(visibles(),'Liste d’adresses')},{t:'Liste d’adresses par CFC',fn:()=>printAdr(visibles().sort((a,b2)=>cmp(a.BKP,b2.BKP)),'Liste d’adresses par CFC')}]);
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>sgtabCsv('adresses',visX(),null,'adresses')},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgl-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
+    const visX=()=>visibles().map(c=>parC.get(String(c.ID))).filter(Boolean);
+    pg._fn.pres=b=>sgtabMenu('adresses',b,()=>V.refresh(['contact']));
+    pg._fn.impr=b=>popMenu(b,[{t:'Liste affichée (PDF)',fn:()=>{ const v=(inp.value||'').trim(), tyL=(SGL_TYPES.find(z=>z[0]===ty)||SGL_TYPES[0])[1];
+        sgtabImprimer('adresses',visX(),null,{titre:'Liste des adresses',lb:'Contacts · Documents',type:'Contacts',sous:tyL+(v?' · « '+v+' »':''),meta:[['Adresses',tyL],['Recherche',v?'« '+v+' »':'']]}); }},'-',{t:'Liste d’adresses',fn:()=>printAdr(visibles(),'Liste d’adresses')},{t:'Liste d’adresses par CFC',fn:()=>printAdr(visibles().sort((a,b2)=>cmp(a.BKP,b2.BKP)),'Liste d’adresses par CFC')}]);
     pg._fn.mail=()=>{ const cs=visibles(); if(cs.length) mailList(cs); };
     /* export : les colonnes de la présentation « Tous » de la liste du moteur (ACOL, PRES), le type de contact et les catégories */
     pg._fn.csv=()=>{ const cs=visibles(), t=h('table'), tr=a=>{ const r=h('tr'); a.forEach(v=>r.append(h('td',{},v==null?'':String(v)))); t.append(r); };
@@ -39169,7 +39195,9 @@ const TACHESG={
     const tri=kind==='done'?(a,b)=>cmp(b.DONEDATE||'',a.DONEDATE||'')||cmp(b.STARTDATE,a.STARTDATE):(a,b)=>(b.ISURGENT?1:0)-(a.ISURGENT?1:0)||cmp(a.DEADLINE||'9',b.DEADLINE||'9')||cmp(b.STARTDATE,a.STARTDATE);
     const L=base.filter(t=>trouve(u.q,...ptText(t,true))).sort(tri); I.R=L;
     const nR=P.filter(retT).length, nP=new Set(P.map(t=>t.PROJECT_ID)).size, prj=t=>DS.get('project',t.PROJECT_ID)||{};
-    const acts='<button class="nx-btn" data-a="menu" title="Copier, exporter" aria-label="Copier, exporter">⋯</button>';
+    const cle=kind==='done'?'tachesreg':'taches', cols=sgtabCols(cle);   /* colonnes de la présentation (bloc 57, catalogues « taches » / « tachesreg », 15.11.2026) */
+    const acts=btn('pres','Présentation ▾','list',0,'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …')+btn('imp','Imprimer','print',0,'Liste affichée (PDF)')
+      +'<button class="nx-btn" data-a="menu" title="Copier, exporter" aria-label="Copier, exporter">⋯</button>';
     const teteP=tete(inis(nom)||'TÂ','Tâches'+(nom?' · '+nom:''),KLIB_T[kind],[pl(base.length,'tâche'),'projets en cours'].join(' · '),acts);
     if(!sl.length) return '<div class="sgsv">'+teteP+'<div class="sgsv-vide"><b>'+(ME.u?'Aucun collaborateur n’est lié à votre utilisateur.':'Choisissez votre nom d’utilisateur (en bas à gauche).')+'</b><br>Les tâches affichées ici sont celles dont un collaborateur est responsable.</div></div>';
     const chf='<div class="nx-kpis sgsv-kp">'+kpi('Urgentes',String(U.length),'',U.length?'ret':'')+kpi('En cours',String(P.length),'')+kpi('En retard',String(nR),nR?'délai dépassé':'aucune',nR?'ret':'')+kpi('Réglées',String(D.length),'')+kpi('Projets',String(nP),'avec une tâche en cours')+'</div>';
@@ -39178,17 +39206,19 @@ const TACHESG={
       +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher une tâche" aria-label="Rechercher une tâche" value="'+E(u.q||'')+'"></span></div>';
     const fait=kind==='done';
     return '<div class="sgsv">'+teteP+chf+fil
-      +(L.length?'<table class="nx-tbl sgsv-tb sgsv-tg"><thead><tr><th>Projet</th><th>Tâche</th><th>Entité</th><th>Priorité</th><th>Début</th><th>'+(fait?'Réglée le':'Délai')+'</th><th>Créée par</th></tr></thead><tbody>'
-        +L.map(t=>{ const p=prj(t), d=String(t.DESCRIPTION||'').split('\n')[0], ret=retT(t);
-          return '<tr data-a="open" data-t="'+E(t.ID)+'"><td class="nw" title="'+E(p.TITLE||'')+'"><b>'+E(p.NUMBER||'')+'</b></td><td><b>'+E(t.SUBJECT||'(sans objet)')+'</b>'+(t.ISURGENT&&!fait?'<span class="sgsv-tag ret">urgente</span>':'')+(d?'<span class="sgsv-sous">'+E(d.length>110?d.slice(0,109)+'…':d)+'</span>':'')+'</td>'
-            +'<td>'+E(ptContact(DS.get('contact',t.CONTACT_ID)))+'</td><td class="nw">'+E(+t.PROJECTTASKPRIORITYCODE?PT_PRIO[t.PROJECTTASKPRIORITYCODE]:'')+'</td><td class="nw">'+E(dmy(t.STARTDATE))+'</td>'
-            +'<td class="nw'+(ret?' sgsv-ret':'')+'">'+E(dmy(fait?t.DONEDATE:t.DEADLINE))+'</td><td class="nw">'+E(t.USERNAME||'')+'</td></tr>'; }).join('')+'</tbody></table>'
+      +(L.length?'<table class="nx-tbl sgsv-tb sgsv-tg sgtab-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'
+        +L.map(t=>'<tr data-a="open" data-t="'+E(t.ID)+'">'+sgtabCellules(cols,t)+'</tr>').join('')+'</tbody></table>'
         :'<p class="sgsv-rien">'+(u.q?'Aucune tâche trouvée.':{urgent:'Aucune tâche urgente.',pending:'Aucune tâche en cours.',done:'Aucune tâche réglée.'}[kind])+'</p>')+'</div>'; },
   action(I,a,tg,e){ const u=I.u, t=tg.dataset.t?DS.get('projecttask',tg.dataset.t):null;
     if(a==='open'){ if(t&&!(e&&e.detail>1)) ptEditReduced(t); }
     else if(a==='kind'){ const v=KVUE_T[tg.dataset.k]; if(v&&(typeof VIEW==='undefined'||!VIEW||VIEW.id!==v)) go(v); }
     else if(a==='staff'){ menuSous(tg,ptStaffs().map(s=>({t:staffName(s),chk:s.ID===u.staff,fn:()=>{ u.staff=s.ID; I.dessiner(); }}))); }
-    else if(a==='menu'){ menuSous(tg,ptExport({view:I.R||[],cols:PT_MCOLS},'Taches')); } },
+    else if(a==='pres'){ sgtabMenu(I.p.KIND==='done'?'tachesreg':'taches',tg,()=>I.dessiner()); }
+    else if(a==='imp'){ const kind=I.p.KIND||'pending', st=u.staff?DS.get('staff',u.staff):null, q=u.q||'';
+      sgtabImprimer(kind==='done'?'tachesreg':'taches',I.R||[],null,{titre:'Tâches · '+KLIB_T[kind],lb:'Projets · Documents',type:'Tâches',sous:(st?staffName(st):'')+(q?' · « '+q+' »':''),
+        meta:[['Tâches',KLIB_T[kind]],['Responsable',st?staffName(st):''],['Recherche',q?'« '+q+' »':'']]}); }
+    else if(a==='menu'){ const L=I.R||[], t=I.box.querySelector('table.sgtab-t'), cle=I.p.KIND==='done'?'tachesreg':'taches';
+      menuSous(tg,[{t:'Copier le tableau',dis:!t,fn:()=>ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).')},{t:'Exporter le tableau dans un fichier CSV …',dis:!L.length,fn:()=>sgtabCsv(cle,L,null,'taches')}]); } },
   ctx(I,tg,e){ if(tg.dataset.a!=='open') return false; const t=DS.get('projecttask',tg.dataset.t); if(!t) return false; let permis=true; try{ permis=typeof sgProjetPermis!=='function'||sgProjetPermis(t.PROJECT_ID); }catch(_){ }
     sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir la tâche…',fn:()=>ptEditReduced(t)},...(permis?[{t:'Voir dans le projet',fn:()=>go('nx-pdom',t.PROJECT_ID+'|Tâches')}]:[]),{t:'Imprimer la tâche…',fn:()=>ptPrintTask(t)}]); return true; } };
 if(typeof VIEWS!=='undefined'&&typeof ptModuleRows==='function'&&typeof ptStaffs==='function'&&typeof PTM!=='undefined'){
@@ -46784,23 +46814,24 @@ if(window.SGSV&&SGSV.outils&&typeof VIEWS!=='undefined'&&VIEWS['collab-actuels']
       const base=A.filter(f[2]).sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)||cmp(staffName(a),staffName(b)));
       const L=base.filter(s=>{ const c=pers(s); return trouve(u.q,staffName(s),s.INITIALS,c.COMPANYROLE,c.EMAIL1,tel(c,1),tel(c,2),app(c)); }); I.R=L;
       const nA=A.filter(s=>+s.ISACTIVE).length, an=x=>isoJ(x).slice(0,4)===y, dep=v!=='collab-actuels'||L.some(s=>s.QUITTINGDATE), VV=Object.keys(FIL).filter(vueOk);
-      const acts=(peutEq('staffNew')?btn('new','Nouveau membre','plus',1):'')+'<button class="nx-btn" data-a="menu" title="Courriel, copier, exporter" aria-label="Courriel, copier, exporter">⋯</button>';
+      const acts=(peutEq('staffNew')?btn('new','Nouveau membre','plus',1):'')+btn('pres','Présentation ▾','list',0,'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …')+btn('imp','Imprimer','print',0,'Liste affichée (PDF)')
+        +'<button class="nx-btn" data-a="menu" title="Courriel, copier, exporter" aria-label="Courriel, copier, exporter">⋯</button>';
+      const cols=sgtabCols('membres');   /* colonnes de la présentation (bloc 57, catalogue « membres », 15.11.2026) */
       return '<div class="sgsv">'+tete('ÉQ','Équipe',f[1],pl(base.length,'membre'),acts)
         +'<div class="nx-kpis sgsv-kp">'+kpi('Membres actuels',String(nA),'')+kpi('Anciens membres',String(A.length-nA),'')+kpi('Arrivées '+y,String(A.filter(s=>an(s.JOININGDATE)).length),'')+kpi('Départs '+y,String(A.filter(s=>an(s.QUITTINGDATE)).length),'')+'</div>'
         +'<div class="sgsv-fil">'+(VV.length>1?VV.map(k=>'<button data-a="vue" data-v="'+k+'" class="'+(k===v?'on':'')+'" aria-pressed="'+(k===v)+'">'+E(FIL[k][0])+'</button>').join(''):'')   /* une seule liste permise (collaborateur, chef de projet) : pas de choix */
         +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher un membre" aria-label="Rechercher un membre" value="'+E(u.q||'')+'"></span></div>'
-        +(L.length?'<table class="nx-tbl sgsv-tb sgmv-eq"><thead><tr><th class="sg-notri"></th><th>Membre</th><th>Appartient à</th><th>Téléphone</th><th>Mobile</th><th>Courriel</th><th>Engagement</th>'+(dep?'<th>Départ</th>':'')+'<th>Heures bloquées</th></tr></thead><tbody>'
-          +L.map(s=>{ const c=pers(s), fn=c.COMPANYROLE||'';
-            return '<tr data-a="open" data-s="'+E(s.ID)+'"'+(+s.ISACTIVE?'':' class="anc"')+'><td><span class="sgsv-ini">'+E(s.INITIALS||'—')+'</span></td><td><b>'+E(staffName(s))+'</b>'+(fn?'<span class="sgsv-sous">'+E(fn)+'</span>':'')+'</td><td class="nw">'+E(app(c))+'</td>'
-              +'<td class="nw">'+E(tel(c,1))+'</td><td class="nw">'+E(tel(c,2))+'</td><td>'+E(c.EMAIL1||'')+'</td><td class="nw">'+E(dfr(s.JOININGDATE))+'</td>'+(dep?'<td class="nw">'+E(dfr(s.QUITTINGDATE))+'</td>':'')
-              +'<td class="nw">'+(+s.ISTIMELOGFROZEN&&s.TIMELOGFREEZINGDATE?'jusqu’au '+E(dfr(s.TIMELOGFREEZINGDATE)):'')+'</td></tr>'; }).join('')+'</tbody></table>'
+        +(L.length?'<table class="nx-tbl sgsv-tb sgmv-eq sgtab-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'
+          +L.map(s=>'<tr data-a="open" data-s="'+E(s.ID)+'"'+(+s.ISACTIVE?'':' class="anc"')+'>'+sgtabCellules(cols,s)+'</tr>').join('')+'</tbody></table>'
           :'<p class="sgsv-rien">'+(u.q?'Aucun membre trouvé.':'Aucun membre dans cette liste.')+'</p>')+'</div>'; },
     action(I,a,tg,e){ const s=tg.dataset.s?DS.get('staff',tg.dataset.s):null;
       if(a==='open'){ if(s&&!(e&&e.detail>1)) go('nx-collab',s.ID); }
       else if(a==='new'){ if(peutEq('staffNew')) editStaff(); }
       else if(a==='vue'){ const v=tg.dataset.v; if(FIL[v]&&(typeof VIEW==='undefined'||!VIEW||VIEW.id!==v)) go(v); }
-      else if(a==='menu'){ const L=I.R||[], g=()=>({cols:colsX,view:L});
-        menuSous(tg,[{t:'Courriel aux membres affichés …',dis:!L.length,fn:()=>mailList(L.map(pers).filter(c=>c&&c.ID!=null))},'-',{t:'Copier le tableau',dis:!L.length,fn:()=>copyTable(g())},{t:'Exporter le tableau dans un fichier CSV …',dis:!L.length,fn:()=>csvTable(g(),'Collaborateurs')}]); } },
+      else if(a==='pres'){ sgtabMenu('membres',tg,()=>I.dessiner()); }
+      else if(a==='imp'){ const v=I.p.VUE, f=FIL[v]||FIL['collab-actuels'], q=I.u.q||''; sgtabImprimer('membres',I.R||[],null,{titre:f[1],lb:'Équipe · Documents',type:'Équipe',sous:q?'« '+q+' »':'',meta:[['Liste',f[1]],['Recherche',q?'« '+q+' »':'']]}); }
+      else if(a==='menu'){ const L=I.R||[], t=I.box.querySelector('table.sgtab-t');
+        menuSous(tg,[{t:'Courriel aux membres affichés …',dis:!L.length,fn:()=>mailList(L.map(pers).filter(c=>c&&c.ID!=null))},'-',{t:'Copier le tableau',dis:!t,fn:()=>ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).')},{t:'Exporter le tableau dans un fichier CSV …',dis:!L.length,fn:()=>sgtabCsv('membres',L,null,'membres')}]); } },
     ctx(I,tg,e){ if(tg.dataset.a!=='open') return false; const s=DS.get('staff',tg.dataset.s); if(!s) return false; const ed=peutEq('staffEdit'), c=pers(s);
       sgMenuAt(e.clientX,e.clientY,[{t:'Fiche du membre',fn:()=>go('nx-collab',s.ID)},
         ...(ed?[{t:'Modifier le membre …',fn:()=>editStaff(s)},'-',{t:'Coût de revient …',fn:()=>staffRates(s)},{t:'Durée prévue …',fn:()=>staffTargets(s)},{t:'Vacances …',fn:()=>staffHolidays(s)},{t:'Disponibilité …',fn:()=>staffProjectTimes(s)},{t:'Verrouillage des heures …',fn:()=>staffFreeze([s])}]:[]),
@@ -47643,16 +47674,22 @@ const sgtabPoste=(cle,v)=>{ const o=sgtabLS(); if(v&&(v.nom||(v.cols&&v.cols.len
 const sgtabEnr=cle=>{ try{ const r=DS.get(SGTAB.T,cle); return ((r&&r.PRES)||[]).filter(p=>p&&p.nom&&Array.isArray(p.cols)); }catch(_){ return []; } };
 const sgtabMoi=()=>{ try{ return typeof ME==='object'&&ME&&ME.id?String(ME.id):null; }catch(_){ return null; } };
 /* état de la présentation : colonnes affichées, présentation enregistrée choisie, colonnes personnalisées non enregistrées, Standard */
+/* colonne proposée : connue, avec des données, permise au profil (c.ok) */
+const sgtabOk=(D,k)=>{ const c=D&&D.cat[k]; if(!c||c.nd) return false; try{ return !c.ok||!!c.ok(); }catch(_){ return false; } };
+/* présentations proposées d'office (D.pres : celles de l'ancien logiciel), puis celles du bureau ; noms réservés */
+const sgtabPre=D=>(D&&D.pres)||{};
+const sgtabReserve=(D,v)=>{ const x=String(v||'').trim().toLowerCase(); return x==='standard'||Object.keys(sgtabPre(D)).some(n=>n.toLowerCase()===x); };
 function sgtabEtat(cle){ const D=SGTAB.def[cle]; if(!D) return {ids:[],actif:null,perso:false,std:true};
-  const ok=k=>!!D.cat[k]&&!D.cat[k].nd, P=sgtabLS()[cle]||{}, L=sgtabEnr(cle), std=D.std.filter(ok), eg=(a,b)=>a.join(',')===b.join(',');
-  if(P.nom){ const p=L.find(x=>x.nom===P.nom); if(p){ const ids=p.cols.filter(ok); if(ids.length) return {ids,actif:p,perso:false,std:false}; } }
-  if(P.cols&&P.cols.length){ const ids=P.cols.filter(ok); if(ids.length&&!eg(ids,std)){ const p=L.find(x=>eg(x.cols.filter(ok),ids)); return {ids,actif:p||null,perso:!p,std:false}; } }
+  const ok=k=>sgtabOk(D,k), P=sgtabLS()[cle]||{}, L=sgtabEnr(cle), PD=sgtabPre(D), std=D.std.filter(ok), eg=(a,b)=>a.join(',')===b.join(',');
+  if(P.nom){ const c0=PD[P.nom]||(L.find(x=>x.nom===P.nom)||{}).cols; if(c0){ const ids=c0.filter(ok); if(ids.length) return {ids,actif:{nom:P.nom,cols:c0,pre:!!PD[P.nom]},perso:false,std:false}; } }
+  if(P.cols&&P.cols.length){ const ids=P.cols.filter(ok); if(ids.length&&!eg(ids,std)){ const nP=Object.keys(PD).find(n=>eg(PD[n].filter(ok),ids)); if(nP) return {ids,actif:{nom:nP,cols:PD[nP],pre:true},perso:false,std:false};
+      const p=L.find(x=>eg(x.cols.filter(ok),ids)); return {ids,actif:p||null,perso:!p,std:false}; } }
   return {ids:std,actif:null,perso:false,std:true}; }
 const sgtabCols=cle=>{ const D=SGTAB.def[cle]; return D?sgtabEtat(cle).ids.map(k=>Object.assign({k},D.cat[k])):[]; };
 const sgtabBrut=h0=>{ if(h0==null) return ''; const d=document.createElement('div'); d.innerHTML=String(h0); return (d.textContent||'').replace(/\s+/g,' ').trim(); };
 /* rendu : titres, cellules, texte (impression, CSV) */
 const sgtabCl=c=>{ const k=[c.r?'r':c.c?'c':'',c.nw?'nw':''].filter(Boolean).join(' '); return k?' class="'+k+'"':''; };   /* r : à droite, c : centré, nw : sur une ligne */
-const sgtabEntete=cols=>'<tr>'+cols.map(c=>'<th'+sgtabCl(c)+(c.w?' style="min-width:'+(+c.w)+'px"':'')+(c.l&&c.l!==c.t?' title="'+nxE(c.l)+'"':'')+'>'+nxE(c.t)+'</th>').join('')+'</tr>';
+const sgtabEntete=cols=>'<tr>'+cols.map(c=>'<th'+sgtabCl(c)+(c.w?' style="min-width:'+(+c.w)+'px"':'')+(c.l&&c.l!==c.t?' title="'+nxE(c.l)+'"':'')+'>'+nxE(c.th!=null?c.th:c.t)+'</th>').join('')+'</tr>';
 const sgtabCellules=(cols,r,ctx)=>cols.map(c=>{ let v=''; try{ v=c.f?c.f(r,ctx):nxE(c.v?c.v(r,ctx):''); }catch(_){ v=''; } return '<td'+sgtabCl(c)+'>'+(v==null?'':v)+'</td>'; }).join('');
 const sgtabTexte=(cols,r,ctx)=>cols.map(c=>{ try{ const v=c.v?c.v(r,ctx):sgtabBrut(c.f?c.f(r,ctx):''); return v==null?'':String(v); }catch(_){ return ''; } });
 /* enregistrement des présentations du tableau (base commune) ; refus (profil, serveur) : message, rien n'est changé à l'écran */
@@ -47660,20 +47697,20 @@ function sgtabEcrire(cle,L){ const D=SGTAB.def[cle]||{}, r0=(()=>{ try{ return D
   const val=Object.assign(r0?Object.assign({},r0):{ID:cle,CLE:cle},{TITRE:D.titre||cle,PRES:L,MODIFIE:new Date().toISOString(),PAR:sgtabMoi()});
   return Promise.resolve(DS.save(SGTAB.T,val)).then(()=>true,e=>{ toast('Présentation non enregistrée : '+((e&&e.message)||'refus du serveur')+'.',true); return false; }); }
 function sgtabChoisir(cle,apres){ const D=SGTAB.def[cle]; if(!D) return; if(typeof ccAffichage!=='function'){ toast('Fenêtre des colonnes indisponible.',true); return; }
-  const cat=[]; Object.entries(D.cat).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l||d.t,{}]); });
+  const cat=[]; Object.entries(D.cat).filter(([k])=>sgtabOk(D,k)).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l||d.t,{}]); });
   ccAffichage({},{touch:()=>{ if(apres) apres(); },liste:{titre:D.titre,titreDlg:'Présentation personnalisée · '+D.titre,cat,std:D.std.slice(),
     note:'Colonnes du tableau « '+D.titre+' », gardées sur ce poste. « Enregistrer la présentation … » la propose à tout le bureau.',
     def:k=>D.cat[k]?{t:D.cat[k].t,l:D.cat[k].l||D.cat[k].t,cat:D.cat[k].cat,nd:D.cat[k].nd}:null,cols:sgtabEtat(cle).ids.slice(),
-    set:ids=>{ const ok=k=>!!D.cat[k]&&!D.cat[k].nd, I=ids.filter(ok), j=I.join(','), p=sgtabEnr(cle).find(x=>x.cols.filter(ok).join(',')===j);
-      if(!I.length||j===D.std.filter(ok).join(',')) sgtabPoste(cle,null); else if(p) sgtabPoste(cle,{nom:p.nom}); else sgtabPoste(cle,{cols:I}); }}}); }
+    set:ids=>{ const ok=k=>sgtabOk(D,k), I=ids.filter(ok), j=I.join(','), PD=sgtabPre(D), nP=Object.keys(PD).find(n=>PD[n].filter(ok).join(',')===j), p=sgtabEnr(cle).find(x=>x.cols.filter(ok).join(',')===j);
+      if(!I.length||j===D.std.filter(ok).join(',')) sgtabPoste(cle,null); else if(nP) sgtabPoste(cle,{nom:nP}); else if(p) sgtabPoste(cle,{nom:p.nom}); else sgtabPoste(cle,{cols:I}); }}}); }
 function sgtabEnregistrer(cle,apres){ const D=SGTAB.def[cle]; if(!D) return; const L=sgtabEnr(cle).map(p=>Object.assign({},p)), E=sgtabEtat(cle);
   let n=L.length+1; while(L.some(p=>p.nom==='Présentation '+n)) n++;
-  const inp=h('input',{class:'inp',value:E.actif?E.actif.nom:'Présentation '+n,style:{width:'100%',boxSizing:'border-box'}}), msg=h('div',{style:{fontSize:'12px',color:'var(--s-gris)',marginTop:'6px',minHeight:'16px'}});
-  const maj=()=>{ const v=inp.value.trim(); msg.textContent=!v?'Donnez un nom à la présentation.':v.toLowerCase()==='standard'?'« Standard » est réservé aux colonnes d’origine.':L.some(p=>p.nom===v)?'« '+v+' » existe déjà : elle sera remplacée.':''; };
+  const inp=h('input',{class:'inp',value:E.actif&&!E.actif.pre?E.actif.nom:'Présentation '+n,style:{width:'100%',boxSizing:'border-box'}}), msg=h('div',{style:{fontSize:'12px',color:'var(--s-gris)',marginTop:'6px',minHeight:'16px'}});
+  const maj=()=>{ const v=inp.value.trim(); msg.textContent=!v?'Donnez un nom à la présentation.':sgtabReserve(D,v)?'« '+v+' » est une présentation d’origine : choisissez un autre nom.':L.some(p=>p.nom===v)?'« '+v+' » existe déjà : elle sera remplacée.':''; };
   inp.oninput=maj; maj();
   const body=h('div',{style:{width:'460px',maxWidth:'80vw'}},h('div',{style:{fontWeight:700,marginBottom:'6px'}},'Nom de la présentation'),inp,msg,
     h('div',{style:{marginTop:'12px',fontSize:'12.5px',color:'var(--s-gris)'}},'Colonnes affichées ('+E.ids.length+') : '+E.ids.map(k=>D.cat[k].t).join(', ')+'. La présentation est proposée à tout le bureau.'));
-  dialog({title:'Enregistrer la présentation · '+D.titre,body,buttons:[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:()=>{ const v=inp.value.trim(); if(!v||v.toLowerCase()==='standard'){ maj(); inp.focus(); return false; }
+  dialog({title:'Enregistrer la présentation · '+D.titre,body,buttons:[{t:'Annuler'},{t:'Enregistrer',pri:true,fn:()=>{ const v=inp.value.trim(); if(!v||sgtabReserve(D,v)){ maj(); inp.focus(); return false; }
     const p={nom:v,cols:E.ids.slice()}, i=L.findIndex(x=>x.nom===v); if(i>=0) L[i]=p; else L.push(p);
     sgtabEcrire(cle,L).then(ok=>{ if(!ok) return; sgtabPoste(cle,{nom:v}); toast('Présentation « '+v+' » enregistrée.'); if(apres) apres(); }); }}]});
   setTimeout(()=>{ inp.focus(); inp.select(); },0); }
@@ -47685,13 +47722,14 @@ function sgtabGerer(cle,apres){ const D=SGTAB.def[cle]; if(!D) return; const L=s
   draw();
   dialog({title:'Présentations enregistrées · '+D.titre,body:box,buttons:[{t:'Annuler'},{t:'OK',pri:true,fn:()=>{ const noms=L.map(p=>p.nom.trim());
     if(noms.some(x=>!x)){ toast('Chaque présentation doit avoir un nom.',true); return false; } if(new Set(noms).size!==noms.length){ toast('Deux présentations portent le même nom.',true); return false; }
-    if(noms.some(x=>x.toLowerCase()==='standard')){ toast('« Standard » est réservé aux colonnes d’origine.',true); return false; }
+    if(noms.some(x=>sgtabReserve(D,x))){ toast('Ce nom est celui d’une présentation d’origine.',true); return false; }
     const P=sgtabLS()[cle]||{}, r=P.nom&&L.find(p=>p._n===P.nom), N=L.map(p=>{ const q=Object.assign({},p,{nom:p.nom.trim()}); delete q._n; return q; });
     sgtabEcrire(cle,N).then(ok=>{ if(!ok) return; if(P.nom) sgtabPoste(cle,r?{nom:r.nom.trim()}:null); if(apres) apres(); }); }}]}); }
 /* menu « Présentation ▾ » d'un tableau (sous le bouton de la barre) */
 function sgtabMenu(cle,el,apres){ const D=SGTAB.def[cle]; if(!D||!el) return; const E=sgtabEtat(cle), L=sgtabEnr(cle), F=()=>{ if(apres) apres(); };
   return sgMenuSous(el,[{t:'Standard',chk:E.std,fn:()=>{ if(!E.std){ sgtabPoste(cle,null); F(); } }},
-    ...L.map(p=>({t:p.nom,chk:!!E.actif&&E.actif.nom===p.nom&&!E.perso,fn:()=>{ sgtabPoste(cle,{nom:p.nom}); F(); }})),
+    ...Object.keys(sgtabPre(D)).map(n=>({t:n,chk:!!E.actif&&E.actif.pre&&E.actif.nom===n,fn:()=>{ sgtabPoste(cle,{nom:n}); F(); }})),
+    ...L.map(p=>({t:p.nom,chk:!!E.actif&&!E.actif.pre&&E.actif.nom===p.nom&&!E.perso,fn:()=>{ sgtabPoste(cle,{nom:p.nom}); F(); }})),
     ...(E.perso?[{t:'Personnalisée (non enregistrée)',chk:true,fn:()=>{}}]:[]),'-',
     {t:'Personnalisé …',fn:()=>sgtabChoisir(cle,apres)},{t:'Enregistrer la présentation …',fn:()=>sgtabEnregistrer(cle,apres)},
     ...(L.length?[{t:'Gérer les présentations …',fn:()=>sgtabGerer(cle,apres)}]:[])]); }
@@ -47754,7 +47792,75 @@ function sgtabCsv(cle,lignes,ctx,nom){ const D=SGTAB.def[cle]; if(!D) return; co
     vol:{t:'Volume m³',l:'Volume construit (m³)',cat:'Caractéristiques',r:1,v:p=>nb(p.VOLUME)},
     vb:{t:'VB SIA 416',l:'Volume bâti SIA 416 (m³, Surfaces et volumes)',cat:'Caractéristiques',r:1,v:p=>{ const v=typeof sgVolumeSIA416==='function'?sgVolumeSIA416(p):0; return v?num(v,0):''; }},
     icc:{t:'Indice ICC',l:'Indice ICC',cat:'Caractéristiques',r:1,v:p=>nb(p.BASISINDEX,1)}}}); }
-window.SGTAB=Object.assign(SGTAB,{etat:sgtabEtat,cols:sgtabCols,menu:sgtabMenu,imprimer:sgtabImprimer,csv:sgtabCsv,archive:sgtabArchive});
+/* colonne d'un tableau du moteur ({k,t,cls,f,v} : colonnes de l'ancien logiciel déjà reproduites) → colonne d'un catalogue ; texte = ce qui est affiché */
+const sgtabMoteur=(c,cat,o)=>Object.assign({t:c.t,cat,f:r=>c.f?c.f(r):nxE(r[c.k]==null?'':String(r[c.k])),v:r=>c.f?sgtabBrut(c.f(r)):(r[c.k]==null?'':String(r[c.k])),r:c.cls==='r'?1:0,c:c.cls==='c'?1:0},o||{});
+/* contexte commun des listes de projets : heures par projet (total, 30 jours, dernière saisie, par collaborateur), phase actuelle, catégorie, heures prévues */
+function sgtabCtxProjets(){ const lim=dayKey(new Date(Date.now()-30*864e5)), I={}, PA={}, HP={}, Z={der:0,derD:null,h30:0,tot:0,st:{}};
+  DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0, k=tlKey(r), x=I[r.PROJECT_ID]||(I[r.PROJECT_ID]={der:0,derD:null,h30:0,tot:0,st:{}}); x.tot+=v; x.st[r.STAFF_ID]=(x.st[r.STAFF_ID]||0)+v; if(k>x.der){ x.der=k; x.derD=tlDate(r); } if(k>=lim) x.h30+=v; });
+  const ix=p=>I[p.ID]||Z, phase=p=>PA[p.ID]!==undefined?PA[p.ID]:(PA[p.ID]=sgPhaseActuelle(p));
+  return {ix,phase,phL:p=>sgTermine(p)?'Terminé':(sgPhaseLib(phase(p),true)||''),catL:p=>{ const c=sgCatOuInterne(p); return c==='interne'?'Autres':c==='architecture'?'':(SG_CAT_L[c]||''); },
+    hp:p=>HP[p.ID]!==undefined?HP[p.ID]:(HP[p.ID]=DS.by('projectphase','PROJECT_ID',p.ID).reduce((t,f)=>t+(+f.TIMEBUDGET||0),0))}; }
+/* « projets » (Projets ▸ Liste des projets) et « mesprojets » (Projets ▸ Mes projets) : mêmes colonnes que la Liste des affaires ; Mes projets ajoute mes heures */
+{ const A=SGTAB.def.affaires.cat;
+  sgtabDef('projets',{titre:'Liste des projets',std:['num','titre','cat','mo','lieu','statut'],cat:A});
+  sgtabDef('mesprojets',{titre:'Mes projets',std:['num','titre','cat','mo','lieu','statut','phase','mesh30'],cat:Object.assign({},A,{
+    mesh30:{t:'Mes heures (30 j)',l:'Mes heures saisies ces 30 derniers jours',cat:'Suivi',r:1,v:(p,x)=>x.mes&&x.mes[p.ID]?nxH(x.mes[p.ID])+' h':''}})}); }
+/* « adresses » (Contacts ▸ Liste des adresses) : lignes {c (adresse), o (entité), nom, rel, t (type de l'entité)}. Colonnes de la liste d'adresses de l'ancien logiciel
+   (reproduites par le moteur : ACOL) et ses présentations (PRES : « Standard » de l'ancien logiciel proposée sous le nom « Coordonnées »), plus celles de l'app. */
+if(typeof ACOL==='object'&&ACOL){ const C={}, m=(k,cat,o)=>{ if(ACOL[k]) C[k]=Object.assign(sgtabMoteur(ACOL[k],cat),{f:x=>ACOL[k].f?ACOL[k].f(x.c):nxE(x.c[ACOL[k].k]==null?'':String(x.c[ACOL[k].k])),
+      v:x=>ACOL[k].f?sgtabBrut(ACOL[k].f(x.c)):(x.c[ACOL[k].k]==null?'':String(x.c[ACOL[k].k]))},o||{}); };
+  const cats=x=>{ try{ return contactProps(x.c).map(nm).filter(Boolean); }catch(_){ return []; } };
+  C.nom={t:'Nom',l:'Nom (entité ou adresse) et catégories',cat:'Contact',w:180,f:x=>{ const t=cats(x); return '<b>'+nxE(x.nom)+'</b>'+t.slice(0,2).map(v=>' <span class="nx-tag">'+nxE(v)+'</span>').join('')+(t.length>2?' <span class="nx-tag" title="'+nxE(t.slice(2).join(', '))+'">+'+(t.length-2)+'</span>':''); },v:x=>x.nom};
+  C.type={t:'Type',l:'Type de contact (société, personne, famille…)',cat:'Contact',nw:1,v:x=>(typeof OWNER_T!=='undefined'&&OWNER_T[x.t])||''};
+  m('ent','Contact'); m('rel','Contact',{w:140});
+  C.adresse={t:'Adresse',l:'Rue, complément et type d’adresse',cat:'Adresse',w:180,f:x=>{ const at=+x.c.ADDRESSTYPECODE&&typeof ADR_T!=='undefined'?ADR_T[+x.c.ADDRESSTYPECODE]||'':''; return nxE([x.c.STREET,x.c.POBOX].filter(Boolean).join(', '))+(at?' <span class="sgl-at">'+nxE(at)+'</span>':''); },
+    v:x=>{ const at=+x.c.ADDRESSTYPECODE&&typeof ADR_T!=='undefined'?ADR_T[+x.c.ADDRESSTYPECODE]||'':''; return [x.c.STREET,x.c.POBOX].filter(Boolean).join(', ')+(at?' ('+at+')':''); }};
+  ['atype','n1','n2','n3','street','pobox'].forEach(k=>m(k,'Adresse')); m('loc','Adresse',{nw:1}); m('pays','Adresse',{nw:1});
+  m('tel','Communication',{nw:1}); m('mob','Communication',{nw:1}); m('fax','Communication',{nw:1}); m('mail','Communication'); m('web','Communication'); m('skype','Communication');
+  m('cfc','Classement',{nw:1}); C.cats={t:'Catégories',cat:'Classement',v:x=>cats(x).join(', ')}; ['abr','stat'].forEach(k=>m(k,'Classement'));
+  ['sal','fn','prof','lang','rem'].forEach(k=>m(k,'Divers')); m('cre','Divers',{nw:1}); m('upd','Divers',{nw:1});
+  const P={}, tr=L=>L.map(k=>k==='ty'?'type':k).filter(k=>C[k]);
+  if(typeof PRES==='object'&&PRES){ Object.entries(PRES).forEach(([n,L])=>{ P[n==='Standard'?'Coordonnées':n]=tr(L); }); }
+  sgtabDef('adresses',{titre:'Liste des adresses',std:['nom','type','rel','adresse','loc','tel','mail','cfc'],cat:C,pres:P}); }
+/* « membres » (Équipe ▸ Membres) : lignes = collaborateurs (staff) ; adresse de la personne (contact PERSON_ID). Pas de données privées (adresse privée, n° AVS,
+   date de naissance) ; vacances et remarque : administrateur ou droit « équipe : taux ». */
+{ const pers=s=>DS.get('contact',s.PERSON_ID)||{}, tel=(c,n)=>{ try{ return phone(c,n)||''; }catch(_){ return ''; } }, app=c=>{ try{ return ownerName(relOf(c),true)||''; }catch(_){ return ''; } };
+  const rh=()=>{ try{ return sgAdmin()||sgDroit('equipe','taux'); }catch(_){ return false; } };
+  sgtabDef('membres',{titre:'Membres de l’équipe',std:['ini','membre','rel','tel','mob','mail','debut','fin','gel'],cat:{
+    ini:{t:'Initiales',th:'',cat:'Membre',c:1,f:s=>'<span class="sgsv-ini">'+nxE(s.INITIALS||'—')+'</span>',v:s=>s.INITIALS||''},
+    membre:{t:'Membre',l:'Membre et fonction',cat:'Membre',w:170,f:s=>{ const fn=pers(s).COMPANYROLE||''; return '<b>'+nxE(staffName(s))+'</b>'+(fn?'<span class="sgsv-sous">'+nxE(fn)+'</span>':''); },v:s=>{ const fn=pers(s).COMPANYROLE||''; return staffName(s)+(fn?' · '+fn:''); }},
+    nom:{t:'Nom',l:'Nom du membre',cat:'Membre',v:s=>staffName(s)},
+    fn:{t:'Fonction',cat:'Membre',v:s=>pers(s).COMPANYROLE||''},
+    prof:{t:'Profession',cat:'Membre',v:s=>pers(s).PROFESSION||''},
+    rel:{t:'Appartient à',cat:'Membre',nw:1,v:s=>app(pers(s))},
+    actif:{t:'Actif',l:'Membre actuel',cat:'Membre',nw:1,v:s=>+s.ISACTIVE?'Oui':'Non'},
+    interne:{t:'Interne',l:'Collaborateur interne',cat:'Membre',nw:1,v:s=>+s.ISINTERNAL?'Oui':'Non'},
+    tri:{t:'Ordre',l:'Ordre dans les listes',cat:'Membre',r:1,v:s=>s.SORTORDER==null?'':String(s.SORTORDER)},
+    tel:{t:'Téléphone',cat:'Communication',nw:1,v:s=>tel(pers(s),1)},mob:{t:'Mobile',l:'Téléphone mobile',cat:'Communication',nw:1,v:s=>tel(pers(s),2)},
+    mail:{t:'Courriel',cat:'Communication',v:s=>pers(s).EMAIL1||''},
+    debut:{t:'Engagement',l:'Date d’engagement',cat:'Engagement',nw:1,v:s=>dfr(s.JOININGDATE)},fin:{t:'Départ',l:'Date de départ',cat:'Engagement',nw:1,v:s=>dfr(s.QUITTINGDATE)},
+    gel:{t:'Heures bloquées',l:'Saisie des heures bloquée jusqu’au',cat:'Heures',nw:1,v:s=>+s.ISTIMELOGFROZEN&&s.TIMELOGFREEZINGDATE?'jusqu’au '+dfr(s.TIMELOGFREEZINGDATE):''},
+    compl:{t:'Heures complètes',l:'Heures complètes jusqu’au',cat:'Heures',nw:1,v:s=>s.TIMELOGCOMPLETEDDATE?'jusqu’au '+dfr(s.TIMELOGCOMPLETEDDATE):''},
+    vac:{t:'Vacances (h)',l:'Droit annuel aux vacances (heures)',cat:'Vacances',r:1,ok:rh,v:s=>s.HOLIDAYS==null||s.HOLIDAYS===''?'':num(+s.HOLIDAYS,1)},
+    solde:{t:'Solde de vacances',l:'Solde de vacances reporté (heures)',cat:'Vacances',r:1,ok:rh,v:s=>s.HOLIDAYBALANCE==null||s.HOLIDAYBALANCE===''?'':num(+s.HOLIDAYBALANCE,1)+(s.HOLIDAYBALANCEYEAR?' ('+s.HOLIDAYBALANCEYEAR+')':'')},
+    rem:{t:'Remarque',cat:'Divers',ok:rh,v:s=>s.REMARK||''}}}); }
+/* « taches » / « tachesreg » (Projets ▸ Tâches : en cours et urgentes / réglées) : lignes = tâches (projecttask). Colonnes de la liste des tâches de l'ancien logiciel
+   (reproduites par le moteur : PTC) et colonnes de l'app (projet, tâche avec le début de sa description). */
+if(typeof PTC==='object'&&PTC){ const prj=t=>DS.get('project',t.PROJECT_ID)||{}, ret=t=>!t.DONEDATE&&t.DEADLINE&&String(t.DEADLINE).slice(0,10)<diso(new Date());
+  const C={
+    projet:{t:'Projet',l:'Numéro du projet',cat:'Tâche',nw:1,f:t=>{ const p=prj(t); return '<b title="'+nxE(p.TITLE||'')+'">'+nxE(p.NUMBER||'')+'</b>'; },v:t=>prj(t).NUMBER||''},
+    projetd:{t:'Désignation du projet',cat:'Tâche',v:t=>prj(t).TITLE||''},
+    tache:{t:'Tâche',l:'Objet, urgence et début de la description',cat:'Tâche',w:220,f:t=>{ const d=String(t.DESCRIPTION||'').split('\n')[0], fait=+t.PROJECTTASKSTATECODE===3;
+        return '<b>'+nxE(t.SUBJECT||'(sans objet)')+'</b>'+(t.ISURGENT&&!fait?'<span class="sgsv-tag ret">urgente</span>':'')+(d?'<span class="sgsv-sous">'+nxE(d.length>110?d.slice(0,109)+'…':d)+'</span>':''); },
+      v:t=>{ const d=String(t.DESCRIPTION||'').split('\n')[0]; return (t.SUBJECT||'(sans objet)')+(d?' — '+d:''); }}};
+  const m=(k,cat,o)=>{ if(PTC[k]) C[k==='d'?'debut':k]=sgtabMoteur(PTC[k],cat,o); };
+  m('s','Tâche',{t:'Objet',l:'Objet de la tâche (« Concerne »)'}); m('de','Tâche'); m('st','Tâche',{nw:1}); m('pr','Tâche',{nw:1});
+  C.urg={t:'Urgente',cat:'Tâche',nw:1,v:t=>t.ISURGENT?'Oui':''}; C.nonlu={t:'Non lue',l:'Tâche pas encore ouverte',cat:'Tâche',nw:1,v:t=>t.ISUNTOUCHED?'Oui':''};
+  m('r','Personnes'); m('c','Personnes'); m('by','Personnes',{t:'Créée par',nw:1}); m('o','Projet');
+  m('d','Dates',{t:'Début',nw:1}); C.dl={t:'Délai',cat:'Dates',nw:1,f:t=>{ const v=dfr(t.DEADLINE); return ret(t)?'<span class="sgsv-ret">'+nxE(v)+'</span>':nxE(v); },v:t=>dfr(t.DEADLINE)}; m('dd','Dates',{t:'Réglée le',nw:1});
+  sgtabDef('taches',{titre:'Tâches',std:['projet','tache','c','pr','debut','dl','by'],cat:C});
+  sgtabDef('tachesreg',{titre:'Tâches réglées',std:['projet','tache','c','pr','debut','dd','by'],cat:C}); }
+window.SGTAB=Object.assign(SGTAB,{etat:sgtabEtat,cols:sgtabCols,menu:sgtabMenu,imprimer:sgtabImprimer,csv:sgtabCsv,archive:sgtabArchive,ctxProjets:sgtabCtxProjets,moteur:sgtabMoteur});
 </script>
 </body>
 </html>

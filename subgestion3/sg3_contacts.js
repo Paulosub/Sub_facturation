@@ -145,29 +145,32 @@ VIEWS['adr-liste']={
     const lc=s=>String(s||'').toLowerCase(), L=DS.all('contact').filter(c=>c&&!c.ISHIDDEN).map(c=>{ const o=ownerOf(c);
       return {c,o,nom:(o?ownerName(o,true):'')||[c.NAME1,c.NAME2].filter(Boolean).join(' ')||c.SHORTLABEL||'',rel:ownerName(relOf(c),true),t:o?+o.TYPECODE:0}; })
       .sort((a,b)=>a.nom.localeCompare(b.nom,'fr',{sensitivity:'base'}));
-    const row=x=>{ const c=x.c, cats=contactProps(c).map(nm).filter(Boolean), at=+c.ADDRESSTYPECODE?ADR_T[+c.ADDRESSTYPECODE]||'':'', tel=phone(c,1)||phone(c,2);
+    /* colonnes de la présentation (bloc 57, catalogue « adresses » : colonnes et présentations de la liste d'adresses de l'ancien logiciel, 15.11.2026) */
+    const cols=sgtabCols('adresses'), parC=new Map(L.map(x=>[String(x.c.ID),x]));
+    const row=x=>{ const c=x.c, cats=contactProps(c).map(nm).filter(Boolean);
       const q=lc([x.nom,x.rel,c.NAME1,c.NAME2,c.NAME3,c.STREET,c.POBOX,locality(c),c.EMAIL1,c.BKP,c.SHORTLABEL,phone(c,1),phone(c,2),cats.join(' ')].filter(Boolean).join(' '));
       return '<tr class="nx-row'+(String(c.ID)===String(SGL.der)?' sgl-der':'')+'"'+(x.o?' data-o="'+x.o.ID+'"':'')+' data-c="'+c.ID+'" data-t="'+x.t+'" data-q="'+nxE(q)+'" title="Clic : fiche du contact · clic droit : modifier l’adresse, listes, catégories, courriel">'
-        +'<td><b>'+nxE(x.nom)+'</b>'+cats.slice(0,2).map(t=>' <span class="nx-tag">'+nxE(t)+'</span>').join('')+(cats.length>2?' <span class="nx-tag" title="'+nxE(cats.slice(2).join(', '))+'">+'+(cats.length-2)+'</span>':'')+'</td>'
-        +'<td>'+nxE(OWNER_T[x.t]||'')+'</td><td>'+nxE(x.rel)+'</td><td>'+nxE([c.STREET,c.POBOX].filter(Boolean).join(', '))+(at?' <span class="sgl-at">'+nxE(at)+'</span>':'')+'</td>'
-        +'<td>'+nxE(locality(c))+'</td><td class="sgl-nw">'+nxE(tel)+'</td><td>'+nxE(c.EMAIL1||'')+'</td><td>'+nxE(c.BKP||'')+'</td></tr>'; };
+        +sgtabCellules(cols,x)+'</tr>'; };
     /* bandeau, chiffres, onglets des types et recherche à droite, barre en texte (Imprimer ▾, Courriel …, Fonctions ▾) : comme les autres listes (15.11.2026,
        navigation et paramètres du devis ouvert) */
     const F=sglFonc(), nT=k=>{ const f=(SGL_TYPES.find(x=>x[0]===k)||SGL_TYPES[0])[2]; return L.filter(x=>f(x.t)).length; }, nM=L.filter(x=>x.c.EMAIL1).length;
     const html='<div class="sg-split">'+sgTete('Contacts','Liste des adresses','Toutes les adresses de l’annuaire. Un clic ouvre la fiche du contact ; clic droit : modifier l’adresse, listes de diffusion, catégories, courriel.',
         sgKpis([sgKpi('Adresses',sgdN(L.length)),sgKpi('Sociétés',sgdN(nT('societe'))),sgKpi('Personnes',sgdN(nT('personne'))),sgKpi('Avec courriel',sgdN(nM),L.length?Math.round(nM/L.length*100)+' %':''),sgKpi('Sans courriel',sgdN(L.length-nM))])
         +sgPageNav({onglets:SGL_TYPES.map(([k,t])=>({t,arg:k,fn:'type',on:k===ty0})),choix:[{html:'<input class="inp" id="sgl-q" placeholder="Rechercher une adresse…" value="'+nxE(q0)+'" style="width:240px"><span class="sg-nn n"></span>'}],
-          gauche:[{t:'Imprimer',i:'print',fn:'impr',dd:1,ti:'Imprimer les adresses affichées'},...(F?[{t:'Courriel …',i:'mail',fn:'mail',ti:'Courriels des adresses affichées, à copier'}]:[])],
+          gauche:[{t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau : Standard, présentations de l’ancien logiciel (Coordonnées, Adresse, Communication…), Personnalisé …'},{t:'Imprimer',i:'print',fn:'impr',dd:1,ti:'Imprimer les adresses affichées'},...(F?[{t:'Courriel …',i:'mail',fn:'mail',ti:'Courriels des adresses affichées, à copier'}]:[])],
           droite:F?[{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]:[]}))
-      +'<div>'+(L.length?'<table class="nx-tbl sg-mesp sgl-t sg-sanstot"><tr><th>Nom</th><th>Type</th><th>Appartient à</th><th>Adresse</th><th>Localité</th><th>Téléphone</th><th>Courriel</th><th>CFC</th></tr>'+L.map(row).join('')+'</table>'
+      +'<div>'+(L.length?'<table class="nx-tbl sgtab-t sgl-t sg-sanstot"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+L.map(row).join('')+'</tbody></table>'
         :'<div class="nx-empty">Aucune adresse dans l’annuaire.</div>')+'</div></div>';
     const pg=nxPage(m,html), inp=pg.querySelector('#sgl-q'), nb=pg.querySelector('.sg-nn');
     let ty=ty0; const visibles=()=>[...pg.querySelectorAll('tr[data-c]')].filter(tr=>tr.style.display!=='none').map(tr=>DS.get('contact',tr.dataset.c)).filter(Boolean);
     const filt=()=>{ const v=inp.value.trim().toLowerCase(), f=(SGL_TYPES.find(x=>x[0]===ty)||SGL_TYPES[0])[2]; nxLS.set('sg3_adrl_q',inp.value); let n=0;
       pg.querySelectorAll('tr[data-c]').forEach(tr=>{ const ok=f(+tr.dataset.t)&&(!v||tr.dataset.q.includes(v)); tr.style.display=ok?'table-row':'none'; if(ok) n++; }); nb.textContent=sgdAdr(n); };
     pg._fn.type=b=>{ ty=b.dataset.arg||b.dataset.k; nxLS.set('sg3_adrl_type',ty); pg.querySelectorAll('[data-fn="type"]').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-selected',x===b?'true':'false'); }); filt(); };
-    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>pg._fn.csv()},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgl-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
-    pg._fn.impr=b=>popMenu(b,[{t:'Liste d’adresses',fn:()=>printAdr(visibles(),'Liste d’adresses')},{t:'Liste d’adresses par CFC',fn:()=>printAdr(visibles().sort((a,b2)=>cmp(a.BKP,b2.BKP)),'Liste d’adresses par CFC')}]);
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',fn:()=>sgtabCsv('adresses',visX(),null,'adresses')},{t:'Copier le tableau',fn:()=>{ const t=pg.querySelector('table.sgl-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
+    const visX=()=>visibles().map(c=>parC.get(String(c.ID))).filter(Boolean);
+    pg._fn.pres=b=>sgtabMenu('adresses',b,()=>V.refresh(['contact']));
+    pg._fn.impr=b=>popMenu(b,[{t:'Liste affichée (PDF)',fn:()=>{ const v=(inp.value||'').trim(), tyL=(SGL_TYPES.find(z=>z[0]===ty)||SGL_TYPES[0])[1];
+        sgtabImprimer('adresses',visX(),null,{titre:'Liste des adresses',lb:'Contacts · Documents',type:'Contacts',sous:tyL+(v?' · « '+v+' »':''),meta:[['Adresses',tyL],['Recherche',v?'« '+v+' »':'']]}); }},'-',{t:'Liste d’adresses',fn:()=>printAdr(visibles(),'Liste d’adresses')},{t:'Liste d’adresses par CFC',fn:()=>printAdr(visibles().sort((a,b2)=>cmp(a.BKP,b2.BKP)),'Liste d’adresses par CFC')}]);
     pg._fn.mail=()=>{ const cs=visibles(); if(cs.length) mailList(cs); };
     /* export : les colonnes de la présentation « Tous » de la liste du moteur (ACOL, PRES), le type de contact et les catégories */
     pg._fn.csv=()=>{ const cs=visibles(), t=h('table'), tr=a=>{ const r=h('tr'); a.forEach(v=>r.append(h('td',{},v==null?'':String(v)))); t.append(r); };

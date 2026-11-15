@@ -1842,3 +1842,11 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .sg-agl-t td.c{text-align:center}
 .sg-agl-t .sg-ag-pt{vertical-align:-1px}
 #sg-agl-q{height:28px}
+
+/* ═══ Tableaux à colonnes au choix (bloc 57, sg3_tableaux.js : Mes projets, Liste des projets, Liste des adresses, Membres, Tâches…) ═══ */
+.nx-tbl.sgtab-t tr[data-go],.nx-tbl.sgtab-t tr[data-c],.nx-tbl.sgtab-t tr[data-a]{cursor:pointer}
+.nx-tbl.sgtab-t tbody tr:hover td{background:var(--s-jaune3)}
+.nx-tbl.sgtab-t th{white-space:nowrap;vertical-align:bottom}
+.nx-tbl.sgtab-t td{vertical-align:top}
+.nx-tbl.sgtab-t td.nw{white-space:nowrap}
+.nx-tbl.sgtab-t td.c,.nx-tbl.sgtab-t th.c{text-align:center}

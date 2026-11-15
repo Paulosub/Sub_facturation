@@ -193,23 +193,24 @@ if(window.SGSV&&SGSV.outils&&typeof VIEWS!=='undefined'&&VIEWS['collab-actuels']
       const base=A.filter(f[2]).sort((a,b)=>cmp(+a.SORTORDER||0,+b.SORTORDER||0)||cmp(staffName(a),staffName(b)));
       const L=base.filter(s=>{ const c=pers(s); return trouve(u.q,staffName(s),s.INITIALS,c.COMPANYROLE,c.EMAIL1,tel(c,1),tel(c,2),app(c)); }); I.R=L;
       const nA=A.filter(s=>+s.ISACTIVE).length, an=x=>isoJ(x).slice(0,4)===y, dep=v!=='collab-actuels'||L.some(s=>s.QUITTINGDATE), VV=Object.keys(FIL).filter(vueOk);
-      const acts=(peutEq('staffNew')?btn('new','Nouveau membre','plus',1):'')+'<button class="nx-btn" data-a="menu" title="Courriel, copier, exporter" aria-label="Courriel, copier, exporter">⋯</button>';
+      const acts=(peutEq('staffNew')?btn('new','Nouveau membre','plus',1):'')+btn('pres','Présentation ▾','list',0,'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …')+btn('imp','Imprimer','print',0,'Liste affichée (PDF)')
+        +'<button class="nx-btn" data-a="menu" title="Courriel, copier, exporter" aria-label="Courriel, copier, exporter">⋯</button>';
+      const cols=sgtabCols('membres');   /* colonnes de la présentation (bloc 57, catalogue « membres », 15.11.2026) */
       return '<div class="sgsv">'+tete('ÉQ','Équipe',f[1],pl(base.length,'membre'),acts)
         +'<div class="nx-kpis sgsv-kp">'+kpi('Membres actuels',String(nA),'')+kpi('Anciens membres',String(A.length-nA),'')+kpi('Arrivées '+y,String(A.filter(s=>an(s.JOININGDATE)).length),'')+kpi('Départs '+y,String(A.filter(s=>an(s.QUITTINGDATE)).length),'')+'</div>'
         +'<div class="sgsv-fil">'+(VV.length>1?VV.map(k=>'<button data-a="vue" data-v="'+k+'" class="'+(k===v?'on':'')+'" aria-pressed="'+(k===v)+'">'+E(FIL[k][0])+'</button>').join(''):'')   /* une seule liste permise (collaborateur, chef de projet) : pas de choix */
         +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher un membre" aria-label="Rechercher un membre" value="'+E(u.q||'')+'"></span></div>'
-        +(L.length?'<table class="nx-tbl sgsv-tb sgmv-eq"><thead><tr><th class="sg-notri"></th><th>Membre</th><th>Appartient à</th><th>Téléphone</th><th>Mobile</th><th>Courriel</th><th>Engagement</th>'+(dep?'<th>Départ</th>':'')+'<th>Heures bloquées</th></tr></thead><tbody>'
-          +L.map(s=>{ const c=pers(s), fn=c.COMPANYROLE||'';
-            return '<tr data-a="open" data-s="'+E(s.ID)+'"'+(+s.ISACTIVE?'':' class="anc"')+'><td><span class="sgsv-ini">'+E(s.INITIALS||'—')+'</span></td><td><b>'+E(staffName(s))+'</b>'+(fn?'<span class="sgsv-sous">'+E(fn)+'</span>':'')+'</td><td class="nw">'+E(app(c))+'</td>'
-              +'<td class="nw">'+E(tel(c,1))+'</td><td class="nw">'+E(tel(c,2))+'</td><td>'+E(c.EMAIL1||'')+'</td><td class="nw">'+E(dfr(s.JOININGDATE))+'</td>'+(dep?'<td class="nw">'+E(dfr(s.QUITTINGDATE))+'</td>':'')
-              +'<td class="nw">'+(+s.ISTIMELOGFROZEN&&s.TIMELOGFREEZINGDATE?'jusqu’au '+E(dfr(s.TIMELOGFREEZINGDATE)):'')+'</td></tr>'; }).join('')+'</tbody></table>'
+        +(L.length?'<table class="nx-tbl sgsv-tb sgmv-eq sgtab-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'
+          +L.map(s=>'<tr data-a="open" data-s="'+E(s.ID)+'"'+(+s.ISACTIVE?'':' class="anc"')+'>'+sgtabCellules(cols,s)+'</tr>').join('')+'</tbody></table>'
           :'<p class="sgsv-rien">'+(u.q?'Aucun membre trouvé.':'Aucun membre dans cette liste.')+'</p>')+'</div>'; },
     action(I,a,tg,e){ const s=tg.dataset.s?DS.get('staff',tg.dataset.s):null;
       if(a==='open'){ if(s&&!(e&&e.detail>1)) go('nx-collab',s.ID); }
       else if(a==='new'){ if(peutEq('staffNew')) editStaff(); }
       else if(a==='vue'){ const v=tg.dataset.v; if(FIL[v]&&(typeof VIEW==='undefined'||!VIEW||VIEW.id!==v)) go(v); }
-      else if(a==='menu'){ const L=I.R||[], g=()=>({cols:colsX,view:L});
-        menuSous(tg,[{t:'Courriel aux membres affichés …',dis:!L.length,fn:()=>mailList(L.map(pers).filter(c=>c&&c.ID!=null))},'-',{t:'Copier le tableau',dis:!L.length,fn:()=>copyTable(g())},{t:'Exporter le tableau dans un fichier CSV …',dis:!L.length,fn:()=>csvTable(g(),'Collaborateurs')}]); } },
+      else if(a==='pres'){ sgtabMenu('membres',tg,()=>I.dessiner()); }
+      else if(a==='imp'){ const v=I.p.VUE, f=FIL[v]||FIL['collab-actuels'], q=I.u.q||''; sgtabImprimer('membres',I.R||[],null,{titre:f[1],lb:'Équipe · Documents',type:'Équipe',sous:q?'« '+q+' »':'',meta:[['Liste',f[1]],['Recherche',q?'« '+q+' »':'']]}); }
+      else if(a==='menu'){ const L=I.R||[], t=I.box.querySelector('table.sgtab-t');
+        menuSous(tg,[{t:'Courriel aux membres affichés …',dis:!L.length,fn:()=>mailList(L.map(pers).filter(c=>c&&c.ID!=null))},'-',{t:'Copier le tableau',dis:!t,fn:()=>ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).')},{t:'Exporter le tableau dans un fichier CSV …',dis:!L.length,fn:()=>sgtabCsv('membres',L,null,'membres')}]); } },
     ctx(I,tg,e){ if(tg.dataset.a!=='open') return false; const s=DS.get('staff',tg.dataset.s); if(!s) return false; const ed=peutEq('staffEdit'), c=pers(s);
       sgMenuAt(e.clientX,e.clientY,[{t:'Fiche du membre',fn:()=>go('nx-collab',s.ID)},
         ...(ed?[{t:'Modifier le membre …',fn:()=>editStaff(s)},'-',{t:'Coût de revient …',fn:()=>staffRates(s)},{t:'Durée prévue …',fn:()=>staffTargets(s)},{t:'Vacances …',fn:()=>staffHolidays(s)},{t:'Disponibilité …',fn:()=>staffProjectTimes(s)},{t:'Verrouillage des heures …',fn:()=>staffFreeze([s])}]:[]),

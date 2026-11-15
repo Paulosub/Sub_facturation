@@ -35,7 +35,7 @@ try{ DS.on(()=>{ setTimeout(()=>{ try{ maj(); }catch(_){ } },0); }); }catch(_){ 
    Affaires et les Archives gardent l'écran d'origine. ── */
 const DOMS={'Intervenants':p=>{ let M=[]; try{ M=DS.by('projectmember','PROJECT_ID',p.ID); }catch(_){ } return fig(M.length,'intervenants')+fig(M.filter(x=>+x.TEAMROLECODE===19).length,'entreprises'); },
   'Soumissionnaires':p=>{ let n=0; try{ n=DS.by('projecttenderer','PROJECT_ID',p.ID).length; }catch(_){ } return fig(n,'soumissionnaires'); },
-  'Liste d’adresses':null,'Calcul des coûts':null};
+  'Liste d’adresses':null};   /* « Calcul des coûts » : liste des estimations au graphisme de l'app depuis le 15.11.2026 (sg3_estimation.js), avec son propre bandeau */
 if(typeof domainView==='function'&&window.SGSV&&SGSV.outils){ const dv0=domainView;
   domainView=function(C,p,dom){ let ok=false; try{ ok=!!(C&&p&&Object.prototype.hasOwnProperty.call(DOMS,dom)&&typeof VIEW!=='undefined'&&VIEW&&VIEW.id==='nx-pdom'); }catch(_){ }
     if(!ok) return dv0.apply(this,arguments);

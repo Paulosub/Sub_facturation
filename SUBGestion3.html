@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 23:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 23:37 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -47783,7 +47783,7 @@ if(typeof grid==='function'){ const g0=grid;
   grid=function(el,o){ if(o&&Array.isArray(o.cols)){
       if(sgtabArchive()){ if(o._sgtabNS){ o.noSort=false; delete o._sgtabNS; } }
       else { if(!o.noSort){ o.noSort=true; o._sgtabNS=true; }
-        if(o._sgtabNS&&o.sort&&Array.isArray(o.rows)){ const [k,dir]=o.sort, c=o.cols.find(x=>x.k===k)||{}, g=c.v||(r=>r[k]);
+        if(o._sgtabNS&&o.sort&&Array.isArray(o.rows)){ const [k,dir]=o.sort, c=(o._sgtab0||o.cols).find(x=>x.k===k)||{}, g=c.v||(r=>r[k]);
           o.rows=o.rows.slice().sort((a,b)=>cmp(g(a),g(b))*(dir<0?-1:1)); } } }
     return g0.apply(this,arguments); }; }
 
@@ -48086,6 +48086,35 @@ if(typeof PTC==='object'&&PTC){ const prj=t=>DS.get('project',t.PROJECT_ID)||{},
     langue:{t:'Langue',cat:'Compte',nw:1,v:u=>(typeof LANG_T!=='undefined'&&LANG_T[u.LANGUAGECODE])||''},
     conn:{t:'Dernière connexion',cat:'Connexion',nw:1,v:u=>u.LOGINTIMESTAMP?dfr(String(u.LOGINTIMESTAMP).slice(0,10))+' '+String(u.LOGINTIMESTAMP).slice(11,16):''},
     poste:{t:'Poste',l:'Poste de la dernière connexion',cat:'Connexion',v:u=>u.LOGINLOCALHOST||''}}}); }
+/* ── 5. Écrans repris de l'ancien logiciel (grilles du moteur) : menu Présentation automatique (15.11.2026, lot 5) ──
+   Toute grille dessinée dans un écran du moteur habillé (SGMV.LISTE : Équipe ▸ Temps de l'équipe, Ressources humaines ▸ Suivi RH, Finances ▸ Controlling,
+   Contrats et Facturation des projets, Suivi des factures, Clients, Indicateurs, Types de projets, Bibliothèque ▸ Documents types, Configuration ▸ Administration…),
+   dans un domaine de la page du projet (Intervenants, Soumissionnaires, Liste d'adresses : .sgmv-corps) ou dans les listes d'adresses (Listes de diffusion,
+   Catégories) reçoit « Présentation ▾ » dans la barre de son panneau. Ses colonnes sont celles que le moteur reproduit de l'ancien logiciel (Standard = toutes, dans
+   leur ordre) ; on peut en masquer, changer l'ordre, enregistrer des présentations. Copie et CSV du moteur suivent les colonnes affichées. Clé du tableau : écran +
+   empreinte des titres de colonnes. Pas pour : Archives, fenêtres, tableaux de moins de 3 colonnes, tableaux aux cellules colorées une à une (planification). */
+const SGTAB_GR={vues:new Set(['adr-groupes','adr-props'])};
+const sgtabEmpreinte=t=>{ let x=5381; for(let i=0;i<t.length;i++) x=((x<<5)+x+t.charCodeAt(i))|0; return (x>>>0).toString(36); };
+function sgtabGrilleOk(el,o){ try{ if(!el||!o||!Array.isArray(o.cols)||o.noPres||sgtabArchive()) return false; const orig=o.cols._sgtab?(o._sgtab0||o.cols):o.cols; if(orig.length<3) return false;
+    if(!el.closest||!el.closest('#main')||el.closest('.ov,.dlg')) return false; const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', L=window.SGMV&&SGMV.LISTE;
+    return !!(L&&L.has&&L.has(v))||SGTAB_GR.vues.has(v)||!!el.closest('.sgmv-corps'); }catch(_){ return false; } }
+const sgtabTitreEcran=()=>{ try{ const v=VIEW.id, x=typeof NX_VIEW!=='undefined'&&NX_VIEW[v]; return (VIEW.nxTitle||(x&&x.t)||v); }catch(_){ return 'Tableau'; } };
+function sgtabBarreDe(el){ for(let p=el,k=0;p&&k<5;p=p.parentElement,k++){ for(let s=p.previousElementSibling;s;s=s.previousElementSibling){ if(s.classList&&s.classList.contains('ph2')) return s; } } return null; }
+function sgtabBouton(el,cle){ const ph=sgtabBarreDe(el)||(el.closest('#main')&&document.getElementById('tools')); if(!ph) return;   /* sans barre propre au panneau : barre de l'écran (#tools) */ let b=ph.querySelector(':scope>.sgtab-gb'); if(b){ b.dataset.cle=cle; return; }
+  b=document.createElement('button'); b.type='button'; b.className='ib sgtab-gb'; b.dataset.cle=cle; b.title='Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …';
+  b.innerHTML=nxSvg('list')+'<span class="lb">Présentation</span><span class="dd"></span>';
+  b.onclick=e=>{ e.stopPropagation(); sgtabMenu(b.dataset.cle,b,()=>{ try{ if(typeof VIEW!=='undefined'&&VIEW) go(VIEW.id,VIEW.arg); }catch(_){} }); };
+  const sp=[...ph.children].find(x=>x.tagName==='DIV'&&String(x.style.flex||'').startsWith('1')); if(sp) ph.insertBefore(b,sp); else ph.append(b); }
+if(typeof grid==='function'){ const g2=grid;
+  grid=function(el,o){ try{ if(sgtabGrilleOk(el,o)&&!(o.rows||[]).some(r=>r&&r.bg)){
+      const orig=o.cols._sgtab?(o._sgtab0||o.cols):(o._sgtab0=o.cols), ids=orig.map((c,i)=>String(c.k!=null?c.k:'c'+i));
+      if(new Set(ids).size===ids.length){ const tit=c=>sgtabBrut(c.t||c.title||''), cle='g:'+VIEW.id+':'+sgtabEmpreinte(orig.map(tit).join('|')), cat={};
+        orig.forEach((c,i)=>{ cat[ids[i]]={t:tit(c)||'(sans titre)',l:tit(c)||'Colonne '+(i+1),cat:'Colonnes',r:/(^|\s)r(\s|$)/.test(c.cls||'')?1:0,
+          f:r=>c.f?c.f(r):nxE(r[c.k]==null?'':String(r[c.k])),v:r=>c.f?sgtabBrut(c.f(r)):(r[c.k]==null?'':String(r[c.k]))}; });
+        sgtabDef(cle,{titre:sgtabTitreEcran(),std:ids.slice(),cat,auto:1});
+        const E=sgtabEtat(cle); if(E.std) o.cols=orig; else { const sel=E.ids.map(k=>orig[ids.indexOf(k)]).filter(Boolean); if(sel.length){ sel._sgtab=1; o.cols=sel; } else o.cols=orig; }
+        const r=g2.apply(this,arguments); sgtabBouton(el,cle); return r; } } }catch(e){ console.error(e); }
+    return g2.apply(this,arguments); }; }
 window.SGTAB=Object.assign(SGTAB,{etat:sgtabEtat,cols:sgtabCols,menu:sgtabMenu,imprimer:sgtabImprimer,csv:sgtabCsv,archive:sgtabArchive,ctxProjets:sgtabCtxProjets,moteur:sgtabMoteur});
 </script>
 </body>

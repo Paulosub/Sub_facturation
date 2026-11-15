@@ -3147,8 +3147,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Documents et boutons Contrat / Avenant / Fin / Décompte restent à droite ; Imprimer ajouté), Réglages ▸ Gestion des utilisateurs (`comptes` : champs d'un
   compte de l'ancien logiciel sans le mot de passe — initiales, courriel, téléphone, titre, fonction, langue, dernière connexion, poste ; `sgVueFenetre`
   accepte `o.barre` et `o.fns`). Les impressions déjà faites de ces pages RH (heures dues avec les mois et les jours fériés, bouclement) sont gardées.
-  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour les autres tableaux de l'app (offres et contrats de l'affaire,
-  Apports de projets, Coût de revient, écrans du moteur, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  **Lot 5 (même soir)** : écrans repris de l'ancien logiciel — présentation AUTOMATIQUE sur toute grille du moteur (`grid` enveloppé, section 5 du bloc 57)
+  dessinée dans un écran de `SGMV.LISTE` (Temps de l'équipe, Suivi RH, Controlling, Contrats et Facturation des projets, Suivi des factures, Clients,
+  Indicateurs, Types de projets, Planification RH, Documents types et modèles de Bibliothèque, Configuration ▸ Administration), dans un domaine de la page du
+  projet (`.sgmv-corps` : Intervenants, Soumissionnaires, Liste d'adresses…) ou dans les Listes de diffusion et Catégories : colonnes = celles que le moteur
+  reproduit de l'ancien logiciel (Standard = toutes, dans leur ordre), « Présentation ▾ » ajouté à la barre du panneau (`.ph2`), sinon à la barre de l'écran
+  (`#tools`, Documents types) ; copie et CSV du moteur suivent les colonnes affichées (`o.cols` remplacé, colonnes d'origine gardées dans `o._sgtab0`, tableau
+  marqué `_sgtab`). Clé `g:<écran>:<empreinte des titres>`. Pas pour : Archives, fenêtres, tableaux de moins de 3 colonnes, tableaux aux cellules colorées une à une
+  (planification : `r.bg`). Le Controlling garde aussi ses présentations d'origine (Fonctions ▸ « Présentation : temps… »).
+  **Reste à faire (lots suivants)** : listes de Facturation dans leur cadre (contrats, factures…), offres et contrats de l'affaire (listes de Facturation posées
+  dans la page du projet), Apports de projets, Coût de revient ; sources : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.

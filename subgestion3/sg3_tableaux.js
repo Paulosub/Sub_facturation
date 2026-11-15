@@ -277,4 +277,59 @@ if(typeof PTC==='object'&&PTC){ const prj=t=>DS.get('project',t.PROJECT_ID)||{},
     marge:{t:'Marge',l:'Facturé HT moins coût de revient',cat:'Marge',r:1,nw:1,v:x=>ch(x.marge),cl:x=>x.marge<0?'sgtab-rouge':'',sum:sm('marge')},
     margepct:{t:'Marge %',l:'Marge en % du facturé HT',cat:'Marge',r:1,nw:1,v:x=>x.factHT?Math.round(x.marge/x.factHT*100)+' %':''},
     al:{t:'Alertes',cat:'Marge',f:x=>(x.al||[]).map(sgAlerteTag).join(' '),v:x=>(x.al||[]).map(a=>a[1]).join(' ; ')}}}); }
+/* « cct » (Ressources humaines ▸ Heures dues et vacances) : lignes {s, c (calcul CCT de l'année), t (heures dues enregistrées)} ; le taux d'occupation et la date de
+   naissance restent des champs de saisie (data-occ, data-nais), le bouton « Appliquer » reste en dernière colonne */
+{ const sumT=t=>t?[...Array(12)].reduce((a,_,i)=>a+(+t['TARGETHOURS'+i]||0),0):null, M=(typeof MOIS!=='undefined'&&MOIS)||['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+  const C={coll:{t:'Collaborateur',cat:'Collaborateur',w:150,f:x=>'<b>'+nxE(staffName(x.s))+'</b>',v:x=>staffName(x.s)},
+    occ:{t:'Occupation %',l:'Taux d’occupation (saisie)',cat:'Collaborateur',f:x=>'<input class="inp" type="number" step="5" min="0" max="100" data-occ="'+x.s.ID+'" value="'+Math.round(x.c.occ*100)+'" style="width:70px;text-align:right">',v:x=>Math.round(x.c.occ*100)+' %'},
+    nais:{t:'Naissance',l:'Date de naissance (saisie)',cat:'Collaborateur',f:x=>'<input class="inp" type="date" data-nais="'+x.s.ID+'" value="'+(x.c.nais||'')+'" style="width:140px">',v:x=>x.c.nais?dfr(x.c.nais):''},
+    age:{t:'Âge au 31.12',cat:'Collaborateur',r:1,v:x=>x.c.age==null?'—':String(x.c.age)},
+    eng:{t:'Engagement',l:'Période d’engagement',cat:'Collaborateur',nw:1,v:x=>(x.c.deb?dfr(x.c.deb):'')+(x.c.fin?' → '+dfr(x.c.fin):'')},
+    du:{t:'Heures dues',l:'Heures dues de l’année',cat:'Heures dues',r:1,nw:1,f:x=>'<b>'+nxH(x.c.an)+'</b>',v:x=>nxH(x.c.an),sum:L=>nxH(L.reduce((a,x)=>a+(+x.c.an||0),0))},
+    vj:{t:'Vacances (jours)',cat:'Vacances',r:1,nw:1,v:x=>num(x.c.vacJours,1)},vh:{t:'Vacances (heures)',cat:'Vacances',r:1,nw:1,v:x=>nxH(x.c.vacHeures),sum:L=>nxH(L.reduce((a,x)=>a+(+x.c.vacHeures||0),0))},
+    enr:{t:'Enregistré',l:'Heures dues enregistrées (orange : différentes du calcul CCT)',cat:'Heures dues',r:1,nw:1,cl:x=>{ const e=sumT(x.t); return e==null||Math.abs(e-x.c.an)>0.05?'sgtab-orange':''; },v:x=>{ const e=sumT(x.t); return e==null?'—':nxH(e); }}};
+  M.forEach((t,i)=>{ C['m'+i]={t,l:'Heures dues · '+t,cat:'Heures dues par mois',r:1,nw:1,v:x=>nxH(x.c.mois[i]),sum:L=>nxH(L.reduce((a,x)=>a+(+x.c.mois[i]||0),0))}; });
+  sgtabDef('cct',{titre:'Heures dues et vacances',std:['coll','occ','nais','age','eng','du',...M.map((_,i)=>'m'+i),'vj','vh','enr'],cat:C}); }
+/* « bcl » (Ressources humaines ▸ Bouclement annuel) : lignes {s, b (soldes calculés), v (validation enregistrée)} ; Validation et Transfert restent en dernières colonnes */
+{ const neg=v=>+v<0?'sgtab-rouge':'';
+  sgtabDef('bcl',{titre:'Bouclement annuel',std:['coll','du','fait','solde','rep','hs','vdroit','vpris','vsolde','vjours'],cat:{
+    coll:{t:'Collaborateur',cat:'Collaborateur',w:150,f:x=>'<b>'+nxE(staffName(x.s))+'</b>',v:x=>staffName(x.s)},
+    du:{t:'Heures dues',cat:'Heures',r:1,nw:1,v:x=>nxH(x.b.du)},fait:{t:'Heures saisies',cat:'Heures',r:1,nw:1,v:x=>nxH(x.b.fait)},
+    solde:{t:'Solde de l’année',l:'Heures saisies − heures dues',cat:'Heures',r:1,nw:1,cl:x=>neg(x.b.solde),v:x=>nxH(x.b.solde)},
+    rep:{t:'Report',l:'Report de l’année précédente',cat:'Heures',r:1,nw:1,v:x=>nxH(x.b.rep)},
+    hs:{t:'Heures sup. à reporter',cat:'Heures',r:1,nw:1,cl:x=>neg(x.b.hs),f:x=>'<b>'+nxH(x.b.hs)+'</b>',v:x=>nxH(x.b.hs)},
+    vdroit:{t:'Droit vacances (h)',l:'Droit aux vacances de l’année (heures)',cat:'Vacances',r:1,nw:1,v:x=>x.b.vacDroit==null?'—':nxH(x.b.vacDroit)},
+    vpris:{t:'Vacances prises (h)',cat:'Vacances',r:1,nw:1,v:x=>x.b.vacPris==null?'—':nxH(x.b.vacPris)},
+    vsolde:{t:'Solde vacances (h)',cat:'Vacances',r:1,nw:1,f:x=>'<b>'+(x.b.vacSolde==null?'—':nxH(x.b.vacSolde))+'</b>',v:x=>x.b.vacSolde==null?'—':nxH(x.b.vacSolde)},
+    vjours:{t:'Solde vacances (jours)',cat:'Vacances',r:1,nw:1,v:x=>x.b.vacSolde==null?'':num(x.b.vacSolde/((typeof SG_CCT!=='undefined'&&SG_CCT.hj)||8.5),1)}}}); }
+/* « ctr » (Ressources humaines ▸ Contrats de travail) : lignes = collaborateurs ; contrat en vigueur à la date du jour ; Documents et boutons restent en dernières colonnes */
+{ const auj=()=>diso(new Date()), cv=s=>{ try{ return sgCtrEnVigueur(s.ID,auj()); }catch(_){ return null; } }, fin=s=>{ try{ return sgCtrFin(s.ID); }catch(_){ return null; } };
+  const cat=c=>c?(((typeof SG_GRILLE!=='undefined'&&SG_GRILLE.cat[c.CATEGORIE])||{}).t||''):'';
+  sgtabDef('ctr',{titre:'Contrats de travail',std:['coll','fonction','taux','salaire','statut'],cat:{
+    coll:{t:'Collaborateur',l:'Collaborateur, entrée et fin',cat:'Collaborateur',w:170,f:s=>{ const f=fin(s); return '<b>'+nxE(staffName(s))+'</b><br><span style="font-size:11.5px;color:var(--s-gris)">'+(s.JOININGDATE?'entrée '+dfr(String(s.JOININGDATE).slice(0,10)):'')+(f&&f.FIN?' · fin '+dfr(f.FIN):'')+'</span>'; },v:s=>staffName(s)},
+    nom:{t:'Nom',cat:'Collaborateur',v:s=>staffName(s)},entree:{t:'Entrée',cat:'Collaborateur',nw:1,v:s=>s.JOININGDATE?dfr(String(s.JOININGDATE).slice(0,10)):''},
+    fin:{t:'Fin',l:'Fin des rapports de travail',cat:'Collaborateur',nw:1,v:s=>{ const f=fin(s); return f&&f.FIN?dfr(f.FIN):''; }},
+    fonction:{t:'Fonction',l:'Fonction et catégorie (contrat en vigueur)',cat:'Contrat',f:s=>{ const c=cv(s); return c?nxE(c.FONCTION||'')+'<br><span style="font-size:11.5px;color:var(--s-gris)">'+nxE(cat(c))+'</span>':'—'; },v:s=>{ const c=cv(s); return c?(c.FONCTION||''):''; }},
+    categorie:{t:'Catégorie',l:'Catégorie de la grille CCT',cat:'Contrat',v:s=>cat(cv(s))},
+    taux:{t:'Taux',l:'Taux d’activité',cat:'Contrat',r:1,nw:1,v:s=>{ const c=cv(s); return c?num(+c.OCC,0)+' %':'—'; }},
+    salaire:{t:'Salaire',l:'Salaire mensuel, nombre de salaires et salaire annuel',cat:'Salaire',r:1,f:s=>{ const c=cv(s); if(!c) return '—'; let m=null; try{ m=sgMinimum(c.CATEGORIE,c.NIVEAU); }catch(_){}
+        const sous=m&&(+c.SALAIRE*(+c.MOIS||12))<m*12*(+c.OCC||100)/100; return 'CHF '+sgChf(c.SALAIRE)+' × '+(+c.MOIS||12)+'<br><span style="font-size:11.5px;color:var(--s-gris)">'+sgChf(c.SALAIRE*(+c.MOIS||12))+'/an</span>'+(sous?'<br><span class="nx-tag urg">sous le minimum CCT</span>':''); },
+      v:s=>{ const c=cv(s); return c?'CHF '+sgChf(c.SALAIRE)+' × '+(+c.MOIS||12):''; }},
+    mensuel:{t:'Salaire mensuel',cat:'Salaire',r:1,nw:1,v:s=>{ const c=cv(s); return c?sgChf(c.SALAIRE):''; }},
+    mois:{t:'Salaires par an',cat:'Salaire',r:1,nw:1,v:s=>{ const c=cv(s); return c?String(+c.MOIS||12):''; }},
+    annuel:{t:'Salaire annuel',cat:'Salaire',r:1,nw:1,v:s=>{ const c=cv(s); return c?sgChf(c.SALAIRE*(+c.MOIS||12)):''; }},
+    statut:{t:'Statut',cat:'Contrat',nw:1,f:s=>{ try{ const [st,cl]=sgCtrStatut(s); return '<span class="nx-tag '+cl+'">'+st+'</span>'; }catch(_){ return ''; } },v:s=>{ try{ return sgCtrStatut(s)[0]; }catch(_){ return ''; } }},
+    ndoc:{t:'Documents',l:'Nombre de documents (contrat, avenants, fin)',cat:'Contrat',r:1,v:s=>{ try{ return String(sgCtrAll(s.ID).length||''); }catch(_){ return ''; } }}}}); }
+/* « comptes » (Réglages ▸ Gestion des utilisateurs) : comptes de l'app (champs d'un utilisateur de l'ancien logiciel, sans le mot de passe) */
+{ const st=u=>DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean).map(staffName).join(', ');
+  sgtabDef('comptes',{titre:'Comptes de l’app',std:['nom','userid','coll','profil','etat'],cat:{
+    nom:{t:'Nom',cat:'Compte',f:u=>'<b>'+nxE(u.NAME||'')+'</b>',v:u=>u.NAME||''},userid:{t:'Identifiant',cat:'Compte',nw:1,v:u=>u.USERID||''},
+    ini:{t:'Initiales',cat:'Compte',nw:1,v:u=>u.INITIALS||''},coll:{t:'Collaborateur',l:'Collaborateurs liés au compte',cat:'Compte',v:st},
+    profil:{t:'Profil',l:'Profil SUBGestion (administrateur, chef de projet, collaborateur)',cat:'Compte',nw:1,v:u=>{ try{ return SG_PROFILS[sgProfilDe(u)]||''; }catch(_){ return ''; } }},
+    etat:{t:'État',cat:'Compte',nw:1,f:u=>+u.ISENABLED?'Activé':'<span style="color:var(--s-gris)">Désactivé</span>',v:u=>+u.ISENABLED?'Activé':'Désactivé'},
+    mail:{t:'Courriel',cat:'Coordonnées',v:u=>u.EMAIL||''},tel:{t:'Téléphone',cat:'Coordonnées',nw:1,v:u=>u.PHONE||''},
+    titre:{t:'Titre',l:'Titre (fonction)',cat:'Fonction',v:u=>u.JOBTITLE||''},fonction:{t:'Fonction',cat:'Fonction',v:u=>u.JOBFUNCTION||''},
+    langue:{t:'Langue',cat:'Compte',nw:1,v:u=>(typeof LANG_T!=='undefined'&&LANG_T[u.LANGUAGECODE])||''},
+    conn:{t:'Dernière connexion',cat:'Connexion',nw:1,v:u=>u.LOGINTIMESTAMP?dfr(String(u.LOGINTIMESTAMP).slice(0,10))+' '+String(u.LOGINTIMESTAMP).slice(11,16):''},
+    poste:{t:'Poste',l:'Poste de la dernière connexion',cat:'Connexion',v:u=>u.LOGINLOCALHOST||''}}}); }
 window.SGTAB=Object.assign(SGTAB,{etat:sgtabEtat,cols:sgtabCols,menu:sgtabMenu,imprimer:sgtabImprimer,csv:sgtabCsv,archive:sgtabArchive,ctxProjets:sgtabCtxProjets,moteur:sgtabMoteur});

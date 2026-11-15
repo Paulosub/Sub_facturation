@@ -3141,8 +3141,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   prix unitaire, TVA, remboursé… ; la case à cocher et les boutons Approuver / Refuser restent autour des colonnes ; total sur toutes les inscriptions, pas
   seulement les 1'000 affichées — `o.totLignes` ; bouton « Présentation ▾ » dans les trois barres). Outil : `sgtabTableauX(cle,lignes,ctx,{tr,cls,attr,avant,
   apres,tot,totLignes})` (colonnes fixes avant / après les colonnes choisies).
-  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour les autres tableaux de l'app (ressources humaines, Gestion des
-  utilisateurs, offres et contrats de l'affaire, écrans du moteur, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  Puis : Ressources humaines ▸ Heures dues et vacances (`cct` : taux d'occupation et date de naissance restent des champs de saisie, 12 colonnes de mois au
+  choix ; « Appliquer » reste en dernière colonne ; bouton Présentation sur l'onglet des collaborateurs), Bouclement annuel (`bcl` : Validation et Transfert
+  restent à droite), Contrats de travail (`ctr` : + nom, entrée, fin, catégorie CCT, salaire mensuel / annuel, nombre de salaires, nombre de documents ;
+  Documents et boutons Contrat / Avenant / Fin / Décompte restent à droite ; Imprimer ajouté), Réglages ▸ Gestion des utilisateurs (`comptes` : champs d'un
+  compte de l'ancien logiciel sans le mot de passe — initiales, courriel, téléphone, titre, fonction, langue, dernière connexion, poste ; `sgVueFenetre`
+  accepte `o.barre` et `o.fns`). Les impressions déjà faites de ces pages RH (heures dues avec les mois et les jours fériés, bouclement) sont gardées.
+  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour les autres tableaux de l'app (offres et contrats de l'affaire,
+  Apports de projets, Coût de revient, écrans du moteur, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.

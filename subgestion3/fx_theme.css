@@ -80,6 +80,9 @@ html:not([data-sgarch]) body .list-tbl th,html:not([data-sgarch]) body .sia-tbl 
 html:not([data-sgarch]) body .cc-tb th,html:not([data-sgarch]) body .rap-tb th{color:var(--s-gris)!important;font-size:11px;border-bottom:2px solid var(--s-noir)!important}
 html:not([data-sgarch]) body .list-tbl th.th-sort{pointer-events:none!important;cursor:default!important}
 html:not([data-sgarch]) body .list-tbl th.th-sort span{display:none!important}
+/* présentation choisie (bloc 57 de la coquille) : les colonnes affichées sont celles de la présentation, plus celles que Facturation masque selon la largeur */
+html body #tbl-contrats.sgtab-pres th,html body #tbl-contrats.sgtab-pres td,html body #tbl-factures.sgtab-pres th,html body #tbl-factures.sgtab-pres td{display:table-cell}
+html body .sg-fxpres{white-space:nowrap}   /* « Présentation ▾ » et « Imprimer » ajoutés par la coquille à côté de « + Nouveau contrat » / « + Nouvelle facture » */
 html body .xls-tbl td,html body .xls-tbl th{border-color:var(--s-filet)}
 html body .xls-tbl td.lbl,html body .xls-tbl td.sym{background:var(--s-fond);color:var(--s-noir)}
 html body .sia-tbl td.calc{background:var(--s-fond);color:var(--s-nuit)}

@@ -3155,8 +3155,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`#tools`, Documents types) ; copie et CSV du moteur suivent les colonnes affichées (`o.cols` remplacé, colonnes d'origine gardées dans `o._sgtab0`, tableau
   marqué `_sgtab`). Clé `g:<écran>:<empreinte des titres>`. Pas pour : Archives, fenêtres, tableaux de moins de 3 colonnes, tableaux aux cellules colorées une à une
   (planification : `r.bg`). Le Controlling garde aussi ses présentations d'origine (Fonctions ▸ « Présentation : temps… »).
-  **Reste à faire (lots suivants)** : listes de Facturation dans leur cadre (contrats, factures…), offres et contrats de l'affaire (listes de Facturation posées
-  dans la page du projet), Apports de projets, Coût de revient ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  **Lot 6 (même soir)** : listes de Facturation dans leur cadre — Contrats d'honoraires (`fx:contrats`) et Liste des factures (`fx:factures`), SANS modifier
+  Facturation.html (l'app seule reste inchangée) : enveloppes de `renderContratsTable` / `renderFacturesList` du cadre (`sgtabFxBrancher`, appelé par
+  `sgtabMarque` après `go` et `fxEnsure`) ; colonnes = celles de la liste (titres de l'en-tête ; la colonne des boutons reste la dernière). « Standard » = la liste
+  telle que Facturation la dessine, y compris ses colonnes masquées d'office selon la largeur (règles `nth-child` de Facturation.html) ; présentation choisie =
+  exactement ses colonnes, dans son ordre (classe `sgtab-pres` : les règles de largeur ne s'appliquent plus, `fx_theme.css`). Boutons « Présentation ▾ » et
+  « Imprimer » (liste affichée à l'écran, au graphisme des documents) ajoutés à côté de « + Nouveau contrat » / « + Nouvelle facture » ; menu placé sous le bouton
+  malgré le cadre (position décalée de celle du cadre). Les offres et contrats de la page du projet (même liste posée, `EMB`) suivent la même présentation.
+  **Reste à faire** : Apports de projets, Coût de revient, autres petits tableaux (Occupation et effectif, Situation des heures : tableaux croisés, sans
+  présentation pour l'instant) ; sources : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.

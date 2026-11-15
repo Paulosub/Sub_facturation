@@ -20,7 +20,8 @@ const SGTAB={def:{},T:'sgpresentation'};
 /* écran rangé dans Archives (même règle que sg3_docs_heures.js) */
 const sgtabArchive=()=>{ try{ const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=typeof NX_VIEW!=='undefined'?NX_VIEW[v]:null; return !!(x&&x.d&&x.d.k==='archives'); }catch(_){ return false; } };
 function sgtabMarque(){ const a=sgtabArchive(), mq=el=>{ if(!el) return; if(a) el.setAttribute('data-sgarch',''); else el.removeAttribute('data-sgarch'); };
-  mq(document.documentElement); try{ const f=document.getElementById('fx-frame'), d=f&&f.contentDocument; if(d) mq(d.documentElement); }catch(_){} }
+  mq(document.documentElement); try{ const f=document.getElementById('fx-frame'), d=f&&f.contentDocument; if(d) mq(d.documentElement); }catch(_){}
+  try{ sgtabFxBrancher(); }catch(e){ console.error(e); } }   /* listes de Facturation (section 6) */
 if(typeof go==='function'){ const g0=go; go=function(){ const r=g0.apply(this,arguments); try{ sgtabMarque(); }catch(_){} return r; }; }
 if(typeof fxEnsure==='function'){ const f0=fxEnsure; fxEnsure=function(){ const r=f0.apply(this,arguments); Promise.resolve(r).then(()=>{ try{ sgtabMarque(); }catch(_){} },()=>{}); return r; }; }
 
@@ -361,4 +362,46 @@ if(typeof grid==='function'){ const g2=grid;
         const E=sgtabEtat(cle); if(E.std) o.cols=orig; else { const sel=E.ids.map(k=>orig[ids.indexOf(k)]).filter(Boolean); if(sel.length){ sel._sgtab=1; o.cols=sel; } else o.cols=orig; }
         const r=g2.apply(this,arguments); sgtabBouton(el,cle); return r; } } }catch(e){ console.error(e); }
     return g2.apply(this,arguments); }; }
+/* ── 6. Listes de Facturation dans leur cadre : contrats d'honoraires et factures (15.11.2026, lot 6) ──
+   Sans toucher à Facturation.html (l'app seule reste telle quelle) : après chaque dessin de la liste (enveloppes de renderContratsTable / renderFacturesList du cadre),
+   les colonnes sont masquées et réordonnées selon la présentation (colonnes = celles de la liste, Standard = toutes ; la colonne des boutons reste la dernière) ;
+   « Présentation ▾ » et « Imprimer » (liste affichée, au graphisme des documents) sont ajoutés à côté de « + Nouveau contrat » / « + Nouvelle facture ». Les mêmes
+   listes posées dans la page du projet (offres et contrats de l'affaire) suivent la même présentation. */
+const SGTAB_FX={contrats:{tbl:'tbl-contrats',fn:'renderContratsTable',cle:'fx:contrats',titre:'Contrats d’honoraires',btn:'button[onclick="newContratCalc()"]'},
+  factures:{tbl:'tbl-factures',fn:'renderFacturesList',cle:'fx:factures',titre:'Liste des factures',btn:'button[onclick*="newFacture()"]'}};
+function sgtabFxCadre(){ try{ const f=document.getElementById('fx-frame'); return f&&f.contentWindow&&f.contentDocument?{w:f.contentWindow,d:f.contentDocument,f}:null; }catch(_){ return null; } }
+const sgtabFxTitre=th=>((th.firstChild&&th.firstChild.nodeType===3?th.firstChild.nodeValue:th.textContent)||'').replace(/\s+/g,' ').trim();
+function sgtabFxAppliquer(k){ const X=sgtabFxCadre(), S=SGTAB_FX[k]; if(!X||!S) return; const t=X.d.getElementById(S.tbl); if(!t||!t.tHead||!t.tHead.rows[0]) return;
+  if(X.d.documentElement.hasAttribute('data-sgarch')) return;
+  const hr=t.tHead.rows[0]; if(!hr.dataset.sgi){ [...hr.cells].forEach((th,i)=>{ th.dataset.sgi=i; }); hr.dataset.sgi='1'; }
+  const H=[...hr.cells].sort((a,b)=>+a.dataset.sgi-+b.dataset.sgi), n=H.length, der=n-1, ids=[], cat={};
+  H.slice(0,der).forEach((th,i)=>{ const id='c'+i, tt=sgtabFxTitre(th); ids.push(id); cat[id]={t:tt||'Colonne '+(i+1),l:th.title?tt+' — '+th.title:tt,cat:'Colonnes'}; });
+  sgtabDef(S.cle,{titre:S.titre,std:ids.slice(),cat,auto:1});
+  /* Standard : la liste telle que Facturation la dessine (ordre d'origine ; colonnes masquées d'office selon la largeur, règles « nth-child » de Facturation) ;
+     présentation choisie : elle seule décide des colonnes (classe sgtab-pres : les règles de largeur ne s'appliquent plus, fx_theme.css) */
+  const E=sgtabEtat(S.cle);
+  if(E.std){ H.forEach(th=>{ hr.appendChild(th); th.style.display=''; }); t.classList.remove('sgtab-pres'); sgtabFxBoutons(k,X); return; }
+  const vis=E.ids.map(id=>+id.slice(1)), cach=ids.map((_,i)=>i).filter(i=>!vis.includes(i)), ordre=[...vis,...cach,der], cache=new Set(cach);
+  t.classList.add('sgtab-pres');
+  ordre.forEach(i=>{ const th=H[i]; hr.appendChild(th); th.style.display=cache.has(i)?'none':''; });
+  [...t.tBodies].forEach(tb=>[...tb.rows].forEach(tr=>{ if(tr.cells.length!==n) return; const C=[...tr.cells]; ordre.forEach(i=>{ tr.appendChild(C[i]); C[i].style.display=cache.has(i)?'none':''; }); }));
+  sgtabFxBoutons(k,X); }
+function sgtabFxBoutons(k,X){ const S=SGTAB_FX[k], ref=X.d.querySelector(S.btn); if(!ref||ref.parentNode.querySelector('.sg-fxpres')) return;
+  const mk=(lib,ti,fn)=>{ const b=X.d.createElement('button'); b.type='button'; b.className='btn btn-sm sg-fxpres'; b.textContent=lib; b.title=ti; b.onclick=e=>{ e.preventDefault(); e.stopPropagation(); fn(b); }; return b; };
+  const ici=b=>({getBoundingClientRect:()=>{ const r=b.getBoundingClientRect(), f=X.f.getBoundingClientRect(); return {left:f.left+r.left,right:f.left+r.right,top:f.top+r.top,bottom:f.top+r.bottom,width:r.width,height:r.height}; }});
+  ref.parentNode.insertBefore(mk('Présentation ▾','Colonnes de la liste : Standard, présentations enregistrées, Personnalisé …',b=>sgtabMenu(S.cle,ici(b),()=>{ try{ X.w[S.fn](); }catch(_){ } })),ref);
+  ref.parentNode.insertBefore(mk('Imprimer','Liste affichée (PDF), avec les colonnes de la présentation',()=>sgtabFxImprimer(k)),ref); }
+function sgtabFxImprimer(k){ const X=sgtabFxCadre(), S=SGTAB_FX[k]; if(!X||!S) return; const t=X.d.getElementById(S.tbl); if(!t||!t.tHead) return;
+  if(!window.SGDH||!SGDH.ouvrir){ toast('Impression indisponible.',true); return; }
+  const hr=t.tHead.rows[0], n=hr.cells.length, vis=c=>{ try{ return X.w.getComputedStyle(c).display!=='none'; }catch(_){ return c.style.display!=='none'; } }, cols=[], idx=[];   /* colonnes visibles à l'écran (largeur comprise) */
+  [...hr.cells].forEach((th,i)=>{ if(!vis(th)) return; const tt=sgtabFxTitre(th); if(!tt) return; cols.push({t:tt}); idx.push(i); });
+  const L=[...(t.tBodies[0]||{rows:[]}).rows].filter(tr=>tr.cells.length===n&&tr.style.display!=='none');
+  if(!L.length){ toast('Rien à imprimer.',true); return; }
+  idx.forEach((i,j)=>{ try{ const a=X.w.getComputedStyle(L[0].cells[i]).textAlign; if(a==='right'||a==='end') cols[j].r=1; }catch(_){} });
+  const rows=L.map(tr=>({c:idx.map(i=>(tr.cells[i].innerText||'').replace(/\s+/g,' ').trim()),g:''}));
+  SGDH.ouvrir({cle:'Liste · '+S.titre,titre:S.titre,p:null,lb:'Facturation · Documents',type:'Facturation',sous:'',meta:[['Présentation',sgtabNom(S.cle)],['Lignes',String(rows.length)]],cols,rows}); }
+function sgtabFxBrancher(){ const X=sgtabFxCadre(); if(!X||X.w.__sgtabFx) return; const w=X.w; let ok=false;
+  Object.entries(SGTAB_FX).forEach(([k,S])=>{ const o=w[S.fn]; if(typeof o!=='function') return; ok=true;
+    w[S.fn]=function(){ const r=o.apply(this,arguments); try{ sgtabFxAppliquer(k); }catch(e){ console.error(e); } return r; }; });
+  if(ok){ w.__sgtabFx=1; Object.keys(SGTAB_FX).forEach(k=>{ try{ sgtabFxAppliquer(k); }catch(_){ } }); } }
 window.SGTAB=Object.assign(SGTAB,{etat:sgtabEtat,cols:sgtabCols,menu:sgtabMenu,imprimer:sgtabImprimer,csv:sgtabCsv,archive:sgtabArchive,ctxProjets:sgtabCtxProjets,moteur:sgtabMoteur});

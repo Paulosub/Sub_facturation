@@ -158,5 +158,83 @@ if(window.SGSV&&SGSV.outils&&typeof VIEWS!=='undefined'&&VIEWS['collab-actuels']
         ...(peutEq('staffDelete')?['-',{t:'Supprimer le membre …',danger:true,fn:()=>delStaff(s)}]:[])]); return true; } };
   Object.keys(FIL).forEach(v=>{ VIEWS[v]={render(m){ monter(m,{ID:'equipe',GLOBAL:1,VUE:v,NUMBER:'',TITLE:''},'equipe',BES,EQUIPE); },refresh(){ }}; });
   window.SGMV_EQ=EQUIPE; }
+/* ── Bibliothèque ▸ modèles d'impression (lot 3, huitième étape, 15.11.2026) : Projets types, Profils d'équipe, Horaires types, Notes de frais types, Gestion types,
+   Formats d'adresse, Étiquettes — les sept écrans à quatre colonnes de l'ancien logiciel (Groupe | Type de modèle | Modèle | aperçu) prennent la présentation de
+   « Documents Substances » (mêmes classes sgds-*, sg3_docsub.js) : à gauche la liste des modèles du groupe choisi (groupes en choix de texte, avec leur nombre de
+   modèles ; recherche ; ↑ ↓), à droite le bandeau du modèle (groupe, libellé, nom, type), ses actions — Éditer la page, Nouveau (copie), Modifier (noms), Supprimer,
+   Groupes ▾, Fonctions ▾ : les fenêtres du moteur (tplOpenEditor, tplNewModel, tplEditModel, tplDelModel, tplNewGroup, tplSetDefaultGroup, tplRenameGroup,
+   tplDelGroup, ch10bTplTools) —, les chiffres (pages, format, éléments de la page, groupes, modèles du groupe), le choix de la page (Page de garde · 1ère page · Page
+   suivante…) et l'aperçu en grand (tplPageHTML ; double-clic = éditer la page). Même état que le moteur (TP.g.sel, TP.m.sel, TP.p.sel) : ses fenêtres agissent sur
+   le modèle affiché. Modifier = profil « bibliothèque : écriture » (administrateur compris) ; sinon consultation seule. Groupe verrouillé : le moteur refuse et le
+   dit, comme avant. Redessin sur place quand la base change (pas de go : défilement et recherche gardés). DeltaSub.html seul garde les quatre colonnes. ── */
+if(typeof TPL_CATS!=='undefined'&&typeof tplPageHTML==='function'&&typeof tplModelesOf==='function'&&typeof TP!=='undefined'&&typeof tplKey==='function'){
+  const E=nxE, QB={}, CADENAS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><rect x="5.5" y="11" width="13" height="9"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>';
+  const ecrit=()=>{ try{ return sgAdmin()||sgDroit('bibliotheque','ecriture'); }catch(_){ return true; } };
+  const groupesDe=cat=>DS.all('modelegroupe').filter(g=>g.categorie===cat).sort((a,b)=>cmp(a.ordre,b.ordre)||cmp(a.groupe,b.groupe));
+  const gKey=g=>g.categorie+'/'+g.groupe, gLib=g=>String(g.libelle||g.groupe||'');
+  const pagesDe=md=>md?Object.entries(md.langues||{}).filter(([lg])=>lg==='fr'||!md.langues.fr).flatMap(([lg,L])=>Object.keys((L&&L.pages)||{}).sort((a,b)=>cmp(Object.keys(TPL_PAGE_L).indexOf(a),Object.keys(TPL_PAGE_L).indexOf(b))).map(pn=>({k:lg+'|'+pn,lg,pn}))):[];
+  const formatP=pg=>{ const W=Math.round(pg.largeur||595), H=Math.round(pg.hauteur||842), a4=(Math.abs(W-595)<=2&&Math.abs(H-842)<=2)||(Math.abs(W-842)<=2&&Math.abs(H-595)<=2); return a4?(W<H?'A4 portrait':'A4 paysage'):W+' × '+H+' pt'; };
+  const sansAc=t=>String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const btn=(fn,ico,t,cls,tt,dis)=>'<button type="button" class="nx-btn sm'+(cls?' '+cls:'')+'" data-fn="'+fn+'" title="'+E(tt||t)+'"'+(dis?' disabled':'')+'>'+(ico?nxSvg(ico):'')+'<span>'+E(t)+'</span></button>';
+  const kpi=(l,v,t,cls)=>'<div class="nx-kpi"'+(t?' title="'+E(t)+'"':'')+'><div class="l">'+E(l)+'</div><div class="v'+(cls?' '+cls:'')+'">'+E(v)+'</div></div>';
+  const monter=(m,id,cat,V)=>{ const x=NX_VIEW[id]||{}, titre=(x.it&&x.it.t)||'Modèles', w=h('div',{class:'sgds sgbm'}); m.append(w);
+    const etat=()=>{ const G=groupesDe(cat); if(!TP.g.sel||!G.some(g=>gKey(g)===TP.g.sel)){ const d=typeof tplDefaultGroup==='function'?tplDefaultGroup(cat):null; TP.g.sel=(G.find(g=>g.groupe===d)||G[0]||{categorie:cat,groupe:''}).groupe?gKey(G.find(g=>g.groupe===d)||G[0]):null; }
+      const g=G.find(z=>gKey(z)===TP.g.sel)||null, M=g?tplModelesOf(cat).filter(z=>z.groupe===g.groupe).sort((a,b)=>cmp(tplLabel(a),tplLabel(b))||cmp(a.nom,b.nom)):[];
+      if(!M.some(z=>tplKey(z)===TP.m.sel)) TP.m.sel=M[0]?tplKey(M[0]):null;
+      const md=M.find(z=>tplKey(z)===TP.m.sel)||null, P=pagesDe(md); if(!P.some(r=>r.k===TP.p.sel)) TP.p.sel=(P.find(r=>r.lg==='fr'&&r.pn==='page1')||P[0]||{}).k||null;
+      const pr=P.find(r=>r.k===TP.p.sel)||null, pg=pr&&md.langues[pr.lg]&&md.langues[pr.lg].pages[pr.pn]||null; return {G,g,M,md,P,pr,pg}; };
+    const liste=S=>{ const q=sansAc(QB[cat]||'').trim(), F=S.M.filter(z=>!q||sansAc(tplLabel(z)+' '+z.nom+' '+z.type).includes(q));
+      return {F,html:F.map(z=>'<button type="button" class="sgds-it'+(tplKey(z)===TP.m.sel?' on':'')+'" data-id="'+E(tplKey(z))+'" role="option" title="'+E(tplLabel(z)+' — '+z.nom+' ('+z.type+')')+'"><span class="sgt-ini">'+E(sgMono(tplLabel(z)))+'</span><span class="sgt-nm"><b>'+E(tplLabel(z))+'</b><small>'+E(z.nom||'')+'</small></span></button>').join('')
+        ||'<div class="sgds-vide">'+(S.M.length?'Aucun modèle ne correspond à « '+E((QB[cat]||'').trim())+' ».':S.g?'Ce groupe n’a pas encore de modèle.':'Aucun groupe de modèles.')+'</div>'}; };
+    const droite=S=>{ const md=S.md, g=S.g, ok=ecrit(), def=g&&typeof tplDefaultGroup==='function'&&tplDefaultGroup(cat)===g.groupe;
+      if(!md) return '<div class="sgds-haut"><div class="sgfh-tete"><div class="sgfh-id"><span class="sgfh-ini">'+E(sgMono(titre))+'</span><div class="sgfh-nm"><div class="lb">Bibliothèque</div><h2>'+E(titre)+'</h2><div class="sgfh-meta">'+E((x.it&&x.it.d)||'')+'</div></div></div>'
+        +'<div class="sgfh-per sgds-btns">'+(ok?btn('nouveau','plus','Nouveau','','Nouveau modèle, copié d’un modèle existant',!g)+btn('groupes','wrench','Groupes','','Groupes de modèles'):'')+'</div></div></div><div class="sgds-ap"><div class="sgds-msg"><b>'+(g?'Aucun modèle dans ce groupe':'Aucun groupe de modèles')+'</b><span>'+(ok?'Créez un modèle par « Nouveau » (copie d’un modèle existant).':'')+'</span></div></div>';
+      const meta=['Nom : '+(md.nom||'—'),'Type : '+md.type,g&&g.verrouille?'groupe en lecture seule':'',def?'groupe par défaut':''].filter(Boolean).join(' · ');
+      const acts=btn('editer','doc',ok&&!(g&&g.verrouille)?'Éditer la page':'Voir la page','pri','Ouvrir la page dans l’éditeur (double-clic sur l’aperçu)',!S.pg)
+        +(ok?btn('nouveau','plus','Nouveau','','Nouveau modèle, copié d’un modèle existant')+btn('modifier','edit','Modifier','','Modifier le libellé du modèle')+btn('supprimer','minus','Supprimer','','Supprimer le modèle')+btn('groupes','wrench','Groupes','','Groupes de modèles : nouveau, par défaut, renommer, supprimer, police de tous les modèles'):'');
+      return '<div class="sgds-haut"><div class="sgfh-tete"><div class="sgfh-id"><span class="sgfh-ini">'+E(sgMono(tplLabel(md)))+'</span><div class="sgfh-nm"><div class="lb">'+E('Bibliothèque · '+titre+(g?' · '+gLib(g):''))+'</div><h2>'+E(tplLabel(md))+'</h2><div class="sgfh-meta">'+E(meta)+'</div></div></div>'
+        +'<div class="sgfh-per sgds-btns">'+acts+'</div></div>'
+        +'<div class="nx-kpis sgfh-kp">'+kpi('Pages',String(S.P.length),'Pages du modèle')+kpi('Format',S.pg?formatP(S.pg):'—','Format de la page affichée','txt')+kpi('Éléments',S.pg?String((S.pg.elements||[]).length):'—','Textes, champs, tableaux, traits et images de la page affichée')
+          +kpi('Groupes',String(S.G.length),'Groupes de modèles de cet écran')+kpi('Modèles du groupe',String(S.M.length),g?gLib(g):'')+'</div></div>'
+        +'<div class="sgbm-pgs">'+(S.P.length>8?'<label class="sgbm-pl">Page <select class="inp sgbm-psel" aria-label="Page du modèle">'+S.P.map(r=>'<option value="'+E(r.k)+'"'+(r.k===TP.p.sel?' selected':'')+'>'+E(TPL_PAGE_L[r.pn]||r.pn)+'</option>').join('')+'</select></label>'
+          :'<div class="sgds-jeux" role="tablist" aria-label="Page du modèle">'+S.P.map(r=>'<button type="button" role="tab" data-pg="'+E(r.k)+'" class="'+(r.k===TP.p.sel?'on':'')+'" aria-selected="'+(r.k===TP.p.sel)+'">'+E(TPL_PAGE_L[r.pn]||r.pn)+'</button>').join('')+'</div>')+'</div>'
+        +'<div class="sgds-ap"><div class="sgbm-pv" title="Double-clic : ouvrir la page dans l’éditeur"></div></div>'; };
+    const apercu=S=>{ const ap=w.querySelector('.sgds-ap'), pv=w.querySelector('.sgbm-pv'); if(!ap||!pv||!S.pg) return; const k=Math.max(0.3,Math.min(1.2,(ap.clientWidth-56)/(S.pg.largeur||595)));
+      try{ pv.innerHTML=tplPageHTML(S.pg,k,{}); }catch(e){ console.error(e); pv.innerHTML='<div class="sgds-msg err"><b>Aperçu impossible</b><span>'+E(String(e&&e.message||e))+'</span></div>'; } };
+    const dessiner=()=>{ if(!w.isConnected) return; const S=etat(), l0=w.querySelector('.sgds-l'), y=l0?l0.scrollTop:0, a=document.activeElement, foc=a&&a.classList&&a.classList.contains('sgds-q')?[a.selectionStart,a.selectionEnd]:null, L=liste(S);
+      w.innerHTML='<aside class="sgds-col"><div class="sgds-ct"><b>'+E(titre)+'</b><span>'+(L.F.length===S.M.length?S.M.length+(S.M.length>1?' modèles':' modèle'):L.F.length+' sur '+S.M.length)+'</span></div>'
+        +'<div class="sgds-flt"><input class="inp sgds-q" type="search" placeholder="Rechercher un modèle" spellcheck="false" aria-label="Rechercher un modèle" value="'+E(QB[cat]||'')+'">'
+        +'<div class="sgds-jeux sgbm-grp" role="tablist" aria-label="Groupe de modèles">'+S.G.map(g=>{ const n=tplModelesOf(cat).filter(z=>z.groupe===g.groupe).length, def=typeof tplDefaultGroup==='function'&&tplDefaultGroup(cat)===g.groupe;
+            return '<button type="button" role="tab" data-g="'+E(gKey(g))+'" class="'+(gKey(g)===TP.g.sel?'on':'')+'" title="'+E(gLib(g)+(g.verrouille?' — lecture seule':'')+(def?' — groupe par défaut':''))+'">'+E(gLib(g))+(g.verrouille?CADENAS:'')+(def?'<i> par défaut</i>':'')+'<small>'+n+'</small></button>'; }).join('')+'</div></div>'
+        +'<div class="sgds-l" role="listbox" aria-label="'+E(titre)+'">'+L.html+'</div></aside><section class="sgds-m">'+droite(S)+'</section>';
+      const l1=w.querySelector('.sgds-l'); if(l1) l1.scrollTop=y; if(foc){ const q=w.querySelector('.sgds-q'); if(q){ q.focus(); try{ q.setSelectionRange(foc[0],foc[1]); }catch(_){ } } }
+      apercu(S); };
+    const menu=(el,L)=>{ const M=L.filter(Boolean); if(window.SGSV&&SGSV.outils&&SGSV.outils.menuSous) SGSV.outils.menuSous(el,M); else if(typeof popMenu==='function') popMenu(el,M); };
+    const agir=(fn,el)=>{ const S=etat(), g=S.g;
+      if(fn==='editer'){ if(S.pg) tplOpenEditor(); }
+      else if(!ecrit()) return;
+      else if(fn==='nouveau') tplNewModel(cat);
+      else if(fn==='modifier'){ if(S.md) tplEditModel(); }
+      else if(fn==='supprimer'){ if(S.md) tplDelModel(); }
+      else if(fn==='groupes'){ let F=[]; try{ const T=typeof ch10bTplTools==='function'?ch10bTplTools(cat).flat():[], gear=T.find(b=>b&&typeof b.menu==='function'); F=gear&&!gear.dis?gear.menu():[]; }catch(e){ console.error(e); }   /* « Fonctions » du moteur (police de tous les modèles du groupe) : dans le même menu */
+        menu(el,[{t:'Nouveau groupe de modèles …',fn:()=>tplNewGroup(cat)},{t:'Utiliser ce groupe par défaut',chk:!!(g&&tplDefaultGroup(cat)===g.groupe),dis:!g,fn:()=>tplSetDefaultGroup(cat,g.groupe)},{t:'Renommer le groupe …',dis:!g,fn:()=>tplRenameGroup(cat)},...(F.length?['-',...F]:[]),'-',{t:'Supprimer le groupe',dis:!g,danger:true,fn:()=>tplDelGroup(cat)}]); } };
+    w.addEventListener('click',e=>{ const gb=e.target.closest('.sgbm-grp button'); if(gb){ if(TP.g.sel!==gb.dataset.g){ TP.g.sel=gb.dataset.g; TP.m.sel=null; TP.p.sel=null; dessiner(); } return; }
+      const pb=e.target.closest('.sgbm-pgs button'); if(pb){ TP.p.sel=pb.dataset.pg; dessiner(); return; }
+      const it=e.target.closest('.sgds-it'); if(it){ if(TP.m.sel!==it.dataset.id){ TP.m.sel=it.dataset.id; TP.p.sel=null; dessiner(); const n=[...w.querySelectorAll('.sgds-it')].find(z=>z.dataset.id===TP.m.sel); if(n) n.focus({preventScroll:true}); } return; }
+      const b=e.target.closest('[data-fn]'); if(b&&!b.disabled) agir(b.dataset.fn,b); });
+    w.addEventListener('dblclick',e=>{ if(e.target.closest('.sgbm-pv')){ agir('editer'); return; } const it=e.target.closest('.sgds-it'); if(it&&ecrit()) agir('modifier'); });
+    w.addEventListener('input',e=>{ if(e.target.classList&&e.target.classList.contains('sgds-q')){ QB[cat]=e.target.value; dessiner(); } });
+    w.addEventListener('change',e=>{ if(e.target.classList&&e.target.classList.contains('sgbm-psel')){ TP.p.sel=e.target.value; dessiner(); const z=w.querySelector('.sgbm-psel'); if(z) z.focus({preventScroll:true}); } });
+    w.addEventListener('keydown',e=>{ if(e.key!=='ArrowDown'&&e.key!=='ArrowUp') return; if(!e.target.closest('.sgds-col')) return; const L=[...w.querySelectorAll('.sgds-it')]; if(!L.length) return;
+      const i=L.findIndex(z=>z.dataset.id===TP.m.sel), n=L[Math.max(0,Math.min(L.length-1,(i<0?0:i)+(e.key==='ArrowDown'?1:-1)))]; e.preventDefault(); if(n&&n.dataset.id!==TP.m.sel){ TP.m.sel=n.dataset.id; TP.p.sel=null; dessiner(); const z=[...w.querySelectorAll('.sgds-it')].find(q=>q.dataset.id===TP.m.sel); if(z){ z.scrollIntoView({block:'nearest'}); if(!e.target.classList.contains('sgds-q')) z.focus({preventScroll:true}); } } });
+    w.addEventListener('contextmenu',e=>{ const it=e.target.closest('.sgds-it'); if(!it||e.altKey||typeof sgMenuAt!=='function') return; e.preventDefault(); if(TP.m.sel!==it.dataset.id){ TP.m.sel=it.dataset.id; TP.p.sel=null; dessiner(); }
+      const ok=ecrit(); sgMenuAt(e.clientX,e.clientY,[{t:ok?'Éditer la page …':'Voir la page …',fn:()=>agir('editer')},...(ok?[{t:'Modifier le modèle …',fn:()=>agir('modifier')},'-',{t:'Supprimer le modèle …',danger:true,fn:()=>agir('supprimer')}]:[])]); });
+    V._d=dessiner; V.redraw=dessiner; dessiner();
+    if(typeof ResizeObserver==='function'){ let t=null, lw=0; new ResizeObserver(()=>{ const ap=w.querySelector('.sgds-ap'), cw=ap?ap.clientWidth:0; if(!cw||Math.abs(cw-lw)<12) return; lw=cw; clearTimeout(t); t=setTimeout(()=>{ if(w.isConnected) apercu(etat()); },120); }).observe(w); } };
+  TPL_CATS.forEach(([id,cat])=>{ if(!VIEWS[id]) return;
+    VIEWS[id]={ render(m){ if(typeof TPL_TABLES!=='undefined'&&TPL_TABLES.some(t=>!DS.loaded.has(t))){ m.append(h('div',{class:'ph'},'Chargement des modèles…')); tplNeed().then(()=>{ if(typeof VIEW!=='undefined'&&VIEW&&VIEW.v===this) go(VIEW.id); }); return; } monter(m,id,cat,this); },
+      refresh(ts){ if(hit(ts,'modele','modelegroupe','setting','arriereplan','image')&&this._d) this._d(); } };
+    LISTE.delete(id); });
+}
 window.SGMV={LISTE,maj,DOMS,CATS,habiller,CHIFFRES};
 })();

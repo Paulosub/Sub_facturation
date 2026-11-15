@@ -2868,8 +2868,23 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   sur une seule ligne compacte, comme le devis. Rien n'est écrit dans la base. Vérifié hors de l'aperçu (base de test, 99TST) : chiffres égaux aux totaux des tableaux,
   tous les onglets des huit écrans, mémoire du dernier onglet, recherche, six visuels, zone étroite, balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`.
   Copie d'avant : `subgestion3/_backup_20261115_1729_avant_onglets_categories/`.
-  **Reste du lot 3** : contenu des tableaux de ces écrans (colonnes et couleurs des graphiques de l'ancien logiciel, panneau « Document » du Suivi des factures),
-  Bibliothèque (`tpl-*` : bandeau et présentation épurée posés, colonnes Groupe · Type · Modèle et aperçu pas encore refaits), page « Paramètres » de l'estimation en onglet. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
+  **Lot 3, huitième étape — Bibliothèque ▸ modèles d'impression (même jour, fin de `sg3_ecrans.js`, classe `sgbm`)** : Projets types, Profils d'équipe, Horaires types,
+  Notes de frais types, Gestion types, Formats d'adresse, Étiquettes — les sept écrans à quatre colonnes de l'ancien logiciel (Groupe | Type de modèle | Modèle |
+  aperçu) prennent la présentation de « Documents Substances » (mêmes classes `sgds-*`) : à gauche la liste des modèles du groupe choisi (groupes en choix de texte
+  avec leur nombre de modèles, cadenas = lecture seule, « par défaut » ; recherche ; ↑ ↓ ; clic droit), à droite le bandeau du modèle (groupe, libellé, nom, type), ses
+  actions — Éditer la page, Nouveau (copie), Modifier (libellé), Supprimer, Groupes ▾ (nouveau, par défaut, renommer, supprimer, et « Modifier la police dans tous les
+  modèles du groupe », l'ancien bouton Fonctions) : les fenêtres du moteur (`tplOpenEditor`, `tplNewModel`, `tplEditModel`, `tplDelModel`, `tplNewGroup`,
+  `tplSetDefaultGroup`, `tplRenameGroup`, `tplDelGroup`, `ch10bTplTools`) —, les chiffres (pages, format, éléments de la page, groupes, modèles du groupe), le choix
+  de la page (Page de garde · 1ère page · Page suivante ; liste déroulante au-delà de 8 pages : 43 formats d'étiquettes) et l'aperçu en grand (`tplPageHTML`, à la
+  largeur de la zone ; double-clic = éditer la page ; non inversé dans Studio nocturne). Même état que le moteur (`TP.g.sel`, `TP.m.sel`, `TP.p.sel`) : ses fenêtres
+  agissent sur le modèle affiché ; groupe ouvert d'office = le groupe par défaut. Modifier = profil « bibliothèque : écriture » (administrateur compris), sinon
+  « Voir la page » seulement ; groupe verrouillé : le moteur refuse et le dit, comme avant. Redessin sur place quand la base change (`refresh` sans `go`). Ces sept
+  écrans sont retirés de `SGMV.LISTE` (ils ont leur bandeau) ; « Documents types » (`tpl-documents`) garde le bandeau et la présentation épurée. DeltaSub.html seul
+  garde les quatre colonnes. Vérifié hors de l'aperçu : les sept écrans, recherche, groupes, pages, nouveau groupe par copie, libellé modifié, suppression (base du
+  banc remise en état), profil en lecture seule, cinq visuels, balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant :
+  `subgestion3/_backup_20261115_1828_avant_bibliotheque_modeles/`.
+  **Reste du lot 3** : contenu des tableaux des écrans à catégories (colonnes et couleurs des graphiques de l'ancien logiciel, panneau « Document » du Suivi des
+  factures), « Documents types » (`tpl-documents`), page « Paramètres » de l'estimation en onglet. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
   (`{...SG_ACC, profil, droits: sgDroitsRole(profil)}`), changer `profil` seul laisse les droits de l'administrateur.
   **Lot 1, analyse des heures — cinq propositions (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie

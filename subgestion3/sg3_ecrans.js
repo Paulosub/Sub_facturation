@@ -22,7 +22,8 @@ const hote=()=>{ let h=document.getElementById('sg-mv'); if(!h){ const sub=docum
 let cle='';
 const maj=()=>{ const h=hote(); if(!h) return; const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=LISTE.has(v)?NX_VIEW[v]:null, m=document.getElementById('main');
   const ok=!!(x&&x.it&&m&&!m.querySelector('.sgfh-tete,.sg-tete,.sg-intro'));
-  if(!ok){ if(h.firstChild){ h.textContent=''; } cle=''; return; }
+  if(!ok){ if(h.firstChild){ h.textContent=''; } cle=''; document.documentElement.removeAttribute('data-vep'); return; }
+  document.documentElement.setAttribute('data-vep','1');   /* présentation épurée de l'écran (styles html[data-vep] de sg3.css) */
   let f=''; try{ f=CHIFFRES[v]?CHIFFRES[v]():''; }catch(e){ console.error(e); }
   const k=v+'|'+f; if(k===cle&&h.firstChild) return; cle=k;
   h.innerHTML='<div class="sgmv">'+sgTete([x.d&&x.d.t,x.it.grp].filter(Boolean).join(' · '),nxE(x.it.t||''),nxE(x.it.d||''),f?'<div class="sg-figs">'+f+'</div>':'')+'</div>'; };

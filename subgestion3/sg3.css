@@ -1648,3 +1648,25 @@ html:has(#main .sgd) #nx-sub{display:none!important}
 #sg-mv:empty{display:none}
 #sg-mv .sgmv{padding:16px 24px 0;container-type:inline-size}
 #sg-mv .sg-tete{margin:0 0 6px}
+
+/* ═══ Écrans de l'ancien logiciel sous le bandeau de l'app (lot 3, sg3_ecrans.js, html[data-vep]) : présentation épurée du chapitre Heures étendue à ces écrans —
+   barres d'outils en texte (choix souligné en bleu nuit), colonnes sans cadre sous un filet noir, tableaux à titres sur filet noir et lignes fines, alignés sur le
+   bandeau (24 px). Les règles propres aux pages Heures (colonne des collaborateurs, tuiles du rapport) ne sont pas reprises. ═══ */
+html[data-vep] #nx-sub{background:#fff;padding:0 24px}
+html[data-vep] #tools .grp{gap:0;padding:0 8px;border-left:1px solid var(--s-filet)}
+html[data-vep] #tools .grp:first-child{border-left:0;padding-left:0}
+html[data-vep] #tools .ib,html[data-vep] #main .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
+html[data-vep] #tools .ib:hover,html[data-vep] #main .ph2 .ib:hover{background:var(--s-jaune3)!important}
+html[data-vep] #tools .ib.on,html[data-vep] #main .ph2 .ib.on{color:var(--s-nuit)!important;border-bottom-color:var(--s-nuit)!important}
+html[data-vep] #tools .ib:disabled,html[data-vep] #main .ph2 .ib:disabled{color:#b9b9b6}
+html[data-vep] #main .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:4px 0 6px;border:0!important;border-bottom:1px solid var(--s-filet)!important;background:transparent}
+html[data-vep] #main .ph2 .ib:first-child{padding-left:0}
+html[data-vep] #main .ph2 .cnt,html[data-vep] #main .ph2>span{font-size:12px;color:var(--s-gris)}
+html[data-vep] #main>.cols,html[data-vep] #main>.col{padding:8px 24px 14px!important;box-sizing:border-box}
+html[data-vep] #main .cols{gap:24px}
+html[data-vep] #main .pane{border:0!important;background:#fff!important;box-shadow:none!important}
+html[data-vep] #main .col{border:0!important;border-top:2px solid var(--s-noir)!important;box-shadow:none!important;background:#fff!important}   /* colonnes sans cadre : seul le filet noir du haut reste */
+html[data-vep] #main table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important}
+html[data-vep] #main table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;height:34px;padding:0 8px!important;font-size:12.5px;font-variant-numeric:tabular-nums}
+html[data-vep] #main table.g tbody tr:hover td{background:var(--s-jaune3)!important}
+html[data-vep] #main table.g tbody tr.on td{background:var(--s-jaune2)!important;color:var(--s-noir)!important}

@@ -1642,3 +1642,9 @@ html:has(#main .sgd) #nx-sub{display:none!important}
   .sg-tete>.acts{grid-row:2;max-width:none;justify-content:flex-start;border-top:0;padding:0 22px 14px}
   .sg-tete>.sg-figs,.sg-tete>.sg-tkp{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* ═══ En-tête de l'app au-dessus des écrans de l'ancien logiciel (refonte d'ensemble, lot 3, sg3_ecrans.js) : bandeau posé avant la barre contextuelle, hors de #main ═══ */
+#sg-mv{flex:0 0 auto;background:#fff}
+#sg-mv:empty{display:none}
+#sg-mv .sgmv{padding:16px 24px 0;container-type:inline-size}
+#sg-mv .sg-tete{margin:0 0 6px}

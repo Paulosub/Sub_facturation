@@ -2731,6 +2731,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   l'app, Réunir les registres. **Gardent `sgIntro`** (pages d'orientation, déjà réglées avec Paulo) : Cockpit, vues d'ensemble `dom-*`, page du projet, et
   « Comparer et noter » (Archives). Vérifié : 21 pages sans erreur ni débordement, cinq visuels à l'essai (bandeau et boutons au même fond), largeur étroite, balayage
   des 121 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_1540_avant_entetes_pages/`.
+  **Lot 3, première étape — bandeau au-dessus des écrans de l'ancien logiciel (15.11.2026, bloc 54, `subgestion3/sg3_ecrans.js`, concaténé en dernier)** : 25 écrans du
+  moteur (`SGMV.LISTE` : Membres, Tous les membres, Anciens membres, Temps de l'équipe, Planification RH, Suivi RH, Controlling, Contrats des projets, Facturation des
+  projets, Suivi des factures, Clients, Indicateurs, Types de projets, les trois écrans de Tâches, Documents types et les sept autres écrans `tpl-*` de Bibliothèque,
+  `config`) reçoivent le bandeau des listes par `sgTete` — monogramme, chapitre (« Administration · Équipe »…), titre et présentation repris du menu (`SG_DOM` : `t`,
+  `d`, `grp`), chiffres simples lus dans la base (`CHIFFRES` : membres actuels / anciens / arrivées / départs de l'année ; tâches en cours / urgentes ; documents types).
+  Le bandeau est posé AVANT la barre contextuelle (`#sg-mv`, inséré devant `#nx-sub`), hors de `#main` que le moteur vide et redessine : ordre de la page = bandeau,
+  chiffres, barre d'outils, contenu ; il est retiré dès que l'écran n'est plus dans la liste (enveloppe de `go`, `DS.on`). Fonctions et données inchangées ; le contenu
+  de ces écrans (colonnes, tableaux du moteur) reste à reprendre chapitre par chapitre. Pas dans cette étape : Estimations (`coplan`, liste et document ouvert à refaire
+  ensemble), intervenants / soumissionnaires / liste d'adresses / calcul des coûts de la page du projet. Vérifié : bandeau sur les 25 écrans et sur aucun autre.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

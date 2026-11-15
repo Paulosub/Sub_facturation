@@ -2916,8 +2916,22 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   vides du moteur non imprimées. Vérifié hors de l'aperçu : chiffres égaux aux totaux des tableaux (Controlling 6'392 h et 75'330 CHF, Facturation des projets
   114'074 / 90'870 / 23'204), dix-sept rapports ouverts sans erreur (Planification RH comprise), couleurs d'origine dans Archives, cinq visuels, balayage des
   120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Pas fait : chiffres du bandeau d'Indicateurs et de Planification RH (définitions de l'ancien logiciel à ne pas
-  réinventer), bouton « Imprimer » sur les pages de l'app qui n'ont qu'un export CSV (Rentabilité, Apports, Occupation). Copie d'avant :
-  `subgestion3/_backup_20261115_1922_avant_bandeau_facturation_finances_rh/`.
+  réinventer). Copie d'avant : `subgestion3/_backup_20261115_1922_avant_bandeau_facturation_finances_rh/`.
+  **Bouton « Imprimer » de Rentabilité des projets, Apports de projets et Occupation et effectif (15.11.2026, Paulo, à la question posée : « Oui, ajouter »)** — à côté
+  de « Exporter (CSV) », dans le bandeau (`data-fn="imp"`, `sg3_plus.js`) ; même document que les autres : page de garde, tableau bleu nuit, fenêtre « Document PDF »
+  (Format, Page de garde ; paysage d'office). **Rentabilité** (`SGDH.ouvrir`) : le tableau de la page — titre complet du projet (l'écran le coupe à 46 signes),
+  honoraires HT, coût de revient, consommé, facturé HT, facturé, encaissé TTC, marge, alertes (une par ligne) —, consommé au-delà de 100 % et marge négative en rouge,
+  ligne « Total » ; page de garde : projets (en cours, ou en cours et terminés), projets suivis, en alerte, totaux. **Apports** : par collaborateur (avec total), puis
+  les projets apportés et les versements du collaborateur choisi ou de tous (`Dc.suite`, un tableau par page) ; page de garde : collaborateur, commission acquise,
+  versé, solde, exigible. **Occupation** (`sgDocTableau` avec `titreTable` et `suite`) : les trois tableaux de la page tels qu'affichés — taux d'occupation de
+  l'année, charge de travail du mois choisi, échéances RH — ; « Effectif » en gras, « Équivalents plein temps » sur bande. Les dialogues, les courbes et la colonne
+  de boutons ne sont pas imprimés. `sgDocTableau` : `lireTable(tb, titre)` (plusieurs lignes de total : la dernière seule sur bande ; `<br>` → « · »), options
+  `titreTable`, `suite [{table, titre}]`, `type`. **Largeurs des documents** (`octets` de `sg3_docs_heures.js`, même jour) : une colonne prend la largeur de son
+  contenu le plus long tant que le tableau tient dans la page (les noms ne passent plus à la ligne quand il y a la place) ; la règle « neuf lignes sur dix », les
+  titres abrégés et les colonnes resserrées ne s'appliquent que si la page est trop étroite ; la place en trop va à la colonne de texte au contenu le plus long
+  (plus à celle au titre le plus long). Vérifié hors de l'aperçu : trois documents de 4 pages sur la base de test, totaux égaux à ceux de la page, un collaborateur
+  choisi dans Apports, zone étroite, onze documents déjà faits rejoués (mêmes nombres de pages), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`.
+  Copie d'avant : `subgestion3/_backup_20261115_1943_avant_imprimer_finances_rh/`.
   **Reste du lot 3** : panneau « Document » du Suivi des factures, « Documents types » (`tpl-documents`), page « Paramètres » de l'estimation en onglet. **Reste du
   lot 5** : impressions des séances, du planning, du permis, du registre des décisions (encore `sgImprimer`) ; icônes ; navigation. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
   (`{...SG_ACC, profil, droits: sgDroitsRole(profil)}`), changer `profil` seul laisse les droits de l'administrateur.

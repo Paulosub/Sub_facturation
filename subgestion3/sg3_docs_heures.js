@@ -49,24 +49,28 @@ async function octets(Dc){ const M=await mesure(), {w,R,fn}=await SGDS.ressource
   const ST={g:'O',s:'W',t:'T','1':'S',x:'X',b:'W','':Tb.hier?'W':'S'}, nC=Tb.cols.length;   /* x : commentaire ou désignation sous sa ligne, en gris italique (comme le descriptif d'une position du devis) ; b : ligne en gras */
   let rows=(Tb.rows||[]).map(r=>{ const c=Tb.cols.map((_,j)=>sv((r.c||[])[j])), seul=un(c[0])!==''&&c.slice(1).every(x=>!un(x)); return Object.assign({c,s:ST[r.g||'']||'S',g:r.g||''},seul||r.debR?{debR:1}:{},Array.isArray(r.cc)&&r.cc.some(Boolean)?{cc:Tb.cols.map((_,j)=>r.cc[j]||'')}:{}); });
   if(!rows.length) rows=[{c:Tb.cols.map((_,j)=>j===0?'Aucune ligne.':''),s:'S',g:'',debR:1}];
-  /* largeurs : chaque colonne à la mesure de son titre et de son contenu — pour une colonne de texte d'un long tableau, la largeur qui suffit à neuf lignes sur dix (les
-     rares textes plus longs passent à la ligne). Trop large pour la page : les colonnes de nombres gardent leur largeur et les colonnes de texte les plus longues sont
+  /* largeurs : chaque colonne à la mesure de son titre et de son contenu. Trop large pour la page : une colonne de texte d'un long tableau prend la largeur qui suffit à
+     neuf lignes sur dix (les rares textes plus longs passent à la ligne) ; puis les colonnes de nombres gardent leur largeur et les colonnes de texte les plus longues sont
      ramenées à une même largeur (commentaire, désignation : leur texte passe à la ligne), les colonnes courtes ne changent pas ; encore trop large : tout est réduit.
      De la place en trop : à la colonne de texte la plus longue. Une colonne de nombres suivie d'une colonne de texte en est séparée par une gouttière de 8 pt (colonne
      vide), sinon le montant touche le texte. Une cellule de texte suivie d'une colonne de texte vide déborde dessus (titre d'un groupe, libellé d'un sous-total) : elle
      ne compte pas dans la largeur de sa colonne. */
   const gras=r=>r.s!=='S', deb=(r,j)=>j<nC-1&&!Tb.cols[j].r&&!un(r.c[j+1])&&(!Tb.cols[j+1].r||r.debR);
-  const contenu=Tb.cols.map((c,j)=>{ const L=rows.filter(r=>!deb(r,j)&&un(r.c[j])!=='').map(r=>Math.max(0,...sv(r.c[j]).split('\n').map(l=>M.larg(l,gras(r))))).sort((a,b)=>a-b);
-    return !L.length?0:(c.r||L.length<12)?L[L.length-1]:L[Math.floor(0.9*(L.length-1))]; });
+  /* largeur du contenu de chaque colonne : la plus grande (maxi) tant que le tableau tient dans la page ; sinon, pour une colonne de texte d'un long tableau, celle
+     qui suffit à neuf lignes sur dix (p90 : les rares textes plus longs passent à la ligne) */
+  const largs=Tb.cols.map((c,j)=>rows.filter(r=>!deb(r,j)&&un(r.c[j])!=='').map(r=>Math.max(0,...sv(r.c[j]).split('\n').map(l=>M.larg(l,gras(r))))).sort((a,b)=>a-b));
+  const maxi=largs.map(L=>L.length?L[L.length-1]:0), p90=largs.map((L,j)=>!L.length?0:(Tb.cols[j].r||L.length<12)?L[L.length-1]:L[Math.floor(0.9*(L.length-1))]);
+  let contenu=maxi;
   const GOUT=8, sp=Tb.cols.map((c,j)=>!!(c.r&&Tb.cols[j+1]&&!Tb.cols[j+1].r)), Wd=W-sp.filter(Boolean).length*GOUT, PL=64, txt=Tb.cols.map((c,j)=>j).filter(j=>!Tb.cols[j].r);
   /* titres : en entier quand le tableau tient dans la page ; sinon un titre plus large que le contenu de sa colonne est abrégé (ABR), comme dans le contrôle des coûts */
-  let TT=Tb.cols.map(c=>sv(c.t)), padN=9; const natDe=()=>Tb.cols.map((c,j)=>Math.max(M.larg(TT[j],true),contenu[j])+(c.r?padN:9)); let nat=natDe();
-  if(nat.reduce((a,b)=>a+b,0)>Wd){ TT=TT.map((t,j)=>ABR[un(t)]&&M.larg(t,true)>contenu[j]?ABR[un(t)]:t); padN=5; nat=natDe(); }   /* trop large : titres abrégés, colonnes de nombres resserrées (tableaux à 18 colonnes du Suivi RH) */
+  let TT=Tb.cols.map(c=>sv(c.t)), padN=9; const natDe=()=>Tb.cols.map((c,j)=>Math.max(M.larg(TT[j],true),contenu[j])+(c.r?padN:9)), trop=()=>nat.reduce((a,b)=>a+b,0)>Wd; let nat=natDe();
+  if(trop()){ contenu=p90; nat=natDe(); }   /* 1. trop large : colonnes de texte à la largeur de neuf lignes sur dix */
+  if(trop()){ TT=TT.map((t,j)=>ABR[un(t)]&&M.larg(t,true)>contenu[j]?ABR[un(t)]:t); padN=5; nat=natDe(); }   /* 2. encore trop large : titres abrégés, colonnes de nombres resserrées (tableaux à 18 colonnes du Suivi RH) */
   let wd=nat.slice(); const som=()=>wd.reduce((a,b)=>a+b,0);
   if(som()>Wd){ let reste=Wd-Tb.cols.reduce((a,c,j)=>a+(c.r?nat[j]:0),0), n=txt.length; const T=txt.slice().sort((a,b)=>nat[a]-nat[b]);   /* des plus courtes aux plus longues */
     for(const j of T){ const part=reste/n; if(nat[j]<=part){ wd[j]=nat[j]; reste-=nat[j]; n--; } else { T.slice(T.indexOf(j)).forEach(k=>{ wd[k]=Math.max(part,Math.min(nat[k],PL)); }); break; } }
     if(som()>Wd+0.5){ const f=Wd/som(); wd=wd.map(x=>x*f); } }
-  else { const jl=txt.length?txt.reduce((a,j)=>nat[j]>nat[a]?j:a,txt[0]):0; wd[jl]+=Wd-som(); }
+  else { const jl=txt.length?txt.reduce((a,j)=>maxi[j]>maxi[a]?j:a,txt[0]):0; wd[jl]+=Wd-som(); }   /* place en trop : à la colonne de texte au contenu le plus long (pas au titre le plus long) */
   const cols=[]; Tb.cols.forEach((c,j)=>{ cols.push({t:TT[j],w:Math.round(wd[j]*100)/100,r:!!c.r}); if(sp[j]) cols.push({t:'',w:GOUT,r:false}); });
   if(sp.some(Boolean)) rows.forEach(r=>{ const c=[], k=[]; r.c.forEach((x,j)=>{ c.push(x); if(r.cc) k.push(r.cc[j]||''); if(sp[j]){ c.push(''); if(r.cc) k.push(''); } }); r.c=c; if(r.cc) r.cc=k; });
   return paginer(etaler(rows,cols,M),cols,cap,Dc.titre); };
@@ -179,18 +183,25 @@ if(typeof ch11aReport==='function'){ const r0=ch11aReport;
       const per=meta.find(m=>m[0]==='Période'||m[0]==='Année');
       if(ouvrir({cle:'rapport:'+type,titre:un(o.titre)||'Rapport',p,meta,cols:C.map(c=>({t:sv(c.t),r:!!c.r})),rows,sous:per?per[1]:'',lb:'Finances · Documents',type:'Rapport'})) return Promise.resolve(null); }catch(e){ console.error(e); }
     return r0.apply(this,arguments); }; }
-/* ── sgDocTableau : un tableau affiché (table.nx-tbl) repris tel quel dans un document — titres, lignes, totaux (tr.tot ou « Total… »), sous-lignes (tr.sub) ── */
-function sgDocTableau(o){ try{ const tb=o&&o.table; if(!tb||!tb.querySelector) return false;
-    const TH=[...tb.querySelectorAll('thead tr')].pop()||[...tb.querySelectorAll('tr')].find(tr=>tr.querySelector('th')), H=TH?[...TH.children]:[]; if(!H.length||H.some(x=>x.colSpan>1)) return false;
-    const txt=td=>{ if(!td) return ''; const k=td.cloneNode(true); k.querySelectorAll('.nx-mini-bar,svg,button,.sg-noimp').forEach(x=>x.remove()); return un(k.textContent); };
-    const TR=[...tb.querySelectorAll('tr')].filter(tr=>tr!==TH&&!tr.closest('thead')&&tr.children.length>=H.length-1&&getComputedStyle(tr).display!=='none');
-    /* colonnes sans titre et sans texte (boutons, barres) : écartées */
-    const garde=H.map((x,j)=>j).filter(j=>!H[j].classList.contains('sg-noimp')&&!(un(H[j].textContent)===''&&!TR.some(tr=>txt(tr.children[j]))));
-    const droite=j=>{ const a=getComputedStyle(H[j]).textAlign; if(a==='right'||a==='end') return true; const c=TR.map(tr=>tr.children[j]).filter(Boolean)[0]; if(!c) return false; const b2=getComputedStyle(c).textAlign; return b2==='right'||b2==='end'; };
-    const cols=garde.map(j=>({t:un(H[j].textContent),r:droite(j)}));
-    const rows=TR.map(tr=>{ const c=garde.map(j=>txt(tr.children[j])), tot=tr.classList.contains('tot')||/^total\b/i.test(c[0]||''); return {c,g:tot?'t':tr.classList.contains('sub')?'1':''}; });
-    const hier=rows.some(r=>r.g==='1');
-    return ouvrir({cle:o.cle||un(o.titre),titre:o.titre,p:o.p||null,meta:o.meta||[],cols,rows,hier,sous:o.sous||'',lb:o.lb||'Heures · Documents',format:o.format});
+/* ── sgDocTableau : un tableau affiché (table.nx-tbl) repris tel quel dans un document — titres, lignes, totaux (tr.tot ou « Total… » : le dernier sur bande bleu
+   nuit, les précédents en gras), sous-lignes (tr.sub), colonnes de boutons écartées. o.titreTable : intertitre en tête du tableau ; o.suite = [{table, titre}] :
+   autres tableaux de la page, chacun sur une nouvelle page avec ses colonnes et son intertitre (Occupation et effectif : taux d'occupation, charge du mois,
+   échéances). ── */
+const lireTable=(tb,titre)=>{ if(!tb||!tb.querySelector) return null;
+  const TH=[...tb.querySelectorAll('thead tr')].pop()||[...tb.querySelectorAll('tr')].find(tr=>tr.querySelector('th')), H=TH?[...TH.children]:[]; if(!H.length||H.some(x=>x.colSpan>1)) return null;
+  const txt=td=>{ if(!td) return ''; const k=td.cloneNode(true); k.querySelectorAll('.nx-mini-bar,svg,button,.sg-noimp').forEach(x=>x.remove()); k.querySelectorAll('br').forEach(x=>x.replaceWith(' · ')); return un(k.textContent); };
+  const TR=[...tb.querySelectorAll('tr')].filter(tr=>tr!==TH&&!tr.closest('thead')&&tr.children.length>=H.length-1&&getComputedStyle(tr).display!=='none');
+  /* colonnes sans titre et sans texte (boutons, barres) : écartées */
+  const garde=H.map((x,j)=>j).filter(j=>!H[j].classList.contains('sg-noimp')&&!(un(H[j].textContent)===''&&!TR.some(tr=>txt(tr.children[j]))));
+  const droite=j=>{ const a=getComputedStyle(H[j]).textAlign; if(a==='right'||a==='end') return true; const c=TR.map(tr=>tr.children[j]).filter(Boolean)[0]; if(!c) return false; const b2=getComputedStyle(c).textAlign; return b2==='right'||b2==='end'; };
+  const cols=garde.map(j=>({t:un(H[j].textContent),r:droite(j)}));
+  const rows=TR.map(tr=>{ const c=garde.map(j=>txt(tr.children[j])), tot=tr.classList.contains('tot')||/^total\b/i.test(c[0]||''); return {c,g:tot?'t':tr.classList.contains('sub')?'1':''}; });
+  const T=rows.filter(r=>r.g==='t'); T.slice(0,-1).forEach(r=>{ r.g='s'; });   /* plusieurs lignes de total (« Effectif », « Équivalents plein temps ») : la dernière seule sur bande */
+  if(un(titre)) rows.unshift({c:cols.map((_,k)=>k?'':un(titre)),g:'g'});
+  return {cols,rows,hier:rows.some(r=>r.g==='1')}; };
+function sgDocTableau(o){ try{ const T=lireTable(o&&o.table,o&&o.titreTable); if(!T) return false;
+    const suite=((o&&o.suite)||[]).map(x=>lireTable(x&&x.table,x&&x.titre)).filter(Boolean);
+    return ouvrir({cle:o.cle||un(o.titre),titre:o.titre,p:o.p||null,meta:o.meta||[],cols:T.cols,rows:T.rows,hier:T.hier,suite,sous:o.sous||'',lb:o.lb||'Heures · Documents',format:o.format,type:o.type});
   }catch(e){ console.error(e); return false; } }
 window.sgDocTableau=sgDocTableau;
 window.SGDH={octets,ouvrir,reglages,rubriques,regDe,regSet,sgDocTableau};

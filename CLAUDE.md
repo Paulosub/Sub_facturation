@@ -2932,6 +2932,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (plus à celle au titre le plus long). Vérifié hors de l'aperçu : trois documents de 4 pages sur la base de test, totaux égaux à ceux de la page, un collaborateur
   choisi dans Apports, zone étroite, onze documents déjà faits rejoués (mêmes nombres de pages), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`.
   Copie d'avant : `subgestion3/_backup_20261115_1943_avant_imprimer_finances_rh/`.
+  **« Imprimer » aussi sur Heures dues et vacances, Bouclement annuel et Coût de revient (15.11.2026, Paulo, à la question posée : « Oui, ajouter »)** — même bouton
+  (`data-fn="imp"`, `sg3_plus.js`) et même document (`SGDH.ouvrir`), mêmes valeurs que la page. **Heures dues et vacances** (paysage) : par collaborateur (occupation,
+  naissance, âge au 31.12, engagement, heures dues, vacances en jours et en heures, « Enregistré » en orange quand la valeur enregistrée diffère du calcul), puis
+  « Heures dues par mois — <année> » (ligne « Total » du bureau) et « Jours fériés <année> (canton de Vaud) » ; page de garde : année, base (CCT), jours fériés,
+  collaborateurs. **Bouclement annuel** (paysage) : les douze colonnes de la page, soldes négatifs en rouge, validation (« validé le … », « · modifié depuis »,
+  « à valider ») et transfert ; page de garde : année (« en cours » signalé), validés, transférés, sort des heures sup. positives. **Coût de revient** (portrait) :
+  paramètres du bureau en Poste · Valeur · Unité (charges sociales, frais généraux, temps de travail et marge, avec leurs totaux), puis « Collaborateurs actuels —
+  données » et « Collaborateurs actuels — coût de revient ». Titres abrégés quand la page est trop étroite (`ABR` de `sg3_docs_heures.js` étendu aux titres RH :
+  « H. dues », « Vac. (h) », « Occup. », « Taux interne », « Revient / h fact. »…). Vérifié hors de l'aperçu (base de test) : 4, 2 et 4 pages, balayage des
+  120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_2002_avant_imprimer_rh/`.
   **Registre des décisions des PV MO (même soir, lot 5)** : « Imprimer le registre » (page du projet ▸ PV MO ▸ Décisions ; `pmRegistre` de `sg3_suivi.js`) ouvre le même
   document — page de garde (ouvrage, maître de l'ouvrage, période, nombre de décisions), tableau Date · PV · Phase · Décision, le texte de la décision sous son
   titre ; repli sur l'impression d'avant si le bloc 56 manque. Restent à l'ancienne impression (`sgImprimer`, papier des contrats) : le planning (tableau et diagramme)

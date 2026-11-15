@@ -27,7 +27,11 @@ const regSet=(cle,patch)=>{ const R=regs(); R[cle]=Object.assign({},R[cle]||{},p
 const formatDe=Dc=>{ const f=regDe(Dc.cle).format; return f==='portrait'||f==='paysage'?f:(Dc.format||(Dc.cols.length>6?'paysage':'portrait')); };
 /* titres abrégés quand le tableau est trop large pour la page (titres du moteur) */
 const ABR={'Heures prévues':'H. prévues','Honoraires prévus':'Hon. prévus','Honoraires prévus-Honoraires':'Hon. prévus − hon.','Taux horaire du collaborateur':'Taux collab.','Frais des collaborateurs':'Frais collab.',
-  'Honoraires-Coûts des collaborateurs':'Hon. − coûts collab.','Budget-Durée':'Budget − durée','Phase partielle':'Phase part.','Groupe d’activités':'Groupe','Facturable':'Fact.','Remboursable':'Remb.','Collaborateur':'Collab.','Quantité':'Qté'};
+  'Honoraires-Coûts des collaborateurs':'Hon. − coûts collab.','Budget-Durée':'Budget − durée','Phase partielle':'Phase part.','Groupe d’activités':'Groupe','Facturable':'Fact.','Remboursable':'Remb.','Collaborateur':'Collab.','Quantité':'Qté',
+  /* Ressources humaines (heures dues, bouclement, coût de revient) */
+  'Heures dues':'H. dues','Heures saisies':'H. saisies','Heures sup. à reporter':'H. sup. à reporter','Droit vacances (h)':'Droit vac. (h)','Vacances prises (h)':'Vac. prises (h)','Solde vacances (h)':'Solde vac. (h)',
+  'Vacances (jours)':'Vac. (j)','Vacances (heures)':'Vac. (h)','Âge au 31.12':'Âge','Occupation':'Occup.','Occupation %':'Occup. %','Salaire mensuel brut':'Salaire mens.','Vacances (sem.)':'Vac. (sem.)','Autres absences (j)':'Abs. (j)',
+  'Part facturable %':'Part fact. %','Frais directs / an':'Frais directs','Heures de présence':'H. présence','Heures facturables':'H. fact.','Taux interne / h':'Taux interne','Coût de revient / h fact.':'Revient / h fact.','Prix de vente conseillé':'Prix de vente'};
 /* ── pages : jamais de titre de groupe seul en bas de page, ni de sous-total ou de total seul en haut ; pas de coupure dans un texte passé à la ligne ── */
 const paginer=(rows,cols,cap,titre)=>{ const P=[]; let i=0;
   while(i<rows.length){ let k=Math.min(rows.length,i+cap);

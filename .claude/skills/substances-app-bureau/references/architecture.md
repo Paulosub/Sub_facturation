@@ -238,3 +238,8 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   (étape au choix) et du descriptif en texte, en octets, sans visionneuse — `X` peut être un contexte de lecture réduit `{id, p, doc, S, ro:true, …}` ;
   `sgDsPdf` : modes `o.contratEnt` (+ `parties {garde, contrat}`), `o.preadj`, `o.pvmo`. Avant de créer un bloc : vérifier par grep que son préfixe de classes ET son
   identifiant de `<style>` sont libres (collision `sgce-css` du 15.11.2026).
+  **Imprimer un tableau au graphisme du devis** (bloc 56, `sg3_docs_heures.js`, `SGDH`) : `SGDH.ouvrir({cle, titre, p, meta, cols:[{t, r}], rows:[{c, g}], hier, droite,
+  sous, format})` ouvre la fenêtre « Document PDF » (Réglages : Format, Page de garde ; choix par poste) avec page de garde et tableau bleu nuit — `g` : '' ligne,
+  'g' titre de groupe, '1' sous-ligne, 's' sous-total, 't' total, 'x' commentaire sous sa ligne ; `sgDocTableau({titre, p, table, meta, sous})` reprend un `table.nx-tbl`
+  affiché. À employer pour toute nouvelle impression de liste plutôt que `sgImprimer`. Écrans à catégories de l'ancien logiciel : `SGMV.CATS` (catégories en onglets),
+  `SGMV.CHIFFRES` (chiffres du bandeau, calculés par les fonctions des tableaux du moteur), `SGMV.habiller`.

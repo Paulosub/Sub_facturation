@@ -671,7 +671,7 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
   SGDE.vue(D,{barre:'pdf',p,lb:'Contrôle des coûts · Documents',titre:T.titre,etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>tableOctets(E,k),
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
   D.maj(tableOctets(E,k)); }
-window.SGCD={lotOctets,bonsOctets,bonsPdf,bonOctets,lotDe,decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+window.SGCD={outils:{mesure,etaler,paginer},lotOctets,bonsOctets,bonsPdf,bonOctets,lotDe,decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();
 
 /* ═══ Archives ▸ Maquettes ▸ Bon de paiement et arrêté de compte · Deux colonnes (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans

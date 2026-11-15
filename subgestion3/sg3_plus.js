@@ -697,7 +697,10 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); nxLS.set('sg3_fiche_an',''); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
       sgCsvTable(t,'heures_'+p.NUMBER+'_'+diso(now)+'.csv'); };
-    pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(t) sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+' · '+nxE(titre)+' · '+nxE(an?'année '+an:perLib)+'</p>'+t.outerHTML); }; return; }
+    /* Imprimer : document au graphisme du devis général et du contrôle des coûts (sgDocTableau, sg3_docs_heures.js, 15.11.2026) ; à défaut l'ancienne impression */
+    pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(!t) return; const per=an?'année '+an:perLib;
+      if(typeof sgDocTableau==='function'&&sgDocTableau({cle:'Heures du projet',titre:titre||'Heures du projet',p,table:t,meta:[['Période',per]],sous:per})) return;
+      sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+' · '+nxE(titre)+' · '+nxE(per)+'</p>'+t.outerHTML); }; return; }
   /* Phases contrat (19.10.2026) : heures contrat / saisies / écart ; pour l'administrateur et le chef de projet, en HT (la TVA n'est pas un revenu,
      le coût de revient n'en contient pas) : contrat HT (sgContratParPhase), coût de revient, marge bénéficiaire (contrat HT − coût), taux obtenu
      (contrat HT ÷ heures saisies), coût horaire (coût ÷ heures saisies) et comparaison des deux (points reliés en vert = gain, en rouge = perte ;
@@ -1544,7 +1547,10 @@ VIEWS['nx-situation']={ render(m){ const st=nxLS.get('sg3_sit',{p:'',per:'12',g:
     m.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>sv({g:b.dataset.g}));
     const titre='Situation des heures — '+(pr?projLabel(pr):'tous les projets')+' — '+(SG_GROUPES.find(x=>x[0]===st.g)||['',''])[1].toLowerCase()+' — '+perLib;
     pg._fn.csv=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgCsvTable(t,'situation_heures_'+(pr?pr.NUMBER:'projets')+'_'+diso(now)+'.csv'); };
-    pg._fn.prn=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgImprimer(titre,'<p>'+nxE((ME.u?'Établi par '+(ME.u.USERID||'')+' — ':'')+dfr(diso(now)))+'</p>'+t.outerHTML); }; } };
+    pg._fn.prn=()=>{ const t=m.querySelector('#sit-t table'); if(!t) return;
+      if(typeof sgDocTableau==='function'&&sgDocTableau({cle:'Situation des heures',titre:'Situation des heures',p:pr||null,table:t,sous:perLib,
+        meta:[['Période',perLib],['Regroupement',(SG_GROUPES.find(x=>x[0]===st.g)||['',''])[1]],['Projets',pr?'':'Tous les projets visibles'],['Établi par',ME.u?(ME.u.USERID||''):'']]})) return;
+      sgImprimer(titre,'<p>'+nxE((ME.u?'Établi par '+(ME.u.USERID||'')+' — ':'')+dfr(diso(now)))+'</p>'+t.outerHTML); }; } };
 
 /* ── Fenêtres du moteur dans le menu de gauche (23.10.2026, demandes de Paulo ; chapitre Admin depuis le 24.10.2026) : Équipe ▸ Gestion des utilisateurs (ch08bUserAdmin, droit
    « gestion des utilisateurs »), Réglages ▸ Paramètres système (ch08aSysPrefs, droit « administrateur ») et Réglages ▸ Préférences
@@ -2898,7 +2904,10 @@ function sgRapportHeuresCollab(p,sid){ const s=DS.get('staff',sid); if(!p||!s) r
     body.querySelectorAll('[data-vue]').forEach(b=>b.onclick=()=>{ vue=b.dataset.vue; nxLS.set('sg3_rap_vue',vue); dessiner(); });
     const tb=()=>body.querySelector('.sg-hscroll table'), c=body.querySelector('[data-rf="csv"]'), pr=body.querySelector('[data-rf="prn"]');
     if(c) c.onclick=()=>{ const t=tb(); if(t) sgCsvTable(t,'Heures_'+(p.NUMBER||'')+'_'+nom.replace(/\s+/g,'_')+(an?'_'+an:'')+'.csv'); };
-    if(pr) pr.onclick=()=>{ const t=tb(); if(t) sgImprimer('Heures de '+nom+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p>'+E(titre)+' · '+nxH(tot)+' h, dont '+nxH(hf)+' h facturables'+(L.length?' · du '+d1+' au '+d2:'')+'</p>'+t.outerHTML); }; };
+    if(pr) pr.onclick=()=>{ const t=tb(); if(!t) return;
+      if(typeof sgDocTableau==='function'&&sgDocTableau({cle:'Heures d’un collaborateur',titre:'Heures de '+nom,p,table:t,sous:titre,
+        meta:[['Période',L.length?'du '+d1+' au '+d2:''],['Affichage',titre],['Total heures',nxH(tot)+' h'],['Total facturables',nxH(hf)+' h']]})) return;
+      sgImprimer('Heures de '+nom+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p>'+E(titre)+' · '+nxH(tot)+' h, dont '+nxH(hf)+' h facturables'+(L.length?' · du '+d1+' au '+d2:'')+'</p>'+t.outerHTML); }; };
   dessiner();
   dialog({title:'Rapport des heures',width:'min(940px,95vw)',body,buttons:[{t:'Fiche du collaborateur',fn:()=>{ nxOpenRef('s:'+s.ID); }},{t:'Fermer',pri:true}]}); }
 /* étendue d'un contrat d'honoraires (23.10.2026, demande de Paulo : « devant Contrat, indiquer enquête, exécution, faisabilité… ; pas besoin de toutes

@@ -2899,7 +2899,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Fonctions ▾ (statut Facturable, statut Facturé, commentaire : fenêtres du moteur `ctlFlag` sans transfert vers les factures de l'ancien logiciel, `ctlComment` ; copier ;
   CSV de TOUTES les positions, le tableau en montre 1'000), Documents ▾ (`ctlPrint`, `ctlStaffReport`), Rapports ▾ (`ctlReport`, `ctlSummary`) ; double-clic = modifier
   (`hsEdit`, `editCost`). Documents : colonnes de la fenêtre d'analyse du moteur (+ Remboursable pour les frais), Oui / Non à la place des signes ✔ ✕ (absents de la police
-  des documents), colonnes vides retirées ; ils s'ouvrent dans la fenêtre de document du moteur (Imprimer, PDF, Partager), pas encore dans la fenêtre « Document PDF ».
+  des documents), colonnes vides retirées ; depuis le même soir, ces documents sont redessinés au graphisme du devis général et s'ouvrent dans la fenêtre « Document PDF » (bloc 56, plus bas).
   **Écritures** (`etat(dom, rows, v)`, un seul `DS.commit`, enregistrements relus juste avant, redessin sur place) : `TIMELOGSTATECODE` / `PROJECTCOSTSTATECODE` 0 saisi,
   1 refusé, 3 approuvé ; jamais hors du périmètre ; **règle ajoutée** (les fenêtres `sgcFenetre` et `ctlCostCheck` ne la contrôlent pas) : une inscription en période bloquée
   (« saisie bloquée jusqu'au … » du collaborateur, règle de `hsFrozen`) n'est ni approuvée, ni refusée, ni réinitialisée ici (étiquette « bloquée », boutons grisés, comptée
@@ -2921,6 +2921,38 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   documents à la barre « Document PDF » ; mise en page du document d'analyse (colonnes de même largeur : 68 pages pour 1'025 inscriptions) ; colonne Honoraires et
   « tout approuver jusqu'au … » ; transfert en facturation depuis le statut « Facturé » (retiré). Copie d'avant : `subgestion3/_backup_20261115_1700_avant_analyse_heures/`,
   `SUBGestion3_backup_20261115_1700_avant_analyse_heures.html`.
+- **Documents des heures et des frais au graphisme du devis général et du contrôle des coûts (15.11.2026, bloc 56, `subgestion3/sg3_docs_heures.js`, concaténé en dernier)** —
+  Paulo : « pour tous les documents des heures, etc. recréer le design des documents de contrôle du coût et devis général, même graphisme pour tous les documents de
+  l'app du chapitre heures ». Tous les documents du chapitre Heures passent par deux fonctions du moteur, enveloppées ici : `ctlPrint` (« Rapport d'heures », « Rapport de
+  frais » : Contrôle des heures d'affaires ▸ Imprimer, Contrôle des frais ▸ Imprimer, Critères d'analyse ▸ Documents) et `ctlDocHTML` (« Journal des heures » et ses cinq
+  tris, « Rapport des frais », « Récapitulatif des heures / des frais » de Grouper, « Rapport heures - facturation - coût de revient »). Mêmes données et mêmes totaux ;
+  le document est dessiné comme les listes du contrôle des coûts (`sgDsPdf`, `livretDG`, style « nuit ») : **page de garde** éditoriale (numéro du projet, titre du
+  document, ouvrage, maître de l'ouvrage, période et filtre, regroupement, totaux — un par ligne ; `rubriques`), **tableau « Bleu nuit »** de la marge à la barre du
+  numéro de page (titres des colonnes en blanc sur bande bleu nuit, titre d'un groupe en bleu nuit souligné, sous-total en gras, total sur bande bleu nuit, filets gris,
+  texte jamais coupé : il passe à la ligne ; montants en noir), papier des contrats ; et il s'ouvre dans la **fenêtre des documents** (`SGDE.vue`, barre « Document PDF » :
+  pages, Imprimer, Télécharger, Fermer ; volet Réglages : Format Paysage | Portrait, Page de garde ; « Choix gardés sur ce poste », par document : `localStorage`
+  `sg3_docs_heures` ; d'office paysage au-delà de 6 colonnes, portrait sinon). `octets(Dc)` : `Dc` = {cle, titre, p, meta [[libellé, valeur]], cols [{t, r}], rows
+  [{c, g}], hier, droite, sous, format} ; `g` = '' ligne, 'g' titre de groupe, '1' sous-ligne, 's' sous-total, 't' total, 'x' commentaire sous sa ligne (gris italique).
+  **Mise en page** : largeur de chaque colonne d'après son titre et son contenu (colonne de texte d'un long tableau : la largeur qui suffit à neuf lignes sur dix) ;
+  page trop étroite : les nombres gardent leur largeur, les colonnes de texte les plus longues sont ramenées à une même largeur, les titres plus larges que leur colonne
+  sont abrégés (`ABR` : « Hon. prévus », « Frais collab. »…) ; colonnes vides retirées ; une colonne de nombres suivie d'un texte en est séparée par une gouttière ;
+  documents de `ctlDocHTML` : nombres rangés à droite avec leur unité (`droite`), le libellé d'un sous-total s'étend sur les colonnes de texte ; pages : jamais de titre
+  de groupe seul en bas, ni de sous-total, de total ou de commentaire séparé de sa ligne (`paginer`).
+  **Liste des positions** (`composer`) : l'écran a jusqu'à 14 colonnes (17 pour les frais) — telle quelle, 193 pages pour les inscriptions de 99TST ; le document est
+  composé comme une position du devis : une ligne par inscription (date, horaire début–fin, personne, activité « groupe › activité », ouvrage, phase « phase › phase
+  partielle », statut, facturable, facturé, durée) et son commentaire dessous en gris italique sur toute la largeur (frais : date, collaborateur, genre de frais « groupe ›
+  genre », n° de pièce, ouvrage, phase, statut, facturable, facturé, remboursable, quantité, unité, montant, monnaie, désignation dessous) : 117 pages, 12 inscriptions
+  par page ; ligne « Total » ajoutée (durée ou montant).
+  **Hors du chapitre Heures** (`sgDocTableau(o)`, appelé par `sg3_plus.js`, repli sur `sgImprimer`) : tableau de bord du projet ▸ Heures ▸ Imprimer, Administration ▸
+  Situation des heures ▸ Imprimer, rapport des heures d'un collaborateur sur un projet — le tableau affiché (`table.nx-tbl`) est repris tel quel : titres, lignes, totaux
+  (`tr.tot` ou « Total… »), sous-lignes (`tr.sub` : la ligne parente en gras), colonnes de boutons écartées.
+  **Pas changés** : les écrans d'Archives (Suivi & écarts, Controlling, Rapports de temps, Notes de frais…) gardent leurs documents — l'enveloppe ne s'applique pas quand
+  l'écran ouvert est rangé dans Archives (`archives()`) ; DeltaSub.html seul : documents d'origine. `sg3_coco_docs.js` exporte ses outils de mise en page
+  (`SGCD.outils` : mesure, etaler, paginer). Rien n'est écrit dans la base. Débogage : `window.SGDH`.
+  Vérifié le 15.11.2026 hors de l'aperçu (99TST) : les sept documents depuis leurs boutons (2 à 117 pages, 3,3 s pour le plus long), paysage et portrait, page de garde
+  décochée et choix retrouvé à la réouverture, trois impressions des autres écrans, écran d'Archives inchangé, balayage des 120 écrans, `nas/nettoyer.py`,
+  `sonde_chrome.sh`. Pas vérifié : mode bureau (NAS), impression sur papier, visuels à l'essai (fenêtre commune, déjà vérifiée pour les autres documents). Copie d'avant :
+  `subgestion3/_backup_20261115_1749_avant_documents_heures/`, `SUBGestion3_backup_20261115_1749_avant_documents_heures.html`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

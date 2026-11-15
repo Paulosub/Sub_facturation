@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 17:37 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 18:03 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -27580,7 +27580,10 @@ function sgOnglet(p,k,pg,cible){ const box=cible||pg.querySelector('#sg-onglet')
     box.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ nxLS.set('sg3_fiche_per',b.dataset.per); nxLS.set('sg3_fiche_an',''); sgOnglet(p,'temps',pg); });
     pg._fn.csvt=()=>{ let t=box.querySelector('#sg-fiche-sit table'); if(!t) return; if(grp==='det'){ t=document.createElement('table'); t.innerHTML=ent+L.map(ligne).join(''); }
       sgCsvTable(t,'heures_'+p.NUMBER+'_'+diso(now)+'.csv'); };
-    pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(t) sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+' · '+nxE(titre)+' · '+nxE(an?'année '+an:perLib)+'</p>'+t.outerHTML); }; return; }
+    /* Imprimer : document au graphisme du devis général et du contrôle des coûts (sgDocTableau, sg3_docs_heures.js, 15.11.2026) ; à défaut l'ancienne impression */
+    pg._fn.prnt=()=>{ const t=box.querySelector('#sg-fiche-sit table'); if(!t) return; const per=an?'année '+an:perLib;
+      if(typeof sgDocTableau==='function'&&sgDocTableau({cle:'Heures du projet',titre:titre||'Heures du projet',p,table:t,meta:[['Période',per]],sous:per})) return;
+      sgImprimer('Heures — '+projLabel(p),'<p>'+dfr(diso(now))+' · '+nxE(titre)+' · '+nxE(per)+'</p>'+t.outerHTML); }; return; }
   /* Phases contrat (19.10.2026) : heures contrat / saisies / écart ; pour l'administrateur et le chef de projet, en HT (la TVA n'est pas un revenu,
      le coût de revient n'en contient pas) : contrat HT (sgContratParPhase), coût de revient, marge bénéficiaire (contrat HT − coût), taux obtenu
      (contrat HT ÷ heures saisies), coût horaire (coût ÷ heures saisies) et comparaison des deux (points reliés en vert = gain, en rouge = perte ;
@@ -28427,7 +28430,10 @@ VIEWS['nx-situation']={ render(m){ const st=nxLS.get('sg3_sit',{p:'',per:'12',g:
     m.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>sv({g:b.dataset.g}));
     const titre='Situation des heures — '+(pr?projLabel(pr):'tous les projets')+' — '+(SG_GROUPES.find(x=>x[0]===st.g)||['',''])[1].toLowerCase()+' — '+perLib;
     pg._fn.csv=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgCsvTable(t,'situation_heures_'+(pr?pr.NUMBER:'projets')+'_'+diso(now)+'.csv'); };
-    pg._fn.prn=()=>{ const t=m.querySelector('#sit-t table'); if(t) sgImprimer(titre,'<p>'+nxE((ME.u?'Établi par '+(ME.u.USERID||'')+' — ':'')+dfr(diso(now)))+'</p>'+t.outerHTML); }; } };
+    pg._fn.prn=()=>{ const t=m.querySelector('#sit-t table'); if(!t) return;
+      if(typeof sgDocTableau==='function'&&sgDocTableau({cle:'Situation des heures',titre:'Situation des heures',p:pr||null,table:t,sous:perLib,
+        meta:[['Période',perLib],['Regroupement',(SG_GROUPES.find(x=>x[0]===st.g)||['',''])[1]],['Projets',pr?'':'Tous les projets visibles'],['Établi par',ME.u?(ME.u.USERID||''):'']]})) return;
+      sgImprimer(titre,'<p>'+nxE((ME.u?'Établi par '+(ME.u.USERID||'')+' — ':'')+dfr(diso(now)))+'</p>'+t.outerHTML); }; } };
 
 /* ── Fenêtres du moteur dans le menu de gauche (23.10.2026, demandes de Paulo ; chapitre Admin depuis le 24.10.2026) : Équipe ▸ Gestion des utilisateurs (ch08bUserAdmin, droit
    « gestion des utilisateurs »), Réglages ▸ Paramètres système (ch08aSysPrefs, droit « administrateur ») et Réglages ▸ Préférences
@@ -29781,7 +29787,10 @@ function sgRapportHeuresCollab(p,sid){ const s=DS.get('staff',sid); if(!p||!s) r
     body.querySelectorAll('[data-vue]').forEach(b=>b.onclick=()=>{ vue=b.dataset.vue; nxLS.set('sg3_rap_vue',vue); dessiner(); });
     const tb=()=>body.querySelector('.sg-hscroll table'), c=body.querySelector('[data-rf="csv"]'), pr=body.querySelector('[data-rf="prn"]');
     if(c) c.onclick=()=>{ const t=tb(); if(t) sgCsvTable(t,'Heures_'+(p.NUMBER||'')+'_'+nom.replace(/\s+/g,'_')+(an?'_'+an:'')+'.csv'); };
-    if(pr) pr.onclick=()=>{ const t=tb(); if(t) sgImprimer('Heures de '+nom+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p>'+E(titre)+' · '+nxH(tot)+' h, dont '+nxH(hf)+' h facturables'+(L.length?' · du '+d1+' au '+d2:'')+'</p>'+t.outerHTML); }; };
+    if(pr) pr.onclick=()=>{ const t=tb(); if(!t) return;
+      if(typeof sgDocTableau==='function'&&sgDocTableau({cle:'Heures d’un collaborateur',titre:'Heures de '+nom,p,table:t,sous:titre,
+        meta:[['Période',L.length?'du '+d1+' au '+d2:''],['Affichage',titre],['Total heures',nxH(tot)+' h'],['Total facturables',nxH(hf)+' h']]})) return;
+      sgImprimer('Heures de '+nom+' — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<p>'+E(titre)+' · '+nxH(tot)+' h, dont '+nxH(hf)+' h facturables'+(L.length?' · du '+d1+' au '+d2:'')+'</p>'+t.outerHTML); }; };
   dessiner();
   dialog({title:'Rapport des heures',width:'min(940px,95vw)',body,buttons:[{t:'Fiche du collaborateur',fn:()=>{ nxOpenRef('s:'+s.ID); }},{t:'Fermer',pri:true}]}); }
 /* étendue d'un contrat d'honoraires (23.10.2026, demande de Paulo : « devant Contrat, indiquer enquête, exécution, faisabilité… ; pas besoin de toutes
@@ -46028,7 +46037,7 @@ function tableVue(E,k){ const T=TABLES[k], o=TABLE_O(E,k), doc=DS.get('costcontr
   SGDE.vue(D,{barre:'pdf',p,lb:'Contrôle des coûts · Documents',titre:T.titre,etat:ETATS[doc.STATECODE]||'',peut,items:()=>items(o),rendre:()=>tableOctets(E,k),
     pied:'Enregistrés dans le contrôle des coûts',groupes:GROUPES,groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
   D.maj(tableOctets(E,k)); }
-window.SGCD={lotOctets,bonsOctets,bonsPdf,bonOctets,lotDe,decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
+window.SGCD={outils:{mesure,etaler,paginer},lotOctets,bonsOctets,bonsPdf,bonOctets,lotDe,decOctets,bonDonnees,arrDonnees,ordDonnees,decNom,tableVue,tableOctets,comptesVue,comptesOctets,ovOctets,kvOctets,listeOctets,items,optsDe,optsSet,presDe,genre,garde,titreDe,filtreDe,entDe,PP,PA,CARTES,sautsDe};
 })();
 
 /* ═══ Archives ▸ Maquettes ▸ Bon de paiement et arrêté de compte · Deux colonnes (14.11.2026, Paulo : « j'aime bien la version 4 que je souhaite garder dans
@@ -46889,6 +46898,154 @@ VIEWS[VE]=vue('entree'); Object.keys(VM).forEach(k=>{ VIEWS[VM[k]]=vue(k); });
 /* les quatre anciennes entrées d'Administration (session, historique, liens) mènent aux modules */
 { const g0=go; go=function(v,arg){ if(REDIR[v]){ v=REDIR[v]; arg=undefined; } return g0.call(this,v,arg); }; }
 window.SGAH={ST,CUR,CTX,VE,VM,REDIR,IDS,etat,approuverLot,filtrer,grouper,statsAff,periode,perim,peutVoir,ecrit,bloquee,grille,choisir,redess,colL};
+})();
+
+/* ═══ 56. Documents des heures et des frais au graphisme des documents du devis général et du contrôle des coûts (15.11.2026) ═══
+   Demande de Paulo du 15.11.2026 : « pour tous les documents des heures, etc. recréer le design des documents de contrôle du coût et devis général, même graphisme pour
+   tous les documents de l'app du chapitre heures ».
+   Tous les documents du chapitre Heures (Contrôle des heures d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais) passent par
+   deux fonctions du moteur : ctlPrint (« Rapport d'heures », « Rapport de frais » : la liste des positions) et ctlDocHTML (« Journal des heures », « Rapport des
+   frais », « Récapitulatif des heures / des frais », « Rapport heures - facturation - coût de revient »). Elles sont enveloppées ici : mêmes données, mêmes colonnes,
+   mêmes totaux, mais le document est dessiné comme les listes du contrôle des coûts — page de garde éditoriale (numéro du projet, titre du document, ouvrage, maître de
+   l'ouvrage, période et filtre, totaux), tableau « Bleu nuit » (titres des colonnes en blanc sur bande bleu nuit, groupes en bleu nuit soulignés, sous-totaux en gras,
+   total sur bande bleu nuit, filets gris, texte jamais coupé : il passe à la ligne), papier des contrats — et s'ouvre dans la fenêtre des documents de l'app (barre
+   « Document PDF » : pages, Imprimer, Télécharger, Fermer ; volet Réglages : Format Paysage | Portrait, Page de garde ; choix gardés sur ce poste, par document :
+   localStorage sg3_docs_heures). Montants en noir, comme dans le devis. Rien n'est écrit dans la base.
+   Aussi, hors du chapitre Heures (sgDocTableau, appelé par sg3_plus.js) : tableau de bord du projet ▸ Heures ▸ Imprimer, Administration ▸ Situation des heures ▸
+   Imprimer, rapport des heures d'un collaborateur sur un projet — le tableau affiché est repris tel quel (titres, lignes, totaux, sous-lignes).
+   Pas ici : les écrans d'Archives (Suivi & écarts, Controlling, Rapports de temps…) gardent leurs documents — l'enveloppe ne s'applique pas quand l'écran ouvert est
+   rangé dans Archives. DeltaSub.html seul : documents d'origine. Outils de mise en page repris de sg3_coco_docs.js (SGCD.outils : mesure, etaler).
+   Débogage : window.SGDH. ═══ */
+(function(){
+if(typeof ctlDocHTML!=='function'||typeof ctlPrint!=='function'||typeof dialog!=='function'||!window.SGDE||!SGDE.vue||!SGDE.livret||!window.SGDS||!SGDS.ressources||!window.SGCD||!SGCD.outils) return;
+const {DG_RH,DG_HP,DG_HT,DG_TXT,deGardeRub}=SGDE.livret, {mesure,etaler}=SGCD.outils;
+const MARGE=28.35, WL=SGDE.livret.DG_WL+(SGDE.livret.DG_X0T-MARGE), WP=SGDE.livret.DG_WP+(SGDE.livret.DG_X0T-MARGE);   /* tableau de la marge de la page à la barre du numéro de page, comme le contrôle des coûts */
+const sv=x=>String(x==null?'':x), un=t=>sv(t).replace(/\s+/g,' ').trim();
+/* ── réglages gardés sur ce poste, par document (clé = nom du document) ── */
+const LS='sg3_docs_heures';
+const regs=()=>{ try{ const r=JSON.parse(localStorage.getItem(LS)||'{}'); return r&&typeof r==='object'?r:{}; }catch(_){ return {}; } };
+const regDe=cle=>Object.assign({},regs()[cle]||{});
+const regSet=(cle,patch)=>{ const R=regs(); R[cle]=Object.assign({},R[cle]||{},patch); try{ localStorage.setItem(LS,JSON.stringify(R)); }catch(_){ } };
+const formatDe=Dc=>{ const f=regDe(Dc.cle).format; return f==='portrait'||f==='paysage'?f:(Dc.format||(Dc.cols.length>6?'paysage':'portrait')); };
+/* titres abrégés quand le tableau est trop large pour la page (titres du moteur) */
+const ABR={'Heures prévues':'H. prévues','Honoraires prévus':'Hon. prévus','Honoraires prévus-Honoraires':'Hon. prévus − hon.','Taux horaire du collaborateur':'Taux collab.','Frais des collaborateurs':'Frais collab.',
+  'Honoraires-Coûts des collaborateurs':'Hon. − coûts collab.','Budget-Durée':'Budget − durée','Phase partielle':'Phase part.','Groupe d’activités':'Groupe','Facturable':'Fact.','Remboursable':'Remb.','Collaborateur':'Collab.','Quantité':'Qté'};
+/* ── pages : jamais de titre de groupe seul en bas de page, ni de sous-total ou de total seul en haut ; pas de coupure dans un texte passé à la ligne ── */
+const paginer=(rows,cols,cap,titre)=>{ const P=[]; let i=0;
+  while(i<rows.length){ let k=Math.min(rows.length,i+cap);
+    if(k<rows.length){ const mauvaise=j=>!!rows[j].k||rows[j].g==='x'||rows[j-1].g==='g'||rows[j].g==='s'||rows[j].g==='t'; let j=k; while(j>i+1&&j>k-12&&mauvaise(j)) j--; if(j>i&&!mauvaise(j)) k=j; }
+    const rr=rows.slice(i,k); while(rr.length<cap) rr.push({c:[],s:'E'}); P.push({type:2,titre,digit:2,lpp:cap,cols,rows:rr}); i=k; }
+  return P; };
+/* ── page de garde : ouvrage et maître de l'ouvrage du projet, puis ce que dit le document (période, filtre, regroupement, totaux) ── */
+const rubriques=Dc=>{ const p=Dc.p, R=[]; if(p){ try{ (deGardeRub(p,{filter:null})||[]).filter(x=>/ouvrage/i.test(sv(x.lib))).forEach(x=>R.push(x)); }catch(e){ console.error(e); } }
+  const M=(Dc.meta||[]).filter(m=>m&&un(m[1])&&!/^(affaire|projet)$/i.test(un(m[0]))), per=M.find(m=>/^(filtre par date|p[ée]riode)$/i.test(un(m[0]))), fil=M.find(m=>/^filtre$/i.test(un(m[0])));
+  if(per||fil) R.push({lib:'Période',nom:per?un(per[1]):'Toutes les dates',adr:fil?'Filtre : '+un(fil[1]):''});
+  const tot=M.filter(m=>/^total/i.test(un(m[0]))), aut=M.filter(m=>m!==per&&m!==fil&&!tot.includes(m)&&!/^monnaie$/i.test(un(m[0])));
+  aut.forEach(m=>R.push({lib:un(m[0]),nom:un(m[1]),adr:''}));
+  if(tot.length){ const tx=m=>{ const l=un(m[0]).replace(/^total\s*/i,''); return (l?l.charAt(0).toLocaleUpperCase('fr')+l.slice(1)+' ':'')+un(m[1]); }; R.push({lib:tot.length>1?'Totaux':'Total',nom:tx(tot[0]),adr:tot.slice(1).map(tx).join('\n')}); }
+  return R; };
+/* ── le PDF ── */
+async function octets(Dc){ const M=await mesure(), {w,R,fn}=await SGDS.ressources(), rg=regDe(Dc.cle), ori=formatDe(Dc), W=ori==='portrait'?WP:WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), p=Dc.p||{};
+  const ST={g:'O',s:'W',t:'T','1':'S',x:'X','':Dc.hier?'W':'S'}, nC=Dc.cols.length;   /* x : commentaire ou désignation sous sa ligne, en gris italique (comme le descriptif d'une position du devis) */
+  let rows=(Dc.rows||[]).map(r=>{ const c=Dc.cols.map((_,j)=>sv((r.c||[])[j])), seul=un(c[0])!==''&&c.slice(1).every(x=>!un(x)); return Object.assign({c,s:ST[r.g||'']||'S',g:r.g||''},seul||r.debR?{debR:1}:{}); });
+  if(!rows.length) rows=[{c:Dc.cols.map((_,j)=>j===0?'Aucune ligne.':''),s:'S',g:'',debR:1}];
+  /* largeurs : chaque colonne à la mesure de son titre et de son contenu — pour une colonne de texte d'un long tableau, la largeur qui suffit à neuf lignes sur dix (les
+     rares textes plus longs passent à la ligne). Trop large pour la page : les colonnes de nombres gardent leur largeur et les colonnes de texte les plus longues sont
+     ramenées à une même largeur (commentaire, désignation : leur texte passe à la ligne), les colonnes courtes ne changent pas ; encore trop large : tout est réduit.
+     De la place en trop : à la colonne de texte la plus longue. Une colonne de nombres suivie d'une colonne de texte en est séparée par une gouttière de 8 pt (colonne
+     vide), sinon le montant touche le texte. Une cellule de texte suivie d'une colonne de texte vide déborde dessus (titre d'un groupe, libellé d'un sous-total) : elle
+     ne compte pas dans la largeur de sa colonne. */
+  const gras=r=>r.s!=='S', deb=(r,j)=>j<nC-1&&!Dc.cols[j].r&&!un(r.c[j+1])&&(!Dc.cols[j+1].r||r.debR);
+  const contenu=Dc.cols.map((c,j)=>{ const L=rows.filter(r=>!deb(r,j)&&un(r.c[j])!=='').map(r=>Math.max(0,...sv(r.c[j]).split('\n').map(l=>M.larg(l,gras(r))))).sort((a,b)=>a-b);
+    return !L.length?0:(c.r||L.length<12)?L[L.length-1]:L[Math.floor(0.9*(L.length-1))]; });
+  const GOUT=8, sp=Dc.cols.map((c,j)=>!!(c.r&&Dc.cols[j+1]&&!Dc.cols[j+1].r)), Wd=W-sp.filter(Boolean).length*GOUT, PL=64, txt=Dc.cols.map((c,j)=>j).filter(j=>!Dc.cols[j].r);
+  /* titres : en entier quand le tableau tient dans la page ; sinon un titre plus large que le contenu de sa colonne est abrégé (ABR), comme dans le contrôle des coûts */
+  let TT=Dc.cols.map(c=>sv(c.t)); const natDe=()=>Dc.cols.map((c,j)=>Math.max(M.larg(TT[j],true),contenu[j])+9); let nat=natDe();
+  if(nat.reduce((a,b)=>a+b,0)>Wd){ TT=TT.map((t,j)=>ABR[un(t)]&&M.larg(t,true)>contenu[j]?ABR[un(t)]:t); nat=natDe(); }
+  let wd=nat.slice(); const som=()=>wd.reduce((a,b)=>a+b,0);
+  if(som()>Wd){ let reste=Wd-Dc.cols.reduce((a,c,j)=>a+(c.r?nat[j]:0),0), n=txt.length; const T=txt.slice().sort((a,b)=>nat[a]-nat[b]);   /* des plus courtes aux plus longues */
+    for(const j of T){ const part=reste/n; if(nat[j]<=part){ wd[j]=nat[j]; reste-=nat[j]; n--; } else { T.slice(T.indexOf(j)).forEach(k=>{ wd[k]=Math.max(part,Math.min(nat[k],PL)); }); break; } }
+    if(som()>Wd+0.5){ const f=Wd/som(); wd=wd.map(x=>x*f); } }
+  else { const jl=txt.length?txt.reduce((a,j)=>nat[j]>nat[a]?j:a,txt[0]):0; wd[jl]+=Wd-som(); }
+  const cols=[]; Dc.cols.forEach((c,j)=>{ cols.push({t:TT[j],w:Math.round(wd[j]*100)/100,r:!!c.r}); if(sp[j]) cols.push({t:'',w:GOUT,r:false}); });
+  if(sp.some(Boolean)) rows.forEach(r=>{ const c=[]; r.c.forEach((x,j)=>{ c.push(x); if(sp[j]) c.push(''); }); r.c=c; });
+  const pages=paginer(etaler(rows,cols,M),cols,cap,Dc.titre);
+  const couverture=rg.garde===false?null:{edito:true,statut:'',num:un(p.NUMBER),titre:sv(Dc.titre).toLocaleUpperCase('fr'),sous:'',info:'',marge:'',filtre:'',rub:rubriques(Dc),sig:[]};
+  if(couverture) pages.unshift({type:0,titre:Dc.titre,rows:[]}); else if(pages[0]) pages[0].type=1;
+  const sT={b:true,z:DG_TXT}, sL={b:false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:sL,D:sL,X:sL,E:sL}, qui=[p.NUMBER,p.TITLE].filter(Boolean).join(' - ');
+  const opt=w.JSON.parse(JSON.stringify({titre:Dc.titre,sousTitre:[qui,Dc.sous].filter(Boolean).join(' · '),date:today(),type:Dc.type||'Heures',description:[Dc.titre,p.NUMBER,p.TITLE].filter(Boolean).join(' '),
+    livretDG:{couverture:couverture||{},pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,orientation:ori,x0:MARGE,x0Tab:MARGE,aligne:true,corpsTitres:DG_TXT,calRetrait:7}})), j=new w.Array(); opt.journal=j;
+  const oct=await fn(R,null,opt); if(j.length) console.info(Dc.titre+' :',Array.from(j)); return oct; }
+/* ── la fenêtre du document : barre « Document PDF », lecteur, volet Réglages ── */
+const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc);
+  return [{t:'Format : Paysage',chk:f==='paysage',grp:'Format',fn:()=>regSet(Dc.cle,{format:'paysage'})},{t:'Format : Portrait',chk:f==='portrait',grp:'Format',fn:()=>regSet(Dc.cle,{format:'portrait'})},
+    {t:'Page de garde',chk:rg.garde!==false,grp:'Affichage',fn:()=>regSet(Dc.cle,{garde:rg.garde===false})}]; };
+function ouvrir(Dc){ Dc=Object.assign({},Dc); Dc.titre=un(Dc.titre)||'Document'; Dc.cle=Dc.cle||Dc.titre; Dc.cols=(Dc.cols||[]).filter(Boolean); if(!Dc.cols.length) return false;
+  /* Dc.droite : colonnes de nombres rangées à droite, dans leur ordre, chacune avec son unité (« Unité », « Monnaie ») — comme les montants du devis général et du
+     contrôle des coûts ; le libellé d'un sous-total ou d'un total s'étend alors sur les colonnes de texte, à gauche des nombres */
+  if(Dc.droite&&Dc.cols.length>2){ const N=Dc.cols.map((c,j)=>!!c.r||(j>0&&!!Dc.cols[j-1].r&&/^(unit[ée]|monnaie)$/i.test(un(c.t)))), ord=[...Dc.cols.map((c,j)=>j).filter(j=>!N[j]),...Dc.cols.map((c,j)=>j).filter(j=>N[j])];
+    if(ord.some((j,i)=>j!==i)&&!N[0]){ Dc.cols=ord.map(j=>Dc.cols[j]); Dc.rows=(Dc.rows||[]).map(r=>Object.assign({},r,{c:ord.map(j=>(r.c||[])[j])})); } }
+  /* colonnes vides sur toutes les lignes (ouvrage, phase partielle… d'un projet qui n'en a pas) : retirées, la place va aux autres */
+  if((Dc.rows||[]).length){ const g=Dc.cols.map((c,j)=>j===0||Dc.rows.some(r=>un((r.c||[])[j])!=='')); if(g.some(x=>!x)){ Dc.cols=Dc.cols.filter((c,j)=>g[j]); Dc.rows=Dc.rows.map(r=>Object.assign({},r,{c:(r.c||[]).filter((x,j)=>g[j])})); } }
+  const dg=dialog({title:Dc.titre,body:h('div'),buttons:[]}), ifr={};
+  const D={bd:dg.bd,iframe:ifr,close:dg.close,maj:r=>{ try{ if(ifr._sgVuePrep) ifr._sgVuePrep(); }catch(_){ }
+    return Promise.resolve(r).then(oct=>{ if(ifr._sgVue) ifr._sgVue(new Blob([oct],{type:'application/pdf'})); },e=>{ console.error(e); if(ifr._sgVueErr) ifr._sgVueErr(e); }); }};
+  SGDE.vue(D,{barre:'pdf',p:Dc.p||{},lb:Dc.lb||'Heures · Documents',titre:Dc.titre,etat:'',peut:()=>true,items:()=>reglages(Dc),rendre:()=>octets(Dc),pied:'Choix gardés sur ce poste',
+    groupes:['Format','Affichage','Autres'],groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
+  D.maj(octets(Dc)); return true; }
+/* ── l'écran ouvert est-il rangé dans Archives ? (ses documents ne changent pas) ── */
+const archives=()=>{ try{ const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=typeof NX_VIEW!=='undefined'?NX_VIEW[v]:null; return !!(x&&x.d&&x.d.k==='archives'); }catch(_){ return false; } };
+const cellule=(c,r)=>{ const d=document.createElement('div'); d.innerHTML=c.f?c.f(r):esc(r[c.k]); return un(d.textContent); };
+const NUMT=/^(dur[ée]e|heures?|h\.|montant|quantit[ée]|prix|tarif|honoraires|co[uû]ts?|total|frais des|taux)/i;
+const dates=L=>{ let a=null, b=null; L.forEach(d=>{ if(!d||isNaN(+d)) return; if(!a||d<a) a=d; if(!b||d>b) b=d; }); return a?(+a===+b?dfr(diso(a)):'du '+dfr(diso(a))+' au '+dfr(diso(b))):''; };
+/* ── ctlPrint : « Rapport d'heures », « Rapport de frais » (liste des positions affichées ou choisies). La liste de l'écran a jusqu'à 14 colonnes (17 pour les frais) :
+   telle quelle, le commentaire n'aurait que 64 pt et chaque position prendrait cinq lignes (193 pages pour les inscriptions de 99TST). Le document est composé comme
+   une position du devis : une ligne par inscription — date, horaire (début–fin), personne, activité (groupe › activité), ouvrage, phase (phase › phase partielle),
+   statut, facturable, facturé, durée — et son commentaire dessous, en gris italique, sur toute la largeur ; frais : date, collaborateur, genre de frais (groupe ›
+   genre), n° de pièce, ouvrage, phase, statut, facturable, facturé, remboursable, quantité, unité, montant, monnaie, et la désignation dessous. Mêmes informations
+   que la liste ; les colonnes vides sont retirées. Liste d'une autre forme (clés inconnues) : colonnes reprises telles quelles. ── */
+const joint=(a,b)=>a&&b&&a!==b?a+' › '+b:(b||a||'');
+const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=(k,r)=>a(k)?cellule(K.get(k),r):'';
+  if(!a('d')||!a(tl?'TIMEPERIOD':'a')) return null;
+  const D=tl?[['Date',r=>v('d',r),a('d')],['Horaire',r=>{ const x=v('h1',r), y=v('h2',r); return x&&y?x+'–'+y:(x||y); },a('h1')||a('h2')],['Personne',r=>v('s',r),a('s')],['Activité',r=>joint(v('ag',r),v('a',r)),a('ag')||a('a')],
+      ['Ouvrage',r=>v('o',r),a('o')],['Phase',r=>joint(v('ph',r),v('sp',r)),a('ph')||a('sp')],['Statut',r=>v('st',r),a('st')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Durée',r=>v('TIMEPERIOD',r),true,1]]
+    :[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('pe',r),a('pe')],['Genre de frais',r=>joint(v('g',r),v('c',r)),a('g')||a('c')],['N° pièce',r=>v('DOCUMENTNUMBER',r),a('DOCUMENTNUMBER')],['Ouvrage',r=>v('o',r),a('o')],
+      ['Phase',r=>joint(v('ph',r),v('sp',r)),a('ph')||a('sp')],['Statut',r=>v('s',r),a('s')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Remboursable',r=>v('rb',r),a('rb')],
+      ['Quantité',r=>v('QUANTITY',r),a('QUANTITY'),1],['Unité',r=>v('UNIT',r),a('UNIT')],['Montant',r=>v('a',r),true,1],['Monnaie',r=>v('m',r),a('m')]];
+  const U=D.filter(x=>x[2]), cols=U.map(x=>({t:x[0],r:!!x[3]})), rows=[], jT=U.findIndex(x=>x[0]===(tl?'Durée':'Montant'));
+  V.forEach(r=>{ rows.push({c:U.map(x=>x[1](r)),g:''}); const d=a('DESCRIPTION')?cellule(K.get('DESCRIPTION'),r):''; if(d&&cols.length>1){ const c=U.map(()=>''); c[1]=d; rows.push({c,g:'x',debR:1}); } });
+  return {cols,rows,jT}; };
+{ const p0=ctlPrint;
+  ctlPrint=function(p,t,o){ if(archives()||!o||!Array.isArray(o.cols)||!Array.isArray(o.view)) return p0.apply(this,arguments);
+    try{ const tl=t==='timelog', C=o.cols.filter(c=>c&&c.k!=='ty'), V=o.view, tot=V.reduce((a,r)=>a+(tl?+r.TIMEPERIOD||0:pcAmount(r)),0), val=tl?hrs(tot):num(tot);
+      let X=composer(tl,C,V);
+      if(!X){ const cols=C.map(c=>({t:sv(c.t),r:/(^|\s)r(\s|$)/.test(sv(c.cls))||NUMT.test(sv(c.t))})), jT=C.findIndex(c=>tl?c.k==='TIMEPERIOD'||/^dur[ée]e$/i.test(sv(c.t)):/^montant/i.test(sv(c.t))); X={cols,rows:V.map(r=>({c:C.map(c=>cellule(c,r)),g:''})),jT}; }
+      if(V.length&&X.jT>0){ const c=X.cols.map(()=>''); c[0]='Total'; c[X.jT]=val; X.rows.push({c,g:'t'}); }
+      const per=dates(V.map(r=>{ try{ return tl?tlDate(r):pcDate(r); }catch(_){ return null; } }));
+      const meta=[['Période',per],['Positions',V.length?String(V.length):''],[tl?'Total heures':'Total',V.length?val+(tl?' h':' CHF'):'']];
+      if(ouvrir({cle:tl?'Rapport d’heures':'Rapport de frais',titre:tl?'Rapport d’heures':'Rapport de frais',p,meta,cols:X.cols,rows:X.rows,sous:per,format:'paysage'})) return; }catch(e){ console.error(e); }
+    return p0.apply(this,arguments); }; }
+/* ── ctlDocHTML : journal des heures, rapport des frais, récapitulatifs, rapport heures - facturation - coût de revient ── */
+{ const d0=ctlDocHTML;
+  ctlDocHTML=function(title,p,meta,cols,rows){ if(archives()||!Array.isArray(cols)||!Array.isArray(rows)) return d0.apply(this,arguments);
+    try{ const hier=rows.some(r=>r&&r.k==='1')&&!rows.some(r=>r&&r.k==='g'), per=(meta||[]).find(m=>m&&/^filtre par date$/i.test(un(m[0])));
+      if(ouvrir({cle:un(title),titre:un(title),p,meta:meta||[],cols:cols.map(c=>({t:sv(c.t),r:!!c.r})),rows:rows.map(r=>({c:(r.c||[]).map(v=>sv(v)),g:r.k||''})),hier,droite:true,sous:per?un(per[1]):''})) return; }catch(e){ console.error(e); }
+    return d0.apply(this,arguments); }; }
+/* ── sgDocTableau : un tableau affiché (table.nx-tbl) repris tel quel dans un document — titres, lignes, totaux (tr.tot ou « Total… »), sous-lignes (tr.sub) ── */
+function sgDocTableau(o){ try{ const tb=o&&o.table; if(!tb||!tb.querySelector) return false;
+    const TH=[...tb.querySelectorAll('thead tr')].pop()||[...tb.querySelectorAll('tr')].find(tr=>tr.querySelector('th')), H=TH?[...TH.children]:[]; if(!H.length||H.some(x=>x.colSpan>1)) return false;
+    const txt=td=>{ if(!td) return ''; const k=td.cloneNode(true); k.querySelectorAll('.nx-mini-bar,svg,button,.sg-noimp').forEach(x=>x.remove()); return un(k.textContent); };
+    const TR=[...tb.querySelectorAll('tr')].filter(tr=>tr!==TH&&!tr.closest('thead')&&tr.children.length>=H.length-1&&getComputedStyle(tr).display!=='none');
+    /* colonnes sans titre et sans texte (boutons, barres) : écartées */
+    const garde=H.map((x,j)=>j).filter(j=>!H[j].classList.contains('sg-noimp')&&!(un(H[j].textContent)===''&&!TR.some(tr=>txt(tr.children[j]))));
+    const droite=j=>{ const a=getComputedStyle(H[j]).textAlign; if(a==='right'||a==='end') return true; const c=TR.map(tr=>tr.children[j]).filter(Boolean)[0]; if(!c) return false; const b2=getComputedStyle(c).textAlign; return b2==='right'||b2==='end'; };
+    const cols=garde.map(j=>({t:un(H[j].textContent),r:droite(j)}));
+    const rows=TR.map(tr=>{ const c=garde.map(j=>txt(tr.children[j])), tot=tr.classList.contains('tot')||/^total\b/i.test(c[0]||''); return {c,g:tot?'t':tr.classList.contains('sub')?'1':''}; });
+    const hier=rows.some(r=>r.g==='1');
+    return ouvrir({cle:o.cle||un(o.titre),titre:o.titre,p:o.p||null,meta:o.meta||[],cols,rows,hier,sous:o.sous||'',lb:o.lb||'Heures · Documents',format:o.format});
+  }catch(e){ console.error(e); return false; } }
+window.sgDocTableau=sgDocTableau;
+window.SGDH={octets,ouvrir,reglages,rubriques,regDe,regSet,sgDocTableau};
 })();
 </script>
 </body>

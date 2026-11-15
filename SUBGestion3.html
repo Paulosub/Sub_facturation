@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 18:03 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 18:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -46938,7 +46938,7 @@ const paginer=(rows,cols,cap,titre)=>{ const P=[]; let i=0;
   return P; };
 /* ── page de garde : ouvrage et maître de l'ouvrage du projet, puis ce que dit le document (période, filtre, regroupement, totaux) ── */
 const rubriques=Dc=>{ const p=Dc.p, R=[]; if(p){ try{ (deGardeRub(p,{filter:null})||[]).filter(x=>/ouvrage/i.test(sv(x.lib))).forEach(x=>R.push(x)); }catch(e){ console.error(e); } }
-  const M=(Dc.meta||[]).filter(m=>m&&un(m[1])&&!/^(affaire|projet)$/i.test(un(m[0]))), per=M.find(m=>/^(filtre par date|p[ée]riode)$/i.test(un(m[0]))), fil=M.find(m=>/^filtre$/i.test(un(m[0])));
+  const M=(Dc.meta||[]).filter(m=>m&&un(m[1])&&!(p&&/^(affaire|projet)$/i.test(un(m[0])))), per=M.find(m=>/^(filtre par date|p[ée]riode)$/i.test(un(m[0]))), fil=M.find(m=>/^filtre$/i.test(un(m[0])));
   if(per||fil) R.push({lib:'Période',nom:per?un(per[1]):'Toutes les dates',adr:fil?'Filtre : '+un(fil[1]):''});
   const tot=M.filter(m=>/^total/i.test(un(m[0]))), aut=M.filter(m=>m!==per&&m!==fil&&!tot.includes(m)&&!/^monnaie$/i.test(un(m[0])));
   aut.forEach(m=>R.push({lib:un(m[0]),nom:un(m[1]),adr:''}));
@@ -46946,30 +46946,33 @@ const rubriques=Dc=>{ const p=Dc.p, R=[]; if(p){ try{ (deGardeRub(p,{filter:null
   return R; };
 /* ── le PDF ── */
 async function octets(Dc){ const M=await mesure(), {w,R,fn}=await SGDS.ressources(), rg=regDe(Dc.cle), ori=formatDe(Dc), W=ori==='portrait'?WP:WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), p=Dc.p||{};
-  const ST={g:'O',s:'W',t:'T','1':'S',x:'X','':Dc.hier?'W':'S'}, nC=Dc.cols.length;   /* x : commentaire ou désignation sous sa ligne, en gris italique (comme le descriptif d'une position du devis) */
-  let rows=(Dc.rows||[]).map(r=>{ const c=Dc.cols.map((_,j)=>sv((r.c||[])[j])), seul=un(c[0])!==''&&c.slice(1).every(x=>!un(x)); return Object.assign({c,s:ST[r.g||'']||'S',g:r.g||''},seul||r.debR?{debR:1}:{}); });
-  if(!rows.length) rows=[{c:Dc.cols.map((_,j)=>j===0?'Aucune ligne.':''),s:'S',g:'',debR:1}];
+  /* un tableau → ses pages ; un document peut en avoir plusieurs (Dc.suite), chacun commence sur une nouvelle page avec ses propres colonnes */
+  const pagesDe=Tb=>{
+  const ST={g:'O',s:'W',t:'T','1':'S',x:'X',b:'W','':Tb.hier?'W':'S'}, nC=Tb.cols.length;   /* x : commentaire ou désignation sous sa ligne, en gris italique (comme le descriptif d'une position du devis) ; b : ligne en gras */
+  let rows=(Tb.rows||[]).map(r=>{ const c=Tb.cols.map((_,j)=>sv((r.c||[])[j])), seul=un(c[0])!==''&&c.slice(1).every(x=>!un(x)); return Object.assign({c,s:ST[r.g||'']||'S',g:r.g||''},seul||r.debR?{debR:1}:{},Array.isArray(r.cc)&&r.cc.some(Boolean)?{cc:Tb.cols.map((_,j)=>r.cc[j]||'')}:{}); });
+  if(!rows.length) rows=[{c:Tb.cols.map((_,j)=>j===0?'Aucune ligne.':''),s:'S',g:'',debR:1}];
   /* largeurs : chaque colonne à la mesure de son titre et de son contenu — pour une colonne de texte d'un long tableau, la largeur qui suffit à neuf lignes sur dix (les
      rares textes plus longs passent à la ligne). Trop large pour la page : les colonnes de nombres gardent leur largeur et les colonnes de texte les plus longues sont
      ramenées à une même largeur (commentaire, désignation : leur texte passe à la ligne), les colonnes courtes ne changent pas ; encore trop large : tout est réduit.
      De la place en trop : à la colonne de texte la plus longue. Une colonne de nombres suivie d'une colonne de texte en est séparée par une gouttière de 8 pt (colonne
      vide), sinon le montant touche le texte. Une cellule de texte suivie d'une colonne de texte vide déborde dessus (titre d'un groupe, libellé d'un sous-total) : elle
      ne compte pas dans la largeur de sa colonne. */
-  const gras=r=>r.s!=='S', deb=(r,j)=>j<nC-1&&!Dc.cols[j].r&&!un(r.c[j+1])&&(!Dc.cols[j+1].r||r.debR);
-  const contenu=Dc.cols.map((c,j)=>{ const L=rows.filter(r=>!deb(r,j)&&un(r.c[j])!=='').map(r=>Math.max(0,...sv(r.c[j]).split('\n').map(l=>M.larg(l,gras(r))))).sort((a,b)=>a-b);
+  const gras=r=>r.s!=='S', deb=(r,j)=>j<nC-1&&!Tb.cols[j].r&&!un(r.c[j+1])&&(!Tb.cols[j+1].r||r.debR);
+  const contenu=Tb.cols.map((c,j)=>{ const L=rows.filter(r=>!deb(r,j)&&un(r.c[j])!=='').map(r=>Math.max(0,...sv(r.c[j]).split('\n').map(l=>M.larg(l,gras(r))))).sort((a,b)=>a-b);
     return !L.length?0:(c.r||L.length<12)?L[L.length-1]:L[Math.floor(0.9*(L.length-1))]; });
-  const GOUT=8, sp=Dc.cols.map((c,j)=>!!(c.r&&Dc.cols[j+1]&&!Dc.cols[j+1].r)), Wd=W-sp.filter(Boolean).length*GOUT, PL=64, txt=Dc.cols.map((c,j)=>j).filter(j=>!Dc.cols[j].r);
+  const GOUT=8, sp=Tb.cols.map((c,j)=>!!(c.r&&Tb.cols[j+1]&&!Tb.cols[j+1].r)), Wd=W-sp.filter(Boolean).length*GOUT, PL=64, txt=Tb.cols.map((c,j)=>j).filter(j=>!Tb.cols[j].r);
   /* titres : en entier quand le tableau tient dans la page ; sinon un titre plus large que le contenu de sa colonne est abrégé (ABR), comme dans le contrôle des coûts */
-  let TT=Dc.cols.map(c=>sv(c.t)); const natDe=()=>Dc.cols.map((c,j)=>Math.max(M.larg(TT[j],true),contenu[j])+9); let nat=natDe();
-  if(nat.reduce((a,b)=>a+b,0)>Wd){ TT=TT.map((t,j)=>ABR[un(t)]&&M.larg(t,true)>contenu[j]?ABR[un(t)]:t); nat=natDe(); }
+  let TT=Tb.cols.map(c=>sv(c.t)), padN=9; const natDe=()=>Tb.cols.map((c,j)=>Math.max(M.larg(TT[j],true),contenu[j])+(c.r?padN:9)); let nat=natDe();
+  if(nat.reduce((a,b)=>a+b,0)>Wd){ TT=TT.map((t,j)=>ABR[un(t)]&&M.larg(t,true)>contenu[j]?ABR[un(t)]:t); padN=5; nat=natDe(); }   /* trop large : titres abrégés, colonnes de nombres resserrées (tableaux à 18 colonnes du Suivi RH) */
   let wd=nat.slice(); const som=()=>wd.reduce((a,b)=>a+b,0);
-  if(som()>Wd){ let reste=Wd-Dc.cols.reduce((a,c,j)=>a+(c.r?nat[j]:0),0), n=txt.length; const T=txt.slice().sort((a,b)=>nat[a]-nat[b]);   /* des plus courtes aux plus longues */
+  if(som()>Wd){ let reste=Wd-Tb.cols.reduce((a,c,j)=>a+(c.r?nat[j]:0),0), n=txt.length; const T=txt.slice().sort((a,b)=>nat[a]-nat[b]);   /* des plus courtes aux plus longues */
     for(const j of T){ const part=reste/n; if(nat[j]<=part){ wd[j]=nat[j]; reste-=nat[j]; n--; } else { T.slice(T.indexOf(j)).forEach(k=>{ wd[k]=Math.max(part,Math.min(nat[k],PL)); }); break; } }
     if(som()>Wd+0.5){ const f=Wd/som(); wd=wd.map(x=>x*f); } }
   else { const jl=txt.length?txt.reduce((a,j)=>nat[j]>nat[a]?j:a,txt[0]):0; wd[jl]+=Wd-som(); }
-  const cols=[]; Dc.cols.forEach((c,j)=>{ cols.push({t:TT[j],w:Math.round(wd[j]*100)/100,r:!!c.r}); if(sp[j]) cols.push({t:'',w:GOUT,r:false}); });
-  if(sp.some(Boolean)) rows.forEach(r=>{ const c=[]; r.c.forEach((x,j)=>{ c.push(x); if(sp[j]) c.push(''); }); r.c=c; });
-  const pages=paginer(etaler(rows,cols,M),cols,cap,Dc.titre);
+  const cols=[]; Tb.cols.forEach((c,j)=>{ cols.push({t:TT[j],w:Math.round(wd[j]*100)/100,r:!!c.r}); if(sp[j]) cols.push({t:'',w:GOUT,r:false}); });
+  if(sp.some(Boolean)) rows.forEach(r=>{ const c=[], k=[]; r.c.forEach((x,j)=>{ c.push(x); if(r.cc) k.push(r.cc[j]||''); if(sp[j]){ c.push(''); if(r.cc) k.push(''); } }); r.c=c; if(r.cc) r.cc=k; });
+  return paginer(etaler(rows,cols,M),cols,cap,Dc.titre); };
+  const pages=[Dc,...(Dc.suite||[])].flatMap(pagesDe);
   const couverture=rg.garde===false?null:{edito:true,statut:'',num:un(p.NUMBER),titre:sv(Dc.titre).toLocaleUpperCase('fr'),sous:'',info:'',marge:'',filtre:'',rub:rubriques(Dc),sig:[]};
   if(couverture) pages.unshift({type:0,titre:Dc.titre,rows:[]}); else if(pages[0]) pages[0].type=1;
   const sT={b:true,z:DG_TXT}, sL={b:false,z:DG_TXT}, st={T:sT,O:sT,W:sT,F:sT,S:sL,D:sL,X:sL,E:sL}, qui=[p.NUMBER,p.TITLE].filter(Boolean).join(' - ');
@@ -46980,13 +46983,17 @@ async function octets(Dc){ const M=await mesure(), {w,R,fn}=await SGDS.ressource
 const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc);
   return [{t:'Format : Paysage',chk:f==='paysage',grp:'Format',fn:()=>regSet(Dc.cle,{format:'paysage'})},{t:'Format : Portrait',chk:f==='portrait',grp:'Format',fn:()=>regSet(Dc.cle,{format:'portrait'})},
     {t:'Page de garde',chk:rg.garde!==false,grp:'Affichage',fn:()=>regSet(Dc.cle,{garde:rg.garde===false})}]; };
-function ouvrir(Dc){ Dc=Object.assign({},Dc); Dc.titre=un(Dc.titre)||'Document'; Dc.cle=Dc.cle||Dc.titre; Dc.cols=(Dc.cols||[]).filter(Boolean); if(!Dc.cols.length) return false;
-  /* Dc.droite : colonnes de nombres rangées à droite, dans leur ordre, chacune avec son unité (« Unité », « Monnaie ») — comme les montants du devis général et du
+/* tableau prêt à être mis en page : colonnes de nombres à droite (T.droite), colonnes vides retirées — les couleurs de cellule (cc) suivent leurs colonnes */
+const normaliser=T=>{ T.cols=(T.cols||[]).filter(Boolean); T.rows=T.rows||[]; const prendre=ord=>{ T.cols=ord.map(j=>T.cols[j]); T.rows=T.rows.map(r=>Object.assign({},r,{c:ord.map(j=>(r.c||[])[j])},Array.isArray(r.cc)?{cc:ord.map(j=>r.cc[j])}:{})); };
+  /* T.droite : colonnes de nombres rangées à droite, dans leur ordre, chacune avec son unité (« Unité », « Monnaie ») — comme les montants du devis général et du
      contrôle des coûts ; le libellé d'un sous-total ou d'un total s'étend alors sur les colonnes de texte, à gauche des nombres */
-  if(Dc.droite&&Dc.cols.length>2){ const N=Dc.cols.map((c,j)=>!!c.r||(j>0&&!!Dc.cols[j-1].r&&/^(unit[ée]|monnaie)$/i.test(un(c.t)))), ord=[...Dc.cols.map((c,j)=>j).filter(j=>!N[j]),...Dc.cols.map((c,j)=>j).filter(j=>N[j])];
-    if(ord.some((j,i)=>j!==i)&&!N[0]){ Dc.cols=ord.map(j=>Dc.cols[j]); Dc.rows=(Dc.rows||[]).map(r=>Object.assign({},r,{c:ord.map(j=>(r.c||[])[j])})); } }
+  if(T.droite&&T.cols.length>2){ const N=T.cols.map((c,j)=>!!c.r||(j>0&&!!T.cols[j-1].r&&/^(unit[ée]|monnaie)$/i.test(un(c.t)))), ord=[...T.cols.map((c,j)=>j).filter(j=>!N[j]),...T.cols.map((c,j)=>j).filter(j=>N[j])];
+    if(ord.some((j,i)=>j!==i)&&!N[0]) prendre(ord); }
   /* colonnes vides sur toutes les lignes (ouvrage, phase partielle… d'un projet qui n'en a pas) : retirées, la place va aux autres */
-  if((Dc.rows||[]).length){ const g=Dc.cols.map((c,j)=>j===0||Dc.rows.some(r=>un((r.c||[])[j])!=='')); if(g.some(x=>!x)){ Dc.cols=Dc.cols.filter((c,j)=>g[j]); Dc.rows=Dc.rows.map(r=>Object.assign({},r,{c:(r.c||[]).filter((x,j)=>g[j])})); } }
+  if(T.rows.length){ const g=T.cols.map((c,j)=>j===0||T.rows.some(r=>un((r.c||[])[j])!=='')); if(g.some(x=>!x)) prendre(T.cols.map((c,j)=>j).filter(j=>g[j])); }
+  return T; };
+function ouvrir(Dc){ Dc=normaliser(Object.assign({},Dc)); Dc.titre=un(Dc.titre)||'Document'; Dc.cle=Dc.cle||Dc.titre; if(!Dc.cols.length) return false;
+  Dc.suite=(Dc.suite||[]).map(t=>normaliser(Object.assign({},t))).filter(t=>t.cols.length);
   const dg=dialog({title:Dc.titre,body:h('div'),buttons:[]}), ifr={};
   const D={bd:dg.bd,iframe:ifr,close:dg.close,maj:r=>{ try{ if(ifr._sgVuePrep) ifr._sgVuePrep(); }catch(_){ }
     return Promise.resolve(r).then(oct=>{ if(ifr._sgVue) ifr._sgVue(new Blob([oct],{type:'application/pdf'})); },e=>{ console.error(e); if(ifr._sgVueErr) ifr._sgVueErr(e); }); }};
@@ -47031,6 +47038,29 @@ const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=
     try{ const hier=rows.some(r=>r&&r.k==='1')&&!rows.some(r=>r&&r.k==='g'), per=(meta||[]).find(m=>m&&/^filtre par date$/i.test(un(m[0])));
       if(ouvrir({cle:un(title),titre:un(title),p,meta:meta||[],cols:cols.map(c=>({t:sv(c.t),r:!!c.r})),rows:rows.map(r=>({c:(r.c||[]).map(v=>sv(v)),g:r.k||''})),hier,droite:true,sous:per?un(per[1]):''})) return; }catch(e){ console.error(e); }
     return d0.apply(this,arguments); }; }
+/* ── mgPrint : « Rapports ▸ Afficher le rapport … » des écrans d'Administration (Temps de l'équipe, Suivi RH, Controlling, Clients, Types de projets, Indicateurs,
+   Planification RH) — le tableau de l'écran (M : colonnes et lignes du moteur, mêmes nombres num(rJ)) au même graphisme : titre d'un bloc en bleu nuit, lignes
+   en gras du moteur en gras, sous-lignes, « Total <nom> » en sous-total, dernier total sur bande bleu nuit, soldes en vert / rouge comme à l'écran ; champs du
+   rapport (année, période, filtre, maître de l'ouvrage…) sur la page de garde. Temps de l'équipe : les trois tableaux du rapport d'origine (activités, phases,
+   collaborateurs), l'un après l'autre. Modèle d'une autre forme : rapport d'avant. ── */
+const CHAMPS={reportYear:'Année',year:'Année',timeFilter:'Période',filterDesc:'Filtre',project:'Projet',subProject:'Ouvrage',builderContact:'Maître de l’ouvrage',person:'Collaborateur',projectStateFilter:'Statut des projets',
+  chargeableFilter:'Facturable',chargedFilter:'Facturé',referenceMonth:'Mois de référence',subProjectFilterDesc:'Ouvrages',subPhaseFilterDesc:'Phases'};
+const mgTable=Mo=>{ const C=Mo.cols||[], R=(Array.isArray(Mo.full)?Mo.full:Mo.rows).filter(r=>r&&!r.sp), dern=R.length-1;
+  const rows=R.map((r,i)=>{ const brut=j=>(r.c||[])[j], c=C.map((col,j)=>{ const v=brut(j); if(typeof v==='number'&&!r.txt){ const x=rJ(v); return x==null||(col.zb&&!x)?'':num(x); } return v==null?'':sv(v); });
+    const g=r.title?'g':r.tot?((i===dern||/^Total(\s+[A-Z]{3})?$/.test(un(c[0])))?'t':'s'):r.lv2?'1':r.b?'b':'';
+    const cc=C.map((col,j)=>{ const v=brut(j); if(typeof v!=='number'||r.txt||!col.col) return ''; const k=mgColor(col,rJ(v)); return k==='#008F00'?'vert':k==='#FF0000'?'rouge':k==='#FF9000'?'#D7860D':''; });
+    return Object.assign({c,g},g!=='t'&&cc.some(Boolean)?{cc}:{}); });
+  return {cols:C.map(c=>({t:sv(c.t),r:!!c.r})),rows}; };
+if(typeof mgPrint==='function'&&typeof mgColor==='function'){ const m0=mgPrint;
+  mgPrint=function(type,title,fields,tables,Mo){ if(archives()||!Mo||!Array.isArray(Mo.cols)||!Mo.cols.length||!Array.isArray(Mo.rows)) return m0.apply(this,arguments);
+    try{ const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=typeof NX_VIEW!=='undefined'?NX_VIEW[v]:null, ong=document.querySelector('#main>.sgmv-ong button.on');
+      const titre=un(title)||(ong?un(ong.textContent):'')||(x&&x.it?un(x.it.t):'')||'Rapport';
+      let p=null, T=mgTable(Mo), suite=[];
+      if(type==='managementProjectTimeReport'&&typeof mghModels==='function'&&typeof MGH!=='undefined'){ p=MGH.pg.sel!=null?DS.get('project',MGH.pg.sel):null;
+        if(p){ const MS=mghModels(p,+MGH.sg.sel||null); T=mgTable(MS.ac); suite=[mgTable(MS.ph),mgTable(MS.st)]; } }
+      const meta=Object.entries(fields||{}).filter(([k,val])=>un(val)!=='').map(([k,val])=>[CHAMPS[k]||k,un(val)]), per=meta.find(m=>m[0]==='Période'||m[0]==='Année');
+      if(ouvrir({cle:'rapport:'+type,titre,p,meta,cols:T.cols,rows:T.rows,suite,sous:per?per[1]:'',lb:((x&&x.d&&x.d.t)||'Administration')+' · Documents',type:'Rapport'})) return; }catch(e){ console.error(e); }
+    return m0.apply(this,arguments); }; }
 /* ── sgDocTableau : un tableau affiché (table.nx-tbl) repris tel quel dans un document — titres, lignes, totaux (tr.tot ou « Total… »), sous-lignes (tr.sub) ── */
 function sgDocTableau(o){ try{ const tb=o&&o.table; if(!tb||!tb.querySelector) return false;
     const TH=[...tb.querySelectorAll('thead tr')].pop()||[...tb.querySelectorAll('tr')].find(tr=>tr.querySelector('th')), H=TH?[...TH.children]:[]; if(!H.length||H.some(x=>x.colSpan>1)) return false;

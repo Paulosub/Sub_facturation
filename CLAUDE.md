@@ -2946,11 +2946,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Hors du chapitre Heures** (`sgDocTableau(o)`, appelé par `sg3_plus.js`, repli sur `sgImprimer`) : tableau de bord du projet ▸ Heures ▸ Imprimer, Administration ▸
   Situation des heures ▸ Imprimer, rapport des heures d'un collaborateur sur un projet — le tableau affiché (`table.nx-tbl`) est repris tel quel : titres, lignes, totaux
   (`tr.tot` ou « Total… »), sous-lignes (`tr.sub` : la ligne parente en gras), colonnes de boutons écartées.
+  **Rapports des écrans d'Administration** (même soir, `mgPrint` enveloppé, `mgTable`, `CHAMPS`) : « Rapports ▸ Afficher le rapport … » de Temps de l'équipe, Suivi RH,
+  Controlling, Clients, Types de projets, Indicateurs et Planification RH — le tableau de l'écran (modèle du moteur `M` : mêmes nombres `num(rJ)`, `M.full` s'il existe)
+  au même graphisme : titre d'un bloc en bleu nuit, lignes en gras du moteur en gras ('b'), sous-lignes, « Total <nom> » en sous-total, dernier total (ou « Total » /
+  « Total CHF ») sur bande bleu nuit, soldes en vert / rouge comme à l'écran (`cc`, `mgColor`), champs du rapport (année, période, filtre, maître de l'ouvrage,
+  collaborateur…) sur la page de garde ; Temps de l'équipe : les trois tableaux du rapport d'origine (activités, phases, collaborateurs) l'un après l'autre (`Dc.suite` :
+  un tableau par page, chacun avec ses colonnes) ; titre vide (Indicateurs) : celui de l'onglet ; tableau trop large (18 colonnes du Suivi RH) : colonnes de nombres
+  resserrées. Modèle d'une autre forme : rapport d'avant (bloc 31). Pas repris : Contrats des projets et Facturation des projets (leurs rapports passent par les
+  formulaires de la Bibliothèque, `tplPrint`).
   **Pas changés** : les écrans d'Archives (Suivi & écarts, Controlling, Rapports de temps, Notes de frais…) gardent leurs documents — l'enveloppe ne s'applique pas quand
   l'écran ouvert est rangé dans Archives (`archives()`) ; DeltaSub.html seul : documents d'origine. `sg3_coco_docs.js` exporte ses outils de mise en page
   (`SGCD.outils` : mesure, etaler, paginer). Rien n'est écrit dans la base. Débogage : `window.SGDH`.
   Vérifié le 15.11.2026 hors de l'aperçu (99TST) : les sept documents depuis leurs boutons (2 à 117 pages, 3,3 s pour le plus long), paysage et portrait, page de garde
-  décochée et choix retrouvé à la réouverture, trois impressions des autres écrans, écran d'Archives inchangé, balayage des 120 écrans, `nas/nettoyer.py`,
+  décochée et choix retrouvé à la réouverture, trois impressions des autres écrans, neuf rapports d'Administration, écran d'Archives inchangé, balayage des 120 écrans, `nas/nettoyer.py`,
   `sonde_chrome.sh`. Pas vérifié : mode bureau (NAS), impression sur papier, visuels à l'essai (fenêtre commune, déjà vérifiée pour les autres documents). Copie d'avant :
   `subgestion3/_backup_20261115_1749_avant_documents_heures/`, `SUBGestion3_backup_20261115_1749_avant_documents_heures.html`.
 

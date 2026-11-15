@@ -25,6 +25,7 @@
    tableau, est masqué). Le parcours à carrés et la barre
    « ‹ Liste · Fichier · Paramètres » sont retirés (⌘S enregistre toujours ; « Paramètres » revient si une de ses commandes est livrée). Étape sans contenu :
    onglet atténué. Mêmes fonctions, mêmes données.
+   Écrans Documents des étapes : mis à la mise en forme des documents du devis par le bloc 53 (sg3_soum_docs.js, 15.11.2026).
    Styles <style id="sgsm-css">, classes sgsm-*. Débogage : window.SGSM. */
 (function(){
 if(typeof svDomain!=='function'||typeof svEditor!=='function'||!window.SGSV||!window.SGSV.outils) return;

@@ -1095,6 +1095,8 @@ function pdfEtCss(){ try{ cssD(); }catch(_){} if(document.getElementById('sgpdfe
 const SGPDF={attente:null,genre:null,ctx:null};
 /* PDF des documents du contrôle des coûts (dossiers …/Costcontrol/<projet>/<document>/coco/<section>…, sauf « documents » = fichiers déposés) */
 const PDF_COCO=/(^|\/)Costcontrol\/[^/]+\/[^/]+\/coco\/(?!documents(\/|$))[^/]/i;
+/* PDF des documents d'une soumission (dossiers …/Devis/devis18/<projet>/<soumission>/<élément>, bloc 53, 15.11.2026) */
+const PDF_SOUM=/(^|\/)Devis\/devis18\/[^/]+\/[^/]+\/[^/]/i;
 const GENRE_LIGNE=['devis','honoraires','descriptif'];   /* document d'origine par indice du moteur (CH02C_ROWS) */
 const PDF_GENRES=[['devis','Devis'],['descriptif','Descriptif'],['honoraires','Honoraires']];   /* ordre des groupes = ordre des documents (ORDRE_DOCS) */
 const pdfCle=v=>String(v==null?'':v).normalize('NFC').trim().toLowerCase();
@@ -1158,7 +1160,7 @@ function pdfGroupes(el,o){ const tb=el.querySelector('tbody'); if(!tb) return; c
     return pm0.apply(this,[at,items,...[].slice.call(arguments,2)]); }; }
 { const z0=ch03cPdfZone; ch03cPdfZone=function(o){ const z=z0.apply(this,arguments); try{ if(z&&z.el){
       const val=v=>typeof v==='function'?v():v, M={dos:()=>val(o&&o.dossier), ro:()=>!!val(o&&o.lectureSeule), devis:()=>/(^|\/)Costestimate\/.+\/archive$/i.test(String(val(o&&o.dossier)||''))};
-      M.reg=()=>M.devis()||!!M.coco||PDF_COCO.test(String(val(o&&o.dossier)||''));   /* M.coco : document du contrôle des coûts encore sans dossier (aucune ligne choisie), posé par sg3_coco.js */   /* registre daté aussi pour les documents du contrôle des coûts (Paulo, 11.11.2026 : « conforme au devis général ») */
+      M.reg=()=>M.devis()||!!M.coco||PDF_COCO.test(String(val(o&&o.dossier)||''))||PDF_SOUM.test(String(val(o&&o.dossier)||''));   /* M.coco : document du contrôle des coûts encore sans dossier (aucune ligne choisie), posé par sg3_coco.js */   /* registre daté aussi pour les documents du contrôle des coûts (Paulo, 11.11.2026 : « conforme au devis général ») */
       z.el._sgPdf=M; z.el.classList.add('sgpdf'); M.redraw=()=>{ try{ if(z.redraw) z.redraw(); }catch(e){ console.error(e); } };
       z.el.addEventListener('dblclick',e=>{ const td=e.target.closest&&e.target.closest('td'), tr=td&&td.parentNode; if(!tr||!tr.dataset||!tr.dataset.k||!td.querySelector('.sgpdf-com')) return;
         e.stopPropagation(); e.preventDefault(); pdfCommentaire(M,tr.dataset.k); },true);
@@ -1934,7 +1936,7 @@ function deRendu(X,rec){ const S=window.SGIMP, id=(++S.n).toString(36)+'d'+Date.
    document, import, fusion) — un nom déjà pris n'écrase jamais l'existant : nouveau fichier « <nom> (2).pdf » (ch03aEnregistrer, message) ; fenêtre « Nom du fichier »
    préremplie avec un nom libre, question « remplacer ? » réécrite ; suppression refusée (ch03aSupprimer, ch03cSupprimerDlg, menu « Supprimer » grisé). Le commentaire
    reste modifiable. Seulement dans l'app (le serveur du NAS ne bloque pas). Les fichiers .dpdoc (documents de l'ancien logiciel) ne sont pas concernés. */
-const PDF_FIGE=(d,nom)=>{ let x=''; try{ x=String(ch03aDos(d)||''); }catch(_){ x=String(d||''); } return (/^Construction\/Costestimate\//.test(x)||PDF_COCO.test(x))&&/\.pdf$/i.test(String(nom||'')); };   /* + documents du contrôle des coûts (11.11.2026) */
+const PDF_FIGE=(d,nom)=>{ let x=''; try{ x=String(ch03aDos(d)||''); }catch(_){ x=String(d||''); } return (/^Construction\/Costestimate\//.test(x)||PDF_COCO.test(x)||PDF_SOUM.test(x))&&/\.pdf$/i.test(String(nom||'')); };   /* + documents du contrôle des coûts (11.11.2026) */
 const pdfLibre=(d,nom)=>{ const m=/^(.*?)(\.pdf)$/i.exec(String(nom)), b=m?m[1]:String(nom), e=m?m[2]:'.pdf'; for(let k=2;k<1000;k++){ const n=b+' ('+k+')'+e; if(!ch03aTrouve(d,n)) return n; } return b+' ('+Date.now()+')'+e; };
 const PDF_FIGE_MSG='Les PDF enregistrés sont une archive définitive : ils ne peuvent être ni remplacés ni supprimés.';
 { const e0=ch03aEnregistrer; ch03aEnregistrer=function(dossier,nom,r,o){ if(PDF_FIGE(dossier,nom)&&ch03aTrouve(dossier,nom)){ const n2=pdfLibre(dossier,nom), A=SGPDF.attente;
@@ -1978,5 +1980,5 @@ VIEWS['mq-vignettes-pdf']={ render(m){
     +'<div class="sgmqv">'+css+html+'</div></div>'); } };
 const SGDE=window.SGDE={X:null,dgOctets,deco,decoCat,habiller,DEVI,dgPdf,ligneCalc,honContrat,honEtat,honRegle};
 /* pour les documents du contrôle des coûts (bloc 52, sg3_coco_docs.js, 10.11.2026) : fenêtre commune et constantes du livret « Bleu nuit » */
-SGDE.vue=vueDocG; SGDE.cssD=cssD; SGDE.saut={ouvrir:dgSpOuvrir,css:dgSpCss};   /* menu « Saut de page » du clic droit (contrôle des coûts, 10.11.2026) */ SGDE.livret={DG_RH,DG_X0T,DG_CFC,DG_WL,DG_WP,DG_HP,DG_HT,DG_TXT,DG_WM,deGardeRub,dgFiltreTexte,deNomAdr};
+SGDE.pdf={SGPDF,pdfEtat};   /* registre des PDF : document d'origine posé par les documents de la soumission (bloc 53) */ SGDE.vue=vueDocG; SGDE.cssD=cssD; SGDE.saut={ouvrir:dgSpOuvrir,css:dgSpCss};   /* menu « Saut de page » du clic droit (contrôle des coûts, 10.11.2026) */ SGDE.livret={DG_RH,DG_X0T,DG_CFC,DG_WL,DG_WP,DG_HP,DG_HT,DG_TXT,DG_WM,deGardeRub,dgFiltreTexte,deNomAdr};
 })();

@@ -1000,7 +1000,8 @@ function sgDossierLib(d){ const s=String(d||'').split('/'), doc=(t,id)=>{ const 
   if(s[0]==='Construction'&&s[1]==='Costcontrol') return reste(['Contrôle des coûts',doc('costcontroldocument',s[3]),coco[s[5]||'']||s[5]].concat(s.slice(6)));
   if(s[0]==='Construction'&&s[1]==='Costestimate') return reste(['Devis général',doc('costestimatedocument',s[3])].concat(s.slice(5)));
   if(s[0]==='Construction'&&s[1]==='Costplanning') return reste(['Calcul des coûts',doc('costplanningdocument',s[3])].concat(s.slice(5)));
-  if(s[0]==='Construction'&&s[1]==='Devis') return reste(['Soumissions','n° '+(s[4]||'')].concat(s.slice(5)));
+  if(s[0]==='Construction'&&s[1]==='Devis'){ const sd=DS.get('devisdocument',s[4]), lot=sd?[sd.BKP,sd.AWARDINGTEXT].filter(Boolean).join(' '):'';   /* « Soumissions › 201.1 Terrassements › Appel d’offres › Documents » (15.11.2026) */
+    return reste(['Soumissions',lot||'n° '+(s[4]||'')].concat(s.slice(5).map(x=>window.SGSD&&SGSD.libNoeud?SGSD.libNoeud(x):x))); }
   return reste(s); }
 async function sgAjouterFichiers(p){ const inp=h('input',{type:'file',multiple:true});
   inp.onchange=async()=>{ const fs=[...inp.files]; if(!fs.length) return; let n=0; const dos=ch03aDossier('document',p.ID,'Général');

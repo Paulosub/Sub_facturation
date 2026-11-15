@@ -523,7 +523,7 @@ function habillerEd(m,id){ cssC(); cssE();
   if(!bNew||!bEd||!bDel||!bPres||!bPar||!bFon||!bSave||!bNew._sgB.menu||!bPres._sgB.menu||!bFon._sgB.menu) return;   /* barre inattendue : l'écran du moteur reste tel quel */
   const its=[...side.children], secIt={}, docIt={};
   CC_SECS.forEach((s,i)=>{ if(its[i]&&its[i].textContent.trim()===s) secIt[s]=its[i]; });
-  SECS.forEach((s,j)=>{ const it=its[CC_SECS.length+j]; if(it&&it.textContent.trim()===SLIB(s)) docIt[s]=it; });
+  { const docsIts=its.slice(CC_SECS.length); SECS.forEach(s=>{ const it=docsIts.find(x=>x.textContent.trim()===SLIB(s)); if(it) docIt[s]=it; }); }   /* par libellé, plus par rang (15.11.2026) : depuis que « Devis général » passe avant « Contrôle du coût » dans SECS (11.11.2026), les documents de ces deux sections n'étaient plus proposés dans l'onglet Documents */
   if(CC_SECS.some(s=>!secIt[s])) return;
   CCV.only3=false;   /* remplacé par le choix CFC Tout · 3 · 2 · 1 */
   const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.innerHTML=x; return e; };

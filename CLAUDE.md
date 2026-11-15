@@ -1512,10 +1512,41 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   retirés (l'arbre est toujours redessiné ; un onglet appelle `X.go(clé)`). « Fichier » (Enregistrer, Fermer…) n'est pas repris, comme dans le devis et le contrôle des coûts :
   chaque modification est enregistrée, le retour ferme la soumission, ⌘S enregistre toujours ; « Paramètres » (Présentation… : aucune commande livrée, entrée grisée) ne revient
   que si une de ses commandes existe. Onglets à 16 px d'écart : dix étapes sur une ligne dès 1040 px de zone, deux lignes en dessous et dans les visuels à l'essai ; aide au
-  clavier de la barre (`.sgcp-aide`) à la ligne si la place manque. Non repris : les écrans Documents des étapes gardent leur liste (pas la mise en forme de l'onglet Documents du
-  devis). Vérifié le 14.11.2026 sur 99TST (aperçu de travail) : les 27 écrans de la soumission 201.1, une soumission sous forme de descriptif, plein écran, retour, lecture seule,
+  clavier de la barre (`.sgcp-aide`) à la ligne si la place manque. Écrans Documents des étapes : mis à la mise en forme des documents du devis le lendemain (paragraphe
+  suivant). Vérifié le 14.11.2026 sur 99TST (aperçu de travail) : les 27 écrans de la soumission 201.1, une soumission sous forme de descriptif, plein écran, retour, lecture seule,
   saisie d'un prix, six visuels, balayage des 121 écrans, `nas/nettoyer.py`. Copie d'avant : `subgestion3/_backup_20261114_1836_avant_soumission_onglets/`,
   `SUBGestion3_backup_20261114_1836_avant_soumission_onglets.html`.
+  **Documents de la soumission à la mise en forme des documents du devis (15.11.2026, bloc 53, `subgestion3/sg3_soum_docs.js`, concaténé en dernier ; Paulo : « Oui, les
+  Documents »)** : les 16 écrans de documents d'une soumission (Documents de chaque étape, Lettres d'accompagnement, Négociation, Courriers de refus, Descriptif par entreprise)
+  = un titre de section sur filet noir, une ligne par document — titre, état (« Pas encore créé » / « Document créé » · « sans PDF » / « PDF créé : nom » · situation de
+  l'offre · expédition · remarque), actions en texte (Ouvrir ou Créer le document, Créer le PDF, Ouvrir le PDF, Note d'expédition…, Informations de l'entreprise…, Utiliser pour
+  tous, Supprimer le document ; mêmes colonnes d'actions sur toutes les lignes) —, puis « Fichiers PDF » avec le registre daté du devis (Créé le, Validé le, Par, Commentaire,
+  Valider ▾, Archivés, Effacés) ; « Fonctions ▾ » du titre = fonctions de tout l'écran (copier, CSV, supprimer tous les documents). Le moteur garde tout : son écran est dessiné
+  puis masqué (`.sgsd-x`), `lire(X)` reconnaît ses trois formes de tableau à leurs titres de colonnes (F « Désignation | Document disponible | Indications », T « Type de
+  document », E « Entité » ou « Contact »), `lignes` en tire les lignes, et chaque action appelle la sienne : double-clic de la ligne du tableau (ouvrir, créer), entrée de ses
+  menus Editer / Effacer / Fonctions pour la ligne choisie (droits de l'ancien logiciel : `ch08bGuardItems`). ⚠ Bloc piloté par les LIBELLÉS du moteur (titres de colonnes,
+  « Editer », « Effacer le document », « Note d'expédition… », « Informations de l'entreprise », « Utiliser ce document pour tous ») : les changer dans `DeltaSub.html` demande
+  d'adapter `lire` et `RE` ; écran non reconnu → celui du moteur reste. **PDF enregistrés (nouveau : le moteur les annonçait « au lot 4 »)** : « Créer le PDF » → nom proposé
+  « <CFC> <document>[ - <entreprise>].pdf » et commentaire (`ch03bNouveauPdfDlg`), document fait sans être affiché (`capturer` : visionneuse du moteur ouverte masquée
+  `.ov.sgsd-cap` puis refermée — cadre `_sgimp` du bloc 31 —, ou visionneuse commune `sgVisionneuse` interceptée : cahier complet, conditions générales, tableau comparatif,
+  descriptif d'une soumission écrite ; un message du moteur, « Vous devez préalablement définir une entreprise. », reste affiché et arrête la création ; une création à la fois,
+  `U.occ`), dépôt par `ch03aDeposer` dans `Construction/Devis/devis18/<projet>/<soumission>/<clé de l'élément>` (`ch03aDossier('soumission', …)` du moteur ; clé =
+  `tenderDocuments`, `tenderingLetters`, `priceComparisonDocuments`, `travailNego`…) avec `GENRE_DOC` = « soum:<ligne> » (`desc`, `order`, `work`, `cg`, `cahier`, type du
+  document, `ent:<contactId>`). « Ouvrir le PDF » : le validé le plus récent de la ligne, sinon le plus récent en cours. Registre daté et archive définitive : ceux du devis,
+  étendus dans `sg3_devis.js` (`PDF_SOUM` dans `M.reg()` et `PDF_FIGE` ; `SGDE.pdf` = {SGPDF, pdfEtat}) — un nom déjà pris donne « (2) », ni remplacement ni suppression
+  (Effacés). « Supprimer le document » : règle et question du devis (`effacer` : refusé si la ligne a un PDF en cours ; « La ligne repassera sur « Créer le document »… »).
+  Conditions générales et cahier complet : états « Conditions enregistrées » / « Modèle du bureau », « Disponible » / « Conditions : modèle du bureau » (`sgCgDoc`). Page du
+  projet ▸ Documents : titres « Soumissions › 201.1 Terrassements › Appel d'offres › Documents » (`sgDossierLib`, `SGSD.libNoeud`). Droits : actions du moteur = ses règles
+  (lecture seule, `svCanEdit`) ; PDF = « documents : dépôt » et soumission non verrouillée. Serveur du NAS : rien à changer (`depotfichier`, règle du dépôt par `PROJECT_ID`).
+  Le champ `soumissiondoc.pdf` du moteur reste vide (rempli, le moteur refuserait d'ouvrir le document). ⚠ `nas/nettoyer.py` : ne pas écrire dans ce bloc les termes de
+  l'ancien logiciel qu'il refuse (arrêt « traces »). Vérifié le 15.11.2026 dans l'aperçu de travail (99TST, exemple 271) : 16 écrans par articles et soumission sous forme
+  de descriptif, PDF de tous les types de documents (1 à 10 pages), registre (valider, nom libre « (2) »), suppression puis recréation d'un document, message du moteur, lecture
+  seule, six visuels, affichage étroit, version servie (page nettoyée, base de test), balayage des 121 écrans. Copie d'avant :
+  `subgestion3/_backup_20261115_0847_avant_documents_soumission/`, `SUBGestion3_backup_20261115_0847_avant_documents_soumission.html`.
+  **Contrôle des coûts ▸ Documents : « Devis général » et « Contrôle du coût » de nouveau proposés (15.11.2026, défaut vu en vérifiant le registre)** : depuis que l'onglet
+  « Devis général » passe avant « Contrôle du coût » (`SECS` trié, 11.11.2026), `habillerEd` (`sg3_coco.js`) associait les documents de chaque section par leur RANG dans le
+  menu du moteur : les deux premiers n'étaient plus reconnus, donc plus proposés dans la ligne de choix de l'onglet Documents ni dans Imprimer ▸ « Documents · … » (ils restaient
+  ouverts par Imprimer ▸ « Contrôle des coûts (PDF) » / « Devis général (PDF) »). Association par libellé désormais (`docsIts.find`).
 - **Descriptifs & devis au graphisme de l'app (05.11.2026, bloc 37, `subgestion3/sg3_devis.js`, concaténé en dernier ; Paulo : « reproduire graphiquement ce chapitre comme tout le reste de l'app, améliore pour rendre plus lisible et simple à utiliser »)** :
   moteur inchangé, DeltaSub.html seul garde ses écrans. Liste (`VIEWS.devis` sans document ouvert, tous les projets, et `ch02dDomain`, page du projet) : page `monter` comme la Soumission — bandeau, chiffres, Tous · Mes devis (tous les projets), statuts, recherche, tableau
   où le total TTC est visible ; clic = ouvrir (`ch02dOpen`, retour à l'écran d'origine ; le 2e clic d'un double-clic d'habitude est ignoré, 450 ms), clic droit = en-tête, dupliquer, dupliquer et modifier la subdivision, supprimer ; ⋯ = documents supprimés, importer, copie, CSV ; un devis créé s'ouvre aussitôt. Devis ouvert (`dvEditor` enveloppé,

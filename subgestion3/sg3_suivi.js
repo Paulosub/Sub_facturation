@@ -425,7 +425,15 @@ function pmApercu(I){ const u=I.u, h=I.box.querySelector('.sgpm-prev-h'); if(!h|
   if(sig===u.sig) return; u.sig=sig; clearTimeout(u.tp); u.lect.attendre(); const L=u.lect;
   u.tp=setTimeout(async()=>{ try{ const oct=await pmOctets(I,s,m,false,d); if(u.sig!==sig||u.lect!==L) return; await L.charger(new Blob([oct],{type:'application/pdf'})); }catch(e){ console.error(e); if(u.lect===L){ u.sig=null; L.echec(e); } } },200); }
 const pmFinApercu=u=>{ clearTimeout(u.tp); if(u.lect){ try{ u.lect.fini(); }catch(_){} u.lect=null; } u.sig=null; u.lectTop=0; };
-function pmRegistre(I,T){ const p=I.p, t=E; sgImprimer('Registre des décisions — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<table><tr><th>Date</th><th>PV</th><th>Phase</th><th>Décision</th></tr>'+T.map(o=>'<tr><td>'+t(dmy(o.m.MEETINGDATE))+'</td><td>n° '+t(o.m.MEETINGNUMBER||'')+'</td><td>'+t(o.s.NUMBER||'')+'</td><td>'+t(o.x.TITLE||'')+(o.x.TITLE&&o.x.TEXT?'<br>':'')+t(o.x.TEXT||'')+'</td></tr>').join('')+'</table>'); }
+function pmRegistre(I,T){ const p=I.p, t=E;
+  /* registre au graphisme des documents de l'app (15.11.2026, SGDH.ouvrir de sg3_docs_heures.js : page de garde, tableau bleu nuit, fenêtre « Document PDF ») —
+     une décision par ligne, son texte sous son titre ; à défaut l'impression d'avant */
+  if(window.SGDH&&SGDH.ouvrir){ const cle=d=>{ if(d==null||d==='') return ''; if(typeof d==='number') return new Date(d).toISOString().slice(0,10); return String(d).slice(0,10); }, D=T.map(o=>o.m.MEETINGDATE).filter(Boolean).sort((x,y)=>cle(x)<cle(y)?-1:cle(x)>cle(y)?1:0);
+    const per=D.length?(cle(D[0])===cle(D[D.length-1])?dmy(D[0]):'du '+dmy(D[0])+' au '+dmy(D[D.length-1])):'';
+    try{ if(SGDH.ouvrir({cle:'Registre des décisions',titre:'Registre des décisions',p,lb:'PV MO · Documents',type:'PV MO',format:'portrait',sous:per,meta:[['Période',per],['Décisions',String(T.length)]],
+        cols:[{t:'Date'},{t:'PV'},{t:'Phase'},{t:'Décision'}],
+        rows:T.map(o=>({c:[dmy(o.m.MEETINGDATE),'n° '+(o.m.MEETINGNUMBER||''),String(o.s.NUMBER||''),[o.x.TITLE,o.x.TEXT].map(x=>String(x==null?'':x).trim()).filter(Boolean).join('\n')],g:''}))})) return; }catch(e){ console.error(e); } }
+  sgImprimer('Registre des décisions — '+(p.NUMBER||'')+' '+(p.TITLE||''),'<table><tr><th>Date</th><th>PV</th><th>Phase</th><th>Décision</th></tr>'+T.map(o=>'<tr><td>'+t(dmy(o.m.MEETINGDATE))+'</td><td>n° '+t(o.m.MEETINGNUMBER||'')+'</td><td>'+t(o.s.NUMBER||'')+'</td><td>'+t(o.x.TITLE||'')+(o.x.TITLE&&o.x.TEXT?'<br>':'')+t(o.x.TEXT||'')+'</td></tr>').join('')+'</table>'); }
 const docsMO=p=>{ const pr=sgDosNfc(p,'Projet'); return {fil:d=>!!pr&&d.startsWith(pr+'/')&&/^\/[^/]+\/PV MO(\/|$)/.test(d.slice(pr.length)),dos:()=>ch03aDossier('document',p.ID,'Projet'),vide:'Aucun fichier de PV MO.',ajout:'Ajouter des PV MO',
   phaseDlg:{titre:'Ajouter des PV MO',phases:SG_PH_FICH.map(x=>x[0]),phase:31,rubriques:[['PV MO','PV']],rubrique:'PV MO',sansPhase:'',enquete:false}}; };
 const PM_CAT={4:['Q','Question du maître de l’ouvrage'],2:['D','Décision']};

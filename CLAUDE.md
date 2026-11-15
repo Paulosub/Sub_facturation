@@ -2932,8 +2932,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (plus à celle au titre le plus long). Vérifié hors de l'aperçu : trois documents de 4 pages sur la base de test, totaux égaux à ceux de la page, un collaborateur
   choisi dans Apports, zone étroite, onze documents déjà faits rejoués (mêmes nombres de pages), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`.
   Copie d'avant : `subgestion3/_backup_20261115_1943_avant_imprimer_finances_rh/`.
+  **Registre des décisions des PV MO (même soir, lot 5)** : « Imprimer le registre » (page du projet ▸ PV MO ▸ Décisions ; `pmRegistre` de `sg3_suivi.js`) ouvre le même
+  document — page de garde (ouvrage, maître de l'ouvrage, période, nombre de décisions), tableau Date · PV · Phase · Décision, le texte de la décision sous son
+  titre ; repli sur l'impression d'avant si le bloc 56 manque. Restent à l'ancienne impression (`sgImprimer`, papier des contrats) : le planning (tableau et diagramme)
+  et le permis de construire (fiche à plusieurs rubriques) — le bloc 56 ne dessine ni image ni fiche.
   **Reste du lot 3** : panneau « Document » du Suivi des factures, « Documents types » (`tpl-documents`), page « Paramètres » de l'estimation en onglet. **Reste du
-  lot 5** : impressions des séances, du planning, du permis, du registre des décisions (encore `sgImprimer`) ; icônes ; navigation. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
+  lot 5** : impressions du planning et du permis de construire (encore `sgImprimer`), procès-verbal de séance (document du moteur) ; icônes ; navigation. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
   (`{...SG_ACC, profil, droits: sgDroitsRole(profil)}`), changer `profil` seul laisse les droits de l'administrateur.
   **Lot 1, analyse des heures — cinq propositions (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie

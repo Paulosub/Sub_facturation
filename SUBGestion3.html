@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 15:28 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 15:42 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1623,6 +1623,34 @@ html:has(#main .sgd) #nx-sub{display:none!important}
 
 /* page du projet : tuile qui commence une nouvelle ligne dans son groupe (SG_TUILE_BR, 02.11.2026) */
 .sg-tiles>.sg-tile.br{grid-column-start:1}
+
+/* ═══ En-tête des pages de l'app = bandeau des listes (refonte d'ensemble, lot 2, 15.11.2026 : « refonte complète de l'app … identique aux éléments définis dans l'app
+   notamment dans devis ») — sgTete (sg3.js) : bandeau jaune (monogramme, chapitre, titre, présentation sur deux lignes), boutons « acts » à droite du bandeau,
+   chiffres « sg-figs » en rangée dessous comme les chiffres des listes ; la page passe sur une colonne ═══ */
+.sg-split:has(>.sg-tete){display:block}
+.sg-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;margin:0 0 26px}
+.sg-tete>.sgfh-tete{grid-column:1/-1;grid-row:1;min-width:0;flex-wrap:nowrap}
+.sg-tete:has(>.acts)>.sgfh-tete{grid-column:1}
+.sg-tete .sgfh-ini{white-space:nowrap}
+.sg-tete .sgfh-nm h2{display:block}
+.sg-tete .sgfh-meta{max-width:1040px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sg-tete .sgfh-meta b{font-weight:700}
+.sg-tete>.acts{grid-column:2;grid-row:1;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:0;padding:14px 22px 14px 6px;background:var(--s-jaune2);border-top:2px solid var(--s-noir);max-width:640px}
+.sg-tete>.acts .nx-btn{justify-content:center}
+.sg-tete>.sg-tkp{grid-column:1/-1;grid-template-columns:repeat(5,minmax(0,1fr));margin:14px 0 0}   /* chiffres de la page, convertis en chiffres des listes par sgTete */
+.sg-tete>.sg-tkp .nx-kpi .l,.sg-tete>.sg-tkp .nx-kpi .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-tete>.sg-tkp .nx-kpi .l{display:block}
+.sg-tete>.sg-figs{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:14px 0 0;border-top:2px solid var(--s-noir)}   /* cinq colonnes comme les chiffres des listes : deux ou trois chiffres restent à gauche, à la même place d'une page à l'autre */
+.sg-tete .sg-fig{display:flex;flex-direction:column-reverse;justify-content:flex-end;padding:14px 18px 16px 0;margin-right:18px;border-bottom:1px solid var(--s-filet);min-width:0}
+.sg-tete .sg-fig .t{font-size:11.5px;font-weight:700;color:var(--s-noir);margin:0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-tete .sg-fig .t::first-letter{text-transform:uppercase}
+.sg-tete .sg-fig .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@container (max-width:860px){
+  .sg-tete{grid-template-columns:minmax(0,1fr)}
+  .sg-tete:has(>.acts)>.sgfh-tete,.sg-tete>.acts{grid-column:1}
+  .sg-tete>.acts{grid-row:2;max-width:none;justify-content:flex-start;border-top:0;padding:0 22px 14px}
+  .sg-tete>.sg-figs,.sg-tete>.sg-tkp{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -26474,6 +26502,16 @@ function nxPage(m,html){ const p=h('div',{class:'nx-page'}); p.innerHTML='<div c
     if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); else if(t.dataset.fn&&p._fn&&p._fn[t.dataset.fn]) p._fn[t.dataset.fn](t); });
   p._fn={}; return p; }
 const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro"><div class="sg-lbl'+(lbl?'':' vide')+'">'+nxE(lbl||'')+'</div><h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
+/* En-tête des pages de l'app = bandeau des listes (refonte d'ensemble, lot 2, 15.11.2026 ; Paulo : « refonte complète de l'app pour avoir une cohérence des éléments de
+   l'app identique aux éléments définis dans l'app notamment dans devis ») : monogramme de la page, chapitre, titre, texte de présentation (deux lignes au plus, entier en
+   infobulle), boutons à droite du bandeau, puis les chiffres en rangée — à la place de la colonne d'introduction (sgIntro), gardée pour les vues d'ensemble, le Cockpit
+   et la page du projet. Mêmes arguments que sgIntro : les pages n'ont que le nom de la fonction à changer (chiffres « sg-figs » et boutons « acts » repris tels quels). */
+const sgMono=t=>{ const s=String(t==null?'':t).replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/&[a-z]+;/g,' '), W=s.split(/[\s’'\-·/]+/).filter(w=>w&&!/^(de|des|du|d|la|le|les|l|et|à|a|au|aux|en|par|sur|pour|&)$/i.test(w));
+  return (W.length>1?W[0][0]+W[1][0]:(W[0]||'').slice(0,2)).toLocaleUpperCase('fr'); };
+const sgTete=(lbl,title,txt,extra,mono)=>{ const brut=String(txt||'').replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/"/g,'&quot;');
+  /* chiffres de la page (« sg-figs » : nombre puis légende) → chiffres des listes (« nx-kpi » : libellé puis valeur), pour qu'ils suivent aussi les visuels à l'essai */
+  const ex=String(extra||'').replace(/<div class="sg-figs"([^>]*)>/g,'<div class="nx-kpis sg-tkp"$1>').replace(/<div class="sg-fig"><div class="n">([\s\S]*?)<\/div><div class="t">([\s\S]*?)<\/div><\/div>/g,(m,n,t)=>{ const l=String(t).trim(); return '<div class="nx-kpi"><div class="l">'+l.charAt(0).toLocaleUpperCase('fr')+l.slice(1)+'</div><div class="v">'+n+'</div></div>'; });
+  return '<header class="sg-tete"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+nxE(mono||sgMono(title))+'</div><div class="sgfh-nm">'+(lbl?'<div class="lb">'+nxE(lbl)+'</div>':'')+'<h2>'+title+'</h2>'+(txt?'<div class="sgfh-meta" title="'+brut+'">'+txt+'</div>':'')+'</div></div></div>'+ex+'</header>'; };
 
 /* ═══ Accueil ═══ */
 VIEWS['nx-home']={
@@ -26687,7 +26725,7 @@ VIEWS['nx-collab']={
 /* ═══ Données & sauvegarde ═══ */
 VIEWS['nx-data']={
   render(m){ const li=DS.linfo||{}, n=t=>DS.all(t).length, cmds=nxMenuCmds();
-    const html='<div class="sg-split">'+sgIntro('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur (sans serveur). Exportez-les régulièrement : base de gestion ci-contre, facturation dans « Sauvegarde Facturation ».')
+    const html='<div class="sg-split">'+sgTete('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur (sans serveur). Exportez-les régulièrement : base de gestion ci-contre, facturation dans « Sauvegarde Facturation ».')
       +'<div><div class="nx-kpis">'+nxKpi('folder','Projets',String(n('project')),null,null,null,1)+nxKpi('contacts','Contacts',String(n('contactowner')),n('contact')+' adresses')+nxKpi('clock','Saisies de temps',num(n('timelog'),0))+nxKpi('users','Membres',String(n('staff')))+'</div>'
       +'<div class="nx-grid">'+nxCard('c6','Base de gestion','<div class="b"><p style="margin:0 0 14px;font-weight:300">L’export télécharge toute la base (projets, contacts, temps, chantier, finances, bibliothèque) dans un fichier <b>.json.gz</b>. L’import <b>remplace</b> la base de ce navigateur.</p>'
         +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-fn="exp">'+nxSvg('export')+'Exporter</button><button class="nx-btn" data-fn="imp">'+nxSvg('import')+'Importer</button></div></div>')
@@ -26952,7 +26990,7 @@ VIEWS['nx-reunir']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Analys
     const r=sgCarnetReste(sgCarnetOriginal()), hs=sgHeuresAReprendre(), hOk=hs.filter(x=>x.ok), hKo=hs.filter(x=>!x.ok&&!x.doublon), dbl=hs.filter(x=>x.doublon);
     const cs=D.c.filter(c=>!c.annule), sans=cs.filter(c=>!sgProjetDuContrat(c)), avec=cs.length-sans.length, fait=nxLS.get('sg3_reunion',null);
     const projOpts=DS.all('project').sort((a,b)=>cmp(b.NUMBER,a.NUMBER)).map(p=>'<option value="'+p.ID+'">'+nxE(projLabel(p))+'</option>').join('');
-    const html='<div class="sg-split">'+sgIntro('Configuration','Réunir les registres','Une seule référence par donnée : l’<b>Annuaire</b> pour les adresses, la <b>Feuille d’heures</b> pour les heures, et chaque contrat relié à son projet. Rien n’est effacé : les anciens registres restent consultables dans Configuration ▸ Archives.'
+    const html='<div class="sg-split">'+sgTete('Configuration','Réunir les registres','Une seule référence par donnée : l’<b>Annuaire</b> pour les adresses, la <b>Feuille d’heures</b> pour les heures, et chaque contrat relié à son projet. Rien n’est effacé : les anciens registres restent consultables dans Configuration ▸ Archives.'
         ,'<div class="sg-figs"><div class="sg-fig"><div class="n">'+r.ent.length+'</div><div class="t">entités du carnet à reprendre</div></div><div class="sg-fig"><div class="n">'+hOk.length+'</div><div class="t">saisies de temps à reprendre</div></div><div class="sg-fig"><div class="n">'+avec+'/'+cs.length+'</div><div class="t">contrats reliés</div></div>'+(fait?'<div class="sg-fig"><div class="n" style="font-size:16px">'+nxE(new Date(fait.le).toLocaleDateString('fr-CH'))+'</div><div class="t">dernière réunion</div></div>':'')+'</div>')
       +'<div><div class="nx-grid">'
       +nxCard('c12','Reprendre maintenant','<div class="b"><p style="margin:0 0 12px;font-weight:300">La base est d’abord sauvegardée. Seuls les éléments absents de la référence sont ajoutés ; les doublons sont ignorés.</p><button class="nx-btn pri" data-fn="go"'+((r.ent.length||hOk.length)?'':' disabled')+'>'+nxSvg('group')+'Réunir : '+r.ent.length+' entités, '+r.adr.length+' adresses, '+hOk.length+' saisies</button></div>')
@@ -26966,7 +27004,7 @@ VIEWS['nx-reunir']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Analys
 
 /* ── Données & sauvegarde (remplace l'écran de sg3.js) : sauvegarde automatique, restauration, export, outils ── */
 VIEWS['nx-data']={ render(m){ const li=DS.linfo||{}, n=t=>DS.all(t).length, cmds=nxMenuCmds(), e=SAUV.etat;
-  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur. La base de gestion est sauvegardée automatiquement après chaque modification ; Facturation a sa propre sauvegarde.')
+  const pg=nxPage(m,'<div class="sg-split">'+sgTete('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur. La base de gestion est sauvegardée automatiquement après chaque modification ; Facturation a sa propre sauvegarde.')
     +'<div><div class="nx-kpis">'+nxKpi('db','Dernière sauvegarde',e.quand?sgDepuis(e.quand):'jamais',e.quand?(e.ou==='serveur'?'Serveur · Sauvegarde Gestion':e.lieu||''):'à faire',null,null,1)+nxKpi('folder','Projets',String(n('project')))+nxKpi('contacts','Contacts',String(n('contactowner')))+nxKpi('clock','Saisies de temps',num(n('timelog'),0))+'</div>'
     +'<div class="nx-grid">'+nxCard('c6','Sauvegarde automatique','<div class="b"><dl class="nx-dl"><dt>État</dt><dd id="sg-sv-etat">…</dd><dt>Destination</dt><dd id="sg-sv-dest">…</dd>'+(e.erreur?'<dt>Dernier incident</dt><dd style="color:var(--s-rouge)">'+nxE(e.erreur)+'</dd>':'')+'</dl>'
         +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="nx-btn pri" data-fn="now">'+nxSvg('save')+'Sauvegarder maintenant</button><button class="nx-btn" data-fn="dir">'+nxSvg('folder')+'Choisir un dossier</button></div></div>')
@@ -27115,7 +27153,7 @@ VIEWS['nx-renta']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcul 
     const ps=DS.all('project').filter(p=>!sgInterne(p)&&(tous?+p.PROJECTSTATECODE!==5:+p.PROJECTSTATECODE===2||+p.PROJECTSTATECODE===3));
     const L=ps.map(p=>sgRenta(p,D,taux)).filter(x=>x.h||x.contratHT).sort((a,b)=>b.niv-a.niv||(b.conso||0)-(a.conso||0));
     const T=L.reduce((t,x)=>({c:t.c+x.contratHT,k:t.k+x.cout,f:t.f+x.factHT,e:t.e+x.encTTC}),{c:0,k:0,f:0,e:0}), nAl=L.filter(x=>x.niv>=2).length;
-    const html='<div class="sg-split">'+sgIntro('Finances','Rentabilité des projets','Pour chaque projet : honoraires du contrat, coût de revient du temps passé (taux interne de chaque membre), montant facturé et encaissé, marge. Les montants sont hors taxes, sauf l’encaissé (TTC).'
+    const html='<div class="sg-split">'+sgTete('Finances','Rentabilité des projets','Pour chaque projet : honoraires du contrat, coût de revient du temps passé (taux interne de chaque membre), montant facturé et encaissé, marge. Les montants sont hors taxes, sauf l’encaissé (TTC).'
         ,'<div class="sg-figs"><div class="sg-fig"><div class="n">'+nAl+'</div><div class="t">projets en alerte</div></div><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">projets suivis</div></div></div><div class="acts"><button class="nx-btn" data-fn="tous">'+nxSvg('filter')+(tous?'Projets en cours seulement':'Inclure les projets terminés')+'</button><button class="nx-btn" data-fn="csv">'+nxSvg('export')+'Exporter (CSV)</button></div>')
       +'<div><div class="nx-kpis">'+nxKpi('contrat','Honoraires (HT)',nxCHF(T.c)+'<small>CHF</small>','contrats reliés',null,null,1)+nxKpi('clock','Coût de revient',nxCHF(T.k)+'<small>CHF</small>',T.c?Math.round(T.k/T.c*100)+' % des honoraires':'')+nxKpi('receipt','Facturé (HT)',nxCHF(T.f)+'<small>CHF</small>',T.c?Math.round(T.f/T.c*100)+' % des honoraires':'')+nxKpi('trend','Marge',nxCHF(T.f-T.k)+'<small>CHF</small>','facturé − coût de revient')+'</div>'
       +nxCard('c12','Par projet','<div class="b flush" style="overflow:auto"><table class="nx-tbl"><tr><th>Projet</th><th class="r">Honoraires HT</th><th class="r">Coût de revient</th><th>Consommé</th><th class="r">Facturé HT</th><th>Facturé</th><th class="r">Encaissé TTC</th><th class="r">Marge</th><th>Alertes</th></tr>'
@@ -27958,7 +27996,7 @@ function sgCodeDlg(changer){ const I1=h('input',{class:'inp',type:'password',aut
     if(I1.value!==I2.value){ toast('Les deux saisies ne correspondent pas.',true); return false; }
     await sgCodeDefinir(I1.value); toast(changer?'Code d’accès changé.':'Code d’accès défini : '+sgAcces().doms.length+' domaine(s) protégé(s).'); go('nx-acces'); }}]}); }
 VIEWS['nx-acces']={ render(m){ const a=sgAcces(), doms=SG_DOM.filter(d=>d.k!=='accueil');
-  const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Accès protégé','Un code d’accès à ce poste pour les parties sensibles : honoraires, factures, rentabilité, contrôle des heures, réglages, configuration. Reverrouillage automatique après une période sans activité.',
+  const pg=nxPage(m,'<div class="sg-split">'+sgTete('Réglages','Accès protégé','Un code d’accès à ce poste pour les parties sensibles : honoraires, factures, rentabilité, contrôle des heures, réglages, configuration. Reverrouillage automatique après une période sans activité.',
       '<div class="sg-figs"><div class="sg-fig"><div class="n">'+(a.hash?(sgOuvert()?'Ouvert':'Verrouillé'):'—')+'</div><div class="t">'+(a.hash?'code défini le '+dfr(diso(new Date(a.depuis||Date.now()))):'aucun code')+'</div></div></div>')
     +'<div><div class="nx-grid">'
     +nxCard('c6','Code d’accès','<div class="b"><p style="margin:0 0 14px;font-weight:300">'+(a.hash?'Un code protège les domaines cochés ci-contre.':'Aucun code : toute l’app est accessible sur ce poste.')+'</p><div style="display:flex;gap:8px;flex-wrap:wrap">'
@@ -28202,7 +28240,7 @@ async function sgDecider(k,id,decision,motif){ const r=await fetch('/api/valider
   if(!r.ok||!d.ok){ toast('✗ '+(d.msg||d.error||('erreur '+r.status)),true); return false; }
   await sgKvTic(); toast(decision==='valide'?'Validé.':'Refusé : la personne qui l’a préparé le verra à l’accueil.'); return true; }
 VIEWS['nx-valider']={ render(m){ const L=sgEnAttente().sort((a,b)=>cmp(a.v.etat,b.v.etat)||cmp(b.v.le,a.v.le)), bureau=typeof dsEstBureau==='function'&&dsEstBureau();
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Facturation','À valider','Les contrats d’honoraires et les factures préparés ou modifiés par un chef de projet restent « à valider » : le PDF définitif n’est disponible qu’une fois validés. Un refus revient à son auteur avec le motif.'
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Facturation','À valider','Les contrats d’honoraires et les factures préparés ou modifiés par un chef de projet restent « à valider » : le PDF définitif n’est disponible qu’une fois validés. Un refus revient à son auteur avec le motif.'
         ,'<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.filter(x=>x.v.etat==='a_valider').length+'</div><div class="t">à valider</div></div><div class="sg-fig"><div class="n">'+L.filter(x=>x.v.etat==='refuse').length+'</div><div class="t">refusé(s)</div></div></div>')
       +'<div>'+(!bureau?'<div class="nx-card c12"><div class="nx-empty">La validation s’applique sur le serveur du bureau (NAS), quand des chefs de projet préparent des contrats ou des factures. Sur ce poste, vous êtes seul : rien à valider.</div></div>':
         nxCard('c12','Contrats et factures',L.length?'<div class="b flush" style="overflow:auto"><table class="nx-tbl"><tr><th>Type</th><th>Référence</th><th>Préparé par</th><th>Le</th><th>État</th><th></th></tr>'
@@ -28298,7 +28336,7 @@ VIEWS['nx-situation']={ render(m){ const st=nxLS.get('sg3_sit',{p:'',per:'12',g:
     else if(lim) L=L.filter(r=>tlKey(r)>=dayKey(lim));
     const pr=st.p&&DS.get('project',st.p), perLib={'1':'mois en cours','3':'3 derniers mois','12':'12 derniers mois','an':'année '+now.getFullYear(),'tout':'tout','perso':'du '+(st.de?dfr(st.de):'…')+' au '+(st.a?dfr(st.a):'…')}[st.per];
     const portee=sgDroit('heures','toutes')?'toutes les heures du bureau':sgDroit('heures','projets')?'les heures de vos projets, tous collaborateurs':'vos heures';
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Administration','Situation des heures','Heures saisies par projet, par collaborateur, par phase, par mois ou par activité — '+portee+'. Export CSV et impression.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Administration','Situation des heures','Heures saisies par projet, par collaborateur, par phase, par mois ou par activité — '+portee+'. Export CSV et impression.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxH(L.reduce((s,r)=>s+(+r.TIMEPERIOD||0),0))+'</div><div class="t">heures</div></div><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">saisies</div></div></div>')
       +'<div><div class="nx-card c12"><div class="b sg-sit-f"><label>Projet <select class="inp" id="sit-p"><option value="">Tous '+(sgDroit('projets_voir','tous')?'les projets':'mes projets')+'</option>'+pids.map(p=>'<option value="'+p.ID+'"'+(String(p.ID)===String(st.p)?' selected':'')+'>'+nxE(projLabel(p))+'</option>').join('')+'</select></label>'
         +'<label>Période <select class="inp" id="sit-per">'+[['1','Mois en cours'],['3','3 derniers mois'],['12','12 derniers mois'],['an','Année en cours'],['tout','Tout'],['perso','Dates…']].map(([v,t])=>'<option value="'+v+'"'+(v===st.per?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'
@@ -28321,7 +28359,7 @@ VIEWS['nx-situation']={ render(m){ const st=nxLS.get('sg3_sit',{p:'',per:'12',g:
 let sgFenPret=false; setTimeout(()=>{ sgFenPret=true; },4000);
 function sgVueFenetre(o){ const ok=()=>!o.droit||ch08aCan(o.droit);
   const dessin=m=>{ if(!ok()){ nxPage(m,'<div class="nx-empty">Droit « '+nxE(o.droitLib)+' » requis.</div>'); return; }
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro(o.lbl,o.t,o.txt,o.figs?o.figs():'')+'<div>'
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete(o.lbl,o.t,o.txt,o.figs?o.figs():'')+'<div>'
       +nxCard('c12',o.t,'<div class="b">'+o.aide+'<p style="margin:14px 0 0"><button class="nx-btn pri" data-fen="1">'+nxSvg(o.ico)+nxE(o.bouton)+'</button></p></div>')+(o.corps?o.corps():'')+'</div></div>');
     pg.querySelector('[data-fen]').onclick=()=>o.ouvrir(); };
   return {render(m){ this._m=m; dessin(m); if(sgFenPret&&ok()) setTimeout(()=>o.ouvrir(),0); },
@@ -28354,7 +28392,7 @@ VIEWS['nx-profils']={ render(m){ const bureau=typeof dsEstBureau==='function'&&d
     const users=DS.all('appuser').filter(u=>u.USERID!=='mayday').sort((a,b)=>cmp(a.USERID,b.USERID)), D={cdp:sgDroitsRole('cdp'),collab:sgDroitsRole('collab')};
     const sel=(p,k)=>'<select class="inp" data-role="'+p+'" data-k="'+k+'">'+SG_DROITS[k].map(n=>'<option value="'+n+'"'+(D[p][k]===n?' selected':'')+'>'+nxE(SG_DROITS_LIB.find(x=>x[0]===k)[3][n])+'</option>').join('')+'</select>';
     const staffsDe=u=>DS.by('appuser_staff','APPUSER_ID',u.ID).map(l=>DS.get('staff',l.STAFFS_ID)).filter(Boolean);
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Réglages','Profils et accès','Trois profils : <b>Administrateur</b> (tout), <b>Chef de projet</b> et <b>Collaborateur</b>, dont vous réglez ici chaque droit — pour limiter ou élargir l’accès aux informations. Puis le profil de chaque compte.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Réglages','Profils et accès','Trois profils : <b>Administrateur</b> (tout), <b>Chef de projet</b> et <b>Collaborateur</b>, dont vous réglez ici chaque droit — pour limiter ou élargir l’accès aux informations. Puis le profil de chaque compte.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+users.filter(u=>sgProfilDe(u)==='cdp').length+'</div><div class="t">chefs de projet</div></div><div class="sg-fig"><div class="n">'+users.filter(u=>sgProfilDe(u)==='collab').length+'</div><div class="t">collaborateurs</div></div></div>')
       +'<div>'+(!bureau?'<div class="nx-card c12" style="margin-bottom:24px"><div class="b" style="font-weight:300">Sur ce poste (fichier ouvert par double-clic), vous êtes seul et administrateur : ces réglages s’appliqueront sur le <b>serveur du bureau (NAS)</b>, une fois la base importée.</div></div>'
         :!auth?'<div class="nx-card c12" style="margin-bottom:24px"><div class="b" style="color:var(--s-rouge)">L’ouverture de session par mot de passe n’est pas active sur le serveur du bureau : personne n’est identifié, les profils ne s’appliquent pas encore (Réglages ▸ Administration ▸ Utilisateurs).</div></div>':'')
@@ -28416,7 +28454,7 @@ VIEWS['nx-coutrevient']={ render(m){ const T=sgCrTout(), P=T.P, f2=v=>num(v,2), 
         +['SALAIRE','MOIS','OCC','VAC','ABS','PROD','DIRECTS'].map(k=>'<td>'+nb('s="'+x.s.ID+'" data-k="'+k+'"',S[k],k==='SALAIRE'||k==='DIRECTS'?'50':k==='MOIS'?'1':'0.5',k==='SALAIRE'||k==='DIRECTS'?'96px':'64px')+'</td>').join('')
         +'<td class="r">'+f0(c.annuel)+'</td><td class="r">'+nxH(c.presence)+'</td><td class="r">'+nxH(c.factu)+'</td><td class="r"><b>'+f2(c.taux)+'</b></td><td class="r">'+f2(c.revient)+'</td><td class="r">'+f2(c.vente)+'</td>'
         +'<td class="r">'+(act!=null?f2(act):'—')+'</td><td><button class="nx-btn" data-fn="a'+i+'"'+(c.taux>0?'':' disabled')+'>Appliquer</button></td></tr>'; }).join('');
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Coût de revient','Coût horaire de chaque collaborateur à partir de son salaire, des charges sociales, de sa part des frais généraux du bureau et de ses heures productives. Le taux interne obtenu sert au coût de revient (rentabilité des projets).',
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Ressources humaines','Coût de revient','Coût horaire de chaque collaborateur à partir de son salaire, des charges sociales, de sa part des frais généraux du bureau et de ses heures productives. Le taux interne obtenu sert au coût de revient (rentabilité des projets).',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+f0(T.fg)+'</div><div class="t">frais généraux / an</div></div><div class="sg-fig"><div class="n">'+num(Object.values(P.CHARGES).reduce((a,b)=>a+(+b||0),0),1)+' %</div><div class="t">charges sociales</div></div></div>'
         +'<div class="acts"><button class="nx-btn pri" data-fn="tous">'+nxSvg('check')+'Appliquer tous les taux</button></div>')
       +'<div><div class="nx-grid">'
@@ -28505,7 +28543,7 @@ async function sgCctAuto(){ if(!sgAdmin()) return; try{ await DS.need(['publicho
 VIEWS['nx-cct']={ render(m){ const y=nxLS.get('sg3_cct_an',new Date().getFullYear()), PH=pubHolidays(y), L=staffList().map(s=>({s,c:sgCctAnnee(s,y),t:DS.by('stafftargettime','STAFF_ID',s.ID).find(x=>+x.TARGETTIMEYEAR===y)}));
     const fer=[...PH.entries()].sort().map(([k,n])=>'<tr><td>'+dfr(k)+'</td><td>'+nxCap(JOURS_L[new Date(k+'T00:00').getDay()])+'</td><td>'+nxE(n)+'</td></tr>').join(''), manqFer=sgFeriesVdOps().length;
     const sumT=t=>t?[...Array(12)].reduce((a,_,i)=>a+(+t['TARGETHOURS'+i]||0),0):null;
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Heures dues et vacances','Calcul automatique selon la '+SG_CCT.nom+' : 42,5 h par semaine, 9 jours fériés vaudois non travaillés, 5 semaines de vacances (6 dès 50 ans et avant 20 ans), au prorata du taux d’occupation et de la période d’engagement.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Ressources humaines','Heures dues et vacances','Calcul automatique selon la '+SG_CCT.nom+' : 42,5 h par semaine, 9 jours fériés vaudois non travaillés, 5 semaines de vacances (6 dès 50 ans et avant 20 ans), au prorata du taux d’occupation et de la période d’engagement.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+y+'</div><div class="t">année</div></div><div class="sg-fig"><div class="n">'+PH.size+'</div><div class="t">jours fériés</div></div></div>'
         +'<div class="acts"><button class="nx-btn" data-fn="prec">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="suiv">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn pri" data-fn="tous">'+nxSvg('check')+'Appliquer à tous ('+y+')</button></div>')
       +'<div><div class="nx-grid">'
@@ -28533,7 +28571,7 @@ function sgBoucler(s,y){ const a=new Date(y,0,1), b=new Date(y,11,31), M=hrMaps(
 VIEWS['nx-bouclement']={ async render(m){ await DS.need(['sgbouclement']); const y=nxLS.get('sg3_bcl_an',new Date().getFullYear()), enCours=y>=new Date().getFullYear();
     const L=staffList().map(s=>{ const b=sgBoucler(s,y), v=DS.get('sgbouclement',y+':'+s.ID); return {s,b,v,chg:v&&(Math.abs((+v.HS||0)-b.hs)>0.05||Math.abs((+v.VAC||0)-(b.vacSolde||0))>0.05)}; });
     const nV=L.filter(x=>x.v&&x.v.VALIDE).length, nT=L.filter(x=>x.v&&x.v.TRANSFERE).length;
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Bouclement annuel','Chaque année : heures supplémentaires (solde de l’année + report) et solde des vacances par collaborateur. Vous validez les heures, puis elles sont transférées sur '+(y+1)+' (report des heures supplémentaires et droit aux vacances).',
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Ressources humaines','Bouclement annuel','Chaque année : heures supplémentaires (solde de l’année + report) et solde des vacances par collaborateur. Vous validez les heures, puis elles sont transférées sur '+(y+1)+' (report des heures supplémentaires et droit aux vacances).',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nV+'/'+L.length+'</div><div class="t">validés</div></div><div class="sg-fig"><div class="n">'+nT+'</div><div class="t">transférés sur '+(y+1)+'</div></div></div>'
         +'<div class="acts"><button class="nx-btn" data-fn="prec">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="suiv">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn" data-fn="vtous">'+nxSvg('check')+'Tout valider</button><button class="nx-btn pri" data-fn="transf"'+(nV?'':' disabled')+'>Transférer sur '+(y+1)+'</button><button class="nx-btn" data-fn="csv">'+nxSvg('export')+'CSV</button></div>')
       +'<div>'+(enCours?'<div class="nx-card c12" style="margin-bottom:22px"><div class="b" style="color:var(--s-orange)">Année '+y+' en cours : les soldes sont calculés au 31 décembre '+y+' avec les heures saisies à ce jour (heures dues de toute l’année). Validez-les en fin d’année, une fois les feuilles d’heures complètes.</div></div>':'')
@@ -28789,7 +28827,7 @@ VIEWS['nx-contrats-travail']={ async render(m){ await DS.need(['sgcontrattravail
         +'<td>'+docs.map((d,j)=>'<div style="white-space:nowrap;font-size:12px">'+({contrat:'Contrat',avenant:'Avenant',fin:'Fin'}[d.TYPE])+' '+dfr(d.EFFET||d.DEBUT||d.FIN||d.DATE)+' <a data-fn="p'+i+'_'+j+'" style="cursor:pointer;text-decoration:underline">document</a> · <a data-fn="e'+i+'_'+j+'" style="cursor:pointer;text-decoration:underline">modifier</a></div>').join('')+'</td>'
         +'<td style="white-space:nowrap">'+(c||!docs.length?'':'')+(!docs.some(d=>d.TYPE==='contrat')?'<button class="nx-btn pri" data-fn="c'+i+'">Contrat</button> ':'<button class="nx-btn" data-fn="a'+i+'">Avenant</button> ')
         +(docs.some(d=>d.TYPE==='contrat')&&!f?'<button class="nx-btn" data-fn="f'+i+'">Fin</button> ':'')+(f?'<button class="nx-btn" data-fn="d'+i+'">Décompte</button>':'')+'</td></tr>'; };
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Contrats de travail','Engagements, avenants annuels et fins de contrat, au modèle du bureau et selon la CCT des bureaux d’architectes et ingénieurs vaudois. Le contrat en vigueur alimente le coût de revient et les heures dues.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Ressources humaines','Contrats de travail','Engagements, avenants annuels et fins de contrat, au modèle du bureau et selon la CCT des bureaux d’architectes et ingénieurs vaudois. Le contrat en vigueur alimente le coût de revient et les heures dues.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.filter(s=>sgCtrEnVigueur(s.ID,auj)).length+'</div><div class="t">sous contrat</div></div><div class="sg-fig"><div class="n">'+L.filter(s=>{ const f=sgCtrFin(s.ID); return f&&f.FIN>=auj; }).length+'</div><div class="t">en préavis</div></div></div>'
         +'<div class="acts"><button class="nx-btn pri" data-fn="nouveau">'+nxSvg('plus')+'Nouvel engagement</button><button class="nx-btn" data-fn="tous">'+nxSvg('filter')+(tous?'Collaborateurs actuels':'Inclure les anciens')+'</button><button class="nx-btn" data-fn="grille">'+nxSvg('analyse')+'Salaires minimaux CCT</button></div>')
       +'<div>'+nxCard('c12','Collaborateurs','<div class="b flush" style="overflow:auto"><table class="nx-tbl"><tr><th>Collaborateur</th><th>Fonction</th><th class="r">Taux</th><th class="r">Salaire</th><th>Statut</th><th>Documents</th><th></th></tr>'+L.map(ligne).join('')+'</table></div>')+'</div></div>');
@@ -28880,7 +28918,7 @@ VIEWS['nx-occupation']={ async render(m){ await DS.need(['sgcontrattravail','sgc
       +E.map(e=>'<tr><td style="white-space:nowrap">'+dfr(e.d)+(e.d<auj?' <span class="nx-tag">passée</span>':'')+'</td><td><b>'+nxE(staffName(e.s))+'</b></td><td>'+(e.cl?'<span class="nx-tag '+e.cl+'">'+nxE(e.t)+'</span>':nxE(e.t))+'</td><td style="text-align:right"><button class="nx-btn" data-go="'+e.v+'">Ouvrir</button></td></tr>').join('')+'</table>'
       :'<div class="nx-empty">Aucune échéance dans les 120 prochains jours.</div>';
     const A=DS.all('staff').filter(s=>sgEngageAu(s,auj)), etpA=A.reduce((a,s)=>a+sgOccAu(s,auj),0), an=k=>DS.all('staff').filter(s=>{ const d=sgEngagement(s)[k]; return d&&d.slice(0,4)===String(y); }).length;
-    const pg=nxPage(m,'<div class="sg-split">'+sgIntro('Ressources humaines','Occupation et effectif','Taux d’occupation de chaque collaborateur mois par mois, selon le contrat de travail et ses avenants (au 15 du mois) ; effectif, équivalents plein temps, charge de travail du mois et échéances RH.',
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Ressources humaines','Occupation et effectif','Taux d’occupation de chaque collaborateur mois par mois, selon le contrat de travail et ses avenants (au 15 du mois) ; effectif, équivalents plein temps, charge de travail du mois et échéances RH.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+A.length+'</div><div class="t">collaborateurs aujourd’hui</div></div><div class="sg-fig"><div class="n">'+num(etpA,2)+'</div><div class="t">équivalents plein temps</div></div>'
         +'<div class="sg-fig"><div class="n">'+an('deb')+' / '+an('fin')+'</div><div class="t">arrivées / départs '+y+'</div></div></div>'
         +'<div class="acts"><button class="nx-btn" data-fn="prev">'+nxSvg('prev')+(y-1)+'</button><button class="nx-btn" data-fn="next">'+(y+1)+nxSvg('next')+'</button><button class="nx-btn" data-fn="csv">'+nxSvg('export')+'Exporter (CSV)</button><button class="nx-btn" data-go="nx-contrats-travail">'+nxSvg('contrat')+'Contrats de travail</button></div>')
@@ -29053,7 +29091,7 @@ VIEWS['nx-apports']={ render(m){ const pg0=nxPage(m,'<div class="nx-empty">Calcu
     const Y=Object.values(ans).sort((a,b)=>cmp(b.y,a.y)), tabY=Y.length?'<table class="nx-tbl"><tr><th>Année</th><th class="r">Commission acquise</th><th class="r">Versé</th><th class="r">Solde à verser en fin d’année</th></tr>'
       +Y.map(r=>'<tr><td>'+r.y+'</td><td class="r">'+nxCHF(r.da)+'</td><td class="r">'+nxCHF(r.dv)+'</td><td class="r"><b>'+nxCHF(r.sol)+'</b></td></tr>').join('')+'</table>':'';
     const titreSel=cur?staffName(cur.s):'tous les collaborateurs', C0=cur?sgCommCond(cur.id):null;
-    const html='<div class="sg-split">'+sgIntro('Finances','Apports de projets','Commission des collaborateurs sur les mandats qu’ils apportent au bureau (contrat de travail, conditions particulières) : un pourcentage des honoraires facturés HT, selon le montant des travaux, versé au décompte final une fois tous les honoraires encaissés.',
+    const html='<div class="sg-split">'+sgTete('Finances','Apports de projets','Commission des collaborateurs sur les mandats qu’ils apportent au bureau (contrat de travail, conditions particulières) : un pourcentage des honoraires facturés HT, selon le montant des travaux, versé au décompte final une fois tous les honoraires encaissés.',
         '<div class="sg-figs"><div class="sg-fig"><div class="n">'+nxCHF(T.acq)+'</div><div class="t">commission acquise (CHF)</div></div><div class="sg-fig"><div class="n">'+nxCHF(T.ver)+'</div><div class="t">versé (CHF)</div></div>'
         +'<div class="sg-fig"><div class="n">'+nxCHF(T.acq-T.ver)+'</div><div class="t">solde à verser (CHF)</div></div><div class="sg-fig"><div class="n">'+nxCHF(T.exi)+'</div><div class="t">dont exigible (CHF)</div></div></div>'
         +'<div class="acts"><button class="nx-btn pri" data-fn="nouveau">'+nxSvg('plus')+'Nouvel apport</button><button class="nx-btn" data-fn="versement">'+nxSvg('plus')+'Nouveau versement</button>'
@@ -31088,7 +31126,7 @@ function sgVisuelApercu(k){
 VIEWS['nx-visuel']={ render(m){ const v=sgVisuel();
   const carte=([k,n,d])=>nxCard('c4',nxE(n)+(k===v?' <span class="nx-tag s2" style="margin-left:8px">sur ce poste</span>':''),'<div class="b">'+sgVisuelApercu(k)
     +'<p style="margin:14px 0 16px;line-height:1.5">'+nxE(d)+'</p>'+(k===v?'<button class="nx-btn" disabled>Visuel utilisé</button>':'<button class="nx-btn pri" data-vis="'+k+'">'+nxSvg('visuel')+'Utiliser ce visuel</button>')+'</div>');
-  nxPage(m,'<div class="sg-split">'+sgIntro('Configuration','Visuel de l’app','Choisissez l’apparence de SUBGestion sur ce poste. Seul l’affichage change : données, documents PDF et impressions restent les mêmes. Le choix vaut pour ce navigateur ; chaque poste choisit le sien.')
+  nxPage(m,'<div class="sg-split">'+sgTete('Configuration','Visuel de l’app','Choisissez l’apparence de SUBGestion sur ce poste. Seul l’affichage change : données, documents PDF et impressions restent les mêmes. Le choix vaut pour ce navigateur ; chaque poste choisit le sien.')
     +'<div><div class="nx-grid">'+SG_VISUELS.map(carte).join('')+'</div><p class="nx-empty" style="padding-top:20px">Les cinq propositions de refonte sont à l’essai. Pour passer d’un visuel à l’autre : bouton '
     +'<span style="display:inline-flex;vertical-align:-3px;width:16px;height:16px">'+nxSvg('visuel')+'</span> du pied du menu, ou ⌘K « Visuel ».</p></div></div>');
   m.querySelectorAll('[data-vis]').forEach(b=>b.onclick=()=>{ sgVisuelAppliquer(b.dataset.vis,true); toast('Visuel : '+sgVisuelNom(b.dataset.vis)+'.'); }); } };
@@ -31963,7 +32001,7 @@ SG_ADM_CTL.forEach(c=>{ const tl=c.f==='heures', T=tl?'timelog':'projectcost', i
         +'<td>'+(x.der?dfr(diso(sgAdmCle(x.der))):'—')+'</td><td class="r"><span class="nx-btn sm">'+nxE(c.b)+'</span></td></tr>';
       const figs='<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">affaires · '+nxE(lib.toLowerCase())+'</div></div>'
         +'<div class="sg-fig"><div class="n">'+nCtl+'</div><div class="t">'+quoi+(nCtl>1&&tl?'s':'')+' à contrôler</div></div></div>';
-      const html='<div class="sg-split">'+sgIntro('Administration',nxE(it.t),nxE(it.d)+' Un clic sur une affaire ouvre '+nxE(c.fen)+'.',figs)
+      const html='<div class="sg-split">'+sgTete('Administration',nxE(it.t),nxE(it.d)+' Un clic sur une affaire ouvre '+nxE(c.fen)+'.',figs)
         +'<div><div class="sg-mesp-bar"><div class="seg">'+chip(0,'Toutes')+CTL_ETATS.map(([e,t])=>chip(e,t)).join('')+'</div>'
         +'<input class="inp" id="sg-admctl-q" placeholder="Rechercher une affaire…" value="'+nxE(st.q)+'"><span class="n"></span></div>'
         +(L.length?'<table class="nx-tbl sg-mesp sg-admctl"><tr><th>N°</th><th>Affaire</th><th class="r">'+(tl?'Heures':'Frais')+'</th><th class="r">À contrôler</th><th class="r">Refusées</th><th>Dernière saisie</th><th class="sg-notri"></th></tr>'

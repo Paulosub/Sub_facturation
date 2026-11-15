@@ -267,7 +267,7 @@ SG_ADM_CTL.forEach(c=>{ const tl=c.f==='heures', T=tl?'timelog':'projectcost', i
         +'<td>'+(x.der?dfr(diso(sgAdmCle(x.der))):'—')+'</td><td class="r"><span class="nx-btn sm">'+nxE(c.b)+'</span></td></tr>';
       const figs='<div class="sg-figs"><div class="sg-fig"><div class="n">'+L.length+'</div><div class="t">affaires · '+nxE(lib.toLowerCase())+'</div></div>'
         +'<div class="sg-fig"><div class="n">'+nCtl+'</div><div class="t">'+quoi+(nCtl>1&&tl?'s':'')+' à contrôler</div></div></div>';
-      const html='<div class="sg-split">'+sgIntro('Administration',nxE(it.t),nxE(it.d)+' Un clic sur une affaire ouvre '+nxE(c.fen)+'.',figs)
+      const html='<div class="sg-split">'+sgTete('Administration',nxE(it.t),nxE(it.d)+' Un clic sur une affaire ouvre '+nxE(c.fen)+'.',figs)
         +'<div><div class="sg-mesp-bar"><div class="seg">'+chip(0,'Toutes')+CTL_ETATS.map(([e,t])=>chip(e,t)).join('')+'</div>'
         +'<input class="inp" id="sg-admctl-q" placeholder="Rechercher une affaire…" value="'+nxE(st.q)+'"><span class="n"></span></div>'
         +(L.length?'<table class="nx-tbl sg-mesp sg-admctl"><tr><th>N°</th><th>Affaire</th><th class="r">'+(tl?'Heures':'Frais')+'</th><th class="r">À contrôler</th><th class="r">Refusées</th><th>Dernière saisie</th><th class="sg-notri"></th></tr>'

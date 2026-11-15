@@ -1614,3 +1614,31 @@ html:has(#main .sgd) #nx-sub{display:none!important}
 
 /* page du projet : tuile qui commence une nouvelle ligne dans son groupe (SG_TUILE_BR, 02.11.2026) */
 .sg-tiles>.sg-tile.br{grid-column-start:1}
+
+/* ═══ En-tête des pages de l'app = bandeau des listes (refonte d'ensemble, lot 2, 15.11.2026 : « refonte complète de l'app … identique aux éléments définis dans l'app
+   notamment dans devis ») — sgTete (sg3.js) : bandeau jaune (monogramme, chapitre, titre, présentation sur deux lignes), boutons « acts » à droite du bandeau,
+   chiffres « sg-figs » en rangée dessous comme les chiffres des listes ; la page passe sur une colonne ═══ */
+.sg-split:has(>.sg-tete){display:block}
+.sg-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;margin:0 0 26px}
+.sg-tete>.sgfh-tete{grid-column:1/-1;grid-row:1;min-width:0;flex-wrap:nowrap}
+.sg-tete:has(>.acts)>.sgfh-tete{grid-column:1}
+.sg-tete .sgfh-ini{white-space:nowrap}
+.sg-tete .sgfh-nm h2{display:block}
+.sg-tete .sgfh-meta{max-width:1040px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sg-tete .sgfh-meta b{font-weight:700}
+.sg-tete>.acts{grid-column:2;grid-row:1;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:0;padding:14px 22px 14px 6px;background:var(--s-jaune2);border-top:2px solid var(--s-noir);max-width:640px}
+.sg-tete>.acts .nx-btn{justify-content:center}
+.sg-tete>.sg-tkp{grid-column:1/-1;grid-template-columns:repeat(5,minmax(0,1fr));margin:14px 0 0}   /* chiffres de la page, convertis en chiffres des listes par sgTete */
+.sg-tete>.sg-tkp .nx-kpi .l,.sg-tete>.sg-tkp .nx-kpi .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-tete>.sg-tkp .nx-kpi .l{display:block}
+.sg-tete>.sg-figs{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:14px 0 0;border-top:2px solid var(--s-noir)}   /* cinq colonnes comme les chiffres des listes : deux ou trois chiffres restent à gauche, à la même place d'une page à l'autre */
+.sg-tete .sg-fig{display:flex;flex-direction:column-reverse;justify-content:flex-end;padding:14px 18px 16px 0;margin-right:18px;border-bottom:1px solid var(--s-filet);min-width:0}
+.sg-tete .sg-fig .t{font-size:11.5px;font-weight:700;color:var(--s-noir);margin:0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-tete .sg-fig .t::first-letter{text-transform:uppercase}
+.sg-tete .sg-fig .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@container (max-width:860px){
+  .sg-tete{grid-template-columns:minmax(0,1fr)}
+  .sg-tete:has(>.acts)>.sgfh-tete,.sg-tete>.acts{grid-column:1}
+  .sg-tete>.acts{grid-row:2;max-width:none;justify-content:flex-start;border-top:0;padding:0 22px 14px}
+  .sg-tete>.sg-figs,.sg-tete>.sg-tkp{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

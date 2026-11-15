@@ -427,6 +427,16 @@ function nxPage(m,html){ const p=h('div',{class:'nx-page'}); p.innerHTML='<div c
     if(t.dataset.ref) nxOpenRef(t.dataset.ref); else if(t.dataset.go) go(t.dataset.go,t.dataset.arg); else if(t.dataset.fn&&p._fn&&p._fn[t.dataset.fn]) p._fn[t.dataset.fn](t); });
   p._fn={}; return p; }
 const sgIntro=(lbl,title,txt,extra)=>'<aside class="sg-intro"><div class="sg-lbl'+(lbl?'':' vide')+'">'+nxE(lbl||'')+'</div><h2>'+title+'</h2>'+(txt?'<p>'+txt+'</p>':'')+(extra||'')+'<div class="foot">substances.ch</div></aside>';
+/* En-tête des pages de l'app = bandeau des listes (refonte d'ensemble, lot 2, 15.11.2026 ; Paulo : « refonte complète de l'app pour avoir une cohérence des éléments de
+   l'app identique aux éléments définis dans l'app notamment dans devis ») : monogramme de la page, chapitre, titre, texte de présentation (deux lignes au plus, entier en
+   infobulle), boutons à droite du bandeau, puis les chiffres en rangée — à la place de la colonne d'introduction (sgIntro), gardée pour les vues d'ensemble, le Cockpit
+   et la page du projet. Mêmes arguments que sgIntro : les pages n'ont que le nom de la fonction à changer (chiffres « sg-figs » et boutons « acts » repris tels quels). */
+const sgMono=t=>{ const s=String(t==null?'':t).replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/&[a-z]+;/g,' '), W=s.split(/[\s’'\-·/]+/).filter(w=>w&&!/^(de|des|du|d|la|le|les|l|et|à|a|au|aux|en|par|sur|pour|&)$/i.test(w));
+  return (W.length>1?W[0][0]+W[1][0]:(W[0]||'').slice(0,2)).toLocaleUpperCase('fr'); };
+const sgTete=(lbl,title,txt,extra,mono)=>{ const brut=String(txt||'').replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/"/g,'&quot;');
+  /* chiffres de la page (« sg-figs » : nombre puis légende) → chiffres des listes (« nx-kpi » : libellé puis valeur), pour qu'ils suivent aussi les visuels à l'essai */
+  const ex=String(extra||'').replace(/<div class="sg-figs"([^>]*)>/g,'<div class="nx-kpis sg-tkp"$1>').replace(/<div class="sg-fig"><div class="n">([\s\S]*?)<\/div><div class="t">([\s\S]*?)<\/div><\/div>/g,(m,n,t)=>{ const l=String(t).trim(); return '<div class="nx-kpi"><div class="l">'+l.charAt(0).toLocaleUpperCase('fr')+l.slice(1)+'</div><div class="v">'+n+'</div></div>'; });
+  return '<header class="sg-tete"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+nxE(mono||sgMono(title))+'</div><div class="sgfh-nm">'+(lbl?'<div class="lb">'+nxE(lbl)+'</div>':'')+'<h2>'+title+'</h2>'+(txt?'<div class="sgfh-meta" title="'+brut+'">'+txt+'</div>':'')+'</div></div></div>'+ex+'</header>'; };
 
 /* ═══ Accueil ═══ */
 VIEWS['nx-home']={
@@ -640,7 +650,7 @@ VIEWS['nx-collab']={
 /* ═══ Données & sauvegarde ═══ */
 VIEWS['nx-data']={
   render(m){ const li=DS.linfo||{}, n=t=>DS.all(t).length, cmds=nxMenuCmds();
-    const html='<div class="sg-split">'+sgIntro('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur (sans serveur). Exportez-les régulièrement : base de gestion ci-contre, facturation dans « Sauvegarde Facturation ».')
+    const html='<div class="sg-split">'+sgTete('Configuration','Données &amp; sauvegarde','Toutes les données sont dans ce navigateur (sans serveur). Exportez-les régulièrement : base de gestion ci-contre, facturation dans « Sauvegarde Facturation ».')
       +'<div><div class="nx-kpis">'+nxKpi('folder','Projets',String(n('project')),null,null,null,1)+nxKpi('contacts','Contacts',String(n('contactowner')),n('contact')+' adresses')+nxKpi('clock','Saisies de temps',num(n('timelog'),0))+nxKpi('users','Membres',String(n('staff')))+'</div>'
       +'<div class="nx-grid">'+nxCard('c6','Base de gestion','<div class="b"><p style="margin:0 0 14px;font-weight:300">L’export télécharge toute la base (projets, contacts, temps, chantier, finances, bibliothèque) dans un fichier <b>.json.gz</b>. L’import <b>remplace</b> la base de ce navigateur.</p>'
         +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="nx-btn pri" data-fn="exp">'+nxSvg('export')+'Exporter</button><button class="nx-btn" data-fn="imp">'+nxSvg('import')+'Importer</button></div></div>')

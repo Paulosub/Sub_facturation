@@ -2708,6 +2708,29 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   aussi une page d'accueil `index.html` qui renvoie vers l'app (le volet ouvre la racine) : écrite par `construire_et_previsualiser.sh`, qui contrôle les deux entrées.
 - Essais des profils : `.claude/launch.json` « profils-test » (port 7798, base de test et comptes de test dans le scratchpad
   de la session) ; le serveur tourne depuis une copie (le partage NAS est refusé à l'aperçu).
+- **Refonte d'ensemble demandée le 15.11.2026** (Paulo : « modifier toute l'app pour reprendre les éléments que nous avons créés ainsi que le design : impression de pdf,
+  mise en forme des pages, cohérence dans les logos, manière de naviguer ; modifie toute l'app hormis les éléments dans archives ; refonte complète … identique aux
+  éléments définis dans l'app notamment dans devis »). Référence = le devis général (liste : bandeau jaune, chiffres, tableau ; document ouvert : bandeau au numéro du
+  projet, chiffres, onglets, barre en texte ; impressions au papier des contrats, fenêtre « Document PDF »). **Inventaire du 15.11.2026** (banc d'essai, 85 écrans du menu
+  hors Archives + modules de la page du projet), quatre familles : (1) déjà à la référence — feuille et journal des heures, contrôle des heures, listes de diffusion,
+  catégories, devis, appels d'offres, contrôle des coûts, Documents Substances ; dans le projet : séances, tâches, frais, avancement, factures, devis général, contrôle des
+  coûts, soumission, contrats d'entreprise, plannings, PV MO, permis ; (2) pages de l'app à la colonne d'introduction `sgIntro` ; (3) écrans de l'ancien logiciel encore
+  tels quels (`table.g`, `.ph2` : Équipe — membres, temps de l'équipe —, Tâches, Bibliothèque `tpl-*`, Finances `mg-*`, `fact-controle`, planification RH, suivi RH,
+  estimations, intervenants, soumissionnaires, liste d'adresses du projet, calcul des coûts, `config`) ; (4) écrans de Facturation dans leur cadre (contrats, calcul,
+  factures, saisie, cockpits, sauvegarde, PV de chantier). **Ordre des lots accepté par Paulo (« Oui, cet ordre »)** : 1) demandes du 15.11 (contrats d'entreprise, PV de
+  chantier, PV MO, analyse des heures) ; 2) en-têtes des pages de l'app ; 3) écrans de l'ancien logiciel, chapitre par chapitre ; 4) écrans de Facturation ; 5) impressions
+  restantes, icônes, navigation. Ne pas toucher aux écrans d'Archives. Méthode : plusieurs chantiers de front possibles, chacun dans une copie privée des sources avec son
+  banc d'essai (dossier de travail, ports distincts), intégrés ensuite fichier par fichier.
+  **Lot 2 — en-têtes des pages de l'app (15.11.2026)** : `sgTete(lbl,title,txt,extra,mono)` et `sgMono(titre)` (`sg3.js`, après `sgIntro`) — mêmes arguments que `sgIntro`,
+  mais la page reçoit le bandeau des listes (`.sgfh-tete` : monogramme de deux lettres tiré du titre, chapitre, titre, texte de présentation sur deux lignes au plus et
+  entier en infobulle), ses boutons « acts » à droite du bandeau (même fond, même filet) et ses chiffres « sg-figs » convertis en chiffres des listes (`.nx-kpis.sg-tkp`,
+  cinq colonnes : `nx-kpi` avec libellé puis valeur, donc habillés par les six visuels) ; `.sg-split:has(>.sg-tete)` passe sur une colonne ; sous 860 px de zone, boutons
+  sous le bandeau et chiffres sur deux colonnes (styles en fin de `sg3.css`). Pages passées de `sgIntro` à `sgTete` (21 écrans) : Rentabilité des projets, Apports de
+  projets, À valider, Occupation et effectif, Contrats de travail, Heures dues et vacances, Bouclement annuel, Coût de revient, Situation des heures, les quatre écrans
+  `adm-ctl-*` / `adm-ana-*`, Gestion des utilisateurs, Paramètres système, Préférences (`sgVueFenetre`), Profils et accès, Accès protégé, Données & sauvegarde, Visuel de
+  l'app, Réunir les registres. **Gardent `sgIntro`** (pages d'orientation, déjà réglées avec Paulo) : Cockpit, vues d'ensemble `dom-*`, page du projet, et
+  « Comparer et noter » (Archives). Vérifié : 21 pages sans erreur ni débordement, cinq visuels à l'essai (bandeau et boutons au même fond), largeur étroite, balayage
+  des 121 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_1540_avant_entetes_pages/`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

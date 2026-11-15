@@ -2829,6 +2829,16 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   montant saisi du devis, ligne choisie en jaune pâle. Pas fait : page « Paramètres » en onglet comme le devis (fenêtres du moteur gardées), couleurs du graphique de
   l'aperçu, fenêtre du document à la barre « Document PDF ». Vérifié sur 99TST hors de l'aperçu (liste du projet et de tous les projets, six onglets, menus, plein écran,
   retour), balayage des 119 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_1625_avant_estimations/`.
+  **Lot 3, cinquième étape — tâches du bureau (même jour, `sg3_suivi.js`, `TACHESG`)** : les trois listes du menu Projets ▸ Tâches (`taches-urgent`, `taches-encours`,
+  `taches-regle`) quittent l'écran du moteur (colonne des collaborateurs + grille) pour la page des listes de l'app (`monter`) : bandeau aux initiales du collaborateur,
+  chiffres (Urgentes, En cours, En retard, Réglées, Projets), choix Urgent · En cours · Réglé (= les trois entrées du menu : un clic change d'écran), collaborateur
+  (ceux qui sont liés à l'utilisateur, `ptStaffs` ; d'office le sien, comme les pastilles du menu ; choix gardé pour la séance, sans toucher à `ds_h_staff` de la
+  Feuille d'heures), recherche, tableau (Projet, Tâche et première ligne de sa description, Entité, Priorité, Début, Délai ou Réglée le, Créée par ; tri commun des
+  tableaux). Mêmes tâches que le moteur (`ptModuleRows` : responsable = le collaborateur, projets « En cours » seulement), même fenêtre au clic (`ptEditReduced`), clic
+  droit : Ouvrir la tâche, Voir dans le projet (page du projet ▸ Tâches), Imprimer la tâche (`ptPrintTask`) ; ⋯ : copie et CSV (`ptExport`, colonnes `PT_MCOLS`). Ces
+  trois écrans sont retirés de `SGMV.LISTE` (`sg3_ecrans.js`). DeltaSub.html seul garde l'écran d'origine. Vérifié hors de l'aperçu (99TST : 2 en cours, 1 urgente,
+  réglées ; fenêtre, clic droit, changement de collaborateur, cinq visuels), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant :
+  `subgestion3/_backup_20261115_1730_avant_taches_bureau/`.
   **Lot 1, analyse des heures — cinq propositions (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie
   de l'app (`subgestion3/_backup_20261115_maquette_analyse_heures/` : `proposition_analyse_heures.js` et ses sources ; page `proposition_analyse_heures.html` de l'aperçu),

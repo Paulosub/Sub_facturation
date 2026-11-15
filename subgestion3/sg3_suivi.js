@@ -82,6 +82,10 @@ button.sgsv-p{cursor:pointer}button.sgsv-p:hover{background:var(--s-jaune3)}
 .sgsv-tb th{text-align:left;font-size:11px;font-weight:700;color:var(--s-gris);padding:8px;border-bottom:2px solid var(--s-noir);white-space:nowrap}
 .sgsv-tb td{padding:6px 8px;height:24px;border-bottom:1px solid var(--s-filet)}
 .sgsv-tb td.nw{white-space:nowrap}
+.sgsv-tg td{vertical-align:top}
+.sgsv-tag{display:inline-block;margin-left:8px;font-size:11px;font-weight:400;color:var(--s-gris);white-space:nowrap}
+.sgsv-tag.ret{color:var(--s-rouge)}
+.sgsv-sous{display:block;font-size:12px;color:var(--s-gris);margin-top:1px}
 .sgsv-tb tr[data-a]{cursor:pointer}.sgsv-tb tr[data-a]:hover td{background:var(--s-jaune3)}
 .sgsv-tb td.r,.sgsv-tb th.r{text-align:right}.sgsv-tb td.c,.sgsv-tb th.c{text-align:center}
 .sgsv-tb tr.tot td{font-weight:700;border-top:2px solid var(--s-noir);border-bottom:0}
@@ -548,6 +552,50 @@ const TACHES={
   ctx(I,tg,e){ if(tg.dataset.a!=='t') return false; const p=I.p, u=I.u, t=DS.get('projecttask',tg.dataset.t); if(!t) return false;
     sgMenuAt(e.clientX,e.clientY,[...(u.peut?[{t:'Modifier…',fn:()=>ptEditFull(t,p)}]:[]),{t:'Imprimer',fn:()=>ptPrintTask(t)},...(u.peut?['-',{t:'Supprimer…',danger:true,fn:()=>ptDelete(t)}]:[])]); return true; } };
 ptDomain=function(C,top,pane,p){ monter(C,p,'taches',['projecttask','projecttasknote','subproject','staff','contact'],TACHES); };
+
+/* ── TÂCHES DU BUREAU (15.11.2026, refonte d'ensemble, lot 3) : les trois listes du menu Projets ▸ Tâches — Urgent, En cours, Réglé (taches-urgent, taches-encours,
+   taches-regle) — sur la page des listes de l'app, à la place de l'écran du moteur (colonne des collaborateurs + grille). Mêmes tâches (ptModuleRows : celles dont le
+   collaborateur choisi est responsable, projets « En cours » seulement), même fenêtre (ptEditReduced : priorité, délai, urgente, réglée, notes), même impression
+   (ptPrintTask), même copie et même CSV (ptExport, colonnes PT_MCOLS). Bandeau (initiales du collaborateur, liste), chiffres (urgentes, en cours, en retard, réglées,
+   projets), choix Urgent · En cours · Réglé (= les trois entrées du menu), collaborateur (ceux qui sont liés à l'utilisateur, comme le moteur ; d'office le sien, comme
+   les pastilles du menu ; choix gardé pour la séance), recherche, tableau trié par le tri commun ; clic = ouvrir la tâche ; clic droit : ouvrir, voir dans le projet,
+   imprimer.
+   DeltaSub.html seul garde l'écran d'origine. ── */
+const KIND_T={'taches-urgent':'urgent','taches-encours':'pending','taches-regle':'done'}, KLIB_T={urgent:'Tâches urgentes',pending:'Tâches en cours',done:'Tâches réglées'}, KVUE_T={urgent:'taches-urgent',pending:'taches-encours',done:'taches-regle'};
+const BES_TG=['projecttask','projecttasknote','project','staff','appuser_staff','contact','contactowner','subproject'];
+const TACHESG={
+  rendre(I){ const u=I.u, kind=I.p.KIND||'pending', sl=ptStaffs();
+    /* collaborateur : celui de l'utilisateur d'office (comme les pastilles du menu), puis le choix fait sur cette page — gardé pour la séance, sans toucher à celui de la Feuille d'heures */
+    let sid=u.staff; if(!sl.some(s=>s.ID===sid)) sid=sl.some(s=>s.ID===(ME.staff||{}).ID)?ME.staff.ID:(sl.some(s=>s.ID===PTM.staff)?PTM.staff:((sl[0]||{}).ID||null)); u.staff=sid;
+    const st=sid?DS.get('staff',sid):null, nom=st?staffName(st):'', de=k=>ptModuleRows(k,sid), U=de('urgent'), P=de('pending'), D=de('done'), base=kind==='urgent'?U:kind==='done'?D:P;
+    const tri=kind==='done'?(a,b)=>cmp(b.DONEDATE||'',a.DONEDATE||'')||cmp(b.STARTDATE,a.STARTDATE):(a,b)=>(b.ISURGENT?1:0)-(a.ISURGENT?1:0)||cmp(a.DEADLINE||'9',b.DEADLINE||'9')||cmp(b.STARTDATE,a.STARTDATE);
+    const L=base.filter(t=>trouve(u.q,...ptText(t,true))).sort(tri); I.R=L;
+    const nR=P.filter(retT).length, nP=new Set(P.map(t=>t.PROJECT_ID)).size, prj=t=>DS.get('project',t.PROJECT_ID)||{};
+    const acts='<button class="nx-btn" data-a="menu" title="Copier, exporter" aria-label="Copier, exporter">⋯</button>';
+    const teteP=tete(inis(nom)||'TÂ','Tâches'+(nom?' · '+nom:''),KLIB_T[kind],[pl(base.length,'tâche'),'projets en cours'].join(' · '),acts);
+    if(!sl.length) return '<div class="sgsv">'+teteP+'<div class="sgsv-vide"><b>'+(ME.u?'Aucun collaborateur n’est lié à votre utilisateur.':'Choisissez votre nom d’utilisateur (en bas à gauche).')+'</b><br>Les tâches affichées ici sont celles dont un collaborateur est responsable.</div></div>';
+    const chf='<div class="nx-kpis sgsv-kp">'+kpi('Urgentes',String(U.length),'',U.length?'ret':'')+kpi('En cours',String(P.length),'')+kpi('En retard',String(nR),nR?'délai dépassé':'aucune',nR?'ret':'')+kpi('Réglées',String(D.length),'')+kpi('Projets',String(nP),'avec une tâche en cours')+'</div>';
+    const fil='<div class="sgsv-fil">'+['urgent','pending','done'].map(k=>'<button data-a="kind" data-k="'+k+'" class="'+(k===kind?'on':'')+'" aria-pressed="'+(k===kind)+'">'+E({urgent:'Urgent',pending:'En cours',done:'Réglé'}[k])+'</button>').join('')
+      +(sl.length>1?'<span style="width:10px"></span><button data-a="staff" title="Choisir le collaborateur">'+E(nom||'Collaborateur')+' ▾</button>':'')
+      +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher une tâche" aria-label="Rechercher une tâche" value="'+E(u.q||'')+'"></span></div>';
+    const fait=kind==='done';
+    return '<div class="sgsv">'+teteP+chf+fil
+      +(L.length?'<table class="nx-tbl sgsv-tb sgsv-tg"><thead><tr><th>Projet</th><th>Tâche</th><th>Entité</th><th>Priorité</th><th>Début</th><th>'+(fait?'Réglée le':'Délai')+'</th><th>Créée par</th></tr></thead><tbody>'
+        +L.map(t=>{ const p=prj(t), d=String(t.DESCRIPTION||'').split('\n')[0], ret=retT(t);
+          return '<tr data-a="open" data-t="'+E(t.ID)+'"><td class="nw" title="'+E(p.TITLE||'')+'"><b>'+E(p.NUMBER||'')+'</b></td><td><b>'+E(t.SUBJECT||'(sans objet)')+'</b>'+(t.ISURGENT&&!fait?'<span class="sgsv-tag ret">urgente</span>':'')+(d?'<span class="sgsv-sous">'+E(d.length>110?d.slice(0,109)+'…':d)+'</span>':'')+'</td>'
+            +'<td>'+E(ptContact(DS.get('contact',t.CONTACT_ID)))+'</td><td class="nw">'+E(+t.PROJECTTASKPRIORITYCODE?PT_PRIO[t.PROJECTTASKPRIORITYCODE]:'')+'</td><td class="nw">'+E(dmy(t.STARTDATE))+'</td>'
+            +'<td class="nw'+(ret?' sgsv-ret':'')+'">'+E(dmy(fait?t.DONEDATE:t.DEADLINE))+'</td><td class="nw">'+E(t.USERNAME||'')+'</td></tr>'; }).join('')+'</tbody></table>'
+        :'<p class="sgsv-rien">'+(u.q?'Aucune tâche trouvée.':{urgent:'Aucune tâche urgente.',pending:'Aucune tâche en cours.',done:'Aucune tâche réglée.'}[kind])+'</p>')+'</div>'; },
+  action(I,a,tg,e){ const u=I.u, t=tg.dataset.t?DS.get('projecttask',tg.dataset.t):null;
+    if(a==='open'){ if(t&&!(e&&e.detail>1)) ptEditReduced(t); }
+    else if(a==='kind'){ const v=KVUE_T[tg.dataset.k]; if(v&&(typeof VIEW==='undefined'||!VIEW||VIEW.id!==v)) go(v); }
+    else if(a==='staff'){ menuSous(tg,ptStaffs().map(s=>({t:staffName(s),chk:s.ID===u.staff,fn:()=>{ u.staff=s.ID; I.dessiner(); }}))); }
+    else if(a==='menu'){ menuSous(tg,ptExport({view:I.R||[],cols:PT_MCOLS},'Taches')); } },
+  ctx(I,tg,e){ if(tg.dataset.a!=='open') return false; const t=DS.get('projecttask',tg.dataset.t); if(!t) return false; let permis=true; try{ permis=typeof sgProjetPermis!=='function'||sgProjetPermis(t.PROJECT_ID); }catch(_){ }
+    sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir la tâche…',fn:()=>ptEditReduced(t)},...(permis?[{t:'Voir dans le projet',fn:()=>go('nx-pdom',t.PROJECT_ID+'|Tâches')}]:[]),{t:'Imprimer la tâche…',fn:()=>ptPrintTask(t)}]); return true; } };
+if(typeof VIEWS!=='undefined'&&typeof ptModuleRows==='function'&&typeof ptStaffs==='function'&&typeof PTM!=='undefined'){
+  Object.keys(KIND_T).forEach(v=>{ if(!VIEWS[v]) return; VIEWS[v]={render(m){ monter(m,{ID:'taches',GLOBAL:1,KIND:KIND_T[v],NUMBER:'',TITLE:''},'tachesg',BES_TG,TACHESG); },refresh(){ }}; });
+  VIEWS['taches']=VIEWS['taches-encours']; }
 
 /* ── FRAIS ── */
 const moisAn=r=>String(r.DATEYEAR||'');

@@ -1971,7 +1971,7 @@ SG_T_BIBLIO = {"modele", "modeledocument", "modelegroupe", "doctemplate", "docte
                "templategroup", "textstyleset", "rowstyleset"}
 SG_T_TAUX = {"staffrate"}                       # taux internes : droit « équipe : taux »
 SG_T_SALAIRES = {"sgcoutrevient", "sgbouclement", "sgcontrattravail", "sgapport"}               # coût de revient (salaires) : droits « équipe : taux » et « réglages »
-SG_T_LIBRES = {"documentlock", "setting", "appusersignature"} | CH08_ADMIN_T   # règles propres (verrous, CH-08)
+SG_T_LIBRES = {"documentlock", "setting", "appusersignature", "sgpresentation"} | CH08_ADMIN_T   # règles propres (verrous, CH-08) ; sgpresentation (15.11.2026) : présentations des tableaux (colonnes affichées), communes au bureau, enregistrables par tout profil
 # parents explicites (enfant → (champ, parent)) ; sinon CHAMP_ID → collection « champ » si elle est rattachée à un projet
 SG_PARENTS = {"projectsubphase": ("PROJECTPHASE_ID", "projectphase"), "projectactivity": ("PROJECTACTIVITYGROUP_ID", "projectactivitygroup"),
               "projectactivity_staff": ("PROJECTACTIVITY_ID", "projectactivity"), "projectcatalogpos": ("PROJECTCATALOG_ID", "projectcatalog"),

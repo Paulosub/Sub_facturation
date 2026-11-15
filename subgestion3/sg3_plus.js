@@ -3073,23 +3073,47 @@ const SG_AG={ouvrir:null,aller:null,reduits:()=>new Set((nxLS.get('sg3_ag_ctr_re
 /* ⌥↑ / ⌥↓ : affaire précédente / suivante de la liste, fiche ouverte (23.10.2026) */
 window.addEventListener('keydown',e=>{ if(!e.altKey||(e.key!=='ArrowUp'&&e.key!=='ArrowDown')||!VIEW||VIEW.id!=='affd-gestion'||!SG_AG.aller||document.querySelector('.ov')) return;
   if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; e.preventDefault(); SG_AG.aller(e.key==='ArrowUp'?-1:1); });
+/* Liste des affaires au graphisme des listes de l'app (15.11.2026, Paulo, capture de la page encadrée : « produire le même graphisme que le reste et ajouter
+   la possibilité d'imprimer la liste avec le même graphisme » ; puis « supprimer la possibilité de réorganiser … directement sur le tableau, ajoute l'option
+   présentation ») : bandeau, chiffres, onglets des statuts (Toutes · En cours · En attente · Configuration · Terminées · Archivées) et choix Externes / Internes à
+   droite, barre en texte (Nouveau projet, Éditer le projet, Supprimer, Présentation ▾, Imprimer ; recherche et Fonctions ▾ à droite) ; tableau des colonnes de la
+   présentation (bloc 57, sg3_tableaux.js : catalogue « affaires », pas de tri par les titres, ordre du numéro comme avant) ; fiche de l'affaire à droite comme avant
+   (clic = fiche, double-clic = éditer, ⌥↑ ⌥↓, clic droit). Bandeau fixe : la liste et la fiche défilent chacune. Imprimer = la liste affichée, colonnes de la
+   présentation, au graphisme des documents (sgtabImprimer → SGDH.ouvrir). Choix gardés par poste : sg3_agl_etat, sg3_agl_type, sg3_agl_q. */
+const SG_AGL_ETATS=[['actives','Toutes',p=>+p.PROJECTSTATECODE!==5,'Toutes les affaires, sauf les archivées'],['2','En cours'],['3','En attente'],['1','Configuration'],['4','Terminées'],['5','Archivées']];
+const SG_AGL_TYPES=[['tous','Toutes'],['ext','Externes'],['int','Internes']];
 VIEWS['affd-gestion']={
-  render(m){ const cur=()=>DS.get('project',AF.g.sel), need=f=>()=>{ const p=cur(); if(!p){ toast('Sélectionnez une affaire.',true); return; } f(p); };
-    const R=h('div',{class:'col fill sg-ag',style:{margin:'6px'}}), pane=h('div',{class:'pane'}), fiche=h('aside',{class:'sg-ag-fiche'});
-    const head=phead([
-      {i:'plus',t:'Nouvelle affaire',fn:()=>editProject()},{i:'edit',t:'Editer l’affaire',fn:need(editProject)},{i:'minus',t:'Supprimer l’affaire',fn:need(delProject)},
-      /* Intervenants, Configuration, Subdivisions, Modèles, Documents et Fonctions retirés de la barre (23.10.2026, demande de Paulo) : les fenêtres
-         du moteur restent (cfgMembers, cfgActivities, cfgRates, cfgPhases, cfgSubprojects, defineTemplates, printProjects, copyTable, csvTable…) */
-      {i:'filter',t:'Filtre',menu:()=>[{t:'Tous les statuts',chk:!AF.filt.s,fn:()=>{ AF.filt.s=null; draw(); }},...Object.entries(PSTATE).map(([k,t])=>({t,chk:AF.filt.s==k,fn:()=>{ AF.filt.s=k; draw(); }})),'-',
-        {t:'Affaires internes',chk:AF.filt.i===1,fn:()=>{ AF.filt.i=AF.filt.i===1?null:1; draw(); }},{t:'Affaires externes',chk:AF.filt.i===0,fn:()=>{ AF.filt.i=AF.filt.i===0?null:0; draw(); }}]}
-    ],{count:1,search:q=>{ AF.q=q; draw(); }});
-    R.append(head,h('div',{class:'sg-ag-corps'},h('div',{class:'sg-ag-liste'},pane),fiche)); m.append(R);
-    let I={}, PA={}; const index=()=>{ const lim=dayKey(new Date(Date.now()-30*864e5)); I={}; PA={};
+  render(m){ VIEW.nxTitle='Liste des affaires'; const V=this, cur=()=>DS.get('project',AF.g.sel);
+    const peut=k=>{ try{ return typeof ch08aCan!=='function'||ch08aCan(k); }catch(_){ return true; } }, def=peut('projectDefinition');
+    let et=String(nxLS.get('sg3_agl_etat','actives')||'actives'), ty=String(nxLS.get('sg3_agl_type','tous')||'tous'); const q0=String(nxLS.get('sg3_agl_q','')||'');
+    if(!SG_AGL_ETATS.some(x=>x[0]===et)) et='actives'; if(!SG_AGL_TYPES.some(x=>x[0]===ty)) ty='tous';
+    let I={}, PA={}, HP={}; const index=()=>{ const lim=dayKey(new Date(Date.now()-30*864e5)); I={}; PA={}; HP={};
       DS.all('timelog').forEach(r=>{ const v=+r.TIMEPERIOD||0, k=tlKey(r), x=I[r.PROJECT_ID]||(I[r.PROJECT_ID]={der:0,derD:null,h30:0,tot:0,st:{}}); x.tot+=v; x.st[r.STAFF_ID]=(x.st[r.STAFF_ID]||0)+v; if(k>x.der){ x.der=k; x.derD=tlDate(r); } if(k>=lim) x.h30+=v; }); };
     const ix=p=>I[p.ID]||{der:0,derD:null,h30:0,tot:0,st:{}}, phase=p=>PA[p.ID]!==undefined?PA[p.ID]:(PA[p.ID]=sgPhaseActuelle(p)), phL=p=>sgTermine(p)?'Terminé':(sgPhaseLib(phase(p),true)||'');
     const catL=p=>{ const c=sgCatOuInterne(p); return c==='interne'?'Autres':c==='architecture'?'':(SG_CAT_L[c]||''); }, E=nxE;
+    const hp=p=>HP[p.ID]!==undefined?HP[p.ID]:(HP[p.ID]=DS.by('projectphase','PROJECT_ID',p.ID).reduce((t,f)=>t+(+f.TIMEBUDGET||0),0)), ctx={ix,phL,catL,hp};
+    index();
+    const fEt=k=>{ const x=SG_AGL_ETATS.find(y=>y[0]===k)||SG_AGL_ETATS[0]; return x[2]||(p=>String(+p.PROJECTSTATECODE)===x[0]); };
+    const chiffres=()=>{ const P=DS.all('project'), n=k=>P.filter(fEt(k)).length, A=P.filter(p=>+p.PROJECTSTATECODE!==5&&ix(p).h30);
+      return {n,act:A.length,h30:A.reduce((t,p)=>t+ix(p).h30,0)}; };
+    const C0=chiffres();
+    const kpis=C=>[sgKpi('Affaires',String(C.n('actives')),'hors archivées'),sgKpi('En cours',String(C.n('2'))),sgKpi('En attente',String(C.n('3'))),
+      sgKpi('Affaires actives',String(C.act),'heures saisies ces 30 jours'),sgKpi('Heures ces 30 jours',nxH(C.h30)+'<small>h</small>','tout le bureau')];
+    const html='<div class="sg-split">'+sgTete('Affaires','Liste des affaires','Toutes les affaires du bureau. Un clic affiche la fiche de l’affaire à droite ; double-clic : éditer l’affaire ; clic droit : ses fonctions. Colonnes au choix : Présentation.',
+        sgKpis(kpis(C0))
+        +sgPageNav({onglets:SG_AGL_ETATS.map(([k,t,f,ti])=>({t,arg:k,fn:'etat',on:k===et,n:C0.n(k),ti:ti||''})),
+          choix:[{lb:'Type',items:SG_AGL_TYPES.map(([k,t])=>({t,fn:'type',arg:k,on:k===ty}))}],
+          gauche:[{t:'Nouveau projet',i:'plus',fn:'nouv',dis:!def,ti:'Créer une affaire'},{t:'Éditer le projet',i:'edit',fn:'edit',dis:!def,ti:'Éditer l’affaire choisie (aussi : double-clic sur la ligne)'},
+            {t:'Supprimer',i:'minus',fn:'supp',dis:!def,ti:'Supprimer l’affaire choisie'},'-',
+            {t:'Présentation',i:'list',fn:'pres',dd:1,ti:'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …'},{t:'Imprimer',i:'print',fn:'imp',ti:'Liste des affaires affichée (PDF)'}],
+          droite:[{html:'<input class="inp" id="sg-agl-q" placeholder="Rechercher une affaire…" value="'+nxE(q0)+'" style="width:220px"><span class="sg-nn n" id="sg-agl-n"></span>'},{t:'Fonctions',i:'gear',fn:'fonctions',dd:1}]}))
+      +'<div class="sg-ag sg-agl"><div class="sg-agl-liste"></div><aside class="sg-ag-fiche"></aside></div></div>';
+    const pg=nxPage(m,html); pg.classList.add('sg-aglp');
+    const R=pg.querySelector('.sg-agl'), liste=pg.querySelector('.sg-agl-liste'), fiche=pg.querySelector('.sg-ag-fiche'), inp=pg.querySelector('#sg-agl-q'), nbEl=pg.querySelector('#sg-agl-n');
+    V._liste=liste;
     let ferme=false, dernier=null; SG_AG.ouvrir=()=>{ ferme=false; dessinerFiche(); };   /* fiche projet = fenêtre à droite, fermable (22.10.2026) */
-    const aller=d=>{ const V=AF.g.view||[], i=V.findIndex(r=>String(r.ID)===String(AF.g.sel)), r=V[i+d]; if(i<0||!r) return; const tr=pane.querySelector('tr[data-k="'+CSS.escape(String(r.ID))+'"]'); if(tr){ tr.click(); tr.scrollIntoView({block:'nearest'}); } };
+    /* affaire précédente / suivante : ordre affiché de la liste (15.11.2026 : plus de grille du moteur) */
+    const aller=d=>{ const T=[...liste.querySelectorAll('tbody tr[data-k]')], i=T.findIndex(x=>x.dataset.k===String(AF.g.sel)), tr=T[i+d]; if(i<0||!tr) return; tr.click(); tr.scrollIntoView({block:'nearest'}); };
     SG_AG.aller=aller;
     const majTout=()=>{ const b=fiche.querySelector('#sg-ag-ctt'), K=[...fiche.querySelectorAll('.sg-ag-ct')]; if(!b) return; b.hidden=K.length<2; b.textContent=K.length&&K.every(k=>k.classList.contains('red'))?'Tout déplier':'Tout réduire'; };
     const reduire=(K,red)=>{ const S=SG_AG.reduits(); K.forEach(k=>{ k.classList.toggle('red',red); const hd=k.querySelector('[data-ctr]'); if(hd){ hd.setAttribute('aria-expanded',String(!red)); hd.title=(red?'Déplier':'Réduire')+' ce contrat'; } red?S.add(k.dataset.ct):S.delete(k.dataset.ct); });
@@ -3133,17 +3157,46 @@ VIEWS['affd-gestion']={
       if(dernier!==p.ID){ fiche.scrollTop=0; dernier=p.ID; }
       fxEnsure().catch(()=>null).then(()=>{ const c=fiche.querySelector('#sg-ag-ctr'); if(!c||cur()!==p) return; const D=fxData(), n=D?sgContratsDuProjet(p,D).length:0;
         c.innerHTML=sgAgContrats(p,D); const ad=fiche.querySelector('#sg-ag-adr'); if(ad) ad.outerHTML=sgFicheAdresses(p,D); const cn=fiche.querySelector('#sg-ag-ctn'); if(cn) cn.textContent=n?String(n):''; majTout(); }); };
-    const draw=()=>{ const rows=DS.all('project').filter(p=>(AF.arch||p.PROJECTSTATECODE!==5)&&(!AF.filt.s||p.PROJECTSTATECODE==AF.filt.s)&&(AF.filt.i==null||(+!!p.ISINTERNAL)===AF.filt.i)&&matchQ(AF.q,p.NUMBER,p.TITLE,p.DESCRIPTION));
-      grid(pane,Object.assign(AF.g,{cols:[{k:'NUMBER',t:'Numéro',w:92},{k:'TITLE',t:'Affaire',w:300},{k:'st',t:'Statut',w:96,f:projState,v:p=>p.PROJECTSTATECODE},
-        {k:'cat',t:'Catégorie',w:90,f:p=>E(catL(p)),v:catL},{k:'ph',t:'Phase actuelle',w:150,f:p=>E(phL(p)),v:phL},
-        {k:'der',t:'Dernière saisie',w:100,f:p=>ix(p).derD?dfr(diso(ix(p).derD)):'',v:p=>ix(p).der},{k:'h30',t:'Heures 30 j',w:84,cls:'r',f:p=>ix(p).h30?nxH(ix(p).h30):'',v:p=>ix(p).h30},
-        {k:'act',t:'Activité',w:62,cls:'c',f:p=>ix(p).h30?'<i class="sg-ag-pt on" title="Heures saisies ces 30 jours"></i>':'<i class="sg-ag-pt" title="Aucune heure saisie ces 30 jours"></i>',v:p=>ix(p).h30},
-        {k:'PROJECTSTARTDATE',t:'Début',w:90,f:p=>dfr(p.PROJECTSTARTDATE)},{k:'PROJECTENDDATE',t:'Fin',w:90,f:p=>dfr(p.PROJECTENDDATE)},{k:'mo',t:'Maître d’ouvrage',w:200,f:p=>E(projMO(p)),v:projMO}],
-        rows,sort:AF.g.sort||['NUMBER',-1],onDbl:p=>editProject(p),onSel:()=>{ ferme=false; dessinerFiche(); }}));
-      if(!pane._sgRouvre){ pane._sgRouvre=1; pane.addEventListener('click',e=>{ const tr=e.target.closest('tr[data-k]'); if(tr&&ferme&&tr.dataset.k===String(AF.g.sel)){ ferme=false; dessinerFiche(); } }); }
-      head.setCount(rows.length+' Affaires'); dessinerFiche(); };
-    this.draw=()=>{ index(); draw(); }; this.draw(); },
-  refresh(ts){ if(hit(ts,'project','projectmember','projectphase','projectsubphase','timelog')&&this.draw) this.draw(); } };
+    /* lignes affichées : statut, type, recherche ; ordre du numéro, du plus grand au plus petit (comme avant) */
+    const lignes=()=>{ const f=fEt(et), qv=(inp?inp.value:q0).trim().toLowerCase();
+      return DS.all('project').filter(p=>f(p)&&(ty==='tous'||(ty==='int')===!!p.ISINTERNAL)&&(!qv||matchQ(qv,p.NUMBER,p.TITLE,p.DESCRIPTION,projMO(p),p.LOCATION)))
+        .sort((a,b)=>cmp(b.NUMBER,a.NUMBER)); };
+    const draw=()=>{ const cols=sgtabCols('affaires'), L=lignes(); V._L=L;
+      liste.innerHTML=L.length?'<table class="nx-tbl sg-agl-t"><thead>'+sgtabEntete(cols)+'</thead><tbody>'
+          +L.map(p=>'<tr class="sg-agl-r'+(String(p.ID)===String(AF.g.sel)?' on':'')+'" data-k="'+nxE(String(p.ID))+'">'+sgtabCellules(cols,p,ctx)+'</tr>').join('')+'</tbody></table>'
+        :'<div class="nx-empty">Aucune affaire pour ce choix.</div>';
+      if(nbEl) nbEl.textContent=L.length+' affaire'+(L.length>1?'s':'');
+      dessinerFiche(); };
+    /* chiffres et nombres des onglets tenus à jour quand la base change (sans redessiner la barre : la recherche garde le curseur) */
+    const majChiffres=()=>{ const C=chiffres(), K=[...pg.querySelectorAll('.sg-tete>.sg-tkp>.nx-kpi')], N=kpis(C), d=document.createElement('div');
+      N.forEach((x,i)=>{ if(!K[i]) return; d.innerHTML=x; const n=d.firstElementChild; if(n) K[i].replaceWith(n); });
+      pg.querySelectorAll('[data-fn="etat"]').forEach(b=>{ const s=b.querySelector('small'); if(s) s.textContent=String(C.n(b.dataset.arg)); }); };
+    const choisir=tr=>{ const k=tr.dataset.k, deja=String(AF.g.sel)===k; liste.querySelectorAll('tbody tr.on').forEach(x=>x.classList.remove('on')); tr.classList.add('on'); AF.g.sel=k;
+      if(!deja||ferme){ ferme=false; } dessinerFiche(); };
+    liste.addEventListener('click',e=>{ const tr=e.target.closest('tbody tr[data-k]'); if(tr&&liste.contains(tr)) choisir(tr); });
+    liste.addEventListener('dblclick',e=>{ const tr=e.target.closest('tbody tr[data-k]'); if(!tr||!def) return; const p=DS.get('project',tr.dataset.k); if(p) editProject(p); });
+    liste.addEventListener('contextmenu',e=>{ if(e.altKey||(typeof sgCtxSelection==='function'&&sgCtxSelection(e.target,document))) return;
+      const tr=e.target.closest('tbody tr[data-k]'); if(!tr||!liste.contains(tr)) return; const p=DS.get('project',tr.dataset.k); if(!p) return;
+      e.preventDefault(); choisir(tr);
+      const it=[{t:'Fiche de l’affaire',fn:()=>{ ferme=false; dessinerFiche(); }},{t:'Éditer le projet …',dis:!def,fn:()=>editProject(p)},{t:'Page du projet',fn:()=>go('nx-pdom',p.ID)},
+        {t:'Tableau de bord du projet',fn:()=>go('nx-projet',p.ID)},'-',{t:'Supprimer le projet …',dis:!def,fn:()=>delProject(p)}];
+      if(typeof sgCtxCopie==='function') it.push('-',...sgCtxCopie(tr)); sgMenuAt(e.clientX,e.clientY,it,tr); });
+    const lib=(L,k)=>(L.find(x=>x[0]===k)||[])[1]||'';
+    pg._fn.etat=b=>{ et=b.dataset.arg; nxLS.set('sg3_agl_etat',et); pg.querySelectorAll('[data-fn="etat"]').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-selected',on?'true':'false'); }); draw(); };
+    pg._fn.type=b=>{ ty=b.dataset.arg; nxLS.set('sg3_agl_type',ty); pg.querySelectorAll('[data-fn="type"]').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-pressed',on?'true':'false'); }); draw(); };
+    pg._fn.nouv=()=>editProject();
+    pg._fn.edit=()=>{ const p=cur(); if(!p){ toast('Sélectionnez une affaire.',true); return; } editProject(p); };
+    pg._fn.supp=()=>{ const p=cur(); if(!p){ toast('Sélectionnez une affaire.',true); return; } delProject(p); };
+    pg._fn.pres=b=>sgtabMenu('affaires',b,draw);
+    pg._fn.imp=()=>{ const L=V._L||[], qv=(inp?inp.value:'').trim();
+      sgtabImprimer('affaires',L,ctx,{titre:'Liste des affaires',lb:'Affaires · Documents',type:'Affaires',sous:lib(SG_AGL_ETATS,et)+(ty!=='tous'?' · '+lib(SG_AGL_TYPES,ty):'')+(qv?' · « '+qv+' »':''),
+        meta:[['Statut',lib(SG_AGL_ETATS,et)],['Type',lib(SG_AGL_TYPES,ty)],['Recherche',qv?'« '+qv+' »':''],['Affaires',String(L.length)]]}); };
+    pg._fn.fonctions=b=>sgMenuSous(b,[{t:'Exporter en CSV …',dis:!(V._L||[]).length,fn:()=>sgtabCsv('affaires',V._L||[],ctx,'affaires')},
+      {t:'Copier le tableau',dis:!liste.querySelector('table'),fn:()=>{ const t=liste.querySelector('table'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); }}]);
+    if(inp) inp.oninput=()=>{ nxLS.set('sg3_agl_q',inp.value); draw(); };
+    V.draw=()=>{ index(); draw(); majChiffres(); }; draw(); },
+  refresh(ts){ if(!this.draw||!hit(ts,'project','projectmember','projectphase','projectsubphase','timelog','contact','contactowner','sgsurfaces','sgpresentation')) return;
+    const L=this._liste, y=L?L.scrollTop:0; this.draw(); if(L&&L.isConnected) L.scrollTop=y; } };
 
 /* ═══ Choix d'une adresse pour une affaire (23.10.2026, demande de Paulo « améliorer la fenêtre adresse de projet dans Éditer le projet ») — remplace,
    dans Éditer l'affaire, le navigateur d'adresses du moteur (pickContact) : recherche immédiate (nom, société, rue, localité), filtre Tous /
@@ -3435,53 +3488,9 @@ NX_VIEW['nx-listeprojets']={d:SG_D.projets,t:'Liste des projets',fiche:1};
 /* écrans du moteur hors du menu Projets (liens internes du moteur) : rattachés au chapitre Affaires pour l'en-tête et le menu */
 [['aff-toutes','Toutes les affaires'],['aff-mes','Mes affaires']].forEach(([v,t])=>{ if(!NX_VIEW[v]) NX_VIEW[v]={d:SG_D.affaires,t,fiche:1}; });
 
-/* ═══ Tri des tableaux (20.10.2026) : un clic sur le titre d'une colonne d'un tableau .nx-tbl de la coquille trie les lignes ; un
-   2e clic inverse. Premier clic : texte de A à Z, nombres du plus grand au plus petit, dates de la plus récente à la plus ancienne
-   (jj.mm.aaaa, « Septembre 2026 »). Cellules vides en bas ; lignes « Total » (tr.tot ou texte « Total… ») gardées à leur place
-   (en tête ou en pied) ; sous-lignes (tr.sub : phases partielles, sous-phases) triées avec leur ligne parente. Tri retenu pour la
-   session, par écran et par jeu de colonnes, et réappliqué quand l'écran se redessine (MutationObserver). Pas de tri : plusieurs
-   lignes de titres, cellules fusionnées (colspan) ou titre contenant un contrôle. Les listes du moteur (grid) ont leur propre tri. ═══ */
-const SG_TRI=new Map();
-const SG_MOIS_FR=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-const SG_TRI_MOIS=new RegExp('^('+SG_MOIS_FR.join('|')+')\\s+(\\d{4})$','i');
-function sgTriVal(td){ if(!td) return null; if(td.dataset&&td.dataset.tri!=null) return td.dataset.tri?{k:'t',v:td.dataset.tri}:null;   // clé de tri fournie (ordre SIA)
-  const c=td.querySelector('input,select,textarea'); const t=(c?c.value:td.textContent).replace(/\s+/g,' ').trim();
-  if(!t||/^[—–-]$/.test(t)||/^\(.*\)$/.test(t)) return null;   // vide, tiret, « (sans phase) »… : toujours en bas
-  let m=/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(t); if(m) return {k:'d',v:+m[3]*10000+ +m[2]*100+ +m[1]};
-  m=SG_TRI_MOIS.exec(t); if(m) return {k:'d',v:+m[2]*100+SG_MOIS_FR.indexOf(m[1].toLowerCase())};
-  const n=t.replace(/[’'   ]/g,'').replace(/[−–]/g,'-').replace(/(CHF|h|%|j|\/h)+$/i,'').replace(/^\+/,'');
-  if(/^-?\d+(\.\d+)?$/.test(n)) return {k:'n',v:parseFloat(n)};
-  return {k:'t',v:t}; }
-function sgTriTable(tb){ if(tb.closest('#sg-onglet')) return null;   // tableau de bord d'un projet (onglets Heures, Contrat, Factures…) : pas de tri, à la demande (20.10.2026)
-  const rows=[...tb.rows], H=rows.filter(r=>r.querySelector('th')); if(H.length!==1) return null;
-  const hr=H[0]; if([...hr.cells].some(c=>c.colSpan>1||c.querySelector('input,select,button,a'))) return null;
-  const data=rows.slice(rows.indexOf(hr)+1); if(data.length<2||data.some(r=>[...r.cells].some(c=>c.colSpan>1))) return null;
-  return {hr,data}; }
-const sgTriSig=hr=>((window.VIEW&&VIEW.id)||'')+'|'+[...hr.cells].map(c=>c.textContent.trim()).join('|');
-const sgTriNum=V=>{ const k=V.filter(Boolean).map(v=>v.k); return k.length>0&&k.filter(x=>x!=='t').length>=k.length*0.8; };
-function sgTriAppliquer(tb,i,sens){ const T=sgTriTable(tb); if(!T) return; const par=T.data[0].parentNode, L=T.data.filter(r=>r.parentNode===par);
-  const sansTot=!!(tb.closest&&tb.closest('table.sg-sanstot'));   /* liste de noms (ex. Liste des adresses, 25.10.2026) : « Total … » n'est pas une ligne de total */
-  const tot=r=>r.classList.contains('tot')||(!sansTot&&/^total\b/i.test(((r.cells[0]&&r.cells[0].textContent)||'').trim()));
-  const tete=[], pied=[], blocs=[]; L.forEach(r=>{ if(tot(r)){ (blocs.length?pied:tete).push(r); return; }
-    if(r.classList.contains('sub')&&blocs.length) blocs[blocs.length-1].subs.push(r); else blocs.push({r,subs:[]}); });
-  const num=sgTriNum(blocs.map(b=>sgTriVal(b.r.cells[i]))), val=r=>{ const v=sgTriVal(r.cells[i]); return v&&num&&v.k==='t'?null:v; };
-  const cmpV=(a,b)=>{ if(!a&&!b) return 0; if(!a) return 1; if(!b) return -1;
-    const d=num?a.v-b.v:String(a.v).localeCompare(String(b.v),'fr',{numeric:true,sensitivity:'base'}); return sens==='asc'?d:-d; };
-  const trier=X=>X.map((r,j)=>({r,j,v:val(r)})).sort((a,b)=>cmpV(a.v,b.v)||a.j-b.j).map(x=>x.r);
-  const ordre=trier(blocs.map(b=>b.r)), sousDe=new Map(blocs.map(b=>[b.r,trier(b.subs)]));
-  [...tete,...ordre.flatMap(r=>[r,...sousDe.get(r)]),...pied].forEach(r=>par.appendChild(r));
-  [...T.hr.cells].forEach((c,j)=>{ c.classList.toggle('sg-tri',j===i); c.classList.toggle('asc',j===i&&sens==='asc'); c.classList.toggle('desc',j===i&&sens==='desc');
-    if(j===i) c.setAttribute('aria-sort',sens==='asc'?'ascending':'descending'); else c.removeAttribute('aria-sort'); }); }
-document.addEventListener('click',e=>{ const th=e.target.closest&&e.target.closest('table.nx-tbl th'); if(!th||e.defaultPrevented) return;
-  const tb=th.closest('table'), T=sgTriTable(tb); if(!T||th.parentNode!==T.hr||!th.textContent.trim()) return;
-  const i=[...T.hr.cells].indexOf(th), sig=sgTriSig(T.hr), cur=SG_TRI.get(sig);
-  const sens=cur&&cur.i===i?(cur.sens==='asc'?'desc':'asc'):(sgTriNum(T.data.map(r=>sgTriVal(r.cells[i])))?'desc':'asc');
-  SG_TRI.set(sig,{i,sens}); sgTriAppliquer(tb,i,sens); });
-{ let f=0; const scan=()=>{ f=0; document.querySelectorAll('table.nx-tbl:not([data-tri])').forEach(tb=>{ const T=sgTriTable(tb); tb.dataset.tri=T?'1':'0'; if(!T) return;
-      T.hr.classList.add('sg-triable'); [...T.hr.cells].forEach(c=>{ if(!c.textContent.trim()) c.classList.add('sg-notri'); else if(!c.title) c.title='Trier'; });
-      const cur=SG_TRI.get(sgTriSig(T.hr)); if(cur&&cur.i<T.hr.cells.length) sgTriAppliquer(tb,cur.i,cur.sens); }); };
-  const go0=()=>{ new MutationObserver(()=>{ if(!f) f=requestAnimationFrame(scan); }).observe(document.body,{childList:true,subtree:true}); scan(); };
-  if(document.body) go0(); else document.addEventListener('DOMContentLoaded',go0); }
+/* ═══ Tri des tableaux (20.10.2026) : RETIRÉ le 15.11.2026 (Paulo : « lorsqu'il s'agit d'un tableau supprimer la possibilité de réorganiser par ordre
+   alphabétique ou tout autre tri directement sur le tableau ») — les tableaux gardent l'ordre de leur écran ; les colonnes se choisissent par « Présentation »
+   (bloc 57, sg3_tableaux.js). Ancien code (clic sur un titre, SG_TRI, data-tri) : subgestion3/_backup_20261115_2225_avant_tableaux/sg3_plus.js. ═══ */
 
 /* ═══ 21. MODULES « PROJET » ET « FAISABILITÉ » DE LA PAGE DU PROJET · PARCELLE & RÈGLEMENTS (20.10.2026) ═══════════════════════════
    Page du projet (nx-pdom) : deux groupes de TRAVAIL en tête — « Projet » (PV MO, Présentation client, Estimations, Descriptifs & devis,

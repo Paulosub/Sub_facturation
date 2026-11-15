@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion</title>
-<!-- SUBGestion 2 — générée le 14.11.2026 10:02 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
+<!-- SUBGestion 2 — générée le 15.11.2026 22:32 par subgestion2/construire.py à partir de DeltaSub.html (moteur et données)
      + subgestion2/nx.css et nx.js (interface). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4024,7 +4024,8 @@ function ccAffichage(C,o){
 .cca-ap div{display:grid;grid-template-columns:minmax(0,1fr) 120px;padding:6px 4px;border-bottom:1px solid #e3e3e0;font-style:italic}
 .cca-ap div span:last-child{text-align:right;font-variant-numeric:tabular-nums}
 `; document.head.appendChild(st); }
-  /* o.liste (11.11.2026) : fenêtre d'une liste des écritures (mutations, adjudications, paiements) — ses colonnes propres {titre, cat, def(id), std, cols, set(ids)}, sans couleurs ni colonne fixe */
+  /* o.liste (11.11.2026) : fenêtre d'une liste des écritures (mutations, adjudications, paiements) — ses colonnes propres {titre, cat, def(id), std, cols, set(ids)}, sans couleurs ni colonne fixe ;
+     liste.note (15.11.2026) : texte sous les colonnes affichées (tableaux de SUBGestion 3, bloc 57) */
   const LI=o.liste||null, CAT=LI?LI.cat:CC_CAT, DEF=id=>LI?LI.def(id):CC_COL[id], PIN=LI?null:'kag';
   const P=LI?{colonnes:(LI.cols||[]).map(id=>({id}))}:o.pres(), cols=(P.colonnes||[]).map(c=>Object.assign({},c)), cou=ccCouleurs(C), eqs=(C.parametres||{}).equations||[];
   if(PIN){ const k=cols.findIndex(x=>x.id===PIN); if(k<0) cols.unshift({id:'kag',idDelta:0,details:false}); else if(k>0) cols.unshift(cols.splice(k,1)[0]); }   /* CFC : toujours la première colonne, ni déplacée ni retirée */
@@ -4062,7 +4063,7 @@ function ccAffichage(C,o){
         if(on){ const k=to>i?to-1:to; if(k!==i) cols.splice(k,0,cols.splice(i,1)[0]); drawS(); } };
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',fin); document.addEventListener('pointercancel',fin); });
     S.append(h('h4',{},'Colonnes affichées, dans l’ordre'),ls,h('div',{class:'cca-acts'},h('button',{type:'button',class:'btn',onclick:()=>{ cols.splice(0,cols.length,...(LI?LI.std.map(id=>({id})):CC_PRES_DEF.Standard.map(id=>({id,idDelta:CH01A_IDD[id],details:!!CC_COL[id].det})))); drawL(); drawS(); }},'Colonnes Standard')),
-      h('div',{class:'cca-note'},LI?'Colonnes de la liste « '+LI.titre+' », enregistrées dans ce contrôle des coûts.':o.note||('Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.')));
+      h('div',{class:'cca-note'},LI?(LI.note||'Colonnes de la liste « '+LI.titre+' », enregistrées dans ce contrôle des coûts.'):o.note||('Le numéro CFC reste la première colonne. Présentation modifiée : '+(P.base?'« Personnalisée » (créée ou mise à jour ; « Standard » ne change pas)':'« '+(P.nom||'(sans nom)')+' »')+'.')));
     pane.append(h('div',{class:'cca-col'},h('div',{},qi,L),S)); drawL(); drawS(); };
   const drawCou=()=>{ pane.innerHTML=''; const els=h('div'), pal=h('div',{class:'cca-pal'}), ap=h('div',{class:'cca-ap'});
     const maj=()=>{ els.innerHTML=''; Object.keys(NOMS).forEach(k=>{ const def=cou[k].toLowerCase()===CC_DEF_COUL[k].toLowerCase();

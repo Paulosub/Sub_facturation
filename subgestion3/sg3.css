@@ -311,6 +311,17 @@ input[type=checkbox],input[type=radio]{accent-color:var(--s-nuit)}
 .nx-tbl td{padding:8px 6px;border-bottom:1px solid var(--line2)}
 .nx-tbl tr:last-child td{border-bottom:0}
 .nx-tbl .r{text-align:right}
+/* Tableaux : même visuel dans toute l'app (15.11.2026, Paulo : « le visuel des tableaux identique pour toute l'app, graphiquement ») — celui du devis et du
+   contrôle des coûts : titres gris en gras sur un filet noir de 2 px, lignes séparées par un filet fin, survol jaune très pâle, ligne choisie jaune pâle, plus
+   de trait bleu nuit à gauche. Spécificité nulle (:where) : un tableau qui a son propre style le garde ; les écrans d'Archives gardent l'ancien visuel
+   (html[data-sgarch], posé par sg3_tableaux.js). Les visuels à l'essai gardent leurs règles. */
+:where(html:not([data-sgarch])) table.g th{font-size:11px;color:var(--s-gris);border-bottom:2px solid var(--s-noir);padding:0 8px}
+:where(html:not([data-sgarch])) table.g td{padding:0 8px;border-bottom:1px solid var(--s-filet)}
+:where(html:not([data-sgarch])) table.g tbody tr.on td{color:var(--s-noir)}
+:where(html:not([data-sgarch])) table.g tbody tr.on td:first-child{box-shadow:none}
+:where(html:not([data-sgarch])) .nx-tbl th{font-size:11px;color:var(--s-gris);border-bottom:2px solid var(--s-noir);padding:8px}
+:where(html:not([data-sgarch])) .nx-tbl td{padding:8px;border-bottom:1px solid var(--s-filet)}
+:where(html:not([data-sgarch])) .nx-tbl tr.tot td,:where(html:not([data-sgarch])) .nx-tbl tr.sg-tot td{font-weight:700;background:var(--s-nuit3)}
 /* vues d'ensemble des domaines : tuiles de modules */
 .sg-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px 22px}
 .sg-tile{border-top:2px solid var(--s-noir);padding:12px 0 14px;cursor:pointer;display:flex;flex-direction:column;min-height:132px;position:relative}
@@ -537,7 +548,7 @@ html body .sg-intro .sg-frise{width:120px}   /* « html body » : plus fort que 
 .sg-fr-an button:focus-visible{outline:2px solid var(--s-nuit);outline-offset:2px}
 .nx-card>h4 .sg-an+.sg-ha{margin-left:18px}
 .sg-hscroll{max-height:62vh;overflow:auto}
-.sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -1.5px 0 var(--s-noir)}
+.sg-hscroll .nx-tbl th{position:sticky;top:0;z-index:1;background:#fff;border-bottom:0;box-shadow:inset 0 -2px 0 var(--s-noir)}
 /* détail des heures (20.10.2026) : colonnes ajustées au contenu — Date, Collaborateur et Durée à leur largeur, Phase, Phase partielle
    et Commentaire se partagent le reste au prorata de leur texte et passent à la ligne si nécessaire (le commentaire prend le plus de place) */
 .sg-htbl td{vertical-align:top}
@@ -780,12 +791,7 @@ html body .sg-intro .sg-frise{width:120px}   /* « html body » : plus fort que 
 .sg-ctr-note{padding:8px 12px;font-size:12px;color:var(--s-gris);line-height:1.5}
 .sg-db .po.hors{margin-left:-10px;border-radius:0;clip-path:polygon(0 0,100% 50%,0 100%)}   /* au-delà de l'échelle : flèche au bord */
 /* Tri des tableaux par clic sur le titre d'une colonne (20.10.2026) */
-.nx-tbl tr.sg-triable th{cursor:pointer;user-select:none}
-.nx-tbl tr.sg-triable th:hover{background:var(--s-jaune3)}
-.nx-tbl th.sg-tri::after{content:'';display:inline-block;margin-left:6px;vertical-align:middle;border:4px solid transparent}
-.nx-tbl th.sg-tri.asc::after{border-bottom:5px solid var(--s-nuit);border-top-width:0}
-.nx-tbl th.sg-tri.desc::after{border-top:5px solid var(--s-nuit);border-bottom-width:0}
-.nx-tbl tr.sg-triable th.sg-notri{cursor:default;background:none}
+/* titres cliquables du tri commun : retirés avec le tri (15.11.2026) */
 .nx-tbl td.sg-ccom{min-width:160px}   /* Contrat : commentaire de la dernière version (20.10.2026) */
 /* Projet / Faisabilité (20.10.2026) : rubriques dans les groupes dépliables (PV MO, estimations, devis, dossier d'enquête, documents) */
 .sg-rub{padding:4px 0 8px;border-top:1px solid var(--s-filet)}
@@ -1818,3 +1824,21 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
   #sg-mv .sg-tkp .nx-kpi .v small{font-size:10px;margin-left:2px}
   #sg-mv .sg-tkp .nx-kpi .s{display:none}
 }
+
+/* ═══ Liste des affaires (15.11.2026, sg3_plus.js) : bandeau fixe ; la liste (colonnes de la présentation, bloc 57) et la fiche de l'affaire défilent chacune ═══ */
+.nx-page.sg-aglp{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+.sg-aglp>.nx-wrap{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column}
+.sg-aglp>.nx-wrap>.sg-split{flex:1 1 auto;min-height:0;display:flex!important;flex-direction:column;align-items:stretch}
+.sg-aglp .sg-tete{flex:0 0 auto;margin-bottom:4px!important}
+.sg-agl{flex:1 1 auto;min-height:0;display:flex}
+.sg-agl-liste{flex:1 1 auto;min-width:0;overflow:auto;padding:0 0 28px}
+.sg-agl .sg-ag-fiche{margin-left:18px}
+.sg-agl-t thead th{position:sticky;top:0;z-index:2;background:#fff;border-bottom:0!important;box-shadow:inset 0 -2px 0 var(--s-noir);white-space:nowrap}
+.sg-agl-t tbody tr{cursor:pointer}
+.sg-agl-t tbody tr:hover td{background:var(--s-jaune3)}
+.sg-agl-t tbody tr.on td{background:var(--s-jaune2)}
+.sg-agl-t td{vertical-align:top}
+.sg-agl-t td.r,.sg-agl-t td.c,.sg-agl-t td.nw{white-space:nowrap}
+.sg-agl-t td.c{text-align:center}
+.sg-agl-t .sg-ag-pt{vertical-align:-1px}
+#sg-agl-q{height:28px}

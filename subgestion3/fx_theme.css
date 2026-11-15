@@ -73,6 +73,13 @@ html body .list-tbl td{border-bottom:1px solid var(--s-filet)}
 html body .list-tbl tr:hover td{background:var(--s-jaune3)}
 html body .list-tbl tr.sel td{background:var(--s-jaune2)}
 html body .list-tbl td.num{color:var(--s-nuit)}
+/* même visuel que les tableaux de l'app et plus de tri par les titres (15.11.2026, Paulo : « supprimer la possibilité de réorganiser … directement sur le
+   tableau », « le visuel des tableaux identique pour toute l'app ») : titres gris sur filet noir de 2 px ; listes des contrats et des factures dans leur ordre
+   par défaut (titres inertes, flèches masquées). Écrans d'Archives (html[data-sgarch], posé par la coquille) : inchangés. */
+html:not([data-sgarch]) body .list-tbl th,html:not([data-sgarch]) body .sia-tbl th,html:not([data-sgarch]) body .xls-tbl th,html:not([data-sgarch]) body .adr-tb th,
+html:not([data-sgarch]) body .cc-tb th,html:not([data-sgarch]) body .rap-tb th{color:var(--s-gris)!important;font-size:11px;border-bottom:2px solid var(--s-noir)!important}
+html:not([data-sgarch]) body .list-tbl th.th-sort{pointer-events:none!important;cursor:default!important}
+html:not([data-sgarch]) body .list-tbl th.th-sort span{display:none!important}
 html body .xls-tbl td,html body .xls-tbl th{border-color:var(--s-filet)}
 html body .xls-tbl td.lbl,html body .xls-tbl td.sym{background:var(--s-fond);color:var(--s-noir)}
 html body .sia-tbl td.calc{background:var(--s-fond);color:var(--s-nuit)}

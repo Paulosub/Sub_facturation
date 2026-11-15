@@ -251,3 +251,14 @@ la ligne des onglets (onglets à gauche, choix en texte à droite), la barre en 
 `sgTete` : passer `sgKpis([sgKpi(…)])` (ou les `sg-figs`) puis `sgPageNav({cle, onglets, choix, gauche, droite})` dans l'argument `extra` ; les blocs d'un onglet
 sans `fn` se déclarent avec `sgOngBloc(k, cur, html)`. Les pages plus anciennes qui posent des boutons dans un bandeau `.sgfh-tete` sont corrigées à l'affichage
 par `sgBandeauVersBarre` (MutationObserver sur `#main`) : ne pas en ajouter de nouvelles.
+
+### Tableaux : présentation des colonnes, pas de tri, même visuel (15.11.2026, bloc 57 `sg3_tableaux.js`)
+
+Règles pour TOUT tableau de SUBGestion 3 (hors Archives) : 1) pas de tri par un clic sur les titres (les listes du moteur `grid` gardent l'ordre par défaut de
+l'écran, `noSort` forcé par une enveloppe ; le tri commun des `.nx-tbl` est retiré) ; 2) même visuel (titres gris en gras 11 px sur filet noir de 2 px, filet fin
+entre les lignes, ligne choisie jaune pâle) — ne pas redonner de style propre aux titres d'un nouveau tableau ; 3) colonnes au choix par un bouton « Présentation ▾ »
+de la barre en texte. Pour un nouveau tableau : déclarer son catalogue avec `sgtabDef(cle,{titre,std:[k…],cat:{k:{t,l,cat,f(r,ctx),v(r,ctx),r,c,nw,w,nd}}})`
+(colonnes de l'écran, champs du modèle de données de l'ancien logiciel, colonnes calculées) ; dessiner l'en-tête et les lignes avec `sgtabCols(cle)`,
+`sgtabEntete(cols)`, `sgtabCellules(cols,r,ctx)` ; bouton « Présentation » → `sgtabMenu(cle,bouton,redessiner)` ; Imprimer → `sgtabImprimer(cle,lignes,ctx,o)`
+(SGDH.ouvrir) ; CSV → `sgtabCsv`. Présentations enregistrées : collection `sgpresentation` (communes) ; choix par poste : `localStorage` `sg3_tab`. Modèle :
+Affaires ▸ Liste des affaires (`VIEWS['affd-gestion']`, catalogue `affaires`). ⚠ Pas de classe `nx-row` sur un `<tr>` (elle met la ligne en `display:flex`).

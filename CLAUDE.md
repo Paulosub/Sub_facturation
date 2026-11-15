@@ -358,7 +358,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   temps) et `tr` / `.nx-row` (leurs boutons). Cadre Facturation (`sgCtxCadre`, branché par `fxEnsure`) : boutons et états de la ligne
   (libellé = infobulle, `sgCtxLib`), destructifs en rouge à la fin. Priorité aux menus propres d'un écran (`event.defaultPrevented`) ;
   menu du navigateur : ⌥ + clic droit, champs de saisie, texte sélectionné.
-- **Tri des tableaux (20.10.2026, fin de `sg3_plus.js`)** : clic sur le titre d'une colonne de tout tableau `.nx-tbl` de la coquille → tri ;
+- **Tri des tableaux (20.10.2026, fin de `sg3_plus.js`) — RETIRÉ le 15.11.2026** (bloc 57 ci-dessous ; ancien code dans `subgestion3/_backup_20261115_2225_avant_tableaux/`) : clic sur le titre d'une colonne de tout tableau `.nx-tbl` de la coquille → tri ;
   2e clic → ordre inverse (flèche bleu nuit, `aria-sort`). Premier clic : texte A→Z, nombres et dates du plus grand / plus récent ; dates
   jj.mm.aaaa et « Septembre 2026 » reconnues ; nombres avec ', h, %, CHF, CHF/h, signe − ; cellules vides, « — » et « (sans …) » toujours en bas ;
   lignes « Total » (`tr.tot` ou « Total… ») gardées en tête / en pied ; sous-lignes `tr.sub` triées avec leur ligne parente ; clé de tri
@@ -3083,6 +3083,42 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   décochée et choix retrouvé à la réouverture, trois impressions des autres écrans, neuf rapports d'Administration, écran d'Archives inchangé, balayage des 120 écrans, `nas/nettoyer.py`,
   `sonde_chrome.sh`. Pas vérifié : mode bureau (NAS), impression sur papier, visuels à l'essai (fenêtre commune, déjà vérifiée pour les autres documents). Copie d'avant :
   `subgestion3/_backup_20261115_1749_avant_documents_heures/`, `SUBGestion3_backup_20261115_1749_avant_documents_heures.html`.
+
+- **Tableaux : présentation des colonnes, plus de tri par les titres, même visuel (15.11.2026, bloc 57, `subgestion3/sg3_tableaux.js`, concaténé en dernier)** — Paulo,
+  sur la Liste des affaires : « produire le même graphisme que le reste et ajouter la possibilité d'imprimer la liste avec le même graphisme », puis « lorsqu'il s'agit
+  d'un tableau supprimer la possibilité de réorganiser par ordre alphabétique ou tout autre tri directement sur le tableau. ajoute l'option présentation et intègre
+  les colonnes liées au tableau, comme pour les autres tableaux devis, etc. […] regarde dans l'app delta project et créer les colonnes pour chaque tableau de l'app,
+  applique à toute l'app comme dans devis et contrôle des coûts », « ainsi que le visuel des tableaux identique pour toute l'app, graphiquement ».
+  **Fait le 15.11.2026 (premier lot)** : 1) **plus de tri par les titres** dans toute l'app hors Archives — listes du moteur (`grid` enveloppé : `noSort` forcé,
+  l'ordre par défaut de l'écran `o.sort` appliqué aux lignes avant le dessin ; `o._sgtabNS`), tableaux de l'app (tri commun de la fin de `sg3_plus.js` retiré),
+  listes des contrats et des factures de Facturation dans leur cadre (`fx_theme.css` : titres inertes, flèches masquées, ordre par défaut) ; 2) **même visuel**
+  (celui du devis et du contrôle des coûts) : titres gris en gras 11 px sur filet noir de 2 px, lignes à filet fin, survol jaune très pâle, ligne choisie jaune pâle
+  sans trait bleu nuit — règles de spécificité nulle `:where(html:not([data-sgarch])) table.g …` et `… .nx-tbl …` dans `sg3.css` (un tableau qui a son
+  propre style le garde ; les visuels à l'essai gardent leurs règles), listes de Facturation dans `fx_theme.css` ; 3) **menu « Présentation ▾ »** d'un tableau, le
+  même que les listes du contrôle des coûts : Standard · présentations enregistrées · « Personnalisée (non enregistrée) » · Personnalisé … (fenêtre des colonnes
+  du moteur, `ccAffichage` option `liste`, avec `liste.note` depuis ce jour dans `DeltaSub.html` — v1 et v2 reconstruites) · Enregistrer la présentation … · Gérer
+  les présentations …. Catalogue de colonnes par tableau (`sgtabDef(cle,{titre,std,cat:{k:{t,l,cat,f,v,r,c,nw,w,nd}}})`) : colonnes de l'écran, champs des
+  données reprises de l'ancien logiciel (même modèle de données, libellés de ses fiches repris par le moteur) et colonnes calculées par l'app. Présentations
+  enregistrées : collection propre **`sgpresentation`** (ID = clé du tableau : {CLE, TITRE, PRES:[{nom, cols}], MODIFIE, PAR}), communes au bureau ; présentation
+  choisie et colonnes « Personnalisée » par poste (`localStorage` `sg3_tab`). Serveur du NAS : `sgpresentation` dans `SG_T_LIBRES` (tout profil peut enregistrer
+  une présentation) — **actif après redémarrage du conteneur** ; avant, sur le NAS, seul l'administrateur peut enregistrer (le choix et « Personnalisé » marchent
+  pour tous). Impression et CSV de la liste affichée avec les colonnes de la présentation (`sgtabImprimer` → `SGDH.ouvrir`, `sgtabCsv`). 4) Écrans d'**Archives**
+  inchangés : attribut `data-sgarch` sur `<html>` de la coquille et du cadre Facturation (`sgtabMarque`, enveloppes de `go` et `fxEnsure`).
+  **Premier tableau : Affaires ▸ Liste des affaires** (`VIEWS['affd-gestion']`, `sg3_plus.js`) au graphisme des listes : bandeau, chiffres (Affaires hors
+  archivées, En cours, En attente, Affaires actives, Heures ces 30 jours), onglets des statuts avec leur nombre (Toutes · En cours · En attente · Configuration ·
+  Terminées · Archivées ; « Archivée » du filtre d'origine ne montrait rien), choix Type Toutes · Externes · Internes à droite, barre en texte (Nouveau projet,
+  Éditer le projet, Supprimer — droit `projectDefinition` de l'ancien logiciel, grisés sans —, Présentation ▾, Imprimer ; recherche et Fonctions ▾ à droite) ;
+  tableau des colonnes de la présentation (catalogue `affaires` : 39 colonnes — Affaire, Suivi, Délais, Adresses, Caractéristiques ; Standard = Numéro, Projet,
+  Maître d'ouvrage, Statut, Catégorie, Phase actuelle, Dernière saisie, Heures 30 j, Activité ; Début et Fin passés dans le catalogue), ordre du numéro décroissant
+  comme avant ; fiche de l'affaire à droite inchangée (clic = fiche, double-clic = éditer, ⌥↑ ⌥↓, clic droit : fiche, éditer, page du projet, tableau de bord,
+  supprimer, copie). Bandeau fixe, la liste et la fiche défilent chacune (`.sg-aglp`, `.sg-agl`). Choix par poste : `sg3_agl_etat`, `sg3_agl_type`, `sg3_agl_q`.
+  Imprimer = la liste affichée au graphisme des documents (page de garde : statut, type, recherche, nombre, présentation ; paysage au-delà de 6 colonnes).
+  ⚠ Classe `nx-row` = ligne de liste en `display:flex` : ne pas la mettre sur un `<tr>` (sinon `style="display:table-row"`).
+  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour chaque autre tableau de l'app (Mes projets, Liste des adresses,
+  Membres, Tâches, listes des modules du projet, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
+  pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
+  `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

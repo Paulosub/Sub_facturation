@@ -129,11 +129,34 @@ function sgaOnglet(ong,ix,o,D){ const {cs,c0,pers,prj,soum,notes,props}=D, nw=sg
   if(ong==='soum') return nxCard('','Soumissions','<div class="b flush">'+(soum.length?'<table class="nx-tbl sga-tbl"><thead><tr><th>N°</th><th>Projet</th><th>État</th><th class="r">CFC</th><th>Responsable</th></tr></thead><tbody>'
     +soum.map(({t,p})=>'<tr data-ref="p:'+p.ID+'"><td><span class="nx-tag num">'+nxE(p.NUMBER||'—')+'</span></td><td><b>'+nxE(p.TITLE||'')+'</b></td><td>'+nxStateTag(p)+'</td><td class="r">'+nxE(t.BKP||'')+'</td><td>'+nxE(contactName(DS.get('contact',t.RESPCONTACT_ID)))+'</td></tr>').join('')+'</tbody></table>':'<div class="nx-empty">Aucune soumission.</div>')+'</div>','<span class="n">'+soum.length+'</span>');
   return ''; }
-function sgaFiche(ix,o){ const cs=sgaAdrs(ix,o), c0=cs[0]||null, pers=sgaPersonnes(ix,o), prj=sgaProjets(ix,o), soum=sgaSoum(cs), notes=sgaNotes(cs), props=sgaProps(cs), soc=+o.TYPECODE!==1;
-  const T=[['vue','Vue d’ensemble'],['adr','Adresses',cs.length],...(soc||pers.length?[['pers','Personnes',pers.length]]:[]),...(prj.length?[['proj','Projets',prj.length]]:[]),['cat','Catégories',props.length],['notes','Notes',notes.length],...(soum.length?[['soum','Soumissions',soum.length]]:[])];
-  const ong=T.some(t=>t[0]===SGA.onglet)?SGA.onglet:'vue';
-  return sgaEntete(ix,o,c0,prj)+'<div class="sg-onglets">'+T.map(([k,t,n])=>'<button data-fn="o_'+k+'" class="'+(k===ong?'on':'')+'">'+t+(n!=null?'<i class="sga-cnt">'+n+'</i>':'')+'</button>').join('')+'</div>'
-    +'<div class="sga-onglet">'+sgaOnglet(ong,ix,o,{cs,c0,pers,prj,soum,notes,props})+'</div>'; }
+/* Fiche sans onglets (15.11.2026, Paulo, capture annotée de la ligne « Vue d'ensemble · Adresses · Personnes · Projets · Catégories · Notes » : « supprimer ») :
+   une seule page qui reprend tout le contenu des anciens onglets — chiffres, adresses complètes avec leurs actions (Modifier, Copier, Mes favoris, Liste…,
+   Supprimer ; Nouvelle adresse, Rattacher… dans le titre), catégories modifiables (× pour retirer, Ajouter…), personnes rattachées (toutes), notes (toutes, à
+   modifier ou supprimer), projets (tous), soumissions. Un chiffre cliquable descend à sa partie (data-sga-sec). sgaOnglet reste défini, plus appelé. */
+function sgaPage(ix,o,D){ const {cs,c0,pers,prj,soum,notes,props}=D, nw=sgaPeut('contactNew'), ed=sgaPeut('contactEdit'), del=sgaPeut('contactDelete'), soc=+o.TYPECODE!==1;
+  const enCours=prj.filter(x=>[1,2,3].includes(+x.p.PROJECTSTATECODE)).length, sec=(k,html)=>html?'<div data-sga-sec="'+k+'">'+html+'</div>':'';
+  /* actions de chaque adresse : barre en texte sous l'adresse (comme les autres pages), Supprimer à droite */
+  const tb=(fn,ico,t,ti,id,cl)=>'<button type="button" class="sg-tb'+(cl?' '+cl:'')+'" data-fn="'+fn+'" data-id="'+id+'" title="'+nxE(ti)+'">'+nxSvg(ico)+'<span>'+nxE(t)+'</span></button>';
+  const actsAdr=c=>'<div class="sg-tbar sga-adr-tbar">'+(ed?tb('adr-mod','edit','Modifier','Modifier l’adresse',c.ID):'')+tb('adr-copie','dup','Copier','Copier l’adresse',c.ID)
+    +tb('adr-fav','star','Mes favoris','Ajouter l’adresse à « Mes favoris »',c.ID)+tb('adr-liste','mail','Liste…','Ajouter à une liste de diffusion',c.ID)
+    +'<span class="sg-tfin"></span>'+(del?tb('adr-sup','trash','Supprimer','Supprimer l’adresse',c.ID,'danger'):'')+'</div>';
+  const lienT=(fn,t,ti)=>'<a class="a" data-fn="'+fn+'"'+(ti?' title="'+nxE(ti)+'"':'')+'>'+nxE(t)+'</a>';
+  return '<div class="nx-kpis sg-pkpis">'+sgaTuile(prj.length?'o_proj':'','folder','Projets',String(prj.length),enCours+' en cours')
+      +(soc?sgaTuile('o_pers','person','Personnes',String(pers.length)):sgaTuile('o_adr','map','Adresses',String(cs.length)))
+      +sgaTuile('','cal','Dernier projet',prj[0]?nxE(prj[0].p.NUMBER||'—'):'—',prj[0]?prj[0].p.TITLE:'')
+      +(soum.length?sgaTuile('o_soum','doc','Soumissions',String(soum.length)):sgaTuile('o_notes','doc','Notes',String(notes.length)))+'</div>'
+    +'<div class="sga-cols"><div class="sg-pcol">'
+      +sec('adr',nxCard('',cs.length>1?'Adresses':'Coordonnées','<div class="b">'+(cs.length?cs.map(c=>'<div class="sga-adr-bloc">'+sgaCoord(c,o)+actsAdr(c)+'</div>').join(''):sgaCoord(null,o))+'</div>',
+        (cs.length>1?'<span class="n">'+cs.length+'</span>':'')+(nw?lienT('nadr','Nouvelle adresse','Ajouter une adresse à cette entité')+lienT('lier','Rattacher…','Rattacher une personne ou une entité à celle-ci'):'')))
+      +sec('cat',props.length||(ed&&c0)?nxCard('','Catégories','<div class="b">'+sgaTagsHtml(props,ed)+'</div>','<span class="n">'+props.length+'</span>'+(ed&&c0?lienT('cat-ajout','Ajouter…','Ajouter des catégories à une adresse'):'')):'')
+    +'</div><div class="sg-pcol">'
+      +sec('pers',soc||pers.length?nxCard('','Personnes','<div class="b flush">'+sgaPersListe(pers)+'</div>','<span class="n">'+pers.length+'</span>'):'')
+      +sec('notes',nxCard('','Notes','<div class="b">'+sgaNotesHtml(notes)+'</div>','<span class="n">'+notes.length+'</span>'+(ed&&c0?lienT('note-nouv','Nouvelle note'):'')))
+    +'</div></div>'
+    +(prj.length?sec('proj','<div class="sga-bloc">'+nxCard('','Projets','<div class="b flush">'+sgaProjTable(prj)+'</div>','<span class="n">'+prj.length+'</span>')+'</div>'):'')
+    +(soum.length?sec('soum','<div class="sga-bloc">'+sgaOnglet('soum',ix,o,D)+'</div>'):''); }
+function sgaFiche(ix,o){ const cs=sgaAdrs(ix,o), c0=cs[0]||null, pers=sgaPersonnes(ix,o), prj=sgaProjets(ix,o), soum=sgaSoum(cs), notes=sgaNotes(cs), props=sgaProps(cs);
+  return sgaEntete(ix,o,c0,prj)+'<div class="sga-onglet sga-unique">'+sgaPage(ix,o,{cs,c0,pers,prj,soum,notes,props})+'</div>'; }
 /* ── barre du haut : liste, précédent / suivant, nouveau contact ── */
 function sgaBarre(o,L){ const i=o?L.findIndex(x=>String(x.ID)===String(o.ID)):-1;
   return '<div class="sga-barre"><button class="nx-btn" data-fn="tiroir" title="Liste des contacts (/)">'+nxSvg('list')+'Contacts<kbd>/</kbd></button>'
@@ -237,7 +260,7 @@ function sgaClic(e,w,o){ const b=e.target.closest('[data-fn],[data-ref]'); if(!b
   if(f==='tiroir') sgaTiroir(w,true); else if(f==='prec') sgaVoisin(-1); else if(f==='suiv') sgaVoisin(1); else if(f==='nouveau') sgaNouveau(b);
   else if(f==='lien'){ e.preventDefault(); const u=b.dataset.href; if(/^https?:/i.test(u)) window.open(u,'_blank','noopener'); else location.href=u; }
   else if(!o) return;
-  else if(f.startsWith('o_')){ SGA.onglet=f.slice(2); nxLS.set('sg3_annu_onglet',SGA.onglet); sgaRedessiner(); }
+  else if(f.startsWith('o_')){ const t=w.querySelector('[data-sga-sec="'+f.slice(2)+'"]'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); }   /* plus d'onglets : le chiffre descend à sa partie */
   else if(f==='pin'){ const on=nxTogglePin('c',o.ID); b.classList.toggle('on',on); try{ sgSide(); }catch(_){} }
   else if(f==='modifier') editOwner(o,o.TYPECODE); else if(f==='plus') sgaMenu(b,sgaSections(o,ix()));
   else if(f==='nadr') editContact(null,o,null); else if(f==='lier') sgaRattacher(o);

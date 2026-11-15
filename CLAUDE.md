@@ -1125,6 +1125,12 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Clavier sur `window` en capture (avant les raccourcis de document : « / » n'ouvre pas la palette ici). État `SGA` : contact `sg3_annu_id`, filtres
   `sg3_annu_type` / `sg3_annu_role`. L'écran d'origine reste dans DeltaSub.html (seul) ; l'ancien `VIEWS['nx-contact']` de sg3.js est remplacé.
   Copie d'avant : `subgestion3/_backup_20261021_2133_avant_annuaire_D/`, `SUBGestion3_backup_20261021_2133_avant_annuaire_D.html`.
+  **Fiche sans onglets (15.11.2026, Paulo, capture annotée de la ligne « Vue d'ensemble · Adresses · Personnes · Projets · Catégories · Notes » : « supprimer »)** :
+  `sgaPage` (sg3_annuaire.js) — une seule page avec tout le contenu des anciens onglets : chiffres, puis à gauche « Coordonnées » (une adresse) ou « Adresses n »
+  (toutes, l'une sous l'autre, chacune avec sa barre en texte Modifier · Copier · Mes favoris · Liste… et Supprimer à droite ; « Nouvelle adresse » et « Rattacher… »
+  dans le titre) et « Catégories » (× pour retirer, « Ajouter… »), à droite « Personnes » (toutes) et « Notes » (toutes, modifier / supprimer, « Nouvelle note »),
+  dessous « Projets » (tous) et « Soumissions ». Un chiffre cliquable descend à sa partie (`data-sga-sec`, actions `o_*`) ; `sgaOnglet` reste défini (soumissions),
+  `sg3_annu_onglet` n'est plus lu. Copie d'avant : `subgestion3/_backup_20261115_2123_avant_annuaire_sans_onglets/`.
 - **Contacts ▸ Listes de diffusion et Catégories au graphisme de l'app (25.10.2026, bloc 29, `subgestion3/sg3_contacts.js` + styles `.sgd-*` en
   fin de `sg3.css`)** — demandes de Paulo « améliorer la liste de diffusion pour avoir le même graphisme que le reste de l'app », « modifier catégorie
   pour avoir le même graphisme que le reste de l'app ». `VIEWS['adr-groupes']` et `VIEWS['adr-props']` remplacés (page commune `sgdPage`) :

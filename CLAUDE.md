@@ -1602,6 +1602,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Ordres_de_paiement_<projet>_<date>.csv », « Paiements_ordre_<n°>_<projet>_<date>.csv »). Les entrées « Copier le tableau » et « Exporter en CSV » du moteur visaient la
   grille de l'éditeur, vide dans cet onglet, et ne faisaient rien : les deux tableaux du dernier dessin sont gardés (`OSEL.g` liste des ordres, `OSEL.gp` paiements de
   l'ordre choisi) et passés à `copyTable` / `csvTable` — copie et CSV suivent donc les colonnes et le tri affichés. Les autres onglets gardent leur menu.
+  **Arrêtés de compte ▸ Imprimer : la liste et l'arrêté choisi (15.11.2026, Paulo : « ajouter l'impression de la liste et les arrêtés de compte individuels lorsqu'un
+  arrêté est sélectionné »)** : menu Imprimer de l'onglet = « Liste des arrêtés de compte (PDF) » (ex-« Arrêtés de compte (PDF) » : même document, `TABLE_SEC` → `tableVue` ;
+  son titre dans le PDF reste « Arrêtés de compte ») et, quand un arrêté est choisi dans le tableau (`CCV.detSel` de sorte `arr`), « Arrêté de compte n° … · <entreprise>
+  (PDF) » (`arrImp`, `arrChoisi`, `arrLib`, `ouvrirArrete` de `sg3_coco.js`) : le document de cet arrêté — celui de Documents ▸ Arrêtés de compte, `cocodoc`
+  <id>/finalpayment/<réf>_<contact>, dessin « Grand chiffre » — dans la fenêtre à la barre « Document PDF », volet Réglages : Arrondir les conditions, Afficher le total
+  arrondi, Inclure le paiement final (coché d'office ; la question que le moteur pose avant l'ouverture n'est pas posée ici). Pas encore créé : créé d'office sous le nom
+  « Arrêté de compte » (`ch01aNew`, `fixe`, premier modèle), comme l'ordre de paiement ; en lecture seule : message, rien n'est créé (document déjà créé : il s'ouvre).
+  Sans arrêté choisi : la liste seule (pas d'entrée grisée). L'onglet Ordres de paiement garde « Ordres de paiement (PDF) ». Vérifié le 15.11.2026 hors de l'aperçu (base de
+  test, 17QUE.DF.1, 22 arrêtés) : menu sans et avec choix, fenêtre (2 pages), solde avec et sans le paiement final, seconde ouverture sans nouvelle création, lecture seule,
+  liste, autres onglets, `nas/nettoyer.py`, `sonde_chrome.sh`. Défaut ancien relevé, non corrigé : Fonctions ▸ « Copier le contenu du tableau » des arrêtés, quand
+  Outils ▸ Adresses est sur deux lignes ou complètes — la cellule Entreprise garde ses retours à la ligne et chaque arrêté est copié sur plusieurs lignes (`tableText` du
+  moteur ne met entre guillemets que pour le CSV, qui est juste).
   **Ordre de paiement et bons de paiement dans un seul document à imprimer (15.11.2026, Paulo : « activer l'impression des bons de paiement de l'ensemble des bons de
   paiement de l'ordre de paiement », « regrouper les deux dans un seul document à imprimer », « ajoute une option ordre et une option bon »)** : Imprimer ▾ du panneau des
   paiements = « Ordre de paiement n° … et bons de paiement (PDF) » (plus « Bon de paiement n° … (PDF) » seulement quand un paiement est choisi ; plus d'entrée grisée

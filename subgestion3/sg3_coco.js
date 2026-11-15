@@ -259,10 +259,29 @@ async function suivreEcran(o){ const K=CCV.cur||{}, D=window.SGCD; if(!D||!D.opt
   await new Promise(res=>D.optsSet(o,{pres:v},()=>res())); }
 /* Arrêtés de compte et Ordres de paiement ▸ Imprimer (Paulo, 14.11.2026 : « produis la même fenêtre dans arrêtés de compte et ordres de paiement ») : la liste de l'onglet
    au graphisme des listes, dans la fenêtre des documents (SGCD.tableVue : volet Réglages), à la place de « Imprimer le tableau (A4 paysage) » */
-const TABLE_SEC={'ARRÊTÉS DE COMPTE':['arretes','Arrêtés de compte (PDF)'],'ORDRES DE PAIEMENT':['ordres','Ordres de paiement (PDF)']};
+const TABLE_SEC={'ARRÊTÉS DE COMPTE':['arretes','Liste des arrêtés de compte (PDF)'],'ORDRES DE PAIEMENT':['ordres','Ordres de paiement (PDF)']};
 async function imprimerTable(k){ const K=CCV.cur||{}; if(!K.C||!window.SGCD||!SGCD.tableVue) return; try{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
     SGCD.tableVue({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:CCV.sec,touch:K.touch||(()=>{})},k); }
   catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
+/* Arrêtés de compte ▸ Imprimer (Paulo, 15.11.2026 : « ajouter l'impression de la liste et les arrêtés de compte individuels lorsqu'un arrêté est sélectionné ») :
+   « Liste des arrêtés de compte (PDF) » (la liste de l'onglet, jusque-là « Arrêtés de compte (PDF) ») et, quand un arrêté est choisi dans le tableau, « Arrêté de compte
+   n° … · <entreprise> (PDF) » = son document (celui de Documents ▸ Arrêtés de compte, même enregistrement cocodoc finalpayment/<réf>), dans la fenêtre à la barre « Document
+   PDF » ; pas encore créé : créé d'office sous son nom, comme l'ordre de paiement ; le paiement final se règle dans le volet Réglages (« Inclure le paiement final », coché
+   d'office), sans la question que le moteur pose avant l'ouverture */
+const arrChoisi=()=>{ const K=CCV.cur||{}, d=CCV.detSel; try{ return K.C&&d&&d.k==='arr'&&d.ref&&typeof ch01cRe==='function'?ch01cRe(K.C,d.ref):null; }catch(_){ return null; } };
+const arrEnt=a=>{ try{ const C=(CCV.cur||{}).C||{}, x=(C.contrats||[]).find(c=>c.id===a.contratId), id=x&&x.contactId!=null?x.contactId:a.contactId; if(id==null) return '';
+    const c=DS.get('contact',id); return String((c&&typeof contactName==='function'?contactName(c):ccEntName(C,id))||'').split('\n')[0].trim(); }catch(_){ return ''; } };
+const arrLib=a=>{ const n=String(a.numero==null?'':a.numero).trim(), e=arrEnt(a); return 'Arrêté de compte'+(n?' n° '+n:'')+(e?' · '+e:''); };
+async function ouvrirArrete(a){ const K=CCV.cur||{}; if(!a||!K.C||typeof ch01aNew!=='function'||typeof ch01cGuaranteeJob!=='function'||typeof ch01cDir!=='function') return;
+  try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
+  const E={C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'ARRÊTÉS DE COMPTE',touch:K.touch||(()=>{})};
+  const o={E,dossier:ch01cDir(a),type:'costControlGuaranteeSummary',nomDefaut:'Arrêté de compte',label:'Arrêté de compte',titre:'Arrêté de compte',fixe:'Arrêté de compte',final:true,
+    job:rep=>ch01cGuaranteeJob(E,(typeof ch01cRe==='function'&&ch01cRe(E.C,a))||a,rep,o.final),sgBarre:'pdf'};
+  try{ const r=ch01aRec(E,o.dossier);
+    if(!(r&&r.doc)&&(!ecrit()||(typeof ch03dLecture==='function'&&ch03dLecture(E)))){ toast('Lecture seule : le document de cet arrêté de compte n’est pas encore créé.',true); return; }
+    return await ch01aNew(o); }
+  catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
+const arrImp=()=>{ const a=arrChoisi(); return a?[{t:arrLib(a)+' (PDF)',dis:typeof ch01cGuaranteeJob!=='function',fn:()=>ouvrirArrete(a)}]:[]; };
 async function imprimerComptes(){ const K=CCV.cur||{}; if(!K.C) return; try{ try{ await DS.need(typeof CH01A_T!=='undefined'?CH01A_T:['cocodoc']); }catch(_){}
     SGCD.comptesVue({C:K.C,p:K.p,doc:K.doc,id:K.id,sec:'COMPTES D’ENTREPRISE',touch:K.touch||(()=>{})}); }   /* fenêtre des documents, volet Réglages à droite (11.11.2026) */
   catch(e){ console.error(e); toast('Document impossible à préparer : '+((e&&e.message)||e),true); } }
@@ -764,7 +783,7 @@ function habillerEd(m,id){ cssC(); cssE();
     const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
       :!CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&window.SGCD&&SGCD.comptesOctets?[{t:'Comptes d’entreprise (PDF)',fn:()=>imprimerComptes()}]
       :!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&typeof ch01aOverviewJob==='function'?[{t:'Contrôle des coûts (PDF)',fn:()=>ouvrirListe('CONTRÔLE DU COÛT')}]
-      :!CCV.docs&&TABLE_SEC[CCV.sec]&&window.SGCD&&SGCD.tableVue?[{t:TABLE_SEC[CCV.sec][1],fn:()=>imprimerTable(TABLE_SEC[CCV.sec][0])}]:fon(/^Imprimer/);   /* contrôle du coût : son document, fenêtre et réglages de Documents (14.11.2026) */   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
+      :!CCV.docs&&TABLE_SEC[CCV.sec]&&window.SGCD&&SGCD.tableVue?[{t:TABLE_SEC[CCV.sec][1],fn:()=>imprimerTable(TABLE_SEC[CCV.sec][0])},...(CCV.sec==='ARRÊTÉS DE COMPTE'?arrImp():[])]:fon(/^Imprimer/);   /* contrôle du coût : son document, fenêtre et réglages de Documents (14.11.2026) */   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
     return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>!CCV.docs&&CCV.sec==='ORDRES DE PAIEMENT'?ordFonctions():[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');

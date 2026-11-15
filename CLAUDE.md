@@ -1576,8 +1576,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   ligne par entreprise, l'ancien logiciel détaille le compte de l'entreprise choisie (contrats, avenants, paiements, totaux) — repris : N° du lot, Lot d'adjudication, CFC,
   Numéro du contrat (listes), Compte d'entreprise, et les 24 montants du compte (contrats, avenants, contrats + avenants, paiements, sur contrat, hors contrat, renchérissement,
   contrat − paiements sur contrat ; TTC, HT, TVA) ; pas repris, faute de lignes d'écriture : ouvrage, localisation, dates, statuts, niveau des prestations, descriptifs,
-  n° et genre de paiement, n° d'ordre, n° de facture. Standard = colonnes d'origine de l'écran (celui de l'ancien logiciel est : ordres — N°, Bénéficiaire, N° Paiement,
-  Paiements à ce jour, Contrats + avenants, Paiements ; arrêtés — N° du lot, Entreprise, Genre, Montant, Début, Échéance : à proposer à Paulo). Enregistrement comme les
+  n° et genre de paiement, n° d'ordre, n° de facture. **Standard = celui de l'ancien logiciel pour les ordres et les arrêtés** (Paulo, 15.11.2026, à la question posée :
+  « Oui, par défaut » ; `LSTD`, `lstd(sec)`) : paiements de l'ordre — N° du lot, Bénéficiaire, N° Paiement, Paiements à ce jour, Contrats + avenants TTC, Paiements TTC (plus
+  de « Statut » d'office) ; arrêtés — N° du lot, Entreprise, Genre, Montant, Début et Échéance de la garantie (plus de n° de l'arrêté, Date, Statut ni Facture finale nette
+  d'office : colonnes à cocher dans « Personnalisé … ») ; un contrôle des coûts sans colonnes enregistrées prend ce Standard, les anciennes colonnes de l'écran choisies à la
+  main sont une présentation personnalisée ; comptes d'entreprise : colonnes d'origine de l'écran. Enregistrement comme les
   listes : `C.listeColonnes.ordres | arretes | comptes` (clés dans l'ordre), `C.listePresentations`, `C.listePresActive`. Pied du tableau : « Total » sous chaque colonne de
   montant (Ordres : remplace la carte « Total … CHF » du moteur ; Paiements à ce jour et Contrats + avenants ne sont pas additionnés). `grid` enveloppé : un tableau déjà réglé
   et redessiné par un tri sur un titre de colonne est reconnu (`o._sgL`) — le pied restait absent après un tri dans les listes aux colonnes personnalisées ; l'ordre choisi dans

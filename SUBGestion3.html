@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 12:20 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 12:30 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -43042,9 +43042,17 @@ const LSIG={MUTATIONS:'numero,date,g,o,d,ttc,statut,remarque',ADJUDICATIONS:'lot
      compte d'entreprise et les montants du compte — contrats, avenants, contrats + avenants, paiements, sur contrat, hors contrat, renchérissement, contrat − paiements sur
      contrat, chacun TTC, HT et TVA ; les colonnes propres à une écriture (dates, statuts, n° de paiement, n° de facture…) n'ont pas de sens sur une ligne d'entreprise.
    Même menu que les listes (Standard · présentations enregistrées · Personnalisé … · Enregistrer · Gérer · Récupérer d'un autre projet), même enregistrement
-   (C.listeColonnes.ordres | arretes | comptes, C.listePresentations, C.listePresActive) ; Standard = colonnes d'origine de l'écran. Les documents PDF gardent leurs colonnes.
+   (C.listeColonnes.ordres | arretes | comptes, C.listePresentations, C.listePresActive) ; Standard = celui de l'ancien logiciel pour les ordres et les arrêtés (LSTD), colonnes
+   d'origine de l'écran pour les comptes d'entreprise. Les documents PDF gardent leurs colonnes.
    LVAL : valeurs partagées par les catalogues et les totaux. */
 const LLIB={'ORDRES DE PAIEMENT':'Paiements de l’ordre'};
+/* Standard d'un onglet quand ce n'est pas celui de l'écran du moteur (Paulo, 15.11.2026, à la question « mettre par défaut les colonnes Standard de l'ancien logiciel
+   (ordres, arrêtés) ? » : « Oui, par défaut ») — paiements de l'ordre : N° du lot, Bénéficiaire, N° Paiement, Paiements à ce jour, Contrats + avenants TTC, Paiements TTC
+   (sans Statut) ; arrêtés de compte : N° du lot, Entreprise, Genre, Montant, Début et Échéance de la garantie (sans n° de l'arrêté, Date, Statut ni Facture finale nette :
+   ces colonnes restent dans « Personnalisé … »). Un contrôle des coûts sans colonnes enregistrées prend ce Standard ; les colonnes d'origine de l'écran, choisies à la main,
+   sont enregistrées comme une présentation personnalisée. */
+const LSTD={'ORDRES DE PAIEMENT':['lot','b','numero','prev','ca','m'],'ARRÊTÉS DE COMPTE':['lotN','e','g','m','d','f']};
+const lstd=sec=>LSTD[sec]||LSIG[sec].split(',');
 function LVAL(C){ const cfg=!!(C.parametres||{}).arrondir, R5=v=>(typeof ch01aR==='function'?ch01aR(v,cfg):+v)||0, T=x=>typeof ch01aTot==='function'?ch01aTot(x):{net:docNet(x),tva:docTva(x)};
   const K=C.contrats||[], P=C.paiements||[], cE=new Map(), uni=L=>[...new Set(L.filter(x=>x!=null&&x!==''))], tri=L=>typeof cfcCmp==='function'?L.sort((x,y)=>cfcCmp(String(x),String(y))):L.sort();
   const tr=L=>L.reduce((a,x)=>{ const n=docNet(x), t=docTva(x); a.ht+=n-t; a.tva+=t; a.ttc+=n; return a; },{ht:0,tva:0,ttc:0});
@@ -43140,7 +43148,7 @@ function LDEF(sec,C){ const E2=x=>esc(String(x??'')), N=v=>v||v===0?num(v):'', e
     ...mont('Paiements'),colT('Paiements','iban','Compte d’entreprise','Compte de l’entreprise (IBAN de ses paiements)',190,e=>X(e).iban),
     ...mont('Différences')]); }
   return {}; }
-const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C, keys=C&&(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) return;
+const listeCols=(sec,o)=>{ const C=CCV.cur&&CCV.cur.C; if(!C) return; let keys=(C.listeColonnes||{})[LCLE[sec]]; if(!keys||!keys.length) keys=LSTD[sec]; if(!keys||!keys.length) return;
   const D=LDEF(sec,C), base=new Map(o.cols.map(c=>[c.k,c])); const L=keys.map(k=>base.get(k)||(D[k]&&D[k].col)).filter(Boolean); if(L.length) o.cols=L; };
 /* Paiements : toujours dans l'ordre des numéros de paiement (Paulo, 11.11.2026 : « supprimer le tri et laisser trier par numéro de paiement ») — bouton « Tri » du
    moteur retiré, pas de tri par les titres de colonnes ; le filtre et le récapitulatif de TVA restent. Le PDF « Rapport des paiements » aussi (ch01dOpt enveloppé : tri enregistré ignoré). */
@@ -43202,18 +43210,18 @@ const ordreGarde=o=>{ if(!CCV.open||CCV.docs||CCV.sec!=='ORDRES DE PAIEMENT'||!o
    (fenêtre des colonnes), Enregistrer la présentation …, Gérer les présentations …, Récupérer d’un autre projet … (libellé : l'app affiche « projet » pour « affaire »). Enregistrées dans le contrôle des coûts :
    C.listePresentations = {mutations|paiements|adjudications: [{nom, cols, recap (paiements : récapitulatif de TVA)}]}, C.listePresActive = {cle: nom}. */
 const lpL=(C,cle)=>((C&&C.listePresentations)||{})[cle]||[];
-const lpCols=(C,sec)=>((C&&C.listeColonnes)||{})[LCLE[sec]]||LSIG[sec].split(',');
+const lpCols=(C,sec)=>((C&&C.listeColonnes)||{})[LCLE[sec]]||lstd(sec);
 const lpRecap=C=>typeof ch01dOpt==='function'?!!ch01dOpt(C).recapTVA:false;
 const lpEgal=(C,sec,p)=>p.cols.join(',')===lpCols(C,sec).join(',')&&(sec!=='PAIEMENTS'||p.recap==null||!!p.recap===lpRecap(C));
 const lpActive=(C,sec)=>{ const L=lpL(C,LCLE[sec]), a=((C&&C.listePresActive)||{})[LCLE[sec]], A=L.find(p=>p.nom===a&&lpEgal(C,sec,p)); return A||L.find(p=>lpEgal(C,sec,p))||null; };
-const lpSetCols=(C,sec,ids)=>{ const cle=LCLE[sec], std=LSIG[sec].split(','), L=C.listeColonnes||(C.listeColonnes={});
+const lpSetCols=(C,sec,ids)=>{ const cle=LCLE[sec], std=lstd(sec), L=C.listeColonnes||(C.listeColonnes={});
   if(!ids||!ids.length||ids.join(',')===std.join(',')) delete L[cle]; else L[cle]=ids.slice(); if(!Object.keys(L).length) delete C.listeColonnes; };
 const lpSetActive=(C,sec,nom)=>{ const A=C.listePresActive||(C.listePresActive={}); if(nom) A[LCLE[sec]]=nom; else delete A[LCLE[sec]]; if(!Object.keys(A).length) delete C.listePresActive; };
 const lpPut=(C,sec,L)=>{ const P=C.listePresentations||(C.listePresentations={}); if(L.length) P[LCLE[sec]]=L; else delete P[LCLE[sec]]; if(!Object.keys(P).length) delete C.listePresentations; };
 const lpTouch=()=>{ const K=CCV.cur||{}; if(K.touch) K.touch(); };
 function lpAppliquer(sec,p){ const C=(CCV.cur||{}).C; if(!C) return; lpSetCols(C,sec,p?p.cols:null); lpSetActive(C,sec,p?p.nom:null);
   if(p&&sec==='PAIEMENTS'&&p.recap!=null&&typeof ch01dSetOpt==='function'&&!!p.recap!==lpRecap(C)) ch01dSetOpt(C,'recapTVA',!!p.recap); lpTouch(); }
-function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), std=LSIG[sec].split(','), cat=[];
+function listeAffichage(sec){ const K=CCV.cur||{}, C=K.C; if(!C||typeof ccAffichage!=='function') return; const D=LDEF(sec,C), std=lstd(sec), cat=[];
   Object.entries(D).forEach(([k,d])=>{ let g=cat.find(x=>x[0]===d.cat); if(!g){ g=[d.cat,[]]; cat.push(g); } g[1].push([k,d.t,d.l,{}]); });
   ccAffichage(C,{touch:K.touch||(()=>{}),liste:{titre:LLIB[sec]||SLIB(sec),titreDlg:'Présentation personnalisée · '+SLIB(sec)+(LLIB[sec]?' · '+LLIB[sec].charAt(0).toLowerCase()+LLIB[sec].slice(1):''),cat,std,def:k=>D[k]?{t:D[k].t,l:D[k].l,cat:D[k].cat}:null,cols:lpCols(C,sec),
     set:ids=>lpSetCols(C,sec,ids)}}); }

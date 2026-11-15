@@ -225,3 +225,16 @@ d'ancrage a disparu (la source a changé), puis écrit le fichier généré à l
   `holidayDate` TYPECODE 3 = Lundi du Jeûne fédéral ;
   `pubHolidays(y)`, `hrMaps`, `hrHoliday`, `targetFor` (soldes d'heures et de vacances, sémantique Deltaproject :
   `TARGETTIMEREDUCTION` = report d'heures sup., `HOLIDAYBALANCE` = droit de `HOLIDAYBALANCEYEAR`).
+
+- **Refonte d'ensemble du 15.11.2026** (référence = le devis général ; détail daté dans CLAUDE.md) — outils communs à réemployer plutôt que de refaire :
+  `sgTete(lbl, titre, texte, extra, mono)` / `sgMono(titre)` (`sg3.js`) = bandeau des listes + chiffres pour une page de l'app (remplace `sgIntro`, gardé pour le
+  Cockpit, les vues d'ensemble et la page du projet) ; `SGSV.outils` (`sg3_suivi.js` : `monter(C,p,cle,besoin,M)` page de liste, `tete`, `kpi`, `btn`, `menuSous`,
+  `E`, `pl`, `trouve`, `moT`) ; bloc 54 `sg3_ecrans.js` (`SGMV.LISTE` : écrans de l'ancien logiciel sous bandeau, attribut `data-vep` sur `<html>` = présentation
+  épurée ; `SGMV.DOMS` : domaines du moteur dans la page du projet) ; estimations (`sg3_estimation.js`, second bloc, `SGEE` : liste `ESTIM` par `monter`, estimation
+  ouverte `habiller` — même recette que `habillerEd` du contrôle des coûts : éléments du moteur déplacés, menu de gauche masqué mais cliqué par les onglets) ;
+  contrats d'entreprise (`sg3_contrats_ent.js`, `SGCE`) : `ouvrirDossier(p,c,seul)` = fenêtre des documents avec volet de pièces (`SGDE.vue` + `dialog` + faux cadre,
+  comme `tableVue` de `sg3_coco_docs.js`), `dossierOctets` (pièces assemblées par pdf-lib), `PA` (formulaire de préadjudication : une description pour l'onglet et le
+  PDF) ; `SGDP.cahierOctets(X|null, {seul, projet})`, `SGDP.pdfArticles(X, plus, et)`, `SGDP.pdfDe(X, cle)` = PDF des conditions générales, du descriptif par articles
+  (étape au choix) et du descriptif en texte, en octets, sans visionneuse — `X` peut être un contexte de lecture réduit `{id, p, doc, S, ro:true, …}` ;
+  `sgDsPdf` : modes `o.contratEnt` (+ `parties {garde, contrat}`), `o.preadj`, `o.pvmo`. Avant de créer un bloc : vérifier par grep que son préfixe de classes ET son
+  identifiant de `<style>` sont libres (collision `sgce-css` du 15.11.2026).

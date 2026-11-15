@@ -286,7 +286,7 @@ const CSS=`
 .sgee-tete .sgfh-nm{min-width:0}
 .sgee-tete .sgfh-nm h2{font-size:20px}
 .sgee-ro{align-self:center;font-size:12px;font-weight:700;color:var(--s-gris);white-space:nowrap}
-.sgee-kp{flex:none;margin:0 24px;grid-template-columns:104px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border-top:0;container-type:inline-size}
+.sgee-kp{flex:none;margin:0 24px;grid-template-columns:124px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border-top:0;container-type:inline-size}
 .sgee-kp .nx-kpi{padding:10px 12px 10px 0;margin-right:12px;min-width:0}
 .sgee-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),22px);margin-top:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .sgee-kp .nx-kpi .l,.sgee-kp .nx-kpi .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

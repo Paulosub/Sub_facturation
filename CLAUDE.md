@@ -2829,7 +2829,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   montant saisi du devis, ligne choisie en jaune pâle. Pas fait : page « Paramètres » en onglet comme le devis (fenêtres du moteur gardées), couleurs du graphique de
   l'aperçu, fenêtre du document à la barre « Document PDF ». Vérifié sur 99TST hors de l'aperçu (liste du projet et de tous les projets, six onglets, menus, plein écran,
   retour), balayage des 119 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_1625_avant_estimations/`.
-  **Lot 1, analyse des heures — cinq propositions en attente du choix de Paulo (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
+  **Lot 1, analyse des heures — cinq propositions (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie
   de l'app (`subgestion3/_backup_20261115_maquette_analyse_heures/` : `proposition_analyse_heures.js` et ses sources ; page `proposition_analyse_heures.html` de l'aperçu),
   données réelles lues dans la base, rien n'est écrit (écriture locale, sauvegarde automatique et « Français seulement » coupées dans cette page). 1 Modules au menu
@@ -2839,6 +2839,45 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   choisie : nouveau bloc `sg3_analyse_heures.js` (vraies écritures `TIMELOGSTATECODE` / `PROJECTCOSTSTATECODE` selon les règles de `sgcFenetre` et `ctlCostCheck`, statut
   Facturable / Facturé, double-clic pour modifier, rapports au papier des contrats), entrées du menu Heures et droits de `nx-controle`, retrait ou renvoi des quatre écrans
   `adm-ctl-*` / `adm-ana-*` d'Administration ; Archives ▸ Suivi & écarts inchangé.
+  **Proposition 1 « Modules au menu » choisie par Paulo le 15.11.2026 (« Proposition 1 », « version 1 pour analyse des heures ») et intégrée le même jour** : paragraphe
+  suivant.
+- **Heures ▸ Analyse des heures et ses quatre modules (15.11.2026, bloc 55, `subgestion3/sg3_analyse_heures.js`, concaténé en dernier)** — Paulo : « faire 5 propositions
+  d'adaptation de l'analyse des heures, ainsi que les 4 modules dans la fenêtre […] je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme
+  de modules » ; proposition 1 « Modules au menu » choisie sur maquette (`subgestion3/_backup_20261115_maquette_analyse_heures/`). Menu Heures (`SG_DOM`, clé `temps`), après
+  le Journal des heures : **Analyse des heures** (`nx-ah` : bandeau `sgTete`, cinq chiffres de la période, les quatre modules en tuiles, affaires actives — un clic = contrôle
+  de l'affaire —, période Mois · Année · 12 mois · Tout, état des affaires, recherche, CSV), **Contrôle des heures d'affaires** (`nx-ah-ctlh`), **Critères d'analyse des
+  heures** (`nx-ah-anah`), **Contrôle des frais** (`nx-ah-ctlf`), **Critères d'analyse des frais** (`nx-ah-anaf`). Les quatre modules : colonne des affaires à gauche (état,
+  recherche ; contrôle = « n à contrôler » sur toute l'affaire, analyse = heures ou montant de la période), page de l'affaire à droite (bandeau au numéro de l'affaire,
+  chiffres, barre en texte, tableaux) ; paramètre de l'écran = l'affaire (`go('nx-ah-ctlh', id)`, rouverte au démarrage ; `majArg`) ; réglages par poste `sg3_ah` {mode, etat}.
+  Contrôle des heures : semaine de l'affaire en grille collaborateurs × jours (clic sur une case = ses inscriptions), ‹ ›, « Dernière saisie », « À contrôler » (semaine
+  précédente qui a des inscriptions à contrôler), inscriptions avec ✓ / ! par ligne (second clic = réinitialiser), cases (Maj + clic = plage) puis Approuver / Refuser /
+  Réinitialiser, « Approuver » d'un collaborateur et « Approuver la semaine » après confirmation, Imprimer, CSV. Contrôle des frais : mois par mois, filtre par
+  collaborateur, mêmes gestes. Critères d'analyse : six listes de critères (la valeur d'une ligne tient compte des autres critères), période, Facturable / Facturé,
+  affichage Détail ou regroupé (phase — avec heures prévues `TIMEBUDGET` et écart —, phase partielle, activité, collaborateur, mois ; frais : genre, groupe…),
+  Fonctions ▾ (statut Facturable, statut Facturé, commentaire : fenêtres du moteur `ctlFlag` sans transfert vers les factures de l'ancien logiciel, `ctlComment` ; copier ;
+  CSV de TOUTES les positions, le tableau en montre 1'000), Documents ▾ (`ctlPrint`, `ctlStaffReport`), Rapports ▾ (`ctlReport`, `ctlSummary`) ; double-clic = modifier
+  (`hsEdit`, `editCost`). Documents : colonnes de la fenêtre d'analyse du moteur (+ Remboursable pour les frais), Oui / Non à la place des signes ✔ ✕ (absents de la police
+  des documents), colonnes vides retirées ; ils s'ouvrent dans la fenêtre de document du moteur (Imprimer, PDF, Partager), pas encore dans la fenêtre « Document PDF ».
+  **Écritures** (`etat(dom, rows, v)`, un seul `DS.commit`, enregistrements relus juste avant, redessin sur place) : `TIMELOGSTATECODE` / `PROJECTCOSTSTATECODE` 0 saisi,
+  1 refusé, 3 approuvé ; jamais hors du périmètre ; **règle ajoutée** (les fenêtres `sgcFenetre` et `ctlCostCheck` ne la contrôlent pas) : une inscription en période bloquée
+  (« saisie bloquée jusqu'au … » du collaborateur, règle de `hsFrozen`) n'est ni approuvée, ni refusée, ni réinitialisée ici (étiquette « bloquée », boutons grisés, comptée
+  à part des inscriptions à contrôler). **Droits** = ceux du Controlling (`SG_VUE_DROIT`, `sg3_plus.js`) : jamais le profil collaborateur ; heures (ou notes de frais) « de
+  ses projets » au moins ; périmètre = `sgProjetsVisibles()` sauf « toutes les heures » / « tous les frais » et l'administrateur ; contrôle et modification seulement avec le
+  droit d'origine (`ctlCan` : `projectTime`, `projectCosts`), sinon lecture seule ; coût de revient et document d'analyse des collaborateurs seulement si `sgTauxVisibles()`.
+  Chapitre Heures : pas protégé par le code d'accès. Pas de colonne Honoraires ni de « tout approuver jusqu'au … » (questions sans réponse le 15.11.2026).
+  **Administration** : les quatre entrées `adm-ctl-heures`, `adm-ana-heures`, `adm-ctl-frais`, `adm-ana-frais` (et leurs écrans de `sg3_controle.js`) sont retirées ; `go`
+  renvoie ces identifiants vers les modules (reprise de session, historique) ; Administration garde le Contrôle des heures (`nx-controle`) et la Situation des heures ;
+  Archives ▸ Suivi & écarts et Controlling inchangés. Styles `.sg-admctl*` retirés de `sg3.css` ; la clé `sg3_adm_ctl` reste sans emploi. Styles `<style id="sgah-css">`, classes
+  `sgah-*`, débogage `window.SGAH`. Vérifié le 15.11.2026 hors de l'aperçu (base de test) : écritures relues dans la base, période bloquée, profils simulés (administrateur,
+  chef de projet, collaborateur), lecture seule, fenêtres et documents du moteur (PDF), CSV, tri commun, clic droit, six visuels, fenêtre étroite, version servie
+  (`nas/nettoyer.py`). Fait par un chantier parallèle dans une copie privée des sources, puis intégré fichier par fichier et revérifié dans le banc de la session
+  (menu, renvoi des anciens identifiants, cinq pages sur 99TST, approuver puis réinitialiser une inscription relue dans la base, profils simulés, balayage des
+  120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`). Pas vérifié : mode bureau (NAS, session par mot de passe, conflits), vrais comptes chef de projet et collaborateur,
+  copie dans le presse-papier. Questions posées à Paulo le 15.11.2026, sans réponse : garder la règle de la période bloquée (et l'étendre à Administration ▸ Contrôle
+  des heures, qui ne l'applique pas) ; protéger ces modules par le code d'accès comme l'était Administration ; chef de projet : ses projets seulement ; fenêtre des
+  documents à la barre « Document PDF » ; mise en page du document d'analyse (colonnes de même largeur : 68 pages pour 1'025 inscriptions) ; colonne Honoraires et
+  « tout approuver jusqu'au … » ; transfert en facturation depuis le statut « Facturé » (retiré). Copie d'avant : `subgestion3/_backup_20261115_1700_avant_analyse_heures/`,
+  `SUBGestion3_backup_20261115_1700_avant_analyse_heures.html`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

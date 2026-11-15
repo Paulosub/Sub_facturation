@@ -81,7 +81,14 @@ const SG_DOM=[
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
   {k:'temps',t:'Heures',ico:'clock',d:'Saisie et contrôle des heures de travail.',items:[   /* chapitre « Temps » renommé « Heures » le 24.10.2026 (demande de Paulo) ; clé temps inchangée */
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
-    {v:'h-journal',t:'Journal des heures',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'}]},   /* 24.10.2026 (demande de Paulo) */
+    {v:'h-journal',t:'Journal des heures',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'},   /* 24.10.2026 (demande de Paulo) */
+    /* Analyse des heures et ses quatre modules (15.11.2026, proposition 1 « Modules au menu » choisie par Paulo ; écrans : sg3_analyse_heures.js) : jamais pour le
+       profil collaborateur (SG_VUE_DROIT, sg3_plus.js) ; les quatre anciennes entrées d'Administration (adm-ctl-*, adm-ana-*) y renvoient */
+    {v:'nx-ah',t:'Analyse des heures',ico:'analyse',d:'Heures et frais des affaires : chiffres de la période, affaires actives et accès aux quatre modules.'},
+    {v:'nx-ah-ctlh',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
+    {v:'nx-ah-anah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
+    {v:'nx-ah-ctlf',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, mois par mois.'},
+    {v:'nx-ah-anaf',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     /* grp : sous-menu dépliable « Tâches » (18.10.2026) ; st = libellé court dans le sous-menu */
@@ -127,12 +134,9 @@ const SG_DOM=[
   /* chapitre « Administration » (24.10.2026, demande de Paulo « un menu administration pour l'admin qui contient l'analyse des heures, le contrôle
      des heures ; les collaborateurs n'auront pas accès à ces informations ») : administrateur seulement (sgVueOk), protégé par le code d'accès */
   {k:'administration',t:'Administration',ico:'gauge',nav:0,d:'Contrôle et analyse des heures, équipe, ressources humaines, facturation et finances du bureau.',items:[
-    /* les quatre tuiles du Controlling (Archives ▸ Suivi & écarts) recopiées en entrées du menu (24.10.2026, demande de Paulo) : sg3_controle.js */
-    {v:'adm-ctl-heures',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et valider les saisies d’heures d’une affaire.'},
-    {v:'adm-ana-heures',t:'Critères d’analyse des heures',ico:'analyse',d:'Analyser les heures d’une affaire par collaborateur, activité et phase ; rapports horaires et pièces jointes à la facture.'},
+    /* les quatre tuiles du Controlling recopiées ici le 24.10.2026 (adm-ctl-heures, adm-ana-heures, adm-ctl-frais, adm-ana-frais) sont devenues, le 15.11.2026, les
+       modules du chapitre Heures (nx-ah-*, sg3_analyse_heures.js, qui y renvoie ces identifiants) ; Administration garde le Contrôle des heures et la Situation des heures */
     {v:'nx-situation',t:'Situation des heures',ico:'analyse',d:'Heures par projet, par collaborateur, par phase ou par mois ; export.'},
-    {v:'adm-ctl-frais',t:'Contrôle des frais',ico:'coins',d:'Vérifier et valider les frais d’une affaire.'},
-    {v:'adm-ana-frais',t:'Critères d’analyse des frais',ico:'analyse',d:'Analyser les frais d’une affaire par collaborateur, groupe de frais et frais ; rapports et pièces jointes à la facture.'},
     /* Équipe, Ressources humaines, Facturation et Finances regroupés ici en sous-menus (25.10.2026, demandes de Paulo « glisser … dans admin ») :
        dom = chapitre d'origine (droits, code d'accès, visuel) ; les chapitres d'origine restent dans SG_DOM, hors menu (menu:0, items vides) */
     {v:'collab-actuels',grp:'Équipe',dom:'equipe',t:'Membres',ico:'users',d:'L’équipe actuelle du bureau.'},
@@ -225,7 +229,7 @@ SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'V
 const nxDomVue=v=>{ const x=NX_VIEW[v]; return x?(x.it&&x.it.dom)||(x.d&&(x.d.k||x.d))||'':''; };
 NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-pdom']={d:SG_D.projets,t:'Projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
 const NX_KW={'nx-mesprojets':'mes projets liste affaires','affd-mes':'mes affaires ancien','affd-toutes':'affaires ancien','affd-gestion':'affaires gestion ancien','affd-controlling':'controlling affaires','aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
-  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','adm-ctl-heures':'controlling contrôle heures affaire','adm-ana-heures':'controlling analyse heures affaire','adm-ctl-frais':'controlling contrôle frais affaire','adm-ana-frais':'controlling analyse frais affaire','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
+  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','nx-ah':'controlling analyse heures frais affaires','nx-ah-ctlh':'controlling contrôle heures affaire approuver','nx-ah-anah':'controlling analyse heures affaire critères rapport','nx-ah-ctlf':'controlling contrôle frais affaire approuver','nx-ah-anaf':'controlling analyse frais affaire critères rapport','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
   'mg-factures':'encaissements qr','mg-mo':'maître d’ouvrage','mg-reporting':'reporting','tpl-documents':'modèles','nx-data':'export import base','config':'administrateur paramètres',
   'fx-contrats':'contrats honoraires sia offre','fx-calchono':'nouveau contrat honoraires sia','fx-factures':'factures acomptes','fx-saisie':'nouvelle facture acompte','fx-backup':'export import facturation'};
 

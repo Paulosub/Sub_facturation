@@ -1368,6 +1368,10 @@ const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion
   'fx-contrats':()=>sgDroit('contrats','lecture'),'fx-calchono':()=>sgDroit('contrats','validation'),'fx-factures':()=>sgDroit('factures','lecture'),'fx-saisie':()=>sgDroit('factures','validation'),
   'nx-valider':()=>sgDroit('contrats','validation')||sgDroit('factures','validation'),'fx-cockpit':()=>sgDroit('finances','projets'),'fx-cockpit2':()=>sgDroit('finances','projets'),
   'nx-renta':()=>sgDroit('finances','projets'),'nx-profils':()=>sgAdmin()};
+/* Heures ▸ Analyse des heures et ses quatre modules (15.11.2026, sg3_analyse_heures.js) : droits du Controlling (aff-controlling) — jamais le profil collaborateur ;
+   heures (ou notes de frais) « de ses projets » au moins ; le périmètre des affaires est appliqué dans le bloc */
+['nx-ah','nx-ah-ctlh','nx-ah-anah'].forEach(v=>{ SG_VUE_DROIT[v]=()=>SG_ACC.profil!=='collab'&&sgDroit('heures','projets'); });
+['nx-ah-ctlf','nx-ah-anaf'].forEach(v=>{ SG_VUE_DROIT[v]=()=>SG_ACC.profil!=='collab'&&sgDroit('frais','projets'); });
 function sgVueOk(v){ if(!v||sgAdmin()) return true;
   if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
   if(nxDomVue(v)==='administration') return false;   /* écrans propres au chapitre Administration (contrôle et analyse des heures, 24.10.2026) : administrateur seulement ;

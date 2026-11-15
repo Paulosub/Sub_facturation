@@ -949,7 +949,10 @@ html body .sg-intro .sg-frise{width:120px}   /* « html body » : plus fort que 
 .sga-adr-acts{margin:10px -6px 0}
 /* fiche sans onglets (15.11.2026) : chiffres juste sous l'en-tête, comme les autres pages ; adresses l'une sous l'autre avec leurs actions */
 .sga-unique{margin-top:22px}
-.sga-unique>.sg-pkpis{border-top:0}
+.sga-unique>.sg-pkpis{border-top:0;margin-bottom:8px}
+.sga-hero:not(:has(>.sga-acts)){grid-template-columns:auto 1fr!important}   /* actions sorties du bandeau (15.11.2026) */
+.sga-tbar{margin:0 0 22px}
+.sga-tbar .sg-tb.on svg{fill:currentColor}
 .sga-adr-bloc+.sga-adr-bloc{border-top:1px solid var(--s-filet);margin-top:16px;padding-top:16px}
 .sga-adr-tbar{margin:6px 0 0;min-height:34px;padding:2px 0}
 .sga-adr-tbar .sg-tb{height:30px}

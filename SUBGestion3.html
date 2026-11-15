@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 21:24 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 21:29 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -958,7 +958,10 @@ html body .sg-intro .sg-frise{width:120px}   /* « html body » : plus fort que 
 .sga-adr-acts{margin:10px -6px 0}
 /* fiche sans onglets (15.11.2026) : chiffres juste sous l'en-tête, comme les autres pages ; adresses l'une sous l'autre avec leurs actions */
 .sga-unique{margin-top:22px}
-.sga-unique>.sg-pkpis{border-top:0}
+.sga-unique>.sg-pkpis{border-top:0;margin-bottom:8px}
+.sga-hero:not(:has(>.sga-acts)){grid-template-columns:auto 1fr!important}   /* actions sorties du bandeau (15.11.2026) */
+.sga-tbar{margin:0 0 22px}
+.sga-tbar .sg-tb.on svg{fill:currentColor}
 .sga-adr-bloc+.sga-adr-bloc{border-top:1px solid var(--s-filet);margin-top:16px;padding-top:16px}
 .sga-adr-tbar{margin:6px 0 0;min-height:34px;padding:2px 0}
 .sga-adr-tbar .sg-tb{height:30px}
@@ -31559,14 +31562,18 @@ function sgaEntete(ix,o,c0,prj){ const cs=ix.byO.get(String(o.ID))||[], ids=new 
     +'<div class="meta"><span class="nx-tag">'+nxE(OWNER_T[o.TYPECODE]||'Contact')+'</span>'+(+o.ISHIDDEN?'<span class="nx-tag urg">Masqué dans les listes</span>':'')
     +(c0&&c0.LOCATION?'<span>'+nxSvg('map')+nxE(c0.LOCATION)+'</span>':'')+(rel?'<span class="sga-lien" data-ref="c:'+rel.ID+'" title="Ouvrir la fiche">'+nxSvg('building')+nxE(ownerName(rel))+'</span>':'')
     +(o.UID?'<span>IDE '+nxE(o.UID)+'</span>':'')+(o.CREATED?'<span>'+nxSvg('cal')+'Dans l’annuaire depuis '+nxE(String(o.CREATED).slice(0,4))+'</span>':'')+'</div>'
-    +(l2.length?'<div class="sga-meta2">'+l2.join('<span class="sga-pt">·</span>')+'</div>':'')+'</div>'
-    +'<div class="sg-htls sg-cacts sga-acts" role="group" aria-label="Actions">'
-    +(tel?sgaBtn('lien','phone','Appeler','Appeler '+(nxPhone(c0,1)||nxPhone(c0,2)),' data-href="'+nxE(tel)+'"'):'<button disabled title="Aucun numéro">'+nxSvg('phone')+'<span>Appeler</span></button>')
-    +(mail?sgaBtn('lien','mail','Courriel','Écrire à '+mail,' data-href="mailto:'+nxE(mail)+'"'):'<button disabled title="Aucune adresse électronique">'+nxSvg('mail')+'<span>Courriel</span></button>')
-    +(adr?sgaBtn('lien','map','Carte','Voir l’adresse sur la carte',' data-href="'+nxE(sgaCarte(c0))+'"'):'<button disabled title="Aucune adresse">'+nxSvg('map')+'<span>Carte</span></button>')
-    +'<button data-fn="pin" class="'+(nxPinned('c',o.ID)?'on':'')+'" title="Épingler dans les favoris du menu">'+nxSvg('star')+'<span>Favori</span></button>'
-    +(sgaPeut('contactEdit')?sgaBtn('modifier','edit','Modifier','Modifier l’entité (nom, type, IDE…)'):'')
-    +sgaBtn('plus','more','Plus','Autres actions')+'</div></div>'; }
+    +(l2.length?'<div class="sga-meta2">'+l2.join('<span class="sga-pt">·</span>')+'</div>':'')+'</div></div>'; }
+/* actions de la fiche : barre en texte sous les chiffres (15.11.2026, Paulo, capture annotée des tuiles Appeler … Plus du bandeau, flèche vers le dessous des chiffres :
+   « déplacer ») — mêmes actions, mêmes règles ; « Plus » devient « Fonctions ▾ » à droite, comme sur les autres pages */
+function sgaActions(o,c0){ const tel=c0&&(sgaTelHref(c0,1)||sgaTelHref(c0,2)), mail=c0&&c0.EMAIL1, adr=c0&&(c0.STREET||c0.LOCATION);
+  const tb=(fn,ico,t,ti,x,cl)=>'<button type="button" class="sg-tb'+(cl?' '+cl:'')+'"'+(fn?' data-fn="'+fn+'"':' disabled')+' title="'+nxE(ti)+'"'+(x||'')+'>'+nxSvg(ico)+'<span>'+nxE(t)+'</span>'+(fn==='plus'?'<span class="dd"></span>':'')+'</button>';
+  return '<div class="sg-tbar sga-tbar" role="group" aria-label="Actions">'
+    +(tel?tb('lien','phone','Appeler','Appeler '+(nxPhone(c0,1)||nxPhone(c0,2)),' data-href="'+nxE(tel)+'"'):tb('','phone','Appeler','Aucun numéro'))
+    +(mail?tb('lien','mail','Courriel','Écrire à '+mail,' data-href="mailto:'+nxE(mail)+'"'):tb('','mail','Courriel','Aucune adresse électronique'))
+    +(adr?tb('lien','map','Carte','Voir l’adresse sur la carte',' data-href="'+nxE(sgaCarte(c0))+'"'):tb('','map','Carte','Aucune adresse'))
+    +tb('pin','star','Favori','Épingler dans les favoris du menu','',nxPinned('c',o.ID)?'on':'')
+    +(sgaPeut('contactEdit')?tb('modifier','edit','Modifier','Modifier l’entité (nom, type, IDE…)'):'')
+    +'<span class="sg-tfin"></span>'+tb('plus','gear','Fonctions','Autres actions : coordonnées, classer, afficher, imprimer, masquer, supprimer')+'</div>'; }
 /* ── onglets ── */
 function sgaCoord(c,o,court){ if(!c) return '<div class="nx-empty">Aucune adresse.'+(sgaPeut('contactNew')?' <a class="sga-lien" data-fn="nadr">Ajouter une adresse</a>':'')+'</div>';
   const rel=c.CONTACTRELATION_ID!=null&&String(c.CONTACTRELATION_ID)!==String(c.CONTACTOWNER_ID)?DS.get('contactowner',c.CONTACTRELATION_ID):null, L=adrLines(c);
@@ -31638,6 +31645,7 @@ function sgaPage(ix,o,D){ const {cs,c0,pers,prj,soum,notes,props}=D, nw=sgaPeut(
       +(soc?sgaTuile('o_pers','person','Personnes',String(pers.length)):sgaTuile('o_adr','map','Adresses',String(cs.length)))
       +sgaTuile('','cal','Dernier projet',prj[0]?nxE(prj[0].p.NUMBER||'—'):'—',prj[0]?prj[0].p.TITLE:'')
       +(soum.length?sgaTuile('o_soum','doc','Soumissions',String(soum.length)):sgaTuile('o_notes','doc','Notes',String(notes.length)))+'</div>'
+    +sgaActions(o,c0)
     +'<div class="sga-cols"><div class="sg-pcol">'
       +sec('adr',nxCard('',cs.length>1?'Adresses':'Coordonnées','<div class="b">'+(cs.length?cs.map(c=>'<div class="sga-adr-bloc">'+sgaCoord(c,o)+actsAdr(c)+'</div>').join(''):sgaCoord(null,o))+'</div>',
         (cs.length>1?'<span class="n">'+cs.length+'</span>':'')+(nw?lienT('nadr','Nouvelle adresse','Ajouter une adresse à cette entité')+lienT('lier','Rattacher…','Rattacher une personne ou une entité à celle-ci'):'')))

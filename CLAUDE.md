@@ -1131,6 +1131,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   dans le titre) et « Catégories » (× pour retirer, « Ajouter… »), à droite « Personnes » (toutes) et « Notes » (toutes, modifier / supprimer, « Nouvelle note »),
   dessous « Projets » (tous) et « Soumissions ». Un chiffre cliquable descend à sa partie (`data-sga-sec`, actions `o_*`) ; `sgaOnglet` reste défini (soumissions),
   `sg3_annu_onglet` n'est plus lu. Copie d'avant : `subgestion3/_backup_20261115_2123_avant_annuaire_sans_onglets/`.
+  **Actions de la fiche sous les chiffres (même soir, capture annotée des tuiles Appeler … Plus du bandeau, flèche vers le dessous des chiffres : « déplacer »)** :
+  `sgaActions(o,c0)` — barre en texte entre les chiffres et les parties (Appeler, Courriel, Carte, Favori, Modifier ; « Fonctions ▾ » à droite = l'ancien « Plus »,
+  même menu `sgaSections`) ; mêmes règles (Appeler / Courriel / Carte grisés sans numéro, courriel ou adresse ; Favori souligné et étoile pleine quand la fiche est
+  épinglée) ; le bandeau ne garde que le monogramme, le nom et ses informations. Copie d'avant : `subgestion3/_backup_20261115_2129_avant_annuaire_actions/`.
 - **Contacts ▸ Listes de diffusion et Catégories au graphisme de l'app (25.10.2026, bloc 29, `subgestion3/sg3_contacts.js` + styles `.sgd-*` en
   fin de `sg3.css`)** — demandes de Paulo « améliorer la liste de diffusion pour avoir le même graphisme que le reste de l'app », « modifier catégorie
   pour avoir le même graphisme que le reste de l'app ». `VIEWS['adr-groupes']` et `VIEWS['adr-props']` remplacés (page commune `sgdPage`) :

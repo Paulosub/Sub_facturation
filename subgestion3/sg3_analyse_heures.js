@@ -248,20 +248,50 @@ const acts=(dom,r,e,ro,pq)=>{ const d=ro?' disabled':''; return '<span class="sg
 const barPer=Pr=>txs('pmode',PMODES,ST.per.mode)+SEP+(ST.per.mode==='tout'?'':bt('pdec','','prev',' data-n="-1" title="Période précédente"'))+'<span class="sgah-lbl">'+E(Pr.lib)+'</span>'+(ST.per.mode==='tout'?'':bt('pdec','','next',' data-n="1" title="Période suivante"'));
 const MAXL=1000;
 /* inscriptions d'heures : o.ck (cases), o.act (approuver / refuser), o.sansSt ; tri commun des tableaux (clé de tri de la date), double-clic = modifier */
-const tabHeures=(L,o)=>{ o=o||{}; const n=L.length, V=L.slice().sort((a,b)=>tlKey(b)-tlKey(a)||tlT1(b)-tlT1(a)).slice(0,MAXL), ec=ecrit('h'); if(!n) return '<div class="sgah-vide">'+E(o.vide||'Aucune inscription.')+'</div>'; let T=0; L.forEach(r=>{ T+=hh(r); });
-  return '<div class="sgah-x"><table class="nx-tbl sgah-tb" data-dom="h"><thead><tr>'+(o.ck?'<th class="ck"></th>':'')+'<th>Date</th>'+(o.sansSt?'':'<th>Collaborateur</th>')+'<th class="r">Durée</th><th>Activité</th><th>Phase</th><th>Commentaire</th><th class="nw" title="Facturable">Fact.</th><th class="nw" title="Facturé">Facturé</th><th>État</th>'+(o.act?'<th></th>':'')+'</tr></thead><tbody>'
-    +V.map(r=>{ const e=etT(r), id=String(r.ID), bl=bloquee(r), d=tlDate(r); return '<tr data-id="'+E(id)+'" class="'+(ST.sel.has(id)?'on':'')+'" '+(ec?' title="Double-clic : modifier l’inscription"':'')+'>'+(o.ck?'<td class="ck"><input type="checkbox" data-ck="'+E(id)+'"'+(ST.sel.has(id)?' checked':'')+' aria-label="Choisir"></td>':'')
-      +'<td class="nw" data-tri="'+diso(d)+' '+hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)+'">'+E(JOURS[d.getDay()]+' '+fD(d))+'</td>'+(o.sansSt?'':'<td class="nw">'+E(sN(r.STAFF_ID))+'</td>')+'<td class="r nw"><b>'+Hh(hh(r))+'</b> h</td><td>'+E(acL(r.ACTIVITY_ID))+'</td><td>'+E(spL(r.SUBPHASE_ID)||phL(r.PHASE_ID))+'</td><td class="com">'+E(r.DESCRIPTION||'')+'</td>'
-      +'<td>'+oui(r.ISCHARGEABLE)+'</td><td>'+oui(r.ISCHARGED)+'</td><td class="nw" data-tri="'+e+'">'+pill(e)+' <span class="gr" style="font-size:11.5px;color:var(--s-gris)">'+E(TSTATE[e]||'')+'</span>'+(bl?'<span class="blo" title="Période bloquée pour ce collaborateur : l’état n’est plus modifiable">bloquée</span>':'')+'</td>'+(o.act?'<td class="r">'+acts('h',r,e,!ec||bl,bl?'Période bloquée pour ce collaborateur : l’état n’est plus modifiable':'')+'</td>':'')+'</tr>'; }).join('')
-    +'<tr class="tot">'+(o.ck?'<td></td>':'')+'<td>Total</td>'+(o.sansSt?'':'<td class="gr">'+num(n,0)+' inscription'+(n>1?'s':'')+'</td>')+'<td class="r nw">'+Hh(T)+' h</td><td></td><td></td><td></td><td></td><td></td><td></td>'+(o.act?'<td></td>':'')+'</tr>'
-    +'</tbody></table></div>'+(n>MAXL?'<div class="sgah-note">'+num(MAXL,0)+' inscriptions affichées sur '+num(n,0)+' (les plus récentes) ; les documents, la copie et le CSV les contiennent toutes.</div>':''); };
-const tabFrais=(L,o)=>{ o=o||{}; const n=L.length, V=L.slice().sort((a,b)=>kC(b)-kC(a)).slice(0,MAXL), ec=ecrit('f'); if(!n) return '<div class="sgah-vide">'+E(o.vide||'Aucune note de frais.')+'</div>'; let T=0; L.forEach(r=>{ T+=pcAmount(r); });
-  return '<div class="sgah-x"><table class="nx-tbl sgah-tb" data-dom="f"><thead><tr>'+(o.ck?'<th class="ck"></th>':'')+'<th>Date</th>'+(o.sansSt?'':'<th>Collaborateur</th>')+'<th>Genre de frais</th><th>Désignation</th><th class="r">Quantité</th><th class="r">Montant CHF</th><th class="nw" title="Facturable">Fact.</th><th class="nw" title="Facturé">Facturé</th><th class="nw" title="Remboursable au collaborateur">Remb.</th><th>État</th>'+(o.act?'<th></th>':'')+'</tr></thead><tbody>'
-    +V.map(r=>{ const e=etC(r), id=String(r.ID), q=+r.QUANTITY||0; return '<tr data-id="'+E(id)+'" class="'+(ST.sel.has(id)?'on':'')+'" '+(ec?' title="Double-clic : modifier la note de frais"':'')+'>'+(o.ck?'<td class="ck"><input type="checkbox" data-ck="'+E(id)+'"'+(ST.sel.has(id)?' checked':'')+' aria-label="Choisir"></td>':'')
-      +'<td class="nw">'+E(fD(pcDate(r)))+'</td>'+(o.sansSt?'':'<td class="nw">'+E(sN(r.STAFF_ID))+'</td>')+'<td>'+E(ccL(r.COSTCATEGORY_ID))+'</td><td class="com">'+E(r.DESCRIPTION||'')+'</td><td class="r nw" data-tri="'+String(Math.round(q*1000)+1e9)+'">'+E(num(q,q%1?2:0))+' '+E(r.UNIT||'')+'</td><td class="r nw"><b>'+F2(pcAmount(r))+'</b></td>'
-      +'<td>'+oui(r.ISCHARGEABLE)+'</td><td>'+oui(r.ISCHARGED)+'</td><td>'+oui(r.ISREFUNDABLE)+'</td><td class="nw" data-tri="'+e+'">'+pill(e)+' <span style="font-size:11.5px;color:var(--s-gris)">'+E(TSTATE[e]||'')+'</span></td>'+(o.act?'<td class="r">'+acts('f',r,e,!ec)+'</td>':'')+'</tr>'; }).join('')
-    +'<tr class="tot">'+(o.ck?'<td></td>':'')+'<td>Total</td>'+(o.sansSt?'':'<td class="gr">'+num(n,0)+' note'+(n>1?'s':'')+'</td>')+'<td></td><td></td><td></td><td class="r nw">'+F2(T)+'</td><td></td><td></td><td></td><td></td>'+(o.act?'<td></td>':'')+'</tr>'
-    +'</tbody></table></div>'+(n>MAXL?'<div class="sgah-note">'+num(MAXL,0)+' notes affichées sur '+num(n,0)+' ; les documents, la copie et le CSV les contiennent toutes.</div>':''); };
+/* colonnes des inscriptions et des notes de frais (bloc 57, catalogues « ahh » et « ahf », 15.11.2026) : champs d'une inscription d'heures et d'une note de frais
+   de l'ancien logiciel ; la case à cocher (choix) et les boutons Approuver / Refuser restent avant et après les colonnes choisies ; total sous la durée / le montant */
+const catAh=()=>{ if(SGTAB.def.ahh) return; const ouiT=v=>v?'Oui':'Non';
+  const etatH=r=>{ const e=etT(r), bl=bloquee(r); return pill(e)+' <span class="gr" style="font-size:11.5px;color:var(--s-gris)">'+E(TSTATE[e]||'')+'</span>'+(bl?'<span class="blo" title="Période bloquée pour ce collaborateur : l’état n’est plus modifiable">bloquée</span>':''); };
+  sgtabDef('ahh',{titre:'Inscriptions d’heures',std:['date','coll','duree','act','phase','com','fact','facture','etat'],cat:{
+    date:{t:'Date',cat:'Inscription',nw:1,v:r=>{ const d=tlDate(r); return JOURS[d.getDay()]+' '+fD(d); }},
+    horaire:{t:'Horaire',l:'Heure de début et de fin',cat:'Inscription',nw:1,v:r=>hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)+' – '+hm(r.TIMEHOUR2||0,r.TIMEMINUTE2||0)},
+    coll:{t:'Collaborateur',cat:'Inscription',nw:1,v:r=>sN(r.STAFF_ID),sum:L=>num(L.length,0)+' inscription'+(L.length>1?'s':'')},
+    ini:{t:'Initiales',cat:'Inscription',nw:1,v:r=>sI(r.STAFF_ID)},
+    duree:{t:'Durée',l:'Durée (heures)',cat:'Inscription',r:1,nw:1,f:r=>'<b>'+Hh(hh(r))+'</b> h',v:r=>Hh(hh(r))+' h',sum:L=>Hh(L.reduce((t,r)=>t+hh(r),0))+' h'},
+    grp:{t:'Groupe d’activité',cat:'Activité',v:r=>agL(r.ACTIVITYGROUP_ID)},act:{t:'Activité',cat:'Activité',v:r=>acL(r.ACTIVITY_ID)},
+    phase:{t:'Phase',l:'Phase partielle, sinon phase',cat:'Phase',v:r=>spL(r.SUBPHASE_ID)||phL(r.PHASE_ID)},
+    phaseg:{t:'Phase (principale)',cat:'Phase',v:r=>phL(r.PHASE_ID)},sphase:{t:'Phase partielle',cat:'Phase',v:r=>spL(r.SUBPHASE_ID)},
+    ouv:{t:'Ouvrage',cat:'Phase',v:r=>suL(r.SUBPROJECT_ID)},
+    com:{t:'Commentaire',cat:'Inscription',cl:()=>'com',v:r=>r.DESCRIPTION||''},
+    vac:{t:'Vacances',cat:'Inscription',nw:1,v:r=>r.ISHOLIDAY?'Oui':''},
+    fact:{t:'Fact.',l:'Facturable',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGEABLE),v:r=>ouiT(r.ISCHARGEABLE)},
+    facture:{t:'Facturé',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGED),v:r=>ouiT(r.ISCHARGED)},
+    factle:{t:'Facturé le',cat:'Facturation',nw:1,v:r=>r.CHARGEDDATE?fD(new Date(String(r.CHARGEDDATE).slice(0,10)+'T00:00')):''},
+    etat:{t:'État',cat:'Contrôle',nw:1,f:etatH,v:r=>(TSTATE[etT(r)]||'')+(bloquee(r)?' (bloquée)':'')}}});
+  sgtabDef('ahf',{titre:'Notes de frais',std:['date','coll','genre','desc','qte','montant','fact','facture','remb','etat'],cat:{
+    date:{t:'Date',cat:'Note de frais',nw:1,v:r=>fD(pcDate(r))},coll:{t:'Collaborateur',cat:'Note de frais',nw:1,v:r=>sN(r.STAFF_ID),sum:L=>num(L.length,0)+' note'+(L.length>1?'s':'')},
+    grp:{t:'Groupe de frais',cat:'Note de frais',v:r=>cgL(r.COSTCATEGORYGROUP_ID)},genre:{t:'Genre de frais',cat:'Note de frais',v:r=>ccL(r.COSTCATEGORY_ID)},
+    desc:{t:'Désignation',cat:'Note de frais',cl:()=>'com',v:r=>r.DESCRIPTION||''},piece:{t:'N° pièce',cat:'Note de frais',nw:1,v:r=>r.DOCUMENTNUMBER||''},
+    qte:{t:'Quantité',cat:'Montants',r:1,nw:1,v:r=>{ const q=+r.QUANTITY||0; return num(q,q%1?2:0)+(r.UNIT?' '+r.UNIT:''); }},
+    pu:{t:'Prix unitaire',cat:'Montants',r:1,nw:1,v:r=>r.UNITPRICE==null||r.UNITPRICE===''?'':F2(+r.UNITPRICE)},
+    montant:{t:'Montant CHF',cat:'Montants',r:1,nw:1,f:r=>'<b>'+F2(pcAmount(r))+'</b>',v:r=>F2(pcAmount(r)),sum:L=>F2(L.reduce((t,r)=>t+pcAmount(r),0))},
+    tva:{t:'TVA %',cat:'Montants',r:1,nw:1,v:r=>r.VATRATE==null||r.VATRATE===''?'':String(r.VATRATE)},
+    phase:{t:'Phase',cat:'Phase',v:r=>spL(r.SUBPHASE_ID)||phL(r.PHASE_ID)},ouv:{t:'Ouvrage',cat:'Phase',v:r=>suL(r.SUBPROJECT_ID)},
+    fact:{t:'Fact.',l:'Facturable',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGEABLE),v:r=>ouiT(r.ISCHARGEABLE)},facture:{t:'Facturé',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGED),v:r=>ouiT(r.ISCHARGED)},
+    remb:{t:'Remb.',l:'Remboursable au collaborateur',cat:'Remboursement',c:1,f:r=>oui(r.ISREFUNDABLE),v:r=>ouiT(r.ISREFUNDABLE)},rembo:{t:'Remboursé',cat:'Remboursement',c:1,f:r=>oui(r.ISREFUNDED),v:r=>ouiT(r.ISREFUNDED)},
+    etat:{t:'État',cat:'Contrôle',nw:1,f:r=>{ const e=etC(r); return pill(e)+' <span style="font-size:11.5px;color:var(--s-gris)">'+E(TSTATE[e]||'')+'</span>'; },v:r=>TSTATE[etC(r)]||''}}}); };
+const tabHeures=(L,o)=>{ o=o||{}; catAh(); const n=L.length, V=L.slice().sort((a,b)=>tlKey(b)-tlKey(a)||tlT1(b)-tlT1(a)).slice(0,MAXL), ec=ecrit('h'); if(!n) return '<div class="sgah-vide">'+E(o.vide||'Aucune inscription.')+'</div>';
+  return '<div class="sgah-x">'+sgtabTableauX('ahh',V,null,{cls:'sgah-tb',attr:' data-dom="h"',tot:{lib:'Total'},totLignes:L,
+      tr:r=>{ const id=String(r.ID); return ' data-id="'+E(id)+'" class="'+(ST.sel.has(id)?'on':'')+'" '+(ec?' title="Double-clic : modifier l’inscription"':''); },
+      avant:o.ck?{th:'<th class="ck"></th>',tot:'<td></td>',td:r=>{ const id=String(r.ID); return '<td class="ck"><input type="checkbox" data-ck="'+E(id)+'"'+(ST.sel.has(id)?' checked':'')+' aria-label="Choisir"></td>'; }}:null,
+      apres:o.act?{th:'<th></th>',tot:'<td></td>',td:r=>{ const e=etT(r), bl=bloquee(r); return '<td class="r">'+acts('h',r,e,!ec||bl,bl?'Période bloquée pour ce collaborateur : l’état n’est plus modifiable':'')+'</td>'; }}:null})+'</div>'
+    +(n>MAXL?'<div class="sgah-note">'+num(MAXL,0)+' inscriptions affichées sur '+num(n,0)+' (les plus récentes) ; les documents, la copie et le CSV les contiennent toutes.</div>':''); };
+const tabFrais=(L,o)=>{ o=o||{}; catAh(); const n=L.length, V=L.slice().sort((a,b)=>kC(b)-kC(a)).slice(0,MAXL), ec=ecrit('f'); if(!n) return '<div class="sgah-vide">'+E(o.vide||'Aucune note de frais.')+'</div>';
+  return '<div class="sgah-x">'+sgtabTableauX('ahf',V,null,{cls:'sgah-tb',attr:' data-dom="f"',tot:{lib:'Total'},totLignes:L,
+      tr:r=>{ const id=String(r.ID); return ' data-id="'+E(id)+'" class="'+(ST.sel.has(id)?'on':'')+'" '+(ec?' title="Double-clic : modifier la note de frais"':''); },
+      avant:o.ck?{th:'<th class="ck"></th>',tot:'<td></td>',td:r=>{ const id=String(r.ID); return '<td class="ck"><input type="checkbox" data-ck="'+E(id)+'"'+(ST.sel.has(id)?' checked':'')+' aria-label="Choisir"></td>'; }}:null,
+      apres:o.act?{th:'<th></th>',tot:'<td></td>',td:r=>'<td class="r">'+acts('f',r,etC(r),!ec)+'</td>'}:null})+'</div>'
+    +(n>MAXL?'<div class="sgah-note">'+num(MAXL,0)+' notes de frais affichées sur '+num(n,0)+' (les plus récentes) ; les documents, la copie et le CSV les contiennent toutes.</div>':''); };
 /* semaine de l'affaire : collaborateurs × jours */
 const semaine=(L,lun,o)=>{ o=o||{}; const J=[...Array(7)].map((_,i)=>jplus(lun,i)), ka=K(auj()), M=new Map(), ec=ecrit('h'); L.forEach(r=>{ let x=M.get(r.STAFF_ID); if(!x) M.set(r.STAFF_ID,x={j:new Map(),h:0,L:[]}); const k=tlKey(r); if(!x.j.has(k)) x.j.set(k,[]); x.j.get(k).push(r); x.h+=hh(r); x.L.push(r); });
   const S=[...M.keys()].sort((a,b)=>cmpN(sN(a),sN(b))); if(!S.length) return '<div class="sgah-vide">Aucune inscription cette semaine pour cette affaire.</div>'; const tj=J.map(()=>0); let th=0;
@@ -368,7 +398,7 @@ const pageCtlh=()=>deux('ctlh',()=>{ const p=Pj(ST.pid), lun=semDe(), L=rowsSem(
     +'<div class="sgah-bar">'+bt('sdec','','prev',' data-n="-1" title="Semaine précédente"')+'<span class="sgah-lbl">'+E(semLib(lun))+'</span>'+bt('sdec','','next',' data-n="1" title="Semaine suivante"')
       +bt('sder','Dernière saisie','today',' title="Semaine de la dernière inscription de l’affaire"')+bt('sctl','À contrôler','urgent',' title="Semaine précédente qui a des inscriptions à contrôler"'+(pa?'':' disabled'))
       +(ec?SEP+bt('apTout','Approuver la semaine','check',' data-dom="h" title="Approuver toutes les inscriptions à contrôler de la semaine"'+(c.ctl?'':' disabled')):'')
-      +DR(bt('impr','Imprimer','print',' data-dom="h" title="Document des inscriptions de la semaine"'+(L.length?'':' disabled'))+bt('csv','CSV','export',' data-dom="h" title="Inscriptions de la semaine dans un fichier CSV"'+(L.length?'':' disabled')))+'</div>'
+      +DR(bt('pres','Présentation ▾','list',' data-dom="h" title="Colonnes du tableau des inscriptions"')+bt('impr','Imprimer','print',' data-dom="h" title="Document des inscriptions de la semaine"'+(L.length?'':' disabled'))+bt('csv','CSV','export',' data-dom="h" title="Inscriptions de la semaine dans un fichier CSV"'+(L.length?'':' disabled')))+'</div>'
     +semaine(L,lun,{sid:ST.col,jour:ST.jour})
     +titreSel(ST.col!=null?'Inscriptions de '+sN(ST.col)+(ST.jour?' · '+fK(ST.jour):''):'Inscriptions de la semaine','h','ctl',ec&&Ld.length)
     +tabHeures(Ld,{ck:ec,act:ec,vide:L.length?'Aucune inscription pour ce choix.':'Aucune inscription cette semaine pour cette affaire.'}); });
@@ -384,7 +414,7 @@ const pageAna=dom=>deux(dom==='h'?'anah':'anaf',()=>{ const p=Pj(ST.pid), Pr=per
   const nc=Object.values(ST.crit[dom]).reduce((s,x)=>s+(x?x.size:0),0)+(ST.fa[dom]!=null?1:0)+(ST.fd[dom]!=null?1:0);
   return tete(p.NUMBER||'',(tl?'Critères d’analyse des heures · ':'Critères d’analyse des frais · ')+Pr.lib,p.TITLE||'',E(num(L.length,0)+' position'+(L.length>1?'s':'')+' sur '+num(nT,0)+(nc?' · '+nc+' critère'+(nc>1?'s':''):' · cochez des critères : les chiffres et le tableau suivent aussitôt')))
     +(tl?kpAnaH(L):kpAnaF(L))+lecture(dom)
-    +'<div class="sgah-bar">'+barPer(Pr)+DR(bt('fonc','Fonctions ▾','gear',' data-dom="'+dom+'"')+bt('docs','Documents ▾','doc',' data-dom="'+dom+'"')+bt('rap','Rapports ▾','analyse',' data-dom="'+dom+'"'))+'</div>'
+    +'<div class="sgah-bar">'+barPer(Pr)+DR(bt('pres','Présentation ▾','list',' data-dom="'+dom+'" title="Colonnes du tableau"')+bt('fonc','Fonctions ▾','gear',' data-dom="'+dom+'"')+bt('docs','Documents ▾','doc',' data-dom="'+dom+'"')+bt('rap','Rapports ▾','analyse',' data-dom="'+dom+'"'))+'</div>'
     +'<div class="sgah-bar sgah-bar2">'+barTri(dom)+SEP+bt('raz','Effacer les critères','',' data-dom="'+dom+'" title="Effacer les critères cochés et les statuts choisis"'+(nc?'':' disabled'))+'</div>'
     +listes(dom,ST.pid)
     +'<div class="sgah-bar"><span class="sgah-gl" style="margin-left:0">Afficher</span>'+txs('grp',GRP[dom],g,' data-dom="'+dom+'"')+'</div>'
@@ -402,7 +432,7 @@ const pageCtlf=()=>deux('ctlf',()=>{ const p=Pj(ST.pid), f=fmDe(), L0=rowsFm(ST.
       +bt('fder','Dernière note','today',' title="Mois de la dernière note de frais de l’affaire"')+bt('fctl','À contrôler','urgent',' title="Mois précédent qui a des notes de frais à contrôler"'+(pa?'':' disabled'))
       +(S.length>1?SEP+'<span class="sgah-gl">Collaborateur</span>'+bt('col','tous','',' data-k=""',ST.col==null?'on':'')+S.map(s=>bt('col',sI(s),'',' data-k="'+E(s)+'" title="'+E(sN(s))+'"',String(ST.col)===String(s)?'on':'')).join(''):'')
       +(ec?SEP+bt('apTout','Approuver le mois','check',' data-dom="f" title="Approuver les notes de frais à contrôler affichées"'+(L.some(r=>aC(etC(r)))?'':' disabled')):'')
-      +DR(bt('impr','Imprimer','print',' data-dom="f" title="Document des notes de frais affichées"'+(L.length?'':' disabled'))+bt('csv','CSV','export',' data-dom="f" title="Notes de frais affichées dans un fichier CSV"'+(L.length?'':' disabled')))+'</div>'
+      +DR(bt('pres','Présentation ▾','list',' data-dom="f" title="Colonnes du tableau des notes de frais"')+bt('impr','Imprimer','print',' data-dom="f" title="Document des notes de frais affichées"'+(L.length?'':' disabled'))+bt('csv','CSV','export',' data-dom="f" title="Notes de frais affichées dans un fichier CSV"'+(L.length?'':' disabled')))+'</div>'
     +titreSel('Notes de frais · '+fmLib(f)+(ST.col!=null?' · '+sN(ST.col):''),'f','ctl',ec&&L.length)
     +tabFrais(L,{ck:ec,act:ec,vide:'Aucune note de frais ce mois-ci pour cette affaire.'}); });
 
@@ -434,6 +464,7 @@ const nId=s=>s===''||s==null?null:(isNaN(+s)?s:+s);
 const moisCle=r=>(+r.DATEYEAR)*100+(+r.DATEMONTH);
 const ctxDoc=p=>{ try{ if(typeof ch11dCtlCtx==='function') ch11dCtlCtx(p); }catch(_){ } };
 const FN={
+  pres:b=>{ catAh(); sgtabMenu(b.dataset.dom==='f'?'ahf':'ahh',b,redess); },
   pmode:b=>{ ST.per.mode=b.dataset.k; garder(); razSel(); redess(); }, pdec:b=>{ perDec(+b.dataset.n); razSel(); redess(); },
   aff:b=>{ if(String(b.dataset.id)===String(ST.pid)) return; choisir(b.dataset.id); majArg(); redess(); },
   mod:b=>{ go(VM[b.dataset.k],b.dataset.id!=null&&b.dataset.id!==''?b.dataset.id:undefined); },

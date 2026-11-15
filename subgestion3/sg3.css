@@ -1852,3 +1852,6 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .nx-tbl.sgtab-t td.c,.nx-tbl.sgtab-t th.c{text-align:center}
 .nx-tbl.sgtab-t td svg{width:14px;height:14px;vertical-align:-2px;flex:none}   /* icônes dans les cellules (cadenas d'une soumission ouverte…) */
 .sgtab-note{display:inline-block;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
+.nx-tbl.sgtab-t td.sgtab-rouge{color:var(--s-rouge)}
+.sgof-tabl{display:inline-flex;align-items:center;gap:2px;margin-left:auto}   /* Présentation et Imprimer du titre « Factures » de l'affaire */
+.nx-tbl.sgtab-t tr.tot td{font-weight:700;background:var(--s-nuit3)}

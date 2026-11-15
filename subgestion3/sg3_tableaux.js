@@ -170,6 +170,12 @@ const sgtabTotal=(cols,rows,ctx,lib)=>cols.some(c=>c.sum)?cols.map((c,i)=>{ let 
 function sgtabTableau(cle,rows,ctx,tr,cls,tot){ const cols=sgtabCols(cle), T=tot&&rows.length?sgtabTotal(cols,rows,ctx,tot.lib):null;
   return '<table class="nx-tbl sgsv-tb sgtab-t'+(cls?' '+cls:'')+'"><thead>'+sgtabEntete(cols)+'</thead><tbody>'+rows.map(r=>'<tr'+(tr?tr(r):'')+'>'+sgtabCellules(cols,r,ctx)+'</tr>').join('')
     +(T?'<tr class="tot">'+T.map((v,i)=>'<td'+sgtabCl(cols[i])+'>'+nxE(v)+'</td>').join('')+'</tr>':'')+'</tbody></table>'; }
+/* tableau avec des colonnes fixes autour des colonnes choisies (case à cocher avant, boutons après…) : o = {tr(r), cls, attr, avant:{th, td(r), tot}, apres:{th, td(r), tot},
+   tot:{lib} (ligne de total sous les colonnes qui ont une somme), apresTot (html ajouté après la ligne de total)} */
+function sgtabTableauX(cle,rows,ctx,o){ o=o||{}; const cols=sgtabCols(cle), A=o.avant||null, B=o.apres||null, T=o.tot&&rows.length?sgtabTotal(cols,o.totLignes||rows,ctx,o.tot.lib):null;   /* o.totLignes : total sur toutes les lignes quand le tableau n'en montre qu'une partie */
+  return '<table class="nx-tbl sgtab-t'+(o.cls?' '+o.cls:'')+'"'+(o.attr||'')+'><thead><tr>'+(A?A.th:'')+sgtabEntete(cols).replace(/^<tr>|<\/tr>$/g,'')+(B?B.th:'')+'</tr></thead><tbody>'
+    +rows.map(r=>'<tr'+(o.tr?o.tr(r):'')+'>'+(A?A.td(r):'')+sgtabCellules(cols,r,ctx)+(B?B.td(r):'')+'</tr>').join('')
+    +(T?'<tr class="tot">'+(A?(A.tot!=null?A.tot:'<td></td>'):'')+T.map((v,i)=>'<td'+sgtabCl(cols[i])+'>'+nxE(v)+'</td>').join('')+(B?(B.tot!=null?B.tot:'<td></td>'):'')+'</tr>':'')+'</tbody></table>'; }
 function sgtabCopie(box){ const t=box&&box.querySelector('table.sgtab-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); else toast('Rien à copier.',true); }
 /* colonnes communes des listes de documents (devis, contrôles des coûts, estimations) : projet, version, numéro, statut, note, modification */
 function sgtabColsDoc(o){ const E=nxE, prj=d=>DS.get('project',d.PROJECT_ID)||{};
@@ -249,4 +255,26 @@ if(typeof PTC==='object'&&PTC){ const prj=t=>DS.get('project',t.PROJECT_ID)||{},
   m('d','Dates',{t:'Début',nw:1}); C.dl={t:'Délai',cat:'Dates',nw:1,f:t=>{ const v=dfr(t.DEADLINE); return ret(t)?'<span class="sgsv-ret">'+nxE(v)+'</span>':nxE(v); },v:t=>dfr(t.DEADLINE)}; m('dd','Dates',{t:'Réglée le',nw:1});
   sgtabDef('taches',{titre:'Tâches',std:['projet','tache','c','pr','debut','dl','by'],cat:C});
   sgtabDef('tachesreg',{titre:'Tâches réglées',std:['projet','tache','c','pr','debut','dd','by'],cat:C}); }
+/* « renta » (Finances ▸ Rentabilité des projets) : lignes = résultat de sgRenta (projet, heures, coût de revient, honoraires, facturé, encaissé, marge, alertes) */
+{ const ch=v=>nxCHF(v||0), sm=k=>L=>nxCHF(L.reduce((t,x)=>t+(+x[k]||0),0)), pc=v=>v==null?'':Math.round(v*100)+' %';
+  sgtabDef('renta',{titre:'Rentabilité des projets',std:['projet','contrat','cout','conso','facht','fact','enc','marge','al'],cat:{
+    projet:{t:'Projet',l:'Numéro et désignation du projet',cat:'Projet',w:220,f:x=>'<span class="nx-tag num">'+nxE(x.p.NUMBER||'')+'</span> '+nxE(x.p.TITLE||''),v:x=>[x.p.NUMBER,x.p.TITLE].filter(Boolean).join(' ')},
+    num:{t:'Numéro',cat:'Projet',nw:1,v:x=>x.p.NUMBER||''},titre:{t:'Désignation',cat:'Projet',v:x=>x.p.TITLE||''},
+    mo:{t:'Maître d’ouvrage',cat:'Projet',v:x=>{ try{ return projMO(x.p)||''; }catch(_){ return ''; } }},
+    statut:{t:'Statut',cat:'Projet',nw:1,v:x=>{ try{ return projState(x.p)||''; }catch(_){ return ''; } }},
+    phase:{t:'Phase actuelle',cat:'Projet',v:x=>{ try{ return sgTermine(x.p)?'Terminé':(sgPhaseLib(sgPhaseActuelle(x.p),true)||''); }catch(_){ return ''; } }},
+    h:{t:'Heures',l:'Heures saisies',cat:'Heures',r:1,nw:1,v:x=>nxH(x.h||0),sum:L=>nxH(L.reduce((t,x)=>t+(+x.h||0),0))},
+    hc:{t:'Heures facturables',cat:'Heures',r:1,nw:1,v:x=>nxH(x.hc||0),sum:L=>nxH(L.reduce((t,x)=>t+(+x.hc||0),0))},
+    contrat:{t:'Honoraires HT',l:'Honoraires du contrat HT',cat:'Honoraires',r:1,nw:1,v:x=>x.contratHT?ch(x.contratHT):'—',sum:sm('contratHT')},
+    contratttc:{t:'Honoraires TTC',l:'Honoraires du contrat TTC',cat:'Honoraires',r:1,nw:1,v:x=>x.contratTTC?ch(x.contratTTC):'—',sum:sm('contratTTC')},
+    cout:{t:'Coût de revient',l:'Coût de revient des heures saisies (taux internes)',cat:'Coût',r:1,nw:1,v:x=>ch(x.cout),sum:sm('cout')},
+    conso:{t:'Consommé',l:'Coût de revient en % des honoraires',cat:'Coût',nw:1,f:x=>sgBarre(x.conso,x.conso>1?'var(--s-rouge)':x.conso>=.8?'var(--s-orange)':null)+' '+sgPct(x.conso),v:x=>pc(x.conso),cl:x=>x.conso>1?'sgtab-rouge':''},
+    reste:{t:'Honoraires − coût',l:'Honoraires HT moins coût de revient',cat:'Coût',r:1,nw:1,v:x=>ch(x.reste),cl:x=>x.reste<0?'sgtab-rouge':'',sum:sm('reste')},
+    facht:{t:'Facturé HT',cat:'Facturation',r:1,nw:1,v:x=>ch(x.factHT),sum:sm('factHT')},
+    factttc:{t:'Facturé TTC',cat:'Facturation',r:1,nw:1,v:x=>ch(x.factTTC),sum:sm('factTTC')},
+    fact:{t:'Facturé',l:'Facturé en % des honoraires',cat:'Facturation',nw:1,f:x=>sgBarre(x.fact)+' '+sgPct(x.fact),v:x=>pc(x.fact)},
+    enc:{t:'Encaissé TTC',cat:'Facturation',r:1,nw:1,v:x=>ch(x.encTTC),sum:sm('encTTC')},
+    marge:{t:'Marge',l:'Facturé HT moins coût de revient',cat:'Marge',r:1,nw:1,v:x=>ch(x.marge),cl:x=>x.marge<0?'sgtab-rouge':'',sum:sm('marge')},
+    margepct:{t:'Marge %',l:'Marge en % du facturé HT',cat:'Marge',r:1,nw:1,v:x=>x.factHT?Math.round(x.marge/x.factHT*100)+' %':''},
+    al:{t:'Alertes',cat:'Marge',f:x=>(x.al||[]).map(sgAlerteTag).join(' '),v:x=>(x.al||[]).map(a=>a[1]).join(' ; ')}}}); }
 window.SGTAB=Object.assign(SGTAB,{etat:sgtabEtat,cols:sgtabCols,menu:sgtabMenu,imprimer:sgtabImprimer,csv:sgtabCsv,archive:sgtabArchive,ctxProjets:sgtabCtxProjets,moteur:sgtabMoteur});

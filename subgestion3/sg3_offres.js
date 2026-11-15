@@ -293,7 +293,26 @@ const base=c=>+c.hht||(+c.httc||0)/(1+tauxTva(c)/100);   /* honoraires HT du con
 const situables=(cs)=>cs.filter(c=>!c.annule&&!c.termine&&Object.values(c.phases||{}).some(v=>+v>0)&&base(c)>0);
 
 const ETAT_F={};   /* par affaire : contrat choisi, année */
-function dessinerF(box,p){ const D=fxData();
+/* colonnes du tableau des factures de l'affaire (bloc 57, 15.11.2026) : champs d'une facture de Facturation ; ctx = {libC (libellé de chaque contrat), auj}.
+   « facturesaff » sans la colonne Contrat (un seul contrat), « facturesaffc » avec (plusieurs contrats ou factures hors contrat), comme avant. */
+const catFactAff=()=>{ if(SGTAB.def.facturesaff) return; const vivantes=L=>L.filter(f=>!fxAnnulee(f));
+  const etatF=(f,x)=>{ const ann=fxAnnulee(f), o=!ann&&fxUnpaid(f), e=o&&f.ech&&f.ech<x.auj; return {ann,o,e}; };
+  const C={num:{t:'Numéro',l:'Numéro de facture',cat:'Facture',nw:1,f:f=>'<b>'+E(f.num||f.id)+'</b>',v:f=>String(f.num||f.id||'')},
+    date:{t:'Date',cat:'Facture',nw:1,v:f=>f.date?dfr(f.date):'—'},type:{t:'Type',cat:'Facture',v:f=>f.type||''},
+    contrat:{t:'Contrat',l:'Contrat facturé (ou hors contrat)',cat:'Facture',v:(f,x)=>horsC(f)?'Hors contrat':String((x.libC&&x.libC.get(String(f.contrat_id)))||f.contrat_id||'')},
+    hon:{t:'Honoraires TTC',l:'Honoraires TTC (sans les frais)',cat:'Montants',r:1,nw:1,f:f=>'<b>'+(ttcF(f)?nxCHF(ttcF(f)):'—')+'</b>',v:f=>ttcF(f)?nxCHF(ttcF(f)):'—',sum:L=>nxCHF(vivantes(L).reduce((t,f)=>t+ttcF(f),0))},
+    frais:{t:'Frais TTC',cat:'Montants',r:1,nw:1,v:f=>fraisF(f)?nxCHF(fraisF(f)):'—',sum:L=>nxCHF(vivantes(L).reduce((t,f)=>t+fraisF(f),0))},
+    total:{t:'Total TTC',l:'Honoraires et frais TTC',cat:'Montants',r:1,nw:1,v:f=>nxCHF(ttcF(f)+fraisF(f)),sum:L=>nxCHF(vivantes(L).reduce((t,f)=>t+ttcF(f)+fraisF(f),0))},
+    ech:{t:'Échéance',cat:'Paiement',nw:1,v:f=>f.ech?dfr(f.ech):'—',cl:(f,x)=>etatF(f,x).e?'sgof-neg':''},
+    etat:{t:'État',cat:'Paiement',nw:1,f:(f,x)=>{ const z=etatF(f,x); return '<span class="nx-tag '+(z.ann?'':z.o?(z.e?'urg':'s3'):'s2')+'">'+(z.ann?'Annulée':z.o?(z.e?'Échue':'Ouverte'):'Payée'+(f.date_paiement?' le '+dfr(f.date_paiement):''))+'</span>'; },
+      v:(f,x)=>{ const z=etatF(f,x); return z.ann?'Annulée':z.o?(z.e?'Échue':'Ouverte'):'Payée'+(f.date_paiement?' le '+dfr(f.date_paiement):''); }},
+    paye:{t:'Payée le',l:'Date de paiement',cat:'Paiement',nw:1,v:f=>f.date_paiement?dfr(f.date_paiement):''},
+    statut:{t:'Statut',l:'Statut de la facture dans Facturation',cat:'Paiement',nw:1,v:f=>f.statut||''},
+    nf:{t:'Note de frais',l:'Note de frais (montant compté en frais)',cat:'Facture',nw:1,v:f=>estNF(f)?'Oui':''},
+    aff:{t:'N° d’affaire',l:'Code d’affaire de la facture',cat:'Facture',nw:1,v:f=>f.cl_affaire||''}};
+  sgtabDef('facturesaff',{titre:'Factures de l’affaire',std:['num','date','type','hon','frais','total','ech','etat'],cat:C});
+  sgtabDef('facturesaffc',{titre:'Factures de l’affaire (plusieurs contrats)',std:['num','date','type','contrat','hon','frais','total','ech','etat'],cat:C}); };
+function dessinerF(box,p){ const D=fxData(); catFactAff();
   if(!D){ box.innerHTML='<p class="sgof-err">La Facturation n’est pas chargée.</p>'; return; }
   const u=ETAT_F[p.ID]||(ETAT_F[p.ID]={cid:null,an:''}), mo=typeof projMO==='function'?projMO(p):'';
   if(sgFinVerrou()){ box.innerHTML='<div class="sgof"><div class="sgfh-tete"><div class="sgfh-id"><div class="sgfh-ini">'+E(p.NUMBER||'')+'</div><div class="sgfh-nm"><div class="lb">Factures</div><h2>'+E(p.TITLE||p.NUMBER||'')+'</h2></div></div></div>'
@@ -336,19 +355,14 @@ function dessinerF(box,p){ const D=fxData();
   const anF=f=>String(f.date||'').slice(0,4), ans=[...new Set(F.map(anF).filter(y=>/^\d{4}$/.test(y)))].sort().reverse(), an=ans.length>1&&ans.includes(u.an)?u.an:'';
   const V=F.filter(f=>!an||anF(f)===an).sort((a,b)=>cmp(String(b.date||''),String(a.date||''))||cmp(String(b.num||''),String(a.num||''))), colC=cs.length>1||fsH.length>0;
   html+='<section class="sgof-sec"><div class="sgof-sech"><h3>Factures'+(an?' · '+an:'')+'</h3><span class="n">'+V.length+'</span>'
+    +'<span class="sgof-tabl"><button class="sg-tb" data-a="fpres" title="Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …">'+nxSvg('list')+'<span>Présentation</span><span class="dd"></span></button><button class="sg-tb" data-a="fimp" title="Liste des factures affichée (PDF)">'+nxSvg('print')+'<span>Imprimer</span></button></span>'
     +(ans.length>1?'<span class="sgof-fil" role="group" aria-label="Année">'+[['','Toutes'],...ans.map(y=>[y,y])].map(([v,t])=>'<button data-an="'+v+'" class="'+(v===an?'on':'')+'" aria-pressed="'+(v===an)+'">'+t+'</button>').join('')+'</span>':'')+'</div>';
   if(!V.length) html+='<p class="sgof-vide">Aucune facture pour cette affaire.</p>';
-  else html+='<div style="overflow:auto"><table class="nx-tbl sgof-t"><tr><th>Numéro</th><th>Date</th><th>Type</th>'+(colC?'<th>Contrat</th>':'')+'<th class="r">Honoraires<br>TTC</th><th class="r">Frais<br>TTC</th><th class="r">Total<br>TTC</th><th>Échéance</th><th>État</th><th class="sg-notri"></th></tr>'
-    +V.map(f=>{ const ann=fxAnnulee(f), o=!ann&&fxUnpaid(f), e=o&&f.ech&&f.ech<auj, c=cs.find(k=>String(k.id)===String(f.contrat_id));
-      return '<tr'+(ann?' class="ann"':'')+'><td class="of"><b>'+E(f.num||f.id)+'</b></td><td>'+(f.date?dfr(f.date):'—')+'</td><td>'+E(f.type||'')+'</td>'
-        +(colC?'<td'+(c?' title="'+E('Contrat '+c.id+(c.projet?' — '+c.projet:''))+'"':'')+'>'+(horsC(f)?'Hors contrat':E(libC.get(String(f.contrat_id))||f.contrat_id||''))+'</td>':'')
-        +'<td class="r"'+(estNF(f)?' title="Note de frais : montant compté en frais"':'')+'><b>'+(ttcF(f)?nxCHF(ttcF(f)):'—')+'</b></td><td class="r">'+(fraisF(f)?nxCHF(fraisF(f)):'—')+'</td><td class="r">'+nxCHF(ttcF(f)+fraisF(f))+'</td>'
-        +'<td'+(e?' class="sgof-neg"':'')+'>'+(f.ech?dfr(f.ech):'—')+'</td>'
-        +'<td><span class="nx-tag '+(ann?'':o?(e?'urg':'s3'):'s2')+'">'+(ann?'Annulée':o?(e?'Échue':'Ouverte'):'Payée'+(f.date_paiement?' le '+dfr(f.date_paiement):''))+'</span></td>'
-        +'<td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-factures" data-arg="fv:'+E(f.id)+'" title="Afficher la facture en PDF">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'
-        +(prep?'<button data-go="fx-saisie" data-arg="f:'+E(f.id)+'" title="Modifier la facture dans la saisie de Facturation">'+nxSvg('edit')+'<span>Modifier</span></button>':'')+'</div></td></tr>'; }).join('')
-    +(V.length>1?'<tr class="tot"><td>Total</td><td></td><td></td>'+(colC?'<td></td>':'')+'<td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+ttcF(f),0))+'</td><td class="r">'+nxCHF(V.filter(f=>!fxAnnulee(f)).reduce((s0,f)=>s0+fraisF(f),0))+'</td><td class="r">'+nxCHF(sum(V.filter(f=>!fxAnnulee(f))))+'</td><td></td><td></td><td></td></tr>':'')
-    +'</table></div>';
+  /* colonnes de la présentation (bloc 57) ; Ouvrir / Modifier restent en dernière colonne ; total des factures non annulées */
+  const cleF=colC?'facturesaffc':'facturesaff', XF={libC,auj};
+  if(V.length) html+='<div style="overflow:auto">'+sgtabTableauX(cleF,V,XF,{cls:'sgof-t',tr:f=>fxAnnulee(f)?' class="ann"':'',tot:V.length>1?{lib:'Total'}:null,
+      apres:{th:'<th class="sg-notri"></th>',tot:'<td></td>',td:f=>'<td class="r"><div class="sg-htls sg-cacts"><button data-go="fx-factures" data-arg="fv:'+E(f.id)+'" title="Afficher la facture en PDF">'+nxSvg('pdf')+'<span>Ouvrir</span></button>'
+        +(prep?'<button data-go="fx-saisie" data-arg="f:'+E(f.id)+'" title="Modifier la facture dans la saisie de Facturation">'+nxSvg('edit')+'<span>Modifier</span></button>':'')+'</div></td>'}})+'</div>';
   html+='</section>';
   /* situation par rapport aux heures — après le tableau des factures (01.11.2026, demande de Paulo « situations après les factures ») ;
      lecture seule (02.11.2026) : heures au contrat, saisies, facturables, facturées, à facturer */
@@ -384,6 +398,8 @@ function dessinerF(box,p){ const D=fxData();
     if(t.dataset.cid!=null){ u.cid=t.dataset.cid; redess(); return; }
     if(t.dataset.an!=null){ u.an=t.dataset.an; redess(); return; }
     const a=t.dataset.a;
+    if(a==='fpres'){ sgtabMenu(colC?'facturesaffc':'facturesaff',t,redess); return; }
+    if(a==='fimp'){ sgtabImprimer(colC?'facturesaffc':'facturesaff',V,{libC,auj},{titre:'Factures',p,lb:'Factures · Documents',type:'Factures',sous:an?String(an):'',total:V.length>1?{lib:'Total'}:null,meta:[['Année',an||'Toutes'],['Factures',String(V.length)]]}); return; }
     if(a==='sit'){ const s=box.querySelector('#sgof-sit'); if(s) s.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(a==='nf'){ const nf=c=>allerFx(box,p,'factures','fx-saisie','nf:'+c.id); if(S.length===1){ nf(S[0]); return; } popMenu(t,S.map(c=>({t:etiq(c)+(c.projet?' — '+c.projet:''),fn:()=>nf(c)}))); }
     else if(a==='deverr') sgDeverrouiller().then(ok=>{ if(ok&&box.isConnected) redess(); });

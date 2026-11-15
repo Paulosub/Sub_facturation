@@ -3132,8 +3132,17 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   bandeau, déplacés dans la barre en texte), `sgtabActionListe(cle,I,a,t,imp)`, `sgtabTableau(cle,lignes,ctx,tr,cls,tot)`, `sgtabCopie(box)`. Icônes des
   cellules à 14 px (le cadenas d'une soumission ouverte s'affichait en très grand). Catalogues définis à la première ouverture (`catDevis`, `catCoco`…) :
   `SGTAB` n'existe pas encore quand ces fichiers sont lus.
-  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour les autres tableaux de l'app (Factures et offres de l'affaire,
-  Administration, Heures, écrans du moteur, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  **Lot 4 (même soir)** : Finances ▸ Rentabilité des projets (`renta` : colonnes de `sgRenta` — heures, heures facturables, honoraires HT / TTC, coût de
+  revient, consommé, honoraires − coût, facturé HT / TTC / %, encaissé, marge et marge %, alertes, projet ; ligne « Total » ; Imprimer avec les colonnes choisies),
+  page du projet ▸ Factures (`facturesaff` / `facturesaffc` = avec la colonne Contrat quand l'affaire a plusieurs contrats ou des factures hors contrat, comme
+  avant ; + payée le, statut, note de frais, n° d'affaire ; Ouvrir / Modifier restent en dernière colonne ; boutons Présentation et Imprimer dans le titre
+  « Factures »), Heures ▸ Analyse des heures (tableaux des inscriptions et des notes de frais des modules Contrôle et Critères d'analyse : `ahh`, `ahf` = champs
+  d'une inscription d'heures / d'une note de frais de l'ancien logiciel — horaire, groupe d'activité, phase partielle, ouvrage, vacances, facturé le, n° de pièce,
+  prix unitaire, TVA, remboursé… ; la case à cocher et les boutons Approuver / Refuser restent autour des colonnes ; total sur toutes les inscriptions, pas
+  seulement les 1'000 affichées — `o.totLignes` ; bouton « Présentation ▾ » dans les trois barres). Outil : `sgtabTableauX(cle,lignes,ctx,{tr,cls,attr,avant,
+  apres,tot,totLignes})` (colonnes fixes avant / après les colonnes choisies).
+  **Reste à faire (lots suivants)** : menu Présentation et colonnes de l'ancien logiciel pour les autres tableaux de l'app (ressources humaines, Gestion des
+  utilisateurs, offres et contrats de l'affaire, écrans du moteur, listes de Facturation…), chapitre par chapitre ; sources : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.

@@ -1704,6 +1704,33 @@ html[data-vep] #main .sgmv-ch{display:inline-flex;align-items:center;gap:2px;mar
 .sgbm-pl select{height:30px;min-width:160px}
 .sgbm-pv{flex:none;background:#fff;border:1px solid var(--s-gris3)}
 .sgbm-pv .tplpage{box-shadow:none!important}
+/* Tableaux des écrans Finances et Ressources humaines repris de l'ancien logiciel (Controlling, Contrats et Facturation des projets, Clients, Indicateurs, Types de
+   projets, Suivi RH, Planification RH, Temps de l'équipe ; 15.11.2026, Paulo : « adopter le même graphisme pour la section finances et ressources humaines ») : plus de
+   bandes grises — titre d'un bloc en bleu nuit souligné, sous-totaux et totaux en gras sur trame bleu nuit pâle (comme les totaux des pages Heures), colonnes des
+   trimestres à peine teintées. Lignes repérées par sg3_ecrans.js (data-sgm) et par les classes du moteur (mgl1 = total, mgl2 = groupe, mgsp = espace). */
+html[data-vep] #main table.g tr.mgl1 td{background:var(--s-nuit3)!important;font-weight:700}
+html[data-vep] #main table.g tr.mgl2 td,html[data-vep] #main table.g tr.mgl3 td{background:transparent!important}
+html[data-vep] #main table.g tr.mgl2 td{font-weight:700}
+html[data-vep] #main table.g td.mgq{background:rgba(0,51,70,.04)}
+html[data-vep] #main table.g tr.mgl1 td.mgq{background:var(--s-nuit3)!important}
+html[data-vep] #main table.g tr.mgsp td{height:12px;border-bottom:0!important;background:transparent!important}
+html[data-vep] #main table.g tr.mgsp:hover td{background:transparent!important}
+html[data-vep] #main table.g tr[data-sgm="g"] td{color:var(--s-nuit);font-weight:700;border-bottom:1px solid var(--s-nuit)!important;background:transparent!important}
+html[data-vep] #main table.g tr[data-sgm="t"] td{background:var(--s-nuit3)!important;font-weight:700}
+html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!important}
+/* cadre Facturation : bandeau aligné sur le contenu du cadre (16 px) ; formulaires (saisie de facture, calcul d'honoraires) : bandeau réduit */
+#sg-mv .sgmv.fx{padding:14px 16px 0}
+#sg-mv .sgmv.fx .sg-tete{margin:0 0 4px}
+#sg-mv .sgmv.compact .sgfh-tete{padding:6px 14px}
+#sg-mv .sgmv.compact .sgfh-ini{font-size:22px}
+#sg-mv .sgmv.compact .sgfh-nm h2{font-size:17px}
+#sg-mv .sgmv.compact .sgfh-nm .lb{margin:0}
+#sg-mv .sgmv.compact .sgfh-meta{-webkit-line-clamp:1}
+#sg-mv .sgmv.compact .sg-tete>.sg-tkp{margin-top:4px}
+#sg-mv .sgmv.compact .sg-tkp .nx-kpi{padding:6px 12px 6px 0}
+#sg-mv .sgmv.compact .sg-tkp .nx-kpi .v{font-size:18px;margin-top:3px}
+#sg-mv .sgmv.compact .sg-tkp .nx-kpi .v.txt{font-size:15px}
+#sg-mv .sgmv.compact .sg-tkp .nx-kpi .s{display:none}
 /* écran bas ou zone étroite : le bandeau et ses chiffres se réduisent pour laisser la place au contenu, comme dans le devis (chiffres toujours sur une ligne) */
 @media (max-height:860px){
   #sg-mv .sgfh-tete{padding:6px 14px}

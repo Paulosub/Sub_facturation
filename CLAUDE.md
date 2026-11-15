@@ -2883,8 +2883,43 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   garde les quatre colonnes. Vérifié hors de l'aperçu : les sept écrans, recherche, groupes, pages, nouveau groupe par copie, libellé modifié, suppression (base du
   banc remise en état), profil en lecture seule, cinq visuels, balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant :
   `subgestion3/_backup_20261115_1828_avant_bibliotheque_modeles/`.
-  **Reste du lot 3** : contenu des tableaux des écrans à catégories (colonnes et couleurs des graphiques de l'ancien logiciel, panneau « Document » du Suivi des
-  factures), « Documents types » (`tpl-documents`), page « Paramètres » de l'estimation en onglet. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
+  **Lot 4 — écrans de Facturation : bandeau et chiffres seulement (15.11.2026, Paulo, à la question posée : « Oui, bandeau seul » ; `sg3_ecrans.js`, `TETES`, `COMPACT`,
+  `chFx*`)** : ses écrans restent tels quels dans leur cadre ; le bandeau et les chiffres de l'app sont posés au-dessus (`#sg-mv`, classe `fx` : aligné à 16 px sur le
+  contenu du cadre ; pas de présentation épurée `data-vep` pour le cadre). Écrans : Contrats d'honoraires, Calcul d'honoraires, Factures, Saisie de facture, Cockpit,
+  Cockpit analytique, Sauvegarde Facturation — pas PV de chantier (mode chantier sur tablette), ni les registres d'Archives, ni le cadre posé dans la page du projet
+  (`nx-pdom`). **Chiffres** calculés avec les définitions des cockpits de Facturation, lues dans le cadre (`fxK` : `ckFactOk`, `ckTTC`, `ckPayee`, `ckContratTTC`,
+  `ckEnCours`, `ckBase`, `ckReste`) : Contrats — contrats en cours (sur le total), signés, envoyés non signés, honoraires en cours TTC, reste à facturer TTC (le chiffre
+  du Cockpit) ; Factures — factures, facturé et encaissé de l'année en cours (honoraires TTC), ouvertes (nombre de factures non payées : le chiffre du Cockpit), échues
+  (échéance passée, en rouge). **Formulaires** (bandeau réduit `compact`) : Saisie de facture — numéro de l'affaire en grand, numéro de la facture en titre, projet ·
+  client · « facture pas encore enregistrée », chiffres du contrat choisi (`#f_contrat`) : contrat TTC, facturé à ce jour, encaissé, reste à facturer, factures ; Calcul
+  d'honoraires — numéro de l'affaire, projet, client · nature · rémunération, état, version, factures, facturé, encaissé du contrat ouvert (`#ch_target`) : toujours
+  les valeurs ENREGISTRÉES, jamais celles en cours de saisie (le formulaire les montre) ; nouvelle facture sans contrat, nouveau contrat : bandeau du menu, sans
+  chiffres. Cockpits et sauvegarde : bandeau seul ; le titre « Substances Architectes — Cockpit » du cadre est masqué (`fx_theme.css` : `.ck-header-title`,
+  `.ck2-head h2`), la ligne « calculé depuis … » et le choix de l'exercice restent. Le cadre change ses données sans passer par la base du moteur : le bandeau est
+  relu toutes les 1,2 s tant qu'un de ses écrans est affiché (rien n'est redessiné sans changement). Finances verrouillées par le code d'accès : pas de chiffres.
+  Rien n'est écrit. Vérifié hors de l'aperçu : chiffres égaux à ceux du Cockpit (reste à facturer, factures ouvertes, facturé de l'année), facture et contrat de 99TST,
+  nouvelle facture puis choix d'un contrat, nouveau contrat, zone étroite, cinq visuels, 144 contrats et 379 factures inchangés.
+  **Finances et Ressources humaines au même graphisme (15.11.2026, Paulo : « adopter le même graphisme pour la section finances et ressources humaines »)** — compris
+  ainsi : les écrans et les documents de ces deux sections au graphisme du reste de l'app ; leurs pages propres à l'app (Rentabilité, Apports, Occupation, Contrats de
+  travail, Heures dues, Bouclement, Coût de revient) l'avaient déjà, restaient les écrans repris de l'ancien logiciel (Controlling, Contrats des projets, Facturation
+  des projets, Suivi des factures, Clients, Indicateurs, Types de projets ; Planification RH, Suivi RH ; aussi Temps de l'équipe). **Tableaux** (`sg3.css`,
+  `html[data-vep]` ; lignes repérées par `marquer` de `sg3_ecrans.js`, attribut `data-sgm`) : plus de bandes grises — titre d'un bloc (ligne en gras dont seule la
+  première cellule est remplie) en bleu nuit souligné, sous-totaux et totaux (`mgl1`, « Total … ») en gras sur trame bleu nuit pâle comme les pages Heures, groupes
+  (`mgl2`) en gras sans fond, colonnes des trimestres à peine teintées, lignes d'espacement sans filet. **Graphiques** : `MG_COL` (12 couleurs de l'ancien logiciel)
+  remplacé par le nuancier de la charte, celui du Cockpit de Facturation (`palette`, posée à chaque `go`) ; les écrans d'Archives gardent les couleurs d'origine.
+  **Chiffres du bandeau** : Controlling — heures saisies, facturable, coût de revient, collaborateurs, projets de l'année affichée (mêmes filtres que `mgtEP`) ;
+  Contrats des projets — contrats, validés, en traitement, montant validé (contrats du maître de l'ouvrage), sous-traitants (`projectcontract`) ; Facturation des
+  projets — factures, facturé, encaissé, solde à encaisser de l'année affichée (ligne « Total » de `ch11bYear`). **Rapports** : « Rapports ▸ Afficher le rapport … »
+  de Contrats des projets et de Facturation des projets (`ch11aReport` enveloppé dans `sg3_docs_heures.js`) au graphisme des documents — page de garde (période,
+  année, jour de référence, contrat ; projet du contrat choisi), tableau bleu nuit, titre d'un projet en bleu nuit, sous-totaux en gras, dernier total sur bande ;
+  plus de fenêtre de choix du modèle ; les entrées « … [Ancien document] » ne changent pas. Rapports `mgPrint` : titre d'un bloc reconnu comme à l'écran, lignes
+  vides du moteur non imprimées. Vérifié hors de l'aperçu : chiffres égaux aux totaux des tableaux (Controlling 6'392 h et 75'330 CHF, Facturation des projets
+  114'074 / 90'870 / 23'204), dix-sept rapports ouverts sans erreur (Planification RH comprise), couleurs d'origine dans Archives, cinq visuels, balayage des
+  120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Pas fait : chiffres du bandeau d'Indicateurs et de Planification RH (définitions de l'ancien logiciel à ne pas
+  réinventer), bouton « Imprimer » sur les pages de l'app qui n'ont qu'un export CSV (Rentabilité, Apports, Occupation). Copie d'avant :
+  `subgestion3/_backup_20261115_1922_avant_bandeau_facturation_finances_rh/`.
+  **Reste du lot 3** : panneau « Document » du Suivi des factures, « Documents types » (`tpl-documents`), page « Paramètres » de l'estimation en onglet. **Reste du
+  lot 5** : impressions des séances, du planning, du permis, du registre des décisions (encore `sgImprimer`) ; icônes ; navigation. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
   (`{...SG_ACC, profil, droits: sgDroitsRole(profil)}`), changer `profil` seul laisse les droits de l'administrateur.
   **Lot 1, analyse des heures — cinq propositions (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie
@@ -2967,8 +3002,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Total CHF ») sur bande bleu nuit, soldes en vert / rouge comme à l'écran (`cc`, `mgColor`), champs du rapport (année, période, filtre, maître de l'ouvrage,
   collaborateur…) sur la page de garde ; Temps de l'équipe : les trois tableaux du rapport d'origine (activités, phases, collaborateurs) l'un après l'autre (`Dc.suite` :
   un tableau par page, chacun avec ses colonnes) ; titre vide (Indicateurs) : celui de l'onglet ; tableau trop large (18 colonnes du Suivi RH) : colonnes de nombres
-  resserrées. Modèle d'une autre forme : rapport d'avant (bloc 31). Pas repris : Contrats des projets et Facturation des projets (leurs rapports passent par les
-  formulaires de la Bibliothèque, `tplPrint`).
+  resserrées. Modèle d'une autre forme : rapport d'avant (bloc 31). Contrats des projets et Facturation des projets : rapports repris le même soir par
+  l'enveloppe de `ch11aReport` (voir « Finances et Ressources humaines au même graphisme »).
   **Pas changés (décision de Paulo, 15.11.2026, à la question posée : « Non, laisser »)** : les écrans d'Archives (Suivi & écarts, Controlling, Rapports de temps, Notes de frais…) gardent leurs documents — l'enveloppe ne s'applique pas quand
   l'écran ouvert est rangé dans Archives (`archives()`) ; DeltaSub.html seul : documents d'origine. `sg3_coco_docs.js` exporte ses outils de mise en page
   (`SGCD.outils` : mesure, etaler, paginer). Rien n'est écrit dans la base. Débogage : `window.SGDH`.

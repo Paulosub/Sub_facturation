@@ -22,6 +22,8 @@ html body{font-family:var(--s-font);background:#fff;color:var(--s-noir)}
 html body input,html body select,html body textarea,html body button{font-family:inherit}
 html body .panel,html body .home-wrap{background:#fff}
 html body .panel>.home-wrap>.home-title,html body .panel>.home-wrap>.home-sub{display:none}
+/* cockpits : leur titre est dans le bandeau de l'app, posé au-dessus du cadre (15.11.2026) ; la ligne « calculé depuis … au … » et le choix de l'exercice restent */
+html body .ck-header-title,html body .ck2-head h2{display:none}
 html body .panel>.home-wrap>.adm-wrap{padding-top:22px!important}
 
 /* ── angles droits, sans ombres (sauf feuilles des aperçus PDF) ── */

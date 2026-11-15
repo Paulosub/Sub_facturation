@@ -45,17 +45,72 @@ const chGenres=()=>{ const k=MGK.kg.sel!=null?DS.get('projectkind',MGK.kg.sel):n
   return kps([kp('Groupes',String(N.g)),kp('Genres',String(N.k)),kp('Projets classés',String(N.p),'au moins un genre'),kp('Projets du genre',n==null?'—':String(n),k?nm(k):'choisir un genre')]); };
 const chFactures=()=>{ const T=memo('fc',()=>{ const r={n:[0,0,0,0],m:[0,0,0,0],tot:0}; FC_CATS.forEach(([c],i)=>{ if(c==='all'){ r.tot=fcRows(c).length; return; } const L=fcRows(c); r.n[i]=L.length; r.m[i]=L.reduce((s,f)=>s+(+f.AMOUNT||0)-(+f.AMOUNTPAID||0),0); }); return r; });
   return kps([kp('Planifiées',String(T.n[0])),kp('Envoyées',String(T.n[1]),T.n[1]?nxCHF(T.m[1])+' à encaisser':''),kp('Rappels envoyés',String(T.n[2]),T.n[2]?nxCHF(T.m[2])+' à encaisser':'',T.n[2]?'neg':''),kp('Payées',String(T.n[3])),kp('Toutes',String(T.tot),T.tot!==T.n[0]+T.n[1]+T.n[2]+T.n[3]?'projets archivés ou en configuration compris':'')]); };
-const CHIFFRES={'tpl-documents':modeles,'mg-heures':chHeures,'mg-collab':chSuiviRH,'mg-mo':chClients,'mg-genres':chGenres,'fact-controle':chFactures};   /* les trois listes des tâches (sg3_suivi.js) et les trois listes des membres (plus bas) ont leur propre page depuis le 15.11.2026 */
+/* ── Finances : Controlling (année affichée), Contrats des projets, Facturation des projets (année affichée) — mêmes filtres et mêmes fonctions que les tableaux du moteur ── */
+const chControlling=()=>{ const y=MGT.y, T=memo('mgt'+y,()=>{ const R=mgRates(), S=new Set(), P=new Set(); let tp=0, amt=0, cost=0;
+    DS.all('timelog').forEach(t=>{ if(t.PROJECT_ID==null||t.STAFF_ID==null||t.TIMEYEAR!==y||!DS.get('project',t.PROJECT_ID)) return; tp+=+t.TIMEPERIOD||0; if(t.ISCHARGEABLE) amt+=R.fee(t); cost+=R.cost(t); S.add(t.STAFF_ID); P.add(t.PROJECT_ID); });
+    return {tp,amt,cost,s:S.size,p:P.size}; });
+  return kps([kp('Heures saisies '+y,hU(T.tp)),kp('Facturable '+y,cU(T.amt),'selon les tarifs des activités'),(typeof sgTauxVisibles!=='function'||sgTauxVisibles())?kp('Coût de revient '+y,cU(T.cost)):'',kp('Collaborateurs',String(T.s),'avec des heures en '+y),kp('Projets',String(T.p),'avec des heures en '+y)]); };
+const chContratsProjets=()=>{ const T=memo('ctp',()=>{ const C=DS.all('projectcontract'), st=k=>C.filter(c=>(+c.STATECODE||0)===k), mo=st(1).filter(c=>!c.ISSUBCONTRACT);
+    return {n:C.length,v:st(1).length,t:st(0).length,r:st(2).length,sub:C.filter(c=>c.ISSUBCONTRACT).length,amt:mo.reduce((a,c)=>a+(+c.CONTRACTAMOUNT||0),0),p:new Set(C.map(c=>c.PROJECT_ID)).size}; });
+  return kps([kp('Contrats',String(T.n),T.p+(T.p>1?' projets':' projet')),kp('Validés',String(T.v)),kp('En traitement',String(T.t),T.r?T.r+(T.r>1?' refusés':' refusé'):''),kp('Montant validé',cU(T.amt),'contrats du maître de l’ouvrage'),kp('Sous-traitants',String(T.sub),'contrats de sous-traitance')]); };
+const chFacturesProjets=()=>{ const y=CH11B.an.y, T=memo('ch11b'+y,()=>{ let tot=[], n=0; try{ tot=ch11bYear(y).rows.filter(r=>r.k==='tot').map(r=>r.v); n=DS.all('projectinvoice').filter(f=>ch11bD10(f.INVOICEDATE).slice(0,4)===String(y)).length; }catch(e){ console.error(e); } return {tot,n}; });
+  const un=T.tot.length===1?T.tot[0]:null, plus=T.tot.length>1?'plusieurs monnaies : voir le tableau':'';
+  return kps([kp('Factures '+y,String(T.n)),kp('Facturé '+y,cU(un&&un[2]),plus),kp('Encaissé '+y,cU(un&&un[3])),kp('Solde à encaisser',cU(un&&un[4]),un?'factures de '+y:'',un&&un[4]>0.004?'neg':'')]); };
+/* ── Écrans de Facturation (lot 4, 15.11.2026 ; Paulo, à la question posée : « Oui, bandeau seul ») : ses écrans restent tels quels dans leur cadre, le bandeau et les
+   chiffres de l'app sont posés au-dessus. Chiffres calculés avec les définitions des cockpits de Facturation elles-mêmes (lues dans le cadre : facture comptée = non
+   annulée, montant = honoraires TTC sans les frais, encaissée = « Payée » ou date de paiement, contrat en cours = ni annulé, ni terminé, ni archivé) : ils égalent ceux
+   du Cockpit. Saisie de facture et Calcul d'honoraires : bandeau au numéro de l'affaire et chiffres du contrat ENREGISTRÉ (facturé, encaissé, reste à facturer) —
+   jamais les valeurs en cours de saisie, que le formulaire montre lui-même. Finances verrouillées par le code d'accès : pas de chiffres. ── */
+const verrou=()=>{ try{ return typeof sgFinVerrou==='function'&&sgFinVerrou(); }catch(_){ return false; } };
+const fxW=()=>{ try{ return typeof FX!=='undefined'&&FX.ready&&FX.w?FX.w:null; }catch(_){ return null; } };
+const fxK=()=>{ const w=fxW(); if(!w) return null; try{ return w.eval('({ckFactOk,ckTTC,ckPayee,ckContratTTC,ckEnCours,ckBase,ckReste})'); }catch(_){ return null; } };
+const fxVal=id=>{ const w=fxW(), e=w&&w.document.getElementById(id); return e?String(e.value||''):''; };
+const fxC=id=>{ const D=id?fxData():null; return D?D.c.find(c=>String(c.id)===String(id))||null:null; };
+const pls=(n,a,b)=>n+' '+(n>1?b:a);
+const chFxContrats=()=>{ if(verrou()) return ''; const D=fxData(), K=fxK(); if(!D||!K) return '';
+  const C=D.c, cours=C.filter(K.ckEnCours), B=K.ckBase(), R=K.ckReste(B.parC), sig=C.filter(c=>c.signe&&!c.annule), env=C.filter(c=>c.envoye&&!c.signe&&!c.annule&&!c.termine);
+  return kps([kp('Contrats en cours',String(cours.length),'sur '+pls(C.length,'contrat','contrats'),'','Contrats ni annulés, ni terminés, ni archivés'),kp('Signés',String(sig.length)),kp('Envoyés, non signés',String(env.length),env.length?'en attente de signature':''),
+    kp('Honoraires en cours',cU(cours.reduce((a,c)=>a+K.ckContratTTC(c),0)),'TTC, contrats en cours'),kp('Reste à facturer',cU(R.reduce((a,r)=>a+r.reste,0)),'TTC, contrats en cours','','Contrats en cours : montant du contrat moins ce qui est facturé, si positif — le chiffre du Cockpit')]); };
+const chFxFactures=()=>{ if(verrou()) return ''; const D=fxData(), K=fxK(); if(!D||!K) return ''; const F=D.f.filter(K.ckFactOk), y=new Date().getFullYear(), td=today(), an=d=>{ const m=/^(\d{4})/.exec(String(d||'')); return m?+m[1]:null; };
+  const fy=F.filter(f=>an(f.date)===y), ey=F.filter(f=>K.ckPayee(f)&&an(f.date_paiement||f.date)===y), ouv=F.filter(f=>!K.ckPayee(f)), ech=ouv.filter(f=>f.ech&&f.ech<td), S=L=>L.reduce((a,f)=>a+K.ckTTC(f),0);
+  return kps([kp('Factures',String(F.length),fy.length+' en '+y),kp('Facturé '+y,cU(S(fy)),'honoraires TTC'),kp('Encaissé '+y,cU(S(ey)),'honoraires TTC'),
+    kp('Ouvertes',cU(S(ouv)),pls(ouv.length,'facture non payée','factures non payées')),kp('Échues',cU(S(ech)),ech.length?pls(ech.length,'facture à relancer','factures à relancer'):'aucune',ech.length?'neg':'')]); };
+const chFxContrat=c=>{ const D=fxData(), K=fxK(); if(!c||!D||!K) return null; const F=D.f.filter(f=>K.ckFactOk(f)&&String(f.contrat_id)===String(c.id)), S=L=>L.reduce((a,f)=>a+K.ckTTC(f),0);
+  return {K,F,ctr:K.ckContratTTC(c),fact:S(F),enc:S(F.filter(K.ckPayee)),ouv:F.filter(f=>!K.ckPayee(f)).length}; };
+const chFxSaisie=()=>{ if(verrou()) return ''; const X=chFxContrat(fxC(fxVal('f_contrat'))); if(!X) return ''; const r=X.ctr-X.fact;
+  return kps([kp('Contrat',cU(X.ctr),'honoraires TTC'),kp('Facturé à ce jour',cU(X.fact),X.ctr>0?Math.round(X.fact/X.ctr*100)+' % du contrat':'','','Factures enregistrées du contrat, honoraires TTC sans les frais'),kp('Encaissé',cU(X.enc)),
+    kp('Reste à facturer',cU(r),r<-0.5?'facturé au-delà du contrat':'',r<-0.5?'neg':''),kp('Factures',String(X.F.length),X.ouv?pls(X.ouv,'ouverte','ouvertes'):'toutes payées')]); };
+const chFxCalc=()=>{ if(verrou()) return ''; const c=fxC(fxVal('ch_target')), X=chFxContrat(c); if(!X) return ''; let I={}; try{ I=sgContratInfo(c); }catch(_){ }
+  return kps([kp('État',nxE(I.etat||'—'),I.nature||'','txt'),kp('Version',String(I.v||1),I.versions>1?'sur '+I.versions:''),kp('Factures',String(X.F.length),X.ouv?pls(X.ouv,'ouverte','ouvertes'):''),
+    kp('Facturé à ce jour',cU(X.fact),'honoraires TTC','','Factures enregistrées du contrat, honoraires TTC sans les frais'),kp('Encaissé',cU(X.enc))]); };
+const CHIFFRES={'tpl-documents':modeles,'mg-heures':chHeures,'mg-collab':chSuiviRH,'mg-mo':chClients,'mg-genres':chGenres,'fact-controle':chFactures,
+  'mg-controlling':chControlling,'mg-contrats':chContratsProjets,'mg-factures':chFacturesProjets,'fx-contrats':chFxContrats,'fx-factures':chFxFactures,'fx-saisie':chFxSaisie,'fx-calchono':chFxCalc};
+/* bandeau propre à l'écran (numéro de l'affaire, facture ou contrat ouvert) : {mono, lbl, titre, txt} ; rien = bandeau du menu */
+const TETES={
+  'fx-saisie':()=>{ const c=fxC(fxVal('f_contrat')); if(!c) return null; const w=fxW(), num=fxVal('f_num'); let enr=true; try{ enr=!!w.eval('typeof faFactureEnregistree==="function"?faFactureEnregistree():true'); }catch(_){ }
+    return {mono:String(c.affaire||'').trim()||'SF',lbl:'Administration · Facturation · Saisie de facture',titre:num||'Nouvelle facture',txt:[c.projet,c.nom,enr?'':'facture pas encore enregistrée'].filter(Boolean).join(' · ')}; },
+  'fx-calchono':()=>{ const c=fxC(fxVal('ch_target')); if(!c) return null; let I={}; try{ I=sgContratInfo(c); }catch(_){ }
+    return {mono:String(c.affaire||'').trim()||'CH',lbl:'Administration · Facturation · Calcul d’honoraires',titre:String(c.projet||'').trim()||'Contrat d’honoraires',txt:[c.nom,I.nature,I.remu].filter(Boolean).join(' · ')}; } };
+const COMPACT=new Set(['fx-saisie','fx-calchono']);   /* formulaires : bandeau réduit, la place va à la saisie */
+['fx-contrats','fx-calchono','fx-factures','fx-saisie','fx-cockpit','fx-cockpit2','fx-backup'].forEach(v=>{ if(NX_VIEW[v]&&NX_VIEW[v].it) LISTE.add(v); });   /* PV de chantier : pas de bandeau (mode chantier sur tablette) */   /* les trois listes des tâches (sg3_suivi.js) et les trois listes des membres (plus bas) ont leur propre page depuis le 15.11.2026 */
 const hote=()=>{ let h=document.getElementById('sg-mv'); if(!h){ const sub=document.getElementById('nx-sub'); if(!sub||!sub.parentNode) return null; h=document.createElement('div'); h.id='sg-mv'; sub.parentNode.insertBefore(h,sub); } return h; };
 let cle='';
-const maj=()=>{ const h=hote(); if(!h) return; const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=LISTE.has(v)?NX_VIEW[v]:null, m=document.getElementById('main');
+const maj=()=>{ const h=hote(); if(!h) return; const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=LISTE.has(v)?NX_VIEW[v]:null, m=document.getElementById('main'), fx=/^fx-/.test(v);
   const ok=!!(x&&x.it&&m&&!m.querySelector('.sgfh-tete,.sg-tete,.sg-intro'));
   if(!ok){ if(h.firstChild){ h.textContent=''; } cle=''; document.documentElement.removeAttribute('data-vep'); return; }
-  document.documentElement.setAttribute('data-vep','1');   /* présentation épurée de l'écran (styles html[data-vep] de sg3.css) */
+  if(fx) document.documentElement.removeAttribute('data-vep'); else document.documentElement.setAttribute('data-vep','1');   /* présentation épurée de l'écran (styles html[data-vep] de sg3.css) ; pas pour le cadre Facturation */
   let f=''; try{ f=CHIFFRES[v]?CHIFFRES[v]():''; }catch(e){ console.error(e); }
-  const k=v+'|'+f; if(k===cle&&h.firstChild) return; cle=k;
-  h.innerHTML='<div class="sgmv">'+sgTete([x.d&&x.d.t,x.it.grp].filter(Boolean).join(' · '),nxE(x.it.t||''),nxE(x.it.d||''),!f?'':/^<div class="nx-kpis/.test(f)?f:'<div class="sg-figs">'+f+'</div>')+'</div>'; };
-{ const g0=go; go=function(){ const r=g0.apply(this,arguments); try{ maj(); }catch(e){ console.error(e); } setTimeout(()=>{ try{ maj(); }catch(_){ } },0); return r; }; }
+  let T=null; try{ T=TETES[v]?TETES[v]():null; }catch(e){ console.error(e); }
+  const k=v+'|'+f+'|'+(T?JSON.stringify(T):''); if(k===cle&&h.firstChild) return; cle=k;
+  h.innerHTML='<div class="sgmv'+(fx?' fx':'')+(COMPACT.has(v)?' compact':'')+'">'+sgTete(T&&T.lbl?T.lbl:[x.d&&x.d.t,x.it.grp].filter(Boolean).join(' · '),nxE(T&&T.titre?T.titre:(x.it.t||'')),nxE(T?(T.txt||''):(x.it.d||'')),
+    !f?'':/^<div class="nx-kpis/.test(f)?f:'<div class="sg-figs">'+f+'</div>',T&&T.mono?T.mono:undefined)+'</div>'; };
+/* couleurs des graphiques de l'ancien logiciel (MG_COL) → nuancier de la charte, celui du Cockpit de Facturation ; les écrans d'Archives gardent les couleurs d'origine */
+const MG0=typeof MG_COL!=='undefined'&&Array.isArray(MG_COL)?MG_COL.slice():null, MG1=['#003346','#4cbab5','#d7860d','#98c21f','#3f4193','#bd1e42','#636e7e','#9d9d9c','#1d1d1b','#c9c9c7','#2e8a85','#7a8fa0'];
+const palette=id=>{ if(!MG0) return; let arch=false; try{ const x=NX_VIEW[id]; arch=!!(x&&x.d&&x.d.k==='archives'); }catch(_){ } const P=arch?MG0:MG1; for(let i=0;i<MG0.length;i++) MG_COL[i]=P[i%P.length]; };
+{ const g0=go; go=function(){ try{ palette(arguments[0]); }catch(_){ } const r=g0.apply(this,arguments); try{ maj(); }catch(e){ console.error(e); } setTimeout(()=>{ try{ maj(); }catch(_){ } },0); return r; }; }
+/* cadre Facturation : ses données changent sans passer par la base du moteur (contrat enregistré, facture payée, autre contrat choisi dans le formulaire) — le bandeau
+   est relu toutes les 1,2 s tant qu'un de ses écrans est affiché (rien n'est redessiné si rien n'a changé) */
+setInterval(()=>{ try{ const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:''; if(/^fx-/.test(v)&&LISTE.has(v)&&!document.hidden) maj(); }catch(_){ } },1200);
 try{ DS.on(()=>{ setTimeout(()=>{ try{ maj(); }catch(_){ } },0); }); }catch(_){ }
 /* ── Lot 3, septième étape (15.11.2026) : les écrans « à catégories » de l'ancien logiciel (liste « Catégorie » ou « Domaine » à gauche) reçoivent des ONGLETS sous le
    bandeau, comme le devis, le contrôle des coûts et la soumission (jamais de menu d'étapes à gauche) : Suivi RH, Controlling, Contrats des projets, Facturation des projets,
@@ -89,10 +144,14 @@ const onglets=(m,cols)=>{ const pr=cols.previousElementSibling; if(pr&&pr.classL
   T.forEach((tr,i)=>{ const b=document.createElement('button'), t=tr.textContent.replace(/\s+/g,' ').trim(), on=tr.classList.contains('on'); b.type='button'; b.textContent=t; b.setAttribute('role','tab'); b.setAttribute('aria-selected',on?'true':'false'); if(on) b.className='on';
     b.addEventListener('click',()=>{ const x=lignes()[i]; if(!x) return; [...g.children].forEach((y,j)=>{ y.classList.toggle('on',j===i); y.setAttribute('aria-selected',j===i?'true':'false'); }); x.click(); }); g.append(b); });
   L.classList.add('sgmv-x'); m.insertBefore(bar,cols); };
+/* lignes en gras des tableaux Management (tr.mgb) : titre d'un bloc (première cellule seule) → data-sgm="g", total (« Total … », « 2026 Total ») → "t", autre → "b" ;
+   la feuille de style leur donne le graphisme de l'app (titre bleu nuit souligné, total sur trame bleu nuit pâle) à la place des bandes grises */
+const marquer=m=>{ m.querySelectorAll('table.g tbody tr.mgb:not([data-sgm])').forEach(tr=>{ const c=[...tr.children], t0=(c[0]?c[0].textContent:'').replace(/\s+/g,' ').trim(), seul=t0!==''&&c.slice(1).every(td=>!td.textContent.trim());
+    tr.dataset.sgm=/^Total\b|\bTotal$/i.test(t0)?'t':seul?'g':'b'; }); };
 let enCours=false;
 const habiller=()=>{ if(enCours) return; const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:''; if(!LISTE.has(v)||!document.documentElement.hasAttribute('data-vep')) return;
   const m=document.getElementById('main'), cols=m&&m.querySelector(':scope>.cols'); if(!cols) return;
-  enCours=true; try{ if(CATS.has(v)) onglets(m,cols); if(HAB[v]) HAB[v](cols); if(CHIFFRES[v]) maj(); }catch(e){ console.error(e); } enCours=false; };
+  enCours=true; try{ if(CATS.has(v)) onglets(m,cols); if(HAB[v]) HAB[v](cols); marquer(m); if(CHIFFRES[v]) maj(); }catch(e){ console.error(e); } enCours=false; };
 { const g1=go; go=function(){ const r=g1.apply(this,arguments); try{ habiller(); }catch(e){ console.error(e); } return r; }; }
 try{ const m0=document.getElementById('main'); if(m0&&typeof MutationObserver==='function') new MutationObserver(()=>{ const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:''; if(LISTE.has(v)) habiller(); }).observe(m0,{childList:true,subtree:true}); }catch(_){ }
 /* ── Page du projet : domaines de l'ancien logiciel encore sans bandeau (Intervenants, Soumissionnaires, Liste d'adresses, Calcul des coûts) — même étape du lot 3 :

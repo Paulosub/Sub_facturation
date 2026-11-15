@@ -143,11 +143,12 @@ const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=
    collaborateurs), l'un après l'autre. Modèle d'une autre forme : rapport d'avant. ── */
 const CHAMPS={reportYear:'Année',year:'Année',timeFilter:'Période',filterDesc:'Filtre',project:'Projet',subProject:'Ouvrage',builderContact:'Maître de l’ouvrage',person:'Collaborateur',projectStateFilter:'Statut des projets',
   chargeableFilter:'Facturable',chargedFilter:'Facturé',referenceMonth:'Mois de référence',subProjectFilterDesc:'Ouvrages',subPhaseFilterDesc:'Phases'};
-const mgTable=Mo=>{ const C=Mo.cols||[], R=(Array.isArray(Mo.full)?Mo.full:Mo.rows).filter(r=>r&&!r.sp), dern=R.length-1;
+const mgTable=Mo=>{ const C=Mo.cols||[], vide=r=>!(r.c||[]).some(v=>v!=null&&String(v).trim()!==''), R=(Array.isArray(Mo.full)?Mo.full:Mo.rows).filter(r=>r&&!r.sp&&!vide(r)), dern=R.length-1;
   const rows=R.map((r,i)=>{ const brut=j=>(r.c||[])[j], c=C.map((col,j)=>{ const v=brut(j); if(typeof v==='number'&&!r.txt){ const x=rJ(v); return x==null||(col.zb&&!x)?'':num(x); } return v==null?'':sv(v); });
-    const g=r.title?'g':r.tot?((i===dern||/^Total(\s+[A-Z]{3})?$/.test(un(c[0])))?'t':'s'):r.lv2?'1':r.b?'b':'';
+    const seul=un(c[0])!==''&&c.slice(1).every(x=>!un(x));   /* ligne en gras dont seule la première cellule est remplie = titre d'un bloc, comme à l'écran */
+    const g=r.title||(r.b&&seul&&!r.tot)?'g':r.tot?((i===dern||/^Total(\s+[A-Z]{3})?$/.test(un(c[0])))?'t':'s'):r.lv2?'1':r.b?'b':'';
     const cc=C.map((col,j)=>{ const v=brut(j); if(typeof v!=='number'||r.txt||!col.col) return ''; const k=mgColor(col,rJ(v)); return k==='#008F00'?'vert':k==='#FF0000'?'rouge':k==='#FF9000'?'#D7860D':''; });
-    return Object.assign({c,g},g!=='t'&&cc.some(Boolean)?{cc}:{}); });
+    return Object.assign({c,g},g!=='t'&&cc.some(Boolean)?{cc}:{}); }).filter(r=>r.c.some(x=>un(x)!==''));   /* lignes d'espacement du moteur (vides) : pas imprimées */
   return {cols:C.map(c=>({t:sv(c.t),r:!!c.r})),rows}; };
 if(typeof mgPrint==='function'&&typeof mgColor==='function'){ const m0=mgPrint;
   mgPrint=function(type,title,fields,tables,Mo){ if(archives()||!Mo||!Array.isArray(Mo.cols)||!Mo.cols.length||!Array.isArray(Mo.rows)) return m0.apply(this,arguments);
@@ -159,6 +160,25 @@ if(typeof mgPrint==='function'&&typeof mgColor==='function'){ const m0=mgPrint;
       const meta=Object.entries(fields||{}).filter(([k,val])=>un(val)!=='').map(([k,val])=>[CHAMPS[k]||k,un(val)]), per=meta.find(m=>m[0]==='Période'||m[0]==='Année');
       if(ouvrir({cle:'rapport:'+type,titre,p,meta,cols:T.cols,rows:T.rows,suite,sous:per?per[1]:'',lb:((x&&x.d&&x.d.t)||'Administration')+' · Documents',type:'Rapport'})) return; }catch(e){ console.error(e); }
     return m0.apply(this,arguments); }; }
+/* ── ch11aReport : « Rapports ▸ Afficher le rapport … » de Finances ▸ Contrats des projets (contrats, sous-traitants, échéancier, encaissements planifiés et reçus,
+   situation) et Facturation des projets (vue d'ensemble de l'année, selon statut, par date, honoraires et frais) — demande de Paulo du 15.11.2026 : « adopter le même
+   graphisme pour la section finances et ressources humaines ». Le tableau de l'écran (o.M : colonnes visibles, mêmes nombres num(rJ), dates déjà en clair) au
+   graphisme des documents : ligne de titre d'un projet ou d'un contrat (k « info », première cellule seule) en bleu nuit, sous-totaux (k « sub », « tot ») en gras,
+   dernier total sur bande bleu nuit ; période, année, jour de référence et contrat sur la page de garde ; projet du contrat choisi en tête. Plus de choix du modèle.
+   Les entrées « … [Ancien document] » ne changent pas. ── */
+if(typeof ch11aReport==='function'){ const r0=ch11aReport;
+  ch11aReport=function(type,job,o){ const Mo=o&&o.M; if(archives()||!Mo||!Array.isArray(Mo.cols)||!Mo.cols.length||!Array.isArray(Mo.rows)) return r0.apply(this,arguments);
+    try{ const C=Mo.cols, R=Mo.rows.filter(r=>r&&!r.sp&&r.k!=='vide'), dern=R.length-1, F=(job&&job.F)||{}, p=F.project&&F.project.p?F.project.p:null;
+      const rows=R.map((r,i)=>{ const c=C.map((col,j)=>{ const v=(r.c||[])[j]; return typeof v==='number'?num(rJ(v)):v==null?'':sv(v); }), seul=un(c[0])!==''&&c.slice(1).every(x=>!un(x));
+        return {c,g:r.k==='info'?(seul?'g':'b'):r.k==='sub'?'s':r.k==='tot'?(i===dern?'t':'s'):(r.b||r.lv)?'b':''}; });
+      const meta=[], d=x=>x&&typeof x==='object'?x.v:x;
+      if(un(F.filterDesc)) meta.push(['Période',un(F.filterDesc)]);
+      if(un(F.year)) meta.push(['Année',un(F.year)]);
+      if(d(F.reportingDate)) meta.push(['Jour de référence',dfr(d(F.reportingDate))]);
+      if(un(F.projectContract)) meta.push(['Contrat',[un(F['projectContract~projectContractNumber']),un(F.projectContract)].filter(Boolean).join(' · ')+(un(F['projectContract~projectContractDate'])?' du '+un(F['projectContract~projectContractDate']):'')]);
+      const per=meta.find(m=>m[0]==='Période'||m[0]==='Année');
+      if(ouvrir({cle:'rapport:'+type,titre:un(o.titre)||'Rapport',p,meta,cols:C.map(c=>({t:sv(c.t),r:!!c.r})),rows,sous:per?per[1]:'',lb:'Finances · Documents',type:'Rapport'})) return Promise.resolve(null); }catch(e){ console.error(e); }
+    return r0.apply(this,arguments); }; }
 /* ── sgDocTableau : un tableau affiché (table.nx-tbl) repris tel quel dans un document — titres, lignes, totaux (tr.tot ou « Total… »), sous-lignes (tr.sub) ── */
 function sgDocTableau(o){ try{ const tb=o&&o.table; if(!tb||!tb.querySelector) return false;
     const TH=[...tb.querySelectorAll('thead tr')].pop()||[...tb.querySelectorAll('tr')].find(tr=>tr.querySelector('th')), H=TH?[...TH.children]:[]; if(!H.length||H.some(x=>x.colSpan>1)) return false;

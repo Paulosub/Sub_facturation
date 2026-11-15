@@ -2873,8 +2873,9 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (`nas/nettoyer.py`). Fait par un chantier parallèle dans une copie privée des sources, puis intégré fichier par fichier et revérifié dans le banc de la session
   (menu, renvoi des anciens identifiants, cinq pages sur 99TST, approuver puis réinitialiser une inscription relue dans la base, profils simulés, balayage des
   120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`). Pas vérifié : mode bureau (NAS, session par mot de passe, conflits), vrais comptes chef de projet et collaborateur,
-  copie dans le presse-papier. Questions posées à Paulo le 15.11.2026, sans réponse : garder la règle de la période bloquée (et l'étendre à Administration ▸ Contrôle
-  des heures, qui ne l'applique pas) ; protéger ces modules par le code d'accès comme l'était Administration ; chef de projet : ses projets seulement ; fenêtre des
+  copie dans le presse-papier. **Code d'accès : ces modules ne sont PAS protégés (décision de Paulo, 15.11.2026, à la question posée : « Non, laisser »)** — ils
+  restent comme le reste du chapitre Heures. Questions posées le même jour, sans réponse : garder la règle de la période bloquée (et l'étendre à Administration ▸ Contrôle
+  des heures, qui ne l'applique pas) ; chef de projet : ses projets seulement ; fenêtre des
   documents à la barre « Document PDF » ; mise en page du document d'analyse (colonnes de même largeur : 68 pages pour 1'025 inscriptions) ; colonne Honoraires et
   « tout approuver jusqu'au … » ; transfert en facturation depuis le statut « Facturé » (retiré). Copie d'avant : `subgestion3/_backup_20261115_1700_avant_analyse_heures/`,
   `SUBGestion3_backup_20261115_1700_avant_analyse_heures.html`.

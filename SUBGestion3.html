@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 16:07 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 16:28 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -26287,8 +26287,8 @@ const SG_DOM=[
   {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports (ancien Controlling, venu du chapitre Projets le 24.10.2026).'},
     {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs, intervenants, subdivisions, modèles (venu du chapitre Projets le 24.10.2026).'},
-    {v:'adr-favoris',t:'Favoris',dom:'contacts',ico:'star',d:'Vos adresses favorites (venu du chapitre Contacts le 25.10.2026 ; dom : droits et visuel de Contacts).'},
-    {v:'adr-chercher',dom:'contacts',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…) (venu du chapitre Contacts le 25.10.2026).'},
+    /* « Favoris » (adr-favoris) et « Recherche avancée » (adr-chercher) retirés du menu le 15.11.2026 (Paulo, deux fois « supprimer ») : écrans du moteur gardés dans
+       DeltaSub.html ; « Mes favoris » se lit dans Contacts ▸ Listes de diffusion, la recherche se fait dans l'Annuaire et la Liste des adresses ; go les y ramène (sg3_plus.js) */
     {v:'affd-controlling',dom:'reglages',t:'Controlling',ico:'trend',d:'Ancien Controlling du chapitre Affaires : contrôle des heures et des frais, critères d’analyse (gardé pour un usage ultérieur).'},
     {v:'mq-vignettes-pdf',grp:'Maquettes',dom:'reglages',t:'Vignettes des PDF',ico:'pdf',d:'Variante C du statut des PDF du devis (10.11.2026), gardée pour plus tard : maquette avec des données d’exemple.'},
     {v:'mq-ecritures-a',grp:'Maquettes',dom:'reglages',t:'Fenêtres des écritures · Avant / après',ico:'trend',d:'Proposition A des fenêtres de mutation, de paiement et de contrat du contrôle des coûts (11.11.2026), gardée pour plus tard : maquette avec des données d’exemple.'},
@@ -28222,6 +28222,7 @@ function sgVueOk(v){ if(!v||sgAdmin()) return true;
   return true; }
 { const g0=go; go=function(v,arg){
     if(v==='tpl-images'||v==='tpl-backgrounds'){ v='dom-biblio'; arg=undefined; }   /* retirés du menu le 30.10.2026 : reprise de session, récents, favoris → Bibliothèque */
+    if(v==='adr-favoris'){ v='adr-groupes'; arg=undefined; } else if(v==='adr-chercher'){ v='adr-entites'; arg=undefined; }   /* retirés du menu le 15.11.2026 : « Mes favoris » → Listes de diffusion, recherche → Annuaire */
     if(v==='h-saisie'&&typeof arg==='string'&&arg.startsWith('jour:')){ try{ HS.d=new Date(arg.slice(5)+'T00:00'); }catch(_){} arg=undefined; }   // « jour sans heures » de l'accueil
     if(!sgVueOk(v)){ toast('Cet écran n’est pas accessible avec votre profil ('+SG_PROFILS[SG_ACC.profil]+').',true); return VIEW?undefined:g0.call(this,'nx-home'); }
     return g0.call(this,v,arg); }; }
@@ -31336,7 +31337,7 @@ function sgaSections(o,ix,ouvrir){ const cs=sgaAdrs(ix,o), c0=cs[0]||null, nw=sg
       del&&{ico:'trash',t:'Supprimer l’entité…',danger:1,fn:()=>delOwner(o)}]}]; }
 const sgaNouveau=anc=>sgaMenu(anc,[{s:'Nouveau contact',items:OWNER_T.map((t,i)=>({ico:SGA_ICO_T[i]||'plus',t,fn:()=>editOwner(null,i,(e,isNew)=>{ SGA.id=String(e.ID); if(isNew) editContact(null,e,null); sgaOuvrir(e.ID); })}))}]);
 function sgaMenuListe(anc){ sgaMenu(anc,[{s:'Liste',items:[{ico:'eyeoff',t:SGA.hid?'Ne plus montrer les entités masquées':'Montrer les entités masquées',fn:()=>{ SGA.hid=!SGA.hid; sgaMajListe(); }},
-  sgaPeut('contactExport')&&{ico:'export',t:'Exporter la liste (CSV)',fn:()=>sgaCsv()},{ico:'list',t:'Liste des adresses',fn:()=>go('adr-liste')},{ico:'search',t:'Recherche avancée…',fn:()=>go('adr-chercher')}]}]); }
+  sgaPeut('contactExport')&&{ico:'export',t:'Exporter la liste (CSV)',fn:()=>sgaCsv()},{ico:'list',t:'Liste des adresses',fn:()=>go('adr-liste')}]}]); }   /* « Recherche avancée… » retiré avec son écran (15.11.2026) */
 /* actions de la fiche */
 function sgaRattacher(o){ pickOwner(ownerName(o,true)+' : rattacher une personne ou une entité',e=>editContact(null,e,o)); }
 function sgaChoisirAdr(cs,titre,fn){ if(cs.length<2){ if(cs[0]) fn(cs[0]); return; } const s=h('select',{class:'inp'},...cs.map((c,i)=>h('option',{value:i},sgaAdrLib(c)+(adrLines(c)[1]?' — '+adrLines(c)[1]:''))));
@@ -32357,7 +32358,8 @@ function sgdPage(V,m,o){ const w=h('div',{class:'sgd'}); m.append(w);
   w.addEventListener('click',e=>{ const it=e.target.closest('[data-sgd]'); if(it&&col.contains(it)){ o.choisir(it.dataset.sgd); V.peindre(); V.tableau(); return; }
     const b=e.target.closest('[data-fn]'); if(b&&haut.contains(b)&&o.fn[b.dataset.fn]) o.fn[b.dataset.fn](b); }); }
 
-/* ── Listes de diffusion (groupes d'adresses du moteur : contactgroup ; « Mes favoris » a son écran, Archives ▸ Favoris) ── */
+/* ── Listes de diffusion (groupes d'adresses du moteur : contactgroup). « Mes favoris » de l'utilisateur : en tête de la colonne dès qu'il a des adresses, depuis que
+   l'écran Archives ▸ Favoris est retiré (15.11.2026) ── */
 const SGD_TOUTES={ID:0,NAME:'Toutes les adresses',SORTDATE:null,ISSMART:null};
 const sgdListes=()=>DS.all('contactgroup').filter(g=>g.NAME&&g.NAME!=='Mes favoris').sort((a,b)=>cmp(String(a.NAME).toLowerCase(),String(b.NAME).toLowerCase()));
 /* critères d'une liste intelligente, en clair (mêmes champs que editSmartGroup) */
@@ -32380,7 +32382,8 @@ VIEWS['adr-groupes']={
       col:()=>{ const it=g=>({id:g.ID,nom:g.NAME,ini:sgdIni(g.NAME),sous:sgdAdr(nb(g))+(g.SORTDATE?' · '+dfr(g.SORTDATE):'')});
         const Ls=sgdListes();
         return sgdColonne('Listes de diffusion',Ls.length+' liste'+(Ls.length>1?'s':''),[
-          {t:'',items:[{id:0,nom:'Toutes les adresses',ini:'TA',sous:sgdAdr(DS.all('contact').filter(c=>!c.ISHIDDEN).length),titre:'Toutes les adresses de l’annuaire : pour les ajouter à une liste statique (Fonctions)'}]},
+          {t:'',items:[{id:0,nom:'Toutes les adresses',ini:'TA',sous:sgdAdr(DS.all('contact').filter(c=>!c.ISHIDDEN).length),titre:'Toutes les adresses de l’annuaire : pour les ajouter à une liste statique (Fonctions)'},
+            ...(()=>{ let f=null; try{ f=typeof favGroup==='function'?favGroup(false):null; }catch(_){ } return f&&f.ID!=null&&nb(f)?[Object.assign(it(f),{ini:'MF',titre:'Vos adresses favorites (Ajouter aux favoris, dans l’Annuaire et la Liste des adresses)'})]:[]; })()]},
           {t:'Listes intelligentes',items:Ls.filter(g=>+g.ISSMART).map(it)},{t:'Listes statiques',items:Ls.filter(g=>!+g.ISSMART).map(it)}],SGD.dif||'0'); },
       tete:()=>{ const g=cur();
         /* mêmes droits que les boutons du moteur (CH08B_GUARDS : Nouveau / Modifier le groupe = contactGroupNew, Supprimer le groupe = contactGroupDelete) */
@@ -41358,6 +41361,214 @@ window.ec4PrintRefQuantities=function(ctx){ return ouvrir(ctx,{seule:'baseQuanti
 window.SGEC={T,TAB,ec4Kag,donnees,rendre,arrondir,assurer,ouvrir,creerPdf,lire,pdfDe,dos,U};
 })();
 
+/* ═══ ESTIMATIONS AU GRAPHISME DES DEVIS (15.11.2026, refonte d'ensemble, lot 3 — même bloc 38 ; Paulo : « refonte complète de l'app … identique aux éléments définis
+   dans l'app notamment dans devis ») ═══
+   Liste : page du projet ▸ Calcul des coûts (ecDomain) et liste de tous les projets (VIEWS.coplan sans estimation ouverte) = page des listes de l'app (SGSV.outils.monter,
+   comme les devis et les contrôles des coûts) — bandeau jaune, chiffres (estimations, validées, coût d'investissement et coût de l'ouvrage de l'estimation de référence :
+   la dernière validée, sinon la plus récente ; dernière modification), filtres (Toutes · Mes estimations pour tous les projets, statuts, recherche), tableau (Version, N°,
+   Statut, Note, Coût d'investissement, Modifié, Par). Un clic ouvre l'estimation ; clic droit : ouvrir, modifier l'en-tête, dupliquer, supprimer (rétablir ou supprimer
+   définitivement une estimation supprimée) ; ⋯ : estimations supprimées, importer un calcul d'un autre projet, valeurs référentielles, copie, CSV.
+   Estimation ouverte : ecEditor du moteur enveloppé (habiller) — ses éléments sont déplacés tels quels (calcul, fenêtres et enregistrement inchangés). Bandeau jaune au
+   numéro du projet (statut, version, désignation, maître de l'ouvrage, modification ; « ‹ Estimations du projet » = page du projet ▸ Calcul des coûts), chiffres (précision,
+   coût d'investissement, coût de réalisation, coût de l'ouvrage, TVA, attribution CFC), onglets = les sections du moteur (menu de gauche masqué, ses éléments servent
+   toujours) puis Documents ; à droite Paramètres (configuration, document, présentations) et le plein écran (Échap). Barres des sections en texte ; leur bouton
+   « Documents » ou « Liste » devient « Imprimer » (sans les entrées pas encore livrées), « Affichage… » passe dans Paramètres. Mêmes fonctions et mêmes données ;
+   DeltaSub.html seul garde ses écrans. Styles <style id="sgee-css">, classes sgee-*. Débogage : window.SGEE. */
+(function(){
+if(typeof ecList!=='function'||typeof ecEditor!=='function'||typeof ecOpen!=='function'||typeof ecEngine!=='function'||typeof ecDocDialog!=='function'||typeof EC_V==='undefined'
+  ||!window.SGSV||!window.SGSV.outils||typeof VIEWS==='undefined'||!VIEWS.coplan) return;
+const {monter,tete,kpi,btn,menuSous,E,pl,trouve,moT,css}=SGSV.outils;
+const DOM='Calcul des coûts', T_D='costplanningdocument', T_C='costplanning', BESOIN=[T_C,T_D,'project'];
+const CSS=`
+.sgee-lt td.note{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgee-lt tr.supp td{opacity:.5}
+.sgee-tag{display:inline-block;margin-left:8px;font-size:11px;font-weight:400;color:var(--s-gris);white-space:nowrap}
+.sgee{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden;background:#fff}
+.sgee.sgee-plein{position:fixed;inset:0;z-index:800;height:auto;padding-top:8px}
+.sgee.sgee-plein>.sgee-tete{display:none}
+.sgee.sgee-plein .sgee-kp .nx-kpi{padding:4px 12px 6px 0}
+.sgee.sgee-plein .sgee-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),17px);margin-top:2px}
+.sgee.sgee-plein .sgee-kp .nx-kpi .s{display:none}
+.sgee>.sgee-x{display:none!important}
+.sgee-tete{flex:none;padding:8px 24px 0}
+.sgee-tete .sgfh-tete{margin:0;padding:10px 18px}
+.sgee-tete .sgfh-ini{font-size:28px;white-space:nowrap}
+.sgee-tete .sgfh-nm{min-width:0}
+.sgee-tete .sgfh-nm h2{font-size:20px}
+.sgee-ro{align-self:center;font-size:12px;font-weight:700;color:var(--s-gris);white-space:nowrap}
+.sgee-kp{flex:none;margin:0 24px;grid-template-columns:104px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border-top:0;container-type:inline-size}
+.sgee-kp .nx-kpi{padding:10px 12px 10px 0;margin-right:12px;min-width:0}
+.sgee-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),22px);margin-top:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sgee-kp .nx-kpi .l,.sgee-kp .nx-kpi .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgee-kp .nx-kpi .s{margin-top:3px}
+.sgee-kp .nx-kpi .v.pos{color:var(--s-rouge)}
+.sgee-kp .nx-kpi .v.ok{color:#4E6B0F}
+.sgee-ong{flex:none;display:flex;align-items:flex-end;gap:14px;margin:0 24px;border-bottom:1px solid var(--s-filet)}
+.sgee-ong .sg-onglets{flex:1 1 auto;min-width:0;margin:0;border:0;gap:0 20px;flex-wrap:wrap;overflow:visible}
+.sgee-ong .sg-onglets button{font-size:13.5px}
+.sgee-osep{flex:none;align-self:center;width:1px;height:16px;background:var(--s-filet)}
+.sgee-od{flex:none;display:flex;align-items:center;gap:2px;padding-bottom:2px}
+.sgee-od .ib,.sgee-corps .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:32px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir)}
+.sgee-od .ib:hover,.sgee-corps .ph2 .ib:hover{background:var(--s-jaune3)!important}
+.sgee-od .ib.on,.sgee-corps .ph2 .ib.on{box-shadow:inset 0 -2px 0 var(--s-nuit)!important}
+.sgee-od .ib:disabled,.sgee-corps .ph2 .ib:disabled{color:#b9b9b6}
+.sgee-od .ib .lb,.sgee-corps .ph2 .ib .lb{display:inline!important}
+.sgee-od .sgee-pl .lb{display:none!important}
+.sgee-corps{flex:1 1 auto;min-height:0;margin:0 24px;padding:0!important;gap:0!important}
+.sgee-corps>.ec-side{display:none!important}
+.sgee-corps .col{border:0!important;background:#fff!important;box-shadow:none!important}
+.sgee-corps .ph2{flex:none;flex-wrap:wrap;height:auto!important;min-height:40px;gap:2px!important;padding:4px 0!important;border:0!important;border-bottom:1px solid var(--s-filet)!important;background:transparent!important;align-items:center}
+.sgee-corps .ph2 .ib:first-child{padding-left:0}
+.sgee-corps .ph2>span,.sgee-corps .ph2>label{font-size:12px;color:var(--s-gris)!important}
+.sgee-corps .ph2>b{font-size:12.5px}
+.sgee-corps .pane{border:0!important;background:#fff!important;box-shadow:none!important}
+.sgee-corps .col.fill>.col.fill>div[style*="padding: 6px"]{padding:6px 0 0!important;gap:20px!important}
+.sgee-corps table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;line-height:15px;font-weight:700;color:var(--s-gris)!important;padding:8px 6px!important;height:auto!important}
+.sgee-corps table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;font-size:12.5px;font-variant-numeric:tabular-nums}
+.sgee-corps table.g.ec-t td{height:26px}
+.sgee-corps table.g tbody tr:hover td{background:var(--s-jaune3)!important}
+.sgee-corps table.g.ec-t tr.mg td{background:var(--s-nuit3)!important}
+.sgee-corps table.g.ec-t td.ed{background:rgba(0,51,70,.07)!important;box-shadow:inset 0 0 0 1px rgba(0,51,70,.35)}
+.sgee-corps table.g tbody tr.on td{background:var(--s-jaune2)!important;color:var(--s-noir)!important}
+.sgee-corps table.g.ec-t tr.blank td{height:8px;border-bottom:0!important;background:#fff!important}
+.sgee-corps .ec-det,.sgee-corps .eca-det{border:0!important;border-top:2px solid var(--s-noir)!important;background:#fff!important;padding:10px 0 12px!important}
+.sgee-corps .ec-det b,.sgee-corps .eca-det b{color:var(--s-gris)!important}
+.sgee-corps .ec-catl,.sgee-corps .eca-cats{border:0!important;background:#fff!important}
+.sgee-corps .ec-catl .hd,.sgee-corps .eca-cats .hd{font-size:11px;line-height:15px;font-weight:700;color:var(--s-gris);padding:8px 6px!important;border-bottom:2px solid var(--s-noir)!important;background:transparent!important}
+.sgee-corps .ec-catl div,.sgee-corps .eca-cats div{border-bottom:1px solid var(--s-filet)}
+.sgee-corps .ecq-kf{gap:20px!important;padding:0!important}
+.sgee-corps .sgec{padding:0 0 16px}
+.sgee-corps .ec-catl div.on,.sgee-corps .eca-cats div.on{background:var(--s-jaune2)!important;color:var(--s-noir)!important;font-weight:700}
+.sgee-corps .ph{color:var(--s-gris)}
+@media (max-height:860px){.sgee-tete .sgfh-meta{display:none}.sgee-tete .sgfh-tete{padding:6px 14px}.sgee-tete .sgfh-ini{font-size:22px}.sgee-tete .sgfh-nm h2{font-size:17px}.sgee-kp .nx-kpi{padding:6px 12px 6px 0}.sgee-kp .nx-kpi .v{font-size:clamp(11px,calc(2.1cqi - 2px),18px);margin-top:3px}.sgee-kp .nx-kpi .s{display:none}}
+`;
+const cssE=()=>{ css(); if(!document.getElementById('sgee-css')){ const s=document.createElement('style'); s.id='sgee-css'; s.textContent=CSS; document.head.appendChild(s); } };
+const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.innerHTML=x; return e; };
+const ecrit=()=>{ try{ return !!sgDroit('chantier','ecriture'); }catch(_){ return true; } };
+const prj=d=>DS.get('project',d.PROJECT_ID)||{};
+const etat=c=>{ const t=(typeof EC_ST!=='undefined'&&EC_ST[+c||0])||''; try{ return typeof sgLib==='function'?sgLib(t):t; }catch(_){ return t; } };
+const nomDe=d=>'« '+(d.VERSION||'(sans titre)')+' »';
+const z=v=>Math.abs(+v)<0.005?0:+v, mt=v=>v==null||!isFinite(+v)?'—':num(z(v));
+/* totaux d'une estimation : calcul du moteur (comme sa liste), gardés tant que son contenu ne change pas */
+const CACHE=new WeakMap();
+const totaux=d=>{ const P=DS.get(T_C,d.ID); if(!P) return null; if(CACHE.has(P)) return CACHE.get(P); let T=null;
+  try{ const r=ecEngine(ecNormalize(ecClone(P),d)), a=!!r.P.arrondir; T={inv:ecR(r.T.inv,a),real:ecR(r.T.real,a),ouv:ecR(r.T.ouv,a)}; }catch(e){ console.error(e); }
+  CACHE.set(P,T); return T; };
+/* retour à la page du projet ▸ Calcul des coûts (le moteur passait un argument que la page du projet ne lit pas) */
+const pdomOk=pid=>{ try{ return pid!=null&&typeof NX_VIEW!=='undefined'&&!!NX_VIEW['nx-pdom']&&(typeof sgProjetPermis!=='function'||sgProjetPermis(pid)); }catch(_){ return false; } };
+{ const o0=ecOpen; ecOpen=function(id,back){ try{ if(back&&back.id==='nx-pdom'&&typeof back.arg!=='string'){ const d=DS.get(T_D,id); if(d) back={id:'nx-pdom',arg:d.PROJECT_ID+'|'+DOM}; } }catch(_){ }
+    return o0.call(this,id,back); }; }
+const ouvrir=d=>ecOpen(d.ID,typeof VIEW!=='undefined'&&VIEW&&VIEW.id!=='coplan'?{id:VIEW.id,arg:VIEW.arg}:null);
+const seq=(t,id)=>((DS.S[t]||{})[String(id)])||0;
+const supprimer=async d=>{ if(!d) return; if(!ecCanEdit(d)){ toast(EC_MSG_DROITS,true); return; } const hs=seq(T_D,d.ID), cs=seq(T_C,d.ID);
+  try{ if(!+d.ISMARKEDASDELETED){ if(await confirmDlg('Supprimer l’estimation '+nomDe(d)+' ?\nElle reste récupérable : ⋯ ▸ Afficher les estimations supprimées.','Supprimer')) await DS.commit([{t:T_D,id:d.ID,val:{...d,ISMARKEDASDELETED:1},bseq:hs}]); }
+    else if(await confirmDlg('Supprimer définitivement l’estimation '+nomDe(d)+' ?\nCette suppression est irréversible.','Supprimer définitivement')) await DS.commit([{t:T_D,id:d.ID,val:null,bseq:hs},{t:T_C,id:d.ID,val:null,bseq:cs}]); }catch(e){ console.error(e); } };
+const retablir=async d=>{ if(!d) return; if(!ecCanEdit(d)){ toast(EC_MSG_DROITS,true); return; }
+  try{ await DS.commit([{t:T_D,id:d.ID,val:{...d,ISMARKEDASDELETED:0},bseq:seq(T_D,d.ID)}]); toast('Estimation '+nomDe(d)+' rétablie.'); }catch(e){ console.error(e); } };
+const fnG=n=>typeof globalThis[n]==='function'?globalThis[n]:null;
+const colsListe=G=>[...(G?[{k:'pn',t:'N° d’affaire',f:d=>E(prj(d).NUMBER||'')}]:[]),{k:'VERSION',t:'Version'},{k:'VERSIONNUMBER',t:'N° de version'},{k:'st',t:'Statut',f:d=>E(etat(d.STATECODE))},{k:'NOTE',t:'Note'},
+  {k:'inv',t:'Coût d’investissement',f:d=>{ const t=totaux(d); return t?E(num(z(t.inv))):''; }},{k:'dt',t:'Modifié',f:d=>E(dfr(d.CHANGEDDATE))},{k:'USERID',t:'Par'}];
+const ESTIM={
+  rendre(I){ cssE(); const p=I.p, u=I.u, G=!!p.GLOBAL, ec=ecrit();
+    const tous=(G?DS.all(T_D):DS.by(T_D,'PROJECT_ID',p.ID)).filter(d=>!G||!u.mine||d.USERID===ME.id), vivant=tous.filter(d=>!+d.ISMARKEDASDELETED), base=u.supp?tous:vivant, parSt=[...new Set(base.map(d=>+d.STATECODE||0))].sort();
+    if(u.statut!=null&&!parSt.includes(u.statut)) u.statut=null;
+    const st=u.statut??null, recent=(a,b)=>cmp(b.CHANGEDDATE,a.CHANGEDDATE)||(+b.VERSIONNUMBER||0)-(+a.VERSIONNUMBER||0)||(+b.ID-+a.ID);
+    const R=base.filter(d=>(st==null||(+d.STATECODE||0)===st)&&trouve(u.q,d.VERSION,d.NOTE,d.USERID,d.VERSIONNUMBER,etat(d.STATECODE),G?prj(d).NUMBER:'',G?prj(d).TITLE:'')).sort(recent); I.R=R;
+    const nV=vivant.filter(d=>+d.STATECODE===2).length, dern=vivant.slice().sort(recent)[0]||null, ref=vivant.filter(d=>+d.STATECODE===2).sort(recent)[0]||dern, tR=!G&&ref?totaux(ref):null, mo=moT(p);
+    const acts=(ec?btn('new','Nouvelle estimation','plus',1):'')+'<button class="nx-btn" data-a="menu" title="Autres actions" aria-label="Autres actions">⋯</button>';
+    const teteP=G?tete('ES','Estimations des coûts','Estimations',pl(vivant.length,'estimation')+' · tous les projets',acts)
+      :tete(p.NUMBER||'','Estimations des coûts',p.TITLE||'',[mo?'Maître de l’ouvrage : '+mo:'',pl(vivant.length,'estimation')].filter(Boolean).join(' · '),acts);
+    if(!vivant.length&&!u.supp&&!(G&&u.mine)) return '<div class="sgsv">'+teteP+'<div class="sgsv-vide"><b>'+(G?'Aucune estimation.':'Aucune estimation pour ce projet.')+'</b><br>Une estimation chiffre l’ouvrage par éléments, avant le devis général : grandeurs référentielles, valeurs référentielles, coût de chaque élément.'+(ec?'<div class="acts">'+btn('new','Nouvelle estimation','plus',1)+'</div>':'')+'</div></div>';
+    const refT=ref?(+ref.STATECODE===2?'Estimation validée la plus récente':'Estimation la plus récente'):'';
+    return '<div class="sgsv">'+teteP
+      +'<div class="nx-kpis sgsv-kp">'+kpi('Estimations',String(vivant.length),G?'tous les projets':'versions du projet')+kpi('Validées',String(nV),'')
+      +(G?kpi('Projets',String(new Set(vivant.map(d=>d.PROJECT_ID)).size),'avec une estimation')
+        :kpi('Coût d’investissement',tR?mt(tR.inv)+'<small>CHF</small>':'—',ref?E(ref.VERSION||'(sans titre)'):'','',refT)+kpi('Coût de l’ouvrage',tR?mt(tR.ouv)+'<small>CHF</small>':'—',tR&&z(tR.real)?'réalisation '+E(mt(tR.real)):'','',refT))
+      +kpi('Dernière modification',dern&&dern.CHANGEDDATE?dfr(dern.CHANGEDDATE):'—',dern&&dern.USERID?'par '+E(dern.USERID):'')+'</div>'
+      +'<div class="sgsv-fil">'+(G?[['0','Toutes'],['1','Mes estimations']].map(([v,t])=>'<button data-a="mine" data-v="'+v+'" class="'+((+v===1)===!!u.mine?'on':'')+'">'+t+'</button>').join('')+'<span style="width:10px"></span>':'')
+      +(parSt.length>1?[['','Tous les statuts'],...parSt.map(c=>[c,etat(c)||String(c)])].map(([c,t])=>{ const v=c===''?null:+c; return '<button data-a="statut" data-c="'+c+'" class="'+(v===st?'on':'')+'" aria-pressed="'+(v===st)+'">'+E(t)+'</button>'; }).join(''):'')
+      +'<span class="dr"><input class="inp" data-q type="search" style="width:240px" placeholder="Rechercher une estimation" aria-label="Rechercher une estimation" value="'+E(u.q||'')+'"></span></div>'
+      +(R.length?'<table class="nx-tbl sgsv-tb sgee-lt"><thead><tr>'+(G?'<th>Projet</th>':'')+'<th>Version</th><th class="r">N°</th><th>Statut</th><th>Note</th><th class="r">Coût d’investissement</th><th>Modifié</th><th>Par</th></tr></thead><tbody>'
+        +R.map(d=>{ const t=totaux(d), nt=d.NOTE||''; return '<tr data-a="open" data-d="'+E(d.ID)+'"'+(+d.ISMARKEDASDELETED?' class="supp"':'')+'>'+(G?'<td class="nw" title="'+E(prj(d).TITLE||'')+'">'+E(prj(d).NUMBER||'')+'</td>':'')
+          +'<td><b>'+E(d.VERSION||'(sans titre)')+'</b>'+(+d.ISAPPLYSUBPROJECTS?'<span class="sgee-tag">subdivisions</span>':'')+(+d.ISMARKEDASDELETED?'<span class="sgee-tag">supprimée</span>':'')+'</td><td class="r">'+E(d.VERSIONNUMBER??'')+'</td><td class="nw">'+E(etat(d.STATECODE))+'</td><td class="note" title="'+E(nt)+'">'+E(nt)+'</td>'
+          +'<td class="r nw">'+(t?E(mt(t.inv)):'—')+'</td><td class="nw">'+E(dfr(d.CHANGEDDATE))+'</td><td class="nw">'+E(d.USERID||'')+'</td></tr>'; }).join('')+'</tbody></table>'
+        :'<p class="sgsv-rien">Aucune estimation trouvée.</p>')+'</div>'; },
+  action(I,a,t,e){ const p=I.p, u=I.u, d=t.dataset.d?DS.get(T_D,t.dataset.d):null;
+    if(a==='new'){ if(!ecrit()) return; ecNeed().then(()=>{ if(p.GLOBAL) pickProject('Choisir le projet',q=>ecDocDialog(q,null,'new')); else ecDocDialog(p,null,'new'); }).catch(e=>console.error(e)); }
+    else if(a==='open'){ if(d&&!(e&&e.detail>1)) ouvrir(d); }
+    else if(a==='mine'){ u.mine=t.dataset.v==='1'; u.statut=null; I.dessiner(); }
+    else if(a==='statut'){ u.statut=t.dataset.c===''?null:+t.dataset.c; I.dessiner(); }
+    else if(a==='menu'){ const g=()=>({cols:colsListe(!!p.GLOBAL),view:I.R||[]}), ec=ecrit(), imp=fnG('ecqImportFromProject');
+      const vr=[['Valeurs référentielles des éléments…','ecaStatisticalValues'],['Valeurs référentielles des sous-éléments…','ecaConstructionParts'],['Structure des éléments pour les valeurs référentielles…','ecaEbkpElements']].filter(x=>fnG(x[1]));
+      menuSous(t,[{t:'Afficher les estimations supprimées',chk:!!u.supp,fn:()=>{ u.supp=!u.supp; I.dessiner(); }},
+        ...(ec&&imp&&!p.GLOBAL?['-',{t:'Importer un calcul des coûts d’un autre projet…',fn:()=>ecNeed().then(()=>imp(p))}]:[]),
+        ...(vr.length?['-',...vr.map(([tt,n])=>({t:tt,fn:()=>fnG(n)()}))]:[]),
+        '-',{t:'Copier le tableau',fn:()=>copyTable(g())},{t:'Exporter le tableau dans un fichier CSV …',fn:()=>csvTable(g(),'Estimations')}]); } },
+  ctx(I,t,e){ if(t.dataset.a!=='open') return false; const d=DS.get(T_D,t.dataset.d); if(!d) return false; const ec=ecrit(), def=!!+d.ISMARKEDASDELETED;
+    sgMenuAt(e.clientX,e.clientY,[{t:'Ouvrir l’estimation',fn:()=>ouvrir(d)},
+      ...(ec?(def?[{t:'Rétablir l’estimation',fn:()=>retablir(d)},'-',{t:'Supprimer définitivement…',danger:true,fn:()=>supprimer(d)}]
+        :[{t:'Modifier l’en-tête…',fn:()=>ecNeed().then(()=>ecDocDialog(prj(d),d,'edit'))},{t:'Dupliquer…',fn:()=>ecDuplicate(d)},'-',{t:'Supprimer…',danger:true,fn:()=>supprimer(d)}]):[])]); return true; } };
+ecDomain=function(C,top,pane,p){ monter(C,p,'estim',BESOIN,ESTIM); };
+{ const V=VIEWS.coplan, r0=V.render;
+  V.render=function(m,arg){ if(EC_V.open||!DS.loaded.has(T_C)) return r0.call(this,m,arg);
+    this.ed=null; this.list=null; const pa=arg&&arg.project?DS.get('project',arg.project):null;
+    monter(m,pa||{ID:'tous',GLOBAL:1,NUMBER:'',TITLE:''},pa?'estim':'estimg',BESOIN,ESTIM); }; }
+
+/* ── estimation ouverte : éléments du moteur déplacés tels quels, ses gestionnaires restent ── */
+const ED={plein:false,box:null};
+const SECL={'QUANTITES REFERENTIELLES':'Grandeurs référentielles','ELEMENTS':'Éléments','APERCU':'Aperçu','CHIFFRES CLEFS':'Chiffres-clés','CALCUL DES RESULTATS':'Calcul des résultats'};
+const livre=x=>!(x&&x.dis&&/\(lot \d\)\s*$/.test(String(x.t||'')));   /* entrées du moteur pas encore livrées : pas affichées */
+const propre=L=>{ const o=(L||[]).filter(x=>x==='-'||(x&&livre(x))); return o.filter((x,i)=>x!=='-'||(i>0&&i<o.length-1&&o[i-1]!=='-')); };
+addEventListener('keydown',e=>{ const B=ED.box; if(e.key!=='Escape'||!ED.plein||!B||!B.isConnected||e.defaultPrevented||document.querySelector('.ov,.sg-visu,.menu')) return; const a=document.activeElement;
+  if(a&&(a.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(a.tagName))) return; e.preventDefault(); B._plein(false); },true);   /* capture : une fenêtre ouverte se ferme d'abord, sans quitter le plein écran */
+function habiller(m,id,R){ cssE(); const ctx=R&&R.ctx; if(!ctx) return;
+  const kids=[...m.children], bar=kids.find(x=>x.classList&&x.classList.contains('ph2')), body=kids.find(x=>x.classList&&x.classList.contains('cols')); if(!bar||!body) return;
+  const side=body.querySelector(':scope>.ec-side'), main=body.querySelector(':scope>.col.fill'); if(!side||!main) return;
+  const bEd=[...bar.querySelectorAll(':scope>button.ib')].find(b=>b._sgB&&b._sgB.label==='Editer');
+  const TABS=[]; EC_SECS.forEach(([sec,subs,fns])=>{ if(subs.includes('Editer')&&(sec==='ELEMENTS'||fnG(fns.Editer))) TABS.push([sec,'Editer',SECL[sec]||sec]); });
+  { const x=EC_SECS.find(y=>y[0]==='ELEMENTS'); if(x&&x[1].includes('Documents')&&fnG(x[2].Documents)) TABS.push(['ELEMENTS','Documents','Documents']); }
+  if(!TABS.length) return;
+  const box=el('div','sgee'), hd=el('div','sgee-tete'), kp=el('div','nx-kpis sgee-kp'), ong=el('div','sgee-ong'), ongL=el('div','sg-onglets'), od=el('div','sgee-od');
+  const peut=()=>{ try{ return !!ctx.canEdit()&&ecrit(); }catch(_){ return false; } };
+  const item=(sec,sub)=>{ let cur=null; for(const x of side.children){ if(x.classList.contains('ec-s')) cur=String(x.firstChild&&x.firstChild.nodeType===3?x.firstChild.textContent:x.textContent).trim(); else if(x.classList.contains('item')&&cur===sec&&x.textContent.trim()===sub) return x; } return null; };
+  const majOng=()=>{ ongL.innerHTML=TABS.map(([s,b,t],i)=>(b==='Documents'?'<span class="sgee-osep"></span>':'')+'<button data-i="'+i+'" class="'+(ctx.sec===s&&ctx.sub===b?'on':'')+'">'+E(t)+'</button>').join(''); };
+  ongL.onclick=e=>{ const b=e.target.closest('[data-i]'); if(!b) return; const x=TABS[+b.dataset.i], it=x&&item(x[0],x[1]); if(it){ it.click(); majOng(); } };
+  const fermer=()=>{ const pid=(ctx.doc||{}).PROJECT_ID; if(ED.plein) box._plein(false); if(pdomOk(pid)) EC_V.back={id:'nx-pdom',arg:pid+'|'+DOM}; ctx.close(); };
+  hd.onclick=e=>{ if(e.target.closest('[data-a="liste"]')) fermer(); };
+  const bPar=ibtn({i:'gear',t:'Paramètres',menu:()=>{ const L=propre(bEd&&bEd._sgB&&typeof bEd._sgB.menu==='function'?bEd._sgB.menu():[]);
+    if(typeof ecPrefDialog==='function') L.splice(Math.min(1,L.length),0,{t:'Document : titre, date, précision, textes…',fn:()=>{ if(!peut()){ toast(EC_MSG_DROITS,true); return; } ecPrefDialog(ctx); }});
+    return L; }});
+  const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgee-pl');
+  box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgee-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const s=bPlein.querySelector('svg'); if(s&&typeof nxSvg==='function') s.outerHTML=nxSvg(ED.plein?'pleinq':'plein');
+    bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };
+  const prec=t=>{ t=String(t||'').trim(); return !t||/^\[\.\.\.\]/.test(t)?'':t; };
+  const entete=()=>{ const d=ctx.doc; if(!d) return; const p=ctx.p||{}, mo=moT(p), P=ctx.P||{}, res=ctx.res||{}, T=res.T||{}, a=!!P.arrondir, et=etat(d.STATECODE), cr=P.coutRealisation||{}, co=P.coutOuvrage||{};
+    hd.innerHTML=tete(p.NUMBER||'','Estimation des coûts'+(et?' · '+et:''),d.VERSION||'(sans titre)',[p.TITLE,mo?'Maître de l’ouvrage : '+mo:'',d.VERSIONNUMBER!=null&&d.VERSIONNUMBER!==''?'version '+d.VERSIONNUMBER:'',d.CHANGEDDATE?'modifié le '+dfr(d.CHANGEDDATE)+(d.USERID?' par '+d.USERID:''):''].filter(Boolean).join(' · '),
+      (ctx.canEdit()?'':'<span class="sgee-ro" title="'+E(EC_MSG_DROITS)+'">Lecture seule</span>')+'<button class="nx-btn" data-a="liste" title="Retour aux estimations du projet">‹ Estimations du projet</button>');
+    const inv=+T.inv||0, cfc=res.cfc?+res.cfc.total||0:0, inc=typeof ecCfcIncomplete==='function'&&ecCfcIncomplete(res), pr=prec(P.precision);
+    kp.innerHTML=kpi('Précision',pr?E(pr):'—','','','Marge d’approximation de l’estimation (Paramètres ▸ Document)')
+      +kpi('Coût d’investissement',mt(ecR(inv,a)),'tous les groupes principaux','','Somme des groupes principaux de l’estimation')
+      +kpi('Coût de réalisation',mt(ecR(T.real,a)),'groupes '+E(cr.de||'B')+' à '+E(cr.a||'W'),'','Paramètres ▸ Configuration ▸ Définitions des coûts')
+      +kpi('Coût de l’ouvrage',mt(ecR(T.ouv,a)),'groupes '+E(co.de||'C')+' à '+E(co.a||'G'),'','Paramètres ▸ Configuration ▸ Définitions des coûts')
+      +kpi('TVA',mt(ecR(T.tva,a)),'groupe Z','','Taxe sur la valeur ajoutée comprise dans le coût d’investissement')
+      +kpi('Attribution CFC',cfc&&inv?num(Math.round(1000*cfc/inv)/10,1)+'<small>%</small>':'—',!cfc?'aucun montant attribué':inc?'reste '+E(mt(inv-cfc)):'terminée',cfc?(inc?'pos':'ok'):'','Part du coût d’investissement attribuée aux CFC (Éléments ▸ Affichage du tableau ▸ Afficher les CFC)');
+    if(typeof VIEW==='object'&&VIEW) VIEW.nxTitle=[p.NUMBER,d.VERSION].filter(Boolean).join(' · '); };
+  /* barre de la section, après chaque dessin du moteur : « Documents » / « Liste » → « Imprimer », « Affichage… » dans Paramètres */
+  const deco=()=>{ try{ entete(); majOng(); const tools=ctx.tools; if(!tools||!tools.isConnected) return;
+      [...tools.querySelectorAll('button.ib')].forEach(b=>{ const o=b._sgB; if(!o||b._sgee) return;
+        if(o.t==='Affichage…'){ b.remove(); return; }
+        if(o.t==='Affichage du tableau'){ const l=b.querySelector('.lb'); if(l) l.textContent='Affichage'; b._sgee=1; return; }
+        if((o.t==='Documents'||o.t==='Liste')&&typeof o.menu==='function'){ const nb=ibtn({i:'print',t:'Imprimer',menu:()=>propre(o.menu()).map(x=>x==='-'?x:Object.assign({},x,{t:String(x.t||'').replace(/…?\s*\[Ancien document\]\s*$/,' (PDF)')}))}); nb._sgee=1; b.replaceWith(nb); } });
+    }catch(e){ console.error(e); } };
+  new MutationObserver(()=>{ if(box.isConnected) deco(); }).observe(main,{childList:true});
+  body.classList.add('sgee-corps'); bar.classList.add('sgee-x'); od.append(bPar,bPlein); ong.append(ongL,od);
+  box.append(hd,kp,ong,...kids.filter(x=>x!==bar&&x!==body),body,bar); m.append(box);
+  if(ED.plein) box._plein(true); else ED.box=box;
+  deco(); }
+{ const e0=ecEditor; ecEditor=function(m,id){ const R=e0.apply(this,arguments); try{ habiller(m,id,R); }catch(e){ console.error(e); } return R; }; }
+window.SGEE={ESTIM,ED,totaux,habiller};
+})();
+
 /* ═══ COMPARATIF ▸ ÉDITER : ENTREPRISES EN COLONNES OU EN LIGNES, PRIX SAISIS DANS LE TABLEAU (06.11.2026, bloc 39 ; demandes de Paulo : « dans comparatif
    éditer je souhaite que les entreprises soient indiquées par colonne et par ligne », « les montants des articles je souhaite pouvoir le faire directement
    dans le fichier affiché sans avoir besoin d'entrer les données dans une fenêtre qui s'ouvre ») ═══
@@ -45763,7 +45974,7 @@ try{ DS.on(()=>{ setTimeout(()=>{ try{ maj(); }catch(_){ } },0); }); }catch(_){ 
    Affaires et les Archives gardent l'écran d'origine. ── */
 const DOMS={'Intervenants':p=>{ let M=[]; try{ M=DS.by('projectmember','PROJECT_ID',p.ID); }catch(_){ } return fig(M.length,'intervenants')+fig(M.filter(x=>+x.TEAMROLECODE===19).length,'entreprises'); },
   'Soumissionnaires':p=>{ let n=0; try{ n=DS.by('projecttenderer','PROJECT_ID',p.ID).length; }catch(_){ } return fig(n,'soumissionnaires'); },
-  'Liste d’adresses':null,'Calcul des coûts':null};
+  'Liste d’adresses':null};   /* « Calcul des coûts » : liste des estimations au graphisme de l'app depuis le 15.11.2026 (sg3_estimation.js), avec son propre bandeau */
 if(typeof domainView==='function'&&window.SGSV&&SGSV.outils){ const dv0=domainView;
   domainView=function(C,p,dom){ let ok=false; try{ ok=!!(C&&p&&Object.prototype.hasOwnProperty.call(DOMS,dom)&&typeof VIEW!=='undefined'&&VIEW&&VIEW.id==='nx-pdom'); }catch(_){ }
     if(!ok) return dv0.apply(this,arguments);

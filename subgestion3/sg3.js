@@ -180,8 +180,8 @@ const SG_DOM=[
   {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[
     {v:'aff-controlling',t:'Suivi & écarts',ico:'trend',d:'Contrôle des heures et des frais, critères d’analyse et rapports (ancien Controlling, venu du chapitre Projets le 24.10.2026).'},
     {v:'aff-gestion',t:'Registre',ico:'list',d:'Créer, modifier et configurer les projets : phases, activités, tarifs, intervenants, subdivisions, modèles (venu du chapitre Projets le 24.10.2026).'},
-    {v:'adr-favoris',t:'Favoris',dom:'contacts',ico:'star',d:'Vos adresses favorites (venu du chapitre Contacts le 25.10.2026 ; dom : droits et visuel de Contacts).'},
-    {v:'adr-chercher',dom:'contacts',t:'Recherche avancée',ico:'search',d:'Recherche multicritère (CFC, propriétés, localité…) (venu du chapitre Contacts le 25.10.2026).'},
+    /* « Favoris » (adr-favoris) et « Recherche avancée » (adr-chercher) retirés du menu le 15.11.2026 (Paulo, deux fois « supprimer ») : écrans du moteur gardés dans
+       DeltaSub.html ; « Mes favoris » se lit dans Contacts ▸ Listes de diffusion, la recherche se fait dans l'Annuaire et la Liste des adresses ; go les y ramène (sg3_plus.js) */
     {v:'affd-controlling',dom:'reglages',t:'Controlling',ico:'trend',d:'Ancien Controlling du chapitre Affaires : contrôle des heures et des frais, critères d’analyse (gardé pour un usage ultérieur).'},
     {v:'mq-vignettes-pdf',grp:'Maquettes',dom:'reglages',t:'Vignettes des PDF',ico:'pdf',d:'Variante C du statut des PDF du devis (10.11.2026), gardée pour plus tard : maquette avec des données d’exemple.'},
     {v:'mq-ecritures-a',grp:'Maquettes',dom:'reglages',t:'Fenêtres des écritures · Avant / après',ico:'trend',d:'Proposition A des fenêtres de mutation, de paiement et de contrat du contrôle des coûts (11.11.2026), gardée pour plus tard : maquette avec des données d’exemple.'},

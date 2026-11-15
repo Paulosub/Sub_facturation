@@ -46,7 +46,8 @@ function sgdPage(V,m,o){ const w=h('div',{class:'sgd'}); m.append(w);
   w.addEventListener('click',e=>{ const it=e.target.closest('[data-sgd]'); if(it&&col.contains(it)){ o.choisir(it.dataset.sgd); V.peindre(); V.tableau(); return; }
     const b=e.target.closest('[data-fn]'); if(b&&haut.contains(b)&&o.fn[b.dataset.fn]) o.fn[b.dataset.fn](b); }); }
 
-/* ── Listes de diffusion (groupes d'adresses du moteur : contactgroup ; « Mes favoris » a son écran, Archives ▸ Favoris) ── */
+/* ── Listes de diffusion (groupes d'adresses du moteur : contactgroup). « Mes favoris » de l'utilisateur : en tête de la colonne dès qu'il a des adresses, depuis que
+   l'écran Archives ▸ Favoris est retiré (15.11.2026) ── */
 const SGD_TOUTES={ID:0,NAME:'Toutes les adresses',SORTDATE:null,ISSMART:null};
 const sgdListes=()=>DS.all('contactgroup').filter(g=>g.NAME&&g.NAME!=='Mes favoris').sort((a,b)=>cmp(String(a.NAME).toLowerCase(),String(b.NAME).toLowerCase()));
 /* critères d'une liste intelligente, en clair (mêmes champs que editSmartGroup) */
@@ -69,7 +70,8 @@ VIEWS['adr-groupes']={
       col:()=>{ const it=g=>({id:g.ID,nom:g.NAME,ini:sgdIni(g.NAME),sous:sgdAdr(nb(g))+(g.SORTDATE?' · '+dfr(g.SORTDATE):'')});
         const Ls=sgdListes();
         return sgdColonne('Listes de diffusion',Ls.length+' liste'+(Ls.length>1?'s':''),[
-          {t:'',items:[{id:0,nom:'Toutes les adresses',ini:'TA',sous:sgdAdr(DS.all('contact').filter(c=>!c.ISHIDDEN).length),titre:'Toutes les adresses de l’annuaire : pour les ajouter à une liste statique (Fonctions)'}]},
+          {t:'',items:[{id:0,nom:'Toutes les adresses',ini:'TA',sous:sgdAdr(DS.all('contact').filter(c=>!c.ISHIDDEN).length),titre:'Toutes les adresses de l’annuaire : pour les ajouter à une liste statique (Fonctions)'},
+            ...(()=>{ let f=null; try{ f=typeof favGroup==='function'?favGroup(false):null; }catch(_){ } return f&&f.ID!=null&&nb(f)?[Object.assign(it(f),{ini:'MF',titre:'Vos adresses favorites (Ajouter aux favoris, dans l’Annuaire et la Liste des adresses)'})]:[]; })()]},
           {t:'Listes intelligentes',items:Ls.filter(g=>+g.ISSMART).map(it)},{t:'Listes statiques',items:Ls.filter(g=>!+g.ISSMART).map(it)}],SGD.dif||'0'); },
       tete:()=>{ const g=cur();
         /* mêmes droits que les boutons du moteur (CH08B_GUARDS : Nouveau / Modifier le groupe = contactGroupNew, Supprimer le groupe = contactGroupDelete) */

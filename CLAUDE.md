@@ -869,6 +869,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Contacts ▸ Favoris (`adr-favoris`) déplacé dans Archives (25.10.2026, demande de Paulo)**, `dom:'contacts'` (droits et visuel de Contacts) ;
   Contacts = Annuaire, Liste des adresses, Listes de diffusion, Catégories ; **Recherche avancée (`adr-chercher`) aussi dans Archives** (même jour,
   `dom:'contacts'`) — le lien « Recherche avancée… » du menu de la liste de l'Annuaire l'ouvre toujours.
+  **Retirés d'Archives le 15.11.2026 (Paulo, deux fois « supprimer » sur l'entrée du menu)** : « Favoris » et « Recherche avancée » ne sont plus dans le menu
+  (`SG_DOM` de `sg3.js`) ; `go('adr-favoris')` mène à Contacts ▸ Listes de diffusion et `go('adr-chercher')` à l'Annuaire (reprise de session, récents, épinglés ;
+  `sg3_plus.js`) ; lien « Recherche avancée… » retiré du menu de la liste de l'Annuaire ; « Mes favoris » de l'utilisateur (`favGroup`) apparaît en tête de la colonne
+  des Listes de diffusion dès qu'il contient une adresse (« Ajouter aux favoris » de l'Annuaire et de la Liste des adresses reste). Écrans du moteur gardés dans
+  DeltaSub.html, aucune donnée touchée. Copie d'avant : `subgestion3/_backup_20261115_1640_avant_archives_favoris/`.
   **Les quatre tuiles du Controlling recopiées dans Administration (même soir, Paulo : « déplacer dans Administration : Contrôle des heures
   d'affaires, Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais — copier ces éléments comme éléments cliquables dans le
   menu de gauche »)** : entrées `adm-ctl-heures`, `adm-ana-heures`, `adm-ctl-frais`, `adm-ana-frais` (ordre : Contrôle des heures, Contrôle des heures
@@ -2773,6 +2778,24 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   soumissionnaires), comme les autres modules de la page du projet : `domainView` enveloppé dans `sg3_ecrans.js`, seulement dans `nx-pdom` — le domaine du moteur est
   dessiné dessous dans `.sgmv-corps`, à la présentation épurée (`:is(html[data-vep] #main,.sgmv-corps)` dans `sg3.css`). Le chapitre Affaires et les Archives gardent
   l'écran d'origine. Vérifié sur 99TST (quatre domaines, les autres modules inchangés).
+  **Lot 3, quatrième étape — Estimations à la présentation du devis (même jour, second bloc de `subgestion3/sg3_estimation.js`, styles `#sgee-css`, classes `sgee-*`,
+  `window.SGEE`)** — **Liste** : page du projet ▸ Calcul des coûts (`ecDomain` remplacé) et liste de tous les projets (`VIEWS.coplan` sans estimation ouverte) = page des
+  listes de l'app (`SGSV.outils.monter`, comme les devis et les contrôles des coûts) : bandeau jaune, chiffres (estimations, validées, coût d'investissement et coût de
+  l'ouvrage de l'estimation de référence — la dernière validée, sinon la plus récente —, dernière modification ; tous les projets : nombre de projets), filtres (Toutes ·
+  Mes estimations, statuts, recherche), tableau (Version, N°, Statut, Note, Coût d'investissement, Modifié, Par ; calcul du moteur gardé par contenu, `totaux`). Un clic
+  ouvre l'estimation ; clic droit : ouvrir, modifier l'en-tête, dupliquer, supprimer (estimation supprimée : rétablir, supprimer définitivement) ; ⋯ : afficher les
+  estimations supprimées, importer un calcul des coûts d'un autre projet, valeurs référentielles, copie, CSV. « Calcul des coûts » est donc retiré de `SGMV.DOMS`
+  (`sg3_ecrans.js` : la liste a son propre bandeau). **Estimation ouverte** : `ecEditor` enveloppé (`habiller`), éléments du moteur déplacés tels quels (calcul, fenêtres
+  et enregistrement inchangés) — bandeau au numéro du projet (« Estimation des coûts · statut », version, projet · maître de l'ouvrage · modifié le … ; « ‹ Estimations du
+  projet » = page du projet ▸ Calcul des coûts, `ecOpen` enveloppé : le moteur passait à la page du projet un argument qu'elle ne lit pas), chiffres (Précision, Coût
+  d'investissement, Coût de réalisation, Coût de l'ouvrage, TVA, Attribution CFC — verte « terminée », rouge avec le reste à attribuer), onglets = les sections du moteur
+  (Grandeurs référentielles · Éléments · Aperçu · Chiffres-clés · Calcul des résultats, puis Documents ; menu de gauche masqué, ses éléments servent toujours), à droite
+  « Paramètres ▾ » (Configuration…, Document : titre, date, précision, textes… = l'ancien bouton « Affichage… », Importer les présentations…) et le plein écran (Échap) ;
+  barres des sections en texte, « Documents » / « Liste » devenu « Imprimer » (« Estimation des coûts (PDF) », sans les entrées pas encore livrées), « Affichage du
+  tableau » libellé « Affichage » ; tableaux à titres gris sur filet noir, groupes principaux sur trame bleu nuit pâle, valeur référentielle saisie encadrée comme le
+  montant saisi du devis, ligne choisie en jaune pâle. Pas fait : page « Paramètres » en onglet comme le devis (fenêtres du moteur gardées), couleurs du graphique de
+  l'aperçu, fenêtre du document à la barre « Document PDF ». Vérifié sur 99TST hors de l'aperçu (liste du projet et de tous les projets, six onglets, menus, plein écran,
+  retour), balayage des 119 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_1625_avant_estimations/`.
   **Lot 1, analyse des heures — cinq propositions en attente du choix de Paulo (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie
   de l'app (`subgestion3/_backup_20261115_maquette_analyse_heures/` : `proposition_analyse_heures.js` et ses sources ; page `proposition_analyse_heures.html` de l'aperçu),

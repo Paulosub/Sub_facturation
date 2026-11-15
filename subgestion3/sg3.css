@@ -1676,3 +1676,37 @@ html[data-vep] #main>.cols,html[data-vep] #main>.col{padding:8px 24px 14px!impor
 .sgmv-eq tr.anc td{color:var(--s-gris)}
 .sgmv-eq tr.anc .sgsv-ini{background:var(--s-gris)}
 .sgmv-eq th:first-child,.sgmv-eq td:first-child{width:44px}
+/* Écrans « à catégories » de l'ancien logiciel (sg3_ecrans.js, lot 3, 15.11.2026) : catégories en onglets sous le bandeau, liste du moteur masquée ; colonnes de choix
+   avec recherche ; choix du tableau en texte ; chiffres de la sélection dans le bandeau */
+.sgmv-x{display:none!important}
+html[data-vep] #main>.sgmv-ong{flex:none;margin:0 24px;border-bottom:1px solid var(--s-filet)}
+html[data-vep] #main>.sgmv-ong .sg-onglets{margin:0;border:0;gap:0 22px;flex-wrap:wrap;overflow:visible}
+html[data-vep] #main>.sgmv-ong .sg-onglets button{font-size:13.5px}
+html[data-vep] #main>.sgmv-ong+.cols{padding-top:0!important}
+html[data-vep] #main>.sgmv-ong+.cols>.col{border-top:0!important}   /* sous les onglets : pas de second filet */
+html[data-vep] #main>.sgmv-ong+.cols .cols{padding:14px 0 0!important}   /* colonnes d'une catégorie (liste de choix + tableau) : alignées sur les onglets */
+html[data-vep] #main .ph2>.sgmv-q{flex:0 1 128px;width:128px;min-width:60px;height:28px;font-size:12.5px}
+html[data-vep] #main .ph2.sgmv-ph>.sgmv-q{flex:1 1 auto;width:auto}
+html[data-vep] #main .sgmv-ch{display:inline-flex;align-items:center;gap:2px;margin:0 8px 0 2px}
+#sg-mv .sg-tkp .nx-kpi .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sg-mv .nx-kpi .v.neg{color:var(--s-rouge)}
+#sg-mv .nx-kpi .v.posi{color:#4E6B0F}
+/* écran bas ou zone étroite : le bandeau et ses chiffres se réduisent pour laisser la place au contenu, comme dans le devis (chiffres toujours sur une ligne) */
+@media (max-height:860px){
+  #sg-mv .sgfh-tete{padding:6px 14px}
+  #sg-mv .sgfh-ini{font-size:22px}
+  #sg-mv .sgfh-nm h2{font-size:17px}
+  #sg-mv .sgfh-nm .lb{margin:0}
+  #sg-mv .sgfh-meta{display:none}
+  #sg-mv .sg-tete>.sg-tkp{margin-top:4px}
+  #sg-mv .sg-tkp .nx-kpi{padding:6px 12px 6px 0}
+  #sg-mv .sg-tkp .nx-kpi .v{font-size:18px;margin-top:3px}
+  #sg-mv .sg-tkp .nx-kpi .s{display:none}
+}
+@container (max-width:860px){
+  #sg-mv .sg-tete>.sg-tkp{grid-template-columns:repeat(5,minmax(0,1fr))}
+  #sg-mv .sg-tkp .nx-kpi{padding:8px 10px 8px 0;margin-right:10px}
+  #sg-mv .sg-tkp .nx-kpi .v{font-size:17px;margin-top:4px}
+  #sg-mv .sg-tkp .nx-kpi .v small{font-size:10px;margin-left:2px}
+  #sg-mv .sg-tkp .nx-kpi .s{display:none}
+}

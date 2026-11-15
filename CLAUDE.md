@@ -2851,8 +2851,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   verrouillage des heures de plusieurs membres choisis à la fois — le courriel se fait sur la liste affichée, le verrouillage membre par membre). Ces trois écrans
   sont retirés de `SGMV.LISTE`. Vérifié hors de l'aperçu (trois listes, recherche, clic droit, fenêtre du coût de revient, fiche, profils collaborateur et chef de projet
   simulés avec leurs droits, cinq visuels), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`. Copie d'avant : `subgestion3/_backup_20261115_1745_avant_membres/`.
-  **Reste du lot 3** : Temps de l'équipe (`mg-heures`), Finances (`mg-*`, `fact-controle`), Planification RH, Suivi RH, Bibliothèque (`tpl-*`), `config` — bandeau et
-  présentation épurée posés, contenu pas encore refait ; page « Paramètres » de l'estimation en onglet. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
+  **Lot 3, septième étape — écrans « à catégories » en onglets, listes de choix avec recherche, chiffres de la sélection (même jour, `sg3_ecrans.js`, `CATS`, `HAB`,
+  `CHIFFRES` ; styles `.sgmv-ong`, `.sgmv-x`, `.sgmv-q`, `.sgmv-ch` de `sg3.css`)** : les écrans de l'ancien logiciel qui avaient une liste « Catégorie » (ou « Domaine »)
+  à gauche — Suivi RH, Controlling, Contrats des projets, Facturation des projets, Suivi des factures, Indicateurs, Planification RH, Administration (`config`) — reçoivent
+  des ONGLETS sous le bandeau, comme le devis, le contrôle des coûts et la soumission (jamais de menu d'étapes à gauche). La liste du moteur reste dessinée, masquée
+  (`.sgmv-x`) : un onglet clique sa ligne (`onglets`), donc même mémoire du dernier choix (`ds_mg_<id>`), mêmes catégories permises, mêmes fonctions ; onglets sur deux
+  lignes quand ils sont nombreux (Suivi RH : 10, Administration : 12). Écrans à liste de CHOIX : Temps de l'équipe (projets), Clients (maîtres de l'ouvrage), Types de
+  projets (genres) gardent la liste à gauche, avec une recherche (`recherche`, lignes masquées à l'écran, sélection inchangée, gardée pendant la séance) ; Temps de l'équipe :
+  choix du tableau « Activités · Phases · Collaborateurs » en texte à la place de la liste déroulante (`enTexte`), liste « Ouvrage » masquée quand le projet n'en a pas.
+  **Chiffres du bandeau** (cinq colonnes, calculés avec les fonctions des tableaux du moteur, donc mêmes totaux ; gardés en mémoire jusqu'au prochain changement de la base :
+  `memo`, `ver`) : Temps de l'équipe — projets en cours, heures prévues, heures saisies, solde (vert / rouge comme la colonne), facturable du projet choisi (`mghModels`) ;
+  Suivi RH — membres actuels, heures saisies, durée prévue, solde, vacances saisies de l'année affichée (`mgcModel`) ; Clients — maîtres de l'ouvrage, projets, heures
+  prévues, facturable, coût de revient du maître de l'ouvrage choisi (`mgmModel`) ; Types de projets — groupes, genres, projets classés, projets du genre ; Suivi des
+  factures — planifiées, envoyées, rappels (montants à encaisser), payées, toutes (`fcRows`). Les chiffres suivent la sélection : tout est refait après chaque dessin du
+  moteur (observateur de `#main`, sans effet hors de ces écrans ; `SGMV.habiller`). Écran bas (moins de 860 px) ou zone étroite : bandeau réduit à une bande et chiffres
+  sur une seule ligne compacte, comme le devis. Rien n'est écrit dans la base. Vérifié hors de l'aperçu (base de test, 99TST) : chiffres égaux aux totaux des tableaux,
+  tous les onglets des huit écrans, mémoire du dernier onglet, recherche, six visuels, zone étroite, balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`.
+  Copie d'avant : `subgestion3/_backup_20261115_1729_avant_onglets_categories/`.
+  **Reste du lot 3** : contenu des tableaux de ces écrans (colonnes et couleurs des graphiques de l'ancien logiciel, panneau « Document » du Suivi des factures),
+  Bibliothèque (`tpl-*` : bandeau et présentation épurée posés, colonnes Groupe · Type · Modèle et aperçu pas encore refaits), page « Paramètres » de l'estimation en onglet. ⚠ Simuler un profil dans un essai : remplacer `SG_ACC` entier
   (`{...SG_ACC, profil, droits: sgDroitsRole(profil)}`), changer `profil` seul laisse les droits de l'administrateur.
   **Lot 1, analyse des heures — cinq propositions (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie

@@ -15,7 +15,37 @@ const fig=(v,t)=>'<div class="sg-fig"><div class="n">'+nxE(String(v))+'</div><di
 const isoJ=v=>{ if(v==null||v==='') return ''; if(typeof v==='number') return new Date(v).toISOString().slice(0,10); return String(v).slice(0,10); };
 /* chiffres simples, lus dans la base à chaque dessin */
 const modeles=()=>{ let n=0; try{ n=Object.values((DS.T&&DS.T.modeledocument)||{}).filter(v=>v&&(v.langue==='fr'||!v.langue)).length; }catch(_){ } return n?fig(n,'documents types'):''; };
-const CHIFFRES={'tpl-documents':modeles};   /* les trois listes des tâches (sg3_suivi.js) et les trois listes des membres (plus bas) ont leur propre page depuis le 15.11.2026 */
+/* chiffres de la sélection en cours (affaire, année, maître de l'ouvrage) : mêmes fonctions que les tableaux du moteur, donc mêmes totaux ; gardés en mémoire jusqu'au
+   prochain changement de la base (ver) */
+let ver=0; try{ DS.on(()=>{ ver++; }); }catch(_){ }
+const MEM=new Map(), memo=(k,fn)=>{ const c=MEM.get(k); if(c&&c[0]===ver) return c[1]; const r=fn(); if(MEM.size>60) MEM.clear(); MEM.set(k,[ver,r]); return r; };
+const kp=(l,v,s,c,ti)=>'<div class="nx-kpi"'+(ti?' title="'+nxE(ti)+'"':'')+'><div class="l">'+nxE(l)+'</div><div class="v'+(c?' '+c:'')+'">'+v+'</div>'+(s?'<div class="s">'+nxE(s)+'</div>':'')+'</div>';
+const kps=L=>{ const x=L.filter(Boolean); return x.length?'<div class="nx-kpis sg-tkp">'+x.join('')+'</div>':''; };
+const hU=v=>v==null||v===''?'—':nxH(v)+'<small>h</small>', cU=v=>v==null||v===''?'—':nxCHF(v)+'<small>CHF</small>', sg=v=>v==null?'':v<-0.004?'neg':v>0.004?'posi':'';
+const totalDe=M=>{ const R=(M&&M.rows)||[]; for(let i=R.length-1;i>=0;i--) if(R[i]&&R[i].tot) return R[i].c; return null; };
+const chHeures=()=>{ const st=MGH.st, p=MGH.pg.sel!=null?DS.get('project',MGH.pg.sel):null, sub=+MGH.sg.sel||null, F=MGH.rf;
+  const n=memo('mgh-n'+st,()=>DS.all('project').filter(x=>x.PROJECTSTATECODE===st).length);
+  let c=null; if(p){ try{ c=totalDe(memo(['mgh',p.ID,sub,F.on,F.y1,F.m1,F.y2,F.m2,MGH.all].join('|'),()=>mghModels(p,sub))[MGH.type]); }catch(e){ console.error(e); } }
+  const qui=p?String(p.NUMBER||p.TITLE||''):'choisir un projet', st_=MGH.type==='st';
+  return kps([kp({2:'Projets en cours',4:'Projets terminés',5:'Projets archivés'}[st]||'Projets',String(n)),
+    kp('Heures prévues',hU(c&&!st_?c[1]:null),qui,'',st_?'Le tableau par collaborateur n’a pas d’heures prévues : choisir Activités ou Phases.':MGH.type==='ph'?'Heures au contrat des phases du projet':'Heures prévues des groupes d’activités du projet'),
+    kp('Heures saisies',hU(c&&c[2]),F.on?mgRFper(F):''),
+    kp('Solde',hU(c&&!st_?c[3]:null),c&&!st_?(c[3]<0?'heures au-delà du prévu':'heures restantes'):'',c&&!st_?sg(c[3]):''),
+    kp('Facturable',cU(c&&c[4]),c?'selon les tarifs des activités':'')]); };
+const chSuiviRH=()=>{ const y=MGC.y, T=memo('mgc'+y,()=>{ const an=k=>{ const c=totalDe(mgcModel(k)); return c?+c[c.length-1]||0:null; }; let r={}; try{ r={hs:an('hs'),dp:an('dp'),sol:an('sol'),vac:an('vac')}; }catch(e){ console.error(e); } return r; });
+  const nA=memo('mgc-n',()=>DS.all('staff').filter(s=>+s.ISACTIVE).length);
+  return kps([kp('Membres actuels',String(nA)),kp('Heures saisies '+y,hU(T.hs),'vacances comprises'),kp('Durée prévue '+y,hU(T.dp)),kp('Solde '+y,hU(T.sol),T.sol==null?'':'saisies moins prévues'),kp('Vacances saisies '+y,hU(T.vac))]); };
+const chClients=()=>{ const c=MGM.lg.sel!=null?DS.get('contact',MGM.lg.sel):null, n=memo('mgm-n',()=>new Set(DS.all('projectmember').filter(x=>x.TEAMROLECODE===8&&x.CONTACT_ID!=null&&DS.get('contact',x.CONTACT_ID)).map(x=>x.CONTACT_ID)).size);
+  let M=null; if(c){ try{ M=memo('mgm|'+c.ID+'|'+MGM.st,()=>mgmModel(c)); }catch(e){ console.error(e); } }
+  const T=M?M.rows.filter(r=>r.tot):[], un=T.length===1?T[0].c:null, qui=c?contactName(c):'choisir un maître de l’ouvrage', etat=MGM.st==null?'toutes':String(PSTATE[MGM.st]||'').toLowerCase();
+  return kps([kp('Maîtres de l’ouvrage',String(n)),kp('Projets',M?String(M.nb||0):'—',c?qui+' · '+etat:qui),kp('Heures prévues',hU(un&&un[2])),kp('Facturable',cU(un&&un[3]),T.length>1?'plusieurs monnaies : voir le tableau':''),
+    (typeof sgTauxVisibles!=='function'||sgTauxVisibles())?kp('Coût de revient',cU(un&&un[5])):'']); };
+const chGenres=()=>{ const k=MGK.kg.sel!=null?DS.get('projectkind',MGK.kg.sel):null, N=memo('mgk-n',()=>({g:DS.all('projectgroup').length,k:DS.all('projectkind').length,p:new Set(DS.all('project_projectkind').map(l=>l.PROJECT_ID)).size}));
+  let n=null; if(k){ try{ n=mgkModel().list.length; }catch(_){ } }
+  return kps([kp('Groupes',String(N.g)),kp('Genres',String(N.k)),kp('Projets classés',String(N.p),'au moins un genre'),kp('Projets du genre',n==null?'—':String(n),k?nm(k):'choisir un genre')]); };
+const chFactures=()=>{ const T=memo('fc',()=>{ const r={n:[0,0,0,0],m:[0,0,0,0],tot:0}; FC_CATS.forEach(([c],i)=>{ if(c==='all'){ r.tot=fcRows(c).length; return; } const L=fcRows(c); r.n[i]=L.length; r.m[i]=L.reduce((s,f)=>s+(+f.AMOUNT||0)-(+f.AMOUNTPAID||0),0); }); return r; });
+  return kps([kp('Planifiées',String(T.n[0])),kp('Envoyées',String(T.n[1]),T.n[1]?nxCHF(T.m[1])+' à encaisser':''),kp('Rappels envoyés',String(T.n[2]),T.n[2]?nxCHF(T.m[2])+' à encaisser':'',T.n[2]?'neg':''),kp('Payées',String(T.n[3])),kp('Toutes',String(T.tot),T.tot!==T.n[0]+T.n[1]+T.n[2]+T.n[3]?'projets archivés ou en configuration compris':'')]); };
+const CHIFFRES={'tpl-documents':modeles,'mg-heures':chHeures,'mg-collab':chSuiviRH,'mg-mo':chClients,'mg-genres':chGenres,'fact-controle':chFactures};   /* les trois listes des tâches (sg3_suivi.js) et les trois listes des membres (plus bas) ont leur propre page depuis le 15.11.2026 */
 const hote=()=>{ let h=document.getElementById('sg-mv'); if(!h){ const sub=document.getElementById('nx-sub'); if(!sub||!sub.parentNode) return null; h=document.createElement('div'); h.id='sg-mv'; sub.parentNode.insertBefore(h,sub); } return h; };
 let cle='';
 const maj=()=>{ const h=hote(); if(!h) return; const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=LISTE.has(v)?NX_VIEW[v]:null, m=document.getElementById('main');
@@ -24,9 +54,47 @@ const maj=()=>{ const h=hote(); if(!h) return; const v=typeof VIEW!=='undefined'
   document.documentElement.setAttribute('data-vep','1');   /* présentation épurée de l'écran (styles html[data-vep] de sg3.css) */
   let f=''; try{ f=CHIFFRES[v]?CHIFFRES[v]():''; }catch(e){ console.error(e); }
   const k=v+'|'+f; if(k===cle&&h.firstChild) return; cle=k;
-  h.innerHTML='<div class="sgmv">'+sgTete([x.d&&x.d.t,x.it.grp].filter(Boolean).join(' · '),nxE(x.it.t||''),nxE(x.it.d||''),f?'<div class="sg-figs">'+f+'</div>':'')+'</div>'; };
+  h.innerHTML='<div class="sgmv">'+sgTete([x.d&&x.d.t,x.it.grp].filter(Boolean).join(' · '),nxE(x.it.t||''),nxE(x.it.d||''),!f?'':/^<div class="nx-kpis/.test(f)?f:'<div class="sg-figs">'+f+'</div>')+'</div>'; };
 { const g0=go; go=function(){ const r=g0.apply(this,arguments); try{ maj(); }catch(e){ console.error(e); } setTimeout(()=>{ try{ maj(); }catch(_){ } },0); return r; }; }
 try{ DS.on(()=>{ setTimeout(()=>{ try{ maj(); }catch(_){ } },0); }); }catch(_){ }
+/* ── Lot 3, septième étape (15.11.2026) : les écrans « à catégories » de l'ancien logiciel (liste « Catégorie » ou « Domaine » à gauche) reçoivent des ONGLETS sous le
+   bandeau, comme le devis, le contrôle des coûts et la soumission (jamais de menu d'étapes à gauche) : Suivi RH, Controlling, Contrats des projets, Facturation des projets,
+   Suivi des factures, Indicateurs, Planification RH, Administration. La liste du moteur reste dessinée, masquée (.sgmv-x) : un onglet clique sa ligne, donc même
+   mémoire du dernier choix, mêmes droits (catégories filtrées par le moteur), mêmes fonctions. Écrans à liste de CHOIX (Temps de l'équipe : affaires ; Clients : maîtres
+   de l'ouvrage ; Types de projets : genres) : la liste reste à gauche, comme les colonnes de l'app, avec une recherche (lignes masquées à l'écran, sélection inchangée) ;
+   Temps de l'équipe : choix du tableau (Activités · Phases · Collaborateurs) en texte à la place de la liste déroulante, liste « Ouvrage » masquée quand l'affaire n'en a
+   pas. Rien n'est écrit dans la base ; tout est refait après chaque dessin du moteur (observateur de #main, sans effet hors de ces écrans). ── */
+const CATS=new Set(['mg-collab','mg-controlling','mg-contrats','mg-factures','fact-controle','mg-reporting','mg-planning','config']);
+const sansAcc=t=>String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const QC={};   /* recherche de la colonne de choix, par écran, gardée pendant la séance */
+const filtrerCol=(pane,q)=>{ const x=sansAcc(q).trim(); pane.querySelectorAll(':scope>table.g>tbody>tr').forEach(tr=>{ tr.style.display=!x||sansAcc(tr.textContent).includes(x)?'':'none'; }); };
+const recherche=(v,L,pane,lib)=>{ if(!L||!pane) return; let bar=L.querySelector(':scope>.ph2'); if(!bar){ bar=document.createElement('div'); bar.className='ph2 sgmv-ph'; L.insertBefore(bar,L.firstChild); }
+  let i=bar.querySelector(':scope>.sgmv-q'); if(!i){ i=document.createElement('input'); i.className='psearch sgmv-q'; i.type='search'; i.placeholder='Rechercher'; i.setAttribute('aria-label',lib||'Rechercher dans la liste'); i.value=QC[v]||'';
+    i.addEventListener('input',()=>{ QC[v]=i.value; filtrerCol(pane,i.value); }); bar.append(i); }
+  if(QC[v]) filtrerCol(pane,QC[v]); };
+const enTexte=(sel,court)=>{ if(!sel||sel._sgmv) return; sel._sgmv=1; const g=document.createElement('span'); g.className='sgmv-ch'; g.setAttribute('role','group'); g.setAttribute('aria-label','Tableau affiché');
+  [...sel.options].forEach(o=>{ const b=document.createElement('button'); b.type='button'; b.className='ib'+(o.selected?' on':''); b.textContent=court?court(o.textContent):o.textContent; b.title=o.textContent; b.setAttribute('aria-pressed',o.selected?'true':'false');
+    b.addEventListener('click',()=>{ if(sel.value===o.value) return; sel.value=o.value; sel.dispatchEvent(new Event('change')); }); g.append(b); });
+  sel.classList.add('sgmv-x'); sel.after(g); };
+const HAB={
+  'mg-heures':cols=>{ const L=cols.firstElementChild, P=L?L.querySelectorAll(':scope>.pane'):[]; recherche('mg-heures',L,P[0],'Rechercher une affaire');
+    if(P[1]) P[1].classList.toggle('sgmv-x',!!P[1].querySelector(':scope>.empty'));   /* liste « Ouvrage » : seulement si l'affaire a des ouvrages */
+    const sel=[...cols.querySelectorAll('.ph2 select.inp')].find(x=>[...x.options].some(o=>o.value==='ac')&&[...x.options].some(o=>o.value==='st')); enTexte(sel,t=>t.replace(/^Affaires\s*-\s*/,'')); },
+  'mg-mo':cols=>{ const L=cols.firstElementChild; recherche('mg-mo',L,L&&L.querySelector(':scope>.pane'),'Rechercher un maître de l’ouvrage'); },
+  'mg-genres':cols=>{ const L=cols.firstElementChild; recherche('mg-genres',L,L&&L.querySelector(':scope>.pane'),'Rechercher un genre'); } };
+const onglets=(m,cols)=>{ const pr=cols.previousElementSibling; if(pr&&pr.classList.contains('sgmv-ong')) return;
+  const L=cols.firstElementChild; if(!L||!L.classList.contains('col')||L===cols.lastElementChild) return;
+  const lignes=()=>[...L.querySelectorAll(':scope>.pane>table.g>tbody>tr')], T=lignes(); if(T.length<2) return;
+  const bar=document.createElement('div'), g=document.createElement('div'); bar.className='sgmv-ong'; g.className='sg-onglets'; g.setAttribute('role','tablist'); bar.append(g);
+  T.forEach((tr,i)=>{ const b=document.createElement('button'), t=tr.textContent.replace(/\s+/g,' ').trim(), on=tr.classList.contains('on'); b.type='button'; b.textContent=t; b.setAttribute('role','tab'); b.setAttribute('aria-selected',on?'true':'false'); if(on) b.className='on';
+    b.addEventListener('click',()=>{ const x=lignes()[i]; if(!x) return; [...g.children].forEach((y,j)=>{ y.classList.toggle('on',j===i); y.setAttribute('aria-selected',j===i?'true':'false'); }); x.click(); }); g.append(b); });
+  L.classList.add('sgmv-x'); m.insertBefore(bar,cols); };
+let enCours=false;
+const habiller=()=>{ if(enCours) return; const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:''; if(!LISTE.has(v)||!document.documentElement.hasAttribute('data-vep')) return;
+  const m=document.getElementById('main'), cols=m&&m.querySelector(':scope>.cols'); if(!cols) return;
+  enCours=true; try{ if(CATS.has(v)) onglets(m,cols); if(HAB[v]) HAB[v](cols); if(CHIFFRES[v]) maj(); }catch(e){ console.error(e); } enCours=false; };
+{ const g1=go; go=function(){ const r=g1.apply(this,arguments); try{ habiller(); }catch(e){ console.error(e); } return r; }; }
+try{ const m0=document.getElementById('main'); if(m0&&typeof MutationObserver==='function') new MutationObserver(()=>{ const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:''; if(LISTE.has(v)) habiller(); }).observe(m0,{childList:true,subtree:true}); }catch(_){ }
 /* ── Page du projet : domaines de l'ancien logiciel encore sans bandeau (Intervenants, Soumissionnaires, Liste d'adresses, Calcul des coûts) — même étape du lot 3 :
    bandeau du projet (numéro, domaine, désignation, maître de l'ouvrage) et chiffres simples au-dessus du domaine, comme les autres modules de la page du projet ; le
    domaine du moteur est dessiné dessous, dans son propre conteneur (.sgmv-corps), avec la présentation épurée. Seulement dans la page du projet (nx-pdom) : le chapitre
@@ -90,5 +158,5 @@ if(window.SGSV&&SGSV.outils&&typeof VIEWS!=='undefined'&&VIEWS['collab-actuels']
         ...(peutEq('staffDelete')?['-',{t:'Supprimer le membre …',danger:true,fn:()=>delStaff(s)}]:[])]); return true; } };
   Object.keys(FIL).forEach(v=>{ VIEWS[v]={render(m){ monter(m,{ID:'equipe',GLOBAL:1,VUE:v,NUMBER:'',TITLE:''},'equipe',BES,EQUIPE); },refresh(){ }}; });
   window.SGMV_EQ=EQUIPE; }
-window.SGMV={LISTE,maj,DOMS};
+window.SGMV={LISTE,maj,DOMS,CATS,habiller,CHIFFRES};
 })();

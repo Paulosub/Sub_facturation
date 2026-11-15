@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 15.11.2026 16:03 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 15.11.2026 16:07 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -1664,21 +1664,25 @@ html:has(#main .sgd) #nx-sub{display:none!important}
 html[data-vep] #nx-sub{background:#fff;padding:0 24px}
 html[data-vep] #tools .grp{gap:0;padding:0 8px;border-left:1px solid var(--s-filet)}
 html[data-vep] #tools .grp:first-child{border-left:0;padding-left:0}
-html[data-vep] #tools .ib,html[data-vep] #main .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
-html[data-vep] #tools .ib:hover,html[data-vep] #main .ph2 .ib:hover{background:var(--s-jaune3)!important}
-html[data-vep] #tools .ib.on,html[data-vep] #main .ph2 .ib.on{color:var(--s-nuit)!important;border-bottom-color:var(--s-nuit)!important}
-html[data-vep] #tools .ib:disabled,html[data-vep] #main .ph2 .ib:disabled{color:#b9b9b6}
-html[data-vep] #main .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:4px 0 6px;border:0!important;border-bottom:1px solid var(--s-filet)!important;background:transparent}
-html[data-vep] #main .ph2 .ib:first-child{padding-left:0}
-html[data-vep] #main .ph2 .cnt,html[data-vep] #main .ph2>span{font-size:12px;color:var(--s-gris)}
+html[data-vep] #tools .ib,:is(html[data-vep] #main,.sgmv-corps) .ph2 .ib{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;height:34px;padding:0 9px;font-size:12.5px;font-weight:700;color:var(--s-noir);border-bottom:2px solid transparent!important}
+html[data-vep] #tools .ib:hover,:is(html[data-vep] #main,.sgmv-corps) .ph2 .ib:hover{background:var(--s-jaune3)!important}
+html[data-vep] #tools .ib.on,:is(html[data-vep] #main,.sgmv-corps) .ph2 .ib.on{color:var(--s-nuit)!important;border-bottom-color:var(--s-nuit)!important}
+html[data-vep] #tools .ib:disabled,:is(html[data-vep] #main,.sgmv-corps) .ph2 .ib:disabled{color:#b9b9b6}
+:is(html[data-vep] #main,.sgmv-corps) .ph2{flex-wrap:wrap;height:auto!important;min-height:40px;row-gap:2px;column-gap:2px;padding:4px 0 6px;border:0!important;border-bottom:1px solid var(--s-filet)!important;background:transparent}
+:is(html[data-vep] #main,.sgmv-corps) .ph2 .ib:first-child{padding-left:0}
+:is(html[data-vep] #main,.sgmv-corps) .ph2 .cnt,:is(html[data-vep] #main,.sgmv-corps) .ph2>span{font-size:12px;color:var(--s-gris)}
 html[data-vep] #main>.cols,html[data-vep] #main>.col{padding:8px 24px 14px!important;box-sizing:border-box}
-html[data-vep] #main .cols{gap:24px}
-html[data-vep] #main .pane{border:0!important;background:#fff!important;box-shadow:none!important}
-html[data-vep] #main .col{border:0!important;border-top:2px solid var(--s-noir)!important;box-shadow:none!important;background:#fff!important}   /* colonnes sans cadre : seul le filet noir du haut reste */
-html[data-vep] #main table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important}
-html[data-vep] #main table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;height:34px;padding:0 8px!important;font-size:12.5px;font-variant-numeric:tabular-nums}
-html[data-vep] #main table.g tbody tr:hover td{background:var(--s-jaune3)!important}
-html[data-vep] #main table.g tbody tr.on td{background:var(--s-jaune2)!important;color:var(--s-noir)!important}
+:is(html[data-vep] #main,.sgmv-corps) .cols{gap:24px}
+:is(html[data-vep] #main,.sgmv-corps) .pane{border:0!important;background:#fff!important;box-shadow:none!important}
+:is(html[data-vep] #main,.sgmv-corps) .col{border:0!important;border-top:2px solid var(--s-noir)!important;box-shadow:none!important;background:#fff!important}   /* colonnes sans cadre : seul le filet noir du haut reste */
+:is(html[data-vep] #main,.sgmv-corps) table.g thead th{background:#fff!important;border:0!important;border-bottom:2px solid var(--s-noir)!important;font-size:11px;font-weight:700;color:var(--s-gris)!important;padding:8px!important;height:auto!important}
+:is(html[data-vep] #main,.sgmv-corps) table.g tbody td{border:0!important;border-bottom:1px solid var(--s-filet)!important;height:34px;padding:0 8px!important;font-size:12.5px;font-variant-numeric:tabular-nums}
+:is(html[data-vep] #main,.sgmv-corps) table.g tbody tr:hover td{background:var(--s-jaune3)!important}
+:is(html[data-vep] #main,.sgmv-corps) table.g tbody tr.on td{background:var(--s-jaune2)!important;color:var(--s-noir)!important}
+/* domaines du moteur dans la page du projet : bandeau du projet, puis le domaine dans son conteneur */
+.sgmv-dom{flex:0 0 auto;container-type:inline-size}
+.sgmv-dom .sg-tete{margin:0 0 8px}
+.sgmv-corps{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
 </style><style id="sg3-visuel">
 /* ══ SUBGestion 3 — jetons des visuels de l'app À L'ESSAI (21.10.2026) ═══════════════════════════════════════════════════════════════
    Injectés dans la coquille ET dans le cadre Facturation. Une seule liste de jetons --p-* par visuel, lue par les bases visuels.css et
@@ -45753,7 +45757,23 @@ const maj=()=>{ const h=hote(); if(!h) return; const v=typeof VIEW!=='undefined'
   h.innerHTML='<div class="sgmv">'+sgTete([x.d&&x.d.t,x.it.grp].filter(Boolean).join(' · '),nxE(x.it.t||''),nxE(x.it.d||''),f?'<div class="sg-figs">'+f+'</div>':'')+'</div>'; };
 { const g0=go; go=function(){ const r=g0.apply(this,arguments); try{ maj(); }catch(e){ console.error(e); } setTimeout(()=>{ try{ maj(); }catch(_){ } },0); return r; }; }
 try{ DS.on(()=>{ setTimeout(()=>{ try{ maj(); }catch(_){ } },0); }); }catch(_){ }
-window.SGMV={LISTE,maj};
+/* ── Page du projet : domaines de l'ancien logiciel encore sans bandeau (Intervenants, Soumissionnaires, Liste d'adresses, Calcul des coûts) — même étape du lot 3 :
+   bandeau du projet (numéro, domaine, désignation, maître de l'ouvrage) et chiffres simples au-dessus du domaine, comme les autres modules de la page du projet ; le
+   domaine du moteur est dessiné dessous, dans son propre conteneur (.sgmv-corps), avec la présentation épurée. Seulement dans la page du projet (nx-pdom) : le chapitre
+   Affaires et les Archives gardent l'écran d'origine. ── */
+const DOMS={'Intervenants':p=>{ let M=[]; try{ M=DS.by('projectmember','PROJECT_ID',p.ID); }catch(_){ } return fig(M.length,'intervenants')+fig(M.filter(x=>+x.TEAMROLECODE===19).length,'entreprises'); },
+  'Soumissionnaires':p=>{ let n=0; try{ n=DS.by('projecttenderer','PROJECT_ID',p.ID).length; }catch(_){ } return fig(n,'soumissionnaires'); },
+  'Liste d’adresses':null,'Calcul des coûts':null};
+if(typeof domainView==='function'&&window.SGSV&&SGSV.outils){ const dv0=domainView;
+  domainView=function(C,p,dom){ let ok=false; try{ ok=!!(C&&p&&Object.prototype.hasOwnProperty.call(DOMS,dom)&&typeof VIEW!=='undefined'&&VIEW&&VIEW.id==='nx-pdom'); }catch(_){ }
+    if(!ok) return dv0.apply(this,arguments);
+    const {tete,moT,css}=SGSV.outils; try{ css&&css(); }catch(_){ }
+    let f=''; try{ f=DOMS[dom]?DOMS[dom](p):''; }catch(e){ console.error(e); }
+    C.innerHTML=''; const hd=document.createElement('div'); hd.className='sgmv-dom';
+    hd.innerHTML=sgTete(dom,nxE(p.TITLE||p.NUMBER||''),moT(p)?'Maître de l’ouvrage : '+nxE(moT(p)):'',f?'<div class="sg-figs">'+f+'</div>':'',p.NUMBER||'');
+    const corps=document.createElement('div'); corps.className='sgmv-corps'; C.append(hd,corps);
+    return dv0.call(this,corps,p,dom); }; }
+window.SGMV={LISTE,maj,DOMS};
 })();
 </script>
 </body>

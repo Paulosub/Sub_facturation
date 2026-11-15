@@ -2768,6 +2768,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   bleu nuit), contenu aligné sur le bandeau (24 px), colonnes `.col` sans cadre sous un filet noir de 2 px, tableaux `table.g` à titres gris sur filet noir et lignes
   fines, ligne choisie en jaune pâle. Les règles propres aux pages Heures (colonne des collaborateurs, tuiles du rapport) ne sont pas reprises. Vérifié : six écrans dans
   la charte, trois visuels à l'essai, balayage des 121 écrans. Copie d'avant : `subgestion3/_backup_20261115_*_avant_ecrans_epures/`.
+  **Lot 3, troisième étape — domaines de l'ancien logiciel dans la page du projet (même jour)** : Intervenants, Soumissionnaires, Liste d'adresses et Calcul des coûts
+  (`SGMV.DOMS`) reçoivent le bandeau du projet (numéro, domaine, désignation, maître de l'ouvrage) et des chiffres simples (intervenants et entreprises ;
+  soumissionnaires), comme les autres modules de la page du projet : `domainView` enveloppé dans `sg3_ecrans.js`, seulement dans `nx-pdom` — le domaine du moteur est
+  dessiné dessous dans `.sgmv-corps`, à la présentation épurée (`:is(html[data-vep] #main,.sgmv-corps)` dans `sg3.css`). Le chapitre Affaires et les Archives gardent
+  l'écran d'origine. Vérifié sur 99TST (quatre domaines, les autres modules inchangés).
   **Lot 1, analyse des heures — cinq propositions en attente du choix de Paulo (15.11.2026 : « faire 5 propositions d'adaptation de l'analyse des heures, ainsi que les 4
   modules dans la fenêtre … je souhaite pouvoir dès sélection d'une version l'intégrer dans Heures », « sous forme de modules »)** : maquette = script injecté dans une copie
   de l'app (`subgestion3/_backup_20261115_maquette_analyse_heures/` : `proposition_analyse_heures.js` et ses sources ; page `proposition_analyse_heures.html` de l'aperçu),

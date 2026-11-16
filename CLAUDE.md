@@ -3169,7 +3169,22 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   « Présentation ▾ » agit sur le tableau de l'onglet affiché ; Versement / Modifier restent à droite et passent l'un sous l'autre si la place manque ; Imprimer =
   colonnes de la présentation de chaque tableau ; CSV inchangé, c'est un export complet). Lignes à champs de saisie centrées en hauteur
   (`.nx-tbl.sgtab-t tr:has(input.inp) td`, aussi Heures dues et vacances).
-  **Reste à faire** : tableaux croisés (Occupation et effectif, Situation des heures), sans présentation pour l'instant ; sources : données reprises (`extraction_deltaproject/schema.txt`),
+  **Lot 8 (16.11.2026, « Oui, continuer avec les tableaux croisés »)** : Ressources humaines ▸ Occupation et effectif — trois catalogues (`occT` taux d'occupation :
+  12 colonnes de mois au choix, Moyenne, + initiales, fonction, contrat, durée du contrat, mois engagés, ETP de l'année, taux aujourd'hui ; `occC` charge de travail du
+  mois : + initiales, heures facturables, part facturable, vacances, projets, non attribuées ; `occE` échéances RH : + délai, urgente, écran où la traiter ; « Ouvrir »
+  reste à droite) ; « Présentation ▾ » agit sur le tableau de l'onglet affiché ; deux lignes de total gardées (« Effectif », « Équivalents plein temps » : option
+  `totaux:[{lib,k}]` de `sgtabTableauX`, valeurs `c.tots[k](lignes,ctx)`, libellé dans la première colonne sans valeur) ; changement de taux (`sgocc-chg`, jaune pâle)
+  et mois hors engagement (`sgocc-nul`) en classes. Administration ▸ Situation des heures — un catalogue par regroupement (`sitP`, `sitC`, `sitF`, `sitM`, `sitA` :
+  + non facturables, part facturable, vacances, projets, jours, durée moyenne, première et dernière saisie, coût de revient et coût / heure si `sgTauxVisibles()` ;
+  projet : numéro, désignation, maître d'ouvrage, statut, catégorie, phase actuelle, heures prévues, heures depuis le début, consommé ; collaborateur : initiales,
+  fonction, actif, engagement, départ ; phase : projet, phase seule, phase partielle, terminée, heures prévues — TIMEBUDGET de la phase partielle, sinon de la phase
+  sans phases partielles —, heures depuis le début, solde ; activité : projet, groupe, heures prévues, depuis le début, solde) et `sitX` pour Collaborateur × phase,
+  dont les colonnes « Phases partielles » et « Phases » se déploient en une colonne par phase présente dans les heures (`sgSitCroise`) — colonnes de phases dans
+  l'ordre SIA 102 (avant : du plus d'heures au moins d'heures). Code : `sgSitTableau`, `sgSitDef`, `sgSitGroupes`, `sgSitCtx` (sg3_plus.js, avant
+  `VIEWS['nx-situation']`) ; `sgSituationHtml` reste pour le tableau de bord du projet et le rapport d'un collaborateur. Standard = tableaux d'avant (comparés cellule
+  par cellule au banc d'essai : identiques, sauf l'ordre des colonnes de phases). Impression, copie et CSV lisent les tableaux affichés (`sgDocTableau`) ; page de garde
+  de la Situation des heures : présentation. Copie d'avant : `subgestion3/_backup_20261116_0601_avant_tableaux_croises/`.
+  **Tous les tableaux de l'app hors Archives ont désormais « Présentation ▾ »** ; sources des colonnes : données reprises (`extraction_deltaproject/schema.txt`),
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.

@@ -173,10 +173,16 @@ function sgtabTableau(cle,rows,ctx,tr,cls,tot){ const cols=sgtabCols(cle), T=tot
     +(T?'<tr class="tot">'+T.map((v,i)=>'<td'+sgtabCl(cols[i])+'>'+nxE(v)+'</td>').join('')+'</tr>':'')+'</tbody></table>'; }
 /* tableau avec des colonnes fixes autour des colonnes choisies (case à cocher avant, boutons après…) : o = {tr(r), cls, attr, avant:{th, td(r), tot}, apres:{th, td(r), tot},
    tot:{lib} (ligne de total sous les colonnes qui ont une somme), apresTot (html ajouté après la ligne de total)} */
+/* lignes de total supplémentaires (o.totaux = [{lib, k, lignes}] : « Effectif », « Équivalents plein temps »…) : chaque colonne donne sa valeur par c.tots[k](lignes, ctx) ;
+   libellé dans la première colonne sans valeur ; ligne omise si aucune colonne affichée n'a de valeur pour elle (16.11.2026, tableaux croisés) */
+const sgtabTotalK=(cols,rows,ctx,lib,k)=>{ if(!cols.some(c=>c.tots&&c.tots[k])) return null; let pose=false;
+  return cols.map(c=>{ const f=c.tots&&c.tots[k]; if(f){ let v=''; try{ v=f(rows,ctx); }catch(_){ v=''; } return v==null?'':String(v); } if(!pose){ pose=true; return lib||'Total'; } return ''; }); };
 function sgtabTableauX(cle,rows,ctx,o){ o=o||{}; const cols=sgtabCols(cle), A=o.avant||null, B=o.apres||null, T=o.tot&&rows.length?sgtabTotal(cols,o.totLignes||rows,ctx,o.tot.lib):null;   /* o.totLignes : total sur toutes les lignes quand le tableau n'en montre qu'une partie */
+  const TT=rows.length?(o.totaux||[]).map(t=>sgtabTotalK(cols,t.lignes||rows,ctx,t.lib,t.k)).filter(Boolean):[];
+  const ligT=V=>'<tr class="tot">'+(A?(A.tot!=null?A.tot:'<td></td>'):'')+V.map((v,i)=>'<td'+sgtabCl(cols[i])+'>'+nxE(v)+'</td>').join('')+(B?(B.tot!=null?B.tot:'<td></td>'):'')+'</tr>';
   return '<table class="nx-tbl sgtab-t'+(o.cls?' '+o.cls:'')+'"'+(o.attr||'')+'><thead><tr>'+(A?A.th:'')+sgtabEntete(cols).replace(/^<tr>|<\/tr>$/g,'')+(B?B.th:'')+'</tr></thead><tbody>'
     +rows.map(r=>'<tr'+(o.tr?o.tr(r):'')+'>'+(A?A.td(r):'')+sgtabCellules(cols,r,ctx)+(B?B.td(r):'')+'</tr>').join('')
-    +(T?'<tr class="tot">'+(A?(A.tot!=null?A.tot:'<td></td>'):'')+T.map((v,i)=>'<td'+sgtabCl(cols[i])+'>'+nxE(v)+'</td>').join('')+(B?(B.tot!=null?B.tot:'<td></td>'):'')+'</tr>':'')+'</tbody></table>'; }
+    +(T?ligT(T):'')+TT.map(ligT).join('')+'</tbody></table>'; }
 function sgtabCopie(box){ const t=box&&box.querySelector('table.sgtab-t'); if(t) ctCopy(sgCtxTexteTableau(t),'Tableau copié (à coller dans un tableur).'); else toast('Rien à copier.',true); }
 /* colonnes communes des listes de documents (devis, contrôles des coûts, estimations) : projet, version, numéro, statut, note, modification */
 function sgtabColsDoc(o){ const E=nxE, prj=d=>DS.get('project',d.PROJECT_ID)||{};

@@ -265,3 +265,7 @@ Affaires ▸ Liste des affaires (`VIEWS['affd-gestion']`, catalogue `affaires`).
 Colonnes fixes autour des colonnes choisies (case à cocher, boutons, champs de saisie) : `sgtabTableauX(cle,lignes,ctx,{tr,cls,avant,apres:{th,td},tot:{lib},totLignes})`
 (exemples : Coût de revient, Apports de projets, Analyse des heures) ; colonne proposée selon le cas : `ok:()=>…` dans le catalogue ; ligne Total : `sum(lignes)` sur
 les colonnes et `tot:{lib:'Total'}` ; impression d'un tableau aux colonnes choisies : `sgtabCols(cle)` + `sgtabTexte(cols,ligne)` (+ `sgtabTotal`) dans `SGDH.ouvrir`.
+Plusieurs lignes de total (Occupation et effectif : « Effectif », « Équivalents plein temps ») : `totaux:[{lib,k}]` dans `sgtabTableauX` et `tots:{k:(lignes,ctx)=>…}`
+sur les colonnes. Tableau croisé (colonnes tirées des données, Situation des heures ▸ Collaborateur × phase) : une pseudo-colonne du catalogue (« Phases ») que le
+rendu déploie lui-même (`sgSitCroise`) ; les clés restent stables d'un projet à l'autre. Tableau imprimé par `sgDocTableau` (lecture du tableau affiché) : il suit
+la présentation sans autre code.

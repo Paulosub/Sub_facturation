@@ -1855,5 +1855,8 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .sgtab-note{display:inline-block;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
 .nx-tbl.sgtab-t td.sgtab-rouge{color:var(--s-rouge)}
 .nx-tbl.sgtab-t td.sgtab-orange{color:var(--s-orange)}
+.nx-tbl.sgtab-t td.sgtab-vert{color:var(--s-vert)}
+.nx-tbl.sgtab-t td.sgocc-nul{color:var(--s-gris3)}   /* Occupation et effectif : mois hors engagement (16.11.2026) */
+.nx-tbl.sgtab-t tbody tr td.sgocc-chg,.nx-tbl.sgtab-t tbody tr:hover td.sgocc-chg{background:var(--s-jaune2)}   /* Occupation et effectif : changement de taux */
 .sgof-tabl{display:inline-flex;align-items:center;gap:2px;margin-left:auto}   /* Présentation et Imprimer du titre « Factures » de l'affaire */
 .nx-tbl.sgtab-t tr.tot td{font-weight:700;background:var(--s-nuit3)}

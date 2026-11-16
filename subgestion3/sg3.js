@@ -87,7 +87,7 @@ const SG_DOM=[
     {v:'nx-ah',t:'Analyse des heures',ico:'analyse',d:'Heures et frais des affaires : chiffres de la période, affaires actives et accès aux quatre modules.'},
     {v:'nx-ah-ctlh',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
     {v:'nx-ah-anah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
-    {v:'nx-ah-ctlf',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, mois par mois.'},
+    {v:'nx-ah-ctlf',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, par mois ou par année.'},
     {v:'nx-ah-anaf',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},

@@ -8,7 +8,7 @@
      nx-ah-ctlh   Contrôle des heures d'affaires : colonne des affaires | semaine de l'affaire en grille collaborateurs × jours, inscriptions, approuver / refuser / réinitialiser
      nx-ah-anah   Critères d'analyse des heures : six listes de critères (ouvrage, groupe d'activités, activité, phase, phase partielle, collaborateur), période,
                   Facturable / Facturé, détail ou regroupement, fonctions, documents et rapports du moteur
-     nx-ah-ctlf   Contrôle des frais : notes de frais de l'affaire, mois par mois ;  nx-ah-anaf  Critères d'analyse des frais (mêmes outils, genres de frais)
+     nx-ah-ctlf   Contrôle des frais : notes de frais de l'affaire, par mois ou par année (choix Mois · Année, 16.11.2026) ;  nx-ah-anaf  Critères d'analyse des frais (mêmes outils, genres de frais)
    Paramètre des quatre modules = identifiant de l'affaire (go('nx-ah-ctlh', id) ; rouvert au démarrage). Réglages par poste : sg3_ah {mode, etat}.
    Écritures (un seul DS.commit par geste, redessin sur place) : état des inscriptions (TIMELOGSTATECODE) et des notes de frais (PROJECTCOSTSTATECODE) — 0 saisi,
    1 refusé, 3 approuvé — comme sgcFenetre et ctlCostCheck : ✓ et ! sur chaque ligne (second clic = réinitialiser), sélection par cases (Maj + clic = plage) puis
@@ -180,9 +180,9 @@ const cout=L=>{ let s=0; try{ L.forEach(r=>{ s+=hh(r)*taux(r.STAFF_ID,diso(tlDat
 
 /* ── état de la page ── */
 const LS0=(()=>{ try{ return nxLS.get('sg3_ah',{})||{}; }catch(_){ return {}; } })();
-const ST={pid:null,per:{mode:['mois','annee','12m','tout'].includes(LS0.mode)?LS0.mode:'annee',d:null},etat:LS0.etat==null?2:+LS0.etat,sem:null,fm:null,col:null,jour:null,q:'',sel:new Set(),dern:null,ycol:0,
+const ST={pid:null,per:{mode:['mois','annee','12m','tout'].includes(LS0.mode)?LS0.mode:'annee',d:null},etat:LS0.etat==null?2:+LS0.etat,fmo:LS0.fmo==='annee'?'annee':'mois',sem:null,fm:null,col:null,jour:null,q:'',sel:new Set(),dern:null,ycol:0,
   crit:{h:{},f:{}},fa:{h:null,f:null},fd:{h:null,f:null},grp:{h:'',f:''}};
-const garder=()=>{ try{ nxLS.set('sg3_ah',{mode:ST.per.mode,etat:ST.etat}); }catch(_){ } };
+const garder=()=>{ try{ nxLS.set('sg3_ah',{mode:ST.per.mode,etat:ST.etat,fmo:ST.fmo}); }catch(_){ } };
 const PMODES=[['mois','Mois'],['annee','Année'],['12m','12 mois'],['tout','Tout']];
 const periode=()=>{ const m=ST.per.mode, d=ST.per.d||auj();
   if(m==='mois'){ const a=new Date(d.getFullYear(),d.getMonth(),1), b=new Date(d.getFullYear(),d.getMonth()+1,0); return {a,b,lib:MOISL[a.getMonth()]+' '+a.getFullYear(),court:(x=>x.charAt(0).toLocaleUpperCase('fr')+x.slice(1))(MOIS[a.getMonth()].replace('.',''))}; }
@@ -339,7 +339,8 @@ const razSel=()=>{ ST.sel.clear(); ST.dern=null; };
 const garderSel=L=>{ if(!ST.sel.size) return; const ok=new Set(L.map(r=>String(r.ID))); [...ST.sel].forEach(i=>{ if(!ok.has(i)) ST.sel.delete(i); }); };
 const semDe=()=>ST.sem||(ST.sem=mondayOf(auj())), semLib=l=>'Semaine '+isoWeek(l)[1], semPer=l=>'du '+fC(l)+' au '+fD(jplus(l,6));
 const rowsSem=(pid,l)=>{ const a=K(l), b=K(jplus(l,6)); return base('h',pid).filter(r=>{ const k=tlKey(r); return k>=a&&k<=b; }); };
-const fmDe=()=>ST.fm||(ST.fm={y:auj().getFullYear(),m:auj().getMonth()}), fmLib=f=>MOISL[f.m]+' '+f.y, rowsFm=(pid,f)=>base('f',pid).filter(r=>+r.DATEYEAR===f.y&&+r.DATEMONTH===f.m);
+const fmDe=()=>ST.fm||(ST.fm={y:auj().getFullYear(),m:auj().getMonth()}), fmAn=()=>ST.fmo==='annee', fmLib=f=>fmAn()?String(f.y):MOISL[f.m]+' '+f.y, rowsFm=(pid,f)=>base('f',pid).filter(r=>+r.DATEYEAR===f.y&&(fmAn()||+r.DATEMONTH===f.m));
+const FMO=[['mois','Mois'],['annee','Année']];   /* contrôle des frais : un mois, ou toute l'année (16.11.2026) */
 const cptH=L=>{ const c={h:0,n:L.length,ctl:0,hctl:0,blo:0,ref:0,ok:0,fa:0,fd:0,af:0,st:new Set()}; L.forEach(r=>{ const t=hh(r), e=etT(r); c.h+=t; if(aC(e)){ if(bloquee(r)) c.blo++; else { c.ctl++; c.hctl+=t; } } else if(e===1) c.ref++; else c.ok++;
   if(r.ISCHARGEABLE){ c.fa+=t; if(!r.ISCHARGED) c.af+=t; } if(r.ISCHARGED) c.fd+=t; c.st.add(r.STAFF_ID); }); return c; };
 const cptF=L=>{ const c={v:0,n:L.length,ctl:0,ref:0,ok:0,fa:0,fd:0,rb:0,st:new Set()}; L.forEach(r=>{ const a=pcAmount(r), e=etC(r); c.v+=a; if(aC(e)) c.ctl++; else if(e===1) c.ref++; else c.ok++; if(r.ISCHARGEABLE) c.fa+=a; if(r.ISCHARGED) c.fd+=a; if(r.ISREFUNDABLE) c.rb+=a; c.st.add(r.STAFF_ID); }); return c; };
@@ -425,21 +426,21 @@ const pageAna=dom=>deux(dom==='h'?'anah':'anaf',()=>{ const p=Pj(ST.pid), Pr=per
 const pageCtlf=()=>deux('ctlf',()=>{ const p=Pj(ST.pid), f=fmDe(), L0=rowsFm(ST.pid,f), S=[...new Set(L0.map(r=>r.STAFF_ID))].sort((a,b)=>cmpN(sN(a),sN(b))), c=cptF(L0), ec=ecrit('f'), pa=aCtlF(ST.pid).length;
   if(ST.col!=null&&!S.some(s=>String(s)===String(ST.col))) ST.col=null;
   const L=L0.filter(r=>ST.col==null||String(r.STAFF_ID)===String(ST.col)); CTX.f=L; garderSel(L);
-  return tete(p.NUMBER||'','Contrôle des frais · '+fmLib(f),p.TITLE||'',E('Notes de frais de l’affaire, mois par mois'+(pa?' · '+num(pa,0)+' note'+(pa>1?'s':'')+' à contrôler sur l’affaire':' · tout est contrôlé sur cette affaire')))
-    +kpis([kpi('Frais du mois',F0(c.v)+'<small>CHF</small>',num(c.n,0)+' note'+(c.n>1?'s':'')),kpi('Facturables',F0(c.fa)+'<small>CHF</small>',''),kpi('Remboursables',F0(c.rb)+'<small>CHF</small>','aux collaborateurs'),kpi('À contrôler',num(c.ctl,0),'',c.ctl?'':'pos'),kpi('Refusées',num(c.ref,0),'',c.ref?'neg':'')])
+  return tete(p.NUMBER||'','Contrôle des frais · '+fmLib(f),p.TITLE||'',E('Notes de frais de l’affaire, '+(fmAn()?'année par année':'mois par mois')+(pa?' · '+num(pa,0)+' note'+(pa>1?'s':'')+' à contrôler sur l’affaire':' · tout est contrôlé sur cette affaire')))
+    +kpis([kpi(fmAn()?'Frais de l’année':'Frais du mois',F0(c.v)+'<small>CHF</small>',num(c.n,0)+' note'+(c.n>1?'s':'')),kpi('Facturables',F0(c.fa)+'<small>CHF</small>',''),kpi('Remboursables',F0(c.rb)+'<small>CHF</small>','aux collaborateurs'),kpi('À contrôler',num(c.ctl,0),'',c.ctl?'':'pos'),kpi('Refusées',num(c.ref,0),'',c.ref?'neg':'')])
     +lecture('f')
-    +'<div class="sgah-bar">'+bt('fdec','','prev',' data-n="-1" title="Mois précédent"')+'<span class="sgah-lbl">'+E(fmLib(f))+'</span>'+bt('fdec','','next',' data-n="1" title="Mois suivant"')
-      +bt('fder','Dernière note','today',' title="Mois de la dernière note de frais de l’affaire"')+bt('fctl','À contrôler','urgent',' title="Mois précédent qui a des notes de frais à contrôler"'+(pa?'':' disabled'))
+    +'<div class="sgah-bar">'+txs('fmo',FMO,ST.fmo)+SEP+bt('fdec','','prev',' data-n="-1" title="'+(fmAn()?'Année précédente':'Mois précédent')+'"')+'<span class="sgah-lbl">'+E(fmLib(f))+'</span>'+bt('fdec','','next',' data-n="1" title="'+(fmAn()?'Année suivante':'Mois suivant')+'"')
+      +bt('fder','Dernière note','today',' title="'+(fmAn()?'Année':'Mois')+' de la dernière note de frais de l’affaire"')+bt('fctl','À contrôler','urgent',' title="'+(fmAn()?'Année précédente':'Mois précédent')+' qui a des notes de frais à contrôler"'+(pa?'':' disabled'))
       +(S.length>1?SEP+'<span class="sgah-gl">Collaborateur</span>'+bt('col','tous','',' data-k=""',ST.col==null?'on':'')+S.map(s=>bt('col',sI(s),'',' data-k="'+E(s)+'" title="'+E(sN(s))+'"',String(ST.col)===String(s)?'on':'')).join(''):'')
-      +(ec?SEP+bt('apTout','Approuver le mois','check',' data-dom="f" title="Approuver les notes de frais à contrôler affichées"'+(L.some(r=>aC(etC(r)))?'':' disabled')):'')
+      +(ec?SEP+bt('apTout',fmAn()?'Approuver l’année':'Approuver le mois','check',' data-dom="f" title="Approuver les notes de frais à contrôler affichées"'+(L.some(r=>aC(etC(r)))?'':' disabled')):'')
       +DR(bt('pres','Présentation ▾','list',' data-dom="f" title="Colonnes du tableau des notes de frais"')+bt('impr','Imprimer','print',' data-dom="f" title="Document des notes de frais affichées"'+(L.length?'':' disabled'))+bt('csv','CSV','export',' data-dom="f" title="Notes de frais affichées dans un fichier CSV"'+(L.length?'':' disabled')))+'</div>'
     +titreSel('Notes de frais · '+fmLib(f)+(ST.col!=null?' · '+sN(ST.col):''),'f','ctl',ec&&L.length)
-    +tabFrais(L,{ck:ec,act:ec,vide:'Aucune note de frais ce mois-ci pour cette affaire.'}); });
+    +tabFrais(L,{ck:ec,act:ec,vide:fmAn()?'Aucune note de frais cette année pour cette affaire.':'Aucune note de frais ce mois-ci pour cette affaire.'}); });
 
 /* ── page d'entrée : chiffres de la période, les quatre modules, les affaires actives ── */
 const MOD_T={ctlh:['Contrôle des heures d’affaires','La semaine de l’affaire, collaborateur par collaborateur : approuver, refuser, réinitialiser les inscriptions.','check'],
   anah:['Critères d’analyse des heures','Les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','filter'],
-  ctlf:['Contrôle des frais','Les notes de frais de l’affaire, mois par mois : approuver, refuser, réinitialiser.','receipt'],
+  ctlf:['Contrôle des frais','Les notes de frais de l’affaire, par mois ou par année : approuver, refuser, réinitialiser.','receipt'],
   anaf:['Critères d’analyse des frais','Les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','coins']};
 const tuile=(mod,ft)=>{ const t=MOD_T[mod]; return '<div class="sg-tile" data-fn="mod" data-k="'+mod+'"><div class="ti">'+nxSvg(t[2])+'<h3>'+E(t[0])+'</h3></div><p>'+E(t[1])+'</p><div class="ft">'+ft+nxSvg('arrow','go')+'</div></div>'; };
 const tabAff=(L,vf)=>{ if(!L.length) return '<div class="sgah-vide">Aucune affaire « '+E(etatLib().toLowerCase())+' » avec des heures'+(vf?' ou des frais':'')+' sur la période.</div>';
@@ -474,10 +475,11 @@ const FN={
   sder:()=>{ ST.sem=derSem(ST.pid); ST.col=null; ST.jour=null; razSel(); redess(); },
   sctl:()=>{ const cur=K(semDe()), W=[...new Set(aCtlH(ST.pid).map(r=>K(mondayOf(tlDate(r)))))].sort((a,b)=>a-b); if(!W.length){ toast('Aucune inscription à contrôler pour cette affaire.'); return; }
     const av=W.filter(k=>k<cur); ST.sem=dK(av.length?av[av.length-1]:W[W.length-1]); ST.col=null; ST.jour=null; razSel(); redess(); },
-  fdec:b=>{ const f=fmDe(), d=new Date(f.y,f.m+(+b.dataset.n),1); ST.fm={y:d.getFullYear(),m:d.getMonth()}; razSel(); redess(); },
+  fmo:b=>{ ST.fmo=b.dataset.k==='annee'?'annee':'mois'; garder(); razSel(); redess(); },
+  fdec:b=>{ const f=fmDe(), d=fmAn()?new Date(f.y+(+b.dataset.n),f.m,1):new Date(f.y,f.m+(+b.dataset.n),1); ST.fm={y:d.getFullYear(),m:d.getMonth()}; razSel(); redess(); },
   fder:()=>{ ST.fm=derFm(ST.pid); razSel(); redess(); },
-  fctl:()=>{ const f=fmDe(), cur=f.y*100+f.m, W=[...new Set(aCtlF(ST.pid).map(moisCle))].sort((a,b)=>a-b); if(!W.length){ toast('Aucune note de frais à contrôler pour cette affaire.'); return; }
-    const av=W.filter(k=>k<cur), k=av.length?av[av.length-1]:W[W.length-1]; ST.fm={y:Math.floor(k/100),m:k%100}; razSel(); redess(); },
+  fctl:()=>{ const f=fmDe(), an=fmAn(), cur=an?f.y:f.y*100+f.m, W=[...new Set(aCtlF(ST.pid).map(r=>an?+r.DATEYEAR:moisCle(r)))].sort((a,b)=>a-b); if(!W.length){ toast('Aucune note de frais à contrôler pour cette affaire.'); return; }
+    const av=W.filter(k=>k<cur), k=av.length?av[av.length-1]:W[W.length-1]; ST.fm=an?{y:k,m:(ST.fm||{m:0}).m}:{y:Math.floor(k/100),m:k%100}; razSel(); redess(); },
   cel:b=>{ const s=nId(b.dataset.s), k=+b.dataset.k; if(String(ST.col)===String(s)&&ST.jour===k){ ST.col=null; ST.jour=null; } else { ST.col=s; ST.jour=k; } razSel(); redess(); },
   col:b=>{ ST.col=nId(b.dataset.k); ST.jour=null; razSel(); redess(); },
   /* état des inscriptions et des notes de frais */
@@ -505,7 +507,7 @@ const FN={
       {t:'Grouper …',dis:!L.length,fn:()=>ctlSummary(p,T,grille(d,L).view,F)},{t:'Grouper les positions choisies …',dis:!S.length,fn:()=>ctlSummary(p,T,grille(d,S).view,F)}]); },
   impr:b=>{ const d=b.dataset.dom, p=Pj(ST.pid), L=d==='h'?CTX.hs:CTX.f; if(!p||!L.length) return; ctxDoc(p); ctlPrint(p,d==='h'?'timelog':'projectcost',grilleDoc(d,L)); },
   csv:b=>{ const d=b.dataset.dom, p=Pj(ST.pid), L=d==='h'?CTX.hs:CTX.f; if(!p||!L.length) return; const f=fmDe();
-    csvTable(grille(d,L),(d==='h'?'Controle_heures_':'Controle_frais_')+(p.NUMBER||p.ID)+'_'+(d==='h'?'S'+isoWeek(semDe())[1]+'_'+isoWeek(semDe())[0]:f.y+'-'+String(f.m+1).padStart(2,'0'))); },
+    csvTable(grille(d,L),(d==='h'?'Controle_heures_':'Controle_frais_')+(p.NUMBER||p.ID)+'_'+(d==='h'?'S'+isoWeek(semDe())[1]+'_'+isoWeek(semDe())[0]:(fmAn()?String(f.y):f.y+'-'+String(f.m+1).padStart(2,'0')))); },
   csva:()=>{ const L=CTX.aff||[]; if(!L.length) return; const vf=peutVoir('f'), n2=v=>(Math.round((+v||0)*100)/100).toFixed(2);
     csvTable({cols:[{k:'n',t:'N°',f:o=>esc(o.p.NUMBER||'')},{k:'t',t:'Affaire',f:o=>esc(o.p.TITLE||'')},{k:'h',t:'Heures',f:o=>n2(o.x.h)},{k:'c',t:'Inscriptions à contrôler',f:o=>String(o.x.ctl)},{k:'r',t:'Refusées',f:o=>String(o.x.ref)},
       {k:'fa',t:'Heures facturables',f:o=>n2(o.x.fa)},{k:'fd',t:'Heures facturées',f:o=>n2(o.x.fd)},{k:'af',t:'Heures à facturer',f:o=>n2(o.x.af)},

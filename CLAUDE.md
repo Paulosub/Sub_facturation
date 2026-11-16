@@ -3016,7 +3016,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Contrôle des heures : semaine de l'affaire en grille collaborateurs × jours (clic sur une case = ses inscriptions), ‹ ›, « Dernière saisie », « À contrôler » (semaine
   précédente qui a des inscriptions à contrôler), inscriptions avec ✓ / ! par ligne (second clic = réinitialiser), cases (Maj + clic = plage) puis Approuver / Refuser /
   Réinitialiser, « Approuver » d'un collaborateur et « Approuver la semaine » après confirmation, Imprimer, CSV. Contrôle des frais : mois par mois, filtre par
-  collaborateur, mêmes gestes. Critères d'analyse : six listes de critères (la valeur d'une ligne tient compte des autres critères), période, Facturable / Facturé,
+  collaborateur, mêmes gestes ; **choix « Mois · Année »** devant ‹ › (16.11.2026, Paulo : « ajoute le tri par année ») — Année = toutes les notes de frais de l'année,
+  ‹ › par année, « Dernière note » / « À contrôler » par année, « Approuver l'année », CSV `…_<année>` ; choix gardé par poste (`sg3_ah.fmo`). Critères d'analyse : six listes de critères (la valeur d'une ligne tient compte des autres critères), période, Facturable / Facturé,
   affichage Détail ou regroupé (phase — avec heures prévues `TIMEBUDGET` et écart —, phase partielle, activité, collaborateur, mois ; frais : genre, groupe…),
   Fonctions ▾ (statut Facturable, statut Facturé, commentaire : fenêtres du moteur `ctlFlag` sans transfert vers les factures de l'ancien logiciel, `ctlComment` ; copier ;
   CSV de TOUTES les positions, le tableau en montre 1'000), Documents ▾ (`ctlPrint`, `ctlStaffReport`), Rapports ▾ (`ctlReport`, `ctlSummary`) ; double-clic = modifier

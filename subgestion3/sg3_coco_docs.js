@@ -533,7 +533,7 @@ function items(o){ const g=genre(o), E=o.E||{}, C=E.C||{}, L=[], rec=ch01aRec(E,
     L.push(it('Format : Paysage',S.format==='paysage',opt(o,'format','paysage'),{grp:'Format'}),it('Format : Portrait',S.format==='portrait',opt(o,'format','portrait'),{grp:'Format',ti:nv>5?'Document en portrait : '+nv+' colonnes de montants, en petits caractères':'Document en portrait'}));
     const PL=((C.presentations||{}).controle)||[];
     L.push(it('Standard',!S.P,opt(o,'pres',null),{grp:'Colonnes',seg:'Colonnes',segLib:false,l:'Standard',ti:'Colonnes de l’écran et la provision : DG, mutations, modifications, DG révisé, contrats et avenants, provision, paiements, coût probable, état du coût'}));
-    PL.forEach((x,i)=>{ if(estStandard(x)&&S.P!==x) return;   /* présentation identique à Standard : pas en double (comme le menu de l'écran) */
+    PL.forEach((x,i)=>{ if((estStandard(x)||sv(x.nom)==='Standard')&&S.P!==x) return;   /* présentation identique à Standard : pas en double (comme le menu de l'écran) ; « Standard » du document : plus proposée (20.11.2026), affichée seulement si elle est encore le choix enregistré du document */
       L.push(it(sv(x.nom||'Présentation '+(i+1))+(sv(x.nom)==='Standard'?' (du document)':''),S.P===x,opt(o,'pres',{i,nom:sv(x.nom)}),{grp:'Colonnes',seg:'Colonnes',segLib:false})); });
     /* mêmes rubriques et mêmes cases que la fenêtre du devis général (Paulo, 14.11.2026 : « semblable à celle du devis général, avec les mêmes options ») : Positions
        (sans montant, 1 à 3 chiffres, descriptif), Écritures (le « calcul » du contrôle des coûts), Montants (décimales, arrondi), Affichage (volume et prix au m³,

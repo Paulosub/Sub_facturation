@@ -662,7 +662,7 @@ const listePresMenu=sec=>{ const C=(CCV.cur||{}).C, L=lpL(C,LCLE[sec]), A=lpActi
    par « Personnalisé … » ; une présentation enregistrée n'est jamais modifiée sans « Enregistrer » (même nom = remplacée). Présentation affichée : CCV.pres (rang),
    retenue par poste et par contrôle des coûts (localStorage sg3_coco_pres : nom, '*' = présentation de travail). */
 const cpL=C=>((C&&C.presentations&&C.presentations.controle)||[]);
-const cpCache=x=>!!x&&x.nom==='Standard'&&(x.colonnes||[]).map(c=>c.id).join()===CC_PRES_DEF.Standard.join();   /* « Standard » du document identique à la base : pas répétée */
+const cpCache=x=>!!x&&x.nom==='Standard';   /* présentation « Standard » du document (ancien logiciel) : jamais proposée — menu, Gérer, Récupérer — (Paulo, 20.11.2026 : « supprimer » sur « Standard (du document) » ; avant : seulement si identique à la base) ; gardée dans les données */
 const cpTravail=x=>!!x&&(x.travail===true||(x.app===true&&x.nom==='Personnalisée'&&x.travail!==false));
 const cpNom=x=>(x.nom||'(sans nom)')+(x.nom==='Standard'?' (du document)':'');
 const cpClone=v=>JSON.parse(JSON.stringify(v==null?null:v));
@@ -781,13 +781,13 @@ function habillerEd(m,id){ cssC(); cssE();
   const fon=t=>(mFon()||[]).filter(x=>x&&x.t&&t.test(x.t)).map(x=>Object.assign({},x,{fn:filtrer(x.fn)}));
   lbl(bNew,'Nouvelle écriture'); lbl(bPar,'Paramètres');
   const bPresN=lbl(ibtn({i:'list',t:'Présentation',menu:()=>!CCV.docs&&CCV.sec==='DEVIS GENERAL'&&DGX?dgPresMenu():!CCV.docs&&LCLE[CCV.sec]?listePresMenu(CCV.sec):!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&CCV.cur&&CCV.cur.pres?cpPresMenu(mPres()):(mPres()||[]).filter(x=>!(x&&x.t&&/1 à 3 chiffres/.test(x.t)))}),'Présentation');
-  const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{ const s=CCV.docs?CCV.sec:CCV.sec==='DOCUMENTS'?null:CCV.sec;
+  const bImp=lbl(ibtn({i:'print',t:'Imprimer',menu:()=>{
     if(!CCV.docs&&CCV.sec==='DEVIS GENERAL') return [{t:'Devis général (PDF)',fn:()=>dgDuDevis(doc())}];   /* onglet Devis général : seulement le document du devis (11.11.2026) */
     const L=!CCV.docs&&LISTE_DOC[CCV.sec], imp=L?[{t:L.nomDefaut+' (PDF)',fn:()=>ouvrirListe(CCV.sec)}]
       :!CCV.docs&&CCV.sec==='COMPTES D’ENTREPRISE'&&window.SGCD&&SGCD.comptesOctets?[{t:'Comptes d’entreprise (PDF)',fn:()=>imprimerComptes()}]
       :!CCV.docs&&CCV.sec==='CONTRÔLE DU COÛT'&&typeof ch01aOverviewJob==='function'?[{t:'Contrôle des coûts (PDF)',fn:()=>ouvrirListe('CONTRÔLE DU COÛT')}]
       :!CCV.docs&&TABLE_SEC[CCV.sec]&&window.SGCD&&SGCD.tableVue?[{t:TABLE_SEC[CCV.sec][1],fn:()=>imprimerTable(TABLE_SEC[CCV.sec][0])},...(CCV.sec==='ARRÊTÉS DE COMPTE'?arrImp():[])]:fon(/^Imprimer/);   /* contrôle du coût : son document, fenêtre et réglages de Documents (14.11.2026) */   /* comptes d'entreprise : PDF au graphisme des listes (11.11.2026) */   /* listes des écritures : leur document au graphisme du devis général (11.11.2026) */
-    return [...imp,...(s&&docIt[s]?['-',{t:'Documents · '+SLIB(s),fn:()=>docs(s)}]:[]),'-',{t:'Fichiers déposés',fn:()=>docs('fichiers')}]; }}),'Imprimer');
+    return imp.length?imp:[{t:'Aucun document à imprimer',dis:true}]; }}),'Imprimer');   /* « Documents · <section> » et « Fichiers déposés » retirés du menu (Paulo, 20.11.2026 : « supprimer ») : ils sont dans l’onglet Documents */
   const bFonN=lbl(ibtn({i:'gear',t:'Fonctions',menu:()=>!CCV.docs&&CCV.sec==='ORDRES DE PAIEMENT'?ordFonctions():[...(!CCV.docs&&ECR.includes(CCV.sec)?[]:[{t:'Éditer l’écriture',fn:()=>bEd.click()},{t:'Supprimer l’écriture…',fn:()=>bDel.click()},'-']),...fon(/^(Copier|Exporter)/)]   /* listes des écritures : éditer / supprimer seulement au clic droit (Paulo, 11.11.2026) ; plus d'« Enregistrer » (même jour : chaque modification est déjà enregistrée, touch) */}),'Fonctions');
   const bPlein=ibtn({i:'plein',t:'Plein écran',fn:()=>box._plein(!ED.plein)}); bPlein.classList.add('sgce-pl');
   box._plein=v=>{ ED.plein=!!v; ED.box=box; box.classList.toggle('sgce-plein',ED.plein); bPlein.classList.toggle('on',ED.plein); const s=bPlein.querySelector('svg'); if(s&&typeof nxSvg==='function') s.outerHTML=nxSvg(ED.plein?'pleinq':'plein'); bPlein.title=ED.plein?'Quitter le plein écran (Échap)':'Plein écran'; bPlein.setAttribute('aria-label',bPlein.title); };

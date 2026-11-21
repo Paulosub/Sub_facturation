@@ -3208,6 +3208,19 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   plannings, permis ou adresses changent. **Le Cockpit (`nx-home`) n'est PAS touché** : pour l'y poser le jour où Paulo le demande, `SGCARTE.zone(el)`
   (`sgCarteZone`). Styles `#sgcarte-css`, classes `sgcarte-*`, débogage `window.SGCARTE`. Copie d'avant : `subgestion3/_backup_20261121_0856_avant_chapitre_proposition/`,
   `SUBGestion3_backup_20261121_0856_avant_chapitre_proposition.html`.
+  **Fonds graphiques à l'essai (même jour, Paulo, affiche de Barcelone à l'appui : « propose-moi 5 variantes de carte, plus graphiques […] le but c'est de ne pas
+  reproduire une carte standard, mais graphique »)** : onglets de la page (`FONDS`, choix du poste `sg3_carte_style`) — Carte validée (swisstopo), **1 Ardoise** (routes
+  TLM en blanc sur bleu nuit, lac plus sombre, épingles jaunes carrées, légende « Projet »), **2 Encre** (routes en noir sur papier, lac hachuré, bâtiments VECTOR25 en
+  vue de ville), **3 Trame** (grille de points posée sur le terrain : petits gris sur la terre, gros bleu nuit dans les zones à bâtir `ch.are.bauzonen` — en vue de ville
+  sur les bâtiments —, rien sur l'eau), **4 Taches urbaines** (zones à bâtir en noir, lac jaune, routes en filets), **5 Relief** (relief en deux tons bleu nuit / blanc
+  cassé, lac jaune pâle ; vue large : relief de la carte de base légère, coupé net à la frontière ; vue de ville : swissALTI3D). Couches WMS de swisstopo (CORS ouvert)
+  chargées en `crossOrigin` et recolorées sur un canevas (`teinte` : la transparence d'une couche sert de masque ; `getImageData` pour la trame et le relief) ;
+  densité plafonnée à 1,5 ; environ 1 s par vue. Eau = lacs VECTOR25 + eaux VECTOR200 en vue large (`eaux`) ; routes principales de VECTOR200 hors de Suisse en vue
+  large (`horsSuisse` : masque = relief léger) — swissTLM3D, VECTOR25 et swissALTI3D s'arrêtent à la frontière ou débordent par carrés de 1 km ; les couches de limites
+  (`swissboundaries3d-*-flaeche.fill`) ne sont que des contours. Cartouche blanc à la manière d'une affiche (« SUBSTANCES ARCHITECTES », nombre de projets, coordonnées
+  WGS84 du centre de la vue, `wgs` = formules approchées de swisstopo). Épingles et groupes accordés à chaque fond (`data-fond` de `.sgcarte-map`) ; « Carte | Photo
+  aérienne » seulement pour la carte validée. Copie d'avant : `subgestion3/_backup_20261121_0951_avant_fonds_graphiques/`. **En attente du choix de Paulo** (les
+  autres fonds seront retirés).
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

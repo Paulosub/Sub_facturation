@@ -3189,6 +3189,25 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   manuel, fichiers de titres, colonnes déjà reproduites par le moteur — pas de désassemblage (voir la mémoire « conformité à la licence »). Le manuel ne liste
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.
+- **Chapitre « Proposition » et carte des projets (21.11.2026, bloc 58, `subgestion3/sg3_proposition.js`, concaténé en dernier)** — Paulo, après les cinq maquettes de
+  carte du 20.11.2026 (`subgestion3/_backup_20261120_maquette_carte/proposition_carte.js`, page `proposition_carte.html` de l'aperçu) : « je valide la proposition 1, mais
+  en attendant ne pas l'intégrer dans le cockpit, enregistre cette proposition dans un nouvel onglet Proposition, pour que je puisse travailler dedans avant de
+  l'appliquer à l'app ». Chapitre `proposition` de `SG_DOM` (juste avant Archives ; icône `carte` ajoutée à `NXI` dans sg3.js ; visuel Mac : vert `--v-vert`) =
+  propositions validées, gardées là tant qu'elles ne sont pas reportées dans l'app ; **administrateur seulement** (`sgVueOk` : `nxDomVue(v)==='proposition'` refusé aux
+  autres profils, chapitre absent de leur menu). Écran `nx-carte` « Carte des projets » = proposition 1 « Carte et panneau » : bandeau `sgTete` et cinq chiffres
+  (projets sur la carte, sans position, actifs ces 30 jours, heures ces 30 jours, prochaine échéance du planning), puis la zone telle qu'elle irait dans le Cockpit —
+  carte swisstopo (WMS `SG_FZ_GEO.wms`, LV95 ; carte grise ou photo aérienne, choix du poste `sg3_carte_fond`), projets visibles hors internes, « En cours » (états 1 à 3)
+  ou « Tous » (`sg3_carte_filtre`), épingles colorées par avancement (`sgPhaseActuelle` : faisabilité, étude, enquête, appel d'offres, réalisation, expertise, en
+  attente, terminé ; couleurs secondaires de la charte), regroupées quand elles sont proches (chiffre, un clic agrandit) ; glisser, molette, + / −, flèches du clavier ;
+  un clic sur un projet = résumé à droite (heures saisies / prévues, ces 30 jours, dernière saisie, prochaine échéance, permis `SGPC.etat`, facturé si
+  `sgMargeVisible` ; planning `sgplanning` projet et chantier, heures par phase, équipe ; Page du projet, Tableau de bord, « Ouvrir la fenêtre » à onglets Vue
+  d'ensemble · Planning · Heures · Équipe · Facturation, Échap). Position : parcelle de Faisabilité (`sgfaisa`), adresse du projet du contrat (padr, ploc), adresse
+  d'affaire (CONTACT1_ID), adresse écrite dans la désignation, localité — géocodées par `sgFzChercherAdresse` (geo.admin.ch, comme Faisabilité), cache du poste
+  `sg3_carte_geo` (adresse trouvée gardée ; introuvable redemandée après 7 jours ; erreur de réseau rien gardé) ; 99TST (commune fictive) : position fictive à
+  Lausanne ; projets sans position listés sous la carte (un clic ouvre leur page). Rien n'est écrit dans la base ; redessin sur place (`refresh`) quand heures,
+  plannings, permis ou adresses changent. **Le Cockpit (`nx-home`) n'est PAS touché** : pour l'y poser le jour où Paulo le demande, `SGCARTE.zone(el)`
+  (`sgCarteZone`). Styles `#sgcarte-css`, classes `sgcarte-*`, débogage `window.SGCARTE`. Copie d'avant : `subgestion3/_backup_20261121_0856_avant_chapitre_proposition/`,
+  `SUBGestion3_backup_20261121_0856_avant_chapitre_proposition.html`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

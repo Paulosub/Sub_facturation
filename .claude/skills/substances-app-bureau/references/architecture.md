@@ -269,3 +269,11 @@ Plusieurs lignes de total (Occupation et effectif : « Effectif », « Équivale
 sur les colonnes. Tableau croisé (colonnes tirées des données, Situation des heures ▸ Collaborateur × phase) : une pseudo-colonne du catalogue (« Phases ») que le
 rendu déploie lui-même (`sgSitCroise`) ; les clés restent stables d'un projet à l'autre. Tableau imprimé par `sgDocTableau` (lecture du tableau affiché) : il suit
 la présentation sans autre code.
+
+### Chapitre « Proposition » (21.11.2026, bloc 58 `sg3_proposition.js`)
+
+Les propositions que Paulo valide « pour y travailler avant de les appliquer » vont dans le chapitre `proposition` de `SG_DOM` (avant Archives ;
+administrateur seulement : `sgVueOk` refuse `nxDomVue(v)==='proposition'` aux autres profils). Premier écran : `nx-carte` « Carte des projets »
+(proposition 1 « Carte et panneau » pour le Cockpit). La zone est indépendante de la page (`SGCARTE.zone(el)` = `sgCarteZone`) : l'appliquer au
+Cockpit = la poser dans `VIEWS['nx-home']` (avant `#sg-at`) puis retirer l'item du chapitre — seulement sur demande. Ne rien écrire dans la base
+depuis une page de ce chapitre sans le dire à Paulo ; positions de la carte = cache du poste `sg3_carte_geo` (géocodage geo.admin.ch).

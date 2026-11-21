@@ -69,6 +69,8 @@ ibtn=function(b){ if(b&&b.i==='today'&&/^Plein écran/.test(String(b.t||''))) b=
     if(lb){ const s=document.createElement('span'); s.className='lb'; s.textContent=lb; el.insertBefore(s,el.querySelector('.dd')); } } }catch(_){}
   return el; };
 
+/* icône du chapitre « Proposition » et de la carte des projets (21.11.2026) : carte pliée */
+Object.assign(NXI,{carte:'<path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/>'});
 /* ── Domaines et modules (ordre de la barre principale) ── */
 const SG_DOM=[
   {k:'accueil',t:'Cockpit',ico:'home',items:[{v:'nx-home',t:'Aujourd’hui'}]},
@@ -179,6 +181,11 @@ const SG_DOM=[
     {v:'nx-data',t:'Données & sauvegarde',ico:'db',hero:1,d:'Export et import de la base de gestion.'},
     {v:'fx-backup',t:'Sauvegarde Facturation',ico:'save',d:'Contrats, factures et registres Facturation : export, import, sauvegarde automatique.'},
     {v:'nx-reunir',t:'Réunir les registres',ico:'group',d:'Un seul registre par donnée : adresses, heures, liens contrats ↔ projets.'}]},
+  /* chapitre « Proposition » (21.11.2026, Paulo : « je valide la proposition 1, mais en attendant ne pas l'intégrer dans le cockpit, enregistre cette proposition
+     dans un nouvel onglet Proposition, pour que je puisse travailler dedans avant de l'appliquer à l'app ») : propositions validées, gardées ici tant qu'elles ne
+     sont pas reportées dans l'app ; administrateur seulement (sgVueOk, sg3_plus.js). Écrans : sg3_proposition.js (bloc 58). */
+  {k:'proposition',t:'Proposition',ico:'carte',nav:0,d:'Propositions validées, à travailler ici avant de les reporter dans l’app.',items:[
+    {v:'nx-carte',t:'Carte des projets',ico:'carte',hero:1,d:'Proposition 1 « Carte et panneau » pour le Cockpit, validée le 21.11.2026 : la position des projets sur la carte ; un clic sur un projet ouvre son résumé.'}]},
   /* chapitre « Archives » (24.10.2026, demande de Paulo : « créer un menu archive, laisse-le vide pour le moment ») ; vide:1 = affiché à
      l'administrateur même sans module (sgSide) */
   {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[

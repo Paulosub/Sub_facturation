@@ -1397,6 +1397,7 @@ const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion
 ['nx-ah-ctlf','nx-ah-anaf'].forEach(v=>{ SG_VUE_DROIT[v]=()=>SG_ACC.profil!=='collab'&&sgDroit('frais','projets'); });
 function sgVueOk(v){ if(!v||sgAdmin()) return true;
   if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
+  if(nxDomVue(v)==='proposition') return false;   /* chapitre Proposition (21.11.2026) : propositions en cours de travail, administrateur seulement */
   if(nxDomVue(v)==='administration') return false;   /* écrans propres au chapitre Administration (contrôle et analyse des heures, 24.10.2026) : administrateur seulement ;
      ses sous-menus Équipe, Ressources humaines, Facturation et Finances (25.10.2026) gardent les droits de leur chapitre d'origine (dom) */
   if(SG_VUE_DROIT[v]) return !!SG_VUE_DROIT[v]();

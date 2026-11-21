@@ -3190,13 +3190,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   pas les colonnes de chaque tableau (texte extractible : ~80 pages, le reste en images). Copies d'avant : `subgestion3/_backup_20261115_2225_avant_tableaux/`,
   `SUBGestion3_backup_20261115_2225_avant_tableaux.html`, `DeltaSub_backup_20261115_2229_avant_tableaux.html`.
 - **Chapitre « Proposition » et carte des projets (21.11.2026, bloc 58, `subgestion3/sg3_proposition.js`, concaténé en dernier)** — Paulo, après les cinq maquettes de
-  carte du 20.11.2026 (`subgestion3/_backup_20261120_maquette_carte/proposition_carte.js`, page `proposition_carte.html` de l'aperçu) : « je valide la proposition 1, mais
+  carte du 20.11.2026 (`subgestion3/_backup_20261120_maquette_carte/proposition_carte.js` ; sa page de l'aperçu a été retirée le 21.11.2026) : « je valide la proposition 1, mais
   en attendant ne pas l'intégrer dans le cockpit, enregistre cette proposition dans un nouvel onglet Proposition, pour que je puisse travailler dedans avant de
   l'appliquer à l'app ». Chapitre `proposition` de `SG_DOM` (juste avant Archives ; icône `carte` ajoutée à `NXI` dans sg3.js ; visuel Mac : vert `--v-vert`) =
   propositions validées, gardées là tant qu'elles ne sont pas reportées dans l'app ; **administrateur seulement** (`sgVueOk` : `nxDomVue(v)==='proposition'` refusé aux
   autres profils, chapitre absent de leur menu). Écran `nx-carte` « Carte des projets » = proposition 1 « Carte et panneau » : bandeau `sgTete` et cinq chiffres
   (projets sur la carte, sans position, actifs ces 30 jours, heures ces 30 jours, prochaine échéance du planning), puis la zone telle qu'elle irait dans le Cockpit —
-  carte swisstopo (WMS `SG_FZ_GEO.wms`, LV95 ; carte grise ou photo aérienne, choix du poste `sg3_carte_fond`), projets visibles hors internes, « En cours » (états 1 à 3)
+  fond « Encre » dessiné à partir des couches de swisstopo (paragraphe suivant), projets visibles hors internes, « En cours » (états 1 à 3)
   ou « Tous » (`sg3_carte_filtre`), épingles colorées par avancement (`sgPhaseActuelle` : faisabilité, étude, enquête, appel d'offres, réalisation, expertise, en
   attente, terminé ; couleurs secondaires de la charte), regroupées quand elles sont proches (chiffre, un clic agrandit) ; glisser, molette, + / −, flèches du clavier ;
   un clic sur un projet = résumé à droite (heures saisies / prévues, ces 30 jours, dernière saisie, prochaine échéance, permis `SGPC.etat`, facturé si
@@ -3208,19 +3208,21 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   plannings, permis ou adresses changent. **Le Cockpit (`nx-home`) n'est PAS touché** : pour l'y poser le jour où Paulo le demande, `SGCARTE.zone(el)`
   (`sgCarteZone`). Styles `#sgcarte-css`, classes `sgcarte-*`, débogage `window.SGCARTE`. Copie d'avant : `subgestion3/_backup_20261121_0856_avant_chapitre_proposition/`,
   `SUBGestion3_backup_20261121_0856_avant_chapitre_proposition.html`.
-  **Fonds graphiques à l'essai (même jour, Paulo, affiche de Barcelone à l'appui : « propose-moi 5 variantes de carte, plus graphiques […] le but c'est de ne pas
-  reproduire une carte standard, mais graphique »)** : onglets de la page (`FONDS`, choix du poste `sg3_carte_style`) — Carte validée (swisstopo), **1 Ardoise** (routes
-  TLM en blanc sur bleu nuit, lac plus sombre, épingles jaunes carrées, légende « Projet »), **2 Encre** (routes en noir sur papier, lac hachuré, bâtiments VECTOR25 en
-  vue de ville), **3 Trame** (grille de points posée sur le terrain : petits gris sur la terre, gros bleu nuit dans les zones à bâtir `ch.are.bauzonen` — en vue de ville
-  sur les bâtiments —, rien sur l'eau), **4 Taches urbaines** (zones à bâtir en noir, lac jaune, routes en filets), **5 Relief** (relief en deux tons bleu nuit / blanc
-  cassé, lac jaune pâle ; vue large : relief de la carte de base légère, coupé net à la frontière ; vue de ville : swissALTI3D). Couches WMS de swisstopo (CORS ouvert)
-  chargées en `crossOrigin` et recolorées sur un canevas (`teinte` : la transparence d'une couche sert de masque ; `getImageData` pour la trame et le relief) ;
-  densité plafonnée à 1,5 ; environ 1 s par vue. Eau = lacs VECTOR25 + eaux VECTOR200 en vue large (`eaux`) ; routes principales de VECTOR200 hors de Suisse en vue
-  large (`horsSuisse` : masque = relief léger) — swissTLM3D, VECTOR25 et swissALTI3D s'arrêtent à la frontière ou débordent par carrés de 1 km ; les couches de limites
-  (`swissboundaries3d-*-flaeche.fill`) ne sont que des contours. Cartouche blanc à la manière d'une affiche (« SUBSTANCES ARCHITECTES », nombre de projets, coordonnées
-  WGS84 du centre de la vue, `wgs` = formules approchées de swisstopo). Épingles et groupes accordés à chaque fond (`data-fond` de `.sgcarte-map`) ; « Carte | Photo
-  aérienne » seulement pour la carte validée. Copie d'avant : `subgestion3/_backup_20261121_0951_avant_fonds_graphiques/`. **En attente du choix de Paulo** (les
-  autres fonds seront retirés).
+  **Fond « Encre » retenu (même jour ; Paulo, affiche de Barcelone à l'appui : « propose-moi 5 variantes de carte, plus graphiques […] le but c'est de ne pas
+  reproduire une carte standard, mais graphique », puis, parmi les cinq fonds essayés en onglets : « la version encre 2 que je trouve la plus intéressante. change la
+  trame du lac en bleu et enregistre le projet dans proposition, on travaillera plus tard sur le projet de carte »)** : plan à l'encre sur papier #FAF8F2
+  (`dessinerEncre`) — routes swissTLM3D en noir ; vue de ville (12 m par pixel au plus) : bâtiments VECTOR25 en gris ; vue large : routes principales VECTOR200 hors de
+  Suisse (`horsSuisse` : masque = relief de la carte de base légère, coupé net à la frontière — swissTLM3D s'arrête à la frontière, VECTOR25 et swissALTI3D débordent
+  par carrés de 1 km, les couches de limites `swissboundaries3d-*-flaeche.fill` ne sont que des contours) ; eau = lacs VECTOR25 + eaux VECTOR200 en vue large (`eaux` ;
+  seules celles-ci couvrent la partie française du Léman), hachurée en bleu encre #1F5FA8 (`BLEU_LAC` ; le bleu de la charte #3F4193 tirait sur le violet sur le lac,
+  essais du 21.11.2026) ; épingles cerclées de noir, groupes en blanc cassé ; cartouche blanc à la manière d'une affiche (« SUBSTANCES ARCHITECTES », nombre de projets,
+  coordonnées WGS84 du centre de la vue, `wgs` = formules approchées de swisstopo). Couches WMS (CORS ouvert) chargées en `crossOrigin` et recolorées sur un canevas
+  (`teinte` : la transparence d'une couche sert de masque) ; densité plafonnée à 1,5 ; environ 1 s par vue ; attribution « © swisstopo, OFEV ». Les quatre autres fonds
+  (1 Ardoise, 3 Trame, 4 Taches urbaines, 5 Relief) et la carte grise / photo aérienne du premier jet sont retirés (leur code : commit ebc2462 et
+  `subgestion3/_backup_20261121_1114_avant_choix_encre/`) : plus d'onglets de fond ni de bouton « Photo aérienne » ; les clés du poste `sg3_carte_style` et
+  `sg3_carte_fond` sont effacées au chargement. **La carte reste à retravailler avec Paulo, plus tard** ; toujours pas dans le Cockpit. Copies d'avant :
+  `subgestion3/_backup_20261121_0951_avant_fonds_graphiques/`, `subgestion3/_backup_20261121_1114_avant_choix_encre/`,
+  `SUBGestion3_backup_20261121_1114_avant_choix_encre.html`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

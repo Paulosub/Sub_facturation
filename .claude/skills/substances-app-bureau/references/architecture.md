@@ -277,3 +277,5 @@ administrateur seulement : `sgVueOk` refuse `nxDomVue(v)==='proposition'` aux au
 (proposition 1 « Carte et panneau » pour le Cockpit). La zone est indépendante de la page (`SGCARTE.zone(el)` = `sgCarteZone`) : l'appliquer au
 Cockpit = la poser dans `VIEWS['nx-home']` (avant `#sg-at`) puis retirer l'item du chapitre — seulement sur demande. Ne rien écrire dans la base
 depuis une page de ce chapitre sans le dire à Paulo ; positions de la carte = cache du poste `sg3_carte_geo` (géocodage geo.admin.ch).
+Fond de la carte : « Encre » seul (`dessinerEncre` : couches WMS de swisstopo recolorées sur un canevas, eau hachurée en `BLEU_LAC` #1F5FA8), choisi par
+Paulo le 21.11.2026 parmi cinq fonds graphiques ; les autres fonds et la carte grise / photo aérienne du premier jet sont dans le commit ebc2462.

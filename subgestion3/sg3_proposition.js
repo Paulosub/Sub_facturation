@@ -6,7 +6,11 @@
    Carte des projets (écran nx-carte) = proposition 1 « Carte et panneau » des cinq maquettes du 20.11.2026 (demande de Paulo : « ajoute une carte avec
    la position des projets, les projets seront sélectionnables sur la carte […] ça ouvrira une fenêtre avec des informations pertinentes, notamment le
    planning, la situation des heures ») ; les cinq maquettes : subgestion3/_backup_20261120_maquette_carte/proposition_carte.js.
-   - Fond : swisstopo (WMS de SG_FZ_GEO, coordonnées LV95), carte nationale grise ou photo aérienne, comme la fenêtre « Recherche de parcelle ».
+   - Fond « Encre » (choisi par Paulo le 21.11.2026 parmi cinq fonds graphiques : « la version encre 2 que je trouve la plus intéressante. change la trame
+     du lac en bleu ») : plan à l'encre sur papier, dessiné sur un canevas à partir des couches de swisstopo (WMS de SG_FZ_GEO, LV95, CORS ouvert) — routes
+     swissTLM3D en noir ; vue de ville (12 m par pixel au plus) : bâtiments VECTOR25 en gris ; vue large : routes principales VECTOR200 hors de Suisse (coupées
+     à la frontière par le relief de la carte de base légère) ; eau = lacs VECTOR25 (+ eaux VECTOR200 en vue large, seules à couvrir la partie française du
+     Léman) hachurée en bleu encre (BLEU_LAC) ; cartouche « SUBSTANCES ARCHITECTES » à la manière d'une affiche (nombre de projets, coordonnées du centre).
    - Projets : ceux que l'utilisateur voit (sgProjetsVisibles), sans les projets internes ; « En cours » (états 1, 2, 3) ou « Tous » (choix gardé sur le poste).
    - Position : parcelle de Faisabilité (sgfaisa ▸ PARCELLE E / N) ; sinon adresse du projet du contrat d'honoraires (padr, ploc), adresse d'affaire
      (CONTACT1_ID), adresse écrite dans la désignation (« Immeuble | Meillerie 6 | Lausanne »), enfin la localité — cherchées par le géoportail fédéral
@@ -17,10 +21,9 @@
      permis, facturé si sgMargeVisible), planning (sgplanning du projet et du chantier), heures par phase, équipe ; Page du projet, Tableau de bord,
      « Ouvrir la fenêtre » (onglets Vue d'ensemble, Planning, Heures, Équipe, Facturation).
    RIEN n'est écrit dans la base. Rien dans le Cockpit (nx-home) tant que Paulo ne le demande pas : sgCarteZone(el) se pose dans n'importe quelle page.
-   Fonds graphiques à l'essai (21.11.2026, Paulo, affiche de Barcelone à l'appui : « propose-moi 5 variantes de carte, plus graphiques […] le but c'est de ne
-   pas reproduire une carte standard, mais graphique ») : onglets de la page — Carte validée (swisstopo), 1 Ardoise, 2 Encre, 3 Trame, 4 Taches urbaines,
-   5 Relief (FONDS, choix du poste « sg3_carte_style ») ; couches de swisstopo (WMS, CORS ouvert) recolorées sur un canevas dans les couleurs de la charte ;
-   eau = lacs VECTOR25 + eaux VECTOR200 en vue large (seules celles-ci couvrent la partie française du Léman) ; cartouche à la manière d'une affiche.
+   Les cinq fonds graphiques essayés le 21.11.2026 (Paulo, affiche de Barcelone à l'appui : « le but c'est de ne pas reproduire une carte standard, mais
+   graphique » : 1 Ardoise, 2 Encre, 3 Trame, 4 Taches urbaines, 5 Relief) et la carte grise / photo aérienne de swisstopo du premier jet : retirés le même jour
+   après le choix d'Encre — code dans le commit ebc2462 et dans subgestion3/_backup_20261121_1114_avant_choix_encre/.
    Styles #sgcarte-css, classes sgcarte-*, débogage window.SGCARTE. */
 (()=>{
 'use strict';
@@ -39,32 +42,29 @@ const CSS=`
 .sgcarte-seg button{border:0;background:none;padding:2px 0;font:inherit;font-size:12.5px;color:var(--s-gris,#706F6F);cursor:pointer;border-bottom:2px solid transparent}
 .sgcarte-seg button:hover{color:var(--s-noir,#1d1d1b)}
 .sgcarte-seg button.on{color:var(--s-noir,#1d1d1b);font-weight:700;border-bottom-color:var(--s-nuit,#003346)}
-.sgcarte-map{position:relative;overflow:hidden;background:#ecebe6;cursor:grab;user-select:none;touch-action:none;outline:none}
+.sgcarte-map{position:relative;overflow:hidden;background:#FAF8F2;cursor:grab;user-select:none;touch-action:none;outline:none}
 .sgcarte-map:focus-visible{box-shadow:inset 0 0 0 2px var(--s-nuit,#003346)}
 .sgcarte-map.drag{cursor:grabbing}
 .sgcarte-img{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;max-width:none}
 .sgcarte-pins{position:absolute;inset:0;pointer-events:none}
-.sgcarte-pin{position:absolute;pointer-events:auto;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);background:var(--c);padding:0;cursor:pointer;transition:transform .12s}
+.sgcarte-pin{position:absolute;pointer-events:auto;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:1.5px solid #1d1d1b;background:var(--c);padding:0;cursor:pointer;transition:transform .12s}
 .sgcarte-pin:hover,.sgcarte-pin.hl{transform:scale(1.3);z-index:3}
-.sgcarte-pin.on{box-shadow:0 0 0 3px var(--s-noir,#1d1d1b),0 0 0 5px #fff;z-index:4}
+.sgcarte-pin.on{box-shadow:0 0 0 3px #FAF8F2,0 0 0 4.5px #1d1d1b;z-index:4}
 .sgcarte-pin .n{position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);background:#fff;padding:1px 5px;font-size:11px;font-weight:700;white-space:nowrap;display:none;border:1px solid var(--s-noir,#1d1d1b);color:var(--s-noir,#1d1d1b)}
 .sgcarte-pin.on .n,.sgcarte-pin.hl .n{display:block}
-.sgcarte-clu{position:absolute;pointer-events:auto;transform:translate(-50%,-50%);min-width:28px;height:28px;border-radius:14px;background:var(--s-nuit,#003346);color:#fff;font:inherit;font-size:12px;font-weight:700;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:pointer;padding:0 7px}
-.sgcarte-clu:hover{background:var(--s-noir,#1d1d1b)}
+.sgcarte-clu{position:absolute;pointer-events:auto;transform:translate(-50%,-50%);min-width:28px;height:28px;border-radius:14px;background:#FAF8F2;color:#1d1d1b;font:inherit;font-size:12px;font-weight:700;border:1.5px solid #1d1d1b;cursor:pointer;padding:0 7px}
+.sgcarte-clu:hover{background:#1d1d1b;color:#FAF8F2}
 .sgcarte-tip{position:absolute;z-index:6;pointer-events:none;background:var(--s-noir,#1d1d1b);color:#fff;font-size:12px;padding:5px 8px;max-width:280px;display:none;line-height:1.35}
 .sgcarte-tip b{display:block}
 .sgcarte-ctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:5}
 .sgcarte-ctl button{width:30px;height:30px;border:1px solid var(--s-noir,#1d1d1b);background:#fff;line-height:1;cursor:pointer;padding:0;display:grid;place-items:center;color:var(--s-noir,#1d1d1b)}
 .sgcarte-ctl button:hover{background:var(--s-jaune2,#FEF6B0)}
 .sgcarte-ctl svg{width:16px;height:16px}
-.sgcarte-fond{position:absolute;left:10px;bottom:10px;z-index:5;display:flex;background:#fff;border:1px solid var(--s-noir,#1d1d1b)}
-.sgcarte-fond button{border:0;background:#fff;font:inherit;font-size:12px;padding:4px 9px;cursor:pointer;color:var(--s-noir,#1d1d1b)}
-.sgcarte-fond button.on{background:var(--s-nuit,#003346);color:#fff}
-.sgcarte-att{position:absolute;right:6px;bottom:3px;font-size:10px;color:#444;background:rgba(255,255,255,.75);padding:0 4px;z-index:5;pointer-events:none}
+.sgcarte-att{position:absolute;right:6px;bottom:3px;font-size:10px;color:#444;background:rgba(250,248,242,.8);padding:0 4px;z-index:5;pointer-events:none}
 .sgcarte-msg{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#fff;border:1px solid var(--s-noir,#1d1d1b);padding:5px 10px;font-size:12px;z-index:6;white-space:nowrap}
 .sgcarte-leg{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;padding:8px 0 2px;align-items:center}
 .sgcarte-leg span{display:inline-flex;align-items:center;gap:6px}
-.sgcarte-leg i{width:10px;height:10px;border-radius:50%;background:var(--c);display:inline-block;flex:none}
+.sgcarte-leg i{width:11px;height:11px;border-radius:50%;background:var(--c);border:1px solid #1d1d1b;box-sizing:border-box;display:inline-block;flex:none}
 .sgcarte-sans{font-size:12px;color:var(--s-gris,#706F6F);padding:7px 0 0;line-height:1.55}
 .sgcarte-sans button{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--s-nuit,#003346);cursor:pointer}
 .sgcarte-sans button:hover{text-decoration:underline}
@@ -136,30 +136,11 @@ const CSS=`
 .sgcarte-acc h5{margin:0 0 8px;font-size:13px}
 .sgcarte-acc p{font-size:12.5px;color:#3d3d3b;margin:0 0 12px;line-height:1.5}
 .sgcarte-rep{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;font-size:12.5px;align-items:center}
-.sgcarte-rep i{width:10px;height:10px;border-radius:50%;background:var(--c)}
-/* fonds graphiques (21.11.2026) : fond d'attente, épingles et groupes accordés à chaque fond, cartouche */
-.sgcarte-map[data-fond="ardoise"]{background:#003346}
-.sgcarte-map[data-fond="encre"]{background:#FAF8F2}
-.sgcarte-map[data-fond="trame"]{background:#fff}
-.sgcarte-map[data-fond="taches"],.sgcarte-map[data-fond="relief"]{background:#F2F0EA}
-.sgcarte-map:not([data-fond="standard"]) .sgcarte-fond{display:none}
-.sgcarte-map[data-fond="ardoise"] .sgcarte-pin{border-radius:0;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;background:#FFF266;border:2px solid #003346;box-shadow:0 0 0 1px #FFF266}
-.sgcarte-map[data-fond="ardoise"] .sgcarte-pin.on{box-shadow:0 0 0 3px #fff,0 0 0 5px #003346}
-.sgcarte-map[data-fond="ardoise"] .sgcarte-clu{background:#FFF266;color:#1d1d1b;border-color:#003346;border-radius:0}
-.sgcarte-map[data-fond="encre"] .sgcarte-pin{border:1.5px solid #1d1d1b;box-shadow:none}
-.sgcarte-map[data-fond="encre"] .sgcarte-pin.on{box-shadow:0 0 0 3px #FAF8F2,0 0 0 4.5px #1d1d1b}
-.sgcarte-map[data-fond="encre"] .sgcarte-clu{background:#FAF8F2;color:#1d1d1b;border:1.5px solid #1d1d1b;box-shadow:none}
-.sgcarte-map[data-fond="trame"] .sgcarte-pin{width:18px;height:18px;margin:-9px 0 0 -9px;border-width:3px}
-.sgcarte-map[data-fond="trame"] .sgcarte-clu{background:#1d1d1b}
-.sgcarte-map[data-fond="taches"] .sgcarte-pin{border-color:#F2F0EA}
-.sgcarte-map[data-fond="taches"] .sgcarte-clu{background:#FFF266;color:#1d1d1b;border-color:#1d1d1b}
-.sgcarte-map[data-fond="relief"] .sgcarte-clu{background:#fff;color:#003346;border-color:#003346}
-.sgcarte-cart{position:absolute;left:18px;bottom:18px;z-index:5;background:#fff;padding:12px 22px 10px;text-align:center;pointer-events:none;min-width:250px;display:none}
+.sgcarte-rep i{width:11px;height:11px;border-radius:50%;background:var(--c);border:1px solid #1d1d1b;box-sizing:border-box}
+/* cartouche du fond « Encre », à la manière d'une affiche */
+.sgcarte-cart{position:absolute;left:18px;bottom:18px;z-index:5;background:#fff;border:1px solid #1d1d1b;padding:12px 22px 10px;text-align:center;pointer-events:none;min-width:250px;display:none}
 .sgcarte-cart b{display:block;font-size:15px;letter-spacing:.32em;padding-left:.32em;font-weight:700;color:#1d1d1b;white-space:nowrap}
 .sgcarte-cart span{display:block;font-size:10px;letter-spacing:.16em;padding-left:.16em;color:#3d3d3b;margin-top:5px;white-space:nowrap}
-.sgcarte-map[data-fond="encre"] .sgcarte-cart,.sgcarte-map[data-fond="trame"] .sgcarte-cart{border:1px solid #1d1d1b}
-.sgcarte-leg i.sq{border-radius:0;border:1.5px solid #003346}
-.sgcarte-leg .nb{color:var(--s-gris,#706F6F)}
 /* fenêtre du projet */
 .sgcarte-voile{position:fixed;inset:0;background:rgba(29,29,27,.38);z-index:870;display:grid;place-items:center}
 .sgcarte-win{width:min(1040px,94vw);max-height:90vh;display:flex;flex-direction:column;background:#fff;box-shadow:0 18px 50px rgba(0,0,0,.3)}
@@ -184,9 +165,10 @@ const kOf=d=>d.getFullYear()*10000+d.getMonth()*100+d.getDate();   /* même clé
 const SVG={plus:'<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>',
   moins:'<svg viewBox="0 0 16 16"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>',
   tout:'<svg viewBox="0 0 16 16"><path d="M2 5.5V2h3.5M10.5 2H14v3.5M14 10.5V14h-3.5M5.5 14H2v-3.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>'};
-/* état de la carte : projet choisi et vue gardés pendant la séance ; filtre et fond gardés sur le poste */
-const ST=window.SGCARTE={sel:null,vue:null,auto:true,filtre:nxLS.get('sg3_carte_filtre','encours')==='tous'?'tous':'encours',fond:nxLS.get('sg3_carte_fond','plan')==='ortho'?'ortho':'plan',
-  style:nxLS.get('sg3_carte_style','standard'),pret:false,pos:new Map(),prog:'',D:null};
+/* état de la carte : projet choisi et vue gardés pendant la séance ; filtre gardé sur le poste */
+const ST=window.SGCARTE={sel:null,vue:null,auto:true,filtre:nxLS.get('sg3_carte_filtre','encours')==='tous'?'tous':'encours',pret:false,pos:new Map(),prog:'',D:null};
+/* choix des fonds essayés le 21.11.2026 (carte grise ou photo aérienne, fonds graphiques) : plus lus depuis le choix d'Encre */
+try{ localStorage.removeItem('sg3_carte_fond'); localStorage.removeItem('sg3_carte_style'); }catch(_){}
 
 /* catégories d'avancement (couleurs de la charte : bleu, bleu nuit, turquoise, orange, vert ; gris pour l'attente et les projets terminés) */
 const PH={fz:['Faisabilité, relevé','#3F4193'],etu:['Étude du projet','#003346'],enq:['Enquête, permis','#4CBAB5'],ao:['Appel d’offres','#D7860D'],
@@ -266,10 +248,9 @@ let tMaj=0; function maj(force){ clearTimeout(tMaj); tMaj=setTimeout(()=>{ if(CU
 function items(){ return projets().map(p=>{ const v=ST.pos.get(p.ID); if(!v) return null; const I=info(p); return {id:p.ID,p,I,E:v.E,N:v.N,src:v.src,cl:I.cl,c:PH[I.cl][1]}; }).filter(Boolean); }
 function sansPos(){ return projets().filter(p=>ST.pos.has(p.ID)&&!ST.pos.get(p.ID)); }
 
-/* ── 4 bis. fonds graphiques à l'essai (21.11.2026) : couches de swisstopo recolorées sur un canevas ── */
-const COUCHE={routes:'ch.swisstopo.swisstlm3d-strassen',routes200:'ch.swisstopo.vec200-transportation-strassennetz',rail:'ch.swisstopo.swisstlm3d-eisenbahnnetz',
-  lacs:'ch.bafu.vec25-seen',eaux200:'ch.swisstopo.vec200-hydrography',bati:'ch.swisstopo.vec25-gebaeude',zones:'ch.are.bauzonen',relief:'ch.swisstopo.swissalti3d-reliefschattierung',reliefLeger:'ch.swisstopo.leichte-basiskarte_reliefschattierung',
-  plan:'ch.swisstopo.pixelkarte-grau',ortho:'ch.swisstopo.swissimage-product'};
+/* ── 4 bis. le fond « Encre » (choisi le 21.11.2026) : couches de swisstopo recolorées sur un canevas ── */
+const COUCHE={routes:'ch.swisstopo.swisstlm3d-strassen',routes200:'ch.swisstopo.vec200-transportation-strassennetz',lacs:'ch.bafu.vec25-seen',
+  eaux200:'ch.swisstopo.vec200-hydrography',bati:'ch.swisstopo.vec25-gebaeude',reliefLeger:'ch.swisstopo.leichte-basiskarte_reliefschattierung'};
 /* U = vue à dessiner : bb (E0, N0, E1, N1 en LV95), res (m par pixel d'écran), w × h (pixels d'écran), r (densité), pw × ph (pixels de l'image) */
 const wmsUrl=(l,U,jpeg)=>SG_FZ_GEO.wms+'?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS='+l+'&STYLES=&CRS=EPSG:2056&BBOX='+U.bb.map(v=>v.toFixed(1)).join(',')
   +'&WIDTH='+U.pw+'&HEIGHT='+U.ph+(jpeg?'&FORMAT=image/jpeg':'&FORMAT=image/png&TRANSPARENT=true');
@@ -279,54 +260,22 @@ const toile=U=>{ const c=document.createElement('canvas'); c.width=U.pw; c.heigh
 const teinte=(U,src,col)=>{ const c=toile(U), x=c.getContext('2d'); x.drawImage(src,0,0,U.pw,U.ph); x.globalCompositeOperation='source-in'; x.fillStyle=col; x.fillRect(0,0,U.pw,U.ph); return c; };
 const hachures=(x,col,pas,ep)=>{ const p=document.createElement('canvas'); p.width=p.height=pas; const q=p.getContext('2d'); q.strokeStyle=col; q.lineWidth=ep; q.beginPath();
   q.moveTo(0,pas); q.lineTo(pas,0); q.moveTo(-1,1); q.lineTo(1,-1); q.moveTo(pas-1,pas+1); q.lineTo(pas+1,pas-1); q.stroke(); return x.createPattern(p,'repeat'); };
-const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 /* l'eau : lacs détaillés de VECTOR25 (Suisse seulement) ; en vue large, + eaux de VECTOR200 (seules à couvrir la partie française du Léman ; trop
    généralisées pour une vue de ville) */
 async function eaux(U){ const I=await Promise.all([couche(COUCHE.lacs,U)].concat(U.res>12?[couche(COUCHE.eaux200,U)]:[]));
   const c=toile(U), x=c.getContext('2d'); I.forEach(i=>x.drawImage(i,0,0,U.pw,U.ph)); return c; }
 /* hors de Suisse seulement : la couche « src » sans ce que couvre « ch » = relief de la carte de base légère, coupé net à la frontière (les relevés
-   suisses — swissALTI3D, VECTOR25 — débordent sur la France par carrés de 1 km) */
+   suisses, VECTOR25 compris, débordent sur la France par carrés de 1 km) */
 const horsSuisse=(U,src,ch)=>{ const c=toile(U), x=c.getContext('2d'); x.drawImage(src,0,0,U.pw,U.ph); x.globalCompositeOperation='destination-out'; x.drawImage(ch,0,0,U.pw,U.ph); return c; };
-const FONDS={
-  standard:{t:'Carte validée',d:'Cliquez sur un projet pour voir son résumé'},
-  ardoise:{t:'1 Ardoise',d:'Routes en blanc sur bleu nuit, lac plus sombre, projets en jaune : à la manière d’une affiche',accent:'#FFF266',cartouche:1,
-    async dessiner(U){ const large=U.res>12, [rt,rr,eau,r2,ch]=await Promise.all([couche(COUCHE.routes,U),couche(COUCHE.rail,U),eaux(U)].concat(large?[couche(COUCHE.routes200,U),couche(COUCHE.reliefLeger,U)]:[])); const c=toile(U), x=c.getContext('2d');
-      x.fillStyle='#003346'; x.fillRect(0,0,U.pw,U.ph); x.drawImage(teinte(U,eau,'#00212D'),0,0);
-      /* vue large : routes principales de VECTOR200 hors de Suisse (les routes détaillées s'arrêtent à la frontière) */
-      if(r2){ x.globalAlpha=.6; x.drawImage(teinte(U,horsSuisse(U,r2,ch),'#F3F1EA'),0,0); }
-      x.globalAlpha=.4; x.drawImage(teinte(U,rr,'#9FB6C0'),0,0); x.globalAlpha=.92; x.drawImage(teinte(U,rt,'#F3F1EA'),0,0); x.globalAlpha=1; return c; }},
-  encre:{t:'2 Encre',d:'Plan à l’encre sur papier : routes et bâtiments en noir, lac hachuré, comme un plan de situation',cartouche:1,
-    async dessiner(U){ const ville=U.res<=12, [rt,eau,e0,ch]=await Promise.all([couche(COUCHE.routes,U),eaux(U),couche(ville?COUCHE.bati:COUCHE.routes200,U)].concat(ville?[]:[couche(COUCHE.reliefLeger,U)]));
-      const ext=ville?e0:horsSuisse(U,e0,ch), c=toile(U), x=c.getContext('2d');
-      x.fillStyle='#FAF8F2'; x.fillRect(0,0,U.pw,U.ph);
-      const l=teinte(U,eau,'#000'), lx=l.getContext('2d'); lx.globalCompositeOperation='source-in'; lx.fillStyle=hachures(lx,'#1d1d1b',Math.max(5,Math.round(7*U.r)),.9*U.r); lx.fillRect(0,0,U.pw,U.ph); x.drawImage(l,0,0);
-      /* ville : bâtiments en gris ; vue large : routes principales de VECTOR200 hors de Suisse */
-      x.globalAlpha=ville?.32:.55; x.drawImage(teinte(U,ext,'#1d1d1b'),0,0); x.globalAlpha=.88; x.drawImage(teinte(U,rt,'#1d1d1b'),0,0); x.globalAlpha=1; return c; }},
-  trame:{t:'3 Trame',d:'Trame de points : un point sur la terre, plus gros et bleu nuit dans les zones à bâtir (en ville : sur les bâtiments), rien sur l’eau',cartouche:1,
-    async dessiner(U){ const [eau,bz]=await Promise.all([eaux(U),couche(U.res<=12?COUCHE.bati:COUCHE.zones,U)]); const A=eau.getContext('2d').getImageData(0,0,U.pw,U.ph).data;
-      const zc=toile(U), zx=zc.getContext('2d'); zx.drawImage(bz,0,0,U.pw,U.ph); const Z=zx.getImageData(0,0,U.pw,U.ph).data;
-      const c=toile(U), x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,U.pw,U.ph);
-      /* grille posée sur le terrain (pas de 9 pixels d'écran) : les points ne glissent pas d'un dessin à l'autre */
-      const m=9*U.res, k=U.r/U.res, gros=new Path2D(), petits=new Path2D(), r1=9*U.r*.36, r2=9*U.r*.17;
-      for(let j=Math.floor(U.bb[3]/m);j*m>=U.bb[1];j--){ const yy=(U.bb[3]-j*m)*k; if(yy<0||yy>=U.ph) continue;
-        for(let i=Math.ceil(U.bb[0]/m);i*m<=U.bb[2];i++){ const xx=(i*m-U.bb[0])*k; if(xx<0||xx>=U.pw) continue; const n=((yy|0)*U.pw+(xx|0))*4; if(A[n+3]>60) continue;
-          const z=Z[n+3]>60, P=z?gros:petits, r=z?r1:r2; P.moveTo(xx+r,yy); P.arc(xx,yy,r,0,6.2832); } }
-      x.fillStyle='#B4B4AF'; x.fill(petits); x.fillStyle='#003346'; x.fill(gros); return c; }},
-  taches:{t:'4 Taches urbaines',d:'Les zones à bâtir en noir, le lac en jaune, les routes en filets : la forme de l’urbanisation',cartouche:1,
-    async dessiner(U){ const ville=U.res<=12, [bz,eau,rt]=await Promise.all([couche(COUCHE.zones,U),eaux(U),couche(ville?COUCHE.routes:COUCHE.routes200,U)]); const c=toile(U), x=c.getContext('2d');
-      x.fillStyle='#F2F0EA'; x.fillRect(0,0,U.pw,U.ph); x.drawImage(teinte(U,eau,'#FFF266'),0,0); x.globalAlpha=.9; x.drawImage(teinte(U,bz,'#1d1d1b'),0,0);
-      x.globalAlpha=ville?.85:.5; x.drawImage(teinte(U,rt,ville?'#F2F0EA':'#706F6F'),0,0); x.globalAlpha=1; return c; }},
-  relief:{t:'5 Relief',d:'Le relief en deux tons, bleu nuit et blanc cassé, le lac en jaune pâle ; hors de Suisse, le papier',cartouche:1,
-    async dessiner(U){ const large=U.res>12, [rel,eau]=await Promise.all([couche(large?COUCHE.reliefLeger:COUCHE.relief,U),eaux(U)]); const c=toile(U), x=c.getContext('2d');
-      /* vue large : relief de la carte de base légère, coupé net à la frontière ; vue de ville : swissALTI3D, plus fin */
-      x.drawImage(rel,0,0,U.pw,U.ph);
-      /* deux tons : ombres en bleu nuit, lumières en blanc cassé ; le relief léger est plus clair (luminance de 0,72 à 0,96), d'où un autre étalement */
-      const d=x.getImageData(0,0,U.pw,U.ph), p=d.data, a=rgb('#003346'), b=rgb('#F2F0EA'), k0=large?.72:.42, k1=large?.24:.5;
-      for(let i=0;i<p.length;i+=4){ if(p[i+3]<10){ p[i]=b[0]; p[i+1]=b[1]; p[i+2]=b[2]; p[i+3]=255; continue; }   /* hors de Suisse : pas de relief */
-        let t=((p[i]*.3+p[i+1]*.59+p[i+2]*.11)/255-k0)/k1; t=t<0?0:t>1?1:Math.pow(t,1.25);
-        p[i]=a[0]+(b[0]-a[0])*t; p[i+1]=a[1]+(b[1]-a[1])*t; p[i+2]=a[2]+(b[2]-a[2])*t; p[i+3]=255; }
-      x.putImageData(d,0,0); x.drawImage(teinte(U,eau,'#FEF6B0'),0,0); return c; }}};
-if(!FONDS[ST.style]) ST.style='standard';
+/* bleu encre de l'eau hachurée (Paulo, 21.11.2026 : « change la trame du lac en bleu ») ; le bleu de la charte (#3F4193) tirait sur le violet sur le lac */
+const BLEU_LAC='#1F5FA8';
+/* plan à l'encre sur papier : routes en noir, bâtiments en gris (vue de ville), eau hachurée en bleu, comme un plan de situation */
+async function dessinerEncre(U){ const ville=U.res<=12, [rt,eau,e0,ch]=await Promise.all([couche(COUCHE.routes,U),eaux(U),couche(ville?COUCHE.bati:COUCHE.routes200,U)].concat(ville?[]:[couche(COUCHE.reliefLeger,U)]));
+  const ext=ville?e0:horsSuisse(U,e0,ch), c=toile(U), x=c.getContext('2d');
+  x.fillStyle='#FAF8F2'; x.fillRect(0,0,U.pw,U.ph);
+  const l=teinte(U,eau,'#000'), lx=l.getContext('2d'); lx.globalCompositeOperation='source-in'; lx.fillStyle=hachures(lx,BLEU_LAC,Math.max(5,Math.round(7*U.r)),U.r); lx.fillRect(0,0,U.pw,U.ph); x.drawImage(l,0,0);
+  /* ville : bâtiments en gris ; vue large : routes principales de VECTOR200 hors de Suisse (les routes détaillées s'arrêtent à la frontière) */
+  x.globalAlpha=ville?.32:.55; x.drawImage(teinte(U,ext,'#1d1d1b'),0,0); x.globalAlpha=.88; x.drawImage(teinte(U,rt,'#1d1d1b'),0,0); x.globalAlpha=1; return c; }
 /* coordonnées WGS84 du centre de la vue pour le cartouche (formules approchées de swisstopo, LV95 → WGS84, précision de l'ordre du mètre) */
 function wgs(E,N){ const y=(E-2600000)/1e6, x=(N-1200000)/1e6;
   const lo=2.6779094+4.728982*y+0.791484*y*x+0.1306*y*x*x-0.0436*y*y*y, la=16.9023892+3.238272*x-0.270978*y*y-0.002528*x*x-0.0447*y*y*x-0.0140*x*x*x;
@@ -334,32 +283,30 @@ function wgs(E,N){ const y=(E-2600000)/1e6, x=(N-1200000)/1e6;
 
 /* ── 5. la carte ── */
 function Carte(el,o){ o=o||{}; el.classList.add('sgcarte-map'); el.tabIndex=0; el.setAttribute('aria-label','Carte des projets : glisser pour déplacer, + / − ou molette pour zoomer, flèches du clavier pour déplacer');
-  let base=document.createElement('img'); base.className='sgcarte-img'; base.alt=''; base.draggable=false;   /* fond : image (carte validée) ou canevas (fonds graphiques) */
+  let base=document.createElement('canvas'); base.className='sgcarte-img'; base.width=base.height=0;   /* fond : canevas dessiné par dessinerEncre */
   const pins=document.createElement('div'); pins.className='sgcarte-pins';
   const tip=document.createElement('div'); tip.className='sgcarte-tip';
   const ctl=document.createElement('div'); ctl.className='sgcarte-ctl';
   ctl.innerHTML='<button type="button" data-z="in" title="Zoom avant">'+SVG.plus+'</button><button type="button" data-z="out" title="Zoom arrière">'+SVG.moins+'</button><button type="button" data-z="fit" title="Voir tous les projets">'+SVG.tout+'</button>';
-  const fond=document.createElement('div'); fond.className='sgcarte-fond'; fond.innerHTML='<button type="button" data-f="plan">Carte</button><button type="button" data-f="ortho">Photo aérienne</button>';
-  const att=document.createElement('div'); att.className='sgcarte-att'; att.textContent='© swisstopo';
+  const att=document.createElement('div'); att.className='sgcarte-att'; att.textContent='© swisstopo, OFEV';
   const msg=document.createElement('div'); msg.className='sgcarte-msg'; msg.style.display='none';
-  const cart=document.createElement('div'); cart.className='sgcarte-cart'; cart.setAttribute('aria-hidden','true');   /* cartouche des fonds graphiques */
-  const F=FONDS[ST.style]||FONDS.standard; el.dataset.fond=FONDS[ST.style]?ST.style:'standard';
-  el.append(base,pins,tip,ctl,fond,cart,att,msg);
+  const cart=document.createElement('div'); cart.className='sgcarte-cart'; cart.setAttribute('aria-hidden','true');   /* cartouche à la manière d'une affiche */
+  el.append(base,pins,tip,ctl,cart,att,msg);
   const S={E:2538000,N:1152000,res:120}; let imgV=null, its=[], sel=ST.sel, hl=null, tImg=0, tokI=0, cbVue=null, ouv=false, msgT='', errImg=false;
   const W=()=>el.clientWidth||800, H=()=>el.clientHeight||500;
   const px=(e,n)=>[(e-S.E)/S.res+W()/2,H()/2-(n-S.N)/S.res];
-  /* vue à dessiner ; densité plafonnée à 1,5 pour les fonds graphiques (trois ou quatre couches par vue) */
-  const vueU=()=>{ const w=W(),h=H(),r=Math.min(F.dessiner?1.5:2,window.devicePixelRatio||1);
+  /* vue à dessiner ; densité plafonnée à 1,5 (trois ou quatre couches par vue) */
+  const vueU=()=>{ const w=W(),h=H(),r=Math.min(1.5,window.devicePixelRatio||1);
     return {E:S.E,N:S.N,res:S.res,w,h,r,pw:Math.round(w*r),ph:Math.round(h*r),bb:[S.E-w/2*S.res,S.N-h/2*S.res,S.E+w/2*S.res,S.N+h/2*S.res]}; };
   const placeImg=()=>{ if(!imgV) return; const s=imgV.res/S.res, x=(imgV.E-imgV.w/2*imgV.res-S.E)/S.res+W()/2, y=H()/2-(imgV.N+imgV.h/2*imgV.res-S.N)/S.res;
     base.style.width=imgV.w+'px'; base.style.height=imgV.h+'px'; base.style.transform='translate('+x+'px,'+y+'px) scale('+s+')'; };
   const montrerMsg=()=>{ const t=msgT||(errImg?'Fond de carte indisponible (connexion à swisstopo ?)':''); msg.textContent=t; msg.style.display=t?'block':'none'; };
-  const poser=(nv,U)=>{ nv.classList.add('sgcarte-img'); if(nv.tagName==='IMG'){ nv.alt=''; nv.draggable=false; } base.replaceWith(nv); base=nv; imgV=U; errImg=false; placeImg(); montrerMsg(); };
+  const poser=(nv,U)=>{ nv.classList.add('sgcarte-img'); base.replaceWith(nv); base=nv; imgV=U; errImg=false; placeImg(); montrerMsg(); };
   const charger=()=>{ clearTimeout(tImg); tImg=setTimeout(async()=>{ const U=vueU(), tok=++tokI;
-    try{ const nv=F.dessiner?await F.dessiner(U):await new Promise((ok,ko)=>{ const im=new Image(); im.onload=()=>ok(im); im.onerror=ko; im.src=wmsUrl(ST.fond==='ortho'?COUCHE.ortho:COUCHE.plan,U,ST.fond==='ortho'); });
+    try{ const nv=await dessinerEncre(U);
       if(tok===tokI&&document.body.contains(el)) poser(nv,U); }
     catch(_){ if(tok===tokI){ errImg=true; montrerMsg(); } } },160); };
-  const majCart=()=>{ if(!F.cartouche) return; const [la,lo]=wgs(S.E,S.N), n=its.length; cart.style.display='block';
+  const majCart=()=>{ const [la,lo]=wgs(S.E,S.N), n=its.length; cart.style.display='block';
     cart.innerHTML='<b>SUBSTANCES ARCHITECTES</b><span>'+n+' PROJET'+(n>1?'S':'')+(ST.filtre==='encours'?' EN COURS':'')+' · '+la.toFixed(4)+'° N, '+lo.toFixed(4)+'° E</span>'; };
   const dessinerPins=()=>{ const w=W(),h=H(), P=its.map(x=>{ const [a,b]=px(x.E,x.N); return {x,a,b}; }).filter(q=>q.a>-40&&q.a<w+40&&q.b>-40&&q.b<h+40);
     /* regroupement des épingles trop proches (les projets les plus actifs restent seuls ; le projet choisi n'est jamais regroupé) */
@@ -375,11 +322,9 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcarte-map'); el.tabIndex=0; e
     S.E=(e0+e1)/2; S.N=(n0+n1)/2; S.res=Math.min(900,Math.max(2.5,Math.max((e1-e0)/Math.max(80,W()-110),(n1-n0)/Math.max(80,H()-110)))); vue(); };
   const zoom=(f,mx,my)=>{ const nr=Math.min(900,Math.max(0.6,S.res*f)); if(mx!=null){ const ec=S.E+(mx-W()/2)*S.res, nc=S.N-(my-H()/2)*S.res; S.E=ec-(mx-W()/2)*nr; S.N=nc+(my-H()/2)*nr; } S.res=nr; vue(); };
   ctl.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; e.stopPropagation(); const z=b.dataset.z; if(z==='in'){ ST.auto=false; zoom(1/1.6); } else if(z==='out'){ ST.auto=false; zoom(1.6); } else { ST.auto=true; ajuster(); } };
-  const majFond=()=>fond.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.f===ST.fond)); majFond();
-  fond.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; e.stopPropagation(); ST.fond=b.dataset.f; nxLS.set('sg3_carte_fond',ST.fond); majFond(); charger(); };
   /* glisser, molette, clic, survol */
   let dr=null;
-  el.addEventListener('pointerdown',e=>{ if(e.button!==0||e.target.closest('.sgcarte-ctl,.sgcarte-fond')) return; dr={x:e.clientX,y:e.clientY,E:S.E,N:S.N,m:false,t:e.target}; try{ el.setPointerCapture(e.pointerId); }catch(_){} });
+  el.addEventListener('pointerdown',e=>{ if(e.button!==0||e.target.closest('.sgcarte-ctl')) return; dr={x:e.clientX,y:e.clientY,E:S.E,N:S.N,m:false,t:e.target}; try{ el.setPointerCapture(e.pointerId); }catch(_){} });
   el.addEventListener('pointermove',e=>{ if(dr){ const dx=e.clientX-dr.x, dy=e.clientY-dr.y; if(!dr.m&&Math.abs(dx)+Math.abs(dy)>4){ dr.m=true; ST.auto=false; el.classList.add('drag'); tip.style.display='none'; }
       if(dr.m){ S.E=dr.E-dx*S.res; S.N=dr.N+dy*S.res; dessiner(); } return; }
     const pin=e.target.closest('.sgcarte-pin'); if(pin){ const x=its.find(z=>String(z.id)===pin.dataset.id); if(x){ const b=el.getBoundingClientRect();
@@ -466,9 +411,7 @@ function brancherActions(box,I,fermer){ box.addEventListener('click',e=>{ const 
   else if(k==='tdb'){ fermerFenetre(); go('nx-projet',p.ID); }
   else if(k==='fenetre') ouvrirFenetre(p.ID); }); }
 const repartition=L=>{ const c={}; L.forEach(x=>{ c[x.cl]=(c[x.cl]||0)+1; }); return '<div class="sgcarte-rep">'+PH_ORD.filter(k=>c[k]).map(k=>'<i style="--c:'+PH[k][1]+'"></i><span>'+E(PH[k][0])+'</span><b>'+c[k]+'</b>').join('')+'</div>'; };
-const legende=()=>{ const F=FONDS[ST.style]||FONDS.standard;   /* fond à couleur unique (Ardoise) : l'avancement reste dans le résumé du projet */
-  if(F.accent) return '<div class="sgcarte-leg"><span style="--c:'+F.accent+'"><i class="sq"></i>Projet</span><span class="nb">L’avancement du projet est indiqué dans son résumé.</span></div>';
-  return '<div class="sgcarte-leg">'+PH_ORD.map(k=>'<span style="--c:'+PH[k][1]+'"><i></i>'+E(PH[k][0])+'</span>').join('')+'</div>'; };
+const legende=()=>'<div class="sgcarte-leg">'+PH_ORD.map(k=>'<span style="--c:'+PH[k][1]+'"><i></i>'+E(PH[k][0])+'</span>').join('')+'</div>';
 function sansHtml(){ if(!ST.pret) return ''; const L=sansPos(); if(!L.length) return '';
   return '<div class="sgcarte-sans">'+L.length+' projet'+(L.length>1?'s':'')+' sans position : '+L.slice(0,40).map(p=>'<button type="button" data-sgcarte-p="'+E(p.ID)+'" title="'+E(p.TITLE||'')+' — ouvrir la page du projet">'+E(p.NUMBER)+'</button>').join(', ')+(L.length>40?', …':'')
     +'. Pour les placer : l’adresse de l’affaire (Liste des affaires ▸ Éditer ▸ Adresses), l’adresse du projet dans le contrat d’honoraires ou la parcelle (Faisabilité ▸ Parcelle & règlements).</div>'; }
@@ -495,7 +438,7 @@ function ouvrirFenetre(id,onglet){ fermerFenetre(); const p=DS.get('project',id)
 
 /* ── 8. la carte et son panneau (proposition 1), posée dans une page ── */
 function sgCarteZone(z){ z.classList.add('sgcarte-zone');
-  z.innerHTML='<div class="sgcarte-card">'+enTete('Carte des projets',(FONDS[ST.style]||FONDS.standard).d)+'<div class="sgcarte-p1"><div class="m"></div><aside aria-live="polite"></aside></div>'+legende()+'<div class="sans"></div></div>';
+  z.innerHTML='<div class="sgcarte-card">'+enTete('Carte des projets','Cliquez sur un projet pour voir son résumé')+'<div class="sgcarte-p1"><div class="m"></div><aside aria-live="polite"></aside></div>'+legende()+'<div class="sans"></div></div>';
   brancherFiltre(z); const aside=z.querySelector('aside'), C=Carte(z.querySelector('.m'),{choisir:id=>choisir(id),vide:()=>choisir(null)});
   let vu;
   const panneau=force=>{ const id=ST.sel, p=id!=null&&DS.get('project',id), L=items();
@@ -526,12 +469,8 @@ const TABLES=['timelog','project','projectphase','projectsubphase','projectmembe
 VIEWS['nx-carte']={
   render(m){ aujourdhui(); INF.clear(); ENC=null; ST.pret=false; ST.prog='';
     for(const [k,v] of ST.pos) if(!v) ST.pos.delete(k);   /* projets sans position : cherchés de nouveau (une adresse a pu être ajoutée) */
-    /* onglets = graphisme de la carte : la carte validée ou l'un des cinq fonds graphiques à l'essai (21.11.2026) */
-    const ong=sgPageNav({onglets:Object.keys(FONDS).map(k=>({t:FONDS[k].t,arg:k,on:ST.style===k,fn:'fond',ti:FONDS[k].d}))});
-    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Proposition','Carte des projets','Proposition 1 « Carte et panneau » pour le Cockpit, validée le 21.11.2026 : à travailler ici avant son ajout au Cockpit. Graphisme : la carte validée ou l’un des cinq fonds graphiques à l’essai.',chiffresHtml()+ong)
+    const pg=nxPage(m,'<div class="sg-split">'+sgTete('Proposition','Carte des projets','Proposition 1 « Carte et panneau » pour le Cockpit, au graphisme « Encre » : plan à l’encre sur papier, lac hachuré en bleu. À travailler ici avant son ajout au Cockpit.',chiffresHtml())
       +'<div class="sgcarte-zone"></div></div>');
-    pg._fn.fond=b=>{ const k=b.dataset.arg; if(!FONDS[k]||k===ST.style) return; ST.style=k; nxLS.set('sg3_carte_style',k);
-      b.closest('.sg-onglets').querySelectorAll('button').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-selected',on?'true':'false'); }); dessinerZone(); };
     ZONE=pg.querySelector('.sgcarte-zone'); dessinerZone(); },
   /* modifications de la base (saisies, plannings, adresses…) : la carte et le résumé suivent, sans perdre la vue */
   refresh(ts){ if(!CUR||!ZONE||!document.body.contains(ZONE)) return; ts=ts||['*']; const a=x=>ts.includes('*')||ts.includes(x);

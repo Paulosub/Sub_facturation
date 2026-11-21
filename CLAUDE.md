@@ -3204,7 +3204,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   d'ensemble · Planning · Heures · Équipe · Facturation, Échap). Position : parcelle de Faisabilité (`sgfaisa`), adresse du projet du contrat (padr, ploc), adresse
   d'affaire (CONTACT1_ID), adresse écrite dans la désignation, localité — géocodées par `sgFzChercherAdresse` (geo.admin.ch, comme Faisabilité), cache du poste
   `sg3_carte_geo` (adresse trouvée gardée ; introuvable redemandée après 7 jours ; erreur de réseau rien gardé) ; 99TST (commune fictive) : position fictive à
-  Lausanne ; projets sans position listés sous la carte (un clic ouvre leur page). Rien n'est écrit dans la base ; redessin sur place (`refresh`) quand heures,
+  Lausanne ; la liste des projets sans position sous la carte est retirée le 21.11.2026 (capture annotée : « supprimer ») : leur nombre reste dans les chiffres.
+  **Bureau** (même jour, Paulo : « indiquer la position du bureau sur la carte ») : adresse de l'annuaire (`sgBureauAdresse`, celle des documents : Rue de la
+  Gare 12, 1096 Cully) cherchée comme celle d'un projet (`placerBureau`, même cache) ; carré noir à cœur jaune nommé « Bureau » (`posBureau`), au-dessus des
+  épingles et des groupes mais transparent aux clics, décalé juste à côté quand un projet ou un groupe occupe la même place (un projet a l'adresse du bureau :
+  sinon le chiffre du groupe était caché) ; compris dans la vue d'ensemble ; nom et adresse au survol ; « Bureau » dans la légende. Rien n'est écrit dans la base ; redessin sur place (`refresh`) quand heures,
   plannings, permis ou adresses changent. **Le Cockpit (`nx-home`) n'est PAS touché** : pour l'y poser le jour où Paulo le demande, `SGCARTE.zone(el)`
   (`sgCarteZone`). Styles `#sgcarte-css`, classes `sgcarte-*`, débogage `window.SGCARTE`. Copie d'avant : `subgestion3/_backup_20261121_0856_avant_chapitre_proposition/`,
   `SUBGestion3_backup_20261121_0856_avant_chapitre_proposition.html`.
@@ -3222,7 +3226,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `subgestion3/_backup_20261121_1114_avant_choix_encre/`) : plus d'onglets de fond ni de bouton « Photo aérienne » ; les clés du poste `sg3_carte_style` et
   `sg3_carte_fond` sont effacées au chargement. **La carte reste à retravailler avec Paulo, plus tard** ; toujours pas dans le Cockpit. Copies d'avant :
   `subgestion3/_backup_20261121_0951_avant_fonds_graphiques/`, `subgestion3/_backup_20261121_1114_avant_choix_encre/`,
-  `SUBGestion3_backup_20261121_1114_avant_choix_encre.html`, `subgestion3/_backup_20261121_1153_avant_sans_cartouche/`.
+  `SUBGestion3_backup_20261121_1114_avant_choix_encre.html`, `subgestion3/_backup_20261121_1153_avant_sans_cartouche/`,
+  `subgestion3/_backup_20261121_1211_avant_sans_liste/`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

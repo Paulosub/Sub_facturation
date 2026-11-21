@@ -3215,14 +3215,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Suisse (`horsSuisse` : masque = relief de la carte de base légère, coupé net à la frontière — swissTLM3D s'arrête à la frontière, VECTOR25 et swissALTI3D débordent
   par carrés de 1 km, les couches de limites `swissboundaries3d-*-flaeche.fill` ne sont que des contours) ; eau = lacs VECTOR25 + eaux VECTOR200 en vue large (`eaux` ;
   seules celles-ci couvrent la partie française du Léman), hachurée en bleu encre #1F5FA8 (`BLEU_LAC` ; le bleu de la charte #3F4193 tirait sur le violet sur le lac,
-  essais du 21.11.2026) ; épingles cerclées de noir, groupes en blanc cassé ; cartouche blanc à la manière d'une affiche (« SUBSTANCES ARCHITECTES », nombre de projets,
-  coordonnées WGS84 du centre de la vue, `wgs` = formules approchées de swisstopo). Couches WMS (CORS ouvert) chargées en `crossOrigin` et recolorées sur un canevas
+  essais du 21.11.2026) ; épingles cerclées de noir, groupes en blanc cassé ; plus de cartouche (« SUBSTANCES ARCHITECTES », nombre de projets et coordonnées du
+  centre, à la manière de l'affiche : retiré le même jour, capture annotée de Paulo : « supprimer »). Couches WMS (CORS ouvert) chargées en `crossOrigin` et recolorées sur un canevas
   (`teinte` : la transparence d'une couche sert de masque) ; densité plafonnée à 1,5 ; environ 1 s par vue ; attribution « © swisstopo, OFEV ». Les quatre autres fonds
   (1 Ardoise, 3 Trame, 4 Taches urbaines, 5 Relief) et la carte grise / photo aérienne du premier jet sont retirés (leur code : commit ebc2462 et
   `subgestion3/_backup_20261121_1114_avant_choix_encre/`) : plus d'onglets de fond ni de bouton « Photo aérienne » ; les clés du poste `sg3_carte_style` et
   `sg3_carte_fond` sont effacées au chargement. **La carte reste à retravailler avec Paulo, plus tard** ; toujours pas dans le Cockpit. Copies d'avant :
   `subgestion3/_backup_20261121_0951_avant_fonds_graphiques/`, `subgestion3/_backup_20261121_1114_avant_choix_encre/`,
-  `SUBGestion3_backup_20261121_1114_avant_choix_encre.html`.
+  `SUBGestion3_backup_20261121_1114_avant_choix_encre.html`, `subgestion3/_backup_20261121_1153_avant_sans_cartouche/`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 21.11.2026 11:20 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 21.11.2026 11:53 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -48343,7 +48343,8 @@ window.SGTAB=Object.assign(SGTAB,{etat:sgtabEtat,cols:sgtabCols,menu:sgtabMenu,i
      du lac en bleu ») : plan à l'encre sur papier, dessiné sur un canevas à partir des couches de swisstopo (WMS de SG_FZ_GEO, LV95, CORS ouvert) — routes
      swissTLM3D en noir ; vue de ville (12 m par pixel au plus) : bâtiments VECTOR25 en gris ; vue large : routes principales VECTOR200 hors de Suisse (coupées
      à la frontière par le relief de la carte de base légère) ; eau = lacs VECTOR25 (+ eaux VECTOR200 en vue large, seules à couvrir la partie française du
-     Léman) hachurée en bleu encre (BLEU_LAC) ; cartouche « SUBSTANCES ARCHITECTES » à la manière d'une affiche (nombre de projets, coordonnées du centre).
+     Léman) hachurée en bleu encre (BLEU_LAC). Cartouche « SUBSTANCES ARCHITECTES » (nombre de projets, coordonnées du centre) retiré le même jour
+     (Paulo, capture annotée : « supprimer »).
    - Projets : ceux que l'utilisateur voit (sgProjetsVisibles), sans les projets internes ; « En cours » (états 1, 2, 3) ou « Tous » (choix gardé sur le poste).
    - Position : parcelle de Faisabilité (sgfaisa ▸ PARCELLE E / N) ; sinon adresse du projet du contrat d'honoraires (padr, ploc), adresse d'affaire
      (CONTACT1_ID), adresse écrite dans la désignation (« Immeuble | Meillerie 6 | Lausanne »), enfin la localité — cherchées par le géoportail fédéral
@@ -48470,10 +48471,6 @@ const CSS=`
 .sgcarte-acc p{font-size:12.5px;color:#3d3d3b;margin:0 0 12px;line-height:1.5}
 .sgcarte-rep{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;font-size:12.5px;align-items:center}
 .sgcarte-rep i{width:11px;height:11px;border-radius:50%;background:var(--c);border:1px solid #1d1d1b;box-sizing:border-box}
-/* cartouche du fond « Encre », à la manière d'une affiche */
-.sgcarte-cart{position:absolute;left:18px;bottom:18px;z-index:5;background:#fff;border:1px solid #1d1d1b;padding:12px 22px 10px;text-align:center;pointer-events:none;min-width:250px;display:none}
-.sgcarte-cart b{display:block;font-size:15px;letter-spacing:.32em;padding-left:.32em;font-weight:700;color:#1d1d1b;white-space:nowrap}
-.sgcarte-cart span{display:block;font-size:10px;letter-spacing:.16em;padding-left:.16em;color:#3d3d3b;margin-top:5px;white-space:nowrap}
 /* fenêtre du projet */
 .sgcarte-voile{position:fixed;inset:0;background:rgba(29,29,27,.38);z-index:870;display:grid;place-items:center}
 .sgcarte-win{width:min(1040px,94vw);max-height:90vh;display:flex;flex-direction:column;background:#fff;box-shadow:0 18px 50px rgba(0,0,0,.3)}
@@ -48609,10 +48606,6 @@ async function dessinerEncre(U){ const ville=U.res<=12, [rt,eau,e0,ch]=await Pro
   const l=teinte(U,eau,'#000'), lx=l.getContext('2d'); lx.globalCompositeOperation='source-in'; lx.fillStyle=hachures(lx,BLEU_LAC,Math.max(5,Math.round(7*U.r)),U.r); lx.fillRect(0,0,U.pw,U.ph); x.drawImage(l,0,0);
   /* ville : bâtiments en gris ; vue large : routes principales de VECTOR200 hors de Suisse (les routes détaillées s'arrêtent à la frontière) */
   x.globalAlpha=ville?.32:.55; x.drawImage(teinte(U,ext,'#1d1d1b'),0,0); x.globalAlpha=.88; x.drawImage(teinte(U,rt,'#1d1d1b'),0,0); x.globalAlpha=1; return c; }
-/* coordonnées WGS84 du centre de la vue pour le cartouche (formules approchées de swisstopo, LV95 → WGS84, précision de l'ordre du mètre) */
-function wgs(E,N){ const y=(E-2600000)/1e6, x=(N-1200000)/1e6;
-  const lo=2.6779094+4.728982*y+0.791484*y*x+0.1306*y*x*x-0.0436*y*y*y, la=16.9023892+3.238272*x-0.270978*y*y-0.002528*x*x-0.0447*y*y*x-0.0140*x*x*x;
-  return [la*100/36,lo*100/36]; }
 
 /* ── 5. la carte ── */
 function Carte(el,o){ o=o||{}; el.classList.add('sgcarte-map'); el.tabIndex=0; el.setAttribute('aria-label','Carte des projets : glisser pour déplacer, + / − ou molette pour zoomer, flèches du clavier pour déplacer');
@@ -48623,8 +48616,7 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcarte-map'); el.tabIndex=0; e
   ctl.innerHTML='<button type="button" data-z="in" title="Zoom avant">'+SVG.plus+'</button><button type="button" data-z="out" title="Zoom arrière">'+SVG.moins+'</button><button type="button" data-z="fit" title="Voir tous les projets">'+SVG.tout+'</button>';
   const att=document.createElement('div'); att.className='sgcarte-att'; att.textContent='© swisstopo, OFEV';
   const msg=document.createElement('div'); msg.className='sgcarte-msg'; msg.style.display='none';
-  const cart=document.createElement('div'); cart.className='sgcarte-cart'; cart.setAttribute('aria-hidden','true');   /* cartouche à la manière d'une affiche */
-  el.append(base,pins,tip,ctl,cart,att,msg);
+  el.append(base,pins,tip,ctl,att,msg);
   const S={E:2538000,N:1152000,res:120}; let imgV=null, its=[], sel=ST.sel, hl=null, tImg=0, tokI=0, cbVue=null, ouv=false, msgT='', errImg=false;
   const W=()=>el.clientWidth||800, H=()=>el.clientHeight||500;
   const px=(e,n)=>[(e-S.E)/S.res+W()/2,H()/2-(n-S.N)/S.res];
@@ -48639,8 +48631,6 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcarte-map'); el.tabIndex=0; e
     try{ const nv=await dessinerEncre(U);
       if(tok===tokI&&document.body.contains(el)) poser(nv,U); }
     catch(_){ if(tok===tokI){ errImg=true; montrerMsg(); } } },160); };
-  const majCart=()=>{ const [la,lo]=wgs(S.E,S.N), n=its.length; cart.style.display='block';
-    cart.innerHTML='<b>SUBSTANCES ARCHITECTES</b><span>'+n+' PROJET'+(n>1?'S':'')+(ST.filtre==='encours'?' EN COURS':'')+' · '+la.toFixed(4)+'° N, '+lo.toFixed(4)+'° E</span>'; };
   const dessinerPins=()=>{ const w=W(),h=H(), P=its.map(x=>{ const [a,b]=px(x.E,x.N); return {x,a,b}; }).filter(q=>q.a>-40&&q.a<w+40&&q.b>-40&&q.b<h+40);
     /* regroupement des épingles trop proches (les projets les plus actifs restent seuls ; le projet choisi n'est jamais regroupé) */
     const G=[]; P.sort((m,n)=>(n.x.I.h30-m.x.I.h30)||(n.x.I.htot-m.x.I.htot));
@@ -48650,7 +48640,7 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcarte-map'); el.tabIndex=0; e
       else { const bt=document.createElement('button'); bt.type='button'; bt.className='sgcarte-clu'; bt.style.cssText='left:'+g.a+'px;top:'+g.b+'px'; bt.textContent=g.m.length;
         bt.title=g.m.map(q=>q.x.p.NUMBER).join(', ')+' — cliquer pour agrandir'; bt._m=g.m.map(q=>q.x); pins.append(bt); } }); };
   const dessiner=()=>{ placeImg(); dessinerPins(); };
-  const vue=()=>{ dessiner(); charger(); majCart(); ST.vue={E:S.E,N:S.N,res:S.res}; clearTimeout(vue.t); vue.t=setTimeout(()=>{ if(cbVue) cbVue(); },200); };
+  const vue=()=>{ dessiner(); charger(); ST.vue={E:S.E,N:S.N,res:S.res}; clearTimeout(vue.t); vue.t=setTimeout(()=>{ if(cbVue) cbVue(); },200); };
   const ajuster=L=>{ L=(L||its); if(!L.length){ vue(); return; } let e0=Infinity,e1=-Infinity,n0=Infinity,n1=-Infinity; L.forEach(x=>{ e0=Math.min(e0,x.E); e1=Math.max(e1,x.E); n0=Math.min(n0,x.N); n1=Math.max(n1,x.N); });
     S.E=(e0+e1)/2; S.N=(n0+n1)/2; S.res=Math.min(900,Math.max(2.5,Math.max((e1-e0)/Math.max(80,W()-110),(n1-n0)/Math.max(80,H()-110)))); vue(); };
   const zoom=(f,mx,my)=>{ const nr=Math.min(900,Math.max(0.6,S.res*f)); if(mx!=null){ const ec=S.E+(mx-W()/2)*S.res, nc=S.N-(my-H()/2)*S.res; S.E=ec-(mx-W()/2)*nr; S.N=nc+(my-H()/2)*nr; } S.res=nr; vue(); };
@@ -48680,7 +48670,7 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcarte-map'); el.tabIndex=0; e
   let nAj=-1;
   return {
     /* tant que personne n'a déplacé ni zoomé la carte (ST.auto), elle s'ajuste à tous les projets placés ; ensuite la vue est gardée pendant la séance */
-    set(L){ its=L; majCart(); if(ST.auto){ if(!ouv||L.length!==nAj){ ouv=true; nAj=L.length; ajuster(); } else dessiner(); return; }
+    set(L){ its=L; if(ST.auto){ if(!ouv||L.length!==nAj){ ouv=true; nAj=L.length; ajuster(); } else dessiner(); return; }
       if(!ouv){ ouv=true; if(ST.vue){ Object.assign(S,ST.vue); vue(); } else ajuster(); } else dessiner(); },
     choisir(id){ sel=id; dessinerPins(); },
     hl(id){ if(hl===id) return; hl=id; pins.querySelectorAll('.sgcarte-pin').forEach(b=>b.classList.toggle('hl',b.dataset.id===String(id))); },

@@ -3235,14 +3235,15 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   titre ne reste jamais seul en bas de page) : script `subgestion3/_backup_20261122_maquette_conditions/maquette.py` (`python3 -I maquette.py` ; moteur
   `moteur_debut.js` + `moteur_fin.js` = `SGMQC(racine, données, options)`, propositions `variantes_a.js|css` 1 à 5 et `variantes_b.js|css` 6 à 10, données
   `donnees_99tst_112.json`) → pages `proposition_conditions.html` (1 à 5) et `proposition_conditions_2.html` (6 à 10) de l'aperçu (port 7797 ; document actuel en
-  images `conditions/actuel_*.png`) et module de l'app `sg3_mq_conditions.js` (ne pas le modifier à la main) : **Archives ▸ Maquettes ▸ « Conditions générales ·
-  5 propositions »** (`mq-conditions-1`, `dom:'reglages'`, racine fantôme, rien n'est lu ni écrit). Propositions 1 Comme le devis général, 2 Grand chiffre,
-  3 Formulaire, 4 Sommaire et chapitres, 5 Compact deux colonnes (gardées dans Archives) ; 6 Plan d'architecte (cadre de dessin, cartouche, zones à remplir hachurées
+  images `conditions/actuel_*.png`) et module de l'app `sg3_mq_conditions.js` (ne pas le modifier à la main ; un moteur par jeu, `MOTEUR_A` / `MOTEUR_B`) :
+  **Archives ▸ Maquettes ▸ « Conditions générales · propositions 1 à 5 »** (`mq-conditions-1`) **et « … propositions 6 à 10 »** (`mq-conditions-2`, même jour,
+  Paulo : « conserve les propositions dans archives ») — `dom:'reglages'`, racine fantôme, rien n'est lu ni écrit. Propositions 1 Comme le devis général, 2 Grand chiffre,
+  3 Formulaire, 4 Sommaire et chapitres, 5 Compact deux colonnes ; 6 Plan d'architecte (cadre de dessin, cartouche, zones à remplir hachurées
   en bleu encre comme le lac de la carte), 7 Bleu nuit (couverture pleine, CFC et date de retour en jaune, bandes de section jusqu'au bord gauche), 8 Onglets en marge
   (onglet jaune de chaque section au bord droit, à sa hauteur ; sommaire en face des onglets sur la couverture), 9 Grille à trois colonnes (repères, texte, colonne
   « réponses » à droite), 10 À lire puis à retourner (pages à remplir et à signer regroupées à la fin, bande jaune et pointillé à détacher ; ordre des sections
   changé) — **choix de Paulo attendu**, à appliquer ensuite dans `contenuCahier` (sg3_docsub.js) et `creerCahier` (sg3_descriptif.js). Copie d'avant :
-  `subgestion3/_backup_20261122_2337_avant_archives_conditions/`.
+  `subgestion3/_backup_20261122_2337_avant_archives_conditions/`, `subgestion3/_backup_20261122_2348_avant_archives_conditions_6_10/`.
 
 ## Skills du projet (`.claude/skills/`, versionnés — exception dans `.gitignore`)
 

@@ -185,7 +185,19 @@ const SG_DOM=[
      dans un nouvel onglet Proposition, pour que je puisse travailler dedans avant de l'appliquer à l'app ») : propositions validées, gardées ici tant qu'elles ne
      sont pas reportées dans l'app ; administrateur seulement (sgVueOk, sg3_plus.js). Écrans : sg3_proposition.js (bloc 58). */
   {k:'proposition',t:'Proposition',ico:'carte',nav:0,d:'Propositions validées, à travailler ici avant de les reporter dans l’app.',items:[
-    {v:'nx-carte',t:'Carte des projets',ico:'carte',hero:1,d:'Proposition 1 « Carte et panneau » pour le Cockpit, validée le 21.11.2026 : la position des projets sur la carte ; un clic sur un projet ouvre son résumé.'}]},
+    {v:'nx-carte',t:'Carte des projets',ico:'carte',hero:1,d:'Proposition 1 « Carte et panneau » pour le Cockpit, validée le 21.11.2026 : la position des projets sur la carte ; un clic sur un projet ouvre son résumé.'},
+    /* cinq variantes de carte et d'organisation de la fenêtre (23.11.2026, Paulo : « conserve toutes les propositions dans Proposition, les 5 variantes ») :
+       écrans de sg3_carte_variantes.js (bloc 60) */
+    {v:'nx-carte-v1',grp:'Carte · variantes',t:'1 Atlas des régions',ico:'carte',d:'Plan au trait, communes hachurées selon la densité des projets, index numéroté par commune ou district.'},
+    {v:'nx-carte-v2',grp:'Carte · variantes',t:'2 Relevé · densité',ico:'carte',d:'Relevé bleu : carroyage kilométrique de la densité des projets sur toute la largeur, relevés dessous qui filtrent la carte (année, type, distance, communes).'},
+    {v:'nx-carte-v3',grp:'Carte · variantes',t:'3 Nuit · chantiers en cours',ico:'carte',d:'Carte en négatif : chantiers en cours en jaune, rayons et distances depuis le bureau, planning des chantiers.'},
+    {v:'nx-carte-v4',grp:'Carte · variantes',t:'4 Flux · portefeuille',ico:'carte',d:'Diagramme de flux région → type → avancement relié à la carte.'},
+    {v:'nx-carte-v5',grp:'Carte · variantes',t:'5 Billets · fiches',ico:'carte',d:'Plan au trait rouge, un billet par projet, parcours des phases du projet choisi.'},
+    {v:'nx-carte-v6',grp:'Carte · variantes',t:'6 Planche · sites',ico:'carte',d:'Aquarelle verte : carte d’ensemble et une vignette du site de chaque projet, triée par activité, avancement, commune ou numéro.'},
+    {v:'nx-carte-v7',grp:'Carte · variantes',t:'7 Chronologie',ico:'carte',d:'L’histoire du bureau mois par mois : projets actifs, commencés, finis ; lecture animée et frise des heures.'},
+    {v:'nx-carte-v8',grp:'Carte · variantes',t:'8 Relief · colonnes',ico:'carte',d:'Plan incliné : une colonne par projet (heures saisies, prévues, des 30 jours ou honoraires), couleur = avancement.'},
+    {v:'nx-carte-v9',grp:'Carte · variantes',t:'9 Réseau · équipe et clients',ico:'carte',d:'Arcs du bureau vers les projets d’un collaborateur ; projets d’un même maître de l’ouvrage reliés.'},
+    {v:'nx-carte-v10',grp:'Carte · variantes',t:'10 Cartogramme · communes',ico:'carte',d:'Une case par commune, chiffres et finances par commune et par district.'}]},
   /* chapitre « Archives » (24.10.2026, demande de Paulo : « créer un menu archive, laisse-le vide pour le moment ») ; vide:1 = affiché à
      l'administrateur même sans module (sgSide) */
   {k:'archives',t:'Archives',ico:'archive',nav:0,vide:1,d:'Anciens modules et registres gardés pour consultation.',items:[

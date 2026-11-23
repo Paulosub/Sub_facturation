@@ -3228,6 +3228,38 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `subgestion3/_backup_20261121_0951_avant_fonds_graphiques/`, `subgestion3/_backup_20261121_1114_avant_choix_encre/`,
   `SUBGestion3_backup_20261121_1114_avant_choix_encre.html`, `subgestion3/_backup_20261121_1153_avant_sans_cartouche/`,
   `subgestion3/_backup_20261121_1211_avant_sans_liste/`.
+- **Proposition ▸ Carte · variantes 1 à 10 (23.11.2026, bloc 60, `subgestion3/sg3_carte_variantes.js`, concaténé après `sg3_proposition.js`)** — Paulo, 18 images
+  d'inspiration à l'appui (affiches de villes, plans noir et blanc, relevé bleu, diagrammes de flux, billets, affiche suisse, parcours à cercles rouges) : « 5
+  propositions de carte et d'organisation de la fenêtre ; pouvoir sélectionner les projets et identifier les données, avec visuellement les chantiers en cours, les
+  projets, région, densité des projets, type de projets ; propose-moi des données à traiter avec la carte », puis « trop bien, conserve toutes les propositions dans
+  Proposition, les 5 variantes ». Écrans `nx-carte-v1` à `v5` (menu Proposition ▸ sous-menu « Carte · variantes », `SG_DOM` de sg3.js ; onglets 1 à 5 dans la page ;
+  « En cours · Tous » par variante, `sessionStorage` `sgcv_f<n>`) ; administrateur seulement (chapitre Proposition) ; rien n'est écrit dans la base. **1 Atlas des
+  régions** (plan au trait noir, eau ardoise, communes hachurées sous le lac — dessinées sur le canevas avant l'eau, `o.sous` — selon projets / heures / honoraires,
+  commune choisie en noir, index numéroté par commune ou district, titre de la région et coordonnées en bas de la carte), **2 Relevé · densité** (bleu sur papier
+  crème, carroyage de 0,25 à 50 km selon le zoom, graduations LV95, relevés qui filtrent la carte : année de la première heure, type, distance du bureau, communes ;
+  depuis le soir du 23.11.2026, carte sur toute la largeur et relevés en quatre colonnes dessous — Paulo : « agrandir la carte jusqu'au bord et mettre les données en
+  dessous » —, fiche d'un projet ou liste d'une case dans une carte flottante sur le plan, × ou Échap pour la fermer ; genres d'affaire
+  en barres sous le Type — « ajouter graphique » —, un clic filtre la carte comme les autres relevés, un projet peut compter dans plusieurs genres),
+  **3 Nuit · chantiers en cours** (terre bleu nuit, eau blanche, chantiers = phase Réalisation en cours en jaune, taille = heures des 30 jours, rayons depuis le bureau,
+  cercles 2 à 40 km, planning des chantiers sous la carte, fiche flottante), **4 Flux · portefeuille** (diagramme district → type → avancement en nombre, heures ou
+  honoraires ; survol / clic d'un flux = ses projets sur la carte et dans le tableau), **5 Billets · fiches** (plan au trait rouge cadré et gradué, un billet par
+  projet : phase, heures des 30 jours, % des heures prévues, échéance, distance et direction du bureau, 12 mois d'heures, équipe ; parcours des phases en cercles).
+  Données : positions de la carte des projets (`window.SGCARTE.placer` / `info`, bloc 58), commune et district par identify de geo.admin.ch (`timeInstant=2025`,
+  `sessionStorage` `sgcv_lieux`, géométrie des communes en mémoire), type `sgCatProjet` + genres d'affaire, `sgavancement`, `sgRenta` (montants seulement si
+  `sgMargeVisible()`). Moteur de carte propre au bloc (`Carte` : fond WMS recoloré sur canevas par palette `FONDS`, dessus SVG redessiné à chaque vue, plan incliné
+  `incliner()` + dessus à l'écran `o.ecran` / `api.proj` pour l'axonométrie ; cadrage d'ouverture sans les projets isolés à plus de 35 km du bureau s'ils sont moins
+  d'un sur cinq). `window.SGCV` : `PROPS`, `ajouter(variante)`, `outils`. Classes et style `sgcv-*`, `#sgcv-css`. Maquettes : `subgestion3/_backup_20261123_maquette_carte2/`
+  (variantes 1 à 5) et **propositions 6 à 10 en maquette** (`subgestion3/_backup_20261123_maquette_carte3/proposition_carte_3.js`, page `proposition_carte_3.html` de
+  l'aperçu, `construire_page.py` : prélude qui coupe toute écriture ; ajoutées par `SGCV.ajouter`, menu de la page seulement) : 6 Planche · sites (aquarelle verte,
+  une vignette du site au 1:5000 par projet), 7 Chronologie (mois par mois, lecture animée, frise des heures), 8 Relief · colonnes (plan incliné, colonnes = heures
+  ou honoraires), 9 Réseau · équipe et clients (arcs du bureau vers les projets d'un collaborateur, projets d'un même maître de l'ouvrage reliés), 10 Cartogramme ·
+  communes (une case par commune, chiffres et finances par district). Limite : projets sans adresse absents (27 sur 50 en cours dans la base de test). Copie d'avant :
+  `subgestion3/_backup_20261123_1400_avant_carte_variantes/`, `SUBGestion3_backup_20261123_1400_avant_carte_variantes.html`.
+  **Variantes 6 à 10 copiées dans l'app le même jour (bloc 61, `subgestion3/sg3_carte_variantes2.js`, concaténé juste après le bloc 60 ; Paulo : « copier les
+  variantes 6 à 10 dans proposition »)** : code de la maquette sans son menu provisoire ni son ouverture d'office, enregistré par `SGCV.ajouter` (onglets 1 à 10 dans
+  chaque page) ; menu Proposition ▸ Carte · variantes = 1 à 10 (`SG_DOM` de sg3.js, écrans `nx-carte-v6` à `v10`) ; style `#sgcv3-css` ; choix par poste en
+  `sessionStorage` (`sgcv6_tri`, `sgcv8_mes|vue`, `sgcv9_mode|per`, `sgcv10_mes`). La page de maquette `proposition_carte_3.html` n'est plus utile. Copie d'avant :
+  `subgestion3/_backup_20261123_1441_avant_carte_variantes_6_10/`, `SUBGestion3_backup_20261123_1441_avant_carte_variantes_6_10.html`.
 - **Conditions générales d'un appel d'offres : maquettes de mise en page (22.11.2026, bloc 59 `subgestion3/sg3_mq_conditions.js`, GÉNÉRÉ)** — Paulo, document
   « Conditions générales 112 Démolitions 99TST » ouvert : « fais-moi 5 propositions pour la mise en page de ce document, dont une identique au document de devis
   général », puis « propose-moi des nouvelles mises en page et propositions de graphisme ; conserve les 5 solutions dans archives ; fais-moi 5 nouvelles propositions

@@ -846,9 +846,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais) sont retirés du menu de gauche (« supprimer du menu de gauche » : `hide:1`,
   `parent:'nx-ah'` dans `SG_DOM` — écrans, droits et fil d'Ariane gardés, ouverts par les tuiles de la page ; « Analyse des heures » reste surlignée dans le menu,
   `sgSideItems`) : le chapitre Heures = Feuille d'heures, Analyse des heures. Puis (« placer dans la fiche projet lorsque je clique sur un des projets dans Affaires ») :
-  les quatre tuiles quittent la page de l'Analyse des heures ; un clic sur une affaire du tableau « Affaires » ouvre sa fiche (`ficheAff`, `ST.fiche`, panneau à
-  droite `.sgah-fiche`, ligne surlignée) — numéro, nom, période et dernière saisie, chiffres de l'affaire (heures, à contrôler, refusées, à facturer, frais), les
-  quatre modules en tuiles ouverts sur l'affaire (`tuile(mod, ft, id)`), « Page du projet », « Tableau de bord » ; × , Échap ou second clic sur la ligne ferment.
+  les quatre tuiles quittent la page de l'Analyse des heures (une fiche flottante de l'affaire, essayée le même jour, est retirée). **Puis (« créer les tuiles dans
+  99TST lorsque je clique sur l'affaire 99TST »)** : un clic sur une affaire du tableau « Affaires » ouvre la page du projet (`nx-pdom`, arg `<ID>|#g:Analyse des
+  heures` : groupe ouvert par son nom) ; nouveau groupe **« Analyse des heures »** (icône `timer`, après « Suivi du projet » ; `SG_PDOM_G`, `SG_AH_VUES` de sg3_plus.js) =
+  les quatre modules en tuiles, chacune ouvre son module sur le projet (`go('nx-ah-ctlh'…, p.ID)`) ; compteurs sur toute la durée du projet (`sgAhCompte` de
+  sg3_analyse_heures.js : inscriptions à contrôler, heures, notes à contrôler, frais) ; droits = ceux des modules (`sgVueOk`) : jamais le profil collaborateur.
   **Chapitre « Archives » (24.10.2026, Paulo : « créer un menu archive, laisse-le vide pour le moment »)** : domaine `archives` en bas du menu (après
   Configuration), icône `archive` (ajoutée à `NXI`), `vide:1` = affiché à l'administrateur même sans module (`sgSide`) ; vue d'ensemble « Aucun module
   pour le moment » ; masqué aux autres profils (aucun écran permis). Pas encore dans les domaines protégés par code (à décider quand il aura des

@@ -138,22 +138,6 @@ const CSS=`
 .sgah-t #sgah-qn{font-size:12px;font-weight:400;color:var(--s-gris)}
 .sgah-lect{font-size:12px;color:var(--s-gris);border-left:3px solid var(--s-gris);padding:6px 10px;margin:10px 0 2px;background:var(--s-fond,#f4f4f2)}
 .sgah .sg-split{display:block}
-.sgah-tuiles{margin:18px 0 6px}
-.sgah-tb tbody tr.clic.on td{background:var(--s-jaune2,#FEF6B0)}
-.sgah-fiche{position:fixed;right:24px;top:96px;width:min(560px,calc(100vw - 48px));max-height:calc(100vh - 120px);overflow:auto;z-index:60;background:#fff;border:2px solid var(--s-noir,#1d1d1b);box-shadow:0 12px 36px rgba(0,0,0,.18);padding:22px 22px 16px;container-type:inline-size}
-.sgah-fx{position:absolute;top:8px;right:10px;border:0;background:none;font:inherit;font-size:22px;line-height:1;cursor:pointer;color:var(--s-noir,#1d1d1b);padding:2px 4px}
-.sgah-fh{display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:baseline;padding-right:28px;margin-bottom:10px}
-.sgah-fh .n{font-size:26px;font-weight:700;color:var(--s-nuit,#003346);grid-row:span 2}
-.sgah-fh .t{font-size:15px;font-weight:700;line-height:1.25}
-.sgah-fh .s{font-size:12px;color:var(--s-gris,#706F6F)}
-.sgah-fiche .sgah-kp{grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr))}
-.sgah-fiche .sgah-kp .nx-kpi .v{font-size:20px}
-.sgah-fiche .sgah-tuiles{grid-template-columns:repeat(2,minmax(0,1fr))}
-.sgah-fiche .sgah-tuiles .sg-tile{min-height:0}
-.sgah-fl{display:flex;gap:18px;margin-top:14px;padding-top:10px;border-top:1px solid #e4e4e0}
-.sgah-fl span{font-size:12.5px;font-weight:700;color:var(--s-nuit,#003346);border-bottom:1.5px solid currentColor;cursor:pointer}
-.sgah-tuiles .sg-tile{min-height:112px}
-.sgah-tuiles .sg-tile .ft{color:var(--s-nuit)}
 `;
 const css=()=>{ if(!document.getElementById('sgah-css')){ const s=document.createElement('style'); s.id='sgah-css'; s.textContent=CSS; document.head.appendChild(s); } };
 
@@ -193,7 +177,7 @@ const cout=L=>{ let s=0; try{ L.forEach(r=>{ s+=hh(r)*taux(r.STAFF_ID,diso(tlDat
 
 /* ── état de la page ── */
 const LS0=(()=>{ try{ return nxLS.get('sg3_ah',{})||{}; }catch(_){ return {}; } })();
-const ST={fiche:null,pid:null,per:{mode:['mois','annee','12m','tout'].includes(LS0.mode)?LS0.mode:'annee',d:null},etat:LS0.etat==null?2:+LS0.etat,fmo:LS0.fmo==='annee'?'annee':'mois',sem:null,fm:null,col:null,jour:null,q:'',sel:new Set(),dern:null,ycol:0,
+const ST={pid:null,per:{mode:['mois','annee','12m','tout'].includes(LS0.mode)?LS0.mode:'annee',d:null},etat:LS0.etat==null?2:+LS0.etat,fmo:LS0.fmo==='annee'?'annee':'mois',sem:null,fm:null,col:null,jour:null,q:'',sel:new Set(),dern:null,ycol:0,
   crit:{h:{},f:{}},fa:{h:null,f:null},fd:{h:null,f:null},grp:{h:'',f:''}};
 const garder=()=>{ try{ nxLS.set('sg3_ah',{mode:ST.per.mode,etat:ST.etat,fmo:ST.fmo}); }catch(_){ } };
 const PMODES=[['mois','Mois'],['annee','Année'],['12m','12 mois'],['tout','Tout']];
@@ -450,18 +434,13 @@ const pageCtlf=()=>deux('ctlf',()=>{ const p=Pj(ST.pid), f=fmDe(), L0=rowsFm(ST.
     +titreSel('Notes de frais · '+fmLib(f)+(ST.col!=null?' · '+sN(ST.col):''),'f','ctl',ec&&L.length)
     +tabFrais(L,{ck:ec,act:ec,vide:fmAn()?'Aucune note de frais cette année pour cette affaire.':'Aucune note de frais ce mois-ci pour cette affaire.'}); });
 
-/* ── page d'entrée : chiffres de la période, les quatre modules, les affaires actives ── */
-const MOD_T={ctlh:['Contrôle des heures d’affaires','La semaine de l’affaire, collaborateur par collaborateur : approuver, refuser, réinitialiser les inscriptions.','check'],
-  anah:['Critères d’analyse des heures','Les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','filter'],
-  ctlf:['Contrôle des frais','Les notes de frais de l’affaire, par mois ou par année : approuver, refuser, réinitialiser.','receipt'],
-  anaf:['Critères d’analyse des frais','Les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','coins']};
-const tuile=(mod,ft,id)=>{ const t=MOD_T[mod]; return '<div class="sg-tile" data-fn="mod" data-k="'+mod+'"'+(id!=null?' data-id="'+E(id)+'"':'')+'><div class="ti">'+nxSvg(t[2])+'<h3>'+E(t[0])+'</h3></div><p>'+E(t[1])+'</p><div class="ft">'+ft+nxSvg('arrow','go')+'</div></div>'; };
+/* ── page d'entrée : chiffres de la période, les affaires actives (les quatre modules : page du projet ▸ Analyse des heures, 24.11.2026) ── */
 const tabAff=(L,vf)=>{ if(!L.length) return '<div class="sgah-vide">Aucune affaire « '+E(etatLib().toLowerCase())+' » avec des heures'+(vf?' ou des frais':'')+' sur la période.</div>';
   return '<div class="sgah-x"><table class="nx-tbl sgah-tb"><thead><tr><th>N°</th><th>Affaire</th><th class="r">Heures</th><th class="r">À contrôler</th><th class="r">Refusées</th><th class="r">À facturer</th>'+(vf?'<th class="r">Frais CHF</th><th class="r">Frais à contrôler</th>':'')+'<th>Dernière saisie</th></tr></thead><tbody>'
-    +L.map(({p,x})=>'<tr class="clic'+(String(p.ID)===String(ST.fiche)?' on':'')+'" data-fn="fiche" data-id="'+E(p.ID)+'" data-q="'+E(((p.NUMBER||'')+' '+(p.TITLE||'')).toLowerCase())+'" title="Ouvrir la fiche de l’affaire : ses chiffres et les quatre modules"><td class="nw"><b>'+E(p.NUMBER||'')+'</b></td><td>'+E(p.TITLE||'')+'</td><td class="r nw"><b>'+Hh(x.h)+'</b> h</td>'
+    +L.map(({p,x})=>'<tr class="clic" data-fn="projet" data-id="'+E(p.ID)+'" data-q="'+E(((p.NUMBER||'')+' '+(p.TITLE||'')).toLowerCase())+'" title="Ouvrir la page du projet : les quatre modules d’analyse en tuiles"><td class="nw"><b>'+E(p.NUMBER||'')+'</b></td><td>'+E(p.TITLE||'')+'</td><td class="r nw"><b>'+Hh(x.h)+'</b> h</td>'
       +'<td class="r nw">'+(x.ctl?num(x.ctl,0):'<span style="color:var(--s-gris)">0</span>')+'</td><td class="r nw">'+(x.ref?'<span style="color:var(--s-rouge)">'+num(x.ref,0)+'</span>':'')+'</td><td class="r nw">'+(x.af>0?Hh(x.af)+' h':'')+'</td>'
       +(vf?'<td class="r nw">'+(x.f?F0(x.f):'')+'</td><td class="r nw">'+(x.fctl?num(x.fctl,0):'')+'</td>':'')+'<td class="nw">'+(x.der?fK(x.der):'')+'</td></tr>').join('')+'</tbody></table></div>'; };
-const pageEntree=()=>{ const Pr=periode(), M=statsAff(Pr), vh=peutVoir('h'), vf=peutVoir('f');
+const pageEntree=()=>{ const Pr=periode(), M=statsAff(Pr), vf=peutVoir('f');
   const A=affaires('hf').map(p=>({p,x:M.get(p.ID)||VIDE})).filter(o=>o.x.n||(vf&&o.x.fn)).sort((a,b)=>Math.max(b.x.der,vf?b.x.fder:0)-Math.max(a.x.der,vf?a.x.fder:0)||cmpN(b.p.NUMBER||'',a.p.NUMBER||'')); CTX.aff=A;
   const T=Object.assign({},VIDE); A.forEach(o=>{ for(const k in T) if(k!=='der'&&k!=='fder') T[k]+=o.x[k]||0; });
   const figs='<div class="nx-kpis sg-tkp">'+kpi('Heures saisies',Hh(T.h)+'<small>h</small>',num(T.n,0)+' inscription'+(T.n>1?'s':''))+kpi('À contrôler',num(T.ctl,0),Hh(T.hctl)+' h'+(T.blo?' · '+num(T.blo,0)+' en période bloquée':''),T.ctl?'':'pos')
@@ -469,20 +448,9 @@ const pageEntree=()=>{ const Pr=periode(), M=statsAff(Pr), vh=peutVoir('h'), vf=
     +(vf?kpi('Frais',F0(T.f)+'<small>CHF</small>',num(T.fn,0)+' note'+(T.fn>1?'s':'')+(T.fctl?' · '+num(T.fctl,0)+' à contrôler':'')):kpi('Affaires',String(A.length),'avec des heures sur la période'))+'</div>';
   return '<div class="sg-split">'+sgTete('Heures','Analyse des heures','Contrôler et analyser les heures et les frais des affaires, semaine par semaine et critère par critère. <b>'+E(Pr.lib)+'</b> · '+A.length+' affaire'+(A.length>1?'s':'')+' « '+E(etatLib().toLowerCase())+' » avec des saisies.',figs,Pr.court)
     +'<div class="sgah-bar">'+barPer(Pr)+SEP+'<span class="sgah-gl">Affaires</span>'+bt('etatm',etatLib()+' ▾')+SEP+'<input class="inp" id="sgah-q" placeholder="Rechercher une affaire…" value="'+E(ST.q)+'" autocomplete="off">'+DR(bt('csva','CSV','export',' title="Liste des affaires dans un fichier CSV"'+(A.length?'':' disabled')))+'</div>'
-    /* les quatre modules ne sont plus en tuiles sur la page : ils sont dans la fiche de l'affaire, ouverte par un clic sur sa ligne (24.11.2026, Paulo : « placer
-       dans la fiche projet lorsque je clique sur un des projets dans Affaires ») */
-    +'<div class="sgah-t"><span>'+E('Affaires · '+Pr.lib)+'</span><small id="sgah-qn"></small></div>'+tabAff(A,vf)+'</div>'
-    +ficheAff(A,Pr,vh,vf); };
-/* fiche d'une affaire : en-tête, chiffres de la période, les quatre modules ouverts sur l'affaire, liens vers la page et le tableau de bord du projet */
-const ficheAff=(A,Pr,vh,vf)=>{ if(ST.fiche==null) return ''; const o=A.find(o=>String(o.p.ID)===String(ST.fiche)); if(!o){ ST.fiche=null; return ''; } const {p,x}=o;
-  return '<div class="sgah-fiche" role="dialog" aria-label="Fiche de l’affaire">'
-    +'<button type="button" class="sgah-fx" data-fn="ffiche" title="Fermer (Échap)" aria-label="Fermer">×</button>'
-    +'<div class="sgah-fh"><span class="n">'+E(p.NUMBER||'')+'</span><span class="t">'+E(p.TITLE||'')+'</span><span class="s">'+E(Pr.lib)+(x.der?' · dernière saisie le '+fK(x.der):'')+'</span></div>'
-    +kpis([kpi('Heures',Hh(x.h)+'<small>h</small>',num(x.n,0)+' inscription'+(x.n>1?'s':'')),kpi('À contrôler',num(x.ctl,0),x.hctl?Hh(x.hctl)+' h':'',x.ctl?'':'pos'),kpi('Refusées',num(x.ref,0),x.ref?'à corriger':'',x.ref?'neg':''),
-      kpi('À facturer',Hh(x.af)+'<small>h</small>','non facturées'),vf?kpi('Frais',F0(x.f)+'<small>CHF</small>',num(x.fn,0)+' note'+(x.fn>1?'s':'')+(x.fctl?' · '+num(x.fctl,0)+' à contrôler':'')):''])
-    +'<div class="sg-tiles sgah-tuiles">'+(vh?tuile('ctlh',num(x.ctl,0)+' inscription'+(x.ctl>1?'s':'')+' à contrôler',p.ID)+tuile('anah',Hh(x.h)+' h sur la période',p.ID):'')
-      +(vf?tuile('ctlf',num(x.fctl,0)+' note'+(x.fctl>1?'s':'')+' à contrôler',p.ID)+tuile('anaf',F0(x.f)+' CHF sur la période',p.ID):'')+'</div>'
-    +'<div class="sgah-fl"><span data-fn="fpage" data-id="'+E(p.ID)+'">Page du projet</span><span data-fn="ftdb" data-id="'+E(p.ID)+'">Tableau de bord</span></div></div>'; };
+    /* les quatre modules ne sont plus sur cette page : un clic sur une affaire ouvre la page du projet, groupe « Analyse des heures » (24.11.2026, Paulo : « créer les tuiles
+       dans 99TST lorsque je clique sur l'affaire 99TST » ; la fiche flottante du même jour est retirée) */
+    +'<div class="sgah-t"><span>'+E('Affaires · '+Pr.lib)+'</span><small id="sgah-qn"></small></div>'+tabAff(A,vf)+'</div>'; };
 const PAGES={entree:pageEntree,ctlh:pageCtlh,anah:()=>pageAna('h'),ctlf:pageCtlf,anaf:()=>pageAna('f')};
 
 /* ── gestes ── */
@@ -494,9 +462,7 @@ const FN={
   pmode:b=>{ ST.per.mode=b.dataset.k; garder(); razSel(); redess(); }, pdec:b=>{ perDec(+b.dataset.n); razSel(); redess(); },
   aff:b=>{ if(String(b.dataset.id)===String(ST.pid)) return; choisir(b.dataset.id); majArg(); redess(); },
   mod:b=>{ go(VM[b.dataset.k],b.dataset.id!=null&&b.dataset.id!==''?b.dataset.id:undefined); },
-  fiche:b=>{ ST.fiche=String(b.dataset.id)===String(ST.fiche)?null:b.dataset.id; redess(); },
-  ffiche:()=>{ ST.fiche=null; redess(); },
-  fpage:b=>go('nx-pdom',String(b.dataset.id)), ftdb:b=>go('nx-projet',nId(b.dataset.id)),
+  projet:b=>go('nx-pdom',String(b.dataset.id)+'|#g:Analyse des heures'),
   etatm:b=>popMenu(b,[{t:'Toutes',chk:!ST.etat,fn:()=>{ ST.etat=0; garder(); redess(); }},...CTL_ETATS.map(([e,t])=>({t,chk:ST.etat===e,fn:()=>{ ST.etat=e; garder(); redess(); }}))]),
   /* semaine (heures) et mois (frais) */
   sdec:b=>{ ST.sem=jplus(semDe(),7*(+b.dataset.n)); ST.col=null; ST.jour=null; razSel(); redess(); },
@@ -553,8 +519,13 @@ const vue=mod=>({ render(m,arg){ css(); CUR.m=m; if(CUR.mod!==mod){ razSel(); ST
   tools(){ return []; },
   refresh(ts){ if(hit(ts,...TABLES)&&CUR.ver!==VER) redess(); } });
 VIEWS[VE]=vue('entree'); Object.keys(VM).forEach(k=>{ VIEWS[VM[k]]=vue(k); });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&ST.fiche!=null&&typeof VIEW!=='undefined'&&VIEW&&VIEW.id===VE&&!document.querySelector('.ov')){ e.stopPropagation(); ST.fiche=null; redess(); } },true);
 /* les quatre anciennes entrées d'Administration (session, historique, liens) mènent aux modules */
 { const g0=go; go=function(v,arg){ if(REDIR[v]){ v=REDIR[v]; arg=undefined; } return g0.call(this,v,arg); }; }
+/* compteurs des tuiles « Analyse des heures » de la page du projet (sg3_plus.js, SG_AH_VUES ; 24.11.2026) : toute la durée du projet */
+window.sgAhCompte=(p,d)=>{ const x=statsAff({a:null,b:null,lib:''}).get(p.ID)||VIDE, pl=(n,s)=>num(n,0)+' '+s+(n>1?'s':'');
+  switch(d){ case 'Contrôle des heures d’affaires': return x.ctl?pl(x.ctl,'inscription')+' à contrôler':'0 à contrôler';
+    case 'Critères d’analyse des heures': return num(Math.round(x.h),0)+' heures';
+    case 'Contrôle des frais': return x.fctl?pl(x.fctl,'note')+' à contrôler':'0 à contrôler';
+    case 'Critères d’analyse des frais': return F0(x.f)+' CHF'; } return ''; };
 window.SGAH={ST,CUR,CTX,VE,VM,REDIR,IDS,etat,approuverLot,filtrer,grouper,statsAff,periode,perim,peutVoir,ecrit,bloquee,grille,choisir,redess,colL};
 })();

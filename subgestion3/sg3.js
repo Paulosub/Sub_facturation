@@ -83,14 +83,16 @@ const SG_DOM=[
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
   {k:'temps',t:'Heures',ico:'clock',d:'Saisie et contrôle des heures de travail.',items:[   /* chapitre « Temps » renommé « Heures » le 24.10.2026 (demande de Paulo) ; clé temps inchangée */
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
-    {v:'h-journal',t:'Journal des heures',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'},   /* 24.10.2026 (demande de Paulo) */
+    /* « Journal des heures » (h-journal) déplacé dans Archives ▸ Heures le 24.11.2026 (demande de Paulo) */
     /* Analyse des heures et ses quatre modules (15.11.2026, proposition 1 « Modules au menu » choisie par Paulo ; écrans : sg3_analyse_heures.js) : jamais pour le
        profil collaborateur (SG_VUE_DROIT, sg3_plus.js) ; les quatre anciennes entrées d'Administration (adm-ctl-*, adm-ana-*) y renvoient */
+    /* les quatre modules retirés du menu de gauche le 24.11.2026 (demande de Paulo) : hide (écrans, droits et fil d'Ariane gardés), on y va par les tuiles de
+       l'Analyse des heures, qui reste surlignée dans le menu (parent) */
     {v:'nx-ah',t:'Analyse des heures',ico:'analyse',d:'Heures et frais des affaires : chiffres de la période, affaires actives et accès aux quatre modules.'},
-    {v:'nx-ah-ctlh',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
-    {v:'nx-ah-anah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
-    {v:'nx-ah-ctlf',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, par mois ou par année.'},
-    {v:'nx-ah-anaf',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
+    {v:'nx-ah-ctlh',hide:1,parent:'nx-ah',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
+    {v:'nx-ah-anah',hide:1,parent:'nx-ah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
+    {v:'nx-ah-ctlf',hide:1,parent:'nx-ah',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, par mois ou par année.'},
+    {v:'nx-ah-anaf',hide:1,parent:'nx-ah',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     /* grp : sous-menu dépliable « Tâches » (18.10.2026) ; st = libellé court dans le sous-menu */
@@ -189,7 +191,7 @@ const SG_DOM=[
     /* cinq variantes de carte et d'organisation de la fenêtre (23.11.2026, Paulo : « conserve toutes les propositions dans Proposition, les 5 variantes ») :
        écrans de sg3_carte_variantes.js (bloc 60) */
     {v:'nx-carte-v1',grp:'Carte · variantes',t:'1 Atlas des régions',ico:'carte',d:'Plan au trait, communes hachurées selon la densité des projets, index numéroté par commune ou district.'},
-    {v:'nx-carte-v2',grp:'Carte · variantes',t:'2 Relevé · densité',ico:'carte',d:'Relevé bleu : carroyage kilométrique de la densité des projets sur toute la largeur, relevés dessous qui filtrent la carte (année, type, distance, communes).'},
+    {v:'nx-carte-v2',grp:'Carte · variantes',t:'2 Relevé · densité',ico:'carte',d:'Relevé aux couleurs de la charte (cinq palettes à l’essai) : grille kilométrique de la densité des projets sur toute la largeur, relevés dessous qui filtrent la carte (année, type, distance, communes).'},
     {v:'nx-carte-v3',grp:'Carte · variantes',t:'3 Nuit · chantiers en cours',ico:'carte',d:'Carte en négatif : chantiers en cours en jaune, rayons et distances depuis le bureau, planning des chantiers.'},
     {v:'nx-carte-v4',grp:'Carte · variantes',t:'4 Flux · portefeuille',ico:'carte',d:'Diagramme de flux région → type → avancement relié à la carte.'},
     {v:'nx-carte-v5',grp:'Carte · variantes',t:'5 Billets · fiches',ico:'carte',d:'Plan au trait rouge, un billet par projet, parcours des phases du projet choisi.'},
@@ -213,6 +215,7 @@ const SG_DOM=[
     {v:'mq-conditions-2',grp:'Maquettes',dom:'reglages',t:'Conditions générales · propositions 6 à 10',ico:'pdf',d:'Propositions 6 à 10 de mise en page des conditions générales d’un appel d’offres (22.11.2026), gardées pour plus tard : maquette avec des données d’exemple (bloc 59, sg3_mq_conditions.js).'},
     /* sous-menu « Heures » (Configuration → Archives le 24.10.2026, demande de Paulo) : dom:'temps' garde leurs droits, leur code d'accès et leur
        visuel — les collaborateurs ont toujours accès à leurs notes de frais et rapports de temps */
+    {v:'h-journal',t:'Journal des heures',grp:'Heures',dom:'temps',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur (venu du chapitre Heures le 24.11.2026).'},
     {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
     {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
     {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
@@ -287,7 +290,7 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
     if(!its.length&&!(d.vide&&typeof sgAdmin==='function'&&sgAdmin())) return;   // domaine sans module permis pour ce profil (chapitre vide:1 : administrateur)
     s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='dom-'+d.k?' on':'')+'" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+(d.prov?'<i class="sg-prov" title="Chapitre provisoire">prov.</i>':'')+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
-      +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')   // fiche ouverte juste sous le titre du chapitre (19.10.2026)
+      +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide&&!c.m.it.parent)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')   // fiche ouverte juste sous le titre du chapitre (19.10.2026)
       +sgSideItems(d,its,c)+'</div></div>'; });
   const pins=nxLS.get('nx_pins3',[]).map(nxRef).filter(Boolean);
   if(pins.length) s+='<div class="nx-pins"><div class="nx-sep">Favoris</div>'+pins.map(r=>'<div class="nx-pin" data-ref="'+r.k+':'+r.id+'" title="'+nxE(r.t)+'">'+(r.tag?'<i>'+nxE(r.tag)+'</i>':nxSvg(r.ico))+'<span>'+nxE(r.t)+'</span></div>').join('')+'</div>';
@@ -299,7 +302,7 @@ function sgTachesCompte(){ const me=ME.staff; if(!me||typeof ptModuleRows!=='fun
 const sgPastille=(n,cl,t)=>n?'<i class="sg-pt '+cl+'" title="'+nxE(t)+'">'+n+'</i>':'';
 function sgSideItems(d,its,c){ const sub=nxLS.get('nx_sub3',{}), tk=its.some(x=>x.grp==='Tâches')?sgTachesCompte():{u:0,p:0};
   const pt=it=>it.v==='taches-urgent'?sgPastille(tk.u,'r',tk.u+' tâche(s) urgente(s)'):it.v==='taches-encours'?sgPastille(tk.p,'v',tk.p+' tâche(s) en cours'):'';
-  const one=(it,lb)=>'<div class="nx-it'+(c.id===it.v?' on':'')+(it.reg?' reg':'')+'" data-go="'+it.v+'" title="'+nxE(it.t)+'">'+nxE(lb)+pt(it)+(it.reg?'<i>F</i>':'')+'</div>';
+  const one=(it,lb)=>'<div class="nx-it'+(c.id===it.v||(c.m&&c.m.it&&c.m.it.parent===it.v)?' on':'')+(it.reg?' reg':'')+'" data-go="'+it.v+'" title="'+nxE(it.t)+'">'+nxE(lb)+pt(it)+(it.reg?'<i>F</i>':'')+'</div>';
   let s=''; for(let i=0;i<its.length;i++){ const it=its[i];
     if(!it.grp){ s+=one(it,it.reg?it.t.replace(/\s*·\s*Facturation$/,''):it.t); continue; }
     const g=it.grp, L=[]; while(i<its.length&&its[i].grp===g) L.push(its[i++]); i--;

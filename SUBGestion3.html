@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 23.11.2026 16:15 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 24.11.2026 18:26 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -26377,14 +26377,16 @@ const SG_DOM=[
     /* « Toutes les affaires » (affd-toutes) retiré du menu le 23.10.2026, à la demande de Paulo (l'écran reste défini, hors menu) */]},
   {k:'temps',t:'Heures',ico:'clock',d:'Saisie et contrôle des heures de travail.',items:[   /* chapitre « Temps » renommé « Heures » le 24.10.2026 (demande de Paulo) ; clé temps inchangée */
     {v:'h-saisie',t:'Feuille d’heures',ico:'timer',hero:1,d:'Saisie des heures par projet, jour après jour.'},
-    {v:'h-journal',t:'Journal des heures',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur.'},   /* 24.10.2026 (demande de Paulo) */
+    /* « Journal des heures » (h-journal) déplacé dans Archives ▸ Heures le 24.11.2026 (demande de Paulo) */
     /* Analyse des heures et ses quatre modules (15.11.2026, proposition 1 « Modules au menu » choisie par Paulo ; écrans : sg3_analyse_heures.js) : jamais pour le
        profil collaborateur (SG_VUE_DROIT, sg3_plus.js) ; les quatre anciennes entrées d'Administration (adm-ctl-*, adm-ana-*) y renvoient */
+    /* les quatre modules retirés du menu de gauche le 24.11.2026 (demande de Paulo) : hide (écrans, droits et fil d'Ariane gardés), on y va par les tuiles de
+       l'Analyse des heures, qui reste surlignée dans le menu (parent) */
     {v:'nx-ah',t:'Analyse des heures',ico:'analyse',d:'Heures et frais des affaires : chiffres de la période, affaires actives et accès aux quatre modules.'},
-    {v:'nx-ah-ctlh',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
-    {v:'nx-ah-anah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
-    {v:'nx-ah-ctlf',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, par mois ou par année.'},
-    {v:'nx-ah-anaf',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
+    {v:'nx-ah-ctlh',hide:1,parent:'nx-ah',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
+    {v:'nx-ah-anah',hide:1,parent:'nx-ah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
+    {v:'nx-ah-ctlf',hide:1,parent:'nx-ah',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, par mois ou par année.'},
+    {v:'nx-ah-anaf',hide:1,parent:'nx-ah',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     /* grp : sous-menu dépliable « Tâches » (18.10.2026) ; st = libellé court dans le sous-menu */
@@ -26483,7 +26485,7 @@ const SG_DOM=[
     /* cinq variantes de carte et d'organisation de la fenêtre (23.11.2026, Paulo : « conserve toutes les propositions dans Proposition, les 5 variantes ») :
        écrans de sg3_carte_variantes.js (bloc 60) */
     {v:'nx-carte-v1',grp:'Carte · variantes',t:'1 Atlas des régions',ico:'carte',d:'Plan au trait, communes hachurées selon la densité des projets, index numéroté par commune ou district.'},
-    {v:'nx-carte-v2',grp:'Carte · variantes',t:'2 Relevé · densité',ico:'carte',d:'Relevé bleu : carroyage kilométrique de la densité des projets sur toute la largeur, relevés dessous qui filtrent la carte (année, type, distance, communes).'},
+    {v:'nx-carte-v2',grp:'Carte · variantes',t:'2 Relevé · densité',ico:'carte',d:'Relevé aux couleurs de la charte (cinq palettes à l’essai) : grille kilométrique de la densité des projets sur toute la largeur, relevés dessous qui filtrent la carte (année, type, distance, communes).'},
     {v:'nx-carte-v3',grp:'Carte · variantes',t:'3 Nuit · chantiers en cours',ico:'carte',d:'Carte en négatif : chantiers en cours en jaune, rayons et distances depuis le bureau, planning des chantiers.'},
     {v:'nx-carte-v4',grp:'Carte · variantes',t:'4 Flux · portefeuille',ico:'carte',d:'Diagramme de flux région → type → avancement relié à la carte.'},
     {v:'nx-carte-v5',grp:'Carte · variantes',t:'5 Billets · fiches',ico:'carte',d:'Plan au trait rouge, un billet par projet, parcours des phases du projet choisi.'},
@@ -26507,6 +26509,7 @@ const SG_DOM=[
     {v:'mq-conditions-2',grp:'Maquettes',dom:'reglages',t:'Conditions générales · propositions 6 à 10',ico:'pdf',d:'Propositions 6 à 10 de mise en page des conditions générales d’un appel d’offres (22.11.2026), gardées pour plus tard : maquette avec des données d’exemple (bloc 59, sg3_mq_conditions.js).'},
     /* sous-menu « Heures » (Configuration → Archives le 24.10.2026, demande de Paulo) : dom:'temps' garde leurs droits, leur code d'accès et leur
        visuel — les collaborateurs ont toujours accès à leurs notes de frais et rapports de temps */
+    {v:'h-journal',t:'Journal des heures',grp:'Heures',dom:'temps',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur (venu du chapitre Heures le 24.11.2026).'},
     {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
     {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
     {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
@@ -26581,7 +26584,7 @@ function sgSide(){ const nav=document.getElementById('nx-nav'); if(!nav) return;
     const its=d.items.filter(it=>!it.hide&&nxCan(it.v)), isOpen=open[d.k]!=null?open[d.k]:c.d===d;
     if(!its.length&&!(d.vide&&typeof sgAdmin==='function'&&sgAdmin())) return;   // domaine sans module permis pour ce profil (chapitre vide:1 : administrateur)
     s+='<div class="nx-g'+(isOpen?' open':'')+(c.d===d?' cur':'')+'"><div class="nx-gt'+(c.id==='dom-'+d.k?' on':'')+'" data-tg="'+d.k+'" title="'+nxE(d.t)+'">'+nxSvg(d.ico)+'<span class="lb">'+nxE(d.t)+(d.prov?'<i class="sg-prov" title="Chapitre provisoire">prov.</i>':'')+'</span>'+nxSvg('fwd','ch')+'</div><div class="nx-gi">'
-      +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')   // fiche ouverte juste sous le titre du chapitre (19.10.2026)
+      +((c.m&&c.m.d===d&&(c.m.fiche||(c.m.it&&c.m.it.hide&&!c.m.it.parent)))?'<div class="nx-it on fiche">'+nxE(VIEW.nxTitle||c.m.t)+'</div>':'')   // fiche ouverte juste sous le titre du chapitre (19.10.2026)
       +sgSideItems(d,its,c)+'</div></div>'; });
   const pins=nxLS.get('nx_pins3',[]).map(nxRef).filter(Boolean);
   if(pins.length) s+='<div class="nx-pins"><div class="nx-sep">Favoris</div>'+pins.map(r=>'<div class="nx-pin" data-ref="'+r.k+':'+r.id+'" title="'+nxE(r.t)+'">'+(r.tag?'<i>'+nxE(r.tag)+'</i>':nxSvg(r.ico))+'<span>'+nxE(r.t)+'</span></div>').join('')+'</div>';
@@ -26593,7 +26596,7 @@ function sgTachesCompte(){ const me=ME.staff; if(!me||typeof ptModuleRows!=='fun
 const sgPastille=(n,cl,t)=>n?'<i class="sg-pt '+cl+'" title="'+nxE(t)+'">'+n+'</i>':'';
 function sgSideItems(d,its,c){ const sub=nxLS.get('nx_sub3',{}), tk=its.some(x=>x.grp==='Tâches')?sgTachesCompte():{u:0,p:0};
   const pt=it=>it.v==='taches-urgent'?sgPastille(tk.u,'r',tk.u+' tâche(s) urgente(s)'):it.v==='taches-encours'?sgPastille(tk.p,'v',tk.p+' tâche(s) en cours'):'';
-  const one=(it,lb)=>'<div class="nx-it'+(c.id===it.v?' on':'')+(it.reg?' reg':'')+'" data-go="'+it.v+'" title="'+nxE(it.t)+'">'+nxE(lb)+pt(it)+(it.reg?'<i>F</i>':'')+'</div>';
+  const one=(it,lb)=>'<div class="nx-it'+(c.id===it.v||(c.m&&c.m.it&&c.m.it.parent===it.v)?' on':'')+(it.reg?' reg':'')+'" data-go="'+it.v+'" title="'+nxE(it.t)+'">'+nxE(lb)+pt(it)+(it.reg?'<i>F</i>':'')+'</div>';
   let s=''; for(let i=0;i<its.length;i++){ const it=its[i];
     if(!it.grp){ s+=one(it,it.reg?it.t.replace(/\s*·\s*Facturation$/,''):it.t); continue; }
     const g=it.grp, L=[]; while(i<its.length&&its[i].grp===g) L.push(its[i++]); i--;
@@ -47327,6 +47330,19 @@ const CSS=`
 .sgah-lect{font-size:12px;color:var(--s-gris);border-left:3px solid var(--s-gris);padding:6px 10px;margin:10px 0 2px;background:var(--s-fond,#f4f4f2)}
 .sgah .sg-split{display:block}
 .sgah-tuiles{margin:18px 0 6px}
+.sgah-tb tbody tr.clic.on td{background:var(--s-jaune2,#FEF6B0)}
+.sgah-fiche{position:fixed;right:24px;top:96px;width:min(560px,calc(100vw - 48px));max-height:calc(100vh - 120px);overflow:auto;z-index:60;background:#fff;border:2px solid var(--s-noir,#1d1d1b);box-shadow:0 12px 36px rgba(0,0,0,.18);padding:22px 22px 16px;container-type:inline-size}
+.sgah-fx{position:absolute;top:8px;right:10px;border:0;background:none;font:inherit;font-size:22px;line-height:1;cursor:pointer;color:var(--s-noir,#1d1d1b);padding:2px 4px}
+.sgah-fh{display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:baseline;padding-right:28px;margin-bottom:10px}
+.sgah-fh .n{font-size:26px;font-weight:700;color:var(--s-nuit,#003346);grid-row:span 2}
+.sgah-fh .t{font-size:15px;font-weight:700;line-height:1.25}
+.sgah-fh .s{font-size:12px;color:var(--s-gris,#706F6F)}
+.sgah-fiche .sgah-kp{grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr))}
+.sgah-fiche .sgah-kp .nx-kpi .v{font-size:20px}
+.sgah-fiche .sgah-tuiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sgah-fiche .sgah-tuiles .sg-tile{min-height:0}
+.sgah-fl{display:flex;gap:18px;margin-top:14px;padding-top:10px;border-top:1px solid #e4e4e0}
+.sgah-fl span{font-size:12.5px;font-weight:700;color:var(--s-nuit,#003346);border-bottom:1.5px solid currentColor;cursor:pointer}
 .sgah-tuiles .sg-tile{min-height:112px}
 .sgah-tuiles .sg-tile .ft{color:var(--s-nuit)}
 `;
@@ -47368,7 +47384,7 @@ const cout=L=>{ let s=0; try{ L.forEach(r=>{ s+=hh(r)*taux(r.STAFF_ID,diso(tlDat
 
 /* ── état de la page ── */
 const LS0=(()=>{ try{ return nxLS.get('sg3_ah',{})||{}; }catch(_){ return {}; } })();
-const ST={pid:null,per:{mode:['mois','annee','12m','tout'].includes(LS0.mode)?LS0.mode:'annee',d:null},etat:LS0.etat==null?2:+LS0.etat,fmo:LS0.fmo==='annee'?'annee':'mois',sem:null,fm:null,col:null,jour:null,q:'',sel:new Set(),dern:null,ycol:0,
+const ST={fiche:null,pid:null,per:{mode:['mois','annee','12m','tout'].includes(LS0.mode)?LS0.mode:'annee',d:null},etat:LS0.etat==null?2:+LS0.etat,fmo:LS0.fmo==='annee'?'annee':'mois',sem:null,fm:null,col:null,jour:null,q:'',sel:new Set(),dern:null,ycol:0,
   crit:{h:{},f:{}},fa:{h:null,f:null},fd:{h:null,f:null},grp:{h:'',f:''}};
 const garder=()=>{ try{ nxLS.set('sg3_ah',{mode:ST.per.mode,etat:ST.etat,fmo:ST.fmo}); }catch(_){ } };
 const PMODES=[['mois','Mois'],['annee','Année'],['12m','12 mois'],['tout','Tout']];
@@ -47630,10 +47646,10 @@ const MOD_T={ctlh:['Contrôle des heures d’affaires','La semaine de l’affair
   anah:['Critères d’analyse des heures','Les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','filter'],
   ctlf:['Contrôle des frais','Les notes de frais de l’affaire, par mois ou par année : approuver, refuser, réinitialiser.','receipt'],
   anaf:['Critères d’analyse des frais','Les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','coins']};
-const tuile=(mod,ft)=>{ const t=MOD_T[mod]; return '<div class="sg-tile" data-fn="mod" data-k="'+mod+'"><div class="ti">'+nxSvg(t[2])+'<h3>'+E(t[0])+'</h3></div><p>'+E(t[1])+'</p><div class="ft">'+ft+nxSvg('arrow','go')+'</div></div>'; };
+const tuile=(mod,ft,id)=>{ const t=MOD_T[mod]; return '<div class="sg-tile" data-fn="mod" data-k="'+mod+'"'+(id!=null?' data-id="'+E(id)+'"':'')+'><div class="ti">'+nxSvg(t[2])+'<h3>'+E(t[0])+'</h3></div><p>'+E(t[1])+'</p><div class="ft">'+ft+nxSvg('arrow','go')+'</div></div>'; };
 const tabAff=(L,vf)=>{ if(!L.length) return '<div class="sgah-vide">Aucune affaire « '+E(etatLib().toLowerCase())+' » avec des heures'+(vf?' ou des frais':'')+' sur la période.</div>';
   return '<div class="sgah-x"><table class="nx-tbl sgah-tb"><thead><tr><th>N°</th><th>Affaire</th><th class="r">Heures</th><th class="r">À contrôler</th><th class="r">Refusées</th><th class="r">À facturer</th>'+(vf?'<th class="r">Frais CHF</th><th class="r">Frais à contrôler</th>':'')+'<th>Dernière saisie</th></tr></thead><tbody>'
-    +L.map(({p,x})=>'<tr class="clic" data-fn="mod" data-k="ctlh" data-id="'+E(p.ID)+'" data-q="'+E(((p.NUMBER||'')+' '+(p.TITLE||'')).toLowerCase())+'" title="Contrôler les heures de cette affaire"><td class="nw"><b>'+E(p.NUMBER||'')+'</b></td><td>'+E(p.TITLE||'')+'</td><td class="r nw"><b>'+Hh(x.h)+'</b> h</td>'
+    +L.map(({p,x})=>'<tr class="clic'+(String(p.ID)===String(ST.fiche)?' on':'')+'" data-fn="fiche" data-id="'+E(p.ID)+'" data-q="'+E(((p.NUMBER||'')+' '+(p.TITLE||'')).toLowerCase())+'" title="Ouvrir la fiche de l’affaire : ses chiffres et les quatre modules"><td class="nw"><b>'+E(p.NUMBER||'')+'</b></td><td>'+E(p.TITLE||'')+'</td><td class="r nw"><b>'+Hh(x.h)+'</b> h</td>'
       +'<td class="r nw">'+(x.ctl?num(x.ctl,0):'<span style="color:var(--s-gris)">0</span>')+'</td><td class="r nw">'+(x.ref?'<span style="color:var(--s-rouge)">'+num(x.ref,0)+'</span>':'')+'</td><td class="r nw">'+(x.af>0?Hh(x.af)+' h':'')+'</td>'
       +(vf?'<td class="r nw">'+(x.f?F0(x.f):'')+'</td><td class="r nw">'+(x.fctl?num(x.fctl,0):'')+'</td>':'')+'<td class="nw">'+(x.der?fK(x.der):'')+'</td></tr>').join('')+'</tbody></table></div>'; };
 const pageEntree=()=>{ const Pr=periode(), M=statsAff(Pr), vh=peutVoir('h'), vf=peutVoir('f');
@@ -47644,8 +47660,20 @@ const pageEntree=()=>{ const Pr=periode(), M=statsAff(Pr), vh=peutVoir('h'), vf=
     +(vf?kpi('Frais',F0(T.f)+'<small>CHF</small>',num(T.fn,0)+' note'+(T.fn>1?'s':'')+(T.fctl?' · '+num(T.fctl,0)+' à contrôler':'')):kpi('Affaires',String(A.length),'avec des heures sur la période'))+'</div>';
   return '<div class="sg-split">'+sgTete('Heures','Analyse des heures','Contrôler et analyser les heures et les frais des affaires, semaine par semaine et critère par critère. <b>'+E(Pr.lib)+'</b> · '+A.length+' affaire'+(A.length>1?'s':'')+' « '+E(etatLib().toLowerCase())+' » avec des saisies.',figs,Pr.court)
     +'<div class="sgah-bar">'+barPer(Pr)+SEP+'<span class="sgah-gl">Affaires</span>'+bt('etatm',etatLib()+' ▾')+SEP+'<input class="inp" id="sgah-q" placeholder="Rechercher une affaire…" value="'+E(ST.q)+'" autocomplete="off">'+DR(bt('csva','CSV','export',' title="Liste des affaires dans un fichier CSV"'+(A.length?'':' disabled')))+'</div>'
-    +'<div class="sg-tiles sgah-tuiles">'+(vh?tuile('ctlh',num(T.ctl,0)+' inscription'+(T.ctl>1?'s':'')+' à contrôler')+tuile('anah',Hh(T.h)+' h sur la période'):'')+(vf?tuile('ctlf',num(T.fctl,0)+' note'+(T.fctl>1?'s':'')+' à contrôler')+tuile('anaf',F0(T.f)+' CHF sur la période'):'')+'</div>'
-    +'<div class="sgah-t"><span>'+E('Affaires · '+Pr.lib)+'</span><small id="sgah-qn"></small></div>'+tabAff(A,vf)+'</div>'; };
+    /* les quatre modules ne sont plus en tuiles sur la page : ils sont dans la fiche de l'affaire, ouverte par un clic sur sa ligne (24.11.2026, Paulo : « placer
+       dans la fiche projet lorsque je clique sur un des projets dans Affaires ») */
+    +'<div class="sgah-t"><span>'+E('Affaires · '+Pr.lib)+'</span><small id="sgah-qn"></small></div>'+tabAff(A,vf)+'</div>'
+    +ficheAff(A,Pr,vh,vf); };
+/* fiche d'une affaire : en-tête, chiffres de la période, les quatre modules ouverts sur l'affaire, liens vers la page et le tableau de bord du projet */
+const ficheAff=(A,Pr,vh,vf)=>{ if(ST.fiche==null) return ''; const o=A.find(o=>String(o.p.ID)===String(ST.fiche)); if(!o){ ST.fiche=null; return ''; } const {p,x}=o;
+  return '<div class="sgah-fiche" role="dialog" aria-label="Fiche de l’affaire">'
+    +'<button type="button" class="sgah-fx" data-fn="ffiche" title="Fermer (Échap)" aria-label="Fermer">×</button>'
+    +'<div class="sgah-fh"><span class="n">'+E(p.NUMBER||'')+'</span><span class="t">'+E(p.TITLE||'')+'</span><span class="s">'+E(Pr.lib)+(x.der?' · dernière saisie le '+fK(x.der):'')+'</span></div>'
+    +kpis([kpi('Heures',Hh(x.h)+'<small>h</small>',num(x.n,0)+' inscription'+(x.n>1?'s':'')),kpi('À contrôler',num(x.ctl,0),x.hctl?Hh(x.hctl)+' h':'',x.ctl?'':'pos'),kpi('Refusées',num(x.ref,0),x.ref?'à corriger':'',x.ref?'neg':''),
+      kpi('À facturer',Hh(x.af)+'<small>h</small>','non facturées'),vf?kpi('Frais',F0(x.f)+'<small>CHF</small>',num(x.fn,0)+' note'+(x.fn>1?'s':'')+(x.fctl?' · '+num(x.fctl,0)+' à contrôler':'')):''])
+    +'<div class="sg-tiles sgah-tuiles">'+(vh?tuile('ctlh',num(x.ctl,0)+' inscription'+(x.ctl>1?'s':'')+' à contrôler',p.ID)+tuile('anah',Hh(x.h)+' h sur la période',p.ID):'')
+      +(vf?tuile('ctlf',num(x.fctl,0)+' note'+(x.fctl>1?'s':'')+' à contrôler',p.ID)+tuile('anaf',F0(x.f)+' CHF sur la période',p.ID):'')+'</div>'
+    +'<div class="sgah-fl"><span data-fn="fpage" data-id="'+E(p.ID)+'">Page du projet</span><span data-fn="ftdb" data-id="'+E(p.ID)+'">Tableau de bord</span></div></div>'; };
 const PAGES={entree:pageEntree,ctlh:pageCtlh,anah:()=>pageAna('h'),ctlf:pageCtlf,anaf:()=>pageAna('f')};
 
 /* ── gestes ── */
@@ -47657,6 +47685,9 @@ const FN={
   pmode:b=>{ ST.per.mode=b.dataset.k; garder(); razSel(); redess(); }, pdec:b=>{ perDec(+b.dataset.n); razSel(); redess(); },
   aff:b=>{ if(String(b.dataset.id)===String(ST.pid)) return; choisir(b.dataset.id); majArg(); redess(); },
   mod:b=>{ go(VM[b.dataset.k],b.dataset.id!=null&&b.dataset.id!==''?b.dataset.id:undefined); },
+  fiche:b=>{ ST.fiche=String(b.dataset.id)===String(ST.fiche)?null:b.dataset.id; redess(); },
+  ffiche:()=>{ ST.fiche=null; redess(); },
+  fpage:b=>go('nx-pdom',String(b.dataset.id)), ftdb:b=>go('nx-projet',nId(b.dataset.id)),
   etatm:b=>popMenu(b,[{t:'Toutes',chk:!ST.etat,fn:()=>{ ST.etat=0; garder(); redess(); }},...CTL_ETATS.map(([e,t])=>({t,chk:ST.etat===e,fn:()=>{ ST.etat=e; garder(); redess(); }}))]),
   /* semaine (heures) et mois (frais) */
   sdec:b=>{ ST.sem=jplus(semDe(),7*(+b.dataset.n)); ST.col=null; ST.jour=null; razSel(); redess(); },
@@ -47713,6 +47744,7 @@ const vue=mod=>({ render(m,arg){ css(); CUR.m=m; if(CUR.mod!==mod){ razSel(); ST
   tools(){ return []; },
   refresh(ts){ if(hit(ts,...TABLES)&&CUR.ver!==VER) redess(); } });
 VIEWS[VE]=vue('entree'); Object.keys(VM).forEach(k=>{ VIEWS[VM[k]]=vue(k); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&ST.fiche!=null&&typeof VIEW!=='undefined'&&VIEW&&VIEW.id===VE&&!document.querySelector('.ov')){ e.stopPropagation(); ST.fiche=null; redess(); } },true);
 /* les quatre anciennes entrées d'Administration (session, historique, liens) mènent aux modules */
 { const g0=go; go=function(v,arg){ if(REDIR[v]){ v=REDIR[v]; arg=undefined; } return g0.call(this,v,arg); }; }
 window.SGAH={ST,CUR,CTX,VE,VM,REDIR,IDS,etat,approuverLot,filtrer,grouper,statsAff,periode,perim,peutVoir,ecrit,bloquee,grille,choisir,redess,colL};
@@ -48975,6 +49007,9 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcv-map'); if(o.sombre) el.cla
   const tip=h('div','sgcv-tip'), ctl=h('div','sgcv-ctl','<button type="button" data-z="in" title="Zoom avant">'+IC.plus+'</button><button type="button" data-z="out" title="Zoom arrière">'+IC.moins+'</button><button type="button" data-z="fit" title="Voir tous les projets">'+IC.tout+'</button>');
   const att=h('div','sgcv-att','© swisstopo, OFEV'), msg=h('div','sgcv-msg'); msg.style.display='none';
   el.append(tw,svg2,tip,ctl,att,msg);
+  /* carte recréée par le choix « En cours / Tous » : cadrée sur TOUS les projets de l'option, projets isolés compris (24.11.2026, Paulo : « lorsque je
+     sélectionne une de ces deux options, zoom tout sur la carte et affiche les projets en lien avec l'option ») */
+  const toutV=!!MK.toutVoir;
   const S={E:2540000,N:1150000,res:60}; let imgV=null,tImg=0,tok=0,its=[],ouvert=false,auto=true,nAj=-1,err=false,msgT='';
   const W=()=>el.clientWidth||800, H=()=>el.clientHeight||500;
   const px=(e,n)=>[(e-S.E)/S.res+W()/2,H()/2-(n-S.N)/S.res];
@@ -48998,7 +49033,8 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcv-map'); if(o.sombre) el.cla
   /* cadrage à l'ouverture : sans les projets isolés à plus de 35 km du bureau quand ils sont moins d'un sur cinq ; le bouton « tout » les montre tous */
   const proche=L=>{ const B=SC.bureau; if(!B||L.length<5) return L; const P=L.filter(x=>Math.hypot(x.E-B.E,x.N-B.N)<35000); return P.length>=L.length*.8?P:L; };
   const cadre=tout=>{ let L=o.cadre?o.cadre(its):its; if(!tout) L=proche(L); return SC.bureau&&o.bureau!==false?L.concat([SC.bureau]):L; };
-  const zoom=(f,mx,my)=>{ auto=false; const nr=Math.min(900,Math.max(0.6,S.res*f)); if(mx!=null){ const ec=S.E+(mx-W()/2)*S.res, nc=S.N-(my-H()/2)*S.res; S.E=ec-(mx-W()/2)*nr; S.N=nc+(my-H()/2)*nr; } S.res=nr; vue(); };
+  const zoomA=(nr,mx,my)=>{ auto=false; nr=Math.min(900,Math.max(0.6,nr)); if(mx!=null){ const ec=S.E+(mx-W()/2)*S.res, nc=S.N-(my-H()/2)*S.res; S.E=ec-(mx-W()/2)*nr; S.N=nc+(my-H()/2)*nr; } S.res=nr; vue(); };
+  const zoom=(f,mx,my)=>zoomA(S.res*f,mx,my);
   ctl.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; e.stopPropagation(); const z=b.dataset.z; if(z==='in') zoom(1/1.6); else if(z==='out') zoom(1.6); else { auto=true; ajuster(cadre(true)); } };
   let dr=null;
   el.addEventListener('pointerdown',e=>{ if(e.button!==0||e.target.closest('.sgcv-ctl')) return; dr={x:e.clientX,y:e.clientY,m:false,t:e.target}; try{ el.setPointerCapture(e.pointerId); }catch(_){} });
@@ -49010,10 +49046,16 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcv-map'); if(o.sombre) el.cla
     if(o.survol) o.survol(t||null); });
   const fin=e=>{ if(!dr) return; const d=dr; dr=null; el.classList.remove('drag'); try{ el.releasePointerCapture(e.pointerId); }catch(_){}
     if(d.m){ const dx=e.clientX-d.x, dy=e.clientY-d.y; lay.style.transform=''; S.E-=dx*S.res; S.N+=dy*S.res; vue(); return; }
-    const t=document.elementFromPoint(e.clientX,e.clientY)||d.t, a=t&&t.closest&&t.closest('[data-id],[data-k]');
-    if(a&&a.dataset.id){ const id=a.dataset.id; if(o.choisir) o.choisir(isNaN(+id)?id:+id); return; }
-    if(a&&a.dataset.k){ if(o.clic) o.clic(a.dataset.k,a); return; }
+    const t=document.elementFromPoint(e.clientX,e.clientY)||d.t, a=t&&t.closest&&t.closest('[data-id],[data-k]'), bb=el.getBoundingClientRect(), pt={x:e.clientX-bb.left,y:e.clientY-bb.top}, now=Date.now();
+    if(a&&a.dataset.id){ vd=null; const id=a.dataset.id; if(o.choisir) o.choisir(isNaN(+id)?id:+id,pt); return; }
+    if(a&&a.dataset.k){ const bu=a.dataset.k==='bureau';
+      /* le bureau se double-clique comme la carte vide : zoom avant autour du point */
+      if(bu&&vd&&now-vd.t<450&&Math.abs(vd.x-pt.x)+Math.abs(vd.y-pt.y)<10){ vd=null; zoom(1/2.5,pt.x,pt.y); return; } vd=bu?{t:now,x:pt.x,y:pt.y}:null;
+      if(o.clic) o.clic(a.dataset.k,a,pt); return; }
+    /* double-clic dans le vide de la carte : zoom avant (× 2,5), le point cliqué reste sous le pointeur */
+    if(vd&&now-vd.t<450&&Math.abs(vd.x-pt.x)+Math.abs(vd.y-pt.y)<10){ vd=null; zoom(1/2.5,pt.x,pt.y); return; } vd={t:now,x:pt.x,y:pt.y};
     if(o.vide) o.vide(); };
+  let vd=null;
   el.addEventListener('pointerup',fin); el.addEventListener('pointercancel',fin);
   el.addEventListener('pointerleave',()=>{ if(!dr){ tip.style.display='none'; if(o.survol) o.survol(null); } });
   el.addEventListener('wheel',e=>{ e.preventDefault(); const b=el.getBoundingClientRect(); zoom(e.deltaY>0?1.3:1/1.3,e.clientX-b.left,e.clientY-b.top); },{passive:false});
@@ -49023,17 +49065,26 @@ function Carte(el,o){ o=o||{}; el.classList.add('sgcv-map'); if(o.sombre) el.cla
   const ro=new ResizeObserver(()=>{ if(!document.body.contains(el)){ ro.disconnect(); return; } if(ouvert) vue(); }); ro.observe(el);
   return {
     /* tant que personne n'a déplacé ni zoomé la carte, elle suit tous les projets placés ; ensuite la vue est gardée */
-    set(L){ its=L; const k=L.length+(SC.bureau?1:0); if(!ouvert||(auto&&k!==nAj)){ ouvert=true; nAj=k; ajuster(cadre()); } else dessus(); },
-    redraw:dessus, recharger:charger, incliner(t){ tw.style.transform=t||''; tw.style.transformOrigin='50% '+(OY*100)+'%'; dessus(); charger(); }, vers(L,pad){ auto=false; ajuster(L,pad); }, tout(){ auto=true; ajuster(cadre(true)); }, centrer(x,res){ auto=false; S.E=x.E; S.N=x.N; if(res) S.res=res; vue(); },
+    set(L){ its=L; const k=L.length+(SC.bureau?1:0); if(!ouvert||(auto&&k!==nAj)){ ouvert=true; nAj=k; ajuster(cadre(toutV)); } else dessus(); },
+    redraw:dessus, recharger:charger, zoomA, incliner(t){ tw.style.transform=t||''; tw.style.transformOrigin='50% '+(OY*100)+'%'; dessus(); charger(); }, vers(L,pad){ auto=false; ajuster(L,pad); }, tout(){ auto=true; ajuster(cadre(true)); }, centrer(x,res){ auto=false; S.E=x.E; S.N=x.N; if(res) S.res=res; vue(); },
     S, px, message(t){ msgT=t||''; montrer(); }, detruire(){ ro.disconnect(); clearTimeout(tImg); } }; }
 
 /* dessus : morceaux communs */
 const pathGeo=(g,px)=>{ const P=g.type==='MultiPolygon'?g.coordinates:g.type==='Polygon'?[g.coordinates]:[]; let d='';
   P.forEach(pl=>pl.forEach(R=>{ let lx=null,ly=null,s=''; R.forEach((c,i)=>{ const [x,y]=px(c[0],c[1]); if(lx!=null&&Math.abs(x-lx)+Math.abs(y-ly)<1.4&&i<R.length-1) return; s+=(s?'L':'M')+x.toFixed(1)+' '+y.toFixed(1); lx=x; ly=y; }); d+=s+'Z'; })); return d; };
 const dedans=(api,x,y,m)=>{ m=m||30; return x>-m&&x<api.W()+m&&y>-m&&y<api.H()+m; };
+/* bureau : « épicentre » (24.11.2026 ; dix propositions faites à Paulo le même jour, choix « garder 6 ») — petit carré noir à cœur jaune et trois cercles
+   qui s'estompent, en rouge de la charte #BD1E42 (même jour, « cercles du bureau d'une couleur différente, à prendre dans la charte » : ni le bleu nuit
+   des cases ni le jaune des projets) : le bureau, origine des distances ; sans libellé (même jour, « supprimer texte bureau » : nom et adresse au survol) ;
+   même marque dans les dix variantes. Les neuf autres propositions
+   (fanion du sigle, logo, carré jaune, repère géodésique, étiquette, monogramme, losange, jalon, cartouche) sont gardées dans
+   subgestion3/_backup_20261124_1430_avant_bureau_epicentre/sg3_carte_variantes.js (burMarque). */
+const BUR_BOX=[-28,-28,28,28];   /* place réservée autour du bureau (étiquettes des projets) */
 const burSvg=(api,o)=>{ const B=SC.bureau; if(!B) return ''; const [x,y]=api.px(B.E,B.N); if(!dedans(api,x,y,60)) return ''; o=o||{};
-  return '<g class="sgcv-bur" data-k="bureau" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')"><rect x="-6" y="-6" width="12" height="12" fill="'+(o.fond||'#1d1d1b')+'"/><rect x="-3" y="-3" width="6" height="6" fill="'+(o.coeur||'#FFF266')+'"/>'
-    +'<text x="10" y="4" class="'+(o.cls||'')+'">'+(o.lib||'Bureau')+'</text></g>'; };
+  return '<g class="sgcv-bur" data-k="bureau" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'
+    +'<circle r="26" fill="none" stroke="#BD1E42" stroke-opacity=".3" stroke-width="1.4"/><circle r="18" fill="none" stroke="#BD1E42" stroke-opacity=".55" stroke-width="1.5"/>'
+    +'<circle r="10" fill="none" stroke="#BD1E42" stroke-opacity=".9" stroke-width="1.8"/><rect x="-5" y="-5" width="10" height="10" fill="#1d1d1b"/><rect x="-2" y="-2" width="4" height="4" fill="#FFF266"/>'
+    +'</g>'; };
 const tipP=x=>'<b>'+E(x.p.NUMBER)+' · '+E(x.p.TITLE||'')+'</b>'+E(PH[x.cl][0])+(x.li&&x.li.com?' · '+E(x.li.com):'')+(x.I.h30?' · '+HR(x.I.h30)+' h ces 30 jours':'');
 const tipBur=()=>SC.bureau?'<b>'+E(SC.bureau.nom||'Bureau')+'</b>'+E(SC.bureau.adr||''):'';
 const tipDe=(t,its)=>{ if(t.dataset.id){ const x=its.find(z=>String(z.id)===t.dataset.id); return x?tipP(x):''; } if(t.dataset.k==='bureau') return tipBur(); return ''; };
@@ -49111,19 +49162,67 @@ function P1(z){
   return {maj(){ its=placés(projets()); grouper(); C.set(its); C.recharger(); C.message(MK.prog); index(); },detruire(){ C.detruire(); }}; }
 
 /* ═══ 2. RELEVÉ — densité : carroyage kilométrique bleu, graduations LV95, petits relevés à côté (années, types, distance, communes) ═══ */
+/* phase du projet pour le relevé « Phase » de la variante 2 (24.11.2026, Paulo : « ajouter au début la [répartition] selon phase de projet : projet,
+   avant-projet, etc. ») — phase actuelle (sgPhaseActuelle : la plus saisie dans les 30 jours avant la dernière heure), reconnue d'abord par le NOM de la phase
+   partielle (les numéros de la base ne sont pas toujours ceux de la SIA 102 : « 414 Mise en service »), puis par son numéro, puis par la phase ; projet terminé :
+   « Terminé » */
+const PHS=[['fz','Faisabilité'],['31','Avant-projet'],['32','Projet'],['33','Enquête'],['3','Étude du projet'],['41','Appel d’offres'],['51','Projet d’exécution'],
+  ['52','Exécution'],['53','Mise en service'],['5','Réalisation'],['exp','Expertise'],['fin','Terminé'],['-','Sans phase']];
+function phaseDe(x){ if(x._ph) return x._ph;
+  const n=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’`]/g,"'");
+  const r=(()=>{ if(x.cl==='fin') return 'fin'; const pa=x.I.pa; if(!pa) return x.cl==='exp'?'exp':'-';
+    const sp=pa.sp?n(pa.sp.NAMEFR||pa.sp.NAME):'', ph=pa.ph?n(pa.ph.NAMEFR||pa.ph.NAME):'', c=String(x.code||'').trim();
+    if(x.cl==='exp'||/expertise/.test(sp+' '+ph)) return 'exp';
+    if(/faisab|etudes? prelim|definition des objectifs/.test(sp+' '+ph)) return 'fz';
+    if(/avant.?projet/.test(sp)) return '31';
+    if(/projet d'execution/.test(sp)) return '51';
+    if(/projet de l'ouvrage/.test(sp)) return '32';
+    if(/autorisation|enquete|permis/.test(sp)) return '33';
+    if(/appel|offres|adjudication/.test(sp)) return '41';
+    if(/execution de l'ouvrage|direction des travaux/.test(sp)) return '52';
+    if(/mise en service|acheve/.test(sp)) return '53';
+    if(/^(31|32|33|41|51|52|53)$/.test(c)) return c;
+    if(/^[12]\d?$/.test(c)||/^[12]$/.test(String(pa.ph&&pa.ph.NUMBER||''))) return 'fz';
+    if(/appel/.test(ph)) return '41'; if(/realisation/.test(ph)) return '5'; if(/etude du projet/.test(ph)||/^3$/.test(c)) return '3';
+    return '-'; })();
+  x._ph=r; return r; }
+/* couleurs de la variante 2 — cinq propositions tirées de la charte (24.11.2026, Paulo : « proposition de couleur basé sur la charte de substances »),
+   au choix dans la page tant que Paulo n'a pas choisi : papier, encre, densité des cases, points, bureau, barres des relevés, fond de carte */
+const PAL2={
+  nuit:{n:'Bleu nuit',mk:'#FFF266',mkb:'#003346',pap:'#FFFFFF',enc:'#003346',doux:'#636E7E',dens:'#003346',dmin:.10,dmax:.74,cl:'#FFFFFF',pt:'#1d1d1b',ptSel:'#FFF266',sel:'#1d1d1b',
+    bur:['#1d1d1b','#FFF266'],barre:'#003346',on:'#FEF6B0',hb:'rgba(0,51,70,.13)',flb:'#003346',bw:'1.5px',
+    fond:{papier:'#FFFFFF',eau:{hach:'#003346'},bati:['#003346',.18],ext:['#003346',.3],route:['#003346',.6]}},
+  jaune:{n:'Noir sur jaune',mk:'#1d1d1b',mkb:'#FFFFFF',page:'#FEF6B0',pap:'#FEF6B0',enc:'#1d1d1b',doux:'#706F6F',dens:'#1d1d1b',dmin:.07,dmax:.82,cl:'#FFF266',pt:'#1d1d1b',ptSel:'#FFFFFF',sel:'#1d1d1b',
+    bur:['#1d1d1b','#FFF266'],barre:'#1d1d1b',on:'#FFF266',hb:'rgba(29,29,27,.12)',flb:'#1d1d1b',bw:'2px',
+    fond:{papier:'#FEF6B0',eau:{plein:'#FFF266'},bati:['#1d1d1b',.15],ext:['#1d1d1b',.26],route:['#1d1d1b',.58]}},
+  negatif:{n:'Négatif',mk:'#FFF266',mkb:'#003346',page:'#003346',pap:'#003346',enc:'#FFFFFF',doux:'rgba(255,255,255,.64)',dens:'#FFF266',dmin:.14,dmax:.9,cl:'#003346',pt:'#FFFFFF',ptSel:'#FFF266',sel:'#FFFFFF',
+    bur:['#FFF266','#003346'],barre:'#FFF266',on:'rgba(255,242,102,.18)',hb:'rgba(255,255,255,.16)',flb:'#FFF266',flx:'#003346',bw:'1.5px',sombre:1,
+    fond:{papier:'#003346',eau:{hach:'#FFFFFF'},bati:['#FFFFFF',.12],ext:['#FFFFFF',.22],route:['#FFFFFF',.46]}},
+  encre:{n:'Encre et jaune',mk:'#FFF266',mkb:'#1d1d1b',pap:'#FFFFFF',enc:'#1d1d1b',doux:'#706F6F',dens:'#1d1d1b',dmin:.07,dmax:.84,cl:'#FFF266',pt:'#1d1d1b',ptSel:'#FFF266',sel:'#1d1d1b',selFill:'#FFF266',
+    bur:['#1d1d1b','#FFF266'],barre:'#1d1d1b',on:'#FFF266',hb:'rgba(29,29,27,.1)',flb:'#1d1d1b',bw:'2px',
+    fond:{papier:'#FFFFFF',eau:{hach:'#1d1d1b'},bati:['#1d1d1b',.13],ext:['#1d1d1b',.24],route:['#1d1d1b',.5]}},
+  ardoise:{n:'Ardoise',mk:'#FFF266',mkb:'#003346',pap:'#F2F3F4',enc:'#636E7E',doux:'#706F6F',dens:'#003346',dmin:.10,dmax:.8,cl:'#FFFFFF',pt:'#003346',ptSel:'#FFF266',sel:'#003346',
+    bur:['#003346','#FFF266'],barre:'#003346',on:'#FEF6B0',hb:'rgba(99,110,126,.15)',flb:'#003346',bw:'1.5px',
+    fond:{papier:'#F2F3F4',eau:{plein:'#D9E0E6'},bati:['#636E7E',.2],ext:['#636E7E',.32],route:['#636E7E',.6]}}};
+const PAL2_ORD=['nuit','jaune','negatif','encre','ardoise'];
 function P2(z){
   /* carte sur toute la largeur (23.11.2026, Paulo : « agrandir la carte jusqu'au bord et mettre les données en dessous ») : relevés en colonnes sous la carte,
      fiche d'un projet ou d'une case dans une carte flottante sur le plan */
-  z.innerHTML='<div class="sgcv-p2"><div class="sgcv-p2-l"><div class="sgcv-p2-hd"></div><div class="sgcv-p2-mw"><div class="sgcv-p2-m"></div><div class="sgcv-p2-fl" hidden></div></div></div><div class="sgcv-p2-r"></div></div>';
-  const st={mes:sessionStorage.getItem('sgcv2_mes')||'n',ans:new Set(),cat:null,gen:null,dst:null,cell:null,pas:2};
+  z.innerHTML='<div class="sgcv-p2"><div class="sgcv-p2-pal"></div><div class="sgcv-p2-l"><div class="sgcv-p2-hd"></div><div class="sgcv-p2-mw"><div class="sgcv-p2-m"></div><div class="sgcv-p2-fl" hidden></div></div></div><div class="sgcv-p2-r"></div></div>';
+  /* toujours en nombre de projets (24.11.2026, Paulo : « supprimer heures, afficher uniquement les données nombre dans la carte ») */
+  const st={mes:'n',pal:PAL2[sessionStorage.getItem('sgcv2_pal')]?sessionStorage.getItem('sgcv2_pal'):'nuit',ans:new Set(),ph:null,cat:null,gen:null,dst:null,com:null,cell:null,lot:null,pas:2};
   const hd=z.querySelector('.sgcv-p2-hd'), aside=z.querySelector('.sgcv-p2-r'), fl=z.querySelector('.sgcv-p2-fl'); let base=[], its=[];
-  const BL='#2338A0';
+  const root=z.querySelector('.sgcv-p2'), palR=z.querySelector('.sgcv-p2-pal'), FD=Object.assign({},FONDS.releve); let P=PAL2[st.pal];
   const DST=[[0,2,'0–2'],[2,5,'2–5'],[5,10,'5–10'],[10,20,'10–20'],[20,50,'20–50'],[50,1e9,'50+']];
-  const filtre=x=>(!st.ans.size||st.ans.has(x.an))&&(!st.cat||x.cat===st.cat)&&(!st.gen||x.genres.includes(st.gen))&&(st.dst==null||(x.km!=null&&x.km>=DST[st.dst][0]&&x.km<DST[st.dst][1]));
+  const comDe=x=>x.li&&x.li.com||'—';
+  const filtre=x=>(!st.ans.size||st.ans.has(x.an))&&(!st.cat||x.cat===st.cat)&&(!st.gen||x.genres.includes(st.gen))&&(st.dst==null||(x.km!=null&&x.km>=DST[st.dst][0]&&x.km<DST[st.dst][1]))&&(!st.com||comDe(x)===st.com)&&(!st.ph||phaseDe(x)===st.ph);
   const pasDe=res=>{ const c=[0.25,0.5,1,2,5,10,20,50]; const want=res*54/1000; return c.reduce((b,v)=>Math.abs(Math.log(v/want))<Math.abs(Math.log(b/want))?v:b,c[0]); };
   const cellK=(x,pas)=>Math.floor(x.E/(pas*1000))+':'+Math.floor(x.N/(pas*1000));
-  const C=Carte(z.querySelector('.sgcv-p2-m'),{fond:FONDS.releve,pad:70,
+  const C=Carte(z.querySelector('.sgcv-p2-m'),{fond:FD,pad:70,
     dessus:api=>{ const px=api.px, S=api.S, w=api.W(), hh=api.H(), pas=st.pas=pasDe(S.res), m=pas*1000;
+      /* vue rapprochée (24.11.2026, Paulo : « une meilleure identification du projet lorsque c'est zoomé ») : à moins de 12 m par pixel (carroyage de 0,5 km
+         et moins), les cases s'effacent et chaque projet reçoit une étiquette ; à moins de 6 m par pixel, sa parcelle est dessinée */
+      const proche=S.res<=PROCHE, parcelle=S.res<=PARCELLE;
       let s='';
       /* papier millimétré : lignes du carroyage sur toute la vue */
       const e0=Math.floor((S.E-w/2*S.res)/m)*m, e1=S.E+w/2*S.res, n0=Math.floor((S.N-hh/2*S.res)/m)*m, n1=S.N+hh/2*S.res;
@@ -49132,68 +49231,208 @@ function P2(z){
       /* cases occupées : bleu d'autant plus dense qu'il y a de projets (ou d'heures) */
       const parC=new Map(); its.forEach(x=>{ const k=cellK(x,pas), g=parC.get(k)||{n:0,h:0,L:[]}; g.n++; g.h+=x.I.htot; g.L.push(x); parC.set(k,g); });
       const vmax=Math.max(1,...[...parC.values()].map(g=>st.mes==='h'?g.h:g.n));
-      parC.forEach((g,k)=>{ const [i,j]=k.split(':').map(Number), [x0,y1]=px(i*m,j*m), [x1,y0]=px((i+1)*m,(j+1)*m), v=(st.mes==='h'?g.h:g.n)/vmax, on=st.cell===k;
+      /* vue d'un projet (parcelles) : plus de cases (24.11.2026, Paulo : « supprimer le rectangle lorsque je suis zoomé sur un projet ») */
+      if(!parcelle) parC.forEach((g,k)=>{ const [i,j]=k.split(':').map(Number), [x0,y1]=px(i*m,j*m), [x1,y0]=px((i+1)*m,(j+1)*m), v=(st.mes==='h'?g.h:g.n)/vmax, on=st.cell===k;
         if(x1<-5||x0>w+5||y1<-5||y0>hh+5) return;
-        s+='<rect data-k="g:'+k+'" x="'+x0.toFixed(1)+'" y="'+y0.toFixed(1)+'" width="'+(x1-x0).toFixed(1)+'" height="'+(y1-y0).toFixed(1)+'" fill="'+BL+'" fill-opacity="'+(0.12+0.66*Math.sqrt(v)).toFixed(2)+'" stroke="'+(on?'#1d1d1b':BL)+'" stroke-width="'+(on?2.2:.8)+'"/>';
-        if(x1-x0>=24) s+='<text x="'+(x0+4).toFixed(1)+'" y="'+(y0+12).toFixed(1)+'" class="sgcv-t2'+(v>.45?' cl':'')+'">'+(st.mes==='h'?HR(g.h):g.n)+'</text>'; });
-      /* chaque projet : un point ; le projet choisi : cercle et numéro */
-      its.forEach(x=>{ const [a,b]=px(x.E,x.N); if(!dedans(api,a,b)) return; const on=x.id===MK.sel;
-        s+='<g data-id="'+E(x.id)+'" transform="translate('+a.toFixed(1)+' '+b.toFixed(1)+')"><circle r="'+(on?6:2.6)+'" fill="'+(on?'#F3F0E7':'#0E1B5C')+'" stroke="'+(on?'#0E1B5C':'none')+'" stroke-width="2"/>'+(on?'<text x="9" y="4" class="sgcv-t2 halo">'+E(x.p.NUMBER)+'</text>':'')+'</g>'; });
-      s+=burSvg(api,{fond:BL,coeur:'#F3F0E7',lib:'BUREAU',cls:'sgcv-t2'});
+        const op=(P.dmin+(P.dmax-P.dmin)*Math.sqrt(v))*(parcelle?.14:proche?.32:1), jf=on&&P.selFill;
+        s+='<rect data-k="g:'+k+'" x="'+x0.toFixed(1)+'" y="'+y0.toFixed(1)+'" width="'+(x1-x0).toFixed(1)+'" height="'+(y1-y0).toFixed(1)+'" fill="'+(jf?P.selFill:P.dens)+'" fill-opacity="'+(jf?.92:op).toFixed(2)+'" stroke="'+(on?P.sel:P.dens)+'" stroke-opacity="'+(on?1:.55)+'" stroke-width="'+(on?2.2:.8)+'"/>';
+        if(x1-x0>=24) s+='<text x="'+(x0+4).toFixed(1)+'" y="'+(y0+12).toFixed(1)+'" class="sgcv-t2 nb'+(!jf&&op>.48?' cl':'')+'">'+(st.mes==='h'?HR(g.h):g.n)+'</text>'; });
+      /* parcelle du projet (vue très rapprochée) : contour épais, aplat léger ; jaune si le projet est choisi */
+      const vus=new Set();
+      if(parcelle) its.forEach(x=>{ const [a,b]=px(x.E,x.N); if(!dedans(api,a,b,250)) return; const g=parc(x); if(!g||vus.has(g)) return; vus.add(g); const on=its.some(y=>y.id===MK.sel&&parc(y)===g);
+        s+='<path data-id="'+E(x.id)+'" d="'+pathGeo(g,px)+'" fill-rule="evenodd" fill="'+(on?'#FFF266':P.dens)+'" fill-opacity="'+(on?.62:.2)+'" stroke="'+(on?P.pt:P.dens)+'" stroke-width="2.2" stroke-linejoin="round"/>'; });
+      /* chaque projet : un repère jaune cerclé (24.11.2026, Paulo : « mieux identifier les projets, agrandir les points d'identification et changer la
+         couleur ») — plus grand en vue rapprochée, avec un cœur foncé ; le projet choisi : anneau autour et numéro */
+      its.forEach(x=>{ const [a,b]=px(x.E,x.N); if(!dedans(api,a,b)) return; const on=x.id===MK.sel, R=proche?(on?9:7.5):(on?6.5:4.4);
+        s+='<g class="sgcv-mk" data-id="'+E(x.id)+'" transform="translate('+a.toFixed(1)+' '+b.toFixed(1)+')">'+(on?'<circle r="'+(R+5)+'" fill="none" stroke="'+P.mkb+'" stroke-width="1.6"/>':'')
+          +'<circle r="'+R+'" fill="'+P.mk+'" stroke="'+P.mkb+'" stroke-width="'+(on?3:proche?2.4:1.6)+'"/>'+(proche?'<circle r="2" fill="'+P.mkb+'"/>':'')
+          +(on&&!proche?'<text x="'+(R+8)+'" y="4" class="sgcv-t2 halo">'+E(x.p.NUMBER)+'</text>':'')+'</g>'; });
+      if(proche) s+=etiquettes(api,w,hh);
+      s+=burSvg(api,{fond:P.bur[0],coeur:P.bur[1],lib:'BUREAU',cls:'sgcv-t2'});
       /* graduations kilométriques (LV95), comme les relevés : en haut et à gauche, une étiquette tous les ≥ 70 px */
       const k=Math.max(1,Math.ceil(70/(m/S.res)));
       for(let e=e0;e<=e1;e+=m*k){ const [x]=px(e,0); if(x<30||x>w-30) continue; s+='<line x1="'+x.toFixed(1)+'" y1="0" x2="'+x.toFixed(1)+'" y2="7" class="sgcv-tk"/><text x="'+(x+3).toFixed(1)+'" y="17" class="sgcv-ax">'+N0(e/1000)+'</text>'; }
       for(let n=n0;n<=n1;n+=m*k){ const [,y]=px(0,n); if(y<30||y>hh-30) continue; s+='<line x1="0" y1="'+y.toFixed(1)+'" x2="7" y2="'+y.toFixed(1)+'" class="sgcv-tk"/><text x="10" y="'+(y-3).toFixed(1)+'" class="sgcv-ax">'+N0(n/1000)+'</text>'; }
       s+='<g class="sgcv-reg"><rect x="4" y="4" width="6" height="6"/><rect x="'+(w-10)+'" y="4" width="6" height="6"/><rect x="4" y="'+(hh-10)+'" width="6" height="6"/><rect x="'+(w-10)+'" y="'+(hh-10)+'" width="6" height="6"/></g>';
       return s; },
-    surVue:()=>entete(),
-    tip:t=>{ if(t.dataset.k&&t.dataset.k.startsWith('g:')){ const k=t.dataset.k.slice(2), L=its.filter(x=>cellK(x,st.pas)===k); return '<b>Case de '+st.pas+' × '+st.pas+' km</b>'+L.length+' projet'+(L.length>1?'s':'')+' · '+HR(L.reduce((s,x)=>s+x.I.htot,0))+' h'; } return tipDe(t,its); },
-    choisir:id=>{ MK.sel=id; C.redraw(); panneau(); },
-    clic:k=>{ if(k.startsWith('g:')){ st.cell=st.cell===k.slice(2)?null:k.slice(2); MK.sel=null; C.redraw(); panneau(); } },
-    vide:()=>{ MK.sel=null; st.cell=null; C.redraw(); panneau(); } });
+    surVue:()=>{ entete(); if(base.length) releves(); },
+    tip:t=>{ if(t.dataset.k&&t.dataset.k.startsWith('lot:')){ const ids=t.dataset.k.slice(4).split('|'), L=its.filter(x=>ids.includes(String(x.id)));
+        return '<b>'+L.length+' projets au même endroit</b>'+L.map(x=>E(x.p.NUMBER)+' · '+E(x.p.TITLE||'')).join('<br>'); }
+      /* case : bulle avec les projets qu'elle contient — numéro, nom, phase (24.11.2026, Paulo : « lorsque je survole le carré, je souhaite voir les projets
+         liés sous forme de bulle » ; la bulle d'avant, taille de la case et heures, avait été retirée le même jour) ; 8 au plus, puis « et n autres » */
+      if(t.dataset.k&&t.dataset.k.startsWith('g:')){ const k=t.dataset.k.slice(2), L=its.filter(x=>cellK(x,st.pas)===k).sort((a,b)=>b.I.htot-a.I.htot||String(a.p.NUMBER).localeCompare(String(b.p.NUMBER)));
+        if(!L.length) return '';
+        const ph=x=>{ const c=phaseDe(x), r=PHS.find(e=>e[0]===c); return r?r[1]:''; };
+        return '<b>'+L.length+' projet'+(L.length>1?'s':'')+'</b>'+L.slice(0,8).map(x=>'<span class="sgcv-tipl"><b>'+E(x.p.NUMBER)+'</b> '+E(x.p.TITLE||'')+(ph(x)?' <i>'+E(ph(x))+'</i>':'')+'</span>').join('')
+          +(L.length>8?'<span class="sgcv-tipl"><i>et '+(L.length-8)+' autre'+(L.length-8>1?'s':'')+'</i></span>':''); }
+      return tipDe(t,its); },
+    /* double-clic sur un point de projet = zoom sur sa case aussi (le point est dans la case) */
+    choisir:id=>{ const t=Date.now(), x=its.find(z=>z.id===id);
+      if(dbl&&dbl.id===id&&t-dbl.t<450&&x){ dbl=null; zoomProjet(x); return; } dbl={id,t};
+      MK.sel=id; C.redraw(); panneau(); },
+    clic:(k,a,pt)=>{ if(k.startsWith('lot:')){ const ids=k.slice(4).split('|').map(v=>isNaN(+v)?v:+v), t=Date.now(), x=its.find(y=>y.id===ids[0]);
+        if(dbl&&dbl.k===k&&t-dbl.t<450&&x){ dbl=null; zoomProjet(x); return; } dbl={k,t};
+        st.lot=ids; st.cell=null; MK.sel=null; C.redraw(); panneau(); return; }
+      if(k.startsWith('g:')){ const c=k.slice(2), t=Date.now();
+        /* second clic sur la même case en moins de 450 ms = double-clic : zoom sur la case (le premier clic l'a ouverte) */
+        if(dbl&&dbl.k===c&&t-dbl.t<450){ dbl=null; zoomCase(c); return; } dbl={k:c,t};
+        st.cell=st.cell===c?null:c; st.lot=null; MK.sel=null; C.redraw(); panneau(); } },
+    vide:()=>{ MK.sel=null; st.cell=null; st.lot=null; C.redraw(); panneau(); } });
+  /* une palette = variables CSS de la page + fond de carte redessiné ; choix gardé pour la séance */
+  function couleurs(k,redessiner){ st.pal=k; P=PAL2[k]; sessionStorage.setItem('sgcv2_pal',k);
+    const V={'--bl':P.enc,'--doux':P.doux,'--pap':P.pap,'--cl':P.cl,'--pt':P.pt,'--barre':P.barre,'--on':P.on,'--hb':P.hb,'--flb':P.flb,'--flx':P.flx||P.enc,'--bw':P.bw,'--page':P.page||'transparent'};
+    Object.entries(V).forEach(([a,b])=>root.style.setProperty(a,b)); root.classList.toggle('page',!!P.page);
+    Object.keys(FD).forEach(a=>delete FD[a]); Object.assign(FD,P.fond);
+    const mp=z.querySelector('.sgcv-p2-m'); mp.classList.toggle('sombre',!!P.sombre);
+    palR.innerHTML='<span class="lb">Couleurs <small>proposition</small></span>'+PAL2_ORD.map((c,i)=>{ const Q=PAL2[c];
+      return '<button type="button" data-pal="'+c+'" class="'+(c===k?'on':'')+'"><span class="sw">'+[Q.pap,Q.enc].concat(Q.dens!==Q.enc?[Q.dens]:[],[Q.bur[1]]).map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>'+(i+1)+' '+E(Q.n)+'</button>'; }).join('');
+    if(redessiner){ C.recharger(); C.redraw(); } }
+  palR.addEventListener('click',e=>{ const b=e.target.closest('[data-pal]'); if(b&&b.dataset.pal!==st.pal) couleurs(b.dataset.pal,true); });
+  /* étiquettes de la vue rapprochée : numéro, désignation, phase et heures, dans un cartouche blanc relié au point ; placées sans se chevaucher
+     (quatre places essayées autour du point, sinon le numéro seul, sinon rien) ; le projet choisi d'abord, puis du plus d'heures au moins d'heures */
+  const PROCHE=12, PARCELLE=6, MCTX=document.createElement('canvas').getContext('2d');
+  const larg=(t,fs,gras)=>{ MCTX.font=(gras?'700 ':'400 ')+fs+'px '+(getComputedStyle(root).fontFamily||'sans-serif'); return MCTX.measureText(t).width; };
+  function etiquettes(api,w,hh){ const px=api.px, occ=[], t=[], G=[];
+    /* projets au même endroit (même adresse) : une seule étiquette et une pastille avec leur nombre */
+    its.forEach(x=>{ const [a,b]=px(x.E,x.N); if(!(a>0&&a<w&&b>0&&b<hh)) return; let g=G.find(g=>Math.abs(g.a-a)<7&&Math.abs(g.b-b)<7); if(!g){ g={a,b,L:[]}; G.push(g); } g.L.push(x); });
+    G.forEach(g=>{ g.L.sort((p,q)=>q.I.htot-p.I.htot); g.h=g.L.reduce((s0,x)=>s0+x.I.htot,0); g.on=g.L.some(x=>x.id===MK.sel)||(st.lot&&g.L.length>1&&g.L.every(x=>st.lot.includes(x.id))); });
+    G.sort((p,q)=>(q.on-p.on)||(q.h-p.h));
+    if(!fl.hidden&&fl.offsetHeight){ const gch=fl.classList.contains('g'); occ.push(gch?[0,0,12+fl.offsetWidth+8,12+fl.offsetHeight+8]:[w-54-fl.offsetWidth-8,0,w,12+fl.offsetHeight+8]); }
+    G.forEach(g=>{ const r0=g.L.length>1?13:11; occ.push([g.a-r0,g.b-r0,g.a+r0,g.b+r0]); });
+    if(SC.bureau){ const [bx,by]=px(SC.bureau.E,SC.bureau.N), bb=BUR_BOX; occ.push([bx+bb[0],by+bb[1],bx+bb[2],by+bb[3]]); }
+    const libre=r=>r[0]>=4&&r[2]<=w-50&&r[1]>=4&&r[3]<=hh-4&&!occ.some(q=>!(r[2]<q[0]||r[0]>q[2]||r[3]<q[1]||r[1]>q[3]));
+    G.forEach(g=>{ const n=g.L.length, x=g.L[0], on=g.on;
+      let no, tc, l2, court2, attr;
+      if(n===1){ no=String(x.p.NUMBER||''); const ti=String(x.p.TITLE||''); tc=ti.length>32?ti.slice(0,31)+'…':ti;
+        l2=(x.lib&&x.cl!=='fin'?x.lib:PH[x.cl][0])+' · '+HR(x.I.htot)+' h'; court2=no; attr='data-id="'+E(x.id)+'"'; }
+      else { const nos=g.L.map(y=>String(y.p.NUMBER||'')); let k=0, lg=0; while(k<nos.length&&lg+nos[k].length<=30){ lg+=nos[k].length+3; k++; } k=Math.max(1,k);
+        no=nos.slice(0,k).join(' · ')+(k<n?' +'+(n-k):''); tc=''; l2=n+' projets au même endroit · '+HR(g.h)+' h'; court2=nos[0]+' +'+(n-1);
+        attr='data-k="lot:'+E(g.L.map(y=>y.id).join('|'))+'"'; }
+      const essai=(lw,lh)=>{ for(const [dx,dy] of [[17,-lh-10],[17,10],[-17-lw,-lh-10],[-17-lw,10]]){ const r=[g.a+dx,g.b+dy,g.a+dx+lw,g.b+dy+lh]; if(libre(r)) return r; } return null; };
+      const wn=larg(no,11,1);
+      /* étiquette seulement pour le projet (ou le lot) choisi (24.11.2026, Paulo : « afficher uniquement lorsque je clique sur le projet ») */
+      let r=!on?null:essai(Math.ceil(Math.max(wn+(tc?larg(' '+tc,11):0)+13,larg(l2,9.5)+13)),34), court=false;
+      if(on&&!r){ r=essai(Math.ceil(larg(court2,11,1)+13),18); court=true; }
+      if(r){ occ.push(r);
+        const cx=r[0]>g.a?r[0]:r[2], cy=r[1]>g.b?r[1]:r[3];
+        t.push('<g class="sgcv-lb'+(on?' on':'')+'" '+attr+'><line x1="'+g.a.toFixed(1)+'" y1="'+g.b.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y2="'+cy.toFixed(1)+'" stroke="'+P.flb+'"/>'
+          +'<rect x="'+r[0].toFixed(1)+'" y="'+r[1].toFixed(1)+'" width="'+(r[2]-r[0]).toFixed(1)+'" height="'+(r[3]-r[1]).toFixed(1)+'" stroke="'+(on?'#1d1d1b':P.flb)+'"/>'
+          +'<text x="'+(r[0]+6).toFixed(1)+'" y="'+(r[1]+13).toFixed(1)+'"><tspan class="n">'+E(court?court2:no)+'</tspan>'+(court||!tc?'':' '+E(tc))+'</text>'
+          +(court?'':'<text class="l2" x="'+(r[0]+6).toFixed(1)+'" y="'+(r[1]+27).toFixed(1)+'">'+E(l2)+'</text>')+'</g>'); }
+      if(n>1) t.push('<g class="sgcv-lot'+(on?' on':'')+'" '+attr+' transform="translate('+g.a.toFixed(1)+' '+g.b.toFixed(1)+')">'+(on?'<circle r="16" fill="none" stroke="'+P.mkb+'" stroke-width="1.6"/>':'')
+        +'<circle r="11" fill="'+(on?P.mkb:P.mk)+'" stroke="'+P.mkb+'" stroke-width="2.4"/>'
+        +'<text y="4" text-anchor="middle" fill="'+(on?P.mk:P.mkb)+'">'+n+'</text></g>'); });
+    return t.join(''); }
+  /* parcelle d'un projet : celle de sa faisabilité si elle est enregistrée, sinon le plan cadastral de geo.admin.ch au point du projet (quatre demandes à la
+     fois, gardée pour la séance) ; parcelle de plus de 2 ha écartée (route, forêt, domaine public : le point est hors de la parcelle bâtie) */
+  const PARC=new Map(); let parcN=0;
+  function parc(x){ const kf='f:'+x.id;
+    if(!PARC.has(kf)){ let g=null; try{ const f=DS.get('sgfaisa',x.p.ID), G=f&&f.PARCELLE&&f.PARCELLE.GEOM; if(G) g=Array.isArray(G)?{type:'Polygon',coordinates:Array.isArray(G[0]&&G[0][0])?G:[G]}:G;
+        /* gardée seulement si le point du projet est sur la parcelle ou à moins de 100 m (sinon le projet est placé ailleurs : plan cadastral à son point) */
+        if(g){ const P0=(g.type==='MultiPolygon'?g.coordinates.flat(2):g.coordinates.flat(1)).filter(c=>Array.isArray(c)&&c.length>=2);
+          const e0=Math.min(...P0.map(c=>c[0])), e1=Math.max(...P0.map(c=>c[0])), n0=Math.min(...P0.map(c=>c[1])), n1=Math.max(...P0.map(c=>c[1]));
+          if(!P0.length||x.E<e0-100||x.E>e1+100||x.N<n0-100||x.N>n1+100) g=null; } }catch(_){ g=null; } PARC.set(kf,{g}); }
+    if(PARC.get(kf).g) return PARC.get(kf).g;
+    const k=Math.round(x.E)+','+Math.round(x.N); if(PARC.has(k)){ const v=PARC.get(k); return v&&v.g||null; }
+    if(typeof sgFzParcelleGeom!=='function'||parcN>=4) return null;
+    PARC.set(k,null); parcN++;
+    sgFzParcelleGeom(Math.round(x.E),Math.round(x.N)).then(g=>{ const a=g&&typeof sgFzAire==='function'?sgFzAire(g):0; PARC.set(k,{g:g&&a<20000?g:null}); },()=>PARC.set(k,{g:null}))
+      .finally(()=>{ parcN--; if(document.body.contains(root)) C.redraw(); });
+    return null; }
+  /* zoom sur une case : la case remplit la carte, le carroyage s'affine aussitôt (taille selon le zoom) */
+  let dbl=null; const KMC=v=>String(v).replace('.',',');
+  /* double-clic sur une case (ou « Zoomer sur la case ») : zoom à la taille de la case, centré sur SES PROJETS (milieu de leur emprise) — 24.11.2026, Paulo :
+     « lorsque je double-clique sur un carré, centrer le carré sur l'affichage », puis « ne pas afficher le carré traitillé » : une fois zoomé, la case
+     elle-même n'est plus dessinée (carroyage plus fin), ce sont ses projets qu'on voit ; ils restent tous visibles (leur emprise ne dépasse pas la case) ;
+     le double-clic dans le vide zoome, lui, autour du point cliqué */
+  function zoomCase(c){ const [i,j]=c.split(':').map(Number), m=st.pas*1000, mp=z.querySelector('.sgcv-p2-m'), cote=Math.max(120,Math.min(mp.clientWidth,mp.clientHeight)-90), res=Math.max(0.6,m/cote);
+    /* puis (même jour, « centre les projets correspondant au carré, pour afficher les projets ») : s'ils n'occupent qu'une partie de la case, zoom jusqu'à ce
+       qu'ils remplissent l'affichage (marge de 80 px), au plus quatre fois plus près que l'échelle de la case */
+    const L=its.filter(x=>cellK(x,st.pas)===c); let E0=(i+.5)*m, N0=(j+.5)*m, r=res;
+    if(L.length){ const es=L.map(x=>x.E), ns=L.map(x=>x.N), e0=Math.min(...es), e1=Math.max(...es), n0=Math.min(...ns), n1=Math.max(...ns);
+      E0=(e0+e1)/2; N0=(n0+n1)/2; const fit=Math.max((e1-e0)/Math.max(80,mp.clientWidth-160),(n1-n0)/Math.max(80,mp.clientHeight-160));
+      r=Math.min(res,Math.max(fit,res/4,0.6));
+      /* un seul projet dans la case (ou tous à la même adresse) : zoom au maximum sur lui (même jour, « lorsqu'il n'y a qu'un seul projet, zoom au maximum ») */
+      if(e1-e0<1&&n1-n0<1) r=0.6; }
+    st.cell=null; st.lot=null; MK.sel=null; C.centrer({E:E0,N:N0},r); panneau(); }
+  /* zoom sur un projet (double-clic sur son point, son étiquette ou un lot) : centré sur lui, jusqu'à voir sa parcelle (≈ 1 m par pixel) */
+  function zoomProjet(x){ st.cell=null; st.lot=null; MK.sel=x.id; const res=Math.max(0.6,Math.min(C.S.res/6,1.2)), mp=z.querySelector('.sgcv-p2-m'), dx=mp.clientWidth>760?185:0;
+    /* le projet au milieu de la partie libre (la fiche s'ouvre à droite) */
+    C.centrer({E:x.E+dx*res,N:x.N},res); panneau(); }
   function entete(){ const ans=base.map(x=>x.an).filter(Boolean), a0=ans.length?Math.min(...ans):'', a1=ans.length?Math.max(...ans):'';
-    hd.innerHTML='<span>RELEVÉ DES PROJETS</span><span>['+its.length+' / '+base.length+' PROJETS]</span><span>['+a0+'–'+a1+']</span><span>CARROYAGE '+String(st.pas).replace('.',',')+' KM</span>'
-      +'<span class="dr">'+seg('mes',st.mes,[['n','Nombre'],['h','Heures']])+'</span>';
-    segs(hd,(k,v)=>{ st[k]=v; sessionStorage.setItem('sgcv2_'+k,v); C.redraw(); entete(); }); }
+    /* en-tête : nombre de projets, années, taille de la grille (« Relevé des projets » retiré, « carroyage » devenu « grille » : 24.11.2026, Paulo) */
+    hd.innerHTML='<span>['+its.length+' / '+base.length+' PROJETS]</span><span>['+a0+'–'+a1+']</span><span>GRILLE '+String(st.pas).replace('.',',')+' KM</span>'; }
   const barres=(L,o)=>{ const M=Math.max(1,...L.map(r=>r.v)); return '<div class="sgcv-bars'+(o&&o.v?' v':'')+'">'+L.map(r=>'<button type="button" class="'+(r.on?'on':'')+(r.off?' off':'')+'" data-f="'+E(r.f)+'" title="'+E(r.t||r.l)+'"><span class="l">'+E(r.l)+'</span><span class="b"><i style="'+(o&&o.v?'height':'width')+':'+Math.max(r.v?3:0,r.v/M*100)+'%"></i></span><span class="n">'+E(r.n!=null?r.n:r.v)+'</span></button>').join('')+'</div>'; };
   function panneau(){ flot(); releves(); }
   /* carte flottante sur le plan : fiche du projet choisi, sinon projets de la case choisie */
   function flot(){ let h='';
-    if(MK.sel!=null){ const x=its.find(z=>z.id===MK.sel)||base.find(z=>z.id===MK.sel); if(x) h=fiche(x,{retour:st.cell?'Case':null,cls:'p2'}); }
+    if(MK.sel!=null){ const x=its.find(z=>z.id===MK.sel)||base.find(z=>z.id===MK.sel); if(x) h=fiche(x,{retour:st.lot?'Projets au même endroit':st.cell?'Case':null,cls:'p2'}); }
+    if(!h&&st.lot){ const L=its.filter(x=>st.lot.includes(x.id)).sort((a,b)=>b.I.htot-a.I.htot), ad=L[0]&&L[0].li&&L[0].li.com;
+      h='<h4 class="sgcv-p2-h">'+L.length+' projets au même endroit'+(ad?' <small>'+E(ad)+'</small>':'')+'</h4>'
+        +L.map(x=>'<button type="button" class="sgcv-li" data-id="'+E(x.id)+'"><b>'+E(x.p.NUMBER)+'</b> '+E(x.p.TITLE||'')+'<small>'+E(x.lib&&x.cl!=='fin'?x.lib:PH[x.cl][0])+' · '+HR(x.I.htot)+' h'+(x.an?' · depuis '+x.an:'')+'</small></button>').join(''); }
     if(!h&&st.cell){ const L=its.filter(x=>cellK(x,st.pas)===st.cell).sort((a,b)=>b.I.htot-a.I.htot);
-      h='<h4 class="sgcv-p2-h">Case '+st.cell.replace(':',' · ')+' <small>'+st.pas+' × '+st.pas+' km</small></h4>'
+      /* sans titre « Case 503 · 230 · 5 × 5 km » (24.11.2026, Paulo : « supprimer ») */
+      h='<button type="button" class="sgcv-ret sgcv-p2-zm" data-act="zoom">Zoomer sur la case</button>'
         +L.map(x=>'<button type="button" class="sgcv-li" data-id="'+E(x.id)+'"><b>'+E(x.p.NUMBER)+'</b> '+E(x.p.TITLE||'')+'<small>'+E(PH[x.cl][0])+' · '+HR(x.I.htot)+' h'+(x.an?' · depuis '+x.an:'')+'</small></button>').join(''); }
+    /* la carte flottante se pose du côté opposé à ce qui est choisi : elle ne cache jamais le point, la case ou le lot (un second clic reste possible) */
+    if(h){ const mp=z.querySelector('.sgcv-p2-m'), sel=MK.sel!=null?its.find(y=>y.id===MK.sel):st.lot?its.find(y=>y.id===st.lot[0]):null;
+      let ax=null; if(sel) ax=C.px(sel.E,sel.N)[0]; else if(st.cell){ const [i,j]=st.cell.split(':').map(Number), m=st.pas*1000; ax=C.px((i+.5)*m,(j+.5)*m)[0]; }
+      fl.classList.toggle('g',ax!=null&&ax>mp.clientWidth/2); }
     fl.hidden=!h; fl.innerHTML=h?'<button type="button" class="sgcv-p2-x" data-act="fermer" title="Fermer (Échap)" aria-label="Fermer">×</button>'+h:'';
-    fl.querySelectorAll('.sgcv-li').forEach(b=>b.onclick=()=>{ MK.sel=isNaN(+b.dataset.id)?b.dataset.id:+b.dataset.id; C.redraw(); panneau(); }); }
+    fl.querySelectorAll('.sgcv-li').forEach(b=>b.onclick=()=>{ MK.sel=isNaN(+b.dataset.id)?b.dataset.id:+b.dataset.id; C.redraw(); panneau(); });
+    /* vue rapprochée : étiquettes replacées autour de la carte flottante (qui vient d'apparaître, de changer ou de se fermer) */
+    const sig=fl.hidden?'':(fl.classList.contains('g')?'g':'d')+fl.offsetHeight; if(C.S.res<=PROCHE&&sig!==flSig){ flSig=sig; C.redraw(); } else flSig=sig; }
+  let flSig='';
   function releves(){ const tous_=base;
-    /* relevés croisés : chaque relevé est compté sur les projets qui passent les autres filtres */
-    const sauf=k=>tous_.filter(x=>(k==='an'||!st.ans.size||st.ans.has(x.an))&&(k==='cat'||!st.cat||x.cat===st.cat)&&(k==='gen'||!st.gen||x.genres.includes(st.gen))&&(k==='dst'||st.dst==null||(x.km!=null&&x.km>=DST[st.dst][0]&&x.km<DST[st.dst][1])));
-    const A=sauf('an'), ys=[...new Set(tous_.map(x=>x.an).filter(Boolean))].sort();
-    const rA=ys.map(y=>({f:'an:'+y,l:String(y).slice(2),t:String(y),v:A.filter(x=>x.an===y).length,on:st.ans.has(y),off:st.ans.size&&!st.ans.has(y)}));
-    const Ct=sauf('cat'), rC=CAT_ORD.filter(k=>tous_.some(x=>x.cat===k)).map(k=>({f:'cat:'+k,l:CAT[k][0],v:Ct.filter(x=>x.cat===k).length,on:st.cat===k,off:st.cat&&st.cat!==k}));
-    const Dt=sauf('dst'), rD=DST.map((d,i)=>({f:'dst:'+i,l:d[2]+' km',v:Dt.filter(x=>x.km!=null&&x.km>=d[0]&&x.km<d[1]).length,on:st.dst===i,off:st.dst!=null&&st.dst!==i}));
-    const parCom=new Map(); its.forEach(x=>{ const k=x.li&&x.li.com||'—'; const g=parCom.get(k)||{n:0,h:0}; g.n++; g.h+=x.I.htot; parCom.set(k,g); });
-    const rM=[...parCom.entries()].sort((a,b)=>(st.mes==='h'?b[1].h-a[1].h:b[1].n-a[1].n)).slice(0,8).map(([k,g])=>({f:'',l:k,v:st.mes==='h'?Math.round(g.h):g.n,n:st.mes==='h'?HR(g.h)+' h':g.n}));
-    /* genres d'affaire en graphique (23.11.2026, Paulo : « ajouter graphique ») : barres comme les autres relevés, un clic filtre la carte ;
-       un projet peut avoir plusieurs genres */
-    const Gt=sauf('gen'), gen=new Map(); tous_.forEach(x=>x.genres.forEach(g=>gen.set(g,0))); Gt.forEach(x=>x.genres.forEach(g=>gen.set(g,gen.get(g)+1)));
-    const rG=[...gen.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'fr')).slice(0,8).map(([g,n])=>({f:'gen:'+g,l:g,v:n,on:st.gen===g,off:st.gen&&st.gen!==g}));
-    aside.innerHTML='<div class="sgcv-p2-b"><h5>Début du projet <small>année de la première heure</small></h5>'+barres(rA,{v:1})+'</div>'
+    /* tous les relevés comptent les projets AFFICHÉS SUR LA CARTE (24.11.2026, Paulo : « adapter toutes les données aux projets affichés sur la carte ») :
+       filtres en cours et cadrage actuel, recalculés à chaque déplacement ou zoom ; les années, types, genres et tranches de distance restent listés (à 0
+       s'il n'y a rien), les communes seulement si elles ont un projet visible (et la commune choisie, pour la retirer) ; un clic filtre comme avant */
+    const S=C.S, mp=z.querySelector('.sgcv-p2-m'), dE=mp.clientWidth/2*S.res, dN=mp.clientHeight/2*S.res;
+    const vus=its.filter(x=>Math.abs(x.E-S.E)<=dE&&Math.abs(x.N-S.N)<=dN);
+    const ys=[...new Set(tous_.map(x=>x.an).filter(Boolean))].sort();
+    const rA=ys.map(y=>({f:'an:'+y,l:String(y).slice(2),t:String(y),v:vus.filter(x=>x.an===y).length,on:st.ans.has(y),off:st.ans.size&&!st.ans.has(y)}));
+    const rP=PHS.filter(([k])=>tous_.some(x=>phaseDe(x)===k)).map(([k,l])=>({f:'ph:'+k,l,v:vus.filter(x=>phaseDe(x)===k).length,on:st.ph===k,off:!!st.ph&&st.ph!==k}));
+    const rC=CAT_ORD.filter(k=>tous_.some(x=>x.cat===k)).map(k=>({f:'cat:'+k,l:CAT[k][0],v:vus.filter(x=>x.cat===k).length,on:st.cat===k,off:st.cat&&st.cat!==k}));
+    const rD=DST.map((d,i)=>({f:'dst:'+i,l:d[2]+' km',v:vus.filter(x=>x.km!=null&&x.km>=d[0]&&x.km<d[1]).length,on:st.dst===i,off:st.dst!=null&&st.dst!==i}));
+    /* communes (cliquables comme la distance, 24.11.2026) */
+    const parCom=new Map(); vus.forEach(x=>{ const k=comDe(x), g=parCom.get(k)||{n:0,h:0}; g.n++; g.h+=x.I.htot; parCom.set(k,g); });
+    if(st.com&&!parCom.has(st.com)) parCom.set(st.com,{n:0,h:0});
+    const comL=[...parCom.entries()].sort((a,b)=>(st.mes==='h'?b[1].h-a[1].h:b[1].n-a[1].n)||a[0].localeCompare(b[0],'fr'));
+    const rM=comL.map(([k,g])=>({f:'com:'+k,l:k,v:st.mes==='h'?Math.round(g.h):g.n,n:st.mes==='h'?HR(g.h)+' h':g.n,on:st.com===k,off:!!st.com&&st.com!==k}));
+    /* genres d'affaire en barres (23.11.2026) : un projet peut avoir plusieurs genres ; les 8 premiers, le genre choisi toujours compris */
+    const gen=new Map(); tous_.forEach(x=>x.genres.forEach(g=>gen.set(g,0))); vus.forEach(x=>x.genres.forEach(g=>gen.set(g,gen.get(g)+1)));
+    let genL=[...gen.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'fr'));
+    if(st.gen&&genL.findIndex(e=>e[0]===st.gen)>=8) genL=genL.slice(0,7).concat(genL.filter(e=>e[0]===st.gen)); else genL=genL.slice(0,8);
+    const rG=genL.map(([g,n])=>({f:'gen:'+g,l:g,v:n,on:st.gen===g,off:st.gen&&st.gen!==g}));
+    aside.innerHTML='<p class="sgcv-p2-rt">Relevés des '+vus.length+' projet'+(vus.length>1?'s':'')+' affiché'+(vus.length>1?'s':'')+' sur la carte'+(vus.length<its.length?' <small>('+(its.length-vus.length)+' hors du cadre)</small>':'')+'</p>'
       +'<div class="sgcv-p2-b"><h5>Type</h5>'+barres(rC)+(rG.length?'<h6 class="sgcv-p2-sh">Genre d’affaire</h6>'+barres(rG).replace('sgcv-bars','sgcv-bars lg'):'')+'</div>'
+      +'<div class="sgcv-p2-b"><h5>Phase du projet <small>phase actuelle</small></h5>'+barres(rP).replace('sgcv-bars','sgcv-bars lg')+'</div>'
+      /* ordre : type, phase, communes, début, distance (24.11.2026, Paulo : communes puis début du projet « déplacer » avant la distance, phase ajoutée au début
+         puis type « déplacer » devant la phase) */
+      +'<div class="sgcv-p2-b"><h5>Communes <small>'+(st.mes==='h'?'heures':'projets')+'</small></h5>'+(rM.length?barres(rM):'<p class="sgcv-p2-vide">Aucun projet dans le cadre de la carte.</p>')+'</div>'
+      +'<div class="sgcv-p2-b"><h5>Début du projet <small>année de la première heure</small></h5>'+barres(rA,{v:1})+'</div>'
       +'<div class="sgcv-p2-b"><h5>Distance du bureau <small>à vol d’oiseau</small></h5>'+barres(rD)+'</div>'
-      +'<div class="sgcv-p2-b"><h5>Communes <small>'+(st.mes==='h'?'heures':'projets')+'</small></h5>'+barres(rM)+'</div>'
-      +((st.ans.size||st.cat||st.gen||st.dst!=null||MK.prog)?'<div class="sgcv-p2-pied">'+((st.ans.size||st.cat||st.gen||st.dst!=null)?'<button type="button" class="sgcv-ret" data-act="raz">× Effacer les filtres</button>':'')
+      +((st.ans.size||st.ph||st.cat||st.gen||st.dst!=null||st.com||MK.prog)?'<div class="sgcv-p2-pied">'+((st.ans.size||st.ph||st.cat||st.gen||st.dst!=null||st.com)?'<button type="button" class="sgcv-ret" data-act="raz">× Effacer les filtres</button>':'')
         +(MK.prog?'<div class="sgcv-prog">'+E(MK.prog)+'</div>':'')+'</div>':'');
     aside.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ const f=b.dataset.f, i=f.indexOf(':'), k=i>0?f.slice(0,i):'', v=f.slice(i+1); if(!k) return;
-      if(k==='an'){ const y=+v; st.ans.has(y)?st.ans.delete(y):st.ans.add(y); } else if(k==='cat') st.cat=st.cat===v?null:v; else if(k==='gen') st.gen=st.gen===v?null:v; else if(k==='dst') st.dst=st.dst===+v?null:+v;
-      its=base.filter(filtre); st.cell=null; C.redraw(); entete(); panneau(); });
-    const r=aside.querySelector('[data-act="raz"]'); if(r) r.onclick=()=>{ st.ans.clear(); st.cat=null; st.gen=null; st.dst=null; its=base.filter(filtre); C.redraw(); entete(); panneau(); }; }
-  actions(fl,()=>{ if(MK.sel!=null) MK.sel=null; else st.cell=null; C.redraw(); panneau(); });
-  const fermer=()=>{ MK.sel=null; st.cell=null; C.redraw(); panneau(); };
-  fl.addEventListener('click',e=>{ if(e.target.closest('[data-act="fermer"]')) fermer(); });
+      if(k==='an'){ const y=+v; st.ans.has(y)?st.ans.delete(y):st.ans.add(y); } else if(k==='cat') st.cat=st.cat===v?null:v; else if(k==='gen') st.gen=st.gen===v?null:v; else if(k==='dst') st.dst=st.dst===+v?null:+v; else if(k==='com') st.com=st.com===v?null:v; else if(k==='ph') st.ph=st.ph===v?null:v;
+      its=base.filter(filtre); st.cell=null;
+      /* choix dans un relevé : la carte se cadre sur les projets retenus ; choix retiré : sur tous les projets affichés (24.11.2026, Paulo : « lorsque je
+         clique sur Lausanne par exemple, zoomer sur la zone », puis, pour la distance, « zoome sur la carte lorsque je sélectionne » — étendu aux années, au
+         type et au genre) */
+      MK.sel=null; st.lot=null;
+      const actif=k==='an'?st.ans.size>0:k==='cat'?!!st.cat:k==='gen'?!!st.gen:k==='dst'?st.dst!=null:k==='ph'?!!st.ph:!!st.com;
+      if(actif&&its.length) C.vers(its,90); else C.tout();
+      entete(); panneau(); });
+    const r=aside.querySelector('[data-act="raz"]'); if(r) r.onclick=()=>{ st.ans.clear(); st.ph=null; st.cat=null; st.gen=null; st.dst=null; st.com=null; its=base.filter(filtre); MK.sel=null; st.lot=null; C.tout(); entete(); panneau(); }; }
+  couleurs(st.pal,false);
+  actions(fl,()=>{ if(MK.sel!=null) MK.sel=null; else if(st.lot) st.lot=null; else st.cell=null; C.redraw(); panneau(); });
+  const fermer=()=>{ MK.sel=null; st.cell=null; st.lot=null; C.redraw(); panneau(); };
+  fl.addEventListener('click',e=>{ if(e.target.closest('[data-act="fermer"]')) fermer(); else if(e.target.closest('[data-act="zoom"]')&&st.cell) zoomCase(st.cell); });
   fl.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.stopPropagation(); fermer(); } });
   z.querySelector('.sgcv-p2-m').addEventListener('keydown',e=>{ if(e.key==='Escape'&&!fl.hidden){ e.stopPropagation(); fermer(); } });
-  return {maj(){ base=placés(projets()); its=base.filter(filtre); C.set(its); C.message(MK.prog); entete(); panneau(); },detruire(){ C.detruire(); }}; }
+  return {maj(){ base=placés(projets()); its=base.filter(filtre); C.set(its); C.message(MK.prog); entete(); panneau(); },detruire(){ C.detruire(); },
+    vue(){ return {E:C.S.E,N:C.S.N,res:C.S.res}; }, poser(v){ if(v) C.centrer(v,v.res); }}; }
 
 /* ═══ 3. NUIT — chantiers en cours : carte en négatif, chantiers en jaune (taille = heures des 30 jours), rayons depuis le bureau, cercles de distance,
        planning des chantiers en bas, fiche flottante ═══ */
@@ -49356,7 +49595,7 @@ function P5(z){
 /* ── 5. écrans : un par variante (Proposition ▸ Carte · variantes), onglets pour passer de l'une à l'autre ── */
 const PROPS=[
   {n:1,t:'Atlas des régions',f:P1,d:'Affiche de ville : plan au trait noir, eau ardoise, communes hachurées selon le nombre de projets (ou les heures), index numéroté par commune ou district à droite, titre de la région au bas de la carte. Données : région, densité par commune, heures, honoraires.'},
-  {n:2,t:'Relevé · densité',f:P2,d:'Relevé bleu sur papier crème : carroyage kilométrique (taille selon le zoom) foncé selon le nombre de projets ou les heures, graduations LV95, carte sur toute la largeur et quatre relevés dessous qui filtrent la carte (année de début, type, distance du bureau, communes). Données : densité, historique, type, éloignement.'},
+  {n:2,t:'Relevé · densité',f:P2,d:'Relevé aux couleurs de la charte (cinq palettes à l’essai : bleu nuit, noir sur jaune, négatif, encre et jaune, ardoise) : grille kilométrique (taille selon le zoom) foncé selon le nombre de projets ou les heures, graduations LV95, carte sur toute la largeur et quatre relevés dessous qui filtrent la carte (année de début, type, distance du bureau, communes). Données : densité, historique, type, éloignement.'},
   {n:3,t:'Nuit · chantiers en cours',f:P3,d:'Carte en négatif : chantiers en jaune (taille = heures des 30 derniers jours), rayons depuis le bureau, cercles de 2 à 40 km, planning des chantiers en bas, fiche flottante. Données : chantiers en cours, distance, échéances, avancement des prestations.'},
   {n:4,t:'Flux · portefeuille',f:P4,d:'Carte discrète à gauche, diagramme de flux à droite : district → type → avancement, en nombre de projets, heures ou honoraires ; survoler un flux montre ses projets sur la carte, un clic le garde. Données : portefeuille par région, type et phase.'},
   {n:5,t:'Billets · fiches',f:P5,d:'Plan au trait rouge dans un cadre gradué, un billet par projet en dessous (phase, heures des 30 jours, % des heures prévues, échéance, distance et direction du bureau, 12 mois d’heures, équipe), parcours des phases du projet choisi en cercles. Données : fiche de chaque projet en un coup d’œil.'}];
@@ -49365,8 +49604,8 @@ function rendre(m,n){ XC.clear(); MK.prop=n; const P=PROPS.find(x=>x.n===n), f=M
     +'<div class="sgcv-nav">'+PROPS.map(x=>'<button type="button" data-p="'+x.n+'" class="'+(x.n===n?'on':'')+'">'+x.n+' '+E(x.t)+'</button>').join('')
     +'<span class="dr"><span class="l">Projets</span>'+seg('flt',f,[['encours','En cours'],['tous','Tous']])+'</span></div><div class="sgcv-zone"></div></div>');
   pg.querySelectorAll('.sgcv-nav [data-p]').forEach(b=>b.onclick=()=>{ if(+b.dataset.p===n) return; MK.sel=null; go('nx-carte-v'+b.dataset.p); });
-  segs(pg.querySelector('.sgcv-nav'),(k,v)=>{ MK.F[n]=v; try{ sessionStorage.setItem('sgcv_f'+n,v); if(n===3) sessionStorage.setItem('sgcv3_mode',v==='tous'?'tout':'ch'); }catch(_){} refaire(); });
-  MK.cur=P.f(pg.querySelector('.sgcv-zone')); preparer(); MK.cur.maj(); }
+  segs(pg.querySelector('.sgcv-nav'),(k,v)=>{ MK.F[n]=v; try{ sessionStorage.setItem('sgcv_f'+n,v); if(n===3) sessionStorage.setItem('sgcv3_mode',v==='tous'?'tout':'ch'); }catch(_){} MK.toutVoir=true; refaire(); });
+  MK.cur=P.f(pg.querySelector('.sgcv-zone')); MK.toutVoir=false; preparer(); MK.cur.maj(); }
 function refaire(){ const m=document.getElementById('main'); if(!m||!MK.prop) return; if(MK.cur&&MK.cur.detruire) MK.cur.detruire(); MK.cur=null; m.innerHTML=''; rendre(m,MK.prop); }
 const TABLES=['*','timelog','project','projectphase','projectsubphase','projectmember','sgplanning','sgavancement','sgpermis','sgfaisa','contact','staff'];
 function ecran(n){ VIEWS['nx-carte-v'+n]={ render(m){ rendre(m,n); },
@@ -49376,6 +49615,25 @@ PROPS.forEach(p=>ecran(p.n));
 Object.assign(MK,{PROPS,ajouter(v){ const i=PROPS.findIndex(x=>x.n===v.n); if(i>=0) PROPS[i]=v; else PROPS.push(v); PROPS.sort((a,b)=>a.n-b.n); ecran(v.n); },
   outils:{E,N0,HR,KM,iso,jma,jmc,dOf,MOIS,AUJ,DIR,ini,h,wgs,PH,PH_ORD,CAT,CAT_ORD,SC,enCours,tous,projets,X,XC,placés,lieu,LK,preparer,rafraichir,
     Carte,FONDS,fond,couche,toile,teinte,hachures,pathGeo,dedans,burSvg,tipP,tipBur,tipDe,fiche,actions,seg,segs,IC}});
+
+/* ── 5 bis. Cockpit : la carte « Relevé · densité » (variante 2 : carte, relevés, filtres, zoom) en haut de l'accueil (24.11.2026, Paulo : « ajoute la
+   carte au cockpit ») — palette choisie dans Proposition (sgcv2_pal), sans la rangée de choix des couleurs ; « En cours / Tous » dans le titre de la carte
+   (même choix que la variante 2, sgcv_f2) ; « Ouvrir en grand » = Proposition ▸ Carte · variantes ▸ 2 ; la vue de la carte est gardée quand le Cockpit se
+   redessine (heures ou projets modifiés) ; rien n'est écrit dans la base ── */
+{ const V=VIEWS['nx-home'], r0=V.render, l0=V.leave; let vueCk=null;
+  const fin=()=>{ if(MK.cur&&MK.cur.cockpit){ try{ vueCk=MK.cur.vue(); }catch(_){} try{ MK.cur.detruire(); }catch(_){} MK.cur=null; } };
+  V.render=function(m){ fin(); r0.apply(this,arguments);
+    const col=m.querySelector('.nx-page .sg-split>div:last-child'); if(!col) return;
+    const f=MK.F[2]||'tous', wrap=h('div','nx-grid sgcv-ckg');
+    wrap.innerHTML=nxCard('c12 sgcv-ck','Carte des projets','<div class="sgcv-zone"></div>',
+      '<span class="dr">'+seg('flt',f,[['encours','En cours'],['tous','Tous']])+'<span class="a" data-go="nx-carte-v2">Ouvrir en grand</span></span>');
+    col.prepend(wrap);   /* tout en haut du Cockpit, avant « À traiter » (même jour, « déplacer la carte tout en haut du cockpit ») */
+    const zone=wrap.querySelector('.sgcv-zone');
+    const monter=garder=>{ fin(); zone.innerHTML=''; MK.prop=2; MK.sel=null; MK.cur=P2(zone); MK.cur.cockpit=true; MK.toutVoir=false; preparer(); MK.cur.maj(); if(garder&&vueCk) MK.cur.poser(vueCk); };
+    segs(wrap,(k,v)=>{ MK.F[2]=v; try{ sessionStorage.setItem('sgcv_f2',v); }catch(_){} wrap.querySelectorAll('.sgcv-seg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); vueCk=null; MK.toutVoir=true; monter(false); });
+    wrap.querySelectorAll('[data-go="nx-carte-v2"]').forEach(a=>a.onclick=e=>{ e.stopPropagation(); go('nx-carte-v2'); });
+    monter(true); };
+  V.leave=function(){ fin(); if(l0) return l0.apply(this,arguments); }; }
 
 /* ── 6. styles (charte : Akkurat, noir, bleu nuit, jaune ; filets, angles droits) ── */
 const STY=`
@@ -49404,6 +49662,9 @@ const STY=`
 .sgcv-svg text.halo,.sgcv-svg .sgcv-bur text{paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round;font-weight:700}
 .sgcv-tip{position:absolute;display:none;z-index:6;background:#fff;border:1px solid #1d1d1b;padding:6px 9px;font-size:12px;max-width:300px;pointer-events:none;line-height:1.4;color:#1d1d1b}
 .sgcv-tip b{display:block;font-weight:700}
+.sgcv-tip .sgcv-tipl{display:block;padding:3px 0;border-top:1px solid #e4e4e0}
+.sgcv-tip .sgcv-tipl b{display:inline;margin-right:2px}
+.sgcv-tip .sgcv-tipl i{font-style:normal;color:#706F6F;margin-left:4px}
 .sgcv-ctl{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px;z-index:5}
 .sgcv-ctl button{width:30px;height:30px;border:1px solid #1d1d1b;background:#fff;display:grid;place-items:center;cursor:pointer;padding:0;color:#1d1d1b}
 .sgcv-ctl svg{width:14px;height:14px}
@@ -49450,50 +49711,84 @@ const STY=`
 .sgcv-p1-gr .it .pt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sgcv-p1-gr .it .ph{width:8px;height:8px;background:var(--c);align-self:center}
 /* 2 Relevé */
-.sgcv-p2{display:block;--bl:#2338A0}
-.sgcv-p2-l{border:1.5px solid var(--bl);background:#F3F0E7}
+.sgcv-p2{display:block;--bl:#003346;--doux:#636E7E;--pap:#FFFFFF;--pt:#1d1d1b;--barre:#003346;--on:#FEF6B0;--hb:rgba(0,51,70,.13);--flb:#003346;--flx:#003346;--bw:1.5px}
+.sgcv-p2.page{background:var(--page);padding:14px 18px 8px;color:var(--bl)}
+.sgcv-p2-pal{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin:0 0 12px;font-size:12.5px;color:var(--doux)}
+.sgcv-p2-pal .lb{font-weight:700;color:var(--bl);margin-right:4px}
+.sgcv-p2-pal .lb small{font-weight:400;color:var(--doux);margin-left:4px}
+.sgcv-p2-pal button{display:inline-flex;align-items:center;gap:7px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;color:var(--doux);cursor:pointer;padding:3px 0}
+.sgcv-p2-pal button:hover{color:var(--bl)}
+.sgcv-p2-pal button.on{color:var(--bl);font-weight:700;border-bottom-color:var(--bl)}
+.sgcv-p2-pal .sw{display:inline-flex;outline:1px solid rgba(112,111,111,.45)}
+.sgcv-p2-pal .sw i{width:10px;height:12px}
+.sgcv-p2-l{border:var(--bw) solid var(--bl);background:var(--pap)}
 .sgcv-p2-hd{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;padding:10px 14px 0;color:var(--bl);font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.06em;border-bottom:1px solid var(--bl)}
-.sgcv-p2-hd .sgcv-seg button{color:#6A77C2;font-family:inherit}
+.sgcv-p2-hd .sgcv-seg button{color:var(--doux);font-family:inherit}
+.sgcv-p2-hd .sgcv-seg button:hover{color:var(--bl)}
 .sgcv-p2-hd .sgcv-seg button.on{color:var(--bl);border-bottom-color:var(--bl)}
 .sgcv-p2-mw{position:relative}
-.sgcv-p2-m{height:660px;background:#F3F0E7}
-.sgcv-p2-fl{position:absolute;top:12px;right:54px;width:340px;max-height:calc(100% - 24px);overflow:auto;z-index:7;background:#fff;border:1.5px solid var(--bl);padding:30px 16px 14px;color:#1d1d1b}
+.sgcv-p2-m{height:660px;background:var(--pap)}
+.sgcv-p2-fl{position:absolute;top:12px;right:54px;width:340px;max-height:calc(100% - 24px);overflow:auto;z-index:7;background:#fff;border:var(--bw) solid var(--flb);padding:30px 16px 14px;color:#1d1d1b}
 .sgcv-p2-fl[hidden]{display:none}
-.sgcv-p2-x{position:absolute;top:4px;right:6px;width:26px;height:26px;border:0;background:none;font:inherit;font-size:20px;line-height:1;color:var(--bl);cursor:pointer;padding:0}
+.sgcv-p2-fl.g{right:auto;left:12px}
+.sgcv-p2-x{position:absolute;top:4px;right:6px;width:26px;height:26px;border:0;background:none;font:inherit;font-size:20px;line-height:1;color:var(--flx);cursor:pointer;padding:0}
 .sgcv-p2-x:hover{color:#1d1d1b}
-.sgcv-svg .sgcv-g2{stroke:#2338A0;stroke-opacity:.12;stroke-width:1}
-.sgcv-svg .sgcv-t2{fill:#2338A0;font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace;font-size:10px}
-.sgcv-svg .sgcv-t2.cl{fill:#F3F0E7}
-.sgcv-svg .sgcv-t2.halo{stroke:#F3F0E7;fill:#0E1B5C}
-.sgcv-svg .sgcv-tk{stroke:#2338A0;stroke-width:1.2}
-.sgcv-svg .sgcv-ax{fill:#2338A0;font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace;font-size:9.5px}
-.sgcv-svg .sgcv-reg rect{fill:#2338A0}
-.sgcv-p2-r{color:var(--bl);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 32px;margin-top:22px}
+.sgcv-svg .sgcv-g2{stroke:var(--bl,#003346);stroke-opacity:.12;stroke-width:1}
+.sgcv-svg .sgcv-t2{fill:var(--bl,#003346);font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace;font-size:10px}
+.sgcv-svg .sgcv-t2.cl{fill:var(--pap,#fff)}
+.sgcv-p2 .sgcv-svg text.sgcv-t2.cl{fill:var(--cl,var(--pap))}
+.sgcv-svg .sgcv-t2.halo{stroke:var(--pap,#fff);fill:var(--pt,#1d1d1b)}
+.sgcv-p2 .sgcv-svg .sgcv-bur text{stroke:var(--pap)}
+.sgcv-svg .sgcv-tk{stroke:var(--bl,#003346);stroke-width:1.2}
+.sgcv-svg .sgcv-ax{fill:var(--bl,#003346);font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace;font-size:9.5px}
+.sgcv-svg .sgcv-reg rect{fill:var(--bl,#003346)}
+.sgcv-p2 .sgcv-ret{color:var(--bl)}
+.sgcv-p2-fl .sgcv-ret{color:var(--s-nuit,#003346)}
+.sgcv-p2-zm{font-weight:700}
+.sgcv-svg text.sgcv-t2.nb{pointer-events:none}
+.sgcv-svg .sgcv-lb{cursor:pointer}
+.sgcv-svg .sgcv-lb line{stroke-width:1.2}
+.sgcv-svg .sgcv-lb rect{fill:#fff;stroke-width:1.2}
+.sgcv-svg .sgcv-lb:hover rect{fill:#FEF6B0}
+.sgcv-svg .sgcv-lb.on rect{fill:#FFF266;stroke-width:2}
+.sgcv-svg .sgcv-lb text{font-family:var(--s-font,inherit);font-size:11px;fill:#1d1d1b}
+.sgcv-svg .sgcv-lb .n{font-weight:700;fill:var(--s-nuit,#003346)}
+.sgcv-svg .sgcv-lb.on .n{fill:#1d1d1b}
+.sgcv-svg .sgcv-lb .l2{font-size:9.5px;fill:#706F6F}
+.sgcv-svg .sgcv-lot{cursor:pointer}
+.sgcv-svg .sgcv-lot text{font-family:var(--s-font,inherit);font-size:11.5px;font-weight:700;pointer-events:none}
+.sgcv-svg .sgcv-mk{cursor:pointer}
+.sgcv-p2 .sgcv-prog{color:var(--doux)}
+.sgcv-p2-r{color:var(--bl);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0 28px;margin-top:22px}
 .sgcv-p2-pied{grid-column:1/-1}
 .sgcv-p2-fl .sgcv-fi,.sgcv-p2-fl .sgcv-li{color:#1d1d1b}
 .sgcv-p2-fl .sgcv-fi .hd{border-top:0;padding-top:0}
 .sgcv-p2-b{border-top:1.5px solid var(--bl);padding:8px 0 14px}
 .sgcv-p2-b h5{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace;font-weight:400}
-.sgcv-p2-b h5 small{text-transform:none;letter-spacing:0;color:#6A77C2;margin-left:6px}
+.sgcv-p2-b h5 small{text-transform:none;letter-spacing:0;color:var(--doux);margin-left:6px}
 .sgcv-bars button{display:grid;grid-template-columns:78px 1fr 44px;gap:8px;align-items:center;width:100%;border:0;background:none;font:inherit;font-size:12px;color:var(--bl);padding:2px 0;cursor:pointer;text-align:left}
 .sgcv-bars button .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sgcv-bars button .b{height:10px;background:repeating-linear-gradient(90deg,rgba(35,56,160,.12) 0 1px,transparent 1px 10px)}
-.sgcv-bars button .b i{display:block;height:100%;background:var(--bl)}
+.sgcv-bars button .b{padding:0;height:10px;background:repeating-linear-gradient(90deg,var(--hb,rgba(0,51,70,.12)) 0 1px,transparent 1px 10px)}
+.sgcv-bars button .b i{display:block;height:100%;background:var(--barre,var(--bl))}
 .sgcv-bars button .n{text-align:right;font-variant-numeric:tabular-nums}
-.sgcv-bars button.on .b i{background:#0E1B5C}.sgcv-bars button.on{font-weight:700}
+.sgcv-bars button:hover .l{text-decoration:underline}
+.sgcv-bars button.on{font-weight:700;background:var(--on,#FEF6B0)}
 .sgcv-bars button.off{opacity:.4}
 .sgcv-bars.v{display:flex;align-items:flex-end;gap:5px;height:118px}
 .sgcv-bars.v button{display:flex;flex-direction:column-reverse;align-items:stretch;height:100%;padding:0;flex:1;gap:3px}
-.sgcv-bars.v button .b{flex:1;display:flex;align-items:flex-end;background:repeating-linear-gradient(0deg,rgba(35,56,160,.12) 0 1px,transparent 1px 10px)}
+.sgcv-bars.v button .b{flex:1;display:flex;align-items:flex-end;background:repeating-linear-gradient(0deg,var(--hb,rgba(0,51,70,.12)) 0 1px,transparent 1px 10px)}
 .sgcv-bars.v button .b i{width:100%}
 .sgcv-bars.v button .l,.sgcv-bars.v button .n{text-align:center;font-size:10.5px}
-.sgcv-p2-sh{margin:12px 0 6px;font-size:11px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:#6A77C2;font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace}
+.sgcv-p2-vide{margin:4px 0 0;font-size:12px;color:var(--doux)}
+.sgcv-p2-rt{grid-column:1/-1;margin:0 0 10px;font-size:12.5px;color:var(--bl)}
+.sgcv-p2-rt small{color:var(--doux);font-size:12px}
+.sgcv-p2-sh{margin:12px 0 6px;font-size:11px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--doux);font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace}
 .sgcv-bars.lg button{grid-template-columns:minmax(78px,40%) 1fr 36px}
 .sgcv-p2-h{margin:0 0 10px;font-size:14px}
-.sgcv-p2-h small{font-weight:400;color:#6A77C2}
-.sgcv-li{display:block;width:100%;text-align:left;border:0;border-top:1px solid #d9dcea;background:none;font:inherit;font-size:12.5px;padding:7px 0;cursor:pointer}
+.sgcv-p2-h small{font-weight:400;color:var(--s-gris,#706F6F)}
+.sgcv-li{display:block;width:100%;text-align:left;border:0;border-top:1px solid #e4e4e0;background:none;font:inherit;font-size:12.5px;padding:7px 0;cursor:pointer}
 .sgcv-li small{display:block;color:var(--s-gris,#706F6F)}
-.sgcv-li:hover{background:#eef0fa}
+.sgcv-li:hover{background:#FEF6B0}
 /* 3 Nuit */
 .sgcv-p3{background:#11303D;color:#fff}
 .sgcv-p3-w{position:relative;height:580px}
@@ -49599,9 +49894,18 @@ const STY=`
 .sgcv-p5-pc svg text{font-family:'Akkurat Mono','AkkuratMono',ui-monospace,Menlo,monospace;font-size:10.5px;fill:#1d1d1b}
 .sgcv-p5-pc svg text.b{font-weight:700}
 .sgcv-p5-pc svg text.g{fill:#706F6F}
+@container (max-width:1300px){ .sgcv-p2-r{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @container (max-width:1040px){ .sgcv-p2-r{grid-template-columns:repeat(2,minmax(0,1fr))} }
-@container (max-width:560px){ .sgcv-p2-r{grid-template-columns:1fr} .sgcv-p2-fl{left:12px;right:12px;width:auto} }
+@container (max-width:560px){ .sgcv-p2-r{grid-template-columns:1fr} .sgcv-p2-fl,.sgcv-p2-fl.g{left:12px;right:12px;width:auto} }
 @container (max-width:820px){ .sgcv-p1,.sgcv-p5-pg{grid-template-columns:1fr} .sgcv-p4-g{grid-template-columns:1fr;height:auto} }
+/* Cockpit */
+.sgcv-ckg{margin:0 0 30px}
+.sgcv-ck>h4{display:flex;align-items:baseline;gap:16px}
+.sgcv-ck>h4 .dr{margin-left:auto;display:flex;gap:18px;align-items:baseline;font-weight:400}
+.sgcv-ck>h4 .a{cursor:pointer}
+.sgcv-ck .sgcv-zone{padding-top:6px}
+.sgcv-ck .sgcv-p2-pal{display:none}
+.sgcv-ck .sgcv-p2-m{height:520px}
 `;
 const sty=document.createElement('style'); sty.id='sgcv-css'; sty.textContent=STY; document.head.append(sty);
 

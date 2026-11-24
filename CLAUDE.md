@@ -841,7 +841,14 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   rafraîchissement et clic droit ; en-tête « Journal » ; barre sans Semaine | Mois, `HS.mode` mis à « sem ») ; le choix Agenda | Journal de l'en-tête
   et `sg3_fh_vue` supprimés (la feuille = agenda ou mois) ; les boutons de la barre et les menus du moteur qui rouvrent `go('h-saisie')` restent dans
   le Journal (clic capturé dans `#tools` / `.menu`, drapeau `SGFH.j`, enveloppe de `go`) ; icônes des cinq chiffres (`sgfhKpis`) retirées.
-  Copie d'avant : `subgestion3/_backup_20261024_2059_avant_journal_menu/`. Puis (même soir) : entrée et en-tête renommés **« Journal des heures »**.
+  Copie d'avant : `subgestion3/_backup_20261024_2059_avant_journal_menu/`. Puis (même soir) : entrée et en-tête renommés **« Journal des heures »**. **Déplacé dans Archives ▸ Heures le 24.11.2026** (demande de Paulo, « déplacer dans archives » ;
+  `dom:'temps'` garde ses droits, son code d'accès et son visuel). Le même jour, les quatre modules de l'Analyse des heures (Contrôle des heures d'affaires,
+  Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais) sont retirés du menu de gauche (« supprimer du menu de gauche » : `hide:1`,
+  `parent:'nx-ah'` dans `SG_DOM` — écrans, droits et fil d'Ariane gardés, ouverts par les tuiles de la page ; « Analyse des heures » reste surlignée dans le menu,
+  `sgSideItems`) : le chapitre Heures = Feuille d'heures, Analyse des heures. Puis (« placer dans la fiche projet lorsque je clique sur un des projets dans Affaires ») :
+  les quatre tuiles quittent la page de l'Analyse des heures ; un clic sur une affaire du tableau « Affaires » ouvre sa fiche (`ficheAff`, `ST.fiche`, panneau à
+  droite `.sgah-fiche`, ligne surlignée) — numéro, nom, période et dernière saisie, chiffres de l'affaire (heures, à contrôler, refusées, à facturer, frais), les
+  quatre modules en tuiles ouverts sur l'affaire (`tuile(mod, ft, id)`), « Page du projet », « Tableau de bord » ; × , Échap ou second clic sur la ligne ferment.
   **Chapitre « Archives » (24.10.2026, Paulo : « créer un menu archive, laisse-le vide pour le moment »)** : domaine `archives` en bas du menu (après
   Configuration), icône `archive` (ajoutée à `NXI`), `vide:1` = affiché à l'administrateur même sans module (`sgSide`) ; vue d'ensemble « Aucun module
   pour le moment » ; masqué aux autres profils (aucun écran permis). Pas encore dans les domaines protégés par code (à décider quand il aura des
@@ -3239,7 +3246,69 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   crème, carroyage de 0,25 à 50 km selon le zoom, graduations LV95, relevés qui filtrent la carte : année de la première heure, type, distance du bureau, communes ;
   depuis le soir du 23.11.2026, carte sur toute la largeur et relevés en quatre colonnes dessous — Paulo : « agrandir la carte jusqu'au bord et mettre les données en
   dessous » —, fiche d'un projet ou liste d'une case dans une carte flottante sur le plan, × ou Échap pour la fermer ; genres d'affaire
-  en barres sous le Type — « ajouter graphique » —, un clic filtre la carte comme les autres relevés, un projet peut compter dans plusieurs genres),
+  en barres sous le Type — « ajouter graphique » —, un clic filtre la carte comme les autres relevés, un projet peut compter dans plusieurs genres ;
+  communes cliquables comme la distance (24.11.2026, « afficher en cliquant comme pour distance du bureau » : `st.com`, comptées sur les projets qui passent les
+  autres filtres, « Effacer les filtres ») ; communes selon l'affichage de la carte (même jour, « ajoute toutes les communes », puis « adapter selon affichage de la
+  map ») : toutes les communes des projets visibles — filtres en cours, commune comprise, et cadrage actuel (`C.S`) —, sans limite, recalculées à chaque
+  déplacement ou zoom (`surVue`) ; la commune choisie reste listée pour pouvoir la retirer ; **tous les relevés comptent les projets affichés sur la carte**
+  (même jour, « adapter toutes les données aux projets affichés sur la carte ») : filtres en cours et cadrage actuel (`vus`), plus de relevés croisés (`sauf`
+  retiré) ; années, types, genres (8 premiers, genre choisi compris) et tranches de distance restent listés à 0 ; ligne « Relevés des n projets affichés sur
+  la carte (m hors du cadre) » au-dessus (`.sgcv-p2-rt`) ; un choix dans n'importe quel relevé (commune, distance, année, type, genre) cadre la carte sur les projets
+  retenus (`C.vers`, marge de 90 px), le retrait d'un choix ou « Effacer les filtres » sur tous les projets affichés (`C.tout`) (même jour, « lorsque je
+  clique sur Lausanne par exemple, zoomer sur la zone », puis pour la distance « zoome sur la carte lorsque je sélectionne ») ;
+  ordre des relevés : Type (et genre), **Phase du projet**, Communes, Début du projet, Distance du bureau (même jour, communes puis début du projet « déplacer »
+  avant la distance ; phase « ajouter au début », puis type « déplacer » devant la phase) ; grille de 5 colonnes, 3 sous 1300 px, 2 sous 1040 px ; relevé « Phase du projet » (`PHS`, `phaseDe`, `st.ph`) :
+  phase actuelle (`sgPhaseActuelle`) reconnue d'abord par le nom de la phase partielle (les numéros de la base ne suivent pas toujours la SIA 102 : « 414 Mise en
+  service »), puis son numéro, puis la phase — Faisabilité, Avant-projet, Projet, Enquête, Étude du projet (sans phase partielle), Appel d'offres, Projet
+  d'exécution, Exécution, Mise en service, Réalisation (sans phase partielle), Expertise, Terminé, Sans phase ; lignes présentes dans les projets seulement,
+  cliquable et zoom comme les autres relevés ; **carte au Cockpit** (même jour, « ajoute la carte au cockpit ») : la variante 2 entière (carte, relevés, filtres,
+  zoom) tout en haut de l'accueil, avant « À traiter » (« déplacer la carte tout en haut du cockpit ») (`nx-home`, carte « Carte des projets » pleine largeur de la colonne, enveloppe de `render` et `leave` à la fin de
+  `sg3_carte_variantes.js`, `MK.cur.cockpit`) — palette choisie dans Proposition (sans la rangée de choix), carte de 520 px, « En cours / Tous » dans le
+  titre (même choix que la variante 2, `sgcv_f2`, recadre), « Ouvrir en grand » = Proposition ▸ Carte · variantes ▸ 2 ; vue gardée quand le Cockpit se
+  redessine (`vue()` / `poser()` de P2) ; projets selon `sgProjetsVisibles` (tous les profils voient le Cockpit) ;
+  plus de choix « Nombre / Heures » (même jour, « supprimer heures, afficher uniquement les données nombre dans la carte ») : cases et relevés toujours en nombre de
+  projets (`st.mes` = 'n') ; barres des relevés : `padding:0` (la règle `.nx-card .b` du Cockpit leur donnait une marge intérieure et les écrasait à 0 px) ;
+  en-tête de la carte = « [n / m PROJETS] [années] GRILLE x KM » (même jour : « Relevé des projets » retiré, « carroyage » remplacé par « grille ») ;
+  carte flottante d'une case sans titre « Case 503 · 230 · 5 × 5 km » (même jour, « supprimer ») : « Zoomer sur la case » puis ses projets ; **« En cours / Tous » recadre la carte sur tous les projets de l'option**, projets isolés compris
+  (moteur `Carte` : `MK.toutVoir` posé par le choix avant `refaire()`, lu à la création — `toutV` — puis remis à faux ; vaut pour les dix variantes) ;
+  **couleurs de la charte à l'essai (24.11.2026, Paulo : « proposition de couleur basé sur la charte de substances »)** : rangée « Couleurs · proposition »
+  au-dessus de la carte, cinq palettes `PAL2` (ordre `PAL2_ORD`) — 1 Bleu nuit (encre et densité #003346 sur blanc, accent jaune), 2 Noir sur jaune (toute la
+  variante sur jaune pâle #FEF6B0, encre et densité noires, lac jaune #FFF266), 3 Négatif (fond bleu nuit, traits blancs, densité jaune), 4 Encre et jaune (noir
+  sur blanc, filets de 2 px, case choisie en jaune), 5 Ardoise (bleu-gris #636E7E sur gris clair, densité bleu nuit, lac plein) ; une palette = variables CSS de
+  `.sgcv-p2` (`--bl`, `--doux`, `--pap`, `--cl`, `--pt`, `--barre`, `--on`, `--hb`, `--flb`, `--flx`, `--bw`, `--page`) + fond de carte redessiné (`FD`) ;
+  choix gardé pour la séance (`sessionStorage` `sgcv2_pal`, défaut Bleu nuit) ; l'ancien bleu #2338A0 sur crème n'est plus proposé (`FONDS.releve` reste le fond
+  de départ, remplacé aussitôt) — choix de Paulo attendu, puis retirer la rangée et garder sa palette ; copie d'avant :
+  `subgestion3/_backup_20261124_1219_avant_couleurs_releve/` ; **double-clic sur une case = zoom** (24.11.2026, Paulo : « lorsque je double clique sur une case
+  zoom sur celle-ci ») : la carte se centre sur LES PROJETS de la case (milieu de leur emprise) et zoome jusqu'à ce qu'ils remplissent l'affichage (marge
+  de 80 px), entre l'échelle de la case et quatre fois plus près ; un seul projet dans la case (ou tous à la même adresse) : zoom au maximum (0,6 m par
+  pixel) centré sur lui (« lorsqu'il n'y a qu'un seul projet, zoom au maximum sur le projet ») ; le carroyage s'affine aussitôt (même jour : « centrer le carré sur l'affichage », puis
+  « ne pas afficher le carré traitillé », puis « ne centre pas le carré, mais centre les projets correspondant au carré, pour afficher les projets » ; essais
+  intermédiaires retirés : zoom autour du point cliqué, case centrée avec son contour en tirets) ; second clic sur la même case en moins de 450 ms (`dbl`,
+  `zoomCase(c)`) ; bulle au survol d'une case = liste de ses projets (numéro, nom, phase ; 8 au plus puis « et n autres » ; même jour : « supprimer
+  la bulle » — taille de la case, heures —, puis « lorsque je survole le carré, je souhaite voir les projets liés sous forme de bulle ») ; **double-clic dans le vide de la carte = zoom avant × 2,5 autour du point cliqué** — dans le moteur `Carte` (toutes les variantes 1 à
+  10 : deux clics à moins de 450 ms et 10 px, `vd`), `o.clic` et `o.choisir` reçoivent la position du clic ; aussi sur un point de projet (zoom sur sa case) et par « Zoomer sur la case » de la carte flottante ; les chiffres des cases ne captent plus le
+  clic (`text.sgcv-t2.nb`) ; **repérage en vue rapprochée** (24.11.2026, Paulo : « une meilleure identification du projet lorsque c'est zoomé ») — à moins de
+  12 m par pixel (`PROCHE`, carroyage 0,5 km et moins) les cases s'effacent (aplat × 0,32 ; au niveau parcelle, plus de cases du tout — Paulo, même jour, « supprimer le rectangle lorsque je suis
+  zoomé sur un projet » ; le quadrillage fin et les graduations restent) et le projet choisi a une étiquette (seulement lui, plus de
+  toutes les étiquettes d'office : Paulo, même jour, « afficher uniquement lorsque je clique sur le projet »)
+  (`etiquettes` : cartouche blanc relié au point — numéro, désignation, phase et heures —, largeur mesurée au texte, quatre places autour du point sans
+  chevauchement ni passage sous la carte flottante, sinon le numéro seul, sinon rien ; projet choisi en jaune) ; projets à la même adresse (moins de 7 px)
+  regroupés : une pastille au nombre (toujours), l'étiquette « n projets au même endroit » une fois le lot cliqué, un clic = leur liste dans la carte flottante (`st.lot`, retour « ‹ Projets
+  au même endroit ») ; à moins de 6 m par pixel (`PARCELLE`), la parcelle du projet est dessinée (contour épais, aplat léger, jaune si choisi) — celle de la
+  faisabilité (`sgfaisa.PARCELLE.GEOM`) si le point est à moins de 100 m, sinon le plan cadastral de geo.admin.ch au point (`sgFzParcelleGeom`, 4 demandes
+  à la fois, une par endroit, gardée pour la séance ; plus de 2 ha écartée : route, forêt, domaine public) ; double-clic sur un point, une étiquette ou un
+  lot = zoom centré sur le projet jusqu'à sa parcelle (`zoomProjet`, ≈ 1 m par pixel, projet dans la partie libre à gauche de la fiche) ; la carte
+  flottante se pose du côté opposé à ce qui est choisi (`.sgcv-p2-fl.g`) ; **repères des projets** (même jour, Paulo : « mieux identifier les projets, agrandir
+  les points d'identification et changer la couleur ») : rond jaune #FFF266 cerclé de foncé (`mk` / `mkb` de chaque palette ; Noir sur jaune : noir cerclé de
+  blanc), rayon 4,4 px en vue d'ensemble, 7,5 px avec un cœur foncé en vue rapprochée, projet choisi plus grand avec un anneau ; pastille d'un lot aux mêmes
+  couleurs (inversées quand le lot est choisi) ; **bureau = « épicentre »** (même jour : « modifier le logo du bureau sur la carte », puis dix propositions — fanion du sigle, logo, carré jaune,
+  repère géodésique, étiquette, épicentre, monogramme, losange, jalon, cartouche — comparées dans une rangée de choix, et « garder 6 ») : petit carré noir à
+  cœur jaune et trois cercles qui s'estompent, en rouge de la charte #BD1E42 (« couleur différente à prendre dans la charte » : ni le bleu nuit des
+  cases ni le jaune des projets) (le bureau, origine des distances), sans libellé (« supprimer texte bureau » : nom et adresse au
+  survol) ; `burSvg`, donc dans les dix variantes ; place
+  réservée aux étiquettes `BUR_BOX` ; double-clic dessus = zoom comme sur la carte vide ; rangée de choix et autres marques retirées (code gardé dans
+  `subgestion3/_backup_20261124_1430_avant_bureau_epicentre/sg3_carte_variantes.js`, `burMarque`) ; la Carte des projets (bloc 58) garde son carré noir à
+  cœur jaune ; copie d'avant : `subgestion3/_backup_20261124_1241_avant_reperage_proche/`),
   **3 Nuit · chantiers en cours** (terre bleu nuit, eau blanche, chantiers = phase Réalisation en cours en jaune, taille = heures des 30 jours, rayons depuis le bureau,
   cercles 2 à 40 km, planning des chantiers sous la carte, fiche flottante), **4 Flux · portefeuille** (diagramme district → type → avancement en nombre, heures ou
   honoraires ; survol / clic d'un flux = ses projets sur la carte et dans le tableau), **5 Billets · fiches** (plan au trait rouge cadré et gradué, un billet par

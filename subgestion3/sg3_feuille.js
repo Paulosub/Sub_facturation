@@ -192,3 +192,154 @@ function sgfhOutilsRendre(){ const tl=document.getElementById('tools'), bar=docu
   /* avant tout changement d'écran, la barre d'outils revient à sa place ; l'ancienne feuille d'heures (h-saisie-archive), supprimée le 24.10.2026,
      rouvre la feuille d'heures (session, récents) */
   const g0=go; go=function(v,...a){ sgfhOutilsRendre(); return g0.call(this,v==='h-saisie-archive'?'h-saisie':v==='h-saisie'&&SGFH.j&&VIEW&&VIEW.id==='h-journal'?'h-journal':v,...a); }; }
+
+/* ═══ Notes de frais ▸ Notes de frais : choix du collaborateur au graphisme de la feuille d'heures (25.11.2026) ═══
+   Demande de Paulo (chapitre Notes de frais, même jour) : « reprends le design du reste de l'app pour la sélection des collaborateurs ». L'écran du moteur
+   (VIEWS.frais : barre, tableau, totaux, gestes, droits) est gardé tel quel ; sa colonne des collaborateurs est masquée et remplacée par l'en-tête de la feuille
+   d'heures : bandeau jaune au nom du collaborateur (initiales en grand, trait, ▾ = changer de collaborateur parmi ch08bMyStaffs, comme la feuille d'heures),
+   au bureau depuis, notes et montant de l'année, mois affiché à droite ; puis les chiffres du mois. Barre du haut (#nx-sub, « Fiche membre ») masquée comme
+   dans la feuille d'heures (html.sgfh-on, retiré par l'enveloppe de go ci-dessus). Chiffres tenus à jour à chaque dessin du moteur (changement de mois,
+   d'année, de collaborateur, saisie : observateur des totaux).
+   Zone de travail redessinée le même jour (proposition 1 « Épurée », voir plus bas). */
+{ const V=VIEWS['frais']; if(V&&typeof V.render==='function'&&typeof NF!=='undefined'){ const R0=V.render;
+  const ch=v=>num(v)+'<small>CHF</small>', dt=x=>dfr(String(x).slice(0,10));
+  const tete=()=>{ const s=DS.get('staff',NF.staff), sl=ch08bMyStaffs(), an=DS.by('projectcost','STAFF_ID',NF.staff).filter(r=>r.DATEYEAR===NF.y), ta=an.reduce((a,r)=>a+pcAmount(r),0);
+    const meta=[s&&s.JOININGDATE?'Au bureau depuis le '+dt(s.JOININGDATE):'',s&&s.QUITTINGDATE?'a quitté le bureau le '+dt(s.QUITTINGDATE):'',
+      an.length?an.length+' note'+(an.length>1?'s':'')+' · '+num(ta)+' CHF en '+NF.y:'aucune note en '+NF.y].filter(Boolean).join(' · ');
+    return '<div class="sgfh-tete"><div class="sgfh-id"><span class="sgfh-ini">'+nxE(s?sgtIni(s):'—')+'</span><div class="sgfh-nm"><div class="lb">Notes de frais</div><h2>'+nxE(s?staffName(s):'Aucun collaborateur')
+        +(sl.length>1?'<button class="sgfh-chg" data-nf="chg" title="Changer de collaborateur">'+nxSvg('fwd')+'</button>':'')+'</h2><div class="sgfh-meta">'+nxE(meta)+'</div></div></div>'
+      +'<div class="sgfh-per"><span class="lbl">'+nxE(MOISL[NF.m]+' '+NF.y)+'</span></div></div>'; };
+  const chiffres=()=>{ const L=DS.by('projectcost','STAFF_ID',NF.staff).filter(r=>r.DATEYEAR===NF.y&&r.DATEMONTH===NF.m), T=nfTotals(L), st=r=>+r.PROJECTCOSTSTATECODE||0;
+    const ctl=L.filter(r=>st(r)===0||st(r)===2).length, ref=L.filter(r=>st(r)===1).length, k=(l,v,s,c,ti)=>'<div class="nx-kpi"'+(ti?' title="'+nxE(ti)+'"':'')+'><div class="l">'+l+'</div><div class="v'+(c?' '+c:'')+'">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>';
+    return '<div class="nx-kpis sgfh-kp">'+k('Frais du mois',ch(T.tot),L.length+' note'+(L.length>1?'s':''))+k('Facturables',ch(T.fac),T.tot?Math.round(T.fac/T.tot*100)+' % du montant':'')
+      +k('Remboursables',ch(T.rem),T.ris?'dont '+num(T.ris)+' CHF ristournés':'au collaborateur')+k('À contrôler',String(ctl),'','','Notes de frais saisies ou corrigées, pas encore approuvées')
+      +k('Refusées',String(ref),ref?'à corriger':'',ref?'sgfh-neg':'')+'</div>'; };
+  /* ── zone de travail « épurée » (25.11.2026, proposition 1 choisie par Paulo parmi 5 — maquette subgestion3/_backup_20261125_maquette_notes_de_frais/) :
+     présentation du devis et du contrôle des coûts. Une seule barre en texte (mois ‹ ›, actions, Présentation ▾, Imprimer ; Fonctions ▾ à droite), tableau à titres
+     gris sur filet noir (affaire et genre de frais en entier, statut en pastille), totaux sous la colonne Montant, le tableau s'arrête à la dernière note.
+     L'écran du moteur reste dessiné dessous, masqué (son dessin tient l'en-tête et la zone à jour) ; mêmes actions que lui (editCost, mêmes règles de
+     duplication, de suppression et de statut). Colonnes : catalogue « notesfrais » du bloc 57 (Présentation ▾ ; remplace « Colonnes supplémentaires »). ── */
+  const U={sel:new Set(),der:null,cle:''}, st=r=>+r.PROJECTCOSTSTATECODE||0, prj=r=>DS.get('project',r.PROJECT_ID)||{};
+  const nomT=(t,id)=>{ try{ return nm(DS.get(t,id))||''; }catch(_){ return ''; } };
+  const genre=r=>nomT('projectcostcategory',r.COSTCATEGORY_ID), groupe=r=>nomT('projectcostcategorygroup',r.COSTCATEGORYGROUP_ID);
+  const pl=(n,x)=>n+' '+x+(n>1?'s':''), E=nxE;
+  const pas=r=>{ const s=st(r); return s===3?'<span class="sgfh-st ok">'+nxSvg('check')+'</span>':s===1?'<span class="sgfh-st ref">!</span>':s===2?'<span class="sgfh-st cor">↺</span>':'<span class="sgfh-st sgc-st0"></span>'; };
+  const oui=v=>v?'<span class="sgnf-ok">'+nxSvg('check')+'</span>':'<span class="sgnf-non">—</span>';
+  const lignes=()=>DS.by('projectcost','STAFF_ID',NF.staff).filter(r=>r.DATEYEAR===NF.y&&r.DATEMONTH===NF.m).sort((a,b)=>pcDate(a)-pcDate(b)||cmp(a.ID,b.ID));
+  const choisies=()=>[...U.sel].map(id=>DS.get('projectcost',id)).filter(r=>r&&r.STAFF_ID===NF.staff&&r.DATEYEAR===NF.y&&r.DATEMONTH===NF.m);
+  const STD=['date','aff','frais','qte','desc','piece','etat','fact','remb','montant'];
+  const CAT={
+    date:{t:'Date',cat:'Note de frais',nw:1,v:r=>dfr(diso(pcDate(r)))},
+    aff:{t:'Affaire',l:'Affaire (numéro et désignation)',cat:'Affaire',w:210,f:r=>'<b class="n">'+E(prj(r).NUMBER||'')+'</b><small>'+E(prj(r).TITLE||'')+'</small>',v:r=>[prj(r).NUMBER,prj(r).TITLE].filter(Boolean).join(' ')},
+    affn:{t:'N° affaire',l:'Numéro de l’affaire',cat:'Affaire',nw:1,v:r=>prj(r).NUMBER||''},
+    afft:{t:'Désignation de l’affaire',cat:'Affaire',v:r=>prj(r).TITLE||''},
+    ouv:{t:'Ouvrage',cat:'Affaire',nw:1,v:r=>(DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE||''},
+    phase:{t:'Phase',cat:'Affaire',v:r=>nomT('projectphase',r.PHASE_ID)},
+    sphase:{t:'Phase partielle',cat:'Affaire',v:r=>nomT('projectsubphase',r.SUBPHASE_ID)},
+    frais:{t:'Frais',l:'Genre de frais (et son groupe)',cat:'Note de frais',w:175,f:r=>'<b>'+E(genre(r))+'</b><small>'+E(groupe(r))+'</small>',v:r=>[groupe(r),genre(r)].filter(Boolean).join(' › ')},
+    genre:{t:'Genre de frais',cat:'Note de frais',v:genre},
+    grp:{t:'Groupe de frais',cat:'Note de frais',v:groupe},
+    desc:{t:'Désignation',cat:'Note de frais',w:170,v:r=>r.DESCRIPTION||''},
+    piece:{t:'N° pièce',cat:'Note de frais',nw:1,v:r=>r.DOCUMENTNUMBER||''},
+    qte:{t:'Quantité',cat:'Montants',r:1,nw:1,v:r=>+r.QUANTITY?num(+r.QUANTITY)+(r.UNIT?' '+r.UNIT:''):''},
+    unite:{t:'Unité',cat:'Montants',nw:1,v:r=>r.UNIT||''},
+    pu:{t:'Prix unitaire',cat:'Montants',r:1,nw:1,v:r=>r.UNITPRICE==null||r.UNITPRICE===''?'':num(+r.UNITPRICE)},
+    tva:{t:'Taux TVA',cat:'Montants',r:1,nw:1,v:r=>r.VATRATE==null||r.VATRATE===''?'':num(+r.VATRATE,1)+' %'},
+    devise:{t:'Monnaie',l:'Monnaie (étrangère : avec le cours)',cat:'Montants',nw:1,v:r=>r.FOREIGNCURRENCYCODE?r.FOREIGNCURRENCYCODE+(r.FOREIGNCURRENCYRATE?' · cours '+r.FOREIGNCURRENCYRATE:''):'CHF'},
+    montant:{t:'Montant CHF',cat:'Montants',r:1,nw:1,f:r=>'<b>'+num(pcAmount(r))+'</b>',v:r=>num(pcAmount(r)),sum:L=>num(L.reduce((a,r)=>a+pcAmount(r),0))},
+    etat:{t:'Statut',cat:'Contrôle',nw:1,f:r=>'<span class="sgnf-st s'+st(r)+'">'+pas(r)+'<span>'+E(TSTATE[st(r)]||'')+'</span></span>',v:r=>TSTATE[st(r)]||''},
+    fact:{t:'Facturable',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGEABLE),v:r=>r.ISCHARGEABLE?'Oui':'Non'},
+    facture:{t:'Facturé',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGED),v:r=>r.ISCHARGED?'Oui':'Non'},
+    factle:{t:'Facturé le',cat:'Facturation',nw:1,v:r=>r.CHARGEDDATE?dfr(String(r.CHARGEDDATE).slice(0,10)):''},
+    remb:{t:'Remboursable',th:'Rembours.',l:'Remboursable au collaborateur',cat:'Remboursement',c:1,f:r=>oui(r.ISREFUNDABLE)+(r.ISREFUNDABLE&&r.ISREFUNDED?'<small>ristourné</small>':''),v:r=>r.ISREFUNDABLE?(r.ISREFUNDED?'Oui · ristourné':'Oui'):'Non'},
+    risto:{t:'Ristourné',l:'Ristourné (remboursé au collaborateur)',cat:'Remboursement',c:1,f:r=>oui(r.ISREFUNDED),v:r=>r.ISREFUNDED?'Oui':'Non'}};
+  const catalogue=()=>{ if(typeof SGTAB!=='undefined'&&!SGTAB.def.notesfrais&&typeof sgtabDef==='function') sgtabDef('notesfrais',{titre:'Notes de frais',std:STD,cat:CAT}); };
+  const colonnes=()=>{ catalogue(); return typeof SGTAB!=='undefined'&&SGTAB.def.notesfrais?sgtabCols('notesfrais'):STD.map(k=>Object.assign({k},CAT[k])); };
+  const cellules=(cols,r)=>typeof sgtabCellules==='function'?sgtabCellules(cols,r,null):cols.map(c=>'<td>'+(c.f?c.f(r):E(c.v(r)))+'</td>').join('');
+  const entete=cols=>typeof sgtabEntete==='function'?sgtabEntete(cols):'<tr>'+cols.map(c=>'<th>'+E(c.th||c.t)+'</th>').join('')+'</tr>';
+  const bt=(a,t,o)=>'<button class="sgnf-b'+(o&&o.c?' '+o.c:'')+'" data-nfa="'+a+'"'+(o&&o.dis?' disabled':'')+(o&&o.ti?' title="'+E(o.ti)+'"':'')+'>'+(o&&o.i?nxSvg(o.i):'')+(t?'<span>'+t+'</span>':'')+'</button>';
+  const sep='<span class="sgnf-sep"></span>';
+  const barre=L=>{ const n=choisies().length, pres=typeof SGTAB!=='undefined';
+    return '<div class="sgnf-bar">'+bt('prev','',{i:'prev',c:'ic',ti:'Mois précédent'})+bt('mois',E(MOISL[NF.m]+' '+NF.y)+' ▾',{c:'sgnf-per',ti:'Choisir le mois'})+bt('next','',{i:'next',c:'ic',ti:'Mois suivant'})
+      +bt('auj','Ce mois',{ti:'Revenir au mois en cours'})+sep+bt('new','Nouvelle note',{i:'plus',ti:'Créer une nouvelle note de frais'})+bt('dup','Dupliquer ▾',{i:'dup',dis:!n})
+      +bt('edit','Modifier',{i:'edit',dis:n!==1,ti:'Modifier la note de frais (double-clic)'})+bt('del','Supprimer',{i:'minus',dis:!n,c:'rg'})
+      +sep+bt('s3','Approuver',{dis:!n})+bt('s1','Refuser',{dis:!n})+bt('s0','Réinitialiser',{dis:!n})
+      +(pres?sep+bt('pres','Présentation ▾',{i:'list',ti:'Colonnes du tableau : Standard, présentations enregistrées, Personnalisé …'})+bt('imp','Imprimer',{i:'print',dis:!L.length,ti:'Notes de frais du mois (PDF)'}):'')
+      +'<span class="sgnf-fin"></span><span class="sgnf-nb">'+(n?pl(n,'choisie')+' sur ':'')+pl(L.length,'note')+'</span>'+bt('fn','Fonctions ▾')+'</div>'; };
+  const tableau=(L,cols)=>{ const T=nfTotals(L), n=cols.length, iM=cols.findIndex(c=>c.k==='montant');
+    const ligne=(cl,lib,v)=>iM<0?'<tr class="'+cl+'"><td colspan="'+n+'" class="lib g">'+lib+' : '+v+' CHF</td></tr>'
+      :'<tr class="'+cl+'">'+(iM?'<td colspan="'+iM+'" class="lib">'+lib+'</td>':'')+'<td class="r">'+v+'</td>'+(n-iM-1?'<td colspan="'+(n-iM-1)+'"'+(iM?'':' class="lib g"')+'>'+(iM?'':lib)+'</td>':'')+'</tr>';
+    return '<table class="nx-tbl sgtab-t sgnf-t"><thead>'+entete(cols)+'</thead><tbody>'
+      +L.map(r=>'<tr data-nfid="'+E(r.ID)+'"'+(U.sel.has(r.ID)?' class="on"':'')+'>'+cellules(cols,r)+'</tr>').join('')+'</tbody><tfoot>'
+      +ligne('t','Total du mois · '+pl(L.length,'note'),num(T.tot))+ligne('s','dont facturable',num(T.fac))
+      +ligne('s','dont remboursable au collaborateur'+(T.ris?' · '+num(T.ris)+' déjà ristourné':''),num(T.rem))+'</tfoot></table>'; };
+  const vide=()=>'<div class="sgnf-vide"><b>Aucune note de frais en '+E(MOISL[NF.m].toLowerCase()+' '+NF.y)+'.</b><span>Les frais du mois s’affichent ici dès la première saisie.</span>'
+    +bt('new','Nouvelle note de frais',{i:'plus',c:'pri'})+'</div>';
+  const dessinerZone=z=>{ const cle=NF.staff+'|'+NF.y+'|'+NF.m; if(cle!==U.cle){ U.cle=cle; U.sel.clear(); U.der=null; }
+    const L=lignes(), ids=new Set(L.map(r=>r.ID)); [...U.sel].forEach(id=>{ if(!ids.has(id)) U.sel.delete(id); });
+    const sc=z.scrollTop; z.innerHTML=barre(L)+(L.length?tableau(L,colonnes()):vide()); z.scrollTop=sc; };
+  /* actions : celles de l'écran du moteur */
+  const actions=(V0,z,maj)=>{
+    const aller=(y,m)=>{ NF.y=y; NF.m=m; V0.draw(); maj(); };
+    const pas1=k=>{ let m=NF.m+k, y=NF.y; if(m<0){ m=11; y--; } if(m>11){ m=0; y++; } aller(y,m); };
+    const nouveau=()=>{ const t=new Date(); editCost(null,{staff:NF.staff,date:new Date(NF.y,NF.m,NF.y===t.getFullYear()&&NF.m===t.getMonth()?t.getDate():1)}); };
+    const modifier=r=>{ r=r||(choisies().length===1?choisies()[0]:null); if(r) editCost(r,{staff:NF.staff}); };
+    const etat=async v=>{ const rs=choisies(); if(!rs.length){ toast('Choisissez des notes de frais (Cmd-clic, Maj-clic).',true); return; }
+      await DS.commit(rs.map(r=>({t:'projectcost',id:r.ID,val:{...r,PROJECTCOSTSTATECODE:v}}))); toast(pl(rs.length,'note')+' de frais : '+TSTATE[v]+'.'); };
+    const dupliquer=async k=>{ const rs=choisies(); if(!rs.length) return; const ids=DS.newIds('projectcost',rs.length);
+      await DS.commit(rs.map((r,i)=>{ const d=pcDate(r); d.setMonth(d.getMonth()+k); return {t:'projectcost',id:ids[i],val:{...r,ID:ids[i],DATEYEAR:d.getFullYear(),DATEMONTH:d.getMonth(),DATEDAY:d.getDate(),PROJECTCOSTSTATECODE:0,ISCHARGED:0,CHARGEDDATE:null,ISREFUNDED:0}}; }));
+      toast(pl(rs.length,'note')+' de frais dupliquée'+(rs.length>1?'s':'')+(k?' dans le mois suivant':'')+'.'); if(k) pas1(1); };
+    const supprimer=async()=>{ const rs=choisies(); if(!rs.length) return; if(rs.some(r=>st(r)===3||r.ISCHARGED)){ toast('Frais approuvé ou facturé : suppression impossible.',true); return; }
+      if(await confirmDlg(rs.length>1?'Voulez-vous vraiment supprimer ces '+rs.length+' notes de frais ?':'Voulez-vous vraiment supprimer cette note de frais ?','Supprimer')){ await DS.commit(rs.map(r=>({t:'projectcost',id:r.ID,val:null}))); U.sel.clear(); } };
+    const nomS=()=>{ const x=DS.get('staff',NF.staff); return x?staffName(x):''; };
+    const imprimer=()=>{ const L=lignes(); if(typeof sgtabImprimer!=='function'||!L.length) return; colonnes();
+      sgtabImprimer('notesfrais',L,null,{cle:'Liste · Notes de frais',titre:'Notes de frais',lb:'Notes de frais · Documents',type:'Notes de frais',sous:nomS()+' · '+MOISL[NF.m]+' '+NF.y,
+        meta:[['Collaborateur',nomS()],['Mois',MOISL[NF.m]+' '+NF.y],['Notes',String(L.length)]],total:{lib:'Total'}}); };
+    const fonctions=()=>{ const n=choisies().length; return [
+      {t:'Marquer comme ristourné (remboursé)',dis:!n,fn:()=>DS.commit(choisies().filter(r=>r.ISREFUNDABLE).map(r=>({t:'projectcost',id:r.ID,val:{...r,ISREFUNDED:1}})))},
+      {t:'Annuler « ristourné »',dis:!n,fn:()=>DS.commit(choisies().map(r=>({t:'projectcost',id:r.ID,val:{...r,ISREFUNDED:0}})))},'-',
+      {t:'Copier le tableau dans le presse-papier',fn:()=>typeof sgtabCopie==='function'?sgtabCopie(z):toast('Copie indisponible.',true)},
+      {t:'Exporter le tableau dans un fichier CSV …',fn:()=>{ colonnes(); if(typeof sgtabCsv==='function') sgtabCsv('notesfrais',lignes(),null,'Notes_de_frais_'+NF.y+'-'+String(NF.m+1).padStart(2,'0')); }},'-',
+      {t:'Rapport mensuel …',fn:()=>{ NFR.staff=NF.staff; NFR.per='Mois'; NFR.y=NF.y; NFR.i=NF.m; go('frais-rapport'); }}]; };
+    const ligne=r=>{ if(!U.sel.has(r.ID)){ U.sel.clear(); U.sel.add(r.ID); U.der=r.ID; dessinerZone(z); } const n=choisies().length; return [
+      {t:'Modifier la note de frais …',dis:n!==1,fn:()=>modifier(r)},{t:'Dupliquer',fn:()=>dupliquer(0)},{t:'Dupliquer dans le mois suivant',fn:()=>dupliquer(1)},'-',
+      {t:'Approuver',fn:()=>etat(3)},{t:'Refuser',fn:()=>etat(1)},{t:'Réinitialiser',fn:()=>etat(0)},'-',
+      {t:'Marquer comme ristourné (remboursé)',fn:()=>DS.commit(choisies().filter(x=>x.ISREFUNDABLE).map(x=>({t:'projectcost',id:x.ID,val:{...x,ISREFUNDED:1}})))},'-',
+      {t:'Supprimer …',danger:true,fn:supprimer}]; };
+    const choisir=(id,ev)=>{ const L=lignes().map(r=>r.ID);
+      if(ev&&ev.shiftKey&&U.der!=null&&L.includes(U.der)){ const a=L.indexOf(U.der), b=L.indexOf(id); L.slice(Math.min(a,b),Math.max(a,b)+1).forEach(x=>U.sel.add(x)); }
+      else if(ev&&(ev.metaKey||ev.ctrlKey)){ U.sel.has(id)?U.sel.delete(id):U.sel.add(id); U.der=id; }
+      else { U.sel.clear(); U.sel.add(id); U.der=id; }
+      dessinerZone(z); };
+    const idDe=el=>{ const v=el.dataset.nfid; return isNaN(+v)?v:+v; };
+    z.addEventListener('click',ev=>{ const a=ev.target.closest('[data-nfa]'); if(a){ if(a.disabled) return; const k=a.dataset.nfa;
+        if(k==='prev') pas1(-1); else if(k==='next') pas1(1); else if(k==='auj'){ const t=new Date(); aller(t.getFullYear(),t.getMonth()); }
+        else if(k==='mois') popMenu(a,MOISL.map((x,i)=>({t:x+' '+NF.y,chk:i===NF.m,fn:()=>aller(NF.y,i)})));
+        else if(k==='new') nouveau(); else if(k==='edit') modifier(); else if(k==='del') supprimer();
+        else if(k==='dup') popMenu(a,[{t:'Dupliquer',fn:()=>dupliquer(0)},{t:'Dupliquer dans le mois suivant',fn:()=>dupliquer(1)}]);
+        else if(k==='s3') etat(3); else if(k==='s1') etat(1); else if(k==='s0') etat(0);
+        else if(k==='pres'&&typeof sgtabMenu==='function'){ colonnes(); sgtabMenu('notesfrais',a,()=>dessinerZone(z)); }
+        else if(k==='imp') imprimer(); else if(k==='fn') popMenu(a,fonctions());
+        return; }
+      const l=ev.target.closest('tr[data-nfid]'); if(l){ choisir(idDe(l),ev); z.focus({preventScroll:true}); } });
+    z.addEventListener('dblclick',ev=>{ const l=ev.target.closest('tr[data-nfid]'); if(!l) return; const r=DS.get('projectcost',idDe(l)); if(r) modifier(r); });
+    z.addEventListener('contextmenu',ev=>{ const l=ev.target.closest('tr[data-nfid]'); if(!l||ev.altKey) return; const r=DS.get('projectcost',idDe(l)); if(!r) return;
+      ev.preventDefault(); ev.stopPropagation(); sgMenuAt(ev.clientX,ev.clientY,ligne(r)); });
+    /* clavier (zone active) : ↑ ↓ choisir, Entrée modifier, Suppr supprimer, Cmd-A tout choisir, Échap ne rien choisir */
+    z.addEventListener('keydown',ev=>{ if(ev.target.closest('input,textarea,select,[contenteditable]')||document.querySelector('.ov')) return; const L=lignes(); if(!L.length) return;
+      if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){ ev.preventDefault(); const ids=L.map(r=>r.ID), i=ids.indexOf(U.der), k=i<0?(ev.key==='ArrowDown'?0:ids.length-1):Math.max(0,Math.min(ids.length-1,i+(ev.key==='ArrowDown'?1:-1)));
+        choisir(ids[k],null); const tr=z.querySelector('tr[data-nfid="'+ids[k]+'"]'); if(tr) tr.scrollIntoView({block:'nearest'}); }
+      else if(ev.key==='Enter'){ ev.preventDefault(); modifier(); }
+      else if(ev.key==='Delete'||ev.key==='Backspace'){ ev.preventDefault(); supprimer(); }
+      else if((ev.metaKey||ev.ctrlKey)&&ev.key.toLowerCase()==='a'){ ev.preventDefault(); L.forEach(r=>U.sel.add(r.ID)); dessinerZone(z); }
+      else if(ev.key==='Escape'&&U.sel.size){ U.sel.clear(); dessinerZone(z); } }); };
+  V.render=function(m){ R0.call(this,m); const cols=m.querySelector(':scope>.cols'); if(!cols) return; const R=cols.children[1];
+    cols.style.display='none';   /* écran du moteur gardé dessous (son dessin tient la page à jour), plus affiché */
+    const haut=h('div',{class:'sgnf-haut'}), z=h('div',{class:'sgnf-zone',tabindex:'0'}); m.insertBefore(haut,cols); m.append(z); document.documentElement.classList.add('sgfh-on');
+    const maj=()=>{ if(haut.isConnected){ haut.innerHTML=tete()+chiffres(); dessinerZone(z); } }; maj();
+    actions(this,z,maj);
+    haut.addEventListener('click',e=>{ const b=e.target.closest('[data-nf="chg"]'); if(!b) return;
+      popMenu(b,ch08bMyStaffs().map(s=>({t:staffName(s),chk:s.ID===NF.staff,fn:()=>{ NF.staff=s.ID; NF.g.selSet=new Set(); NF.g.sel=null; this.draw(); maj(); }}))); });
+    /* le moteur redessine le tableau et ses totaux (mois, année, saisie, autre poste) : en-tête, chiffres et zone suivent */
+    const foot=R&&R.lastElementChild; if(foot) new MutationObserver(maj).observe(foot,{childList:true,subtree:true}); };
+} }

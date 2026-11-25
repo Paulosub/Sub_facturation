@@ -1521,6 +1521,46 @@ html[data-vdom="temps"] #main .col.fill>.ph2:last-child b{font-size:18px;color:v
 /* barre d'outils de la feuille d'heures sous les chiffres (#tools déplacé dans la page) ; barre du haut masquée sur cet écran */
 html.sgfh-on #nx-sub{display:none!important}
 .sgfh-outils{margin:0 0 12px}
+/* Notes de frais ▸ Notes de frais : en-tête et chiffres de la feuille d'heures au-dessus de l'écran du moteur (25.11.2026, sg3_feuille.js) */
+.sgnf-haut{flex:none;padding:16px 24px 0}.sgnf-haut .sgfh-kp{margin:12px 0 0}
+.cols.sgnf-cols{padding-top:4px}
+/* Notes de frais : zone de travail « épurée » (25.11.2026, proposition 1 choisie par Paulo) — barre en texte, tableau du devis, totaux sous le montant */
+.sgnf-zone{flex:1 1 auto;min-height:0;overflow:auto;padding:0 24px 28px;outline:none;container-type:inline-size}
+.sgnf-bar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;min-height:42px;padding:6px 0;margin:6px 0 0;border-bottom:1px solid var(--s-filet);position:sticky;top:0;background:#fff;z-index:3}
+.sgnf-b{border:0;background:none;font:inherit;font-size:12.5px;font-weight:700;color:var(--s-noir);height:32px;padding:0 9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.sgnf-bar>.sgnf-b:first-child{padding-left:0}
+.sgnf-b:hover{background:var(--s-jaune3)}
+.sgnf-b svg{width:15px;height:15px}
+.sgnf-b:disabled{color:#b9b9b6;cursor:default;background:none}
+.sgnf-b.rg{color:var(--s-rouge)}.sgnf-b.rg:disabled{color:#d9b5bd}
+.sgnf-b.pri{background:var(--s-nuit);color:#fff;padding:0 14px;height:34px}.sgnf-b.pri:hover{background:#00253a}
+.sgnf-per{min-width:132px;justify-content:center;font-size:13px}
+.sgnf-sep{flex:none;width:1px;height:18px;background:var(--s-filet);margin:0 6px}
+.sgnf-fin{flex:1 1 auto}
+.sgnf-nb{font-size:12px;color:var(--s-gris);margin:0 8px;white-space:nowrap}
+.sgnf-t{margin-top:14px}
+.sgnf-t td{vertical-align:top}
+.sgnf-t th:first-child,.sgnf-t td:first-child{padding-left:0}
+.sgnf-t th:last-child,.sgnf-t td:last-child{padding-right:0}
+.sgnf-t td small{display:block;font-size:11.5px;color:var(--s-gris);margin-top:2px}
+.sgnf-t td b.n{color:var(--s-nuit)}
+.sgnf-t tbody tr{cursor:default}
+.sgnf-t tbody tr:hover td{background:var(--s-jaune3)}
+.sgnf-t tbody tr.on td{background:var(--s-jaune2)}
+.sgnf-t tfoot td{border-bottom:0;padding:6px 8px}
+.sgnf-t tfoot tr.t td{border-top:2px solid var(--s-noir);font-weight:700;font-size:13.5px;padding-top:10px}
+.sgnf-t tfoot td.lib{text-align:right;padding-right:18px}.sgnf-t tfoot td.lib.g{text-align:left}
+.sgnf-t tfoot tr.s td{color:var(--s-gris);font-size:12px;padding-top:2px;padding-bottom:2px}
+.sgnf-t tfoot tr.s td.r{color:var(--s-noir)}
+.sgnf-st{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px}
+.sgnf-st.s1{color:var(--s-rouge)}.sgnf-st.s0{color:var(--s-gris)}
+.sgnf-ok{display:inline-grid;place-items:center;color:var(--s-nuit)}.sgnf-ok svg{width:15px;height:15px;stroke-width:2.2}
+.sgnf-non{color:#c9c9c6}
+.sgnf-vide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:28px 0 0;border-top:2px solid var(--s-noir);margin-top:14px}
+.sgnf-vide b{font-size:15px}.sgnf-vide span{font-size:12.5px;color:var(--s-gris);margin-bottom:12px}
+/* zone moins large : la barre reste sur une ligne — icônes des actions retirées, puis le nombre de notes (il est dans les chiffres) */
+@container (max-width:1420px){.sgnf-b:not(.ic):not(.pri) svg{display:none}.sgnf-b{padding:0 7px}}
+@container (max-width:1240px){.sgnf-nb{display:none}}
 .sgfh-outils #tools{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
 .sgfh.sgc .sgfh-outils #tools>.grp:last-child{margin-left:auto}   /* Contrôle des heures : Fonctions à droite (la feuille d'heures n'en a plus : clic droit) */
 /* zone de travail étroite : chiffres sur deux lignes, panneau de droite sous la semaine */

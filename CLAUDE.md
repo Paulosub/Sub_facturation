@@ -846,11 +846,88 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Critères d'analyse des heures, Contrôle des frais, Critères d'analyse des frais) sont retirés du menu de gauche (« supprimer du menu de gauche » : `hide:1`,
   `parent:'nx-ah'` dans `SG_DOM` — écrans, droits et fil d'Ariane gardés, ouverts par les tuiles de la page ; « Analyse des heures » reste surlignée dans le menu,
   `sgSideItems`) : le chapitre Heures = Feuille d'heures, Analyse des heures. Puis (« placer dans la fiche projet lorsque je clique sur un des projets dans Affaires ») :
-  les quatre tuiles quittent la page de l'Analyse des heures (une fiche flottante de l'affaire, essayée le même jour, est retirée). **Puis (« créer les tuiles dans
-  99TST lorsque je clique sur l'affaire 99TST »)** : un clic sur une affaire du tableau « Affaires » ouvre la page du projet (`nx-pdom`, arg `<ID>|#g:Analyse des
-  heures` : groupe ouvert par son nom) ; nouveau groupe **« Analyse des heures »** (icône `timer`, après « Suivi du projet » ; `SG_PDOM_G`, `SG_AH_VUES` de sg3_plus.js) =
-  les quatre modules en tuiles, chacune ouvre son module sur le projet (`go('nx-ah-ctlh'…, p.ID)`) ; compteurs sur toute la durée du projet (`sgAhCompte` de
-  sg3_analyse_heures.js : inscriptions à contrôler, heures, notes à contrôler, frais) ; droits = ceux des modules (`sgVueOk`) : jamais le profil collaborateur.
+  les quatre tuiles quittent la page de l'Analyse des heures (une fiche flottante de l'affaire, essayée le même jour, est retirée ; puis un groupe « Analyse des
+  heures » dans la page du projet, retiré le lendemain). **Page de l'affaire dans l'Analyse des heures (25.11.2026, Paulo : « je ne souhaite pas créer les tuiles dans
+  la page du projet, mais dans analyse des heures ; lorsque je clique sur une affaire, tu ouvres une page analyse de l'heure de cette affaire et tu appliques la
+  possibilité de sélectionner les tuiles »)** : un clic sur une affaire du tableau « Affaires » = `go('nx-ah', <ID>)` (`affp`) ; `nx-ah` avec une affaire permise
+  (heures ou frais du périmètre) = `pageAff` de sg3_analyse_heures.js (`CUR.mod` 'affaire', `ST.aff`) : bandeau au numéro de l'affaire (« Analyse des heures · <période> »,
+  maître de l'ouvrage, dernière saisie, ce qui reste à contrôler sur toute l'affaire ; « ‹ Toutes les affaires »), chiffres de la période, choix de la période, puis
+  « Modules » : les quatre tuiles (`MOD_T`, `tuile` ; quatre de front, deux sous 900 px ; contrôles = à contrôler sur toute l'affaire, analyses = heures ou frais de la
+  période) ; tuiles des frais seulement avec les frais visibles. **Un clic sur une tuile affiche le module juste en dessous, sur la même page** (même jour, Paulo :
+  « lorsque je clique sur une tuile, affiche les données juste en dessous, pas d'ouverture de nouvelle page ») : `ST.amod`, tuile choisie sur jaune pâle (flèche
+  tournée vers le bas), second clic ou « Fermer » = refermer ; contenu = celui du module (`corpsCtlh`, `corpsAna`, `corpsCtlf` avec `emb` : sans colonne des affaires,
+  bandeau remplacé par un titre de section `ent`/`.sgah-et`, choix de la période des critères pris dans la barre de la page) ; mêmes gestes et écritures ; paramètre de
+  l'écran `<ID>|ctlh` (sans entrée d'historique, `majArg`) ; défilement seulement si le module commence trop bas (`voirEmb`). Les pages pleines des modules
+  (`nx-ah-ctlh`…, renvois d'Administration) restent ; leur bandeau a « ‹ Analyse de l'affaire » (`retaff` : page de l'affaire, ce module ouvert dessous). Menu :
+  « Analyse des heures » reste surlignée. La page du projet n'a plus
+  le groupe « Analyse des heures » (sg3_plus.js remis à son état d'avant, `SG_AH_VUES` et `sgAhCompte` retirés). Copie d'avant :
+  `subgestion3/_backup_20261125_1025_avant_page_affaire_analyse/`.
+  **Chapitre « Notes de frais » (25.11.2026, Paulo : « avec le même principe, créer un menu note de frais » ; choix : saisie + Analyse des frais, les frais retirés
+  de l'Analyse des heures)** : domaine `ndf` de `SG_DOM`, juste après Heures (icône `receipt` ; visuel Mac : menthe #00C7BE) = **Notes de frais** (`frais`, l'écran de
+  saisie du moteur, sorti d'Archives ▸ Heures — « Rapport des notes de frais » y reste) et **Analyse des frais** (`nx-af`, même code que l'Analyse des heures :
+  `KND.f`, pages `fentree` / `faffaire` de sg3_analyse_heures.js) — liste des affaires avec des notes de frais (Frais CHF, notes, à contrôler, refusées, à facturer,
+  remboursables, dernière note ; CSV `Analyse_des_frais`), chiffres de la période ; un clic = `go('nx-af', ID)` : page de l'affaire, tuiles Contrôle des frais et
+  Critères d'analyse des frais, module affiché dessous (`ID|ctlf`) ; « ‹ Analyse de l'affaire » des pages pleines `nx-ah-ctlf` / `nx-ah-anaf` (parent `nx-af`) y
+  ramène. Les quatre entrées portent `dom:'temps'` (droits, code d'accès et visuel épuré du chapitre Heures : la saisie garde sa colonne des collaborateurs).
+  Droits : `SG_VUE_DROIT['nx-af']` = ceux des frais du Controlling (jamais le profil collaborateur, qui ne voit que la saisie). **L'Analyse des heures ne parle plus
+  que des heures** : plus de colonnes, chiffres ni tuiles des frais ; page de l'affaire = Heures saisies, À contrôler, Refusées, À facturer, Facturées + tuiles
+  Contrôle des heures d'affaires et Critères d'analyse des heures (deux de front). Statistiques des frais ajoutées à `statsAff` : `ffa`, `faf`, `frb`. Copie d'avant :
+  `subgestion3/_backup_20261125_1037_avant_menu_notes_de_frais/`.
+  **Analyse des heures / des frais, suite (même jour)** : 1) **tuiles des modules de retour sur les pages d'entrée** (Paulo : « rajoute les tuiles d'analyse dans
+  l'analyse des heures également, j'ai vu que tu avais supprimé », « comme pour les heures les tuiles en lien avec frais ») — sous la barre de la période, « Modules » :
+  Contrôle des heures d'affaires + Critères d'analyse des heures (`nx-ah`), Contrôle des frais + Critères d'analyse des frais (`nx-af`) ; pied = à contrôler / heures ou
+  frais de la période ; les critères d'analyse avant le contrôle (Paulo, même jour : « déplacer, également pour les frais, les critères devant » ; même ordre dans la page de l'affaire) ; un clic affiche le module juste en dessous, sur la même page (Paulo, même jour : « lorsque je clique sur la tuile, ajouter les données en dessous sans
+  changer de page ») — colonne des affaires (sans sa recherche : celle de la barre la filtre ; affaire choisie d'office, `embEntree`) et le module de l'affaire, à la
+  place du tableau des affaires, qui revient au second clic ou par « Fermer » ; paramètre de l'écran « |anah » (`majArg`, reprise de session) ; `tuileE` → action
+  `amod` (`modgo` reste, plus appelé). La page de l'affaire garde ses tuiles qui affichent le module dessous.
+  **Puis (même jour, Paulo : « supprimer la liste, l'affaire doit être sélectionnée dans la liste des affaires dans analyse »)** : plus de colonne des affaires propre
+  au module ; avec un module ouvert, la liste des affaires de la page reste (300 px de haut, défilement, titres collés), un clic y choisit l'affaire du module
+  (action `affsel`, ligne surlignée ; d'office la première, `selEntree`), le module est dessous. Sans module, un clic ne fait que choisir l'affaire (Paulo,
+  même jour : « lorsque je clique, juste sélectionner » ; « affaire choisie : n° » dans le titre) — la page de l'affaire n'est plus ouverte depuis cette liste.
+  **Puis (Paulo : « supprimer la liste dans critère »)** : module ouvert = plus de liste au-dessus (pour les deux modules) ; l'affaire choisie avant est dans le titre du
+  module ; « Fermer · changer d'affaire » ramène la liste. (La liste limitée en hauteur `sgah-xs` n'est plus utilisée.)
+  **Enfin (Paulo : « afficher la liste lorsque les tuiles ne sont pas sélectionnées ; je sélectionne l'affaire, je clique sur la tuile, tu ouvres les critères sans la
+  liste des affaires mais uniquement l'affaire sélectionnée »)** : au-dessus du module, la seule ligne de l'affaire choisie (titre « Affaire ») ; **plus de page propre à
+  l'affaire** — `nx-ah` / `nx-af` avec « ID » ou « ID|module » = page d'entrée avec cette affaire choisie (et ce module ouvert) : reprise de session, « ‹ Analyse de
+  l'affaire » des pages pleines (`retaff`) ; paramètre tenu par `majArg` ; `pageAff`, `entree`, `affp` restent, plus appelés. Barre de la période et des affaires (Mois · Année ·
+  12 mois · Tout, ‹ › , état, recherche, CSV) placée sous les tuiles (Paulo, même jour : « déplacer sous les critères »). Module ouvert : le bandeau jaune porte
+  l'affaire choisie (numéro en grand, désignation en titre, « Analyse des heures · 2026 » au-dessus, maître de l'ouvrage et dernière saisie dessous ; Paulo : « afficher ici
+  le nom de l'affaire avec le numéro ») ; chiffres sous le bandeau et pied des tuiles = ceux de cette affaire sur la période (5e chiffre : Facturées / Remboursables). La ligne « Affaire » au-dessus du module est retirée
+  (Paulo : « ne plus afficher ici l'affaire ») : l'affaire n'est plus que dans le bandeau. Critères d'analyse ouverts sur la page d'entrée : sans le titre
+  du module ni sa rangée de chiffres (Paulo : « à supprimer car doublon avec l'en-tête ») — le module se referme par sa tuile ; le Contrôle garde les siens. Critères ouverts : la barre de la période et
+  des affaires descend entre les listes de critères et « Afficher » (Paulo : « déplacer ») ; puis (« déplacer ») Présentation · Fonctions · Documents · Rapports y prennent
+  la place de la recherche : une seule barre = période à gauche, ces quatre boutons à droite (recherche, état des affaires et CSV de la liste retirés avec un module
+  ouvert) ; Contrôle ouvert ou aucun module : barre complète sous les tuiles. 2) **« Par affaire · Par collaborateur » — RETIRÉ le même jour** (Paulo, capture annotée de « Par collaborateur · 2026 » : « supprimer » ; titre du tableau =
+  « Affaires » ; code gardé, plus appelé : `col=false` dans `pageEntree`, `sg3_ah.par` plus lu) — description d'avant (Paulo, page Analyse des frais : « trier par collaborateur ») : choix dans le titre
+  du tableau, gardé par page (`sg3_ah.par` = {h, f}) ; par collaborateur (`statsCol`, `tabCol`, `cellsX`) = une ligne par collaborateur sur trame bleu nuit pâle (initiales,
+  nom, nombre d'affaires, ses totaux ; un clic replie / déplie ses affaires, « Tout replier / déplier » ; frais : bouton « Notes de frais » = son écran de saisie au mois
+  de sa dernière note, si `ch08bMyStaffs` le permet), ses affaires dessous (un clic = page de l'affaire) ; du plus de frais / d'heures au moins, saisies sans
+  collaborateur à la fin ; mêmes affaires (état, périmètre) et même période ; recherche sur l'affaire ou le collaborateur ; 5e chiffre « Collaborateurs » ; CSV avec la
+  colonne Collaborateur et une ligne « Total du collaborateur ». 3) Vue d'ensemble Notes de frais (`sgFigs('ndf')`) : notes de frais ce mois, CHF ce mois, dépenses
+  à rembourser, CHF à rembourser (les deux derniers quittent la vue d'ensemble Heures, qui garde ma semaine et mon mois). 4) **Tableau « Affaires » des pages d'entrée = simple liste** (Paulo,
+  même jour : « affiche la liste des affaires, pas les frais, tant que je n'ai pas sélectionné critère ou contrôle » ; aussi pour les heures) : N°, Affaire, Maître de
+  l'ouvrage, Statut, Dernière saisie / note — plus de montants ni d'heures (ils sont dans le bandeau et les modules) ; un clic = page de l'affaire ; `tabAff`. Copie d'avant :
+  `subgestion3/_backup_20261125_1514_avant_frais_par_collaborateur/`.
+  **Notes de frais ▸ Notes de frais : choix du collaborateur au graphisme de la feuille d'heures (même jour, Paulo : « reprends le design du reste de l'app
+  pour la sélection des collaborateurs »)** : fin de sg3_feuille.js (enveloppe de `VIEWS.frais.render`) — colonne des collaborateurs du moteur masquée ; au-dessus,
+  `.sgnf-haut` = bandeau jaune de la feuille d'heures (initiales en grand, trait, nom, ▾ = changer de collaborateur parmi `ch08bMyStaffs`, « Au bureau depuis »,
+  notes et montant de l'année, mois affiché à droite) et chiffres du mois (Frais du mois, Facturables, Remboursables, À contrôler, Refusées ; `nfTotals`) tenus à
+  jour par un observateur des totaux du moteur ; barre du haut (« Fiche membre ») masquée (`html.sgfh-on`). Barre, tableau, totaux, gestes et droits du moteur
+  inchangés. « Rapport des notes de frais » (Archives) garde sa colonne. Copie d'avant : `subgestion3/_backup_20261125_1043_avant_notes_de_frais_tete/`.
+  **Zone de travail « Épurée » (même jour, Paulo, capture annotée de la barre, du tableau et des totaux : « améliore le visuel », « propose-moi 5 variantes » ;
+  proposition 1 choisie parmi 1 Épurée, 2 Frise de l'année, 3 Par affaire, 4 Cartes, 5 Liste et fiche — maquette `subgestion3/_backup_20261125_maquette_notes_de_frais/`,
+  page `proposition_ndf.html` de l'aperçu)** : l'écran du moteur reste dessiné, masqué (`.cols` en `display:none` ; son dessin tient en-tête et zone à jour par
+  l'observateur des totaux) ; dessous `.sgnf-zone` (fin de sg3_feuille.js, styles `.sgnf-*` de sg3.css) = présentation du devis : une barre en texte collée en
+  haut (‹ mois ▾ ›, Ce mois, Nouvelle note, Dupliquer ▾, Modifier, Supprimer, Approuver, Refuser, Réinitialiser, Présentation ▾, Imprimer ; nombre et Fonctions ▾ à
+  droite ; icônes des actions retirées sous 1420 px de zone, nombre sous 1240 px), tableau `nx-tbl sgtab-t` (affaire et genre de frais en entier sur deux lignes,
+  statut en pastille, Facturable / Rembours. en coches, montant en gras), pied « Total du mois · n notes », « dont facturable », « dont remboursable » sous la
+  colonne Montant (sans elle : une ligne de texte) ; le tableau s'arrête à la dernière note, mois vide = message et « Nouvelle note de frais ». Colonnes : catalogue
+  `notesfrais` du bloc 57 (Standard = Date, Affaire, Frais, Quantité, Désignation, N° pièce, Statut, Facturable, Rembours., Montant ; + n° et désignation de
+  l'affaire, ouvrage, phase, phase partielle, genre, groupe, unité, prix unitaire, TVA, monnaie, facturé, facturé le, ristourné) — remplace « Colonnes
+  supplémentaires » du moteur (`NF.plus` plus lu). Mêmes actions et mêmes règles que le moteur (editCost ; duplication, suppression refusée si approuvée ou
+  facturée, statut, ristourné ; aucun droit ajouté ni retiré) ; gestes : clic, Cmd / Maj-clic, double-clic = modifier, clic droit = actions, ↑ ↓, Entrée, Suppr,
+  Cmd-A, Échap. Fonctions ▾ : ristourné, annuler, copier, CSV (`sgtabCsv`), Rapport mensuel (Archives). Imprimer = `sgtabImprimer` (page de garde : collaborateur,
+  mois, notes, présentation). Copie d'avant : `subgestion3/_backup_20261125_1450_avant_notes_de_frais_epuree/`.
   **Chapitre « Archives » (24.10.2026, Paulo : « créer un menu archive, laisse-le vide pour le moment »)** : domaine `archives` en bas du menu (après
   Configuration), icône `archive` (ajoutée à `NXI`), `vide:1` = affiché à l'administrateur même sans module (`sgSide`) ; vue d'ensemble « Aucun module
   pour le moment » ; masqué aux autres profils (aucun écran permis). Pas encore dans les domaines protégés par code (à décider quand il aura des
@@ -865,7 +942,7 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   l'Annuaire et son infobulle) ; les autres « toutes les adresses » (CFC / propriétés d'un contact, choix des participants, navigateur du moteur) gardés.
   **Configuration allégée, tout le reste dans Archives (même soir, demandes de Paulo « déplacer dans archives »)** : Configuration = Données &
   sauvegarde, Visuel de l'app, Sauvegarde Facturation, Réunir les registres. Archives = Suivi & écarts, Registre, Controlling (ex-« Archives ·
-  Controlling »), sous-menu Heures (Rapports de temps, Disponibilités, Notes de frais, Rapport des notes de frais — `dom:'temps'` : collaborateurs
+  Controlling »), sous-menu Heures (Rapports de temps, Disponibilités, Notes de frais — dans le chapitre Notes de frais depuis le 25.11.2026 —, Rapport des notes de frais — `dom:'temps'` : collaborateurs
   toujours servis, le chapitre Archives leur est donc visible), puis les registres F de Facturation (Carnet des PV, Feuille d'heures, Rapport
   d'heures, Devis, Contrôle du coût, Projets, Collaborateurs, Heures, Import Deltaproject, Analyse globale ; `dom:'reglages'` : droit
   « Configuration » et code d'accès inchangés ; préfixe « Archives · » retiré des libellés). Copies d'avant :

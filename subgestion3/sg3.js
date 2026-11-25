@@ -88,11 +88,18 @@ const SG_DOM=[
        profil collaborateur (SG_VUE_DROIT, sg3_plus.js) ; les quatre anciennes entrées d'Administration (adm-ctl-*, adm-ana-*) y renvoient */
     /* les quatre modules retirés du menu de gauche le 24.11.2026 (demande de Paulo) : hide (écrans, droits et fil d'Ariane gardés), on y va par les tuiles de
        l'Analyse des heures, qui reste surlignée dans le menu (parent) */
-    {v:'nx-ah',t:'Analyse des heures',ico:'analyse',d:'Heures et frais des affaires : chiffres de la période, affaires actives et accès aux quatre modules.'},
+    {v:'nx-ah',t:'Analyse des heures',ico:'analyse',d:'Heures des affaires : chiffres de la période, affaires actives et accès aux deux modules.'},
     {v:'nx-ah-ctlh',hide:1,parent:'nx-ah',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
     {v:'nx-ah-anah',hide:1,parent:'nx-ah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
-    {v:'nx-ah-ctlf',hide:1,parent:'nx-ah',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, par mois ou par année.'},
-    {v:'nx-ah-anaf',hide:1,parent:'nx-ah',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
+    /* Contrôle des frais et Critères d'analyse des frais : chapitre Notes de frais (25.11.2026) */]},
+  /* chapitre « Notes de frais » (25.11.2026, Paulo : « avec le même principe, créer un menu note de frais » ; choix : saisie + Analyse des frais, les frais retirés de
+     l'Analyse des heures) : même principe que Heures — la saisie, puis l'analyse (liste des affaires → page de l'affaire → tuiles, module affiché dessous ;
+     sg3_analyse_heures.js). dom:'temps' : droits, code d'accès et visuel du chapitre Heures (visuel épuré de la saisie des notes de frais, sg3_temps.js) */
+  {k:'ndf',t:'Notes de frais',ico:'receipt',d:'Saisie et contrôle des notes de frais.',items:[
+    {v:'frais',t:'Notes de frais',dom:'temps',ico:'receipt',hero:1,d:'Notes de frais par membre et par projet.'},   /* venu d'Archives ▸ Heures le 25.11.2026 */
+    {v:'nx-af',t:'Analyse des frais',dom:'temps',ico:'analyse',d:'Frais des affaires : chiffres de la période, affaires actives et accès aux deux modules.'},
+    {v:'nx-ah-ctlf',hide:1,parent:'nx-af',dom:'temps',t:'Contrôle des frais',ico:'receipt',d:'Vérifier et approuver les notes de frais d’une affaire, par mois ou par année.'},
+    {v:'nx-ah-anaf',hide:1,parent:'nx-af',dom:'temps',t:'Critères d’analyse des frais',ico:'coins',d:'Analyser les frais d’une affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'}]},
   {k:'projets',t:'Projets',ico:'folder',d:'Les projets du bureau : intervenants, documents, séances, notes, tâches et contrats.',items:[
     {v:'nx-mesprojets',t:'Mes projets',ico:'person',hero:1,d:'La liste de vos projets ; un clic ouvre la page du projet et ses domaines : intervenants, documents, séances, notes, tâches, contrats…'},
     /* grp : sous-menu dépliable « Tâches » (18.10.2026) ; st = libellé court dans le sous-menu */
@@ -218,7 +225,7 @@ const SG_DOM=[
     {v:'h-journal',t:'Journal des heures',grp:'Heures',dom:'temps',ico:'list',d:'Les saisies de la semaine, jour par jour, pour l’information du collaborateur (venu du chapitre Heures le 24.11.2026).'},
     {v:'h-rapport',t:'Rapports de temps',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapports hebdomadaires, mensuels, annuels et vacances.'},
     {v:'h-dispo',t:'Disponibilités',grp:'Heures',dom:'temps',ico:'cal',d:'Disponibilité des membres de l’équipe.'},
-    {v:'frais',t:'Notes de frais',grp:'Heures',dom:'temps',ico:'receipt',d:'Notes de frais par membre et par projet.'},
+    /* « Notes de frais » (frais) : chapitre Notes de frais depuis le 25.11.2026 */
     {v:'frais-rapport',t:'Rapport des notes de frais',grp:'Heures',dom:'temps',ico:'analyse',d:'Rapport des notes de frais.'},
     /* chapitres provisoires « Honoraires (ancien) » et « Facturation (ancien) » (Archives le 24.10.2026, demande de Paulo) : sous-menus ; dom garde
        leurs droits (SG_VUE_DROIT), leur code d'accès (« ancien », « ancienf »), leur bandeau et « Comparer et noter » (sgAncChDe) */
@@ -253,7 +260,7 @@ SG_DOM.forEach(d=>{ SG_D[d.k]=d; if(d.k!=='accueil') NX_VIEW['dom-'+d.k]={d,t:'V
 const nxDomVue=v=>{ const x=NX_VIEW[v]; return x?(x.it&&x.it.dom)||(x.d&&(x.d.k||x.d))||'':''; };
 NX_VIEW['nx-projet']={d:SG_D.projets,t:'Fiche projet',fiche:1}; NX_VIEW['nx-pdom']={d:SG_D.projets,t:'Projet',fiche:1}; NX_VIEW['nx-contact']={d:SG_D.contacts,t:'Fiche contact',fiche:1}; NX_VIEW['nx-collab']={d:SG_D.equipe,t:'Fiche membre',fiche:1};
 const NX_KW={'nx-mesprojets':'mes projets liste affaires','affd-mes':'mes affaires ancien','affd-toutes':'affaires ancien','affd-gestion':'affaires gestion ancien','affd-controlling':'controlling affaires','aff-mes':'affaires','aff-toutes':'affaires','aff-controlling':'controlling','aff-gestion':'affaires gestion','coplan':'eccc','devis':'cfc','soum':'soumissions','coco':'budget',
-  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','nx-ah':'controlling analyse heures frais affaires','nx-ah-ctlh':'controlling contrôle heures affaire approuver','nx-ah-anah':'controlling analyse heures affaire critères rapport','nx-ah-ctlf':'controlling contrôle frais affaire approuver','nx-ah-anaf':'controlling analyse frais affaire critères rapport','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
+  'adr-entites':'adresses entités','h-saisie':'heures','h-journal':'heures journal semaine','nx-ah':'controlling analyse heures affaires','nx-af':'controlling analyse frais notes affaires','nx-ah-ctlh':'controlling contrôle heures affaire approuver','nx-ah-anah':'controlling analyse heures affaire critères rapport','nx-ah-ctlf':'controlling contrôle frais affaire approuver','nx-ah-anaf':'controlling analyse frais affaire critères rapport','h-rapport':'heures','frais':'notes de frais','collab-actuels':'collaborateurs','mg-heures':'heures','mg-collab':'collaborateurs','mg-contrats':'honoraires',
   'mg-factures':'encaissements qr','mg-mo':'maître d’ouvrage','mg-reporting':'reporting','tpl-documents':'modèles','nx-data':'export import base','config':'administrateur paramètres',
   'fx-contrats':'contrats honoraires sia offre','fx-calchono':'nouveau contrat honoraires sia','fx-factures':'factures acomptes','fx-saisie':'nouvelle facture acompte','fx-backup':'export import facturation'};
 
@@ -593,8 +600,12 @@ async function sgFigs(k){ const n=t=>DS.all(t).length, f=(v,t)=>({v,t});
   if(k==='contacts') return [f(DS.all('contactowner').filter(o=>!+o.ISHIDDEN).length,'entités'),f(n('contact'),'adresses'),f(n('contactgroup'),'listes'),f(n('property'),'catégories')];
   if(k==='temps'){ const me=nxMe(), now=new Date(), mon=mondayOf(now), k0=dayKey(mon), mine=me?DS.by('timelog','STAFF_ID',me.ID):[];
     const wk=mine.filter(r=>tlKey(r)>=k0).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0), mo=mine.filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()).reduce((s,r)=>s+(+r.TIMEPERIOD||0),0);
-    const ex=me?DS.by('projectcost','STAFF_ID',me.ID).filter(r=>+r.ISREFUNDABLE&&!+r.ISREFUNDED):[];
-    return [f(nxH(wk)+' h','ma semaine'),f(nxH(mo)+' h','mon mois'),f(ex.length,'dépenses à rembourser'),f(nxCHF(ex.reduce((s,r)=>s+pcAmount(r),0)),'CHF à rembourser')]; }
+    return [f(nxH(wk)+' h','ma semaine'),f(nxH(mo)+' h','mon mois')]; }
+  /* Notes de frais (25.11.2026, Paulo : « ajoute comme pour les heures les tuiles en lien avec frais ») : mes frais du mois et ce qui reste à me rembourser —
+     les deux chiffres des frais quittent la vue d'ensemble Heures */
+  if(k==='ndf'){ const me=nxMe(), now=new Date(), mine=me?DS.by('projectcost','STAFF_ID',me.ID):[], mo=mine.filter(r=>+r.DATEYEAR===now.getFullYear()&&+r.DATEMONTH===now.getMonth());
+    const ex=mine.filter(r=>+r.ISREFUNDABLE&&!+r.ISREFUNDED);
+    return [f(mo.length,mo.length>1?'notes de frais ce mois':'note de frais ce mois'),f(nxCHF(mo.reduce((s,r)=>s+pcAmount(r),0)),'CHF ce mois'),f(ex.length,'dépenses à rembourser'),f(nxCHF(ex.reduce((s,r)=>s+pcAmount(r),0)),'CHF à rembourser')]; }
   if(k==='administration'){ if(typeof sgAdmin==='function'&&!sgAdmin()) return [];   /* chiffres du contrôle des heures : administrateur seulement */
     const now=new Date(), L=DS.all('timelog').filter(r=>+r.TIMEYEAR===now.getFullYear()&&+r.TIMEMONTH===now.getMonth()&&!+r.ISHOLIDAY);
     const c=s=>L.filter(r=>(+r.TIMELOGSTATECODE||0)===s).length;

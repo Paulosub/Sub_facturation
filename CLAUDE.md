@@ -3192,6 +3192,10 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   en capitales grasses entre deux filets noirs, puis « heures · période » (nombre d'inscriptions retiré le même jour) (`forme` 'chap', « (SUITE) » sur ses pages suivantes), ses positions, « Total
   <nom> » en gras à la fin ; plus de total général en fin de document (il est dans le récapitulatif). Case « Grouper par collaborateur » seule dans le volet (plus de
   choix de présentation ni de case « Nouvelle page »). 99TST : 132 pages (récapitulatif page 2). Copie d'avant : `subgestion3/_backup_20261126_avant_variante4/`.
+  **Retouches du 26.11.2026 au soir (annotations de Paulo sur le rapport de 99TST)** : colonne « Activité » du rapport d'heures renommée **« Prestation »**
+  (« remplacer activité par prestation » ; titre de `composer`, contenu inchangé : groupe › activité) — l'écran des critères, la feuille d'heures et le Journal des
+  heures gardent « Activité » ; ligne sous le nom d'un chapitre de collaborateur = **période puis heures** (« inverser » : « Du 05.01.2026 au 03.11.2026 · 344.50 h »,
+  « Du » en capitale en début de ligne), aussi pour le rapport de frais. Copie d'avant : `subgestion3/_backup_20261126_2031_avant_prestation/`.
 
 - **Tableaux : présentation des colonnes, plus de tri par les titres, même visuel (15.11.2026, bloc 57, `subgestion3/sg3_tableaux.js`, concaténé en dernier)** — Paulo,
   sur la Liste des affaires : « produire le même graphisme que le reste et ajouter la possibilité d'imprimer la liste avec le même graphisme », puis « lorsqu'il s'agit

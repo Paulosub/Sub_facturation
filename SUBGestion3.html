@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 26.11.2026 17:50 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 26.11.2026 20:32 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -48381,7 +48381,7 @@ const parCollaborateur=Dc=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/^(dur[
   /* chapitres : un par collaborateur, chacun sur une nouvelle page */
   const rows=[];
   L.forEach((g,i)=>{ const nom=nomDe(g), s=vide(); s[0]='Total '+nom; s[jT]=fmt(g.n);
-    const e={forme:'chap',dy:2,num:String(i+1),nom,sous:[fmt(g.n)+unite,dates(g.d)].filter(Boolean).join(' · ')   /* sans le nombre d'inscriptions (26.11.2026, « supprimer ») */};
+    const e={forme:'chap',dy:2,num:String(i+1),nom,sous:[dates(g.d).replace(/^du /,'Du '),fmt(g.n)+unite].filter(Boolean).join(' · ')   /* sans le nombre d'inscriptions (26.11.2026, « supprimer ») ; période puis heures (même jour, « inverser ») */};
     rows.push(Object.assign({},g.rows[0],{saut:e}),...g.rows.slice(1),{c:s,g:'s'}); });
   /* récapitulatif par collaborateur, avant les chapitres (nombre d'inscriptions — tableau, chiffres, chapitres — et nombre de collaborateurs retirés le 26.11.2026 à la demande ; chiffres : période, heures ou montant) */
   const avant=L.length?[{cols:[{t:'Collaborateur'},{t:'Période'},{t:'Part du total',r:true},{t:lVal,r:true}],
@@ -48413,14 +48413,15 @@ const NUMT=/^(dur[ée]e|heures?|h\.|montant|quantit[ée]|prix|tarif|honoraires|c
 const dates=L=>{ let a=null, b=null; L.forEach(d=>{ if(!d||isNaN(+d)) return; if(!a||d<a) a=d; if(!b||d>b) b=d; }); return a?(+a===+b?dfr(diso(a)):'du '+dfr(diso(a))+' au '+dfr(diso(b))):''; };
 /* ── ctlPrint : « Rapport d'heures », « Rapport de frais » (liste des positions affichées ou choisies). La liste de l'écran a jusqu'à 14 colonnes (17 pour les frais) :
    telle quelle, le commentaire n'aurait que 64 pt et chaque position prendrait cinq lignes (193 pages pour les inscriptions de 99TST). Le document est composé comme
-   une position du devis : une ligne par inscription — date, personne, activité (groupe › activité), ouvrage, phase, phase partielle,
+   une position du devis : une ligne par inscription — date, personne, prestation (groupe › activité ; colonne « Prestation » au lieu de « Activité » le 26.11.2026,
+   à la demande de Paulo : « remplacer activité par prestation »), ouvrage, phase, phase partielle,
    facturable, facturé, durée (sans l'horaire ni le statut, retirés le 26.11.2026 à la demande) — et son commentaire dessous, en gris italique, sur toute la largeur ; frais : date, collaborateur, genre de frais (groupe ›
    genre), n° de pièce, ouvrage, phase, phase partielle, statut, facturable, facturé, remboursable, quantité, unité, montant, monnaie, et la désignation dessous. Mêmes informations
    que la liste ; les colonnes vides sont retirées. Liste d'une autre forme (clés inconnues) : colonnes reprises telles quelles. ── */
 const joint=(a,b)=>a&&b&&a!==b?a+' › '+b:(b||a||'');
 const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=(k,r)=>a(k)?cellule(K.get(k),r):'';
   if(!a('d')||!a(tl?'TIMEPERIOD':'a')) return null;
-  const D=tl?[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('s',r),a('s')],['Activité',r=>joint(v('ag',r),v('a',r)),a('ag')||a('a')],
+  const D=tl?[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('s',r),a('s')],['Prestation',r=>joint(v('ag',r),v('a',r)),a('ag')||a('a')],
       ['Ouvrage',r=>v('o',r),a('o')],['Phase',r=>v('ph',r),a('ph')],['Phase partielle',r=>v('sp',r),a('sp')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Durée',r=>v('TIMEPERIOD',r),true,1]]
     :[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('pe',r),a('pe')],['Genre de frais',r=>joint(v('g',r),v('c',r)),a('g')||a('c')],['N° pièce',r=>v('DOCUMENTNUMBER',r),a('DOCUMENTNUMBER')],['Ouvrage',r=>v('o',r),a('o')],
       ['Phase',r=>v('ph',r),a('ph')],['Phase partielle',r=>v('sp',r),a('sp')],['Statut',r=>v('s',r),a('s')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Remboursable',r=>v('rb',r),a('rb')],

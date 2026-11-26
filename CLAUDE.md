@@ -3220,6 +3220,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   `parCollaborateur`) : pour chaque collaborateur, son nom en titre, une ligne par période (Période, Part du total, Heures), son total ; sans total coché, une ligne
   par collaborateur comme avant ; les chapitres suivent. Aussi pour le rapport de frais (le récapitulatif y existe). Ancien choix « recap » gardé sur un poste = tri
   selon affichage. Copie d'avant : `subgestion3/_backup_20261126_2108_avant_recap_fusion/`.
+  « Totaux par mois » coché : plus de colonne « Période » dans ce tableau (même soir, Paulo : « supprimer la colonne période lorsque totaux par mois est activé ») ;
+  trimestres, semestres ou années seuls : la colonne reste.
   **Largeurs des colonnes des documents des heures (même soir, Paulo, rapport de 24PRC : « mieux répartir les colonnes »)** : quand le tableau tient dans la page, la
   place en trop est RÉPARTIE sur les colonnes au prorata de leur largeur (avant : toute à la colonne de texte au contenu le plus long, d'où un grand vide) ; une colonne
   de texte au contenu très long (« Appel et comparaisons des offres, propositions d'adjudication ») est limitée à deux parts égales de la place des textes (à partir de

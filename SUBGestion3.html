@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 26.11.2026 21:13 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 26.11.2026 21:16 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -48445,9 +48445,9 @@ const parCollaborateur=(Dc,tri,per)=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(
     PER.forEach(([,kf,lf])=>{ const M=new Map(); g.pos.forEach(x=>{ if(!x.d) return; const [y,i]=kf(x.d), k=y*100+i; if(!M.has(k)) M.set(k,{y,i,n:0,d:[]}); const m=M.get(k); m.n+=x.n; m.d.push(x.d); });
       [...M.keys()].sort((a,b)=>a-b).forEach(k=>{ const m=M.get(k); out.push({c:[lf(m.y,m.i),court(dates(m.d)),pct(m.n),fmt(m.n)],g:'1'}); }); });
     out.push({c:['Total '+nomDe(g),court(dates(g.d)),pct(g.n),fmt(g.n)],g:'s'}); return out; });
-  /* « Totaux par mois » coché : plus de colonne « Période » (chaque ligne nomme déjà son mois ; 26.11.2026, Paulo : « supprimer la colonne période lorsque totaux par
-     mois est activé ») ; trimestres, semestres ou années seuls : la colonne reste */
-  const sansPer=!!(per&&per.m), colR=c=>sansPer?c.filter((_,i)=>i!==1):c;
+  /* un total par période coché (mois, trimestre, semestre ou année) : plus de colonne « Période », chaque ligne nomme déjà sa période (26.11.2026, Paulo : « supprimer
+     la colonne période lorsque totaux par mois est activé », puis « … par semestre … et totaux par année ») ; récapitulatif simple : la colonne reste */
+  const sansPer=PER.length>0, colR=c=>sansPer?c.filter((_,i)=>i!==1):c;
   const avant=L.length?[{cols:colR([{t:'Collaborateur'},{t:'Période'},{t:'Part du total',r:true},{t:lVal,r:true}]),
     rows:lignesRecap.concat([{c:['Total','','100.0 %',fmt(tot)],g:'t'}]).map(r=>Object.assign({},r,{c:colR(r.c)}))}]:[];
   if(avant.length) avant[0].rows[0].saut={forme:'fiche',dy:3,nom:'Récapitulatif par collaborateur',nc:3,chif:[['Période',court(perAll)],[lVal,fmt(tot)+unite]]};

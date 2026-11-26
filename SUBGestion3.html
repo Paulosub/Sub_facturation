@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 26.11.2026 20:39 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 26.11.2026 20:47 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -47664,6 +47664,9 @@ const DIM={st:{t:'Collaborateur',k:r=>String(r.STAFF_ID==null?'':r.STAFF_ID),l:k
   pr:{t:'Affaire',k:r=>String(r.PROJECT_ID==null?'':r.PROJECT_ID),l:k=>{ const p=k===''?null:Pj(isNaN(+k)?k:+k); return p?[p.NUMBER,p.TITLE].filter(Boolean).join(' '):'(sans affaire)'; },lab:1},
   cg:{t:'Groupe de frais',k:r=>cgL(r.COSTCATEGORYGROUP_ID),l:k=>k||'(sans groupe)'}, cat:{t:'Genre de frais',k:r=>ccL(r.COSTCATEGORY_ID),l:k=>k||'(sans genre)'},
   mois:{t:'Mois',k:(r,tl)=>String(tl?r.TIMEYEAR*100+r.TIMEMONTH:(+r.DATEYEAR)*100+(+r.DATEMONTH)),l:k=>MOISL[(+k)%100]+' '+Math.floor((+k)/100),desc:1,num:1}};
+/* prestation d'une inscription : Projet, Images 3D ou Maquette, la règle de la liste « Prestations » ; colonne « Prestation » du tableau des inscriptions et des
+   documents au lieu de « Activité » (26.11.2026, Paulo : « remplacer par prestation ») — l'activité elle-même reste dans Présentation ▸ Personnalisé */
+const prestaL=r=>PRESTA[DIM.pre.k(r)]||'Projet';
 /* deux rangées : l'affaire (ouvrage, phases…), puis toujours dessous, à partir d'Ouvrage, période, collaborateur, statuts et affichage (26.11.2026, Paulo : « toujours en dessous de ouvrage ») */
 /* liste « Afficher » retirée (même jour, Paulo : « supprimer tri ») : le tableau est toujours le détail des positions ; les regroupements restent dans Rapports ▸ Grouper */
 /* Facturé sous Facturable, dans la même colonne (même jour, Paulo : « déplacer ») */
@@ -47687,7 +47690,7 @@ const filtreMoteur=dom=>{ const Pr=periode(), F={dOn:!!(Pr.a||Pr.b),dMode:ST.per
 const ON=v=>v?'Oui':'Non';
 const COLS={h:()=>[{k:'d',t:'Date',f:r=>dfr(diso(tlDate(r)))},{k:'h1',t:'Début',f:r=>hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)},{k:'h2',t:'Fin',f:r=>{ const e=tlT2(r); return hm(Math.floor(e/60),e%60); }},{k:'TIMEPERIOD',t:'Durée',f:r=>hrs(r.TIMEPERIOD)},
     {k:'st',t:'Statut',f:r=>TSTATE[r.TIMELOGSTATECODE||0]},{k:'fa',t:'Facturable',f:r=>ON(r.ISCHARGEABLE)},{k:'fd',t:'Facturé',f:r=>ON(r.ISCHARGED)},{k:'s',t:'Personne',f:r=>esc(sN(r.STAFF_ID))},
-    {k:'ag',t:'Groupe d’activités',f:r=>esc(agL(r.ACTIVITYGROUP_ID))},{k:'a',t:'Activité',f:r=>esc(acL(r.ACTIVITY_ID))},{k:'o',t:'Ouvrage',f:r=>esc((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE||'')},
+    {k:'ag',t:'Groupe d’activités',f:r=>esc(agL(r.ACTIVITYGROUP_ID))},{k:'a',t:'Prestation',f:r=>esc(prestaL(r))},{k:'o',t:'Ouvrage',f:r=>esc((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE||'')},
     {k:'ph',t:'Phase',f:r=>esc(lb('projectphase',r.PHASE_ID,nm))},{k:'sp',t:'Phase partielle',f:r=>esc(lb('projectsubphase',r.SUBPHASE_ID,nm))},{k:'DESCRIPTION',t:'Commentaire'}],
   f:()=>[...COSTCOLS.map(c=>c.k==='fa'?{...c,f:r=>ON(r.ISCHARGEABLE)}:c.k==='fd'?{...c,f:r=>ON(r.ISCHARGED)}:c),{k:'rb',t:'Remboursable',f:r=>ON(r.ISREFUNDABLE)},{k:'pe',t:'Collaborateur',f:r=>esc(sN(r.STAFF_ID))},{k:'o',t:'Ouvrage',f:r=>esc((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE||'')},
     {k:'ph',t:'Phase',f:r=>esc(lb('projectphase',r.PHASE_ID,nm))},{k:'sp',t:'Phase partielle',f:r=>esc(lb('projectsubphase',r.SUBPHASE_ID,nm))}]};
@@ -47723,7 +47726,7 @@ const catAh=()=>{ if(SGTAB.def.ahh) return; const ouiT=v=>v?'Oui':'Non';
     coll:{t:'Collaborateur',cat:'Inscription',nw:1,v:r=>sN(r.STAFF_ID),sum:L=>num(L.length,0)+' inscription'+(L.length>1?'s':'')},
     ini:{t:'Initiales',cat:'Inscription',nw:1,v:r=>sI(r.STAFF_ID)},
     duree:{t:'Durée',l:'Durée (heures)',cat:'Inscription',r:1,nw:1,f:r=>'<b>'+Hh(hh(r))+'</b> h',v:r=>Hh(hh(r))+' h',sum:L=>Hh(L.reduce((t,r)=>t+hh(r),0))+' h'},
-    grp:{t:'Groupe d’activité',cat:'Activité',v:r=>agL(r.ACTIVITYGROUP_ID)},act:{t:'Activité',cat:'Activité',v:r=>acL(r.ACTIVITY_ID)},
+    grp:{t:'Groupe d’activité',cat:'Activité',v:r=>agL(r.ACTIVITYGROUP_ID)},act:{t:'Prestation',l:'Prestation (Projet, Images 3D, Maquette)',cat:'Activité',v:r=>prestaL(r)},activ:{t:'Activité',cat:'Activité',v:r=>acL(r.ACTIVITY_ID)},
     phase:{t:'Phase ou phase partielle',l:'Phase partielle, sinon phase',cat:'Phase',v:r=>spL(r.SUBPHASE_ID)||phL(r.PHASE_ID)},
     phaseg:{t:'Phase',l:'Phase (principale)',cat:'Phase',v:r=>phL(r.PHASE_ID)},sphase:{t:'Phase partielle',cat:'Phase',v:r=>spL(r.SUBPHASE_ID)},
     ouv:{t:'Ouvrage',cat:'Phase',v:r=>suL(r.SUBPROJECT_ID)},
@@ -48120,7 +48123,7 @@ const embEntree=(k,em)=>{ const L=colL(em); if(!L.some(o=>String(o.p.ID)===Strin
   return '<div class="sgah-emb" id="sgah-emb"><div class="sgah-2c">'+colAff(em,true)+'<div class="sgah-m">'+(Pj(ST.pid)?CORPS[em](true):'<div class="sgah-vide">Choisissez une affaire dans la liste.</div>')+'</div></div></div>'; };
 /* ── page de l'affaire (nx-ah / nx-af, arg = identifiant de l'affaire) : bandeau, chiffres de la période, les deux modules en tuiles, le module choisi affiché dessous ── */
 const MOD_T={ctlh:['Contrôle des heures d’affaires','La semaine de l’affaire, collaborateur par collaborateur : approuver, refuser, réinitialiser les inscriptions.','check'],
-  anah:['Critères d’analyse des heures','Les heures de l’affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','filter'],
+  anah:['Critères d’analyse des heures','Les heures de l’affaire par ouvrage, prestation, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','filter'],
   ctlf:['Contrôle des frais','Les notes de frais de l’affaire, par mois ou par année : approuver, refuser, réinitialiser.','receipt'],
   anaf:['Critères d’analyse des frais','Les frais de l’affaire par genre de frais, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.','coins']};
 const tuile=(mod,ft,id)=>{ const t=MOD_T[mod], on=ST.amod===mod; return '<div class="sg-tile'+(on?' on':'')+'" data-fn="amod" data-k="'+mod+'" aria-expanded="'+on+'" title="'+(on?'Refermer':'Afficher')+' « '+E(t[0])+' » sous les tuiles"><div class="ti">'+nxSvg(t[2])+'<h3>'+E(t[0])+'</h3></div><p>'+E(t[1])+'</p><div class="ft">'+ft+nxSvg('arrow','go')+'</div></div>'; };
@@ -48252,7 +48255,7 @@ const vue=mod0=>({ render(m,arg){ css(); CUR.m=m; let mod=mod0;
 VIEWS[VE]=vue('entree'); VIEWS[VF]=vue('fentree'); VIEWS[VC]=vue('centree'); Object.keys(VM).forEach(k=>{ VIEWS[VM[k]]=vue(k); });
 /* les quatre anciennes entrées d'Administration (session, historique, liens) mènent aux modules */
 { const g0=go; go=function(v,arg){ if(REDIR[v]){ v=REDIR[v]; arg=undefined; } return g0.call(this,v,arg); }; }
-window.SGAH={ST,CUR,CTX,VE,VF,VC,VM,REDIR,IDS,etat,approuverLot,filtrer,grouper,statsAff,periode,perim,peutVoir,ecrit,bloquee,grille,choisir,redess,colL};
+window.SGAH={ST,CUR,CTX,VE,VF,VC,VM,REDIR,IDS,etat,approuverLot,filtrer,grouper,statsAff,periode,perim,peutVoir,ecrit,bloquee,grille,choisir,redess,colL,presta:prestaL};
 })();
 
 /* ═══ 56. Documents des heures et des frais au graphisme des documents du devis général et du contrôle des coûts (15.11.2026) ═══
@@ -48414,15 +48417,15 @@ const dates=L=>{ let a=null, b=null; L.forEach(d=>{ if(!d||isNaN(+d)) return; if
 /* ── ctlPrint : « Rapport d'heures », « Rapport de frais » (liste des positions affichées ou choisies). La liste de l'écran a jusqu'à 14 colonnes (17 pour les frais) :
    telle quelle, le commentaire n'aurait que 64 pt et chaque position prendrait cinq lignes (193 pages pour les inscriptions de 99TST). Le document est composé comme
    une position du devis : une ligne par inscription — date, personne, prestation (colonne « Prestation » au lieu de « Activité » le 26.11.2026, à la demande de
-   Paulo : « remplacer activité par prestation », puis « elle est censée montrer projet, maquette, image 3D » : l'ACTIVITÉ SEULE — Projet, Maquette, Image de
-   synthèse, DT, Expertise… —, sans son groupe, « Affaire » pour les deux tiers des heures du bureau ; le groupe seulement s'il n'y a pas d'activité), ouvrage, phase, phase partielle,
+   Paulo : « remplacer activité par prestation », puis « elle est censée montrer projet, maquette, image 3D ») : PROJET, IMAGES 3D ou MAQUETTE, la règle de la liste
+   « Prestations » de l'Analyse des heures (SGAH.presta, d'après l'activité ; toute autre activité = Projet), ouvrage, phase, phase partielle,
    facturable, facturé, durée (sans l'horaire ni le statut, retirés le 26.11.2026 à la demande) — et son commentaire dessous, en gris italique, sur toute la largeur ; frais : date, collaborateur, genre de frais (groupe ›
    genre), n° de pièce, ouvrage, phase, phase partielle, statut, facturable, facturé, remboursable, quantité, unité, montant, monnaie, et la désignation dessous. Mêmes informations
    que la liste ; les colonnes vides sont retirées. Liste d'une autre forme (clés inconnues) : colonnes reprises telles quelles. ── */
 const joint=(a,b)=>a&&b&&a!==b?a+' › '+b:(b||a||'');
 const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=(k,r)=>a(k)?cellule(K.get(k),r):'';
   if(!a('d')||!a(tl?'TIMEPERIOD':'a')) return null;
-  const D=tl?[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('s',r),a('s')],['Prestation',r=>v('a',r)||v('ag',r),a('a')||a('ag')],
+  const D=tl?[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('s',r),a('s')],['Prestation',r=>typeof SGAH!=='undefined'&&SGAH.presta?SGAH.presta(r):(v('a',r)||v('ag',r)),a('a')||a('ag')],
       ['Ouvrage',r=>v('o',r),a('o')],['Phase',r=>v('ph',r),a('ph')],['Phase partielle',r=>v('sp',r),a('sp')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Durée',r=>v('TIMEPERIOD',r),true,1]]
     :[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('pe',r),a('pe')],['Genre de frais',r=>joint(v('g',r),v('c',r)),a('g')||a('c')],['N° pièce',r=>v('DOCUMENTNUMBER',r),a('DOCUMENTNUMBER')],['Ouvrage',r=>v('o',r),a('o')],
       ['Phase',r=>v('ph',r),a('ph')],['Phase partielle',r=>v('sp',r),a('sp')],['Statut',r=>v('s',r),a('s')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Remboursable',r=>v('rb',r),a('rb')],

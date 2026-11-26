@@ -157,15 +157,15 @@ const dates=L=>{ let a=null, b=null; L.forEach(d=>{ if(!d||isNaN(+d)) return; if
 /* ── ctlPrint : « Rapport d'heures », « Rapport de frais » (liste des positions affichées ou choisies). La liste de l'écran a jusqu'à 14 colonnes (17 pour les frais) :
    telle quelle, le commentaire n'aurait que 64 pt et chaque position prendrait cinq lignes (193 pages pour les inscriptions de 99TST). Le document est composé comme
    une position du devis : une ligne par inscription — date, personne, prestation (colonne « Prestation » au lieu de « Activité » le 26.11.2026, à la demande de
-   Paulo : « remplacer activité par prestation », puis « elle est censée montrer projet, maquette, image 3D » : l'ACTIVITÉ SEULE — Projet, Maquette, Image de
-   synthèse, DT, Expertise… —, sans son groupe, « Affaire » pour les deux tiers des heures du bureau ; le groupe seulement s'il n'y a pas d'activité), ouvrage, phase, phase partielle,
+   Paulo : « remplacer activité par prestation », puis « elle est censée montrer projet, maquette, image 3D ») : PROJET, IMAGES 3D ou MAQUETTE, la règle de la liste
+   « Prestations » de l'Analyse des heures (SGAH.presta, d'après l'activité ; toute autre activité = Projet), ouvrage, phase, phase partielle,
    facturable, facturé, durée (sans l'horaire ni le statut, retirés le 26.11.2026 à la demande) — et son commentaire dessous, en gris italique, sur toute la largeur ; frais : date, collaborateur, genre de frais (groupe ›
    genre), n° de pièce, ouvrage, phase, phase partielle, statut, facturable, facturé, remboursable, quantité, unité, montant, monnaie, et la désignation dessous. Mêmes informations
    que la liste ; les colonnes vides sont retirées. Liste d'une autre forme (clés inconnues) : colonnes reprises telles quelles. ── */
 const joint=(a,b)=>a&&b&&a!==b?a+' › '+b:(b||a||'');
 const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=(k,r)=>a(k)?cellule(K.get(k),r):'';
   if(!a('d')||!a(tl?'TIMEPERIOD':'a')) return null;
-  const D=tl?[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('s',r),a('s')],['Prestation',r=>v('a',r)||v('ag',r),a('a')||a('ag')],
+  const D=tl?[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('s',r),a('s')],['Prestation',r=>typeof SGAH!=='undefined'&&SGAH.presta?SGAH.presta(r):(v('a',r)||v('ag',r)),a('a')||a('ag')],
       ['Ouvrage',r=>v('o',r),a('o')],['Phase',r=>v('ph',r),a('ph')],['Phase partielle',r=>v('sp',r),a('sp')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Durée',r=>v('TIMEPERIOD',r),true,1]]
     :[['Date',r=>v('d',r),a('d')],['Collaborateur',r=>v('pe',r),a('pe')],['Genre de frais',r=>joint(v('g',r),v('c',r)),a('g')||a('c')],['N° pièce',r=>v('DOCUMENTNUMBER',r),a('DOCUMENTNUMBER')],['Ouvrage',r=>v('o',r),a('o')],
       ['Phase',r=>v('ph',r),a('ph')],['Phase partielle',r=>v('sp',r),a('sp')],['Statut',r=>v('s',r),a('s')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Remboursable',r=>v('rb',r),a('rb')],

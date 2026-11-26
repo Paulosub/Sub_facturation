@@ -2859,6 +2859,13 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   pilotant ses propres formulaires dans le cadre (`hht`, `httc` calculés par l'app). Rejouable : registre `sg_meta/affaire_travail` (`AT.purger`). `banc/banc.py` = essai dans Chrome sans fenêtre, sur une copie. Pendant la génération, `setTimeout(0)` passe
   par une file de messages (`A.sansFrein`) : sinon, panneau masqué, pdf-lib attend à chaque enregistrement (296 s → 56 s). `construire_et_previsualiser.sh` réassemble le générateur dans l'aperçu ; régénération : skill de vérification, § 3 ter.
   `ECARTS_APP.md` = 27 écarts de l'app relevés avec l'affaire, **non corrigés**, à présenter à Paulo.
+  **Activités comme les affaires du bureau (26.11.2026, Paulo : « Oui, régénérer » 99TST avec les prestations du bureau)** : relevé sur la base reprise, 106 affaires
+  sur 108 n'ont que le groupe d'activités « Affaire » (Projet, Image de synthèse, Maquette ; parfois Secrétariat ; DT depuis 2025), budget sur « Projet » seulement ;
+  99TST a désormais ce seul groupe : Projet (budget = celui des phases), Secrétariat, Image de synthèse, Maquette, DT ; plus de projectactivity_staff. Les activités
+  détaillées du dossier standard (« Séance › avec l'entreprise »…) ne sont plus créées : elles restent des catégories pour le choix des commentaires (`ctx.act`), et
+  chaque inscription reçoit l'activité de l'affaire par `ctx.prestationDe` (m20) : Maquette, Image de synthèse, Secrétariat d'après la catégorie ; DT en 52–53 pour la
+  directrice des travaux et le travail de chantier ; sinon Projet. Maquette et images de synthèse ajoutées en 31, 32, 33 (textes dans m60). Résultat au banc : Projet
+  ≈ 2'770 h, DT ≈ 1'060 h, Maquette ≈ 50 h, Image de synthèse ≈ 40 h, Secrétariat ≈ 15 h ; prestations : Projet ≈ 3'840 h, Maquette, Images 3D ; 0 écart.
 - Aperçu de travail `/tmp/subgestion_dev` (port 7802, config `subgestion-dev`, 05.11.2026) : base et origine distinctes de l'aperçu de Paulo, pour tester sans déranger son onglet.
 - **Dossier de l'aperçu `/tmp/subgestion_apercu` (port 7797) nettoyé le 24.10.2026 (demande de Paulo)** : seulement `SUBGestion3.html`, `affaire_travail.js` (05.11.2026, générateur de 99TST) et
   `base_test.json.gz` ; les maquettes (`proposition_*.html`, copies complètes de l'app) et l'ancienne copie NAS supprimées, leurs scripts gardés dans
@@ -3193,10 +3200,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   <nom> » en gras à la fin ; plus de total général en fin de document (il est dans le récapitulatif). Case « Grouper par collaborateur » seule dans le volet (plus de
   choix de présentation ni de case « Nouvelle page »). 99TST : 132 pages (récapitulatif page 2). Copie d'avant : `subgestion3/_backup_20261126_avant_variante4/`.
   **Retouches du 26.11.2026 au soir (annotations de Paulo sur le rapport de 99TST)** : colonne « Activité » du rapport d'heures renommée **« Prestation »**
-  (« remplacer activité par prestation », puis « elle est censée montrer projet, maquette, image 3D ») : la colonne montre l'ACTIVITÉ SEULE (`composer` : Projet,
-  Maquette, Image de synthèse, DT, Expertise… — dans les saisies du bureau, ces activités sont dans le groupe « Affaire », deux tiers des heures —, le groupe seulement
-  sans activité ; avant : « groupe › activité ») ; 99TST, générée avec des activités détaillées (« Séance › avec l'entreprise »…) que le bureau n'utilise pas, n'est
-  pas représentative ici — l'écran des critères, la feuille d'heures et le Journal des heures gardent « Activité » ; ligne sous le nom d'un chapitre de collaborateur = **période puis heures** (« inverser » : « Du 05.01.2026 au 03.11.2026 · 344.50 h »,
+  (« remplacer activité par prestation », puis « elle est censée montrer projet, maquette, image 3D ») : la colonne montre la PRESTATION, Projet, Images 3D ou
+  Maquette, selon la règle de la liste « Prestations » des critères (`SGAH.presta` = `prestaL` de sg3_analyse_heures.js, d'après l'activité ; toute autre activité,
+  DT et Secrétariat compris, = Projet ; avant : « groupe › activité ») ; même colonne, même titre, dans le tableau des inscriptions de l'Analyse des heures
+  (« remplacer par prestation » : catalogue `ahh` clé `act`, et `COLS.h` des documents, copie et CSV ; l'activité elle-même reste à choisir dans Présentation ▸
+  Personnalisé, clé `activ`) ; la feuille d'heures et le Journal des heures gardent « Activité » ; ligne sous le nom d'un chapitre de collaborateur = **période puis heures** (« inverser » : « Du 05.01.2026 au 03.11.2026 · 344.50 h »,
   « Du » en capitale en début de ligne), aussi pour le rapport de frais. Copie d'avant : `subgestion3/_backup_20261126_2031_avant_prestation/`.
 
 - **Tableaux : présentation des colonnes, plus de tri par les titres, même visuel (15.11.2026, bloc 57, `subgestion3/sg3_tableaux.js`, concaténé en dernier)** — Paulo,

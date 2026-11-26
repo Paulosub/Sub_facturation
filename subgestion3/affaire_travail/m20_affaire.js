@@ -2,7 +2,8 @@
    Crée le dossier complet de l'affaire, sur le dossier standard du bureau, d'après AT.REF :
    - project (état 2, tous les champs utiles), genres d'affaire, adresse d'affaire (seconde adresse du maître de l'ouvrage, CONTACT1_ID), affectations ;
    - phases et phases partielles du standard, budgets de REF.phases aux DEUX niveaux (heures, honoraires, frais) + phase 2 Faisabilité ; 31 et 32 verrouillées ;
-   - 5 niveaux de tarif, 7 groupes d'activités et leurs 32 activités avec budgets (§ 3.3 T3 de la checklist : Σ groupes = Σ phases), projectactivity_staff ;
+   - 5 niveaux de tarif ; activités comme les affaires du bureau (26.11.2026) : un seul groupe « Affaire » — Projet, Secrétariat, Image de synthèse, Maquette (dossier
+     standard) et DT —, budget sur le groupe et sur « Projet » (§ 3.3 T3 de la checklist : Σ groupes = Σ phases) ; plus de projectactivity_staff ;
    - genres de frais du standard avec prévisions ;
    - intervenants : équipe rôle 12 (dont le compte courant), MO rôle 8 et représentante 51, architecte 1, responsable 6, DT 2, ingénieur civil 3,
      spécialistes 10, adjudicataires rôle 19 avec CFC, autorité 14.
@@ -10,10 +11,11 @@
    Ajoute à ctx :
    ctx.pid         ID de l'affaire ; ctx.adrAffaire = contact.ID de l'adresse d'affaire
    ctx.phases[n]   projectphase.ID, n = 0…8 (usage : 2, 3, 4, 5) ; ctx.sub[n] projectsubphase.ID, n = 11…62 (usage : 31…53) ; ctx.phaseDeSub[n] = phase de la sous-phase n
-   ctx.act['<Groupe>/<Activité>']  {id, gid, groupe, nom}  (projectactivity.ID, projectactivitygroup.ID) ; libellés standard corrigés de leurs fautes,
-                   les graphies d'origine et l'apostrophe ’ marchent aussi comme clés ; ctx.activites = la liste sans doublon
-   ctx.actPhase[n] activités d'usage pour la phase 2 ou 31…53 : [{cle, id, gid, poids}] (Σ poids = 1), à suivre pour répartir les heures
-   ctx.actOk(cleStaff, cleActivité)  vrai si l'activité est proposée à ce collaborateur (règle de la feuille d'heures, projectactivity_staff)
+   ctx.act['<Groupe>/<Activité>']  {groupe, nom, cle} : CATÉGORIES de textes du module 60 = activités détaillées du dossier standard (« Séance/avec l'entreprise »…),
+                   plus créées dans l'affaire ; libellés corrigés de leurs fautes, graphies d'origine et apostrophe ’ aussi comme clés ; ctx.activites = la liste
+   ctx.actPhase[n] catégories d'usage pour la phase 2 ou 31…53 : [{cle, poids}] (Σ poids = 1), à suivre pour répartir les heures
+   ctx.actOk(cleStaff, cleActivité)  vrai si la catégorie convient à ce collaborateur (règle de la feuille d'heures d'après ATTRIB, gardée en mémoire)
+   ctx.prest[nom]  {id, gid, nom} : activités de l'affaire (groupe « Affaire ») ; ctx.prestationDe(cle, n, cleStaff) = celle d'une inscription
    ctx.tarif       {taux:REF.tarifHoraire, defaut:<groupe Architecte>, groupes:{'<niveau>':{id, rate}}}
    ctx.frais['<Groupe>/<Genre>']   {id, gid, unit, prix}  (projectcostcategory.ID, projectcostcategorygroup.ID)
    ctx.intervenants[role]  tableau des projectmember.ID, role = TEAMROLECODE */
@@ -28,26 +30,18 @@ const fr=iso=>iso?iso.split('-').reverse().join('.'):null;
 /* fautes du dossier standard, corrigées dans l'affaire seulement */
 const CORR={'avec les madataires spécialisés':'avec les mandataires spécialisés',"avec le mâitre de l'ouvrage":"avec le maître de l'ouvrage",'avec les autoritéss':'avec les autorités'};
 const MO="avec le maître de l'ouvrage", MAND='avec les mandataires spécialisés', AUT='avec les autorités', ENT="avec l'entreprise";
-/* part du budget total par groupe (checklist § 3.3) et poids des activités dans le groupe */
-const GROUPES={
-  'Projet':{pct:25,a:{'Direction générale':30,'Demande de permis de construire':15,'Traitement des oppositions':10,'Planification des délais':15,'Documentation':30}},
-  'Planification':{pct:15,a:{'Projet':45,"Préparation de l'exécution":40,'Travail de création':15}},
-  'Exécution':{pct:45,a:{"Dossier d'appel d'offres":18,"Envoi d'appels d'offres":3,'Comparaison des offres':8,"Négociation d'adjudication":4,"Contrat d'entreprise":5,'Saisie des métrés':12,'Contrôle du coût':30,'Comptabilisation des paiements':10,'Planification des délais':10}},
-  'Séance':{pct:8,a:{[MO]:30,[AUT]:5,[MAND]:25,[ENT]:40}},
-  'Entretien':{pct:2,a:{[MO]:40,[AUT]:15,[MAND]:20,[ENT]:25}},
-  'Secrétariat':{pct:3,a:{'Travaux de secrétariat':70,'Envoi':20,'Achats':10}},
-  'Affaire':{pct:2,a:{'Projet':60,'Secrétariat':20,'Image de synthèse':10,'Maquette':10}}};
-/* activités d'usage par phase (rapport 2 § 12) */
+/* catégories d'usage par phase (rapport 2 § 12) ; maquette et images de synthèse en avant-projet, projet et enquête (26.11.2026 : prestations du bureau) */
 const ACT_PHASE={
   2:[['Planification/Travail de création',.5],['Affaire/Projet',.3],['Séance/'+MO,.2]],
-  31:[['Planification/Projet',.45],['Planification/Travail de création',.25],['Affaire/Projet',.15],['Séance/'+MO,.1],['Entretien/'+MAND,.05]],
-  32:[['Planification/Projet',.45],['Projet/Direction générale',.15],['Affaire/Projet',.15],['Séance/'+MAND,.15],['Séance/'+MO,.1]],
-  33:[['Projet/Demande de permis de construire',.65],['Projet/Traitement des oppositions',.25],['Entretien/'+AUT,.1]],
+  31:[['Planification/Projet',.37],['Planification/Travail de création',.25],['Affaire/Projet',.15],['Séance/'+MO,.1],['Entretien/'+MAND,.05],['Affaire/Maquette',.05],['Affaire/Image de synthèse',.03]],
+  32:[['Planification/Projet',.37],['Projet/Direction générale',.15],['Affaire/Projet',.15],['Séance/'+MAND,.15],['Séance/'+MO,.1],['Affaire/Maquette',.04],['Affaire/Image de synthèse',.04]],
+  33:[['Projet/Demande de permis de construire',.62],['Projet/Traitement des oppositions',.25],['Entretien/'+AUT,.1],['Affaire/Image de synthèse',.03]],
   41:[["Exécution/Dossier d'appel d'offres",.45],["Exécution/Envoi d'appels d'offres",.05],['Exécution/Comparaison des offres',.25],["Exécution/Négociation d'adjudication",.1],["Exécution/Contrat d'entreprise",.15]],
   51:[["Planification/Préparation de l'exécution",.65],['Exécution/Planification des délais',.1],['Exécution/Saisie des métrés',.1],['Séance/'+MAND,.15]],
   52:[['Séance/'+ENT,.25],['Exécution/Contrôle du coût',.25],['Exécution/Comptabilisation des paiements',.15],['Projet/Direction générale',.15],['Exécution/Saisie des métrés',.1],['Exécution/Planification des délais',.1]],
   53:[['Projet/Documentation',.4],['Exécution/Comptabilisation des paiements',.35],['Exécution/Contrôle du coût',.15],['Séance/'+MO,.1]]};
-/* activités attribuées (coché dans un groupe = ne voit que celles-là dans ce groupe) : l'apprenti et la dessinatrice n'ont ni négociation ni paiements */
+/* catégories permises (coché dans un groupe = ne voit que celles-là dans ce groupe) : l'apprenti et la dessinatrice n'ont ni négociation ni paiements ; règle gardée
+   pour le choix des textes, plus écrite dans projectactivity_staff (26.11.2026) */
 const ATTRIB={
   appr:['Planification/Projet',"Planification/Préparation de l'exécution",'Exécution/Saisie des métrés'],
   dess:['Planification/Projet',"Planification/Préparation de l'exécution",'Planification/Travail de création',"Exécution/Dossier d'appel d'offres",'Exécution/Saisie des métrés','Projet/Demande de permis de construire','Projet/Documentation']};
@@ -93,18 +87,32 @@ A.mod(20,'affaire','Affaire 99TST',async ctx=>{
   TARIFS.forEach((nom,i)=>{ const r=cleOk(stdR.find(x=>x.NAMEFR===nom),'dossier standard : tarif '+nom), [g]=A.ids('projectrategroup'), [t]=A.ids('projectrate'), m=nom==='Architecte'?R.tarifHoraire:r.RATE; ctx.tarif.groupes[nom]={id:g,rate:m}; if(nom==='Architecte') ctx.tarif.defaut=g;
     ops.push({t:'projectrategroup',id:g,val:{ID:g,PROJECT_ID:pid,NAMEFR:nom,SORTORDER:i+1}},{t:'projectrate',id:t,val:{ID:t,PROJECTRATEGROUP_ID:g,RATE:m,VALIDFROM:C.debutAffaire}}); });
 
-  /* activités : 7 groupes du standard ; budgets d'après la référence, pour que Clients, Temps de l'équipe et Controlling aient une prévision */
-  ctx.act={}; ctx.activites=[]; ctx.actPhase={};
-  const stdG=DS.all('activitygroup').slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)), nomsG=stdG.map(g=>g.NAMEFR), pctG=nomsG.map(n=>(GROUPES[n]||{pct:0}).pct), hG=repartir(hT,pctG), mG=repartir(mT,pctG), alias=(k,v)=>{ if(!(k in ctx.act)) Object.defineProperty(ctx.act,k,{value:v,enumerable:false}); };
-  stdG.forEach((g,i)=>{ const [gid]=A.ids('projectactivitygroup'), Ls=DS.all('activity').filter(a=>a.ACTIVITYGROUP_ID===g.ID).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)), def=GROUPES[g.NAMEFR]||{a:{}};
-    ops.push({t:'projectactivitygroup',id:gid,val:{ID:gid,PROJECT_ID:pid,NAMEFR:g.NAMEFR,SORTORDER:+g.SORTORDER||i+1,TIMEBUDGET:hG[i],TIMEAMOUNTBUDGET:mG[i]}});
-    const noms=Ls.map(a=>{ const n=String(a.NAMEFR).replace(/’/g,"'"); return CORR[n]||n; }), pa=noms.map(n=>def.a[n]||0), hA=repartir(hG[i],pa), mA=repartir(mG[i],pa);
-    Ls.forEach((a,k)=>{ const [id]=A.ids('projectactivity'), nom=noms[k], tar=(g.NAMEFR==='Secrétariat'||nom==='Secrétariat')?ctx.tarif.groupes['Secrétariat'].id:ctx.tarif.defaut, x={id,gid,groupe:g.NAMEFR,nom}, cle=g.NAMEFR+'/'+nom;
-      ops.push({t:'projectactivity',id,val:{ID:id,PROJECTACTIVITYGROUP_ID:gid,NAMEFR:nom,TYPECODE:a.TYPECODE||0,SORTORDER:+a.SORTORDER||k+1,PROJECTRATEGROUP_ID:tar,TIMEBUDGET:hA[k],TIMEAMOUNTBUDGET:mA[k]}});
-      ctx.act[cle]=x; ctx.activites.push(x); alias(g.NAMEFR+'/'+a.NAMEFR,x); alias(cle.replace(/'/g,'’'),x); alias((g.NAMEFR+'/'+a.NAMEFR).replace(/'/g,'’'),x); }); });
-  for(const [n,L] of Object.entries(ACT_PHASE)) ctx.actPhase[n]=L.map(([cle,poids])=>{ const a=cleOk(ctx.act[cle],'activité inconnue : '+cle); return {cle,id:a.id,gid:a.gid,poids}; });
-  ctx.actOk=(cleS,cleA)=>{ const a=ctx.act[cleA], S=ctx.staff[cleS]; if(!a||!S) return false; const coches=ctx.activites.filter(x=>x.gid===a.gid&&DS.get('projectactivity_staff',x.id+'-'+S.id)); return !coches.length||coches.some(x=>x.id===a.id); };
-  for(const [cle,L] of Object.entries(ATTRIB)){ const sid=ctx.staff[cle].id; L.forEach(k=>{ const a=cleOk(ctx.act[k],'activité inconnue : '+k), id=a.id+'-'+sid; ops.push({t:'projectactivity_staff',id,val:{PROJECTACTIVITY_ID:a.id,STAFFS_ID:sid}}); }); }
+  /* activités : comme les affaires du bureau (relevé du 26.11.2026 sur la base reprise : 106 affaires sur 108 n'ont que le groupe « Affaire » — Projet, Image de
+     synthèse, Maquette, parfois Secrétariat et, depuis 2025, DT —, budget sur « Projet » seulement ; les six autres groupes du standard ne servent que dans deux
+     affaires). Les activités détaillées du standard restent des CATÉGORIES de textes pour le module 60 (ctx.act) ; chaque inscription reçoit l'activité de
+     l'affaire qui lui correspond (ctx.prestationDe). Prestations au sens de l'Analyse des heures : Projet, Images 3D (Image de synthèse), Maquette ; DT et
+     Secrétariat y comptent comme Projet. */
+  ctx.act={}; ctx.activites=[]; ctx.actPhase={}; ctx.prest={};
+  const stdG=DS.all('activitygroup').slice().sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)), alias=(k,v)=>{ if(!(k in ctx.act)) Object.defineProperty(ctx.act,k,{value:v,enumerable:false}); };
+  stdG.forEach(g=>DS.all('activity').filter(a=>a.ACTIVITYGROUP_ID===g.ID).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).forEach(a=>{ const n0=String(a.NAMEFR).replace(/’/g,"'"), nom=CORR[n0]||n0, cle=g.NAMEFR+'/'+nom, x={groupe:g.NAMEFR,nom,cle};
+    ctx.act[cle]=x; ctx.activites.push(x); alias(g.NAMEFR+'/'+a.NAMEFR,x); alias(cle.replace(/'/g,'’'),x); alias((g.NAMEFR+'/'+a.NAMEFR).replace(/'/g,'’'),x); }));
+  const gA=cleOk(stdG.find(g=>g.NAMEFR==='Affaire'),'dossier standard : groupe Affaire absent'), [gid]=A.ids('projectactivitygroup');
+  ops.push({t:'projectactivitygroup',id:gid,val:{ID:gid,PROJECT_ID:pid,NAMEFR:gA.NAMEFR,SORTORDER:1,TIMEBUDGET:hT,TIMEAMOUNTBUDGET:mT}});
+  [...DS.all('activity').filter(a=>a.ACTIVITYGROUP_ID===gA.ID).sort((a,b)=>cmp(a.SORTORDER,b.SORTORDER)).map(a=>String(a.NAMEFR)),'DT'].forEach((nom,k)=>{ const [id]=A.ids('projectactivity'), pj=nom==='Projet',
+      tar=nom==='Secrétariat'?ctx.tarif.groupes['Secrétariat'].id:nom==='DT'?ctx.tarif.groupes['Directeur des travaux'].id:ctx.tarif.defaut;
+    ops.push({t:'projectactivity',id,val:{ID:id,PROJECTACTIVITYGROUP_ID:gid,NAMEFR:nom,TYPECODE:0,SORTORDER:k+1,PROJECTRATEGROUP_ID:tar,TIMEBUDGET:pj?hT:0,TIMEAMOUNTBUDGET:pj?mT:0}});
+    ctx.prest[nom]={id,gid,nom}; });
+  ['Projet','Secrétariat','Image de synthèse','Maquette','DT'].forEach(n=>cleOk(ctx.prest[n],'dossier standard : activité '+n+' absente du groupe Affaire'));
+  for(const [n,L] of Object.entries(ACT_PHASE)) ctx.actPhase[n]=L.map(([cle,poids])=>{ cleOk(ctx.act[cle],'activité inconnue : '+cle); return {cle,poids}; });
+  ctx.actOk=(cleS,cleA)=>{ const a=ctx.act[cleA]; if(!a||!ctx.staff[cleS]) return false; const L=(ATTRIB[cleS]||[]).map(k=>cleOk(ctx.act[k],'activité inconnue : '+k)).filter(x=>x.groupe===a.groupe); return !L.length||L.includes(a); };
+  /* activité de l'affaire d'une inscription : Maquette, Image de synthèse, Secrétariat d'après la catégorie ; DT en réalisation et mise en service (52, 53) pour la
+     directrice des travaux et le travail de chantier (séances et entretiens avec les entreprises, métrés, paiements, contrôle du coût) ; sinon Projet */
+  const CHANTIER=new Set(['Séance/'+ENT,'Entretien/'+ENT,'Exécution/Saisie des métrés','Exécution/Comptabilisation des paiements','Exécution/Contrôle du coût'].map(k=>cleOk(ctx.act[k],'activité inconnue : '+k)));
+  ctx.prestationDe=(cle,n,cleS)=>{ const a=cleOk(ctx.act[cle],'activité inconnue : '+cle);
+    if(a.groupe==='Affaire'&&ctx.prest[a.nom]) return ctx.prest[a.nom];
+    if(a.groupe==='Secrétariat') return ctx.prest['Secrétariat'];
+    if((+n===52||+n===53)&&(cleS==='dt'||CHANTIER.has(a))) return ctx.prest.DT;
+    return ctx.prest.Projet; };
 
   /* genres de frais : import du standard par la fonction de l'app, prévisions d'après le taux de frais du mandat */
   const gs=DS.all('costcategorygroup'), cats=DS.all('costcategory'), nc=cats.filter(c=>gs.some(g=>g.ID===c.COSTCATEGORYGROUP_ID)).length, fr0=ch17aStdOps(pid,gs,cats,A.ids('projectcostcategorygroup',gs.length),A.ids('projectcostcategory',nc));
@@ -141,6 +149,6 @@ A.mod(20,'affaire','Affaire 99TST',async ctx=>{
   ZONES.forEach(([code,nom],i)=>{ const [id]=A.ids('projectusezone'); ops.push({t:'projectusezone',id,val:{ID:id,PROJECT_ID:pid,CODE:code,NAME:nom,SORTORDER:i+1}}); });
 
   await A.commit(ops); await A.sauverRegistre();
-  A.log('affaire :',R.code,'id '+pid+', '+hT+' h et '+mT+' CHF au budget, '+ctx.activites.length+' activités, '+so+' intervenants');
+  A.log('affaire :',R.code,'id '+pid+', '+hT+' h et '+mT+' CHF au budget, groupe Affaire : '+Object.keys(ctx.prest).join(', ')+', '+so+' intervenants');
 });
 })();

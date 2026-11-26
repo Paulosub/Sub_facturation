@@ -1,6 +1,7 @@
 /* ═══ AFFAIRE DE TRAVAIL 99TST — MODULE 60 : FEUILLE D'HEURES ET FRAIS (04.11.2026) ═══
    Crée, d'après AT.REF (phases, faisabilité, répartition, calendrier, lots, récit, factures) :
-   - timelog de l'affaire, 1 100 à 1 300 lignes : heures de chaque phase = heures au contrat × part saisie, réparties entre collaborateurs selon REF.repartition,
+   - timelog de l'affaire, 1 100 à 1 300 lignes, sur les activités du groupe « Affaire » comme les affaires du bureau (Projet, Maquette, Image de synthèse, DT,
+     Secrétariat : ctx.prestationDe du module 20 ; les catégories détaillées ne servent qu'au choix des commentaires) : heures de chaque phase = heures au contrat × part saisie, réparties entre collaborateurs selon REF.repartition,
      dans le calendrier de la phase, jours ouvrés hors fériés, 08:00–12:00 et 13:00–17:30, sans aucun chevauchement, entrée et départ respectés (le compte courant
      a déjà des heures presque chaque jour dans la base : ses lignes sont de petits blocs posés dans ses trous). Chaque ligne a l'activité et le commentaire de ce jour-là : faits du récit à leur date (lignes « épinglées »),
      séance de chantier du lundi, descriptifs, offres, contrats et contrôles lot par lot aux dates de REF.lots ;
@@ -120,7 +121,12 @@ function textes(ctx){
       ...g('cdp arch me',J.sondages,null,['Séance MO : résultats des sondages','Séance MO : estimation de l’avant-projet','Préparation de la séance avec le maître de l’ouvrage'])],
     ['Entretien/'+MAND]:[
       ...g('cdp arch',null,J.sondages,['Coordination avec '+ing+' : trame porteuse','Entretien avec '+geol+' : programme des sondages','Commande du plan de base à '+geom]),
-      ...g('cdp arch',J.sondages,null,['Entretien avec '+geol+' : résultats, rocher au nord','Entretien avec '+phys+' : exigences acoustiques','Point avec '+cvse+' : gaines et local technique','Coordination avec '+ing+' : radier et murs du sous-sol'])]},
+      ...g('cdp arch',J.sondages,null,['Entretien avec '+geol+' : résultats, rocher au nord','Entretien avec '+phys+' : exigences acoustiques','Point avec '+cvse+' : gaines et local technique','Coordination avec '+ing+' : radier et murs du sous-sol'])],
+    /* maquette et images de synthèse : prestations du bureau (26.11.2026) */
+    'Affaire/Maquette':[
+      ...g('arch dess',null,null,['Maquette d’étude 1:500 : terrain et bâtiments voisins','Maquette d’étude 1:200 : volumes et attique','Maquette d’étude : variantes de l’attique en carton gris','Maquette de travail : implantation et accès au parking'])],
+    'Affaire/Image de synthèse':[
+      ...g('arch dess',null,null,['Modèle 3D de l’avant-projet : volumes et terrain','Image de synthèse : vue depuis le chemin du Projet','Vue aérienne de l’implantation pour la séance MO'])]},
 
   32:{ 'Planification/Projet':[
       ...g('cdp arch dess anc',null,ap(ph(32).au,-10),['Plans 1:100 : sous-sol et parking','Plans 1:100 : rez-de-chaussée','Plans 1:100 : étages types','Plans 1:100 : attique et toiture','Coupes 1:100 sur les cages d’escalier','Coupe longitudinale sur la rampe du parking','Façades 1:100 : nord et est','Façades 1:100 : sud et ouest','Caves et locaux techniques : distribution du sous-sol','Local vélos et poussettes','Ascenseur : gaine, cuvette et machinerie','Cuisines types : implantation et gaines','Salles de bains types : plans et élévations','Mise à jour du modèle 3D','Tableau des surfaces locatives','Coordination des plans avec les gaines CVSE','Intégration des plans de l’ingénieur civil','Plan des aménagements extérieurs 1:200']),
@@ -140,7 +146,12 @@ function textes(ctx){
       ...g('cdp arch anc',null,null,['Séance avec '+ing+' : radier et murs du sous-sol','Séance avec '+ing+' : porte-à-faux des loggias','Séance avec '+cvse+' : production de chaleur et distribution','Séance avec '+cvse+' : ventilation et gaines techniques','Séance avec '+phys+' : séparatifs entre logements','Séance avec '+geom+' : implantation et servitudes'])],
     ['Séance/'+MO]:[
       ...g('cdp arch me',null,J.parking,['Séance MO : plans d’étages et cuisines','Séance MO : façades et matériaux','Préparation du dossier de séance MO']),
-      ...g('cdp arch me',J.parking,null,['Séance MO : mise à jour de l’estimation','Séance MO : plans du sous-sol avec les places supplémentaires','Séance MO : matériaux et teintes de façade','Séance MO : aménagements extérieurs et place de jeux','Séance MO : validation du projet de l’ouvrage avant dépôt','Compte rendu de la séance MO','Préparation du dossier de séance MO'])]},
+      ...g('cdp arch me',J.parking,null,['Séance MO : mise à jour de l’estimation','Séance MO : plans du sous-sol avec les places supplémentaires','Séance MO : matériaux et teintes de façade','Séance MO : aménagements extérieurs et place de jeux','Séance MO : validation du projet de l’ouvrage avant dépôt','Compte rendu de la séance MO','Préparation du dossier de séance MO'])],
+    'Affaire/Maquette':[
+      ...g('arch dess anc',null,null,['Maquette 1:200 : façades et loggias','Maquette 1:100 : coupe sur le hall d’entrée','Maquette de présentation : socle et terrain']),
+      ...g('arch dess anc',J.parking,null,['Maquette : mise à jour du sous-sol après les places supplémentaires'])],
+    'Affaire/Image de synthèse':[
+      ...g('arch dess anc',null,null,['Images de synthèse : façades sud et ouest','Image de synthèse des loggias : matériaux et teintes','Vue intérieure d’un logement type','Images 3D pour la présentation au conseil de fondation'])]},
 
   33:{ 'Projet/Demande de permis de construire':[
       ...g('cdp dess',null,P.enqD,['Contrôle des pièces du dossier CAMAC','Compléments demandés par le service technique','Profilement : pose des gabarits avec le géomètre','Avis d’enquête : publication et affichage']),
@@ -152,7 +163,9 @@ function textes(ctx){
       ...g('cdp',J.oppos,P.decision,['Opposition sur la hauteur : note de réponse','Opposition sur les arbres : plan des plantations compensatoires','Détermination à l’attention de la Municipalité','Préparation de la séance de conciliation','Réponse à l’observation reçue pendant l’enquête'])],
     ['Entretien/'+AUT]:[
       ...g('cdp me',null,J.oppos,['Entretien avec '+chef+' : gabarits et hauteurs','Téléphone à la CAMAC : état du dossier']),
-      ...g('cdp me',J.oppos,null,['Point avec '+chef+' sur les oppositions','Entretien avec le service technique : suites de l’enquête','Entretien avec '+chef+' : conditions du permis'])]},
+      ...g('cdp me',J.oppos,null,['Point avec '+chef+' sur les oppositions','Entretien avec le service technique : suites de l’enquête','Entretien avec '+chef+' : conditions du permis'])],
+    'Affaire/Image de synthèse':[
+      ...g('cdp dess',null,P.decision,['Images de synthèse pour la séance avec la Municipalité','Photomontage depuis la route pour le dossier d’enquête','Mise à jour des images après la séance avec la Municipalité'])]},
 
   41:{ "Exécution/Dossier d'appel d'offres":[
       ...g('cdp tech dt anc',null,ap(adj[0].ao.envoi,-1),['Découpage des lots et calendrier des appels d’offres','Liste des entreprises à consulter avec la direction des travaux','Conditions générales des appels d’offres']),
@@ -379,7 +392,7 @@ A.mod(60,'heures','Heures et frais',async ctx=>{
   lignes.sort((x,y)=>x.j.localeCompare(y.j)||x.sid-y.sid||x.a-y.a);
   const ids=A.ids('timelog',lignes.length+lignesVac.length); let ii=0;
   const base=(sid,j,a,b)=>({STAFF_ID:sid,TIMEYEAR:+j.slice(0,4),TIMEMONTH:+j.slice(5,7)-1,TIMEDAY:+j.slice(8,10),TIMEHOUR1:Math.floor(a/60),TIMEMINUTE1:a%60,TIMEHOUR2:Math.floor(b/60),TIMEMINUTE2:b%60,TIMEPERIOD:(b-a)/60,SUBPROJECT_ID:null});
-  lignes.forEach(x=>{ const id=ids[ii++], ac=ctx.act[x.act], sub=x.n===FA.groupe?null:ctx.sub[x.n];
+  lignes.forEach(x=>{ const id=ids[ii++], ac=ctx.prestationDe(x.act,x.n,x.cle), sub=x.n===FA.groupe?null:ctx.sub[x.n];   /* activité de l'affaire (groupe « Affaire », 26.11.2026) */
     ops.push({t:'timelog',id,val:{ID:id,...base(x.sid,x.j,x.a,x.b),PROJECT_ID:pid,ACTIVITYGROUP_ID:ac.gid,ACTIVITY_ID:ac.id,PHASE_ID:sub==null?ctx.phases[x.n]:ctx.phaseDeSub[x.n],SUBPHASE_ID:sub,DESCRIPTION:x.t,ISCHARGEABLE:x.nf?0:1,ISCHARGED:x.cd?1:0,ISHOLIDAY:0,TIMELOGSTATECODE:x.etat,CHARGEDDATE:x.cd||null}}); });
   lignesVac.sort((x,y)=>x.j.localeCompare(y.j)).forEach(x=>{ const id=ids[ii++];
     ops.push({t:'timelog',id,val:{ID:id,...base(x.sid,x.j,x.a,x.b),PROJECT_ID:null,ACTIVITYGROUP_ID:null,ACTIVITY_ID:null,PHASE_ID:null,SUBPHASE_ID:null,DESCRIPTION:libVac(x.j),ISCHARGEABLE:1,ISCHARGED:0,ISHOLIDAY:1,TIMELOGSTATECODE:x.j<seuil?3:0,CHARGEDDATE:null}}); });

@@ -306,24 +306,23 @@ const MAXL=1000;
 const catAh=()=>{ if(SGTAB.def.ahh) return; const ouiT=v=>v?'Oui':'Non';
   const etatH=r=>{ const e=etT(r), bl=bloquee(r); return pill(e)+' <span class="gr" style="font-size:11.5px;color:var(--s-gris)">'+E(TSTATE[e]||'')+'</span>'+(bl?'<span class="blo" title="Période bloquée pour ce collaborateur : l’état n’est plus modifiable">bloquée</span>':''); };
   /* Standard : Phase puis Phase partielle, en deux colonnes (26.11.2026, Paulo : « ajouter phase partiel ») ; avant : une colonne « Phase » = phase partielle, sinon phase */
-  sgtabDef('ahh',{titre:'Inscriptions d’heures',std:['date','coll','duree','act','phaseg','sphase','com','fact','facture','etat'],cat:{
+  /* colonnes non cochées retirées du catalogue (26.11.2026, Paulo, sur la fenêtre « Présentation personnalisée » : « supprimer les éléments non sélectionnés ») :
+     Initiales, Vacances, Groupe d'activité, Prestation, Phase partielle sinon phase, Facturé le ; restent les douze de sa présentation, « Activité » (activité de
+     l'inscription) au lieu de « Prestation » dans le Standard. Le tableau des collaborateurs (ahc) reprend ce catalogue. */
+  sgtabDef('ahh',{titre:'Inscriptions d’heures',std:['date','coll','duree','activ','phaseg','sphase','com','fact','facture','etat'],cat:{
     date:{t:'Date',cat:'Inscription',nw:1,v:r=>{ const d=tlDate(r); return JOURS[d.getDay()]+' '+fD(d); }},
     horaire:{t:'Horaire',l:'Heure de début et de fin',cat:'Inscription',nw:1,v:r=>hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)+' – '+hm(r.TIMEHOUR2||0,r.TIMEMINUTE2||0)},
     coll:{t:'Collaborateur',cat:'Inscription',nw:1,v:r=>sN(r.STAFF_ID),sum:L=>num(L.length,0)+' inscription'+(L.length>1?'s':'')},
-    ini:{t:'Initiales',cat:'Inscription',nw:1,v:r=>sI(r.STAFF_ID)},
     duree:{t:'Durée',l:'Durée (heures)',cat:'Inscription',r:1,nw:1,f:r=>'<b>'+Hh(hh(r))+'</b> h',v:r=>Hh(hh(r))+' h',sum:L=>Hh(L.reduce((t,r)=>t+hh(r),0))+' h'},
-    grp:{t:'Groupe d’activité',cat:'Activité',v:r=>agL(r.ACTIVITYGROUP_ID)},act:{t:'Prestation',l:'Prestation (Projet, Images 3D, Maquette)',cat:'Activité',v:r=>prestaL(r)},activ:{t:'Activité',cat:'Activité',v:r=>acL(r.ACTIVITY_ID)},
-    phase:{t:'Phase ou phase partielle',l:'Phase partielle, sinon phase',cat:'Phase',v:r=>spL(r.SUBPHASE_ID)||phL(r.PHASE_ID)},
+    activ:{t:'Activité',cat:'Activité',v:r=>acL(r.ACTIVITY_ID)},
     phaseg:{t:'Phase',l:'Phase (principale)',cat:'Phase',v:r=>phL(r.PHASE_ID)},sphase:{t:'Phase partielle',cat:'Phase',v:r=>spL(r.SUBPHASE_ID)},
     ouv:{t:'Ouvrage',cat:'Phase',v:r=>suL(r.SUBPROJECT_ID)},
     com:{t:'Commentaire',cat:'Inscription',cl:()=>'com',v:r=>r.DESCRIPTION||''},
-    vac:{t:'Vacances',cat:'Inscription',nw:1,v:r=>r.ISHOLIDAY?'Oui':''},
     fact:{t:'Fact.',l:'Facturable',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGEABLE),v:r=>ouiT(r.ISCHARGEABLE)},
     facture:{t:'Facturé',cat:'Facturation',c:1,f:r=>oui(r.ISCHARGED),v:r=>ouiT(r.ISCHARGED)},
-    factle:{t:'Facturé le',cat:'Facturation',nw:1,v:r=>r.CHARGEDDATE?fD(new Date(String(r.CHARGEDDATE).slice(0,10)+'T00:00')):''},
     etat:{t:'État',cat:'Contrôle',nw:1,f:etatH,v:r=>(TSTATE[etT(r)]||'')+(bloquee(r)?' (bloquée)':'')}}});
   /* inscriptions d'un collaborateur (26.11.2026) : mêmes colonnes, l'affaire à la place du collaborateur */
-  sgtabDef('ahc',{titre:'Inscriptions d’heures d’un collaborateur',std:['date','aff','duree','act','phaseg','sphase','com','fact','facture','etat'],cat:Object.assign({aff:{t:'Affaire',cat:'Inscription',f:r=>{ const p=Pj(r.PROJECT_ID); return p?'<b>'+E(p.NUMBER||'')+'</b> '+E(p.TITLE||''):''; },v:r=>{ const p=Pj(r.PROJECT_ID); return p?[p.NUMBER,p.TITLE].filter(Boolean).join(' '):''; }}},SGTAB.def.ahh.cat)});
+  sgtabDef('ahc',{titre:'Inscriptions d’heures d’un collaborateur',std:['date','aff','duree','activ','phaseg','sphase','com','fact','facture','etat'],cat:Object.assign({aff:{t:'Affaire',cat:'Inscription',f:r=>{ const p=Pj(r.PROJECT_ID); return p?'<b>'+E(p.NUMBER||'')+'</b> '+E(p.TITLE||''):''; },v:r=>{ const p=Pj(r.PROJECT_ID); return p?[p.NUMBER,p.TITLE].filter(Boolean).join(' '):''; }}},SGTAB.def.ahh.cat)});
   sgtabDef('ahf',{titre:'Notes de frais',std:['date','coll','genre','desc','qte','montant','fact','facture','remb','etat'],cat:{
     date:{t:'Date',cat:'Note de frais',nw:1,v:r=>fD(pcDate(r))},coll:{t:'Collaborateur',cat:'Note de frais',nw:1,v:r=>sN(r.STAFF_ID),sum:L=>num(L.length,0)+' note'+(L.length>1?'s':'')},
     grp:{t:'Groupe de frais',cat:'Note de frais',v:r=>cgL(r.COSTCATEGORYGROUP_ID)},genre:{t:'Genre de frais',cat:'Note de frais',v:r=>ccL(r.COSTCATEGORY_ID)},

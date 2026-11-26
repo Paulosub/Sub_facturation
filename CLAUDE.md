@@ -3202,9 +3202,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   **Retouches du 26.11.2026 au soir (annotations de Paulo sur le rapport de 99TST)** : colonne « Activité » du rapport d'heures renommée **« Prestation »**
   (« remplacer activité par prestation », puis « elle est censée montrer projet, maquette, image 3D ») : la colonne montre la PRESTATION, Projet, Images 3D ou
   Maquette, selon la règle de la liste « Prestations » des critères (`SGAH.presta` = `prestaL` de sg3_analyse_heures.js, d'après l'activité ; toute autre activité,
-  DT et Secrétariat compris, = Projet ; avant : « groupe › activité ») ; même colonne, même titre, dans le tableau des inscriptions de l'Analyse des heures
-  (« remplacer par prestation » : catalogue `ahh` clé `act`, et `COLS.h` des documents, copie et CSV ; l'activité elle-même reste à choisir dans Présentation ▸
-  Personnalisé, clé `activ`) ; la feuille d'heures et le Journal des heures gardent « Activité » ; ligne sous le nom d'un chapitre de collaborateur = **période puis heures** (« inverser » : « Du 05.01.2026 au 03.11.2026 · 344.50 h »,
+  DT et Secrétariat compris, = Projet ; avant : « groupe › activité ») ; aussi dans `COLS.h` (documents, copie et CSV). Tableau des inscriptions de l'Analyse des
+  heures : d'abord la même colonne (« remplacer par prestation », catalogue `ahh` clé `act`), puis, le même soir, Paulo y a choisi « Activité » (clé `activ`) et a
+  demandé « supprimer les éléments non sélectionnés » dans la fenêtre « Présentation personnalisée » : catalogues `ahh` et `ahc` réduits à ses douze colonnes (Date,
+  Horaire, Collaborateur, Durée, Commentaire, Activité, Phase, Phase partielle, Ouvrage, Facturable, Facturé, État) — Initiales, Vacances, Groupe d'activité,
+  Prestation, Phase partielle sinon phase et Facturé le retirés ; Standard avec « Activité » ; la feuille d'heures et le Journal des heures gardent « Activité » ; ligne sous le nom d'un chapitre de collaborateur = **période puis heures** (« inverser » : « Du 05.01.2026 au 03.11.2026 · 344.50 h »,
   « Du » en capitale en début de ligne), aussi pour le rapport de frais. Copie d'avant : `subgestion3/_backup_20261126_2031_avant_prestation/`.
   **Options de « Composer le rapport » dans le volet Réglages du rapport d'heures (même soir, Paulo : « ajouter ses options dans l'image 2 »)** : groupe « Tri »
   (`TRI_L`, `PER_L`, choix gardés sur ce poste : `sg3_docs_heures` {tri, per}) — Tri selon affichage, Tri par prestation (ex-« par activité »), par collaborateur ou par

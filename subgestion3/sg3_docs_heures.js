@@ -48,8 +48,7 @@ const rubriques=Dc=>{ const p=Dc.p, R=[]; if(p){ try{ (deGardeRub(p,{filter:null
   return R; };
 /* ── le PDF ── */
 async function octets(Dc){ const rg0=regDe(Dc.cle), tri=triDe(Dc,rg0);
-  if(tri==='recap') Dc=recapitulatif(Dc,perDe(rg0));
-  else if(Dc.grouper&&rg0.parCol===true) Dc=parCollaborateur(Dc,tri);
+  if(Dc.grouper&&rg0.parCol===true) Dc=parCollaborateur(Dc,tri,perDe(rg0));
   else if(tri!=='none'){ const X=sousTotaux(Dc.cols,Dc.rows,tri,true,true); if(X) Dc=Object.assign({},Dc,X); }
   const M=await mesure(), {w,R,fn}=await SGDS.ressources(), rg=rg0, ori=formatDe(Dc), W=ori==='portrait'?WP:WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), p=Dc.p||{};
   /* un tableau → ses pages ; un document peut en avoir plusieurs (Dc.suite), chacun commence sur une nouvelle page avec ses propres colonnes */
@@ -108,15 +107,18 @@ async function octets(Dc){ const rg0=regDe(Dc.cle), tri=triDe(Dc,rg0);
     livretDG:{couverture:couverture||{},pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,orientation:ori,x0:MARGE,x0Tab:X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:7}})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info(Dc.titre+' :',Array.from(j)); return oct; }
 /* ── la fenêtre du document : barre « Document PDF », lecteur, volet Réglages ── */
-const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc), tl=!!(Dc.grouper&&Dc.grouper.tl), tri=triDe(Dc,rg), per=perDe(rg), parCol=rg.parCol===true&&tri!=='recap';
+const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc), tl=!!(Dc.grouper&&Dc.grouper.tl), tri=triDe(Dc,rg), per=perDe(rg), parCol=rg.parCol===true;
   return [{t:'Format : Paysage',chk:f==='paysage',grp:'Format',fn:()=>regSet(Dc.cle,{format:'paysage'})},{t:'Format : Portrait',chk:f==='portrait',grp:'Format',fn:()=>regSet(Dc.cle,{format:'portrait'})},
     {t:'Page de garde',chk:rg.garde!==false,grp:'Affichage',fn:()=>regSet(Dc.cle,{garde:regDe(Dc.cle).garde===false})}]
-    .concat(Dc.grouper&&colDe(Dc)>=0?[{t:'Grouper par collaborateur',chk:parCol,dis:tri==='recap',grp:'Affichage',fn:()=>{ const r=regDe(Dc.cle), on=r.parCol!==true; regSet(Dc.cle,Object.assign({parCol:on},on&&r.tri==='st'?{tri:'none'}:{})); }}]:[])
-    /* « Composer le rapport » du moteur, dans le volet (26.11.2026, Paulo : « ajouter ses options dans l'image 2 ») : un seul tri à la fois ; « Totaux par … » sous le
-       récapitulatif ; avec « Grouper par collaborateur », le tri s'applique dans chaque chapitre (tri par collaborateur alors sans objet) */
-    .concat(tl?TRI_L.map(([k,l])=>({t:l,chk:tri===k,grp:'Tri',dis:k==='st'&&parCol,fn:()=>regSet(Dc.cle,{tri:k})}))
-      .concat(PER_L.map(([k,l])=>({t:l,chk:!!per[k],grp:'Tri',ind:true,dis:tri!=='recap',fn:()=>{ const p=perDe(regDe(Dc.cle)); p[k]=p[k]?0:1; regSet(Dc.cle,{per:p}); }}))):[]); };
-/* ── « Grouper par collaborateur » (Paulo, 26.11.2026 : « ajouter une option permettant de grouper les heures par collaborateur ») : rapport d'heures et rapport de
+    /* « Grouper par collaborateur » renommé « Récapitulatif par collaborateur », les « Totaux par … » de « Composer le rapport » dessous, en retrait (26.11.2026, Paulo :
+       « déplacer sous Grouper … et renommer grouper collaborateur par récapitulatif par collaborateur ») — un seul récapitulatif : plus d'option « Récapitulatif » dans « Tri » */
+    .concat(Dc.grouper&&colDe(Dc)>=0?[{t:'Récapitulatif par collaborateur',chk:parCol,grp:'Affichage',fn:()=>{ const r=regDe(Dc.cle), on=r.parCol!==true; regSet(Dc.cle,Object.assign({parCol:on},on&&r.tri==='st'?{tri:'none'}:{})); }}]
+      .concat(PER_L.map(([k,l])=>({t:l,chk:!!per[k],grp:'Affichage',ind:true,dis:!parCol,fn:()=>{ const p=perDe(regDe(Dc.cle)); p[k]=p[k]?0:1; regSet(Dc.cle,{per:p}); }}))):[])
+    /* « Composer le rapport » du moteur, dans le volet (26.11.2026, Paulo : « ajouter ses options dans l'image 2 ») : un seul tri à la fois ; avec le récapitulatif par
+       collaborateur, le tri s'applique dans chaque chapitre (tri par collaborateur alors sans objet) */
+    .concat(tl?TRI_L.map(([k,l])=>({t:l,chk:tri===k,grp:'Tri',dis:k==='st'&&parCol,fn:()=>regSet(Dc.cle,{tri:k})})):[]); };
+/* ── « Grouper par collaborateur », option renommée « Récapitulatif par collaborateur » le même soir (Paulo, 26.11.2026 : « ajouter une option permettant de grouper
+   les heures par collaborateur ») : rapport d'heures et rapport de
    frais. Présentation choisie par Paulo le même jour parmi 5 essais (« garde la variante 4 et crée le récapitulatif des heures collaborateur comme variante 5 ») :
    — d'abord le RÉCAPITULATIF PAR COLLABORATEUR (variante 5 « Fiche ») : au-dessus du tableau « Récapitulatif par collaborateur » en grand (gras 18 bleu nuit) et
      quatre chiffres (collaborateurs, heures ou montant, inscriptions ou notes de frais, période) ; tableau Collaborateur · Période · Inscriptions · Part du total ·
@@ -128,13 +130,16 @@ const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc), tl=!!(Dc.grouper&&D
 const colDe=Dc=>(Dc.cols||[]).findIndex(c=>un(c.t)==='Collaborateur');
 /* ── tris du rapport d'heures : « Composer le rapport » du moteur (ctlReport / ctlJournal) repris dans le volet Réglages (26.11.2026, Paulo, sur la fenêtre du rapport :
    « ajouter ses options dans l'image 2 ») — Tri selon affichage, Tri par prestation (l'activité du moteur, « Prestation » depuis le même jour), par collaborateur ou par
-   phase partielle avec sous-totaux, Récapitulatif par collaborateur avec totaux par mois, trimestre, semestre, année (Durée, Montant = tlFee, Frais des collaborateurs =
-   tlCost seulement si sgTauxVisibles, comme le coût de revient). Les lignes gardent les colonnes du rapport ; la colonne du tri est retirée (le titre du groupe la nomme).
+   phase partielle avec sous-totaux ; les « Totaux par mois, trimestre, semestre, année » sont passés sous « Récapitulatif par collaborateur » (ex-« Grouper par
+   collaborateur », même soir) et s'appliquent à son tableau. Les lignes gardent les colonnes du rapport ; la colonne du tri est retirée (le titre du groupe la nomme).
    Choix gardés sur ce poste (sg3_docs_heures : tri, per). ── */
-const TRI_L=[['none','Tri selon affichage'],['pre','Tri par prestation avec sous-total'],['st','Tri par collaborateur avec sous-total'],['sp','Tri par phase partielle avec sous-total'],['recap','Récapitulatif par collaborateur']];
+const TRI_L=[['none','Tri selon affichage'],['pre','Tri par prestation avec sous-total'],['st','Tri par collaborateur avec sous-total'],['sp','Tri par phase partielle avec sous-total']];
 const PER_L=[['m','Totaux par mois'],['q','Totaux par trimestre'],['s','Totaux par semestre'],['y','Totaux par année']];
 const triDe=(Dc,rg)=>Dc.grouper&&Dc.grouper.tl&&TRI_L.some(x=>x[0]===rg.tri)?rg.tri:'none';
-const perDe=rg=>Object.assign({m:1,q:0,s:0,y:0},rg.per&&typeof rg.per==='object'?rg.per:{});
+const perDe=rg=>Object.assign({m:0,q:0,s:0,y:0},rg.per&&typeof rg.per==='object'?rg.per:{});   /* aucun total par période d'office : le récapitulatif reste une ligne par collaborateur */
+/* périodes des totaux (comme ctlJournal du moteur) : [clé, (date) → [année, rang], (année, rang) → libellé] */
+const PERIODES=[['m',d=>[d.getFullYear(),d.getMonth()],(y,i)=>MOISL[i]+' '+y],['q',d=>[d.getFullYear(),Math.floor(d.getMonth()/3)],(y,i)=>['1er','2ème','3ème','4ème'][i]+' trimestre '+y],
+  ['s',d=>[d.getFullYear(),Math.floor(d.getMonth()/6)],(y,i)=>(i?'2ème':'1er')+' semestre '+y],['y',d=>[d.getFullYear(),0],y=>String(y)]];
 const TRI_COL={pre:'Prestation',st:'Collaborateur',sp:'Phase partielle'}, PRE_ORD={'Projet':0,'Images 3D':1,'Maquette':2};
 /* positions et leurs commentaires (lignes x qui les suivent) ; sous-totaux et totaux laissés de côté */
 const blocsDe=rows=>{ const B=[]; (rows||[]).forEach(r=>{ if(!r.g) B.push({p:r,x:[]}); else if(r.g==='x'&&B.length) B[B.length-1].x.push(r); }); return B; };
@@ -152,27 +157,11 @@ const sousTotaux=(cols,rows,tri,tl,total)=>{ const j=cols.findIndex(c=>un(c.t)==
     const st=vide(); st[0]='Total '+g.lbl; if(jT>=0) st[jT]=fmt(g.n); out.push({c:st,g:'s'}); });
   if(total){ const t=vide(); t[0]='Total'; if(jT>=0) t[jT]=fmt(L.reduce((a,g)=>a+g.n,0)); out.push({c:t,g:'t'}); }
   return {cols:sans(cols),rows:out}; };
-/* récapitulatif par collaborateur : pour chacun, ses totaux par période choisie, puis son total ; total général (calcul de ctlJournal du moteur) */
-const recapitulatif=(Dc,per)=>{ const V=(Dc.view||[]).filter(Boolean), fee=typeof tlFee==='function'?tlFee:null, cost=typeof tlCost==='function'&&(typeof sgTauxVisibles!=='function'||sgTauxVisibles())?tlCost:null;
-  const H=L=>L.reduce((a,r)=>a+(+r.TIMEPERIOD||0),0), F=L=>L.reduce((a,r)=>a+(+fee(r)||0),0), K=L=>L.reduce((a,r)=>a+(+cost(r)||0),0);
-  const P=[['m',d=>[d.getFullYear(),d.getMonth()],(y,i)=>MOISL[i]+' '+y],['q',d=>[d.getFullYear(),Math.floor(d.getMonth()/3)],(y,i)=>['1er','2ème','3ème','4ème'][i]+' trimestre '+y],
-    ['s',d=>[d.getFullYear(),Math.floor(d.getMonth()/6)],(y,i)=>(i?'2ème':'1er')+' semestre '+y],['y',d=>[d.getFullYear(),0],y=>String(y)]].filter(x=>per[x[0]]);
-  const cols=[{t:'Collaborateur'},{t:'Durée',r:true}].concat(fee?[{t:'Montant',r:true}]:[]).concat(cost?[{t:'Frais des collaborateurs',r:true}]:[]);
-  const ligne=(lbl,L)=>[lbl,hrs(H(L))].concat(fee?[num(F(L))]:[]).concat(cost?[num(K(L))]:[]), vide=()=>cols.map(()=>'');
-  const S=new Map(); V.forEach(r=>{ const k=r.STAFF_ID==null?'':String(r.STAFF_ID); if(!S.has(k)) S.set(k,[]); S.get(k).push(r); });
-  const nom=k=>{ const x=k===''?null:DS.get('staff',isNaN(+k)?k:+k); return x?staffName(x):'(sans collaborateur)'; };
-  const L=[...S.entries()].map(([k,R])=>({k,nom:nom(k),R})).sort((a,b)=>(a.k==='')-(b.k==='')||a.nom.localeCompare(b.nom,'fr')), rows=[];
-  L.forEach(g=>{ const h=vide(); h[0]=g.nom; rows.push({c:h,g:'g'});
-    P.forEach(([,kf,lf])=>{ const M=new Map(); g.R.forEach(r=>{ const [y,i]=kf(tlDate(r)), k=y*100+i; if(!M.has(k)) M.set(k,{y,i,R:[]}); M.get(k).R.push(r); });
-      [...M.keys()].sort((a,b)=>a-b).forEach(k=>{ const x=M.get(k); rows.push({c:ligne(lf(x.y,x.i),x.R),g:'1'}); }); });
-    rows.push({c:ligne('Total '+g.nom,g.R),g:'s'}); });
-  rows.push({c:ligne('Total',V),g:'t'});
-  return Object.assign({},Dc,{cols,rows,avant:null,hier:true}); };
-const parCollaborateur=(Dc,tri)=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/^(dur[ée]e|montant)$/i.test(un(c.t))); if(j<0||jT0<0) return Dc;
+const parCollaborateur=(Dc,tri,per)=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/^(dur[ée]e|montant)$/i.test(un(c.t))); if(j<0||jT0<0) return Dc;
   const tl=!!(Dc.grouper&&Dc.grouper.tl), fmt=n=>tl?hrs(n):num(n), unite=tl?' h':' CHF', nC=Dc.cols.length-1, jT=jT0>j?jT0-1:jT0, sans=c=>c.filter((_,i)=>i!==j), vide=()=>Array.from({length:nC},()=>'');
   const G=new Map(); let cur=null;
   (Dc.rows||[]).forEach(r=>{ if(r.g==='t') return;
-    if(r.g===''||!cur){ const k=un(r._k||r.c[j]).replace(/^[—–-]$/,''); if(!G.has(k)) G.set(k,{k,n:0,np:0,d:[],rows:[]}); cur=G.get(k); cur.n+=+r._n||0; cur.np++; if(r._d) cur.d.push(r._d); cur.rows.push(Object.assign({},r,{c:sans(r.c)})); return; }
+    if(r.g===''||!cur){ const k=un(r._k||r.c[j]).replace(/^[—–-]$/,''); if(!G.has(k)) G.set(k,{k,n:0,np:0,d:[],pos:[],rows:[]}); cur=G.get(k); cur.n+=+r._n||0; cur.np++; if(r._d) cur.d.push(r._d); cur.pos.push({d:r._d,n:+r._n||0}); cur.rows.push(Object.assign({},r,{c:sans(r.c)})); return; }
     if(r.g==='x'){ const t=(r.c||[]).map(un).find(Boolean)||'', c=vide(); c[Math.min(1,nC-1)]=t; cur.rows.push(Object.assign({},r,{c})); return; }
     cur.rows.push(Object.assign({},r,{c:sans(r.c)})); });
   const L=[...G.values()].filter(g=>g.rows.length).sort((a,b)=>(!a.k)-(!b.k)||b.n-a.n||a.k.localeCompare(b.k,'fr'));
@@ -188,8 +177,16 @@ const parCollaborateur=(Dc,tri)=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/
     const e={forme:'chap',dy:2,num:String(i+1),nom,sous:[dates(g.d).replace(/^du /,'Du '),fmt(g.n)+unite].filter(Boolean).join(' · ')   /* sans le nombre d'inscriptions (26.11.2026, « supprimer ») ; période puis heures (même jour, « inverser ») */};
     rows.push(Object.assign({},g.rows[0],{saut:e}),...g.rows.slice(1),{c:s,g:'s'}); });
   /* récapitulatif par collaborateur, avant les chapitres (nombre d'inscriptions — tableau, chiffres, chapitres — et nombre de collaborateurs retirés le 26.11.2026 à la demande ; chiffres : période, heures ou montant) */
+  /* totaux par mois, trimestre, semestre, année (« Totaux par … », 26.11.2026) : pour chaque collaborateur, son nom en titre, une ligne par période, son total ;
+     sans total coché, une ligne par collaborateur comme avant */
+  const PER=PERIODES.filter(x=>per&&per[x[0]]);
+  const lignesRecap=L.flatMap(g=>{ if(!PER.length) return [{c:[nomDe(g),court(dates(g.d)),pct(g.n),fmt(g.n)],g:''}];
+    const out=[{c:[nomDe(g),'','',''],g:'g'}];
+    PER.forEach(([,kf,lf])=>{ const M=new Map(); g.pos.forEach(x=>{ if(!x.d) return; const [y,i]=kf(x.d), k=y*100+i; if(!M.has(k)) M.set(k,{y,i,n:0,d:[]}); const m=M.get(k); m.n+=x.n; m.d.push(x.d); });
+      [...M.keys()].sort((a,b)=>a-b).forEach(k=>{ const m=M.get(k); out.push({c:[lf(m.y,m.i),court(dates(m.d)),pct(m.n),fmt(m.n)],g:'1'}); }); });
+    out.push({c:['Total '+nomDe(g),court(dates(g.d)),pct(g.n),fmt(g.n)],g:'s'}); return out; });
   const avant=L.length?[{cols:[{t:'Collaborateur'},{t:'Période'},{t:'Part du total',r:true},{t:lVal,r:true}],
-    rows:L.map(g=>({c:[nomDe(g),court(dates(g.d)),pct(g.n),fmt(g.n)],g:''})).concat([{c:['Total','','100.0 %',fmt(tot)],g:'t'}])}]:[];
+    rows:lignesRecap.concat([{c:['Total','','100.0 %',fmt(tot)],g:'t'}])}]:[];
   if(avant.length) avant[0].rows[0].saut={forme:'fiche',dy:3,nom:'Récapitulatif par collaborateur',nc:3,chif:[['Période',court(perAll)],[lVal,fmt(tot)+unite]]};
   const meta=(Dc.meta||[]).slice();   /* plus de rubrique « Regroupement » sur la page de garde (26.11.2026, à la demande) */
   return Object.assign({},Dc,{cols:colsF,rows,meta,avant}); };

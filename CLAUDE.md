@@ -3036,8 +3036,8 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   de boutons ne sont pas imprimés. `sgDocTableau` : `lireTable(tb, titre)` (plusieurs lignes de total : la dernière seule sur bande ; `<br>` → « · »), options
   `titreTable`, `suite [{table, titre}]`, `type`. **Largeurs des documents** (`octets` de `sg3_docs_heures.js`, même jour) : une colonne prend la largeur de son
   contenu le plus long tant que le tableau tient dans la page (les noms ne passent plus à la ligne quand il y a la place) ; la règle « neuf lignes sur dix », les
-  titres abrégés et les colonnes resserrées ne s'appliquent que si la page est trop étroite ; la place en trop va à la colonne de texte au contenu le plus long
-  (plus à celle au titre le plus long). Vérifié hors de l'aperçu : trois documents de 4 pages sur la base de test, totaux égaux à ceux de la page, un collaborateur
+  titres abrégés et les colonnes resserrées ne s'appliquent que si la page est trop étroite ; la place en trop allait à la colonne de texte au contenu le plus long
+  (plus à celle au titre le plus long) — remplacé le 26.11.2026 par une répartition sur toutes les colonnes (voir « Largeurs des colonnes des documents des heures »). Vérifié hors de l'aperçu : trois documents de 4 pages sur la base de test, totaux égaux à ceux de la page, un collaborateur
   choisi dans Apports, zone étroite, onze documents déjà faits rejoués (mêmes nombres de pages), balayage des 120 écrans, `nas/nettoyer.py`, `sonde_chrome.sh`.
   Copie d'avant : `subgestion3/_backup_20261115_1943_avant_imprimer_finances_rh/`.
   **« Imprimer » aussi sur Heures dues et vacances, Bouclement annuel et Coût de revient (15.11.2026, Paulo, à la question posée : « Oui, ajouter »)** — même bouton

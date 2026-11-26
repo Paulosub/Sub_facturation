@@ -793,8 +793,10 @@ const FN={
   trs:b=>{ ST[b.dataset.c][b.dataset.dom]=b.dataset.k===''?null:+b.dataset.k; razSel(); redess(); },
   grp:b=>{ ST.grp[b.dataset.dom]=b.dataset.k; razSel(); redess(); },
   /* fonctions, documents et rapports : fenêtres et impressions du moteur */
-  fonc:b=>{ const d=b.dataset.dom, T=d==='h'?'timelog':'projectcost', p=SP(), L=CTX[d], S=selRows(d), n=S.length, ec=ecrit(d), o={selSet:new Set(S.map(r=>r.ID))}; if(!p) return;
-    popMenu(b,[{t:'Modifier le statut « Facturable » …',dis:!n||!ec,fn:()=>ctlFlag(T,o,'ISCHARGEABLE')},{t:'Modifier le statut « Facturé » …',dis:!n||!ec,fn:()=>ctlFlag(T,o,'ISCHARGED')},{t:'Modifier le commentaire …',dis:!n||!ec,fn:()=>ctlComment(o,T)},'-',
+  /* Fonctions : copie et CSV seulement — « Modifier le statut « Facturable » / « Facturé » … » et « Modifier le commentaire … » retirés (26.11.2026, Paulo : « supprimer » ;
+     les statuts restent au clic droit sur une position, le commentaire dans la fenêtre de l'inscription, double-clic) ; heures et frais */
+  fonc:b=>{ const d=b.dataset.dom, p=SP(), L=CTX[d]; if(!p) return;
+    popMenu(b,[
       {t:'Copier les positions dans le presse-papier',dis:!L.length,fn:()=>copyTable(grille(d,L))},{t:'Exporter les positions en CSV …',dis:!L.length,fn:()=>csvTable(grille(d,L),(d==='h'?'Analyse_heures_':'Analyse_frais_')+nomF(p))}]); },
   docs:b=>{ const d=b.dataset.dom, tl=d==='h', T=tl?'timelog':'projectcost', p=SP(), L=CTX[d], S=selRows(d), F=filtreMoteur(d); if(!p) return;
     popMenu(b,[{t:'Établir le document d’analyse …',dis:!L.length,fn:()=>{ ctxDoc(p); ctlPrint(p,T,grilleDoc(d,L)); }},{t:'Document des positions choisies …',dis:!S.length,fn:()=>{ ctxDoc(p); ctlPrint(p,T,grilleDoc(d,S)); }},

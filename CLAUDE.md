@@ -3206,6 +3206,18 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   (« remplacer par prestation » : catalogue `ahh` clé `act`, et `COLS.h` des documents, copie et CSV ; l'activité elle-même reste à choisir dans Présentation ▸
   Personnalisé, clé `activ`) ; la feuille d'heures et le Journal des heures gardent « Activité » ; ligne sous le nom d'un chapitre de collaborateur = **période puis heures** (« inverser » : « Du 05.01.2026 au 03.11.2026 · 344.50 h »,
   « Du » en capitale en début de ligne), aussi pour le rapport de frais. Copie d'avant : `subgestion3/_backup_20261126_2031_avant_prestation/`.
+  **Options de « Composer le rapport » dans le volet Réglages du rapport d'heures (même soir, Paulo : « ajouter ses options dans l'image 2 »)** : groupe « Tri »
+  (`TRI_L`, `PER_L`, choix gardés sur ce poste : `sg3_docs_heures` {tri, per}) — Tri selon affichage, Tri par prestation (ex-« par activité »), par collaborateur ou par
+  phase partielle avec sous-total (`sousTotaux` : titre du groupe en bleu nuit, lignes, « Total … » ; la colonne du tri est retirée ; prestation dans l'ordre Projet,
+  Images 3D, Maquette, phase partielle dans l'ordre SIA), Récapitulatif par collaborateur avec, en retrait, Totaux par mois / trimestre / semestre / année (grisés hors
+  récapitulatif ; `recapitulatif` = calcul de `ctlJournal` du moteur : Durée, Montant `tlFee`, Frais des collaborateurs `tlCost` seulement si `sgTauxVisibles()`).
+  Avec « Grouper par collaborateur », le tri s'applique dans chaque chapitre (« Tri par collaborateur » alors grisé) ; avec le récapitulatif, « Grouper » est grisé.
+  Chaque position garde son inscription (`_r`) et la fenêtre la liste des inscriptions (`Dc.view`). Le rapport de frais n'a pas ces options.
+  **Largeurs des colonnes des documents des heures (même soir, Paulo, rapport de 24PRC : « mieux répartir les colonnes »)** : quand le tableau tient dans la page, la
+  place en trop est RÉPARTIE sur les colonnes au prorata de leur largeur (avant : toute à la colonne de texte au contenu le plus long, d'où un grand vide) ; une colonne
+  de texte au contenu très long (« Appel et comparaisons des offres, propositions d'adjudication ») est limitée à deux parts égales de la place des textes (à partir de
+  trois colonnes de texte), ses textes plus longs passent à la ligne ; avec des commentaires, la 1re colonne (Date) garde sa largeur. Tableau trop large pour la page :
+  règle inchangée. 24PRC, toute la période, regroupé par collaborateur : 109 → 136 pages (libellés de la phase 41 sur deux lignes).
 
 - **Tableaux : présentation des colonnes, plus de tri par les titres, même visuel (15.11.2026, bloc 57, `subgestion3/sg3_tableaux.js`, concaténé en dernier)** — Paulo,
   sur la Liste des affaires : « produire le même graphisme que le reste et ajouter la possibilité d'imprimer la liste avec le même graphisme », puis « lorsqu'il s'agit

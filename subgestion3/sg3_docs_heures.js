@@ -47,7 +47,11 @@ const rubriques=Dc=>{ const p=Dc.p, R=[]; if(p){ try{ (deGardeRub(p,{filter:null
   if(tot.length){ const tx=m=>{ const l=un(m[0]).replace(/^total\s*/i,''); return (l?l.charAt(0).toLocaleUpperCase('fr')+l.slice(1)+' ':'')+un(m[1]); }; R.push({lib:tot.length>1?'Totaux':'Total',nom:tx(tot[0]),adr:tot.slice(1).map(tx).join('\n')}); }
   return R; };
 /* ── le PDF ── */
-async function octets(Dc){ const rg0=regDe(Dc.cle); if(Dc.grouper&&rg0.parCol===true) Dc=parCollaborateur(Dc); const M=await mesure(), {w,R,fn}=await SGDS.ressources(), rg=rg0, ori=formatDe(Dc), W=ori==='portrait'?WP:WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), p=Dc.p||{};
+async function octets(Dc){ const rg0=regDe(Dc.cle), tri=triDe(Dc,rg0);
+  if(tri==='recap') Dc=recapitulatif(Dc,perDe(rg0));
+  else if(Dc.grouper&&rg0.parCol===true) Dc=parCollaborateur(Dc,tri);
+  else if(tri!=='none'){ const X=sousTotaux(Dc.cols,Dc.rows,tri,true,true); if(X) Dc=Object.assign({},Dc,X); }
+  const M=await mesure(), {w,R,fn}=await SGDS.ressources(), rg=rg0, ori=formatDe(Dc), W=ori==='portrait'?WP:WL, cap=Math.max(1,Math.floor((ori==='portrait'?DG_HP:DG_HT)/DG_RH)), p=Dc.p||{};
   /* un tableau → ses pages ; un document peut en avoir plusieurs (Dc.suite), chacun commence sur une nouvelle page avec ses propres colonnes */
   const pagesDe=Tb=>{
   const ST={g:'O',s:'W',t:'T','1':'S',x:'X',b:'W','':Tb.hier?'W':'S'}, nC=Tb.cols.length;   /* x : commentaire ou désignation sous sa ligne, en gris italique (comme le descriptif d'une position du devis) ; b : ligne en gras */
@@ -74,7 +78,15 @@ async function octets(Dc){ const rg0=regDe(Dc.cle); if(Dc.grouper&&rg0.parCol===
   if(som()>Wd){ let reste=Wd-Tb.cols.reduce((a,c,j)=>a+(c.r?nat[j]:0),0), n=txt.length; const T=txt.slice().sort((a,b)=>nat[a]-nat[b]);   /* des plus courtes aux plus longues */
     for(const j of T){ const part=reste/n; if(nat[j]<=part){ wd[j]=nat[j]; reste-=nat[j]; n--; } else { T.slice(T.indexOf(j)).forEach(k=>{ wd[k]=Math.max(part,Math.min(nat[k],PL)); }); break; } }
     if(som()>Wd+0.5){ const f=Wd/som(); wd=wd.map(x=>x*f); } }
-  else { const jl=txt.length?txt.reduce((a,j)=>maxi[j]>maxi[a]?j:a,txt[0]):0; wd[jl]+=Wd-som(); }   /* place en trop : à la colonne de texte au contenu le plus long (pas au titre le plus long) */
+  else { /* place en trop RÉPARTIE sur les colonnes, au prorata de leur largeur (26.11.2026, Paulo, sur le rapport d'heures de 24PRC : « mieux répartir les colonnes » ;
+            avant : toute à la colonne de texte au contenu le plus long, d'où un grand vide après elle) ; avec des commentaires (lignes x, qui partent de la 2e colonne),
+            la 1re colonne garde sa largeur, sinon la date s'élargit et le commentaire est repoussé */
+    /* une colonne de texte au contenu très long (un libellé rare : « Appel et comparaisons des offres, propositions d'adjudication ») ne prend pas toute la largeur sur
+       tout le document : au plus deux parts égales de la place des textes, ses textes plus longs passent à la ligne ; elle ne reçoit pas de place en trop */
+    const placeTx=Wd-Tb.cols.reduce((a,c,j)=>a+(c.r?wd[j]:0),0), cap=txt.length>2?Math.max(PL,2*placeTx/txt.length):Infinity, plafond=Tb.cols.map((c,j)=>!c.r&&wd[j]>cap);
+    plafond.forEach((p,j)=>{ if(p) wd[j]=cap; });
+    const hasX=rows.some(r=>r.g==='x'), part=Tb.cols.map((c,j)=>!plafond[j]&&!(hasX&&j===0&&Tb.cols.length>1)), base=part.reduce((a,p,j)=>a+(p?wd[j]:0),0), libre=Wd-som();
+    if(base>0&&libre>0) wd=wd.map((x,j)=>part[j]?x+libre*x/base:x); else if(libre>0){ const jl=txt.length?txt[0]:0; wd[jl]+=libre; } }
   const cols=[]; Tb.cols.forEach((c,j)=>{ cols.push({t:TT[j],w:Math.round(wd[j]*100)/100,r:!!c.r}); if(sp[j]) cols.push({t:'',w:GOUT,r:false}); });
   if(sp.some(Boolean)) rows.forEach(r=>{ const c=[], k=[]; r.c.forEach((x,j)=>{ c.push(x); if(r.cc) k.push(r.cc[j]||''); if(sp[j]){ c.push(''); if(r.cc) k.push(''); } }); r.c=c; if(r.cc) r.cc=k; });
   const R=etaler(rows,cols,M);
@@ -96,10 +108,14 @@ async function octets(Dc){ const rg0=regDe(Dc.cle); if(Dc.grouper&&rg0.parCol===
     livretDG:{couverture:couverture||{},pages,st,zebra:false,style:'nuit',deborde:true,rh:DG_RH,orientation:ori,x0:MARGE,x0Tab:X0T,aligne:true,corpsTitres:DG_TXT,calRetrait:7}})), j=new w.Array(); opt.journal=j;
   const oct=await fn(R,null,opt); if(j.length) console.info(Dc.titre+' :',Array.from(j)); return oct; }
 /* ── la fenêtre du document : barre « Document PDF », lecteur, volet Réglages ── */
-const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc);
+const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc), tl=!!(Dc.grouper&&Dc.grouper.tl), tri=triDe(Dc,rg), per=perDe(rg), parCol=rg.parCol===true&&tri!=='recap';
   return [{t:'Format : Paysage',chk:f==='paysage',grp:'Format',fn:()=>regSet(Dc.cle,{format:'paysage'})},{t:'Format : Portrait',chk:f==='portrait',grp:'Format',fn:()=>regSet(Dc.cle,{format:'portrait'})},
     {t:'Page de garde',chk:rg.garde!==false,grp:'Affichage',fn:()=>regSet(Dc.cle,{garde:regDe(Dc.cle).garde===false})}]
-    .concat(Dc.grouper&&colDe(Dc)>=0?[{t:'Grouper par collaborateur',chk:rg.parCol===true,grp:'Affichage',fn:()=>regSet(Dc.cle,{parCol:regDe(Dc.cle).parCol!==true})}]:[]); };
+    .concat(Dc.grouper&&colDe(Dc)>=0?[{t:'Grouper par collaborateur',chk:parCol,dis:tri==='recap',grp:'Affichage',fn:()=>{ const r=regDe(Dc.cle), on=r.parCol!==true; regSet(Dc.cle,Object.assign({parCol:on},on&&r.tri==='st'?{tri:'none'}:{})); }}]:[])
+    /* « Composer le rapport » du moteur, dans le volet (26.11.2026, Paulo : « ajouter ses options dans l'image 2 ») : un seul tri à la fois ; « Totaux par … » sous le
+       récapitulatif ; avec « Grouper par collaborateur », le tri s'applique dans chaque chapitre (tri par collaborateur alors sans objet) */
+    .concat(tl?TRI_L.map(([k,l])=>({t:l,chk:tri===k,grp:'Tri',dis:k==='st'&&parCol,fn:()=>regSet(Dc.cle,{tri:k})}))
+      .concat(PER_L.map(([k,l])=>({t:l,chk:!!per[k],grp:'Tri',ind:true,dis:tri!=='recap',fn:()=>{ const p=perDe(regDe(Dc.cle)); p[k]=p[k]?0:1; regSet(Dc.cle,{per:p}); }}))):[]); };
 /* ── « Grouper par collaborateur » (Paulo, 26.11.2026 : « ajouter une option permettant de grouper les heures par collaborateur ») : rapport d'heures et rapport de
    frais. Présentation choisie par Paulo le même jour parmi 5 essais (« garde la variante 4 et crée le récapitulatif des heures collaborateur comme variante 5 ») :
    — d'abord le RÉCAPITULATIF PAR COLLABORATEUR (variante 5 « Fiche ») : au-dessus du tableau « Récapitulatif par collaborateur » en grand (gras 18 bleu nuit) et
@@ -110,7 +126,49 @@ const reglages=Dc=>{ const rg=regDe(Dc.cle), f=formatDe(Dc);
      Collaborateur retirée ; « Total <nom> » en gras à la fin.
    Collaborateurs du plus d'heures (ou de frais) au moins, « (sans collaborateur) » à la fin. Les autres essais : subgestion3/_backup_20261126_avant_variante4/. ── */
 const colDe=Dc=>(Dc.cols||[]).findIndex(c=>un(c.t)==='Collaborateur');
-const parCollaborateur=Dc=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/^(dur[ée]e|montant)$/i.test(un(c.t))); if(j<0||jT0<0) return Dc;
+/* ── tris du rapport d'heures : « Composer le rapport » du moteur (ctlReport / ctlJournal) repris dans le volet Réglages (26.11.2026, Paulo, sur la fenêtre du rapport :
+   « ajouter ses options dans l'image 2 ») — Tri selon affichage, Tri par prestation (l'activité du moteur, « Prestation » depuis le même jour), par collaborateur ou par
+   phase partielle avec sous-totaux, Récapitulatif par collaborateur avec totaux par mois, trimestre, semestre, année (Durée, Montant = tlFee, Frais des collaborateurs =
+   tlCost seulement si sgTauxVisibles, comme le coût de revient). Les lignes gardent les colonnes du rapport ; la colonne du tri est retirée (le titre du groupe la nomme).
+   Choix gardés sur ce poste (sg3_docs_heures : tri, per). ── */
+const TRI_L=[['none','Tri selon affichage'],['pre','Tri par prestation avec sous-total'],['st','Tri par collaborateur avec sous-total'],['sp','Tri par phase partielle avec sous-total'],['recap','Récapitulatif par collaborateur']];
+const PER_L=[['m','Totaux par mois'],['q','Totaux par trimestre'],['s','Totaux par semestre'],['y','Totaux par année']];
+const triDe=(Dc,rg)=>Dc.grouper&&Dc.grouper.tl&&TRI_L.some(x=>x[0]===rg.tri)?rg.tri:'none';
+const perDe=rg=>Object.assign({m:1,q:0,s:0,y:0},rg.per&&typeof rg.per==='object'?rg.per:{});
+const TRI_COL={pre:'Prestation',st:'Collaborateur',sp:'Phase partielle'}, PRE_ORD={'Projet':0,'Images 3D':1,'Maquette':2};
+/* positions et leurs commentaires (lignes x qui les suivent) ; sous-totaux et totaux laissés de côté */
+const blocsDe=rows=>{ const B=[]; (rows||[]).forEach(r=>{ if(!r.g) B.push({p:r,x:[]}); else if(r.g==='x'&&B.length) B[B.length-1].x.push(r); }); return B; };
+/* lignes regroupées selon la colonne du tri, titre du groupe, sous-total ; total général si demandé */
+const sousTotaux=(cols,rows,tri,tl,total)=>{ const j=cols.findIndex(c=>un(c.t)===TRI_COL[tri]); if(j<0) return null;
+  const jT0=cols.findIndex(c=>/^(dur[ée]e|montant)$/i.test(un(c.t))), nC=cols.length-1, jT=jT0>j?jT0-1:jT0, sans=c=>c.filter((_,i)=>i!==j), vide=()=>Array.from({length:nC},()=>''), fmt=n=>tl?hrs(n):num(n);
+  const G=new Map();
+  blocsDe(rows).forEach(b=>{ const brut=un(b.p.c[j]).replace(/^[—–-]$/,''), lbl=brut||'(sans '+TRI_COL[tri].toLowerCase()+')';
+    if(!G.has(lbl)){ const sp=tri==='sp'&&b.p._r?DS.get('projectsubphase',b.p._r.SUBPHASE_ID):null;
+      G.set(lbl,{lbl,n:0,B:[],o:!brut?1e9:tri==='pre'?(PRE_ORD[lbl]!=null?PRE_ORD[lbl]:9):tri==='sp'?(sp&&sp.NUMBER!=null&&!isNaN(+sp.NUMBER)?+sp.NUMBER:9999):0}); }
+    const g=G.get(lbl); g.n+=+b.p._n||0; g.B.push(b); });
+  const L=[...G.values()].sort((a,b)=>a.o-b.o||a.lbl.localeCompare(b.lbl,'fr')), out=[];
+  L.forEach(g=>{ const h=vide(); h[0]=g.lbl; out.push({c:h,g:'g'});
+    g.B.forEach(b=>{ out.push(Object.assign({},b.p,{c:sans(b.p.c)})); b.x.forEach(x=>{ const t=(x.c||[]).map(un).find(Boolean)||'', c=vide(); c[Math.min(1,nC-1)]=t; out.push(Object.assign({},x,{c})); }); });
+    const st=vide(); st[0]='Total '+g.lbl; if(jT>=0) st[jT]=fmt(g.n); out.push({c:st,g:'s'}); });
+  if(total){ const t=vide(); t[0]='Total'; if(jT>=0) t[jT]=fmt(L.reduce((a,g)=>a+g.n,0)); out.push({c:t,g:'t'}); }
+  return {cols:sans(cols),rows:out}; };
+/* récapitulatif par collaborateur : pour chacun, ses totaux par période choisie, puis son total ; total général (calcul de ctlJournal du moteur) */
+const recapitulatif=(Dc,per)=>{ const V=(Dc.view||[]).filter(Boolean), fee=typeof tlFee==='function'?tlFee:null, cost=typeof tlCost==='function'&&(typeof sgTauxVisibles!=='function'||sgTauxVisibles())?tlCost:null;
+  const H=L=>L.reduce((a,r)=>a+(+r.TIMEPERIOD||0),0), F=L=>L.reduce((a,r)=>a+(+fee(r)||0),0), K=L=>L.reduce((a,r)=>a+(+cost(r)||0),0);
+  const P=[['m',d=>[d.getFullYear(),d.getMonth()],(y,i)=>MOISL[i]+' '+y],['q',d=>[d.getFullYear(),Math.floor(d.getMonth()/3)],(y,i)=>['1er','2ème','3ème','4ème'][i]+' trimestre '+y],
+    ['s',d=>[d.getFullYear(),Math.floor(d.getMonth()/6)],(y,i)=>(i?'2ème':'1er')+' semestre '+y],['y',d=>[d.getFullYear(),0],y=>String(y)]].filter(x=>per[x[0]]);
+  const cols=[{t:'Collaborateur'},{t:'Durée',r:true}].concat(fee?[{t:'Montant',r:true}]:[]).concat(cost?[{t:'Frais des collaborateurs',r:true}]:[]);
+  const ligne=(lbl,L)=>[lbl,hrs(H(L))].concat(fee?[num(F(L))]:[]).concat(cost?[num(K(L))]:[]), vide=()=>cols.map(()=>'');
+  const S=new Map(); V.forEach(r=>{ const k=r.STAFF_ID==null?'':String(r.STAFF_ID); if(!S.has(k)) S.set(k,[]); S.get(k).push(r); });
+  const nom=k=>{ const x=k===''?null:DS.get('staff',isNaN(+k)?k:+k); return x?staffName(x):'(sans collaborateur)'; };
+  const L=[...S.entries()].map(([k,R])=>({k,nom:nom(k),R})).sort((a,b)=>(a.k==='')-(b.k==='')||a.nom.localeCompare(b.nom,'fr')), rows=[];
+  L.forEach(g=>{ const h=vide(); h[0]=g.nom; rows.push({c:h,g:'g'});
+    P.forEach(([,kf,lf])=>{ const M=new Map(); g.R.forEach(r=>{ const [y,i]=kf(tlDate(r)), k=y*100+i; if(!M.has(k)) M.set(k,{y,i,R:[]}); M.get(k).R.push(r); });
+      [...M.keys()].sort((a,b)=>a-b).forEach(k=>{ const x=M.get(k); rows.push({c:ligne(lf(x.y,x.i),x.R),g:'1'}); }); });
+    rows.push({c:ligne('Total '+g.nom,g.R),g:'s'}); });
+  rows.push({c:ligne('Total',V),g:'t'});
+  return Object.assign({},Dc,{cols,rows,avant:null,hier:true}); };
+const parCollaborateur=(Dc,tri)=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/^(dur[ée]e|montant)$/i.test(un(c.t))); if(j<0||jT0<0) return Dc;
   const tl=!!(Dc.grouper&&Dc.grouper.tl), fmt=n=>tl?hrs(n):num(n), unite=tl?' h':' CHF', nC=Dc.cols.length-1, jT=jT0>j?jT0-1:jT0, sans=c=>c.filter((_,i)=>i!==j), vide=()=>Array.from({length:nC},()=>'');
   const G=new Map(); let cur=null;
   (Dc.rows||[]).forEach(r=>{ if(r.g==='t') return;
@@ -118,12 +176,15 @@ const parCollaborateur=Dc=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/^(dur[
     if(r.g==='x'){ const t=(r.c||[]).map(un).find(Boolean)||'', c=vide(); c[Math.min(1,nC-1)]=t; cur.rows.push(Object.assign({},r,{c})); return; }
     cur.rows.push(Object.assign({},r,{c:sans(r.c)})); });
   const L=[...G.values()].filter(g=>g.rows.length).sort((a,b)=>(!a.k)-(!b.k)||b.n-a.n||a.k.localeCompare(b.k,'fr'));
+  /* tri par prestation ou par phase partielle dans chaque chapitre (26.11.2026) : colonnes de tous les chapitres = celles du tri */
+  let colsF=sans(Dc.cols); if(tri==='pre'||tri==='sp') L.forEach(g=>{ const X=sousTotaux(sans(Dc.cols),g.rows,tri,tl,false); if(X){ g.rows=X.rows; colsF=X.cols; } });
+  const nF=colsF.length, jTF=colsF.findIndex(c=>/^(dur[ée]e|montant)$/i.test(un(c.t))), videF=()=>Array.from({length:nF},()=>'');
   const tot=L.reduce((a,g)=>a+g.n,0), totNp=L.reduce((a,g)=>a+g.np,0), perAll=dates(L.flatMap(g=>g.d));
   const nomDe=g=>g.k||'(sans collaborateur)', court=per=>sv(per).replace(/^du /,'').replace(' au ',' – '), pct=n=>tot?(Math.round(1000*n/tot)/10).toFixed(1)+' %':'';
   const lPos=tl?'Inscriptions':'Notes de frais', lVal=tl?'Heures':'Montant';
   /* chapitres : un par collaborateur, chacun sur une nouvelle page */
   const rows=[];
-  L.forEach((g,i)=>{ const nom=nomDe(g), s=vide(); s[0]='Total '+nom; s[jT]=fmt(g.n);
+  L.forEach((g,i)=>{ const nom=nomDe(g), s=videF(); s[0]='Total '+nom; if(jTF>=0) s[jTF]=fmt(g.n);
     const e={forme:'chap',dy:2,num:String(i+1),nom,sous:[dates(g.d).replace(/^du /,'Du '),fmt(g.n)+unite].filter(Boolean).join(' · ')   /* sans le nombre d'inscriptions (26.11.2026, « supprimer ») ; période puis heures (même jour, « inverser ») */};
     rows.push(Object.assign({},g.rows[0],{saut:e}),...g.rows.slice(1),{c:s,g:'s'}); });
   /* récapitulatif par collaborateur, avant les chapitres (nombre d'inscriptions — tableau, chiffres, chapitres — et nombre de collaborateurs retirés le 26.11.2026 à la demande ; chiffres : période, heures ou montant) */
@@ -131,7 +192,7 @@ const parCollaborateur=Dc=>{ const j=colDe(Dc), jT0=Dc.cols.findIndex(c=>/^(dur[
     rows:L.map(g=>({c:[nomDe(g),court(dates(g.d)),pct(g.n),fmt(g.n)],g:''})).concat([{c:['Total','','100.0 %',fmt(tot)],g:'t'}])}]:[];
   if(avant.length) avant[0].rows[0].saut={forme:'fiche',dy:3,nom:'Récapitulatif par collaborateur',nc:3,chif:[['Période',court(perAll)],[lVal,fmt(tot)+unite]]};
   const meta=(Dc.meta||[]).slice();   /* plus de rubrique « Regroupement » sur la page de garde (26.11.2026, à la demande) */
-  return Object.assign({},Dc,{cols:sans(Dc.cols),rows,meta,avant}); };
+  return Object.assign({},Dc,{cols:colsF,rows,meta,avant}); };
 /* tableau prêt à être mis en page : colonnes de nombres à droite (T.droite), colonnes vides retirées — les couleurs de cellule (cc) suivent leurs colonnes */
 const normaliser=T=>{ T.cols=(T.cols||[]).filter(Boolean); T.rows=T.rows||[]; const prendre=ord=>{ T.cols=ord.map(j=>T.cols[j]); T.rows=T.rows.map(r=>Object.assign({},r,{c:ord.map(j=>(r.c||[])[j])},Array.isArray(r.cc)?{cc:ord.map(j=>r.cc[j])}:{})); };
   /* T.droite : colonnes de nombres rangées à droite, dans leur ordre, chacune avec son unité (« Unité », « Monnaie ») — comme les montants du devis général et du
@@ -147,7 +208,7 @@ function ouvrir(Dc){ Dc=normaliser(Object.assign({},Dc)); Dc.titre=un(Dc.titre)|
   const D={bd:dg.bd,iframe:ifr,close:dg.close,maj:r=>{ try{ if(ifr._sgVuePrep) ifr._sgVuePrep(); }catch(_){ }
     return Promise.resolve(r).then(oct=>{ if(ifr._sgVue) ifr._sgVue(new Blob([oct],{type:'application/pdf'})); },e=>{ console.error(e); if(ifr._sgVueErr) ifr._sgVueErr(e); }); }};
   SGDE.vue(D,{barre:'pdf',p:Dc.p||{},lb:Dc.lb||'Heures · Documents',titre:Dc.titre,etat:'',peut:()=>true,items:()=>reglages(Dc),rendre:()=>octets(Dc),pied:'Choix gardés sur ce poste',
-    groupes:['Format','Affichage','Autres'],groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
+    groupes:['Format','Affichage','Tri','Autres'],groupe:(x,G)=>x.grp&&G[x.grp]?x.grp:'Autres',rang:()=>0,retrait:x=>!!x.ind});
   D.maj(octets(Dc)); return true; }
 /* ── l'écran ouvert est-il rangé dans Archives ? (ses documents ne changent pas) ── */
 const archives=()=>{ try{ const v=typeof VIEW!=='undefined'&&VIEW?VIEW.id:'', x=typeof NX_VIEW!=='undefined'?NX_VIEW[v]:null; return !!(x&&x.d&&x.d.k==='archives'); }catch(_){ return false; } };
@@ -171,7 +232,7 @@ const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=
       ['Phase',r=>v('ph',r),a('ph')],['Phase partielle',r=>v('sp',r),a('sp')],['Statut',r=>v('s',r),a('s')],['Facturable',r=>v('fa',r),a('fa')],['Facturé',r=>v('fd',r),a('fd')],['Remboursable',r=>v('rb',r),a('rb')],
       ['Quantité',r=>v('QUANTITY',r),a('QUANTITY'),1],['Unité',r=>v('UNIT',r),a('UNIT')],['Montant',r=>v('a',r),true,1],['Monnaie',r=>v('m',r),a('m')]];
   const U=D.filter(x=>x[2]), cols=U.map(x=>({t:x[0],r:!!x[3]})), rows=[], jT=U.findIndex(x=>x[0]===(tl?'Durée':'Montant'));
-  V.forEach(r=>{ rows.push({c:U.map(x=>x[1](r)),g:'',_k:tl?v('s',r):v('pe',r),_n:tl?(+r.TIMEPERIOD||0):pcAmount(r),_d:(()=>{ try{ return tl?tlDate(r):pcDate(r); }catch(_){ return null; } })()}); const d=a('DESCRIPTION')?cellule(K.get('DESCRIPTION'),r):''; if(d&&cols.length>1){ const c=U.map(()=>''); c[1]='> '+d; rows.push({c,g:'x',debR:1});   /* « > » devant le commentaire (26.11.2026), comme les écritures du contrôle des coûts */ } });
+  V.forEach(r=>{ rows.push({c:U.map(x=>x[1](r)),g:'',_r:r,_k:tl?v('s',r):v('pe',r),_n:tl?(+r.TIMEPERIOD||0):pcAmount(r),_d:(()=>{ try{ return tl?tlDate(r):pcDate(r); }catch(_){ return null; } })()}); const d=a('DESCRIPTION')?cellule(K.get('DESCRIPTION'),r):''; if(d&&cols.length>1){ const c=U.map(()=>''); c[1]='> '+d; rows.push({c,g:'x',debR:1});   /* « > » devant le commentaire (26.11.2026), comme les écritures du contrôle des coûts */ } });
   return {cols,rows,jT}; };
 { const p0=ctlPrint;
   ctlPrint=function(p,t,o){ if(archives()||!o||!Array.isArray(o.cols)||!Array.isArray(o.view)) return p0.apply(this,arguments);
@@ -181,7 +242,7 @@ const composer=(tl,C,V)=>{ const K=new Map(C.map(c=>[c.k,c])), a=k=>K.has(k), v=
       if(V.length&&X.jT>0){ const c=X.cols.map(()=>''); c[0]='Total'; c[X.jT]=val; X.rows.push({c,g:'t'}); }
       const per=dates(V.map(r=>{ try{ return tl?tlDate(r):pcDate(r); }catch(_){ return null; } }));
       const meta=[['Période',per],[tl?'Total heures':'Total',V.length?val+(tl?' h':' CHF'):'']];
-      if(ouvrir({cle:tl?'Rapport d’heures':'Rapport de frais',titre:tl?'Rapport d’heures':'Rapport de frais',p,meta,cols:X.cols,rows:X.rows,sous:per,format:'paysage',grouper:X.rows.some(r=>'_n' in r)?{tl}:null})) return; }catch(e){ console.error(e); }
+      if(ouvrir({cle:tl?'Rapport d’heures':'Rapport de frais',titre:tl?'Rapport d’heures':'Rapport de frais',p,meta,cols:X.cols,rows:X.rows,sous:per,format:'paysage',grouper:X.rows.some(r=>'_n' in r)?{tl}:null,view:V})) return; }catch(e){ console.error(e); }
     return p0.apply(this,arguments); }; }
 /* ── ctlDocHTML : journal des heures, rapport des frais, récapitulatifs, rapport heures - facturation - coût de revient ── */
 { const d0=ctlDocHTML;

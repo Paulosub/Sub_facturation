@@ -1393,7 +1393,7 @@ const SG_VUE_DROIT={'aff-toutes':()=>sgDroit('projets_voir','tous'),'aff-gestion
   'nx-renta':()=>sgDroit('finances','projets'),'nx-profils':()=>sgAdmin()};
 /* Heures ▸ Analyse des heures et ses quatre modules (15.11.2026, sg3_analyse_heures.js) : droits du Controlling (aff-controlling) — jamais le profil collaborateur ;
    heures (ou notes de frais) « de ses projets » au moins ; le périmètre des affaires est appliqué dans le bloc */
-['nx-ah','nx-ah-ctlh','nx-ah-anah'].forEach(v=>{ SG_VUE_DROIT[v]=()=>SG_ACC.profil!=='collab'&&sgDroit('heures','projets'); });
+['nx-ah','nx-ah-ctlh','nx-ah-anah','nx-ahc'].forEach(v=>{ SG_VUE_DROIT[v]=()=>SG_ACC.profil!=='collab'&&sgDroit('heures','projets'); });
 ['nx-af','nx-ah-ctlf','nx-ah-anaf'].forEach(v=>{ SG_VUE_DROIT[v]=()=>SG_ACC.profil!=='collab'&&sgDroit('frais','projets'); });
 function sgVueOk(v){ if(!v||sgAdmin()) return true;
   if(/^dom-/.test(v)){ const d=SG_D[v.slice(4)]; return !!d&&d.items.some(it=>!it.hide&&sgVueOk(it.v)); }
@@ -2853,9 +2853,10 @@ function sgCtxMenuDe(t){
   const row=t.closest('tr,.nx-row,[data-ref]'); if(!row||!zone.contains(row)||row.closest('#nx-side')) return null;   /* écrans de la coquille, tableaux simples */
   const L=[], ref=row.dataset&&row.dataset.ref;
   if(ref) L.push(...sgCtxRef(ref));
+  else if(row.dataset&&row.dataset.dbl!=null) L.push({t:'Ouvrir',fn:()=>row.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}))});   /* ligne qui s'ouvre par double-clic */
   else if(row.matches('[data-go],[data-fn]')||typeof row.onclick==='function'||row.hasAttribute('onclick')) L.push({t:'Ouvrir',fn:()=>row.click()});
   const A=sgCtxActionsLigne(row); if(A.length) L.push('-',...A);
-  if(row.tagName==='TR'&&row.cells&&row.cells.length) L.push('-',...sgCtxCopie(row));
+  if(row.tagName==='TR'&&row.cells&&row.cells.length&&!row.closest('table[data-sans-copie]')) L.push('-',...sgCtxCopie(row));   /* table[data-sans-copie] : pas de copie au clic droit */
   return {items:L,ligne:row}; }
 document.addEventListener('contextmenu',e=>{ if(e.defaultPrevented||e.altKey) return; const t=e.target; if(!t||t.nodeType!==1) return;
   if(sgCtxSaisie(t)||sgCtxSelection(t,document)) return;

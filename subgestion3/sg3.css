@@ -1900,3 +1900,5 @@ html[data-vep] #main .pp-fix tr.mgl1 td:first-child{background:var(--s-nuit3)!im
 .nx-tbl.sgtab-t tbody tr td.sgocc-chg,.nx-tbl.sgtab-t tbody tr:hover td.sgocc-chg{background:var(--s-jaune2)}   /* Occupation et effectif : changement de taux */
 .sgof-tabl{display:inline-flex;align-items:center;gap:2px;margin-left:auto}   /* Présentation et Imprimer du titre « Factures » de l'affaire */
 .nx-tbl.sgtab-t tr.tot td{font-weight:700;background:var(--s-nuit3)}
+/* Heures ▸ « Analyse des heures des collaborateurs » (26.11.2026) : nom trop long pour une ligne du menu — sur deux lignes plutôt que coupé */
+.nx-it[data-go="nx-ahc"]{white-space:normal;height:auto;min-height:30px;padding-top:5px;padding-bottom:5px;line-height:1.3}

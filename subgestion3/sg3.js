@@ -88,9 +88,12 @@ const SG_DOM=[
        profil collaborateur (SG_VUE_DROIT, sg3_plus.js) ; les quatre anciennes entrées d'Administration (adm-ctl-*, adm-ana-*) y renvoient */
     /* les quatre modules retirés du menu de gauche le 24.11.2026 (demande de Paulo) : hide (écrans, droits et fil d'Ariane gardés), on y va par les tuiles de
        l'Analyse des heures, qui reste surlignée dans le menu (parent) */
-    {v:'nx-ah',t:'Analyse des heures',ico:'analyse',d:'Heures des affaires : chiffres de la période, affaires actives et accès aux deux modules.'},
+    {v:'nx-ah',t:'Analyse des heures d’affaires',ico:'analyse',d:'Heures des affaires : chiffres de la période, affaires actives et accès aux deux modules.'},
     {v:'nx-ah-ctlh',hide:1,parent:'nx-ah',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
     {v:'nx-ah-anah',hide:1,parent:'nx-ah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
+    /* Analyse des heures des collaborateurs (26.11.2026, Paulo : « ajoute ici analyse des heures collaborateurs » ; même principe que l'Analyse des heures
+       d'affaires, par collaborateur ; accès comme elle) */
+    {v:'nx-ahc',t:'Analyse des heures des collaborateurs',ico:'users',d:'Heures des collaborateurs : liste des collaborateurs et accès aux deux modules.'},
     /* Contrôle des frais et Critères d'analyse des frais : chapitre Notes de frais (25.11.2026) */]},
   /* chapitre « Notes de frais » (25.11.2026, Paulo : « avec le même principe, créer un menu note de frais » ; choix : saisie + Analyse des frais, les frais retirés de
      l'Analyse des heures) : même principe que Heures — la saisie, puis l'analyse (liste des affaires → page de l'affaire → tuiles, module affiché dessous ;

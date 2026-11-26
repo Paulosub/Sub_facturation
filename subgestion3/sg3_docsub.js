@@ -1664,6 +1664,21 @@ async function sgDsPdf(R, rep, o){
           if(pc){ cx.texte(P(d[2]), xR, T(yy), { police:F.regular, taille:zc, align:'d' }); if(u) cx.texte(u, xU0, T(yy), { police:F.light, taille:zu, couleur:GRT }); }
           else { if(u) cx.texte(u, xR, T(yy), { police:F.light, taille:zu, couleur:GRT, align:'d' }); cx.texte(P(d[2]), xR - (u ? wu + 4 : 0), T(yy), { police:F.regular, taille:zc, align:'d' }); }   /* sans colonne [%] : unité après la valeur */
           cx.rect(XB, T(yy + 4) - 0.25, WB, 0.5, { fond:FILN }); }); }
+      /* pg.entete = { forme, nom, … } : titre d'un groupe au-dessus de la bande, le tableau étant descendu de pg.dy (rapport d'heures / de frais groupé par collaborateur,
+         26.11.2026, Paulo : « mieux identifier le nom du collaborateur » ; présentation choisie parmi 5 essais) — forme « chap » : un collaborateur ; « fiche » : le
+         récapitulatif */
+      if(!info && pg.entete && nuit && pg.entete.forme === 'chap'){ const E = pg.entete, haut = 100.5 + dyR;   /* chapitre (variante 4) : « n | NOM » en capitales grasses entre deux filets noirs, puis une ligne d'information */
+        cx.rect(XB, T(haut - 50) - 0.375, WB, 0.75, { fond:C.N }); cx.rect(XB, T(haut - 31) - 0.375, WB, 0.75, { fond:C.N });
+        const tt = (E.num ? E.num + ' | ' : '') + String(E.nom || '').toLocaleUpperCase('fr'), t1 = ajuste(tt, F.bold, 10, W * 0.8); cx.texte(t1, X0, T(haut - 37), { police:F.bold, taille:10 });
+        if(E.suite) cx.texte('(SUITE)', X0 + cx.largeur(t1, F.bold, 10) + 6, T(haut - 37), { police:F.light, taille:10, couleur:GRT });
+        if(E.sous) cx.texte(ajuste(E.sous, F.light, 8, W), X0, T(haut - 17), { police:F.light, taille:8, couleur:GRT }); }
+      else if(!info && pg.entete && nuit && pg.entete.forme === 'fiche'){ const E = pg.entete, haut = 100.5 + dyR, nom = ajuste(E.nom || '', F.bold, 18, W * 0.8);   /* fiche (variante 5) : nom en grand, puis les chiffres, chacun sous son trait */
+        cx.texte(nom, X0, T(haut - 50), { police:F.bold, taille:18, couleur:NUIT });
+        if(E.suite) cx.texte('suite', X0 + cx.largeur(nom, F.bold, 18) + 8, T(haut - 50), { police:F.light, taille:10, couleur:GRT });
+        const CH = Array.from(E.chif || []), nc = Math.max(CH.length, +E.nc || 0), wc = nc ? W / nc : W;   /* nc : nombre de places (chiffres alignés sur une grille fixe, places vides à droite) */
+        if(!CH.length) cx.rect(XB, T(haut - 41) - 0.25, WB, 0.5, { fond:FILN });
+        else CH.forEach((d, k) => { const x1 = k ? X0 + k * wc : XB, x2 = k === nc - 1 ? XB + WB : X0 + (k + 1) * wc - 8; cx.rect(x1, T(haut - 41) - 0.25, x2 - x1, 0.5, { fond:FILN }); });   /* filet coupé : un trait par chiffre (26.11.2026) */
+        CH.forEach((d, k) => { const xx = X0 + k * wc; cx.texte(P(String(d[0] || '').toLocaleUpperCase('fr')), xx, T(haut - 30), { police:F.regular, taille:6.5, couleur:GRT }); cx.texte(ajuste(d[1] || '', F.bold, 10, wc - 8), xx, T(haut - 16), { police:F.bold, taille:10 }); }); }
       let y = (info ? 121 : 122) + dyR;
       const RG = Array.from(pg.rows || []), plein = r => !!r && Array.from(r.c || []).some(v => String(v == null ? '' : v).trim()), det = r => { const x = String((r || {}).s || 'S'); return x === 'D' || x === 'X'; };
       /* Bleu nuit — bloc = une rangée de tête et ce qui la continue : ses lignes de calcul et son descriptif (D, X), la suite d'un texte passé à la ligne (k), ses ouvrages

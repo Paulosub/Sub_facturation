@@ -250,8 +250,9 @@ const DIM={st:{t:'Collaborateur',k:r=>String(r.STAFF_ID==null?'':r.STAFF_ID),l:k
   pr:{t:'Affaire',k:r=>String(r.PROJECT_ID==null?'':r.PROJECT_ID),l:k=>{ const p=k===''?null:Pj(isNaN(+k)?k:+k); return p?[p.NUMBER,p.TITLE].filter(Boolean).join(' '):'(sans affaire)'; },lab:1},
   cg:{t:'Groupe de frais',k:r=>cgL(r.COSTCATEGORYGROUP_ID),l:k=>k||'(sans groupe)'}, cat:{t:'Genre de frais',k:r=>ccL(r.COSTCATEGORY_ID),l:k=>k||'(sans genre)'},
   mois:{t:'Mois',k:(r,tl)=>String(tl?r.TIMEYEAR*100+r.TIMEMONTH:(+r.DATEYEAR)*100+(+r.DATEMONTH)),l:k=>MOISL[(+k)%100]+' '+Math.floor((+k)/100),desc:1,num:1}};
-/* prestation d'une inscription : Projet, Images 3D ou Maquette, la règle de la liste « Prestations » ; colonne « Prestation » du tableau des inscriptions et des
-   documents au lieu de « Activité » (26.11.2026, Paulo : « remplacer par prestation ») — l'activité elle-même reste dans Présentation ▸ Personnalisé */
+/* prestation d'une inscription : Projet, Images 3D ou Maquette, la règle de la liste « Prestations ». Colonnes des documents, de la copie et du CSV (COLS.h) :
+   « Activité » de nouveau à la place de « Prestation » (27.11.2026, Paulo, sur le rapport d'heures : « remplacer par activité ») — l'activité seule, son groupe
+   seulement s'il n'y a pas d'activité */
 const prestaL=r=>PRESTA[DIM.pre.k(r)]||'Projet';
 /* deux rangées : l'affaire (ouvrage, phases…), puis toujours dessous, à partir d'Ouvrage, période, collaborateur, statuts et affichage (26.11.2026, Paulo : « toujours en dessous de ouvrage ») */
 /* liste « Afficher » retirée (même jour, Paulo : « supprimer tri ») : le tableau est toujours le détail des positions ; les regroupements restent dans Rapports ▸ Grouper */
@@ -276,7 +277,7 @@ const filtreMoteur=dom=>{ const Pr=periode(), F={dOn:!!(Pr.a||Pr.b),dMode:ST.per
 const ON=v=>v?'Oui':'Non';
 const COLS={h:()=>[{k:'d',t:'Date',f:r=>dfr(diso(tlDate(r)))},{k:'h1',t:'Début',f:r=>hm(r.TIMEHOUR1||0,r.TIMEMINUTE1||0)},{k:'h2',t:'Fin',f:r=>{ const e=tlT2(r); return hm(Math.floor(e/60),e%60); }},{k:'TIMEPERIOD',t:'Durée',f:r=>hrs(r.TIMEPERIOD)},
     {k:'st',t:'Statut',f:r=>TSTATE[r.TIMELOGSTATECODE||0]},{k:'fa',t:'Facturable',f:r=>ON(r.ISCHARGEABLE)},{k:'fd',t:'Facturé',f:r=>ON(r.ISCHARGED)},{k:'s',t:'Personne',f:r=>esc(sN(r.STAFF_ID))},
-    {k:'ag',t:'Groupe d’activités',f:r=>esc(agL(r.ACTIVITYGROUP_ID))},{k:'a',t:'Prestation',f:r=>esc(prestaL(r))},{k:'o',t:'Ouvrage',f:r=>esc((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE||'')},
+    {k:'ag',t:'Groupe d’activités',f:r=>esc(agL(r.ACTIVITYGROUP_ID))},{k:'a',t:'Activité',f:r=>esc(acL(r.ACTIVITY_ID)||agL(r.ACTIVITYGROUP_ID))},{k:'o',t:'Ouvrage',f:r=>esc((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE||'')},
     {k:'ph',t:'Phase',f:r=>esc(lb('projectphase',r.PHASE_ID,nm))},{k:'sp',t:'Phase partielle',f:r=>esc(lb('projectsubphase',r.SUBPHASE_ID,nm))},{k:'DESCRIPTION',t:'Commentaire'}],
   f:()=>[...COSTCOLS.map(c=>c.k==='fa'?{...c,f:r=>ON(r.ISCHARGEABLE)}:c.k==='fd'?{...c,f:r=>ON(r.ISCHARGED)}:c),{k:'rb',t:'Remboursable',f:r=>ON(r.ISREFUNDABLE)},{k:'pe',t:'Collaborateur',f:r=>esc(sN(r.STAFF_ID))},{k:'o',t:'Ouvrage',f:r=>esc((DS.get('subproject',r.SUBPROJECT_ID)||{}).CODE||'')},
     {k:'ph',t:'Phase',f:r=>esc(lb('projectphase',r.PHASE_ID,nm))},{k:'sp',t:'Phase partielle',f:r=>esc(lb('projectsubphase',r.SUBPHASE_ID,nm))}]};

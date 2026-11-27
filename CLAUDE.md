@@ -3209,6 +3209,11 @@ SUBGestion v1 (`SUBGestion.html`) reste en place, inchangée.
   Horaire, Collaborateur, Durée, Commentaire, Activité, Phase, Phase partielle, Ouvrage, Facturable, Facturé, État) — Initiales, Vacances, Groupe d'activité,
   Prestation, Phase partielle sinon phase et Facturé le retirés ; Standard avec « Activité » ; la feuille d'heures et le Journal des heures gardent « Activité » ; ligne sous le nom d'un chapitre de collaborateur = **période puis heures** (« inverser » : « Du 05.01.2026 au 03.11.2026 · 344.50 h »,
   « Du » en capitale en début de ligne), aussi pour le rapport de frais. Copie d'avant : `subgestion3/_backup_20261126_2031_avant_prestation/`.
+  **« Activité » de nouveau (27.11.2026, Paulo, sur la colonne « Prestation » du rapport d'heures de 23COL : « remplacer par activité »)** : colonne **« Activité »**
+  = l'activité seule (Projet, Image de synthèse, Maquette, DT, Secrétariat…), son groupe seulement s'il n'y a pas d'activité — `COLS.h` clé `a` (documents, copie,
+  CSV) et `composer` de sg3_docs_heures.js ; « Tri par prestation avec sous-total » redevient **« Tri par activité avec sous-total »** (même clé `pre`, choix gardés ;
+  groupes dans l'ordre des activités de l'affaire, `SORTORDER`, `actOrd`). La liste « Prestations » des critères ne change pas. Copie d'avant :
+  `subgestion3/_backup_20261127_avant_colonne_activite/`.
   **Options de « Composer le rapport » dans le volet Réglages du rapport d'heures (même soir, Paulo : « ajouter ses options dans l'image 2 »)** : groupe « Tri »
   (`TRI_L`, `PER_L`, choix gardés sur ce poste : `sg3_docs_heures` {tri, per}) — Tri selon affichage, Tri par prestation (ex-« par activité »), par collaborateur ou par
   phase partielle avec sous-total (`sousTotaux` : titre du groupe en bleu nuit, lignes, « Total … » ; la colonne du tri est retirée ; prestation dans l'ordre Projet,

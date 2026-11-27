@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SUBGestion — Substances Architectes</title>
-<!-- SUBGestion 3 — générée le 27.11.2026 16:04 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
+<!-- SUBGestion 3 — générée le 27.11.2026 17:02 par subgestion3/construire.py : moteur DeltaSub.html + app Facturation.html (cadre)
      + subgestion3/sg3.css et sg3.js (charte Substances). NE PAS MODIFIER À LA MAIN : modifier les sources puis reconstruire. -->
 <script>try{var v=JSON.parse(localStorage.getItem('sg3_visuel'));if(/^(papier|brume|signaletique|nocturne|mac)$/.test(v))document.documentElement.setAttribute('data-visuel',v)}catch(e){}</script><style id="sg3-css">
 /* ══ SUBGestion 3 — charte graphique Substances Architectes ═══════════════════════════════════════
@@ -26427,9 +26427,10 @@ const SG_DOM=[
     {v:'nx-ah',t:'Analyse des heures d’affaires',ico:'analyse',d:'Heures des affaires : chiffres de la période, affaires actives et accès aux deux modules.'},
     {v:'nx-ah-ctlh',hide:1,parent:'nx-ah',t:'Contrôle des heures d’affaires',ico:'check',d:'Vérifier et approuver les heures d’une affaire, semaine par semaine.'},
     {v:'nx-ah-anah',hide:1,parent:'nx-ah',t:'Critères d’analyse des heures',ico:'filter',d:'Analyser les heures d’une affaire par ouvrage, activité, phase et collaborateur ; statut Facturable / Facturé, documents et rapports.'},
+    /* Contrôle des heures collaborateurs (ex-« Analyse des heures des collaborateurs », renommée le 27.11.2026 à la demande de Paulo) */
     /* Analyse des heures des collaborateurs (26.11.2026, Paulo : « ajoute ici analyse des heures collaborateurs » ; même principe que l'Analyse des heures
        d'affaires, par collaborateur ; accès comme elle) */
-    {v:'nx-ahc',t:'Analyse des heures des collaborateurs',ico:'users',d:'Heures des collaborateurs : liste des collaborateurs et accès aux deux modules.'},
+    {v:'nx-ahc',t:'Contrôle des heures collaborateurs',ico:'users',d:'Heures des collaborateurs : liste des collaborateurs et accès aux deux modules.'},
     /* Contrôle des frais et Critères d'analyse des frais : chapitre Notes de frais (25.11.2026) */]},
   /* chapitre « Notes de frais » (25.11.2026, Paulo : « avec le même principe, créer un menu note de frais » ; choix : saisie + Analyse des frais, les frais retirés de
      l'Analyse des heures) : même principe que Heures — la saisie, puis l'analyse (liste des affaires → page de l'affaire → tuiles, module affiché dessous ;
@@ -47552,6 +47553,8 @@ const CSS=`
 .sgah-sem tr.on td.nom b{color:var(--s-nuit)}
 .sgah-sem tr.tot td{font-weight:700;border-top:2px solid var(--s-noir);border-bottom:0}
 .sgah-sem td.z{color:#c4c4c0}
+.sgah-sem tr.ch td{height:30px;padding-top:8px;font-weight:700;color:var(--s-nuit);text-align:left;border-bottom:1px solid var(--s-noir)}
+.sgah-bur td.nom{padding-left:16px}
 .sgah-crit{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin:4px 0 10px}
 @container (max-width:1050px){.sgah-crit{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .sgah-cl.s2{grid-column:span 2}.sgah-crit.n3{grid-template-columns:repeat(3,minmax(0,1fr))}.sgah-crit.n4{grid-template-columns:repeat(4,minmax(0,1fr))}.sgah-crit.n5{grid-template-columns:repeat(5,minmax(0,1fr))}.sgah-crit+.sgah-crit{margin-top:18px}
@@ -47631,7 +47634,7 @@ const cout=L=>{ let s=0; try{ L.forEach(r=>{ s+=hh(r)*taux(r.STAFF_ID,diso(tlDat
 /* ── état de la page ── */
 const LS0=(()=>{ try{ return nxLS.get('sg3_ah',{})||{}; }catch(_){ return {}; } })();
 const ST={pid:null,sid:null,aff:null,amod:null,per:{mode:['mois','annee','12m','tout'].includes(LS0.mode)?LS0.mode:'annee',d:null,a:null,b:null},ppOuvert:false,etat:LS0.etat==null?2:+LS0.etat,fmo:LS0.fmo==='annee'?'annee':'mois',par:{h:LS0.par&&LS0.par.h==='col'?'col':'aff',f:LS0.par&&(LS0.par.f==='col'||LS0.par==='col')?'col':'aff'},plie:new Set(),sem:null,fm:null,col:null,jour:null,q:'',sel:new Set(),dern:null,ycol:0,
-  crit:{h:{},f:{}},perL:null,fa:{h:null,f:null},fd:{h:null,f:null},grp:{h:'',f:''}};
+  crit:{h:{},f:{}},perL:null,fa:{h:null,f:null},fd:{h:null,f:null},grp:{h:'',f:''},csem:true};   /* csem : contrôle d'un collaborateur par semaine (sinon : période de la liste « Période ») */
 const garder=()=>{ try{ nxLS.set('sg3_ah',{mode:ST.per.mode,etat:ST.etat,fmo:ST.fmo,par:ST.par}); }catch(_){ } };
 const PMODES=[['mois','Mois'],['annee','Année'],['12m','12 mois'],['tout','Tout']];
 const periode=()=>{ const m=ST.per.mode, d=ST.per.d||auj();
@@ -47782,20 +47785,22 @@ const pivot=(dom,rows,d1,o)=>{ o=o||{}; const tl=dom==='h', G=grouper(dom,rows,d
 /* listes de critères (heures : ouvrage, phase, phase partielle, collaborateur ; frais : six) : la valeur d'une ligne = heures ou montant avec les AUTRES critères appliqués ; cocher filtre aussitôt */
 /* liste « Période » (26.11.2026, Paulo : la barre Mois · Année · 12 mois · Tout « ajouter comme tri et supprimer en bas ») : une seule période choisie à la fois ;
    Toutes les années (« 12 derniers mois » retiré le 26.11.2026, montré seulement quand cette période est choisie dans la barre de la page), puis les années ou les mois (choix « années · mois » du titre) qui ont des positions ; valeur = avec les autres critères */
-const listePer=(dom,pid)=>{ const tl=dom==='h', m=ST.per.mode, d=ST.per.d||auj(), vue=ST.perL||(m==='mois'?'mois':'an'), R=filtrer(dom,pid,{sansPer:1}), f=v=>tl?Hh(v):F0(v);
-  const M=new Map(); let tot=0; R.forEach(r=>{ const k=kR(r,tl), v=vR(r,tl), c=vue==='mois'?Math.floor(k/100):Math.floor(k/10000); tot+=v; M.set(c,(M.get(c)||0)+v); });
-  const cur=m==='annee'&&vue==='an'?d.getFullYear():m==='mois'&&vue==='mois'?d.getFullYear()*100+d.getMonth():null; if(cur!=null&&!M.has(cur)) M.set(cur,0);
+const listePer=(dom,pid,o)=>{ o=o||{}; const off=!!(o.sem&&ST.csem), tl=dom==='h', m=ST.per.mode, d=ST.per.d||auj(), vue=o.sem?(ST.perLC||(ST.csem?'sem':m==='mois'?'mois':'an')):(ST.perL||(m==='mois'?'mois':'an')), R=filtrer(dom,pid,{sansPer:1}), f=v=>tl?Hh(v):F0(v);
+  /* semaines (contrôle d'un collaborateur, 27.11.2026, Paulo : « ajouter semaine » dans le titre de la liste) : clé = lundi de la semaine */
+  const sem=vue==='sem', wk=k=>K(mondayOf(dK(k)));
+  const M=new Map(); let tot=0; R.forEach(r=>{ const k=kR(r,tl), v=vR(r,tl), c=sem?wk(k):vue==='mois'?Math.floor(k/100):Math.floor(k/10000); tot+=v; M.set(c,(M.get(c)||0)+v); });
+  const cur=off?(sem?K(semDe()):null):m==='annee'&&vue==='an'?d.getFullYear():m==='mois'&&vue==='mois'?d.getFullYear()*100+d.getMonth():null; if(cur!=null&&!M.has(cur)) M.set(cur,0);
   const d12=m==='12m'?d:auj(), b12=new Date(d12.getFullYear(),d12.getMonth()+1,0), a12=new Date(b12.getFullYear(),b12.getMonth()-11,1), P12={a:a12,b:b12}, v12=R.reduce((t,r)=>t+(dans(kR(r,tl),P12)?vR(r,tl):0),0),
     l12=m==='12m'&&ST.per.d&&K(new Date(d.getFullYear(),d.getMonth(),1))!==K(new Date(auj().getFullYear(),auj().getMonth(),1))?'12 mois jusqu’à '+MOISL[d.getMonth()].toLowerCase()+' '+d.getFullYear():'12 derniers mois';
   const it=(k,lib,v,on,ti)=>!v&&!on&&k!=='tout'?'':'<div class="i'+(on?' on':'')+(v?'':' z')+'" data-fn="perk" data-k="'+E(k)+'"'+(ti?' title="'+E(ti)+'"':'')+'><span title="'+E(lib)+'">'+E(lib)+'</span></div>';
-  const tg=(k,t)=>'<button type="button" data-fn="perl" data-k="'+k+'"'+(vue===k?' class="on"':'')+' title="'+(k==='an'?'Lister les années':'Lister les mois')+'">'+t+'</button>';
-  const P=m==='perso'?periode():null, iso=x=>x?diso(x):'';
+  const tg=(k,t)=>'<button type="button" data-fn="'+(o.sem?'perlc':'perl')+'" data-k="'+k+'"'+(vue===k?' class="on"':'')+' title="'+(k==='an'?'Lister les années':k==='sem'?'Lister les semaines':'Lister les mois')+'">'+t+'</button>';
+  const P=m==='perso'&&!off?periode():null, iso=x=>x?diso(x):'';
   const pp='<div class="i'+(P?' on':'')+'" data-fn="ppo" title="Choisir une période : du … au …"><span>'+E(P?P.lib.charAt(0).toUpperCase()+P.lib.slice(1):'Personnalisée…')+'</span></div>'
     +(ST.ppOuvert?'<div class="sgah-pp"><label>Du</label><input type="date" class="inp" data-pp="a" value="'+iso(ST.per.a)+'"><label>Au</label><input type="date" class="inp" data-pp="b" value="'+iso(ST.per.b)+'">'
       +'<span></span><span class="bb">'+bt('ppok','Appliquer','',' title="Appliquer la période (Entrée)"')+bt('ppx','Annuler','',' title="Fermer sans changer (Échap)"')+'</span></div>':'');
-  return '<div class="sgah-cl sgah-per"><h4><span>Période</span><span class="tg">'+tg('an','années')+tg('mois','mois')+'</span></h4><div class="l">'
-    +it('tout','Toutes les années',tot,m==='tout')+pp+(m!=='12m'?'':it('12m',l12,v12,true,MOIS[a12.getMonth()]+' '+a12.getFullYear()+' – '+MOIS[b12.getMonth()]+' '+b12.getFullYear()))
-    +[...M.keys()].sort((a,b)=>b-a).map(c=>vue==='mois'?it('m'+c,MOISL[c%100]+' '+Math.floor(c/100),M.get(c),c===cur):it('a'+c,String(c),M.get(c),c===cur)).join('')+'</div></div>'; };
+  return '<div class="sgah-cl sgah-per"><h4><span>Période</span><span class="tg">'+tg('an','années')+(o.sem?tg('sem','semaines'):'')+tg('mois','mois')+'</span></h4><div class="l">'
+    +it('tout','Toutes les années',tot,m==='tout'&&!off)+pp+(m!=='12m'||off?'':it('12m',l12,v12,true,MOIS[a12.getMonth()]+' '+a12.getFullYear()+' – '+MOIS[b12.getMonth()]+' '+b12.getFullYear()))
+    +[...M.keys()].sort((a,b)=>b-a).map(c=>sem?(l=>it('w'+c,semLib(l)+' · '+isoWeek(l)[0],M.get(c),c===cur,semPer(l)))(dK(c)):vue==='mois'?it('m'+c,MOISL[c%100]+' '+Math.floor(c/100),M.get(c),c===cur):it('a'+c,String(c),M.get(c),c===cur)).join('')+'</div></div>'; };
 /* Facturable, Facturé et Afficher en listes de critères (26.11.2026, Paulo : « ajouter au critère de tri ») : un seul choix par liste */
 /* plus de valeur (heures, montant, nombre de lignes) à droite des lignes des listes (même jour, Paulo : « supprimer info ») ; choix vides masqués (même jour, Paulo :
    « afficher uniquement les données en lien avec l'affaire » → « masquer les choix vides ») : une ligne qui ne donnerait aucune position avec les autres critères n'est
@@ -47888,7 +47893,7 @@ function dessiner(m){ let R; try{ R=PAGES[CUR.mod](); }catch(e){ console.error(e
     if(!ST.sel.has(id)){ ST.sel.clear(); ST.sel.add(id); ST.dern=id; tb.querySelectorAll('input[data-ck]').forEach(c=>{ const on=c.dataset.ck===id; c.checked=on; const r=c.closest('tr'); if(r) r.classList.toggle('on',on); }); majSel(pg); }
     const T=d==='h'?'timelog':'projectcost', S=selRows(d), n=S.length, ec=ecrit(d), o={selSet:new Set(S.map(r=>r.ID))};
     e.preventDefault(); sgMenuAt(e.clientX,e.clientY,[{t:'Modifier le statut « Facturable » …',dis:!n||!ec,fn:()=>ctlFlag(T,o,'ISCHARGEABLE')},{t:'Modifier le statut « Facturé » …',dis:!n||!ec,fn:()=>ctlFlag(T,o,'ISCHARGED')}],tr); });
-  pg.addEventListener('dblclick',e=>{ const t=e.target.closest&&e.target.closest('tr[data-dbl]'); if(!t||!pg.contains(t)) return; e.preventDefault(); try{ const s=window.getSelection&&window.getSelection(); if(s) s.removeAllRanges(); }catch(_){ } ouvrirAna(t.dataset.id); });
+  pg.addEventListener('dblclick',e=>{ const t=e.target.closest&&e.target.closest('tr[data-dbl]'); if(!t||!pg.contains(t)) return; e.preventDefault(); try{ const s=window.getSelection&&window.getSelection(); if(s) s.removeAllRanges(); }catch(_){ } if(t.dataset.sid!=null) ouvrirCtlC(t.dataset.sid); else ouvrirAna(t.dataset.id); });
   pg.addEventListener('dblclick',e=>{ if(e.target.closest('button,input,a,select,label')) return; const tr=e.target.closest('tr[data-id]'), tb=tr&&tr.closest('table[data-dom]'); if(!tb) return; const dom=tb.dataset.dom, r=rec(dom,tr.dataset.id); if(!r) return;
     try{ const s=window.getSelection&&window.getSelection(); if(s) s.removeAllRanges(); }catch(_){ }
     if(!ecrit(dom)){ toast('Lecture seule : votre profil ne permet pas de modifier '+(dom==='h'?'les heures':'les frais')+' des affaires.',true); return; }
@@ -47941,20 +47946,66 @@ const semaineC=(L,lun,o)=>{ o=o||{}; const J=[...Array(7)].map((_,i)=>jplus(lun,
       +J.map((d,i)=>{ const Lj=x.j.get(K(d))||[], h=Lj.reduce((t,r)=>t+hh(r),0); tj[i]+=h; return '<td class="j'+(d.getDay()%6?'':' off')+(Lj.length?'':' z')+(String(o.pid)===String(id)&&o.jour===K(d)?' on':'')+'" data-fn="cel" data-s="'+E(id)+'" data-k="'+K(d)+'"'+(Lj.length?' title="'+E(Lj.length+' inscription'+(Lj.length>1?'s':'')+' : cliquer pour les afficher seules')+'"':'')+'>'+(Lj.length?Hh(h)+pillL(Lj.map(etT)):'·')+'</td>'; }).join('')
       +'<td><b>'+Hh(x.h)+'</b> h</td><td>'+pillL(x.L.map(etT))+'</td><td>'+(ec&&aAp?bt('apP','Approuver','check',' data-p="'+E(id)+'" title="Approuver les inscriptions à contrôler de la semaine sur cette affaire"'):'')+'</td></tr>'; }).join('')
     +'<tr class="tot"><td>Total</td>'+tj.map(h=>'<td>'+(h?Hh(h):'')+'</td>').join('')+'<td>'+Hh(th)+' h</td><td></td><td></td></tr></tbody></table></div>'; };
-const corpsCtlhC=emb=>{ const sk=SK(), lun=semDe(), L=rowsSem(sk,lun), c=cptH(L), ec=ecrit('h'), pa=aCtlH(sk).length, nP=new Set(L.map(r=>String(r.PROJECT_ID))).size; CTX.hs=L;
-  if(ST.col!=null&&!L.some(r=>String(r.PROJECT_ID)===String(ST.col))){ ST.col=null; ST.jour=null; }
-  const Ld=L.filter(r=>(ST.col==null||String(r.PROJECT_ID)===String(ST.col))&&(ST.jour==null||tlKey(r)===ST.jour)); CTX.h=Ld; garderSel(Ld);
-  return ent(emb,SP(),'Contrôle des heures · '+semLib(lun),E(semPer(lun)+(pa?' · '+num(pa,0)+' inscription'+(pa>1?'s':'')+' à contrôler pour ce collaborateur':' · tout est contrôlé pour ce collaborateur')))
+/* tri du contrôle d'un collaborateur (27.11.2026, Paulo, sur « ‹ Semaine 40 › » : « ajoute le tri comme pour analyse des heures, année, mois, affaire ») : listes
+   « Période » (Toutes les années, Personnalisée…, années, semaines ou mois — choix « semaines » du titre, ajouté le même jour, Paulo : « ajouter semaine » ; l'entrée
+   « Semaine n » d'abord placée en tête de la liste a été retirée, « supprimer » ; d'office : contrôle semaine par semaine, semaine surlignée) et « Affaire » (critère pr, plusieurs
+   choix — retirée le même jour, Paulo : « supprimer » ; une affaire se choisit par sa ligne ou une case de la semaine ; listeAffC et affPr restent) au-dessus de la barre ; une période choisie : une ligne par affaire (heures, état, Approuver) puis les inscriptions de la période */
+const listeAffC=(sk,R)=>{ const s=ST.crit.h.pr||new Set(), G=grouper('h',R,'pr'), abs=[...s].filter(x=>!G.some(g=>g.k===x)).map(x=>({k:x,v:0}));
+  return '<div class="sgah-cl"><h4><span>Affaire'+(s.size?' · '+s.size:'')+'</span>'+(s.size?'<button type="button" data-fn="razd" data-dom="h" data-d="pr" title="Annuler la sélection">✕ effacer</button>':'')+'</h4><div class="l">'
+    +[...G,...abs].filter(g=>g.v||s.has(g.k)).map(g=>'<div class="i'+(s.has(g.k)?' on':'')+(g.v?'':' z')+'" data-fn="crit" data-dom="h" data-d="pr" data-k="'+E(g.k)+'"><span title="'+E(DIM.pr.l(g.k))+'">'+E(DIM.pr.l(g.k))+'</span></div>').join('')
+    +(G.length||abs.length?'':'<div class="sgah-vide">Aucune affaire.</div>')+'</div></div>'; };
+const affPr=r=>{ const s=ST.crit.h.pr; return !s||!s.size||s.has(String(r.PROJECT_ID==null?'':r.PROJECT_ID)); };
+const lotLibC=()=>ST.csem?semLib(semDe()).toLowerCase():periode().lib;
+/* affaire du bureau (SUBSTANCES, SUB « Affaire bureau / modèle ») : hors du tableau des affaires, dans un tableau « Substances » par chapitre (groupe d'activités) et activité
+   (27.11.2026, Paulo : « supprimer Substances de la liste des projets ; créer une liste de Substances avec les chapitres en lien avec Substances ») ; clé d'une ligne :
+   l'affaire (son ID) ou, pour l'affaire du bureau, « a<ID de l'activité> » — ST.col, Approuver, inscriptions affichées */
+const burP=id=>{ const p=Pj(id); return !!p&&(/^(SUBSTANCES|SUB)$/.test(p.NUMBER||'')||/^affaire (bureau|mod[eè]le)$/i.test((p.TITLE||'').trim())); };
+const cleC=r=>burP(r.PROJECT_ID)?'a'+(r.ACTIVITY_ID==null?'':r.ACTIVITY_ID):String(r.PROJECT_ID==null?'':r.PROJECT_ID);
+const libC=k=>{ k=String(k); return k[0]==='a'?'Substances · '+(acL(nId(k.slice(1)))||'(sans activité)'):pLib(nId(k)); };
+/* tableau des affaires ou de Substances : semaine (lun : un jour par colonne) ou période (inscriptions, dernière saisie) ; total, état, Approuver par ligne */
+const tabC=(L,lun,bur)=>{ const ec=ecrit('h'), J=lun?[...Array(7)].map((_,i)=>jplus(lun,i)):null, ka=K(auj()), M=new Map();
+  L.forEach(r=>{ const k=cleC(r); let x=M.get(k); if(!x) M.set(k,x={k,j:new Map(),h:0,L:[],der:0,ch:bur?(agL(r.ACTIVITYGROUP_ID)||'(sans chapitre)'):''}); const t=tlKey(r); if(!x.j.has(t)) x.j.set(t,[]); x.j.get(t).push(r); x.h+=hh(r); x.L.push(r); if(t>x.der) x.der=t; });
+  const nomA=x=>acL(nId(x.k.slice(1)))||'(sans activité)', X=[...M.values()].sort(bur?(a,b)=>cmpN(a.ch,b.ch)||cmpN(nomA(a),nomA(b)):(a,b)=>cmpN((Pj(nId(a.k))||{}).NUMBER||'',(Pj(nId(b.k))||{}).NUMBER||''));
+  const nc=lun?11:6, tj=lun?J.map(()=>0):null; let th=0, chap=null;
+  const tete='<thead><tr><th>'+(bur?'Chapitre · activité':'Affaire')+'</th>'+(lun?J.map(d=>'<th class="'+(d.getDay()%6?'':'off')+(K(d)===ka?' auj':'')+'">'+JOURS[d.getDay()]+'<span class="n">'+d.getDate()+'</span></th>').join(''):'<th>Inscriptions</th><th>Dernière saisie</th>')+'<th>Total</th><th>État</th><th></th></tr></thead>';
+  const corps=X.map(x=>{ const on=String(ST.col)===x.k, aAp=x.L.some(r=>aC(etT(r))&&!bloquee(r)), p=bur?null:(Pj(nId(x.k))||{}); th+=x.h;
+    const ch=bur&&x.ch!==chap?'<tr class="ch"><td colspan="'+nc+'">'+E(x.ch)+'</td></tr>':''; if(bur) chap=x.ch;
+    const nom='<span>'+(bur?E(nomA(x)):'<b>'+E(p.NUMBER||'')+'</b><br><small>'+E(p.TITLE||'')+'</small>')+'</span>';
+    const tiN=on?'Afficher toutes les inscriptions':'Afficher seulement les inscriptions de '+(bur?'cette activité':'cette affaire');
+    return ch+'<tr class="'+(on?'on':'')+'"><td class="nom'+(lun?'':' j')+'"'+(lun?'':' data-fn="colp" data-k="'+E(x.k)+'" title="'+E(tiN)+'"')+'>'+nom+'</td>'
+      +(lun?J.map((d,i)=>{ const Lj=x.j.get(K(d))||[], h=Lj.reduce((t,r)=>t+hh(r),0); tj[i]+=h; return '<td class="j'+(d.getDay()%6?'':' off')+(Lj.length?'':' z')+(on&&ST.jour===K(d)?' on':'')+'" data-fn="cel" data-s="'+E(x.k)+'" data-k="'+K(d)+'"'+(Lj.length?' title="'+E(Lj.length+' inscription'+(Lj.length>1?'s':'')+' : cliquer pour les afficher seules')+'"':'')+'>'+(Lj.length?Hh(h)+pillL(Lj.map(etT)):'·')+'</td>'; }).join('')
+        :'<td>'+num(x.L.length,0)+'</td><td>'+(x.der?fK(x.der):'')+'</td>')
+      +'<td><b>'+Hh(x.h)+'</b> h</td><td>'+pillL(x.L.map(etT))+'</td><td>'+(ec&&aAp?bt('apP','Approuver','check',' data-p="'+E(x.k)+'" title="Approuver les inscriptions à contrôler '+(lun?'de la semaine':'de la période')+' '+(bur?'sur cette activité':'sur cette affaire')+'"'):'')+'</td></tr>'; }).join('');
+  return '<div class="sgah-x"><table class="sgah-sem'+(bur?' sgah-bur':'')+'">'+tete+'<tbody>'+corps
+    +'<tr class="tot"><td>Total</td>'+(lun?tj.map(h=>'<td>'+(h?Hh(h):'')+'</td>').join(''):'<td>'+num(L.length,0)+'</td><td></td>')+'<td>'+Hh(th)+' h</td><td></td><td></td></tr></tbody></table></div>'; };
+const tablesC=(L,lun)=>{ const A=L.filter(r=>!burP(r.PROJECT_ID)), B=L.filter(r=>burP(r.PROJECT_ID));
+  if(!L.length) return '<div class="sgah-vide">'+(lun?'Aucune inscription cette semaine pour ce collaborateur.':'Aucune inscription sur la période pour ce collaborateur.')+'</div>';
+  return (A.length?tabC(A,lun,false):'<div class="sgah-vide">Aucune heure sur les affaires '+(lun?'cette semaine.':'sur la période.')+'</div>')
+    +(B.length?'<div class="sgah-t"><span>Substances</span><small>affaire bureau · par chapitre et activité</small></div>'+tabC(B,lun,true):''); };
+/* liste « Contrôle » (27.11.2026, Paulo, sur « Dernière saisie · À contrôler · Approuver la semaine » de la barre : « ajouter au tri ») : ces trois commandes
+   passent de la barre à la zone de tri, à côté de « Période » ; Dernière saisie et À contrôler ramènent au contrôle par semaine ; ligne grisée = sans objet */
+const listeCtlC=(pa,c,ec,sem)=>{ const it=(fn,t,ti,ok,x)=>'<div class="i'+(ok?'':' z')+'"'+(ok?' data-fn="'+fn+'"'+(x||''):' style="cursor:default"')+' title="'+E(ti)+'"><span>'+E(t)+'</span></div>';
+  return '<div class="sgah-cl"><h4><span>Contrôle</span></h4><div class="l">'
+    +it('sder','Dernière saisie','Semaine de la dernière inscription du collaborateur',true)
+    +it('sctl','À contrôler',pa?'Semaine précédente qui a des inscriptions à contrôler':'Aucune inscription à contrôler pour ce collaborateur',pa>0)
+    +(ec?it('apTout',sem?'Approuver la semaine':'Approuver la période',c.ctl?'Approuver toutes les inscriptions à contrôler '+(sem?'de la semaine':'de la période'):'Aucune inscription à contrôler '+(sem?'cette semaine':'sur la période'),c.ctl>0,' data-dom="h"'):'')
+    +'</div></div>'; };
+const corpsCtlhC=emb=>{ if(ST.crit.h.pr) delete ST.crit.h.pr;   /* liste « Affaire » retirée (27.11.2026, Paulo : « supprimer ») : plus de filtre caché */
+  const sk=SK(), sem=ST.csem, lun=semDe(), Pr=periode(), L=sem?rowsSem(sk,lun):filtrer('h',sk), c=cptH(L), ec=ecrit('h'), pa=aCtlH(sk).length, nP=new Set(L.map(r=>String(r.PROJECT_ID))).size; CTX.hs=L;
+  if(ST.col!=null&&!L.some(r=>cleC(r)===String(ST.col))){ ST.col=null; ST.jour=null; }
+  if(!sem) ST.jour=null;
+  const Ld=L.filter(r=>(ST.col==null||cleC(r)===String(ST.col))&&(ST.jour==null||tlKey(r)===ST.jour)); CTX.h=Ld; garderSel(Ld);
+  const lib=sem?semLib(lun):Pr.lib.charAt(0).toUpperCase()+Pr.lib.slice(1), quand=sem?'de la semaine':'de la période';
+  return ent(emb,SP(),'Contrôle des heures · '+lib,E((sem?semPer(lun):Pr.lib)+(pa?' · '+num(pa,0)+' inscription'+(pa>1?'s':'')+' à contrôler pour ce collaborateur':' · tout est contrôlé pour ce collaborateur')))
     +kpis([kpi('Heures saisies',Hh(c.h)+'<small>h</small>',num(c.n,0)+' inscription'+(c.n>1?'s':'')),kpi('À contrôler',num(c.ctl,0),Hh(c.hctl)+' h'+(c.blo?' · '+c.blo+' en période bloquée':''),c.ctl?'':'pos'),kpi('Approuvées',num(c.ok,0),''),
       kpi('Refusées',num(c.ref,0),c.ref?'à corriger':'',c.ref?'neg':'','Inscriptions refusées : à corriger par le collaborateur'),kpi('Affaires',String(nP),'')])
     +lecture('h')
-    +'<div class="sgah-bar">'+bt('sdec','','prev',' data-n="-1" title="Semaine précédente"')+'<span class="sgah-lbl">'+E(semLib(lun))+'</span>'+bt('sdec','','next',' data-n="1" title="Semaine suivante"')
-      +bt('sder','Dernière saisie','today',' title="Semaine de la dernière inscription du collaborateur"')+bt('sctl','À contrôler','urgent',' title="Semaine précédente qui a des inscriptions à contrôler"'+(pa?'':' disabled'))
-      +(ec?SEP+bt('apTout','Approuver la semaine','check',' data-dom="h" title="Approuver toutes les inscriptions à contrôler de la semaine"'+(c.ctl?'':' disabled')):'')
-      +DR(bt('pres','Présentation ▾','list',' data-dom="h" title="Colonnes du tableau des inscriptions"')+bt('impr','Imprimer','print',' data-dom="h" title="Document des inscriptions de la semaine"'+(L.length?'':' disabled'))+bt('csv','CSV','export',' data-dom="h" title="Inscriptions de la semaine dans un fichier CSV"'+(L.length?'':' disabled')))+'</div>'
-    +semaineC(L,lun,{pid:ST.col,jour:ST.jour})
-    +titreSel(ST.col!=null?'Inscriptions · '+pLib(ST.col)+(ST.jour?' · '+fK(ST.jour):''):'Inscriptions de la semaine','h','ctl',ec&&Ld.length)
-    +tabHeures(Ld,{ck:ec,act:ec,cle:'ahc',vide:L.length?'Aucune inscription pour ce choix.':'Aucune inscription cette semaine pour ce collaborateur.'}); };
+    +'<div class="sgah-crit n3">'+listePer('h',sk,{sem:semLib(lun)})+listeCtlC(pa,c,ec,sem)+'</div>'
+    /* « ‹ Semaine n › » (ou la période) retiré de la barre (27.11.2026, Paulo : « supprimer ») : la semaine se choisit dans la liste « Période » (semaines) */
+    +'<div class="sgah-bar">'+DR(bt('pres','Présentation ▾','list',' data-dom="h" title="Colonnes du tableau des inscriptions"')+bt('impr','Imprimer','print',' data-dom="h" title="Document des inscriptions '+quand+'"'+(L.length?'':' disabled'))+bt('csv','CSV','export',' data-dom="h" title="Inscriptions '+quand+' dans un fichier CSV"'+(L.length?'':' disabled')))+'</div>'
+    +tablesC(L,sem?lun:null)
+    +titreSel(ST.col!=null?'Inscriptions · '+libC(ST.col)+(ST.jour?' · '+fK(ST.jour):''):'Inscriptions '+quand,'h','ctl',ec&&Ld.length)
+    +tabHeures(Ld,{ck:ec,act:ec,cle:'ahc',vide:L.length?'Aucune inscription pour ce choix.':sem?'Aucune inscription cette semaine pour ce collaborateur.':'Aucune inscription sur la période pour ce collaborateur.'}); };
 
 /* ── Critères d'analyse des heures / des frais ── */
 const TRI=[['','tous'],['1','oui'],['0','non']];
@@ -48096,7 +48147,7 @@ const statsSt=Pr=>memo('ss'+(Pr.a?K(Pr.a):0)+'-'+(Pr.b?K(Pr.b):0),()=>{ const M=
 const parti=s=>+s.ISACTIVE===0||(!!s.QUITTINGDATE&&String(s.QUITTINGDATE).slice(0,10)<diso(auj()));
 const tabSt=S=>{ if(!S.length) return '<div class="sgah-vide">Aucun collaborateur avec des heures sur la période.</div>';
   return '<div class="sgah-x"><table class="nx-tbl sgah-tb"><thead><tr><th>Collaborateur</th><th>Statut</th><th>Dernière saisie</th></tr></thead><tbody>'
-    +S.map(({sid,s,x})=>'<tr class="clic'+(String(sid)===String(ST.sid)?' on':'')+'" data-fn="colsel" data-sid="'+E(sid)+'" data-qc="1" data-q="'+E((staffName(s)+' '+(s.INITIALS||'')).toLowerCase())+'" title="Choisir ce collaborateur pour les modules"><td>'+ini(s.ID)+' <b>'+E(staffName(s))+'</b></td><td class="nw">'+(parti(s)?'<span style="color:var(--s-gris)">a quitté le bureau</span>':'au bureau')+'</td><td class="nw">'+(x.der?fK(x.der):'')+'</td></tr>').join('')+'</tbody></table></div>'; };
+    +S.map(({sid,s,x})=>'<tr class="clic'+(String(sid)===String(ST.sid)?' on':'')+'" data-fn="colsel" data-dbl="1" data-sid="'+E(sid)+'" data-qc="1" data-q="'+E((staffName(s)+' '+(s.INITIALS||'')).toLowerCase())+'" title="Un clic choisit ce collaborateur ; double-clic : contrôle de ses heures"><td>'+ini(s.ID)+' <b>'+E(staffName(s))+'</b></td><td class="nw">'+(parti(s)?'<span style="color:var(--s-gris)">a quitté le bureau</span>':'au bureau')+'</td><td class="nw">'+(x.der?fK(x.der):'')+'</td></tr>').join('')+'</tbody></table></div>'; };
 const MOD_C={anah:['Critères d’analyse des heures','Les heures du collaborateur par affaire, ouvrage, phase et période ; statut Facturé, documents et rapports.','filter'],
   ctlh:['Contrôle des heures','La semaine du collaborateur, affaire par affaire : approuver, refuser, réinitialiser les inscriptions.','check']};
 const tuileC=(mod,ft)=>{ const t=MOD_C[mod], on=ST.amod===mod; return '<div class="sg-tile'+(on?' on':'')+'" data-fn="amod" data-k="'+mod+'" aria-expanded="'+on+'" title="'+(on?'Refermer':'Afficher')+' « '+E(t[0])+' » sous les tuiles"><div class="ti">'+nxSvg(t[2])+'<h3>'+E(t[0])+'</h3></div><p>'+E(t[1])+'</p><div class="ft">'+E(ft)+nxSvg('arrow','go')+'</div></div>'; };
@@ -48110,12 +48161,12 @@ const pageEntreeC=()=>{ const Pr=periode(), M=statsSt(Pr), S=[...M.entries()].ma
   const figs=sE?'<div class="nx-kpis sg-tkp">'+kpi('Heures saisies',Hh(U.h)+'<small>h</small>',num(U.n,0)+' inscription'+(U.n>1?'s':''))+kpi('À contrôler',num(U.ctl,0),Hh(U.hctl)+' h'+(U.blo?' · '+num(U.blo,0)+' en période bloquée':''),U.ctl?'':'pos')
       +kpi('Refusées',num(U.ref,0),U.ref?'à corriger':'',U.ref?'neg':'','Inscriptions refusées : à corriger par le collaborateur')+kpi('À facturer',Hh(U.af)+'<small>h</small>','facturables non facturées')+kpi('Affaires',String(xE.A.size),'avec des heures sur la période')+'</div>':'';
   const barE='<div class="sgah-bar sgah-bar2"><input class="inp" id="sgah-q" placeholder="Rechercher un collaborateur…" value="'+E(ST.q)+'" autocomplete="off">'+DR(bt('csvc','CSV','export',' title="Liste des collaborateurs dans un fichier CSV"'+(S.length?'':' disabled')))+'</div>';
-  return '<div class="sg-split">'+(sE?sgTete('Analyse des heures des collaborateurs · '+Pr.lib,E(staffName(sE)),[parti(sE)?'a quitté le bureau':(sE.JOININGDATE?'au bureau depuis le '+dfr(String(sE.JOININGDATE).slice(0,10)):''),xE.der?'dernière saisie le '+fK(xE.der):'',gel?'saisie bloquée jusqu’au '+dfr(gel):''].filter(Boolean).join(' · '),figs,sI(sE.ID))
-      :sgTete('Heures','Analyse des heures des collaborateurs','Contrôler et analyser les heures des collaborateurs, semaine par semaine et critère par critère. <b>'+E(Pr.lib)+'</b> · '+S.length+' collaborateur'+(S.length>1?'s':'')+' avec des saisies.','',Pr.court))
-    +'<div class="sgah-t"><span>Modules</span><small>un clic affiche le module juste en dessous ; un second clic le referme</small></div><div class="sg-tiles sgah-tuiles">'
-      +tuileC('anah',Hh(U.h)+' h · '+Pr.lib)+tuileC('ctlh',U.ctl?num(U.ctl,0)+' inscription'+(U.ctl>1?'s':'')+' à contrôler · '+Pr.lib:'tout est contrôlé · '+Pr.lib)+'</div>'
+  return '<div class="sg-split">'+(sE?sgTete('Contrôle des heures collaborateurs · '+Pr.lib,E(staffName(sE)),[parti(sE)?'a quitté le bureau':(sE.JOININGDATE?'au bureau depuis le '+dfr(String(sE.JOININGDATE).slice(0,10)):''),xE.der?'dernière saisie le '+fK(xE.der):'',gel?'saisie bloquée jusqu’au '+dfr(gel):''].filter(Boolean).join(' · '),figs,sI(sE.ID))
+      :sgTete('Heures','Contrôle des heures collaborateurs','Contrôler et analyser les heures des collaborateurs, semaine par semaine et critère par critère. <b>'+E(Pr.lib)+'</b> · '+S.length+' collaborateur'+(S.length>1?'s':'')+' avec des saisies.','',Pr.court))
+    /* tuiles « Critères d'analyse des heures » et « Contrôle des heures » retirées (27.11.2026, Paulo : « supprimer ») : le double-clic sur un collaborateur ouvre
+       son contrôle des heures (ouvrirCtlC) ; tuileC et MOD_C restent (paramètre « <id>|anah » ou « <id>|ctlh » de l'écran) */
     +(em?'<div class="sgah-emb" id="sgah-emb">'+(sE?CORPSC[em](true):'<div class="sgah-vide">Choisissez un collaborateur dans la liste.</div>')+'</div>'
-      :barE+'<div class="sgah-t"><span>Collaborateurs</span><span class="sgah-tr"><small>'+(()=>{ const o=S.find(o=>String(o.sid)===String(ST.sid)); return o?'collaborateur choisi : '+E(staffName(o.s))+' — ouvrez un module ci-dessus':'un clic choisit le collaborateur des modules'; })()+'</small><small id="sgah-qn"></small></span></div>'+tabSt(S))+'</div>'; };
+      :barE+'<div class="sgah-t"><span>Collaborateurs</span><span class="sgah-tr"><small>'+(()=>{ const o=S.find(o=>String(o.sid)===String(ST.sid)); return o?'collaborateur choisi : '+E(staffName(o.s))+' — double-clic : contrôle de ses heures':'un clic choisit le collaborateur · double-clic : contrôle de ses heures'; })()+'</small><small id="sgah-qn"></small></span></div>'+tabSt(S))+'</div>'; };
 /* affaire du module ouvert sur la page d'entrée : celle choisie, sinon la première de la liste */
 const selEntree=(A,k)=>{ if((ST.pid==null||!Pj(ST.pid)||!permisP(k,ST.pid))&&A.length) choisir(A[0].p.ID); };
 /* ancienne présentation (colonne des affaires propre au module), plus appelée depuis le 25.11.2026 */
@@ -48151,21 +48202,28 @@ const ouvrirAna=id=>{ const p=Pj(id); if(!p||!permisP('h',p.ID)) return;
   /* affaire sans heure sur la période choisie (la liste les montre toutes depuis le 26.11.2026) : critères ouverts sur « Toutes les années » plutôt que vides */
   const x=statsAff(periode()).get(p.ID); if(!x||!x.n){ ST.per.mode='tout'; ST.per.d=null; garder(); }
   go(VE,String(p.ID)+'|anah'); };
+/* double-clic sur un collaborateur (27.11.2026, Paulo : « lorsque je double clique sur le nom du collaborateur ça ouvre contrôle des heures du collaborateur ») :
+   le module Contrôle des heures de ce collaborateur, ouvert sous les tuiles (entrée d'historique : la flèche ‹ revient à la liste) */
+const ouvrirCtlC=sid=>{ const s=DS.get('staff',nId(sid)); if(!s) return; go(VC,String(s.ID)+'|ctlh'); };
 const voirEmb=()=>{ try{ const e=CUR.m&&CUR.m.querySelector('#sgah-emb'); if(!e) return; const r=e.getBoundingClientRect(); if(r.top>window.innerHeight-160) e.scrollIntoView({block:'start',behavior:'smooth'}); }catch(_){ } };
 const nId=s=>s===''||s==null?null:(isNaN(+s)?s:+s);
 const moisCle=r=>(+r.DATEYEAR)*100+(+r.DATEMONTH);
 const ctxDoc=p=>{ try{ if(p&&p.ID!=null&&typeof ch11dCtlCtx==='function') ch11dCtlCtx(p); }catch(_){ } };
 const FN={
   pres:b=>{ catAh(); sgtabMenu(b.dataset.dom==='f'?'ahf':CUR.mod==='centree'?'ahc':'ahh',b,redess); },
-  colsel:b=>{ const s=nId(b.dataset.sid); if(String(s)===String(ST.sid)) return; choisirC(s); razSel(); majArg(); redess(); },
-  apP:b=>{ const p=b.dataset.p; approuverLot('h',CTX.hs.filter(r=>String(r.PROJECT_ID)===String(p)),pLib(nId(p))+', '+semLib(semDe()).toLowerCase()); },
+  colsel:b=>{ const s=nId(b.dataset.sid); if(String(s)===String(ST.sid)) return; choisirC(s); razSel(); majArg();
+    if(b.dataset.dbl!=null){ const tb=b.closest('tbody'); if(tb) tb.querySelectorAll('tr.on').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+      const st=CUR.m&&CUR.m.querySelector('.sgah-tr small'), o=(CTX.st||[]).find(o=>String(o.sid)===String(s)); if(st&&o) st.textContent='collaborateur choisi : '+staffName(o.s)+' — double-clic : contrôle de ses heures'; return; } redess(); },
+  apP:b=>{ const p=String(b.dataset.p); approuverLot('h',CTX.hs.filter(r=>cleC(r)===p),libC(p)+', '+(CUR.mod==='centree'?lotLibC():semLib(semDe()).toLowerCase())); },
+  csem:()=>{ if(ST.csem) return; ST.csem=true; ST.ppOuvert=false; ST.col=null; ST.jour=null; razSel(); redess(); },
+  colp:b=>{ const k=String(b.dataset.k); ST.col=String(ST.col)===k?null:k; ST.jour=null; razSel(); redess(); },
   pmode:b=>{ ST.per.mode=b.dataset.k; garder(); razSel(); redess(); },
-  perk:b=>{ const k=b.dataset.k; ST.ppOuvert=false; if(k==='tout'||k==='12m'){ ST.per.mode=k; ST.per.d=null; } else if(k[0]==='a'){ ST.per.mode='annee'; ST.per.d=new Date(+k.slice(1),0,1); } else { const c=+k.slice(1); ST.per.mode='mois'; ST.per.d=new Date(Math.floor(c/100),c%100,1); } garder(); razSel(); redess(); },
-  perl:b=>{ ST.perL=b.dataset.k; redess(); },
+  perk:b=>{ const k=b.dataset.k; ST.ppOuvert=false; if(k[0]==='w'){ ST.csem=true; ST.sem=dK(+k.slice(1)); ST.col=null; ST.jour=null; razSel(); redess(); return; } if(CUR.mod==='centree'){ ST.csem=false; ST.col=null; ST.jour=null; } if(k==='tout'||k==='12m'){ ST.per.mode=k; ST.per.d=null; } else if(k[0]==='a'){ ST.per.mode='annee'; ST.per.d=new Date(+k.slice(1),0,1); } else { const c=+k.slice(1); ST.per.mode='mois'; ST.per.d=new Date(Math.floor(c/100),c%100,1); } garder(); razSel(); redess(); },
+  perl:b=>{ ST.perL=b.dataset.k; redess(); }, perlc:b=>{ ST.perLC=b.dataset.k; redess(); },
   ppo:b=>{ ST.ppOuvert=!ST.ppOuvert; redess(); if(ST.ppOuvert) setTimeout(()=>{ const i=CUR.m&&CUR.m.querySelector('input[data-pp="a"]'); if(i) i.focus(); },0); },
   ppx:b=>{ ST.ppOuvert=false; redess(); },
   ppok:b=>{ const z=b.closest('.sgah-pp')||(CUR.m&&CUR.m.querySelector('.sgah-pp')); if(!z) return; const v=k=>{ const x=z.querySelector('input[data-pp="'+k+'"]').value; return x?new Date(x+'T00:00:00'):null; };
-    let a=v('a'), c=v('b'); if(a&&c&&a>c) [a,c]=[c,a]; ST.per.a=a; ST.per.b=c; ST.per.d=null; ST.per.mode=a||c?'perso':'tout'; ST.ppOuvert=false; garder(); razSel(); redess(); }, pdec:b=>{ perDec(+b.dataset.n); razSel(); redess(); },
+    let a=v('a'), c=v('b'); if(a&&c&&a>c) [a,c]=[c,a]; ST.per.a=a; ST.per.b=c; ST.per.d=null; ST.per.mode=a||c?'perso':'tout'; ST.ppOuvert=false; if(CUR.mod==='centree'){ ST.csem=false; ST.col=null; ST.jour=null; } garder(); razSel(); redess(); }, pdec:b=>{ perDec(+b.dataset.n); razSel(); redess(); },
   aff:b=>{ if(String(b.dataset.id)===String(ST.pid)) return; choisir(b.dataset.id); majArg(); redess(); },
   affsel:b=>{ if(String(b.dataset.id)===String(ST.pid)) return; choisir(b.dataset.id); razSel(); majArg();
     if(b.dataset.dbl!=null){ const tb=b.closest('tbody'); if(tb) tb.querySelectorAll('tr.on').forEach(x=>x.classList.remove('on')); b.classList.add('on'); return; } redess(); },
@@ -48183,23 +48241,23 @@ const FN={
     NF.staff=c.sid; NF.y=d.getFullYear(); NF.m=d.getMonth(); go('frais'); },
   etatm:b=>popMenu(b,[{t:'Toutes',chk:!ST.etat,fn:()=>{ ST.etat=0; garder(); redess(); }},...CTL_ETATS.map(([e,t])=>({t,chk:ST.etat===e,fn:()=>{ ST.etat=e; garder(); redess(); }}))]),
   /* semaine (heures) et mois (frais) */
-  sdec:b=>{ ST.sem=jplus(semDe(),7*(+b.dataset.n)); ST.col=null; ST.jour=null; razSel(); redess(); },
-  sder:()=>{ ST.sem=derSem(SK()); ST.col=null; ST.jour=null; razSel(); redess(); },
-  sctl:()=>{ const cur=K(semDe()), W=[...new Set(aCtlH(SK()).map(r=>K(mondayOf(tlDate(r)))))].sort((a,b)=>a-b); if(!W.length){ toast(CUR.mod==='centree'?'Aucune inscription à contrôler pour ce collaborateur.':'Aucune inscription à contrôler pour cette affaire.'); return; }
+  sdec:b=>{ ST.sem=jplus(semDe(),7*(+b.dataset.n)); if(CUR.mod==='centree') ST.perLC='sem'; ST.col=null; ST.jour=null; razSel(); redess(); },
+  sder:()=>{ if(CUR.mod==='centree'){ ST.csem=true; ST.perLC='sem'; } ST.sem=derSem(SK()); ST.col=null; ST.jour=null; razSel(); redess(); },
+  sctl:()=>{ if(CUR.mod==='centree'){ ST.csem=true; ST.perLC='sem'; } const cur=K(semDe()), W=[...new Set(aCtlH(SK()).map(r=>K(mondayOf(tlDate(r)))))].sort((a,b)=>a-b); if(!W.length){ toast(CUR.mod==='centree'?'Aucune inscription à contrôler pour ce collaborateur.':'Aucune inscription à contrôler pour cette affaire.'); return; }
     const av=W.filter(k=>k<cur); ST.sem=dK(av.length?av[av.length-1]:W[W.length-1]); ST.col=null; ST.jour=null; razSel(); redess(); },
   fmo:b=>{ ST.fmo=b.dataset.k==='annee'?'annee':'mois'; garder(); razSel(); redess(); },
   fdec:b=>{ const f=fmDe(), d=fmAn()?new Date(f.y+(+b.dataset.n),f.m,1):new Date(f.y,f.m+(+b.dataset.n),1); ST.fm={y:d.getFullYear(),m:d.getMonth()}; razSel(); redess(); },
   fder:()=>{ ST.fm=derFm(ST.pid); razSel(); redess(); },
   fctl:()=>{ const f=fmDe(), an=fmAn(), cur=an?f.y:f.y*100+f.m, W=[...new Set(aCtlF(ST.pid).map(r=>an?+r.DATEYEAR:moisCle(r)))].sort((a,b)=>a-b); if(!W.length){ toast('Aucune note de frais à contrôler pour cette affaire.'); return; }
     const av=W.filter(k=>k<cur), k=av.length?av[av.length-1]:W[W.length-1]; ST.fm=an?{y:k,m:(ST.fm||{m:0}).m}:{y:Math.floor(k/100),m:k%100}; razSel(); redess(); },
-  cel:b=>{ const s=nId(b.dataset.s), k=+b.dataset.k; if(String(ST.col)===String(s)&&ST.jour===k){ ST.col=null; ST.jour=null; } else { ST.col=s; ST.jour=k; } razSel(); redess(); },
+  cel:b=>{ const s=CUR.mod==='centree'?String(b.dataset.s):nId(b.dataset.s), k=+b.dataset.k; if(String(ST.col)===String(s)&&ST.jour===k){ ST.col=null; ST.jour=null; } else { ST.col=s; ST.jour=k; } razSel(); redess(); },
   col:b=>{ ST.col=nId(b.dataset.k); ST.jour=null; razSel(); redess(); },
   /* état des inscriptions et des notes de frais */
   ap1:b=>{ const d=b.dataset.dom, r=rec(d,b.dataset.id); if(r) etat(d,[r],(d==='h'?etT(r):etC(r))===3?0:3); },
   rf1:b=>{ const d=b.dataset.dom, r=rec(d,b.dataset.id); if(r) etat(d,[r],(d==='h'?etT(r):etC(r))===1?0:1); },
   apSel:b=>etat(b.dataset.dom,selRows(b.dataset.dom),3), rfSel:b=>etat(b.dataset.dom,selRows(b.dataset.dom),1), rzSel:b=>etat(b.dataset.dom,selRows(b.dataset.dom),0),
   apS:b=>{ const s=b.dataset.s; approuverLot('h',CTX.hs.filter(r=>String(r.STAFF_ID)===String(s)),sN(nId(s))+', '+semLib(semDe()).toLowerCase()); },
-  apTout:b=>{ const d=b.dataset.dom, p=SP(); approuverLot(d,d==='h'?CTX.hs:CTX.f,(p&&(p.NUMBER||p.TITLE)?(p.NUMBER||p.TITLE)+', ':'')+(d==='h'?semLib(semDe()).toLowerCase():fmLib(fmDe()).toLowerCase()+(ST.col!=null?', '+sN(ST.col):''))); },
+  apTout:b=>{ const d=b.dataset.dom, p=SP(); approuverLot(d,d==='h'?CTX.hs:CTX.f,(p&&(p.NUMBER||p.TITLE)?(p.NUMBER||p.TITLE)+', ':'')+(d==='h'?(CUR.mod==='centree'?lotLibC():semLib(semDe()).toLowerCase()):fmLib(fmDe()).toLowerCase()+(ST.col!=null?', '+sN(ST.col):''))); },
   selTout:b=>{ const L=CTX[b.dataset.dom]||[]; if(L.length&&ST.sel.size>=L.length) razSel(); else L.forEach(r=>ST.sel.add(String(r.ID))); redess(); },
   /* critères d'analyse */
   crit:b=>{ const C=ST.crit[b.dataset.dom], k=b.dataset.d, s=C[k]||(C[k]=new Set()); if(s.has(b.dataset.k)) s.delete(b.dataset.k); else s.add(b.dataset.k); if(!s.size) delete C[k]; razSel(); redess(); },
@@ -48221,7 +48279,7 @@ const FN={
       {t:'Grouper …',dis:!L.length,fn:()=>ctlSummary(p,T,grille(d,L).view,F)},{t:'Grouper les positions choisies …',dis:!S.length,fn:()=>ctlSummary(p,T,grille(d,S).view,F)}]); },
   impr:b=>{ const d=b.dataset.dom, p=SP(), L=d==='h'?CTX.hs:CTX.f; if(!p||!L.length) return; ctxDoc(p); ctlPrint(p,d==='h'?'timelog':'projectcost',grilleDoc(d,L)); },
   csv:b=>{ const d=b.dataset.dom, p=SP(), L=d==='h'?CTX.hs:CTX.f; if(!p||!L.length) return; const f=fmDe();
-    csvTable(grille(d,L),(d==='h'?'Controle_heures_':'Controle_frais_')+nomF(p)+'_'+(d==='h'?'S'+isoWeek(semDe())[1]+'_'+isoWeek(semDe())[0]:(fmAn()?String(f.y):f.y+'-'+String(f.m+1).padStart(2,'0')))); },
+    csvTable(grille(d,L),(d==='h'?'Controle_heures_':'Controle_frais_')+nomF(p)+'_'+(d==='h'?(CUR.mod==='centree'&&!ST.csem?periode().lib.replace(/[^0-9A-Za-zÀ-ÿ]+/g,'_'):'S'+isoWeek(semDe())[1]+'_'+isoWeek(semDe())[0]):(fmAn()?String(f.y):f.y+'-'+String(f.m+1).padStart(2,'0')))); },
   csvc:()=>{ const L=CTX.st||[]; if(!L.length) return; const n2=v=>(Math.round((+v||0)*100)/100).toFixed(2);
     csvTable({cols:[{k:'c',t:'Collaborateur',f:o=>esc(staffName(o.s))},{k:'i',t:'Initiales',f:o=>esc(o.s.INITIALS||'')},{k:'h',t:'Heures',f:o=>n2(o.x.h)},{k:'a',t:'Affaires',f:o=>String(o.x.A.size)},{k:'c2',t:'Inscriptions à contrôler',f:o=>String(o.x.ctl)},
       {k:'r',t:'Refusées',f:o=>String(o.x.ref)},{k:'fa',t:'Heures facturables',f:o=>n2(o.x.fa)},{k:'fd',t:'Heures facturées',f:o=>n2(o.x.fd)},{k:'af',t:'Heures à facturer',f:o=>n2(o.x.af)},{k:'d',t:'Dernière saisie',f:o=>o.x.der?fK(o.x.der):''}],view:L},'Analyse_heures_collaborateurs'); },
